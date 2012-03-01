@@ -1,131 +1,325 @@
-From: Robert Lee <rob.lee@linaro.org>
-Date: Tue, 20 Mar 2012 20:22:43 +0000
-Subject: [PATCH v8 2/8] ARM: at91: Consolidate time keeping and irq enable
-Message-Id: <1332274969-15782-3-git-send-email-rob.lee@linaro.org>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 01 Mar 2012 15:07:33 +0000
+Subject: [PATCH v2 20/57] fbdev: sh_mobile_lcdc: Merge board_cfg and lcd_size_cfg into panel_cfg
+Message-Id: <1330614490-14149-21-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1332274969-15782-1-git-send-email-rob.lee@linaro.org>
-In-Reply-To: <1332274969-15782-1-git-send-email-rob.lee@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-fbdev@vger.kernel.org
 
-Enable core cpuidle timekeeping and irq enabling and remove that
-handling from this code.
+Update board code accordingly.
 
-Signed-off-by: Robert Lee <rob.lee@linaro.org>
-Reviewed-by: Kevin Hilman <khilman@ti.com>
-Reviewed-by: Daniel Lezcano <daniel.lezcano@linaro.org>
-Acked-by: Jean Pihet<j-pihet@ti.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/arm/mach-at91/cpuidle.c |   67 +++++++++++++++---------------------------
- 1 file changed, 24 insertions(+), 43 deletions(-)
+ arch/arm/mach-shmobile/board-ag5evm.c   |    6 ++--
+ arch/arm/mach-shmobile/board-ap4evb.c   |    8 +++---
+ arch/arm/mach-shmobile/board-bonito.c   |    2 +-
+ arch/arm/mach-shmobile/board-mackerel.c |    6 +++-
+ arch/sh/boards/mach-ap325rxa/setup.c    |    6 +---
+ arch/sh/boards/mach-ecovec24/setup.c    |    2 +-
+ arch/sh/boards/mach-kfr2r09/setup.c     |    4 +--
+ arch/sh/boards/mach-migor/setup.c       |    8 ++----
+ arch/sh/boards/mach-se/7724/setup.c     |    2 +-
+ drivers/video/sh_mobile_lcdcfb.c        |   35 +++++++++++++++----------------
+ include/video/sh_mobile_lcdc.h          |   12 +++-------
+ 11 files changed, 41 insertions(+), 50 deletions(-)
 
-diff --git a/arch/arm/mach-at91/cpuidle.c b/arch/arm/mach-at91/cpuidle.c
-index a851e6c..d40b3f3 100644
---- a/arch/arm/mach-at91/cpuidle.c
-+++ b/arch/arm/mach-at91/cpuidle.c
-@@ -17,9 +17,10 @@
- #include <linux/init.h>
- #include <linux/platform_device.h>
- #include <linux/cpuidle.h>
--#include <asm/proc-fns.h>
- #include <linux/io.h>
- #include <linux/export.h>
-+#include <asm/proc-fns.h>
-+#include <asm/cpuidle.h>
+diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
+index 0b79fe2..19c91ab 100644
+--- a/arch/arm/mach-shmobile/board-ag5evm.c
++++ b/arch/arm/mach-shmobile/board-ag5evm.c
+@@ -259,12 +259,12 @@ static struct sh_mobile_lcdc_info lcdc0_info = {
+ 		.interface_type = RGB24,
+ 		.clock_divider = 1,
+ 		.flags = LCDC_FLAGS_DWPOL,
+-		.lcd_size_cfg.width = 44,
+-		.lcd_size_cfg.height = 79,
+ 		.fourcc = V4L2_PIX_FMT_RGB565,
+ 		.lcd_cfg = lcdc0_modes,
+ 		.num_cfg = ARRAY_SIZE(lcdc0_modes),
+-		.board_cfg = {
++		.panel_cfg = {
++			.width = 44,
++			.height = 79,
+ 			.display_on = lcd_backlight_on,
+ 			.display_off = lcd_backlight_reset,
+ 		},
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 21f4fa8..a93b797 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -1368,8 +1368,8 @@ static void __init ap4evb_init(void)
+ 	lcdc_info.ch[0].interface_type		= RGB24;
+ 	lcdc_info.ch[0].clock_divider		= 1;
+ 	lcdc_info.ch[0].flags			= LCDC_FLAGS_DWPOL;
+-	lcdc_info.ch[0].lcd_size_cfg.width	= 44;
+-	lcdc_info.ch[0].lcd_size_cfg.height	= 79;
++	lcdc_info.ch[0].panel_cfg.width		= 44;
++	lcdc_info.ch[0].panel_cfg.height	= 79;
  
- #include "pm.h"
+ 	platform_add_devices(qhd_devices, ARRAY_SIZE(qhd_devices));
  
-@@ -27,66 +28,46 @@
+@@ -1410,8 +1410,8 @@ static void __init ap4evb_init(void)
+ 	lcdc_info.ch[0].interface_type		= RGB18;
+ 	lcdc_info.ch[0].clock_divider		= 3;
+ 	lcdc_info.ch[0].flags			= 0;
+-	lcdc_info.ch[0].lcd_size_cfg.width	= 152;
+-	lcdc_info.ch[0].lcd_size_cfg.height	= 91;
++	lcdc_info.ch[0].panel_cfg.width		= 152;
++	lcdc_info.ch[0].panel_cfg.height	= 91;
  
- static DEFINE_PER_CPU(struct cpuidle_device, at91_cpuidle_device);
- 
--static struct cpuidle_driver at91_idle_driver = {
--	.name =         "at91_idle",
--	.owner =        THIS_MODULE,
--};
--
- /* Actual code that puts the SoC in different idle states */
- static int at91_enter_idle(struct cpuidle_device *dev,
- 			struct cpuidle_driver *drv,
- 			       int index)
+ 	/* enable TouchScreen */
+ 	irq_set_irq_type(IRQ7, IRQ_TYPE_LEVEL_LOW);
+diff --git a/arch/arm/mach-shmobile/board-bonito.c b/arch/arm/mach-shmobile/board-bonito.c
+index 4bd1162..2c21579 100644
+--- a/arch/arm/mach-shmobile/board-bonito.c
++++ b/arch/arm/mach-shmobile/board-bonito.c
+@@ -248,7 +248,7 @@ static struct sh_mobile_lcdc_info lcdc0_info = {
+ 		.flags			= 0,
+ 		.lcd_cfg		= &lcdc0_mode,
+ 		.num_cfg		= 1,
+-		.lcd_size_cfg = {
++		.panel_cfg = {
+ 			.width	= 152,
+ 			.height = 91,
+ 		},
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 00f72ed..fc50d1b 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -394,8 +394,10 @@ static struct sh_mobile_lcdc_info lcdc_info = {
+ 		.interface_type		= RGB24,
+ 		.clock_divider		= 3,
+ 		.flags			= 0,
+-		.lcd_size_cfg.width	= 152,
+-		.lcd_size_cfg.height	= 91,
++		.panel_cfg = {
++			.width		= 152,
++			.height		= 91,
++		},
+ 		.bl_info = {
+ 			.name = "sh_mobile_lcdc_bl",
+ 			.max_brightness = 1,
+diff --git a/arch/sh/boards/mach-ap325rxa/setup.c b/arch/sh/boards/mach-ap325rxa/setup.c
+index b321ba8..728cebe 100644
+--- a/arch/sh/boards/mach-ap325rxa/setup.c
++++ b/arch/sh/boards/mach-ap325rxa/setup.c
+@@ -212,11 +212,9 @@ static struct sh_mobile_lcdc_info lcdc_info = {
+ 		.clock_divider = 1,
+ 		.lcd_cfg = ap325rxa_lcdc_modes,
+ 		.num_cfg = ARRAY_SIZE(ap325rxa_lcdc_modes),
+-		.lcd_size_cfg = { /* 7.0 inch */
+-			.width = 152,
++		.panel_cfg = {
++			.width = 152,	/* 7.0 inch */
+ 			.height = 91,
+-		},
+-		.board_cfg = {
+ 			.display_on = ap320_wvga_power_on,
+ 			.display_off = ap320_wvga_power_off,
+ 		},
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 62cdd27..5fa7264 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -325,7 +325,7 @@ static struct sh_mobile_lcdc_info lcdc_info = {
+ 		.interface_type = RGB18,
+ 		.chan = LCDC_CHAN_MAINLCD,
+ 		.fourcc = V4L2_PIX_FMT_RGB565,
+-		.lcd_size_cfg = { /* 7.0 inch */
++		.panel_cfg = { /* 7.0 inch */
+ 			.width = 152,
+ 			.height = 91,
+ 		},
+diff --git a/arch/sh/boards/mach-kfr2r09/setup.c b/arch/sh/boards/mach-kfr2r09/setup.c
+index 2a18b06..0139c70 100644
+--- a/arch/sh/boards/mach-kfr2r09/setup.c
++++ b/arch/sh/boards/mach-kfr2r09/setup.c
+@@ -149,11 +149,9 @@ static struct sh_mobile_lcdc_info kfr2r09_sh_lcdc_info = {
+ 		.flags = LCDC_FLAGS_DWPOL,
+ 		.lcd_cfg = kfr2r09_lcdc_modes,
+ 		.num_cfg = ARRAY_SIZE(kfr2r09_lcdc_modes),
+-		.lcd_size_cfg = {
++		.panel_cfg = {
+ 			.width = 35,
+ 			.height = 58,
+-		},
+-		.board_cfg = {
+ 			.setup_sys = kfr2r09_lcd_setup,
+ 			.start_transfer = kfr2r09_lcd_start,
+ 			.display_on = kfr2r09_lcd_on,
+diff --git a/arch/sh/boards/mach-migor/setup.c b/arch/sh/boards/mach-migor/setup.c
+index 68c3d6f..f37f497 100644
+--- a/arch/sh/boards/mach-migor/setup.c
++++ b/arch/sh/boards/mach-migor/setup.c
+@@ -246,7 +246,7 @@ static struct sh_mobile_lcdc_info sh_mobile_lcdc_info = {
+ 		.clock_divider = 2,
+ 		.lcd_cfg = migor_lcd_modes,
+ 		.num_cfg = ARRAY_SIZE(migor_lcd_modes),
+-		.lcd_size_cfg = { /* 7.0 inch */
++		.panel_cfg = { /* 7.0 inch */
+ 			.width = 152,
+ 			.height = 91,
+ 		},
+@@ -260,11 +260,9 @@ static struct sh_mobile_lcdc_info sh_mobile_lcdc_info = {
+ 		.clock_divider = 10,
+ 		.lcd_cfg = migor_lcd_modes,
+ 		.num_cfg = ARRAY_SIZE(migor_lcd_modes),
+-		.lcd_size_cfg = { /* 2.4 inch */
+-			.width = 49,
++		.panel_cfg = {
++			.width = 49,	/* 2.4 inch */
+ 			.height = 37,
+-		},
+-		.board_cfg = {
+ 			.setup_sys = migor_lcd_qvga_setup,
+ 		},
+ 		.sys_bus_cfg = {
+diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
+index 090b686..9edbdc8 100644
+--- a/arch/sh/boards/mach-se/7724/setup.c
++++ b/arch/sh/boards/mach-se/7724/setup.c
+@@ -181,7 +181,7 @@ static struct sh_mobile_lcdc_info lcdc_info = {
+ 		.chan = LCDC_CHAN_MAINLCD,
+ 		.fourcc = V4L2_PIX_FMT_RGB565,
+ 		.clock_divider = 1,
+-		.lcd_size_cfg = { /* 7.0 inch */
++		.panel_cfg = { /* 7.0 inch */
+ 			.width = 152,
+ 			.height = 91,
+ 		},
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index adfffd6..9e44988 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -289,7 +289,7 @@ static void sh_mobile_lcdc_deferred_io(struct fb_info *info,
+ 				       struct list_head *pagelist)
  {
--	struct timeval before, after;
--	int idle_time;
- 	u32 saved_lpr;
+ 	struct sh_mobile_lcdc_chan *ch = info->par;
+-	struct sh_mobile_lcdc_board_cfg	*bcfg = &ch->cfg.board_cfg;
++	struct sh_mobile_lcdc_panel_cfg *panel = &ch->cfg.panel_cfg;
  
--	local_irq_disable();
--	do_gettimeofday(&before);
--	if (index = 0)
--		/* Wait for interrupt state */
--		cpu_do_idle();
--	else if (index = 1) {
--		asm("b 1f; .align 5; 1:");
--		asm("mcr p15, 0, r0, c7, c10, 4");	/* drain write buffer */
--		saved_lpr = sdram_selfrefresh_enable();
--		cpu_do_idle();
--		sdram_selfrefresh_disable(saved_lpr);
--	}
--	do_gettimeofday(&after);
--	local_irq_enable();
--	idle_time = (after.tv_sec - before.tv_sec) * USEC_PER_SEC +
--			(after.tv_usec - before.tv_usec);
-+	__asm__("b 1f; .align 5; 1:\n"
-+	"	mcr p15, 0, r0, c7, c10, 4");	/* drain write buffer */
-+
-+	saved_lpr = sdram_selfrefresh_enable();
-+	cpu_do_idle();
-+	sdram_selfrefresh_disable(saved_lpr);
+ 	/* enable clocks before accessing hardware */
+ 	sh_mobile_lcdc_clk_on(ch->lcdc);
+@@ -314,13 +314,13 @@ static void sh_mobile_lcdc_deferred_io(struct fb_info *info,
  
--	dev->last_residency = idle_time;
- 	return index;
+ 		/* trigger panel update */
+ 		dma_map_sg(info->dev, ch->sglist, nr_pages, DMA_TO_DEVICE);
+-		if (bcfg->start_transfer)
+-			bcfg->start_transfer(ch, &sh_mobile_lcdc_sys_bus_ops);
++		if (panel->start_transfer)
++			panel->start_transfer(ch, &sh_mobile_lcdc_sys_bus_ops);
+ 		lcdc_write_chan(ch, LDSM2R, LDSM2R_OSTRG);
+ 		dma_unmap_sg(info->dev, ch->sglist, nr_pages, DMA_TO_DEVICE);
+ 	} else {
+-		if (bcfg->start_transfer)
+-			bcfg->start_transfer(ch, &sh_mobile_lcdc_sys_bus_ops);
++		if (panel->start_transfer)
++			panel->start_transfer(ch, &sh_mobile_lcdc_sys_bus_ops);
+ 		lcdc_write_chan(ch, LDSM2R, LDSM2R_OSTRG);
+ 	}
+ }
+@@ -335,7 +335,7 @@ static void sh_mobile_lcdc_deferred_io_touch(struct fb_info *info)
+ 
+ static void sh_mobile_lcdc_display_on(struct sh_mobile_lcdc_chan *ch)
+ {
+-	struct sh_mobile_lcdc_board_cfg	*board_cfg = &ch->cfg.board_cfg;
++	struct sh_mobile_lcdc_panel_cfg *panel = &ch->cfg.panel_cfg;
+ 
+ 	if (ch->tx_dev) {
+ 		if (ch->tx_dev->ops->display_on(ch->tx_dev, ch->info) < 0)
+@@ -343,16 +343,16 @@ static void sh_mobile_lcdc_display_on(struct sh_mobile_lcdc_chan *ch)
+ 	}
+ 
+ 	/* HDMI must be enabled before LCDC configuration */
+-	if (board_cfg->display_on)
+-		board_cfg->display_on();
++	if (panel->display_on)
++		panel->display_on();
  }
  
-+static struct cpuidle_driver at91_idle_driver = {
-+	.name			= "at91_idle",
-+	.owner			= THIS_MODULE,
-+	.en_core_tk_irqen	= 1,
-+	.states[0]		= ARM_CPUIDLE_WFI_STATE,
-+	.states[1]		= {
-+		.enter			= at91_enter_idle,
-+		.exit_latency		= 10,
-+		.target_residency	= 100000,
-+		.flags			= CPUIDLE_FLAG_TIME_VALID,
-+		.name			= "RAM_SR",
-+		.desc			= "WFI and DDR Self Refresh",
-+	},
-+	.state_count = AT91_MAX_STATES,
-+};
-+
- /* Initialize CPU idle by registering the idle states */
- static int at91_init_cpuidle(void)
+ static void sh_mobile_lcdc_display_off(struct sh_mobile_lcdc_chan *ch)
  {
- 	struct cpuidle_device *device;
--	struct cpuidle_driver *driver = &at91_idle_driver;
+-	struct sh_mobile_lcdc_board_cfg	*board_cfg = &ch->cfg.board_cfg;
++	struct sh_mobile_lcdc_panel_cfg *panel = &ch->cfg.panel_cfg;
  
- 	device = &per_cpu(at91_cpuidle_device, smp_processor_id());
- 	device->state_count = AT91_MAX_STATES;
--	driver->state_count = AT91_MAX_STATES;
+-	if (board_cfg->display_off)
+-		board_cfg->display_off();
++	if (panel->display_off)
++		panel->display_off();
+ 
+ 	if (ch->tx_dev)
+ 		ch->tx_dev->ops->display_off(ch->tx_dev);
+@@ -687,16 +687,15 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
+ 	lcdc_wait_bit(priv, _LDCNT2R, LDCNT2R_BR, 0);
+ 
+ 	for (k = 0; k < ARRAY_SIZE(priv->ch); k++) {
+-		struct sh_mobile_lcdc_board_cfg	*board_cfg;
++		struct sh_mobile_lcdc_panel_cfg *panel;
+ 
+ 		ch = &priv->ch[k];
+ 		if (!ch->enabled)
+ 			continue;
+ 
+-		board_cfg = &ch->cfg.board_cfg;
+-		if (board_cfg->setup_sys) {
+-			ret = board_cfg->setup_sys(ch,
+-						   &sh_mobile_lcdc_sys_bus_ops);
++		panel = &ch->cfg.panel_cfg;
++		if (panel->setup_sys) {
++			ret = panel->setup_sys(ch, &sh_mobile_lcdc_sys_bus_ops);
+ 			if (ret)
+ 				return ret;
+ 		}
+@@ -1654,8 +1653,8 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
+ 	 */
+ 	var = &info->var;
+ 	fb_videomode_to_var(var, mode);
+-	var->width = cfg->lcd_size_cfg.width;
+-	var->height = cfg->lcd_size_cfg.height;
++	var->width = cfg->panel_cfg.width;
++	var->height = cfg->panel_cfg.height;
+ 	var->yres_virtual = var->yres * 2;
+ 	var->activate = FB_ACTIVATE_NOW;
+ 
+diff --git a/include/video/sh_mobile_lcdc.h b/include/video/sh_mobile_lcdc.h
+index ecde6aa..4f0fb55 100644
+--- a/include/video/sh_mobile_lcdc.h
++++ b/include/video/sh_mobile_lcdc.h
+@@ -147,7 +147,9 @@ struct sh_mobile_lcdc_sys_bus_ops {
+ 	unsigned long (*read_data)(void *handle);
+ };
+ 
+-struct sh_mobile_lcdc_board_cfg {
++struct sh_mobile_lcdc_panel_cfg {
++	unsigned long width;		/* Panel width in mm */
++	unsigned long height;		/* Panel height in mm */
+ 	int (*setup_sys)(void *sys_ops_handle,
+ 			 struct sh_mobile_lcdc_sys_bus_ops *sys_ops);
+ 	void (*start_transfer)(void *sys_ops_handle,
+@@ -156,11 +158,6 @@ struct sh_mobile_lcdc_board_cfg {
+ 	void (*display_off)(void);
+ };
+ 
+-struct sh_mobile_lcdc_lcd_size_cfg { /* width and height of panel in mm */
+-	unsigned long width;
+-	unsigned long height;
+-};
 -
--	/* Wait for interrupt state */
--	driver->states[0].enter = at91_enter_idle;
--	driver->states[0].exit_latency = 1;
--	driver->states[0].target_residency = 10000;
--	driver->states[0].flags = CPUIDLE_FLAG_TIME_VALID;
--	strcpy(driver->states[0].name, "WFI");
--	strcpy(driver->states[0].desc, "Wait for interrupt");
--
--	/* Wait for interrupt and RAM self refresh state */
--	driver->states[1].enter = at91_enter_idle;
--	driver->states[1].exit_latency = 10;
--	driver->states[1].target_residency = 10000;
--	driver->states[1].flags = CPUIDLE_FLAG_TIME_VALID;
--	strcpy(driver->states[1].name, "RAM_SR");
--	strcpy(driver->states[1].desc, "WFI and RAM Self Refresh");
- 
- 	cpuidle_register_driver(&at91_idle_driver);
- 
+ /* backlight info */
+ struct sh_mobile_lcdc_bl_info {
+ 	const char *name;
+@@ -178,8 +175,7 @@ struct sh_mobile_lcdc_chan_cfg {
+ 	unsigned long flags; /* LCDC_FLAGS_... */
+ 	const struct fb_videomode *lcd_cfg;
+ 	int num_cfg;
+-	struct sh_mobile_lcdc_lcd_size_cfg lcd_size_cfg;
+-	struct sh_mobile_lcdc_board_cfg board_cfg;
++	struct sh_mobile_lcdc_panel_cfg panel_cfg;
+ 	struct sh_mobile_lcdc_bl_info bl_info;
+ 	struct sh_mobile_lcdc_sys_bus_cfg sys_bus_cfg; /* only for SYSn I/F */
+ 	struct sh_mobile_meram_cfg *meram_cfg;
 -- 
-1.7.9.4
+1.7.3.4
 
