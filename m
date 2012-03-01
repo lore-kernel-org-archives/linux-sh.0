@@ -1,158 +1,40 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 01 Mar 2012 15:07:38 +0000
-Subject: [PATCH v2 25/57] sh_mobile_lcdc: Add display notify callback to sh_mobile_lcdc_chan
-Message-Id: <1330614490-14149-26-git-send-email-laurent.pinchart@ideasonboard.com>
+Date: Thu, 01 Mar 2012 13:57:11 +0000
+Subject: [PATCH for v3.3] arm: sh_mobile: ag5evm: Fix compilation by including linux/videodev2.h
+Message-Id: <1330610231-6228-1-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-The callback implements 3 notification events:
+The board file uses a 4CC defined in linux/videodev2.h. Include the
+header to fix
 
-- SH_MOBILE_LCDC_EVENT_DISPLAY_CONNECT notifies the LCDC that the
-  display has been connected
-- SH_MOBILE_LCDC_EVENT_DISPLAY_DISCONNECT notifies the LCDC that the
-  display has been disconnected
-- SH_MOBILE_LCDC_EVENT_DISPLAY_MODE notifies that LCDC that a display
-  mode has been detected
+arch/arm/mach-shmobile/board-ag5evm.c:262: error: 'V4L2_PIX_FMT_RGB565'
+undeclared here (not in a function)
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- drivers/video/sh_mobile_lcdcfb.c |   84 ++++++++++++++++++++++++++++++++++++++
- drivers/video/sh_mobile_lcdcfb.h |   10 +++++
- 2 files changed, 94 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/board-ag5evm.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index 5a19ef3..128eb77 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -364,6 +364,89 @@ static void sh_mobile_lcdc_display_off(struct sh_mobile_lcdc_chan *ch)
- 		ch->tx_dev->ops->display_off(ch->tx_dev);
- }
- 
-+static bool
-+sh_mobile_lcdc_must_reconfigure(struct sh_mobile_lcdc_chan *ch,
-+				const struct fb_var_screeninfo *new_var)
-+{
-+	struct fb_var_screeninfo *old_var = &ch->display_var;
-+	struct fb_videomode old_mode;
-+	struct fb_videomode new_mode;
-+
-+	fb_var_to_videomode(&old_mode, old_var);
-+	fb_var_to_videomode(&new_mode, new_var);
-+
-+	dev_dbg(ch->info->dev, "Old %ux%u, new %ux%u\n",
-+		old_mode.xres, old_mode.yres, new_mode.xres, new_mode.yres);
-+
-+	if (fb_mode_is_equal(&old_mode, &new_mode)) {
-+		/* It can be a different monitor with an equal video-mode */
-+		old_var->width = new_var->width;
-+		old_var->height = new_var->height;
-+		return false;
-+	}
-+
-+	dev_dbg(ch->info->dev, "Switching %u -> %u lines\n",
-+		old_mode.yres, new_mode.yres);
-+	*old_var = *new_var;
-+
-+	return true;
-+}
-+
-+static int sh_mobile_check_var(struct fb_var_screeninfo *var,
-+			       struct fb_info *info);
-+
-+static int sh_mobile_lcdc_display_notify(struct sh_mobile_lcdc_chan *ch,
-+					 enum sh_mobile_lcdc_entity_event event,
-+					 struct fb_var_screeninfo *var)
-+{
-+	struct fb_info *info = ch->info;
-+	int ret = 0;
-+
-+	switch (event) {
-+	case SH_MOBILE_LCDC_EVENT_DISPLAY_CONNECT:
-+		/* HDMI plug in */
-+		if (lock_fb_info(info)) {
-+			console_lock();
-+
-+			if (!sh_mobile_lcdc_must_reconfigure(ch, var) &&
-+			    info->state = FBINFO_STATE_RUNNING) {
-+				/* First activation with the default monitor.
-+				 * Just turn on, if we run a resume here, the
-+				 * logo disappears.
-+				 */
-+				info->var.width = var->width;
-+				info->var.height = var->height;
-+				sh_mobile_lcdc_display_on(ch);
-+			} else {
-+				/* New monitor or have to wake up */
-+				fb_set_suspend(info, 0);
-+			}
-+
-+			console_unlock();
-+			unlock_fb_info(info);
-+		}
-+		break;
-+
-+	case SH_MOBILE_LCDC_EVENT_DISPLAY_DISCONNECT:
-+		/* HDMI disconnect */
-+		if (lock_fb_info(info)) {
-+			console_lock();
-+			fb_set_suspend(info, 1);
-+			console_unlock();
-+			unlock_fb_info(info);
-+		}
-+		break;
-+
-+	case SH_MOBILE_LCDC_EVENT_DISPLAY_MODE:
-+		/* Validate a proposed new mode */
-+		var->bits_per_pixel = info->var.bits_per_pixel;
-+		ret = sh_mobile_check_var(var, info);
-+		break;
-+	}
-+
-+	return ret;
-+}
-+
- /* -----------------------------------------------------------------------------
-  * Format helpers
-  */
-@@ -1591,6 +1674,7 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
- 	int i;
- 
- 	mutex_init(&ch->open_lock);
-+	ch->notify = sh_mobile_lcdc_display_notify;
- 
- 	/* Allocate the frame buffer device. */
- 	ch->info = framebuffer_alloc(0, priv->dev);
-diff --git a/drivers/video/sh_mobile_lcdcfb.h b/drivers/video/sh_mobile_lcdcfb.h
-index 6fb956c..e2eb7af 100644
---- a/drivers/video/sh_mobile_lcdcfb.h
-+++ b/drivers/video/sh_mobile_lcdcfb.h
-@@ -30,6 +30,12 @@ struct sh_mobile_lcdc_entity_ops {
- 	void (*display_off)(struct sh_mobile_lcdc_entity *entity);
- };
- 
-+enum sh_mobile_lcdc_entity_event {
-+	SH_MOBILE_LCDC_EVENT_DISPLAY_CONNECT,
-+	SH_MOBILE_LCDC_EVENT_DISPLAY_DISCONNECT,
-+	SH_MOBILE_LCDC_EVENT_DISPLAY_MODE,
-+};
-+
- struct sh_mobile_lcdc_entity {
- 	struct module *owner;
- 	const struct sh_mobile_lcdc_entity_ops *ops;
-@@ -70,6 +76,10 @@ struct sh_mobile_lcdc_chan {
- 	unsigned long base_addr_y;
- 	unsigned long base_addr_c;
- 	unsigned int pitch;
-+
-+	int (*notify)(struct sh_mobile_lcdc_chan *ch,
-+		      enum sh_mobile_lcdc_entity_event event,
-+		      struct fb_var_screeninfo *var);
- };
- 
- #endif
+This is a v3.3 regression.
+
+diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
+index eff8a96..0db1685 100644
+--- a/arch/arm/mach-shmobile/board-ag5evm.c
++++ b/arch/arm/mach-shmobile/board-ag5evm.c
+@@ -38,6 +38,7 @@
+ #include <linux/mfd/tmio.h>
+ #include <linux/sh_clk.h>
+ #include <linux/dma-mapping.h>
++#include <linux/videodev2.h>
+ #include <video/sh_mobile_lcdc.h>
+ #include <video/sh_mipi_dsi.h>
+ #include <sound/sh_fsi.h>
 -- 
-1.7.3.4
+Regards,
+
+Laurent Pinchart
 
