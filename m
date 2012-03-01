@@ -1,101 +1,67 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 01 Mar 2012 15:07:51 +0000
-Subject: [PATCH v2 38/57] fbdev: sh_mobile_lcdc: Pass channel pointer to sh_mobile_wait_for_vsync
-Message-Id: <1330614490-14149-39-git-send-email-laurent.pinchart@ideasonboard.com>
+Date: Thu, 01 Mar 2012 15:08:05 +0000
+Subject: [PATCH v2 52/57] arm: mach-shmobile: Constify sh_mobile_meram_cfg structures
+Message-Id: <1330614490-14149-53-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-fbdev@vger.kernel.org
 
-The sh_mobile_wait_for_vsync() function isn't related to the fbdev API,
-make it generic by passing a channel pointer instead of an fb_info
-pointer.
+The structures, passed to the sh_mobile_lcdcfb driver through platform
+data, are read only by the driver. Make them const.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- drivers/video/sh_mobile_lcdcfb.c |   47 ++++++++++++++++++-------------------
- 1 files changed, 23 insertions(+), 24 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c   |    5 +++--
+ arch/arm/mach-shmobile/board-mackerel.c |    4 ++--
+ 2 files changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index 6d377b4..adc911f 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -585,6 +585,26 @@ static irqreturn_t sh_mobile_lcdc_irq(int irq, void *data)
- 	return IRQ_HANDLED;
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 9d6ad2d..28a2301 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -587,7 +587,8 @@ static const struct fb_videomode ap4evb_lcdc_modes[] = {
+ #endif
+ 	},
+ };
+-static struct sh_mobile_meram_cfg lcd_meram_cfg = {
++
++static const struct sh_mobile_meram_cfg lcd_meram_cfg = {
+ 	.icb[0] = {
+ 		.meram_size     = 0x40,
+ 	},
+@@ -864,7 +865,7 @@ static long ap4evb_clk_optimize(unsigned long target, unsigned long *best_freq,
+ 	return error;
  }
  
-+static int sh_mobile_wait_for_vsync(struct sh_mobile_lcdc_chan *ch)
-+{
-+	unsigned long ldintr;
-+	int ret;
-+
-+	/* Enable VSync End interrupt and be careful not to acknowledge any
-+	 * pending interrupt.
-+	 */
-+	ldintr = lcdc_read(ch->lcdc, _LDINTR);
-+	ldintr |= LDINTR_VEE | LDINTR_STATUS_MASK;
-+	lcdc_write(ch->lcdc, _LDINTR, ldintr);
-+
-+	ret = wait_for_completion_interruptible_timeout(&ch->vsync_completion,
-+							msecs_to_jiffies(100));
-+	if (!ret)
-+		return -ETIMEDOUT;
-+
-+	return 0;
-+}
-+
- static void sh_mobile_lcdc_start_stop(struct sh_mobile_lcdc_priv *priv,
- 				      int start)
- {
-@@ -1083,27 +1103,6 @@ static int sh_mobile_fb_pan_display(struct fb_var_screeninfo *var,
- 	return 0;
+-static struct sh_mobile_meram_cfg hdmi_meram_cfg = {
++static const struct sh_mobile_meram_cfg hdmi_meram_cfg = {
+ 	.icb[0] = {
+ 		.meram_size     = 0x100,
+ 	},
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 4acd748..ca084dd 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -374,7 +374,7 @@ static int mackerel_get_brightness(void)
+ 	return gpio_get_value(GPIO_PORT31);
  }
  
--static int sh_mobile_wait_for_vsync(struct fb_info *info)
--{
--	struct sh_mobile_lcdc_chan *ch = info->par;
--	unsigned long ldintr;
--	int ret;
--
--	/* Enable VSync End interrupt and be careful not to acknowledge any
--	 * pending interrupt.
--	 */
--	ldintr = lcdc_read(ch->lcdc, _LDINTR);
--	ldintr |= LDINTR_VEE | LDINTR_STATUS_MASK;
--	lcdc_write(ch->lcdc, _LDINTR, ldintr);
--
--	ret = wait_for_completion_interruptible_timeout(&ch->vsync_completion,
--							msecs_to_jiffies(100));
--	if (!ret)
--		return -ETIMEDOUT;
--
--	return 0;
--}
--
- static int sh_mobile_ioctl(struct fb_info *info, unsigned int cmd,
- 		       unsigned long arg)
- {
-@@ -1111,7 +1110,7 @@ static int sh_mobile_ioctl(struct fb_info *info, unsigned int cmd,
+-static struct sh_mobile_meram_cfg lcd_meram_cfg = {
++static const struct sh_mobile_meram_cfg lcd_meram_cfg = {
+ 	.icb[0] = {
+ 		.meram_size     = 0x40,
+ 	},
+@@ -460,7 +460,7 @@ static struct platform_device hdmi_device = {
+ 	},
+ };
  
- 	switch (cmd) {
- 	case FBIO_WAITFORVSYNC:
--		retval = sh_mobile_wait_for_vsync(info);
-+		retval = sh_mobile_wait_for_vsync(info->par);
- 		break;
- 
- 	default:
-@@ -1388,8 +1387,8 @@ static int sh_mobile_lcdc_blank(int blank, struct fb_info *info)
- 		 * mode will reenable the clocks and update the screen in time,
- 		 * so it does not need this. */
- 		if (!info->fbdefio) {
--			sh_mobile_wait_for_vsync(info);
--			sh_mobile_wait_for_vsync(info);
-+			sh_mobile_wait_for_vsync(ch);
-+			sh_mobile_wait_for_vsync(ch);
- 		}
- 		sh_mobile_lcdc_clk_off(p);
- 	}
+-static struct sh_mobile_meram_cfg hdmi_meram_cfg = {
++static const struct sh_mobile_meram_cfg hdmi_meram_cfg = {
+ 	.icb[0] = {
+ 		.meram_size     = 0x100,
+ 	},
 -- 
 1.7.3.4
 
