@@ -1,127 +1,418 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 06 Mar 2012 08:36:37 +0000
-Subject: [PATCH 04/08] ARM: mach-shmobile: sh7372, AP4EVB and Mackerel timer rework
-Message-Id: <20120306083637.8131.67504.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 01 Mar 2012 15:07:44 +0000
+Subject: [PATCH v2 31/57] fbdev: sh_mobile_lcdc: Rename (lcd|num)_cfg (lcd|num)_modes
+Message-Id: <1330614490-14149-32-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+The struct sh_mobile_lcdc_chan_cfg platform data contains a list of
+video modes. Name the lcd_cfg and num_cfg fields to reflect that they
+describe video modes.
 
-Move the SoC specific timer code from AP4EVB and Mackerel
-to sh7372 setup code. This makes is possible to share
-the SoC specific timer code across boards and it also
-removes the need for a board specific timer structure.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
+ arch/arm/mach-shmobile/board-ag5evm.c   |    4 +-
+ arch/arm/mach-shmobile/board-ap4evb.c   |    4 +-
+ arch/arm/mach-shmobile/board-bonito.c   |    4 +-
+ arch/arm/mach-shmobile/board-mackerel.c |    4 +-
+ arch/sh/boards/mach-ap325rxa/setup.c    |    4 +-
+ arch/sh/boards/mach-ecovec24/setup.c    |    8 +++---
+ arch/sh/boards/mach-kfr2r09/setup.c     |    4 +-
+ arch/sh/boards/mach-migor/setup.c       |    8 +++---
+ arch/sh/boards/mach-se/7724/setup.c     |    8 +++---
+ drivers/video/sh_mipi_dsi.c             |   38 +++++++++++++++---------------
+ drivers/video/sh_mobile_lcdcfb.c        |   20 ++++++++--------
+ include/video/sh_mobile_lcdc.h          |    4 +-
+ 12 files changed, 55 insertions(+), 55 deletions(-)
 
- Depends on the patches:
- "[PATCH] ARM: mach-shmobile: Move sh7372 AP4EVB external clk setup"
- "[PATCH] ARM: mach-shmobile: Move sh7372 Mackerel external clk setup"
- "[PATCH 01/08] ARM: mach-shmobile: add shmobile_earlytimer_init()"
+diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
+index 19c91ab..5480454 100644
+--- a/arch/arm/mach-shmobile/board-ag5evm.c
++++ b/arch/arm/mach-shmobile/board-ag5evm.c
+@@ -260,8 +260,8 @@ static struct sh_mobile_lcdc_info lcdc0_info = {
+ 		.clock_divider = 1,
+ 		.flags = LCDC_FLAGS_DWPOL,
+ 		.fourcc = V4L2_PIX_FMT_RGB565,
+-		.lcd_cfg = lcdc0_modes,
+-		.num_cfg = ARRAY_SIZE(lcdc0_modes),
++		.lcd_modes = lcdc0_modes,
++		.num_modes = ARRAY_SIZE(lcdc0_modes),
+ 		.panel_cfg = {
+ 			.width = 44,
+ 			.height = 79,
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index a93b797..505d4e6 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -601,8 +601,8 @@ static struct sh_mobile_lcdc_info lcdc_info = {
+ 	.ch[0] = {
+ 		.chan = LCDC_CHAN_MAINLCD,
+ 		.fourcc = V4L2_PIX_FMT_RGB565,
+-		.lcd_cfg = ap4evb_lcdc_modes,
+-		.num_cfg = ARRAY_SIZE(ap4evb_lcdc_modes),
++		.lcd_modes = ap4evb_lcdc_modes,
++		.num_modes = ARRAY_SIZE(ap4evb_lcdc_modes),
+ 		.meram_cfg = &lcd_meram_cfg,
+ #ifdef CONFIG_AP4EVB_QHD
+ 		.tx_dev = &mipidsi0_device,
+diff --git a/arch/arm/mach-shmobile/board-bonito.c b/arch/arm/mach-shmobile/board-bonito.c
+index 2c21579..c79baa9 100644
+--- a/arch/arm/mach-shmobile/board-bonito.c
++++ b/arch/arm/mach-shmobile/board-bonito.c
+@@ -246,8 +246,8 @@ static struct sh_mobile_lcdc_info lcdc0_info = {
+ 		.interface_type		= RGB24,
+ 		.clock_divider		= 5,
+ 		.flags			= 0,
+-		.lcd_cfg		= &lcdc0_mode,
+-		.num_cfg		= 1,
++		.lcd_modes		= &lcdc0_mode,
++		.num_modes		= 1,
+ 		.panel_cfg = {
+ 			.width	= 152,
+ 			.height = 91,
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index fc50d1b..f22135e 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -389,8 +389,8 @@ static struct sh_mobile_lcdc_info lcdc_info = {
+ 	.ch[0] = {
+ 		.chan = LCDC_CHAN_MAINLCD,
+ 		.fourcc = V4L2_PIX_FMT_RGB565,
+-		.lcd_cfg = mackerel_lcdc_modes,
+-		.num_cfg = ARRAY_SIZE(mackerel_lcdc_modes),
++		.lcd_modes = mackerel_lcdc_modes,
++		.num_modes = ARRAY_SIZE(mackerel_lcdc_modes),
+ 		.interface_type		= RGB24,
+ 		.clock_divider		= 3,
+ 		.flags			= 0,
+diff --git a/arch/sh/boards/mach-ap325rxa/setup.c b/arch/sh/boards/mach-ap325rxa/setup.c
+index 728cebe..7f0f5b3 100644
+--- a/arch/sh/boards/mach-ap325rxa/setup.c
++++ b/arch/sh/boards/mach-ap325rxa/setup.c
+@@ -210,8 +210,8 @@ static struct sh_mobile_lcdc_info lcdc_info = {
+ 		.fourcc = V4L2_PIX_FMT_RGB565,
+ 		.interface_type = RGB18,
+ 		.clock_divider = 1,
+-		.lcd_cfg = ap325rxa_lcdc_modes,
+-		.num_cfg = ARRAY_SIZE(ap325rxa_lcdc_modes),
++		.lcd_modes = ap325rxa_lcdc_modes,
++		.num_modes = ARRAY_SIZE(ap325rxa_lcdc_modes),
+ 		.panel_cfg = {
+ 			.width = 152,	/* 7.0 inch */
+ 			.height = 91,
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 5fa7264..92bb087 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -1112,8 +1112,8 @@ static int __init arch_setup(void)
+ 		/* DVI */
+ 		lcdc_info.clock_source			= LCDC_CLK_EXTERNAL;
+ 		lcdc_info.ch[0].clock_divider		= 1;
+-		lcdc_info.ch[0].lcd_cfg			= ecovec_dvi_modes;
+-		lcdc_info.ch[0].num_cfg			= ARRAY_SIZE(ecovec_dvi_modes);
++		lcdc_info.ch[0].lcd_modes		= ecovec_dvi_modes;
++		lcdc_info.ch[0].num_modes		= ARRAY_SIZE(ecovec_dvi_modes);
+ 
+ 		gpio_set_value(GPIO_PTA2, 1);
+ 		gpio_set_value(GPIO_PTU1, 1);
+@@ -1121,8 +1121,8 @@ static int __init arch_setup(void)
+ 		/* Panel */
+ 		lcdc_info.clock_source			= LCDC_CLK_PERIPHERAL;
+ 		lcdc_info.ch[0].clock_divider		= 2;
+-		lcdc_info.ch[0].lcd_cfg			= ecovec_lcd_modes;
+-		lcdc_info.ch[0].num_cfg			= ARRAY_SIZE(ecovec_lcd_modes);
++		lcdc_info.ch[0].lcd_modes		= ecovec_lcd_modes;
++		lcdc_info.ch[0].num_modes		= ARRAY_SIZE(ecovec_lcd_modes);
+ 
+ 		gpio_set_value(GPIO_PTR1, 1);
+ 
+diff --git a/arch/sh/boards/mach-kfr2r09/setup.c b/arch/sh/boards/mach-kfr2r09/setup.c
+index 0139c70..748564f 100644
+--- a/arch/sh/boards/mach-kfr2r09/setup.c
++++ b/arch/sh/boards/mach-kfr2r09/setup.c
+@@ -147,8 +147,8 @@ static struct sh_mobile_lcdc_info kfr2r09_sh_lcdc_info = {
+ 		.interface_type = SYS18,
+ 		.clock_divider = 6,
+ 		.flags = LCDC_FLAGS_DWPOL,
+-		.lcd_cfg = kfr2r09_lcdc_modes,
+-		.num_cfg = ARRAY_SIZE(kfr2r09_lcdc_modes),
++		.lcd_modes = kfr2r09_lcdc_modes,
++		.num_modes = ARRAY_SIZE(kfr2r09_lcdc_modes),
+ 		.panel_cfg = {
+ 			.width = 35,
+ 			.height = 58,
+diff --git a/arch/sh/boards/mach-migor/setup.c b/arch/sh/boards/mach-migor/setup.c
+index f37f497..017b4cc 100644
+--- a/arch/sh/boards/mach-migor/setup.c
++++ b/arch/sh/boards/mach-migor/setup.c
+@@ -244,8 +244,8 @@ static struct sh_mobile_lcdc_info sh_mobile_lcdc_info = {
+ 		.fourcc = V4L2_PIX_FMT_RGB565,
+ 		.interface_type = RGB16,
+ 		.clock_divider = 2,
+-		.lcd_cfg = migor_lcd_modes,
+-		.num_cfg = ARRAY_SIZE(migor_lcd_modes),
++		.lcd_modes = migor_lcd_modes,
++		.num_modes = ARRAY_SIZE(migor_lcd_modes),
+ 		.panel_cfg = { /* 7.0 inch */
+ 			.width = 152,
+ 			.height = 91,
+@@ -258,8 +258,8 @@ static struct sh_mobile_lcdc_info sh_mobile_lcdc_info = {
+ 		.fourcc = V4L2_PIX_FMT_RGB565,
+ 		.interface_type = SYS16A,
+ 		.clock_divider = 10,
+-		.lcd_cfg = migor_lcd_modes,
+-		.num_cfg = ARRAY_SIZE(migor_lcd_modes),
++		.lcd_modes = migor_lcd_modes,
++		.num_modes = ARRAY_SIZE(migor_lcd_modes),
+ 		.panel_cfg = {
+ 			.width = 49,	/* 2.4 inch */
+ 			.height = 37,
+diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
+index 9edbdc8..b1a7714 100644
+--- a/arch/sh/boards/mach-se/7724/setup.c
++++ b/arch/sh/boards/mach-se/7724/setup.c
+@@ -885,12 +885,12 @@ static int __init devices_setup(void)
+ 
+ 	if (sw & SW41_B) {
+ 		/* 720p */
+-		lcdc_info.ch[0].lcd_cfg	= lcdc_720p_modes;
+-		lcdc_info.ch[0].num_cfg	= ARRAY_SIZE(lcdc_720p_modes);
++		lcdc_info.ch[0].lcd_modes = lcdc_720p_modes;
++		lcdc_info.ch[0].num_modes = ARRAY_SIZE(lcdc_720p_modes);
+ 	} else {
+ 		/* VGA */
+-		lcdc_info.ch[0].lcd_cfg	= lcdc_vga_modes;
+-		lcdc_info.ch[0].num_cfg	= ARRAY_SIZE(lcdc_vga_modes);
++		lcdc_info.ch[0].lcd_modes = lcdc_vga_modes;
++		lcdc_info.ch[0].num_modes = ARRAY_SIZE(lcdc_vga_modes);
+ 	}
+ 
+ 	if (sw & SW41_A) {
+diff --git a/drivers/video/sh_mipi_dsi.c b/drivers/video/sh_mipi_dsi.c
+index 5ff3742..42ad0f7 100644
+--- a/drivers/video/sh_mipi_dsi.c
++++ b/drivers/video/sh_mipi_dsi.c
+@@ -147,77 +147,77 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
+ 		pctype = 0;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_24;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_24BIT;
+-		linelength = ch->lcd_cfg[0].xres * 3;
++		linelength = ch->lcd_modes[0].xres * 3;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_RGB565:
+ 		pctype = 1;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_16;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_16BIT;
+-		linelength = ch->lcd_cfg[0].xres * 2;
++		linelength = ch->lcd_modes[0].xres * 2;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_RGB666_LP:
+ 		pctype = 2;
+ 		datatype = MIPI_DSI_PIXEL_STREAM_3BYTE_18;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_24BIT;
+-		linelength = ch->lcd_cfg[0].xres * 3;
++		linelength = ch->lcd_modes[0].xres * 3;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_RGB666:
+ 		pctype = 3;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_18;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_18BIT;
+-		linelength = (ch->lcd_cfg[0].xres * 18 + 7) / 8;
++		linelength = (ch->lcd_modes[0].xres * 18 + 7) / 8;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_BGR888:
+ 		pctype = 8;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_24;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_24BIT;
+-		linelength = ch->lcd_cfg[0].xres * 3;
++		linelength = ch->lcd_modes[0].xres * 3;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_BGR565:
+ 		pctype = 9;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_16;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_16BIT;
+-		linelength = ch->lcd_cfg[0].xres * 2;
++		linelength = ch->lcd_modes[0].xres * 2;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_BGR666_LP:
+ 		pctype = 0xa;
+ 		datatype = MIPI_DSI_PIXEL_STREAM_3BYTE_18;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_24BIT;
+-		linelength = ch->lcd_cfg[0].xres * 3;
++		linelength = ch->lcd_modes[0].xres * 3;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_BGR666:
+ 		pctype = 0xb;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_18;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_18BIT;
+-		linelength = (ch->lcd_cfg[0].xres * 18 + 7) / 8;
++		linelength = (ch->lcd_modes[0].xres * 18 + 7) / 8;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_YUYV:
+ 		pctype = 4;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_YCBCR16;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_16BIT;
+-		linelength = ch->lcd_cfg[0].xres * 2;
++		linelength = ch->lcd_modes[0].xres * 2;
+ 		yuv = true;
+ 		break;
+ 	case MIPI_UYVY:
+ 		pctype = 5;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_YCBCR16;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_16BIT;
+-		linelength = ch->lcd_cfg[0].xres * 2;
++		linelength = ch->lcd_modes[0].xres * 2;
+ 		yuv = true;
+ 		break;
+ 	case MIPI_YUV420_L:
+ 		pctype = 6;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_YCBCR12;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_12BIT;
+-		linelength = (ch->lcd_cfg[0].xres * 12 + 7) / 8;
++		linelength = (ch->lcd_modes[0].xres * 12 + 7) / 8;
+ 		yuv = true;
+ 		break;
+ 	case MIPI_YUV420:
+@@ -225,7 +225,7 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_YCBCR12;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_12BIT;
+ 		/* Length of U/V line */
+-		linelength = (ch->lcd_cfg[0].xres + 1) / 2;
++		linelength = (ch->lcd_modes[0].xres + 1) / 2;
+ 		yuv = true;
+ 		break;
+ 	default:
+@@ -294,7 +294,7 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
+ 	 */
+ 	iowrite32(0x00000006, mipi->linkbase + DTCTR);
+ 	/* VSYNC width = 2 (<< 17) */
+-	iowrite32((ch->lcd_cfg[0].vsync_len << pdata->vsynw_offset) |
++	iowrite32((ch->lcd_modes[0].vsync_len << pdata->vsynw_offset) |
+ 		  (pdata->clksrc << 16) | (pctype << 12) | datatype,
+ 		  mipi->linkbase + VMCTR1);
+ 
+@@ -328,7 +328,7 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
+ 	top = linelength << 16; /* RGBLEN */
+ 	bottom = 0x00000001;
+ 	if (pdata->flags & SH_MIPI_DSI_HSABM) /* HSALEN */
+-		bottom = (pdata->lane * ch->lcd_cfg[0].hsync_len) - 10;
++		bottom = (pdata->lane * ch->lcd_modes[0].hsync_len) - 10;
+ 	iowrite32(top | bottom , mipi->linkbase + VMLEN1);
+ 
+ 	/*
+@@ -348,18 +348,18 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
+ 		div = 2;
+ 
+ 	if (pdata->flags & SH_MIPI_DSI_HFPBM) {	/* HBPLEN */
+-		top = ch->lcd_cfg[0].hsync_len + ch->lcd_cfg[0].left_margin;
++		top = ch->lcd_modes[0].hsync_len + ch->lcd_modes[0].left_margin;
+ 		top = ((pdata->lane * top / div) - 10) << 16;
+ 	}
+ 	if (pdata->flags & SH_MIPI_DSI_HBPBM) { /* HFPLEN */
+-		bottom = ch->lcd_cfg[0].right_margin;
++		bottom = ch->lcd_modes[0].right_margin;
+ 		bottom = (pdata->lane * bottom / div) - 12;
+ 	}
+ 
+-	bpp = linelength / ch->lcd_cfg[0].xres; /* byte / pixel */
++	bpp = linelength / ch->lcd_modes[0].xres; /* byte / pixel */
+ 	if ((pdata->lane / div) > bpp) {
+-		tmp = ch->lcd_cfg[0].xres / bpp; /* output cycle */
+-		tmp = ch->lcd_cfg[0].xres - tmp; /* (input - output) cycle */
++		tmp = ch->lcd_modes[0].xres / bpp; /* output cycle */
++		tmp = ch->lcd_modes[0].xres - tmp; /* (input - output) cycle */
+ 		delay = (pdata->lane * tmp);
+ 	}
+ 
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 422fcfd..ab7b179 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -1191,8 +1191,8 @@ static int sh_mobile_check_var(struct fb_var_screeninfo *var, struct fb_info *in
+ 	 * distance between two modes is defined as the size of the
+ 	 * non-overlapping parts of the two rectangles.
+ 	 */
+-	for (i = 0; i < ch->cfg.num_cfg; ++i) {
+-		const struct fb_videomode *mode = &ch->cfg.lcd_cfg[i];
++	for (i = 0; i < ch->cfg.num_modes; ++i) {
++		const struct fb_videomode *mode = &ch->cfg.lcd_modes[i];
+ 		unsigned int dist;
+ 
+ 		/* We can only round up. */
+@@ -1211,7 +1211,7 @@ static int sh_mobile_check_var(struct fb_var_screeninfo *var, struct fb_info *in
+ 	}
+ 
+ 	/* If no available mode can be used, return an error. */
+-	if (ch->cfg.num_cfg != 0) {
++	if (ch->cfg.num_modes != 0) {
+ 		if (best_dist = (unsigned int)-1)
+ 			return -EINVAL;
+ 
+@@ -1671,7 +1671,7 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
+ 	struct fb_var_screeninfo *var;
+ 	struct fb_info *info;
+ 	unsigned int max_size;
+-	int num_cfg;
++	int num_modes;
+ 	void *buf;
+ 	int ret;
+ 	int i;
+@@ -1698,7 +1698,7 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
+ 	max_mode = NULL;
+ 	max_size = 0;
+ 
+-	for (i = 0, mode = cfg->lcd_cfg; i < cfg->num_cfg; i++, mode++) {
++	for (i = 0, mode = cfg->lcd_modes; i < cfg->num_modes; i++, mode++) {
+ 		unsigned int size = mode->yres * mode->xres;
+ 
+ 		/* NV12/NV21 buffers must have even number of lines */
+@@ -1722,15 +1722,15 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
+ 			max_mode->xres, max_mode->yres);
+ 
+ 	/* Create the mode list. */
+-	if (cfg->lcd_cfg = NULL) {
++	if (cfg->lcd_modes = NULL) {
+ 		mode = &default_720p;
+-		num_cfg = 1;
++		num_modes = 1;
+ 	} else {
+-		mode = cfg->lcd_cfg;
+-		num_cfg = cfg->num_cfg;
++		mode = cfg->lcd_modes;
++		num_modes = cfg->num_modes;
+ 	}
+ 
+-	fb_videomode_to_modelist(mode, num_cfg, &info->modelist);
++	fb_videomode_to_modelist(mode, num_modes, &info->modelist);
+ 
+ 	/* Initialize the transmitter device if present. */
+ 	if (cfg->tx_dev) {
+diff --git a/include/video/sh_mobile_lcdc.h b/include/video/sh_mobile_lcdc.h
+index 4f0fb55..484b0a2 100644
+--- a/include/video/sh_mobile_lcdc.h
++++ b/include/video/sh_mobile_lcdc.h
+@@ -173,8 +173,8 @@ struct sh_mobile_lcdc_chan_cfg {
+ 	int interface_type; /* selects RGBn or SYSn I/F, see above */
+ 	int clock_divider;
+ 	unsigned long flags; /* LCDC_FLAGS_... */
+-	const struct fb_videomode *lcd_cfg;
+-	int num_cfg;
++	const struct fb_videomode *lcd_modes;
++	int num_modes;
+ 	struct sh_mobile_lcdc_panel_cfg panel_cfg;
+ 	struct sh_mobile_lcdc_bl_info bl_info;
+ 	struct sh_mobile_lcdc_sys_bus_cfg sys_bus_cfg; /* only for SYSn I/F */
+-- 
+1.7.3.4
 
- arch/arm/mach-shmobile/board-ap4evb.c   |   13 +------------
- arch/arm/mach-shmobile/board-mackerel.c |   13 +------------
- arch/arm/mach-shmobile/setup-sh7372.c   |   10 ++++++++++
- 3 files changed, 12 insertions(+), 24 deletions(-)
-
---- 0033/arch/arm/mach-shmobile/board-ap4evb.c
-+++ work/arch/arm/mach-shmobile/board-ap4evb.c	2012-03-06 12:53:01.000000000 +0900
-@@ -61,7 +61,6 @@
- 
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
--#include <asm/mach/time.h>
- #include <asm/setup.h>
- 
- /*
-@@ -1436,21 +1435,11 @@ static void __init ap4evb_init(void)
- 	pm_clk_add(&lcdc1_device.dev, "hdmi");
- }
- 
--static void __init ap4evb_timer_init(void)
--{
--	sh7372_clock_init();
--	shmobile_timer.init();
--}
--
--static struct sys_timer ap4evb_timer = {
--	.init		= ap4evb_timer_init,
--};
--
- MACHINE_START(AP4EVB, "ap4evb")
- 	.map_io		= sh7372_map_io,
- 	.init_early	= sh7372_add_early_devices,
- 	.init_irq	= sh7372_init_irq,
- 	.handle_irq	= shmobile_handle_irq_intc,
- 	.init_machine	= ap4evb_init,
--	.timer		= &ap4evb_timer,
-+	.timer		= &shmobile_timer,
- MACHINE_END
---- 0032/arch/arm/mach-shmobile/board-mackerel.c
-+++ work/arch/arm/mach-shmobile/board-mackerel.c	2012-03-06 12:52:39.000000000 +0900
-@@ -57,7 +57,6 @@
- #include <mach/sh7372.h>
- 
- #include <asm/mach/arch.h>
--#include <asm/mach/time.h>
- #include <asm/mach-types.h>
- 
- /*
-@@ -1554,21 +1553,11 @@ static void __init mackerel_init(void)
- 	pm_clk_add(&hdmi_lcdc_device.dev, "hdmi");
- }
- 
--static void __init mackerel_timer_init(void)
--{
--	sh7372_clock_init();
--	shmobile_timer.init();
--}
--
--static struct sys_timer mackerel_timer = {
--	.init		= mackerel_timer_init,
--};
--
- MACHINE_START(MACKEREL, "mackerel")
- 	.map_io		= sh7372_map_io,
- 	.init_early	= sh7372_add_early_devices,
- 	.init_irq	= sh7372_init_irq,
- 	.handle_irq	= shmobile_handle_irq_intc,
- 	.init_machine	= mackerel_init,
--	.timer		= &mackerel_timer,
-+	.timer		= &shmobile_timer,
- MACHINE_END
---- 0004/arch/arm/mach-shmobile/setup-sh7372.c
-+++ work/arch/arm/mach-shmobile/setup-sh7372.c	2012-03-06 12:52:48.000000000 +0900
-@@ -37,6 +37,7 @@
- #include <asm/mach/map.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
-+#include <asm/mach/time.h>
- 
- static struct map_desc sh7372_io_desc[] __initdata = {
- 	/* create a 1:1 entity map for 0xe6xxxxxx
-@@ -1064,6 +1065,12 @@ void __init sh7372_add_standard_devices(
- 	sh7372_add_device_to_domain(&sh7372_a4r, &jpu_device);
- }
- 
-+static void __init sh7372_earlytimer_init(void)
-+{
-+	sh7372_clock_init();
-+	shmobile_earlytimer_init();
-+}
-+
- void __init sh7372_add_early_devices(void)
- {
- 	early_platform_add_devices(sh7372_early_devices,
-@@ -1071,4 +1078,7 @@ void __init sh7372_add_early_devices(voi
- 
- 	/* setup early console here as well */
- 	shmobile_setup_console();
-+
-+	/* override timer setup with soc-specific code */
-+	shmobile_timer.init = sh7372_earlytimer_init;
- }
