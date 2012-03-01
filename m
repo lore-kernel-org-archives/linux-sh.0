@@ -1,40 +1,62 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 01 Mar 2012 13:57:11 +0000
-Subject: [PATCH for v3.3] arm: sh_mobile: ag5evm: Fix compilation by including linux/videodev2.h
-Message-Id: <1330610231-6228-1-git-send-email-laurent.pinchart@ideasonboard.com>
+Date: Thu, 01 Mar 2012 15:07:30 +0000
+Subject: [PATCH v2 17/57] fbdev: sh_mobile_lcdc: Remove board configuration owner field
+Message-Id: <1330614490-14149-18-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-The board file uses a 4CC defined in linux/videodev2.h. Include the
-header to fix
-
-arch/arm/mach-shmobile/board-ag5evm.c:262: error: 'V4L2_PIX_FMT_RGB565'
-undeclared here (not in a function)
+The field is unused, remove it.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-ag5evm.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+ drivers/video/sh_mobile_lcdcfb.c |    8 ++------
+ include/video/sh_mobile_lcdc.h   |    2 --
+ 2 files changed, 2 insertions(+), 8 deletions(-)
 
-This is a v3.3 regression.
-
-diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
-index eff8a96..0db1685 100644
---- a/arch/arm/mach-shmobile/board-ag5evm.c
-+++ b/arch/arm/mach-shmobile/board-ag5evm.c
-@@ -38,6 +38,7 @@
- #include <linux/mfd/tmio.h>
- #include <linux/sh_clk.h>
- #include <linux/dma-mapping.h>
-+#include <linux/videodev2.h>
- #include <video/sh_mobile_lcdc.h>
- #include <video/sh_mipi_dsi.h>
- #include <sound/sh_fsi.h>
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index a2e0903..a899b6d 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -345,20 +345,16 @@ static void sh_mobile_lcdc_display_on(struct sh_mobile_lcdc_chan *ch)
+ 	}
+ 
+ 	/* HDMI must be enabled before LCDC configuration */
+-	if (board_cfg->display_on && try_module_get(board_cfg->owner)) {
++	if (board_cfg->display_on)
+ 		board_cfg->display_on(board_cfg->board_data, ch->info);
+-		module_put(board_cfg->owner);
+-	}
+ }
+ 
+ static void sh_mobile_lcdc_display_off(struct sh_mobile_lcdc_chan *ch)
+ {
+ 	struct sh_mobile_lcdc_board_cfg	*board_cfg = &ch->cfg.board_cfg;
+ 
+-	if (board_cfg->display_off && try_module_get(board_cfg->owner)) {
++	if (board_cfg->display_off)
+ 		board_cfg->display_off(board_cfg->board_data);
+-		module_put(board_cfg->owner);
+-	}
+ 
+ 	if (ch->tx_dev)
+ 		ch->tx_dev->ops->display_off(ch->tx_dev);
+diff --git a/include/video/sh_mobile_lcdc.h b/include/video/sh_mobile_lcdc.h
+index 3681cf6..163f4b7 100644
+--- a/include/video/sh_mobile_lcdc.h
++++ b/include/video/sh_mobile_lcdc.h
+@@ -147,9 +147,7 @@ struct sh_mobile_lcdc_sys_bus_ops {
+ 	unsigned long (*read_data)(void *handle);
+ };
+ 
+-struct module;
+ struct sh_mobile_lcdc_board_cfg {
+-	struct module *owner;
+ 	void *board_data;
+ 	int (*setup_sys)(void *board_data, void *sys_ops_handle,
+ 			 struct sh_mobile_lcdc_sys_bus_ops *sys_ops);
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.3.4
 
