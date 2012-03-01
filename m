@@ -1,33 +1,51 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 12 Mar 2012 06:34:33 +0000
-Subject: [GIT PULL] rmobile fixes for 3.3-rc8
-Message-Id: <20120312063433.GA5573@linux-sh.org>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 01 Mar 2012 15:07:21 +0000
+Subject: [PATCH v2 08/57] fbdev: sh_mobile_lcdc: Add sh_mobile_lcdc_entity definition
+Message-Id: <1330614490-14149-9-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-The following changes since commit 55062d061790b43aee01ab3f9ac57b8596254f19:
+The sh_mobile_lcdc_entity structure will be used to abstract operations
+performed by transceivers (such as MIPI/DSI and HDMI).
 
-  x86: fix typo in recent find_vma_prev purge (2012-03-06 18:48:13 -0800)
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+ drivers/video/sh_mobile_lcdcfb.h |   18 ++++++++++++++++--
+ 1 files changed, 16 insertions(+), 2 deletions(-)
 
-are available in the git repository at:
-  git://github.com/pmundt/linux-sh.git rmobile-for-linus
+diff --git a/drivers/video/sh_mobile_lcdcfb.h b/drivers/video/sh_mobile_lcdcfb.h
+index a58a0f3..d79e5aa 100644
+--- a/drivers/video/sh_mobile_lcdcfb.h
++++ b/drivers/video/sh_mobile_lcdcfb.h
+@@ -14,9 +14,23 @@ enum { LDDCKPAT1R, LDDCKPAT2R, LDMT1R, LDMT2R, LDMT3R, LDDFR, LDSM1R,
+ 
+ #define PALETTE_NR 16
+ 
+-struct sh_mobile_lcdc_priv;
+-struct fb_info;
+ struct backlight_device;
++struct fb_info;
++struct module;
++struct sh_mobile_lcdc_entity;
++struct sh_mobile_lcdc_priv;
++
++struct sh_mobile_lcdc_entity_ops {
++	/* Display */
++	int (*display_on)(struct sh_mobile_lcdc_entity *entity,
++			  struct fb_info *info);
++	void (*display_off)(struct sh_mobile_lcdc_entity *entity);
++};
++
++struct sh_mobile_lcdc_entity {
++	struct module *owner;
++	const struct sh_mobile_lcdc_entity_ops *ops;
++};
+ 
+ /*
+  * struct sh_mobile_lcdc_chan - LCDC display channel
+-- 
+1.7.3.4
 
-Kuninori Morimoto (1):
-      ARM: mach-shmobile: ap4evb: fixup fsi2_ak4643_info typo
-
-Laurent Pinchart (2):
-      ARM: mach-shmobile: Fix ag5evm compilation by including linux/videodev2.h
-      ARM: mach-shmobile: mackerel: Reserve DMA memory for the frame buffer
-
-Phil Edworthy (1):
-      ARM: mach-shmobile: Fix bonito compile breakage
-
- arch/arm/mach-shmobile/board-ag5evm.c   |    1 +
- arch/arm/mach-shmobile/board-ap4evb.c   |    2 +-
- arch/arm/mach-shmobile/board-bonito.c   |    3 ++-
- arch/arm/mach-shmobile/board-mackerel.c |    4 ++++
- 4 files changed, 8 insertions(+), 2 deletions(-)
