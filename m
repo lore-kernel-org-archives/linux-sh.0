@@ -1,129 +1,175 @@
-From: Robert Lee <rob.lee@linaro.org>
-Date: Tue, 20 Mar 2012 20:22:44 +0000
-Subject: [PATCH v8 3/8] ARM: kirkwood: Consolidate time keeping and irq enable
-Message-Id: <1332274969-15782-4-git-send-email-rob.lee@linaro.org>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 01 Mar 2012 15:07:23 +0000
+Subject: [PATCH v2 10/57] fbdev: sh_mipi_dsi: Implement sh_mobile_lcdc_entity interface
+Message-Id: <1330614490-14149-11-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1332274969-15782-1-git-send-email-rob.lee@linaro.org>
-In-Reply-To: <1332274969-15782-1-git-send-email-rob.lee@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-fbdev@vger.kernel.org
 
-Enable core cpuidle timekeeping and irq enabling and remove that
-handling from this code.
-
-Signed-off-by: Robert Lee <rob.lee@linaro.org>
-Reviewed-by: Kevin Hilman <khilman@ti.com>
-Reviewed-by: Daniel Lezcano <daniel.lezcano@linaro.org>
-Acked-by: Jean Pihet<j-pihet@ti.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/arm/mach-kirkwood/cpuidle.c |   72 +++++++++++---------------------------
- 1 file changed, 21 insertions(+), 51 deletions(-)
+ drivers/video/sh_mipi_dsi.c |   66 +++++++++++++++++++++++++++++++++----------
+ 1 files changed, 51 insertions(+), 15 deletions(-)
 
-diff --git a/arch/arm/mach-kirkwood/cpuidle.c b/arch/arm/mach-kirkwood/cpuidle.c
-index 7088180..0f17109 100644
---- a/arch/arm/mach-kirkwood/cpuidle.c
-+++ b/arch/arm/mach-kirkwood/cpuidle.c
-@@ -20,77 +20,47 @@
- #include <linux/io.h>
- #include <linux/export.h>
- #include <asm/proc-fns.h>
-+#include <asm/cpuidle.h>
- #include <mach/kirkwood.h>
+diff --git a/drivers/video/sh_mipi_dsi.c b/drivers/video/sh_mipi_dsi.c
+index 05151b8..58744fe 100644
+--- a/drivers/video/sh_mipi_dsi.c
++++ b/drivers/video/sh_mipi_dsi.c
+@@ -24,6 +24,8 @@
+ #include <video/sh_mipi_dsi.h>
+ #include <video/sh_mobile_lcdc.h>
  
- #define KIRKWOOD_MAX_STATES	2
++#include "sh_mobile_lcdcfb.h"
++
+ #define SYSCTRL		0x0000
+ #define SYSCONF		0x0004
+ #define TIMSET		0x0008
+@@ -50,6 +52,8 @@
+ #define MAX_SH_MIPI_DSI 2
  
--static struct cpuidle_driver kirkwood_idle_driver = {
--	.name =         "kirkwood_idle",
--	.owner =        THIS_MODULE,
--};
--
--static DEFINE_PER_CPU(struct cpuidle_device, kirkwood_cpuidle_device);
--
- /* Actual code that puts the SoC in different idle states */
- static int kirkwood_enter_idle(struct cpuidle_device *dev,
- 				struct cpuidle_driver *drv,
- 			       int index)
+ struct sh_mipi {
++	struct sh_mobile_lcdc_entity entity;
++
+ 	void __iomem	*base;
+ 	void __iomem	*linkbase;
+ 	struct clk	*dsit_clk;
+@@ -60,6 +64,8 @@ struct sh_mipi {
+ 	void	(*next_display_off)(void *board_data);
+ };
+ 
++#define to_sh_mipi(e)	container_of(e, struct sh_mipi, entity)
++
+ static struct sh_mipi *mipi_dsi[MAX_SH_MIPI_DSI];
+ 
+ /* Protect the above array */
+@@ -120,7 +126,7 @@ static void sh_mipi_dsi_enable(struct sh_mipi *mipi, bool enable)
+ 
+ static void sh_mipi_shutdown(struct platform_device *pdev)
  {
--	struct timeval before, after;
--	int idle_time;
--
--	local_irq_disable();
--	do_gettimeofday(&before);
--	if (index = 0)
--		/* Wait for interrupt state */
--		cpu_do_idle();
--	else if (index = 1) {
--		/*
--		 * Following write will put DDR in self refresh.
--		 * Note that we have 256 cycles before DDR puts it
--		 * self in self-refresh, so the wait-for-interrupt
--		 * call afterwards won't get the DDR from self refresh
--		 * mode.
--		 */
--		writel(0x7, DDR_OPERATION_BASE);
--		cpu_do_idle();
--	}
--	do_gettimeofday(&after);
--	local_irq_enable();
--	idle_time = (after.tv_sec - before.tv_sec) * USEC_PER_SEC +
--			(after.tv_usec - before.tv_usec);
--
--	/* Update last residency */
--	dev->last_residency = idle_time;
-+	writel(0x7, DDR_OPERATION_BASE);
-+	cpu_do_idle();
+-	struct sh_mipi *mipi = platform_get_drvdata(pdev);
++	struct sh_mipi *mipi = to_sh_mipi(platform_get_drvdata(pdev));
  
- 	return index;
+ 	sh_mipi_dsi_enable(mipi, false);
+ }
+@@ -392,9 +398,10 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
+ 	return 0;
  }
  
-+static struct cpuidle_driver kirkwood_idle_driver = {
-+	.name			= "kirkwood_idle",
-+	.owner			= THIS_MODULE,
-+	.en_core_tk_irqen	= 1,
-+	.states[0]		= ARM_CPUIDLE_WFI_STATE,
-+	.states[1]		= {
-+		.enter			= kirkwood_enter_idle,
-+		.exit_latency		= 10,
-+		.target_residency	= 100000,
-+		.flags			= CPUIDLE_FLAG_TIME_VALID,
-+		.name			= "DDR SR",
-+		.desc			= "WFI and DDR Self Refresh",
-+	},
-+	.state_count = KIRKWOOD_MAX_STATES,
+-static void mipi_display_on(void *arg, struct fb_info *info)
++static int __mipi_display_on(struct sh_mobile_lcdc_entity *entity,
++			     struct fb_info *info)
+ {
+-	struct sh_mipi *mipi = arg;
++	struct sh_mipi *mipi = to_sh_mipi(entity);
+ 	struct sh_mipi_dsi_info *pdata = mipi->pdev->dev.platform_data;
+ 	int ret;
+ 
+@@ -410,24 +417,34 @@ static void mipi_display_on(void *arg, struct fb_info *info)
+ 
+ 	sh_mipi_dsi_enable(mipi, true);
+ 
+-	if (mipi->next_display_on)
+-		mipi->next_display_on(mipi->next_board_data, info);
+-
+-	return;
++	return 0;
+ 
+ mipi_display_on_fail1:
+ 	pm_runtime_put_sync(&mipi->pdev->dev);
+ mipi_display_on_fail2:
+ 	pdata->set_dot_clock(mipi->pdev, mipi->base, 0);
++
++	return ret;
+ }
+ 
+-static void mipi_display_off(void *arg)
++static void mipi_display_on(void *arg, struct fb_info *info)
+ {
+-	struct sh_mipi *mipi = arg;
+-	struct sh_mipi_dsi_info *pdata = mipi->pdev->dev.platform_data;
++	struct sh_mobile_lcdc_entity *entity = arg;
++	struct sh_mipi *mipi = to_sh_mipi(entity);
++	int ret;
+ 
+-	if (mipi->next_display_off)
+-		mipi->next_display_off(mipi->next_board_data);
++	ret = __mipi_display_on(entity, info);
++	if (ret < 0)
++		return;
++
++	if (mipi->next_display_on)
++		mipi->next_display_on(mipi->next_board_data, info);
++}
++
++static void __mipi_display_off(struct sh_mobile_lcdc_entity *entity)
++{
++	struct sh_mipi *mipi = to_sh_mipi(entity);
++	struct sh_mipi_dsi_info *pdata = mipi->pdev->dev.platform_data;
+ 
+ 	sh_mipi_dsi_enable(mipi, false);
+ 
+@@ -436,6 +453,22 @@ static void mipi_display_off(void *arg)
+ 	pm_runtime_put_sync(&mipi->pdev->dev);
+ }
+ 
++static void mipi_display_off(void *arg)
++{
++	struct sh_mobile_lcdc_entity *entity = arg;
++	struct sh_mipi *mipi = to_sh_mipi(entity);
++
++	if (mipi->next_display_off)
++		mipi->next_display_off(mipi->next_board_data);
++
++	__mipi_display_off(entity);
++}
++
++static const struct sh_mobile_lcdc_entity_ops mipi_ops = {
++	.display_on = __mipi_display_on,
++	.display_off = __mipi_display_off,
 +};
 +
-+static DEFINE_PER_CPU(struct cpuidle_device, kirkwood_cpuidle_device);
-+
- /* Initialize CPU idle by registering the idle states */
- static int kirkwood_init_cpuidle(void)
+ static int __init sh_mipi_probe(struct platform_device *pdev)
  {
- 	struct cpuidle_device *device;
--	struct cpuidle_driver *driver = &kirkwood_idle_driver;
+ 	struct sh_mipi *mipi;
+@@ -467,6 +500,9 @@ static int __init sh_mipi_probe(struct platform_device *pdev)
+ 		goto ealloc;
+ 	}
  
- 	device = &per_cpu(kirkwood_cpuidle_device, smp_processor_id());
- 	device->state_count = KIRKWOOD_MAX_STATES;
--	driver->state_count = KIRKWOOD_MAX_STATES;
--
--	/* Wait for interrupt state */
--	driver->states[0].enter = kirkwood_enter_idle;
--	driver->states[0].exit_latency = 1;
--	driver->states[0].target_residency = 10000;
--	driver->states[0].flags = CPUIDLE_FLAG_TIME_VALID;
--	strcpy(driver->states[0].name, "WFI");
--	strcpy(driver->states[0].desc, "Wait for interrupt");
--
--	/* Wait for interrupt and DDR self refresh state */
--	driver->states[1].enter = kirkwood_enter_idle;
--	driver->states[1].exit_latency = 10;
--	driver->states[1].target_residency = 10000;
--	driver->states[1].flags = CPUIDLE_FLAG_TIME_VALID;
--	strcpy(driver->states[1].name, "DDR SR");
--	strcpy(driver->states[1].desc, "WFI and DDR Self Refresh");
++	mipi->entity.owner = THIS_MODULE;
++	mipi->entity.ops = &mipi_ops;
++
+ 	if (!request_mem_region(res->start, resource_size(res), pdev->name)) {
+ 		dev_err(&pdev->dev, "MIPI register region already claimed\n");
+ 		ret = -EBUSY;
+@@ -521,7 +557,7 @@ static int __init sh_mipi_probe(struct platform_device *pdev)
+ 	pm_runtime_resume(&pdev->dev);
  
- 	cpuidle_register_driver(&kirkwood_idle_driver);
- 	if (cpuidle_register_device(device)) {
+ 	mutex_unlock(&array_lock);
+-	platform_set_drvdata(pdev, mipi);
++	platform_set_drvdata(pdev, &mipi->entity);
+ 
+ 	/* Save original LCDC callbacks */
+ 	mipi->next_board_data = pdata->lcd_chan->board_cfg.board_data;
+@@ -529,7 +565,7 @@ static int __init sh_mipi_probe(struct platform_device *pdev)
+ 	mipi->next_display_off = pdata->lcd_chan->board_cfg.display_off;
+ 
+ 	/* Set up LCDC callbacks */
+-	pdata->lcd_chan->board_cfg.board_data = mipi;
++	pdata->lcd_chan->board_cfg.board_data = &mipi->entity;
+ 	pdata->lcd_chan->board_cfg.display_on = mipi_display_on;
+ 	pdata->lcd_chan->board_cfg.display_off = mipi_display_off;
+ 	pdata->lcd_chan->board_cfg.owner = THIS_MODULE;
+@@ -561,7 +597,7 @@ static int __exit sh_mipi_remove(struct platform_device *pdev)
+ 	struct sh_mipi_dsi_info *pdata = pdev->dev.platform_data;
+ 	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	struct resource *res2 = platform_get_resource(pdev, IORESOURCE_MEM, 1);
+-	struct sh_mipi *mipi = platform_get_drvdata(pdev);
++	struct sh_mipi *mipi = to_sh_mipi(platform_get_drvdata(pdev));
+ 	int i, ret;
+ 
+ 	mutex_lock(&array_lock);
 -- 
-1.7.9.4
+1.7.3.4
 
