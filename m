@@ -1,89 +1,58 @@
-From: Thomas Schwinge <thomas@codesourcery.com>
-Date: Fri, 09 Mar 2012 20:23:46 +0000
-Subject: Re: [PATCH 3/7] serial: sh-sci: restore big-endian operation.
-Message-Id: <87lin9mskt.fsf@schwinge.name>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="=-=-="
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Thu, 01 Mar 2012 21:22:03 +0000
+Subject: Re: [PATCH 00/06] ARM: mach-shmobile: map_io and init_early update
+Message-Id: <201203012222.03808.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1331311133-26937-1-git-send-email-thomas@codesourcery.com> <1331311133-26937-3-git-send-email-thomas@codesourcery.com> <20120309171007.GA25965@kroah.com>
-In-Reply-To: <20120309171007.GA25965@kroah.com>
-To: Greg KH <gregkh@linuxfoundation.org>
-Cc: Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, linux-serial@vger.kernel.org
+References: <20120229123656.28584.90874.sendpatchset@w520>
+In-Reply-To: <20120229123656.28584.90874.sendpatchset@w520>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
---=-=-=
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+On Wednesday, February 29, 2012, Magnus Damm wrote:
+>  ARM: mach-shmobile: map_io and init_early update
+> 
+> [PATCH 01/06] ARM: mach-shmobile: sh7367 map_io and init_early update
+> [PATCH 02/06] ARM: mach-shmobile: sh7377 map_io and init_early update
+> [PATCH 03/06] ARM: mach-shmobile: sh7372 map_io and init_early update
+> [PATCH 04/06] ARM: mach-shmobile: sh73a0 map_io and init_early update
+> [PATCH 05/06] ARM: mach-shmobile: r8a7740 map_io and init_early update
+> [PATCH 06/06] ARM: mach-shmobile: r8a7779 map_io and init_early update
+> 
+> This patch series converts the mach-shmobile subarch to properly
+> make use of a per-soc map_io and a separate init_early callback for
+> early serial console support on platforms where that is possible.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-Hi Greg!
+Paul, would you mind if I took this patchset into the renesas tree for v3.4?
 
-First -- as you probably have guessed already -- I'm not (not yet?) :-)
-too familiar with the Linux kernel patch submission process.  I have
-spent quite some time reading the included documentation, but apparently
-missed some details...  :-)
-
-
-On Fri, 9 Mar 2012 09:10:07 -0800, Greg KH <gregkh@linuxfoundation.org> wro=
-te:
-> On Fri, Mar 09, 2012 at 05:38:49PM +0100, Thomas Schwinge wrote:
-> > As of 37b7a97884ba64bf7d403351ac2a9476ab4f1bba we have to use the
-> > endianess-agnostic I/O accessor functions.
->=20
-> Please always put a human readable description of what the git id is, so
-> that we have a chance to understand what is going on.
-
-Sorry.  ``sh: machvec IO death.'' -- well, the essential part what I'm
-fixing here is that before this commit readw (and friends, such as
-ioread16) didn't do any endianess modification of the data, but directly
-invoked __raw_readw, whereas after 37b7a978 they do such modification by
-means of filtering through le16_to_cpu (in the readw/ioread16 case).
-This is where things break for big endian (but not little endian, where
-this is a no-op).
+Rafael
 
 
-> Are these patches supposed to be going through the sh tree, or the
-> serial tree to Linus?
+> ---
+> 
+>  arch/arm/mach-shmobile/board-ag5evm.c        |   25 +------------
+>  arch/arm/mach-shmobile/board-ap4evb.c        |   25 +------------
+>  arch/arm/mach-shmobile/board-bonito.c        |   28 +--------------
+>  arch/arm/mach-shmobile/board-g3evm.c         |   25 +------------
+>  arch/arm/mach-shmobile/board-g4evm.c         |   25 +------------
+>  arch/arm/mach-shmobile/board-kota2.c         |   25 +------------
+>  arch/arm/mach-shmobile/board-mackerel.c      |   25 +------------
+>  arch/arm/mach-shmobile/board-marzen.c        |   48 +-------------------------
+>  arch/arm/mach-shmobile/include/mach/common.h |    6 +++
+>  arch/arm/mach-shmobile/setup-r8a7740.c       |   35 ++++++++++++++++++
+>  arch/arm/mach-shmobile/setup-r8a7779.c       |   39 +++++++++++++++++++++
+>  arch/arm/mach-shmobile/setup-sh7367.c        |   22 +++++++++++
+>  arch/arm/mach-shmobile/setup-sh7372.c        |   22 +++++++++++
+>  arch/arm/mach-shmobile/setup-sh7377.c        |   22 +++++++++++
+>  arch/arm/mach-shmobile/setup-sh73a0.c        |   22 +++++++++++
+>  15 files changed, 184 insertions(+), 210 deletions(-)
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> 
 
-I'm assuming that Paul Mundt will handle the whole lot in an SH tree.
-
-Paul, by the way, if that's more convenient I can also publish my Git
-tree.
-
-
-> And watch your To: line, it seemed to be munged :(
-
-Yes.  By means of scripts/get_maintainer.pl (and some manual adjustments)
-I created the Cc: lists that are part of my commits' log messages.  Then,
-I just had git send-email send that out, without explicitly specifying a
-primary recipient (To: line).  I assume I should have put Paul there?
-
-On this patch, the linux-serial was Cced (as suggested by
-scripts/get_maintainer.pl), as it touches a TTY/serial driver, and I
-wanted to make sure to give you an opportunity to review that the patch
-doesn't introduce any breakage on non-SH architectures, for example.
-(Despite its indicative name, sh-sci also seems to be used on some ARM
-boards.)
-
-
-> confused,
-
-Sorry; will hopefully improve.  :-)
-
-
-Gr=C3=BC=C3=9Fe,
- Thomas
-
---=-=-=
-Content-Type: application/pgp-signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iQEcBAEBAgAGBQJPWmbSAAoJENuKOtuXzphJR5EIAKslGo7+zlQGhPiZ3sOGl+3g
-8nrO/kbTl8SrZYV2fjFjVWkRRbWrGT/WA/d1LRQ4wZVNDFgbqH8QfH0yovzZwHVf
-Os3hsr0LLZYQYZs6lqmGy6HjNy8YNXKok3/zAoOWE90HyCJMHeVo5LIwYtpzwYGb
-Mnu87HDb82TCf7kpF66+uQ/lbcvl6/41HbudTnLQOAhgT/52XKBC0irdxxopkdmB
-8h+fzfVxaJ+yaTy2YZai/Pf9jCJkazvcXQhXOMhsYjr5ETBHnSkUVLOBPPVtc3zn
-Vy17x5qBPIMPUImd6H6CzWnznoeQbE3GWDlcMFpQGg4AkHe99q8rplguc9UrZsc=
-=gifc
------END PGP SIGNATURE-----
---=-=-=--
