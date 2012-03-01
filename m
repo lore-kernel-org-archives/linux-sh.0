@@ -1,68 +1,50 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 28 Mar 2012 10:22:30 +0000
-Subject: [PATCH 01/06] ARM: mach-shmobile: Introduce shmobile_setup_delay()
-Message-Id: <20120328102230.18870.92390.sendpatchset@w520>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date: Thu, 01 Mar 2012 02:32:42 +0000
+Subject: [PATCH 3/3] sh: sh7786: Add echi-sh of platform data
+Message-Id: <1330569162-9485-3-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120328064026.28557.5982.sendpatchset@w520>
-In-Reply-To: <20120328064026.28557.5982.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
-
-Add the function shmobile_setup_delay() to let platforms
-configure their maximum loops per jiffy delay. With this
-jiffies calculation done the dependency on early timer
-is removed.
-
-In the future this allows us to assign timers
-using the regular driver model via the device tree.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 ---
+ arch/sh/kernel/cpu/sh4a/setup-sh7786.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
 
- arch/arm/mach-shmobile/include/mach/common.h |    2 ++
- arch/arm/mach-shmobile/timer.c               |   17 +++++++++++++++++
- 2 files changed, 19 insertions(+)
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7786.c b/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
+index 599022d..9e32e1c 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
+@@ -23,6 +23,7 @@
+ #include <linux/sh_timer.h>
+ #include <linux/sh_dma.h>
+ #include <linux/sh_intc.h>
++#include <linux/usb/ehci-sh.h>
+ #include <cpu/dma-register.h>
+ #include <asm/mmzone.h>
+ 
+@@ -540,6 +541,11 @@ static struct platform_device dma0_device = {
+ 	},
+ };
+ 
++static struct ehci_sh_platdata usb_ehci_pdata = {
++	.phy_init = NULL,
++	.clkmode = 0,
++};
++
+ #define USB_EHCI_START 0xffe70000
+ #define USB_OHCI_START 0xffe70400
+ 
+@@ -562,6 +568,7 @@ static struct platform_device usb_ehci_device = {
+ 	.dev = {
+ 		.dma_mask		= &usb_ehci_device.dev.coherent_dma_mask,
+ 		.coherent_dma_mask	= DMA_BIT_MASK(32),
++		.platform_data      = &usb_ehci_pdata,
+ 	},
+ 	.num_resources	= ARRAY_SIZE(usb_ehci_resources),
+ 	.resource	= usb_ehci_resources,
+-- 
+1.7.9.1
 
---- 0031/arch/arm/mach-shmobile/include/mach/common.h
-+++ work/arch/arm/mach-shmobile/include/mach/common.h	2012-03-06 13:43:42.000000000 +0900
-@@ -3,6 +3,8 @@
- 
- extern void shmobile_earlytimer_init(void);
- extern struct sys_timer shmobile_timer;
-+extern void shmobile_setup_delay(unsigned int max_cpu_core_mhz,
-+				 unsigned int mult, unsigned int div);
- extern void shmobile_setup_console(void);
- extern void shmobile_secondary_vector(void);
- extern int shmobile_platform_cpu_kill(unsigned int cpu);
---- 0031/arch/arm/mach-shmobile/timer.c
-+++ work/arch/arm/mach-shmobile/timer.c	2012-03-06 13:44:29.000000000 +0900
-@@ -19,8 +19,25 @@
-  *
-  */
- #include <linux/platform_device.h>
-+#include <linux/delay.h>
- #include <asm/mach/time.h>
- 
-+void __init shmobile_setup_delay(unsigned int max_cpu_core_mhz,
-+				 unsigned int mult, unsigned int div)
-+{
-+	/* calculate a worst-case loops-per-jiffy value
-+	 * based on maximum cpu core mhz setting and the
-+	 * __delay() implementation in arch/arm/lib/delay.S
-+	 *
-+	 * this will result in a longer delay than expected
-+	 * when the cpu core runs on lower frequencies.
-+	 */
-+
-+	unsigned int value = (1000000 * mult) / (HZ * div);
-+
-+	lpj_fine = max_cpu_core_mhz * value;
-+}
-+
- static void __init shmobile_late_time_init(void)
- {
- 	/*
