@@ -1,113 +1,279 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 01 Mar 2012 15:07:13 +0000
-Subject: [PATCH v2 00/57] SH Mobile LCDC: rework DSI/HDMI interface and add overlays support
-Message-Id: <1330614490-14149-1-git-send-email-laurent.pinchart@ideasonboard.com>
+Date: Thu, 01 Mar 2012 15:07:46 +0000
+Subject: [PATCH v2 33/57] fbdev: sh_mobile_lcdc: Add sh_mobile_format_info() function
+Message-Id: <1330614490-14149-34-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-fbdev@vger.kernel.org
 
-Hi everybody,
+The function returns a pointer to a structure describing a format based
+on its fourcc. Use the function where applicable instead of hardcoded
+switch-case statements.
 
-Here's the second version of the patch SH Mobile LCDC rework patch set. I've
-taken the review into account and rebased the patches on top of fbdev-next.
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+ drivers/video/sh_mobile_lcdcfb.c |  174 ++++++++++++++++++++++----------------
+ 1 files changed, 102 insertions(+), 72 deletions(-)
 
-I would still like to push patches 01 to 54 (after review of course) to v3.4.
-
-Laurent Pinchart (57):
-  fbdev: sh_mobile_lcdc: Reorder code into sections
-  fbdev: sh_mobile_lcdc: Mark init-only symbols with __devinit(const)
-  fbdev: sh_mobile_lcdc: Move pm runtime enable to probe()
-  fbdev: sh_mobile_lcdc: Don't pass struct device around
-  fbdev: sh_mobile_lcdc: Create functions to turn the display on/off
-  fbdev: sh_mobile_hdmi: Don't access LCDC channel in notifier callback
-  sh_mobile_hdmi: Remove platform data lcd_dev field
-  fbdev: sh_mobile_lcdc: Add sh_mobile_lcdc_entity definition
-  fbdev: sh_mobile_hdmi: Implement sh_mobile_lcdc_entity interface
-  fbdev: sh_mipi_dsi: Implement sh_mobile_lcdc_entity interface
-  fbdev: sh_mobile_lcdc: Handle HDMI/MIPI transmitter device directly
-  arm: mach-shmobile: Add LCDC tx_dev field to platform data
-  fbdev: sh_mipi_dsi: Don't hook up into board_cfg display operations
-  fbdev: sh_mobile_hdmi: Don't hook up into board_cfg display
-    operations
-  arm: mach-shmobile: Don't initialize the hdmi_info lcd_chan field
-  fbdev: sh_mobile_hdmi: Remove sh_mobile_hdmi_info lcd_chan field
-  fbdev: sh_mobile_lcdc: Remove board configuration owner field
-  fbdev: sh_mobile_lcdc: Remove board configuration board_data field
-  fbdev: sh_mobile_lcdc: Move brightness ops to sh_mobile_lcdc_bl_info
-  fbdev: sh_mobile_lcdc: Merge board_cfg and lcd_size_cfg into
-    panel_cfg
-  sh_mobile_lcdc: Add an lcdc channel pointer to sh_mobile_lcdc_entity
-  sh_mobile_hdmi: Use sh_mobile_lcdc_entity::channel to access fb_info
-  fbdev: sh_mobile_lcdc: Remove fb_info parameter to display_on
-    operation
-  fbdev: sh_mobile_lcdc: Return display connection state in display_on
-  sh_mobile_lcdc: Add display notify callback to sh_mobile_lcdc_chan
-  sh_mobile_hdmi: Use LCDC notification callback
-  fbdev: sh_mobile_lcdc: Pass a video mode to the notify callback
-  fbdev: sh_mobile_hdmi: Don't set sh_hdmi::mode in the display on
-    handler
-  fbdev: sh_mobile_hdmi: Don't access LCDC fb_info
-  fbdev: sh_mobile_lcdc: Store display mode in a struct fb_videomode
-  fbdev: sh_mobile_lcdc: Rename (lcd|num)_cfg (lcd|num)_modes
-  fbdev: sh_mobile_lcdc: Reorganize the sh_mobile_lcdc_chan structure
-  fbdev: sh_mobile_lcdc: Add sh_mobile_format_info() function
-  fbdev: sh_mobile_lcdc: Store the format in struct sh_mobile_lcdc_chan
-  fbdev: sh_mobile_lcdc: Split fb init/cleanup from channel
-    init/cleanup
-  fbdev: sh_mobile_lcdc: Pass physical device pointer to DMA functions
-  fbdev: sh_mobile_lcdc: Store configuration in channel structure
-  fbdev: sh_mobile_lcdc: Pass channel pointer to
-    sh_mobile_wait_for_vsync
-  arm: mach-shmobile: Split MERAM resources into regs and meram
-  fbdev: sh_mobile_meram: Request memory regions for memory resources
-  fbdev: sh_mobile_meram: Add _cfg suffix to struct sh_mobile_meram_icb
-  fbdev: sh_mobile_meram: Make variables unsigned where applicable
-  fbdev: sh_mobile_meram: Make current_reg field store the current reg
-    set
-  fbdev: sh_mobile_meram: Add struct sh_mobile_meram_icb
-  fbdev: sh_mobile_meram: Don't inline everything
-  fbdev: sh_mobile_meram: Divide the code into sections
-  fbdev: sh_mobile_meram: Use genalloc to manage MERAM allocation
-  fbdev: sh_mobile_meram: Allocate ICBs automatically
-  arm: mach-shmobile: Don't set MERAM ICB numbers in platform data
-  fbdev: sh_mobile_meram: Remove unused sh_mobile_meram_icb_cfg fields
-  fbdev: sh_mobile_lcdc: Don't store copy of platform data
-  arm: mach-shmobile: Constify sh_mobile_meram_cfg structures
-  fbdev: sh_mobile_meram: Don't perform update in register operation
-  fbdev: sh_mobile_meram: Remove unneeded sanity checks
-  fbdev: sh_mobile_lcdc: Constify sh_mobile_lcdc_fix structure
-  fbdev: sh_mobile_lcdc: Rename fb operation handlers with a common
-    prefix
-  fbdev: sh_mobile_lcdc: Implement overlays support
-
- arch/arm/mach-shmobile/board-ag5evm.c       |   24 +-
- arch/arm/mach-shmobile/board-ap4evb.c       |  290 ++--
- arch/arm/mach-shmobile/board-bonito.c       |    6 +-
- arch/arm/mach-shmobile/board-mackerel.c     |  106 +-
- arch/sh/boards/mach-ap325rxa/setup.c        |   22 +-
- arch/sh/boards/mach-ecovec24/setup.c        |   20 +-
- arch/sh/boards/mach-kfr2r09/lcd_wqvga.c     |   10 +-
- arch/sh/boards/mach-kfr2r09/setup.c         |    8 +-
- arch/sh/boards/mach-migor/lcd_qvga.c        |    3 +-
- arch/sh/boards/mach-migor/setup.c           |   16 +-
- arch/sh/boards/mach-se/7724/setup.c         |   12 +-
- arch/sh/include/mach-kfr2r09/mach/kfr2r09.h |   16 +-
- arch/sh/include/mach-migor/mach/migor.h     |    2 +-
- drivers/video/Kconfig                       |    1 +
- drivers/video/sh_mipi_dsi.c                 |   97 +-
- drivers/video/sh_mobile_hdmi.c              |  297 +---
- drivers/video/sh_mobile_lcdcfb.c            | 2359 +++++++++++++++++++--------
- drivers/video/sh_mobile_lcdcfb.h            |   84 +-
- drivers/video/sh_mobile_meram.c             |  679 ++++----
- include/video/sh_mobile_hdmi.h              |    2 -
- include/video/sh_mobile_lcdc.h              |   42 +-
- include/video/sh_mobile_meram.h             |   45 +-
- 22 files changed, 2533 insertions(+), 1608 deletions(-)
-
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index ab7b179..c66f0f4 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -449,6 +449,75 @@ static int sh_mobile_lcdc_display_notify(struct sh_mobile_lcdc_chan *ch,
+  * Format helpers
+  */
+ 
++struct sh_mobile_lcdc_format_info {
++	u32 fourcc;
++	unsigned int bpp;
++	bool yuv;
++	u32 lddfr;
++};
++
++static const struct sh_mobile_lcdc_format_info sh_mobile_format_infos[] = {
++	{
++		.fourcc = V4L2_PIX_FMT_RGB565,
++		.bpp = 16,
++		.yuv = false,
++		.lddfr = LDDFR_PKF_RGB16,
++	}, {
++		.fourcc = V4L2_PIX_FMT_BGR24,
++		.bpp = 24,
++		.yuv = false,
++		.lddfr = LDDFR_PKF_RGB24,
++	}, {
++		.fourcc = V4L2_PIX_FMT_BGR32,
++		.bpp = 32,
++		.yuv = false,
++		.lddfr = LDDFR_PKF_ARGB32,
++	}, {
++		.fourcc = V4L2_PIX_FMT_NV12,
++		.bpp = 12,
++		.yuv = true,
++		.lddfr = LDDFR_CC | LDDFR_YF_420,
++	}, {
++		.fourcc = V4L2_PIX_FMT_NV21,
++		.bpp = 12,
++		.yuv = true,
++		.lddfr = LDDFR_CC | LDDFR_YF_420,
++	}, {
++		.fourcc = V4L2_PIX_FMT_NV16,
++		.bpp = 16,
++		.yuv = true,
++		.lddfr = LDDFR_CC | LDDFR_YF_422,
++	}, {
++		.fourcc = V4L2_PIX_FMT_NV61,
++		.bpp = 16,
++		.yuv = true,
++		.lddfr = LDDFR_CC | LDDFR_YF_422,
++	}, {
++		.fourcc = V4L2_PIX_FMT_NV24,
++		.bpp = 24,
++		.yuv = true,
++		.lddfr = LDDFR_CC | LDDFR_YF_444,
++	}, {
++		.fourcc = V4L2_PIX_FMT_NV42,
++		.bpp = 24,
++		.yuv = true,
++		.lddfr = LDDFR_CC | LDDFR_YF_444,
++	},
++};
++
++static const struct sh_mobile_lcdc_format_info *
++sh_mobile_format_info(u32 fourcc)
++{
++	unsigned int i;
++
++	for (i = 0; i < ARRAY_SIZE(sh_mobile_format_infos); ++i) {
++		if (sh_mobile_format_infos[i].fourcc = fourcc)
++			return &sh_mobile_format_infos[i];
++	}
++
++	return NULL;
++}
++
+ static int sh_mobile_format_fourcc(const struct fb_var_screeninfo *var)
+ {
+ 	if (var->grayscale > 1)
+@@ -473,21 +542,13 @@ static int sh_mobile_format_is_fourcc(const struct fb_var_screeninfo *var)
+ 
+ static bool sh_mobile_format_is_yuv(const struct fb_var_screeninfo *var)
+ {
++	const struct sh_mobile_lcdc_format_info *format;
++
+ 	if (var->grayscale <= 1)
+ 		return false;
+ 
+-	switch (var->grayscale) {
+-	case V4L2_PIX_FMT_NV12:
+-	case V4L2_PIX_FMT_NV21:
+-	case V4L2_PIX_FMT_NV16:
+-	case V4L2_PIX_FMT_NV61:
+-	case V4L2_PIX_FMT_NV24:
+-	case V4L2_PIX_FMT_NV42:
+-		return true;
+-
+-	default:
+-		return false;
+-	}
++	format = sh_mobile_format_info(var->grayscale);
++	return format ? format->yuv : false;
+ }
+ 
+ /* -----------------------------------------------------------------------------
+@@ -667,37 +728,20 @@ static void __sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
+ 
+ 	/* Setup geometry, format, frame buffer memory and operation mode. */
+ 	for (k = 0; k < ARRAY_SIZE(priv->ch); k++) {
++		const struct sh_mobile_lcdc_format_info *format;
++		u32 fourcc;
++
+ 		ch = &priv->ch[k];
+ 		if (!ch->enabled)
+ 			continue;
+ 
+ 		sh_mobile_lcdc_geometry(ch);
+ 
+-		switch (sh_mobile_format_fourcc(&ch->info->var)) {
+-		case V4L2_PIX_FMT_RGB565:
+-			tmp = LDDFR_PKF_RGB16;
+-			break;
+-		case V4L2_PIX_FMT_BGR24:
+-			tmp = LDDFR_PKF_RGB24;
+-			break;
+-		case V4L2_PIX_FMT_BGR32:
+-			tmp = LDDFR_PKF_ARGB32;
+-			break;
+-		case V4L2_PIX_FMT_NV12:
+-		case V4L2_PIX_FMT_NV21:
+-			tmp = LDDFR_CC | LDDFR_YF_420;
+-			break;
+-		case V4L2_PIX_FMT_NV16:
+-		case V4L2_PIX_FMT_NV61:
+-			tmp = LDDFR_CC | LDDFR_YF_422;
+-			break;
+-		case V4L2_PIX_FMT_NV24:
+-		case V4L2_PIX_FMT_NV42:
+-			tmp = LDDFR_CC | LDDFR_YF_444;
+-			break;
+-		}
++		fourcc = sh_mobile_format_fourcc(&ch->info->var);
++		format = sh_mobile_format_info(fourcc);
++		tmp = format->lddfr;
+ 
+-		if (sh_mobile_format_is_yuv(&ch->info->var)) {
++		if (format->yuv) {
+ 			switch (ch->info->var.colorspace) {
+ 			case V4L2_COLORSPACE_REC709:
+ 				tmp |= LDDFR_CF1;
+@@ -711,7 +755,7 @@ static void __sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
+ 		lcdc_write_chan(ch, LDDFR, tmp);
+ 		lcdc_write_chan(ch, LDMLSR, ch->pitch);
+ 		lcdc_write_chan(ch, LDSA1R, ch->base_addr_y);
+-		if (sh_mobile_format_is_yuv(&ch->info->var))
++		if (format->yuv)
+ 			lcdc_write_chan(ch, LDSA2R, ch->base_addr_c);
+ 
+ 		/* When using deferred I/O mode, configure the LCDC for one-shot
+@@ -1228,32 +1272,17 @@ static int sh_mobile_check_var(struct fb_var_screeninfo *var, struct fb_info *in
+ 		var->yres_virtual = var->yres;
+ 
+ 	if (sh_mobile_format_is_fourcc(var)) {
+-		switch (var->grayscale) {
+-		case V4L2_PIX_FMT_NV12:
+-		case V4L2_PIX_FMT_NV21:
+-			var->bits_per_pixel = 12;
+-			break;
+-		case V4L2_PIX_FMT_RGB565:
+-		case V4L2_PIX_FMT_NV16:
+-		case V4L2_PIX_FMT_NV61:
+-			var->bits_per_pixel = 16;
+-			break;
+-		case V4L2_PIX_FMT_BGR24:
+-		case V4L2_PIX_FMT_NV24:
+-		case V4L2_PIX_FMT_NV42:
+-			var->bits_per_pixel = 24;
+-			break;
+-		case V4L2_PIX_FMT_BGR32:
+-			var->bits_per_pixel = 32;
+-			break;
+-		default:
++		const struct sh_mobile_lcdc_format_info *format;
++
++		format = sh_mobile_format_info(var->grayscale);
++		if (format = NULL)
+ 			return -EINVAL;
+-		}
++		var->bits_per_pixel = format->bpp;
+ 
+ 		/* Default to RGB and JPEG color-spaces for RGB and YUV formats
+ 		 * respectively.
+ 		 */
+-		if (!sh_mobile_format_is_yuv(var))
++		if (!format->yuv)
+ 			var->colorspace = V4L2_COLORSPACE_SRGB;
+ 		else if (var->colorspace != V4L2_COLORSPACE_REC709)
+ 			var->colorspace = V4L2_COLORSPACE_JPEG;
+@@ -1665,6 +1694,7 @@ static int __devinit
+ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
+ 			    struct sh_mobile_lcdc_chan *ch)
+ {
++	const struct sh_mobile_lcdc_format_info *format;
+ 	struct sh_mobile_lcdc_chan_cfg *cfg = &ch->cfg;
+ 	const struct fb_videomode *max_mode;
+ 	const struct fb_videomode *mode;
+@@ -1679,6 +1709,13 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
+ 	mutex_init(&ch->open_lock);
+ 	ch->notify = sh_mobile_lcdc_display_notify;
+ 
++	/* Validate the format. */
++	format = sh_mobile_format_info(cfg->fourcc);
++	if (format = NULL) {
++		dev_err(priv->dev, "Invalid FOURCC %08x.\n", cfg->fourcc);
++		return -EINVAL;
++	}
++
+ 	/* Allocate the frame buffer device. */
+ 	ch->info = framebuffer_alloc(0, priv->dev);
+ 	if (!ch->info) {
+@@ -1756,20 +1793,13 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
+ 	var->yres_virtual = var->yres * 2;
+ 	var->activate = FB_ACTIVATE_NOW;
+ 
+-	switch (cfg->fourcc) {
+-	case V4L2_PIX_FMT_RGB565:
+-		var->bits_per_pixel = 16;
+-		break;
+-	case V4L2_PIX_FMT_BGR24:
+-		var->bits_per_pixel = 24;
+-		break;
+-	case V4L2_PIX_FMT_BGR32:
+-		var->bits_per_pixel = 32;
+-		break;
+-	default:
++	/* Use the legacy API by default for RGB formats, and the FOURCC API
++	 * for YUV formats.
++	 */
++	if (!format->yuv)
++		var->bits_per_pixel = format->bpp;
++	else
+ 		var->grayscale = cfg->fourcc;
+-		break;
+-	}
+ 
+ 	/* Make sure the memory size check won't fail. smem_len is initialized
+ 	 * later based on var.
+@@ -1806,7 +1836,7 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
+ 	    cfg->fourcc = V4L2_PIX_FMT_NV21)
+ 		info->fix.ypanstep = 2;
+ 
+-	if (sh_mobile_format_is_yuv(var)) {
++	if (format->yuv) {
+ 		info->fix.line_length = var->xres;
+ 		info->fix.visual = FB_VISUAL_FOURCC;
+ 	} else {
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.3.4
 
