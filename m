@@ -1,46 +1,127 @@
-From: Tony Luck <tony.luck@intel.com>
-Date: Tue, 27 Mar 2012 21:20:05 +0000
-Subject: Re: [PATCH 05/14] IA64: adapt for dma_map_ops changes
-Message-Id: <CA+8MBbLAafFbVwviFmkjD0DNz5RsCbB_TNLL67wEi2k-hyXkXA@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 01 Mar 2012 15:07:47 +0000
+Subject: [PATCH v2 34/57] fbdev: sh_mobile_lcdc: Store the format in struct sh_mobile_lcdc_chan
+Message-Id: <1330614490-14149-35-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1324643253-3024-1-git-send-email-m.szyprowski@samsung.com>
-	<1324643253-3024-6-git-send-email-m.szyprowski@samsung.com>
-In-Reply-To: <1324643253-3024-6-git-send-email-m.szyprowski@samsung.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Marek Szyprowski <m.szyprowski@samsung.com>
-Cc: linux-kernel@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Thomas Gleixner <tglx@linutronix.de>, Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>, Stephen Rothwell <sfr@canb.auug.org.au>, microblaze-uclinux@itee.uq.edu.au, linux-arch@vger.kernel.org, x86@kernel.org, linux-sh@vger.kernel.org, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mips@linux-mips.org, discuss@x86-64.org, linux-arm-kernel@lists.infradead.org, linux-mm@kvack.org, linaro-mm-sig@lists.linaro.org, Jonathan Corbet <corbet@lwn.net>, Kyungmin Park <kyungmin.park@samsung.com>, Andrzej Pietrasiewicz <andrzej.p@samsung.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-fbdev@vger.kernel.org
 
-On Fri, Dec 23, 2011 at 4:27 AM, Marek Szyprowski
-<m.szyprowski@samsung.com> wrote:
-> From: Andrzej Pietrasiewicz <andrzej.p@samsung.com>
->
-> Adapt core IA64 architecture code for dma_map_ops changes: replace
-> alloc/free_coherent with generic alloc/free methods.
->
-> Signed-off-by: Andrzej Pietrasiewicz <andrzej.p@samsung.com>
-> Signed-off-by: Marek Szyprowski <m.szyprowski@samsung.com>
-> Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
-> ---
-> =A0arch/ia64/hp/common/sba_iommu.c =A0 =A0 | =A0 11 ++++++-----
-> =A0arch/ia64/include/asm/dma-mapping.h | =A0 18 ++++++++++++------
-> =A0arch/ia64/kernel/pci-swiotlb.c =A0 =A0 =A0| =A0 =A09 +++++----
-> =A0arch/ia64/sn/pci/pci_dma.c =A0 =A0 =A0 =A0 =A0| =A0 =A09 +++++----
-> =A04 files changed, 28 insertions(+), 19 deletions(-)
+Store the active format in the channel structure, and use it instead of
+parsing info->var all over the place when the format is needed.
 
-The series breaks bisection from part 2 (when the x86 part changes
-lib/swiotlb.c)
-until part 5 (when ia64 sees the changes to match).  You could either merge=
- part
-5 into part 2 (to make a combined x86+ia64 piece) ... or try to pull
-the libswiotlb
-changes into their own piece (which would have some of the ia64 and x86 bit=
-s).
-Or at the very least minimize the breakage window by putting ia64
-right after x86
-in the patch sequence.
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+ drivers/video/sh_mobile_lcdcfb.c |   21 ++++++++++-----------
+ drivers/video/sh_mobile_lcdcfb.h |    4 +++-
+ 2 files changed, 13 insertions(+), 12 deletions(-)
 
-Otherwise seems OK
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index c66f0f4..6d8c30b 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -728,20 +728,15 @@ static void __sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
+ 
+ 	/* Setup geometry, format, frame buffer memory and operation mode. */
+ 	for (k = 0; k < ARRAY_SIZE(priv->ch); k++) {
+-		const struct sh_mobile_lcdc_format_info *format;
+-		u32 fourcc;
+-
+ 		ch = &priv->ch[k];
+ 		if (!ch->enabled)
+ 			continue;
+ 
+ 		sh_mobile_lcdc_geometry(ch);
+ 
+-		fourcc = sh_mobile_format_fourcc(&ch->info->var);
+-		format = sh_mobile_format_info(fourcc);
+-		tmp = format->lddfr;
++		tmp = ch->format->lddfr;
+ 
+-		if (format->yuv) {
++		if (ch->format->yuv) {
+ 			switch (ch->info->var.colorspace) {
+ 			case V4L2_COLORSPACE_REC709:
+ 				tmp |= LDDFR_CF1;
+@@ -755,7 +750,7 @@ static void __sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
+ 		lcdc_write_chan(ch, LDDFR, tmp);
+ 		lcdc_write_chan(ch, LDMLSR, ch->pitch);
+ 		lcdc_write_chan(ch, LDSA1R, ch->base_addr_y);
+-		if (format->yuv)
++		if (ch->format->yuv)
+ 			lcdc_write_chan(ch, LDSA2R, ch->base_addr_c);
+ 
+ 		/* When using deferred I/O mode, configure the LCDC for one-shot
+@@ -772,7 +767,7 @@ static void __sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
+ 	}
+ 
+ 	/* Word and long word swap. */
+-	switch (sh_mobile_format_fourcc(&priv->ch[0].info->var)) {
++	switch (priv->ch[0].format->fourcc) {
+ 	case V4L2_PIX_FMT_RGB565:
+ 	case V4L2_PIX_FMT_NV21:
+ 	case V4L2_PIX_FMT_NV61:
+@@ -859,7 +854,7 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
+ 			ch->meram_enabled = 0;
+ 		}
+ 
+-		switch (sh_mobile_format_fourcc(&ch->info->var)) {
++		switch (ch->format->fourcc) {
+ 		case V4L2_PIX_FMT_NV12:
+ 		case V4L2_PIX_FMT_NV21:
+ 		case V4L2_PIX_FMT_NV16:
+@@ -1065,7 +1060,7 @@ static int sh_mobile_fb_pan_display(struct fb_var_screeninfo *var,
+ 			    + info->var.xres * info->var.yres_virtual
+ 			    + c_offset;
+ 		/* Set x offset */
+-		if (sh_mobile_format_fourcc(&info->var) = V4L2_PIX_FMT_NV24)
++		if (ch->format->fourcc = V4L2_PIX_FMT_NV24)
+ 			base_addr_c += 2 * var->xoffset;
+ 		else
+ 			base_addr_c += var->xoffset;
+@@ -1353,6 +1348,8 @@ static int sh_mobile_set_par(struct fb_info *info)
+ 		info->fix.line_length = info->var.xres
+ 				      * info->var.bits_per_pixel / 8;
+ 
++	ch->format = sh_mobile_format_info(sh_mobile_format_fourcc(&info->var));
++
+ 	ret = sh_mobile_lcdc_start(ch->lcdc);
+ 	if (ret < 0) {
+ 		dev_err(info->dev, "%s: unable to restart LCDC\n", __func__);
+@@ -1716,6 +1713,8 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
+ 		return -EINVAL;
+ 	}
+ 
++	ch->format = format;
++
+ 	/* Allocate the frame buffer device. */
+ 	ch->info = framebuffer_alloc(0, priv->dev);
+ 	if (!ch->info) {
+diff --git a/drivers/video/sh_mobile_lcdcfb.h b/drivers/video/sh_mobile_lcdcfb.h
+index 8e0d009..5ef7559 100644
+--- a/drivers/video/sh_mobile_lcdcfb.h
++++ b/drivers/video/sh_mobile_lcdcfb.h
+@@ -17,9 +17,10 @@ enum { LDDCKPAT1R, LDDCKPAT2R, LDMT1R, LDMT2R, LDMT3R, LDDFR, LDSM1R,
+ struct backlight_device;
+ struct fb_info;
+ struct module;
++struct sh_mobile_lcdc_chan;
+ struct sh_mobile_lcdc_entity;
++struct sh_mobile_lcdc_format_info;
+ struct sh_mobile_lcdc_priv;
+-struct sh_mobile_lcdc_chan;
+ 
+ #define SH_MOBILE_LCDC_DISPLAY_DISCONNECTED	0
+ #define SH_MOBILE_LCDC_DISPLAY_CONNECTED	1
+@@ -70,6 +71,7 @@ struct sh_mobile_lcdc_chan {
+ 	wait_queue_head_t frame_end_wait;
+ 	struct completion vsync_completion;
+ 
++	const struct sh_mobile_lcdc_format_info *format;
+ 	unsigned long base_addr_y;
+ 	unsigned long base_addr_c;
+ 	unsigned int pitch;
+-- 
+1.7.3.4
 
-Acked-by: Tony Luck <tony.luck@intel.com>
