@@ -1,66 +1,104 @@
-From: Anton Vorontsov <anton.vorontsov@linaro.org>
-Date: Sat, 24 Mar 2012 10:28:08 +0000
-Subject: [PATCH 02/10] arm: Use clear_tasks_mm_cpumask()
-Message-Id: <20120324102808.GB29067@lizard>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 01 Mar 2012 15:07:37 +0000
+Subject: [PATCH v2 24/57] fbdev: sh_mobile_lcdc: Return display connection state in display_on
+Message-Id: <1330614490-14149-25-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120324102609.GA28356@lizard>
-In-Reply-To: <20120324102609.GA28356@lizard>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-fbdev@vger.kernel.org
 
-Current CPU hotplug code has some task->mm handling issues:
+Return true if the display is connected and false otherwise. Set the fb
+info state to FBINFO_STATE_SUSPENDED in the sh_mobile_lcdc driver when
+the display is not connected.
 
-1. Working with task->mm w/o getting mm or grabing the task lock is
-   dangerous as ->mm might disappear (exit_mm() assigns NULL under
-   task_lock(), so tasklist lock is not enough).
-
-   We can't use get_task_mm()/mmput() pair as mmput() might sleep,
-   so we must take the task lock while handle its mm.
-
-2. Checking for process->mm is not enough because process' main
-   thread may exit or detach its mm via use_mm(), but other threads
-   may still have a valid mm.
-
-   To fix this we would need to use find_lock_task_mm(), which would
-   walk up all threads and returns an appropriate task (with task
-   lock held).
-
-clear_tasks_mm_cpumask() has all the issues fixed, so let's use it.
-
-Suggested-by: Oleg Nesterov <oleg@redhat.com>
-Signed-off-by: Anton Vorontsov <anton.vorontsov@linaro.org>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/arm/kernel/smp.c |    8 +-------
- 1 file changed, 1 insertion(+), 7 deletions(-)
+ drivers/video/sh_mipi_dsi.c      |    2 +-
+ drivers/video/sh_mobile_hdmi.c   |    9 +++++----
+ drivers/video/sh_mobile_lcdcfb.c |    8 +++++++-
+ drivers/video/sh_mobile_lcdcfb.h |    3 +++
+ 4 files changed, 16 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/kernel/smp.c b/arch/arm/kernel/smp.c
-index cdeb727..880b93a 100644
---- a/arch/arm/kernel/smp.c
-+++ b/arch/arm/kernel/smp.c
-@@ -136,7 +136,6 @@ static void percpu_timer_stop(void);
- int __cpu_disable(void)
+diff --git a/drivers/video/sh_mipi_dsi.c b/drivers/video/sh_mipi_dsi.c
+index 1ede247..5ff3742 100644
+--- a/drivers/video/sh_mipi_dsi.c
++++ b/drivers/video/sh_mipi_dsi.c
+@@ -412,7 +412,7 @@ static int mipi_display_on(struct sh_mobile_lcdc_entity *entity)
+ 
+ 	sh_mipi_dsi_enable(mipi, true);
+ 
+-	return 0;
++	return SH_MOBILE_LCDC_DISPLAY_CONNECTED;
+ 
+ mipi_display_on_fail1:
+ 	pm_runtime_put_sync(&mipi->pdev->dev);
+diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
+index c22e123..1464abf 100644
+--- a/drivers/video/sh_mobile_hdmi.c
++++ b/drivers/video/sh_mobile_hdmi.c
+@@ -1004,9 +1004,9 @@ static int sh_hdmi_display_on(struct sh_mobile_lcdc_entity *entity)
  {
- 	unsigned int cpu = smp_processor_id();
--	struct task_struct *p;
- 	int ret;
+ 	struct sh_hdmi *hdmi = entity_to_sh_hdmi(entity);
+ 	struct sh_mobile_lcdc_chan *ch = entity->lcdc;
+-	struct fb_info *info = ch->info;
  
- 	ret = platform_cpu_disable(cpu);
-@@ -166,12 +165,7 @@ int __cpu_disable(void)
- 	flush_cache_all();
- 	local_flush_tlb_all();
+-	dev_dbg(hdmi->dev, "%s(%p): state %x\n", __func__, hdmi, info->state);
++	dev_dbg(hdmi->dev, "%s(%p): state %x\n", __func__, hdmi,
++		hdmi->hp_state);
  
--	read_lock(&tasklist_lock);
--	for_each_process(p) {
--		if (p->mm)
--			cpumask_clear_cpu(cpu, mm_cpumask(p->mm));
--	}
--	read_unlock(&tasklist_lock);
-+	clear_tasks_mm_cpumask(cpu);
+ 	/*
+ 	 * hp_state can be set to
+@@ -1021,12 +1021,13 @@ static int sh_hdmi_display_on(struct sh_mobile_lcdc_entity *entity)
+ 		dev_dbg(hdmi->dev, "HDMI running\n");
+ 		break;
+ 	case HDMI_HOTPLUG_DISCONNECTED:
+-		info->state = FBINFO_STATE_SUSPENDED;
+ 	default:
+ 		hdmi->var = ch->display_var;
+ 	}
  
- 	return 0;
+-	return 0;
++	return hdmi->hp_state = HDMI_HOTPLUG_DISCONNECTED
++		? SH_MOBILE_LCDC_DISPLAY_DISCONNECTED
++		: SH_MOBILE_LCDC_DISPLAY_CONNECTED;
  }
+ 
+ static void sh_hdmi_display_off(struct sh_mobile_lcdc_entity *entity)
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 03ee382..5a19ef3 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -338,8 +338,14 @@ static void sh_mobile_lcdc_display_on(struct sh_mobile_lcdc_chan *ch)
+ 	struct sh_mobile_lcdc_panel_cfg *panel = &ch->cfg.panel_cfg;
+ 
+ 	if (ch->tx_dev) {
+-		if (ch->tx_dev->ops->display_on(ch->tx_dev) < 0)
++		int ret;
++
++		ret = ch->tx_dev->ops->display_on(ch->tx_dev);
++		if (ret < 0)
+ 			return;
++
++		if (ret = SH_MOBILE_LCDC_DISPLAY_DISCONNECTED)
++			ch->info->state = FBINFO_STATE_SUSPENDED;
+ 	}
+ 
+ 	/* HDMI must be enabled before LCDC configuration */
+diff --git a/drivers/video/sh_mobile_lcdcfb.h b/drivers/video/sh_mobile_lcdcfb.h
+index b2cb8e6..6fb956c 100644
+--- a/drivers/video/sh_mobile_lcdcfb.h
++++ b/drivers/video/sh_mobile_lcdcfb.h
+@@ -21,6 +21,9 @@ struct sh_mobile_lcdc_entity;
+ struct sh_mobile_lcdc_priv;
+ struct sh_mobile_lcdc_chan;
+ 
++#define SH_MOBILE_LCDC_DISPLAY_DISCONNECTED	0
++#define SH_MOBILE_LCDC_DISPLAY_CONNECTED	1
++
+ struct sh_mobile_lcdc_entity_ops {
+ 	/* Display */
+ 	int (*display_on)(struct sh_mobile_lcdc_entity *entity);
 -- 
-1.7.9.2
+1.7.3.4
 
