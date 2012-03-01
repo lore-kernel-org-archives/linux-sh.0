@@ -1,129 +1,150 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 01 Mar 2012 15:07:53 +0000
-Subject: [PATCH v2 40/57] fbdev: sh_mobile_meram: Request memory regions for memory resources
-Message-Id: <1330614490-14149-41-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Robert Lee <rob.lee@linaro.org>
+Date: Thu, 01 Mar 2012 00:42:54 +0000
+Subject: [PATCH v7 5/9] ARM: davinci: Consolidate time keeping and irq enable
+Message-Id: <1330562578-3410-6-git-send-email-rob.lee@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1330562578-3410-1-git-send-email-rob.lee@linaro.org>
+In-Reply-To: <1330562578-3410-1-git-send-email-rob.lee@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Make sure the registers and MERAM spaces are reserved before using them.
+Enable core cpuidle timekeeping and irq enabling and remove that
+handling from this code.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Robert Lee <rob.lee@linaro.org>
 ---
- drivers/video/sh_mobile_meram.c |   53 +++++++++++++++++++++++++++-----------
- 1 files changed, 37 insertions(+), 16 deletions(-)
+ arch/arm/mach-davinci/cpuidle.c |   82 ++++++++++++++++-----------------------
+ 1 files changed, 33 insertions(+), 49 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
-index f45d83e..dbf5c43 100644
---- a/drivers/video/sh_mobile_meram.c
-+++ b/drivers/video/sh_mobile_meram.c
-@@ -596,13 +596,12 @@ static struct sh_mobile_meram_ops sh_mobile_meram_ops = {
-  * initialize MERAM
-  */
+diff --git a/arch/arm/mach-davinci/cpuidle.c b/arch/arm/mach-davinci/cpuidle.c
+index a30c7c5..93ae096 100644
+--- a/arch/arm/mach-davinci/cpuidle.c
++++ b/arch/arm/mach-davinci/cpuidle.c
+@@ -18,6 +18,7 @@
+ #include <linux/io.h>
+ #include <linux/export.h>
+ #include <asm/proc-fns.h>
++#include <asm/cpuidle.h>
  
--static int sh_mobile_meram_remove(struct platform_device *pdev);
+ #include <mach/cpuidle.h>
+ #include <mach/ddr2.h>
+@@ -30,12 +31,42 @@ struct davinci_ops {
+ 	u32 flags;
+ };
+ 
++/* Actual code that puts the SoC in different idle states */
++static int davinci_enter_idle(struct cpuidle_device *dev,
++				struct cpuidle_driver *drv,
++						int index)
++{
++	struct cpuidle_state_usage *state_usage = &dev->states_usage[index];
++	struct davinci_ops *ops = cpuidle_get_statedata(state_usage);
++
++	if (ops && ops->enter)
++		ops->enter(ops->flags);
++
++	index = cpuidle_wrap_enter(dev,	drv, index,
++				arm_cpuidle_simple_enter);
++
++	if (ops && ops->exit)
++		ops->exit(ops->flags);
++
++	return index;
++}
++
+ /* fields in davinci_ops.flags */
+ #define DAVINCI_CPUIDLE_FLAGS_DDR2_PWDN	BIT(0)
+ 
+ static struct cpuidle_driver davinci_idle_driver = {
+-	.name	= "cpuidle-davinci",
+-	.owner	= THIS_MODULE,
++	.name		= "cpuidle-davinci",
++	.owner		= THIS_MODULE,
++	.states[0]	= ARM_CPUIDLE_WFI_STATE,
++	.states[1]	= {
++		.enter			= davinci_enter_idle,
++		.exit_latency		= 10,
++		.target_residency	= 100000,
++		.flags			= CPUIDLE_FLAG_TIME_VALID,
++		.name			= "DDR SR",
++		.desc			= "WFI and DDR Self Refresh",
++	},
++	.state_count = DAVINCI_CPUIDLE_MAX_STATES,
+ };
+ 
+ static DEFINE_PER_CPU(struct cpuidle_device, davinci_cpuidle_device);
+@@ -77,41 +108,10 @@ static struct davinci_ops davinci_states[DAVINCI_CPUIDLE_MAX_STATES] = {
+ 	},
+ };
+ 
+-/* Actual code that puts the SoC in different idle states */
+-static int davinci_enter_idle(struct cpuidle_device *dev,
+-				struct cpuidle_driver *drv,
+-						int index)
+-{
+-	struct cpuidle_state_usage *state_usage = &dev->states_usage[index];
+-	struct davinci_ops *ops = cpuidle_get_statedata(state_usage);
+-	struct timeval before, after;
+-	int idle_time;
 -
- static int __devinit sh_mobile_meram_probe(struct platform_device *pdev)
- {
- 	struct sh_mobile_meram_priv *priv;
- 	struct sh_mobile_meram_info *pdata = pdev->dev.platform_data;
--	struct resource *res;
-+	struct resource *regs;
-+	struct resource *meram;
- 	int error;
- 
- 	if (!pdata) {
-@@ -610,8 +609,9 @@ static int __devinit sh_mobile_meram_probe(struct platform_device *pdev)
- 		return -EINVAL;
- 	}
- 
--	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
--	if (!res) {
-+	regs = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	meram = platform_get_resource(pdev, IORESOURCE_MEM, 1);
-+	if (regs = NULL || meram = NULL) {
- 		dev_err(&pdev->dev, "cannot get platform resources\n");
- 		return -ENOENT;
- 	}
-@@ -622,32 +622,50 @@ static int __devinit sh_mobile_meram_probe(struct platform_device *pdev)
- 		return -ENOMEM;
- 	}
- 
--	platform_set_drvdata(pdev, priv);
+-	local_irq_disable();
+-	do_gettimeofday(&before);
 -
- 	/* initialize private data */
- 	mutex_init(&priv->lock);
--	priv->base = ioremap_nocache(res->start, resource_size(res));
-+	pdata->ops = &sh_mobile_meram_ops;
-+	pdata->priv = priv;
-+	pdata->pdev = pdev;
-+
-+	if (!request_mem_region(regs->start, resource_size(regs), pdev->name)) {
-+		dev_err(&pdev->dev, "MERAM registers region already claimed\n");
-+		error = -EBUSY;
-+		goto err_req_regs;
-+	}
-+
-+	if (!request_mem_region(meram->start, resource_size(meram),
-+				pdev->name)) {
-+		dev_err(&pdev->dev, "MERAM memory region already claimed\n");
-+		error = -EBUSY;
-+		goto err_req_meram;
-+	}
-+
-+	priv->base = ioremap_nocache(regs->start, resource_size(regs));
- 	if (!priv->base) {
- 		dev_err(&pdev->dev, "ioremap failed\n");
- 		error = -EFAULT;
--		goto err;
-+		goto err_ioremap;
- 	}
--	pdata->ops = &sh_mobile_meram_ops;
--	pdata->priv = priv;
--	pdata->pdev = pdev;
- 
- 	/* initialize ICB addressing mode */
- 	if (pdata->addr_mode = SH_MOBILE_MERAM_MODE1)
- 		meram_write_reg(priv->base, MEVCR1, MEVCR1_AMD1);
- 
-+	platform_set_drvdata(pdev, priv);
- 	pm_runtime_enable(&pdev->dev);
- 
- 	dev_info(&pdev->dev, "sh_mobile_meram initialized.");
- 
- 	return 0;
- 
--err:
--	sh_mobile_meram_remove(pdev);
-+err_ioremap:
-+	release_mem_region(meram->start, resource_size(meram));
-+err_req_meram:
-+	release_mem_region(regs->start, resource_size(regs));
-+err_req_regs:
-+	mutex_destroy(&priv->lock);
-+	kfree(priv);
- 
- 	return error;
- }
-@@ -656,11 +674,14 @@ err:
- static int sh_mobile_meram_remove(struct platform_device *pdev)
+-	if (ops && ops->enter)
+-		ops->enter(ops->flags);
+-	/* Wait for interrupt state */
+-	cpu_do_idle();
+-	if (ops && ops->exit)
+-		ops->exit(ops->flags);
+-
+-	do_gettimeofday(&after);
+-	local_irq_enable();
+-	idle_time = (after.tv_sec - before.tv_sec) * USEC_PER_SEC +
+-			(after.tv_usec - before.tv_usec);
+-
+-	dev->last_residency = idle_time;
+-
+-	return index;
+-}
+-
+ static int __init davinci_cpuidle_probe(struct platform_device *pdev)
  {
- 	struct sh_mobile_meram_priv *priv = platform_get_drvdata(pdev);
-+	struct resource *regs = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	struct resource *meram = platform_get_resource(pdev, IORESOURCE_MEM, 1);
+ 	int ret;
+ 	struct cpuidle_device *device;
+-	struct cpuidle_driver *driver = &davinci_idle_driver;
+ 	struct davinci_cpuidle_config *pdata = pdev->dev.platform_data;
  
- 	pm_runtime_disable(&pdev->dev);
+ 	device = &per_cpu(davinci_cpuidle_device, smp_processor_id());
+@@ -123,27 +123,11 @@ static int __init davinci_cpuidle_probe(struct platform_device *pdev)
  
--	if (priv->base)
--		iounmap(priv->base);
-+	iounmap(priv->base);
-+	release_mem_region(meram->start, resource_size(meram));
-+	release_mem_region(regs->start, resource_size(regs));
+ 	ddr2_reg_base = pdata->ddr2_ctlr_base;
  
- 	mutex_destroy(&priv->lock);
+-	/* Wait for interrupt state */
+-	driver->states[0].enter = davinci_enter_idle;
+-	driver->states[0].exit_latency = 1;
+-	driver->states[0].target_residency = 10000;
+-	driver->states[0].flags = CPUIDLE_FLAG_TIME_VALID;
+-	strcpy(driver->states[0].name, "WFI");
+-	strcpy(driver->states[0].desc, "Wait for interrupt");
+-
+-	/* Wait for interrupt and DDR self refresh state */
+-	driver->states[1].enter = davinci_enter_idle;
+-	driver->states[1].exit_latency = 10;
+-	driver->states[1].target_residency = 10000;
+-	driver->states[1].flags = CPUIDLE_FLAG_TIME_VALID;
+-	strcpy(driver->states[1].name, "DDR SR");
+-	strcpy(driver->states[1].desc, "WFI and DDR Self Refresh");
+ 	if (pdata->ddr2_pdown)
+ 		davinci_states[1].flags |= DAVINCI_CPUIDLE_FLAGS_DDR2_PWDN;
+ 	cpuidle_set_statedata(&device->states_usage[1], &davinci_states[1]);
  
+ 	device->state_count = DAVINCI_CPUIDLE_MAX_STATES;
+-	driver->state_count = DAVINCI_CPUIDLE_MAX_STATES;
+ 
+ 	ret = cpuidle_register_driver(&davinci_idle_driver);
+ 	if (ret) {
 -- 
-1.7.3.4
+1.7.1
 
