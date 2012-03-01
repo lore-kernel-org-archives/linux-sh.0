@@ -1,111 +1,111 @@
-From: Anton Vorontsov <anton.vorontsov@linaro.org>
-Date: Sat, 24 Mar 2012 10:29:39 +0000
-Subject: [PATCH 05/10] blackfin: A couple of task->mm handling fixes
-Message-Id: <20120324102939.GE29067@lizard>
+From: Bastian Hecht <hechtb@googlemail.com>
+Date: Thu, 01 Mar 2012 09:48:39 +0000
+Subject: [PATCH v3 5/7] mtd: sh_flctl: Use cached register value for FLCMNCR
+Message-Id: <1330595321-2728-5-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120324102609.GA28356@lizard>
-In-Reply-To: <20120324102609.GA28356@lizard>
+References: <1330595321-2728-1-git-send-email-hechtb@gmail.com>
+In-Reply-To: <1330595321-2728-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org, linux-mtd@lists.infradead.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pichart <laurent.pinchart@ideasonboard.com>
 
-The patch fixes two problems:
+Instead of reading out the register, use a cached value. This will
+make way for a proper runtime power management implementation.
 
-1. Working with task->mm w/o getting mm or grabing the task lock is
-   dangerous as ->mm might disappear (exit_mm() assigns NULL under
-   task_lock(), so tasklist lock is not enough).
-
-   We can't use get_task_mm()/mmput() pair as mmput() might sleep,
-   so we have to take the task lock while handle its mm.
-
-2. Checking for process->mm is not enough because process' main
-   thread may exit or detach its mm via use_mm(), but other threads
-   may still have a valid mm.
-
-   To catch this we use find_lock_task_mm(), which walks up all
-   threads and returns an appropriate task (with task lock held).
-
-Suggested-by: Oleg Nesterov <oleg@redhat.com>
-Signed-off-by: Anton Vorontsov <anton.vorontsov@linaro.org>
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
 ---
- arch/blackfin/kernel/trace.c |   26 +++++++++++++-------------
- 1 file changed, 13 insertions(+), 13 deletions(-)
+changelog: 
+ renamed flcmncr_val to flcmncr_base
+ hwecc code needs to alter flcmncr_base too
+ use cached value in set_cmd_regs too
+ pull in the chip enable flag into the flcmncr_base value. I think it's easier to just modify flcmncr_base in flctl_select_chip() rather than adding another cached value for the enable flag.
 
-diff --git a/arch/blackfin/kernel/trace.c b/arch/blackfin/kernel/trace.c
-index 050db44..5102cdf 100644
---- a/arch/blackfin/kernel/trace.c
-+++ b/arch/blackfin/kernel/trace.c
-@@ -10,6 +10,8 @@
- #include <linux/hardirq.h>
- #include <linux/thread_info.h>
- #include <linux/mm.h>
-+#include <linux/oom.h>
-+#include <linux/sched.h>
- #include <linux/uaccess.h>
- #include <linux/module.h>
- #include <linux/kallsyms.h>
-@@ -27,7 +29,6 @@ void decode_address(char *buf, unsigned long address)
- 	struct task_struct *p;
- 	struct mm_struct *mm;
- 	unsigned long flags, offset;
--	unsigned char in_atomic = (bfin_read_IPEND() & 0x10) || in_atomic();
- 	struct rb_node *n;
+ drivers/mtd/nand/sh_flctl.c  |   22 +++++++---------------
+ include/linux/mtd/sh_flctl.h |    1 +
+ 2 files changed, 8 insertions(+), 15 deletions(-)
+
+diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
+index 5c3e71f..73398f7 100644
+--- a/drivers/mtd/nand/sh_flctl.c
++++ b/drivers/mtd/nand/sh_flctl.c
+@@ -283,7 +283,7 @@ static void write_fiforeg(struct sh_flctl *flctl, int rlen, int offset)
+ static void set_cmd_regs(struct mtd_info *mtd, uint32_t cmd, uint32_t flcmcdr_val)
+ {
+ 	struct sh_flctl *flctl = mtd_to_flctl(mtd);
+-	uint32_t flcmncr_val = readl(FLCMNCR(flctl)) & ~SEL_16BIT;
++	uint32_t flcmncr_val = flctl->flcmncr_base & ~SEL_16BIT;
+ 	uint32_t flcmdcr_val, addr_len_bytes = 0;
  
- #ifdef CONFIG_KALLSYMS
-@@ -113,15 +114,15 @@ void decode_address(char *buf, unsigned long address)
- 	 */
- 	write_lock_irqsave(&tasklist_lock, flags);
- 	for_each_process(p) {
--		mm = (in_atomic ? p->mm : get_task_mm(p));
--		if (!mm)
--			continue;
-+		struct task_struct *t;
+ 	/* Set SNAND bit if page size is 2048byte */
+@@ -681,16 +681,15 @@ read_normal_exit:
+ static void flctl_select_chip(struct mtd_info *mtd, int chipnr)
+ {
+ 	struct sh_flctl *flctl = mtd_to_flctl(mtd);
+-	uint32_t flcmncr_val = readl(FLCMNCR(flctl));
  
--		if (!down_read_trylock(&mm->mmap_sem)) {
--			if (!in_atomic)
--				mmput(mm);
-+		t = find_lock_task_mm(p);
-+		if (!t)
- 			continue;
--		}
-+
-+		mm = t->mm;
-+		if (!down_read_trylock(&mm->mmap_sem))
-+			goto __continue;
+ 	switch (chipnr) {
+ 	case -1:
+-		flcmncr_val &= ~CE0_ENABLE;
+-		writel(flcmncr_val, FLCMNCR(flctl));
++		flctl->flcmncr_base &= ~CE0_ENABLE;
++		writel(flctl->flcmncr_base, FLCMNCR(flctl));
+ 		break;
+ 	case 0:
+-		flcmncr_val |= CE0_ENABLE;
+-		writel(flcmncr_val, FLCMNCR(flctl));
++		flctl->flcmncr_base |= CE0_ENABLE;
++		writel(flctl->flcmncr_base, FLCMNCR(flctl));
+ 		break;
+ 	default:
+ 		BUG();
+@@ -748,11 +747,6 @@ static int flctl_verify_buf(struct mtd_info *mtd, const u_char *buf, int len)
+ 	return 0;
+ }
  
- 		for (n = rb_first(&mm->mm_rb); n; n = rb_next(n)) {
- 			struct vm_area_struct *vma;
-@@ -130,7 +131,7 @@ void decode_address(char *buf, unsigned long address)
+-static void flctl_register_init(struct sh_flctl *flctl, unsigned long val)
+-{
+-	writel(val, FLCMNCR(flctl));
+-}
+-
+ static int flctl_chip_init_tail(struct mtd_info *mtd)
+ {
+ 	struct sh_flctl *flctl = mtd_to_flctl(mtd);
+@@ -804,8 +798,7 @@ static int flctl_chip_init_tail(struct mtd_info *mtd)
+ 		chip->ecc.mode = NAND_ECC_HW;
  
- 			if (address >= vma->vm_start && address < vma->vm_end) {
- 				char _tmpbuf[256];
--				char *name = p->comm;
-+				char *name = t->comm;
- 				struct file *file = vma->vm_file;
- 
- 				if (file) {
-@@ -163,8 +164,7 @@ void decode_address(char *buf, unsigned long address)
- 						name, vma->vm_start, vma->vm_end);
- 
- 				up_read(&mm->mmap_sem);
--				if (!in_atomic)
--					mmput(mm);
-+				task_unlock(t);
- 
- 				if (buf[0] = '\0')
- 					sprintf(buf, "[ %s ] dynamic memory", name);
-@@ -174,8 +174,8 @@ void decode_address(char *buf, unsigned long address)
- 		}
- 
- 		up_read(&mm->mmap_sem);
--		if (!in_atomic)
--			mmput(mm);
-+__continue:
-+		task_unlock(t);
+ 		/* 4 symbols ECC enabled */
+-		writel(readl(FLCMNCR(flctl)) | _4ECCEN | ECCPOS2 | ECCPOS_02,
+-				FLCMNCR(flctl));
++		flctl->flcmncr_base |= _4ECCEN | ECCPOS2 | ECCPOS_02;
+ 	} else {
+ 		chip->ecc.mode = NAND_ECC_SOFT;
  	}
+@@ -851,10 +844,9 @@ static int __devinit flctl_probe(struct platform_device *pdev)
+ 	nand = &flctl->chip;
+ 	flctl_mtd->priv = nand;
+ 	flctl->pdev = pdev;
++	flctl->flcmncr_base = pdata->flcmncr_val;
+ 	flctl->hwecc = pdata->has_hwecc;
  
- 	/*
+-	flctl_register_init(flctl, pdata->flcmncr_val);
+-
+ 	nand->options = NAND_NO_AUTOINCR;
+ 
+ 	/* Set address of hardware control function */
+diff --git a/include/linux/mtd/sh_flctl.h b/include/linux/mtd/sh_flctl.h
+index b669405..c708282 100644
+--- a/include/linux/mtd/sh_flctl.h
++++ b/include/linux/mtd/sh_flctl.h
+@@ -132,6 +132,7 @@ struct sh_flctl {
+ 	int	erase1_page_addr;	/* page_addr in ERASE1 cmd */
+ 	uint32_t erase_ADRCNT;		/* bits of FLCMDCR in ERASE1 cmd */
+ 	uint32_t rw_ADRCNT;	/* bits of FLCMDCR in READ WRITE cmd */
++	uint32_t flcmncr_base;	/* base value of FLCMNCR */
+ 
+ 	int	hwecc_cant_correct[4];
+ 
 -- 
-1.7.9.2
+1.7.5.4
 
