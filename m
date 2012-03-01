@@ -1,103 +1,60 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 01 Mar 2012 15:07:54 +0000
-Subject: [PATCH v2 41/57] fbdev: sh_mobile_meram: Add _cfg suffix to struct sh_mobile_meram_icb
-Message-Id: <1330614490-14149-42-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Bastian Hecht <hechtb@googlemail.com>
+Date: Thu, 01 Mar 2012 09:48:38 +0000
+Subject: [PATCH v3 4/7] mtd: sh_flctl: Implement NAND_CMD_RNDOUT command
+Message-Id: <1330595321-2728-4-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1330595321-2728-1-git-send-email-hechtb@gmail.com>
+In-Reply-To: <1330595321-2728-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org, linux-mtd@lists.infradead.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pichart <laurent.pinchart@ideasonboard.com>
 
-The structure describe ICB configuration, no ICB objects themselves.
-Rename it to sh_mobile_meram_icb_cfg in preparation for the addition of
-an ICB structure.
+Implements the command to seek and read in pages.
 
-All the structure fields are unsigned integers, make them so.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
 ---
- drivers/video/sh_mobile_meram.c |   10 +++++-----
- include/video/sh_mobile_meram.h |   14 +++++++-------
- 2 files changed, 12 insertions(+), 12 deletions(-)
+changelog: the code only works for software ecc. Make this explicit in
+the code
 
-diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
-index dbf5c43..2ad5a45 100644
---- a/drivers/video/sh_mobile_meram.c
-+++ b/drivers/video/sh_mobile_meram.c
-@@ -156,7 +156,7 @@ static inline unsigned long meram_read_reg(void __iomem *base, int off)
-  */
+ drivers/mtd/nand/sh_flctl.c |   16 ++++++++++++++++
+ 1 files changed, 16 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
+index 407acb5..655ff2d 100644
+--- a/drivers/mtd/nand/sh_flctl.c
++++ b/drivers/mtd/nand/sh_flctl.c
+@@ -303,6 +303,7 @@ static void set_cmd_regs(struct mtd_info *mtd, uint32_t cmd, uint32_t flcmcdr_va
+ 		break;
+ 	case NAND_CMD_READ0:
+ 	case NAND_CMD_READOOB:
++	case NAND_CMD_RNDOUT:
+ 		addr_len_bytes = flctl->rw_ADRCNT;
+ 		flcmdcr_val |= CDSRC_E;
+ 		if (flctl->chip.options & NAND_BUSWIDTH_16)
+@@ -558,6 +559,21 @@ static void flctl_cmdfunc(struct mtd_info *mtd, unsigned int command,
+ 		flctl->read_bytes = mtd->oobsize;
+ 		goto read_normal_exit;
  
- static inline int meram_check_overlap(struct sh_mobile_meram_priv *priv,
--				      struct sh_mobile_meram_icb *new)
-+				      struct sh_mobile_meram_icb_cfg *new)
- {
- 	int i;
- 	int used_start, used_end, meram_start, meram_end;
-@@ -188,7 +188,7 @@ static inline int meram_check_overlap(struct sh_mobile_meram_priv *priv,
-  */
++	case NAND_CMD_RNDOUT:
++		if (flctl->hwecc)
++			break;
++
++		if (flctl->page_size)
++			set_cmd_regs(mtd, command, (NAND_CMD_RNDOUTSTART << 8)
++				| command);
++		else
++			set_cmd_regs(mtd, command, command);
++
++		set_addr(mtd, column, 0);
++
++		flctl->read_bytes = mtd->writesize + mtd->oobsize - column;
++		goto read_normal_exit;
++
+ 	case NAND_CMD_READID:
+ 		set_cmd_regs(mtd, command, command);
  
- static inline void meram_mark(struct sh_mobile_meram_priv *priv,
--			      struct sh_mobile_meram_icb *new)
-+			      struct sh_mobile_meram_icb_cfg *new)
- {
- 	int n;
- 
-@@ -211,7 +211,7 @@ static inline void meram_mark(struct sh_mobile_meram_priv *priv,
-  */
- 
- static inline void meram_unmark(struct sh_mobile_meram_priv *priv,
--				struct sh_mobile_meram_icb *icb)
-+				struct sh_mobile_meram_icb_cfg *icb)
- {
- 	int i;
- 	unsigned long pattern;
-@@ -303,7 +303,7 @@ static inline void meram_get_next_icb_addr(struct sh_mobile_meram_info *pdata,
-  */
- 
- static int meram_init(struct sh_mobile_meram_priv *priv,
--		      struct sh_mobile_meram_icb *icb,
-+		      struct sh_mobile_meram_icb_cfg *icb,
- 		      int xres, int yres, int *out_pitch)
- {
- 	unsigned long total_byte_count = MERAM_CALC_BYTECOUNT(xres, yres);
-@@ -370,7 +370,7 @@ static int meram_init(struct sh_mobile_meram_priv *priv,
- }
- 
- static void meram_deinit(struct sh_mobile_meram_priv *priv,
--			struct sh_mobile_meram_icb *icb)
-+			 struct sh_mobile_meram_icb_cfg *icb)
- {
- 	/* disable ICB */
- 	meram_write_icb(priv->base, icb->cache_icb,  MExxCTL,
-diff --git a/include/video/sh_mobile_meram.h b/include/video/sh_mobile_meram.h
-index af602d6..caae558 100644
---- a/include/video/sh_mobile_meram.h
-+++ b/include/video/sh_mobile_meram.h
-@@ -25,17 +25,17 @@ struct sh_mobile_meram_info {
- };
- 
- /* icb config */
--struct sh_mobile_meram_icb {
--	int marker_icb;		/* ICB # for Marker ICB */
--	int cache_icb;		/* ICB # for Cache ICB */
--	int meram_offset;	/* MERAM Buffer Offset to use */
--	int meram_size;		/* MERAM Buffer Size to use */
-+struct sh_mobile_meram_icb_cfg {
-+	unsigned int marker_icb;	/* ICB # for Marker ICB */
-+	unsigned int cache_icb;		/* ICB # for Cache ICB */
-+	unsigned int meram_offset;	/* MERAM Buffer Offset to use */
-+	unsigned int meram_size;	/* MERAM Buffer Size to use */
- 
--	int cache_unit;		/* bytes to cache per ICB */
-+	unsigned int cache_unit;	/* bytes to cache per ICB */
- };
- 
- struct sh_mobile_meram_cfg {
--	struct sh_mobile_meram_icb	icb[2];
-+	struct sh_mobile_meram_icb_cfg	icb[2];
- 	int				pixelformat;
- 	int				current_reg;
- };
 -- 
-1.7.3.4
+1.7.5.4
 
