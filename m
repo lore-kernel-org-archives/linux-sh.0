@@ -1,298 +1,441 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 01 Mar 2012 15:07:40 +0000
-Subject: [PATCH v2 27/57] fbdev: sh_mobile_lcdc: Pass a video mode to the notify callback
-Message-Id: <1330614490-14149-28-git-send-email-laurent.pinchart@ideasonboard.com>
+Date: Thu, 01 Mar 2012 15:07:57 +0000
+Subject: [PATCH v2 44/57] fbdev: sh_mobile_meram: Add struct sh_mobile_meram_icb
+Message-Id: <1330614490-14149-45-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-fbdev@vger.kernel.org
 
-Pass pointers to struct fb_videomode and struct fb_monspecs instead of
-struct fb_var_screeninfo to the notify callback.
+The new structure stores ICB parameters for ICBs.
+
+Instead of modifying the struct sh_mobile_meram_cfg instances passed by
+callers, store the ICB parameters internally and make the public API
+take const pointers to sh_mobile_meram_cfg.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- drivers/video/sh_mobile_hdmi.c   |   59 +++++++++++++++++--------------------
- drivers/video/sh_mobile_lcdcfb.c |   36 ++++++++++++-----------
- drivers/video/sh_mobile_lcdcfb.h |    3 +-
- 3 files changed, 48 insertions(+), 50 deletions(-)
+ drivers/video/sh_mobile_meram.c |  178 ++++++++++++++++++++-------------------
+ include/video/sh_mobile_meram.h |   12 +--
+ 2 files changed, 94 insertions(+), 96 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
-index 055cd92..2617609 100644
---- a/drivers/video/sh_mobile_hdmi.c
-+++ b/drivers/video/sh_mobile_hdmi.c
-@@ -220,7 +220,7 @@ struct sh_hdmi {
- 	struct clk *hdmi_clk;
- 	struct device *dev;
- 	struct delayed_work edid_work;
--	struct fb_var_screeninfo var;
-+	struct fb_videomode mode;
- 	struct fb_monspecs monspec;
+diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
+index 7af2ffe..cddb180 100644
+--- a/drivers/video/sh_mobile_meram.c
++++ b/drivers/video/sh_mobile_meram.c
+@@ -100,14 +100,38 @@ static unsigned long icb_regs[] = {
  };
+ #define ICB_REGS_SIZE ARRAY_SIZE(icb_regs)
  
-@@ -291,24 +291,24 @@ static struct snd_soc_codec_driver soc_codec_dev_sh_hdmi = {
- /* External video parameter settings */
- static void sh_hdmi_external_video_param(struct sh_hdmi *hdmi)
- {
--	struct fb_var_screeninfo *var = &hdmi->var;
-+	struct fb_videomode *mode = &hdmi->mode;
- 	u16 htotal, hblank, hdelay, vtotal, vblank, vdelay, voffset;
- 	u8 sync = 0;
- 
--	htotal = var->xres + var->right_margin + var->left_margin + var->hsync_len;
--
--	hdelay = var->hsync_len + var->left_margin;
--	hblank = var->right_margin + hdelay;
-+	htotal = mode->xres + mode->right_margin + mode->left_margin
-+	       + mode->hsync_len;
-+	hdelay = mode->hsync_len + mode->left_margin;
-+	hblank = mode->right_margin + hdelay;
- 
- 	/*
- 	 * Vertical timing looks a bit different in Figure 18,
- 	 * but let's try the same first by setting offset = 0
- 	 */
--	vtotal = var->yres + var->upper_margin + var->lower_margin + var->vsync_len;
--
--	vdelay = var->vsync_len + var->upper_margin;
--	vblank = var->lower_margin + vdelay;
--	voffset = min(var->upper_margin / 2, 6U);
-+	vtotal = mode->yres + mode->upper_margin + mode->lower_margin
-+	       + mode->vsync_len;
-+	vdelay = mode->vsync_len + mode->upper_margin;
-+	vblank = mode->lower_margin + vdelay;
-+	voffset = min(mode->upper_margin / 2, 6U);
- 
- 	/*
- 	 * [3]: VSYNC polarity: Positive
-@@ -316,14 +316,14 @@ static void sh_hdmi_external_video_param(struct sh_hdmi *hdmi)
- 	 * [1]: Interlace/Progressive: Progressive
- 	 * [0]: External video settings enable: used.
- 	 */
--	if (var->sync & FB_SYNC_HOR_HIGH_ACT)
-+	if (mode->sync & FB_SYNC_HOR_HIGH_ACT)
- 		sync |= 4;
--	if (var->sync & FB_SYNC_VERT_HIGH_ACT)
-+	if (mode->sync & FB_SYNC_VERT_HIGH_ACT)
- 		sync |= 8;
- 
- 	dev_dbg(hdmi->dev, "H: %u, %u, %u, %u; V: %u, %u, %u, %u; sync 0x%x\n",
--		htotal, hblank, hdelay, var->hsync_len,
--		vtotal, vblank, vdelay, var->vsync_len, sync);
-+		htotal, hblank, hdelay, mode->hsync_len,
-+		vtotal, vblank, vdelay, mode->vsync_len, sync);
- 
- 	hdmi_write(hdmi, sync | (voffset << 4), HDMI_EXTERNAL_VIDEO_PARAM_SETTINGS);
- 
-@@ -336,8 +336,8 @@ static void sh_hdmi_external_video_param(struct sh_hdmi *hdmi)
- 	hdmi_write(hdmi, hdelay, HDMI_EXTERNAL_H_DELAY_7_0);
- 	hdmi_write(hdmi, hdelay >> 8, HDMI_EXTERNAL_H_DELAY_9_8);
- 
--	hdmi_write(hdmi, var->hsync_len, HDMI_EXTERNAL_H_DURATION_7_0);
--	hdmi_write(hdmi, var->hsync_len >> 8, HDMI_EXTERNAL_H_DURATION_9_8);
-+	hdmi_write(hdmi, mode->hsync_len, HDMI_EXTERNAL_H_DURATION_7_0);
-+	hdmi_write(hdmi, mode->hsync_len >> 8, HDMI_EXTERNAL_H_DURATION_9_8);
- 
- 	hdmi_write(hdmi, vtotal, HDMI_EXTERNAL_V_TOTAL_7_0);
- 	hdmi_write(hdmi, vtotal >> 8, HDMI_EXTERNAL_V_TOTAL_9_8);
-@@ -346,7 +346,7 @@ static void sh_hdmi_external_video_param(struct sh_hdmi *hdmi)
- 
- 	hdmi_write(hdmi, vdelay, HDMI_EXTERNAL_V_DELAY);
- 
--	hdmi_write(hdmi, var->vsync_len, HDMI_EXTERNAL_V_DURATION);
-+	hdmi_write(hdmi, mode->vsync_len, HDMI_EXTERNAL_V_DURATION);
- 
- 	/* Set bit 0 of HDMI_EXTERNAL_VIDEO_PARAM_SETTINGS here for external mode */
- 	if (!hdmi->preprogrammed_vic)
-@@ -473,7 +473,7 @@ static void sh_hdmi_audio_config(struct sh_hdmi *hdmi)
-  */
- static void sh_hdmi_phy_config(struct sh_hdmi *hdmi)
- {
--	if (hdmi->var.pixclock < 10000) {
-+	if (hdmi->mode.pixclock < 10000) {
- 		/* for 1080p8bit 148MHz */
- 		hdmi_write(hdmi, 0x1d, HDMI_SLIPHDMIT_PARAM_SETTINGS_1);
- 		hdmi_write(hdmi, 0x00, HDMI_SLIPHDMIT_PARAM_SETTINGS_2);
-@@ -484,7 +484,7 @@ static void sh_hdmi_phy_config(struct sh_hdmi *hdmi)
- 		hdmi_write(hdmi, 0x0e, HDMI_SLIPHDMIT_PARAM_SETTINGS_8);
- 		hdmi_write(hdmi, 0x25, HDMI_SLIPHDMIT_PARAM_SETTINGS_9);
- 		hdmi_write(hdmi, 0x04, HDMI_SLIPHDMIT_PARAM_SETTINGS_10);
--	} else if (hdmi->var.pixclock < 30000) {
-+	} else if (hdmi->mode.pixclock < 30000) {
- 		/* 720p, 8bit, 74.25MHz. Might need to be adjusted for other formats */
- 		/*
- 		 * [1:0]	Speed_A
-@@ -735,7 +735,6 @@ static int sh_hdmi_read_edid(struct sh_hdmi *hdmi, unsigned long *hdmi_rate,
- {
- 	struct sh_mobile_lcdc_chan *ch = hdmi->entity.lcdc;
- 	struct fb_info *info = ch ? ch->info : NULL;
--	struct fb_var_screeninfo var;
- 	const struct fb_videomode *mode, *found = NULL;
- 	const struct fb_modelist *modelist = NULL;
- 	unsigned int f_width = 0, f_height = 0, f_refresh = 0;
-@@ -855,10 +854,9 @@ static int sh_hdmi_read_edid(struct sh_hdmi *hdmi, unsigned long *hdmi_rate,
- 		}
- 
- 		/* Check if supported: sufficient fb memory, supported clock-rate */
--		fb_videomode_to_var(&var, mode);
--
- 		if (ch && ch->notify &&
--		    ch->notify(ch, SH_MOBILE_LCDC_EVENT_DISPLAY_MODE, &var)) {
-+		    ch->notify(ch, SH_MOBILE_LCDC_EVENT_DISPLAY_MODE, mode,
-+			       NULL)) {
- 			scanning = true;
- 			preferred_bad = true;
- 			continue;
-@@ -868,9 +866,6 @@ static int sh_hdmi_read_edid(struct sh_hdmi *hdmi, unsigned long *hdmi_rate,
- 		found_rate_error = rate_error;
- 	}
- 
--	hdmi->var.width = hdmi->monspec.max_x * 10;
--	hdmi->var.height = hdmi->monspec.max_y * 10;
--
- 	/*
- 	 * TODO 1: if no ->info is present, postpone running the config until
- 	 * after ->info first gets registered.
-@@ -916,7 +911,7 @@ static int sh_hdmi_read_edid(struct sh_hdmi *hdmi, unsigned long *hdmi_rate,
- 		found->xres, found->yres, found->refresh,
- 		PICOS2KHZ(found->pixclock) * 1000, found_rate_error);
- 
--	fb_videomode_to_var(&hdmi->var, found);
-+	hdmi->mode = *found;
- 	sh_hdmi_external_video_param(hdmi);
- 
- 	return 0;
-@@ -1017,9 +1012,9 @@ static int sh_hdmi_display_on(struct sh_mobile_lcdc_entity *entity)
- 		hdmi_write(hdmi, 0x80, HDMI_SYSTEM_CTRL);
- 		dev_dbg(hdmi->dev, "HDMI running\n");
- 		break;
--	case HDMI_HOTPLUG_DISCONNECTED:
- 	default:
--		hdmi->var = ch->display_var;
-+		fb_var_to_videomode(&hdmi->mode, &ch->display_var);
-+		break;
- 	}
- 
- 	return hdmi->hp_state = HDMI_HOTPLUG_DISCONNECTED
-@@ -1107,7 +1102,7 @@ static void sh_hdmi_edid_work_fn(struct work_struct *work)
- 
- 		if (ch && ch->notify)
- 			ch->notify(ch, SH_MOBILE_LCDC_EVENT_DISPLAY_CONNECT,
--				   &hdmi->var);
-+				   &hdmi->mode, &hdmi->monspec);
- 	} else {
- 		hdmi->monspec.modedb_len = 0;
- 		fb_destroy_modedb(hdmi->monspec.modedb);
-@@ -1115,7 +1110,7 @@ static void sh_hdmi_edid_work_fn(struct work_struct *work)
- 
- 		if (ch && ch->notify)
- 			ch->notify(ch, SH_MOBILE_LCDC_EVENT_DISPLAY_DISCONNECT,
--				   NULL);
-+				   NULL, NULL);
- 
- 		ret = 0;
- 	}
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index 128eb77..d3299ff 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -366,28 +366,23 @@ static void sh_mobile_lcdc_display_off(struct sh_mobile_lcdc_chan *ch)
- 
- static bool
- sh_mobile_lcdc_must_reconfigure(struct sh_mobile_lcdc_chan *ch,
--				const struct fb_var_screeninfo *new_var)
-+				const struct fb_videomode *new_mode)
- {
- 	struct fb_var_screeninfo *old_var = &ch->display_var;
- 	struct fb_videomode old_mode;
--	struct fb_videomode new_mode;
- 
- 	fb_var_to_videomode(&old_mode, old_var);
--	fb_var_to_videomode(&new_mode, new_var);
- 
- 	dev_dbg(ch->info->dev, "Old %ux%u, new %ux%u\n",
--		old_mode.xres, old_mode.yres, new_mode.xres, new_mode.yres);
-+		old_mode.xres, old_mode.yres, new_mode->xres, new_mode->yres);
- 
--	if (fb_mode_is_equal(&old_mode, &new_mode)) {
--		/* It can be a different monitor with an equal video-mode */
--		old_var->width = new_var->width;
--		old_var->height = new_var->height;
-+	/* It can be a different monitor with an equal video-mode */
-+	if (fb_mode_is_equal(&old_mode, new_mode))
- 		return false;
--	}
- 
- 	dev_dbg(ch->info->dev, "Switching %u -> %u lines\n",
--		old_mode.yres, new_mode.yres);
--	*old_var = *new_var;
-+		old_mode.yres, new_mode->yres);
-+	fb_videomode_to_var(old_var, new_mode);
- 
- 	return true;
- }
-@@ -397,9 +392,11 @@ static int sh_mobile_check_var(struct fb_var_screeninfo *var,
- 
- static int sh_mobile_lcdc_display_notify(struct sh_mobile_lcdc_chan *ch,
- 					 enum sh_mobile_lcdc_entity_event event,
--					 struct fb_var_screeninfo *var)
-+					 const struct fb_videomode *mode,
-+					 const struct fb_monspecs *monspec)
- {
- 	struct fb_info *info = ch->info;
-+	struct fb_var_screeninfo var;
- 	int ret = 0;
- 
- 	switch (event) {
-@@ -408,14 +405,17 @@ static int sh_mobile_lcdc_display_notify(struct sh_mobile_lcdc_chan *ch,
- 		if (lock_fb_info(info)) {
- 			console_lock();
- 
--			if (!sh_mobile_lcdc_must_reconfigure(ch, var) &&
-+			ch->display_var.width = monspec->max_x * 10;
-+			ch->display_var.height = monspec->max_y * 10;
++/*
++ * sh_mobile_meram_icb - MERAM ICB information
++ * @regs: Registers cache
++ * @region: Start and end addresses of the MERAM region
++ * @cache_unit: Bytes to cache per ICB
++ * @pixelformat: Video pixel format of the data stored in the ICB
++ * @current_reg: Which of Start Address Register A (0) or B (1) is in use
++ */
++struct sh_mobile_meram_icb {
++	unsigned long regs[ICB_REGS_SIZE];
 +
-+			if (!sh_mobile_lcdc_must_reconfigure(ch, mode) &&
- 			    info->state = FBINFO_STATE_RUNNING) {
- 				/* First activation with the default monitor.
- 				 * Just turn on, if we run a resume here, the
- 				 * logo disappears.
- 				 */
--				info->var.width = var->width;
--				info->var.height = var->height;
-+				info->var.width = monspec->max_x * 10;
-+				info->var.height = monspec->max_y * 10;
- 				sh_mobile_lcdc_display_on(ch);
- 			} else {
- 				/* New monitor or have to wake up */
-@@ -439,8 +439,10 @@ static int sh_mobile_lcdc_display_notify(struct sh_mobile_lcdc_chan *ch,
- 
- 	case SH_MOBILE_LCDC_EVENT_DISPLAY_MODE:
- 		/* Validate a proposed new mode */
--		var->bits_per_pixel = info->var.bits_per_pixel;
--		ret = sh_mobile_check_var(var, info);
-+		fb_videomode_to_var(&var, mode);
-+		var.bits_per_pixel = info->var.bits_per_pixel;
-+		var.grayscale = info->var.grayscale;
-+		ret = sh_mobile_check_var(&var, info);
- 		break;
- 	}
- 
-diff --git a/drivers/video/sh_mobile_lcdcfb.h b/drivers/video/sh_mobile_lcdcfb.h
-index e2eb7af..10086ae 100644
---- a/drivers/video/sh_mobile_lcdcfb.h
-+++ b/drivers/video/sh_mobile_lcdcfb.h
-@@ -79,7 +79,8 @@ struct sh_mobile_lcdc_chan {
- 
- 	int (*notify)(struct sh_mobile_lcdc_chan *ch,
- 		      enum sh_mobile_lcdc_entity_event event,
--		      struct fb_var_screeninfo *var);
-+		      const struct fb_videomode *mode,
-+		      const struct fb_monspecs *monspec);
++	unsigned long region;
++	unsigned int cache_unit;
++	unsigned int pixelformat;
++	unsigned int current_reg;
++};
++
++/*
++ * sh_mobile_meram_priv - MERAM device
++ * @base: Registers base address
++ * @regs: Registers cache
++ * @lock: Protects used_icb and icbs
++ * @used_icb: Bitmask of used ICBs
++ * @icbs: ICBs
++ */
+ struct sh_mobile_meram_priv {
+-	void __iomem	*base;
+-	struct mutex	lock;
+-	unsigned long	used_icb;
+-	unsigned int	used_meram_cache_regions;
+-	unsigned long	used_meram_cache[SH_MOBILE_MERAM_ICB_NUM];
+-	unsigned long	cmn_saved_regs[CMN_REGS_SIZE];
+-	unsigned long	icb_saved_regs[ICB_REGS_SIZE * SH_MOBILE_MERAM_ICB_NUM];
++	void __iomem *base;
++	unsigned long regs[CMN_REGS_SIZE];
++
++	struct mutex lock;
++	unsigned long used_icb;
++	struct sh_mobile_meram_icb icbs[SH_MOBILE_MERAM_ICB_NUM];
  };
  
- #endif
+ /* settings */
+@@ -157,7 +181,7 @@ static inline unsigned long meram_read_reg(void __iomem *base, unsigned int off)
+  */
+ 
+ static inline int meram_check_overlap(struct sh_mobile_meram_priv *priv,
+-				      struct sh_mobile_meram_icb_cfg *new)
++				      const struct sh_mobile_meram_icb_cfg *new)
+ {
+ 	unsigned int used_start, used_end, meram_start, meram_end;
+ 	unsigned int i;
+@@ -167,17 +191,20 @@ static inline int meram_check_overlap(struct sh_mobile_meram_priv *priv,
+ 		return 1;
+ 
+ 	if (test_bit(new->marker_icb, &priv->used_icb) ||
+-			test_bit(new->cache_icb,  &priv->used_icb))
++	    test_bit(new->cache_icb,  &priv->used_icb))
+ 		return  1;
+ 
+-	for (i = 0; i < priv->used_meram_cache_regions; i++) {
+-		used_start = MERAM_CACHE_START(priv->used_meram_cache[i]);
+-		used_end   = MERAM_CACHE_END(priv->used_meram_cache[i]);
++	for (i = 0; i < SH_MOBILE_MERAM_ICB_NUM; i++) {
++		if (!test_bit(i, &priv->used_icb))
++			continue;
++
++		used_start = MERAM_CACHE_START(priv->icbs[i].region);
++		used_end   = MERAM_CACHE_END(priv->icbs[i].region);
+ 		meram_start = new->meram_offset;
+ 		meram_end   = new->meram_offset + new->meram_size;
+ 
+ 		if ((meram_start >= used_start && meram_start < used_end) ||
+-			(meram_end > used_start && meram_end < used_end))
++		    (meram_end > used_start && meram_end < used_end))
+ 			return 1;
+ 	}
+ 
+@@ -189,22 +216,18 @@ static inline int meram_check_overlap(struct sh_mobile_meram_priv *priv,
+  */
+ 
+ static inline void meram_mark(struct sh_mobile_meram_priv *priv,
+-			      struct sh_mobile_meram_icb_cfg *new)
++			      const struct sh_mobile_meram_icb_cfg *new,
++			      int pixelformat)
+ {
+-	unsigned int n;
+-
+-	if (new->marker_icb < 0 || new->cache_icb < 0)
+-		return;
+-
+ 	__set_bit(new->marker_icb, &priv->used_icb);
+ 	__set_bit(new->cache_icb, &priv->used_icb);
+ 
+-	n = priv->used_meram_cache_regions;
+-
+-	priv->used_meram_cache[n] = MERAM_CACHE_SET(new->meram_offset,
+-						    new->meram_size);
+-
+-	priv->used_meram_cache_regions++;
++	priv->icbs[new->marker_icb].region = MERAM_CACHE_SET(new->meram_offset,
++							     new->meram_size);
++	priv->icbs[new->cache_icb].region = MERAM_CACHE_SET(new->meram_offset,
++							    new->meram_size);
++	priv->icbs[new->marker_icb].current_reg = 1;
++	priv->icbs[new->marker_icb].pixelformat = pixelformat;
+ }
+ 
+ /*
+@@ -212,30 +235,10 @@ static inline void meram_mark(struct sh_mobile_meram_priv *priv,
+  */
+ 
+ static inline void meram_unmark(struct sh_mobile_meram_priv *priv,
+-				struct sh_mobile_meram_icb_cfg *icb)
++				const struct sh_mobile_meram_icb_cfg *icb)
+ {
+-	unsigned long pattern;
+-	unsigned int i;
+-
+-	if (icb->marker_icb < 0 || icb->cache_icb < 0)
+-		return;
+-
+ 	__clear_bit(icb->marker_icb, &priv->used_icb);
+ 	__clear_bit(icb->cache_icb, &priv->used_icb);
+-
+-	pattern = MERAM_CACHE_SET(icb->meram_offset, icb->meram_size);
+-	for (i = 0; i < priv->used_meram_cache_regions; i++) {
+-		if (priv->used_meram_cache[i] = pattern) {
+-			while (i < priv->used_meram_cache_regions - 1) {
+-				priv->used_meram_cache[i] -					priv->used_meram_cache[i + 1] ;
+-				i++;
+-			}
+-			priv->used_meram_cache[i] = 0;
+-			priv->used_meram_cache_regions--;
+-			break;
+-		}
+-	}
+ }
+ 
+ /*
+@@ -244,7 +247,7 @@ static inline void meram_unmark(struct sh_mobile_meram_priv *priv,
+ static inline int is_nvcolor(int cspace)
+ {
+ 	if (cspace = SH_MOBILE_MERAM_PF_NV ||
+-			cspace = SH_MOBILE_MERAM_PF_NV24)
++	    cspace = SH_MOBILE_MERAM_PF_NV24)
+ 		return 1;
+ 	return 0;
+ }
+@@ -253,46 +256,51 @@ static inline int is_nvcolor(int cspace)
+  * set the next address to fetch
+  */
+ static inline void meram_set_next_addr(struct sh_mobile_meram_priv *priv,
+-				       struct sh_mobile_meram_cfg *cfg,
++				       const struct sh_mobile_meram_cfg *cfg,
+ 				       unsigned long base_addr_y,
+ 				       unsigned long base_addr_c)
+ {
++	struct sh_mobile_meram_icb *icb = &priv->icbs[cfg->icb[0].marker_icb];
+ 	unsigned long target;
+ 
+-	cfg->current_reg ^= 1;
+-	target = cfg->current_reg ? MExxSARB : MExxSARA;
++	icb->current_reg ^= 1;
++	target = icb->current_reg ? MExxSARB : MExxSARA;
+ 
+ 	/* set the next address to fetch */
+-	meram_write_icb(priv->base, cfg->icb[0].cache_icb,  target,
++	meram_write_icb(priv->base, cfg->icb[0].cache_icb, target,
+ 			base_addr_y);
+ 	meram_write_icb(priv->base, cfg->icb[0].marker_icb, target,
+-			base_addr_y + cfg->icb[0].cache_unit);
++			base_addr_y +
++			priv->icbs[cfg->icb[0].marker_icb].cache_unit);
+ 
+-	if (is_nvcolor(cfg->pixelformat)) {
++	if (is_nvcolor(icb->pixelformat)) {
+ 		meram_write_icb(priv->base, cfg->icb[1].cache_icb,  target,
+ 				base_addr_c);
+ 		meram_write_icb(priv->base, cfg->icb[1].marker_icb, target,
+-				base_addr_c + cfg->icb[1].cache_unit);
++				base_addr_c +
++				priv->icbs[cfg->icb[1].marker_icb].cache_unit);
+ 	}
+ }
+ 
+ /*
+  * get the next ICB address
+  */
+-static inline void meram_get_next_icb_addr(struct sh_mobile_meram_info *pdata,
+-					   struct sh_mobile_meram_cfg *cfg,
+-					   unsigned long *icb_addr_y,
+-					   unsigned long *icb_addr_c)
++static inline void
++meram_get_next_icb_addr(struct sh_mobile_meram_info *pdata,
++			const struct sh_mobile_meram_cfg *cfg,
++			unsigned long *icb_addr_y, unsigned long *icb_addr_c)
+ {
++	struct sh_mobile_meram_priv *priv = pdata->priv;
++	struct sh_mobile_meram_icb *icb = &priv->icbs[cfg->icb[0].marker_icb];
+ 	unsigned long icb_offset;
+ 
+ 	if (pdata->addr_mode = SH_MOBILE_MERAM_MODE0)
+-		icb_offset = 0x80000000 | (cfg->current_reg << 29);
++		icb_offset = 0x80000000 | (icb->current_reg << 29);
+ 	else
+-		icb_offset = 0xc0000000 | (cfg->current_reg << 23);
++		icb_offset = 0xc0000000 | (icb->current_reg << 23);
+ 
+ 	*icb_addr_y = icb_offset | (cfg->icb[0].marker_icb << 24);
+-	if (is_nvcolor(cfg->pixelformat))
++	if (is_nvcolor(icb->pixelformat))
+ 		*icb_addr_c = icb_offset | (cfg->icb[1].marker_icb << 24);
+ }
+ 
+@@ -304,7 +312,7 @@ static inline void meram_get_next_icb_addr(struct sh_mobile_meram_info *pdata,
+  */
+ 
+ static int meram_init(struct sh_mobile_meram_priv *priv,
+-		      struct sh_mobile_meram_icb_cfg *icb,
++		      const struct sh_mobile_meram_icb_cfg *icb,
+ 		      unsigned int xres, unsigned int yres,
+ 		      unsigned int *out_pitch)
+ {
+@@ -352,7 +360,8 @@ static int meram_init(struct sh_mobile_meram_priv *priv,
+ 	meram_write_icb(priv->base, icb->marker_icb, MExxSBSIZE, xpitch);
+ 
+ 	/* save a cache unit size */
+-	icb->cache_unit = xres * save_lines;
++	priv->icbs[icb->cache_icb].cache_unit = xres * save_lines;
++	priv->icbs[icb->marker_icb].cache_unit = xres * save_lines;
+ 
+ 	/*
+ 	 * Set MERAM for framebuffer
+@@ -374,14 +383,16 @@ static int meram_init(struct sh_mobile_meram_priv *priv,
+ }
+ 
+ static void meram_deinit(struct sh_mobile_meram_priv *priv,
+-			 struct sh_mobile_meram_icb_cfg *icb)
++			 const struct sh_mobile_meram_icb_cfg *icb)
+ {
+ 	/* disable ICB */
+ 	meram_write_icb(priv->base, icb->cache_icb,  MExxCTL,
+ 			MExxCTL_WBF | MExxCTL_WF | MExxCTL_RF);
+ 	meram_write_icb(priv->base, icb->marker_icb, MExxCTL,
+ 			MExxCTL_WBF | MExxCTL_WF | MExxCTL_RF);
+-	icb->cache_unit = 0;
++
++	priv->icbs[icb->cache_icb].cache_unit = 0;
++	priv->icbs[icb->marker_icb].cache_unit = 0;
+ }
+ 
+ /*
+@@ -389,7 +400,7 @@ static void meram_deinit(struct sh_mobile_meram_priv *priv,
+  */
+ 
+ static int sh_mobile_meram_register(struct sh_mobile_meram_info *pdata,
+-				    struct sh_mobile_meram_cfg *cfg,
++				    const struct sh_mobile_meram_cfg *cfg,
+ 				    unsigned int xres, unsigned int yres,
+ 				    unsigned int pixelformat,
+ 				    unsigned long base_addr_y,
+@@ -433,12 +444,6 @@ static int sh_mobile_meram_register(struct sh_mobile_meram_info *pdata,
+ 
+ 	mutex_lock(&priv->lock);
+ 
+-	if (priv->used_meram_cache_regions + 2 > SH_MOBILE_MERAM_ICB_NUM) {
+-		dev_err(&pdev->dev, "no more ICB available.");
+-		error = -EINVAL;
+-		goto err;
+-	}
+-
+ 	/* make sure that there's no overlaps */
+ 	if (meram_check_overlap(priv, &cfg->icb[0])) {
+ 		dev_err(&pdev->dev, "conflicting config detected.");
+@@ -464,10 +469,9 @@ static int sh_mobile_meram_register(struct sh_mobile_meram_info *pdata,
+ 	}
+ 
+ 	/* we now register the ICB */
+-	cfg->pixelformat = pixelformat;
+-	meram_mark(priv, &cfg->icb[0]);
++	meram_mark(priv, &cfg->icb[0], pixelformat);
+ 	if (is_nvcolor(pixelformat))
+-		meram_mark(priv, &cfg->icb[1]);
++		meram_mark(priv, &cfg->icb[1], pixelformat);
+ 
+ 	/* initialize MERAM */
+ 	meram_init(priv, &cfg->icb[0], xres, yres, &out_pitch);
+@@ -479,7 +483,6 @@ static int sh_mobile_meram_register(struct sh_mobile_meram_info *pdata,
+ 		meram_init(priv, &cfg->icb[1], 2 * xres, (yres + 1) / 2,
+ 			&out_pitch);
+ 
+-	cfg->current_reg = 1;
+ 	meram_set_next_addr(priv, cfg, base_addr_y, base_addr_c);
+ 	meram_get_next_icb_addr(pdata, cfg, icb_addr_y, icb_addr_c);
+ 
+@@ -492,19 +495,21 @@ err:
+ }
+ 
+ static int sh_mobile_meram_unregister(struct sh_mobile_meram_info *pdata,
+-				      struct sh_mobile_meram_cfg *cfg)
++				      const struct sh_mobile_meram_cfg *cfg)
+ {
+ 	struct sh_mobile_meram_priv *priv;
++	struct sh_mobile_meram_icb *icb;
+ 
+ 	if (!pdata || !pdata->priv || !cfg)
+ 		return -EINVAL;
+ 
+ 	priv = pdata->priv;
++	icb = &priv->icbs[cfg->icb[0].marker_icb];
+ 
+ 	mutex_lock(&priv->lock);
+ 
+ 	/* deinit & unmark */
+-	if (is_nvcolor(cfg->pixelformat)) {
++	if (is_nvcolor(icb->pixelformat)) {
+ 		meram_deinit(priv, &cfg->icb[1]);
+ 		meram_unmark(priv, &cfg->icb[1]);
+ 	}
+@@ -517,7 +522,7 @@ static int sh_mobile_meram_unregister(struct sh_mobile_meram_info *pdata,
+ }
+ 
+ static int sh_mobile_meram_update(struct sh_mobile_meram_info *pdata,
+-				  struct sh_mobile_meram_cfg *cfg,
++				  const struct sh_mobile_meram_cfg *cfg,
+ 				  unsigned long base_addr_y,
+ 				  unsigned long base_addr_c,
+ 				  unsigned long *icb_addr_y,
+@@ -547,18 +552,17 @@ static int sh_mobile_meram_runtime_suspend(struct device *dev)
+ 	unsigned int i, j;
+ 
+ 	for (i = 0; i < CMN_REGS_SIZE; i++)
+-		priv->cmn_saved_regs[i] = meram_read_reg(priv->base,
+-			common_regs[i]);
++		priv->regs[i] = meram_read_reg(priv->base, common_regs[i]);
+ 
+ 	for (i = 0; i < 32; i++) {
+ 		if (!test_bit(i, &priv->used_icb))
+ 			continue;
+ 		for (j = 0; j < ICB_REGS_SIZE; j++) {
+-			priv->icb_saved_regs[i * ICB_REGS_SIZE + j] +			priv->icbs[i].regs[j]  				meram_read_icb(priv->base, i, icb_regs[j]);
+ 			/* Reset ICB on resume */
+ 			if (icb_regs[j] = MExxCTL)
+-				priv->icb_saved_regs[i * ICB_REGS_SIZE + j] |+				priv->icbs[i].regs[j] | 					MExxCTL_WBF | MExxCTL_WF | MExxCTL_RF;
+ 		}
+ 	}
+@@ -574,15 +578,13 @@ static int sh_mobile_meram_runtime_resume(struct device *dev)
+ 	for (i = 0; i < 32; i++) {
+ 		if (!test_bit(i, &priv->used_icb))
+ 			continue;
+-		for (j = 0; j < ICB_REGS_SIZE; j++) {
++		for (j = 0; j < ICB_REGS_SIZE; j++)
+ 			meram_write_icb(priv->base, i, icb_regs[j],
+-			priv->icb_saved_regs[i * ICB_REGS_SIZE + j]);
+-		}
++					priv->icbs[i].regs[j]);
+ 	}
+ 
+ 	for (i = 0; i < CMN_REGS_SIZE; i++)
+-		meram_write_reg(priv->base, common_regs[i],
+-				priv->cmn_saved_regs[i]);
++		meram_write_reg(priv->base, common_regs[i], priv->regs[i]);
+ 	return 0;
+ }
+ 
+diff --git a/include/video/sh_mobile_meram.h b/include/video/sh_mobile_meram.h
+index 6755e3f..05ca3f9 100644
+--- a/include/video/sh_mobile_meram.h
++++ b/include/video/sh_mobile_meram.h
+@@ -30,14 +30,10 @@ struct sh_mobile_meram_icb_cfg {
+ 	unsigned int cache_icb;		/* ICB # for Cache ICB */
+ 	unsigned int meram_offset;	/* MERAM Buffer Offset to use */
+ 	unsigned int meram_size;	/* MERAM Buffer Size to use */
+-
+-	unsigned int cache_unit;	/* bytes to cache per ICB */
+ };
+ 
+ struct sh_mobile_meram_cfg {
+-	struct sh_mobile_meram_icb_cfg	icb[2];
+-	int				pixelformat;
+-	int				current_reg;
++	struct sh_mobile_meram_icb_cfg icb[2];
+ };
+ 
+ struct module;
+@@ -45,7 +41,7 @@ struct sh_mobile_meram_ops {
+ 	struct module	*module;
+ 	/* register usage of meram */
+ 	int (*meram_register)(struct sh_mobile_meram_info *meram_dev,
+-			      struct sh_mobile_meram_cfg *cfg,
++			      const struct sh_mobile_meram_cfg *cfg,
+ 			      unsigned int xres, unsigned int yres,
+ 			      unsigned int pixelformat,
+ 			      unsigned long base_addr_y,
+@@ -56,11 +52,11 @@ struct sh_mobile_meram_ops {
+ 
+ 	/* unregister usage of meram */
+ 	int (*meram_unregister)(struct sh_mobile_meram_info *meram_dev,
+-				struct sh_mobile_meram_cfg *cfg);
++				const struct sh_mobile_meram_cfg *cfg);
+ 
+ 	/* update meram settings */
+ 	int (*meram_update)(struct sh_mobile_meram_info *meram_dev,
+-			    struct sh_mobile_meram_cfg *cfg,
++			    const struct sh_mobile_meram_cfg *cfg,
+ 			    unsigned long base_addr_y,
+ 			    unsigned long base_addr_c,
+ 			    unsigned long *icb_addr_y,
 -- 
 1.7.3.4
 
