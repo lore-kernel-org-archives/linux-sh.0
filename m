@@ -1,65 +1,99 @@
-From: Anton Vorontsov <anton.vorontsov@linaro.org>
-Date: Sat, 24 Mar 2012 10:28:59 +0000
-Subject: [PATCH 04/10] sh: Use clear_tasks_mm_cpumask()
-Message-Id: <20120324102859.GD29067@lizard>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 01 Mar 2012 15:08:06 +0000
+Subject: [PATCH v2 53/57] fbdev: sh_mobile_meram: Don't perform update in register operation
+Message-Id: <1330614490-14149-54-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120324102609.GA28356@lizard>
-In-Reply-To: <20120324102609.GA28356@lizard>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-fbdev@vger.kernel.org
 
-Current CPU hotplug code has some task->mm handling issues:
+Remove the RGB or Y/C base address update from the meram_register()
+operation, as this belongs to the meram_update() operation.
 
-1. Working with task->mm w/o getting mm or grabing the task lock is
-   dangerous as ->mm might disappear (exit_mm() assigns NULL under
-   task_lock(), so tasklist lock is not enough).
-
-   We can't use get_task_mm()/mmput() pair as mmput() might sleep,
-   so we must take the task lock while handle its mm.
-
-2. Checking for process->mm is not enough because process' main
-   thread may exit or detach its mm via use_mm(), but other threads
-   may still have a valid mm.
-
-   To fix this we would need to use find_lock_task_mm(), which would
-   walk up all threads and returns an appropriate task (with task
-   lock held).
-
-clear_tasks_mm_cpumask() has all the issues fixed, so let's use it.
-
-Suggested-by: Oleg Nesterov <oleg@redhat.com>
-Signed-off-by: Anton Vorontsov <anton.vorontsov@linaro.org>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/sh/kernel/smp.c |    7 +------
- 1 file changed, 1 insertion(+), 6 deletions(-)
+ drivers/video/sh_mobile_lcdcfb.c |    8 +++++---
+ drivers/video/sh_mobile_meram.c  |   15 ++-------------
+ include/video/sh_mobile_meram.h  |    4 ----
+ 3 files changed, 7 insertions(+), 20 deletions(-)
 
-diff --git a/arch/sh/kernel/smp.c b/arch/sh/kernel/smp.c
-index f624174..2470c83 100644
---- a/arch/sh/kernel/smp.c
-+++ b/arch/sh/kernel/smp.c
-@@ -123,7 +123,6 @@ void native_play_dead(void)
- int __cpu_disable(void)
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 0338516..4b54cd5 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -882,11 +882,13 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
+ 
+ 		meram = mdev->ops->meram_register(mdev, ch->cfg->meram_cfg,
+ 					ch->pitch, ch->yres, pixelformat,
+-					ch->base_addr_y, ch->base_addr_c,
+-					&ch->base_addr_y, &ch->base_addr_c,
+ 					&ch->pitch);
+-		if (!IS_ERR(meram))
++		if (!IS_ERR(meram)) {
++			mdev->ops->meram_update(mdev, meram,
++					ch->base_addr_y, ch->base_addr_c,
++					&ch->base_addr_y, &ch->base_addr_c);
+ 			ch->meram = meram;
++		}
+ 	}
+ 
+ 	/* Start the LCDC. */
+diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
+index 085c49a..2ce0d8f 100644
+--- a/drivers/video/sh_mobile_meram.c
++++ b/drivers/video/sh_mobile_meram.c
+@@ -448,10 +448,6 @@ static void *sh_mobile_meram_register(struct sh_mobile_meram_info *pdata,
+ 				      const struct sh_mobile_meram_cfg *cfg,
+ 				      unsigned int xres, unsigned int yres,
+ 				      unsigned int pixelformat,
+-				      unsigned long base_addr_y,
+-				      unsigned long base_addr_c,
+-				      unsigned long *icb_addr_y,
+-				      unsigned long *icb_addr_c,
+ 				      unsigned int *pitch)
  {
- 	unsigned int cpu = smp_processor_id();
--	struct task_struct *p;
- 	int ret;
+ 	struct sh_mobile_meram_fb_cache *cache;
+@@ -470,9 +466,8 @@ static void *sh_mobile_meram_register(struct sh_mobile_meram_info *pdata,
+ 	priv = pdata->priv;
+ 	pdev = pdata->pdev;
  
- 	ret = mp_ops->cpu_disable(cpu);
-@@ -153,11 +152,7 @@ int __cpu_disable(void)
- 	flush_cache_all();
- 	local_flush_tlb_all();
+-	dev_dbg(&pdev->dev, "registering %dx%d (%s) (y=%08lx, c=%08lx)",
+-		xres, yres, (!pixelformat) ? "yuv" : "rgb",
+-		base_addr_y, base_addr_c);
++	dev_dbg(&pdev->dev, "registering %dx%d (%s)", xres, yres,
++		!pixelformat ? "yuv" : "rgb");
  
--	read_lock(&tasklist_lock);
--	for_each_process(p)
--		if (p->mm)
--			cpumask_clear_cpu(cpu, mm_cpumask(p->mm));
--	read_unlock(&tasklist_lock);
-+	clear_tasks_mm_cpumask(cpu);
+ 	/* we can't handle wider than 8192px */
+ 	if (xres > 8192) {
+@@ -500,12 +495,6 @@ static void *sh_mobile_meram_register(struct sh_mobile_meram_info *pdata,
+ 		meram_init(priv, &cache->planes[1], 2 * xres, (yres + 1) / 2,
+ 			&out_pitch);
  
- 	return 0;
- }
+-	meram_set_next_addr(priv, cache, base_addr_y, base_addr_c);
+-	meram_get_next_icb_addr(pdata, cache, icb_addr_y, icb_addr_c);
+-
+-	dev_dbg(&pdev->dev, "registered - can access via y=%08lx, c=%08lx",
+-		*icb_addr_y, *icb_addr_c);
+-
+ err:
+ 	mutex_unlock(&priv->lock);
+ 	return cache;
+diff --git a/include/video/sh_mobile_meram.h b/include/video/sh_mobile_meram.h
+index 8979607..553335c 100644
+--- a/include/video/sh_mobile_meram.h
++++ b/include/video/sh_mobile_meram.h
+@@ -46,10 +46,6 @@ struct sh_mobile_meram_ops {
+ 				const struct sh_mobile_meram_cfg *cfg,
+ 				unsigned int xres, unsigned int yres,
+ 				unsigned int pixelformat,
+-				unsigned long base_addr_y,
+-				unsigned long base_addr_c,
+-				unsigned long *icb_addr_y,
+-				unsigned long *icb_addr_c,
+ 				unsigned int *pitch);
+ 
+ 	/* unregister usage of meram */
 -- 
-1.7.9.2
+1.7.3.4
 
