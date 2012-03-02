@@ -1,7 +1,7 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Thu, 01 Mar 2012 21:22:03 +0000
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Fri, 02 Mar 2012 01:39:53 +0000
 Subject: Re: [PATCH 00/06] ARM: mach-shmobile: map_io and init_early update
-Message-Id: <201203012222.03808.rjw@sisk.pl>
+Message-Id: <20120302013953.GA11325@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20120229123656.28584.90874.sendpatchset@w520>
 In-Reply-To: <20120229123656.28584.90874.sendpatchset@w520>
@@ -10,49 +10,34 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wednesday, February 29, 2012, Magnus Damm wrote:
->  ARM: mach-shmobile: map_io and init_early update
+On Thu, Mar 01, 2012 at 10:22:03PM +0100, Rafael J. Wysocki wrote:
+> On Wednesday, February 29, 2012, Magnus Damm wrote:
+> >  ARM: mach-shmobile: map_io and init_early update
+> > 
+> > [PATCH 01/06] ARM: mach-shmobile: sh7367 map_io and init_early update
+> > [PATCH 02/06] ARM: mach-shmobile: sh7377 map_io and init_early update
+> > [PATCH 03/06] ARM: mach-shmobile: sh7372 map_io and init_early update
+> > [PATCH 04/06] ARM: mach-shmobile: sh73a0 map_io and init_early update
+> > [PATCH 05/06] ARM: mach-shmobile: r8a7740 map_io and init_early update
+> > [PATCH 06/06] ARM: mach-shmobile: r8a7779 map_io and init_early update
+> > 
+> > This patch series converts the mach-shmobile subarch to properly
+> > make use of a per-soc map_io and a separate init_early callback for
+> > early serial console support on platforms where that is possible.
+> > 
+> > Signed-off-by: Magnus Damm <damm@opensource.se>
 > 
-> [PATCH 01/06] ARM: mach-shmobile: sh7367 map_io and init_early update
-> [PATCH 02/06] ARM: mach-shmobile: sh7377 map_io and init_early update
-> [PATCH 03/06] ARM: mach-shmobile: sh7372 map_io and init_early update
-> [PATCH 04/06] ARM: mach-shmobile: sh73a0 map_io and init_early update
-> [PATCH 05/06] ARM: mach-shmobile: r8a7740 map_io and init_early update
-> [PATCH 06/06] ARM: mach-shmobile: r8a7779 map_io and init_early update
-> 
-> This patch series converts the mach-shmobile subarch to properly
-> make use of a per-soc map_io and a separate init_early callback for
-> early serial console support on platforms where that is possible.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+> Paul, would you mind if I took this patchset into the renesas tree for v3.4?
 
-Paul, would you mind if I took this patchset into the renesas tree for v3.4?
-
-Rafael
-
-
-> ---
+On Thu, Mar 01, 2012 at 10:21:14PM +0100, Rafael J. Wysocki wrote:
+> On Wednesday, February 29, 2012, Magnus Damm wrote:
+> > From: Magnus Damm <damm@opensource.se>
+> > 
+> > Rename clk_init() to shmobile_clk_init() to avoid a potential
+> > future name space collision with the common clock framework.
+> > 
+> > Signed-off-by: Magnus Damm <damm@opensource.se>
 > 
->  arch/arm/mach-shmobile/board-ag5evm.c        |   25 +------------
->  arch/arm/mach-shmobile/board-ap4evb.c        |   25 +------------
->  arch/arm/mach-shmobile/board-bonito.c        |   28 +--------------
->  arch/arm/mach-shmobile/board-g3evm.c         |   25 +------------
->  arch/arm/mach-shmobile/board-g4evm.c         |   25 +------------
->  arch/arm/mach-shmobile/board-kota2.c         |   25 +------------
->  arch/arm/mach-shmobile/board-mackerel.c      |   25 +------------
->  arch/arm/mach-shmobile/board-marzen.c        |   48 +-------------------------
->  arch/arm/mach-shmobile/include/mach/common.h |    6 +++
->  arch/arm/mach-shmobile/setup-r8a7740.c       |   35 ++++++++++++++++++
->  arch/arm/mach-shmobile/setup-r8a7779.c       |   39 +++++++++++++++++++++
->  arch/arm/mach-shmobile/setup-sh7367.c        |   22 +++++++++++
->  arch/arm/mach-shmobile/setup-sh7372.c        |   22 +++++++++++
->  arch/arm/mach-shmobile/setup-sh7377.c        |   22 +++++++++++
->  arch/arm/mach-shmobile/setup-sh73a0.c        |   22 +++++++++++
->  15 files changed, 184 insertions(+), 210 deletions(-)
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
+> Paul, would you mind if I took this patchset into the renesas tree for v3.4?
 
+Both look fine to me, so feel free to take them at your leisure.
