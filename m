@@ -1,103 +1,75 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sat, 03 Mar 2012 20:53:15 +0000
-Subject: Re: [PATCH/RFC] mmc: add a device PM QoS constraint when a host is first claimed
-Message-Id: <201203032153.15889.rjw@sisk.pl>
+Date: Fri, 02 Mar 2012 23:41:30 +0000
+Subject: [PATCH] sh_tmu / PM: Prevent power from being removed from TMU devices
+Message-Id: <201203030041.30244.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1112121642080.10378@axis700.grange> <Pine.LNX.4.64.1112160954030.6572@axis700.grange> <4EEF2B54.6050108@stericsson.com>
-In-Reply-To: <4EEF2B54.6050108@stericsson.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@stericsson.com>
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, "linux-mmc@vger.kernel.org" <linux-mmc@vger.kernel.org>, "linux-pm@vger.kernel.org" <linux-pm@vger.kernel.org>, Chris Ball <cjb@laptop.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-Hi,
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Sorry for the late respones.
+To prevent TMU devices from losing power define a fake "always busy"
+suspend callback in the sh_tmu driver that will cause all attempts to
+suspend the system to fail.  In addition to that, make the driver
+change the runtime PM settings of TMU devices so that they appear to
+be always "active" and make SH7372 add them to the A4R domain (where
+they physically belong), to make the PM domains core take those
+settings into consideration when attempting to remove power from A4R.
 
-On Monday, December 19, 2011, Ulf Hansson wrote:
-> Guennadi Liakhovetski wrote:
-> > On Wed, 14 Dec 2011, Rafael J. Wysocki wrote:
-> > 
-> >> On Wednesday, December 14, 2011, Ulf Hansson wrote:
-> > 
-> > [snip]
-> > 
-> >>> 2.
-> >>> When executing mmc/sd commands/requests the host must always be claimed 
-> >>> (and thus the host is always enabled).
-> > 
-> > Why? Why cannot we save some power between IO operations - if we can do 
-> > this quickly and safely without affecting functionality and throughput?
-> > 
-> >>> But more important some mmc/sd 
-> >>> commands must be executed as a sequence, without the host being disabled 
-> >>> in between the commands (since a disable might mean that the clock to 
-> >>> card gets disabled).
-> > 
-> > Ok, there might well be such command sequences, but my question is: who 
-> > knows about them? Is this mandated by the MMC(/SD/SDIO/...) standard or is 
-> > it host-specific? Also "might mean" is actually interesting here. I think 
-> > we eventually need a combination of timing-oriented PM constraints and 
-> > "stateful" ones. During such a command sequence you would require the card 
-> > clock to stay on.
-> 
-> MMC/SD/SDIO standard sets the requirement and must somehow "notify" the 
-> host about how to act in certain scenarios.
-> 
-> Just for information, I think one interesting host driver to look at is 
-> omap_hsmmc. For it's enable function is does pm_runtime_get_sync and for 
-> it's disable function it does pm_runtime_put_autosuspend, this to make 
-> sure the clock is enabled when it is needed.
+Proprer power management support will be added to the sh_tmu driver
+in the future.
 
-That's OK, but that doesn't solve the issue the $subject patch tries to
-address.
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
+ arch/arm/mach-shmobile/setup-sh7372.c |    2 ++
+ drivers/clocksource/sh_tmu.c          |   12 ++++++++++++
+ 2 files changed, 14 insertions(+)
 
-> >>> To solve this, the mmc_claim_host is used, to make 
-> >>> sure the host is enabled during the complete command sequence.
-> >>>
-> >>> I happily continue this discussion, to see if someone more can break the 
-> >>> idea about having get_sync in mmc_host_enable. :-)
-> >> I'll leave this one to Guennadi, if you don't mind. :-)
-> > 
-> > As I said above, I think, we need both - to be able to require a certain 
-> > responsiveness / throughput and specific interface parameters like 
-> > supplying clock, power, etc.
-> > 
-> > Also notice, that setting a constraint doesn't affect in principle, when 
-> > the device is allowed to suspend. This is done as usual per 
-> > pm_runtime_get*() and _put*(). I think, a reasonable solution to use PM 
-> > QoS to impose timing constraints but at the same time to not disable the 
-> > hardware, when this is disallowed, is to tie pm_runtime_get() and _put() 
-> > calls to driver's .set_ios() method, like tmio_mmc and sh_mmcif drivers 
-> > currently do. Those drivers only call pm_runtime_put() when the interface 
-> > clock is gated. So, as long as the core is aware, that that IO sequence 
-> > has to run uninterrupted without stopping the clock between single 
-> > transfers, it just has to avoid gating the clock for that period and the 
-> > interface will not enter any power-saving mode.
-> > 
-> > So, I don't think we need to enforce pm_runtime_get_sync() in 
-> > mmc_claim_host().
-> 
-> You might be right; but still we need a way for the mmc framework to 
-> prevent the host driver from disabling clock etc to the card for some 
-> command sequences. As the omap driver solves it is to implement the 
-> enable/disable function and then call for get_sync and put in these 
-> functions, maybe that is the way how to solve this!?
-
-You still seem to be confusing preventing the clock from being disabled
-at all (which may be necessary for some command sequences etc.) with preventing
-the host adapter from being put into an overly deep low-power state _after_
-_the_ _clock_ _has_ _been_ _disabled_.  They are two _different_ issues
-and there's no way we can address them both by using timeouts.
-
-With PM domains support on SH7372 we can easily have a situation in which
-the controller's runtime PM causes a whole domain to go off (or in a more
-complicated scenario, the runtime PM of some _other_ device in the same PM
-domain causes it to go off while the MMC controller is in the "suspended"
-state) and that leads to an overly long delay in the MMC subsystem.  So,
-we need to address this issue _in_ _addition_ to ensuring that the controller
-is _not_ suspended when it shouldn't be.
-
-Thanks,
-Rafael
+Index: linux/drivers/clocksource/sh_tmu.c
+=================================--- linux.orig/drivers/clocksource/sh_tmu.c
++++ linux/drivers/clocksource/sh_tmu.c
+@@ -426,6 +426,10 @@ static int __devinit sh_tmu_probe(struct
+ 		kfree(p);
+ 		platform_set_drvdata(pdev, NULL);
+ 	}
++#ifdef CONFIG_PM_RUNTIME
++	pdev->dev.power.disable_depth = 0;
++	pdev->dev.power.runtime_status = RPM_ACTIVE;
++#endif
+ 	return ret;
+ }
+ 
+@@ -434,11 +438,19 @@ static int __devexit sh_tmu_remove(struc
+ 	return -EBUSY; /* cannot unregister clockevent and clocksource */
+ }
+ 
++static int sh_tmu_no_suspend(struct device *dev)
++{
++	return -EBUSY;
++}
++
++static SIMPLE_DEV_PM_OPS(sh_tmu_pm_ops, sh_tmu_no_suspend, NULL);
++
+ static struct platform_driver sh_tmu_device_driver = {
+ 	.probe		= sh_tmu_probe,
+ 	.remove		= __devexit_p(sh_tmu_remove),
+ 	.driver		= {
+ 		.name	= "sh_tmu",
++		.pm	= &sh_tmu_pm_ops,
+ 	}
+ };
+ 
+Index: linux/arch/arm/mach-shmobile/setup-sh7372.c
+=================================--- linux.orig/arch/arm/mach-shmobile/setup-sh7372.c
++++ linux/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -1043,6 +1043,8 @@ void __init sh7372_add_standard_devices(
+ 	sh7372_add_device_to_domain(&sh7372_a4r, &veu2_device);
+ 	sh7372_add_device_to_domain(&sh7372_a4r, &veu3_device);
+ 	sh7372_add_device_to_domain(&sh7372_a4r, &jpu_device);
++	sh7372_add_device_to_domain(&sh7372_a4r, &tmu00_device);
++	sh7372_add_device_to_domain(&sh7372_a4r, &tmu01_device);
+ }
+ 
+ void __init sh7372_add_early_devices(void)
