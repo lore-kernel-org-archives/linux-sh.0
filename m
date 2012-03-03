@@ -1,59 +1,103 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 15 Mar 2012 16:45:30 +0000
-Subject: Re: [PATCH/RFC] spi: sh-msiof: per-transaction runtime PM
-Message-Id: <Pine.LNX.4.64.1203151740430.2988@axis700.grange>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sat, 03 Mar 2012 20:53:15 +0000
+Subject: Re: [PATCH/RFC] mmc: add a device PM QoS constraint when a host is first claimed
+Message-Id: <201203032153.15889.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1203141828230.30291@axis700.grange>
-	<CANqRtoQUm5PyVwe-PtQPP1DX+_tAh9ptbj9mSkx48+W4Yh9DiA@mail.gmail.com>
-In-Reply-To: <CANqRtoQUm5PyVwe-PtQPP1DX+_tAh9ptbj9mSkx48+W4Yh9DiA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
+References: <Pine.LNX.4.64.1112121642080.10378@axis700.grange> <Pine.LNX.4.64.1112160954030.6572@axis700.grange> <4EEF2B54.6050108@stericsson.com>
+In-Reply-To: <4EEF2B54.6050108@stericsson.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
-Cc: "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>, spi-devel-general-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Ulf Hansson <ulf.hansson@stericsson.com>
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, "linux-mmc@vger.kernel.org" <linux-mmc@vger.kernel.org>, "linux-pm@vger.kernel.org" <linux-pm@vger.kernel.org>, Chris Ball <cjb@laptop.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>
 
-Hi Magnus
+Hi,
 
-On Thu, 15 Mar 2012, Magnus Damm wrote:
+Sorry for the late respones.
 
-> On Thu, Mar 15, 2012 at 2:35 AM, Guennadi Liakhovetski
-> <g.liakhovetski@gmx.de> wrote:
-> > Currently the spi-sh-msiof driver implements a runtime PM scheme, based on
-> > chipselect toggling. However, this is largely inefficient, since SPI
-> > client drivers are allowed to keep the chipselect active for long periods
-> > of time. This patch allows the driver to runtime-suspend the controller
-> > between SPI transfers. While moving runtime-PM hooks this patch also
-> > removes manual PM clock manipulation.
-> >
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > ---
-> >
-> > Marked as RFC, because I'm actually not sure, whether suspending after
-> > each transfer is actually allowed. This seems to bring problems with
-> > mmc-spi at least. Some commands return errors, but a retry recovers. More
-> > investigation is required. Any hints concerning why this is not perfectly
-> > functioning would be appreciated!
+On Monday, December 19, 2011, Ulf Hansson wrote:
+> Guennadi Liakhovetski wrote:
+> > On Wed, 14 Dec 2011, Rafael J. Wysocki wrote:
+> > 
+> >> On Wednesday, December 14, 2011, Ulf Hansson wrote:
+> > 
+> > [snip]
+> > 
+> >>> 2.
+> >>> When executing mmc/sd commands/requests the host must always be claimed 
+> >>> (and thus the host is always enabled).
+> > 
+> > Why? Why cannot we save some power between IO operations - if we can do 
+> > this quickly and safely without affecting functionality and throughput?
+> > 
+> >>> But more important some mmc/sd 
+> >>> commands must be executed as a sequence, without the host being disabled 
+> >>> in between the commands (since a disable might mean that the clock to 
+> >>> card gets disabled).
+> > 
+> > Ok, there might well be such command sequences, but my question is: who 
+> > knows about them? Is this mandated by the MMC(/SD/SDIO/...) standard or is 
+> > it host-specific? Also "might mean" is actually interesting here. I think 
+> > we eventually need a combination of timing-oriented PM constraints and 
+> > "stateful" ones. During such a command sequence you would require the card 
+> > clock to stay on.
 > 
-> Hi Guennadi,
+> MMC/SD/SDIO standard sets the requirement and must somehow "notify" the 
+> host about how to act in certain scenarios.
 > 
-> Thanks for your efforts. I believe that the error you are seeing with
-> this patch applied is because the code has been updated to change the
-> polarity of some shared SPI bus pins while CS is being asserted. This
-> will result in potential spikes on the shared SPI bus pins which is
-> far from perfect. =)
+> Just for information, I think one interesting host driver to look at is 
+> omap_hsmmc. For it's enable function is does pm_runtime_get_sync and for 
+> it's disable function it does pm_runtime_put_autosuspend, this to make 
+> sure the clock is enabled when it is needed.
 
-You're probably right:-) I forgot to mention, that the problem goes away 
-if PM QoS is used, but we certainly cannot rely on it. As we further 
-discussed in a chat, the problem can be relatively easily solved by 
-postponing the CS activation until in the first transfer, but this only 
-helps as long as the runtime PM doesn't power the domain down. Whereas, as 
-discussed in my reply to Grant in this thread, if this happens, a 
-different problem occurs, which anyway makes this approach much more 
-problematic, that originally thought.
+That's OK, but that doesn't solve the issue the $subject patch tries to
+address.
 
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+> >>> To solve this, the mmc_claim_host is used, to make 
+> >>> sure the host is enabled during the complete command sequence.
+> >>>
+> >>> I happily continue this discussion, to see if someone more can break the 
+> >>> idea about having get_sync in mmc_host_enable. :-)
+> >> I'll leave this one to Guennadi, if you don't mind. :-)
+> > 
+> > As I said above, I think, we need both - to be able to require a certain 
+> > responsiveness / throughput and specific interface parameters like 
+> > supplying clock, power, etc.
+> > 
+> > Also notice, that setting a constraint doesn't affect in principle, when 
+> > the device is allowed to suspend. This is done as usual per 
+> > pm_runtime_get*() and _put*(). I think, a reasonable solution to use PM 
+> > QoS to impose timing constraints but at the same time to not disable the 
+> > hardware, when this is disallowed, is to tie pm_runtime_get() and _put() 
+> > calls to driver's .set_ios() method, like tmio_mmc and sh_mmcif drivers 
+> > currently do. Those drivers only call pm_runtime_put() when the interface 
+> > clock is gated. So, as long as the core is aware, that that IO sequence 
+> > has to run uninterrupted without stopping the clock between single 
+> > transfers, it just has to avoid gating the clock for that period and the 
+> > interface will not enter any power-saving mode.
+> > 
+> > So, I don't think we need to enforce pm_runtime_get_sync() in 
+> > mmc_claim_host().
+> 
+> You might be right; but still we need a way for the mmc framework to 
+> prevent the host driver from disabling clock etc to the card for some 
+> command sequences. As the omap driver solves it is to implement the 
+> enable/disable function and then call for get_sync and put in these 
+> functions, maybe that is the way how to solve this!?
+
+You still seem to be confusing preventing the clock from being disabled
+at all (which may be necessary for some command sequences etc.) with preventing
+the host adapter from being put into an overly deep low-power state _after_
+_the_ _clock_ _has_ _been_ _disabled_.  They are two _different_ issues
+and there's no way we can address them both by using timeouts.
+
+With PM domains support on SH7372 we can easily have a situation in which
+the controller's runtime PM causes a whole domain to go off (or in a more
+complicated scenario, the runtime PM of some _other_ device in the same PM
+domain causes it to go off while the MMC controller is in the "suspended"
+state) and that leads to an overly long delay in the MMC subsystem.  So,
+we need to address this issue _in_ _addition_ to ensuring that the controller
+is _not_ suspended when it shouldn't be.
+
+Thanks,
+Rafael
