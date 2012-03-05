@@ -1,44 +1,106 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 30 Mar 2012 08:20:58 +0000
-Subject: [PATCH] ASoC: fsi: update for dmaengine prep_slave_sg fallout.
-Message-Id: <20120330082058.GE26543@linux-sh.org>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Mon, 05 Mar 2012 20:56:34 +0000
+Subject: Re: [PATCH 00/17] sh and mach-shmobile struct sh_clk_ops rename
+Message-Id: <201203052156.34401.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20120229131605.29154.8330.sendpatchset@w520>
+In-Reply-To: <20120229131605.29154.8330.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Leading up to the ->device_prep_slave_sg change in
-185ecb5f4fd43911c35956d4cc7d94a1da30417f 'dmaengine: add context
-parameter to prep_slave_sg and prep_dma_cyclic' a generic wrapper was
-added in place to guard against the API change, though the fsi driver
-wasn't updated in the process (presumably its dmaengine support hadn't
-been merged yet at the time). This trivially switches over to the new
-wrapper and gets it building again.
+Hi,
 
-Signed-off-by: Paul Mundt <lethal@linux-sh.org>
+On Wednesday, February 29, 2012, Magnus Damm wrote:
+> sh and mach-shmobile struct sh_clk_ops rename
+> 
+> [PATCH 01/17] sh: introduce sh_clk_ops in parallel with clk_ops
+> [PATCH 02/17] sh: convert cpg code to sh_clk_ops
+> [PATCH 03/17] ARM: mach-shmobile: sh7367 sh_clk_ops rename
+> [PATCH 04/17] ARM: mach-shmobile: sh7377 sh_clk_ops rename
+> [PATCH 05/17] ARM: mach-shmobile: sh7372 sh_clk_ops rename
+> [PATCH 06/17] ARM: mach-shmobile: sh73a0 sh_clk_ops rename
+> [PATCH 07/17] ARM: mach-shmobile: r8a7740 sh_clk_ops rename
+> [PATCH 08/17] ARM: mach-shmobile: r8a7779 sh_clk_ops rename
+> [PATCH 09/17] sh: sh header sh_clk_ops rename
+> [PATCH 10/17] sh: sh2 sh_clk_ops rename
+> [PATCH 11/17] sh: sh2a sh_clk_ops rename
+> [PATCH 12/17] sh: sh3 sh_clk_ops rename
+> [PATCH 13/17] sh: sh4 sh_clk_ops rename
+> [PATCH 14/17] sh: sh4a sh_clk_ops rename
+> [PATCH 15/17] sh: sh5 sh_clk_ops rename
+> [PATCH 16/17] sh: board sh_clk_ops rename
+> [PATCH 17/17] sh: remove clk_ops
+> 
+> This patch series renames struct clk_ops to struct sh_clk_ops across
+> arch/sh, arch/arm/mach-shmobile and drivers/sh. The reason for this
+> is to avoid name space collision with the common struct clk patches.
+> 
+> Merge order wise across the different trees, [PATCH 01/17] needs to be
+> first and [PATCH 17/17] last. In between any order is ok.
+> 
+> All SoCs with ARM, sh2, sh3, sh4 and sh4a are known to compile.
+> sh2a and sh5 are not compiled but survive basic grep testing.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
----
+Well, this is a hard one, because it has a potential to create many
+dependencies and I think some other patchsets already posted depend on it
+right?
 
- sound/soc/sh/fsi.c |    7 +++----
- 1 file changed, 3 insertions(+), 4 deletions(-)
+I'd handle that by creating a separate branch, based on the Linus' current,
+that will contain all of the patches in the $subject series and may be
+merged into other branches by me or Paul as needed.
 
-diff --git a/sound/soc/sh/fsi.c b/sound/soc/sh/fsi.c
-index 378cc5b..74ed2df 100644
---- a/sound/soc/sh/fsi.c
-+++ b/sound/soc/sh/fsi.c
-@@ -1001,11 +1001,10 @@ static void fsi_dma_do_tasklet(unsigned long data)
- 	sg_dma_address(&sg) = buf;
- 	sg_dma_len(&sg) = len;
- 
--	desc = chan->device->device_prep_slave_sg(chan, &sg, 1, dir,
--						  DMA_PREP_INTERRUPT |
--						  DMA_CTRL_ACK);
-+	desc = dmaengine_prep_slave_sg(chan, &sg, 1, dir,
-+				       DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
- 	if (!desc) {
--		dev_err(dai->dev, "device_prep_slave_sg() fail\n");
-+		dev_err(dai->dev, "dmaengine_prep_slave_sg() fail\n");
- 		return;
- 	}
- 
+What do you think?
+
+Rafael
+
+
+> ---
+> 
+>  arch/arm/mach-shmobile/clock-r8a7740.c |    6 +++---
+>  arch/arm/mach-shmobile/clock-r8a7779.c |    2 +-
+>  arch/arm/mach-shmobile/clock-sh7367.c  |    6 +++---
+>  arch/arm/mach-shmobile/clock-sh7372.c  |    8 ++++----
+>  arch/arm/mach-shmobile/clock-sh7377.c  |    6 +++---
+>  arch/arm/mach-shmobile/clock-sh73a0.c  |   12 ++++++------
+>  arch/sh/boards/mach-highlander/setup.c |    2 +-
+>  arch/sh/boards/mach-sdk7786/setup.c    |    2 +-
+>  arch/sh/include/asm/clock.h            |    2 +-
+>  arch/sh/kernel/cpu/sh2/clock-sh7619.c  |   12 ++++++------
+>  arch/sh/kernel/cpu/sh2a/clock-sh7201.c |   12 ++++++------
+>  arch/sh/kernel/cpu/sh2a/clock-sh7203.c |   12 ++++++------
+>  arch/sh/kernel/cpu/sh2a/clock-sh7206.c |   12 ++++++------
+>  arch/sh/kernel/cpu/sh3/clock-sh3.c     |   12 ++++++------
+>  arch/sh/kernel/cpu/sh3/clock-sh7705.c  |   12 ++++++------
+>  arch/sh/kernel/cpu/sh3/clock-sh7706.c  |   12 ++++++------
+>  arch/sh/kernel/cpu/sh3/clock-sh7709.c  |   12 ++++++------
+>  arch/sh/kernel/cpu/sh3/clock-sh7710.c  |   12 ++++++------
+>  arch/sh/kernel/cpu/sh3/clock-sh7712.c  |   10 +++++-----
+>  arch/sh/kernel/cpu/sh4/clock-sh4-202.c |    6 +++---
+>  arch/sh/kernel/cpu/sh4/clock-sh4.c     |   12 ++++++------
+>  arch/sh/kernel/cpu/sh4a/clock-sh7343.c |    4 ++--
+>  arch/sh/kernel/cpu/sh4a/clock-sh7366.c |    4 ++--
+>  arch/sh/kernel/cpu/sh4a/clock-sh7722.c |    4 ++--
+>  arch/sh/kernel/cpu/sh4a/clock-sh7723.c |    4 ++--
+>  arch/sh/kernel/cpu/sh4a/clock-sh7724.c |    6 +++---
+>  arch/sh/kernel/cpu/sh4a/clock-sh7757.c |    2 +-
+>  arch/sh/kernel/cpu/sh4a/clock-sh7763.c |   14 +++++++-------
+>  arch/sh/kernel/cpu/sh4a/clock-sh7770.c |   12 ++++++------
+>  arch/sh/kernel/cpu/sh4a/clock-sh7780.c |   14 +++++++-------
+>  arch/sh/kernel/cpu/sh4a/clock-sh7785.c |    2 +-
+>  arch/sh/kernel/cpu/sh4a/clock-sh7786.c |    2 +-
+>  arch/sh/kernel/cpu/sh4a/clock-shx3.c   |    2 +-
+>  arch/sh/kernel/cpu/sh5/clock-sh5.c     |   12 ++++++------
+>  drivers/sh/clk/cpg.c                   |   16 ++++++++--------
+>  include/linux/sh_clk.h                 |    7 ++++---
+>  36 files changed, 144 insertions(+), 143 deletions(-)
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> 
+
