@@ -1,25 +1,45 @@
-From: Anton Vorontsov <anton.vorontsov@linaro.org>
-Date: Sat, 24 Mar 2012 16:43:35 +0000
-Subject: Re: [PATCH 07/10] um: Should hold tasklist_lock while traversing processes
-Message-Id: <20120324164335.GA4955@lizard>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 06 Mar 2012 07:30:18 +0000
+Subject: [PATCH] ARM: mach-shmobile: Move sh7372 Mackerel external clk setup
+Message-Id: <20120306073018.27853.20666.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120324102609.GA28356@lizard> <20120324103030.GG29067@lizard>
- <1332593303.16159.28.camel@twins>
-In-Reply-To: <1332593303.16159.28.camel@twins>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Sat, Mar 24, 2012 at 01:48:23PM +0100, Peter Zijlstra wrote:
-> On Sat, 2012-03-24 at 14:30 +0400, Anton Vorontsov wrote:
-> > Traversing the tasks requires holding tasklist_lock, otherwise it
-> > is unsafe. 
-> 
-> No it doesn't, it either requires tasklist_lock or rcu_read_lock().
+From: Magnus Damm <damm@opensource.se>
 
-Well, currently the code does neither. :-)
+Move the board specific external clock setting for sh7372 Mackerel
+from machine_desc->sys_timer->init() to machine_desc->init_machine().
 
--- 
-Anton Vorontsov
-Email: cbouatmailru@gmail.com
+This is ground work for shmobile timer code consolidation.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/mach-shmobile/board-mackerel.c |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- 0004/arch/arm/mach-shmobile/board-mackerel.c
++++ work/arch/arm/mach-shmobile/board-mackerel.c	2012-03-06 12:43:35.000000000 +0900
+@@ -1348,6 +1348,9 @@ static void __init mackerel_init(void)
+ 	struct clk *clk;
+ 	int ret;
+ 
++	/* External clock source */
++	clk_set_rate(&sh7372_dv_clki_clk, 27000000);
++
+ 	sh7372_pinmux_init();
+ 
+ 	/* enable SCIFA0 */
+@@ -1555,9 +1558,6 @@ static void __init mackerel_timer_init(v
+ {
+ 	sh7372_clock_init();
+ 	shmobile_timer.init();
+-
+-	/* External clock source */
+-	clk_set_rate(&sh7372_dv_clki_clk, 27000000);
+ }
+ 
+ static struct sys_timer mackerel_timer = {
