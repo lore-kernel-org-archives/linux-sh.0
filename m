@@ -1,43 +1,114 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Fri, 16 Mar 2012 11:55:35 +0000
-Subject: Re: [PATCH 00/10 v3] mmc: tmio/sdhi: hotplug & PM
-Message-Id: <87obrwbw08.fsf@laptop.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 06 Mar 2012 04:24:08 +0000
+Subject: AP4EVB board couldn't boot on latest linus/master
+Message-Id: <87booawe57.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1328824636-10553-1-git-send-email-g.liakhovetski@gmx.de>
-	<m2obs6qugn.fsf@bob.laptop.org>
-In-Reply-To: <m2obs6qugn.fsf@bob.laptop.org> (Chris Ball's message of "Thu, 08
-	Mar 2012 23:17:12 -0500")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-mmc@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-Hi,
 
-On Thu, Mar 08 2012, Chris Ball wrote:
->> Guennadi Liakhovetski (10):
->>   mmc: simplify mmc_cd_gpio_request() by removing two parameters
->>   mmc: tmio: calculate the native hotplug condition only once
->>   mmc: tmio_mmc: support the generic MMC GPIO card hotplug helper
->>   mmc: sh_mobile_sdhi: pass card hotplug GPIO number to TMIO MMC
->>   ARM: mach-shmobile: convert mackerel to use the generic MMC GPIO
->>     hotplug helper
->>   ARM: mach-shmobile: convert ag5evm to use the generic MMC GPIO
->>     hotplug helper
->>   mmc: tmio_mmc: power status flag doesn't have to be exposed in
->>     platform data
->>   mmc: tmio_mmc: remove unused sdio_irq_enabled flag
->>   mmc: sh_mobile_sdhi: do not manage PM clocks manually
->>   mmc: tmio: cosmetic: prettify the tmio_mmc_set_ios() function
->
-> Looks like you didn't get any ACKs for these, and the ARM patches no
-> longer apply -- would you like me to take all but the two ARM patches
-> and leave those to you?  (Does that result in working systems?)
+Hi SH ML
 
-I've applied all of these except 5/6 to mmc-next for 3.4 now, thanks.
+Cc Laurent, Rafael
 
-- Chris.
--- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
+Could you please give me your help ?
+My AP4EVB board couldn't boot on latest linus/master branch.
+
+I tried debug/bisect for it, and noticed that it has 2 issues.
+It were
+
+1) sh_mobile_lcdc/fbcon seems has dead lock issue
+2) PM runtime issue (?)
+
+But mackerel board works well on same tree.
+So, I guess ap4evb.c is missing something.
+
+======================lcdc/fbcon dead lock
+======================
+This issue happen from this merge commit
+
+	----------------------------------------------
+	commit 51be08419dc86c72486ac556aa39bc01026a403d
+	Merge: ec8013b f787f32
+	Author: Linus Torvalds <torvalds@linux-foundation.org>
+	Date:   Sat Jan 14 15:11:19 2012 -0800
+
+	    Merge branch 'fbdev-next' of git://github.com/schandinat/linux-2.6
+    
+	    * 'fbdev-next' of git://github.com/schandinat/linux-2.6: (175 commits)
+	      module_param: make bool parameters really bool (drivers/video/i810)
+	      Revert "atmel_lcdfb: Adjust HFP calculation so it matches the manual."
+	      ...
+	----------------------------------------------
+
+The kernel log was
+
+	----------------------------------------------
+	...
+	io scheduler noop registered (default)                                          
+	sh_mobile_lcdc_fb sh_mobile_lcdc_fb.1: start latency exceeded, new value 17416 s
+	arm_vmregion_alloc: allocation too big (requested 0x7e9000)                     
+	sh_mobile_lcdc_fb sh_mobile_lcdc_fb.1: unable to allocate buffer                
+	sh_mobile_lcdc_fb: probe of sh_mobile_lcdc_fb.1 failed with error -12           
+	sh_mobile_lcdc_fb sh_mobile_lcdc_fb.0: start latency exceeded, new value 3750 ns
+        (dead lock)
+	----------------------------------------------
+
+I'm not sure why, but console_lock() seems dead lock on 2nd lcdc.
+This is the trace
+
+sh_mobile_lcdc_probe()
+ - register_framebuffer()
+  - do_register_framebuffer()
+   - fb_notifier_call_chain(FB_EVENT_FB_REGISTERED, xx)
+    - fbcon_event_notify()
+     - fbcon_fb_registered()
+      - fbcon_takeover()
+       - take_over_console()
+        - bind_con_driver()
+         - console_lock()    <== dead lock
+
+I could skip this issue by removing CONFIG_FRAMEBUFFER_CONSOLE from my .config
+
+ap4evb lcdc_info settings are less than mackerel.
+(note, ap4evb_init adds more settings for it)
+Does it missing something ?
+
+======================PM runtime (?) dead
+======================
+I got 2nd issue after skipping above issue.
+It seems happen from this commit
+
+	----------------------------------------------
+	commit 0140d8bd47f798d55c3720f7fcade9e50929a5e5
+	Author: Rafael J. Wysocki <rjw@sisk.pl>
+	Date:   Thu Dec 1 00:02:17 2011 +0100
+
+	    PM / Domains: Automatically update overoptimistic latency information
+    
+	    Measure the time of execution of the .stop(), .start(), .save_state()
+	    and .restore_state() PM domain device callbacks and if the result
+	    ...
+	----------------------------------------------
+
+The kernel log is
+
+	----------------------------------------------
+	...
+	sh_mobile_lcdc_fb sh_mobile_lcdc_fb.0: start latency exceeded, new value 3834 ns
+	graphics fb0: registered sh_mobile_lcdc_fb/mainlcd as 544x961 16bpp.            
+	SuperH SCI(F) driver initialized                                                
+	sh-sci.0: ttySC0 at MMIO 0xe6c40000 (irq = 80) is a scifa                       
+	sh-sci sh-sci.0: start latency exceeded, new value 4666 ns                      
+	console [ttySC0] enabled, bootconsole disabled                                  
+	console [ttySC0] enabled, bootconsole disabled    
+	(dead)
+	----------------------------------------------
+
+what is required for ap4evb ?
+
+Best regards
+---
+Kuninori Morimoto
