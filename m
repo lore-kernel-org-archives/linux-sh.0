@@ -1,51 +1,91 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 01 Mar 2012 15:07:28 +0000
-Subject: [PATCH v2 15/57] arm: mach-shmobile: Don't initialize the hdmi_info lcd_chan field
-Message-Id: <1330614490-14149-16-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 06 Mar 2012 08:36:22 +0000
+Subject: [PATCH 02/08] ARM: mach-shmobile: sh7367 and G3EVM timer rework
+Message-Id: <20120306083622.8131.5018.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-The field is unused and will be removed. Don't initialize it.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Move the SoC specific timer code from G3EVM board code
+to sh7367 setup code. This makes is possible to share
+the SoC specific timer code across boards and it also
+removes the need for a board specific timer structure.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c   |    3 ---
- arch/arm/mach-shmobile/board-mackerel.c |    3 ---
- 2 files changed, 0 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 407a4b6..21f4fa8 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -816,10 +816,7 @@ static struct platform_device fsi_ak4643_device = {
- static long ap4evb_clk_optimize(unsigned long target, unsigned long *best_freq,
- 				unsigned long *parent_freq);
- 
--static struct sh_mobile_lcdc_info sh_mobile_lcdc1_info;
--
- static struct sh_mobile_hdmi_info hdmi_info = {
--	.lcd_chan = &sh_mobile_lcdc1_info.ch[0],
- 	.flags = HDMI_SND_SRC_SPDIF,
- 	.clk_optimize_parent = ap4evb_clk_optimize,
- };
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 5a96d81..52b7cb7 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -432,10 +432,7 @@ static struct platform_device lcdc_device = {
- };
- 
- /* HDMI */
--static struct sh_mobile_lcdc_info hdmi_lcdc_info;
--
- static struct sh_mobile_hdmi_info hdmi_info = {
--	.lcd_chan	= &hdmi_lcdc_info.ch[0],
- 	.flags		= HDMI_SND_SRC_SPDIF,
- };
- 
--- 
-1.7.3.4
+ Depends on the patch:
+ "[PATCH 01/08] ARM: mach-shmobile: add shmobile_earlytimer_init()"
 
+ arch/arm/mach-shmobile/board-g3evm.c  |   13 +------------
+ arch/arm/mach-shmobile/setup-sh7367.c |   10 ++++++++++
+ 2 files changed, 11 insertions(+), 12 deletions(-)
+
+--- 0008/arch/arm/mach-shmobile/board-g3evm.c
++++ work/arch/arm/mach-shmobile/board-g3evm.c	2012-03-06 12:56:44.000000000 +0900
+@@ -37,7 +37,6 @@
+ #include <mach/common.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+-#include <asm/mach/time.h>
+ 
+ /*
+  * IrDA
+@@ -332,21 +331,11 @@ static void __init g3evm_init(void)
+ 	platform_add_devices(g3evm_devices, ARRAY_SIZE(g3evm_devices));
+ }
+ 
+-static void __init g3evm_timer_init(void)
+-{
+-	sh7367_clock_init();
+-	shmobile_timer.init();
+-}
+-
+-static struct sys_timer g3evm_timer = {
+-	.init		= g3evm_timer_init,
+-};
+-
+ MACHINE_START(G3EVM, "g3evm")
+ 	.map_io		= sh7367_map_io,
+ 	.init_early	= sh7367_add_early_devices,
+ 	.init_irq	= sh7367_init_irq,
+ 	.handle_irq	= shmobile_handle_irq_intc,
+ 	.init_machine	= g3evm_init,
+-	.timer		= &g3evm_timer,
++	.timer		= &shmobile_timer,
+ MACHINE_END
+--- 0008/arch/arm/mach-shmobile/setup-sh7367.c
++++ work/arch/arm/mach-shmobile/setup-sh7367.c	2012-03-06 12:56:54.000000000 +0900
+@@ -33,6 +33,7 @@
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/map.h>
++#include <asm/mach/time.h>
+ 
+ static struct map_desc sh7367_io_desc[] __initdata = {
+ 	/* create a 1:1 entity map for 0xe6xxxxxx
+@@ -454,6 +455,12 @@ void __init sh7367_add_standard_devices(
+ 			    ARRAY_SIZE(sh7367_devices));
+ }
+ 
++static void __init sh7367_earlytimer_init(void)
++{
++	sh7367_clock_init();
++	shmobile_earlytimer_init();
++}
++
+ #define SYMSTPCR2 0xe6158048
+ #define SYMSTPCR2_CMT1 (1 << 29)
+ 
+@@ -467,4 +474,7 @@ void __init sh7367_add_early_devices(voi
+ 
+ 	/* setup early console here as well */
+ 	shmobile_setup_console();
++
++	/* override timer setup with soc-specific code */
++	shmobile_timer.init = sh7367_earlytimer_init;
+ }
