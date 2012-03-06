@@ -1,29 +1,46 @@
-From: Catalin Marinas <catalin.marinas@arm.com>
-Date: Mon, 26 Mar 2012 10:38:54 +0000
-Subject: Re: [PATCH] ARM: fixup section mismatch warning for alloc_init_pud()
-Message-Id: <20120326103854.GG30455@arm.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 06 Mar 2012 08:36:06 +0000
+Subject: [PATCH 00/08] mach-shmobile timer consolidation
+Message-Id: <20120306083606.8131.92041.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87398zswkj.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87398zswkj.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Mar 23, 2012 at 05:41:52AM +0000, Kuninori Morimoto wrote:
-> This patch fixup below warning
-> 
-> WARNING: arch/arm/mm/built-in.o(.text+0x2320):
-> Section mismatch in reference from the function alloc_init_pud()
-> to the function .init.text:alloc_init_section()
-> The function alloc_init_pud() references
-> the function __init alloc_init_section().
-> This is often because alloc_init_pud lacks a __init
-> annotation or the annotation of alloc_init_section is wrong.
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+mach-shmobile timer consolidation
 
-Acked-by: Catalin Marinas <catalin.marinas@arm.com>
+[PATCH 01/08] ARM: mach-shmobile: add shmobile_earlytimer_init()
+[PATCH 02/08] ARM: mach-shmobile: sh7367 and G3EVM timer rework
+[PATCH 03/08] ARM: mach-shmobile: sh7377 and G4EVM timer rework
+[PATCH 04/08] ARM: mach-shmobile: sh7372, AP4EVB and Mackerel timer rework
+[PATCH 05/08] ARM: mach-shmobile: sh73a0, AG5EVM and Kota2 timer rework
+[PATCH 06/08] ARM: mach-shmobile: r8a7740 and Bonito timer rework
+[PATCH 07/08] ARM: mach-shmobile: r8a7779 and Marzen timer rework
+[PATCH 08/08] ARM: mach-shmobile: default to no earlytimer
 
--- 
-Catalin
+These patches rework the shmobile timer code to make the earlytimer
+opt-in instead of default. The exisitng in-tree boards will keep on
+using earlytimer as usual, but upcoming DT-based generic support
+can with these patches use the regular driver model for timers.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/mach-shmobile/board-ag5evm.c        |   14 +-------------
+ arch/arm/mach-shmobile/board-ap4evb.c        |   13 +------------
+ arch/arm/mach-shmobile/board-bonito.c        |   18 +++++++++++-------
+ arch/arm/mach-shmobile/board-g3evm.c         |   13 +------------
+ arch/arm/mach-shmobile/board-g4evm.c         |   13 +------------
+ arch/arm/mach-shmobile/board-kota2.c         |   13 +------------
+ arch/arm/mach-shmobile/board-mackerel.c      |   13 +------------
+ arch/arm/mach-shmobile/board-marzen.c        |   14 +-------------
+ arch/arm/mach-shmobile/include/mach/common.h |    1 +
+ arch/arm/mach-shmobile/setup-r8a7740.c       |   10 ++++++++++
+ arch/arm/mach-shmobile/setup-r8a7779.c       |   10 ++++++++++
+ arch/arm/mach-shmobile/setup-sh7367.c        |   10 ++++++++++
+ arch/arm/mach-shmobile/setup-sh7372.c        |   10 ++++++++++
+ arch/arm/mach-shmobile/setup-sh7377.c        |   10 ++++++++++
+ arch/arm/mach-shmobile/setup-sh73a0.c        |   10 ++++++++++
+ arch/arm/mach-shmobile/timer.c               |    8 ++++++--
+ 16 files changed, 85 insertions(+), 95 deletions(-)
