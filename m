@@ -1,129 +1,127 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 15 Mar 2012 17:43:51 +0000
-Subject: [RFC/PATCH 3/6] sh_mobile_meram: Add direct MERAM allocation API
-Message-Id: <1331833434-11934-4-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 06 Mar 2012 08:36:37 +0000
+Subject: [PATCH 04/08] ARM: mach-shmobile: sh7372, AP4EVB and Mackerel timer rework
+Message-Id: <20120306083637.8131.67504.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-The API can be used to allocate and free MERAM blocks directly, without
-going through ICBs.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Move the SoC specific timer code from AP4EVB and Mackerel
+to sh7372 setup code. This makes is possible to share
+the SoC specific timer code across boards and it also
+removes the need for a board specific timer structure.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/video/sh_mobile_meram.c |   39 +++++++++++++++++++++++++++++++++++----
- include/video/sh_mobile_meram.h |   16 ++++++++++++++++
- 2 files changed, 51 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
-index 843fb29..ae9dc3b 100644
---- a/drivers/video/sh_mobile_meram.c
-+++ b/drivers/video/sh_mobile_meram.c
-@@ -194,6 +194,21 @@ static inline unsigned long meram_read_reg(void __iomem *base, unsigned int off)
+ Depends on the patches:
+ "[PATCH] ARM: mach-shmobile: Move sh7372 AP4EVB external clk setup"
+ "[PATCH] ARM: mach-shmobile: Move sh7372 Mackerel external clk setup"
+ "[PATCH 01/08] ARM: mach-shmobile: add shmobile_earlytimer_init()"
+
+ arch/arm/mach-shmobile/board-ap4evb.c   |   13 +------------
+ arch/arm/mach-shmobile/board-mackerel.c |   13 +------------
+ arch/arm/mach-shmobile/setup-sh7372.c   |   10 ++++++++++
+ 3 files changed, 12 insertions(+), 24 deletions(-)
+
+--- 0033/arch/arm/mach-shmobile/board-ap4evb.c
++++ work/arch/arm/mach-shmobile/board-ap4evb.c	2012-03-06 12:53:01.000000000 +0900
+@@ -61,7 +61,6 @@
+ 
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+-#include <asm/mach/time.h>
+ #include <asm/setup.h>
+ 
+ /*
+@@ -1436,21 +1435,11 @@ static void __init ap4evb_init(void)
+ 	pm_clk_add(&lcdc1_device.dev, "hdmi");
  }
  
- /* -----------------------------------------------------------------------------
-+ * MERAM allocation and free
-+ */
-+
-+static unsigned long meram_alloc(struct sh_mobile_meram_priv *priv, size_t size)
+-static void __init ap4evb_timer_init(void)
+-{
+-	sh7372_clock_init();
+-	shmobile_timer.init();
+-}
+-
+-static struct sys_timer ap4evb_timer = {
+-	.init		= ap4evb_timer_init,
+-};
+-
+ MACHINE_START(AP4EVB, "ap4evb")
+ 	.map_io		= sh7372_map_io,
+ 	.init_early	= sh7372_add_early_devices,
+ 	.init_irq	= sh7372_init_irq,
+ 	.handle_irq	= shmobile_handle_irq_intc,
+ 	.init_machine	= ap4evb_init,
+-	.timer		= &ap4evb_timer,
++	.timer		= &shmobile_timer,
+ MACHINE_END
+--- 0032/arch/arm/mach-shmobile/board-mackerel.c
++++ work/arch/arm/mach-shmobile/board-mackerel.c	2012-03-06 12:52:39.000000000 +0900
+@@ -57,7 +57,6 @@
+ #include <mach/sh7372.h>
+ 
+ #include <asm/mach/arch.h>
+-#include <asm/mach/time.h>
+ #include <asm/mach-types.h>
+ 
+ /*
+@@ -1554,21 +1553,11 @@ static void __init mackerel_init(void)
+ 	pm_clk_add(&hdmi_lcdc_device.dev, "hdmi");
+ }
+ 
+-static void __init mackerel_timer_init(void)
+-{
+-	sh7372_clock_init();
+-	shmobile_timer.init();
+-}
+-
+-static struct sys_timer mackerel_timer = {
+-	.init		= mackerel_timer_init,
+-};
+-
+ MACHINE_START(MACKEREL, "mackerel")
+ 	.map_io		= sh7372_map_io,
+ 	.init_early	= sh7372_add_early_devices,
+ 	.init_irq	= sh7372_init_irq,
+ 	.handle_irq	= shmobile_handle_irq_intc,
+ 	.init_machine	= mackerel_init,
+-	.timer		= &mackerel_timer,
++	.timer		= &shmobile_timer,
+ MACHINE_END
+--- 0004/arch/arm/mach-shmobile/setup-sh7372.c
++++ work/arch/arm/mach-shmobile/setup-sh7372.c	2012-03-06 12:52:48.000000000 +0900
+@@ -37,6 +37,7 @@
+ #include <asm/mach/map.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
++#include <asm/mach/time.h>
+ 
+ static struct map_desc sh7372_io_desc[] __initdata = {
+ 	/* create a 1:1 entity map for 0xe6xxxxxx
+@@ -1064,6 +1065,12 @@ void __init sh7372_add_standard_devices(
+ 	sh7372_add_device_to_domain(&sh7372_a4r, &jpu_device);
+ }
+ 
++static void __init sh7372_earlytimer_init(void)
 +{
-+	return gen_pool_alloc(priv->pool, size);
++	sh7372_clock_init();
++	shmobile_earlytimer_init();
 +}
 +
-+static void meram_free(struct sh_mobile_meram_priv *priv, unsigned long mem,
-+		       size_t size)
-+{
-+	gen_pool_free(priv->pool, mem, size);
-+}
-+
-+/* -----------------------------------------------------------------------------
-  * LCDC cache planes allocation, init, cleanup and free
-  */
- 
-@@ -215,7 +230,7 @@ static int meram_plane_alloc(struct sh_mobile_meram_priv *priv,
- 		return -ENOMEM;
- 	plane->marker = &priv->icbs[idx];
- 
--	mem = gen_pool_alloc(priv->pool, size * 1024);
-+	mem = meram_alloc(priv, size * 1024);
- 	if (mem = 0)
- 		return -ENOMEM;
- 
-@@ -232,8 +247,8 @@ static int meram_plane_alloc(struct sh_mobile_meram_priv *priv,
- static void meram_plane_free(struct sh_mobile_meram_priv *priv,
- 			     struct sh_mobile_meram_fb_plane *plane)
+ void __init sh7372_add_early_devices(void)
  {
--	gen_pool_free(priv->pool, priv->meram + plane->marker->offset,
--		      plane->marker->size * 1024);
-+	meram_free(priv, priv->meram + plane->marker->offset,
-+		   plane->marker->size * 1024);
+ 	early_platform_add_devices(sh7372_early_devices,
+@@ -1071,4 +1078,7 @@ void __init sh7372_add_early_devices(voi
  
- 	__clear_bit(plane->marker->index, &priv->used_icb);
- 	__clear_bit(plane->cache->index, &priv->used_icb);
-@@ -385,9 +400,25 @@ static void meram_plane_cleanup(struct sh_mobile_meram_priv *priv,
+ 	/* setup early console here as well */
+ 	shmobile_setup_console();
++
++	/* override timer setup with soc-specific code */
++	shmobile_timer.init = sh7372_earlytimer_init;
  }
- 
- /* -----------------------------------------------------------------------------
-- * LCDC cache operations
-+ * MERAM operations
-  */
- 
-+unsigned long sh_mobile_meram_alloc(struct sh_mobile_meram_info *pdata,
-+				    size_t size)
-+{
-+	struct sh_mobile_meram_priv *priv = pdata->priv;
-+
-+	return meram_alloc(priv, size);
-+}
-+
-+void sh_mobile_meram_free(struct sh_mobile_meram_info *pdata, unsigned long mem,
-+			  size_t size)
-+{
-+	struct sh_mobile_meram_priv *priv = pdata->priv;
-+
-+	meram_free(priv, mem, size);
-+}
-+
- /* Allocate memory for the ICBs and mark them as used. */
- static struct sh_mobile_meram_fb_cache *
- meram_cache_alloc(struct sh_mobile_meram_priv *priv,
-diff --git a/include/video/sh_mobile_meram.h b/include/video/sh_mobile_meram.h
-index 1134837..062e6e7 100644
---- a/include/video/sh_mobile_meram.h
-+++ b/include/video/sh_mobile_meram.h
-@@ -38,6 +38,10 @@ struct sh_mobile_meram_cfg {
- 
- #if defined(CONFIG_FB_SH_MOBILE_MERAM) || \
-     defined(CONFIG_FB_SH_MOBILE_MERAM_MODULE)
-+unsigned long sh_mobile_meram_alloc(struct sh_mobile_meram_info *meram_dev,
-+				    size_t size);
-+void sh_mobile_meram_free(struct sh_mobile_meram_info *meram_dev,
-+			  unsigned long mem, size_t size);
- void *sh_mobile_meram_cache_alloc(struct sh_mobile_meram_info *dev,
- 				  const struct sh_mobile_meram_cfg *cfg,
- 				  unsigned int xres, unsigned int yres,
-@@ -50,6 +54,18 @@ void sh_mobile_meram_cache_update(struct sh_mobile_meram_info *dev, void *data,
- 				  unsigned long *icb_addr_y,
- 				  unsigned long *icb_addr_c);
- #else
-+static inline unsigned long
-+sh_mobile_meram_alloc(struct sh_mobile_meram_info *meram_dev, size_t size)
-+{
-+	return 0;
-+}
-+
-+static inline void
-+sh_mobile_meram_free(struct sh_mobile_meram_info *meram_dev,
-+		     unsigned long mem, size_t size)
-+{
-+}
-+
- static inline void *
- sh_mobile_meram_cache_alloc(struct sh_mobile_meram_info *dev,
- 			    const struct sh_mobile_meram_cfg *cfg,
--- 
-1.7.3.4
-
