@@ -1,60 +1,93 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Thu, 01 Mar 2012 09:48:37 +0000
-Subject: [PATCH v3 3/7] mtd: sh_flctl: Expand the READID command to 8 bytes
-Message-Id: <1330595321-2728-3-git-send-email-hechtb@gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 06 Mar 2012 08:37:01 +0000
+Subject: [PATCH 07/08] ARM: mach-shmobile: r8a7779 and Marzen timer rework
+Message-Id: <20120306083701.8131.29019.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1330595321-2728-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1330595321-2728-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-mtd@lists.infradead.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pichart <laurent.pinchart@ideasonboard.com>
+To: linux-sh@vger.kernel.org
 
-The nand base code wants to read out 8 bytes in the READID command.
-Reflect this in the driver code.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+Move the SoC specific timer code from Marzen board code
+to r8a7779 setup code. This makes is possible to share
+the SoC specific timer code across boards and it also
+removes the need for a board specific timer structure.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
-changelog: There was an inconsistency between patch 2/7 and 3/7. An empty_fifo() call has been moved around to correct it.
 
- drivers/mtd/nand/sh_flctl.c |   12 +++++++++---
- 1 files changed, 9 insertions(+), 3 deletions(-)
+ Depends on the patch:
+ "[PATCH 01/08] ARM: mach-shmobile: add shmobile_earlytimer_init()"
 
-diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
-index 9291066..407acb5 100644
---- a/drivers/mtd/nand/sh_flctl.c
-+++ b/drivers/mtd/nand/sh_flctl.c
-@@ -320,6 +320,7 @@ static void set_cmd_regs(struct mtd_info *mtd, uint32_t cmd, uint32_t flcmcdr_va
- 		break;
- 	case NAND_CMD_READID:
- 		flcmncr_val &= ~SNAND_E;
-+		flcmdcr_val |= CDSRC_E;
- 		addr_len_bytes = ADRCNT_1;
- 		break;
- 	case NAND_CMD_STATUS:
-@@ -559,13 +560,18 @@ static void flctl_cmdfunc(struct mtd_info *mtd, unsigned int command,
+ arch/arm/mach-shmobile/board-marzen.c  |   14 +-------------
+ arch/arm/mach-shmobile/setup-r8a7779.c |   10 ++++++++++
+ 2 files changed, 11 insertions(+), 13 deletions(-)
+
+--- 0007/arch/arm/mach-shmobile/board-marzen.c
++++ work/arch/arm/mach-shmobile/board-marzen.c	2012-03-06 13:23:54.000000000 +0900
+@@ -33,7 +33,6 @@
+ #include <mach/common.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+-#include <asm/mach/time.h>
+ #include <asm/hardware/gic.h>
+ #include <asm/traps.h>
  
- 	case NAND_CMD_READID:
- 		set_cmd_regs(mtd, command, command);
--		set_addr(mtd, 0, 0);
+@@ -91,17 +90,6 @@ static void __init marzen_init(void)
+ 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
+ }
  
--		flctl->read_bytes = 4;
-+		/* READID is always performed using an 8-bit bus */
-+		if (flctl->chip.options & NAND_BUSWIDTH_16)
-+			column <<= 1;
-+		set_addr(mtd, column, 0);
+-static void __init marzen_timer_init(void)
+-{
+-	r8a7779_clock_init();
+-	shmobile_timer.init();
+-	return;
+-}
+-
+-struct sys_timer marzen_timer = {
+-	.init	= marzen_timer_init,
+-};
+-
+ MACHINE_START(MARZEN, "marzen")
+ 	.map_io		= r8a7779_map_io,
+ 	.init_early	= r8a7779_add_early_devices,
+@@ -109,5 +97,5 @@ MACHINE_START(MARZEN, "marzen")
+ 	.init_irq	= r8a7779_init_irq,
+ 	.handle_irq	= gic_handle_irq,
+ 	.init_machine	= marzen_init,
+-	.timer		= &marzen_timer,
++	.timer		= &shmobile_timer,
+ MACHINE_END
+--- 0028/arch/arm/mach-shmobile/setup-r8a7779.c
++++ work/arch/arm/mach-shmobile/setup-r8a7779.c	2012-03-06 13:23:57.000000000 +0900
+@@ -33,6 +33,7 @@
+ #include <mach/common.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
++#include <asm/mach/time.h>
+ #include <asm/mach/map.h>
+ #include <asm/hardware/cache-l2x0.h>
+ 
+@@ -260,6 +261,12 @@ void __init r8a7779_add_standard_devices
+ 			    ARRAY_SIZE(r8a7779_late_devices));
+ }
+ 
++static void __init r8a7779_earlytimer_init(void)
++{
++	r8a7779_clock_init();
++	shmobile_earlytimer_init();
++}
 +
-+		flctl->read_bytes = 8;
- 		writel(flctl->read_bytes, FLDTCNTR(flctl)); /* set read size */
- 		empty_fifo(flctl);
- 		start_translation(flctl);
--		read_datareg(flctl, 0);	/* read and end */
-+		read_fiforeg(flctl, flctl->read_bytes, 0);
-+		wait_completion(flctl);
- 		break;
- 
- 	case NAND_CMD_ERASE1:
--- 
-1.7.5.4
-
+ void __init r8a7779_add_early_devices(void)
+ {
+ 	early_platform_add_devices(r8a7779_early_devices,
+@@ -280,4 +287,7 @@ void __init r8a7779_add_early_devices(vo
+ 	 * As a final step pass earlyprint=sh-sci.2,115200 on the kernel
+ 	 * command line in case of the marzen board.
+ 	 */
++
++	/* override timer setup with soc-specific code */
++	shmobile_timer.init = r8a7779_earlytimer_init;
+ }
