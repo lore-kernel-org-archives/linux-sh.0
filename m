@@ -1,36 +1,62 @@
-From: Peter Zijlstra <a.p.zijlstra@chello.nl>
-Date: Sat, 24 Mar 2012 12:43:41 +0000
-Subject: Re: [PATCH 01/10] cpu: Introduce clear_tasks_mm_cpumask() helper
-Message-Id: <1332593021.16159.27.camel@twins>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date: Tue, 06 Mar 2012 05:07:09 +0000
+Subject: [PATCH] sh/next: Fix build fail by asm/system.h in asm/bitops.h
+Message-Id: <1331010429-29574-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120324102609.GA28356@lizard> <20120324102751.GA29067@lizard>
-In-Reply-To: <20120324102751.GA29067@lizard>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Sat, 2012-03-24 at 14:27 +0400, Anton Vorontsov wrote:
-> +void clear_tasks_mm_cpumask(int cpu)
-> +{
-> +       struct task_struct *p;
-> +
-> +       read_lock(&tasklist_lock);
-> +       for_each_process(p) {
-> +               struct task_struct *t;
-> +
-> +               t = find_lock_task_mm(p);
-> +               if (!t)
-> +                       continue;
-> +               cpumask_clear_cpu(cpu, mm_cpumask(t->mm));
-> +               task_unlock(t);
-> +       }
-> +       read_unlock(&tasklist_lock);
-> +} 
+Other files are not done include definitely by asm/system.h made
+include in asm/bitops.h.
+This patch remove asm/system.h from asm/bitops.h.
 
-Why bother with the tasklist_lock at all anymore, afaict you could use
-rcu_read_lock() here. This all is called after the cpu is taken down and
-marked offline, so its not like new tasks will ever get this cpu set in
-their mm mask.
+-----
+LANG=C make ARCH=sh CROSS_COMPILE=sh4-linux-gnu-
+  CHK     include/linux/version.h
+  CHK     include/generated/utsrelease.h
+make[1]: `include/generated/machtypes.h' is up to date.
+  CC      arch/sh/kernel/asm-offsets.s
+In file included from include/asm-generic/getorder.h:7,
+               from /home/iwamatsu/work/kernel/sh-2.6-devel/arch/sh/include/asm/page.h:187,
+               from /home/iwamatsu/work/kernel/sh-2.6-devel/arch/sh/include/asm/mmu.h:38,
+               from /home/iwamatsu/work/kernel/sh-2.6-devel/arch/sh/include/asm/system_32.h:5,
+               from /home/iwamatsu/work/kernel/sh-2.6-devel/arch/sh/include/asm/system.h:179,
+               from /home/iwamatsu/work/kernel/sh-2.6-devel/arch/sh/include/asm/bitops.h:10,
+               from include/linux/bitops.h:22,
+               from include/linux/thread_info.h:52,
+               from include/linux/preempt.h:9,
+               from include/linux/spinlock.h:50,
+               from include/linux/mmzone.h:7,
+               from include/linux/gfp.h:4,
+               from include/linux/mm.h:8,
+               from arch/sh/kernel/asm-offsets.c:13:
+include/linux/log2.h: In function '__ilog2_u32':
+include/linux/log2.h:34: error: implicit declaration of function 'fls'
+include/linux/log2.h: In function '__ilog2_u64':
+include/linux/log2.h:42: error: implicit declaration of function 'fls64'
+include/linux/log2.h: In function '__roundup_pow_of_two':
+include/linux/log2.h:63: error: implicit declaration of function 'fls_long'
+-----
 
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+---
+ arch/sh/include/asm/bitops.h |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+diff --git a/arch/sh/include/asm/bitops.h b/arch/sh/include/asm/bitops.h
+index 90fa3e4..ea8706d 100644
+--- a/arch/sh/include/asm/bitops.h
++++ b/arch/sh/include/asm/bitops.h
+@@ -7,7 +7,6 @@
+ #error only <linux/bitops.h> can be included directly
+ #endif
+ 
+-#include <asm/system.h>
+ /* For __swab32 */
+ #include <asm/byteorder.h>
+ 
+-- 
+1.7.9.1
 
