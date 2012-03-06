@@ -1,39 +1,52 @@
-From: Adrian McMenamin <lkmladrian@gmail.com>
-Date: Sat, 24 Mar 2012 16:55:53 +0000
-Subject: [PATCH] Add VMUFAT file system support (v2)
-Message-Id: <CAN628AH-h=G3e7U8-Tmcok0dtAQd1+GBfvTP72ecB5J17vuXcg@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 06 Mar 2012 08:36:14 +0000
+Subject: [PATCH 01/08] ARM: mach-shmobile: add shmobile_earlytimer_init()
+Message-Id: <20120306083614.8131.7386.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: viro@zeniv.linux.org.uk, LKML <linux-kernel@vger.kernel.org>, linux-fsdevel@vger.kernel.org
-Cc: Linux-sh <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-Sega Dreamcasts come with a "visual memory unit" (VMU) with 128KB of
-flash memory in a FAT type filesystem. This patch adds support for
-this filesystem to the Linux kernel.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Adrian McMenamin <adrianmcmenamin@gmail.com>
+Add shmobile_earlytimer_init() that can be used to
+enable the earlytimer probing from the SoC code.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- Documentation/filesystems/vmufat.txt |   83 ++++
- fs/Kconfig                           |    1 +
- fs/Makefile                          |    1 +
- fs/vmufat/Kconfig                    |   14 +
- fs/vmufat/Makefile                   |    7 +
- fs/vmufat/inode.c                    |  903 ++++++++++++++++++++++++++++++++++
- fs/vmufat/super.c                    |  522 ++++++++++++++++++++
- fs/vmufat/vmufat.h                   |  115 +++++
- include/linux/magic.h                |    1 +
- 9 files changed, 1647 insertions(+), 0 deletions(-)
- create mode 100644 Documentation/filesystems/vmufat.txt
- create mode 100644 fs/vmufat/Kconfig
- create mode 100644 fs/vmufat/Makefile
- create mode 100644 fs/vmufat/inode.c
- create mode 100644 fs/vmufat/super.c
- create mode 100644 fs/vmufat/vmufat.h
+ arch/arm/mach-shmobile/include/mach/common.h |    1 +
+ arch/arm/mach-shmobile/timer.c               |    7 ++++++-
+ 2 files changed, 7 insertions(+), 1 deletion(-)
 
-
-Patch may be pulled/reviewed at:
-
-https://github.com/mcmenaminadrian/vmufat/commit/47305b24487ce6d6d9264bddf2ccf75e5123c1b1
+--- 0026/arch/arm/mach-shmobile/include/mach/common.h
++++ work/arch/arm/mach-shmobile/include/mach/common.h	2012-03-06 12:40:16.000000000 +0900
+@@ -1,6 +1,7 @@
+ #ifndef __ARCH_MACH_COMMON_H
+ #define __ARCH_MACH_COMMON_H
+ 
++extern void shmobile_earlytimer_init(void);
+ extern struct sys_timer shmobile_timer;
+ extern void shmobile_setup_console(void);
+ extern void shmobile_secondary_vector(void);
+--- 0001/arch/arm/mach-shmobile/timer.c
++++ work/arch/arm/mach-shmobile/timer.c	2012-03-06 12:40:02.000000000 +0900
+@@ -36,11 +36,16 @@ static void __init shmobile_late_time_in
+ 	early_platform_driver_probe("earlytimer", 2, 0);
+ }
+ 
+-static void __init shmobile_timer_init(void)
++void __init shmobile_earlytimer_init(void)
+ {
+ 	late_time_init = shmobile_late_time_init;
+ }
+ 
++static void __init shmobile_timer_init(void)
++{
++	shmobile_earlytimer_init();
++}
++
+ struct sys_timer shmobile_timer = {
+ 	.init		= shmobile_timer_init,
+ };
