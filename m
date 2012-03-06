@@ -1,73 +1,98 @@
-From: Robert Lee <rob.lee@linaro.org>
-Date: Thu, 01 Mar 2012 00:42:56 +0000
-Subject: [PATCH v7 7/9] ARM: omap: Consolidate OMAP4 time keeping and irq enable
-Message-Id: <1330562578-3410-8-git-send-email-rob.lee@linaro.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 06 Mar 2012 08:36:53 +0000
+Subject: [PATCH 06/08] ARM: mach-shmobile: r8a7740 and Bonito timer rework
+Message-Id: <20120306083653.8131.8509.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1330562578-3410-1-git-send-email-rob.lee@linaro.org>
-In-Reply-To: <1330562578-3410-1-git-send-email-rob.lee@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Enable core cpuidle timekeeping and irq enabling and remove that
-handling from this code.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Robert Lee <rob.lee@linaro.org>
+Copy the SoC specific timer code from Bonito board code
+to r8a7740 setup code. This makes is possible to share
+the SoC specific timer code across boards. The Bonito
+specific timer setup code tied to the FPGA is kept as-is.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-omap2/cpuidle44xx.c |   21 +++------------------
- 1 files changed, 3 insertions(+), 18 deletions(-)
 
-diff --git a/arch/arm/mach-omap2/cpuidle44xx.c b/arch/arm/mach-omap2/cpuidle44xx.c
-index cfdbb86..e2ff9f6 100644
---- a/arch/arm/mach-omap2/cpuidle44xx.c
-+++ b/arch/arm/mach-omap2/cpuidle44xx.c
-@@ -62,16 +62,10 @@ static int omap4_enter_idle(struct cpuidle_device *dev,
- {
- 	struct omap4_idle_statedata *cx  			cpuidle_get_statedata(&dev->states_usage[index]);
--	struct timespec ts_preidle, ts_postidle, ts_idle;
- 	u32 cpu1_state;
--	int idle_time;
- 	int new_state_idx;
- 	int cpu_id = smp_processor_id();
- 
--	/* Used to keep track of the total time in idle */
--	getnstimeofday(&ts_preidle);
--
--	local_irq_disable();
- 	local_fiq_disable();
- 
- 	/*
-@@ -129,26 +123,17 @@ static int omap4_enter_idle(struct cpuidle_device *dev,
- 	if (index > 0)
- 		clockevents_notify(CLOCK_EVT_NOTIFY_BROADCAST_EXIT, &cpu_id);
- 
--	getnstimeofday(&ts_postidle);
--	ts_idle = timespec_sub(ts_postidle, ts_preidle);
--
--	local_irq_enable();
- 	local_fiq_enable();
- 
--	idle_time = ts_idle.tv_nsec / NSEC_PER_USEC + ts_idle.tv_sec * \
--								USEC_PER_SEC;
--
--	/* Update cpuidle counters */
--	dev->last_residency = idle_time;
--
- 	return index;
+ Depends on the patch:
+ "[PATCH 01/08] ARM: mach-shmobile: add shmobile_earlytimer_init()"
+
+ arch/arm/mach-shmobile/board-bonito.c  |   18 +++++++++++-------
+ arch/arm/mach-shmobile/setup-r8a7740.c |   10 ++++++++++
+ 2 files changed, 21 insertions(+), 7 deletions(-)
+
+--- 0006/arch/arm/mach-shmobile/board-bonito.c
++++ work/arch/arm/mach-shmobile/board-bonito.c	2012-03-06 13:17:44.000000000 +0900
+@@ -466,7 +466,7 @@ static void __init bonito_init(void)
+ 	}
  }
  
- DEFINE_PER_CPU(struct cpuidle_device, omap4_idle_dev);
+-static void __init bonito_timer_init(void)
++static void __init bonito_earlytimer_init(void)
+ {
+ 	u16 val;
+ 	u8 md_ck = 0;
+@@ -481,18 +481,22 @@ static void __init bonito_timer_init(voi
+ 		md_ck |= MD_CK0;
  
- struct cpuidle_driver omap4_idle_driver = {
--	.name =		"omap4_idle",
--	.owner =	THIS_MODULE,
-+	.name				= "omap4_idle",
-+	.owner				= THIS_MODULE,
-+	.en_core_tk_irqen		= 1,
- };
+ 	r8a7740_clock_init(md_ck);
+-	shmobile_timer.init();
++	shmobile_earlytimer_init();
+ }
  
- static inline void _fill_cstate(struct cpuidle_driver *drv,
--- 
-1.7.1
-
+-struct sys_timer bonito_timer = {
+-	.init	= bonito_timer_init,
+-};
++void __init bonito_add_early_devices(void)
++{
++	r8a7740_add_early_devices();
++
++	/* override timer setup with board-specific code */
++	shmobile_timer.init = bonito_earlytimer_init;
++}
+ 
+ MACHINE_START(BONITO, "bonito")
+ 	.map_io		= bonito_map_io,
+-	.init_early	= r8a7740_add_early_devices,
++	.init_early	= bonito_add_early_devices,
+ 	.init_irq	= r8a7740_init_irq,
+ 	.handle_irq	= shmobile_handle_irq_intc,
+ 	.init_machine	= bonito_init,
+-	.timer		= &bonito_timer,
++	.timer		= &shmobile_timer,
+ MACHINE_END
+--- 0006/arch/arm/mach-shmobile/setup-r8a7740.c
++++ work/arch/arm/mach-shmobile/setup-r8a7740.c	2012-03-06 13:19:18.000000000 +0900
+@@ -29,6 +29,7 @@
+ #include <asm/mach-types.h>
+ #include <asm/mach/map.h>
+ #include <asm/mach/arch.h>
++#include <asm/mach/time.h>
+ 
+ static struct map_desc r8a7740_io_desc[] __initdata = {
+ 	 /*
+@@ -377,6 +378,12 @@ void __init r8a7740_add_standard_devices
+ 			     ARRAY_SIZE(r8a7740_late_devices));
+ }
+ 
++static void __init r8a7740_earlytimer_init(void)
++{
++	r8a7740_clock_init(0);
++	shmobile_earlytimer_init();
++}
++
+ void __init r8a7740_add_early_devices(void)
+ {
+ 	early_platform_add_devices(r8a7740_early_devices,
+@@ -384,4 +391,7 @@ void __init r8a7740_add_early_devices(vo
+ 
+ 	/* setup early console here as well */
+ 	shmobile_setup_console();
++
++	/* override timer setup with soc-specific code */
++	shmobile_timer.init = r8a7740_earlytimer_init;
+ }
