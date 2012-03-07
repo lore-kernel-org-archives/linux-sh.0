@@ -1,118 +1,74 @@
-From: Marek Szyprowski <m.szyprowski@samsung.com>
-Date: Mon, 13 Feb 2012 10:40:05 +0000
-Subject: [PATCH] Hexagon: adapt for dma_map_ops changes
-Message-Id: <1329129605-27355-1-git-send-email-m.szyprowski@samsung.com>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 07 Mar 2012 05:45:37 +0000
+Subject: [PATCH RESEND] spi: spi-sh: add IORESOURCE_MEM_TYPE_MASK decoding for access size
+Message-Id: <4F56F601.2070405@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1324643253-3024-1-git-send-email-m.szyprowski@samsung.com>
-In-Reply-To: <1324643253-3024-1-git-send-email-m.szyprowski@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>, Thomas Gleixner <tglx@linutronix.de>, Andrew Morton <akpm@linux-foundation.org>, Arnd Bergmann <arnd@arndb.de>, Stephen Rothwell <sfr@canb.auug.org.au>, FUJITA Tomonori <fujita.tomonori@lab.ntt.co.jp>, microblaze-uclinux@itee.uq.edu.au, linux-arch@vger.kernel.org, x86@kernel.org, linux-sh@vger.kernel.org, linux-alpha@vger.kernel.org, sparclinux@vger.kernel.org, linux-ia64@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mips@linux-mips.org, discuss@x86-64.org, linux-arm-kernel@lists.infradead.org, linux-mm@kvack.org, linaro-mm-sig@lists.linaro.org, Jonathan Corbet <corbet@lwn.net>, Marek Szyprowski <m.szyprowski@samsung.com>, Kyungmin Park <kyungmin.park@samsung.com>, Andrzej Pietrasiewicz <andrzej.p@samsung.com>, linux-hexagon@vger.kernel.org
+To: Grant Likely <grant.likely@secretlab.ca>
+Cc: spi-devel-general@lists.sourceforge.net, SH-Linux <linux-sh@vger.kernel.org>
 
-Adapt core Hexagon architecture code for dma_map_ops changes: replace
-alloc/free_coherent with generic alloc/free methods.
+This SPI controller's access size is 32, or 8-bit. The previous driver
+supported 32-bit only. So, this patch adds IORESOURCE_MEM_TYPE_MASK
+decoding, an then, the driver can handle the SPI controller of 8-bit.
 
-Signed-off-by: Marek Szyprowski <m.szyprowski@samsung.com>
-Signed-off-by: Kyungmin Park <kyungmin.park@samsung.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
+ drivers/spi/spi-sh.c |   25 +++++++++++++++++++++++--
+ 1 files changed, 23 insertions(+), 2 deletions(-)
 
-Hello,
+diff --git a/drivers/spi/spi-sh.c b/drivers/spi/spi-sh.c
+index 70c8af9..79442c3 100644
+--- a/drivers/spi/spi-sh.c
++++ b/drivers/spi/spi-sh.c
+@@ -92,17 +92,26 @@ struct spi_sh_data {
+ 	unsigned long cr1;
+ 	wait_queue_head_t wait;
+ 	spinlock_t lock;
++	int width;
+ };
 
-This patch adds Hexagon architecture to the DMA-mapping framework
-redesign preparation patches. For more information please refer to the
-following thread:
-https://lkml.org/lkml/2011/12/23/97
+ static void spi_sh_write(struct spi_sh_data *ss, unsigned long data,
+ 			     unsigned long offset)
+ {
+-	writel(data, ss->addr + offset);
++	if (ss->width = 8)
++		iowrite8(data, ss->addr + (offset >> 2));
++	else if (ss->width = 32)
++		iowrite32(data, ss->addr + offset);
+ }
 
-Best regards
-Marek Szyprowski
-Samsung Poland R&D Center
----
- arch/hexagon/include/asm/dma-mapping.h |   18 ++++++++++++------
- arch/hexagon/kernel/dma.c              |    9 +++++----
- 2 files changed, 17 insertions(+), 10 deletions(-)
+ static unsigned long spi_sh_read(struct spi_sh_data *ss, unsigned long offset)
+ {
+-	return readl(ss->addr + offset);
++	if (ss->width = 8)
++		return ioread8(ss->addr + (offset >> 2));
++	else if (ss->width = 32)
++		return ioread32(ss->addr + offset);
++	else
++		return 0;
+ }
 
-diff --git a/arch/hexagon/include/asm/dma-mapping.h b/arch/hexagon/include/asm/dma-mapping.h
-index 448b224..233ed3d 100644
---- a/arch/hexagon/include/asm/dma-mapping.h
-+++ b/arch/hexagon/include/asm/dma-mapping.h
-@@ -71,29 +71,35 @@ static inline int dma_mapping_error(struct device *dev, dma_addr_t dma_addr)
- 	return (dma_addr = bad_dma_address);
- }
- 
--static inline void *dma_alloc_coherent(struct device *dev, size_t size,
--				       dma_addr_t *dma_handle, gfp_t flag)
-+#define dma_alloc_coherent(d,s,h,f)	dma_alloc_attrs(d,s,h,f,NULL)
-+
-+static inline void *dma_alloc_attrs(struct device *dev, size_t size,
-+				    dma_addr_t *dma_handle, gfp_t flag,
-+				    struct dma_attrs *attrs)
- {
- 	void *ret;
- 	struct dma_map_ops *ops = get_dma_ops(dev);
- 
- 	BUG_ON(!dma_ops);
- 
--	ret = ops->alloc_coherent(dev, size, dma_handle, flag);
-+	ret = ops->alloc(dev, size, dma_handle, flag, attrs);
- 
- 	debug_dma_alloc_coherent(dev, size, *dma_handle, ret);
- 
- 	return ret;
- }
- 
--static inline void dma_free_coherent(struct device *dev, size_t size,
--				     void *cpu_addr, dma_addr_t dma_handle)
-+#define dma_free_coherent(d,s,c,h) dma_free_attrs(d,s,c,h,NULL)
-+
-+static inline void dma_free_attrs(struct device *dev, size_t size,
-+				  void *cpu_addr, dma_addr_t dma_handle,
-+				  struct dma_attrs *attrs)
- {
- 	struct dma_map_ops *dma_ops = get_dma_ops(dev);
- 
- 	BUG_ON(!dma_ops);
- 
--	dma_ops->free_coherent(dev, size, cpu_addr, dma_handle);
-+	dma_ops->free(dev, size, cpu_addr, dma_handle, attrs);
- 
- 	debug_dma_free_coherent(dev, size, cpu_addr, dma_handle);
- }
-diff --git a/arch/hexagon/kernel/dma.c b/arch/hexagon/kernel/dma.c
-index e711ace..3730221 100644
---- a/arch/hexagon/kernel/dma.c
-+++ b/arch/hexagon/kernel/dma.c
-@@ -54,7 +54,8 @@ static struct gen_pool *coherent_pool;
- /* Allocates from a pool of uncached memory that was reserved at boot time */
- 
- void *hexagon_dma_alloc_coherent(struct device *dev, size_t size,
--				 dma_addr_t *dma_addr, gfp_t flag)
-+				 dma_addr_t *dma_addr, gfp_t flag,
-+				 struct dma_attrs *attrs)
- {
- 	void *ret;
- 
-@@ -81,7 +82,7 @@ void *hexagon_dma_alloc_coherent(struct device *dev, size_t size,
- }
- 
- static void hexagon_free_coherent(struct device *dev, size_t size, void *vaddr,
--				  dma_addr_t dma_addr)
-+				  dma_addr_t dma_addr, struct dma_attrs *attrs)
- {
- 	gen_pool_free(coherent_pool, (unsigned long) vaddr, size);
- }
-@@ -202,8 +203,8 @@ static void hexagon_sync_single_for_device(struct device *dev,
- }
- 
- struct dma_map_ops hexagon_dma_ops = {
--	.alloc_coherent	= hexagon_dma_alloc_coherent,
--	.free_coherent	= hexagon_free_coherent,
-+	.alloc		= hexagon_dma_alloc_coherent,
-+	.free		= hexagon_free_coherent,
- 	.map_sg		= hexagon_map_sg,
- 	.map_page	= hexagon_map_page,
- 	.sync_single_for_cpu = hexagon_sync_single_for_cpu,
+ static void spi_sh_set_bit(struct spi_sh_data *ss, unsigned long val,
+@@ -464,6 +473,18 @@ static int __devinit spi_sh_probe(struct platform_device *pdev)
+ 	ss = spi_master_get_devdata(master);
+ 	dev_set_drvdata(&pdev->dev, ss);
+
++	switch (res->flags & IORESOURCE_MEM_TYPE_MASK) {
++	case IORESOURCE_MEM_8BIT:
++		ss->width = 8;
++		break;
++	case IORESOURCE_MEM_32BIT:
++		ss->width = 32;
++		break;
++	default:
++		dev_err(&pdev->dev, "No support width\n");
++		ret = -ENODEV;
++		goto error1;
++	}
+ 	ss->irq = irq;
+ 	ss->master = master;
+ 	ss->addr = ioremap(res->start, resource_size(res));
 -- 
-1.7.1.569.g6f426
-
+1.7.1
