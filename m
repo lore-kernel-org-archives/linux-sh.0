@@ -1,42 +1,80 @@
-From: Barry Song <21cnbao@gmail.com>
-Date: Tue, 13 Mar 2012 14:34:18 +0000
-Subject: Re: implementing "suspend to ram" on cortex A8 based on linux 3.0.8
-Message-Id: <CAGsJ_4yDjDLSPwXubcecmCzpeJTwvGz30-awSAZfC+YtTwB_-w@mail.gmail.com>
+From: Stephen Warren <swarren@wwwdotorg.org>
+Date: Wed, 07 Mar 2012 00:30:37 +0000
+Subject: [PATCH 2/3] Kbuild: Implement CONFIG_UIMAGE_KERNEL_NOLOAD
+Message-Id: <1331080238-1524-2-git-send-email-swarren@wwwdotorg.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAFawwkXQhyj+c8LEDnD7q4mXDJV2jYCAHV0tBrqxrEaNGk+_0w@mail.gmail.com>
- <CACNz9cVbULxVSGvo60V+JLL=15BDEaYwgd5k9ZMNu09Kfwz4WQ@mail.gmail.com>
- <CAFawwkWQd=y=kVm97UjSs37=-MRmJiy9f7sy8ChYzCHZ9Y-gyA@mail.gmail.com>
- <CAFawwkVuCTijwLr6UWVRh9XNGCt-8brr2f4aDrpM_YwkWSGP+A@mail.gmail.com>
-In-Reply-To: <CAFawwkVuCTijwLr6UWVRh9XNGCt-8brr2f4aDrpM_YwkWSGP+A@mail.gmail.com>
+References: <1331080238-1524-1-git-send-email-swarren@wwwdotorg.org>
+In-Reply-To: <1331080238-1524-1-git-send-email-swarren@wwwdotorg.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Michal Marek <mmarek@suse.cz>
+Cc: Russell King <linux@arm.linux.org.uk>, nico@fluxnic.net, Haavard Skinnemoen <hskinnemoen@gmail.com>, Hans-Christian Egtvedt <egtvedt@samfundet.no>, Mike Frysinger <vapier@gentoo.org>, Michal Simek <monstr@monstr.eu>, Paul Mundt <lethal@linux-sh.org>, "David S. Miller" <davem@davemloft.net>, Guan Xuetao <gxt@mprc.pku.edu.cn>, linux-kernel@vger.kernel.org, linux-kbuild@vger.kernel.org, linux-arm-kernel@lists.infradead.org, uclinux-dist-devel@blackfin.uclinux.org, microblaze-uclinux@itee.uq.edu.au, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, Stephen Warren <swarren@wwwdotorg.org>
 
-hi yang,
+This allows the user to use U-Boot's mkimage's -T kernel_noload option
+if their arch Kconfig allows it, and they desire.
 
-在 2012年3月10日 下午10:37，yang gqyang <hustgqyang@gmail.com> 写道：
->  Thanks for your comment.
->  Finally, i find out that i made a mistake.  The uart(8250) have not been
->  restore after resume, instead, it use the configuration got from boot. The
->  uart have not been restored correctly, so that "ls" can not output result
->  correctly resulting in it seems that the busybox can not work correctly.
->  Now, i still have a question about the uart: why the "printk" can work
->  correctly, but the "printf" not?
->
->  Before this, i believe that the "printk" work correctly, then the uart
->  work ok. but now, i  need more reconsidaration about
->  the relation between the "printk", "printf" and "uart".
->  Can anyone give me some suggestion? Any comment is welcome, thanks a
->  lot.
+Signed-off-by: Stephen Warren <swarren@wwwdotorg.org>
+---
+The next patch enables this new CONFIG_ALLOW_ option for ARM. I assume
+that some other architectures will also be able to enable it, but I'm
+not familiar enough with any to know which.
 
-printk use "struct console" driver, it doesn't depend on a device node
-for userspace.
-printf actaully depends on uart_driver and a /dev/ttySx device node,
-stdout and stderr are redirected to /dev/ttySx
-uart is just a hardware which can be a tty or kernel console output.
+ init/Kconfig         |   15 +++++++++++++++
+ scripts/Makefile.lib |   15 ++++++++++++---
+ 2 files changed, 27 insertions(+), 3 deletions(-)
 
+diff --git a/init/Kconfig b/init/Kconfig
+index 6cfd71d..2035562 100644
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -203,6 +203,21 @@ config KERNEL_LZO
+ 
+ endchoice
+ 
++config ALLOW_UIMAGE_KERNEL_NOLOAD
++	bool
++
++config UIMAGE_KERNEL_NOLOAD
++	bool "Use mkimage's -T kernel_noload instead of -T kernel"
++	depends on ALLOW_UIMAGE_KERNEL_NOLOAD
++	help
++	  uImage files of type "kernel" embed an absolute load and entry point
++	  address. If the uImage is loaded to a different address, then the
++	  image must be copied the uImage file to the specified load address.
++	  This copy is a waste of time if the uImage is in fact completely
++	  relocatable. If your kernel and bootloader support it, you can build
++	  a "kernel_noload" uImage rather than a "kernel" uImage, which
++	  prevents any such copying. If unsure say N.
++
+ config DEFAULT_HOSTNAME
+ 	string "Default hostname"
+ 	default "(none)"
+diff --git a/scripts/Makefile.lib b/scripts/Makefile.lib
+index 7b0be18..d9c1c87 100644
+--- a/scripts/Makefile.lib
++++ b/scripts/Makefile.lib
+@@ -314,9 +314,18 @@ MKIMAGE := $(srctree)/scripts/mkuboot.sh
+ UIMAGE_ARCH = $(SRCARCH)
+ UIMAGE_COMPRESSION = $(if $(2),$(2),none)
+ UIMAGE_OPTS-y -UIMAGE_TYPE = kernel
+-UIMAGE_LOADADDR=arch_must_set_this
+-UIMAGE_ENTRYADDR=$(UIMAGE_LOADADDR)
++ifeq ($(CONFIG_UIMAGE_KERNEL_NOLOAD),y)
++  UIMAGE_TYPE = kernel_noload
++  # Unused by bootloader:
++  UIMAGE_LOADADDR=0
++  # Entry point relative to actual load address:
++  UIMAGE_ENTRYADDR=0
++else
++  UIMAGE_TYPE = kernel
++  # Absolute addresses:
++  UIMAGE_LOADADDR=arch_must_set_this
++  UIMAGE_ENTRYADDR=$(UIMAGE_LOADADDR)
++endif
+ UIMAGE_NAME = 'Linux-$(KERNELRELEASE)'
+ UIMAGE_IN = $<
+ UIMAGE_OUT = $@
+-- 
+1.7.0.4
 
->
->
--barry
