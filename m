@@ -1,100 +1,62 @@
 From: Robert Lee <rob.lee@linaro.org>
-Date: Tue, 20 Mar 2012 20:22:46 +0000
-Subject: [PATCH v8 5/8] ARM: omap: Consolidate OMAP3 time keeping and irq enable
-Message-Id: <1332274969-15782-6-git-send-email-rob.lee@linaro.org>
+Date: Wed, 07 Mar 2012 03:42:18 +0000
+Subject: [RFC PATCH] cpuidle: avoid unnecessary expensive governor processing
+Message-Id: <1331091738-26322-1-git-send-email-rob.lee@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1332274969-15782-1-git-send-email-rob.lee@linaro.org>
-In-Reply-To: <1332274969-15782-1-git-send-email-rob.lee@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Use core cpuidle timekeeping and irqen wrapper and remove that
-handling from this code.
+There a few cases when a platform's cpuidle_device will only have one
+cpuidle state.  e.g., when a single idle state system uses cpuidle
+to provide sysfs staticstics for profiling (powertop, etc).  This can
+also be the case for coupled smp system implementations that keep
+all but one cpuidle_device at a state_count of 1, but they still want
+to export idle statistics for these states using cpuidle.
 
 Signed-off-by: Robert Lee <rob.lee@linaro.org>
-Reviewed-by: Kevin Hilman <khilman@ti.com>
-Reviewed-by: Daniel Lezcano <daniel.lezcano@linaro.org>
-Tested-by: Jean Pihet<j-pihet@ti.com>
-Acked-by: Jean Pihet<j-pihet@ti.com>
 ---
- arch/arm/mach-omap2/cpuidle34xx.c |   42 +++++++++++++++----------------------
- 1 file changed, 17 insertions(+), 25 deletions(-)
+ drivers/cpuidle/governors/ladder.c |    7 +++++--
+ drivers/cpuidle/governors/menu.c   |    7 +++++--
+ 2 files changed, 10 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-omap2/cpuidle34xx.c b/arch/arm/mach-omap2/cpuidle34xx.c
-index 464cffd..5358664 100644
---- a/arch/arm/mach-omap2/cpuidle34xx.c
-+++ b/arch/arm/mach-omap2/cpuidle34xx.c
-@@ -87,29 +87,14 @@ static int _cpuidle_deny_idle(struct powerdomain *pwrdm,
- 	return 0;
- }
+diff --git a/drivers/cpuidle/governors/ladder.c b/drivers/cpuidle/governors/ladder.c
+index b6a09ea..13abdba 100644
+--- a/drivers/cpuidle/governors/ladder.c
++++ b/drivers/cpuidle/governors/ladder.c
+@@ -71,8 +71,11 @@ static int ladder_select_state(struct cpuidle_driver *drv,
+ 	int last_residency, last_idx = ldev->last_state_idx;
+ 	int latency_req = pm_qos_request(PM_QOS_CPU_DMA_LATENCY);
  
--/**
-- * omap3_enter_idle - Programs OMAP3 to enter the specified state
-- * @dev: cpuidle device
-- * @drv: cpuidle driver
-- * @index: the index of state to be entered
-- *
-- * Called from the CPUidle framework to program the device to the
-- * specified target state selected by the governor.
-- */
--static int omap3_enter_idle(struct cpuidle_device *dev,
-+static int __omap3_enter_idle(struct cpuidle_device *dev,
- 				struct cpuidle_driver *drv,
- 				int index)
- {
- 	struct omap3_idle_statedata *cx  			cpuidle_get_statedata(&dev->states_usage[index]);
--	struct timespec ts_preidle, ts_postidle, ts_idle;
- 	u32 mpu_state = cx->mpu_state, core_state = cx->core_state;
--	int idle_time;
--
--	/* Used to keep track of the total time in idle */
--	getnstimeofday(&ts_preidle);
- 
--	local_irq_disable();
- 	local_fiq_disable();
- 
- 	pwrdm_set_next_pwrst(mpu_pd, mpu_state);
-@@ -148,22 +133,29 @@ static int omap3_enter_idle(struct cpuidle_device *dev,
+-	/* Special case when user has set very strict latency requirement */
+-	if (unlikely(latency_req = 0)) {
++	/*
++	 * Special case when user has set very strict latency requirement or
++	 * there is currently only one state for this device.
++	 */
++	if ((latency_req = 0) || (dev->state_count = 1)) {
+ 		ladder_do_selection(ldev, last_idx, 0);
+ 		return 0;
  	}
+diff --git a/drivers/cpuidle/governors/menu.c b/drivers/cpuidle/governors/menu.c
+index ad09526..80eb606 100644
+--- a/drivers/cpuidle/governors/menu.c
++++ b/drivers/cpuidle/governors/menu.c
+@@ -249,8 +249,11 @@ static int menu_select(struct cpuidle_driver *drv, struct cpuidle_device *dev)
+ 	data->last_state_idx = 0;
+ 	data->exit_us = 0;
  
- return_sleep_time:
--	getnstimeofday(&ts_postidle);
--	ts_idle = timespec_sub(ts_postidle, ts_preidle);
+-	/* Special case when user has set very strict latency requirement */
+-	if (unlikely(latency_req = 0))
++	/*
++	 * Special case when user has set very strict latency requirement or
++	 * there is currently only one state for this device.
++	 */
++	if ((latency_req = 0) || (dev->state_count = 1))
+ 		return 0;
  
--	local_irq_enable();
- 	local_fiq_enable();
- 
--	idle_time = ts_idle.tv_nsec / NSEC_PER_USEC + ts_idle.tv_sec * \
--								USEC_PER_SEC;
--
--	/* Update cpuidle counters */
--	dev->last_residency = idle_time;
--
- 	return index;
- }
- 
- /**
-+ * omap3_enter_idle - Programs OMAP3 to enter the specified state
-+ * @dev: cpuidle device
-+ * @drv: cpuidle driver
-+ * @index: the index of state to be entered
-+ *
-+ * Called from the CPUidle framework to program the device to the
-+ * specified target state selected by the governor.
-+ */
-+static inline int omap3_enter_idle(struct cpuidle_device *dev,
-+				struct cpuidle_driver *drv,
-+				int index)
-+{
-+	return cpuidle_wrap_enter(dev, drv, index, __omap3_enter_idle);
-+}
-+
-+/**
-  * next_valid_state - Find next valid C-state
-  * @dev: cpuidle device
-  * @drv: cpuidle driver
+ 	/* determine the expected residency time, round up */
 -- 
-1.7.9.4
+1.7.1
 
