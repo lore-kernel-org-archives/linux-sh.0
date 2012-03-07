@@ -1,32 +1,33 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 01 Mar 2012 15:07:29 +0000
-Subject: [PATCH v2 16/57] fbdev: sh_mobile_hdmi: Remove sh_mobile_hdmi_info lcd_chan field
-Message-Id: <1330614490-14149-17-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 07 Mar 2012 00:14:15 +0000
+Subject: [PATCH] ARM: mach-shmobile: ap4evb: fixup fsi2_ak4643_info typo
+Message-Id: <871up5p8rv.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-The field is unused, remove it.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- include/video/sh_mobile_hdmi.h |    1 -
- 1 files changed, 0 insertions(+), 1 deletions(-)
+This is for linus/master
 
-diff --git a/include/video/sh_mobile_hdmi.h b/include/video/sh_mobile_hdmi.h
-index 0b8d2cf..728f9de 100644
---- a/include/video/sh_mobile_hdmi.h
-+++ b/include/video/sh_mobile_hdmi.h
-@@ -31,7 +31,6 @@ struct clk;
- #define HDMI_SND_SRC_HBR	(3 << 0)
+ arch/arm/mach-shmobile/board-ap4evb.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index eeb4d96..b4718b0 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -794,7 +794,7 @@ static struct fsi_ak4642_info fsi2_ak4643_info = {
+ static struct platform_device fsi_ak4643_device = {
+ 	.name	= "fsi-ak4642-audio",
+ 	.dev	= {
+-		.platform_data	= &fsi_info,
++		.platform_data	= &fsi2_ak4643_info,
+ 	},
+ };
  
- struct sh_mobile_hdmi_info {
--	struct sh_mobile_lcdc_chan_cfg	*lcd_chan;
- 	unsigned int			 flags;
- 	long (*clk_optimize_parent)(unsigned long target, unsigned long *best_freq,
- 				    unsigned long *parent_freq);
 -- 
-1.7.3.4
+1.7.5.4
 
