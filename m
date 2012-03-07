@@ -1,59 +1,46 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Wed, 07 Mar 2012 21:57:39 +0000
-Subject: Re: [PATCH 00/06] ARM: mach-shmobile: map_io and init_early update
-Message-Id: <201203072301.00280.rjw@sisk.pl>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 07 Mar 2012 05:46:38 +0000
+Subject: [PATCH RESEND] sh: add parameter for RSPI in clock-sh7757
+Message-Id: <4F56F63E.1050002@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120229123656.28584.90874.sendpatchset@w520>
-In-Reply-To: <20120229123656.28584.90874.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wednesday, February 29, 2012, Magnus Damm wrote:
->  ARM: mach-shmobile: map_io and init_early update
-> 
-> [PATCH 01/06] ARM: mach-shmobile: sh7367 map_io and init_early update
-> [PATCH 02/06] ARM: mach-shmobile: sh7377 map_io and init_early update
-> [PATCH 03/06] ARM: mach-shmobile: sh7372 map_io and init_early update
-> [PATCH 04/06] ARM: mach-shmobile: sh73a0 map_io and init_early update
-> [PATCH 05/06] ARM: mach-shmobile: r8a7740 map_io and init_early update
-> [PATCH 06/06] ARM: mach-shmobile: r8a7779 map_io and init_early update
-> 
-> This patch series converts the mach-shmobile subarch to properly
-> make use of a per-soc map_io and a separate init_early callback for
-> early serial console support on platforms where that is possible.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ arch/sh/kernel/cpu/sh4a/clock-sh7757.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
 
-Applied.
+diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7757.c b/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
+index 0fbff14..0bd21c8 100644
+--- a/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
++++ b/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
+@@ -79,7 +79,7 @@ struct clk div4_clks[DIV4_NR] = {
+ #define MSTPCR1		0xffc80034
+ #define MSTPCR2		0xffc10028
 
-Thanks,
-Rafael
+-enum { MSTP004, MSTP000, MSTP114, MSTP113, MSTP112,
++enum { MSTP004, MSTP000, MSTP127, MSTP114, MSTP113, MSTP112,
+        MSTP111, MSTP110, MSTP103, MSTP102, MSTP220,
+        MSTP_NR };
 
+@@ -89,6 +89,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP000] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 0, 0),
 
-> ---
-> 
->  arch/arm/mach-shmobile/board-ag5evm.c        |   25 +------------
->  arch/arm/mach-shmobile/board-ap4evb.c        |   25 +------------
->  arch/arm/mach-shmobile/board-bonito.c        |   28 +--------------
->  arch/arm/mach-shmobile/board-g3evm.c         |   25 +------------
->  arch/arm/mach-shmobile/board-g4evm.c         |   25 +------------
->  arch/arm/mach-shmobile/board-kota2.c         |   25 +------------
->  arch/arm/mach-shmobile/board-mackerel.c      |   25 +------------
->  arch/arm/mach-shmobile/board-marzen.c        |   48 +-------------------------
->  arch/arm/mach-shmobile/include/mach/common.h |    6 +++
->  arch/arm/mach-shmobile/setup-r8a7740.c       |   35 ++++++++++++++++++
->  arch/arm/mach-shmobile/setup-r8a7779.c       |   39 +++++++++++++++++++++
->  arch/arm/mach-shmobile/setup-sh7367.c        |   22 +++++++++++
->  arch/arm/mach-shmobile/setup-sh7372.c        |   22 +++++++++++
->  arch/arm/mach-shmobile/setup-sh7377.c        |   22 +++++++++++
->  arch/arm/mach-shmobile/setup-sh73a0.c        |   22 +++++++++++
->  15 files changed, 184 insertions(+), 210 deletions(-)
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
+ 	/* MSTPCR1 */
++	[MSTP127] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1, 27, 0),
+ 	[MSTP114] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1, 14, 0),
+ 	[MSTP113] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1, 13, 0),
+ 	[MSTP112] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1, 12, 0),
+@@ -131,6 +132,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("usb_fck", &mstp_clks[MSTP103]),
+ 	CLKDEV_DEV_ID("renesas_usbhs.0", &mstp_clks[MSTP102]),
+ 	CLKDEV_CON_ID("mmc0", &mstp_clks[MSTP220]),
++	CLKDEV_CON_ID("rspi2", &mstp_clks[MSTP127]),
+ };
 
+ int __init arch_clk_init(void)
+-- 
+1.7.1
