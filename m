@@ -1,31 +1,55 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 13 Mar 2012 01:44:09 +0000
-Subject: Re: [PATCH 0/6] PM / Domains: System suspend fixes and "always on" flag
-Message-Id: <20120313014408.GA9916@linux-sh.org>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 07 Mar 2012 05:46:41 +0000
+Subject: [PATCH RESEND] sh: add platform_device for RSPI in setup-sh7757
+Message-Id: <4F56F641.4030809@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201203130123.16268.rjw@sisk.pl>
-In-Reply-To: <201203130123.16268.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Rafael J. Wysocki" <rjw@sisk.pl>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, LKML <linux-kernel@vger.kernel.org>, Cao Minh Hiep <hiepcm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-On Tue, Mar 13, 2012 at 01:23:15AM +0100, Rafael J. Wysocki wrote:
-> The following patches fix system suspend/resume and hibernation device
-> callback routines in the generic PM domains code and add an "always on" flag
-> for devices allowing their drivers to protect them from surprise power
-> removals.
-> 
-> [1/6] - Fix system resume of devices involved in system wakeup.
-> [2/6] - Fix hibernation restore of devices.
-> [3/6] - Introduce "always on" flag for "special" devices in PM domains.
-> [4/6] - Make TMU clocksource driver use the "always on" flag.
-> [5/6] - Make CMT clocksource driver use the "always on" flag.
-> [6/6] - Make MTU2 clocksource driver use the "always on" flag.
-> 
-> All of them are v3.4 material if there are no objections.
-> 
-Looks good to me.
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ arch/sh/kernel/cpu/sh4a/setup-sh7757.c |   20 ++++++++++++++++++++
+ 1 files changed, 20 insertions(+), 0 deletions(-)
 
-Acked-by: Paul Mundt <lethal@linux-sh.org>
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
+index 2875e8b..c8836cf 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
+@@ -680,6 +680,25 @@ static struct platform_device spi1_device = {
+ 	.resource	= spi1_resources,
+ };
+
++static struct resource rspi_resources[] = {
++	{
++		.start	= 0xfe480000,
++		.end	= 0xfe4800ff,
++		.flags	= IORESOURCE_MEM,
++	},
++	{
++		.start	= 220,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device rspi_device = {
++	.name	= "rspi",
++	.id	= 2,
++	.num_resources	= ARRAY_SIZE(rspi_resources),
++	.resource	= rspi_resources,
++};
++
+ static struct resource usb_ehci_resources[] = {
+ 	[0] = {
+ 		.start	= 0xfe4f1000,
+@@ -740,6 +759,7 @@ static struct platform_device *sh7757_devices[] __initdata = {
+ 	&dma3_device,
+ 	&spi0_device,
+ 	&spi1_device,
++	&rspi_device,
+ 	&usb_ehci_device,
+ 	&usb_ohci_device,
+ };
+-- 
+1.7.1
