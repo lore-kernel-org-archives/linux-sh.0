@@ -1,7 +1,7 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Thu, 01 Mar 2012 21:21:14 +0000
+Date: Wed, 07 Mar 2012 21:58:28 +0000
 Subject: Re: [PATCH] ARM: mach-shmobile: rename clk_init() to shmobile_clk_init()
-Message-Id: <201203012221.14287.rjw@sisk.pl>
+Message-Id: <201203072301.43889.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20120229124130.29066.74120.sendpatchset@w520>
 In-Reply-To: <20120229124130.29066.74120.sendpatchset@w520>
@@ -18,8 +18,9 @@ On Wednesday, February 29, 2012, Magnus Damm wrote:
 > 
 > Signed-off-by: Magnus Damm <damm@opensource.se>
 
-Paul, would you mind if I took this patchset into the renesas tree for v3.4?
+Applied.
 
+Thanks,
 Rafael
 
 
