@@ -1,41 +1,66 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 28 Mar 2012 05:25:04 +0000
-Subject: Re: [PATCH 1/2] dma: shdma: fix runtime PM: clear channel buffers on reset
-Message-Id: <20120328052503.GP26543@linux-sh.org>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 07 Mar 2012 05:53:49 +0000
+Subject: [PATCH 01/03] ARM: mach-shmobile: introduce shmobile_setup_delay()
+Message-Id: <20120307055349.20126.85621.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1201041528570.30506@axis700.grange> <Pine.LNX.4.64.1201041532290.30506@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1201041532290.30506@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-kernel@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, "Rafael J. Wysocki" <rjw@sisk.pl>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-On Wed, Jan 04, 2012 at 03:34:17PM +0100, Guennadi Liakhovetski wrote:
-> On platforms, supporting power domains, if the domain, containing a DMAC
-> instance is powered down, the driver fails to resume correctly. On those
-> platforms DMAC channels have an additional CHCLR register for clearing
-> channel buffers. Using this register during runtime resume fixes the
-> problem.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+From: Magnus Damm <damm@opensource.se>
 
-..
+Add the function shmobile_setup_delay() to let platforms
+configure their maximum loops per jiffy delay. With this
+jiffies calculation done the dependency on early timer
+is removed.
 
-> @@ -139,6 +157,10 @@ static int sh_dmae_rst(struct sh_dmae_device *shdev)
->  		dev_warn(shdev->common.dev, "Can't initialize DMAOR.\n");
->  		return -EIO;
->  	}
-> +	if (shdev->pdata->dmaor_init & ~dmaor)
-> +		dev_warn(shdev->common.dev,
-> +			 "DMAOR=0x%x hasn't latched the initial value 0x%x.\n",
-> +			 dmaor, shdev->pdata->dmaor_init);
->  	return 0;
->  }
->  
-I've just hit this on SH7786, which I suspect means that I've got it
-wired up incorrectly somehow. This hunk also appears completely unrelated
-to the changelog, so I'm wondering what exactly it's for. If this is a
-probe attempt then presumably we should be handing down an error and
--ENODEV'ing in the init path? Is it expected that this is non-fatal in
-the other reset cases?
+In the future this allows us to assign timers
+using the regular driver model via the device tree.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/mach-shmobile/include/mach/common.h |    2 ++
+ arch/arm/mach-shmobile/timer.c               |   17 +++++++++++++++++
+ 2 files changed, 19 insertions(+)
+
+--- 0031/arch/arm/mach-shmobile/include/mach/common.h
++++ work/arch/arm/mach-shmobile/include/mach/common.h	2012-03-06 13:43:42.000000000 +0900
+@@ -3,6 +3,8 @@
+ 
+ extern void shmobile_earlytimer_init(void);
+ extern struct sys_timer shmobile_timer;
++extern void shmobile_setup_delay(unsigned int max_cpu_core_mhz,
++				 unsigned int mult, unsigned int div);
+ extern void shmobile_setup_console(void);
+ extern void shmobile_secondary_vector(void);
+ extern int shmobile_platform_cpu_kill(unsigned int cpu);
+--- 0031/arch/arm/mach-shmobile/timer.c
++++ work/arch/arm/mach-shmobile/timer.c	2012-03-06 13:44:29.000000000 +0900
+@@ -19,8 +19,25 @@
+  *
+  */
+ #include <linux/platform_device.h>
++#include <linux/delay.h>
+ #include <asm/mach/time.h>
+ 
++void __init shmobile_setup_delay(unsigned int max_cpu_core_mhz,
++				 unsigned int mult, unsigned int div)
++{
++	/* calculate a worst-case loops-per-jiffy value
++	 * based on maximum cpu core mhz setting and the
++	 * __delay() implementation in arch/arm/lib/delay.S
++	 *
++	 * this will result in a longer delay than expected
++	 * when the cpu core runs on lower frequencies.
++	 */
++
++	unsigned int value = (1000000 * mult) / (HZ * div);
++
++	lpj_fine = max_cpu_core_mhz * value;
++}
++
+ static void __init shmobile_late_time_init(void)
+ {
+ 	/*
