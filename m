@@ -1,72 +1,36 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 16 Mar 2012 04:10:12 +0000
-Subject: [PATCH] usb: r8a66597-udc: add support for set_selfpowered
-Message-Id: <4F62BD24.2060607@renesas.com>
+From: Rob Herring <rob.herring@calxeda.com>
+Date: Fri, 09 Mar 2012 16:51:27 +0000
+Subject: Re: linux-next: manual merge of the powerpc tree with the arm tree
+Message-Id: <4F5A350F.3090905@calxeda.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20120308120422.e071cba36425eacbee1f8d98@canb.auug.org.au>  <25744.1331174036@neuling.org>  <20120308145131.fad50bbc79c36f0b0b12d101@canb.auug.org.au>  <1331185951.3105.29.camel@pasglop> <1331249746.3105.40.camel@pasglop>  <20120309003937.GC8680@flint.arm.linux.org.uk> <1331262821.3105.47.camel@pasglop>
+In-Reply-To: <1331262821.3105.47.camel@pasglop>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+Cc: Russell King <rmk@arm.linux.org.uk>, Stephen Rothwell <sfr@canb.auug.org.au>, Michael Neuling <mikey@neuling.org>, Paul Mackerras <paulus@samba.org>, linuxppc-dev@lists.ozlabs.org, linux-next@vger.kernel.org, linux-kernel@vger.kernel.org, Grant Likely <grant.likely@secretlab.ca>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
 
-The previous code always set to USB_DEVICE_SELF_POWERED in GET_STATUS.
-So, this patch adds set_selfpowered().
+On 03/08/2012 09:13 PM, Benjamin Herrenschmidt wrote:
+> On Fri, 2012-03-09 at 00:39 +0000, Russell King wrote:
+>> On Fri, Mar 09, 2012 at 10:35:46AM +1100, Benjamin Herrenschmidt wrote:
+>>> Actually, I didn't keep MAY_HAVE_SPARSE_IRQ, I kept HAVE_SPARSE_IRQ. If
+>>> I remove it, then I get Kconfig warnings:
+>>>
+>>> warning: (PPC) selects SPARSE_IRQ which has unmet direct dependencies
+>>> (HAVE_GENERIC_HARDIRQS && HAVE_SPARSE_IRQ)
+>>
+>> Do you have commit 2ed86b16eabe4efbf80cc725a8cbb5310746a2fc ?
+> 
+> Nope, Grant patch didn't mention a dependency.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- drivers/usb/gadget/r8a66597-udc.c |   16 +++++++++++++++-
- drivers/usb/gadget/r8a66597-udc.h |    1 +
- 2 files changed, 16 insertions(+), 1 deletions(-)
+My opinion is that SPARSE_IRQ shouldn't be user visible option, and the
+simple solution was to just make it hidden. It wasn't clear if this was
+desired or not for other arches at the time. There is a mixture of
+settings in powerpc defconfigs. SuperH selects it for 32-bit and leaves
+it user selectable for 64-bit.
 
-diff --git a/drivers/usb/gadget/r8a66597-udc.c b/drivers/usb/gadget/r8a66597-udc.c
-index c4401e7..683b3d2 100644
---- a/drivers/usb/gadget/r8a66597-udc.c
-+++ b/drivers/usb/gadget/r8a66597-udc.c
-@@ -1170,7 +1170,7 @@ __acquires(r8a66597->lock)
+I'm happy to revert adding MAY_HAVE_SPARSE_IRQ and just make SPARSE_IRQ
+a hidden option. It really just needs the okay from SuperH folks.
 
- 	switch (ctrl->bRequestType & USB_RECIP_MASK) {
- 	case USB_RECIP_DEVICE:
--		status = 1 << USB_DEVICE_SELF_POWERED;
-+		status = r8a66597->device_status;
- 		break;
- 	case USB_RECIP_INTERFACE:
- 		status = 0;
-@@ -1800,11 +1800,25 @@ static int r8a66597_pullup(struct usb_gadget *gadget, int is_on)
- 	return 0;
- }
-
-+static int r8a66597_set_selfpowered(struct usb_gadget *gadget, int is_self)
-+{
-+	struct r8a66597 *r8a66597 = gadget_to_r8a66597(gadget);
-+	unsigned long flags;
-+
-+	if (is_self)
-+		r8a66597->device_status |= 1 << USB_DEVICE_SELF_POWERED;
-+	else
-+		r8a66597->device_status &= ~(1 << USB_DEVICE_SELF_POWERED);
-+
-+	return 0;
-+}
-+
- static struct usb_gadget_ops r8a66597_gadget_ops = {
- 	.get_frame		= r8a66597_get_frame,
- 	.udc_start		= r8a66597_start,
- 	.udc_stop		= r8a66597_stop,
- 	.pullup			= r8a66597_pullup,
-+	.set_selfpowered	= r8a66597_set_selfpowered,
- };
-
- static int __exit r8a66597_remove(struct platform_device *pdev)
-diff --git a/drivers/usb/gadget/r8a66597-udc.h b/drivers/usb/gadget/r8a66597-udc.h
-index 8e3de61..8b855a8 100644
---- a/drivers/usb/gadget/r8a66597-udc.h
-+++ b/drivers/usb/gadget/r8a66597-udc.h
-@@ -111,6 +111,7 @@ struct r8a66597 {
- 	u16			old_vbus;
- 	u16			scount;
- 	u16			old_dvsq;
-+	u16			device_status;	/* for GET_STATUS */
-
- 	/* pipe config */
- 	unsigned char bulk;
--- 
-1.7.1
+Rob
