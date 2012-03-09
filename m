@@ -1,86 +1,70 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Fri, 16 Mar 2012 16:21:50 +0000
-Subject: Re: [PATCH] mmc: sh_mobile_sdhi: add a callback for board specific init code
-Message-Id: <87haxobjoh.fsf@laptop.org>
+From: Artem Bityutskiy <dedekind1@gmail.com>
+Date: Fri, 09 Mar 2012 12:11:52 +0000
+Subject: Re: [PATCH v2 0/7] SH Mobile sh_flctl driver brush up
+Message-Id: <1331295112.29445.14.camel@sauron.fi.intel.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1331913438-3161-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1331913438-3161-1-git-send-email-hechtb@gmail.com> (Bastian
-	Hecht's message of "Fri, 16 Mar 2012 16:57:18 +0100")
+References: <1328960705-18699-1-git-send-email-hechtb@gmail.com>
+ <1329140515.22240.145.camel@sauron.fi.intel.com>
+ <20120214033810.GF21094@verge.net.au>
+ <CABYn4sydNW_S=mivCOCd5RoxeW0T+Q-encFRUps2xYU0_H2GHg@mail.gmail.com>
+In-Reply-To: <CABYn4sydNW_S=mivCOCd5RoxeW0T+Q-encFRUps2xYU0_H2GHg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Bastian Hecht <hechtb@googlemail.com>
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org, Bastian Hecht <hechtb@gmail.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, linux-mtd@lists.infradead.org, Laurent Pichart <laurent.pinchart@ideasonboard.com>, linux-sh@vger.kernel.org
 
-Hi,
+On Tue, 2012-02-14 at 11:58 +0100, Bastian Hecht wrote:
+> Hello Artem,
+> 
+> 2012/2/14 Simon Horman <horms@verge.net.au>:
+> > On Mon, Feb 13, 2012 at 03:41:55PM +0200, Artem Bityutskiy wrote:
+> >> On Sat, 2012-02-11 at 12:44 +0100, Bastian Hecht wrote:
+> >> > This patch series brushs up the sh_flctl.c a bit to make it work with
+> >> > the mackerel board. The hardware has changed and this needed to be
+> >> > reflected in the NAND host driver.
+> >> > On the road some minor enhancements have been incorporated.
+> >>
+> >> I cannot even compile-test this patch because I get the following error:
+> >>
+> >>
+> >> sh4-linux-gcc: error: command line option '-m4-nofpu' is not supported
+> >> by this configuration
+> >>
+> >>
+> >> with the cross-compiler downloaded from here:
+> >>
+> >> http://kernel.org/pub/tools/crosstool/files/bin/x86_64/4.6.0/x86_64-gcc-4.6.0-nolibc_sh4-linux.tar.bz2
+> >>
+> >> Could you please describe how could I compile-test it?
+> >
+> > You may find it easier to build a kernel for mackerel using
+> > arch arm and defconfig_mackerel.
+> >
+> > Personally I have had good experience using Code Sourcery (now part of
+> > Mentor Graphics?) G++ lite to compile both arm and sh kernels.
+> >
+> >
+> 
+> I as well use a Code Sourcery toolchain. arm-none-linux-gnueabi-gcc -v
+> states "gcc version 4.4.1 (Sourcery G++ Lite 2010q1-202)". It took me
+> quite a bit to find a link to the toolchain as these gpl toolchains
+> from Code Sourcery almost seem to be hidden. But here it is if you
+> want to give it a try:
 
-On Fri, Mar 16 2012, Bastian Hecht wrote:
-> Some boards need a preliminary setup stage to prepare the sdhi
-> controller.
->
-> Signed-off-by: Bastian Hecht <hechtb@gmail.com>
-> ---
->  drivers/mmc/host/sh_mobile_sdhi.c  |   13 +++++++++++++
->  include/linux/mmc/sh_mobile_sdhi.h |    4 ++++
->  2 files changed, 17 insertions(+), 0 deletions(-)
->
-> diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-> index 0df69ab..1da31a4 100644
-> --- a/drivers/mmc/host/sh_mobile_sdhi.c
-> +++ b/drivers/mmc/host/sh_mobile_sdhi.c
-> @@ -109,6 +109,12 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
->  	mmc_data = &priv->mmc_data;
->  	p->pdata = mmc_data;
->  
-> +	if (p->init) {
-> +		ret = p->init(pdev);
-> +		if (ret)
-> +			goto einit;
-> +	}
-> +
->  	snprintf(clk_name, sizeof(clk_name), "sdhi%d", pdev->id);
->  	priv->clk = clk_get(&pdev->dev, clk_name);
->  	if (IS_ERR(priv->clk)) {
-> @@ -242,6 +248,9 @@ eprobe:
->  #endif
->  	clk_put(priv->clk);
->  eclkget:
-> +	if (p->cleanup)
-> +		p->cleanup(pdev);
-> +einit:
->  	kfree(priv);
->  	return ret;
->  }
-> @@ -269,6 +278,10 @@ static int sh_mobile_sdhi_remove(struct platform_device *pdev)
->  	clk_disable(priv->clk);
->  #endif
->  	clk_put(priv->clk);
-> +
-> +	if (p->cleanup)
-> +		p->cleanup(pdev);
-> +
->  	kfree(priv);
->  
->  	return 0;
-> diff --git a/include/linux/mmc/sh_mobile_sdhi.h b/include/linux/mmc/sh_mobile_sdhi.h
-> index 86347f6..9cad001 100644
-> --- a/include/linux/mmc/sh_mobile_sdhi.h
-> +++ b/include/linux/mmc/sh_mobile_sdhi.h
-> @@ -22,6 +22,10 @@ struct sh_mobile_sdhi_info {
->  	struct tmio_mmc_data *pdata;
->  	void (*set_pwr)(struct platform_device *pdev, int state);
->  	int (*get_cd)(struct platform_device *pdev);
-> +
-> +	/* callbacks for board specific setup code */
-> +	int (*init)(struct platform_device *pdev);
-> +	void (*cleanup)(struct platform_device *pdev);
->  };
->  
->  #endif /* LINUX_MMC_SH_MOBILE_SDHI_H */
+I am a bit confused. We have the following in drivers/mtd/nand/Kconfig
 
-Thanks, pushed to mmc-next for 3.4.
+config MTD_NAND_SH_FLCTL
+        tristate "Support for NAND on Renesas SuperH FLCTL"
+        depends on SUPERH || ARCH_SHMOBILE
+        help
+          Several Renesas SuperH CPU has FLCTL. This option enables support
+          for NAND Flash using FLCTL.
 
-- Chris.
+SUPERH and ARCH_SHMOBILE are SH platforms - how can I compile-test your
+patch-set with an arm cross-compiler?
+
 -- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
+Best Regards,
+Artem Bityutskiy
+
