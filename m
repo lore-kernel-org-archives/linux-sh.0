@@ -1,46 +1,56 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Tue, 13 Mar 2012 00:27:07 +0000
-Subject: [PATCH 5/6] PM / shmobile: Make CMT driver use pm_genpd_dev_always_on()
-Message-Id: <201203130127.07634.rjw@sisk.pl>
+From: Thomas Schwinge <thomas@codesourcery.com>
+Date: Fri, 09 Mar 2012 16:38:53 +0000
+Subject: [PATCH 7/7] sm501: restore big-endian operation.
+Message-Id: <1331311133-26937-7-git-send-email-thomas@codesourcery.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201203130123.16268.rjw@sisk.pl>
-In-Reply-To: <201203130123.16268.rjw@sisk.pl>
+References: <1331311133-26937-1-git-send-email-thomas@codesourcery.com>
+In-Reply-To: <1331311133-26937-1-git-send-email-thomas@codesourcery.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux-sh list <linux-sh@vger.kernel.org>
-Cc: Linux PM list <linux-pm@vger.kernel.org>, Paul Mundt <lethal@linux-sh.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, LKML <linux-kernel@vger.kernel.org>, Cao Minh Hiep <hiepcm@gmail.com>
+Cc: Thomas Schwinge <thomas@codesourcery.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Heiko Schocher <hs@denx.de>, Samuel Ortiz <sameo@linux.intel.com>, linux-fbdev@vger.kernel.org, devicetree-discuss@ozlabs.org, Ben Dooks <ben@simtec.co.uk>, Vincent Sanders <vince@simtec.co.uk>, Randy Dunlap <rdunlap@xenotime.net>
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+On SH, as of 37b7a97884ba64bf7d403351ac2a9476ab4f1bba we have to use the
+endianess-agnostic I/O accessor functions.
 
-Make the CMT clocksource driver mark its device as "always on"
-using pm_genpd_dev_always_on() to protect it from surprise power
-removals.
+In commit bf5f0019046d596d613caf74722ba4994e153899, Heiko fixed this for 32-bit
+PowerPC; my patch now generalizes upon that.
 
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+The device is now recognized correctly for both litte-endian and big-endian
+sh7785lcr, but I have not tested this any further, as the board is situated in
+a remote data center.
+
+Signed-off-by: Thomas Schwinge <thomas@codesourcery.com>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org
+Cc: Heiko Schocher <hs@denx.de>
+Cc: Samuel Ortiz <sameo@linux.intel.com>
+Cc: linux-fbdev@vger.kernel.org
+Cc: devicetree-discuss@ozlabs.org
+Cc: Ben Dooks <ben@simtec.co.uk>
+Cc: Vincent Sanders <vince@simtec.co.uk>
+Cc: Randy Dunlap <rdunlap@xenotime.net>
 ---
- drivers/clocksource/sh_cmt.c |    4 ++++
- 1 file changed, 4 insertions(+)
+ include/linux/sm501.h |    9 ++-------
+ 1 files changed, 2 insertions(+), 7 deletions(-)
 
-Index: linux/drivers/clocksource/sh_cmt.c
-=================================--- linux.orig/drivers/clocksource/sh_cmt.c
-+++ linux/drivers/clocksource/sh_cmt.c
-@@ -32,6 +32,7 @@
- #include <linux/sh_timer.h>
- #include <linux/slab.h>
- #include <linux/module.h>
-+#include <linux/pm_domain.h>
+diff --git a/include/linux/sm501.h b/include/linux/sm501.h
+index 02fde50..0312e3c 100644
+--- a/include/linux/sm501.h
++++ b/include/linux/sm501.h
+@@ -173,10 +173,5 @@ struct sm501_platdata {
+ 	unsigned int			 gpio_i2c_nr;
+ };
  
- struct sh_cmt_priv {
- 	void __iomem *mapbase;
-@@ -689,6 +690,9 @@ static int __devinit sh_cmt_probe(struct
- 	struct sh_cmt_priv *p = platform_get_drvdata(pdev);
- 	int ret;
- 
-+	if (!is_early_platform_device(pdev))
-+		pm_genpd_dev_always_on(&pdev->dev, true);
-+
- 	if (p) {
- 		dev_info(&pdev->dev, "kept as earlytimer\n");
- 		return 0;
+-#if defined(CONFIG_PPC32)
+-#define smc501_readl(addr)		ioread32be((addr))
+-#define smc501_writel(val, addr)	iowrite32be((val), (addr))
+-#else
+-#define smc501_readl(addr)		readl(addr)
+-#define smc501_writel(val, addr)	writel(val, addr)
+-#endif
++#define smc501_readl(addr)		__raw_readl(addr)
++#define smc501_writel(val, addr)	__raw_writel(val, addr)
+-- 
+1.7.4.1
 
