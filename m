@@ -1,59 +1,68 @@
-From: Rob Herring <robherring2@gmail.com>
-Date: Fri, 09 Mar 2012 21:48:34 +0000
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Fri, 09 Mar 2012 21:52:47 +0000
 Subject: Re: [GIT PULL] Renesas SoC updates for v3.4
-Message-Id: <4F5A7AB2.1040307@gmail.com>
+Message-Id: <201203092252.48110.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201203092155.04731.rjw@sisk.pl> <201203092134.30191.arnd@arndb.de>
 In-Reply-To: <201203092134.30191.arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Bergmann <arnd@arndb.de>
-Cc: "Rafael J. Wysocki" <rjw@sisk.pl>, LKML <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>, "arm@kernel.org" <arm@kernel.org>, Paul Mundt <lethal@linux-sh.org>
+To: Arnd Bergmann <arnd@arndb.de>, Paul Mundt <lethal@linux-sh.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>, "arm@kernel.org" <arm@kernel.org>, Rob Herring <robherring2@gmail.com>
 
-On 03/09/2012 03:34 PM, Arnd Bergmann wrote:
+Hi,
+
+On Friday, March 09, 2012, Arnd Bergmann wrote:
 > On Friday 09 March 2012, Rafael J. Wysocki wrote:
->> Hi,
->>
->> Please pull Renesas SoC updates for v3.4 since commit
->> ce8fea7aa4ad9e3b40999a08622ef27c77159659:
->>
->>     mmap: EINVAL not ENOMEM when rejecting VM_GROWS
->>
->> with top-most commit f57fd2100e8273af3a9d2ff67714903d2dfd1eef
+> > Hi,
+> > 
+> > Please pull Renesas SoC updates for v3.4 since commit
+> > ce8fea7aa4ad9e3b40999a08622ef27c77159659:
+> > 
+> >     mmap: EINVAL not ENOMEM when rejecting VM_GROWS
+> > 
+> > with top-most commit f57fd2100e8273af3a9d2ff67714903d2dfd1eef
 > 
 > Hi Rafael,
 > 
 > Please rebase this on an -rc release, otherwise we get a rather
 > messy history in the arm-soc tree.
-> 
->>     ARM: mach-shmobile: default to no earlytimer
->>
->> from the git repository at:
->>
->> git://git.kernel.org/pub/scm/linux/kernel/git/rafael/renesas.git soc
->>
->> They include:
->>
->> * The rename of shmobile struct clk_ops to struct sh_clk_ops to avoid
->>   possible future name space collision with common struct clk code.
->>
->>   This also affects drivers that are shared with the sh architecture,
->>   so the branch containing this part of the material, clk_ops-rename,
->>   will be merged into the Paul Mundt's sh tree if necessary.
->>
->> * Introduction of L2 Cache support for r8a7779.
->>
->> * Conversion of the mach-shmobile subarch to properly use a per-SoC
->>   map_io and separate init_early callback for early serial console
->>   support on platforms where that is possible.
->>
->> Magnus Damm is the author of all the changes.
+
+Well, OK, I can rebase it on -rc7 if there is one, unless Paul
+has already pulled from clk_ops-rename.  Paul?
+
+> >     ARM: mach-shmobile: default to no earlytimer
+> > 
+> > from the git repository at:
+> > 
+> > git://git.kernel.org/pub/scm/linux/kernel/git/rafael/renesas.git soc
+> > 
+> > They include:
+> > 
+> > * The rename of shmobile struct clk_ops to struct sh_clk_ops to avoid
+> >   possible future name space collision with common struct clk code.
+> > 
+> >   This also affects drivers that are shared with the sh architecture,
+> >   so the branch containing this part of the material, clk_ops-rename,
+> >   will be merged into the Paul Mundt's sh tree if necessary.
+> > 
+> > * Introduction of L2 Cache support for r8a7779.
+> > 
+> > * Conversion of the mach-shmobile subarch to properly use a per-SoC
+> >   map_io and separate init_early callback for early serial console
+> >   support on platforms where that is possible.
+> > 
+> > Magnus Damm is the author of all the changes.
 > 
 > For next time, I think it would be good to make those things separate pull
 > requests, since they are all rather big. In particular, the clk rework
 > could be a series by itself.
-> 
+
+It is a series by itself.  You can readily pull it from clk_ops-rename even. :-)
+
+I'm not sure, though, what exactly the point of this would be.
+
 > One thing I noticed while browsing through the patches was this hunk
 > that Rob should know about:
 > 
@@ -109,9 +118,6 @@ On 03/09/2012 03:34 PM, Arnd Bergmann wrote:
 > These are all broken and need to be changed to something else before we add the
 > global definition for __io.
 
-Several platforms define IO_MEM for the purpose of casting the defines
-to void __iomem *, so I'll make that common unless you have better
-suggestion. I'd guess that changing the defines themselves will cause
-lots of warnings in other places.
+While I generally agree with that, I think it's not super-urgent, is it?
 
-Rob
+Rafael
