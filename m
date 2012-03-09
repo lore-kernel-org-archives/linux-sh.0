@@ -1,42 +1,71 @@
-From: Nicolas Pitre <nico@fluxnic.net>
-Date: Wed, 07 Mar 2012 22:43:43 +0000
-Subject: Re: [PATCH 2/3] Kbuild: Implement CONFIG_UIMAGE_KERNEL_NOLOAD
-Message-Id: <alpine.LFD.2.02.1203071644180.24151@xanadu.home>
+From: Thomas Schwinge <thomas@codesourcery.com>
+Date: Fri, 09 Mar 2012 16:38:52 +0000
+Subject: [PATCH 6/7] SH: pci-sh7780: enable big-endian operation.
+Message-Id: <1331311133-26937-6-git-send-email-thomas@codesourcery.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1331080238-1524-1-git-send-email-swarren@wwwdotorg.org>
- <1331080238-1524-2-git-send-email-swarren@wwwdotorg.org>
- <20120307180815.GA27213@game.jcrosoft.org> <4F57AB92.6060907@wwwdotorg.org>
- <20120307183633.GB27213@game.jcrosoft.org> <4F57C4C6.2070602@wwwdotorg.org>
- <alpine.LFD.2.02.1203071537130.24151@xanadu.home>
- <20120307213009.GF18787@n2100.arm.linux.org.uk>
-In-Reply-To: <20120307213009.GF18787@n2100.arm.linux.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Russell King - ARM Linux <linux@arm.linux.org.uk>
-Cc: Stephen Warren <swarren@wwwdotorg.org>, Jean-Christophe PLAGNIOL-VILLARD <plagnioj@jcrosoft.com>, Michal Marek <mmarek@suse.cz>, linux-arch@vger.kernel.org, Michal Simek <monstr@monstr.eu>, Guan Xuetao <gxt@mprc.pku.edu.cn>, Mike Frysinger <vapier@gentoo.org>, linux-sh@vger.kernel.org, microblaze-uclinux@itee.uq.edu.au, linux-kbuild@vger.kernel.org, linux-kernel@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, uclinux-dist-devel@blackfin.uclinux.org, sparclinux@vger.kernel.org, Haavard Skinnemoen <hskinnemoen@gmail.com>, "David S. Miller" <davem@davemloft.net>, linux-arm-kernel@lists.infradead.org, Hans-Christian Egtvedt <egtvedt@samfundet.no>
+To: linux-sh@vger.kernel.org
 
-On Wed, 7 Mar 2012, Russell King - ARM Linux wrote:
+If in big-endian mode, switch the PCI bus, too.
 
-> On Wed, Mar 07, 2012 at 04:03:04PM -0500, Nicolas Pitre wrote:
-> > Well, I do have a patch series getting rid of ZRELADDR entirely, and 
-> > AUTO_ZRELADDR would then become implicit, unless CONFIG_PHYS_OFFSET is 
-> > defined.
-> 
-> Not possible, unless you're goign to also rip out uImage support.
+Tested on both litte-endian and big-endian sh7785lcr.
 
-I wish I could.  At least this new "noload" option would make uImage 
-compatible with this.  That won't help existing u-Boot installations 
-though, which is why I didn't post that patch series yet as I still 
-haven't found a good fallback.
+Signed-off-by: Thomas Schwinge <thomas@codesourcery.com>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org
+---
+ arch/sh/drivers/pci/pci-sh7780.c |   15 ++++++++++++---
+ 1 files changed, 12 insertions(+), 3 deletions(-)
 
-> Otherwise, how do we deal with platforms like Versatile Express where
-> uboot does a funky relocation of data depending on whether the uImage
-> it's loading is for the low 256MB RAM mapping or the high 1GB RAM
-> mapping.
+diff --git a/arch/sh/drivers/pci/pci-sh7780.c b/arch/sh/drivers/pci/pci-sh7780.c
+index fa7b978..d87aac6 100644
+--- a/arch/sh/drivers/pci/pci-sh7780.c
++++ b/arch/sh/drivers/pci/pci-sh7780.c
+@@ -21,6 +21,13 @@
+ #include <asm/mmu.h>
+ #include <asm/sizes.h>
+ 
++#if defined(CONFIG_CPU_BIG_ENDIAN)
++# define PCICR_ENDIANNESS SH4_PCICR_BSWP
++#else
++# define PCICR_ENDIANNESS 0
++#endif
++
++
+ static struct resource sh7785_pci_resources[] = {
+ 	{
+ 		.name	= "PCI IO",
+@@ -254,7 +261,7 @@ static int __init sh7780_pci_init(void)
+ 	__raw_writel(PCIECR_ENBL, PCIECR);
+ 
+ 	/* Reset */
+-	__raw_writel(SH4_PCICR_PREFIX | SH4_PCICR_PRST,
++	__raw_writel(SH4_PCICR_PREFIX | SH4_PCICR_PRST | PCICR_ENDIANNESS,
+ 		     chan->reg_base + SH4_PCICR);
+ 
+ 	/*
+@@ -290,7 +297,8 @@ static int __init sh7780_pci_init(void)
+ 	 * Now throw it in to register initialization mode and
+ 	 * start the real work.
+ 	 */
+-	__raw_writel(SH4_PCICR_PREFIX, chan->reg_base + SH4_PCICR);
++	__raw_writel(SH4_PCICR_PREFIX | PCICR_ENDIANNESS,
++		     chan->reg_base + SH4_PCICR);
+ 
+ 	memphys = __pa(memory_start);
+ 	memsize = roundup_pow_of_two(memory_end - memory_start);
+@@ -380,7 +388,8 @@ static int __init sh7780_pci_init(void)
+ 	 * Initialization mode complete, release the control register and
+ 	 * enable round robin mode to stop device overruns/starvation.
+ 	 */
+-	__raw_writel(SH4_PCICR_PREFIX | SH4_PCICR_CFIN | SH4_PCICR_FTO,
++	__raw_writel(SH4_PCICR_PREFIX | SH4_PCICR_CFIN | SH4_PCICR_FTO |
++		     PCICR_ENDIANNESS,
+ 		     chan->reg_base + SH4_PCICR);
+ 
+ 	ret = register_pci_controller(chan);
+-- 
+1.7.4.1
 
-Doesn't it use AUTO_ZRELADDR?  With the newer u-Boot, you'd just load 
-uImage to whatever address and u-Boot won't mess with it.
-
-
-Nicolas
