@@ -1,25 +1,18 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 15 Mar 2012 06:14:50 +0000
-Subject: Re: [PATCH 4/7] arch/sh/drivers/dma/{dma-g2,dmabrg}.c: ensure arguments to request_irq and free_irq
-Message-Id: <20120315061450.GC10046@linux-sh.org>
+From: Fabio Estevam <festevam@gmail.com>
+Date: Fri, 09 Mar 2012 14:16:49 +0000
+Subject: Re: implementing "suspend to ram" on cortex A8 based on linux 3.0.8
+Message-Id: <CAOMZO5AMfdFciOtgn+8jU07ciL_TCd_Fo-DgfA09vR8tAAoh2w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1331494587-12196-1-git-send-email-Julia.Lawall@lip6.fr> <1331494587-12196-5-git-send-email-Julia.Lawall@lip6.fr>
-In-Reply-To: <1331494587-12196-5-git-send-email-Julia.Lawall@lip6.fr>
+References: <CAFawwkXQhyj+c8LEDnD7q4mXDJV2jYCAHV0tBrqxrEaNGk+_0w@mail.gmail.com>
+In-Reply-To: <CAFawwkXQhyj+c8LEDnD7q4mXDJV2jYCAHV0tBrqxrEaNGk+_0w@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Julia Lawall <Julia.Lawall@lip6.fr>
-Cc: kernel-janitors@vger.kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Sun, Mar 11, 2012 at 08:36:24PM +0100, Julia Lawall wrote:
-> From: Julia Lawall <Julia.Lawall@lip6.fr>
-> 
-> Convert calls to free_irq so that the second argument is the same as the
-> last argument of the corresponding call to request_irq.  Without this
-> property, free_irq does nothing.
-> 
-> In the case of dmabrg.c the change is merely cosmetic - changing 0 to NULL.
-> 
-> Signed-off-by: Julia Lawall <Julia.Lawall@lip6.fr>
-> 
-Applied, thanks.
+On Wed, Mar 7, 2012 at 12:05 PM, yang gqyang <hustgqyang@gmail.com> wrote:
+> dear all:
+> I am working on arm cortex a8 now, trying to implement "suspend to ram"
+> based on linux 3.0.8.
+
+Which CPU exactly are you using?
