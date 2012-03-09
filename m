@@ -1,138 +1,111 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Fri, 09 Mar 2012 20:55:04 +0000
-Subject: [GIT PULL] Renesas SoC updates for v3.4
-Message-Id: <201203092155.04731.rjw@sisk.pl>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 09 Mar 2012 21:34:29 +0000
+Subject: Re: [GIT PULL] Renesas SoC updates for v3.4
+Message-Id: <201203092134.30191.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201203092155.04731.rjw@sisk.pl>
+In-Reply-To: <201203092155.04731.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Bergmann <arnd@arndb.de>
-Cc: LKML <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>, "arm@kernel.org" <arm@kernel.org>, Paul Mundt <lethal@linux-sh.org>
+To: "Rafael J. Wysocki" <rjw@sisk.pl>
+Cc: LKML <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>, "arm@kernel.org" <arm@kernel.org>, Paul Mundt <lethal@linux-sh.org>, Rob Herring <robherring2@gmail.com>
 
-Hi,
+On Friday 09 March 2012, Rafael J. Wysocki wrote:
+> Hi,
+> 
+> Please pull Renesas SoC updates for v3.4 since commit
+> ce8fea7aa4ad9e3b40999a08622ef27c77159659:
+> 
+>     mmap: EINVAL not ENOMEM when rejecting VM_GROWS
+> 
+> with top-most commit f57fd2100e8273af3a9d2ff67714903d2dfd1eef
 
-Please pull Renesas SoC updates for v3.4 since commit
-ce8fea7aa4ad9e3b40999a08622ef27c77159659:
+Hi Rafael,
 
-    mmap: EINVAL not ENOMEM when rejecting VM_GROWS
+Please rebase this on an -rc release, otherwise we get a rather
+messy history in the arm-soc tree.
 
-with top-most commit f57fd2100e8273af3a9d2ff67714903d2dfd1eef
+>     ARM: mach-shmobile: default to no earlytimer
+> 
+> from the git repository at:
+> 
+> git://git.kernel.org/pub/scm/linux/kernel/git/rafael/renesas.git soc
+> 
+> They include:
+> 
+> * The rename of shmobile struct clk_ops to struct sh_clk_ops to avoid
+>   possible future name space collision with common struct clk code.
+> 
+>   This also affects drivers that are shared with the sh architecture,
+>   so the branch containing this part of the material, clk_ops-rename,
+>   will be merged into the Paul Mundt's sh tree if necessary.
+> 
+> * Introduction of L2 Cache support for r8a7779.
+> 
+> * Conversion of the mach-shmobile subarch to properly use a per-SoC
+>   map_io and separate init_early callback for early serial console
+>   support on platforms where that is possible.
+> 
+> Magnus Damm is the author of all the changes.
 
-    ARM: mach-shmobile: default to no earlytimer
+For next time, I think it would be good to make those things separate pull
+requests, since they are all rather big. In particular, the clk rework
+could be a series by itself.
 
-from the git repository at:
+One thing I noticed while browsing through the patches was this hunk
+that Rob should know about:
 
-git://git.kernel.org/pub/scm/linux/kernel/git/rafael/renesas.git soc
+@@ -242,6 +243,10 @@ static struct platform_device *r8a7779_late_devices[] __initdata = {
+ 
+ void __init r8a7779_add_standard_devices(void)
+ {
++#ifdef CONFIG_CACHE_L2X0
++       /* Early BRESP enable, Shared attribute override enable, 64K*16way */
++       l2x0_init(__io(0xf0100000), 0x40470000, 0x82000fff);
++#endif
+        r8a7779_pm_init();
+ 
+        r8a7779_init_pm_domain(&r8a7779_sh4a);
 
-They include:
+Here you are abusing the __io() macro rather badly as a typecast. This breaks
+with Rob's series to turn __io(foo) into a NULL pointer for the case where
+PCI is disabled. I found a few more of these, mostly in mach-shmobile but
+also some others:
 
-* The rename of shmobile struct clk_ops to struct sh_clk_ops to avoid
-  possible future name space collision with common struct clk code.
+arnd@klappe2:~/linux-arm$ git grep -w __io arch/arm/mach-* | grep -v __typesafe
+arch/arm/mach-cns3xxx/core.c:   gic_init(0, 29, __io(CNS3XXX_TC11MP_GIC_DIST_BASE_VIRT),
+arch/arm/mach-cns3xxx/core.c:            __io(CNS3XXX_TC11MP_GIC_CPU_BASE_VIRT));
+arch/arm/mach-cns3xxx/core.c:   u32 __iomem *pm_base = __io(CNS3XXX_PM_BASE_VIRT);
+arch/arm/mach-cns3xxx/core.c:   cns3xxx_tmr1 = __io(CNS3XXX_TIMER1_2_3_BASE_VIRT);
+arch/arm/mach-cns3xxx/devices.c:        u32 __iomem *gpioa = __io(CNS3XXX_MISC_BASE_VIRT + 0x0014);
+arch/arm/mach-netx/generic.c:   vic_init(__io(io_p2v(NETX_PA_VIC)), 0, ~0, 0);
+arch/arm/mach-netx/include/mach/netx-regs.h:#define NETX_SYSTEM_REG(ofs)            __io(NETX_VA_SYSTEM + (ofs))
+arch/arm/mach-netx/include/mach/netx-regs.h:#define NETX_GPIO_REG(ofs)                     __io(NETX_VA_GPIO + (ofs))
+arch/arm/mach-netx/include/mach/netx-regs.h:#define NETX_PIO_REG(ofs)        __io(NETX_VA_PIO + (ofs))
+arch/arm/mach-netx/include/mach/netx-regs.h:#define NETX_MIIMU           __io(NETX_VA_MIIMU)
+arch/arm/mach-netx/include/mach/netx-regs.h:#define NETX_PFIFO_REG(ofs)               __io(NETX_VA_PFIFO + (ofs))
+arch/arm/mach-netx/include/mach/netx-regs.h:#define NETX_MEMCR_REG(ofs)               __io(NETX_VA_MEMCR + (ofs))
+arch/arm/mach-netx/include/mach/netx-regs.h:#define NETX_DPMAS_REG(ofs)               __io(NETX_VA_DPMAS + (ofs))
+arch/arm/mach-netx/include/mach/netx-regs.h:#define NETX_I2C_REG(ofs)   __io(NETX_VA_I2C, (ofs))
+arch/arm/mach-realview/include/mach/hardware.h:#define __io_address(n)          __io(IO_ADDRESS(n))
+arch/arm/mach-shmobile/board-ag5evm.c:  l2x0_init(__io(0xf0100000), 0x00460000, 0xc2000fff);
+arch/arm/mach-shmobile/board-bonito.c:  l2x0_init(__io(0xf0002000), 0x40440000, 0x82000fff);
+arch/arm/mach-shmobile/board-kota2.c:   l2x0_init(__io(0xf0100000), 0x40460000, 0x82000fff);
+arch/arm/mach-shmobile/include/mach/io.h:#define __io(a)                        ((void __iomem *)(a))
+arch/arm/mach-shmobile/intc-r8a7779.c:  void __iomem *gic_dist_base = __io(0xf0001000);
+arch/arm/mach-shmobile/intc-r8a7779.c:  void __iomem *gic_cpu_base = __io(0xf0000100);
+arch/arm/mach-shmobile/intc-sh73a0.c:   void __iomem *gic_dist_base = __io(0xf0001000);
+arch/arm/mach-shmobile/intc-sh73a0.c:   void __iomem *gic_cpu_base = __io(0xf0000100);
+arch/arm/mach-shmobile/smp-r8a7779.c:   __raw_writel(__pa(shmobile_secondary_vector), __io(AVECR));
+arch/arm/mach-shmobile/smp-sh73a0.c:    if (((__raw_readl(__io(PSTR)) >> (4 * cpu)) & 3) = 3)
+arch/arm/mach-shmobile/smp-sh73a0.c:            __raw_writel(1 << cpu, __io(WUPCR));    /* wake up */
+arch/arm/mach-shmobile/smp-sh73a0.c:            __raw_writel(1 << cpu, __io(SRESCR));   /* reset */
+arch/arm/mach-shmobile/smp-sh73a0.c:    __raw_writel(0, __io(APARMBAREA));      /* 4k */
+arch/arm/mach-shmobile/smp-sh73a0.c:    __raw_writel(__pa(shmobile_secondary_vector), __io(SBAR));
+arch/arm/mach-ux500/include/mach/hardware.h:#define __io_address(n)             __io(IO_ADDRESS(n))
 
-  This also affects drivers that are shared with the sh architecture,
-  so the branch containing this part of the material, clk_ops-rename,
-  will be merged into the Paul Mundt's sh tree if necessary.
+These are all broken and need to be changed to something else before we add the
+global definition for __io.
 
-* Introduction of L2 Cache support for r8a7779.
-
-* Conversion of the mach-shmobile subarch to properly use a per-SoC
-  map_io and separate init_early callback for early serial console
-  support on platforms where that is possible.
-
-Magnus Damm is the author of all the changes.
-
-
- arch/arm/mach-shmobile/board-ag5evm.c        |   39 +---------------
- arch/arm/mach-shmobile/board-ap4evb.c        |   44 +++----------------
- arch/arm/mach-shmobile/board-bonito.c        |   44 +++++-------------
- arch/arm/mach-shmobile/board-g3evm.c         |   38 +--------------
- arch/arm/mach-shmobile/board-g4evm.c         |   38 +--------------
- arch/arm/mach-shmobile/board-kota2.c         |   38 +--------------
- arch/arm/mach-shmobile/board-mackerel.c      |   44 +++----------------
- arch/arm/mach-shmobile/board-marzen.c        |   62 +------------------------
- arch/arm/mach-shmobile/clock-r8a7740.c       |    8 ++--
- arch/arm/mach-shmobile/clock-r8a7779.c       |    4 +-
- arch/arm/mach-shmobile/clock-sh7367.c        |    8 ++--
- arch/arm/mach-shmobile/clock-sh7372.c        |   10 ++--
- arch/arm/mach-shmobile/clock-sh7377.c        |    8 ++--
- arch/arm/mach-shmobile/clock-sh73a0.c        |   14 +++---
- arch/arm/mach-shmobile/clock.c               |    2 +-
- arch/arm/mach-shmobile/include/mach/common.h |    9 +++-
- arch/arm/mach-shmobile/setup-r8a7740.c       |   45 +++++++++++++++++++
- arch/arm/mach-shmobile/setup-r8a7779.c       |   54 ++++++++++++++++++++++
- arch/arm/mach-shmobile/setup-sh7367.c        |   32 +++++++++++++
- arch/arm/mach-shmobile/setup-sh7372.c        |   32 +++++++++++++
- arch/arm/mach-shmobile/setup-sh7377.c        |   32 +++++++++++++
- arch/arm/mach-shmobile/setup-sh73a0.c        |   32 +++++++++++++
- arch/arm/mach-shmobile/timer.c               |    6 ++-
- arch/sh/boards/mach-highlander/setup.c       |    2 +-
- arch/sh/boards/mach-sdk7786/setup.c          |    2 +-
- arch/sh/include/asm/clock.h                  |    2 +-
- arch/sh/kernel/cpu/sh2/clock-sh7619.c        |   12 +++---
- arch/sh/kernel/cpu/sh2a/clock-sh7201.c       |   12 +++---
- arch/sh/kernel/cpu/sh2a/clock-sh7203.c       |   12 +++---
- arch/sh/kernel/cpu/sh2a/clock-sh7206.c       |   12 +++---
- arch/sh/kernel/cpu/sh3/clock-sh3.c           |   12 +++---
- arch/sh/kernel/cpu/sh3/clock-sh7705.c        |   12 +++---
- arch/sh/kernel/cpu/sh3/clock-sh7706.c        |   12 +++---
- arch/sh/kernel/cpu/sh3/clock-sh7709.c        |   12 +++---
- arch/sh/kernel/cpu/sh3/clock-sh7710.c        |   12 +++---
- arch/sh/kernel/cpu/sh3/clock-sh7712.c        |   10 ++--
- arch/sh/kernel/cpu/sh4/clock-sh4-202.c       |    6 +-
- arch/sh/kernel/cpu/sh4/clock-sh4.c           |   12 +++---
- arch/sh/kernel/cpu/sh4a/clock-sh7343.c       |    4 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7366.c       |    4 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7722.c       |    4 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7723.c       |    4 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7724.c       |    6 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7757.c       |    2 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7763.c       |   14 +++---
- arch/sh/kernel/cpu/sh4a/clock-sh7770.c       |   12 +++---
- arch/sh/kernel/cpu/sh4a/clock-sh7780.c       |   14 +++---
- arch/sh/kernel/cpu/sh4a/clock-sh7785.c       |    2 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7786.c       |    2 +-
- arch/sh/kernel/cpu/sh4a/clock-shx3.c         |    2 +-
- arch/sh/kernel/cpu/sh5/clock-sh5.c           |   12 +++---
- drivers/sh/clk/cpg.c                         |   16 +++---
- include/linux/sh_clk.h                       |    5 +-
- 53 files changed, 429 insertions(+), 459 deletions(-)
-
----------------
-
-Magnus Damm (35):
-      sh: introduce sh_clk_ops in parallel with clk_ops
-      sh: convert cpg code to sh_clk_ops
-      ARM: mach-shmobile: sh7367 sh_clk_ops rename
-      ARM: mach-shmobile: sh7377 sh_clk_ops rename
-      ARM: mach-shmobile: sh7372 sh_clk_ops rename
-      ARM: mach-shmobile: sh73a0 sh_clk_ops rename
-      ARM: mach-shmobile: r8a7740 sh_clk_ops rename
-      ARM: mach-shmobile: r8a7779 sh_clk_ops rename
-      sh: sh header sh_clk_ops rename
-      sh: sh2 sh_clk_ops rename
-      sh: sh2a sh_clk_ops rename
-      sh: sh3 sh_clk_ops rename
-      sh: sh4 sh_clk_ops rename
-      sh: sh4a sh_clk_ops rename
-      sh: sh5 sh_clk_ops rename
-      sh: board sh_clk_ops rename
-      sh: remove clk_ops
-      ARM: mach-shmobile: sh7367 map_io and init_early update
-      ARM: mach-shmobile: sh7377 map_io and init_early update
-      ARM: mach-shmobile: sh7372 map_io and init_early update
-      ARM: mach-shmobile: sh73a0 map_io and init_early update
-      ARM: mach-shmobile: r8a7740 map_io and init_early update
-      ARM: mach-shmobile: r8a7779 map_io and init_early update
-      ARM: mach-shmobile: r8a7779 L2 cache support
-      ARM: mach-shmobile: rename clk_init() to shmobile_clk_init()
-      ARM: mach-shmobile: Move sh7372 Mackerel external clk setup
-      ARM: mach-shmobile: Move sh7372 AP4EVB external clk setup
-      ARM: mach-shmobile: add shmobile_earlytimer_init()
-      ARM: mach-shmobile: sh7367 and G3EVM timer rework
-      ARM: mach-shmobile: sh7377 and G4EVM timer rework
-      ARM: mach-shmobile: sh7372, AP4EVB and Mackerel timer rework
-      ARM: mach-shmobile: sh73a0, AG5EVM and Kota2 timer rework
-      ARM: mach-shmobile: r8a7740 and Bonito timer rework
-      ARM: mach-shmobile: r8a7779 and Marzen timer rework
-      ARM: mach-shmobile: default to no earlytimer
-
+	Arnd
