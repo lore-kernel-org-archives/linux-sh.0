@@ -1,193 +1,137 @@
-From: Amit Kucheria <amit.kucheria@linaro.org>
-Date: Wed, 21 Mar 2012 14:36:29 +0000
-Subject: Re: [PATCH v8 4/8] ARM: davinci: Consolidate time keeping and irq enable
-Message-Id: <CAP245DW9SdTYNc8XXwiuHzo5Y-aZrLc2qP0MekKkyAT2TosjbQ@mail.gmail.com>
+From: Bastian Hecht <hechtb@googlemail.com>
+Date: Sat, 10 Mar 2012 15:31:18 +0000
+Subject: [PATCH] mtd: sh_flctl: Add power management support
+Message-Id: <1331393478-30850-1-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1332274969-15782-1-git-send-email-rob.lee@linaro.org>
- <1332274969-15782-5-git-send-email-rob.lee@linaro.org>
- <CAMXH7KH5kS=wPFdC8QrtnhE6_sZqmsJ8h=6Gs3kfHOTbeHjacA@mail.gmail.com>
-In-Reply-To: <CAMXH7KH5kS=wPFdC8QrtnhE6_sZqmsJ8h=6Gs3kfHOTbeHjacA@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org, linux-mtd@lists.infradead.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pichart <laurent.pinchart@ideasonboard.com>
 
-Rob, you should start a new '3.4-fixes' branch containing such
-bugfixes that can be pushed to Len after -rc1.
+All transactions with the NAND chip require a chip enable signal. So we
+wrap the runtime_pm_get()/put()s around it. As registers are cached, we
+need no suspend()/resume() callbacks.
 
-On Wed, Mar 21, 2012 at 4:28 PM, Rob Lee <rob.lee@linaro.org> wrote:
-> Sekhar tested this patch on Davinci last night and found a problem. =A0I
-> looked at the code again and found a mindless omission on my part (see
-> below). =A0Fix is trivial. =A0I've check all other platforms and confirmed
-> this problem does not exist for those. =A0Will resend a v9 of the
-> patchset shortly.
->
-> On Tue, Mar 20, 2012 at 3:22 PM, Robert Lee <rob.lee@linaro.org> wrote:
->> Enable core cpuidle timekeeping and irq enabling and remove that
->> handling from this code.
->>
->> Signed-off-by: Robert Lee <rob.lee@linaro.org>
->> Reviewed-by: Kevin Hilman <khilman@ti.com>
->> Reviewed-by: Daniel Lezcano <daniel.lezcano@linaro.org>
->> Acked-by: Jean Pihet<j-pihet@ti.com>
->> ---
->> =A0arch/arm/mach-davinci/cpuidle.c | =A0 82 ++++++++++++++++------------=
------------
->> =A01 file changed, 33 insertions(+), 49 deletions(-)
->>
->> diff --git a/arch/arm/mach-davinci/cpuidle.c b/arch/arm/mach-davinci/cpu=
-idle.c
->> index a30c7c5..93ae096 100644
->> --- a/arch/arm/mach-davinci/cpuidle.c
->> +++ b/arch/arm/mach-davinci/cpuidle.c
->> @@ -18,6 +18,7 @@
->> =A0#include <linux/io.h>
->> =A0#include <linux/export.h>
->> =A0#include <asm/proc-fns.h>
->> +#include <asm/cpuidle.h>
->>
->> =A0#include <mach/cpuidle.h>
->> =A0#include <mach/ddr2.h>
->> @@ -30,12 +31,42 @@ struct davinci_ops {
->> =A0 =A0 =A0 =A0u32 flags;
->> =A0};
->>
->> +/* Actual code that puts the SoC in different idle states */
->> +static int davinci_enter_idle(struct cpuidle_device *dev,
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 struct cpu=
-idle_driver *drv,
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =
-=A0 =A0 =A0 =A0 =A0 =A0 int index)
->> +{
->> + =A0 =A0 =A0 struct cpuidle_state_usage *state_usage =3D &dev->states_u=
-sage[index];
->> + =A0 =A0 =A0 struct davinci_ops *ops =3D cpuidle_get_statedata(state_us=
-age);
->> +
->> + =A0 =A0 =A0 if (ops && ops->enter)
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 ops->enter(ops->flags);
->> +
->> + =A0 =A0 =A0 index =3D cpuidle_wrap_enter(dev, drv, index,
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 arm_cpuidl=
-e_simple_enter);
->> +
->> + =A0 =A0 =A0 if (ops && ops->exit)
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 ops->exit(ops->flags);
->> +
->> + =A0 =A0 =A0 return index;
->> +}
->> +
->> =A0/* fields in davinci_ops.flags */
->> =A0#define DAVINCI_CPUIDLE_FLAGS_DDR2_PWDN =A0 =A0 =A0 =A0BIT(0)
->>
->> =A0static struct cpuidle_driver davinci_idle_driver =3D {
->> - =A0 =A0 =A0 .name =A0 =3D "cpuidle-davinci",
->> - =A0 =A0 =A0 .owner =A0=3D THIS_MODULE,
->> + =A0 =A0 =A0 .name =A0 =A0 =A0 =A0 =A0 =3D "cpuidle-davinci",
->> + =A0 =A0 =A0 .owner =A0 =A0 =A0 =A0 =A0=3D THIS_MODULE,
->
-> Argh! I am missing the ".en_core_tk_irqen =3D 1" here.
->
->
->> + =A0 =A0 =A0 .states[0] =A0 =A0 =A0=3D ARM_CPUIDLE_WFI_STATE,
->> + =A0 =A0 =A0 .states[1] =A0 =A0 =A0=3D {
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .enter =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
-=3D davinci_enter_idle,
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .exit_latency =A0 =A0 =A0 =A0 =A0 =3D 10,
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .target_residency =A0 =A0 =A0 =3D 100000,
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .flags =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
-=3D CPUIDLE_FLAG_TIME_VALID,
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .name =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =
-=3D "DDR SR",
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .desc =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =
-=3D "WFI and DDR Self Refresh",
->> + =A0 =A0 =A0 },
->> + =A0 =A0 =A0 .state_count =3D DAVINCI_CPUIDLE_MAX_STATES,
->> =A0};
->>
->> =A0static DEFINE_PER_CPU(struct cpuidle_device, davinci_cpuidle_device);
->> @@ -77,41 +108,10 @@ static struct davinci_ops davinci_states[DAVINCI_CP=
-UIDLE_MAX_STATES] =3D {
->> =A0 =A0 =A0 =A0},
->> =A0};
->>
->> -/* Actual code that puts the SoC in different idle states */
->> -static int davinci_enter_idle(struct cpuidle_device *dev,
->> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 struct cpu=
-idle_driver *drv,
->> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =
-=A0 =A0 =A0 =A0 =A0 =A0 int index)
->> -{
->> - =A0 =A0 =A0 struct cpuidle_state_usage *state_usage =3D &dev->states_u=
-sage[index];
->> - =A0 =A0 =A0 struct davinci_ops *ops =3D cpuidle_get_statedata(state_us=
-age);
->> - =A0 =A0 =A0 struct timeval before, after;
->> - =A0 =A0 =A0 int idle_time;
->> -
->> - =A0 =A0 =A0 local_irq_disable();
->> - =A0 =A0 =A0 do_gettimeofday(&before);
->> -
->> - =A0 =A0 =A0 if (ops && ops->enter)
->> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 ops->enter(ops->flags);
->> - =A0 =A0 =A0 /* Wait for interrupt state */
->> - =A0 =A0 =A0 cpu_do_idle();
->> - =A0 =A0 =A0 if (ops && ops->exit)
->> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 ops->exit(ops->flags);
->> -
->> - =A0 =A0 =A0 do_gettimeofday(&after);
->> - =A0 =A0 =A0 local_irq_enable();
->> - =A0 =A0 =A0 idle_time =3D (after.tv_sec - before.tv_sec) * USEC_PER_SE=
-C +
->> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 (after.tv_usec - before.tv=
-_usec);
->> -
->> - =A0 =A0 =A0 dev->last_residency =3D idle_time;
->> -
->> - =A0 =A0 =A0 return index;
->> -}
->> -
->> =A0static int __init davinci_cpuidle_probe(struct platform_device *pdev)
->> =A0{
->> =A0 =A0 =A0 =A0int ret;
->> =A0 =A0 =A0 =A0struct cpuidle_device *device;
->> - =A0 =A0 =A0 struct cpuidle_driver *driver =3D &davinci_idle_driver;
->> =A0 =A0 =A0 =A0struct davinci_cpuidle_config *pdata =3D pdev->dev.platfo=
-rm_data;
->>
->> =A0 =A0 =A0 =A0device =3D &per_cpu(davinci_cpuidle_device, smp_processor=
-_id());
->> @@ -123,27 +123,11 @@ static int __init davinci_cpuidle_probe(struct pla=
-tform_device *pdev)
->>
->> =A0 =A0 =A0 =A0ddr2_reg_base =3D pdata->ddr2_ctlr_base;
->>
->> - =A0 =A0 =A0 /* Wait for interrupt state */
->> - =A0 =A0 =A0 driver->states[0].enter =3D davinci_enter_idle;
->> - =A0 =A0 =A0 driver->states[0].exit_latency =3D 1;
->> - =A0 =A0 =A0 driver->states[0].target_residency =3D 10000;
->> - =A0 =A0 =A0 driver->states[0].flags =3D CPUIDLE_FLAG_TIME_VALID;
->> - =A0 =A0 =A0 strcpy(driver->states[0].name, "WFI");
->> - =A0 =A0 =A0 strcpy(driver->states[0].desc, "Wait for interrupt");
->> -
->> - =A0 =A0 =A0 /* Wait for interrupt and DDR self refresh state */
->> - =A0 =A0 =A0 driver->states[1].enter =3D davinci_enter_idle;
->> - =A0 =A0 =A0 driver->states[1].exit_latency =3D 10;
->> - =A0 =A0 =A0 driver->states[1].target_residency =3D 10000;
->> - =A0 =A0 =A0 driver->states[1].flags =3D CPUIDLE_FLAG_TIME_VALID;
->> - =A0 =A0 =A0 strcpy(driver->states[1].name, "DDR SR");
->> - =A0 =A0 =A0 strcpy(driver->states[1].desc, "WFI and DDR Self Refresh");
->> =A0 =A0 =A0 =A0if (pdata->ddr2_pdown)
->> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0davinci_states[1].flags |=3D DAVINCI_CPUI=
-DLE_FLAGS_DDR2_PWDN;
->> =A0 =A0 =A0 =A0cpuidle_set_statedata(&device->states_usage[1], &davinci_=
-states[1]);
->>
->> =A0 =A0 =A0 =A0device->state_count =3D DAVINCI_CPUIDLE_MAX_STATES;
->> - =A0 =A0 =A0 driver->state_count =3D DAVINCI_CPUIDLE_MAX_STATES;
->>
->> =A0 =A0 =A0 =A0ret =3D cpuidle_register_driver(&davinci_idle_driver);
->> =A0 =A0 =A0 =A0if (ret) {
->> --
->> 1.7.9.4
->>
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+---
+ drivers/mtd/nand/sh_flctl.c  |   31 +++++++++++++++++++++++++------
+ include/linux/mtd/sh_flctl.h |    1 +
+ 2 files changed, 26 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
+index d0f1f3c..c72de39 100644
+--- a/drivers/mtd/nand/sh_flctl.c
++++ b/drivers/mtd/nand/sh_flctl.c
+@@ -26,6 +26,7 @@
+ #include <linux/delay.h>
+ #include <linux/io.h>
+ #include <linux/platform_device.h>
++#include <linux/pm_runtime.h>
+ #include <linux/slab.h>
+ 
+ #include <linux/mtd/mtd.h>
+@@ -515,6 +516,8 @@ static void flctl_cmdfunc(struct mtd_info *mtd, unsigned int command,
+ 	struct sh_flctl *flctl = mtd_to_flctl(mtd);
+ 	uint32_t read_cmd = 0;
+ 
++	BUG_ON(!flctl->power);
++
+ 	flctl->read_bytes = 0;
+ 	if (command != NAND_CMD_PAGEPROG)
+ 		flctl->index = 0;
+@@ -689,12 +692,22 @@ static void flctl_select_chip(struct mtd_info *mtd, int chipnr)
+ 	case -1:
+ 		flctl->flcmncr_base &= ~CE0_ENABLE;
+ 		writel(flctl->flcmncr_base, FLCMNCR(flctl));
++
++		if (flctl->power) {
++			pm_runtime_put_sync(&flctl->pdev->dev);
++			flctl->power = 0;
++		}
+ 		break;
+ 	case 0:
+ 		flctl->flcmncr_base |= CE0_ENABLE;
+ 		writel(flctl->flcmncr_base, FLCMNCR(flctl));
+ 		if (flctl->holden)
+ 			writel(HOLDEN, FLHOLDCR(flctl));
++
++		if (!flctl->power) {
++			pm_runtime_get_sync(&flctl->pdev->dev);
++			flctl->power = 1;
++		}
+ 		break;
+ 	default:
+ 		BUG();
+@@ -835,13 +848,13 @@ static int __devinit flctl_probe(struct platform_device *pdev)
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	if (!res) {
+ 		dev_err(&pdev->dev, "failed to get I/O memory\n");
+-		goto err;
++		goto err_iomap;
+ 	}
+ 
+ 	flctl->reg = ioremap(res->start, resource_size(res));
+ 	if (flctl->reg = NULL) {
+ 		dev_err(&pdev->dev, "failed to remap I/O memory\n");
+-		goto err;
++		goto err_iomap;
+ 	}
+ 
+ 	platform_set_drvdata(pdev, flctl);
+@@ -871,23 +884,28 @@ static int __devinit flctl_probe(struct platform_device *pdev)
+ 		nand->read_word = flctl_read_word;
+ 	}
+ 
++	pm_runtime_enable(&pdev->dev);
++	pm_runtime_resume(&pdev->dev);
++
+ 	ret = nand_scan_ident(flctl_mtd, 1, NULL);
+ 	if (ret)
+-		goto err;
++		goto err_chip;
+ 
+ 	ret = flctl_chip_init_tail(flctl_mtd);
+ 	if (ret)
+-		goto err;
++		goto err_chip;
+ 
+ 	ret = nand_scan_tail(flctl_mtd);
+ 	if (ret)
+-		goto err;
++		goto err_chip;
+ 
+ 	mtd_device_register(flctl_mtd, pdata->parts, pdata->nr_parts);
+ 
+ 	return 0;
+ 
+-err:
++err_chip:
++	pm_runtime_disable(&pdev->dev);
++err_iomap:
+ 	kfree(flctl);
+ 	return ret;
+ }
+@@ -897,6 +915,7 @@ static int __devexit flctl_remove(struct platform_device *pdev)
+ 	struct sh_flctl *flctl = platform_get_drvdata(pdev);
+ 
+ 	nand_release(&flctl->mtd);
++	pm_runtime_disable(&pdev->dev);
+ 	kfree(flctl);
+ 
+ 	return 0;
+diff --git a/include/linux/mtd/sh_flctl.h b/include/linux/mtd/sh_flctl.h
+index 8bcf299..f34a0a1 100644
+--- a/include/linux/mtd/sh_flctl.h
++++ b/include/linux/mtd/sh_flctl.h
+@@ -149,6 +149,7 @@ struct sh_flctl {
+ 	unsigned page_size:1;	/* NAND page size (0 = 512, 1 = 2048) */
+ 	unsigned hwecc:1;	/* Hardware ECC (0 = disabled, 1 = enabled) */
+ 	unsigned holden:1;	/* Hardware has FLHOLDCR and HOLDEN is set */
++	unsigned power:1;	/* RTPM flag */
+ };
+ 
+ struct sh_flctl_platform_data {
+-- 
+1.7.5.4
+
