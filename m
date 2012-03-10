@@ -1,18 +1,36 @@
-From: Fabio Estevam <festevam@gmail.com>
-Date: Fri, 09 Mar 2012 14:16:49 +0000
+From: yang gqyang <hustgqyang@gmail.com>
+Date: Sat, 10 Mar 2012 14:37:09 +0000
 Subject: Re: implementing "suspend to ram" on cortex A8 based on linux 3.0.8
-Message-Id: <CAOMZO5AMfdFciOtgn+8jU07ciL_TCd_Fo-DgfA09vR8tAAoh2w@mail.gmail.com>
+Message-Id: <CAFawwkVuCTijwLr6UWVRh9XNGCt-8brr2f4aDrpM_YwkWSGP+A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <CAFawwkXQhyj+c8LEDnD7q4mXDJV2jYCAHV0tBrqxrEaNGk+_0w@mail.gmail.com>
-In-Reply-To: <CAFawwkXQhyj+c8LEDnD7q4mXDJV2jYCAHV0tBrqxrEaNGk+_0w@mail.gmail.com>
+ <CACNz9cVbULxVSGvo60V+JLL=15BDEaYwgd5k9ZMNu09Kfwz4WQ@mail.gmail.com>
+ <CAFawwkWQd=y=kVm97UjSs37=-MRmJiy9f7sy8ChYzCHZ9Y-gyA@mail.gmail.com>
+In-Reply-To: <CAFawwkWQd=y=kVm97UjSs37=-MRmJiy9f7sy8ChYzCHZ9Y-gyA@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="gb2312"
+Content-Transfer-Encoding: base64
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Mar 7, 2012 at 12:05 PM, yang gqyang <hustgqyang@gmail.com> wrote:
-> dear all:
-> I am working on arm cortex a8 now, trying to implement "suspend to ram"
-> based on linux 3.0.8.
-
-Which CPU exactly are you using?
+IFRoYW5rcyBmb3IgeW91ciBjb21tZW50LgogRmluYWxseSwgaSBmaW5kIG91dCB0aGF0IGkgbWFk
+ZSBhIG1pc3Rha2UuICBUaGUgdWFydCg4MjUwKSBoYXZlIG5vdCBiZWVuCiByZXN0b3JlIGFmdGVy
+IHJlc3VtZSwgaW5zdGVhZCwgaXQgdXNlIHRoZSBjb25maWd1cmF0aW9uIGdvdCBmcm9tIGJvb3Qu
+IFRoZQogdWFydCBoYXZlIG5vdCBiZWVuIHJlc3RvcmVkIGNvcnJlY3RseSwgc28gdGhhdCAibHMi
+IGNhbiBub3Qgb3V0cHV0IHJlc3VsdAogY29ycmVjdGx5IHJlc3VsdGluZyBpbiBpdCBzZWVtcyB0
+aGF0IHRoZSBidXN5Ym94IGNhbiBub3Qgd29yayBjb3JyZWN0bHkuCiBOb3csIGkgc3RpbGwgaGF2
+ZSBhIHF1ZXN0aW9uIGFib3V0IHRoZSB1YXJ0OiB3aHkgdGhlICJwcmludGsiIGNhbiB3b3JrCiBj
+b3JyZWN0bHksIGJ1dCB0aGUgInByaW50ZiIgbm90PwoKIEJlZm9yZSB0aGlzLCBpIGJlbGlldmUg
+dGhhdCB0aGUgInByaW50ayIgd29yayBjb3JyZWN0bHksIHRoZW4gdGhlIHVhcnQKIHdvcmsgb2su
+IGJ1dCBub3csIGkgIG5lZWQgbW9yZSByZWNvbnNpZGFyYXRpb24gYWJvdXQKIHRoZSByZWxhdGlv
+biBiZXR3ZWVuIHRoZSAicHJpbnRrIiwgInByaW50ZiIgYW5kICJ1YXJ0Ii4KIENhbiBhbnlvbmUg
+Z2l2ZSBtZSBzb21lIHN1Z2dlc3Rpb24/IEFueSBjb21tZW50IGlzIHdlbGNvbWUsIHRoYW5rcyBh
+CiBsb3QuCgoKPiDU2iAyMDEyxOoz1MI5yNUgz8LO5zEwOjA4o6xDaGVuZ2xpZSBIZSA8Y2hlbmdq
+aWUuaGVAbGluYXJvLm9yZz7QtLXAo7oKPgo+PiBIaSwKPj4KPj4gSSBhbSBkb2luZyB0aGlzIG9u
+IEE5LCBlY2hvIG1lbSA+L3N5cy9wb3dlci9zdGF0ZSBpcyByaWdodCwgd2lsbCB0cmlnZ2VyCj4+
+IGtlcm5lbCB0byBzbGVlcC4KPj4KPj4gLWphY2sKCj4Kc29tZSByZWNpcGllbnQgcHJvbW90ZToK
+IlRoZSBtZXNzYWdlIGNvbnRhaW5zIEhUTUwgc3VicGFydCwgdGhlcmVmb3JlIHdlIGNvbnNpZGVy
+IGl0IFNQQU0gb3IKT3V0bG9vayBWaXJ1cyIKc28gaSByZXNlbmQgdGhlIGVtYWlsLCBob3BlIGl0
+IG5vdCBkaXN0dXJiIHUuIHRoYW5rcyBhIGxvdC4KLS0KVG8gdW5zdWJzY3JpYmUgZnJvbSB0aGlz
+IGxpc3Q6IHNlbmQgdGhlIGxpbmUgInVuc3Vic2NyaWJlIGxpbnV4LXNoIiBpbgp0aGUgYm9keSBv
+ZiBhIG1lc3NhZ2UgdG8gbWFqb3Jkb21vQHZnZXIua2VybmVsLm9yZwpNb3JlIG1ham9yZG9tbyBp
+bmZvIGF0ICBodHRwOi8vdmdlci5rZXJuZWwub3JnL21ham9yZG9tby1pbmZvLmh0bWw=
