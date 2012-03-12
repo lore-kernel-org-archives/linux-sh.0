@@ -1,104 +1,103 @@
-From: Stephen Rothwell <sfr@canb.auug.org.au>
-Date: Fri, 09 Mar 2012 06:40:17 +0000
+From: Rob Lee <rob.lee@linaro.org>
+Date: Mon, 12 Mar 2012 18:45:15 +0000
 Subject: Re: [git pull] Consolidate cpuidle functionality
-Message-Id: <20120309174017.081154936f57039b37c50435@canb.auug.org.au>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="Signature=_Fri__9_Mar_2012_17_40_17_+1100_s.1cezz0iw7EXb7M"
+Message-Id: <CAMXH7KFrMVzn1tVxWzm1yOVuiaVJoo7x_NHm6XPo3rPDtuM=tQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1330562578-3410-1-git-send-email-rob.lee@linaro.org>
  <87y5reivhb.fsf@ti.com>
  <CAMXH7KEwQM37R++8moXB8Q41_fBXOnVY2hXJGFQmTQ20oeFPEQ@mail.gmail.com>
-In-Reply-To: <CAMXH7KEwQM37R++8moXB8Q41_fBXOnVY2hXJGFQmTQ20oeFPEQ@mail.gmail.com>
+ <20120309174017.081154936f57039b37c50435@canb.auug.org.au>
+In-Reply-To: <20120309174017.081154936f57039b37c50435@canb.auug.org.au>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
---Signature=_Fri__9_Mar_2012_17_40_17_+1100_s.1cezz0iw7EXb7M
-Content-Type: text/plain; charset=US-ASCII
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Len and Andrew,
 
-Hi Rob,
+Please consider this an official merge request of this cpuidle
+patchset for v3.4.
 
-On Thu, 8 Mar 2012 19:58:23 -0600 Rob Lee <rob.lee@linaro.org> wrote:
+There were two small conflicts Stephen Rothwell found when merging to
+linux-next.  The first conflict is with patch 1/9 in the
+drivers/cpuidle/cpuidle.c file which is trivially to resolve.  I'm
+told this fixup is trivially enough to not require anyone to carry it.
+
+The second is with patch 2/9 in mach-at91/cpuidle.c due to some minor
+cleanup changes.  The fix is also pretty simple but I'm waiting to
+hear back about who will carry it.
+
+Please let me know if you need any other action or information on my part.
+
+Thanks,
+Rob
+
+
+On Fri, Mar 9, 2012 at 12:40 AM, Stephen Rothwell <sfr@canb.auug.org.au> wr=
+ote:
+> Hi Rob,
 >
->   git://git.linaro.org/people/rob_lee/linux.git cpuidle_consol_pull
->=20
-> These changes move various functionality duplicated in platform
-> cpuidle drivers to the core cpuidle driver and common arch arm code. Also,
-> the irq disabling in the platform code was removed as all calls into
-> cpuidle_call_idle() will have already called local_irq_disable().
->=20
-> This patchset is bisect safe.  Also, the core cpuidle and arch changes of=
- the
-> first commit do not require any changes to the arch and platform cpuidle
-> drivers, though those arch and platform change should be made to take
-> advantage of the new consolidation function.
->=20
-> Stephen, this patch has been reviewed, tested, and ACK'd per the list abo=
-ve but
-> cpuidle maintainer Len Brown has been out on vacation for a couple of wee=
-ks so
-> I am sending you this pull request as time is running out to get this into
-> v3.4.  I've had a brief communication with Andrew Morton about
-> this as well so he is aware of this situation.  I am fairly new to the
-> community so please let me know if you see anything that needs my attenti=
-on or
-> anything I should be doing differently.
-
-I will add this tree from today.  Lets see if anyone screams.
-
-Thanks for adding your subsystem tree as a participant of linux-next.  As
-you may know, this is not a judgment of your code.  The purpose of
-linux-next is for integration testing and to lower the impact of
-conflicts between subsystems in the next merge window.=20
-
-You will need to ensure that the patches/commits in your tree/series have
-been:
-     * submitted under GPL v2 (or later) and include the Contributor's
-	Signed-off-by,
-     * posted to the relevant mailing list,
-     * reviewed by you (or another maintainer of your subsystem tree),
-     * successfully unit tested, and=20
-     * destined for the current or next Linux merge window.
-
-Basically, this should be just what you would send to Linus (or ask him
-to fetch).  It is allowed to be rebased if you deem it necessary.
-
---=20
-Cheers,
-Stephen Rothwell=20
-sfr@canb.auug.org.au
-
-Legal Stuff:
-By participating in linux-next, your subsystem tree contributions are
-public and will be included in the linux-next trees.  You may be sent
-e-mail messages indicating errors or other issues when the
-patches/commits from your subsystem tree are merged and tested in
-linux-next.  These messages may also be cross-posted to the linux-next
-mailing list, the linux-kernel mailing list, etc.  The linux-next tree
-project and IBM (my employer) make no warranties regarding the linux-next
-project, the testing procedures, the results, the e-mails, etc.  If you
-don't agree to these ground rules, let me know and I'll remove your tree
-from participation in linux-next.
-
---Signature=_Fri__9_Mar_2012_17_40_17_+1100_s.1cezz0iw7EXb7M
-Content-Type: application/pgp-signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBCAAGBQJPWaXRAAoJEECxmPOUX5FEG8wP/3yuuKTi0q50yYdS5P5YTniy
-kcqPNEPr6BFSSwn/Xl2jPl84y4TwnSon4vb1jTnSL6fLvynGih9gpQiHq+HqA16C
-VuxoqO/j73IDppj5Iwo1x7mBt7A9wpD5hKyktkAvhgdcebgPvWIKFMGzwN4nSgzz
-NJM4I/D1oLfi98Z9dYiku3Ke4CFX62MjEBp5GM2BYeOsiSbJS5pEnY2xPOxfQ+Tl
-75OhNj1QAQpX5rFQmLcrQtkq65B7XBwmNln34o1QQR3XUm1aC4z5TWTKnyA0jg0n
-1LgDZitrmRcHfyTdo/VAHwPHL0O0WLRpurz8CXgZ1CI0WTbWnDvzqN2PBaKWe8vm
-gN97Sb+KLpx7BS/j5e/erE+qL9IsGtck738u1RCnm8BLqOIUUpr4zbaBR2hNHWzD
-kjU6fvbF/BXy0LM6E33ijmV1lUGTPGu4NrGRw0v9RQXZCKQQcbyE4a8edVp81FHP
-opMra2iEPVczhBZpHWB/RcuczA2RK426uI+QMcCBCWinWkzduLPw96+FxeSsmB3z
-uOkExrqAvhQtdwsPKiq4nJgwdiCzYfNPBqhTJxBZruYMenRbmoHFjCCCMd5w4Ihr
-GUZThNtZ/qsBBEIKteFMCYQsLfQRw/z9KQkWA1D0o1Bztg81iU6rYW7RLzeXmz1Q
-UUWG9shxJzD3auGISdWm
-=cCwu
------END PGP SIGNATURE-----
-
---Signature=_Fri__9_Mar_2012_17_40_17_+1100_s.1cezz0iw7EXb7M--
+> On Thu, 8 Mar 2012 19:58:23 -0600 Rob Lee <rob.lee@linaro.org> wrote:
+>>
+>> =A0 git://git.linaro.org/people/rob_lee/linux.git cpuidle_consol_pull
+>>
+>> These changes move various functionality duplicated in platform
+>> cpuidle drivers to the core cpuidle driver and common arch arm code. Als=
+o,
+>> the irq disabling in the platform code was removed as all calls into
+>> cpuidle_call_idle() will have already called local_irq_disable().
+>>
+>> This patchset is bisect safe. =A0Also, the core cpuidle and arch changes=
+ of the
+>> first commit do not require any changes to the arch and platform cpuidle
+>> drivers, though those arch and platform change should be made to take
+>> advantage of the new consolidation function.
+>>
+>> Stephen, this patch has been reviewed, tested, and ACK'd per the list ab=
+ove but
+>> cpuidle maintainer Len Brown has been out on vacation for a couple of we=
+eks so
+>> I am sending you this pull request as time is running out to get this in=
+to
+>> v3.4. =A0I've had a brief communication with Andrew Morton about
+>> this as well so he is aware of this situation. =A0I am fairly new to the
+>> community so please let me know if you see anything that needs my attent=
+ion or
+>> anything I should be doing differently.
+>
+> I will add this tree from today. =A0Lets see if anyone screams.
+>
+> Thanks for adding your subsystem tree as a participant of linux-next. =A0=
+As
+> you may know, this is not a judgment of your code. =A0The purpose of
+> linux-next is for integration testing and to lower the impact of
+> conflicts between subsystems in the next merge window.
+>
+> You will need to ensure that the patches/commits in your tree/series have
+> been:
+> =A0 =A0 * submitted under GPL v2 (or later) and include the Contributor's
+> =A0 =A0 =A0 =A0Signed-off-by,
+> =A0 =A0 * posted to the relevant mailing list,
+> =A0 =A0 * reviewed by you (or another maintainer of your subsystem tree),
+> =A0 =A0 * successfully unit tested, and
+> =A0 =A0 * destined for the current or next Linux merge window.
+>
+> Basically, this should be just what you would send to Linus (or ask him
+> to fetch). =A0It is allowed to be rebased if you deem it necessary.
+>
+> --
+> Cheers,
+> Stephen Rothwell
+> sfr@canb.auug.org.au
+>
+> Legal Stuff:
+> By participating in linux-next, your subsystem tree contributions are
+> public and will be included in the linux-next trees. =A0You may be sent
+> e-mail messages indicating errors or other issues when the
+> patches/commits from your subsystem tree are merged and tested in
+> linux-next. =A0These messages may also be cross-posted to the linux-next
+> mailing list, the linux-kernel mailing list, etc. =A0The linux-next tree
+> project and IBM (my employer) make no warranties regarding the linux-next
+> project, the testing procedures, the results, the e-mails, etc. =A0If you
+> don't agree to these ground rules, let me know and I'll remove your tree
+> from participation in linux-next.
