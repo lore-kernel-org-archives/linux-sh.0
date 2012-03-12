@@ -1,7 +1,7 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 12 Mar 2012 21:37:53 +0000
+Date: Mon, 12 Mar 2012 21:54:25 +0000
 Subject: Re: [PATCH] sh_tmu / PM: Prevent power from being removed from TMU devices
-Message-Id: <201203122237.53636.rjw@sisk.pl>
+Message-Id: <201203122254.25467.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201203030041.30244.rjw@sisk.pl>
 In-Reply-To: <201203030041.30244.rjw@sisk.pl>
@@ -48,7 +48,9 @@ On Monday, March 12, 2012, Simon Horman wrote:
 > I have tried the patch below (slightly modified as I have detailed inline)
 > on top of 3.3-rc7, however, I am observing that the boot hangs in the
 > usual spot when using the default config.
-> 
+
+First off, the patch applies to 3.3-rc7 without any modifications for me.
+
 > arm_vmregion_alloc: allocation too big (requested 0x7e9000)
 > sh_mobile_lcdc_fb sh_mobile_lcdc_fb.1: unable to allocate buffer
 > sh_mobile_lcdc_fb: probe of sh_mobile_lcdc_fb.1 failed with error -12
@@ -58,73 +60,10 @@ On Monday, March 12, 2012, Simon Horman wrote:
 > console [ttySC0] enabled, bootconsole disabled
 > console [ttySC0] enabled, bootconsole disabled
 
-Can you please send me your .config?
+I've just tried the default .config for Mackerel and I cannot reproduce the
+problem with the patch applied.
 
-> > From: Rafael J. Wysocki <rjw@sisk.pl>
-> > Subject: PM / shmobile: Mark clocksource devices as "always on"
-> > 
-> > The TMU device on the Mackerel board belongs to the A4R power domain
-> > and loses power when the domain is turned off.  Unfortunately, the
-> > TMU driver is not prepared to cope with such situations and crashes
-> > the system when that happens.  To work around this problem introduce
-> > a new helper function, pm_genpd_dev_always_on(), allowing a device
-> > driver to mark its device as "always on" in case it belongs to a PM
-> > domain, which will make the generic PM domains core code avoid
-> > powering off the domain containing the device, both at run time and
-> > during system suspend.
-> > 
-> > Make the TMU driver use pm_genpd_dev_always_on() to prevent the
-> > A4R domain from losing power and make the other SH colocksource
-> > drivers, sh_cmt and sh_mtu2, behave analogously.
-> > 
-> > Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
-> > ---
-> >  arch/arm/mach-shmobile/setup-sh7372.c |    2 ++
-> >  drivers/base/power/domain.c           |   28 ++++++++++++++++++++++++++--
-> >  drivers/clocksource/sh_cmt.c          |    4 ++++
-> >  drivers/clocksource/sh_mtu2.c         |    4 ++++
-> >  drivers/clocksource/sh_tmu.c          |    4 ++++
-> >  include/linux/pm_domain.h             |    3 +++
-> >  6 files changed, 43 insertions(+), 2 deletions(-)
-> > 
-> > Index: linux/drivers/base/power/domain.c
-> > =================================> > --- linux.orig/drivers/base/power/domain.c
-> > +++ linux/drivers/base/power/domain.c
-> > @@ -372,7 +372,7 @@ static int pm_genpd_poweroff(struct gene
-> >  	not_suspended = 0;
-> >  	list_for_each_entry(pdd, &genpd->dev_list, list_node)
-> >  		if (pdd->dev->driver && (!pm_runtime_suspended(pdd->dev)
-> > -		    || pdd->dev->power.irq_safe))
-> > +		    || pdd->dev->power.irq_safe || to_gpd_data(pdd)->always_on))
-> >  			not_suspended++;
-> >  
-> >  	if (not_suspended > genpd->in_progress)
-> > @@ -509,6 +509,9 @@ static int pm_genpd_runtime_suspend(stru
-> >  
-> >  	might_sleep_if(!genpd->dev_irq_safe);
-> >  
-> > +	if (dev_gpd_data(dev)->always_on)
-> > +		return -EBUSY;
-> > +
-> >  	stop_ok = genpd->gov ? genpd->gov->stop_ok : NULL;
-> >  	if (stop_ok && !stop_ok(dev))
-> >  		return -EBUSY;
-> > @@ -864,7 +867,8 @@ static int pm_genpd_suspend_noirq(struct
-> >  		return -EINVAL;
-> >  
-> >  	if (genpd->suspend_power_off
-> > -	    || (dev->power.wakeup_path && genpd_dev_active_wakeup(genpd, dev)))
-> > +	    || (dev->power.wakeup_path && genpd_dev_active_wakeup(genpd, dev))
-> > +	    || dev_gpd_data(dev)->always_on)
-> >  		return 0;
-> >  
-> >  	genpd_stop_dev(genpd, dev);
-> 
-> I modified the above hunk as follows as the genpd_dev_active_wakeup()
-> line does not seem to be present in pm_genpd_runtime_suspend().
-> Perhaps I need another patch?
+Can you double-check, please?
 
-They are present in pm_genpd_suspend_noirq() surely in -rc7.  What kernel
-version are you using?
-
+Thanks,
 Rafael
