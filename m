@@ -1,181 +1,260 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 29 Mar 2012 07:40:38 +0000
-Subject: iomap API and big endian interactivity
-Message-Id: <20120329074038.GZ26543@linux-sh.org>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Mon, 12 Mar 2012 22:11:03 +0000
+Subject: [PATCH] PM / shmobile: Mark clocksource devices as "always on" (was: Re: [PATCH] sh_tmu / PM: Preven
+Message-Id: <201203122311.03576.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Oct 12, 2011 at 09:03:24AM +0100, Phil Edworthy wrote:
-> Commit 37b7a97884ba64bf7d403351ac2a9476ab4f1bba makes all ioread/iowrite
-> functions treat registers as little endian. For SH2 this is not the case,
-> they are big endian.
+On Monday, March 12, 2012, Rafael J. Wysocki wrote:
+> On Monday, March 12, 2012, Simon Horman wrote:
+> > On Tue, Mar 06, 2012 at 11:13:10PM +0100, Rafael J. Wysocki wrote:
+> > > On Tuesday, March 06, 2012, Paul Mundt wrote:
+> > > > On Mon, Mar 05, 2012 at 11:46:08PM +0100, Rafael J. Wysocki wrote:
+> > > > > On Monday, March 05, 2012, Rafael J. Wysocki wrote:
+> > > > > > Anyway, to use the same approach in all three drivers we need a flag that
+> > > > > > will allow a driver to say "don't power down the domain this device belongs to"
+> > > > > > to the core.  It shouldn't be very difficult to introduce it, but I'm still
+> > > > > > not sure that will make the "TMU vs system resume" problem mentioned above go
+> > > > > > away.
+> > > > > > 
+> > > > > > I'll try to prepare a patch for that later today anyway.
+> > > > > 
+> > > > > Is appended.  Without a changelog for now, because I need to add CMT and
+> > > > > MTU2 to it still.
+> > > > > 
+> > > > The updated version looks much nicer, and the interaction with early
+> > > > platform entry is quite obvious. If we can reuse this for CMT and MTU2
+> > > > then that should about take care of it.
+> > > 
+> > > I believe that we can.
+> > > 
+> > > > Thanks for persisting!
+> > > 
+> > > No problem.
+> > > 
+> > > Below is a full patch with a changelog and CMT and MTU2 changes too.
+> > > This has been tested on Mackerel both with and without the TMU driver
+> > > without causing any visible issues to appear.
+> > 
+> > Hi Rafael,
+> > 
+> > I apologise for not responding earlier, I returned from a vacation
+> > (without my Mackerel) last night,
+> > 
+> > I have tried the patch below (slightly modified as I have detailed inline)
+> > on top of 3.3-rc7, however, I am observing that the boot hangs in the
+> > usual spot when using the default config.
 > 
-Ok, it looks like we're finally going to have to bite the bullet and
-support I/O swabbing for the platforms that need it. I dislike this for
-the reasons that the I/O accessors are supposed to be little endian and
-in the PCI case we can deal with CPU vs host controller endianness
-mismatches just fine, ensuring a consistent little endian space.
+> First off, the patch applies to 3.3-rc7 without any modifications for me.
 
-It's not sufficient to back off from the I/O accessors that are presently
-employed given that they do a lot more with regards to ordering and cache
-maintenance across the various platforms that the raw ones simply ignore.
-While this was ok for the effected parts in the past, returning to that
-approach would introduce far more subtle and hard to debug breakage on
-newer parts than the current issues experienced on the big endian ones.
-(SH7785 in big endian mode is one of the ones that needs the barrier
-semantics provided by the non-relaxed variants, so we're not able to work
-around it with this approach anyways).
+Sorry, I was talking about a different patch.
 
-For now I've added trivial I/O swabbing based on the MIPS port mangling
-interface (though I dropped the actual port mangling bits, as we deal
-with all of those gnarly SuperIOs with bizarre hookups through trapped
-I/O these days). The resulting interface should permit platforms to
-enable it unconditionally where necessary, and conditionally relative to
-endianness (ie, SH7785 && BE).
+You need this one to fix the boot problem:
 
-Hopefully this will be all that's necessary for fixing up the SH-2(A) and
-SH-4A big endian use cases. Boards can of course override the swabbing
-behaviour where necessary, though I don't forsee much need to deviate
-from the generic implementation any time soon given that we've ripped out
-the address swizzling (in which case we could probably just inline it in
-io.h directly).
+http://marc.info/?l=linux-sh&m3073065924863&w=4
+
+(Paul has already taken it).
+
+However, as said in the message, it addresses the boot problem _only_, so
+you need the other patch to address the possible PM issues after booting.
+
+That other patch really didn't apply on 3.3-rc7, but for a reason different
+from what you described.  Appended is a fixed version.
+
+Paul, do you want to take it or should I include it in my for-3.4 PM push
+with a Cc to -stable?
+
+Thanks,
+Rafael
 
 ---
+From: Rafael J. Wysocki <rjw@sisk.pl>
+Subject: PM / shmobile: Mark clocksource devices as "always on"
 
- arch/sh/Kconfig                                |    3 +
- arch/sh/include/asm/io.h                       |   25 +++++-------
- arch/sh/include/mach-common/mach/mangle-port.h |   49 +++++++++++++++++++++++++
- 3 files changed, 62 insertions(+), 15 deletions(-)
+The TMU device on the Mackerel board belongs to the A4R power domain
+and loses power when the domain is turned off.  Unfortunately, the
+TMU driver is not prepared to cope with such situations and crashes
+the system when that happens.  To work around this problem introduce
+a new helper function, pm_genpd_dev_always_on(), allowing a device
+driver to mark its device as "always on" in case it belongs to a PM
+domain, which will make the generic PM domains core code avoid
+powering off the domain containing the device, both at run time and
+during system suspend.
 
-commit b7e68d6876dfbab087bc3859211a9efc74cbe30c
-Author: Paul Mundt <lethal@linux-sh.org>
-Date:   Thu Mar 29 16:05:10 2012 +0900
+Make the TMU driver use pm_genpd_dev_always_on() to prevent the
+A4R domain from losing power and make the other SH colocksource
+drivers, sh_cmt and sh_mtu2, behave analogously.
 
-    sh: Support I/O space swapping where needed.
-    
-    This adopts a trimmed down version of the MIPS port mangling interface
-    limited to the I/O swabbing for platforms that can't use little endian
-    accessors. For platforms with mixed I/O spaces involving PCI it will
-    still be necessary to enable byte swapping at the host controller level.
-    Attention needs to be paid to all of host controller endianness, CPU
-    endianness, and whether I/O accesses are explicitly swapped or not via
-    SWAP_IO_SPACE. Fortunately the platforms that need this are in the
-    minority.
-    
-    Signed-off-by: Paul Mundt <lethal@linux-sh.org>
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
+ arch/arm/mach-shmobile/setup-sh7372.c |    2 ++
+ drivers/base/power/domain.c           |   27 +++++++++++++++++++++++++--
+ drivers/clocksource/sh_cmt.c          |    4 ++++
+ drivers/clocksource/sh_mtu2.c         |    4 ++++
+ drivers/clocksource/sh_tmu.c          |    4 ++++
+ include/linux/pm_domain.h             |    3 +++
+ 6 files changed, 42 insertions(+), 2 deletions(-)
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 5d1ae85..2d9cd13 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -162,6 +162,9 @@ config NO_IOPORT
- config IO_TRAPPED
- 	bool
+Index: linux/drivers/base/power/domain.c
+=================================--- linux.orig/drivers/base/power/domain.c
++++ linux/drivers/base/power/domain.c
+@@ -366,7 +366,7 @@ static int pm_genpd_poweroff(struct gene
+ 	not_suspended = 0;
+ 	list_for_each_entry(pdd, &genpd->dev_list, list_node)
+ 		if (pdd->dev->driver && (!pm_runtime_suspended(pdd->dev)
+-		    || pdd->dev->power.irq_safe))
++		    || pdd->dev->power.irq_safe || to_gpd_data(pdd)->always_on))
+ 			not_suspended++;
  
-+config SWAP_IO_SPACE
-+	bool
+ 	if (not_suspended > genpd->in_progress)
+@@ -503,6 +503,9 @@ static int pm_genpd_runtime_suspend(stru
+ 
+ 	might_sleep_if(!genpd->dev_irq_safe);
+ 
++	if (dev_gpd_data(dev)->always_on)
++		return -EBUSY;
 +
- config DMA_COHERENT
- 	bool
+ 	stop_ok = genpd->gov ? genpd->gov->stop_ok : NULL;
+ 	if (stop_ok && !stop_ok(dev))
+ 		return -EBUSY;
+@@ -838,7 +841,7 @@ static int pm_genpd_suspend_noirq(struct
+ 	if (IS_ERR(genpd))
+ 		return -EINVAL;
  
-diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-index 28c5aa5..eb76cb3 100644
---- a/arch/sh/include/asm/io.h
-+++ b/arch/sh/include/asm/io.h
-@@ -24,6 +24,7 @@
- #define __IO_PREFIX     generic
- #include <asm/io_generic.h>
- #include <asm/io_trapped.h>
-+#include <mach/mangle-port.h>
+-	if (genpd->suspend_power_off)
++	if (genpd->suspend_power_off || dev_gpd_data(dev)->always_on)
+ 		return 0;
  
- #define __raw_writeb(v,a)	(__chk_io_ptr(a), *(volatile u8  __force *)(a) = (v))
- #define __raw_writew(v,a)	(__chk_io_ptr(a), *(volatile u16 __force *)(a) = (v))
-@@ -35,21 +36,15 @@
- #define __raw_readl(a)		(__chk_io_ptr(a), *(volatile u32 __force *)(a))
- #define __raw_readq(a)		(__chk_io_ptr(a), *(volatile u64 __force *)(a))
+ 	ret = genpd_suspend_late(genpd, dev);
+@@ -1216,6 +1219,26 @@ int pm_genpd_remove_device(struct generi
+ }
  
--#define readb_relaxed(c)	({ u8  __v = __raw_readb(c); __v; })
--#define readw_relaxed(c)	({ u16 __v = le16_to_cpu((__force __le16) \
--					__raw_readw(c)); __v; })
--#define readl_relaxed(c)	({ u32 __v = le32_to_cpu((__force __le32) \
--					__raw_readl(c)); __v; })
--#define readq_relaxed(c)	({ u64 __v = le64_to_cpu((__force __le64) \
--					__raw_readq(c)); __v; })
--
--#define writeb_relaxed(v,c)	((void)__raw_writeb(v,c))
--#define writew_relaxed(v,c)	((void)__raw_writew((__force u16) \
--					cpu_to_le16(v),c))
--#define writel_relaxed(v,c)	((void)__raw_writel((__force u32) \
--					cpu_to_le32(v),c))
--#define writeq_relaxed(v,c)	((void)__raw_writeq((__force u64) \
--					cpu_to_le64(v),c))
-+#define readb_relaxed(c)	({ u8  __v = ioswabb(__raw_readb(c)); __v; })
-+#define readw_relaxed(c)	({ u16 __v = ioswabw(__raw_readw(c)); __v; })
-+#define readl_relaxed(c)	({ u32 __v = ioswabl(__raw_readl(c)); __v; })
-+#define readq_relaxed(c)	({ u64 __v = ioswabq(__raw_readq(c)); __v; })
-+
-+#define writeb_relaxed(v,c)	((void)__raw_writeb((__force  u8)ioswabb(v),c))
-+#define writew_relaxed(v,c)	((void)__raw_writew((__force u16)ioswabw(v),c))
-+#define writel_relaxed(v,c)	((void)__raw_writel((__force u32)ioswabl(v),c))
-+#define writeq_relaxed(v,c)	((void)__raw_writeq((__force u64)ioswabq(v),c))
- 
- #define readb(a)		({ u8  r_ = readb_relaxed(a); rmb(); r_; })
- #define readw(a)		({ u16 r_ = readw_relaxed(a); rmb(); r_; })
-diff --git a/arch/sh/include/mach-common/mach/mangle-port.h b/arch/sh/include/mach-common/mach/mangle-port.h
-new file mode 100644
-index 0000000..4ca1769
---- /dev/null
-+++ b/arch/sh/include/mach-common/mach/mangle-port.h
-@@ -0,0 +1,49 @@
-+/*
-+ * SH version cribbed from the MIPS copy:
-+ *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
-+ *
-+ * Copyright (C) 2003, 2004 Ralf Baechle
+ /**
++ * pm_genpd_dev_always_on - Set/unset the "always on" flag for a given device.
++ * @dev: Device to set/unset the flag for.
++ * @val: The new value of the device's "always on" flag.
 + */
-+#ifndef __MACH_COMMON_MANGLE_PORT_H
-+#define __MACH_COMMON_MANGLE_PORT_H
++void pm_genpd_dev_always_on(struct device *dev, bool val)
++{
++	struct pm_subsys_data *psd;
++	unsigned long flags;
 +
-+/*
-+ * Sane hardware offers swapping of PCI/ISA I/O space accesses in hardware;
-+ * less sane hardware forces software to fiddle with this...
-+ *
-+ * Regardless, if the host bus endianness mismatches that of PCI/ISA, then
-+ * you can't have the numerical value of data and byte addresses within
-+ * multibyte quantities both preserved at the same time.  Hence two
-+ * variations of functions: non-prefixed ones that preserve the value
-+ * and prefixed ones that preserve byte addresses.  The latters are
-+ * typically used for moving raw data between a peripheral and memory (cf.
-+ * string I/O functions), hence the "__mem_" prefix.
-+ */
-+#if defined(CONFIG_SWAP_IO_SPACE)
++	spin_lock_irqsave(&dev->power.lock, flags);
 +
-+# define ioswabb(x)		(x)
-+# define __mem_ioswabb(x)	(x)
-+# define ioswabw(x)		le16_to_cpu(x)
-+# define __mem_ioswabw(x)	(x)
-+# define ioswabl(x)		le32_to_cpu(x)
-+# define __mem_ioswabl(x)	(x)
-+# define ioswabq(x)		le64_to_cpu(x)
-+# define __mem_ioswabq(x)	(x)
++	psd = dev_to_psd(dev);
++	if (psd && psd->domain_data)
++		to_gpd_data(psd->domain_data)->always_on = val;
 +
-+#else
++	spin_unlock_irqrestore(&dev->power.lock, flags);
++}
++EXPORT_SYMBOL_GPL(pm_genpd_dev_always_on);
 +
-+# define ioswabb(x)		(x)
-+# define __mem_ioswabb(x)	(x)
-+# define ioswabw(x)		(x)
-+# define __mem_ioswabw(x)	cpu_to_le16(x)
-+# define ioswabl(x)		(x)
-+# define __mem_ioswabl(x)	cpu_to_le32(x)
-+# define ioswabq(x)		(x)
-+# define __mem_ioswabq(x)	cpu_to_le32(x)
++/**
+  * pm_genpd_add_subdomain - Add a subdomain to an I/O PM domain.
+  * @genpd: Master PM domain to add the subdomain to.
+  * @subdomain: Subdomain to be added.
+Index: linux/include/linux/pm_domain.h
+=================================--- linux.orig/include/linux/pm_domain.h
++++ linux/include/linux/pm_domain.h
+@@ -97,6 +97,7 @@ struct generic_pm_domain_data {
+ 	struct gpd_dev_ops ops;
+ 	struct gpd_timing_data td;
+ 	bool need_restore;
++	bool always_on;
+ };
+ 
+ static inline struct generic_pm_domain_data *to_gpd_data(struct pm_domain_data *pdd)
+@@ -125,6 +126,7 @@ static inline int pm_genpd_add_device(st
+ 
+ extern int pm_genpd_remove_device(struct generic_pm_domain *genpd,
+ 				  struct device *dev);
++extern void pm_genpd_dev_always_on(struct device *dev, bool val);
+ extern int pm_genpd_add_subdomain(struct generic_pm_domain *genpd,
+ 				  struct generic_pm_domain *new_subdomain);
+ extern int pm_genpd_remove_subdomain(struct generic_pm_domain *genpd,
+@@ -163,6 +165,7 @@ static inline int pm_genpd_remove_device
+ {
+ 	return -ENOSYS;
+ }
++static inline void pm_genpd_dev_always_on(struct device *dev, bool val) {}
+ static inline int pm_genpd_add_subdomain(struct generic_pm_domain *genpd,
+ 					 struct generic_pm_domain *new_sd)
+ {
+Index: linux/drivers/clocksource/sh_tmu.c
+=================================--- linux.orig/drivers/clocksource/sh_tmu.c
++++ linux/drivers/clocksource/sh_tmu.c
+@@ -32,6 +32,7 @@
+ #include <linux/sh_timer.h>
+ #include <linux/slab.h>
+ #include <linux/module.h>
++#include <linux/pm_domain.h>
+ 
+ struct sh_tmu_priv {
+ 	void __iomem *mapbase;
+@@ -410,6 +411,9 @@ static int __devinit sh_tmu_probe(struct
+ 	struct sh_tmu_priv *p = platform_get_drvdata(pdev);
+ 	int ret;
+ 
++	if (!is_early_platform_device(pdev))
++		pm_genpd_dev_always_on(&pdev->dev, true);
 +
-+#endif
+ 	if (p) {
+ 		dev_info(&pdev->dev, "kept as earlytimer\n");
+ 		return 0;
+Index: linux/arch/arm/mach-shmobile/setup-sh7372.c
+=================================--- linux.orig/arch/arm/mach-shmobile/setup-sh7372.c
++++ linux/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -1043,6 +1043,8 @@ void __init sh7372_add_standard_devices(
+ 	sh7372_add_device_to_domain(&sh7372_a4r, &veu2_device);
+ 	sh7372_add_device_to_domain(&sh7372_a4r, &veu3_device);
+ 	sh7372_add_device_to_domain(&sh7372_a4r, &jpu_device);
++	sh7372_add_device_to_domain(&sh7372_a4r, &tmu00_device);
++	sh7372_add_device_to_domain(&sh7372_a4r, &tmu01_device);
+ }
+ 
+ void __init sh7372_add_early_devices(void)
+Index: linux/drivers/clocksource/sh_cmt.c
+=================================--- linux.orig/drivers/clocksource/sh_cmt.c
++++ linux/drivers/clocksource/sh_cmt.c
+@@ -32,6 +32,7 @@
+ #include <linux/sh_timer.h>
+ #include <linux/slab.h>
+ #include <linux/module.h>
++#include <linux/pm_domain.h>
+ 
+ struct sh_cmt_priv {
+ 	void __iomem *mapbase;
+@@ -689,6 +690,9 @@ static int __devinit sh_cmt_probe(struct
+ 	struct sh_cmt_priv *p = platform_get_drvdata(pdev);
+ 	int ret;
+ 
++	if (!is_early_platform_device(pdev))
++		pm_genpd_dev_always_on(&pdev->dev, true);
 +
-+#endif /* __MACH_COMMON_MANGLE_PORT_H */
+ 	if (p) {
+ 		dev_info(&pdev->dev, "kept as earlytimer\n");
+ 		return 0;
+Index: linux/drivers/clocksource/sh_mtu2.c
+=================================--- linux.orig/drivers/clocksource/sh_mtu2.c
++++ linux/drivers/clocksource/sh_mtu2.c
+@@ -31,6 +31,7 @@
+ #include <linux/sh_timer.h>
+ #include <linux/slab.h>
+ #include <linux/module.h>
++#include <linux/pm_domain.h>
+ 
+ struct sh_mtu2_priv {
+ 	void __iomem *mapbase;
+@@ -306,6 +307,9 @@ static int __devinit sh_mtu2_probe(struc
+ 	struct sh_mtu2_priv *p = platform_get_drvdata(pdev);
+ 	int ret;
+ 
++	if (!is_early_platform_device(pdev))
++		pm_genpd_dev_always_on(&pdev->dev, true);
++
+ 	if (p) {
+ 		dev_info(&pdev->dev, "kept as earlytimer\n");
+ 		return 0;
