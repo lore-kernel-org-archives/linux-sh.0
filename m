@@ -1,7 +1,7 @@
-From: Anton Vorontsov <cbouatmailru@gmail.com>
-Date: Mon, 12 Mar 2012 19:42:24 +0000
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Tue, 13 Mar 2012 08:56:03 +0000
 Subject: Re: [PATCH 4/4] ARM: __io abuse cleanup
-Message-Id: <20120312194224.GB26116@oksana.dev.rtsoft.ru>
+Message-Id: <CACRpkdZ_y3=vcj99C34SZ=hKQUmXdqoj0mqKJg2MLGqyUFsB0g@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1331500100-31351-1-git-send-email-robherring2@gmail.com>
  <1331500100-31351-5-git-send-email-robherring2@gmail.com>
@@ -11,12 +11,13 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sun, Mar 11, 2012 at 04:08:20PM -0500, Rob Herring wrote:
+On Sun, Mar 11, 2012 at 10:08 PM, Rob Herring <robherring2@gmail.com> wrote:
+
 > From: Rob Herring <rob.herring@calxeda.com>
-> 
+>
 > Several platforms incorrectly use __io() for casting to 'void __iomem *'.
 > This converts all of those uses to use the common IOMEM macro.
-> 
+>
 > Reported-by: Arnd Bergmann <arnd@arndb.de>
 > Signed-off-by: Rob Herring <rob.herring@calxeda.com>
 > Cc: Anton Vorontsov <avorontsov@mvista.com>
@@ -26,14 +27,8 @@ On Sun, Mar 11, 2012 at 04:08:20PM -0500, Rob Herring wrote:
 > Cc: Srinidhi Kasagar <srinidhi.kasagar@stericsson.com>
 > Cc: Linus Walleij <linus.walleij@stericsson.com>
 > Cc: linux-sh@vger.kernel.org
-> ---
 
-For cns3xxx:
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 
-Acked-by: Anton Vorontsov <cbouatmailru@gmail.com>
-
-Thanks!
-
--- 
-Anton Vorontsov
-Email: cbouatmailru@gmail.com
+Thanks Rob!
+Linus Walleij
