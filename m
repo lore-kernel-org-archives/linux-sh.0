@@ -1,96 +1,53 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 01 Mar 2012 15:07:36 +0000
-Subject: [PATCH v2 23/57] fbdev: sh_mobile_lcdc: Remove fb_info parameter to display_on operation
-Message-Id: <1330614490-14149-24-git-send-email-laurent.pinchart@ideasonboard.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Tue, 13 Mar 2012 00:24:11 +0000
+Subject: [PATCH 1/6] PM / Domains: Fix handling of wakeup devices during system resume
+Message-Id: <201203130124.11871.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201203130123.16268.rjw@sisk.pl>
+In-Reply-To: <201203130123.16268.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: Linux-sh list <linux-sh@vger.kernel.org>
+Cc: Linux PM list <linux-pm@vger.kernel.org>, Paul Mundt <lethal@linux-sh.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, LKML <linux-kernel@vger.kernel.org>, Cao Minh Hiep <hiepcm@gmail.com>
 
-The parameter is unused, remove it.
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+During system suspend pm_genpd_suspend_noirq() checks if the given
+device is in a wakeup path (i.e. it appears to be needed for one or
+more wakeup devices to work or is a wakeup device itself) and if it
+needs to be "active" for wakeup to work.  If that is the case, the
+function returns 0 without incrementing the device domain's counter
+of suspended devices and without executing genpd_stop_dev() for the
+device.  In consequence, the device is not stopped (e.g. its clock
+isn't disabled) and power is always supplied to its domain in the
+resulting system sleep state.
+
+However, pm_genpd_resume_noirq() doesn't repeat that check and it
+runs genpd_start_dev() and decrements the domain's counter of
+suspended devices even for the wakeup device that weren't stopped by
+pm_genpd_suspend_noirq().  As a result, the start callback may be run
+unnecessarily for them and their domains' counters of suspended
+devices may become negative.  Both outcomes aren't desirable, so fix
+pm_genpd_resume_noirq() to look for wakeup devices that might not be
+stopped by during system suspend.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- drivers/video/sh_mipi_dsi.c      |    3 +--
- drivers/video/sh_mobile_hdmi.c   |   11 +++--------
- drivers/video/sh_mobile_lcdcfb.c |    2 +-
- drivers/video/sh_mobile_lcdcfb.h |    3 +--
- 4 files changed, 6 insertions(+), 13 deletions(-)
+ drivers/base/power/domain.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/video/sh_mipi_dsi.c b/drivers/video/sh_mipi_dsi.c
-index ad09a05..1ede247 100644
---- a/drivers/video/sh_mipi_dsi.c
-+++ b/drivers/video/sh_mipi_dsi.c
-@@ -394,8 +394,7 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
- 	return 0;
- }
+Index: linux/drivers/base/power/domain.c
+=================================--- linux.orig/drivers/base/power/domain.c
++++ linux/drivers/base/power/domain.c
+@@ -896,7 +896,8 @@ static int pm_genpd_resume_noirq(struct
+ 	if (IS_ERR(genpd))
+ 		return -EINVAL;
  
--static int mipi_display_on(struct sh_mobile_lcdc_entity *entity,
--			   struct fb_info *info)
-+static int mipi_display_on(struct sh_mobile_lcdc_entity *entity)
- {
- 	struct sh_mipi *mipi = to_sh_mipi(entity);
- 	struct sh_mipi_dsi_info *pdata = mipi->pdev->dev.platform_data;
-diff --git a/drivers/video/sh_mobile_hdmi.c b/drivers/video/sh_mobile_hdmi.c
-index bd885ee..c22e123 100644
---- a/drivers/video/sh_mobile_hdmi.c
-+++ b/drivers/video/sh_mobile_hdmi.c
-@@ -1000,16 +1000,11 @@ static irqreturn_t sh_hdmi_hotplug(int irq, void *dev_id)
- 	return IRQ_HANDLED;
- }
+-	if (genpd->suspend_power_off)
++	if (genpd->suspend_power_off
++	    || (dev->power.wakeup_path && genpd_dev_active_wakeup(genpd, dev)))
+ 		return 0;
  
--/* locking:	called with info->lock held, or before register_framebuffer() */
--static int sh_hdmi_display_on(struct sh_mobile_lcdc_entity *entity,
--			      struct fb_info *info)
-+static int sh_hdmi_display_on(struct sh_mobile_lcdc_entity *entity)
- {
--	/*
--	 * info is guaranteed to be valid, when we are called, because our
--	 * FB_EVENT_FB_UNBIND notify is also called with info->lock held
--	 */
- 	struct sh_hdmi *hdmi = entity_to_sh_hdmi(entity);
- 	struct sh_mobile_lcdc_chan *ch = entity->lcdc;
-+	struct fb_info *info = ch->info;
- 
- 	dev_dbg(hdmi->dev, "%s(%p): state %x\n", __func__, hdmi, info->state);
- 
-@@ -1156,7 +1151,7 @@ static void sh_hdmi_edid_work_fn(struct work_struct *work)
- 				 */
- 				info->var.width = hdmi->var.width;
- 				info->var.height = hdmi->var.height;
--				sh_hdmi_display_on(&hdmi->entity, info);
-+				sh_hdmi_display_on(&hdmi->entity);
- 			} else {
- 				/* New monitor or have to wake up */
- 				fb_set_suspend(info, 0);
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index 1ecc71e..03ee382 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -338,7 +338,7 @@ static void sh_mobile_lcdc_display_on(struct sh_mobile_lcdc_chan *ch)
- 	struct sh_mobile_lcdc_panel_cfg *panel = &ch->cfg.panel_cfg;
- 
- 	if (ch->tx_dev) {
--		if (ch->tx_dev->ops->display_on(ch->tx_dev, ch->info) < 0)
-+		if (ch->tx_dev->ops->display_on(ch->tx_dev) < 0)
- 			return;
- 	}
- 
-diff --git a/drivers/video/sh_mobile_lcdcfb.h b/drivers/video/sh_mobile_lcdcfb.h
-index 36cd564..b2cb8e6 100644
---- a/drivers/video/sh_mobile_lcdcfb.h
-+++ b/drivers/video/sh_mobile_lcdcfb.h
-@@ -23,8 +23,7 @@ struct sh_mobile_lcdc_chan;
- 
- struct sh_mobile_lcdc_entity_ops {
- 	/* Display */
--	int (*display_on)(struct sh_mobile_lcdc_entity *entity,
--			  struct fb_info *info);
-+	int (*display_on)(struct sh_mobile_lcdc_entity *entity);
- 	void (*display_off)(struct sh_mobile_lcdc_entity *entity);
- };
- 
--- 
-1.7.3.4
+ 	/*
 
