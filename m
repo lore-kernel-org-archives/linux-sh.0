@@ -1,97 +1,164 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Fri, 30 Mar 2012 06:26:14 +0000
-Subject: [GIT PULL] sh updates for 3.4
-Message-Id: <20120330062613.GC26543@linux-sh.org>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Tue, 13 Mar 2012 21:34:52 +0000
+Subject: [Update][PATCH 3/6] PM / Domains: Introduce "always on" device flag
+Message-Id: <201203132234.52298.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201203130123.16268.rjw@sisk.pl> <201203130125.43385.rjw@sisk.pl>
+In-Reply-To: <201203130125.43385.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Linux-sh list <linux-sh@vger.kernel.org>
+Cc: Linux PM list <linux-pm@vger.kernel.org>, Paul Mundt <lethal@linux-sh.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, LKML <linux-kernel@vger.kernel.org>, Cao Minh Hiep <hiepcm@gmail.com>
 
-The following changes since commit 6658a6991cef75719a21441aa0b7f8d6821534ee:
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-  Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kernel/git/s390/linux (2012-03-27 18:36:38 -0700)
+The TMU device on the Mackerel board belongs to the A4R power domain
+and loses power when the domain is turned off.  Unfortunately, the
+TMU driver is not prepared to cope with such situations and crashes
+the system when that happens.  To work around this problem introduce
+a new helper function, pm_genpd_dev_always_on(), allowing a device
+driver to mark its device as "always on" in case it belongs to a PM
+domain, which will make the generic PM domains core code avoid
+powering off the domain containing the device, both at run time and
+during system suspend.
 
-are available in the git repository at:
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Tested-by: Simon Horman <horms@verge.net.au>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
+---
 
+The only change with respect to the previous version is the hunk in
+pm_genpd_restore_noirq() which only affects hibernation.
 
-  git://github.com/pmundt/linux-sh.git sh-for-linus
+Thanks,
+Rafael
 
-for you to fetch changes up to b7e68d6876dfbab087bc3859211a9efc74cbe30c:
+---
+ drivers/base/power/domain.c |   37 +++++++++++++++++++++++++++++++------
+ include/linux/pm_domain.h   |    3 +++
+ 2 files changed, 34 insertions(+), 6 deletions(-)
 
-  sh: Support I/O space swapping where needed. (2012-03-29 16:05:10 +0900)
-
-----------------------------------------------------------------
-SuperH updates for 3.4 merge window
-
-----------------------------------------------------------------
-Guennadi Liakhovetski (1):
-      sh: ecovec: switch SDHI controllers to card polling
-
-Julia Lawall (1):
-      arch/sh/drivers/dma/{dma-g2,dmabrg}.c: ensure arguments to request_irq and free_irq are compatible
-
-Matt Fleming (2):
-      sh: no need to reset handler if SA_ONESHOT
-      sh: use set_current_blocked() and block_sigmask()
-
-Nobuhiro Iwamatsu (3):
-      sh/next: Fix build fail by asm/system.h in asm/bitops.h
-      sh: dma: Collect up CHCR of SH7723 and SH7730
-      sh: dma: Collect up CHCR of SH7763, SH7764, SH7780 and SH7785
-
-Paul Mundt (18):
-      sh: intc: Make global intc controller counter static.
-      sh: intc: Prefer IRQCHIP_SKIP_SET_WAKE over a dummy set_wake callback.
-      sh: intc: Kill off superfluous irq_shutdown hooking.
-      sh: intc: Use IRQ_SET_MASK_OK_NOCOPY for intc_set_affinity.
-      sh: intc: optimize intc IRQ lookup
-      sh: cpufreq: percpu struct clk accounting.
-      sh: cpufreq: struct device lookup from CPU topology.
-      sh: cpufreq: Support CPU clock frequency table.
-      sh: cpufreq: notify about rate rounding fallback.
-      sh: cpufreq: Wire up scaling_available_freqs support.
-      Merge branch 'master' of git://git.kernel.org/.../torvalds/linux into sh-latest
-      Merge branch 'sh/cpufreq' into sh-latest
-      Merge branch 'common/intc-extension' into sh-latest
-      sh: Avoid exporting unimplemented syscalls.
-      sh: Consolidate duplicate _32/_64 unistd definitions.
-      sh: select ARCH_DISCARD_MEMBLOCK.
-      sh: intc: Fix up section mismatch for intc_ack_data
-      sh: Support I/O space swapping where needed.
-
-Shimoda, Yoshihiro (1):
-      sh: add platform_device for RSPI in setup-sh7757
-
-Takashi YOSHII (1):
-      serial: sh-sci: fix a race of DMA submit_tx on transfer
-
-Thomas Schwinge (1):
-      SH: pci-sh7780: enable big-endian operation.
-
- arch/sh/Kconfig                                |    4 +
- arch/sh/boards/mach-ecovec24/setup.c           |  104 ++++++++++++--------
- arch/sh/drivers/dma/dma-g2.c                   |    4 +-
- arch/sh/drivers/dma/dmabrg.c                   |    4 +-
- arch/sh/drivers/pci/pci-sh7780.c               |   15 +++-
- arch/sh/include/asm/bitops.h                   |    1 -
- arch/sh/include/asm/io.h                       |   25 ++---
- arch/sh/include/asm/unistd.h                   |   37 +++++++
- arch/sh/include/asm/unistd_32.h                |  102 ++++++--------------
- arch/sh/include/asm/unistd_64.h                |  106 +++++++--------------
- arch/sh/include/cpu-sh4/cpu/dma-register.h     |   32 ++-----
- arch/sh/include/mach-common/mach/mangle-port.h |   49 ++++++++++
- arch/sh/kernel/cpu/sh4a/setup-sh7757.c         |   20 ++++
- arch/sh/kernel/cpufreq.c                       |  121 ++++++++++++++++--------
- arch/sh/kernel/signal_32.c                     |   35 ++-----
- arch/sh/kernel/signal_64.c                     |   40 ++------
- arch/sh/kernel/syscalls_32.S                   |    8 +-
- arch/sh/kernel/syscalls_64.S                   |    8 +-
- drivers/sh/intc/chip.c                         |   37 ++------
- drivers/sh/intc/core.c                         |   11 ++-
- drivers/sh/intc/handle.c                       |    5 +-
- drivers/sh/intc/internals.h                    |    9 ++-
- drivers/tty/serial/sh-sci.c                    |   15 ++-
- 23 files changed, 420 insertions(+), 372 deletions(-)
- create mode 100644 arch/sh/include/mach-common/mach/mangle-port.h
+Index: linux/drivers/base/power/domain.c
+=================================--- linux.orig/drivers/base/power/domain.c
++++ linux/drivers/base/power/domain.c
+@@ -366,7 +366,7 @@ static int pm_genpd_poweroff(struct gene
+ 	not_suspended = 0;
+ 	list_for_each_entry(pdd, &genpd->dev_list, list_node)
+ 		if (pdd->dev->driver && (!pm_runtime_suspended(pdd->dev)
+-		    || pdd->dev->power.irq_safe))
++		    || pdd->dev->power.irq_safe || to_gpd_data(pdd)->always_on))
+ 			not_suspended++;
+ 
+ 	if (not_suspended > genpd->in_progress)
+@@ -503,6 +503,9 @@ static int pm_genpd_runtime_suspend(stru
+ 
+ 	might_sleep_if(!genpd->dev_irq_safe);
+ 
++	if (dev_gpd_data(dev)->always_on)
++		return -EBUSY;
++
+ 	stop_ok = genpd->gov ? genpd->gov->stop_ok : NULL;
+ 	if (stop_ok && !stop_ok(dev))
+ 		return -EBUSY;
+@@ -859,7 +862,7 @@ static int pm_genpd_suspend_noirq(struct
+ 	if (IS_ERR(genpd))
+ 		return -EINVAL;
+ 
+-	if (genpd->suspend_power_off
++	if (genpd->suspend_power_off || dev_gpd_data(dev)->always_on
+ 	    || (dev->power.wakeup_path && genpd_dev_active_wakeup(genpd, dev)))
+ 		return 0;
+ 
+@@ -892,7 +895,7 @@ static int pm_genpd_resume_noirq(struct
+ 	if (IS_ERR(genpd))
+ 		return -EINVAL;
+ 
+-	if (genpd->suspend_power_off
++	if (genpd->suspend_power_off || dev_gpd_data(dev)->always_on
+ 	    || (dev->power.wakeup_path && genpd_dev_active_wakeup(genpd, dev)))
+ 		return 0;
+ 
+@@ -1012,7 +1015,8 @@ static int pm_genpd_freeze_noirq(struct
+ 	if (IS_ERR(genpd))
+ 		return -EINVAL;
+ 
+-	return genpd->suspend_power_off ? 0 : genpd_stop_dev(genpd, dev);
++	return genpd->suspend_power_off || dev_gpd_data(dev)->always_on ?
++		0 : genpd_stop_dev(genpd, dev);
+ }
+ 
+ /**
+@@ -1032,7 +1036,8 @@ static int pm_genpd_thaw_noirq(struct de
+ 	if (IS_ERR(genpd))
+ 		return -EINVAL;
+ 
+-	return genpd->suspend_power_off ? 0 : genpd_start_dev(genpd, dev);
++	return genpd->suspend_power_off || dev_gpd_data(dev)->always_on ?
++		0 : genpd_start_dev(genpd, dev);
+ }
+ 
+ /**
+@@ -1125,7 +1130,7 @@ static int pm_genpd_restore_noirq(struct
+ 
+ 	pm_genpd_poweron(genpd);
+ 
+-	return genpd_start_dev(genpd, dev);
++	return dev_gpd_data(dev)->always_on ? 0 : genpd_start_dev(genpd, dev);
+ }
+ 
+ /**
+@@ -1289,6 +1294,26 @@ int pm_genpd_remove_device(struct generi
+ }
+ 
+ /**
++ * pm_genpd_dev_always_on - Set/unset the "always on" flag for a given device.
++ * @dev: Device to set/unset the flag for.
++ * @val: The new value of the device's "always on" flag.
++ */
++void pm_genpd_dev_always_on(struct device *dev, bool val)
++{
++	struct pm_subsys_data *psd;
++	unsigned long flags;
++
++	spin_lock_irqsave(&dev->power.lock, flags);
++
++	psd = dev_to_psd(dev);
++	if (psd && psd->domain_data)
++		to_gpd_data(psd->domain_data)->always_on = val;
++
++	spin_unlock_irqrestore(&dev->power.lock, flags);
++}
++EXPORT_SYMBOL_GPL(pm_genpd_dev_always_on);
++
++/**
+  * pm_genpd_add_subdomain - Add a subdomain to an I/O PM domain.
+  * @genpd: Master PM domain to add the subdomain to.
+  * @subdomain: Subdomain to be added.
+Index: linux/include/linux/pm_domain.h
+=================================--- linux.orig/include/linux/pm_domain.h
++++ linux/include/linux/pm_domain.h
+@@ -97,6 +97,7 @@ struct generic_pm_domain_data {
+ 	struct gpd_dev_ops ops;
+ 	struct gpd_timing_data td;
+ 	bool need_restore;
++	bool always_on;
+ };
+ 
+ #ifdef CONFIG_PM_GENERIC_DOMAINS
+@@ -125,6 +126,7 @@ static inline int pm_genpd_add_device(st
+ 
+ extern int pm_genpd_remove_device(struct generic_pm_domain *genpd,
+ 				  struct device *dev);
++extern void pm_genpd_dev_always_on(struct device *dev, bool val);
+ extern int pm_genpd_add_subdomain(struct generic_pm_domain *genpd,
+ 				  struct generic_pm_domain *new_subdomain);
+ extern int pm_genpd_remove_subdomain(struct generic_pm_domain *genpd,
+@@ -167,6 +169,7 @@ static inline int pm_genpd_remove_device
+ {
+ 	return -ENOSYS;
+ }
++static inline void pm_genpd_dev_always_on(struct device *dev, bool val) {}
+ static inline int pm_genpd_add_subdomain(struct generic_pm_domain *genpd,
+ 					 struct generic_pm_domain *new_sd)
+ {
