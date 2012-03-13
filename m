@@ -1,217 +1,83 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 01 Mar 2012 15:07:55 +0000
-Subject: [PATCH v2 42/57] fbdev: sh_mobile_meram: Make variables unsigned where applicable
-Message-Id: <1330614490-14149-43-git-send-email-laurent.pinchart@ideasonboard.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Tue, 13 Mar 2012 00:24:59 +0000
+Subject: [PATCH 2/6] PM / Domains: Fix hibernation restore of devices
+Message-Id: <201203130124.59376.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201203130123.16268.rjw@sisk.pl>
+In-Reply-To: <201203130123.16268.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: Linux-sh list <linux-sh@vger.kernel.org>
+Cc: Linux PM list <linux-pm@vger.kernel.org>, Paul Mundt <lethal@linux-sh.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, LKML <linux-kernel@vger.kernel.org>, Cao Minh Hiep <hiepcm@gmail.com>
 
-Many variables, such as loop counters, sizes and offsets, should be
-unsigned integers. Make them so.
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+During resume from hibernation pm_genpd_restore_noirq() has to
+deal with software state left by pm_genpd_suspend_noirq() and
+unknown hardware state (the boot kernel may leave all PM domains and
+devices in arbitrary states).  For this reason, make it attempt to
+power cycle each domain when before resuming its first device to
+possibly get rid of any unwanted hardware state that may interfere
+with genpd_start_dev() later on.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- drivers/video/sh_mobile_meram.c |   80 +++++++++++++++++++++------------------
- include/video/sh_mobile_meram.h |    6 ++-
- 2 files changed, 47 insertions(+), 39 deletions(-)
+ drivers/base/power/domain.c |   21 +++++++++++++--------
+ 1 file changed, 13 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
-index 2ad5a45..548f700 100644
---- a/drivers/video/sh_mobile_meram.c
-+++ b/drivers/video/sh_mobile_meram.c
-@@ -104,7 +104,7 @@ struct sh_mobile_meram_priv {
- 	void __iomem	*base;
- 	struct mutex	lock;
- 	unsigned long	used_icb;
--	int		used_meram_cache_regions;
-+	unsigned int	used_meram_cache_regions;
- 	unsigned long	used_meram_cache[SH_MOBILE_MERAM_ICB_NUM];
- 	unsigned long	cmn_saved_regs[CMN_REGS_SIZE];
- 	unsigned long	icb_saved_regs[ICB_REGS_SIZE * SH_MOBILE_MERAM_ICB_NUM];
-@@ -120,24 +120,25 @@ struct sh_mobile_meram_priv {
+Index: linux/drivers/base/power/domain.c
+=================================--- linux.orig/drivers/base/power/domain.c
++++ linux/drivers/base/power/domain.c
+@@ -770,8 +770,10 @@ static int pm_genpd_prepare(struct devic
  
- #define MERAM_ICB_OFFSET(base, idx, off)	((base) + (off) + (idx) * 0x20)
+ 	genpd_acquire_lock(genpd);
  
--static inline void meram_write_icb(void __iomem *base, int idx, int off,
--	unsigned long val)
-+static inline void meram_write_icb(void __iomem *base, unsigned int idx,
-+				   unsigned int off, unsigned long val)
- {
- 	iowrite32(val, MERAM_ICB_OFFSET(base, idx, off));
- }
+-	if (genpd->prepared_count++ = 0)
++	if (genpd->prepared_count++ = 0) {
++		genpd->suspended_count = 0;
+ 		genpd->suspend_power_off = genpd->status = GPD_STATE_POWER_OFF;
++	}
  
--static inline unsigned long meram_read_icb(void __iomem *base, int idx, int off)
-+static inline unsigned long meram_read_icb(void __iomem *base, unsigned int idx,
-+					   unsigned int off)
- {
- 	return ioread32(MERAM_ICB_OFFSET(base, idx, off));
- }
+ 	genpd_release_lock(genpd);
  
--static inline void meram_write_reg(void __iomem *base, int off,
--		unsigned long val)
-+static inline void meram_write_reg(void __iomem *base, unsigned int off,
-+				   unsigned long val)
- {
- 	iowrite32(val, base + off);
- }
- 
--static inline unsigned long meram_read_reg(void __iomem *base, int off)
-+static inline unsigned long meram_read_reg(void __iomem *base, unsigned int off)
- {
- 	return ioread32(base + off);
- }
-@@ -158,8 +159,8 @@ static inline unsigned long meram_read_reg(void __iomem *base, int off)
- static inline int meram_check_overlap(struct sh_mobile_meram_priv *priv,
- 				      struct sh_mobile_meram_icb_cfg *new)
- {
--	int i;
--	int used_start, used_end, meram_start, meram_end;
-+	unsigned int used_start, used_end, meram_start, meram_end;
-+	unsigned int i;
- 
- 	/* valid ICB? */
- 	if (new->marker_icb & ~0x1f || new->cache_icb & ~0x1f)
-@@ -190,7 +191,7 @@ static inline int meram_check_overlap(struct sh_mobile_meram_priv *priv,
- static inline void meram_mark(struct sh_mobile_meram_priv *priv,
- 			      struct sh_mobile_meram_icb_cfg *new)
- {
--	int n;
-+	unsigned int n;
- 
- 	if (new->marker_icb < 0 || new->cache_icb < 0)
- 		return;
-@@ -213,8 +214,8 @@ static inline void meram_mark(struct sh_mobile_meram_priv *priv,
- static inline void meram_unmark(struct sh_mobile_meram_priv *priv,
- 				struct sh_mobile_meram_icb_cfg *icb)
- {
--	int i;
- 	unsigned long pattern;
-+	unsigned int i;
- 
- 	if (icb->marker_icb < 0 || icb->cache_icb < 0)
- 		return;
-@@ -304,12 +305,15 @@ static inline void meram_get_next_icb_addr(struct sh_mobile_meram_info *pdata,
- 
- static int meram_init(struct sh_mobile_meram_priv *priv,
- 		      struct sh_mobile_meram_icb_cfg *icb,
--		      int xres, int yres, int *out_pitch)
-+		      unsigned int xres, unsigned int yres,
-+		      unsigned int *out_pitch)
- {
- 	unsigned long total_byte_count = MERAM_CALC_BYTECOUNT(xres, yres);
- 	unsigned long bnm;
--	int lcdc_pitch, xpitch, line_cnt;
--	int save_lines;
-+	unsigned int lcdc_pitch;
-+	unsigned int xpitch;
-+	unsigned int line_cnt;
-+	unsigned int save_lines;
- 
- 	/* adjust pitch to 1024, 2048, 4096 or 8192 */
- 	lcdc_pitch = (xres - 1) | 1023;
-@@ -386,16 +390,18 @@ static void meram_deinit(struct sh_mobile_meram_priv *priv,
- 
- static int sh_mobile_meram_register(struct sh_mobile_meram_info *pdata,
- 				    struct sh_mobile_meram_cfg *cfg,
--				    int xres, int yres, int pixelformat,
-+				    unsigned int xres, unsigned int yres,
-+				    unsigned int pixelformat,
- 				    unsigned long base_addr_y,
- 				    unsigned long base_addr_c,
- 				    unsigned long *icb_addr_y,
- 				    unsigned long *icb_addr_c,
--				    int *pitch)
-+				    unsigned int *pitch)
- {
- 	struct platform_device *pdev;
- 	struct sh_mobile_meram_priv *priv;
--	int n, out_pitch;
-+	unsigned int out_pitch;
-+	unsigned int n;
- 	int error = 0;
- 
- 	if (!pdata || !pdata->priv || !pdata->pdev || !cfg)
-@@ -538,21 +544,21 @@ static int sh_mobile_meram_runtime_suspend(struct device *dev)
- {
- 	struct platform_device *pdev = to_platform_device(dev);
- 	struct sh_mobile_meram_priv *priv = platform_get_drvdata(pdev);
--	int k, j;
-+	unsigned int i, j;
- 
--	for (k = 0; k < CMN_REGS_SIZE; k++)
--		priv->cmn_saved_regs[k] = meram_read_reg(priv->base,
--			common_regs[k]);
-+	for (i = 0; i < CMN_REGS_SIZE; i++)
-+		priv->cmn_saved_regs[i] = meram_read_reg(priv->base,
-+			common_regs[i]);
- 
--	for (j = 0; j < 32; j++) {
--		if (!test_bit(j, &priv->used_icb))
-+	for (i = 0; i < 32; i++) {
-+		if (!test_bit(i, &priv->used_icb))
- 			continue;
--		for (k = 0; k < ICB_REGS_SIZE; k++) {
--			priv->icb_saved_regs[j * ICB_REGS_SIZE + k] -				meram_read_icb(priv->base, j, icb_regs[k]);
-+		for (j = 0; j < ICB_REGS_SIZE; j++) {
-+			priv->icb_saved_regs[i * ICB_REGS_SIZE + j] +				meram_read_icb(priv->base, i, icb_regs[j]);
- 			/* Reset ICB on resume */
--			if (icb_regs[k] = MExxCTL)
--				priv->icb_saved_regs[j * ICB_REGS_SIZE + k] |+			if (icb_regs[j] = MExxCTL)
-+				priv->icb_saved_regs[i * ICB_REGS_SIZE + j] | 					MExxCTL_WBF | MExxCTL_WF | MExxCTL_RF;
- 		}
- 	}
-@@ -563,20 +569,20 @@ static int sh_mobile_meram_runtime_resume(struct device *dev)
- {
- 	struct platform_device *pdev = to_platform_device(dev);
- 	struct sh_mobile_meram_priv *priv = platform_get_drvdata(pdev);
--	int k, j;
-+	unsigned int i, j;
- 
--	for (j = 0; j < 32; j++) {
--		if (!test_bit(j, &priv->used_icb))
-+	for (i = 0; i < 32; i++) {
-+		if (!test_bit(i, &priv->used_icb))
- 			continue;
--		for (k = 0; k < ICB_REGS_SIZE; k++) {
--			meram_write_icb(priv->base, j, icb_regs[k],
--			priv->icb_saved_regs[j * ICB_REGS_SIZE + k]);
-+		for (j = 0; j < ICB_REGS_SIZE; j++) {
-+			meram_write_icb(priv->base, i, icb_regs[j],
-+			priv->icb_saved_regs[i * ICB_REGS_SIZE + j]);
- 		}
+@@ -1103,20 +1105,24 @@ static int pm_genpd_restore_noirq(struct
+ 	 * Since all of the "noirq" callbacks are executed sequentially, it is
+ 	 * guaranteed that this function will never run twice in parallel for
+ 	 * the same PM domain, so it is not necessary to use locking here.
++	 *
++	 * At this point suspended_count = 0 means this routing is being run
++	 * for the first time for the given domain in the present cycle.
+ 	 */
+-	genpd->status = GPD_STATE_POWER_OFF;
+-	if (genpd->suspend_power_off) {
++	if (genpd->suspended_count++ = 0) {
+ 		/*
+-		 * The boot kernel might put the domain into the power on state,
+-		 * so make sure it really is powered off.
++		 * The boot kernel might put the domain into arbitrary state,
++		 * so make sure it is powered off.
+ 		 */
++		genpd->status = GPD_STATE_POWER_OFF;
+ 		if (genpd->power_off)
+ 			genpd->power_off(genpd);
+-		return 0;
  	}
  
--	for (k = 0; k < CMN_REGS_SIZE; k++)
--		meram_write_reg(priv->base, common_regs[k],
--			priv->cmn_saved_regs[k]);
-+	for (i = 0; i < CMN_REGS_SIZE; i++)
-+		meram_write_reg(priv->base, common_regs[i],
-+				priv->cmn_saved_regs[i]);
- 	return 0;
++	if (genpd->suspend_power_off)
++		return 0;
++
+ 	pm_genpd_poweron(genpd);
+-	genpd->suspended_count--;
+ 
+ 	return genpd_start_dev(genpd, dev);
  }
- 
-diff --git a/include/video/sh_mobile_meram.h b/include/video/sh_mobile_meram.h
-index caae558..6755e3f 100644
---- a/include/video/sh_mobile_meram.h
-+++ b/include/video/sh_mobile_meram.h
-@@ -46,11 +46,13 @@ struct sh_mobile_meram_ops {
- 	/* register usage of meram */
- 	int (*meram_register)(struct sh_mobile_meram_info *meram_dev,
- 			      struct sh_mobile_meram_cfg *cfg,
--			      int xres, int yres, int pixelformat,
-+			      unsigned int xres, unsigned int yres,
-+			      unsigned int pixelformat,
- 			      unsigned long base_addr_y,
- 			      unsigned long base_addr_c,
- 			      unsigned long *icb_addr_y,
--			      unsigned long *icb_addr_c, int *pitch);
-+			      unsigned long *icb_addr_c,
-+			      unsigned int *pitch);
- 
- 	/* unregister usage of meram */
- 	int (*meram_unregister)(struct sh_mobile_meram_info *meram_dev,
--- 
-1.7.3.4
+@@ -1623,7 +1629,6 @@ void pm_genpd_init(struct generic_pm_dom
+ 	genpd->poweroff_task = NULL;
+ 	genpd->resume_count = 0;
+ 	genpd->device_count = 0;
+-	genpd->suspended_count = 0;
+ 	genpd->max_off_time_ns = -1;
+ 	genpd->domain.ops.runtime_suspend = pm_genpd_runtime_suspend;
+ 	genpd->domain.ops.runtime_resume = pm_genpd_runtime_resume;
 
