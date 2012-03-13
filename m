@@ -1,52 +1,37 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Fri, 09 Mar 2012 04:47:29 +0000
-Subject: Re: [PATCH RESEND] mmc: sh_mmcif: fix MMC_GEN_CMD setting
-Message-Id: <m2linapehq.fsf@bob.laptop.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 13 Mar 2012 01:55:23 +0000
+Subject: [PATCH] ARM: mach-shmobile: ap4evb: Reserve DMA memory for the frame buffer
+Message-Id: <87r4wxi7sn.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4F571E36.4050509@renesas.com>
-In-Reply-To: <4F571E36.4050509@renesas.com> (Yoshihiro Shimoda's message of
-	"Wed, 07 Mar 2012 17:37:10 +0900")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Cc: linux-mmc@vger.kernel.org, SH-Linux <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-Hi,
+ap4evb board needs the same fix as
+1740d3448012475f6b63172631c60cbcd1994a81
+(ARM: mach-shmobile: mackerel: Reserve DMA memory for the frame buffer)
 
-On Wed, Mar 07 2012, Shimoda, Yoshihiro wrote:
-> The MMC_GEN_CMD (CMD56) doesn't need to check busy signal.
-> So, the patch fixes the setting.
->
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> ---
->  drivers/mmc/host/sh_mmcif.c |    2 --
->  1 files changed, 0 insertions(+), 2 deletions(-)
->
-> diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-> index 4a2c5b2..e8b70e3 100644
-> --- a/drivers/mmc/host/sh_mmcif.c
-> +++ b/drivers/mmc/host/sh_mmcif.c
-> @@ -745,7 +745,6 @@ static u32 sh_mmcif_set_cmd(struct sh_mmcif_host *host,
->  	case MMC_SET_WRITE_PROT:
->  	case MMC_CLR_WRITE_PROT:
->  	case MMC_ERASE:
-> -	case MMC_GEN_CMD:
->  		tmp |= CMD_SET_RBSY;
->  		break;
->  	}
-> @@ -828,7 +827,6 @@ static void sh_mmcif_start_cmd(struct sh_mmcif_host *host,
->  	case MMC_SET_WRITE_PROT:
->  	case MMC_CLR_WRITE_PROT:
->  	case MMC_ERASE:
-> -	case MMC_GEN_CMD:
->  		mask = MASK_START_CMD | MASK_MRBSYE;
->  		break;
->  	default:
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/board-ap4evb.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
 
-Thanks, pushed to mmc-next for 3.4.
-
-- Chris.
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index eeb4d96..3b17d13 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -1205,6 +1205,10 @@ static struct map_desc ap4evb_io_desc[] __initdata = {
+ static void __init ap4evb_map_io(void)
+ {
+ 	iotable_init(ap4evb_io_desc, ARRAY_SIZE(ap4evb_io_desc));
++	/* DMA memory at 0xff200000 - 0xffdfffff. The default 2MB size isn't
++	 * enough to allocate the frame buffer memory.
++	 */
++	init_consistent_dma_size(12 << 20);
+ 
+ 	/* setup early devices and console here as well */
+ 	sh7372_add_early_devices();
 -- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
+1.7.5.4
+
