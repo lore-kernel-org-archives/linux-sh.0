@@ -1,37 +1,52 @@
-From: Sergei Shtylyov <sshtylyov@mvista.com>
-Date: Thu, 01 Mar 2012 10:33:45 +0000
-Subject: Re: [PATCH 2/3] sh: sh7757: Add echi-sh of platform data
-Message-Id: <4F4F5089.8000407@mvista.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 14 Mar 2012 15:02:24 +0000
+Subject: [PATCH 2/2] ARM: mach-shmobile: sh7372 CEU supports up to 8188x8188 images
+Message-Id: <Pine.LNX.4.64.1203141601060.25284@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1330569162-9485-2-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
-In-Reply-To: <1330569162-9485-2-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+References: <Pine.LNX.4.64.1203141600210.25284@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1203141600210.25284@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linux Media Mailing List <linux-media@vger.kernel.org>
+Cc: linux-sh@vger.kernel.org
 
-Hello.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
 
-On 01-03-2012 6:32, Nobuhiro Iwamatsu wrote:
+This patch we can push some time after the first one in this series gets 
+in, no breakage is caused.
 
-> Signed-off-by: Nobuhiro Iwamatsu<nobuhiro.iwamatsu.yj@renesas.com>
-> ---
->   arch/sh/kernel/cpu/sh4a/setup-sh7757.c |    7 +++++++
->   1 files changed, 7 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c   |    2 ++
+ arch/arm/mach-shmobile/board-mackerel.c |    2 ++
+ 2 files changed, 4 insertions(+), 0 deletions(-)
 
-> diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
-> index 2875e8b..d791d64 100644
-> --- a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
-> +++ b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
-[...]
-> @@ -680,6 +681,11 @@ static struct platform_device spi1_device = {
->   	.resource	= spi1_resources,
->   };
->
-> +static struct ehci_sh_platdata usb_ehci_pdata = {
-> +	.phy_init = NULL,
-> +	.clkmode = 0,
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index aab0a34..f67aa03 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -1009,6 +1009,8 @@ static struct sh_mobile_ceu_companion csi2 = {
+ 
+ static struct sh_mobile_ceu_info sh_mobile_ceu_info = {
+ 	.flags = SH_CEU_FLAG_USE_8BIT_BUS,
++	.max_width = 8188,
++	.max_height = 8188,
+ 	.csi2 = &csi2,
+ };
+ 
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 9b42fbd..f790772 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1270,6 +1270,8 @@ static void mackerel_camera_del(struct soc_camera_device *icd)
+ 
+ static struct sh_mobile_ceu_info sh_mobile_ceu_info = {
+ 	.flags = SH_CEU_FLAG_USE_8BIT_BUS,
++	.max_width = 8188,
++	.max_height = 8188,
+ };
+ 
+ static struct resource ceu_resources[] = {
+-- 
+1.7.2.5
 
-    Do not initialize explicitly to 0 or NULL.
-
-WBR, Sergei
