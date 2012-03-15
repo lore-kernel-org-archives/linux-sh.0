@@ -1,38 +1,129 @@
-From: Al Viro <viro@ZenIV.linux.org.uk>
-Date: Wed, 21 Mar 2012 19:42:03 +0000
-Subject: Re: [PATCH] VMUFAT filesystem [2/4]
-Message-Id: <20120321194202.GP6589@ZenIV.linux.org.uk>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 15 Mar 2012 17:43:51 +0000
+Subject: [RFC/PATCH 3/6] sh_mobile_meram: Add direct MERAM allocation API
+Message-Id: <1331833434-11934-4-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAN628AE8gytYTE3eGDYrKR9Vx4JnND+OGzHcfneCb4q-QUM6cA@mail.gmail.com>
- <20120321053735.GO6589@ZenIV.linux.org.uk>
- <CACwZE5TaUBLwsz0qMNqih9qnE1awP3i048ds-Say+xMAJXnMDA@mail.gmail.com>
-In-Reply-To: <CACwZE5TaUBLwsz0qMNqih9qnE1awP3i048ds-Say+xMAJXnMDA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Adrian McMenamin <adrianmcmenamin@gmail.com>
-Cc: Adrian McMenamin <lkmladrian@gmail.com>, LKML <linux-kernel@vger.kernel.org>, linux-fsdevel@vger.kernel.org, Linux-sh <linux-sh@vger.kernel.org>
+To: linux-fbdev@vger.kernel.org
 
-On Wed, Mar 21, 2012 at 04:32:59PM +0800, Adrian McMenamin wrote:
-> On 21 March 2012 13:37, Al Viro <viro@zeniv.linux.org.uk> wrote:
-> 
-> ...
-> 
-> OK, points essentially taken and will push through another patch in
-> due course ... just a couple of points, though:
-> 
-> * Did the defensive stuff because bad guys might inject evil code
-> rather than because I thought in normal run of execution there would
-> be an issue - guess I just have to forget that?
+The API can be used to allocate and free MERAM blocks directly, without
+going through ICBs.
 
-Remove ones that are provably useless.  If your bad guys really manage to
-get their code in kernel mode, you have already lost as thoroughly as one can.
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+ drivers/video/sh_mobile_meram.c |   39 +++++++++++++++++++++++++++++++++++----
+ include/video/sh_mobile_meram.h |   16 ++++++++++++++++
+ 2 files changed, 51 insertions(+), 4 deletions(-)
 
-> * On the semaphore - what should I use? Uninterruptible? Spinlock?
-> Aren't there big downsides to them also?
+diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
+index 843fb29..ae9dc3b 100644
+--- a/drivers/video/sh_mobile_meram.c
++++ b/drivers/video/sh_mobile_meram.c
+@@ -194,6 +194,21 @@ static inline unsigned long meram_read_reg(void __iomem *base, unsigned int off)
+ }
+ 
+ /* -----------------------------------------------------------------------------
++ * MERAM allocation and free
++ */
++
++static unsigned long meram_alloc(struct sh_mobile_meram_priv *priv, size_t size)
++{
++	return gen_pool_alloc(priv->pool, size);
++}
++
++static void meram_free(struct sh_mobile_meram_priv *priv, unsigned long mem,
++		       size_t size)
++{
++	gen_pool_free(priv->pool, mem, size);
++}
++
++/* -----------------------------------------------------------------------------
+  * LCDC cache planes allocation, init, cleanup and free
+  */
+ 
+@@ -215,7 +230,7 @@ static int meram_plane_alloc(struct sh_mobile_meram_priv *priv,
+ 		return -ENOMEM;
+ 	plane->marker = &priv->icbs[idx];
+ 
+-	mem = gen_pool_alloc(priv->pool, size * 1024);
++	mem = meram_alloc(priv, size * 1024);
+ 	if (mem = 0)
+ 		return -ENOMEM;
+ 
+@@ -232,8 +247,8 @@ static int meram_plane_alloc(struct sh_mobile_meram_priv *priv,
+ static void meram_plane_free(struct sh_mobile_meram_priv *priv,
+ 			     struct sh_mobile_meram_fb_plane *plane)
+ {
+-	gen_pool_free(priv->pool, priv->meram + plane->marker->offset,
+-		      plane->marker->size * 1024);
++	meram_free(priv, priv->meram + plane->marker->offset,
++		   plane->marker->size * 1024);
+ 
+ 	__clear_bit(plane->marker->index, &priv->used_icb);
+ 	__clear_bit(plane->cache->index, &priv->used_icb);
+@@ -385,9 +400,25 @@ static void meram_plane_cleanup(struct sh_mobile_meram_priv *priv,
+ }
+ 
+ /* -----------------------------------------------------------------------------
+- * LCDC cache operations
++ * MERAM operations
+  */
+ 
++unsigned long sh_mobile_meram_alloc(struct sh_mobile_meram_info *pdata,
++				    size_t size)
++{
++	struct sh_mobile_meram_priv *priv = pdata->priv;
++
++	return meram_alloc(priv, size);
++}
++
++void sh_mobile_meram_free(struct sh_mobile_meram_info *pdata, unsigned long mem,
++			  size_t size)
++{
++	struct sh_mobile_meram_priv *priv = pdata->priv;
++
++	meram_free(priv, mem, size);
++}
++
+ /* Allocate memory for the ICBs and mark them as used. */
+ static struct sh_mobile_meram_fb_cache *
+ meram_cache_alloc(struct sh_mobile_meram_priv *priv,
+diff --git a/include/video/sh_mobile_meram.h b/include/video/sh_mobile_meram.h
+index 1134837..062e6e7 100644
+--- a/include/video/sh_mobile_meram.h
++++ b/include/video/sh_mobile_meram.h
+@@ -38,6 +38,10 @@ struct sh_mobile_meram_cfg {
+ 
+ #if defined(CONFIG_FB_SH_MOBILE_MERAM) || \
+     defined(CONFIG_FB_SH_MOBILE_MERAM_MODULE)
++unsigned long sh_mobile_meram_alloc(struct sh_mobile_meram_info *meram_dev,
++				    size_t size);
++void sh_mobile_meram_free(struct sh_mobile_meram_info *meram_dev,
++			  unsigned long mem, size_t size);
+ void *sh_mobile_meram_cache_alloc(struct sh_mobile_meram_info *dev,
+ 				  const struct sh_mobile_meram_cfg *cfg,
+ 				  unsigned int xres, unsigned int yres,
+@@ -50,6 +54,18 @@ void sh_mobile_meram_cache_update(struct sh_mobile_meram_info *dev, void *data,
+ 				  unsigned long *icb_addr_y,
+ 				  unsigned long *icb_addr_c);
+ #else
++static inline unsigned long
++sh_mobile_meram_alloc(struct sh_mobile_meram_info *meram_dev, size_t size)
++{
++	return 0;
++}
++
++static inline void
++sh_mobile_meram_free(struct sh_mobile_meram_info *meram_dev,
++		     unsigned long mem, size_t size)
++{
++}
++
+ static inline void *
+ sh_mobile_meram_cache_alloc(struct sh_mobile_meram_info *dev,
+ 			    const struct sh_mobile_meram_cfg *cfg,
+-- 
+1.7.3.4
 
-Depends on the things you are going to do under it.  Spinlocks are OK only
-for non-blocking areas; in this context I'd probably go for a plain mutex -
-you don't need it to protect directory, since all directory operations have
-->i_mutex on your only directory inode, but you need something to protect
-your block allocator...
