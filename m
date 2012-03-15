@@ -1,62 +1,56 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 15 Mar 2012 16:37:55 +0000
+Date: Thu, 15 Mar 2012 16:45:30 +0000
 Subject: Re: [PATCH/RFC] spi: sh-msiof: per-transaction runtime PM
-Message-Id: <Pine.LNX.4.64.1203151711460.2988@axis700.grange>
+Message-Id: <Pine.LNX.4.64.1203151740430.2988@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1203141828230.30291@axis700.grange>
- <20120315095111.C1B3F3E0899@localhost>
-In-Reply-To: <20120315095111.C1B3F3E0899@localhost>
+	<CANqRtoQUm5PyVwe-PtQPP1DX+_tAh9ptbj9mSkx48+W4Yh9DiA@mail.gmail.com>
+In-Reply-To: <CANqRtoQUm5PyVwe-PtQPP1DX+_tAh9ptbj9mSkx48+W4Yh9DiA-JsoAwUIsXosN+BqQ9rBEUg@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Grant Likely <grant.likely@secretlab.ca>
-Cc: spi-devel-general@lists.sourceforge.net, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, "Rafael J. Wysocki" <rjw@sisk.pl>
+To: Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+Cc: "Rafael J. Wysocki" <rjw-KKrjLPT3xs0@public.gmane.org>, spi-devel-general-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Hi Grant
+Hi Magnus
 
-On Thu, 15 Mar 2012, Grant Likely wrote:
+On Thu, 15 Mar 2012, Magnus Damm wrote:
 
-> On Wed, 14 Mar 2012 18:35:58 +0100 (CET), Guennadi Liakhovetski <g.liakhovetski@gmx.de> wrote:
+> On Thu, Mar 15, 2012 at 2:35 AM, Guennadi Liakhovetski
+> <g.liakhovetski@gmx.de> wrote:
 > > Currently the spi-sh-msiof driver implements a runtime PM scheme, based on
 > > chipselect toggling. However, this is largely inefficient, since SPI
 > > client drivers are allowed to keep the chipselect active for long periods
 > > of time. This patch allows the driver to runtime-suspend the controller
-> > between SPI transfers. While moving runtime-PM hooks this patch also 
+> > between SPI transfers. While moving runtime-PM hooks this patch also
 > > removes manual PM clock manipulation.
-> > 
+> >
 > > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 > > ---
-> > 
-> > Marked as RFC, because I'm actually not sure, whether suspending after 
-> > each transfer is actually allowed. This seems to bring problems with 
-> > mmc-spi at least. Some commands return errors, but a retry recovers. More 
-> > investigation is required. Any hints concerning why this is not perfectly 
+> >
+> > Marked as RFC, because I'm actually not sure, whether suspending after
+> > each transfer is actually allowed. This seems to bring problems with
+> > mmc-spi at least. Some commands return errors, but a retry recovers. More
+> > investigation is required. Any hints concerning why this is not perfectly
 > > functioning would be appreciated!
 > 
-> Suspending in the txrx function is fine since each bitbang instance gets its own
-> workqueue.  It's only the transfer() hook (which bitbang supplies for you) that
-> cannot sleep.
+> Hi Guennadi,
+> 
+> Thanks for your efforts. I believe that the error you are seeing with
+> this patch applied is because the code has been updated to change the
+> polarity of some shared SPI bus pins while CS is being asserted. This
+> will result in potential spikes on the shared SPI bus pins which is
+> far from perfect. =)
 
-Thanks for the reply, but I think, the problem is different. The problem 
-is, that the hardware can be suspended or even powered down during that 
-suspend. On some systems, where these controllers are used, there are at 
-least 2 possibilities to save power: (1) turn off the clock, (2) power 
-down the controller completely as a part of a power domain. The former is 
-ok - the pins retain their static configuration (hope, Magnus or Rafael 
-will correct me if I confuse something), and the bus clock shall be turned 
-off anyway. But if the controller is really powered down, its pins will 
-lose their configuration, which might produce spurious edges on the SPI 
-bus with an active chip-select. This is certainly not allowed. So, we 
-would either have to only allow the "light" form of power-saving, or to 
-try to reconfigure pins as GPIOs for the suspend time to preserve their 
-levels, but this can be difficult... So, looks like we'll have to leave 
-this idea for now.
+You're probably right:-) I forgot to mention, that the problem goes away 
+if PM QoS is used, but we certainly cannot rely on it. As we further 
+discussed in a chat, the problem can be relatively easily solved by 
+postponing the CS activation until in the first transfer, but this only 
+helps as long as the runtime PM doesn't power the domain down. Whereas, as 
+discussed in my reply to Grant in this thread, if this happens, a 
+different problem occurs, which anyway makes this approach much more 
+problematic, that originally thought.
 
-What would help is a finer-grained chip-select control. The above shows, 
-that suspending the hardware during an active CS is difficult, so, it 
-would be good to, maybe, have an option to really minimise CS-active 
-intervals. But that goes down to individual SPI client drivers...
- 
 Thanks
 Guennadi
 ---
