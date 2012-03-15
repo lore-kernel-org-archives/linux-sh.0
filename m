@@ -1,44 +1,41 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 01 Mar 2012 14:45:16 +0000
-Subject: [PATCH for v3.3] arm: sh_mobile: mackerel: Reserve DMA memory for the frame buffer
-Message-Id: <1330613116-12957-1-git-send-email-laurent.pinchart@ideasonboard.com>
+Date: Thu, 15 Mar 2012 17:43:48 +0000
+Subject: [RFC/PATCH 0/6] SH Mobile LCDC MERAM-based frame buffer backing store
+Message-Id: <1331833434-11934-1-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-The default 2MB size of DMA coherent memory isn't enough for allocate
-frame buffer memory.
+Hi everybody,
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
----
- arch/arm/mach-shmobile/board-mackerel.c |    4 ++++
- 1 files changed, 4 insertions(+), 0 deletions(-)
+This patch set implements support for storing the frame buffer contents in the
+on-chip SRAM (MERAM). This will allow keeping the display on while putting
+system memory in a low-power mode (assuming the CPU is idle). The main use case
+is to reduce power consumption on mobile platforms when the user doesn't
+interact with the device and lets it lock itself automatically after a short
+timeout.
 
-This fixes a v3.3 regression introduced in
+This is a first implementation and improvements are possible (such as copying
+the frame buffer content using DMA, possibly through the VEU to handle format
+conversion). I've tested it on a Mackerel board.
 
-commit 5917bfa4c0c529d7a93323671f2edec7e3d81c07
-Author: Magnus Damm <damm@opensource.se>
-Date:   Mon Jan 2 22:57:03 2012 -0500
+Laurent Pinchart (6):
+  sh_mobile_meram: Rename operations to cache_[alloc|free|update]
+  sh_mobile_meram: Use direct function calls for the public API
+  sh_mobile_meram: Add direct MERAM allocation API
+  fbdev: sh_mobile_lcdc: Fix pan offset computation in YUV mode
+  fbdev: sh_mobile_lcdc: Destroy mutex at remove time
+  fbdev: sh_mobile_lcdc: Added MERAM-backed frame buffer support
 
-    ARM: mach-shmobile: use standard 2MiB coherent DMA memory size
+ drivers/video/sh_mobile_lcdcfb.c |  254 +++++++++++++++++++++++++++----------
+ drivers/video/sh_mobile_lcdcfb.h |   10 ++-
+ drivers/video/sh_mobile_meram.c  |  227 +++++++++++++++++++---------------
+ include/video/sh_mobile_lcdc.h   |    1 +
+ include/video/sh_mobile_meram.h  |   71 ++++++++---
+ 5 files changed, 370 insertions(+), 193 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 9b42fbd..2202987 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1402,6 +1402,10 @@ static struct map_desc mackerel_io_desc[] __initdata = {
- static void __init mackerel_map_io(void)
- {
- 	iotable_init(mackerel_io_desc, ARRAY_SIZE(mackerel_io_desc));
-+	/* DMA memory at 0xff200000 - 0xffdfffff. The default 2MB size isn't
-+	 * enough to allocate the frame buffer memory.
-+	 */
-+	init_consistent_dma_size(12 << 20);
- 
- 	/* setup early devices and console here as well */
- 	sh7372_add_early_devices();
 -- 
 Regards,
 
