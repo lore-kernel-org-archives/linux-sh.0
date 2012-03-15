@@ -1,61 +1,39 @@
-From: Robert Lee <rob.lee@linaro.org>
-Date: Tue, 20 Mar 2012 20:22:49 +0000
-Subject: [PATCH v8 8/8] SH: shmobile: Consolidate time keeping and irq enable
-Message-Id: <1332274969-15782-9-git-send-email-rob.lee@linaro.org>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 15 Mar 2012 17:43:53 +0000
+Subject: [RFC/PATCH 5/6] fbdev: sh_mobile_lcdc: Destroy mutex at remove time
+Message-Id: <1331833434-11934-6-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1332274969-15782-1-git-send-email-rob.lee@linaro.org>
-In-Reply-To: <1332274969-15782-1-git-send-email-rob.lee@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-fbdev@vger.kernel.org
 
-Enable core cpuidle timekeeping and irq enabling and remove that
-handling from this code.
+Add a missing mutex_destroy() call when the driver is unbound from the
+device.
 
-Signed-off-by: Robert Lee <rob.lee@linaro.org>
-Reviewed-by: Kevin Hilman <khilman@ti.com>
-Reviewed-by: Daniel Lezcano <daniel.lezcano@linaro.org>
-Acked-by: Jean Pihet<j-pihet@ti.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/sh/kernel/cpu/shmobile/cpuidle.c |   10 +++-------
- 1 file changed, 3 insertions(+), 7 deletions(-)
+ drivers/video/sh_mobile_lcdcfb.c |    7 +++++--
+ 1 files changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/arch/sh/kernel/cpu/shmobile/cpuidle.c b/arch/sh/kernel/cpu/shmobile/cpuidle.c
-index 6d62eb4..1ddc876 100644
---- a/arch/sh/kernel/cpu/shmobile/cpuidle.c
-+++ b/arch/sh/kernel/cpu/shmobile/cpuidle.c
-@@ -29,7 +29,6 @@ static int cpuidle_sleep_enter(struct cpuidle_device *dev,
- 				int index)
- {
- 	unsigned long allowed_mode = SUSP_SH_SLEEP;
--	ktime_t before, after;
- 	int requested_state = index;
- 	int allowed_state;
- 	int k;
-@@ -47,19 +46,16 @@ static int cpuidle_sleep_enter(struct cpuidle_device *dev,
- 	 */
- 	k = min_t(int, allowed_state, requested_state);
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 2009432..23d0446 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -1725,8 +1725,11 @@ static int sh_mobile_lcdc_remove(struct platform_device *pdev)
+ 	}
  
--	before = ktime_get();
- 	sh_mobile_call_standby(cpuidle_mode[k]);
--	after = ktime_get();
--
--	dev->last_residency = (int)ktime_to_ns(ktime_sub(after, before)) >> 10;
+ 	for (i = 0; i < ARRAY_SIZE(priv->ch); i++) {
+-		if (priv->ch[i].bl)
+-			sh_mobile_lcdc_bl_remove(priv->ch[i].bl);
++		struct sh_mobile_lcdc_chan *ch = &priv->ch[i];
++
++		if (ch->bl)
++			sh_mobile_lcdc_bl_remove(ch->bl);
++		mutex_destroy(&ch->open_lock);
+ 	}
  
- 	return k;
- }
- 
- static struct cpuidle_device cpuidle_dev;
- static struct cpuidle_driver cpuidle_driver = {
--	.name =		"sh_idle",
--	.owner =	THIS_MODULE,
-+	.name			= "sh_idle",
-+	.owner			= THIS_MODULE,
-+	.en_core_tk_irqen	= 1,
- };
- 
- void sh_mobile_setup_cpuidle(void)
+ 	if (priv->dot_clk) {
 -- 
-1.7.9.4
+1.7.3.4
 
