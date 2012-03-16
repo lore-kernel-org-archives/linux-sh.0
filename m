@@ -1,146 +1,66 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 01 Mar 2012 15:07:18 +0000
-Subject: [PATCH v2 05/57] fbdev: sh_mobile_lcdc: Create functions to turn the display on/off
-Message-Id: <1330614490-14149-6-git-send-email-laurent.pinchart@ideasonboard.com>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 16 Mar 2012 04:10:15 +0000
+Subject: [PATCH] usb: renesas_usbhs: gadget: add support for set_selfpowered
+Message-Id: <4F62BD27.9020406@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+The previous code always set to USB_DEVICE_SELF_POWERED in GET_STATUS.
+So, this patch adds set_selfpowered().
+
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- drivers/video/sh_mobile_lcdcfb.c |   53 ++++++++++++++++++++------------------
- 1 files changed, 28 insertions(+), 25 deletions(-)
+ drivers/usb/renesas_usbhs/mod_gadget.c |   19 ++++++++++++++++++-
+ 1 files changed, 18 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index a805f96..bd725a4 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -224,7 +224,7 @@ static int sh_mobile_lcdc_setup_clocks(struct sh_mobile_lcdc_priv *priv,
- }
- 
- /* -----------------------------------------------------------------------------
-- * Sys panel and deferred I/O
-+ * Display, panel and deferred I/O
-  */
- 
- static void lcdc_sys_write_index(void *handle, unsigned long data)
-@@ -335,6 +335,27 @@ static void sh_mobile_lcdc_deferred_io_touch(struct fb_info *info)
- 		schedule_delayed_work(&info->deferred_work, fbdefio->delay);
- }
- 
-+static void sh_mobile_lcdc_display_on(struct sh_mobile_lcdc_chan *ch)
-+{
-+	struct sh_mobile_lcdc_board_cfg	*board_cfg = &ch->cfg.board_cfg;
+diff --git a/drivers/usb/renesas_usbhs/mod_gadget.c b/drivers/usb/renesas_usbhs/mod_gadget.c
+index 00bd2a5..28478ce 100644
+--- a/drivers/usb/renesas_usbhs/mod_gadget.c
++++ b/drivers/usb/renesas_usbhs/mod_gadget.c
+@@ -55,6 +55,7 @@ struct usbhsg_gpriv {
+ #define USBHSG_STATUS_STARTED		(1 << 0)
+ #define USBHSG_STATUS_REGISTERD		(1 << 1)
+ #define USBHSG_STATUS_WEDGE		(1 << 2)
++#define USBHSG_STATUS_SELF_POWERED	(1 << 3)
+ };
+
+ struct usbhsg_recip_handle {
+@@ -333,7 +334,10 @@ static int usbhsg_recip_handler_std_get_device(struct usbhs_priv *priv,
+ 					       struct usb_ctrlrequest *ctrl)
+ {
+ 	struct usbhsg_gpriv *gpriv = usbhsg_uep_to_gpriv(uep);
+-	unsigned short status = 1 << USB_DEVICE_SELF_POWERED;
++	unsigned short status = 0;
 +
-+	/* HDMI must be enabled before LCDC configuration */
-+	if (board_cfg->display_on && try_module_get(board_cfg->owner)) {
-+		board_cfg->display_on(board_cfg->board_data, ch->info);
-+		module_put(board_cfg->owner);
-+	}
++	if (usbhsg_status_has(gpriv, USBHSG_STATUS_SELF_POWERED))
++		status = 1 << USB_DEVICE_SELF_POWERED;
+
+ 	__usbhsg_recip_send_status(gpriv, status);
+
+@@ -879,8 +883,21 @@ static int usbhsg_get_frame(struct usb_gadget *gadget)
+ 	return usbhs_frame_get_num(priv);
+ }
+
++static int usbhsg_set_selfpowered(struct usb_gadget *gadget, int is_self)
++{
++	struct usbhsg_gpriv *gpriv = usbhsg_gadget_to_gpriv(gadget);
++
++	if (is_self)
++		usbhsg_status_set(gpriv, USBHSG_STATUS_SELF_POWERED);
++	else
++		usbhsg_status_clr(gpriv, USBHSG_STATUS_SELF_POWERED);
++
++	return 0;
 +}
 +
-+static void sh_mobile_lcdc_display_off(struct sh_mobile_lcdc_chan *ch)
-+{
-+	struct sh_mobile_lcdc_board_cfg	*board_cfg = &ch->cfg.board_cfg;
-+
-+	if (board_cfg->display_off && try_module_get(board_cfg->owner)) {
-+		board_cfg->display_off(board_cfg->board_data);
-+		module_put(board_cfg->owner);
-+	}
-+}
-+
- /* -----------------------------------------------------------------------------
-  * Format helpers
-  */
-@@ -648,7 +669,6 @@ static void __sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
- static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
- {
- 	struct sh_mobile_meram_info *mdev = priv->meram_dev;
--	struct sh_mobile_lcdc_board_cfg	*board_cfg;
- 	struct sh_mobile_lcdc_chan *ch;
- 	unsigned long tmp;
- 	int ret;
-@@ -665,8 +685,9 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
- 	lcdc_wait_bit(priv, _LDCNT2R, LDCNT2R_BR, 0);
- 
- 	for (k = 0; k < ARRAY_SIZE(priv->ch); k++) {
--		ch = &priv->ch[k];
-+		struct sh_mobile_lcdc_board_cfg	*board_cfg;
- 
-+		ch = &priv->ch[k];
- 		if (!ch->enabled)
- 			continue;
- 
-@@ -754,11 +775,7 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
- 			fb_deferred_io_init(ch->info);
- 		}
- 
--		board_cfg = &ch->cfg.board_cfg;
--		if (board_cfg->display_on && try_module_get(board_cfg->owner)) {
--			board_cfg->display_on(board_cfg->board_data, ch->info);
--			module_put(board_cfg->owner);
--		}
-+		sh_mobile_lcdc_display_on(ch);
- 
- 		if (ch->bl) {
- 			ch->bl->props.power = FB_BLANK_UNBLANK;
-@@ -772,7 +789,6 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
- static void sh_mobile_lcdc_stop(struct sh_mobile_lcdc_priv *priv)
- {
- 	struct sh_mobile_lcdc_chan *ch;
--	struct sh_mobile_lcdc_board_cfg	*board_cfg;
- 	int k;
- 
- 	/* clean up deferred io and ask board code to disable panel */
-@@ -799,11 +815,7 @@ static void sh_mobile_lcdc_stop(struct sh_mobile_lcdc_priv *priv)
- 			backlight_update_status(ch->bl);
- 		}
- 
--		board_cfg = &ch->cfg.board_cfg;
--		if (board_cfg->display_off && try_module_get(board_cfg->owner)) {
--			board_cfg->display_off(board_cfg->board_data);
--			module_put(board_cfg->owner);
--		}
-+		sh_mobile_lcdc_display_off(ch);
- 
- 		/* disable the meram */
- 		if (ch->meram_enabled) {
-@@ -1417,7 +1429,6 @@ static int sh_mobile_lcdc_notify(struct notifier_block *nb,
- 	struct fb_event *event = data;
- 	struct fb_info *info = event->info;
- 	struct sh_mobile_lcdc_chan *ch = info->par;
--	struct sh_mobile_lcdc_board_cfg	*board_cfg = &ch->cfg.board_cfg;
- 
- 	if (&ch->lcdc->notifier != nb)
- 		return NOTIFY_DONE;
-@@ -1427,10 +1438,7 @@ static int sh_mobile_lcdc_notify(struct notifier_block *nb,
- 
- 	switch(action) {
- 	case FB_EVENT_SUSPEND:
--		if (board_cfg->display_off && try_module_get(board_cfg->owner)) {
--			board_cfg->display_off(board_cfg->board_data);
--			module_put(board_cfg->owner);
--		}
-+		sh_mobile_lcdc_display_off(ch);
- 		sh_mobile_lcdc_stop(ch->lcdc);
- 		break;
- 	case FB_EVENT_RESUME:
-@@ -1438,12 +1446,7 @@ static int sh_mobile_lcdc_notify(struct notifier_block *nb,
- 		sh_mobile_fb_reconfig(info);
- 		mutex_unlock(&ch->open_lock);
- 
--		/* HDMI must be enabled before LCDC configuration */
--		if (board_cfg->display_on && try_module_get(board_cfg->owner)) {
--			board_cfg->display_on(board_cfg->board_data, info);
--			module_put(board_cfg->owner);
--		}
--
-+		sh_mobile_lcdc_display_on(ch);
- 		sh_mobile_lcdc_start(ch->lcdc);
- 	}
- 
+ static struct usb_gadget_ops usbhsg_gadget_ops = {
+ 	.get_frame		= usbhsg_get_frame,
++	.set_selfpowered	= usbhsg_set_selfpowered,
+ 	.udc_start		= usbhsg_gadget_start,
+ 	.udc_stop		= usbhsg_gadget_stop,
+ };
 -- 
-1.7.3.4
-
+1.7.1
