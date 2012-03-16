@@ -1,52 +1,54 @@
-From: Richard Weinberger <richard@nod.at>
-Date: Sat, 24 Mar 2012 11:12:12 +0000
-Subject: Re: [PATCH 08/10] um: Fix possible race on task->mm
-Message-Id: <4F6DAC0C.4010203@nod.at>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="------------enigD953513F54FF3AFE747589E6"
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date: Fri, 16 Mar 2012 02:31:25 +0000
+Subject: [PATCH 1/2] sh: dma: Collect up CHCR of SH7723 and SH7730
+Message-Id: <1331865086-20880-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120324102609.GA28356@lizard> <20120324103050.GH29067@lizard>
-In-Reply-To: <20120324103050.GH29067@lizard>
-To: linux-arm-kernel@lists.infradead.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
---------------enigD953513F54FF3AFE747589E6
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+CHCR of SH7723 and SH7730 is constitution same as SH7724.
 
-Am 24.03.2012 11:30, schrieb Anton Vorontsov:
-> Checking for task->mm is dangerous as ->mm might disappear (exit_mm()
-> assigns NULL under task_lock(), so tasklist lock is not enough).
->=20
-> We can't use get_task_mm()/mmput() pair as mmput() might sleep,
-> so let's take the task lock while we care about its mm.
->=20
-> Note that we should also use find_lock_task_mm() to check all process'
-> threads for a valid mm, but for uml we'll do it in a separate patch.
->=20
-> Signed-off-by: Anton Vorontsov <anton.vorontsov@linaro.org>
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+---
+ arch/sh/include/cpu-sh4/cpu/dma-register.h |   10 +++-------
+ 1 files changed, 3 insertions(+), 7 deletions(-)
 
-Acked-by: Richard Weinberger <richard@nod.at>
+diff --git a/arch/sh/include/cpu-sh4/cpu/dma-register.h b/arch/sh/include/cpu-sh4/cpu/dma-register.h
+index 18fa80a..1af4a95 100644
+--- a/arch/sh/include/cpu-sh4/cpu/dma-register.h
++++ b/arch/sh/include/cpu-sh4/cpu/dma-register.h
+@@ -16,14 +16,15 @@
+ 
+ #define DMAOR_INIT	DMAOR_DME
+ 
+-#if defined(CONFIG_CPU_SUBTYPE_SH7343) || \
+-	defined(CONFIG_CPU_SUBTYPE_SH7730)
++#if defined(CONFIG_CPU_SUBTYPE_SH7343)
+ #define CHCR_TS_LOW_MASK	0x00000018
+ #define CHCR_TS_LOW_SHIFT	3
+ #define CHCR_TS_HIGH_MASK	0
+ #define CHCR_TS_HIGH_SHIFT	0
+ #elif defined(CONFIG_CPU_SUBTYPE_SH7722) || \
++	defined(CONFIG_CPU_SUBTYPE_SH7723) || \
+ 	defined(CONFIG_CPU_SUBTYPE_SH7724) || \
++	defined(CONFIG_CPU_SUBTYPE_SH7730) || \
+ 	defined(CONFIG_CPU_SUBTYPE_SH7786)
+ #define CHCR_TS_LOW_MASK	0x00000018
+ #define CHCR_TS_LOW_SHIFT	3
+@@ -35,11 +36,6 @@
+ #define CHCR_TS_LOW_SHIFT	3
+ #define CHCR_TS_HIGH_MASK	0
+ #define CHCR_TS_HIGH_SHIFT	0
+-#elif defined(CONFIG_CPU_SUBTYPE_SH7723)
+-#define CHCR_TS_LOW_MASK	0x00000018
+-#define CHCR_TS_LOW_SHIFT	3
+-#define CHCR_TS_HIGH_MASK	0
+-#define CHCR_TS_HIGH_SHIFT	0
+ #elif defined(CONFIG_CPU_SUBTYPE_SH7757)
+ #define CHCR_TS_LOW_MASK	0x00000018
+ #define CHCR_TS_LOW_SHIFT	3
+-- 
+1.7.9.1
 
-Thanks,
-//richard
-
-
---------------enigD953513F54FF3AFE747589E6
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.18 (GNU/Linux)
-
-iQEcBAEBAgAGBQJPbawQAAoJEN9758yqZn9et8IIAIjjApdHtjO4jbQojJt9/hMC
-a2mKqQUILDnbdr7KTCZu3OGUbHpQhvdWYo1ZssGjz9XHSDFIKF8PdmSwPuh46HcO
-GZwGZ6gfPRV23gJr1BnT+WkJzRoC4CG/xBzt2YpPMgjLDFAs4mkGX0w0knd/iEYD
-hu185ttLe/u2DmU2rbCsEJ9YfxkwQ0+326WxH7D71HwAMpRCtmg1ciPdXMabeNnq
-mU6gHLh7JPKWu8QPYWLwF+NRAzqOAENnHZkBEBX3rvapkQhIYdFWBHLhY2Wh9dgL
-8cLyhir504HG+JcT5wegeivcMT2YQ/ODRuPqCwUsUEXxjI5caPzyWfsV3d2Y2nI=
-=J9Yc
------END PGP SIGNATURE-----
-
---------------enigD953513F54FF3AFE747589E6--
