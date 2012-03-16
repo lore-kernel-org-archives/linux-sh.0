@@ -1,213 +1,50 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 16 Mar 2012 08:46:18 +0000
-Subject: [PATCH 5/5] net: sh_eth: use NAPI
-Message-Id: <4F62FDDA.9070708@renesas.com>
+From: David Miller <davem@davemloft.net>
+Date: Fri, 16 Mar 2012 09:15:38 +0000
+Subject: Re: [PATCH 5/5] net: sh_eth: use NAPI
+Message-Id: <20120316.021538.2022095011493944779.davem@davemloft.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <4F62FDDA.9070708@renesas.com>
+In-Reply-To: <4F62FDDA.9070708@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev <netdev@vger.kernel.org>
-Cc: SH-Linux <linux-sh@vger.kernel.org>
+To: yoshihiro.shimoda.uh@renesas.com
+Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
 
-This patch modifies the driver to use NAPI.
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 16 Mar 2012 17:46:18 +0900
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- drivers/net/ethernet/renesas/sh_eth.c |   88 +++++++++++++++++++++++----------
- drivers/net/ethernet/renesas/sh_eth.h |    3 +
- 2 files changed, 64 insertions(+), 27 deletions(-)
+sh_eth_interrupt takes mdp->lock, and:
 
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index 62458d9..02878af 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -871,7 +871,7 @@ static int sh_eth_txfree(struct net_device *ndev)
- 		if (mdp->tx_skbuff[entry]) {
- 			dma_unmap_single(&ndev->dev, txdesc->addr,
- 					 txdesc->buffer_length, DMA_TO_DEVICE);
--			dev_kfree_skb_irq(mdp->tx_skbuff[entry]);
-+			dev_kfree_skb(mdp->tx_skbuff[entry]);
- 			mdp->tx_skbuff[entry] = NULL;
- 			freeNum++;
- 		}
-@@ -886,7 +886,7 @@ static int sh_eth_txfree(struct net_device *ndev)
- }
+> +static int sh_eth_poll(struct napi_struct *napi, int budget)
+> +{
+> +	struct sh_eth_private *mdp = container_of(napi, struct sh_eth_private,
+> +						  napi);
+> +	struct net_device *ndev = mdp->ndev;
+> +	struct sh_eth_cpu_data *cd = mdp->cd;
+> +	int work_done = 0, txfree_num;
+> +	u32 intr_status = sh_eth_read(ndev, EESR);
+> +
+> +	spin_lock(&mdp->lock);
 
- /* Packet receive function */
--static int sh_eth_rx(struct net_device *ndev)
-+static int sh_eth_rx(struct net_device *ndev, int *work, int budget)
- {
- 	struct sh_eth_private *mdp = netdev_priv(ndev);
- 	struct sh_eth_rxdesc *rxdesc;
-@@ -898,7 +898,8 @@ static int sh_eth_rx(struct net_device *ndev)
- 	u32 desc_status;
+sh_eth_poll() runs from software interrupt context, therefore
+this can deadlock.
 
- 	rxdesc = &mdp->rx_ring[entry];
--	while (!(rxdesc->status & cpu_to_edmac(mdp, RD_RACT))) {
-+	while (!(rxdesc->status & cpu_to_edmac(mdp, RD_RACT)) &&
-+	       *work < budget) {
- 		desc_status = edmac_to_cpu(mdp, rxdesc->status);
- 		pkt_len = rxdesc->frame_length;
+Even though you turned off interrupts in sh_eth_interrupt to
+enable NAPI mode, this can still happen, interrupts can be
+stuck in the interrupt controller, another device can be on
+the same interrupt line, etc.  Therefore you must handle
+this properly.
 
-@@ -934,13 +935,16 @@ static int sh_eth_rx(struct net_device *ndev)
- 				skb_reserve(skb, NET_IP_ALIGN);
- 			skb_put(skb, pkt_len);
- 			skb->protocol = eth_type_trans(skb, ndev);
--			netif_rx(skb);
--			ndev->stats.rx_packets++;
--			ndev->stats.rx_bytes += pkt_len;
-+			if (netif_receive_skb(skb) = NET_RX_DROP) {
-+				ndev->stats.rx_dropped++;
-+			} else {
-+				ndev->stats.rx_packets++;
-+				ndev->stats.rx_bytes += pkt_len;
-+			}
- 		}
--		rxdesc->status |= cpu_to_edmac(mdp, RD_RACT);
- 		entry = (++mdp->cur_rx) % RX_RING_SIZE;
- 		rxdesc = &mdp->rx_ring[entry];
-+		(*work)++;
- 	}
+I would suggest _NOT_ fixing this by taking the lock with interrupts
+disabled in sh_eth_poll(), that defeats the whole prupose of
+converting to NAPI and this would also require you to change back
+the dev_kfree_skb() to dev_kfree_skb_irq().
 
- 	/* Refill the Rx ring buffers. */
-@@ -972,7 +976,7 @@ static int sh_eth_rx(struct net_device *ndev)
+Instead, do what other drivers do, make your interrupt handler run
+completely lockless and have a sophisticated quiescence sequence
+when you want to sync interrupts off and make sure no async contexts
+are still running in the interrupt handler.  See tg3.c for one
+example of this.
 
- 	/* Restart Rx engine if stopped. */
- 	/* If we don't need to check status, don't. -KDU */
--	if (!(sh_eth_read(ndev, EDRRR) & EDRRR_R)) {
-+	if (*work < budget && !(sh_eth_read(ndev, EDRRR) & EDRRR_R)) {
- 		/* fix the values for the next receiving */
- 		mdp->cur_rx = mdp->dirty_rx = (sh_eth_read(ndev, RDFAR) -
- 					       sh_eth_read(ndev, RDLAR)) >> 4;
-@@ -1128,38 +1132,61 @@ static irqreturn_t sh_eth_interrupt(int irq, void *netdev)
-
- 	/* Get interrpt stat */
- 	intr_status = sh_eth_read(ndev, EESR);
--	/* Clear interrupt */
- 	if (intr_status & (EESR_FRC | EESR_RMAF | EESR_RRF |
- 			EESR_RTLF | EESR_RTSF | EESR_PRE | EESR_CERF |
- 			cd->tx_check | cd->eesr_err_check)) {
--		sh_eth_write(ndev, intr_status, EESR);
-+		if (napi_schedule_prep(&mdp->napi)) {
-+			/* Disable all interrupts */
-+			sh_eth_write(ndev, 0, EESIPR);
-+			__napi_schedule(&mdp->napi);
-+		}
- 		ret = IRQ_HANDLED;
--	} else
--		goto other_irq;
--
--	if (intr_status & (EESR_FRC | /* Frame recv*/
--			EESR_RMAF | /* Multi cast address recv*/
--			EESR_RRF  | /* Bit frame recv */
--			EESR_RTLF | /* Long frame recv*/
--			EESR_RTSF | /* short frame recv */
--			EESR_PRE  | /* PHY-LSI recv error */
--			EESR_CERF)){ /* recv frame CRC error */
--		sh_eth_rx(ndev);
- 	}
-
--	/* Tx Check */
--	if (intr_status & cd->tx_check) {
--		sh_eth_txfree(ndev);
-+	spin_unlock(&mdp->lock);
-+
-+	return ret;
-+}
-+
-+static int sh_eth_poll(struct napi_struct *napi, int budget)
-+{
-+	struct sh_eth_private *mdp = container_of(napi, struct sh_eth_private,
-+						  napi);
-+	struct net_device *ndev = mdp->ndev;
-+	struct sh_eth_cpu_data *cd = mdp->cd;
-+	int work_done = 0, txfree_num;
-+	u32 intr_status = sh_eth_read(ndev, EESR);
-+
-+	spin_lock(&mdp->lock);
-+
-+	/* Clear interrupt flags */
-+	sh_eth_write(ndev, intr_status, EESR);
-+
-+	/* check txdesc */
-+	txfree_num = sh_eth_txfree(ndev);
-+	if (txfree_num)
- 		netif_wake_queue(ndev);
--	}
-
-+	/* check rxdesc */
-+	sh_eth_rx(ndev, &work_done, budget);
-+
-+	/* check error flags */
- 	if (intr_status & cd->eesr_err_check)
- 		sh_eth_error(ndev, intr_status);
-
--other_irq:
-+	/* get current interrupt flags */
-+	intr_status = sh_eth_read(ndev, EESR);
- 	spin_unlock(&mdp->lock);
-
--	return ret;
-+	/* check whether the controller doesn't have any events */
-+	if (!txfree_num && !(intr_status & cd->eesr_err_check) &&
-+	    work_done < budget) {
-+		napi_complete(napi);
-+		/* Enable all interrupts */
-+		sh_eth_write(ndev, cd->eesipr_value, EESIPR);
-+	}
-+
-+	return work_done;
- }
-
- /* PHY state control function */
-@@ -1380,6 +1407,8 @@ static int sh_eth_open(struct net_device *ndev)
-
- 	pm_runtime_get_sync(&mdp->pdev->dev);
-
-+	napi_enable(&mdp->napi);
-+
- 	ret = request_irq(ndev->irq, sh_eth_interrupt,
- #if defined(CONFIG_CPU_SUBTYPE_SH7763) || \
- 	defined(CONFIG_CPU_SUBTYPE_SH7764) || \
-@@ -1520,6 +1549,8 @@ static int sh_eth_close(struct net_device *ndev)
- 		phy_disconnect(mdp->phydev);
- 	}
-
-+	napi_disable(&mdp->napi);
-+
- 	free_irq(ndev->irq, ndev);
-
- 	/* Free all the skbuffs in the Rx queue. */
-@@ -2152,6 +2183,9 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
- #endif
- 	sh_eth_set_default_cpu_data(mdp->cd);
-
-+	mdp->ndev = ndev;
-+	netif_napi_add(ndev, &mdp->napi, sh_eth_poll, SH_ETH_NAPI_WEIGHT);
-+
- 	/* set function */
- 	ndev->netdev_ops = &sh_eth_netdev_ops;
- 	SET_ETHTOOL_OPS(ndev, &sh_eth_ethtool_ops);
-diff --git a/drivers/net/ethernet/renesas/sh_eth.h b/drivers/net/ethernet/renesas/sh_eth.h
-index 667bdd2..9f4c91e 100644
---- a/drivers/net/ethernet/renesas/sh_eth.h
-+++ b/drivers/net/ethernet/renesas/sh_eth.h
-@@ -31,6 +31,7 @@
- #define PKT_BUF_SZ		1538
- #define SH_ETH_TSU_TIMEOUT_MS	500
- #define SH_ETH_TSU_CAM_ENTRIES	32
-+#define SH_ETH_NAPI_WEIGHT	32
-
- enum {
- 	/* E-DMAC registers */
-@@ -716,6 +717,8 @@ struct sh_eth_private {
- 	int duplex;
- 	int port;		/* for TSU */
- 	int vlan_num_ids;	/* for VLAN tag filter */
-+	struct napi_struct napi;
-+	struct net_device *ndev;
-
- 	unsigned no_ether_link:1;
- 	unsigned ether_link_active_low:1;
--- 
-1.7.1
+I'm toss this entire patch series, it needs a lot more work.
