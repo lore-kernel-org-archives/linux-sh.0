@@ -1,115 +1,50 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 30 Mar 2012 06:22:25 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: sh7372 generic board support via DT V2
-Message-Id: <CANqRtoRU=fLqgWtuCohMB_fF8vWhXFZ84fnVFTDNe_MOiDCmKg@mail.gmail.com>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 16 Mar 2012 08:46:16 +0000
+Subject: [PATCH 4/5] net: sh_eth: add CONFIG_SH_ETH_NUM_RXDESC option
+Message-Id: <4F62FDD8.9010907@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20110707134813.22370.25948.sendpatchset@t400s>
-In-Reply-To: <20110707134813.22370.25948.sendpatchset@t400s>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: netdev <netdev@vger.kernel.org>
+Cc: SH-Linux <linux-sh@vger.kernel.org>
 
-On Fri, Mar 30, 2012 at 5:40 AM, Rafael J. Wysocki <rjw@sisk.pl> wrote:
-> On Thursday, March 29, 2012, Magnus Damm wrote:
->> Hello Rafael,
->>
->> 2012/3/29 Rafael J. Wysocki <rjw@sisk.pl>:
->> > Hi,
->> >
->> > On Wednesday, March 28, 2012, Magnus Damm wrote:
->> >> From: Magnus Damm <damm@opensource.se>
->> >>
->> >> Add generic DT board support for the sh7372 SoC V2.
->> >>
->> >> SCIF serial ports and timers are kept as regular
->> >> platform devices. Other on-chip and on-board devices
->> >> should be configured via the device tree.
->> >>
->> >> Tested on the mackerel board via kexec using a zImage
->> >> kernel with an appended dtb.
->> >>
->> >> At this point there is no interrupt controller support
->> >> in place but such code will be added over time when
->> >> proper IRQ domain support has been added to INTC.
->> >>
->> >> Signed-off-by: Magnus Damm <damm@opensource.se>
->> >
->> > My understanding is that this patch along with the
->> > "[PATCH 00/06] mach-shmobile device tree preparation patches V2" serie=
-s is
->> > sufficient for preliminary support of device trees on sh7372. =A0For t=
-his
->> > reason, I have put those patches into the dt branch at:
->> >
->> > git://git.kernel.org/pub/scm/linux/kernel/git/rafael/renesas.git
->>
->> Great, thanks for your help!
->>
->> > However, the branch is based on v3.3 final, so I've had to rebase two =
-patches
->> > on top of it. =A0Magnus, can you please double check if the commits lo=
-ok good?
->>
->> Sorry, it does not seem ok. This patch and the earlier series "[PATCH
->> 00/06] mach-shmobile device tree preparation patches V2" were built on
->> top of the renesas git tree commit
->> a6e24019468009a21b674e392d74283a90f415dd (origin/master at the
->> moment). Using v3.3 final will not work due to missing patches.
->>
->> The following log shows the first 3 commits in origin/master and
->> origin/dt for arch/arm/mach-shmobile/setup-sh7372.c:
->>
->> damm@w520 ~/git/renesas $ git log --oneline origin/master
->> arch/arm/mach-shmobile/setup-sh7372.c | head -n 3
->> 17254bf ARM: mach-shmobile: sh7372, AP4EVB and Mackerel timer rework
->> 5d7220ec ARM: mach-shmobile: sh7372 map_io and init_early update
->> c8ddf03 ARM: mach-shmobile: both USB DMAC instances on sh7372 are slave-=
-only
->> damm@w520 ~/git/renesas $ git log --oneline origin/dt
->> arch/arm/mach-shmobile/setup-sh7372.c | head -n 3
->> 71f5ef5 ARM: mach-shmobile: sh7372 generic board support via DT V2
->> c8ddf03 ARM: mach-shmobile: both USB DMAC instances on sh7372 are slave-=
-only
->> 57f2685 Merge branch 'next' of git://git.infradead.org/users/vkoul/slave=
--dma
->> damm@w520 ~/git/renesas $
->>
->> The patches "ARM: mach-shmobile: sh7372, AP4EVB and Mackerel timer
->> rework" and "ARM: mach-shmobile: sh7372 map_io and init_early update"
->> and all their dependencies are needed, so please base on your current
->> origin/master to avoid the following errors:
->>
->> arch/arm/mach-shmobile/setup-sh7372.c: In function
->> 'sh7372_add_early_devices_dt':
->> arch/arm/mach-shmobile/setup-sh7372.c:1059:2: error: implicit
->> declaration of function 'shmobile_setup_delay'
->> arch/arm/mach-shmobile/setup-sh7372.c:1065:2: error: implicit
->> declaration of function 'shmobile_setup_console'
->> arch/arm/mach-shmobile/setup-sh7372.c: In function
->> 'sh7372_add_standard_devices_dt':
->> arch/arm/mach-shmobile/setup-sh7372.c:1075:2: error: implicit
->> declaration of function 'sh7372_clock_init'
->> arch/arm/mach-shmobile/setup-sh7372.c: At top level:
->> arch/arm/mach-shmobile/setup-sh7372.c:1090:12: error: 'sh7372_map_io'
->> undeclared here (not in a function)
->> arch/arm/mach-shmobile/setup-sh7372.c:1093:14: error:
->> 'sh7372_init_irq' undeclared here (not in a function)
->> arch/arm/mach-shmobile/setup-sh7372.c:1094:16: error:
->> 'shmobile_handle_irq_intc' undeclared here (not in a function)
->> arch/arm/mach-shmobile/setup-sh7372.c:1096:12: error: 'shmobile_timer'
->> undeclared here (not in a function)
->> make[1]: *** [arch/arm/mach-shmobile/setup-sh7372.o] Error 1
->> make: *** [arch/arm/mach-shmobile] Error 2
->
-> OK
->
-> So I'll need to rebase the dt branch on top of 3.4-rc1 when it is out.
-> I think that should resolve the problems, is that correct?
+This patch allows you to configure the number of RX descriptors.
 
-Yes, since the dependencies are fulfilled at this moment I believe
-that they also will be ok by then. =3D)
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ drivers/net/ethernet/renesas/Kconfig  |    8 ++++++++
+ drivers/net/ethernet/renesas/sh_eth.h |    2 +-
+ 2 files changed, 9 insertions(+), 1 deletions(-)
 
-Thanks!
-
-/ magnus
+diff --git a/drivers/net/ethernet/renesas/Kconfig b/drivers/net/ethernet/renesas/Kconfig
+index 9755b49..32c093b 100644
+--- a/drivers/net/ethernet/renesas/Kconfig
++++ b/drivers/net/ethernet/renesas/Kconfig
+@@ -17,3 +17,11 @@ config SH_ETH
+ 	  Renesas SuperH Ethernet device driver.
+ 	  This driver supporting CPUs are:
+ 		- SH7710, SH7712, SH7763, SH7619, SH7724, and SH7757.
++
++config SH_ETH_NUM_RXDESC
++	int "Number of RX descriptor"
++	depends on SH_ETH
++	default "64"
++	---help---
++	  If you want to need more RX descriptors, you can configure
++	  the number of RX descriptors by this option.
+diff --git a/drivers/net/ethernet/renesas/sh_eth.h b/drivers/net/ethernet/renesas/sh_eth.h
+index 9ab3f8b..667bdd2 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.h
++++ b/drivers/net/ethernet/renesas/sh_eth.h
+@@ -26,7 +26,7 @@
+ #define CARDNAME	"sh-eth"
+ #define TX_TIMEOUT	(5*HZ)
+ #define TX_RING_SIZE	64	/* Tx ring size */
+-#define RX_RING_SIZE	64	/* Rx ring size */
++#define RX_RING_SIZE	CONFIG_SH_ETH_NUM_RXDESC	/* Rx ring size */
+ #define ETHERSMALL		60
+ #define PKT_BUF_SZ		1538
+ #define SH_ETH_TSU_TIMEOUT_MS	500
+-- 
+1.7.1
