@@ -1,50 +1,72 @@
-From: David Miller <davem@davemloft.net>
-Date: Fri, 16 Mar 2012 09:15:38 +0000
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 16 Mar 2012 10:46:28 +0000
 Subject: Re: [PATCH 5/5] net: sh_eth: use NAPI
-Message-Id: <20120316.021538.2022095011493944779.davem@davemloft.net>
+Message-Id: <4F631A04.90307@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <4F62FDDA.9070708@renesas.com>
-In-Reply-To: <4F62FDDA.9070708@renesas.com>
+ <20120316.021538.2022095011493944779.davem@davemloft.net>
+In-Reply-To: <20120316.021538.2022095011493944779.davem@davemloft.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: yoshihiro.shimoda.uh@renesas.com
+To: David Miller <davem@davemloft.net>
 Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
 
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 16 Mar 2012 17:46:18 +0900
+2012/03/16 18:15, David Miller wrote:
+> From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+> Date: Fri, 16 Mar 2012 17:46:18 +0900
+> 
+> sh_eth_interrupt takes mdp->lock, and:
+> 
+>> +static int sh_eth_poll(struct napi_struct *napi, int budget)
+>> +{
+>> +	struct sh_eth_private *mdp = container_of(napi, struct sh_eth_private,
+>> +						  napi);
+>> +	struct net_device *ndev = mdp->ndev;
+>> +	struct sh_eth_cpu_data *cd = mdp->cd;
+>> +	int work_done = 0, txfree_num;
+>> +	u32 intr_status = sh_eth_read(ndev, EESR);
+>> +
+>> +	spin_lock(&mdp->lock);
+> 
+> sh_eth_poll() runs from software interrupt context, therefore
+> this can deadlock.
 
-sh_eth_interrupt takes mdp->lock, and:
+Thank you for the point. I will fix it.
 
-> +static int sh_eth_poll(struct napi_struct *napi, int budget)
-> +{
-> +	struct sh_eth_private *mdp = container_of(napi, struct sh_eth_private,
-> +						  napi);
-> +	struct net_device *ndev = mdp->ndev;
-> +	struct sh_eth_cpu_data *cd = mdp->cd;
-> +	int work_done = 0, txfree_num;
-> +	u32 intr_status = sh_eth_read(ndev, EESR);
-> +
-> +	spin_lock(&mdp->lock);
+> Even though you turned off interrupts in sh_eth_interrupt to
+> enable NAPI mode, this can still happen, interrupts can be
+> stuck in the interrupt controller, another device can be on
+> the same interrupt line, etc.  Therefore you must handle
+> this properly.
 
-sh_eth_poll() runs from software interrupt context, therefore
-this can deadlock.
+I see. I wrote a comment below in sh_eth_interrupt, but this
+is a wrong comment.
 
-Even though you turned off interrupts in sh_eth_interrupt to
-enable NAPI mode, this can still happen, interrupts can be
-stuck in the interrupt controller, another device can be on
-the same interrupt line, etc.  Therefore you must handle
-this properly.
++			/* Disable all interrupts */
++			sh_eth_write(ndev, 0, EESIPR);
 
-I would suggest _NOT_ fixing this by taking the lock with interrupts
-disabled in sh_eth_poll(), that defeats the whole prupose of
-converting to NAPI and this would also require you to change back
-the dev_kfree_skb() to dev_kfree_skb_irq().
+It only disable the interrupts of the controller's channel.
+It doesn't disable other devices. So, I will fix the comment.
 
-Instead, do what other drivers do, make your interrupt handler run
-completely lockless and have a sophisticated quiescence sequence
-when you want to sync interrupts off and make sure no async contexts
-are still running in the interrupt handler.  See tg3.c for one
-example of this.
+> I would suggest _NOT_ fixing this by taking the lock with interrupts
+> disabled in sh_eth_poll(), that defeats the whole prupose of
+> converting to NAPI and this would also require you to change back
+> the dev_kfree_skb() to dev_kfree_skb_irq().
 
-I'm toss this entire patch series, it needs a lot more work.
+I understood it. I will fix it.
+
+> Instead, do what other drivers do, make your interrupt handler run
+> completely lockless and have a sophisticated quiescence sequence
+> when you want to sync interrupts off and make sure no async contexts
+> are still running in the interrupt handler.  See tg3.c for one
+> example of this.
+
+Thank you for your suggestion. I will see the tg3.c.
+
+> I'm toss this entire patch series, it needs a lot more work.
+
+I understood it. I wlll resubmit entire patch series after I fix the code.
+
+Best regards,
+Yoshihiro Shimoda
