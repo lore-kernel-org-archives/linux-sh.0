@@ -1,62 +1,49 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 01 Mar 2012 15:07:30 +0000
-Subject: [PATCH v2 17/57] fbdev: sh_mobile_lcdc: Remove board configuration owner field
-Message-Id: <1330614490-14149-18-git-send-email-laurent.pinchart@ideasonboard.com>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 16 Mar 2012 08:46:14 +0000
+Subject: [PATCH 3/5] net: sh_eth: fix the rxdesc pointer when rx descriptor empty happens
+Message-Id: <4F62FDD6.60508@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: netdev <netdev@vger.kernel.org>
+Cc: SH-Linux <linux-sh@vger.kernel.org>
 
-The field is unused, remove it.
+When Receive Descriptor Empty happens, rxdesc pointer of the driver
+and actual next descriptor of the controller may be mismatch.
+This patch fixes it.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- drivers/video/sh_mobile_lcdcfb.c |    8 ++------
- include/video/sh_mobile_lcdc.h   |    2 --
- 2 files changed, 2 insertions(+), 8 deletions(-)
+ drivers/net/ethernet/renesas/sh_eth.c |    8 +++++---
+ 1 files changed, 5 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index a2e0903..a899b6d 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -345,20 +345,16 @@ static void sh_mobile_lcdc_display_on(struct sh_mobile_lcdc_chan *ch)
- 	}
- 
- 	/* HDMI must be enabled before LCDC configuration */
--	if (board_cfg->display_on && try_module_get(board_cfg->owner)) {
-+	if (board_cfg->display_on)
- 		board_cfg->display_on(board_cfg->board_data, ch->info);
--		module_put(board_cfg->owner);
--	}
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 6718ba0..62458d9 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -972,8 +972,12 @@ static int sh_eth_rx(struct net_device *ndev)
+
+ 	/* Restart Rx engine if stopped. */
+ 	/* If we don't need to check status, don't. -KDU */
+-	if (!(sh_eth_read(ndev, EDRRR) & EDRRR_R))
++	if (!(sh_eth_read(ndev, EDRRR) & EDRRR_R)) {
++		/* fix the values for the next receiving */
++		mdp->cur_rx = mdp->dirty_rx = (sh_eth_read(ndev, RDFAR) -
++					       sh_eth_read(ndev, RDLAR)) >> 4;
+ 		sh_eth_write(ndev, EDRRR_R, EDRRR);
++	}
+
+ 	return 0;
  }
- 
- static void sh_mobile_lcdc_display_off(struct sh_mobile_lcdc_chan *ch)
- {
- 	struct sh_mobile_lcdc_board_cfg	*board_cfg = &ch->cfg.board_cfg;
- 
--	if (board_cfg->display_off && try_module_get(board_cfg->owner)) {
-+	if (board_cfg->display_off)
- 		board_cfg->display_off(board_cfg->board_data);
--		module_put(board_cfg->owner);
--	}
- 
- 	if (ch->tx_dev)
- 		ch->tx_dev->ops->display_off(ch->tx_dev);
-diff --git a/include/video/sh_mobile_lcdc.h b/include/video/sh_mobile_lcdc.h
-index 3681cf6..163f4b7 100644
---- a/include/video/sh_mobile_lcdc.h
-+++ b/include/video/sh_mobile_lcdc.h
-@@ -147,9 +147,7 @@ struct sh_mobile_lcdc_sys_bus_ops {
- 	unsigned long (*read_data)(void *handle);
- };
- 
--struct module;
- struct sh_mobile_lcdc_board_cfg {
--	struct module *owner;
- 	void *board_data;
- 	int (*setup_sys)(void *board_data, void *sys_ops_handle,
- 			 struct sh_mobile_lcdc_sys_bus_ops *sys_ops);
--- 
-1.7.3.4
+@@ -1070,8 +1074,6 @@ static void sh_eth_error(struct net_device *ndev, int intr_status)
+ 		/* Receive Descriptor Empty int */
+ 		ndev->stats.rx_over_errors++;
 
+-		if (sh_eth_read(ndev, EDRRR) ^ EDRRR_R)
+-			sh_eth_write(ndev, EDRRR_R, EDRRR);
+ 		if (netif_msg_rx_err(mdp))
+ 			dev_err(&ndev->dev, "Receive Descriptor Empty\n");
+ 	}
+-- 
+1.7.1
