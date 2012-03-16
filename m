@@ -1,81 +1,53 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 21 Mar 2012 00:57:56 +0000
-Subject: Re: [PATCH] fbdev: sh_mipi_dsi: add extra phyctrl for sh_mipi_dsi_info
-Message-Id: <87r4wmwz1q.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 16 Mar 2012 11:49:04 +0000
+Subject: [PATCH] mmc: sh_mmcif: simplify bitmask macros
+Message-Id: <Pine.LNX.4.64.1203161247360.13465@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87y5rdnmmu.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87y5rdnmmu.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org
 
+Purely cosmetic readability improvement, no functional change.
 
-Hi Florian
-
-Thank you for checking patch
-
-> > sh_mipi uses some clocks, but the method of setup depends on CPU.
-> > 
-> > Current SuperH (like sh73a0) can control all of these clocks
-> > by CPG (Clock Pulse Generator).
-> > It means we can control it by clock framework only.
-> > But on sh7372, it needs CPG settings AND sh_mipi PHYCTRL::PLLDS,
-> > and only sh7372 has PHYCTRL::PLLDS.
-> > 
-> > But on current sh_mipi driver, PHYCTRL::PLLDS of sh7372 was
-> > overwrote since the callback timing of clock setting was changed
-> > by c2658b70f06108361aa5024798f9c1bf47c73374
-> > (fbdev: sh_mipi_dsi: fixup setup timing of sh_mipi_setup()).
-> > 
-> > The difference of PHYCTRL between current SuperH (=sh73a0) and
-> > old SuperH (=sh7372) is not only PLLDS.
-> > So this patch adds extra .phyctrl.
-> > 
-> > It also adds detail explanation for unclear mipi settings for ap4evb.
-> > 
-> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > ---
-(snip)
-> >  	if (enable) {
-> > +		/*
-> > +		 * DSIPCLK	= 24MHz
-> > +		 * D-PHY	= DSIPCLK * ((0x6*2)+1) = 321MHz (see .phyctrl)
-> 
-> Shouldn't this be 312?
-
-Oops, indeed.
-I fix it.
-
-> > +		 * HsByteCLK	= D-PHY/8 = 39MHz
-> > +		 *
-> > +		 *  X * Y * FPS > > +		 * (544+72+600+16) * (961+8+8+2) * 30 = 36.1MHz
-> > +		 */
-> >  		clk_set_rate(pck, clk_round_rate(pck, 24000000));
-> > -		iowrite32(ioread32(phy) | (0xb << 8), phy);
-> 
-> Here you remove writing a 0xb<<8 (0xb = 11 = 8+2+1)...
-> 
-> >  		clk_enable(pck);
-> >  	} else {
-> >  		clk_disable(pck);
-> > @@ -598,6 +603,7 @@ static struct sh_mipi_dsi_info mipidsi0_info = {
-> >  	.lcd_chan	= &lcdc_info.ch[0],
-> >  	.lane		= 2,
-> >  	.vsynw_offset	= 17,
-> > +	.phyctrl	= 0x6 << 8,
-> 
-> ...and here you set a 0x6<<8 (0x6 = 6 = 4+2). Looks suspicious, was this
-> change intended?
-
-Sorry. the git log didn't explain that this patch fixup it.
-0x6 is correct here. This used for D-PHY.
-
- D-PHY	= DSIPCLK * ((0x6*2)+1) = 321MHz (see .phyctrl)
-                      ~~~
-
-I add it on v2 patch.
-
-Best regards
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-Kuninori Morimoto
+ include/linux/mmc/sh_mmcif.h |   21 +++++++++------------
+ 1 files changed, 9 insertions(+), 12 deletions(-)
+
+diff --git a/include/linux/mmc/sh_mmcif.h b/include/linux/mmc/sh_mmcif.h
+index b36caa9..c37956c 100644
+--- a/include/linux/mmc/sh_mmcif.h
++++ b/include/linux/mmc/sh_mmcif.h
+@@ -71,18 +71,15 @@ struct sh_mmcif_plat_data {
+ 
+ /* CE_CLK_CTRL */
+ #define CLK_ENABLE		(1 << 24) /* 1: output mmc clock */
+-#define CLK_CLEAR		((1 << 19) | (1 << 18) | (1 << 17) | (1 << 16))
+-#define CLK_SUP_PCLK		((1 << 19) | (1 << 18) | (1 << 17) | (1 << 16))
+-#define CLKDIV_4		(1<<16) /* mmc clock frequency.
+-					 * n: bus clock/(2^(n+1)) */
+-#define CLKDIV_256		(7<<16) /* mmc clock frequency. (see above) */
+-#define SRSPTO_256		((1 << 13) | (0 << 12)) /* resp timeout */
+-#define SRBSYTO_29		((1 << 11) | (1 << 10) |	\
+-				 (1 << 9) | (1 << 8)) /* resp busy timeout */
+-#define SRWDTO_29		((1 << 7) | (1 << 6) |		\
+-				 (1 << 5) | (1 << 4)) /* read/write timeout */
+-#define SCCSTO_29		((1 << 3) | (1 << 2) |		\
+-				 (1 << 1) | (1 << 0)) /* ccs timeout */
++#define CLK_CLEAR		(0xf << 16)
++#define CLK_SUP_PCLK		(0xf << 16)
++#define CLKDIV_4		(1 << 16) /* mmc clock frequency.
++					   * n: bus clock/(2^(n+1)) */
++#define CLKDIV_256		(7 << 16) /* mmc clock frequency. (see above) */
++#define SRSPTO_256		(2 << 12) /* resp timeout */
++#define SRBSYTO_29		(0xf << 8) /* resp busy timeout */
++#define SRWDTO_29		(0xf << 4) /* read/write timeout */
++#define SCCSTO_29		(0xf << 0) /* ccs timeout */
+ 
+ /* CE_VERSION */
+ #define SOFT_RST_ON		(1 << 31)
+-- 
+1.7.2.5
+
