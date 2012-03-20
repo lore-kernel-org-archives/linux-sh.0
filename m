@@ -1,68 +1,100 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Thu, 01 Mar 2012 09:48:36 +0000
-Subject: [PATCH v3 2/7] mtd: sh_flctl: Reorder empty_fifo() calls
-Message-Id: <1330595321-2728-2-git-send-email-hechtb@gmail.com>
+From: Robert Lee <rob.lee@linaro.org>
+Date: Tue, 20 Mar 2012 20:22:46 +0000
+Subject: [PATCH v8 5/8] ARM: omap: Consolidate OMAP3 time keeping and irq enable
+Message-Id: <1332274969-15782-6-git-send-email-rob.lee@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1330595321-2728-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1330595321-2728-1-git-send-email-hechtb@gmail.com>
+References: <1332274969-15782-1-git-send-email-rob.lee@linaro.org>
+In-Reply-To: <1332274969-15782-1-git-send-email-rob.lee@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-mtd@lists.infradead.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pichart <laurent.pinchart@ideasonboard.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Reorders the calls to make it a bit shorter and match the calling
-procedure displayed in the datasheet.
+Use core cpuidle timekeeping and irqen wrapper and remove that
+handling from this code.
 
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+Signed-off-by: Robert Lee <rob.lee@linaro.org>
+Reviewed-by: Kevin Hilman <khilman@ti.com>
+Reviewed-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+Tested-by: Jean Pihet<j-pihet@ti.com>
+Acked-by: Jean Pihet<j-pihet@ti.com>
 ---
-changelog: There was an inconsistency between patch 2/7 and 3/7. An empty_fifo() call has been moved around to correct it.
+ arch/arm/mach-omap2/cpuidle34xx.c |   42 +++++++++++++++----------------------
+ 1 file changed, 17 insertions(+), 25 deletions(-)
 
- drivers/mtd/nand/sh_flctl.c |    5 ++---
- 1 files changed, 2 insertions(+), 3 deletions(-)
-
-diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
-index 93b1f74..9291066 100644
---- a/drivers/mtd/nand/sh_flctl.c
-+++ b/drivers/mtd/nand/sh_flctl.c
-@@ -525,7 +525,6 @@ static void flctl_cmdfunc(struct mtd_info *mtd, unsigned int command,
- 			execmd_read_page_sector(mtd, page_addr);
- 			break;
- 		}
--		empty_fifo(flctl);
- 		if (flctl->page_size)
- 			set_cmd_regs(mtd, command, (NAND_CMD_READSTART << 8)
- 				| command);
-@@ -547,7 +546,6 @@ static void flctl_cmdfunc(struct mtd_info *mtd, unsigned int command,
- 			break;
- 		}
+diff --git a/arch/arm/mach-omap2/cpuidle34xx.c b/arch/arm/mach-omap2/cpuidle34xx.c
+index 464cffd..5358664 100644
+--- a/arch/arm/mach-omap2/cpuidle34xx.c
++++ b/arch/arm/mach-omap2/cpuidle34xx.c
+@@ -87,29 +87,14 @@ static int _cpuidle_deny_idle(struct powerdomain *pwrdm,
+ 	return 0;
+ }
  
--		empty_fifo(flctl);
- 		if (flctl->page_size) {
- 			set_cmd_regs(mtd, command, (NAND_CMD_READSTART << 8)
- 				| NAND_CMD_READ0);
-@@ -560,12 +558,12 @@ static void flctl_cmdfunc(struct mtd_info *mtd, unsigned int command,
- 		goto read_normal_exit;
+-/**
+- * omap3_enter_idle - Programs OMAP3 to enter the specified state
+- * @dev: cpuidle device
+- * @drv: cpuidle driver
+- * @index: the index of state to be entered
+- *
+- * Called from the CPUidle framework to program the device to the
+- * specified target state selected by the governor.
+- */
+-static int omap3_enter_idle(struct cpuidle_device *dev,
++static int __omap3_enter_idle(struct cpuidle_device *dev,
+ 				struct cpuidle_driver *drv,
+ 				int index)
+ {
+ 	struct omap3_idle_statedata *cx  			cpuidle_get_statedata(&dev->states_usage[index]);
+-	struct timespec ts_preidle, ts_postidle, ts_idle;
+ 	u32 mpu_state = cx->mpu_state, core_state = cx->core_state;
+-	int idle_time;
+-
+-	/* Used to keep track of the total time in idle */
+-	getnstimeofday(&ts_preidle);
  
- 	case NAND_CMD_READID:
--		empty_fifo(flctl);
- 		set_cmd_regs(mtd, command, command);
- 		set_addr(mtd, 0, 0);
+-	local_irq_disable();
+ 	local_fiq_disable();
  
- 		flctl->read_bytes = 4;
- 		writel(flctl->read_bytes, FLDTCNTR(flctl)); /* set read size */
-+		empty_fifo(flctl);
- 		start_translation(flctl);
- 		read_datareg(flctl, 0);	/* read and end */
- 		break;
-@@ -654,6 +652,7 @@ static void flctl_cmdfunc(struct mtd_info *mtd, unsigned int command,
+ 	pwrdm_set_next_pwrst(mpu_pd, mpu_state);
+@@ -148,22 +133,29 @@ static int omap3_enter_idle(struct cpuidle_device *dev,
+ 	}
  
- read_normal_exit:
- 	writel(flctl->read_bytes, FLDTCNTR(flctl));	/* set read size */
-+	empty_fifo(flctl);
- 	start_translation(flctl);
- 	read_fiforeg(flctl, flctl->read_bytes, 0);
- 	wait_completion(flctl);
+ return_sleep_time:
+-	getnstimeofday(&ts_postidle);
+-	ts_idle = timespec_sub(ts_postidle, ts_preidle);
+ 
+-	local_irq_enable();
+ 	local_fiq_enable();
+ 
+-	idle_time = ts_idle.tv_nsec / NSEC_PER_USEC + ts_idle.tv_sec * \
+-								USEC_PER_SEC;
+-
+-	/* Update cpuidle counters */
+-	dev->last_residency = idle_time;
+-
+ 	return index;
+ }
+ 
+ /**
++ * omap3_enter_idle - Programs OMAP3 to enter the specified state
++ * @dev: cpuidle device
++ * @drv: cpuidle driver
++ * @index: the index of state to be entered
++ *
++ * Called from the CPUidle framework to program the device to the
++ * specified target state selected by the governor.
++ */
++static inline int omap3_enter_idle(struct cpuidle_device *dev,
++				struct cpuidle_driver *drv,
++				int index)
++{
++	return cpuidle_wrap_enter(dev, drv, index, __omap3_enter_idle);
++}
++
++/**
+  * next_valid_state - Find next valid C-state
+  * @dev: cpuidle device
+  * @drv: cpuidle driver
 -- 
-1.7.5.4
+1.7.9.4
 
