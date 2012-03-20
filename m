@@ -1,86 +1,61 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 01 Mar 2012 15:08:02 +0000
-Subject: [PATCH v2 49/57] arm: mach-shmobile: Don't set MERAM ICB numbers in platform data
-Message-Id: <1330614490-14149-50-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Robert Lee <rob.lee@linaro.org>
+Date: Tue, 20 Mar 2012 20:22:49 +0000
+Subject: [PATCH v8 8/8] SH: shmobile: Consolidate time keeping and irq enable
+Message-Id: <1332274969-15782-9-git-send-email-rob.lee@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1332274969-15782-1-git-send-email-rob.lee@linaro.org>
+In-Reply-To: <1332274969-15782-1-git-send-email-rob.lee@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The marker and cache ICBs are now allocated automatically, there's no
-need to specify them manually anymore.
+Enable core cpuidle timekeeping and irq enabling and remove that
+handling from this code.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Robert Lee <rob.lee@linaro.org>
+Reviewed-by: Kevin Hilman <khilman@ti.com>
+Reviewed-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+Acked-by: Jean Pihet<j-pihet@ti.com>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c   |    8 --------
- arch/arm/mach-shmobile/board-mackerel.c |    8 --------
- 2 files changed, 0 insertions(+), 16 deletions(-)
+ arch/sh/kernel/cpu/shmobile/cpuidle.c |   10 +++-------
+ 1 file changed, 3 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index f215818..9d6ad2d 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -589,13 +589,9 @@ static const struct fb_videomode ap4evb_lcdc_modes[] = {
- };
- static struct sh_mobile_meram_cfg lcd_meram_cfg = {
- 	.icb[0] = {
--		.marker_icb     = 28,
--		.cache_icb      = 24,
- 		.meram_size     = 0x40,
- 	},
- 	.icb[1] = {
--		.marker_icb     = 29,
--		.cache_icb      = 25,
- 		.meram_size     = 0x40,
- 	},
- };
-@@ -870,13 +866,9 @@ static long ap4evb_clk_optimize(unsigned long target, unsigned long *best_freq,
+diff --git a/arch/sh/kernel/cpu/shmobile/cpuidle.c b/arch/sh/kernel/cpu/shmobile/cpuidle.c
+index 6d62eb4..1ddc876 100644
+--- a/arch/sh/kernel/cpu/shmobile/cpuidle.c
++++ b/arch/sh/kernel/cpu/shmobile/cpuidle.c
+@@ -29,7 +29,6 @@ static int cpuidle_sleep_enter(struct cpuidle_device *dev,
+ 				int index)
+ {
+ 	unsigned long allowed_mode = SUSP_SH_SLEEP;
+-	ktime_t before, after;
+ 	int requested_state = index;
+ 	int allowed_state;
+ 	int k;
+@@ -47,19 +46,16 @@ static int cpuidle_sleep_enter(struct cpuidle_device *dev,
+ 	 */
+ 	k = min_t(int, allowed_state, requested_state);
  
- static struct sh_mobile_meram_cfg hdmi_meram_cfg = {
- 	.icb[0] = {
--		.marker_icb     = 30,
--		.cache_icb      = 26,
- 		.meram_size     = 0x100,
- 	},
- 	.icb[1] = {
--		.marker_icb     = 31,
--		.cache_icb      = 27,
- 		.meram_size     = 0x100,
- 	},
- };
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 3b85509..4acd748 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -376,13 +376,9 @@ static int mackerel_get_brightness(void)
+-	before = ktime_get();
+ 	sh_mobile_call_standby(cpuidle_mode[k]);
+-	after = ktime_get();
+-
+-	dev->last_residency = (int)ktime_to_ns(ktime_sub(after, before)) >> 10;
  
- static struct sh_mobile_meram_cfg lcd_meram_cfg = {
- 	.icb[0] = {
--		.marker_icb     = 28,
--		.cache_icb      = 24,
- 		.meram_size     = 0x40,
- 	},
- 	.icb[1] = {
--		.marker_icb     = 29,
--		.cache_icb      = 25,
- 		.meram_size     = 0x40,
- 	},
- };
-@@ -466,13 +462,9 @@ static struct platform_device hdmi_device = {
+ 	return k;
+ }
  
- static struct sh_mobile_meram_cfg hdmi_meram_cfg = {
- 	.icb[0] = {
--		.marker_icb     = 30,
--		.cache_icb      = 26,
- 		.meram_size     = 0x100,
- 	},
- 	.icb[1] = {
--		.marker_icb     = 31,
--		.cache_icb      = 27,
- 		.meram_size     = 0x100,
- 	},
+ static struct cpuidle_device cpuidle_dev;
+ static struct cpuidle_driver cpuidle_driver = {
+-	.name =		"sh_idle",
+-	.owner =	THIS_MODULE,
++	.name			= "sh_idle",
++	.owner			= THIS_MODULE,
++	.en_core_tk_irqen	= 1,
  };
+ 
+ void sh_mobile_setup_cpuidle(void)
 -- 
-1.7.3.4
+1.7.9.4
 
