@@ -1,29 +1,75 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Fri, 09 Mar 2012 04:29:10 +0000
-Subject: Re: [PATCH] mmc: tmio_mmc: do not enable card hotplug interrupts, if unused
-Message-Id: <m2fwdiqtwp.fsf@bob.laptop.org>
+From: Robert Lee <rob.lee@linaro.org>
+Date: Tue, 20 Mar 2012 20:22:47 +0000
+Subject: [PATCH v8 6/8] ARM: omap: Consolidate OMAP4 time keeping and irq enable
+Message-Id: <1332274969-15782-7-git-send-email-rob.lee@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <alpine.DEB.2.00.1202221314351.3136@axis700.grange>
-In-Reply-To: <alpine.DEB.2.00.1202221314351.3136@axis700.grange> (Guennadi
-	Liakhovetski's message of "Wed, 22 Feb 2012 13:16:09 +0100 (CET)")
+References: <1332274969-15782-1-git-send-email-rob.lee@linaro.org>
+In-Reply-To: <1332274969-15782-1-git-send-email-rob.lee@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Guennadi,
+Enable core cpuidle timekeeping and irq enabling and remove that
+handling from this code.
 
-On Wed, Feb 22 2012, Guennadi Liakhovetski wrote:
-> If TMIO MMC is used in polling mode, or the card is non-removable, or
-> card-detection is performed, using an external interrupt, there is no
-> need to enable controller native card hotplug interrupts.
->
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Robert Lee <rob.lee@linaro.org>
+Reviewed-by: Kevin Hilman <khilman@ti.com>
+Reviewed-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+Acked-by: Jean Pihet<j-pihet@ti.com>
+---
+ arch/arm/mach-omap2/cpuidle44xx.c |   21 +++------------------
+ 1 file changed, 3 insertions(+), 18 deletions(-)
 
-Thanks, pushed to mmc-next for 3.4.
-
-- Chris.
+diff --git a/arch/arm/mach-omap2/cpuidle44xx.c b/arch/arm/mach-omap2/cpuidle44xx.c
+index 72e018b..f386cbe 100644
+--- a/arch/arm/mach-omap2/cpuidle44xx.c
++++ b/arch/arm/mach-omap2/cpuidle44xx.c
+@@ -62,15 +62,9 @@ static int omap4_enter_idle(struct cpuidle_device *dev,
+ {
+ 	struct omap4_idle_statedata *cx  			cpuidle_get_statedata(&dev->states_usage[index]);
+-	struct timespec ts_preidle, ts_postidle, ts_idle;
+ 	u32 cpu1_state;
+-	int idle_time;
+ 	int cpu_id = smp_processor_id();
+ 
+-	/* Used to keep track of the total time in idle */
+-	getnstimeofday(&ts_preidle);
+-
+-	local_irq_disable();
+ 	local_fiq_disable();
+ 
+ 	/*
+@@ -128,26 +122,17 @@ static int omap4_enter_idle(struct cpuidle_device *dev,
+ 	if (index > 0)
+ 		clockevents_notify(CLOCK_EVT_NOTIFY_BROADCAST_EXIT, &cpu_id);
+ 
+-	getnstimeofday(&ts_postidle);
+-	ts_idle = timespec_sub(ts_postidle, ts_preidle);
+-
+-	local_irq_enable();
+ 	local_fiq_enable();
+ 
+-	idle_time = ts_idle.tv_nsec / NSEC_PER_USEC + ts_idle.tv_sec * \
+-								USEC_PER_SEC;
+-
+-	/* Update cpuidle counters */
+-	dev->last_residency = idle_time;
+-
+ 	return index;
+ }
+ 
+ DEFINE_PER_CPU(struct cpuidle_device, omap4_idle_dev);
+ 
+ struct cpuidle_driver omap4_idle_driver = {
+-	.name =		"omap4_idle",
+-	.owner =	THIS_MODULE,
++	.name				= "omap4_idle",
++	.owner				= THIS_MODULE,
++	.en_core_tk_irqen		= 1,
+ };
+ 
+ static inline void _fill_cstate(struct cpuidle_driver *drv,
 -- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
+1.7.9.4
+
