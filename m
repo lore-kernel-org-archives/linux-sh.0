@@ -1,146 +1,129 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Tue, 13 Mar 2012 00:25:43 +0000
-Subject: [PATCH 3/6] PM / Domains: Introduce "always on" device flag
-Message-Id: <201203130125.43385.rjw@sisk.pl>
+From: Robert Lee <rob.lee@linaro.org>
+Date: Tue, 20 Mar 2012 20:22:44 +0000
+Subject: [PATCH v8 3/8] ARM: kirkwood: Consolidate time keeping and irq enable
+Message-Id: <1332274969-15782-4-git-send-email-rob.lee@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201203130123.16268.rjw@sisk.pl>
-In-Reply-To: <201203130123.16268.rjw@sisk.pl>
+References: <1332274969-15782-1-git-send-email-rob.lee@linaro.org>
+In-Reply-To: <1332274969-15782-1-git-send-email-rob.lee@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux-sh list <linux-sh@vger.kernel.org>
-Cc: Linux PM list <linux-pm@vger.kernel.org>, Paul Mundt <lethal@linux-sh.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, LKML <linux-kernel@vger.kernel.org>, Cao Minh Hiep <hiepcm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+Enable core cpuidle timekeeping and irq enabling and remove that
+handling from this code.
 
-The TMU device on the Mackerel board belongs to the A4R power domain
-and loses power when the domain is turned off.  Unfortunately, the
-TMU driver is not prepared to cope with such situations and crashes
-the system when that happens.  To work around this problem introduce
-a new helper function, pm_genpd_dev_always_on(), allowing a device
-driver to mark its device as "always on" in case it belongs to a PM
-domain, which will make the generic PM domains core code avoid
-powering off the domain containing the device, both at run time and
-during system suspend.
-
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Robert Lee <rob.lee@linaro.org>
+Reviewed-by: Kevin Hilman <khilman@ti.com>
+Reviewed-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+Acked-by: Jean Pihet<j-pihet@ti.com>
 ---
- drivers/base/power/domain.c |   35 ++++++++++++++++++++++++++++++-----
- include/linux/pm_domain.h   |    3 +++
- 2 files changed, 33 insertions(+), 5 deletions(-)
+ arch/arm/mach-kirkwood/cpuidle.c |   72 +++++++++++---------------------------
+ 1 file changed, 21 insertions(+), 51 deletions(-)
 
-Index: linux/drivers/base/power/domain.c
-=================================--- linux.orig/drivers/base/power/domain.c
-+++ linux/drivers/base/power/domain.c
-@@ -372,7 +372,7 @@ static int pm_genpd_poweroff(struct gene
- 	not_suspended = 0;
- 	list_for_each_entry(pdd, &genpd->dev_list, list_node)
- 		if (pdd->dev->driver && (!pm_runtime_suspended(pdd->dev)
--		    || pdd->dev->power.irq_safe))
-+		    || pdd->dev->power.irq_safe || to_gpd_data(pdd)->always_on))
- 			not_suspended++;
+diff --git a/arch/arm/mach-kirkwood/cpuidle.c b/arch/arm/mach-kirkwood/cpuidle.c
+index 7088180..0f17109 100644
+--- a/arch/arm/mach-kirkwood/cpuidle.c
++++ b/arch/arm/mach-kirkwood/cpuidle.c
+@@ -20,77 +20,47 @@
+ #include <linux/io.h>
+ #include <linux/export.h>
+ #include <asm/proc-fns.h>
++#include <asm/cpuidle.h>
+ #include <mach/kirkwood.h>
  
- 	if (not_suspended > genpd->in_progress)
-@@ -509,6 +509,9 @@ static int pm_genpd_runtime_suspend(stru
+ #define KIRKWOOD_MAX_STATES	2
  
- 	might_sleep_if(!genpd->dev_irq_safe);
- 
-+	if (dev_gpd_data(dev)->always_on)
-+		return -EBUSY;
-+
- 	stop_ok = genpd->gov ? genpd->gov->stop_ok : NULL;
- 	if (stop_ok && !stop_ok(dev))
- 		return -EBUSY;
-@@ -865,7 +868,7 @@ static int pm_genpd_suspend_noirq(struct
- 	if (IS_ERR(genpd))
- 		return -EINVAL;
- 
--	if (genpd->suspend_power_off
-+	if (genpd->suspend_power_off || dev_gpd_data(dev)->always_on
- 	    || (dev->power.wakeup_path && genpd_dev_active_wakeup(genpd, dev)))
- 		return 0;
- 
-@@ -898,7 +901,7 @@ static int pm_genpd_resume_noirq(struct
- 	if (IS_ERR(genpd))
- 		return -EINVAL;
- 
--	if (genpd->suspend_power_off
-+	if (genpd->suspend_power_off || dev_gpd_data(dev)->always_on
- 	    || (dev->power.wakeup_path && genpd_dev_active_wakeup(genpd, dev)))
- 		return 0;
- 
-@@ -1018,7 +1021,8 @@ static int pm_genpd_freeze_noirq(struct
- 	if (IS_ERR(genpd))
- 		return -EINVAL;
- 
--	return genpd->suspend_power_off ? 0 : genpd_stop_dev(genpd, dev);
-+	return genpd->suspend_power_off || dev_gpd_data(dev)->always_on ?
-+		0 : genpd_stop_dev(genpd, dev);
- }
- 
- /**
-@@ -1038,7 +1042,8 @@ static int pm_genpd_thaw_noirq(struct de
- 	if (IS_ERR(genpd))
- 		return -EINVAL;
- 
--	return genpd->suspend_power_off ? 0 : genpd_start_dev(genpd, dev);
-+	return genpd->suspend_power_off || dev_gpd_data(dev)->always_on ?
-+		0 : genpd_start_dev(genpd, dev);
- }
- 
- /**
-@@ -1288,6 +1293,26 @@ int pm_genpd_remove_device(struct generi
- }
- 
- /**
-+ * pm_genpd_dev_always_on - Set/unset the "always on" flag for a given device.
-+ * @dev: Device to set/unset the flag for.
-+ * @val: The new value of the device's "always on" flag.
-+ */
-+void pm_genpd_dev_always_on(struct device *dev, bool val)
-+{
-+	struct pm_subsys_data *psd;
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&dev->power.lock, flags);
-+
-+	psd = dev_to_psd(dev);
-+	if (psd && psd->domain_data)
-+		to_gpd_data(psd->domain_data)->always_on = val;
-+
-+	spin_unlock_irqrestore(&dev->power.lock, flags);
-+}
-+EXPORT_SYMBOL_GPL(pm_genpd_dev_always_on);
-+
-+/**
-  * pm_genpd_add_subdomain - Add a subdomain to an I/O PM domain.
-  * @genpd: Master PM domain to add the subdomain to.
-  * @subdomain: Subdomain to be added.
-Index: linux/include/linux/pm_domain.h
-=================================--- linux.orig/include/linux/pm_domain.h
-+++ linux/include/linux/pm_domain.h
-@@ -97,6 +97,7 @@ struct generic_pm_domain_data {
- 	struct gpd_dev_ops ops;
- 	struct gpd_timing_data td;
- 	bool need_restore;
-+	bool always_on;
- };
- 
- #ifdef CONFIG_PM_GENERIC_DOMAINS
-@@ -125,6 +126,7 @@ static inline int pm_genpd_add_device(st
- 
- extern int pm_genpd_remove_device(struct generic_pm_domain *genpd,
- 				  struct device *dev);
-+extern void pm_genpd_dev_always_on(struct device *dev, bool val);
- extern int pm_genpd_add_subdomain(struct generic_pm_domain *genpd,
- 				  struct generic_pm_domain *new_subdomain);
- extern int pm_genpd_remove_subdomain(struct generic_pm_domain *genpd,
-@@ -167,6 +169,7 @@ static inline int pm_genpd_remove_device
+-static struct cpuidle_driver kirkwood_idle_driver = {
+-	.name =         "kirkwood_idle",
+-	.owner =        THIS_MODULE,
+-};
+-
+-static DEFINE_PER_CPU(struct cpuidle_device, kirkwood_cpuidle_device);
+-
+ /* Actual code that puts the SoC in different idle states */
+ static int kirkwood_enter_idle(struct cpuidle_device *dev,
+ 				struct cpuidle_driver *drv,
+ 			       int index)
  {
- 	return -ENOSYS;
+-	struct timeval before, after;
+-	int idle_time;
+-
+-	local_irq_disable();
+-	do_gettimeofday(&before);
+-	if (index = 0)
+-		/* Wait for interrupt state */
+-		cpu_do_idle();
+-	else if (index = 1) {
+-		/*
+-		 * Following write will put DDR in self refresh.
+-		 * Note that we have 256 cycles before DDR puts it
+-		 * self in self-refresh, so the wait-for-interrupt
+-		 * call afterwards won't get the DDR from self refresh
+-		 * mode.
+-		 */
+-		writel(0x7, DDR_OPERATION_BASE);
+-		cpu_do_idle();
+-	}
+-	do_gettimeofday(&after);
+-	local_irq_enable();
+-	idle_time = (after.tv_sec - before.tv_sec) * USEC_PER_SEC +
+-			(after.tv_usec - before.tv_usec);
+-
+-	/* Update last residency */
+-	dev->last_residency = idle_time;
++	writel(0x7, DDR_OPERATION_BASE);
++	cpu_do_idle();
+ 
+ 	return index;
  }
-+static inline void pm_genpd_dev_always_on(struct device *dev, bool val) {}
- static inline int pm_genpd_add_subdomain(struct generic_pm_domain *genpd,
- 					 struct generic_pm_domain *new_sd)
+ 
++static struct cpuidle_driver kirkwood_idle_driver = {
++	.name			= "kirkwood_idle",
++	.owner			= THIS_MODULE,
++	.en_core_tk_irqen	= 1,
++	.states[0]		= ARM_CPUIDLE_WFI_STATE,
++	.states[1]		= {
++		.enter			= kirkwood_enter_idle,
++		.exit_latency		= 10,
++		.target_residency	= 100000,
++		.flags			= CPUIDLE_FLAG_TIME_VALID,
++		.name			= "DDR SR",
++		.desc			= "WFI and DDR Self Refresh",
++	},
++	.state_count = KIRKWOOD_MAX_STATES,
++};
++
++static DEFINE_PER_CPU(struct cpuidle_device, kirkwood_cpuidle_device);
++
+ /* Initialize CPU idle by registering the idle states */
+ static int kirkwood_init_cpuidle(void)
  {
+ 	struct cpuidle_device *device;
+-	struct cpuidle_driver *driver = &kirkwood_idle_driver;
+ 
+ 	device = &per_cpu(kirkwood_cpuidle_device, smp_processor_id());
+ 	device->state_count = KIRKWOOD_MAX_STATES;
+-	driver->state_count = KIRKWOOD_MAX_STATES;
+-
+-	/* Wait for interrupt state */
+-	driver->states[0].enter = kirkwood_enter_idle;
+-	driver->states[0].exit_latency = 1;
+-	driver->states[0].target_residency = 10000;
+-	driver->states[0].flags = CPUIDLE_FLAG_TIME_VALID;
+-	strcpy(driver->states[0].name, "WFI");
+-	strcpy(driver->states[0].desc, "Wait for interrupt");
+-
+-	/* Wait for interrupt and DDR self refresh state */
+-	driver->states[1].enter = kirkwood_enter_idle;
+-	driver->states[1].exit_latency = 10;
+-	driver->states[1].target_residency = 10000;
+-	driver->states[1].flags = CPUIDLE_FLAG_TIME_VALID;
+-	strcpy(driver->states[1].name, "DDR SR");
+-	strcpy(driver->states[1].desc, "WFI and DDR Self Refresh");
+ 
+ 	cpuidle_register_driver(&kirkwood_idle_driver);
+ 	if (cpuidle_register_device(device)) {
+-- 
+1.7.9.4
 
