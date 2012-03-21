@@ -1,153 +1,188 @@
-From: Robert Lee <rob.lee@linaro.org>
-Date: Tue, 20 Mar 2012 20:22:45 +0000
-Subject: [PATCH v8 4/8] ARM: davinci: Consolidate time keeping and irq enable
-Message-Id: <1332274969-15782-5-git-send-email-rob.lee@linaro.org>
+From: Rob Lee <rob.lee@linaro.org>
+Date: Wed, 21 Mar 2012 14:28:18 +0000
+Subject: Re: [PATCH v8 4/8] ARM: davinci: Consolidate time keeping and irq enable
+Message-Id: <CAMXH7KH5kS=wPFdC8QrtnhE6_sZqmsJ8h=6Gs3kfHOTbeHjacA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1332274969-15782-1-git-send-email-rob.lee@linaro.org>
-In-Reply-To: <1332274969-15782-1-git-send-email-rob.lee@linaro.org>
+ <1332274969-15782-5-git-send-email-rob.lee@linaro.org>
+In-Reply-To: <1332274969-15782-5-git-send-email-rob.lee@linaro.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-Enable core cpuidle timekeeping and irq enabling and remove that
-handling from this code.
+Sekhar tested this patch on Davinci last night and found a problem.  I
+looked at the code again and found a mindless omission on my part (see
+below).  Fix is trivial.  I've check all other platforms and confirmed
+this problem does not exist for those.  Will resend a v9 of the
+patchset shortly.
 
-Signed-off-by: Robert Lee <rob.lee@linaro.org>
-Reviewed-by: Kevin Hilman <khilman@ti.com>
-Reviewed-by: Daniel Lezcano <daniel.lezcano@linaro.org>
-Acked-by: Jean Pihet<j-pihet@ti.com>
----
- arch/arm/mach-davinci/cpuidle.c |   82 ++++++++++++++++-----------------------
- 1 file changed, 33 insertions(+), 49 deletions(-)
+On Tue, Mar 20, 2012 at 3:22 PM, Robert Lee <rob.lee@linaro.org> wrote:
+> Enable core cpuidle timekeeping and irq enabling and remove that
+> handling from this code.
+>
+> Signed-off-by: Robert Lee <rob.lee@linaro.org>
+> Reviewed-by: Kevin Hilman <khilman@ti.com>
+> Reviewed-by: Daniel Lezcano <daniel.lezcano@linaro.org>
+> Acked-by: Jean Pihet<j-pihet@ti.com>
+> ---
+> =A0arch/arm/mach-davinci/cpuidle.c | =A0 82 ++++++++++++++++-------------=
+----------
+> =A01 file changed, 33 insertions(+), 49 deletions(-)
+>
+> diff --git a/arch/arm/mach-davinci/cpuidle.c b/arch/arm/mach-davinci/cpui=
+dle.c
+> index a30c7c5..93ae096 100644
+> --- a/arch/arm/mach-davinci/cpuidle.c
+> +++ b/arch/arm/mach-davinci/cpuidle.c
+> @@ -18,6 +18,7 @@
+> =A0#include <linux/io.h>
+> =A0#include <linux/export.h>
+> =A0#include <asm/proc-fns.h>
+> +#include <asm/cpuidle.h>
+>
+> =A0#include <mach/cpuidle.h>
+> =A0#include <mach/ddr2.h>
+> @@ -30,12 +31,42 @@ struct davinci_ops {
+> =A0 =A0 =A0 =A0u32 flags;
+> =A0};
+>
+> +/* Actual code that puts the SoC in different idle states */
+> +static int davinci_enter_idle(struct cpuidle_device *dev,
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 struct cpui=
+dle_driver *drv,
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
+ =A0 =A0 =A0 =A0 =A0 int index)
+> +{
+> + =A0 =A0 =A0 struct cpuidle_state_usage *state_usage =3D &dev->states_us=
+age[index];
+> + =A0 =A0 =A0 struct davinci_ops *ops =3D cpuidle_get_statedata(state_usa=
+ge);
+> +
+> + =A0 =A0 =A0 if (ops && ops->enter)
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 ops->enter(ops->flags);
+> +
+> + =A0 =A0 =A0 index =3D cpuidle_wrap_enter(dev, drv, index,
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 arm_cpuidle=
+_simple_enter);
+> +
+> + =A0 =A0 =A0 if (ops && ops->exit)
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 ops->exit(ops->flags);
+> +
+> + =A0 =A0 =A0 return index;
+> +}
+> +
+> =A0/* fields in davinci_ops.flags */
+> =A0#define DAVINCI_CPUIDLE_FLAGS_DDR2_PWDN =A0 =A0 =A0 =A0BIT(0)
+>
+> =A0static struct cpuidle_driver davinci_idle_driver =3D {
+> - =A0 =A0 =A0 .name =A0 =3D "cpuidle-davinci",
+> - =A0 =A0 =A0 .owner =A0=3D THIS_MODULE,
+> + =A0 =A0 =A0 .name =A0 =A0 =A0 =A0 =A0 =3D "cpuidle-davinci",
+> + =A0 =A0 =A0 .owner =A0 =A0 =A0 =A0 =A0=3D THIS_MODULE,
 
-diff --git a/arch/arm/mach-davinci/cpuidle.c b/arch/arm/mach-davinci/cpuidle.c
-index a30c7c5..93ae096 100644
---- a/arch/arm/mach-davinci/cpuidle.c
-+++ b/arch/arm/mach-davinci/cpuidle.c
-@@ -18,6 +18,7 @@
- #include <linux/io.h>
- #include <linux/export.h>
- #include <asm/proc-fns.h>
-+#include <asm/cpuidle.h>
- 
- #include <mach/cpuidle.h>
- #include <mach/ddr2.h>
-@@ -30,12 +31,42 @@ struct davinci_ops {
- 	u32 flags;
- };
- 
-+/* Actual code that puts the SoC in different idle states */
-+static int davinci_enter_idle(struct cpuidle_device *dev,
-+				struct cpuidle_driver *drv,
-+						int index)
-+{
-+	struct cpuidle_state_usage *state_usage = &dev->states_usage[index];
-+	struct davinci_ops *ops = cpuidle_get_statedata(state_usage);
-+
-+	if (ops && ops->enter)
-+		ops->enter(ops->flags);
-+
-+	index = cpuidle_wrap_enter(dev,	drv, index,
-+				arm_cpuidle_simple_enter);
-+
-+	if (ops && ops->exit)
-+		ops->exit(ops->flags);
-+
-+	return index;
-+}
-+
- /* fields in davinci_ops.flags */
- #define DAVINCI_CPUIDLE_FLAGS_DDR2_PWDN	BIT(0)
- 
- static struct cpuidle_driver davinci_idle_driver = {
--	.name	= "cpuidle-davinci",
--	.owner	= THIS_MODULE,
-+	.name		= "cpuidle-davinci",
-+	.owner		= THIS_MODULE,
-+	.states[0]	= ARM_CPUIDLE_WFI_STATE,
-+	.states[1]	= {
-+		.enter			= davinci_enter_idle,
-+		.exit_latency		= 10,
-+		.target_residency	= 100000,
-+		.flags			= CPUIDLE_FLAG_TIME_VALID,
-+		.name			= "DDR SR",
-+		.desc			= "WFI and DDR Self Refresh",
-+	},
-+	.state_count = DAVINCI_CPUIDLE_MAX_STATES,
- };
- 
- static DEFINE_PER_CPU(struct cpuidle_device, davinci_cpuidle_device);
-@@ -77,41 +108,10 @@ static struct davinci_ops davinci_states[DAVINCI_CPUIDLE_MAX_STATES] = {
- 	},
- };
- 
--/* Actual code that puts the SoC in different idle states */
--static int davinci_enter_idle(struct cpuidle_device *dev,
--				struct cpuidle_driver *drv,
--						int index)
--{
--	struct cpuidle_state_usage *state_usage = &dev->states_usage[index];
--	struct davinci_ops *ops = cpuidle_get_statedata(state_usage);
--	struct timeval before, after;
--	int idle_time;
--
--	local_irq_disable();
--	do_gettimeofday(&before);
--
--	if (ops && ops->enter)
--		ops->enter(ops->flags);
--	/* Wait for interrupt state */
--	cpu_do_idle();
--	if (ops && ops->exit)
--		ops->exit(ops->flags);
--
--	do_gettimeofday(&after);
--	local_irq_enable();
--	idle_time = (after.tv_sec - before.tv_sec) * USEC_PER_SEC +
--			(after.tv_usec - before.tv_usec);
--
--	dev->last_residency = idle_time;
--
--	return index;
--}
--
- static int __init davinci_cpuidle_probe(struct platform_device *pdev)
- {
- 	int ret;
- 	struct cpuidle_device *device;
--	struct cpuidle_driver *driver = &davinci_idle_driver;
- 	struct davinci_cpuidle_config *pdata = pdev->dev.platform_data;
- 
- 	device = &per_cpu(davinci_cpuidle_device, smp_processor_id());
-@@ -123,27 +123,11 @@ static int __init davinci_cpuidle_probe(struct platform_device *pdev)
- 
- 	ddr2_reg_base = pdata->ddr2_ctlr_base;
- 
--	/* Wait for interrupt state */
--	driver->states[0].enter = davinci_enter_idle;
--	driver->states[0].exit_latency = 1;
--	driver->states[0].target_residency = 10000;
--	driver->states[0].flags = CPUIDLE_FLAG_TIME_VALID;
--	strcpy(driver->states[0].name, "WFI");
--	strcpy(driver->states[0].desc, "Wait for interrupt");
--
--	/* Wait for interrupt and DDR self refresh state */
--	driver->states[1].enter = davinci_enter_idle;
--	driver->states[1].exit_latency = 10;
--	driver->states[1].target_residency = 10000;
--	driver->states[1].flags = CPUIDLE_FLAG_TIME_VALID;
--	strcpy(driver->states[1].name, "DDR SR");
--	strcpy(driver->states[1].desc, "WFI and DDR Self Refresh");
- 	if (pdata->ddr2_pdown)
- 		davinci_states[1].flags |= DAVINCI_CPUIDLE_FLAGS_DDR2_PWDN;
- 	cpuidle_set_statedata(&device->states_usage[1], &davinci_states[1]);
- 
- 	device->state_count = DAVINCI_CPUIDLE_MAX_STATES;
--	driver->state_count = DAVINCI_CPUIDLE_MAX_STATES;
- 
- 	ret = cpuidle_register_driver(&davinci_idle_driver);
- 	if (ret) {
--- 
-1.7.9.4
+Argh! I am missing the ".en_core_tk_irqen =3D 1" here.
 
+
+> + =A0 =A0 =A0 .states[0] =A0 =A0 =A0=3D ARM_CPUIDLE_WFI_STATE,
+> + =A0 =A0 =A0 .states[1] =A0 =A0 =A0=3D {
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .enter =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
+=3D davinci_enter_idle,
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .exit_latency =A0 =A0 =A0 =A0 =A0 =3D 10,
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .target_residency =A0 =A0 =A0 =3D 100000,
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .flags =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
+=3D CPUIDLE_FLAG_TIME_VALID,
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .name =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =
+=3D "DDR SR",
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 .desc =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =
+=3D "WFI and DDR Self Refresh",
+> + =A0 =A0 =A0 },
+> + =A0 =A0 =A0 .state_count =3D DAVINCI_CPUIDLE_MAX_STATES,
+> =A0};
+>
+> =A0static DEFINE_PER_CPU(struct cpuidle_device, davinci_cpuidle_device);
+> @@ -77,41 +108,10 @@ static struct davinci_ops davinci_states[DAVINCI_CPU=
+IDLE_MAX_STATES] =3D {
+> =A0 =A0 =A0 =A0},
+> =A0};
+>
+> -/* Actual code that puts the SoC in different idle states */
+> -static int davinci_enter_idle(struct cpuidle_device *dev,
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 struct cpui=
+dle_driver *drv,
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
+ =A0 =A0 =A0 =A0 =A0 int index)
+> -{
+> - =A0 =A0 =A0 struct cpuidle_state_usage *state_usage =3D &dev->states_us=
+age[index];
+> - =A0 =A0 =A0 struct davinci_ops *ops =3D cpuidle_get_statedata(state_usa=
+ge);
+> - =A0 =A0 =A0 struct timeval before, after;
+> - =A0 =A0 =A0 int idle_time;
+> -
+> - =A0 =A0 =A0 local_irq_disable();
+> - =A0 =A0 =A0 do_gettimeofday(&before);
+> -
+> - =A0 =A0 =A0 if (ops && ops->enter)
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 ops->enter(ops->flags);
+> - =A0 =A0 =A0 /* Wait for interrupt state */
+> - =A0 =A0 =A0 cpu_do_idle();
+> - =A0 =A0 =A0 if (ops && ops->exit)
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 ops->exit(ops->flags);
+> -
+> - =A0 =A0 =A0 do_gettimeofday(&after);
+> - =A0 =A0 =A0 local_irq_enable();
+> - =A0 =A0 =A0 idle_time =3D (after.tv_sec - before.tv_sec) * USEC_PER_SEC=
+ +
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 (after.tv_usec - before.tv_=
+usec);
+> -
+> - =A0 =A0 =A0 dev->last_residency =3D idle_time;
+> -
+> - =A0 =A0 =A0 return index;
+> -}
+> -
+> =A0static int __init davinci_cpuidle_probe(struct platform_device *pdev)
+> =A0{
+> =A0 =A0 =A0 =A0int ret;
+> =A0 =A0 =A0 =A0struct cpuidle_device *device;
+> - =A0 =A0 =A0 struct cpuidle_driver *driver =3D &davinci_idle_driver;
+> =A0 =A0 =A0 =A0struct davinci_cpuidle_config *pdata =3D pdev->dev.platfor=
+m_data;
+>
+> =A0 =A0 =A0 =A0device =3D &per_cpu(davinci_cpuidle_device, smp_processor_=
+id());
+> @@ -123,27 +123,11 @@ static int __init davinci_cpuidle_probe(struct plat=
+form_device *pdev)
+>
+> =A0 =A0 =A0 =A0ddr2_reg_base =3D pdata->ddr2_ctlr_base;
+>
+> - =A0 =A0 =A0 /* Wait for interrupt state */
+> - =A0 =A0 =A0 driver->states[0].enter =3D davinci_enter_idle;
+> - =A0 =A0 =A0 driver->states[0].exit_latency =3D 1;
+> - =A0 =A0 =A0 driver->states[0].target_residency =3D 10000;
+> - =A0 =A0 =A0 driver->states[0].flags =3D CPUIDLE_FLAG_TIME_VALID;
+> - =A0 =A0 =A0 strcpy(driver->states[0].name, "WFI");
+> - =A0 =A0 =A0 strcpy(driver->states[0].desc, "Wait for interrupt");
+> -
+> - =A0 =A0 =A0 /* Wait for interrupt and DDR self refresh state */
+> - =A0 =A0 =A0 driver->states[1].enter =3D davinci_enter_idle;
+> - =A0 =A0 =A0 driver->states[1].exit_latency =3D 10;
+> - =A0 =A0 =A0 driver->states[1].target_residency =3D 10000;
+> - =A0 =A0 =A0 driver->states[1].flags =3D CPUIDLE_FLAG_TIME_VALID;
+> - =A0 =A0 =A0 strcpy(driver->states[1].name, "DDR SR");
+> - =A0 =A0 =A0 strcpy(driver->states[1].desc, "WFI and DDR Self Refresh");
+> =A0 =A0 =A0 =A0if (pdata->ddr2_pdown)
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0davinci_states[1].flags |=3D DAVINCI_CPUID=
+LE_FLAGS_DDR2_PWDN;
+> =A0 =A0 =A0 =A0cpuidle_set_statedata(&device->states_usage[1], &davinci_s=
+tates[1]);
+>
+> =A0 =A0 =A0 =A0device->state_count =3D DAVINCI_CPUIDLE_MAX_STATES;
+> - =A0 =A0 =A0 driver->state_count =3D DAVINCI_CPUIDLE_MAX_STATES;
+>
+> =A0 =A0 =A0 =A0ret =3D cpuidle_register_driver(&davinci_idle_driver);
+> =A0 =A0 =A0 =A0if (ret) {
+> --
+> 1.7.9.4
+>
