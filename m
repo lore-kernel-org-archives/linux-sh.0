@@ -1,62 +1,107 @@
-From: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Date: Sat, 31 Mar 2012 06:15:20 +0000
-Subject: Re: [PATCH] input: st1232 device tree support
-Message-Id: <20120331061520.GA20406@core.coreip.homeip.net>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 21 Mar 2012 01:34:10 +0000
+Subject: [PATCH v2] fbdev: sh_mipi_dsi: add extra phyctrl for sh_mipi_dsi_info
+Message-Id: <87mx7awxdd.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120330084749.19624.84121.sendpatchset@w520>
-In-Reply-To: <20120330084749.19624.84121.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-input@vger.kernel.org, arnd@arndb.de, linux-sh@vger.kernel.org, rjw@sisk.pl, lethal@linux-sh.org
+To: linux-fbdev@vger.kernel.org
 
-Hi Magnus,
+sh_mipi uses some clocks, but the method of setup depends on CPU.
 
-On Fri, Mar 30, 2012 at 05:47:49PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> This patch enables DT support for the st1232 driver
-> which is primarily used on the sh7372 Mackerel board.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  drivers/input/touchscreen/st1232.c |    7 +++++++
->  1 file changed, 7 insertions(+)
-> 
-> --- 0001/drivers/input/touchscreen/st1232.c
-> +++ work/drivers/input/touchscreen/st1232.c	2012-03-29 14:43:13.000000000 +0900
-> @@ -255,6 +255,12 @@ static const struct i2c_device_id st1232
->  };
->  MODULE_DEVICE_TABLE(i2c, st1232_ts_id);
->  
-> +static const struct of_device_id st1232_ts_dt_ids[] __devinitconst = {
-> +	{ .compatible = "sitronix,st1232", },
-> +	{ }
-> +};
-> +MODULE_DEVICE_TABLE(of, st1232_ts_dt_ids);
-> +
+Current SuperH (like sh73a0) can control all of these clocks
+by CPG (Clock Pulse Generator).
+It means we can control it by clock framework only.
+But on sh7372, it needs CPG settings AND sh_mipi PHYCTRL::PLLDS,
+and only sh7372 has PHYCTRL::PLLDS.
 
-Should it be guarder with "#ifdef CONFIG_OF" and then we'd do
+But on current sh_mipi driver, PHYCTRL::PLLDS of sh7372 was
+overwrote since the callback timing of clock setting was changed
+by c2658b70f06108361aa5024798f9c1bf47c73374
+(fbdev: sh_mipi_dsi: fixup setup timing of sh_mipi_setup()).
+To solve this issue, this patch adds extra .phyctrl.
 
-	.of_match_table = of_match_ptr(st1232_ts_dt_ids);
+This patch adds detail explanation for unclear mipi settings
+and fixup wrong PHYCTRL::PLLDS value for ap4evb (0xb -> 0x6).
 
-?
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
-Thanks.
+- fixup wrong MHz (321 -> 312)
+- Adds explain that this patch fixup wrong PLLDS value for ap4evb
 
->  static struct i2c_driver st1232_ts_driver = {
->  	.probe		= st1232_ts_probe,
->  	.remove		= __devexit_p(st1232_ts_remove),
-> @@ -262,6 +268,7 @@ static struct i2c_driver st1232_ts_drive
->  	.driver = {
->  		.name	= ST1232_TS_NAME,
->  		.owner	= THIS_MODULE,
-> +		.of_match_table = st1232_ts_dt_ids,
->  #ifdef CONFIG_PM
->  		.pm	= &st1232_ts_pm_ops,
->  #endif
+ arch/arm/mach-shmobile/board-ap4evb.c |   12 +++++++++---
+ drivers/video/sh_mipi_dsi.c           |    2 +-
+ include/video/sh_mipi_dsi.h           |    1 +
+ 3 files changed, 11 insertions(+), 4 deletions(-)
 
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index eeb4d96..50fcf1b 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -556,20 +556,25 @@ static struct platform_device keysc_device = {
+ };
+ 
+ /* MIPI-DSI */
+-#define PHYCTRL		0x0070
+ static int sh_mipi_set_dot_clock(struct platform_device *pdev,
+ 				 void __iomem *base,
+ 				 int enable)
+ {
+ 	struct clk *pck = clk_get(&pdev->dev, "dsip_clk");
+-	void __iomem *phy =  base + PHYCTRL;
+ 
+ 	if (IS_ERR(pck))
+ 		return PTR_ERR(pck);
+ 
+ 	if (enable) {
++		/*
++		 * DSIPCLK	= 24MHz
++		 * D-PHY	= DSIPCLK * ((0x6*2)+1) = 312MHz (see .phyctrl)
++		 * HsByteCLK	= D-PHY/8 = 39MHz
++		 *
++		 *  X * Y * FPS +		 * (544+72+600+16) * (961+8+8+2) * 30 = 36.1MHz
++		 */
+ 		clk_set_rate(pck, clk_round_rate(pck, 24000000));
+-		iowrite32(ioread32(phy) | (0xb << 8), phy);
+ 		clk_enable(pck);
+ 	} else {
+ 		clk_disable(pck);
+@@ -598,6 +603,7 @@ static struct sh_mipi_dsi_info mipidsi0_info = {
+ 	.lcd_chan	= &lcdc_info.ch[0],
+ 	.lane		= 2,
+ 	.vsynw_offset	= 17,
++	.phyctrl	= 0x6 << 8,
+ 	.flags		= SH_MIPI_DSI_SYNC_PULSES_MODE |
+ 			  SH_MIPI_DSI_HSbyteCLK,
+ 	.set_dot_clock	= sh_mipi_set_dot_clock,
+diff --git a/drivers/video/sh_mipi_dsi.c b/drivers/video/sh_mipi_dsi.c
+index 05151b8..214482c 100644
+--- a/drivers/video/sh_mipi_dsi.c
++++ b/drivers/video/sh_mipi_dsi.c
+@@ -271,7 +271,7 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
+ 	iowrite32(0x00000001, base + PHYCTRL);
+ 	udelay(200);
+ 	/* Deassert resets, power on */
+-	iowrite32(0x03070001, base + PHYCTRL);
++	iowrite32(0x03070001 | pdata->phyctrl, base + PHYCTRL);
+ 
+ 	/*
+ 	 * Default = ULPS enable |
+diff --git a/include/video/sh_mipi_dsi.h b/include/video/sh_mipi_dsi.h
+index 434d56b..06c67fb 100644
+--- a/include/video/sh_mipi_dsi.h
++++ b/include/video/sh_mipi_dsi.h
+@@ -51,6 +51,7 @@ struct sh_mipi_dsi_info {
+ 	int				lane;
+ 	unsigned long			flags;
+ 	u32				clksrc;
++	u32				phyctrl; /* for extra setting */
+ 	unsigned int			vsynw_offset;
+ 	int	(*set_dot_clock)(struct platform_device *pdev,
+ 				 void __iomem *base,
 -- 
-Dmitry
+1.7.5.4
+
