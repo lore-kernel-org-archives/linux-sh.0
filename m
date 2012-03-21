@@ -1,131 +1,146 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 01 Mar 2012 15:07:26 +0000
-Subject: [PATCH v2 13/57] fbdev: sh_mipi_dsi: Don't hook up into board_cfg display operations
-Message-Id: <1330614490-14149-14-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Adrian McMenamin <lkmladrian@gmail.com>
+Date: Wed, 21 Mar 2012 04:37:08 +0000
+Subject: Re: [PATCH] VMUFAT filesystem [4/4]
+Message-Id: <CAN628AFiRxGEYHBbahYgnUpr-M3cKmh4T=copKif=jesCSBYkA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: viro@zeniv.linux.org.uk, LKML <linux-kernel@vger.kernel.org>, linux-fsdevel@vger.kernel.org
+Cc: Linux-sh <linux-sh@vger.kernel.org>, Adrian McMenamin <adrianmcmenamin@gmail.com>
 
-The display_on/off operations are now accessed through the
-sh_mobile_lcdc_entity operations.
+diff --git a/fs/vmufat/vmufat.h b/fs/vmufat/vmufat.h
+new file mode 100644
+index 0000000..8d4b714
+--- /dev/null
++++ b/fs/vmufat/vmufat.h
+@@ -0,0 +1,115 @@
++/* Header file for VMUFAT filesystem */
++#ifndef _VMUFAT_H_
++#define _VMUFAT_H_
++
++/* maximum length of file name */
++#define VMUFAT_NAMELEN			12
++
++/* GNU utils won't list files with inode num 0 */
++#define VMUFAT_ZEROBLOCK		0x10000
++#define VMU_BLK_SZ			512
++#define	VMU_BLK_SZ16			256
++
++/* file allocation table markers */
++#define VMUFAT_FILE_END			0xFFFA
++#define VMUFAT_UNALLOCATED		0xFFFC
++#define VMUFAT_ERROR			0xFFFF
++
++/* parameters for possible VMU volume sizes */
++#define VMUFAT_MIN_BLK			0x04
++#define VMUFAT_MAX_BLK			0x10000
++#define VMUFAT_START_ALLOC		199
++
++/* specifcations for directory entries */
++#define VMU_DIR_RECORD_LEN		0x20
++#define VMU_DIR_RECORD_LEN16		0x10
++#define VMU_DIR_ENTRIES_PER_BLOCK	0x10
++#define VMUFAT_NAME_OFFSET		0x04
++#define VMUFAT_FIRSTBLOCK_OFFSET16	0x01
++#define VMUFAT_START_OFFSET16		0x01
++#define VMUFAT_SIZE_OFFSET16		0x0C
++#define VMUFAT_HEADER_OFFSET16		0x0D
++
++/* File types used in directory */
++#define VMU_GAME			0xCC
++#define VMU_DATA			0x33
++
++/* filesystem locations marked in the root block */
++#define VMU_LOCATION_FAT		0x23
++#define VMU_LOCATION_FATLEN		0x24
++#define VMU_LOCATION_DIR		0x25
++#define VMU_LOCATION_DIRLEN		0x26
++#define VMU_LOCATION_USRLEN		0x28 /* reports false figure */
++
++/* date offsets */
++#define VMUFAT_SB_DATEOFFSET		0x30
++#define VMUFAT_FILE_DATEOFFSET		0x10
++
++#define EXEC				0111
++#define NOCOPY				0xFF
++#define CANCOPY				0x00
++
++u16 vmufat_get_fat(struct super_block *sb, long block);
++void vmufat_save_bcd(struct inode *in, char *bh, int index_to_dir);
++struct inode *vmufat_get_inode(struct super_block *sb, long ino);
++int vmufat_list_blocks(struct inode *in);
++
++enum vmufat_date {
++	VMUFAT_DIR_CENT	=		0x10,
++	VMUFAT_DIR_YEAR,
++	VMUFAT_DIR_MONTH,
++	VMUFAT_DIR_DAY,
++	VMUFAT_DIR_HOUR,
++	VMUFAT_DIR_MIN,
++	VMUFAT_DIR_SEC,
++	VMUFAT_DIR_DOW
++};
++
++/* constants for BCD conversion */
++#define SECONDS_PER_DAY			86400
++#define DAYS_PER_YEAR			365
++#define SECONDS_PER_HOUR		3600
++#define HOURS_PER_DAY			24
++#define SIXTY_MINS_OR_SECS		60
++#define FEB28				59
++
++struct memcard {
++	unsigned int sb_bnum;
++	unsigned int fat_bnum;
++	unsigned int fat_len;
++	unsigned int dir_bnum;
++	unsigned int dir_len;
++	unsigned int numblocks;
++	struct semaphore vmu_sem;
++};
++
++struct vmufat_block_list {
++	struct list_head b_list;
++	int bno;
++};
++
++struct vmufat_inode {
++	struct vmufat_block_list blocks;
++	unsigned int nblcks;
++	struct inode vfs_inode;
++};
++
++static inline struct vmufat_inode *VMUFAT_I(struct inode *in)
++{
++	return container_of(in, struct vmufat_inode, vfs_inode);
++}
++
++struct vmufat_file_info {
++	u8 ftype;
++	int fblk;
++	char fname[VMUFAT_NAMELEN];
++};
++
++static inline struct buffer_head *vmufat_sb_bread(struct super_block *sb,
++	sector_t block)
++{
++	if (!sb)
++		return NULL;
++	return sb_bread(sb, block);
++}
++#endif
+diff --git a/include/linux/magic.h b/include/linux/magic.h
+index 2d4beab..f285512 100644
+--- a/include/linux/magic.h
++++ b/include/linux/magic.h
+@@ -29,6 +29,7 @@
+ #define JFFS2_SUPER_MAGIC	0x72b6
+ #define ANON_INODE_FS_MAGIC	0x09041934
+ #define PSTOREFS_MAGIC		0x6165676C
++#define VMUFAT_MAGIC		0x55555555	/* opening bytes of root */
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
----
- drivers/video/sh_mipi_dsi.c |   56 ++++---------------------------------------
- 1 files changed, 5 insertions(+), 51 deletions(-)
-
-diff --git a/drivers/video/sh_mipi_dsi.c b/drivers/video/sh_mipi_dsi.c
-index 58744fe..ad09a05 100644
---- a/drivers/video/sh_mipi_dsi.c
-+++ b/drivers/video/sh_mipi_dsi.c
-@@ -58,10 +58,6 @@ struct sh_mipi {
- 	void __iomem	*linkbase;
- 	struct clk	*dsit_clk;
- 	struct platform_device *pdev;
--
--	void	*next_board_data;
--	void	(*next_display_on)(void *board_data, struct fb_info *info);
--	void	(*next_display_off)(void *board_data);
- };
- 
- #define to_sh_mipi(e)	container_of(e, struct sh_mipi, entity)
-@@ -398,8 +394,8 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
- 	return 0;
- }
- 
--static int __mipi_display_on(struct sh_mobile_lcdc_entity *entity,
--			     struct fb_info *info)
-+static int mipi_display_on(struct sh_mobile_lcdc_entity *entity,
-+			   struct fb_info *info)
- {
- 	struct sh_mipi *mipi = to_sh_mipi(entity);
- 	struct sh_mipi_dsi_info *pdata = mipi->pdev->dev.platform_data;
-@@ -427,21 +423,7 @@ mipi_display_on_fail2:
- 	return ret;
- }
- 
--static void mipi_display_on(void *arg, struct fb_info *info)
--{
--	struct sh_mobile_lcdc_entity *entity = arg;
--	struct sh_mipi *mipi = to_sh_mipi(entity);
--	int ret;
--
--	ret = __mipi_display_on(entity, info);
--	if (ret < 0)
--		return;
--
--	if (mipi->next_display_on)
--		mipi->next_display_on(mipi->next_board_data, info);
--}
--
--static void __mipi_display_off(struct sh_mobile_lcdc_entity *entity)
-+static void mipi_display_off(struct sh_mobile_lcdc_entity *entity)
- {
- 	struct sh_mipi *mipi = to_sh_mipi(entity);
- 	struct sh_mipi_dsi_info *pdata = mipi->pdev->dev.platform_data;
-@@ -453,20 +435,9 @@ static void __mipi_display_off(struct sh_mobile_lcdc_entity *entity)
- 	pm_runtime_put_sync(&mipi->pdev->dev);
- }
- 
--static void mipi_display_off(void *arg)
--{
--	struct sh_mobile_lcdc_entity *entity = arg;
--	struct sh_mipi *mipi = to_sh_mipi(entity);
--
--	if (mipi->next_display_off)
--		mipi->next_display_off(mipi->next_board_data);
--
--	__mipi_display_off(entity);
--}
--
- static const struct sh_mobile_lcdc_entity_ops mipi_ops = {
--	.display_on = __mipi_display_on,
--	.display_off = __mipi_display_off,
-+	.display_on = mipi_display_on,
-+	.display_off = mipi_display_off,
- };
- 
- static int __init sh_mipi_probe(struct platform_device *pdev)
-@@ -559,17 +530,6 @@ static int __init sh_mipi_probe(struct platform_device *pdev)
- 	mutex_unlock(&array_lock);
- 	platform_set_drvdata(pdev, &mipi->entity);
- 
--	/* Save original LCDC callbacks */
--	mipi->next_board_data = pdata->lcd_chan->board_cfg.board_data;
--	mipi->next_display_on = pdata->lcd_chan->board_cfg.display_on;
--	mipi->next_display_off = pdata->lcd_chan->board_cfg.display_off;
--
--	/* Set up LCDC callbacks */
--	pdata->lcd_chan->board_cfg.board_data = &mipi->entity;
--	pdata->lcd_chan->board_cfg.display_on = mipi_display_on;
--	pdata->lcd_chan->board_cfg.display_off = mipi_display_off;
--	pdata->lcd_chan->board_cfg.owner = THIS_MODULE;
--
- 	return 0;
- 
- eclkton:
-@@ -594,7 +554,6 @@ efindslot:
- 
- static int __exit sh_mipi_remove(struct platform_device *pdev)
- {
--	struct sh_mipi_dsi_info *pdata = pdev->dev.platform_data;
- 	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
- 	struct resource *res2 = platform_get_resource(pdev, IORESOURCE_MEM, 1);
- 	struct sh_mipi *mipi = to_sh_mipi(platform_get_drvdata(pdev));
-@@ -617,11 +576,6 @@ static int __exit sh_mipi_remove(struct platform_device *pdev)
- 	if (ret < 0)
- 		return ret;
- 
--	pdata->lcd_chan->board_cfg.owner = NULL;
--	pdata->lcd_chan->board_cfg.display_on = NULL;
--	pdata->lcd_chan->board_cfg.display_off = NULL;
--	pdata->lcd_chan->board_cfg.board_data = NULL;
--
- 	pm_runtime_disable(&pdev->dev);
- 	clk_disable(mipi->dsit_clk);
- 	clk_put(mipi->dsit_clk);
+ #define MINIX_SUPER_MAGIC	0x137F		/* minix v1 fs, 14 char names */
+ #define MINIX_SUPER_MAGIC2	0x138F		/* minix v1 fs, 30 char names */
 -- 
-1.7.3.4
-
+1.7.5.4
