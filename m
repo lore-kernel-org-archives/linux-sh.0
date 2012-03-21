@@ -1,45 +1,74 @@
-From: Nicolas Pitre <nicolas.pitre@linaro.org>
-Date: Wed, 21 Mar 2012 02:23:53 +0000
+From: Deepthi Dharwar <deepthi@linux.vnet.ibm.com>
+Date: Wed, 21 Mar 2012 02:50:41 +0000
 Subject: Re: [PATCH v8 0/8] Consolidate cpuidle functionality
-Message-Id: <alpine.LFD.2.02.1203202146131.24151@xanadu.home>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="8323328-1729038486-1332296636=:24151"
+Message-Id: <4F693F31.6030309@linux.vnet.ibm.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1332274969-15782-1-git-send-email-rob.lee@linaro.org>
- <201203202158.08042.arnd.bergmann@linaro.org> <873992zy5u.fsf@ti.com>
+ <873992zy5u.fsf@ti.com>
  <CAP245DXwhCMOJaspW8SY7jtqsA3d5SK4Ctr+JvS+cw4yHfL-mw@mail.gmail.com>
-In-Reply-To: <CAP245DXwhCMOJaspW8SY7jtqsA3d5SK4Ctr+JvS+cw4yHfL-mw@mail.gmail.com>
+ <201203210101.08361.rjw@sisk.pl>
+In-Reply-To: <201203210101.08361.rjw@sisk.pl>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-  This message is in MIME format.  The first part should be readable text,
-  while the remaining parts are likely unreadable without MIME-aware tools.
+On 03/21/2012 05:31 AM, Rafael J. Wysocki wrote:
 
---8323328-1729038486-1332296636=:24151
-Content-Type: TEXT/PLAIN; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+> On Wednesday, March 21, 2012, Amit Kucheria wrote:
+>> On Wed, Mar 21, 2012 at 12:48 AM, Kevin Hilman <khilman@ti.com> wrote:
+>>> Arnd Bergmann <arnd.bergmann@linaro.org> writes:
+>>>
+>>>> On Tuesday 20 March 2012, Robert Lee wrote:
+>>>>> This patch series moves various functionality duplicated in platform
+>>>>> cpuidle drivers to the core cpuidle driver. Also, the platform irq
+>>>>> disabling was removed as it appears that all calls into
+>>>>> cpuidle_call_idle will have already called local_irq_disable().
+>>>>>
+>>>>> These changes have been pulled into linux-next.
+>>>>>
+>>>>> Len, Andrew, can a request be made for Linus to pull these changes?
+>>>>
+>>>> FWIW, Len seems to be rather inactive on the kernel mailing list right
+>>>> now and generally not very interested in anything outside of x86 and
+>>>> acpi. If he doesn't reply in the next few days and Andrew also isn't
+>>>> interested in handling these patches, I'd suggest you just send the pull
+>>>> request to Linus, with Len on Cc and explain that you tried to send
+>>>> them through him but gave up in the end.
+>>>
+>>> FWIW, I have not had good luck getting response for proposed core
+>>> CPUidle changes either:
+>>>
+>>>        http://lkml.org/lkml/2011/9/19/374
+>>>
+>>> Maybe it's time that drivers/cpuidle gets a maintainer.  With lots of
+>>> discussions of scheduler changes that affect load estimation, I suspect
+>>> we're all going to have a bit of CPUidle work to do in the
+>>> not-so-distant future.
+>>>
+>>
+>> I don't mean to be piling on to Len here, but Daniel Lezcano too has a
+>> bunch of clean ups that didn't get any maintainer review for over two
+>> months. He has now refreshed them for 3.3 and is getting ready to send
+>> them out again. We (Linaro) expect to be spending a lot of time on
+>> cpuidle in the future and would be glad to help review, test and
+>> collect patches into a tree for Linus/Andrew to pull while we wait for
+>> Len to respond or another maintainer to emerge.
+> 
+> Well, I discussed that before with Arjan and he said he would maintain
+> CPUidle if Len didn't have the time, but it seems he didn't expect that
+> there would be a lot of work on it in the near future.
+> 
+> So, I suggest that if neither Len nor Arjan reappear shortly, people can
+> send CPUidle patches to me.
+> 
+> Thanks,
+> Rafael
+> 
 
-On Wed, 21 Mar 2012, Amit Kucheria wrote:
 
-> On Wed, Mar 21, 2012 at 12:48 AM, Kevin Hilman <khilman@ti.com> wrote:
-> > Maybe it's time that drivers/cpuidle gets a maintainer. =A0With lots of
-> > discussions of scheduler changes that affect load estimation, I suspect
-> > we're all going to have a bit of CPUidle work to do in the
-> > not-so-distant future.
-> >
->=20
-> I don't mean to be piling on to Len here, but Daniel Lezcano too has a
-> bunch of clean ups that didn't get any maintainer review for over two
-> months. He has now refreshed them for 3.3 and is getting ready to send
-> them out again. We (Linaro) expect to be spending a lot of time on
-> cpuidle in the future and would be glad to help review, test and
-> collect patches into a tree for Linus/Andrew to pull while we wait for
-> Len to respond or another maintainer to emerge.
+I'll be glad to assist you in this.
 
-As I advised recently, it is usually a good idea for the person/group=20
-who is working the most on a subsystem to simply take the lead and=20
-become the new maintainer.  Waiting for another maintainer to emerge=20
-could be compared to cowardice.
+Cheers,
+Deepthi
 
-
-Nicolas
---8323328-1729038486-1332296636=:24151--
