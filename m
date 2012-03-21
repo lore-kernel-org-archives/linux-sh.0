@@ -1,959 +1,204 @@
-From: Adrian McMenamin <lkmladrian@gmail.com>
-Date: Wed, 21 Mar 2012 04:32:59 +0000
-Subject: [PATCH] VMUFAT filesystem [2/4]
-Message-Id: <CAN628AE8gytYTE3eGDYrKR9Vx4JnND+OGzHcfneCb4q-QUM6cA@mail.gmail.com>
+From: Al Viro <viro@ZenIV.linux.org.uk>
+Date: Wed, 21 Mar 2012 05:37:36 +0000
+Subject: Re: [PATCH] VMUFAT filesystem [2/4]
+Message-Id: <20120321053735.GO6589@ZenIV.linux.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
+References: <CAN628AE8gytYTE3eGDYrKR9Vx4JnND+OGzHcfneCb4q-QUM6cA@mail.gmail.com>
+In-Reply-To: <CAN628AE8gytYTE3eGDYrKR9Vx4JnND+OGzHcfneCb4q-QUM6cA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: viro@zeniv.linux.org.uk, LKML <linux-kernel@vger.kernel.org>, linux-fsdevel@vger.kernel.org
-Cc: Linux-sh <linux-sh@vger.kernel.org>, Adrian McMenamin <adrianmcmenamin@gmail.com>
+To: Adrian McMenamin <lkmladrian@gmail.com>
+Cc: LKML <linux-kernel@vger.kernel.org>, linux-fsdevel@vger.kernel.org, Linux-sh <linux-sh@vger.kernel.org>, Adrian McMenamin <adrianmcmenamin@gmail.com>
 
-diff --git a/fs/vmufat/inode.c b/fs/vmufat/inode.c
-new file mode 100644
-index 0000000..584fb56
---- /dev/null
-+++ b/fs/vmufat/inode.c
-@@ -0,0 +1,951 @@
-+/*
-+ * VMUFAT file system
-+ *
-+ * Copyright (C) 2002 - 2012	Adrian McMenamin
-+ * Copyright (C) 2002		Paul Mundt
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License, or
-+ * (at your option) any later version.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-+ */
-+
-+#include <linux/fs.h>
-+#include <linux/bcd.h>
-+#include <linux/rtc.h>
-+#include <linux/slab.h>
-+#include <linux/sched.h>
-+#include <linux/magic.h>
-+#include <linux/device.h>
-+#include <linux/module.h>
-+#include <linux/statfs.h>
-+#include <linux/buffer_head.h>
-+#include "vmufat.h"
-+
-+const struct inode_operations vmufat_inode_operations;
-+const struct file_operations vmufat_file_operations;
-+const struct address_space_operations vmufat_address_space_operations;
-+const struct file_operations vmufat_file_dir_operations;
-+struct kmem_cache *vmufat_blist_cachep;
-+/* Linear day numbers of the respective 1sts in non-leap years. */
-+int day_n[] = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334};
-+
-+static struct dentry *vmufat_inode_lookup(struct inode *in, struct
-dentry *dent,
-+	struct nameidata *ignored)
-+{
-+	struct super_block *sb;
-+	struct memcard *vmudetails;
-+	struct buffer_head *bufhead = NULL;
-+	struct inode *ino;
-+	char name[VMUFAT_NAMELEN];
-+	int i, j, error = -EINVAL;
-+	if (!dent || !in || !in->i_sb)
-+		goto out;
-+	if (dent->d_name.len > VMUFAT_NAMELEN) {
-+		error = -ENAMETOOLONG;
-+		goto out;
-+	}
-+	sb = in->i_sb;
-+	if (!sb->s_fs_info)
-+		goto out;
-+	vmudetails = sb->s_fs_info;
-+	error = 0;
-+
-+	for (i = vmudetails->dir_bnum;
-+		i > vmudetails->dir_bnum - vmudetails->dir_len; i--) {
-+		brelse(bufhead);
-+		bufhead = vmufat_sb_bread(sb, i);
-+		if (!bufhead) {
-+			error = -EIO;
-+			goto out;
-+		}
-+		for (j = 0; j < VMU_DIR_ENTRIES_PER_BLOCK; j++) {
-+			if (bufhead->b_data[j * VMU_DIR_RECORD_LEN] = 0)
-+				goto fail;
-+			/* get name and check for match */
-+			memcpy(name,
-+				bufhead->b_data + j * VMU_DIR_RECORD_LEN
-+				+ VMUFAT_NAME_OFFSET, VMUFAT_NAMELEN);
-+			if (memcmp(dent->d_name.name, name,
-+				dent->d_name.len) = 0) {
-+				ino = vmufat_get_inode(sb,
-+					le16_to_cpu(((u16 *) bufhead->b_data)
-+					[j * VMU_DIR_RECORD_LEN16
-+					+ VMUFAT_FIRSTBLOCK_OFFSET16]));
-+				if (IS_ERR_OR_NULL(ino)) {
-+					if (IS_ERR(ino))
-+						error = PTR_ERR(ino);
-+					else
-+						error = -EACCES;
-+					goto out;
-+				}
-+				d_add(dent, ino);
-+				goto out;
-+			}
-+		}
-+	}
-+fail:
-+	d_add(dent, NULL); /* Did not find the file */
-+out:
-+	brelse(bufhead);
-+	return ERR_PTR(error);
-+}
-+
-+/*
-+ * Find a block marked free in the FAT
-+ */
-+static int vmufat_find_free(struct super_block *sb)
-+{
-+	struct memcard *vmudetails;
-+	int found = 0, testblk, fatblk, error, index_to_fat;
-+	int diff;
-+	__le16 fatdata;
-+	struct buffer_head *bh_fat;
-+
-+	if (!sb || !sb->s_fs_info) {
-+		error = -EINVAL;
-+		goto fail;
-+	}
-+	vmudetails = sb->s_fs_info;
-+
-+	for (fatblk = vmudetails->fat_bnum;
-+		fatblk > vmudetails->fat_bnum - vmudetails->fat_len;
-+		fatblk--) {
-+		bh_fat = vmufat_sb_bread(sb, fatblk);
-+		if (!bh_fat) {
-+			error = -EIO;
-+			goto fail;
-+		}
-+
-+		index_to_fat = 0xFF;
-+		/* prefer not to allocate to higher blocks if we can
-+		 * to ensure full compatibility with Dreamcast devices */
-+		diff = index_to_fat - VMUFAT_START_ALLOC;
-+		for (testblk = index_to_fat; testblk > 0; testblk--) {
-+			if (diff > 0 && testblk - diff < 0)
-+				diff = -VMUFAT_START_ALLOC - 1;
-+			fatdata +				le16_to_cpu(((u16 *) bh_fat->b_data)
-+				[testblk - diff]);
-+			if (fatdata = VMUFAT_UNALLOCATED) {
-+				found = 1;
-+				put_bh(bh_fat);
-+				goto out_of_loop;
-+			}
-+		}
-+		put_bh(bh_fat);
-+	}
-+out_of_loop:
-+	return (fatblk - 1 - vmudetails->fat_bnum + vmudetails->fat_len)
-+			* VMU_BLK_SZ16 + testblk - diff;
-+
-+	printk(KERN_WARNING "VMUFAT: volume is full\n");
-+	error = -ENOSPC;
-+fail:
-+	return error;
-+}
-+
-+/* read the FAT for a given block */
-+u16 vmufat_get_fat(struct super_block *sb, long block)
-+{
-+	struct buffer_head *bufhead;
-+	int offset;
-+	u16 block_content = VMUFAT_ERROR;
-+	struct memcard *vmudetails;
-+	if (!sb || !sb->s_fs_info)
-+		goto out;
-+	vmudetails = sb->s_fs_info;
-+
-+	/* which block in the FAT */
-+	offset = block / VMU_BLK_SZ16;
-+	if (offset >= vmudetails->fat_len)
-+		goto out;
-+
-+	/* fat_bnum points to highest block in FAT */
-+	bufhead = vmufat_sb_bread(sb, offset + 1 +
-+		vmudetails->fat_bnum - vmudetails->fat_len);
-+	if (!bufhead)
-+		goto out;
-+	/* look inside the block */
-+	block_content = le16_to_cpu(((u16 *)bufhead->b_data)
-+		[block % VMU_BLK_SZ16]);
-+	put_bh(bufhead);
-+out:
-+	return block_content;
-+}
-+
-+/* set the FAT for a given block */
-+static int vmufat_set_fat(struct super_block *sb, long block,
-+		u16 data_to_set)
-+{
-+	struct buffer_head *bh;
-+	int offset, error = 0;
-+	struct memcard *vmudetails;
-+	if (!sb || !sb->s_fs_info) {
-+		error = -EINVAL;
-+		goto out;
-+	}
-+	vmudetails = sb->s_fs_info;
-+
-+	offset = block / VMU_BLK_SZ16;
-+	if (offset >= vmudetails->fat_len) {
-+		error = -EINVAL;
-+		goto out;
-+	}
-+	bh = vmufat_sb_bread(sb, offset + 1 +
-+		vmudetails->fat_bnum - vmudetails->fat_len);
-+	if (!bh) {
-+		error = -EIO;
-+		goto out;
-+	}
-+	((u16 *) bh->b_data)[block % VMU_BLK_SZ16] = cpu_to_le16(data_to_set);
-+	mark_buffer_dirty(bh);
-+	put_bh(bh);
-+out:
-+	return 0;
-+}
-+
-+
-+static void vmufat_save_bcd_nortc(struct inode *in, char *bh, int index_to_dir)
-+{
-+	long years, days;
-+	unsigned char bcd_century, nl_day, bcd_month;
-+	unsigned char u8year;
-+	__kernel_time_t unix_date;
-+
-+	unix_date = in->i_mtime.tv_sec;
-+	days = unix_date / SECONDS_PER_DAY;
-+	years = days / DAYS_PER_YEAR;
-+	/* 1 Jan gets 1 day later after every leap year */
-+	if ((years + 3) / 4 + DAYS_PER_YEAR * years >= days)
-+		years--;
-+	/* rebase days to account for leap years */
-+	days -= (years + 3) / 4 + DAYS_PER_YEAR * years;
-+	/* 1 Jan is Day 1 */
-+	days++;
-+	if (days = (FEB28 + 1) && !(years % 4)) {
-+		nl_day = days;
-+		bcd_month = 2;
-+	} else {
-+		nl_day = (years % 4) || days <= FEB28 ? days : days - 1;
-+		for (bcd_month = 0; bcd_month < 12; bcd_month++)
-+			if (day_n[bcd_month] > nl_day)
-+				break;
-+	}
-+
-+	bcd_century = 19;
-+	/* TODO:accounts for 21st century but will fail in 2100
-+		because of leap days */
-+	if (years > 29)
-+		bcd_century += 1 + (years - 30)/100;
-+
-+	bh[index_to_dir + VMUFAT_DIR_CENT] = bin2bcd(bcd_century);
-+	u8year = years + 70; /* account for epoch */
-+	if (u8year > 99)
-+		u8year = u8year - 100;
-+
-+	bh[index_to_dir + VMUFAT_DIR_YEAR] = bin2bcd(u8year);
-+	bh[index_to_dir + VMUFAT_DIR_MONTH] = bin2bcd(bcd_month);
-+	bh[index_to_dir + VMUFAT_DIR_DAY] +	    bin2bcd(days - day_n[bcd_month - 1]);
-+	bh[index_to_dir + VMUFAT_DIR_HOUR] +	    bin2bcd((unix_date / SECONDS_PER_HOUR) % HOURS_PER_DAY);
-+	bh[index_to_dir + VMUFAT_DIR_MIN] +		bin2bcd((unix_date / SIXTY_MINS_OR_SECS)
-+		 % SIXTY_MINS_OR_SECS);
-+	bh[index_to_dir + VMUFAT_DIR_SEC] +		bin2bcd(unix_date % SIXTY_MINS_OR_SECS);
-+}
-+
-+static void vmufat_save_bcd_rtc(struct rtc_device *rtc, struct inode *in,
-+	char *bh, int index_to_dir)
-+{
-+	struct rtc_time now;
-+
-+	if (rtc_read_time(rtc, &now) < 0)
-+		vmufat_save_bcd_nortc(in, bh, index_to_dir);
-+	bh[index_to_dir + VMUFAT_DIR_CENT] = bin2bcd((char)(now.tm_year/100));
-+	bh[index_to_dir + VMUFAT_DIR_YEAR] = bin2bcd((char)(now.tm_year % 100));
-+	bh[index_to_dir + VMUFAT_DIR_MONTH] = bin2bcd((char)(now.tm_mon));
-+	bh[index_to_dir + VMUFAT_DIR_DAY] = bin2bcd((char)(now.tm_mday));
-+	bh[index_to_dir + VMUFAT_DIR_HOUR] = bin2bcd((char)(now.tm_hour));
-+	bh[index_to_dir + VMUFAT_DIR_MIN] = bin2bcd((char)(now.tm_min));
-+	bh[index_to_dir + VMUFAT_DIR_SEC] = bin2bcd((char)(now.tm_sec));
-+	bh[index_to_dir + VMUFAT_DIR_DOW] = bin2bcd((char)(now.tm_wday));
-+}
-+
-+/*
-+ * write out the date in bcd format
-+ * in the appropriate part of the
-+ * directory entry
-+ */
-+void vmufat_save_bcd(struct inode *in, char *bh, int index_to_dir)
-+{
-+	struct rtc_device *rtc;
-+	rtc = rtc_class_open("rtc0");
-+	if (!rtc)
-+		vmufat_save_bcd_nortc(in, bh, index_to_dir);
-+	else {
-+		vmufat_save_bcd_rtc(rtc, in, bh, index_to_dir);
-+		rtc_class_close(rtc);
-+	}
-+}
-+
-+static int vmufat_allocate_inode(umode_t imode,
-+		struct super_block *sb, struct inode *in)
-+{
-+	int error;
-+	if (!sb || !in)
-+		return -EINVAL;
-+	/* Executable files must be at the start of the volume */
-+	if (imode & EXEC) {
-+		in->i_ino = VMUFAT_ZEROBLOCK;
-+		if (vmufat_get_fat(sb, 0) != VMUFAT_UNALLOCATED) {
-+			printk(KERN_WARNING "VMUFAT: cannot write excutable "
-+				"file. Volume block 0 already allocated.\n");
-+			error = -ENOSPC;
-+			goto out;
-+		}
-+		error = 0;
-+	} else {
-+		error = vmufat_find_free(sb);
-+		if (error >= 0)
-+			in->i_ino = error;
-+	}
-+out:
-+	return error;
-+}
-+
-+static void vmufat_setup_inode(struct inode *in, umode_t imode,
-+		struct super_block *sb)
-+{
-+	if (!in)
-+		return;
-+
-+	in->i_uid = current_fsuid();
-+	in->i_gid = current_fsgid();
-+	in->i_mtime = in->i_atime = in->i_ctime = CURRENT_TIME;
-+	in->i_mode = imode;
-+	in->i_blocks = 1;
-+	in->i_sb = sb;
-+	insert_inode_hash(in);
-+	in->i_op = &vmufat_inode_operations;
-+	in->i_fop = &vmufat_file_operations;
-+	in->i_mapping->a_ops = &vmufat_address_space_operations;
-+}
-+
-+static void vmu_handle_zeroblock(int recno, struct buffer_head *bh, int ino)
-+{
-+	/* offset and header offset settings */
-+	if (ino != VMUFAT_ZEROBLOCK) {
-+		((u16 *) bh->b_data)[recno + VMUFAT_START_OFFSET16] +		    cpu_to_le16(ino);
-+		((u16 *) bh->b_data)[recno + VMUFAT_HEADER_OFFSET16] = 0;
-+	} else {
-+		((u16 *) bh->b_data)[recno + VMUFAT_START_OFFSET16] = 0;
-+		((u16 *) bh->b_data)[recno + VMUFAT_HEADER_OFFSET16] = 1;
-+	}
-+}
-+
-+static void vmu_write_name(int recno, struct buffer_head *bh, char *name,
-+	int len)
-+{
-+	memset((char *) (bh->b_data + recno + VMUFAT_NAME_OFFSET), '\0',
-+		VMUFAT_NAMELEN);
-+	memcpy((char *) (bh->b_data + recno + VMUFAT_NAME_OFFSET),
-+		name, len);
-+}
-+
-+static int vmufat_inode_create(struct inode *dir, struct dentry *de,
-+		umode_t imode, struct nameidata *nd)
-+{
-+	/* Create an inode */
-+	int i, j, found = 0, error = 0, freeblock;
-+	struct inode *inode;
-+	struct super_block *sb;
-+	struct memcard *vmudetails;
-+	struct buffer_head *bh = NULL;
-+	if (!dir || !de) {
-+		error = -EINVAL;
-+		goto out;
-+	}
-+
-+	if (de->d_name.len > VMUFAT_NAMELEN) {
-+		error = -ENAMETOOLONG;
-+		goto out;
-+	}
-+
-+	sb = dir->i_sb;
-+	if (!sb || !sb->s_fs_info) {
-+		error = -EINVAL;
-+		goto out;
-+	}
-+	vmudetails = sb->s_fs_info;
-+
-+	inode = new_inode(sb);
-+	if (!inode) {
-+		error = -ENOSPC;
-+		goto out;
-+	}
-+
-+	down_interruptible(&vmudetails->vmu_sem);
-+	freeblock = vmufat_allocate_inode(imode, sb, inode);
-+	if (freeblock < 0) {
-+		up(&vmudetails->vmu_sem);
-+		error = freeblock;
-+		goto clean_inode;
-+	}
-+	/* mark as single block file - may grow later */
-+	error = vmufat_set_fat(sb, freeblock, VMUFAT_FILE_END);
-+	up(&vmudetails->vmu_sem);
-+	if (error)
-+		goto clean_inode;
-+
-+	vmufat_setup_inode(inode, imode, sb);
-+
-+	/* Write to the directory
-+	 * Now search for space for the directory entry */
-+	down_interruptible(&vmudetails->vmu_sem);
-+	for (i = vmudetails->dir_bnum;
-+		i > vmudetails->dir_bnum - vmudetails->dir_len; i--) {
-+		brelse(bh);
-+		bh = vmufat_sb_bread(sb, i);
-+		if (!bh) {
-+			up(&vmudetails->vmu_sem);
-+			error = -EIO;
-+			goto clean_fat;
-+		}
-+		for (j = 0; j < VMU_DIR_ENTRIES_PER_BLOCK; j++) {
-+			if (((bh->b_data)[j * VMU_DIR_RECORD_LEN]) = 0) {
-+				up(&vmudetails->vmu_sem);
-+				found = 1;
-+				goto dir_space_found;
-+			}
-+		}
-+	}
-+	if (found = 0)
-+		goto clean_fat;
-+dir_space_found:
-+	j = j * VMU_DIR_RECORD_LEN;
-+	/* Have the directory entry
-+	 * so now update it */
-+	if (imode & EXEC)
-+		bh->b_data[j] = VMU_GAME;	/* exec file */
-+	else
-+		bh->b_data[j] = VMU_DATA;
-+
-+	/* copy protection settings */
-+	if (bh->b_data[j + 1] != (char) NOCOPY)
-+		bh->b_data[j + 1] = (char) CANCOPY;
-+
-+	vmu_handle_zeroblock(j / 2, bh, inode->i_ino);
-+	vmu_write_name(j, bh, (char *) de->d_name.name, de->d_name.len);
-+
-+	/* BCD timestamp it */
-+	vmufat_save_bcd(inode, bh->b_data, j);
-+
-+	((u16 *) bh->b_data)[j / 2 + VMUFAT_SIZE_OFFSET16] +	    cpu_to_le16(inode->i_blocks);
-+	mark_buffer_dirty(bh);
-+	brelse(bh);
-+	error = vmufat_list_blocks(inode);
-+	if (error)
-+		goto clean_fat;
-+	up(&vmudetails->vmu_sem);
-+	d_instantiate(de, inode);
-+	return error;
-+
-+clean_fat:
-+	vmufat_set_fat(sb, freeblock, VMUFAT_UNALLOCATED);
-+	up(&vmudetails->vmu_sem);
-+clean_inode:
-+	iput(inode);
-+out:
-+	if (error < 0)
-+		printk(KERN_ERR "VMUFAT: inode creation fails with error"
-+			" %i\n", error);
-+	return error;
-+}
-+
-+static int vmufat_readdir(struct file *filp, void *dirent, filldir_t filldir)
-+{
-+	int filenamelen, index, j, k, error = -EINVAL;
-+	struct vmufat_file_info *saved_file = NULL;
-+	struct dentry *dentry;
-+	struct inode *inode;
-+	struct super_block *sb;
-+	struct memcard *vmudetails;
-+	struct buffer_head *bh = NULL;
-+	if (!filp || !filp->f_dentry)
-+		goto out;
-+	dentry = filp->f_dentry;
-+	inode = dentry->d_inode;
-+	if (!inode)
-+		goto out;
-+	sb = inode->i_sb;
-+	if (!sb)
-+		goto out;
-+	vmudetails = sb->s_fs_info;
-+	if (!vmudetails)
-+		goto out;
-+	error = 0;
-+
-+	index = filp->f_pos;
-+	if (index > 200)
-+		return -EIO;
-+	/* handle . for this directory and .. for parent */
-+	switch ((unsigned int) filp->f_pos) {
-+	case 0:
-+		error = filldir(dirent, ".", 1, index++, inode->i_ino, DT_DIR);
-+		if (error < 0)
-+			goto out;
-+	case 1:
-+		error = filldir(dirent, "..", 2, index++,
-+			    dentry->d_parent->d_inode->i_ino, DT_DIR);
-+		if (error < 0)
-+			goto out;
-+	default:
-+		break;
-+	}
-+
-+	saved_file +	    kmalloc(sizeof(struct vmufat_file_info), GFP_KERNEL);
-+	if (!saved_file) {
-+		error = -ENOMEM;
-+		goto out;
-+	}
-+
-+	for (j = vmudetails->dir_bnum -
-+		(index - 2) / VMU_DIR_ENTRIES_PER_BLOCK;
-+		j > vmudetails->dir_bnum - vmudetails->dir_len; j--) {
-+		brelse(bh);
-+		bh = vmufat_sb_bread(sb, j);
-+		if (!bh) {
-+			error = -EIO;
-+			goto finish;
-+		}
-+		for (k = (index - 2) % VMU_DIR_ENTRIES_PER_BLOCK;
-+			k < VMU_DIR_ENTRIES_PER_BLOCK; k++) {
-+			saved_file->ftype = bh->b_data[k * VMU_DIR_RECORD_LEN];
-+			if (saved_file->ftype = 0)
-+				goto finish;
-+			saved_file->fblk +				le16_to_cpu(((u16 *) bh->b_data)
-+				[k * VMU_DIR_RECORD_LEN16 + 1]);
-+			if (saved_file->fblk = 0)
-+				saved_file->fblk = VMUFAT_ZEROBLOCK;
-+			memcpy(saved_file->fname,
-+				bh->b_data + k * VMU_DIR_RECORD_LEN
-+				+ VMUFAT_NAME_OFFSET, VMUFAT_NAMELEN);
-+			filenamelen = strlen(saved_file->fname);
-+			if (filenamelen > VMUFAT_NAMELEN)
-+				filenamelen = VMUFAT_NAMELEN;
-+			error = filldir(dirent, saved_file->fname, filenamelen,
-+				index++, saved_file->fblk, DT_REG);
-+			if (error < 0)
-+				goto finish;
-+		}
-+	}
-+
-+finish:
-+	filp->f_pos = index;
-+	kfree(saved_file);
-+	brelse(bh);
-+out:
-+	return error;
-+}
-+
-+
-+int vmufat_list_blocks(struct inode *in)
-+{
-+	struct vmufat_inode *vi;
-+	struct super_block *sb;
-+	long nextblock;
-+	long ino;
-+	struct memcard *vmudetails;
-+	int error = -EINVAL;
-+	struct list_head *iter, *iter2;
-+	struct vmufat_block_list *vbl, *nvbl;
-+	u16 fatdata;
-+	if (!in || !in->i_sb)
-+		goto out;
-+
-+	vi = VMUFAT_I(in);
-+	if (!vi)
-+		goto out;
-+	sb = in->i_sb;
-+	ino = in->i_ino;
-+	vmudetails = sb->s_fs_info;
-+	if (!vmudetails)
-+		goto out;
-+	error = 0;
-+	nextblock = ino;
-+	if (nextblock = VMUFAT_ZEROBLOCK)
-+		nextblock = 0;
-+
-+	/* Delete any previous list of blocks */
-+	list_for_each_safe(iter, iter2, &vi->blocks.b_list) {
-+		vbl = list_entry(iter, struct vmufat_block_list, b_list);
-+		list_del(iter);
-+		kmem_cache_free(vmufat_blist_cachep, vbl);
-+	}
-+	vi->nblcks = 0;
-+	do {
-+		vbl = kmem_cache_alloc(vmufat_blist_cachep,
-+			GFP_KERNEL);
-+		if (!vbl) {
-+			error = -ENOMEM;
-+			goto unwind_out;
-+		}
-+		INIT_LIST_HEAD(&vbl->b_list);
-+		vbl->bno = nextblock;
-+		list_add_tail(&vbl->b_list, &vi->blocks.b_list);
-+		vi->nblcks++;
-+
-+		/* Find next block in the FAT - if there is one */
-+		fatdata = vmufat_get_fat(sb, nextblock);
-+		if (fatdata = VMUFAT_UNALLOCATED) {
-+			printk(KERN_ERR "VMUFAT: FAT table appears to have"
-+				" been corrupted.\n");
-+			error = -EIO;
-+			goto unwind_out;
-+		}
-+		if (fatdata = VMUFAT_FILE_END)
-+			break;	/*end of file */
-+		nextblock = fatdata;
-+	} while (1);
-+out:
-+	return error;
-+
-+unwind_out:
-+	list_for_each_entry_safe(vbl, nvbl, &vi->blocks.b_list, b_list) {
-+		list_del_init(&vbl->b_list);
-+		kmem_cache_free(vmufat_blist_cachep, vbl);
-+	}
-+	return error;
-+}
-+
-+static int vmufat_clean_fat(struct super_block *sb, int inum)
-+{
-+	int error = 0;
-+	u16 fatword, nextword;
-+	if (!sb) {
-+		error = -EINVAL;
-+		goto out;
-+	}
-+
-+	nextword = inum;
-+	do {
-+		fatword = vmufat_get_fat(sb, nextword);
-+		if (fatword = VMUFAT_ERROR) {
-+			error = -EIO;
-+			goto out;
-+		}
-+		error = vmufat_set_fat(sb, nextword, VMUFAT_UNALLOCATED);
-+		if (error)
-+			goto out;
-+		if (fatword = VMUFAT_FILE_END)
-+			goto out;
-+		nextword = fatword;
-+	} while (1);
-+out:
-+	return error;
-+}
-+
-+/*
-+ * Delete inode by marking space as free in FAT
-+ * no need to waste time and effort by actually
-+ * wiping underlying data on media
-+ */
-+static void vmufat_remove_inode(struct inode *in)
-+{
-+	struct buffer_head *bh = NULL, *bh_old = NULL;
-+	struct super_block *sb;
-+	struct memcard *vmudetails;
-+	int i, j, k, l, startpt, found = 0;
-+	if (!in || !in->i_sb)
-+		goto ret;
-+
-+	if (in->i_ino = VMUFAT_ZEROBLOCK)
-+		in->i_ino = 0;
-+	sb = in->i_sb;
-+	vmudetails = sb->s_fs_info;
-+	if (!vmudetails)
-+		goto ret;
-+	if (in->i_ino > vmudetails->fat_len * sb->s_blocksize / 2) {
-+		printk(KERN_ERR "VMUFAT: attempting to delete"
-+			"inode beyond device size");
-+		goto ret;
-+	}
-+
-+	down_interruptible(&vmudetails->vmu_sem);
-+	if (vmufat_clean_fat(sb, in->i_ino)) {
-+		up(&vmudetails->vmu_sem);
-+		goto failure;
-+	}
-+
-+	/* Now clean the directory entry
-+	 * Have to wander through this
-+	 * to find the appropriate entry */
-+	for (i = vmudetails->dir_bnum;
-+		i > vmudetails->dir_bnum - vmudetails->dir_len; i--) {
-+		brelse(bh);
-+		bh = vmufat_sb_bread(sb, i);
-+		if (!bh) {
-+			up(&vmudetails->vmu_sem);
-+			goto failure;
-+		}
-+		for (j = 0; j < VMU_DIR_ENTRIES_PER_BLOCK; j++) {
-+			if (bh->b_data[j * VMU_DIR_RECORD_LEN] = 0) {
-+				up(&vmudetails->vmu_sem);
-+				goto failure;
-+			}
-+			if (le16_to_cpu(((u16 *) bh->b_data)
-+				[j * VMU_DIR_RECORD_LEN16 +
-+				VMUFAT_FIRSTBLOCK_OFFSET16]) = in->i_ino) {
-+				found = 1;
-+				goto found;
-+			}
-+		}
-+	}
-+found:
-+	if (found = 0) {
-+		up(&vmudetails->vmu_sem);
-+		goto failure;
-+	}
-+
-+	/* Found directory entry - so NULL it now */
-+	for (k = 0; k < VMU_DIR_RECORD_LEN; k++)
-+		bh->b_data[j * VMU_DIR_RECORD_LEN + k] = 0;
-+	mark_buffer_dirty(bh);
-+	/* Patch up directory, by moving up last file */
-+	found = 0;
-+	startpt = j + 1;
-+	for (l = i; l > vmudetails->dir_bnum - vmudetails->dir_len; l--) {
-+		bh_old = vmufat_sb_bread(sb, l);
-+		if (!bh_old) {
-+			up(&vmudetails->vmu_sem);
-+			goto failure;
-+		}
-+		for (k = startpt; k < VMU_DIR_ENTRIES_PER_BLOCK; k++) {
-+			if (bh_old->b_data[k * VMU_DIR_RECORD_LEN] = 0) {
-+				found = 1;
-+				brelse(bh_old);
-+				goto lastdirfound;
-+			}
-+		}
-+		startpt = 0;
-+		brelse(bh_old);
-+	}
-+lastdirfound:
-+	if (found = 0) {	/* full directory */
-+		l = vmudetails->dir_bnum - vmudetails->dir_len + 1;
-+		k = VMU_DIR_ENTRIES_PER_BLOCK;
-+	} else if (l = i && k = j + 1) /* deleted entry was last in dir */
-+		goto finish;
-+	else if (k = 0) {
-+		l = l + 1;
-+		k = VMU_DIR_ENTRIES_PER_BLOCK;
-+		if (l = i && k = j + 1)
-+			goto finish;
-+	}
-+	/* fill gap first then wipe out old entry */
-+	bh_old = vmufat_sb_bread(sb, l);
-+	if (!bh_old) {
-+		up(&vmudetails->vmu_sem);
-+		brelse(bh);
-+		goto failure;
-+	}
-+	for (i = 0; i < VMU_DIR_RECORD_LEN; i++) {
-+		bh->b_data[j * VMU_DIR_RECORD_LEN + i] +			bh_old->b_data[(k - 1) * VMU_DIR_RECORD_LEN + i];
-+		bh_old->b_data[(k - 1) * VMU_DIR_RECORD_LEN + i] = 0;
-+	}
-+	mark_buffer_dirty(bh_old);
-+	mark_buffer_dirty(bh);
-+	brelse(bh_old);
-+
-+finish:
-+	up(&vmudetails->vmu_sem);
-+	brelse(bh);
-+	return;
-+
-+failure:
-+	printk(KERN_ERR "VMUFAT: Failure to read volume,"
-+		" could not delete inode - filesystem may be damaged\n");
-+ret:
-+	return;
-+}
-+
-+/*
-+ * vmufat_unlink - delete a file pointed to
-+ * by the dentry (only one directory in a
-+ * vmufat fs so safe to ignore the inode
-+ * supplied here
-+ */
-+static int vmufat_unlink(struct inode *dir, struct dentry *dentry)
-+{
-+	struct inode *in;
-+	if (!dentry || !dentry->d_inode)
-+		return -EINVAL;
-+	in = dentry->d_inode;
-+	vmufat_remove_inode(in);
-+	return 0;
-+}
-+
-+static int vmufat_get_block(struct inode *inode, sector_t iblock,
-+	struct buffer_head *bh_result, int create)
-+{
-+	struct vmufat_inode *vin;
-+	struct vmufat_block_list *vlist, *vblk;
-+	struct super_block *sb;
-+	struct memcard *vmudetails;
-+	int cural;
-+	int finblk, nxtblk, exeblk;
-+	struct list_head *iter;
-+	sector_t cntdwn = iblock;
-+	sector_t phys;
-+	int error = -EINVAL;
-+	if (!inode || !inode->i_sb)
-+		goto out;
-+	vin = VMUFAT_I(inode);
-+	if (!vin || !(&vin->blocks))
-+		goto out;
-+	vlist = &vin->blocks;
-+	sb = inode->i_sb;
-+	vmudetails = sb->s_fs_info;
-+	if (!vmudetails)
-+		goto out;
-+
-+	if (vin->nblcks <= 0)
-+		goto out;
-+	if (iblock < vin->nblcks) {
-+		/* block is already here so read it into the buffer head */
-+		list_for_each(iter, &vlist->b_list) {
-+			if (cntdwn-- = 0)
-+				break;
-+		}
-+		vblk = list_entry(iter, struct vmufat_block_list, b_list);
-+		clear_buffer_new(bh_result);
-+		error = 0;
-+		phys = vblk->bno;
-+		goto got_it;
-+	}
-+	if (!create)
-+		goto out;
-+	/*
-+	 * check not looking for a block too far
-+	 * beyond the end of the existing file
-+	 */
-+	if (iblock > vin->nblcks)
-+		goto out;
-+
-+	/* if looking for a block that is not current - allocate it*/
-+	cural = vin->nblcks;
-+	list_for_each(iter, &vlist->b_list) {
-+		if (cural-- = 1)
-+			break;
-+	}
-+	vblk = list_entry(iter, struct vmufat_block_list, b_list);
-+	finblk = vblk->bno;
-+
-+	down_interruptible(&vmudetails->vmu_sem);
-+	/* Exec files have to be linear */
-+	if (inode->i_ino = 0) {
-+		exeblk = vmufat_get_fat(sb, finblk + 1);
-+		if (exeblk != VMUFAT_UNALLOCATED) {
-+			up(&vmudetails->vmu_sem);
-+			printk(KERN_WARNING "VMUFAT: Cannot allocate linear "
-+				"space needed for executible\n");
-+			error = -ENOSPC;
-+			goto out;
-+		}
-+		nxtblk = finblk + 1;
-+	} else {
-+		nxtblk = vmufat_find_free(sb);
-+		if (nxtblk < 0) {
-+			up(&vmudetails->vmu_sem);
-+			error = nxtblk;
-+			goto out;
-+		}
-+	}
-+	error = vmufat_set_fat(sb, finblk, nxtblk);
-+	if (error) {
-+		up(&vmudetails->vmu_sem);
-+		goto out;
-+	}
-+	error = vmufat_set_fat(sb, nxtblk, VMUFAT_FILE_END);
-+	up(&vmudetails->vmu_sem);
-+	if (error)
-+		goto out;
-+	error = vmufat_list_blocks(inode);
-+	mark_inode_dirty(inode);
-+	if (error)
-+		goto out;
-+	set_buffer_new(bh_result);
-+	phys = nxtblk;
-+	error = 0;
-+got_it:
-+	map_bh(bh_result, sb, phys);
-+out:
-+	return error;
-+}
-+
-+static int vmufat_writepage(struct page *page, struct writeback_control *wbc)
-+{
-+	return block_write_full_page(page, vmufat_get_block, wbc);
-+}
-+
-+static int vmufat_write_begin(struct file *filp, struct address_space *mapping,
-+		loff_t pos, unsigned len, unsigned flags,
-+		struct page **pagep, void **fsdata)
-+{
-+	*pagep = NULL;
-+	return block_write_begin(mapping, pos, len, flags, pagep,
-+		vmufat_get_block);
-+}
-+
-+static int vmufat_readpage(struct file *file, struct page *page)
-+{
-+	return block_read_full_page(page, vmufat_get_block);
-+}
-+
-+
-+const struct address_space_operations
-+		vmufat_address_space_operations = {
-+	.readpage =	vmufat_readpage,
-+	.writepage =	vmufat_writepage,
-+	.write_begin =	vmufat_write_begin,
-+	.write_end =	generic_write_end,
-+};
-+
-+const struct inode_operations vmufat_inode_operations = {
-+	.lookup =	vmufat_inode_lookup,
-+	.create =	vmufat_inode_create,
-+	.unlink =	vmufat_unlink,
-+};
-+
-+const struct file_operations vmufat_file_dir_operations = {
-+	.owner =	THIS_MODULE,
-+	.read =		generic_read_dir,
-+	.readdir =	vmufat_readdir,
-+	.fsync =	generic_file_fsync,
-+};
-+
-+const struct file_operations vmufat_file_operations = {
-+	.llseek =	generic_file_llseek,
-+	.read =		do_sync_read,
-+	.write =	do_sync_write,
-+	.aio_read =	generic_file_aio_read,
-+	.aio_write =	generic_file_aio_write,
-+	.fsync =	generic_file_fsync,
-+};
+On Wed, Mar 21, 2012 at 12:32:59PM +0800, Adrian McMenamin wrote:
+> +static struct dentry *vmufat_inode_lookup(struct inode *in, struct
+> dentry *dent,
+> +	struct nameidata *ignored)
+> +{
+> +	struct super_block *sb;
+> +	struct memcard *vmudetails;
+> +	struct buffer_head *bufhead = NULL;
+> +	struct inode *ino;
+> +	char name[VMUFAT_NAMELEN];
+> +	int i, j, error = -EINVAL;
+
+> +	if (!dent || !in || !in->i_sb)
+> +		goto out;
+Huh?  It is ->lookup(), isn't it?  Then none of the above can happen...
+
+> +	if (dent->d_name.len > VMUFAT_NAMELEN) {
+> +		error = -ENAMETOOLONG;
+> +		goto out;
+> +	}
+> +	sb = in->i_sb;
+> +	if (!sb->s_fs_info)
+> +		goto out;
+
+Is it possible?
+
+> +	vmudetails = sb->s_fs_info;
+> +	error = 0;
+> +
+> +	for (i = vmudetails->dir_bnum;
+> +		i > vmudetails->dir_bnum - vmudetails->dir_len; i--) {
+> +		brelse(bufhead);
+> +		bufhead = vmufat_sb_bread(sb, i);
+> +		if (!bufhead) {
+> +			error = -EIO;
+> +			goto out;
+> +		}
+> +		for (j = 0; j < VMU_DIR_ENTRIES_PER_BLOCK; j++) {
+> +			if (bufhead->b_data[j * VMU_DIR_RECORD_LEN] = 0)
+> +				goto fail;
+Two words: local variables.  Like something that would store
+bufhead->b_data + j * VMU_DIR_RECORD_LEN instead of copying that expression
+again and again...
+
+> +			/* get name and check for match */
+> +			memcpy(name,
+> +				bufhead->b_data + j * VMU_DIR_RECORD_LEN
+> +				+ VMUFAT_NAME_OFFSET, VMUFAT_NAMELEN);
+> +			if (memcmp(dent->d_name.name, name,
+
+What's the point of that name array, while we are at it?  You've copied into
+it, then compared the copy with ->d_name.name contents and never used that
+copy again.  Why bother copying at all, when comparison with the original
+would obviously work just as well?
+
+> +				dent->d_name.len) = 0) {
+> +				ino = vmufat_get_inode(sb,
+> +					le16_to_cpu(((u16 *) bufhead->b_data)
+> +					[j * VMU_DIR_RECORD_LEN16
+> +					+ VMUFAT_FIRSTBLOCK_OFFSET16]));
+> +				if (IS_ERR_OR_NULL(ino)) {
+> +					if (IS_ERR(ino))
+> +						error = PTR_ERR(ino);
+> +					else
+> +						error = -EACCES;
+> +					goto out;
+> +				}
+Please, explain that one.
+
+> +				d_add(dent, ino);
+> +				goto out;
+> +			}
+> +		}
+> +	}
+> +fail:
+> +	d_add(dent, NULL); /* Did not find the file */
+> +out:
+> +	brelse(bufhead);
+> +	return ERR_PTR(error);
+> +}
+
+> +static int vmufat_find_free(struct super_block *sb)
+> +{
+> +	struct memcard *vmudetails;
+> +	int found = 0, testblk, fatblk, error, index_to_fat;
+> +	int diff;
+> +	__le16 fatdata;
+> +	struct buffer_head *bh_fat;
+> +
+> +	if (!sb || !sb->s_fs_info) {
+
+Again, can that really happen?  The same goes for all subsequent functions
+where you do that...  Defensive programming of that kind is almost always
+wrong - it obfuscates the code and make finding bugs harder.  Please, don't
+do that kind of stuff.
+
+> +	for (fatblk = vmudetails->fat_bnum;
+> +		fatblk > vmudetails->fat_bnum - vmudetails->fat_len;
+> +		fatblk--) {
+> +		bh_fat = vmufat_sb_bread(sb, fatblk);
+> +		if (!bh_fat) {
+> +			error = -EIO;
+> +			goto fail;
+> +		}
+> +
+> +		index_to_fat = 0xFF;
+> +		/* prefer not to allocate to higher blocks if we can
+> +		 * to ensure full compatibility with Dreamcast devices */
+> +		diff = index_to_fat - VMUFAT_START_ALLOC;
+> +		for (testblk = index_to_fat; testblk > 0; testblk--) {
+> +			if (diff > 0 && testblk - diff < 0)
+> +				diff = -VMUFAT_START_ALLOC - 1;
+
+l-k != IOCCC.  This is way too convoluted for its own good - what you
+are trying to do is
+	__le16 *p = bh_fat->b_data;
+	for (i = VMUFAT_START_ALLOC; i >= 0; i--) {
+		if (p[i] = cpu_to_le16(VMUFAT_UNALLOCATED)) {
+			put_bh(bh_fat);
+			return i + <whatever>;
+		}
+	}
+	for (i = 0xff; i > VMUFAT_START_ALLOC; i--) {
+		if (p[i] = cpu_to_le16(VMUFAT_UNALLOCATED)) {
+			put_bh(bh_fat);
+			return i + <whatever>;
+		}
+	}
+	put_bh(bh_fat);
+
+with this <whatever> (i.e.
+(fatblk - 1 - vmudetails->fat_bnum + vmudetails->fat_len) * VMU_BLK_SZ16
+) IMO begging to be in a local variable as well.
+
+> +out_of_loop:
+> +	return (fatblk - 1 - vmudetails->fat_bnum + vmudetails->fat_len)
+> +			* VMU_BLK_SZ16 + testblk - diff;
+> +
+> +	printk(KERN_WARNING "VMUFAT: volume is full\n");
+
+Huh?  How are we going to get here?
+
+> +	/* Executable files must be at the start of the volume */
+> +	if (imode & EXEC) {
+
+Huh?  If you mean S_IXUGO, please say so.
+
+> +		in->i_ino = VMUFAT_ZEROBLOCK;
+> +		if (vmufat_get_fat(sb, 0) != VMUFAT_UNALLOCATED) {
+> +			printk(KERN_WARNING "VMUFAT: cannot write excutable "
+> +				"file. Volume block 0 already allocated.\n");
+
+Umm...  So one can trigger KERN_WARNING printk by normal syscalls?
+
+> +static void vmu_handle_zeroblock(int recno, struct buffer_head *bh, int ino)
+> +{
+> +	/* offset and header offset settings */
+> +	if (ino != VMUFAT_ZEROBLOCK) {
+> +		((u16 *) bh->b_data)[recno + VMUFAT_START_OFFSET16] > +		    cpu_to_le16(ino);
+> +		((u16 *) bh->b_data)[recno + VMUFAT_HEADER_OFFSET16] = 0;
+> +	} else {
+> +		((u16 *) bh->b_data)[recno + VMUFAT_START_OFFSET16] = 0;
+> +		((u16 *) bh->b_data)[recno + VMUFAT_HEADER_OFFSET16] = 1;
+
+That smells very fishy - what happens on big-endian here?
+
+> +static int vmufat_inode_create(struct inode *dir, struct dentry *de,
+> +		umode_t imode, struct nameidata *nd)
+
+> +	if (de->d_name.len > VMUFAT_NAMELEN) {
+
+How would such a dentry arrive here?  It would have to survive ->lookup()
+first, after all...
+
+> +	down_interruptible(&vmudetails->vmu_sem);
+
+The point of down_interruptible() is that we allow signals to interrupt us
+while we are waiting for that semaphore.  Doesn't your code want to know
+if we got the damn semaphore, after all?  The same goes for all subsequent
+uses of that thing.
+
+> +	vmudetails = sb->s_fs_info;
+> +	if (!vmudetails)
+> +		goto out;
+> +	error = 0;
+> +
+> +	index = filp->f_pos;
+> +	if (index > 200)
+> +		return -EIO;
+
+So lseek() past the end of directory => -EIO on readdir()?
