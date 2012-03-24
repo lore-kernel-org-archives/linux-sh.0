@@ -1,55 +1,51 @@
-From: Anton Vorontsov <anton.vorontsov@linaro.org>
-Date: Sat, 24 Mar 2012 10:30:30 +0000
-Subject: [PATCH 07/10] um: Should hold tasklist_lock while traversing processes
-Message-Id: <20120324103030.GG29067@lizard>
+From: Richard Weinberger <richard@nod.at>
+Date: Sat, 24 Mar 2012 11:12:40 +0000
+Subject: Re: [PATCH 07/10] um: Should hold tasklist_lock while traversing processes
+Message-Id: <4F6DAC28.301@nod.at>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="------------enigE41A5EA7F7A3D882738B89D5"
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120324102609.GA28356@lizard>
-In-Reply-To: <20120324102609.GA28356@lizard>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+References: <20120324102609.GA28356@lizard> <20120324103030.GG29067@lizard>
+In-Reply-To: <20120324103030.GG29067@lizard>
 To: linux-arm-kernel@lists.infradead.org
 
-Traversing the tasks requires holding tasklist_lock, otherwise it
-is unsafe.
+This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
+--------------enigE41A5EA7F7A3D882738B89D5
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
 
-p.s. However, I'm not sure that calling os_kill_ptraced_process()
-in the atomic context is correct. It seem to work, but please
-take a closer look.
+Am 24.03.2012 11:30, schrieb Anton Vorontsov:
+> Traversing the tasks requires holding tasklist_lock, otherwise it
+> is unsafe.
+>=20
+> p.s. However, I'm not sure that calling os_kill_ptraced_process()
+> in the atomic context is correct. It seem to work, but please
+> take a closer look.
 
-Signed-off-by: Anton Vorontsov <anton.vorontsov@linaro.org>
----
- arch/um/kernel/reboot.c |    3 +++
- 1 file changed, 3 insertions(+)
+os_kill_ptraced_process() calls a host function.
+=46rom UML's point of view nothing sleeps, so this is fine.
 
-diff --git a/arch/um/kernel/reboot.c b/arch/um/kernel/reboot.c
-index 4d93dff..66d754c 100644
---- a/arch/um/kernel/reboot.c
-+++ b/arch/um/kernel/reboot.c
-@@ -4,6 +4,7 @@
-  */
- 
- #include "linux/sched.h"
-+#include "linux/spinlock.h"
- #include "linux/slab.h"
- #include "kern_util.h"
- #include "os.h"
-@@ -22,6 +23,7 @@ static void kill_off_processes(void)
- 		struct task_struct *p;
- 		int pid;
- 
-+		read_lock(&tasklist_lock);
- 		for_each_process(p) {
- 			if (p->mm = NULL)
- 				continue;
-@@ -29,6 +31,7 @@ static void kill_off_processes(void)
- 			pid = p->mm->context.id.u.pid;
- 			os_kill_ptraced_process(pid, 1);
- 		}
-+		read_unlock(&tasklist_lock);
- 	}
- }
- 
--- 
-1.7.9.2
+Acked-by: Richard Weinberger <richard@nod.at>
 
+Thanks,
+//richard
+
+
+--------------enigE41A5EA7F7A3D882738B89D5
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.18 (GNU/Linux)
+
+iQEcBAEBAgAGBQJPbawoAAoJEN9758yqZn9enHsH/04wJSPdhgma1hiCpbwhLKzT
+jLaxk9Jl2lXj7n7ydXmtkkiYkO9QCi9syUAFKi5fV0HDyI4Yvo9ymPUOxAd569mQ
+p8Jo3iUBrgDKMbUAHyK+xxawB0TsLynRQbNY1iaKhbjcR9ejqKddlDXlV40GI3k0
+bU/Yk1umtUZhV9sT1ymTiHa/zAzRRhTa/AlOONRsLFWYGwtdYTm2vnDwPR0x18Zg
+kNF0OKf1/4hFCNUHYpJ8F99PDMN/T5hyJ52iXUsqeg/eJS5rJopbtsTFUxf1Fh78
+ksu1G6Xh5iWQVHQPDWcNrSN7t4oWbpb6OlsdojQYdOEXySuUtBVELMcjhwMCELU=
+=bzOH
+-----END PGP SIGNATURE-----
+
+--------------enigE41A5EA7F7A3D882738B89D5--
