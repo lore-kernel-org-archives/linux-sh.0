@@ -1,40 +1,128 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Fri, 16 Mar 2012 16:22:23 +0000
-Subject: Re: [PATCH v2] mmc: sh_mobile_sdhi: support modular mmc-core with non-standard hotplug
-Message-Id: <87fwd8bjnk.fsf@laptop.org>
+From: Anton Vorontsov <anton.vorontsov@linaro.org>
+Date: Sat, 24 Mar 2012 16:43:16 +0000
+Subject: [PATCH v2.1 01/10] cpu: Introduce clear_tasks_mm_cpumask() helper
+Message-Id: <20120324164316.GB3640@lizard>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1202271454270.32434@axis700.grange>
-	<Pine.LNX.4.64.1203091012150.7852@axis700.grange>
-	<CANqRtoQ8GSmX5U-twQjKmHcBv18RBHO_YW8DqBW8myOauebufg@mail.gmail.com>
-In-Reply-To: <CANqRtoQ8GSmX5U-twQjKmHcBv18RBHO_YW8DqBW8myOauebufg@mail.gmail.com>
-	(Magnus Damm's message of "Fri, 9 Mar 2012 22:51:21 +0900")
+References: <20120324102609.GA28356@lizard> <20120324102751.GA29067@lizard>
+ <1332593021.16159.27.camel@twins>
+In-Reply-To: <1332593021.16159.27.camel@twins>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+Many architctures clear tasks' mm_cpumask like this:
 
-On Fri, Mar 09 2012, Magnus Damm wrote:
-> On Fri, Mar 9, 2012 at 6:16 PM, Guennadi Liakhovetski
-> <g.liakhovetski@gmx.de> wrote:
->> Currently if a platform wants to implement a non-standard card-detection
->> method, it would need to call tmio_mmc_cd_wakeup(), which is an inline
->> function, calling mmc_detect_change(). For this the platform would have
->> to link mmc_core statically into the kernel, losing the ability to build
->> it as a module. This patch adds a callback to the sh_mobile_sdhi driver,
->> which eliminates this dependency.
->>
->> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
->
-> Looks good to me, thanks for this!
->
-> Acked-by: Magnus Damm <damm@opensource.se>
+	read_lock(&tasklist_lock);
+	for_each_process(p) {
+		if (p->mm)
+			cpumask_clear_cpu(cpu, mm_cpumask(p->mm));
+	}
+	read_unlock(&tasklist_lock);
 
-Pushed to mmc-next for 3.4, thanks.
+The code above has several problems, such as:
 
-- Chris.
+1. Working with task->mm w/o getting mm or grabing the task lock is
+   dangerous as ->mm might disappear (exit_mm() assigns NULL under
+   task_lock(), so tasklist lock is not enough).
+
+2. Checking for process->mm is not enough because process' main
+   thread may exit or detach its mm via use_mm(), but other threads
+   may still have a valid mm.
+
+This patch implements a small helper function that does things
+correctly, i.e.:
+
+1. We take the task's lock while whe handle its mm (we can't use
+   get_task_mm()/mmput() pair as mmput() might sleep);
+
+2. To catch exited main thread case, we use find_lock_task_mm(),
+   which walks up all threads and returns an appropriate task
+   (with task lock held).
+
+Also, Per Peter Zijlstra's idea, now we don't grab tasklist_lock in
+the new helper, instead we take the rcu read lock. We can do this
+because the function is called after the cpu is taken down and marked
+offline, so no new tasks will get this cpu set in their mm mask.
+
+Signed-off-by: Anton Vorontsov <anton.vorontsov@linaro.org>
+---
+
+On Sat, Mar 24, 2012 at 01:43:41PM +0100, Peter Zijlstra wrote:
+> On Sat, 2012-03-24 at 14:27 +0400, Anton Vorontsov wrote:
+> > +       read_unlock(&tasklist_lock);
+> > +} 
+> 
+> Why bother with the tasklist_lock at all anymore, afaict you could use
+> rcu_read_lock() here. This all is called after the cpu is taken down and
+> marked offline, so its not like new tasks will ever get this cpu set in
+> their mm mask.
+
+I guess you're right. Well, this would make the code a bit fragile,
+but a comment might help.
+
+How about this version?
+
+ include/linux/cpu.h |    1 +
+ kernel/cpu.c        |   26 ++++++++++++++++++++++++++
+ 2 files changed, 27 insertions(+)
+
+diff --git a/include/linux/cpu.h b/include/linux/cpu.h
+index 1f65875..941e865 100644
+--- a/include/linux/cpu.h
++++ b/include/linux/cpu.h
+@@ -171,6 +171,7 @@ extern void put_online_cpus(void);
+ #define hotcpu_notifier(fn, pri)	cpu_notifier(fn, pri)
+ #define register_hotcpu_notifier(nb)	register_cpu_notifier(nb)
+ #define unregister_hotcpu_notifier(nb)	unregister_cpu_notifier(nb)
++void clear_tasks_mm_cpumask(int cpu);
+ int cpu_down(unsigned int cpu);
+ 
+ #ifdef CONFIG_ARCH_CPU_PROBE_RELEASE
+diff --git a/kernel/cpu.c b/kernel/cpu.c
+index 2060c6e..ecdf499 100644
+--- a/kernel/cpu.c
++++ b/kernel/cpu.c
+@@ -10,6 +10,8 @@
+ #include <linux/sched.h>
+ #include <linux/unistd.h>
+ #include <linux/cpu.h>
++#include <linux/oom.h>
++#include <linux/rcupdate.h>
+ #include <linux/export.h>
+ #include <linux/kthread.h>
+ #include <linux/stop_machine.h>
+@@ -171,6 +173,30 @@ void __ref unregister_cpu_notifier(struct notifier_block *nb)
+ }
+ EXPORT_SYMBOL(unregister_cpu_notifier);
+ 
++void clear_tasks_mm_cpumask(int cpu)
++{
++	struct task_struct *p;
++
++	/*
++	 * This function is called after the cpu is taken down and marked
++	 * offline, so its not like new tasks will ever get this cpu set in
++	 * their mm mask. -- Peter Zijlstra
++	 * Thus, we may use rcu_read_lock() here, instead of grabbing
++	 * full-fledged tasklist_lock.
++	 */
++	rcu_read_lock();
++	for_each_process(p) {
++		struct task_struct *t;
++
++		t = find_lock_task_mm(p);
++		if (!t)
++			continue;
++		cpumask_clear_cpu(cpu, mm_cpumask(t->mm));
++		task_unlock(t);
++	}
++	rcu_read_unlock();
++}
++
+ static inline void check_for_tasks(int cpu)
+ {
+ 	struct task_struct *p;
 -- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
+1.7.9.2
+
