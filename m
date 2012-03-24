@@ -1,10 +1,65 @@
-From: "Spencer Hines & Associates \(Estate Lawyer\)s"  <thereviewcommittee2010@gmail.c
-Date: Mon, 26 Mar 2012 07:29:13 +0000
-Subject: Get back to us for details of how your name was included in Late Mr. Derek's last Will and Testament
-Message-Id: <1332746953.58454.YahooMailClassic@web1106.biz.mail.sk1.yahoo.com>
+From: Anton Vorontsov <anton.vorontsov@linaro.org>
+Date: Sat, 24 Mar 2012 10:28:59 +0000
+Subject: [PATCH 04/10] sh: Use clear_tasks_mm_cpumask()
+Message-Id: <20120324102859.GD29067@lizard>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20120324102609.GA28356@lizard>
+In-Reply-To: <20120324102609.GA28356@lizard>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
+
+Current CPU hotplug code has some task->mm handling issues:
+
+1. Working with task->mm w/o getting mm or grabing the task lock is
+   dangerous as ->mm might disappear (exit_mm() assigns NULL under
+   task_lock(), so tasklist lock is not enough).
+
+   We can't use get_task_mm()/mmput() pair as mmput() might sleep,
+   so we must take the task lock while handle its mm.
+
+2. Checking for process->mm is not enough because process' main
+   thread may exit or detach its mm via use_mm(), but other threads
+   may still have a valid mm.
+
+   To fix this we would need to use find_lock_task_mm(), which would
+   walk up all threads and returns an appropriate task (with task
+   lock held).
+
+clear_tasks_mm_cpumask() has all the issues fixed, so let's use it.
+
+Suggested-by: Oleg Nesterov <oleg@redhat.com>
+Signed-off-by: Anton Vorontsov <anton.vorontsov@linaro.org>
+---
+ arch/sh/kernel/smp.c |    7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
+
+diff --git a/arch/sh/kernel/smp.c b/arch/sh/kernel/smp.c
+index f624174..2470c83 100644
+--- a/arch/sh/kernel/smp.c
++++ b/arch/sh/kernel/smp.c
+@@ -123,7 +123,6 @@ void native_play_dead(void)
+ int __cpu_disable(void)
+ {
+ 	unsigned int cpu = smp_processor_id();
+-	struct task_struct *p;
+ 	int ret;
+ 
+ 	ret = mp_ops->cpu_disable(cpu);
+@@ -153,11 +152,7 @@ int __cpu_disable(void)
+ 	flush_cache_all();
+ 	local_flush_tlb_all();
+ 
+-	read_lock(&tasklist_lock);
+-	for_each_process(p)
+-		if (p->mm)
+-			cpumask_clear_cpu(cpu, mm_cpumask(p->mm));
+-	read_unlock(&tasklist_lock);
++	clear_tasks_mm_cpumask(cpu);
+ 
+ 	return 0;
+ }
+-- 
+1.7.9.2
 
