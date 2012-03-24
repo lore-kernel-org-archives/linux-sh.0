@@ -1,68 +1,98 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 28 Mar 2012 10:22:38 +0000
-Subject: [PATCH 02/06] ARM: mach-shmobile: Use NR_IRQS_LEGACY as IRQ offset
-Message-Id: <20120328102238.18870.85134.sendpatchset@w520>
+From: Anton Vorontsov <anton.vorontsov@linaro.org>
+Date: Sat, 24 Mar 2012 10:27:51 +0000
+Subject: [PATCH 01/10] cpu: Introduce clear_tasks_mm_cpumask() helper
+Message-Id: <20120324102751.GA29067@lizard>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120328064034.28557.13697.sendpatchset@w520>
-In-Reply-To: <20120328064034.28557.13697.sendpatchset@w520>
+References: <20120324102609.GA28356@lizard>
+In-Reply-To: <20120324102609.GA28356@lizard>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+Many architctures clear tasks' mm_cpumask like this:
 
-Use NR_IRQS_LEGACY as INTC IRQ offset on mach-shmobile.
+	read_lock(&tasklist_lock);
+	for_each_process(p) {
+		if (p->mm)
+			cpumask_clear_cpu(cpu, mm_cpumask(p->mm));
+	}
+	read_unlock(&tasklist_lock);
 
-This moves up the INTC vector 0x0200 from Linux interrupt 0
-to NR_IRQS_LEGACY which is set to 16 for the ARM architecture.
+The code above has several problems, such as:
 
-Without this change it is impossible to allocate vector 0x0200
-together with upcoming IRQ domain support.
+1. Working with task->mm w/o getting mm or grabing the task lock is
+   dangerous as ->mm might disappear (exit_mm() assigns NULL under
+   task_lock(), so tasklist lock is not enough).
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+2. Checking for process->mm is not enough because process' main
+   thread may exit or detach its mm via use_mm(), but other threads
+   may still have a valid mm.
+
+This patch implements a small helper function that does things
+correctly, i.e.:
+
+1. We take the task's lock while whe handle its mm (we can't use
+   get_task_mm()/mmput() pair as mmput() might sleep);
+
+2. To catch exited main thread case, we use find_lock_task_mm(),
+   which walks up all threads and returns an appropriate task
+   (with task lock held).
+
+Signed-off-by: Anton Vorontsov <anton.vorontsov@linaro.org>
 ---
+ include/linux/cpu.h |    1 +
+ kernel/cpu.c        |   18 ++++++++++++++++++
+ 2 files changed, 19 insertions(+)
 
- arch/arm/mach-shmobile/entry-intc.S        |    2 ++
- arch/arm/mach-shmobile/include/mach/irqs.h |    6 ++++--
- 2 files changed, 6 insertions(+), 2 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/entry-intc.S
-+++ work/arch/arm/mach-shmobile/entry-intc.S	2012-03-27 17:03:51.000000000 +0900
-@@ -9,6 +9,7 @@
-  * warranty of any kind, whether express or implied.
-  */
+diff --git a/include/linux/cpu.h b/include/linux/cpu.h
+index 1f65875..941e865 100644
+--- a/include/linux/cpu.h
++++ b/include/linux/cpu.h
+@@ -171,6 +171,7 @@ extern void put_online_cpus(void);
+ #define hotcpu_notifier(fn, pri)	cpu_notifier(fn, pri)
+ #define register_hotcpu_notifier(nb)	register_cpu_notifier(nb)
+ #define unregister_hotcpu_notifier(nb)	unregister_cpu_notifier(nb)
++void clear_tasks_mm_cpumask(int cpu);
+ int cpu_down(unsigned int cpu);
  
-+#include <asm/irq.h>
- #include <asm/entry-macro-multi.S>
+ #ifdef CONFIG_ARCH_CPU_PROBE_RELEASE
+diff --git a/kernel/cpu.c b/kernel/cpu.c
+index 2060c6e..5255936 100644
+--- a/kernel/cpu.c
++++ b/kernel/cpu.c
+@@ -10,6 +10,7 @@
+ #include <linux/sched.h>
+ #include <linux/unistd.h>
+ #include <linux/cpu.h>
++#include <linux/oom.h>
+ #include <linux/export.h>
+ #include <linux/kthread.h>
+ #include <linux/stop_machine.h>
+@@ -171,6 +172,23 @@ void __ref unregister_cpu_notifier(struct notifier_block *nb)
+ }
+ EXPORT_SYMBOL(unregister_cpu_notifier);
  
- #define INTCA_BASE	0xe6980000
-@@ -44,6 +45,7 @@
- 	/* Convert vector to irq number, same as the evt2irq() macro */
- 	lsr	\irqnr, \irqnr, #0x5
- 	subs	\irqnr, \irqnr, #16
-+	adds	\irqnr, \irqnr, #NR_IRQS_LEGACY
- 
- 1000:
- 	.endm
---- 0001/arch/arm/mach-shmobile/include/mach/irqs.h
-+++ work/arch/arm/mach-shmobile/include/mach/irqs.h	2012-03-27 17:03:41.000000000 +0900
-@@ -1,14 +1,16 @@
- #ifndef __ASM_MACH_IRQS_H
- #define __ASM_MACH_IRQS_H
- 
-+#include <asm/irq.h>
++void clear_tasks_mm_cpumask(int cpu)
++{
++	struct task_struct *p;
 +
- #define NR_IRQS         1024
- 
- /* GIC */
- #define gic_spi(nr)		((nr) + 32)
- 
- /* INTCA */
--#define evt2irq(evt)		(((evt) >> 5) - 16)
--#define irq2evt(irq)		(((irq) + 16) << 5)
-+#define evt2irq(evt)		(NR_IRQS_LEGACY + ((evt) >> 5) - 16)
-+#define irq2evt(irq)		(((irq) + 16 - NR_IRQS_LEGACY) << 5)
- 
- /* INTCS */
- #define INTCS_VECT_BASE		0x2200
++	read_lock(&tasklist_lock);
++	for_each_process(p) {
++		struct task_struct *t;
++
++		t = find_lock_task_mm(p);
++		if (!t)
++			continue;
++		cpumask_clear_cpu(cpu, mm_cpumask(t->mm));
++		task_unlock(t);
++	}
++	read_unlock(&tasklist_lock);
++}
++
+ static inline void check_for_tasks(int cpu)
+ {
+ 	struct task_struct *p;
+-- 
+1.7.9.2
+
