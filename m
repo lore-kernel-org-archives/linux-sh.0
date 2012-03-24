@@ -1,61 +1,52 @@
-From: Anton Vorontsov <anton.vorontsov@linaro.org>
-Date: Sat, 24 Mar 2012 10:31:10 +0000
-Subject: [PATCH 09/10] um: Properly check all process' threads for a live mm
-Message-Id: <20120324103110.GI29067@lizard>
+From: Richard Weinberger <richard@nod.at>
+Date: Sat, 24 Mar 2012 11:12:21 +0000
+Subject: Re: [PATCH 09/10] um: Properly check all process' threads for a live mm
+Message-Id: <4F6DAC15.7040702@nod.at>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="------------enig88EC09FADEB6B6709009C1CF"
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120324102609.GA28356@lizard>
-In-Reply-To: <20120324102609.GA28356@lizard>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+References: <20120324102609.GA28356@lizard> <20120324103110.GI29067@lizard>
+In-Reply-To: <20120324103110.GI29067@lizard>
 To: linux-arm-kernel@lists.infradead.org
 
-kill_off_processes() might miss a valid process, this is because
-checking for process->mm is not enough. Process' main thread may
-exit or detach its mm via use_mm(), but other threads may still
-have a valid mm.
+This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
+--------------enig88EC09FADEB6B6709009C1CF
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
 
-To catch this we use find_lock_task_mm(), which walks up all
-threads and returns an appropriate task (with task lock held).
+Am 24.03.2012 11:31, schrieb Anton Vorontsov:
+> kill_off_processes() might miss a valid process, this is because
+> checking for process->mm is not enough. Process' main thread may
+> exit or detach its mm via use_mm(), but other threads may still
+> have a valid mm.
+>=20
+> To catch this we use find_lock_task_mm(), which walks up all
+> threads and returns an appropriate task (with task lock held).
+>=20
+> Suggested-by: Oleg Nesterov <oleg@redhat.com>
+> Signed-off-by: Anton Vorontsov <anton.vorontsov@linaro.org>
 
-Suggested-by: Oleg Nesterov <oleg@redhat.com>
-Signed-off-by: Anton Vorontsov <anton.vorontsov@linaro.org>
----
- arch/um/kernel/reboot.c |   13 +++++++------
- 1 file changed, 7 insertions(+), 6 deletions(-)
+Acked-by: Richard Weinberger <richard@nod.at>
 
-diff --git a/arch/um/kernel/reboot.c b/arch/um/kernel/reboot.c
-index 1411f4e..3d15243 100644
---- a/arch/um/kernel/reboot.c
-+++ b/arch/um/kernel/reboot.c
-@@ -6,6 +6,7 @@
- #include "linux/sched.h"
- #include "linux/spinlock.h"
- #include "linux/slab.h"
-+#include "linux/oom.h"
- #include "kern_util.h"
- #include "os.h"
- #include "skas.h"
-@@ -25,13 +26,13 @@ static void kill_off_processes(void)
- 
- 		read_lock(&tasklist_lock);
- 		for_each_process(p) {
--			task_lock(p);
--			if (!p->mm) {
--				task_unlock(p);
-+			struct task_struct *t;
-+
-+			t = find_lock_task_mm(p);
-+			if (!t)
- 				continue;
--			}
--			pid = p->mm->context.id.u.pid;
--			task_unlock(p);
-+			pid = t->mm->context.id.u.pid;
-+			task_unlock(t);
- 			os_kill_ptraced_process(pid, 1);
- 		}
- 		read_unlock(&tasklist_lock);
--- 
-1.7.9.2
+Thanks,
+//richard
 
+
+--------------enig88EC09FADEB6B6709009C1CF
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.18 (GNU/Linux)
+
+iQEcBAEBAgAGBQJPbawWAAoJEN9758yqZn9e/icH/iVN9aQ0/yXa9SJlm4SLtuzl
+ihg243HbKaJpRbPXf+fqsEVutMgRKM+yqkVmeuTdeADDdVSoyoBb750N1fPvq7pU
+yjTzeNfWySr727F6cMgblhtKzilRd6JOq+lI3JD74T/pga6mrlIE8Os8fp6HOyfR
+sIyklQPPtXml4b1CboiWWwc8qlHSX+2I5w2pCcOSUozsFa8rPBdvtxiXVES0OdJJ
+ZFcw2OICs2DbRRJXrq1PCx/qU6e9b3kb5Mj/peSQosjIltksQNafKECm6tonM8TN
+e4ZxUnOXUxaULn9E5C7YnuQdP/0SnmF5jnKYNkNqwNIh+oqDPoVgmKnv7aG49GQ=
+=Ic2C
+-----END PGP SIGNATURE-----
+
+--------------enig88EC09FADEB6B6709009C1CF--
