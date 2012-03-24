@@ -1,61 +1,111 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Tue, 13 Mar 2012 00:26:27 +0000
-Subject: [PATCH 4/6] PM / shmobile: Make TMU driver use pm_genpd_dev_always_on()
-Message-Id: <201203130126.28000.rjw@sisk.pl>
+From: Anton Vorontsov <anton.vorontsov@linaro.org>
+Date: Sat, 24 Mar 2012 10:29:39 +0000
+Subject: [PATCH 05/10] blackfin: A couple of task->mm handling fixes
+Message-Id: <20120324102939.GE29067@lizard>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201203130123.16268.rjw@sisk.pl>
-In-Reply-To: <201203130123.16268.rjw@sisk.pl>
+References: <20120324102609.GA28356@lizard>
+In-Reply-To: <20120324102609.GA28356@lizard>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux-sh list <linux-sh@vger.kernel.org>
-Cc: Linux PM list <linux-pm@vger.kernel.org>, Paul Mundt <lethal@linux-sh.org>, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, LKML <linux-kernel@vger.kernel.org>, Cao Minh Hiep <hiepcm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+The patch fixes two problems:
 
-Make the TMU clocksource driver mark its device as "always on"
-using pm_genpd_dev_always_on() to protect it from surprise power
-removals and make sh7372_add_standard_devices() add TMU devices on
-sh7372 to the A4R power domain so that their "always on" flags
-are taken into account as appropriate.
+1. Working with task->mm w/o getting mm or grabing the task lock is
+   dangerous as ->mm might disappear (exit_mm() assigns NULL under
+   task_lock(), so tasklist lock is not enough).
 
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+   We can't use get_task_mm()/mmput() pair as mmput() might sleep,
+   so we have to take the task lock while handle its mm.
+
+2. Checking for process->mm is not enough because process' main
+   thread may exit or detach its mm via use_mm(), but other threads
+   may still have a valid mm.
+
+   To catch this we use find_lock_task_mm(), which walks up all
+   threads and returns an appropriate task (with task lock held).
+
+Suggested-by: Oleg Nesterov <oleg@redhat.com>
+Signed-off-by: Anton Vorontsov <anton.vorontsov@linaro.org>
 ---
- arch/arm/mach-shmobile/setup-sh7372.c |    2 ++
- drivers/clocksource/sh_tmu.c          |    4 ++++
- 2 files changed, 6 insertions(+)
+ arch/blackfin/kernel/trace.c |   26 +++++++++++++-------------
+ 1 file changed, 13 insertions(+), 13 deletions(-)
 
-Index: linux/drivers/clocksource/sh_tmu.c
-=================================--- linux.orig/drivers/clocksource/sh_tmu.c
-+++ linux/drivers/clocksource/sh_tmu.c
-@@ -32,6 +32,7 @@
- #include <linux/sh_timer.h>
- #include <linux/slab.h>
+diff --git a/arch/blackfin/kernel/trace.c b/arch/blackfin/kernel/trace.c
+index 050db44..5102cdf 100644
+--- a/arch/blackfin/kernel/trace.c
++++ b/arch/blackfin/kernel/trace.c
+@@ -10,6 +10,8 @@
+ #include <linux/hardirq.h>
+ #include <linux/thread_info.h>
+ #include <linux/mm.h>
++#include <linux/oom.h>
++#include <linux/sched.h>
+ #include <linux/uaccess.h>
  #include <linux/module.h>
-+#include <linux/pm_domain.h>
+ #include <linux/kallsyms.h>
+@@ -27,7 +29,6 @@ void decode_address(char *buf, unsigned long address)
+ 	struct task_struct *p;
+ 	struct mm_struct *mm;
+ 	unsigned long flags, offset;
+-	unsigned char in_atomic = (bfin_read_IPEND() & 0x10) || in_atomic();
+ 	struct rb_node *n;
  
- struct sh_tmu_priv {
- 	void __iomem *mapbase;
-@@ -410,6 +411,9 @@ static int __devinit sh_tmu_probe(struct
- 	struct sh_tmu_priv *p = platform_get_drvdata(pdev);
- 	int ret;
+ #ifdef CONFIG_KALLSYMS
+@@ -113,15 +114,15 @@ void decode_address(char *buf, unsigned long address)
+ 	 */
+ 	write_lock_irqsave(&tasklist_lock, flags);
+ 	for_each_process(p) {
+-		mm = (in_atomic ? p->mm : get_task_mm(p));
+-		if (!mm)
+-			continue;
++		struct task_struct *t;
  
-+	if (!is_early_platform_device(pdev))
-+		pm_genpd_dev_always_on(&pdev->dev, true);
+-		if (!down_read_trylock(&mm->mmap_sem)) {
+-			if (!in_atomic)
+-				mmput(mm);
++		t = find_lock_task_mm(p);
++		if (!t)
+ 			continue;
+-		}
 +
- 	if (p) {
- 		dev_info(&pdev->dev, "kept as earlytimer\n");
- 		return 0;
-Index: linux/arch/arm/mach-shmobile/setup-sh7372.c
-=================================--- linux.orig/arch/arm/mach-shmobile/setup-sh7372.c
-+++ linux/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -1043,6 +1043,8 @@ void __init sh7372_add_standard_devices(
- 	sh7372_add_device_to_domain(&sh7372_a4r, &veu2_device);
- 	sh7372_add_device_to_domain(&sh7372_a4r, &veu3_device);
- 	sh7372_add_device_to_domain(&sh7372_a4r, &jpu_device);
-+	sh7372_add_device_to_domain(&sh7372_a4r, &tmu00_device);
-+	sh7372_add_device_to_domain(&sh7372_a4r, &tmu01_device);
- }
++		mm = t->mm;
++		if (!down_read_trylock(&mm->mmap_sem))
++			goto __continue;
  
- void __init sh7372_add_early_devices(void)
+ 		for (n = rb_first(&mm->mm_rb); n; n = rb_next(n)) {
+ 			struct vm_area_struct *vma;
+@@ -130,7 +131,7 @@ void decode_address(char *buf, unsigned long address)
+ 
+ 			if (address >= vma->vm_start && address < vma->vm_end) {
+ 				char _tmpbuf[256];
+-				char *name = p->comm;
++				char *name = t->comm;
+ 				struct file *file = vma->vm_file;
+ 
+ 				if (file) {
+@@ -163,8 +164,7 @@ void decode_address(char *buf, unsigned long address)
+ 						name, vma->vm_start, vma->vm_end);
+ 
+ 				up_read(&mm->mmap_sem);
+-				if (!in_atomic)
+-					mmput(mm);
++				task_unlock(t);
+ 
+ 				if (buf[0] = '\0')
+ 					sprintf(buf, "[ %s ] dynamic memory", name);
+@@ -174,8 +174,8 @@ void decode_address(char *buf, unsigned long address)
+ 		}
+ 
+ 		up_read(&mm->mmap_sem);
+-		if (!in_atomic)
+-			mmput(mm);
++__continue:
++		task_unlock(t);
+ 	}
+ 
+ 	/*
+-- 
+1.7.9.2
 
