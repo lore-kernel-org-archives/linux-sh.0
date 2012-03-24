@@ -1,66 +1,55 @@
-From: Rob Lee <rob.lee@linaro.org>
-Date: Thu, 01 Mar 2012 20:42:32 +0000
-Subject: Re: [PATCH v7 1/9] cpuidle: Add common time keeping and irq enabling
-Message-Id: <CAMXH7KHn-bLckyXKv3mWM6GY8DQ7yJY9kLteM-xRCFWFTH1Gew@mail.gmail.com>
+From: Anton Vorontsov <anton.vorontsov@linaro.org>
+Date: Sat, 24 Mar 2012 10:30:30 +0000
+Subject: [PATCH 07/10] um: Should hold tasklist_lock while traversing processes
+Message-Id: <20120324103030.GG29067@lizard>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1330562578-3410-1-git-send-email-rob.lee@linaro.org>
- <1330562578-3410-2-git-send-email-rob.lee@linaro.org>
- <4F4EF7FC.9040403@linux.vnet.ibm.com>
-In-Reply-To: <4F4EF7FC.9040403@linux.vnet.ibm.com>
+References: <20120324102609.GA28356@lizard>
+In-Reply-To: <20120324102609.GA28356@lizard>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello Deepthi,
+Traversing the tasks requires holding tasklist_lock, otherwise it
+is unsafe.
 
-On Wed, Feb 29, 2012 at 10:15 PM, Deepthi Dharwar
-<deepthi@linux.vnet.ibm.com> wrote:
-> Hi Rob,
->
-> On 03/01/2012 06:12 AM, Robert Lee wrote:
->
->> Make necessary changes to implement time keeping and irq enabling
->> in the core cpuidle code. =A0This will allow the removal of these
->> functionalities from various platform cpuidle implementations whose
->> timekeeping and irq enabling follows the form in this common code.
->
->
-> The generic cpuidle changes look good, but is there a reason as
-> to why these changes are enabled only for ARM and not other
-> archs ?
->
+p.s. However, I'm not sure that calling os_kill_ptraced_process()
+in the atomic context is correct. It seem to work, but please
+take a closer look.
 
-Besides ARM, this patchset also enables some of this new consolidation
-functionality on arch/SH and for archs that use the
-CONFIG_ARCH_HAS_CPU_RELAX (maybe x86 uses this?).
+Signed-off-by: Anton Vorontsov <anton.vorontsov@linaro.org>
+---
+ arch/um/kernel/reboot.c |    3 +++
+ 1 file changed, 3 insertions(+)
 
-For the powerpc P-series, it could probably could be modified to use
-the consolidated timekeeping but I didn't feel comfortable making that
-change myself for a couple of reasons.  First, the common wrapper also
-includes the local_irq_enable() call, but the p-series cpuidle code
-doesn't include this call, as instead, it relies on the
-local_irq_enable() call in the cpu_idle() function in
-arch/powerpc/kernel/idle.c.  Is it OK to remove this
-local_irq_enable() once the wrapper is used?  Second, is there any
-special coordination needed with the timekeeping functions and the
-mfspr() calls?
+diff --git a/arch/um/kernel/reboot.c b/arch/um/kernel/reboot.c
+index 4d93dff..66d754c 100644
+--- a/arch/um/kernel/reboot.c
++++ b/arch/um/kernel/reboot.c
+@@ -4,6 +4,7 @@
+  */
+ 
+ #include "linux/sched.h"
++#include "linux/spinlock.h"
+ #include "linux/slab.h"
+ #include "kern_util.h"
+ #include "os.h"
+@@ -22,6 +23,7 @@ static void kill_off_processes(void)
+ 		struct task_struct *p;
+ 		int pid;
+ 
++		read_lock(&tasklist_lock);
+ 		for_each_process(p) {
+ 			if (p->mm = NULL)
+ 				continue;
+@@ -29,6 +31,7 @@ static void kill_off_processes(void)
+ 			pid = p->mm->context.id.u.pid;
+ 			os_kill_ptraced_process(pid, 1);
+ 		}
++		read_unlock(&tasklist_lock);
+ 	}
+ }
+ 
+-- 
+1.7.9.2
 
-Looking at the intel and acpi cpuidle implementations, their current
-organization does seem to be able to use the common time keeping / irq
-enabling wrapper.  Upon first glance, it appears that there are
-special timer/timekeeping requirements for x86 that aren't required by
-other platforms.  But that may not be correct.
-
-If you look back at v4 of this patch series, you'll see an attempt at
-a common timekeeping that could be used by x86 and acpi , but it
-causes other compromises that to me aren't worth the extra gain from a
-100% common timekeeping / irq enable solution.  I requested
-feedback/opinions on this issue after v4 but didn't hear anything
-about changes made to the intel or acpi implementations.  So I
-continued on with the common wrapper direction from v3 when making v5.
-
-Ultimately, even if the consolidated code only can be used by most and
-not all arch or platform cpuidle implementations, it still reduces
-some platform cpuidle fragmentation and duplicated code and hopefully
-improves the maintainability of the core cpuidle.
