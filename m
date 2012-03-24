@@ -1,175 +1,66 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 01 Mar 2012 15:07:23 +0000
-Subject: [PATCH v2 10/57] fbdev: sh_mipi_dsi: Implement sh_mobile_lcdc_entity interface
-Message-Id: <1330614490-14149-11-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Anton Vorontsov <anton.vorontsov@linaro.org>
+Date: Sat, 24 Mar 2012 10:28:08 +0000
+Subject: [PATCH 02/10] arm: Use clear_tasks_mm_cpumask()
+Message-Id: <20120324102808.GB29067@lizard>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20120324102609.GA28356@lizard>
+In-Reply-To: <20120324102609.GA28356@lizard>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Current CPU hotplug code has some task->mm handling issues:
+
+1. Working with task->mm w/o getting mm or grabing the task lock is
+   dangerous as ->mm might disappear (exit_mm() assigns NULL under
+   task_lock(), so tasklist lock is not enough).
+
+   We can't use get_task_mm()/mmput() pair as mmput() might sleep,
+   so we must take the task lock while handle its mm.
+
+2. Checking for process->mm is not enough because process' main
+   thread may exit or detach its mm via use_mm(), but other threads
+   may still have a valid mm.
+
+   To fix this we would need to use find_lock_task_mm(), which would
+   walk up all threads and returns an appropriate task (with task
+   lock held).
+
+clear_tasks_mm_cpumask() has all the issues fixed, so let's use it.
+
+Suggested-by: Oleg Nesterov <oleg@redhat.com>
+Signed-off-by: Anton Vorontsov <anton.vorontsov@linaro.org>
 ---
- drivers/video/sh_mipi_dsi.c |   66 +++++++++++++++++++++++++++++++++----------
- 1 files changed, 51 insertions(+), 15 deletions(-)
+ arch/arm/kernel/smp.c |    8 +-------
+ 1 file changed, 1 insertion(+), 7 deletions(-)
 
-diff --git a/drivers/video/sh_mipi_dsi.c b/drivers/video/sh_mipi_dsi.c
-index 05151b8..58744fe 100644
---- a/drivers/video/sh_mipi_dsi.c
-+++ b/drivers/video/sh_mipi_dsi.c
-@@ -24,6 +24,8 @@
- #include <video/sh_mipi_dsi.h>
- #include <video/sh_mobile_lcdc.h>
- 
-+#include "sh_mobile_lcdcfb.h"
-+
- #define SYSCTRL		0x0000
- #define SYSCONF		0x0004
- #define TIMSET		0x0008
-@@ -50,6 +52,8 @@
- #define MAX_SH_MIPI_DSI 2
- 
- struct sh_mipi {
-+	struct sh_mobile_lcdc_entity entity;
-+
- 	void __iomem	*base;
- 	void __iomem	*linkbase;
- 	struct clk	*dsit_clk;
-@@ -60,6 +64,8 @@ struct sh_mipi {
- 	void	(*next_display_off)(void *board_data);
- };
- 
-+#define to_sh_mipi(e)	container_of(e, struct sh_mipi, entity)
-+
- static struct sh_mipi *mipi_dsi[MAX_SH_MIPI_DSI];
- 
- /* Protect the above array */
-@@ -120,7 +126,7 @@ static void sh_mipi_dsi_enable(struct sh_mipi *mipi, bool enable)
- 
- static void sh_mipi_shutdown(struct platform_device *pdev)
+diff --git a/arch/arm/kernel/smp.c b/arch/arm/kernel/smp.c
+index cdeb727..880b93a 100644
+--- a/arch/arm/kernel/smp.c
++++ b/arch/arm/kernel/smp.c
+@@ -136,7 +136,6 @@ static void percpu_timer_stop(void);
+ int __cpu_disable(void)
  {
--	struct sh_mipi *mipi = platform_get_drvdata(pdev);
-+	struct sh_mipi *mipi = to_sh_mipi(platform_get_drvdata(pdev));
- 
- 	sh_mipi_dsi_enable(mipi, false);
- }
-@@ -392,9 +398,10 @@ static int __init sh_mipi_setup(struct sh_mipi *mipi,
- 	return 0;
- }
- 
--static void mipi_display_on(void *arg, struct fb_info *info)
-+static int __mipi_display_on(struct sh_mobile_lcdc_entity *entity,
-+			     struct fb_info *info)
- {
--	struct sh_mipi *mipi = arg;
-+	struct sh_mipi *mipi = to_sh_mipi(entity);
- 	struct sh_mipi_dsi_info *pdata = mipi->pdev->dev.platform_data;
+ 	unsigned int cpu = smp_processor_id();
+-	struct task_struct *p;
  	int ret;
  
-@@ -410,24 +417,34 @@ static void mipi_display_on(void *arg, struct fb_info *info)
+ 	ret = platform_cpu_disable(cpu);
+@@ -166,12 +165,7 @@ int __cpu_disable(void)
+ 	flush_cache_all();
+ 	local_flush_tlb_all();
  
- 	sh_mipi_dsi_enable(mipi, true);
+-	read_lock(&tasklist_lock);
+-	for_each_process(p) {
+-		if (p->mm)
+-			cpumask_clear_cpu(cpu, mm_cpumask(p->mm));
+-	}
+-	read_unlock(&tasklist_lock);
++	clear_tasks_mm_cpumask(cpu);
  
--	if (mipi->next_display_on)
--		mipi->next_display_on(mipi->next_board_data, info);
--
--	return;
-+	return 0;
- 
- mipi_display_on_fail1:
- 	pm_runtime_put_sync(&mipi->pdev->dev);
- mipi_display_on_fail2:
- 	pdata->set_dot_clock(mipi->pdev, mipi->base, 0);
-+
-+	return ret;
+ 	return 0;
  }
- 
--static void mipi_display_off(void *arg)
-+static void mipi_display_on(void *arg, struct fb_info *info)
- {
--	struct sh_mipi *mipi = arg;
--	struct sh_mipi_dsi_info *pdata = mipi->pdev->dev.platform_data;
-+	struct sh_mobile_lcdc_entity *entity = arg;
-+	struct sh_mipi *mipi = to_sh_mipi(entity);
-+	int ret;
- 
--	if (mipi->next_display_off)
--		mipi->next_display_off(mipi->next_board_data);
-+	ret = __mipi_display_on(entity, info);
-+	if (ret < 0)
-+		return;
-+
-+	if (mipi->next_display_on)
-+		mipi->next_display_on(mipi->next_board_data, info);
-+}
-+
-+static void __mipi_display_off(struct sh_mobile_lcdc_entity *entity)
-+{
-+	struct sh_mipi *mipi = to_sh_mipi(entity);
-+	struct sh_mipi_dsi_info *pdata = mipi->pdev->dev.platform_data;
- 
- 	sh_mipi_dsi_enable(mipi, false);
- 
-@@ -436,6 +453,22 @@ static void mipi_display_off(void *arg)
- 	pm_runtime_put_sync(&mipi->pdev->dev);
- }
- 
-+static void mipi_display_off(void *arg)
-+{
-+	struct sh_mobile_lcdc_entity *entity = arg;
-+	struct sh_mipi *mipi = to_sh_mipi(entity);
-+
-+	if (mipi->next_display_off)
-+		mipi->next_display_off(mipi->next_board_data);
-+
-+	__mipi_display_off(entity);
-+}
-+
-+static const struct sh_mobile_lcdc_entity_ops mipi_ops = {
-+	.display_on = __mipi_display_on,
-+	.display_off = __mipi_display_off,
-+};
-+
- static int __init sh_mipi_probe(struct platform_device *pdev)
- {
- 	struct sh_mipi *mipi;
-@@ -467,6 +500,9 @@ static int __init sh_mipi_probe(struct platform_device *pdev)
- 		goto ealloc;
- 	}
- 
-+	mipi->entity.owner = THIS_MODULE;
-+	mipi->entity.ops = &mipi_ops;
-+
- 	if (!request_mem_region(res->start, resource_size(res), pdev->name)) {
- 		dev_err(&pdev->dev, "MIPI register region already claimed\n");
- 		ret = -EBUSY;
-@@ -521,7 +557,7 @@ static int __init sh_mipi_probe(struct platform_device *pdev)
- 	pm_runtime_resume(&pdev->dev);
- 
- 	mutex_unlock(&array_lock);
--	platform_set_drvdata(pdev, mipi);
-+	platform_set_drvdata(pdev, &mipi->entity);
- 
- 	/* Save original LCDC callbacks */
- 	mipi->next_board_data = pdata->lcd_chan->board_cfg.board_data;
-@@ -529,7 +565,7 @@ static int __init sh_mipi_probe(struct platform_device *pdev)
- 	mipi->next_display_off = pdata->lcd_chan->board_cfg.display_off;
- 
- 	/* Set up LCDC callbacks */
--	pdata->lcd_chan->board_cfg.board_data = mipi;
-+	pdata->lcd_chan->board_cfg.board_data = &mipi->entity;
- 	pdata->lcd_chan->board_cfg.display_on = mipi_display_on;
- 	pdata->lcd_chan->board_cfg.display_off = mipi_display_off;
- 	pdata->lcd_chan->board_cfg.owner = THIS_MODULE;
-@@ -561,7 +597,7 @@ static int __exit sh_mipi_remove(struct platform_device *pdev)
- 	struct sh_mipi_dsi_info *pdata = pdev->dev.platform_data;
- 	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
- 	struct resource *res2 = platform_get_resource(pdev, IORESOURCE_MEM, 1);
--	struct sh_mipi *mipi = platform_get_drvdata(pdev);
-+	struct sh_mipi *mipi = to_sh_mipi(platform_get_drvdata(pdev));
- 	int i, ret;
- 
- 	mutex_lock(&array_lock);
 -- 
-1.7.3.4
+1.7.9.2
 
