@@ -1,57 +1,69 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 28 Mar 2012 07:02:38 +0000
-Subject: Re: [PATCH 1/2] dma: shdma: fix runtime PM: clear channel buffers on reset
-Message-Id: <Pine.LNX.4.64.1203280858120.4583@axis700.grange>
+From: Anton Vorontsov <anton.vorontsov@linaro.org>
+Date: Sat, 24 Mar 2012 10:28:31 +0000
+Subject: [PATCH 03/10] powerpc: Use clear_tasks_mm_cpumask()
+Message-Id: <20120324102831.GC29067@lizard>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1201041528570.30506@axis700.grange>
- <Pine.LNX.4.64.1201041532290.30506@axis700.grange> <20120328052503.GP26543@linux-sh.org>
-In-Reply-To: <20120328052503.GP26543@linux-sh.org>
+References: <20120324102609.GA28356@lizard>
+In-Reply-To: <20120324102609.GA28356@lizard>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-kernel@vger.kernel.org, Vinod Koul <vinod.koul@intel.com>, linux-sh@vger.kernel.org, linux-pm@vger.kernel.org, "Rafael J. Wysocki" <rjw@sisk.pl>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, 28 Mar 2012, Paul Mundt wrote:
+Current CPU hotplug code has some task->mm handling issues:
 
-> On Wed, Jan 04, 2012 at 03:34:17PM +0100, Guennadi Liakhovetski wrote:
-> > On platforms, supporting power domains, if the domain, containing a DMAC
-> > instance is powered down, the driver fails to resume correctly. On those
-> > platforms DMAC channels have an additional CHCLR register for clearing
-> > channel buffers. Using this register during runtime resume fixes the
-> > problem.
-> > 
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> 
-> ..
-> 
-> > @@ -139,6 +157,10 @@ static int sh_dmae_rst(struct sh_dmae_device *shdev)
-> >  		dev_warn(shdev->common.dev, "Can't initialize DMAOR.\n");
-> >  		return -EIO;
-> >  	}
-> > +	if (shdev->pdata->dmaor_init & ~dmaor)
-> > +		dev_warn(shdev->common.dev,
-> > +			 "DMAOR=0x%x hasn't latched the initial value 0x%x.\n",
-> > +			 dmaor, shdev->pdata->dmaor_init);
-> >  	return 0;
-> >  }
-> >  
-> I've just hit this on SH7786, which I suspect means that I've got it
-> wired up incorrectly somehow. This hunk also appears completely unrelated
-> to the changelog, so I'm wondering what exactly it's for. If this is a
-> probe attempt then presumably we should be handing down an error and
-> -ENODEV'ing in the init path? Is it expected that this is non-fatal in
-> the other reset cases?
+1. Working with task->mm w/o getting mm or grabing the task lock is
+   dangerous as ->mm might disappear (exit_mm() assigns NULL under
+   task_lock(), so tasklist lock is not enough).
 
-The answer is "I don't know." I'm also seeing this in several cases, e.g., 
-on sh7372 one of the two USB DMA controllers always triggers this, IIRC. 
-This failure does indeed seem to be non-fatal, and it has been simply 
-ignored in the past. I just hit it in my tests and decided it was worth 
-drawing attention to it to maybe actually find out what's going on there.
+   We can't use get_task_mm()/mmput() pair as mmput() might sleep,
+   so we must take the task lock while handle its mm.
 
-Thanks
-Guennadi
+2. Checking for process->mm is not enough because process' main
+   thread may exit or detach its mm via use_mm(), but other threads
+   may still have a valid mm.
+
+   To fix this we would need to use find_lock_task_mm(), which would
+   walk up all threads and returns an appropriate task (with task
+   lock held).
+
+clear_tasks_mm_cpumask() has all the issues fixed, so let's use it.
+
+Suggested-by: Oleg Nesterov <oleg@redhat.com>
+Signed-off-by: Anton Vorontsov <anton.vorontsov@linaro.org>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ arch/powerpc/mm/mmu_context_nohash.c |   11 ++---------
+ 1 file changed, 2 insertions(+), 9 deletions(-)
+
+diff --git a/arch/powerpc/mm/mmu_context_nohash.c b/arch/powerpc/mm/mmu_context_nohash.c
+index 5b63bd3..e779642 100644
+--- a/arch/powerpc/mm/mmu_context_nohash.c
++++ b/arch/powerpc/mm/mmu_context_nohash.c
+@@ -333,9 +333,7 @@ static int __cpuinit mmu_context_cpu_notify(struct notifier_block *self,
+ 					    unsigned long action, void *hcpu)
+ {
+ 	unsigned int cpu = (unsigned int)(long)hcpu;
+-#ifdef CONFIG_HOTPLUG_CPU
+-	struct task_struct *p;
+-#endif
++
+ 	/* We don't touch CPU 0 map, it's allocated at aboot and kept
+ 	 * around forever
+ 	 */
+@@ -358,12 +356,7 @@ static int __cpuinit mmu_context_cpu_notify(struct notifier_block *self,
+ 		stale_map[cpu] = NULL;
+ 
+ 		/* We also clear the cpu_vm_mask bits of CPUs going away */
+-		read_lock(&tasklist_lock);
+-		for_each_process(p) {
+-			if (p->mm)
+-				cpumask_clear_cpu(cpu, mm_cpumask(p->mm));
+-		}
+-		read_unlock(&tasklist_lock);
++		clear_tasks_mm_cpumask(cpu);
+ 	break;
+ #endif /* CONFIG_HOTPLUG_CPU */
+ 	}
+-- 
+1.7.9.2
+
