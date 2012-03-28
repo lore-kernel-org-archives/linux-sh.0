@@ -1,55 +1,82 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Wed, 07 Mar 2012 21:57:58 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: r8a7779 L2 cache support
-Message-Id: <201203072301.19787.rjw@sisk.pl>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 28 Mar 2012 06:40:42 +0000
+Subject: [PATCH 03/06] ARM: mach-shmobile: Introduce INTC_IRQ_PINS_16H
+Message-Id: <20120328064042.28557.17936.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120301034803.12883.22696.sendpatchset@w520>
-In-Reply-To: <20120301034803.12883.22696.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thursday, March 01, 2012, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> L2 Cache support for r8a7779. Settings taken from
-> out-of-tree kernel patches by Kouei Abe.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+From: Magnus Damm <damm@opensource.se>
 
-Applied.
+Add INTC_IRQ_PINS_16H to allow broken out support of the
+the high 16 external interrupt pins. On SoCs with 32 external
+interrupt pins the interrupt vectors for the low 16 and the
+high 16 interrupt pins are sparesly populated. The low 16 are
+at 0x0200 and high 16 are at 0x3200 which with current macros
+results in a separation of 384 linux interrupts. This sparse
+population makes it unsuitable with a single IRQ domain to
+cover the full IRQ range, so this macro breaks out the 32 pins
+into two separate 16 bit controllers to allow two independent
+INTC instances with two separate IRQ domains.
 
-Thanks,
-Rafael
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
+ arch/arm/mach-shmobile/include/mach/intc.h |   44 ++++++++++++++++++++++++++++
+ 1 file changed, 44 insertions(+)
 
-> ---
-> 
->  arch/arm/mach-shmobile/setup-r8a7779.c |    5 +++++
->  1 file changed, 5 insertions(+)
-> 
-> --- 0007/arch/arm/mach-shmobile/setup-r8a7779.c
-> +++ work/arch/arm/mach-shmobile/setup-r8a7779.c	2012-03-01 12:28:07.000000000 +0900
-> @@ -34,6 +34,7 @@
->  #include <asm/mach-types.h>
->  #include <asm/mach/arch.h>
->  #include <asm/mach/map.h>
-> +#include <asm/hardware/cache-l2x0.h>
->  
->  static struct map_desc r8a7779_io_desc[] __initdata = {
->  	/* 2M entity map for 0xf0000000 (MPCORE) */
-> @@ -242,6 +243,10 @@ static struct platform_device *r8a7779_l
->  
->  void __init r8a7779_add_standard_devices(void)
->  {
-> +#ifdef CONFIG_CACHE_L2X0
-> +	/* Early BRESP enable, Shared attribute override enable, 64K*16way */
-> +	l2x0_init(__io(0xf0100000), 0x40470000, 0x82000fff);
-> +#endif
->  	r8a7779_pm_init();
->  
->  	r8a7779_init_pm_domain(&r8a7779_sh4a);
-> 
-> 
-
+--- 0001/arch/arm/mach-shmobile/include/mach/intc.h
++++ work/arch/arm/mach-shmobile/include/mach/intc.h	2012-03-27 17:23:22.000000000 +0900
+@@ -142,6 +142,50 @@ static struct intc_desc p ## _desc __ini
+ 			     p ## _sense_registers, p ## _ack_registers) \
+ }
+ 
++#define INTC_IRQ_PINS_16H(p, base, vect, str)				\
++									\
++static struct resource p ## _resources[] __initdata = {			\
++	[0] = {								\
++		.start	= base,						\
++		.end	= base + 0x64,					\
++		.flags	= IORESOURCE_MEM,				\
++	},								\
++};									\
++									\
++enum {									\
++	p ## _UNUSED = 0,						\
++	INTC_IRQ_PINS_ENUM_16H(p),					\
++};									\
++									\
++static struct intc_vect p ## _vectors[] __initdata = {			\
++	INTC_IRQ_PINS_VECT_16H(p, vect),				\
++};									\
++									\
++static struct intc_mask_reg p ## _mask_registers[] __initdata = {	\
++	INTC_IRQ_PINS_MASK_16H(p, base),				\
++};									\
++									\
++static struct intc_prio_reg p ## _prio_registers[] __initdata = {	\
++	INTC_IRQ_PINS_PRIO_16H(p, base),				\
++};									\
++									\
++static struct intc_sense_reg p ## _sense_registers[] __initdata = {	\
++	INTC_IRQ_PINS_SENSE_16H(p, base),				\
++};									\
++									\
++static struct intc_mask_reg p ## _ack_registers[] __initdata = {	\
++	INTC_IRQ_PINS_ACK_16H(p, base),					\
++};									\
++									\
++static struct intc_desc p ## _desc __initdata = {			\
++	.name = str,							\
++	.resource = p ## _resources,					\
++	.num_resources = ARRAY_SIZE(p ## _resources),			\
++	.hw = INTC_HW_DESC(p ## _vectors, NULL,				\
++			     p ## _mask_registers, p ## _prio_registers, \
++			     p ## _sense_registers, p ## _ack_registers) \
++}
++
+ #define INTC_IRQ_PINS_32(p, base, vect, str)				\
+ 									\
+ static struct resource p ## _resources[] __initdata = {			\
