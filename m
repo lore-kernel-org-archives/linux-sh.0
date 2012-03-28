@@ -1,30 +1,23 @@
-From: Peter Zijlstra <a.p.zijlstra@chello.nl>
-Date: Sat, 24 Mar 2012 16:43:27 +0000
+From: David Rientjes <rientjes@google.com>
+Date: Wed, 28 Mar 2012 07:20:32 +0000
 Subject: Re: [PATCH 10/10] oom: Make find_lock_task_mm() sparse-aware
-Message-Id: <1332607407.16159.51.camel@twins>
+Message-Id: <alpine.DEB.2.00.1203280020100.16201@chino.kir.corp.google.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20120324102609.GA28356@lizard> <20120324103127.GJ29067@lizard>
- <1332593574.16159.31.camel@twins> <20120324162151.GA3640@lizard>
-In-Reply-To: <20120324162151.GA3640@lizard>
+ <1332593574.16159.31.camel@twins>
+In-Reply-To: <1332593574.16159.31.camel@twins>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sat, 2012-03-24 at 20:21 +0400, Anton Vorontsov wrote:
+On Sat, 24 Mar 2012, Peter Zijlstra wrote:
 
-> Just wonder how do you see the feature implemented?
+> Yeah, so Nacked-by: Peter Zijlstra <a.p.zijlstra@chello.nl>
 > 
-> Something like this?
+> Also, why didn't lockdep catch it?
 > 
-> #define __ret_cond_locked(l, c)	__attribute__((ret_cond_locked(l, c)))
-> #define __ret_value		__attribute__((ret_value))
-> #define __ret_locked_nonnull(l)	__ret_cond_locked(l, __ret_value);
+> Fix sparse already instead of smearing ugly all over.
 > 
-> extern struct task_struct *find_lock_task_mm(struct task_struct *p)
-> 	__ret_locked_nonnull(&__ret_value->alloc_lock);
 
-Yeah, see the email I just CC'ed you on to linux-sparse.
-
-Basically extend __attribute__((context())) to allow things similar to
-what you proposed.
+Fully agreed, please don't add this to the oom killer.
