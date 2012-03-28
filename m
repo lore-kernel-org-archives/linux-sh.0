@@ -1,8 +1,10 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 28 Mar 2012 06:40:50 +0000
+Date: Wed, 28 Mar 2012 10:22:54 +0000
 Subject: [PATCH 04/06] ARM: mach-shmobile: Use 0x3400 as INTCS vector offset
-Message-Id: <20120328064050.28557.46203.sendpatchset@w520>
+Message-Id: <20120328102254.18870.73004.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20120328064050.28557.46203.sendpatchset@w520>
+In-Reply-To: <20120328064050.28557.46203.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
