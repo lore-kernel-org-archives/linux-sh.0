@@ -1,38 +1,48 @@
-From: Peter Zijlstra <a.p.zijlstra@chello.nl>
-Date: Mon, 26 Mar 2012 17:23:44 +0000
+From: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+Date: Wed, 28 Mar 2012 00:01:14 +0000
 Subject: Re: [PATCH v2.1 01/10] cpu: Introduce clear_tasks_mm_cpumask() helper
-Message-Id: <1332782624.16159.145.camel@twins>
+Message-Id: <1332892874.2882.66.camel@pasglop>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20120324102609.GA28356@lizard> <20120324102751.GA29067@lizard>
  <1332593021.16159.27.camel@twins> <20120324164316.GB3640@lizard>
- <20120325174210.GA23605@redhat.com> <1332748746.16159.62.camel@twins>
- <20120326170443.GA25229@redhat.com>
-In-Reply-To: <20120326170443.GA25229@redhat.com>
+ <20120325174210.GA23605@redhat.com>
+In-Reply-To: <20120325174210.GA23605@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, 2012-03-26 at 19:04 +0200, Oleg Nesterov wrote:
+On Sun, 2012-03-25 at 19:42 +0200, Oleg Nesterov wrote:
+> > Also, Per Peter Zijlstra's idea, now we don't grab tasklist_lock in
+> > the new helper, instead we take the rcu read lock. We can do this
+> > because the function is called after the cpu is taken down and
+> marked
+> > offline, so no new tasks will get this cpu set in their mm mask.
+> 
+> And only powerpc needs rcu_read_lock() and task_lock().
+> 
+> OTOH, I do not understand why powepc does this on CPU_DEAD...
+> And probably CPU_UP_CANCELED doesn't need to clear mm_cpumask().
+> 
+> That said, personally I think these patches are fine, the common
+> helper makes sense. 
 
-> Interesting... Why? I mean, why do you dislike stop_machine() in
-> _cpu_down() ? Just curious.
+Not strictly speaking a problem with this patch, but I was wondering...
 
-It disturbs all cpus, the -rt people don't like that their FIFO tasks
-don't get to run, the trading people don't like their RDMA poll loops to
-be interrupted.. etc.
+Do we know for sure that the mmu context has been fully flushed out
+before the unplug ? idle_task_exit() will do a context switch but in our
+case that may not be enough.
 
-Now arguably, one should simply not do hotplug crap while such things
-are running, and mostly that's a perfectly fine constraint. But it
-doesn't help that people view cpu hotplug as a power savings or resource
-provisioning 'feature' and there's userspace daemons that plug
-on-demand.
+Once the CPU is offline, tlb flushes won't hit it any more so it can get
+out of sync (in some cases the offlining process is just some kind of
+deep sleep loop that doesn't involve a TLB state loss).
 
-But my ultimate goal is to completely remove synchronization that is
-actively machine wide, since we all know that as long as such stuff
-exists people will want to use it.
+Should we add a flush_tlb_mm of all those bits in that loop ? that would
+be a tad expensive... we don't have a flush_tlb_all() as a generic kind
+of accessors, but we could add something like that as a requirement for
+ppc_md.cpu_die ?
 
-Now I don't know we'll ever fully get there -- see the BKL saga -- but
-its worth trying I think. The module unload and esp. the text_poke usage
-of stop_machine are much worse offenders, since both those are
-relatively common and much harder to avoid.
+Cheers,
+Ben.
+
+
