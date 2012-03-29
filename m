@@ -1,1821 +1,2535 @@
-From: David Howells <dhowells@redhat.com>
-Date: Thu, 15 Mar 2012 20:58:59 +0000
-Subject: [PATCH 24/38] Disintegrate asm/system.h for SH [ver #3]
-Message-Id: <20120315205859.28759.34154.stgit@warthog.procyon.org.uk>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date: Thu, 29 Mar 2012 04:04:59 +0000
+Subject: [PATCH 2/2] sh: Add support pinmux for SH7734
+Message-Id: <1332993899-15946-2-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120315205514.28759.58969.stgit@warthog.procyon.org.uk>
-In-Reply-To: <20120315205514.28759.58969.stgit@warthog.procyon.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: paul.gortmaker@windriver.com
-Cc: linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org, arnd@arndb.de, David Howells <dhowells@redhat.com>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Disintegrate asm/system.h for SH.
-
-Signed-off-by: David Howells <dhowells@redhat.com>
-cc: linux-sh@vger.kernel.org
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 ---
+ arch/sh/kernel/cpu/sh4a/Makefile        |    1 +
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7734.c | 2497 +++++++++++++++++++++++++++++++
+ 2 files changed, 2498 insertions(+), 0 deletions(-)
+ create mode 100644 arch/sh/kernel/cpu/sh4a/pinmux-sh7734.c
 
- arch/sh/boards/mach-microdev/irq.c      |    1 
- arch/sh/include/asm/atomic-irq.h        |    2 
- arch/sh/include/asm/atomic.h            |    2 
- arch/sh/include/asm/auxvec.h            |    2 
- arch/sh/include/asm/barrier.h           |   54 +++++++
- arch/sh/include/asm/bitops.h            |    1 
- arch/sh/include/asm/bl_bit.h            |   10 +
- arch/sh/include/asm/bl_bit_32.h         |   33 ++++
- arch/sh/include/asm/bl_bit_64.h         |   40 +++++
- arch/sh/include/asm/bug.h               |    5 +
- arch/sh/include/asm/cache_insns.h       |   11 +
- arch/sh/include/asm/cache_insns_32.h    |   21 +++
- arch/sh/include/asm/cache_insns_64.h    |   23 +++
- arch/sh/include/asm/cmpxchg-irq.h       |    2 
- arch/sh/include/asm/cmpxchg.h           |   70 +++++++++
- arch/sh/include/asm/exec.h              |   10 +
- arch/sh/include/asm/futex-irq.h         |    1 
- arch/sh/include/asm/io.h                |    1 
- arch/sh/include/asm/processor.h         |   15 ++
- arch/sh/include/asm/ptrace.h            |    1 
- arch/sh/include/asm/setup.h             |    1 
- arch/sh/include/asm/switch_to.h         |   19 ++
- arch/sh/include/asm/switch_to_32.h      |  134 ++++++++++++++++++
- arch/sh/include/asm/switch_to_64.h      |   35 +++++
- arch/sh/include/asm/system.h            |  191 +------------------------
- arch/sh/include/asm/system_32.h         |  236 -------------------------------
- arch/sh/include/asm/system_64.h         |   79 ----------
- arch/sh/include/asm/traps.h             |   21 +++
- arch/sh/include/asm/traps_32.h          |   68 +++++++++
- arch/sh/include/asm/traps_64.h          |   24 +++
- arch/sh/include/asm/uaccess.h           |   14 ++
- arch/sh/kernel/cpu/init.c               |    2 
- arch/sh/kernel/cpu/irq/imask.c          |    1 
- arch/sh/kernel/cpu/sh2a/opcode_helper.c |    1 
- arch/sh/kernel/cpu/sh4/fpu.c            |    1 
- arch/sh/kernel/hw_breakpoint.c          |    1 
- arch/sh/kernel/idle.c                   |    2 
- arch/sh/kernel/io_trapped.c             |    1 
- arch/sh/kernel/process_32.c             |    1 
- arch/sh/kernel/process_64.c             |    1 
- arch/sh/kernel/ptrace_32.c              |    1 
- arch/sh/kernel/ptrace_64.c              |    2 
- arch/sh/kernel/reboot.c                 |    2 
- arch/sh/kernel/signal_32.c              |    1 
- arch/sh/kernel/smp.c                    |    1 
- arch/sh/kernel/traps.c                  |    2 
- arch/sh/kernel/traps_32.c               |    3 
- arch/sh/kernel/traps_64.c               |    1 
- arch/sh/math-emu/math.c                 |    1 
- arch/sh/mm/fault_32.c                   |    2 
- arch/sh/mm/fault_64.c                   |    1 
- arch/sh/mm/flush-sh4.c                  |    1 
- arch/sh/mm/pmb.c                        |    1 
- arch/sh/mm/tlb-pteaex.c                 |    1 
- arch/sh/mm/tlb-sh3.c                    |    1 
- arch/sh/mm/tlb-sh4.c                    |    1 
- arch/sh/mm/tlbflush_64.c                |    1 
- 57 files changed, 634 insertions(+), 527 deletions(-)
- create mode 100644 arch/sh/include/asm/barrier.h
- create mode 100644 arch/sh/include/asm/bl_bit.h
- create mode 100644 arch/sh/include/asm/bl_bit_32.h
- create mode 100644 arch/sh/include/asm/bl_bit_64.h
- create mode 100644 arch/sh/include/asm/cache_insns.h
- create mode 100644 arch/sh/include/asm/cache_insns_32.h
- create mode 100644 arch/sh/include/asm/cache_insns_64.h
- create mode 100644 arch/sh/include/asm/cmpxchg.h
- create mode 100644 arch/sh/include/asm/exec.h
- create mode 100644 arch/sh/include/asm/switch_to.h
- create mode 100644 arch/sh/include/asm/switch_to_32.h
- create mode 100644 arch/sh/include/asm/switch_to_64.h
- delete mode 100644 arch/sh/include/asm/system_32.h
- delete mode 100644 arch/sh/include/asm/system_64.h
- create mode 100644 arch/sh/include/asm/traps.h
- create mode 100644 arch/sh/include/asm/traps_32.h
- create mode 100644 arch/sh/include/asm/traps_64.h
-
-diff --git a/arch/sh/boards/mach-microdev/irq.c b/arch/sh/boards/mach-microdev/irq.c
-index 4fb0036..9a8aff3 100644
---- a/arch/sh/boards/mach-microdev/irq.c
-+++ b/arch/sh/boards/mach-microdev/irq.c
-@@ -12,7 +12,6 @@
- #include <linux/init.h>
- #include <linux/irq.h>
- #include <linux/interrupt.h>
--#include <asm/system.h>
- #include <asm/io.h>
- #include <mach/microdev.h>
- 
-diff --git a/arch/sh/include/asm/atomic-irq.h b/arch/sh/include/asm/atomic-irq.h
-index 467d941..9f7c566 100644
---- a/arch/sh/include/asm/atomic-irq.h
-+++ b/arch/sh/include/asm/atomic-irq.h
-@@ -1,6 +1,8 @@
- #ifndef __ASM_SH_ATOMIC_IRQ_H
- #define __ASM_SH_ATOMIC_IRQ_H
- 
-+#include <linux/irqflags.h>
-+
- /*
-  * To get proper branch prediction for the main line, we must branch
-  * forward to code at the end of this object's .text section, then
-diff --git a/arch/sh/include/asm/atomic.h b/arch/sh/include/asm/atomic.h
-index 63a27db..37f2f4a 100644
---- a/arch/sh/include/asm/atomic.h
-+++ b/arch/sh/include/asm/atomic.h
-@@ -9,7 +9,7 @@
- 
- #include <linux/compiler.h>
- #include <linux/types.h>
--#include <asm/system.h>
-+#include <asm/cmpxchg.h>
- 
- #define ATOMIC_INIT(i)	( (atomic_t) { (i) } )
- 
-diff --git a/arch/sh/include/asm/auxvec.h b/arch/sh/include/asm/auxvec.h
-index 483effd..8bcc51a 100644
---- a/arch/sh/include/asm/auxvec.h
-+++ b/arch/sh/include/asm/auxvec.h
-@@ -33,4 +33,6 @@
- #define AT_L1D_CACHESHAPE	35
- #define AT_L2_CACHESHAPE	36
- 
-+#define AT_VECTOR_SIZE_ARCH 5 /* entries in ARCH_DLINFO */
-+
- #endif /* __ASM_SH_AUXVEC_H */
-diff --git a/arch/sh/include/asm/barrier.h b/arch/sh/include/asm/barrier.h
+diff --git a/arch/sh/kernel/cpu/sh4a/Makefile b/arch/sh/kernel/cpu/sh4a/Makefile
+index ed71c3f..8fc6ec2 100644
+--- a/arch/sh/kernel/cpu/sh4a/Makefile
++++ b/arch/sh/kernel/cpu/sh4a/Makefile
+@@ -39,6 +39,7 @@ clock-$(CONFIG_CPU_SUBTYPE_SHX3)	:= clock-shx3.o
+ pinmux-$(CONFIG_CPU_SUBTYPE_SH7722)	:= pinmux-sh7722.o
+ pinmux-$(CONFIG_CPU_SUBTYPE_SH7723)	:= pinmux-sh7723.o
+ pinmux-$(CONFIG_CPU_SUBTYPE_SH7724)	:= pinmux-sh7724.o
++pinmux-$(CONFIG_CPU_SUBTYPE_SH7734)	:= pinmux-sh7734.o
+ pinmux-$(CONFIG_CPU_SUBTYPE_SH7757)	:= pinmux-sh7757.o
+ pinmux-$(CONFIG_CPU_SUBTYPE_SH7785)	:= pinmux-sh7785.o
+ pinmux-$(CONFIG_CPU_SUBTYPE_SH7786)	:= pinmux-sh7786.o
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7734.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7734.c
 new file mode 100644
-index 0000000..72c103d
+index 0000000..eed3b9d
 --- /dev/null
-+++ b/arch/sh/include/asm/barrier.h
-@@ -0,0 +1,54 @@
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7734.c
+@@ -0,0 +1,2497 @@
 +/*
-+ * Copyright (C) 1999, 2000  Niibe Yutaka  &  Kaz Kojima
-+ * Copyright (C) 2002 Paul Mundt
-+ */
-+#ifndef __ASM_SH_BARRIER_H
-+#define __ASM_SH_BARRIER_H
-+
-+#if defined(CONFIG_CPU_SH4A) || defined(CONFIG_CPU_SH5)
-+#include <asm/cache_insns.h>
-+#endif
-+
-+/*
-+ * A brief note on ctrl_barrier(), the control register write barrier.
++ * SH7734 processor support - PFC hardware block
 + *
-+ * Legacy SH cores typically require a sequence of 8 nops after
-+ * modification of a control register in order for the changes to take
-+ * effect. On newer cores (like the sh4a and sh5) this is accomplished
-+ * with icbi.
-+ *
-+ * Also note that on sh4a in the icbi case we can forego a synco for the
-+ * write barrier, as it's not necessary for control registers.
-+ *
-+ * Historically we have only done this type of barrier for the MMUCR, but
-+ * it's also necessary for the CCR, so we make it generic here instead.
-+ */
-+#if defined(CONFIG_CPU_SH4A) || defined(CONFIG_CPU_SH5)
-+#define mb()		__asm__ __volatile__ ("synco": : :"memory")
-+#define rmb()		mb()
-+#define wmb()		__asm__ __volatile__ ("synco": : :"memory")
-+#define ctrl_barrier()	__icbi(PAGE_OFFSET)
-+#define read_barrier_depends()	do { } while(0)
-+#else
-+#define mb()		__asm__ __volatile__ ("": : :"memory")
-+#define rmb()		mb()
-+#define wmb()		__asm__ __volatile__ ("": : :"memory")
-+#define ctrl_barrier()	__asm__ __volatile__ ("nop;nop;nop;nop;nop;nop;nop;nop")
-+#define read_barrier_depends()	do { } while(0)
-+#endif
-+
-+#ifdef CONFIG_SMP
-+#define smp_mb()	mb()
-+#define smp_rmb()	rmb()
-+#define smp_wmb()	wmb()
-+#define smp_read_barrier_depends()	read_barrier_depends()
-+#else
-+#define smp_mb()	barrier()
-+#define smp_rmb()	barrier()
-+#define smp_wmb()	barrier()
-+#define smp_read_barrier_depends()	do { } while(0)
-+#endif
-+
-+#define set_mb(var, value) do { (void)xchg(&var, value); } while (0)
-+
-+#endif /* __ASM_SH_BARRIER_H */
-diff --git a/arch/sh/include/asm/bitops.h b/arch/sh/include/asm/bitops.h
-index 90fa3e4..ea8706d 100644
---- a/arch/sh/include/asm/bitops.h
-+++ b/arch/sh/include/asm/bitops.h
-@@ -7,7 +7,6 @@
- #error only <linux/bitops.h> can be included directly
- #endif
- 
--#include <asm/system.h>
- /* For __swab32 */
- #include <asm/byteorder.h>
- 
-diff --git a/arch/sh/include/asm/bl_bit.h b/arch/sh/include/asm/bl_bit.h
-new file mode 100644
-index 0000000..45e6b9f
---- /dev/null
-+++ b/arch/sh/include/asm/bl_bit.h
-@@ -0,0 +1,10 @@
-+#ifndef __ASM_SH_BL_BIT_H
-+#define __ASM_SH_BL_BIT_H
-+
-+#ifdef CONFIG_SUPERH32
-+# include "bl_bit_32.h"
-+#else
-+# include "bl_bit_64.h"
-+#endif
-+
-+#endif /* __ASM_SH_BL_BIT_H */
-diff --git a/arch/sh/include/asm/bl_bit_32.h b/arch/sh/include/asm/bl_bit_32.h
-new file mode 100644
-index 0000000..fd21eee
---- /dev/null
-+++ b/arch/sh/include/asm/bl_bit_32.h
-@@ -0,0 +1,33 @@
-+#ifndef __ASM_SH_BL_BIT_32_H
-+#define __ASM_SH_BL_BIT_32_H
-+
-+static inline void set_bl_bit(void)
-+{
-+	unsigned long __dummy0, __dummy1;
-+
-+	__asm__ __volatile__ (
-+		"stc	sr, %0\n\t"
-+		"or	%2, %0\n\t"
-+		"and	%3, %0\n\t"
-+		"ldc	%0, sr\n\t"
-+		: "=&r" (__dummy0), "=r" (__dummy1)
-+		: "r" (0x10000000), "r" (0xffffff0f)
-+		: "memory"
-+	);
-+}
-+
-+static inline void clear_bl_bit(void)
-+{
-+	unsigned long __dummy0, __dummy1;
-+
-+	__asm__ __volatile__ (
-+		"stc	sr, %0\n\t"
-+		"and	%2, %0\n\t"
-+		"ldc	%0, sr\n\t"
-+		: "=&r" (__dummy0), "=r" (__dummy1)
-+		: "1" (~0x10000000)
-+		: "memory"
-+	);
-+}
-+
-+#endif /* __ASM_SH_BL_BIT_32_H */
-diff --git a/arch/sh/include/asm/bl_bit_64.h b/arch/sh/include/asm/bl_bit_64.h
-new file mode 100644
-index 0000000..6cc8711
---- /dev/null
-+++ b/arch/sh/include/asm/bl_bit_64.h
-@@ -0,0 +1,40 @@
-+/*
-+ * Copyright (C) 2000, 2001  Paolo Alberelli
-+ * Copyright (C) 2003  Paul Mundt
-+ * Copyright (C) 2004  Richard Curnow
++ * Copyright (C) 2012  Renesas Solutions Corp.
++ * Copyright (C) 2012  Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 + *
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
 + * for more details.
 + */
-+#ifndef __ASM_SH_BL_BIT_64_H
-+#define __ASM_SH_BL_BIT_64_H
-+
-+#include <asm/processor.h>
-+
-+#define SR_BL_LL	0x0000000010000000LL
-+
-+static inline void set_bl_bit(void)
-+{
-+	unsigned long long __dummy0, __dummy1 = SR_BL_LL;
-+
-+	__asm__ __volatile__("getcon	" __SR ", %0\n\t"
-+			     "or	%0, %1, %0\n\t"
-+			     "putcon	%0, " __SR "\n\t"
-+			     : "=&r" (__dummy0)
-+			     : "r" (__dummy1));
-+
-+}
-+
-+static inline void clear_bl_bit(void)
-+{
-+	unsigned long long __dummy0, __dummy1 = ~SR_BL_LL;
-+
-+	__asm__ __volatile__("getcon	" __SR ", %0\n\t"
-+			     "and	%0, %1, %0\n\t"
-+			     "putcon	%0, " __SR "\n\t"
-+			     : "=&r" (__dummy0)
-+			     : "r" (__dummy1));
-+}
-+
-+#endif /* __ASM_SH_BL_BIT_64_H */
-diff --git a/arch/sh/include/asm/bug.h b/arch/sh/include/asm/bug.h
-index 6323f86..2b87d86 100644
---- a/arch/sh/include/asm/bug.h
-+++ b/arch/sh/include/asm/bug.h
-@@ -1,6 +1,8 @@
- #ifndef __ASM_SH_BUG_H
- #define __ASM_SH_BUG_H
- 
-+#include <linux/linkage.h>
-+
- #define TRAPA_BUG_OPCODE	0xc33e	/* trapa #0x3e */
- #define BUGFLAG_UNWINDER	(1 << 1)
- 
-@@ -107,4 +109,7 @@ do {							\
- 
- #include <asm-generic/bug.h>
- 
-+struct pt_regs;
-+extern void die(const char *str, struct pt_regs *regs, long err) __attribute__ ((noreturn));
-+
- #endif /* __ASM_SH_BUG_H */
-diff --git a/arch/sh/include/asm/cache_insns.h b/arch/sh/include/asm/cache_insns.h
-new file mode 100644
-index 0000000..d25fbe5
---- /dev/null
-+++ b/arch/sh/include/asm/cache_insns.h
-@@ -0,0 +1,11 @@
-+#ifndef __ASM_SH_CACHE_INSNS_H
-+#define __ASM_SH_CACHE_INSNS_H
-+
-+
-+#ifdef CONFIG_SUPERH32
-+# include "cache_insns_32.h"
-+#else
-+# include "cache_insns_64.h"
-+#endif
-+
-+#endif /* __ASM_SH_CACHE_INSNS_H */
-diff --git a/arch/sh/include/asm/cache_insns_32.h b/arch/sh/include/asm/cache_insns_32.h
-new file mode 100644
-index 0000000..b92fe54
---- /dev/null
-+++ b/arch/sh/include/asm/cache_insns_32.h
-@@ -0,0 +1,21 @@
-+#ifndef __ASM_SH_CACHE_INSNS_32_H
-+#define __ASM_SH_CACHE_INSNS_32_H
-+
-+#include <linux/types.h>
-+
-+#if defined(CONFIG_CPU_SH4A)
-+#define __icbi(addr)	__asm__ __volatile__ ( "icbi @%0\n\t" : : "r" (addr))
-+#else
-+#define __icbi(addr)	mb()
-+#endif
-+
-+#define __ocbp(addr)	__asm__ __volatile__ ( "ocbp @%0\n\t" : : "r" (addr))
-+#define __ocbi(addr)	__asm__ __volatile__ ( "ocbi @%0\n\t" : : "r" (addr))
-+#define __ocbwb(addr)	__asm__ __volatile__ ( "ocbwb @%0\n\t" : : "r" (addr))
-+
-+static inline reg_size_t register_align(void *val)
-+{
-+	return (unsigned long)(signed long)val;
-+}
-+
-+#endif /* __ASM_SH_CACHE_INSNS_32_H */
-diff --git a/arch/sh/include/asm/cache_insns_64.h b/arch/sh/include/asm/cache_insns_64.h
-new file mode 100644
-index 0000000..70b6357
---- /dev/null
-+++ b/arch/sh/include/asm/cache_insns_64.h
-@@ -0,0 +1,23 @@
-+/*
-+ * Copyright (C) 2000, 2001  Paolo Alberelli
-+ * Copyright (C) 2003  Paul Mundt
-+ * Copyright (C) 2004  Richard Curnow
-+ *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
-+ */
-+#ifndef __ASM_SH_CACHE_INSNS_64_H
-+#define __ASM_SH_CACHE_INSNS_64_H
-+
-+#define __icbi(addr)	__asm__ __volatile__ ( "icbi %0, 0\n\t" : : "r" (addr))
-+#define __ocbp(addr)	__asm__ __volatile__ ( "ocbp %0, 0\n\t" : : "r" (addr))
-+#define __ocbi(addr)	__asm__ __volatile__ ( "ocbi %0, 0\n\t" : : "r" (addr))
-+#define __ocbwb(addr)	__asm__ __volatile__ ( "ocbwb %0, 0\n\t" : : "r" (addr))
-+
-+static inline reg_size_t register_align(void *val)
-+{
-+	return (unsigned long long)(signed long long)(signed long)val;
-+}
-+
-+#endif /* __ASM_SH_CACHE_INSNS_64_H */
-diff --git a/arch/sh/include/asm/cmpxchg-irq.h b/arch/sh/include/asm/cmpxchg-irq.h
-index 43049ec..bd11f63 100644
---- a/arch/sh/include/asm/cmpxchg-irq.h
-+++ b/arch/sh/include/asm/cmpxchg-irq.h
-@@ -1,6 +1,8 @@
- #ifndef __ASM_SH_CMPXCHG_IRQ_H
- #define __ASM_SH_CMPXCHG_IRQ_H
- 
-+#include <linux/irqflags.h>
-+
- static inline unsigned long xchg_u32(volatile u32 *m, unsigned long val)
- {
- 	unsigned long flags, retval;
-diff --git a/arch/sh/include/asm/cmpxchg.h b/arch/sh/include/asm/cmpxchg.h
-new file mode 100644
-index 0000000..f6bd140
---- /dev/null
-+++ b/arch/sh/include/asm/cmpxchg.h
-@@ -0,0 +1,70 @@
-+#ifndef __ASM_SH_CMPXCHG_H
-+#define __ASM_SH_CMPXCHG_H
-+
-+/*
-+ * Atomic operations that C can't guarantee us.  Useful for
-+ * resource counting etc..
-+ */
-+
-+#include <linux/compiler.h>
-+#include <linux/types.h>
-+
-+#if defined(CONFIG_GUSA_RB)
-+#include <asm/cmpxchg-grb.h>
-+#elif defined(CONFIG_CPU_SH4A)
-+#include <asm/cmpxchg-llsc.h>
-+#else
-+#include <asm/cmpxchg-irq.h>
-+#endif
-+
-+extern void __xchg_called_with_bad_pointer(void);
-+
-+#define __xchg(ptr, x, size)				\
-+({							\
-+	unsigned long __xchg__res;			\
-+	volatile void *__xchg_ptr = (ptr);		\
-+	switch (size) {					\
-+	case 4:						\
-+		__xchg__res = xchg_u32(__xchg_ptr, x);	\
-+		break;					\
-+	case 1:						\
-+		__xchg__res = xchg_u8(__xchg_ptr, x);	\
-+		break;					\
-+	default:					\
-+		__xchg_called_with_bad_pointer();	\
-+		__xchg__res = x;			\
-+		break;					\
-+	}						\
-+							\
-+	__xchg__res;					\
-+})
-+
-+#define xchg(ptr,x)	\
-+	((__typeof__(*(ptr)))__xchg((ptr),(unsigned long)(x), sizeof(*(ptr))))
-+
-+/* This function doesn't exist, so you'll get a linker error
-+ * if something tries to do an invalid cmpxchg(). */
-+extern void __cmpxchg_called_with_bad_pointer(void);
-+
-+#define __HAVE_ARCH_CMPXCHG 1
-+
-+static inline unsigned long __cmpxchg(volatile void * ptr, unsigned long old,
-+		unsigned long new, int size)
-+{
-+	switch (size) {
-+	case 4:
-+		return __cmpxchg_u32(ptr, old, new);
-+	}
-+	__cmpxchg_called_with_bad_pointer();
-+	return old;
-+}
-+
-+#define cmpxchg(ptr,o,n)						 \
-+  ({									 \
-+     __typeof__(*(ptr)) _o_ = (o);					 \
-+     __typeof__(*(ptr)) _n_ = (n);					 \
-+     (__typeof__(*(ptr))) __cmpxchg((ptr), (unsigned long)_o_,		 \
-+				    (unsigned long)_n_, sizeof(*(ptr))); \
-+  })
-+
-+#endif /* __ASM_SH_CMPXCHG_H */
-diff --git a/arch/sh/include/asm/exec.h b/arch/sh/include/asm/exec.h
-new file mode 100644
-index 0000000..69486a9
---- /dev/null
-+++ b/arch/sh/include/asm/exec.h
-@@ -0,0 +1,10 @@
-+/*
-+ * Copyright (C) 1999, 2000  Niibe Yutaka  &  Kaz Kojima
-+ * Copyright (C) 2002 Paul Mundt
-+ */
-+#ifndef __ASM_SH_EXEC_H
-+#define __ASM_SH_EXEC_H
-+
-+#define arch_align_stack(x) (x)
-+
-+#endif /* __ASM_SH_EXEC_H */
-diff --git a/arch/sh/include/asm/futex-irq.h b/arch/sh/include/asm/futex-irq.h
-index 6cb9f19..63d3312 100644
---- a/arch/sh/include/asm/futex-irq.h
-+++ b/arch/sh/include/asm/futex-irq.h
-@@ -1,7 +1,6 @@
- #ifndef __ASM_SH_FUTEX_IRQ_H
- #define __ASM_SH_FUTEX_IRQ_H
- 
--#include <asm/system.h>
- 
- static inline int atomic_futex_op_xchg_set(int oparg, u32 __user *uaddr,
- 					   int *oldval)
-diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-index 28c5aa5..35fc8b0 100644
---- a/arch/sh/include/asm/io.h
-+++ b/arch/sh/include/asm/io.h
-@@ -14,7 +14,6 @@
-  */
- #include <linux/errno.h>
- #include <asm/cache.h>
--#include <asm/system.h>
- #include <asm/addrspace.h>
- #include <asm/machvec.h>
- #include <asm/pgtable.h>
-diff --git a/arch/sh/include/asm/processor.h b/arch/sh/include/asm/processor.h
-index 9c7bdfc..a229c39 100644
---- a/arch/sh/include/asm/processor.h
-+++ b/arch/sh/include/asm/processor.h
-@@ -101,6 +101,10 @@ extern struct sh_cpuinfo cpu_data[];
- #define cpu_sleep()	__asm__ __volatile__ ("sleep" : : : "memory")
- #define cpu_relax()	barrier()
- 
-+void default_idle(void);
-+void cpu_idle_wait(void);
-+void stop_this_cpu(void *);
-+
- /* Forward decl */
- struct seq_operations;
- struct task_struct;
-@@ -161,6 +165,17 @@ int vsyscall_init(void);
- #define vsyscall_init() do { } while (0)
- #endif
- 
-+/*
-+ * SH-2A has both 16 and 32-bit opcodes, do lame encoding checks.
-+ */
-+#ifdef CONFIG_CPU_SH2A
-+extern unsigned int instruction_size(unsigned int insn);
-+#elif defined(CONFIG_SUPERH32)
-+#define instruction_size(insn)	(2)
-+#else
-+#define instruction_size(insn)	(4)
-+#endif
-+
- #endif /* __ASSEMBLY__ */
- 
- #ifdef CONFIG_SUPERH32
-diff --git a/arch/sh/include/asm/ptrace.h b/arch/sh/include/asm/ptrace.h
-index 2d3679b..c7b7e1e 100644
---- a/arch/sh/include/asm/ptrace.h
-+++ b/arch/sh/include/asm/ptrace.h
-@@ -37,7 +37,6 @@
- #include <linux/thread_info.h>
- #include <asm/addrspace.h>
- #include <asm/page.h>
--#include <asm/system.h>
- 
- #define user_mode(regs)			(((regs)->sr & 0x40000000)=0)
- #define kernel_stack_pointer(_regs)	((unsigned long)(_regs)->regs[15])
-diff --git a/arch/sh/include/asm/setup.h b/arch/sh/include/asm/setup.h
-index 01fa17a..465a22d 100644
---- a/arch/sh/include/asm/setup.h
-+++ b/arch/sh/include/asm/setup.h
-@@ -20,6 +20,7 @@
- 
- void sh_mv_setup(void);
- void check_for_initrd(void);
-+void per_cpu_trap_init(void);
- 
- #endif /* __KERNEL__ */
- 
-diff --git a/arch/sh/include/asm/switch_to.h b/arch/sh/include/asm/switch_to.h
-new file mode 100644
-index 0000000..62b1941
---- /dev/null
-+++ b/arch/sh/include/asm/switch_to.h
-@@ -0,0 +1,19 @@
-+/*
-+ * Copyright (C) 2000, 2001  Paolo Alberelli
-+ * Copyright (C) 2003  Paul Mundt
-+ * Copyright (C) 2004  Richard Curnow
-+ *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
-+ */
-+#ifndef __ASM_SH_SWITCH_TO_H
-+#define __ASM_SH_SWITCH_TO_H
-+
-+#ifdef CONFIG_SUPERH32
-+# include "switch_to_32.h"
-+#else
-+# include "switch_to_64.h"
-+#endif
-+
-+#endif /* __ASM_SH_SWITCH_TO_H */
-diff --git a/arch/sh/include/asm/switch_to_32.h b/arch/sh/include/asm/switch_to_32.h
-new file mode 100644
-index 0000000..0c06551
---- /dev/null
-+++ b/arch/sh/include/asm/switch_to_32.h
-@@ -0,0 +1,134 @@
-+#ifndef __ASM_SH_SWITCH_TO_32_H
-+#define __ASM_SH_SWITCH_TO_32_H
-+
-+#ifdef CONFIG_SH_DSP
-+
-+#define is_dsp_enabled(tsk)						\
-+	(!!(tsk->thread.dsp_status.status & SR_DSP))
-+
-+#define __restore_dsp(tsk)						\
-+do {									\
-+	register u32 *__ts2 __asm__ ("r2") =				\
-+			(u32 *)&tsk->thread.dsp_status;			\
-+	__asm__ __volatile__ (						\
-+		".balign 4\n\t"						\
-+		"movs.l	@r2+, a0\n\t"					\
-+		"movs.l	@r2+, a1\n\t"					\
-+		"movs.l	@r2+, a0g\n\t"					\
-+		"movs.l	@r2+, a1g\n\t"					\
-+		"movs.l	@r2+, m0\n\t"					\
-+		"movs.l	@r2+, m1\n\t"					\
-+		"movs.l	@r2+, x0\n\t"					\
-+		"movs.l	@r2+, x1\n\t"					\
-+		"movs.l	@r2+, y0\n\t"					\
-+		"movs.l	@r2+, y1\n\t"					\
-+		"lds.l	@r2+, dsr\n\t"					\
-+		"ldc.l	@r2+, rs\n\t"					\
-+		"ldc.l	@r2+, re\n\t"					\
-+		"ldc.l	@r2+, mod\n\t"					\
-+		: : "r" (__ts2));					\
-+} while (0)
-+
-+#define __save_dsp(tsk)							\
-+do {									\
-+	register u32 *__ts2 __asm__ ("r2") =				\
-+			(u32 *)&tsk->thread.dsp_status + 14;		\
-+									\
-+	__asm__ __volatile__ (						\
-+		".balign 4\n\t"						\
-+		"stc.l	mod, @-r2\n\t"					\
-+		"stc.l	re, @-r2\n\t"					\
-+		"stc.l	rs, @-r2\n\t"					\
-+		"sts.l	dsr, @-r2\n\t"					\
-+		"movs.l	y1, @-r2\n\t"					\
-+		"movs.l	y0, @-r2\n\t"					\
-+		"movs.l	x1, @-r2\n\t"					\
-+		"movs.l	x0, @-r2\n\t"					\
-+		"movs.l	m1, @-r2\n\t"					\
-+		"movs.l	m0, @-r2\n\t"					\
-+		"movs.l	a1g, @-r2\n\t"					\
-+		"movs.l	a0g, @-r2\n\t"					\
-+		"movs.l	a1, @-r2\n\t"					\
-+		"movs.l	a0, @-r2\n\t"					\
-+		: : "r" (__ts2));					\
-+} while (0)
-+
-+#else
-+
-+#define is_dsp_enabled(tsk)	(0)
-+#define __save_dsp(tsk)		do { } while (0)
-+#define __restore_dsp(tsk)	do { } while (0)
-+#endif
-+
-+struct task_struct *__switch_to(struct task_struct *prev,
-+				struct task_struct *next);
-+
-+/*
-+ *	switch_to() should switch tasks to task nr n, first
-+ */
-+#define switch_to(prev, next, last)				\
-+do {								\
-+	register u32 *__ts1 __asm__ ("r1");			\
-+	register u32 *__ts2 __asm__ ("r2");			\
-+	register u32 *__ts4 __asm__ ("r4");			\
-+	register u32 *__ts5 __asm__ ("r5");			\
-+	register u32 *__ts6 __asm__ ("r6");			\
-+	register u32 __ts7 __asm__ ("r7");			\
-+	struct task_struct *__last;				\
-+								\
-+	if (is_dsp_enabled(prev))				\
-+		__save_dsp(prev);				\
-+								\
-+	__ts1 = (u32 *)&prev->thread.sp;			\
-+	__ts2 = (u32 *)&prev->thread.pc;			\
-+	__ts4 = (u32 *)prev;					\
-+	__ts5 = (u32 *)next;					\
-+	__ts6 = (u32 *)&next->thread.sp;			\
-+	__ts7 = next->thread.pc;				\
-+								\
-+	__asm__ __volatile__ (					\
-+		".balign 4\n\t"					\
-+		"stc.l	gbr, @-r15\n\t"				\
-+		"sts.l	pr, @-r15\n\t"				\
-+		"mov.l	r8, @-r15\n\t"				\
-+		"mov.l	r9, @-r15\n\t"				\
-+		"mov.l	r10, @-r15\n\t"				\
-+		"mov.l	r11, @-r15\n\t"				\
-+		"mov.l	r12, @-r15\n\t"				\
-+		"mov.l	r13, @-r15\n\t"				\
-+		"mov.l	r14, @-r15\n\t"				\
-+		"mov.l	r15, @r1\t! save SP\n\t"		\
-+		"mov.l	@r6, r15\t! change to new stack\n\t"	\
-+		"mova	1f, %0\n\t"				\
-+		"mov.l	%0, @r2\t! save PC\n\t"			\
-+		"mov.l	2f, %0\n\t"				\
-+		"jmp	@%0\t! call __switch_to\n\t"		\
-+		" lds	r7, pr\t!  with return to new PC\n\t"	\
-+		".balign	4\n"				\
-+		"2:\n\t"					\
-+		".long	__switch_to\n"				\
-+		"1:\n\t"					\
-+		"mov.l	@r15+, r14\n\t"				\
-+		"mov.l	@r15+, r13\n\t"				\
-+		"mov.l	@r15+, r12\n\t"				\
-+		"mov.l	@r15+, r11\n\t"				\
-+		"mov.l	@r15+, r10\n\t"				\
-+		"mov.l	@r15+, r9\n\t"				\
-+		"mov.l	@r15+, r8\n\t"				\
-+		"lds.l	@r15+, pr\n\t"				\
-+		"ldc.l	@r15+, gbr\n\t"				\
-+		: "=z" (__last)					\
-+		: "r" (__ts1), "r" (__ts2), "r" (__ts4),	\
-+		  "r" (__ts5), "r" (__ts6), "r" (__ts7)		\
-+		: "r3", "t");					\
-+								\
-+	last = __last;						\
-+} while (0)
-+
-+#define finish_arch_switch(prev)				\
-+do {								\
-+	if (is_dsp_enabled(prev))				\
-+		__restore_dsp(prev);				\
-+} while (0)
-+
-+#endif /* __ASM_SH_SWITCH_TO_32_H */
-diff --git a/arch/sh/include/asm/switch_to_64.h b/arch/sh/include/asm/switch_to_64.h
-new file mode 100644
-index 0000000..ba3129d
---- /dev/null
-+++ b/arch/sh/include/asm/switch_to_64.h
-@@ -0,0 +1,35 @@
-+/*
-+ * Copyright (C) 2000, 2001  Paolo Alberelli
-+ * Copyright (C) 2003  Paul Mundt
-+ * Copyright (C) 2004  Richard Curnow
-+ *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
-+ */
-+#ifndef __ASM_SH_SWITCH_TO_64_H
-+#define __ASM_SH_SWITCH_TO_64_H
-+
-+struct thread_struct;
-+struct task_struct;
-+
-+/*
-+ *	switch_to() should switch tasks to task nr n, first
-+ */
-+struct task_struct *sh64_switch_to(struct task_struct *prev,
-+				   struct thread_struct *prev_thread,
-+				   struct task_struct *next,
-+				   struct thread_struct *next_thread);
-+
-+#define switch_to(prev,next,last)				\
-+do {								\
-+	if (last_task_used_math != next) {			\
-+		struct pt_regs *regs = next->thread.uregs;	\
-+		if (regs) regs->sr |= SR_FD;			\
-+	}							\
-+	last = sh64_switch_to(prev, &prev->thread, next,	\
-+			      &next->thread);			\
-+} while (0)
-+
-+
-+#endif /* __ASM_SH_SWITCH_TO_64_H */
-diff --git a/arch/sh/include/asm/system.h b/arch/sh/include/asm/system.h
-index 10c8b18..e2042aa 100644
---- a/arch/sh/include/asm/system.h
-+++ b/arch/sh/include/asm/system.h
-@@ -1,184 +1,9 @@
--#ifndef __ASM_SH_SYSTEM_H
--#define __ASM_SH_SYSTEM_H
--
--/*
-- * Copyright (C) 1999, 2000  Niibe Yutaka  &  Kaz Kojima
-- * Copyright (C) 2002 Paul Mundt
-- */
--
--#include <linux/irqflags.h>
--#include <linux/compiler.h>
--#include <linux/linkage.h>
--#include <asm/types.h>
--#include <asm/uncached.h>
--
--#define AT_VECTOR_SIZE_ARCH 5 /* entries in ARCH_DLINFO */
--
--/*
-- * A brief note on ctrl_barrier(), the control register write barrier.
-- *
-- * Legacy SH cores typically require a sequence of 8 nops after
-- * modification of a control register in order for the changes to take
-- * effect. On newer cores (like the sh4a and sh5) this is accomplished
-- * with icbi.
-- *
-- * Also note that on sh4a in the icbi case we can forego a synco for the
-- * write barrier, as it's not necessary for control registers.
-- *
-- * Historically we have only done this type of barrier for the MMUCR, but
-- * it's also necessary for the CCR, so we make it generic here instead.
-- */
--#if defined(CONFIG_CPU_SH4A) || defined(CONFIG_CPU_SH5)
--#define mb()		__asm__ __volatile__ ("synco": : :"memory")
--#define rmb()		mb()
--#define wmb()		__asm__ __volatile__ ("synco": : :"memory")
--#define ctrl_barrier()	__icbi(PAGE_OFFSET)
--#define read_barrier_depends()	do { } while(0)
--#else
--#define mb()		__asm__ __volatile__ ("": : :"memory")
--#define rmb()		mb()
--#define wmb()		__asm__ __volatile__ ("": : :"memory")
--#define ctrl_barrier()	__asm__ __volatile__ ("nop;nop;nop;nop;nop;nop;nop;nop")
--#define read_barrier_depends()	do { } while(0)
--#endif
--
--#ifdef CONFIG_SMP
--#define smp_mb()	mb()
--#define smp_rmb()	rmb()
--#define smp_wmb()	wmb()
--#define smp_read_barrier_depends()	read_barrier_depends()
--#else
--#define smp_mb()	barrier()
--#define smp_rmb()	barrier()
--#define smp_wmb()	barrier()
--#define smp_read_barrier_depends()	do { } while(0)
--#endif
--
--#define set_mb(var, value) do { (void)xchg(&var, value); } while (0)
--
--#ifdef CONFIG_GUSA_RB
--#include <asm/cmpxchg-grb.h>
--#elif defined(CONFIG_CPU_SH4A)
--#include <asm/cmpxchg-llsc.h>
--#else
--#include <asm/cmpxchg-irq.h>
--#endif
--
--extern void __xchg_called_with_bad_pointer(void);
--
--#define __xchg(ptr, x, size)				\
--({							\
--	unsigned long __xchg__res;			\
--	volatile void *__xchg_ptr = (ptr);		\
--	switch (size) {					\
--	case 4:						\
--		__xchg__res = xchg_u32(__xchg_ptr, x);	\
--		break;					\
--	case 1:						\
--		__xchg__res = xchg_u8(__xchg_ptr, x);	\
--		break;					\
--	default:					\
--		__xchg_called_with_bad_pointer();	\
--		__xchg__res = x;			\
--		break;					\
--	}						\
--							\
--	__xchg__res;					\
--})
--
--#define xchg(ptr,x)	\
--	((__typeof__(*(ptr)))__xchg((ptr),(unsigned long)(x), sizeof(*(ptr))))
--
--/* This function doesn't exist, so you'll get a linker error
-- * if something tries to do an invalid cmpxchg(). */
--extern void __cmpxchg_called_with_bad_pointer(void);
--
--#define __HAVE_ARCH_CMPXCHG 1
--
--static inline unsigned long __cmpxchg(volatile void * ptr, unsigned long old,
--		unsigned long new, int size)
--{
--	switch (size) {
--	case 4:
--		return __cmpxchg_u32(ptr, old, new);
--	}
--	__cmpxchg_called_with_bad_pointer();
--	return old;
--}
--
--#define cmpxchg(ptr,o,n)						 \
--  ({									 \
--     __typeof__(*(ptr)) _o_ = (o);					 \
--     __typeof__(*(ptr)) _n_ = (n);					 \
--     (__typeof__(*(ptr))) __cmpxchg((ptr), (unsigned long)_o_,		 \
--				    (unsigned long)_n_, sizeof(*(ptr))); \
--  })
--
--struct pt_regs;
--
--extern void die(const char *str, struct pt_regs *regs, long err) __attribute__ ((noreturn));
-+/* FILE TO BE DELETED. DO NOT ADD STUFF HERE! */
-+#include <asm/barrier.h>
-+#include <asm/bl_bit.h>
-+#include <asm/cache_insns.h>
-+#include <asm/cmpxchg.h>
-+#include <asm/exec.h>
-+#include <asm/switch_to.h>
-+#include <asm/traps.h>
- void free_initmem(void);
--void free_initrd_mem(unsigned long start, unsigned long end);
--
--extern void *set_exception_table_vec(unsigned int vec, void *handler);
--
--static inline void *set_exception_table_evt(unsigned int evt, void *handler)
--{
--	return set_exception_table_vec(evt >> 5, handler);
--}
--
--/*
-- * SH-2A has both 16 and 32-bit opcodes, do lame encoding checks.
-- */
--#ifdef CONFIG_CPU_SH2A
--extern unsigned int instruction_size(unsigned int insn);
--#elif defined(CONFIG_SUPERH32)
--#define instruction_size(insn)	(2)
--#else
--#define instruction_size(insn)	(4)
--#endif
--
--void per_cpu_trap_init(void);
--void default_idle(void);
--void cpu_idle_wait(void);
--void stop_this_cpu(void *);
--
--#ifdef CONFIG_SUPERH32
--#define BUILD_TRAP_HANDLER(name)					\
--asmlinkage void name##_trap_handler(unsigned long r4, unsigned long r5,	\
--				    unsigned long r6, unsigned long r7,	\
--				    struct pt_regs __regs)
--
--#define TRAP_HANDLER_DECL				\
--	struct pt_regs *regs = RELOC_HIDE(&__regs, 0);	\
--	unsigned int vec = regs->tra;			\
--	(void)vec;
--#else
--#define BUILD_TRAP_HANDLER(name)	\
--asmlinkage void name##_trap_handler(unsigned int vec, struct pt_regs *regs)
--#define TRAP_HANDLER_DECL
--#endif
--
--BUILD_TRAP_HANDLER(address_error);
--BUILD_TRAP_HANDLER(debug);
--BUILD_TRAP_HANDLER(bug);
--BUILD_TRAP_HANDLER(breakpoint);
--BUILD_TRAP_HANDLER(singlestep);
--BUILD_TRAP_HANDLER(fpu_error);
--BUILD_TRAP_HANDLER(fpu_state_restore);
--BUILD_TRAP_HANDLER(nmi);
--
--#define arch_align_stack(x) (x)
--
--struct mem_access {
--	unsigned long (*from)(void *dst, const void __user *src, unsigned long cnt);
--	unsigned long (*to)(void __user *dst, const void *src, unsigned long cnt);
--};
--
--#ifdef CONFIG_SUPERH32
--# include "system_32.h"
--#else
--# include "system_64.h"
--#endif
--
--#endif
-diff --git a/arch/sh/include/asm/system_32.h b/arch/sh/include/asm/system_32.h
-deleted file mode 100644
-index a4ad1cd..0000000
---- a/arch/sh/include/asm/system_32.h
-+++ /dev/null
-@@ -1,236 +0,0 @@
--#ifndef __ASM_SH_SYSTEM_32_H
--#define __ASM_SH_SYSTEM_32_H
--
--#include <linux/types.h>
--#include <asm/mmu.h>
--
--#ifdef CONFIG_SH_DSP
--
--#define is_dsp_enabled(tsk)						\
--	(!!(tsk->thread.dsp_status.status & SR_DSP))
--
--#define __restore_dsp(tsk)						\
--do {									\
--	register u32 *__ts2 __asm__ ("r2") =				\
--			(u32 *)&tsk->thread.dsp_status;			\
--	__asm__ __volatile__ (						\
--		".balign 4\n\t"						\
--		"movs.l	@r2+, a0\n\t"					\
--		"movs.l	@r2+, a1\n\t"					\
--		"movs.l	@r2+, a0g\n\t"					\
--		"movs.l	@r2+, a1g\n\t"					\
--		"movs.l	@r2+, m0\n\t"					\
--		"movs.l	@r2+, m1\n\t"					\
--		"movs.l	@r2+, x0\n\t"					\
--		"movs.l	@r2+, x1\n\t"					\
--		"movs.l	@r2+, y0\n\t"					\
--		"movs.l	@r2+, y1\n\t"					\
--		"lds.l	@r2+, dsr\n\t"					\
--		"ldc.l	@r2+, rs\n\t"					\
--		"ldc.l	@r2+, re\n\t"					\
--		"ldc.l	@r2+, mod\n\t"					\
--		: : "r" (__ts2));					\
--} while (0)
--
--
--#define __save_dsp(tsk)							\
--do {									\
--	register u32 *__ts2 __asm__ ("r2") =				\
--			(u32 *)&tsk->thread.dsp_status + 14;		\
--									\
--	__asm__ __volatile__ (						\
--		".balign 4\n\t"						\
--		"stc.l	mod, @-r2\n\t"					\
--		"stc.l	re, @-r2\n\t"					\
--		"stc.l	rs, @-r2\n\t"					\
--		"sts.l	dsr, @-r2\n\t"					\
--		"movs.l	y1, @-r2\n\t"					\
--		"movs.l	y0, @-r2\n\t"					\
--		"movs.l	x1, @-r2\n\t"					\
--		"movs.l	x0, @-r2\n\t"					\
--		"movs.l	m1, @-r2\n\t"					\
--		"movs.l	m0, @-r2\n\t"					\
--		"movs.l	a1g, @-r2\n\t"					\
--		"movs.l	a0g, @-r2\n\t"					\
--		"movs.l	a1, @-r2\n\t"					\
--		"movs.l	a0, @-r2\n\t"					\
--		: : "r" (__ts2));					\
--} while (0)
--
--#else
--
--#define is_dsp_enabled(tsk)	(0)
--#define __save_dsp(tsk)		do { } while (0)
--#define __restore_dsp(tsk)	do { } while (0)
--#endif
--
--#if defined(CONFIG_CPU_SH4A)
--#define __icbi(addr)	__asm__ __volatile__ ( "icbi @%0\n\t" : : "r" (addr))
--#else
--#define __icbi(addr)	mb()
--#endif
--
--#define __ocbp(addr)	__asm__ __volatile__ ( "ocbp @%0\n\t" : : "r" (addr))
--#define __ocbi(addr)	__asm__ __volatile__ ( "ocbi @%0\n\t" : : "r" (addr))
--#define __ocbwb(addr)	__asm__ __volatile__ ( "ocbwb @%0\n\t" : : "r" (addr))
--
--struct task_struct *__switch_to(struct task_struct *prev,
--				struct task_struct *next);
--
--/*
-- *	switch_to() should switch tasks to task nr n, first
-- */
--#define switch_to(prev, next, last)				\
--do {								\
--	register u32 *__ts1 __asm__ ("r1");			\
--	register u32 *__ts2 __asm__ ("r2");			\
--	register u32 *__ts4 __asm__ ("r4");			\
--	register u32 *__ts5 __asm__ ("r5");			\
--	register u32 *__ts6 __asm__ ("r6");			\
--	register u32 __ts7 __asm__ ("r7");			\
--	struct task_struct *__last;				\
--								\
--	if (is_dsp_enabled(prev))				\
--		__save_dsp(prev);				\
--								\
--	__ts1 = (u32 *)&prev->thread.sp;			\
--	__ts2 = (u32 *)&prev->thread.pc;			\
--	__ts4 = (u32 *)prev;					\
--	__ts5 = (u32 *)next;					\
--	__ts6 = (u32 *)&next->thread.sp;			\
--	__ts7 = next->thread.pc;				\
--								\
--	__asm__ __volatile__ (					\
--		".balign 4\n\t"					\
--		"stc.l	gbr, @-r15\n\t"				\
--		"sts.l	pr, @-r15\n\t"				\
--		"mov.l	r8, @-r15\n\t"				\
--		"mov.l	r9, @-r15\n\t"				\
--		"mov.l	r10, @-r15\n\t"				\
--		"mov.l	r11, @-r15\n\t"				\
--		"mov.l	r12, @-r15\n\t"				\
--		"mov.l	r13, @-r15\n\t"				\
--		"mov.l	r14, @-r15\n\t"				\
--		"mov.l	r15, @r1\t! save SP\n\t"		\
--		"mov.l	@r6, r15\t! change to new stack\n\t"	\
--		"mova	1f, %0\n\t"				\
--		"mov.l	%0, @r2\t! save PC\n\t"			\
--		"mov.l	2f, %0\n\t"				\
--		"jmp	@%0\t! call __switch_to\n\t"		\
--		" lds	r7, pr\t!  with return to new PC\n\t"	\
--		".balign	4\n"				\
--		"2:\n\t"					\
--		".long	__switch_to\n"				\
--		"1:\n\t"					\
--		"mov.l	@r15+, r14\n\t"				\
--		"mov.l	@r15+, r13\n\t"				\
--		"mov.l	@r15+, r12\n\t"				\
--		"mov.l	@r15+, r11\n\t"				\
--		"mov.l	@r15+, r10\n\t"				\
--		"mov.l	@r15+, r9\n\t"				\
--		"mov.l	@r15+, r8\n\t"				\
--		"lds.l	@r15+, pr\n\t"				\
--		"ldc.l	@r15+, gbr\n\t"				\
--		: "=z" (__last)					\
--		: "r" (__ts1), "r" (__ts2), "r" (__ts4),	\
--		  "r" (__ts5), "r" (__ts6), "r" (__ts7)		\
--		: "r3", "t");					\
--								\
--	last = __last;						\
--} while (0)
--
--#define finish_arch_switch(prev)				\
--do {								\
--	if (is_dsp_enabled(prev))				\
--		__restore_dsp(prev);				\
--} while (0)
--
--#ifdef CONFIG_CPU_HAS_SR_RB
--#define lookup_exception_vector()	\
--({					\
--	unsigned long _vec;		\
--					\
--	__asm__ __volatile__ (		\
--		"stc r2_bank, %0\n\t"	\
--		: "=r" (_vec)		\
--	);				\
--					\
--	_vec;				\
--})
--#else
--#define lookup_exception_vector()	\
--({					\
--	unsigned long _vec;		\
--	__asm__ __volatile__ (		\
--		"mov r4, %0\n\t"	\
--		: "=r" (_vec)		\
--	);				\
--					\
--	_vec;				\
--})
--#endif
--
--static inline reg_size_t register_align(void *val)
--{
--	return (unsigned long)(signed long)val;
--}
--
--int handle_unaligned_access(insn_size_t instruction, struct pt_regs *regs,
--			    struct mem_access *ma, int, unsigned long address);
--
--static inline void trigger_address_error(void)
--{
--	__asm__ __volatile__ (
--		"ldc %0, sr\n\t"
--		"mov.l @%1, %0"
--		:
--		: "r" (0x10000000), "r" (0x80000001)
--	);
--}
--
--asmlinkage void do_address_error(struct pt_regs *regs,
--				 unsigned long writeaccess,
--				 unsigned long address);
--asmlinkage void do_divide_error(unsigned long r4, unsigned long r5,
--				unsigned long r6, unsigned long r7,
--				struct pt_regs __regs);
--asmlinkage void do_reserved_inst(unsigned long r4, unsigned long r5,
--				unsigned long r6, unsigned long r7,
--				struct pt_regs __regs);
--asmlinkage void do_illegal_slot_inst(unsigned long r4, unsigned long r5,
--				unsigned long r6, unsigned long r7,
--				struct pt_regs __regs);
--asmlinkage void do_exception_error(unsigned long r4, unsigned long r5,
--				   unsigned long r6, unsigned long r7,
--				   struct pt_regs __regs);
--
--static inline void set_bl_bit(void)
--{
--	unsigned long __dummy0, __dummy1;
--
--	__asm__ __volatile__ (
--		"stc	sr, %0\n\t"
--		"or	%2, %0\n\t"
--		"and	%3, %0\n\t"
--		"ldc	%0, sr\n\t"
--		: "=&r" (__dummy0), "=r" (__dummy1)
--		: "r" (0x10000000), "r" (0xffffff0f)
--		: "memory"
--	);
--}
--
--static inline void clear_bl_bit(void)
--{
--	unsigned long __dummy0, __dummy1;
--
--	__asm__ __volatile__ (
--		"stc	sr, %0\n\t"
--		"and	%2, %0\n\t"
--		"ldc	%0, sr\n\t"
--		: "=&r" (__dummy0), "=r" (__dummy1)
--		: "1" (~0x10000000)
--		: "memory"
--	);
--}
--
--#endif /* __ASM_SH_SYSTEM_32_H */
-diff --git a/arch/sh/include/asm/system_64.h b/arch/sh/include/asm/system_64.h
-deleted file mode 100644
-index 8593bc8d..0000000
---- a/arch/sh/include/asm/system_64.h
-+++ /dev/null
-@@ -1,79 +0,0 @@
--#ifndef __ASM_SH_SYSTEM_64_H
--#define __ASM_SH_SYSTEM_64_H
--
--/*
-- * include/asm-sh/system_64.h
-- *
-- * Copyright (C) 2000, 2001  Paolo Alberelli
-- * Copyright (C) 2003  Paul Mundt
-- * Copyright (C) 2004  Richard Curnow
-- *
-- * This file is subject to the terms and conditions of the GNU General Public
-- * License.  See the file "COPYING" in the main directory of this archive
-- * for more details.
-- */
--#include <cpu/registers.h>
--#include <asm/processor.h>
--
--/*
-- *	switch_to() should switch tasks to task nr n, first
-- */
--struct thread_struct;
--struct task_struct *sh64_switch_to(struct task_struct *prev,
--				   struct thread_struct *prev_thread,
--				   struct task_struct *next,
--				   struct thread_struct *next_thread);
--
--#define switch_to(prev,next,last)				\
--do {								\
--	if (last_task_used_math != next) {			\
--		struct pt_regs *regs = next->thread.uregs;	\
--		if (regs) regs->sr |= SR_FD;			\
--	}							\
--	last = sh64_switch_to(prev, &prev->thread, next,	\
--			      &next->thread);			\
--} while (0)
--
--#define __icbi(addr)	__asm__ __volatile__ ( "icbi %0, 0\n\t" : : "r" (addr))
--#define __ocbp(addr)	__asm__ __volatile__ ( "ocbp %0, 0\n\t" : : "r" (addr))
--#define __ocbi(addr)	__asm__ __volatile__ ( "ocbi %0, 0\n\t" : : "r" (addr))
--#define __ocbwb(addr)	__asm__ __volatile__ ( "ocbwb %0, 0\n\t" : : "r" (addr))
--
--static inline reg_size_t register_align(void *val)
--{
--	return (unsigned long long)(signed long long)(signed long)val;
--}
--
--extern void phys_stext(void);
--
--static inline void trigger_address_error(void)
--{
--	phys_stext();
--}
--
--#define SR_BL_LL	0x0000000010000000LL
--
--static inline void set_bl_bit(void)
--{
--	unsigned long long __dummy0, __dummy1 = SR_BL_LL;
--
--	__asm__ __volatile__("getcon	" __SR ", %0\n\t"
--			     "or	%0, %1, %0\n\t"
--			     "putcon	%0, " __SR "\n\t"
--			     : "=&r" (__dummy0)
--			     : "r" (__dummy1));
--
--}
--
--static inline void clear_bl_bit(void)
--{
--	unsigned long long __dummy0, __dummy1 = ~SR_BL_LL;
--
--	__asm__ __volatile__("getcon	" __SR ", %0\n\t"
--			     "and	%0, %1, %0\n\t"
--			     "putcon	%0, " __SR "\n\t"
--			     : "=&r" (__dummy0)
--			     : "r" (__dummy1));
--}
--
--#endif /* __ASM_SH_SYSTEM_64_H */
-diff --git a/arch/sh/include/asm/traps.h b/arch/sh/include/asm/traps.h
-new file mode 100644
-index 0000000..afd9df8
---- /dev/null
-+++ b/arch/sh/include/asm/traps.h
-@@ -0,0 +1,21 @@
-+#ifndef __ASM_SH_TRAPS_H
-+#define __ASM_SH_TRAPS_H
-+
-+#include <linux/compiler.h>
-+
-+#ifdef CONFIG_SUPERH32
-+# include "traps_32.h"
-+#else
-+# include "traps_64.h"
-+#endif
-+
-+BUILD_TRAP_HANDLER(address_error);
-+BUILD_TRAP_HANDLER(debug);
-+BUILD_TRAP_HANDLER(bug);
-+BUILD_TRAP_HANDLER(breakpoint);
-+BUILD_TRAP_HANDLER(singlestep);
-+BUILD_TRAP_HANDLER(fpu_error);
-+BUILD_TRAP_HANDLER(fpu_state_restore);
-+BUILD_TRAP_HANDLER(nmi);
-+
-+#endif /* __ASM_SH_TRAPS_H */
-diff --git a/arch/sh/include/asm/traps_32.h b/arch/sh/include/asm/traps_32.h
-new file mode 100644
-index 0000000..cfd55ff
---- /dev/null
-+++ b/arch/sh/include/asm/traps_32.h
-@@ -0,0 +1,68 @@
-+#ifndef __ASM_SH_TRAPS_32_H
-+#define __ASM_SH_TRAPS_32_H
-+
-+#include <linux/types.h>
-+#include <asm/mmu.h>
-+
-+#ifdef CONFIG_CPU_HAS_SR_RB
-+#define lookup_exception_vector()	\
-+({					\
-+	unsigned long _vec;		\
-+					\
-+	__asm__ __volatile__ (		\
-+		"stc r2_bank, %0\n\t"	\
-+		: "=r" (_vec)		\
-+	);				\
-+					\
-+	_vec;				\
-+})
-+#else
-+#define lookup_exception_vector()	\
-+({					\
-+	unsigned long _vec;		\
-+	__asm__ __volatile__ (		\
-+		"mov r4, %0\n\t"	\
-+		: "=r" (_vec)		\
-+	);				\
-+					\
-+	_vec;				\
-+})
-+#endif
-+
-+static inline void trigger_address_error(void)
-+{
-+	__asm__ __volatile__ (
-+		"ldc %0, sr\n\t"
-+		"mov.l @%1, %0"
-+		:
-+		: "r" (0x10000000), "r" (0x80000001)
-+	);
-+}
-+
-+asmlinkage void do_address_error(struct pt_regs *regs,
-+				 unsigned long writeaccess,
-+				 unsigned long address);
-+asmlinkage void do_divide_error(unsigned long r4, unsigned long r5,
-+				unsigned long r6, unsigned long r7,
-+				struct pt_regs __regs);
-+asmlinkage void do_reserved_inst(unsigned long r4, unsigned long r5,
-+				unsigned long r6, unsigned long r7,
-+				struct pt_regs __regs);
-+asmlinkage void do_illegal_slot_inst(unsigned long r4, unsigned long r5,
-+				unsigned long r6, unsigned long r7,
-+				struct pt_regs __regs);
-+asmlinkage void do_exception_error(unsigned long r4, unsigned long r5,
-+				   unsigned long r6, unsigned long r7,
-+				   struct pt_regs __regs);
-+
-+#define BUILD_TRAP_HANDLER(name)					\
-+asmlinkage void name##_trap_handler(unsigned long r4, unsigned long r5,	\
-+				    unsigned long r6, unsigned long r7,	\
-+				    struct pt_regs __regs)
-+
-+#define TRAP_HANDLER_DECL				\
-+	struct pt_regs *regs = RELOC_HIDE(&__regs, 0);	\
-+	unsigned int vec = regs->tra;			\
-+	(void)vec;
-+
-+#endif /* __ASM_SH_TRAPS_32_H */
-diff --git a/arch/sh/include/asm/traps_64.h b/arch/sh/include/asm/traps_64.h
-new file mode 100644
-index 0000000..c52d7f9
---- /dev/null
-+++ b/arch/sh/include/asm/traps_64.h
-@@ -0,0 +1,24 @@
-+/*
-+ * Copyright (C) 2000, 2001  Paolo Alberelli
-+ * Copyright (C) 2003  Paul Mundt
-+ * Copyright (C) 2004  Richard Curnow
-+ *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
-+ */
-+#ifndef __ASM_SH_TRAPS_64_H
-+#define __ASM_SH_TRAPS_64_H
-+
-+extern void phys_stext(void);
-+
-+static inline void trigger_address_error(void)
-+{
-+	phys_stext();
-+}
-+
-+#define BUILD_TRAP_HANDLER(name)	\
-+asmlinkage void name##_trap_handler(unsigned int vec, struct pt_regs *regs)
-+#define TRAP_HANDLER_DECL
-+
-+#endif /* __ASM_SH_TRAPS_64_H */
-diff --git a/arch/sh/include/asm/uaccess.h b/arch/sh/include/asm/uaccess.h
-index 075848f..050f221 100644
---- a/arch/sh/include/asm/uaccess.h
-+++ b/arch/sh/include/asm/uaccess.h
-@@ -254,5 +254,19 @@ int fixup_exception(struct pt_regs *regs);
- unsigned long search_exception_table(unsigned long addr);
- const struct exception_table_entry *search_exception_tables(unsigned long addr);
- 
-+extern void *set_exception_table_vec(unsigned int vec, void *handler);
-+
-+static inline void *set_exception_table_evt(unsigned int evt, void *handler)
-+{
-+	return set_exception_table_vec(evt >> 5, handler);
-+}
-+
-+struct mem_access {
-+	unsigned long (*from)(void *dst, const void __user *src, unsigned long cnt);
-+	unsigned long (*to)(void __user *dst, const void *src, unsigned long cnt);
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/gpio.h>
++#include <linux/ioport.h>
++#include <cpu/sh7734.h>
++
++#define CPU_32_PORT(fn, pfx, sfx)				\
++	PORT_10(fn, pfx, sfx), PORT_10(fn, pfx##1, sfx),	\
++	PORT_10(fn, pfx##2, sfx), PORT_1(fn, pfx##30, sfx),	\
++	PORT_1(fn, pfx##31, sfx)
++
++#define CPU_32_PORT5(fn, pfx, sfx)				\
++	PORT_1(fn, pfx##0, sfx), PORT_1(fn, pfx##1, sfx),	\
++	PORT_1(fn, pfx##2, sfx), PORT_1(fn, pfx##3, sfx),	\
++	PORT_1(fn, pfx##4, sfx), PORT_1(fn, pfx##5, sfx),	\
++	PORT_1(fn, pfx##6, sfx), PORT_1(fn, pfx##7, sfx),	\
++	PORT_1(fn, pfx##8, sfx), PORT_1(fn, pfx##9, sfx),	\
++	PORT_1(fn, pfx##10, sfx), PORT_1(fn, pfx##11, sfx)
++
++/* GPSR0 - GPSR5 */
++#define CPU_ALL_PORT(fn, pfx, sfx)				\
++	CPU_32_PORT(fn, pfx##_0_, sfx),			\
++	CPU_32_PORT(fn, pfx##_1_, sfx),				\
++	CPU_32_PORT(fn, pfx##_2_, sfx),				\
++	CPU_32_PORT(fn, pfx##_3_, sfx),				\
++	CPU_32_PORT(fn, pfx##_4_, sfx),				\
++	CPU_32_PORT5(fn, pfx##_5_, sfx)
++
++#define _GP_GPIO(pfx, sfx) PINMUX_GPIO(GPIO_GP##pfx, GP##pfx##_DATA)
++#define _GP_DATA(pfx, sfx) PINMUX_DATA(GP##pfx##_DATA, GP##pfx##_FN,	\
++				       GP##pfx##_IN, GP##pfx##_OUT)
++
++#define _GP_INOUTSEL(pfx, sfx) GP##pfx##_IN, GP##pfx##_OUT
++#define _GP_INDT(pfx, sfx) GP##pfx##_DATA
++
++#define GP_ALL(str)	CPU_ALL_PORT(_PORT_ALL, GP, str)
++#define PINMUX_GPIO_GP_ALL()	CPU_ALL_PORT(_GP_GPIO, , unused)
++#define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_GP_DATA, , unused)
++
++#define PORT_10_REV(fn, pfx, sfx)	\
++	PORT_1(fn, pfx##9, sfx), PORT_1(fn, pfx##8, sfx),	\
++	PORT_1(fn, pfx##7, sfx), PORT_1(fn, pfx##6, sfx),	\
++	PORT_1(fn, pfx##5, sfx), PORT_1(fn, pfx##4, sfx),	\
++	PORT_1(fn, pfx##3, sfx), PORT_1(fn, pfx##2, sfx),	\
++	PORT_1(fn, pfx##1, sfx), PORT_1(fn, pfx##0, sfx)
++
++#define CPU_32_PORT_REV(fn, pfx, sfx)	\
++	PORT_1(fn, pfx##31, sfx), PORT_1(fn, pfx##30, sfx),	\
++	PORT_10_REV(fn, pfx##2, sfx), PORT_10_REV(fn, pfx##1, sfx),	\
++	PORT_10_REV(fn, pfx, sfx)
++
++#define GP_INOUTSEL(bank) CPU_32_PORT_REV(_GP_INOUTSEL, _##bank##_, unused)
++#define GP_INDT(bank) CPU_32_PORT_REV(_GP_INDT, _##bank##_, unused)
++
++#define PINMUX_IPSR_DATA(ipsr, fn) PINMUX_DATA(fn##_MARK, FN_##ipsr, FN_##fn)
++#define PINMUX_IPSR_MODSEL_DATA(ipsr, fn, ms) PINMUX_DATA(fn##_MARK, FN_##ms, \
++							  FN_##ipsr, FN_##fn)
++
++enum {
++	PINMUX_RESERVED = 0,
++
++	PINMUX_DATA_BEGIN,
++	GP_ALL(DATA), /* GP_0_0_DATA -> GP_5_11_DATA */
++	PINMUX_DATA_END,
++
++	PINMUX_INPUT_BEGIN,
++	GP_ALL(IN), /* GP_0_0_IN -> GP_5_11_IN */
++	PINMUX_INPUT_END,
++
++	PINMUX_OUTPUT_BEGIN,
++	GP_ALL(OUT), /* GP_0_0_OUT -> GP_5_11_OUT */
++	PINMUX_OUTPUT_END,
++
++	PINMUX_FUNCTION_BEGIN,
++	GP_ALL(FN), /* GP_0_0_FN -> GP_5_11_FN */
++
++	/* GPSR0 */
++	FN_IP1_9_8, FN_IP1_11_10, FN_IP1_13_12, FN_IP1_15_14,
++	FN_IP0_7_6, FN_IP0_9_8, FN_IP0_11_10, FN_IP0_13_12,
++	FN_IP0_15_14, FN_IP0_17_16, FN_IP0_19_18, FN_IP0_21_20,
++	FN_IP0_23_22, FN_IP0_25_24, FN_IP0_27_26, FN_IP0_29_28,
++	FN_IP0_31_30, FN_IP1_1_0, FN_IP1_3_2, FN_IP1_5_4,
++	FN_IP1_7_6, FN_IP11_28, FN_IP0_1_0, FN_IP0_3_2,
++	FN_IP0_5_4, FN_IP1_17_16, FN_IP1_19_18, FN_IP1_22_20,
++	FN_IP1_25_23, FN_IP1_28_26, FN_IP1_31_29, FN_IP2_2_0,
++
++	/* GPSR1 */
++	FN_IP3_20, FN_IP3_29_27, FN_IP11_20_19, FN_IP11_22_21,
++	FN_IP2_16_14, FN_IP2_19_17, FN_IP2_22_20, FN_IP2_24_23,
++	FN_IP2_27_25, FN_IP2_30_28, FN_IP3_1_0, FN_CLKOUT,
++	FN_BS, FN_CS0, FN_IP3_2, FN_EX_CS0,
++	FN_IP3_5_3, FN_IP3_8_6, FN_IP3_11_9, FN_IP3_14_12,
++	FN_IP3_17_15, FN_RD, FN_IP3_19_18, FN_WE0,
++	FN_WE1, FN_IP2_4_3, FN_IP3_23_21, FN_IP3_26_24,
++	FN_IP2_7_5, FN_IP2_10_8, FN_IP2_13_11, FN_IP11_25_23,
++
++	/* GPSR2 */
++	FN_IP11_6_4, FN_IP11_9_7, FN_IP11_11_10, FN_IP4_2_0,
++	FN_IP8_29_28, FN_IP11_27_26, FN_IP8_22_20, FN_IP8_25_23,
++	FN_IP11_12, FN_IP8_27_26, FN_IP4_5_3, FN_IP4_8_6,
++	FN_IP4_11_9, FN_IP4_14_12, FN_IP4_17_15, FN_IP4_19_18,
++	FN_IP4_21_20, FN_IP4_23_22, FN_IP4_25_24, FN_IP4_27_26,
++	FN_IP4_29_28, FN_IP4_31_30, FN_IP5_2_0, FN_IP5_5_3,
++	FN_IP5_8_6, FN_IP5_11_9, FN_IP5_14_12, FN_IP5_17_15,
++	FN_IP5_20_18, FN_IP5_22_21, FN_IP5_24_23, FN_IP5_26_25,
++
++	/* GPSR3 */
++	FN_IP6_2_0, FN_IP6_5_3, FN_IP6_7_6, FN_IP6_9_8,
++	FN_IP6_11_10, FN_IP6_13_12, FN_IP6_15_14, FN_IP6_17_16,
++	FN_IP6_20_18, FN_IP6_23_21, FN_IP7_2_0, FN_IP7_5_3,
++	FN_IP7_8_6, FN_IP7_11_9, FN_IP7_14_12, FN_IP7_17_15,
++	FN_IP7_20_18, FN_IP7_23_21, FN_IP7_26_24, FN_IP7_28_27,
++	FN_IP7_30_29, FN_IP8_1_0, FN_IP8_3_2, FN_IP8_5_4,
++	FN_IP8_7_6, FN_IP8_9_8, FN_IP8_11_10, FN_IP8_13_12,
++	FN_IP8_15_14, FN_IP8_17_16, FN_IP8_19_18, FN_IP9_1_0,
++
++	/* GPSR4 */
++	FN_IP9_19_18, FN_IP9_21_20, FN_IP9_23_22, FN_IP9_25_24,
++	FN_IP9_11_10, FN_IP9_13_12, FN_IP9_15_14, FN_IP9_17_16,
++	FN_IP9_3_2, FN_IP9_5_4, FN_IP9_7_6, FN_IP9_9_8,
++	FN_IP9_27_26, FN_IP9_29_28, FN_IP10_2_0, FN_IP10_5_3,
++	FN_IP10_8_6, FN_IP10_11_9, FN_IP10_14_12, FN_IP10_15,
++	FN_IP10_18_16, FN_IP10_21_19, FN_IP11_0, FN_IP11_1,
++	FN_SCL0, FN_IP11_2, FN_PENC0, FN_IP11_15_13, /* Need check*/
++	FN_USB_OVC0, FN_IP11_18_16,
++	FN_IP10_22, FN_IP10_24_23,
++
++	/* GPSR5 */
++	FN_IP10_25, FN_IP11_3, FN_IRQ2_B, FN_IRQ3_B,
++	FN_IP10_27_26, /* 10 */
++	FN_IP10_29_28, /* 11 */
++
++	/* IPSR0 */
++	FN_A15, FN_ST0_VCO_CLKIN, FN_LCD_DATA15_A, FN_TIOC3D_C,
++	FN_A14, FN_LCD_DATA14_A, FN_TIOC3C_C,
++	FN_A13, FN_LCD_DATA13_A, FN_TIOC3B_C,
++	FN_A12, FN_LCD_DATA12_A, FN_TIOC3A_C,
++	FN_A11, FN_ST0_D7, FN_LCD_DATA11_A, FN_TIOC2B_C,
++	FN_A10, FN_ST0_D6, FN_LCD_DATA10_A, FN_TIOC2A_C,
++	FN_A9, FN_ST0_D5, FN_LCD_DATA9_A, FN_TIOC1B_C,
++	FN_A8, FN_ST0_D4, FN_LCD_DATA8_A, FN_TIOC1A_C,
++	FN_A7, FN_ST0_D3, FN_LCD_DATA7_A, FN_TIOC0D_C,
++	FN_A6, FN_ST0_D2, FN_LCD_DATA6_A, FN_TIOC0C_C,
++	FN_A5, FN_ST0_D1, FN_LCD_DATA5_A, FN_TIOC0B_C,
++	FN_A4, FN_ST0_D0, FN_LCD_DATA4_A, FN_TIOC0A_C,
++	FN_A3, FN_ST0_VLD, FN_LCD_DATA3_A, FN_TCLKD_C,
++	FN_A2, FN_ST0_SYC, FN_LCD_DATA2_A, FN_TCLKC_C,
++	FN_A1, FN_ST0_REQ, FN_LCD_DATA1_A, FN_TCLKB_C,
++	FN_A0, FN_ST0_CLKIN, FN_LCD_DATA0_A, FN_TCLKA_C,
++
++	/* IPSR1 */
++	FN_D3, FN_SD0_DAT3_A, FN_MMC_D3_A, FN_ST1_D6, FN_FD3_A,
++	FN_D2, FN_SD0_DAT2_A, FN_MMC_D2_A, FN_ST1_D5, FN_FD2_A,
++	FN_D1, FN_SD0_DAT1_A, FN_MMC_D1_A, FN_ST1_D4, FN_FD1_A,
++	FN_D0, FN_SD0_DAT0_A, FN_MMC_D0_A, FN_ST1_D3, FN_FD0_A,
++	FN_A25, FN_TX2_D, FN_ST1_D2,
++	FN_A24, FN_RX2_D, FN_ST1_D1,
++	FN_A23, FN_ST1_D0, FN_LCD_M_DISP_A,
++	FN_A22, FN_ST1_VLD, FN_LCD_VEPWC_A,
++	FN_A21, FN_ST1_SYC, FN_LCD_VCPWC_A,
++	FN_A20, FN_ST1_REQ, FN_LCD_FLM_A,
++	FN_A19, FN_ST1_CLKIN, FN_LCD_CLK_A,	FN_TIOC4D_C,
++	FN_A18, FN_ST1_PWM, FN_LCD_CL2_A, FN_TIOC4C_C,
++	FN_A17, FN_ST1_VCO_CLKIN, FN_LCD_CL1_A,	FN_TIOC4B_C,
++	FN_A16, FN_ST0_PWM, FN_LCD_DON_A, FN_TIOC4A_C,
++
++	/* IPSR2 */
++	FN_D14, FN_TX2_B, FN_FSE_A, FN_ET0_TX_CLK_B,
++	FN_D13, FN_RX2_B, FN_FRB_A,	FN_ET0_ETXD6_B,
++	FN_D12, FN_FWE_A, FN_ET0_ETXD5_B,
++	FN_D11, FN_RSPI_MISO_A, FN_QMI_QIO1_A, FN_FRE_A,
++		FN_ET0_ETXD3_B,
++	FN_D10, FN_RSPI_MOSI_A, FN_QMO_QIO0_A, FN_FALE_A,
++		FN_ET0_ETXD2_B,
++	FN_D9, FN_SD0_CMD_A, FN_MMC_CMD_A, FN_QIO3_A, FN_FCLE_A,
++		FN_ET0_ETXD1_B,
++	FN_D8, FN_SD0_CLK_A, FN_MMC_CLK_A, FN_QIO2_A, FN_FCE_A,
++		FN_ET0_GTX_CLK_B,
++	FN_D7, FN_RSPI_SSL_A, FN_MMC_D7_A, FN_QSSL_A, FN_FD7_A,
++	FN_D6, FN_RSPI_RSPCK_A, FN_MMC_D6_A, FN_QSPCLK_A, FN_FD6_A,
++	FN_D5, FN_SD0_WP_A, FN_MMC_D5_A, FN_FD5_A,
++	FN_D4, FN_SD0_CD_A, FN_MMC_D4_A, FN_ST1_D7, FN_FD4_A,
++
++	/* IPSR3 */
++	FN_DRACK0, FN_SD1_DAT2_A, FN_ATAG, FN_TCLK1_A, FN_ET0_ETXD7,
++	FN_EX_WAIT2, FN_SD1_DAT1_A, FN_DACK2, FN_CAN1_RX_C,
++		FN_ET0_MAGIC_C, FN_ET0_ETXD6_A,
++	FN_EX_WAIT1, FN_SD1_DAT0_A, FN_DREQ2, FN_CAN1_TX_C,
++		FN_ET0_LINK_C, FN_ET0_ETXD5_A,
++	FN_EX_WAIT0, FN_TCLK1_B,
++	FN_RD_WR, FN_TCLK0, FN_CAN_CLK_B, FN_ET0_ETXD4,
++	FN_EX_CS5, FN_SD1_CMD_A, FN_ATADIR, FN_QSSL_B, FN_ET0_ETXD3_A,
++	FN_EX_CS4, FN_SD1_WP_A, FN_ATAWR, FN_QMI_QIO1_B, FN_ET0_ETXD2_A,
++	FN_EX_CS3, FN_SD1_CD_A, FN_ATARD, FN_QMO_QIO0_B, FN_ET0_ETXD1_A,
++	FN_EX_CS2, FN_TX3_B, FN_ATACS1, FN_QSPCLK_B, FN_ET0_GTX_CLK_A,
++	FN_EX_CS1, FN_RX3_B, FN_ATACS0, FN_QIO2_B, FN_ET0_ETXD0,
++	FN_CS1_A26, FN_QIO3_B,
++	FN_D15, FN_SCK2_B,
++
++	/* IPSR4 */
++	FN_SCK2_A, FN_VI0_G3,
++	FN_RTS1_B, FN_VI0_G2,
++	FN_CTS1_B, FN_VI0_DATA7_VI0_G1,
++	FN_TX1_B, FN_VI0_DATA6_VI0_G0, FN_ET0_PHY_INT_A,
++	FN_RX1_B, FN_VI0_DATA5_VI0_B5, FN_ET0_MAGIC_A,
++	FN_SCK1_B, FN_VI0_DATA4_VI0_B4, FN_ET0_LINK_A,
++	FN_RTS0_B, FN_VI0_DATA3_VI0_B3, FN_ET0_MDIO_A,
++	FN_CTS0_B, FN_VI0_DATA2_VI0_B2, FN_RMII0_MDIO_A, FN_ET0_MDC,
++	FN_HTX0_A, FN_TX1_A, FN_VI0_DATA1_VI0_B1, FN_RMII0_MDC_A, FN_ET0_COL,
++	FN_HRX0_A, FN_RX1_A, FN_VI0_DATA0_VI0_B0, FN_RMII0_CRS_DV_A, FN_ET0_CRS,
++	FN_HSCK0_A, FN_SCK1_A, FN_VI0_VSYNC, FN_RMII0_RX_ER_A, FN_ET0_RX_ER,
++	FN_HRTS0_A, FN_RTS1_A, FN_VI0_HSYNC, FN_RMII0_TXD_EN_A, FN_ET0_RX_DV,
++	FN_HCTS0_A, FN_CTS1_A, FN_VI0_FIELD, FN_RMII0_RXD1_A, FN_ET0_ERXD7,
++
++	/* IPSR5 */
++	FN_SD2_CLK_A, FN_RX2_A, FN_VI0_G4, FN_ET0_RX_CLK_B,
++	FN_SD2_CMD_A, FN_TX2_A, FN_VI0_G5, FN_ET0_ERXD2_B,
++	FN_SD2_DAT0_A, FN_RX3_A, FN_VI0_R0, FN_ET0_ERXD3_B,
++	FN_SD2_DAT1_A, FN_TX3_A, FN_VI0_R1, FN_ET0_MDIO_B,
++	FN_SD2_DAT2_A, FN_RX4_A, FN_VI0_R2, FN_ET0_LINK_B,
++	FN_SD2_DAT3_A, FN_TX4_A, FN_VI0_R3, FN_ET0_MAGIC_B,
++	FN_SD2_CD_A, FN_RX5_A, FN_VI0_R4, FN_ET0_PHY_INT_B,
++	FN_SD2_WP_A, FN_TX5_A, FN_VI0_R5,
++	FN_REF125CK, FN_ADTRG, FN_RX5_C,
++	FN_REF50CK, FN_CTS1_E, FN_HCTS0_D,
++
++	/* IPSR6 */
++	FN_DU0_DR0, FN_SCIF_CLK_B, FN_HRX0_D, FN_IETX_A, FN_TCLKA_A, FN_HIFD00,
++	FN_DU0_DR1, FN_SCK0_B, FN_HTX0_D, FN_IERX_A, FN_TCLKB_A, FN_HIFD01,
++	FN_DU0_DR2, FN_RX0_B, FN_TCLKC_A, FN_HIFD02,
++	FN_DU0_DR3, FN_TX0_B, FN_TCLKD_A, FN_HIFD03,
++	FN_DU0_DR4, FN_CTS0_C, FN_TIOC0A_A, FN_HIFD04,
++	FN_DU0_DR5, FN_RTS0_C, FN_TIOC0B_A, FN_HIFD05,
++	FN_DU0_DR6, FN_SCK1_C, FN_TIOC0C_A, FN_HIFD06,
++	FN_DU0_DR7, FN_RX1_C, FN_TIOC0D_A, FN_HIFD07,
++	FN_DU0_DG0, FN_TX1_C, FN_HSCK0_D, FN_IECLK_A, FN_TIOC1A_A, FN_HIFD08,
++	FN_DU0_DG1, FN_CTS1_C, FN_HRTS0_D, FN_TIOC1B_A, FN_HIFD09,
++
++	/* IPSR7 */
++	FN_DU0_DG2, FN_RTS1_C, FN_RMII0_MDC_B, FN_TIOC2A_A, FN_HIFD10,
++	FN_DU0_DG3, FN_SCK2_C, FN_RMII0_MDIO_B, FN_TIOC2B_A, FN_HIFD11,
++	FN_DU0_DG4, FN_RX2_C, FN_RMII0_CRS_DV_B, FN_TIOC3A_A, FN_HIFD12,
++	FN_DU0_DG5, FN_TX2_C, FN_RMII0_RX_ER_B, FN_TIOC3B_A, FN_HIFD13,
++	FN_DU0_DG6, FN_RX3_C, FN_RMII0_RXD0_B, FN_TIOC3C_A, FN_HIFD14,
++	FN_DU0_DG7, FN_TX3_C, FN_RMII0_RXD1_B, FN_TIOC3D_A, FN_HIFD15,
++	FN_DU0_DB0, FN_RX4_C, FN_RMII0_TXD_EN_B, FN_TIOC4A_A, FN_HIFCS,
++	FN_DU0_DB1, FN_TX4_C, FN_RMII0_TXD0_B, FN_TIOC4B_A, FN_HIFRS,
++	FN_DU0_DB2, FN_RX5_B, FN_RMII0_TXD1_B, FN_TIOC4C_A, FN_HIFWR,
++	FN_DU0_DB3, FN_TX5_B, FN_TIOC4D_A, FN_HIFRD,
++	FN_DU0_DB4, FN_HIFINT,
++
++	/* IPSR8 */
++	FN_DU0_DB5, FN_HIFDREQ,
++	FN_DU0_DB6, FN_HIFRDY,
++	FN_DU0_DB7, FN_SSI_SCK0_B, FN_HIFEBL_B,
++	FN_DU0_DOTCLKIN, FN_HSPI_CS0_C, FN_SSI_WS0_B,
++	FN_DU0_DOTCLKOUT, FN_HSPI_CLK0_C, FN_SSI_SDATA0_B,
++	FN_DU0_EXHSYNC_DU0_HSYNC, FN_HSPI_TX0_C, FN_SSI_SCK1_B,
++	FN_DU0_EXVSYNC_DU0_VSYNC, FN_HSPI_RX0_C, FN_SSI_WS1_B,
++	FN_DU0_EXODDF_DU0_ODDF, FN_CAN0_RX_B, FN_HSCK0_B, FN_SSI_SDATA1_B,
++	FN_DU0_DISP, FN_CAN0_TX_B, FN_HRX0_B, FN_AUDIO_CLKA_B,
++	FN_DU0_CDE, FN_HTX0_B, FN_AUDIO_CLKB_B, FN_LCD_VCPWC_B,
++	FN_IRQ0_A, FN_HSPI_TX_B, FN_RX3_E, FN_ET0_ERXD0,
++	FN_IRQ1_A, FN_HSPI_RX_B, FN_TX3_E, FN_ET0_ERXD1,
++	FN_IRQ2_A, FN_CTS0_A, FN_HCTS0_B, FN_ET0_ERXD2_A,
++	FN_IRQ3_A, FN_RTS0_A, FN_HRTS0_B, FN_ET0_ERXD3_A,
++
++	/* IPSR9 */
++	FN_VI1_CLK_A, FN_FD0_B, FN_LCD_DATA0_B,
++	FN_VI1_0_A, FN_FD1_B, FN_LCD_DATA1_B,
++	FN_VI1_1_A, FN_FD2_B, FN_LCD_DATA2_B,
++	FN_VI1_2_A, FN_FD3_B, FN_LCD_DATA3_B,
++	FN_VI1_3_A, FN_FD4_B, FN_LCD_DATA4_B,
++	FN_VI1_4_A, FN_FD5_B, FN_LCD_DATA5_B,
++	FN_VI1_5_A, FN_FD6_B, FN_LCD_DATA6_B,
++	FN_VI1_6_A, FN_FD7_B, FN_LCD_DATA7_B,
++	FN_VI1_7_A, FN_FCE_B, FN_LCD_DATA8_B,
++	FN_SSI_SCK0_A, FN_TIOC1A_B, FN_LCD_DATA9_B,
++	FN_SSI_WS0_A, FN_TIOC1B_B, FN_LCD_DATA10_B,
++	FN_SSI_SDATA0_A, FN_VI1_0_B, FN_TIOC2A_B, FN_LCD_DATA11_B,
++	FN_SSI_SCK1_A, FN_VI1_1_B, FN_TIOC2B_B, FN_LCD_DATA12_B,
++	FN_SSI_WS1_A, FN_VI1_2_B, FN_LCD_DATA13_B,
++	FN_SSI_SDATA1_A, FN_VI1_3_B, FN_LCD_DATA14_B,
++
++	/* IPSR10 */
++	FN_SSI_SCK23, FN_VI1_4_B, FN_RX1_D, FN_FCLE_B, FN_LCD_DATA15_B,
++	FN_SSI_WS23, FN_VI1_5_B, FN_TX1_D, FN_HSCK0_C, FN_FALE_B, FN_LCD_DON_B,
++	FN_SSI_SDATA2, FN_VI1_6_B, FN_HRX0_C, FN_FRE_B, FN_LCD_CL1_B,
++	FN_SSI_SDATA3, FN_VI1_7_B, FN_HTX0_C, FN_FWE_B, FN_LCD_CL2_B,
++	FN_AUDIO_CLKA_A, FN_VI1_CLK_B, FN_SCK1_D, FN_IECLK_B, FN_LCD_FLM_B,
++	FN_AUDIO_CLKB_A, FN_LCD_CLK_B,
++	FN_AUDIO_CLKC, FN_SCK1_E, FN_HCTS0_C, FN_FRB_B, FN_LCD_VEPWC_B,
++	FN_AUDIO_CLKOUT, FN_TX1_E, FN_HRTS0_C, FN_FSE_B, FN_LCD_M_DISP_B,
++	FN_CAN_CLK_A, FN_RX4_D,
++	FN_CAN0_TX_A, FN_TX4_D, FN_MLB_CLK,
++	FN_CAN1_RX_A, FN_IRQ1_B,
++	FN_CAN0_RX_A, FN_IRQ0_B, FN_MLB_SIG,
++	FN_CAN1_TX_A, FN_TX5_C, FN_MLB_DAT,
++
++	/* IPSR11 */
++	FN_SCL1, FN_SCIF_CLK_C,
++	FN_SDA1, FN_RX1_E,
++	FN_SDA0, FN_HIFEBL_A,
++	FN_SDSELF, FN_RTS1_E,
++	FN_SCIF_CLK_A, FN_HSPI_CLK_A, FN_VI0_CLK, FN_RMII0_TXD0_A, FN_ET0_ERXD4,
++	FN_SCK0_A, FN_HSPI_CS_A, FN_VI0_CLKENB, FN_RMII0_TXD1_A, FN_ET0_ERXD5,
++	FN_RX0_A, FN_HSPI_RX_A, FN_RMII0_RXD0_A, FN_ET0_ERXD6,
++	FN_TX0_A, FN_HSPI_TX_A,
++	FN_PENC1, FN_TX3_D, FN_CAN1_TX_B, FN_TX5_D, FN_IETX_B,
++	FN_USB_OVC1, FN_RX3_D, FN_CAN1_RX_B, FN_RX5_D, FN_IERX_B,
++	FN_DREQ0, FN_SD1_CLK_A, FN_ET0_TX_EN,
++	FN_DACK0, FN_SD1_DAT3_A, FN_ET0_TX_ER,
++	FN_DREQ1, FN_HSPI_CLK_B, FN_RX4_B, FN_ET0_PHY_INT_C, FN_ET0_TX_CLK_A,
++	FN_DACK1, FN_HSPI_CS_B, FN_TX4_B, FN_ET0_RX_CLK_A,
++	FN_PRESETOUT, FN_ST_CLKOUT,
++
++	/* MOD_SEL1 */
++	FN_SEL_IEBUS_0, FN_SEL_IEBUS_1,
++	FN_SEL_RQSPI_0, FN_SEL_RQSPI_1,
++	FN_SEL_VIN1_0, FN_SEL_VIN1_1,
++	FN_SEL_HIF_0, FN_SEL_HIF_1,
++	FN_SEL_RSPI_0, FN_SEL_RSPI_1,
++	FN_SEL_LCDC_0, FN_SEL_LCDC_1,
++	FN_SEL_ET0_CTL_0, FN_SEL_ET0_CTL_1, FN_SEL_ET0_CTL_2,
++	FN_SEL_ET0_0, FN_SEL_ET0_1,
++	FN_SEL_RMII_0, FN_SEL_RMII_1,
++	FN_SEL_TMU_0, FN_SEL_TMU_1,
++	FN_SEL_HSPI_0, FN_SEL_HSPI_1, FN_SEL_HSPI_2,
++	FN_SEL_HSCIF_0, FN_SEL_HSCIF_1, FN_SEL_HSCIF_2, FN_SEL_HSCIF_3,
++	FN_SEL_RCAN_CLK_0, FN_SEL_RCAN_CLK_1,
++	FN_SEL_RCAN1_0, FN_SEL_RCAN1_1, FN_SEL_RCAN1_2,
++	FN_SEL_RCAN0_0, FN_SEL_RCAN0_1,
++	FN_SEL_SDHI2_0, FN_SEL_SDHI2_1,
++	FN_SEL_SDHI1_0, FN_SEL_SDHI1_1,
++	FN_SEL_SDHI0_0, FN_SEL_SDHI0_1,
++	FN_SEL_SSI1_0, FN_SEL_SSI1_1,
++	FN_SEL_SSI0_0, FN_SEL_SSI0_1,
++	FN_SEL_AUDIO_CLKB_0, FN_SEL_AUDIO_CLKB_1,
++	FN_SEL_AUDIO_CLKA_0, FN_SEL_AUDIO_CLKA_1,
++	FN_SEL_FLCTL_0, FN_SEL_FLCTL_1,
++	FN_SEL_MMC_0, FN_SEL_MMC_1,
++	FN_SEL_INTC_0, FN_SEL_INTC_1,
++
++	/* MOD_SEL2 */
++	FN_SEL_MTU2_CLK_0, FN_SEL_MTU2_CLK_1,
++	FN_SEL_MTU2_CH4_0, FN_SEL_MTU2_CH4_1,
++	FN_SEL_MTU2_CH3_0, FN_SEL_MTU2_CH3_1,
++	FN_SEL_MTU2_CH2_0, FN_SEL_MTU2_CH2_1, FN_SEL_MTU2_CH2_2,
++	FN_SEL_MTU2_CH1_0, FN_SEL_MTU2_CH1_1, FN_SEL_MTU2_CH1_2,
++	FN_SEL_MTU2_CH0_0, FN_SEL_MTU2_CH0_1,
++	FN_SEL_SCIF5_0, FN_SEL_SCIF5_1,
++	FN_SEL_SCIF5_2, FN_SEL_SCIF5_3,
++	FN_SEL_SCIF4_0, FN_SEL_SCIF4_1,
++	FN_SEL_SCIF4_2, FN_SEL_SCIF4_3,
++	FN_SEL_SCIF3_0, FN_SEL_SCIF3_1, FN_SEL_SCIF3_2,
++		FN_SEL_SCIF3_3, FN_SEL_SCIF3_4,
++	FN_SEL_SCIF2_0, FN_SEL_SCIF2_1, FN_SEL_SCIF2_2,
++		FN_SEL_SCIF2_3,
++	FN_SEL_SCIF1_0, FN_SEL_SCIF1_1, FN_SEL_SCIF1_2,
++		FN_SEL_SCIF1_3, FN_SEL_SCIF1_4,
++	FN_SEL_SCIF0_0, FN_SEL_SCIF0_1, FN_SEL_SCIF0_2,
++	FN_SEL_SCIF_CLK_0, FN_SEL_SCIF_CLK_1, FN_SEL_SCIF_CLK_2,
++
++	PINMUX_FUNCTION_END,
++
++	PINMUX_MARK_BEGIN,
++
++	CLKOUT_MARK, BS_MARK, CS0_MARK, EX_CS0_MARK, RD_MARK,
++	WE0_MARK, WE1_MARK,
++
++	SCL0_MARK, PENC0_MARK, USB_OVC0_MARK,
++
++	IRQ2_B_MARK, IRQ3_B_MARK,
++
++	/* IPSR0 */
++	A15_MARK, ST0_VCO_CLKIN_MARK, LCD_DATA15_A_MARK, TIOC3D_C_MARK,
++	A14_MARK, LCD_DATA14_A_MARK, TIOC3C_C_MARK,
++	A13_MARK, LCD_DATA13_A_MARK, TIOC3B_C_MARK,
++	A12_MARK, LCD_DATA12_A_MARK, TIOC3A_C_MARK,
++	A11_MARK, ST0_D7_MARK, LCD_DATA11_A_MARK, TIOC2B_C_MARK,
++	A10_MARK, ST0_D6_MARK, LCD_DATA10_A_MARK, TIOC2A_C_MARK,
++	A9_MARK, ST0_D5_MARK, LCD_DATA9_A_MARK, TIOC1B_C_MARK,
++	A8_MARK, ST0_D4_MARK, LCD_DATA8_A_MARK, TIOC1A_C_MARK,
++	A7_MARK, ST0_D3_MARK, LCD_DATA7_A_MARK, TIOC0D_C_MARK,
++	A6_MARK, ST0_D2_MARK, LCD_DATA6_A_MARK, TIOC0C_C_MARK,
++	A5_MARK, ST0_D1_MARK, LCD_DATA5_A_MARK, TIOC0B_C_MARK,
++	A4_MARK, ST0_D0_MARK, LCD_DATA4_A_MARK, TIOC0A_C_MARK,
++	A3_MARK, ST0_VLD_MARK, LCD_DATA3_A_MARK, TCLKD_C_MARK,
++	A2_MARK, ST0_SYC_MARK, LCD_DATA2_A_MARK, TCLKC_C_MARK,
++	A1_MARK, ST0_REQ_MARK, LCD_DATA1_A_MARK, TCLKB_C_MARK,
++	A0_MARK, ST0_CLKIN_MARK, LCD_DATA0_A_MARK, TCLKA_C_MARK,
++
++	/* IPSR1 */
++	D3_MARK, SD0_DAT3_A_MARK, MMC_D3_A_MARK, ST1_D6_MARK, FD3_A_MARK,
++	D2_MARK, SD0_DAT2_A_MARK, MMC_D2_A_MARK, ST1_D5_MARK, FD2_A_MARK,
++	D1_MARK, SD0_DAT1_A_MARK, MMC_D1_A_MARK, ST1_D4_MARK, FD1_A_MARK,
++	D0_MARK, SD0_DAT0_A_MARK, MMC_D0_A_MARK, ST1_D3_MARK, FD0_A_MARK,
++	A25_MARK, TX2_D_MARK, ST1_D2_MARK,
++	A24_MARK, RX2_D_MARK, ST1_D1_MARK,
++	A23_MARK, ST1_D0_MARK, LCD_M_DISP_A_MARK,
++	A22_MARK, ST1_VLD_MARK, LCD_VEPWC_A_MARK,
++	A21_MARK, ST1_SYC_MARK, LCD_VCPWC_A_MARK,
++	A20_MARK, ST1_REQ_MARK, LCD_FLM_A_MARK,
++	A19_MARK, ST1_CLKIN_MARK, LCD_CLK_A_MARK,	TIOC4D_C_MARK,
++	A18_MARK, ST1_PWM_MARK, LCD_CL2_A_MARK, TIOC4C_C_MARK,
++	A17_MARK, ST1_VCO_CLKIN_MARK, LCD_CL1_A_MARK, TIOC4B_C_MARK,
++	A16_MARK, ST0_PWM_MARK, LCD_DON_A_MARK, TIOC4A_C_MARK,
++
++	/* IPSR2 */
++	D14_MARK, TX2_B_MARK, FSE_A_MARK, ET0_TX_CLK_B_MARK,
++	D13_MARK, RX2_B_MARK, FRB_A_MARK, ET0_ETXD6_B_MARK,
++	D12_MARK, FWE_A_MARK, ET0_ETXD5_B_MARK,
++	D11_MARK, RSPI_MISO_A_MARK, QMI_QIO1_A_MARK, FRE_A_MARK,
++		ET0_ETXD3_B_MARK,
++	D10_MARK, RSPI_MOSI_A_MARK, QMO_QIO0_A_MARK, FALE_A_MARK,
++		ET0_ETXD2_B_MARK,
++	D9_MARK, SD0_CMD_A_MARK, MMC_CMD_A_MARK, QIO3_A_MARK,
++		FCLE_A_MARK, ET0_ETXD1_B_MARK,
++	D8_MARK, SD0_CLK_A_MARK, MMC_CLK_A_MARK, QIO2_A_MARK,
++		FCE_A_MARK, ET0_GTX_CLK_B_MARK,
++	D7_MARK, RSPI_SSL_A_MARK, MMC_D7_A_MARK, QSSL_A_MARK,
++		FD7_A_MARK,
++	D6_MARK, RSPI_RSPCK_A_MARK, MMC_D6_A_MARK, QSPCLK_A_MARK,
++		FD6_A_MARK,
++	D5_MARK, SD0_WP_A_MARK, MMC_D5_A_MARK, FD5_A_MARK,
++	D4_MARK, SD0_CD_A_MARK, MMC_D4_A_MARK, ST1_D7_MARK,
++		FD4_A_MARK,
++
++	/* IPSR3 */
++	DRACK0_MARK, SD1_DAT2_A_MARK, ATAG_MARK, TCLK1_A_MARK, ET0_ETXD7_MARK,
++	EX_WAIT2_MARK, SD1_DAT1_A_MARK, DACK2_MARK, CAN1_RX_C_MARK,
++		ET0_MAGIC_C_MARK, ET0_ETXD6_A_MARK,
++	EX_WAIT1_MARK, SD1_DAT0_A_MARK, DREQ2_MARK, CAN1_TX_C_MARK,
++		ET0_LINK_C_MARK, ET0_ETXD5_A_MARK,
++	EX_WAIT0_MARK, TCLK1_B_MARK,
++	RD_WR_MARK, TCLK0_MARK, CAN_CLK_B_MARK, ET0_ETXD4_MARK,
++	EX_CS5_MARK, SD1_CMD_A_MARK, ATADIR_MARK, QSSL_B_MARK,
++		ET0_ETXD3_A_MARK,
++	EX_CS4_MARK, SD1_WP_A_MARK, ATAWR_MARK, QMI_QIO1_B_MARK,
++		ET0_ETXD2_A_MARK,
++	EX_CS3_MARK, SD1_CD_A_MARK, ATARD_MARK, QMO_QIO0_B_MARK,
++		ET0_ETXD1_A_MARK,
++	EX_CS2_MARK, TX3_B_MARK, ATACS1_MARK, QSPCLK_B_MARK,
++		ET0_GTX_CLK_A_MARK,
++	EX_CS1_MARK, RX3_B_MARK, ATACS0_MARK, QIO2_B_MARK,
++		ET0_ETXD0_MARK,
++	CS1_A26_MARK, QIO3_B_MARK,
++	D15_MARK, SCK2_B_MARK,
++
++	/* IPSR4 */
++	SCK2_A_MARK, VI0_G3_MARK,
++	RTS1_B_MARK, VI0_G2_MARK,
++	CTS1_B_MARK, VI0_DATA7_VI0_G1_MARK,
++	TX1_B_MARK, VI0_DATA6_VI0_G0_MARK, ET0_PHY_INT_A_MARK,
++	RX1_B_MARK, VI0_DATA5_VI0_B5_MARK, ET0_MAGIC_A_MARK,
++	SCK1_B_MARK, VI0_DATA4_VI0_B4_MARK, ET0_LINK_A_MARK,
++	RTS0_B_MARK, VI0_DATA3_VI0_B3_MARK, ET0_MDIO_A_MARK,
++	CTS0_B_MARK, VI0_DATA2_VI0_B2_MARK, RMII0_MDIO_A_MARK,
++		ET0_MDC_MARK,
++	HTX0_A_MARK, TX1_A_MARK, VI0_DATA1_VI0_B1_MARK,
++		RMII0_MDC_A_MARK, ET0_COL_MARK,
++	HRX0_A_MARK, RX1_A_MARK, VI0_DATA0_VI0_B0_MARK,
++		RMII0_CRS_DV_A_MARK, ET0_CRS_MARK,
++	HSCK0_A_MARK, SCK1_A_MARK, VI0_VSYNC_MARK,
++		RMII0_RX_ER_A_MARK, ET0_RX_ER_MARK,
++	HRTS0_A_MARK, RTS1_A_MARK, VI0_HSYNC_MARK,
++		RMII0_TXD_EN_A_MARK, ET0_RX_DV_MARK,
++	HCTS0_A_MARK, CTS1_A_MARK, VI0_FIELD_MARK,
++		RMII0_RXD1_A_MARK, ET0_ERXD7_MARK,
++
++	/* IPSR5 */
++	SD2_CLK_A_MARK, RX2_A_MARK, VI0_G4_MARK, ET0_RX_CLK_B_MARK,
++	SD2_CMD_A_MARK, TX2_A_MARK, VI0_G5_MARK, ET0_ERXD2_B_MARK,
++	SD2_DAT0_A_MARK, RX3_A_MARK, VI0_R0_MARK, ET0_ERXD3_B_MARK,
++	SD2_DAT1_A_MARK, TX3_A_MARK, VI0_R1_MARK, ET0_MDIO_B_MARK,
++	SD2_DAT2_A_MARK, RX4_A_MARK, VI0_R2_MARK, ET0_LINK_B_MARK,
++	SD2_DAT3_A_MARK, TX4_A_MARK, VI0_R3_MARK, ET0_MAGIC_B_MARK,
++	SD2_CD_A_MARK, RX5_A_MARK, VI0_R4_MARK, ET0_PHY_INT_B_MARK,
++	SD2_WP_A_MARK, TX5_A_MARK, VI0_R5_MARK,
++	REF125CK_MARK, ADTRG_MARK, RX5_C_MARK,
++	REF50CK_MARK, CTS1_E_MARK, HCTS0_D_MARK,
++
++	/* IPSR6 */
++	DU0_DR0_MARK, SCIF_CLK_B_MARK, HRX0_D_MARK, IETX_A_MARK,
++		TCLKA_A_MARK, HIFD00_MARK,
++	DU0_DR1_MARK, SCK0_B_MARK, HTX0_D_MARK, IERX_A_MARK,
++		TCLKB_A_MARK, HIFD01_MARK,
++	DU0_DR2_MARK, RX0_B_MARK, TCLKC_A_MARK, HIFD02_MARK,
++	DU0_DR3_MARK, TX0_B_MARK, TCLKD_A_MARK, HIFD03_MARK,
++	DU0_DR4_MARK, CTS0_C_MARK, TIOC0A_A_MARK, HIFD04_MARK,
++	DU0_DR5_MARK, RTS0_C_MARK, TIOC0B_A_MARK, HIFD05_MARK,
++	DU0_DR6_MARK, SCK1_C_MARK, TIOC0C_A_MARK, HIFD06_MARK,
++	DU0_DR7_MARK, RX1_C_MARK, TIOC0D_A_MARK, HIFD07_MARK,
++	DU0_DG0_MARK, TX1_C_MARK, HSCK0_D_MARK, IECLK_A_MARK,
++		TIOC1A_A_MARK, HIFD08_MARK,
++	DU0_DG1_MARK, CTS1_C_MARK, HRTS0_D_MARK, TIOC1B_A_MARK,
++		HIFD09_MARK,
++
++	/* IPSR7 */
++	DU0_DG2_MARK, RTS1_C_MARK, RMII0_MDC_B_MARK, TIOC2A_A_MARK,
++		HIFD10_MARK,
++	DU0_DG3_MARK, SCK2_C_MARK, RMII0_MDIO_B_MARK, TIOC2B_A_MARK,
++		HIFD11_MARK,
++	DU0_DG4_MARK, RX2_C_MARK, RMII0_CRS_DV_B_MARK, TIOC3A_A_MARK,
++		HIFD12_MARK,
++	DU0_DG5_MARK, TX2_C_MARK, RMII0_RX_ER_B_MARK, TIOC3B_A_MARK,
++		HIFD13_MARK,
++	DU0_DG6_MARK, RX3_C_MARK, RMII0_RXD0_B_MARK, TIOC3C_A_MARK,
++		HIFD14_MARK,
++	DU0_DG7_MARK, TX3_C_MARK, RMII0_RXD1_B_MARK, TIOC3D_A_MARK,
++		HIFD15_MARK,
++	DU0_DB0_MARK, RX4_C_MARK, RMII0_TXD_EN_B_MARK, TIOC4A_A_MARK,
++		HIFCS_MARK,
++	DU0_DB1_MARK, TX4_C_MARK, RMII0_TXD0_B_MARK, TIOC4B_A_MARK,
++		HIFRS_MARK,
++	DU0_DB2_MARK, RX5_B_MARK, RMII0_TXD1_B_MARK, TIOC4C_A_MARK,
++		HIFWR_MARK,
++	DU0_DB3_MARK, TX5_B_MARK, TIOC4D_A_MARK, HIFRD_MARK,
++	DU0_DB4_MARK, HIFINT_MARK,
++
++	/* IPSR8 */
++	DU0_DB5_MARK, HIFDREQ_MARK,
++	DU0_DB6_MARK, HIFRDY_MARK,
++	DU0_DB7_MARK, SSI_SCK0_B_MARK, HIFEBL_B_MARK,
++	DU0_DOTCLKIN_MARK, HSPI_CS0_C_MARK, SSI_WS0_B_MARK,
++	DU0_DOTCLKOUT_MARK, HSPI_CLK0_C_MARK, SSI_SDATA0_B_MARK,
++	DU0_EXHSYNC_DU0_HSYNC_MARK, HSPI_TX0_C_MARK, SSI_SCK1_B_MARK,
++	DU0_EXVSYNC_DU0_VSYNC_MARK, HSPI_RX0_C_MARK, SSI_WS1_B_MARK,
++	DU0_EXODDF_DU0_ODDF_MARK, CAN0_RX_B_MARK, HSCK0_B_MARK,
++		SSI_SDATA1_B_MARK,
++	DU0_DISP_MARK, CAN0_TX_B_MARK, HRX0_B_MARK, AUDIO_CLKA_B_MARK,
++	DU0_CDE_MARK, HTX0_B_MARK, AUDIO_CLKB_B_MARK, LCD_VCPWC_B_MARK,
++	IRQ0_A_MARK, HSPI_TX_B_MARK, RX3_E_MARK, ET0_ERXD0_MARK,
++	IRQ1_A_MARK, HSPI_RX_B_MARK, TX3_E_MARK, ET0_ERXD1_MARK,
++	IRQ2_A_MARK, CTS0_A_MARK, HCTS0_B_MARK, ET0_ERXD2_A_MARK,
++	IRQ3_A_MARK, RTS0_A_MARK, HRTS0_B_MARK, ET0_ERXD3_A_MARK,
++
++	/* IPSR9 */
++	VI1_CLK_A_MARK, FD0_B_MARK, LCD_DATA0_B_MARK,
++	VI1_0_A_MARK, FD1_B_MARK, LCD_DATA1_B_MARK,
++	VI1_1_A_MARK, FD2_B_MARK, LCD_DATA2_B_MARK,
++	VI1_2_A_MARK, FD3_B_MARK, LCD_DATA3_B_MARK,
++	VI1_3_A_MARK, FD4_B_MARK, LCD_DATA4_B_MARK,
++	VI1_4_A_MARK, FD5_B_MARK, LCD_DATA5_B_MARK,
++	VI1_5_A_MARK, FD6_B_MARK, LCD_DATA6_B_MARK,
++	VI1_6_A_MARK, FD7_B_MARK, LCD_DATA7_B_MARK,
++	VI1_7_A_MARK, FCE_B_MARK, LCD_DATA8_B_MARK,
++	SSI_SCK0_A_MARK, TIOC1A_B_MARK, LCD_DATA9_B_MARK,
++	SSI_WS0_A_MARK, TIOC1B_B_MARK, LCD_DATA10_B_MARK,
++	SSI_SDATA0_A_MARK, VI1_0_B_MARK, TIOC2A_B_MARK, LCD_DATA11_B_MARK,
++	SSI_SCK1_A_MARK, VI1_1_B_MARK, TIOC2B_B_MARK, LCD_DATA12_B_MARK,
++	SSI_WS1_A_MARK, VI1_2_B_MARK, LCD_DATA13_B_MARK,
++	SSI_SDATA1_A_MARK, VI1_3_B_MARK, LCD_DATA14_B_MARK,
++
++	/* IPSR10 */
++	SSI_SCK23_MARK, VI1_4_B_MARK, RX1_D_MARK, FCLE_B_MARK,
++		LCD_DATA15_B_MARK,
++	SSI_WS23_MARK, VI1_5_B_MARK, TX1_D_MARK, HSCK0_C_MARK,
++		FALE_B_MARK, LCD_DON_B_MARK,
++	SSI_SDATA2_MARK, VI1_6_B_MARK, HRX0_C_MARK, FRE_B_MARK,
++		LCD_CL1_B_MARK,
++	SSI_SDATA3_MARK, VI1_7_B_MARK, HTX0_C_MARK, FWE_B_MARK,
++		LCD_CL2_B_MARK,
++	AUDIO_CLKA_A_MARK, VI1_CLK_B_MARK, SCK1_D_MARK, IECLK_B_MARK,
++		LCD_FLM_B_MARK,
++	AUDIO_CLKB_A_MARK, LCD_CLK_B_MARK,
++	AUDIO_CLKC_MARK, SCK1_E_MARK, HCTS0_C_MARK, FRB_B_MARK,
++		LCD_VEPWC_B_MARK,
++	AUDIO_CLKOUT_MARK, TX1_E_MARK, HRTS0_C_MARK, FSE_B_MARK,
++		LCD_M_DISP_B_MARK,
++	CAN_CLK_A_MARK, RX4_D_MARK,
++	CAN0_TX_A_MARK, TX4_D_MARK, MLB_CLK_MARK,
++	CAN1_RX_A_MARK, IRQ1_B_MARK,
++	CAN0_RX_A_MARK, IRQ0_B_MARK, MLB_SIG_MARK,
++	CAN1_TX_A_MARK, TX5_C_MARK, MLB_DAT_MARK,
++
++	/* IPSR11 */
++	SCL1_MARK, SCIF_CLK_C_MARK,
++	SDA1_MARK, RX1_E_MARK,
++	SDA0_MARK, HIFEBL_A_MARK,
++	SDSELF_MARK, RTS1_E_MARK,
++	SCIF_CLK_A_MARK, HSPI_CLK_A_MARK, VI0_CLK_MARK, RMII0_TXD0_A_MARK,
++		ET0_ERXD4_MARK,
++	SCK0_A_MARK, HSPI_CS_A_MARK, VI0_CLKENB_MARK, RMII0_TXD1_A_MARK,
++		ET0_ERXD5_MARK,
++	RX0_A_MARK, HSPI_RX_A_MARK, RMII0_RXD0_A_MARK, ET0_ERXD6_MARK,
++	TX0_A_MARK, HSPI_TX_A_MARK,
++	PENC1_MARK, TX3_D_MARK, CAN1_TX_B_MARK, TX5_D_MARK,
++		IETX_B_MARK,
++	USB_OVC1_MARK, RX3_D_MARK, CAN1_RX_B_MARK, RX5_D_MARK,
++		IERX_B_MARK,
++	DREQ0_MARK, SD1_CLK_A_MARK, ET0_TX_EN_MARK,
++	DACK0_MARK, SD1_DAT3_A_MARK, ET0_TX_ER_MARK,
++	DREQ1_MARK, HSPI_CLK_B_MARK, RX4_B_MARK, ET0_PHY_INT_C_MARK,
++		ET0_TX_CLK_A_MARK,
++	DACK1_MARK, HSPI_CS_B_MARK, TX4_B_MARK, ET0_RX_CLK_A_MARK,
++	PRESETOUT_MARK, ST_CLKOUT_MARK,
++
++	PINMUX_MARK_END,
 +};
 +
-+int handle_unaligned_access(insn_size_t instruction, struct pt_regs *regs,
-+			    struct mem_access *ma, int, unsigned long address);
- 
- #endif /* __ASM_SH_UACCESS_H */
-diff --git a/arch/sh/kernel/cpu/init.c b/arch/sh/kernel/cpu/init.c
-index fac742e..61a07da 100644
---- a/arch/sh/kernel/cpu/init.c
-+++ b/arch/sh/kernel/cpu/init.c
-@@ -18,13 +18,13 @@
- #include <asm/processor.h>
- #include <asm/uaccess.h>
- #include <asm/page.h>
--#include <asm/system.h>
- #include <asm/cacheflush.h>
- #include <asm/cache.h>
- #include <asm/elf.h>
- #include <asm/io.h>
- #include <asm/smp.h>
- #include <asm/sh_bios.h>
-+#include <asm/setup.h>
- 
- #ifdef CONFIG_SH_FPU
- #define cpu_has_fpu	1
-diff --git a/arch/sh/kernel/cpu/irq/imask.c b/arch/sh/kernel/cpu/irq/imask.c
-index 39b6a24..e7f1745 100644
---- a/arch/sh/kernel/cpu/irq/imask.c
-+++ b/arch/sh/kernel/cpu/irq/imask.c
-@@ -19,7 +19,6 @@
- #include <linux/cache.h>
- #include <linux/irq.h>
- #include <linux/bitmap.h>
--#include <asm/system.h>
- #include <asm/irq.h>
- 
- /* Bitmap of IRQ masked */
-diff --git a/arch/sh/kernel/cpu/sh2a/opcode_helper.c b/arch/sh/kernel/cpu/sh2a/opcode_helper.c
-index 9704b79..72aa61c 100644
---- a/arch/sh/kernel/cpu/sh2a/opcode_helper.c
-+++ b/arch/sh/kernel/cpu/sh2a/opcode_helper.c
-@@ -10,7 +10,6 @@
-  * for more details.
-  */
- #include <linux/kernel.h>
--#include <asm/system.h>
- 
- /*
-  * Instructions on SH are generally fixed at 16-bits, however, SH-2A
-diff --git a/arch/sh/kernel/cpu/sh4/fpu.c b/arch/sh/kernel/cpu/sh4/fpu.c
-index 447482d..e74cd6c 100644
---- a/arch/sh/kernel/cpu/sh4/fpu.c
-+++ b/arch/sh/kernel/cpu/sh4/fpu.c
-@@ -15,7 +15,6 @@
- #include <linux/io.h>
- #include <cpu/fpu.h>
- #include <asm/processor.h>
--#include <asm/system.h>
- #include <asm/fpu.h>
- 
- /* The PR (precision) bit in the FP Status Register must be clear when
-diff --git a/arch/sh/kernel/hw_breakpoint.c b/arch/sh/kernel/hw_breakpoint.c
-index efae6ab..f917376 100644
---- a/arch/sh/kernel/hw_breakpoint.c
-+++ b/arch/sh/kernel/hw_breakpoint.c
-@@ -22,6 +22,7 @@
- #include <asm/hw_breakpoint.h>
- #include <asm/mmu_context.h>
- #include <asm/ptrace.h>
-+#include <asm/traps.h>
- 
- /*
-  * Stores the breakpoints currently in use on each breakpoint address
-diff --git a/arch/sh/kernel/idle.c b/arch/sh/kernel/idle.c
-index 406508d..b7c8f68 100644
---- a/arch/sh/kernel/idle.c
-+++ b/arch/sh/kernel/idle.c
-@@ -18,9 +18,9 @@
- #include <linux/smp.h>
- #include <linux/cpuidle.h>
- #include <asm/pgalloc.h>
--#include <asm/system.h>
- #include <linux/atomic.h>
- #include <asm/smp.h>
-+#include <asm/bl_bit.h>
- 
- void (*pm_idle)(void);
- 
-diff --git a/arch/sh/kernel/io_trapped.c b/arch/sh/kernel/io_trapped.c
-index 0f62f46..c0a9761 100644
---- a/arch/sh/kernel/io_trapped.c
-+++ b/arch/sh/kernel/io_trapped.c
-@@ -15,7 +15,6 @@
- #include <linux/vmalloc.h>
- #include <linux/module.h>
- #include <linux/init.h>
--#include <asm/system.h>
- #include <asm/mmu_context.h>
- #include <asm/uaccess.h>
- #include <asm/io.h>
-diff --git a/arch/sh/kernel/process_32.c b/arch/sh/kernel/process_32.c
-index 7ec6651..f72e3a9 100644
---- a/arch/sh/kernel/process_32.c
-+++ b/arch/sh/kernel/process_32.c
-@@ -24,7 +24,6 @@
- #include <linux/prefetch.h>
- #include <asm/uaccess.h>
- #include <asm/mmu_context.h>
--#include <asm/system.h>
- #include <asm/fpu.h>
- #include <asm/syscalls.h>
- 
-diff --git a/arch/sh/kernel/process_64.c b/arch/sh/kernel/process_64.c
-index cbd4e4b..4264583 100644
---- a/arch/sh/kernel/process_64.c
-+++ b/arch/sh/kernel/process_64.c
-@@ -30,6 +30,7 @@
- #include <asm/pgtable.h>
- #include <asm/mmu_context.h>
- #include <asm/fpu.h>
-+#include <asm/switch_to.h>
- 
- struct task_struct *last_task_used_math = NULL;
- 
-diff --git a/arch/sh/kernel/ptrace_32.c b/arch/sh/kernel/ptrace_32.c
-index a3e6515..9698671 100644
---- a/arch/sh/kernel/ptrace_32.c
-+++ b/arch/sh/kernel/ptrace_32.c
-@@ -28,7 +28,6 @@
- #include <linux/hw_breakpoint.h>
- #include <asm/uaccess.h>
- #include <asm/pgtable.h>
--#include <asm/system.h>
- #include <asm/processor.h>
- #include <asm/mmu_context.h>
- #include <asm/syscalls.h>
-diff --git a/arch/sh/kernel/ptrace_64.c b/arch/sh/kernel/ptrace_64.c
-index 3d0080b..bc81e07 100644
---- a/arch/sh/kernel/ptrace_64.c
-+++ b/arch/sh/kernel/ptrace_64.c
-@@ -34,11 +34,11 @@
- #include <asm/io.h>
- #include <asm/uaccess.h>
- #include <asm/pgtable.h>
--#include <asm/system.h>
- #include <asm/processor.h>
- #include <asm/mmu_context.h>
- #include <asm/syscalls.h>
- #include <asm/fpu.h>
-+#include <asm/traps.h>
- 
- #define CREATE_TRACE_POINTS
- #include <trace/events/syscalls.h>
-diff --git a/arch/sh/kernel/reboot.c b/arch/sh/kernel/reboot.c
-index ca6a5ca..04afe5b 100644
---- a/arch/sh/kernel/reboot.c
-+++ b/arch/sh/kernel/reboot.c
-@@ -8,8 +8,8 @@
- #endif
- #include <asm/addrspace.h>
- #include <asm/reboot.h>
--#include <asm/system.h>
- #include <asm/tlbflush.h>
-+#include <asm/traps.h>
- 
- void (*pm_power_off)(void);
- EXPORT_SYMBOL(pm_power_off);
-diff --git a/arch/sh/kernel/signal_32.c b/arch/sh/kernel/signal_32.c
-index a7a55ed..0bc5886 100644
---- a/arch/sh/kernel/signal_32.c
-+++ b/arch/sh/kernel/signal_32.c
-@@ -25,7 +25,6 @@
- #include <linux/freezer.h>
- #include <linux/io.h>
- #include <linux/tracehook.h>
--#include <asm/system.h>
- #include <asm/ucontext.h>
- #include <asm/uaccess.h>
- #include <asm/pgtable.h>
-diff --git a/arch/sh/kernel/smp.c b/arch/sh/kernel/smp.c
-index f624174..a17a14d 100644
---- a/arch/sh/kernel/smp.c
-+++ b/arch/sh/kernel/smp.c
-@@ -23,7 +23,6 @@
- #include <linux/sched.h>
- #include <linux/atomic.h>
- #include <asm/processor.h>
--#include <asm/system.h>
- #include <asm/mmu_context.h>
- #include <asm/smp.h>
- #include <asm/cacheflush.h>
-diff --git a/arch/sh/kernel/traps.c b/arch/sh/kernel/traps.c
-index 0830c2a..a87e58a 100644
---- a/arch/sh/kernel/traps.c
-+++ b/arch/sh/kernel/traps.c
-@@ -7,7 +7,7 @@
- #include <linux/uaccess.h>
- #include <linux/hardirq.h>
- #include <asm/unwinder.h>
--#include <asm/system.h>
-+#include <asm/traps.h>
- 
- #ifdef CONFIG_GENERIC_BUG
- static void handle_BUG(struct pt_regs *regs)
-diff --git a/arch/sh/kernel/traps_32.c b/arch/sh/kernel/traps_32.c
-index 7bbef95..a37175d 100644
---- a/arch/sh/kernel/traps_32.c
-+++ b/arch/sh/kernel/traps_32.c
-@@ -27,10 +27,11 @@
- #include <linux/sysfs.h>
- #include <linux/uaccess.h>
- #include <linux/perf_event.h>
--#include <asm/system.h>
- #include <asm/alignment.h>
- #include <asm/fpu.h>
- #include <asm/kprobes.h>
-+#include <asm/traps.h>
-+#include <asm/bl_bit.h>
- 
- #ifdef CONFIG_CPU_SH2
- # define TRAP_RESERVED_INST	4
-diff --git a/arch/sh/kernel/traps_64.c b/arch/sh/kernel/traps_64.c
-index cd3a404..6c04860 100644
---- a/arch/sh/kernel/traps_64.c
-+++ b/arch/sh/kernel/traps_64.c
-@@ -25,7 +25,6 @@
- #include <linux/sysctl.h>
- #include <linux/module.h>
- #include <linux/perf_event.h>
--#include <asm/system.h>
- #include <asm/uaccess.h>
- #include <asm/io.h>
- #include <linux/atomic.h>
-diff --git a/arch/sh/math-emu/math.c b/arch/sh/math-emu/math.c
-index 9771952..b876780 100644
---- a/arch/sh/math-emu/math.c
-+++ b/arch/sh/math-emu/math.c
-@@ -14,7 +14,6 @@
- #include <linux/signal.h>
- #include <linux/perf_event.h>
- 
--#include <asm/system.h>
- #include <asm/uaccess.h>
- #include <asm/processor.h>
- #include <asm/io.h>
-diff --git a/arch/sh/mm/fault_32.c b/arch/sh/mm/fault_32.c
-index 7bebd04..324eef9 100644
---- a/arch/sh/mm/fault_32.c
-+++ b/arch/sh/mm/fault_32.c
-@@ -17,9 +17,9 @@
- #include <linux/kprobes.h>
- #include <linux/perf_event.h>
- #include <asm/io_trapped.h>
--#include <asm/system.h>
- #include <asm/mmu_context.h>
- #include <asm/tlbflush.h>
-+#include <asm/traps.h>
- 
- static inline int notify_page_fault(struct pt_regs *regs, int trap)
- {
-diff --git a/arch/sh/mm/fault_64.c b/arch/sh/mm/fault_64.c
-index 2b356ce..44a3410 100644
---- a/arch/sh/mm/fault_64.c
-+++ b/arch/sh/mm/fault_64.c
-@@ -33,7 +33,6 @@
- #include <linux/mm.h>
- #include <linux/smp.h>
- #include <linux/interrupt.h>
--#include <asm/system.h>
- #include <asm/tlb.h>
- #include <asm/io.h>
- #include <asm/uaccess.h>
-diff --git a/arch/sh/mm/flush-sh4.c b/arch/sh/mm/flush-sh4.c
-index cef4026..75a17f5 100644
---- a/arch/sh/mm/flush-sh4.c
-+++ b/arch/sh/mm/flush-sh4.c
-@@ -1,6 +1,7 @@
- #include <linux/mm.h>
- #include <asm/mmu_context.h>
- #include <asm/cacheflush.h>
-+#include <asm/traps.h>
- 
- /*
-  * Write back the dirty D-caches, but not invalidate them.
-diff --git a/arch/sh/mm/pmb.c b/arch/sh/mm/pmb.c
-index fad52f1..7160c9f 100644
---- a/arch/sh/mm/pmb.c
-+++ b/arch/sh/mm/pmb.c
-@@ -25,7 +25,6 @@
- #include <linux/vmalloc.h>
- #include <asm/cacheflush.h>
- #include <asm/sizes.h>
--#include <asm/system.h>
- #include <asm/uaccess.h>
- #include <asm/pgtable.h>
- #include <asm/page.h>
-diff --git a/arch/sh/mm/tlb-pteaex.c b/arch/sh/mm/tlb-pteaex.c
-index b71db6a..4db21ad 100644
---- a/arch/sh/mm/tlb-pteaex.c
-+++ b/arch/sh/mm/tlb-pteaex.c
-@@ -12,7 +12,6 @@
- #include <linux/kernel.h>
- #include <linux/mm.h>
- #include <linux/io.h>
--#include <asm/system.h>
- #include <asm/mmu_context.h>
- #include <asm/cacheflush.h>
- 
-diff --git a/arch/sh/mm/tlb-sh3.c b/arch/sh/mm/tlb-sh3.c
-index 7a940db..6554fb4 100644
---- a/arch/sh/mm/tlb-sh3.c
-+++ b/arch/sh/mm/tlb-sh3.c
-@@ -20,7 +20,6 @@
- #include <linux/smp.h>
- #include <linux/interrupt.h>
- 
--#include <asm/system.h>
- #include <asm/io.h>
- #include <asm/uaccess.h>
- #include <asm/pgalloc.h>
-diff --git a/arch/sh/mm/tlb-sh4.c b/arch/sh/mm/tlb-sh4.c
-index cfdf793..d42dd7e 100644
---- a/arch/sh/mm/tlb-sh4.c
-+++ b/arch/sh/mm/tlb-sh4.c
-@@ -11,7 +11,6 @@
- #include <linux/kernel.h>
- #include <linux/mm.h>
- #include <linux/io.h>
--#include <asm/system.h>
- #include <asm/mmu_context.h>
- #include <asm/cacheflush.h>
- 
-diff --git a/arch/sh/mm/tlbflush_64.c b/arch/sh/mm/tlbflush_64.c
-index e3430e0..11c5a18 100644
---- a/arch/sh/mm/tlbflush_64.c
-+++ b/arch/sh/mm/tlbflush_64.c
-@@ -22,7 +22,6 @@
- #include <linux/smp.h>
- #include <linux/perf_event.h>
- #include <linux/interrupt.h>
--#include <asm/system.h>
- #include <asm/io.h>
- #include <asm/tlb.h>
- #include <asm/uaccess.h>
++static pinmux_enum_t pinmux_data[] = {
++	PINMUX_DATA_GP_ALL(), /* PINMUX_DATA(GP_M_N_DATA, GP_M_N_FN...), */
++
++	PINMUX_DATA(CLKOUT_MARK, FN_CLKOUT),
++	PINMUX_DATA(BS_MARK, FN_BS), PINMUX_DATA(CS0_MARK, FN_CS0),
++	PINMUX_DATA(EX_CS0_MARK, FN_EX_CS0),
++	PINMUX_DATA(RD_MARK, FN_RD), PINMUX_DATA(WE0_MARK, FN_WE0),
++	PINMUX_DATA(WE1_MARK, FN_WE1),
++	PINMUX_DATA(SCL0_MARK, FN_SCL0), PINMUX_DATA(PENC0_MARK, FN_PENC0),
++	PINMUX_DATA(USB_OVC0_MARK, FN_USB_OVC0),
++	PINMUX_DATA(IRQ2_B_MARK, FN_IRQ2_B),
++		PINMUX_DATA(IRQ3_B_MARK, FN_IRQ3_B),
++
++	/* IPSR0 */
++	PINMUX_IPSR_DATA(IP0_1_0, A0),
++	PINMUX_IPSR_DATA(IP0_1_0, ST0_CLKIN),
++	PINMUX_IPSR_MODSEL_DATA(IP0_1_0, LCD_DATA0_A, SEL_LCDC_0),
++	PINMUX_IPSR_MODSEL_DATA(IP0_1_0, TCLKA_C, SEL_MTU2_CLK_1),
++
++	PINMUX_IPSR_DATA(IP0_3_2, A1),
++	PINMUX_IPSR_DATA(IP0_3_2, ST0_REQ),
++	PINMUX_IPSR_MODSEL_DATA(IP0_3_2, LCD_DATA1_A, SEL_LCDC_0),
++	PINMUX_IPSR_MODSEL_DATA(IP0_3_2, TCLKB_C, SEL_MTU2_CLK_1),
++
++	PINMUX_IPSR_DATA(IP0_5_4, A2),
++	PINMUX_IPSR_DATA(IP0_5_4, ST0_SYC),
++	PINMUX_IPSR_MODSEL_DATA(IP0_5_4, LCD_DATA2_A, SEL_LCDC_0),
++	PINMUX_IPSR_MODSEL_DATA(IP0_5_4, TCLKC_C, SEL_MTU2_CLK_1),
++
++	PINMUX_IPSR_DATA(IP0_7_6, A3),
++	PINMUX_IPSR_DATA(IP0_7_6, ST0_VLD),
++	PINMUX_IPSR_MODSEL_DATA(IP0_7_6, LCD_DATA3_A, SEL_LCDC_0),
++	PINMUX_IPSR_MODSEL_DATA(IP0_7_6, TCLKD_C, SEL_MTU2_CLK_1),
++
++	PINMUX_IPSR_DATA(IP0_9_8, A4),
++	PINMUX_IPSR_DATA(IP0_9_8, ST0_D0),
++	PINMUX_IPSR_MODSEL_DATA(IP0_9_8, LCD_DATA4_A, SEL_LCDC_0),
++	PINMUX_IPSR_MODSEL_DATA(IP0_9_8, TIOC0A_C, SEL_MTU2_CH0_1),
++
++	PINMUX_IPSR_DATA(IP0_11_10, A5),
++	PINMUX_IPSR_DATA(IP0_11_10, ST0_D1),
++	PINMUX_IPSR_MODSEL_DATA(IP0_11_10, LCD_DATA5_A, SEL_LCDC_0),
++	PINMUX_IPSR_MODSEL_DATA(IP0_11_10, TIOC0B_C, SEL_MTU2_CH0_1),
++
++	PINMUX_IPSR_DATA(IP0_13_12, A6),
++	PINMUX_IPSR_DATA(IP0_13_12, ST0_D2),
++	PINMUX_IPSR_MODSEL_DATA(IP0_13_12, LCD_DATA6_A, SEL_LCDC_0),
++	PINMUX_IPSR_MODSEL_DATA(IP0_13_12, TIOC0C_C, SEL_MTU2_CH0_1),
++
++	PINMUX_IPSR_DATA(IP0_15_14, A7),
++	PINMUX_IPSR_DATA(IP0_15_14, ST0_D3),
++	PINMUX_IPSR_MODSEL_DATA(IP0_15_14, LCD_DATA7_A, SEL_LCDC_0),
++	PINMUX_IPSR_MODSEL_DATA(IP0_15_14, TIOC0D_C, SEL_MTU2_CH0_1),
++
++	PINMUX_IPSR_DATA(IP0_17_16, A8),
++	PINMUX_IPSR_DATA(IP0_17_16, ST0_D4),
++	PINMUX_IPSR_MODSEL_DATA(IP0_17_16, LCD_DATA8_A, SEL_LCDC_0),
++	PINMUX_IPSR_MODSEL_DATA(IP0_17_16, TIOC1A_C, SEL_MTU2_CH1_2),
++
++	PINMUX_IPSR_DATA(IP0_19_18, A9),
++	PINMUX_IPSR_DATA(IP0_19_18, ST0_D5),
++	PINMUX_IPSR_MODSEL_DATA(IP0_19_18, LCD_DATA9_A, SEL_LCDC_0),
++	PINMUX_IPSR_MODSEL_DATA(IP0_19_18, TIOC1B_C, SEL_MTU2_CH1_2),
++
++	PINMUX_IPSR_DATA(IP0_21_20, A10),
++	PINMUX_IPSR_DATA(IP0_21_20, ST0_D6),
++	PINMUX_IPSR_MODSEL_DATA(IP0_21_20, LCD_DATA10_A, SEL_LCDC_0),
++	PINMUX_IPSR_MODSEL_DATA(IP0_21_20, TIOC2A_C, SEL_MTU2_CH2_2),
++
++	PINMUX_IPSR_DATA(IP0_23_22, A11),
++	PINMUX_IPSR_DATA(IP0_23_22, ST0_D7),
++	PINMUX_IPSR_MODSEL_DATA(IP0_23_22, LCD_DATA11_A, SEL_LCDC_0),
++	PINMUX_IPSR_MODSEL_DATA(IP0_23_22, TIOC2B_C, SEL_MTU2_CH2_2),
++
++	PINMUX_IPSR_DATA(IP0_25_24, A12),
++	PINMUX_IPSR_MODSEL_DATA(IP0_25_24, LCD_DATA12_A, SEL_LCDC_0),
++	PINMUX_IPSR_MODSEL_DATA(IP0_25_24, TIOC3A_C, SEL_MTU2_CH3_1),
++
++	PINMUX_IPSR_DATA(IP0_27_26, A13),
++	PINMUX_IPSR_MODSEL_DATA(IP0_27_26, LCD_DATA13_A, SEL_LCDC_0),
++	PINMUX_IPSR_MODSEL_DATA(IP0_27_26, TIOC3B_C, SEL_MTU2_CH3_1),
++
++	PINMUX_IPSR_DATA(IP0_29_28, A14),
++	PINMUX_IPSR_MODSEL_DATA(IP0_29_28, LCD_DATA14_A, SEL_LCDC_0),
++	PINMUX_IPSR_MODSEL_DATA(IP0_29_28, TIOC3C_C, SEL_MTU2_CH3_1),
++
++	PINMUX_IPSR_DATA(IP0_31_30, A15),
++	PINMUX_IPSR_DATA(IP0_31_30, ST0_VCO_CLKIN),
++	PINMUX_IPSR_MODSEL_DATA(IP0_31_30, LCD_DATA15_A, SEL_LCDC_0),
++	PINMUX_IPSR_MODSEL_DATA(IP0_31_30, TIOC3D_C, SEL_MTU2_CH3_1),
++
++
++	/* IPSR1 */
++	PINMUX_IPSR_DATA(IP1_1_0, A16),
++	PINMUX_IPSR_DATA(IP1_1_0, ST0_PWM),
++	PINMUX_IPSR_MODSEL_DATA(IP1_1_0, LCD_DON_A, SEL_LCDC_0),
++	PINMUX_IPSR_MODSEL_DATA(IP1_1_0, TIOC4A_C, SEL_MTU2_CH4_1),
++
++	PINMUX_IPSR_DATA(IP1_3_2, A17),
++	PINMUX_IPSR_DATA(IP1_3_2, ST1_VCO_CLKIN),
++	PINMUX_IPSR_MODSEL_DATA(IP1_3_2, LCD_CL1_A, SEL_LCDC_0),
++	PINMUX_IPSR_MODSEL_DATA(IP1_3_2, TIOC4B_C, SEL_MTU2_CH4_1),
++
++	PINMUX_IPSR_DATA(IP1_5_4, A18),
++	PINMUX_IPSR_DATA(IP1_5_4, ST1_PWM),
++	PINMUX_IPSR_MODSEL_DATA(IP1_5_4, LCD_CL2_A, SEL_LCDC_0),
++	PINMUX_IPSR_MODSEL_DATA(IP1_5_4, TIOC4C_C, SEL_MTU2_CH4_1),
++
++	PINMUX_IPSR_DATA(IP1_7_6, A19),
++	PINMUX_IPSR_DATA(IP1_7_6, ST1_CLKIN),
++	PINMUX_IPSR_MODSEL_DATA(IP1_7_6, LCD_CLK_A, SEL_LCDC_0),
++	PINMUX_IPSR_MODSEL_DATA(IP1_7_6, TIOC4D_C, SEL_MTU2_CH4_1),
++
++	PINMUX_IPSR_DATA(IP1_9_8, A20),
++	PINMUX_IPSR_DATA(IP1_9_8, ST1_REQ),
++	PINMUX_IPSR_MODSEL_DATA(IP1_9_8, LCD_FLM_A, SEL_LCDC_0),
++
++	PINMUX_IPSR_DATA(IP1_11_10, A21),
++	PINMUX_IPSR_DATA(IP1_11_10, ST1_SYC),
++	PINMUX_IPSR_MODSEL_DATA(IP1_11_10, LCD_VCPWC_A, SEL_LCDC_0),
++
++	PINMUX_IPSR_DATA(IP1_13_12, A22),
++	PINMUX_IPSR_DATA(IP1_13_12, ST1_VLD),
++	PINMUX_IPSR_MODSEL_DATA(IP1_13_12, LCD_VEPWC_A, SEL_LCDC_0),
++
++	PINMUX_IPSR_DATA(IP1_15_14, A23),
++	PINMUX_IPSR_DATA(IP1_15_14, ST1_D0),
++	PINMUX_IPSR_MODSEL_DATA(IP1_15_14, LCD_M_DISP_A, SEL_LCDC_0),
++
++	PINMUX_IPSR_DATA(IP1_17_16, A24),
++	PINMUX_IPSR_MODSEL_DATA(IP1_17_16, RX2_D, SEL_SCIF2_3),
++	PINMUX_IPSR_DATA(IP1_17_16, ST1_D1),
++
++	PINMUX_IPSR_DATA(IP1_19_18, A25),
++	PINMUX_IPSR_MODSEL_DATA(IP1_17_16, RX2_D, SEL_SCIF2_3),
++	PINMUX_IPSR_DATA(IP1_17_16, ST1_D2),
++
++	PINMUX_IPSR_DATA(IP1_22_20, D0),
++	PINMUX_IPSR_MODSEL_DATA(IP1_22_20, SD0_DAT0_A, SEL_SDHI0_0),
++	PINMUX_IPSR_MODSEL_DATA(IP1_22_20, MMC_D0_A, SEL_MMC_0),
++	PINMUX_IPSR_DATA(IP1_22_20, ST1_D3),
++	PINMUX_IPSR_MODSEL_DATA(IP1_22_20, FD0_A, SEL_FLCTL_0),
++
++	PINMUX_IPSR_DATA(IP1_25_23, D1),
++	PINMUX_IPSR_MODSEL_DATA(IP1_25_23, SD0_DAT0_A, SEL_SDHI0_0),
++	PINMUX_IPSR_MODSEL_DATA(IP1_25_23, MMC_D1_A, SEL_MMC_0),
++	PINMUX_IPSR_DATA(IP1_25_23, ST1_D4),
++	PINMUX_IPSR_MODSEL_DATA(IP1_25_23, FD1_A, SEL_FLCTL_0),
++
++	PINMUX_IPSR_DATA(IP1_28_26, D2),
++	PINMUX_IPSR_MODSEL_DATA(IP1_28_26, SD0_DAT0_A, SEL_SDHI0_0),
++	PINMUX_IPSR_MODSEL_DATA(IP1_28_26, MMC_D2_A, SEL_MMC_0),
++	PINMUX_IPSR_DATA(IP1_28_26, ST1_D5),
++	PINMUX_IPSR_MODSEL_DATA(IP1_28_26, FD2_A, SEL_FLCTL_0),
++
++	PINMUX_IPSR_DATA(IP1_31_29, D3),
++	PINMUX_IPSR_MODSEL_DATA(IP1_31_29, SD0_DAT0_A, SEL_SDHI0_0),
++	PINMUX_IPSR_MODSEL_DATA(IP1_31_29, MMC_D3_A, SEL_MMC_0),
++	PINMUX_IPSR_DATA(IP1_31_29, ST1_D6),
++	PINMUX_IPSR_MODSEL_DATA(IP1_31_29, FD3_A, SEL_FLCTL_0),
++
++	/* IPSR2 */
++	PINMUX_IPSR_DATA(IP2_2_0, D4),
++	PINMUX_IPSR_MODSEL_DATA(IP2_2_0, SD0_CD_A, SEL_SDHI0_0),
++	PINMUX_IPSR_MODSEL_DATA(IP2_2_0, MMC_D4_A, SEL_MMC_0),
++	PINMUX_IPSR_DATA(IP2_2_0, ST1_D7),
++	PINMUX_IPSR_MODSEL_DATA(IP2_2_0, FD4_A, SEL_FLCTL_0),
++
++	PINMUX_IPSR_DATA(IP2_4_3, D5),
++	PINMUX_IPSR_MODSEL_DATA(IP2_4_3, SD0_WP_A, SEL_SDHI0_0),
++	PINMUX_IPSR_MODSEL_DATA(IP2_4_3, MMC_D5_A, SEL_MMC_0),
++	PINMUX_IPSR_MODSEL_DATA(IP2_4_3, FD5_A, SEL_FLCTL_0),
++
++	PINMUX_IPSR_DATA(IP2_7_5, D6),
++	PINMUX_IPSR_MODSEL_DATA(IP2_7_5, RSPI_RSPCK_A, SEL_RSPI_0),
++	PINMUX_IPSR_MODSEL_DATA(IP2_7_5, MMC_D6_A, SEL_MMC_0),
++	PINMUX_IPSR_MODSEL_DATA(IP2_7_5, QSPCLK_A, SEL_RQSPI_0),
++	PINMUX_IPSR_MODSEL_DATA(IP2_7_5, FD6_A, SEL_FLCTL_0),
++
++	PINMUX_IPSR_DATA(IP2_10_8, D7),
++	PINMUX_IPSR_MODSEL_DATA(IP2_10_8, RSPI_SSL_A, SEL_RSPI_0),
++	PINMUX_IPSR_MODSEL_DATA(IP2_10_8, MMC_D7_A, SEL_MMC_0),
++	PINMUX_IPSR_MODSEL_DATA(IP2_10_8, QSSL_A, SEL_RQSPI_0),
++	PINMUX_IPSR_MODSEL_DATA(IP2_10_8, FD7_A, SEL_FLCTL_0),
++
++	PINMUX_IPSR_DATA(IP2_13_11, D8),
++	PINMUX_IPSR_MODSEL_DATA(IP2_13_11, SD0_CLK_A, SEL_SDHI0_0),
++	PINMUX_IPSR_MODSEL_DATA(IP2_13_11, MMC_CLK_A, SEL_MMC_0),
++	PINMUX_IPSR_MODSEL_DATA(IP2_13_11, QIO2_A, SEL_RQSPI_0),
++	PINMUX_IPSR_MODSEL_DATA(IP2_13_11, FCE_A, SEL_FLCTL_0),
++	PINMUX_IPSR_MODSEL_DATA(IP2_13_11, ET0_GTX_CLK_B, SEL_ET0_1),
++
++	PINMUX_IPSR_DATA(IP2_16_14, D9),
++	PINMUX_IPSR_MODSEL_DATA(IP2_16_14, SD0_CMD_A, SEL_SDHI0_0),
++	PINMUX_IPSR_MODSEL_DATA(IP2_16_14, MMC_CMD_A, SEL_MMC_0),
++	PINMUX_IPSR_MODSEL_DATA(IP2_16_14, QIO3_A, SEL_RQSPI_0),
++	PINMUX_IPSR_MODSEL_DATA(IP2_16_14, FCLE_A, SEL_FLCTL_0),
++	PINMUX_IPSR_MODSEL_DATA(IP2_16_14, ET0_ETXD1_B, SEL_ET0_1),
++
++	PINMUX_IPSR_DATA(IP2_19_17, D10),
++	PINMUX_IPSR_MODSEL_DATA(IP2_19_17, RSPI_MOSI_A, SEL_RSPI_0),
++	PINMUX_IPSR_MODSEL_DATA(IP2_19_17, QMO_QIO0_A, SEL_RQSPI_0),
++	PINMUX_IPSR_MODSEL_DATA(IP2_19_17, FALE_A, SEL_FLCTL_0),
++	PINMUX_IPSR_MODSEL_DATA(IP2_19_17, ET0_ETXD2_B, SEL_ET0_1),
++
++	PINMUX_IPSR_DATA(IP2_22_20, D11),
++	PINMUX_IPSR_MODSEL_DATA(IP2_22_20, RSPI_MISO_A, SEL_RSPI_0),
++	PINMUX_IPSR_MODSEL_DATA(IP2_22_20, QMI_QIO1_A, SEL_RQSPI_0),
++	PINMUX_IPSR_MODSEL_DATA(IP2_22_20, FRE_A, SEL_FLCTL_0),
++
++	PINMUX_IPSR_DATA(IP2_24_23, D12),
++	PINMUX_IPSR_MODSEL_DATA(IP2_24_23, FWE_A, SEL_FLCTL_0),
++	PINMUX_IPSR_MODSEL_DATA(IP2_24_23, ET0_ETXD5_B, SEL_ET0_1),
++
++	PINMUX_IPSR_DATA(IP2_27_25, D13),
++	PINMUX_IPSR_MODSEL_DATA(IP2_27_25, RX2_B, SEL_SCIF2_1),
++	PINMUX_IPSR_MODSEL_DATA(IP2_27_25, FRB_A, SEL_FLCTL_0),
++	PINMUX_IPSR_MODSEL_DATA(IP2_27_25, ET0_ETXD6_B, SEL_ET0_1),
++
++	PINMUX_IPSR_DATA(IP2_30_28, D14),
++	PINMUX_IPSR_MODSEL_DATA(IP2_30_28, TX2_B, SEL_SCIF2_1),
++	PINMUX_IPSR_MODSEL_DATA(IP2_30_28, FSE_A, SEL_FLCTL_0),
++	PINMUX_IPSR_MODSEL_DATA(IP2_30_28, ET0_TX_CLK_B, SEL_ET0_1),
++
++	/* IPSR3 */
++	PINMUX_IPSR_DATA(IP3_1_0, D15),
++	PINMUX_IPSR_MODSEL_DATA(IP3_1_0, SCK2_B, SEL_SCIF2_1),
++
++	PINMUX_IPSR_DATA(IP3_2, CS1_A26),
++	PINMUX_IPSR_MODSEL_DATA(IP3_2, QIO3_B, SEL_RQSPI_1),
++
++	PINMUX_IPSR_DATA(IP3_5_3, EX_CS1),
++	PINMUX_IPSR_MODSEL_DATA(IP3_5_3, RX3_B, SEL_SCIF2_1),
++	PINMUX_IPSR_DATA(IP3_5_3, ATACS0),
++	PINMUX_IPSR_MODSEL_DATA(IP3_5_3, QIO2_B, SEL_RQSPI_1),
++	PINMUX_IPSR_DATA(IP3_5_3, ET0_ETXD0),
++
++	PINMUX_IPSR_DATA(IP3_8_6, EX_CS2),
++	PINMUX_IPSR_MODSEL_DATA(IP3_8_6, TX3_B, SEL_SCIF3_1),
++	PINMUX_IPSR_DATA(IP3_8_6, ATACS1),
++	PINMUX_IPSR_MODSEL_DATA(IP3_8_6, QSPCLK_B, SEL_RQSPI_1),
++	PINMUX_IPSR_MODSEL_DATA(IP3_8_6, ET0_GTX_CLK_A, SEL_ET0_0),
++
++	PINMUX_IPSR_DATA(IP3_11_9, EX_CS3),
++	PINMUX_IPSR_MODSEL_DATA(IP3_11_9, SD1_CD_A, SEL_SDHI1_0),
++	PINMUX_IPSR_DATA(IP3_11_9, ATARD),
++	PINMUX_IPSR_MODSEL_DATA(IP3_11_9, QMO_QIO0_B, SEL_RQSPI_1),
++	PINMUX_IPSR_MODSEL_DATA(IP3_11_9, ET0_ETXD1_A, SEL_ET0_0),
++
++	PINMUX_IPSR_DATA(IP3_14_12, EX_CS4),
++	PINMUX_IPSR_MODSEL_DATA(IP3_14_12, SD1_WP_A, SEL_SDHI1_0),
++	PINMUX_IPSR_DATA(IP3_14_12, ATAWR),
++	PINMUX_IPSR_MODSEL_DATA(IP3_14_12, QMI_QIO1_B, SEL_RQSPI_1),
++	PINMUX_IPSR_MODSEL_DATA(IP3_14_12, ET0_ETXD2_A, SEL_ET0_0),
++
++	PINMUX_IPSR_DATA(IP3_17_15, EX_CS5),
++	PINMUX_IPSR_MODSEL_DATA(IP3_17_15, SD1_CMD_A, SEL_SDHI1_0),
++	PINMUX_IPSR_DATA(IP3_17_15, ATADIR),
++	PINMUX_IPSR_MODSEL_DATA(IP3_17_15, QSSL_B, SEL_RQSPI_1),
++	PINMUX_IPSR_MODSEL_DATA(IP3_17_15, ET0_ETXD3_A, SEL_ET0_0),
++
++	PINMUX_IPSR_DATA(IP3_19_18, RD_WR),
++	PINMUX_IPSR_DATA(IP3_19_18, TCLK0),
++	PINMUX_IPSR_MODSEL_DATA(IP3_19_18, CAN_CLK_B, SEL_RCAN_CLK_1),
++	PINMUX_IPSR_DATA(IP3_19_18, ET0_ETXD4),
++
++	PINMUX_IPSR_DATA(IP3_20, EX_WAIT0),
++	PINMUX_IPSR_MODSEL_DATA(IP3_20, TCLK1_B, SEL_TMU_1),
++
++	PINMUX_IPSR_DATA(IP3_23_21, EX_WAIT1),
++	PINMUX_IPSR_MODSEL_DATA(IP3_23_21, SD1_DAT0_A, SEL_SDHI1_0),
++	PINMUX_IPSR_DATA(IP3_23_21, DREQ2),
++	PINMUX_IPSR_MODSEL_DATA(IP3_23_21, CAN1_TX_C, SEL_RCAN1_2),
++	PINMUX_IPSR_MODSEL_DATA(IP3_23_21, ET0_LINK_C, SEL_ET0_CTL_2),
++	PINMUX_IPSR_MODSEL_DATA(IP3_23_21, ET0_ETXD5_A, SEL_ET0_0),
++
++	PINMUX_IPSR_DATA(IP3_26_24, EX_WAIT2),
++	PINMUX_IPSR_MODSEL_DATA(IP3_26_24, SD1_DAT1_A, SEL_SDHI1_0),
++	PINMUX_IPSR_DATA(IP3_26_24, DACK2),
++	PINMUX_IPSR_MODSEL_DATA(IP3_26_24, CAN1_RX_C, SEL_RCAN1_2),
++	PINMUX_IPSR_MODSEL_DATA(IP3_26_24, ET0_MAGIC_C, SEL_ET0_CTL_2),
++	PINMUX_IPSR_MODSEL_DATA(IP3_26_24, ET0_ETXD6_A, SEL_ET0_0),
++
++	PINMUX_IPSR_DATA(IP3_29_27, DRACK0),
++	PINMUX_IPSR_MODSEL_DATA(IP3_29_27, SD1_DAT2_A, SEL_SDHI1_0),
++	PINMUX_IPSR_DATA(IP3_29_27, ATAG),
++	PINMUX_IPSR_MODSEL_DATA(IP3_29_27, TCLK1_A, SEL_TMU_0),
++	PINMUX_IPSR_DATA(IP3_29_27, ET0_ETXD7),
++
++	/* IPSR4 */
++	PINMUX_IPSR_MODSEL_DATA(IP4_2_0, HCTS0_A, SEL_HSCIF_0),
++	PINMUX_IPSR_MODSEL_DATA(IP4_2_0, CTS1_A, SEL_SCIF1_0),
++	PINMUX_IPSR_DATA(IP4_2_0, VI0_FIELD),
++	PINMUX_IPSR_MODSEL_DATA(IP4_2_0, RMII0_RXD1_A, SEL_RMII_0),
++	PINMUX_IPSR_DATA(IP4_2_0, ET0_ERXD7),
++
++	PINMUX_IPSR_MODSEL_DATA(IP4_5_3, HRTS0_A, SEL_HSCIF_0),
++	PINMUX_IPSR_MODSEL_DATA(IP4_5_3, RTS1_A, SEL_SCIF1_0),
++	PINMUX_IPSR_DATA(IP4_5_3, VI0_HSYNC),
++	PINMUX_IPSR_MODSEL_DATA(IP4_5_3, RMII0_TXD_EN_A, SEL_RMII_0),
++	PINMUX_IPSR_DATA(IP4_5_3, ET0_RX_DV),
++
++	PINMUX_IPSR_MODSEL_DATA(IP4_8_6, HSCK0_A, SEL_HSCIF_0),
++	PINMUX_IPSR_MODSEL_DATA(IP4_8_6, SCK1_A, SEL_SCIF1_0),
++	PINMUX_IPSR_DATA(IP4_8_6, VI0_VSYNC),
++	PINMUX_IPSR_MODSEL_DATA(IP4_8_6, RMII0_RX_ER_A, SEL_RMII_0),
++	PINMUX_IPSR_DATA(IP4_8_6, ET0_RX_ER),
++
++	PINMUX_IPSR_MODSEL_DATA(IP4_11_9, HRX0_A, SEL_HSCIF_0),
++	PINMUX_IPSR_MODSEL_DATA(IP4_11_9, RX1_A, SEL_SCIF1_0),
++	PINMUX_IPSR_DATA(IP4_11_9, VI0_DATA0_VI0_B0),
++	PINMUX_IPSR_MODSEL_DATA(IP4_11_9, RMII0_CRS_DV_A, SEL_RMII_0),
++	PINMUX_IPSR_DATA(IP4_11_9, ET0_CRS),
++
++	PINMUX_IPSR_MODSEL_DATA(IP4_14_12, HTX0_A, SEL_HSCIF_0),
++	PINMUX_IPSR_MODSEL_DATA(IP4_14_12, TX1_A, SEL_SCIF1_0),
++	PINMUX_IPSR_DATA(IP4_14_12, VI0_DATA1_VI0_B1),
++	PINMUX_IPSR_MODSEL_DATA(IP4_14_12, RMII0_MDC_A, SEL_RMII_0),
++	PINMUX_IPSR_DATA(IP4_14_12, ET0_COL),
++
++	PINMUX_IPSR_MODSEL_DATA(IP4_17_15, CTS0_B, SEL_SCIF0_1),
++	PINMUX_IPSR_DATA(IP4_17_15, VI0_DATA2_VI0_B2),
++	PINMUX_IPSR_MODSEL_DATA(IP4_17_15, RMII0_MDIO_A, SEL_RMII_0),
++	PINMUX_IPSR_DATA(IP4_17_15, ET0_MDC),
++
++	PINMUX_IPSR_MODSEL_DATA(IP4_19_18, RTS0_B, SEL_SCIF0_1),
++	PINMUX_IPSR_DATA(IP4_19_18, VI0_DATA3_VI0_B3),
++	PINMUX_IPSR_MODSEL_DATA(IP4_19_18, ET0_MDIO_A, SEL_ET0_0),
++
++	PINMUX_IPSR_MODSEL_DATA(IP4_21_20, SCK1_B, SEL_SCIF1_1),
++	PINMUX_IPSR_DATA(IP4_21_20, VI0_DATA4_VI0_B4),
++	PINMUX_IPSR_MODSEL_DATA(IP4_21_20, ET0_LINK_A, SEL_ET0_CTL_0),
++
++	PINMUX_IPSR_MODSEL_DATA(IP4_23_22, RX1_B, SEL_SCIF1_1),
++	PINMUX_IPSR_DATA(IP4_23_22, VI0_DATA5_VI0_B5),
++	PINMUX_IPSR_MODSEL_DATA(IP4_23_22, ET0_MAGIC_A, SEL_ET0_CTL_0),
++
++	PINMUX_IPSR_MODSEL_DATA(IP4_25_24, TX1_B, SEL_SCIF1_1),
++	PINMUX_IPSR_DATA(IP4_25_24, VI0_DATA6_VI0_G0),
++	PINMUX_IPSR_MODSEL_DATA(IP4_25_24, ET0_PHY_INT_A, SEL_ET0_CTL_0),
++
++	PINMUX_IPSR_MODSEL_DATA(IP4_27_26, CTS1_B, SEL_SCIF1_1),
++	PINMUX_IPSR_DATA(IP4_27_26, VI0_DATA7_VI0_G1),
++
++	PINMUX_IPSR_MODSEL_DATA(IP4_29_28, RTS1_B, SEL_SCIF1_1),
++	PINMUX_IPSR_DATA(IP4_29_28, VI0_G2),
++
++	PINMUX_IPSR_MODSEL_DATA(IP4_31_30, SCK2_A, SEL_SCIF2_0),
++	PINMUX_IPSR_DATA(IP4_31_30, VI0_G3),
++
++	/* IPSR5 */
++	PINMUX_IPSR_MODSEL_DATA(IP5_2_0, SD2_CLK_A, SEL_SDHI2_0),
++	PINMUX_IPSR_MODSEL_DATA(IP5_2_0, RX2_A, SEL_SCIF2_0),
++	PINMUX_IPSR_DATA(IP5_2_0, VI0_G4),
++	PINMUX_IPSR_MODSEL_DATA(IP5_2_0, ET0_RX_CLK_B, SEL_ET0_1),
++
++	PINMUX_IPSR_MODSEL_DATA(IP5_5_3, SD2_CMD_A, SEL_SDHI2_0),
++	PINMUX_IPSR_MODSEL_DATA(IP5_5_3, TX2_A, SEL_SCIF2_0),
++	PINMUX_IPSR_DATA(IP5_5_3, VI0_G5),
++	PINMUX_IPSR_MODSEL_DATA(IP5_5_3, ET0_ERXD2_B, SEL_ET0_1),
++
++	PINMUX_IPSR_MODSEL_DATA(IP5_8_6, SD2_DAT0_A, SEL_SDHI2_0),
++	PINMUX_IPSR_MODSEL_DATA(IP5_8_6, RX3_A, SEL_SCIF3_0),
++	PINMUX_IPSR_DATA(IP4_8_6, VI0_R0),
++	PINMUX_IPSR_MODSEL_DATA(IP4_8_6, ET0_ERXD2_B, SEL_ET0_1),
++
++	PINMUX_IPSR_MODSEL_DATA(IP5_11_9, SD2_DAT1_A, SEL_SDHI2_0),
++	PINMUX_IPSR_MODSEL_DATA(IP5_11_9, TX3_A, SEL_SCIF3_0),
++	PINMUX_IPSR_DATA(IP5_11_9, VI0_R1),
++	PINMUX_IPSR_MODSEL_DATA(IP5_11_9, ET0_MDIO_B, SEL_ET0_1),
++
++	PINMUX_IPSR_MODSEL_DATA(IP5_14_12, SD2_DAT2_A, SEL_SDHI2_0),
++	PINMUX_IPSR_MODSEL_DATA(IP5_14_12, RX4_A, SEL_SCIF4_0),
++	PINMUX_IPSR_DATA(IP5_14_12, VI0_R2),
++	PINMUX_IPSR_MODSEL_DATA(IP5_14_12, ET0_LINK_B, SEL_ET0_CTL_1),
++
++	PINMUX_IPSR_MODSEL_DATA(IP5_17_15, SD2_DAT3_A, SEL_SDHI2_0),
++	PINMUX_IPSR_MODSEL_DATA(IP5_17_15, TX4_A, SEL_SCIF4_0),
++	PINMUX_IPSR_DATA(IP5_17_15, VI0_R3),
++	PINMUX_IPSR_MODSEL_DATA(IP5_17_15, ET0_MAGIC_B, SEL_ET0_CTL_1),
++
++	PINMUX_IPSR_MODSEL_DATA(IP5_20_18, SD2_CD_A, SEL_SDHI2_0),
++	PINMUX_IPSR_MODSEL_DATA(IP5_20_18, RX5_A, SEL_SCIF5_0),
++	PINMUX_IPSR_DATA(IP5_20_18, VI0_R4),
++	PINMUX_IPSR_MODSEL_DATA(IP5_20_18, ET0_PHY_INT_B, SEL_ET0_CTL_1),
++
++	PINMUX_IPSR_MODSEL_DATA(IP5_22_21, SD2_WP_A, SEL_SDHI2_0),
++	PINMUX_IPSR_MODSEL_DATA(IP5_22_21, TX5_A, SEL_SCIF5_0),
++	PINMUX_IPSR_DATA(IP5_22_21, VI0_R5),
++
++	PINMUX_IPSR_DATA(IP5_24_23, REF125CK),
++	PINMUX_IPSR_DATA(IP5_24_23, ADTRG),
++	PINMUX_IPSR_MODSEL_DATA(IP5_24_23, RX5_C, SEL_SCIF5_2),
++	PINMUX_IPSR_DATA(IP5_26_25, REF50CK),
++	PINMUX_IPSR_MODSEL_DATA(IP5_26_25, CTS1_E, SEL_SCIF1_3),
++	PINMUX_IPSR_MODSEL_DATA(IP5_26_25, HCTS0_D, SEL_HSCIF_3),
++
++	/* IPSR6 */
++	PINMUX_IPSR_DATA(IP6_2_0, DU0_DR0),
++	PINMUX_IPSR_MODSEL_DATA(IP6_2_0, SCIF_CLK_B, SEL_SCIF_CLK_1),
++	PINMUX_IPSR_MODSEL_DATA(IP6_2_0, HRX0_D, SEL_HSCIF_3),
++	PINMUX_IPSR_MODSEL_DATA(IP6_2_0, IETX_A, SEL_IEBUS_0),
++	PINMUX_IPSR_MODSEL_DATA(IP6_2_0, TCLKA_A, SEL_MTU2_CLK_0),
++	PINMUX_IPSR_DATA(IP6_2_0, HIFD00),
++
++	PINMUX_IPSR_DATA(IP6_5_3, DU0_DR1),
++	PINMUX_IPSR_MODSEL_DATA(IP6_5_3, SCK0_B, SEL_SCIF0_1),
++	PINMUX_IPSR_MODSEL_DATA(IP6_5_3, HTX0_D, SEL_HSCIF_3),
++	PINMUX_IPSR_MODSEL_DATA(IP6_5_3, IERX_A, SEL_IEBUS_0),
++	PINMUX_IPSR_MODSEL_DATA(IP6_5_3, TCLKB_A, SEL_MTU2_CLK_0),
++	PINMUX_IPSR_DATA(IP6_5_3, HIFD01),
++
++	PINMUX_IPSR_DATA(IP6_7_6, DU0_DR2),
++	PINMUX_IPSR_MODSEL_DATA(IP6_7_6, RX0_B, SEL_SCIF0_1),
++	PINMUX_IPSR_MODSEL_DATA(IP6_7_6, TCLKC_A, SEL_MTU2_CLK_0),
++	PINMUX_IPSR_DATA(IP6_7_6, HIFD02),
++
++	PINMUX_IPSR_DATA(IP6_9_8, DU0_DR3),
++	PINMUX_IPSR_MODSEL_DATA(IP6_9_8, TX0_B, SEL_SCIF0_1),
++	PINMUX_IPSR_MODSEL_DATA(IP6_9_8, TCLKD_A, SEL_MTU2_CLK_0),
++	PINMUX_IPSR_DATA(IP6_9_8, HIFD03),
++
++	PINMUX_IPSR_DATA(IP6_11_10, DU0_DR4),
++	PINMUX_IPSR_MODSEL_DATA(IP6_11_10, CTS0_C, SEL_SCIF0_2),
++	PINMUX_IPSR_MODSEL_DATA(IP6_11_10, TIOC0A_A, SEL_MTU2_CH0_0),
++	PINMUX_IPSR_DATA(IP6_11_10, HIFD04),
++
++	PINMUX_IPSR_DATA(IP6_13_12, DU0_DR5),
++	PINMUX_IPSR_MODSEL_DATA(IP6_13_12, RTS0_C, SEL_SCIF0_1),
++	PINMUX_IPSR_MODSEL_DATA(IP6_13_12, TIOC0B_A, SEL_MTU2_CH0_0),
++	PINMUX_IPSR_DATA(IP6_13_12, HIFD05),
++
++	PINMUX_IPSR_DATA(IP6_15_14, DU0_DR6),
++	PINMUX_IPSR_MODSEL_DATA(IP6_15_14, SCK1_C, SEL_SCIF1_2),
++	PINMUX_IPSR_MODSEL_DATA(IP6_15_14, TIOC0C_A, SEL_MTU2_CH0_0),
++	PINMUX_IPSR_DATA(IP6_15_14, HIFD06),
++
++	PINMUX_IPSR_DATA(IP6_17_16, DU0_DR7),
++	PINMUX_IPSR_MODSEL_DATA(IP6_17_16, RX1_C, SEL_SCIF1_2),
++	PINMUX_IPSR_MODSEL_DATA(IP6_17_16, TIOC0D_A, SEL_MTU2_CH0_0),
++	PINMUX_IPSR_DATA(IP6_17_16, HIFD07),
++
++	PINMUX_IPSR_DATA(IP6_20_18, DU0_DG0),
++	PINMUX_IPSR_MODSEL_DATA(IP6_20_18, TX1_C, SEL_SCIF1_2),
++	PINMUX_IPSR_MODSEL_DATA(IP6_20_18, HSCK0_D, SEL_HSCIF_3),
++	PINMUX_IPSR_MODSEL_DATA(IP6_20_18, IECLK_A, SEL_IEBUS_0),
++	PINMUX_IPSR_MODSEL_DATA(IP6_20_18, TIOC1A_A, SEL_MTU2_CH1_0),
++	PINMUX_IPSR_DATA(IP6_20_18, HIFD08),
++
++	PINMUX_IPSR_DATA(IP6_23_21, DU0_DG1),
++	PINMUX_IPSR_MODSEL_DATA(IP6_23_21, CTS1_C, SEL_SCIF1_2),
++	PINMUX_IPSR_MODSEL_DATA(IP6_23_21, HRTS0_D, SEL_HSCIF_3),
++	PINMUX_IPSR_MODSEL_DATA(IP6_23_21, TIOC1B_A, SEL_MTU2_CH1_0),
++	PINMUX_IPSR_DATA(IP6_23_21, HIFD09),
++
++	/* IPSR7 */
++	PINMUX_IPSR_DATA(IP7_2_0, DU0_DG2),
++	PINMUX_IPSR_MODSEL_DATA(IP7_2_0, RTS1_C, SEL_SCIF1_2),
++	PINMUX_IPSR_MODSEL_DATA(IP7_2_0, RMII0_MDC_B, SEL_RMII_1),
++	PINMUX_IPSR_MODSEL_DATA(IP7_2_0, TIOC2A_A, SEL_MTU2_CH2_0),
++	PINMUX_IPSR_DATA(IP7_2_0, HIFD10),
++
++	PINMUX_IPSR_DATA(IP7_5_3, DU0_DG3),
++	PINMUX_IPSR_MODSEL_DATA(IP7_5_3, SCK2_C, SEL_SCIF2_2),
++	PINMUX_IPSR_MODSEL_DATA(IP7_5_3, RMII0_MDIO_B, SEL_RMII_1),
++	PINMUX_IPSR_MODSEL_DATA(IP7_5_3, TIOC2B_A, SEL_MTU2_CH2_0),
++	PINMUX_IPSR_DATA(IP7_5_3, HIFD11),
++
++	PINMUX_IPSR_DATA(IP7_8_6, DU0_DG4),
++	PINMUX_IPSR_MODSEL_DATA(IP7_8_6, RX2_C, SEL_SCIF2_2),
++	PINMUX_IPSR_MODSEL_DATA(IP7_8_6, RMII0_CRS_DV_B, SEL_RMII_1),
++	PINMUX_IPSR_MODSEL_DATA(IP7_8_6, TIOC3A_A, SEL_MTU2_CH3_0),
++	PINMUX_IPSR_DATA(IP7_8_6, HIFD12),
++
++	PINMUX_IPSR_DATA(IP7_11_9, DU0_DG5),
++	PINMUX_IPSR_MODSEL_DATA(IP7_11_9, TX2_C, SEL_SCIF2_2),
++	PINMUX_IPSR_MODSEL_DATA(IP7_11_9, RMII0_RX_ER_B, SEL_RMII_1),
++	PINMUX_IPSR_MODSEL_DATA(IP7_11_9, TIOC3B_A, SEL_MTU2_CH3_0),
++	PINMUX_IPSR_DATA(IP7_11_9, HIFD13),
++
++	PINMUX_IPSR_DATA(IP7_14_12, DU0_DG6),
++	PINMUX_IPSR_MODSEL_DATA(IP7_14_12, RX3_C, SEL_SCIF3_2),
++	PINMUX_IPSR_MODSEL_DATA(IP7_14_12, RMII0_RXD0_B, SEL_RMII_1),
++	PINMUX_IPSR_MODSEL_DATA(IP7_14_12, TIOC3C_A, SEL_MTU2_CH3_0),
++	PINMUX_IPSR_DATA(IP7_14_12, HIFD14),
++
++	PINMUX_IPSR_DATA(IP7_17_15, DU0_DG7),
++	PINMUX_IPSR_MODSEL_DATA(IP7_17_15, TX3_C, SEL_SCIF3_2),
++	PINMUX_IPSR_MODSEL_DATA(IP7_17_15, RMII0_RXD1_B, SEL_RMII_1),
++	PINMUX_IPSR_MODSEL_DATA(IP7_17_15, TIOC3D_A, SEL_MTU2_CH3_0),
++	PINMUX_IPSR_DATA(IP7_17_15, HIFD15),
++
++	PINMUX_IPSR_DATA(IP7_20_18, DU0_DB0),
++	PINMUX_IPSR_MODSEL_DATA(IP7_20_18, RX4_C, SEL_SCIF4_2),
++	PINMUX_IPSR_MODSEL_DATA(IP7_20_18, RMII0_TXD_EN_B, SEL_RMII_1),
++	PINMUX_IPSR_MODSEL_DATA(IP7_20_18, TIOC4A_A, SEL_MTU2_CH4_0),
++	PINMUX_IPSR_DATA(IP7_20_18, HIFCS),
++
++	PINMUX_IPSR_DATA(IP7_23_21, DU0_DB1),
++	PINMUX_IPSR_MODSEL_DATA(IP7_23_21, TX4_C, SEL_SCIF4_2),
++	PINMUX_IPSR_MODSEL_DATA(IP7_23_21, RMII0_TXD0_B, SEL_RMII_1),
++	PINMUX_IPSR_MODSEL_DATA(IP7_23_21, TIOC4B_A, SEL_MTU2_CH4_0),
++	PINMUX_IPSR_DATA(IP7_23_21, HIFWR),
++
++	PINMUX_IPSR_DATA(IP7_26_24, DU0_DB2),
++	PINMUX_IPSR_MODSEL_DATA(IP7_26_24, RX5_B, SEL_SCIF5_1),
++	PINMUX_IPSR_MODSEL_DATA(IP7_26_24, RMII0_TXD1_B, SEL_RMII_1),
++	PINMUX_IPSR_MODSEL_DATA(IP7_26_24, TIOC4C_A, SEL_MTU2_CH4_0),
++
++	PINMUX_IPSR_DATA(IP7_28_27, DU0_DB3),
++	PINMUX_IPSR_MODSEL_DATA(IP7_28_27, TX5_B, SEL_SCIF5_1),
++	PINMUX_IPSR_MODSEL_DATA(IP7_28_27, TIOC4D_A, SEL_MTU2_CH4_0),
++	PINMUX_IPSR_DATA(IP7_28_27, HIFRD),
++
++	PINMUX_IPSR_DATA(IP7_30_29, DU0_DB4),
++	PINMUX_IPSR_DATA(IP7_30_29, HIFINT),
++
++	/* IPSR8 */
++	PINMUX_IPSR_DATA(IP8_1_0, DU0_DB5),
++	PINMUX_IPSR_DATA(IP8_1_0, HIFDREQ),
++
++	PINMUX_IPSR_DATA(IP8_3_2, DU0_DB6),
++	PINMUX_IPSR_DATA(IP8_3_2, HIFRDY),
++
++	PINMUX_IPSR_DATA(IP8_5_4, DU0_DB7),
++	PINMUX_IPSR_MODSEL_DATA(IP8_5_4, SSI_SCK0_B, SEL_SSI0_1),
++	PINMUX_IPSR_MODSEL_DATA(IP8_5_4, HIFEBL_B, SEL_HIF_1),
++
++	PINMUX_IPSR_DATA(IP8_7_6, DU0_DOTCLKIN),
++	PINMUX_IPSR_MODSEL_DATA(IP8_7_6, HSPI_CS0_C, SEL_HSPI_2),
++	PINMUX_IPSR_MODSEL_DATA(IP8_7_6, SSI_WS0_B, SEL_SSI0_1),
++
++	PINMUX_IPSR_DATA(IP8_9_8, DU0_DOTCLKOUT),
++	PINMUX_IPSR_MODSEL_DATA(IP8_9_8, HSPI_CLK0_C, SEL_HSPI_2),
++	PINMUX_IPSR_MODSEL_DATA(IP8_9_8, SSI_SDATA0_B, SEL_SSI0_1),
++
++	PINMUX_IPSR_DATA(IP8_11_10, DU0_EXHSYNC_DU0_HSYNC),
++	PINMUX_IPSR_MODSEL_DATA(IP8_11_10, HSPI_TX0_C, SEL_HSPI_2),
++	PINMUX_IPSR_MODSEL_DATA(IP8_11_10, SSI_SCK1_B, SEL_SSI1_1),
++
++	PINMUX_IPSR_DATA(IP8_13_12, DU0_EXVSYNC_DU0_VSYNC),
++	PINMUX_IPSR_MODSEL_DATA(IP8_13_12, HSPI_RX0_C, SEL_HSPI_2),
++	PINMUX_IPSR_MODSEL_DATA(IP8_13_12, SSI_WS1_B, SEL_SSI1_1),
++
++	PINMUX_IPSR_DATA(IP8_15_14, DU0_EXODDF_DU0_ODDF),
++	PINMUX_IPSR_MODSEL_DATA(IP8_15_14, CAN0_RX_B, SEL_RCAN0_1),
++	PINMUX_IPSR_MODSEL_DATA(IP8_15_14, HSCK0_B, SEL_HSCIF_1),
++	PINMUX_IPSR_MODSEL_DATA(IP8_15_14, SSI_SDATA1_B, SEL_SSI1_1),
++
++	PINMUX_IPSR_DATA(IP8_17_16, DU0_DISP),
++	PINMUX_IPSR_MODSEL_DATA(IP8_17_16, CAN0_TX_B, SEL_RCAN0_1),
++	PINMUX_IPSR_MODSEL_DATA(IP8_17_16, HRX0_B, SEL_HSCIF_1),
++	PINMUX_IPSR_MODSEL_DATA(IP8_17_16, AUDIO_CLKA_B, SEL_AUDIO_CLKA_1),
++
++	PINMUX_IPSR_DATA(IP8_19_18, DU0_CDE),
++	PINMUX_IPSR_MODSEL_DATA(IP8_19_18, HTX0_B, SEL_HSCIF_1),
++	PINMUX_IPSR_MODSEL_DATA(IP8_19_18, AUDIO_CLKB_B, SEL_AUDIO_CLKB_1),
++	PINMUX_IPSR_MODSEL_DATA(IP8_19_18, LCD_VCPWC_B, SEL_LCDC_1),
++
++	PINMUX_IPSR_MODSEL_DATA(IP8_22_20, IRQ0_A, SEL_INTC_0),
++	PINMUX_IPSR_MODSEL_DATA(IP8_22_20, HSPI_TX_B, SEL_HSPI_1),
++	PINMUX_IPSR_MODSEL_DATA(IP8_22_20, RX3_E, SEL_SCIF3_4),
++	PINMUX_IPSR_DATA(IP8_22_20, ET0_ERXD0),
++
++	PINMUX_IPSR_MODSEL_DATA(IP8_25_23, IRQ1_A, SEL_INTC_0),
++	PINMUX_IPSR_MODSEL_DATA(IP8_25_23, HSPI_RX_B, SEL_HSPI_1),
++	PINMUX_IPSR_MODSEL_DATA(IP8_25_23, TX3_E, SEL_SCIF3_4),
++	PINMUX_IPSR_DATA(IP8_25_23, ET0_ERXD1),
++
++	PINMUX_IPSR_MODSEL_DATA(IP8_27_26, IRQ2_A, SEL_INTC_0),
++	PINMUX_IPSR_MODSEL_DATA(IP8_27_26, CTS0_A, SEL_SCIF0_0),
++	PINMUX_IPSR_MODSEL_DATA(IP8_27_26, HCTS0_B, SEL_HSCIF_1),
++	PINMUX_IPSR_MODSEL_DATA(IP8_27_26, ET0_ERXD2_A, SEL_ET0_0),
++
++	PINMUX_IPSR_MODSEL_DATA(IP8_29_28, IRQ3_A, SEL_INTC_0),
++	PINMUX_IPSR_MODSEL_DATA(IP8_29_28, RTS0_A, SEL_SCIF0_0),
++	PINMUX_IPSR_MODSEL_DATA(IP8_29_28, HRTS0_B, SEL_HSCIF_1),
++	PINMUX_IPSR_MODSEL_DATA(IP8_29_28, ET0_ERXD3_A, SEL_ET0_0),
++
++	/* IPSR9 */
++	PINMUX_IPSR_MODSEL_DATA(IP9_1_0, VI1_CLK_A, SEL_VIN1_0),
++	PINMUX_IPSR_MODSEL_DATA(IP9_1_0, FD0_B, SEL_FLCTL_1),
++	PINMUX_IPSR_MODSEL_DATA(IP9_1_0, LCD_DATA0_B, SEL_LCDC_1),
++
++	PINMUX_IPSR_MODSEL_DATA(IP9_3_2, VI1_0_A, SEL_VIN1_0),
++	PINMUX_IPSR_MODSEL_DATA(IP9_3_2, FD1_B, SEL_FLCTL_1),
++	PINMUX_IPSR_MODSEL_DATA(IP9_3_2, LCD_DATA1_B, SEL_LCDC_1),
++
++	PINMUX_IPSR_MODSEL_DATA(IP9_5_4, VI1_1_A, SEL_VIN1_0),
++	PINMUX_IPSR_MODSEL_DATA(IP9_5_4, FD2_B, SEL_FLCTL_1),
++	PINMUX_IPSR_MODSEL_DATA(IP9_5_4, LCD_DATA2_B, SEL_LCDC_1),
++
++	PINMUX_IPSR_MODSEL_DATA(IP9_7_6, VI1_2_A, SEL_VIN1_0),
++	PINMUX_IPSR_MODSEL_DATA(IP9_7_6, FD3_B, SEL_FLCTL_1),
++	PINMUX_IPSR_MODSEL_DATA(IP9_7_6, LCD_DATA3_B, SEL_LCDC_1),
++
++	PINMUX_IPSR_MODSEL_DATA(IP9_9_8, VI1_3_A, SEL_VIN1_0),
++	PINMUX_IPSR_MODSEL_DATA(IP9_9_8, FD4_B, SEL_FLCTL_1),
++	PINMUX_IPSR_MODSEL_DATA(IP9_9_8, LCD_DATA4_B, SEL_LCDC_1),
++
++	PINMUX_IPSR_MODSEL_DATA(IP9_11_10, VI1_4_A, SEL_VIN1_0),
++	PINMUX_IPSR_MODSEL_DATA(IP9_11_10, FD5_B, SEL_FLCTL_1),
++	PINMUX_IPSR_MODSEL_DATA(IP9_11_10, LCD_DATA5_B, SEL_LCDC_1),
++
++	PINMUX_IPSR_MODSEL_DATA(IP9_13_12, VI1_5_A, SEL_VIN1_0),
++	PINMUX_IPSR_MODSEL_DATA(IP9_13_12, FD6_B, SEL_FLCTL_1),
++	PINMUX_IPSR_MODSEL_DATA(IP9_13_12, LCD_DATA6_B, SEL_LCDC_1),
++
++	PINMUX_IPSR_MODSEL_DATA(IP9_15_14, VI1_6_A, SEL_VIN1_0),
++	PINMUX_IPSR_MODSEL_DATA(IP9_15_14, FD7_B, SEL_FLCTL_1),
++	PINMUX_IPSR_MODSEL_DATA(IP9_15_14, LCD_DATA7_B, SEL_LCDC_1),
++
++	PINMUX_IPSR_MODSEL_DATA(IP9_17_16, VI1_7_A, SEL_VIN1_0),
++	PINMUX_IPSR_MODSEL_DATA(IP9_17_16, FCE_B, SEL_FLCTL_1),
++	PINMUX_IPSR_MODSEL_DATA(IP9_17_16, LCD_DATA8_B, SEL_LCDC_1),
++
++	PINMUX_IPSR_MODSEL_DATA(IP9_19_18, SSI_SCK0_A, SEL_SSI0_0),
++	PINMUX_IPSR_MODSEL_DATA(IP9_19_18, TIOC1A_B, SEL_MTU2_CH1_1),
++	PINMUX_IPSR_MODSEL_DATA(IP9_19_18, LCD_DATA9_B, SEL_LCDC_1),
++
++	PINMUX_IPSR_MODSEL_DATA(IP9_21_20, SSI_WS0_A, SEL_SSI0_0),
++	PINMUX_IPSR_MODSEL_DATA(IP9_21_20, TIOC1B_B, SEL_MTU2_CH1_1),
++	PINMUX_IPSR_MODSEL_DATA(IP9_21_20, LCD_DATA10_B, SEL_LCDC_1),
++
++	PINMUX_IPSR_MODSEL_DATA(IP9_23_22, SSI_SDATA0_A, SEL_SSI0_0),
++	PINMUX_IPSR_MODSEL_DATA(IP9_23_22, VI1_0_B, SEL_VIN1_1),
++	PINMUX_IPSR_MODSEL_DATA(IP9_23_22, TIOC2A_B, SEL_MTU2_CH2_1),
++	PINMUX_IPSR_MODSEL_DATA(IP9_23_22, LCD_DATA11_B, SEL_LCDC_1),
++
++	PINMUX_IPSR_MODSEL_DATA(IP9_25_24, SSI_SCK1_A, SEL_SSI1_0),
++	PINMUX_IPSR_MODSEL_DATA(IP9_25_24, VI1_1_B, SEL_VIN1_1),
++	PINMUX_IPSR_MODSEL_DATA(IP9_25_24, TIOC2B_B, SEL_MTU2_CH2_1),
++	PINMUX_IPSR_MODSEL_DATA(IP9_25_24, LCD_DATA12_B, SEL_LCDC_1),
++
++	PINMUX_IPSR_MODSEL_DATA(IP9_27_26, SSI_WS1_A, SEL_SSI1_0),
++	PINMUX_IPSR_MODSEL_DATA(IP9_27_26, VI1_2_B, SEL_VIN1_1),
++	PINMUX_IPSR_MODSEL_DATA(IP9_27_26, LCD_DATA13_B, SEL_LCDC_1),
++
++	PINMUX_IPSR_MODSEL_DATA(IP9_29_28, SSI_SDATA1_A, SEL_SSI1_0),
++	PINMUX_IPSR_MODSEL_DATA(IP9_29_28, VI1_3_B, SEL_VIN1_1),
++	PINMUX_IPSR_MODSEL_DATA(IP9_29_28, LCD_DATA14_B, SEL_LCDC_1),
++
++	/* IPSE10 */
++	PINMUX_IPSR_DATA(IP10_2_0, SSI_SCK23),
++	PINMUX_IPSR_MODSEL_DATA(IP10_2_0, VI1_4_B, SEL_VIN1_1),
++	PINMUX_IPSR_MODSEL_DATA(IP10_2_0, RX1_D, SEL_SCIF1_3),
++	PINMUX_IPSR_MODSEL_DATA(IP10_2_0, FCLE_B, SEL_FLCTL_1),
++	PINMUX_IPSR_MODSEL_DATA(IP10_2_0, LCD_DATA15_B, SEL_LCDC_1),
++
++	PINMUX_IPSR_DATA(IP10_5_3, SSI_WS23),
++	PINMUX_IPSR_MODSEL_DATA(IP10_5_3, VI1_5_B, SEL_VIN1_1),
++	PINMUX_IPSR_MODSEL_DATA(IP10_5_3, TX1_D, SEL_SCIF1_3),
++	PINMUX_IPSR_MODSEL_DATA(IP10_5_3, HSCK0_C, SEL_HSCIF_2),
++	PINMUX_IPSR_MODSEL_DATA(IP10_5_3, FALE_B, SEL_FLCTL_1),
++	PINMUX_IPSR_MODSEL_DATA(IP10_5_3, LCD_DON_B, SEL_LCDC_1),
++
++	PINMUX_IPSR_DATA(IP10_8_6, SSI_SDATA2),
++	PINMUX_IPSR_MODSEL_DATA(IP10_8_6, VI1_6_B, SEL_VIN1_1),
++	PINMUX_IPSR_MODSEL_DATA(IP10_8_6, HRX0_C, SEL_HSCIF_2),
++	PINMUX_IPSR_MODSEL_DATA(IP10_8_6, FRE_B, SEL_FLCTL_1),
++	PINMUX_IPSR_MODSEL_DATA(IP10_8_6, LCD_CL1_B, SEL_LCDC_1),
++
++	PINMUX_IPSR_DATA(IP10_11_9, SSI_SDATA3),
++	PINMUX_IPSR_MODSEL_DATA(IP10_11_9, VI1_7_B, SEL_VIN1_1),
++	PINMUX_IPSR_MODSEL_DATA(IP10_11_9, HTX0_C, SEL_HSCIF_2),
++	PINMUX_IPSR_MODSEL_DATA(IP10_11_9, FWE_B, SEL_FLCTL_1),
++	PINMUX_IPSR_MODSEL_DATA(IP10_11_9, LCD_CL2_B, SEL_LCDC_1),
++
++	PINMUX_IPSR_MODSEL_DATA(IP10_14_12, AUDIO_CLKA_A, SEL_AUDIO_CLKA_0),
++	PINMUX_IPSR_MODSEL_DATA(IP10_14_12, VI1_CLK_B, SEL_VIN1_1),
++	PINMUX_IPSR_MODSEL_DATA(IP10_14_12, SCK1_D, SEL_SCIF1_3),
++	PINMUX_IPSR_MODSEL_DATA(IP10_14_12, IECLK_B, SEL_IEBUS_1),
++	PINMUX_IPSR_MODSEL_DATA(IP10_14_12, LCD_FLM_B, SEL_LCDC_1),
++
++	PINMUX_IPSR_MODSEL_DATA(IP10_15, AUDIO_CLKB_A, SEL_AUDIO_CLKB_0),
++	PINMUX_IPSR_MODSEL_DATA(IP10_15, LCD_CLK_B, SEL_LCDC_1),
++
++	PINMUX_IPSR_DATA(IP10_18_16, AUDIO_CLKC),
++	PINMUX_IPSR_MODSEL_DATA(IP10_18_16, SCK1_E, SEL_SCIF1_4),
++	PINMUX_IPSR_MODSEL_DATA(IP10_18_16, HCTS0_C, SEL_HSCIF_2),
++	PINMUX_IPSR_MODSEL_DATA(IP10_18_16, FRB_B, SEL_FLCTL_1),
++	PINMUX_IPSR_MODSEL_DATA(IP10_18_16, LCD_VEPWC_B, SEL_LCDC_1),
++
++	PINMUX_IPSR_DATA(IP10_21_19, AUDIO_CLKOUT),
++	PINMUX_IPSR_MODSEL_DATA(IP10_21_19, TX1_E, SEL_SCIF1_4),
++	PINMUX_IPSR_MODSEL_DATA(IP10_21_19, HRTS0_C, SEL_HSCIF_2),
++	PINMUX_IPSR_MODSEL_DATA(IP10_21_19, FSE_B, SEL_FLCTL_1),
++	PINMUX_IPSR_MODSEL_DATA(IP10_21_19, LCD_M_DISP_B, SEL_LCDC_1),
++
++	PINMUX_IPSR_MODSEL_DATA(IP10_22, CAN_CLK_A, SEL_RCAN_CLK_0),
++	PINMUX_IPSR_MODSEL_DATA(IP10_22, RX4_D, SEL_SCIF4_3),
++
++	PINMUX_IPSR_MODSEL_DATA(IP10_24_23, CAN0_TX_A, SEL_RCAN0_0),
++	PINMUX_IPSR_MODSEL_DATA(IP10_24_23, TX4_D, SEL_SCIF4_3),
++	PINMUX_IPSR_DATA(IP10_24_23, MLB_CLK),
++
++	PINMUX_IPSR_MODSEL_DATA(IP10_25, CAN1_RX_A, SEL_RCAN1_0),
++	PINMUX_IPSR_MODSEL_DATA(IP10_25, IRQ1_B, SEL_INTC_1),
++
++	PINMUX_IPSR_MODSEL_DATA(IP10_27_26, CAN0_RX_A, SEL_RCAN0_0),
++	PINMUX_IPSR_MODSEL_DATA(IP10_27_26, IRQ0_B, SEL_INTC_1),
++	PINMUX_IPSR_DATA(IP10_27_26, MLB_SIG),
++
++	PINMUX_IPSR_MODSEL_DATA(IP10_29_28, CAN1_TX_A, SEL_RCAN1_0),
++	PINMUX_IPSR_MODSEL_DATA(IP10_29_28, TX5_C, SEL_SCIF1_2),
++	PINMUX_IPSR_DATA(IP10_29_28, MLB_DAT),
++
++	/* IPSR11 */
++	PINMUX_IPSR_DATA(IP11_0, SCL1),
++	PINMUX_IPSR_MODSEL_DATA(IP11_0, SCIF_CLK_C, SEL_SCIF_CLK_2),
++
++	PINMUX_IPSR_DATA(IP11_1, SDA1),
++	PINMUX_IPSR_MODSEL_DATA(IP11_0, RX1_E, SEL_SCIF1_4),
++
++	PINMUX_IPSR_DATA(IP11_2, SDA0),
++	PINMUX_IPSR_MODSEL_DATA(IP11_2, HIFEBL_A, SEL_HIF_0),
++
++	PINMUX_IPSR_DATA(IP11_3, SDSELF),
++	PINMUX_IPSR_MODSEL_DATA(IP11_3, RTS1_E, SEL_SCIF1_3),
++
++	PINMUX_IPSR_MODSEL_DATA(IP11_6_4, SCIF_CLK_A, SEL_SCIF_CLK_0),
++	PINMUX_IPSR_MODSEL_DATA(IP11_6_4, HSPI_CLK_A, SEL_HSPI_0),
++	PINMUX_IPSR_DATA(IP11_6_4, VI0_CLK),
++	PINMUX_IPSR_MODSEL_DATA(IP11_6_4, RMII0_TXD0_A, SEL_RMII_0),
++	PINMUX_IPSR_DATA(IP11_6_4, ET0_ERXD4),
++
++	PINMUX_IPSR_MODSEL_DATA(IP11_9_7, SCK0_A, SEL_SCIF0_0),
++	PINMUX_IPSR_MODSEL_DATA(IP11_9_7, HSPI_CS_A, SEL_HSPI_0),
++	PINMUX_IPSR_DATA(IP11_9_7, VI0_CLKENB),
++	PINMUX_IPSR_MODSEL_DATA(IP11_9_7, RMII0_TXD1_A, SEL_RMII_0),
++	PINMUX_IPSR_DATA(IP11_9_7, ET0_ERXD5),
++
++	PINMUX_IPSR_MODSEL_DATA(IP11_11_10, RX0_A, SEL_SCIF0_0),
++	PINMUX_IPSR_MODSEL_DATA(IP11_11_10, HSPI_RX_A, SEL_HSPI_0),
++	PINMUX_IPSR_MODSEL_DATA(IP11_11_10, RMII0_RXD0_A, SEL_RMII_0),
++	PINMUX_IPSR_DATA(IP11_11_10, ET0_ERXD6),
++
++	PINMUX_IPSR_MODSEL_DATA(IP11_12, TX0_A, SEL_SCIF0_0),
++	PINMUX_IPSR_MODSEL_DATA(IP11_12, HSPI_TX_A, SEL_HSPI_0),
++
++	PINMUX_IPSR_DATA(IP11_15_13, PENC1),
++	PINMUX_IPSR_MODSEL_DATA(IP11_15_13, TX3_D, SEL_SCIF3_3),
++	PINMUX_IPSR_MODSEL_DATA(IP11_15_13, CAN1_TX_B,  SEL_RCAN1_1),
++	PINMUX_IPSR_MODSEL_DATA(IP11_15_13, TX5_D, SEL_SCIF5_3),
++	PINMUX_IPSR_MODSEL_DATA(IP11_15_13, IETX_B, SEL_IEBUS_1),
++
++	PINMUX_IPSR_DATA(IP11_18_16, USB_OVC1),
++	PINMUX_IPSR_MODSEL_DATA(IP11_18_16, RX3_D, SEL_SCIF3_3),
++	PINMUX_IPSR_MODSEL_DATA(IP11_18_16, CAN1_RX_B, SEL_RCAN1_1),
++	PINMUX_IPSR_MODSEL_DATA(IP11_18_16, RX5_D, SEL_SCIF5_3),
++	PINMUX_IPSR_MODSEL_DATA(IP11_18_16, IERX_B, SEL_IEBUS_1),
++
++	PINMUX_IPSR_DATA(IP11_20_19, DREQ0),
++	PINMUX_IPSR_MODSEL_DATA(IP11_20_19, SD1_CLK_A, SEL_SDHI1_0),
++	PINMUX_IPSR_DATA(IP11_20_19, ET0_TX_EN),
++
++	PINMUX_IPSR_DATA(IP11_22_21, DACK0),
++	PINMUX_IPSR_MODSEL_DATA(IP11_22_21, SD1_DAT3_A, SEL_SDHI1_0),
++	PINMUX_IPSR_DATA(IP11_22_21, ET0_TX_ER),
++
++	PINMUX_IPSR_DATA(IP11_25_23, DREQ1),
++	PINMUX_IPSR_MODSEL_DATA(IP11_25_23, HSPI_CLK_B, SEL_HSPI_1),
++	PINMUX_IPSR_MODSEL_DATA(IP11_25_23, RX4_B, SEL_SCIF4_1),
++	PINMUX_IPSR_MODSEL_DATA(IP11_25_23, ET0_PHY_INT_C, SEL_ET0_CTL_0),
++	PINMUX_IPSR_MODSEL_DATA(IP11_25_23, ET0_TX_CLK_A, SEL_ET0_0),
++
++	PINMUX_IPSR_DATA(IP11_27_26, DACK1),
++	PINMUX_IPSR_MODSEL_DATA(IP11_27_26, HSPI_CS_B, SEL_HSPI_1),
++	PINMUX_IPSR_MODSEL_DATA(IP11_27_26, TX4_B, SEL_SCIF3_1),
++	PINMUX_IPSR_MODSEL_DATA(IP11_27_26, ET0_RX_CLK_A, SEL_ET0_0),
++
++	PINMUX_IPSR_DATA(IP11_28, PRESETOUT),
++	PINMUX_IPSR_DATA(IP11_28, ST_CLKOUT),
++};
++
++static struct pinmux_gpio pinmux_gpios[] = {
++	PINMUX_GPIO_GP_ALL(),
++
++	GPIO_FN(CLKOUT), GPIO_FN(BS), GPIO_FN(CS0), GPIO_FN(EX_CS0),
++	GPIO_FN(RD), GPIO_FN(WE0), GPIO_FN(WE1),
++	GPIO_FN(SCL0), GPIO_FN(PENC0), GPIO_FN(USB_OVC0),
++	GPIO_FN(IRQ2_B), GPIO_FN(IRQ3_B),
++
++	/* IPSR0 */
++	GPIO_FN(A0), GPIO_FN(ST0_CLKIN), GPIO_FN(LCD_DATA0_A),
++	GPIO_FN(TCLKA_C),
++	GPIO_FN(A1), GPIO_FN(ST0_REQ), GPIO_FN(LCD_DATA1_A),
++	GPIO_FN(TCLKB_C),
++	GPIO_FN(A2), GPIO_FN(ST0_SYC), GPIO_FN(LCD_DATA2_A),
++	GPIO_FN(TCLKC_C),
++	GPIO_FN(A3), GPIO_FN(ST0_VLD), GPIO_FN(LCD_DATA3_A),
++	GPIO_FN(TCLKD_C),
++	GPIO_FN(A4), GPIO_FN(ST0_D0), GPIO_FN(LCD_DATA4_A),
++	GPIO_FN(TIOC0A_C),
++	GPIO_FN(A5), GPIO_FN(ST0_D1), GPIO_FN(LCD_DATA5_A),
++	GPIO_FN(TIOC0B_C),
++	GPIO_FN(A6), GPIO_FN(ST0_D2), GPIO_FN(LCD_DATA6_A),
++	GPIO_FN(TIOC0C_C),
++	GPIO_FN(A7), GPIO_FN(ST0_D3), GPIO_FN(LCD_DATA7_A),
++	GPIO_FN(TIOC0D_C),
++	GPIO_FN(A8), GPIO_FN(ST0_D4), GPIO_FN(LCD_DATA8_A),
++	GPIO_FN(TIOC1A_C),
++	GPIO_FN(A9), GPIO_FN(ST0_D5), GPIO_FN(LCD_DATA9_A),
++	GPIO_FN(TIOC1B_C),
++	GPIO_FN(A10), GPIO_FN(ST0_D6), GPIO_FN(LCD_DATA10_A),
++	GPIO_FN(TIOC2A_C),
++	GPIO_FN(A11), GPIO_FN(ST0_D7), GPIO_FN(LCD_DATA11_A),
++	GPIO_FN(TIOC2B_C),
++	GPIO_FN(A12), GPIO_FN(LCD_DATA12_A), GPIO_FN(TIOC3A_C),
++	GPIO_FN(A13), GPIO_FN(LCD_DATA13_A), GPIO_FN(TIOC3B_C),
++	GPIO_FN(A14), GPIO_FN(LCD_DATA14_A), GPIO_FN(TIOC3C_C),
++	GPIO_FN(A15), GPIO_FN(ST0_VCO_CLKIN), GPIO_FN(LCD_DATA15_A),
++	GPIO_FN(TIOC3D_C),
++
++	/* IPSR1 */
++	GPIO_FN(A16), GPIO_FN(ST0_PWM), GPIO_FN(LCD_DON_A),
++	GPIO_FN(TIOC4A_C),
++	GPIO_FN(A17), GPIO_FN(ST1_VCO_CLKIN), GPIO_FN(LCD_CL1_A),
++	GPIO_FN(TIOC4B_C),
++	GPIO_FN(A18), GPIO_FN(ST1_PWM), GPIO_FN(LCD_CL2_A),
++	GPIO_FN(TIOC4C_C),
++	GPIO_FN(A19), GPIO_FN(ST1_CLKIN), GPIO_FN(LCD_CLK_A),
++	GPIO_FN(TIOC4D_C),
++	GPIO_FN(A20), GPIO_FN(ST1_REQ), GPIO_FN(LCD_FLM_A),
++	GPIO_FN(A21), GPIO_FN(ST1_SYC), GPIO_FN(LCD_VCPWC_A),
++	GPIO_FN(A22), GPIO_FN(ST1_VLD), GPIO_FN(LCD_VEPWC_A),
++	GPIO_FN(A23), GPIO_FN(ST1_D0), GPIO_FN(LCD_M_DISP_A),
++	GPIO_FN(A24), GPIO_FN(RX2_D), GPIO_FN(ST1_D1),
++	GPIO_FN(A25), GPIO_FN(TX2_D), GPIO_FN(ST1_D2),
++	GPIO_FN(D0), GPIO_FN(SD0_DAT0_A), GPIO_FN(MMC_D0_A),
++	GPIO_FN(ST1_D3), GPIO_FN(FD0_A),
++	GPIO_FN(D1), GPIO_FN(SD0_DAT1_A), GPIO_FN(MMC_D1_A),
++	GPIO_FN(ST1_D4), GPIO_FN(FD1_A),
++	GPIO_FN(D2), GPIO_FN(SD0_DAT2_A), GPIO_FN(MMC_D2_A),
++	GPIO_FN(ST1_D5), GPIO_FN(FD2_A),
++	GPIO_FN(D3), GPIO_FN(SD0_DAT3_A), GPIO_FN(MMC_D3_A),
++	GPIO_FN(ST1_D6), GPIO_FN(FD3_A),
++
++	/* IPSR2 */
++	GPIO_FN(D4), GPIO_FN(SD0_CD_A), GPIO_FN(MMC_D4_A), GPIO_FN(ST1_D7),
++	GPIO_FN(FD4_A),
++	GPIO_FN(D5), GPIO_FN(SD0_WP_A), GPIO_FN(MMC_D5_A), GPIO_FN(FD5_A),
++	GPIO_FN(D6), GPIO_FN(RSPI_RSPCK_A), GPIO_FN(MMC_D6_A),
++		GPIO_FN(QSPCLK_A),
++	GPIO_FN(FD6_A),
++	GPIO_FN(D7), GPIO_FN(RSPI_SSL_A), GPIO_FN(MMC_D7_A), GPIO_FN(QSSL_A),
++	GPIO_FN(FD7_A),
++	GPIO_FN(D8), GPIO_FN(SD0_CLK_A), GPIO_FN(MMC_CLK_A), GPIO_FN(QIO2_A),
++	GPIO_FN(FCE_A), GPIO_FN(ET0_GTX_CLK_B),
++	GPIO_FN(D9), GPIO_FN(SD0_CMD_A), GPIO_FN(MMC_CMD_A), GPIO_FN(QIO3_A),
++	GPIO_FN(FCLE_A), GPIO_FN(ET0_ETXD1_B),
++	GPIO_FN(D10), GPIO_FN(RSPI_MOSI_A), GPIO_FN(QMO_QIO0_A),
++		GPIO_FN(FALE_A), GPIO_FN(ET0_ETXD2_B),
++	GPIO_FN(D11), GPIO_FN(RSPI_MISO_A), GPIO_FN(QMI_QIO1_A), GPIO_FN(FRE_A),
++		GPIO_FN(ET0_ETXD3_B),
++	GPIO_FN(D12), GPIO_FN(FWE_A), GPIO_FN(ET0_ETXD5_B),
++	GPIO_FN(D13), GPIO_FN(RX2_B), GPIO_FN(FRB_A), GPIO_FN(ET0_ETXD6_B),
++	GPIO_FN(D14), GPIO_FN(TX2_B), GPIO_FN(FSE_A), GPIO_FN(ET0_TX_CLK_B),
++
++	/* IPSR3 */
++	GPIO_FN(D15), GPIO_FN(SCK2_B),
++	GPIO_FN(CS1_A26), GPIO_FN(QIO3_B),
++	GPIO_FN(EX_CS1), GPIO_FN(RX3_B), GPIO_FN(ATACS0), GPIO_FN(QIO2_B),
++	GPIO_FN(ET0_ETXD0),
++	GPIO_FN(EX_CS2), GPIO_FN(TX3_B), GPIO_FN(ATACS1), GPIO_FN(QSPCLK_B),
++	GPIO_FN(ET0_GTX_CLK_A),
++	GPIO_FN(EX_CS3), GPIO_FN(SD1_CD_A), GPIO_FN(ATARD), GPIO_FN(QMO_QIO0_B),
++	GPIO_FN(ET0_ETXD1_A),
++	GPIO_FN(EX_CS4), GPIO_FN(SD1_WP_A), GPIO_FN(ATAWR), GPIO_FN(QMI_QIO1_B),
++	GPIO_FN(ET0_ETXD2_A),
++	GPIO_FN(EX_CS5), GPIO_FN(SD1_CMD_A), GPIO_FN(ATADIR), GPIO_FN(QSSL_B),
++	GPIO_FN(ET0_ETXD3_A),
++	GPIO_FN(RD_WR), GPIO_FN(TCLK1_B),
++	GPIO_FN(EX_WAIT0), GPIO_FN(TCLK1_B),
++	GPIO_FN(EX_WAIT1), GPIO_FN(SD1_DAT0_A), GPIO_FN(DREQ2),
++		GPIO_FN(CAN1_TX_C), GPIO_FN(ET0_LINK_C), GPIO_FN(ET0_ETXD5_A),
++	GPIO_FN(EX_WAIT2), GPIO_FN(SD1_DAT1_A), GPIO_FN(DACK2),
++		GPIO_FN(CAN1_RX_C), GPIO_FN(ET0_MAGIC_C), GPIO_FN(ET0_ETXD6_A),
++	GPIO_FN(DRACK0), GPIO_FN(SD1_DAT2_A), GPIO_FN(ATAG), GPIO_FN(TCLK1_A),
++	GPIO_FN(ET0_ETXD7),
++
++	/* IPSR4 */
++	GPIO_FN(HCTS0_A), GPIO_FN(CTS1_A), GPIO_FN(VI0_FIELD),
++		GPIO_FN(RMII0_RXD1_A), GPIO_FN(ET0_ERXD7),
++	GPIO_FN(HRTS0_A), GPIO_FN(RTS1_A), GPIO_FN(VI0_HSYNC),
++		GPIO_FN(RMII0_TXD_EN_A), GPIO_FN(ET0_RX_DV),
++	GPIO_FN(HSCK0_A), GPIO_FN(SCK1_A), GPIO_FN(VI0_VSYNC),
++		GPIO_FN(RMII0_RX_ER_A), GPIO_FN(ET0_RX_ER),
++	GPIO_FN(HRX0_A), GPIO_FN(RX1_A), GPIO_FN(VI0_DATA0_VI0_B0),
++		GPIO_FN(RMII0_CRS_DV_A), GPIO_FN(ET0_CRS),
++	GPIO_FN(HTX0_A), GPIO_FN(TX1_A), GPIO_FN(VI0_DATA1_VI0_B1),
++		GPIO_FN(RMII0_MDC_A), GPIO_FN(ET0_COL),
++	GPIO_FN(CTS0_B), GPIO_FN(VI0_DATA2_VI0_B2), GPIO_FN(RMII0_MDIO_A),
++		GPIO_FN(ET0_MDC),
++	GPIO_FN(RTS0_B), GPIO_FN(VI0_DATA3_VI0_B3), GPIO_FN(ET0_MDIO_A),
++	GPIO_FN(SCK1_B), GPIO_FN(VI0_DATA4_VI0_B4), GPIO_FN(ET0_LINK_A),
++	GPIO_FN(RX1_B), GPIO_FN(VI0_DATA5_VI0_B5), GPIO_FN(ET0_MAGIC_A),
++	GPIO_FN(TX1_B), GPIO_FN(VI0_DATA6_VI0_G0), GPIO_FN(ET0_PHY_INT_A),
++	GPIO_FN(CTS1_B), GPIO_FN(VI0_DATA7_VI0_G1),
++	GPIO_FN(RTS1_B), GPIO_FN(VI0_G2),
++	GPIO_FN(SCK2_A), GPIO_FN(VI0_G3),
++
++	/* IPSR5 */
++	GPIO_FN(REF50CK), GPIO_FN(CTS1_E), GPIO_FN(HCTS0_D),
++	GPIO_FN(REF125CK), GPIO_FN(ADTRG), GPIO_FN(RX5_C),
++	GPIO_FN(SD2_WP_A), GPIO_FN(TX5_A), GPIO_FN(VI0_R5),
++	GPIO_FN(SD2_CD_A), GPIO_FN(RX5_A), GPIO_FN(VI0_R4),
++		GPIO_FN(ET0_PHY_INT_B),
++	GPIO_FN(SD2_DAT3_A), GPIO_FN(TX4_A), GPIO_FN(VI0_R3),
++		GPIO_FN(ET0_MAGIC_B),
++	GPIO_FN(SD2_DAT2_A), GPIO_FN(RX4_A), GPIO_FN(VI0_R2),
++		GPIO_FN(ET0_LINK_B),
++	GPIO_FN(SD2_DAT1_A), GPIO_FN(TX3_A), GPIO_FN(VI0_R1),
++		GPIO_FN(ET0_MDIO_B),
++	GPIO_FN(SD2_DAT0_A), GPIO_FN(RX3_A), GPIO_FN(VI0_R0),
++		GPIO_FN(ET0_ERXD3_B),
++	GPIO_FN(SD2_CMD_A), GPIO_FN(TX2_A), GPIO_FN(VI0_G5),
++		GPIO_FN(ET0_ERXD2_B),
++	GPIO_FN(SD2_CLK_A), GPIO_FN(RX2_A), GPIO_FN(VI0_G4),
++		GPIO_FN(ET0_RX_CLK_B),
++
++	/* IPSR6 */
++	GPIO_FN(DU0_DG1), GPIO_FN(CTS1_C), GPIO_FN(HRTS0_D),
++		GPIO_FN(TIOC1B_A), GPIO_FN(HIFD09),
++	GPIO_FN(DU0_DG0), GPIO_FN(TX1_C), GPIO_FN(HSCK0_D),
++		GPIO_FN(IECLK_A), GPIO_FN(TIOC1A_A), GPIO_FN(HIFD08),
++	GPIO_FN(DU0_DR7), GPIO_FN(RX1_C), GPIO_FN(TIOC0D_A),
++		GPIO_FN(HIFD07),
++	GPIO_FN(DU0_DR6), GPIO_FN(SCK1_C), GPIO_FN(TIOC0C_A),
++		GPIO_FN(HIFD06),
++	GPIO_FN(DU0_DR5), GPIO_FN(RTS0_C), GPIO_FN(TIOC0B_A),
++		GPIO_FN(HIFD05),
++	GPIO_FN(DU0_DR4), GPIO_FN(CTS0_C), GPIO_FN(TIOC0A_A),
++		GPIO_FN(HIFD04),
++	GPIO_FN(DU0_DR3), GPIO_FN(TX0_B), GPIO_FN(TCLKD_A), GPIO_FN(HIFD03),
++	GPIO_FN(DU0_DR2), GPIO_FN(RX0_B), GPIO_FN(TCLKC_A), GPIO_FN(HIFD02),
++	GPIO_FN(DU0_DR1), GPIO_FN(SCK0_B), GPIO_FN(HTX0_D),
++		GPIO_FN(IERX_A), GPIO_FN(TCLKB_A), GPIO_FN(HIFD01),
++	GPIO_FN(DU0_DR0), GPIO_FN(SCIF_CLK_B), GPIO_FN(HRX0_D),
++		GPIO_FN(IETX_A), GPIO_FN(TCLKA_A), GPIO_FN(HIFD00),
++
++	/* IPSR7 */
++	GPIO_FN(DU0_DB4), GPIO_FN(HIFINT),
++	GPIO_FN(DU0_DB3), GPIO_FN(TX5_B), GPIO_FN(TIOC4D_A), GPIO_FN(HIFRD),
++	GPIO_FN(DU0_DB2), GPIO_FN(RX5_B), GPIO_FN(RMII0_TXD1_B),
++		GPIO_FN(TIOC4C_A), GPIO_FN(HIFWR),
++	GPIO_FN(DU0_DB1), GPIO_FN(TX4_C), GPIO_FN(RMII0_TXD0_B),
++		GPIO_FN(TIOC4B_A), GPIO_FN(HIFRS),
++	GPIO_FN(DU0_DB0), GPIO_FN(RX4_C), GPIO_FN(RMII0_TXD_EN_B),
++		GPIO_FN(TIOC4A_A), GPIO_FN(HIFCS),
++	GPIO_FN(DU0_DG7), GPIO_FN(TX3_C), GPIO_FN(RMII0_RXD1_B),
++		GPIO_FN(TIOC3D_A), GPIO_FN(HIFD15),
++	GPIO_FN(DU0_DG6), GPIO_FN(RX3_C), GPIO_FN(RMII0_RXD0_B),
++		GPIO_FN(TIOC3C_A), GPIO_FN(HIFD14),
++	GPIO_FN(DU0_DG5), GPIO_FN(TX2_C), GPIO_FN(RMII0_RX_ER_B),
++		GPIO_FN(TIOC3B_A), GPIO_FN(HIFD13),
++	GPIO_FN(DU0_DG4), GPIO_FN(RX2_C), GPIO_FN(RMII0_CRS_DV_B),
++		GPIO_FN(TIOC3A_A), GPIO_FN(HIFD12),
++	GPIO_FN(DU0_DG3), GPIO_FN(SCK2_C), GPIO_FN(RMII0_MDIO_B),
++		GPIO_FN(TIOC2B_A), GPIO_FN(HIFD11),
++	GPIO_FN(DU0_DG2), GPIO_FN(RTS1_C), GPIO_FN(RMII0_MDC_B),
++		GPIO_FN(TIOC2A_A), GPIO_FN(HIFD10),
++
++	/* IPSR8 */
++	GPIO_FN(IRQ3_A), GPIO_FN(RTS0_A), GPIO_FN(HRTS0_B),
++		GPIO_FN(ET0_ERXD3_A),
++	GPIO_FN(IRQ2_A), GPIO_FN(CTS0_A), GPIO_FN(HCTS0_B),
++		GPIO_FN(ET0_ERXD2_A),
++	GPIO_FN(IRQ1_A), GPIO_FN(HSPI_RX_B), GPIO_FN(TX3_E),
++		GPIO_FN(ET0_ERXD1),
++	GPIO_FN(IRQ0_A), GPIO_FN(HSPI_TX_B), GPIO_FN(RX3_E),
++		GPIO_FN(ET0_ERXD0),
++	GPIO_FN(DU0_CDE), GPIO_FN(HTX0_B), GPIO_FN(AUDIO_CLKB_B),
++		GPIO_FN(LCD_VCPWC_B),
++	GPIO_FN(DU0_DISP), GPIO_FN(CAN0_TX_B), GPIO_FN(HRX0_B),
++		GPIO_FN(AUDIO_CLKA_B),
++	GPIO_FN(DU0_EXODDF_DU0_ODDF), GPIO_FN(CAN0_RX_B), GPIO_FN(HSCK0_B),
++		GPIO_FN(SSI_SDATA1_B),
++	GPIO_FN(DU0_EXVSYNC_DU0_VSYNC), GPIO_FN(HSPI_RX0_C),
++		GPIO_FN(SSI_WS1_B),
++	GPIO_FN(DU0_EXHSYNC_DU0_HSYNC), GPIO_FN(HSPI_TX0_C),
++		GPIO_FN(SSI_SCK1_B),
++	GPIO_FN(DU0_DOTCLKOUT), GPIO_FN(HSPI_CLK0_C),
++		GPIO_FN(SSI_SDATA0_B),
++	GPIO_FN(DU0_DOTCLKIN), GPIO_FN(HSPI_CS0_C),
++		GPIO_FN(SSI_WS0_B),
++	GPIO_FN(DU0_DB7), GPIO_FN(SSI_SCK0_B), GPIO_FN(HIFEBL_B),
++	GPIO_FN(DU0_DB6), GPIO_FN(HIFRDY),
++	GPIO_FN(DU0_DB5), GPIO_FN(HIFDREQ),
++
++	/* IPSR9 */
++	GPIO_FN(SSI_SDATA1_A), GPIO_FN(VI1_3_B), GPIO_FN(LCD_DATA14_B),
++	GPIO_FN(SSI_WS1_A), GPIO_FN(VI1_2_B), GPIO_FN(LCD_DATA13_B),
++	GPIO_FN(SSI_SCK1_A), GPIO_FN(VI1_1_B), GPIO_FN(TIOC2B_B),
++		GPIO_FN(LCD_DATA12_B),
++	GPIO_FN(SSI_SDATA0_A), GPIO_FN(VI1_0_B), GPIO_FN(TIOC2A_B),
++		GPIO_FN(LCD_DATA11_B),
++	GPIO_FN(SSI_WS0_A), GPIO_FN(TIOC1B_B), GPIO_FN(LCD_DATA10_B),
++	GPIO_FN(SSI_SCK0_A), GPIO_FN(TIOC1A_B), GPIO_FN(LCD_DATA9_B),
++	GPIO_FN(VI1_7_A), GPIO_FN(FCE_B), GPIO_FN(LCD_DATA8_B),
++	GPIO_FN(VI1_6_A), GPIO_FN(FD7_B), GPIO_FN(LCD_DATA7_B),
++	GPIO_FN(VI1_5_A), GPIO_FN(FD6_B), GPIO_FN(LCD_DATA6_B),
++	GPIO_FN(VI1_4_A), GPIO_FN(FD5_B), GPIO_FN(LCD_DATA5_B),
++	GPIO_FN(VI1_3_A), GPIO_FN(FD4_B), GPIO_FN(LCD_DATA4_B),
++	GPIO_FN(VI1_2_A), GPIO_FN(FD3_B), GPIO_FN(LCD_DATA3_B),
++	GPIO_FN(VI1_1_A), GPIO_FN(FD2_B), GPIO_FN(LCD_DATA2_B),
++	GPIO_FN(VI1_0_A), GPIO_FN(FD1_B), GPIO_FN(LCD_DATA1_B),
++	GPIO_FN(VI1_CLK_A), GPIO_FN(FD0_B), GPIO_FN(LCD_DATA0_B),
++
++	/* IPSR10 */
++	GPIO_FN(CAN1_TX_A), GPIO_FN(TX5_C), GPIO_FN(MLB_DAT),
++	GPIO_FN(CAN0_RX_A), GPIO_FN(IRQ0_B), GPIO_FN(MLB_SIG),
++	GPIO_FN(CAN1_RX_A), GPIO_FN(IRQ1_B),
++	GPIO_FN(CAN0_TX_A), GPIO_FN(TX4_D), GPIO_FN(MLB_CLK),
++	GPIO_FN(CAN_CLK_A), GPIO_FN(RX4_D),
++	GPIO_FN(AUDIO_CLKOUT), GPIO_FN(TX1_E), GPIO_FN(HRTS0_C),
++		GPIO_FN(FSE_B), GPIO_FN(LCD_M_DISP_B),
++	GPIO_FN(AUDIO_CLKC), GPIO_FN(SCK1_E), GPIO_FN(HCTS0_C),
++		GPIO_FN(FRB_B), GPIO_FN(LCD_VEPWC_B),
++	GPIO_FN(AUDIO_CLKB_A), GPIO_FN(LCD_CLK_B),
++	GPIO_FN(AUDIO_CLKA_A), GPIO_FN(VI1_CLK_B), GPIO_FN(SCK1_D),
++		GPIO_FN(IECLK_B), GPIO_FN(LCD_FLM_B),
++	GPIO_FN(SSI_SDATA3), GPIO_FN(VI1_7_B), GPIO_FN(HTX0_C),
++		GPIO_FN(FWE_B), GPIO_FN(LCD_CL2_B),
++	GPIO_FN(SSI_SDATA2), GPIO_FN(VI1_6_B), GPIO_FN(HRX0_C),
++		GPIO_FN(FRE_B), GPIO_FN(LCD_CL1_B),
++	GPIO_FN(SSI_WS23), GPIO_FN(VI1_5_B), GPIO_FN(TX1_D),
++		GPIO_FN(HSCK0_C), GPIO_FN(FALE_B), GPIO_FN(LCD_DON_B),
++	GPIO_FN(SSI_SCK23), GPIO_FN(VI1_4_B), GPIO_FN(RX1_D),
++		GPIO_FN(FCLE_B), GPIO_FN(LCD_DATA15_B),
++
++	/* IPSR11 */
++	GPIO_FN(PRESETOUT), GPIO_FN(ST_CLKOUT),
++	GPIO_FN(DACK1), GPIO_FN(HSPI_CS_B), GPIO_FN(TX4_B),
++		GPIO_FN(ET0_RX_CLK_A),
++	GPIO_FN(DREQ1), GPIO_FN(HSPI_CLK_B), GPIO_FN(RX4_B),
++		GPIO_FN(ET0_PHY_INT_C), GPIO_FN(ET0_TX_CLK_A),
++	GPIO_FN(DACK0), GPIO_FN(SD1_DAT3_A), GPIO_FN(ET0_TX_ER),
++	GPIO_FN(DREQ0), GPIO_FN(SD1_CLK_A), GPIO_FN(ET0_TX_EN),
++	GPIO_FN(USB_OVC1), GPIO_FN(RX3_D), GPIO_FN(CAN1_RX_B),
++		GPIO_FN(RX5_D), GPIO_FN(IERX_B),
++	GPIO_FN(PENC1), GPIO_FN(TX3_D), GPIO_FN(CAN1_TX_B),
++		GPIO_FN(TX5_D), GPIO_FN(IETX_B),
++	GPIO_FN(TX0_A), GPIO_FN(HSPI_TX_A),
++	GPIO_FN(RX0_A), GPIO_FN(HSPI_RX_A), GPIO_FN(RMII0_RXD0_A),
++		GPIO_FN(ET0_ERXD6),
++	GPIO_FN(SCK0_A), GPIO_FN(HSPI_CS_A), GPIO_FN(VI0_CLKENB),
++		GPIO_FN(RMII0_TXD1_A), GPIO_FN(ET0_ERXD5),
++	GPIO_FN(SCIF_CLK_A), GPIO_FN(HSPI_CLK_A), GPIO_FN(VI0_CLK),
++		GPIO_FN(RMII0_TXD0_A), GPIO_FN(ET0_ERXD4),
++	GPIO_FN(SDSELF), GPIO_FN(RTS1_E),
++	GPIO_FN(SDA0), GPIO_FN(HIFEBL_A),
++	GPIO_FN(SDA1), GPIO_FN(RX1_E),
++	GPIO_FN(SCL1), GPIO_FN(SCIF_CLK_C),
++};
++
++static struct pinmux_cfg_reg pinmux_config_regs[] = {
++	{ PINMUX_CFG_REG("GPSR0", 0xFFFC0004, 32, 1) {
++		GP_0_31_FN, FN_IP2_2_0,
++		GP_0_30_FN, FN_IP1_31_29,
++		GP_0_29_FN, FN_IP1_28_26,
++		GP_0_28_FN, FN_IP1_25_23,
++		GP_0_27_FN, FN_IP1_22_20,
++		GP_0_26_FN, FN_IP1_19_18,
++		GP_0_25_FN, FN_IP1_17_16,
++		GP_0_24_FN, FN_IP0_5_4,
++		GP_0_23_FN, FN_IP0_3_2,
++		GP_0_22_FN, FN_IP0_1_0,
++		GP_0_21_FN, FN_IP11_28,
++		GP_0_20_FN, FN_IP1_7_6,
++		GP_0_19_FN, FN_IP1_5_4,
++		GP_0_18_FN, FN_IP1_3_2,
++		GP_0_17_FN, FN_IP1_1_0,
++		GP_0_16_FN, FN_IP0_31_30,
++		GP_0_15_FN, FN_IP0_29_28,
++		GP_0_14_FN, FN_IP0_27_26,
++		GP_0_13_FN, FN_IP0_25_24,
++		GP_0_12_FN, FN_IP0_23_22,
++		GP_0_11_FN, FN_IP0_21_20,
++		GP_0_10_FN, FN_IP0_19_18,
++		GP_0_9_FN, FN_IP0_17_16,
++		GP_0_8_FN, FN_IP0_15_14,
++		GP_0_7_FN, FN_IP0_13_12,
++		GP_0_6_FN, FN_IP0_11_10,
++		GP_0_5_FN, FN_IP0_9_8,
++		GP_0_4_FN, FN_IP0_7_6,
++		GP_0_3_FN, FN_IP1_15_14,
++		GP_0_2_FN, FN_IP1_13_12,
++		GP_0_1_FN, FN_IP1_11_10,
++		GP_0_0_FN, FN_IP1_9_8 }
++	},
++	{ PINMUX_CFG_REG("GPSR1", 0xFFFC0008, 32, 1) {
++		GP_1_31_FN, FN_IP11_25_23,
++		GP_1_30_FN, FN_IP2_13_11,
++		GP_1_29_FN, FN_IP2_10_8,
++		GP_1_28_FN, FN_IP2_7_5,
++		GP_1_27_FN, FN_IP3_26_24,
++		GP_1_26_FN, FN_IP3_23_21,
++		GP_1_25_FN, FN_IP2_4_3,
++		GP_1_24_FN, FN_WE1,
++		GP_1_23_FN, FN_WE0,
++		GP_1_22_FN, FN_IP3_19_18,
++		GP_1_21_FN, FN_RD,
++		GP_1_20_FN, FN_IP3_17_15,
++		GP_1_19_FN, FN_IP3_14_12,
++		GP_1_18_FN, FN_IP3_11_9,
++		GP_1_17_FN, FN_IP3_8_6,
++		GP_1_16_FN, FN_IP3_5_3,
++		GP_1_15_FN, FN_EX_CS0,
++		GP_1_14_FN, FN_IP3_2,
++		GP_1_13_FN, FN_CS0,
++		GP_1_12_FN, FN_BS,
++		GP_1_11_FN, FN_CLKOUT,
++		GP_1_10_FN, FN_IP3_1_0,
++		GP_1_9_FN, FN_IP2_30_28,
++		GP_1_8_FN, FN_IP2_27_25,
++		GP_1_7_FN, FN_IP2_24_23,
++		GP_1_6_FN, FN_IP2_22_20,
++		GP_1_5_FN, FN_IP2_19_17,
++		GP_1_4_FN, FN_IP2_16_14,
++		GP_1_3_FN, FN_IP11_22_21,
++		GP_1_2_FN, FN_IP11_20_19,
++		GP_1_1_FN, FN_IP3_29_27,
++		GP_1_0_FN, FN_IP3_20 }
++	},
++	{ PINMUX_CFG_REG("GPSR2", 0xFFFC000C, 32, 1) {
++		GP_2_31_FN, FN_IP4_31_30,
++		GP_2_30_FN, FN_IP5_2_0,
++		GP_2_29_FN, FN_IP5_5_3,
++		GP_2_28_FN, FN_IP5_8_6,
++		GP_2_27_FN, FN_IP5_11_9,
++		GP_2_26_FN, FN_IP5_14_12,
++		GP_2_25_FN, FN_IP5_17_15,
++		GP_2_24_FN, FN_IP5_20_18,
++		GP_2_23_FN, FN_IP5_22_21,
++		GP_2_22_FN, FN_IP5_24_23,
++		GP_2_21_FN, FN_IP5_26_25,
++		GP_2_20_FN, FN_IP4_29_28,
++		GP_2_19_FN, FN_IP4_27_26,
++		GP_2_18_FN, FN_IP4_25_24,
++		GP_2_17_FN, FN_IP4_23_22,
++		GP_2_16_FN, FN_IP4_21_20,
++		GP_2_15_FN, FN_IP4_19_18,
++		GP_2_14_FN, FN_IP4_17_15,
++		GP_2_13_FN, FN_IP4_14_12,
++		GP_2_12_FN, FN_IP4_11_9,
++		GP_2_11_FN, FN_IP4_8_6,
++		GP_2_10_FN, FN_IP4_5_3,
++		GP_2_9_FN, FN_IP8_27_26,
++		GP_2_8_FN, FN_IP11_12,
++		GP_2_7_FN, FN_IP8_25_23,
++		GP_2_6_FN, FN_IP8_22_20,
++		GP_2_5_FN, FN_IP11_27_26,
++		GP_2_4_FN, FN_IP8_29_28,
++		GP_2_3_FN, FN_IP4_2_0,
++		GP_2_2_FN, FN_IP11_11_10,
++		GP_2_1_FN, FN_IP11_9_7,
++		GP_2_0_FN, FN_IP11_6_4 }
++	},
++	{ PINMUX_CFG_REG("GPSR3", 0xFFFC0010, 32, 1) {
++		GP_3_31_FN, FN_IP9_1_0,
++		GP_3_30_FN, FN_IP8_19_18,
++		GP_3_29_FN, FN_IP8_17_16,
++		GP_3_28_FN, FN_IP8_15_14,
++		GP_3_27_FN, FN_IP8_13_12,
++		GP_3_26_FN, FN_IP8_11_10,
++		GP_3_25_FN, FN_IP8_9_8,
++		GP_3_24_FN, FN_IP8_7_6,
++		GP_3_23_FN, FN_IP8_5_4,
++		GP_3_22_FN, FN_IP8_3_2,
++		GP_3_21_FN, FN_IP8_1_0,
++		GP_3_20_FN, FN_IP7_30_29,
++		GP_3_19_FN, FN_IP7_28_27,
++		GP_3_18_FN, FN_IP7_26_24,
++		GP_3_17_FN, FN_IP7_23_21,
++		GP_3_16_FN, FN_IP7_20_18,
++		GP_3_15_FN, FN_IP7_17_15,
++		GP_3_14_FN, FN_IP7_14_12,
++		GP_3_13_FN, FN_IP7_11_9,
++		GP_3_12_FN, FN_IP7_8_6,
++		GP_3_11_FN, FN_IP7_5_3,
++		GP_3_10_FN, FN_IP7_2_0,
++		GP_3_9_FN, FN_IP6_23_21,
++		GP_3_8_FN, FN_IP6_20_18,
++		GP_3_7_FN, FN_IP6_17_16,
++		GP_3_6_FN, FN_IP6_15_14,
++		GP_3_5_FN, FN_IP6_13_12,
++		GP_3_4_FN, FN_IP6_11_10,
++		GP_3_3_FN, FN_IP6_9_8,
++		GP_3_2_FN, FN_IP6_7_6,
++		GP_3_1_FN, FN_IP6_5_3,
++		GP_3_0_FN, FN_IP6_2_0 }
++	},
++
++	{ PINMUX_CFG_REG("GPSR4", 0xFFFC0014, 32, 1) {
++		GP_4_31_FN, FN_IP10_24_23,
++		GP_4_30_FN, FN_IP10_22,
++		GP_4_29_FN, FN_IP11_18_16,
++		GP_4_28_FN, FN_USB_OVC0,
++		GP_4_27_FN, FN_IP11_15_13,
++		GP_4_26_FN, FN_PENC0,
++		GP_4_25_FN, FN_IP11_2,
++		GP_4_24_FN, FN_SCL0,
++		GP_4_23_FN, FN_IP11_1,
++		GP_4_22_FN, FN_IP11_0,
++		GP_4_21_FN, FN_IP10_21_19,
++		GP_4_20_FN, FN_IP10_18_16,
++		GP_4_19_FN, FN_IP10_15,
++		GP_4_18_FN, FN_IP10_14_12,
++		GP_4_17_FN, FN_IP10_11_9,
++		GP_4_16_FN, FN_IP10_8_6,
++		GP_4_15_FN, FN_IP10_5_3,
++		GP_4_14_FN, FN_IP10_2_0,
++		GP_4_13_FN, FN_IP9_29_28,
++		GP_4_12_FN, FN_IP9_27_26,
++		GP_4_11_FN, FN_IP9_9_8,
++		GP_4_10_FN, FN_IP9_7_6,
++		GP_4_9_FN, FN_IP9_5_4,
++		GP_4_8_FN, FN_IP9_3_2,
++		GP_4_7_FN, FN_IP9_17_16,
++		GP_4_6_FN, FN_IP9_15_14,
++		GP_4_5_FN, FN_IP9_13_12,
++		GP_4_4_FN, FN_IP9_11_10,
++		GP_4_3_FN, FN_IP9_25_24,
++		GP_4_2_FN, FN_IP9_23_22,
++		GP_4_1_FN, FN_IP9_21_20,
++		GP_4_0_FN, FN_IP9_19_18 }
++	},
++	{ PINMUX_CFG_REG("GPSR5", 0xFFFC0018, 32, 1) {
++		0, 0, 0, 0, 0, 0, 0, 0, /* 31 - 28 */
++		0, 0, 0, 0, 0, 0, 0, 0, /* 27 - 24 */
++		0, 0, 0, 0, 0, 0, 0, 0, /* 23 - 20 */
++		0, 0, 0, 0, 0, 0, 0, 0, /* 19 - 16 */
++		0, 0, 0, 0, 0, 0, 0, 0, /* 15 - 12 */
++		GP_5_11_FN, FN_IP10_29_28,
++		GP_5_10_FN, FN_IP10_27_26,
++		0, 0, 0, 0, 0, 0, 0, 0, /* 9 - 6 */
++		0, 0, 0, 0, /* 5, 4 */
++		GP_5_3_FN, FN_IRQ3_B,
++		GP_5_2_FN, FN_IRQ2_B,
++		GP_5_1_FN, FN_IP11_3,
++		GP_5_0_FN, FN_IP10_25 }
++	},
++
++	{ PINMUX_CFG_REG_VAR("IPSR0", 0xFFFC001C, 32,
++			2, 2, 2, 2, 2, 2, 2, 2,
++			2, 2, 2, 2, 2, 2, 2, 2) {
++		/* IP0_31_30 [2] */
++		FN_A15, FN_ST0_VCO_CLKIN, FN_LCD_DATA15_A,
++			FN_TIOC3D_C,
++		/* IP0_29_28 [2] */
++		FN_A14, FN_LCD_DATA14_A, FN_TIOC3C_C, 0,
++		/* IP0_27_26 [2] */
++		FN_A13, FN_LCD_DATA13_A, FN_TIOC3B_C, 0,
++		/* IP0_25_24 [2] */
++		FN_A12, FN_LCD_DATA12_A, FN_TIOC3A_C, 0,
++		/* IP0_23_22 [2] */
++		FN_A11, FN_ST0_D7, FN_LCD_DATA11_A, FN_TIOC2B_C,
++		/* IP0_21_20 [2] */
++		FN_A10, FN_ST0_D6, FN_LCD_DATA10_A, FN_TIOC2A_C,
++		/* IP0_19_18 [2] */
++		FN_A9, FN_ST0_D5, FN_LCD_DATA9_A, FN_TIOC1B_C,
++		/* IP0_17_16 [2] */
++		FN_A8, FN_ST0_D4, FN_LCD_DATA8_A, FN_TIOC1A_C,
++		/* IP0_15_14 [2] */
++		FN_A7, FN_ST0_D3, FN_LCD_DATA7_A, FN_TIOC0D_C,
++		/* IP0_13_12 [2] */
++		FN_A6, FN_ST0_D2, FN_LCD_DATA6_A, FN_TIOC0C_C,
++		/* IP0_11_10 [2] */
++		FN_A5, FN_ST0_D1, FN_LCD_DATA5_A, FN_TIOC0B_C,
++		/* IP0_9_8 [2] */
++		FN_A4, FN_ST0_D0, FN_LCD_DATA4_A, FN_TIOC0A_C,
++		/* IP0_7_6 [2] */
++		FN_A3, FN_ST0_VLD, FN_LCD_DATA3_A, FN_TCLKD_C,
++		/* IP0_5_4 [2] */
++		FN_A2, FN_ST0_SYC, FN_LCD_DATA2_A, FN_TCLKC_C,
++		/* IP0_3_2 [2] */
++		FN_A1, FN_ST0_REQ, FN_LCD_DATA1_A, FN_TCLKB_C,
++		/* IP0_1_0 [2] */
++		FN_A0, FN_ST0_CLKIN, FN_LCD_DATA0_A, FN_TCLKA_C }
++	},
++	{ PINMUX_CFG_REG_VAR("IPSR1", 0xFFFC0020, 32,
++			3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2) {
++		/* IP1_31_29 [3] */
++		FN_D3, FN_SD0_DAT3_A, FN_MMC_D3_A, FN_ST1_D6,
++			FN_FD3_A, 0, 0, 0,
++		/* IP1_28_26 [3] */
++		FN_D2, FN_SD0_DAT2_A, FN_MMC_D2_A, FN_ST1_D5,
++			FN_FD2_A, 0, 0, 0,
++		/* IP1_25_23 [3] */
++		FN_D1, FN_SD0_DAT1_A, FN_MMC_D1_A, FN_ST1_D4,
++			FN_FD1_A, 0, 0, 0,
++		/* IP1_22_20 [3] */
++		FN_D0, FN_SD0_DAT0_A, FN_MMC_D0_A, FN_ST1_D3,
++			FN_FD0_A, 0, 0, 0,
++		/* IP1_19_18 [2] */
++		FN_A25, FN_TX2_D, FN_ST1_D2, 0,
++		/* IP1_17_16 [2] */
++		FN_A24, FN_RX2_D, FN_ST1_D1, 0,
++		/* IP1_15_14 [2] */
++		FN_A23, FN_ST1_D0, FN_LCD_M_DISP_A, 0,
++		/* IP1_13_12 [2] */
++		FN_A22, FN_ST1_VLD, FN_LCD_VEPWC_A, 0,
++		/* IP1_11_10 [2] */
++		FN_A21, FN_ST1_SYC, FN_LCD_VCPWC_A, 0,
++		/* IP1_9_8 [2] */
++		FN_A20, FN_ST1_REQ, FN_LCD_FLM_A, 0,
++		/* IP1_7_6 [2] */
++		FN_A19, FN_ST1_CLKIN, FN_LCD_CLK_A,	FN_TIOC4D_C,
++		/* IP1_5_4 [2] */
++		FN_A18, FN_ST1_PWM, FN_LCD_CL2_A, FN_TIOC4C_C,
++		/* IP1_3_2 [2] */
++		FN_A17, FN_ST1_VCO_CLKIN, FN_LCD_CL1_A,	FN_TIOC4B_C,
++		/* IP1_1_0 [2] */
++		FN_A16, FN_ST0_PWM, FN_LCD_DON_A, FN_TIOC4A_C }
++	},
++	{ PINMUX_CFG_REG_VAR("IPSR2", 0xFFFC0024, 32,
++			     1, 3, 3, 2, 3, 3, 3, 3, 3, 3, 2, 3) {
++		/* IP2_31 [1] */
++		0, 0,
++		/* IP2_30_28 [3] */
++		FN_D14, FN_TX2_B, 0, FN_FSE_A,
++			FN_ET0_TX_CLK_B, 0, 0, 0,
++		/* IP2_27_25 [3] */
++		FN_D13, FN_RX2_B, 0, FN_FRB_A,
++			FN_ET0_ETXD6_B, 0, 0, 0,
++		/* IP2_24_23 [2] */
++		FN_D12, 0, FN_FWE_A, FN_ET0_ETXD5_B,
++		/* IP2_22_20 [3] */
++		FN_D11, FN_RSPI_MISO_A, 0, FN_QMI_QIO1_A,
++			FN_FRE_A, FN_ET0_ETXD3_B, 0, 0,
++		/* IP2_19_17 [3] */
++		FN_D10, FN_RSPI_MOSI_A, 0, FN_QMO_QIO0_A,
++			FN_FALE_A, FN_ET0_ETXD2_B, 0, 0,
++		/* IP2_16_14 [3] */
++		FN_D9, FN_SD0_CMD_A, FN_MMC_CMD_A, FN_QIO3_A,
++			FN_FCLE_A, FN_ET0_ETXD1_B, 0, 0,
++		/* IP2_13_11 [3] */
++		FN_D8, FN_SD0_CLK_A, FN_MMC_CLK_A, FN_QIO2_A,
++			FN_FCE_A, FN_ET0_GTX_CLK_B, 0, 0,
++		/* IP2_10_8 [3] */
++		FN_D7, FN_RSPI_SSL_A, FN_MMC_D7_A, FN_QSSL_A,
++			FN_FD7_A, 0, 0, 0,
++		/* IP2_7_5 [3] */
++		FN_D6, FN_RSPI_RSPCK_A, FN_MMC_D6_A, FN_QSPCLK_A,
++			FN_FD6_A, 0, 0, 0,
++		/* IP2_4_3 [2] */
++		FN_D5, FN_SD0_WP_A, FN_MMC_D5_A, FN_FD5_A,
++		/* IP2_2_0 [3] */
++		FN_D4, FN_SD0_CD_A, FN_MMC_D4_A, FN_ST1_D7,
++			FN_FD4_A, 0, 0, 0 }
++	},
++	{ PINMUX_CFG_REG_VAR("IPSR3", 0xFFFC0028, 32,
++				2, 3, 3, 3, 1, 2, 3, 3, 3, 3, 3, 1, 2) {
++	    /* IP3_31_30 [2] */
++		0, 0, 0, 0,
++	    /* IP3_29_27 [3] */
++		FN_DRACK0, FN_SD1_DAT2_A, FN_ATAG, FN_TCLK1_A,
++		FN_ET0_ETXD7, 0, 0, 0,
++	    /* IP3_26_24 [3] */
++		FN_EX_WAIT2, FN_SD1_DAT1_A, FN_DACK2, FN_CAN1_RX_C,
++		FN_ET0_MAGIC_C, FN_ET0_ETXD6_A, 0, 0,
++	    /* IP3_23_21 [3] */
++		FN_EX_WAIT1, FN_SD1_DAT0_A, FN_DREQ2, FN_CAN1_TX_C,
++		FN_ET0_LINK_C, FN_ET0_ETXD5_A, 0, 0,
++	    /* IP3_20 [1] */
++		FN_EX_WAIT0, FN_TCLK1_B,
++	    /* IP3_19_18 [2] */
++		FN_RD_WR, FN_TCLK1_B, 0, 0,
++	    /* IP3_17_15 [3] */
++		FN_EX_CS5, FN_SD1_CMD_A, FN_ATADIR, FN_QSSL_B,
++		FN_ET0_ETXD3_A, 0, 0, 0,
++	    /* IP3_14_12 [3] */
++		FN_EX_CS4, FN_SD1_WP_A, FN_ATAWR, FN_QMI_QIO1_B,
++		FN_ET0_ETXD2_A, 0, 0, 0,
++	    /* IP3_11_9 [3] */
++		FN_EX_CS3, FN_SD1_CD_A, FN_ATARD, FN_QMO_QIO0_B,
++		FN_ET0_ETXD1_A, 0, 0, 0,
++	    /* IP3_8_6 [3] */
++		FN_EX_CS2, FN_TX3_B, FN_ATACS1, FN_QSPCLK_B,
++		FN_ET0_GTX_CLK_A, 0, 0, 0,
++	    /* IP3_5_3 [3] */
++		FN_EX_CS1, FN_RX3_B, FN_ATACS0, FN_QIO2_B,
++		FN_ET0_ETXD0, 0, 0, 0,
++	    /* IP3_2 [1] */
++		FN_CS1_A26, FN_QIO3_B,
++	    /* IP3_1_0 [2] */
++		FN_D15, FN_SCK2_B, 0, 0 }
++	},
++	{ PINMUX_CFG_REG_VAR("IPSR4", 0xFFFC002C, 32,
++				2, 2, 2, 2, 2, 2 , 2, 3, 3, 3, 3, 3, 3) {
++	    /* IP4_31_30 [2] */
++		0, FN_SCK2_A, FN_VI0_G3, 0,
++	    /* IP4_29_28 [2] */
++		0, FN_RTS1_B, FN_VI0_G2, 0,
++	    /* IP4_27_26 [2] */
++		0, FN_CTS1_B, FN_VI0_DATA7_VI0_G1, 0,
++	    /* IP4_25_24 [2] */
++		0, FN_TX1_B, FN_VI0_DATA6_VI0_G0, FN_ET0_PHY_INT_A,
++	    /* IP4_23_22 [2] */
++		0, FN_RX1_B, FN_VI0_DATA5_VI0_B5, FN_ET0_MAGIC_A,
++	    /* IP4_21_20 [2] */
++		0, FN_SCK1_B, FN_VI0_DATA4_VI0_B4, FN_ET0_LINK_A,
++	    /* IP4_19_18 [2] */
++		0, FN_RTS0_B, FN_VI0_DATA3_VI0_B3, FN_ET0_MDIO_A,
++	    /* IP4_17_15 [3] */
++		0, FN_CTS0_B, FN_VI0_DATA2_VI0_B2, FN_RMII0_MDIO_A,
++			FN_ET0_MDC, 0, 0, 0,
++	    /* IP4_14_12 [3] */
++		FN_HTX0_A, FN_TX1_A, FN_VI0_DATA1_VI0_B1, FN_RMII0_MDC_A,
++			FN_ET0_COL, 0, 0, 0,
++	    /* IP4_11_9 [3] */
++		FN_HRX0_A, FN_RX1_A, FN_VI0_DATA0_VI0_B0, FN_RMII0_CRS_DV_A,
++			FN_ET0_CRS, 0, 0, 0,
++	    /* IP4_8_6 [3] */
++		FN_HSCK0_A, FN_SCK1_A, FN_VI0_VSYNC, FN_RMII0_RX_ER_A,
++			FN_ET0_RX_ER, 0, 0, 0,
++	    /* IP4_5_3 [3] */
++		FN_HRTS0_A, FN_RTS1_A, FN_VI0_HSYNC, FN_RMII0_TXD_EN_A,
++			FN_ET0_RX_DV, 0, 0, 0,
++	    /* IP4_2_0 [3] */
++		FN_HCTS0_A, FN_CTS1_A, FN_VI0_FIELD, FN_RMII0_RXD1_A,
++			FN_ET0_ERXD7, 0, 0, 0 }
++	},
++	{ PINMUX_CFG_REG_VAR("IPSR5", 0xFFFC0030, 32,
++				1, 1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3) {
++	    /* IP5_31 [1] */
++	    0, 0,
++	    /* IP5_30 [1] */
++	    0, 0,
++	    /* IP5_29 [1] */
++	    0, 0,
++	    /* IP5_28 [1] */
++	    0, 0,
++	    /* IP5_27 [1] */
++	    0, 0,
++	    /* IP5_26_25 [2] */
++		FN_REF50CK, FN_CTS1_E, FN_HCTS0_D, 0,
++	    /* IP5_24_23 [2] */
++		FN_REF125CK, FN_ADTRG, FN_RX5_C, 0,
++	    /* IP5_22_21 [2] */
++		FN_SD2_WP_A, FN_TX5_A, FN_VI0_R5, 0,
++	    /* IP5_20_18 [3] */
++		FN_SD2_CD_A, FN_RX5_A, FN_VI0_R4, 0,
++		0, 0, 0, FN_ET0_PHY_INT_B,
++	    /* IP5_17_15 [3] */
++		FN_SD2_DAT3_A, FN_TX4_A, FN_VI0_R3, 0,
++		0, 0, 0, FN_ET0_MAGIC_B,
++	    /* IP5_14_12 [3] */
++		FN_SD2_DAT2_A, FN_RX4_A, FN_VI0_R2, 0,
++		0, 0, 0, FN_ET0_LINK_B,
++	    /* IP5_11_9 [3] */
++		FN_SD2_DAT1_A, FN_TX3_A, FN_VI0_R1, 0,
++		0, 0, 0, FN_ET0_MDIO_B,
++	    /* IP5_8_6 [3] */
++		FN_SD2_DAT0_A, FN_RX3_A, FN_VI0_R0, 0,
++		0, 0, 0, FN_ET0_ERXD3_B,
++	    /* IP5_5_3 [3] */
++		FN_SD2_CMD_A, FN_TX2_A, FN_VI0_G5, 0,
++		0, 0, 0, FN_ET0_ERXD2_B,
++	    /* IP5_2_0 [3] */
++		FN_SD2_CLK_A, FN_RX2_A, FN_VI0_G4, 0,
++		FN_ET0_RX_CLK_B, 0, 0, 0 }
++	},
++	{ PINMUX_CFG_REG_VAR("IPSR6", 0xFFFC0034, 32,
++				1, 1, 1, 1, 1, 1, 1, 1,
++				3, 3, 2, 2, 2, 2, 2, 2, 3, 3) {
++	    /* IP5_31 [1] */
++	    0, 0,
++	    /* IP6_30 [1] */
++	    0, 0,
++	    /* IP6_29 [1] */
++	    0, 0,
++	    /* IP6_28 [1] */
++	    0, 0,
++	    /* IP6_27 [1] */
++	    0, 0,
++	    /* IP6_26 [1] */
++	    0, 0,
++	    /* IP6_25 [1] */
++	    0, 0,
++	    /* IP6_24 [1] */
++	    0, 0,
++	    /* IP6_23_21 [3] */
++		FN_DU0_DG1, FN_CTS1_C, FN_HRTS0_D, FN_TIOC1B_A,
++		FN_HIFD09, 0, 0, 0,
++	    /* IP6_20_18 [3] */
++		FN_DU0_DG0, FN_TX1_C, FN_HSCK0_D, FN_IECLK_A,
++		FN_TIOC1A_A, FN_HIFD08, 0, 0,
++	    /* IP6_17_16 [2] */
++		FN_DU0_DR7, FN_RX1_C, FN_TIOC0D_A, FN_HIFD07,
++	    /* IP6_15_14 [2] */
++		FN_DU0_DR6, FN_SCK1_C, FN_TIOC0C_A, FN_HIFD06,
++	    /* IP6_13_12 [2] */
++		FN_DU0_DR5, FN_RTS0_C, FN_TIOC0B_A, FN_HIFD05,
++	    /* IP6_11_10 [2] */
++		FN_DU0_DR4, FN_CTS0_C, FN_TIOC0A_A, FN_HIFD04,
++	    /* IP6_9_8 [2] */
++		FN_DU0_DR3, FN_TX0_B, FN_TCLKD_A, FN_HIFD03,
++	    /* IP6_7_6 [2] */
++		FN_DU0_DR2, FN_RX0_B, FN_TCLKC_A, FN_HIFD02,
++	    /* IP6_5_3 [3] */
++		FN_DU0_DR1, FN_SCK0_B, FN_HTX0_D, FN_IERX_A,
++		FN_TCLKB_A, FN_HIFD01, 0, 0,
++	    /* IP6_2_0 [3] */
++		FN_DU0_DR0, FN_SCIF_CLK_B, FN_HRX0_D, FN_IETX_A,
++		FN_TCLKA_A, FN_HIFD00, 0, 0 }
++	},
++	{ PINMUX_CFG_REG_VAR("IPSR7", 0xFFFC0038, 32,
++			     1, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3) {
++	    /* IP7_31 [1] */
++	    0, 0,
++	    /* IP7_30_29 [2] */
++		FN_DU0_DB4, 0, FN_HIFINT, 0,
++	    /* IP7_28_27 [2] */
++		FN_DU0_DB3, FN_TX5_B, FN_TIOC4D_A, FN_HIFRD,
++	    /* IP7_26_24 [3] */
++		FN_DU0_DB2, FN_RX5_B, FN_RMII0_TXD1_B, FN_TIOC4C_A,
++		FN_HIFWR, 0, 0, 0,
++	    /* IP7_23_21 [3] */
++		FN_DU0_DB1, FN_TX4_C, FN_RMII0_TXD0_B, FN_TIOC4B_A,
++		FN_HIFRS, 0, 0, 0,
++	    /* IP7_20_18 [3] */
++		FN_DU0_DB0, FN_RX4_C, FN_RMII0_TXD_EN_B, FN_TIOC4A_A,
++		FN_HIFCS, 0, 0, 0,
++	    /* IP7_17_15 [3] */
++		FN_DU0_DG7, FN_TX3_C, FN_RMII0_RXD1_B, FN_TIOC3D_A,
++		FN_HIFD15, 0, 0, 0,
++	    /* IP7_14_12 [3] */
++		FN_DU0_DG6, FN_RX3_C, FN_RMII0_RXD0_B, FN_TIOC3C_A,
++		FN_HIFD14, 0, 0, 0,
++	    /* IP7_11_9 [3] */
++		FN_DU0_DG5, FN_TX2_C, FN_RMII0_RX_ER_B, FN_TIOC3B_A,
++		FN_HIFD13, 0, 0, 0,
++	    /* IP7_8_6 [3] */
++		FN_DU0_DG4, FN_RX2_C, FN_RMII0_CRS_DV_B, FN_TIOC3A_A,
++		FN_HIFD12, 0, 0, 0,
++	    /* IP7_5_3 [3] */
++		FN_DU0_DG3, FN_SCK2_C, FN_RMII0_MDIO_B, FN_TIOC2B_A,
++		FN_HIFD11, 0, 0, 0,
++	    /* IP7_2_0 [3] */
++		FN_DU0_DG2, FN_RTS1_C, FN_RMII0_MDC_B, FN_TIOC2A_A,
++		FN_HIFD10, 0, 0, 0 }
++	},
++	{ PINMUX_CFG_REG_VAR("IPSR8", 0xFFFC003C, 32,
++			     2, 2, 2, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2) {
++	    /* IP9_31_30 [2] */
++	    0, 0, 0, 0,
++	    /* IP8_29_28 [2] */
++		FN_IRQ3_A, FN_RTS0_A, FN_HRTS0_B, FN_ET0_ERXD3_A,
++	    /* IP8_27_26 [2] */
++		FN_IRQ2_A, FN_CTS0_A, FN_HCTS0_B, FN_ET0_ERXD2_A,
++	    /* IP8_25_23 [3] */
++		FN_IRQ1_A, 0, FN_HSPI_RX_B, FN_TX3_E,
++			FN_ET0_ERXD1, 0, 0, 0,
++	    /* IP8_22_20 [3] */
++		FN_IRQ0_A, 0, FN_HSPI_TX_B, FN_RX3_E,
++			FN_ET0_ERXD0, 0, 0, 0,
++	    /* IP8_19_18 [2] */
++		FN_DU0_CDE, FN_HTX0_B, FN_AUDIO_CLKB_B, FN_LCD_VCPWC_B,
++	    /* IP8_17_16 [2] */
++		FN_DU0_DISP, FN_CAN0_TX_B, FN_HRX0_B, FN_AUDIO_CLKA_B,
++	    /* IP8_15_14 [2] */
++		FN_DU0_EXODDF_DU0_ODDF, FN_CAN0_RX_B, FN_HSCK0_B,
++			FN_SSI_SDATA1_B,
++	    /* IP8_13_12 [2] */
++		FN_DU0_EXVSYNC_DU0_VSYNC, 0, FN_HSPI_RX0_C, FN_SSI_WS1_B,
++	    /* IP8_11_10 [2] */
++		FN_DU0_EXHSYNC_DU0_HSYNC, 0, FN_HSPI_TX0_C, FN_SSI_SCK1_B,
++	    /* IP8_9_8 [2] */
++		FN_DU0_DOTCLKOUT, 0, FN_HSPI_CLK0_C, FN_SSI_SDATA0_B,
++	    /* IP8_7_6 [2] */
++		FN_DU0_DOTCLKIN, 0, FN_HSPI_CS0_C, FN_SSI_WS0_B,
++	    /* IP8_5_4 [2] */
++		FN_DU0_DB7, 0, FN_SSI_SCK0_B, FN_HIFEBL_B,
++	    /* IP8_3_2 [2] */
++		FN_DU0_DB6, 0, FN_HIFRDY, 0,
++	    /* IP8_1_0 [2] */
++		FN_DU0_DB5, 0, FN_HIFDREQ, 0 }
++	},
++	{ PINMUX_CFG_REG_VAR("IPSR9", 0xFFFC0040, 32,
++			     2, 2, 2, 2, 2, 2, 2, 2,
++			     2, 2, 2, 2, 2, 2, 2, 2) {
++	    /* IP9_31_30 [2] */
++	    0, 0, 0, 0,
++	    /* IP9_29_28 [2] */
++		FN_SSI_SDATA1_A, FN_VI1_3_B, FN_LCD_DATA14_B, 0,
++	    /* IP9_27_26 [2] */
++		FN_SSI_WS1_A, FN_VI1_2_B, FN_LCD_DATA13_B, 0,
++	    /* IP9_25_24 [2] */
++		FN_SSI_SCK1_A, FN_VI1_1_B, FN_TIOC2B_B, FN_LCD_DATA12_B,
++	    /* IP9_23_22 [2] */
++		FN_SSI_SDATA0_A, FN_VI1_0_B, FN_TIOC2A_B, FN_LCD_DATA11_B,
++	    /* IP9_21_20 [2] */
++		FN_SSI_WS0_A, FN_TIOC1B_B, FN_LCD_DATA10_B, 0,
++	    /* IP9_19_18 [2] */
++		FN_SSI_SCK0_A, FN_TIOC1A_B, FN_LCD_DATA9_B, 0,
++	    /* IP9_17_16 [2] */
++		FN_VI1_7_A, FN_FCE_B, FN_LCD_DATA8_B, 0,
++	    /* IP9_15_14 [2] */
++		FN_VI1_6_A, 0, FN_FD7_B, FN_LCD_DATA7_B,
++	    /* IP9_13_12 [2] */
++		FN_VI1_5_A, 0, FN_FD6_B, FN_LCD_DATA6_B,
++	    /* IP9_11_10 [2] */
++		FN_VI1_4_A, 0, FN_FD5_B, FN_LCD_DATA5_B,
++	    /* IP9_9_8 [2] */
++		FN_VI1_3_A, 0, FN_FD4_B, FN_LCD_DATA4_B,
++	    /* IP9_7_6 [2] */
++		FN_VI1_2_A, 0, FN_FD3_B, FN_LCD_DATA3_B,
++	    /* IP9_5_4 [2] */
++		FN_VI1_1_A, 0, FN_FD2_B, FN_LCD_DATA2_B,
++	    /* IP9_3_2 [2] */
++		FN_VI1_0_A, 0, FN_FD1_B, FN_LCD_DATA1_B,
++	    /* IP9_1_0 [2] */
++		FN_VI1_CLK_A, 0, FN_FD0_B, FN_LCD_DATA0_B }
++	},
++	{ PINMUX_CFG_REG_VAR("IPSR10", 0xFFFC0044, 32,
++					2, 2, 2, 1, 2, 1, 3,
++					3, 1, 3, 3, 3, 3, 3) {
++	    /* IP9_31_30 [2] */
++	    0, 0, 0, 0,
++	    /* IP10_29_28 [2] */
++		FN_CAN1_TX_A, FN_TX5_C, FN_MLB_DAT, 0,
++	    /* IP10_27_26 [2] */
++		FN_CAN0_RX_A, FN_IRQ0_B, FN_MLB_SIG, 0,
++	    /* IP10_25 [1] */
++		FN_CAN1_RX_A, FN_IRQ1_B,
++	    /* IP10_24_23 [2] */
++		FN_CAN0_TX_A, FN_TX4_D, FN_MLB_CLK, 0,
++	    /* IP10_22 [1] */
++		FN_CAN_CLK_A, FN_RX4_D,
++	    /* IP10_21_19 [3] */
++		FN_AUDIO_CLKOUT, FN_TX1_E, FN_HRTS0_C, FN_FSE_B,
++		FN_LCD_M_DISP_B, 0, 0, 0,
++	    /* IP10_18_16 [3] */
++		FN_AUDIO_CLKC, FN_SCK1_E, FN_HCTS0_C, FN_FRB_B,
++		FN_LCD_VEPWC_B, 0, 0, 0,
++	    /* IP10_15 [1] */
++		FN_AUDIO_CLKB_A, FN_LCD_CLK_B,
++	    /* IP10_14_12 [3] */
++		FN_AUDIO_CLKA_A, FN_VI1_CLK_B, FN_SCK1_D, FN_IECLK_B,
++		FN_LCD_FLM_B, 0, 0, 0,
++	    /* IP10_11_9 [3] */
++		FN_SSI_SDATA3, FN_VI1_7_B, FN_HTX0_C, FN_FWE_B,
++		FN_LCD_CL2_B, 0, 0, 0,
++	    /* IP10_8_6 [3] */
++		FN_SSI_SDATA2, FN_VI1_6_B, FN_HRX0_C, FN_FRE_B,
++		FN_LCD_CL1_B, 0, 0, 0,
++	    /* IP10_5_3 [3] */
++		FN_SSI_WS23, FN_VI1_5_B, FN_TX1_D, FN_HSCK0_C, FN_FALE_B,
++		FN_LCD_DON_B, 0, 0, 0,
++	    /* IP10_2_0 [3] */
++		FN_SSI_SCK23, FN_VI1_4_B, FN_RX1_D, FN_FCLE_B,
++		FN_LCD_DATA15_B, 0, 0, 0 }
++	},
++	{ PINMUX_CFG_REG_VAR("IPSR11", 0xFFFC0048, 32,
++			3, 1, 2, 2, 2, 3, 3, 1, 2, 3, 3, 1, 1, 1, 1) {
++	    /* IP11_31_29 [3] */
++	    0, 0, 0, 0, 0, 0, 0, 0,
++	    /* IP11_28 [1] */
++		FN_PRESETOUT, FN_ST_CLKOUT,
++	    /* IP11_27_26 [2] */
++		FN_DACK1, FN_HSPI_CS_B, FN_TX4_B, FN_ET0_RX_CLK_A,
++	    /* IP11_25_23 [3] */
++		FN_DREQ1, FN_HSPI_CLK_B, FN_RX4_B, FN_ET0_PHY_INT_C,
++		FN_ET0_TX_CLK_A, 0, 0, 0,
++	    /* IP11_22_21 [2] */
++		FN_DACK0, FN_SD1_DAT3_A, FN_ET0_TX_ER, 0,
++	    /* IP11_20_19 [2] */
++		FN_DREQ0, FN_SD1_CLK_A, FN_ET0_TX_EN, 0,
++	    /* IP11_18_16 [3] */
++		FN_USB_OVC1, FN_RX3_D, FN_CAN1_RX_B, FN_RX5_D,
++		FN_IERX_B, 0, 0, 0,
++	    /* IP11_15_13 [3] */
++		FN_PENC1, FN_TX3_D, FN_CAN1_TX_B, FN_TX5_D,
++		FN_IETX_B, 0, 0, 0,
++	    /* IP11_12 [1] */
++		FN_TX0_A, FN_HSPI_TX_A,
++	    /* IP11_11_10 [2] */
++		FN_RX0_A, FN_HSPI_RX_A, FN_RMII0_RXD0_A, FN_ET0_ERXD6,
++	    /* IP11_9_7 [3] */
++		FN_SCK0_A, FN_HSPI_CS_A, FN_VI0_CLKENB, FN_RMII0_TXD1_A,
++		FN_ET0_ERXD5, 0, 0, 0,
++	    /* IP11_6_4 [3] */
++		FN_SCIF_CLK_A, FN_HSPI_CLK_A, FN_VI0_CLK, FN_RMII0_TXD0_A,
++		FN_ET0_ERXD4, 0, 0, 0,
++	    /* IP11_3 [1] */
++		FN_SDSELF, FN_RTS1_E,
++	    /* IP11_2 [1] */
++		FN_SDA0, FN_HIFEBL_A,
++	    /* IP11_1 [1] */
++		FN_SDA1, FN_RX1_E,
++	    /* IP11_0 [1] */
++		FN_SCL1, FN_SCIF_CLK_C }
++	},
++	{ PINMUX_CFG_REG_VAR("MOD_SEL1", 0xFFFC004C, 32,
++				3, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 2, 2,
++				1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1) {
++		/* SEL1_31_29 [3] */
++		0, 0, 0, 0, 0, 0, 0, 0,
++		/* SEL1_28 [1] */
++		FN_SEL_IEBUS_0, FN_SEL_IEBUS_1,
++		/* SEL1_27 [1] */
++		FN_SEL_RQSPI_0, FN_SEL_RQSPI_1,
++		/* SEL1_26 [1] */
++		FN_SEL_VIN1_0, FN_SEL_VIN1_1,
++		/* SEL1_25 [1] */
++		FN_SEL_HIF_0, FN_SEL_HIF_1,
++		/* SEL1_24 [1] */
++		FN_SEL_RSPI_0, FN_SEL_RSPI_1,
++		/* SEL1_23 [1] */
++		FN_SEL_LCDC_0, FN_SEL_LCDC_1,
++		/* SEL1_22_21 [2] */
++		FN_SEL_ET0_CTL_0, FN_SEL_ET0_CTL_1, FN_SEL_ET0_CTL_2, 0,
++		/* SEL1_20 [1] */
++		FN_SEL_ET0_0, FN_SEL_ET0_1,
++		/* SEL1_19 [1] */
++		FN_SEL_RMII_0, FN_SEL_RMII_1,
++		/* SEL1_18 [1] */
++		FN_SEL_TMU_0, FN_SEL_TMU_1,
++		/* SEL1_17_16 [2] */
++		FN_SEL_HSPI_0, FN_SEL_HSPI_1, FN_SEL_HSPI_2, 0,
++		/* SEL1_15_14 [2] */
++		FN_SEL_HSCIF_0, FN_SEL_HSCIF_1, FN_SEL_HSCIF_2, FN_SEL_HSCIF_3,
++		/* SEL1_13 [1] */
++		FN_SEL_RCAN_CLK_0, FN_SEL_RCAN_CLK_1,
++		/* SEL1_12_11 [2] */
++		FN_SEL_RCAN1_0, FN_SEL_RCAN1_1, FN_SEL_RCAN1_2, 0,
++		/* SEL1_10 [1] */
++		FN_SEL_RCAN0_0, FN_SEL_RCAN0_1,
++		/* SEL1_9 [1] */
++		FN_SEL_SDHI2_0, FN_SEL_SDHI2_1,
++		/* SEL1_8 [1] */
++		FN_SEL_SDHI1_0, FN_SEL_SDHI1_1,
++		/* SEL1_7 [1] */
++		FN_SEL_SDHI0_0, FN_SEL_SDHI0_1,
++		/* SEL1_6 [1] */
++		FN_SEL_SSI1_0, FN_SEL_SSI1_1,
++		/* SEL1_5 [1] */
++		FN_SEL_SSI0_0, FN_SEL_SSI0_1,
++		/* SEL1_4 [1] */
++		FN_SEL_AUDIO_CLKB_0, FN_SEL_AUDIO_CLKB_1,
++		/* SEL1_3 [1] */
++		FN_SEL_AUDIO_CLKA_0, FN_SEL_AUDIO_CLKA_1,
++		/* SEL1_2 [1] */
++		FN_SEL_FLCTL_0, FN_SEL_FLCTL_1,
++		/* SEL1_1 [1] */
++		FN_SEL_MMC_0, FN_SEL_MMC_1,
++		/* SEL1_0 [1] */
++		FN_SEL_INTC_0, FN_SEL_INTC_1 }
++	},
++	{ PINMUX_CFG_REG_VAR("MOD_SEL2", 0xFFFC0050, 32,
++				1, 1, 1, 1, 1, 1, 1, 1,
++				1, 1, 1, 2, 2, 1, 2, 2, 3, 2, 3, 2, 2) {
++		/* SEL2_31 [1] */
++		0, 0,
++		/* SEL2_30 [1] */
++		0, 0,
++		/* SEL2_29 [1] */
++		0, 0,
++		/* SEL2_28 [1] */
++		0, 0,
++		/* SEL2_27 [1] */
++		0, 0,
++		/* SEL2_26 [1] */
++		0, 0,
++		/* SEL2_25 [1] */
++		0, 0,
++		/* SEL2_24 [1] */
++		0, 0,
++		/* SEL2_23 [1] */
++		FN_SEL_MTU2_CLK_0, FN_SEL_MTU2_CLK_1,
++		/* SEL2_22 [1] */
++		FN_SEL_MTU2_CH4_0, FN_SEL_MTU2_CH4_1,
++		/* SEL2_21 [1] */
++		FN_SEL_MTU2_CH3_0, FN_SEL_MTU2_CH3_1,
++		/* SEL2_20_19 [2] */
++		FN_SEL_MTU2_CH2_0, FN_SEL_MTU2_CH2_1, FN_SEL_MTU2_CH2_2, 0,
++		/* SEL2_18_17 [2] */
++		FN_SEL_MTU2_CH1_0, FN_SEL_MTU2_CH1_1, FN_SEL_MTU2_CH1_2, 0,
++		/* SEL2_16 [1] */
++		FN_SEL_MTU2_CH0_0, FN_SEL_MTU2_CH0_1,
++		/* SEL2_15_14 [2] */
++		FN_SEL_SCIF5_0, FN_SEL_SCIF5_1, FN_SEL_SCIF5_2, FN_SEL_SCIF5_3,
++		/* SEL2_13_12 [2] */
++		FN_SEL_SCIF4_0, FN_SEL_SCIF4_1, FN_SEL_SCIF4_2, FN_SEL_SCIF4_3,
++		/* SEL2_11_9 [3] */
++		FN_SEL_SCIF3_0, FN_SEL_SCIF3_1, FN_SEL_SCIF3_2, FN_SEL_SCIF3_3,
++		FN_SEL_SCIF3_4, 0, 0, 0,
++		/* SEL2_8_7 [2] */
++		FN_SEL_SCIF2_0, FN_SEL_SCIF2_1, FN_SEL_SCIF2_2, FN_SEL_SCIF2_3,
++		/* SEL2_6_4 [3] */
++		FN_SEL_SCIF1_0, FN_SEL_SCIF1_1, FN_SEL_SCIF1_2, FN_SEL_SCIF1_3,
++			FN_SEL_SCIF1_4, 0, 0, 0,
++		/* SEL2_3_2 [2] */
++		FN_SEL_SCIF0_0, FN_SEL_SCIF0_1, FN_SEL_SCIF0_2, 0,
++		/* SEL2_1_0 [2] */
++		FN_SEL_SCIF_CLK_0, FN_SEL_SCIF_CLK_1, FN_SEL_SCIF_CLK_2, 0  }
++	},
++	/* GPIO 0 - 5*/
++	{ PINMUX_CFG_REG("INOUTSEL0", 0xFFC40004, 32, 1) { GP_INOUTSEL(0) } },
++	{ PINMUX_CFG_REG("INOUTSEL1", 0xFFC41004, 32, 1) { GP_INOUTSEL(1) } },
++	{ PINMUX_CFG_REG("INOUTSEL2", 0xFFC42004, 32, 1) { GP_INOUTSEL(2) } },
++	{ PINMUX_CFG_REG("INOUTSEL3", 0xFFC43004, 32, 1) { GP_INOUTSEL(3) } },
++	{ PINMUX_CFG_REG("INOUTSEL4", 0xFFC44004, 32, 1) { GP_INOUTSEL(4) } },
++	{ PINMUX_CFG_REG("INOUTSEL5", 0xffc45004, 32, 1) {
++		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 31 - 24 */
++		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 23 - 16 */
++		0, 0, 0, 0, 0, 0, 0, 0, /* 15 - 12 */
++		GP_5_11_IN, GP_5_11_OUT,
++		GP_5_10_IN, GP_5_10_OUT,
++		GP_5_9_IN, GP_5_9_OUT,
++		GP_5_8_IN, GP_5_8_OUT,
++		GP_5_7_IN, GP_5_7_OUT,
++		GP_5_6_IN, GP_5_6_OUT,
++		GP_5_5_IN, GP_5_5_OUT,
++		GP_5_4_IN, GP_5_4_OUT,
++		GP_5_3_IN, GP_5_3_OUT,
++		GP_5_2_IN, GP_5_2_OUT,
++		GP_5_1_IN, GP_5_1_OUT,
++		GP_5_0_IN, GP_5_0_OUT }
++	},
++	{ },
++};
++
++static struct pinmux_data_reg pinmux_data_regs[] = {
++	/* GPIO 0 - 5*/
++	{ PINMUX_DATA_REG("INDT0", 0xFFC4000C, 32) { GP_INDT(0) } },
++	{ PINMUX_DATA_REG("INDT1", 0xFFC4100C, 32) { GP_INDT(1) } },
++	{ PINMUX_DATA_REG("INDT2", 0xFFC4200C, 32) { GP_INDT(2) } },
++	{ PINMUX_DATA_REG("INDT3", 0xFFC4300C, 32) { GP_INDT(3) } },
++	{ PINMUX_DATA_REG("INDT4", 0xFFC4400C, 32) { GP_INDT(4) } },
++	{ PINMUX_DATA_REG("INDT5", 0xFFC4500C, 32) {
++		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
++		0, 0, 0, 0,
++		GP_5_11_DATA, GP_5_10_DATA, GP_5_9_DATA, GP_5_8_DATA,
++		GP_5_7_DATA, GP_5_6_DATA, GP_5_5_DATA, GP_5_4_DATA,
++		GP_5_3_DATA, GP_5_2_DATA, GP_5_1_DATA, GP_5_0_DATA }
++	},
++	{ },
++};
++
++static struct resource sh7734_pfc_resources[] = {
++	[0] = { /* PFC */
++		.start	= 0xFFFC0000,
++		.end	= 0xFFFC011C,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = { /* GPIO */
++		.start	= 0xFFC40000,
++		.end	= 0xFFC4502B,
++		.flags	= IORESOURCE_MEM,
++	}
++};
++
++static struct pinmux_info sh7734_pinmux_info = {
++	.name = "sh7734_pfc",
++
++	.resource = sh7734_pfc_resources,
++	.num_resources = ARRAY_SIZE(sh7734_pfc_resources),
++
++	.unlock_reg = 0xFFFC0000,
++
++	.reserved_id = PINMUX_RESERVED,
++	.data = { PINMUX_DATA_BEGIN, PINMUX_DATA_END },
++	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
++	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
++	.mark = { PINMUX_MARK_BEGIN, PINMUX_MARK_END },
++	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
++
++	.first_gpio = GPIO_GP_0_0,
++	.last_gpio = GPIO_FN_ST_CLKOUT,
++
++	.gpios = pinmux_gpios,
++	.cfg_regs = pinmux_config_regs,
++	.data_regs = pinmux_data_regs,
++
++	.gpio_data = pinmux_data,
++	.gpio_data_size = ARRAY_SIZE(pinmux_data),
++};
++
++static int __init plat_pinmux_setup(void)
++{
++	return register_pinmux(&sh7734_pinmux_info);
++}
++arch_initcall(plat_pinmux_setup);
+-- 
+1.7.9.1
 
