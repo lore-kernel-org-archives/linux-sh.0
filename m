@@ -1,27 +1,45 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Wed, 07 Mar 2012 08:48:11 +0000
-Subject: Re: AP4EVB board couldn't boot on latest linus/master
-Message-Id: <201203070948.11478.rjw@sisk.pl>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 30 Mar 2012 08:47:49 +0000
+Subject: [PATCH] input: st1232 device tree support
+Message-Id: <20120330084749.19624.84121.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87booawe57.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87booawe57.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-input@vger.kernel.org
+Cc: arnd@arndb.de, linux-sh@vger.kernel.org, dmitry.torokhov@gmail.com, rjw@sisk.pl, lethal@linux-sh.org, Magnus Damm <magnus.damm@gmail.com>
 
-On Wednesday, March 07, 2012, Paul Mundt wrote:
-> On Tue, Mar 06, 2012 at 04:11:12PM -0800, Kuninori Morimoto wrote:
-> > > Please try the sh-sci patch posted here:
-> > > http://marc.info/?l=linux-sh&m3073065924863&w=4
-> > 
-> > Thank you !!
-> > It solved AP4 boot issue.
-> > 
-> Rafael, are you going to make any more changes to this, or should I apply
-> it as-is to send out with the next round of -rc fixes?
+From: Magnus Damm <damm@opensource.se>
 
-Please take it as is.
+This patch enables DT support for the st1232 driver
+which is primarily used on the sh7372 Mackerel board.
 
-Thanks,
-Rafael
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ drivers/input/touchscreen/st1232.c |    7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- 0001/drivers/input/touchscreen/st1232.c
++++ work/drivers/input/touchscreen/st1232.c	2012-03-29 14:43:13.000000000 +0900
+@@ -255,6 +255,12 @@ static const struct i2c_device_id st1232
+ };
+ MODULE_DEVICE_TABLE(i2c, st1232_ts_id);
+ 
++static const struct of_device_id st1232_ts_dt_ids[] __devinitconst = {
++	{ .compatible = "sitronix,st1232", },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, st1232_ts_dt_ids);
++
+ static struct i2c_driver st1232_ts_driver = {
+ 	.probe		= st1232_ts_probe,
+ 	.remove		= __devexit_p(st1232_ts_remove),
+@@ -262,6 +268,7 @@ static struct i2c_driver st1232_ts_drive
+ 	.driver = {
+ 		.name	= ST1232_TS_NAME,
+ 		.owner	= THIS_MODULE,
++		.of_match_table = st1232_ts_dt_ids,
+ #ifdef CONFIG_PM
+ 		.pm	= &st1232_ts_pm_ops,
+ #endif
