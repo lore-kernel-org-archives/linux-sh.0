@@ -1,59 +1,102 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Wed, 07 Mar 2012 21:59:05 +0000
-Subject: Re: [PATCH 00/08] mach-shmobile timer consolidation
-Message-Id: <201203072302.26681.rjw@sisk.pl>
+From: Kautuk Consul <consul.kautuk@gmail.com>
+Date: Sat, 31 Mar 2012 12:06:11 +0000
+Subject: [PATCH 16/19 v2] sh/mm/fault_32.c: Port OOM changes to do_page_fault
+Message-Id: <1333195571-5455-1-git-send-email-consul.kautuk@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120306083606.8131.92041.sendpatchset@w520>
-In-Reply-To: <20120306083606.8131.92041.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Paul Mundt <lethal@linux-sh.org>, Ingo Molnar <mingo@elte.hu>, Peter Zijlstra <a.p.zijlstra@chello.nl>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Kautuk Consul <consul.kautuk@gmail.com>
 
-On Tuesday, March 06, 2012, Magnus Damm wrote:
-> mach-shmobile timer consolidation
-> 
-> [PATCH 01/08] ARM: mach-shmobile: add shmobile_earlytimer_init()
-> [PATCH 02/08] ARM: mach-shmobile: sh7367 and G3EVM timer rework
-> [PATCH 03/08] ARM: mach-shmobile: sh7377 and G4EVM timer rework
-> [PATCH 04/08] ARM: mach-shmobile: sh7372, AP4EVB and Mackerel timer rework
-> [PATCH 05/08] ARM: mach-shmobile: sh73a0, AG5EVM and Kota2 timer rework
-> [PATCH 06/08] ARM: mach-shmobile: r8a7740 and Bonito timer rework
-> [PATCH 07/08] ARM: mach-shmobile: r8a7779 and Marzen timer rework
-> [PATCH 08/08] ARM: mach-shmobile: default to no earlytimer
-> 
-> These patches rework the shmobile timer code to make the earlytimer
-> opt-in instead of default. The exisitng in-tree boards will keep on
-> using earlytimer as usual, but upcoming DT-based generic support
-> can with these patches use the regular driver model for timers.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+Commit d065bd810b6deb67d4897a14bfe21f8eb526ba99
+(mm: retry page fault when blocking on disk transfer) and
+commit 37b23e0525d393d48a7d59f870b3bc061a30ccdb
+(x86,mm: make pagefault killable)
 
-Applied.
+The above commits introduced changes into the x86 pagefault handler
+for making the page fault handler retryable as well as killable.
 
-Thanks,
-Rafael
+These changes reduce the mmap_sem hold time, which is crucial
+during OOM killer invocation.
 
+Port these changes to the 32-bit SH platform.
 
-> ---
-> 
->  arch/arm/mach-shmobile/board-ag5evm.c        |   14 +-------------
->  arch/arm/mach-shmobile/board-ap4evb.c        |   13 +------------
->  arch/arm/mach-shmobile/board-bonito.c        |   18 +++++++++++-------
->  arch/arm/mach-shmobile/board-g3evm.c         |   13 +------------
->  arch/arm/mach-shmobile/board-g4evm.c         |   13 +------------
->  arch/arm/mach-shmobile/board-kota2.c         |   13 +------------
->  arch/arm/mach-shmobile/board-mackerel.c      |   13 +------------
->  arch/arm/mach-shmobile/board-marzen.c        |   14 +-------------
->  arch/arm/mach-shmobile/include/mach/common.h |    1 +
->  arch/arm/mach-shmobile/setup-r8a7740.c       |   10 ++++++++++
->  arch/arm/mach-shmobile/setup-r8a7779.c       |   10 ++++++++++
->  arch/arm/mach-shmobile/setup-sh7367.c        |   10 ++++++++++
->  arch/arm/mach-shmobile/setup-sh7372.c        |   10 ++++++++++
->  arch/arm/mach-shmobile/setup-sh7377.c        |   10 ++++++++++
->  arch/arm/mach-shmobile/setup-sh73a0.c        |   10 ++++++++++
->  arch/arm/mach-shmobile/timer.c               |    8 ++++++--
->  16 files changed, 85 insertions(+), 95 deletions(-)
-> 
-> 
+Signed-off-by: Kautuk Consul <consul.kautuk@gmail.com>
+---
+ arch/sh/mm/fault_32.c |   38 +++++++++++++++++++++++++++++---------
+ 1 files changed, 29 insertions(+), 9 deletions(-)
+
+diff --git a/arch/sh/mm/fault_32.c b/arch/sh/mm/fault_32.c
+index 324eef9..6084982 100644
+--- a/arch/sh/mm/fault_32.c
++++ b/arch/sh/mm/fault_32.c
+@@ -129,6 +129,8 @@ asmlinkage void __kprobes do_page_fault(struct pt_regs *regs,
+ 	int si_code;
+ 	int fault;
+ 	siginfo_t info;
++	unsigned int flags = (FAULT_FLAG_ALLOW_RETRY | FAULT_FLAG_KILLABLE |
++			      (writeaccess ? FAULT_FLAG_WRITE : 0));
+ 
+ 	tsk = current;
+ 	mm = tsk->mm;
+@@ -169,6 +171,7 @@ asmlinkage void __kprobes do_page_fault(struct pt_regs *regs,
+ 	if (in_atomic() || !mm)
+ 		goto no_context;
+ 
++retry:
+ 	down_read(&mm->mmap_sem);
+ 
+ 	vma = find_vma(mm, address);
+@@ -200,7 +203,11 @@ good_area:
+ 	 * make sure we exit gracefully rather than endlessly redo
+ 	 * the fault.
+ 	 */
+-	fault = handle_mm_fault(mm, vma, address, writeaccess ? FAULT_FLAG_WRITE : 0);
++	fault = handle_mm_fault(mm, vma, address, flags);
++
++	if ((fault & VM_FAULT_RETRY) && fatal_signal_pending(current))
++		return;
++
+ 	if (unlikely(fault & VM_FAULT_ERROR)) {
+ 		if (fault & VM_FAULT_OOM)
+ 			goto out_of_memory;
+@@ -208,14 +215,27 @@ good_area:
+ 			goto do_sigbus;
+ 		BUG();
+ 	}
+-	if (fault & VM_FAULT_MAJOR) {
+-		tsk->maj_flt++;
+-		perf_sw_event(PERF_COUNT_SW_PAGE_FAULTS_MAJ, 1,
+-				     regs, address);
+-	} else {
+-		tsk->min_flt++;
+-		perf_sw_event(PERF_COUNT_SW_PAGE_FAULTS_MIN, 1,
+-				     regs, address);
++
++	if (flags & FAULT_FLAG_ALLOW_RETRY) {
++		if (fault & VM_FAULT_MAJOR) {
++			tsk->maj_flt++;
++			perf_sw_event(PERF_COUNT_SW_PAGE_FAULTS_MAJ, 1,
++				      regs, address);
++		} else {
++			tsk->min_flt++;
++			perf_sw_event(PERF_COUNT_SW_PAGE_FAULTS_MIN, 1,
++				      regs, address);
++		}
++		if (fault & VM_FAULT_RETRY) {
++			flags &= ~FAULT_FLAG_ALLOW_RETRY;
++
++			 /* No need to up_read(&mm->mmap_sem) as we would
++			 * have already released it in __lock_page_or_retry
++			 * in mm/filemap.c.
++			 */
++
++			goto retry;
++		}
+ 	}
+ 
+ 	up_read(&mm->mmap_sem);
+-- 
+1.7.5.4
 
