@@ -1,7 +1,7 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 01 Apr 2012 05:58:56 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Sun, 01 Apr 2012 23:28:08 +0000
 Subject: Re: [PATCH] Input: st1232 - switch to using SIMPLE_DEV_PM_OPS
-Message-Id: <201204010758.56276.rjw@sisk.pl>
+Message-Id: <20120401232808.GA2336@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20120331061801.GA20441@core.coreip.homeip.net>
 In-Reply-To: <20120331061801.GA20441@core.coreip.homeip.net>
@@ -9,15 +9,15 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Dmitry Torokhov <dmitry.torokhov@gmail.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, linux-input@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, "Rafael J. Wysocki" <rjw@sisk.pl>, Arnd Bergmann <arnd@arndb.de>, linux-sh@vger.kernel.org, linux-input@vger.kernel.org
 
-On Saturday, March 31, 2012, Dmitry Torokhov wrote:
+Hi,
+
+I'm not sure that I follow why st1232_ts_pm_ops is needed
+if CONFIG_PM_SLEEP isn't defined.
+
+On Fri, Mar 30, 2012 at 11:18:02PM -0700, Dmitry Torokhov wrote:
 > Signed-off-by: Dmitry Torokhov <dtor@mail.ru>
-
-Looks good.
-
-Acked-by: Rafael J. Wysocki <rjw@sisk.pl>
-
 > ---
 > 
 > Just compiled, not tested...
@@ -64,5 +64,14 @@ Acked-by: Rafael J. Wysocki <rjw@sisk.pl>
 >  	},
 >  };
 >  
+> -- 
+> 1.7.7.6
 > 
-
+> 
+> -- 
+> Dmitry
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
