@@ -1,67 +1,57 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Wed, 25 Apr 2012 14:03:34 +0000
-Subject: [PATCH v2 06/10] mtd: sh_flctl: Simplify the hardware ecc page read/write
-Message-Id: <1335362618-4559-7-git-send-email-hechtb@gmail.com>
+From: Artem Bityutskiy <dedekind1@gmail.com>
+Date: Mon, 02 Apr 2012 11:08:45 +0000
+Subject: Re: [PATCH 0/5] mtd: plat_nand: Add default partition parser and use it
+Message-Id: <1333364925.5440.104.camel@sauron.fi.intel.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="=-tYG+VEjJEvHHNxPyqYt8"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1335362618-4559-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1335362618-4559-1-git-send-email-hechtb@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+References: <201203281112.48788.hartleys@visionengravers.com>
+In-Reply-To: <201203281112.48788.hartleys@visionengravers.com>
+To: linux-arm-kernel@lists.infradead.org
+
+
+--=-tYG+VEjJEvHHNxPyqYt8
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+On Wed, 2012-03-28 at 11:12 -0700, H Hartley Sweeten wrote:
+> This patch series adds cmdlinepart as the default partition parser for th=
+e
+> plat_nand driver and updates all the arch setup code to use it.
+>=20
+> Arch setup code that requires other partition parsers can still pass that
+> information as chip.part_probe_types.
+>=20
+> Signed-off-by: H Hartley Sweeten <hsweeten@visionengravers.com>
+
+Pushed the series to l2-mtd.git, thanks!
+
+--=20
+Best Regards,
+Artem Bityutskiy
+
+--=-tYG+VEjJEvHHNxPyqYt8
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
 Content-Transfer-Encoding: 7bit
-To: linux-mtd@lists.infradead.org, linux-sh@vger.kernel.org
-Cc: Brian Norris <computersforpeace@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pichart <laurent.pinchart@ideasonboard.com>
 
-As the equation mtd->writesize = eccsteps * eccsize holds, we can
-simplify the code. The second loop of the 1st hunk is never entered,
-so we delete it.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
----
- drivers/mtd/nand/sh_flctl.c |   25 ++-----------------------
- 1 files changed, 2 insertions(+), 23 deletions(-)
+iQIcBAABAgAGBQJPeYi9AAoJECmIfjd9wqK01TkQAMewuEX1gPp1EPSpGZQcSvXs
+jsTvmYqJE6vhHRv8KlbN+bfz5Gjh4xsUyz63/QqILHv8ru3R3MypineF9tGlV+k+
+fvWdcmMuXQ4VmkfsIKQIQ4Y51wWJG91J4QG5Va/Epk7yXzyvskINWN3YWKp0J0Mk
+zePW7mBxEZFFRr45/sTK7Wx3Us8FU3NEV71cbXWjjw+AosLc4G92dIDXEie7BTUn
+OqS2+oRbNyigsDSb9WPTAu4O9Ln5p7F99elipFtBP/OGuSVK9Q92ImUwPB6FJf6E
++rZs/PiYrfMxkyCUsIw/4FVT49PbRusDsVSKzIrTxzzZ/mjb6ANx3gRJBqDXNyvH
+hdhzlacV4H4Id60jIuDeAocI95v39MPX5oQ075P4dNBDd06og9K0RGXvpFPXrVy5
+ZUwfws9ltOEy1oo4Mg8FpJ6j2OWTK/9xc0jFHcLB8WrQ669W9ScM+xQNpki1eaJk
+u5qPSAYr7mod3RLahiPytspkqGdXdtdK256ceUZ0c2u/Bc18mEtq27flRVA3/tc5
+OiWFAS+8d/qCR8evTAn5PSJoGmZk0ZAldcoZ2IRimwEuz8aXZjdX0pkezc8yhulV
+INJBhHNlei00Rop7Gq851ob32uUQrUO5DiPyhF/4WwIxMfeTQ3PsYjEI+j3IzfEF
+DyRHjIGr/NVucPumONWe
+=pJwc
+-----END PGP SIGNATURE-----
 
-diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
-index c8e58bb..b027370 100644
---- a/drivers/mtd/nand/sh_flctl.c
-+++ b/drivers/mtd/nand/sh_flctl.c
-@@ -353,35 +353,14 @@ static void set_cmd_regs(struct mtd_info *mtd, uint32_t cmd, uint32_t flcmcdr_va
- static int flctl_read_page_hwecc(struct mtd_info *mtd, struct nand_chip *chip,
- 				uint8_t *buf, int page)
- {
--	int i, eccsize = chip->ecc.size;
--	int eccbytes = chip->ecc.bytes;
--	int eccsteps = chip->ecc.steps;
--	uint8_t *p = buf;
--	struct sh_flctl *flctl = mtd_to_flctl(mtd);
--
--	for (i = 0; eccsteps; eccsteps--, i += eccbytes, p += eccsize)
--		chip->read_buf(mtd, p, eccsize);
--
--	for (i = 0; eccsteps; eccsteps--, i += eccbytes, p += eccsize) {
--		if (flctl->hwecc_cant_correct[i])
--			mtd->ecc_stats.failed++;
--		else
--			mtd->ecc_stats.corrected += 0;
--	}
--
-+	chip->read_buf(mtd, buf, mtd->writesize);
- 	return 0;
- }
- 
- static void flctl_write_page_hwecc(struct mtd_info *mtd, struct nand_chip *chip,
- 				   const uint8_t *buf)
- {
--	int i, eccsize = chip->ecc.size;
--	int eccbytes = chip->ecc.bytes;
--	int eccsteps = chip->ecc.steps;
--	const uint8_t *p = buf;
--
--	for (i = 0; eccsteps; eccsteps--, i += eccbytes, p += eccsize)
--		chip->write_buf(mtd, p, eccsize);
-+	chip->write_buf(mtd, buf, mtd->writesize);
- }
- 
- static void execmd_read_page_sector(struct mtd_info *mtd, int page_addr)
--- 
-1.7.5.4
+--=-tYG+VEjJEvHHNxPyqYt8--
 
