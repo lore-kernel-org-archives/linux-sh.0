@@ -1,128 +1,63 @@
-From: Andrew Morton <akpm@linux-foundation.org>
-Date: Thu, 26 Apr 2012 23:59:11 +0000
-Subject: Re: [PATCH 1/9] cpu: Introduce clear_tasks_mm_cpumask() helper
-Message-Id: <20120426165911.00cebd31.akpm@linux-foundation.org>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 04 Apr 2012 02:16:09 +0000
+Subject: [PATCH] sh: fix build error in fpu.c
+Message-Id: <4F7BAEE9.7020401@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120423070641.GA27702@lizard>
-	<20120423070736.GA30752@lizard>
-In-Reply-To: <20120423070736.GA30752@lizard>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-sh@vger.kernel.org
 
-On Mon, 23 Apr 2012 00:07:36 -0700
-Anton Vorontsov <anton.vorontsov@linaro.org> wrote:
+This patch fixes the following build error:
 
-> Many architectures clear tasks' mm_cpumask like this:
-> 
-> 	read_lock(&tasklist_lock);
-> 	for_each_process(p) {
-> 		if (p->mm)
-> 			cpumask_clear_cpu(cpu, mm_cpumask(p->mm));
-> 	}
-> 	read_unlock(&tasklist_lock);
-> 
-> Depending on the context, the code above may have several problems,
-> such as:
-> 
-> 1. Working with task->mm w/o getting mm or grabing the task lock is
->    dangerous as ->mm might disappear (exit_mm() assigns NULL under
->    task_lock(), so tasklist lock is not enough).
-> 
-> 2. Checking for process->mm is not enough because process' main
->    thread may exit or detach its mm via use_mm(), but other threads
->    may still have a valid mm.
-> 
-> This patch implements a small helper function that does things
-> correctly, i.e.:
-> 
-> 1. We take the task's lock while whe handle its mm (we can't use
->    get_task_mm()/mmput() pair as mmput() might sleep);
-> 
-> 2. To catch exited main thread case, we use find_lock_task_mm(),
->    which walks up all threads and returns an appropriate task
->    (with task lock held).
-> 
-> Also, Per Peter Zijlstra's idea, now we don't grab tasklist_lock in
-> the new helper, instead we take the rcu read lock. We can do this
-> because the function is called after the cpu is taken down and marked
-> offline, so no new tasks will get this cpu set in their mm mask.
-> 
+  CC      arch/sh/kernel/cpu/sh4/fpu.o
+arch/sh/kernel/cpu/sh4/fpu.c:405: warning: return type defaults to ‘int’
+arch/sh/kernel/cpu/sh4/fpu.c:405: warning: function declaration isn’t a prototype
+arch/sh/kernel/cpu/sh4/fpu.c: In function ‘BUILD_TRAP_HANDLER’:
+arch/sh/kernel/cpu/sh4/fpu.c:407: error: ‘TRAP_HANDLER_DECL’ undeclared (first use in this function)
+arch/sh/kernel/cpu/sh4/fpu.c:407: error: (Each undeclared identifier is reported only once
+arch/sh/kernel/cpu/sh4/fpu.c:407: error: for each function it appears in.)
+arch/sh/kernel/cpu/sh4/fpu.c:409: error: ‘regs’ undeclared (first use in this function)
+arch/sh/kernel/cpu/sh4/fpu.c:423: warning: ‘return’ with no value, in function returning non-void
+  CC      arch/sh/kernel/cpu/fpu.o
+arch/sh/kernel/cpu/fpu.c:80: warning: return type defaults to ‘int’
+arch/sh/kernel/cpu/fpu.c:80: warning: function declaration isn’t a prototype
+arch/sh/kernel/cpu/fpu.c: In function ‘BUILD_TRAP_HANDLER’:
+arch/sh/kernel/cpu/fpu.c:81: error: ‘TRAP_HANDLER_DECL’ undeclared (first use in this function)
+arch/sh/kernel/cpu/fpu.c:81: error: (Each undeclared identifier is reported only once
+arch/sh/kernel/cpu/fpu.c:81: error: for each function it appears in.)
+arch/sh/kernel/cpu/fpu.c:83: error: ‘regs’ undeclared (first use in this function)
+arch/sh/kernel/cpu/fpu.c:83: error: called object ‘fpu_state_restore’ is not a function
 
-Seems reasonable.
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ arch/sh/kernel/cpu/fpu.c     |    1 +
+ arch/sh/kernel/cpu/sh4/fpu.c |    1 +
+ 2 files changed, 2 insertions(+), 0 deletions(-)
 
-> --- a/include/linux/cpu.h
-> +++ b/include/linux/cpu.h
-> @@ -179,6 +179,7 @@ extern void put_online_cpus(void);
->  #define hotcpu_notifier(fn, pri)	cpu_notifier(fn, pri)
->  #define register_hotcpu_notifier(nb)	register_cpu_notifier(nb)
->  #define unregister_hotcpu_notifier(nb)	unregister_cpu_notifier(nb)
-> +void clear_tasks_mm_cpumask(int cpu);
->  int cpu_down(unsigned int cpu);
->  
->  #ifdef CONFIG_ARCH_CPU_PROBE_RELEASE
-> diff --git a/kernel/cpu.c b/kernel/cpu.c
-> index 2060c6e..ecdf499 100644
-> --- a/kernel/cpu.c
-> +++ b/kernel/cpu.c
-> @@ -10,6 +10,8 @@
->  #include <linux/sched.h>
->  #include <linux/unistd.h>
->  #include <linux/cpu.h>
-> +#include <linux/oom.h>
-> +#include <linux/rcupdate.h>
->  #include <linux/export.h>
->  #include <linux/kthread.h>
->  #include <linux/stop_machine.h>
-> @@ -171,6 +173,30 @@ void __ref unregister_cpu_notifier(struct notifier_block *nb)
->  }
->  EXPORT_SYMBOL(unregister_cpu_notifier);
->  
-> +void clear_tasks_mm_cpumask(int cpu)
+diff --git a/arch/sh/kernel/cpu/fpu.c b/arch/sh/kernel/cpu/fpu.c
+index 7f1b70c..f8f7af5 100644
+--- a/arch/sh/kernel/cpu/fpu.c
++++ b/arch/sh/kernel/cpu/fpu.c
+@@ -2,6 +2,7 @@
+ #include <linux/slab.h>
+ #include <asm/processor.h>
+ #include <asm/fpu.h>
++#include <asm/traps.h>
 
-The operation of this function was presumably obvious to you at the
-time you wrote it, but that isn't true of other people at later times.
+ int init_fpu(struct task_struct *tsk)
+ {
+diff --git a/arch/sh/kernel/cpu/sh4/fpu.c b/arch/sh/kernel/cpu/sh4/fpu.c
+index e74cd6c..69ab4d3 100644
+--- a/arch/sh/kernel/cpu/sh4/fpu.c
++++ b/arch/sh/kernel/cpu/sh4/fpu.c
+@@ -16,6 +16,7 @@
+ #include <cpu/fpu.h>
+ #include <asm/processor.h>
+ #include <asm/fpu.h>
++#include <asm/traps.h>
 
-Please document it?
-
-
-> +{
-> +	struct task_struct *p;
-> +
-> +	/*
-> +	 * This function is called after the cpu is taken down and marked
-> +	 * offline,
-
-hm, well.  Who said that this function will only ever be called
-after that CPU was taken down?  There is nothing in the function name
-nor in the (absent) documentation which enforces this precondition.
-
-If someone tries to use this function for a different purpose, or
-copies-and-modifies it for a different purpose, we just shot them in
-the foot.
-
-They'd be pretty dumb to do that without reading the local comment,
-but still...
-
-> 	 so its not like new tasks will ever get this cpu set in
-> +	 * their mm mask. -- Peter Zijlstra
-> +	 * Thus, we may use rcu_read_lock() here, instead of grabbing
-> +	 * full-fledged tasklist_lock.
-> +	 */
-> +	rcu_read_lock();
-> +	for_each_process(p) {
-> +		struct task_struct *t;
-> +
-> +		t = find_lock_task_mm(p);
-> +		if (!t)
-> +			continue;
-> +		cpumask_clear_cpu(cpu, mm_cpumask(t->mm));
-> +		task_unlock(t);
-> +	}
-> +	rcu_read_unlock();
-> +}
-
-It is good that this code exists under CONFIG_HOTPLUG_CPU.  Did you
-check that everything works correctly with CONFIG_HOTPLUG_CPU=n?
-
+ /* The PR (precision) bit in the FP Status Register must be clear when
+  * an frchg instruction is executed, otherwise the instruction is undefined.
+-- 
+1.7.1
