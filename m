@@ -1,159 +1,38 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 23 Apr 2012 07:03:25 +0000
-Subject: [PATCH 2/2] ARM: mach-shmobile: kzm9g: add FSI-AK4648 support
-Message-Id: <87y5pn7ww6.wl%kuninori.morimoto.gx@renesas.com>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 04 Apr 2012 02:56:07 +0000
+Subject: [PATCH] sh: fix clock-sh7757 for the latest sh_mobile_sdhi driver
+Message-Id: <4F7BB847.6010801@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The commit 996bc8aebd2cd5b6d4c5d85085f171fa2447f364 (mmc: sh_mobile_sdhi:
+do not manage PM clocks manually) modified the sh_mobile_sdhi driver to
+remove the clk_enable/clk_disable. So, we need to change
+the "CLKDEV_CON_ID" to "CLKDEV_DEV_ID".
+
+If we don't change this, we will see the following error from the driver:
+    sh_mobile_sdhi sh_mobile_sdhi.0: timeout waiting for hardware interrupt (CMD52)
+
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/mach-shmobile/Kconfig       |    1 +
- arch/arm/mach-shmobile/board-kzm9g.c |   79 ++++++++++++++++++++++++++++++++++
- 2 files changed, 80 insertions(+), 0 deletions(-)
+ arch/sh/kernel/cpu/sh4a/clock-sh7757.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index c39413a..11c734e 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -102,6 +102,7 @@ config MACH_KZM9G
- 	bool "KZM-A9-GT board"
- 	depends on ARCH_SH73A0
- 	select ARCH_REQUIRE_GPIOLIB
-+	select SND_SOC_AK4642 if SND_SIMPLE_CARD
- 
- comment "SH-Mobile System Configuration"
- 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index 78e9850..a94aefe 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -33,6 +33,8 @@
- #include <linux/smsc911x.h>
- #include <linux/usb/r8a66597.h>
- #include <linux/videodev2.h>
-+#include <sound/sh_fsi.h>
-+#include <sound/simple_card.h>
- #include <mach/irqs.h>
- #include <mach/sh73a0.h>
- #include <mach/common.h>
-@@ -54,6 +56,14 @@
- #define GPIO_PCF8575_PORT15	(GPIO_NR + 13)
- #define GPIO_PCF8575_PORT16	(GPIO_NR + 14)
- 
-+/*
-+ * FSI-AK4648
-+ *
-+ * this command is required when playback.
-+ *
-+ * # amixer set "LINEOUT Mixer DACL" on
-+ */
-+
- /* SMSC 9221 */
- static struct resource smsc9221_resources[] = {
- 	[0] = {
-@@ -267,11 +277,70 @@ static struct platform_device gpio_keys_device = {
- 	},
- };
- 
-+/* FSI-AK4648 */
-+static struct sh_fsi_platform_info fsi_info = {
-+	.port_a = {
-+	},
-+};
-+
-+static struct resource fsi_resources[] = {
-+	[0] = {
-+		.name	= "FSI",
-+		.start	= 0xEC230000,
-+		.end	= 0xEC230400 - 1,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start  = gic_spi(146),
-+		.flags  = IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device fsi_device = {
-+	.name		= "sh_fsi2",
-+	.id		= -1,
-+	.num_resources	= ARRAY_SIZE(fsi_resources),
-+	.resource	= fsi_resources,
-+	.dev	= {
-+		.platform_data	= &fsi_info,
-+	},
-+};
-+
-+static struct asoc_simple_dai_init_info fsi2_ak4648_init_info = {
-+	.fmt		= SND_SOC_DAIFMT_LEFT_J,
-+	.codec_daifmt	= SND_SOC_DAIFMT_CBM_CFM,
-+	.cpu_daifmt	= SND_SOC_DAIFMT_CBS_CFS,
-+	.sysclk		= 11289600,
-+};
-+
-+static struct asoc_simple_card_info fsi2_ak4648_info = {
-+	.name		= "AK4648",
-+	.card		= "FSI2A-AK4648",
-+	.cpu_dai	= "fsia-dai",
-+	.codec		= "ak4642-codec.0-0012",
-+	.platform	= "sh_fsi2",
-+	.codec_dai	= "ak4642-hifi",
-+	.init		= &fsi2_ak4648_init_info,
-+};
-+
-+static struct platform_device fsi_ak4648_device = {
-+	.name	= "asoc-simple-card",
-+	.dev	= {
-+		.platform_data	= &fsi2_ak4648_info,
-+	},
-+};
-+
- /* I2C */
- static struct pcf857x_platform_data pcf8575_pdata = {
- 	.gpio_base	= GPIO_PCF8575_BASE,
- };
- 
-+static struct i2c_board_info i2c0_devices[] = {
-+	{
-+		I2C_BOARD_INFO("ak4648", 0x12),
-+	}
-+};
-+
- static struct i2c_board_info i2c1_devices[] = {
- 	{
- 		I2C_BOARD_INFO("st1232-ts", 0x55),
-@@ -293,6 +362,8 @@ static struct platform_device *kzm_devices[] __initdata = {
- 	&mmc_device,
- 	&sdhi0_device,
- 	&gpio_keys_device,
-+	&fsi_device,
-+	&fsi_ak4648_device,
- };
- 
- /*
-@@ -431,11 +502,19 @@ static void __init kzm_init(void)
- 	gpio_request(GPIO_FN_PORT27_I2C_SCL3, NULL);
- 	gpio_request(GPIO_FN_PORT28_I2C_SDA3, NULL);
- 
-+	/* enable FSI2 port A (ak4648) */
-+	gpio_request(GPIO_FN_FSIACK,	NULL);
-+	gpio_request(GPIO_FN_FSIAILR,	NULL);
-+	gpio_request(GPIO_FN_FSIAIBT,	NULL);
-+	gpio_request(GPIO_FN_FSIAISLD,	NULL);
-+	gpio_request(GPIO_FN_FSIAOSLD,	NULL);
-+
- #ifdef CONFIG_CACHE_L2X0
- 	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
- 	l2x0_init(IOMEM(0xf0100000), 0x40460000, 0x82000fff);
- #endif
- 
-+	i2c_register_board_info(0, i2c0_devices, ARRAY_SIZE(i2c0_devices));
- 	i2c_register_board_info(1, i2c1_devices, ARRAY_SIZE(i2c1_devices));
- 	i2c_register_board_info(3, i2c3_devices, ARRAY_SIZE(i2c3_devices));
- 
+diff --git a/arch/sh/kernel/cpu/sh4a/clock-sh7757.c b/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
+index 5853989..04ab5ae 100644
+--- a/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
++++ b/arch/sh/kernel/cpu/sh4a/clock-sh7757.c
+@@ -113,7 +113,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("cpu_clk", &div4_clks[DIV4_I]),
+
+ 	/* MSTP32 clocks */
+-	CLKDEV_CON_ID("sdhi0", &mstp_clks[MSTP004]),
++	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP004]),
+ 	CLKDEV_CON_ID("riic0", &mstp_clks[MSTP000]),
+ 	CLKDEV_CON_ID("riic1", &mstp_clks[MSTP000]),
+ 	CLKDEV_CON_ID("riic2", &mstp_clks[MSTP000]),
 -- 
-1.7.5.4
-
+1.7.1
