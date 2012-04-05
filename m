@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 06 Apr 2012 08:28:59 +0000
-Subject: [PATCH 2/7 v2] ARM: mach-shmobile: add armadillo800eva board support.
-Message-Id: <87pqbljmbd.wl%kuninori.morimoto.gx@renesas.com>
+Date: Thu, 05 Apr 2012 08:33:14 +0000
+Subject: [PATCH 1/6] ARM: mach-shmobile: add armadillo800eva board support.
+Message-Id: <87obr64lyx.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -12,11 +12,6 @@ This adds very basic armadillo800eva board (R-Mobile A1) support
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v1 -> v2
-
- - used <mach/irqs.h>
- - fixup typo
-
  arch/arm/mach-shmobile/Kconfig                 |   11 ++-
  arch/arm/mach-shmobile/Makefile                |    1 +
  arch/arm/mach-shmobile/board-armadillo800eva.c |  154 ++++++++++++++++++++++++
@@ -24,7 +19,7 @@ v1 -> v2
  create mode 100644 arch/arm/mach-shmobile/board-armadillo800eva.c
 
 diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 34560ca..7828a7a 100644
+index 060e564..c882e90 100644
 --- a/arch/arm/mach-shmobile/Kconfig
 +++ b/arch/arm/mach-shmobile/Kconfig
 @@ -93,6 +93,11 @@ config MACH_BONITO
@@ -39,7 +34,7 @@ index 34560ca..7828a7a 100644
  config MACH_MARZEN
  	bool "MARZEN board"
  	depends on ARCH_R8A7779
-@@ -110,7 +115,8 @@ config MEMORY_START
+@@ -106,7 +111,8 @@ config MEMORY_START
  	hex "Physical memory start address"
  	default "0x50000000" if MACH_G3EVM
  	default "0x40000000" if MACH_G4EVM || MACH_AP4EVB || MACH_AG5EVM || \
@@ -49,7 +44,7 @@ index 34560ca..7828a7a 100644
  	default "0x41000000" if MACH_KOTA2
  	default "0x00000000"
  	---help---
-@@ -122,7 +128,8 @@ config MEMORY_SIZE
+@@ -118,7 +124,8 @@ config MEMORY_SIZE
  	hex "Physical memory size"
  	default "0x08000000" if MACH_G3EVM
  	default "0x08000000" if MACH_G4EVM
@@ -60,10 +55,10 @@ index 34560ca..7828a7a 100644
  	default "0x10000000" if MACH_AP4EVB || MACH_MACKEREL
  	default "0x04000000"
 diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index e7c2590..6125c2b 100644
+index 7ad6954..c3432ce 100644
 --- a/arch/arm/mach-shmobile/Makefile
 +++ b/arch/arm/mach-shmobile/Makefile
-@@ -49,6 +49,7 @@ obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
+@@ -50,6 +50,7 @@ obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
  obj-$(CONFIG_MACH_KOTA2)	+= board-kota2.o
  obj-$(CONFIG_MACH_BONITO)	+= board-bonito.o
  obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
@@ -73,7 +68,7 @@ index e7c2590..6125c2b 100644
  obj-$(CONFIG_SMP)		+= $(smp-y)
 diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
 new file mode 100644
-index 0000000..28bc259
+index 0000000..1ca153b
 --- /dev/null
 +++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
 @@ -0,0 +1,154 @@
@@ -101,10 +96,10 @@ index 0000000..28bc259
 +#include <linux/clk.h>
 +#include <linux/err.h>
 +#include <linux/kernel.h>
++#include <linux/irq.h>
 +#include <linux/platform_device.h>
 +#include <linux/gpio.h>
 +#include <mach/common.h>
-+#include <mach/irqs.h>
 +#include <asm/page.h>
 +#include <asm/mach-types.h>
 +#include <asm/mach/arch.h>
@@ -223,7 +218,7 @@ index 0000000..28bc259
 +	shmobile_timer.init = eva_earlytimer_init;
 +}
 +
-+MACHINE_START(ARMADILLO800EVA, "armadillo800eva")
++MACHINE_START(ARMADILLO800EVA, "armadillo800a8eva")
 +	.map_io		= r8a7740_map_io,
 +	.init_early	= eva_add_early_devices,
 +	.init_irq	= r8a7740_init_irq,
