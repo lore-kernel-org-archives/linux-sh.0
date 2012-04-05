@@ -1,26 +1,108 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 06 Apr 2012 05:33:14 +0000
-Subject: Re: [PATCH] ASoC: fsi:  Add missing argument to device_prep_slave_sg()
-Message-Id: <87vcldjug9.wl%kuninori.morimoto.gx@renesas.com>
+Date: Thu, 05 Apr 2012 08:34:27 +0000
+Subject: [PATCH 6/6] ARM: mach-shmobile: armadillo800eva: add support sh_eth
+Message-Id: <87hawy4lww.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1333616835-973-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1333616835-973-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-
-Hi Simon
-
-> > Maybe this is same as
-> > http://www.spinics.net/lists/linux-sh/msg10806.html
-> 
-> Yes, it is. Sorry for missing that.
-
-No worry.
-Thank you for checking/trying my patch anyway.
-
-Best regards
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-Kuninori Morimoto
+ arch/arm/mach-shmobile/board-armadillo800eva.c |   58 ++++++++++++++++++++++++
+ 1 files changed, 58 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 987265a..b1a192a 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -27,6 +27,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/gpio.h>
+ #include <linux/gpio_keys.h>
++#include <linux/sh_eth.h>
+ #include <linux/videodev2.h>
+ #include <mach/common.h>
+ #include <asm/page.h>
+@@ -96,6 +97,38 @@
+  *-----------+---------------+----------------------------
+  */
+ 
++/* Ether */
++static struct sh_eth_plat_data sh_eth_platdata = {
++	.phy			= 0x00, /* LAN8710A */
++	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
++	.register_type		= SH_ETH_REG_GIGABIT,
++	.phy_interface		= PHY_INTERFACE_MODE_MII,
++};
++
++static struct resource sh_eth_resources[] = {
++	{
++		.start	= 0xe9a00000,
++		.end	= 0xe9a00800 - 1,
++		.flags	= IORESOURCE_MEM,
++	}, {
++		.start	= 0xe9a01800,
++		.end	= 0xe9a02000 - 1,
++		.flags	= IORESOURCE_MEM,
++	}, {
++		.start	= evt2irq(0x0500),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device sh_eth_device = {
++	.name = "sh-eth",
++	.dev = {
++		.platform_data = &sh_eth_platdata,
++	},
++	.resource = sh_eth_resources,
++	.num_resources = ARRAY_SIZE(sh_eth_resources),
++};
++
+ /* LCDC */
+ static struct fb_videomode lcdc0_mode = {
+ 	.name		= "AMPIER/AM-800480",
+@@ -188,6 +221,7 @@ static struct platform_device gpio_keys_device = {
+ static struct platform_device *eva_devices[] __initdata = {
+ 	&lcdc0_device,
+ 	&gpio_keys_device,
++	&sh_eth_device,
+ };
+ 
+ /*
+@@ -244,6 +278,30 @@ static void __init eva_init(void)
+ 	gpio_request(GPIO_PORT166,	NULL); /* TP_RST_B */
+ 	gpio_direction_output(GPIO_PORT166, 1);
+ 
++	/* GETHER */
++	gpio_request(GPIO_FN_ET_CRS,		NULL);
++	gpio_request(GPIO_FN_ET_MDC,		NULL);
++	gpio_request(GPIO_FN_ET_MDIO,		NULL);
++	gpio_request(GPIO_FN_ET_TX_ER,		NULL);
++	gpio_request(GPIO_FN_ET_RX_ER,		NULL);
++	gpio_request(GPIO_FN_ET_ERXD0,		NULL);
++	gpio_request(GPIO_FN_ET_ERXD1,		NULL);
++	gpio_request(GPIO_FN_ET_ERXD2,		NULL);
++	gpio_request(GPIO_FN_ET_ERXD3,		NULL);
++	gpio_request(GPIO_FN_ET_TX_CLK,		NULL);
++	gpio_request(GPIO_FN_ET_TX_EN,		NULL);
++	gpio_request(GPIO_FN_ET_ETXD0,		NULL);
++	gpio_request(GPIO_FN_ET_ETXD1,		NULL);
++	gpio_request(GPIO_FN_ET_ETXD2,		NULL);
++	gpio_request(GPIO_FN_ET_ETXD3,		NULL);
++	gpio_request(GPIO_FN_ET_PHY_INT,	NULL);
++	gpio_request(GPIO_FN_ET_COL,		NULL);
++	gpio_request(GPIO_FN_ET_RX_DV,		NULL);
++	gpio_request(GPIO_FN_ET_RX_CLK,		NULL);
++
++	gpio_request(GPIO_PORT18, NULL); /* PHY_RST */
++	gpio_direction_output(GPIO_PORT18, 1);
++
+ 	/*
+ 	 * CAUTION
+ 	 *
+-- 
+1.7.5.4
+
