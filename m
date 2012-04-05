@@ -1,101 +1,35 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 23 Apr 2012 06:53:40 +0000
-Subject: [PATCH 4/6] ARM: mach-shmobile: kzm9g: add MMCIF support
-Message-Id: <8762cr9bwv.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 05 Apr 2012 09:07:15 +0000
+Subject: [PATCH] ASoC: fsi:  Add missing argument to device_prep_slave_sg()
+Message-Id: <1333616835-973-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <878vi23ooh.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <878vi23ooh.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm/mach-shmobile/board-kzm9g.c |   49 ++++++++++++++++++++++++++++++++++
- 1 files changed, 49 insertions(+), 0 deletions(-)
+An extra paramter, context, was added to device_prep_slave_sg()
+by "dmaengine: add context parameter to prep_slave_sg and prep_dma_cyclic".
+This patch updates the FSI driver so that it compiles once again.
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index 545d633..57c391a 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -22,6 +22,8 @@
- #include <linux/io.h>
- #include <linux/irq.h>
- #include <linux/i2c.h>
-+#include <linux/mmc/host.h>
-+#include <linux/mmc/sh_mmcif.h>
- #include <linux/platform_device.h>
- #include <linux/smsc911x.h>
- #include <linux/usb/r8a66597.h>
-@@ -147,6 +149,40 @@ static struct platform_device lcdc_device = {
- 	},
- };
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ sound/soc/sh/fsi.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/sound/soc/sh/fsi.c b/sound/soc/sh/fsi.c
+index 378cc5b..a2114e5 100644
+--- a/sound/soc/sh/fsi.c
++++ b/sound/soc/sh/fsi.c
+@@ -1003,7 +1003,7 @@ static void fsi_dma_do_tasklet(unsigned long data)
  
-+/* MMCIF */
-+static struct resource sh_mmcif_resources[] = {
-+	[0] = {
-+		.name	= "MMCIF",
-+		.start	= 0xe6bd0000,
-+		.end	= 0xe6bd00ff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= gic_spi(141),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+	[2] = {
-+		.start	= gic_spi(140),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct sh_mmcif_plat_data sh_mmcif_platdata = {
-+	.ocr		= MMC_VDD_165_195,
-+	.caps		= MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE,
-+};
-+
-+static struct platform_device mmc_device = {
-+	.name		= "sh_mmcif",
-+	.dev		= {
-+		.dma_mask		= NULL,
-+		.coherent_dma_mask	= 0xffffffff,
-+		.platform_data		= &sh_mmcif_platdata,
-+	},
-+	.num_resources	= ARRAY_SIZE(sh_mmcif_resources),
-+	.resource	= sh_mmcif_resources,
-+};
-+
- static struct i2c_board_info i2c1_devices[] = {
- 	{
- 		I2C_BOARD_INFO("st1232-ts", 0x55),
-@@ -158,6 +194,7 @@ static struct platform_device *kzm_devices[] __initdata = {
- 	&smsc_device,
- 	&usb_host_device,
- 	&lcdc_device,
-+	&mmc_device,
- };
- 
- /*
-@@ -267,6 +304,18 @@ static void __init kzm_init(void)
- 	gpio_request(GPIO_PORT223, NULL); /* IRQ8 */
- 	gpio_direction_input(GPIO_PORT223);
- 
-+	/* enable MMCIF */
-+	gpio_request(GPIO_FN_MMCCLK0,		NULL);
-+	gpio_request(GPIO_FN_MMCCMD0_PU,	NULL);
-+	gpio_request(GPIO_FN_MMCD0_0_PU,	NULL);
-+	gpio_request(GPIO_FN_MMCD0_1_PU,	NULL);
-+	gpio_request(GPIO_FN_MMCD0_2_PU,	NULL);
-+	gpio_request(GPIO_FN_MMCD0_3_PU,	NULL);
-+	gpio_request(GPIO_FN_MMCD0_4_PU,	NULL);
-+	gpio_request(GPIO_FN_MMCD0_5_PU,	NULL);
-+	gpio_request(GPIO_FN_MMCD0_6_PU,	NULL);
-+	gpio_request(GPIO_FN_MMCD0_7_PU,	NULL);
-+
- #ifdef CONFIG_CACHE_L2X0
- 	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
- 	l2x0_init(IOMEM(0xf0100000), 0x40460000, 0x82000fff);
+ 	desc = chan->device->device_prep_slave_sg(chan, &sg, 1, dir,
+ 						  DMA_PREP_INTERRUPT |
+-						  DMA_CTRL_ACK);
++						  DMA_CTRL_ACK, NULL);
+ 	if (!desc) {
+ 		dev_err(dai->dev, "device_prep_slave_sg() fail\n");
+ 		return;
 -- 
-1.7.5.4
+1.7.9.1
 
