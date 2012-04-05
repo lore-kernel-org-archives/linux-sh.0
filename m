@@ -1,69 +1,48 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 19 Apr 2012 22:09:20 +0000
-Subject: [PATCH 3/3] mmc: sh_mmcif: re-read the clock frequency upon re-enabling
-Message-Id: <Pine.LNX.4.64.1204192357250.2110@axis700.grange>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 05 Apr 2012 08:32:20 +0000
+Subject: [PATCH 0/6] ARM: mach-shmobile: add Armadillo800eva board support
+Message-Id: <87pqbm4m0b.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1201101604130.530@axis700.grange>
- <Pine.LNX.4.64.1202022256580.13860@axis700.grange>
- <CANqRtoQ7o=_9uRa3F=4pkNvDWS2g2wZU6oBipttfGuFv4irpzA@mail.gmail.com>
- <Pine.LNX.4.64.1202031156020.6211@axis700.grange>
- <Pine.LNX.4.64.1204191215430.2110@axis700.grange>
- <CANqRtoTq1e7_g82FGZS3S8yb0j7MgCYNhiH7E=a+nHkTWiOgLQ@mail.gmail.com>
- <Pine.LNX.4.64.1204192351190.2110@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1204192351190.2110@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: "Rafael J. Wysocki" <rjw@sisk.pl>, linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Once the clock is disabled by a driver, nothing prevents it from being 
-reconfigured by another user. Drivers, that save power by disabling the 
-clock when not in use must re-read its frequency every time they re-enable 
-it.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Hi Rafael, Magnus
+Cc Simon, nakai-san, Saneyoshi-san
+
+These are basic R8A7740 A1 Armadillo800eva baord support patch set.
+These are based on rafael/master branch.
+
+Kuninori Morimoto (6):
+      ARM: mach-shmobile: add armadillo800eva board support.
+      ARM: mach-shmobile: armadillo800eva: add defconfig
+      ARM: mach-shmobile: armadillo800eva: add support LCDC0
+      ARM: mach-shmobile: armadillo800eva: add support ST1232
+      ARM: mach-shmobile: armadillo800eva: add support gpio_key
+      ARM: mach-shmobile: armadillo800eva: add support sh_eth
+
+These still not support device tree at this point,
+but I will work for it soon.
+
+#5 patch require R8A7740 .gipo_irq support patch which I posted this morning.
+[PATCH] ARM: mach-shmobile: pfc-r8a7740: add .gpio_irq support
+
+#6 patch adds sh_eth support to armadillo800eva board,
+no compile error, but doesn't work on rafael/master at this point.
+it needs shimoda-san's sh_eth patches.
+
+git://git.kernel.org/pub/scm/linux/kernel/git/davem/net.git
+10b9194f959608368ed89df1937f17cfe6bd6d84
+(net: sh_eth: fix endian check for architecture independent)
+
+git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git
+73a0d907301ece200d32b4e8ba2da2ca296b507f
+(net: sh_eth: add support R8A7740)
+
+I hope these patches are back-ported and go to LTSI support.
+
+Best regards
 ---
- drivers/mmc/host/sh_mmcif.c |   12 +++++++++---
- 1 files changed, 9 insertions(+), 3 deletions(-)
-
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index 0441140..ed59392 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -916,6 +916,13 @@ static void sh_mmcif_request(struct mmc_host *mmc, struct mmc_request *mrq)
- 	sh_mmcif_start_cmd(host, mrq);
- }
- 
-+static void sh_mmcif_clk_update(struct sh_mmcif_host *host)
-+{
-+	host->clk = clk_get_rate(host->hclk);
-+	host->mmc->f_max = host->clk / 2;
-+	host->mmc->f_min = host->clk / 512;
-+}
-+
- static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- {
- 	struct sh_mmcif_host *host = mmc_priv(mmc);
-@@ -962,6 +969,7 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 			if (p->set_pwr)
- 				p->set_pwr(host->pd, ios->power_mode);
- 			clk_enable(host->hclk);
-+			sh_mmcif_clk_update(host);
- 			pm_runtime_get_sync(&host->pd->dev);
- 			host->power = true;
- 			sh_mmcif_sync_reset(host);
-@@ -1313,9 +1321,7 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
- 		goto eclkget;
- 	}
- 	clk_enable(host->hclk);
--	host->clk = clk_get_rate(host->hclk);
--	mmc->f_max = host->clk / 2;
--	mmc->f_min = host->clk / 512;
-+	sh_mmcif_clk_update(host);
- 
- 	ret = pm_runtime_resume(&pdev->dev);
- 	if (ret < 0)
--- 
-1.7.2.5
-
+Kuninori Morimoto
