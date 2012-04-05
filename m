@@ -1,43 +1,63 @@
 From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 11 Apr 2012 09:36:40 +0000
-Subject: Re: [PATCH v2] serial: sh-sci: modify sci_break_ctl()
-Message-Id: <4F8550A8.30904@renesas.com>
+Date: Thu, 05 Apr 2012 09:34:00 +0000
+Subject: [PATCH] serial: sh-sci: modify sci_break_ctl()
+Message-Id: <4F7D6708.5060500@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4F7E3FE2.4050902@renesas.com>
-In-Reply-To: <4F7E3FE2.4050902@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-2012/04/11 13:28, Paul Mundt wrote:
-> On Fri, Apr 06, 2012 at 02:39:00PM +0900, Shimoda, Yoshihiro wrote:
->>
->> Sorry I forgot that the SH7724 has SCIF and SCIFA.
->> The ecovec uses SCIF, and it doesn't have SCSPTR.
-> 
-> Well, one thing that you can do is test for the SCSPTR existence and
-> simply not care about the port type. This is roughly what the generic
-> sci_init_pins() does for example.
-> 
-> You would have to ensure that the bits you are twiddling also exist for
-> the SCIx_SH2_SCIF_FIFODATA_REGTYPE, SCIx_SH2_SCIF_FIFODATA_REGTYPE, and
-> SCIx_SH4_SCIF_FIFODATA_REGTYPE, though.
+SCIF modules which have SCSPTR can output the break signal.
+This patch supports it.
 
-Thank you for the suggestion. I will modify the code.
+This patch tested on sh7757lcr.
 
->> I checked the ecovec schematics, but it cannot use SCIFA because
->> other functions use the multiplex pins.
->>
-> You should be able to plug them in for the port and let the sh-sci driver
-> try to grab the port. The port will simply be skipped if pin demux fails.
-> Take a look at 50f0959ad4f9ac1c5ee208bb820de299a1b3730b for an idea of
-> how to wire it up.
-> 
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ drivers/tty/serial/sh-sci.c |   30 ++++++++++++++++++++++++++----
+ 1 files changed, 26 insertions(+), 4 deletions(-)
 
-I'm sorry, I don't understand this comment.
-I think that if the sh-sci driver grab the port, other driver cannot
-work correctly when other driver is working.
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index bf461cf..4f46532 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1567,10 +1567,32 @@ static void sci_enable_ms(struct uart_port *port)
 
-Best regards,
-Yoshihiro Shimoda
+ static void sci_break_ctl(struct uart_port *port, int break_state)
+ {
+-	/*
+-	 * Not supported by hardware. Most parts couple break and rx
+-	 * interrupts together, with break detection always enabled.
+-	 */
++	struct sci_port *s = to_sci_port(port);
++	unsigned short scscr, scsptr;
++
++	switch (s->cfg->regtype) {
++	case SCIx_SH4_SCIF_REGTYPE:
++		scsptr = sci_in(port, SCSPTR);
++		scscr = sci_in(port, SCSCR);
++
++		if (break_state = -1) {
++			scsptr = (scsptr | SCSPTR_SPB2IO) & ~SCSPTR_SPB2DT;
++			scscr &= ~SCSCR_TE;
++		} else {
++			scsptr = (scsptr | SCSPTR_SPB2DT) & ~SCSPTR_SPB2IO;
++			scscr |= SCSCR_TE;
++		}
++
++		sci_out(port, SCSPTR, scsptr);
++		sci_out(port, SCSCR, scscr);
++		break;
++	default:
++		/*
++		 * Not supported by hardware. Most parts couple break and rx
++		 * interrupts together, with break detection always enabled.
++		 */
++		break;
++	}
+ }
+
+ #ifdef CONFIG_SERIAL_SH_SCI_DMA
+-- 
+1.7.1
