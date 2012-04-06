@@ -1,117 +1,172 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 11 Apr 2012 03:57:31 +0000
-Subject: [PATCH 1/6] ARM: mach-shmobile: add KZM-A9-GT board support
-Message-Id: <87d37e3opk.wl%kuninori.morimoto.gx@renesas.com>
+Date: Fri, 06 Apr 2012 08:29:36 +0000
+Subject: [PATCH 3/7 v2] ARM: mach-shmobile: armadillo800eva: add defconfig
+Message-Id: <87obr5jmab.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This adds very basic KZM-A9-GT board (SH73a0) support
-
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/Kconfig       |    5 +++
- arch/arm/mach-shmobile/Makefile      |    1 +
- arch/arm/mach-shmobile/board-kzm9g.c |   60 ++++++++++++++++++++++++++++++++++
- 3 files changed, 66 insertions(+), 0 deletions(-)
- create mode 100644 arch/arm/mach-shmobile/board-kzm9g.c
+v1 -> v2
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 34560ca..c39413a 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -98,6 +98,11 @@ config MACH_MARZEN
- 	depends on ARCH_R8A7779
- 	select ARCH_REQUIRE_GPIOLIB
- 
-+config MACH_KZM9G
-+	bool "KZM-A9-GT board"
-+	depends on ARCH_SH73A0
-+	select ARCH_REQUIRE_GPIOLIB
-+
- comment "SH-Mobile System Configuration"
- 
- config CPU_HAS_INTEVT
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index e7c2590..015c2d4 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -49,6 +49,7 @@ obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
- obj-$(CONFIG_MACH_KOTA2)	+= board-kota2.o
- obj-$(CONFIG_MACH_BONITO)	+= board-bonito.o
- obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
-+obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o
- 
- # Framework support
- obj-$(CONFIG_SMP)		+= $(smp-y)
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+- based on linus/master
+
+ arch/arm/configs/armadillo800eva_defconfig |  143 ++++++++++++++++++++++++++++
+ 1 files changed, 143 insertions(+), 0 deletions(-)
+ create mode 100644 arch/arm/configs/armadillo800eva_defconfig
+
+diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
 new file mode 100644
-index 0000000..55dad87
+index 0000000..0d20749
 --- /dev/null
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -0,0 +1,60 @@
-+/*
-+ * KZM-A9-GT board support
-+ *
-+ * Copyright (C) 2012	Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+ */
-+#include <linux/gpio.h>
-+#include <linux/io.h>
-+#include <linux/irq.h>
-+#include <linux/platform_device.h>
-+#include <mach/sh73a0.h>
-+#include <mach/common.h>
-+#include <asm/hardware/cache-l2x0.h>
-+#include <asm/hardware/gic.h>
-+#include <asm/mach-types.h>
-+#include <asm/mach/arch.h>
-+
-+static struct platform_device *kzm_devices[] __initdata = {
-+};
-+
-+static void __init kzm_init(void)
-+{
-+	sh73a0_pinmux_init();
-+
-+	/* enable SCIFA4 */
-+	gpio_request(GPIO_FN_SCIFA4_TXD, NULL);
-+	gpio_request(GPIO_FN_SCIFA4_RXD, NULL);
-+	gpio_request(GPIO_FN_SCIFA4_RTS_, NULL);
-+	gpio_request(GPIO_FN_SCIFA4_CTS_, NULL);
-+
-+#ifdef CONFIG_CACHE_L2X0
-+	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
-+	l2x0_init(IOMEM(0xf0100000), 0x40460000, 0x82000fff);
-+#endif
-+
-+	sh73a0_add_standard_devices();
-+	platform_add_devices(kzm_devices, ARRAY_SIZE(kzm_devices));
-+}
-+
-+MACHINE_START(KZM9G, "kzm9g")
-+	.map_io		= sh73a0_map_io,
-+	.init_early	= sh73a0_add_early_devices,
-+	.nr_irqs	= NR_IRQS_LEGACY,
-+	.init_irq	= sh73a0_init_irq,
-+	.handle_irq	= gic_handle_irq,
-+	.init_machine	= kzm_init,
-+	.timer		= &shmobile_timer,
-+MACHINE_END
++++ b/arch/arm/configs/armadillo800eva_defconfig
+@@ -0,0 +1,143 @@
++CONFIG_EXPERIMENTAL=y
++CONFIG_SYSVIPC=y
++CONFIG_IKCONFIG=y
++CONFIG_IKCONFIG_PROC=y
++CONFIG_LOG_BUF_SHIFT
++# CONFIG_UTS_NS is not set
++# CONFIG_IPC_NS is not set
++# CONFIG_USER_NS is not set
++# CONFIG_PID_NS is not set
++CONFIG_SYSFS_DEPRECATED=y
++CONFIG_SYSFS_DEPRECATED_V2=y
++CONFIG_CC_OPTIMIZE_FOR_SIZE=y
++CONFIG_KALLSYMS_ALL=y
++CONFIG_SLAB=y
++CONFIG_MODULES=y
++CONFIG_MODULE_UNLOAD=y
++CONFIG_MODULE_FORCE_UNLOAD=y
++# CONFIG_BLK_DEV_BSG is not set
++# CONFIG_IOSCHED_DEADLINE is not set
++# CONFIG_IOSCHED_CFQ is not set
++CONFIG_ARCH_SHMOBILE=y
++CONFIG_ARCH_R8A7740=y
++CONFIG_MACH_ARMADILLO800EVA=y
++# CONFIG_SH_TIMER_TMU is not set
++# CONFIG_ARM_THUMB is not set
++CONFIG_CPU_BPREDICT_DISABLE=y
++# CONFIG_CACHE_L2X0 is not set
++CONFIG_ARM_ERRATA_430973=y
++CONFIG_ARM_ERRATA_458693=y
++CONFIG_ARM_ERRATA_460075=y
++CONFIG_ARM_ERRATA_720789=y
++CONFIG_ARM_ERRATA_743622=y
++CONFIG_ARM_ERRATA_751472=y
++CONFIG_ARM_ERRATA_754322=y
++CONFIG_AEABI=y
++# CONFIG_OABI_COMPAT is not set
++CONFIG_FORCE_MAX_ZONEORDER
++CONFIG_ZBOOT_ROM_TEXT=0x0
++CONFIG_ZBOOT_ROM_BSS=0x0
++CONFIG_CMDLINE="console=tty0 console=ttySC1,115200 earlyprintk=sh-sci.1,115200 ignore_loglevel root=/dev/nfs ip=dhcp nfsroot=,rsize@96,wsize@96"
++CONFIG_CMDLINE_FORCE=y
++CONFIG_KEXEC=y
++# CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
++# CONFIG_SUSPEND is not set
++CONFIG_NET=y
++CONFIG_PACKET=y
++CONFIG_UNIX=y
++CONFIG_INET=y
++CONFIG_IP_PNP=y
++CONFIG_IP_PNP_DHCP=y
++# CONFIG_INET_XFRM_MODE_TRANSPORT is not set
++# CONFIG_INET_XFRM_MODE_TUNNEL is not set
++# CONFIG_INET_XFRM_MODE_BEET is not set
++# CONFIG_INET_LRO is not set
++# CONFIG_INET_DIAG is not set
++# CONFIG_IPV6 is not set
++# CONFIG_WIRELESS is not set
++CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
++CONFIG_SCSI=y
++CONFIG_BLK_DEV_SD=y
++CONFIG_MD=y
++CONFIG_BLK_DEV_DM=y
++CONFIG_NETDEVICES=y
++# CONFIG_NET_VENDOR_BROADCOM is not set
++# CONFIG_NET_VENDOR_CHELSIO is not set
++# CONFIG_NET_VENDOR_FARADAY is not set
++# CONFIG_NET_VENDOR_INTEL is not set
++# CONFIG_NET_VENDOR_MARVELL is not set
++# CONFIG_NET_VENDOR_MICREL is not set
++# CONFIG_NET_VENDOR_NATSEMI is not set
++CONFIG_SH_ETH=y
++# CONFIG_NET_VENDOR_SEEQ is not set
++# CONFIG_NET_VENDOR_STMICRO is not set
++# CONFIG_WLAN is not set
++# CONFIG_INPUT_MOUSEDEV_PSAUX is not set
++CONFIG_INPUT_EVDEV=y
++# CONFIG_KEYBOARD_ATKBD is not set
++CONFIG_KEYBOARD_GPIO=y
++# CONFIG_INPUT_MOUSE is not set
++CONFIG_INPUT_TOUCHSCREEN=y
++CONFIG_TOUCHSCREEN_ST1232=y
++# CONFIG_SERIO is not set
++# CONFIG_LEGACY_PTYS is not set
++CONFIG_SERIAL_SH_SCI=y
++CONFIG_SERIAL_SH_SCI_NR_UARTS=8
++CONFIG_SERIAL_SH_SCI_CONSOLE=y
++# CONFIG_HW_RANDOM is not set
++CONFIG_I2C=y
++CONFIG_I2C_SH_MOBILE=y
++# CONFIG_HWMON is not set
++CONFIG_FB=y
++CONFIG_FB_MODE_HELPERS=y
++CONFIG_FB_SH_MOBILE_LCDC=y
++CONFIG_LCD_CLASS_DEVICE=y
++CONFIG_FRAMEBUFFER_CONSOLE=y
++CONFIG_FRAMEBUFFER_CONSOLE_DETECT_PRIMARY=y
++CONFIG_LOGO=y
++# CONFIG_LOGO_LINUX_MONO is not set
++# CONFIG_LOGO_LINUX_VGA16 is not set
++CONFIG_SOUND=y
++CONFIG_SND=y
++# CONFIG_SND_SUPPORT_OLD_API is not set
++# CONFIG_SND_VERBOSE_PROCFS is not set
++# CONFIG_SND_DRIVERS is not set
++# CONFIG_SND_ARM is not set
++CONFIG_SND_SOC=y
++CONFIG_SND_SOC_SH4_FSI=y
++# CONFIG_HID_SUPPORT is not set
++# CONFIG_USB_SUPPORT is not set
++CONFIG_UIO=y
++CONFIG_UIO_PDRV_GENIRQ=y
++# CONFIG_DNOTIFY is not set
++CONFIG_MSDOS_FS=y
++CONFIG_VFAT_FS=y
++CONFIG_TMPFS=y
++# CONFIG_MISC_FILESYSTEMS is not set
++CONFIG_NFS_FS=y
++CONFIG_NFS_V3=y
++CONFIG_NFS_V3_ACL=y
++CONFIG_NFS_V4=y
++CONFIG_NFS_V4_1=y
++CONFIG_ROOT_NFS=y
++CONFIG_NLS_CODEPAGE_437=y
++CONFIG_NLS_ISO8859_1=y
++# CONFIG_ENABLE_WARN_DEPRECATED is not set
++# CONFIG_ENABLE_MUST_CHECK is not set
++CONFIG_MAGIC_SYSRQ=y
++CONFIG_DEBUG_SECTION_MISMATCH=y
++CONFIG_DEBUG_KERNEL=y
++CONFIG_LOCKUP_DETECTOR=y
++CONFIG_BOOTPARAM_SOFTLOCKUP_PANIC=y
++# CONFIG_DETECT_HUNG_TASK is not set
++# CONFIG_SCHED_DEBUG is not set
++CONFIG_DEBUG_KMEMLEAK=y
++CONFIG_DEBUG_SPINLOCK=y
++CONFIG_DEBUG_INFO=y
++# CONFIG_FTRACE is not set
++CONFIG_CRYPTO=y
++CONFIG_CRYPTO_CBC=y
++CONFIG_CRYPTO_MD5=y
++CONFIG_CRYPTO_DES=y
++CONFIG_CRYPTO_ANSI_CPRNG=y
++CONFIG_XZ_DEC=y
 -- 
 1.7.5.4
 
