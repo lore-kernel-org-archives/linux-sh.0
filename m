@@ -1,35 +1,62 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Wed, 25 Apr 2012 14:03:38 +0000
-Subject: [PATCH v2 10/10] ARM: sh-mobile: mackerel: Use hardware error correction
-Message-Id: <1335362618-4559-11-git-send-email-hechtb@gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 06 Apr 2012 08:30:42 +0000
+Subject: [PATCH 5/7 v2] ARM: mach-shmobile: armadillo800eva: add support ST1232
+Message-Id: <87lim9jm8h.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1335362618-4559-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1335362618-4559-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mtd@lists.infradead.org, linux-sh@vger.kernel.org
-Cc: Brian Norris <computersforpeace@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pichart <laurent.pinchart@ideasonboard.com>
+To: linux-sh@vger.kernel.org
 
-Use the built-in hardware error code correction of the sh_flctl.
-
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-mackerel.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+v1 -> v2
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 1de1fb7..f8289f4 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1003,6 +1003,7 @@ static struct sh_flctl_platform_data nand_flash_data = {
- 	.flcmncr_val	= CLK_16B_12L_4H | TYPESEL_SET
- 			| SHBUSSEL | SEL_16BIT | SNAND_E,
- 	.use_holden	= 1,
-+	.has_hwecc	= 1,
+- same as v1 but based on linus/master
+
+ arch/arm/mach-shmobile/board-armadillo800eva.c |   15 +++++++++++++++
+ 1 files changed, 15 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 5cc17a8..74213e3 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -149,6 +149,14 @@ static struct platform_device lcdc0_device = {
+ 	},
  };
  
- static struct platform_device nand_flash_device = {
++/* I2C */
++static struct i2c_board_info i2c0_devices[] = {
++	{
++		I2C_BOARD_INFO("st1232-ts", 0x55),
++		.irq = evt2irq(0x0340),
++	},
++};
++
+ /*
+  * board devices
+  */
+@@ -205,6 +213,11 @@ static void __init eva_init(void)
+ 	gpio_request(GPIO_PORT202, NULL); /* LCD0_LED_CONT */
+ 	gpio_direction_output(GPIO_PORT202, 0);
+ 
++	/* Touchscreen */
++	gpio_request(GPIO_FN_IRQ10,	NULL); /* TP_INT */
++	gpio_request(GPIO_PORT166,	NULL); /* TP_RST_B */
++	gpio_direction_output(GPIO_PORT166, 1);
++
+ 	/*
+ 	 * CAUTION
+ 	 *
+@@ -219,6 +232,8 @@ static void __init eva_init(void)
+ 	l2x0_init(__io(0xf0002000), 0x40440000, 0x82000fff);
+ #endif
+ 
++	i2c_register_board_info(0, i2c0_devices, ARRAY_SIZE(i2c0_devices));
++
+ 	r8a7740_add_standard_devices();
+ 
+ 	platform_add_devices(eva_devices,
 -- 
 1.7.5.4
 
