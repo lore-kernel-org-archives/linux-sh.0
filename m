@@ -1,29 +1,36 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 06 Apr 2012 07:03:43 +0000
-Subject: Re: [PATCH 5/6] ARM: mach-shmobile: armadillo800eva: add support gpio_key
-Message-Id: <20120406070338.GA20174@verge.net.au>
+From: Adrian McMenamin <lkmladrian@gmail.com>
+Date: Fri, 06 Apr 2012 13:40:45 +0000
+Subject: Re: Utility code to generate a VMUFAT filesystem
+Message-Id: <CAN628AE6GLEUGke68z0rfbZWvmEuTsBQ0EHcy4mzC6Bz3bYX5Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87iphe4lx7.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87iphe4lx7.wl%kuninori.morimoto.gx@renesas.com>
+References: <CAN628AHjJeLD_bUNGSDmBOo_EW=aFML-VZ-A4GRyAi2eNwA1yw@mail.gmail.com>
+	<201203250232.29843.vapier@gentoo.org>
+In-Reply-To: <201203250232.29843.vapier@gentoo.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mike Frysinger <vapier@gentoo.org>
+Cc: viro@zeniv.linux.org.uk, linux-fsdevel@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>, Linux-sh <linux-sh@vger.kernel.org>, Adrian McMenamin <adrianmcmenamin@gmail.com>
 
-On Thu, Apr 05, 2012 at 10:21:47PM -0700, Kuninori Morimoto wrote:
-> 
-> Hi Simon
-> 
-> Thank you for checking patch.
-> 
-> > I am seeing the following, is it expected?
-> > 
-> > gpio-keys gpio-keys: Unable to get irq number for GPIO 99, error -38
-> > gpio-keys: probe of gpio-keys failed with error -38
-> 
-> Sorry for confusion.
-> Yes. gpio-keys support needs +1 patch.
-> 
-> I expected it on [0/6] mail :)
+On 25 March 2012 14:32, Mike Frysinger <vapier@gentoo.org> wrote:
+> On Wednesday 21 March 2012 00:41:17 Adrian McMenamin wrote:
+>> /*
+>>  * mkfs.vmufat.c - make a linux (VMUFAT) filesystem
+>>  *
+>>  * Copyright (c) 2012 Adrian McMenamin adrianmcmenamin@gmail.com
+>>  * Licensed under Version 2 of the GNU General Public Licence
+>>  *
+>>  * Parts shamelessly copied from other mkfs code
+>>  * copyright Linus Torvalds and others
 
-Sorry, I should have read that email more thoroughly.
+
+With thanks to Mike - a new version of mkfs.vmufat.c is now available
+at https://github.com/mcmenaminadrian/mkfs.vmufat
+
+I have tried to incorporate all his points - even the bits where he
+was complaining about the code I lifted from Linus's work :)
+
+
+Any and all feedback welcome.
+
+Adrian
