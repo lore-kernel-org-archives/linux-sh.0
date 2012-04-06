@@ -1,57 +1,112 @@
-From: Artem Bityutskiy <dedekind1@gmail.com>
-Date: Mon, 02 Apr 2012 11:08:45 +0000
-Subject: Re: [PATCH 0/5] mtd: plat_nand: Add default partition parser and use it
-Message-Id: <1333364925.5440.104.camel@sauron.fi.intel.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="=-tYG+VEjJEvHHNxPyqYt8"
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 06 Apr 2012 08:32:02 +0000
+Subject: [PATCH 7/7 v2] ARM: mach-shmobile: armadillo800eva: add support sh_eth
+Message-Id: <87iphdjm69.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201203281112.48788.hartleys@visionengravers.com>
-In-Reply-To: <201203281112.48788.hartleys@visionengravers.com>
-To: linux-arm-kernel@lists.infradead.org
-
-
---=-tYG+VEjJEvHHNxPyqYt8
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-
-On Wed, 2012-03-28 at 11:12 -0700, H Hartley Sweeten wrote:
-> This patch series adds cmdlinepart as the default partition parser for th=
-e
-> plat_nand driver and updates all the arch setup code to use it.
->=20
-> Arch setup code that requires other partition parsers can still pass that
-> information as chip.part_probe_types.
->=20
-> Signed-off-by: H Hartley Sweeten <hsweeten@visionengravers.com>
-
-Pushed the series to l2-mtd.git, thanks!
-
---=20
-Best Regards,
-Artem Bityutskiy
-
---=-tYG+VEjJEvHHNxPyqYt8
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
-iQIcBAABAgAGBQJPeYi9AAoJECmIfjd9wqK01TkQAMewuEX1gPp1EPSpGZQcSvXs
-jsTvmYqJE6vhHRv8KlbN+bfz5Gjh4xsUyz63/QqILHv8ru3R3MypineF9tGlV+k+
-fvWdcmMuXQ4VmkfsIKQIQ4Y51wWJG91J4QG5Va/Epk7yXzyvskINWN3YWKp0J0Mk
-zePW7mBxEZFFRr45/sTK7Wx3Us8FU3NEV71cbXWjjw+AosLc4G92dIDXEie7BTUn
-OqS2+oRbNyigsDSb9WPTAu4O9Ln5p7F99elipFtBP/OGuSVK9Q92ImUwPB6FJf6E
-+rZs/PiYrfMxkyCUsIw/4FVT49PbRusDsVSKzIrTxzzZ/mjb6ANx3gRJBqDXNyvH
-hdhzlacV4H4Id60jIuDeAocI95v39MPX5oQ075P4dNBDd06og9K0RGXvpFPXrVy5
-ZUwfws9ltOEy1oo4Mg8FpJ6j2OWTK/9xc0jFHcLB8WrQ669W9ScM+xQNpki1eaJk
-u5qPSAYr7mod3RLahiPytspkqGdXdtdK256ceUZ0c2u/Bc18mEtq27flRVA3/tc5
-OiWFAS+8d/qCR8evTAn5PSJoGmZk0ZAldcoZ2IRimwEuz8aXZjdX0pkezc8yhulV
-INJBhHNlei00Rop7Gq851ob32uUQrUO5DiPyhF/4WwIxMfeTQ3PsYjEI+j3IzfEF
-DyRHjIGr/NVucPumONWe
-=pJwc
------END PGP SIGNATURE-----
+- same as v1 but based on linus/master
 
---=-tYG+VEjJEvHHNxPyqYt8--
+ arch/arm/mach-shmobile/board-armadillo800eva.c |   58 ++++++++++++++++++++++++
+ 1 files changed, 58 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 8bb4d27..c2affc4 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -26,6 +26,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/gpio.h>
+ #include <linux/gpio_keys.h>
++#include <linux/sh_eth.h>
+ #include <linux/videodev2.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+@@ -96,6 +97,38 @@
+  *-----------+---------------+----------------------------
+  */
+ 
++/* Ether */
++static struct sh_eth_plat_data sh_eth_platdata = {
++	.phy			= 0x00, /* LAN8710A */
++	.edmac_endian		= EDMAC_LITTLE_ENDIAN,
++	.register_type		= SH_ETH_REG_GIGABIT,
++	.phy_interface		= PHY_INTERFACE_MODE_MII,
++};
++
++static struct resource sh_eth_resources[] = {
++	{
++		.start	= 0xe9a00000,
++		.end	= 0xe9a00800 - 1,
++		.flags	= IORESOURCE_MEM,
++	}, {
++		.start	= 0xe9a01800,
++		.end	= 0xe9a02000 - 1,
++		.flags	= IORESOURCE_MEM,
++	}, {
++		.start	= evt2irq(0x0500),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device sh_eth_device = {
++	.name = "sh-eth",
++	.dev = {
++		.platform_data = &sh_eth_platdata,
++	},
++	.resource = sh_eth_resources,
++	.num_resources = ARRAY_SIZE(sh_eth_resources),
++};
++
+ /* LCDC */
+ static struct fb_videomode lcdc0_mode = {
+ 	.name		= "AMPIER/AM-800480",
+@@ -188,6 +221,7 @@ static struct platform_device gpio_keys_device = {
+ static struct platform_device *eva_devices[] __initdata = {
+ 	&lcdc0_device,
+ 	&gpio_keys_device,
++	&sh_eth_device,
+ };
+ 
+ /*
+@@ -244,6 +278,30 @@ static void __init eva_init(void)
+ 	gpio_request(GPIO_PORT166,	NULL); /* TP_RST_B */
+ 	gpio_direction_output(GPIO_PORT166, 1);
+ 
++	/* GETHER */
++	gpio_request(GPIO_FN_ET_CRS,		NULL);
++	gpio_request(GPIO_FN_ET_MDC,		NULL);
++	gpio_request(GPIO_FN_ET_MDIO,		NULL);
++	gpio_request(GPIO_FN_ET_TX_ER,		NULL);
++	gpio_request(GPIO_FN_ET_RX_ER,		NULL);
++	gpio_request(GPIO_FN_ET_ERXD0,		NULL);
++	gpio_request(GPIO_FN_ET_ERXD1,		NULL);
++	gpio_request(GPIO_FN_ET_ERXD2,		NULL);
++	gpio_request(GPIO_FN_ET_ERXD3,		NULL);
++	gpio_request(GPIO_FN_ET_TX_CLK,		NULL);
++	gpio_request(GPIO_FN_ET_TX_EN,		NULL);
++	gpio_request(GPIO_FN_ET_ETXD0,		NULL);
++	gpio_request(GPIO_FN_ET_ETXD1,		NULL);
++	gpio_request(GPIO_FN_ET_ETXD2,		NULL);
++	gpio_request(GPIO_FN_ET_ETXD3,		NULL);
++	gpio_request(GPIO_FN_ET_PHY_INT,	NULL);
++	gpio_request(GPIO_FN_ET_COL,		NULL);
++	gpio_request(GPIO_FN_ET_RX_DV,		NULL);
++	gpio_request(GPIO_FN_ET_RX_CLK,		NULL);
++
++	gpio_request(GPIO_PORT18, NULL); /* PHY_RST */
++	gpio_direction_output(GPIO_PORT18, 1);
++
+ 	/*
+ 	 * CAUTION
+ 	 *
+-- 
+1.7.5.4
 
