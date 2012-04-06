@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 06 Apr 2012 02:18:13 +0000
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 06 Apr 2012 05:33:14 +0000
 Subject: Re: [PATCH] ASoC: fsi:  Add missing argument to device_prep_slave_sg()
-Message-Id: <20120406021811.GC27120@verge.net.au>
+Message-Id: <87vcldjug9.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1333616835-973-1-git-send-email-horms@verge.net.au>
 In-Reply-To: <1333616835-973-1-git-send-email-horms@verge.net.au>
@@ -10,13 +10,17 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Apr 05, 2012 at 02:25:19AM -0700, Kuninori Morimoto wrote:
-> 
-> Hi Simon
-> 
-> Thank you for your patch
-> 
-> Maybe this is same as
-> http://www.spinics.net/lists/linux-sh/msg10806.html
 
-Yes, it is. Sorry for missing that.
+Hi Simon
+
+> > Maybe this is same as
+> > http://www.spinics.net/lists/linux-sh/msg10806.html
+> 
+> Yes, it is. Sorry for missing that.
+
+No worry.
+Thank you for checking/trying my patch anyway.
+
+Best regards
+---
+Kuninori Morimoto
