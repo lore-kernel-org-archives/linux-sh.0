@@ -1,200 +1,236 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 24 Apr 2012 16:41:47 +0000
-Subject: [PATCH 7/7] sh: ecovec: switch MMC power control to regulators
-Message-Id: <1335285707-22707-8-git-send-email-g.liakhovetski@gmx.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 06 Apr 2012 08:28:59 +0000
+Subject: [PATCH 2/7 v2] ARM: mach-shmobile: add armadillo800eva board support.
+Message-Id: <87pqbljmbd.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1335285707-22707-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1335285707-22707-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Mark Brown <broonie@opensource.wolfsonmicro.com>, Liam Girdwood <lrg@ti.com>
+To: linux-sh@vger.kernel.org
 
-Power on the CN11 and CN12 SD/MMC slots on ecovec is controlled by GPIOs,
-which makes it possible to use the fixed voltage regulator driver to switch
-card power on and off.
+This adds very basic armadillo800eva board (R-Mobile A1) support
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Magnus Damm <magnus.damm@gmail.com>
-Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Cc: Liam Girdwood <lrg@ti.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/sh/boards/mach-ecovec24/setup.c |   85 ++++++++++++++++++++++++---------
- 1 files changed, 62 insertions(+), 23 deletions(-)
+v1 -> v2
 
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index a2f70e6..0822931 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -19,6 +19,9 @@
- #include <linux/interrupt.h>
- #include <linux/io.h>
- #include <linux/delay.h>
-+#include <linux/regulator/driver.h>
-+#include <linux/regulator/fixed.h>
-+#include <linux/regulator/machine.h>
- #include <linux/usb/r8a66597.h>
- #include <linux/usb/renesas_usbhs.h>
- #include <linux/i2c.h>
-@@ -515,12 +518,66 @@ static struct i2c_board_info ts_i2c_clients = {
- 	.irq		= IRQ0,
- };
+ - used <mach/irqs.h>
+ - fixup typo
+
+ arch/arm/mach-shmobile/Kconfig                 |   11 ++-
+ arch/arm/mach-shmobile/Makefile                |    1 +
+ arch/arm/mach-shmobile/board-armadillo800eva.c |  154 ++++++++++++++++++++++++
+ 3 files changed, 164 insertions(+), 2 deletions(-)
+ create mode 100644 arch/arm/mach-shmobile/board-armadillo800eva.c
+
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 34560ca..7828a7a 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -93,6 +93,11 @@ config MACH_BONITO
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	depends on ARCH_R8A7740
  
-+static struct regulator_consumer_supply cn12_power_consumers[] +{
-+	REGULATOR_SUPPLY("MMC Vdd", "sh_mmcif.0"),
-+	REGULATOR_SUPPLY("SD Vdd", "sh_mobile_sdhi.1"),
++config MACH_ARMADILLO800EVA
++	bool "Armadillo-800 EVA board"
++	depends on ARCH_R8A7740
++	select ARCH_REQUIRE_GPIOLIB
++
+ config MACH_MARZEN
+ 	bool "MARZEN board"
+ 	depends on ARCH_R8A7779
+@@ -110,7 +115,8 @@ config MEMORY_START
+ 	hex "Physical memory start address"
+ 	default "0x50000000" if MACH_G3EVM
+ 	default "0x40000000" if MACH_G4EVM || MACH_AP4EVB || MACH_AG5EVM || \
+-				MACH_MACKEREL || MACH_BONITO
++				MACH_MACKEREL || MACH_BONITO || \
++				MACH_ARMADILLO800EVA
+ 	default "0x41000000" if MACH_KOTA2
+ 	default "0x00000000"
+ 	---help---
+@@ -122,7 +128,8 @@ config MEMORY_SIZE
+ 	hex "Physical memory size"
+ 	default "0x08000000" if MACH_G3EVM
+ 	default "0x08000000" if MACH_G4EVM
+-	default "0x20000000" if MACH_AG5EVM || MACH_BONITO
++	default "0x20000000" if MACH_AG5EVM || MACH_BONITO || \
++				MACH_ARMADILLO800EVA
+ 	default "0x1e000000" if MACH_KOTA2
+ 	default "0x10000000" if MACH_AP4EVB || MACH_MACKEREL
+ 	default "0x04000000"
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index e7c2590..6125c2b 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -49,6 +49,7 @@ obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
+ obj-$(CONFIG_MACH_KOTA2)	+= board-kota2.o
+ obj-$(CONFIG_MACH_BONITO)	+= board-bonito.o
+ obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
++obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
+ 
+ # Framework support
+ obj-$(CONFIG_SMP)		+= $(smp-y)
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+new file mode 100644
+index 0000000..28bc259
+--- /dev/null
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -0,0 +1,154 @@
++/*
++ * armadillo 800 eva board support
++ *
++ * Copyright (C) 2012 Renesas Solutions Corp.
++ * Copyright (C) 2012 Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ *
++ */
++
++#include <linux/clk.h>
++#include <linux/err.h>
++#include <linux/kernel.h>
++#include <linux/platform_device.h>
++#include <linux/gpio.h>
++#include <mach/common.h>
++#include <mach/irqs.h>
++#include <asm/page.h>
++#include <asm/mach-types.h>
++#include <asm/mach/arch.h>
++#include <asm/mach/map.h>
++#include <asm/mach/time.h>
++#include <asm/hardware/cache-l2x0.h>
++#include <mach/r8a7740.h>
++
++/*
++ * CON1		Camera Module
++ * CON2		Extension Bus
++ * CON3		HDMI Output
++ * CON4		Composite Video Output
++ * CON5		H-UDI JTAG
++ * CON6		ARM JTAG
++ * CON7		SD1
++ * CON8		SD2
++ * CON9		RTC BackUp
++ * CON10	Monaural Mic Input
++ * CON11	Stereo Headphone Output
++ * CON12	Audio Line Output(L)
++ * CON13	Audio Line Output(R)
++ * CON14	AWL13 Module
++ * CON15	Extension
++ * CON16	LCD1
++ * CON17	LCD2
++ * CON19	Power Input
++ * CON20	USB1
++ * CON21	USB2
++ * CON22	Serial
++ * CON23	LAN
++ * CON24	USB3
++ * LED1		Camera LED(Yellow)
++ * LED2		Power LED (Green)
++ * ED3-LED6	User LED(Yellow)
++ * LED7		LAN link LED(Green)
++ * LED8		LAN activity LED(Yellow)
++ */
++
++/*
++ * DipSwitch
++ *
++ *                    SW1
++ *
++ * -12345678-+---------------+----------------------------
++ *  1        | boot          | hermit
++ *  0        | boot          | OS auto boot
++ * -12345678-+---------------+----------------------------
++ *   00      | boot device   | eMMC
++ *   10      | boot device   | SDHI0 (CON7)
++ *   01      | boot device   | -
++ *   11      | boot device   | Extension Buss (CS0)
++ * -12345678-+---------------+----------------------------
++ *     0     | Extension Bus | D8-D15 disable, eMMC enable
++ *     1     | Extension Bus | D8-D15 enable,  eMMC disable
++ * -12345678-+---------------+----------------------------
++ *      0    | SDHI1         | COM8 enable,  COM14 disable
++ *      1    | SDHI1         | COM8 enable,  COM14 disable
++ * -12345678-+---------------+----------------------------
++ *        00 | JTAG          | SH-X2
++ *        10 | JTAG          | ARM
++ *        01 | JTAG          | -
++ *        11 | JTAG          | Boundary Scan
++ *-----------+---------------+----------------------------
++ */
++
++/*
++ * board devices
++ */
++static struct platform_device *eva_devices[] __initdata = {
 +};
 +
-+static struct regulator_init_data cn12_power_init_data = {
-+	.constraints = {
-+		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
-+	},
-+	.num_consumer_supplies  = ARRAY_SIZE(cn12_power_consumers),
-+	.consumer_supplies      = cn12_power_consumers,
-+};
++/*
++ * board init
++ */
++static void __init eva_init(void)
++{
++	r8a7740_pinmux_init();
 +
-+static struct fixed_voltage_config cn12_power_info = {
-+	.supply_name = "CN12 SD/MMC Vdd",
-+	.microvolts = 3300000,
-+	.gpio = GPIO_PTB7,
-+	.enable_high = 1,
-+	.init_data = &cn12_power_init_data,
-+};
++	/* SCIFA1 */
++	gpio_request(GPIO_FN_SCIFA1_RXD, NULL);
++	gpio_request(GPIO_FN_SCIFA1_TXD, NULL);
 +
-+static struct platform_device cn12_power = {
-+	.name = "reg-fixed-voltage",
-+	.id   = 0,
-+	.dev  = {
-+		.platform_data = &cn12_power_info,
-+	},
-+};
++#ifdef CONFIG_CACHE_L2X0
++	/* Early BRESP enable, Shared attribute override enable, 32K*8way */
++	l2x0_init(__io(0xf0002000), 0x40440000, 0x82000fff);
++#endif
 +
- #if defined(CONFIG_MMC_SDHI) || defined(CONFIG_MMC_SDHI_MODULE)
- /* SDHI0 */
--static void sdhi0_set_pwr(struct platform_device *pdev, int state)
-+static struct regulator_consumer_supply sdhi0_power_consumers[]  {
--	gpio_set_value(GPIO_PTB6, state);
--}
-+	REGULATOR_SUPPLY("SD Vdd", "sh_mobile_sdhi.0"),
-+};
++	r8a7740_add_standard_devices();
 +
-+static struct regulator_init_data sdhi0_power_init_data = {
-+	.constraints = {
-+		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
-+	},
-+	.num_consumer_supplies  = ARRAY_SIZE(sdhi0_power_consumers),
-+	.consumer_supplies      = sdhi0_power_consumers,
-+};
++	platform_add_devices(eva_devices,
++			     ARRAY_SIZE(eva_devices));
++}
 +
-+static struct fixed_voltage_config sdhi0_power_info = {
-+	.supply_name = "CN11 SD/MMC Vdd",
-+	.microvolts = 3300000,
-+	.gpio = GPIO_PTB6,
-+	.enable_high = 1,
-+	.init_data = &sdhi0_power_init_data,
-+};
++static void __init eva_earlytimer_init(void)
++{
++	struct clk *xtal1;
 +
-+static struct platform_device sdhi0_power = {
-+	.name = "reg-fixed-voltage",
-+	.id   = 1,
-+	.dev  = {
-+		.platform_data = &sdhi0_power_info,
-+	},
-+};
- 
- static int sdhi0_get_cd(struct platform_device *pdev)
- {
-@@ -530,7 +587,6 @@ static int sdhi0_get_cd(struct platform_device *pdev)
- static struct sh_mobile_sdhi_info sdhi0_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
--	.set_pwr	= sdhi0_set_pwr,
- 	.tmio_caps      = MMC_CAP_SDIO_IRQ | MMC_CAP_POWER_OFF_CARD |
- 			  MMC_CAP_NEEDS_POLL,
- 	.get_cd		= sdhi0_get_cd,
-@@ -561,11 +617,6 @@ static struct platform_device sdhi0_device = {
- 
- #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
- /* SDHI1 */
--static void sdhi1_set_pwr(struct platform_device *pdev, int state)
--{
--	gpio_set_value(GPIO_PTB7, state);
--}
--
- static int sdhi1_get_cd(struct platform_device *pdev)
- {
- 	return !gpio_get_value(GPIO_PTW7);
-@@ -576,7 +627,6 @@ static struct sh_mobile_sdhi_info sdhi1_info = {
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
- 	.tmio_caps      = MMC_CAP_SDIO_IRQ | MMC_CAP_POWER_OFF_CARD |
- 			  MMC_CAP_NEEDS_POLL,
--	.set_pwr	= sdhi1_set_pwr,
- 	.get_cd		= sdhi1_get_cd,
- };
- 
-@@ -872,11 +922,6 @@ static struct platform_device vou_device = {
- 
- #if defined(CONFIG_MMC_SH_MMCIF) || defined(CONFIG_MMC_SH_MMCIF_MODULE)
- /* SH_MMCIF */
--static void mmcif_set_pwr(struct platform_device *pdev, int state)
--{
--	gpio_set_value(GPIO_PTB7, state);
--}
--
- static struct resource sh_mmcif_resources[] = {
- 	[0] = {
- 		.name	= "SH_MMCIF",
-@@ -897,12 +942,10 @@ static struct resource sh_mmcif_resources[] = {
- };
- 
- static struct sh_mmcif_plat_data sh_mmcif_plat = {
--	.set_pwr	= mmcif_set_pwr,
- 	.sup_pclk	= 0, /* SH7724: Max Pclk/2 */
- 	.caps		= MMC_CAP_4_BIT_DATA |
- 			  MMC_CAP_8_BIT_DATA |
- 			  MMC_CAP_NEEDS_POLL,
--	.ocr		= MMC_VDD_32_33 | MMC_VDD_33_34,
- };
- 
- static struct platform_device sh_mmcif_device = {
-@@ -927,7 +970,9 @@ static struct platform_device *ecovec_devices[] __initdata = {
- 	&ceu0_device,
- 	&ceu1_device,
- 	&keysc_device,
-+	&cn12_power,
- #if defined(CONFIG_MMC_SDHI) || defined(CONFIG_MMC_SDHI_MODULE)
-+	&sdhi0_power,
- 	&sdhi0_device,
- #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
- 	&sdhi1_device,
-@@ -1224,8 +1269,6 @@ static int __init arch_setup(void)
- 	gpio_request(GPIO_FN_SDHI0D2,  NULL);
- 	gpio_request(GPIO_FN_SDHI0D1,  NULL);
- 	gpio_request(GPIO_FN_SDHI0D0,  NULL);
--	gpio_request(GPIO_PTB6, NULL);
--	gpio_direction_output(GPIO_PTB6, 0);
- #else
- 	/* enable MSIOF0 on CN11 (needs DS2.4 set to OFF) */
- 	gpio_request(GPIO_FN_MSIOF0_TXD, NULL);
-@@ -1254,8 +1297,6 @@ static int __init arch_setup(void)
- 	gpio_request(GPIO_FN_MMC_D0, NULL);
- 	gpio_request(GPIO_FN_MMC_CLK, NULL);
- 	gpio_request(GPIO_FN_MMC_CMD, NULL);
--	gpio_request(GPIO_PTB7, NULL);
--	gpio_direction_output(GPIO_PTB7, 0);
- 
- 	cn12_enabled = true;
- #elif defined(CONFIG_MMC_SDHI) || defined(CONFIG_MMC_SDHI_MODULE)
-@@ -1267,8 +1308,6 @@ static int __init arch_setup(void)
- 	gpio_request(GPIO_FN_SDHI1D2,  NULL);
- 	gpio_request(GPIO_FN_SDHI1D1,  NULL);
- 	gpio_request(GPIO_FN_SDHI1D0,  NULL);
--	gpio_request(GPIO_PTB7, NULL);
--	gpio_direction_output(GPIO_PTB7, 0);
- 
- 	/* Card-detect, used on CN12 with SDHI1 */
- 	gpio_request(GPIO_PTW7, NULL);
++	r8a7740_clock_init(MD_CK0 | MD_CK2);
++
++	xtal1 = clk_get(NULL, "extal1");
++	if (!IS_ERR(xtal1)) {
++		/* armadillo 800 eva extal1 is 24MHz */
++		clk_set_rate(xtal1, 24000000);
++		clk_put(xtal1);
++	}
++
++	shmobile_earlytimer_init();
++}
++
++static void __init eva_add_early_devices(void)
++{
++	r8a7740_add_early_devices();
++
++	/* override timer setup with board-specific code */
++	shmobile_timer.init = eva_earlytimer_init;
++}
++
++MACHINE_START(ARMADILLO800EVA, "armadillo800eva")
++	.map_io		= r8a7740_map_io,
++	.init_early	= eva_add_early_devices,
++	.init_irq	= r8a7740_init_irq,
++	.handle_irq	= shmobile_handle_irq_intc,
++	.init_machine	= eva_init,
++	.timer		= &shmobile_timer,
++MACHINE_END
 -- 
-1.7.2.5
+1.7.5.4
 
