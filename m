@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 06 Apr 2012 11:13:08 +0000
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Mon, 09 Apr 2012 07:59:44 +0000
 Subject: Re: [PATCH v2] serial: sh-sci: modify sci_break_ctl()
-Message-Id: <20120406111308.GF14124@verge.net.au>
+Message-Id: <20120409075944.GC11820@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <4F7E3FE2.4050902@renesas.com>
 In-Reply-To: <4F7E3FE2.4050902@renesas.com>
@@ -10,25 +10,16 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Apr 06, 2012 at 02:39:00PM +0900, Shimoda, Yoshihiro wrote:
-> 2012/04/06 14:11, Simon Horman wrote:
-> > On Fri, Apr 06, 2012 at 12:50:00PM +0900, Shimoda, Yoshihiro wrote:
-> >>
-> >> If userland calls ioctl with TIOCSBRK/TIOCCBRK, the sci_break_ctl
-> >> is called. After TIOCSBRK we cannot send data from SCIF.
-> >> After TIOCCBRK, we can send data from SCIF.
-> > 
-> > Thanks, that make a lot of sense.
-> > 
-> > Unfortunately the ecovec doesn't exercise the new code
-> > as the regtype of its scif is SCIx_SH4_SCIF_NO_SCSPTR_REGTYPE
-> > but your code only operates on SCIx_SH4_SCIF_REGTYPE.
+On Fri, Apr 06, 2012 at 09:59:14AM +0900, Shimoda, Yoshihiro wrote:
+> SCIF modules which have SCSPTR can output the break signal.
+> This patch supports it.
 > 
-> Sorry I forgot that the SH7724 has SCIF and SCIFA.
-> The ecovec uses SCIF, and it doesn't have SCSPTR.
-> I checked the ecovec schematics, but it cannot use SCIFA because
-> other functions use the multiplex pins.
-
-No problem.
-
-In any case, Reviewed-by: Simon Horman <horms@verge.net.au>
+> This patch tested on sh7757lcr.
+> 
+> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+> ---
+>  about v2:
+>   - add serial_sci.h
+>   - change sci_in/sci_out to serial_port_in/serial_port_out
+> 
+Looks good to me, I'll queue it up, thanks.
