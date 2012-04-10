@@ -1,64 +1,86 @@
-From: Artem Bityutskiy <dedekind1@gmail.com>
-Date: Sat, 28 Apr 2012 15:30:43 +0000
-Subject: Re: [PATCH v2 0/10] sh_flctl hardware ECC mode cleanup
-Message-Id: <1335627043.1917.4.camel@koala>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="=-r9+4jDIelZ3xpBckAsQb"
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Tue, 10 Apr 2012 13:00:50 +0000
+Subject: [PATCH 1/4] sh: Add support for 8-bit module stop registers
+Message-Id: <1334062853-23045-2-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1335362618-4559-1-git-send-email-hechtb@gmail.com>
- <1335626773.1917.3.camel@koala>
-In-Reply-To: <1335626773.1917.3.camel@koala>
-To: Bastian Hecht <hechtb@googlemail.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Brian Norris <computersforpeace@gmail.com>, linux-mtd@lists.infradead.org, Laurent Pichart <laurent.pinchart@ideasonboard.com>, linux-sh@vger.kernel.org
-
-
---=-r9+4jDIelZ3xpBckAsQb
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-
-On Sat, 2012-04-28 at 18:26 +0300, Artem Bityutskiy wrote:
-> On Wed, 2012-04-25 at 16:03 +0200, Bastian Hecht wrote:
-> > changelog:
-> >   - extract the iounmap calls from patch "Add support for error IRQ" in=
-to a new patch.
-> >   - swapped patches "Add support for error IRQ" and "Add error IRQ reso=
-urce"
-> >   - corrected an indentation mistake
->=20
-> Unfortunantely, I cannot build-test your patches because mackerel
-> defconfig still does not build (mackerel_defconfig). Any suggestions how
-> to work this around or any other defconfig to use?
-
-If you send me a temprorary work-around patch for the build failure -
-would be fine. This patch does  not have to work, just make the tree
-compile.
-
---=20
-Best Regards,
-Artem Bityutskiy
-
---=-r9+4jDIelZ3xpBckAsQb
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+sh2a uses the same mechanism for module stop, but uses 8-bit regs
+containing the module stops bits, rather than 32-bit regs.
 
-iQIcBAABAgAGBQJPnA0jAAoJECmIfjd9wqK0h8cQAIk3h5uxfHajo9yFVWnXVv4t
-15IoqLPCsjC8nsHvK9iZEXF1dXEG5qG6+lzi5wFveqZH4/69DezWjtOJqxk0STth
-XNegXhkXN4g4GGrCeMXgEQNEOHIav+yyLqJNl8S08ahoIFujbEtaIsa2jDIZlW5R
-qweLhKkJI24Y/9wH2iaIZpvbswAsmBE6bokn+wFjRtW5bjJRFVu9yVNwzos3VIhc
-odrT67Tgg7cMKJC4/bN00eWJykhYsxg2HNHBBDyiM75QLtHTf665A8Xp4FjxyWd0
-vSKWmjeT5HcAZd3IH4/rhqy3COmY+zO1LXbeVAlq8ilXgoGzuEnm0WQDFLqrOrKR
-URMLomwhoxVLpNCuJoCI8AyTzbkbFV3IrSII5+JmeCbrUF9tdl0Hutl4FFC1SPpE
-tq6yYe4CLRjCcSPms+xnWLHL9TMi0aWct1HgMnRoim2dMuOH7PP9YgRQ/iKidBNV
-QMyoJ09x95BY638zxwpnjCZrkf8UvZfoX3Czt28v1HrMBbWGozGfNfobfeR+p2lS
-gtwoR48L38h/N6cpIS9vuOHOkOpJKh/BU+gMTP7IwP87vWuuL4dqykNgLcqqM58U
-heFnPwseUJv9Kq5IA9ZwrItmqkAd5I7DmhE6nl345I3e0lxMfUXFuKdjAHv5KoFn
-+9yQp9Oy6d5ORi8M+S4e
-=c9YV
------END PGP SIGNATURE-----
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+---
+ drivers/sh/clk/cpg.c   |   34 ++++++++++++++++++++++++++++++++++
+ include/linux/sh_clk.h |    1 +
+ 2 files changed, 35 insertions(+), 0 deletions(-)
 
---=-r9+4jDIelZ3xpBckAsQb--
+diff --git a/drivers/sh/clk/cpg.c b/drivers/sh/clk/cpg.c
+index 91b6d52..10e2b94 100644
+--- a/drivers/sh/clk/cpg.c
++++ b/drivers/sh/clk/cpg.c
+@@ -13,6 +13,25 @@
+ #include <linux/io.h>
+ #include <linux/sh_clk.h>
+ 
++static int sh_clk_mstp8_enable(struct clk *clk)
++{
++	__raw_writeb(__raw_readb(clk->enable_reg) & ~(1 << clk->enable_bit),
++		     clk->enable_reg);
++	return 0;
++}
++
++static void sh_clk_mstp8_disable(struct clk *clk)
++{
++	__raw_writeb(__raw_readb(clk->enable_reg) | (1 << clk->enable_bit),
++		     clk->enable_reg);
++}
++
++static struct sh_clk_ops sh_clk_mstp8_clk_ops = {
++	.enable		= sh_clk_mstp8_enable,
++	.disable	= sh_clk_mstp8_disable,
++	.recalc		= followparent_recalc,
++};
++
+ static int sh_clk_mstp32_enable(struct clk *clk)
+ {
+ 	iowrite32(ioread32(clk->mapped_reg) & ~(1 << clk->enable_bit),
+@@ -32,6 +51,21 @@ static struct sh_clk_ops sh_clk_mstp32_clk_ops = {
+ 	.recalc		= followparent_recalc,
+ };
+ 
++int __init sh_clk_mstp8_register(struct clk *clks, int nr)
++{
++	struct clk *clkp;
++	int ret = 0;
++	int k;
++
++	for (k = 0; !ret && (k < nr); k++) {
++		clkp = clks + k;
++		clkp->ops = &sh_clk_mstp8_clk_ops;
++		ret |= clk_register(clkp);
++	}
++
++	return ret;
++}
++
+ int __init sh_clk_mstp32_register(struct clk *clks, int nr)
+ {
+ 	struct clk *clkp;
+diff --git a/include/linux/sh_clk.h b/include/linux/sh_clk.h
+index 0a9d8f2..211d173 100644
+--- a/include/linux/sh_clk.h
++++ b/include/linux/sh_clk.h
+@@ -110,6 +110,7 @@ long clk_round_parent(struct clk *clk, unsigned long target,
+ 	.flags		= _flags,					\
+ }
+ 
++int sh_clk_mstp8_register(struct clk *clks, int nr);
+ int sh_clk_mstp32_register(struct clk *clks, int nr);
+ 
+ #define SH_CLK_DIV4(_parent, _reg, _shift, _div_bitmap, _flags)	\
+-- 
+1.7.0.4
 
