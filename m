@@ -1,46 +1,152 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 24 Apr 2012 09:10:05 +0000
-Subject: [PATCH 8/8] ARM: mach-shmobile: r8a7740: reserve DMA memory for the frame buffer
-Message-Id: <87zka1ebrq.wl%kuninori.morimoto.gx@renesas.com>
+Date: Wed, 11 Apr 2012 03:57:45 +0000
+Subject: [PATCH 2/6] ARM: mach-shmobile: kzm9g: add defconfig
+Message-Id: <87bomy3op6.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The default 2MB size of DMA coherent memory isn't enough for allocate
-frame buffer memory.
-
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/setup-r8a7740.c |    7 +++++++
- 1 files changed, 7 insertions(+), 0 deletions(-)
+ arch/arm/configs/kzm9g_defconfig |  127 ++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 127 insertions(+), 0 deletions(-)
+ create mode 100644 arch/arm/configs/kzm9g_defconfig
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 14edb5c..a3951c1 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -18,6 +18,7 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
- #include <linux/delay.h>
-+#include <linux/dma-mapping.h>
- #include <linux/kernel.h>
- #include <linux/init.h>
- #include <linux/io.h>
-@@ -60,6 +61,12 @@ static struct map_desc r8a7740_io_desc[] __initdata = {
- void __init r8a7740_map_io(void)
- {
- 	iotable_init(r8a7740_io_desc, ARRAY_SIZE(r8a7740_io_desc));
-+
-+	/*
-+	 * DMA memory at 0xff200000 - 0xffdfffff. The default 2MB size isn't
-+	 * enough to allocate the frame buffer memory.
-+	 */
-+	init_consistent_dma_size(12 << 20);
- }
- 
- /* SCIFA0 */
+diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
+new file mode 100644
+index 0000000..164c5d2
+--- /dev/null
++++ b/arch/arm/configs/kzm9g_defconfig
+@@ -0,0 +1,127 @@
++# CONFIG_ARM_PATCH_PHYS_VIRT is not set
++CONFIG_EXPERIMENTAL=y
++# CONFIG_LOCALVERSION_AUTO is not set
++CONFIG_SYSVIPC=y
++CONFIG_IKCONFIG=y
++CONFIG_IKCONFIG_PROC=y
++CONFIG_LOG_BUF_SHIFT
++CONFIG_NAMESPACES=y
++# CONFIG_UTS_NS is not set
++# CONFIG_IPC_NS is not set
++# CONFIG_USER_NS is not set
++# CONFIG_PID_NS is not set
++# CONFIG_NET_NS is not set
++CONFIG_CC_OPTIMIZE_FOR_SIZE=y
++CONFIG_SYSCTL_SYSCALL=y
++CONFIG_EMBEDDED=y
++CONFIG_SLAB=y
++CONFIG_MODULES=y
++CONFIG_MODULE_FORCE_LOAD=y
++CONFIG_MODULE_UNLOAD=y
++# CONFIG_BLK_DEV_BSG is not set
++# CONFIG_IOSCHED_DEADLINE is not set
++# CONFIG_IOSCHED_CFQ is not set
++CONFIG_ARCH_SHMOBILE=y
++CONFIG_ARCH_SH73A0=y
++CONFIG_MACH_KZM9G=y
++CONFIG_MEMORY_START=0x41000000
++CONFIG_MEMORY_SIZE=0x1f000000
++CONFIG_ARM_ERRATA_743622=y
++CONFIG_ARM_ERRATA_754322=y
++CONFIG_NO_HZ=y
++CONFIG_HIGH_RES_TIMERS=y
++CONFIG_PREEMPT=y
++CONFIG_AEABI=y
++# CONFIG_OABI_COMPAT is not set
++CONFIG_HIGHMEM=y
++CONFIG_ZBOOT_ROM_TEXT=0x0
++CONFIG_ZBOOT_ROM_BSS=0x0
++CONFIG_CMDLINE="console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=serial"
++CONFIG_KEXEC=y
++CONFIG_VFP=y
++CONFIG_NEON=y
++# CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
++CONFIG_PM_RUNTIME=y
++CONFIG_NET=y
++CONFIG_PACKET=y
++CONFIG_UNIX=y
++CONFIG_INET=y
++CONFIG_IP_PNP=y
++CONFIG_IP_PNP_DHCP=y
++# CONFIG_INET_XFRM_MODE_TRANSPORT is not set
++# CONFIG_INET_XFRM_MODE_TUNNEL is not set
++# CONFIG_INET_XFRM_MODE_BEET is not set
++# CONFIG_INET_LRO is not set
++# CONFIG_INET_DIAG is not set
++# CONFIG_IPV6 is not set
++CONFIG_IRDA=y
++CONFIG_SH_IRDA=y
++# CONFIG_WIRELESS is not set
++CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
++CONFIG_SCSI=y
++CONFIG_BLK_DEV_SD=y
++CONFIG_NETDEVICES=y
++CONFIG_SMSC911X=y
++# CONFIG_WLAN is not set
++CONFIG_INPUT_SPARSEKMAP=y
++# CONFIG_INPUT_MOUSEDEV is not set
++CONFIG_INPUT_EVDEV=y
++# CONFIG_KEYBOARD_ATKBD is not set
++CONFIG_KEYBOARD_GPIO=y
++CONFIG_KEYBOARD_SH_KEYSC=y
++# CONFIG_INPUT_MOUSE is not set
++CONFIG_INPUT_TOUCHSCREEN=y
++CONFIG_TOUCHSCREEN_ST1232=y
++# CONFIG_LEGACY_PTYS is not set
++CONFIG_SERIAL_SH_SCI=y
++CONFIG_SERIAL_SH_SCI_NR_UARTS=9
++CONFIG_SERIAL_SH_SCI_CONSOLE=y
++# CONFIG_HW_RANDOM is not set
++CONFIG_I2C_CHARDEV=y
++CONFIG_I2C_SH_MOBILE=y
++CONFIG_POWER_SUPPLY=y
++# CONFIG_HWMON is not set
++CONFIG_FB=y
++CONFIG_FB_SH_MOBILE_LCDC=y
++CONFIG_FRAMEBUFFER_CONSOLE=y
++CONFIG_LOGO=y
++CONFIG_FB_SH_MOBILE_MERAM=y
++# CONFIG_HID_SUPPORT is not set
++CONFIG_USB=y
++CONFIG_USB_DEVICEFS=y
++CONFIG_USB_R8A66597_HCD=y
++CONFIG_USB_STORAGE=y
++CONFIG_MMC=y
++# CONFIG_MMC_BLOCK_BOUNCE is not set
++CONFIG_MMC_SDHI=y
++CONFIG_MMC_SH_MMCIF=y
++CONFIG_NEW_LEDS=y
++CONFIG_LEDS_CLASS=y
++CONFIG_RTC_CLASS=y
++CONFIG_DMADEVICES=y
++CONFIG_SH_DMAE=y
++CONFIG_ASYNC_TX_DMA=y
++CONFIG_STAGING=y
++# CONFIG_DNOTIFY is not set
++# CONFIG_INOTIFY_USER is not set
++CONFIG_VFAT_FS=y
++CONFIG_TMPFS=y
++# CONFIG_MISC_FILESYSTEMS is not set
++CONFIG_NFS_FS=y
++CONFIG_NFS_V3=y
++CONFIG_NFS_V3_ACL=y
++CONFIG_NFS_V4=y
++CONFIG_NFS_V4_1=y
++CONFIG_ROOT_NFS=y
++CONFIG_NLS_CODEPAGE_437=y
++CONFIG_NLS_ISO8859_1=y
++CONFIG_MAGIC_SYSRQ=y
++CONFIG_DETECT_HUNG_TASK=y
++CONFIG_DEBUG_INFO=y
++# CONFIG_FTRACE is not set
++CONFIG_DEBUG_USER=y
++CONFIG_CRYPTO=y
++CONFIG_CRYPTO_CBC=y
++CONFIG_CRYPTO_MD5=y
++CONFIG_CRYPTO_DES=y
++CONFIG_CRC16=y
 -- 
 1.7.5.4
 
