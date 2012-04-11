@@ -1,93 +1,208 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 15 Apr 2012 21:59:57 +0000
-Subject: Re: [PATCH 1/7] ARM: mach-shmobile: pfc-r8a7740: add gpio_irq support
-Message-Id: <201204152359.58190.rjw@sisk.pl>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 11 Apr 2012 03:58:33 +0000
+Subject: [PATCH 5/6] ARM: mach-shmobile: kzm9g: add LCDC support
+Message-Id: <877gxm3onu.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87r4w1jmcl.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87r4w1jmcl.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Friday, April 06, 2012, Kuninori Morimoto wrote:
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+AS3711 chip initalization is required for enabling LCDC backlight,
+but there is no driver for this chip.
+So, this patch sends its settings when boot.
 
-Applied to the r8a7740 branch of the renesas.git tree.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/board-kzm9g.c |  143 ++++++++++++++++++++++++++++++++++
+ 1 files changed, 143 insertions(+), 0 deletions(-)
 
-Thanks,
-Rafael
-
-
-> ---
-> I added this patch to series as #1
-> 
->  arch/arm/mach-shmobile/pfc-r8a7740.c |   39 ++++++++++++++++++++++++++++++++++
->  1 files changed, 39 insertions(+), 0 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/pfc-r8a7740.c b/arch/arm/mach-shmobile/pfc-r8a7740.c
-> index a4fff69..670fe18 100644
-> --- a/arch/arm/mach-shmobile/pfc-r8a7740.c
-> +++ b/arch/arm/mach-shmobile/pfc-r8a7740.c
-> @@ -22,6 +22,7 @@
->  #include <linux/kernel.h>
->  #include <linux/gpio.h>
->  #include <mach/r8a7740.h>
-> +#include <mach/irqs.h>
->  
->  #define CPU_ALL_PORT(fn, pfx, sfx)					\
->  	PORT_10(fn, pfx, sfx),		PORT_90(fn, pfx, sfx),		\
-> @@ -2527,6 +2528,41 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
->  	{ },
->  };
->  
-> +static struct pinmux_irq pinmux_irqs[] = {
-> +	PINMUX_IRQ(evt2irq(0x0200), PORT2_FN0,	 PORT13_FN0),	/* IRQ0A */
-> +	PINMUX_IRQ(evt2irq(0x0220), PORT20_FN0),		/* IRQ1A */
-> +	PINMUX_IRQ(evt2irq(0x0240), PORT11_FN0,	 PORT12_FN0),	/* IRQ2A */
-> +	PINMUX_IRQ(evt2irq(0x0260), PORT10_FN0,	 PORT14_FN0),	/* IRQ3A */
-> +	PINMUX_IRQ(evt2irq(0x0280), PORT15_FN0,	 PORT172_FN0),	/* IRQ4A */
-> +	PINMUX_IRQ(evt2irq(0x02A0), PORT0_FN0,	 PORT1_FN0),	/* IRQ5A */
-> +	PINMUX_IRQ(evt2irq(0x02C0), PORT121_FN0, PORT173_FN0),	/* IRQ6A */
-> +	PINMUX_IRQ(evt2irq(0x02E0), PORT120_FN0, PORT209_FN0),	/* IRQ7A */
-> +	PINMUX_IRQ(evt2irq(0x0300), PORT119_FN0),		/* IRQ8A */
-> +	PINMUX_IRQ(evt2irq(0x0320), PORT118_FN0, PORT210_FN0),	/* IRQ9A */
-> +	PINMUX_IRQ(evt2irq(0x0340), PORT19_FN0),		/* IRQ10A */
-> +	PINMUX_IRQ(evt2irq(0x0360), PORT104_FN0),		/* IRQ11A */
-> +	PINMUX_IRQ(evt2irq(0x0380), PORT42_FN0,	 PORT97_FN0),	/* IRQ12A */
-> +	PINMUX_IRQ(evt2irq(0x03A0), PORT64_FN0,	 PORT98_FN0),	/* IRQ13A */
-> +	PINMUX_IRQ(evt2irq(0x03C0), PORT63_FN0,	 PORT99_FN0),	/* IRQ14A */
-> +	PINMUX_IRQ(evt2irq(0x03E0), PORT62_FN0,	 PORT100_FN0),	/* IRQ15A */
-> +	PINMUX_IRQ(evt2irq(0x3200), PORT68_FN0,	 PORT211_FN0),	/* IRQ16A */
-> +	PINMUX_IRQ(evt2irq(0x3220), PORT69_FN0),		/* IRQ17A */
-> +	PINMUX_IRQ(evt2irq(0x3240), PORT70_FN0),		/* IRQ18A */
-> +	PINMUX_IRQ(evt2irq(0x3260), PORT71_FN0),		/* IRQ19A */
-> +	PINMUX_IRQ(evt2irq(0x3280), PORT67_FN0),		/* IRQ20A */
-> +	PINMUX_IRQ(evt2irq(0x32A0), PORT202_FN0),		/* IRQ21A */
-> +	PINMUX_IRQ(evt2irq(0x32C0), PORT95_FN0),		/* IRQ22A */
-> +	PINMUX_IRQ(evt2irq(0x32E0), PORT96_FN0),		/* IRQ23A */
-> +	PINMUX_IRQ(evt2irq(0x3300), PORT180_FN0),		/* IRQ24A */
-> +	PINMUX_IRQ(evt2irq(0x3320), PORT38_FN0),		/* IRQ25A */
-> +	PINMUX_IRQ(evt2irq(0x3340), PORT58_FN0,	 PORT81_FN0),	/* IRQ26A */
-> +	PINMUX_IRQ(evt2irq(0x3360), PORT57_FN0,	 PORT168_FN0),	/* IRQ27A */
-> +	PINMUX_IRQ(evt2irq(0x3380), PORT56_FN0,	 PORT169_FN0),	/* IRQ28A */
-> +	PINMUX_IRQ(evt2irq(0x33A0), PORT50_FN0,	 PORT170_FN0),	/* IRQ29A */
-> +	PINMUX_IRQ(evt2irq(0x33C0), PORT49_FN0,	 PORT171_FN0),	/* IRQ30A */
-> +	PINMUX_IRQ(evt2irq(0x33E0), PORT41_FN0,	 PORT167_FN0),	/* IRQ31A */
-> +};
-> +
->  static struct pinmux_info r8a7740_pinmux_info = {
->  	.name		= "r8a7740_pfc",
->  	.reserved_id	= PINMUX_RESERVED,
-> @@ -2554,6 +2590,9 @@ static struct pinmux_info r8a7740_pinmux_info = {
->  
->  	.gpio_data	= pinmux_data,
->  	.gpio_data_size	= ARRAY_SIZE(pinmux_data),
-> +
-> +	.gpio_irq	= pinmux_irqs,
-> +	.gpio_irq_size	= ARRAY_SIZE(pinmux_irqs),
->  };
->  
->  void r8a7740_pinmux_init(void)
-> 
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index f48db23..145341d 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -16,12 +16,15 @@
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
++
++#include <linux/delay.h>
+ #include <linux/gpio.h>
+ #include <linux/io.h>
+ #include <linux/irq.h>
+ #include <linux/platform_device.h>
+ #include <linux/smsc911x.h>
+ #include <linux/usb/r8a66597.h>
++#include <linux/videodev2.h>
+ #include <mach/irqs.h>
+ #include <mach/sh73a0.h>
+ #include <mach/common.h>
+@@ -29,6 +32,7 @@
+ #include <asm/hardware/gic.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
++#include <video/sh_mobile_lcdc.h>
+ 
+ /* SMSC 9221 */
+ static struct resource smsc9221_resources[] = {
+@@ -88,11 +92,119 @@ static struct platform_device usb_host_device = {
+ 	.resource	= usb_resources,
+ };
+ 
++/* LCDC */
++static struct fb_videomode kzm_lcdc_mode = {
++	.name		= "WVGA Panel",
++	.xres		= 800,
++	.yres		= 480,
++	.left_margin	= 220,
++	.right_margin	= 110,
++	.hsync_len	= 70,
++	.upper_margin	= 20,
++	.lower_margin	= 5,
++	.vsync_len	= 5,
++	.sync		= 0,
++};
++
++static struct sh_mobile_lcdc_info lcdc_info = {
++	.clock_source = LCDC_CLK_BUS,
++	.ch[0] = {
++		.chan		= LCDC_CHAN_MAINLCD,
++		.fourcc		= V4L2_PIX_FMT_RGB565,
++		.interface_type	= RGB24,
++		.lcd_modes	= &kzm_lcdc_mode,
++		.num_modes	= 1,
++		.clock_divider	= 5,
++		.flags		= 0,
++		.panel_cfg = {
++			.width	= 152,
++			.height	= 91,
++		},
++	}
++};
++
++static struct resource lcdc_resources[] = {
++	[0] = {
++		.name	= "LCDC",
++		.start	= 0xfe940000,
++		.end	= 0xfe943fff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= intcs_evt2irq(0x580),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device lcdc_device = {
++	.name		= "sh_mobile_lcdc_fb",
++	.num_resources	= ARRAY_SIZE(lcdc_resources),
++	.resource	= lcdc_resources,
++	.dev	= {
++		.platform_data	= &lcdc_info,
++		.coherent_dma_mask = ~0,
++	},
++};
++
+ static struct platform_device *kzm_devices[] __initdata = {
+ 	&smsc_device,
+ 	&usb_host_device,
++	&lcdc_device,
+ };
+ 
++/*
++ * FIXME
++ *
++ * This is quick hack for enabling LCDC backlight
++ */
++static int __init as3711_enable_lcdc_backlight(void)
++{
++	struct i2c_adapter *a = i2c_get_adapter(0);
++	struct i2c_msg msg;
++	int i, ret;
++	__u8 magic[] = {
++		0x40, 0x2a,
++		0x43, 0x3c,
++		0x44, 0x3c,
++		0x45, 0x3c,
++		0x54, 0x03,
++		0x51, 0x00,
++		0x51, 0x01,
++		0xff, 0x00, /* wait */
++		0x43, 0xf0,
++		0x44, 0xf0,
++		0x45, 0xf0,
++	};
++
++	if (!machine_is_kzm9g())
++		return 0;
++
++	if (!a)
++		return 0;
++
++	msg.addr	= 0x40;
++	msg.len		= 2;
++	msg.flags	= 0;
++
++	for (i = 0; i < ARRAY_SIZE(magic); i += 2) {
++		msg.buf = magic + i;
++
++		if (0xff = msg.buf[0]) {
++			udelay(500);
++			continue;
++		}
++
++		ret = i2c_transfer(a, &msg, 1);
++		if (ret < 0) {
++			pr_err("i2c transfer fail\n");
++			break;
++		}
++	}
++
++	return 0;
++}
++device_initcall(as3711_enable_lcdc_backlight);
++
+ static void __init kzm_init(void)
+ {
+ 	sh73a0_pinmux_init();
+@@ -110,6 +222,37 @@ static void __init kzm_init(void)
+ 	gpio_request(GPIO_PORT224, NULL); /* IRQ3 */
+ 	gpio_direction_input(GPIO_PORT224);
+ 
++	/* LCDC */
++	gpio_request(GPIO_FN_LCDD23,	NULL);
++	gpio_request(GPIO_FN_LCDD22,	NULL);
++	gpio_request(GPIO_FN_LCDD21,	NULL);
++	gpio_request(GPIO_FN_LCDD20,	NULL);
++	gpio_request(GPIO_FN_LCDD19,	NULL);
++	gpio_request(GPIO_FN_LCDD18,	NULL);
++	gpio_request(GPIO_FN_LCDD17,	NULL);
++	gpio_request(GPIO_FN_LCDD16,	NULL);
++	gpio_request(GPIO_FN_LCDD15,	NULL);
++	gpio_request(GPIO_FN_LCDD14,	NULL);
++	gpio_request(GPIO_FN_LCDD13,	NULL);
++	gpio_request(GPIO_FN_LCDD12,	NULL);
++	gpio_request(GPIO_FN_LCDD11,	NULL);
++	gpio_request(GPIO_FN_LCDD10,	NULL);
++	gpio_request(GPIO_FN_LCDD9,	NULL);
++	gpio_request(GPIO_FN_LCDD8,	NULL);
++	gpio_request(GPIO_FN_LCDD7,	NULL);
++	gpio_request(GPIO_FN_LCDD6,	NULL);
++	gpio_request(GPIO_FN_LCDD5,	NULL);
++	gpio_request(GPIO_FN_LCDD4,	NULL);
++	gpio_request(GPIO_FN_LCDD3,	NULL);
++	gpio_request(GPIO_FN_LCDD2,	NULL);
++	gpio_request(GPIO_FN_LCDD1,	NULL);
++	gpio_request(GPIO_FN_LCDD0,	NULL);
++	gpio_request(GPIO_FN_LCDDISP,	NULL);
++	gpio_request(GPIO_FN_LCDDCK,	NULL);
++
++	gpio_request(GPIO_PORT222,	NULL);
++	gpio_direction_output(GPIO_PORT222, 1);
++
+ #ifdef CONFIG_CACHE_L2X0
+ 	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
+ 	l2x0_init(IOMEM(0xf0100000), 0x40460000, 0x82000fff);
+-- 
+1.7.5.4
 
