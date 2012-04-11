@@ -1,74 +1,51 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Wed, 11 Apr 2012 09:51:28 +0000
-Subject: [PATCH v2] usb: r8a66597-udc: add support for set_selfpowered
-Message-Id: <4F855420.5010705@renesas.com>
+From: Felipe Balbi <balbi@ti.com>
+Date: Wed, 11 Apr 2012 10:03:13 +0000
+Subject: Re: [PATCH v2] usb: r8a66597-udc: add support for set_selfpowered
+Message-Id: <20120411100312.GR12064@arwen.pp.htv.fi>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="phbq2bkSb+hZnunM"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+References: <4F855420.5010705@renesas.com>
+In-Reply-To: <4F855420.5010705@renesas.com>
 To: linux-sh@vger.kernel.org
 
-The previous code always set to USB_DEVICE_SELF_POWERED in GET_STATUS.
-So, this patch adds set_selfpowered().
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- about v2:
-  - fix compile warning
+--phbq2bkSb+hZnunM
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
- drivers/usb/gadget/r8a66597-udc.c |   15 ++++++++++++++-
- drivers/usb/gadget/r8a66597-udc.h |    1 +
- 2 files changed, 15 insertions(+), 1 deletions(-)
+On Wed, Apr 11, 2012 at 06:51:28PM +0900, Shimoda, Yoshihiro wrote:
+> The previous code always set to USB_DEVICE_SELF_POWERED in GET_STATUS.
+> So, this patch adds set_selfpowered().
+>=20
+> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 
-diff --git a/drivers/usb/gadget/r8a66597-udc.c b/drivers/usb/gadget/r8a66597-udc.c
-index c4401e7..873e69f 100644
---- a/drivers/usb/gadget/r8a66597-udc.c
-+++ b/drivers/usb/gadget/r8a66597-udc.c
-@@ -1170,7 +1170,7 @@ __acquires(r8a66597->lock)
+applied, thanks
 
- 	switch (ctrl->bRequestType & USB_RECIP_MASK) {
- 	case USB_RECIP_DEVICE:
--		status = 1 << USB_DEVICE_SELF_POWERED;
-+		status = r8a66597->device_status;
- 		break;
- 	case USB_RECIP_INTERFACE:
- 		status = 0;
-@@ -1800,11 +1800,24 @@ static int r8a66597_pullup(struct usb_gadget *gadget, int is_on)
- 	return 0;
- }
+--=20
+balbi
 
-+static int r8a66597_set_selfpowered(struct usb_gadget *gadget, int is_self)
-+{
-+	struct r8a66597 *r8a66597 = gadget_to_r8a66597(gadget);
-+
-+	if (is_self)
-+		r8a66597->device_status |= 1 << USB_DEVICE_SELF_POWERED;
-+	else
-+		r8a66597->device_status &= ~(1 << USB_DEVICE_SELF_POWERED);
-+
-+	return 0;
-+}
-+
- static struct usb_gadget_ops r8a66597_gadget_ops = {
- 	.get_frame		= r8a66597_get_frame,
- 	.udc_start		= r8a66597_start,
- 	.udc_stop		= r8a66597_stop,
- 	.pullup			= r8a66597_pullup,
-+	.set_selfpowered	= r8a66597_set_selfpowered,
- };
+--phbq2bkSb+hZnunM
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
- static int __exit r8a66597_remove(struct platform_device *pdev)
-diff --git a/drivers/usb/gadget/r8a66597-udc.h b/drivers/usb/gadget/r8a66597-udc.h
-index 8e3de61..8b855a8 100644
---- a/drivers/usb/gadget/r8a66597-udc.h
-+++ b/drivers/usb/gadget/r8a66597-udc.h
-@@ -111,6 +111,7 @@ struct r8a66597 {
- 	u16			old_vbus;
- 	u16			scount;
- 	u16			old_dvsq;
-+	u16			device_status;	/* for GET_STATUS */
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
- 	/* pipe config */
- 	unsigned char bulk;
--- 
-1.7.1
+iQIcBAEBAgAGBQJPhVbgAAoJEIaOsuA1yqREhx0QAKxO1vTu7HRgrQXZ7bcIUsuw
+YROXtCJZacA6HVYN1RME3ybG5tBJHujCExzihetxy4dI1WJPFY9jli73ZiIWZENM
+gDFY2VA+8CTDkaaASR1fd6J6WhG8GS8xJ+rOgBVZadCLVN5Zu0cQ9xrG6Rp3G4sp
+l99Sx0mNYe9kjGyEzZN8DA3/YCVzgj4tnQ3XR/SZnTG6Q2jnCgibob0SizrOSRFB
+ifHXaXsoYwit4b42AQq6iJsbMq/20jlrTDof23aio5ms4GqJVe0s4PfGTLag+0vC
+USfxFwLugmKwJ/4DvA5UWPyL/c6CRg3MBRo/IguPsM3HCP8M1liTpS5NOOGNgo6S
+GSNUjZDcFSsbbHZ5YVeeJYJsoTvCRnDyXYw1EYwyaKbxiYTv/mhhMX+9xnFRZ/EE
+32HmX0neYx4irIoyXfm5MIuQv1UX8cShQw6lm15FWnzr/G/PSYpaF328yYDcm2s0
+aBLoXpITckuxhYD2olNZXi1uuZGoxAN+3Z+K2HpPz9+9ZIO1jbxJctsW+0ljxNq1
+23xWVcCrUck9Kcak2jAN42t4Rqfp2up4aX7WYs9PPgVRgTOaZp3SAFi1Ska+fipC
+YV8PMserVbV/hoSXPc84aXlP0uIJhWsoxpcAIUzKaXjXms/wwUpCu/4+JMYehukB
+BnMp++5GgNzyeVVAJXJ0
+=wMhM
+-----END PGP SIGNATURE-----
+
+--phbq2bkSb+hZnunM--
