@@ -1,49 +1,114 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Wed, 25 Apr 2012 19:28:32 +0000
-Subject: [PATCH 0/3] PM / Domains: Fix device stop and domain power off governor functions, take 2
-Message-Id: <201204252128.33016.rjw@sisk.pl>
+From: Felipe Balbi <balbi@ti.com>
+Date: Wed, 11 Apr 2012 09:35:48 +0000
+Subject: Re: [PATCH] usb: r8a66597-udc: add support for set_selfpowered
+Message-Id: <20120411093546.GI12064@arwen.pp.htv.fi>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="MPkR1dXiUZqK+927"
 List-Id: <linux-sh.vger.kernel.org>
-References: <201204242349.26288.rjw@sisk.pl>
-In-Reply-To: <201204242349.26288.rjw@sisk.pl>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Linux PM list <linux-pm@vger.kernel.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Kevin Hilman <khilman@ti.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, markgross@thegnar.org, Jean Pihet <j-pihet@ti.com>, Simon Horman <horms@verge.net.au>
+References: <4F62BD24.2060607@renesas.com>
+In-Reply-To: <4F62BD24.2060607@renesas.com>
+To: linux-sh@vger.kernel.org
 
-Hi all,
 
-On Tuesday, April 24, 2012, Rafael J. Wysocki wrote:
-> Hi all,
-> 
-> It turns out that the PM domains device stop and domain power off governor
-> functions I invented some time ago don't really make sense, because they
-> should only decide whether or not the resulting low-power state will be
-> too deep and that only depends on latencies.  In particular, the time
-> when devices have been suspended doesn't really matter here, so the
-> results returned by those functions shouldn't depend on it either (as it
-> shouldn't depend on any "break even" values that only make sense when we
-> know how much time in advance the device is going to be used, but this
-> information is not related to the PM QoS latency constraint).
-> 
-> If this functions are fixed (patches [1/3] and [2/3]), then some ugly
-> computations can be removed from rpm_suspend() and other places and the
-> whole framework can be simplified quite a bit (patch [3/3]).
+--MPkR1dXiUZqK+927
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-I noticed a few problems with the patches sent yesterday.  Most importantly:
+On Fri, Mar 16, 2012 at 01:10:12PM +0900, Shimoda, Yoshihiro wrote:
+> The previous code always set to USB_DEVICE_SELF_POWERED in GET_STATUS.
+> So, this patch adds set_selfpowered().
+>=20
+> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+> ---
+>  drivers/usb/gadget/r8a66597-udc.c |   16 +++++++++++++++-
+>  drivers/usb/gadget/r8a66597-udc.h |    1 +
+>  2 files changed, 16 insertions(+), 1 deletions(-)
+>=20
+> diff --git a/drivers/usb/gadget/r8a66597-udc.c b/drivers/usb/gadget/r8a66=
+597-udc.c
+> index c4401e7..683b3d2 100644
+> --- a/drivers/usb/gadget/r8a66597-udc.c
+> +++ b/drivers/usb/gadget/r8a66597-udc.c
+> @@ -1170,7 +1170,7 @@ __acquires(r8a66597->lock)
+>=20
+>  	switch (ctrl->bRequestType & USB_RECIP_MASK) {
+>  	case USB_RECIP_DEVICE:
+> -		status =3D 1 << USB_DEVICE_SELF_POWERED;
+> +		status =3D r8a66597->device_status;
+>  		break;
+>  	case USB_RECIP_INTERFACE:
+>  		status =3D 0;
+> @@ -1800,11 +1800,25 @@ static int r8a66597_pullup(struct usb_gadget *gad=
+get, int is_on)
+>  	return 0;
+>  }
+>=20
+> +static int r8a66597_set_selfpowered(struct usb_gadget *gadget, int is_se=
+lf)
+> +{
+> +	struct r8a66597 *r8a66597 =3D gadget_to_r8a66597(gadget);
+> +	unsigned long flags;
 
-* dev_pm_qos_read_value() should be used rather than its unlocked counterpart.
-* All children of the device have to be taken into account, not only those
-  belonging to generic PM domains.
-* default_power_down_ok() should take restore_state_latency_ns into account.
-* default_power_down_ok() should not assume that default_stop_ok() will always
-  be called before it (the domain may choose to use a different device stop
-  governor function in principle).
-* rpm_resume() still should check the devices PM QoS constraint and return
-  error code if the value is negative (which means never suspend).
+compile warning here. Did you even test this patch ???
 
-Updated patches follow.
+> +
+> +	if (is_self)
+> +		r8a66597->device_status |=3D 1 << USB_DEVICE_SELF_POWERED;
+> +	else
+> +		r8a66597->device_status &=3D ~(1 << USB_DEVICE_SELF_POWERED);
+> +
+> +	return 0;
+> +}
+> +
+>  static struct usb_gadget_ops r8a66597_gadget_ops =3D {
+>  	.get_frame		=3D r8a66597_get_frame,
+>  	.udc_start		=3D r8a66597_start,
+>  	.udc_stop		=3D r8a66597_stop,
+>  	.pullup			=3D r8a66597_pullup,
+> +	.set_selfpowered	=3D r8a66597_set_selfpowered,
+>  };
+>=20
+>  static int __exit r8a66597_remove(struct platform_device *pdev)
+> diff --git a/drivers/usb/gadget/r8a66597-udc.h b/drivers/usb/gadget/r8a66=
+597-udc.h
+> index 8e3de61..8b855a8 100644
+> --- a/drivers/usb/gadget/r8a66597-udc.h
+> +++ b/drivers/usb/gadget/r8a66597-udc.h
+> @@ -111,6 +111,7 @@ struct r8a66597 {
+>  	u16			old_vbus;
+>  	u16			scount;
+>  	u16			old_dvsq;
+> +	u16			device_status;	/* for GET_STATUS */
+>=20
+>  	/* pipe config */
+>  	unsigned char bulk;
+> --=20
+> 1.7.1
 
-Thanks,
-Rafael
+--=20
+balbi
 
+--MPkR1dXiUZqK+927
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJPhVByAAoJEIaOsuA1yqRE36YP/23mLOpgjHs1ZR1wFQDs/6IO
+Z1JEZoDYS8UOQR0UXPGPsNpKI+NZA53pyIxqxzREl3PCuKWnaJ7NxOHIVs0S5oMn
+WOB+hDyyu6Sipcgl6q7YCzwR8G4BESyLx4cj58DWlwUZwiOrWivr0heo/XpI13HG
+RV0kQAsEkPBRqcrZW2vbGMvXRTZT6JEWpZVtxbgfH2HguvfZM0Xuwa/ugDHBw0s2
+eQLc1kEq1leDcXLe54qtIh7SNm0dH+Rsi1yA9Yu5UqhX8BPkttgtxyh82rVmBNXt
+Chpc/a0sWPqxCmBVGAlrFp4v6qD1TyrmdX6G6USFs5cztQjKE+tgSt3HzpoSAE2V
+sNI5yA64JHlkA3gMmhyJfCcHhzcbCU82e3WoUjYzb2kg8PY29nDpJ0S2X0h/PYky
+uMmrSDM9r+pjDWj+lsMMdBtdJd0lJXG+fcGDZ2MOgZbPDKqdj3yduu2cH9eH8+0+
+vjM9pS7Cp/GfH4JR/ZrAjBdXhy5ZIKtl0DLbJfZPfJIMTjFlGSx923y7LgPKGYbT
+xAgMw96KMv2eojY2xW+pqg1vk+91c9mj95SNvlZiTtvYzRCE8CysLtSA28SFZxco
+EYqAKyH7sDaNo6rD9h9GGg5WfabWJ1Axz4pPPl6wLNdUX/8zhIcO24Z9MBPubTYR
+PrCvLJ0uC7w5UEgRFOkT
+=A4tr
+-----END PGP SIGNATURE-----
+
+--MPkR1dXiUZqK+927--
