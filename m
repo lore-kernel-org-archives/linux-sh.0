@@ -1,7 +1,7 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Wed, 11 Apr 2012 00:24:26 +0000
+Date: Thu, 12 Apr 2012 08:25:59 +0000
 Subject: Re: [PATCH 0/7 v2] ARM: mach-shmobile: add Armadillo800eva board support
-Message-Id: <20120411002423.GD5366@verge.net.au>
+Message-Id: <20120412082557.GB26803@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87sjghjmeu.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <87sjghjmeu.wl%kuninori.morimoto.gx@renesas.com>
@@ -10,19 +10,30 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Apr 10, 2012 at 01:27:56AM -0700, Kuninori Morimoto wrote:
+On Fri, Apr 06, 2012 at 01:26:54AM -0700, kuninori.morimoto.gx@renesas.com wrote:
 > 
-> Hi Simon
+> Hi Rafael, Magnus
+> Cc Simon, nakai-san, Saneyoshi-san
 > 
-> Thank you for checking patch
+> These are v2 of basic R8A7740 A1 Armadillo800eva baord support patch set.
+> These are based on linus/master branch.
 > 
-> > unfortunately I seem to be having a lot of trouble reliably booting using
-> > these patches. I am using tftpboot as follows:
-> > 
-> > hermit>  tftpboot 10.3.3.147 10.3.3.135 --kernel=armadillo/uImage
-> 
-> I'm using Image file here, not uImage.
+> Kuninori Morimoto (7):
+>       ARM: mach-shmobile: pfc-r8a7740: add gpio_irq support
+>       ARM: mach-shmobile: add armadillo800eva board support.
+>       ARM: mach-shmobile: armadillo800eva: add defconfig
+>       ARM: mach-shmobile: armadillo800eva: add support LCDC0
+>       ARM: mach-shmobile: armadillo800eva: add support ST1232
+>       ARM: mach-shmobile: armadillo800eva: add support gpio_key
+>       ARM: mach-shmobile: armadillo800eva: add support sh_eth
 
-Ok, its my turn to make you sigh.
+I have tested all of the patches above, except
+"ARM: mach-shmobile: armadillo800eva: add support ST1232",
+against 3.4-rc2. For those six patches:
 
-Its now working using a zImage.
+	Tested-by: Simon Horman <horms@verge.net.au>
+
+I have also booted a kernel with "ARM: mach-shmobile: armadillo800eva: add
+support ST1232", however I am unable to exercise this code as I am having
+trouble bringing up an Android user-space. Tips on how the code might
+be exercised would be greatly. appreciated.
