@@ -1,40 +1,44 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 19 Apr 2012 23:58:11 +0000
-Subject: Re: ARM: mach-shmobile: remove pointless global clocks
-Message-Id: <87ehrjuvea.wl%kuninori.morimoto.gx@renesas.com>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date: Fri, 13 Apr 2012 03:14:01 +0000
+Subject: [PATCH 2/4] sh: sh4: Change the specification method of IRQ to SCIx_IRQ_MUXED
+Message-Id: <1334286843-3297-2-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CANqRtoTkLPRDGUxR9j+wkwuf9vdvu5O6eEUDcB0ST=t+fqrreg@mail.gmail.com>
-In-Reply-To: <CANqRtoTkLPRDGUxR9j+wkwuf9vdvu5O6eEUDcB0ST=t+fqrreg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+Some SCIF devices specify the same IRQ. We can use SCIx_IRQ_MUXED for this.
+And change use to evt2irq(), without specifying the value of IRQ directly.
+This is correction to the SH4 series.
 
-Hi Magnus, Rafael
-
-Thank you for reviewing this
-
-> Perhaps that's what you feel is lazy, but I prefer to have the
-> compiler doing the checks for us with global symbols instead of
-> relying on run-time checked errors with clk_get(). Also, usually we
-> don't have any struct device in the board code, so this means we have
-> to use clk_get(NULL, "string" ) which is both ugly and a corner case.
-(snip)
-> > Hmm... Yes, these are just clean-up.
-> > But I don't like many global variable.
-> > So, how about just removing "un-used" global variable at this point ?
-> > When we use these clocks in the future, we can use clk_get()
-> 
-> I prefer not to use clk_get(NULL, "string"). And I think the global
-> variables are useful too for people that maintain out-of-tree boards.
-
-OK.
-These are not super important patches.
-(and indeed, clk_get(NULL, "string") is ugly :)
-
-Please drop these patches.
-
-Best regards
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 ---
-Kuninori Morimoto
+ arch/sh/kernel/cpu/sh4/setup-sh7750.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/sh/kernel/cpu/sh4/setup-sh7750.c b/arch/sh/kernel/cpu/sh4/setup-sh7750.c
+index 98cc0c7..56b3bdc 100644
+--- a/arch/sh/kernel/cpu/sh4/setup-sh7750.c
++++ b/arch/sh/kernel/cpu/sh4/setup-sh7750.c
+@@ -43,7 +43,7 @@ static struct plat_sci_port sci_platform_data = {
+ 	.scscr		= SCSCR_TE | SCSCR_RE,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCI,
+-	.irqs		= { 23, 23, 23, 0 },
++	.irqs		= SCIx_IRQ_MUXED(evt2irq(0xE40)),
+ 	.regshift	= 2,
+ };
+ 
+@@ -61,7 +61,7 @@ static struct plat_sci_port scif_platform_data = {
+ 	.scscr		= SCSCR_TE | SCSCR_RE | SCSCR_REIE,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= { 40, 40, 40, 40 },
++	.irqs		= SCIx_IRQ_MUXED(evt2irq(0x700)),
+ };
+ 
+ static struct platform_device scif_device = {
+-- 
+1.7.9.1
+
