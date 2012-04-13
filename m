@@ -1,58 +1,53 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Tue, 24 Apr 2012 12:14:25 +0000
-Subject: Re: [PATCH/RFC] sh: ecovec: switch MMC power control to regulator
-Message-Id: <20120424121424.GA13747@opensource.wolfsonmicro.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="6TrnltStXW4iwmi0"
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 13 Apr 2012 09:41:06 +0000
+Subject: [PATCH] ARM: mach-shmobile: r8a7740: cleanup I2C workaround method
+Message-Id: <87wr5k2clt.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1204201835230.3974@axis700.grange>
- <Pine.LNX.4.64.1204201850180.3974@axis700.grange>
- <20120420170744.GC3080@opensource.wolfsonmicro.com>
- <Pine.LNX.4.64.1204241342590.21239@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1204241342590.21239@axis700.grange>
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-mmc@vger.kernel.org, Liam Girdwood <lrg@ti.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
 
---6TrnltStXW4iwmi0
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Current workaround of I2C on r8a7740 used mdelay(),
+but it were overkill.
+This patch cleanup workaround delay.
 
-On Tue, Apr 24, 2012 at 01:46:09PM +0200, Guennadi Liakhovetski wrote:
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/setup-r8a7740.c |   12 ++++++------
+ 1 files changed, 6 insertions(+), 6 deletions(-)
 
-> One more question in this respect: I see, that most other MMC drivers use=
-=20
-> "vmmc" as supply name. How important is it for all MMC drivers to use the=
-=20
-> same name? Shall I use it for MMCIF and TMIO-MMC too?
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 14edb5c..34a1548 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -350,19 +350,19 @@ static void r8a7740_i2c_workaround(struct platform_device *pdev)
+ 	i2c_write(reg, ICSTART, i2c_read(reg, ICSTART) | 0x10);
+ 	i2c_read(reg, ICSTART); /* dummy read */
+ 
+-	mdelay(100);
++	udelay(10);
+ 
+ 	i2c_write(reg, ICCR, 0x01);
+-	i2c_read(reg, ICCR);
+ 	i2c_write(reg, ICSTART, 0x00);
+-	i2c_read(reg, ICSTART);
++
++	udelay(10);
+ 
+ 	i2c_write(reg, ICCR, 0x10);
+-	mdelay(100);
++	udelay(10);
+ 	i2c_write(reg, ICCR, 0x00);
+-	mdelay(100);
++	udelay(10);
+ 	i2c_write(reg, ICCR, 0x10);
+-	mdelay(100);
++	udelay(10);
+ 
+ 	iounmap(reg);
+ }
+-- 
+1.7.5.4
 
-The only thing from a regulator API point of view is that the name
-should be something that users can easily match up with the schematic -
-the general advice is that it should correspond to the name given in the
-chip datasheet as that can be tied in with relative ease, though so long
-as it's clear it doesn't *really* matter.
-
---6TrnltStXW4iwmi0
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJPlpj8AAoJEBus8iNuMP3dk1IP/3/FL9PoV+S30/G35AuVreKS
-hx9B4gJobxmvUZxDfLoBCb/YQE1BR3+UAlJCYQSpZerTRg8Y6ObNa5J7ErWWPlgT
-4wBmrBiHvGePYhnOi9U8zv2FMyTdG5qvEPhMTjT+YoCojaKweZlJPsj2q0FN0I9b
-CjUtimCMPOrwClOHhnTiGftsqOcd1BAsLfj0tV14tml9aE6Cp+jMxUOXwuKsp2R5
-aslu3c/y498OLgEbuH3YPid8FKh5RBo50WwyRDdUiLcgiOws+wslmKdZqw/lzSk8
-+KDFYXJapt9U1IAU1H3iu+e/Nnx85S862bTU3oTlDtISIfVOJnOgrU5ZuUi7eJmj
-IIxSi7/0EJ1FBqk3wMjdGXqEzlBwKze1Ry6Drzakn6i8rgbU1B+db44J1+ZM7sMm
-jUjwpF9O0QCySA0UUvPxVqfq0vBJJ5UdY9QWkyJgoiS99OMjqytwUzrP0vdEDb0e
-dXHGsP3gjWMbMVXhT9F3lRxzQXHq2mk5wWuDADdGPb28JjOEN6OPMcdNr7DNwImm
-EkDrtZtFuRFrut4pgjetCd1sc9R62T3PE0K8uHerH0M+MAphbqrk3M2zKG/xsygk
-y8ywNbEhQ8vTtOLcd9/yKgQ0JnVnkqGRouz0T6n0wsGJ/QeK7ao/Rsuf5SP2L5om
-WxrFm02hsDSgRosTW3LA
-=/1gf
------END PGP SIGNATURE-----
-
---6TrnltStXW4iwmi0--
