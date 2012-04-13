@@ -1,38 +1,31 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 24 Apr 2012 11:31:13 +0000
-Subject: [PULL for v3.5] SH Mobile LCDC overlay support
-Message-Id: <5022250.LOHRC1DPLO@avalon>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 13 Apr 2012 09:56:45 +0000
+Subject: [PATCH 2/3] ARM: mach-shmobile: armadillo800eva: tidyup dipswitch explain for SDHI
+Message-Id: <87obqw2bvq.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi Florian,
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-Could you please pull the following patches that add overlay support for the 
-SH Mobile LCDC ? They have been posted for review as part of a bigger series 
-some time ago.
-
-The following changes since commit d313a86d2efb2c5568832389663322e93e291c59:
-
-  i.MX28: Shut down the LCD controller to avoid BootROM sampling bug 
-(2012-04-21 21:53:12 +0000)
-
-are available in the git repository at:
-  git://linuxtv.org/pinchartl/fbdev.git planes
-
-Laurent Pinchart (3):
-      fbdev: sh_mobile_lcdc: Constify sh_mobile_lcdc_fix structure
-      fbdev: sh_mobile_lcdc: Rename fb operation handlers with a common prefix
-      fbdev: sh_mobile_lcdc: Implement overlays support
-
- drivers/video/sh_mobile_lcdcfb.c | 1004 +++++++++++++++++++++++++++++++++----
- include/video/sh_mobile_lcdc.h   |    7 +
- 2 files changed, 915 insertions(+), 96 deletions(-)
-
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index c2affc4..b80b8ea 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -87,7 +87,7 @@
+  *     0     | Extension Bus | D8-D15 disable, eMMC enable
+  *     1     | Extension Bus | D8-D15 enable,  eMMC disable
+  * -12345678-+---------------+----------------------------
+- *      0    | SDHI1         | COM8 enable,  COM14 disable
++ *      0    | SDHI1         | COM8 disable, COM14 enable
+  *      1    | SDHI1         | COM8 enable,  COM14 disable
+  * -12345678-+---------------+----------------------------
+  *        00 | JTAG          | SH-X2
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.5.4
 
