@@ -1,49 +1,225 @@
-From: Felipe Balbi <balbi@ti.com>
-Date: Wed, 11 Apr 2012 09:38:48 +0000
-Subject: Re: [PATCH] usb: renesas_usbhs: gadget: add support for set_selfpowered
-Message-Id: <20120411093847.GJ12064@arwen.pp.htv.fi>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="mFHiwr52TKrxpkjc"
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date: Fri, 13 Apr 2012 03:14:03 +0000
+Subject: [PATCH 4/4] sh: sh2: Change the specification method of IRQ to SCIx_IRQ_MUXED
+Message-Id: <1334286843-3297-4-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+Some SCIF devices specify the same IRQ. We can use SCIx_IRQ_MUXED for this.
+This is correction to the SH2/SH2A series.
 
---mFHiwr52TKrxpkjc
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+---
+ arch/sh/kernel/cpu/sh2/setup-sh7619.c  |    6 +++---
+ arch/sh/kernel/cpu/sh2a/setup-mxg.c    |    2 +-
+ arch/sh/kernel/cpu/sh2a/setup-sh7201.c |   16 ++++++++--------
+ arch/sh/kernel/cpu/sh2a/setup-sh7203.c |    8 ++++----
+ arch/sh/kernel/cpu/sh2a/setup-sh7206.c |    8 ++++----
+ 5 files changed, 20 insertions(+), 20 deletions(-)
 
-On Fri, Mar 16, 2012 at 01:10:15PM +0900, Shimoda, Yoshihiro wrote:
-> The previous code always set to USB_DEVICE_SELF_POWERED in GET_STATUS.
-> So, this patch adds set_selfpowered().
->=20
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+diff --git a/arch/sh/kernel/cpu/sh2/setup-sh7619.c b/arch/sh/kernel/cpu/sh2/setup-sh7619.c
+index 0f8befc..e0b740c 100644
+--- a/arch/sh/kernel/cpu/sh2/setup-sh7619.c
++++ b/arch/sh/kernel/cpu/sh2/setup-sh7619.c
+@@ -65,7 +65,7 @@ static struct plat_sci_port scif0_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_REIE,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= { 88, 88, 88, 88 },
++	.irqs		= SCIx_IRQ_MUXED(88),
+ };
+ 
+ static struct platform_device scif0_device = {
+@@ -82,7 +82,7 @@ static struct plat_sci_port scif1_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_REIE,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= { 92, 92, 92, 92 },
++	.irqs		= SCIx_IRQ_MUXED(92),
+ };
+ 
+ static struct platform_device scif1_device = {
+@@ -99,7 +99,7 @@ static struct plat_sci_port scif2_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_REIE,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= { 96, 96, 96, 96 },
++	.irqs		= SCIx_IRQ_MUXED(96),
+ };
+ 
+ static struct platform_device scif2_device = {
+diff --git a/arch/sh/kernel/cpu/sh2a/setup-mxg.c b/arch/sh/kernel/cpu/sh2a/setup-mxg.c
+index 949bf2b..f7f1cf2 100644
+--- a/arch/sh/kernel/cpu/sh2a/setup-mxg.c
++++ b/arch/sh/kernel/cpu/sh2a/setup-mxg.c
+@@ -204,7 +204,7 @@ static struct plat_sci_port scif0_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_REIE,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= { 220, 220, 220, 220 },
++	.irqs		= SCIx_IRQ_MUXED(220),
+ };
+ 
+ static struct platform_device scif0_device = {
+diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7201.c b/arch/sh/kernel/cpu/sh2a/setup-sh7201.c
+index 9df558d..7b84785 100644
+--- a/arch/sh/kernel/cpu/sh2a/setup-sh7201.c
++++ b/arch/sh/kernel/cpu/sh2a/setup-sh7201.c
+@@ -183,7 +183,7 @@ static struct plat_sci_port scif0_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_REIE,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= { 180, 180, 180, 180 }
++	.irqs		= SCIx_IRQ_MUXED(180),
+ };
+ 
+ static struct platform_device scif0_device = {
+@@ -200,7 +200,7 @@ static struct plat_sci_port scif1_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_REIE,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= { 184, 184, 184, 184 }
++	.irqs		= SCIx_IRQ_MUXED(184),
+ };
+ 
+ static struct platform_device scif1_device = {
+@@ -217,7 +217,7 @@ static struct plat_sci_port scif2_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_REIE,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= { 188, 188, 188, 188 }
++	.irqs		= SCIx_IRQ_MUXED(188),
+ };
+ 
+ static struct platform_device scif2_device = {
+@@ -234,7 +234,7 @@ static struct plat_sci_port scif3_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_REIE,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= { 192, 192, 192, 192 }
++	.irqs		= SCIx_IRQ_MUXED(192),
+ };
+ 
+ static struct platform_device scif3_device = {
+@@ -251,7 +251,7 @@ static struct plat_sci_port scif4_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_REIE,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= { 196, 196, 196, 196 }
++	.irqs		= SCIx_IRQ_MUXED(196),
+ };
+ 
+ static struct platform_device scif4_device = {
+@@ -268,7 +268,7 @@ static struct plat_sci_port scif5_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_REIE,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= { 200, 200, 200, 200 }
++	.irqs		= SCIx_IRQ_MUXED(200),
+ };
+ 
+ static struct platform_device scif5_device = {
+@@ -285,7 +285,7 @@ static struct plat_sci_port scif6_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_REIE,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= { 204, 204, 204, 204 }
++	.irqs		= SCIx_IRQ_MUXED(204),
+ };
+ 
+ static struct platform_device scif6_device = {
+@@ -302,7 +302,7 @@ static struct plat_sci_port scif7_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_REIE,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= { 208, 208, 208, 208 }
++	.irqs		= SCIx_IRQ_MUXED(208),
+ };
+ 
+ static struct platform_device scif7_device = {
+diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7203.c b/arch/sh/kernel/cpu/sh2a/setup-sh7203.c
+index 0bd744f..bfc33f6 100644
+--- a/arch/sh/kernel/cpu/sh2a/setup-sh7203.c
++++ b/arch/sh/kernel/cpu/sh2a/setup-sh7203.c
+@@ -180,7 +180,7 @@ static struct plat_sci_port scif0_platform_data = {
+ 			  SCSCR_REIE,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		=  { 192, 192, 192, 192 },
++	.irqs		= SCIx_IRQ_MUXED(192),
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+ 
+@@ -199,7 +199,7 @@ static struct plat_sci_port scif1_platform_data = {
+ 			  SCSCR_REIE,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		=  { 196, 196, 196, 196 },
++	.irqs		= SCIx_IRQ_MUXED(196),
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+ 
+@@ -218,7 +218,7 @@ static struct plat_sci_port scif2_platform_data = {
+ 			  SCSCR_REIE,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		=  { 200, 200, 200, 200 },
++	.irqs		= SCIx_IRQ_MUXED(200),
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+ 
+@@ -237,7 +237,7 @@ static struct plat_sci_port scif3_platform_data = {
+ 			  SCSCR_REIE,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		=  { 204, 204, 204, 204 },
++	.irqs		= SCIx_IRQ_MUXED(204),
+ 	.regtype	= SCIx_SH2_SCIF_FIFODATA_REGTYPE,
+ };
+ 
+diff --git a/arch/sh/kernel/cpu/sh2a/setup-sh7206.c b/arch/sh/kernel/cpu/sh2a/setup-sh7206.c
+index 5d14f84..a501074 100644
+--- a/arch/sh/kernel/cpu/sh2a/setup-sh7206.c
++++ b/arch/sh/kernel/cpu/sh2a/setup-sh7206.c
+@@ -139,7 +139,7 @@ static struct plat_sci_port scif0_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_REIE,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= { 240, 240, 240, 240 },
++	.irqs		= SCIx_IRQ_MUXED(240),
+ };
+ 
+ static struct platform_device scif0_device = {
+@@ -156,7 +156,7 @@ static struct plat_sci_port scif1_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_REIE,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= { 244, 244, 244, 244 },
++	.irqs		= SCIx_IRQ_MUXED(244),
+ };
+ 
+ static struct platform_device scif1_device = {
+@@ -173,7 +173,7 @@ static struct plat_sci_port scif2_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_REIE,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= { 248, 248, 248, 248 },
++	.irqs		= SCIx_IRQ_MUXED(248),
+ };
+ 
+ static struct platform_device scif2_device = {
+@@ -190,7 +190,7 @@ static struct plat_sci_port scif3_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_REIE,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= { 252, 252, 252, 252 },
++	.irqs		= SCIx_IRQ_MUXED(252),
+ };
+ 
+ static struct platform_device scif3_device = {
+-- 
+1.7.9.1
 
-applied, thanks
-
---=20
-balbi
-
---mFHiwr52TKrxpkjc
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJPhVEnAAoJEIaOsuA1yqREG00P/3+9ElWm+7rP/I12z8sG96zA
-zPpow7RZN7dWm3A5X93Lo2HjeZih1ubt9zi6jJ+NhtG/krSJMaGBKi1az6e0YE8L
-m96f4ojyywhxcWyGenfGPA62wEp2weXK9zgnHTdoP2LhsH2PpbEagC/AmWw3C0z9
-OnFFMdKEMrqzsmjIHExBliNR3PaRHoY11yVOl8unpXheSnraOlSYhF1aPlIXpn9O
-OL75ncpelb1oKxpkev0HxtIsD5fn0lv5HuGS97qV05ljFi00rIvVRBGyWLhZjCu6
-JLfreah7H/rnNxmres0VT2jwZPmirjyY8TQGOwXnXtvmtpecExHMQSPOFQRmiTQs
-LmFYv/CNZCGiPYdgRG5V+0KxyYyng+Y2xg0HCe9509CO31upmGESf2lalRTgAo8u
-t3CZCiPdVBp95Ue6TtlMBkGUWXTt6vjRjm9QHZzx8gN2NTNtpfk886GH/vJ3Jsq1
-8SIr+T0sXsBsIa8D3T3bjzn09FwEaqx4V6nySCjnLeYYQnNbh7D0BGq8QHZ6htWY
-ui7aGJgof0DqMbiw9jrVkkN5aZdIJkfHoEgjHUFTwNetuQlKS0UN8ddFNV2fxTpG
-Uia2ivq4D0YqasRqoZvWk6Lw1tQvQgtsWreyUt47Cq16LSlZII8Qc98qdzjPRmnt
-nD+Q4l5H7YU8BD2HKnMJ
-=Fk3r
------END PGP SIGNATURE-----
-
---mFHiwr52TKrxpkjc--
