@@ -1,84 +1,93 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 06 Apr 2012 08:28:14 +0000
-Subject: [PATCH 1/7] ARM: mach-shmobile: pfc-r8a7740: add gpio_irq support
-Message-Id: <87r4w1jmcl.wl%kuninori.morimoto.gx@renesas.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sun, 15 Apr 2012 21:59:57 +0000
+Subject: Re: [PATCH 1/7] ARM: mach-shmobile: pfc-r8a7740: add gpio_irq support
+Message-Id: <201204152359.58190.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87r4w1jmcl.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87r4w1jmcl.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-I added this patch to series as #1
+On Friday, April 06, 2012, Kuninori Morimoto wrote:
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
- arch/arm/mach-shmobile/pfc-r8a7740.c |   39 ++++++++++++++++++++++++++++++++++
- 1 files changed, 39 insertions(+), 0 deletions(-)
+Applied to the r8a7740 branch of the renesas.git tree.
 
-diff --git a/arch/arm/mach-shmobile/pfc-r8a7740.c b/arch/arm/mach-shmobile/pfc-r8a7740.c
-index a4fff69..670fe18 100644
---- a/arch/arm/mach-shmobile/pfc-r8a7740.c
-+++ b/arch/arm/mach-shmobile/pfc-r8a7740.c
-@@ -22,6 +22,7 @@
- #include <linux/kernel.h>
- #include <linux/gpio.h>
- #include <mach/r8a7740.h>
-+#include <mach/irqs.h>
- 
- #define CPU_ALL_PORT(fn, pfx, sfx)					\
- 	PORT_10(fn, pfx, sfx),		PORT_90(fn, pfx, sfx),		\
-@@ -2527,6 +2528,41 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
- 	{ },
- };
- 
-+static struct pinmux_irq pinmux_irqs[] = {
-+	PINMUX_IRQ(evt2irq(0x0200), PORT2_FN0,	 PORT13_FN0),	/* IRQ0A */
-+	PINMUX_IRQ(evt2irq(0x0220), PORT20_FN0),		/* IRQ1A */
-+	PINMUX_IRQ(evt2irq(0x0240), PORT11_FN0,	 PORT12_FN0),	/* IRQ2A */
-+	PINMUX_IRQ(evt2irq(0x0260), PORT10_FN0,	 PORT14_FN0),	/* IRQ3A */
-+	PINMUX_IRQ(evt2irq(0x0280), PORT15_FN0,	 PORT172_FN0),	/* IRQ4A */
-+	PINMUX_IRQ(evt2irq(0x02A0), PORT0_FN0,	 PORT1_FN0),	/* IRQ5A */
-+	PINMUX_IRQ(evt2irq(0x02C0), PORT121_FN0, PORT173_FN0),	/* IRQ6A */
-+	PINMUX_IRQ(evt2irq(0x02E0), PORT120_FN0, PORT209_FN0),	/* IRQ7A */
-+	PINMUX_IRQ(evt2irq(0x0300), PORT119_FN0),		/* IRQ8A */
-+	PINMUX_IRQ(evt2irq(0x0320), PORT118_FN0, PORT210_FN0),	/* IRQ9A */
-+	PINMUX_IRQ(evt2irq(0x0340), PORT19_FN0),		/* IRQ10A */
-+	PINMUX_IRQ(evt2irq(0x0360), PORT104_FN0),		/* IRQ11A */
-+	PINMUX_IRQ(evt2irq(0x0380), PORT42_FN0,	 PORT97_FN0),	/* IRQ12A */
-+	PINMUX_IRQ(evt2irq(0x03A0), PORT64_FN0,	 PORT98_FN0),	/* IRQ13A */
-+	PINMUX_IRQ(evt2irq(0x03C0), PORT63_FN0,	 PORT99_FN0),	/* IRQ14A */
-+	PINMUX_IRQ(evt2irq(0x03E0), PORT62_FN0,	 PORT100_FN0),	/* IRQ15A */
-+	PINMUX_IRQ(evt2irq(0x3200), PORT68_FN0,	 PORT211_FN0),	/* IRQ16A */
-+	PINMUX_IRQ(evt2irq(0x3220), PORT69_FN0),		/* IRQ17A */
-+	PINMUX_IRQ(evt2irq(0x3240), PORT70_FN0),		/* IRQ18A */
-+	PINMUX_IRQ(evt2irq(0x3260), PORT71_FN0),		/* IRQ19A */
-+	PINMUX_IRQ(evt2irq(0x3280), PORT67_FN0),		/* IRQ20A */
-+	PINMUX_IRQ(evt2irq(0x32A0), PORT202_FN0),		/* IRQ21A */
-+	PINMUX_IRQ(evt2irq(0x32C0), PORT95_FN0),		/* IRQ22A */
-+	PINMUX_IRQ(evt2irq(0x32E0), PORT96_FN0),		/* IRQ23A */
-+	PINMUX_IRQ(evt2irq(0x3300), PORT180_FN0),		/* IRQ24A */
-+	PINMUX_IRQ(evt2irq(0x3320), PORT38_FN0),		/* IRQ25A */
-+	PINMUX_IRQ(evt2irq(0x3340), PORT58_FN0,	 PORT81_FN0),	/* IRQ26A */
-+	PINMUX_IRQ(evt2irq(0x3360), PORT57_FN0,	 PORT168_FN0),	/* IRQ27A */
-+	PINMUX_IRQ(evt2irq(0x3380), PORT56_FN0,	 PORT169_FN0),	/* IRQ28A */
-+	PINMUX_IRQ(evt2irq(0x33A0), PORT50_FN0,	 PORT170_FN0),	/* IRQ29A */
-+	PINMUX_IRQ(evt2irq(0x33C0), PORT49_FN0,	 PORT171_FN0),	/* IRQ30A */
-+	PINMUX_IRQ(evt2irq(0x33E0), PORT41_FN0,	 PORT167_FN0),	/* IRQ31A */
-+};
-+
- static struct pinmux_info r8a7740_pinmux_info = {
- 	.name		= "r8a7740_pfc",
- 	.reserved_id	= PINMUX_RESERVED,
-@@ -2554,6 +2590,9 @@ static struct pinmux_info r8a7740_pinmux_info = {
- 
- 	.gpio_data	= pinmux_data,
- 	.gpio_data_size	= ARRAY_SIZE(pinmux_data),
-+
-+	.gpio_irq	= pinmux_irqs,
-+	.gpio_irq_size	= ARRAY_SIZE(pinmux_irqs),
- };
- 
- void r8a7740_pinmux_init(void)
--- 
-1.7.5.4
+Thanks,
+Rafael
+
+
+> ---
+> I added this patch to series as #1
+> 
+>  arch/arm/mach-shmobile/pfc-r8a7740.c |   39 ++++++++++++++++++++++++++++++++++
+>  1 files changed, 39 insertions(+), 0 deletions(-)
+> 
+> diff --git a/arch/arm/mach-shmobile/pfc-r8a7740.c b/arch/arm/mach-shmobile/pfc-r8a7740.c
+> index a4fff69..670fe18 100644
+> --- a/arch/arm/mach-shmobile/pfc-r8a7740.c
+> +++ b/arch/arm/mach-shmobile/pfc-r8a7740.c
+> @@ -22,6 +22,7 @@
+>  #include <linux/kernel.h>
+>  #include <linux/gpio.h>
+>  #include <mach/r8a7740.h>
+> +#include <mach/irqs.h>
+>  
+>  #define CPU_ALL_PORT(fn, pfx, sfx)					\
+>  	PORT_10(fn, pfx, sfx),		PORT_90(fn, pfx, sfx),		\
+> @@ -2527,6 +2528,41 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
+>  	{ },
+>  };
+>  
+> +static struct pinmux_irq pinmux_irqs[] = {
+> +	PINMUX_IRQ(evt2irq(0x0200), PORT2_FN0,	 PORT13_FN0),	/* IRQ0A */
+> +	PINMUX_IRQ(evt2irq(0x0220), PORT20_FN0),		/* IRQ1A */
+> +	PINMUX_IRQ(evt2irq(0x0240), PORT11_FN0,	 PORT12_FN0),	/* IRQ2A */
+> +	PINMUX_IRQ(evt2irq(0x0260), PORT10_FN0,	 PORT14_FN0),	/* IRQ3A */
+> +	PINMUX_IRQ(evt2irq(0x0280), PORT15_FN0,	 PORT172_FN0),	/* IRQ4A */
+> +	PINMUX_IRQ(evt2irq(0x02A0), PORT0_FN0,	 PORT1_FN0),	/* IRQ5A */
+> +	PINMUX_IRQ(evt2irq(0x02C0), PORT121_FN0, PORT173_FN0),	/* IRQ6A */
+> +	PINMUX_IRQ(evt2irq(0x02E0), PORT120_FN0, PORT209_FN0),	/* IRQ7A */
+> +	PINMUX_IRQ(evt2irq(0x0300), PORT119_FN0),		/* IRQ8A */
+> +	PINMUX_IRQ(evt2irq(0x0320), PORT118_FN0, PORT210_FN0),	/* IRQ9A */
+> +	PINMUX_IRQ(evt2irq(0x0340), PORT19_FN0),		/* IRQ10A */
+> +	PINMUX_IRQ(evt2irq(0x0360), PORT104_FN0),		/* IRQ11A */
+> +	PINMUX_IRQ(evt2irq(0x0380), PORT42_FN0,	 PORT97_FN0),	/* IRQ12A */
+> +	PINMUX_IRQ(evt2irq(0x03A0), PORT64_FN0,	 PORT98_FN0),	/* IRQ13A */
+> +	PINMUX_IRQ(evt2irq(0x03C0), PORT63_FN0,	 PORT99_FN0),	/* IRQ14A */
+> +	PINMUX_IRQ(evt2irq(0x03E0), PORT62_FN0,	 PORT100_FN0),	/* IRQ15A */
+> +	PINMUX_IRQ(evt2irq(0x3200), PORT68_FN0,	 PORT211_FN0),	/* IRQ16A */
+> +	PINMUX_IRQ(evt2irq(0x3220), PORT69_FN0),		/* IRQ17A */
+> +	PINMUX_IRQ(evt2irq(0x3240), PORT70_FN0),		/* IRQ18A */
+> +	PINMUX_IRQ(evt2irq(0x3260), PORT71_FN0),		/* IRQ19A */
+> +	PINMUX_IRQ(evt2irq(0x3280), PORT67_FN0),		/* IRQ20A */
+> +	PINMUX_IRQ(evt2irq(0x32A0), PORT202_FN0),		/* IRQ21A */
+> +	PINMUX_IRQ(evt2irq(0x32C0), PORT95_FN0),		/* IRQ22A */
+> +	PINMUX_IRQ(evt2irq(0x32E0), PORT96_FN0),		/* IRQ23A */
+> +	PINMUX_IRQ(evt2irq(0x3300), PORT180_FN0),		/* IRQ24A */
+> +	PINMUX_IRQ(evt2irq(0x3320), PORT38_FN0),		/* IRQ25A */
+> +	PINMUX_IRQ(evt2irq(0x3340), PORT58_FN0,	 PORT81_FN0),	/* IRQ26A */
+> +	PINMUX_IRQ(evt2irq(0x3360), PORT57_FN0,	 PORT168_FN0),	/* IRQ27A */
+> +	PINMUX_IRQ(evt2irq(0x3380), PORT56_FN0,	 PORT169_FN0),	/* IRQ28A */
+> +	PINMUX_IRQ(evt2irq(0x33A0), PORT50_FN0,	 PORT170_FN0),	/* IRQ29A */
+> +	PINMUX_IRQ(evt2irq(0x33C0), PORT49_FN0,	 PORT171_FN0),	/* IRQ30A */
+> +	PINMUX_IRQ(evt2irq(0x33E0), PORT41_FN0,	 PORT167_FN0),	/* IRQ31A */
+> +};
+> +
+>  static struct pinmux_info r8a7740_pinmux_info = {
+>  	.name		= "r8a7740_pfc",
+>  	.reserved_id	= PINMUX_RESERVED,
+> @@ -2554,6 +2590,9 @@ static struct pinmux_info r8a7740_pinmux_info = {
+>  
+>  	.gpio_data	= pinmux_data,
+>  	.gpio_data_size	= ARRAY_SIZE(pinmux_data),
+> +
+> +	.gpio_irq	= pinmux_irqs,
+> +	.gpio_irq_size	= ARRAY_SIZE(pinmux_irqs),
+>  };
+>  
+>  void r8a7740_pinmux_init(void)
+> 
 
