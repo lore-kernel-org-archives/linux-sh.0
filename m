@@ -1,65 +1,18 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 24 Apr 2012 16:41:42 +0000
-Subject: [PATCH 2/7] mmc: tmio: don't needlessly enable interrupts during probing
-Message-Id: <1335285707-22707-3-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 16 Apr 2012 02:08:57 +0000
+Subject: Re: [PATCH 05/10 v3] ARM: mach-shmobile: convert mackerel to use the generic MMC GPIO hotplug helper
+Message-Id: <20120416020856.GD25747@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1335285707-22707-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1335285707-22707-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1328824636-10553-1-git-send-email-g.liakhovetski@gmx.de>
+ <1328824636-10553-6-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1328824636-10553-6-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-We don't have to force-enable MMC interrupts in our .probe() method,
-mmc_add_host() will trigger card detection, that will enable all the
-necessary interrupts.
+On Thu, Feb 09, 2012 at 10:57:11PM +0100, Guennadi Liakhovetski wrote:
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Magnus Damm <magnus.damm@gmail.com>
----
- drivers/mmc/host/tmio_mmc_pio.c |   21 +++++++++++----------
- 1 files changed, 11 insertions(+), 10 deletions(-)
-
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 0d2643b..8cd3637 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -948,6 +948,17 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 
- 	_host->sdcard_irq_mask = sd_ctrl_read32(_host, CTL_IRQ_MASK);
- 	tmio_mmc_disable_mmc_irqs(_host, TMIO_MASK_ALL);
-+
-+	/* Unmask the IRQs we want to know about */
-+	if (!_host->chan_rx)
-+		irq_mask |= TMIO_MASK_READOP;
-+	if (!_host->chan_tx)
-+		irq_mask |= TMIO_MASK_WRITEOP;
-+	if (!_host->native_hotplug)
-+		irq_mask &= ~(TMIO_STAT_CARD_REMOVE | TMIO_STAT_CARD_INSERT);
-+
-+	_host->sdcard_irq_mask &= ~irq_mask;
-+
- 	if (pdata->flags & TMIO_MMC_SDIO_IRQ)
- 		tmio_mmc_enable_sdio_irq(mmc, 0);
- 
-@@ -965,16 +976,6 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 
- 	dev_pm_qos_expose_latency_limit(&pdev->dev, 100);
- 
--	/* Unmask the IRQs we want to know about */
--	if (!_host->chan_rx)
--		irq_mask |= TMIO_MASK_READOP;
--	if (!_host->chan_tx)
--		irq_mask |= TMIO_MASK_WRITEOP;
--	if (!_host->native_hotplug)
--		irq_mask &= ~(TMIO_STAT_CARD_REMOVE | TMIO_STAT_CARD_INSERT);
--
--	tmio_mmc_enable_mmc_irqs(_host, irq_mask);
--
- 	if (pdata->flags & TMIO_MMC_USE_GPIO_CD) {
- 		ret = mmc_cd_gpio_request(mmc, pdata->cd_gpio);
- 		if (ret < 0) {
--- 
-1.7.2.5
-
+Tested-by: Simon Horman <horms@verge.net.au>
