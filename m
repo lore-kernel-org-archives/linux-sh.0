@@ -1,48 +1,22 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 24 Apr 2012 16:41:40 +0000
-Subject: [PATCH/RFC 0/7] mmc: tmio: regulator support, clock management, convert ecovec
-Message-Id: <1335285707-22707-1-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 16 Apr 2012 02:16:08 +0000
+Subject: Re: [PATCH 06/10 v3] ARM: mach-shmobile: convert ag5evm to use the generic MMC GPIO hotplug helper
+Message-Id: <20120416021608.GE25747@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1328824636-10553-1-git-send-email-g.liakhovetski@gmx.de>
+ <1328824636-10553-7-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1328824636-10553-7-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-This patch series adds clock management callbacks to the TMIO MMC driver,
-fixes clock management on SDHI systems, updates clock frequency every time
-the clock is re-enabled, adds regulator support to TMIO MMC and converts
-the sh7724 ecovec system to use regulators with both MMCIF and SDHI/TMIO
-controllers.
+On Thu, Feb 09, 2012 at 10:57:12PM +0100, Guennadi Liakhovetski wrote:
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-These patches continue my earlier series "mmc: sh_mmcif: add regulator
-support," "mmc: sh-mmcif: clock management updates." The last patch in this
-series also supersedes the earlier patch "[PATCH/RFC] sh: ecovec: switch
-MMC power control to regulator."
+Reviewed-by: Simon Horman <horms@verge.net.au>
 
-I think, my clock management updates might cause some comments and require
-some updates, so, I'm labelling this whole series as RFC too.
-
-Guennadi Liakhovetski (7):
-  mmc: tmio: stop interface clock before runtime PM suspending
-  mmc: tmio: don't needlessly enable interrupts during probing
-  mmc: tmio: add callbacks to enable-update and disable the interface
-    clock
-  mmc: sdhi: implement tmio-mmc clock enable-update and disable
-    callbacks
-  mmc: tmio: add regulator support
-  mmc: sdhi: do not install dummy callbacks
-  sh: ecovec: switch MMC power control to regulators
-
- arch/sh/boards/mach-ecovec24/setup.c |   85 ++++++++++++++++++++--------
- drivers/mmc/host/sh_mobile_sdhi.c    |   38 ++++++++++---
- drivers/mmc/host/tmio_mmc.h          |    2 +
- drivers/mmc/host/tmio_mmc_pio.c      |  102 ++++++++++++++++++++++++++-------
- include/linux/mfd/tmio.h             |    3 +
- 5 files changed, 176 insertions(+), 54 deletions(-)
-
-Thanks
-Guennadi
--- 
-1.7.2.5
-
+I don't have access to this HW as far as I know
+but the changes are in keeping with those for Mackerel
+and I have tested the Mackerel changes.
