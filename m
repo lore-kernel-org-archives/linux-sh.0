@@ -1,7 +1,7 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Sun, 08 Apr 2012 11:23:58 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 16 Apr 2012 01:55:04 +0000
 Subject: Re: [PATCH 2/2] ARM: mach-shmobile: sh7372 CEU supports up to 8188x8188 images
-Message-Id: <Pine.LNX.4.64.1204081319520.29005@axis700.grange>
+Message-Id: <20120416015504.GA15753@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1203141600210.25284@axis700.grange>
  <Pine.LNX.4.64.1203141601060.25284@axis700.grange>
@@ -9,26 +9,19 @@ In-Reply-To: <Pine.LNX.4.64.1203141601060.25284@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux Media Mailing List <linux-media@vger.kernel.org>
-Cc: linux-sh@vger.kernel.org, "Rafael J. Wysocki" <rjw@sisk.pl>, Paul Mundt <lethal@linux-sh.org>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Linux Media Mailing List <linux-media@vger.kernel.org>, linux-sh@vger.kernel.org
 
-On Wed, 14 Mar 2012, Guennadi Liakhovetski wrote:
-
+On Wed, Mar 14, 2012 at 04:02:24PM +0100, Guennadi Liakhovetski wrote:
 > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+
+Reviewed-by: Simon Horman <horms@verge.net.au>
+
 > ---
 > 
 > This patch we can push some time after the first one in this series gets 
 > in, no breakage is caused.
-
-Patch 1/2 from this series is now in the mainline, so, also this patch can 
-be applied now. Not sure whether this qualifies as a fix (in the sense, 
-that the default maximum sizes of 2560x1920, used without this patch are 
-wrong for sh7372). Please, either push for 3.4 or queue for 3.5 
-accordingly.
-
-Thanks
-Guennadi
-
+> 
 >  arch/arm/mach-shmobile/board-ap4evb.c   |    2 ++
 >  arch/arm/mach-shmobile/board-mackerel.c |    2 ++
 >  2 files changed, 4 insertions(+), 0 deletions(-)
@@ -62,9 +55,8 @@ Guennadi
 > -- 
 > 1.7.2.5
 > 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > 
-
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
