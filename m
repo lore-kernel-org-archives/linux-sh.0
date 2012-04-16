@@ -1,48 +1,41 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 20 Apr 2012 16:59:51 +0000
-Subject: [PATCH 2/5] sh: ecovec: remove unused .down_pwr() MMCIF callback
-Message-Id: <Pine.LNX.4.64.1204201839140.3974@axis700.grange>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 16 Apr 2012 04:55:02 +0000
+Subject: Re: [PATCH 0/3 v2] ARM: mach-shmobile: r8a7740: USB Function support
+Message-Id: <87zkac5l99.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1204201835230.3974@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1204201835230.3974@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: Liam Girdwood <lrg@ti.com>, Mark Brown <broonie@opensource.wolfsonmicro.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-.down_pwr() on ecovec was equivalent to .set_pwr(0). Now that .down_pwr()
-is no longer used by the driver, it can be removed.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Hi Rafael, Simon
+
+These are v2 of USB Function support patches for Armadillo board.
+
+Kuninori Morimoto (3):
+      ARM: mach-shmobile: r8a7740: add usb clock support
+      ARM: mach-shmobile: armadillo800eva: tidyup dipswitch explain for SDHI
+      ARM: mach-shmobile: armadillo800eva: add USB function support
+
+#1, #2 are same as v1
+I added explain for workaround on #3.
+
+>> Simon
+
+Please add below on your .config
+
+CONFIG_USB_RENESAS_USBHS=y
+CONFIG_USB_RENESAS_USBHS_UDC=y
+
+and select USB Gadget driver.
+I used CONFIG_USB_ETH for test.
+
+And set SW1.6 ON, then you can use CN24.
+
+# insmod g_ether.ko
+# ifconfig usb0 xxx.xxx.xxx.xxx up
+
+Best regards
 ---
- arch/sh/boards/mach-ecovec24/setup.c |    6 ------
- 1 files changed, 0 insertions(+), 6 deletions(-)
-
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index d12fe9d..a2f70e6 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -877,11 +877,6 @@ static void mmcif_set_pwr(struct platform_device *pdev, int state)
- 	gpio_set_value(GPIO_PTB7, state);
- }
- 
--static void mmcif_down_pwr(struct platform_device *pdev)
--{
--	gpio_set_value(GPIO_PTB7, 0);
--}
--
- static struct resource sh_mmcif_resources[] = {
- 	[0] = {
- 		.name	= "SH_MMCIF",
-@@ -903,7 +898,6 @@ static struct resource sh_mmcif_resources[] = {
- 
- static struct sh_mmcif_plat_data sh_mmcif_plat = {
- 	.set_pwr	= mmcif_set_pwr,
--	.down_pwr	= mmcif_down_pwr,
- 	.sup_pclk	= 0, /* SH7724: Max Pclk/2 */
- 	.caps		= MMC_CAP_4_BIT_DATA |
- 			  MMC_CAP_8_BIT_DATA |
--- 
-1.7.2.5
-
+Kuninori Morimoto
