@@ -1,128 +1,48 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 24 Apr 2012 09:09:19 +0000
-Subject: [PATCH 5/8] ARM: mach-shmobile: armadillo800eva: add SDHI0 support
-Message-Id: <874ns9fqdg.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 18 Apr 2012 11:28:44 +0000
+Subject: [PATCH 5/6] mmc: mmcif: don't use connection IDs to obtain a clock reference
+Message-Id: <Pine.LNX.4.64.1204181326280.30514@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On armadillo800eva board,
-CD (= Card Detect) pin is not connected to SDHI0_CD.
-Then, we can use IRQ31 as card detect irq,
-but it needs chattering removal operation.
-We should use IRQ card detect in the future,
-but this patch use polling mode at this point.
+All MMCIF platforms have been switched to use device IDs in their MMCIF
+clock look-ups. The clock connection ID can now be also removed from the
+driver.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c |   71 ++++++++++++++++++++++++
- 1 files changed, 71 insertions(+), 0 deletions(-)
+ drivers/mmc/host/sh_mmcif.c |    6 ++----
+ 1 files changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 1d25d5f..ed85686 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -31,6 +31,9 @@
- #include <linux/sh_eth.h>
- #include <linux/videodev2.h>
- #include <linux/usb/renesas_usbhs.h>
-+#include <linux/mfd/tmio.h>
-+#include <linux/mmc/host.h>
-+#include <linux/mmc/sh_mobile_sdhi.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <asm/page.h>
-@@ -402,6 +405,55 @@ static struct platform_device gpio_keys_device = {
- 	},
- };
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index b0bf19c..efac927 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -1250,7 +1250,6 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
+ 	struct resource *res;
+ 	struct clk *hclk;
+ 	void __iomem *reg;
+-	char clk_name[8];
  
-+/* SDHI0 */
-+/*
-+ * FIXME
-+ *
-+ * It use polling mode here, since
-+ * CD (= Card Detect) pin is not connected to SDHI0_CD.
-+ * We can use IRQ31 as card detect irq,
-+ * but it needs chattering removal operation
-+ */
-+#define IRQ31	evt2irq(0x33E0)
-+static struct sh_mobile_sdhi_info sdhi0_info = {
-+	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |\
-+			  MMC_CAP_NEEDS_POLL,
-+	.tmio_ocr_mask	= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
-+	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
-+};
-+
-+static struct resource sdhi0_resources[] = {
-+	{
-+		.name	= "SDHI0",
-+		.start	= 0xe6850000,
-+		.end	= 0xe6850100 - 1,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	/*
-+	 * no SH_MOBILE_SDHI_IRQ_CARD_DETECT here
-+	 */
-+	{
-+		.name	= SH_MOBILE_SDHI_IRQ_SDCARD,
-+		.start	= evt2irq(0x0E20),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+	{
-+		.name	= SH_MOBILE_SDHI_IRQ_SDIO,
-+		.start	= evt2irq(0x0E40),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device sdhi0_device = {
-+	.name		= "sh_mobile_sdhi",
-+	.id		= 0,
-+	.dev		= {
-+		.platform_data	= &sdhi0_info,
-+	},
-+	.num_resources	= ARRAY_SIZE(sdhi0_resources),
-+	.resource	= sdhi0_resources,
-+};
-+
- /* I2C */
- static struct i2c_board_info i2c0_devices[] = {
- 	{
-@@ -417,6 +469,7 @@ static struct platform_device *eva_devices[] __initdata = {
- 	&lcdc0_device,
- 	&gpio_keys_device,
- 	&sh_eth_device,
-+	&sdhi0_device,
- };
+ 	irq[0] = platform_get_irq(pdev, 0);
+ 	irq[1] = platform_get_irq(pdev, 1);
+@@ -1284,11 +1283,10 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
+ 	host->addr	= reg;
+ 	host->timeout	= 1000;
  
- static void __init eva_clock_init(void)
-@@ -539,6 +592,24 @@ static void __init eva_init(void)
- 		platform_device_register(&usbhsf_device);
+-	snprintf(clk_name, sizeof(clk_name), "mmc%d", pdev->id);
+-	hclk = clk_get(&pdev->dev, clk_name);
++	hclk = clk_get(&pdev->dev, NULL);
+ 	if (IS_ERR(hclk)) {
+-		dev_err(&pdev->dev, "cannot get clock \"%s\"\n", clk_name);
+ 		ret = PTR_ERR(hclk);
++		dev_err(&pdev->dev, "cannot get clock: %d\n", ret);
+ 		goto clean_up1;
  	}
- 
-+	/* SDHI0 */
-+	gpio_request(GPIO_FN_SDHI0_CMD, NULL);
-+	gpio_request(GPIO_FN_SDHI0_CLK, NULL);
-+	gpio_request(GPIO_FN_SDHI0_D0, NULL);
-+	gpio_request(GPIO_FN_SDHI0_D1, NULL);
-+	gpio_request(GPIO_FN_SDHI0_D2, NULL);
-+	gpio_request(GPIO_FN_SDHI0_D3, NULL);
-+	gpio_request(GPIO_FN_SDHI0_WP, NULL);
-+
-+	gpio_request(GPIO_PORT17, NULL);	/* SDHI0_18/33_B */
-+	gpio_request(GPIO_PORT74, NULL);	/* SDHI0_PON */
-+	gpio_request(GPIO_PORT75, NULL);	/* SDSLOT1_PON */
-+	gpio_direction_output(GPIO_PORT17, 0);
-+	gpio_direction_output(GPIO_PORT74, 1);
-+	gpio_direction_output(GPIO_PORT75, 1);
-+
-+	/* we can use GPIO_FN_IRQ31_PORT167 here for SDHI0 CD irq */
-+
- 	/*
- 	 * CAUTION
- 	 *
+ 	host->clk = clk_get_rate(hclk);
 -- 
-1.7.5.4
+1.7.2.5
 
