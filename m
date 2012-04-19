@@ -1,32 +1,48 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 17 Apr 2012 07:38:22 +0000
-Subject: Re: [PATCH 1/4] sh: sh4a: Change the specification method of IRQ to SCIx_IRQ_MUXED
-Message-Id: <20120417073822.GA25751@linux-sh.org>
+From: Srinivas KANDAGATLA <srinivas.kandagatla@st.com>
+Date: Thu, 19 Apr 2012 10:06:30 +0000
+Subject: [PATCH 3.4.0-rc3] sh:pfc: include sh_pfc.h header file.
+Message-Id: <1334829990-9196-1-git-send-email-srinivas.kandagatla@st.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1334286843-3297-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
-In-Reply-To: <1334286843-3297-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Apr 13, 2012 at 12:14:00PM +0900, Nobuhiro Iwamatsu wrote:
-> Some SCIF devices specify the same IRQ. We can use SCIx_IRQ_MUXED for this.
-> And change use to evt2irq(), without specifying the value of IRQ directly.
-> This is correction to the SH4A series.
+This patch includes sh_pfc.h in pfc.c file, without this include kernel
+build with CONFIG_GENERIC_GPIO will throw below errors.
 
-On Fri, Apr 13, 2012 at 12:14:01PM +0900, Nobuhiro Iwamatsu wrote:
-> Some SCIF devices specify the same IRQ. We can use SCIx_IRQ_MUXED for this.
-> And change use to evt2irq(), without specifying the value of IRQ directly.
-> This is correction to the SH4 series.
+drivers/sh/pfc.c:25:32: warning: ‘struct pinmux_info’ declared inside
+parameter list [enabled by default]
+drivers/sh/pfc.c:25:32: warning: its scope is only this definition or
+declaration, which is probably not what you want [enabled by default]
+drivers/sh/pfc.c: In function ‘pfc_iounmap’:
+drivers/sh/pfc.c:29:21: error: dereferencing pointer to incomplete type
+drivers/sh/pfc.c:30:10:error: dereferencing pointer to incomplete type
+drivers/sh/pfc.c:31:15:error: dereferencing pointer to incomplete type
+drivers/sh/pfc.c:33:11: error: dereferencing pointer to incomplete type
 
-On Fri, Apr 13, 2012 at 12:14:02PM +0900, Nobuhiro Iwamatsu wrote:
-> Some SCIF devices specify the same IRQ. We can use SCIx_IRQ_MUXED for this.
-> And change use to evt2irq(), without specifying the value of IRQ directly.
-> This is correction to the SH3 series.
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@st.com>
+---
+Hi All, 
+This patch fixes a compilation error in the sh kernel build if CONFIG_GENERIC_GPIO is enabled.
 
-On Fri, Apr 13, 2012 at 12:14:03PM +0900, Nobuhiro Iwamatsu wrote:
-> Some SCIF devices specify the same IRQ. We can use SCIx_IRQ_MUXED for this.
-> This is correction to the SH2/SH2A series.
+--srini
 
-All applied, thanks.
+ drivers/sh/pfc.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/sh/pfc.c b/drivers/sh/pfc.c
+index 522c6c4..505d7cf 100644
+--- a/drivers/sh/pfc.c
++++ b/drivers/sh/pfc.c
+@@ -21,6 +21,7 @@
+ #include <linux/gpio.h>
+ #include <linux/slab.h>
+ #include <linux/ioport.h>
++#include <linux/sh_pfc.h>
+ 
+ static void pfc_iounmap(struct pinmux_info *pip)
+ {
+-- 
+1.7.0.4
+
