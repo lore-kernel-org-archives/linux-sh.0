@@ -1,49 +1,69 @@
-From: Anton Vorontsov <anton.vorontsov@linaro.org>
-Date: Mon, 23 Apr 2012 07:09:35 +0000
-Subject: [PATCH 8/9] um: Fix possible race on task->mm
-Message-Id: <20120423070935.GH30752@lizard>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 19 Apr 2012 22:09:20 +0000
+Subject: [PATCH 3/3] mmc: sh_mmcif: re-read the clock frequency upon re-enabling
+Message-Id: <Pine.LNX.4.64.1204192357250.2110@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120423070641.GA27702@lizard>
-In-Reply-To: <20120423070641.GA27702@lizard>
+References: <Pine.LNX.4.64.1201101604130.530@axis700.grange>
+ <Pine.LNX.4.64.1202022256580.13860@axis700.grange>
+ <CANqRtoQ7o=_9uRa3F=4pkNvDWS2g2wZU6oBipttfGuFv4irpzA@mail.gmail.com>
+ <Pine.LNX.4.64.1202031156020.6211@axis700.grange>
+ <Pine.LNX.4.64.1204191215430.2110@axis700.grange>
+ <CANqRtoTq1e7_g82FGZS3S8yb0j7MgCYNhiH7E=a+nHkTWiOgLQ@mail.gmail.com>
+ <Pine.LNX.4.64.1204192351190.2110@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1204192351190.2110@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Magnus Damm <magnus.damm@gmail.com>
+Cc: "Rafael J. Wysocki" <rjw@sisk.pl>, linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
 
-Checking for task->mm is dangerous as ->mm might disappear (exit_mm()
-assigns NULL under task_lock(), so tasklist lock is not enough).
+Once the clock is disabled by a driver, nothing prevents it from being 
+reconfigured by another user. Drivers, that save power by disabling the 
+clock when not in use must re-read its frequency every time they re-enable 
+it.
 
-We can't use get_task_mm()/mmput() pair as mmput() might sleep,
-so let's take the task lock while we care about its mm.
-
-Note that we should also use find_lock_task_mm() to check all process'
-threads for a valid mm, but for uml we'll do it in a separate patch.
-
-Signed-off-by: Anton Vorontsov <anton.vorontsov@linaro.org>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/um/kernel/reboot.c |    7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
+ drivers/mmc/host/sh_mmcif.c |   12 +++++++++---
+ 1 files changed, 9 insertions(+), 3 deletions(-)
 
-diff --git a/arch/um/kernel/reboot.c b/arch/um/kernel/reboot.c
-index 66d754c..1411f4e 100644
---- a/arch/um/kernel/reboot.c
-+++ b/arch/um/kernel/reboot.c
-@@ -25,10 +25,13 @@ static void kill_off_processes(void)
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 0441140..ed59392 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -916,6 +916,13 @@ static void sh_mmcif_request(struct mmc_host *mmc, struct mmc_request *mrq)
+ 	sh_mmcif_start_cmd(host, mrq);
+ }
  
- 		read_lock(&tasklist_lock);
- 		for_each_process(p) {
--			if (p->mm = NULL)
-+			task_lock(p);
-+			if (!p->mm) {
-+				task_unlock(p);
- 				continue;
--
-+			}
- 			pid = p->mm->context.id.u.pid;
-+			task_unlock(p);
- 			os_kill_ptraced_process(pid, 1);
- 		}
- 		read_unlock(&tasklist_lock);
++static void sh_mmcif_clk_update(struct sh_mmcif_host *host)
++{
++	host->clk = clk_get_rate(host->hclk);
++	host->mmc->f_max = host->clk / 2;
++	host->mmc->f_min = host->clk / 512;
++}
++
+ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ {
+ 	struct sh_mmcif_host *host = mmc_priv(mmc);
+@@ -962,6 +969,7 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 			if (p->set_pwr)
+ 				p->set_pwr(host->pd, ios->power_mode);
+ 			clk_enable(host->hclk);
++			sh_mmcif_clk_update(host);
+ 			pm_runtime_get_sync(&host->pd->dev);
+ 			host->power = true;
+ 			sh_mmcif_sync_reset(host);
+@@ -1313,9 +1321,7 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
+ 		goto eclkget;
+ 	}
+ 	clk_enable(host->hclk);
+-	host->clk = clk_get_rate(host->hclk);
+-	mmc->f_max = host->clk / 2;
+-	mmc->f_min = host->clk / 512;
++	sh_mmcif_clk_update(host);
+ 
+ 	ret = pm_runtime_resume(&pdev->dev);
+ 	if (ret < 0)
 -- 
-1.7.9.2
+1.7.2.5
 
