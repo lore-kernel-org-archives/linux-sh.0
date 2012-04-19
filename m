@@ -1,43 +1,57 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Fri, 27 Apr 2012 21:07:59 +0000
-Subject: Re: [PATCH 1/8] ARM: mach-shmobile: clock-r8a7740: add USB clock
-Message-Id: <201204272307.59483.rjw@sisk.pl>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 19 Apr 2012 10:04:02 +0000
+Subject: [PATCH] sh: modify the sh_dmae_slave_config for RSPI in setup-sh7757
+Message-Id: <4F8FE312.2040203@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87aa21fqg0.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87aa21fqg0.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Friday, April 27, 2012, Kuninori Morimoto wrote:
-> 
-> Hi Paul
-> 
-> > > R8A7740 USB needs many clocks for workaround,
-> > > and it has confusing name "usb24s" and "usb24".
-> > > This "usb24s" will be used by other clocks.
-> > > 
-> > > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > > ---
-> > >  arch/arm/mach-shmobile/clock-r8a7740.c |  118 +++++++++++++++++++++++++++++++-
-> > >  1 files changed, 116 insertions(+), 2 deletions(-)
-> > > 
-> > > diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-> > > index 99c4d74..30535f4 100644
-> > > --- a/arch/arm/mach-shmobile/clock-r8a7740.c
-> > > +++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-> > > +static unsigned long usb24s_recalc(struct clk *clk)
-> > > +{
-> > > +	return clk->parent->rate;
-> > > +};
-> > > +
-> > You don't need this, just use followparent_recalc() directly.
-> 
-> Thanks.
-> I will fix up it.
+Modify the sh7757_dmae1_slave to add parameters of RSPI's slave_id
 
-Please do an incremental patch on top of [1/8] then.
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ arch/sh/include/cpu-sh4/cpu/sh7757.h   |    2 ++
+ arch/sh/kernel/cpu/sh4a/setup-sh7757.c |   14 ++++++++++++++
+ 2 files changed, 16 insertions(+), 0 deletions(-)
 
-Thanks,
-Rafael
+diff --git a/arch/sh/include/cpu-sh4/cpu/sh7757.h b/arch/sh/include/cpu-sh4/cpu/sh7757.h
+index 41f9f8b..5340f3b 100644
+--- a/arch/sh/include/cpu-sh4/cpu/sh7757.h
++++ b/arch/sh/include/cpu-sh4/cpu/sh7757.h
+@@ -283,5 +283,7 @@ enum {
+ 	SHDMA_SLAVE_RIIC8_RX,
+ 	SHDMA_SLAVE_RIIC9_TX,
+ 	SHDMA_SLAVE_RIIC9_RX,
++	SHDMA_SLAVE_RSPI_TX,
++	SHDMA_SLAVE_RSPI_RX,
+ };
+ #endif /* __ASM_SH7757_H__ */
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
+index fe45e4c..f807590 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
+@@ -216,6 +216,20 @@ static const struct sh_dmae_slave_config sh7757_dmae1_slaves[] = {
+ 				  TS_INDEX2VAL(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x42,
+ 	},
++	{
++		.slave_id	= SHDMA_SLAVE_RSPI_TX,
++		.addr		= 0xfe480004,
++		.chcr		= SM_INC | 0x800 | 0x40000000 |
++				  TS_INDEX2VAL(XMIT_SZ_16BIT),
++		.mid_rid	= 0xc1,
++	},
++	{
++		.slave_id	= SHDMA_SLAVE_RSPI_RX,
++		.addr		= 0xfe480004,
++		.chcr		= DM_INC | 0x800 | 0x40000000 |
++				  TS_INDEX2VAL(XMIT_SZ_16BIT),
++		.mid_rid	= 0xc2,
++	},
+ };
+
+ static const struct sh_dmae_slave_config sh7757_dmae2_slaves[] = {
+-- 
+1.7.1
