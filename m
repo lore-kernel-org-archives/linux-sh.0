@@ -1,122 +1,51 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 20 Apr 2012 16:59:41 +0000
-Subject: [PATCH/RFC] sh: ecovec: switch MMC power control to regulator
-Message-Id: <Pine.LNX.4.64.1204201850180.3974@axis700.grange>
+From: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date: Fri, 20 Apr 2012 17:07:44 +0000
+Subject: Re: [PATCH/RFC] sh: ecovec: switch MMC power control to regulator
+Message-Id: <20120420170744.GC3080@opensource.wolfsonmicro.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="TiqCXmo5T1hvSQQg"
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1204201835230.3974@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1204201835230.3974@axis700.grange>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: Liam Girdwood <lrg@ti.com>, Mark Brown <broonie@opensource.wolfsonmicro.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+ <Pine.LNX.4.64.1204201850180.3974@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1204201850180.3974@axis700.grange>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-mmc@vger.kernel.org, Liam Girdwood <lrg@ti.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Power on the CN12 SD/MMC slot on ecovec is controlled by a GPIO, which
-makes it possible to use the gpio-regulator driver to produce a primitive
-voltage regulator.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
+--TiqCXmo5T1hvSQQg
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-As mentioned in the introductory mail, this patch is mostly an 
-implementation example.
+On Fri, Apr 20, 2012 at 06:59:41PM +0200, Guennadi Liakhovetski wrote:
 
- arch/sh/boards/mach-ecovec24/setup.c |   50 +++++++++++++++++++++++++++++-----
- 1 files changed, 43 insertions(+), 7 deletions(-)
+> +static struct gpio_regulator_state mmcif_power_states[] = {
+> +	{ .value = 3300000, .gpios = 0 },
+> +};
 
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index a2f70e6..96561ec 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -19,6 +19,10 @@
- #include <linux/interrupt.h>
- #include <linux/io.h>
- #include <linux/delay.h>
-+#include <linux/regulator/consumer.h>
-+#include <linux/regulator/driver.h>
-+#include <linux/regulator/gpio-regulator.h>
-+#include <linux/regulator/machine.h>
- #include <linux/usb/r8a66597.h>
- #include <linux/usb/renesas_usbhs.h>
- #include <linux/i2c.h>
-@@ -872,10 +876,45 @@ static struct platform_device vou_device = {
- 
- #if defined(CONFIG_MMC_SH_MMCIF) || defined(CONFIG_MMC_SH_MMCIF_MODULE)
- /* SH_MMCIF */
--static void mmcif_set_pwr(struct platform_device *pdev, int state)
-+static struct regulator_consumer_supply mmcif_power_consumers[]  {
--	gpio_set_value(GPIO_PTB7, state);
--}
-+	REGULATOR_SUPPLY("MMC Vdd", "sh_mmcif.0"),
-+};
-+
-+static struct regulator_init_data mmcif_power_init_data = {
-+	.constraints = {
-+		.min_uV         = 3300000,
-+		.max_uV         = 3300000,
-+		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
-+	},
-+	.num_consumer_supplies  = ARRAY_SIZE(mmcif_power_consumers),
-+	.consumer_supplies      = mmcif_power_consumers,
-+};
-+
-+static struct gpio_regulator_state mmcif_power_states[] = {
-+	{ .value = 3300000, .gpios = 0 },
-+};
-+
-+static struct gpio_regulator_config mmcif_power_info = {
-+	.supply_name = "CN12 SD/MMC Vdd",
-+
-+	.enable_gpio = GPIO_PTB7,
-+	.enable_high = 1,
-+
-+	.states = mmcif_power_states,
-+	.nr_states = ARRAY_SIZE(mmcif_power_states),
-+
-+	.type = REGULATOR_VOLTAGE,
-+	.init_data = &mmcif_power_init_data,
-+};
-+
-+static struct platform_device mmcif_power = {
-+	.name = "gpio-regulator",
-+	.id   = -1,
-+	.dev  = {
-+		.platform_data = &mmcif_power_info,
-+	},
-+};
- 
- static struct resource sh_mmcif_resources[] = {
- 	[0] = {
-@@ -897,12 +936,10 @@ static struct resource sh_mmcif_resources[] = {
- };
- 
- static struct sh_mmcif_plat_data sh_mmcif_plat = {
--	.set_pwr	= mmcif_set_pwr,
- 	.sup_pclk	= 0, /* SH7724: Max Pclk/2 */
- 	.caps		= MMC_CAP_4_BIT_DATA |
- 			  MMC_CAP_8_BIT_DATA |
- 			  MMC_CAP_NEEDS_POLL,
--	.ocr		= MMC_VDD_32_33 | MMC_VDD_33_34,
- };
- 
- static struct platform_device sh_mmcif_device = {
-@@ -942,6 +979,7 @@ static struct platform_device *ecovec_devices[] __initdata = {
- 	&irda_device,
- 	&vou_device,
- #if defined(CONFIG_MMC_SH_MMCIF) || defined(CONFIG_MMC_SH_MMCIF_MODULE)
-+	&mmcif_power,
- 	&sh_mmcif_device,
- #endif
- };
-@@ -1254,8 +1292,6 @@ static int __init arch_setup(void)
- 	gpio_request(GPIO_FN_MMC_D0, NULL);
- 	gpio_request(GPIO_FN_MMC_CLK, NULL);
- 	gpio_request(GPIO_FN_MMC_CMD, NULL);
--	gpio_request(GPIO_PTB7, NULL);
--	gpio_direction_output(GPIO_PTB7, 0);
- 
- 	cn12_enabled = true;
- #elif defined(CONFIG_MMC_SDHI) || defined(CONFIG_MMC_SDHI_MODULE)
--- 
-1.7.2.5
+It doesn't make much odds but if you've only got one voltage the fixed
+voltage regulator is a little more idiomatic here (there's some overlap
+as they've been evolving separately.  No harm in gpio-regulator though.
 
+--TiqCXmo5T1hvSQQg
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJPkZfaAAoJEBus8iNuMP3dw8IP/0qnKyU5HHudd5Y+YHuCKCEC
+aF/SThj/8zAeHFK7pdV5cJQfH/k7I+FnQCVPtbVIZz37l/fjbE2Sc4cLK1F0C8f4
+yoOmkOEIkKuI37b5+60EKeV3oSOVyQbJpFa8z9oELHnzucR2xPTZqi6YupPY8jJA
+Z4Ur3NjpMqcNdhG4ySoyPUOpHRWF4ulDnLvoWJ45Q44x300l3d/QtQfk3hXui5s/
+5aImVt49eW+w5eM0+b7QqnswK8J7nyKw8ul3zkYR+SO4YzfHyPMRv2tJxe1mzDtt
+rWU9f3YE1SaAHfNyr/Jz2j7VWaf2eIJH0uhQOWxT6CU1fnJd9OMe+Trxm0EaAL0Z
+OP0O+OV4yHOpa1I9YIBsRR86r9vDeYHpVO/8ffkINffiSwSYV560V3Tghto9duwM
+z0612FORxRZK9iZjp0bwYfo99iyz9Nhk4ktYVfxvmoCedOfB9iHw/QQThRJcKAG0
+94xVSExsMeu+25RzYUorJCEF7oZVfrLviIm+SpeXos+2KkUKm6Lnf2nakRaCjsu9
+j20MHt73+nGSpVjFIoH9Aus++4Kgi8NigAgstrff/TtMHOgTRapwmIHbxqnuSMxn
+VDUOqupTekISzm93OvVIii9ohBuE29Q2CSRaOPoXz1yv8n4BtTD5zzFSlVZJUMHl
+rbuu+AxUWB6mYAZtzYqY
+=vt/H
+-----END PGP SIGNATURE-----
+
+--TiqCXmo5T1hvSQQg--
