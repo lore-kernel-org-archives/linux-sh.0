@@ -1,27 +1,35 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 18 Apr 2012 11:28:24 +0000
-Subject: [PATCH/RFC 0/6] update MSIOF, MMCIF, SDHI clock management
-Message-Id: <Pine.LNX.4.64.1204172345570.27488@axis700.grange>
+From: Bastian Hecht <hechtb@googlemail.com>
+Date: Fri, 20 Apr 2012 09:13:50 +0000
+Subject: [PATCH 9/9] ARM: sh-mobile: mackerel: Use hardware error correction
+Message-Id: <1334913230-23615-10-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1334913230-23615-1-git-send-email-hechtb@gmail.com>
+In-Reply-To: <1334913230-23615-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mtd@lists.infradead.org, linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pichart <laurent.pinchart@ideasonboard.com>
 
-Attention: only compile-tested for SuperH.
+Use the built-in hardware error code correction of the sh_flctl.
 
-This patch set is aiming at fixing two issues: (1) remove the use of 
-connection IDs for the above devices, (2) remove manual clock management 
-in MSIOF and MMCIF. In SDHI this has been done earlier by the commit "mmc: 
-sh_mobile_sdhi: do not manage PM clocks manually." Since I don't have 
-access to any of the affected by patch 1/6 platforms, any reviewing and 
-testing would be highly appreciated. Lightly tested on ecovec (sh7724) and 
-mackerel (sh7372). These patches should also make DT addition to affected 
-drivers easier.
-
-Thanks
-Guennadi
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ arch/arm/mach-shmobile/board-mackerel.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 1de1fb7..f8289f4 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1003,6 +1003,7 @@ static struct sh_flctl_platform_data nand_flash_data = {
+ 	.flcmncr_val	= CLK_16B_12L_4H | TYPESEL_SET
+ 			| SHBUSSEL | SEL_16BIT | SNAND_E,
+ 	.use_holden	= 1,
++	.has_hwecc	= 1,
+ };
+ 
+ static struct platform_device nand_flash_device = {
+-- 
+1.7.5.4
+
