@@ -1,163 +1,37 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 06 Apr 2012 08:30:09 +0000
-Subject: [PATCH 4/7 v2] ARM: mach-shmobile: armadillo800eva: add support LCDC0
-Message-Id: <87mx6pjm9e.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 20 Apr 2012 19:56:13 +0000
+Subject: Re: [PATCH/RFC 5/5] sh: ecovec: switch MMC power control to regulator
+Message-Id: <Pine.LNX.4.64.1204202155160.3974@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1204201835230.3974@axis700.grange>
+ <Pine.LNX.4.64.1204201850180.3974@axis700.grange>
+ <20120420170744.GC3080@opensource.wolfsonmicro.com>
+In-Reply-To: <20120420170744.GC3080@opensource.wolfsonmicro.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Cc: linux-mmc@vger.kernel.org, Liam Girdwood <lrg@ti.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+(this patch should have been 5/5, as you have guessed:-))
+
+On Fri, 20 Apr 2012, Mark Brown wrote:
+
+> On Fri, Apr 20, 2012 at 06:59:41PM +0200, Guennadi Liakhovetski wrote:
+> 
+> > +static struct gpio_regulator_state mmcif_power_states[] = {
+> > +	{ .value = 3300000, .gpios = 0 },
+> > +};
+> 
+> It doesn't make much odds but if you've only got one voltage the fixed
+> voltage regulator is a little more idiomatic here (there's some overlap
+> as they've been evolving separately.  No harm in gpio-regulator though.
+
+Indeed, that would have been even easier, thanks for the suggestion, Mark!
+
+Regards
+Guennadi
 ---
-v1 -> v2
-
-- based on linus/maseter for settings
-
- arch/arm/mach-shmobile/board-armadillo800eva.c |  105 ++++++++++++++++++++++++
- 1 files changed, 105 insertions(+), 0 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 28bc259..5cc17a8 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -24,6 +24,7 @@
- #include <linux/kernel.h>
- #include <linux/platform_device.h>
- #include <linux/gpio.h>
-+#include <linux/videodev2.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <asm/page.h>
-@@ -33,6 +34,7 @@
- #include <asm/mach/time.h>
- #include <asm/hardware/cache-l2x0.h>
- #include <mach/r8a7740.h>
-+#include <video/sh_mobile_lcdc.h>
- 
- /*
-  * CON1		Camera Module
-@@ -92,10 +94,66 @@
-  *-----------+---------------+----------------------------
-  */
- 
-+/* LCDC */
-+static struct fb_videomode lcdc0_mode = {
-+	.name		= "AMPIER/AM-800480",
-+	.xres		= 800,
-+	.yres		= 480,
-+	.left_margin	= 88,
-+	.right_margin	= 40,
-+	.hsync_len	= 128,
-+	.upper_margin	= 20,
-+	.lower_margin	= 5,
-+	.vsync_len	= 5,
-+	.sync		= 0,
-+};
-+
-+static struct sh_mobile_lcdc_info lcdc0_info = {
-+	.clock_source	= LCDC_CLK_BUS,
-+	.ch[0] = {
-+		.chan		= LCDC_CHAN_MAINLCD,
-+		.fourcc		= V4L2_PIX_FMT_RGB565,
-+		.interface_type	= RGB24,
-+		.clock_divider	= 5,
-+		.flags		= 0,
-+		.lcd_modes	= &lcdc0_mode,
-+		.num_modes	= 1,
-+		.panel_cfg = {
-+			.width	= 111,
-+			.height = 68,
-+		},
-+	},
-+};
-+
-+static struct resource lcdc0_resources[] = {
-+	[0] = {
-+		.name	= "LCD0",
-+		.start	= 0xfe940000,
-+		.end	= 0xfe943fff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= intcs_evt2irq(0x580),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device lcdc0_device = {
-+	.name		= "sh_mobile_lcdc_fb",
-+	.num_resources	= ARRAY_SIZE(lcdc0_resources),
-+	.resource	= lcdc0_resources,
-+	.id		= 0,
-+	.dev	= {
-+		.platform_data	= &lcdc0_info,
-+		.coherent_dma_mask = ~0,
-+	},
-+};
-+
- /*
-  * board devices
-  */
- static struct platform_device *eva_devices[] __initdata = {
-+	&lcdc0_device,
- };
- 
- /*
-@@ -109,6 +167,53 @@ static void __init eva_init(void)
- 	gpio_request(GPIO_FN_SCIFA1_RXD, NULL);
- 	gpio_request(GPIO_FN_SCIFA1_TXD, NULL);
- 
-+	/* LCDC0 */
-+	gpio_request(GPIO_FN_LCDC0_SELECT,	NULL);
-+	gpio_request(GPIO_FN_LCD0_D0,		NULL);
-+	gpio_request(GPIO_FN_LCD0_D1,		NULL);
-+	gpio_request(GPIO_FN_LCD0_D2,		NULL);
-+	gpio_request(GPIO_FN_LCD0_D3,		NULL);
-+	gpio_request(GPIO_FN_LCD0_D4,		NULL);
-+	gpio_request(GPIO_FN_LCD0_D5,		NULL);
-+	gpio_request(GPIO_FN_LCD0_D6,		NULL);
-+	gpio_request(GPIO_FN_LCD0_D7,		NULL);
-+	gpio_request(GPIO_FN_LCD0_D8,		NULL);
-+	gpio_request(GPIO_FN_LCD0_D9,		NULL);
-+	gpio_request(GPIO_FN_LCD0_D10,		NULL);
-+	gpio_request(GPIO_FN_LCD0_D11,		NULL);
-+	gpio_request(GPIO_FN_LCD0_D12,		NULL);
-+	gpio_request(GPIO_FN_LCD0_D13,		NULL);
-+	gpio_request(GPIO_FN_LCD0_D14,		NULL);
-+	gpio_request(GPIO_FN_LCD0_D15,		NULL);
-+	gpio_request(GPIO_FN_LCD0_D16,		NULL);
-+	gpio_request(GPIO_FN_LCD0_D17,		NULL);
-+	gpio_request(GPIO_FN_LCD0_D18_PORT40,	NULL);
-+	gpio_request(GPIO_FN_LCD0_D19_PORT4,	NULL);
-+	gpio_request(GPIO_FN_LCD0_D20_PORT3,	NULL);
-+	gpio_request(GPIO_FN_LCD0_D21_PORT2,	NULL);
-+	gpio_request(GPIO_FN_LCD0_D22_PORT0,	NULL);
-+	gpio_request(GPIO_FN_LCD0_D23_PORT1,	NULL);
-+	gpio_request(GPIO_FN_LCD0_DCK,		NULL);
-+	gpio_request(GPIO_FN_LCD0_VSYN,		NULL);
-+	gpio_request(GPIO_FN_LCD0_HSYN,		NULL);
-+	gpio_request(GPIO_FN_LCD0_DISP,		NULL);
-+	gpio_request(GPIO_FN_LCD0_LCLK_PORT165,	NULL);
-+
-+	gpio_request(GPIO_PORT61, NULL); /* LCDDON */
-+	gpio_direction_output(GPIO_PORT61, 1);
-+
-+	gpio_request(GPIO_PORT202, NULL); /* LCD0_LED_CONT */
-+	gpio_direction_output(GPIO_PORT202, 0);
-+
-+	/*
-+	 * CAUTION
-+	 *
-+	 * DBGMD/LCDC0/FSIA MUX
-+	 * DBGMD_SELECT_B should be set after setting PFC Function.
-+	 */
-+	gpio_request(GPIO_PORT176, NULL);
-+	gpio_direction_output(GPIO_PORT176, 1);
-+
- #ifdef CONFIG_CACHE_L2X0
- 	/* Early BRESP enable, Shared attribute override enable, 32K*8way */
- 	l2x0_init(__io(0xf0002000), 0x40440000, 0x82000fff);
--- 
-1.7.5.4
-
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
