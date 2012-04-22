@@ -1,62 +1,36 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 16 Apr 2012 01:55:04 +0000
-Subject: Re: [PATCH 2/2] ARM: mach-shmobile: sh7372 CEU supports up to 8188x8188 images
-Message-Id: <20120416015504.GA15753@verge.net.au>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sun, 22 Apr 2012 21:59:04 +0000
+Subject: ASoC: sh: fsi: Build proble in 3.4-rc4
+Message-Id: <201204230001.41270.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1203141600210.25284@axis700.grange>
- <Pine.LNX.4.64.1203141601060.25284@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1203141601060.25284@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Linux Media Mailing List <linux-media@vger.kernel.org>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Paul Mundt <lethal@linux-sh.org>, Linux-ALSA <alsa-devel@alsa-project.org>, Liam Girdwood <lrg@ti.com>, Magnus Damm <magnus.damm@gmail.com>, Mark Brown <broonie@opensource.wolfsonmicro.com>
 
-On Wed, Mar 14, 2012 at 04:02:24PM +0100, Guennadi Liakhovetski wrote:
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Hi all,
 
-Reviewed-by: Simon Horman <horms@verge.net.au>
+There is a build problem in sound/soc/sh/fsi.c which seems to be fixed by
+the following patch.  I'm unsure if that is the right fix, though.
 
-> ---
-> 
-> This patch we can push some time after the first one in this series gets 
-> in, no breakage is caused.
-> 
->  arch/arm/mach-shmobile/board-ap4evb.c   |    2 ++
->  arch/arm/mach-shmobile/board-mackerel.c |    2 ++
->  2 files changed, 4 insertions(+), 0 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-> index aab0a34..f67aa03 100644
-> --- a/arch/arm/mach-shmobile/board-ap4evb.c
-> +++ b/arch/arm/mach-shmobile/board-ap4evb.c
-> @@ -1009,6 +1009,8 @@ static struct sh_mobile_ceu_companion csi2 = {
->  
->  static struct sh_mobile_ceu_info sh_mobile_ceu_info = {
->  	.flags = SH_CEU_FLAG_USE_8BIT_BUS,
-> +	.max_width = 8188,
-> +	.max_height = 8188,
->  	.csi2 = &csi2,
->  };
->  
-> diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-> index 9b42fbd..f790772 100644
-> --- a/arch/arm/mach-shmobile/board-mackerel.c
-> +++ b/arch/arm/mach-shmobile/board-mackerel.c
-> @@ -1270,6 +1270,8 @@ static void mackerel_camera_del(struct soc_camera_device *icd)
->  
->  static struct sh_mobile_ceu_info sh_mobile_ceu_info = {
->  	.flags = SH_CEU_FLAG_USE_8BIT_BUS,
-> +	.max_width = 8188,
-> +	.max_height = 8188,
->  };
->  
->  static struct resource ceu_resources[] = {
-> -- 
-> 1.7.2.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Thanks,
+Rafael
+
+
+---
+ sound/soc/sh/fsi.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+Index: linux/sound/soc/sh/fsi.c
+=================================--- linux.orig/sound/soc/sh/fsi.c
++++ linux/sound/soc/sh/fsi.c
+@@ -1003,7 +1003,7 @@ static void fsi_dma_do_tasklet(unsigned
+ 
+ 	desc = chan->device->device_prep_slave_sg(chan, &sg, 1, dir,
+ 						  DMA_PREP_INTERRUPT |
+-						  DMA_CTRL_ACK);
++						  DMA_CTRL_ACK, NULL);
+ 	if (!desc) {
+ 		dev_err(dai->dev, "device_prep_slave_sg() fail\n");
+ 		return;
