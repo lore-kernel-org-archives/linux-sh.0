@@ -1,32 +1,34 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Sun, 22 Apr 2012 20:14:40 +0000
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sun, 22 Apr 2012 21:25:34 +0000
 Subject: Re: [git pull] Renesas DT changes for v3.5
-Message-Id: <201204222014.40964.arnd@arndb.de>
+Message-Id: <201204222325.34411.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201204152320.56147.rjw@sisk.pl>
-In-Reply-To: <201204152320.56147.rjw@sisk.pl>
+References: <201204152320.56147.rjw@sisk.pl> <201204222014.40964.arnd@arndb.de>
+In-Reply-To: <201204222014.40964.arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sunday 15 April 2012, Rafael J. Wysocki wrote:
-> Please pull changes since commit 0034102808e0dbbf3a2394b82b1bb40b5778de9e:
+On Sunday, April 22, 2012, Arnd Bergmann wrote:
+> On Sunday 15 April 2012, Rafael J. Wysocki wrote:
+> > Please pull changes since commit 0034102808e0dbbf3a2394b82b1bb40b5778de9e:
+> > 
+> >     Linux 3.4-rc2
+> > 
+> > with top-most commit 3b7b70552afe351a8bd8fff1eb2d60aab2206576:
+> > 
+> >     ARM: mach-shmobile: sh7372 generic board support via DT V2
+> > 
+> > from the git repository at:
+> > 
+> >   git://git.kernel.org/pub/scm/linux/kernel/git/rafael/renesas.git dt
+> > 
+> > to receive material requisite for preliminary support of device trees on
+> > Renesas platforms.
 > 
->     Linux 3.4-rc2
-> 
-> with top-most commit 3b7b70552afe351a8bd8fff1eb2d60aab2206576:
-> 
->     ARM: mach-shmobile: sh7372 generic board support via DT V2
-> 
-> from the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/rafael/renesas.git dt
-> 
-> to receive material requisite for preliminary support of device trees on
-> Renesas platforms.
+> Pulled into next/dt now, thanks and sorry for the delay.
 
-Pulled into next/dt now, thanks and sorry for the delay.
+No problem, thanks a lot!
 
-	Arnd
-
+Rafael
