@@ -1,49 +1,112 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 23 Apr 2012 07:03:10 +0000
-Subject: [PATCH 1/2] ARM: mach-shmobile: clock-sh73a0: add FSI clock
-Message-Id: <87zka37wwl.wl%kuninori.morimoto.gx@renesas.com>
+From: Anton Vorontsov <anton.vorontsov@linaro.org>
+Date: Mon, 23 Apr 2012 07:07:36 +0000
+Subject: [PATCH 1/9] cpu: Introduce clear_tasks_mm_cpumask() helper
+Message-Id: <20120423070736.GA30752@lizard>
 List-Id: <linux-sh.vger.kernel.org>
-References: <w3pzkuyihfm.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <w3pzkuyihfm.wl%kuninori.morimoto.gx@renesas.com>
+References: <20120423070641.GA27702@lizard>
+In-Reply-To: <20120423070641.GA27702@lizard>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Many architectures clear tasks' mm_cpumask like this:
+
+	read_lock(&tasklist_lock);
+	for_each_process(p) {
+		if (p->mm)
+			cpumask_clear_cpu(cpu, mm_cpumask(p->mm));
+	}
+	read_unlock(&tasklist_lock);
+
+Depending on the context, the code above may have several problems,
+such as:
+
+1. Working with task->mm w/o getting mm or grabing the task lock is
+   dangerous as ->mm might disappear (exit_mm() assigns NULL under
+   task_lock(), so tasklist lock is not enough).
+
+2. Checking for process->mm is not enough because process' main
+   thread may exit or detach its mm via use_mm(), but other threads
+   may still have a valid mm.
+
+This patch implements a small helper function that does things
+correctly, i.e.:
+
+1. We take the task's lock while whe handle its mm (we can't use
+   get_task_mm()/mmput() pair as mmput() might sleep);
+
+2. To catch exited main thread case, we use find_lock_task_mm(),
+   which walks up all threads and returns an appropriate task
+   (with task lock held).
+
+Also, Per Peter Zijlstra's idea, now we don't grab tasklist_lock in
+the new helper, instead we take the rcu read lock. We can do this
+because the function is called after the cpu is taken down and marked
+offline, so no new tasks will get this cpu set in their mm mask.
+
+Signed-off-by: Anton Vorontsov <anton.vorontsov@linaro.org>
 ---
- arch/arm/mach-shmobile/clock-sh73a0.c |    4 +++-
- 1 files changed, 3 insertions(+), 1 deletions(-)
+ include/linux/cpu.h |    1 +
+ kernel/cpu.c        |   26 ++++++++++++++++++++++++++
+ 2 files changed, 27 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-index 472d1f5..77a86dd 100644
---- a/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-@@ -477,7 +477,7 @@ enum { MSTP001,
- 	MSTP129, MSTP128, MSTP127, MSTP126, MSTP125, MSTP118, MSTP116, MSTP100,
- 	MSTP219,
- 	MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
--	MSTP331, MSTP329, MSTP325, MSTP323, MSTP318,
-+	MSTP331, MSTP329, MSTP328, MSTP325, MSTP323, MSTP318,
- 	MSTP314, MSTP313, MSTP312, MSTP311,
- 	MSTP303, MSTP302, MSTP301, MSTP300,
- 	MSTP411, MSTP410, MSTP403,
-@@ -506,6 +506,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP200] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 0, 0), /* SCIFA4 */
- 	[MSTP331] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR3, 31, 0), /* SCIFA6 */
- 	[MSTP329] = MSTP(&r_clk, SMSTPCR3, 29, 0), /* CMT10 */
-+	[MSTP328] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 28, 0), /*FSI*/
- 	[MSTP325] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR3, 25, 0), /* IrDA */
- 	[MSTP323] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 23, 0), /* IIC1 */
- 	[MSTP318] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 18, 0), /* SY-DMAC */
-@@ -561,6 +562,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP200]), /* SCIFA4 */
- 	CLKDEV_DEV_ID("sh-sci.6", &mstp_clks[MSTP331]), /* SCIFA6 */
- 	CLKDEV_DEV_ID("sh_cmt.10", &mstp_clks[MSTP329]), /* CMT10 */
-+	CLKDEV_DEV_ID("sh_fsi2", &mstp_clks[MSTP328]), /* FSI */
- 	CLKDEV_DEV_ID("sh_irda.0", &mstp_clks[MSTP325]), /* IrDA */
- 	CLKDEV_DEV_ID("i2c-sh_mobile.1", &mstp_clks[MSTP323]), /* I2C1 */
- 	CLKDEV_DEV_ID("sh-dma-engine.0", &mstp_clks[MSTP318]), /* SY-DMAC */
+diff --git a/include/linux/cpu.h b/include/linux/cpu.h
+index ee28844..d2ca49f 100644
+--- a/include/linux/cpu.h
++++ b/include/linux/cpu.h
+@@ -179,6 +179,7 @@ extern void put_online_cpus(void);
+ #define hotcpu_notifier(fn, pri)	cpu_notifier(fn, pri)
+ #define register_hotcpu_notifier(nb)	register_cpu_notifier(nb)
+ #define unregister_hotcpu_notifier(nb)	unregister_cpu_notifier(nb)
++void clear_tasks_mm_cpumask(int cpu);
+ int cpu_down(unsigned int cpu);
+ 
+ #ifdef CONFIG_ARCH_CPU_PROBE_RELEASE
+diff --git a/kernel/cpu.c b/kernel/cpu.c
+index 2060c6e..ecdf499 100644
+--- a/kernel/cpu.c
++++ b/kernel/cpu.c
+@@ -10,6 +10,8 @@
+ #include <linux/sched.h>
+ #include <linux/unistd.h>
+ #include <linux/cpu.h>
++#include <linux/oom.h>
++#include <linux/rcupdate.h>
+ #include <linux/export.h>
+ #include <linux/kthread.h>
+ #include <linux/stop_machine.h>
+@@ -171,6 +173,30 @@ void __ref unregister_cpu_notifier(struct notifier_block *nb)
+ }
+ EXPORT_SYMBOL(unregister_cpu_notifier);
+ 
++void clear_tasks_mm_cpumask(int cpu)
++{
++	struct task_struct *p;
++
++	/*
++	 * This function is called after the cpu is taken down and marked
++	 * offline, so its not like new tasks will ever get this cpu set in
++	 * their mm mask. -- Peter Zijlstra
++	 * Thus, we may use rcu_read_lock() here, instead of grabbing
++	 * full-fledged tasklist_lock.
++	 */
++	rcu_read_lock();
++	for_each_process(p) {
++		struct task_struct *t;
++
++		t = find_lock_task_mm(p);
++		if (!t)
++			continue;
++		cpumask_clear_cpu(cpu, mm_cpumask(t->mm));
++		task_unlock(t);
++	}
++	rcu_read_unlock();
++}
++
+ static inline void check_for_tasks(int cpu)
+ {
+ 	struct task_struct *p;
 -- 
-1.7.5.4
+1.7.9.2
 
