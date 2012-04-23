@@ -1,41 +1,69 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 16 Apr 2012 04:55:02 +0000
-Subject: Re: [PATCH 0/3 v2] ARM: mach-shmobile: r8a7740: USB Function support
-Message-Id: <87zkac5l99.wl%kuninori.morimoto.gx@renesas.com>
+From: Anton Vorontsov <anton.vorontsov@linaro.org>
+Date: Mon, 23 Apr 2012 07:08:38 +0000
+Subject: [PATCH 3/9] powerpc: Use clear_tasks_mm_cpumask()
+Message-Id: <20120423070838.GC30752@lizard>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20120423070641.GA27702@lizard>
+In-Reply-To: <20120423070641.GA27702@lizard>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+Current CPU hotplug code has some task->mm handling issues:
 
-Hi Rafael, Simon
+1. Working with task->mm w/o getting mm or grabing the task lock is
+   dangerous as ->mm might disappear (exit_mm() assigns NULL under
+   task_lock(), so tasklist lock is not enough).
 
-These are v2 of USB Function support patches for Armadillo board.
+   We can't use get_task_mm()/mmput() pair as mmput() might sleep,
+   so we must take the task lock while handle its mm.
 
-Kuninori Morimoto (3):
-      ARM: mach-shmobile: r8a7740: add usb clock support
-      ARM: mach-shmobile: armadillo800eva: tidyup dipswitch explain for SDHI
-      ARM: mach-shmobile: armadillo800eva: add USB function support
+2. Checking for process->mm is not enough because process' main
+   thread may exit or detach its mm via use_mm(), but other threads
+   may still have a valid mm.
 
-#1, #2 are same as v1
-I added explain for workaround on #3.
+   To fix this we would need to use find_lock_task_mm(), which would
+   walk up all threads and returns an appropriate task (with task
+   lock held).
 
->> Simon
+clear_tasks_mm_cpumask() has all the issues fixed, so let's use it.
 
-Please add below on your .config
-
-CONFIG_USB_RENESAS_USBHS=y
-CONFIG_USB_RENESAS_USBHS_UDC=y
-
-and select USB Gadget driver.
-I used CONFIG_USB_ETH for test.
-
-And set SW1.6 ON, then you can use CN24.
-
-# insmod g_ether.ko
-# ifconfig usb0 xxx.xxx.xxx.xxx up
-
-Best regards
+Suggested-by: Oleg Nesterov <oleg@redhat.com>
+Signed-off-by: Anton Vorontsov <anton.vorontsov@linaro.org>
 ---
-Kuninori Morimoto
+ arch/powerpc/mm/mmu_context_nohash.c |   11 ++---------
+ 1 file changed, 2 insertions(+), 9 deletions(-)
+
+diff --git a/arch/powerpc/mm/mmu_context_nohash.c b/arch/powerpc/mm/mmu_context_nohash.c
+index 5b63bd3..e779642 100644
+--- a/arch/powerpc/mm/mmu_context_nohash.c
++++ b/arch/powerpc/mm/mmu_context_nohash.c
+@@ -333,9 +333,7 @@ static int __cpuinit mmu_context_cpu_notify(struct notifier_block *self,
+ 					    unsigned long action, void *hcpu)
+ {
+ 	unsigned int cpu = (unsigned int)(long)hcpu;
+-#ifdef CONFIG_HOTPLUG_CPU
+-	struct task_struct *p;
+-#endif
++
+ 	/* We don't touch CPU 0 map, it's allocated at aboot and kept
+ 	 * around forever
+ 	 */
+@@ -358,12 +356,7 @@ static int __cpuinit mmu_context_cpu_notify(struct notifier_block *self,
+ 		stale_map[cpu] = NULL;
+ 
+ 		/* We also clear the cpu_vm_mask bits of CPUs going away */
+-		read_lock(&tasklist_lock);
+-		for_each_process(p) {
+-			if (p->mm)
+-				cpumask_clear_cpu(cpu, mm_cpumask(p->mm));
+-		}
+-		read_unlock(&tasklist_lock);
++		clear_tasks_mm_cpumask(cpu);
+ 	break;
+ #endif /* CONFIG_HOTPLUG_CPU */
+ 	}
+-- 
+1.7.9.2
+
