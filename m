@@ -1,42 +1,37 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 20 Apr 2012 16:59:47 +0000
-Subject: [PATCH 1/5] mmc: sh_mmcif: remove redundant .down_pwr() callback
-Message-Id: <Pine.LNX.4.64.1204201838360.3974@axis700.grange>
+From: Anton Vorontsov <anton.vorontsov@linaro.org>
+Date: Mon, 23 Apr 2012 07:06:41 +0000
+Subject: [PATCH v3 0/9] Fixes for common mistakes w/ for_each_process and task->mm
+Message-Id: <20120423070641.GA27702@lizard>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1204201835230.3974@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1204201835230.3974@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: Liam Girdwood <lrg@ti.com>, Mark Brown <broonie@opensource.wolfsonmicro.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From the original version of sh_mmcif the .set_pwr() callback has only been
-used to turn the card's power on, and the .down_pwr() callback has been
-used to turn it off. .set_pwr() can be used for both these tasks, which is
-also how it is implemented by the only user of this API: the SH7724 ecovec
-board.
+Hi all,
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
- drivers/mmc/host/sh_mmcif.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+This is another resend of several task->mm fixes, the bugs I found
+during LMK code audit. Architectures were traverse the tasklist
+in an unsafe manner, plus there are a few cases of unsafe access to
+task->mm in general.
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index ed59392..19c7576 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -957,8 +957,8 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 			pm_runtime_put(&host->pd->dev);
- 			clk_disable(host->hclk);
- 			host->power = false;
--			if (p->down_pwr && ios->power_mode = MMC_POWER_OFF)
--				p->down_pwr(host->pd);
-+			if (p->set_pwr && ios->power_mode = MMC_POWER_OFF)
-+				p->set_pwr(host->pd, 0);
- 		}
- 		host->state = STATE_IDLE;
- 		return;
+There were no objections on the previous resend, and the final words
+were somewhere along "the patches are fine" line.
+
+In v3:
+- Dropped a controversal 'Make find_lock_task_mm() sparse-aware' patch;
+- Reword arm and sh commit messages, per Oleg Nesterov's suggestions;
+- Added an optimization trick in clear_tasks_mm_cpumask(): take only
+  the rcu read lock, no need for the whole tasklist_lock.
+  Suggested by Peter Zijlstra.
+
+In v2: 
+- introduced a small helper in cpu.c: most arches duplicate the
+  same [buggy] code snippet, so it's better to fix it and move the
+  logic into a common function.
+
+Thanks,
+
 -- 
-1.7.2.5
-
+Anton Vorontsov
+Email: cbouatmailru@gmail.com
