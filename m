@@ -1,43 +1,61 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 24 Apr 2012 16:41:41 +0000
-Subject: [PATCH 1/7] mmc: tmio: stop interface clock before runtime PM suspending
-Message-Id: <1335285707-22707-2-git-send-email-g.liakhovetski@gmx.de>
+From: Anton Vorontsov <anton.vorontsov@linaro.org>
+Date: Mon, 23 Apr 2012 07:09:15 +0000
+Subject: [PATCH 6/9] blackfin: Fix possible deadlock in decode_address()
+Message-Id: <20120423070915.GF30752@lizard>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1335285707-22707-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1335285707-22707-1-git-send-email-g.liakhovetski@gmx.de>
+References: <20120423070641.GA27702@lizard>
+In-Reply-To: <20120423070641.GA27702@lizard>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-The call to pm_runtime_put() in tmio-mmc's .set_ios() method can switch
-off the supplying clock or even power down the whole unit. Therefore,
-calling tmio_mmc_clk_stop() after that can be redundant, put it before.
+Oleg Nesterov found an interesting deadlock possibility:
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Magnus Damm <magnus.damm@gmail.com>
+> sysrq_showregs_othercpus() does smp_call_function(showacpu)
+> and showacpu() show_stack()->decode_address(). Now suppose that IPI
+> interrupts the task holding read_lock(tasklist).
+
+To fix this, blackfin should not grab the write_ variant of the
+tasklist lock, read_ one is enough.
+
+Suggested-by: Oleg Nesterov <oleg@redhat.com>
+Signed-off-by: Anton Vorontsov <anton.vorontsov@linaro.org>
 ---
- drivers/mmc/host/tmio_mmc_pio.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ arch/blackfin/kernel/trace.c |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 9a7996a..0d2643b 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -809,11 +809,11 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 	} else if (ios->power_mode != MMC_POWER_UP) {
- 		if (host->set_pwr && ios->power_mode = MMC_POWER_OFF)
- 			host->set_pwr(host->pdev, 0);
-+		tmio_mmc_clk_stop(host);
- 		if (host->power) {
- 			host->power = false;
- 			pm_runtime_put(dev);
- 		}
--		tmio_mmc_clk_stop(host);
- 	}
+diff --git a/arch/blackfin/kernel/trace.c b/arch/blackfin/kernel/trace.c
+index d08f0e3..f7f7a18 100644
+--- a/arch/blackfin/kernel/trace.c
++++ b/arch/blackfin/kernel/trace.c
+@@ -29,7 +29,7 @@ void decode_address(char *buf, unsigned long address)
+ {
+ 	struct task_struct *p;
+ 	struct mm_struct *mm;
+-	unsigned long flags, offset;
++	unsigned long offset;
+ 	struct rb_node *n;
  
- 	switch (ios->bus_width) {
+ #ifdef CONFIG_KALLSYMS
+@@ -113,7 +113,7 @@ void decode_address(char *buf, unsigned long address)
+ 	 * mappings of all our processes and see if we can't be a whee
+ 	 * bit more specific
+ 	 */
+-	write_lock_irqsave(&tasklist_lock, flags);
++	read_lock(&tasklist_lock);
+ 	for_each_process(p) {
+ 		struct task_struct *t;
+ 
+@@ -186,7 +186,7 @@ __continue:
+ 	sprintf(buf, "/* kernel dynamic memory */");
+ 
+ done:
+-	write_unlock_irqrestore(&tasklist_lock, flags);
++	read_unlock(&tasklist_lock);
+ }
+ 
+ #define EXPAND_LEN ((1 << CONFIG_DEBUG_BFIN_HWTRACE_EXPAND_LEN) * 256 - 1)
 -- 
-1.7.2.5
+1.7.9.2
 
