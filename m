@@ -1,172 +1,57 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 06 Apr 2012 08:29:36 +0000
-Subject: [PATCH 3/7 v2] ARM: mach-shmobile: armadillo800eva: add defconfig
-Message-Id: <87obr5jmab.wl%kuninori.morimoto.gx@renesas.com>
+From: Anton Vorontsov <anton.vorontsov@linaro.org>
+Date: Mon, 23 Apr 2012 07:08:28 +0000
+Subject: [PATCH 2/9] arm: Use clear_tasks_mm_cpumask()
+Message-Id: <20120423070828.GB30752@lizard>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20120423070641.GA27702@lizard>
+In-Reply-To: <20120423070641.GA27702@lizard>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Checking for process->mm is not enough because process' main
+thread may exit or detach its mm via use_mm(), but other threads
+may still have a valid mm.
+
+To fix this we would need to use find_lock_task_mm(), which would
+walk up all threads and returns an appropriate task (with task
+lock held).
+
+clear_tasks_mm_cpumask() has this issue fixed, so let's use it.
+
+Suggested-by: Oleg Nesterov <oleg@redhat.com>
+Signed-off-by: Anton Vorontsov <anton.vorontsov@linaro.org>
 ---
-v1 -> v2
+ arch/arm/kernel/smp.c |    8 +-------
+ 1 file changed, 1 insertion(+), 7 deletions(-)
 
-- based on linus/master
-
- arch/arm/configs/armadillo800eva_defconfig |  143 ++++++++++++++++++++++++++++
- 1 files changed, 143 insertions(+), 0 deletions(-)
- create mode 100644 arch/arm/configs/armadillo800eva_defconfig
-
-diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
-new file mode 100644
-index 0000000..0d20749
---- /dev/null
-+++ b/arch/arm/configs/armadillo800eva_defconfig
-@@ -0,0 +1,143 @@
-+CONFIG_EXPERIMENTAL=y
-+CONFIG_SYSVIPC=y
-+CONFIG_IKCONFIG=y
-+CONFIG_IKCONFIG_PROC=y
-+CONFIG_LOG_BUF_SHIFT
-+# CONFIG_UTS_NS is not set
-+# CONFIG_IPC_NS is not set
-+# CONFIG_USER_NS is not set
-+# CONFIG_PID_NS is not set
-+CONFIG_SYSFS_DEPRECATED=y
-+CONFIG_SYSFS_DEPRECATED_V2=y
-+CONFIG_CC_OPTIMIZE_FOR_SIZE=y
-+CONFIG_KALLSYMS_ALL=y
-+CONFIG_SLAB=y
-+CONFIG_MODULES=y
-+CONFIG_MODULE_UNLOAD=y
-+CONFIG_MODULE_FORCE_UNLOAD=y
-+# CONFIG_BLK_DEV_BSG is not set
-+# CONFIG_IOSCHED_DEADLINE is not set
-+# CONFIG_IOSCHED_CFQ is not set
-+CONFIG_ARCH_SHMOBILE=y
-+CONFIG_ARCH_R8A7740=y
-+CONFIG_MACH_ARMADILLO800EVA=y
-+# CONFIG_SH_TIMER_TMU is not set
-+# CONFIG_ARM_THUMB is not set
-+CONFIG_CPU_BPREDICT_DISABLE=y
-+# CONFIG_CACHE_L2X0 is not set
-+CONFIG_ARM_ERRATA_430973=y
-+CONFIG_ARM_ERRATA_458693=y
-+CONFIG_ARM_ERRATA_460075=y
-+CONFIG_ARM_ERRATA_720789=y
-+CONFIG_ARM_ERRATA_743622=y
-+CONFIG_ARM_ERRATA_751472=y
-+CONFIG_ARM_ERRATA_754322=y
-+CONFIG_AEABI=y
-+# CONFIG_OABI_COMPAT is not set
-+CONFIG_FORCE_MAX_ZONEORDER
-+CONFIG_ZBOOT_ROM_TEXT=0x0
-+CONFIG_ZBOOT_ROM_BSS=0x0
-+CONFIG_CMDLINE="console=tty0 console=ttySC1,115200 earlyprintk=sh-sci.1,115200 ignore_loglevel root=/dev/nfs ip=dhcp nfsroot=,rsize@96,wsize@96"
-+CONFIG_CMDLINE_FORCE=y
-+CONFIG_KEXEC=y
-+# CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
-+# CONFIG_SUSPEND is not set
-+CONFIG_NET=y
-+CONFIG_PACKET=y
-+CONFIG_UNIX=y
-+CONFIG_INET=y
-+CONFIG_IP_PNP=y
-+CONFIG_IP_PNP_DHCP=y
-+# CONFIG_INET_XFRM_MODE_TRANSPORT is not set
-+# CONFIG_INET_XFRM_MODE_TUNNEL is not set
-+# CONFIG_INET_XFRM_MODE_BEET is not set
-+# CONFIG_INET_LRO is not set
-+# CONFIG_INET_DIAG is not set
-+# CONFIG_IPV6 is not set
-+# CONFIG_WIRELESS is not set
-+CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
-+CONFIG_SCSI=y
-+CONFIG_BLK_DEV_SD=y
-+CONFIG_MD=y
-+CONFIG_BLK_DEV_DM=y
-+CONFIG_NETDEVICES=y
-+# CONFIG_NET_VENDOR_BROADCOM is not set
-+# CONFIG_NET_VENDOR_CHELSIO is not set
-+# CONFIG_NET_VENDOR_FARADAY is not set
-+# CONFIG_NET_VENDOR_INTEL is not set
-+# CONFIG_NET_VENDOR_MARVELL is not set
-+# CONFIG_NET_VENDOR_MICREL is not set
-+# CONFIG_NET_VENDOR_NATSEMI is not set
-+CONFIG_SH_ETH=y
-+# CONFIG_NET_VENDOR_SEEQ is not set
-+# CONFIG_NET_VENDOR_STMICRO is not set
-+# CONFIG_WLAN is not set
-+# CONFIG_INPUT_MOUSEDEV_PSAUX is not set
-+CONFIG_INPUT_EVDEV=y
-+# CONFIG_KEYBOARD_ATKBD is not set
-+CONFIG_KEYBOARD_GPIO=y
-+# CONFIG_INPUT_MOUSE is not set
-+CONFIG_INPUT_TOUCHSCREEN=y
-+CONFIG_TOUCHSCREEN_ST1232=y
-+# CONFIG_SERIO is not set
-+# CONFIG_LEGACY_PTYS is not set
-+CONFIG_SERIAL_SH_SCI=y
-+CONFIG_SERIAL_SH_SCI_NR_UARTS=8
-+CONFIG_SERIAL_SH_SCI_CONSOLE=y
-+# CONFIG_HW_RANDOM is not set
-+CONFIG_I2C=y
-+CONFIG_I2C_SH_MOBILE=y
-+# CONFIG_HWMON is not set
-+CONFIG_FB=y
-+CONFIG_FB_MODE_HELPERS=y
-+CONFIG_FB_SH_MOBILE_LCDC=y
-+CONFIG_LCD_CLASS_DEVICE=y
-+CONFIG_FRAMEBUFFER_CONSOLE=y
-+CONFIG_FRAMEBUFFER_CONSOLE_DETECT_PRIMARY=y
-+CONFIG_LOGO=y
-+# CONFIG_LOGO_LINUX_MONO is not set
-+# CONFIG_LOGO_LINUX_VGA16 is not set
-+CONFIG_SOUND=y
-+CONFIG_SND=y
-+# CONFIG_SND_SUPPORT_OLD_API is not set
-+# CONFIG_SND_VERBOSE_PROCFS is not set
-+# CONFIG_SND_DRIVERS is not set
-+# CONFIG_SND_ARM is not set
-+CONFIG_SND_SOC=y
-+CONFIG_SND_SOC_SH4_FSI=y
-+# CONFIG_HID_SUPPORT is not set
-+# CONFIG_USB_SUPPORT is not set
-+CONFIG_UIO=y
-+CONFIG_UIO_PDRV_GENIRQ=y
-+# CONFIG_DNOTIFY is not set
-+CONFIG_MSDOS_FS=y
-+CONFIG_VFAT_FS=y
-+CONFIG_TMPFS=y
-+# CONFIG_MISC_FILESYSTEMS is not set
-+CONFIG_NFS_FS=y
-+CONFIG_NFS_V3=y
-+CONFIG_NFS_V3_ACL=y
-+CONFIG_NFS_V4=y
-+CONFIG_NFS_V4_1=y
-+CONFIG_ROOT_NFS=y
-+CONFIG_NLS_CODEPAGE_437=y
-+CONFIG_NLS_ISO8859_1=y
-+# CONFIG_ENABLE_WARN_DEPRECATED is not set
-+# CONFIG_ENABLE_MUST_CHECK is not set
-+CONFIG_MAGIC_SYSRQ=y
-+CONFIG_DEBUG_SECTION_MISMATCH=y
-+CONFIG_DEBUG_KERNEL=y
-+CONFIG_LOCKUP_DETECTOR=y
-+CONFIG_BOOTPARAM_SOFTLOCKUP_PANIC=y
-+# CONFIG_DETECT_HUNG_TASK is not set
-+# CONFIG_SCHED_DEBUG is not set
-+CONFIG_DEBUG_KMEMLEAK=y
-+CONFIG_DEBUG_SPINLOCK=y
-+CONFIG_DEBUG_INFO=y
-+# CONFIG_FTRACE is not set
-+CONFIG_CRYPTO=y
-+CONFIG_CRYPTO_CBC=y
-+CONFIG_CRYPTO_MD5=y
-+CONFIG_CRYPTO_DES=y
-+CONFIG_CRYPTO_ANSI_CPRNG=y
-+CONFIG_XZ_DEC=y
+diff --git a/arch/arm/kernel/smp.c b/arch/arm/kernel/smp.c
+index addbbe8..e824ee4 100644
+--- a/arch/arm/kernel/smp.c
++++ b/arch/arm/kernel/smp.c
+@@ -130,7 +130,6 @@ static void percpu_timer_stop(void);
+ int __cpu_disable(void)
+ {
+ 	unsigned int cpu = smp_processor_id();
+-	struct task_struct *p;
+ 	int ret;
+ 
+ 	ret = platform_cpu_disable(cpu);
+@@ -160,12 +159,7 @@ int __cpu_disable(void)
+ 	flush_cache_all();
+ 	local_flush_tlb_all();
+ 
+-	read_lock(&tasklist_lock);
+-	for_each_process(p) {
+-		if (p->mm)
+-			cpumask_clear_cpu(cpu, mm_cpumask(p->mm));
+-	}
+-	read_unlock(&tasklist_lock);
++	clear_tasks_mm_cpumask(cpu);
+ 
+ 	return 0;
+ }
 -- 
-1.7.5.4
+1.7.9.2
 
