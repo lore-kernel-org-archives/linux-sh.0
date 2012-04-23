@@ -1,48 +1,56 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 18 Apr 2012 11:28:40 +0000
-Subject: [PATCH 4/6] mmc: sdhi: don't use connection IDs to obtain a clock reference
-Message-Id: <Pine.LNX.4.64.1204181325530.30514@axis700.grange>
+From: Anton Vorontsov <anton.vorontsov@linaro.org>
+Date: Mon, 23 Apr 2012 07:08:49 +0000
+Subject: [PATCH 4/9] sh: Use clear_tasks_mm_cpumask()
+Message-Id: <20120423070849.GD30752@lizard>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20120423070641.GA27702@lizard>
+In-Reply-To: <20120423070641.GA27702@lizard>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-All SDHI platforms have been switched to use device IDs in their SDHI
-clock look-ups. The clock connection ID can now be also removed from the
-driver.
+Checking for process->mm is not enough because process' main
+thread may exit or detach its mm via use_mm(), but other threads
+may still have a valid mm.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To fix this we would need to use find_lock_task_mm(), which would
+walk up all threads and returns an appropriate task (with task
+lock held).
+
+clear_tasks_mm_cpumask() has the issue fixed, so let's use it.
+
+Suggested-by: Oleg Nesterov <oleg@redhat.com>
+Signed-off-by: Anton Vorontsov <anton.vorontsov@linaro.org>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |    6 ++----
- 1 files changed, 2 insertions(+), 4 deletions(-)
+ arch/sh/kernel/smp.c |    7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 934b68e..5ac656e 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -105,7 +105,6 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	struct tmio_mmc_data *mmc_data;
- 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
- 	struct tmio_mmc_host *host;
--	char clk_name[8];
- 	int irq, ret, i = 0;
- 	bool multiplexed_isr = true;
+diff --git a/arch/sh/kernel/smp.c b/arch/sh/kernel/smp.c
+index eaebdf6..4664f76 100644
+--- a/arch/sh/kernel/smp.c
++++ b/arch/sh/kernel/smp.c
+@@ -123,7 +123,6 @@ void native_play_dead(void)
+ int __cpu_disable(void)
+ {
+ 	unsigned int cpu = smp_processor_id();
+-	struct task_struct *p;
+ 	int ret;
  
-@@ -124,11 +123,10 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
- 			goto einit;
- 	}
+ 	ret = mp_ops->cpu_disable(cpu);
+@@ -153,11 +152,7 @@ int __cpu_disable(void)
+ 	flush_cache_all();
+ 	local_flush_tlb_all();
  
--	snprintf(clk_name, sizeof(clk_name), "sdhi%d", pdev->id);
--	priv->clk = clk_get(&pdev->dev, clk_name);
-+	priv->clk = clk_get(&pdev->dev, NULL);
- 	if (IS_ERR(priv->clk)) {
--		dev_err(&pdev->dev, "cannot get clock \"%s\"\n", clk_name);
- 		ret = PTR_ERR(priv->clk);
-+		dev_err(&pdev->dev, "cannot get clock: %d\n", ret);
- 		goto eclkget;
- 	}
+-	read_lock(&tasklist_lock);
+-	for_each_process(p)
+-		if (p->mm)
+-			cpumask_clear_cpu(cpu, mm_cpumask(p->mm));
+-	read_unlock(&tasklist_lock);
++	clear_tasks_mm_cpumask(cpu);
  
+ 	return 0;
+ }
 -- 
-1.7.2.5
+1.7.9.2
 
