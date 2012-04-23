@@ -1,57 +1,37 @@
-From: Anton Vorontsov <anton.vorontsov@linaro.org>
-Date: Mon, 23 Apr 2012 07:08:28 +0000
-Subject: [PATCH 2/9] arm: Use clear_tasks_mm_cpumask()
-Message-Id: <20120423070828.GB30752@lizard>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 23 Apr 2012 06:53:24 +0000
+Subject: [PATCH 3/6] ARM: mach-shmobile: kzm9g: correct screen direction
+Message-Id: <877gx79bxb.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120423070641.GA27702@lizard>
-In-Reply-To: <20120423070641.GA27702@lizard>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Checking for process->mm is not enough because process' main
-thread may exit or detach its mm via use_mm(), but other threads
-may still have a valid mm.
+The correct screen direction of KZM9G board needs
+PORT226/SC settings.
 
-To fix this we would need to use find_lock_task_mm(), which would
-walk up all threads and returns an appropriate task (with task
-lock held).
-
-clear_tasks_mm_cpumask() has this issue fixed, so let's use it.
-
-Suggested-by: Oleg Nesterov <oleg@redhat.com>
-Signed-off-by: Anton Vorontsov <anton.vorontsov@linaro.org>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/kernel/smp.c |    8 +-------
- 1 file changed, 1 insertion(+), 7 deletions(-)
+ arch/arm/mach-shmobile/board-kzm9g.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
 
-diff --git a/arch/arm/kernel/smp.c b/arch/arm/kernel/smp.c
-index addbbe8..e824ee4 100644
---- a/arch/arm/kernel/smp.c
-+++ b/arch/arm/kernel/smp.c
-@@ -130,7 +130,6 @@ static void percpu_timer_stop(void);
- int __cpu_disable(void)
- {
- 	unsigned int cpu = smp_processor_id();
--	struct task_struct *p;
- 	int ret;
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index c846531..545d633 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -258,8 +258,10 @@ static void __init kzm_init(void)
+ 	gpio_request(GPIO_FN_LCDDISP,	NULL);
+ 	gpio_request(GPIO_FN_LCDDCK,	NULL);
  
- 	ret = platform_cpu_disable(cpu);
-@@ -160,12 +159,7 @@ int __cpu_disable(void)
- 	flush_cache_all();
- 	local_flush_tlb_all();
+-	gpio_request(GPIO_PORT222,	NULL);
++	gpio_request(GPIO_PORT222,	NULL); /* LCDCDON */
++	gpio_request(GPIO_PORT226,	NULL); /* SC */
+ 	gpio_direction_output(GPIO_PORT222, 1);
++	gpio_direction_output(GPIO_PORT226, 1);
  
--	read_lock(&tasklist_lock);
--	for_each_process(p) {
--		if (p->mm)
--			cpumask_clear_cpu(cpu, mm_cpumask(p->mm));
--	}
--	read_unlock(&tasklist_lock);
-+	clear_tasks_mm_cpumask(cpu);
- 
- 	return 0;
- }
+ 	/* Touchscreen */
+ 	gpio_request(GPIO_PORT223, NULL); /* IRQ8 */
 -- 
-1.7.9.2
+1.7.5.4
 
