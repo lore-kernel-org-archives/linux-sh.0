@@ -1,204 +1,105 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 11 Apr 2012 03:58:33 +0000
-Subject: [PATCH 5/6] ARM: mach-shmobile: kzm9g: add LCDC support
-Message-Id: <877gxm3onu.wl%kuninori.morimoto.gx@renesas.com>
+Date: Mon, 23 Apr 2012 06:53:59 +0000
+Subject: [PATCH 5/6] ARM: mach-shmobile: kzm9g: add SDHI support
+Message-Id: <874nsb9bwc.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <877gxm3onu.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <877gxm3onu.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-AS3711 chip initalization is required for enabling LCDC backlight,
-but there is no driver for this chip.
-So, this patch sends its settings when boot.
-
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-kzm9g.c |  143 ++++++++++++++++++++++++++++++++++
- 1 files changed, 143 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/board-kzm9g.c |   57 ++++++++++++++++++++++++++++++++++
+ 1 files changed, 57 insertions(+), 0 deletions(-)
 
 diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index f48db23..145341d 100644
+index 57c391a..657ba64 100644
 --- a/arch/arm/mach-shmobile/board-kzm9g.c
 +++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -16,12 +16,15 @@
-  * along with this program; if not, write to the Free Software
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
-+
-+#include <linux/delay.h>
- #include <linux/gpio.h>
- #include <linux/io.h>
- #include <linux/irq.h>
+@@ -24,6 +24,8 @@
+ #include <linux/i2c.h>
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mmcif.h>
++#include <linux/mmc/sh_mobile_sdhi.h>
++#include <linux/mfd/tmio.h>
  #include <linux/platform_device.h>
  #include <linux/smsc911x.h>
  #include <linux/usb/r8a66597.h>
-+#include <linux/videodev2.h>
- #include <mach/irqs.h>
- #include <mach/sh73a0.h>
- #include <mach/common.h>
-@@ -29,6 +32,7 @@
- #include <asm/hardware/gic.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
-+#include <video/sh_mobile_lcdc.h>
- 
- /* SMSC 9221 */
- static struct resource smsc9221_resources[] = {
-@@ -88,11 +92,119 @@ static struct platform_device usb_host_device = {
- 	.resource	= usb_resources,
+@@ -183,6 +185,47 @@ static struct platform_device mmc_device = {
+ 	.resource	= sh_mmcif_resources,
  };
  
-+/* LCDC */
-+static struct fb_videomode kzm_lcdc_mode = {
-+	.name		= "WVGA Panel",
-+	.xres		= 800,
-+	.yres		= 480,
-+	.left_margin	= 220,
-+	.right_margin	= 110,
-+	.hsync_len	= 70,
-+	.upper_margin	= 20,
-+	.lower_margin	= 5,
-+	.vsync_len	= 5,
-+	.sync		= 0,
++/* SDHI */
++static struct sh_mobile_sdhi_info sdhi0_info = {
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
++	.tmio_ocr_mask	= MMC_VDD_27_28 | MMC_VDD_28_29,
 +};
 +
-+static struct sh_mobile_lcdc_info lcdc_info = {
-+	.clock_source = LCDC_CLK_BUS,
-+	.ch[0] = {
-+		.chan		= LCDC_CHAN_MAINLCD,
-+		.fourcc		= V4L2_PIX_FMT_RGB565,
-+		.interface_type	= RGB24,
-+		.lcd_modes	= &kzm_lcdc_mode,
-+		.num_modes	= 1,
-+		.clock_divider	= 5,
-+		.flags		= 0,
-+		.panel_cfg = {
-+			.width	= 152,
-+			.height	= 91,
-+		},
-+	}
-+};
-+
-+static struct resource lcdc_resources[] = {
++static struct resource sdhi0_resources[] = {
 +	[0] = {
-+		.name	= "LCDC",
-+		.start	= 0xfe940000,
-+		.end	= 0xfe943fff,
++		.name	= "SDHI0",
++		.start	= 0xee100000,
++		.end	= 0xee1000ff,
 +		.flags	= IORESOURCE_MEM,
 +	},
 +	[1] = {
-+		.start	= intcs_evt2irq(0x580),
++		.name	= SH_MOBILE_SDHI_IRQ_CARD_DETECT,
++		.start	= gic_spi(83),
++		.flags	= IORESOURCE_IRQ,
++	},
++	[2] = {
++		.name	= SH_MOBILE_SDHI_IRQ_SDCARD,
++		.start	= gic_spi(84),
++		.flags	= IORESOURCE_IRQ,
++	},
++	[3] = {
++		.name	= SH_MOBILE_SDHI_IRQ_SDIO,
++		.start	= gic_spi(85),
 +		.flags	= IORESOURCE_IRQ,
 +	},
 +};
 +
-+static struct platform_device lcdc_device = {
-+	.name		= "sh_mobile_lcdc_fb",
-+	.num_resources	= ARRAY_SIZE(lcdc_resources),
-+	.resource	= lcdc_resources,
++static struct platform_device sdhi0_device = {
++	.name		= "sh_mobile_sdhi",
++	.num_resources	= ARRAY_SIZE(sdhi0_resources),
++	.resource	= sdhi0_resources,
 +	.dev	= {
-+		.platform_data	= &lcdc_info,
-+		.coherent_dma_mask = ~0,
++		.platform_data	= &sdhi0_info,
 +	},
 +};
 +
- static struct platform_device *kzm_devices[] __initdata = {
- 	&smsc_device,
++/* I2C */
+ static struct i2c_board_info i2c1_devices[] = {
+ 	{
+ 		I2C_BOARD_INFO("st1232-ts", 0x55),
+@@ -195,6 +238,7 @@ static struct platform_device *kzm_devices[] __initdata = {
  	&usb_host_device,
-+	&lcdc_device,
+ 	&lcdc_device,
+ 	&mmc_device,
++	&sdhi0_device,
  };
  
-+/*
-+ * FIXME
-+ *
-+ * This is quick hack for enabling LCDC backlight
-+ */
-+static int __init as3711_enable_lcdc_backlight(void)
-+{
-+	struct i2c_adapter *a = i2c_get_adapter(0);
-+	struct i2c_msg msg;
-+	int i, ret;
-+	__u8 magic[] = {
-+		0x40, 0x2a,
-+		0x43, 0x3c,
-+		0x44, 0x3c,
-+		0x45, 0x3c,
-+		0x54, 0x03,
-+		0x51, 0x00,
-+		0x51, 0x01,
-+		0xff, 0x00, /* wait */
-+		0x43, 0xf0,
-+		0x44, 0xf0,
-+		0x45, 0xf0,
-+	};
-+
-+	if (!machine_is_kzm9g())
-+		return 0;
-+
-+	if (!a)
-+		return 0;
-+
-+	msg.addr	= 0x40;
-+	msg.len		= 2;
-+	msg.flags	= 0;
-+
-+	for (i = 0; i < ARRAY_SIZE(magic); i += 2) {
-+		msg.buf = magic + i;
-+
-+		if (0xff = msg.buf[0]) {
-+			udelay(500);
-+			continue;
-+		}
-+
-+		ret = i2c_transfer(a, &msg, 1);
-+		if (ret < 0) {
-+			pr_err("i2c transfer fail\n");
-+			break;
-+		}
-+	}
-+
-+	return 0;
-+}
-+device_initcall(as3711_enable_lcdc_backlight);
-+
- static void __init kzm_init(void)
- {
- 	sh73a0_pinmux_init();
-@@ -110,6 +222,37 @@ static void __init kzm_init(void)
- 	gpio_request(GPIO_PORT224, NULL); /* IRQ3 */
- 	gpio_direction_input(GPIO_PORT224);
+ /*
+@@ -316,6 +360,19 @@ static void __init kzm_init(void)
+ 	gpio_request(GPIO_FN_MMCD0_6_PU,	NULL);
+ 	gpio_request(GPIO_FN_MMCD0_7_PU,	NULL);
  
-+	/* LCDC */
-+	gpio_request(GPIO_FN_LCDD23,	NULL);
-+	gpio_request(GPIO_FN_LCDD22,	NULL);
-+	gpio_request(GPIO_FN_LCDD21,	NULL);
-+	gpio_request(GPIO_FN_LCDD20,	NULL);
-+	gpio_request(GPIO_FN_LCDD19,	NULL);
-+	gpio_request(GPIO_FN_LCDD18,	NULL);
-+	gpio_request(GPIO_FN_LCDD17,	NULL);
-+	gpio_request(GPIO_FN_LCDD16,	NULL);
-+	gpio_request(GPIO_FN_LCDD15,	NULL);
-+	gpio_request(GPIO_FN_LCDD14,	NULL);
-+	gpio_request(GPIO_FN_LCDD13,	NULL);
-+	gpio_request(GPIO_FN_LCDD12,	NULL);
-+	gpio_request(GPIO_FN_LCDD11,	NULL);
-+	gpio_request(GPIO_FN_LCDD10,	NULL);
-+	gpio_request(GPIO_FN_LCDD9,	NULL);
-+	gpio_request(GPIO_FN_LCDD8,	NULL);
-+	gpio_request(GPIO_FN_LCDD7,	NULL);
-+	gpio_request(GPIO_FN_LCDD6,	NULL);
-+	gpio_request(GPIO_FN_LCDD5,	NULL);
-+	gpio_request(GPIO_FN_LCDD4,	NULL);
-+	gpio_request(GPIO_FN_LCDD3,	NULL);
-+	gpio_request(GPIO_FN_LCDD2,	NULL);
-+	gpio_request(GPIO_FN_LCDD1,	NULL);
-+	gpio_request(GPIO_FN_LCDD0,	NULL);
-+	gpio_request(GPIO_FN_LCDDISP,	NULL);
-+	gpio_request(GPIO_FN_LCDDCK,	NULL);
-+
-+	gpio_request(GPIO_PORT222,	NULL);
-+	gpio_direction_output(GPIO_PORT222, 1);
++	/* enable SD */
++	gpio_request(GPIO_FN_SDHIWP0,		NULL);
++	gpio_request(GPIO_FN_SDHICD0,		NULL);
++	gpio_request(GPIO_FN_SDHICMD0,		NULL);
++	gpio_request(GPIO_FN_SDHICLK0,		NULL);
++	gpio_request(GPIO_FN_SDHID0_3,		NULL);
++	gpio_request(GPIO_FN_SDHID0_2,		NULL);
++	gpio_request(GPIO_FN_SDHID0_1,		NULL);
++	gpio_request(GPIO_FN_SDHID0_0,		NULL);
++	gpio_request(GPIO_FN_SDHI0_VCCQ_MC0_ON,	NULL);
++	gpio_request(GPIO_PORT15, NULL);
++	gpio_direction_output(GPIO_PORT15, 1); /* power */
 +
  #ifdef CONFIG_CACHE_L2X0
  	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
