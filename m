@@ -1,28 +1,49 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 20 Apr 2012 16:59:44 +0000
-Subject: [PATCH 0/5] mmc: sh_mmcif: add regulator support
-Message-Id: <Pine.LNX.4.64.1204201835230.3974@axis700.grange>
+From: Anton Vorontsov <anton.vorontsov@linaro.org>
+Date: Mon, 23 Apr 2012 07:09:35 +0000
+Subject: [PATCH 8/9] um: Fix possible race on task->mm
+Message-Id: <20120423070935.GH30752@lizard>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20120423070641.GA27702@lizard>
+In-Reply-To: <20120423070641.GA27702@lizard>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: Liam Girdwood <lrg@ti.com>, Mark Brown <broonie@opensource.wolfsonmicro.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi all
+Checking for task->mm is dangerous as ->mm might disappear (exit_mm()
+assigns NULL under task_lock(), so tasklist lock is not enough).
 
-The first 3 patches in this series are preparatory, patches 2 and 3 can be 
-pushed with later kernel versions to simplify dependencies. Patch 4 
-actually adds regulator support. Patch 5 is not (necessarily) for 
-inclusion. It's just an implementation example for ecovec. Since ecovec's 
-CN12 slot is a combined SD/MMC slot, driven by the SDHI controller in SD 
-mode, it might make sense to wait until regulators are supported by SDHI 
-too, after which a single regulator device in ecovec platform data can be 
-used for both.
+We can't use get_task_mm()/mmput() pair as mmput() might sleep,
+so let's take the task lock while we care about its mm.
 
-Thanks
-Guennadi
+Note that we should also use find_lock_task_mm() to check all process'
+threads for a valid mm, but for uml we'll do it in a separate patch.
+
+Signed-off-by: Anton Vorontsov <anton.vorontsov@linaro.org>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ arch/um/kernel/reboot.c |    7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/arch/um/kernel/reboot.c b/arch/um/kernel/reboot.c
+index 66d754c..1411f4e 100644
+--- a/arch/um/kernel/reboot.c
++++ b/arch/um/kernel/reboot.c
+@@ -25,10 +25,13 @@ static void kill_off_processes(void)
+ 
+ 		read_lock(&tasklist_lock);
+ 		for_each_process(p) {
+-			if (p->mm = NULL)
++			task_lock(p);
++			if (!p->mm) {
++				task_unlock(p);
+ 				continue;
+-
++			}
+ 			pid = p->mm->context.id.u.pid;
++			task_unlock(p);
+ 			os_kill_ptraced_process(pid, 1);
+ 		}
+ 		read_unlock(&tasklist_lock);
+-- 
+1.7.9.2
+
