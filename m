@@ -1,48 +1,35 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 05 Apr 2012 08:32:20 +0000
-Subject: [PATCH 0/6] ARM: mach-shmobile: add Armadillo800eva board support
-Message-Id: <87pqbm4m0b.wl%kuninori.morimoto.gx@renesas.com>
+Date: Mon, 23 Apr 2012 06:53:07 +0000
+Subject: [PATCH 2/6] ARM: mach-shmobile: sh73a0.h: add GPIO_NR
+Message-Id: <878vhn9bxs.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+GPIO_NR is added in order to clarify end of GPIO array.
+We can add extra GPIO from it.
 
-Hi Rafael, Magnus
-Cc Simon, nakai-san, Saneyoshi-san
-
-These are basic R8A7740 A1 Armadillo800eva baord support patch set.
-These are based on rafael/master branch.
-
-Kuninori Morimoto (6):
-      ARM: mach-shmobile: add armadillo800eva board support.
-      ARM: mach-shmobile: armadillo800eva: add defconfig
-      ARM: mach-shmobile: armadillo800eva: add support LCDC0
-      ARM: mach-shmobile: armadillo800eva: add support ST1232
-      ARM: mach-shmobile: armadillo800eva: add support gpio_key
-      ARM: mach-shmobile: armadillo800eva: add support sh_eth
-
-These still not support device tree at this point,
-but I will work for it soon.
-
-#5 patch require R8A7740 .gipo_irq support patch which I posted this morning.
-[PATCH] ARM: mach-shmobile: pfc-r8a7740: add .gpio_irq support
-
-#6 patch adds sh_eth support to armadillo800eva board,
-no compile error, but doesn't work on rafael/master at this point.
-it needs shimoda-san's sh_eth patches.
-
-git://git.kernel.org/pub/scm/linux/kernel/git/davem/net.git
-10b9194f959608368ed89df1937f17cfe6bd6d84
-(net: sh_eth: fix endian check for architecture independent)
-
-git://git.kernel.org/pub/scm/linux/kernel/git/davem/net-next.git
-73a0d907301ece200d32b4e8ba2da2ca296b507f
-(net: sh_eth: add support R8A7740)
-
-I hope these patches are back-ported and go to LTSI support.
-
-Best regards
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-Kuninori Morimoto
+ arch/arm/mach-shmobile/include/mach/sh73a0.h |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/include/mach/sh73a0.h b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+index cad5757..ac75857 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh73a0.h
++++ b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+@@ -482,6 +482,9 @@ enum {
+ 	GPIO_FN_FSIAILR_PU,
+ 	GPIO_FN_FSIAIBT_PU,
+ 	GPIO_FN_FSIAISLD_PU,
++
++	/* end of GPIO */
++	GPIO_NR,
+ };
+ 
+ /* DMA slave IDs */
+-- 
+1.7.5.4
+
