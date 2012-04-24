@@ -1,51 +1,29 @@
-From: Felipe Balbi <balbi@ti.com>
-Date: Wed, 11 Apr 2012 10:03:13 +0000
-Subject: Re: [PATCH v2] usb: r8a66597-udc: add support for set_selfpowered
-Message-Id: <20120411100312.GR12064@arwen.pp.htv.fi>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="phbq2bkSb+hZnunM"
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Tue, 24 Apr 2012 21:49:26 +0000
+Subject: [PATCH 0/3] PM / Domains: Fix device stop and domain power off governor functions
+Message-Id: <201204242349.26288.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4F855420.5010705@renesas.com>
-In-Reply-To: <4F855420.5010705@renesas.com>
-To: linux-sh@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Linux PM list <linux-pm@vger.kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Kevin Hilman <khilman@ti.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, markgross@thegnar.org, Jean Pihet <j-pihet@ti.com>
 
+Hi all,
 
---phbq2bkSb+hZnunM
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+It turns out that the PM domains device stop and domain power off governor
+functions I invented some time ago don't really make sense, because they
+should only decide whether or not the resulting low-power state will be
+too deep and that only depends on latencies.  In particular, the time
+when devices have been suspended doesn't really matter here, so the
+results returned by those functions shouldn't depend on it either (as it
+shouldn't depend on any "break even" values that only make sense when we
+know how much time in advance the device is going to be used, but this
+information is not related to the PM QoS latency constraint).
 
-On Wed, Apr 11, 2012 at 06:51:28PM +0900, Shimoda, Yoshihiro wrote:
-> The previous code always set to USB_DEVICE_SELF_POWERED in GET_STATUS.
-> So, this patch adds set_selfpowered().
->=20
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+If this functions are fixed (patches [1/3] and [2/3]), then some ugly
+computations can be removed from rpm_suspend() and other places and the
+whole framework can be simplified quite a bit (patch [3/3]).
 
-applied, thanks
-
---=20
-balbi
-
---phbq2bkSb+hZnunM
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJPhVbgAAoJEIaOsuA1yqREhx0QAKxO1vTu7HRgrQXZ7bcIUsuw
-YROXtCJZacA6HVYN1RME3ybG5tBJHujCExzihetxy4dI1WJPFY9jli73ZiIWZENM
-gDFY2VA+8CTDkaaASR1fd6J6WhG8GS8xJ+rOgBVZadCLVN5Zu0cQ9xrG6Rp3G4sp
-l99Sx0mNYe9kjGyEzZN8DA3/YCVzgj4tnQ3XR/SZnTG6Q2jnCgibob0SizrOSRFB
-ifHXaXsoYwit4b42AQq6iJsbMq/20jlrTDof23aio5ms4GqJVe0s4PfGTLag+0vC
-USfxFwLugmKwJ/4DvA5UWPyL/c6CRg3MBRo/IguPsM3HCP8M1liTpS5NOOGNgo6S
-GSNUjZDcFSsbbHZ5YVeeJYJsoTvCRnDyXYw1EYwyaKbxiYTv/mhhMX+9xnFRZ/EE
-32HmX0neYx4irIoyXfm5MIuQv1UX8cShQw6lm15FWnzr/G/PSYpaF328yYDcm2s0
-aBLoXpITckuxhYD2olNZXi1uuZGoxAN+3Z+K2HpPz9+9ZIO1jbxJctsW+0ljxNq1
-23xWVcCrUck9Kcak2jAN42t4Rqfp2up4aX7WYs9PPgVRgTOaZp3SAFi1Ska+fipC
-YV8PMserVbV/hoSXPc84aXlP0uIJhWsoxpcAIUzKaXjXms/wwUpCu/4+JMYehukB
-BnMp++5GgNzyeVVAJXJ0
-=wMhM
------END PGP SIGNATURE-----
-
---phbq2bkSb+hZnunM--
+Thanks,
+Rafael
