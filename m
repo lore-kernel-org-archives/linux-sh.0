@@ -1,40 +1,46 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 15 Apr 2012 21:59:57 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: bonito: make sure static function
-Message-Id: <201204160002.50008.rjw@sisk.pl>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 24 Apr 2012 09:10:05 +0000
+Subject: [PATCH 8/8] ARM: mach-shmobile: r8a7740: reserve DMA memory for the frame buffer
+Message-Id: <87zka1ebrq.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Monday, April 09, 2012, Kuninori Morimoto wrote:
-> bonito_add_early_devices() needs static
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The default 2MB size of DMA coherent memory isn't enough for allocate
+frame buffer memory.
 
-Applied to the r8a7740 branch of the renesas.git tree.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/setup-r8a7740.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
 
-Thanks,
-Rafael
-
-
-> ---
->  arch/arm/mach-shmobile/board-bonito.c |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/board-bonito.c b/arch/arm/mach-shmobile/board-bonito.c
-> index 81fd95f..63ab706 100644
-> --- a/arch/arm/mach-shmobile/board-bonito.c
-> +++ b/arch/arm/mach-shmobile/board-bonito.c
-> @@ -486,7 +486,7 @@ static void __init bonito_earlytimer_init(void)
->  	shmobile_earlytimer_init();
->  }
->  
-> -void __init bonito_add_early_devices(void)
-> +static void __init bonito_add_early_devices(void)
->  {
->  	r8a7740_add_early_devices();
->  
-> 
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 14edb5c..a3951c1 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -18,6 +18,7 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ #include <linux/delay.h>
++#include <linux/dma-mapping.h>
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+ #include <linux/io.h>
+@@ -60,6 +61,12 @@ static struct map_desc r8a7740_io_desc[] __initdata = {
+ void __init r8a7740_map_io(void)
+ {
+ 	iotable_init(r8a7740_io_desc, ARRAY_SIZE(r8a7740_io_desc));
++
++	/*
++	 * DMA memory at 0xff200000 - 0xffdfffff. The default 2MB size isn't
++	 * enough to allocate the frame buffer memory.
++	 */
++	init_consistent_dma_size(12 << 20);
+ }
+ 
+ /* SCIFA0 */
+-- 
+1.7.5.4
 
