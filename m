@@ -1,42 +1,57 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Wed, 25 Apr 2012 13:26:16 +0000
-Subject: Re: [PATCH 8/9] mtd: sh_flctl: Use user oob data in hardware ECC mode
-Message-Id: <CABYn4sxg9+kC4256_snAQaAWZ4jwMpuKf3StUGbJ2tXQA0SFdw@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 24 Apr 2012 09:07:05 +0000
+Subject: [PATCH 0/8] ARM: mach-shmobile: armadillo800eva: USB/SDHI/MMIF support patch set
+Message-Id: <87bomhfqh7.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1334913230-23615-1-git-send-email-hechtb@gmail.com>
- <CABYn4sx4SehvwHgP3m5i5Bg7_5FWTHHGMLL+n_R1YujwaU_MzA@mail.gmail.com>
- <CABYn4sxbXiOkdPps59gkOj2MiYZXkeqgKTXt7i7HTz17VqWk0Q@mail.gmail.com>
- <5280156.KyNjAmSTh8@avalon>
- <CAN8TOE9oAbLPSSO5P+U=DJk_vhjF0DgM0mBO7QyYE7zAOwbnmw@mail.gmail.com>
-In-Reply-To: <CAN8TOE9oAbLPSSO5P+U=DJk_vhjF0DgM0mBO7QyYE7zAOwbnmw@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Brian Norris <computersforpeace@gmail.com>
-Cc: linux-mtd@lists.infradead.org, Shmulik Ladkani <shmulik.ladkani@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-sh@vger.kernel.org
 
->> My point was just that it was pointless to read/write OOB data if the caller
->> doesn't use them. It's an optimization: reading OOB data won't hurt regardless
->> of what the caller does with it, but it will use CPU time and power for no
->> reason. Adding an OOB argument to the {read,write}_page function would make
->> this explicit.
->
-> Right, it is pointless and should be changed fairly soon, if my
-> patches go through. But until the additional argument is added, you
-> cannot guarantee that the interface wasn't expecting both data+OOB to
-> be read. For instance, the mtd_read_oob interface may call
-> nand_do_read_ops() with non-null datbuf and oobbuf. We have just such
-> a case in mtdswap.c and nand_bbt.c, I think. See Shmulik's comments
-> here (some of which only apply to mtd_write_oob):
->
-> http://lists.infradead.org/pipermail/linux-mtd/2012-April/040800.html
->
-> Brian
 
-So after some back and forth, I'll leave the 8/9 patch as it is to
-ensure compliance to the nand base code and wait for Brian's patches
-to make it into the mainline.
+Hi Rafael, Magnus
+Cc Simon
 
-Best regards,
+These are incremental patch set for armadillo800eva.
 
- Bastian Hecht
+Kuninori Morimoto (8):
+      ARM: mach-shmobile: clock-r8a7740: add USB clock
+      ARM: mach-shmobile: clock-r8a7740: add SDHI clock
+      ARM: mach-shmobile: clock-r8a7740: add MMCIF clock
+      ARM: mach-shmobile: armadillo800eva: add USB function support
+      ARM: mach-shmobile: armadillo800eva: add SDHI0 support
+      ARM: mach-shmobile: armadillo800eva: add SDHI1 support
+      ARM: mach-shmobile: armadillo800eva: add MMCIF support
+      ARM: mach-shmobile: r8a7740: Reserve DMA memory for the frame buffer
+
+This patch set include v3 of USB support.
+Some R8A7740 clocks, for example, SUB/SPU/CEU/ clocks, use "usb24s" clock a=
+s parent.
+"usb24s" clock is parent clock of "usb24", and this "usb24" is the main clo=
+ck for USB.
+These are very confusing naming, but based on R8A7740 chip datasheet.
+
+#5 support SDHI0, but it use polling mode.
+Because CD (=CArd Detect) pin didn't connected to SDHI0_CD pin, but connect=
+ed IRQ31.
+We can use IRQ31 for CD, but it needs chattering removal operation.
+So, I selected very simple solution (=3D polling mode).
+But polling mode is very enough at this point.
+
+If you use USB function, please select
+
+CONFIG_USB_RENESAS_USBHS=3Dy
+CONFIG_USB_RENESAS_USBHS_UDC=3Dy
+
+and select USB Gadget driver.
+I used CONFIG_USB_ETH for test.
+
+And set SW1.6 ON, then you can use CN24.
+
+# insmod g_ether.ko
+# ifconfig usb0 xxx.xxx.xxx.xxx up
+
+
+Best regards
+---
+Kuninori Morimoto
