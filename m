@@ -1,112 +1,107 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 24 Apr 2012 09:09:31 +0000
-Subject: [PATCH 6/8] ARM: mach-shmobile: armadillo800eva: add SDHI1 support
-Message-Id: <87397tfqd4.wl%kuninori.morimoto.gx@renesas.com>
+Date: Tue, 24 Apr 2012 09:09:42 +0000
+Subject: [PATCH 7/8] ARM: mach-shmobile: armadillo800eva: add MMCIF support
+Message-Id: <871undfqct.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-We can switch CON8/CON14 by SW1.5
-SDHI1 is CON8 (SW1.5 = ON)
-
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c |   66 +++++++++++++++++++++++-
- 1 files changed, 65 insertions(+), 1 deletions(-)
+ arch/arm/mach-shmobile/board-armadillo800eva.c |   57 ++++++++++++++++++++++++
+ 1 files changed, 57 insertions(+), 0 deletions(-)
 
 diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index ed85686..5f62428 100644
+index 5f62428..0cfaec5 100644
 --- a/arch/arm/mach-shmobile/board-armadillo800eva.c
 +++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -93,7 +93,7 @@
-  *     0     | Extension Bus | D8-D15 disable, eMMC enable
-  *     1     | Extension Bus | D8-D15 enable,  eMMC disable
-  * -12345678-+---------------+----------------------------
-- *      0    | SDHI1         | COM8 enable,  COM14 disable
-+ *      0    | SDHI1         | COM8 disable, COM14 enable
-  *      1    | SDHI1         | COM8 enable,  COM14 disable
-  * -12345678-+---------------+----------------------------
-  *       0   | USB0          | COM20 enable,  COM24 disable
-@@ -454,6 +454,44 @@ static struct platform_device sdhi0_device = {
- 	.resource	= sdhi0_resources,
+@@ -33,6 +33,7 @@
+ #include <linux/usb/renesas_usbhs.h>
+ #include <linux/mfd/tmio.h>
+ #include <linux/mmc/host.h>
++#include <linux/mmc/sh_mmcif.h>
+ #include <linux/mmc/sh_mobile_sdhi.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+@@ -492,6 +493,44 @@ static struct platform_device sdhi1_device = {
+ 	.resource	= sdhi1_resources,
  };
  
-+/* SDHI1 */
-+static struct sh_mobile_sdhi_info sdhi1_info = {
-+	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
-+	.tmio_ocr_mask	= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
-+	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
++/* MMCIF */
++static struct sh_mmcif_plat_data sh_mmcif_plat = {
++	.sup_pclk	= 0,
++	.ocr		= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
++	.caps		= MMC_CAP_4_BIT_DATA |
++			  MMC_CAP_8_BIT_DATA |
++			  MMC_CAP_NONREMOVABLE,
 +};
 +
-+static struct resource sdhi1_resources[] = {
++static struct resource sh_mmcif_resources[] = {
 +	[0] = {
-+		.name	= "SDHI1",
-+		.start	= 0xe6860000,
-+		.end	= 0xe6860100 - 1,
++		.name	= "MMCIF",
++		.start	= 0xe6bd0000,
++		.end	= 0xe6bd0100 - 1,
 +		.flags	= IORESOURCE_MEM,
 +	},
 +	[1] = {
-+		.start	= evt2irq(0x0E80),
++		/* MMC ERR */
++		.start	= evt2irq(0x1AC0),
 +		.flags	= IORESOURCE_IRQ,
 +	},
 +	[2] = {
-+		.start	= evt2irq(0x0EA0),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+	[3] = {
-+		.start	= evt2irq(0x0EC0),
++		/* MMC NOR */
++		.start	= evt2irq(0x1AE0),
 +		.flags	= IORESOURCE_IRQ,
 +	},
 +};
 +
-+static struct platform_device sdhi1_device = {
-+	.name		= "sh_mobile_sdhi",
-+	.id		= 1,
++static struct platform_device sh_mmcif_device = {
++	.name		= "sh_mmcif",
++	.id		= -1,
 +	.dev		= {
-+		.platform_data	= &sdhi1_info,
++		.platform_data	= &sh_mmcif_plat,
 +	},
-+	.num_resources	= ARRAY_SIZE(sdhi1_resources),
-+	.resource	= sdhi1_resources,
++	.num_resources	= ARRAY_SIZE(sh_mmcif_resources),
++	.resource	= sh_mmcif_resources,
 +};
 +
  /* I2C */
  static struct i2c_board_info i2c0_devices[] = {
  	{
-@@ -619,6 +657,32 @@ static void __init eva_init(void)
- 	gpio_request(GPIO_PORT176, NULL);
- 	gpio_direction_output(GPIO_PORT176, 1);
+@@ -508,6 +547,7 @@ static struct platform_device *eva_devices[] __initdata = {
+ 	&gpio_keys_device,
+ 	&sh_eth_device,
+ 	&sdhi0_device,
++	&sh_mmcif_device,
+ };
  
-+	/*
-+	 * We can switch CON8/CON14 by SW1.5,
-+	 * but it needs after DBGMD_SELECT_B
+ static void __init eva_clock_init(void)
+@@ -649,6 +689,23 @@ static void __init eva_init(void)
+ 	/* we can use GPIO_FN_IRQ31_PORT167 here for SDHI0 CD irq */
+ 
+ 	/*
++	 * MMCIF
++	 *
++	 * Here doesn't care SW1.4 status,
++	 * since CON2 is not mounted.
 +	 */
-+	gpio_request(GPIO_PORT6, NULL);
-+	gpio_direction_input(GPIO_PORT6);
-+	if (gpio_get_value(GPIO_PORT6)) {
-+		/* CON14 enable */
-+	} else {
-+		/* CON8 (SDHI1) enable */
-+		gpio_request(GPIO_FN_SDHI1_CLK,	NULL);
-+		gpio_request(GPIO_FN_SDHI1_CMD,	NULL);
-+		gpio_request(GPIO_FN_SDHI1_D0,	NULL);
-+		gpio_request(GPIO_FN_SDHI1_D1,	NULL);
-+		gpio_request(GPIO_FN_SDHI1_D2,	NULL);
-+		gpio_request(GPIO_FN_SDHI1_D3,	NULL);
-+		gpio_request(GPIO_FN_SDHI1_CD,	NULL);
-+		gpio_request(GPIO_FN_SDHI1_WP,	NULL);
++	gpio_request(GPIO_FN_MMC1_CLK_PORT103,	NULL);
++	gpio_request(GPIO_FN_MMC1_CMD_PORT104,	NULL);
++	gpio_request(GPIO_FN_MMC1_D0_PORT149,	NULL);
++	gpio_request(GPIO_FN_MMC1_D1_PORT148,	NULL);
++	gpio_request(GPIO_FN_MMC1_D2_PORT147,	NULL);
++	gpio_request(GPIO_FN_MMC1_D3_PORT146,	NULL);
++	gpio_request(GPIO_FN_MMC1_D4_PORT145,	NULL);
++	gpio_request(GPIO_FN_MMC1_D5_PORT144,	NULL);
++	gpio_request(GPIO_FN_MMC1_D6_PORT143,	NULL);
++	gpio_request(GPIO_FN_MMC1_D7_PORT142,	NULL);
 +
-+		gpio_request(GPIO_PORT16, NULL); /* SDSLOT2_PON */
-+		gpio_direction_output(GPIO_PORT16, 1);
-+
-+		platform_device_register(&sdhi1_device);
-+	}
-+
-+
- #ifdef CONFIG_CACHE_L2X0
- 	/* Early BRESP enable, Shared attribute override enable, 32K*8way */
- 	l2x0_init(__io(0xf0002000), 0x40440000, 0x82000fff);
++	/*
+ 	 * CAUTION
+ 	 *
+ 	 * DBGMD/LCDC0/FSIA MUX
 -- 
 1.7.5.4
 
