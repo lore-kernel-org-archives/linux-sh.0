@@ -1,146 +1,128 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Wed, 25 Apr 2012 14:03:31 +0000
-Subject: [PATCH v2 03/10] mtd: sh_flctl: Add support for error IRQ
-Message-Id: <1335362618-4559-4-git-send-email-hechtb@gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 24 Apr 2012 09:09:19 +0000
+Subject: [PATCH 5/8] ARM: mach-shmobile: armadillo800eva: add SDHI0 support
+Message-Id: <874ns9fqdg.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1335362618-4559-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1335362618-4559-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mtd@lists.infradead.org, linux-sh@vger.kernel.org
-Cc: Brian Norris <computersforpeace@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pichart <laurent.pinchart@ideasonboard.com>
+To: linux-sh@vger.kernel.org
 
-When the data transfer between the controller and the NAND chip fails,
-we now get notified.
+On armadillo800eva board,
+CD (= Card Detect) pin is not connected to SDHI0_CD.
+Then, we can use IRQ31 as card detect irq,
+but it needs chattering removal operation.
+We should use IRQ card detect in the future,
+but this patch use polling mode at this point.
 
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/mtd/nand/sh_flctl.c  |   34 +++++++++++++++++++++++++++++++---
- include/linux/mtd/sh_flctl.h |    9 +++++++++
- 2 files changed, 40 insertions(+), 3 deletions(-)
+ arch/arm/mach-shmobile/board-armadillo800eva.c |   71 ++++++++++++++++++++++++
+ 1 files changed, 71 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
-index ed86a64..dd00853 100644
---- a/drivers/mtd/nand/sh_flctl.c
-+++ b/drivers/mtd/nand/sh_flctl.c
-@@ -24,6 +24,7 @@
- #include <linux/module.h>
- #include <linux/kernel.h>
- #include <linux/delay.h>
-+#include <linux/interrupt.h>
- #include <linux/io.h>
- #include <linux/platform_device.h>
- #include <linux/pm_runtime.h>
-@@ -68,8 +69,8 @@ static struct nand_bbt_descr flctl_4secc_largepage = {
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 1d25d5f..ed85686 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -31,6 +31,9 @@
+ #include <linux/sh_eth.h>
+ #include <linux/videodev2.h>
+ #include <linux/usb/renesas_usbhs.h>
++#include <linux/mfd/tmio.h>
++#include <linux/mmc/host.h>
++#include <linux/mmc/sh_mobile_sdhi.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <asm/page.h>
+@@ -402,6 +405,55 @@ static struct platform_device gpio_keys_device = {
+ 	},
+ };
  
- static void empty_fifo(struct sh_flctl *flctl)
- {
--	writel(0x000c0000, FLINTDMACR(flctl));	/* FIFO Clear */
--	writel(0x00000000, FLINTDMACR(flctl));	/* Clear Error flags */
-+	writel(flctl->flintdmacr_base | AC1CLR | AC0CLR, FLINTDMACR(flctl));
-+	writel(flctl->flintdmacr_base, FLINTDMACR(flctl));
- }
- 
- static void start_translation(struct sh_flctl *flctl)
-@@ -838,6 +839,16 @@ static int flctl_chip_init_tail(struct mtd_info *mtd)
- 	return 0;
- }
- 
-+static irqreturn_t flctl_handle_flste(int irq, void *dev_id)
-+{
-+	struct sh_flctl *flctl = dev_id;
++/* SDHI0 */
++/*
++ * FIXME
++ *
++ * It use polling mode here, since
++ * CD (= Card Detect) pin is not connected to SDHI0_CD.
++ * We can use IRQ31 as card detect irq,
++ * but it needs chattering removal operation
++ */
++#define IRQ31	evt2irq(0x33E0)
++static struct sh_mobile_sdhi_info sdhi0_info = {
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |\
++			  MMC_CAP_NEEDS_POLL,
++	.tmio_ocr_mask	= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
++};
 +
-+	dev_err(&flctl->pdev->dev, "flste irq: %x\n", readl(FLINTDMACR(flctl)));
-+	writel(flctl->flintdmacr_base, FLINTDMACR(flctl));
++static struct resource sdhi0_resources[] = {
++	{
++		.name	= "SDHI0",
++		.start	= 0xe6850000,
++		.end	= 0xe6850100 - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	/*
++	 * no SH_MOBILE_SDHI_IRQ_CARD_DETECT here
++	 */
++	{
++		.name	= SH_MOBILE_SDHI_IRQ_SDCARD,
++		.start	= evt2irq(0x0E20),
++		.flags	= IORESOURCE_IRQ,
++	},
++	{
++		.name	= SH_MOBILE_SDHI_IRQ_SDIO,
++		.start	= evt2irq(0x0E40),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
 +
-+	return IRQ_HANDLED;
-+}
++static struct platform_device sdhi0_device = {
++	.name		= "sh_mobile_sdhi",
++	.id		= 0,
++	.dev		= {
++		.platform_data	= &sdhi0_info,
++	},
++	.num_resources	= ARRAY_SIZE(sdhi0_resources),
++	.resource	= sdhi0_resources,
++};
 +
- static int __devinit flctl_probe(struct platform_device *pdev)
- {
- 	struct resource *res;
-@@ -846,6 +857,7 @@ static int __devinit flctl_probe(struct platform_device *pdev)
- 	struct nand_chip *nand;
- 	struct sh_flctl_platform_data *pdata;
- 	int ret = -ENXIO;
-+	int irq;
+ /* I2C */
+ static struct i2c_board_info i2c0_devices[] = {
+ 	{
+@@ -417,6 +469,7 @@ static struct platform_device *eva_devices[] __initdata = {
+ 	&lcdc0_device,
+ 	&gpio_keys_device,
+ 	&sh_eth_device,
++	&sdhi0_device,
+ };
  
- 	pdata = pdev->dev.platform_data;
- 	if (pdata = NULL) {
-@@ -871,14 +883,27 @@ static int __devinit flctl_probe(struct platform_device *pdev)
- 		goto err_iomap;
+ static void __init eva_clock_init(void)
+@@ -539,6 +592,24 @@ static void __init eva_init(void)
+ 		platform_device_register(&usbhsf_device);
  	}
  
-+	irq = platform_get_irq(pdev, 0);
-+	if (irq < 0) {
-+		dev_err(&pdev->dev, "failed to get flste irq data\n");
-+		goto err_flste;
-+	}
++	/* SDHI0 */
++	gpio_request(GPIO_FN_SDHI0_CMD, NULL);
++	gpio_request(GPIO_FN_SDHI0_CLK, NULL);
++	gpio_request(GPIO_FN_SDHI0_D0, NULL);
++	gpio_request(GPIO_FN_SDHI0_D1, NULL);
++	gpio_request(GPIO_FN_SDHI0_D2, NULL);
++	gpio_request(GPIO_FN_SDHI0_D3, NULL);
++	gpio_request(GPIO_FN_SDHI0_WP, NULL);
 +
-+	ret = request_irq(irq, flctl_handle_flste, IRQF_SHARED, "flste", flctl);
-+	if (ret) {
-+		dev_err(&pdev->dev, "request interrupt failed.\n");
-+		goto err_flste;
-+	}
++	gpio_request(GPIO_PORT17, NULL);	/* SDHI0_18/33_B */
++	gpio_request(GPIO_PORT74, NULL);	/* SDHI0_PON */
++	gpio_request(GPIO_PORT75, NULL);	/* SDSLOT1_PON */
++	gpio_direction_output(GPIO_PORT17, 0);
++	gpio_direction_output(GPIO_PORT74, 1);
++	gpio_direction_output(GPIO_PORT75, 1);
 +
- 	platform_set_drvdata(pdev, flctl);
- 	flctl_mtd = &flctl->mtd;
- 	nand = &flctl->chip;
- 	flctl_mtd->priv = nand;
- 	flctl->pdev = pdev;
--	flctl->flcmncr_base = pdata->flcmncr_val;
- 	flctl->hwecc = pdata->has_hwecc;
- 	flctl->holden = pdata->use_holden;
-+	flctl->flcmncr_base = pdata->flcmncr_val;
-+	flctl->flintdmacr_base = flctl->hwecc ? (STERINTE | ECERB) : STERINTE;
- 
- 	nand->options = NAND_NO_AUTOINCR;
- 
-@@ -919,6 +944,8 @@ static int __devinit flctl_probe(struct platform_device *pdev)
- 
- err_chip:
- 	pm_runtime_disable(&pdev->dev);
-+	free_irq(platform_get_irq(pdev, 0), flctl);
-+err_flste:
- 	iounmap(flctl->reg);
- err_iomap:
- 	kfree(flctl);
-@@ -931,6 +958,7 @@ static int __devexit flctl_remove(struct platform_device *pdev)
- 
- 	nand_release(&flctl->mtd);
- 	pm_runtime_disable(&pdev->dev);
-+	free_irq(platform_get_irq(pdev, 0), flctl);
- 	iounmap(flctl->reg);
- 	kfree(flctl);
- 
-diff --git a/include/linux/mtd/sh_flctl.h b/include/linux/mtd/sh_flctl.h
-index a38e1fa..2daa43e 100644
---- a/include/linux/mtd/sh_flctl.h
-+++ b/include/linux/mtd/sh_flctl.h
-@@ -107,6 +107,14 @@
- #define DOCMD2_E	(0x1 << 17)	/* 2nd cmd stage execute */
- #define DOCMD1_E	(0x1 << 16)	/* 1st cmd stage execute */
- 
-+/* FLINTDMACR control bits */
-+#define ESTERINTE	(0x1 << 24)	/* ECC error interrupt enable */
-+#define AC1CLR		(0x1 << 19)	/* ECC FIFO clear */
-+#define AC0CLR		(0x1 << 18)	/* Data FIFO clear */
-+#define ECERB		(0x1 << 9)	/* ECC error */
-+#define STERB		(0x1 << 8)	/* Status error */
-+#define STERINTE	(0x1 << 4)	/* Status error enable */
++	/* we can use GPIO_FN_IRQ31_PORT167 here for SDHI0 CD irq */
 +
- /* FLTRCR control bits */
- #define TRSTRT		(0x1 << 0)	/* translation start */
- #define TREND		(0x1 << 1)	/* translation end */
-@@ -145,6 +153,7 @@ struct sh_flctl {
- 	uint32_t erase_ADRCNT;		/* bits of FLCMDCR in ERASE1 cmd */
- 	uint32_t rw_ADRCNT;	/* bits of FLCMDCR in READ WRITE cmd */
- 	uint32_t flcmncr_base;	/* base value of FLCMNCR */
-+	uint32_t flintdmacr_base;	/* irq enable bits */
- 
- 	int	hwecc_cant_correct[4];
- 
+ 	/*
+ 	 * CAUTION
+ 	 *
 -- 
 1.7.5.4
 
