@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 06 Apr 2012 08:30:42 +0000
-Subject: [PATCH 5/7 v2] ARM: mach-shmobile: armadillo800eva: add support ST1232
-Message-Id: <87lim9jm8h.wl%kuninori.morimoto.gx@renesas.com>
+Date: Tue, 24 Apr 2012 09:20:41 +0000
+Subject: [PATCH 1/2][for LTSI] ARM: mach-shmobile: clock-r8a7740: add FSI clock
+Message-Id: <87vckpeba2.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,53 +10,38 @@ To: linux-sh@vger.kernel.org
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v1 -> v2
+ arch/arm/mach-shmobile/clock-r8a7740.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
 
-- same as v1 but based on linus/master
-
- arch/arm/mach-shmobile/board-armadillo800eva.c |   15 +++++++++++++++
- 1 files changed, 15 insertions(+), 0 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 5cc17a8..74213e3 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -149,6 +149,14 @@ static struct platform_device lcdc0_device = {
- 	},
- };
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index 927d42a..89a2f9d 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -355,7 +355,7 @@ enum {
+ 	MSTP222,
+ 	MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
  
-+/* I2C */
-+static struct i2c_board_info i2c0_devices[] = {
-+	{
-+		I2C_BOARD_INFO("st1232-ts", 0x55),
-+		.irq = evt2irq(0x0340),
-+	},
-+};
-+
- /*
-  * board devices
-  */
-@@ -205,6 +213,11 @@ static void __init eva_init(void)
- 	gpio_request(GPIO_PORT202, NULL); /* LCD0_LED_CONT */
- 	gpio_direction_output(GPIO_PORT202, 0);
+-	MSTP329, MSTP323, MSTP320,
++	MSTP329, MSTP328, MSTP323, MSTP320,
+ 	MSTP314, MSTP313, MSTP312,
  
-+	/* Touchscreen */
-+	gpio_request(GPIO_FN_IRQ10,	NULL); /* TP_INT */
-+	gpio_request(GPIO_PORT166,	NULL); /* TP_RST_B */
-+	gpio_direction_output(GPIO_PORT166, 1);
-+
- 	/*
- 	 * CAUTION
- 	 *
-@@ -219,6 +232,8 @@ static void __init eva_init(void)
- 	l2x0_init(__io(0xf0002000), 0x40440000, 0x82000fff);
- #endif
+ 	MSTP416, MSTP415, MSTP407, MSTP406,
+@@ -381,6 +381,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP200] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR2,  0, 0), /* SCIFA4 */
  
-+	i2c_register_board_info(0, i2c0_devices, ARRAY_SIZE(i2c0_devices));
-+
- 	r8a7740_add_standard_devices();
+ 	[MSTP329] = SH_CLK_MSTP32(&r_clk,		SMSTPCR3, 29, 0), /* CMT10 */
++	[MSTP328] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 28, 0), /* FSI */
+ 	[MSTP323] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR3, 23, 0), /* IIC1 */
+ 	[MSTP320] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 20, 0), /* USBF */
+ 	[MSTP314] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 14, 0), /* SDHI0 */
+@@ -445,6 +446,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.6",		&mstp_clks[MSTP230]),
  
- 	platform_add_devices(eva_devices,
+ 	CLKDEV_DEV_ID("sh_cmt.10",		&mstp_clks[MSTP329]),
++	CLKDEV_DEV_ID("sh_fsi2",		&mstp_clks[MSTP328]),
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.1",	&mstp_clks[MSTP323]),
+ 	CLKDEV_DEV_ID("renesas_usbhs",		&mstp_clks[MSTP320]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0",	&mstp_clks[MSTP314]),
 -- 
 1.7.5.4
 
