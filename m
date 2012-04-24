@@ -1,59 +1,120 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Tue, 17 Apr 2012 22:18:23 +0000
-Subject: Re: [PATCH 0/7 v2] ARM: mach-shmobile: add Armadillo800eva board support
-Message-Id: <201204180018.23501.rjw@sisk.pl>
+Date: Tue, 24 Apr 2012 21:50:04 +0000
+Subject: [PATCH 1/3] PM / Domains: Rework default device stop governor function
+Message-Id: <201204242350.04667.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87sjghjmeu.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87sjghjmeu.wl%kuninori.morimoto.gx@renesas.com>
+References: <201204242349.26288.rjw@sisk.pl>
+In-Reply-To: <201204242349.26288.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linux PM list <linux-pm@vger.kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Kevin Hilman <khilman@ti.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, markgross@thegnar.org, Jean Pihet <j-pihet@ti.com>
 
-On Monday, April 16, 2012, Simon Horman wrote:
-> On Mon, Apr 16, 2012 at 09:04:19AM +0900, Simon Horman wrote:
-> > On Mon, Apr 16, 2012 at 12:01:40AM +0200, Rafael J. Wysocki wrote:
-> > > On Thursday, April 12, 2012, Simon Horman wrote:
-> > > > On Fri, Apr 06, 2012 at 01:26:54AM -0700, kuninori.morimoto.gx@renesas.com wrote:
-> > > > > 
-> > > > > Hi Rafael, Magnus
-> > > > > Cc Simon, nakai-san, Saneyoshi-san
-> > > > > 
-> > > > > These are v2 of basic R8A7740 A1 Armadillo800eva baord support patch set.
-> > > > > These are based on linus/master branch.
-> > > > > 
-> > > > > Kuninori Morimoto (7):
-> > > > >       ARM: mach-shmobile: pfc-r8a7740: add gpio_irq support
-> > > > >       ARM: mach-shmobile: add armadillo800eva board support.
-> > > > >       ARM: mach-shmobile: armadillo800eva: add defconfig
-> > > > >       ARM: mach-shmobile: armadillo800eva: add support LCDC0
-> > > > >       ARM: mach-shmobile: armadillo800eva: add support ST1232
-> > > > >       ARM: mach-shmobile: armadillo800eva: add support gpio_key
-> > > > >       ARM: mach-shmobile: armadillo800eva: add support sh_eth
-> > > > 
-> > > > I have tested all of the patches above, except
-> > > > "ARM: mach-shmobile: armadillo800eva: add support ST1232",
-> > > > against 3.4-rc2. For those six patches:
-> > > > 
-> > > > 	Tested-by: Simon Horman <horms@verge.net.au>
-> > > 
-> > > Patches [2-4/7] and [6-7/7] applied to the armadillo800eva branch of the
-> > > renesas.git tree.  Please let me know what the status of patch [5/7] is.
-> > 
-> > Hi Rafael,
-> > 
-> > I have not been able to successfully test 5/7 yet.
-> > I'll let you know when that changes.
-> 
-> Hi Rafael,
-> 
-> it seems that I may not be able to test 5/7 as it appears that
-> the touchscreen on my A1 board may be broken. Please consider
-> applying patch 5/7 anyway.
-> 
-> [5/7] Reviewed-by: Simon Horman <horms@verge.net.au>
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Applied to the armadillo800eva branch of the renesas.git tree.
+The existing default device stop governor function for PM domains,
+default_stop_ok(), is supposed to check whether or not the device's
+PM QoS latency constraint will be violated if the device is stopped
+by pm_genpd_runtime_suspend().  However, the computations carried out
+by it don't reflect the definition of the PM QoS latency constrait in
+Documentation/ABI/testing/sysfs-devices-power.
 
-Thanks,
-Rafael
+Make default_stop_ok() follow the definition of the PM QoS latency
+constrait.  In particular, make it take the device's start and stop
+latencies correctly.
+
+Add a new field, effective_constraint_ns, to struct gpd_timing_data
+and use it to store the difference between the device's PM QoS
+constraint and its resume latency for use by the device's parent
+(the effective_constraint_ns values for the children are used for
+computing the parent's one along with its PM QoS constraint).
+
+Remove the break_even_ns field from struct gpd_timing_data, because
+it's not used any more.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
+ drivers/base/power/domain_governor.c |   46 +++++++++++++++++++++++++++++++----
+ include/linux/pm_domain.h            |    2 -
+ 2 files changed, 42 insertions(+), 6 deletions(-)
+
+Index: linux/drivers/base/power/domain_governor.c
+=================================--- linux.orig/drivers/base/power/domain_governor.c
++++ linux/drivers/base/power/domain_governor.c
+@@ -14,6 +14,21 @@
+ 
+ #ifdef CONFIG_PM_RUNTIME
+ 
++static int dev_update_qos_constraint(struct device *dev, void *data)
++{
++	s64 *constraint_ns_p = data;
++	struct gpd_timing_data *td;
++
++	if (!(dev->power.subsys_data && dev->power.subsys_data->domain_data))
++		return 0;
++
++	td = &dev_gpd_data(dev)->td;
++	if (!*constraint_ns_p || td->effective_constraint_ns < *constraint_ns_p)
++		*constraint_ns_p = td->effective_constraint_ns;
++
++	return 0;
++}
++
+ /**
+  * default_stop_ok - Default PM domain governor routine for stopping devices.
+  * @dev: Device to check.
+@@ -21,14 +36,35 @@
+ bool default_stop_ok(struct device *dev)
+ {
+ 	struct gpd_timing_data *td = &dev_gpd_data(dev)->td;
++	s64 constraint_ns;
+ 
+ 	dev_dbg(dev, "%s()\n", __func__);
+ 
+-	if (dev->power.max_time_suspended_ns < 0 || td->break_even_ns = 0)
+-		return true;
+-
+-	return td->stop_latency_ns + td->start_latency_ns < td->break_even_ns
+-		&& td->break_even_ns < dev->power.max_time_suspended_ns;
++	td->effective_constraint_ns = -1;
++	constraint_ns = __dev_pm_qos_read_value(dev);
++	if (constraint_ns < 0)
++		return false;
++
++	constraint_ns *= NSEC_PER_USEC;
++	/*
++	 * We can walk the children without any additional locking, because
++	 * they all have been suspended at this point.
++	 */
++	if (!dev->power.ignore_children)
++		device_for_each_child(dev, &constraint_ns,
++				      dev_update_qos_constraint);
++
++	if (constraint_ns > 0) {
++		constraint_ns -= td->start_latency_ns;
++		if (constraint_ns = 0)
++			return false;
++	}
++	td->effective_constraint_ns = constraint_ns;
++	/*
++	 * The children have been suspended already, so we don't need to take
++	 * their stop latencies into account here.
++	 */
++	return constraint_ns > td->stop_latency_ns;
+ }
+ 
+ /**
+Index: linux/include/linux/pm_domain.h
+=================================--- linux.orig/include/linux/pm_domain.h
++++ linux/include/linux/pm_domain.h
+@@ -93,7 +93,7 @@ struct gpd_timing_data {
+ 	s64 start_latency_ns;
+ 	s64 save_state_latency_ns;
+ 	s64 restore_state_latency_ns;
+-	s64 break_even_ns;
++	s64 effective_constraint_ns;
+ };
+ 
+ struct generic_pm_domain_data {
+
