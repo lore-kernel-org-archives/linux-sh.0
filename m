@@ -1,46 +1,112 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 16 Apr 2012 21:09:04 +0000
-Subject: [PATCH 1/3] ARM: mach-shmobile: sh7372 CEU supports up to 8188x8188 images
-Message-Id: <Pine.LNX.4.64.1204162305050.29915@axis700.grange>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 24 Apr 2012 09:09:31 +0000
+Subject: [PATCH 6/8] ARM: mach-shmobile: armadillo800eva: add SDHI1 support
+Message-Id: <87397tfqd4.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Reviewed-by: Simon Horman <horms@verge.net.au>
----
- arch/arm/mach-shmobile/board-ap4evb.c   |    2 ++
- arch/arm/mach-shmobile/board-mackerel.c |    2 ++
- 2 files changed, 4 insertions(+), 0 deletions(-)
+We can switch CON8/CON14 by SW1.5
+SDHI1 is CON8 (SW1.5 = ON)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index b56dde2..0c3caeba 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -997,6 +997,8 @@ static struct sh_mobile_ceu_companion csi2 = {
- 
- static struct sh_mobile_ceu_info sh_mobile_ceu_info = {
- 	.flags = SH_CEU_FLAG_USE_8BIT_BUS,
-+	.max_width = 8188,
-+	.max_height = 8188,
- 	.csi2 = &csi2,
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/board-armadillo800eva.c |   66 +++++++++++++++++++++++-
+ 1 files changed, 65 insertions(+), 1 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index ed85686..5f62428 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -93,7 +93,7 @@
+  *     0     | Extension Bus | D8-D15 disable, eMMC enable
+  *     1     | Extension Bus | D8-D15 enable,  eMMC disable
+  * -12345678-+---------------+----------------------------
+- *      0    | SDHI1         | COM8 enable,  COM14 disable
++ *      0    | SDHI1         | COM8 disable, COM14 enable
+  *      1    | SDHI1         | COM8 enable,  COM14 disable
+  * -12345678-+---------------+----------------------------
+  *       0   | USB0          | COM20 enable,  COM24 disable
+@@ -454,6 +454,44 @@ static struct platform_device sdhi0_device = {
+ 	.resource	= sdhi0_resources,
  };
  
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index f49e28a..30fd516 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1257,6 +1257,8 @@ static void mackerel_camera_del(struct soc_camera_device *icd)
++/* SDHI1 */
++static struct sh_mobile_sdhi_info sdhi1_info = {
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
++	.tmio_ocr_mask	= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
++};
++
++static struct resource sdhi1_resources[] = {
++	[0] = {
++		.name	= "SDHI1",
++		.start	= 0xe6860000,
++		.end	= 0xe6860100 - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= evt2irq(0x0E80),
++		.flags	= IORESOURCE_IRQ,
++	},
++	[2] = {
++		.start	= evt2irq(0x0EA0),
++		.flags	= IORESOURCE_IRQ,
++	},
++	[3] = {
++		.start	= evt2irq(0x0EC0),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device sdhi1_device = {
++	.name		= "sh_mobile_sdhi",
++	.id		= 1,
++	.dev		= {
++		.platform_data	= &sdhi1_info,
++	},
++	.num_resources	= ARRAY_SIZE(sdhi1_resources),
++	.resource	= sdhi1_resources,
++};
++
+ /* I2C */
+ static struct i2c_board_info i2c0_devices[] = {
+ 	{
+@@ -619,6 +657,32 @@ static void __init eva_init(void)
+ 	gpio_request(GPIO_PORT176, NULL);
+ 	gpio_direction_output(GPIO_PORT176, 1);
  
- static struct sh_mobile_ceu_info sh_mobile_ceu_info = {
- 	.flags = SH_CEU_FLAG_USE_8BIT_BUS,
-+	.max_width = 8188,
-+	.max_height = 8188,
- };
- 
- static struct resource ceu_resources[] = {
++	/*
++	 * We can switch CON8/CON14 by SW1.5,
++	 * but it needs after DBGMD_SELECT_B
++	 */
++	gpio_request(GPIO_PORT6, NULL);
++	gpio_direction_input(GPIO_PORT6);
++	if (gpio_get_value(GPIO_PORT6)) {
++		/* CON14 enable */
++	} else {
++		/* CON8 (SDHI1) enable */
++		gpio_request(GPIO_FN_SDHI1_CLK,	NULL);
++		gpio_request(GPIO_FN_SDHI1_CMD,	NULL);
++		gpio_request(GPIO_FN_SDHI1_D0,	NULL);
++		gpio_request(GPIO_FN_SDHI1_D1,	NULL);
++		gpio_request(GPIO_FN_SDHI1_D2,	NULL);
++		gpio_request(GPIO_FN_SDHI1_D3,	NULL);
++		gpio_request(GPIO_FN_SDHI1_CD,	NULL);
++		gpio_request(GPIO_FN_SDHI1_WP,	NULL);
++
++		gpio_request(GPIO_PORT16, NULL); /* SDSLOT2_PON */
++		gpio_direction_output(GPIO_PORT16, 1);
++
++		platform_device_register(&sdhi1_device);
++	}
++
++
+ #ifdef CONFIG_CACHE_L2X0
+ 	/* Early BRESP enable, Shared attribute override enable, 32K*8way */
+ 	l2x0_init(__io(0xf0002000), 0x40440000, 0x82000fff);
 -- 
-1.7.2.5
+1.7.5.4
 
