@@ -1,38 +1,67 @@
-From: Hideo Saito <saito@densan.co.jp>
-Date: Tue, 03 Apr 2012 04:48:58 +0000
-Subject: gcc optimization problem on const variable
-Message-Id: <20120403.134858.179772577.saito@densan.co.jp>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 24 Apr 2012 16:41:46 +0000
+Subject: [PATCH 6/7] mmc: sdhi: do not install dummy callbacks
+Message-Id: <1335285707-22707-7-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1335285707-22707-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1335285707-22707-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-Dear all.
+Currently the SDHI glue for the TMIO MMC driver installs dummy .get_cd() and
+.set_pwr() callbacks even if the platform didn't supply them. This is not
+necessary, since the TMIO MMC driver itself checks for NULL callbacks. This
+is also dubious if the platform provides a regulator for SD-card power
+switching. It is better to only install those callbacks, if they are really
+provided by the platform.
 
-Following definition of the variable seems to cause an unexpected result by gcc optimization on gcc-4.4.5, that is the optimizer considers sh_io_port_base is equal to '-1'. I think that following change maybe fixes this problem.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+---
+ drivers/mmc/host/sh_mobile_sdhi.c |   14 ++++++--------
+ 1 files changed, 6 insertions(+), 8 deletions(-)
 
- const unsigned long sh_io_port_base __read_mostly = -1;
-
-
---- arch/sh/kernel/ioport.c.org	2012-01-05 08:55:44.000000000 +0900
-+++ arch/sh/kernel/ioport.c	2012-04-02 15:20:31.000000000 +0900
-@@ -14,17 +14,17 @@
- const unsigned long sh_io_port_base __read_mostly = -1;
- EXPORT_SYMBOL(sh_io_port_base);
- 
- void __iomem *__ioport_map(unsigned long addr, unsigned int size)
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index a746ae8..ae2e3da 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -64,18 +64,14 @@ static void sh_mobile_sdhi_set_pwr(struct platform_device *pdev, int state)
  {
- 	if (sh_mv.mv_ioport_map)
- 		return sh_mv.mv_ioport_map(addr, size);
+ 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
  
--	return (void __iomem *)(addr + sh_io_port_base);
-+	return (void __iomem *)(addr + *(volatile unsigned long *)&sh_io_port_base);
+-	if (p && p->set_pwr)
+-		p->set_pwr(pdev, state);
++	p->set_pwr(pdev, state);
  }
- EXPORT_SYMBOL(__ioport_map);
  
- void __iomem *ioport_map(unsigned long port, unsigned int nr)
+ static int sh_mobile_sdhi_get_cd(struct platform_device *pdev)
  {
- 	void __iomem *ret;
+ 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
  
- 	ret = __ioport_map_trapped(port, nr);
+-	if (p && p->get_cd)
+-		return p->get_cd(pdev);
+-	else
+-		return -ENOSYS;
++	return p->get_cd(pdev);
+ }
+ 
+ static int sh_mobile_sdhi_wait_idle(struct tmio_mmc_host *host)
+@@ -151,8 +147,10 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 		goto eclkget;
+ 	}
+ 
+-	mmc_data->set_pwr = sh_mobile_sdhi_set_pwr;
+-	mmc_data->get_cd = sh_mobile_sdhi_get_cd;
++	if (p->set_pwr)
++		mmc_data->set_pwr = sh_mobile_sdhi_set_pwr;
++	if (p->get_cd)
++		mmc_data->get_cd = sh_mobile_sdhi_get_cd;
+ 	mmc_data->clk_enable = sh_mobile_sdhi_clk_enable;
+ 	mmc_data->clk_disable = sh_mobile_sdhi_clk_disable;
+ 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
+-- 
+1.7.2.5
+
