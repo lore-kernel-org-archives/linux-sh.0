@@ -1,169 +1,70 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 05 Apr 2012 08:33:31 +0000
-Subject: [PATCH 2/6] ARM: mach-shmobile: armadillo800eva: add defconfig
-Message-Id: <87mx6q4lyg.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 24 Apr 2012 16:41:44 +0000
+Subject: [PATCH 4/7] mmc: sdhi: implement tmio-mmc clock enable-update and disable callbacks
+Message-Id: <1335285707-22707-5-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1335285707-22707-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1335285707-22707-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Instead of delivering one static clock frequency value, read from the
+hardware during probing, enable the tmio-mmc driver to re-read the
+frequency dynamically.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Magnus Damm <magnus.damm@gmail.com>
 ---
- arch/arm/configs/armadillo800eva_defconfig |  144 ++++++++++++++++++++++++++++
- 1 files changed, 144 insertions(+), 0 deletions(-)
- create mode 100644 arch/arm/configs/armadillo800eva_defconfig
+ drivers/mmc/host/sh_mobile_sdhi.c |   24 +++++++++++++++++++++++-
+ 1 files changed, 23 insertions(+), 1 deletions(-)
 
-diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
-new file mode 100644
-index 0000000..f193149
---- /dev/null
-+++ b/arch/arm/configs/armadillo800eva_defconfig
-@@ -0,0 +1,144 @@
-+CONFIG_EXPERIMENTAL=y
-+CONFIG_SYSVIPC=y
-+CONFIG_IKCONFIG=y
-+CONFIG_IKCONFIG_PROC=y
-+CONFIG_LOG_BUF_SHIFT
-+# CONFIG_UTS_NS is not set
-+# CONFIG_IPC_NS is not set
-+# CONFIG_USER_NS is not set
-+# CONFIG_PID_NS is not set
-+CONFIG_SYSFS_DEPRECATED=y
-+CONFIG_SYSFS_DEPRECATED_V2=y
-+CONFIG_CC_OPTIMIZE_FOR_SIZE=y
-+CONFIG_KALLSYMS_ALL=y
-+CONFIG_SLAB=y
-+CONFIG_MODULES=y
-+CONFIG_MODULE_UNLOAD=y
-+CONFIG_MODULE_FORCE_UNLOAD=y
-+# CONFIG_BLK_DEV_BSG is not set
-+# CONFIG_IOSCHED_DEADLINE is not set
-+# CONFIG_IOSCHED_CFQ is not set
-+CONFIG_ARCH_SHMOBILE=y
-+CONFIG_ARCH_R8A7740=y
-+CONFIG_MACH_ARMADILLO800EVA=y
-+# CONFIG_SH_TIMER_TMU is not set
-+# CONFIG_ARM_THUMB is not set
-+CONFIG_CPU_BPREDICT_DISABLE=y
-+# CONFIG_CACHE_L2X0 is not set
-+CONFIG_ARM_ERRATA_430973=y
-+CONFIG_ARM_ERRATA_458693=y
-+CONFIG_ARM_ERRATA_460075=y
-+CONFIG_ARM_ERRATA_720789=y
-+CONFIG_ARM_ERRATA_743622=y
-+CONFIG_ARM_ERRATA_751472=y
-+CONFIG_ARM_ERRATA_754322=y
-+CONFIG_AEABI=y
-+# CONFIG_OABI_COMPAT is not set
-+CONFIG_FORCE_MAX_ZONEORDER
-+CONFIG_ZBOOT_ROM_TEXT=0x0
-+CONFIG_ZBOOT_ROM_BSS=0x0
-+CONFIG_CMDLINE="console=tty0 console=ttySC1,115200 earlyprintk=sh-sci.1,115200 ignore_loglevel root=/dev/nfs ip=dhcp nfsroot=,rsize@96,wsize@96"
-+CONFIG_CMDLINE_FORCE=y
-+CONFIG_KEXEC=y
-+# CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
-+# CONFIG_SUSPEND is not set
-+CONFIG_NET=y
-+CONFIG_PACKET=y
-+CONFIG_UNIX=y
-+CONFIG_INET=y
-+CONFIG_IP_PNP=y
-+CONFIG_IP_PNP_DHCP=y
-+# CONFIG_INET_XFRM_MODE_TRANSPORT is not set
-+# CONFIG_INET_XFRM_MODE_TUNNEL is not set
-+# CONFIG_INET_XFRM_MODE_BEET is not set
-+# CONFIG_INET_LRO is not set
-+# CONFIG_INET_DIAG is not set
-+# CONFIG_IPV6 is not set
-+# CONFIG_WIRELESS is not set
-+CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
-+CONFIG_SCSI=y
-+CONFIG_BLK_DEV_SD=y
-+CONFIG_MD=y
-+CONFIG_BLK_DEV_DM=y
-+CONFIG_NETDEVICES=y
-+# CONFIG_NET_VENDOR_BROADCOM is not set
-+# CONFIG_NET_VENDOR_CHELSIO is not set
-+# CONFIG_NET_VENDOR_FARADAY is not set
-+# CONFIG_NET_VENDOR_INTEL is not set
-+# CONFIG_NET_VENDOR_MARVELL is not set
-+# CONFIG_NET_VENDOR_MICREL is not set
-+# CONFIG_NET_VENDOR_NATSEMI is not set
-+CONFIG_SH_ETH=y
-+# CONFIG_NET_VENDOR_SEEQ is not set
-+# CONFIG_NET_VENDOR_STMICRO is not set
-+# CONFIG_WLAN is not set
-+# CONFIG_INPUT_MOUSEDEV_PSAUX is not set
-+CONFIG_INPUT_EVDEV=y
-+# CONFIG_KEYBOARD_ATKBD is not set
-+CONFIG_KEYBOARD_GPIO=y
-+# CONFIG_INPUT_MOUSE is not set
-+CONFIG_INPUT_TOUCHSCREEN=y
-+CONFIG_TOUCHSCREEN_ST1232=y
-+# CONFIG_SERIO is not set
-+# CONFIG_LEGACY_PTYS is not set
-+CONFIG_SERIAL_SH_SCI=y
-+CONFIG_SERIAL_SH_SCI_NR_UARTS=8
-+CONFIG_SERIAL_SH_SCI_CONSOLE=y
-+# CONFIG_HW_RANDOM is not set
-+CONFIG_I2C=y
-+CONFIG_I2C_SH_MOBILE=y
-+# CONFIG_HWMON is not set
-+CONFIG_FB=y
-+CONFIG_FB_MODE_HELPERS=y
-+CONFIG_FB_SH_MOBILE_LCDC=y
-+# CONFIG_FB_SH_MOBILE_MERAM is not set
-+CONFIG_LCD_CLASS_DEVICE=y
-+CONFIG_FRAMEBUFFER_CONSOLE=y
-+CONFIG_FRAMEBUFFER_CONSOLE_DETECT_PRIMARY=y
-+CONFIG_LOGO=y
-+# CONFIG_LOGO_LINUX_MONO is not set
-+# CONFIG_LOGO_LINUX_VGA16 is not set
-+CONFIG_SOUND=y
-+CONFIG_SND=y
-+# CONFIG_SND_SUPPORT_OLD_API is not set
-+# CONFIG_SND_VERBOSE_PROCFS is not set
-+# CONFIG_SND_DRIVERS is not set
-+# CONFIG_SND_ARM is not set
-+CONFIG_SND_SOC=y
-+CONFIG_SND_SOC_SH4_FSI=y
-+# CONFIG_HID_SUPPORT is not set
-+# CONFIG_USB_SUPPORT is not set
-+CONFIG_UIO=y
-+CONFIG_UIO_PDRV_GENIRQ=y
-+# CONFIG_DNOTIFY is not set
-+CONFIG_MSDOS_FS=y
-+CONFIG_VFAT_FS=y
-+CONFIG_TMPFS=y
-+# CONFIG_MISC_FILESYSTEMS is not set
-+CONFIG_NFS_FS=y
-+CONFIG_NFS_V3=y
-+CONFIG_NFS_V3_ACL=y
-+CONFIG_NFS_V4=y
-+CONFIG_NFS_V4_1=y
-+CONFIG_ROOT_NFS=y
-+CONFIG_NLS_CODEPAGE_437=y
-+CONFIG_NLS_ISO8859_1=y
-+# CONFIG_ENABLE_WARN_DEPRECATED is not set
-+# CONFIG_ENABLE_MUST_CHECK is not set
-+CONFIG_MAGIC_SYSRQ=y
-+CONFIG_DEBUG_SECTION_MISMATCH=y
-+CONFIG_DEBUG_KERNEL=y
-+CONFIG_LOCKUP_DETECTOR=y
-+CONFIG_BOOTPARAM_SOFTLOCKUP_PANIC=y
-+# CONFIG_DETECT_HUNG_TASK is not set
-+# CONFIG_SCHED_DEBUG is not set
-+CONFIG_DEBUG_KMEMLEAK=y
-+CONFIG_DEBUG_SPINLOCK=y
-+CONFIG_DEBUG_INFO=y
-+# CONFIG_FTRACE is not set
-+CONFIG_CRYPTO=y
-+CONFIG_CRYPTO_CBC=y
-+CONFIG_CRYPTO_MD5=y
-+CONFIG_CRYPTO_DES=y
-+CONFIG_CRYPTO_ANSI_CPRNG=y
-+CONFIG_XZ_DEC=y
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 5ac656e..a746ae8 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -39,6 +39,27 @@ struct sh_mobile_sdhi {
+ 	struct tmio_mmc_dma dma_priv;
+ };
+ 
++static int sh_mobile_sdhi_clk_enable(struct platform_device *pdev, unsigned int *f)
++{
++	struct mmc_host *mmc = dev_get_drvdata(&pdev->dev);
++	struct tmio_mmc_host *host = mmc_priv(mmc);
++	struct sh_mobile_sdhi *priv = container_of(host->pdata, struct sh_mobile_sdhi, mmc_data);
++	int ret = clk_enable(priv->clk);
++	if (ret < 0)
++		return ret;
++
++	*f = clk_get_rate(priv->clk);
++	return 0;
++}
++
++static void sh_mobile_sdhi_clk_disable(struct platform_device *pdev)
++{
++	struct mmc_host *mmc = dev_get_drvdata(&pdev->dev);
++	struct tmio_mmc_host *host = mmc_priv(mmc);
++	struct sh_mobile_sdhi *priv = container_of(host->pdata, struct sh_mobile_sdhi, mmc_data);
++	clk_disable(priv->clk);
++}
++
+ static void sh_mobile_sdhi_set_pwr(struct platform_device *pdev, int state)
+ {
+ 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
+@@ -130,9 +151,10 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 		goto eclkget;
+ 	}
+ 
+-	mmc_data->hclk = clk_get_rate(priv->clk);
+ 	mmc_data->set_pwr = sh_mobile_sdhi_set_pwr;
+ 	mmc_data->get_cd = sh_mobile_sdhi_get_cd;
++	mmc_data->clk_enable = sh_mobile_sdhi_clk_enable;
++	mmc_data->clk_disable = sh_mobile_sdhi_clk_disable;
+ 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
+ 	if (p) {
+ 		mmc_data->flags = p->tmio_flags;
 -- 
-1.7.5.4
+1.7.2.5
 
