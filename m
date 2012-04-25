@@ -1,15 +1,15 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Tue, 24 Apr 2012 21:50:04 +0000
-Subject: [PATCH 1/3] PM / Domains: Rework default device stop governor function
-Message-Id: <201204242350.04667.rjw@sisk.pl>
+Date: Wed, 25 Apr 2012 19:29:22 +0000
+Subject: [PATCH 1/3] PM / Domains: Rework default device stop governor function, v2
+Message-Id: <201204252129.22364.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201204242349.26288.rjw@sisk.pl>
-In-Reply-To: <201204242349.26288.rjw@sisk.pl>
+References: <201204242349.26288.rjw@sisk.pl> <201204252128.33016.rjw@sisk.pl>
+In-Reply-To: <201204252128.33016.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Linux PM list <linux-pm@vger.kernel.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Kevin Hilman <khilman@ti.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, markgross@thegnar.org, Jean Pihet <j-pihet@ti.com>
+Cc: LKML <linux-kernel@vger.kernel.org>, Kevin Hilman <khilman@ti.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, markgross@thegnar.org, Jean Pihet <j-pihet@ti.com>, Simon Horman <horms@verge.net.au>
 
 From: Rafael J. Wysocki <rjw@sisk.pl>
 
@@ -35,28 +35,39 @@ it's not used any more.
 
 Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- drivers/base/power/domain_governor.c |   46 +++++++++++++++++++++++++++++++----
+ drivers/base/power/domain.c          |    1 
+ drivers/base/power/domain_governor.c |   55 +++++++++++++++++++++++++++++++----
  include/linux/pm_domain.h            |    2 -
- 2 files changed, 42 insertions(+), 6 deletions(-)
+ 3 files changed, 52 insertions(+), 6 deletions(-)
 
 Index: linux/drivers/base/power/domain_governor.c
 =================================--- linux.orig/drivers/base/power/domain_governor.c
 +++ linux/drivers/base/power/domain_governor.c
-@@ -14,6 +14,21 @@
+@@ -14,6 +14,31 @@
  
  #ifdef CONFIG_PM_RUNTIME
  
 +static int dev_update_qos_constraint(struct device *dev, void *data)
 +{
 +	s64 *constraint_ns_p = data;
-+	struct gpd_timing_data *td;
++	s32 constraint_ns = -1;
 +
-+	if (!(dev->power.subsys_data && dev->power.subsys_data->domain_data))
++	if (dev->power.subsys_data && dev->power.subsys_data->domain_data)
++		constraint_ns = dev_gpd_data(dev)->td.effective_constraint_ns;
++
++	if (constraint_ns < 0) {
++		constraint_ns = dev_pm_qos_read_value(dev);
++		constraint_ns *= NSEC_PER_USEC;
++	}
++	if (constraint_ns = 0)
 +		return 0;
 +
-+	td = &dev_gpd_data(dev)->td;
-+	if (!*constraint_ns_p || td->effective_constraint_ns < *constraint_ns_p)
-+		*constraint_ns_p = td->effective_constraint_ns;
++	/*
++	 * constraint_ns cannot be negative here, because the device has been
++	 * suspended.
++	 */
++	if (constraint_ns < *constraint_ns_p || *constraint_ns_p = 0)
++		*constraint_ns_p = constraint_ns;
 +
 +	return 0;
 +}
@@ -64,7 +75,7 @@ Index: linux/drivers/base/power/domain_governor.c
  /**
   * default_stop_ok - Default PM domain governor routine for stopping devices.
   * @dev: Device to check.
-@@ -21,14 +36,35 @@
+@@ -21,14 +46,34 @@
  bool default_stop_ok(struct device *dev)
  {
  	struct gpd_timing_data *td = &dev_gpd_data(dev)->td;
@@ -77,8 +88,7 @@ Index: linux/drivers/base/power/domain_governor.c
 -
 -	return td->stop_latency_ns + td->start_latency_ns < td->break_even_ns
 -		&& td->break_even_ns < dev->power.max_time_suspended_ns;
-+	td->effective_constraint_ns = -1;
-+	constraint_ns = __dev_pm_qos_read_value(dev);
++	constraint_ns = dev_pm_qos_read_value(dev);
 +	if (constraint_ns < 0)
 +		return false;
 +
@@ -101,7 +111,7 @@ Index: linux/drivers/base/power/domain_governor.c
 +	 * The children have been suspended already, so we don't need to take
 +	 * their stop latencies into account here.
 +	 */
-+	return constraint_ns > td->stop_latency_ns;
++	return constraint_ns > td->stop_latency_ns || constraint_ns = 0;
  }
  
  /**
@@ -117,4 +127,15 @@ Index: linux/include/linux/pm_domain.h
  };
  
  struct generic_pm_domain_data {
+Index: linux/drivers/base/power/domain.c
+=================================--- linux.orig/drivers/base/power/domain.c
++++ linux/drivers/base/power/domain.c
+@@ -506,6 +506,7 @@ static int pm_genpd_runtime_suspend(stru
+ 	if (dev_gpd_data(dev)->always_on)
+ 		return -EBUSY;
+ 
++	dev_gpd_data(dev)->td.effective_constraint_ns = -1;
+ 	stop_ok = genpd->gov ? genpd->gov->stop_ok : NULL;
+ 	if (stop_ok && !stop_ok(dev))
+ 		return -EBUSY;
 
