@@ -1,66 +1,115 @@
 From: Bastian Hecht <hechtb@googlemail.com>
-Date: Thu, 26 Apr 2012 14:00:59 +0000
-Subject: [RFC DT style 1/4] ARM: sh-mobile: Add sh_flctl to sh7372-mackerel device tree
-Message-Id: <1335448862-5201-2-git-send-email-hechtb@gmail.com>
+Date: Wed, 25 Apr 2012 14:03:35 +0000
+Subject: [PATCH v2 07/10] mtd: sh_flctl: Group sector accesses into a single transfer
+Message-Id: <1335362618-4559-8-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1335362618-4559-1-git-send-email-hechtb@gmail.com>
+In-Reply-To: <1335362618-4559-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mtd@lists.infradead.org, linux-sh@vger.kernel.org
+Cc: Brian Norris <computersforpeace@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pichart <laurent.pinchart@ideasonboard.com>
 
-Add the flash controller flctl to the device tree of the mackerel board.
+When we use hardware ecc, the flctl is run in so-called "sector access
+mode". We can bundle 4 sector accesses when using 2k page sizes to read
+a whole page at once and speed up things.
+
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
 ---
- arch/arm/boot/dts/sh7372-mackerel.dts |   36 +++++++++++++++++++++++++++++++++
- 1 files changed, 36 insertions(+), 0 deletions(-)
+ drivers/mtd/nand/sh_flctl.c |   44 ++++++++++++++++++------------------------
+ 1 files changed, 19 insertions(+), 25 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh7372-mackerel.dts b/arch/arm/boot/dts/sh7372-mackerel.dts
-index 1acbf28..eef01cf 100644
---- a/arch/arm/boot/dts/sh7372-mackerel.dts
-+++ b/arch/arm/boot/dts/sh7372-mackerel.dts
-@@ -28,6 +28,43 @@
- 		smsc,irq-push-pull;
- 	};
+diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
+index b027370..96c88b8 100644
+--- a/drivers/mtd/nand/sh_flctl.c
++++ b/drivers/mtd/nand/sh_flctl.c
+@@ -368,25 +368,21 @@ static void execmd_read_page_sector(struct mtd_info *mtd, int page_addr)
+ 	struct sh_flctl *flctl = mtd_to_flctl(mtd);
+ 	int sector, page_sectors;
  
-+	flctl@e6a30000 {
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+		compatible = "renesas,shmobile-flctl";
-+		interrupt-parent = <&intca>;
-+		reg = <0xe6a30000 0x100>;
-+		interrupts = <0x0d80>;
+-	if (flctl->page_size)
+-		page_sectors = 4;
+-	else
+-		page_sectors = 1;
++	page_sectors = flctl->page_size ? 4 : 1;
 +
-+		ext-bus-con;
-+		use-holden;
-+		clk-scheme = <0x20200>;
++	set_cmd_regs(mtd, NAND_CMD_READ0,
++		(NAND_CMD_READSTART << 8) | NAND_CMD_READ0);
+ 
+ 	writel(readl(FLCMNCR(flctl)) | ACM_SACCES_MODE | _4ECCCORRECT,
+ 		 FLCMNCR(flctl));
++	writel(readl(FLCMDCR(flctl)) | page_sectors, FLCMDCR(flctl));
++	writel(page_addr << 2, FLADR(flctl));
+ 
+-	set_cmd_regs(mtd, NAND_CMD_READ0,
+-		(NAND_CMD_READSTART << 8) | NAND_CMD_READ0);
++	empty_fifo(flctl);
++	start_translation(flctl);
+ 
+ 	for (sector = 0; sector < page_sectors; sector++) {
+ 		int ret;
+-
+-		empty_fifo(flctl);
+-		writel(readl(FLCMDCR(flctl)) | 1, FLCMDCR(flctl));
+-		writel(page_addr << 2 | sector, FLADR(flctl));
+-
+-		start_translation(flctl);
+ 		read_fiforeg(flctl, 512, 512 * sector);
+ 
+ 		ret = read_ecfiforeg(flctl,
+@@ -397,8 +393,10 @@ static void execmd_read_page_sector(struct mtd_info *mtd, int page_addr)
+ 			flctl->hwecc_cant_correct[sector] = 1;
+ 
+ 		writel(0x0, FL4ECCCR(flctl));
+-		wait_completion(flctl);
+ 	}
 +
-+		nand@0 {
-+			#address-cells = <1>;
-+			#size-cells = <1>;
++	wait_completion(flctl);
 +
-+			nand-ecc-mode = "hw";
-+			nand-bus-width = <16>;
-+			flctl-snand;
-+
-+			system@0 {
-+				label = "system";
-+				reg = <0x0 0x8000000>;
-+			};
-+
-+			userdata@8000000 {
-+				label = "userdata";
-+				reg = <0x8000000 0x10000000>;
-+			};
-+
-+			cache@18000000 {
-+				label = "cache";
-+				reg = <0x18000000 0x8000000>;
-+			};
-+		};
-+	};
-+
- 	i2c0: i2c@fff20000 {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
+ 	writel(readl(FLCMNCR(flctl)) & ~(ACM_SACCES_MODE | _4ECCCORRECT),
+ 			FLCMNCR(flctl));
+ }
+@@ -430,31 +428,27 @@ static void execmd_write_page_sector(struct mtd_info *mtd)
+ 	int i, page_addr = flctl->seqin_page_addr;
+ 	int sector, page_sectors;
+ 
+-	if (flctl->page_size)
+-		page_sectors = 4;
+-	else
+-		page_sectors = 1;
+-
+-	writel(readl(FLCMNCR(flctl)) | ACM_SACCES_MODE, FLCMNCR(flctl));
++	page_sectors = flctl->page_size ? 4 : 1;
+ 
+ 	set_cmd_regs(mtd, NAND_CMD_PAGEPROG,
+ 			(NAND_CMD_PAGEPROG << 8) | NAND_CMD_SEQIN);
+ 
+-	for (sector = 0; sector < page_sectors; sector++) {
+-		empty_fifo(flctl);
+-		writel(readl(FLCMDCR(flctl)) | 1, FLCMDCR(flctl));
+-		writel(page_addr << 2 | sector, FLADR(flctl));
++	empty_fifo(flctl);
++	writel(readl(FLCMNCR(flctl)) | ACM_SACCES_MODE, FLCMNCR(flctl));
++	writel(readl(FLCMDCR(flctl)) | page_sectors, FLCMDCR(flctl));
++	writel(page_addr << 2, FLADR(flctl));
++	start_translation(flctl);
+ 
+-		start_translation(flctl);
++	for (sector = 0; sector < page_sectors; sector++) {
+ 		write_fiforeg(flctl, 512, 512 * sector);
+ 
+ 		for (i = 0; i < 4; i++) {
+ 			wait_wecfifo_ready(flctl); /* wait for write ready */
+ 			writel(0xFFFFFFFF, FLECFIFO(flctl));
+ 		}
+-		wait_completion(flctl);
+ 	}
+ 
++	wait_completion(flctl);
+ 	writel(readl(FLCMNCR(flctl)) & ~ACM_SACCES_MODE, FLCMNCR(flctl));
+ }
+ 
 -- 
 1.7.5.4
 
