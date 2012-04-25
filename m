@@ -1,42 +1,38 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 27 Apr 2012 02:11:23 +0000
-Subject: Re: [RFC/PATCH] sh: Remove cast of atomic_t in ATOMIC_INIT macro
-Message-Id: <20120427021123.GA17984@verge.net.au>
+From: Bastian Hecht <hechtb@googlemail.com>
+Date: Wed, 25 Apr 2012 14:03:28 +0000
+Subject: [PATCH v2 0/10] sh_flctl hardware ECC mode cleanup
+Message-Id: <1335362618-4559-1-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1335149312-1564-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
-In-Reply-To: <1335149312-1564-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mtd@lists.infradead.org, linux-sh@vger.kernel.org
+Cc: Brian Norris <computersforpeace@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pichart <laurent.pinchart@ideasonboard.com>
 
-On Fri, Apr 27, 2012 at 09:35:50AM +0900, Paul Mundt wrote:
-> On Wed, Apr 25, 2012 at 12:11:14PM +0900, Nobuhiro Iwamatsu wrote:
-> > And this problem occurs by STATIC_KEY_INIT_TRUE and
-> > STATIC_KEY_INIT_FALSE of include/linux/jump_label.h.
-> > The architecture by which jumplabel   is defined following,
-> > 
-> > > #define STATIC_KEY_INIT_TRUE ((struct static_key) \
-> > >     { .enabled = ATOMIC_INIT(1), .entries = (void *)1 })
-> > > #define STATIC_KEY_INIT_FALSE ((struct static_key) \
-> > >     { .enabled = ATOMIC_INIT(0), .entries = (void *)0 })
-> > 
-> > and does not define following.
-> > 
-> > > #define STATIC_KEY_INIT_TRUE ((struct static_key) \
-> > >                { .enabled = ATOMIC_INIT(1) })
-> > > #define STATIC_KEY_INIT_FALSE ((struct static_key) \
-> > >                { .enabled = ATOMIC_INIT(0) })
-> > 
-> > Although a problem is solved by considering it following.
-> > 
-> > > #define STATIC_KEY_INIT_TRUE {ATOMIC_INIT(1)}
-> > > #define STATIC_KEY_INIT_FALSE {ATOMIC_INIT(0)}
-> > 
-> > However, since definitions differ by the same macro name,
-> > extendibility is lost.
-> > I think that it is better to remove the cast from ATOMIC_INIT.
-> > 
-> Yes, agreed. I'll queue up the patch, thanks.
+changelog:
+  - extract the iounmap calls from patch "Add support for error IRQ" into a new patch.
+  - swapped patches "Add support for error IRQ" and "Add error IRQ resource"
+  - corrected an indentation mistake
 
-Excellent.
+This series cleans up the flctl when run in hardware ecc mode. The first 2 patches make sure we catch all errors that result from hardware transmission. The other patches handle how the ecc is layed out, correct some code to write and read it and make sure we propagate the statistics about errors/repairs to the nand base.
+
+Bastian Hecht (10):
+  mtd: sh_flctl: Add missing iounmap()
+  ARM: sh-mobile: mackerel: Add error IRQ resource
+  mtd: sh_flctl: Add support for error IRQ
+  mtd: sh_flctl: Use different OOB layout
+  mtd: sh_flctl: Fix hardware ECC behaviour
+  mtd: sh_flctl: Simplify the hardware ecc page read/write
+  mtd: sh_flctl: Group sector accesses into a single transfer
+  mtd: sh_flctl: Restructure the hardware ECC handling
+  mtd: sh_flctl: Use user oob data in hardware ECC mode
+  ARM: sh-mobile: mackerel: Use hardware error correction
+
+ arch/arm/mach-shmobile/board-mackerel.c |    7 +-
+ drivers/mtd/nand/sh_flctl.c             |  296 ++++++++++++++++++-------------
+ include/linux/mtd/sh_flctl.h            |   23 ++-
+ 3 files changed, 193 insertions(+), 133 deletions(-)
+
+-- 
+1.7.5.4
+
