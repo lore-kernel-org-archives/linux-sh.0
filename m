@@ -1,35 +1,40 @@
 From: Bastian Hecht <hechtb@googlemail.com>
-Date: Fri, 20 Apr 2012 09:13:50 +0000
-Subject: [PATCH 9/9] ARM: sh-mobile: mackerel: Use hardware error correction
-Message-Id: <1334913230-23615-10-git-send-email-hechtb@gmail.com>
+Date: Wed, 25 Apr 2012 14:03:30 +0000
+Subject: [PATCH v2 02/10] ARM: sh-mobile: mackerel: Add error IRQ resource
+Message-Id: <1335362618-4559-3-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1334913230-23615-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1334913230-23615-1-git-send-email-hechtb@gmail.com>
+References: <1335362618-4559-1-git-send-email-hechtb@gmail.com>
+In-Reply-To: <1335362618-4559-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-mtd@lists.infradead.org, linux-sh@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, Laurent Pichart <laurent.pinchart@ideasonboard.com>
+Cc: Brian Norris <computersforpeace@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pichart <laurent.pinchart@ideasonboard.com>
 
-Use the built-in hardware error code correction of the sh_flctl.
+Supply the platform data for the FLSTEI error IRQ.
 
 Signed-off-by: Bastian Hecht <hechtb@gmail.com>
 ---
- arch/arm/mach-shmobile/board-mackerel.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/board-mackerel.c |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
 
 diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 1de1fb7..f8289f4 100644
+index 8758f94..1de1fb7 100644
 --- a/arch/arm/mach-shmobile/board-mackerel.c
 +++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1003,6 +1003,7 @@ static struct sh_flctl_platform_data nand_flash_data = {
- 	.flcmncr_val	= CLK_16B_12L_4H | TYPESEL_SET
- 			| SHBUSSEL | SEL_16BIT | SNAND_E,
- 	.use_holden	= 1,
-+	.has_hwecc	= 1,
+@@ -990,7 +990,11 @@ static struct resource nand_flash_resources[] = {
+ 		.start	= 0xe6a30000,
+ 		.end	= 0xe6a3009b,
+ 		.flags	= IORESOURCE_MEM,
+-	}
++	},
++	[1] = {
++		.start	= evt2irq(0x0d80), /* flstei: status error irq */
++		.flags	= IORESOURCE_IRQ,
++	},
  };
  
- static struct platform_device nand_flash_device = {
+ static struct sh_flctl_platform_data nand_flash_data = {
 -- 
 1.7.5.4
 
