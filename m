@@ -1,15 +1,15 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Tue, 24 Apr 2012 21:51:34 +0000
-Subject: [PATCH 3/3] PM / Runtime: Remove device fields related to suspend time
-Message-Id: <201204242351.35172.rjw@sisk.pl>
+Date: Wed, 25 Apr 2012 19:30:59 +0000
+Subject: [PATCH 3/3] PM / Runtime: Remove device fields related to suspend time, v2
+Message-Id: <201204252130.59814.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201204242349.26288.rjw@sisk.pl>
-In-Reply-To: <201204242349.26288.rjw@sisk.pl>
+References: <201204242349.26288.rjw@sisk.pl> <201204252128.33016.rjw@sisk.pl>
+In-Reply-To: <201204252128.33016.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Linux PM list <linux-pm@vger.kernel.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Kevin Hilman <khilman@ti.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, markgross@thegnar.org, Jean Pihet <j-pihet@ti.com>
+Cc: LKML <linux-kernel@vger.kernel.org>, Kevin Hilman <khilman@ti.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, markgross@thegnar.org, Jean Pihet <j-pihet@ti.com>, Simon Horman <horms@verge.net.au>
 
 From: Rafael J. Wysocki <rjw@sisk.pl>
 
@@ -24,10 +24,10 @@ which simplifies the runtime PM framework quite a bit.
 Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
  drivers/base/power/domain.c  |   13 -----
- drivers/base/power/runtime.c |  105 -------------------------------------------
+ drivers/base/power/runtime.c |  103 -------------------------------------------
  include/linux/pm.h           |    2 
  include/linux/pm_runtime.h   |    3 -
- 4 files changed, 123 deletions(-)
+ 4 files changed, 2 insertions(+), 119 deletions(-)
 
 Index: linux/drivers/base/power/runtime.c
 =================================--- linux.orig/drivers/base/power/runtime.c
@@ -88,19 +88,21 @@ Index: linux/drivers/base/power/runtime.c
  	int retval;
  
  	trace_rpm_suspend(dev, rpmflags);
-@@ -445,38 +403,8 @@ static int rpm_suspend(struct device *de
+@@ -445,38 +403,14 @@ static int rpm_suspend(struct device *de
  		goto out;
  	}
  
 -	qos.constraint_ns = __dev_pm_qos_read_value(dev);
 -	if (qos.constraint_ns < 0) {
 -		/* Negative constraint means "never suspend". */
--		retval = -EPERM;
--		goto out;
--	}
++	if (__dev_pm_qos_read_value(dev) < 0) {
++		/* Negative PM QoS constraint means "never suspend". */
+ 		retval = -EPERM;
+ 		goto out;
+ 	}
 -	qos.constraint_ns *= NSEC_PER_USEC;
 -	qos.time_now = ktime_get();
--
+ 
  	__update_runtime_status(dev, RPM_SUSPENDING);
  
 -	if (!dev->power.ignore_children) {
@@ -127,7 +129,7 @@ Index: linux/drivers/base/power/runtime.c
  	if (dev->pm_domain)
  		callback = dev->pm_domain->ops.runtime_suspend;
  	else if (dev->type && dev->type->pm)
-@@ -529,8 +457,6 @@ static int rpm_suspend(struct device *de
+@@ -529,8 +463,6 @@ static int rpm_suspend(struct device *de
  
   fail:
  	__update_runtime_status(dev, RPM_ACTIVE);
@@ -136,7 +138,7 @@ Index: linux/drivers/base/power/runtime.c
  	dev->power.deferred_resume = false;
  	wake_up_all(&dev->power.wait_queue);
  
-@@ -704,9 +630,6 @@ static int rpm_resume(struct device *dev
+@@ -704,9 +636,6 @@ static int rpm_resume(struct device *dev
  	if (dev->power.no_callbacks)
  		goto no_callback;	/* Assume success. */
  
@@ -146,7 +148,7 @@ Index: linux/drivers/base/power/runtime.c
  	__update_runtime_status(dev, RPM_RESUMING);
  
  	if (dev->pm_domain)
-@@ -1369,9 +1292,6 @@ void pm_runtime_init(struct device *dev)
+@@ -1369,9 +1298,6 @@ void pm_runtime_init(struct device *dev)
  	setup_timer(&dev->power.suspend_timer, pm_suspend_timer_fn,
  			(unsigned long)dev);
  
@@ -156,7 +158,7 @@ Index: linux/drivers/base/power/runtime.c
  	init_waitqueue_head(&dev->power.wait_queue);
  }
  
-@@ -1389,28 +1309,3 @@ void pm_runtime_remove(struct device *de
+@@ -1389,28 +1315,3 @@ void pm_runtime_remove(struct device *de
  	if (dev->power.irq_safe && dev->parent)
  		pm_runtime_put_sync(dev->parent);
  }
@@ -200,7 +202,7 @@ Index: linux/include/linux/pm.h
 Index: linux/drivers/base/power/domain.c
 =================================--- linux.orig/drivers/base/power/domain.c
 +++ linux/drivers/base/power/domain.c
-@@ -444,16 +444,6 @@ static int pm_genpd_poweroff(struct gene
+@@ -445,16 +445,6 @@ static int pm_genpd_poweroff(struct gene
  
  	genpd->status = GPD_STATE_POWER_OFF;
  
@@ -217,7 +219,7 @@ Index: linux/drivers/base/power/domain.c
  	list_for_each_entry(link, &genpd->slave_links, slave_node) {
  		genpd_sd_counter_dec(link->master);
  		genpd_queue_power_off_work(link->master);
-@@ -513,9 +503,6 @@ static int pm_genpd_runtime_suspend(stru
+@@ -515,9 +505,6 @@ static int pm_genpd_runtime_suspend(stru
  	if (ret)
  		return ret;
  
