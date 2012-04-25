@@ -1,28 +1,54 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 06 Apr 2012 00:22:33 +0000
-Subject: Re: [PATCH] serial: sh-sci: modify sci_break_ctl()
-Message-Id: <4F7E3749.8010209@renesas.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Wed, 25 Apr 2012 21:13:23 +0000
+Subject: Re: [PATCH] ARM: mach-shmobile: clock-r8a7740: add FSI clock
+Message-Id: <201204252313.23899.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4F7D6708.5060500@renesas.com>
-In-Reply-To: <4F7D6708.5060500@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-2012/04/05 18:34, Shimoda, Yoshihiro wrote:
-> SCIF modules which have SCSPTR can output the break signal.
-> This patch supports it.
-> 
-> This patch tested on sh7757lcr.
-> 
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+On Monday, April 02, 2012, Kuninori Morimoto wrote:
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+Applied to the r8a7740 branch of the renesas.git tree.
+
+Thanks,
+Rafael
+
+
 > ---
->  drivers/tty/serial/sh-sci.c |   30 ++++++++++++++++++++++++++----
->  1 files changed, 26 insertions(+), 4 deletions(-)
+>  arch/arm/mach-shmobile/clock-r8a7740.c |    4 +++-
+>  1 files changed, 3 insertions(+), 1 deletions(-)
+> 
+> diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+> index 3b35b9a..4a659f2e 100644
+> --- a/arch/arm/mach-shmobile/clock-r8a7740.c
+> +++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+> @@ -257,7 +257,7 @@ enum {
+>  	MSTP222,
+>  	MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
+>  
+> -	MSTP329, MSTP323,
+> +	MSTP329, MSTP328, MSTP323,
+>  
+>  	MSTP_NR
+>  };
+> @@ -280,6 +280,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+>  	[MSTP200] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR2,  0, 0), /* SCIFA4 */
+>  
+>  	[MSTP329] = SH_CLK_MSTP32(&r_clk,		SMSTPCR3, 29, 0), /* CMT10 */
+> +	[MSTP328] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],	SMSTPCR3, 28, 0), /* FSI */
+>  	[MSTP323] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR3, 23, 0), /* IIC1 */
+>  };
+>  
+> @@ -334,6 +335,7 @@ static struct clk_lookup lookups[] = {
+>  	CLKDEV_DEV_ID("sh-sci.6",		&mstp_clks[MSTP230]),
+>  
+>  	CLKDEV_DEV_ID("sh_cmt.10",		&mstp_clks[MSTP329]),
+> +	CLKDEV_DEV_ID("sh_fsi2",		&mstp_clks[MSTP328]),
+>  	CLKDEV_DEV_ID("i2c-sh_mobile.1",	&mstp_clks[MSTP323]),
+>  };
+>  
+> 
 
-I would like to cancel this patch because I forgot to add serial_sci.h
-to the patch.
-
-Best regards,
-Yoshihiro Shimoda
