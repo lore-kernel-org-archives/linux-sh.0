@@ -1,36 +1,43 @@
-From: Adrian McMenamin <lkmladrian@gmail.com>
-Date: Fri, 06 Apr 2012 13:40:45 +0000
-Subject: Re: Utility code to generate a VMUFAT filesystem
-Message-Id: <CAN628AE6GLEUGke68z0rfbZWvmEuTsBQ0EHcy4mzC6Bz3bYX5Q@mail.gmail.com>
+From: Bastian Hecht <hechtb@googlemail.com>
+Date: Wed, 25 Apr 2012 14:03:29 +0000
+Subject: [PATCH v2 01/10] mtd: sh_flctl: Add missing iounmap()
+Message-Id: <1335362618-4559-2-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CAN628AHjJeLD_bUNGSDmBOo_EW=aFML-VZ-A4GRyAi2eNwA1yw@mail.gmail.com>
-	<201203250232.29843.vapier@gentoo.org>
-In-Reply-To: <201203250232.29843.vapier@gentoo.org>
+References: <1335362618-4559-1-git-send-email-hechtb@gmail.com>
+In-Reply-To: <1335362618-4559-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mike Frysinger <vapier@gentoo.org>
-Cc: viro@zeniv.linux.org.uk, linux-fsdevel@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>, Linux-sh <linux-sh@vger.kernel.org>, Adrian McMenamin <adrianmcmenamin@gmail.com>
+To: linux-mtd@lists.infradead.org, linux-sh@vger.kernel.org
+Cc: Brian Norris <computersforpeace@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pichart <laurent.pinchart@ideasonboard.com>
 
-On 25 March 2012 14:32, Mike Frysinger <vapier@gentoo.org> wrote:
-> On Wednesday 21 March 2012 00:41:17 Adrian McMenamin wrote:
->> /*
->>  * mkfs.vmufat.c - make a linux (VMUFAT) filesystem
->>  *
->>  * Copyright (c) 2012 Adrian McMenamin adrianmcmenamin@gmail.com
->>  * Licensed under Version 2 of the GNU General Public Licence
->>  *
->>  * Parts shamelessly copied from other mkfs code
->>  * copyright Linus Torvalds and others
+Add the unmapping for the error case and for the driver removal.
 
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+---
+ drivers/mtd/nand/sh_flctl.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
-With thanks to Mike - a new version of mkfs.vmufat.c is now available
-at https://github.com/mcmenaminadrian/mkfs.vmufat
+diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
+index 2ee9a1b..ed86a64 100644
+--- a/drivers/mtd/nand/sh_flctl.c
++++ b/drivers/mtd/nand/sh_flctl.c
+@@ -919,6 +919,7 @@ static int __devinit flctl_probe(struct platform_device *pdev)
+ 
+ err_chip:
+ 	pm_runtime_disable(&pdev->dev);
++	iounmap(flctl->reg);
+ err_iomap:
+ 	kfree(flctl);
+ 	return ret;
+@@ -930,6 +931,7 @@ static int __devexit flctl_remove(struct platform_device *pdev)
+ 
+ 	nand_release(&flctl->mtd);
+ 	pm_runtime_disable(&pdev->dev);
++	iounmap(flctl->reg);
+ 	kfree(flctl);
+ 
+ 	return 0;
+-- 
+1.7.5.4
 
-I have tried to incorporate all his points - even the bits where he
-was complaining about the code I lifted from Linus's work :)
-
-
-Any and all feedback welcome.
-
-Adrian
