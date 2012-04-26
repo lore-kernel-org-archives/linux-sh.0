@@ -1,60 +1,84 @@
-From: Anton Vorontsov <anton.vorontsov@linaro.org>
-Date: Mon, 23 Apr 2012 07:09:43 +0000
-Subject: [PATCH 9/9] um: Properly check all process' threads for a live mm
-Message-Id: <20120423070943.GI30752@lizard>
+From: Bastian Hecht <hechtb@googlemail.com>
+Date: Thu, 26 Apr 2012 14:01:02 +0000
+Subject: [RFC DT style 4/4] docs/mtd/nand/sh_flctl: Initial device tree binding specification
+Message-Id: <1335448862-5201-5-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120423070641.GA27702@lizard>
-In-Reply-To: <20120423070641.GA27702@lizard>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-kill_off_processes() might miss a valid process, this is because
-checking for process->mm is not enough. Process' main thread may
-exit or detach its mm via use_mm(), but other threads may still
-have a valid mm.
-
-To catch this we use find_lock_task_mm(), which walks up all
-threads and returns an appropriate task (with task lock held).
-
-Suggested-by: Oleg Nesterov <oleg@redhat.com>
-Signed-off-by: Anton Vorontsov <anton.vorontsov@linaro.org>
+Add documentation for setting up the flctl flash controller via device
+tree description.
 ---
- arch/um/kernel/reboot.c |   13 +++++++------
- 1 file changed, 7 insertions(+), 6 deletions(-)
+ .../devicetree/bindings/mtd/rmobile-flctl.txt      |   58 ++++++++++++++++++++
+ 1 files changed, 58 insertions(+), 0 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/mtd/rmobile-flctl.txt
 
-diff --git a/arch/um/kernel/reboot.c b/arch/um/kernel/reboot.c
-index 1411f4e..3d15243 100644
---- a/arch/um/kernel/reboot.c
-+++ b/arch/um/kernel/reboot.c
-@@ -6,6 +6,7 @@
- #include "linux/sched.h"
- #include "linux/spinlock.h"
- #include "linux/slab.h"
-+#include "linux/oom.h"
- #include "kern_util.h"
- #include "os.h"
- #include "skas.h"
-@@ -25,13 +26,13 @@ static void kill_off_processes(void)
- 
- 		read_lock(&tasklist_lock);
- 		for_each_process(p) {
--			task_lock(p);
--			if (!p->mm) {
--				task_unlock(p);
-+			struct task_struct *t;
+diff --git a/Documentation/devicetree/bindings/mtd/rmobile-flctl.txt b/Documentation/devicetree/bindings/mtd/rmobile-flctl.txt
+new file mode 100644
+index 0000000..ee0011b
+--- /dev/null
++++ b/Documentation/devicetree/bindings/mtd/rmobile-flctl.txt
+@@ -0,0 +1,58 @@
++Renesas RMobile Flash controller FLCTL.
 +
-+			t = find_lock_task_mm(p);
-+			if (!t)
- 				continue;
--			}
--			pid = p->mm->context.id.u.pid;
--			task_unlock(p);
-+			pid = t->mm->context.id.u.pid;
-+			task_unlock(t);
- 			os_kill_ptraced_process(pid, 1);
- 		}
- 		read_unlock(&tasklist_lock);
++Controller properties:
++- compatible:	"rmobile,flctl".
++- reg:		I/O map base address.
++- ext-bus-con:	"SHBUSSEL - External Bus Connection". Set this flag when the
++		I/O is multiplexed with the external bus through BSC.
++- release-bus:	"HOLDEN - Bus occupancy enable". Set this flag if the bus shall
++		be released when the FIFO becomes empty or full.
++- clk-scheme:	The bit fields differ between different hardware releases.
++		Please consult the datasheet and select a proper u32 that
++		is OR'ed to FLCMNCR.
++
++For each NAND chip connected to the FLCTL add a subnode compliant to mtd/nand
++bindings.
++
++- nand-ecc-mode: See nand.txt. Hardware and software ECC modes are supported.
++- nand-bus-width: See nand.txt. 16 and 8 bit widths are supported.
++- flctl-snand:	"SNAND - Large capacity NAND Flash Memory Select". Set this for
++		2k page size NAND chips or for AG-AND-type chips with a capacity
++		of 1Gb or more.
++
++These options may follow partition definitions, see partition.txt.
++
++Examples:
++
++flctl@e6000000 {
++	compatible = "rmobile,flctl";
++	reg = <0xe6000000 0x100>;
++
++	ext-bus-con;
++	use-holden;
++	clk-scheme = <0x20200>; /* Low 12, high 4 cycles */
++
++	nand@0 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		nand-ecc-mode = "hw";
++		nand-bus-width = <16>;
++		nand-large-page;
++
++		system@0 {
++			label = "system";
++			reg = <0x0 0x8000000>;
++		};
++
++		userdata@8000000 {
++			label = "userdata";
++			reg = <0x8000000 0x10000000>;
++		};
++
++		cache@18000000 {
++			label = "cache";
++			reg = <0x18000000 0x8000000>;
++		};
++	};
++};
 -- 
-1.7.9.2
+1.7.5.4
+
