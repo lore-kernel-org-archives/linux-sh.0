@@ -1,112 +1,128 @@
-From: Anton Vorontsov <anton.vorontsov@linaro.org>
-Date: Mon, 23 Apr 2012 07:07:36 +0000
-Subject: [PATCH 1/9] cpu: Introduce clear_tasks_mm_cpumask() helper
-Message-Id: <20120423070736.GA30752@lizard>
+From: Andrew Morton <akpm@linux-foundation.org>
+Date: Thu, 26 Apr 2012 23:59:11 +0000
+Subject: Re: [PATCH 1/9] cpu: Introduce clear_tasks_mm_cpumask() helper
+Message-Id: <20120426165911.00cebd31.akpm@linux-foundation.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20120423070641.GA27702@lizard>
-In-Reply-To: <20120423070641.GA27702@lizard>
+	<20120423070736.GA30752@lizard>
+In-Reply-To: <20120423070736.GA30752@lizard>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Many architectures clear tasks' mm_cpumask like this:
+On Mon, 23 Apr 2012 00:07:36 -0700
+Anton Vorontsov <anton.vorontsov@linaro.org> wrote:
 
-	read_lock(&tasklist_lock);
-	for_each_process(p) {
-		if (p->mm)
-			cpumask_clear_cpu(cpu, mm_cpumask(p->mm));
-	}
-	read_unlock(&tasklist_lock);
+> Many architectures clear tasks' mm_cpumask like this:
+> 
+> 	read_lock(&tasklist_lock);
+> 	for_each_process(p) {
+> 		if (p->mm)
+> 			cpumask_clear_cpu(cpu, mm_cpumask(p->mm));
+> 	}
+> 	read_unlock(&tasklist_lock);
+> 
+> Depending on the context, the code above may have several problems,
+> such as:
+> 
+> 1. Working with task->mm w/o getting mm or grabing the task lock is
+>    dangerous as ->mm might disappear (exit_mm() assigns NULL under
+>    task_lock(), so tasklist lock is not enough).
+> 
+> 2. Checking for process->mm is not enough because process' main
+>    thread may exit or detach its mm via use_mm(), but other threads
+>    may still have a valid mm.
+> 
+> This patch implements a small helper function that does things
+> correctly, i.e.:
+> 
+> 1. We take the task's lock while whe handle its mm (we can't use
+>    get_task_mm()/mmput() pair as mmput() might sleep);
+> 
+> 2. To catch exited main thread case, we use find_lock_task_mm(),
+>    which walks up all threads and returns an appropriate task
+>    (with task lock held).
+> 
+> Also, Per Peter Zijlstra's idea, now we don't grab tasklist_lock in
+> the new helper, instead we take the rcu read lock. We can do this
+> because the function is called after the cpu is taken down and marked
+> offline, so no new tasks will get this cpu set in their mm mask.
+> 
 
-Depending on the context, the code above may have several problems,
-such as:
+Seems reasonable.
 
-1. Working with task->mm w/o getting mm or grabing the task lock is
-   dangerous as ->mm might disappear (exit_mm() assigns NULL under
-   task_lock(), so tasklist lock is not enough).
+> --- a/include/linux/cpu.h
+> +++ b/include/linux/cpu.h
+> @@ -179,6 +179,7 @@ extern void put_online_cpus(void);
+>  #define hotcpu_notifier(fn, pri)	cpu_notifier(fn, pri)
+>  #define register_hotcpu_notifier(nb)	register_cpu_notifier(nb)
+>  #define unregister_hotcpu_notifier(nb)	unregister_cpu_notifier(nb)
+> +void clear_tasks_mm_cpumask(int cpu);
+>  int cpu_down(unsigned int cpu);
+>  
+>  #ifdef CONFIG_ARCH_CPU_PROBE_RELEASE
+> diff --git a/kernel/cpu.c b/kernel/cpu.c
+> index 2060c6e..ecdf499 100644
+> --- a/kernel/cpu.c
+> +++ b/kernel/cpu.c
+> @@ -10,6 +10,8 @@
+>  #include <linux/sched.h>
+>  #include <linux/unistd.h>
+>  #include <linux/cpu.h>
+> +#include <linux/oom.h>
+> +#include <linux/rcupdate.h>
+>  #include <linux/export.h>
+>  #include <linux/kthread.h>
+>  #include <linux/stop_machine.h>
+> @@ -171,6 +173,30 @@ void __ref unregister_cpu_notifier(struct notifier_block *nb)
+>  }
+>  EXPORT_SYMBOL(unregister_cpu_notifier);
+>  
+> +void clear_tasks_mm_cpumask(int cpu)
 
-2. Checking for process->mm is not enough because process' main
-   thread may exit or detach its mm via use_mm(), but other threads
-   may still have a valid mm.
+The operation of this function was presumably obvious to you at the
+time you wrote it, but that isn't true of other people at later times.
 
-This patch implements a small helper function that does things
-correctly, i.e.:
+Please document it?
 
-1. We take the task's lock while whe handle its mm (we can't use
-   get_task_mm()/mmput() pair as mmput() might sleep);
 
-2. To catch exited main thread case, we use find_lock_task_mm(),
-   which walks up all threads and returns an appropriate task
-   (with task lock held).
+> +{
+> +	struct task_struct *p;
+> +
+> +	/*
+> +	 * This function is called after the cpu is taken down and marked
+> +	 * offline,
 
-Also, Per Peter Zijlstra's idea, now we don't grab tasklist_lock in
-the new helper, instead we take the rcu read lock. We can do this
-because the function is called after the cpu is taken down and marked
-offline, so no new tasks will get this cpu set in their mm mask.
+hm, well.  Who said that this function will only ever be called
+after that CPU was taken down?  There is nothing in the function name
+nor in the (absent) documentation which enforces this precondition.
 
-Signed-off-by: Anton Vorontsov <anton.vorontsov@linaro.org>
----
- include/linux/cpu.h |    1 +
- kernel/cpu.c        |   26 ++++++++++++++++++++++++++
- 2 files changed, 27 insertions(+)
+If someone tries to use this function for a different purpose, or
+copies-and-modifies it for a different purpose, we just shot them in
+the foot.
 
-diff --git a/include/linux/cpu.h b/include/linux/cpu.h
-index ee28844..d2ca49f 100644
---- a/include/linux/cpu.h
-+++ b/include/linux/cpu.h
-@@ -179,6 +179,7 @@ extern void put_online_cpus(void);
- #define hotcpu_notifier(fn, pri)	cpu_notifier(fn, pri)
- #define register_hotcpu_notifier(nb)	register_cpu_notifier(nb)
- #define unregister_hotcpu_notifier(nb)	unregister_cpu_notifier(nb)
-+void clear_tasks_mm_cpumask(int cpu);
- int cpu_down(unsigned int cpu);
- 
- #ifdef CONFIG_ARCH_CPU_PROBE_RELEASE
-diff --git a/kernel/cpu.c b/kernel/cpu.c
-index 2060c6e..ecdf499 100644
---- a/kernel/cpu.c
-+++ b/kernel/cpu.c
-@@ -10,6 +10,8 @@
- #include <linux/sched.h>
- #include <linux/unistd.h>
- #include <linux/cpu.h>
-+#include <linux/oom.h>
-+#include <linux/rcupdate.h>
- #include <linux/export.h>
- #include <linux/kthread.h>
- #include <linux/stop_machine.h>
-@@ -171,6 +173,30 @@ void __ref unregister_cpu_notifier(struct notifier_block *nb)
- }
- EXPORT_SYMBOL(unregister_cpu_notifier);
- 
-+void clear_tasks_mm_cpumask(int cpu)
-+{
-+	struct task_struct *p;
-+
-+	/*
-+	 * This function is called after the cpu is taken down and marked
-+	 * offline, so its not like new tasks will ever get this cpu set in
-+	 * their mm mask. -- Peter Zijlstra
-+	 * Thus, we may use rcu_read_lock() here, instead of grabbing
-+	 * full-fledged tasklist_lock.
-+	 */
-+	rcu_read_lock();
-+	for_each_process(p) {
-+		struct task_struct *t;
-+
-+		t = find_lock_task_mm(p);
-+		if (!t)
-+			continue;
-+		cpumask_clear_cpu(cpu, mm_cpumask(t->mm));
-+		task_unlock(t);
-+	}
-+	rcu_read_unlock();
-+}
-+
- static inline void check_for_tasks(int cpu)
- {
- 	struct task_struct *p;
--- 
-1.7.9.2
+They'd be pretty dumb to do that without reading the local comment,
+but still...
+
+> 	 so its not like new tasks will ever get this cpu set in
+> +	 * their mm mask. -- Peter Zijlstra
+> +	 * Thus, we may use rcu_read_lock() here, instead of grabbing
+> +	 * full-fledged tasklist_lock.
+> +	 */
+> +	rcu_read_lock();
+> +	for_each_process(p) {
+> +		struct task_struct *t;
+> +
+> +		t = find_lock_task_mm(p);
+> +		if (!t)
+> +			continue;
+> +		cpumask_clear_cpu(cpu, mm_cpumask(t->mm));
+> +		task_unlock(t);
+> +	}
+> +	rcu_read_unlock();
+> +}
+
+It is good that this code exists under CONFIG_HOTPLUG_CPU.  Did you
+check that everything works correctly with CONFIG_HOTPLUG_CPU=n?
 
