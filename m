@@ -1,38 +1,58 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Wed, 25 Apr 2012 14:03:28 +0000
-Subject: [PATCH v2 0/10] sh_flctl hardware ECC mode cleanup
-Message-Id: <1335362618-4559-1-git-send-email-hechtb@gmail.com>
+From: Artem Bityutskiy <dedekind1@gmail.com>
+Date: Sat, 28 Apr 2012 15:26:13 +0000
+Subject: Re: [PATCH v2 0/10] sh_flctl hardware ECC mode cleanup
+Message-Id: <1335626773.1917.3.camel@koala>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="=-towusb8ws+Ppq5y3yFMw"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+References: <1335362618-4559-1-git-send-email-hechtb@gmail.com>
+In-Reply-To: <1335362618-4559-1-git-send-email-hechtb@gmail.com>
+To: Bastian Hecht <hechtb@googlemail.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Brian Norris <computersforpeace@gmail.com>, linux-mtd@lists.infradead.org, Laurent Pichart <laurent.pinchart@ideasonboard.com>, linux-sh@vger.kernel.org
+
+
+--=-towusb8ws+Ppq5y3yFMw
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+On Wed, 2012-04-25 at 16:03 +0200, Bastian Hecht wrote:
+> changelog:
+>   - extract the iounmap calls from patch "Add support for error IRQ" into=
+ a new patch.
+>   - swapped patches "Add support for error IRQ" and "Add error IRQ resour=
+ce"
+>   - corrected an indentation mistake
+
+Unfortunantely, I cannot build-test your patches because mackerel
+defconfig still does not build (mackerel_defconfig). Any suggestions how
+to work this around or any other defconfig to use?
+
+--=20
+Best Regards,
+Artem Bityutskiy
+
+--=-towusb8ws+Ppq5y3yFMw
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
 Content-Transfer-Encoding: 7bit
-To: linux-mtd@lists.infradead.org, linux-sh@vger.kernel.org
-Cc: Brian Norris <computersforpeace@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pichart <laurent.pinchart@ideasonboard.com>
 
-changelog:
-  - extract the iounmap calls from patch "Add support for error IRQ" into a new patch.
-  - swapped patches "Add support for error IRQ" and "Add error IRQ resource"
-  - corrected an indentation mistake
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-This series cleans up the flctl when run in hardware ecc mode. The first 2 patches make sure we catch all errors that result from hardware transmission. The other patches handle how the ecc is layed out, correct some code to write and read it and make sure we propagate the statistics about errors/repairs to the nand base.
+iQIcBAABAgAGBQJPnAwVAAoJECmIfjd9wqK0CjoP/24SojzXorFYvJliSKyMJfwv
+Xl5L8LsP98fu1A4xXVpa9wyIU3mxjXM1tWpDN0g/+rwrjjU4cKkgusfRHzQ3/+hp
+Et4hKi5chXZ0+jWMJG2TSesFkYgsL5jxpU+b8g3603sZDiodoxP595/PItTZuVd9
+mM7tT+9nxELgzZVfCf5cMyeC7Q0jk8h1guZZ25Q93NZX9D/TFR1bh5Q8c6JJDoUL
+8CpJ1wc/7RdtvAEB8UsZyCLWXlBIjYd0p3JCyR/xtJwot8DH9TAlapvbXn4DuFfd
+lOBzSmuzQOSD2wr7h8rvUtU67KDtU2evfq5FP8qiv08znZ9uT4azS7yUHRpL4Wld
+Rz4YrlzDY1d4KFWGXZjTa75DwpFP/FNqp85Wh5ZocefjqbDzsoNUsmLT6D/qtsVL
+XIe9Iek9PUVEqkeiHLsV9mliO7sup464mVbUPdr73+2kdWfv29SI/TaI7BwnO9ts
+J0vkGXDSNhEm1kaiqaMcquOjugwDjaNM8jpujosa3IpzpOrIpFW51MyrhFNq9Fpv
+c8xc+B4vkhpoLEWqbnQuGkNj2mBN0Viero3hdgRdfWbjnuPomltGsnZTRm+swBfF
+54hc0mQHM6+0Z6AoMyT3sSJsvlpYeONnAhfN7R+ApCoyTOzOexzPjhW5QWWbkMHj
+dLUdh+X/I6wsHhmTPK79
+=4Ea0
+-----END PGP SIGNATURE-----
 
-Bastian Hecht (10):
-  mtd: sh_flctl: Add missing iounmap()
-  ARM: sh-mobile: mackerel: Add error IRQ resource
-  mtd: sh_flctl: Add support for error IRQ
-  mtd: sh_flctl: Use different OOB layout
-  mtd: sh_flctl: Fix hardware ECC behaviour
-  mtd: sh_flctl: Simplify the hardware ecc page read/write
-  mtd: sh_flctl: Group sector accesses into a single transfer
-  mtd: sh_flctl: Restructure the hardware ECC handling
-  mtd: sh_flctl: Use user oob data in hardware ECC mode
-  ARM: sh-mobile: mackerel: Use hardware error correction
-
- arch/arm/mach-shmobile/board-mackerel.c |    7 +-
- drivers/mtd/nand/sh_flctl.c             |  296 ++++++++++++++++++-------------
- include/linux/mtd/sh_flctl.h            |   23 ++-
- 3 files changed, 193 insertions(+), 133 deletions(-)
-
--- 
-1.7.5.4
+--=-towusb8ws+Ppq5y3yFMw--
 
