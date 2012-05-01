@@ -1,34 +1,64 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Tue, 15 May 2012 19:13:16 +0000
-Subject: Re: [PATCH] gpio: Emma Mobile GPIO driver
-Message-Id: <201205151913.16372.arnd@arndb.de>
+From: Peter Zijlstra <a.p.zijlstra@chello.nl>
+Date: Tue, 01 May 2012 10:45:33 +0000
+Subject: Re: [PATCH 1/9] cpu: Introduce clear_tasks_mm_cpumask() helper
+Message-Id: <1335869133.13683.125.camel@twins>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120511094103.16423.51840.sendpatchset@w520> <201205121318.54115.arnd@arndb.de> <CANqRtoQa8Ewd74d+t0iXPXkmUDan6OjcD5VPwCFpQKcg8KvXbg@mail.gmail.com>
-In-Reply-To: <CANqRtoQa8Ewd74d+t0iXPXkmUDan6OjcD5VPwCFpQKcg8KvXbg@mail.gmail.com>
+References: <20120423070641.GA27702@lizard> <20120423070736.GA30752@lizard>
+ <20120426165911.00cebd31.akpm@linux-foundation.org>
+In-Reply-To: <20120426165911.00cebd31.akpm@linux-foundation.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: Linus Walleij <linus.walleij@linaro.org>, linux-kernel@vger.kernel.org, rjw@sisk.pl, linus.walleij@stericsson.com, linux-sh@vger.kernel.org, horms@verge.net.au, grant.likely@secretlab.ca, lethal@linux-sh.org, olof@lixom.net
+To: linux-arm-kernel@lists.infradead.org
 
-On Tuesday 15 May 2012, Magnus Damm wrote:
-> >> > Isn't there a new nice inline that will both request and
-> >> > remap a piece of memory?
-> >>
-> >> If so then that would be excellent. Especially together with
-> >> ioread/iowrite so the code can work both for IOMEM and PORT
-> >> transparently.
-> >
-> > We have a bunch of helpers, but I think none that does
-> > everything yet. io_iomap() locates and remaps the resource.
-> > devm_request_and_ioremap() does the request and the map, but
-> > doesn't pull it out of the device.
+On Thu, 2012-04-26 at 16:59 -0700, Andrew Morton wrote:
+> > +void clear_tasks_mm_cpumask(int cpu)
 > 
-> Let me know if you see any reason for not doing that. I'd be happy to
-> try to cook something up and convert my drivers one by one.
+> The operation of this function was presumably obvious to you at the
+> time you wrote it, but that isn't true of other people at later times.
+> 
+> Please document it?
+> 
+> 
+> > +{
+> > +     struct task_struct *p;
+> > +
+> > +     /*
+> > +      * This function is called after the cpu is taken down and marked
+> > +      * offline,
+> 
+> hm, well.  Who said that this function will only ever be called
+> after that CPU was taken down?  There is nothing in the function name
+> nor in the (absent) documentation which enforces this precondition.
+> 
+> If someone tries to use this function for a different purpose, or
+> copies-and-modifies it for a different purpose, we just shot them in
+> the foot.
+> 
+> They'd be pretty dumb to do that without reading the local comment,
+> but still...
 
-I think it would be good to have it, so I don't mind if you give it
-a go, but I fear that a lot of people cna have conflicting ideas on
-what the perfect interface looks like ;-)
+Methinks something simple like:
 
-	Arnd
+	WARN_ON(cpu_online(cpu));
+
+Ought to cure that worry, no? :-)
+
+> 
+> >        so its not like new tasks will ever get this cpu set in
+> > +      * their mm mask. -- Peter Zijlstra
+> > +      * Thus, we may use rcu_read_lock() here, instead of grabbing
+> > +      * full-fledged tasklist_lock.
+> > +      */
+> > +     rcu_read_lock();
+> > +     for_each_process(p) {
+> > +             struct task_struct *t;
+> > +
+> > +             t = find_lock_task_mm(p);
+> > +             if (!t)
+> > +                     continue;
+> > +             cpumask_clear_cpu(cpu, mm_cpumask(t->mm));
+> > +             task_unlock(t);
+> > +     }
+> > +     rcu_read_unlock();
+> > +} 
