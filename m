@@ -1,92 +1,55 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 31 May 2012 00:22:56 +0000
-Subject: [PATCH 2/9] ARM: mach-shmobile: share TS_HI/LOW value for DMAEngine
-Message-Id: <87pq9l8ahu.wl%kuninori.morimoto.gx@renesas.com>
+From: "Western Union" <w-online@wu.com>
+Date: Tue, 01 May 2012 15:14:51 +0000
+Subject: $5000 AVAILABLE FOR PICK UP
+Message-Id: <20120501171451.193421we09oa3mcg@webmail.ladresse.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-In SH-ARM CPU (= sh7372/sh73a0/r8a7740),
-CHCR :: TS (= DMA Transfer Size Specify) bit is mapped as
-TS[3:2] = CHCR[21:20]
-TS[1:0] = CHCR[4:3]
 
-Because of these mapping, shdma needs
-special settings on sh_dmae_pdata / sh_dmae_slave_config.
 
-But it is easy to understand if these settings shared defined
-value instead of raw value.
-This patch modify these.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm/mach-shmobile/include/mach/dma-register.h |   11 ++++++++++-
- arch/arm/mach-shmobile/setup-sh7372.c              |    8 ++++----
- arch/arm/mach-shmobile/setup-sh73a0.c              |    8 ++++----
- 3 files changed, 18 insertions(+), 9 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/include/mach/dma-register.h b/arch/arm/mach-shmobile/include/mach/dma-register.h
-index 72a874030..02bcfe4 100644
---- a/arch/arm/mach-shmobile/include/mach/dma-register.h
-+++ b/arch/arm/mach-shmobile/include/mach/dma-register.h
-@@ -38,7 +38,16 @@ enum {
- 	[XMIT_SZ_512BIT]	= 6,	\
- }
- 
--#define TS_INDEX2VAL(i) ((((i) & 0x3) << 3) | (((i) & 0xc) << (20 - 2)))
-+#define TS_LOW_BIT	0x3 /* --xx */
-+#define TS_HI_BIT	0xc /* xx-- */
-+
-+#define TS_LOW_SHIFT	(3)
-+#define TS_HI_SHIFT	(20 - 2)	/* 2 bits for shifted low TS */
-+
-+#define TS_INDEX2VAL(i) \
-+	((((i) & TS_LOW_BIT) << TS_LOW_SHIFT) |\
-+	 (((i) & TS_HI_BIT)  << TS_HI_SHIFT))
-+
- #define CHCR_TX(xmit_sz) (DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL((xmit_sz)))
- #define CHCR_RX(xmit_sz) (DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL((xmit_sz)))
- 
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index 86f08ec..a2333f3 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -503,10 +503,10 @@ static struct sh_dmae_pdata dma_platform_data = {
- 	.slave_num	= ARRAY_SIZE(sh7372_dmae_slaves),
- 	.channel	= sh7372_dmae_channels,
- 	.channel_num	= ARRAY_SIZE(sh7372_dmae_channels),
--	.ts_low_shift	= 3,
--	.ts_low_mask	= 0x18,
--	.ts_high_shift	= (20 - 2),	/* 2 bits for shifted low TS */
--	.ts_high_mask	= 0x00300000,
-+	.ts_low_shift	= TS_LOW_SHIFT,
-+	.ts_low_mask	= TS_LOW_BIT << TS_LOW_SHIFT,
-+	.ts_high_shift	= TS_HI_SHIFT,
-+	.ts_high_mask	= TS_HI_BIT << TS_HI_SHIFT,
- 	.ts_shift	= ts_shift,
- 	.ts_shift_num	= ARRAY_SIZE(ts_shift),
- 	.dmaor_init	= DMAOR_DME,
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index 2035101..7f4757f 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -586,10 +586,10 @@ static struct sh_dmae_pdata sh73a0_dmae_platform_data = {
- 	.slave_num      = ARRAY_SIZE(sh73a0_dmae_slaves),
- 	.channel        = sh73a0_dmae_channels,
- 	.channel_num    = ARRAY_SIZE(sh73a0_dmae_channels),
--	.ts_low_shift   = 3,
--	.ts_low_mask    = 0x18,
--	.ts_high_shift  = (20 - 2),     /* 2 bits for shifted low TS */
--	.ts_high_mask   = 0x00300000,
-+	.ts_low_shift   = TS_LOW_SHIFT,
-+	.ts_low_mask    = TS_LOW_BIT << TS_LOW_SHIFT,
-+	.ts_high_shift  = TS_HI_SHIFT,
-+	.ts_high_mask   = TS_HI_BIT << TS_HI_SHIFT,
- 	.ts_shift       = ts_shift,
- 	.ts_shift_num   = ARRAY_SIZE(ts_shift),
- 	.dmaor_init     = DMAOR_DME,
 -- 
-1.7.5.4
+
+Dear Beneficiary?
+This is to inform you that we have already sent
+you USD5000.00 dollars through Western union
+as we have been mandated by United Nations
+and ECOWAS which are supporting individual
+due to the worldwide economy meltdown, to
+transfer to you the full compensation sum
+payment of $1.800,000.00 USD via western
+union by this government.
+
+In this regards, We decided to email the
+relevant details for you to be able to pick up
+this USD5000.00 to enable us send another
+USD5000.00 by tomorrow as you know we will be
+sending you only $5000.00 per day.You can
+track at before going to pick it up the link
+
+https://wumt.westernunion.com/asp/orderStatus.asp?country=global
+
+Mr.John Balo.
+Chief Operating Officer,
+Western Union.
+Tell: +2348182570719
+Email: johnbalo33@w.cn
+call or email the above details once you picked
+up this USD5000.00
+
+Here is the western union information to pick up
+the compensation Pick Up Information
+
+Sender's first name:.........Godwin
+Sender's last name:..........Onyia
+MTCN.................... 6890479748
+
+Amount Sent: $5000USD
+I am waiting for your call once you pick up this transfer.
+Best Regards,
+Mrs.Sandra Morris.
+Co-Ordinator,
+WESTERN UNION.
 
