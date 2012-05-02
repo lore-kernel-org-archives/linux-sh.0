@@ -1,73 +1,133 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 22 May 2012 02:29:00 +0000
-Subject: [PATCH 06/11] ARM: mach-shmobile: pfc-r8a7740: add HDMI GPIO support
-Message-Id: <87aa11aqzb.wl%kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 02 May 2012 12:47:18 +0000
+Subject: [PATCH 04/06] serial8250: Clean up default map and dl code
+Message-Id: <20120502124718.30480.3406.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20120502124642.30480.41373.sendpatchset@w520>
+In-Reply-To: <20120502124642.30480.41373.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-serial@vger.kernel.org
+Cc: horms@verge.net.au, arnd@arndb.de, linux-sh@vger.kernel.org, gregkh@linuxfoundation.org, swarren@wwwdotorg.org, linux-kernel@vger.kernel.org, rjw@sisk.pl, paul.gortmaker@windriver.com, lethal@linux-sh.org, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, dan.j.williams@intel.com, alan@linux.intel.com
 
-This patch is based on v1.0 manual
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Get rid of unused functions and macros now when
+Alchemy and RM9K are converted over to callbacks.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7740.h |    4 ++++
- arch/arm/mach-shmobile/pfc-r8a7740.c          |    9 +++++++++
- 2 files changed, 13 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index 9d447ab..2764846 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -565,6 +565,10 @@ enum {
- 	GPIO_FN_RESETP_PULLUP,
- 	GPIO_FN_RESETP_PLAIN,
- 
-+	/* HDMI */
-+	GPIO_FN_HDMI_HPD,
-+	GPIO_FN_HDMI_CEC,
-+
- 	/* SDENC */
- 	GPIO_FN_SDENC_CPG,
- 	GPIO_FN_SDENC_DV_CLKI,
-diff --git a/arch/arm/mach-shmobile/pfc-r8a7740.c b/arch/arm/mach-shmobile/pfc-r8a7740.c
-index 670fe18..0dda816 100644
---- a/arch/arm/mach-shmobile/pfc-r8a7740.c
-+++ b/arch/arm/mach-shmobile/pfc-r8a7740.c
-@@ -560,6 +560,9 @@ enum {
- 	/* SDENC */
- 	SDENC_CPG_MARK,		SDENC_DV_CLKI_MARK,
- 
-+	/* HDMI */
-+	HDMI_HPD_MARK, HDMI_CEC_MARK,
-+
- 	/* DEBUG */
- 	EDEBGREQ_PULLUP_MARK,	/* for JTAG */
- 	EDEBGREQ_PULLDOWN_MARK,
-@@ -1620,9 +1623,11 @@ static pinmux_enum_t pinmux_data[] = {
- 
- 	/* Port210 */
- 	PINMUX_DATA(IRQ9_PORT210_MARK,		PORT210_FN0,	MSEL1CR_9_1),
-+	PINMUX_DATA(HDMI_HPD_MARK,		PORT210_FN1),
- 
- 	/* Port211 */
- 	PINMUX_DATA(IRQ16_PORT211_MARK,		PORT211_FN0,	MSEL1CR_16_1),
-+	PINMUX_DATA(HDMI_CEC_MARK,		PORT211_FN1),
- 
- 	/* LCDC select */
- 	PINMUX_DATA(LCDC0_SELECT_MARK,				MSEL3CR_6_0),
-@@ -2097,6 +2102,10 @@ static struct pinmux_gpio pinmux_gpios[] = {
- 	GPIO_FN(SDENC_CPG),
- 	GPIO_FN(SDENC_DV_CLKI),
- 
-+	/* HDMI */
-+	GPIO_FN(HDMI_HPD),
-+	GPIO_FN(HDMI_CEC),
-+
- 	/* SYSC */
- 	GPIO_FN(RESETP_PULLUP),
- 	GPIO_FN(RESETP_PLAIN),
--- 
-1.7.5.4
+ drivers/tty/serial/8250/8250.c |   38 ++++++++++++--------------------------
+ 1 file changed, 12 insertions(+), 26 deletions(-)
 
+--- 0007/drivers/tty/serial/8250/8250.c
++++ work/drivers/tty/serial/8250/8250.c	2012-05-01 22:52:30.000000000 +0900
+@@ -285,28 +285,18 @@ static const struct serial8250_config ua
+ };
+ 
+ /* Uart divisor latch read */
+-static int default_dl_read(struct uart_8250_port *up)
++static int default_serial_dl_read(struct uart_8250_port *up)
+ {
+ 	return serial_in(up, UART_DLL) | serial_in(up, UART_DLM) << 8;
+ }
+ 
+ /* Uart divisor latch write */
+-static void default_dl_write(struct uart_8250_port *up, int value)
++static void default_serial_dl_write(struct uart_8250_port *up, int value)
+ {
+ 	serial_out(up, UART_DLL, value & 0xff);
+ 	serial_out(up, UART_DLM, value >> 8 & 0xff);
+ }
+ 
+-static int _serial_dl_read(struct uart_8250_port *up)
+-{
+-	return default_dl_read(up);
+-}
+-
+-static void _serial_dl_write(struct uart_8250_port *up, int value)
+-{
+-	default_dl_write(up, value);
+-}
+-
+ #ifdef CONFIG_MIPS_ALCHEMY
+ 
+ /* Au1x00 UART hardware has a weird register layout */
+@@ -403,57 +393,53 @@ static void rm9k_serial_dl_write(struct
+ 
+ #endif
+ 
+-/* sane hardware needs no mapping */
+-#define map_8250_in_reg(up, offset) (offset)
+-#define map_8250_out_reg(up, offset) (offset)
+-
+ static unsigned int hub6_serial_in(struct uart_port *p, int offset)
+ {
+-	offset = map_8250_in_reg(p, offset) << p->regshift;
++	offset = offset << p->regshift;
+ 	outb(p->hub6 - 1 + offset, p->iobase);
+ 	return inb(p->iobase + 1);
+ }
+ 
+ static void hub6_serial_out(struct uart_port *p, int offset, int value)
+ {
+-	offset = map_8250_out_reg(p, offset) << p->regshift;
++	offset = offset << p->regshift;
+ 	outb(p->hub6 - 1 + offset, p->iobase);
+ 	outb(value, p->iobase + 1);
+ }
+ 
+ static unsigned int mem_serial_in(struct uart_port *p, int offset)
+ {
+-	offset = map_8250_in_reg(p, offset) << p->regshift;
++	offset = offset << p->regshift;
+ 	return readb(p->membase + offset);
+ }
+ 
+ static void mem_serial_out(struct uart_port *p, int offset, int value)
+ {
+-	offset = map_8250_out_reg(p, offset) << p->regshift;
++	offset = offset << p->regshift;
+ 	writeb(value, p->membase + offset);
+ }
+ 
+ static void mem32_serial_out(struct uart_port *p, int offset, int value)
+ {
+-	offset = map_8250_out_reg(p, offset) << p->regshift;
++	offset = offset << p->regshift;
+ 	writel(value, p->membase + offset);
+ }
+ 
+ static unsigned int mem32_serial_in(struct uart_port *p, int offset)
+ {
+-	offset = map_8250_in_reg(p, offset) << p->regshift;
++	offset = offset << p->regshift;
+ 	return readl(p->membase + offset);
+ }
+ 
+ static unsigned int io_serial_in(struct uart_port *p, int offset)
+ {
+-	offset = map_8250_in_reg(p, offset) << p->regshift;
++	offset = offset << p->regshift;
+ 	return inb(p->iobase + offset);
+ }
+ 
+ static void io_serial_out(struct uart_port *p, int offset, int value)
+ {
+-	offset = map_8250_out_reg(p, offset) << p->regshift;
++	offset = offset << p->regshift;
+ 	outb(value, p->iobase + offset);
+ }
+ 
+@@ -464,8 +450,8 @@ static void set_io_from_upio(struct uart
+ 	struct uart_8250_port *up  		container_of(p, struct uart_8250_port, port);
+ 
+-	up->dl_read = _serial_dl_read;
+-	up->dl_write = _serial_dl_write;
++	up->dl_read = default_serial_dl_read;
++	up->dl_write = default_serial_dl_write;
+ 
+ 	switch (p->iotype) {
+ 	case UPIO_HUB6:
