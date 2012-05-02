@@ -1,178 +1,138 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 23 May 2012 01:35:53 +0000
-Subject: [PATCH 12/12 v2] ARM: mach-shmobile: armadillo800eva: add FSI-HDMI support
-Message-Id: <87zk8zu1ah.wl%kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 02 May 2012 12:47:00 +0000
+Subject: [PATCH 02/06] serial8250: Use dl_read()/dl_write() on Alchemy
+Message-Id: <20120502124700.30480.63274.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20120502124642.30480.41373.sendpatchset@w520>
+In-Reply-To: <20120502124642.30480.41373.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-serial@vger.kernel.org
+Cc: horms@verge.net.au, arnd@arndb.de, linux-sh@vger.kernel.org, gregkh@linuxfoundation.org, swarren@wwwdotorg.org, linux-kernel@vger.kernel.org, rjw@sisk.pl, paul.gortmaker@windriver.com, lethal@linux-sh.org, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, dan.j.williams@intel.com, alan@linux.intel.com
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm@opensource.se>
+
+Convert the 8250 Alchemy support code to make
+use of the new dl_read()/dl_write() callbacks.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
-v1 -> v2
 
- - same as v1
+ drivers/tty/serial/8250/8250.c |   67 +++++++++++++++-------------------------
+ 1 file changed, 26 insertions(+), 41 deletions(-)
 
- arch/arm/mach-shmobile/board-armadillo800eva.c |   82 +++++++++++++++++++++++-
- 1 files changed, 79 insertions(+), 3 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index b7b226b..1f0028f 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -718,10 +718,42 @@ static struct platform_device ceu0_device = {
+--- 0005/drivers/tty/serial/8250/8250.c
++++ work/drivers/tty/serial/8250/8250.c	2012-05-01 22:51:07.000000000 +0900
+@@ -297,24 +297,7 @@ static void default_dl_write(struct uart
+ 	serial_out(up, UART_DLM, value >> 8 & 0xff);
+ }
+ 
+-#if defined(CONFIG_MIPS_ALCHEMY)
+-/* Au1x00 haven't got a standard divisor latch */
+-static int _serial_dl_read(struct uart_8250_port *up)
+-{
+-	if (up->port.iotype = UPIO_AU)
+-		return __raw_readl(up->port.membase + 0x28);
+-	else
+-		return default_dl_read(up);
+-}
+-
+-static void _serial_dl_write(struct uart_8250_port *up, int value)
+-{
+-	if (up->port.iotype = UPIO_AU)
+-		__raw_writel(value, up->port.membase + 0x28);
+-	else
+-		default_dl_write(up, value);
+-}
+-#elif defined(CONFIG_SERIAL_8250_RM9K)
++#if defined(CONFIG_SERIAL_8250_RM9K)
+ static int _serial_dl_read(struct uart_8250_port *up)
+ {
+ 	return	(up->port.iotype = UPIO_RM9000) ?
+@@ -344,7 +327,7 @@ static void _serial_dl_write(struct uart
+ }
+ #endif
+ 
+-#if defined(CONFIG_MIPS_ALCHEMY)
++#ifdef CONFIG_MIPS_ALCHEMY
+ 
+ /* Au1x00 UART hardware has a weird register layout */
+ static const u8 au_io_in_map[] = {
+@@ -365,22 +348,32 @@ static const u8 au_io_out_map[] = {
+ 	[UART_MCR] = 6,
  };
  
- /* FSI */
-+static int fsi_hdmi_set_rate(struct device *dev, int rate, int enable)
-+{
-+	struct clk *fsib;
-+	int ret;
-+
-+	/* it support 48KHz only */
-+	if (48000 != rate)
-+		return -EINVAL;
-+
-+	fsib = clk_get(dev, "ickb");
-+	if (IS_ERR(fsib))
-+		return -EINVAL;
-+
-+	if (enable) {
-+		ret = SH_FSI_ACKMD_256 | SH_FSI_BPFMD_64;
-+		clk_enable(fsib);
-+	} else {
-+		ret = 0;
-+		clk_disable(fsib);
-+	}
-+
-+	clk_put(fsib);
-+
-+	return ret;
+-/* sane hardware needs no mapping */
+-static inline int map_8250_in_reg(struct uart_port *p, int offset)
++static unsigned int au_serial_in(struct uart_port *p, int offset)
+ {
+-	if (p->iotype != UPIO_AU)
+-		return offset;
+-	return au_io_in_map[offset];
++	offset = au_io_in_map[offset] << p->regshift;
++	return __raw_readl(p->membase + offset);
+ }
+ 
+-static inline int map_8250_out_reg(struct uart_port *p, int offset)
++static void au_serial_out(struct uart_port *p, int offset, int value)
+ {
+-	if (p->iotype != UPIO_AU)
+-		return offset;
+-	return au_io_out_map[offset];
++	offset = au_io_out_map[offset] << p->regshift;
++	__raw_writel(value, p->membase + offset);
 +}
 +
- static struct sh_fsi_platform_info fsi_info = {
- 	/* FSI-WM8978 */
- 	.port_a = {
- 	},
-+	/* FSI-HDMI */
-+	.port_b = {
-+		.flags		= SH_FSI_FMT_SPDIF |
-+				  SH_FSI_ENABLE_STREAM_MODE,
-+		.set_rate	= fsi_hdmi_set_rate,
-+	}
- };
- 
- static struct resource fsi_resources[] = {
-@@ -773,6 +805,29 @@ static struct platform_device fsi_wm8978_device = {
- 	},
- };
- 
-+/* FSI-HDMI */
-+static struct asoc_simple_dai_init_info fsi2_hdmi_init_info = {
-+	.cpu_daifmt	= SND_SOC_DAIFMT_CBM_CFM,
-+};
++/* Au1x00 haven't got a standard divisor latch */
++static int au_serial_dl_read(struct uart_8250_port *up)
++{
++	return __raw_readl(up->port.membase + 0x28);
++}
 +
-+static struct asoc_simple_card_info fsi2_hdmi_info = {
-+	.name		= "HDMI",
-+	.card		= "FSI2B-HDMI",
-+	.cpu_dai	= "fsib-dai",
-+	.codec		= "sh-mobile-hdmi",
-+	.platform	= "sh_fsi2",
-+	.codec_dai	= "sh_mobile_hdmi-hifi",
-+	.init		= &fsi2_hdmi_init_info,
-+};
-+
-+static struct platform_device fsi_hdmi_device = {
-+	.name	= "asoc-simple-card",
-+	.id	= 1,
-+	.dev	= {
-+		.platform_data	= &fsi2_hdmi_info,
-+	},
-+};
-+
- /* I2C */
- static struct i2c_board_info i2c0_devices[] = {
- 	{
-@@ -798,6 +853,7 @@ static struct platform_device *eva_devices[] __initdata = {
- 	&camera_device,
- 	&ceu0_device,
- 	&fsi_device,
-+	&fsi_hdmi_device,
- 	&fsi_wm8978_device,
- };
- 
-@@ -806,10 +862,14 @@ static void __init eva_clock_init(void)
- 	struct clk *system	= clk_get(NULL, "system_clk");
- 	struct clk *xtal1	= clk_get(NULL, "extal1");
- 	struct clk *usb24s	= clk_get(NULL, "usb24s");
-+	struct clk *fsibck	= clk_get(NULL, "fsibck");
-+	struct clk *fsib	= clk_get(&fsi_device.dev, "ickb");
- 
- 	if (IS_ERR(system)	||
- 	    IS_ERR(xtal1)	||
--	    IS_ERR(usb24s)) {
-+	    IS_ERR(usb24s)	||
-+	    IS_ERR(fsibck)	||
-+	    IS_ERR(fsib)) {
- 		pr_err("armadillo800eva board clock init failed\n");
- 		goto clock_error;
- 	}
-@@ -829,6 +889,11 @@ static void __init eva_clock_init(void)
- 	/* video1 (= CON1 camera) expect 24MHz */
- 	clk_set_rate(cam1_mclk, clk_round_rate(cam1_mclk, 24000000));
- 
-+	/* FSIBCK is 12.288MHz, and it is parent of FSI-B */
-+	clk_set_parent(fsib, fsibck);
-+	clk_set_rate(fsibck, 12288000);
-+	clk_set_rate(fsib,   12288000);
-+
- clock_error:
- 	if (!IS_ERR(system))
- 		clk_put(system);
-@@ -836,6 +901,10 @@ clock_error:
- 		clk_put(xtal1);
- 	if (!IS_ERR(usb24s))
- 		clk_put(usb24s);
-+	if (!IS_ERR(fsibck))
-+		clk_put(fsibck);
-+	if (!IS_ERR(fsib))
-+		clk_put(fsib);
++static void au_serial_dl_write(struct uart_8250_port *up, int value)
++{
++	__raw_writel(value, up->port.membase + 0x28);
  }
  
- /*
-@@ -845,8 +914,6 @@ clock_error:
- #define GPIO_PORT8CR	0xe6050008
- static void __init eva_init(void)
- {
--	eva_clock_init();
+-#elif defined(CONFIG_SERIAL_8250_RM9K)
++#endif
++
++#if defined(CONFIG_SERIAL_8250_RM9K)
+ 
+ static const u8
+ 	regmap_in[8] = {
+@@ -464,18 +457,6 @@ static unsigned int mem32_serial_in(stru
+ 	return readl(p->membase + offset);
+ }
+ 
+-static unsigned int au_serial_in(struct uart_port *p, int offset)
+-{
+-	offset = map_8250_in_reg(p, offset) << p->regshift;
+-	return __raw_readl(p->membase + offset);
+-}
 -
- 	r8a7740_pinmux_init();
- 	r8a7740_meram_workaround();
+-static void au_serial_out(struct uart_port *p, int offset, int value)
+-{
+-	offset = map_8250_out_reg(p, offset) << p->regshift;
+-	__raw_writel(value, p->membase + offset);
+-}
+-
+ static unsigned int io_serial_in(struct uart_port *p, int offset)
+ {
+ 	offset = map_8250_in_reg(p, offset) << p->regshift;
+@@ -515,10 +496,14 @@ static void set_io_from_upio(struct uart
+ 		p->serial_out = mem32_serial_out;
+ 		break;
  
-@@ -1004,6 +1071,13 @@ static void __init eva_init(void)
- 	gpio_direction_none(GPIO_PORT7CR); /* FSIAOBT needs no direction */
- 	gpio_direction_none(GPIO_PORT8CR); /* FSIAOLR needs no direction */
++#ifdef CONFIG_MIPS_ALCHEMY
+ 	case UPIO_AU:
+ 		p->serial_in = au_serial_in;
+ 		p->serial_out = au_serial_out;
++		up->dl_read = au_serial_dl_read;
++		up->dl_write = au_serial_dl_write;
+ 		break;
++#endif
  
-+	/* FSI-HDMI */
-+	gpio_request(GPIO_FN_FSIBCK,		NULL);
-+
-+	/* HDMI */
-+	gpio_request(GPIO_FN_HDMI_HPD,		NULL);
-+	gpio_request(GPIO_FN_HDMI_CEC,		NULL);
-+
- 	/*
- 	 * CAUTION
- 	 *
-@@ -1050,6 +1124,8 @@ static void __init eva_init(void)
- 
- 	platform_add_devices(eva_devices,
- 			     ARRAY_SIZE(eva_devices));
-+
-+	eva_clock_init();
- }
- 
- static void __init eva_earlytimer_init(void)
--- 
-1.7.5.4
-
+ 	default:
+ 		p->serial_in = io_serial_in;
