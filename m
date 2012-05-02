@@ -1,62 +1,40 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 14 May 2012 06:13:50 +0000
-Subject: Re: [PATCH v2 4/5] net: sh_eth: add support for set_ringparam/get_ringparam
-Message-Id: <4FB0A29E.1070709@renesas.com>
+From: Bastian Hecht <hechtb@googlemail.com>
+Date: Wed, 02 May 2012 09:41:42 +0000
+Subject: [PATCH v3 02/10] ARM: sh-mobile: mackerel: Add error IRQ resource
+Message-Id: <1335951710-9390-3-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4FACD005.3010800@renesas.com>
- <1336750030.2874.65.camel@bwh-desktop.uk.solarflarecom.com>
-In-Reply-To: <1336750030.2874.65.camel@bwh-desktop.uk.solarflarecom.com>
+References: <1335951710-9390-1-git-send-email-hechtb@gmail.com>
+In-Reply-To: <1335951710-9390-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ben Hutchings <bhutchings@solarflare.com>
-Cc: netdev <netdev@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>
+To: linux-mtd@lists.infradead.org, linux-sh@vger.kernel.org
+Cc: Brian Norris <computersforpeace@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pichart <laurent.pinchart@ideasonboard.com>, Artem Bityutskiy <dedekind1@gmail.com>
 
-2012/05/12 0:27, Ben Hutchings wrote:
-> On Fri, 2012-05-11 at 17:38 +0900, Shimoda, Yoshihiro wrote:
->> This patch supports the ethtool's set_ringparam() and get_ringparam().
-> [...]
->> +static int sh_eth_set_ringparam(struct net_device *ndev,
->> +				struct ethtool_ringparam *ring)
->> +{
-< snip >
->> +	if (netif_running(ndev)) {
->> +		/* Disable interrupts by clearing the interrupt mask. */
->> +		sh_eth_write(ndev, 0x0000, EESIPR);
->> +		/* Stop the chip's Tx and Rx processes. */
->> +		sh_eth_write(ndev, 0, EDTRR);
->> +		sh_eth_write(ndev, 0, EDRRR);
-> 
-> You'll also need to call netif_tx_disable() and synchronize_irq().
+Supply the platform data for the FLSTEI error IRQ.
 
-Thank you for the point. I will fix it.
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+---
+ arch/arm/mach-shmobile/board-mackerel.c |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
 
->> +	sh_eth_ring_init(ndev);
->> +	sh_eth_dev_init(ndev);
-> 
-> And what if either of these fails?
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 8758f94..1de1fb7 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -990,7 +990,11 @@ static struct resource nand_flash_resources[] = {
+ 		.start	= 0xe6a30000,
+ 		.end	= 0xe6a3009b,
+ 		.flags	= IORESOURCE_MEM,
+-	}
++	},
++	[1] = {
++		.start	= evt2irq(0x0d80), /* flstei: status error irq */
++		.flags	= IORESOURCE_IRQ,
++	},
+ };
+ 
+ static struct sh_flctl_platform_data nand_flash_data = {
+-- 
+1.7.5.4
 
-Oh, I should have added error handling.
-I checked this driver, and I found that the driver should change
-the value of the pointer to NULL. So, I will submit such a patch first.
-
->> +	if (netif_running(ndev)) {
->> +		sh_eth_write(ndev, mdp->cd->eesipr_value, EESIPR);
->> +		/* Setting the Rx mode will start the Rx process. */
->> +		sh_eth_write(ndev, EDRRR_R, EDRRR);
-> 
-> You'll need to call netif_wake_queue().
-
-I will fix it.
-
->> +	}
->> +
->> +	return 0;
->> +}
-> [...]
-> 
-> Ben.
-> 
-
-Best regards,
-Yoshihiro Shimoda
