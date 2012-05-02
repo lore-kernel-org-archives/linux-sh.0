@@ -1,137 +1,197 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 25 May 2012 15:45:25 +0000
-Subject: [PATCH 5/5 v3] mmc: sh_mmcif: add regulator support
-Message-Id: <1337960752-4944-11-git-send-email-g.liakhovetski@gmx.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 02 May 2012 12:46:51 +0000
+Subject: [PATCH 01/06] serial8250: Add dl_read()/dl_write() callbacks
+Message-Id: <20120502124651.30480.88827.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
+References: <20120502124642.30480.41373.sendpatchset@w520>
+In-Reply-To: <20120502124642.30480.41373.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>, Mark Brown <broonie@opensource.wolfsonmicro.com>
+To: linux-serial@vger.kernel.org
+Cc: arnd@arndb.de, swarren@wwwdotorg.org, lethal@linux-sh.org, gregkh@linuxfoundation.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, rjw@sisk.pl, paul.gortmaker@windriver.com, horms@verge.net.au, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, dan.j.williams@intel.com, alan@linux.intel.com
 
-Add regulator support to the sh_mmcif driver, but also preserve the current
-power-callback.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Convert serial_dl_read() and serial_dl_write() from macro
+to 8250 specific callbacks. This change makes it easier to
+support 8250 hardware with non-standard DLL and DLM register
+configurations such as Alchemy, RM9K and upcoming Emma Mobile
+UART hardware.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
-v3: don't (yet) give preference to using the regulator over the .set_pwr() 
-platform callback, call them both if both are available. Thanks to Mark 
-and Magnus.
+ drivers/tty/serial/8250/8250.c |  117 +++++++++++++++++++++-------------------
+ drivers/tty/serial/8250/8250.h |   14 ++++
+ 2 files changed, 78 insertions(+), 53 deletions(-)
 
- drivers/mmc/host/sh_mmcif.c |   41 ++++++++++++++++++++++++++++++++++-------
- 1 files changed, 34 insertions(+), 7 deletions(-)
-
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index 3834b21..f952978 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -207,6 +207,8 @@ enum mmcif_wait_for {
- 	MMCIF_WAIT_FOR_STOP,
+--- 0001/drivers/tty/serial/8250/8250.c
++++ work/drivers/tty/serial/8250/8250.c	2012-05-01 22:50:38.000000000 +0900
+@@ -284,6 +284,66 @@ static const struct serial8250_config ua
+ 	},
  };
  
-+struct regulator;
-+
- struct sh_mmcif_host {
- 	struct mmc_host *mmc;
- 	struct mmc_request *mrq;
-@@ -231,6 +233,8 @@ struct sh_mmcif_host {
- 	bool power;
- 	bool card_present;
- 
-+	struct regulator	*vdd;
-+
- 	/* DMA support */
- 	struct dma_chan		*chan_rx;
- 	struct dma_chan		*chan_tx;
-@@ -929,10 +933,21 @@ static int sh_mmcif_clk_update(struct sh_mmcif_host *host)
- 	return ret;
- }
- 
-+static void sh_mmcif_set_power(struct sh_mmcif_host *host, struct mmc_ios *ios)
++/* Uart divisor latch read */
++static int default_dl_read(struct uart_8250_port *up)
 +{
-+	struct sh_mmcif_plat_data *pd = host->pd->dev.platform_data;
-+
-+	if (pd->set_pwr)
-+		pd->set_pwr(host->pd, ios->power_mode != MMC_POWER_OFF);
-+	if (host->vdd)
-+		/* Errors ignored... */
-+		mmc_regulator_set_ocr(host->mmc, host->vdd,
-+				      ios->power_mode ? ios->vdd : 0);
++	return serial_in(up, UART_DLL) | serial_in(up, UART_DLM) << 8;
 +}
 +
- static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- {
- 	struct sh_mmcif_host *host = mmc_priv(mmc);
--	struct sh_mmcif_plat_data *p = host->pd->dev.platform_data;
- 	unsigned long flags;
- 
- 	spin_lock_irqsave(&host->lock, flags);
-@@ -950,6 +965,7 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 			sh_mmcif_request_dma(host, host->pd->dev.platform_data);
- 			host->card_present = true;
- 		}
-+		sh_mmcif_set_power(host, ios);
- 	} else if (ios->power_mode = MMC_POWER_OFF || !ios->clock) {
- 		/* clock stop */
- 		sh_mmcif_clock_control(host, 0);
-@@ -963,8 +979,8 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 			pm_runtime_put(&host->pd->dev);
- 			clk_disable(host->hclk);
- 			host->power = false;
--			if (p->set_pwr && ios->power_mode = MMC_POWER_OFF)
--				p->set_pwr(host->pd, 0);
-+			if (ios->power_mode = MMC_POWER_OFF)
-+				sh_mmcif_set_power(host, ios);
- 		}
- 		host->state = STATE_IDLE;
- 		return;
-@@ -972,8 +988,6 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 
- 	if (ios->clock) {
- 		if (!host->power) {
--			if (p->set_pwr)
--				p->set_pwr(host->pd, ios->power_mode);
- 			sh_mmcif_clk_update(host);
- 			pm_runtime_get_sync(&host->pd->dev);
- 			host->power = true;
-@@ -1257,6 +1271,19 @@ static void mmcif_timeout_work(struct work_struct *work)
- 	mmc_request_done(host->mmc, mrq);
- }
- 
-+static void sh_mmcif_init_ocr(struct sh_mmcif_host *host)
++/* Uart divisor latch write */
++static void default_dl_write(struct uart_8250_port *up, int value)
 +{
-+	struct sh_mmcif_plat_data *pd = host->pd->dev.platform_data;
-+	struct mmc_host *mmc = host->mmc;
-+
-+	host->vdd = mmc_regulator_get_vmmc(mmc);
-+
-+	if (!mmc->ocr_avail)
-+		mmc->ocr_avail = pd->ocr;
-+	else if (pd->ocr)
-+		dev_warn(mmc_dev(mmc), "Platform OCR mask is ignored\n");
++	serial_out(up, UART_DLL, value & 0xff);
++	serial_out(up, UART_DLM, value >> 8 & 0xff);
 +}
 +
- static int __devinit sh_mmcif_probe(struct platform_device *pdev)
- {
- 	int ret = 0, irq[2];
-@@ -1304,8 +1331,8 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
- 	spin_lock_init(&host->lock);
- 
- 	mmc->ops = &sh_mmcif_ops;
--	if (pd->ocr)
--		mmc->ocr_avail = pd->ocr;
-+	sh_mmcif_init_ocr(host);
++#if defined(CONFIG_MIPS_ALCHEMY)
++/* Au1x00 haven't got a standard divisor latch */
++static int _serial_dl_read(struct uart_8250_port *up)
++{
++	if (up->port.iotype = UPIO_AU)
++		return __raw_readl(up->port.membase + 0x28);
++	else
++		return default_dl_read(up);
++}
 +
- 	mmc->caps = MMC_CAP_MMC_HIGHSPEED;
- 	if (pd->caps)
- 		mmc->caps |= pd->caps;
--- 
-1.7.2.5
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
++static void _serial_dl_write(struct uart_8250_port *up, int value)
++{
++	if (up->port.iotype = UPIO_AU)
++		__raw_writel(value, up->port.membase + 0x28);
++	else
++		default_dl_write(up, value);
++}
++#elif defined(CONFIG_SERIAL_8250_RM9K)
++static int _serial_dl_read(struct uart_8250_port *up)
++{
++	return	(up->port.iotype = UPIO_RM9000) ?
++		(((__raw_readl(up->port.membase + 0x10) << 8) |
++		(__raw_readl(up->port.membase + 0x08) & 0xff)) & 0xffff) :
++		default_dl_read(up);
++}
++
++static void _serial_dl_write(struct uart_8250_port *up, int value)
++{
++	if (up->port.iotype = UPIO_RM9000) {
++		__raw_writel(value, up->port.membase + 0x08);
++		__raw_writel(value >> 8, up->port.membase + 0x10);
++	} else {
++		default_dl_write(up, value);
++	}
++}
++#else
++static int _serial_dl_read(struct uart_8250_port *up)
++{
++	return default_dl_read(up);
++}
++
++static void _serial_dl_write(struct uart_8250_port *up, int value)
++{
++	default_dl_write(up, value);
++}
++#endif
++
+ #if defined(CONFIG_MIPS_ALCHEMY)
+ 
+ /* Au1x00 UART hardware has a weird register layout */
+@@ -434,6 +494,10 @@ static void set_io_from_upio(struct uart
+ {
+ 	struct uart_8250_port *up  		container_of(p, struct uart_8250_port, port);
++
++	up->dl_read = _serial_dl_read;
++	up->dl_write = _serial_dl_write;
++
+ 	switch (p->iotype) {
+ 	case UPIO_HUB6:
+ 		p->serial_in = hub6_serial_in;
+@@ -481,59 +545,6 @@ serial_port_out_sync(struct uart_port *p
+ 	}
+ }
+ 
+-/* Uart divisor latch read */
+-static inline int _serial_dl_read(struct uart_8250_port *up)
+-{
+-	return serial_in(up, UART_DLL) | serial_in(up, UART_DLM) << 8;
+-}
+-
+-/* Uart divisor latch write */
+-static inline void _serial_dl_write(struct uart_8250_port *up, int value)
+-{
+-	serial_out(up, UART_DLL, value & 0xff);
+-	serial_out(up, UART_DLM, value >> 8 & 0xff);
+-}
+-
+-#if defined(CONFIG_MIPS_ALCHEMY)
+-/* Au1x00 haven't got a standard divisor latch */
+-static int serial_dl_read(struct uart_8250_port *up)
+-{
+-	if (up->port.iotype = UPIO_AU)
+-		return __raw_readl(up->port.membase + 0x28);
+-	else
+-		return _serial_dl_read(up);
+-}
+-
+-static void serial_dl_write(struct uart_8250_port *up, int value)
+-{
+-	if (up->port.iotype = UPIO_AU)
+-		__raw_writel(value, up->port.membase + 0x28);
+-	else
+-		_serial_dl_write(up, value);
+-}
+-#elif defined(CONFIG_SERIAL_8250_RM9K)
+-static int serial_dl_read(struct uart_8250_port *up)
+-{
+-	return	(up->port.iotype = UPIO_RM9000) ?
+-		(((__raw_readl(up->port.membase + 0x10) << 8) |
+-		(__raw_readl(up->port.membase + 0x08) & 0xff)) & 0xffff) :
+-		_serial_dl_read(up);
+-}
+-
+-static void serial_dl_write(struct uart_8250_port *up, int value)
+-{
+-	if (up->port.iotype = UPIO_RM9000) {
+-		__raw_writel(value, up->port.membase + 0x08);
+-		__raw_writel(value >> 8, up->port.membase + 0x10);
+-	} else {
+-		_serial_dl_write(up, value);
+-	}
+-}
+-#else
+-#define serial_dl_read(up) _serial_dl_read(up)
+-#define serial_dl_write(up, value) _serial_dl_write(up, value)
+-#endif
+-
+ /*
+  * For the 16C950
+  */
+--- 0001/drivers/tty/serial/8250/8250.h
++++ work/drivers/tty/serial/8250/8250.h	2012-05-01 22:50:38.000000000 +0900
+@@ -37,6 +37,10 @@ struct uart_8250_port {
+ 	unsigned char		lsr_saved_flags;
+ #define MSR_SAVE_FLAGS UART_MSR_ANY_DELTA
+ 	unsigned char		msr_saved_flags;
++
++	/* 8250 specific callbacks */
++	int			(*dl_read)(struct uart_8250_port *);
++	void			(*dl_write)(struct uart_8250_port *, int);
+ };
+ 
+ struct old_serial_port {
+@@ -96,6 +100,16 @@ static inline void serial_out(struct uar
+ 	up->port.serial_out(&up->port, offset, value);
+ }
+ 
++static inline int serial_dl_read(struct uart_8250_port *up)
++{
++	return up->dl_read(up);
++}
++
++static inline void serial_dl_write(struct uart_8250_port *up, int value)
++{
++	up->dl_write(up, value);
++}
++
+ #if defined(__alpha__) && !defined(CONFIG_PCI)
+ /*
+  * Digital did something really horribly wrong with the OUT1 and OUT2
