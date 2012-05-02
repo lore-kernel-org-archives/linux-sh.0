@@ -1,53 +1,139 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 29 May 2012 08:14:54 +0000
-Subject: [PATCH v5 3/6] net: sh_eth: fix the rxdesc pointer when rx descriptor empty happens
-Message-Id: <4FC4857E.6020907@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 02 May 2012 12:47:09 +0000
+Subject: [PATCH 03/06] serial8250: Use dl_read()/dl_write() on RM9K
+Message-Id: <20120502124709.30480.98463.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20120502124642.30480.41373.sendpatchset@w520>
+In-Reply-To: <20120502124642.30480.41373.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev <netdev@vger.kernel.org>
-Cc: SH-Linux <linux-sh@vger.kernel.org>
+To: linux-serial@vger.kernel.org
+Cc: arnd@arndb.de, swarren@wwwdotorg.org, lethal@linux-sh.org, gregkh@linuxfoundation.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, rjw@sisk.pl, paul.gortmaker@windriver.com, horms@verge.net.au, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, dan.j.williams@intel.com, alan@linux.intel.com
 
-When Receive Descriptor Empty happens, rxdesc pointer of the driver
-and actual next descriptor of the controller may be mismatch.
-This patch fixes it.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Convert the 8250 RM9K support code to make
+use of the new dl_read()/dl_write() callbacks.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- about v5:
-  - this patch is the same as v3
 
- drivers/net/ethernet/renesas/sh_eth.c |    8 +++++---
- 1 files changed, 5 insertions(+), 3 deletions(-)
+ drivers/tty/serial/8250/8250.c |   62 ++++++++++++++++++----------------------
+ 1 file changed, 29 insertions(+), 33 deletions(-)
 
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index 10f2a89..906e410 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -1098,8 +1098,12 @@ static int sh_eth_rx(struct net_device *ndev)
-
- 	/* Restart Rx engine if stopped. */
- 	/* If we don't need to check status, don't. -KDU */
--	if (!(sh_eth_read(ndev, EDRRR) & EDRRR_R))
-+	if (!(sh_eth_read(ndev, EDRRR) & EDRRR_R)) {
-+		/* fix the values for the next receiving */
-+		mdp->cur_rx = mdp->dirty_rx = (sh_eth_read(ndev, RDFAR) -
-+					       sh_eth_read(ndev, RDLAR)) >> 4;
- 		sh_eth_write(ndev, EDRRR_R, EDRRR);
-+	}
-
- 	return 0;
+--- 0006/drivers/tty/serial/8250/8250.c
++++ work/drivers/tty/serial/8250/8250.c	2012-05-01 22:51:42.000000000 +0900
+@@ -297,25 +297,6 @@ static void default_dl_write(struct uart
+ 	serial_out(up, UART_DLM, value >> 8 & 0xff);
  }
-@@ -1196,8 +1200,6 @@ static void sh_eth_error(struct net_device *ndev, int intr_status)
- 		/* Receive Descriptor Empty int */
- 		ndev->stats.rx_over_errors++;
-
--		if (sh_eth_read(ndev, EDRRR) ^ EDRRR_R)
--			sh_eth_write(ndev, EDRRR_R, EDRRR);
- 		if (netif_msg_rx_err(mdp))
- 			dev_err(&ndev->dev, "Receive Descriptor Empty\n");
- 	}
--- 
-1.7.1
-
+ 
+-#if defined(CONFIG_SERIAL_8250_RM9K)
+-static int _serial_dl_read(struct uart_8250_port *up)
+-{
+-	return	(up->port.iotype = UPIO_RM9000) ?
+-		(((__raw_readl(up->port.membase + 0x10) << 8) |
+-		(__raw_readl(up->port.membase + 0x08) & 0xff)) & 0xffff) :
+-		default_dl_read(up);
+-}
+-
+-static void _serial_dl_write(struct uart_8250_port *up, int value)
+-{
+-	if (up->port.iotype = UPIO_RM9000) {
+-		__raw_writel(value, up->port.membase + 0x08);
+-		__raw_writel(value >> 8, up->port.membase + 0x10);
+-	} else {
+-		default_dl_write(up, value);
+-	}
+-}
+-#else
+ static int _serial_dl_read(struct uart_8250_port *up)
+ {
+ 	return default_dl_read(up);
+@@ -325,7 +306,6 @@ static void _serial_dl_write(struct uart
+ {
+ 	default_dl_write(up, value);
+ }
+-#endif
+ 
+ #ifdef CONFIG_MIPS_ALCHEMY
+ 
+@@ -373,7 +353,7 @@ static void au_serial_dl_write(struct ua
+ 
+ #endif
+ 
+-#if defined(CONFIG_SERIAL_8250_RM9K)
++#ifdef CONFIG_SERIAL_8250_RM9K
+ 
+ static const u8
+ 	regmap_in[8] = {
+@@ -397,28 +377,36 @@ static const u8
+ 		[UART_SCR]	= 0x2c
+ 	};
+ 
+-static inline int map_8250_in_reg(struct uart_port *p, int offset)
++static unsigned int rm9k_serial_in(struct uart_port *p, int offset)
++{
++	offset = regmap_in[offset] << p->regshift;
++	return readl(p->membase + offset);
++}
++
++static void rm9k_serial_out(struct uart_port *p, int offset, int value)
+ {
+-	if (p->iotype != UPIO_RM9000)
+-		return offset;
+-	return regmap_in[offset];
++	offset = regmap_out[offset] << p->regshift;
++	writel(value, p->membase + offset);
++}
++
++static int rm9k_serial_dl_read(struct uart_8250_port *up)
++{
++	return ((__raw_readl(up->port.membase + 0x10) << 8) |
++		(__raw_readl(up->port.membase + 0x08) & 0xff)) & 0xffff;
+ }
+ 
+-static inline int map_8250_out_reg(struct uart_port *p, int offset)
++static void rm9k_serial_dl_write(struct uart_8250_port *up, int value)
+ {
+-	if (p->iotype != UPIO_RM9000)
+-		return offset;
+-	return regmap_out[offset];
++	__raw_writel(value, up->port.membase + 0x08);
++	__raw_writel(value >> 8, up->port.membase + 0x10);
+ }
+ 
+-#else
++#endif
+ 
+ /* sane hardware needs no mapping */
+ #define map_8250_in_reg(up, offset) (offset)
+ #define map_8250_out_reg(up, offset) (offset)
+ 
+-#endif
+-
+ static unsigned int hub6_serial_in(struct uart_port *p, int offset)
+ {
+ 	offset = map_8250_in_reg(p, offset) << p->regshift;
+@@ -490,12 +478,20 @@ static void set_io_from_upio(struct uart
+ 		p->serial_out = mem_serial_out;
+ 		break;
+ 
+-	case UPIO_RM9000:
+ 	case UPIO_MEM32:
+ 		p->serial_in = mem32_serial_in;
+ 		p->serial_out = mem32_serial_out;
+ 		break;
+ 
++#ifdef CONFIG_SERIAL_8250_RM9K
++	case UPIO_RM9000:
++		p->serial_in = rm9k_serial_in;
++		p->serial_out = rm9k_serial_out;
++		up->dl_read = rm9k_serial_dl_read;
++		up->dl_write = rm9k_serial_dl_write;
++		break;
++#endif
++
+ #ifdef CONFIG_MIPS_ALCHEMY
+ 	case UPIO_AU:
+ 		p->serial_in = au_serial_in;
