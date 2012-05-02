@@ -1,305 +1,67 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 31 May 2012 00:22:44 +0000
-Subject: [PATCH 1/9] ARM: mach-shmobile: share DMAEngine definitions
-Message-Id: <87r4u18ai7.wl%kuninori.morimoto.gx@renesas.com>
+From: Bastian Hecht <hechtb@googlemail.com>
+Date: Wed, 02 May 2012 09:41:46 +0000
+Subject: [PATCH v3 06/10] mtd: sh_flctl: Simplify the hardware ecc page read/write
+Message-Id: <1335951710-9390-7-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1335951710-9390-1-git-send-email-hechtb@gmail.com>
+In-Reply-To: <1335951710-9390-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mtd@lists.infradead.org, linux-sh@vger.kernel.org
+Cc: Brian Norris <computersforpeace@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pichart <laurent.pinchart@ideasonboard.com>, Artem Bityutskiy <dedekind1@gmail.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+As the equation mtd->writesize = eccsteps * eccsize holds, we can
+simplify the code. The second loop of the 1st hunk is never entered,
+so we delete it.
+
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
 ---
- arch/arm/mach-shmobile/include/mach/dma-register.h |   45 ++++++++++++
- arch/arm/mach-shmobile/setup-sh7372.c              |   74 +++++++-------------
- arch/arm/mach-shmobile/setup-sh73a0.c              |   27 +-------
- 3 files changed, 71 insertions(+), 75 deletions(-)
- create mode 100644 arch/arm/mach-shmobile/include/mach/dma-register.h
+ drivers/mtd/nand/sh_flctl.c |   25 ++-----------------------
+ 1 files changed, 2 insertions(+), 23 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/dma-register.h b/arch/arm/mach-shmobile/include/mach/dma-register.h
-new file mode 100644
-index 0000000..72a874030
---- /dev/null
-+++ b/arch/arm/mach-shmobile/include/mach/dma-register.h
-@@ -0,0 +1,45 @@
-+/*
-+ * SH-ARM CPU-specific DMA definitions, used by both DMA drivers
-+ *
-+ * Copyright (C) 2012 Renesas Solutions Corp
-+ *
-+ * Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-+ *
-+ * Based on arch/sh/include/cpu-sh4/cpu/dma-register.h
-+ * Copyright (C) 2010 Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
-+ */
-+
-+#ifndef DMA_REGISTER_H
-+#define DMA_REGISTER_H
-+
-+/* Transmit sizes and respective CHCR register values */
-+enum {
-+	XMIT_SZ_8BIT		= 0,
-+	XMIT_SZ_16BIT		= 1,
-+	XMIT_SZ_32BIT		= 2,
-+	XMIT_SZ_64BIT		= 7,
-+	XMIT_SZ_128BIT		= 3,
-+	XMIT_SZ_256BIT		= 4,
-+	XMIT_SZ_512BIT		= 5,
-+};
-+
-+/* log2(size / 8) - used to calculate number of transfers */
-+#define TS_SHIFT {			\
-+	[XMIT_SZ_8BIT]		= 0,	\
-+	[XMIT_SZ_16BIT]		= 1,	\
-+	[XMIT_SZ_32BIT]		= 2,	\
-+	[XMIT_SZ_64BIT]		= 3,	\
-+	[XMIT_SZ_128BIT]	= 4,	\
-+	[XMIT_SZ_256BIT]	= 5,	\
-+	[XMIT_SZ_512BIT]	= 6,	\
-+}
-+
-+#define TS_INDEX2VAL(i) ((((i) & 0x3) << 3) | (((i) & 0xc) << (20 - 2)))
-+#define CHCR_TX(xmit_sz) (DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL((xmit_sz)))
-+#define CHCR_RX(xmit_sz) (DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL((xmit_sz)))
-+
-+#endif /* DMA_REGISTER_H */
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index 6a4bd58..86f08ec 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -33,6 +33,7 @@
- #include <linux/sh_timer.h>
- #include <linux/pm_domain.h>
- #include <linux/dma-mapping.h>
-+#include <mach/dma-register.h>
- #include <mach/hardware.h>
- #include <mach/irqs.h>
- #include <mach/sh7372.h>
-@@ -335,151 +336,126 @@ static struct platform_device iic1_device = {
- };
+diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
+index 4ea3e20..b0389c5 100644
+--- a/drivers/mtd/nand/sh_flctl.c
++++ b/drivers/mtd/nand/sh_flctl.c
+@@ -346,35 +346,14 @@ static void set_cmd_regs(struct mtd_info *mtd, uint32_t cmd, uint32_t flcmcdr_va
+ static int flctl_read_page_hwecc(struct mtd_info *mtd, struct nand_chip *chip,
+ 				uint8_t *buf, int page)
+ {
+-	int i, eccsize = chip->ecc.size;
+-	int eccbytes = chip->ecc.bytes;
+-	int eccsteps = chip->ecc.steps;
+-	uint8_t *p = buf;
+-	struct sh_flctl *flctl = mtd_to_flctl(mtd);
+-
+-	for (i = 0; eccsteps; eccsteps--, i += eccbytes, p += eccsize)
+-		chip->read_buf(mtd, p, eccsize);
+-
+-	for (i = 0; eccsteps; eccsteps--, i += eccbytes, p += eccsize) {
+-		if (flctl->hwecc_cant_correct[i])
+-			mtd->ecc_stats.failed++;
+-		else
+-			mtd->ecc_stats.corrected += 0; /* FIXME */
+-	}
+-
++	chip->read_buf(mtd, buf, mtd->writesize);
+ 	return 0;
+ }
  
- /* DMA */
--/* Transmit sizes and respective CHCR register values */
--enum {
--	XMIT_SZ_8BIT		= 0,
--	XMIT_SZ_16BIT		= 1,
--	XMIT_SZ_32BIT		= 2,
--	XMIT_SZ_64BIT		= 7,
--	XMIT_SZ_128BIT		= 3,
--	XMIT_SZ_256BIT		= 4,
--	XMIT_SZ_512BIT		= 5,
--};
+ static void flctl_write_page_hwecc(struct mtd_info *mtd, struct nand_chip *chip,
+ 				   const uint8_t *buf)
+ {
+-	int i, eccsize = chip->ecc.size;
+-	int eccbytes = chip->ecc.bytes;
+-	int eccsteps = chip->ecc.steps;
+-	const uint8_t *p = buf;
 -
--/* log2(size / 8) - used to calculate number of transfers */
--#define TS_SHIFT {			\
--	[XMIT_SZ_8BIT]		= 0,	\
--	[XMIT_SZ_16BIT]		= 1,	\
--	[XMIT_SZ_32BIT]		= 2,	\
--	[XMIT_SZ_64BIT]		= 3,	\
--	[XMIT_SZ_128BIT]	= 4,	\
--	[XMIT_SZ_256BIT]	= 5,	\
--	[XMIT_SZ_512BIT]	= 6,	\
--}
--
--#define TS_INDEX2VAL(i) ((((i) & 3) << 3) | \
--			 (((i) & 0xc) << (20 - 2)))
--
- static const struct sh_dmae_slave_config sh7372_dmae_slaves[] = {
- 	{
- 		.slave_id	= SHDMA_SLAVE_SCIF0_TX,
- 		.addr		= 0xe6c40020,
--		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
-+		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
- 		.mid_rid	= 0x21,
- 	}, {
- 		.slave_id	= SHDMA_SLAVE_SCIF0_RX,
- 		.addr		= 0xe6c40024,
--		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
-+		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
- 		.mid_rid	= 0x22,
- 	}, {
- 		.slave_id	= SHDMA_SLAVE_SCIF1_TX,
- 		.addr		= 0xe6c50020,
--		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
-+		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
- 		.mid_rid	= 0x25,
- 	}, {
- 		.slave_id	= SHDMA_SLAVE_SCIF1_RX,
- 		.addr		= 0xe6c50024,
--		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
-+		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
- 		.mid_rid	= 0x26,
- 	}, {
- 		.slave_id	= SHDMA_SLAVE_SCIF2_TX,
- 		.addr		= 0xe6c60020,
--		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
-+		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
- 		.mid_rid	= 0x29,
- 	}, {
- 		.slave_id	= SHDMA_SLAVE_SCIF2_RX,
- 		.addr		= 0xe6c60024,
--		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
-+		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
- 		.mid_rid	= 0x2a,
- 	}, {
- 		.slave_id	= SHDMA_SLAVE_SCIF3_TX,
- 		.addr		= 0xe6c70020,
--		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
-+		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
- 		.mid_rid	= 0x2d,
- 	}, {
- 		.slave_id	= SHDMA_SLAVE_SCIF3_RX,
- 		.addr		= 0xe6c70024,
--		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
-+		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
- 		.mid_rid	= 0x2e,
- 	}, {
- 		.slave_id	= SHDMA_SLAVE_SCIF4_TX,
- 		.addr		= 0xe6c80020,
--		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
-+		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
- 		.mid_rid	= 0x39,
- 	}, {
- 		.slave_id	= SHDMA_SLAVE_SCIF4_RX,
- 		.addr		= 0xe6c80024,
--		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
-+		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
- 		.mid_rid	= 0x3a,
- 	}, {
- 		.slave_id	= SHDMA_SLAVE_SCIF5_TX,
- 		.addr		= 0xe6cb0020,
--		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
-+		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
- 		.mid_rid	= 0x35,
- 	}, {
- 		.slave_id	= SHDMA_SLAVE_SCIF5_RX,
- 		.addr		= 0xe6cb0024,
--		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
-+		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
- 		.mid_rid	= 0x36,
- 	}, {
- 		.slave_id	= SHDMA_SLAVE_SCIF6_TX,
- 		.addr		= 0xe6c30040,
--		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
-+		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
- 		.mid_rid	= 0x3d,
- 	}, {
- 		.slave_id	= SHDMA_SLAVE_SCIF6_RX,
- 		.addr		= 0xe6c30060,
--		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
-+		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
- 		.mid_rid	= 0x3e,
- 	}, {
- 		.slave_id	= SHDMA_SLAVE_SDHI0_TX,
- 		.addr		= 0xe6850030,
--		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
-+		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
- 		.mid_rid	= 0xc1,
- 	}, {
- 		.slave_id	= SHDMA_SLAVE_SDHI0_RX,
- 		.addr		= 0xe6850030,
--		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
-+		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
- 		.mid_rid	= 0xc2,
- 	}, {
- 		.slave_id	= SHDMA_SLAVE_SDHI1_TX,
- 		.addr		= 0xe6860030,
--		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
-+		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
- 		.mid_rid	= 0xc9,
- 	}, {
- 		.slave_id	= SHDMA_SLAVE_SDHI1_RX,
- 		.addr		= 0xe6860030,
--		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
-+		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
- 		.mid_rid	= 0xca,
- 	}, {
- 		.slave_id	= SHDMA_SLAVE_SDHI2_TX,
- 		.addr		= 0xe6870030,
--		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
-+		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
- 		.mid_rid	= 0xcd,
- 	}, {
- 		.slave_id	= SHDMA_SLAVE_SDHI2_RX,
- 		.addr		= 0xe6870030,
--		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
-+		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
- 		.mid_rid	= 0xce,
- 	}, {
- 		.slave_id	= SHDMA_SLAVE_FSIA_TX,
- 		.addr		= 0xfe1f0024,
--		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
-+		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
- 		.mid_rid	= 0xb1,
- 	}, {
- 		.slave_id	= SHDMA_SLAVE_FSIA_RX,
- 		.addr		= 0xfe1f0020,
--		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
-+		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
- 		.mid_rid	= 0xb2,
- 	}, {
- 		.slave_id	= SHDMA_SLAVE_MMCIF_TX,
- 		.addr		= 0xe6bd0034,
--		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
-+		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
- 		.mid_rid	= 0xd1,
- 	}, {
- 		.slave_id	= SHDMA_SLAVE_MMCIF_RX,
- 		.addr		= 0xe6bd0034,
--		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
-+		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
- 		.mid_rid	= 0xd2,
- 	},
- };
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index 04a0dfe..2035101 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -30,6 +30,7 @@
- #include <linux/sh_dma.h>
- #include <linux/sh_intc.h>
- #include <linux/sh_timer.h>
-+#include <mach/dma-register.h>
- #include <mach/hardware.h>
- #include <mach/irqs.h>
- #include <mach/sh73a0.h>
-@@ -415,32 +416,6 @@ static struct platform_device i2c4_device = {
- 	.num_resources	= ARRAY_SIZE(i2c4_resources),
- };
+-	for (i = 0; eccsteps; eccsteps--, i += eccbytes, p += eccsize)
+-		chip->write_buf(mtd, p, eccsize);
++	chip->write_buf(mtd, buf, mtd->writesize);
+ }
  
--/* Transmit sizes and respective CHCR register values */
--enum {
--	XMIT_SZ_8BIT		= 0,
--	XMIT_SZ_16BIT		= 1,
--	XMIT_SZ_32BIT		= 2,
--	XMIT_SZ_64BIT		= 7,
--	XMIT_SZ_128BIT		= 3,
--	XMIT_SZ_256BIT		= 4,
--	XMIT_SZ_512BIT		= 5,
--};
--
--/* log2(size / 8) - used to calculate number of transfers */
--#define TS_SHIFT {			\
--	[XMIT_SZ_8BIT]		= 0,	\
--	[XMIT_SZ_16BIT]		= 1,	\
--	[XMIT_SZ_32BIT]		= 2,	\
--	[XMIT_SZ_64BIT]		= 3,	\
--	[XMIT_SZ_128BIT]	= 4,	\
--	[XMIT_SZ_256BIT]	= 5,	\
--	[XMIT_SZ_512BIT]	= 6,	\
--}
--
--#define TS_INDEX2VAL(i) ((((i) & 3) << 3) | (((i) & 0xc) << (20 - 2)))
--#define CHCR_TX(xmit_sz) (DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL((xmit_sz)))
--#define CHCR_RX(xmit_sz) (DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL((xmit_sz)))
--
- static const struct sh_dmae_slave_config sh73a0_dmae_slaves[] = {
- 	{
- 		.slave_id	= SHDMA_SLAVE_SCIF0_TX,
+ static void execmd_read_page_sector(struct mtd_info *mtd, int page_addr)
 -- 
 1.7.5.4
 
