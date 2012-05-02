@@ -1,192 +1,85 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 16 May 2012 06:45:54 +0000
-Subject: [PATCH 07/08] mach-shmobile: Emma Mobile EV2 DT support V3
-Message-Id: <20120516064554.32286.70806.sendpatchset@w520>
+From: Bastian Hecht <hechtb@googlemail.com>
+Date: Wed, 02 May 2012 09:41:45 +0000
+Subject: [PATCH v3 05/10] mtd: sh_flctl: Fix hardware ECC behaviour
+Message-Id: <1335951710-9390-6-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120516064449.32286.77941.sendpatchset@w520>
-In-Reply-To: <20120516064449.32286.77941.sendpatchset@w520>
+References: <1335951710-9390-1-git-send-email-hechtb@gmail.com>
+In-Reply-To: <1335951710-9390-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mtd@lists.infradead.org, linux-sh@vger.kernel.org
+Cc: Brian Norris <computersforpeace@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pichart <laurent.pinchart@ideasonboard.com>, Artem Bityutskiy <dedekind1@gmail.com>
 
-From: Magnus Damm <damm@opensource.se>
+The flctl uses 10 bytes ECC data for every 512 bytes sector. This patch
+makes the controller write all 40 bytes instead of 10 bytes only.
 
-This is EMEV2 DT support V3. The support is limited to
-whatever devices that are complied in the kernel. At this
-point we have UARTs handled by "em-uart" and a timer
-handled by "em-sti". Clocks and SMP are not supported.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
 ---
+ drivers/mtd/nand/sh_flctl.c |   30 +++++++-----------------------
+ 1 files changed, 7 insertions(+), 23 deletions(-)
 
- Changes since V2:
- - converted board-specific emev2-kzm9d.dts into emev2.dtsi
-
- Changes since V1:
- - cleaned up the command line in the dts file
- - removed call to clock setup code - this should be done through DT
- - removed map io callback
- - removed Makefile hacks, people will have to add them by themselves
-
- arch/arm/boot/dts/emev2.dtsi         |   63 ++++++++++++++++++++++++++++++++++
- arch/arm/mach-shmobile/clock-emev2.c |    5 ++
- arch/arm/mach-shmobile/setup-emev2.c |   47 ++++++++++++++++++++++++-
- 3 files changed, 114 insertions(+), 1 deletion(-)
-
---- /dev/null
-+++ work/arch/arm/boot/dts/emev2.dtsi	2012-05-16 15:01:20.000000000 +0900
-@@ -0,0 +1,63 @@
-+/*
-+ * Device Tree Source for the EMEV2 SoC
-+ *
-+ * Copyright (C) 2012 Renesas Solutions Corp.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/include/ "skeleton.dtsi"
-+
-+/ {
-+	compatible = "renesas,emev2";
-+	interrupt-parent = <&gic>;
-+
-+	cpus {
-+		cpu@0 {
-+			compatible = "arm,cortex-a9";
-+		};
-+		cpu@1 {
-+			compatible = "arm,cortex-a9";
-+		};
-+	};
-+
-+	gic: interrupt-controller@e0020000 {
-+		compatible = "arm,cortex-a9-gic";
-+		interrupt-controller;
-+		#interrupt-cells = <3>;
-+		reg = <0xe0028000 0x1000>,
-+		      <0xe0020000 0x0100>;
-+	};
-+
-+	sti@e0180000 {
-+		compatible = "renesas,em-sti";
-+		reg = <0xe0180000 0x54>;
-+		interrupts = <0 125 0>;
-+	};
-+
-+	uart@e1020000 {
-+		compatible = "renesas,em-uart";
-+		reg = <0xe1020000 0x38>;
-+		interrupts = <0 8 0>;
-+	};
-+
-+	uart@e1030000 {
-+		compatible = "renesas,em-uart";
-+		reg = <0xe1030000 0x38>;
-+		interrupts = <0 9 0>;
-+	};
-+
-+	uart@e1040000 {
-+		compatible = "renesas,em-uart";
-+		reg = <0xe1040000 0x38>;
-+		interrupts = <0 10 0>;
-+	};
-+
-+	uart@e1050000 {
-+		compatible = "renesas,em-uart";
-+		reg = <0xe1050000 0x38>;
-+		interrupts = <0 11 0>;
-+	};
-+};
---- 0009/arch/arm/mach-shmobile/clock-emev2.c
-+++ work/arch/arm/mach-shmobile/clock-emev2.c	2012-05-16 14:56:42.000000000 +0900
-@@ -191,10 +191,15 @@ static int __init emev2_sclkdiv_register
- 
- static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("serial8250-em.0", &gclk_clks[GCLK_USIAU0_SCLK]),
-+	CLKDEV_DEV_ID("e1020000.uart", &gclk_clks[GCLK_USIAU0_SCLK]),
- 	CLKDEV_DEV_ID("serial8250-em.1", &gclk_clks[GCLK_USIBU1_SCLK]),
-+	CLKDEV_DEV_ID("e1030000.uart", &gclk_clks[GCLK_USIBU1_SCLK]),
- 	CLKDEV_DEV_ID("serial8250-em.2", &gclk_clks[GCLK_USIBU2_SCLK]),
-+	CLKDEV_DEV_ID("e1040000.uart", &gclk_clks[GCLK_USIBU2_SCLK]),
- 	CLKDEV_DEV_ID("serial8250-em.3", &gclk_clks[GCLK_USIBU3_SCLK]),
-+	CLKDEV_DEV_ID("e1050000.uart", &gclk_clks[GCLK_USIBU3_SCLK]),
- 	CLKDEV_DEV_ID("em_sti.0", &gclk_clks[GCLK_STI_SCLK]),
-+	CLKDEV_DEV_ID("e0180000.sti", &gclk_clks[GCLK_STI_SCLK]),
- };
- 
- void __init emev2_clock_init(void)
---- 0010/arch/arm/mach-shmobile/setup-emev2.c
-+++ work/arch/arm/mach-shmobile/setup-emev2.c	2012-05-16 14:56:42.000000000 +0900
-@@ -22,9 +22,11 @@
- #include <linux/irq.h>
- #include <linux/platform_device.h>
- #include <linux/platform_data/gpio-em.h>
-+#include <linux/of_platform.h>
- #include <linux/delay.h>
- #include <linux/input.h>
- #include <linux/io.h>
-+#include <linux/of_irq.h>
- #include <mach/hardware.h>
- #include <mach/common.h>
- #include <mach/emev2.h>
-@@ -381,9 +383,14 @@ void __init emev2_add_standard_devices(v
- 			     ARRAY_SIZE(emev2_late_devices));
- }
- 
--void __init emev2_add_early_devices(void)
-+void __init emev2_init_delay(void)
+diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
+index dda34a2..c8e58bb 100644
+--- a/drivers/mtd/nand/sh_flctl.c
++++ b/drivers/mtd/nand/sh_flctl.c
+@@ -427,30 +427,20 @@ static void execmd_read_page_sector(struct mtd_info *mtd, int page_addr)
+ static void execmd_read_oob(struct mtd_info *mtd, int page_addr)
  {
- 	shmobile_setup_delay(533, 1, 3); /* Cortex-A9 @ 533MHz */
-+}
-+
-+void __init emev2_add_early_devices(void)
-+{
-+	emev2_init_delay();
+ 	struct sh_flctl *flctl = mtd_to_flctl(mtd);
++	int page_sectors = flctl->page_size ? 4 : 1;
++	int i;
  
- 	early_platform_add_devices(emev2_early_devices,
- 				   ARRAY_SIZE(emev2_early_devices));
-@@ -405,3 +412,41 @@ void __init emev2_init_irq(void)
- 	/* Use GIC to handle interrupts */
- 	gic_init(0, 29, gic_dist_base, gic_cpu_base);
+ 	set_cmd_regs(mtd, NAND_CMD_READ0,
+ 		(NAND_CMD_READSTART << 8) | NAND_CMD_READ0);
+ 
+ 	empty_fifo(flctl);
+-	if (flctl->page_size) {
+-		int i;
+-		/* In case that the page size is 2k */
+-		for (i = 0; i < 16 * 3; i++)
+-			flctl->done_buff[i] = 0xFF;
+-
+-		set_addr(mtd, 3 * 528 + 512, page_addr);
+-		writel(16, FLDTCNTR(flctl));
+ 
+-		start_translation(flctl);
+-		read_fiforeg(flctl, 16, 16 * 3);
+-		wait_completion(flctl);
+-	} else {
+-		/* In case that the page size is 512b */
+-		set_addr(mtd, 512, page_addr);
++	for (i = 0; i < page_sectors; i++) {
++		set_addr(mtd, (512 + 16) * i + 512 , page_addr);
+ 		writel(16, FLDTCNTR(flctl));
+ 
+ 		start_translation(flctl);
+-		read_fiforeg(flctl, 16, 0);
++		read_fiforeg(flctl, 16, 16 * i);
+ 		wait_completion(flctl);
+ 	}
  }
-+
-+#ifdef CONFIG_USE_OF
-+static const struct of_dev_auxdata emev2_auxdata_lookup[] __initconst = {
-+	{ }
-+};
-+
-+void __init emev2_add_standard_devices_dt(void)
-+{
-+	of_platform_populate(NULL, of_default_bus_match_table,
-+			     emev2_auxdata_lookup, NULL);
-+}
-+
-+static const struct of_device_id emev2_dt_irq_match[] = {
-+	{ .compatible = "arm,cortex-a9-gic", .data = gic_of_init, },
-+	{},
-+};
-+
-+static const char *emev2_boards_compat_dt[] __initdata = {
-+	"renesas,emev2",
-+	NULL,
-+};
-+
-+void __init emev2_init_irq_dt(void)
-+{
-+	of_irq_init(emev2_dt_irq_match);
-+}
-+
-+DT_MACHINE_START(EMEV2_DT, "Generic Emma Mobile EV2 (Flattened Device Tree)")
-+	.init_early	= emev2_init_delay,
-+	.nr_irqs	= NR_IRQS_LEGACY,
-+	.init_irq	= emev2_init_irq_dt,
-+	.handle_irq	= gic_handle_irq,
-+	.init_machine	= emev2_add_standard_devices_dt,
-+	.timer		= &shmobile_timer,
-+	.dt_compat	= emev2_boards_compat_dt,
-+MACHINE_END
-+
-+#endif /* CONFIG_USE_OF */
+@@ -495,18 +485,12 @@ static void execmd_write_oob(struct mtd_info *mtd)
+ 	int page_addr = flctl->seqin_page_addr;
+ 	int sector, page_sectors;
+ 
+-	if (flctl->page_size) {
+-		sector = 3;
+-		page_sectors = 4;
+-	} else {
+-		sector = 0;
+-		page_sectors = 1;
+-	}
++	page_sectors = flctl->page_size ? 4 : 1;
+ 
+ 	set_cmd_regs(mtd, NAND_CMD_PAGEPROG,
+ 			(NAND_CMD_PAGEPROG << 8) | NAND_CMD_SEQIN);
+ 
+-	for (; sector < page_sectors; sector++) {
++	for (sector = 0; sector < page_sectors; sector++) {
+ 		empty_fifo(flctl);
+ 		set_addr(mtd, sector * 528 + 512, page_addr);
+ 		writel(16, FLDTCNTR(flctl));	/* set read size */
+-- 
+1.7.5.4
+
