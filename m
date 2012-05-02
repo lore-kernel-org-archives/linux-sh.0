@@ -1,51 +1,46 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 02 May 2012 12:46:42 +0000
-Subject: [PATCH 00/06] serial8250: DLL/DLM rework, Emma Mobile UART driver
-Message-Id: <20120502124642.30480.41373.sendpatchset@w520>
+From: Alan Cox <alan@lxorguk.ukuu.org.uk>
+Date: Wed, 02 May 2012 13:03:21 +0000
+Subject: Re: [PATCH 00/06] serial8250: DLL/DLM rework, Emma Mobile UART driver
+Message-Id: <20120502140321.54f7af9c@pyramind.ukuu.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20120502124642.30480.41373.sendpatchset@w520>
+In-Reply-To: <20120502124642.30480.41373.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-serial@vger.kernel.org
-Cc: horms@verge.net.au, arnd@arndb.de, linux-sh@vger.kernel.org, gregkh@linuxfoundation.org, swarren@wwwdotorg.org, linux-kernel@vger.kernel.org, rjw@sisk.pl, paul.gortmaker@windriver.com, lethal@linux-sh.org, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, dan.j.williams@intel.com, alan@linux.intel.com
+To: Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-serial@vger.kernel.org, horms@verge.net.au, arnd@arndb.de, linux-sh@vger.kernel.org, gregkh@linuxfoundation.org, swarren@wwwdotorg.org, linux-kernel@vger.kernel.org, rjw@sisk.pl, paul.gortmaker@windriver.com, lethal@linux-sh.org, olof@lixom.net, dan.j.williams@intel.com, alan@linux.intel.com
 
-serial8250: DLL/DLM rework, Emma Mobile UART driver
+On Wed, 02 May 2012 21:46:42 +0900
+Magnus Damm <magnus.damm@gmail.com> wrote:
 
-[PATCH 01/06] serial8250: Add dl_read()/dl_write() callbacks
-[PATCH 02/06] serial8250: Use dl_read()/dl_write() on Alchemy
-[PATCH 03/06] serial8250: Use dl_read()/dl_write() on RM9K
-[PATCH 04/06] serial8250: Clean up default map and dl code
-[PATCH 05/06] serial8250: Introduce serial8250_register_8250_port()
-[PATCH 06/06] serial8250-em: Add Emma Mobile UART driver
+> serial8250: DLL/DLM rework, Emma Mobile UART driver
+> 
+> [PATCH 01/06] serial8250: Add dl_read()/dl_write() callbacks
+> [PATCH 02/06] serial8250: Use dl_read()/dl_write() on Alchemy
+> [PATCH 03/06] serial8250: Use dl_read()/dl_write() on RM9K
+> [PATCH 04/06] serial8250: Clean up default map and dl code
+> [PATCH 05/06] serial8250: Introduce serial8250_register_8250_port()
+> [PATCH 06/06] serial8250-em: Add Emma Mobile UART driver
+> 
+> This series cleans up and adjusts the 8250 code base to allow
+> hooking in a driver for the UART in Emma Mobile SoCs.
+> 
+> In short:
+> - Patch 1-4 tie in 8250-specific dl_read()/dl_write() callbacks.
+> - Patch 5 adds a new register function to use new callbacks.
+> - Patch 6 adds a new driver that makes use of the above.
+> 
+> I'd be happy to rework the above patches if needed. The
+> main challenge for Emma Mobile UART support is the non-
+> standard offsets for DLL and DLM registers.
+> 
+> Note that there is no DT support included at this point,
+> but it boils down to a 10 line change. The boot loader on
+> my board does not do DT so I'd like to use kexec for DT
+> development (as usual), but to use kexec I first need to
+> get a non-DT kernel working. Which is basically this. =)
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-This series cleans up and adjusts the 8250 code base to allow
-hooking in a driver for the UART in Emma Mobile SoCs.
-
-In short:
-- Patch 1-4 tie in 8250-specific dl_read()/dl_write() callbacks.
-- Patch 5 adds a new register function to use new callbacks.
-- Patch 6 adds a new driver that makes use of the above.
-
-I'd be happy to rework the above patches if needed. The
-main challenge for Emma Mobile UART support is the non-
-standard offsets for DLL and DLM registers.
-
-Note that there is no DT support included at this point,
-but it boils down to a 10 line change. The boot loader on
-my board does not do DT so I'd like to use kexec for DT
-development (as usual), but to use kexec I first need to
-get a non-DT kernel working. Which is basically this. =)
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- Builds on top of linux-next 20120501.
-
- drivers/tty/serial/8250/8250.c    |  373 ++++++++++++++++++-------------------
- drivers/tty/serial/8250/8250.h    |   14 +
- drivers/tty/serial/8250/8250_em.c |  179 +++++++++++++++++
- drivers/tty/serial/8250/Kconfig   |    8 
- drivers/tty/serial/8250/Makefile  |    1 
- include/linux/serial_8250.h       |    1 
- 6 files changed, 392 insertions(+), 184 deletions(-)
-
+Acked-by: Alan Cox <alan@linux.intel.com>
