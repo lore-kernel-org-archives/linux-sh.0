@@ -1,136 +1,56 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 03 May 2012 15:05:37 +0000
-Subject: [PATCH 08/29] mmc: sh_mmcif: add regulator support
-Message-Id: <1336057558-11031-9-git-send-email-g.liakhovetski@gmx.de>
+From: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date: Thu, 03 May 2012 15:45:32 +0000
+Subject: Re: [PATCH 08/29] mmc: sh_mmcif: add regulator support
+Message-Id: <20120503154532.GP3955@opensource.wolfsonmicro.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="Bd2KlmcTHfsQFEJ+"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>
+ <1336057558-11031-9-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1336057558-11031-9-git-send-email-g.liakhovetski@gmx.de>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
 
-Add regulator support to the sh_mmcif driver, but also preserve the current
-power-callback.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>
----
- drivers/mmc/host/sh_mmcif.c |   48 ++++++++++++++++++++++++++++++++++++------
- 1 files changed, 41 insertions(+), 7 deletions(-)
+--Bd2KlmcTHfsQFEJ+
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index 19c7576..f6d0b11 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -58,6 +58,7 @@
- #include <linux/platform_device.h>
- #include <linux/pm_qos.h>
- #include <linux/pm_runtime.h>
-+#include <linux/regulator/consumer.h>
- #include <linux/spinlock.h>
- #include <linux/module.h>
- 
-@@ -231,6 +232,8 @@ struct sh_mmcif_host {
- 	bool power;
- 	bool card_present;
- 
-+	struct regulator	*vdd;
-+
- 	/* DMA support */
- 	struct dma_chan		*chan_rx;
- 	struct dma_chan		*chan_tx;
-@@ -923,10 +926,24 @@ static void sh_mmcif_clk_update(struct sh_mmcif_host *host)
- 	host->mmc->f_min = host->clk / 512;
- }
- 
-+static void sh_mmcif_set_power(struct sh_mmcif_host *host, struct mmc_ios *ios)
-+{
-+	struct sh_mmcif_plat_data *pd = host->pd->dev.platform_data;
-+
-+	if (!(host->mmc->caps & MMC_CAP_POWER_OFF_CARD))
-+		return;
-+
-+	if (host->vdd)
-+		/* Errors ignored... */
-+		mmc_regulator_set_ocr(host->mmc, host->vdd,
-+				      ios->power_mode ? ios->vdd : 0);
-+	else if (pd->set_pwr)
-+		pd->set_pwr(host->pd, ios->power_mode != MMC_POWER_OFF);
-+}
-+
- static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- {
- 	struct sh_mmcif_host *host = mmc_priv(mmc);
--	struct sh_mmcif_plat_data *p = host->pd->dev.platform_data;
- 	unsigned long flags;
- 
- 	spin_lock_irqsave(&host->lock, flags);
-@@ -944,6 +961,7 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 			sh_mmcif_request_dma(host, host->pd->dev.platform_data);
- 			host->card_present = true;
- 		}
-+		sh_mmcif_set_power(host, ios);
- 	} else if (ios->power_mode = MMC_POWER_OFF || !ios->clock) {
- 		/* clock stop */
- 		sh_mmcif_clock_control(host, 0);
-@@ -957,8 +975,8 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 			pm_runtime_put(&host->pd->dev);
- 			clk_disable(host->hclk);
- 			host->power = false;
--			if (p->set_pwr && ios->power_mode = MMC_POWER_OFF)
--				p->set_pwr(host->pd, 0);
-+			if (ios->power_mode = MMC_POWER_OFF)
-+				sh_mmcif_set_power(host, ios);
- 		}
- 		host->state = STATE_IDLE;
- 		return;
-@@ -966,8 +984,6 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 
- 	if (ios->clock) {
- 		if (!host->power) {
--			if (p->set_pwr)
--				p->set_pwr(host->pd, ios->power_mode);
- 			clk_enable(host->hclk);
- 			sh_mmcif_clk_update(host);
- 			pm_runtime_get_sync(&host->pd->dev);
-@@ -1252,6 +1268,24 @@ static void mmcif_timeout_work(struct work_struct *work)
- 	mmc_request_done(host->mmc, mrq);
- }
- 
-+static void sh_mmcif_init_ocr(struct sh_mmcif_host *host)
-+{
-+	struct sh_mmcif_plat_data *pd = host->pd->dev.platform_data;
-+	struct mmc_host *mmc = host->mmc;
-+
-+	host->vdd = mmc_regulator_get_vmmc(mmc);
-+
-+	if ((mmc->ocr_avail && pd->ocr) || (host->vdd && pd->set_pwr))
-+		dev_warn(mmc_dev(mmc),
-+			 "Platform OCR mask / .set_pwr() are ignored\n");
-+
-+	if (pd->set_pwr)
-+		mmc->caps |= MMC_CAP_POWER_OFF_CARD;
-+
-+	if (!mmc->ocr_avail)
-+		mmc->ocr_avail = pd->ocr;
-+}
-+
- static int __devinit sh_mmcif_probe(struct platform_device *pdev)
- {
- 	int ret = 0, irq[2];
-@@ -1298,8 +1332,8 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
- 	spin_lock_init(&host->lock);
- 
- 	mmc->ops = &sh_mmcif_ops;
--	if (pd->ocr)
--		mmc->ocr_avail = pd->ocr;
-+	sh_mmcif_init_ocr(host);
-+
- 	mmc->caps = MMC_CAP_MMC_HIGHSPEED;
- 	if (pd->caps)
- 		mmc->caps |= pd->caps;
--- 
-1.7.2.5
+On Thu, May 03, 2012 at 05:05:37PM +0200, Guennadi Liakhovetski wrote:
 
+> +#include <linux/regulator/consumer.h>
+
+Where's this used?
+
+> +static void sh_mmcif_set_power(struct sh_mmcif_host *host, struct mmc_ios *ios)
+> +{
+> +	struct sh_mmcif_plat_data *pd = host->pd->dev.platform_data;
+> +
+> +	if (!(host->mmc->caps & MMC_CAP_POWER_OFF_CARD))
+> +		return;
+
+Surely the core should be implementing this?
+
+--Bd2KlmcTHfsQFEJ+
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJPoqgUAAoJEBus8iNuMP3dcNEP/jCt4hWKKgIuuTQTjTH9kvWM
+4LJRA134rc+XrBzCcOlJL+L1KmPfQ9Fx4tyOh5GBbljx7bw+QCUaojYLFB1Tqybf
+U2p2/VFdViW3WNcPK2zdlRGsjTRNErBfAKKJ0CY8u4FRMAv9Dci3B/taCgZPJY9j
+ru7DCLHD5G8MzHJbZ8PNKss+XhxVQyjcNXC8b04/LegijR9kXuqtA2oMPm0wxaT+
+c25N77Mz/sX96e7ArT0Iqep4h7bsDQdBdTmJgt2AwycQmS8Oncu66ftM15hqHPJr
+5MjxidoZqXLZHUoeJCMGyZNEbLFFRTgL9R96Bkte/FAAWIVropLCVU+VzmPRldLN
+IP6ELFBit1xsUUuBoDwGDXud2pV8zIiO6ucUQVxuiaWCMyRiTViaGDkuQXkb8J+P
++xWRX7+pKWf0EKnzw2v4/UnQdi2WwJglj/9FPn78AR7xA8XwhfY5oEUX/FZyGdmG
+nh3XnKA2MK970aPuZ4rg5EMpt0LWQBPDOqDe/fptnQz3X8A3o17nQBdtXs752zCp
+oszl5fP7Eef4+x+/dBRH3UYzRW5nlHUX3B1yaRItDcYipMQOeHZvQOoFMRxSQVKo
+Lg3RjEUybmiZHPbKY1ZCFDyY9V+HlEpKv/B/2cBGZrMbtC3tTZg5C/LoStYkbpii
+N0MRJb9ciUmDD0PkbEXX
+=hzkc
+-----END PGP SIGNATURE-----
+
+--Bd2KlmcTHfsQFEJ+--
