@@ -1,54 +1,136 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Thu, 10 May 2012 21:42:12 +0000
-Subject: Re: [PATCH] mach-shmobile: r8a7779 SMP TWD boot regression fix
-Message-Id: <201205102342.12772.rjw@sisk.pl>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 03 May 2012 15:05:37 +0000
+Subject: [PATCH 08/29] mmc: sh_mmcif: add regulator support
+Message-Id: <1336057558-11031-9-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120510055722.29862.28709.sendpatchset@w520>
-In-Reply-To: <20120510055722.29862.28709.sendpatchset@w520>
+References: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>
 
-On Thursday, May 10, 2012, Magnus Damm wrote:
-> On Thu, May 10, 2012 at 7:13 PM, Marc Zyngier <marc.zyngier@arm.com> wrote:
-> > On 10/05/12 11:10, Magnus Damm wrote:
-> >> On Thu, May 10, 2012 at 7:03 PM, Marc Zyngier <marc.zyngier@arm.com> wrote:
-> >>> Hi Magnus,
-> >>>
-> >>> On 10/05/12 06:57, Magnus Damm wrote:
-> >>>> From: Magnus Damm <damm@opensource.se>
-> >>>>
-> >>>> Fix SMP TWD boot regression on r8a7779 based platforms caused by:
-> >>>>
-> >>>> 4200b16 ARM: shmobile: convert to twd_local_timer_register() interface
-> >>>>
-> >>>> After the merge of the above commit it has been impossible to boot
-> >>>> r8a7779 based SoCs with SMP enabled and CONFIG_HAVE_ARM_TWD=y. The
-> >>>> kernel crashes at smp_init_cpus() timing which is before the console
-> >>>> has been initialized, so to the user this looks like a kernel lock up
-> >>>> without any particular error message.
-> >>>>
-> >>>> This patch fixes the regression on r8a7779 by moving the TWD
-> >>>> registration code from smp_init_cpus() to sys_timer->init() time.
-> >>>>
-> >>>> Signed-off-by: Magnus Damm <damm@opensource.se>
-> >>>
-> >>> I'm a bit confused here. Does sh73a0 work OK? If so, why is the behavior
-> >>> any different?
-> >>
-> >> It doesn't,both are busted I'm afraid. But I fixed the r8a7779 one
-> >> myself and let Morimoto-san deal with sh73a0 to make sure it got fixed
-> >> and tested too.
-> >
-> > OK. It would be good to fold these two patches into one, then.
-> >
-> > FWIW, Acked-by: Marc Zyngier <marc.zyngier@arm.com>
-> 
-> Thanks! I intentionally made them broken out since they fixed
-> different platforms, but that's not so important to me.
+Add regulator support to the sh_mmcif driver, but also preserve the current
+power-callback.
 
-Applied.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>
+---
+ drivers/mmc/host/sh_mmcif.c |   48 ++++++++++++++++++++++++++++++++++++------
+ 1 files changed, 41 insertions(+), 7 deletions(-)
 
-Thanks,
-Rafael
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 19c7576..f6d0b11 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -58,6 +58,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/pm_qos.h>
+ #include <linux/pm_runtime.h>
++#include <linux/regulator/consumer.h>
+ #include <linux/spinlock.h>
+ #include <linux/module.h>
+ 
+@@ -231,6 +232,8 @@ struct sh_mmcif_host {
+ 	bool power;
+ 	bool card_present;
+ 
++	struct regulator	*vdd;
++
+ 	/* DMA support */
+ 	struct dma_chan		*chan_rx;
+ 	struct dma_chan		*chan_tx;
+@@ -923,10 +926,24 @@ static void sh_mmcif_clk_update(struct sh_mmcif_host *host)
+ 	host->mmc->f_min = host->clk / 512;
+ }
+ 
++static void sh_mmcif_set_power(struct sh_mmcif_host *host, struct mmc_ios *ios)
++{
++	struct sh_mmcif_plat_data *pd = host->pd->dev.platform_data;
++
++	if (!(host->mmc->caps & MMC_CAP_POWER_OFF_CARD))
++		return;
++
++	if (host->vdd)
++		/* Errors ignored... */
++		mmc_regulator_set_ocr(host->mmc, host->vdd,
++				      ios->power_mode ? ios->vdd : 0);
++	else if (pd->set_pwr)
++		pd->set_pwr(host->pd, ios->power_mode != MMC_POWER_OFF);
++}
++
+ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ {
+ 	struct sh_mmcif_host *host = mmc_priv(mmc);
+-	struct sh_mmcif_plat_data *p = host->pd->dev.platform_data;
+ 	unsigned long flags;
+ 
+ 	spin_lock_irqsave(&host->lock, flags);
+@@ -944,6 +961,7 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 			sh_mmcif_request_dma(host, host->pd->dev.platform_data);
+ 			host->card_present = true;
+ 		}
++		sh_mmcif_set_power(host, ios);
+ 	} else if (ios->power_mode = MMC_POWER_OFF || !ios->clock) {
+ 		/* clock stop */
+ 		sh_mmcif_clock_control(host, 0);
+@@ -957,8 +975,8 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 			pm_runtime_put(&host->pd->dev);
+ 			clk_disable(host->hclk);
+ 			host->power = false;
+-			if (p->set_pwr && ios->power_mode = MMC_POWER_OFF)
+-				p->set_pwr(host->pd, 0);
++			if (ios->power_mode = MMC_POWER_OFF)
++				sh_mmcif_set_power(host, ios);
+ 		}
+ 		host->state = STATE_IDLE;
+ 		return;
+@@ -966,8 +984,6 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 
+ 	if (ios->clock) {
+ 		if (!host->power) {
+-			if (p->set_pwr)
+-				p->set_pwr(host->pd, ios->power_mode);
+ 			clk_enable(host->hclk);
+ 			sh_mmcif_clk_update(host);
+ 			pm_runtime_get_sync(&host->pd->dev);
+@@ -1252,6 +1268,24 @@ static void mmcif_timeout_work(struct work_struct *work)
+ 	mmc_request_done(host->mmc, mrq);
+ }
+ 
++static void sh_mmcif_init_ocr(struct sh_mmcif_host *host)
++{
++	struct sh_mmcif_plat_data *pd = host->pd->dev.platform_data;
++	struct mmc_host *mmc = host->mmc;
++
++	host->vdd = mmc_regulator_get_vmmc(mmc);
++
++	if ((mmc->ocr_avail && pd->ocr) || (host->vdd && pd->set_pwr))
++		dev_warn(mmc_dev(mmc),
++			 "Platform OCR mask / .set_pwr() are ignored\n");
++
++	if (pd->set_pwr)
++		mmc->caps |= MMC_CAP_POWER_OFF_CARD;
++
++	if (!mmc->ocr_avail)
++		mmc->ocr_avail = pd->ocr;
++}
++
+ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
+ {
+ 	int ret = 0, irq[2];
+@@ -1298,8 +1332,8 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
+ 	spin_lock_init(&host->lock);
+ 
+ 	mmc->ops = &sh_mmcif_ops;
+-	if (pd->ocr)
+-		mmc->ocr_avail = pd->ocr;
++	sh_mmcif_init_ocr(host);
++
+ 	mmc->caps = MMC_CAP_MMC_HIGHSPEED;
+ 	if (pd->caps)
+ 		mmc->caps |= pd->caps;
+-- 
+1.7.2.5
+
