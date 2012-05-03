@@ -1,42 +1,126 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Sat, 12 May 2012 22:32:59 +0000
-Subject: Re: [GIT PULL][Update x2] Urgent fixes (for v3.4 if possible) for Renesas ARM-based platforms
-Message-Id: <CAOesGMgULO=os=pp8J3aMQDWuWse308xBtEvfMRcTnSz+JHo7g@mail.gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 03 May 2012 15:05:42 +0000
+Subject: [PATCH 13/29] mmc: tmio: add regulator support
+Message-Id: <1336057558-11031-14-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201205112025.13478.rjw@sisk.pl> <201205122256.24289.rjw@sisk.pl>
- <201205122309.53928.rjw@sisk.pl>
-In-Reply-To: <201205122309.53928.rjw@sisk.pl>
+References: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>
 
-Rafael,
+Currently the TMIO MMC driver derives the OCR mask from the platform data
+and uses a platform callback to turn card power on and off. This patch adds
+regulator support to the driver.
 
-On Sat, May 12, 2012 at 2:09 PM, Rafael J. Wysocki <rjw@sisk.pl> wrote:
-> Hi,
->
-> Please pull changes since commit d48b97b403d23f6df0b990cee652bdf9a52337a3
->
-> =A0 =A0Linux 3.4-rc6
->
-> with top-most commit e994d5eb7c3e45e13eb4fc882a47238f8dc4d63e
->
-> =A0 =A0ARM / mach-shmobile: Invalidate caches when booting secondary cores
->
-> from the git repository at:
->
-> =A0git://git.kernel.org/pub/scm/linux/kernel/git/rafael/renesas.git fixes
->
-> to receive urgent fixes for Renesas ARM-based platforms. =A0Four of these=
- commits
-> are fixes of regressions new in 3.4-rc and the last one is necessary for =
-SMP to
-> work on those systems in general.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>
+---
+ drivers/mmc/host/tmio_mmc.h     |    2 +
+ drivers/mmc/host/tmio_mmc_pio.c |   44 +++++++++++++++++++++++++++++++-------
+ 2 files changed, 38 insertions(+), 8 deletions(-)
 
-Pulled! Thanks for the quick respin. I'll send them up shortly,
-there's one other 3.4 fixes pull request that I'm waiting on a respin
-for and off they will go.
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index d857f5c..12c0108 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -55,6 +55,8 @@ struct tmio_mmc_host {
+ 	void (*set_pwr)(struct platform_device *host, int state);
+ 	void (*set_clk_div)(struct platform_device *host, int state);
+ 
++	struct regulator	*vdd;
++
+ 	/* pio related stuff */
+ 	struct scatterlist      *sg_ptr;
+ 	struct scatterlist      *sg_orig;
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 579f990..175cc71 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -42,6 +42,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/pm_qos.h>
+ #include <linux/pm_runtime.h>
++#include <linux/regulator/consumer.h>
+ #include <linux/scatterlist.h>
+ #include <linux/spinlock.h>
+ #include <linux/workqueue.h>
+@@ -767,6 +768,19 @@ static int tmio_mmc_clk_update(struct mmc_host *mmc)
+ 	return ret;
+ }
+ 
++static void tmio_mmc_set_power(struct tmio_mmc_host *host, struct mmc_ios *ios)
++{
++	if (!(host->mmc->caps & MMC_CAP_POWER_OFF_CARD))
++		return;
++
++	if (host->vdd)
++		/* Errors ignored... */
++		mmc_regulator_set_ocr(host->mmc, host->vdd,
++				      ios->power_mode ? ios->vdd : 0);
++	else if (host->set_pwr)
++		host->set_pwr(host->pdev, ios->power_mode != MMC_POWER_OFF);
++}
++
+ /* Set MMC clock / power.
+  * Note: This controller uses a simple divider scheme therefore it cannot
+  * run a MMC card at full speed (20MHz). The max clock is 24MHz on SD, but as
+@@ -819,13 +833,12 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 		}
+ 		tmio_mmc_set_clock(host, ios->clock);
+ 		/* power up SD bus */
+-		if (host->set_pwr)
+-			host->set_pwr(host->pdev, 1);
++		tmio_mmc_set_power(host, ios);
+ 		/* start bus clock */
+ 		tmio_mmc_clk_start(host);
+ 	} else if (ios->power_mode != MMC_POWER_UP) {
+-		if (host->set_pwr && ios->power_mode = MMC_POWER_OFF)
+-			host->set_pwr(host->pdev, 0);
++		if (ios->power_mode = MMC_POWER_OFF)
++			tmio_mmc_set_power(host, ios);
+ 		tmio_mmc_clk_stop(host);
+ 		if (host->power) {
+ 			struct tmio_mmc_data *pdata = host->pdata;
+@@ -885,6 +898,24 @@ static const struct mmc_host_ops tmio_mmc_ops = {
+ 	.enable_sdio_irq = tmio_mmc_enable_sdio_irq,
+ };
+ 
++static void tmio_mmc_init_ocr(struct tmio_mmc_host *host)
++{
++	struct tmio_mmc_data *pdata = host->pdata;
++	struct mmc_host *mmc = host->mmc;
++
++	host->vdd = mmc_regulator_get_vmmc(mmc);
++
++	if ((mmc->ocr_avail && pdata->ocr_mask) || (host->vdd && host->set_pwr))
++		dev_warn(mmc_dev(mmc),
++			 "Platform OCR mask / .set_pwr() are ignored\n");
++
++	if (host->set_pwr)
++		mmc->caps |= MMC_CAP_POWER_OFF_CARD;
++
++	if (!mmc->ocr_avail)
++		mmc->ocr_avail = pdata->ocr_mask ? : MMC_VDD_32_33 | MMC_VDD_33_34;
++}
++
+ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 				  struct platform_device *pdev,
+ 				  struct tmio_mmc_data *pdata)
+@@ -930,10 +961,7 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 		mmc->max_segs;
+ 	mmc->max_req_size = mmc->max_blk_size * mmc->max_blk_count;
+ 	mmc->max_seg_size = mmc->max_req_size;
+-	if (pdata->ocr_mask)
+-		mmc->ocr_avail = pdata->ocr_mask;
+-	else
+-		mmc->ocr_avail = MMC_VDD_32_33 | MMC_VDD_33_34;
++	tmio_mmc_init_ocr(_host);
+ 
+ 	_host->native_hotplug = !(pdata->flags & TMIO_MMC_USE_GPIO_CD ||
+ 				  mmc->caps & MMC_CAP_NEEDS_POLL ||
+-- 
+1.7.2.5
 
-
--Olof
