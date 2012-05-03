@@ -1,54 +1,69 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 25 May 2012 15:45:44 +0000
-Subject: [PATCH 09/10 v3] ARM: mach-shmobile: specify inverted SDHI card-detect signal polarity
-Message-Id: <1337960752-4944-30-git-send-email-g.liakhovetski@gmx.de>
+Date: Thu, 03 May 2012 15:05:41 +0000
+Subject: [PATCH 12/29] mmc: sdhi: implement tmio-mmc clock enable-update and disable callbacks
+Message-Id: <1336057558-11031-13-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
+References: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-On mackerel and ag5evm the SDHI0 CD signal is inverted (active low). To
-prepare for the generic GPIO CD handler the MMC_CAP2_INVERTED_CD flag
-has to be specified in platform data.
+Instead of delivering one static clock frequency value, read from the
+hardware during probing, enable the tmio-mmc driver to re-read the
+frequency dynamically.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/board-ag5evm.c   |    1 +
- arch/arm/mach-shmobile/board-mackerel.c |    1 +
- 2 files changed, 2 insertions(+), 0 deletions(-)
+ drivers/mmc/host/sh_mobile_sdhi.c |   24 +++++++++++++++++++++++-
+ 1 files changed, 23 insertions(+), 1 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
-index 5a6f22f..545fd06 100644
---- a/arch/arm/mach-shmobile/board-ag5evm.c
-+++ b/arch/arm/mach-shmobile/board-ag5evm.c
-@@ -370,6 +370,7 @@ static struct sh_mobile_sdhi_info sdhi0_info = {
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_USE_GPIO_CD,
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
-+	.tmio_caps2	= MMC_CAP2_INVERTED_CD,
- 	.tmio_ocr_mask	= MMC_VDD_27_28 | MMC_VDD_28_29,
- 	.cd_gpio	= GPIO_PORT251,
- };
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index b577f7c..5881bb1 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1047,6 +1047,7 @@ static struct sh_mobile_sdhi_info sdhi0_info = {
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
- 	.tmio_flags	= TMIO_MMC_USE_GPIO_CD,
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
-+	.tmio_caps2	= MMC_CAP2_INVERTED_CD,
- 	.cd_gpio	= GPIO_PORT172,
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 5ac656e..a746ae8 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -39,6 +39,27 @@ struct sh_mobile_sdhi {
+ 	struct tmio_mmc_dma dma_priv;
  };
  
++static int sh_mobile_sdhi_clk_enable(struct platform_device *pdev, unsigned int *f)
++{
++	struct mmc_host *mmc = dev_get_drvdata(&pdev->dev);
++	struct tmio_mmc_host *host = mmc_priv(mmc);
++	struct sh_mobile_sdhi *priv = container_of(host->pdata, struct sh_mobile_sdhi, mmc_data);
++	int ret = clk_enable(priv->clk);
++	if (ret < 0)
++		return ret;
++
++	*f = clk_get_rate(priv->clk);
++	return 0;
++}
++
++static void sh_mobile_sdhi_clk_disable(struct platform_device *pdev)
++{
++	struct mmc_host *mmc = dev_get_drvdata(&pdev->dev);
++	struct tmio_mmc_host *host = mmc_priv(mmc);
++	struct sh_mobile_sdhi *priv = container_of(host->pdata, struct sh_mobile_sdhi, mmc_data);
++	clk_disable(priv->clk);
++}
++
+ static void sh_mobile_sdhi_set_pwr(struct platform_device *pdev, int state)
+ {
+ 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
+@@ -130,9 +151,10 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 		goto eclkget;
+ 	}
+ 
+-	mmc_data->hclk = clk_get_rate(priv->clk);
+ 	mmc_data->set_pwr = sh_mobile_sdhi_set_pwr;
+ 	mmc_data->get_cd = sh_mobile_sdhi_get_cd;
++	mmc_data->clk_enable = sh_mobile_sdhi_clk_enable;
++	mmc_data->clk_disable = sh_mobile_sdhi_clk_disable;
+ 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
+ 	if (p) {
+ 		mmc_data->flags = p->tmio_flags;
 -- 
 1.7.2.5
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
