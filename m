@@ -1,36 +1,120 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 22 May 2012 02:26:06 +0000
-Subject: [PATCH 0/11] ARM: mach-shmobile: armadillo: add FSI/HDMI/Camera support
-Message-Id: <87ipfpar45.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 03 May 2012 15:05:49 +0000
+Subject: [PATCH 20/29] mmc: add CD GPIO polling support to slot functions
+Message-Id: <1336057558-11031-21-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
+A simple extension of mmc slot functions add support for CD GPIO polling
+for cases, where the GPIO cannot produce interrupts or this is for some
+reason not desired.
 
-Hi Rafael, Magnus
-Cc Simon
-
-The necessary missing patches for Armadillo will be merged on v3.5 kernel.
-These are ASoC/FSI/HDMI/CEU/.
-(and already exists on linux-next tree)
-
-These patch set add HDMI/camera/FSI sound x2 to Armadillo board for v3.5 kernel.
-
-Kuninori Morimoto (11):
-      ARM: mach-shmobile: intc-r8a7740: add HDMI support
-      ARM: mach-shmobile: setup-r8a7740: add MERAM work-around
-      ARM: mach-shmobile: clock-r8a7740: add HDMI clock
-      ARM: mach-shmobile: clock-r8a7740: add CEU support
-      ARM: mach-shmobile: clock-r8a7740: add FSI parent control support
-      ARM: mach-shmobile: pfc-r8a7740: Add HDMI GPIO support
-      ARM: mach-shmobile: pfc-r8a7740: add FSI-B (for HDMI) support
-      ARM: mach-shmobile: armadillo800eva: add HDMI support
-      ARM: mach-shmobile: armadillo800eva: add camera support
-      ARM: mach-shmobile: armadillo800eva: Add FSI-WM8978 support
-      ARM: mach-shmobile: armadillo800eva: add FSI-HDMI support
-
-Best regards
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-Kuninori Morimoto
+ drivers/mmc/core/slot-gpio.c  |   42 +++++++++++++++++++++++++++++-----------
+ include/linux/mmc/slot-gpio.h |    2 +
+ 2 files changed, 32 insertions(+), 12 deletions(-)
+
+diff --git a/drivers/mmc/core/slot-gpio.c b/drivers/mmc/core/slot-gpio.c
+index 11a8ef1..1491fd8 100644
+--- a/drivers/mmc/core/slot-gpio.c
++++ b/drivers/mmc/core/slot-gpio.c
+@@ -29,6 +29,18 @@ static irqreturn_t mmc_gpio_cd_irqt(int irq, void *dev_id)
+ 	return IRQ_HANDLED;
+ }
+ 
++int mmc_gpio_get_cd(struct mmc_host *host)
++{
++	struct mmc_gpio *ctx = host->slot.handler_priv;
++
++	if (!ctx || !gpio_is_valid(ctx->cd_gpio))
++		return -ENOSYS;
++
++	return !gpio_get_value_cansleep(ctx->cd_gpio) ^
++		!(host->caps2 & MMC_CAP2_INVERTED_CD);
++}
++EXPORT_SYMBOL(mmc_gpio_get_cd);
++
+ int mmc_gpio_request_cd(struct mmc_host *host, unsigned int gpio)
+ {
+ 	size_t len = strlen(dev_name(host->parent)) + 4;
+@@ -36,9 +48,6 @@ int mmc_gpio_request_cd(struct mmc_host *host, unsigned int gpio)
+ 	int irq = gpio_to_irq(gpio);
+ 	int ret;
+ 
+-	if (irq < 0)
+-		return irq;
+-
+ 	ctx = kmalloc(sizeof(*ctx) + len, GFP_KERNEL);
+ 	if (!ctx)
+ 		return -ENOMEM;
+@@ -49,20 +58,25 @@ int mmc_gpio_request_cd(struct mmc_host *host, unsigned int gpio)
+ 	if (ret < 0)
+ 		goto egpioreq;
+ 
+-	ret = request_threaded_irq(irq, NULL, mmc_gpio_cd_irqt,
+-				   IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,
+-				   ctx->cd_label, host);
+-	if (ret < 0)
+-		goto eirqreq;
++	/*
++	 * Even if gpio_to_irq() returns a valid IRQ number, the platform might
++	 * still prefer to poll, e.g., because that IRQ number is already used
++	 * by another unit and cannot be shared.
++	 */
++	if (host->caps & MMC_CAP_NEEDS_POLL || irq < 0) {
++		host->caps |= MMC_CAP_NEEDS_POLL;
++		host->slot.cd_irq = -EINVAL;
++	} else if (!request_threaded_irq(irq, NULL, mmc_gpio_cd_irqt,
++				IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,
++				ctx->cd_label, host)) {
++		host->slot.cd_irq = irq;
++	}
+ 
+ 	ctx->cd_gpio = gpio;
+-	host->slot.cd_irq = irq;
+ 	host->slot.handler_priv = ctx;
+ 
+ 	return 0;
+ 
+-eirqreq:
+-	gpio_free(gpio);
+ egpioreq:
+ 	kfree(ctx);
+ 	return ret;
+@@ -76,8 +90,12 @@ void mmc_gpio_free_cd(struct mmc_host *host)
+ 	if (!ctx)
+ 		return;
+ 
+-	free_irq(host->slot.cd_irq, host);
++	if (host->slot.cd_irq >= 0) {
++		free_irq(host->slot.cd_irq, host);
++		host->slot.cd_irq = -EINVAL;
++	}
+ 	gpio_free(ctx->cd_gpio);
++	host->slot.handler_priv = NULL;
+ 	kfree(ctx);
+ }
+ EXPORT_SYMBOL(mmc_gpio_free_cd);
+diff --git a/include/linux/mmc/slot-gpio.h b/include/linux/mmc/slot-gpio.h
+index edfaa32..1a977d7 100644
+--- a/include/linux/mmc/slot-gpio.h
++++ b/include/linux/mmc/slot-gpio.h
+@@ -12,6 +12,8 @@
+ #define MMC_SLOT_GPIO_H
+ 
+ struct mmc_host;
++
++int mmc_gpio_get_cd(struct mmc_host *host);
+ int mmc_gpio_request_cd(struct mmc_host *host, unsigned int gpio);
+ void mmc_gpio_free_cd(struct mmc_host *host);
+ 
+-- 
+1.7.2.5
+
