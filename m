@@ -1,43 +1,59 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 03 May 2012 14:46:45 +0000
-Subject: [PATCH 00/02] mach-shmobile: Emma Mobile EV2 - first shot
-Message-Id: <20120503144645.6390.62303.sendpatchset@w520>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Thu, 03 May 2012 19:23:55 +0000
+Subject: Re: [PATCH 00/02] mach-shmobile: Emma Mobile EV2 - first shot
+Message-Id: <201205032123.55535.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20120503144645.6390.62303.sendpatchset@w520>
+In-Reply-To: <20120503144645.6390.62303.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-mach-shmobile: Emma Mobile EV2 - first shot
+On Thursday, May 03, 2012, Magnus Damm wrote:
+> mach-shmobile: Emma Mobile EV2 - first shot
+> 
+> [PATCH 01/02] mach-shmobile: Emma Mobile EV2 SoC base support
+> [PATCH 02/02] mach-shmobile: KZM9D board prototype support
+> 
+> This series adds experimental Emma Mobile EV2 support to
+> mach-shmobile. Yet another dual core Cortex-A9 SoC.
+> 
+> At this point only serial and timer is supported. Future work
+> includes GPIO, network device, SMP and DT support. If possible
+> it would be nice to use the common clocks on this platform.
+> 
+> To boot this on actual hardware you also need the following:
+> "[PATCH] serial8250-em: Emma Mobile UART driver V2"
+> "[PATCH] clocksource: em_sti: Emma Mobile STI driver"
+> 
+> Any reason to not put this in mach-shmobile?
+> 
+> Partially-signed-off-by: Magnus Damm <damm@opensource.se>
+> ---
+> 
+>  Does unfortunately not apply cleanly to the renesas
+>  git repository,
 
-[PATCH 01/02] mach-shmobile: Emma Mobile EV2 SoC base support
-[PATCH 02/02] mach-shmobile: KZM9D board prototype support
+Well, this sounds like a reason.
 
-This series adds experimental Emma Mobile EV2 support to
-mach-shmobile. Yet another dual core Cortex-A9 SoC.
+>  so we need to figure out how to let
+>  this coexist with the new boards...
 
-At this point only serial and timer is supported. Future work
-includes GPIO, network device, SMP and DT support. If possible
-it would be nice to use the common clocks on this platform.
+Surely.
 
-To boot this on actual hardware you also need the following:
-"[PATCH] serial8250-em: Emma Mobile UART driver V2"
-"[PATCH] clocksource: em_sti: Emma Mobile STI driver"
+Thanks,
+Rafael
 
-Any reason to not put this in mach-shmobile?
 
-Partially-signed-off-by: Magnus Damm <damm@opensource.se>
----
+>  arch/arm/mach-shmobile/Kconfig               |    9 +
+>  arch/arm/mach-shmobile/Makefile              |    2 
+>  arch/arm/mach-shmobile/board-kzm9d.c         |   44 +++++
+>  arch/arm/mach-shmobile/clock-emev2.c         |  206 ++++++++++++++++++++++++++
+>  arch/arm/mach-shmobile/include/mach/common.h |    6 
+>  arch/arm/mach-shmobile/intc-emev2.c          |   36 ++++
+>  arch/arm/mach-shmobile/setup-emev2.c         |  187 +++++++++++++++++++++++
+>  7 files changed, 490 insertions(+)
+> 
+> 
 
- Does unfortunately not apply cleanly to the renesas
- git repository, so we need to figure out how to let
- this coexist with the new boards...
- 
- arch/arm/mach-shmobile/Kconfig               |    9 +
- arch/arm/mach-shmobile/Makefile              |    2 
- arch/arm/mach-shmobile/board-kzm9d.c         |   44 +++++
- arch/arm/mach-shmobile/clock-emev2.c         |  206 ++++++++++++++++++++++++++
- arch/arm/mach-shmobile/include/mach/common.h |    6 
- arch/arm/mach-shmobile/intc-emev2.c          |   36 ++++
- arch/arm/mach-shmobile/setup-emev2.c         |  187 +++++++++++++++++++++++
- 7 files changed, 490 insertions(+)
