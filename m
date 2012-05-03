@@ -1,81 +1,39 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 22 May 2012 02:26:53 +0000
-Subject: [PATCH 01/11] ARM: mach-shmobile: intc-r8a7740: add HDMI support
-Message-Id: <87hav9ar2t.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 03 May 2012 15:16:01 +0000
+Subject: [PATCH/RFC] ARM: sh7372: initialise the GPIO subsystem also when booting with OF
+Message-Id: <Pine.LNX.4.64.1205031711270.18111@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This patch is based on v1.0 manual
+sh7372_pinmux_init() has to be called during initialisation to make the GPIO
+subsystem available.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/intc-r8a7740.c |   13 +++++++++----
- 1 files changed, 9 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/intc-r8a7740.c b/arch/arm/mach-shmobile/intc-r8a7740.c
-index 09c42af..9a69a31 100644
---- a/arch/arm/mach-shmobile/intc-r8a7740.c
-+++ b/arch/arm/mach-shmobile/intc-r8a7740.c
-@@ -71,10 +71,12 @@ enum {
- 	DMAC3_1_DEI0, DMAC3_1_DEI1, DMAC3_1_DEI2, DMAC3_1_DEI3,
- 	DMAC3_2_DEI4, DMAC3_2_DEI5, DMAC3_2_DADERR,
- 	SHWYSTAT_RT, SHWYSTAT_HS, SHWYSTAT_COM,
-+	HDMI,
- 	USBH_INT, USBH_OHCI, USBH_EHCI, USBH_PME, USBH_BIND,
- 	RSPI_OVRF, RSPI_SPTEF, RSPI_SPRF,
- 	SPU2_0, SPU2_1,
- 	FSI, FMSI,
-+	HDMI_SSS, HDMI_KEY,
- 	IPMMU,
- 	AP_ARM_CTIIRQ, AP_ARM_PMURQ,
- 	MFIS2,
-@@ -182,6 +184,7 @@ static struct intc_vect intca_vectors[] __initdata = {
- 	INTC_VECT(USBH_EHCI,		0x1580),
- 	INTC_VECT(USBH_PME,		0x15A0),
- 	INTC_VECT(USBH_BIND,		0x15C0),
-+	INTC_VECT(HDMI,			0x1700),
- 	INTC_VECT(RSPI_OVRF,		0x1780),
- 	INTC_VECT(RSPI_SPTEF,		0x17A0),
- 	INTC_VECT(RSPI_SPRF,		0x17C0),
-@@ -189,6 +192,8 @@ static struct intc_vect intca_vectors[] __initdata = {
- 	INTC_VECT(SPU2_1,		0x1820),
- 	INTC_VECT(FSI,			0x1840),
- 	INTC_VECT(FMSI,			0x1860),
-+	INTC_VECT(HDMI_SSS,		0x18A0),
-+	INTC_VECT(HDMI_KEY,		0x18C0),
- 	INTC_VECT(IPMMU,		0x1920),
- 	INTC_VECT(AP_ARM_CTIIRQ,	0x1980),
- 	INTC_VECT(AP_ARM_PMURQ,		0x19A0),
-@@ -304,11 +309,11 @@ static struct intc_mask_reg intca_mask_registers[] __initdata = {
- 	    USBH_EHCI, USBH_PME, USBH_BIND, 0 } },
- 	  /* IMR3A3 / IMCR3A3 */
- 	{ /* IMR4A3 / IMCR4A3 */ 0xe6950090, 0xe69500d0, 8,
--	  { 0, 0, 0, 0,
-+	  { HDMI, 0, 0, 0,
- 	    RSPI_OVRF, RSPI_SPTEF, RSPI_SPRF, 0 } },
- 	{ /* IMR5A3 / IMCR5A3 */ 0xe6950094, 0xe69500d4, 8,
- 	  { SPU2_0, SPU2_1, FSI, FMSI,
--	    0, 0, 0, 0 } },
-+	    0, HDMI_SSS, HDMI_KEY, 0 } },
- 	{ /* IMR6A3 / IMCR6A3 */ 0xe6950098, 0xe69500d8, 8,
- 	  { 0, IPMMU, 0, 0,
- 	    AP_ARM_CTIIRQ, AP_ARM_PMURQ, 0, 0 } },
-@@ -353,10 +358,10 @@ static struct intc_prio_reg intca_prio_registers[] __initdata = {
- 	{ 0xe6950014, 0, 16, 4, /* IPRFA3 */ { USBH2, 0, 0, 0 } },
- 				/* IPRGA3 */
- 				/* IPRHA3 */
--				/* IPRIA3 */
-+	{ 0xe6950020, 0, 16, 4, /* IPRIA3 */ { HDMI, 0, 0, 0 } },
- 	{ 0xe6950024, 0, 16, 4, /* IPRJA3 */ { RSPI, 0, 0, 0 } },
- 	{ 0xe6950028, 0, 16, 4, /* IPRKA3 */ { SPU2, 0, FSI, FMSI } },
--				/* IPRLA3 */
-+	{ 0xe695002c, 0, 16, 4, /* IPRLA3 */ { 0, HDMI_SSS, HDMI_KEY, 0 } },
- 	{ 0xe6950030, 0, 16, 4, /* IPRMA3 */ { IPMMU, 0, 0, 0 } },
- 	{ 0xe6950034, 0, 16, 4, /* IPRNA3 */ { AP_ARM2, 0, 0, 0 } },
- 	{ 0xe6950038, 0, 16, 4, /* IPROA3 */ { MFIS2, CPORTR2S,
+Goes on top of sh7372 OF patches from Magnus. It might not be what we want 
+in the mainline, but it works and was helpful to me. If we do decide to 
+include this, feel free to just wrap this into your patch.
+
+ arch/arm/mach-shmobile/setup-sh7372.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index b2378f1..9cdf6c1 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -1119,6 +1119,8 @@ void __init sh7372_add_standard_devices_dt(void)
+ 	platform_add_devices(sh7372_early_devices,
+ 			    ARRAY_SIZE(sh7372_early_devices));
+ 
++	sh7372_pinmux_init();
++
+ 	of_platform_populate(NULL, of_default_bus_match_table,
+ 			     sh7372_auxdata_lookup, NULL);
+ }
 -- 
-1.7.5.4
+1.7.2.5
 
