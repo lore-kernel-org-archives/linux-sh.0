@@ -1,197 +1,201 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 02 May 2012 12:46:51 +0000
-Subject: [PATCH 01/06] serial8250: Add dl_read()/dl_write() callbacks
-Message-Id: <20120502124651.30480.88827.sendpatchset@w520>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 03 May 2012 15:05:58 +0000
+Subject: [PATCH 29/29] sh: ecovec: switch MMC power control to regulators
+Message-Id: <1336057558-11031-30-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120502124642.30480.41373.sendpatchset@w520>
-In-Reply-To: <20120502124642.30480.41373.sendpatchset@w520>
+References: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-serial@vger.kernel.org
-Cc: arnd@arndb.de, swarren@wwwdotorg.org, lethal@linux-sh.org, gregkh@linuxfoundation.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, rjw@sisk.pl, paul.gortmaker@windriver.com, horms@verge.net.au, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, dan.j.williams@intel.com, alan@linux.intel.com
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
 
-From: Magnus Damm <damm@opensource.se>
+Power on the CN11 and CN12 SD/MMC slots on ecovec is controlled by GPIOs,
+which makes it possible to use the fixed voltage regulator driver to switch
+card power on and off.
 
-Convert serial_dl_read() and serial_dl_write() from macro
-to 8250 specific callbacks. This change makes it easier to
-support 8250 hardware with non-standard DLL and DLM register
-configurations such as Alchemy, RM9K and upcoming Emma Mobile
-UART hardware.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Paul Mundt <lethal@linux-sh.org>
 ---
 
- drivers/tty/serial/8250/8250.c |  117 +++++++++++++++++++++-------------------
- drivers/tty/serial/8250/8250.h |   14 ++++
- 2 files changed, 78 insertions(+), 53 deletions(-)
+Optional, mainly FYI
 
---- 0001/drivers/tty/serial/8250/8250.c
-+++ work/drivers/tty/serial/8250/8250.c	2012-05-01 22:50:38.000000000 +0900
-@@ -284,6 +284,66 @@ static const struct serial8250_config ua
- 	},
+ arch/sh/boards/mach-ecovec24/setup.c |   85 ++++++++++++++++++++++++---------
+ 1 files changed, 62 insertions(+), 23 deletions(-)
+
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index a2f70e6..0822931 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -19,6 +19,9 @@
+ #include <linux/interrupt.h>
+ #include <linux/io.h>
+ #include <linux/delay.h>
++#include <linux/regulator/driver.h>
++#include <linux/regulator/fixed.h>
++#include <linux/regulator/machine.h>
+ #include <linux/usb/r8a66597.h>
+ #include <linux/usb/renesas_usbhs.h>
+ #include <linux/i2c.h>
+@@ -515,12 +518,66 @@ static struct i2c_board_info ts_i2c_clients = {
+ 	.irq		= IRQ0,
  };
  
-+/* Uart divisor latch read */
-+static int default_dl_read(struct uart_8250_port *up)
-+{
-+	return serial_in(up, UART_DLL) | serial_in(up, UART_DLM) << 8;
-+}
++static struct regulator_consumer_supply cn12_power_consumers[] +{
++	REGULATOR_SUPPLY("vmmc", "sh_mmcif.0"),
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
++};
 +
-+/* Uart divisor latch write */
-+static void default_dl_write(struct uart_8250_port *up, int value)
-+{
-+	serial_out(up, UART_DLL, value & 0xff);
-+	serial_out(up, UART_DLM, value >> 8 & 0xff);
-+}
++static struct regulator_init_data cn12_power_init_data = {
++	.constraints = {
++		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
++	},
++	.num_consumer_supplies  = ARRAY_SIZE(cn12_power_consumers),
++	.consumer_supplies      = cn12_power_consumers,
++};
 +
-+#if defined(CONFIG_MIPS_ALCHEMY)
-+/* Au1x00 haven't got a standard divisor latch */
-+static int _serial_dl_read(struct uart_8250_port *up)
-+{
-+	if (up->port.iotype = UPIO_AU)
-+		return __raw_readl(up->port.membase + 0x28);
-+	else
-+		return default_dl_read(up);
-+}
++static struct fixed_voltage_config cn12_power_info = {
++	.supply_name = "CN12 SD/MMC Vdd",
++	.microvolts = 3300000,
++	.gpio = GPIO_PTB7,
++	.enable_high = 1,
++	.init_data = &cn12_power_init_data,
++};
 +
-+static void _serial_dl_write(struct uart_8250_port *up, int value)
-+{
-+	if (up->port.iotype = UPIO_AU)
-+		__raw_writel(value, up->port.membase + 0x28);
-+	else
-+		default_dl_write(up, value);
-+}
-+#elif defined(CONFIG_SERIAL_8250_RM9K)
-+static int _serial_dl_read(struct uart_8250_port *up)
-+{
-+	return	(up->port.iotype = UPIO_RM9000) ?
-+		(((__raw_readl(up->port.membase + 0x10) << 8) |
-+		(__raw_readl(up->port.membase + 0x08) & 0xff)) & 0xffff) :
-+		default_dl_read(up);
-+}
++static struct platform_device cn12_power = {
++	.name = "reg-fixed-voltage",
++	.id   = 0,
++	.dev  = {
++		.platform_data = &cn12_power_info,
++	},
++};
 +
-+static void _serial_dl_write(struct uart_8250_port *up, int value)
-+{
-+	if (up->port.iotype = UPIO_RM9000) {
-+		__raw_writel(value, up->port.membase + 0x08);
-+		__raw_writel(value >> 8, up->port.membase + 0x10);
-+	} else {
-+		default_dl_write(up, value);
-+	}
-+}
-+#else
-+static int _serial_dl_read(struct uart_8250_port *up)
-+{
-+	return default_dl_read(up);
-+}
+ #if defined(CONFIG_MMC_SDHI) || defined(CONFIG_MMC_SDHI_MODULE)
+ /* SDHI0 */
+-static void sdhi0_set_pwr(struct platform_device *pdev, int state)
++static struct regulator_consumer_supply sdhi0_power_consumers[]  {
+-	gpio_set_value(GPIO_PTB6, state);
+-}
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
++};
 +
-+static void _serial_dl_write(struct uart_8250_port *up, int value)
-+{
-+	default_dl_write(up, value);
-+}
-+#endif
++static struct regulator_init_data sdhi0_power_init_data = {
++	.constraints = {
++		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
++	},
++	.num_consumer_supplies  = ARRAY_SIZE(sdhi0_power_consumers),
++	.consumer_supplies      = sdhi0_power_consumers,
++};
 +
- #if defined(CONFIG_MIPS_ALCHEMY)
++static struct fixed_voltage_config sdhi0_power_info = {
++	.supply_name = "CN11 SD/MMC Vdd",
++	.microvolts = 3300000,
++	.gpio = GPIO_PTB6,
++	.enable_high = 1,
++	.init_data = &sdhi0_power_init_data,
++};
++
++static struct platform_device sdhi0_power = {
++	.name = "reg-fixed-voltage",
++	.id   = 1,
++	.dev  = {
++		.platform_data = &sdhi0_power_info,
++	},
++};
  
- /* Au1x00 UART hardware has a weird register layout */
-@@ -434,6 +494,10 @@ static void set_io_from_upio(struct uart
+ static int sdhi0_get_cd(struct platform_device *pdev)
  {
- 	struct uart_8250_port *up  		container_of(p, struct uart_8250_port, port);
-+
-+	up->dl_read = _serial_dl_read;
-+	up->dl_write = _serial_dl_write;
-+
- 	switch (p->iotype) {
- 	case UPIO_HUB6:
- 		p->serial_in = hub6_serial_in;
-@@ -481,59 +545,6 @@ serial_port_out_sync(struct uart_port *p
- 	}
- }
+@@ -530,7 +587,6 @@ static int sdhi0_get_cd(struct platform_device *pdev)
+ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+-	.set_pwr	= sdhi0_set_pwr,
+ 	.tmio_caps      = MMC_CAP_SDIO_IRQ | MMC_CAP_POWER_OFF_CARD |
+ 			  MMC_CAP_NEEDS_POLL,
+ 	.get_cd		= sdhi0_get_cd,
+@@ -561,11 +617,6 @@ static struct platform_device sdhi0_device = {
  
--/* Uart divisor latch read */
--static inline int _serial_dl_read(struct uart_8250_port *up)
+ #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
+ /* SDHI1 */
+-static void sdhi1_set_pwr(struct platform_device *pdev, int state)
 -{
--	return serial_in(up, UART_DLL) | serial_in(up, UART_DLM) << 8;
+-	gpio_set_value(GPIO_PTB7, state);
 -}
 -
--/* Uart divisor latch write */
--static inline void _serial_dl_write(struct uart_8250_port *up, int value)
--{
--	serial_out(up, UART_DLL, value & 0xff);
--	serial_out(up, UART_DLM, value >> 8 & 0xff);
--}
--
--#if defined(CONFIG_MIPS_ALCHEMY)
--/* Au1x00 haven't got a standard divisor latch */
--static int serial_dl_read(struct uart_8250_port *up)
--{
--	if (up->port.iotype = UPIO_AU)
--		return __raw_readl(up->port.membase + 0x28);
--	else
--		return _serial_dl_read(up);
--}
--
--static void serial_dl_write(struct uart_8250_port *up, int value)
--{
--	if (up->port.iotype = UPIO_AU)
--		__raw_writel(value, up->port.membase + 0x28);
--	else
--		_serial_dl_write(up, value);
--}
--#elif defined(CONFIG_SERIAL_8250_RM9K)
--static int serial_dl_read(struct uart_8250_port *up)
--{
--	return	(up->port.iotype = UPIO_RM9000) ?
--		(((__raw_readl(up->port.membase + 0x10) << 8) |
--		(__raw_readl(up->port.membase + 0x08) & 0xff)) & 0xffff) :
--		_serial_dl_read(up);
--}
--
--static void serial_dl_write(struct uart_8250_port *up, int value)
--{
--	if (up->port.iotype = UPIO_RM9000) {
--		__raw_writel(value, up->port.membase + 0x08);
--		__raw_writel(value >> 8, up->port.membase + 0x10);
--	} else {
--		_serial_dl_write(up, value);
--	}
--}
--#else
--#define serial_dl_read(up) _serial_dl_read(up)
--#define serial_dl_write(up, value) _serial_dl_write(up, value)
--#endif
--
- /*
-  * For the 16C950
-  */
---- 0001/drivers/tty/serial/8250/8250.h
-+++ work/drivers/tty/serial/8250/8250.h	2012-05-01 22:50:38.000000000 +0900
-@@ -37,6 +37,10 @@ struct uart_8250_port {
- 	unsigned char		lsr_saved_flags;
- #define MSR_SAVE_FLAGS UART_MSR_ANY_DELTA
- 	unsigned char		msr_saved_flags;
-+
-+	/* 8250 specific callbacks */
-+	int			(*dl_read)(struct uart_8250_port *);
-+	void			(*dl_write)(struct uart_8250_port *, int);
+ static int sdhi1_get_cd(struct platform_device *pdev)
+ {
+ 	return !gpio_get_value(GPIO_PTW7);
+@@ -576,7 +627,6 @@ static struct sh_mobile_sdhi_info sdhi1_info = {
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
+ 	.tmio_caps      = MMC_CAP_SDIO_IRQ | MMC_CAP_POWER_OFF_CARD |
+ 			  MMC_CAP_NEEDS_POLL,
+-	.set_pwr	= sdhi1_set_pwr,
+ 	.get_cd		= sdhi1_get_cd,
  };
  
- struct old_serial_port {
-@@ -96,6 +100,16 @@ static inline void serial_out(struct uar
- 	up->port.serial_out(&up->port, offset, value);
- }
+@@ -872,11 +922,6 @@ static struct platform_device vou_device = {
  
-+static inline int serial_dl_read(struct uart_8250_port *up)
-+{
-+	return up->dl_read(up);
-+}
-+
-+static inline void serial_dl_write(struct uart_8250_port *up, int value)
-+{
-+	up->dl_write(up, value);
-+}
-+
- #if defined(__alpha__) && !defined(CONFIG_PCI)
- /*
-  * Digital did something really horribly wrong with the OUT1 and OUT2
+ #if defined(CONFIG_MMC_SH_MMCIF) || defined(CONFIG_MMC_SH_MMCIF_MODULE)
+ /* SH_MMCIF */
+-static void mmcif_set_pwr(struct platform_device *pdev, int state)
+-{
+-	gpio_set_value(GPIO_PTB7, state);
+-}
+-
+ static struct resource sh_mmcif_resources[] = {
+ 	[0] = {
+ 		.name	= "SH_MMCIF",
+@@ -897,12 +942,10 @@ static struct resource sh_mmcif_resources[] = {
+ };
+ 
+ static struct sh_mmcif_plat_data sh_mmcif_plat = {
+-	.set_pwr	= mmcif_set_pwr,
+ 	.sup_pclk	= 0, /* SH7724: Max Pclk/2 */
+ 	.caps		= MMC_CAP_4_BIT_DATA |
+ 			  MMC_CAP_8_BIT_DATA |
+ 			  MMC_CAP_NEEDS_POLL,
+-	.ocr		= MMC_VDD_32_33 | MMC_VDD_33_34,
+ };
+ 
+ static struct platform_device sh_mmcif_device = {
+@@ -927,7 +970,9 @@ static struct platform_device *ecovec_devices[] __initdata = {
+ 	&ceu0_device,
+ 	&ceu1_device,
+ 	&keysc_device,
++	&cn12_power,
+ #if defined(CONFIG_MMC_SDHI) || defined(CONFIG_MMC_SDHI_MODULE)
++	&sdhi0_power,
+ 	&sdhi0_device,
+ #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
+ 	&sdhi1_device,
+@@ -1224,8 +1269,6 @@ static int __init arch_setup(void)
+ 	gpio_request(GPIO_FN_SDHI0D2,  NULL);
+ 	gpio_request(GPIO_FN_SDHI0D1,  NULL);
+ 	gpio_request(GPIO_FN_SDHI0D0,  NULL);
+-	gpio_request(GPIO_PTB6, NULL);
+-	gpio_direction_output(GPIO_PTB6, 0);
+ #else
+ 	/* enable MSIOF0 on CN11 (needs DS2.4 set to OFF) */
+ 	gpio_request(GPIO_FN_MSIOF0_TXD, NULL);
+@@ -1254,8 +1297,6 @@ static int __init arch_setup(void)
+ 	gpio_request(GPIO_FN_MMC_D0, NULL);
+ 	gpio_request(GPIO_FN_MMC_CLK, NULL);
+ 	gpio_request(GPIO_FN_MMC_CMD, NULL);
+-	gpio_request(GPIO_PTB7, NULL);
+-	gpio_direction_output(GPIO_PTB7, 0);
+ 
+ 	cn12_enabled = true;
+ #elif defined(CONFIG_MMC_SDHI) || defined(CONFIG_MMC_SDHI_MODULE)
+@@ -1267,8 +1308,6 @@ static int __init arch_setup(void)
+ 	gpio_request(GPIO_FN_SDHI1D2,  NULL);
+ 	gpio_request(GPIO_FN_SDHI1D1,  NULL);
+ 	gpio_request(GPIO_FN_SDHI1D0,  NULL);
+-	gpio_request(GPIO_PTB7, NULL);
+-	gpio_direction_output(GPIO_PTB7, 0);
+ 
+ 	/* Card-detect, used on CN12 with SDHI1 */
+ 	gpio_request(GPIO_PTW7, NULL);
+-- 
+1.7.2.5
+
