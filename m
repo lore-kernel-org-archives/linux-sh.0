@@ -1,90 +1,71 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 03 May 2012 15:05:36 +0000
-Subject: [PATCH 07/29] mmc: add a function to get a regulator, supplying card's Vdd
-Message-Id: <1336057558-11031-8-git-send-email-g.liakhovetski@gmx.de>
+From: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date: Thu, 03 May 2012 15:42:53 +0000
+Subject: Re: [PATCH 07/29] mmc: add a function to get a regulator, supplying card's Vdd
+Message-Id: <20120503154252.GO3955@opensource.wolfsonmicro.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="jx/LfW4V5TfZLeq7"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>
+ <1336057558-11031-8-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1336057558-11031-8-git-send-email-g.liakhovetski@gmx.de>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
 
-Add a function to get a regulator, supplying card's Vdd on a specific host.
-If such a regulator is found, the function checks, whether a valid OCR mask
-can be obtained from this regulator, and whether it can switch card's power
-on and off.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>
----
- drivers/mmc/core/core.c  |   27 +++++++++++++++++++++++++++
- include/linux/mmc/host.h |    6 ++++++
- 2 files changed, 33 insertions(+), 0 deletions(-)
+--jx/LfW4V5TfZLeq7
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-diff --git a/drivers/mmc/core/core.c b/drivers/mmc/core/core.c
-index 7474c47..ccb5c8a 100644
---- a/drivers/mmc/core/core.c
-+++ b/drivers/mmc/core/core.c
-@@ -1012,6 +1012,33 @@ int mmc_regulator_set_ocr(struct mmc_host *mmc,
- }
- EXPORT_SYMBOL(mmc_regulator_set_ocr);
- 
-+struct regulator *mmc_regulator_get_vmmc(struct mmc_host *mmc)
-+{
-+	struct device *dev = mmc_dev(mmc);
-+	struct regulator *supply = devm_regulator_get(dev, "vmmc");
-+	int ret;
-+
-+	if (IS_ERR(supply))
-+		return NULL;
-+
-+	ret = mmc_regulator_get_ocrmask(supply);
-+	if (ret > 0)
-+		mmc->ocr_avail = ret;
-+
-+	if (regulator_can_change_status(supply)) {
-+		mmc->caps |= MMC_CAP_POWER_OFF_CARD;
-+		return supply;
-+	}
-+
-+	devm_regulator_put(supply);
-+
-+	if (ret <= 0)
-+		dev_warn(dev, "Ignoring useless (dummy?) regulator\n");
-+
-+	return NULL;
-+}
-+EXPORT_SYMBOL(mmc_regulator_get_vmmc);
-+
- #endif /* CONFIG_REGULATOR */
- 
- /*
-diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
-index cbde4b7..bcf5562 100644
---- a/include/linux/mmc/host.h
-+++ b/include/linux/mmc/host.h
-@@ -362,6 +362,7 @@ int mmc_regulator_get_ocrmask(struct regulator *supply);
- int mmc_regulator_set_ocr(struct mmc_host *mmc,
- 			struct regulator *supply,
- 			unsigned short vdd_bit);
-+struct regulator *mmc_regulator_get_vmmc(struct mmc_host *mmc);
- #else
- static inline int mmc_regulator_get_ocrmask(struct regulator *supply)
- {
-@@ -374,6 +375,11 @@ static inline int mmc_regulator_set_ocr(struct mmc_host *mmc,
- {
- 	return 0;
- }
-+
-+static inline struct regulator *mmc_regulator_get_vmmc(struct mmc_host *mmc)
-+{
-+	return NULL;
-+}
- #endif
- 
- int mmc_card_awake(struct mmc_host *host);
--- 
-1.7.2.5
+On Thu, May 03, 2012 at 05:05:36PM +0200, Guennadi Liakhovetski wrote:
 
+> +	ret =3D mmc_regulator_get_ocrmask(supply);
+> +	if (ret > 0)
+> +		mmc->ocr_avail =3D ret;
+> +
+> +	if (regulator_can_change_status(supply)) {
+> +		mmc->caps |=3D MMC_CAP_POWER_OFF_CARD;
+> +		return supply;
+> +	}
+> +=20
+> +	devm_regulator_put(supply);
+> +
+> +	if (ret <=3D 0)
+> +		dev_warn(dev, "Ignoring useless (dummy?) regulator\n");
+
+This code seems very tricky and a bit confusing - you're checking that
+either you can change the voltage or change the status but you're doing
+it in a fairly abstruse way and it'll come out as saying that a fixed
+voltage regulator is a useful regulator to have which probably isn't what
+you want if it's worth ignoring a dummy regulator.
+
+You may also run into trouble on boards that use the ability to disable
+unused regulators at the end of boot - they'll power things off even
+without the ability to change status at runtime.
+
+It'd at least be nice to write things more directly, or add some
+comments.
+
+--jx/LfW4V5TfZLeq7
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJPoqdyAAoJEBus8iNuMP3dkEwP/3rccjC0RZHYdRPMk9E2zJ3F
+yHaqe8NmEMx+KpnilEnd4ww8vO32GNPM83oWsvPq84bsp6QSjQCO3FmdPTIBpZ6p
+6tel9qSu7E/ue+0k5GhQab/DgsF8pL8rFNntA6fUqDU7YaQ5PlBk9KJb8JIR/sT1
+Qlvj7Eak8pGOxc3CRMcpRc5AD4bzCE1Oi2RsgVan1JSJL6nDkccvFJ4l2/xWpJE8
+0/rlGcKQtbVCwNNVAUNaGlP4J4iabLCNahnxM0SAfBYkWckDizaNr4ZklccnDIk+
+MWiAJidH1XFwoRIbeYLKTStIYuuT+6AGuOb5o39l58WP5NgBO0XoIOWW+/uJ1dLE
+Ym1E2TBMKz481h6cL9MeIakJfGmhC+2iEabDHyZWorKTjmCarWRJ/0V2BaycSTRl
+kipeoKo2pfJ0fpaIR7bvWYbC4mOJoF1TR6PoUVG/MdKuV0rGNPY0k0gnBz78VK0I
+uDxVu8UEKKOHCpT4GQ/uGOEN78dhFVqFzMXBw2b3OWLyjCcz8+UKNdNVBhWSMnug
+0PEnoQYhhWit6G4fjzmrtki5pEYLWwICJKYRR5QCroGcLJ6YL+SO6GwO8r2B0U/f
+NXimkyMt0o82FM54aWkdJzmQbtotWxB2IjMy5xyAwE6ktUSbSw6v3FYdcPUT07QQ
+AMe4SwyrLu4vOm+eebNw
+=F/m7
+-----END PGP SIGNATURE-----
+
+--jx/LfW4V5TfZLeq7--
