@@ -1,64 +1,43 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Wed, 16 May 2012 09:37:02 +0000
-Subject: Re: [PATCH v4 8/8] mtd: sh_flctl: Use user oob data in hardware ECC mode
-Message-Id: <CABYn4sy5MPv42tBBDJX4N+cdJ3Vjc2HA3d=0wWT+9v9gz=bZvQ@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 03 May 2012 14:46:45 +0000
+Subject: [PATCH 00/02] mach-shmobile: Emma Mobile EV2 - first shot
+Message-Id: <20120503144645.6390.62303.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1336997687-6868-1-git-send-email-hechtb@gmail.com>
- <1336997687-6868-9-git-send-email-hechtb@gmail.com>
- <CAN8TOE9sq56X_VUgi+ZujLRPs=SpcJm9a1N-NuzF6+6R2WPLAg@mail.gmail.com>
-In-Reply-To: <CAN8TOE9sq56X_VUgi+ZujLRPs=SpcJm9a1N-NuzF6+6R2WPLAg@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Brian Norris <computersforpeace@gmail.com>
-Cc: Artem Bityutskiy <dedekind1@gmail.com>, linux-sh@vger.kernel.org, magnus.damm@gmail.com, Bastian Hecht <hechtb@gmail.com>, linux-mtd@lists.infradead.org, laurent.pinchart@ideasonboard.com
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-Hello Brian,
+mach-shmobile: Emma Mobile EV2 - first shot
 
-Artem pushed the set and I'll supply a follow-up patch containing your
-suggestion.
+[PATCH 01/02] mach-shmobile: Emma Mobile EV2 SoC base support
+[PATCH 02/02] mach-shmobile: KZM9D board prototype support
 
-Thanks,
+This series adds experimental Emma Mobile EV2 support to
+mach-shmobile. Yet another dual core Cortex-A9 SoC.
 
-Bastian
+At this point only serial and timer is supported. Future work
+includes GPIO, network device, SMP and DT support. If possible
+it would be nice to use the common clocks on this platform.
 
+To boot this on actual hardware you also need the following:
+"[PATCH] serial8250-em: Emma Mobile UART driver V2"
+"[PATCH] clocksource: em_sti: Emma Mobile STI driver"
 
-2012/5/14 Brian Norris <computersforpeace@gmail.com>:
-> On Mon, May 14, 2012 at 5:14 AM, Bastian Hecht <hechtb@googlemail.com> wr=
-ote:
->> diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
->> index 631f7ed..8a07212 100644
->> --- a/drivers/mtd/nand/sh_flctl.c
->> +++ b/drivers/mtd/nand/sh_flctl.c
->> @@ -384,6 +395,7 @@ static int flctl_read_page_hwecc(struct mtd_info *mt=
-d, struct nand_chip *chip,
->> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0uint8_t *=
-buf, int oob_required, int page)
->> =A0{
->> =A0 =A0 =A0 =A0chip->read_buf(mtd, buf, mtd->writesize);
->> + =A0 =A0 =A0 chip->read_buf(mtd, chip->oob_poi, mtd->oobsize);
->> =A0 =A0 =A0 =A0return 0;
->> =A0}
->
-> Well, my 'oob_required' patches won the race for inclusion in
-> l2-mtd-2.6.git, so it's probably good to just use the 'oob_required'
-> parameter now. That is:
->
-> if (oob_required)
-> =A0 =A0 =A0 chip->read_buf(mtd, chip->oob_poi, mtd->oobsize);
->
->> @@ -391,6 +403,7 @@ static void flctl_write_page_hwecc(struct mtd_info *=
-mtd, struct nand_chip *chip,
->> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 cons=
-t uint8_t *buf, int oob_required)
->> =A0{
->> =A0 =A0 =A0 =A0chip->write_buf(mtd, buf, mtd->writesize);
->> + =A0 =A0 =A0 chip->write_buf(mtd, chip->oob_poi, mtd->oobsize);
->> =A0}
->
-> Similar here:
->
-> if (oob_required)
-> =A0 =A0 =A0 chip->write_buf(mtd, chip->oob_poi, mtd->oobsize);
->
-> Brian
+Any reason to not put this in mach-shmobile?
+
+Partially-signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Does unfortunately not apply cleanly to the renesas
+ git repository, so we need to figure out how to let
+ this coexist with the new boards...
+ 
+ arch/arm/mach-shmobile/Kconfig               |    9 +
+ arch/arm/mach-shmobile/Makefile              |    2 
+ arch/arm/mach-shmobile/board-kzm9d.c         |   44 +++++
+ arch/arm/mach-shmobile/clock-emev2.c         |  206 ++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/common.h |    6 
+ arch/arm/mach-shmobile/intc-emev2.c          |   36 ++++
+ arch/arm/mach-shmobile/setup-emev2.c         |  187 +++++++++++++++++++++++
+ 7 files changed, 490 insertions(+)
