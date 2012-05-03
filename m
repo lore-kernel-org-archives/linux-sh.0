@@ -1,42 +1,65 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Thu, 03 May 2012 08:46:54 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 03 May 2012 12:19:40 +0000
 Subject: Re: [PATCH 06/06] serial8250-em: Add Emma Mobile UART driver
-Message-Id: <201205030846.55250.arnd@arndb.de>
+Message-Id: <CANqRtoR7rtJW65jY3urnTcaS5S6swY84C-Xa8NMQkZP66m+==w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120502124642.30480.41373.sendpatchset@w520> <4FA14788.6090000@windriver.com> <20120502212205.GA12212@kroah.com>
+References: <20120502124642.30480.41373.sendpatchset@w520>
+	<20120502124736.30480.48207.sendpatchset@w520>
+	<4FA14788.6090000@windriver.com>
+	<20120502212205.GA12212@kroah.com>
 In-Reply-To: <20120502212205.GA12212@kroah.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: Greg KH <gregkh@linuxfoundation.org>
-Cc: Paul Gortmaker <paul.gortmaker@windriver.com>, Magnus Damm <magnus.damm@gmail.com>, linux-serial@vger.kernel.org, horms@verge.net.au, linux-sh@vger.kernel.org, swarren@wwwdotorg.org, linux-kernel@vger.kernel.org, rjw@sisk.pl, lethal@linux-sh.org, olof@lixom.net, dan.j.williams@intel.com, alan@linux.intel.com
+Cc: Paul Gortmaker <paul.gortmaker@windriver.com>, linux-serial@vger.kernel.org, horms@verge.net.au, arnd@arndb.de, linux-sh@vger.kernel.org, swarren@wwwdotorg.org, linux-kernel@vger.kernel.org, rjw@sisk.pl, lethal@linux-sh.org, olof@lixom.net, dan.j.williams@intel.com, alan@linux.intel.com
 
-On Wednesday 02 May 2012, Greg KH wrote:
-> > > +
-> > > +config SERIAL_8250_EM
-> > > +   tristate "Support for Emma Mobile intergrated serial port"
-> > > +   depends on SERIAL_8250
-> > 
-> > Should we depend on arch=ARM or something similar?  Even if the
-> > driver is written to be arch independent, if the Emma itself is
-> > physically tied to ARM platforms, we probably don't need to be
-> > building it for sparc allyesconfig etc.
-> 
+On Thu, May 3, 2012 at 6:22 AM, Greg KH <gregkh@linuxfoundation.org> wrote:
+> On Wed, May 02, 2012 at 10:41:12AM -0400, Paul Gortmaker wrote:
+>> On 12-05-02 08:47 AM, Magnus Damm wrote:
+>> > From: Magnus Damm <damm@opensource.se>
+>> >
+>> > Add a platform driver for Emma Mobile 8250 hardware.
+>>
+>>
+>> [...]
+>>
+>> > +
+>> > +config SERIAL_8250_EM
+>> > + =A0 tristate "Support for Emma Mobile intergrated serial port"
+>> > + =A0 depends on SERIAL_8250
+>>
+>> Should we depend on arch=3DARM or something similar? =A0Even if the
+>> driver is written to be arch independent, if the Emma itself is
+>> physically tied to ARM platforms, we probably don't need to be
+>> building it for sparc allyesconfig etc.
+>
 > Yeah, it doesn't build on x86-64, I get the following build problems:
->         ERROR: "clk_get_rate" [drivers/tty/serial/8250/8250_em.ko] undefined!
->         ERROR: "clk_enable" [drivers/tty/serial/8250/8250_em.ko] undefined!
->         ERROR: "clk_get" [drivers/tty/serial/8250/8250_em.ko] undefined!
->         ERROR: "clk_put" [drivers/tty/serial/8250/8250_em.ko] undefined!
->         ERROR: "clk_disable" [drivers/tty/serial/8250/8250_em.ko] undefined!
-> 
+> =A0 =A0 =A0 =A0ERROR: "clk_get_rate" [drivers/tty/serial/8250/8250_em.ko]=
+ undefined!
+> =A0 =A0 =A0 =A0ERROR: "clk_enable" [drivers/tty/serial/8250/8250_em.ko] u=
+ndefined!
+> =A0 =A0 =A0 =A0ERROR: "clk_get" [drivers/tty/serial/8250/8250_em.ko] unde=
+fined!
+> =A0 =A0 =A0 =A0ERROR: "clk_put" [drivers/tty/serial/8250/8250_em.ko] unde=
+fined!
+> =A0 =A0 =A0 =A0ERROR: "clk_disable" [drivers/tty/serial/8250/8250_em.ko] =
+undefined!
+>
 > So it should depend on some arch that has clk at the least.
-> 
-> Magnus, care to redo just this one patch that fixes this up?  I've
+>
+> Magnus, care to redo just this one patch that fixes this up? =A0I've
 > applied the first 5 already.
 
-I think it's best to make it depend on HAVE_CLK, but depending on
-ARM && HAVE_CLK is also fine with me. I would not like to have it depend
-on EMMA specifically though because I want to increase built coverage.
+Done!
 
-	Arnd
+I decided to go with SERIAL_8250 && ARM && HAVE_CLK to limit the
+exposure a bit but not hinder any single ARM kernel image work. Hope
+this balance is making everyone happy.
 
+It is not impossible that this driver can be used on older MIPS based
+SoCs from NEC, but that can easily be dealt with later if needed.
+
+Thanks for your help!
+
+/ magnus
