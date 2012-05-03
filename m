@@ -1,58 +1,100 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Wed, 09 May 2012 22:48:13 +0000
-Subject: Re: [PATCH] mach-shmobile: Use preset_lpj with calibrate_delay()
-Message-Id: <201205100048.13290.rjw@sisk.pl>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 03 May 2012 14:47:03 +0000
+Subject: [PATCH 02/02] mach-shmobile: KZM9D board prototype support
+Message-Id: <20120503144703.6390.20689.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120509071107.18870.37448.sendpatchset@w520>
-In-Reply-To: <20120509071107.18870.37448.sendpatchset@w520>
+References: <20120503144645.6390.62303.sendpatchset@w520>
+In-Reply-To: <20120503144645.6390.62303.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wednesday, May 09, 2012, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Update the mach-shmobile shared delay calibration code for late
-> timers. All existing in-tree non-DT socs are however using early
-> timers today and they are unaffected by this change.
-> 
-> The patch modifies shmobile_setup_delay() from using lpj_fine
-> to preset_lpj. This change allows us to preset the worst case
-> loops-per-jiffy value to all CPU cores on the system.
-> 
-> The old code which made use of lpj_fine did not affect the 
-> secondary CPU cores which made it impossible to boot on SMP
-> without early timers.
-> 
-> Needed for SMP SoCs using late timers like EMEV2 or any other
-> mach-shmobile SMP SoC that makes use of late timers via DT.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+From: Magnus Damm <damm@opensource.se>
 
-Applied to the soc branch of the renesas.git tree.
+Add experimental KZM9D board support that makes
+use of the Emma Mobile EV2 SoC code.
 
-Thanks,
-Rafael
+Nothing except serial ports and timer are supported
+at this point. On-board ethernet support can be
+added after proper GPIO bindings are implemented.
+Without GPIO we cannot make use of external IRQs.
 
+Not-yet-signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-> ---
-> 
->  arch/arm/mach-shmobile/timer.c |    3 ++-
->  1 file changed, 2 insertions(+), 1 deletion(-)
-> 
-> --- 0003/arch/arm/mach-shmobile/timer.c
-> +++ work/arch/arm/mach-shmobile/timer.c	2012-05-08 18:56:03.000000000 +0900
-> @@ -36,7 +36,8 @@ void __init shmobile_setup_delay(unsigne
->  
->  	unsigned int value = (1000000 * mult) / (HZ * div);
->  
-> -	lpj_fine = max_cpu_core_mhz * value;
-> +	if (!preset_lpj)
-> +		preset_lpj = max_cpu_core_mhz * value;
->  }
->  
->  static void __init shmobile_late_time_init(void)
-> 
-> 
+ arch/arm/mach-shmobile/Kconfig       |    4 +++
+ arch/arm/mach-shmobile/Makefile      |    1 
+ arch/arm/mach-shmobile/board-kzm9d.c |   44 ++++++++++++++++++++++++++++++++++
+ 3 files changed, 49 insertions(+)
 
+--- 0011/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2012-05-03 20:50:52.000000000 +0900
+@@ -103,6 +103,10 @@ config MACH_MARZEN
+ 	depends on ARCH_R8A7779
+ 	select ARCH_REQUIRE_GPIOLIB
+ 
++config MACH_KZM9D
++	bool "KZM9D board"
++	depends on ARCH_EMEV2
++
+ comment "SH-Mobile System Configuration"
+ 
+ config CPU_HAS_INTEVT
+--- 0011/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2012-05-03 20:50:52.000000000 +0900
+@@ -50,6 +50,7 @@ obj-$(CONFIG_MACH_MACKEREL)	+= board-mac
+ obj-$(CONFIG_MACH_KOTA2)	+= board-kota2.o
+ obj-$(CONFIG_MACH_BONITO)	+= board-bonito.o
+ obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
++obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d.o
+ 
+ # Framework support
+ obj-$(CONFIG_SMP)		+= $(smp-y)
+--- /dev/null
++++ work/arch/arm/mach-shmobile/board-kzm9d.c	2012-05-03 20:51:20.000000000 +0900
+@@ -0,0 +1,44 @@
++/*
++ * kzm9d board support
++ *
++ * Copyright (C) 2012  Renesas Solutions Corp.
++ * Copyright (C) 2012  Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ */
++
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/interrupt.h>
++#include <linux/platform_device.h>
++#include <linux/io.h>
++#include <mach/hardware.h>
++#include <mach/common.h>
++#include <mach/irqs.h>
++#include <asm/mach-types.h>
++#include <asm/mach/map.h>
++#include <asm/mach/arch.h>
++#include <asm/mach/time.h>
++#include <asm/hardware/gic.h>
++#include <asm/traps.h>
++
++MACHINE_START(KZM9D, "kzm9d")
++	.map_io		= emev2_map_io,
++	.init_early	= emev2_add_early_devices,
++	.nr_irqs	= NR_IRQS_LEGACY,
++	.init_irq	= emev2_init_irq,
++	.handle_irq	= gic_handle_irq,
++	.init_machine	= emev2_add_standard_devices,
++	.timer		= &shmobile_timer,
++MACHINE_END
