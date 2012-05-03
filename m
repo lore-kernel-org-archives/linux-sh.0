@@ -1,84 +1,42 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 14 May 2012 10:54:33 +0000
-Subject: [PATCH 01/03] mach-shmobile: Use DT_MACHINE for KZM9G
-Message-Id: <20120514105433.8596.1974.sendpatchset@w520>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 03 May 2012 15:05:30 +0000
+Subject: [PATCH 01/29] mmc: sh_mmcif: remove redundant .down_pwr() callback
+Message-Id: <1336057558-11031-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120514105424.8596.38355.sendpatchset@w520>
-In-Reply-To: <20120514105424.8596.38355.sendpatchset@w520>
+References: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+From the original version of sh_mmcif the .set_pwr() callback has only been
+used to turn the card's power on, and the .down_pwr() callback has been
+used to turn it off. .set_pwr() can be used for both these tasks, which is
+also how it is implemented by the only user of this API: the SH7724 ecovec
+board.
 
-Use DT_MACHINE_START() on the sh73a0 based KZM9G board.
-
-Also include a tiny DTS file to describe the board and
-update the Kconfig dependencies to select CONFIG_USE_OF.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ drivers/mmc/host/sh_mmcif.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
- arch/arm/boot/dts/sh73a0-kzm9g.dts   |   22 ++++++++++++++++++++++
- arch/arm/mach-shmobile/Kconfig       |    1 +
- arch/arm/mach-shmobile/board-kzm9g.c |    8 +++++++-
- 3 files changed, 30 insertions(+), 1 deletion(-)
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index ed59392..19c7576 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -957,8 +957,8 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 			pm_runtime_put(&host->pd->dev);
+ 			clk_disable(host->hclk);
+ 			host->power = false;
+-			if (p->down_pwr && ios->power_mode = MMC_POWER_OFF)
+-				p->down_pwr(host->pd);
++			if (p->set_pwr && ios->power_mode = MMC_POWER_OFF)
++				p->set_pwr(host->pd, 0);
+ 		}
+ 		host->state = STATE_IDLE;
+ 		return;
+-- 
+1.7.2.5
 
---- /dev/null
-+++ work/arch/arm/boot/dts/sh73a0-kzm9g.dts	2012-05-14 18:37:52.000000000 +0900
-@@ -0,0 +1,22 @@
-+/*
-+ * Device Tree Source for the KZM-A9-GT board
-+ *
-+ * Copyright (C) 2012 Renesas Solutions Corp.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/dts-v1/;
-+/include/ "skeleton.dtsi"
-+
-+/ {
-+	model = "KZM-A9-GT";
-+	compatible = "renesas,kzm9g";
-+
-+	memory {
-+		device_type = "memory";
-+		reg = <0x41000000 0x1e800000>;
-+	};
-+};
---- 0001/arch/arm/mach-shmobile/Kconfig
-+++ work/arch/arm/mach-shmobile/Kconfig	2012-05-14 18:54:57.000000000 +0900
-@@ -109,6 +109,7 @@ config MACH_KZM9G
- 	bool "KZM-A9-GT board"
- 	depends on ARCH_SH73A0
- 	select ARCH_REQUIRE_GPIOLIB
-+	select USE_OF
- 
- comment "SH-Mobile System Configuration"
- 
---- 0001/arch/arm/mach-shmobile/board-kzm9g.c
-+++ work/arch/arm/mach-shmobile/board-kzm9g.c	2012-05-14 18:33:43.000000000 +0900
-@@ -443,7 +443,12 @@ static void __init kzm_init(void)
- 	platform_add_devices(kzm_devices, ARRAY_SIZE(kzm_devices));
- }
- 
--MACHINE_START(KZM9G, "kzm9g")
-+static const char *kzm9g_boards_compat_dt[] __initdata = {
-+	"renesas,kzm9g",
-+	NULL,
-+};
-+
-+DT_MACHINE_START(KZM9G_DT, "kzm9g")
- 	.map_io		= sh73a0_map_io,
- 	.init_early	= sh73a0_add_early_devices,
- 	.nr_irqs	= NR_IRQS_LEGACY,
-@@ -451,4 +456,5 @@ MACHINE_START(KZM9G, "kzm9g")
- 	.handle_irq	= gic_handle_irq,
- 	.init_machine	= kzm_init,
- 	.timer		= &shmobile_timer,
-+	.dt_compat	= kzm9g_boards_compat_dt,
- MACHINE_END
