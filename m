@@ -1,250 +1,179 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Mon, 14 May 2012 12:14:46 +0000
-Subject: [PATCH v4 7/8] mtd: sh_flctl: Restructure the hardware ECC handling
-Message-Id: <1336997687-6868-8-git-send-email-hechtb@gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 03 May 2012 15:05:29 +0000
+Subject: [PATCH 00/29] mmc: mmcif and tmio regulator and OF support
+Message-Id: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1336997687-6868-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1336997687-6868-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mtd@lists.infradead.org
-Cc: Bastian Hecht <hechtb@gmail.com>, magnus.damm@gmail.com, laurent.pinchart@ideasonboard.com, linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-There are multiple reasons for a rewrite:
- - a race exists: when _4ECCEND is set, _4ECCFA may become true too
-   meanwhile, which is lost and a non-correctable error is treated as
-   correctable.
- - the ECC statistics don't get properly propagated to the base code.
- - empty pages would get marked as corrupted
+Hi
 
-The rewrite resolves the issues and I hope it gives a more explicit
-code flow structure.
+I was not directly sure, what was the better way to send these out - as 
+one seriess or as several. I would actually prefer several, but there are 
+many dependencies. So, maybe best would be to try to review and address 
+any issues on the MLs, only posting new versions of affected patches, and 
+eventually provide a branch to pull from.
 
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
----
- drivers/mtd/nand/sh_flctl.c  |  121 ++++++++++++++++++++++++++++--------------
- include/linux/mtd/sh_flctl.h |   10 +++-
- 2 files changed, 88 insertions(+), 43 deletions(-)
+Now to contents:
 
-diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
-index 9de4225..631f7ed 100644
---- a/drivers/mtd/nand/sh_flctl.c
-+++ b/drivers/mtd/nand/sh_flctl.c
-@@ -165,27 +165,56 @@ static void wait_wfifo_ready(struct sh_flctl *flctl)
- 	timeout_error(flctl, __func__);
- }
- 
--static int wait_recfifo_ready(struct sh_flctl *flctl, int sector_number)
-+static enum flctl_ecc_res_t wait_recfifo_ready
-+		(struct sh_flctl *flctl, int sector_number)
- {
- 	uint32_t timeout = LOOP_TIMEOUT_MAX;
--	int checked[4];
- 	void __iomem *ecc_reg[4];
- 	int i;
-+	int state = FL_SUCCESS;
- 	uint32_t data, size;
- 
--	memset(checked, 0, sizeof(checked));
--
-+	/*
-+	 * First this loops checks in FLDTCNTR if we are ready to read out the
-+	 * oob data. This is the case if either all went fine without errors or
-+	 * if the bottom part of the loop corrected the errors or marked them as
-+	 * uncorrectable and the controller is given time to push the data into
-+	 * the FIFO.
-+	 */
- 	while (timeout--) {
-+		/* check if all is ok and we can read out the OOB */
- 		size = readl(FLDTCNTR(flctl)) >> 24;
--		if (size & 0xFF)
--			return 0;	/* success */
-+		if ((size & 0xFF) = 4)
-+			return state;
-+
-+		/* check if a correction code has been calculated */
-+		if (!(readl(FL4ECCCR(flctl)) & _4ECCEND)) {
-+			/*
-+			 * either we wait for the fifo to be filled or a
-+			 * correction pattern is being generated
-+			 */
-+			udelay(1);
-+			continue;
-+		}
- 
--		if (readl(FL4ECCCR(flctl)) & _4ECCFA)
--			return 1;	/* can't correct */
-+		/* check for an uncorrectable error */
-+		if (readl(FL4ECCCR(flctl)) & _4ECCFA) {
-+			/* check if we face a non-empty page */
-+			for (i = 0; i < 512; i++) {
-+				if (flctl->done_buff[i] != 0xff) {
-+					state = FL_ERROR; /* can't correct */
-+					break;
-+				}
-+			}
- 
--		udelay(1);
--		if (!(readl(FL4ECCCR(flctl)) & _4ECCEND))
-+			if (state = FL_SUCCESS)
-+				dev_dbg(&flctl->pdev->dev,
-+				"reading empty sector %d, ecc error ignored\n",
-+				sector_number);
-+
-+			writel(0, FL4ECCCR(flctl));
- 			continue;
-+		}
- 
- 		/* start error correction */
- 		ecc_reg[0] = FL4ECCRESULT0(flctl);
-@@ -194,28 +223,26 @@ static int wait_recfifo_ready(struct sh_flctl *flctl, int sector_number)
- 		ecc_reg[3] = FL4ECCRESULT3(flctl);
- 
- 		for (i = 0; i < 3; i++) {
-+			uint8_t org;
-+			int index;
-+
- 			data = readl(ecc_reg[i]);
--			if (data != INIT_FL4ECCRESULT_VAL && !checked[i]) {
--				uint8_t org;
--				int index;
--
--				if (flctl->page_size)
--					index = (512 * sector_number) +
--						(data >> 16);
--				else
--					index = data >> 16;
--
--				org = flctl->done_buff[index];
--				flctl->done_buff[index] = org ^ (data & 0xFF);
--				checked[i] = 1;
--			}
--		}
- 
-+			if (flctl->page_size)
-+				index = (512 * sector_number) +
-+					(data >> 16);
-+			else
-+				index = data >> 16;
-+
-+			org = flctl->done_buff[index];
-+			flctl->done_buff[index] = org ^ (data & 0xFF);
-+		}
-+		state = FL_REPAIRABLE;
- 		writel(0, FL4ECCCR(flctl));
- 	}
- 
- 	timeout_error(flctl, __func__);
--	return 1;	/* timeout */
-+	return FL_TIMEOUT;	/* timeout */
- }
- 
- static void wait_wecfifo_ready(struct sh_flctl *flctl)
-@@ -259,20 +286,23 @@ static void read_fiforeg(struct sh_flctl *flctl, int rlen, int offset)
- 	}
- }
- 
--static int read_ecfiforeg(struct sh_flctl *flctl, uint8_t *buff, int sector)
-+static enum flctl_ecc_res_t read_ecfiforeg
-+		(struct sh_flctl *flctl, uint8_t *buff, int sector)
- {
- 	int i;
-+	enum flctl_ecc_res_t res;
- 	unsigned long *ecc_buf = (unsigned long *)buff;
--	void *fifo_addr = (void *)FLECFIFO(flctl);
- 
--	for (i = 0; i < 4; i++) {
--		if (wait_recfifo_ready(flctl , sector))
--			return 1;
--		ecc_buf[i] = readl(fifo_addr);
--		ecc_buf[i] = be32_to_cpu(ecc_buf[i]);
-+	res = wait_recfifo_ready(flctl , sector);
-+
-+	if (res != FL_ERROR) {
-+		for (i = 0; i < 4; i++) {
-+			ecc_buf[i] = readl(FLECFIFO(flctl));
-+			ecc_buf[i] = be32_to_cpu(ecc_buf[i]);
-+		}
- 	}
- 
--	return 0;
-+	return res;
- }
- 
- static void write_fiforeg(struct sh_flctl *flctl, int rlen, int offset)
-@@ -367,6 +397,7 @@ static void execmd_read_page_sector(struct mtd_info *mtd, int page_addr)
- {
- 	struct sh_flctl *flctl = mtd_to_flctl(mtd);
- 	int sector, page_sectors;
-+	enum flctl_ecc_res_t ecc_result;
- 
- 	page_sectors = flctl->page_size ? 4 : 1;
- 
-@@ -382,17 +413,27 @@ static void execmd_read_page_sector(struct mtd_info *mtd, int page_addr)
- 	start_translation(flctl);
- 
- 	for (sector = 0; sector < page_sectors; sector++) {
--		int ret;
- 		read_fiforeg(flctl, 512, 512 * sector);
- 
--		ret = read_ecfiforeg(flctl,
-+		ecc_result = read_ecfiforeg(flctl,
- 			&flctl->done_buff[mtd->writesize + 16 * sector],
- 			sector);
- 
--		if (ret)
--			flctl->hwecc_cant_correct[sector] = 1;
--
--		writel(0x0, FL4ECCCR(flctl));
-+		switch (ecc_result) {
-+		case FL_REPAIRABLE:
-+			dev_info(&flctl->pdev->dev,
-+				"applied ecc on page 0x%x", page_addr);
-+			flctl->mtd.ecc_stats.corrected++;
-+			break;
-+		case FL_ERROR:
-+			dev_warn(&flctl->pdev->dev,
-+				"page 0x%x contains corrupted data\n",
-+				page_addr);
-+			flctl->mtd.ecc_stats.failed++;
-+			break;
-+		default:
-+			;
-+		}
- 	}
- 
- 	wait_completion(flctl);
-diff --git a/include/linux/mtd/sh_flctl.h b/include/linux/mtd/sh_flctl.h
-index 3feaae0..01e4b15 100644
---- a/include/linux/mtd/sh_flctl.h
-+++ b/include/linux/mtd/sh_flctl.h
-@@ -129,9 +129,15 @@
- #define	_4ECCEND	(0x1 << 1)	/* 4 symbols end */
- #define	_4ECCEXST	(0x1 << 0)	/* 4 symbols exist */
- 
--#define INIT_FL4ECCRESULT_VAL	0x03FF03FF
- #define LOOP_TIMEOUT_MAX	0x00010000
- 
-+enum flctl_ecc_res_t {
-+	FL_SUCCESS,
-+	FL_REPAIRABLE,
-+	FL_ERROR,
-+	FL_TIMEOUT
-+};
-+
- struct sh_flctl {
- 	struct mtd_info		mtd;
- 	struct nand_chip	chip;
-@@ -151,8 +157,6 @@ struct sh_flctl {
- 	uint32_t flcmncr_base;	/* base value of FLCMNCR */
- 	uint32_t flintdmacr_base;	/* irq enable bits */
- 
--	int	hwecc_cant_correct[4];
--
- 	unsigned page_size:1;	/* NAND page size (0 = 512, 1 = 2048) */
- 	unsigned hwecc:1;	/* Hardware ECC (0 = disabled, 1 = enabled) */
- 	unsigned holden:1;	/* Hardware has FLHOLDCR and HOLDEN is set */
+1. prerequisites: goes on top of
+
+[PATCH 4/6] mmc: sdhi: don't use connection IDs to obtain a clock reference
+[PATCH 5/6] mmc: mmcif: don't use connection IDs to obtain a clock reference
+
+http://thread.gmane.org/gmane.linux.ports.sh.devel/14425
+
+[PATCH 0/3] mmc: sh-mmcif: clock management updates         
+[PATCH 1/3] mmc: sh_mmcif: simplify and use meaningful label names in error-handling
+[PATCH 2/3] mmc: sh_mmcif: fix clock management             
+[PATCH 3/3] mmc: sh_mmcif: re-read the clock frequency upon re-enabling
+
+http://thread.gmane.org/gmane.linux.ports.sh.devel/14448
+
+(the following two patches should already be in the MMC tree)
+
+[PATCH] mmc: cd-gpio.c: Include header to pickup exported symbol prototypes
+
+http://www.spinics.net/lists/linux-mmc/msg13823.html
+
+[PATCH] mmc: cd-gpio: allow NULL context in mmc_cd_gpio_free()
+
+http://thread.gmane.org/gmane.linux.kernel.mmc/14103
+
+2. supersede: this series supersedes my earlier patches:
+
+[PATCH/RFC 0/7] mmc: tmio: regulator support, clock management, convert ecovec
+[PATCH 1/7] mmc: tmio: stop interface clock before runtime PM suspending
+[PATCH 2/7] mmc: tmio: don't needlessly enable interrupts during probing
+[PATCH 3/7] mmc: tmio: add callbacks to enable-update and disable the interface clock
+[PATCH 4/7] mmc: sdhi: implement tmio-mmc clock enable-update and disable callbacks
+[PATCH 5/7] mmc: tmio: add regulator support
+[PATCH 6/7] mmc: sdhi: do not install dummy callbacks
+[PATCH 7/7] sh: ecovec: switch MMC power control to regulators
+
+http://thread.gmane.org/gmane.linux.ports.sh.devel/14539
+
+[PATCH 0/5] mmc: sh_mmcif: add regulator support
+[PATCH 1/5] mmc: sh_mmcif: remove redundant .down_pwr() callback
+[PATCH 2/5] sh: ecovec: remove unused .down_pwr() MMCIF callback
+[PATCH 3/5] mmc: sh_mmcif: remove unused .down_pwr() callback
+[PATCH 4/5] mmc: sh_mmcif: add regulator support
+[PATCH/RFC 5/5] sh: ecovec: switch MMC power control to regulator
+
+http://thread.gmane.org/gmane.linux.ports.sh.devel/14469
+
+3. regulators: this series includes a bug-fix:
+
+[PATCH 04/31] regulator: fix devm_regulator_put() to call regulator_put() explicitly
+
+a cosmetic improvement:
+
+[PATCH 05/31] regulator: use IS_ERR_OR_NULL() instead of open-coding
+
+and a feature addition to the regulators framework.
+
+4. mmc: this is where most of the patches fall into. This series includes 
+additions and enhancements to the cd-gpio helper, which from now on is 
+going to be called "slot-gpio;" a new file drivers/mmc/core/of.c with only 
+two functions, so, if preferred, it can be merged into core.c; and 
+numerous features, enhancements and improvements to the MMCIF and 
+SDHI/TMIO drivers.
+
+The of.c addition is actually pretty important, because it defines an 
+external interface: it defines mmc properties, that all mmc host drivers 
+will now be able to use, instead of adding new proprietary ones. Drivers, 
+that already have OF support cannot stop supporting their interfaces. 
+Since we do not want to rewrite .dts filesand break binary compatibility 
+with existing platforms, these properties have to be carefully designed.
+
+mmc regulator support: thanks to Mark Brown for comments. This version 
+adds a generic mmc function to obtain a "vmmc" regulator for a specific 
+mmc interface and now uses the device-managed version of regulator_get().
+
+5. sh patches: 
+
+[PATCH 02/29] sh: ecovec: remove unused .down_pwr() MMCIF callback
+
+If we get an ack for this one, we can pull it together with other 
+mmc-related patches via the mmc tree. If not, the following patch
+
+[PATCH 03/29] mmc: sh_mmcif: remove unused .down_pwr() callback
+
+will have to wait until [PATCH 02/29] makes it in.
+
+One more
+
+[PATCH 29/29] sh: ecovec: switch MMC power control to regulators
+
+is optional and mostly is offered as an example of how regulators 
+can be used with sh_mmcif and sh_mobile_sdhi.
+
+Thanks
+Guennadi
+
+Guennadi Liakhovetski (29):
+  mmc: sh_mmcif: remove redundant .down_pwr() callback
+  sh: ecovec: remove unused .down_pwr() MMCIF callback
+  mmc: sh_mmcif: remove unused .down_pwr() callback
+  regulator: fix devm_regulator_put() to call regulator_put()
+    explicitly
+  regulator: use IS_ERR_OR_NULL() instead of open-coding
+  regulator: export a function to check if regulator can change status
+  mmc: add a function to get a regulator, supplying card's Vdd
+  mmc: sh_mmcif: add regulator support
+  mmc: tmio: stop interface clock before runtime PM suspending
+  mmc: tmio: don't needlessly enable interrupts during probing
+  mmc: tmio: add callbacks to enable-update and disable the interface
+    clock
+  mmc: sdhi: implement tmio-mmc clock enable-update and disable
+    callbacks
+  mmc: tmio: add regulator support
+  mmc: sdhi: do not install dummy callbacks
+  mmc: extend and rename cd-gpio helpers to handle more slot GPIO
+    functions
+  mmc: tmio: use MMC opcode defines instead of numbers
+  mmc: use a more generic name for slot function types and fields
+  mmc: tmio: remove a duplicated comment line
+  mmc: add two capability flags for CD and WP signal polarity
+  mmc: add CD GPIO polling support to slot functions
+  mmc: convert slot functions to managed allocation
+  mmc: add WP pin handler to slot functions
+  mmc: tmio: use generic GPIO CD and WP handlers
+  mmc: add a simple generic OF parser
+  mmc: tmio: add OF support
+  mmc: sdhi: add OF support, make platform data optional
+  mmc: mmcif: add OF support
+  mmc: mmcif: add support for generic GPIO CD polling
+  sh: ecovec: switch MMC power control to regulators
+
+ arch/sh/boards/mach-ecovec24/setup.c |   91 ++++++++++++------
+ drivers/mmc/core/Makefile            |    4 +-
+ drivers/mmc/core/cd-gpio.c           |   83 ----------------
+ drivers/mmc/core/core.c              |   27 +++++
+ drivers/mmc/core/host.c              |    4 +
+ drivers/mmc/core/of.c                |   91 ++++++++++++++++++
+ drivers/mmc/core/slot-gpio.c         |  175 ++++++++++++++++++++++++++++++++++
+ drivers/mmc/host/sh_mmcif.c          |   83 ++++++++++++++---
+ drivers/mmc/host/sh_mobile_sdhi.c    |   56 ++++++++---
+ drivers/mmc/host/tmio_mmc.h          |    2 +
+ drivers/mmc/host/tmio_mmc_pio.c      |  159 +++++++++++++++++++++++++------
+ drivers/regulator/core.c             |   20 ++++-
+ include/linux/mfd/tmio.h             |    3 +
+ include/linux/mmc/cd-gpio.h          |   18 ----
+ include/linux/mmc/host.h             |   39 +++++++-
+ include/linux/mmc/sh_mmcif.h         |    1 -
+ include/linux/mmc/slot-gpio.h        |   24 +++++
+ include/linux/regulator/consumer.h   |    7 ++
+ 18 files changed, 694 insertions(+), 193 deletions(-)
+ delete mode 100644 drivers/mmc/core/cd-gpio.c
+ create mode 100644 drivers/mmc/core/of.c
+ create mode 100644 drivers/mmc/core/slot-gpio.c
+ delete mode 100644 include/linux/mmc/cd-gpio.h
+ create mode 100644 include/linux/mmc/slot-gpio.h
+
 -- 
-1.7.5.4
+1.7.2.5
 
