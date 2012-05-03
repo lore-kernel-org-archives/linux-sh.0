@@ -1,7 +1,7 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 03 May 2012 15:05:58 +0000
-Subject: [PATCH 29/29] sh: ecovec: switch MMC power control to regulators
-Message-Id: <1336057558-11031-30-git-send-email-g.liakhovetski@gmx.de>
+Date: Thu, 03 May 2012 15:05:50 +0000
+Subject: [PATCH 21/29] mmc: convert slot functions to managed allocation
+Message-Id: <1336057558-11031-22-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
 In-Reply-To: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
@@ -9,193 +9,145 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org
 
-Power on the CN11 and CN12 SD/MMC slots on ecovec is controlled by GPIOs,
-which makes it possible to use the fixed voltage regulator driver to switch
-card power on and off.
+This prepares for the addition of further slot functions.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Paul Mundt <lethal@linux-sh.org>
 ---
+ drivers/mmc/core/host.c      |    2 +
+ drivers/mmc/core/slot-gpio.c |   49 +++++++++++++++++++++++++++++++----------
+ include/linux/mmc/host.h     |    2 +
+ 3 files changed, 41 insertions(+), 12 deletions(-)
 
-Optional, mainly FYI
-
- arch/sh/boards/mach-ecovec24/setup.c |   85 ++++++++++++++++++++++++---------
- 1 files changed, 62 insertions(+), 23 deletions(-)
-
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index a2f70e6..0822931 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -19,6 +19,9 @@
- #include <linux/interrupt.h>
- #include <linux/io.h>
- #include <linux/delay.h>
-+#include <linux/regulator/driver.h>
-+#include <linux/regulator/fixed.h>
-+#include <linux/regulator/machine.h>
- #include <linux/usb/r8a66597.h>
- #include <linux/usb/renesas_usbhs.h>
- #include <linux/i2c.h>
-@@ -515,12 +518,66 @@ static struct i2c_board_info ts_i2c_clients = {
- 	.irq		= IRQ0,
- };
- 
-+static struct regulator_consumer_supply cn12_power_consumers[] +{
-+	REGULATOR_SUPPLY("vmmc", "sh_mmcif.0"),
-+	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
-+};
-+
-+static struct regulator_init_data cn12_power_init_data = {
-+	.constraints = {
-+		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
-+	},
-+	.num_consumer_supplies  = ARRAY_SIZE(cn12_power_consumers),
-+	.consumer_supplies      = cn12_power_consumers,
-+};
-+
-+static struct fixed_voltage_config cn12_power_info = {
-+	.supply_name = "CN12 SD/MMC Vdd",
-+	.microvolts = 3300000,
-+	.gpio = GPIO_PTB7,
-+	.enable_high = 1,
-+	.init_data = &cn12_power_init_data,
-+};
-+
-+static struct platform_device cn12_power = {
-+	.name = "reg-fixed-voltage",
-+	.id   = 0,
-+	.dev  = {
-+		.platform_data = &cn12_power_info,
-+	},
-+};
-+
- #if defined(CONFIG_MMC_SDHI) || defined(CONFIG_MMC_SDHI_MODULE)
- /* SDHI0 */
--static void sdhi0_set_pwr(struct platform_device *pdev, int state)
-+static struct regulator_consumer_supply sdhi0_power_consumers[]  {
--	gpio_set_value(GPIO_PTB6, state);
--}
-+	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
-+};
-+
-+static struct regulator_init_data sdhi0_power_init_data = {
-+	.constraints = {
-+		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
-+	},
-+	.num_consumer_supplies  = ARRAY_SIZE(sdhi0_power_consumers),
-+	.consumer_supplies      = sdhi0_power_consumers,
-+};
-+
-+static struct fixed_voltage_config sdhi0_power_info = {
-+	.supply_name = "CN11 SD/MMC Vdd",
-+	.microvolts = 3300000,
-+	.gpio = GPIO_PTB6,
-+	.enable_high = 1,
-+	.init_data = &sdhi0_power_init_data,
-+};
-+
-+static struct platform_device sdhi0_power = {
-+	.name = "reg-fixed-voltage",
-+	.id   = 1,
-+	.dev  = {
-+		.platform_data = &sdhi0_power_info,
-+	},
-+};
- 
- static int sdhi0_get_cd(struct platform_device *pdev)
+diff --git a/drivers/mmc/core/host.c b/drivers/mmc/core/host.c
+index b8c5290..74cf29a5 100644
+--- a/drivers/mmc/core/host.c
++++ b/drivers/mmc/core/host.c
+@@ -32,6 +32,7 @@
+ static void mmc_host_classdev_release(struct device *dev)
  {
-@@ -530,7 +587,6 @@ static int sdhi0_get_cd(struct platform_device *pdev)
- static struct sh_mobile_sdhi_info sdhi0_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
--	.set_pwr	= sdhi0_set_pwr,
- 	.tmio_caps      = MMC_CAP_SDIO_IRQ | MMC_CAP_POWER_OFF_CARD |
- 			  MMC_CAP_NEEDS_POLL,
- 	.get_cd		= sdhi0_get_cd,
-@@ -561,11 +617,6 @@ static struct platform_device sdhi0_device = {
+ 	struct mmc_host *host = cls_dev_to_mmc_host(dev);
++	mutex_destroy(&host->slot.lock);
+ 	kfree(host);
+ }
  
- #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
- /* SDHI1 */
--static void sdhi1_set_pwr(struct platform_device *pdev, int state)
--{
--	gpio_set_value(GPIO_PTB7, state);
--}
--
- static int sdhi1_get_cd(struct platform_device *pdev)
+@@ -327,6 +328,7 @@ struct mmc_host *mmc_alloc_host(int extra, struct device *dev)
+ 
+ 	mmc_host_clk_init(host);
+ 
++	mutex_init(&host->slot.lock);
+ 	host->slot.cd_irq = -EINVAL;
+ 
+ 	spin_lock_init(&host->lock);
+diff --git a/drivers/mmc/core/slot-gpio.c b/drivers/mmc/core/slot-gpio.c
+index 1491fd8..7e16a50 100644
+--- a/drivers/mmc/core/slot-gpio.c
++++ b/drivers/mmc/core/slot-gpio.c
+@@ -29,6 +29,33 @@ static irqreturn_t mmc_gpio_cd_irqt(int irq, void *dev_id)
+ 	return IRQ_HANDLED;
+ }
+ 
++static int mmc_gpio_alloc(struct mmc_host *host)
++{
++	size_t len = strlen(dev_name(host->parent)) + 4;
++	struct mmc_gpio *ctx;
++
++	mutex_lock(&host->slot.lock);
++
++	ctx = host->slot.handler_priv;
++	if (!ctx) {
++		/*
++		 * devm_kzalloc() can be called after device_initialize(), even
++		 * before device_add(), i.e., between mmc_alloc_host() and
++		 * mmc_add_host()
++		 */
++		ctx = devm_kzalloc(&host->class_dev, sizeof(*ctx) + len,
++				   GFP_KERNEL);
++		if (ctx) {
++			snprintf(ctx->cd_label, len, "%s cd", dev_name(host->parent));
++			host->slot.handler_priv = ctx;
++		}
++	}
++
++	mutex_unlock(&host->slot.lock);
++
++	return ctx ? 0 : -ENOMEM;
++}
++
+ int mmc_gpio_get_cd(struct mmc_host *host)
  {
- 	return !gpio_get_value(GPIO_PTW7);
-@@ -576,7 +627,6 @@ static struct sh_mobile_sdhi_info sdhi1_info = {
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
- 	.tmio_caps      = MMC_CAP_SDIO_IRQ | MMC_CAP_POWER_OFF_CARD |
- 			  MMC_CAP_NEEDS_POLL,
--	.set_pwr	= sdhi1_set_pwr,
- 	.get_cd		= sdhi1_get_cd,
- };
+ 	struct mmc_gpio *ctx = host->slot.handler_priv;
+@@ -43,20 +70,24 @@ EXPORT_SYMBOL(mmc_gpio_get_cd);
  
-@@ -872,11 +922,6 @@ static struct platform_device vou_device = {
+ int mmc_gpio_request_cd(struct mmc_host *host, unsigned int gpio)
+ {
+-	size_t len = strlen(dev_name(host->parent)) + 4;
+ 	struct mmc_gpio *ctx;
+ 	int irq = gpio_to_irq(gpio);
+ 	int ret;
  
- #if defined(CONFIG_MMC_SH_MMCIF) || defined(CONFIG_MMC_SH_MMCIF_MODULE)
- /* SH_MMCIF */
--static void mmcif_set_pwr(struct platform_device *pdev, int state)
--{
--	gpio_set_value(GPIO_PTB7, state);
--}
+-	ctx = kmalloc(sizeof(*ctx) + len, GFP_KERNEL);
+-	if (!ctx)
+-		return -ENOMEM;
++	ret = mmc_gpio_alloc(host);
++	if (ret < 0)
++		return ret;
+ 
+-	snprintf(ctx->cd_label, len, "%s cd", dev_name(host->parent));
++	ctx = host->slot.handler_priv;
+ 
+ 	ret = gpio_request_one(gpio, GPIOF_DIR_IN, ctx->cd_label);
+ 	if (ret < 0)
+-		goto egpioreq;
++		/*
++		 * don't bother freeing gpio. It might still get used by other
++		 * slot functions, in any case it will be freed, when the device
++		 * is destroyed.
++		 */
++		return ret;
+ 
+ 	/*
+ 	 * Even if gpio_to_irq() returns a valid IRQ number, the platform might
+@@ -76,10 +107,6 @@ int mmc_gpio_request_cd(struct mmc_host *host, unsigned int gpio)
+ 	host->slot.handler_priv = ctx;
+ 
+ 	return 0;
 -
- static struct resource sh_mmcif_resources[] = {
- 	[0] = {
- 		.name	= "SH_MMCIF",
-@@ -897,12 +942,10 @@ static struct resource sh_mmcif_resources[] = {
+-egpioreq:
+-	kfree(ctx);
+-	return ret;
+ }
+ EXPORT_SYMBOL(mmc_gpio_request_cd);
+ 
+@@ -95,7 +122,5 @@ void mmc_gpio_free_cd(struct mmc_host *host)
+ 		host->slot.cd_irq = -EINVAL;
+ 	}
+ 	gpio_free(ctx->cd_gpio);
+-	host->slot.handler_priv = NULL;
+-	kfree(ctx);
+ }
+ EXPORT_SYMBOL(mmc_gpio_free_cd);
+diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
+index f1ca61b..f8157a9 100644
+--- a/include/linux/mmc/host.h
++++ b/include/linux/mmc/host.h
+@@ -154,6 +154,7 @@ struct mmc_async_req {
+  * struct mmc_slot - MMC slot functions
+  *
+  * @cd_irq:		MMC/SD-card slot hotplug detection IRQ or -EINVAL
++ * @lock:		protect the @handler_priv pointer
+  * @handler_priv:	MMC/SD-card slot context
+  *
+  * Some MMC/SD host controllers implement slot-functions like card and
+@@ -163,6 +164,7 @@ struct mmc_async_req {
+  */
+ struct mmc_slot {
+ 	unsigned int cd_irq;
++	struct mutex lock;
+ 	void *handler_priv;
  };
  
- static struct sh_mmcif_plat_data sh_mmcif_plat = {
--	.set_pwr	= mmcif_set_pwr,
- 	.sup_pclk	= 0, /* SH7724: Max Pclk/2 */
- 	.caps		= MMC_CAP_4_BIT_DATA |
- 			  MMC_CAP_8_BIT_DATA |
- 			  MMC_CAP_NEEDS_POLL,
--	.ocr		= MMC_VDD_32_33 | MMC_VDD_33_34,
- };
- 
- static struct platform_device sh_mmcif_device = {
-@@ -927,7 +970,9 @@ static struct platform_device *ecovec_devices[] __initdata = {
- 	&ceu0_device,
- 	&ceu1_device,
- 	&keysc_device,
-+	&cn12_power,
- #if defined(CONFIG_MMC_SDHI) || defined(CONFIG_MMC_SDHI_MODULE)
-+	&sdhi0_power,
- 	&sdhi0_device,
- #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
- 	&sdhi1_device,
-@@ -1224,8 +1269,6 @@ static int __init arch_setup(void)
- 	gpio_request(GPIO_FN_SDHI0D2,  NULL);
- 	gpio_request(GPIO_FN_SDHI0D1,  NULL);
- 	gpio_request(GPIO_FN_SDHI0D0,  NULL);
--	gpio_request(GPIO_PTB6, NULL);
--	gpio_direction_output(GPIO_PTB6, 0);
- #else
- 	/* enable MSIOF0 on CN11 (needs DS2.4 set to OFF) */
- 	gpio_request(GPIO_FN_MSIOF0_TXD, NULL);
-@@ -1254,8 +1297,6 @@ static int __init arch_setup(void)
- 	gpio_request(GPIO_FN_MMC_D0, NULL);
- 	gpio_request(GPIO_FN_MMC_CLK, NULL);
- 	gpio_request(GPIO_FN_MMC_CMD, NULL);
--	gpio_request(GPIO_PTB7, NULL);
--	gpio_direction_output(GPIO_PTB7, 0);
- 
- 	cn12_enabled = true;
- #elif defined(CONFIG_MMC_SDHI) || defined(CONFIG_MMC_SDHI_MODULE)
-@@ -1267,8 +1308,6 @@ static int __init arch_setup(void)
- 	gpio_request(GPIO_FN_SDHI1D2,  NULL);
- 	gpio_request(GPIO_FN_SDHI1D1,  NULL);
- 	gpio_request(GPIO_FN_SDHI1D0,  NULL);
--	gpio_request(GPIO_PTB7, NULL);
--	gpio_direction_output(GPIO_PTB7, 0);
- 
- 	/* Card-detect, used on CN12 with SDHI1 */
- 	gpio_request(GPIO_PTW7, NULL);
 -- 
 1.7.2.5
 
