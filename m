@@ -1,49 +1,38 @@
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Tue, 22 May 2012 06:22:28 +0000
-Subject: Re: [PATCH 2/4] sh: sh4: Change the specification method of IRQ to SCIx_IRQ_MUXED
-Message-Id: <CABMQnV+Rr-J=r+Z0oxjDGwRRbpGetb4-kahRgaa==mn6y6qUCA@mail.gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 03 May 2012 15:05:33 +0000
+Subject: [PATCH 04/29] regulator: fix devm_regulator_put() to call regulator_put() explicitly
+Message-Id: <1336057558-11031-5-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1334286843-3297-2-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
-In-Reply-To: <1334286843-3297-2-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+References: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>
 
-2012/5/18 Paul Mundt <lethal@linux-sh.org>:
-> On Fri, Apr 13, 2012 at 12:14:01PM +0900, Nobuhiro Iwamatsu wrote:
->> Some SCIF devices specify the same IRQ. We can use SCIx_IRQ_MUXED for th=
-is.
->> And change use to evt2irq(), without specifying the value of IRQ directl=
-y.
->> This is correction to the SH4 series.
->>
->> Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
->> ---
->> =A0arch/sh/kernel/cpu/sh4/setup-sh7750.c | =A0 =A04 ++--
->> =A01 files changed, 2 insertions(+), 2 deletions(-)
->>
->> diff --git a/arch/sh/kernel/cpu/sh4/setup-sh7750.c b/arch/sh/kernel/cpu/=
-sh4/setup-sh7750.c
->> index 98cc0c7..56b3bdc 100644
->> --- a/arch/sh/kernel/cpu/sh4/setup-sh7750.c
->> +++ b/arch/sh/kernel/cpu/sh4/setup-sh7750.c
->> @@ -43,7 +43,7 @@ static struct plat_sci_port sci_platform_data =3D {
->> =A0 =A0 =A0 .scscr =A0 =A0 =A0 =A0 =A0=3D SCSCR_TE | SCSCR_RE,
->> =A0 =A0 =A0 .scbrr_algo_id =A0=3D SCBRR_ALGO_2,
->> =A0 =A0 =A0 .type =A0 =A0 =A0 =A0 =A0 =3D PORT_SCI,
->> - =A0 =A0 .irqs =A0 =A0 =A0 =A0 =A0 =3D { 23, 23, 23, 0 },
->> + =A0 =A0 .irqs =A0 =A0 =A0 =A0 =A0 =3D SCIx_IRQ_MUXED(evt2irq(0xE40)),
->> =A0 =A0 =A0 .regshift =A0 =A0 =A0 =3D 2,
->> =A0};
->>
-> 23 is actually 0x4e0, 0xe40 would be 98. Fortunately git merge collided
-> on this while I was merging my evt2irq migration branch, as it's unlikely
-> anyone would have noticed this for some time..
+devres_destroy() doesn't call the release() method, it only destroys the
+resource. The caller should take care to release the associated object
+itself.
 
-Sorry, and thanks.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>
+---
+ drivers/regulator/core.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-Nobuhiro
+diff --git a/drivers/regulator/core.c b/drivers/regulator/core.c
+index e70dd38..fdeabba 100644
+--- a/drivers/regulator/core.c
++++ b/drivers/regulator/core.c
+@@ -1429,6 +1429,7 @@ void devm_regulator_put(struct regulator *regulator)
+ {
+ 	int rc;
+ 
++	regulator_put(regulator);
+ 	rc = devres_destroy(regulator->dev, devm_regulator_release,
+ 			    devm_regulator_match, regulator);
+ 	WARN_ON(rc);
+-- 
+1.7.2.5
 
---=20
-Nobuhiro Iwamatsu
