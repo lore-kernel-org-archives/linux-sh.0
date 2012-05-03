@@ -1,44 +1,64 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Mon, 14 May 2012 12:14:40 +0000
-Subject: [PATCH v4 1/8] mtd: sh_flctl: Add missing iounmap()
-Message-Id: <1336997687-6868-2-git-send-email-hechtb@gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 03 May 2012 15:05:39 +0000
+Subject: [PATCH 10/29] mmc: tmio: don't needlessly enable interrupts during probing
+Message-Id: <1336057558-11031-11-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1336997687-6868-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1336997687-6868-1-git-send-email-hechtb@gmail.com>
+References: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mtd@lists.infradead.org
-Cc: Bastian Hecht <hechtb@gmail.com>, magnus.damm@gmail.com, laurent.pinchart@ideasonboard.com, linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org
 
-Add the unmapping for the error case and for the driver removal.
+We don't have to force-enable MMC interrupts in our .probe() method,
+mmc_add_host() will trigger card detection, that will enable all the
+necessary interrupts.
 
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/mtd/nand/sh_flctl.c |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
+ drivers/mmc/host/tmio_mmc_pio.c |   21 +++++++++++----------
+ 1 files changed, 11 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
-index aa9b8a5..a5a60ca 100644
---- a/drivers/mtd/nand/sh_flctl.c
-+++ b/drivers/mtd/nand/sh_flctl.c
-@@ -918,6 +918,7 @@ static int __devinit flctl_probe(struct platform_device *pdev)
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 0d2643b..8cd3637 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -948,6 +948,17 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
  
- err_chip:
- 	pm_runtime_disable(&pdev->dev);
-+	iounmap(flctl->reg);
- err_iomap:
- 	kfree(flctl);
- 	return ret;
-@@ -929,6 +930,7 @@ static int __devexit flctl_remove(struct platform_device *pdev)
+ 	_host->sdcard_irq_mask = sd_ctrl_read32(_host, CTL_IRQ_MASK);
+ 	tmio_mmc_disable_mmc_irqs(_host, TMIO_MASK_ALL);
++
++	/* Unmask the IRQs we want to know about */
++	if (!_host->chan_rx)
++		irq_mask |= TMIO_MASK_READOP;
++	if (!_host->chan_tx)
++		irq_mask |= TMIO_MASK_WRITEOP;
++	if (!_host->native_hotplug)
++		irq_mask &= ~(TMIO_STAT_CARD_REMOVE | TMIO_STAT_CARD_INSERT);
++
++	_host->sdcard_irq_mask &= ~irq_mask;
++
+ 	if (pdata->flags & TMIO_MMC_SDIO_IRQ)
+ 		tmio_mmc_enable_sdio_irq(mmc, 0);
  
- 	nand_release(&flctl->mtd);
- 	pm_runtime_disable(&pdev->dev);
-+	iounmap(flctl->reg);
- 	kfree(flctl);
+@@ -965,16 +976,6 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
  
- 	return 0;
+ 	dev_pm_qos_expose_latency_limit(&pdev->dev, 100);
+ 
+-	/* Unmask the IRQs we want to know about */
+-	if (!_host->chan_rx)
+-		irq_mask |= TMIO_MASK_READOP;
+-	if (!_host->chan_tx)
+-		irq_mask |= TMIO_MASK_WRITEOP;
+-	if (!_host->native_hotplug)
+-		irq_mask &= ~(TMIO_STAT_CARD_REMOVE | TMIO_STAT_CARD_INSERT);
+-
+-	tmio_mmc_enable_mmc_irqs(_host, irq_mask);
+-
+ 	if (pdata->flags & TMIO_MMC_USE_GPIO_CD) {
+ 		ret = mmc_cd_gpio_request(mmc, pdata->cd_gpio);
+ 		if (ret < 0) {
 -- 
-1.7.5.4
+1.7.2.5
 
