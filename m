@@ -1,7 +1,7 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Thu, 03 May 2012 19:23:55 +0000
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 04 May 2012 19:57:14 +0000
 Subject: Re: [PATCH 00/02] mach-shmobile: Emma Mobile EV2 - first shot
-Message-Id: <201205032123.55535.rjw@sisk.pl>
+Message-Id: <201205041957.14205.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20120503144645.6390.62303.sendpatchset@w520>
 In-Reply-To: <20120503144645.6390.62303.sendpatchset@w520>
@@ -10,7 +10,7 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thursday, May 03, 2012, Magnus Damm wrote:
+On Thursday 03 May 2012, Magnus Damm wrote:
 > mach-shmobile: Emma Mobile EV2 - first shot
 > 
 > [PATCH 01/02] mach-shmobile: Emma Mobile EV2 SoC base support
@@ -28,32 +28,27 @@ On Thursday, May 03, 2012, Magnus Damm wrote:
 > "[PATCH] clocksource: em_sti: Emma Mobile STI driver"
 > 
 > Any reason to not put this in mach-shmobile?
-> 
-> Partially-signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  Does unfortunately not apply cleanly to the renesas
->  git repository,
 
-Well, this sounds like a reason.
+Well, from all I can tell it shares basically zero code with the
+rest of mach-shmobile, so I would be more comfortable with creating
+a new mach-emma directory for this.
 
->  so we need to figure out how to let
->  this coexist with the new boards...
+Clearly you have an interest in building it into the same kernel
+as the shmobile/rmobile platforms, but there seems to be little
+technical reason to keep them together. Since we are still missing
+a bit of infrastructure to actually build multiple platform
+directories together, how about doing this similar to some of
+the mach-s3c24* directories:?
 
-Surely.
+You can have a single Kconfig entry for shmobile and emma, but
+leave the code in separate directories, and just refer to the
+arch/arm/mach-shmobile/include/mach/ directory for the global
+headers (they are obviously identical right now). The additions
+to mach/common.h can easily become a local header file instead
+of getting listed in mach/*.h. I believe you don't actually need
+the other headers you currently include (mach/hardware.h, mach/irqs.h),
+so it would be completely standalone aside from the header files
+that are required for building, and it can still be built
+together with shmobile.
 
-Thanks,
-Rafael
-
-
->  arch/arm/mach-shmobile/Kconfig               |    9 +
->  arch/arm/mach-shmobile/Makefile              |    2 
->  arch/arm/mach-shmobile/board-kzm9d.c         |   44 +++++
->  arch/arm/mach-shmobile/clock-emev2.c         |  206 ++++++++++++++++++++++++++
->  arch/arm/mach-shmobile/include/mach/common.h |    6 
->  arch/arm/mach-shmobile/intc-emev2.c          |   36 ++++
->  arch/arm/mach-shmobile/setup-emev2.c         |  187 +++++++++++++++++++++++
->  7 files changed, 490 insertions(+)
-> 
-> 
-
+	Arnd
