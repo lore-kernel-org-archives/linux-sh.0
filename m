@@ -1,100 +1,53 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 03 May 2012 14:47:03 +0000
-Subject: [PATCH 02/02] mach-shmobile: KZM9D board prototype support
-Message-Id: <20120503144703.6390.20689.sendpatchset@w520>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 04 May 2012 13:14:08 +0000
+Subject: Re: [PATCH 02/02] mach-shmobile: KZM9D board prototype support
+Message-Id: <201205041314.08701.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20120503144645.6390.62303.sendpatchset@w520>
-In-Reply-To: <20120503144645.6390.62303.sendpatchset@w520>
+ <20120503144703.6390.20689.sendpatchset@w520>
+In-Reply-To: <20120503144703.6390.20689.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+On Thursday 03 May 2012, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> Add experimental KZM9D board support that makes
+> use of the Emma Mobile EV2 SoC code.
+> 
+> Nothing except serial ports and timer are supported
+> at this point. On-board ethernet support can be
+> added after proper GPIO bindings are implemented.
+> Without GPIO we cannot make use of external IRQs.
+> 
+> Not-yet-signed-off-by: Magnus Damm <damm@opensource.se>
 
-Add experimental KZM9D board support that makes
-use of the Emma Mobile EV2 SoC code.
+Given that this doesn't do anything, I see no reason to leave this
+machine based on ATAG rather than DT probing:
 
-Nothing except serial ports and timer are supported
-at this point. On-board ethernet support can be
-added after proper GPIO bindings are implemented.
-Without GPIO we cannot make use of external IRQs.
-
-Not-yet-signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- arch/arm/mach-shmobile/Kconfig       |    4 +++
- arch/arm/mach-shmobile/Makefile      |    1 
- arch/arm/mach-shmobile/board-kzm9d.c |   44 ++++++++++++++++++++++++++++++++++
- 3 files changed, 49 insertions(+)
-
---- 0011/arch/arm/mach-shmobile/Kconfig
-+++ work/arch/arm/mach-shmobile/Kconfig	2012-05-03 20:50:52.000000000 +0900
-@@ -103,6 +103,10 @@ config MACH_MARZEN
- 	depends on ARCH_R8A7779
- 	select ARCH_REQUIRE_GPIOLIB
- 
-+config MACH_KZM9D
-+	bool "KZM9D board"
-+	depends on ARCH_EMEV2
-+
- comment "SH-Mobile System Configuration"
- 
- config CPU_HAS_INTEVT
---- 0011/arch/arm/mach-shmobile/Makefile
-+++ work/arch/arm/mach-shmobile/Makefile	2012-05-03 20:50:52.000000000 +0900
-@@ -50,6 +50,7 @@ obj-$(CONFIG_MACH_MACKEREL)	+= board-mac
- obj-$(CONFIG_MACH_KOTA2)	+= board-kota2.o
- obj-$(CONFIG_MACH_BONITO)	+= board-bonito.o
- obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
-+obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d.o
- 
- # Framework support
- obj-$(CONFIG_SMP)		+= $(smp-y)
---- /dev/null
-+++ work/arch/arm/mach-shmobile/board-kzm9d.c	2012-05-03 20:51:20.000000000 +0900
-@@ -0,0 +1,44 @@
-+/*
-+ * kzm9d board support
-+ *
-+ * Copyright (C) 2012  Renesas Solutions Corp.
-+ * Copyright (C) 2012  Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+ */
-+
-+#include <linux/kernel.h>
-+#include <linux/init.h>
-+#include <linux/interrupt.h>
-+#include <linux/platform_device.h>
-+#include <linux/io.h>
-+#include <mach/hardware.h>
-+#include <mach/common.h>
-+#include <mach/irqs.h>
-+#include <asm/mach-types.h>
-+#include <asm/mach/map.h>
-+#include <asm/mach/arch.h>
-+#include <asm/mach/time.h>
-+#include <asm/hardware/gic.h>
-+#include <asm/traps.h>
-+
 +MACHINE_START(KZM9D, "kzm9d")
-+	.map_io		= emev2_map_io,
-+	.init_early	= emev2_add_early_devices,
-+	.nr_irqs	= NR_IRQS_LEGACY,
-+	.init_irq	= emev2_init_irq,
-+	.handle_irq	= gic_handle_irq,
-+	.init_machine	= emev2_add_standard_devices,
-+	.timer		= &shmobile_timer,
++       .map_io         = emev2_map_io,
++       .init_early     = emev2_add_early_devices,
++       .nr_irqs        = NR_IRQS_LEGACY,
++       .init_irq       = emev2_init_irq,
++       .handle_irq     = gic_handle_irq,
++       .init_machine   = emev2_add_standard_devices,
++       .timer          = &shmobile_timer,
 +MACHINE_END
+
+Just make this DT_MACHINE_START and add a minimal .dts file for
+it that has the right compatible value. That will already enable
+people to add devices in their .dts files without touching
+the platform code.
+
+It would also be really easy to just add DT support for the three
+devices you actually support (GIC, STI, uart), because two of
+them already have bindings and the third one is a new driver.
+When we discussed this new soc earlier, you said that using DT
+based booting would be extra work, but given the set of devices
+that you are putting into this, I don't think that argument holds
+any more.
+
+	Arnd
