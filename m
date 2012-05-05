@@ -1,83 +1,102 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 14 May 2012 10:54:41 +0000
-Subject: [PATCH 02/03] mach-shmobile: Use DT_MACHINE for armadillo 800 eva
-Message-Id: <20120514105441.8596.31776.sendpatchset@w520>
+From: Anton Vorontsov <anton.vorontsov@linaro.org>
+Date: Sat, 05 May 2012 01:47:28 +0000
+Subject: [PATCH] cpu: Document clear_tasks_mm_cpumask()
+Message-Id: <20120505014728.GA9079@lizard>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120514105424.8596.38355.sendpatchset@w520>
-In-Reply-To: <20120514105424.8596.38355.sendpatchset@w520>
+References: <20120423070641.GA27702@lizard> <20120423070736.GA30752@lizard>
+ <20120426165911.00cebd31.akpm@linux-foundation.org>
+ <1335869133.13683.125.camel@twins>
+In-Reply-To: <1335869133.13683.125.camel@twins>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+This patch adds more comments on clear_tasks_mm_cpumask, plus adds
+a runtime check: the function is only suitable for offlined CPUs,
+and if called inappropriately, the kernel should scream aloud.
 
-Use DT_MACHINE_START() on the r8a7740 based armadillo 800 eva board.
-
-Also include a tiny DTS file to describe the board and update the
-Kconfig dependencies to select CONFIG_USE_OF.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Suggested-by: Andrew Morton <akpm@linux-foundation.org>
+Suggested-by: Peter Zijlstra <a.p.zijlstra@chello.nl>
+Signed-off-by: Anton Vorontsov <anton.vorontsov@linaro.org>
 ---
 
- arch/arm/boot/dts/r8a7740-armadillo800eva.dts  |   22 ++++++++++++++++++++++
- arch/arm/mach-shmobile/Kconfig                 |    1 +
- arch/arm/mach-shmobile/board-armadillo800eva.c |    8 +++++++-
- 3 files changed, 30 insertions(+), 1 deletion(-)
+On Tue, May 01, 2012 at 12:45:33PM +0200, Peter Zijlstra wrote:
+> On Thu, 2012-04-26 at 16:59 -0700, Andrew Morton wrote:
+> > > +void clear_tasks_mm_cpumask(int cpu)
+> > 
+> > The operation of this function was presumably obvious to you at the
+> > time you wrote it, but that isn't true of other people at later times.
+> > 
+> > Please document it?
+[...]
+> > If someone tries to use this function for a different purpose, or
+> > copies-and-modifies it for a different purpose, we just shot them in
+> > the foot.
+> > 
+> > They'd be pretty dumb to do that without reading the local comment,
+> > but still...
+> 
+> Methinks something simple like:
+> 
+> 	WARN_ON(cpu_online(cpu));
+> 
+> Ought to cure that worry, no? :-)
 
---- /dev/null
-+++ work/arch/arm/boot/dts/r8a7740-armadillo800eva.dts	2012-05-14 19:31:57.000000000 +0900
-@@ -0,0 +1,22 @@
-+/*
-+ * Device Tree Source for the armadillo 800 eva board
-+ *
-+ * Copyright (C) 2012 Renesas Solutions Corp.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/dts-v1/;
-+/include/ "skeleton.dtsi"
-+
-+/ {
-+	model = "armadillo 800 eva";
-+	compatible = "renesas,armadillo800eva";
-+
-+	memory {
-+		device_type = "memory";
-+		reg = <0x40000000 0x20000000>;
-+	};
-+};
---- 0002/arch/arm/mach-shmobile/Kconfig
-+++ work/arch/arm/mach-shmobile/Kconfig	2012-05-14 19:32:21.000000000 +0900
-@@ -99,6 +99,7 @@ config MACH_ARMADILLO800EVA
- 	bool "Armadillo-800 EVA board"
- 	depends on ARCH_R8A7740
- 	select ARCH_REQUIRE_GPIOLIB
-+	select USE_OF
- 
- config MACH_MARZEN
- 	bool "MARZEN board"
---- 0001/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ work/arch/arm/mach-shmobile/board-armadillo800eva.c	2012-05-14 19:35:27.000000000 +0900
-@@ -768,11 +768,17 @@ static void __init eva_add_early_devices
- 	shmobile_timer.init = eva_earlytimer_init;
+Yeah, this is all good ideas, thanks.
+
+How about the following patch?
+
+ kernel/cpu.c |   18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+diff --git a/kernel/cpu.c b/kernel/cpu.c
+index ecdf499..1bfa26f 100644
+--- a/kernel/cpu.c
++++ b/kernel/cpu.c
+@@ -13,6 +13,7 @@
+ #include <linux/oom.h>
+ #include <linux/rcupdate.h>
+ #include <linux/export.h>
++#include <linux/bug.h>
+ #include <linux/kthread.h>
+ #include <linux/stop_machine.h>
+ #include <linux/mutex.h>
+@@ -173,6 +174,18 @@ void __ref unregister_cpu_notifier(struct notifier_block *nb)
  }
+ EXPORT_SYMBOL(unregister_cpu_notifier);
  
--MACHINE_START(ARMADILLO800EVA, "armadillo800eva")
-+static const char *eva_boards_compat_dt[] __initdata = {
-+	"renesas,armadillo800eva",
-+	NULL,
-+};
-+
-+DT_MACHINE_START(ARMADILLO800EVA_DT, "armadillo800eva")
- 	.map_io		= r8a7740_map_io,
- 	.init_early	= eva_add_early_devices,
- 	.init_irq	= r8a7740_init_irq,
- 	.handle_irq	= shmobile_handle_irq_intc,
- 	.init_machine	= eva_init,
- 	.timer		= &shmobile_timer,
-+	.dt_compat	= eva_boards_compat_dt,
- MACHINE_END
++/**
++ * clear_tasks_mm_cpumask - Safely clear tasks' mm_cpumask for a CPU
++ * @cpu: a CPU id
++ *
++ * This function walks up all processes, finds a valid mm struct for
++ * each one and then clears a corresponding bit in mm's cpumask. While
++ * this all sounds trivial, there are various non-obvious corner cases,
++ * which this function tries to solve in a safe manner.
++ *
++ * Also note that the function uses a somewhat relaxed locking scheme,
++ * so it may be called only for an already offlined CPU.
++ */
+ void clear_tasks_mm_cpumask(int cpu)
+ {
+ 	struct task_struct *p;
+@@ -184,10 +197,15 @@ void clear_tasks_mm_cpumask(int cpu)
+ 	 * Thus, we may use rcu_read_lock() here, instead of grabbing
+ 	 * full-fledged tasklist_lock.
+ 	 */
++	WARN_ON(cpu_online(cpu));
+ 	rcu_read_lock();
+ 	for_each_process(p) {
+ 		struct task_struct *t;
+ 
++		/*
++		 * Main thread might exit, but other threads may still have
++		 * a valid mm. Find one.
++		 */
+ 		t = find_lock_task_mm(p);
+ 		if (!t)
+ 			continue;
+-- 
+1.7.9.2
+
