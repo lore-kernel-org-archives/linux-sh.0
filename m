@@ -1,49 +1,49 @@
-From: Grant Likely <grant.likely@secretlab.ca>
-Date: Sat, 19 May 2012 18:42:22 +0000
-Subject: Re: [PATCH 5/8] irqdomain: Kill off duplicate definitions.
-Message-Id: <20120519184222.8DFF23E03B8@localhost>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 07 May 2012 01:12:41 +0000
+Subject: [PATCH] ARM: mach-shmobile: clock-r8a7740: use followparent_recalc on usb24s
+Message-Id: <87y5p423qy.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1337407908-7421-1-git-send-email-lethal@linux-sh.org> <1337407908-7421-6-git-send-email-lethal@linux-sh.org>
-In-Reply-To: <1337407908-7421-6-git-send-email-lethal@linux-sh.org>
+References: <201204252313.23899.rjw@sisk.pl>
+In-Reply-To: <201204252313.23899.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Sat, 19 May 2012 15:11:45 +0900, Paul Mundt <lethal@linux-sh.org> wrote:
-> Presently irqdomain.h has duplicate definitions for irq_find_host() and
-> irq_set_default_host(), presumably from merge damage. Kill off the
-> duplicates.
-> 
-> Signed-off-by: Paul Mundt <lethal@linux-sh.org>
+If the clocks is always same value as the parent clock,
+we can use followparent_recalc() for .recalc
 
-Applied, thanks.
+Reported-by: Paul Mundt <lethal@linux-sh.org>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/clock-r8a7740.c |    7 +------
+ 1 files changed, 1 insertions(+), 6 deletions(-)
 
-g.
-
-> ---
->  include/linux/irqdomain.h |    3 ---
->  1 files changed, 0 insertions(+), 3 deletions(-)
-> 
-> diff --git a/include/linux/irqdomain.h b/include/linux/irqdomain.h
-> index a796dbf..5abb533 100644
-> --- a/include/linux/irqdomain.h
-> +++ b/include/linux/irqdomain.h
-> @@ -144,9 +144,6 @@ static inline struct irq_domain *irq_domain_add_legacy_isa(
->  
->  extern void irq_domain_remove(struct irq_domain *host);
->  
-> -extern struct irq_domain *irq_find_host(struct device_node *node);
-> -extern void irq_set_default_host(struct irq_domain *host);
-> -
->  extern unsigned int irq_create_mapping(struct irq_domain *host,
->  				       irq_hw_number_t hwirq);
->  extern void irq_dispose_mapping(unsigned int virq);
-> -- 
-> 1.7.9.rc0.28.g0e1cf
-> 
-
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index 89a2f9d..81b54a6 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -188,11 +188,6 @@ static struct clk *usb24s_parents[] = {
+ 	[1] = &extal2_clk
+ };
+ 
+-static unsigned long usb24s_recalc(struct clk *clk)
+-{
+-	return clk->parent->rate;
+-};
+-
+ static int usb24s_enable(struct clk *clk)
+ {
+ 	__raw_writel(__raw_readl(USBCKCR) & ~(1 << 8), USBCKCR);
+@@ -234,7 +229,7 @@ static int usb24s_set_parent(struct clk *clk, struct clk *parent)
+ }
+ 
+ static struct sh_clk_ops usb24s_clk_ops = {
+-	.recalc		= usb24s_recalc,
++	.recalc		= followparent_recalc,
+ 	.enable		= usb24s_enable,
+ 	.disable	= usb24s_disable,
+ 	.set_parent	= usb24s_set_parent,
 -- 
-Grant Likely, B.Sc, P.Eng.
-Secret Lab Technologies, Ltd.
+1.7.5.4
+
