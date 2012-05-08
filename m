@@ -1,73 +1,151 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Fri, 04 May 2012 19:47:38 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 08 May 2012 16:56:04 +0000
 Subject: Re: [PATCH 01/02] mach-shmobile: Emma Mobile EV2 SoC base support
-Message-Id: <201205041947.38375.arnd@arndb.de>
+Message-Id: <CANqRtoRqiFQEH+xaC9WtHy3v2rAHOZBNPTffOVQoDNuPb9H4-A@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20120503144645.6390.62303.sendpatchset@w520>
  <20120503144654.6390.56399.sendpatchset@w520>
  <201205041307.46080.arnd@arndb.de>
 In-Reply-To: <201205041307.46080.arnd@arndb.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-On Friday 04 May 2012, Arnd Bergmann wrote:
-> 
+On Fri, May 4, 2012 at 10:07 PM, Arnd Bergmann <arnd@arndb.de> wrote:
 > On Thursday 03 May 2012, Magnus Damm wrote:
-> 
-> > +
-> > +/* EMEV2 SMU registers */
-> > +#define USIAU0_RSTCTRL 0xe0110094
-> > +#define USIBU1_RSTCTRL 0xe01100ac
-> > +#define USIBU2_RSTCTRL 0xe01100b0
-> > +#define USIBU3_RSTCTRL 0xe01100b4
-> > +#define STI_RSTCTRL 0xe0110124
-> > +#define USIAU0GCLKCTRL 0xe01104a0
-> > +#define USIBU1GCLKCTRL 0xe01104b8
-> > +#define USIBU2GCLKCTRL 0xe01104bc
-> > +#define USIBU3GCLKCTRL 0xe01104c0
-> > +#define STIGCLKCTRL 0xe0110528
-> > +#define USIAU0SCLKDIV 0xe011061c
-> > +#define USIB2SCLKDIV 0xe011065c
-> > +#define USIB3SCLKDIV 0xe0110660
-> > +#define STI_CLKSEL 0xe0110688
-> 
+>
+>> +
+>> +/* EMEV2 SMU registers */
+>> +#define USIAU0_RSTCTRL 0xe0110094
+>> +#define USIBU1_RSTCTRL 0xe01100ac
+>> +#define USIBU2_RSTCTRL 0xe01100b0
+>> +#define USIBU3_RSTCTRL 0xe01100b4
+>> +#define STI_RSTCTRL 0xe0110124
+>> +#define USIAU0GCLKCTRL 0xe01104a0
+>> +#define USIBU1GCLKCTRL 0xe01104b8
+>> +#define USIBU2GCLKCTRL 0xe01104bc
+>> +#define USIBU3GCLKCTRL 0xe01104c0
+>> +#define STIGCLKCTRL 0xe0110528
+>> +#define USIAU0SCLKDIV 0xe011061c
+>> +#define USIB2SCLKDIV 0xe011065c
+>> +#define USIB3SCLKDIV 0xe0110660
+>> +#define STI_CLKSEL 0xe0110688
+>
 > Please cast to __iomem* here, e.g. using the IOMEM() macro, as these are
 > virtual addresses.
 
-I should revise that: there is no excuse to hardcode these virtual address
-here at all. Just use call ioremap() on the physical address for the
-clock registers (0xe0110000) and use the resulting pointer with an
-offset that you define locally in this file.
+Sure, will do!
 
-It is safe to call ioremap when you get to emev2_clock_init()
-and you will still get a large page mapping with the recent
-code reworks for map_desc.
+>> +void __init emev2_clock_init(void)
+>> +{
+>> + =A0 =A0 int k, ret =3D 0;
+>> +
+>> + =A0 =A0 /* setup STI timer to run on 37.768 kHz and deassert reset */
+>> + =A0 =A0 __raw_writel(0, STI_CLKSEL);
+>> + =A0 =A0 __raw_writel(1, STI_RSTCTRL);
+>> +
+>> + =A0 =A0 /* deassert reset for UART0->UART3 */
+>> + =A0 =A0 __raw_writel(2, USIAU0_RSTCTRL);
+>> + =A0 =A0 __raw_writel(2, USIBU1_RSTCTRL);
+>> + =A0 =A0 __raw_writel(2, USIBU2_RSTCTRL);
+>> + =A0 =A0 __raw_writel(2, USIBU3_RSTCTRL);
+>
+> Better use iowrite32 or writel or writel_relaxed here, but not __raw_*.
 
-Regarding the iotable that is currently defined as
+Ok. Would you like us to convert exiting code for other SoCs as well?
 
-+static struct map_desc emev2_io_desc[] __initdata = {
-+       /* 128K entity map for 0xe0020000 (GIC) */
-+       {
-+               .virtual        = 0xe0020000,
-+               .pfn            = __phys_to_pfn(0xe0020000),
-+               .length         = SZ_128K,
-+               .type           = MT_UNCACHED
-+       },
-+       /* 128K entity map for 0xe0100000 (SMU) */
-+       {
-+               .virtual        = 0xe0100000,
-+               .pfn            = __phys_to_pfn(0xe0100000),
-+               .length         = SZ_128K,
-+               .type           = MT_DEVICE
-+       },
-+};
+>> --- 0003/arch/arm/mach-shmobile/include/mach/common.h
+>> +++ work/arch/arm/mach-shmobile/include/mach/common.h 2012-05-03 20:45:5=
+6.000000000 +0900
+>> @@ -85,4 +85,10 @@ extern void r8a7779_secondary_init(unsig
+>> =A0extern int r8a7779_boot_secondary(unsigned int cpu);
+>> =A0extern void r8a7779_smp_prepare_cpus(void);
+>>
+>> +extern void emev2_init_irq(void);
+>> +extern void emev2_map_io(void);
+>> +extern void emev2_add_early_devices(void);
+>> +extern void emev2_add_standard_devices(void);
+>> +extern void emev2_clock_init(void);
+>> +
+>> =A0#endif /* __ARCH_MACH_COMMON_H */
+>
+> I would feel more comfortable with a separate header for this than putting
+> it into the same file as everything else, but it's not important to me.
 
-I would recommend just mapping the entire 16MB page around this, or at least
-2 MB, so you can benefit from the larger mappings. If you don't do that,
-better remove the entire iotable registration and rely on ioremap, the
-result will be the same and you can be prevent any hacks from creeping in
-that rely on the virtual address being the same as the physical address.
+I've been thinking about something along those lines myself too.
 
-	Arnd
+Perhaps I can also move the existing soc symbols in common.h into
+separate per-soc header files, like for instance moving the sh7372
+symbols to sh7372.h. Not sure if we have enough time for the upcoming
+merge window though, when do you need the code?
+
+>> --- /dev/null
+>> +++ work/arch/arm/mach-shmobile/intc-emev2.c =A02012-05-03 20:45:57.0000=
+00000 +0900
+>
+>> +
+>> +void __init emev2_init_irq(void)
+>> +{
+>> + =A0 =A0 void __iomem *gic_dist_base =3D IOMEM(0xe0028000);
+>> + =A0 =A0 void __iomem *gic_cpu_base =3D IOMEM(0xe0020000);
+>> +
+>> + =A0 =A0 /* use GIC to handle interrupts */
+>> + =A0 =A0 gic_init(0, 29, gic_dist_base, gic_cpu_base);
+>> +}
+>
+> This could just go into teh setup-emev2.c file, it doesn't actually do mu=
+ch,
+> and the other file is where the constants are coming from anyway. Then you
+> can put it right next to this code:
+
+Sure, will do.
+
+>> +static struct map_desc emev2_io_desc[] __initdata =3D {
+>> + =A0 =A0 /* 128K entity map for 0xe0020000 (GIC) */
+>> + =A0 =A0 {
+>> + =A0 =A0 =A0 =A0 =A0 =A0 .virtual =A0 =A0 =A0 =A0=3D 0xe0020000,
+>> + =A0 =A0 =A0 =A0 =A0 =A0 .pfn =A0 =A0 =A0 =A0 =A0 =A0=3D __phys_to_pfn(=
+0xe0020000),
+>> + =A0 =A0 =A0 =A0 =A0 =A0 .length =A0 =A0 =A0 =A0 =3D SZ_128K,
+>> + =A0 =A0 =A0 =A0 =A0 =A0 .type =A0 =A0 =A0 =A0 =A0 =3D MT_UNCACHED
+>> + =A0 =A0 },
+>> + =A0 =A0 /* 128K entity map for 0xe0100000 (SMU) */
+>> + =A0 =A0 {
+>> + =A0 =A0 =A0 =A0 =A0 =A0 .virtual =A0 =A0 =A0 =A0=3D 0xe0100000,
+>> + =A0 =A0 =A0 =A0 =A0 =A0 .pfn =A0 =A0 =A0 =A0 =A0 =A0=3D __phys_to_pfn(=
+0xe0100000),
+>> + =A0 =A0 =A0 =A0 =A0 =A0 .length =A0 =A0 =A0 =A0 =3D SZ_128K,
+>> + =A0 =A0 =A0 =A0 =A0 =A0 .type =A0 =A0 =A0 =A0 =A0 =3D MT_DEVICE
+>> + =A0 =A0 },
+>> +};
+>> +
+>> +void __init emev2_map_io(void)
+>> +{
+>> + =A0 =A0 iotable_init(emev2_io_desc, ARRAY_SIZE(emev2_io_desc));
+>> +}
+
+As you said, this iotable can most likely go away too. The only valid
+use case I can think of (which is not included above) is our early
+platform driver based console. Basically, it's the 8250_em driver
+being probed as early as possible. This allows us to get console
+output at MACHINE->init_early() timing. To get that working we rely on
+having entity mappings in our iotable so ioremap() can give us those
+early on. Something does however seem busted with the early ioremap()
+- but I need to spend more time to investigate that. And this is
+totally untested with DT, so it needs more work in general.
+
+I intend to post some SMP support patch together with some DT support
+tomorrow. I also have some GPIO code and some board-level network
+support. Ideally I'd like to go DT-only, but I'm a bit unsure how to
+tie in the SMP bits in a DT-only scenario. And we still have the
+clocks.
+
+If you have time, please let me know how you think my upcoming SMP
+patches can be reworked to be more DT friendly. Also, please note that
+those new patches will still be based on the old V1, but I'll rework
+it all to fit whichever location you prefer.
+
+Thanks for your help!
+
+/ magnus
