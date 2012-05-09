@@ -1,52 +1,56 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 10 May 2012 06:55:26 +0000
-Subject: Re: [PATCH] mach-shmobile: Invalidate caches when booting secondary cores
-Message-Id: <CANqRtoSLAQJsLy8sR0=4J2+aJXUd=OQZd7p1-hfreAq3aM31Vw@mail.gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 09 May 2012 15:09:17 +0000
+Subject: [PATCH 5/9 v3] serial: sh-sci: prepare for conversion to the shdma base library
+Message-Id: <1336576161-27082-6-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120509072459.20583.11420.sendpatchset@w520>
-In-Reply-To: <20120509072459.20583.11420.sendpatchset@w520>
+References: <1336576161-27082-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1336576161-27082-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Vinod Koul <vinod.koul@intel.com>
+Cc: linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Alan Cox <alan@linux.intel.com>
 
-On Thu, May 10, 2012 at 3:47 PM, Kuninori Morimoto
-<kuninori.morimoto.gx@renesas.com> wrote:
-> At Thu, 10 May 2012 14:21:29 +0900,
-> Magnus wrote:
->>
->> On Wed, May 9, 2012 at 4:24 PM, Magnus Damm <magnus.damm@gmail.com> wrot=
-e:
->> > From: Magnus Damm <damm@opensource.se>
->> >
->> > Make sure L1 caches are invalidated when booting secondary
->> > cores. Needed to boot all mach-shmobile SMP systems that
->> > are using Cortex-A9 including sh73a0, r8a7779 and EMEV2.
->> >
->> > Thanks to imx and tegra guys for actual code.
->> >
->> > Signed-off-by: Magnus Damm <damm@opensource.se>
->> > ---
->> >
->> > =A0This should really be moved into a common location. Feel free
->> > =A0to point me in the right direction and I will be happy to
->> > =A0submit a patch that unifies the code.
->> >
->> > =A0Tested on EMEV2.
->>
->> Now also successfully tested on the r8a7779 Marzen board.
->
-> I used this patch on KZM9G board. it allows SMP boot.
->
-> Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Alan Cox <alan@linux.intel.com>
+---
+ drivers/tty/serial/sh-sci.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
 
-Thanks for testing, Morimoto-san.
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index bf461cf..49e3b2a 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1579,9 +1579,9 @@ static bool filter(struct dma_chan *chan, void *slave)
+ 	struct sh_dmae_slave *param = slave;
+ 
+ 	dev_dbg(chan->device->dev, "%s: slave ID %d\n", __func__,
+-		param->slave_id);
++		param->shdma_slave.slave_id);
+ 
+-	chan->private = param;
++	chan->private = &param->shdma_slave;
+ 	return true;
+ }
+ 
+@@ -1620,7 +1620,7 @@ static void sci_request_dma(struct uart_port *port)
+ 	param = &s->param_tx;
+ 
+ 	/* Slave ID, e.g., SHDMA_SLAVE_SCIF0_TX */
+-	param->slave_id = s->cfg->dma_slave_tx;
++	param->shdma_slave.slave_id = s->cfg->dma_slave_tx;
+ 
+ 	s->cookie_tx = -EINVAL;
+ 	chan = dma_request_channel(mask, filter, param);
+@@ -1648,7 +1648,7 @@ static void sci_request_dma(struct uart_port *port)
+ 	param = &s->param_rx;
+ 
+ 	/* Slave ID, e.g., SHDMA_SLAVE_SCIF0_RX */
+-	param->slave_id = s->cfg->dma_slave_rx;
++	param->shdma_slave.slave_id = s->cfg->dma_slave_rx;
+ 
+ 	chan = dma_request_channel(mask, filter, param);
+ 	dev_dbg(port->dev, "%s: RX: got channel %p\n", __func__, chan);
+-- 
+1.7.2.5
 
-Since KZM9G is based on sh73a0 we have now tested all mach-shmobile
-SMP SoCs with this patch.
-
-Rafael, please pick up!
-
-Cheers,
-
-/ magnus
