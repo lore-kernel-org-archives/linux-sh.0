@@ -1,55 +1,58 @@
-From: "Western Union" <w-online@wu.com>
-Date: Tue, 01 May 2012 15:14:51 +0000
-Subject: $5000 AVAILABLE FOR PICK UP
-Message-Id: <20120501171451.193421we09oa3mcg@webmail.ladresse.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 09 May 2012 15:09:12 +0000
+Subject: [PATCH 0/9 v3] extract an shdma base library from shdma.c
+Message-Id: <1336576161-27082-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Vinod Koul <vinod.koul@intel.com>
+Cc: linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
 
+This is v3 of the shdma driver split. It is no longer trying to be 
+generic, instead it is kept sh-specific, until we have better conditions 
+for making it generic. Apart from moving to an own directory with the 
+rest of shdma driver files, it has been updated to the top of the current 
+slave-dma tree. The comment from Sascha Hauer to v2 of this patch-set 
+has also been addressed - thanks! Two more client drivers have also been 
+added - fsi and renesas_usbhs. Would be really great to get it into 3.5 - 
+it is blocking the addition of one more DMAC variant.
 
+Guennadi Liakhovetski (9):
+  dmaengine: add an shdma-base library
+  dma: shdma: prepare for conversion to the shdma base library
+  mmc: sh_mmcif: remove unneeded struct sh_mmcif_dma, prepare to shdma
+    conversion
+  mmc: sh_mobile_sdhi: prepare for conversion to the shdma base library
+  serial: sh-sci: prepare for conversion to the shdma base library
+  ASoC: siu: prepare for conversion to the shdma base library
+  usb: renesas_usbhs: prepare for conversion to the shdma base library
+  ASoC: fsi: prepare for conversion to the shdma base library
+  dma: shdma: convert to the shdma base library
+
+ drivers/dma/sh/Makefile           |    1 +
+ drivers/dma/sh/shdma-base.c       |  868 ++++++++++++++++++++++++++++
+ drivers/dma/sh/shdma.c            | 1122 +++++++++----------------------------
+ drivers/dma/sh/shdma.h            |   44 +-
+ drivers/mmc/host/sh_mmcif.c       |   24 +-
+ drivers/mmc/host/sh_mobile_sdhi.c |    8 +-
+ drivers/tty/serial/sh-sci.c       |    8 +-
+ drivers/usb/renesas_usbhs/fifo.c  |   10 +-
+ include/linux/mmc/sh_mmcif.h      |    8 +-
+ include/linux/sh_dma.h            |   33 +-
+ include/linux/shdma-base.h        |  123 ++++
+ sound/soc/sh/fsi.c                |    4 +-
+ sound/soc/sh/siu_pcm.c            |    8 +-
+ 13 files changed, 1326 insertions(+), 935 deletions(-)
+ create mode 100644 drivers/dma/sh/shdma-base.c
+ create mode 100644 include/linux/shdma-base.h
 
 -- 
+1.7.2.5
 
-Dear Beneficiary?
-This is to inform you that we have already sent
-you USD5000.00 dollars through Western union
-as we have been mandated by United Nations
-and ECOWAS which are supporting individual
-due to the worldwide economy meltdown, to
-transfer to you the full compensation sum
-payment of $1.800,000.00 USD via western
-union by this government.
-
-In this regards, We decided to email the
-relevant details for you to be able to pick up
-this USD5000.00 to enable us send another
-USD5000.00 by tomorrow as you know we will be
-sending you only $5000.00 per day.You can
-track at before going to pick it up the link
-
-https://wumt.westernunion.com/asp/orderStatus.asp?country=global
-
-Mr.John Balo.
-Chief Operating Officer,
-Western Union.
-Tell: +2348182570719
-Email: johnbalo33@w.cn
-call or email the above details once you picked
-up this USD5000.00
-
-Here is the western union information to pick up
-the compensation Pick Up Information
-
-Sender's first name:.........Godwin
-Sender's last name:..........Onyia
-MTCN.................... 6890479748
-
-Amount Sent: $5000USD
-I am waiting for your call once you pick up this transfer.
-Best Regards,
-Mrs.Sandra Morris.
-Co-Ordinator,
-WESTERN UNION.
-
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
