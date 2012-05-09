@@ -1,22 +1,57 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Wed, 09 May 2012 11:21:38 +0000
-Subject: Re: [PATCH] serial8250-em: Add DT support
-Message-Id: <201205091121.38313.arnd@arndb.de>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 09 May 2012 15:09:19 +0000
+Subject: [PATCH 7/9 v3] usb: renesas_usbhs: prepare for conversion to the shdma base library
+Message-Id: <1336576161-27082-8-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120509065514.18528.83245.sendpatchset@w520>
-In-Reply-To: <20120509065514.18528.83245.sendpatchset@w520>
+References: <1336576161-27082-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1336576161-27082-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-serial@vger.kernel.org, horms@verge.net.au, linux-sh@vger.kernel.org, gregkh@linuxfoundation.org, swarren@wwwdotorg.org, linux-kernel@vger.kernel.org, rjw@sisk.pl, paul.gortmaker@windriver.com, lethal@linux-sh.org, olof@lixom.net, dan.j.williams@intel.com, alan@linux.intel.com
+To: Vinod Koul <vinod.koul@intel.com>
+Cc: linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 
-On Wednesday 09 May 2012, Magnus Damm wrote:
-> 
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Update the 8250_em driver to support DT.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/usb/renesas_usbhs/fifo.c |   10 +++++-----
+ 1 files changed, 5 insertions(+), 5 deletions(-)
 
-Acked-by: Arnd Bergmann <arnd@arndb.de>
+diff --git a/drivers/usb/renesas_usbhs/fifo.c b/drivers/usb/renesas_usbhs/fifo.c
+index 6ec7f83..fc597a4 100644
+--- a/drivers/usb/renesas_usbhs/fifo.c
++++ b/drivers/usb/renesas_usbhs/fifo.c
+@@ -994,7 +994,7 @@ static bool usbhsf_dma_filter(struct dma_chan *chan, void *param)
+ 	 *
+ 	 * usbhs doesn't recognize id = 0 as valid DMA
+ 	 */
+-	if (0 = slave->slave_id)
++	if (0 = slave->shdma_slave.slave_id)
+ 		return false;
+ 
+ 	chan->private = slave;
+@@ -1173,8 +1173,8 @@ int usbhs_fifo_probe(struct usbhs_priv *priv)
+ 	fifo->port	= D0FIFO;
+ 	fifo->sel	= D0FIFOSEL;
+ 	fifo->ctr	= D0FIFOCTR;
+-	fifo->tx_slave.slave_id	= usbhs_get_dparam(priv, d0_tx_id);
+-	fifo->rx_slave.slave_id	= usbhs_get_dparam(priv, d0_rx_id);
++	fifo->tx_slave.shdma_slave.slave_id	= usbhs_get_dparam(priv, d0_tx_id);
++	fifo->rx_slave.shdma_slave.slave_id	= usbhs_get_dparam(priv, d0_rx_id);
+ 
+ 	/* D1FIFO */
+ 	fifo = usbhsf_get_d1fifo(priv);
+@@ -1182,8 +1182,8 @@ int usbhs_fifo_probe(struct usbhs_priv *priv)
+ 	fifo->port	= D1FIFO;
+ 	fifo->sel	= D1FIFOSEL;
+ 	fifo->ctr	= D1FIFOCTR;
+-	fifo->tx_slave.slave_id	= usbhs_get_dparam(priv, d1_tx_id);
+-	fifo->rx_slave.slave_id	= usbhs_get_dparam(priv, d1_rx_id);
++	fifo->tx_slave.shdma_slave.slave_id	= usbhs_get_dparam(priv, d1_tx_id);
++	fifo->rx_slave.shdma_slave.slave_id	= usbhs_get_dparam(priv, d1_rx_id);
+ 
+ 	return 0;
+ }
+-- 
+1.7.2.5
+
