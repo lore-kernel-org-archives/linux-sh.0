@@ -1,57 +1,46 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 09 May 2012 15:09:18 +0000
-Subject: [PATCH 6/9 v3] ASoC: siu: prepare for conversion to the shdma base library
-Message-Id: <1336576161-27082-7-git-send-email-g.liakhovetski@gmx.de>
+From: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date: Wed, 09 May 2012 15:37:10 +0000
+Subject: Re: [PATCH 6/9 v3] ASoC: siu: prepare for conversion to the shdma base library
+Message-Id: <20120509153710.GC3955@opensource.wolfsonmicro.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="dOtxUVmLoGkyu1PA"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1336576161-27082-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1336576161-27082-1-git-send-email-g.liakhovetski@gmx.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>
-Cc: linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Liam Girdwood <lrg@ti.com>, Mark Brown <broonie@opensource.wolfsonmicro.com>
+ <1336576161-27082-7-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1336576161-27082-7-git-send-email-g.liakhovetski@gmx.de>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Vinod Koul <vinod.koul@intel.com>, linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Liam Girdwood <lrg@ti.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Liam Girdwood <lrg@ti.com>
-Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>
----
- sound/soc/sh/siu_pcm.c |    8 ++++----
- 1 files changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/sound/soc/sh/siu_pcm.c b/sound/soc/sh/siu_pcm.c
-index 5cfcc65..3fdc801 100644
---- a/sound/soc/sh/siu_pcm.c
-+++ b/sound/soc/sh/siu_pcm.c
-@@ -330,12 +330,12 @@ static bool filter(struct dma_chan *chan, void *slave)
- {
- 	struct sh_dmae_slave *param = slave;
- 
--	pr_debug("%s: slave ID %d\n", __func__, param->slave_id);
-+	pr_debug("%s: slave ID %d\n", __func__, param->shdma_slave.slave_id);
- 
- 	if (unlikely(param->dma_dev != chan->device->dev))
- 		return false;
- 
--	chan->private = param;
-+	chan->private = &param->shdma_slave;
- 	return true;
- }
- 
-@@ -360,12 +360,12 @@ static int siu_pcm_open(struct snd_pcm_substream *ss)
- 	if (ss->stream = SNDRV_PCM_STREAM_PLAYBACK) {
- 		siu_stream = &port_info->playback;
- 		param = &siu_stream->param;
--		param->slave_id = port ? pdata->dma_slave_tx_b :
-+		param->shdma_slave.slave_id = port ? pdata->dma_slave_tx_b :
- 			pdata->dma_slave_tx_a;
- 	} else {
- 		siu_stream = &port_info->capture;
- 		param = &siu_stream->param;
--		param->slave_id = port ? pdata->dma_slave_rx_b :
-+		param->shdma_slave.slave_id = port ? pdata->dma_slave_rx_b :
- 			pdata->dma_slave_rx_a;
- 	}
- 
--- 
-1.7.2.5
+--dOtxUVmLoGkyu1PA
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
+On Wed, May 09, 2012 at 05:09:18PM +0200, Guennadi Liakhovetski wrote:
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+
+Acked-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
+
+--dOtxUVmLoGkyu1PA
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJPqo8ZAAoJEBus8iNuMP3dRwgP/3WKq5h5IXvlGRXChuXGMVnE
+4zodvSzx2z0haYzyZC/BHhq7CvSCggbuc0hztzqMnmvRNhTFMpSoVUTAPjTd8Sx/
+CWq6dQFDETlovfS5p28DADcyMUWJdxegAvj1UM/AWDJ8ov/PIY5qR8EMV3yhEAsK
+fV0sko9Dm+nuNo9l8HCEIR/nVfeNQVgnJGjxJvWpQTixU6+gXevMPLFC0wykVbL3
+k1WazI1WciZsyt0ml/jf06LGTdko2RkIMGhR5AOfRziNCXk8ofwqzknK8pJS5CvA
+qURZ5BQLXuKv9axXxuA0hlOUzixmwh7OFe9BYkNw2aQ1dltkOHlfiB9kNG6VVkfW
+p9/mivOoSR2n69iAnEYoksIMRPAq7eMQXWMFBVXx+LAANNYy0KKaVTy5w0zRDgwk
+0h7hv3z/oc7YIUjH/si0tdpnIQXeHcWmhCIMNBGRau30NKsIahJVxxKbFu1ex8bO
+GmGgbCeIFjB0Rq2QJuUvbWSTYmKb848dK2m2R9uATBe5SXaJdusLrCNvpxuAIlSJ
+F9WU2/LhN+FpM0we1BRMkR8VL9/hPh55dsxk2DfJXwmjD7UFs52hyxjKsGmR/Ns2
+yLSxkCNMM5hHG2COprosIATBMAzBtXrTiizcfyyk666U/ZbJzo7OQ/d9TNQ5B4S3
+v6Wp2SkxJTUh+0kyR9DU
+=YPox
+-----END PGP SIGNATURE-----
+
+--dOtxUVmLoGkyu1PA--
