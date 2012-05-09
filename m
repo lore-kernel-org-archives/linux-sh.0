@@ -1,52 +1,41 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 25 May 2012 15:45:43 +0000
-Subject: [PATCH 08/10 v3] mmc: sh_mobile_sdhi: support caps2 flags
-Message-Id: <1337960752-4944-29-git-send-email-g.liakhovetski@gmx.de>
+Date: Wed, 09 May 2012 15:09:16 +0000
+Subject: [PATCH 4/9 v3] mmc: sh_mobile_sdhi: prepare for conversion to the shdma base library
+Message-Id: <1336576161-27082-5-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
+References: <1336576161-27082-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1336576161-27082-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>
-
-Let SDHI platforms specify mmc_host::caps2 flags in their platform data.
+To: Vinod Koul <vinod.koul@intel.com>
+Cc: linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Chris Ball <cjb@laptop.org>
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Chris Ball <cjb@laptop.org>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c  |    1 +
- include/linux/mmc/sh_mobile_sdhi.h |    1 +
- 2 files changed, 2 insertions(+), 0 deletions(-)
+ drivers/mmc/host/sh_mobile_sdhi.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 42f07fa..1e7c5c4 100644
+index 934b68e..b8d7004 100644
 --- a/drivers/mmc/host/sh_mobile_sdhi.c
 +++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -162,6 +162,7 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
- 			mmc_data->write16_hook = sh_mobile_sdhi_write16_hook;
- 		mmc_data->ocr_mask = p->tmio_ocr_mask;
- 		mmc_data->capabilities |= p->tmio_caps;
-+		mmc_data->capabilities2 |= p->tmio_caps2;
+@@ -145,10 +145,10 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
  		mmc_data->cd_gpio = p->cd_gpio;
  
  		if (p->dma_slave_tx > 0 && p->dma_slave_rx > 0) {
-diff --git a/include/linux/mmc/sh_mobile_sdhi.h b/include/linux/mmc/sh_mobile_sdhi.h
-index e94e620..b65679f 100644
---- a/include/linux/mmc/sh_mobile_sdhi.h
-+++ b/include/linux/mmc/sh_mobile_sdhi.h
-@@ -23,6 +23,7 @@ struct sh_mobile_sdhi_info {
- 	int dma_slave_rx;
- 	unsigned long tmio_flags;
- 	unsigned long tmio_caps;
-+	unsigned long tmio_caps2;
- 	u32 tmio_ocr_mask;	/* available MMC voltages */
- 	unsigned int cd_gpio;
- 	struct tmio_mmc_data *pdata;
+-			priv->param_tx.slave_id = p->dma_slave_tx;
+-			priv->param_rx.slave_id = p->dma_slave_rx;
+-			priv->dma_priv.chan_priv_tx = &priv->param_tx;
+-			priv->dma_priv.chan_priv_rx = &priv->param_rx;
++			priv->param_tx.shdma_slave.slave_id = p->dma_slave_tx;
++			priv->param_rx.shdma_slave.slave_id = p->dma_slave_rx;
++			priv->dma_priv.chan_priv_tx = &priv->param_tx.shdma_slave;
++			priv->dma_priv.chan_priv_rx = &priv->param_rx.shdma_slave;
+ 			priv->dma_priv.alignment_shift = 1; /* 2-byte alignment */
+ 			mmc_data->dma = &priv->dma_priv;
+ 		}
 -- 
 1.7.2.5
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
