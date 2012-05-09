@@ -1,120 +1,97 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 23 May 2012 01:32:57 +0000
-Subject: [PATCH 06/12 v2] ARM: mach-shmobile: clock-r8a7740: add FSI parent control support
-Message-Id: <878vgjvfzu.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 09 May 2012 15:09:15 +0000
+Subject: [PATCH 3/9 v3] mmc: sh_mmcif: remove unneeded struct sh_mmcif_dma, prepare to shdma conversion
+Message-Id: <1336576161-27082-4-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1336576161-27082-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1336576161-27082-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Vinod Koul <vinod.koul@intel.com>
+Cc: linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Chris Ball <cjb@laptop.org>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Now that all users have been updated to use the embedded in struct
+sh_mmcif_plat_data DMA slave IDs, struct sh_mmcif_dma is no longer needed
+and can be removed. This also makes preparation to the shdma base library
+conversion easier.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Chris Ball <cjb@laptop.org>
 ---
-v1 -> v2
+ drivers/mmc/host/sh_mmcif.c  |   24 ++++++++++--------------
+ include/linux/mmc/sh_mmcif.h |    8 +-------
+ 2 files changed, 11 insertions(+), 21 deletions(-)
 
- - same as v1
-
- arch/arm/mach-shmobile/clock-r8a7740.c |   31 +++++++++++++++++++++++++++++++
- 1 files changed, 31 insertions(+), 0 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index ce0930a..7b9e4ab 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -46,6 +46,7 @@
- #define VCLKCR1		0xE6150008
- #define VCLKCR2		0xE615000c
- #define FRQCRC		0xe61500e0
-+#define FSIACKCR	0xe6150018
- #define PLLC01CR	0xe6150028
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index aafaf0b..25cf203 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -385,31 +385,27 @@ static void sh_mmcif_request_dma(struct sh_mmcif_host *host,
+ 	host->dma_active = false;
  
- #define SUBCKCR		0xe6150080
-@@ -56,6 +57,7 @@
- #define MSTPSR2		0xe6150040
- #define MSTPSR3		0xe6150048
- #define MSTPSR4		0xe615004c
-+#define FSIBCKCR	0xe6150090
- #define HDMICKCR	0xe6150094
- #define SMSTPCR0	0xe6150130
- #define SMSTPCR1	0xe6150134
-@@ -274,6 +276,13 @@ static struct clk usb24_clk = {
- 	.parent		= &usb24s_clk,
- };
- 
-+/* External FSIACK/FSIBCK clock */
-+static struct clk fsiack_clk = {
-+};
+ 	/* We can only either use DMA for both Tx and Rx or not use it at all */
+-	if (pdata->dma) {
+-		dev_warn(&host->pd->dev,
+-			 "Update your platform to use embedded DMA slave IDs\n");
+-		tx = &pdata->dma->chan_priv_tx;
+-		rx = &pdata->dma->chan_priv_rx;
+-	} else {
+-		tx = &host->dma_slave_tx;
+-		tx->slave_id = pdata->slave_id_tx;
+-		rx = &host->dma_slave_rx;
+-		rx->slave_id = pdata->slave_id_rx;
+-	}
+-	if (tx->slave_id > 0 && rx->slave_id > 0) {
++	tx = &host->dma_slave_tx;
++	tx->shdma_slave.slave_id = pdata->slave_id_tx;
++	rx = &host->dma_slave_rx;
++	rx->shdma_slave.slave_id = pdata->slave_id_rx;
 +
-+static struct clk fsibck_clk = {
-+};
-+
- struct clk *main_clks[] = {
- 	&extalr_clk,
- 	&extal1_clk,
-@@ -291,6 +300,8 @@ struct clk *main_clks[] = {
- 	&pllc1_div2_clk,
- 	&usb24s_clk,
- 	&usb24_clk,
-+	&fsiack_clk,
-+	&fsibck_clk,
- };
++	if (tx->shdma_slave.slave_id > 0 && rx->shdma_slave.slave_id > 0) {
+ 		dma_cap_mask_t mask;
  
- static void div4_kick(struct clk *clk)
-@@ -320,6 +331,7 @@ static struct clk_div4_table div4_table = {
- enum {
- 	DIV6_HDMI,
- 	DIV6_VCLK1, DIV6_VCLK2,
-+	DIV6_FSIA, DIV6_FSIB,
- 	DIV6_REPARENT_NR,
- };
+ 		dma_cap_zero(mask);
+ 		dma_cap_set(DMA_SLAVE, mask);
  
-@@ -337,6 +349,16 @@ static struct clk *vclk_parents[8] = {
- 	[5] = &extalr_clk,
- };
+-		host->chan_tx = dma_request_channel(mask, sh_mmcif_filter, tx);
++		host->chan_tx = dma_request_channel(mask, sh_mmcif_filter,
++						    &tx->shdma_slave);
+ 		dev_dbg(&host->pd->dev, "%s: TX: got channel %p\n", __func__,
+ 			host->chan_tx);
  
-+static struct clk *fsia_parents[] = {
-+	[0] = &pllc1_div2_clk,
-+	[1] = &fsiack_clk, /* external clock */
-+};
-+
-+static struct clk *fsib_parents[] = {
-+	[0] = &pllc1_div2_clk,
-+	[1] = &fsibck_clk, /* external clock */
-+};
-+
- static struct clk div6_reparent_clks[DIV6_REPARENT_NR] = {
- 	[DIV6_HDMI] = SH_CLK_DIV6_EXT(HDMICKCR, 0,
- 				      hdmi_parent, ARRAY_SIZE(hdmi_parent), 6, 2),
-@@ -344,6 +366,10 @@ static struct clk div6_reparent_clks[DIV6_REPARENT_NR] = {
- 				       vclk_parents, ARRAY_SIZE(vclk_parents), 12, 3),
- 	[DIV6_VCLK2] = SH_CLK_DIV6_EXT(VCLKCR2, 0,
- 				       vclk_parents, ARRAY_SIZE(vclk_parents), 12, 3),
-+	[DIV6_FSIA] = SH_CLK_DIV6_EXT(FSIACKCR, 0,
-+				      fsia_parents, ARRAY_SIZE(fsia_parents), 6, 2),
-+	[DIV6_FSIB] = SH_CLK_DIV6_EXT(FSIBCKCR, 0,
-+				      fsib_parents, ARRAY_SIZE(fsib_parents), 6, 2),
- };
+ 		if (!host->chan_tx)
+ 			return;
  
- /* HDMI1/2 clock */
-@@ -503,6 +529,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("hdmi2",			&hdmi2_clk),
- 	CLKDEV_CON_ID("video1",			&div6_reparent_clks[DIV6_VCLK1]),
- 	CLKDEV_CON_ID("video2",			&div6_reparent_clks[DIV6_VCLK2]),
-+	CLKDEV_CON_ID("fsiack",			&fsiack_clk),
-+	CLKDEV_CON_ID("fsibck",			&fsibck_clk),
+-		host->chan_rx = dma_request_channel(mask, sh_mmcif_filter, rx);
++		host->chan_rx = dma_request_channel(mask, sh_mmcif_filter,
++						    &rx->shdma_slave);
+ 		dev_dbg(&host->pd->dev, "%s: RX: got channel %p\n", __func__,
+ 			host->chan_rx);
  
- 	/* DIV4 clocks */
- 	CLKDEV_CON_ID("i_clk",			&div4_clks[DIV4_I]),
-@@ -557,6 +585,9 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("pci",	"renesas_usbhs",	&div4_clks[DIV4_USBP]),
- 	CLKDEV_ICK_ID("usb24",	"renesas_usbhs",	&usb24_clk),
- 	CLKDEV_ICK_ID("ick",	"sh-mobile-hdmi",	&div6_reparent_clks[DIV6_HDMI]),
-+
-+	CLKDEV_ICK_ID("icka", "sh_fsi2",	&div6_reparent_clks[DIV6_FSIA]),
-+	CLKDEV_ICK_ID("ickb", "sh_fsi2",	&div6_reparent_clks[DIV6_FSIB]),
- };
+diff --git a/include/linux/mmc/sh_mmcif.h b/include/linux/mmc/sh_mmcif.h
+index 05f0e3d..c37956c 100644
+--- a/include/linux/mmc/sh_mmcif.h
++++ b/include/linux/mmc/sh_mmcif.h
+@@ -32,17 +32,11 @@
+  * 1111 : Peripheral clock (sup_pclk set '1')
+  */
  
- void __init r8a7740_clock_init(u8 md_ck)
+-struct sh_mmcif_dma {
+-	struct sh_dmae_slave chan_priv_tx;
+-	struct sh_dmae_slave chan_priv_rx;
+-};
+-
+ struct sh_mmcif_plat_data {
+ 	void (*set_pwr)(struct platform_device *pdev, int state);
+ 	void (*down_pwr)(struct platform_device *pdev);
+ 	int (*get_cd)(struct platform_device *pdef);
+-	struct sh_mmcif_dma	*dma;		/* Deprecated. Instead */
+-	unsigned int		slave_id_tx;	/* use embedded slave_id_[tr]x */
++	unsigned int		slave_id_tx;	/* embedded slave_id_[tr]x */
+ 	unsigned int		slave_id_rx;
+ 	u8			sup_pclk;	/* 1 :SH7757, 0: SH7724/SH7372 */
+ 	unsigned long		caps;
 -- 
-1.7.5.4
+1.7.2.5
 
