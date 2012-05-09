@@ -1,33 +1,44 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 03 May 2012 15:05:47 +0000
-Subject: [PATCH 18/29] mmc: tmio: remove a duplicated comment line
-Message-Id: <1336057558-11031-19-git-send-email-g.liakhovetski@gmx.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 09 May 2012 14:39:50 +0000
+Subject: [PATCH 03/03] clocksource: em_sti: Add DT support
+Message-Id: <20120509143950.27521.7949.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
+References: <20120509143926.27521.20342.sendpatchset@w520>
+In-Reply-To: <20120509143926.27521.20342.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: arnd@arndb.de, horms@verge.net.au, linux-sh@vger.kernel.org, johnstul@us.ibm.com, rjw@sisk.pl, lethal@linux-sh.org, gregkh@linuxfoundation.org, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+From: Magnus Damm <damm@opensource.se>
+
+Update the em-sti driver to support DT.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/mmc/host/tmio_mmc_pio.c |    1 -
- 1 files changed, 0 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index e843da0..d1eb611 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -989,7 +989,6 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 	 *  While we increment the runtime PM counter for all scenarios when
- 	 *  the mmc core activates us by calling an appropriate set_ios(), we
- 	 *  must additionally ensure that in case 2) the tmio mmc hardware stays
--	 *  additionally ensure that in case 2) the tmio mmc hardware stays
- 	 *  powered on during runtime for the card detection to work.
- 	 */
- 	if (_host->native_hotplug)
--- 
-1.7.2.5
+ drivers/clocksource/em_sti.c |    7 +++++++
+ 1 file changed, 7 insertions(+)
 
+--- 0015/drivers/clocksource/em_sti.c
++++ work/drivers/clocksource/em_sti.c	2012-05-09 22:52:47.000000000 +0900
+@@ -403,11 +403,18 @@ static int __devexit em_sti_remove(struc
+ 	return -EBUSY; /* cannot unregister clockevent and clocksource */
+ }
+ 
++static const struct of_device_id em_sti_dt_ids[] __devinitconst = {
++	{ .compatible = "renesas,em-sti", },
++	{},
++};
++MODULE_DEVICE_TABLE(of, em_sti_dt_ids);
++
+ static struct platform_driver em_sti_device_driver = {
+ 	.probe		= em_sti_probe,
+ 	.remove		= __devexit_p(em_sti_remove),
+ 	.driver		= {
+ 		.name	= "em_sti",
++		.of_match_table = em_sti_dt_ids,
+ 	}
+ };
+ 
