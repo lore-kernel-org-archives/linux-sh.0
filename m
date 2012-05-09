@@ -1,26 +1,48 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 07 May 2012 18:59:09 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: clock-r8a7740: add sh-eth clock
-Message-Id: <201205072101.44656.rjw@sisk.pl>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 09 May 2012 15:09:14 +0000
+Subject: [PATCH 2/9 v3] dma: shdma: prepare for conversion to the shdma base library
+Message-Id: <1336576161-27082-3-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201204252313.23899.rjw@sisk.pl>
-In-Reply-To: <201204252313.23899.rjw@sisk.pl>
+References: <1336576161-27082-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1336576161-27082-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Vinod Koul <vinod.koul@intel.com>
+Cc: linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
 
-On Monday, May 07, 2012, Simon Horman wrote:
-> On Sun, May 06, 2012 at 10:58:41PM -0700, Kuninori Morimoto wrote:
-> > armadillo800eva board is using sh-eth, but clock-r8a7740 didn't care it.
-> > This clock was enabled by boot-loader.
-> > This patch fix it up.
-> > 
-> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> Reviewed-by: Simon Horman <horms@verge.net.au>
+By placing an anonymous union at the top of struct sh_dmae_slave we can
+transparently prepare all device and client drivers for the upcoming
+shdma-base conversion.
 
-Applied to the armadillo800eva branch of the renesas.git tree.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ include/linux/sh_dma.h |    8 ++++++--
+ 1 files changed, 6 insertions(+), 2 deletions(-)
 
-Thanks,
-Rafael
+diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
+index 425450b..e081e8e 100644
+--- a/include/linux/sh_dma.h
++++ b/include/linux/sh_dma.h
+@@ -10,12 +10,16 @@
+ #ifndef SH_DMA_H
+ #define SH_DMA_H
+ 
+-#include <linux/list.h>
+ #include <linux/dmaengine.h>
++#include <linux/list.h>
++#include <linux/shdma-base.h>
+ 
+ /* Used by slave DMA clients to request DMA to/from a specific peripheral */
+ struct sh_dmae_slave {
+-	unsigned int			slave_id; /* Set by the platform */
++	union {
++		unsigned int		slave_id; /* Set by the platform */
++		struct shdma_slave	shdma_slave;
++	};
+ 	struct device			*dma_dev; /* Set by the platform */
+ 	const struct sh_dmae_slave_config	*config;  /* Set by the driver */
+ };
+-- 
+1.7.2.5
+
