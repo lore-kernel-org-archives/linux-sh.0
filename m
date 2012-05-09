@@ -1,65 +1,496 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 03 May 2012 12:19:40 +0000
-Subject: Re: [PATCH 06/06] serial8250-em: Add Emma Mobile UART driver
-Message-Id: <CANqRtoR7rtJW65jY3urnTcaS5S6swY84C-Xa8NMQkZP66m+==w@mail.gmail.com>
+Date: Wed, 09 May 2012 14:39:42 +0000
+Subject: [PATCH 02/03] clocksource: em_sti: Emma Mobile STI driver V2
+Message-Id: <20120509143942.27521.8595.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120502124642.30480.41373.sendpatchset@w520>
-	<20120502124736.30480.48207.sendpatchset@w520>
-	<4FA14788.6090000@windriver.com>
-	<20120502212205.GA12212@kroah.com>
-In-Reply-To: <20120502212205.GA12212@kroah.com>
+References: <20120509143926.27521.20342.sendpatchset@w520>
+In-Reply-To: <20120509143926.27521.20342.sendpatchset@w520>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Greg KH <gregkh@linuxfoundation.org>
-Cc: Paul Gortmaker <paul.gortmaker@windriver.com>, linux-serial@vger.kernel.org, horms@verge.net.au, arnd@arndb.de, linux-sh@vger.kernel.org, swarren@wwwdotorg.org, linux-kernel@vger.kernel.org, rjw@sisk.pl, lethal@linux-sh.org, olof@lixom.net, dan.j.williams@intel.com, alan@linux.intel.com
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-kernel@vger.kernel.org
+Cc: arnd@arndb.de, horms@verge.net.au, linux-sh@vger.kernel.org, johnstul@us.ibm.com, rjw@sisk.pl, lethal@linux-sh.org, gregkh@linuxfoundation.org, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
-On Thu, May 3, 2012 at 6:22 AM, Greg KH <gregkh@linuxfoundation.org> wrote:
-> On Wed, May 02, 2012 at 10:41:12AM -0400, Paul Gortmaker wrote:
->> On 12-05-02 08:47 AM, Magnus Damm wrote:
->> > From: Magnus Damm <damm@opensource.se>
->> >
->> > Add a platform driver for Emma Mobile 8250 hardware.
->>
->>
->> [...]
->>
->> > +
->> > +config SERIAL_8250_EM
->> > + =A0 tristate "Support for Emma Mobile intergrated serial port"
->> > + =A0 depends on SERIAL_8250
->>
->> Should we depend on arch=3DARM or something similar? =A0Even if the
->> driver is written to be arch independent, if the Emma itself is
->> physically tied to ARM platforms, we probably don't need to be
->> building it for sparc allyesconfig etc.
->
-> Yeah, it doesn't build on x86-64, I get the following build problems:
-> =A0 =A0 =A0 =A0ERROR: "clk_get_rate" [drivers/tty/serial/8250/8250_em.ko]=
- undefined!
-> =A0 =A0 =A0 =A0ERROR: "clk_enable" [drivers/tty/serial/8250/8250_em.ko] u=
-ndefined!
-> =A0 =A0 =A0 =A0ERROR: "clk_get" [drivers/tty/serial/8250/8250_em.ko] unde=
-fined!
-> =A0 =A0 =A0 =A0ERROR: "clk_put" [drivers/tty/serial/8250/8250_em.ko] unde=
-fined!
-> =A0 =A0 =A0 =A0ERROR: "clk_disable" [drivers/tty/serial/8250/8250_em.ko] =
-undefined!
->
-> So it should depend on some arch that has clk at the least.
->
-> Magnus, care to redo just this one patch that fixes this up? =A0I've
-> applied the first 5 already.
+From: Magnus Damm <damm@opensource.se>
 
-Done!
+This is V2 of the Emma Mobile STI timer driver.
 
-I decided to go with SERIAL_8250 && ARM && HAVE_CLK to limit the
-exposure a bit but not hinder any single ARM kernel image work. Hope
-this balance is making everyone happy.
+The STI hardware is based on a single 48-bit 32kHz
+counter that together with two individual compare
+registers can generate interrupts. There are no
+timer operating modes selectable which means that
+the timer can not clear on match.
 
-It is not impossible that this driver can be used on older MIPS based
-SoCs from NEC, but that can easily be dealt with later if needed.
+This driver is providing clocksource support for the
+48-bit counter. Clockevents are also supported using
+the same timer in periodic or oneshot modes.
 
-Thanks for your help!
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-/ magnus
+ Changes since V1 :
+ - removed unused early timer cruft
+ - reduce number of functions
+ - use request_irq() instead setup_irq() since we run late during boot
+ - replace confusing flags with perhaps equally confusing active[] array
+ - use clockevents_config_and_register() for registration
+ - update frequency with clockevents_config()
+ - use 2 ticks as minimum
+ - verify oneshot timer and return error to clock event layer
+
+ Verified in the following modes on EMEV2:
+ - clocksource only
+ - clockevent in periodic mode only
+ - clocksource and clockevent in periodic mode
+ - clocksource and clockevent in oneshot mode
+
+ arch/arm/mach-shmobile/Kconfig |    6 
+ drivers/clocksource/Makefile   |    1 
+ drivers/clocksource/em_sti.c   |  418 ++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 425 insertions(+)
+
+--- 0013/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2012-05-09 22:44:52.000000000 +0900
+@@ -168,6 +168,12 @@ config SH_TIMER_TMU
+ 	help
+ 	  This enables build of the TMU timer driver.
+ 
++config EM_TIMER_STI
++	bool "STI timer driver"
++	default y
++	help
++	  This enables build of the STI timer driver.
++
+ endmenu
+ 
+ config SH_CLK_CPG
+--- 0001/drivers/clocksource/Makefile
++++ work/drivers/clocksource/Makefile	2012-05-09 22:44:52.000000000 +0900
+@@ -6,6 +6,7 @@ obj-$(CONFIG_CS5535_CLOCK_EVENT_SRC)	+ obj-$(CONFIG_SH_TIMER_CMT)	+= sh_cmt.o
+ obj-$(CONFIG_SH_TIMER_MTU2)	+= sh_mtu2.o
+ obj-$(CONFIG_SH_TIMER_TMU)	+= sh_tmu.o
++obj-$(CONFIG_EM_TIMER_STI)	+= em_sti.o
+ obj-$(CONFIG_CLKBLD_I8253)	+= i8253.o
+ obj-$(CONFIG_CLKSRC_MMIO)	+= mmio.o
+ obj-$(CONFIG_DW_APB_TIMER)	+= dw_apb_timer.o
+--- /dev/null
++++ work/drivers/clocksource/em_sti.c	2012-05-09 22:44:52.000000000 +0900
+@@ -0,0 +1,418 @@
++/*
++ * Emma Mobile Timer Support - STI
++ *
++ *  Copyright (C) 2012 Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++
++#include <linux/init.h>
++#include <linux/platform_device.h>
++#include <linux/spinlock.h>
++#include <linux/interrupt.h>
++#include <linux/ioport.h>
++#include <linux/io.h>
++#include <linux/clk.h>
++#include <linux/irq.h>
++#include <linux/err.h>
++#include <linux/delay.h>
++#include <linux/clocksource.h>
++#include <linux/clockchips.h>
++#include <linux/slab.h>
++#include <linux/module.h>
++
++enum { USER_CLOCKSOURCE, USER_CLOCKEVENT, USER_NR };
++
++struct em_sti_priv {
++	void __iomem *base;
++	struct clk *clk;
++	struct platform_device *pdev;
++	unsigned int active[USER_NR];
++	unsigned long rate;
++	unsigned long delta;
++	cycle_t next;
++	spinlock_t lock;
++	struct clock_event_device ced;
++	struct clocksource cs;
++};
++
++#define STI_CONTROL 0x00
++#define STI_COMPA_H 0x10
++#define STI_COMPA_L 0x14
++#define STI_COMPB_H 0x18
++#define STI_COMPB_L 0x1c
++#define STI_COUNT_H 0x20
++#define STI_COUNT_L 0x24
++#define STI_COUNT_RAW_H 0x28
++#define STI_COUNT_RAW_L 0x2c
++#define STI_SET_H 0x30
++#define STI_SET_L 0x34
++#define STI_INTSTATUS 0x40
++#define STI_INTRAWSTATUS 0x44
++#define STI_INTENSET 0x48
++#define STI_INTENCLR 0x4c
++#define STI_INTFFCLR 0x50
++
++static inline unsigned long em_sti_read(struct em_sti_priv *p, int offs)
++{
++	return ioread32(p->base + offs);
++}
++
++static inline void em_sti_write(struct em_sti_priv *p, int offs,
++				unsigned long value)
++{
++	iowrite32(value, p->base + offs);
++}
++
++static int em_sti_enable(struct em_sti_priv *p)
++{
++	int ret;
++
++	/* enable clock */
++	ret = clk_enable(p->clk);
++	if (ret) {
++		dev_err(&p->pdev->dev, "cannot enable clock\n");
++		return ret;
++	}
++
++	/* configure channel, periodic mode and maximum timeout */
++	p->rate = clk_get_rate(p->clk);
++
++	/* reset the counter */
++	em_sti_write(p, STI_SET_H, 0x40000000);
++	em_sti_write(p, STI_SET_L, 0x00000000);
++
++	/* mask and clear pending interrupts */
++	em_sti_write(p, STI_INTENCLR, 3);
++	em_sti_write(p, STI_INTFFCLR, 3);
++
++	/* enable updates of counter registers */
++	em_sti_write(p, STI_CONTROL, 1);
++
++	return 0;
++}
++
++static void em_sti_disable(struct em_sti_priv *p)
++{
++	/* mask interrupts */
++	em_sti_write(p, STI_INTENCLR, 3);
++
++	/* stop clock */
++	clk_disable(p->clk);
++}
++
++static cycle_t em_sti_count(struct em_sti_priv *p)
++{
++	cycle_t ticks;
++	unsigned long flags;
++
++	/* the STI hardware buffers the 48-bit count, but to
++	 * break it out into two 32-bit access the registers
++	 * must be accessed in a certain order.
++	 * Always read STI_COUNT_H before STI_COUNT_L.
++	 */
++	spin_lock_irqsave(&p->lock, flags);
++	ticks = (cycle_t)(em_sti_read(p, STI_COUNT_H) & 0xffff) << 32;
++	ticks |= em_sti_read(p, STI_COUNT_L);
++	spin_unlock_irqrestore(&p->lock, flags);
++
++	return ticks;
++}
++
++static void em_sti_update(struct em_sti_priv *p)
++{
++	unsigned long flags;
++
++	spin_lock_irqsave(&p->lock, flags);
++
++	/* update our cached counter */
++	p->next += p->delta;
++
++	/* mask compare A interrupt */
++	em_sti_write(p, STI_INTENCLR, 1);
++
++	/* update compare A value */
++	em_sti_write(p, STI_COMPA_H, p->next >> 32);
++	em_sti_write(p, STI_COMPA_L, p->next & 0xffffffff);
++
++	/* clear compare A interrupt source */
++	em_sti_write(p, STI_INTFFCLR, 1);
++
++	/* unmask compare A interrupt */
++	em_sti_write(p, STI_INTENSET, 1);
++
++	spin_unlock_irqrestore(&p->lock, flags);
++}
++
++static irqreturn_t em_sti_interrupt(int irq, void *dev_id)
++{
++	struct em_sti_priv *p = dev_id;
++
++	/* Always regprogram timer compare A */
++	if (p->ced.mode = CLOCK_EVT_MODE_PERIODIC)
++		em_sti_update(p);
++
++	p->ced.event_handler(&p->ced);
++	return IRQ_HANDLED;
++}
++
++static int em_sti_start(struct em_sti_priv *p, unsigned int user)
++{
++	unsigned long flags;
++	int used_before;
++	int ret = 0;
++
++	spin_lock_irqsave(&p->lock, flags);
++	used_before = p->active[USER_CLOCKSOURCE] | p->active[USER_CLOCKEVENT];
++	if (!used_before)
++		ret = em_sti_enable(p);
++
++	if (!ret)
++		p->active[user] = 1;
++	spin_unlock_irqrestore(&p->lock, flags);
++
++	return ret;
++}
++
++static void em_sti_stop(struct em_sti_priv *p, unsigned int user)
++{
++	unsigned long flags;
++	int used_before, used_after;
++
++	spin_lock_irqsave(&p->lock, flags);
++	used_before = p->active[USER_CLOCKSOURCE] | p->active[USER_CLOCKEVENT];
++	p->active[user] = 0;
++	used_after = p->active[USER_CLOCKSOURCE] | p->active[USER_CLOCKEVENT];
++
++	if (used_before && !used_after)
++		em_sti_disable(p);
++	spin_unlock_irqrestore(&p->lock, flags);
++}
++
++static struct em_sti_priv *cs_to_em_sti(struct clocksource *cs)
++{
++	return container_of(cs, struct em_sti_priv, cs);
++}
++
++static cycle_t em_sti_clocksource_read(struct clocksource *cs)
++{
++	return em_sti_count(cs_to_em_sti(cs));
++}
++
++static int em_sti_clocksource_enable(struct clocksource *cs)
++{
++	int ret;
++	struct em_sti_priv *p = cs_to_em_sti(cs);
++
++	ret = em_sti_start(p, USER_CLOCKSOURCE);
++	if (!ret)
++		__clocksource_updatefreq_hz(cs, p->rate);
++	return ret;
++}
++
++static void em_sti_clocksource_disable(struct clocksource *cs)
++{
++	em_sti_stop(cs_to_em_sti(cs), USER_CLOCKSOURCE);
++}
++
++static void em_sti_clocksource_resume(struct clocksource *cs)
++{
++	em_sti_clocksource_enable(cs);
++}
++
++static int em_sti_register_clocksource(struct em_sti_priv *p)
++{
++	struct clocksource *cs = &p->cs;
++
++	memset(cs, 0, sizeof(*cs));
++	cs->name = dev_name(&p->pdev->dev);
++	cs->rating = 200;
++	cs->read = em_sti_clocksource_read;
++	cs->enable = em_sti_clocksource_enable;
++	cs->disable = em_sti_clocksource_disable;
++	cs->suspend = em_sti_clocksource_disable;
++	cs->resume = em_sti_clocksource_resume;
++	cs->mask = CLOCKSOURCE_MASK(48);
++	cs->flags = CLOCK_SOURCE_IS_CONTINUOUS;
++
++	dev_info(&p->pdev->dev, "used as clock source\n");
++
++	/* Register with dummy 1 Hz value, gets updated in ->enable() */
++	clocksource_register_hz(cs, 1);
++	return 0;
++}
++
++static struct em_sti_priv *ced_to_em_sti(struct clock_event_device *ced)
++{
++	return container_of(ced, struct em_sti_priv, ced);
++}
++
++static void em_sti_clock_event_mode(enum clock_event_mode mode,
++				    struct clock_event_device *ced)
++{
++	struct em_sti_priv *p = ced_to_em_sti(ced);
++
++	/* deal with old setting first */
++	switch (ced->mode) {
++	case CLOCK_EVT_MODE_PERIODIC:
++	case CLOCK_EVT_MODE_ONESHOT:
++		em_sti_stop(p, USER_CLOCKEVENT);
++		break;
++	default:
++		break;
++	}
++
++	switch (mode) {
++	case CLOCK_EVT_MODE_PERIODIC:
++		dev_info(&p->pdev->dev, "used for periodic clock events\n");
++		em_sti_start(p, USER_CLOCKEVENT);
++		clockevents_config(&p->ced, p->rate);
++		p->delta = (p->rate + HZ/2) / HZ;
++		p->next = em_sti_count(p);
++		em_sti_update(p);
++		break;
++	case CLOCK_EVT_MODE_ONESHOT:
++		dev_info(&p->pdev->dev, "used for oneshot clock events\n");
++		em_sti_start(p, USER_CLOCKEVENT);
++		clockevents_config(&p->ced, p->rate);
++		break;
++	case CLOCK_EVT_MODE_SHUTDOWN:
++	case CLOCK_EVT_MODE_UNUSED:
++		em_sti_stop(p, USER_CLOCKEVENT);
++		break;
++	default:
++		break;
++	}
++}
++
++static int em_sti_clock_event_next(unsigned long delta,
++				   struct clock_event_device *ced)
++{
++	struct em_sti_priv *p = ced_to_em_sti(ced);
++	int safe;
++
++	p->delta = delta;
++	p->next = em_sti_count(p);
++	em_sti_update(p);
++
++	safe = em_sti_count(p) < (p->next - 1);
++
++	return !safe;
++}
++
++static void em_sti_register_clockevent(struct em_sti_priv *p)
++{
++	struct clock_event_device *ced = &p->ced;
++
++	memset(ced, 0, sizeof(*ced));
++	ced->name = dev_name(&p->pdev->dev);
++	ced->features = CLOCK_EVT_FEAT_PERIODIC;
++	ced->features |= CLOCK_EVT_FEAT_ONESHOT;
++	ced->rating = 200;
++	ced->cpumask = cpumask_of(0);
++	ced->set_next_event = em_sti_clock_event_next;
++	ced->set_mode = em_sti_clock_event_mode;
++
++	dev_info(&p->pdev->dev, "used for clock events\n");
++
++	/* Register with dummy 1 Hz value, gets updated in ->set_mode() */
++	clockevents_config_and_register(ced, 1, 2, 0xffffffff);
++}
++
++static int __devinit em_sti_probe(struct platform_device *pdev)
++{
++	struct em_sti_priv *p;
++	struct resource *res;
++	int irq, ret;
++
++	p = kzalloc(sizeof(*p), GFP_KERNEL);
++	if (p = NULL) {
++		dev_err(&pdev->dev, "failed to allocate driver data\n");
++		ret = -ENOMEM;
++		goto err0;
++	}
++
++	p->pdev = pdev;
++	platform_set_drvdata(pdev, p);
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!res) {
++		dev_err(&pdev->dev, "failed to get I/O memory\n");
++		ret = -EINVAL;
++		goto err0;
++	}
++
++	irq = platform_get_irq(pdev, 0);
++	if (irq < 0) {
++		dev_err(&pdev->dev, "failed to get irq\n");
++		ret = -EINVAL;
++		goto err0;
++	}
++
++	/* map memory, let base point to the STI instance */
++	p->base = ioremap_nocache(res->start, resource_size(res));
++	if (p->base = NULL) {
++		dev_err(&pdev->dev, "failed to remap I/O memory\n");
++		ret = -ENXIO;
++		goto err0;
++	}
++
++	/* get hold of clock */
++	p->clk = clk_get(&pdev->dev, "sclk");
++	if (IS_ERR(p->clk)) {
++		dev_err(&pdev->dev, "cannot get clock\n");
++		ret = PTR_ERR(p->clk);
++		goto err1;
++	}
++
++	if (request_irq(irq, em_sti_interrupt,
++			IRQF_TIMER | IRQF_IRQPOLL | IRQF_NOBALANCING,
++			dev_name(&pdev->dev), p)) {
++		dev_err(&pdev->dev, "failed to request low IRQ\n");
++		ret = -ENOENT;
++		goto err2;
++	}
++
++	spin_lock_init(&p->lock);
++	em_sti_register_clockevent(p);
++	em_sti_register_clocksource(p);
++	return 0;
++
++err2:
++	clk_put(p->clk);
++err1:
++	iounmap(p->base);
++err0:
++	kfree(p);
++	return ret;
++}
++
++static int __devexit em_sti_remove(struct platform_device *pdev)
++{
++	return -EBUSY; /* cannot unregister clockevent and clocksource */
++}
++
++static struct platform_driver em_sti_device_driver = {
++	.probe		= em_sti_probe,
++	.remove		= __devexit_p(em_sti_remove),
++	.driver		= {
++		.name	= "em_sti",
++	}
++};
++
++module_platform_driver(em_sti_device_driver);
++
++MODULE_AUTHOR("Magnus Damm");
++MODULE_DESCRIPTION("Renesas Emma Mobile STI Timer Driver");
++MODULE_LICENSE("GPL v2");
