@@ -1,7 +1,7 @@
-From: Marc Zyngier <marc.zyngier@arm.com>
-Date: Thu, 10 May 2012 10:03:41 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 10 May 2012 10:10:27 +0000
 Subject: Re: [PATCH] mach-shmobile: r8a7779 SMP TWD boot regression fix
-Message-Id: <4FAB927D.6000600@arm.com>
+Message-Id: <CANqRtoQpP8QwSa+tX-TKtyWtQROMfrK1aOUd7OQuLFwGjj_pMw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20120510055722.29862.28709.sendpatchset@w520>
 In-Reply-To: <20120510055722.29862.28709.sendpatchset@w520>
@@ -10,30 +10,34 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Magnus,
+On Thu, May 10, 2012 at 7:03 PM, Marc Zyngier <marc.zyngier@arm.com> wrote:
+> Hi Magnus,
+>
+> On 10/05/12 06:57, Magnus Damm wrote:
+>> From: Magnus Damm <damm@opensource.se>
+>>
+>> Fix SMP TWD boot regression on r8a7779 based platforms caused by:
+>>
+>> 4200b16 ARM: shmobile: convert to twd_local_timer_register() interface
+>>
+>> After the merge of the above commit it has been impossible to boot
+>> r8a7779 based SoCs with SMP enabled and CONFIG_HAVE_ARM_TWD=y. The
+>> kernel crashes at smp_init_cpus() timing which is before the console
+>> has been initialized, so to the user this looks like a kernel lock up
+>> without any particular error message.
+>>
+>> This patch fixes the regression on r8a7779 by moving the TWD
+>> registration code from smp_init_cpus() to sys_timer->init() time.
+>>
+>> Signed-off-by: Magnus Damm <damm@opensource.se>
+>
+> I'm a bit confused here. Does sh73a0 work OK? If so, why is the behavior
+> any different?
 
-On 10/05/12 06:57, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Fix SMP TWD boot regression on r8a7779 based platforms caused by:
-> 
-> 4200b16 ARM: shmobile: convert to twd_local_timer_register() interface
-> 
-> After the merge of the above commit it has been impossible to boot
-> r8a7779 based SoCs with SMP enabled and CONFIG_HAVE_ARM_TWD=y. The
-> kernel crashes at smp_init_cpus() timing which is before the console
-> has been initialized, so to the user this looks like a kernel lock up
-> without any particular error message.
-> 
-> This patch fixes the regression on r8a7779 by moving the TWD
-> registration code from smp_init_cpus() to sys_timer->init() time. 
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+It doesn't,both are busted I'm afraid. But I fixed the r8a7779 one
+myself and let Morimoto-san deal with sh73a0 to make sure it got fixed
+and tested too.
 
-I'm a bit confused here. Does sh73a0 work OK? If so, why is the behavior
-any different?
+Cheers,
 
-	M.
--- 
-Jazz is not dead. It just smells funny...
-
+/ magnus
