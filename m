@@ -1,100 +1,33 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 09 May 2012 07:24:59 +0000
-Subject: [PATCH] mach-shmobile: Invalidate caches when booting secondary cores
-Message-Id: <20120509072459.20583.11420.sendpatchset@w520>
+Date: Thu, 10 May 2012 05:21:29 +0000
+Subject: Re: [PATCH] mach-shmobile: Invalidate caches when booting secondary cores
+Message-Id: <CANqRtoTuaofXJaucjBHBVfCucf0ocY9Nhb+2T+Kvb4BOXfRGqA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20120509072459.20583.11420.sendpatchset@w520>
+In-Reply-To: <20120509072459.20583.11420.sendpatchset@w520>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+On Wed, May 9, 2012 at 4:24 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
+> From: Magnus Damm <damm@opensource.se>
+>
+> Make sure L1 caches are invalidated when booting secondary
+> cores. Needed to boot all mach-shmobile SMP systems that
+> are using Cortex-A9 including sh73a0, r8a7779 and EMEV2.
+>
+> Thanks to imx and tegra guys for actual code.
+>
+> Signed-off-by: Magnus Damm <damm@opensource.se>
+> ---
+>
+> =A0This should really be moved into a common location. Feel free
+> =A0to point me in the right direction and I will be happy to
+> =A0submit a patch that unifies the code.
+>
+> =A0Tested on EMEV2.
 
-Make sure L1 caches are invalidated when booting secondary
-cores. Needed to boot all mach-shmobile SMP systems that
-are using Cortex-A9 including sh73a0, r8a7779 and EMEV2.
+Now also successfully tested on the r8a7779 Marzen board.
 
-Thanks to imx and tegra guys for actual code.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- This should really be moved into a common location. Feel free
- to point me in the right direction and I will be happy to
- submit a patch that unifies the code.
-
- Tested on EMEV2.
-
- arch/arm/mach-shmobile/headsmp.S |   57 +++++++++++++++++++++++++++++++++++++-
- 1 file changed, 56 insertions(+), 1 deletion(-)
-
---- 0001/arch/arm/mach-shmobile/headsmp.S
-+++ work/arch/arm/mach-shmobile/headsmp.S	2012-05-09 16:13:07.000000000 +0900
-@@ -16,6 +16,59 @@
- 
- 	__CPUINIT
- 
-+/* Cache invalidation nicked from arch/arm/mach-imx/head-v7.S, thanks!
-+ *
-+ * The secondary kernel init calls v7_flush_dcache_all before it enables
-+ * the L1; however, the L1 comes out of reset in an undefined state, so
-+ * the clean + invalidate performed by v7_flush_dcache_all causes a bunch
-+ * of cache lines with uninitialized data and uninitialized tags to get
-+ * written out to memory, which does really unpleasant things to the main
-+ * processor.  We fix this by performing an invalidate, rather than a
-+ * clean + invalidate, before jumping into the kernel.
-+ *
-+ * This funciton is cloned from arch/arm/mach-tegra/headsmp.S, and needs
-+ * to be called for both secondary cores startup and primary core resume
-+ * procedures.  Ideally, it should be moved into arch/arm/mm/cache-v7.S.
-+ */
-+ENTRY(v7_invalidate_l1)
-+	mov	r0, #0
-+	mcr	p15, 0, r0, c7, c5, 0	@ invalidate I cache
-+	mcr	p15, 2, r0, c0, c0, 0
-+	mrc	p15, 1, r0, c0, c0, 0
-+
-+	ldr	r1, =0x7fff
-+	and	r2, r1, r0, lsr #13
-+
-+	ldr	r1, =0x3ff
-+
-+	and	r3, r1, r0, lsr #3	@ NumWays - 1
-+	add	r2, r2, #1		@ NumSets
-+
-+	and	r0, r0, #0x7
-+	add	r0, r0, #4	@ SetShift
-+
-+	clz	r1, r3		@ WayShift
-+	add	r4, r3, #1	@ NumWays
-+1:	sub	r2, r2, #1	@ NumSets--
-+	mov	r3, r4		@ Temp = NumWays
-+2:	subs	r3, r3, #1	@ Temp--
-+	mov	r5, r3, lsl r1
-+	mov	r6, r2, lsl r0
-+	orr	r5, r5, r6	@ Reg = (Temp<<WayShift)|(NumSets<<SetShift)
-+	mcr	p15, 0, r5, c7, c6, 2
-+	bgt	2b
-+	cmp	r2, #0
-+	bgt	1b
-+	dsb
-+	isb
-+	mov	pc, lr
-+ENDPROC(v7_invalidate_l1)
-+
-+ENTRY(shmobile_invalidate_start)
-+	bl	v7_invalidate_l1
-+	b	secondary_startup
-+ENDPROC(shmobile_invalidate_start)
-+
- /*
-  * Reset vector for secondary CPUs.
-  * This will be mapped at address 0 by SBAR register.
-@@ -24,4 +77,6 @@
- 	.align  12
- ENTRY(shmobile_secondary_vector)
- 	ldr     pc, 1f
--1:	.long   secondary_startup - PAGE_OFFSET + PLAT_PHYS_OFFSET
-+1:	.long   shmobile_invalidate_start - PAGE_OFFSET + PLAT_PHYS_OFFSET
-+ENDPROC(shmobile_secondary_vector)
-+
+/ magnus
