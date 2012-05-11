@@ -1,143 +1,52 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 22 May 2012 02:27:31 +0000
-Subject: [PATCH 03/11] ARM: mach-shmobile: clock-r8a7740: add HDMI clock
-Message-Id: <87ehqdar1r.wl%kuninori.morimoto.gx@renesas.com>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 11 May 2012 08:38:26 +0000
+Subject: [PATCH v2 3/5] net: sh_eth: fix the rxdesc pointer when rx descriptor empty happens
+Message-Id: <4FACD002.1020304@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: netdev <netdev@vger.kernel.org>
+Cc: SH-Linux <linux-sh@vger.kernel.org>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+When Receive Descriptor Empty happens, rxdesc pointer of the driver
+and actual next descriptor of the controller may be mismatch.
+This patch fixes it.
+
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7740.c |   84 ++++++++++++++++++++++++++++++++
- 1 files changed, 84 insertions(+), 0 deletions(-)
+ about v2:
+  - rebase the latest net-next.git
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index 26eea5f..b095343 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -54,6 +54,7 @@
- #define MSTPSR2		0xe6150040
- #define MSTPSR3		0xe6150048
- #define MSTPSR4		0xe615004c
-+#define HDMICKCR	0xe6150094
- #define SMSTPCR0	0xe6150130
- #define SMSTPCR1	0xe6150134
- #define SMSTPCR2	0xe6150138
-@@ -313,6 +314,79 @@ static struct clk_div4_table div4_table = {
- 	.kick = div4_kick,
- };
- 
-+/* DIV6 reparent */
-+enum {
-+	DIV6_HDMI,
-+	DIV6_REPARENT_NR,
-+};
-+
-+static struct clk *hdmi_parent[] = {
-+	[0] = &pllc1_div2_clk,
-+	[1] = &system_clk,
-+	[2] = &dv_clk
-+};
-+
-+static struct clk div6_reparent_clks[DIV6_REPARENT_NR] = {
-+	[DIV6_HDMI] = SH_CLK_DIV6_EXT(HDMICKCR, 0,
-+				      hdmi_parent, ARRAY_SIZE(hdmi_parent), 6, 2),
-+};
-+
-+/* HDMI1/2 clock */
-+static unsigned long hdmi12_recalc(struct clk *clk)
-+{
-+	u32 val = __raw_readl(HDMICKCR);
-+	int shift = (int)clk->priv;
-+
-+	val >>= shift;
-+	val &= 0x3;
-+
-+	return clk->parent->rate / (1 << val);
-+};
-+
-+static int hdmi12_set_rate(struct clk *clk, unsigned long rate)
-+{
-+	u32 val, mask;
-+	int i, shift;
-+
-+	for (i = 0; i < 3; i++)
-+		if (rate = clk->parent->rate / (1 << i))
-+			goto find;
-+	return -ENODEV;
-+
-+find:
-+	shift = (int)clk->priv;
-+
-+	val = __raw_readl(HDMICKCR);
-+	mask = ~(0x3 << shift);
-+	val = (val & mask) | i << shift;
-+	__raw_writel(val, HDMICKCR);
-+
-+	return 0;
-+};
-+
-+static struct sh_clk_ops hdmi12_clk_ops = {
-+	.recalc		= hdmi12_recalc,
-+	.set_rate	= hdmi12_set_rate,
-+};
-+
-+static struct clk hdmi1_clk = {
-+	.ops		= &hdmi12_clk_ops,
-+	.priv		= (void *)9,
-+	.parent		= &div6_reparent_clks[DIV6_HDMI],  /* late install */
-+};
-+
-+static struct clk hdmi2_clk = {
-+	.ops		= &hdmi12_clk_ops,
-+	.priv		= (void *)11,
-+	.parent		= &div6_reparent_clks[DIV6_HDMI], /* late install */
-+};
-+
-+static struct clk *late_main_clks[] = {
-+	&hdmi1_clk,
-+	&hdmi2_clk,
-+};
-+
-+/* MSTP */
- enum {
- 	DIV4_I, DIV4_ZG, DIV4_B, DIV4_M1, DIV4_HP,
- 	DIV4_HPP, DIV4_USBP, DIV4_S, DIV4_ZB, DIV4_M3, DIV4_CP,
-@@ -408,6 +482,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("pllc1_clk",		&pllc1_clk),
- 	CLKDEV_CON_ID("pllc1_div2_clk",		&pllc1_div2_clk),
- 	CLKDEV_CON_ID("usb24s",			&usb24s_clk),
-+	CLKDEV_CON_ID("hdmi1",			&hdmi1_clk),
-+	CLKDEV_CON_ID("hdmi2",			&hdmi2_clk),
- 
- 	/* DIV4 clocks */
- 	CLKDEV_CON_ID("i_clk",			&div4_clks[DIV4_I]),
-@@ -459,6 +535,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("phy",	"renesas_usbhs",	&mstp_clks[MSTP406]),
- 	CLKDEV_ICK_ID("pci",	"renesas_usbhs",	&div4_clks[DIV4_USBP]),
- 	CLKDEV_ICK_ID("usb24",	"renesas_usbhs",	&usb24_clk),
-+	CLKDEV_ICK_ID("ick",	"sh-mobile-hdmi",	&div6_reparent_clks[DIV6_HDMI]),
- };
- 
- void __init r8a7740_clock_init(u8 md_ck)
-@@ -495,8 +572,15 @@ void __init r8a7740_clock_init(u8 md_ck)
- 		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
- 
- 	if (!ret)
-+		ret = sh_clk_div6_reparent_register(div6_reparent_clks,
-+						    DIV6_REPARENT_NR);
-+
-+	if (!ret)
- 		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
- 
-+	for (k = 0; !ret && (k < ARRAY_SIZE(late_main_clks)); k++)
-+		ret = clk_register(late_main_clks[k]);
-+
- 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
- 
- 	if (!ret)
+ drivers/net/ethernet/renesas/sh_eth.c |    8 +++++---
+ 1 files changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 10f2a89..906e410 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1098,8 +1098,12 @@ static int sh_eth_rx(struct net_device *ndev)
+
+ 	/* Restart Rx engine if stopped. */
+ 	/* If we don't need to check status, don't. -KDU */
+-	if (!(sh_eth_read(ndev, EDRRR) & EDRRR_R))
++	if (!(sh_eth_read(ndev, EDRRR) & EDRRR_R)) {
++		/* fix the values for the next receiving */
++		mdp->cur_rx = mdp->dirty_rx = (sh_eth_read(ndev, RDFAR) -
++					       sh_eth_read(ndev, RDLAR)) >> 4;
+ 		sh_eth_write(ndev, EDRRR_R, EDRRR);
++	}
+
+ 	return 0;
+ }
+@@ -1196,8 +1200,6 @@ static void sh_eth_error(struct net_device *ndev, int intr_status)
+ 		/* Receive Descriptor Empty int */
+ 		ndev->stats.rx_over_errors++;
+
+-		if (sh_eth_read(ndev, EDRRR) ^ EDRRR_R)
+-			sh_eth_write(ndev, EDRRR_R, EDRRR);
+ 		if (netif_msg_rx_err(mdp))
+ 			dev_err(&ndev->dev, "Receive Descriptor Empty\n");
+ 	}
 -- 
-1.7.5.4
-
+1.7.1
