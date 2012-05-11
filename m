@@ -1,137 +1,321 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 15 May 2012 15:52:49 +0000
-Subject: [PATCH/RFC] gpio: Emma Mobile GPIO DT prototype
-Message-Id: <20120515155249.6690.62293.sendpatchset@w520>
+Date: Fri, 11 May 2012 19:42:20 +0000
+Subject: [PATCH 03/06] mach-shmobile: Emma Mobile EV2 SMP support V2
+Message-Id: <20120511194220.6567.56443.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20120511194151.6567.53888.sendpatchset@w520>
+In-Reply-To: <20120511194151.6567.53888.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: rjw@sisk.pl, linus.walleij@stericsson.com, arnd@arndb.de, linux-sh@vger.kernel.org, horms@verge.net.au, grant.likely@secretlab.ca, lethal@linux-sh.org, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Here is my first attempt on EMEV2 GPIO DT support.
+This is V2 of Emma Mobile EV2 SMP support.
 
-More or less only dry coded at this point - only tested
-with platform devices using pdata->irq_base = 0.
+At this point only the most basic form of SMP operation
+is supported. TWD and CPU Hotplug support is excluded.
 
-The IRQ bits seem quite fine to me, but perhaps some
-people will dislike the idea of runtime selection if
-linear or legacy irq domain should be used. The reason
-for both is that the linear irq domain is used in the
-case when we want to have a static preallocated range
-of IRQs configurable via platform data, and the linear
-range is used for DT together with the ->xlate feature.
+Tied to both the Emma Mobile EV2 and the KZM9D board
+due to the need to switch on board in platsmp.c and
+the newly introduced need for static mappings.
 
-I am yet to try to tie in the actual GPIO pins using DT.
-So please consider this as an early preview of DT support.
+The static mappings are needed to allow hardware
+acces early during boot when SMP is initialized.
+This early requirement forces us to also map in
+the SMU registers.
 
-Pointers in any direction would be greatly appreciated.
-
-Not-yet-signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- Applies on top of:
- "[PATCH] gpio: Emma Mobile GPIO driver V2"
+ Changes since V1:
+ - access SMU via separate function
+ - rework SCU coherency setting function
+ - make use of broken out emev2 header
 
- drivers/gpio/gpio-em.c |   44 +++++++++++++++++++++++++++++++++++++++-----
- 1 file changed, 39 insertions(+), 5 deletions(-)
+ arch/arm/mach-shmobile/Makefile             |    1 
+ arch/arm/mach-shmobile/board-kzm9d.c        |    1 
+ arch/arm/mach-shmobile/clock-emev2.c        |   18 +++++
+ arch/arm/mach-shmobile/include/mach/emev2.h |    7 +
+ arch/arm/mach-shmobile/platsmp.c            |   17 ++++
+ arch/arm/mach-shmobile/setup-emev2.c        |   24 ++++++
+ arch/arm/mach-shmobile/smp-emev2.c          |   97 +++++++++++++++++++++++++++
+ 7 files changed, 165 insertions(+)
 
---- 0011/drivers/gpio/gpio-em.c
-+++ work/drivers/gpio/gpio-em.c	2012-05-16 00:24:30.000000000 +0900
-@@ -41,6 +41,11 @@ struct em_gio_priv {
- 	struct gpio_chip gpio_chip;
- 	struct irq_chip irq_chip;
- 	struct irq_domain *irq_domain;
-+
-+	unsigned int (*hook_irq)(struct irq_domain *domain,
-+				 irq_hw_number_t hwirq);
-+	unsigned int (*demux_irq)(struct irq_domain *domain,
-+				  irq_hw_number_t hwirq);
- };
+--- 0008/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2012-05-12 02:48:35.000000000 +0900
+@@ -19,6 +19,7 @@ smp-y				:= platsmp.o headsmp.o
+ smp-$(CONFIG_HOTPLUG_CPU)	+= hotplug.o
+ smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o
+ smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o
++smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o
  
- #define GIO_E1 0x00
-@@ -169,7 +174,7 @@ static irqreturn_t em_gio_irq_handler(in
- 	while ((pending = em_gio_read(p, GIO_MST))) {
- 		offset = __ffs(pending);
- 		em_gio_write(p, GIO_IIR, BIT(offset));
--		generic_handle_irq(irq_find_mapping(p->irq_domain, offset));
-+		generic_handle_irq(p->demux_irq(p->irq_domain, offset));
- 		irqs_handled++;
- 	}
+ # Pinmux setup
+ pfc-y				:--- 0008/arch/arm/mach-shmobile/board-kzm9d.c
++++ work/arch/arm/mach-shmobile/board-kzm9d.c	2012-05-12 03:23:09.000000000 +0900
+@@ -27,6 +27,7 @@
+ #include <asm/hardware/gic.h>
  
-@@ -220,7 +225,9 @@ static int em_gio_direction_output(struc
+ MACHINE_START(KZM9D, "kzm9d")
++	.map_io		= emev2_map_io,
+ 	.init_early	= emev2_add_early_devices,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_irq	= emev2_init_irq,
+--- 0007/arch/arm/mach-shmobile/clock-emev2.c
++++ work/arch/arm/mach-shmobile/clock-emev2.c	2012-05-12 03:34:20.000000000 +0900
+@@ -40,6 +40,7 @@
+ #define USIB2SCLKDIV 0x65c
+ #define USIB3SCLKDIV 0x660
+ #define STI_CLKSEL 0x688
++#define SMU_GENERAL_REG0 0x7c0
  
- static int em_gio_to_irq(struct gpio_chip *chip, unsigned offset)
- {
--	return irq_find_mapping(gpio_to_priv(chip)->irq_domain, offset);
-+	struct em_gio_priv *p = gpio_to_priv(chip);
-+
-+	return p->hook_irq(p->irq_domain, offset);
+ /* not pretty, but hey */
+ static void __iomem *smu_base;
+@@ -50,6 +51,11 @@ static void emev2_smu_write(unsigned lon
+ 	iowrite32(value, smu_base + offs);
  }
  
- static int em_gio_irq_domain_map(struct irq_domain *h, unsigned int virq,
-@@ -238,9 +245,10 @@ static int em_gio_irq_domain_map(struct
- 
- static struct irq_domain_ops em_gio_irq_domain_ops = {
- 	.map	= em_gio_irq_domain_map,
-+	.xlate	= irq_domain_xlate_twocell,
- };
- 
--static int __devinit em_gio_irq_domain_init(struct em_gio_priv *p)
-+static int __devinit em_gio_irq_domain_init_legacy(struct em_gio_priv *p)
++void emev2_set_boot_vector(unsigned long value)
++{
++	emev2_smu_write(value, SMU_GENERAL_REG0);
++}
++
+ static struct clk_mapping smu_mapping = {
+ 	.phys	= EMEV2_SMU_BASE,
+ 	.len	= PAGE_SIZE,
+@@ -194,6 +200,18 @@ static struct clk_lookup lookups[] = {
+ void __init emev2_clock_init(void)
  {
- 	struct platform_device *pdev = p->pdev;
- 	struct gpio_em_config *pdata = pdev->dev.platform_data;
-@@ -263,6 +271,27 @@ static int __devinit em_gio_irq_domain_i
- 		return -ENXIO;
- 	}
+ 	int k, ret = 0;
++	static int is_setup;
++
++	/* yuck, this is ugly as hell, but the non-smp case of clocks
++	 * code is now designed to rely on ioremap() instead of static
++	 * entity maps. in the case of smp we need access to the SMU
++	 * register earlier than ioremap() is actually working without
++	 * any static maps. to enable SMP in ugly but with dynamic
++	 * mappings we have to call emev2_clock_init() from different
++	 * places depending on UP and SMP...
++	 */
++	if (is_setup++)
++		return;
  
-+	p->hook_irq = irq_find_mapping;
-+	p->demux_irq = irq_find_mapping;
+ 	smu_base = ioremap(EMEV2_SMU_BASE, PAGE_SIZE);
+ 	BUG_ON(!smu_base);
+--- 0007/arch/arm/mach-shmobile/include/mach/emev2.h
++++ work/arch/arm/mach-shmobile/include/mach/emev2.h	2012-05-12 02:59:15.000000000 +0900
+@@ -1,9 +1,16 @@
+ #ifndef __ASM_EMEV2_H__
+ #define __ASM_EMEV2_H__
+ 
++extern void emev2_map_io(void);
+ extern void emev2_init_irq(void);
+ extern void emev2_add_early_devices(void);
+ extern void emev2_add_standard_devices(void);
+ extern void emev2_clock_init(void);
++extern void emev2_set_boot_vector(unsigned long value);
++extern unsigned int emev2_get_core_count(void);
++extern int emev2_platform_cpu_kill(unsigned int cpu);
++extern void emev2_secondary_init(unsigned int cpu);
++extern int emev2_boot_secondary(unsigned int cpu);
++extern void emev2_smp_prepare_cpus(void);
+ 
+ #endif /* __ASM_EMEV2_H__ */
+--- 0001/arch/arm/mach-shmobile/platsmp.c
++++ work/arch/arm/mach-shmobile/platsmp.c	2012-05-12 03:20:28.000000000 +0900
+@@ -19,9 +19,11 @@
+ #include <asm/hardware/gic.h>
+ #include <asm/mach-types.h>
+ #include <mach/common.h>
++#include <mach/emev2.h>
+ 
+ #define is_sh73a0() (machine_is_ag5evm() || machine_is_kota2() || machine_is_kzm9g())
+ #define is_r8a7779() machine_is_marzen()
++#define is_emev2() machine_is_kzm9d()
+ 
+ static unsigned int __init shmobile_smp_get_core_count(void)
+ {
+@@ -31,6 +33,9 @@ static unsigned int __init shmobile_smp_
+ 	if (is_r8a7779())
+ 		return r8a7779_get_core_count();
+ 
++	if (is_emev2())
++		return emev2_get_core_count();
++
+ 	return 1;
+ }
+ 
+@@ -41,6 +46,9 @@ static void __init shmobile_smp_prepare_
+ 
+ 	if (is_r8a7779())
+ 		r8a7779_smp_prepare_cpus();
++
++	if (is_emev2())
++		emev2_smp_prepare_cpus();
+ }
+ 
+ int shmobile_platform_cpu_kill(unsigned int cpu)
+@@ -48,6 +56,9 @@ int shmobile_platform_cpu_kill(unsigned
+ 	if (is_r8a7779())
+ 		return r8a7779_platform_cpu_kill(cpu);
+ 
++	if (is_emev2())
++		return emev2_platform_cpu_kill(cpu);
++
+ 	return 1;
+ }
+ 
+@@ -60,6 +71,9 @@ void __cpuinit platform_secondary_init(u
+ 
+ 	if (is_r8a7779())
+ 		r8a7779_secondary_init(cpu);
++
++	if (is_emev2())
++		emev2_secondary_init(cpu);
+ }
+ 
+ int __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
+@@ -70,6 +84,9 @@ int __cpuinit boot_secondary(unsigned in
+ 	if (is_r8a7779())
+ 		return r8a7779_boot_secondary(cpu);
+ 
++	if (is_emev2())
++		return emev2_boot_secondary(cpu);
++
+ 	return -ENOSYS;
+ }
+ 
+--- 0007/arch/arm/mach-shmobile/setup-emev2.c
++++ work/arch/arm/mach-shmobile/setup-emev2.c	2012-05-12 03:37:24.000000000 +0900
+@@ -34,6 +34,30 @@
+ #include <asm/mach/time.h>
+ #include <asm/hardware/gic.h>
+ 
++static struct map_desc emev2_io_desc[] __initdata = {
++#ifdef CONFIG_SMP
++	/* 128K entity map for 0xe0100000 (SMU) */
++	{
++		.virtual	= 0xe0100000,
++		.pfn		= __phys_to_pfn(0xe0100000),
++		.length		= SZ_128K,
++		.type		= MT_DEVICE
++	},
++	/* 2M mapping for SCU + L2 controller */
++	{
++		.virtual	= 0xf0000000,
++		.pfn		= __phys_to_pfn(0x1e000000),
++		.length		= SZ_2M,
++		.type		= MT_DEVICE
++	},
++#endif
++};
++
++void __init emev2_map_io(void)
++{
++	iotable_init(emev2_io_desc, ARRAY_SIZE(emev2_io_desc));
++}
++
+ /* UART */
+ static struct resource uart0_resources[] = {
+ 	[0]	= {
+--- /dev/null
++++ work/arch/arm/mach-shmobile/smp-emev2.c	2012-05-12 03:38:32.000000000 +0900
+@@ -0,0 +1,97 @@
++/*
++ * SMP support for Emma Mobile EV2
++ *
++ * Copyright (C) 2012  Renesas Solutions Corp.
++ * Copyright (C) 2012  Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ */
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/smp.h>
++#include <linux/spinlock.h>
++#include <linux/io.h>
++#include <linux/delay.h>
++#include <mach/common.h>
++#include <mach/emev2.h>
++#include <asm/smp_plat.h>
++#include <asm/smp_scu.h>
++#include <asm/hardware/gic.h>
++#include <asm/cacheflush.h>
++
++#define EMEV2_SCU_BASE 0x1e000000
++
++static DEFINE_SPINLOCK(scu_lock);
++static void __iomem *scu_base;
++
++static void modify_scu_cpu_psr(unsigned long set, unsigned long clr)
++{
++	unsigned long tmp;
++
++	/* we assume this code is running on a different cpu
++	 * than the one that is changing coherency setting */
++	spin_lock(&scu_lock);
++	tmp = readl(scu_base + 8);
++	tmp &= ~clr;
++	tmp |= set;
++	writel(tmp, scu_base + 8);
++	spin_unlock(&scu_lock);
++
++}
++
++unsigned int __init emev2_get_core_count(void)
++{
++	if (!scu_base) {
++		scu_base = ioremap(EMEV2_SCU_BASE, PAGE_SIZE);
++		emev2_clock_init(); /* need ioremapped SMU */
++	}
++
++	WARN_ON_ONCE(!scu_base);
++
++	return scu_base ? scu_get_core_count(scu_base) : 1;
++}
++
++int emev2_platform_cpu_kill(unsigned int cpu)
++{
++	return 0; /* not supported yet */
++}
++
++void __cpuinit emev2_secondary_init(unsigned int cpu)
++{
++	gic_secondary_init(0);
++}
++
++int __cpuinit emev2_boot_secondary(unsigned int cpu)
++{
++	cpu = cpu_logical_map(cpu);
++
++	/* enable cache coherency */
++	modify_scu_cpu_psr(0, 3 << (cpu * 8));
++
++	/* Tell ROM loader about our vector (in headsmp.S) */
++	emev2_set_boot_vector(__pa(shmobile_secondary_vector));
++
++	gic_raise_softirq(cpumask_of(cpu), 1);
 +	return 0;
 +}
 +
-+static int __devinit em_gio_irq_domain_init_linear(struct em_gio_priv *p)
++void __init emev2_smp_prepare_cpus(void)
 +{
-+	struct platform_device *pdev = p->pdev;
-+	struct gpio_em_config *pdata = pdev->dev.platform_data;
++	int cpu = cpu_logical_map(0);
 +
-+	pr_debug("gio: hw base = %d, nr = %d, sw base = dynamic\n",
-+		 pdata->gpio_base, pdata->number_of_pins);
++	scu_enable(scu_base);
 +
-+	p->irq_domain = irq_domain_add_linear(pdev->dev.of_node,
-+					      pdata->number_of_pins,
-+					      &em_gio_irq_domain_ops, p);
-+	if (!p->irq_domain)
-+		return -ENXIO;
-+
-+	p->hook_irq = irq_create_mapping;
-+	p->demux_irq = irq_linear_revmap;
- 	return 0;
- }
- 
-@@ -270,7 +299,8 @@ static void __devexit em_gio_irq_domain_
- {
- 	struct gpio_em_config *pdata = p->pdev->dev.platform_data;
- 
--	irq_free_descs(p->irq_base, pdata->number_of_pins);
-+	if (p->irq_base)
-+		irq_free_descs(p->irq_base, pdata->number_of_pins);
- 	/* FIXME: irq domain wants to be freed! */
- }
- 
-@@ -340,7 +370,11 @@ static int __devinit em_gio_probe(struct
- 	irq_chip->irq_set_type = em_gio_irq_set_type;
- 	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE;
- 
--	ret = em_gio_irq_domain_init(p);
-+	if (pdata->irq_base)
-+		ret = em_gio_irq_domain_init_legacy(p); /* static */
-+	else
-+		ret = em_gio_irq_domain_init_linear(p); /* dynamic */
-+
- 	if (ret) {
- 		dev_err(&pdev->dev, "cannot initialize irq domain\n");
- 		goto err3;
++	/* enable cache coherency on CPU0 */
++	modify_scu_cpu_psr(0, 3 << (cpu * 8));
++}
