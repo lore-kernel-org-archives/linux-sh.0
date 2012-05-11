@@ -1,42 +1,64 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 03 May 2012 15:05:30 +0000
-Subject: [PATCH 01/29] mmc: sh_mmcif: remove redundant .down_pwr() callback
-Message-Id: <1336057558-11031-2-git-send-email-g.liakhovetski@gmx.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 11 May 2012 19:41:51 +0000
+Subject: [PATCH 00/06] mach-shmobile: Emma Mobile EV2 support V2
+Message-Id: <20120511194151.6567.53888.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From the original version of sh_mmcif the .set_pwr() callback has only been
-used to turn the card's power on, and the .down_pwr() callback has been
-used to turn it off. .set_pwr() can be used for both these tasks, which is
-also how it is implemented by the only user of this API: the SH7724 ecovec
-board.
+mach-shmobile: Emma Mobile EV2 support V2
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+[PATCH 01/06] mach-shmobile: Emma Mobile EV2 SoC base support V2
+[PATCH 02/06] mach-shmobile: KZM9D board support V2
+[PATCH 03/06] mach-shmobile: Emma Mobile EV2 SMP support V2
+[PATCH 04/06] mach-shmobile: Emma Mobile EV2 GPIO support V2
+[PATCH 05/06] mach-shmobile: KZM9D board Ethernet support V2
+[PATCH 06/06] mach-shmobile: Emma Mobile EV2 DT support V2
+
+This series are the second iteration of Emma Mobile EV2 support
+for mach-shmobile. Yet another dual core Cortex-A9 SoC.
+
+At this point serial, timer and gpio are supported as platform
+devices. Serial and timer also come with DT bindings.
+
+Basic SMP support is in place, but CPU hotplug and TWD needs
+more work.
+
+Clocks are enabled in the case of the KZM9D board support
+via platform devices. In the DT case there are no clocks
+enabled. SMP is also missing from DT. So anyone playing
+around with DT will have to accept the fact that it is very
+limited at tis point. All features with upstream support
+can however be enabled via regular platform devices.
+
+Many thanks to Arnd for his endless reviews and helpful
+suggestions and a lot of patience!
+
+To build this you also need whatever included in linux-next
+as of 20120511 plus the following patches:
+
+[PATCH 01/03] clockevents: Make clockevents_config() a global symbol
+[PATCH 02/03] clocksource: em_sti: Emma Mobile STI driver V2
+[PATCH 03/03] clocksource: em_sti: Add DT support
+[PATCH] gpio: Emma Mobile GPIO driver
+
+Also, the KZM9D mach-type entry seems gone in linux-next,
+so I suppose we need to deal with that as well somehow.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/mmc/host/sh_mmcif.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index ed59392..19c7576 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -957,8 +957,8 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 			pm_runtime_put(&host->pd->dev);
- 			clk_disable(host->hclk);
- 			host->power = false;
--			if (p->down_pwr && ios->power_mode = MMC_POWER_OFF)
--				p->down_pwr(host->pd);
-+			if (p->set_pwr && ios->power_mode = MMC_POWER_OFF)
-+				p->set_pwr(host->pd, 0);
- 		}
- 		host->state = STATE_IDLE;
- 		return;
--- 
-1.7.2.5
+ Applies to linux-next 20120511
 
+ arch/arm/boot/dts/emev2-kzm9d.dts           |   66 +++
+ arch/arm/mach-shmobile/Kconfig              |   10 
+ arch/arm/mach-shmobile/Makefile             |    3 
+ arch/arm/mach-shmobile/board-kzm9d.c        |   81 ++++
+ arch/arm/mach-shmobile/clock-emev2.c        |  249 ++++++++++++++
+ arch/arm/mach-shmobile/include/mach/emev2.h |   19 +
+ arch/arm/mach-shmobile/platsmp.c            |   17 +
+ arch/arm/mach-shmobile/setup-emev2.c        |  454 ++++++++++++++++++++++++++-
+ arch/arm/mach-shmobile/smp-emev2.c          |   97 +++++
+ 9 files changed, 994 insertions(+), 2 deletions(-)
