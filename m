@@ -1,258 +1,485 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 18 May 2012 01:58:36 +0000
-Subject: [PATCH v5 6/6] net: sh_eth: use NAPI
-Message-Id: <4FB5ACCC.9050709@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 11 May 2012 19:42:03 +0000
+Subject: [PATCH 01/06] mach-shmobile: Emma Mobile EV2 SoC base support V2
+Message-Id: <20120511194203.6567.29067.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20120511194151.6567.53888.sendpatchset@w520>
+In-Reply-To: <20120511194151.6567.53888.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev <netdev@vger.kernel.org>
-Cc: SH-Linux <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-This patch modifies the driver to use NAPI.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+This is V2 of the Emma Mobile EV2 SoC support.
+Included here is support for serial and timer
+devices which is just about enough to boot a kernel.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- about v5:
-  - fix two racing sh_eth_txfree() in sh_eth_start_xmit() and sh_eth_poll()
 
- drivers/net/ethernet/renesas/sh_eth.c |  109 +++++++++++++++++++++------------
- drivers/net/ethernet/renesas/sh_eth.h |    3 +
- 2 files changed, 73 insertions(+), 39 deletions(-)
+ Changes since V1:
+ - use IOMEM(), ioremap() and iowrite32() for clock code
+ - use built-in ioremap in shared sh clock code
+ - break out function prototypes to a separate header
+ - move gic code into setup-emev2.c
+ - get rid of static io table
 
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index c64a31c..1dc9b6e 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -1035,7 +1035,7 @@ static int sh_eth_txfree(struct net_device *ndev)
- }
+ Thanks to Arnd for his kind help!
 
- /* Packet receive function */
--static int sh_eth_rx(struct net_device *ndev)
-+static int sh_eth_rx(struct net_device *ndev, int *work, int budget)
- {
- 	struct sh_eth_private *mdp = netdev_priv(ndev);
- 	struct sh_eth_rxdesc *rxdesc;
-@@ -1047,7 +1047,8 @@ static int sh_eth_rx(struct net_device *ndev)
- 	u32 desc_status;
+ arch/arm/mach-shmobile/Kconfig              |    5 
+ arch/arm/mach-shmobile/Makefile             |    1 
+ arch/arm/mach-shmobile/clock-emev2.c        |  226 +++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/emev2.h |    9 +
+ arch/arm/mach-shmobile/setup-emev2.c        |  180 +++++++++++++++++++++
+ 5 files changed, 421 insertions(+)
 
- 	rxdesc = &mdp->rx_ring[entry];
--	while (!(rxdesc->status & cpu_to_edmac(mdp, RD_RACT))) {
-+	while (!(rxdesc->status & cpu_to_edmac(mdp, RD_RACT)) &&
-+	       *work < budget) {
- 		desc_status = edmac_to_cpu(mdp, rxdesc->status);
- 		pkt_len = rxdesc->frame_length;
-
-@@ -1087,13 +1088,17 @@ static int sh_eth_rx(struct net_device *ndev)
- 				skb_reserve(skb, NET_IP_ALIGN);
- 			skb_put(skb, pkt_len);
- 			skb->protocol = eth_type_trans(skb, ndev);
--			netif_rx(skb);
--			ndev->stats.rx_packets++;
--			ndev->stats.rx_bytes += pkt_len;
-+			if (netif_receive_skb(skb) = NET_RX_DROP) {
-+				ndev->stats.rx_dropped++;
-+			} else {
-+				ndev->stats.rx_packets++;
-+				ndev->stats.rx_bytes += pkt_len;
-+			}
- 		}
- 		rxdesc->status |= cpu_to_edmac(mdp, RD_RACT);
- 		entry = (++mdp->cur_rx) % mdp->num_rx_ring;
- 		rxdesc = &mdp->rx_ring[entry];
-+		(*work)++;
- 	}
-
- 	/* Refill the Rx ring buffers. */
-@@ -1125,7 +1130,7 @@ static int sh_eth_rx(struct net_device *ndev)
-
- 	/* Restart Rx engine if stopped. */
- 	/* If we don't need to check status, don't. -KDU */
--	if (!(sh_eth_read(ndev, EDRRR) & EDRRR_R)) {
-+	if (*work < budget && !(sh_eth_read(ndev, EDRRR) & EDRRR_R)) {
- 		/* fix the values for the next receiving */
- 		mdp->cur_rx = mdp->dirty_rx = (sh_eth_read(ndev, RDFAR) -
- 					       sh_eth_read(ndev, RDLAR)) >> 4;
-@@ -1281,38 +1286,61 @@ static irqreturn_t sh_eth_interrupt(int irq, void *netdev)
-
- 	/* Get interrpt stat */
- 	intr_status = sh_eth_read(ndev, EESR);
--	/* Clear interrupt */
- 	if (intr_status & (EESR_FRC | EESR_RMAF | EESR_RRF |
- 			EESR_RTLF | EESR_RTSF | EESR_PRE | EESR_CERF |
- 			cd->tx_check | cd->eesr_err_check)) {
--		sh_eth_write(ndev, intr_status, EESR);
-+		if (napi_schedule_prep(&mdp->napi)) {
-+			/* Disable interrupts of the channel */
-+			sh_eth_write(ndev, 0, EESIPR);
-+			__napi_schedule(&mdp->napi);
-+		}
- 		ret = IRQ_HANDLED;
--	} else
--		goto other_irq;
--
--	if (intr_status & (EESR_FRC | /* Frame recv*/
--			EESR_RMAF | /* Multi cast address recv*/
--			EESR_RRF  | /* Bit frame recv */
--			EESR_RTLF | /* Long frame recv*/
--			EESR_RTSF | /* short frame recv */
--			EESR_PRE  | /* PHY-LSI recv error */
--			EESR_CERF)){ /* recv frame CRC error */
--		sh_eth_rx(ndev);
- 	}
-
--	/* Tx Check */
--	if (intr_status & cd->tx_check) {
--		sh_eth_txfree(ndev);
--		netif_wake_queue(ndev);
-+	spin_unlock(&mdp->lock);
+--- 0003/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2012-05-12 02:45:10.000000000 +0900
+@@ -41,6 +41,11 @@ config ARCH_R8A7779
+ 	select ARM_GIC
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 
++config ARCH_EMEV2
++	bool "Emma Mobile EV2"
++	select CPU_V7
++	select ARM_GIC
++
+ comment "SH-Mobile Board Type"
+ 
+ config MACH_G3EVM
+--- 0001/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2012-05-12 02:45:20.000000000 +0900
+@@ -12,6 +12,7 @@ obj-$(CONFIG_ARCH_SH7372)	+= setup-sh737
+ obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o clock-sh73a0.o intc-sh73a0.o
+ obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o clock-r8a7740.o intc-r8a7740.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o clock-r8a7779.o intc-r8a7779.o
++obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o clock-emev2.o
+ 
+ # SMP objects
+ smp-y				:= platsmp.o headsmp.o
+--- /dev/null
++++ work/arch/arm/mach-shmobile/clock-emev2.c	2012-05-12 02:44:44.000000000 +0900
+@@ -0,0 +1,226 @@
++/*
++ * Emma Mobile EV2 clock framework support
++ *
++ * Copyright (C) 2012  Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ */
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/io.h>
++#include <linux/sh_clk.h>
++#include <linux/clkdev.h>
++#include <mach/common.h>
++
++#define EMEV2_SMU_BASE 0xe0110000
++
++/* EMEV2 SMU registers */
++#define USIAU0_RSTCTRL 0x094
++#define USIBU1_RSTCTRL 0x0ac
++#define USIBU2_RSTCTRL 0x0b0
++#define USIBU3_RSTCTRL 0x0b4
++#define STI_RSTCTRL 0x124
++#define USIAU0GCLKCTRL 0x4a0
++#define USIBU1GCLKCTRL 0x4b8
++#define USIBU2GCLKCTRL 0x4bc
++#define USIBU3GCLKCTRL 0x04c0
++#define STIGCLKCTRL 0x528
++#define USIAU0SCLKDIV 0x61c
++#define USIB2SCLKDIV 0x65c
++#define USIB3SCLKDIV 0x660
++#define STI_CLKSEL 0x688
++
++/* not pretty, but hey */
++static void __iomem *smu_base;
++
++static void emev2_smu_write(unsigned long value, int offs)
++{
++	BUG_ON(!smu_base || (offs >= PAGE_SIZE));
++	iowrite32(value, smu_base + offs);
++}
++
++static struct clk_mapping smu_mapping = {
++	.phys	= EMEV2_SMU_BASE,
++	.len	= PAGE_SIZE,
++};
++
++/* Fixed 32 KHz root clock from C32K pin */
++static struct clk c32k_clk = {
++	.rate           = 32768,
++	.mapping	= &smu_mapping,
++};
++
++/* PLL3 multiplies C32K with 7000 */
++static unsigned long pll3_recalc(struct clk *clk)
++{
++	return clk->parent->rate * 7000;
++}
++
++static struct sh_clk_ops pll3_clk_ops = {
++	.recalc		= pll3_recalc,
++};
++
++static struct clk pll3_clk = {
++	.ops		= &pll3_clk_ops,
++	.parent		= &c32k_clk,
++};
++
++static struct clk *main_clks[] = {
++	&c32k_clk,
++	&pll3_clk,
++};
++
++enum { SCLKDIV_USIAU0, SCLKDIV_USIBU2, SCLKDIV_USIBU1, SCLKDIV_USIBU3,
++	SCLKDIV_NR };
++
++#define SCLKDIV(_reg, _shift)			\
++{								\
++	.parent		= &pll3_clk,				\
++	.enable_reg	= IOMEM(EMEV2_SMU_BASE + (_reg)),	\
++	.enable_bit	= _shift,				\
++}
++
++static struct clk sclkdiv_clks[SCLKDIV_NR] = {
++	[SCLKDIV_USIAU0] = SCLKDIV(USIAU0SCLKDIV, 0),
++	[SCLKDIV_USIBU2] = SCLKDIV(USIB2SCLKDIV, 16),
++	[SCLKDIV_USIBU1] = SCLKDIV(USIB2SCLKDIV, 0),
++	[SCLKDIV_USIBU3] = SCLKDIV(USIB3SCLKDIV, 0),
++};
++
++enum { GCLK_USIAU0_SCLK, GCLK_USIBU1_SCLK, GCLK_USIBU2_SCLK, GCLK_USIBU3_SCLK,
++	GCLK_STI_SCLK,
++	GCLK_NR };
++
++#define GCLK_SCLK(_parent, _reg) \
++{								\
++	.parent		= _parent,				\
++	.enable_reg	= IOMEM(EMEV2_SMU_BASE + (_reg)),	\
++	.enable_bit	= 1, /* SCLK_GCC */			\
++}
++
++static struct clk gclk_clks[GCLK_NR] = {
++	[GCLK_USIAU0_SCLK] = GCLK_SCLK(&sclkdiv_clks[SCLKDIV_USIAU0],
++				       USIAU0GCLKCTRL),
++	[GCLK_USIBU1_SCLK] = GCLK_SCLK(&sclkdiv_clks[SCLKDIV_USIBU1],
++				       USIBU1GCLKCTRL),
++	[GCLK_USIBU2_SCLK] = GCLK_SCLK(&sclkdiv_clks[SCLKDIV_USIBU2],
++				       USIBU2GCLKCTRL),
++	[GCLK_USIBU3_SCLK] = GCLK_SCLK(&sclkdiv_clks[SCLKDIV_USIBU3],
++				       USIBU3GCLKCTRL),
++	[GCLK_STI_SCLK] = GCLK_SCLK(&c32k_clk, STIGCLKCTRL),
++};
++
++static int emev2_gclk_enable(struct clk *clk)
++{
++	iowrite32(ioread32(clk->mapped_reg) | (1 << clk->enable_bit),
++		  clk->mapped_reg);
++	return 0;
++}
++
++static void emev2_gclk_disable(struct clk *clk)
++{
++	iowrite32(ioread32(clk->mapped_reg) & ~(1 << clk->enable_bit),
++		  clk->mapped_reg);
++}
++
++static struct sh_clk_ops emev2_gclk_clk_ops = {
++	.enable		= emev2_gclk_enable,
++	.disable	= emev2_gclk_disable,
++	.recalc		= followparent_recalc,
++};
++
++static int __init emev2_gclk_register(struct clk *clks, int nr)
++{
++	struct clk *clkp;
++	int ret = 0;
++	int k;
++
++	for (k = 0; !ret && (k < nr); k++) {
++		clkp = clks + k;
++		clkp->ops = &emev2_gclk_clk_ops;
++		ret |= clk_register(clkp);
++	}
 +
 +	return ret;
 +}
 +
-+static int sh_eth_poll(struct napi_struct *napi, int budget)
++static unsigned long emev2_sclkdiv_recalc(struct clk *clk)
 +{
-+	struct sh_eth_private *mdp = container_of(napi, struct sh_eth_private,
-+						  napi);
-+	struct net_device *ndev = mdp->ndev;
-+	struct sh_eth_cpu_data *cd = mdp->cd;
-+	int work_done = 0, txfree_num;
-+	u32 intr_status = sh_eth_read(ndev, EESR);
++	unsigned int sclk_div;
 +
-+	/* Clear interrupt flags */
-+	sh_eth_write(ndev, intr_status, EESR);
++	sclk_div = (ioread32(clk->mapped_reg) >> clk->enable_bit) & 0xff;
 +
-+	/* check txdesc */
-+	txfree_num = sh_eth_txfree(ndev);
-+	if (txfree_num) {
-+		netif_tx_lock(ndev);
-+		if (netif_queue_stopped(ndev))
-+			netif_wake_queue(ndev);
-+		netif_tx_unlock(ndev);
- 	}
-
-+	/* check rxdesc */
-+	sh_eth_rx(ndev, &work_done, budget);
++	return clk->parent->rate / (sclk_div + 1);
++}
 +
-+	/* check error flags */
- 	if (intr_status & cd->eesr_err_check)
- 		sh_eth_error(ndev, intr_status);
-
--other_irq:
--	spin_unlock(&mdp->lock);
-+	/* get current interrupt flags */
-+	intr_status = sh_eth_read(ndev, EESR);
-
--	return ret;
-+	/* check whether this driver should call napi_complete() */
-+	if (work_done < budget) {
-+		napi_complete(napi);
-+		/* Enable all interrupts */
-+		sh_eth_write(ndev, cd->eesipr_value, EESIPR);
++static struct sh_clk_ops emev2_sclkdiv_clk_ops = {
++	.recalc		= emev2_sclkdiv_recalc,
++};
++
++static int __init emev2_sclkdiv_register(struct clk *clks, int nr)
++{
++	struct clk *clkp;
++	int ret = 0;
++	int k;
++
++	for (k = 0; !ret && (k < nr); k++) {
++		clkp = clks + k;
++		clkp->ops = &emev2_sclkdiv_clk_ops;
++		ret |= clk_register(clkp);
 +	}
 +
-+	return work_done;
- }
-
- /* PHY state control function */
-@@ -1545,6 +1573,7 @@ static int sh_eth_set_ringparam(struct net_device *ndev,
- 		/* Stop the chip's Tx and Rx processes. */
- 		sh_eth_write(ndev, 0, EDTRR);
- 		sh_eth_write(ndev, 0, EDRRR);
-+		napi_disable(&mdp->napi);
- 		synchronize_irq(ndev->irq);
- 	}
-
-@@ -1569,6 +1598,7 @@ static int sh_eth_set_ringparam(struct net_device *ndev,
- 	}
-
- 	if (netif_running(ndev)) {
-+		napi_enable(&mdp->napi);
- 		sh_eth_write(ndev, mdp->cd->eesipr_value, EESIPR);
- 		/* Setting the Rx mode will start the Rx process. */
- 		sh_eth_write(ndev, EDRRR_R, EDRRR);
-@@ -1600,6 +1630,8 @@ static int sh_eth_open(struct net_device *ndev)
-
- 	pm_runtime_get_sync(&mdp->pdev->dev);
-
-+	napi_enable(&mdp->napi);
++	return ret;
++}
 +
- 	ret = request_irq(ndev->irq, sh_eth_interrupt,
- #if defined(CONFIG_CPU_SUBTYPE_SH7763) || \
- 	defined(CONFIG_CPU_SUBTYPE_SH7764) || \
-@@ -1678,19 +1710,6 @@ static int sh_eth_start_xmit(struct sk_buff *skb, struct net_device *ndev)
- 	struct sh_eth_private *mdp = netdev_priv(ndev);
- 	struct sh_eth_txdesc *txdesc;
- 	u32 entry;
--	unsigned long flags;
--
--	spin_lock_irqsave(&mdp->lock, flags);
--	if ((mdp->cur_tx - mdp->dirty_tx) >= (mdp->num_tx_ring - 4)) {
--		if (!sh_eth_txfree(ndev)) {
--			if (netif_msg_tx_queued(mdp))
--				dev_warn(&ndev->dev, "TxFD exhausted.\n");
--			netif_stop_queue(ndev);
--			spin_unlock_irqrestore(&mdp->lock, flags);
--			return NETDEV_TX_BUSY;
--		}
--	}
--	spin_unlock_irqrestore(&mdp->lock, flags);
-
- 	entry = mdp->cur_tx % mdp->num_tx_ring;
- 	mdp->tx_skbuff[entry] = skb;
-@@ -1716,6 +1735,13 @@ static int sh_eth_start_xmit(struct sk_buff *skb, struct net_device *ndev)
- 	if (!(sh_eth_read(ndev, EDTRR) & sh_eth_get_edtrr_trns(mdp)))
- 		sh_eth_write(ndev, sh_eth_get_edtrr_trns(mdp), EDTRR);
-
-+	if ((mdp->cur_tx - mdp->dirty_tx) >= (mdp->num_tx_ring - 4)) {
-+		if (netif_msg_tx_queued(mdp)) {
-+			dev_warn(&ndev->dev, "TxFD exhausted.\n");
-+			netif_stop_queue(ndev);
-+		}
++static struct clk_lookup lookups[] = {
++	CLKDEV_DEV_ID("serial8250-em.0", &gclk_clks[GCLK_USIAU0_SCLK]),
++	CLKDEV_DEV_ID("serial8250-em.1", &gclk_clks[GCLK_USIBU1_SCLK]),
++	CLKDEV_DEV_ID("serial8250-em.2", &gclk_clks[GCLK_USIBU2_SCLK]),
++	CLKDEV_DEV_ID("serial8250-em.3", &gclk_clks[GCLK_USIBU3_SCLK]),
++	CLKDEV_DEV_ID("em_sti.0", &gclk_clks[GCLK_STI_SCLK]),
++};
++
++void __init emev2_clock_init(void)
++{
++	int k, ret = 0;
++
++	smu_base = ioremap(EMEV2_SMU_BASE, PAGE_SIZE);
++	BUG_ON(!smu_base);
++
++	/* setup STI timer to run on 37.768 kHz and deassert reset */
++	emev2_smu_write(0, STI_CLKSEL);
++	emev2_smu_write(1, STI_RSTCTRL);
++
++	/* deassert reset for UART0->UART3 */
++	emev2_smu_write(2, USIAU0_RSTCTRL);
++	emev2_smu_write(2, USIBU1_RSTCTRL);
++	emev2_smu_write(2, USIBU2_RSTCTRL);
++	emev2_smu_write(2, USIBU3_RSTCTRL);
++
++	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
++		ret = clk_register(main_clks[k]);
++
++	if (!ret)
++		ret = emev2_sclkdiv_register(sclkdiv_clks, SCLKDIV_NR);
++
++	if (!ret)
++		ret = emev2_gclk_register(gclk_clks, GCLK_NR);
++
++	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
++
++	if (!ret)
++		shmobile_clk_init();
++	else
++		panic("failed to setup emev2 clocks\n");
++}
+--- /dev/null
++++ work/arch/arm/mach-shmobile/include/mach/emev2.h	2012-05-12 02:44:44.000000000 +0900
+@@ -0,0 +1,9 @@
++#ifndef __ASM_EMEV2_H__
++#define __ASM_EMEV2_H__
++
++extern void emev2_init_irq(void);
++extern void emev2_add_early_devices(void);
++extern void emev2_add_standard_devices(void);
++extern void emev2_clock_init(void);
++
++#endif /* __ASM_EMEV2_H__ */
+--- /dev/null
++++ work/arch/arm/mach-shmobile/setup-emev2.c	2012-05-12 02:44:44.000000000 +0900
+@@ -0,0 +1,180 @@
++/*
++ * Emma Mobile EV2 processor support
++ *
++ * Copyright (C) 2012  Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ */
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/interrupt.h>
++#include <linux/irq.h>
++#include <linux/platform_device.h>
++#include <linux/delay.h>
++#include <linux/input.h>
++#include <linux/io.h>
++#include <mach/hardware.h>
++#include <mach/common.h>
++#include <mach/emev2.h>
++#include <mach/irqs.h>
++#include <asm/mach-types.h>
++#include <asm/mach/arch.h>
++#include <asm/mach/map.h>
++#include <asm/mach/time.h>
++#include <asm/hardware/gic.h>
++
++/* UART */
++static struct resource uart0_resources[] = {
++	[0]	= {
++		.start	= 0xe1020000,
++		.end	= 0xe1020037,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1]	= {
++		.start	= 40,
++		.flags	= IORESOURCE_IRQ,
 +	}
++};
 +
- 	return NETDEV_TX_OK;
- }
-
-@@ -1739,6 +1765,8 @@ static int sh_eth_close(struct net_device *ndev)
- 		phy_disconnect(mdp->phydev);
- 	}
-
-+	napi_disable(&mdp->napi);
++static struct platform_device uart0_device = {
++	.name		= "serial8250-em",
++	.id		= 0,
++	.num_resources	= ARRAY_SIZE(uart0_resources),
++	.resource	= uart0_resources,
++};
 +
- 	free_irq(ndev->irq, ndev);
-
- 	/* Free all the skbuffs in the Rx queue. */
-@@ -2368,6 +2396,9 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
- #endif
- 	sh_eth_set_default_cpu_data(mdp->cd);
-
-+	mdp->ndev = ndev;
-+	netif_napi_add(ndev, &mdp->napi, sh_eth_poll, SH_ETH_NAPI_WEIGHT);
++static struct resource uart1_resources[] = {
++	[0]	= {
++		.start	= 0xe1030000,
++		.end	= 0xe1030037,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1]	= {
++		.start	= 41,
++		.flags	= IORESOURCE_IRQ,
++	}
++};
 +
- 	/* set function */
- 	ndev->netdev_ops = &sh_eth_netdev_ops;
- 	SET_ETHTOOL_OPS(ndev, &sh_eth_ethtool_ops);
-diff --git a/drivers/net/ethernet/renesas/sh_eth.h b/drivers/net/ethernet/renesas/sh_eth.h
-index f1dbc27..93dad7b 100644
---- a/drivers/net/ethernet/renesas/sh_eth.h
-+++ b/drivers/net/ethernet/renesas/sh_eth.h
-@@ -35,6 +35,7 @@
- #define PKT_BUF_SZ		1538
- #define SH_ETH_TSU_TIMEOUT_MS	500
- #define SH_ETH_TSU_CAM_ENTRIES	32
-+#define SH_ETH_NAPI_WEIGHT	32
-
- enum {
- 	/* E-DMAC registers */
-@@ -728,6 +729,8 @@ struct sh_eth_private {
- 	int duplex;
- 	int port;		/* for TSU */
- 	int vlan_num_ids;	/* for VLAN tag filter */
-+	struct napi_struct napi;
-+	struct net_device *ndev;
-
- 	unsigned no_ether_link:1;
- 	unsigned ether_link_active_low:1;
--- 
-1.7.1
++static struct platform_device uart1_device = {
++	.name		= "serial8250-em",
++	.id		= 1,
++	.num_resources	= ARRAY_SIZE(uart1_resources),
++	.resource	= uart1_resources,
++};
++
++static struct resource uart2_resources[] = {
++	[0]	= {
++		.start	= 0xe1040000,
++		.end	= 0xe1040037,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1]	= {
++		.start	= 42,
++		.flags	= IORESOURCE_IRQ,
++	}
++};
++
++static struct platform_device uart2_device = {
++	.name		= "serial8250-em",
++	.id		= 2,
++	.num_resources	= ARRAY_SIZE(uart2_resources),
++	.resource	= uart2_resources,
++};
++
++static struct resource uart3_resources[] = {
++	[0]	= {
++		.start	= 0xe1050000,
++		.end	= 0xe1050037,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1]	= {
++		.start	= 43,
++		.flags	= IORESOURCE_IRQ,
++	}
++};
++
++static struct platform_device uart3_device = {
++	.name		= "serial8250-em",
++	.id		= 3,
++	.num_resources	= ARRAY_SIZE(uart3_resources),
++	.resource	= uart3_resources,
++};
++
++/* STI */
++static struct resource sti_resources[] = {
++	[0] = {
++		.name	= "STI",
++		.start	= 0xe0180000,
++		.end	= 0xe0180053,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= 157,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device sti_device = {
++	.name		= "em_sti",
++	.id		= 0,
++	.resource	= sti_resources,
++	.num_resources	= ARRAY_SIZE(sti_resources),
++};
++
++static struct platform_device *emev2_early_devices[] __initdata = {
++	&uart0_device,
++	&uart1_device,
++	&uart2_device,
++	&uart3_device,
++};
++
++static struct platform_device *emev2_late_devices[] __initdata = {
++	&sti_device,
++};
++
++void __init emev2_add_standard_devices(void)
++{
++	emev2_clock_init();
++
++	platform_add_devices(emev2_early_devices,
++			     ARRAY_SIZE(emev2_early_devices));
++
++	platform_add_devices(emev2_late_devices,
++			     ARRAY_SIZE(emev2_late_devices));
++}
++
++void __init emev2_add_early_devices(void)
++{
++	shmobile_setup_delay(533, 1, 3); /* Cortex-A9 @ 533MHz */
++
++	early_platform_add_devices(emev2_early_devices,
++				   ARRAY_SIZE(emev2_early_devices));
++
++	/* setup early console here as well */
++	shmobile_setup_console();
++}
++
++void __init emev2_init_irq(void)
++{
++	void __iomem *gic_dist_base;
++	void __iomem *gic_cpu_base;
++
++	/* Static mappings, never released */
++	gic_dist_base = ioremap(0xe0028000, PAGE_SIZE);
++	gic_cpu_base = ioremap(0xe0020000, PAGE_SIZE);
++	BUG_ON(!gic_dist_base || !gic_cpu_base);
++
++	/* Use GIC to handle interrupts */
++	gic_init(0, 29, gic_dist_base, gic_cpu_base);
++}
