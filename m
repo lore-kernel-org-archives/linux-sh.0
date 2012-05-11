@@ -1,58 +1,98 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 09 May 2012 15:09:12 +0000
-Subject: [PATCH 0/9 v3] extract an shdma base library from shdma.c
-Message-Id: <1336576161-27082-1-git-send-email-g.liakhovetski@gmx.de>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 11 May 2012 08:38:17 +0000
+Subject: [PATCH v2 1/5] net: sh_eth: remove unnecessary function
+Message-Id: <4FACCFF9.2040002@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>
-Cc: linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
+To: netdev <netdev@vger.kernel.org>
+Cc: SH-Linux <linux-sh@vger.kernel.org>
 
-This is v3 of the shdma driver split. It is no longer trying to be 
-generic, instead it is kept sh-specific, until we have better conditions 
-for making it generic. Apart from moving to an own directory with the 
-rest of shdma driver files, it has been updated to the top of the current 
-slave-dma tree. The comment from Sascha Hauer to v2 of this patch-set 
-has also been addressed - thanks! Two more client drivers have also been 
-added - fsi and renesas_usbhs. Would be really great to get it into 3.5 - 
-it is blocking the addition of one more DMAC variant.
+The sh_eth_timer() called mod_timer() for itself.
+So, this patch removes the function.
 
-Guennadi Liakhovetski (9):
-  dmaengine: add an shdma-base library
-  dma: shdma: prepare for conversion to the shdma base library
-  mmc: sh_mmcif: remove unneeded struct sh_mmcif_dma, prepare to shdma
-    conversion
-  mmc: sh_mobile_sdhi: prepare for conversion to the shdma base library
-  serial: sh-sci: prepare for conversion to the shdma base library
-  ASoC: siu: prepare for conversion to the shdma base library
-  usb: renesas_usbhs: prepare for conversion to the shdma base library
-  ASoC: fsi: prepare for conversion to the shdma base library
-  dma: shdma: convert to the shdma base library
-
- drivers/dma/sh/Makefile           |    1 +
- drivers/dma/sh/shdma-base.c       |  868 ++++++++++++++++++++++++++++
- drivers/dma/sh/shdma.c            | 1122 +++++++++----------------------------
- drivers/dma/sh/shdma.h            |   44 +-
- drivers/mmc/host/sh_mmcif.c       |   24 +-
- drivers/mmc/host/sh_mobile_sdhi.c |    8 +-
- drivers/tty/serial/sh-sci.c       |    8 +-
- drivers/usb/renesas_usbhs/fifo.c  |   10 +-
- include/linux/mmc/sh_mmcif.h      |    8 +-
- include/linux/sh_dma.h            |   33 +-
- include/linux/shdma-base.h        |  123 ++++
- sound/soc/sh/fsi.c                |    4 +-
- sound/soc/sh/siu_pcm.c            |    8 +-
- 13 files changed, 1326 insertions(+), 935 deletions(-)
- create mode 100644 drivers/dma/sh/shdma-base.c
- create mode 100644 include/linux/shdma-base.h
-
--- 
-1.7.2.5
-
-Thanks
-Guennadi
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ about v2:
+  - rebase the latest net-next.git
+
+ drivers/net/ethernet/renesas/sh_eth.c |   22 ----------------------
+ drivers/net/ethernet/renesas/sh_eth.h |    1 -
+ 2 files changed, 0 insertions(+), 23 deletions(-)
+
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index be3c221..c35084a 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1289,14 +1289,6 @@ other_irq:
+ 	return ret;
+ }
+
+-static void sh_eth_timer(unsigned long data)
+-{
+-	struct net_device *ndev = (struct net_device *)data;
+-	struct sh_eth_private *mdp = netdev_priv(ndev);
+-
+-	mod_timer(&mdp->timer, jiffies + (10 * HZ));
+-}
+-
+ /* PHY state control function */
+ static void sh_eth_adjust_link(struct net_device *ndev)
+ {
+@@ -1544,11 +1536,6 @@ static int sh_eth_open(struct net_device *ndev)
+ 	if (ret)
+ 		goto out_free_irq;
+
+-	/* Set the timer to check for link beat. */
+-	init_timer(&mdp->timer);
+-	mdp->timer.expires = (jiffies + (24 * HZ)) / 10;/* 2.4 sec. */
+-	setup_timer(&mdp->timer, sh_eth_timer, (unsigned long)ndev);
+-
+ 	return ret;
+
+ out_free_irq:
+@@ -1573,9 +1560,6 @@ static void sh_eth_tx_timeout(struct net_device *ndev)
+ 	/* tx_errors count up */
+ 	ndev->stats.tx_errors++;
+
+-	/* timer off */
+-	del_timer_sync(&mdp->timer);
+-
+ 	/* Free all the skbuffs in the Rx queue. */
+ 	for (i = 0; i < RX_RING_SIZE; i++) {
+ 		rxdesc = &mdp->rx_ring[i];
+@@ -1593,10 +1577,6 @@ static void sh_eth_tx_timeout(struct net_device *ndev)
+
+ 	/* device init */
+ 	sh_eth_dev_init(ndev);
+-
+-	/* timer on */
+-	mdp->timer.expires = (jiffies + (24 * HZ)) / 10;/* 2.4 sec. */
+-	add_timer(&mdp->timer);
+ }
+
+ /* Packet transmit function */
+@@ -1669,8 +1649,6 @@ static int sh_eth_close(struct net_device *ndev)
+
+ 	free_irq(ndev->irq, ndev);
+
+-	del_timer_sync(&mdp->timer);
+-
+ 	/* Free all the skbuffs in the Rx queue. */
+ 	sh_eth_ring_free(ndev);
+
+diff --git a/drivers/net/ethernet/renesas/sh_eth.h b/drivers/net/ethernet/renesas/sh_eth.h
+index 57b8e1f..9e8e4d5 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.h
++++ b/drivers/net/ethernet/renesas/sh_eth.h
+@@ -771,7 +771,6 @@ struct sh_eth_private {
+ 	struct sh_eth_txdesc *tx_ring;
+ 	struct sk_buff **rx_skbuff;
+ 	struct sk_buff **tx_skbuff;
+-	struct timer_list timer;
+ 	spinlock_t lock;
+ 	u32 cur_rx, dirty_rx;	/* Producer/consumer ring indices */
+ 	u32 cur_tx, dirty_tx;
+-- 
+1.7.1
