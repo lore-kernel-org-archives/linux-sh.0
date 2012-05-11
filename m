@@ -1,35 +1,55 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 30 May 2012 07:35:47 +0000
-Subject: Re: [PATCH][RFC] ARM: mach-shmobile: sh73a0: bugfix: SY-DMAC number
-Message-Id: <87ipfe2ka8.wl%kuninori.morimoto.gx@renesas.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Fri, 11 May 2012 18:25:13 +0000
+Subject: [GIT PULL] Urgent fixes (for v3.4 if possible) for Renesas ARM-based platforms
+Message-Id: <201205112025.13478.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87lika2ob7.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87lika2ob7.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
+
+Hi,
+
+Please pull changes since commit d48b97b403d23f6df0b990cee652bdf9a52337a3
+
+    Linux 3.4-rc6
+
+with top-most commit 5fab7b501bf29c08c5b01627b496b6b766bd0165
+
+    ARM / mach-shmobile: Invalidate caches when booting secondary cores
+
+from the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/rafael/renesas.git fixes
+
+to receive urgent fixes for Renesas ARM-based platforms.  Four of these commits
+are fixes of regressions new in 3.4-rc and the last one is necessary for SMP to
+work on those systems in general.
+
+Thanks!
 
 
-Hi Paul
+ arch/arm/mach-shmobile/board-ag5evm.c        |   22 +---------
+ arch/arm/mach-shmobile/board-mackerel.c      |   22 +---------
+ arch/arm/mach-shmobile/headsmp.S             |   56 +++++++++++++++++++++++++-
+ arch/arm/mach-shmobile/include/mach/common.h |    2 +-
+ arch/arm/mach-shmobile/setup-r8a7779.c       |    4 ++
+ arch/arm/mach-shmobile/setup-sh73a0.c        |    4 ++
+ arch/arm/mach-shmobile/smp-r8a7779.c         |    8 +++-
+ arch/arm/mach-shmobile/smp-sh73a0.c          |    7 +++-
+ arch/arm/mach-shmobile/timer.c               |    9 ----
+ 9 files changed, 81 insertions(+), 53 deletions(-)
 
-Thank you for checking patch
+---------------
 
-> > 681e1b3eeb3606e06a7c4984e8058df84296f8bb
-> > (ARM: mach-shmobile: sh73a0 DMA Engine support for SY-DMAC)
-> > added SY-DMAC, but the number is 218, not 318
-> > 
-> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> With these sorts of changes it is good to note the revision of the data
-> sheet used in the changelog so we don't run in to ping-ponging issues
-> where it's not obvious which is newest or most correct.
+Guennadi Liakhovetski (2):
+      ARM: mach-shmobile: convert ag5evm to use the generic MMC GPIO hotplug helper
+      ARM: mach-shmobile: convert mackerel to use the generic MMC GPIO hotplug helper
 
-I see.
-But it needs double-check by Magnus/Guennadi.
-If it got acked-by/tested-by from them,
-I will send v2 patch which includes datasheet version and their acked-by/tested-by.
+Kuninori Morimoto (1):
+      ARM / mach-shmobile: sh73a0 SMP TWD boot regression fix
 
-Best regards
----
-Kuninori Morimoto
+Magnus Damm (2):
+      ARM / mach-shmobile: r8a7779 SMP TWD boot regression fix
+      ARM / mach-shmobile: Invalidate caches when booting secondary cores
+
