@@ -1,64 +1,144 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Fri, 18 May 2012 15:04:19 +0000
-Subject: Re: [PATCH 05/29] regulator: use IS_ERR_OR_NULL() instead of open-coding
-Message-Id: <20120518150417.GA4039@opensource.wolfsonmicro.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="BXVAT5kNtrzKuDFl"
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 11 May 2012 08:38:23 +0000
+Subject: [PATCH v2 2/5] net: sh_eth: remove unnecessary members/definitions
+Message-Id: <4FACCFFF.4030807@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
- <1336057558-11031-6-git-send-email-g.liakhovetski@gmx.de>
- <20120503153239.GN3955@opensource.wolfsonmicro.com>
- <20120518085749.GE24355@linux-sh.org>
-In-Reply-To: <20120518085749.GE24355@linux-sh.org>
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: netdev <netdev@vger.kernel.org>
+Cc: SH-Linux <linux-sh@vger.kernel.org>
 
+This patch removes unnecessary members in sh_th_private.
+This patch also removes unnecessary definitions in sh_eth.h
 
---BXVAT5kNtrzKuDFl
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ about v2:
+  - rebase the latest net-next.git
 
-On Fri, May 18, 2012 at 05:57:50PM +0900, Paul Mundt wrote:
-> On Thu, May 03, 2012 at 04:32:39PM +0100, Mark Brown wrote:
-> > On Thu, May 03, 2012 at 05:05:34PM +0200, Guennadi Liakhovetski wrote:
+ drivers/net/ethernet/renesas/sh_eth.c |    7 +---
+ drivers/net/ethernet/renesas/sh_eth.h |   69 ---------------------------------
+ 2 files changed, 1 insertions(+), 75 deletions(-)
 
-> > > -	if (regulator == NULL || IS_ERR(regulator))
-> > > +	if (IS_ERR_OR_NULL(regulator))
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index c35084a..10f2a89 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -898,7 +898,6 @@ static int sh_eth_dev_init(struct net_device *ndev)
+ {
+ 	int ret = 0;
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+-	u_int32_t rx_int_var, tx_int_var;
+ 	u32 val;
 
-> > The bigger question here is why we're accepting NULL in the first place.
+ 	/* Soft Reset */
+@@ -926,9 +925,7 @@ static int sh_eth_dev_init(struct net_device *ndev)
+ 	/* Frame recv control */
+ 	sh_eth_write(ndev, mdp->cd->rmcr_value, RMCR);
 
-> I'm not sure about the regulator case, but it's been useful to support
-> passing NULL around in the clock framework case. There are plenty of
-> cases where a struct clk is optional and if we fail to find the clock we
-> just set clk to NULL and continue on without having to constantly check
-> the value of the clk pointer, which helps considerably when you consider
-> the number of clk_enable/disable() pairs some drivers have.
+-	rx_int_var = mdp->rx_int_var = DESC_I_RINT8 | DESC_I_RINT5;
+-	tx_int_var = mdp->tx_int_var = DESC_I_TINT2;
+-	sh_eth_write(ndev, rx_int_var | tx_int_var, TRSCER);
++	sh_eth_write(ndev, DESC_I_RINT8 | DESC_I_RINT5 | DESC_I_TINT2, TRSCER);
 
-> Presumably the same applies for regulators?
+ 	if (mdp->cd->bculr)
+ 		sh_eth_write(ndev, 0x800, BCULR);	/* Burst sycle set */
+@@ -2286,8 +2283,6 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
 
-This is checking the value of regulator_get(), NULL is a perfectly valid
-regulator value to get passed back.
+ 	/* debug message level */
+ 	mdp->msg_enable = SH_ETH_DEF_MSG_ENABLE;
+-	mdp->post_rx = POST_RX >> (devno << 1);
+-	mdp->post_fw = POST_FW >> (devno << 1);
 
---BXVAT5kNtrzKuDFl
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+ 	/* read and set MAC address */
+ 	read_mac_address(ndev, pd->mac_addr);
+diff --git a/drivers/net/ethernet/renesas/sh_eth.h b/drivers/net/ethernet/renesas/sh_eth.h
+index 9e8e4d5..9525199 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.h
++++ b/drivers/net/ethernet/renesas/sh_eth.h
+@@ -585,71 +585,6 @@ enum RPADIR_BIT {
+ /* FDR */
+ #define DEFAULT_FDR_INIT	0x00000707
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+-enum phy_offsets {
+-	PHY_CTRL = 0, PHY_STAT = 1, PHY_IDT1 = 2, PHY_IDT2 = 3,
+-	PHY_ANA = 4, PHY_ANL = 5, PHY_ANE = 6,
+-	PHY_16 = 16,
+-};
+-
+-/* PHY_CTRL */
+-enum PHY_CTRL_BIT {
+-	PHY_C_RESET = 0x8000, PHY_C_LOOPBK = 0x4000, PHY_C_SPEEDSL = 0x2000,
+-	PHY_C_ANEGEN = 0x1000, PHY_C_PWRDN = 0x0800, PHY_C_ISO = 0x0400,
+-	PHY_C_RANEG = 0x0200, PHY_C_DUPLEX = 0x0100, PHY_C_COLT = 0x0080,
+-};
+-#define DM9161_PHY_C_ANEGEN 0	/* auto nego special */
+-
+-/* PHY_STAT */
+-enum PHY_STAT_BIT {
+-	PHY_S_100T4 = 0x8000, PHY_S_100X_F = 0x4000, PHY_S_100X_H = 0x2000,
+-	PHY_S_10T_F = 0x1000, PHY_S_10T_H = 0x0800, PHY_S_ANEGC = 0x0020,
+-	PHY_S_RFAULT = 0x0010, PHY_S_ANEGA = 0x0008, PHY_S_LINK = 0x0004,
+-	PHY_S_JAB = 0x0002, PHY_S_EXTD = 0x0001,
+-};
+-
+-/* PHY_ANA */
+-enum PHY_ANA_BIT {
+-	PHY_A_NP = 0x8000, PHY_A_ACK = 0x4000, PHY_A_RF = 0x2000,
+-	PHY_A_FCS = 0x0400, PHY_A_T4 = 0x0200, PHY_A_FDX = 0x0100,
+-	PHY_A_HDX = 0x0080, PHY_A_10FDX = 0x0040, PHY_A_10HDX = 0x0020,
+-	PHY_A_SEL = 0x001e,
+-};
+-/* PHY_ANL */
+-enum PHY_ANL_BIT {
+-	PHY_L_NP = 0x8000, PHY_L_ACK = 0x4000, PHY_L_RF = 0x2000,
+-	PHY_L_FCS = 0x0400, PHY_L_T4 = 0x0200, PHY_L_FDX = 0x0100,
+-	PHY_L_HDX = 0x0080, PHY_L_10FDX = 0x0040, PHY_L_10HDX = 0x0020,
+-	PHY_L_SEL = 0x001f,
+-};
+-
+-/* PHY_ANE */
+-enum PHY_ANE_BIT {
+-	PHY_E_PDF = 0x0010, PHY_E_LPNPA = 0x0008, PHY_E_NPA = 0x0004,
+-	PHY_E_PRX = 0x0002, PHY_E_LPANEGA = 0x0001,
+-};
+-
+-/* DM9161 */
+-enum PHY_16_BIT {
+-	PHY_16_BP4B45 = 0x8000, PHY_16_BPSCR = 0x4000, PHY_16_BPALIGN = 0x2000,
+-	PHY_16_BP_ADPOK = 0x1000, PHY_16_Repeatmode = 0x0800,
+-	PHY_16_TXselect = 0x0400,
+-	PHY_16_Rsvd = 0x0200, PHY_16_RMIIEnable = 0x0100,
+-	PHY_16_Force100LNK = 0x0080,
+-	PHY_16_APDLED_CTL = 0x0040, PHY_16_COLLED_CTL = 0x0020,
+-	PHY_16_RPDCTR_EN = 0x0010,
+-	PHY_16_ResetStMch = 0x0008, PHY_16_PreamSupr = 0x0004,
+-	PHY_16_Sleepmode = 0x0002,
+-	PHY_16_RemoteLoopOut = 0x0001,
+-};
+-
+-#define POST_RX		0x08
+-#define POST_FW		0x04
+-#define POST0_RX	(POST_RX)
+-#define POST0_FW	(POST_FW)
+-#define POST1_RX	(POST_RX >> 2)
+-#define POST1_FW	(POST_FW >> 2)
+-#define POST_ALL	(POST0_RX | POST0_FW | POST1_RX | POST1_FW)
+-
+ /* ARSTR */
+ enum ARSTR_BIT { ARSTR_ARSTR = 0x00000001, };
 
-iQIcBAEBAgAGBQJPtmTLAAoJEBus8iNuMP3d3/8P/jBzJ8oB7uOI3WI+Af3dEZrk
-hfpFlm546LaGHs1Xz8QO4GmGFHF0XbqSB666K+k/tU9cBRQou/6LXROIx08hjgir
-fEhGTg7YZu6XsbxEojedoou3Ltq12d0jJAGCmYzTUDxLDV5qHLlAuwI+qYMKbm4x
-GWD/gT4w/A6TmS7sigvGlnrIKx/nyeGd5ls2n9JQhpQeUk+p+iVORSw52Ynv245C
-FYIoI63Ug/SVizrrKvTjiBBzpKqatt64FooA4DeZhSBgfzMo4abruT8rHC++At28
-0RWxSRKKIsT4N11T1vXl6NRVDmM5N6z/BQQlzc9RZgoeNTznGqYip3Gzxb3BsgkU
-ZwTojhHqFzaLX+jUD2ZvdpemX9VJh+rSCkyULOBwR2tIopMlG5ES2Xtsqjsy0DQM
-+TlQHxByziszYN9ybwFbJBJgkaRAAXLJ2MN0Z+8lLrMjcM7sg0dc0F282un9heD9
-Mbtsqzk8hGPjF2cJ1lGnWqvrPnNjz8jKoN+k1ABt41uo+3iySdpOA3uTryenRdv8
-T9Eo5837AJNAqADtOodZ11tIaTjgUN1JbNHH+x1eD/zJgD0ZSSh6ybeNzaLtiTon
-gdp5KVzDssNV0eB4+BTTJ+GIJ7kqAyx70TFDsb760NN4bQt0f/v/1xqD8DwyVd9n
-GdKEIlfAduX6kPA0YzTn
-=32gs
------END PGP SIGNATURE-----
+@@ -785,10 +720,6 @@ struct sh_eth_private {
+ 	int msg_enable;
+ 	int speed;
+ 	int duplex;
+-	u32 rx_int_var, tx_int_var;	/* interrupt control variables */
+-	char post_rx;		/* POST receive */
+-	char post_fw;		/* POST forward */
+-	struct net_device_stats tsu_stats;	/* TSU forward status */
+ 	int port;		/* for TSU */
+ 	int vlan_num_ids;	/* for VLAN tag filter */
 
---BXVAT5kNtrzKuDFl--
+-- 
+1.7.1
