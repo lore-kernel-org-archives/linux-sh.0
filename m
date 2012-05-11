@@ -1,42 +1,91 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 25 May 2012 15:45:23 +0000
-Subject: [PATCH 3/5 v3] mmc: sh_mmcif: remove unused .down_pwr() callback
-Message-Id: <1337960752-4944-9-git-send-email-g.liakhovetski@gmx.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 11 May 2012 19:42:40 +0000
+Subject: [PATCH 05/06] mach-shmobile: KZM9D board Ethernet support V2
+Message-Id: <20120511194240.6567.71240.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
+References: <20120511194151.6567.53888.sendpatchset@w520>
+In-Reply-To: <20120511194151.6567.53888.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>, Mark Brown <broonie@opensource.wolfsonmicro.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+From: Magnus Damm <damm@opensource.se>
+
+Tie in the on-board Ethernet controller on KZM9D
+and make use of the GPIO controller for external
+IRQ pin support.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
-This patch shall only be applied after the previous one. If the previous 
-one has to go via the sh tree, we can postpone this one until a later 
-merge, no big problem with that.
+ Changes from V1:
+ - none - this is the first public release
 
- include/linux/mmc/sh_mmcif.h |    1 -
- 1 files changed, 0 insertions(+), 1 deletions(-)
+ arch/arm/mach-shmobile/board-kzm9d.c |   44 +++++++++++++++++++++++++++++++++-
+ 1 file changed, 43 insertions(+), 1 deletion(-)
 
-diff --git a/include/linux/mmc/sh_mmcif.h b/include/linux/mmc/sh_mmcif.h
-index 05f0e3d..cb84340 100644
---- a/include/linux/mmc/sh_mmcif.h
-+++ b/include/linux/mmc/sh_mmcif.h
-@@ -39,7 +39,6 @@ struct sh_mmcif_dma {
+--- 0009/arch/arm/mach-shmobile/board-kzm9d.c
++++ work/arch/arm/mach-shmobile/board-kzm9d.c	2012-05-12 03:49:52.000000000 +0900
+@@ -20,18 +20,60 @@
  
- struct sh_mmcif_plat_data {
- 	void (*set_pwr)(struct platform_device *pdev, int state);
--	void (*down_pwr)(struct platform_device *pdev);
- 	int (*get_cd)(struct platform_device *pdef);
- 	struct sh_mmcif_dma	*dma;		/* Deprecated. Instead */
- 	unsigned int		slave_id_tx;	/* use embedded slave_id_[tr]x */
--- 
-1.7.2.5
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+ #include <linux/kernel.h>
+ #include <linux/interrupt.h>
++#include <linux/platform_device.h>
++#include <linux/smsc911x.h>
+ #include <mach/common.h>
+ #include <mach/emev2.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <asm/hardware/gic.h>
+ 
++/* Ether */
++static struct resource smsc911x_resources[] = {
++	[0] = {
++		.start	= 0x20000000,
++		.end	= 0x2000ffff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= EMEV2_GPIO_IRQ(1),
++		.flags	= IORESOURCE_IRQ | IRQF_TRIGGER_HIGH,
++	},
++};
++
++static struct smsc911x_platform_config smsc911x_platdata = {
++	.flags		= SMSC911X_USE_32BIT,
++	.irq_type	= SMSC911X_IRQ_TYPE_PUSH_PULL,
++	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_HIGH,
++};
++
++static struct platform_device smsc91x_device = {
++	.name	= "smsc911x",
++	.id	= 0,
++	.dev	= {
++		  .platform_data = &smsc911x_platdata,
++		},
++	.num_resources	= ARRAY_SIZE(smsc911x_resources),
++	.resource	= smsc911x_resources,
++};
++
++static struct platform_device *kzm9d_devices[] __initdata = {
++	&smsc91x_device,
++};
++
++void __init kzm9d_add_standard_devices(void)
++{
++	emev2_add_standard_devices();
++
++	platform_add_devices(kzm9d_devices, ARRAY_SIZE(kzm9d_devices));
++}
++
+ MACHINE_START(KZM9D, "kzm9d")
+ 	.map_io		= emev2_map_io,
+ 	.init_early	= emev2_add_early_devices,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_irq	= emev2_init_irq,
+ 	.handle_irq	= gic_handle_irq,
+-	.init_machine	= emev2_add_standard_devices,
++	.init_machine	= kzm9d_add_standard_devices,
+ 	.timer		= &shmobile_timer,
+ MACHINE_END
