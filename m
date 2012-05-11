@@ -1,77 +1,53 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 09 May 2012 14:52:47 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 11 May 2012 07:13:08 +0000
 Subject: Re: [PATCH] mach-shmobile: Emma Mobile EV2 SMP prototype code
-Message-Id: <CANqRtoSwLJKw-8CiHo8ATV4kXKwULPcC1P7_no1tiNLVH-j_eA@mail.gmail.com>
+Message-Id: <20120511071305.GD17741@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20120509075407.5991.60556.sendpatchset@w520>
- <201205091212.08239.arnd@arndb.de> <4FAA6DE6.3040001@arm.com>
- <201205091345.34404.arnd@arndb.de>
-In-Reply-To: <201205091345.34404.arnd@arndb.de>
+In-Reply-To: <20120509075407.5991.60556.sendpatchset@w520>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, May 9, 2012 at 10:45 PM, Arnd Bergmann <arnd@arndb.de> wrote:
-> On Wednesday 09 May 2012, Marc Zyngier wrote:
->> On 09/05/12 13:12, Arnd Bergmann wrote:
->> > On Wednesday 09 May 2012, Magnus Damm wrote:
->> >> =A0static unsigned int __init shmobile_smp_get_core_count(void)
->> >> =A0{
->> >> @@ -31,6 +32,9 @@ static unsigned int __init shmobile_smp_
->> >> =A0 =A0if (is_r8a7779())
->> >> =A0 =A0 =A0 =A0 =A0 =A0return r8a7779_get_core_count();
->> >>
->> >> + =A0if (is_emev2())
->> >> + =A0 =A0 =A0 =A0 =A0return emev2_get_core_count();
->> >> +
->> >> =A0 =A0return 1;
->> >> =A0}
->> >>
->> >> @@ -41,6 +45,9 @@ static void __init shmobile_smp_prepare_
->> >>
->> >> =A0 =A0if (is_r8a7779())
->> >> =A0 =A0 =A0 =A0 =A0 =A0r8a7779_smp_prepare_cpus();
->> >> +
->> >> + =A0if (is_emev2())
->> >> + =A0 =A0 =A0 =A0 =A0emev2_smp_prepare_cpus();
->> >> =A0}
->> >>
->> >> =A0int shmobile_platform_cpu_kill(unsigned int cpu)
->> >> ...
->> >
->> > This shows that we really want an abstraction for soc-specific SMP ops
->> > even within one platform, and we'll need the same thing for multiplatf=
-orm.
->> >
->> > Marc Zyngier already proposed a solution for this last year, but I
->> > think we couldn't agree on the details back then before he lost intere=
-st.
->> > I think we should pick that up again and get it into 3.6 so the code a=
-bove
->> > can be simplified and we can do the multiplatform solution. We'll prob=
-ably
->> > discuss the details in Hong Kong in a couple of weeks, so there is no
->> > point in changing it now, but I'd hope that you can migrate this to
->> > whatever we come up with in the following merge window.
->>
->> I'm happy to revive the series if there is an interest.
->
-> Ok, good. I think we were almost there the last time, but I don't
-> know if Russell still had any objections. Magnus, can you comment on
-> the "[PATCH v6 09/15] ARM: SoC: convert shmobile SMP to SoC descriptor"
-> patch from February to see if it fits your needs?
+On Wed, May 09, 2012 at 04:54:07PM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> Prototype code that adds SMP support to EMEV2.
+> 
+> At this point only the most basic form of SMP operation
+> is supported. TWD and CPU Hotplug support is excluded.
+> 
+> Based on V1 of the Emma Mobile EV2 code. Needs to be
+> reworked to coexist with DT. Work in progress.
 
-I took the liberty to give some comments here instead. I've gone
-through the patch and it looks good in general. I have not tested it
-but I'd be happy to fix whatever fallout that may happen.
+Hi Magnus,
 
-The patch is pretty close to be a perfect fit from my point of view.
-This is definitely a step in the right direction. I am however a bit
-hesitant with how the CPU hotplug code ended up, but at the same time
-I don't really have any better suggestions. I think I simply need to
-convert it to be a full per-soc implementation.
+I tried out this patch on top of the next branch of Rafael's
+renesas tree (5658c94) plus V2 of your Emma Mobile EV2 code but
+I am only seeing one CPU.  Do I need some other tweaks?
 
-Thanks!
+The list of patches I have applied is as follows:
 
-/ magnus
+mach-shmobile: Emma Mobile EV2 SMP prototype code
+ARM: mach-types: Manually add KZM-A9-GT
+mach-shmobile: KZM9D board prototype support
+mach-shmobile: Emma Mobile EV2 SoC base support
+serial8250-em: Add DT support
+serial8250-em: clk_get() IS_ERR() error handling fix
+serial8250-em: Emma Mobile UART driver V2
+serial8250: Introduce serial8250_register_8250_port()
+serial8250: Clean up default map and dl code
+serial8250: Use dl_read()/dl_write() on RM9K
+serial8250: Use dl_read()/dl_write() on Alchemy
+serial8250: Add dl_read()/dl_write() callbacks
+8250.c: less than 2400 baud fix.
+serial/8250_pci: Clear FIFOs for Intel ME Serial Over Lan device on BI
+tegra, serial8250: add ->handle_break() uart_port op
+clocksource: em_sti: Add DT support
+clocksource: em_sti: Emma Mobile STI driver V2
+clockevents: Make clockevents_config() a global symbol
+
+
+And yes, I did enable CONFIG_SMP :)
+
