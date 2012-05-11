@@ -1,146 +1,207 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Mon, 14 May 2012 12:14:41 +0000
-Subject: [PATCH v4 2/8] mtd: sh_flctl: Add support for error IRQ
-Message-Id: <1336997687-6868-3-git-send-email-hechtb@gmail.com>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 11 May 2012 08:38:31 +0000
+Subject: [PATCH v2 5/5] net: sh_eth: use NAPI
+Message-Id: <4FACD007.1070308@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1336997687-6868-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1336997687-6868-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mtd@lists.infradead.org
-Cc: Bastian Hecht <hechtb@gmail.com>, magnus.damm@gmail.com, laurent.pinchart@ideasonboard.com, linux-sh@vger.kernel.org
+To: netdev <netdev@vger.kernel.org>
+Cc: SH-Linux <linux-sh@vger.kernel.org>
 
-When the data transfer between the controller and the NAND chip fails,
-we now get notified.
+This patch modifies the driver to use NAPI.
 
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- drivers/mtd/nand/sh_flctl.c  |   34 +++++++++++++++++++++++++++++++---
- include/linux/mtd/sh_flctl.h |    9 +++++++++
- 2 files changed, 40 insertions(+), 3 deletions(-)
+ about v2:
+  - remove the spin_lock/spin_unlock() in sh_eth_poll()
+  - modify comment in sh_eth_interrupt()
+  - change back the dev_kfree_skb() to dev_kfree_skb_irq() in sh_eth_txfree()
 
-diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
-index a5a60ca..fb22cc7 100644
---- a/drivers/mtd/nand/sh_flctl.c
-+++ b/drivers/mtd/nand/sh_flctl.c
-@@ -24,6 +24,7 @@
- #include <linux/module.h>
- #include <linux/kernel.h>
- #include <linux/delay.h>
-+#include <linux/interrupt.h>
- #include <linux/io.h>
- #include <linux/platform_device.h>
- #include <linux/pm_runtime.h>
-@@ -68,8 +69,8 @@ static struct nand_bbt_descr flctl_4secc_largepage = {
- 
- static void empty_fifo(struct sh_flctl *flctl)
+ drivers/net/ethernet/renesas/sh_eth.c |   84 ++++++++++++++++++++++----------
+ drivers/net/ethernet/renesas/sh_eth.h |    3 +
+ 2 files changed, 61 insertions(+), 26 deletions(-)
+
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 1bcf205..e9b1953 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1008,7 +1008,7 @@ static int sh_eth_txfree(struct net_device *ndev)
+ }
+
+ /* Packet receive function */
+-static int sh_eth_rx(struct net_device *ndev)
++static int sh_eth_rx(struct net_device *ndev, int *work, int budget)
  {
--	writel(0x000c0000, FLINTDMACR(flctl));	/* FIFO Clear */
--	writel(0x00000000, FLINTDMACR(flctl));	/* Clear Error flags */
-+	writel(flctl->flintdmacr_base | AC1CLR | AC0CLR, FLINTDMACR(flctl));
-+	writel(flctl->flintdmacr_base, FLINTDMACR(flctl));
- }
- 
- static void start_translation(struct sh_flctl *flctl)
-@@ -839,6 +840,16 @@ static int flctl_chip_init_tail(struct mtd_info *mtd)
- 	return 0;
- }
- 
-+static irqreturn_t flctl_handle_flste(int irq, void *dev_id)
-+{
-+	struct sh_flctl *flctl = dev_id;
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+ 	struct sh_eth_rxdesc *rxdesc;
+@@ -1020,7 +1020,8 @@ static int sh_eth_rx(struct net_device *ndev)
+ 	u32 desc_status;
+
+ 	rxdesc = &mdp->rx_ring[entry];
+-	while (!(rxdesc->status & cpu_to_edmac(mdp, RD_RACT))) {
++	while (!(rxdesc->status & cpu_to_edmac(mdp, RD_RACT)) &&
++	       *work < budget) {
+ 		desc_status = edmac_to_cpu(mdp, rxdesc->status);
+ 		pkt_len = rxdesc->frame_length;
+
+@@ -1060,13 +1061,17 @@ static int sh_eth_rx(struct net_device *ndev)
+ 				skb_reserve(skb, NET_IP_ALIGN);
+ 			skb_put(skb, pkt_len);
+ 			skb->protocol = eth_type_trans(skb, ndev);
+-			netif_rx(skb);
+-			ndev->stats.rx_packets++;
+-			ndev->stats.rx_bytes += pkt_len;
++			if (netif_receive_skb(skb) = NET_RX_DROP) {
++				ndev->stats.rx_dropped++;
++			} else {
++				ndev->stats.rx_packets++;
++				ndev->stats.rx_bytes += pkt_len;
++			}
+ 		}
+ 		rxdesc->status |= cpu_to_edmac(mdp, RD_RACT);
+ 		entry = (++mdp->cur_rx) % mdp->num_rx_ring;
+ 		rxdesc = &mdp->rx_ring[entry];
++		(*work)++;
+ 	}
+
+ 	/* Refill the Rx ring buffers. */
+@@ -1098,7 +1103,7 @@ static int sh_eth_rx(struct net_device *ndev)
+
+ 	/* Restart Rx engine if stopped. */
+ 	/* If we don't need to check status, don't. -KDU */
+-	if (!(sh_eth_read(ndev, EDRRR) & EDRRR_R)) {
++	if (*work < budget && !(sh_eth_read(ndev, EDRRR) & EDRRR_R)) {
+ 		/* fix the values for the next receiving */
+ 		mdp->cur_rx = mdp->dirty_rx = (sh_eth_read(ndev, RDFAR) -
+ 					       sh_eth_read(ndev, RDLAR)) >> 4;
+@@ -1254,38 +1259,58 @@ static irqreturn_t sh_eth_interrupt(int irq, void *netdev)
+
+ 	/* Get interrpt stat */
+ 	intr_status = sh_eth_read(ndev, EESR);
+-	/* Clear interrupt */
+ 	if (intr_status & (EESR_FRC | EESR_RMAF | EESR_RRF |
+ 			EESR_RTLF | EESR_RTSF | EESR_PRE | EESR_CERF |
+ 			cd->tx_check | cd->eesr_err_check)) {
+-		sh_eth_write(ndev, intr_status, EESR);
++		if (napi_schedule_prep(&mdp->napi)) {
++			/* Disable interrupts of the channel */
++			sh_eth_write(ndev, 0, EESIPR);
++			__napi_schedule(&mdp->napi);
++		}
+ 		ret = IRQ_HANDLED;
+-	} else
+-		goto other_irq;
+-
+-	if (intr_status & (EESR_FRC | /* Frame recv*/
+-			EESR_RMAF | /* Multi cast address recv*/
+-			EESR_RRF  | /* Bit frame recv */
+-			EESR_RTLF | /* Long frame recv*/
+-			EESR_RTSF | /* short frame recv */
+-			EESR_PRE  | /* PHY-LSI recv error */
+-			EESR_CERF)){ /* recv frame CRC error */
+-		sh_eth_rx(ndev);
+ 	}
+
+-	/* Tx Check */
+-	if (intr_status & cd->tx_check) {
+-		sh_eth_txfree(ndev);
++	spin_unlock(&mdp->lock);
 +
-+	dev_err(&flctl->pdev->dev, "flste irq: %x\n", readl(FLINTDMACR(flctl)));
-+	writel(flctl->flintdmacr_base, FLINTDMACR(flctl));
-+
-+	return IRQ_HANDLED;
++	return ret;
 +}
 +
- static int __devinit flctl_probe(struct platform_device *pdev)
- {
- 	struct resource *res;
-@@ -847,6 +858,7 @@ static int __devinit flctl_probe(struct platform_device *pdev)
- 	struct nand_chip *nand;
- 	struct sh_flctl_platform_data *pdata;
- 	int ret = -ENXIO;
-+	int irq;
- 
- 	pdata = pdev->dev.platform_data;
- 	if (pdata = NULL) {
-@@ -872,14 +884,27 @@ static int __devinit flctl_probe(struct platform_device *pdev)
- 		goto err_iomap;
- 	}
- 
-+	irq = platform_get_irq(pdev, 0);
-+	if (irq < 0) {
-+		dev_err(&pdev->dev, "failed to get flste irq data\n");
-+		goto err_flste;
-+	}
++static int sh_eth_poll(struct napi_struct *napi, int budget)
++{
++	struct sh_eth_private *mdp = container_of(napi, struct sh_eth_private,
++						  napi);
++	struct net_device *ndev = mdp->ndev;
++	struct sh_eth_cpu_data *cd = mdp->cd;
++	int work_done = 0, txfree_num;
++	u32 intr_status = sh_eth_read(ndev, EESR);
 +
-+	ret = request_irq(irq, flctl_handle_flste, IRQF_SHARED, "flste", flctl);
-+	if (ret) {
-+		dev_err(&pdev->dev, "request interrupt failed.\n");
-+		goto err_flste;
-+	}
++	/* Clear interrupt flags */
++	sh_eth_write(ndev, intr_status, EESR);
 +
- 	platform_set_drvdata(pdev, flctl);
- 	flctl_mtd = &flctl->mtd;
- 	nand = &flctl->chip;
- 	flctl_mtd->priv = nand;
- 	flctl->pdev = pdev;
--	flctl->flcmncr_base = pdata->flcmncr_val;
- 	flctl->hwecc = pdata->has_hwecc;
- 	flctl->holden = pdata->use_holden;
-+	flctl->flcmncr_base = pdata->flcmncr_val;
-+	flctl->flintdmacr_base = flctl->hwecc ? (STERINTE | ECERB) : STERINTE;
- 
- 	/* Set address of hardware control function */
- 	/* 20 us command delay time */
-@@ -918,6 +943,8 @@ static int __devinit flctl_probe(struct platform_device *pdev)
- 
- err_chip:
- 	pm_runtime_disable(&pdev->dev);
-+	free_irq(irq, flctl);
-+err_flste:
- 	iounmap(flctl->reg);
- err_iomap:
- 	kfree(flctl);
-@@ -930,6 +957,7 @@ static int __devexit flctl_remove(struct platform_device *pdev)
- 
- 	nand_release(&flctl->mtd);
- 	pm_runtime_disable(&pdev->dev);
-+	free_irq(platform_get_irq(pdev, 0), flctl);
- 	iounmap(flctl->reg);
- 	kfree(flctl);
- 
-diff --git a/include/linux/mtd/sh_flctl.h b/include/linux/mtd/sh_flctl.h
-index a38e1fa..2daa43e 100644
---- a/include/linux/mtd/sh_flctl.h
-+++ b/include/linux/mtd/sh_flctl.h
-@@ -107,6 +107,14 @@
- #define DOCMD2_E	(0x1 << 17)	/* 2nd cmd stage execute */
- #define DOCMD1_E	(0x1 << 16)	/* 1st cmd stage execute */
- 
-+/* FLINTDMACR control bits */
-+#define ESTERINTE	(0x1 << 24)	/* ECC error interrupt enable */
-+#define AC1CLR		(0x1 << 19)	/* ECC FIFO clear */
-+#define AC0CLR		(0x1 << 18)	/* Data FIFO clear */
-+#define ECERB		(0x1 << 9)	/* ECC error */
-+#define STERB		(0x1 << 8)	/* Status error */
-+#define STERINTE	(0x1 << 4)	/* Status error enable */
-+
- /* FLTRCR control bits */
- #define TRSTRT		(0x1 << 0)	/* translation start */
- #define TREND		(0x1 << 1)	/* translation end */
-@@ -145,6 +153,7 @@ struct sh_flctl {
- 	uint32_t erase_ADRCNT;		/* bits of FLCMDCR in ERASE1 cmd */
- 	uint32_t rw_ADRCNT;	/* bits of FLCMDCR in READ WRITE cmd */
- 	uint32_t flcmncr_base;	/* base value of FLCMNCR */
-+	uint32_t flintdmacr_base;	/* irq enable bits */
- 
- 	int	hwecc_cant_correct[4];
- 
--- 
-1.7.5.4
++	/* check txdesc */
++	txfree_num = sh_eth_txfree(ndev);
++	if (txfree_num)
+ 		netif_wake_queue(ndev);
+-	}
 
++	/* check rxdesc */
++	sh_eth_rx(ndev, &work_done, budget);
++
++	/* check error flags */
+ 	if (intr_status & cd->eesr_err_check)
+ 		sh_eth_error(ndev, intr_status);
+
+-other_irq:
+-	spin_unlock(&mdp->lock);
++	/* get current interrupt flags */
++	intr_status = sh_eth_read(ndev, EESR);
+
+-	return ret;
++	/* check whether the controller doesn't have any events */
++	if (!txfree_num && !(intr_status & cd->eesr_err_check) &&
++	    work_done < budget) {
++		napi_complete(napi);
++		/* Enable all interrupts */
++		sh_eth_write(ndev, cd->eesipr_value, EESIPR);
++	}
++
++	return work_done;
+ }
+
+ /* PHY state control function */
+@@ -1565,6 +1590,8 @@ static int sh_eth_open(struct net_device *ndev)
+
+ 	pm_runtime_get_sync(&mdp->pdev->dev);
+
++	napi_enable(&mdp->napi);
++
+ 	ret = request_irq(ndev->irq, sh_eth_interrupt,
+ #if defined(CONFIG_CPU_SUBTYPE_SH7763) || \
+ 	defined(CONFIG_CPU_SUBTYPE_SH7764) || \
+@@ -1705,6 +1732,8 @@ static int sh_eth_close(struct net_device *ndev)
+ 		phy_disconnect(mdp->phydev);
+ 	}
+
++	napi_disable(&mdp->napi);
++
+ 	free_irq(ndev->irq, ndev);
+
+ 	/* Free all the skbuffs in the Rx queue. */
+@@ -2339,6 +2368,9 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
+ #endif
+ 	sh_eth_set_default_cpu_data(mdp->cd);
+
++	mdp->ndev = ndev;
++	netif_napi_add(ndev, &mdp->napi, sh_eth_poll, SH_ETH_NAPI_WEIGHT);
++
+ 	/* set function */
+ 	ndev->netdev_ops = &sh_eth_netdev_ops;
+ 	SET_ETHTOOL_OPS(ndev, &sh_eth_ethtool_ops);
+diff --git a/drivers/net/ethernet/renesas/sh_eth.h b/drivers/net/ethernet/renesas/sh_eth.h
+index f1dbc27..93dad7b 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.h
++++ b/drivers/net/ethernet/renesas/sh_eth.h
+@@ -35,6 +35,7 @@
+ #define PKT_BUF_SZ		1538
+ #define SH_ETH_TSU_TIMEOUT_MS	500
+ #define SH_ETH_TSU_CAM_ENTRIES	32
++#define SH_ETH_NAPI_WEIGHT	32
+
+ enum {
+ 	/* E-DMAC registers */
+@@ -728,6 +729,8 @@ struct sh_eth_private {
+ 	int duplex;
+ 	int port;		/* for TSU */
+ 	int vlan_num_ids;	/* for VLAN tag filter */
++	struct napi_struct napi;
++	struct net_device *ndev;
+
+ 	unsigned no_ether_link:1;
+ 	unsigned ether_link_active_low:1;
+-- 
+1.7.1
