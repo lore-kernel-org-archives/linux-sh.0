@@ -1,62 +1,55 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 18 May 2012 08:21:28 +0000
-Subject: Re: [PATCH 2/9 v3] dma: shdma: prepare for conversion to the shdma base library
-Message-Id: <Pine.LNX.4.64.1205181017250.23140@axis700.grange>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sat, 12 May 2012 20:56:24 +0000
+Subject: [GIT PULL][Update] Urgent fixes (for v3.4 if possible) for Renesas ARM-based platforms
+Message-Id: <201205122256.24289.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1336576161-27082-1-git-send-email-g.liakhovetski@gmx.de> 
- <1336576161-27082-3-git-send-email-g.liakhovetski@gmx.de>
- <1337055832.16185.5362.camel@vkoul-udesk3>
-In-Reply-To: <1337055832.16185.5362.camel@vkoul-udesk3>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@linux.intel.com>
-Cc: linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Tue, 15 May 2012, Vinod Koul wrote:
+Hi,
 
-> On Wed, 2012-05-09 at 17:09 +0200, Guennadi Liakhovetski wrote:
-> > By placing an anonymous union at the top of struct sh_dmae_slave we can
-> > transparently prepare all device and client drivers for the upcoming
-> > shdma-base conversion.
-> > 
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > ---
-> >  include/linux/sh_dma.h |    8 ++++++--
-> >  1 files changed, 6 insertions(+), 2 deletions(-)
-> > 
-> > diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
-> > index 425450b..e081e8e 100644
-> > --- a/include/linux/sh_dma.h
-> > +++ b/include/linux/sh_dma.h
-> > @@ -10,12 +10,16 @@
-> >  #ifndef SH_DMA_H
-> >  #define SH_DMA_H
-> >  
-> > -#include <linux/list.h>
-> >  #include <linux/dmaengine.h>
-> > +#include <linux/list.h>
-> > +#include <linux/shdma-base.h>
-> >  
-> >  /* Used by slave DMA clients to request DMA to/from a specific peripheral */
-> >  struct sh_dmae_slave {
-> > -	unsigned int			slave_id; /* Set by the platform */
-> > +	union {
-> > +		unsigned int		slave_id; /* Set by the platform */
-> > +		struct shdma_slave	shdma_slave;
-> again, this should be move to dma_slave_config
+Please pull changes since commit d48b97b403d23f6df0b990cee652bdf9a52337a3
 
-Same reasoning as in patch 1: I think such changes should be done 
-separately.
+    Linux 3.4-rc6
 
-> > +	};
-> >  	struct device			*dma_dev; /* Set by the platform */
-> >  	const struct sh_dmae_slave_config	*config;  /* Set by the driver */
-> >  };
+with top-most commit 5fab7b501bf29c08c5b01627b496b6b766bd0165
 
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+    ARM / mach-shmobile: Invalidate caches when booting secondary cores
+
+from the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/rafael/renesas.git fixes
+
+to receive urgent fixes for Renesas ARM-based platforms.  Four of these commits
+are fixes of regressions new in 3.4-rc and the last one is necessary for SMP to
+work on those systems in general.
+
+Thanks!
+
+
+ arch/arm/mach-shmobile/board-ag5evm.c        |   22 +---------
+ arch/arm/mach-shmobile/board-mackerel.c      |   22 +---------
+ arch/arm/mach-shmobile/headsmp.S             |   56 +++++++++++++++++++++++++-
+ arch/arm/mach-shmobile/include/mach/common.h |    2 +-
+ arch/arm/mach-shmobile/setup-r8a7779.c       |    4 ++
+ arch/arm/mach-shmobile/setup-sh73a0.c        |    4 ++
+ arch/arm/mach-shmobile/smp-r8a7779.c         |    8 +++-
+ arch/arm/mach-shmobile/smp-sh73a0.c          |    7 +++-
+ arch/arm/mach-shmobile/timer.c               |    9 ----
+ 9 files changed, 81 insertions(+), 53 deletions(-)
+
+---------------
+
+Guennadi Liakhovetski (2):
+      ARM: mach-shmobile: convert ag5evm to use the generic MMC GPIO hotplug helper
+      ARM: mach-shmobile: convert mackerel to use the generic MMC GPIO hotplug helper
+
+Kuninori Morimoto (1):
+      ARM / mach-shmobile: sh73a0 SMP TWD boot regression fix
+
+Magnus Damm (2):
+      ARM / mach-shmobile: r8a7779 SMP TWD boot regression fix
+      ARM / mach-shmobile: Invalidate caches when booting secondary cores
+
