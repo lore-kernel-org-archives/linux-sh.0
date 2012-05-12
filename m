@@ -1,75 +1,76 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Sat, 12 May 2012 06:27:35 +0000
+Date: Sat, 12 May 2012 06:37:24 +0000
 Subject: Re: [GIT PULL] Urgent fixes (for v3.4 if possible) for Renesas ARM-based platforms
-Message-Id: <Pine.LNX.4.64.1205120823450.7233@axis700.grange>
+Message-Id: <Pine.LNX.4.64.1205120832290.7233@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201205112025.13478.rjw@sisk.pl>
  <CAOesGMh3g-7oTNBoj2ZWGw+9P1Sf7V89etLb-iZiVoKDEvhO8w@mail.gmail.com>
  <CANqRtoSDN+vYet+9qiNZQq73BdSiqPL3K+95wCbNL29wDvT4EA@mail.gmail.com>
-In-Reply-To: <CANqRtoSDN+vYet+9qiNZQq73BdSiqPL3K+95wCbNL29wDvT4EA@mail.gmail.com>
+ <CAOesGMieNxya9w=2a0Lv06qbVb2SOtiLTYeWW=kQ9sbkSzbtvg@mail.gmail.com>
+In-Reply-To: <CAOesGMieNxya9w=2a0Lv06qbVb2SOtiLTYeWW=kQ9sbkSzbtvg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-Hi all
+On Fri, 11 May 2012, Olof Johansson wrote:
 
-On Sat, 12 May 2012, Magnus Damm wrote:
+> Hej Magnus,
+>=20
+> On Fri, May 11, 2012 at 9:28 PM, Magnus Damm <magnus.damm@gmail.com> wrot=
+e:
+>=20
+> >>> =A0git://git.kernel.org/pub/scm/linux/kernel/git/rafael/renesas.git f=
+ixes
+> >>
+> >> No such branch (nor tag).
+> >
+> > I believe Rafael will get back to you about that when he gets to his co=
+mputer.
+>=20
+> Yep, good.
+>=20
+> >>> Guennadi Liakhovetski (2):
+> >>> =A0 =A0 =A0ARM: mach-shmobile: convert ag5evm to use the generic MMC =
+GPIO hotplug helper
+> >>> =A0 =A0 =A0ARM: mach-shmobile: convert mackerel to use the generic MM=
+C GPIO hotplug helper
+> >>
+> >> These seem to fix the long-standing build errors on the two platforms,
+> >> but that's impossible to tell from reading the commit messages (they
+> >> are empty). Care to add one describing why they're important to go in?
+> >
+> > I only know that a) some boards don't build without these fixes and b)
+> > they used to build just fine.
+> >
+> > Perhaps Guennadi [CC:ed] could be so kind to fill us in with the blanks?
+>=20
+> It was pretty obvious once I tried applying them and building that
+> they did indeed resolve the build errors. However, the reason I'm
+> asking for a better description is that when looking at just the pull
+> request, or even the patch full commit description, it was impossible
+> to tell why the patch was urgent as a fix. So, while I am not
+> questioning that the patch should be included, I'm just requesting to
+> make sure it's properly described. That's also good for historical
+> purposes when someone is reading the git logs a year from now, etc.
 
-> Hi Olof,
->=20
-> [CC Guennadi]
->=20
-> Thanks for your help!
->=20
-> On Sat, May 12, 2012 at 7:41 AM, Olof Johansson <olof@lixom.net> wrote:
-> > Hi,
-> >
-> > On Fri, May 11, 2012 at 11:25 AM, Rafael J. Wysocki <rjw@sisk.pl> wrote:
-> >> Hi,
-> >>
-> >> Please pull changes since commit d48b97b403d23f6df0b990cee652bdf9a5233=
-7a3
-> >>
-> >> =A0 =A0Linux 3.4-rc6
-> >>
-> >> with top-most commit 5fab7b501bf29c08c5b01627b496b6b766bd0165
-> >>
-> >> =A0 =A0ARM / mach-shmobile: Invalidate caches when booting secondary c=
-ores
-> >>
-> >> from the git repository at:
-> >>
-> >> =A0git://git.kernel.org/pub/scm/linux/kernel/git/rafael/renesas.git fi=
-xes
-> >
-> > No such branch (nor tag).
->=20
-> I believe Rafael will get back to you about that when he gets to his comp=
-uter.
->=20
-> >> to receive urgent fixes for Renesas ARM-based platforms. =A0Four of th=
-ese commits
-> >> are fixes of regressions new in 3.4-rc and the last one is necessary f=
-or SMP to
-> >> work on those systems in general.
-> > [...]
-> >> Guennadi Liakhovetski (2):
-> >> =A0 =A0 =A0ARM: mach-shmobile: convert ag5evm to use the generic MMC G=
-PIO hotplug helper
-> >> =A0 =A0 =A0ARM: mach-shmobile: convert mackerel to use the generic MMC=
- GPIO hotplug helper
-> >
-> > These seem to fix the long-standing build errors on the two platforms,
-> > but that's impossible to tell from reading the commit messages (they
-> > are empty). Care to add one describing why they're important to go in?
->=20
-> I only know that a) some boards don't build without these fixes and b)
-> they used to build just fine.
->=20
-> Perhaps Guennadi [CC:ed] could be so kind to fill us in with the blanks?
+Ok, sorry, I wasn't sure from the previous mail - would you prefer to=20
+actually extend their commit messages? As described here
 
-Yes, they do fix modular mmc build on the two respective platforms.
+http://thread.gmane.org/gmane.linux.kernel.mmc/12744/focus=12748
+
+These patches are a part of a patch-series, so, when they were submitted=20
+in that context, it was pretty obvious how they relate to the rest.=20
+However, unfortunately, they are now applied later than the main patches=20
+in that series, so, their purpose has become much less obvious, and their=20
+main feature now seems to be not the conversion of the affected platforms, =
+
+but fixing the build. So, I think, we could use something like this in the =
+
+patch descriptions:
+
+This also fixes modular mmc build on this platform by eliminating the use=20
+of an inline function, which calls into the mmc core.
 
 Thanks
 Guennadi
