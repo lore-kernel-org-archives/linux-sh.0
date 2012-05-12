@@ -1,142 +1,162 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Fri, 11 May 2012 22:12:13 +0000
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Sat, 12 May 2012 13:18:53 +0000
 Subject: Re: [PATCH] gpio: Emma Mobile GPIO driver
-Message-Id: <CACRpkdYm0Ywv1XyTha8ks-PF2hme9C4dXKLGCq+i+1Pk9N9qJw@mail.gmail.com>
+Message-Id: <201205121318.54115.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120511094103.16423.51840.sendpatchset@w520>
-	<CACRpkdaVsBswz8uO_nTjbfbzt+T+YcxunpvoDvOn4+=DTwjG3A@mail.gmail.com>
-	<CANqRtoRx0VDmrPz=foD03z+ZYdb605Km8SEDKQQwCzbrZ54m3Q@mail.gmail.com>
+References: <20120511094103.16423.51840.sendpatchset@w520> <CACRpkdaVsBswz8uO_nTjbfbzt+T+YcxunpvoDvOn4+=DTwjG3A@mail.gmail.com> <CANqRtoRx0VDmrPz=foD03z+ZYdb605Km8SEDKQQwCzbrZ54m3Q@mail.gmail.com>
 In-Reply-To: <CANqRtoRx0VDmrPz=foD03z+ZYdb605Km8SEDKQQwCzbrZ54m3Q@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-kernel@vger.kernel.org, rjw@sisk.pl, linus.walleij@stericsson.com, arnd@arndb.de, linux-sh@vger.kernel.org, horms@verge.net.au, grant.likely@secretlab.ca, lethal@linux-sh.org, olof@lixom.net
+Cc: Linus Walleij <linus.walleij@linaro.org>, linux-kernel@vger.kernel.org, rjw@sisk.pl, linus.walleij@stericsson.com, linux-sh@vger.kernel.org, horms@verge.net.au, grant.likely@secretlab.ca, lethal@linux-sh.org, olof@lixom.net
 
-On Fri, May 11, 2012 at 5:45 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
-
->>> +config GPIO_EM
->>> + =A0 =A0 =A0 tristate "Emma Mobile GPIO"
->>> + =A0 =A0 =A0 depends on ARM
->>
->> ARM really? Why should all ARM systems have the option of configuring in=
- an Emma
->> controller?
->
-(...)
+On Friday 11 May 2012, Magnus Damm wrote:
+> On Fri, May 11, 2012 at 10:10 PM, Linus Walleij
+> <linus.walleij@linaro.org> wrote:
+> > On Fri, May 11, 2012 at 11:41 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
+> >
+> >> +config GPIO_EM
+> >> +       tristate "Emma Mobile GPIO"
+> >> +       depends on ARM
+> >
+> > ARM really? Why should all ARM systems have the option of configuring in an Emma
+> > controller?
+> 
+> Well, first of all, the Emma Mobile line of SoCs are ARM based. You
+> may think of MIPS based Emma devices. I don' t know so much about
+> them, but if you happen to know where I can find docs then I'd be very
+> interested in looking at them to see if I can share any of my recently
+> developed drivers.
+> 
 > Not sure if your point is that this has nothing to do with the CPU
-> core itself
+> core itself - at least I usually prefer to omit CPU dependencies for
+> I/O devices and have as few dependencies as possible to get as much as
+> compile time testing done. In this particular case I've added ARM as
+> dependency because I was asked so for the UART driver 8250_em. Either
+> way is fine with me, so it's up to you GPIO maintainers to decide what
+> you want. As long as I can enable it on the ARM based SoC family I'm
+> happy. =)
 
-Nah I was more after a more strict dependency, like in this example
-from pinctrl:
+My preference is generally to define the dependencies rather broadly
+so you can build each driver on as many platforms as possible, and
+just leave them out of defconfig. This seems to be the common way to
+do things. Limiting by architecture makes some sense if you don't
+want to expose the driver to all architectures that might not be
+able to build it (e.g. s390 would not be able to build this one).
 
-config PINCTRL_SIRF
-        bool "CSR SiRFprimaII pin controller driver"
-        depends on ARCH_PRIMA2
-        select PINMUX
+> >> +static inline unsigned long em_gio_read(struct em_gio_priv *p, int offs)
+> >> +{
+> >> +       if (offs < GIO_IDT0)
+> >> +               return ioread32(p->base0 + offs);
+> >> +       else
+> >> +               return ioread32(p->base1 + (offs - GIO_IDT0));
+> >> +}
+> >> +
+> >> +static inline void em_gio_write(struct em_gio_priv *p, int offs,
+> >> +                               unsigned long value)
+> >> +{
+> >> +       if (offs < GIO_IDT0)
+> >> +               iowrite32(value, p->base0 + offs);
+> >> +       else
+> >> +               iowrite32(value, p->base1 + (offs - GIO_IDT0));
+> >> +}
+> >
+> > Isn't ioread()/iowrite() some ISA I/O-space operations? What's wrong with
+> > readl_[relaxed] and writel_[relaxed]()?
+> 
+> Nothing wrong with readl/writel, I've just have a habit of using the
+> ioread/iowrite ones. I find the code that allows platforms to select
+> PORT or IOMEM in lib/iomap.c rather neat.
 
-So if this controller is only in one arch then put that as depends...
+For reference: The ioread family is defined to be a superset of the
+readl family and the inl family and to be compatible with the calling
+convention of readl, so it's correct to use it here, but it may be
+slower on architectures that require the lib/iomap.c wrappers. ARM
+does not use those wrappers on modern systems because the PIO space
+is memory mapped.
 
->>> +static irqreturn_t em_gio_irq_handler(int irq, void *dev_id)
->>> +{
->>> + =A0 =A0 =A0 struct em_gio_priv *p =3D dev_id;
->>> + =A0 =A0 =A0 unsigned long tmp, status;
->>> + =A0 =A0 =A0 unsigned int offset;
->>> +
->>> + =A0 =A0 =A0 status =3D tmp =3D em_gio_read(p, GIO_MST);
->>> + =A0 =A0 =A0 if (!status)
->>> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 return IRQ_NONE;
->>> +
->>> + =A0 =A0 =A0 while (status) {
->>> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 offset =3D __ffs(status);
->>> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 generic_handle_irq(p->irq_base + offset);
->>
->> Pleas use irqdomain to translate the IRQ numbers.
->
+For performance sensitive drivers that do not use DMA, it makes
+sense to use the readl_relaxed() family instead, because those
+omit the expensive barriers that protect us from overlapping with
+DMA.
+
+The main advantage of using readl/writel is that it's more common
+on ARM so reviewers don't have to wonder why this driver does things
+differently. Any driver shared with powerpc, mips or sh would likely
+use a different style. E.g. on powerpc, using readl/writel is considered
+wrong because it's only well-defined for PCI there.
+
+> >> +static struct em_gio_priv *irq_to_priv(unsigned int irq)
+> >> +{
+> >> +       struct irq_chip *chip = irq_get_chip(irq);
+> >> +       return container_of(chip, struct em_gio_priv, irq_chip);
+> >> +}
+> >
+> > Should this be inline maybe?
+> 
+> I have not checked if they actually turn out inline with my ARM
+> compiler, but gcc for SH was always rather good at deciding when to
+> inline by itself. Its a bit like likely()/unlikely() in my mind, it
+> may be good to give hints for the compiler but in the majority of the
+> cases the compiler will be fine by itself. I guess this particular
+> function may end up as just a few instructions.
+
+Right.
+
+> >> +static irqreturn_t em_gio_irq_handler(int irq, void *dev_id)
+> >> +{
+> >> +       struct em_gio_priv *p = dev_id;
+> >> +       unsigned long tmp, status;
+> >> +       unsigned int offset;
+> >> +
+> >> +       status = tmp = em_gio_read(p, GIO_MST);
+> >> +       if (!status)
+> >> +               return IRQ_NONE;
+> >> +
+> >> +       while (status) {
+> >> +               offset = __ffs(status);
+> >> +               generic_handle_irq(p->irq_base + offset);
+> >
+> > Pleas use irqdomain to translate the IRQ numbers.
+> 
 > Is this mandatory for regular platform devices not using DT?
-
-Irqdomain has nothing to do with DT ...
-
-It's just a very nice way to do translation of a range of local
-numbers onto the bigger IRQ numberspace, we've been discussing
-what to do with IRQ numbers and after some dealing with
-irqdomain I think it's really nice for this.
-
-It does the same as offsetting like above, but in a more
-abstract way.
-
+> 
 > I don't object to your idea, but I was planning on adding that in my
 > DT feature patch.
 
-Why not do it now and be done with it :-)
+There is little value in delaying this if you already know how
+to do it. irq domains are useful for other reasons as well, e.g.
+for allowing to build with sparse IRQ, which is needed when we get
+to multiplatform kernels.
 
->>> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 status &=3D ~(1 << offset);
->>> + =A0 =A0 =A0 }
->>
->> We've recently patched a log of IRQ handlers to re-read the IRQ
->> status register on each iteration. I suspect that is needed here
->> as well.
->
-> Doesn't that depend on how the hardware works? OTOH, it may be a safe
-> way to implement correct code for all kinds of controllers, not sure.
-
-Not really, the issue is how the IRQ framework works really.
-Check out this pointer from Russell:
-http://lists.arm.linux.org.uk/lurker/message/20120402.214614.e7740b12.en.ht=
-ml
-and the rest of that thread.
-
-> I guess it can be done like that, but wouldn't that lead to potential
-> starvation of IRQs with bits that happen to be processed first in the
-> word?
-
-Yes, but the alternative seems to be to miss IRQs which is probably
-worse.
-
->> inline?
->
+> >> +static struct em_gio_priv *gpio_to_priv(struct gpio_chip *chip)
+> >> +{
+> >> +       return container_of(chip, struct em_gio_priv, gpio_chip);
+> >> +}
+> >
+> > inline?
+> 
 > Sure, if you think that is absolutely necessary. May I ask, is it
 > important for you, or is it ok if I skip and keep this driver in line
-> with my other ones? =3D)
+> with my other ones? =)
 
-Forget it... no big deal.
+I don't think it makes any difference in practice, other for people
+reading the code. Adding the 'inline' tells the reader that this is
+meant to be a trivial function that doesn't add much object code,
+and that the author was aware of that. I don't think it matters much
+either way.
 
->>> + =A0 =A0 =A0 p =3D kzalloc(sizeof(*p), GFP_KERNEL);
->>
->> Use devm_kzalloc() and friends?
->
-> I tend to prefer not to. This because I need to perform proper error
-> handling anyway.
->
->> Which makes the error path all much simpler.
->
-> Maybe so, perhaps I should look into that anyway though.
-
-OK no big deal for me, just seen it a bit lately, it's getting
-popular.
-
->> Isn't there a new nice inline that will both request and
->> remap a piece of memory?
->
+> > Isn't there a new nice inline that will both request and
+> > remap a piece of memory?
+> 
 > If so then that would be excellent. Especially together with
 > ioread/iowrite so the code can work both for IOMEM and PORT
 > transparently.
 
-Speaking about the garbage-collecting devm_* stuff, there
-is:
-devm_ioremap()
+We have a bunch of helpers, but I think none that does
+everything yet. io_iomap() locates and remaps the resource.
+devm_request_and_ioremap() does the request and the map, but
+doesn't pull it out of the device.
 
-Which will auto-release the mapping when the device goes away.
-(Makes exit() really thin.)
-
-> Do you have any good suggestion what to use to unregister my irqchip?
-> I believe this version of the driver isn't doing that properly.
-
-Is this code going to be used as module? Else one way to
-avoid it to to not have an exit() function like drivers/gpio/gpio-pl061.c
-
-Most people seem to avoid that so you really got me on this
-one, I really have no good example of how to do that...
-
-Yours,
-Linus Walleij
+	Arnd
