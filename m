@@ -1,148 +1,57 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Sat, 12 May 2012 23:04:10 +0000
-Subject: Re: [GIT PULL] Renesas ARM-based platforms updates for v3.5
-Message-Id: <CAOesGMhZ9096aPsURMExjeTTf09bt4zbSz97u31F86WZwV=swQ@mail.gmail.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sat, 12 May 2012 21:09:53 +0000
+Subject: Re: [GIT PULL][Update x2] Urgent fixes (for v3.4 if possible) for Renesas ARM-based platforms
+Message-Id: <201205122309.53928.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201205112101.59949.rjw@sisk.pl>
- <CAOesGMgFWM6K6969Oz6xGewrRekyrJA-ztGBADxsqnB1w=V2QA@mail.gmail.com>
- <201205122158.13999.rjw@sisk.pl>
-In-Reply-To: <201205122158.13999.rjw@sisk.pl>
+References: <201205112025.13478.rjw@sisk.pl> <201205122256.24289.rjw@sisk.pl>
+In-Reply-To: <201205122256.24289.rjw@sisk.pl>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
 Hi,
 
-On Sat, May 12, 2012 at 12:58 PM, Rafael J. Wysocki <rjw@sisk.pl> wrote:
-> On Saturday, May 12, 2012, Olof Johansson wrote:
->> On Fri, May 11, 2012 at 12:01 PM, Rafael J. Wysocki <rjw@sisk.pl> wrote:
->> > Hi,
->> >
->> > Please pull changes since commit d48b97b403d23f6df0b990cee652bdf9a5233=
-7a3
->> >
->> > =A0 =A0Linux 3.4-rc6
->> >
->> > with top-most commit 5658c94096c16e769203b6dea5e5f04e7ff12633
->> >
->> > =A0 =A0Merge branch 'renesas-kzm9g' into renesas-soc-new
->> >
->> > from the git repository at:
->> >
->> > =A0git://git.kernel.org/pub/scm/linux/kernel/git/rafael/renesas.git so=
-c-new
->> >
->> > to receive new Renesas ARM-based platforms material for v3.5. =A0Inclu=
-ded are:
->> >
->> > =A0* Urgent regression and SMP fixes (also included in the fixes branc=
-h that I've
->> > =A0 just sent a separate pull request for in the hope it is still poss=
-ible to
->> > =A0 push them for v3.4). =A0Two of those fixes are duplicated in the r=
-enesas-sh7372
->> > =A0 branch, which is because I learned that they were fixes for recent
->> > =A0 regressions after they had gone to that branch. =A0Sorry about tha=
-t.
->> >
->> > =A0* Updates for boards based on the sh7372 and r8a7740 SoCs.
->> >
->> > =A0* Support for 2 new boards, armadillo800eva and KZM-A9-GT.
->>
->> Hi Rafael,
->>
->> If you take a look at how the other ARM subarch maintainers organize
->> the patches that they feed up to us, you'll see that they group them
->> either per functional topic, or more commonly per subject such as
->> "core soc updates", "soc driver updates", "board updates", "device
->> tree updates", "cleanup", and so on.
->>
->> That fits the model we've been having on arm-soc as well, since we
->> split our tree up per category like that, and send those cross-section
->> branches between different vendors (but same categories) up to Linus
->> that way.
->>
->>
->> So, would you mind taking a look at what you have in the new-soc
->> branch and reshuffling things a bit? Looking at the history of the
->> new-soc branch and the rest of the repo, it seems that you're already
->> more or less organizing your tree the way I am asking for, it's just
->> that you merged them all together before sending this pull request.
->
-> Well.
->
-> I'd prefer not to rebase any branches and move commits around if that's
-> what you're talking about, because I have a rule that my branches are not
-> rebased, except for the next one.
+Please pull changes since commit d48b97b403d23f6df0b990cee652bdf9a52337a3
 
-Yeah, sorry for not giving you a heads up on this before. Hopefully
-it's just a bootstrap issue this first merge window that you're
-sending things through our tree.
+    Linux 3.4-rc6
 
-> Now, there are three categories of commits in the soc-new branch,
-> "core soc updates", "board updates" and "new board support". =A0However,
-> "board updates" depend on "core soc updates" and go together with them
-> in two branches, "sh7372" and "r8a7740" (branch names are after SoC names
-> and each branch contains updates for the given SoC and boards based on it=
-).
-> I can send a pull request to you separately for each of those branches,
-> if you prefer, or I can merge them together and send a pull request for
-> the whole (it actually is a separate branch in my tree, called "soc").
+with top-most commit e994d5eb7c3e45e13eb4fc882a47238f8dc4d63e
 
-In general we don't mind seeing each branch separately, and having
-dependencies between them is perfectly fine. Other subarch trees do
-this all the time. So having the core updates as a prereq (and
-included in) the two SoC names is perfectly fine, the dependencies
-will carry over to how we merge them into our next/* branches in
-arm-soc.
+    ARM / mach-shmobile: Invalidate caches when booting secondary cores
 
-> The new board support stuff is just that - commits adding support for
-> new boards. =A0Those things, however, depend on the "core soc updates" and
-> "board updates", so they are based on the "soc" branch (honestly, I don't
-> think they will work without the "core" changes). =A0So, while I could
-> send separate pull requests for the "armadillo800eva" and "kzm9g" branche=
-s,
-> I don't think that merging them without the changes in the "soc" branch w=
-ill
-> do any good.
+from the git repository at:
 
-Again, that's fine. We have a "waterfall" of dependencies through the
-arm-soc next/* branches and this will normally fit right in.
+  git://git.kernel.org/pub/scm/linux/kernel/git/rafael/renesas.git fixes
 
-To see how we organize (and document) the branches we have pulled in,
-take a look at arch/arm/arm-soc-for-next-contents.txt in the for-next
-branch of the arm-soc tree:
+to receive urgent fixes for Renesas ARM-based platforms.  Four of these commits
+are fixes of regressions new in 3.4-rc and the last one is necessary for SMP to
+work on those systems in general.
 
-http://git.kernel.org/?p=3Dlinux/kernel/git/arm/arm-soc.git;a=3Dblob;f=3Dar=
-ch/arm/arm-soc-for-next-contents.txt;h=8Ca6bef667fa81c355a0a9200804d20c1617=
-3f2d;hb=3Drefs/heads/for-next
-
-In general, the document is sorted such that the prerequisites for
-later branches are listed above. In some cases it means that we need
-to have more than one topic branch due to otherwise circular or
-awkward dependencies, for example next/dt and next/dt2.
+Thanks!
 
 
-General organization and order tends to start out as:
+ arch/arm/mach-shmobile/board-ag5evm.c        |   22 +---------
+ arch/arm/mach-shmobile/board-mackerel.c      |   22 +---------
+ arch/arm/mach-shmobile/headsmp.S             |   56 +++++++++++++++++++++++++-
+ arch/arm/mach-shmobile/include/mach/common.h |    2 +-
+ arch/arm/mach-shmobile/setup-r8a7779.c       |    4 ++
+ arch/arm/mach-shmobile/setup-sh73a0.c        |    4 ++
+ arch/arm/mach-shmobile/smp-r8a7779.c         |    8 +++-
+ arch/arm/mach-shmobile/smp-sh73a0.c          |    7 +++-
+ arch/arm/mach-shmobile/timer.c               |    9 ----
+ 9 files changed, 81 insertions(+), 53 deletions(-)
 
-* cleanups
-* fixes
-* device tree updates
-* core soc support (new socs, etc)
-* soc drivers and soc-related items. This time we split them up a bit
-(pm, pinctrl, clock, drivers)
-* boards (generally very limited new board introductions, mostly updates)
+---------------
 
-But over time order can be somewhat reshuffled due to added dependencies.
+Guennadi Liakhovetski (2):
+      ARM: mach-shmobile: convert mackerel to use the generic MMC GPIO hotplug helper
+      ARM: mach-shmobile: convert ag5evm to use the generic MMC GPIO hotplug helper
 
+Kuninori Morimoto (1):
+      ARM / mach-shmobile: sh73a0 SMP TWD boot regression fix
 
-The for-next and next/* branches are not guaranteed to be stable,
-since we have in the past had to drop branches and rebuild them. In
-general, downstream developers should be basing their work on the
-specific subarch trees and not on arm-soc. There are a few exceptions
-for tree-wide cleanups but even then, basing it on regular mainline
-makes much more sense.
+Magnus Damm (2):
+      ARM / mach-shmobile: r8a7779 SMP TWD boot regression fix
+      ARM / mach-shmobile: Invalidate caches when booting secondary cores
 
-
--Olof
