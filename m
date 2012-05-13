@@ -1,61 +1,33 @@
 From: Olof Johansson <olof@lixom.net>
-Date: Sat, 12 May 2012 23:29:20 +0000
-Subject: Re: [GIT PULL] Renesas ARM-based platforms: core SoC updates for v3.5
-Message-Id: <CAOesGMgF3oLD9=db9d3rcGKPFzQYvCfBgaYHZmy8LPW46t0Yeg@mail.gmail.com>
+Date: Sun, 13 May 2012 04:24:20 +0000
+Subject: Re: [GIT PULL] Renesas ARM-based platforms: board support updates for v3.5
+Message-Id: <CAOesGMixGL7hBBvd0SkKUiTaoOAQqi7NheEveUwp6RvU33qPMQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201205112101.59949.rjw@sisk.pl>
  <CAOesGMgFWM6K6969Oz6xGewrRekyrJA-ztGBADxsqnB1w=V2QA@mail.gmail.com>
- <201205122307.20590.rjw@sisk.pl>
-In-Reply-To: <201205122307.20590.rjw@sisk.pl>
+ <201205122307.20590.rjw@sisk.pl> <201205122318.01634.rjw@sisk.pl>
+In-Reply-To: <201205122318.01634.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="iso-8859-1"
 Content-Transfer-Encoding: quoted-printable
 To: linux-arm-kernel@lists.infradead.org
 
-On Sat, May 12, 2012 at 2:07 PM, Rafael J. Wysocki <rjw@sisk.pl> wrote:
+On Sat, May 12, 2012 at 2:18 PM, Rafael J. Wysocki <rjw@sisk.pl> wrote:
 > Hi,
 >
 > Please pull changes since commit d48b97b403d23f6df0b990cee652bdf9a52337a3
 >
 > =A0 =A0Linux 3.4-rc6
 >
-> with top-most commit c8241085e8606a14ef48e6d99556133c48aaddaf
+> with top-most commit 8823e2b38bd0ee45346ebd3613f47ddb2a3a208a
 >
-> =A0 =A0ARM: mach-shmobile: clock-r8a7740: use followparent_recalc on usb2=
-4s
+> =A0 =A0ARM: mach-shmobile: bonito: make sure static function
 >
 > from the git repository at:
 >
-> =A0git://git.kernel.org/pub/scm/linux/kernel/git/rafael/renesas.git soc-c=
-ore
->
-> to receive updates of the Renesas ARM-based platforms core code for v3.5.
-> Included are:
->
-> =A0* Shared delay calibration code update from Magnus Damm.
->
-> =A0* The addition of FSI DMAEngine support for the sh7372 SoC from Kunino=
-ri Morimoto.
->
-> =A0* Muliple updates of the r8a7740 SoC support code from Kuninori Morimo=
-to.
->
-> This is based on the Renesas DT updates that have been merged into arm-so=
-c already
-> and on the urgent fixes I've sent a separate pull request for.
->
-> Thanks!
+> =A0git://git.kernel.org/pub/scm/linux/kernel/git/rafael/renesas.git board
 
-Rafael,
-
-This looks good, thanks for splitting things up. I will pull it in a
-little later today when I get a few minutes of quiet.
-
-If you start using signed tags, feel free to add the above description
-into there for our convenience. :-)
-
-Also, the diffstat below includes the dependent branches. Feel free to
-send only the delta, but either way works.
+Thanks, pulled.
 
 
 -Olof
