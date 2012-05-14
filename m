@@ -1,64 +1,34 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 03 May 2012 15:05:39 +0000
-Subject: [PATCH 10/29] mmc: tmio: don't needlessly enable interrupts during probing
-Message-Id: <1336057558-11031-11-git-send-email-g.liakhovetski@gmx.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 14 May 2012 10:54:24 +0000
+Subject: [PATCH 00/03] ARM: mach-shmobile: DT_MACHINE and mach-type updates
+Message-Id: <20120514105424.8596.38355.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-We don't have to force-enable MMC interrupts in our .probe() method,
-mmc_add_host() will trigger card detection, that will enable all the
-necessary interrupts.
+ARM: mach-shmobile: DT_MACHINE and mach-type updates
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+[PATCH 01/03] mach-shmobile: Use DT_MACHINE for KZM9G
+[PATCH 02/03] mach-shmobile: Use DT_MACHINE for armadillo 800 eva
+[PATCH 03/03] ARM: Undelete KZM9D mach-type
+
+These patches contain a few last minute updates for mach-shmobile.
+There are two patches that convert recently added boards to make use
+of DT_MACHINE_START(). Also, slightly unrelated to the new boards,
+but the KZM9D mach-type is undeleted as well. This to allow build
+of the EMEV2-based KZM9D board.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/mmc/host/tmio_mmc_pio.c |   21 +++++++++++----------
- 1 files changed, 11 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 0d2643b..8cd3637 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -948,6 +948,17 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 
- 	_host->sdcard_irq_mask = sd_ctrl_read32(_host, CTL_IRQ_MASK);
- 	tmio_mmc_disable_mmc_irqs(_host, TMIO_MASK_ALL);
-+
-+	/* Unmask the IRQs we want to know about */
-+	if (!_host->chan_rx)
-+		irq_mask |= TMIO_MASK_READOP;
-+	if (!_host->chan_tx)
-+		irq_mask |= TMIO_MASK_WRITEOP;
-+	if (!_host->native_hotplug)
-+		irq_mask &= ~(TMIO_STAT_CARD_REMOVE | TMIO_STAT_CARD_INSERT);
-+
-+	_host->sdcard_irq_mask &= ~irq_mask;
-+
- 	if (pdata->flags & TMIO_MMC_SDIO_IRQ)
- 		tmio_mmc_enable_sdio_irq(mmc, 0);
- 
-@@ -965,16 +976,6 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 
- 	dev_pm_qos_expose_latency_limit(&pdev->dev, 100);
- 
--	/* Unmask the IRQs we want to know about */
--	if (!_host->chan_rx)
--		irq_mask |= TMIO_MASK_READOP;
--	if (!_host->chan_tx)
--		irq_mask |= TMIO_MASK_WRITEOP;
--	if (!_host->native_hotplug)
--		irq_mask &= ~(TMIO_STAT_CARD_REMOVE | TMIO_STAT_CARD_INSERT);
--
--	tmio_mmc_enable_mmc_irqs(_host, irq_mask);
--
- 	if (pdata->flags & TMIO_MMC_USE_GPIO_CD) {
- 		ret = mmc_cd_gpio_request(mmc, pdata->cd_gpio);
- 		if (ret < 0) {
--- 
-1.7.2.5
+ Applies to linux-next 20120514
 
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts  |   22 ++++++++++++++++++++++
+ arch/arm/boot/dts/sh73a0-kzm9g.dts             |   22 ++++++++++++++++++++++
+ arch/arm/mach-shmobile/Kconfig                 |    2 ++
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    8 +++++++-
+ arch/arm/mach-shmobile/board-kzm9g.c           |    8 +++++++-
+ arch/arm/tools/mach-types                      |    1 +
+ 6 files changed, 61 insertions(+), 2 deletions(-)
