@@ -1,78 +1,62 @@
-From: Ben Hutchings <bhutchings@solarflare.com>
-Date: Fri, 11 May 2012 15:27:10 +0000
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 14 May 2012 06:13:50 +0000
 Subject: Re: [PATCH v2 4/5] net: sh_eth: add support for set_ringparam/get_ringparam
-Message-Id: <1336750030.2874.65.camel@bwh-desktop.uk.solarflarecom.com>
+Message-Id: <4FB0A29E.1070709@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <4FACD005.3010800@renesas.com>
-In-Reply-To: <4FACD005.3010800@renesas.com>
+ <1336750030.2874.65.camel@bwh-desktop.uk.solarflarecom.com>
+In-Reply-To: <1336750030.2874.65.camel@bwh-desktop.uk.solarflarecom.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+To: Ben Hutchings <bhutchings@solarflare.com>
 Cc: netdev <netdev@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>
 
-On Fri, 2012-05-11 at 17:38 +0900, Shimoda, Yoshihiro wrote:
-> This patch supports the ethtool's set_ringparam() and get_ringparam().
-[...]
-> +static int sh_eth_set_ringparam(struct net_device *ndev,
-> +				struct ethtool_ringparam *ring)
-> +{
-> +	struct sh_eth_private *mdp = netdev_priv(ndev);
-> +	int ringsize;
-> +
-> +	if (ring->tx_pending > TX_RING_MAX ||
-> +	    ring->rx_pending > RX_RING_MAX ||
-> +	    ring->tx_pending < TX_RING_MIN ||
-> +	    ring->rx_pending < RX_RING_MIN)
-> +		return -EINVAL;
-> +	if (ring->rx_mini_pending || ring->rx_jumbo_pending)
-> +		return -EINVAL;
-> +
-> +	if (netif_running(ndev)) {
-> +		/* Disable interrupts by clearing the interrupt mask. */
-> +		sh_eth_write(ndev, 0x0000, EESIPR);
-> +		/* Stop the chip's Tx and Rx processes. */
-> +		sh_eth_write(ndev, 0, EDTRR);
-> +		sh_eth_write(ndev, 0, EDRRR);
+2012/05/12 0:27, Ben Hutchings wrote:
+> On Fri, 2012-05-11 at 17:38 +0900, Shimoda, Yoshihiro wrote:
+>> This patch supports the ethtool's set_ringparam() and get_ringparam().
+> [...]
+>> +static int sh_eth_set_ringparam(struct net_device *ndev,
+>> +				struct ethtool_ringparam *ring)
+>> +{
+< snip >
+>> +	if (netif_running(ndev)) {
+>> +		/* Disable interrupts by clearing the interrupt mask. */
+>> +		sh_eth_write(ndev, 0x0000, EESIPR);
+>> +		/* Stop the chip's Tx and Rx processes. */
+>> +		sh_eth_write(ndev, 0, EDTRR);
+>> +		sh_eth_write(ndev, 0, EDRRR);
+> 
+> You'll also need to call netif_tx_disable() and synchronize_irq().
 
-You'll also need to call netif_tx_disable() and synchronize_irq().
+Thank you for the point. I will fix it.
 
-> +	}
-> +
-> +	/* Free all the skbuffs in the Rx queue. */
-> +	sh_eth_ring_free(ndev);
-> +	/* Free DMA buffer */
-> +	ringsize = sizeof(struct sh_eth_rxdesc) * mdp->num_rx_ring;
-> +	dma_free_coherent(NULL, ringsize, mdp->rx_ring, mdp->rx_desc_dma);
-> +	ringsize = sizeof(struct sh_eth_txdesc) * mdp->num_tx_ring;
-> +	dma_free_coherent(NULL, ringsize, mdp->tx_ring, mdp->tx_desc_dma);
-> +
-> +	/* Set new parameters */
-> +	mdp->num_rx_ring = ring->rx_pending;
-> +	mdp->num_tx_ring = ring->tx_pending;
-> +
-> +	sh_eth_ring_init(ndev);
-> +	sh_eth_dev_init(ndev);
+>> +	sh_eth_ring_init(ndev);
+>> +	sh_eth_dev_init(ndev);
+> 
+> And what if either of these fails?
 
-And what if either of these fails?
+Oh, I should have added error handling.
+I checked this driver, and I found that the driver should change
+the value of the pointer to NULL. So, I will submit such a patch first.
 
-> +	if (netif_running(ndev)) {
-> +		sh_eth_write(ndev, mdp->cd->eesipr_value, EESIPR);
-> +		/* Setting the Rx mode will start the Rx process. */
-> +		sh_eth_write(ndev, EDRRR_R, EDRRR);
+>> +	if (netif_running(ndev)) {
+>> +		sh_eth_write(ndev, mdp->cd->eesipr_value, EESIPR);
+>> +		/* Setting the Rx mode will start the Rx process. */
+>> +		sh_eth_write(ndev, EDRRR_R, EDRRR);
+> 
+> You'll need to call netif_wake_queue().
 
-You'll need to call netif_wake_queue().
+I will fix it.
 
-> +	}
-> +
-> +	return 0;
-> +}
-[...]
+>> +	}
+>> +
+>> +	return 0;
+>> +}
+> [...]
+> 
+> Ben.
+> 
 
-Ben.
-
--- 
-Ben Hutchings, Staff Engineer, Solarflare
-Not speaking for my employer; that's the marketing department's job.
-They asked us to note that Solarflare product names are trademarked.
-
+Best regards,
+Yoshihiro Shimoda
