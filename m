@@ -1,125 +1,144 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 25 May 2012 15:45:31 +0000
-Subject: [PATCH 5/8 v3] mmc: tmio: add regulator support
-Message-Id: <1337960752-4944-17-git-send-email-g.liakhovetski@gmx.de>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 14 May 2012 06:46:31 +0000
+Subject: [PATCH v3 2/6] net: sh_eth: remove unnecessary members/definitions
+Message-Id: <4FB0AA47.5040600@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>, Mark Brown <broonie@opensource.wolfsonmicro.com>
+To: netdev <netdev@vger.kernel.org>
+Cc: SH-Linux <linux-sh@vger.kernel.org>
 
-Currently the TMIO MMC driver derives the OCR mask from the platform data
-and uses a platform callback to turn card power on and off. This patch adds
-regulator support to the driver.
+This patch removes unnecessary members in sh_th_private.
+This patch also removes unnecessary definitions in sh_eth.h
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
+ about v3:
+  - this patch is the same as v2
 
-v3: similar to MMCIF don't prefer regulator over platform callback, call 
-both. Thanks to all, who commented.
+ drivers/net/ethernet/renesas/sh_eth.c |    7 +---
+ drivers/net/ethernet/renesas/sh_eth.h |   69 ---------------------------------
+ 2 files changed, 1 insertions(+), 75 deletions(-)
 
- drivers/mmc/host/tmio_mmc.h     |    3 +++
- drivers/mmc/host/tmio_mmc_pio.c |   35 +++++++++++++++++++++++++++--------
- 2 files changed, 30 insertions(+), 8 deletions(-)
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index c35084a..10f2a89 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -898,7 +898,6 @@ static int sh_eth_dev_init(struct net_device *ndev)
+ {
+ 	int ret = 0;
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+-	u_int32_t rx_int_var, tx_int_var;
+ 	u32 val;
 
-diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-index d857f5c..3a8dcfb 100644
---- a/drivers/mmc/host/tmio_mmc.h
-+++ b/drivers/mmc/host/tmio_mmc.h
-@@ -39,6 +39,7 @@
- #define TMIO_MASK_IRQ     (TMIO_MASK_READOP | TMIO_MASK_WRITEOP | TMIO_MASK_CMD)
- 
- struct tmio_mmc_data;
-+struct regulator;
- 
- struct tmio_mmc_host {
- 	void __iomem *ctl;
-@@ -55,6 +56,8 @@ struct tmio_mmc_host {
- 	void (*set_pwr)(struct platform_device *host, int state);
- 	void (*set_clk_div)(struct platform_device *host, int state);
- 
-+	struct regulator	*vdd;
-+
- 	/* pio related stuff */
- 	struct scatterlist      *sg_ptr;
- 	struct scatterlist      *sg_orig;
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 579f990..baa0959 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -767,6 +767,16 @@ static int tmio_mmc_clk_update(struct mmc_host *mmc)
- 	return ret;
- }
- 
-+static void tmio_mmc_set_power(struct tmio_mmc_host *host, struct mmc_ios *ios)
-+{
-+	if (host->set_pwr)
-+		host->set_pwr(host->pdev, ios->power_mode != MMC_POWER_OFF);
-+	if (host->vdd)
-+		/* Errors ignored... */
-+		mmc_regulator_set_ocr(host->mmc, host->vdd,
-+				      ios->power_mode ? ios->vdd : 0);
-+}
-+
- /* Set MMC clock / power.
-  * Note: This controller uses a simple divider scheme therefore it cannot
-  * run a MMC card at full speed (20MHz). The max clock is 24MHz on SD, but as
-@@ -819,13 +829,12 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 		}
- 		tmio_mmc_set_clock(host, ios->clock);
- 		/* power up SD bus */
--		if (host->set_pwr)
--			host->set_pwr(host->pdev, 1);
-+		tmio_mmc_set_power(host, ios);
- 		/* start bus clock */
- 		tmio_mmc_clk_start(host);
- 	} else if (ios->power_mode != MMC_POWER_UP) {
--		if (host->set_pwr && ios->power_mode = MMC_POWER_OFF)
--			host->set_pwr(host->pdev, 0);
-+		if (ios->power_mode = MMC_POWER_OFF)
-+			tmio_mmc_set_power(host, ios);
- 		tmio_mmc_clk_stop(host);
- 		if (host->power) {
- 			struct tmio_mmc_data *pdata = host->pdata;
-@@ -885,6 +894,19 @@ static const struct mmc_host_ops tmio_mmc_ops = {
- 	.enable_sdio_irq = tmio_mmc_enable_sdio_irq,
- };
- 
-+static void tmio_mmc_init_ocr(struct tmio_mmc_host *host)
-+{
-+	struct tmio_mmc_data *pdata = host->pdata;
-+	struct mmc_host *mmc = host->mmc;
-+
-+	host->vdd = mmc_regulator_get_vmmc(mmc);
-+
-+	if (!mmc->ocr_avail)
-+		mmc->ocr_avail = pdata->ocr_mask ? : MMC_VDD_32_33 | MMC_VDD_33_34;
-+	else if (pdata->ocr_mask)
-+		dev_warn(mmc_dev(mmc), "Platform OCR mask is ignored\n");
-+}
-+
- int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 				  struct platform_device *pdev,
- 				  struct tmio_mmc_data *pdata)
-@@ -930,10 +952,7 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 		mmc->max_segs;
- 	mmc->max_req_size = mmc->max_blk_size * mmc->max_blk_count;
- 	mmc->max_seg_size = mmc->max_req_size;
--	if (pdata->ocr_mask)
--		mmc->ocr_avail = pdata->ocr_mask;
--	else
--		mmc->ocr_avail = MMC_VDD_32_33 | MMC_VDD_33_34;
-+	tmio_mmc_init_ocr(_host);
- 
- 	_host->native_hotplug = !(pdata->flags & TMIO_MMC_USE_GPIO_CD ||
- 				  mmc->caps & MMC_CAP_NEEDS_POLL ||
+ 	/* Soft Reset */
+@@ -926,9 +925,7 @@ static int sh_eth_dev_init(struct net_device *ndev)
+ 	/* Frame recv control */
+ 	sh_eth_write(ndev, mdp->cd->rmcr_value, RMCR);
+
+-	rx_int_var = mdp->rx_int_var = DESC_I_RINT8 | DESC_I_RINT5;
+-	tx_int_var = mdp->tx_int_var = DESC_I_TINT2;
+-	sh_eth_write(ndev, rx_int_var | tx_int_var, TRSCER);
++	sh_eth_write(ndev, DESC_I_RINT8 | DESC_I_RINT5 | DESC_I_TINT2, TRSCER);
+
+ 	if (mdp->cd->bculr)
+ 		sh_eth_write(ndev, 0x800, BCULR);	/* Burst sycle set */
+@@ -2286,8 +2283,6 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
+
+ 	/* debug message level */
+ 	mdp->msg_enable = SH_ETH_DEF_MSG_ENABLE;
+-	mdp->post_rx = POST_RX >> (devno << 1);
+-	mdp->post_fw = POST_FW >> (devno << 1);
+
+ 	/* read and set MAC address */
+ 	read_mac_address(ndev, pd->mac_addr);
+diff --git a/drivers/net/ethernet/renesas/sh_eth.h b/drivers/net/ethernet/renesas/sh_eth.h
+index 9e8e4d5..9525199 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.h
++++ b/drivers/net/ethernet/renesas/sh_eth.h
+@@ -585,71 +585,6 @@ enum RPADIR_BIT {
+ /* FDR */
+ #define DEFAULT_FDR_INIT	0x00000707
+
+-enum phy_offsets {
+-	PHY_CTRL = 0, PHY_STAT = 1, PHY_IDT1 = 2, PHY_IDT2 = 3,
+-	PHY_ANA = 4, PHY_ANL = 5, PHY_ANE = 6,
+-	PHY_16 = 16,
+-};
+-
+-/* PHY_CTRL */
+-enum PHY_CTRL_BIT {
+-	PHY_C_RESET = 0x8000, PHY_C_LOOPBK = 0x4000, PHY_C_SPEEDSL = 0x2000,
+-	PHY_C_ANEGEN = 0x1000, PHY_C_PWRDN = 0x0800, PHY_C_ISO = 0x0400,
+-	PHY_C_RANEG = 0x0200, PHY_C_DUPLEX = 0x0100, PHY_C_COLT = 0x0080,
+-};
+-#define DM9161_PHY_C_ANEGEN 0	/* auto nego special */
+-
+-/* PHY_STAT */
+-enum PHY_STAT_BIT {
+-	PHY_S_100T4 = 0x8000, PHY_S_100X_F = 0x4000, PHY_S_100X_H = 0x2000,
+-	PHY_S_10T_F = 0x1000, PHY_S_10T_H = 0x0800, PHY_S_ANEGC = 0x0020,
+-	PHY_S_RFAULT = 0x0010, PHY_S_ANEGA = 0x0008, PHY_S_LINK = 0x0004,
+-	PHY_S_JAB = 0x0002, PHY_S_EXTD = 0x0001,
+-};
+-
+-/* PHY_ANA */
+-enum PHY_ANA_BIT {
+-	PHY_A_NP = 0x8000, PHY_A_ACK = 0x4000, PHY_A_RF = 0x2000,
+-	PHY_A_FCS = 0x0400, PHY_A_T4 = 0x0200, PHY_A_FDX = 0x0100,
+-	PHY_A_HDX = 0x0080, PHY_A_10FDX = 0x0040, PHY_A_10HDX = 0x0020,
+-	PHY_A_SEL = 0x001e,
+-};
+-/* PHY_ANL */
+-enum PHY_ANL_BIT {
+-	PHY_L_NP = 0x8000, PHY_L_ACK = 0x4000, PHY_L_RF = 0x2000,
+-	PHY_L_FCS = 0x0400, PHY_L_T4 = 0x0200, PHY_L_FDX = 0x0100,
+-	PHY_L_HDX = 0x0080, PHY_L_10FDX = 0x0040, PHY_L_10HDX = 0x0020,
+-	PHY_L_SEL = 0x001f,
+-};
+-
+-/* PHY_ANE */
+-enum PHY_ANE_BIT {
+-	PHY_E_PDF = 0x0010, PHY_E_LPNPA = 0x0008, PHY_E_NPA = 0x0004,
+-	PHY_E_PRX = 0x0002, PHY_E_LPANEGA = 0x0001,
+-};
+-
+-/* DM9161 */
+-enum PHY_16_BIT {
+-	PHY_16_BP4B45 = 0x8000, PHY_16_BPSCR = 0x4000, PHY_16_BPALIGN = 0x2000,
+-	PHY_16_BP_ADPOK = 0x1000, PHY_16_Repeatmode = 0x0800,
+-	PHY_16_TXselect = 0x0400,
+-	PHY_16_Rsvd = 0x0200, PHY_16_RMIIEnable = 0x0100,
+-	PHY_16_Force100LNK = 0x0080,
+-	PHY_16_APDLED_CTL = 0x0040, PHY_16_COLLED_CTL = 0x0020,
+-	PHY_16_RPDCTR_EN = 0x0010,
+-	PHY_16_ResetStMch = 0x0008, PHY_16_PreamSupr = 0x0004,
+-	PHY_16_Sleepmode = 0x0002,
+-	PHY_16_RemoteLoopOut = 0x0001,
+-};
+-
+-#define POST_RX		0x08
+-#define POST_FW		0x04
+-#define POST0_RX	(POST_RX)
+-#define POST0_FW	(POST_FW)
+-#define POST1_RX	(POST_RX >> 2)
+-#define POST1_FW	(POST_FW >> 2)
+-#define POST_ALL	(POST0_RX | POST0_FW | POST1_RX | POST1_FW)
+-
+ /* ARSTR */
+ enum ARSTR_BIT { ARSTR_ARSTR = 0x00000001, };
+
+@@ -785,10 +720,6 @@ struct sh_eth_private {
+ 	int msg_enable;
+ 	int speed;
+ 	int duplex;
+-	u32 rx_int_var, tx_int_var;	/* interrupt control variables */
+-	char post_rx;		/* POST receive */
+-	char post_fw;		/* POST forward */
+-	struct net_device_stats tsu_stats;	/* TSU forward status */
+ 	int port;		/* for TSU */
+ 	int vlan_num_ids;	/* for VLAN tag filter */
+
 -- 
-1.7.2.5
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+1.7.1
