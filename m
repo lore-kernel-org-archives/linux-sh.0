@@ -1,33 +1,98 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 31 May 2012 17:21:04 +0000
-Subject: [PATCH 1/3] fbdev: sh_mobile_lcdc: Constify sh_mobile_lcdc_fix structure
-Message-Id: <1338484866-12237-2-git-send-email-laurent.pinchart@ideasonboard.com>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 14 May 2012 06:46:45 +0000
+Subject: [PATCH v3 4/6] net: sh_eth: fix up the buffer pointers
+Message-Id: <4FB0AA55.1000800@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: netdev <netdev@vger.kernel.org>
+Cc: SH-Linux <linux-sh@vger.kernel.org>
 
-The structure is only read, make it const.
+After freeing the buffer, the driver should change the value of
+the pointer to NULL.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- drivers/video/sh_mobile_lcdcfb.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ about v3:
+  - a new patch
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index 7a0b301..b6fb8a4 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -1002,7 +1002,7 @@ static int sh_mobile_lcdc_setcolreg(u_int regno,
- 	return 0;
+ drivers/net/ethernet/renesas/sh_eth.c |   31 ++++++++++++++++++++++++-------
+ 1 files changed, 24 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 906e410..ff5a4a9 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -745,6 +745,7 @@ static void sh_eth_ring_free(struct net_device *ndev)
+ 		}
+ 	}
+ 	kfree(mdp->rx_skbuff);
++	mdp->rx_skbuff = NULL;
+
+ 	/* Free Tx skb ringbuffer */
+ 	if (mdp->tx_skbuff) {
+@@ -754,6 +755,7 @@ static void sh_eth_ring_free(struct net_device *ndev)
+ 		}
+ 	}
+ 	kfree(mdp->tx_skbuff);
++	mdp->tx_skbuff = NULL;
  }
- 
--static struct fb_fix_screeninfo sh_mobile_lcdc_fix  = {
-+static const struct fb_fix_screeninfo sh_mobile_lcdc_fix  = {
- 	.id =		"SH Mobile LCDC",
- 	.type =		FB_TYPE_PACKED_PIXELS,
- 	.visual =	FB_VISUAL_TRUECOLOR,
--- 
-1.7.3.4
 
+ /* format skb and descriptor buffer */
+@@ -890,10 +892,31 @@ desc_ring_free:
+ skb_ring_free:
+ 	/* Free Rx and Tx skb ring buffer */
+ 	sh_eth_ring_free(ndev);
++	mdp->tx_ring = NULL;
++	mdp->rx_ring = NULL;
+
+ 	return ret;
+ }
+
++static void sh_eth_free_dma_buffer(struct sh_eth_private *mdp)
++{
++	int ringsize;
++
++	if (mdp->rx_ring) {
++		ringsize = sizeof(struct sh_eth_rxdesc) * RX_RING_SIZE;
++		dma_free_coherent(NULL, ringsize, mdp->rx_ring,
++				  mdp->rx_desc_dma);
++		mdp->rx_ring = NULL;
++	}
++
++	if (mdp->tx_ring) {
++		ringsize = sizeof(struct sh_eth_txdesc) * TX_RING_SIZE;
++		dma_free_coherent(NULL, ringsize, mdp->tx_ring,
++				  mdp->tx_desc_dma);
++		mdp->tx_ring = NULL;
++	}
++}
++
+ static int sh_eth_dev_init(struct net_device *ndev)
+ {
+ 	int ret = 0;
+@@ -1629,7 +1652,6 @@ static int sh_eth_start_xmit(struct sk_buff *skb, struct net_device *ndev)
+ static int sh_eth_close(struct net_device *ndev)
+ {
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+-	int ringsize;
+
+ 	netif_stop_queue(ndev);
+
+@@ -1652,12 +1674,7 @@ static int sh_eth_close(struct net_device *ndev)
+ 	sh_eth_ring_free(ndev);
+
+ 	/* free DMA buffer */
+-	ringsize = sizeof(struct sh_eth_rxdesc) * RX_RING_SIZE;
+-	dma_free_coherent(NULL, ringsize, mdp->rx_ring, mdp->rx_desc_dma);
+-
+-	/* free DMA buffer */
+-	ringsize = sizeof(struct sh_eth_txdesc) * TX_RING_SIZE;
+-	dma_free_coherent(NULL, ringsize, mdp->tx_ring, mdp->tx_desc_dma);
++	sh_eth_free_dma_buffer(mdp);
+
+ 	pm_runtime_put_sync(&mdp->pdev->dev);
+
+-- 
+1.7.1
