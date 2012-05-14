@@ -1,90 +1,43 @@
-From: Ben Hutchings <bhutchings@solarflare.com>
-Date: Fri, 11 May 2012 15:35:29 +0000
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 14 May 2012 06:13:57 +0000
 Subject: Re: [PATCH v2 5/5] net: sh_eth: use NAPI
-Message-Id: <1336750529.2874.69.camel@bwh-desktop.uk.solarflarecom.com>
+Message-Id: <4FB0A2A5.3060001@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <4FACD007.1070308@renesas.com>
-In-Reply-To: <4FACD007.1070308@renesas.com>
+ <1336750529.2874.69.camel@bwh-desktop.uk.solarflarecom.com>
+In-Reply-To: <1336750529.2874.69.camel@bwh-desktop.uk.solarflarecom.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+To: Ben Hutchings <bhutchings@solarflare.com>
 Cc: netdev <netdev@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>
 
-On Fri, 2012-05-11 at 17:38 +0900, Shimoda, Yoshihiro wrote:
-> This patch modifies the driver to use NAPI.
-[...]
-> +static int sh_eth_poll(struct napi_struct *napi, int budget)
-> +{
-> +	struct sh_eth_private *mdp = container_of(napi, struct sh_eth_private,
-> +						  napi);
-> +	struct net_device *ndev = mdp->ndev;
-> +	struct sh_eth_cpu_data *cd = mdp->cd;
-> +	int work_done = 0, txfree_num;
-> +	u32 intr_status = sh_eth_read(ndev, EESR);
-> +
-> +	/* Clear interrupt flags */
-> +	sh_eth_write(ndev, intr_status, EESR);
-> +
-> +	/* check txdesc */
-> +	txfree_num = sh_eth_txfree(ndev);
-> +	if (txfree_num)
->  		netif_wake_queue(ndev);
-> -	}
+2012/05/12 0:35, Ben Hutchings wrote:
+> On Fri, 2012-05-11 at 17:38 +0900, Shimoda, Yoshihiro wrote:
+>> This patch modifies the driver to use NAPI.
+> [...]
+>> +static int sh_eth_poll(struct napi_struct *napi, int budget)
+>> +{
+< snip >
+>> +	/* check whether the controller doesn't have any events */
+>> +	if (!txfree_num && !(intr_status & cd->eesr_err_check) &&
+>> +	    work_done < budget) {
+>> +		napi_complete(napi);
 > 
-> +	/* check rxdesc */
-> +	sh_eth_rx(ndev, &work_done, budget);
-> +
-> +	/* check error flags */
->  	if (intr_status & cd->eesr_err_check)
->  		sh_eth_error(ndev, intr_status);
-> 
-> -other_irq:
-> -	spin_unlock(&mdp->lock);
-> +	/* get current interrupt flags */
-> +	intr_status = sh_eth_read(ndev, EESR);
-> 
-> -	return ret;
-> +	/* check whether the controller doesn't have any events */
-> +	if (!txfree_num && !(intr_status & cd->eesr_err_check) &&
-> +	    work_done < budget) {
-> +		napi_complete(napi);
+> If and only if you return a value less than the budget then you *must*
+> call napi_complete().  You can't add these extra conditions.
 
-If and only if you return a value less than the budget then you *must*
-call napi_complete().  You can't add these extra conditions.
+Thank you for the point. I will fix it.
 
-> +		/* Enable all interrupts */
-> +		sh_eth_write(ndev, cd->eesipr_value, EESIPR);
-> +	}
-> +
-> +	return work_done;
->  }
+< snip >
 > 
->  /* PHY state control function */
-> @@ -1565,6 +1590,8 @@ static int sh_eth_open(struct net_device *ndev)
+> You will also need to call napi_disable() and napi_enable() in the
+> set_ringparam implementation.
+
+I will add the code in sh_eth_set_ringparam().
+
+> Ben.
 > 
->  	pm_runtime_get_sync(&mdp->pdev->dev);
-> 
-> +	napi_enable(&mdp->napi);
-> +
->  	ret = request_irq(ndev->irq, sh_eth_interrupt,
->  #if defined(CONFIG_CPU_SUBTYPE_SH7763) || \
->  	defined(CONFIG_CPU_SUBTYPE_SH7764) || \
-> @@ -1705,6 +1732,8 @@ static int sh_eth_close(struct net_device *ndev)
->  		phy_disconnect(mdp->phydev);
->  	}
-> 
-> +	napi_disable(&mdp->napi);
-> +
-[...]
 
-You will also need to call napi_disable() and napi_enable() in the
-set_ringparam implementation.
-
-Ben.
-
--- 
-Ben Hutchings, Staff Engineer, Solarflare
-Not speaking for my employer; that's the marketing department's job.
-They asked us to note that Solarflare product names are trademarked.
-
+Best regards,
+Yoshihiro Shimoda
