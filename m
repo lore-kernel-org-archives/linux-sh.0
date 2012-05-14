@@ -1,69 +1,83 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 03 May 2012 15:05:41 +0000
-Subject: [PATCH 12/29] mmc: sdhi: implement tmio-mmc clock enable-update and disable callbacks
-Message-Id: <1336057558-11031-13-git-send-email-g.liakhovetski@gmx.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 14 May 2012 10:54:41 +0000
+Subject: [PATCH 02/03] mach-shmobile: Use DT_MACHINE for armadillo 800 eva
+Message-Id: <20120514105441.8596.31776.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
+References: <20120514105424.8596.38355.sendpatchset@w520>
+In-Reply-To: <20120514105424.8596.38355.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Instead of delivering one static clock frequency value, read from the
-hardware during probing, enable the tmio-mmc driver to re-read the
-frequency dynamically.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Use DT_MACHINE_START() on the r8a7740 based armadillo 800 eva board.
+
+Also include a tiny DTS file to describe the board and update the
+Kconfig dependencies to select CONFIG_USE_OF.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |   24 +++++++++++++++++++++++-
- 1 files changed, 23 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 5ac656e..a746ae8 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -39,6 +39,27 @@ struct sh_mobile_sdhi {
- 	struct tmio_mmc_dma dma_priv;
- };
- 
-+static int sh_mobile_sdhi_clk_enable(struct platform_device *pdev, unsigned int *f)
-+{
-+	struct mmc_host *mmc = dev_get_drvdata(&pdev->dev);
-+	struct tmio_mmc_host *host = mmc_priv(mmc);
-+	struct sh_mobile_sdhi *priv = container_of(host->pdata, struct sh_mobile_sdhi, mmc_data);
-+	int ret = clk_enable(priv->clk);
-+	if (ret < 0)
-+		return ret;
-+
-+	*f = clk_get_rate(priv->clk);
-+	return 0;
-+}
-+
-+static void sh_mobile_sdhi_clk_disable(struct platform_device *pdev)
-+{
-+	struct mmc_host *mmc = dev_get_drvdata(&pdev->dev);
-+	struct tmio_mmc_host *host = mmc_priv(mmc);
-+	struct sh_mobile_sdhi *priv = container_of(host->pdata, struct sh_mobile_sdhi, mmc_data);
-+	clk_disable(priv->clk);
-+}
-+
- static void sh_mobile_sdhi_set_pwr(struct platform_device *pdev, int state)
- {
- 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
-@@ -130,9 +151,10 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
- 		goto eclkget;
- 	}
- 
--	mmc_data->hclk = clk_get_rate(priv->clk);
- 	mmc_data->set_pwr = sh_mobile_sdhi_set_pwr;
- 	mmc_data->get_cd = sh_mobile_sdhi_get_cd;
-+	mmc_data->clk_enable = sh_mobile_sdhi_clk_enable;
-+	mmc_data->clk_disable = sh_mobile_sdhi_clk_disable;
- 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
- 	if (p) {
- 		mmc_data->flags = p->tmio_flags;
--- 
-1.7.2.5
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts  |   22 ++++++++++++++++++++++
+ arch/arm/mach-shmobile/Kconfig                 |    1 +
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    8 +++++++-
+ 3 files changed, 30 insertions(+), 1 deletion(-)
 
+--- /dev/null
++++ work/arch/arm/boot/dts/r8a7740-armadillo800eva.dts	2012-05-14 19:31:57.000000000 +0900
+@@ -0,0 +1,22 @@
++/*
++ * Device Tree Source for the armadillo 800 eva board
++ *
++ * Copyright (C) 2012 Renesas Solutions Corp.
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++
++/dts-v1/;
++/include/ "skeleton.dtsi"
++
++/ {
++	model = "armadillo 800 eva";
++	compatible = "renesas,armadillo800eva";
++
++	memory {
++		device_type = "memory";
++		reg = <0x40000000 0x20000000>;
++	};
++};
+--- 0002/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2012-05-14 19:32:21.000000000 +0900
+@@ -99,6 +99,7 @@ config MACH_ARMADILLO800EVA
+ 	bool "Armadillo-800 EVA board"
+ 	depends on ARCH_R8A7740
+ 	select ARCH_REQUIRE_GPIOLIB
++	select USE_OF
+ 
+ config MACH_MARZEN
+ 	bool "MARZEN board"
+--- 0001/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ work/arch/arm/mach-shmobile/board-armadillo800eva.c	2012-05-14 19:35:27.000000000 +0900
+@@ -768,11 +768,17 @@ static void __init eva_add_early_devices
+ 	shmobile_timer.init = eva_earlytimer_init;
+ }
+ 
+-MACHINE_START(ARMADILLO800EVA, "armadillo800eva")
++static const char *eva_boards_compat_dt[] __initdata = {
++	"renesas,armadillo800eva",
++	NULL,
++};
++
++DT_MACHINE_START(ARMADILLO800EVA_DT, "armadillo800eva")
+ 	.map_io		= r8a7740_map_io,
+ 	.init_early	= eva_add_early_devices,
+ 	.init_irq	= r8a7740_init_irq,
+ 	.handle_irq	= shmobile_handle_irq_intc,
+ 	.init_machine	= eva_init,
+ 	.timer		= &shmobile_timer,
++	.dt_compat	= eva_boards_compat_dt,
+ MACHINE_END
