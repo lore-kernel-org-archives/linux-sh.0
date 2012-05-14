@@ -1,102 +1,44 @@
-From: Anton Vorontsov <anton.vorontsov@linaro.org>
-Date: Sat, 05 May 2012 01:47:28 +0000
-Subject: [PATCH] cpu: Document clear_tasks_mm_cpumask()
-Message-Id: <20120505014728.GA9079@lizard>
+From: Bastian Hecht <hechtb@googlemail.com>
+Date: Mon, 14 May 2012 12:14:40 +0000
+Subject: [PATCH v4 1/8] mtd: sh_flctl: Add missing iounmap()
+Message-Id: <1336997687-6868-2-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120423070641.GA27702@lizard> <20120423070736.GA30752@lizard>
- <20120426165911.00cebd31.akpm@linux-foundation.org>
- <1335869133.13683.125.camel@twins>
-In-Reply-To: <1335869133.13683.125.camel@twins>
+References: <1336997687-6868-1-git-send-email-hechtb@gmail.com>
+In-Reply-To: <1336997687-6868-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mtd@lists.infradead.org
+Cc: Bastian Hecht <hechtb@gmail.com>, magnus.damm@gmail.com, laurent.pinchart@ideasonboard.com, linux-sh@vger.kernel.org
 
-This patch adds more comments on clear_tasks_mm_cpumask, plus adds
-a runtime check: the function is only suitable for offlined CPUs,
-and if called inappropriately, the kernel should scream aloud.
+Add the unmapping for the error case and for the driver removal.
 
-Suggested-by: Andrew Morton <akpm@linux-foundation.org>
-Suggested-by: Peter Zijlstra <a.p.zijlstra@chello.nl>
-Signed-off-by: Anton Vorontsov <anton.vorontsov@linaro.org>
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
+ drivers/mtd/nand/sh_flctl.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
-On Tue, May 01, 2012 at 12:45:33PM +0200, Peter Zijlstra wrote:
-> On Thu, 2012-04-26 at 16:59 -0700, Andrew Morton wrote:
-> > > +void clear_tasks_mm_cpumask(int cpu)
-> > 
-> > The operation of this function was presumably obvious to you at the
-> > time you wrote it, but that isn't true of other people at later times.
-> > 
-> > Please document it?
-[...]
-> > If someone tries to use this function for a different purpose, or
-> > copies-and-modifies it for a different purpose, we just shot them in
-> > the foot.
-> > 
-> > They'd be pretty dumb to do that without reading the local comment,
-> > but still...
-> 
-> Methinks something simple like:
-> 
-> 	WARN_ON(cpu_online(cpu));
-> 
-> Ought to cure that worry, no? :-)
-
-Yeah, this is all good ideas, thanks.
-
-How about the following patch?
-
- kernel/cpu.c |   18 ++++++++++++++++++
- 1 file changed, 18 insertions(+)
-
-diff --git a/kernel/cpu.c b/kernel/cpu.c
-index ecdf499..1bfa26f 100644
---- a/kernel/cpu.c
-+++ b/kernel/cpu.c
-@@ -13,6 +13,7 @@
- #include <linux/oom.h>
- #include <linux/rcupdate.h>
- #include <linux/export.h>
-+#include <linux/bug.h>
- #include <linux/kthread.h>
- #include <linux/stop_machine.h>
- #include <linux/mutex.h>
-@@ -173,6 +174,18 @@ void __ref unregister_cpu_notifier(struct notifier_block *nb)
- }
- EXPORT_SYMBOL(unregister_cpu_notifier);
+diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
+index aa9b8a5..a5a60ca 100644
+--- a/drivers/mtd/nand/sh_flctl.c
++++ b/drivers/mtd/nand/sh_flctl.c
+@@ -918,6 +918,7 @@ static int __devinit flctl_probe(struct platform_device *pdev)
  
-+/**
-+ * clear_tasks_mm_cpumask - Safely clear tasks' mm_cpumask for a CPU
-+ * @cpu: a CPU id
-+ *
-+ * This function walks up all processes, finds a valid mm struct for
-+ * each one and then clears a corresponding bit in mm's cpumask. While
-+ * this all sounds trivial, there are various non-obvious corner cases,
-+ * which this function tries to solve in a safe manner.
-+ *
-+ * Also note that the function uses a somewhat relaxed locking scheme,
-+ * so it may be called only for an already offlined CPU.
-+ */
- void clear_tasks_mm_cpumask(int cpu)
- {
- 	struct task_struct *p;
-@@ -184,10 +197,15 @@ void clear_tasks_mm_cpumask(int cpu)
- 	 * Thus, we may use rcu_read_lock() here, instead of grabbing
- 	 * full-fledged tasklist_lock.
- 	 */
-+	WARN_ON(cpu_online(cpu));
- 	rcu_read_lock();
- 	for_each_process(p) {
- 		struct task_struct *t;
+ err_chip:
+ 	pm_runtime_disable(&pdev->dev);
++	iounmap(flctl->reg);
+ err_iomap:
+ 	kfree(flctl);
+ 	return ret;
+@@ -929,6 +930,7 @@ static int __devexit flctl_remove(struct platform_device *pdev)
  
-+		/*
-+		 * Main thread might exit, but other threads may still have
-+		 * a valid mm. Find one.
-+		 */
- 		t = find_lock_task_mm(p);
- 		if (!t)
- 			continue;
+ 	nand_release(&flctl->mtd);
+ 	pm_runtime_disable(&pdev->dev);
++	iounmap(flctl->reg);
+ 	kfree(flctl);
+ 
+ 	return 0;
 -- 
-1.7.9.2
+1.7.5.4
 
