@@ -1,26 +1,137 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 25 May 2012 15:45:49 +0000
-Subject: [PATCH 0/3:6/6 v3] sh, ARM: mach-shmobile: update MMC platform data
-Message-Id: <1337960752-4944-35-git-send-email-g.liakhovetski@gmx.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 15 May 2012 15:52:49 +0000
+Subject: [PATCH/RFC] gpio: Emma Mobile GPIO DT prototype
+Message-Id: <20120515155249.6690.62293.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-kernel@vger.kernel.org
+Cc: rjw@sisk.pl, linus.walleij@stericsson.com, arnd@arndb.de, linux-sh@vger.kernel.org, horms@verge.net.au, grant.likely@secretlab.ca, lethal@linux-sh.org, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>
 
-The patches in this series update ecovec and mackerel to use voltage 
-regulators and GPIO slot functions, available for SDHI and MMCIF blocks.
+From: Magnus Damm <damm@opensource.se>
 
-Thanks
-Guennadi
+Here is my first attempt on EMEV2 GPIO DT support.
+
+More or less only dry coded at this point - only tested
+with platform devices using pdata->irq_base = 0.
+
+The IRQ bits seem quite fine to me, but perhaps some
+people will dislike the idea of runtime selection if
+linear or legacy irq domain should be used. The reason
+for both is that the linear irq domain is used in the
+case when we want to have a static preallocated range
+of IRQs configurable via platform data, and the linear
+range is used for DT together with the ->xlate feature.
+
+I am yet to try to tie in the actual GPIO pins using DT.
+So please consider this as an early preview of DT support.
+
+Pointers in any direction would be greatly appreciated.
+
+Not-yet-signed-off-by: Magnus Damm <damm@opensource.se>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
---
-To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+ Applies on top of:
+ "[PATCH] gpio: Emma Mobile GPIO driver V2"
+
+ drivers/gpio/gpio-em.c |   44 +++++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 39 insertions(+), 5 deletions(-)
+
+--- 0011/drivers/gpio/gpio-em.c
++++ work/drivers/gpio/gpio-em.c	2012-05-16 00:24:30.000000000 +0900
+@@ -41,6 +41,11 @@ struct em_gio_priv {
+ 	struct gpio_chip gpio_chip;
+ 	struct irq_chip irq_chip;
+ 	struct irq_domain *irq_domain;
++
++	unsigned int (*hook_irq)(struct irq_domain *domain,
++				 irq_hw_number_t hwirq);
++	unsigned int (*demux_irq)(struct irq_domain *domain,
++				  irq_hw_number_t hwirq);
+ };
+ 
+ #define GIO_E1 0x00
+@@ -169,7 +174,7 @@ static irqreturn_t em_gio_irq_handler(in
+ 	while ((pending = em_gio_read(p, GIO_MST))) {
+ 		offset = __ffs(pending);
+ 		em_gio_write(p, GIO_IIR, BIT(offset));
+-		generic_handle_irq(irq_find_mapping(p->irq_domain, offset));
++		generic_handle_irq(p->demux_irq(p->irq_domain, offset));
+ 		irqs_handled++;
+ 	}
+ 
+@@ -220,7 +225,9 @@ static int em_gio_direction_output(struc
+ 
+ static int em_gio_to_irq(struct gpio_chip *chip, unsigned offset)
+ {
+-	return irq_find_mapping(gpio_to_priv(chip)->irq_domain, offset);
++	struct em_gio_priv *p = gpio_to_priv(chip);
++
++	return p->hook_irq(p->irq_domain, offset);
+ }
+ 
+ static int em_gio_irq_domain_map(struct irq_domain *h, unsigned int virq,
+@@ -238,9 +245,10 @@ static int em_gio_irq_domain_map(struct
+ 
+ static struct irq_domain_ops em_gio_irq_domain_ops = {
+ 	.map	= em_gio_irq_domain_map,
++	.xlate	= irq_domain_xlate_twocell,
+ };
+ 
+-static int __devinit em_gio_irq_domain_init(struct em_gio_priv *p)
++static int __devinit em_gio_irq_domain_init_legacy(struct em_gio_priv *p)
+ {
+ 	struct platform_device *pdev = p->pdev;
+ 	struct gpio_em_config *pdata = pdev->dev.platform_data;
+@@ -263,6 +271,27 @@ static int __devinit em_gio_irq_domain_i
+ 		return -ENXIO;
+ 	}
+ 
++	p->hook_irq = irq_find_mapping;
++	p->demux_irq = irq_find_mapping;
++	return 0;
++}
++
++static int __devinit em_gio_irq_domain_init_linear(struct em_gio_priv *p)
++{
++	struct platform_device *pdev = p->pdev;
++	struct gpio_em_config *pdata = pdev->dev.platform_data;
++
++	pr_debug("gio: hw base = %d, nr = %d, sw base = dynamic\n",
++		 pdata->gpio_base, pdata->number_of_pins);
++
++	p->irq_domain = irq_domain_add_linear(pdev->dev.of_node,
++					      pdata->number_of_pins,
++					      &em_gio_irq_domain_ops, p);
++	if (!p->irq_domain)
++		return -ENXIO;
++
++	p->hook_irq = irq_create_mapping;
++	p->demux_irq = irq_linear_revmap;
+ 	return 0;
+ }
+ 
+@@ -270,7 +299,8 @@ static void __devexit em_gio_irq_domain_
+ {
+ 	struct gpio_em_config *pdata = p->pdev->dev.platform_data;
+ 
+-	irq_free_descs(p->irq_base, pdata->number_of_pins);
++	if (p->irq_base)
++		irq_free_descs(p->irq_base, pdata->number_of_pins);
+ 	/* FIXME: irq domain wants to be freed! */
+ }
+ 
+@@ -340,7 +370,11 @@ static int __devinit em_gio_probe(struct
+ 	irq_chip->irq_set_type = em_gio_irq_set_type;
+ 	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE;
+ 
+-	ret = em_gio_irq_domain_init(p);
++	if (pdata->irq_base)
++		ret = em_gio_irq_domain_init_legacy(p); /* static */
++	else
++		ret = em_gio_irq_domain_init_linear(p); /* dynamic */
++
+ 	if (ret) {
+ 		dev_err(&pdev->dev, "cannot initialize irq domain\n");
+ 		goto err3;
