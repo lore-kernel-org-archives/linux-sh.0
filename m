@@ -1,42 +1,44 @@
-From: Grant Likely <grant.likely@secretlab.ca>
-Date: Tue, 15 May 2012 17:56:08 +0000
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Tue, 15 May 2012 19:09:47 +0000
 Subject: Re: [PATCH 03/03] ARM: Undelete KZM9D mach-type
-Message-Id: <20120515175609.04A4D3E080A@localhost>
+Message-Id: <201205151909.47381.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20120514105424.8596.38355.sendpatchset@w520>
- <201205142107.51335.arnd@arndb.de>
- <CANqRtoSts80a-Pgas23Um8FFtnSeeu2oZKNehdfymLWoTOSspA@mail.gmail.com>
- <201205150832.10069.arnd@arndb.de>
-In-Reply-To: <201205150832.10069.arnd@arndb.de>
+ <201205150832.10069.arnd@arndb.de> <20120515175609.04A4D3E080A@localhost>
+In-Reply-To: <20120515175609.04A4D3E080A@localhost>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, 15 May 2012 08:32:09 +0000, Arnd Bergmann <arnd@arndb.de> wrote:
-> On Monday 14 May 2012, Magnus Damm wrote:
-> > Right, I agree. Relying on a fixed DTB in an unreliable boot loader is
-> > the last thing I want to do.
+On Tuesday 15 May 2012, Grant Likely wrote:
+> On Tue, 15 May 2012 08:32:09 +0000, Arnd Bergmann <arnd@arndb.de> wrote:
+> > On Monday 14 May 2012, Magnus Damm wrote:
+> > > Right, I agree. Relying on a fixed DTB in an unreliable boot loader is
+> > > the last thing I want to do.
+> > > 
+> > > So if your boot loader can't pass DTB to the kernel, and you want to
+> > > have a single kernel supporting multiple boards, then do you see
+> > > anything wrong with based on mach-type do a run time decision (in
+> > > arch/arm/boot/compressed/) to override the ATAG from the boot loader
+> > > with a compiled-in per-board DTB?
 > > 
-> > So if your boot loader can't pass DTB to the kernel, and you want to
-> > have a single kernel supporting multiple boards, then do you see
-> > anything wrong with based on mach-type do a run time decision (in
-> > arch/arm/boot/compressed/) to override the ATAG from the boot loader
-> > with a compiled-in per-board DTB?
+> > I know that we have discussed this in the past, but I don't remember
+> > the outcome of the discussion, maybe someone else can help out here
+> > (Grant?)
+> > 
+> > It's definitely technically possible to do it, but it could either be
+> > that nobody has bothered to do the implementation, or that we had good
+> > reasons against it and decided not to allow this.
 > 
-> I know that we have discussed this in the past, but I don't remember
-> the outcome of the discussion, maybe someone else can help out here
-> (Grant?)
-> 
-> It's definitely technically possible to do it, but it could either be
-> that nobody has bothered to do the implementation, or that we had good
-> reasons against it and decided not to allow this.
+> Tony and I talked about this quite a bit during the last Connect.  The
+> plan is to extend the existing bootwrapper ATAGs to DT code to allow
+> appending multiple .dtbs to the zImage and selecting the correct one
+> based on the machine number.  It shouldn't be very complicated, but I
+> haven't had time to implement it.
 
-Tony and I talked about this quite a bit during the last Connect.  The
-plan is to extend the existing bootwrapper ATAGs to DT code to allow
-appending multiple .dtbs to the zImage and selecting the correct one
-based on the machine number.  It shouldn't be very complicated, but I
-haven't had time to implement it.
+Ok, good. so you are both on the same page then, Grant and Magnus.
+I suppose you just need to coordinate then who is doing the work,
+and it seems that Magnus is eager to prototype this.
 
-g.
-
+	Arnd
