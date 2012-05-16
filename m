@@ -1,89 +1,283 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 25 May 2012 15:45:19 +0000
-Subject: [PATCH 3/3 v3] mmc: sh_mmcif: re-read the clock frequency every time the clock is turned on
-Message-Id: <1337960752-4944-5-git-send-email-g.liakhovetski@gmx.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 16 May 2012 06:45:34 +0000
+Subject: [PATCH 05/08] mach-shmobile: Emma Mobile EV2 GPIO support V3
+Message-Id: <20120516064534.32286.14931.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
+References: <20120516064449.32286.77941.sendpatchset@w520>
+In-Reply-To: <20120516064449.32286.77941.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-With aggressive clock gating the clock can be disabled during interface
-inactivity. During this time its frequency can be changed by another its
-user. Therefore when the interface is activated again and the clock is
-re-enabled, its frequency has to be re-read.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Tie in the Emma Mobile GPIO driver "em-gio" to
+support the GPIOs on Emma Mobile EV2.
+
+A static IRQ range is used to allow boards to
+hook up their platform devices to the GPIOs.
+
+DT support is still on the TODO for the GPIO driver,
+so only platform device support is included here.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
-v2: also move clk_enable() inside sh_mmcif_clk_update(), check its return 
-value in .probe()
+ Changes since V2:
+ - none, just bumped up version to match the V3 series
 
- drivers/mmc/host/sh_mmcif.c |   23 ++++++++++++++++++-----
- 1 files changed, 18 insertions(+), 5 deletions(-)
+ Changes since V1:
+ - none, this is the first public release
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index e5e8198..bdf42d5 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -916,6 +916,19 @@ static void sh_mmcif_request(struct mmc_host *mmc, struct mmc_request *mrq)
- 	sh_mmcif_start_cmd(host, mrq);
- }
+ arch/arm/mach-shmobile/Kconfig              |    1 
+ arch/arm/mach-shmobile/include/mach/emev2.h |    3 
+ arch/arm/mach-shmobile/setup-emev2.c        |  203 +++++++++++++++++++++++++++
+ 3 files changed, 207 insertions(+)
+
+--- 0008/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2012-05-12 03:41:45.000000000 +0900
+@@ -45,6 +45,7 @@ config ARCH_EMEV2
+ 	bool "Emma Mobile EV2"
+ 	select CPU_V7
+ 	select ARM_GIC
++	select ARCH_WANT_OPTIONAL_GPIOLIB
  
-+static int sh_mmcif_clk_update(struct sh_mmcif_host *host)
-+{
-+	int ret = clk_enable(host->hclk);
-+
-+	if (!ret) {
-+		host->clk = clk_get_rate(host->hclk);
-+		host->mmc->f_max = host->clk / 2;
-+		host->mmc->f_min = host->clk / 512;
-+	}
-+
-+	return ret;
-+}
-+
- static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- {
- 	struct sh_mmcif_host *host = mmc_priv(mmc);
-@@ -961,7 +974,7 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 		if (!host->power) {
- 			if (p->set_pwr)
- 				p->set_pwr(host->pd, ios->power_mode);
--			clk_enable(host->hclk);
-+			sh_mmcif_clk_update(host);
- 			pm_runtime_get_sync(&host->pd->dev);
- 			host->power = true;
- 			sh_mmcif_sync_reset(host);
-@@ -1314,10 +1327,9 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
- 		dev_err(&pdev->dev, "cannot get clock \"%s\": %d\n", clk_name, ret);
- 		goto eclkget;
- 	}
--	clk_enable(host->hclk);
--	host->clk = clk_get_rate(host->hclk);
--	mmc->f_max = host->clk / 2;
--	mmc->f_min = host->clk / 512;
-+	ret = sh_mmcif_clk_update(host);
-+	if (ret < 0)
-+		goto eclkupdate;
+ comment "SH-Mobile Board Type"
  
- 	ret = pm_runtime_resume(&pdev->dev);
- 	if (ret < 0)
-@@ -1359,6 +1371,7 @@ ereqirq0:
- 	pm_runtime_suspend(&pdev->dev);
- eresume:
- 	clk_disable(host->hclk);
-+eclkupdate:
- 	clk_put(host->hclk);
- eclkget:
- 	pm_runtime_disable(&pdev->dev);
--- 
-1.7.2.5
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--- 0009/arch/arm/mach-shmobile/include/mach/emev2.h
++++ work/arch/arm/mach-shmobile/include/mach/emev2.h	2012-05-12 03:44:29.000000000 +0900
+@@ -13,4 +13,7 @@ extern void emev2_secondary_init(unsigne
+ extern int emev2_boot_secondary(unsigned int cpu);
+ extern void emev2_smp_prepare_cpus(void);
+ 
++#define EMEV2_GPIO_BASE 200
++#define EMEV2_GPIO_IRQ(n) (EMEV2_GPIO_BASE + (n))
++
+ #endif /* __ASM_EMEV2_H__ */
+--- 0009/arch/arm/mach-shmobile/setup-emev2.c
++++ work/arch/arm/mach-shmobile/setup-emev2.c	2012-05-12 03:45:30.000000000 +0900
+@@ -21,6 +21,7 @@
+ #include <linux/interrupt.h>
+ #include <linux/irq.h>
+ #include <linux/platform_device.h>
++#include <linux/platform_data/gpio-em.h>
+ #include <linux/delay.h>
+ #include <linux/input.h>
+ #include <linux/io.h>
+@@ -156,6 +157,203 @@ static struct platform_device sti_device
+ 	.num_resources	= ARRAY_SIZE(sti_resources),
+ };
+ 
++
++/* GIO */
++static struct gpio_em_config gio0_config = {
++	.gpio_base = 0,
++	.irq_base = EMEV2_GPIO_IRQ(0),
++	.number_of_pins = 32,
++};
++
++static struct resource gio0_resources[] = {
++	[0] = {
++		.name	= "GIO_000",
++		.start	= 0xe0050000,
++		.end	= 0xe005002b,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.name	= "GIO_000",
++		.start	= 0xe0050040,
++		.end	= 0xe005005f,
++		.flags	= IORESOURCE_MEM,
++	},
++	[2] = {
++		.start	= 99,
++		.flags	= IORESOURCE_IRQ,
++	},
++	[3] = {
++		.start	= 100,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device gio0_device = {
++	.name		= "em_gio",
++	.id		= 0,
++	.resource	= gio0_resources,
++	.num_resources	= ARRAY_SIZE(gio0_resources),
++	.dev		= {
++		.platform_data	= &gio0_config,
++	},
++};
++
++static struct gpio_em_config gio1_config = {
++	.gpio_base = 32,
++	.irq_base = EMEV2_GPIO_IRQ(32),
++	.number_of_pins = 32,
++};
++
++static struct resource gio1_resources[] = {
++	[0] = {
++		.name	= "GIO_032",
++		.start	= 0xe0050080,
++		.end	= 0xe00500ab,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.name	= "GIO_032",
++		.start	= 0xe00500c0,
++		.end	= 0xe00500df,
++		.flags	= IORESOURCE_MEM,
++	},
++	[2] = {
++		.start	= 101,
++		.flags	= IORESOURCE_IRQ,
++	},
++	[3] = {
++		.start	= 102,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device gio1_device = {
++	.name		= "em_gio",
++	.id		= 1,
++	.resource	= gio1_resources,
++	.num_resources	= ARRAY_SIZE(gio1_resources),
++	.dev		= {
++		.platform_data	= &gio1_config,
++	},
++};
++
++static struct gpio_em_config gio2_config = {
++	.gpio_base = 64,
++	.irq_base = EMEV2_GPIO_IRQ(64),
++	.number_of_pins = 32,
++};
++
++static struct resource gio2_resources[] = {
++	[0] = {
++		.name	= "GIO_064",
++		.start	= 0xe0050100,
++		.end	= 0xe005012b,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.name	= "GIO_064",
++		.start	= 0xe0050140,
++		.end	= 0xe005015f,
++		.flags	= IORESOURCE_MEM,
++	},
++	[2] = {
++		.start	= 103,
++		.flags	= IORESOURCE_IRQ,
++	},
++	[3] = {
++		.start	= 104,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device gio2_device = {
++	.name		= "em_gio",
++	.id		= 2,
++	.resource	= gio2_resources,
++	.num_resources	= ARRAY_SIZE(gio2_resources),
++	.dev		= {
++		.platform_data	= &gio2_config,
++	},
++};
++
++static struct gpio_em_config gio3_config = {
++	.gpio_base = 96,
++	.irq_base = EMEV2_GPIO_IRQ(96),
++	.number_of_pins = 32,
++};
++
++static struct resource gio3_resources[] = {
++	[0] = {
++		.name	= "GIO_096",
++		.start	= 0xe0050100,
++		.end	= 0xe005012b,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.name	= "GIO_096",
++		.start	= 0xe0050140,
++		.end	= 0xe005015f,
++		.flags	= IORESOURCE_MEM,
++	},
++	[2] = {
++		.start	= 105,
++		.flags	= IORESOURCE_IRQ,
++	},
++	[3] = {
++		.start	= 106,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device gio3_device = {
++	.name		= "em_gio",
++	.id		= 3,
++	.resource	= gio3_resources,
++	.num_resources	= ARRAY_SIZE(gio3_resources),
++	.dev		= {
++		.platform_data	= &gio3_config,
++	},
++};
++
++static struct gpio_em_config gio4_config = {
++	.gpio_base = 128,
++	.irq_base = EMEV2_GPIO_IRQ(128),
++	.number_of_pins = 31,
++};
++
++static struct resource gio4_resources[] = {
++	[0] = {
++		.name	= "GIO_128",
++		.start	= 0xe0050200,
++		.end	= 0xe005022b,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.name	= "GIO_128",
++		.start	= 0xe0050240,
++		.end	= 0xe005025f,
++		.flags	= IORESOURCE_MEM,
++	},
++	[2] = {
++		.start	= 107,
++		.flags	= IORESOURCE_IRQ,
++	},
++	[3] = {
++		.start	= 108,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device gio4_device = {
++	.name		= "em_gio",
++	.id		= 4,
++	.resource	= gio4_resources,
++	.num_resources	= ARRAY_SIZE(gio4_resources),
++	.dev		= {
++		.platform_data	= &gio4_config,
++	},
++};
++
+ static struct platform_device *emev2_early_devices[] __initdata = {
+ 	&uart0_device,
+ 	&uart1_device,
+@@ -165,6 +363,11 @@ static struct platform_device *emev2_ear
+ 
+ static struct platform_device *emev2_late_devices[] __initdata = {
+ 	&sti_device,
++	&gio0_device,
++	&gio1_device,
++	&gio2_device,
++	&gio3_device,
++	&gio4_device,
+ };
+ 
+ void __init emev2_add_standard_devices(void)
