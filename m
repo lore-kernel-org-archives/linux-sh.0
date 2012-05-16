@@ -1,10 +1,10 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 11 May 2012 19:42:40 +0000
-Subject: [PATCH 05/06] mach-shmobile: KZM9D board Ethernet support V2
-Message-Id: <20120511194240.6567.71240.sendpatchset@w520>
+Date: Wed, 16 May 2012 06:45:07 +0000
+Subject: [PATCH 02/08] ARM: Undelete KZM9D mach-type V3
+Message-Id: <20120516064507.32286.10714.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120511194151.6567.53888.sendpatchset@w520>
-In-Reply-To: <20120511194151.6567.53888.sendpatchset@w520>
+References: <20120516064449.32286.77941.sendpatchset@w520>
+In-Reply-To: <20120516064449.32286.77941.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,80 +12,25 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Tie in the on-board Ethernet controller on KZM9D
-and make use of the GPIO controller for external
-IRQ pin support.
+Undelete the KZM9D mach-type to allow build of board
+for EMEV2 SoC support.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- Changes from V1:
- - none - this is the first public release
+ Changes since V1:
+ - posted before in different series, here just bumped version to match V3
 
- arch/arm/mach-shmobile/board-kzm9d.c |   44 +++++++++++++++++++++++++++++++++-
- 1 file changed, 43 insertions(+), 1 deletion(-)
+ arch/arm/tools/mach-types |    1 +
+ 1 file changed, 1 insertion(+)
 
---- 0009/arch/arm/mach-shmobile/board-kzm9d.c
-+++ work/arch/arm/mach-shmobile/board-kzm9d.c	2012-05-12 03:49:52.000000000 +0900
-@@ -20,18 +20,60 @@
- 
- #include <linux/kernel.h>
- #include <linux/interrupt.h>
-+#include <linux/platform_device.h>
-+#include <linux/smsc911x.h>
- #include <mach/common.h>
- #include <mach/emev2.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- #include <asm/hardware/gic.h>
- 
-+/* Ether */
-+static struct resource smsc911x_resources[] = {
-+	[0] = {
-+		.start	= 0x20000000,
-+		.end	= 0x2000ffff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= EMEV2_GPIO_IRQ(1),
-+		.flags	= IORESOURCE_IRQ | IRQF_TRIGGER_HIGH,
-+	},
-+};
-+
-+static struct smsc911x_platform_config smsc911x_platdata = {
-+	.flags		= SMSC911X_USE_32BIT,
-+	.irq_type	= SMSC911X_IRQ_TYPE_PUSH_PULL,
-+	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_HIGH,
-+};
-+
-+static struct platform_device smsc91x_device = {
-+	.name	= "smsc911x",
-+	.id	= 0,
-+	.dev	= {
-+		  .platform_data = &smsc911x_platdata,
-+		},
-+	.num_resources	= ARRAY_SIZE(smsc911x_resources),
-+	.resource	= smsc911x_resources,
-+};
-+
-+static struct platform_device *kzm9d_devices[] __initdata = {
-+	&smsc91x_device,
-+};
-+
-+void __init kzm9d_add_standard_devices(void)
-+{
-+	emev2_add_standard_devices();
-+
-+	platform_add_devices(kzm9d_devices, ARRAY_SIZE(kzm9d_devices));
-+}
-+
- MACHINE_START(KZM9D, "kzm9d")
- 	.map_io		= emev2_map_io,
- 	.init_early	= emev2_add_early_devices,
- 	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_irq	= emev2_init_irq,
- 	.handle_irq	= gic_handle_irq,
--	.init_machine	= emev2_add_standard_devices,
-+	.init_machine	= kzm9d_add_standard_devices,
- 	.timer		= &shmobile_timer,
- MACHINE_END
+--- 0001/arch/arm/tools/mach-types
++++ work/arch/arm/tools/mach-types	2012-05-14 19:38:03.000000000 +0900
+@@ -530,6 +530,7 @@ nokia_rm680		MACH_NOKIA_RM680	NOKIA_RM68
+ msm8960_sim		MACH_MSM8960_SIM	MSM8960_SIM		3230
+ msm8960_rumi3		MACH_MSM8960_RUMI3	MSM8960_RUMI3		3231
+ gsia18s			MACH_GSIA18S		GSIA18S			3234
++kzm9d			MACH_KZM9D		KZM9D			3246
+ mx53_loco		MACH_MX53_LOCO		MX53_LOCO		3273
+ tx53			MACH_TX53		TX53			3279
+ encore			MACH_ENCORE		ENCORE			3284
