@@ -1,7 +1,7 @@
-From: Joe Perches <joe@perches.com>
-Date: Tue, 15 May 2012 16:32:26 +0000
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Wed, 16 May 2012 07:11:14 +0000
 Subject: Re: [PATCH] gpio: Emma Mobile GPIO driver V2
-Message-Id: <1337099546.7050.9.camel@joe2Laptop>
+Message-Id: <CACRpkdb9LbjvobsJf61VA1Nt8-UCwDZzmjqC8JuN8WPdvhq+iQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20120515154333.6659.66479.sendpatchset@w520>
 In-Reply-To: <20120515154333.6659.66479.sendpatchset@w520>
@@ -11,67 +11,28 @@ Content-Transfer-Encoding: 7bit
 To: Magnus Damm <magnus.damm@gmail.com>
 Cc: linux-kernel@vger.kernel.org, rjw@sisk.pl, linus.walleij@stericsson.com, arnd@arndb.de, linux-sh@vger.kernel.org, horms@verge.net.au, grant.likely@secretlab.ca, lethal@linux-sh.org, olof@lixom.net
 
-On Wed, 2012-05-16 at 00:43 +0900, Magnus Damm wrote:
-> This patch is V2 of the Emma Mobile GPIO driver.
+On Tue, May 15, 2012 at 5:43 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
 
-Just some trivial comments
+> From: Magnus Damm <damm@opensource.se>
+>
+> This patch is V2 of the Emma Mobile GPIO driver. This
+> driver is designed to be reusable between multiple SoCs
+> that share the same basic building block, but so far it
+> has only been used on Emma Mobile EV2.
+>
+> Each driver instance handles 32 GPIOs with individually
+> maskable IRQs. The driver operates on two I/O memory
+> ranges and the 32 GPIOs are hooked up to two interrupts.
+>
+> In the case of Emma Mobile EV2 this GPIO building block
+> is used as main external interrupt controller hooking up
+> 159 GPIOS as 159 interrupts via 5 driver instances and
+> 10 interrupts to the GIC and the Cortex-A9 Dual.
+>
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-> +++ work/drivers/gpio/gpio-em.c	2012-05-16 00:07:20.000000000 +0900
-[]
+V2 is fair enough for me, so feel free to add:
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 
-Adding pr_fmt before any #include prefixes all pr_<level> messages.
-
-#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
-
-> +#include <linux/init.h>
-> +#include <linux/platform_device.h>
-[]
-> +static int em_gio_irq_set_type(struct irq_data *d, unsigned int type)
-> +{
-[]
-> +	pr_debug("gio: sense irq = %d, mode = %d\n", offset, value);
-
-	pr_debug("sense irq = %d, mode = %d\n", offset, value);
-[]
-> +static void __em_gio_set(struct gpio_chip *chip, unsigned int reg,
-> +			 unsigned shift, int value)
-> +{
-> +	/* upper 16 bits contains mask and lower 16 actual value */
-> +	em_gio_write(gpio_to_priv(chip), reg,
-> +		     (1 << (shift + 16)) | (value << shift));
-> +}
-
-comment doesn't seem to match code unless
-value is a single bit, then value should
-probably be renamed.
-
-> +static int em_gio_irq_domain_map(struct irq_domain *h, unsigned int virq,
-> +				 irq_hw_number_t hw)
-> +{
-> +	struct em_gio_priv *p = h->host_data;
-> +
-> +	pr_debug("gio: map hw irq = %d, virq = %d\n", (int)hw, virq);
-
-	pr_debug("map hw irq = %d, virq = %d\n", (int)hw, virq)
-
-> +static struct irq_domain_ops em_gio_irq_domain_ops = {
-
-const?
-
-> +static int __devinit em_gio_irq_domain_init(struct em_gio_priv *p)
-[]
-> +	pr_debug("gio: hw base = %d, nr = %d, sw base = %d\n",
-> +		 pdata->gpio_base, pdata->number_of_pins, p->irq_base);
-
-etc.
-
-> +static int __devinit em_gio_probe(struct platform_device *pdev)
-[]
-> +	p = kzalloc(sizeof(*p), GFP_KERNEL);
-> +	if (!p) {
-> +		dev_err(&pdev->dev, "failed to allocate driver data\n");
-
-OOM messages aren't necessary as k.alloc failures
-produce a dump_stack.
-
-
+Yours,
+Linus Walleij
