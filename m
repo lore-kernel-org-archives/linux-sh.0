@@ -1,26 +1,29 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Wed, 16 May 2012 11:25:44 +0000
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Wed, 16 May 2012 12:09:03 +0000
 Subject: Re: [PATCH] gpio: Emma Mobile GPIO driver V2
-Message-Id: <CACRpkdb4iHomtj5Ue=HmHLLvH==wLuSoMA+uwrp3vTBAPnQr_g@mail.gmail.com>
+Message-Id: <201205161209.03985.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120515154333.6659.66479.sendpatchset@w520>
-	<CACRpkdb9LbjvobsJf61VA1Nt8-UCwDZzmjqC8JuN8WPdvhq+iQ@mail.gmail.com>
-	<CANqRtoTCo_Vwe8OMS2ovHNimoe_4ZnCEHk5TQ4YPq8oPJXMObg@mail.gmail.com>
-In-Reply-To: <CANqRtoTCo_Vwe8OMS2ovHNimoe_4ZnCEHk5TQ4YPq8oPJXMObg@mail.gmail.com>
+References: <20120515154333.6659.66479.sendpatchset@w520> <20120516072927.GN7988@linux-sh.org> <CANqRtoSSEb9jwEmvbhBuyHp-9BfUSRabQzqjrrVGTFDP-AHutQ@mail.gmail.com>
+In-Reply-To: <CANqRtoSSEb9jwEmvbhBuyHp-9BfUSRabQzqjrrVGTFDP-AHutQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-kernel@vger.kernel.org, rjw@sisk.pl, linus.walleij@stericsson.com, arnd@arndb.de, linux-sh@vger.kernel.org, horms@verge.net.au, grant.likely@secretlab.ca, lethal@linux-sh.org, olof@lixom.net
+Cc: Paul Mundt <lethal@linux-sh.org>, linux-kernel@vger.kernel.org, rjw@sisk.pl, linus.walleij@stericsson.com, linux-sh@vger.kernel.org, horms@verge.net.au, grant.likely@secretlab.ca, olof@lixom.net
 
-On Wed, May 16, 2012 at 12:15 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
+On Wednesday 16 May 2012, Magnus Damm wrote:
+> > irq_domain_add_legacy() exists for existing static ranges, which there is
+> > really no reason to be adding in new board/platform support. You don't
+> > have to worry about virq overlap since irq_create_mapping() already wraps
+> > on top of irq_alloc_desc_xxx() for lookup.
+> 
+> So I intentionally made use of the legacy domain in the non-DT case.
+> This because I want to let the SoC code set the static IRQ ranges via
+> platform data.
 
-> Do you guys have any preferences how to merge this?
->
-> Can I include it together with the EMEV2 SoC bits perhaps? That may be
-> easy so we can keep track of the platform data header file dependency.
+I think it's generally better to use just one code path for both cases,
+if you need both DT and non-DT support, which means you would always
+use irq_domain_add_legacy. Once you have the final patch to convert it
+to DT, you can remove the legacy domain and just convert it to linear.
 
-For ux500 I made a special "gpio and pins" branch and sent through ARM SoC.
-
-Yours,
-Linus Walleij
+	Arnd
