@@ -1,37 +1,56 @@
-From: Francois Romieu <romieu@fr.zoreil.com>
-Date: Tue, 15 May 2012 18:29:19 +0000
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 16 May 2012 02:14:17 +0000
 Subject: Re: [PATCH v3 6/6] net: sh_eth: use NAPI
-Message-Id: <20120515182919.GA7157@electric-eye.fr.zoreil.com>
+Message-Id: <4FB30D79.7060101@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4FB1DFF0.4040709@renesas.com> <20120515.010753.2012331320750491448.davem@davemloft.net> <4FB225F1.20407@renesas.com> <20120515.130552.119728053706080493.davem@davemloft.net>
+References: <4FB1DFF0.4040709@renesas.com>
+ <20120515.010753.2012331320750491448.davem@davemloft.net>
+ <4FB225F1.20407@renesas.com>
+ <20120515.130552.119728053706080493.davem@davemloft.net>
 In-Reply-To: <20120515.130552.119728053706080493.davem@davemloft.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: David Miller <davem@davemloft.net>
-Cc: yoshihiro.shimoda.uh@renesas.com, netdev@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org
 
-David Miller <davem@davemloft.net> :
+2012/05/16 2:05, David Miller wrote:
 > From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-[...]
-> > I will modify the code as the following. Is it correct?
-> > 
-> > 	if (txfree_num) {
-> > 		netif_tx_lock(ndev);
-> > 		if (netif_queue_stopped(ndev))
-> > 			netif_wake_queue(ndev);
-> > 		netif_tx_unlock(ndev);
-> > 	}
+> Date: Tue, 15 May 2012 18:46:25 +0900
+> 
+>> 2012/05/15 14:07, David Miller wrote:
+>>> From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+>>> Date: Tue, 15 May 2012 13:47:44 +0900
+>>>
+>>>> 2012/05/15 7:50, David Miller wrote:
+>>>>> You need strict synchronization between your TX queueing and TX
+>>>>> liberation flows.  So that queue stop and wake are only performed
+>>>>> at the correct moment.
+>>>>
+>>>> I will add netif_queue_stopped() in the sh_eth_poll().
+>>>
+>>> That doesn't fix the bug.  What if someone transmits a packet and
+>>> fills the TX queue between the netif_queue_stopped() test and the
+>>> call to netif_wake_queue()?
+>>>
+>>> Adding another test doesn't create the necessary synchronization.
+>>>
+>>
+>> Thank you for the reply again.
+>> I will modify the code as the following. Is it correct?
+>>
+>> 	if (txfree_num) {
+>> 		netif_tx_lock(ndev);
+>> 		if (netif_queue_stopped(ndev))
+>> 			netif_wake_queue(ndev);
+>> 		netif_tx_unlock(ndev);
+>> 	}
 > 
 > Yes, and then you don't need that private lock in the start_xmit()
 > method at all, since that method runs with the tx_lock held.
+> 
 
-I agree that the lock should go but:
-1. something must be done to prevent sh_eth_txfree() being called
-   at the same time from the xmit and poll handlers
-2. while netif_tx locking above provides an implicit memory barrier,
-   there won't be one in sh_eth_start_xmit once the lock is removed.
-   mdp->dirty_tx changes may thus go unnoticed in sh_eth_start_xmit
+Thank you for the reply. I will also modify the start_xmit().
 
--- 
-Ueimor
+Best regards,
+Yoshihiro Shimoda
