@@ -1,52 +1,113 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 11 May 2012 08:38:26 +0000
-Subject: [PATCH v2 3/5] net: sh_eth: fix the rxdesc pointer when rx descriptor empty happens
-Message-Id: <4FACD002.1020304@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 16 May 2012 06:46:03 +0000
+Subject: [PATCH 08/08] mach-shmobile: Use DT_MACHINE for KZM9D V3
+Message-Id: <20120516064603.32286.93274.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20120516064449.32286.77941.sendpatchset@w520>
+In-Reply-To: <20120516064449.32286.77941.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev <netdev@vger.kernel.org>
-Cc: SH-Linux <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-When Receive Descriptor Empty happens, rxdesc pointer of the driver
-and actual next descriptor of the controller may be mismatch.
-This patch fixes it.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Use DT_MACHINE_START() on the emev2 based KZM9D board.
+
+Also include a tiny DTS file to describe the board and
+update the Kconfig dependencies to select CONFIG_USE_OF.
+
+Update the SMP glue code to use OF for matching.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- about v2:
-  - rebase the latest net-next.git
 
- drivers/net/ethernet/renesas/sh_eth.c |    8 +++++---
- 1 files changed, 5 insertions(+), 3 deletions(-)
+ Changes from V1:
+ - none - this is the first public release
 
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index 10f2a89..906e410 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -1098,8 +1098,12 @@ static int sh_eth_rx(struct net_device *ndev)
+ arch/arm/boot/dts/emev2-kzm9d.dts    |   26 ++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/Kconfig       |    1 +
+ arch/arm/mach-shmobile/board-kzm9d.c |    8 +++++++-
+ arch/arm/mach-shmobile/platsmp.c     |    3 ++-
+ 4 files changed, 36 insertions(+), 2 deletions(-)
 
- 	/* Restart Rx engine if stopped. */
- 	/* If we don't need to check status, don't. -KDU */
--	if (!(sh_eth_read(ndev, EDRRR) & EDRRR_R))
-+	if (!(sh_eth_read(ndev, EDRRR) & EDRRR_R)) {
-+		/* fix the values for the next receiving */
-+		mdp->cur_rx = mdp->dirty_rx = (sh_eth_read(ndev, RDFAR) -
-+					       sh_eth_read(ndev, RDLAR)) >> 4;
- 		sh_eth_write(ndev, EDRRR_R, EDRRR);
-+	}
-
- 	return 0;
+--- /dev/null
++++ work/arch/arm/boot/dts/emev2-kzm9d.dts	2012-05-16 15:22:30.000000000 +0900
+@@ -0,0 +1,26 @@
++/*
++ * Device Tree Source for the KZM9D board
++ *
++ * Copyright (C) 2012 Renesas Solutions Corp.
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++/dts-v1/;
++
++/include/ "emev2.dtsi"
++
++/ {
++	model = "EMEV2 KZM9D Board";
++	compatible = "renesas,kzm9d", "renesas,emev2";
++
++	memory {
++		device_type = "memory";
++		reg = <0x40000000 0x8000000>;
++	};
++
++	chosen {
++		bootargs = "console=ttyS1,115200n81";
++	};
++};
+--- 0010/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2012-05-16 15:03:53.000000000 +0900
+@@ -119,6 +119,7 @@ config MACH_KZM9G
+ config MACH_KZM9D
+ 	bool "KZM9D board"
+ 	depends on ARCH_EMEV2
++	select USE_OF
+ 
+ comment "SH-Mobile System Configuration"
+ 
+--- 0011/arch/arm/mach-shmobile/board-kzm9d.c
++++ work/arch/arm/mach-shmobile/board-kzm9d.c	2012-05-16 15:17:35.000000000 +0900
+@@ -68,7 +68,12 @@ void __init kzm9d_add_standard_devices(v
+ 	platform_add_devices(kzm9d_devices, ARRAY_SIZE(kzm9d_devices));
  }
-@@ -1196,8 +1200,6 @@ static void sh_eth_error(struct net_device *ndev, int intr_status)
- 		/* Receive Descriptor Empty int */
- 		ndev->stats.rx_over_errors++;
-
--		if (sh_eth_read(ndev, EDRRR) ^ EDRRR_R)
--			sh_eth_write(ndev, EDRRR_R, EDRRR);
- 		if (netif_msg_rx_err(mdp))
- 			dev_err(&ndev->dev, "Receive Descriptor Empty\n");
- 	}
--- 
-1.7.1
+ 
+-MACHINE_START(KZM9D, "kzm9d")
++static const char *kzm9d_boards_compat_dt[] __initdata = {
++	"renesas,kzm9d",
++	NULL,
++};
++
++DT_MACHINE_START(KZM9D_DT, "kzm9d")
+ 	.map_io		= emev2_map_io,
+ 	.init_early	= emev2_add_early_devices,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+@@ -76,4 +81,5 @@ MACHINE_START(KZM9D, "kzm9d")
+ 	.handle_irq	= gic_handle_irq,
+ 	.init_machine	= kzm9d_add_standard_devices,
+ 	.timer		= &shmobile_timer,
++	.dt_compat	= kzm9d_boards_compat_dt,
+ MACHINE_END
+--- 0009/arch/arm/mach-shmobile/platsmp.c
++++ work/arch/arm/mach-shmobile/platsmp.c	2012-05-16 15:17:41.000000000 +0900
+@@ -16,6 +16,7 @@
+ #include <linux/device.h>
+ #include <linux/smp.h>
+ #include <linux/io.h>
++#include <linux/of.h>
+ #include <asm/hardware/gic.h>
+ #include <asm/mach-types.h>
+ #include <mach/common.h>
+@@ -23,7 +24,7 @@
+ 
+ #define is_sh73a0() (machine_is_ag5evm() || machine_is_kota2() || machine_is_kzm9g())
+ #define is_r8a7779() machine_is_marzen()
+-#define is_emev2() machine_is_kzm9d()
++#define is_emev2() of_machine_is_compatible("renesas,emev2")
+ 
+ static unsigned int __init shmobile_smp_get_core_count(void)
+ {
