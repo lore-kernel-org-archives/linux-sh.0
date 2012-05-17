@@ -1,63 +1,103 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 17 May 2012 00:41:25 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 17 May 2012 06:20:39 +0000
 Subject: Re: [PATCH] gpio: Emma Mobile GPIO driver V2
-Message-Id: <20120517004124.GA16069@linux-sh.org>
+Message-Id: <CANqRtoRW4xtRkCYvDs89XD82R8ac_kAFdLp3tSfUv8HufTS1cQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20120515154333.6659.66479.sendpatchset@w520>
- <20120516072927.GN7988@linux-sh.org>
- <CANqRtoSSEb9jwEmvbhBuyHp-9BfUSRabQzqjrrVGTFDP-AHutQ@mail.gmail.com>
- <201205161209.03985.arnd@arndb.de>
-In-Reply-To: <201205161209.03985.arnd@arndb.de>
+	<1337099546.7050.9.camel@joe2Laptop>
+In-Reply-To: <1337099546.7050.9.camel@joe2Laptop>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Arnd Bergmann <arnd@arndb.de>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-kernel@vger.kernel.org, rjw@sisk.pl, linus.walleij@stericsson.com, linux-sh@vger.kernel.org, horms@verge.net.au, grant.likely@secretlab.ca, olof@lixom.net
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: Joe Perches <joe@perches.com>
+Cc: linux-kernel@vger.kernel.org, rjw@sisk.pl, linus.walleij@stericsson.com, arnd@arndb.de, linux-sh@vger.kernel.org, horms@verge.net.au, grant.likely@secretlab.ca, lethal@linux-sh.org, olof@lixom.net
 
-On Wed, May 16, 2012 at 12:09:03PM +0000, Arnd Bergmann wrote:
-> On Wednesday 16 May 2012, Magnus Damm wrote:
-> > > irq_domain_add_legacy() exists for existing static ranges, which there is
-> > > really no reason to be adding in new board/platform support. You don't
-> > > have to worry about virq overlap since irq_create_mapping() already wraps
-> > > on top of irq_alloc_desc_xxx() for lookup.
-> > 
-> > So I intentionally made use of the legacy domain in the non-DT case.
-> > This because I want to let the SoC code set the static IRQ ranges via
-> > platform data.
-> 
-> I think it's generally better to use just one code path for both cases,
-> if you need both DT and non-DT support, which means you would always
-> use irq_domain_add_legacy. Once you have the final patch to convert it
-> to DT, you can remove the legacy domain and just convert it to linear.
-> 
-That's a bit short sighted. There are going to be plenty of cases where
-we can tie in IRQ domains and will make use of it both with and without
-DT, and there is very little cause for forcing manual irq_desc
-allocation/freeing up the chain when the IRQ domain code can handle it
-just fine.
+Hi Joe,
 
-The one area that I see being problematic with IRQ domains at the moment
-is IORESOURCE_IRQ. In the 'legacy' cases this maps out to the hwirq,
-while in the non-legacy cases it works out to a virq mapping that's
-lazily inserted by of_irq_to_resource_table() in of_device_alloc().
+On Wed, May 16, 2012 at 1:32 AM, Joe Perches <joe@perches.com> wrote:
+> On Wed, 2012-05-16 at 00:43 +0900, Magnus Damm wrote:
+>> This patch is V2 of the Emma Mobile GPIO driver.
+>
+> Just some trivial comments
 
-In adding irq domain support for the sh intc subsystem I hacked up some
-prototype code for doing an in-place update of IORESOURCE_IRQ resources
-hanging off platform devices that does the hwirq->virq translation and it
-seems to work fine, albeit hacky, and something I would rather avoid. On
-the other hand, there's no need for that either if we support a 1:1 hwirq
-to virq mapping where possible, which is fairly easy to do by just trying
-to fetch a virq with irq_alloc_desc_at() before falling back on the
-existing virq hinting logic in irq_create_mapping(). We can easily or a
-flag in to the revmap type that denotes the 'static' nature of the domain
-to inhibit irq_alloc_desc_from() usage in domains with 1:1 mappings.
+Nice with feedback, thank you!
 
-In any event, it looks like irq domains needs some more work for the
-non-DT case before it can really be useful. Creating arbitrary static
-mappings to shoe-horn a driver in to DT + non-DT shape through a legacy
-mapping seems pretty absurd, though.
+>> +++ work/drivers/gpio/gpio-em.c =A0 =A0 =A0 2012-05-16 00:07:20.00000000=
+0 +0900
+> []
+>
+> Adding pr_fmt before any #include prefixes all pr_<level> messages.
+>
+> #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
-I'll do some more hacking on it and see what I come up with, but I'm
-certainly not going to be maintaining my own radix tree on the side and
-wrapping in to a legacy domain for the sh intc case when all of the
-support infrastructure is already extant in the irqdomain code.
+Ok, good idea, will add.
+
+>> +#include <linux/init.h>
+>> +#include <linux/platform_device.h>
+> []
+>> +static int em_gio_irq_set_type(struct irq_data *d, unsigned int type)
+>> +{
+> []
+>> + =A0 =A0 pr_debug("gio: sense irq =3D %d, mode =3D %d\n", offset, value=
+);
+>
+> =A0 =A0 =A0 =A0pr_debug("sense irq =3D %d, mode =3D %d\n", offset, value);
+
+Right, with the above pr_fmt() line.
+
+> []
+>> +static void __em_gio_set(struct gpio_chip *chip, unsigned int reg,
+>> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0unsigned shift, int value)
+>> +{
+>> + =A0 =A0 /* upper 16 bits contains mask and lower 16 actual value */
+>> + =A0 =A0 em_gio_write(gpio_to_priv(chip), reg,
+>> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0(1 << (shift + 16)) | (value << shi=
+ft));
+>> +}
+>
+> comment doesn't seem to match code unless
+> value is a single bit, then value should
+> probably be renamed.
+
+Perhaps a bit odd, but the argument variable names match the GPIO API:
+
+[include/linux/gpio.h]
+..
+static inline void gpio_set_value(unsigned int gpio, int value)
+
+So I prefer to keep them as-is.
+
+>> +static int em_gio_irq_domain_map(struct irq_domain *h, unsigned int vir=
+q,
+>> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0irq_hw_numb=
+er_t hw)
+>> +{
+>> + =A0 =A0 struct em_gio_priv *p =3D h->host_data;
+>> +
+>> + =A0 =A0 pr_debug("gio: map hw irq =3D %d, virq =3D %d\n", (int)hw, vir=
+q);
+>
+> =A0 =A0 =A0 =A0pr_debug("map hw irq =3D %d, virq =3D %d\n", (int)hw, virq)
+>
+>> +static struct irq_domain_ops em_gio_irq_domain_ops =3D {
+>
+> const?
+
+Sure, why not?
+
+>> +static int __devinit em_gio_probe(struct platform_device *pdev)
+> []
+>> + =A0 =A0 p =3D kzalloc(sizeof(*p), GFP_KERNEL);
+>> + =A0 =A0 if (!p) {
+>> + =A0 =A0 =A0 =A0 =A0 =A0 dev_err(&pdev->dev, "failed to allocate driver=
+ data\n");
+>
+> OOM messages aren't necessary as k.alloc failures
+> produce a dump_stack.
+
+Ok!
+
+Thanks for your feedback, I will address them in a separate
+incremental feature patch.
+
+/ magnus
