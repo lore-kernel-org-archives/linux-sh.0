@@ -1,7 +1,7 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 18 May 2012 08:44:06 +0000
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Fri, 18 May 2012 08:57:50 +0000
 Subject: Re: [PATCH 05/29] regulator: use IS_ERR_OR_NULL() instead of open-coding
-Message-Id: <Pine.LNX.4.64.1205181041551.23140@axis700.grange>
+Message-Id: <20120518085749.GE24355@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
  <1336057558-11031-6-git-send-email-g.liakhovetski@gmx.de>
@@ -11,10 +11,9 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Thu, 3 May 2012, Mark Brown wrote:
-
+On Thu, May 03, 2012 at 04:32:39PM +0100, Mark Brown wrote:
 > On Thu, May 03, 2012 at 05:05:34PM +0200, Guennadi Liakhovetski wrote:
 > 
 > > -	if (regulator = NULL || IS_ERR(regulator))
@@ -22,13 +21,11 @@ On Thu, 3 May 2012, Mark Brown wrote:
 > 
 > The bigger question here is why we're accepting NULL in the first place.
 
-No idea, you seem to be right - regulator_get() never returns NULL, so, it 
-shouldn't be needed here. We could either remove this check altogether or 
-change it to a BUG_OG().
+I'm not sure about the regulator case, but it's been useful to support
+passing NULL around in the clock framework case. There are plenty of
+cases where a struct clk is optional and if we fail to find the clock we
+just set clk to NULL and continue on without having to constantly check
+the value of the clk pointer, which helps considerably when you consider
+the number of clk_enable/disable() pairs some drivers have.
 
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+Presumably the same applies for regulators?
