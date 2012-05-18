@@ -1,50 +1,43 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Thu, 03 May 2012 15:25:58 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 18 May 2012 08:33:42 +0000
 Subject: Re: [PATCH 06/29] regulator: export a function to check if regulator can change status
-Message-Id: <20120503152558.GL3955@opensource.wolfsonmicro.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="UUBKWyapWpFAak7q"
+Message-Id: <Pine.LNX.4.64.1205181030550.23140@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
  <1336057558-11031-7-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1336057558-11031-7-git-send-email-g.liakhovetski@gmx.de>
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+ <20120503152558.GL3955@opensource.wolfsonmicro.com>
+In-Reply-To: <20120503152558.GL3955@opensource.wolfsonmicro.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Mark Brown <broonie@opensource.wolfsonmicro.com>
 Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
 
+Hi Mark
 
---UUBKWyapWpFAak7q
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+On Thu, 3 May 2012, Mark Brown wrote:
 
-On Thu, May 03, 2012 at 05:05:35PM +0200, Guennadi Liakhovetski wrote:
-> Some consumers, e.g., the mmc subsystem, can benefit from an ability to
-> check, whether a regulator can switch power on and off.
+> On Thu, May 03, 2012 at 05:05:35PM +0200, Guennadi Liakhovetski wrote:
+> > Some consumers, e.g., the mmc subsystem, can benefit from an ability to
+> > check, whether a regulator can switch power on and off.
+> 
+> You're going to have to expand a lot more on why this is a good idea...
 
-You're going to have to expand a lot more on why this is a good idea...
-Bear in mind that the regulator may be shared by other users so even if
-the regulator is flagged as potentially being able to change status that
-doesn't mean that it actually can change status.
+I want to use this call in mmc to decide whether or not to set the 
+MMC_CAP_POWER_OFF_CARD mmc capability flag. This flag is used with SDIO 
+cards to decide whether or not to enable runtime PM for them.
 
---UUBKWyapWpFAak7q
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+> Bear in mind that the regulator may be shared by other users so even if
+> the regulator is flagged as potentially being able to change status that
+> doesn't mean that it actually can change status.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+Yes, I think, that's ok. We just need to know, that the card can in 
+principle be powered off. We don't need a guarantee, that we can power it 
+down at any time, when we think we need it.
 
-iQIcBAEBAgAGBQJPoqN9AAoJEBus8iNuMP3d8zYP/iBcASEgMlHzW1IK3LjgbWbP
-0/f6a7jtOibJFhxlgWlGdNy0zn/U1DCG1DAydAKhTzsxQPq5Z32Iw4sRi8OWCANu
-iV4iT3cPkTImkENWDBN2XP99azfj5srnoWoRr9npoNloqQtRVKzAG87vNJUEfQFC
-H/9wM4yhMAsL6QPZEnBHWa3yUhz30eN23V1gBkKSUGapAPsfuHMxTASMpm22t8t5
-3JvAmJ6a07wpCFVrHQ6GbRsKP/KQr+PjHXNOYCM25v4mrePgqMJ6Loqfu16VWBZU
-ZqIV+hmHPVGPtKeB9VpflK9SpOFiMjoSSjdrm/5DztxPMU1NCYWOCcnvak0/0VD7
-FKrvXUk8qJY63aWzBnzWt9BK4jiRPqH9DgB0lJeo1FqbXklOYKVvFwFZNpSavw9C
-6THf0ZKpIT1hb00nImylSDk022l6QDmizz1yhx8OVz1aMrDTHKsDKuy49fm0DKyl
-zO/TAxHwD2Vu4p4Tc27yUpGhqEJS18a7XKrSeVRMu0kgPY7cM+1VWZqoTqwo0pDN
-8hNDgVovhs6f3wv58UGqyt5Us8ZjeLwnieelahtkMUyEfcenUfxy0xMfD1vtmg20
-8GHknqmxWTED4hF/6XNFt16iMZ+uy5YT5UVZLkczgNl9P2KHRcPYhLFBDmVSOuUX
-GUTzevEpS0zA3jWHjih6
-=LgQd
------END PGP SIGNATURE-----
-
---UUBKWyapWpFAak7q--
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
