@@ -1,102 +1,46 @@
-From: Francois Romieu <romieu@fr.zoreil.com>
-Date: Thu, 17 May 2012 10:33:08 +0000
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Fri, 18 May 2012 01:44:43 +0000
 Subject: Re: [PATCH v4 6/6] net: sh_eth: use NAPI
-Message-Id: <20120517103308.GA15830@electric-eye.fr.zoreil.com>
+Message-Id: <4FB5A98B.501@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <4FB32D17.30404@renesas.com>
-In-Reply-To: <4FB32D17.30404@renesas.com>
+ <20120517103308.GA15830@electric-eye.fr.zoreil.com>
+In-Reply-To: <20120517103308.GA15830@electric-eye.fr.zoreil.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+To: Francois Romieu <romieu@fr.zoreil.com>
 Cc: netdev <netdev@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>
 
-Shimoda, Yoshihiro <yoshihiro.shimoda.uh@renesas.com> :
-[...]
-> diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-> index c64a31c..edc7dfe 100644
-> --- a/drivers/net/ethernet/renesas/sh_eth.c
-> +++ b/drivers/net/ethernet/renesas/sh_eth.c
-[...]
-> +static int sh_eth_poll(struct napi_struct *napi, int budget)
-> +{
-> +	struct sh_eth_private *mdp = container_of(napi, struct sh_eth_private,
-> +						  napi);
-> +	struct net_device *ndev = mdp->ndev;
-> +	struct sh_eth_cpu_data *cd = mdp->cd;
-> +	int work_done = 0, txfree_num;
-> +	u32 intr_status = sh_eth_read(ndev, EESR);
-> +
-> +	/* Clear interrupt flags */
-> +	sh_eth_write(ndev, intr_status, EESR);
-> +
-> +	/* check txdesc */
-> +	txfree_num = sh_eth_txfree(ndev);
-
-[...]
-> @@ -1678,19 +1710,15 @@ static int sh_eth_start_xmit(struct sk_buff *skb, struct net_device *ndev)
->  	struct sh_eth_private *mdp = netdev_priv(ndev);
->  	struct sh_eth_txdesc *txdesc;
->  	u32 entry;
-> -	unsigned long flags;
+2012/05/17 19:33, Francois Romieu wrote:
+> Shimoda, Yoshihiro <yoshihiro.shimoda.uh@renesas.com> :
+> [...]
+>> diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+>> index c64a31c..edc7dfe 100644
+>> --- a/drivers/net/ethernet/renesas/sh_eth.c
+>> +++ b/drivers/net/ethernet/renesas/sh_eth.c
+> [...]
+< snip >
+>> @@ -1678,19 +1710,15 @@ static int sh_eth_start_xmit(struct sk_buff *skb, struct net_device *ndev)
+>>  	struct sh_eth_private *mdp = netdev_priv(ndev);
+>>  	struct sh_eth_txdesc *txdesc;
+>>  	u32 entry;
+>> -	unsigned long flags;
+>>
+>> -	spin_lock_irqsave(&mdp->lock, flags);
+>>  	if ((mdp->cur_tx - mdp->dirty_tx) >= (mdp->num_tx_ring - 4)) {
+>>  		if (!sh_eth_txfree(ndev)) {
 > 
-> -	spin_lock_irqsave(&mdp->lock, flags);
->  	if ((mdp->cur_tx - mdp->dirty_tx) >= (mdp->num_tx_ring - 4)) {
->  		if (!sh_eth_txfree(ndev)) {
+> There are now two racing sh_eth_txfree and there is no [PATCH v4 7/6].
+> 
+> If I may suggest a slightly different approach, I would apply the patch
+> below before anything NAPI related:
 
-There are now two racing sh_eth_txfree and there is no [PATCH v4 7/6].
+Thank you very much for the suggestion. I will modify the NAPI patch to fix
+the racing using your suggestion.
+(Because the original driver (before NAPI) was already locked by mdp->lock
+ in sh_eth_interrupt(), I think that the original driver doesn't have the
+ racing issue.)
 
-If I may suggest a slightly different approach, I would apply the patch
-below before anything NAPI related:
-
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index d63e09b..6d77462 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -1495,18 +1495,6 @@ static int sh_eth_start_xmit(struct sk_buff *skb, struct net_device *ndev)
- 	u32 entry;
- 	unsigned long flags;
- 
--	spin_lock_irqsave(&mdp->lock, flags);
--	if ((mdp->cur_tx - mdp->dirty_tx) >= (TX_RING_SIZE - 4)) {
--		if (!sh_eth_txfree(ndev)) {
--			if (netif_msg_tx_queued(mdp))
--				dev_warn(&ndev->dev, "TxFD exhausted.\n");
--			netif_stop_queue(ndev);
--			spin_unlock_irqrestore(&mdp->lock, flags);
--			return NETDEV_TX_BUSY;
--		}
--	}
--	spin_unlock_irqrestore(&mdp->lock, flags);
--
- 	entry = mdp->cur_tx % TX_RING_SIZE;
- 	mdp->tx_skbuff[entry] = skb;
- 	txdesc = &mdp->tx_ring[entry];
-@@ -1531,6 +1519,15 @@ static int sh_eth_start_xmit(struct sk_buff *skb, struct net_device *ndev)
- 	if (!(sh_eth_read(ndev, EDTRR) & sh_eth_get_edtrr_trns(mdp)))
- 		sh_eth_write(ndev, sh_eth_get_edtrr_trns(mdp), EDTRR);
- 
-+	spin_lock_irqsave(&mdp->lock, flags);
-+	if ((mdp->cur_tx - mdp->dirty_tx) >= (TX_RING_SIZE - 4)) {
-+		if (netif_msg_tx_queued(mdp)) {
-+			dev_warn(&ndev->dev, "TxFD exhausted.\n");
-+			netif_stop_queue(ndev);
-+		}
-+	}
-+	spin_unlock_irqrestore(&mdp->lock, flags);
-+
- 	return NETDEV_TX_OK;
- }
- 
-
-Rationale: the driver does not need to return NETDEV_TX_BUSY when it
-should signal that it will not handle more packets after the current
-one. You may add an extra assertion at the start of sh_eth_start_xmit()
-and return NETDEV_TX_BUSY but it should be understood as a debug / bug
-helper only.
-
-Then you can convert to a {start/stop} queue race free NAPI with adequate
-barriers.
-
--- 
-Ueimor
+Best regards,
+Yoshihiro Shimoda
