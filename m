@@ -1,65 +1,52 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Thu, 03 May 2012 16:56:07 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 18 May 2012 08:54:26 +0000
 Subject: Re: [PATCH 04/29] regulator: fix devm_regulator_put() to call regulator_put() explicitly
-Message-Id: <20120503165606.GR3955@opensource.wolfsonmicro.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="b0op/nKJ9CeIhp9z"
+Message-Id: <Pine.LNX.4.64.1205181053510.23140@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
  <1336057558-11031-5-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1336057558-11031-5-git-send-email-g.liakhovetski@gmx.de>
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+ <20120503165606.GR3955@opensource.wolfsonmicro.com>
+In-Reply-To: <20120503165606.GR3955@opensource.wolfsonmicro.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Mark Brown <broonie@opensource.wolfsonmicro.com>
 Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
 
+Hi Mark
 
---b0op/nKJ9CeIhp9z
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+On Thu, 3 May 2012, Mark Brown wrote:
 
-On Thu, May 03, 2012 at 05:05:33PM +0200, Guennadi Liakhovetski wrote:
-> devres_destroy() doesn't call the release() method, it only destroys the
-> resource. The caller should take care to release the associated object
-> itself.
+> On Thu, May 03, 2012 at 05:05:33PM +0200, Guennadi Liakhovetski wrote:
+> > devres_destroy() doesn't call the release() method, it only destroys the
+> > resource. The caller should take care to release the associated object
+> > itself.
+> 
+> > +	regulator_put(regulator);
+> >  	rc = devres_destroy(regulator->dev, devm_regulator_release,
+> >  			    devm_regulator_match, regulator);
 
-> +	regulator_put(regulator);
->  	rc = devres_destroy(regulator->dev, devm_regulator_release,
->  			    devm_regulator_match, regulator);
+So, shall we rather use your new devres_release() here?
 
-Oh dear.  This seems like pretty peculiar behaviour on the part of
-devres_destroy() - everything about the function and its documentation
-would suggest that it'd actually free the resource not just free the
-devm_ internal bits of the resource, and especially given that we have
-to pass the release function in.
+Thanks
+Guennadi
 
-This also seems like it's the wrong way round - it probably shouldn't
-matter that much but we should really only do the regulator_put() after
-the destroy succeeded since there's a small chance that hotplug or
-something might cause this to run while the device is being removed
-elsewhere so we could end up trying to double free.
+> Oh dear.  This seems like pretty peculiar behaviour on the part of
+> devres_destroy() - everything about the function and its documentation
+> would suggest that it'd actually free the resource not just free the
+> devm_ internal bits of the resource, and especially given that we have
+> to pass the release function in.
+> 
+> This also seems like it's the wrong way round - it probably shouldn't
+> matter that much but we should really only do the regulator_put() after
+> the destroy succeeded since there's a small chance that hotplug or
+> something might cause this to run while the device is being removed
+> elsewhere so we could end up trying to double free.
+> 
+> Also, this patch is totally unrelated to the rest of the series and
+> should really have been sent separately.
 
-Also, this patch is totally unrelated to the rest of the series and
-should really have been sent separately.
-
---b0op/nKJ9CeIhp9z
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJPorigAAoJEBus8iNuMP3d1JIP/0+bbfl60FXs03bzPPoz2thq
-8dX2IG9NdBIRvFfH9Jv6Mhz2P6EaIfJnde3TNbSg4Z934T32YHbT/i8ymo1lVG/F
-Ap0nh5ZPlUn0UT3LsJ3Ay7Vb+O8W4x3nYJ5PJaw0jU4yf8QbkCxHOtlEsbZEtopF
-MjrHfUPoIKptqShVmBm0cED/i6EVib/gOuI6ITP6Y8R1cKZUMUnUpnuMu4YGzuqh
-jxgqRQuWJewV0Le2cszZ7sPwi7s0jFoHHIRzCw5Mor4Qqla08TF5xFngNib8zL+O
-bt7PRy00nZADFSCMC7f6+IdRRVWyA+SIgZhGDwSnhStImrEGTZaugVeHWkCc88k5
-mKbAz9d3wn6I7QMTvz6DCrSJpokuxFWNUhnbrkKKShO9bIliylSvgytIpPeFUjFg
-yQO3po7ktFbbFWVq1GQGci+NW+1dVPNFlZaqF4dhzMJHtRqVBYAAMHp2jw9gKTZw
-fhP16ajCR1W1pTyMbWCA+FQYhfDOSw355sLiRh7lMjfcUNimB0TsKgcsAk3fAkgp
-XOP1uIttkA2nbvEX3rcZ2BbPkvMfVJhpTiy9fR00D7FAtBCWoeHj7yTOmsnAVR59
-vNCAfu8VvuC8mANS+v+IhJpxPXkx22f3R8cAXsfc4ae0XXGPktVUAmNYl5p07iTh
-5mdCHS4W+JY8XUw3yfD+
-=fEU9
------END PGP SIGNATURE-----
-
---b0op/nKJ9CeIhp9z--
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
