@@ -1,70 +1,101 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 16 May 2012 06:44:49 +0000
-Subject: [PATCH 00/08] mach-shmobile: Emma Mobile EV2 support V3
-Message-Id: <20120516064449.32286.77941.sendpatchset@w520>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 18 May 2012 01:44:26 +0000
+Subject: Re: [PATCH 00/08] mach-shmobile: Emma Mobile EV2 support V3
+Message-Id: <20120518014424.GL19000@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20120516064449.32286.77941.sendpatchset@w520>
+In-Reply-To: <20120516064449.32286.77941.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-mach-shmobile: Emma Mobile EV2 support V3
+Hi Magnus,
 
-[PATCH 01/08] mach-shmobile: Emma Mobile EV2 SoC base support V3
-[PATCH 02/08] ARM: Undelete KZM9D mach-type V3
-[PATCH 03/08] mach-shmobile: KZM9D board support V3
-[PATCH 04/08] mach-shmobile: Emma Mobile EV2 SMP support V3
-[PATCH 05/08] mach-shmobile: Emma Mobile EV2 GPIO support V3
-[PATCH 06/08] mach-shmobile: KZM9D board Ethernet support V3
-[PATCH 07/08] mach-shmobile: Emma Mobile EV2 DT support V3
-[PATCH 08/08] mach-shmobile: Use DT_MACHINE for KZM9D V3
+I have tested these patches on top of the soc-new branch of
+rafael's renesas tree, revision 5658c94, which is based on
+v3.4-rc6.
 
-This series are the third iteration of Emma Mobile EV2 support
-for mach-shmobile. Yet another dual core Cortex-A9 SoC.
+I also have the cherry picked following patches before applying your patches.
 
-At this point serial, timer and gpio are supported as platform
-devices. Serial and timer also come with DT bindings.
+serial8250-em: clk_get() IS_ERR() error handling fix
+serial8250-em: Emma Mobile UART driver V2
+serial8250: Introduce serial8250_register_8250_port()
+serial8250: Clean up default map and dl code
+serial8250: Use dl_read()/dl_write() on RM9K
+serial8250: Use dl_read()/dl_write() on Alchemy
+serial8250: Add dl_read()/dl_write() callbacks
+8250.c: less than 2400 baud fix.
+serial/8250_pci: Clear FIFOs for Intel ME Serial Over Lan device on BI
+tegra, serial8250: add ->handle_break() uart_port op
+clocksource: em_sti: Add DT support
+clocksource: em_sti: Emma Mobile STI driver V2
+clockevents: Make clockevents_config() a global symbol
 
-Basic SMP support is in place, but CPU hotplug and TWD needs
-more work.
+I have added the follwing patch of yours
 
-Clocks are enabled in the case of the KZM9D board support
-via platform devices. In the DT case there are no clocks
-enabled. So anyone playing around with DT will have to accept
-the fact that it is very limited at tis point. All features with
-upstream support can however be enabled via regular platform devices.
+gpio: Emma Mobile GPIO driver V2
 
-Many thanks to Arnd for his endless reviews and helpful
-suggestions and a lot of patience!
+And one of my own, which just fixes a build problem
+in rafael's tree.
 
-To build this you also need whatever included in linux-next
-as of 20120514 plus the following patches:
+ARM: mach-types: Manually add KZM-A9-GT
 
-[PATCH 01/03] clockevents: Make clockevents_config() a global symbol
-[PATCH 02/03] clocksource: em_sti: Emma Mobile STI driver V2
-[PATCH 03/03] clocksource: em_sti: Add DT support
-[PATCH] gpio: Emma Mobile GPIO driver V2
+On Wed, May 16, 2012 at 03:44:49PM +0900, Magnus Damm wrote:
+> mach-shmobile: Emma Mobile EV2 support V3
+> 
+> [PATCH 01/08] mach-shmobile: Emma Mobile EV2 SoC base support V3
 
-The only update since V2 of this series is DT related bits
-in [7/8] and [8/8] plus the mach-type change in [2/8].
+Tested-by: Simon Horman <horms@verge.net.au>
 
-In case the GPIO driver does not get merged it should be possible
-to omit [5/8] and [6/8] and still have a working but limited system.
+> [PATCH 02/08] ARM: Undelete KZM9D mach-type V3
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
+I did not need this patch with the base I am using,
+so I did not test it.
 
- Applies to linux-next 20120514
+Reviewed-by: Simon Horman <horms@verge.net.au>
 
- arch/arm/boot/dts/emev2-kzm9d.dts           |   26 +
- arch/arm/boot/dts/emev2.dtsi                |   63 +++
- arch/arm/mach-shmobile/Kconfig              |   11 
- arch/arm/mach-shmobile/Makefile             |    3 
- arch/arm/mach-shmobile/board-kzm9d.c        |   89 +++++
- arch/arm/mach-shmobile/clock-emev2.c        |  249 ++++++++++++++
- arch/arm/mach-shmobile/include/mach/emev2.h |   19 +
- arch/arm/mach-shmobile/platsmp.c            |   20 +
- arch/arm/mach-shmobile/setup-emev2.c        |  454 ++++++++++++++++++++++++++-
- arch/arm/mach-shmobile/smp-emev2.c          |   97 +++++
- arch/arm/tools/mach-types                   |    1 
- 11 files changed, 1028 insertions(+), 4 deletions(-)
+> [PATCH 03/08] mach-shmobile: KZM9D board support V3
+
+Tested-by: Simon Horman <horms@verge.net.au>
+
+> [PATCH 04/08] mach-shmobile: Emma Mobile EV2 SMP support V3
+
+Tested-by: Simon Horman <horms@verge.net.au>
+
+> [PATCH 05/08] mach-shmobile: Emma Mobile EV2 GPIO support V3
+
+I am only seeing interripts for em_gio.0, is there a
+way to exercise em_gio.1 .. 4 ?
+
+Duplicate names for interrupts, that is
+each of em_gio.0..4 have two entries in /proc/interripts.
+Is this intentional?
+
+ 99:         32          0       GIC  em_gio.0
+ 100:          0          0       GIC  em_gio.0
+ 101:          0          0       GIC  em_gio.1
+ 102:          0          0       GIC  em_gio.1
+ 103:          0          0       GIC  em_gio.2
+ 104:          0          0       GIC  em_gio.2
+ 105:          0          0       GIC  em_gio.3
+ 106:          0          0       GIC  em_gio.3
+ 107:          0          0       GIC  em_gio.4
+ 108:          0          0       GIC  em_gio.4
+ 157:      35952          0       GIC  em_sti.0
+
+> [PATCH 06/08] mach-shmobile: KZM9D board Ethernet support V3
+
+Tested-by: Simon Horman <horms@verge.net.au>
+
+> [PATCH 07/08] mach-shmobile: Emma Mobile EV2 DT support V3
+
+I applied this and the resulting kernel booted.
+
+> [PATCH 08/08] mach-shmobile: Use DT_MACHINE for KZM9D V3
+
+I applied this and the resulting kernel did not boot.
+I saw nothing after the uboot prompt..
+
+
+Lastly, could you consider suppling a patch which provides a defconfig?
