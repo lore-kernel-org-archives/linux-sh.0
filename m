@@ -1,130 +1,38 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Thu, 10 May 2012 21:41:42 +0000
-Subject: Re: [PATCH 1/2 v2] mach-shmobile: sh73a0 SMP TWD boot regression fix
-Message-Id: <201205102341.42374.rjw@sisk.pl>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Fri, 18 May 2012 09:11:17 +0000
+Subject: Re: [PATCH 2/4] sh: sh4: Change the specification method of IRQ to SCIx_IRQ_MUXED
+Message-Id: <20120518091117.GF24355@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <877gwkpkch.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <877gwkpkch.wl%kuninori.morimoto.gx@renesas.com>
+References: <1334286843-3297-2-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+In-Reply-To: <1334286843-3297-2-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thursday, May 10, 2012, Kuninori Morimoto wrote:
-> Fix SMP TWD boot regression on sh73a0 based platforms caused by:
+On Fri, Apr 13, 2012 at 12:14:01PM +0900, Nobuhiro Iwamatsu wrote:
+> Some SCIF devices specify the same IRQ. We can use SCIx_IRQ_MUXED for this.
+> And change use to evt2irq(), without specifying the value of IRQ directly.
+> This is correction to the SH4 series.
 > 
-> 4200b16 ARM: shmobile: convert to twd_local_timer_register() interface
-> 
-> After the merge of the above commit it has been impossible to boot
-> sh73a0 based SoCs with SMP enabled and CONFIG_HAVE_ARM_TWD=y. The
-> kernel crashes at smp_init_cpus() timing which is before the console
-> has been initialized, so to the user this looks like a kernel lock up
-> without any particular error message.
-> 
-> This patch fixes the regression on sh73a0 by moving the TWD
-> registration code from smp_init_cpus() to sys_timer->init() time.
-> 
-> This patch removed shmobile_twd_init() which is no longer needed
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-
-Applied.
-
-Thanks,
-Rafael
-
-
+> Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 > ---
-> v1 -> v2
->  - removed shmobile_twd_init() from header
+>  arch/sh/kernel/cpu/sh4/setup-sh7750.c |    4 ++--
+>  1 files changed, 2 insertions(+), 2 deletions(-)
 > 
->  Fixes 3.4-rc regression.
-> 
->  Tested on the kzm9g board
-> 
->  arch/arm/mach-shmobile/include/mach/common.h |    1 -
->  arch/arm/mach-shmobile/setup-sh73a0.c        |    4 ++++
->  arch/arm/mach-shmobile/smp-sh73a0.c          |    7 ++++++-
->  arch/arm/mach-shmobile/timer.c               |    9 ---------
->  4 files changed, 10 insertions(+), 11 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-> index 18ac825..c85e6ec 100644
-> --- a/arch/arm/mach-shmobile/include/mach/common.h
-> +++ b/arch/arm/mach-shmobile/include/mach/common.h
-> @@ -4,7 +4,6 @@
->  extern void shmobile_earlytimer_init(void);
->  extern struct sys_timer shmobile_timer;
->  struct twd_local_timer;
-> -void shmobile_twd_init(struct twd_local_timer *twd_local_timer);
->  extern void shmobile_setup_console(void);
->  extern void shmobile_secondary_vector(void);
->  extern int shmobile_platform_cpu_kill(unsigned int cpu);
-> diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-> index 5bebffc..04a0dfe 100644
-> --- a/arch/arm/mach-shmobile/setup-sh73a0.c
-> +++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-> @@ -688,10 +688,14 @@ void __init sh73a0_add_standard_devices(void)
->  			    ARRAY_SIZE(sh73a0_late_devices));
->  }
->  
-> +/* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
-> +void __init __weak sh73a0_register_twd(void) { }
-> +
->  static void __init sh73a0_earlytimer_init(void)
->  {
->  	sh73a0_clock_init();
->  	shmobile_earlytimer_init();
-> +	sh73a0_register_twd();
->  }
->  
->  void __init sh73a0_add_early_devices(void)
-> diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
-> index 14ad8b05..e36c41c 100644
-> --- a/arch/arm/mach-shmobile/smp-sh73a0.c
-> +++ b/arch/arm/mach-shmobile/smp-sh73a0.c
-> @@ -42,7 +42,13 @@ static void __iomem *scu_base_addr(void)
->  static DEFINE_SPINLOCK(scu_lock);
->  static unsigned long tmp;
->  
-> +#ifdef CONFIG_HAVE_ARM_TWD
->  static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, 0xf0000600, 29);
-> +void __init sh73a0_register_twd(void)
-> +{
-> +	twd_local_timer_register(&twd_local_timer);
-> +}
-> +#endif
->  
->  static void modify_scu_cpu_psr(unsigned long set, unsigned long clr)
->  {
-> @@ -62,7 +68,6 @@ unsigned int __init sh73a0_get_core_count(void)
->  {
->  	void __iomem *scu_base = scu_base_addr();
->  
-> -	shmobile_twd_init(&twd_local_timer);
->  	return scu_get_core_count(scu_base);
->  }
->  
-> diff --git a/arch/arm/mach-shmobile/timer.c b/arch/arm/mach-shmobile/timer.c
-> index 2fba5f3..8b79e79 100644
-> --- a/arch/arm/mach-shmobile/timer.c
-> +++ b/arch/arm/mach-shmobile/timer.c
-> @@ -46,15 +46,6 @@ static void __init shmobile_timer_init(void)
->  {
->  }
->  
-> -void __init shmobile_twd_init(struct twd_local_timer *twd_local_timer)
-> -{
-> -#ifdef CONFIG_HAVE_ARM_TWD
-> -	int err = twd_local_timer_register(twd_local_timer);
-> -	if (err)
-> -		pr_err("twd_local_timer_register failed %d\n", err);
-> -#endif
-> -}
-> -
->  struct sys_timer shmobile_timer = {
->  	.init		= shmobile_timer_init,
+> diff --git a/arch/sh/kernel/cpu/sh4/setup-sh7750.c b/arch/sh/kernel/cpu/sh4/setup-sh7750.c
+> index 98cc0c7..56b3bdc 100644
+> --- a/arch/sh/kernel/cpu/sh4/setup-sh7750.c
+> +++ b/arch/sh/kernel/cpu/sh4/setup-sh7750.c
+> @@ -43,7 +43,7 @@ static struct plat_sci_port sci_platform_data = {
+>  	.scscr		= SCSCR_TE | SCSCR_RE,
+>  	.scbrr_algo_id	= SCBRR_ALGO_2,
+>  	.type		= PORT_SCI,
+> -	.irqs		= { 23, 23, 23, 0 },
+> +	.irqs		= SCIx_IRQ_MUXED(evt2irq(0xE40)),
+>  	.regshift	= 2,
 >  };
-> 
-
+>  
+23 is actually 0x4e0, 0xe40 would be 98. Fortunately git merge collided
+on this while I was merging my evt2irq migration branch, as it's unlikely
+anyone would have noticed this for some time..
