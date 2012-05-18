@@ -1,61 +1,58 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Thu, 03 May 2012 15:56:55 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 18 May 2012 09:55:53 +0000
 Subject: Re: [PATCH 13/29] mmc: tmio: add regulator support
-Message-Id: <20120503155655.GQ3955@opensource.wolfsonmicro.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="8HhMLSHvAouSipEr"
+Message-Id: <Pine.LNX.4.64.1205181137570.23140@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
  <1336057558-11031-14-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1336057558-11031-14-git-send-email-g.liakhovetski@gmx.de>
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+ <20120503155655.GQ3955@opensource.wolfsonmicro.com>
+In-Reply-To: <20120503155655.GQ3955@opensource.wolfsonmicro.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Mark Brown <broonie@opensource.wolfsonmicro.com>
 Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
 
+On Thu, 3 May 2012, Mark Brown wrote:
 
---8HhMLSHvAouSipEr
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+> On Thu, May 03, 2012 at 05:05:42PM +0200, Guennadi Liakhovetski wrote:
+> 
+> > +static void tmio_mmc_set_power(struct tmio_mmc_host *host, struct mmc_ios *ios)
+> > +{
+> > +	if (!(host->mmc->caps & MMC_CAP_POWER_OFF_CARD))
+> > +		return;
+> > +
+> > +	if (host->vdd)
+> > +		/* Errors ignored... */
+> > +		mmc_regulator_set_ocr(host->mmc, host->vdd,
+> > +				      ios->power_mode ? ios->vdd : 0);
+> > +	else if (host->set_pwr)
+> > +		host->set_pwr(host->pdev, ios->power_mode != MMC_POWER_OFF);
+> > +}
+> 
+> This looks pretty much identical to the previous code,
 
-On Thu, May 03, 2012 at 05:05:42PM +0200, Guennadi Liakhovetski wrote:
+Maybe it's because it's been written and is maintained by the same group 
+of people? :-)
 
-> +static void tmio_mmc_set_power(struct tmio_mmc_host *host, struct mmc_ios *ios)
-> +{
-> +	if (!(host->mmc->caps & MMC_CAP_POWER_OFF_CARD))
-> +		return;
-> +
-> +	if (host->vdd)
-> +		/* Errors ignored... */
-> +		mmc_regulator_set_ocr(host->mmc, host->vdd,
-> +				      ios->power_mode ? ios->vdd : 0);
-> +	else if (host->set_pwr)
-> +		host->set_pwr(host->pdev, ios->power_mode != MMC_POWER_OFF);
-> +}
+> should it be being factored out into the core?
 
-This looks pretty much identical to the previous code, should it be
-being factored out into the core?  Or put the regulator bit in the core
-and provide an option to override with manual callbacks if that's
-required.
+Weeeell, it's not a lot of code. We could make this a library function, 
+provided by the core, but I don't think it would be very straight forward 
+to also automate its calling, thus freeing individual drivers from this 
+task. As you can see in these two drivers, one of them turns the card on 
+already upon MMC_POWER_UP, the other one only in MMC_POWER_ON. I'm not 
+sure off the top of my head why this difference is there, but in any case 
+different drivers might have different ideas about this. So, I'm not sure 
+whether this micro-optimisation is worth it.
 
---8HhMLSHvAouSipEr
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+> Or put the regulator bit in the core
+> and provide an option to override with manual callbacks if that's
+> required.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJPoqq4AAoJEBus8iNuMP3dthoP/0dm86ckicqVhEHC3ySqexkQ
-Ny8IhX/ptWTqdy5cLyE+jh0x8RcPmf2Gp6Yp+vRRLwSEFnT8Y0RMAVgmuDLg2oFp
-u6xQ1i92q15mZZGRfqh9LTny7IPJueZOi0RcUGfCXWRKuYMHalXcFxLf/3K84hWi
-j6kOXBOeMsofOD1zousnKFuGwEnz7jZRU7ipXbEUKQetRRHzadY54gisbF5z8HTM
-TJEC0uWtRaf3O6M3kwdP1LLmTC6/japokppoL8ZhvcYR0TDjnHfz1ugj9gfObwR6
-GnoSEZCitxLfNVhZO1KS2/5x2Vq/Sd1leJuZL8mPnOvs4nXdwRoMlwCCzTWT6fNA
-hhcQbFVq5e3tWFA2giFe8D4fefz/SXH7dgwzeZxygmftIxZs+m6N5SRGJT+Sr7Hw
-SL7X5oXa3gxQUqZHjoj8mxTS7tm5rU/9ibu/ANnztQJj8DScggmaOjpo2K6VgmTL
-T1Q51FN/V3WNP3mHDwAgU6R4WfakdcwrnGwLLPRXFrSiPp7+kb4PFKUU+v1DX0xH
-8nCMSJGnqU523SZrYiRTUZYlBPQDqf5J6D7ej0PEH0xJZnqK8diCl65TCfFx0rrn
-fNQ8ER6R8jCujg5T3EzsDgezb9Su3ubrYja12CmmGWjgyODpc6higzLmohku+Xm6
-xTS3M32h3KSD0rN0lAYW
-=JHNy
------END PGP SIGNATURE-----
-
---8HhMLSHvAouSipEr--
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
