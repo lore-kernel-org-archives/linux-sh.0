@@ -1,58 +1,39 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Fri, 18 May 2012 16:04:19 +0000
-Subject: Re: [PATCH 07/29] mmc: add a function to get a regulator, supplying card's Vdd
-Message-Id: <20120518160418.GK4039@opensource.wolfsonmicro.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="Xsn3knLL3qrmRbVI"
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Sat, 19 May 2012 06:11:45 +0000
+Subject: [PATCH 5/8] irqdomain: Kill off duplicate definitions.
+Message-Id: <1337407908-7421-6-git-send-email-lethal@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
- <1336057558-11031-8-git-send-email-g.liakhovetski@gmx.de>
- <20120503154252.GO3955@opensource.wolfsonmicro.com>
- <Pine.LNX.4.64.1205181059560.23140@axis700.grange>
- <20120518151837.GD4039@opensource.wolfsonmicro.com>
- <Pine.LNX.4.64.1205181727320.23140@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1205181727320.23140@axis700.grange>
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+References: <1337407908-7421-1-git-send-email-lethal@linux-sh.org>
+In-Reply-To: <1337407908-7421-1-git-send-email-lethal@linux-sh.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Grant Likely <grant.likely@secretlab.ca>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
 
+Presently irqdomain.h has duplicate definitions for irq_find_host() and
+irq_set_default_host(), presumably from merge damage. Kill off the
+duplicates.
 
---Xsn3knLL3qrmRbVI
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Paul Mundt <lethal@linux-sh.org>
+---
+ include/linux/irqdomain.h |    3 ---
+ 1 files changed, 0 insertions(+), 3 deletions(-)
 
-On Fri, May 18, 2012 at 05:39:39PM +0200, Guennadi Liakhovetski wrote:
+diff --git a/include/linux/irqdomain.h b/include/linux/irqdomain.h
+index a796dbf..5abb533 100644
+--- a/include/linux/irqdomain.h
++++ b/include/linux/irqdomain.h
+@@ -144,9 +144,6 @@ static inline struct irq_domain *irq_domain_add_legacy_isa(
+ 
+ extern void irq_domain_remove(struct irq_domain *host);
+ 
+-extern struct irq_domain *irq_find_host(struct device_node *node);
+-extern void irq_set_default_host(struct irq_domain *host);
+-
+ extern unsigned int irq_create_mapping(struct irq_domain *host,
+ 				       irq_hw_number_t hwirq);
+ extern void irq_dispose_mapping(unsigned int virq);
+-- 
+1.7.9.rc0.28.g0e1cf
 
-> 08/29] mmc: sh_mmcif: add regulator support"). But perhaps giving=20
-> preference to the regulator is bogus. Maybe I should just switch both, or=
-=20
-> even give preference to the call-back. What do you think? Switching both=
-=20
-> is, perhaps, the safest bet.
-
-I think most things either give preference to the callback or complain
-if you try to set both.
-
---Xsn3knLL3qrmRbVI
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJPtnLzAAoJEBus8iNuMP3dnlkQAIHHqp2rR/ro8/bcOTy/PQAG
-oRrdZ9C36b8tBIrPP1HvKVN+fxyQwcuxO1BLnVe6LzZi6N7vufZy+Rp44AXesDg+
-RlEpZNHMRIFB0iaOTRVvzKPGgD2T2R40MJYk2TKkXgqZhAwy4UNk8xnezDu/D9kz
-sfp/RVGPv3uKx1+7uEKd/j7Xag+A9WeI84jy547y7pDDe+OCfhkto+LOX7sU/WC7
-6T3WRkGiipMl029gWdMuV+x9jutQalcj+IOb3pNN2vH4u/IhIliEPxnCMSIf8Afx
-M7LCgUALtjB4xsfw+EE+mCLBIJ0d3i8OW+DgdRBfiyhIeY0d53iiaNw9ksvWPqdV
-Yt9if9qjLBGG5OVuAAvR4PtH21fxR0EgRpJiP3McxRxWcExEebmM3XBTRP07K3Yk
-mPMz5FBEaSXuZ26+a65kGk8sMorK2xydjNmCoaWh9zuQiVqZF7C3W8wNvPsxRvLM
-fW3wWl+mYn+sM7Y7W8BP0EBMotenJ6zC8x8k5uT1k7KvHv9a+ztL0C2ru+HV1qs+
-a/ctleTrKMJAZX75MQ7XT+OUBntG0s/GtXSiN/EwA3Kakr+/hcLATqI0VtVEwvdE
-x8xfyabukKUMBo0WHRCblXkGvxMIHeMXA3ThHW6OjNNaga7BAGUWcGPP7kvmwwU9
-AINI3RTNy+czw/yBjTeD
-=lwqX
------END PGP SIGNATURE-----
-
---Xsn3knLL3qrmRbVI--
