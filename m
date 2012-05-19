@@ -1,71 +1,164 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Fri, 18 May 2012 15:34:18 +0000
-Subject: Re: [PATCH 13/29] mmc: tmio: add regulator support
-Message-Id: <20120518153416.GE4039@opensource.wolfsonmicro.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="dFWYt1i2NyOo1oI9"
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Sat, 19 May 2012 06:11:47 +0000
+Subject: [PATCH 7/8] irqdomain: trivial pr_fmt conversion.
+Message-Id: <1337407908-7421-8-git-send-email-lethal@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
- <1336057558-11031-14-git-send-email-g.liakhovetski@gmx.de>
- <20120503155655.GQ3955@opensource.wolfsonmicro.com>
- <Pine.LNX.4.64.1205181137570.23140@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1205181137570.23140@axis700.grange>
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+References: <1337407908-7421-1-git-send-email-lethal@linux-sh.org>
+In-Reply-To: <1337407908-7421-1-git-send-email-lethal@linux-sh.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Grant Likely <grant.likely@secretlab.ca>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
 
+Convert to pr_fmt before things start to get out of hand and some
+janitors start getting overly excited.
 
---dFWYt1i2NyOo1oI9
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Signed-off-by: Paul Mundt <lethal@linux-sh.org>
+---
+ kernel/irq/irqdomain.c |   36 +++++++++++++++++++-----------------
+ 1 files changed, 19 insertions(+), 17 deletions(-)
 
-On Fri, May 18, 2012 at 11:55:53AM +0200, Guennadi Liakhovetski wrote:
-> On Thu, 3 May 2012, Mark Brown wrote:
+diff --git a/kernel/irq/irqdomain.c b/kernel/irq/irqdomain.c
+index ac44781..e8ac7df 100644
+--- a/kernel/irq/irqdomain.c
++++ b/kernel/irq/irqdomain.c
+@@ -1,3 +1,5 @@
++#define pr_fmt(fmt)  "irq: " fmt
++
+ #include <linux/debugfs.h>
+ #include <linux/hardirq.h>
+ #include <linux/interrupt.h>
+@@ -124,7 +126,7 @@ void irq_domain_remove(struct irq_domain *domain)
+ 
+ 	mutex_unlock(&irq_domain_mutex);
+ 
+-	pr_debug("irq: Removed domain of type %d @0x%p\n",
++	pr_debug("Removed domain of type %d @0x%p\n",
+ 		 domain->revmap_type, domain);
+ 
+ 	irq_domain_free(domain);
+@@ -329,7 +331,7 @@ EXPORT_SYMBOL_GPL(irq_find_host);
+  */
+ void irq_set_default_host(struct irq_domain *domain)
+ {
+-	pr_debug("irq: Default domain set to @0x%p\n", domain);
++	pr_debug("Default domain set to @0x%p\n", domain);
+ 
+ 	irq_default_domain = domain;
+ }
+@@ -343,7 +345,7 @@ static int irq_setup_virq(struct irq_domain *domain, unsigned int virq,
+ 	irq_data->hwirq = hwirq;
+ 	irq_data->domain = domain;
+ 	if (domain->ops->map(domain, virq, hwirq)) {
+-		pr_debug("irq: -> mapping failed, freeing\n");
++		pr_debug("-> mapping failed, freeing\n");
+ 		irq_data->domain = NULL;
+ 		irq_data->hwirq = 0;
+ 		return -1;
+@@ -374,7 +376,7 @@ unsigned int irq_create_direct_mapping(struct irq_domain *domain)
+ 
+ 	virq = irq_alloc_desc_from(1, irq_domain_nid(domain->of_node));
+ 	if (!virq) {
+-		pr_debug("irq: create_direct virq allocation failed\n");
++		pr_debug("create_direct virq allocation failed\n");
+ 		return 0;
+ 	}
+ 	if (virq >= domain->revmap_data.nomap.max_irq) {
+@@ -383,7 +385,7 @@ unsigned int irq_create_direct_mapping(struct irq_domain *domain)
+ 		irq_free_desc(virq);
+ 		return 0;
+ 	}
+-	pr_debug("irq: create_direct obtained virq %d\n", virq);
++	pr_debug("create_direct obtained virq %d\n", virq);
+ 
+ 	if (irq_setup_virq(domain, virq, virq)) {
+ 		irq_free_desc(virq);
+@@ -410,23 +412,23 @@ unsigned int irq_create_mapping(struct irq_domain *domain,
+ 	unsigned int hint;
+ 	int virq;
+ 
+-	pr_debug("irq: irq_create_mapping(0x%p, 0x%lx)\n", domain, hwirq);
++	pr_debug("irq_create_mapping(0x%p, 0x%lx)\n", domain, hwirq);
+ 
+ 	/* Look for default domain if nececssary */
+ 	if (domain = NULL)
+ 		domain = irq_default_domain;
+ 	if (domain = NULL) {
+-		printk(KERN_WARNING "irq_create_mapping called for"
+-		       " NULL domain, hwirq=%lx\n", hwirq);
++		pr_warning("irq_create_mapping called for"
++			   " NULL domain, hwirq=%lx\n", hwirq);
+ 		WARN_ON(1);
+ 		return 0;
+ 	}
+-	pr_debug("irq: -> using domain @%p\n", domain);
++	pr_debug("-> using domain @%p\n", domain);
+ 
+ 	/* Check if mapping already exists */
+ 	virq = irq_find_mapping(domain, hwirq);
+ 	if (virq) {
+-		pr_debug("irq: -> existing mapping on virq %d\n", virq);
++		pr_debug("-> existing mapping on virq %d\n", virq);
+ 		return virq;
+ 	}
+ 
+@@ -442,7 +444,7 @@ unsigned int irq_create_mapping(struct irq_domain *domain,
+ 	if (virq <= 0)
+ 		virq = irq_alloc_desc_from(1, irq_domain_nid(domain->of_node));
+ 	if (virq <= 0) {
+-		pr_debug("irq: -> virq allocation failed\n");
++		pr_debug("-> virq allocation failed\n");
+ 		return 0;
+ 	}
+ 
+@@ -452,7 +454,7 @@ unsigned int irq_create_mapping(struct irq_domain *domain,
+ 		return 0;
+ 	}
+ 
+-	pr_debug("irq: irq %lu on domain %s mapped to virtual irq %u\n",
++	pr_debug("irq %lu on domain %s mapped to virtual irq %u\n",
+ 		hwirq, domain->of_node ? domain->of_node->full_name : "null", virq);
+ 
+ 	return virq;
+@@ -472,7 +474,7 @@ unsigned int irq_create_identity_mapping(struct irq_domain *domain,
+ {
+ 	int virq;
+ 
+-	pr_debug("irq: irq_create_identity_mapping(0x%p, 0x%lx)\n",
++	pr_debug("irq_create_identity_mapping(0x%p, 0x%lx)\n",
+ 		 domain, hwirq);
+ 
+ 	if (domain = NULL)
+@@ -484,7 +486,7 @@ unsigned int irq_create_identity_mapping(struct irq_domain *domain,
+ 
+ 	virq = irq_alloc_desc_at(hwirq, irq_domain_nid(domain->of_node));
+ 	if (virq < 0) {
+-		pr_debug("irq: -> virq allocation failed\n");
++		pr_debug("-> virq allocation failed\n");
+ 		return 0;
+ 	}
+ 
+@@ -494,7 +496,7 @@ unsigned int irq_create_identity_mapping(struct irq_domain *domain,
+ 		return 0;
+ 	}
+ 
+-	pr_debug("irq: irq %lu identity mapped\n", hwirq);
++	pr_debug("irq %lu identity mapped\n", hwirq);
+ 
+ 	return virq;
+ }
+@@ -522,8 +524,8 @@ unsigned int irq_create_of_mapping(struct device_node *controller,
+ 		if (intsize > 0)
+ 			return intspec[0];
+ #endif
+-		printk(KERN_WARNING "irq: no irq domain found for %s !\n",
+-		       controller->full_name);
++		pr_warning("no irq domain found for %s !\n",
++			   controller->full_name);
+ 		return 0;
+ 	}
+ 
+-- 
+1.7.9.rc0.28.g0e1cf
 
-> > should it be being factored out into the core?
-
-> Weeeell, it's not a lot of code. We could make this a library function,=
-=20
-> provided by the core, but I don't think it would be very straight forward=
-=20
-> to also automate its calling, thus freeing individual drivers from this=
-=20
-> task. As you can see in these two drivers, one of them turns the card on=
-=20
-> already upon MMC_POWER_UP, the other one only in MMC_POWER_ON. I'm not=20
-> sure off the top of my head why this difference is there, but in any case=
-=20
-> different drivers might have different ideas about this. So, I'm not sure=
-=20
-> whether this micro-optimisation is worth it.
-
-My take on this would be that we shouldn't even have to think about what
-the differences are and that if there are genuine tradeoffs here it's
-likely that we should be offering them at runtime or to boards or
-something rather than picking something in an individual driver.  If
-there are meaningful differences I'd at least expect to be able to tell
-what they are.
-
---dFWYt1i2NyOo1oI9
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJPtmvyAAoJEBus8iNuMP3dgDkP/1XtwriOZNsYa6PcZASxrcGa
-nxfucveaK0Cma8bvQzElC2sZ03DEGiE/8HdH9omo32nFL0QIJ/v0W2jzsrxpzVpL
-87Jfil5C+fiK7ccbIwBYrG6lCKRDM8hY+l4CthYVtoR+JTCB6JaaUcR36ZAISUHl
-jtVRcXqhpqC4HjkoSPoeBCEyn5b2pR2Ogs/3Pgm3sw0Be7YfPi5TFPx6i/LlUzcF
-sE3Bh7+GRsjkIZB5+dce8koxmAW/Su8dW0CO8DM+BSenL7UmPkrGCjMGdxGRHj4E
-QBQ3iXjr1VYb5T0o3nxkOJbjDxaD719jUE+ZKCqDtKJ3lzVaMzmf4Xg1xIy1TB+q
-AesNio/INlWiPaiISP8iNcowUyj3DfXrNRdbvf4WDgc+C65xoBx0NxU8nO3/VGE4
-mDPzn7G3xA25GOEy61VuP4p2nNoZW0HODdzVXdcQjzTByiz0qJeb0fjtlvLaNv2J
-s/crMYWvcceXmYmzJvwIIR7AKsCockLaFX3pYS5Kbamatg4A7Zy+suA2CBIPwkto
-E1WtD+2Qks0Flwvgp40Jdam262zvVNbtiuZS//MvqNZlO55pO2CCPzc0IGQFFazu
-iusjPaRUzpAuhHSN1gL1EGOE+K1ehK1xfzSvZMLeeNWCj4X382VH6MO4BiBWTKrR
-QvLOLlwQm6gzMEEubliA
-=5PGr
------END PGP SIGNATURE-----
-
---dFWYt1i2NyOo1oI9--
