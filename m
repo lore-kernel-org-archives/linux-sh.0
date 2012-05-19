@@ -1,52 +1,93 @@
-From: Grant Likely <grant.likely@secretlab.ca>
-Date: Sat, 19 May 2012 18:35:43 +0000
-Subject: Re: [PATCH 3/8] irqdomain: Make irq_domain_simple_map() static.
-Message-Id: <20120519183543.C2F5B3E03B8@localhost>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Sat, 19 May 2012 06:11:46 +0000
+Subject: [PATCH 6/8] irqdomain: Support identity mapped VIRQ allocation.
+Message-Id: <1337407908-7421-7-git-send-email-lethal@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1337407908-7421-1-git-send-email-lethal@linux-sh.org> <1337407908-7421-4-git-send-email-lethal@linux-sh.org>
-In-Reply-To: <1337407908-7421-4-git-send-email-lethal@linux-sh.org>
+References: <1337407908-7421-1-git-send-email-lethal@linux-sh.org>
+In-Reply-To: <1337407908-7421-1-git-send-email-lethal@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Grant Likely <grant.likely@secretlab.ca>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
 
-On Sat, 19 May 2012 15:11:43 +0900, Paul Mundt <lethal@linux-sh.org> wrote:
-> Presently irq_domain_simple_map() isn't labelled as static, but there's
-> no definition for it in the public irqdomain header either. At present
-> all in-tree ->map users have meaningful work to do, and all others are
-> using irq_domain_simple_ops directly. Make it static for now, as it can
-> always be exported and added to the public API later.
-> 
-> Signed-off-by: Paul Mundt <lethal@linux-sh.org>
+This adds a new irq_create_identity_mapping() routine to permit platforms
+to utilize 1:1 identity mapping between hardware and linux IRQs for
+domain population. The same semantics as irq_create_mapping() apply,
+though in this case we only support irqdesc allocation at a static
+location, rather than falling back on dynamic lookup.
 
-Applied, thanks.
+Signed-off-by: Paul Mundt <lethal@linux-sh.org>
+---
+ include/linux/irqdomain.h |    2 ++
+ kernel/irq/irqdomain.c    |   41 +++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 43 insertions(+), 0 deletions(-)
 
-g.
-
-> ---
->  kernel/irq/irqdomain.c |    4 ++--
->  1 files changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/kernel/irq/irqdomain.c b/kernel/irq/irqdomain.c
-> index 01d4a0d..92e06442 100644
-> --- a/kernel/irq/irqdomain.c
-> +++ b/kernel/irq/irqdomain.c
-> @@ -758,8 +758,8 @@ static int __init irq_debugfs_init(void)
->  __initcall(irq_debugfs_init);
->  #endif /* CONFIG_IRQ_DOMAIN_DEBUG */
->  
-> -int irq_domain_simple_map(struct irq_domain *d, unsigned int irq,
-> -			  irq_hw_number_t hwirq)
-> +static int irq_domain_simple_map(struct irq_domain *d, unsigned int irq,
-> +				 irq_hw_number_t hwirq)
->  {
->  	return 0;
->  }
-> -- 
-> 1.7.9.rc0.28.g0e1cf
-> 
-
+diff --git a/include/linux/irqdomain.h b/include/linux/irqdomain.h
+index 5abb533..e32d2e7 100644
+--- a/include/linux/irqdomain.h
++++ b/include/linux/irqdomain.h
+@@ -149,6 +149,8 @@ extern unsigned int irq_create_mapping(struct irq_domain *host,
+ extern void irq_dispose_mapping(unsigned int virq);
+ extern unsigned int irq_find_mapping(struct irq_domain *host,
+ 				     irq_hw_number_t hwirq);
++extern unsigned int irq_create_identity_mapping(struct irq_domain *host,
++						irq_hw_number_t hwirq);
+ extern unsigned int irq_create_direct_mapping(struct irq_domain *host);
+ extern void irq_radix_revmap_insert(struct irq_domain *host, unsigned int virq,
+ 				    irq_hw_number_t hwirq);
+diff --git a/kernel/irq/irqdomain.c b/kernel/irq/irqdomain.c
+index 5f0ca52..ac44781 100644
+--- a/kernel/irq/irqdomain.c
++++ b/kernel/irq/irqdomain.c
+@@ -459,6 +459,47 @@ unsigned int irq_create_mapping(struct irq_domain *domain,
+ }
+ EXPORT_SYMBOL_GPL(irq_create_mapping);
+ 
++/**
++ * irq_create_identity_mapping() - Allocate an identity mapped irq
++ * @domain: domain owning this hardware interrupt or NULL for default domain
++ * @hwirq: hardware irq number in that domain space
++ *
++ * This routine is used to allocate IRQs with a 1:1 identity mapping
++ * between the hardware and linux irq.
++ */
++unsigned int irq_create_identity_mapping(struct irq_domain *domain,
++					 irq_hw_number_t hwirq)
++{
++	int virq;
++
++	pr_debug("irq: irq_create_identity_mapping(0x%p, 0x%lx)\n",
++		 domain, hwirq);
++
++	if (domain = NULL)
++		domain = irq_default_domain;
++	if (domain = NULL) {
++		WARN_ON(1);
++		return 0;
++	}
++
++	virq = irq_alloc_desc_at(hwirq, irq_domain_nid(domain->of_node));
++	if (virq < 0) {
++		pr_debug("irq: -> virq allocation failed\n");
++		return 0;
++	}
++
++	if (irq_setup_virq(domain, virq, hwirq)) {
++		if (domain->revmap_type != IRQ_DOMAIN_MAP_LEGACY)
++			irq_free_desc(virq);
++		return 0;
++	}
++
++	pr_debug("irq: irq %lu identity mapped\n", hwirq);
++
++	return virq;
++}
++EXPORT_SYMBOL_GPL(irq_create_identity_mapping);
++
+ unsigned int irq_create_of_mapping(struct device_node *controller,
+ 				   const u32 *intspec, unsigned int intsize)
+ {
 -- 
-Grant Likely, B.Sc, P.Eng.
-Secret Lab Technologies, Ltd.
+1.7.9.rc0.28.g0e1cf
+
