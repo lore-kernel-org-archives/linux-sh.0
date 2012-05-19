@@ -1,64 +1,132 @@
-From: Artem Bityutskiy <dedekind1@gmail.com>
-Date: Tue, 15 May 2012 10:47:05 +0000
-Subject: Re: [PATCH v4 0/8] sh_flctl hardware ECC mode cleanup
-Message-Id: <1337078825.2528.157.camel@sauron.fi.intel.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="=-fZ5BGZjC5PHIrVz684HH"
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Sat, 19 May 2012 06:11:41 +0000
+Subject: [PATCH 1/8] irqdomain: Support removal of IRQ domains.
+Message-Id: <1337407908-7421-2-git-send-email-lethal@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1336997687-6868-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1336997687-6868-1-git-send-email-hechtb@gmail.com>
-To: Bastian Hecht <hechtb@googlemail.com>
-Cc: Bastian Hecht <hechtb@gmail.com>, magnus.damm@gmail.com, linux-mtd@lists.infradead.org, laurent.pinchart@ideasonboard.com, linux-sh@vger.kernel.org
-
-
---=-fZ5BGZjC5PHIrVz684HH
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-
-On Mon, 2012-05-14 at 14:14 +0200, Bastian Hecht wrote:
-> changelog v4:
->=20
->   - removed arch/arm related patches
->   - rebased on current l2-mtd.git
->   - fixed some compiler warnings
-> 	- patch 2: use "int irq" when removing irq binding in error case to fix =
-smatch breakage
-> 	- patch 7 and 8: just directly use the void __iomem pointer instead of t=
-he unprecise void pointer to fix sparse breakage
-
-Pushed to l2-mtd.git. You can send a follow-up patch for using
-"oob_required" parameter. Also, I CCed you to a thread which discusses
-busy-loops I complained about - your driver also has a similar
-busy-loop.
-
-Thanks!
-
---=20
-Best Regards,
-Artem Bityutskiy
-
---=-fZ5BGZjC5PHIrVz684HH
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
+References: <1337407908-7421-1-git-send-email-lethal@linux-sh.org>
+In-Reply-To: <1337407908-7421-1-git-send-email-lethal@linux-sh.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
+To: Grant Likely <grant.likely@secretlab.ca>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+Now that IRQ domains are being used by modules it's necessary to support
+removing them, too. This adds a new irq_domain_remove() routine for doing
+the bulk of the heavy lifting. It's left as an exercise to the caller to
+ensure all mappings have been appropriatey disposed of before attempting
+to remove the domain.
 
-iQIcBAABAgAGBQJPsjQpAAoJECmIfjd9wqK0S4EP/ie7bJQlMeDKxLa/eao0ub40
-drLsPVNoq4aFRFF6LxOFYn5v90j7I9cp3OFHJLBB9PxxM+MdUoRKTNr/PQm7BusR
-2McnGrlHwKNjhUziFwp/GrMsIFW2YV79yDE5TdAqNCiy4zFdIysb59VTI8TmnUxt
-YsqX+FOPjvEDoPUhrGomPWUR75m+zKvDSK4KtS9X5PoWMSYMY0f2oc3UhdbPHWKD
-KU+ykeRT/W6vRFZ+bDw2UjVtOT6WR8xYa6CGanU0xfa4lmY0p8bFMDjBgXCOZ3v9
-KFWDX1tyRj4ivIO0GaRJ2tPNMo5aw4PvQUszJKkQpSVw+ienq6VqH7GRnZ3jr5aC
-XD0A6JTtMZyF0SIlUOVZyN28zqkXGrBP61iDFQPT9pcdSQQsi1ApHFwMsGGJubv6
-LjoJEv5wJ/ZvIKm0oC5ehdPdX6qXwZWU8ywVfF0F2C98cJWHXzz7Z8uM7AhifATq
-hMz3grNFzxsMGHGKbsZv/Cmd3MxCzRJVGkcyERnd7geNbK1teLORJF5hg3tjUgdX
-hoeymsYOeUyDAsdyY8s22MjisUOmzLL5rObWVdXXpELK4TTnI8Hh4Ly9CVbe6Jft
-6XtAIqhRec0HLkX8fLNraXO9ZPCub/KfxxbJYegDgVpvuEJaZqteEtLntkI+voXI
-4dcs0NxI0Xy8qlMZnCGI
-=Pewg
------END PGP SIGNATURE-----
+Signed-off-by: Paul Mundt <lethal@linux-sh.org>
+---
+ include/linux/irqdomain.h |    4 ++-
+ kernel/irq/irqdomain.c    |   61 +++++++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 62 insertions(+), 3 deletions(-)
 
---=-fZ5BGZjC5PHIrVz684HH--
+diff --git a/include/linux/irqdomain.h b/include/linux/irqdomain.h
+index c65740d..a796dbf 100644
+--- a/include/linux/irqdomain.h
++++ b/include/linux/irqdomain.h
+@@ -141,10 +141,12 @@ static inline struct irq_domain *irq_domain_add_legacy_isa(
+ 	return irq_domain_add_legacy(of_node, NUM_ISA_INTERRUPTS, 0, 0, ops,
+ 				     host_data);
+ }
++
++extern void irq_domain_remove(struct irq_domain *host);
++
+ extern struct irq_domain *irq_find_host(struct device_node *node);
+ extern void irq_set_default_host(struct irq_domain *host);
+ 
+-
+ extern unsigned int irq_create_mapping(struct irq_domain *host,
+ 				       irq_hw_number_t hwirq);
+ extern void irq_dispose_mapping(unsigned int virq);
+diff --git a/kernel/irq/irqdomain.c b/kernel/irq/irqdomain.c
+index 0e0ba5f..9cae0b2 100644
+--- a/kernel/irq/irqdomain.c
++++ b/kernel/irq/irqdomain.c
+@@ -56,6 +56,12 @@ static struct irq_domain *irq_domain_alloc(struct device_node *of_node,
+ 	return domain;
+ }
+ 
++static void irq_domain_free(struct irq_domain *domain)
++{
++	of_node_put(domain->of_node);
++	kfree(domain);
++}
++
+ static void irq_domain_add(struct irq_domain *domain)
+ {
+ 	mutex_lock(&irq_domain_mutex);
+@@ -65,6 +71,58 @@ static void irq_domain_add(struct irq_domain *domain)
+ 		 domain->revmap_type, domain);
+ }
+ 
++/**
++ * irq_domain_remove() - Remove an irq domain.
++ * @domain: domain to remove
++ *
++ * This routine is used to remove an irq domain. The caller must ensure
++ * that all mappings within the domain have been disposed of prior to
++ * use, depending on the revmap type.
++ */
++void irq_domain_remove(struct irq_domain *domain)
++{
++	mutex_lock(&irq_domain_mutex);
++
++	switch (domain->revmap_type) {
++	case IRQ_DOMAIN_MAP_LEGACY:
++		/*
++		 * Legacy domains don't manage their own irq_desc
++		 * allocations, we expect the caller to handle irq_desc
++		 * freeing on their own.
++		 */
++		break;
++	case IRQ_DOMAIN_MAP_TREE:
++		/*
++		 * radix_tree_delete() takes care of destroying the root
++		 * node when all entries are removed. Shout if there are
++		 * any mappings left.
++		 */
++		WARN_ON(domain->revmap_data.tree.height);
++		break;
++	case IRQ_DOMAIN_MAP_LINEAR:
++		kfree(domain->revmap_data.linear.revmap);
++		domain->revmap_data.linear.size = 0;
++		break;
++	case IRQ_DOMAIN_MAP_NOMAP:
++		break;
++	}
++
++	list_del(&domain->link);
++
++	/*
++	 * If the going away domain is the default one, reset it.
++	 */
++	if (unlikely(irq_default_domain = domain))
++		irq_set_default_host(NULL);
++
++	mutex_unlock(&irq_domain_mutex);
++
++	pr_debug("irq: Removed domain of type %d @0x%p\n",
++		 domain->revmap_type, domain);
++
++	irq_domain_free(domain);
++}
++
+ static unsigned int irq_domain_legacy_revmap(struct irq_domain *domain,
+ 					     irq_hw_number_t hwirq)
+ {
+@@ -117,8 +175,7 @@ struct irq_domain *irq_domain_add_legacy(struct device_node *of_node,
+ 
+ 		if (WARN_ON(!irq_data || irq_data->domain)) {
+ 			mutex_unlock(&irq_domain_mutex);
+-			of_node_put(domain->of_node);
+-			kfree(domain);
++			irq_domain_free(domain);
+ 			return NULL;
+ 		}
+ 	}
+-- 
+1.7.9.rc0.28.g0e1cf
 
