@@ -1,7 +1,7 @@
 From: MASAO TAKAHASHI <masao-takahashi@kanno.co.jp>
-Date: Mon, 21 May 2012 01:07:19 +0000
+Date: Mon, 21 May 2012 01:44:14 +0000
 Subject: Re: ALSA dma_area not utilizing D-cahce
-Message-Id: <20120521100719.f0fd467eb79a90f007bf5673@kanno.co.jp>
+Message-Id: <20120521104414.c5d8f347326fbb5aec3fa297@kanno.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20120516095123.73abdf103d1ca64996d9c23c@kanno.co.jp>
 In-Reply-To: <20120516095123.73abdf103d1ca64996d9c23c@kanno.co.jp>
@@ -9,6 +9,7 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+
 
 On Thu, 17 May 2012 17:03:09 +0900
 Paul Mundt <lethal@linux-sh.org> wrote:
@@ -71,11 +72,9 @@ Paul Mundt <lethal@linux-sh.org> wrote:
 > own interface, your cycles would be better spent trying to figure out
 > where SNDRV_DMA_TYPE_DEV goes wrong in the mmap case and sending patches.
 > You already have several places to look at to get you started.
-I made some changes from the original ALSA driver.
-And made a patch as follows.
-Is it right ?
-Please help me.
-
+I do miss.
+Please discards previous mail.
+The corret patch as follows.
 diff -Nru a/arch/sh/include/asm/page.h b/arch/sh/include/asm/page.h
 --- a/arch/sh/include/asm/page.h	2012-05-21 09:05:58.556556493 +0900
 +++ b/arch/sh/include/asm/page.h	2012-05-21 09:14:44.649922912 +0900
@@ -93,7 +92,16 @@ diff -Nru a/arch/sh/include/asm/page.h b/arch/sh/include/asm/page.h
  #define page_to_phys(page)	(page_to_pfn(page) << PAGE_SHIFT)
 diff -Nru a/sound/soc/sh/sh7764-pcm.c b/sound/soc/sh/sh7764-pcm.c
 --- a/sound/soc/sh/sh7764-pcm.c	2012-05-21 09:35:51.720808534 +0900
-+++ b/sound/soc/sh/sh7764-pcm.c	2012-05-21 09:45:36.027357354 +0900
++++ b/sound/soc/sh/sh7764-pcm.c	2012-05-21 10:38:45.319271348 +0900
+@@ -496,7 +496,7 @@
+ 	sd->vperiod = sd->buffer_size / sd->period_size;
+ 
+ 	if (substream->stream = SNDRV_PCM_STREAM_PLAYBACK) {
+-		ssidma_outl(sd, (u32)runtime->dma_area, SSIRDMADR);
++		ssidma_outl(sd, (u32)runtime->dma_addr, SSIRDMADR);
+ 		ssidma_outl(sd, sd->buffer_size, SSIRDMCNTR);
+ 		ssidma_outl(sd, blcnt, SSIBLCNTSR);
+ 		ssidma_outl(sd, sd->period_size / blcnt, SSIBLNCNTSR);
 @@ -639,6 +639,89 @@
  
  	return frames;
@@ -138,7 +146,7 @@ diff -Nru a/sound/soc/sh/sh7764-pcm.c b/sound/soc/sh/sh7764-pcm.c
 +};
 +
 +/****************************************************
-+ * 	Title :sh7764_pcm_mmap			*
++ * Title :sh7764_pcm_mmap			*
 + ****************************************************/
 +static int	sh7764_pcm_mmap(struct snd_pcm_substream *substream,
 +				struct vm_area_struct *area)
@@ -191,9 +199,15 @@ diff -Nru a/sound/soc/sh/sh7764-pcm.c b/sound/soc/sh/sh7764-pcm.c
  };
  
  static void sh7764_ssidma_free(struct snd_pcm *pcm)
-
-
-Thanks in advance
+@@ -663,7 +747,7 @@
+ 	 * in MMAP mode (i.e. aplay -M)
+ 	 */
+ 	snd_pcm_lib_preallocate_pages_for_all(pcm,
+-					      SNDRV_DMA_TYPE_CONTINUOUS,
++					      SNDRV_DMA_TYPE_DEV,
+ 					      snd_dma_continuous_data(GFP_KERNEL),
+ 					      64*1024, 64*1024);
+ 
 ---------- 
 
 MASAO TAKAHASHI <masao-takahashi@kanno.co.jp>
