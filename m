@@ -1,7 +1,7 @@
 From: MASAO TAKAHASHI <masao-takahashi@kanno.co.jp>
-Date: Thu, 17 May 2012 08:31:58 +0000
+Date: Mon, 21 May 2012 01:07:19 +0000
 Subject: Re: ALSA dma_area not utilizing D-cahce
-Message-Id: <20120517173158.3b823fb5c58b90cc97368fb9@kanno.co.jp>
+Message-Id: <20120521100719.f0fd467eb79a90f007bf5673@kanno.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20120516095123.73abdf103d1ca64996d9c23c@kanno.co.jp>
 In-Reply-To: <20120516095123.73abdf103d1ca64996d9c23c@kanno.co.jp>
@@ -9,7 +9,6 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-
 
 On Thu, 17 May 2012 17:03:09 +0900
 Paul Mundt <lethal@linux-sh.org> wrote:
@@ -72,10 +71,129 @@ Paul Mundt <lethal@linux-sh.org> wrote:
 > own interface, your cycles would be better spent trying to figure out
 > where SNDRV_DMA_TYPE_DEV goes wrong in the mmap case and sending patches.
 > You already have several places to look at to get you started.
-I am afraid to misunderstand your advice cause my poor english.
-I will wait for an answer of Morimoto-san. Is it OK? 
+I made some changes from the original ALSA driver.
+And made a patch as follows.
+Is it right ?
+Please help me.
+
+diff -Nru a/arch/sh/include/asm/page.h b/arch/sh/include/asm/page.h
+--- a/arch/sh/include/asm/page.h	2012-05-21 09:05:58.556556493 +0900
++++ b/arch/sh/include/asm/page.h	2012-05-21 09:14:44.649922912 +0900
+@@ -136,6 +136,11 @@
+ #define __pa(x)	((unsigned long)(x)-PAGE_OFFSET)
+ #define __va(x)	((void *)((unsigned long)(x)+PAGE_OFFSET))
+ #endif
++/* add 2012/5/21 */
++#if defined(CONFIG_29BIT)
++#define UNCAC_ADDR(addr)	P2SEGADDR(addr)
++#define CAC_ADDR(addr)		P1SEGADDR(addr)
++#endif
+ 
+ #define pfn_to_kaddr(pfn)	__va((pfn) << PAGE_SHIFT)
+ #define page_to_phys(page)	(page_to_pfn(page) << PAGE_SHIFT)
+diff -Nru a/sound/soc/sh/sh7764-pcm.c b/sound/soc/sh/sh7764-pcm.c
+--- a/sound/soc/sh/sh7764-pcm.c	2012-05-21 09:35:51.720808534 +0900
++++ b/sound/soc/sh/sh7764-pcm.c	2012-05-21 09:45:36.027357354 +0900
+@@ -639,6 +639,89 @@
+ 
+ 	return frames;
+ }
++/*
++ * fault callback for mmapping a RAM page
++ */
++static int sh7764_mmap_data_fault(struct vm_area_struct *area,
++						struct vm_fault *vmf)
++{
++	struct snd_pcm_substream *substream = area->vm_private_data;
++	struct snd_pcm_runtime *runtime;
++	unsigned long offset;
++	struct page * page;
++	void *vaddr;
++	size_t dma_bytes;
++	
++	pr_debug("mmap_data_fault\n");
++	if (substream = NULL)
++		return VM_FAULT_SIGBUS;
++	runtime = substream->runtime;
++	offset = vmf->pgoff << PAGE_SHIFT;
++	dma_bytes = PAGE_ALIGN(runtime->dma_bytes);
++	if (offset > dma_bytes - PAGE_SIZE)
++		return VM_FAULT_SIGBUS;
++	if (substream->ops->page) {
++		page = substream->ops->page(substream, offset);
++		if (!page)
++			return VM_FAULT_SIGBUS;
++	} else {
++		vaddr = CAC_ADDR(runtime->dma_area + offset);
++		page = virt_to_page(vaddr);
++	}
++	get_page(page);
++	vmf->page = page;
++	pr_debug("mmap_data_fault:page = %x\n", (unsigned int)page);
++	return 0;
++}
++
++static struct vm_operations_struct sh7764_pcm_vm_ops_data +{
++	.fault =	sh7764_mmap_data_fault,
++};
++
++/****************************************************
++ * 	Title :sh7764_pcm_mmap			*
++ ****************************************************/
++static int	sh7764_pcm_mmap(struct snd_pcm_substream *substream,
++				struct vm_area_struct *area)
++{
++	unsigned long	offset;
++	unsigned long	mp;
++	unsigned long	virt;
++	int				map_size;
++	struct page *map, *mapend, *ip;
++	struct snd_pcm_runtime *runtime;
++	int	ret;
++
++	
++#ifdef pgprot_noncached
++	/*
++ 	 * disable non-chahe attribute cause
++ 	 */ 
++	area->vm_page_prot = pgprot_noncached(area->vm_page_prot);
++#endif
++	offset = area->vm_pgoff << PAGE_SHIFT;
++	runtime = substream->runtime;
++	map_size = runtime->dma_bytes;
++	mp = (unsigned long)runtime->dma_addr;
++	map = virt_to_page(mp);
++	mapend = virt_to_page(mp+map_size - 1);
++	for (ip = map; ip <= mapend; ip++){
++		SetPageReserved(ip);
++	}
++	area->vm_ops = &sh7764_pcm_vm_ops_data;
++	area->vm_private_data = substream;
++	area->vm_flags |= VM_IO;
++	ret = io_remap_pfn_range(area, area->vm_start, mp>>PAGE_SHIFT, 
++						area->vm_end - area->vm_start, area->vm_page_prot);
++	if (ret ){
++		pr_debug("sh7764-pcm.c:remap_pfn_range returned EAGAIN\n");
++		return -EAGAIN;
++	}
++	atomic_inc(&substream->mmap_count);
++	return 0;
++}
++
+ static struct snd_pcm_ops sh7764_ssidma_ops = {
+ 	.open		= sh7764_ssidma_open,
+ 	.close		= sh7764_ssidma_close,
+@@ -648,6 +731,7 @@
+ 	.prepare	= sh7764_prepare,
+ 	.trigger	= sh7764_trigger,
+ 	.pointer	= sh7764_pos,
++	.mmap		= sh7764_pcm_mmap,	
+ };
+ 
+ static void sh7764_ssidma_free(struct snd_pcm *pcm)
 
 
+Thanks in advance
 ---------- 
 
 MASAO TAKAHASHI <masao-takahashi@kanno.co.jp>
