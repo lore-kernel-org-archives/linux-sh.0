@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 22 May 2012 02:28:33 +0000
-Subject: [PATCH 05/11] ARM: mach-shmobile: clock-r8a7740: add FSI parent control
-Message-Id: <87bolhar02.wl%kuninori.morimoto.gx@renesas.com>
+Date: Tue, 22 May 2012 02:28:10 +0000
+Subject: [PATCH 04/11] ARM: mach-shmobile: clock-r8a7740: add CEU clock
+Message-Id: <87d35xar0o.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -10,107 +10,88 @@ To: linux-sh@vger.kernel.org
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7740.c |   31 +++++++++++++++++++++++++++++++
- 1 files changed, 31 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7740.c |   23 ++++++++++++++++++++++-
+ 1 files changed, 22 insertions(+), 1 deletions(-)
 
 diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index ce0930a..7b9e4ab 100644
+index b095343..ce0930a 100644
 --- a/arch/arm/mach-shmobile/clock-r8a7740.c
 +++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -46,6 +46,7 @@
- #define VCLKCR1		0xE6150008
- #define VCLKCR2		0xE615000c
+@@ -43,6 +43,8 @@
+ /* CPG registers */
+ #define FRQCRA		0xe6150000
+ #define FRQCRB		0xe6150004
++#define VCLKCR1		0xE6150008
++#define VCLKCR2		0xE615000c
  #define FRQCRC		0xe61500e0
-+#define FSIACKCR	0xe6150018
  #define PLLC01CR	0xe6150028
  
- #define SUBCKCR		0xe6150080
-@@ -56,6 +57,7 @@
- #define MSTPSR2		0xe6150040
- #define MSTPSR3		0xe6150048
- #define MSTPSR4		0xe615004c
-+#define FSIBCKCR	0xe6150090
- #define HDMICKCR	0xe6150094
- #define SMSTPCR0	0xe6150130
- #define SMSTPCR1	0xe6150134
-@@ -274,6 +276,13 @@ static struct clk usb24_clk = {
- 	.parent		= &usb24s_clk,
- };
- 
-+/* External FSIACK/FSIBCK clock */
-+static struct clk fsiack_clk = {
-+};
-+
-+static struct clk fsibck_clk = {
-+};
-+
- struct clk *main_clks[] = {
- 	&extalr_clk,
- 	&extal1_clk,
-@@ -291,6 +300,8 @@ struct clk *main_clks[] = {
- 	&pllc1_div2_clk,
- 	&usb24s_clk,
- 	&usb24_clk,
-+	&fsiack_clk,
-+	&fsibck_clk,
- };
- 
- static void div4_kick(struct clk *clk)
-@@ -320,6 +331,7 @@ static struct clk_div4_table div4_table = {
+@@ -317,6 +319,7 @@ static struct clk_div4_table div4_table = {
+ /* DIV6 reparent */
  enum {
  	DIV6_HDMI,
- 	DIV6_VCLK1, DIV6_VCLK2,
-+	DIV6_FSIA, DIV6_FSIB,
++	DIV6_VCLK1, DIV6_VCLK2,
  	DIV6_REPARENT_NR,
  };
  
-@@ -337,6 +349,16 @@ static struct clk *vclk_parents[8] = {
- 	[5] = &extalr_clk,
+@@ -326,9 +329,21 @@ static struct clk *hdmi_parent[] = {
+ 	[2] = &dv_clk
  };
  
-+static struct clk *fsia_parents[] = {
++static struct clk *vclk_parents[8] = {
 +	[0] = &pllc1_div2_clk,
-+	[1] = &fsiack_clk, /* external clock */
-+};
-+
-+static struct clk *fsib_parents[] = {
-+	[0] = &pllc1_div2_clk,
-+	[1] = &fsibck_clk, /* external clock */
++	[2] = &dv_clk,
++	[3] = &usb24s_clk,
++	[4] = &extal1_div2_clk,
++	[5] = &extalr_clk,
 +};
 +
  static struct clk div6_reparent_clks[DIV6_REPARENT_NR] = {
  	[DIV6_HDMI] = SH_CLK_DIV6_EXT(HDMICKCR, 0,
  				      hdmi_parent, ARRAY_SIZE(hdmi_parent), 6, 2),
-@@ -344,6 +366,10 @@ static struct clk div6_reparent_clks[DIV6_REPARENT_NR] = {
- 				       vclk_parents, ARRAY_SIZE(vclk_parents), 12, 3),
- 	[DIV6_VCLK2] = SH_CLK_DIV6_EXT(VCLKCR2, 0,
- 				       vclk_parents, ARRAY_SIZE(vclk_parents), 12, 3),
-+	[DIV6_FSIA] = SH_CLK_DIV6_EXT(FSIACKCR, 0,
-+				      fsia_parents, ARRAY_SIZE(fsia_parents), 6, 2),
-+	[DIV6_FSIB] = SH_CLK_DIV6_EXT(FSIBCKCR, 0,
-+				      fsib_parents, ARRAY_SIZE(fsib_parents), 6, 2),
++	[DIV6_VCLK1] = SH_CLK_DIV6_EXT(VCLKCR1, 0,
++				       vclk_parents, ARRAY_SIZE(vclk_parents), 12, 3),
++	[DIV6_VCLK2] = SH_CLK_DIV6_EXT(VCLKCR2, 0,
++				       vclk_parents, ARRAY_SIZE(vclk_parents), 12, 3),
  };
  
  /* HDMI1/2 clock */
-@@ -503,6 +529,8 @@ static struct clk_lookup lookups[] = {
+@@ -417,7 +432,7 @@ static struct clk div6_clks[DIV6_NR] = {
+ };
+ 
+ enum {
+-	MSTP125,
++	MSTP128, MSTP127, MSTP125,
+ 	MSTP116, MSTP111, MSTP100, MSTP117,
+ 
+ 	MSTP230,
+@@ -434,6 +449,8 @@ enum {
+ };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP128] = SH_CLK_MSTP32(&div4_clks[DIV4_S],	SMSTPCR1, 28, 0), /* CEU21 */
++	[MSTP127] = SH_CLK_MSTP32(&div4_clks[DIV4_S],	SMSTPCR1, 27, 0), /* CEU20 */
+ 	[MSTP125] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR1, 25, 0), /* TMU0 */
+ 	[MSTP117] = SH_CLK_MSTP32(&div4_clks[DIV4_B],	SMSTPCR1, 17, 0), /* LCDC1 */
+ 	[MSTP116] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR1, 16, 0), /* IIC0 */
+@@ -484,6 +501,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("usb24s",			&usb24s_clk),
+ 	CLKDEV_CON_ID("hdmi1",			&hdmi1_clk),
  	CLKDEV_CON_ID("hdmi2",			&hdmi2_clk),
- 	CLKDEV_CON_ID("video1",			&div6_reparent_clks[DIV6_VCLK1]),
- 	CLKDEV_CON_ID("video2",			&div6_reparent_clks[DIV6_VCLK2]),
-+	CLKDEV_CON_ID("fsiack",			&fsiack_clk),
-+	CLKDEV_CON_ID("fsibck",			&fsibck_clk),
++	CLKDEV_CON_ID("video1",			&div6_reparent_clks[DIV6_VCLK1]),
++	CLKDEV_CON_ID("video2",			&div6_reparent_clks[DIV6_VCLK2]),
  
  	/* DIV4 clocks */
  	CLKDEV_CON_ID("i_clk",			&div4_clks[DIV4_I]),
-@@ -557,6 +585,9 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("pci",	"renesas_usbhs",	&div4_clks[DIV4_USBP]),
- 	CLKDEV_ICK_ID("usb24",	"renesas_usbhs",	&usb24_clk),
- 	CLKDEV_ICK_ID("ick",	"sh-mobile-hdmi",	&div6_reparent_clks[DIV6_HDMI]),
-+
-+	CLKDEV_ICK_ID("icka", "sh_fsi2",	&div6_reparent_clks[DIV6_FSIA]),
-+	CLKDEV_ICK_ID("ickb", "sh_fsi2",	&div6_reparent_clks[DIV6_FSIB]),
- };
+@@ -506,6 +525,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.0",	&mstp_clks[MSTP116]),
+ 	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.1",	&mstp_clks[MSTP117]),
+ 	CLKDEV_DEV_ID("sh_tmu.0",		&mstp_clks[MSTP125]),
++	CLKDEV_DEV_ID("sh_mobile_ceu.0",	&mstp_clks[MSTP127]),
++	CLKDEV_DEV_ID("sh_mobile_ceu.1",	&mstp_clks[MSTP128]),
  
- void __init r8a7740_clock_init(u8 md_ck)
+ 	CLKDEV_DEV_ID("sh-sci.4",		&mstp_clks[MSTP200]),
+ 	CLKDEV_DEV_ID("sh-sci.3",		&mstp_clks[MSTP201]),
 -- 
 1.7.5.4
 
