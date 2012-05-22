@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 23 May 2012 01:31:05 +0000
-Subject: [PATCH 02/12 v2] ARM: mach-shmobile: intc-r8a7740: add HDMI support
-Message-Id: <87ehqbvg2x.wl%kuninori.morimoto.gx@renesas.com>
+Date: Tue, 22 May 2012 02:29:21 +0000
+Subject: [PATCH 07/11] ARM: mach-shmobile: pfc-r8a7740: add FSI-B (for HDMI) support
+Message-Id: <878vglaqyp.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -12,74 +12,83 @@ This patch is based on v1.0 manual
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v1 -> v2
+ arch/arm/mach-shmobile/include/mach/r8a7740.h |    5 ++++-
+ arch/arm/mach-shmobile/pfc-r8a7740.c          |   11 +++++++++--
+ 2 files changed, 13 insertions(+), 3 deletions(-)
 
-- same as v1
-
- arch/arm/mach-shmobile/intc-r8a7740.c |   13 +++++++++----
- 1 files changed, 9 insertions(+), 4 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/intc-r8a7740.c b/arch/arm/mach-shmobile/intc-r8a7740.c
-index 09c42af..9a69a31 100644
---- a/arch/arm/mach-shmobile/intc-r8a7740.c
-+++ b/arch/arm/mach-shmobile/intc-r8a7740.c
-@@ -71,10 +71,12 @@ enum {
- 	DMAC3_1_DEI0, DMAC3_1_DEI1, DMAC3_1_DEI2, DMAC3_1_DEI3,
- 	DMAC3_2_DEI4, DMAC3_2_DEI5, DMAC3_2_DADERR,
- 	SHWYSTAT_RT, SHWYSTAT_HS, SHWYSTAT_COM,
-+	HDMI,
- 	USBH_INT, USBH_OHCI, USBH_EHCI, USBH_PME, USBH_BIND,
- 	RSPI_OVRF, RSPI_SPTEF, RSPI_SPRF,
- 	SPU2_0, SPU2_1,
- 	FSI, FMSI,
-+	HDMI_SSS, HDMI_KEY,
- 	IPMMU,
- 	AP_ARM_CTIIRQ, AP_ARM_PMURQ,
- 	MFIS2,
-@@ -182,6 +184,7 @@ static struct intc_vect intca_vectors[] __initdata = {
- 	INTC_VECT(USBH_EHCI,		0x1580),
- 	INTC_VECT(USBH_PME,		0x15A0),
- 	INTC_VECT(USBH_BIND,		0x15C0),
-+	INTC_VECT(HDMI,			0x1700),
- 	INTC_VECT(RSPI_OVRF,		0x1780),
- 	INTC_VECT(RSPI_SPTEF,		0x17A0),
- 	INTC_VECT(RSPI_SPRF,		0x17C0),
-@@ -189,6 +192,8 @@ static struct intc_vect intca_vectors[] __initdata = {
- 	INTC_VECT(SPU2_1,		0x1820),
- 	INTC_VECT(FSI,			0x1840),
- 	INTC_VECT(FMSI,			0x1860),
-+	INTC_VECT(HDMI_SSS,		0x18A0),
-+	INTC_VECT(HDMI_KEY,		0x18C0),
- 	INTC_VECT(IPMMU,		0x1920),
- 	INTC_VECT(AP_ARM_CTIIRQ,	0x1980),
- 	INTC_VECT(AP_ARM_PMURQ,		0x19A0),
-@@ -304,11 +309,11 @@ static struct intc_mask_reg intca_mask_registers[] __initdata = {
- 	    USBH_EHCI, USBH_PME, USBH_BIND, 0 } },
- 	  /* IMR3A3 / IMCR3A3 */
- 	{ /* IMR4A3 / IMCR4A3 */ 0xe6950090, 0xe69500d0, 8,
--	  { 0, 0, 0, 0,
-+	  { HDMI, 0, 0, 0,
- 	    RSPI_OVRF, RSPI_SPTEF, RSPI_SPRF, 0 } },
- 	{ /* IMR5A3 / IMCR5A3 */ 0xe6950094, 0xe69500d4, 8,
- 	  { SPU2_0, SPU2_1, FSI, FMSI,
--	    0, 0, 0, 0 } },
-+	    0, HDMI_SSS, HDMI_KEY, 0 } },
- 	{ /* IMR6A3 / IMCR6A3 */ 0xe6950098, 0xe69500d8, 8,
- 	  { 0, IPMMU, 0, 0,
- 	    AP_ARM_CTIIRQ, AP_ARM_PMURQ, 0, 0 } },
-@@ -353,10 +358,10 @@ static struct intc_prio_reg intca_prio_registers[] __initdata = {
- 	{ 0xe6950014, 0, 16, 4, /* IPRFA3 */ { USBH2, 0, 0, 0 } },
- 				/* IPRGA3 */
- 				/* IPRHA3 */
--				/* IPRIA3 */
-+	{ 0xe6950020, 0, 16, 4, /* IPRIA3 */ { HDMI, 0, 0, 0 } },
- 	{ 0xe6950024, 0, 16, 4, /* IPRJA3 */ { RSPI, 0, 0, 0 } },
- 	{ 0xe6950028, 0, 16, 4, /* IPRKA3 */ { SPU2, 0, FSI, FMSI } },
--				/* IPRLA3 */
-+	{ 0xe695002c, 0, 16, 4, /* IPRLA3 */ { 0, HDMI_SSS, HDMI_KEY, 0 } },
- 	{ 0xe6950030, 0, 16, 4, /* IPRMA3 */ { IPMMU, 0, 0, 0 } },
- 	{ 0xe6950034, 0, 16, 4, /* IPRNA3 */ { AP_ARM2, 0, 0, 0 } },
- 	{ 0xe6950038, 0, 16, 4, /* IPROA3 */ { MFIS2, CPORTR2S,
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+index 2764846..6468fcc 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+@@ -139,7 +139,7 @@ enum {
+ 	GPIO_FN_DBGMD10,	GPIO_FN_DBGMD11,	GPIO_FN_DBGMD20,
+ 	GPIO_FN_DBGMD21,
+ 
+-	/* FSI */
++	/* FSI-A */
+ 	GPIO_FN_FSIAISLD_PORT0,		/* FSIAISLD Port 0/5 */
+ 	GPIO_FN_FSIAISLD_PORT5,
+ 	GPIO_FN_FSIASPDIF_PORT9,	/* FSIASPDIF Port 9/18 */
+@@ -150,6 +150,9 @@ enum {
+ 	GPIO_FN_FSIACK,		GPIO_FN_FSIAILR,
+ 	GPIO_FN_FSIAIBT,
+ 
++	/* FSI-B */
++	GPIO_FN_FSIBCK,
++
+ 	/* FMSI */
+ 	GPIO_FN_FMSISLD_PORT1, /* FMSISLD Port 1/6 */
+ 	GPIO_FN_FMSISLD_PORT6,
+diff --git a/arch/arm/mach-shmobile/pfc-r8a7740.c b/arch/arm/mach-shmobile/pfc-r8a7740.c
+index 0dda816..03def0f 100644
+--- a/arch/arm/mach-shmobile/pfc-r8a7740.c
++++ b/arch/arm/mach-shmobile/pfc-r8a7740.c
+@@ -169,7 +169,7 @@ enum {
+ 	DBGMD10_MARK,	DBGMD11_MARK,	DBGMD20_MARK,
+ 	DBGMD21_MARK,
+ 
+-	/* FSI */
++	/* FSI-A */
+ 	FSIAISLD_PORT0_MARK,	/* FSIAISLD Port 0/5 */
+ 	FSIAISLD_PORT5_MARK,
+ 	FSIASPDIF_PORT9_MARK,	/* FSIASPDIF Port 9/18 */
+@@ -178,6 +178,9 @@ enum {
+ 	FSIAOBT_MARK,	FSIAOSLD_MARK,	FSIAOMC_MARK,
+ 	FSIACK_MARK,	FSIAILR_MARK,	FSIAIBT_MARK,
+ 
++	/* FSI-B */
++	FSIBCK_MARK,
++
+ 	/* FMSI */
+ 	FMSISLD_PORT1_MARK, /* FMSISLD Port 1/6 */
+ 	FMSISLD_PORT6_MARK,
+@@ -774,6 +777,7 @@ static pinmux_enum_t pinmux_data[] = {
+ 
+ 	/* Port11 */
+ 	PINMUX_DATA(FSIACK_MARK,		PORT11_FN1),
++	PINMUX_DATA(FSIBCK_MARK,		PORT11_FN2),
+ 	PINMUX_DATA(IRQ2_PORT11_MARK,		PORT11_FN0,	MSEL1CR_2_0),
+ 
+ 	/* Port12 */
+@@ -1696,7 +1700,7 @@ static struct pinmux_gpio pinmux_gpios[] = {
+ 	GPIO_FN(DBGMD10),	GPIO_FN(DBGMD11),	GPIO_FN(DBGMD20),
+ 	GPIO_FN(DBGMD21),
+ 
+-	/* FSI */
++	/* FSI-A */
+ 	GPIO_FN(FSIAISLD_PORT0),	/* FSIAISLD Port 0/5 */
+ 	GPIO_FN(FSIAISLD_PORT5),
+ 	GPIO_FN(FSIASPDIF_PORT9),	/* FSIASPDIF Port 9/18 */
+@@ -1705,6 +1709,9 @@ static struct pinmux_gpio pinmux_gpios[] = {
+ 	GPIO_FN(FSIAOBT),	GPIO_FN(FSIAOSLD),	GPIO_FN(FSIAOMC),
+ 	GPIO_FN(FSIACK),	GPIO_FN(FSIAILR),	GPIO_FN(FSIAIBT),
+ 
++	/* FSI-B */
++	GPIO_FN(FSIBCK),
++
+ 	/* FMSI */
+ 	GPIO_FN(FMSISLD_PORT1), /* FMSISLD Port 1/6 */
+ 	GPIO_FN(FMSISLD_PORT6),
 -- 
 1.7.5.4
 
