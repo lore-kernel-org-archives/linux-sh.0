@@ -1,98 +1,143 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Fri, 11 May 2012 08:38:17 +0000
-Subject: [PATCH v2 1/5] net: sh_eth: remove unnecessary function
-Message-Id: <4FACCFF9.2040002@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 22 May 2012 02:27:31 +0000
+Subject: [PATCH 03/11] ARM: mach-shmobile: clock-r8a7740: add HDMI clock
+Message-Id: <87ehqdar1r.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev <netdev@vger.kernel.org>
-Cc: SH-Linux <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-The sh_eth_timer() called mod_timer() for itself.
-So, this patch removes the function.
-
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- about v2:
-  - rebase the latest net-next.git
+ arch/arm/mach-shmobile/clock-r8a7740.c |   84 ++++++++++++++++++++++++++++++++
+ 1 files changed, 84 insertions(+), 0 deletions(-)
 
- drivers/net/ethernet/renesas/sh_eth.c |   22 ----------------------
- drivers/net/ethernet/renesas/sh_eth.h |    1 -
- 2 files changed, 0 insertions(+), 23 deletions(-)
-
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index be3c221..c35084a 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -1289,14 +1289,6 @@ other_irq:
- 	return ret;
- }
-
--static void sh_eth_timer(unsigned long data)
--{
--	struct net_device *ndev = (struct net_device *)data;
--	struct sh_eth_private *mdp = netdev_priv(ndev);
--
--	mod_timer(&mdp->timer, jiffies + (10 * HZ));
--}
--
- /* PHY state control function */
- static void sh_eth_adjust_link(struct net_device *ndev)
- {
-@@ -1544,11 +1536,6 @@ static int sh_eth_open(struct net_device *ndev)
- 	if (ret)
- 		goto out_free_irq;
-
--	/* Set the timer to check for link beat. */
--	init_timer(&mdp->timer);
--	mdp->timer.expires = (jiffies + (24 * HZ)) / 10;/* 2.4 sec. */
--	setup_timer(&mdp->timer, sh_eth_timer, (unsigned long)ndev);
--
- 	return ret;
-
- out_free_irq:
-@@ -1573,9 +1560,6 @@ static void sh_eth_tx_timeout(struct net_device *ndev)
- 	/* tx_errors count up */
- 	ndev->stats.tx_errors++;
-
--	/* timer off */
--	del_timer_sync(&mdp->timer);
--
- 	/* Free all the skbuffs in the Rx queue. */
- 	for (i = 0; i < RX_RING_SIZE; i++) {
- 		rxdesc = &mdp->rx_ring[i];
-@@ -1593,10 +1577,6 @@ static void sh_eth_tx_timeout(struct net_device *ndev)
-
- 	/* device init */
- 	sh_eth_dev_init(ndev);
--
--	/* timer on */
--	mdp->timer.expires = (jiffies + (24 * HZ)) / 10;/* 2.4 sec. */
--	add_timer(&mdp->timer);
- }
-
- /* Packet transmit function */
-@@ -1669,8 +1649,6 @@ static int sh_eth_close(struct net_device *ndev)
-
- 	free_irq(ndev->irq, ndev);
-
--	del_timer_sync(&mdp->timer);
--
- 	/* Free all the skbuffs in the Rx queue. */
- 	sh_eth_ring_free(ndev);
-
-diff --git a/drivers/net/ethernet/renesas/sh_eth.h b/drivers/net/ethernet/renesas/sh_eth.h
-index 57b8e1f..9e8e4d5 100644
---- a/drivers/net/ethernet/renesas/sh_eth.h
-+++ b/drivers/net/ethernet/renesas/sh_eth.h
-@@ -771,7 +771,6 @@ struct sh_eth_private {
- 	struct sh_eth_txdesc *tx_ring;
- 	struct sk_buff **rx_skbuff;
- 	struct sk_buff **tx_skbuff;
--	struct timer_list timer;
- 	spinlock_t lock;
- 	u32 cur_rx, dirty_rx;	/* Producer/consumer ring indices */
- 	u32 cur_tx, dirty_tx;
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index 26eea5f..b095343 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -54,6 +54,7 @@
+ #define MSTPSR2		0xe6150040
+ #define MSTPSR3		0xe6150048
+ #define MSTPSR4		0xe615004c
++#define HDMICKCR	0xe6150094
+ #define SMSTPCR0	0xe6150130
+ #define SMSTPCR1	0xe6150134
+ #define SMSTPCR2	0xe6150138
+@@ -313,6 +314,79 @@ static struct clk_div4_table div4_table = {
+ 	.kick = div4_kick,
+ };
+ 
++/* DIV6 reparent */
++enum {
++	DIV6_HDMI,
++	DIV6_REPARENT_NR,
++};
++
++static struct clk *hdmi_parent[] = {
++	[0] = &pllc1_div2_clk,
++	[1] = &system_clk,
++	[2] = &dv_clk
++};
++
++static struct clk div6_reparent_clks[DIV6_REPARENT_NR] = {
++	[DIV6_HDMI] = SH_CLK_DIV6_EXT(HDMICKCR, 0,
++				      hdmi_parent, ARRAY_SIZE(hdmi_parent), 6, 2),
++};
++
++/* HDMI1/2 clock */
++static unsigned long hdmi12_recalc(struct clk *clk)
++{
++	u32 val = __raw_readl(HDMICKCR);
++	int shift = (int)clk->priv;
++
++	val >>= shift;
++	val &= 0x3;
++
++	return clk->parent->rate / (1 << val);
++};
++
++static int hdmi12_set_rate(struct clk *clk, unsigned long rate)
++{
++	u32 val, mask;
++	int i, shift;
++
++	for (i = 0; i < 3; i++)
++		if (rate = clk->parent->rate / (1 << i))
++			goto find;
++	return -ENODEV;
++
++find:
++	shift = (int)clk->priv;
++
++	val = __raw_readl(HDMICKCR);
++	mask = ~(0x3 << shift);
++	val = (val & mask) | i << shift;
++	__raw_writel(val, HDMICKCR);
++
++	return 0;
++};
++
++static struct sh_clk_ops hdmi12_clk_ops = {
++	.recalc		= hdmi12_recalc,
++	.set_rate	= hdmi12_set_rate,
++};
++
++static struct clk hdmi1_clk = {
++	.ops		= &hdmi12_clk_ops,
++	.priv		= (void *)9,
++	.parent		= &div6_reparent_clks[DIV6_HDMI],  /* late install */
++};
++
++static struct clk hdmi2_clk = {
++	.ops		= &hdmi12_clk_ops,
++	.priv		= (void *)11,
++	.parent		= &div6_reparent_clks[DIV6_HDMI], /* late install */
++};
++
++static struct clk *late_main_clks[] = {
++	&hdmi1_clk,
++	&hdmi2_clk,
++};
++
++/* MSTP */
+ enum {
+ 	DIV4_I, DIV4_ZG, DIV4_B, DIV4_M1, DIV4_HP,
+ 	DIV4_HPP, DIV4_USBP, DIV4_S, DIV4_ZB, DIV4_M3, DIV4_CP,
+@@ -408,6 +482,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("pllc1_clk",		&pllc1_clk),
+ 	CLKDEV_CON_ID("pllc1_div2_clk",		&pllc1_div2_clk),
+ 	CLKDEV_CON_ID("usb24s",			&usb24s_clk),
++	CLKDEV_CON_ID("hdmi1",			&hdmi1_clk),
++	CLKDEV_CON_ID("hdmi2",			&hdmi2_clk),
+ 
+ 	/* DIV4 clocks */
+ 	CLKDEV_CON_ID("i_clk",			&div4_clks[DIV4_I]),
+@@ -459,6 +535,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("phy",	"renesas_usbhs",	&mstp_clks[MSTP406]),
+ 	CLKDEV_ICK_ID("pci",	"renesas_usbhs",	&div4_clks[DIV4_USBP]),
+ 	CLKDEV_ICK_ID("usb24",	"renesas_usbhs",	&usb24_clk),
++	CLKDEV_ICK_ID("ick",	"sh-mobile-hdmi",	&div6_reparent_clks[DIV6_HDMI]),
+ };
+ 
+ void __init r8a7740_clock_init(u8 md_ck)
+@@ -495,8 +572,15 @@ void __init r8a7740_clock_init(u8 md_ck)
+ 		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
+ 
+ 	if (!ret)
++		ret = sh_clk_div6_reparent_register(div6_reparent_clks,
++						    DIV6_REPARENT_NR);
++
++	if (!ret)
+ 		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
+ 
++	for (k = 0; !ret && (k < ARRAY_SIZE(late_main_clks)); k++)
++		ret = clk_register(late_main_clks[k]);
++
+ 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+ 
+ 	if (!ret)
 -- 
-1.7.1
+1.7.5.4
+
