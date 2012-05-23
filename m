@@ -1,49 +1,60 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Tue, 22 May 2012 16:55:27 +0000
-Subject: Re: ap4 (sh7372) regression in 3.3 / 3.4 with serial console - boot failures
-Message-Id: <201205221855.27493.rjw@sisk.pl>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 23 May 2012 01:29:09 +0000
+Subject: Re: [PATCH 0/12 v2] ARM: mach-shmobile: armadillo: add FSI/HDMI/Camera support
+Message-Id: <87hav7vg65.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1205161431380.30283@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1205161431380.30283@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tuesday, May 22, 2012, Laurent Pinchart wrote:
-> Hi Paul,
+
+Hi Rafael, Paul, Magnus
+Cc Simon
+
+> The necessary missing patches for Armadillo will be merged on v3.5 kernel.
+> These are ASoC/FSI/HDMI/CEU/.
+> (and already exists on linux-next tree)
 > 
-> On Thursday 17 May 2012 09:46:04 Paul Mundt wrote:
-> > On Wed, May 16, 2012 at 03:36:10PM +0200, Guennadi Liakhovetski wrote:
-> > > I'm observing a regression with 3.3 and 3.4 kernels, 3.2 seems to be ok.
-> > > The system (confirmed with mackerel and ap4evb) hangs during boot at
-> > > random times. This can be directly after "freeing init memory," or some
-> > > time during the OS start up, or immediately after the start up has
-> > > completed. But if it managed to boot, it continues to run, I've never seen
-> > > it hanging after I ssh onto the system. It also seems, that the
-> > > probability to hang increases with time after the initial system power on.
-> > > A simple short power off doesn't solve the problem.
-> > 
-> > So you experience random hangs at boot and you have a known good and
-> > known bad version. If only there were some sort of a bisection tool one
-> > could use..
+> These patch set add HDMI/camera/FSI sound x2 to Armadillo board for v3.5 kernel.
 > 
-> I'm experiencing the same issue on mackerel. I don't know at which kernel 
-> version the problems started in my case though.
-> 
-> Bisecting this would take quite a long time given the random nature of the 
-> problem. If there's no other option we'll of course need to go that way, but 
-> it certainly made sense to raise the matter on the list before investigating 
-> it in case someone was already working on a fix (or, better, had already 
-> written a fix :-)).
+> Kuninori Morimoto (11):
+>       ARM: mach-shmobile: intc-r8a7740: add HDMI support
+>       ARM: mach-shmobile: setup-r8a7740: add MERAM work-around
+>       ARM: mach-shmobile: clock-r8a7740: add HDMI clock
+>       ARM: mach-shmobile: clock-r8a7740: add CEU support
+>       ARM: mach-shmobile: clock-r8a7740: add FSI parent control support
+>       ARM: mach-shmobile: pfc-r8a7740: Add HDMI GPIO support
+>       ARM: mach-shmobile: pfc-r8a7740: add FSI-B (for HDMI) support
+>       ARM: mach-shmobile: armadillo800eva: add HDMI support
+>       ARM: mach-shmobile: armadillo800eva: add camera support
+>       ARM: mach-shmobile: armadillo800eva: Add FSI-WM8978 support
+>       ARM: mach-shmobile: armadillo800eva: add FSI-HDMI support
 
-Well, why would they work on it if they didn't know that the issue was there?
+These are v2 patch set for r8a7740/armadillo FSI/HDMI/Camera support
+v2 includes yesterday's my
+ARM: mach-shmobile: add extra gpio setting functions
 
-Whatever.
+Kuninori Morimoto (12):
+      ARM: mach-shmobile: shareing extra gpio setting functions
+      ARM: mach-shmobile: intc-r8a7740: add HDMI support
+      ARM: mach-shmobile: setup-r8a7740: add MERAM work-around
+      ARM: mach-shmobile: clock-r8a7740: add HDMI clock
+      ARM: mach-shmobile: clock-r8a7740: add CEU support
+      ARM: mach-shmobile: clock-r8a7740: add FSI parent control support
+      ARM: mach-shmobile: pfc-r8a7740: Add HDMI GPIO support
+      ARM: mach-shmobile: pfc-r8a7740: add FSI-B (for HDMI) support
+      ARM: mach-shmobile: armadillo800eva: add HDMI support
+      ARM: mach-shmobile: armadillo800eva: add camera support
+      ARM: mach-shmobile: armadillo800eva: Add FSI-WM8978 support
+      ARM: mach-shmobile: armadillo800eva: add FSI-HDMI support
 
-Please try to add an extra pm_runtime_get() to the serial console initialization
-to prevent it from being suspended and see if the problem is still reproducible
-then.
+v1 -> v2
 
-Thanks,
-Rafael
+ - "ARM: mach-shmobile: add extra gpio setting functions" became 1st patch
+ - #3 work-around is called from board code
+ - #11 patch used gpio_direction_none()
+
+Best regards
+---
+Kuninori Morimoto
