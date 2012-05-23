@@ -1,49 +1,195 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 03 May 2012 15:05:31 +0000
-Subject: [PATCH 02/29] sh: ecovec: remove unused .down_pwr() MMCIF callback
-Message-Id: <1336057558-11031-3-git-send-email-g.liakhovetski@gmx.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 23 May 2012 01:30:38 +0000
+Subject: [PATCH 01/12 v2] ARM: mach-shmobile: shareing extra gpio setting functions
+Message-Id: <87fwarvg3p.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
+To: linux-sh@vger.kernel.org
 
-.down_pwr() on ecovec was equivalent to .set_pwr(0). Now that .down_pwr()
-is no longer used by the driver, it can be removed.
+Current gpio frame work doesn't have the method to control
+just pull up/down/free, but some SH-ARM boards need such kind of operation,
+and some boards already have such functions on each code.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Paul Mundt <lethal@linux-sh.org>
+This patch shares extra gpio method for SH-ARM.
+But these functions should be replaced by correct
+gpio function in the future.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/sh/boards/mach-ecovec24/setup.c |    6 ------
- 1 files changed, 0 insertions(+), 6 deletions(-)
+v1 -> v2
 
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index d12fe9d..a2f70e6 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -877,11 +877,6 @@ static void mmcif_set_pwr(struct platform_device *pdev, int state)
- 	gpio_set_value(GPIO_PTB7, state);
+- this patch is included in this v2 patch set
+
+ arch/arm/mach-shmobile/board-ap4evb.c      |   19 +--------------
+ arch/arm/mach-shmobile/board-g4evm.c       |   18 ---------------
+ arch/arm/mach-shmobile/board-mackerel.c    |   30 +------------------------
+ arch/arm/mach-shmobile/include/mach/gpio.h |   32 ++++++++++++++++++++++++++++
+ 4 files changed, 36 insertions(+), 63 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index ace6024..d7417f3 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -1138,21 +1138,6 @@ static void __init fsi_init_pm_clock(void)
+ 	clk_put(fsia_ick);
  }
  
--static void mmcif_down_pwr(struct platform_device *pdev)
+-/*
+- * FIXME !!
+- *
+- * gpio_no_direction
+- * are quick_hack.
+- *
+- * current gpio frame work doesn't have
+- * the method to control only pull up/down/free.
+- * this function should be replaced by correct gpio function
+- */
+-static void __init gpio_no_direction(u32 addr)
 -{
--	gpio_set_value(GPIO_PTB7, 0);
+-	__raw_writeb(0x00, addr);
 -}
 -
- static struct resource sh_mmcif_resources[] = {
- 	[0] = {
- 		.name	= "SH_MMCIF",
-@@ -903,7 +898,6 @@ static struct resource sh_mmcif_resources[] = {
+ /* TouchScreen */
+ #ifdef CONFIG_AP4EVB_QHD
+ # define GPIO_TSC_IRQ	GPIO_FN_IRQ28_123
+@@ -1302,8 +1287,8 @@ static void __init ap4evb_init(void)
  
- static struct sh_mmcif_plat_data sh_mmcif_plat = {
- 	.set_pwr	= mmcif_set_pwr,
--	.down_pwr	= mmcif_down_pwr,
- 	.sup_pclk	= 0, /* SH7724: Max Pclk/2 */
- 	.caps		= MMC_CAP_4_BIT_DATA |
- 			  MMC_CAP_8_BIT_DATA |
+ 	gpio_request(GPIO_PORT9, NULL);
+ 	gpio_request(GPIO_PORT10, NULL);
+-	gpio_no_direction(GPIO_PORT9CR);  /* FSIAOBT needs no direction */
+-	gpio_no_direction(GPIO_PORT10CR); /* FSIAOLR needs no direction */
++	gpio_direction_none(GPIO_PORT9CR);  /* FSIAOBT needs no direction */
++	gpio_direction_none(GPIO_PORT10CR); /* FSIAOLR needs no direction */
+ 
+ 	/* card detect pin for MMC slot (CN7) */
+ 	gpio_request(GPIO_PORT41, NULL);
+diff --git a/arch/arm/mach-shmobile/board-g4evm.c b/arch/arm/mach-shmobile/board-g4evm.c
+index f125732..6b6f028 100644
+--- a/arch/arm/mach-shmobile/board-g4evm.c
++++ b/arch/arm/mach-shmobile/board-g4evm.c
+@@ -271,24 +271,6 @@ static struct platform_device *g4evm_devices[] __initdata = {
+ #define GPIO_SDHID1_D3	0xe6052106
+ #define GPIO_SDHICMD1	0xe6052107
+ 
+-/*
+- * FIXME !!
+- *
+- * gpio_pull_up is quick_hack.
+- *
+- * current gpio frame work doesn't have
+- * the method to control only pull up/down/free.
+- * this function should be replaced by correct gpio function
+- */
+-static void __init gpio_pull_up(u32 addr)
+-{
+-	u8 data = __raw_readb(addr);
+-
+-	data &= 0x0F;
+-	data |= 0xC0;
+-	__raw_writeb(data, addr);
+-}
+-
+ static void __init g4evm_init(void)
+ {
+ 	sh7377_pinmux_init();
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index b577f7c..798be2b 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -203,32 +203,6 @@
+  * amixer set "HPOUTR Mixer DACH" on
+  */
+ 
+-/*
+- * FIXME !!
+- *
+- * gpio_no_direction
+- * gpio_pull_down
+- * are quick_hack.
+- *
+- * current gpio frame work doesn't have
+- * the method to control only pull up/down/free.
+- * this function should be replaced by correct gpio function
+- */
+-static void __init gpio_no_direction(u32 addr)
+-{
+-	__raw_writeb(0x00, addr);
+-}
+-
+-static void __init gpio_pull_down(u32 addr)
+-{
+-	u8 data = __raw_readb(addr);
+-
+-	data &= 0x0F;
+-	data |= 0xA0;
+-
+-	__raw_writeb(data, addr);
+-}
+-
+ /* MTD */
+ static struct mtd_partition nor_flash_partitions[] = {
+ 	{
+@@ -1475,8 +1449,8 @@ static void __init mackerel_init(void)
+ 
+ 	gpio_request(GPIO_PORT9,  NULL);
+ 	gpio_request(GPIO_PORT10, NULL);
+-	gpio_no_direction(GPIO_PORT9CR);  /* FSIAOBT needs no direction */
+-	gpio_no_direction(GPIO_PORT10CR); /* FSIAOLR needs no direction */
++	gpio_direction_none(GPIO_PORT9CR);  /* FSIAOBT needs no direction */
++	gpio_direction_none(GPIO_PORT10CR); /* FSIAOLR needs no direction */
+ 
+ 	intc_set_priority(IRQ_FSI, 3); /* irq priority FSI(3) > SMSC911X(2) */
+ 
+diff --git a/arch/arm/mach-shmobile/include/mach/gpio.h b/arch/arm/mach-shmobile/include/mach/gpio.h
+index de795b4..7c1e4ab 100644
+--- a/arch/arm/mach-shmobile/include/mach/gpio.h
++++ b/arch/arm/mach-shmobile/include/mach/gpio.h
+@@ -13,6 +13,7 @@
+ #include <linux/kernel.h>
+ #include <linux/errno.h>
+ #include <linux/sh_pfc.h>
++#include <asm/io.h>
+ 
+ #ifdef CONFIG_GPIOLIB
+ 
+@@ -27,4 +28,35 @@ static inline int irq_to_gpio(unsigned int irq)
+ 
+ #endif /* CONFIG_GPIOLIB */
+ 
++/*
++ * FIXME !!
++ *
++ * current gpio frame work doesn't have
++ * the method to control only pull up/down/free.
++ * this function should be replaced by correct gpio function
++ */
++static inline void __init gpio_direction_none(u32 addr)
++{
++	__raw_writeb(0x00, addr);
++}
++
++static inline void __init gpio_pull_up(u32 addr)
++{
++	u8 data = __raw_readb(addr);
++
++	data &= 0x0F;
++	data |= 0xC0;
++	__raw_writeb(data, addr);
++}
++
++static inline void __init gpio_pull_down(u32 addr)
++{
++	u8 data = __raw_readb(addr);
++
++	data &= 0x0F;
++	data |= 0xA0;
++
++	__raw_writeb(data, addr);
++}
++
+ #endif /* __ASM_ARCH_GPIO_H */
 -- 
-1.7.2.5
+1.7.5.4
 
