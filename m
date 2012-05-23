@@ -1,172 +1,98 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 25 May 2012 15:45:18 +0000
-Subject: [PATCH 2/3 v3] mmc: sh_mmcif: fix clock management
-Message-Id: <1337960752-4944-4-git-send-email-g.liakhovetski@gmx.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 23 May 2012 01:33:38 +0000
+Subject: [PATCH 08/12 v2] ARM: mach-shmobile: pfc-r8a7740: add FSI-B (for HDMI) support
+Message-Id: <8762bnvfyo.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-Regardless, whether the MMC bus clock is the same, as the PM clock on this
-specific interface, it has to be managed separately. Its proper management
-should also include enabling and disabling of the clock, whenever the
-interface is becoming active or going idle respectively.
+This patch is based on v1.0 manual
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/mmc/host/sh_mmcif.c |   46 +++++++++++++++++++++---------------------
- 1 files changed, 23 insertions(+), 23 deletions(-)
+v1 -> v2
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index 01db31c..e5e8198 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -948,6 +948,7 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 		}
- 		if (host->power) {
- 			pm_runtime_put(&host->pd->dev);
-+			clk_disable(host->hclk);
- 			host->power = false;
- 			if (p->down_pwr && ios->power_mode = MMC_POWER_OFF)
- 				p->down_pwr(host->pd);
-@@ -960,6 +961,7 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 		if (!host->power) {
- 			if (p->set_pwr)
- 				p->set_pwr(host->pd, ios->power_mode);
-+			clk_enable(host->hclk);
- 			pm_runtime_get_sync(&host->pd->dev);
- 			host->power = true;
- 			sh_mmcif_sync_reset(host);
-@@ -1284,22 +1286,11 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
- 	host->addr	= reg;
- 	host->timeout	= 1000;
+ - same as v1
+
+ arch/arm/mach-shmobile/include/mach/r8a7740.h |    5 ++++-
+ arch/arm/mach-shmobile/pfc-r8a7740.c          |   11 +++++++++--
+ 2 files changed, 13 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+index 2764846..6468fcc 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+@@ -139,7 +139,7 @@ enum {
+ 	GPIO_FN_DBGMD10,	GPIO_FN_DBGMD11,	GPIO_FN_DBGMD20,
+ 	GPIO_FN_DBGMD21,
  
--	snprintf(clk_name, sizeof(clk_name), "mmc%d", pdev->id);
--	host->hclk = clk_get(&pdev->dev, clk_name);
--	if (IS_ERR(host->hclk)) {
--		dev_err(&pdev->dev, "cannot get clock \"%s\"\n", clk_name);
--		ret = PTR_ERR(host->hclk);
--		goto eclkget;
--	}
--	clk_enable(host->hclk);
--	host->clk = clk_get_rate(host->hclk);
- 	host->pd = pdev;
+-	/* FSI */
++	/* FSI-A */
+ 	GPIO_FN_FSIAISLD_PORT0,		/* FSIAISLD Port 0/5 */
+ 	GPIO_FN_FSIAISLD_PORT5,
+ 	GPIO_FN_FSIASPDIF_PORT9,	/* FSIASPDIF Port 9/18 */
+@@ -150,6 +150,9 @@ enum {
+ 	GPIO_FN_FSIACK,		GPIO_FN_FSIAILR,
+ 	GPIO_FN_FSIAIBT,
  
- 	spin_lock_init(&host->lock);
- 
- 	mmc->ops = &sh_mmcif_ops;
--	mmc->f_max = host->clk / 2;
--	mmc->f_min = host->clk / 512;
- 	if (pd->ocr)
- 		mmc->ocr_avail = pd->ocr;
- 	mmc->caps = MMC_CAP_MMC_HIGHSPEED;
-@@ -1311,18 +1302,30 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
- 	mmc->max_blk_count = mmc->max_req_size / mmc->max_blk_size;
- 	mmc->max_seg_size = mmc->max_req_size;
- 
--	sh_mmcif_sync_reset(host);
- 	platform_set_drvdata(pdev, host);
- 
- 	pm_runtime_enable(&pdev->dev);
- 	host->power = false;
- 
-+	snprintf(clk_name, sizeof(clk_name), "mmc%d", pdev->id);
-+	host->hclk = clk_get(&pdev->dev, clk_name);
-+	if (IS_ERR(host->hclk)) {
-+		ret = PTR_ERR(host->hclk);
-+		dev_err(&pdev->dev, "cannot get clock \"%s\": %d\n", clk_name, ret);
-+		goto eclkget;
-+	}
-+	clk_enable(host->hclk);
-+	host->clk = clk_get_rate(host->hclk);
-+	mmc->f_max = host->clk / 2;
-+	mmc->f_min = host->clk / 512;
++	/* FSI-B */
++	GPIO_FN_FSIBCK,
 +
- 	ret = pm_runtime_resume(&pdev->dev);
- 	if (ret < 0)
- 		goto eresume;
+ 	/* FMSI */
+ 	GPIO_FN_FMSISLD_PORT1, /* FMSISLD Port 1/6 */
+ 	GPIO_FN_FMSISLD_PORT6,
+diff --git a/arch/arm/mach-shmobile/pfc-r8a7740.c b/arch/arm/mach-shmobile/pfc-r8a7740.c
+index 0dda816..03def0f 100644
+--- a/arch/arm/mach-shmobile/pfc-r8a7740.c
++++ b/arch/arm/mach-shmobile/pfc-r8a7740.c
+@@ -169,7 +169,7 @@ enum {
+ 	DBGMD10_MARK,	DBGMD11_MARK,	DBGMD20_MARK,
+ 	DBGMD21_MARK,
  
- 	INIT_DELAYED_WORK(&host->timeout_work, mmcif_timeout_work);
+-	/* FSI */
++	/* FSI-A */
+ 	FSIAISLD_PORT0_MARK,	/* FSIAISLD Port 0/5 */
+ 	FSIAISLD_PORT5_MARK,
+ 	FSIASPDIF_PORT9_MARK,	/* FSIASPDIF Port 9/18 */
+@@ -178,6 +178,9 @@ enum {
+ 	FSIAOBT_MARK,	FSIAOSLD_MARK,	FSIAOMC_MARK,
+ 	FSIACK_MARK,	FSIAILR_MARK,	FSIAIBT_MARK,
  
-+	sh_mmcif_sync_reset(host);
- 	sh_mmcif_writel(host->addr, MMCIF_CE_INT_MASK, MASK_ALL);
++	/* FSI-B */
++	FSIBCK_MARK,
++
+ 	/* FMSI */
+ 	FMSISLD_PORT1_MARK, /* FMSISLD Port 1/6 */
+ 	FMSISLD_PORT6_MARK,
+@@ -774,6 +777,7 @@ static pinmux_enum_t pinmux_data[] = {
  
- 	ret = request_threaded_irq(irq[0], sh_mmcif_intr, sh_mmcif_irqt, 0, "sh_mmc:error", host);
-@@ -1336,6 +1339,7 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
- 		goto ereqirq1;
- 	}
+ 	/* Port11 */
+ 	PINMUX_DATA(FSIACK_MARK,		PORT11_FN1),
++	PINMUX_DATA(FSIBCK_MARK,		PORT11_FN2),
+ 	PINMUX_DATA(IRQ2_PORT11_MARK,		PORT11_FN0,	MSEL1CR_2_0),
  
-+	clk_disable(host->hclk);
- 	ret = mmc_add_host(mmc);
- 	if (ret < 0)
- 		goto emmcaddh;
-@@ -1354,9 +1358,10 @@ ereqirq1:
- ereqirq0:
- 	pm_runtime_suspend(&pdev->dev);
- eresume:
--	pm_runtime_disable(&pdev->dev);
- 	clk_disable(host->hclk);
-+	clk_put(host->hclk);
- eclkget:
-+	pm_runtime_disable(&pdev->dev);
- 	mmc_free_host(mmc);
- ealloch:
- 	iounmap(reg);
-@@ -1369,6 +1374,7 @@ static int __devexit sh_mmcif_remove(struct platform_device *pdev)
- 	int irq[2];
+ 	/* Port12 */
+@@ -1696,7 +1700,7 @@ static struct pinmux_gpio pinmux_gpios[] = {
+ 	GPIO_FN(DBGMD10),	GPIO_FN(DBGMD11),	GPIO_FN(DBGMD20),
+ 	GPIO_FN(DBGMD21),
  
- 	host->dying = true;
-+	clk_enable(host->hclk);
- 	pm_runtime_get_sync(&pdev->dev);
+-	/* FSI */
++	/* FSI-A */
+ 	GPIO_FN(FSIAISLD_PORT0),	/* FSIAISLD Port 0/5 */
+ 	GPIO_FN(FSIAISLD_PORT5),
+ 	GPIO_FN(FSIASPDIF_PORT9),	/* FSIASPDIF Port 9/18 */
+@@ -1705,6 +1709,9 @@ static struct pinmux_gpio pinmux_gpios[] = {
+ 	GPIO_FN(FSIAOBT),	GPIO_FN(FSIAOSLD),	GPIO_FN(FSIAOMC),
+ 	GPIO_FN(FSIACK),	GPIO_FN(FSIAILR),	GPIO_FN(FSIAIBT),
  
- 	dev_pm_qos_hide_latency_limit(&pdev->dev);
-@@ -1394,9 +1400,9 @@ static int __devexit sh_mmcif_remove(struct platform_device *pdev)
- 
- 	platform_set_drvdata(pdev, NULL);
- 
--	clk_disable(host->hclk);
- 	mmc_free_host(host->mmc);
- 	pm_runtime_put_sync(&pdev->dev);
-+	clk_disable(host->hclk);
- 	pm_runtime_disable(&pdev->dev);
- 
- 	return 0;
-@@ -1405,24 +1411,18 @@ static int __devexit sh_mmcif_remove(struct platform_device *pdev)
- #ifdef CONFIG_PM
- static int sh_mmcif_suspend(struct device *dev)
- {
--	struct platform_device *pdev = to_platform_device(dev);
--	struct sh_mmcif_host *host = platform_get_drvdata(pdev);
-+	struct sh_mmcif_host *host = dev_get_drvdata(dev);
- 	int ret = mmc_suspend_host(host->mmc);
- 
--	if (!ret) {
-+	if (!ret)
- 		sh_mmcif_writel(host->addr, MMCIF_CE_INT_MASK, MASK_ALL);
--		clk_disable(host->hclk);
--	}
- 
- 	return ret;
- }
- 
- static int sh_mmcif_resume(struct device *dev)
- {
--	struct platform_device *pdev = to_platform_device(dev);
--	struct sh_mmcif_host *host = platform_get_drvdata(pdev);
--
--	clk_enable(host->hclk);
-+	struct sh_mmcif_host *host = dev_get_drvdata(dev);
- 
- 	return mmc_resume_host(host->mmc);
- }
++	/* FSI-B */
++	GPIO_FN(FSIBCK),
++
+ 	/* FMSI */
+ 	GPIO_FN(FMSISLD_PORT1), /* FMSISLD Port 1/6 */
+ 	GPIO_FN(FMSISLD_PORT6),
 -- 
-1.7.2.5
+1.7.5.4
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
