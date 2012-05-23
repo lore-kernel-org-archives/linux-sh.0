@@ -1,94 +1,120 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Wed, 02 May 2012 09:41:44 +0000
-Subject: [PATCH v3 04/10] mtd: sh_flctl: Use different OOB layout
-Message-Id: <1335951710-9390-5-git-send-email-hechtb@gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 23 May 2012 01:32:57 +0000
+Subject: [PATCH 06/12 v2] ARM: mach-shmobile: clock-r8a7740: add FSI parent control support
+Message-Id: <878vgjvfzu.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1335951710-9390-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1335951710-9390-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mtd@lists.infradead.org, linux-sh@vger.kernel.org
-Cc: Brian Norris <computersforpeace@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pichart <laurent.pinchart@ideasonboard.com>, Artem Bityutskiy <dedekind1@gmail.com>
+To: linux-sh@vger.kernel.org
 
-The flctl hardware has changed and a new OOB layout must be adapted for
-2k page size NAND chips when using hardware ECC.
-The related bit fields ECCPOS[0-2] are gone - the bits are marked as
-reserved now in the datasheet. As there are no official users of the
-hardware ECC so far, they are completely removed.
-
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/mtd/nand/sh_flctl.c  |   18 ++++++++++++------
- include/linux/mtd/sh_flctl.h |    4 ----
- 2 files changed, 12 insertions(+), 10 deletions(-)
+v1 -> v2
 
-diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
-index dd00853..dda34a2 100644
---- a/drivers/mtd/nand/sh_flctl.c
-+++ b/drivers/mtd/nand/sh_flctl.c
-@@ -44,11 +44,17 @@ static struct nand_ecclayout flctl_4secc_oob_16 = {
+ - same as v1
+
+ arch/arm/mach-shmobile/clock-r8a7740.c |   31 +++++++++++++++++++++++++++++++
+ 1 files changed, 31 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index ce0930a..7b9e4ab 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -46,6 +46,7 @@
+ #define VCLKCR1		0xE6150008
+ #define VCLKCR2		0xE615000c
+ #define FRQCRC		0xe61500e0
++#define FSIACKCR	0xe6150018
+ #define PLLC01CR	0xe6150028
+ 
+ #define SUBCKCR		0xe6150080
+@@ -56,6 +57,7 @@
+ #define MSTPSR2		0xe6150040
+ #define MSTPSR3		0xe6150048
+ #define MSTPSR4		0xe615004c
++#define FSIBCKCR	0xe6150090
+ #define HDMICKCR	0xe6150094
+ #define SMSTPCR0	0xe6150130
+ #define SMSTPCR1	0xe6150134
+@@ -274,6 +276,13 @@ static struct clk usb24_clk = {
+ 	.parent		= &usb24s_clk,
  };
  
- static struct nand_ecclayout flctl_4secc_oob_64 = {
--	.eccbytes = 10,
--	.eccpos = {48, 49, 50, 51, 52, 53, 54, 55, 56, 57},
-+	.eccbytes = 4 * 10,
-+	.eccpos = {
-+		 6,  7,  8,  9, 10, 11, 12, 13, 14, 15,
-+		22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
-+		38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
-+		54, 55, 56, 57, 58, 59, 60, 61, 62, 63 },
- 	.oobfree = {
--		{.offset = 60,
--		. length = 4} },
-+		{.offset =  2, .length = 4},
-+		{.offset = 16, .length = 6},
-+		{.offset = 32, .length = 6},
-+		{.offset = 48, .length = 6} },
++/* External FSIACK/FSIBCK clock */
++static struct clk fsiack_clk = {
++};
++
++static struct clk fsibck_clk = {
++};
++
+ struct clk *main_clks[] = {
+ 	&extalr_clk,
+ 	&extal1_clk,
+@@ -291,6 +300,8 @@ struct clk *main_clks[] = {
+ 	&pllc1_div2_clk,
+ 	&usb24s_clk,
+ 	&usb24_clk,
++	&fsiack_clk,
++	&fsibck_clk,
  };
  
- static uint8_t scan_ff_pattern[] = { 0xff, 0xff };
-@@ -62,7 +68,7 @@ static struct nand_bbt_descr flctl_4secc_smallpage = {
- 
- static struct nand_bbt_descr flctl_4secc_largepage = {
- 	.options = NAND_BBT_SCAN2NDPAGE,
--	.offs = 58,
-+	.offs = 0,
- 	.len = 2,
- 	.pattern = scan_ff_pattern,
+ static void div4_kick(struct clk *clk)
+@@ -320,6 +331,7 @@ static struct clk_div4_table div4_table = {
+ enum {
+ 	DIV6_HDMI,
+ 	DIV6_VCLK1, DIV6_VCLK2,
++	DIV6_FSIA, DIV6_FSIB,
+ 	DIV6_REPARENT_NR,
  };
-@@ -831,7 +837,7 @@ static int flctl_chip_init_tail(struct mtd_info *mtd)
- 		chip->ecc.mode = NAND_ECC_HW;
  
- 		/* 4 symbols ECC enabled */
--		flctl->flcmncr_base |= _4ECCEN | ECCPOS2 | ECCPOS_02;
-+		flctl->flcmncr_base |= _4ECCEN;
- 	} else {
- 		chip->ecc.mode = NAND_ECC_SOFT;
- 	}
-diff --git a/include/linux/mtd/sh_flctl.h b/include/linux/mtd/sh_flctl.h
-index 2daa43e..3feaae0 100644
---- a/include/linux/mtd/sh_flctl.h
-+++ b/include/linux/mtd/sh_flctl.h
-@@ -49,7 +49,6 @@
- #define	FLERRADR(f)		(f->reg + 0x98)
+@@ -337,6 +349,16 @@ static struct clk *vclk_parents[8] = {
+ 	[5] = &extalr_clk,
+ };
  
- /* FLCMNCR control bits */
--#define ECCPOS2		(0x1 << 25)
- #define _4ECCCNTEN	(0x1 << 24)
- #define _4ECCEN		(0x1 << 23)
- #define _4ECCCORRECT	(0x1 << 22)
-@@ -59,9 +58,6 @@
- #define QTSEL_E		(0x1 << 17)
- #define ENDIAN		(0x1 << 16)	/* 1 = little endian */
- #define FCKSEL_E	(0x1 << 15)
--#define ECCPOS_00	(0x00 << 12)
--#define ECCPOS_01	(0x01 << 12)
--#define ECCPOS_02	(0x02 << 12)
- #define ACM_SACCES_MODE	(0x01 << 10)
- #define NANWF_E		(0x1 << 9)
- #define SE_D		(0x1 << 8)	/* Spare area disable */
++static struct clk *fsia_parents[] = {
++	[0] = &pllc1_div2_clk,
++	[1] = &fsiack_clk, /* external clock */
++};
++
++static struct clk *fsib_parents[] = {
++	[0] = &pllc1_div2_clk,
++	[1] = &fsibck_clk, /* external clock */
++};
++
+ static struct clk div6_reparent_clks[DIV6_REPARENT_NR] = {
+ 	[DIV6_HDMI] = SH_CLK_DIV6_EXT(HDMICKCR, 0,
+ 				      hdmi_parent, ARRAY_SIZE(hdmi_parent), 6, 2),
+@@ -344,6 +366,10 @@ static struct clk div6_reparent_clks[DIV6_REPARENT_NR] = {
+ 				       vclk_parents, ARRAY_SIZE(vclk_parents), 12, 3),
+ 	[DIV6_VCLK2] = SH_CLK_DIV6_EXT(VCLKCR2, 0,
+ 				       vclk_parents, ARRAY_SIZE(vclk_parents), 12, 3),
++	[DIV6_FSIA] = SH_CLK_DIV6_EXT(FSIACKCR, 0,
++				      fsia_parents, ARRAY_SIZE(fsia_parents), 6, 2),
++	[DIV6_FSIB] = SH_CLK_DIV6_EXT(FSIBCKCR, 0,
++				      fsib_parents, ARRAY_SIZE(fsib_parents), 6, 2),
+ };
+ 
+ /* HDMI1/2 clock */
+@@ -503,6 +529,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("hdmi2",			&hdmi2_clk),
+ 	CLKDEV_CON_ID("video1",			&div6_reparent_clks[DIV6_VCLK1]),
+ 	CLKDEV_CON_ID("video2",			&div6_reparent_clks[DIV6_VCLK2]),
++	CLKDEV_CON_ID("fsiack",			&fsiack_clk),
++	CLKDEV_CON_ID("fsibck",			&fsibck_clk),
+ 
+ 	/* DIV4 clocks */
+ 	CLKDEV_CON_ID("i_clk",			&div4_clks[DIV4_I]),
+@@ -557,6 +585,9 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("pci",	"renesas_usbhs",	&div4_clks[DIV4_USBP]),
+ 	CLKDEV_ICK_ID("usb24",	"renesas_usbhs",	&usb24_clk),
+ 	CLKDEV_ICK_ID("ick",	"sh-mobile-hdmi",	&div6_reparent_clks[DIV6_HDMI]),
++
++	CLKDEV_ICK_ID("icka", "sh_fsi2",	&div6_reparent_clks[DIV6_FSIA]),
++	CLKDEV_ICK_ID("ickb", "sh_fsi2",	&div6_reparent_clks[DIV6_FSIB]),
+ };
+ 
+ void __init r8a7740_clock_init(u8 md_ck)
 -- 
 1.7.5.4
 
