@@ -1,166 +1,101 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 02 May 2012 12:47:27 +0000
-Subject: [PATCH 05/06] serial8250: Introduce serial8250_register_8250_port()
-Message-Id: <20120502124727.30480.66237.sendpatchset@w520>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 23 May 2012 01:32:34 +0000
+Subject: [PATCH 05/12 v2] ARM: mach-shmobile: clock-r8a7740: add CEU support
+Message-Id: <87aa0zvg0h.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120502124642.30480.41373.sendpatchset@w520>
-In-Reply-To: <20120502124642.30480.41373.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-serial@vger.kernel.org
-Cc: arnd@arndb.de, swarren@wwwdotorg.org, lethal@linux-sh.org, gregkh@linuxfoundation.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, rjw@sisk.pl, paul.gortmaker@windriver.com, horms@verge.net.au, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, dan.j.williams@intel.com, alan@linux.intel.com
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
-
-Introduce yet another 8250 registration function.
-This time it is serial8250_register_8250_port() and it
-allows us to register 8250 hardware instances using struct 
-uart_8250_port. The new function makes it possible to
-register 8250 hardware that makes use of 8250 specific
-callbacks such as ->dl_read() and ->dl_write().
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
+v1 -> v2
 
- drivers/tty/serial/8250/8250.c |   89 ++++++++++++++++++++++++++--------------
- include/linux/serial_8250.h    |    1 
+ - same as v1
 
---- 0005/drivers/tty/serial/8250/8250.c
-+++ work/drivers/tty/serial/8250/8250.c	2012-05-02 20:51:44.000000000 +0900
-@@ -3111,7 +3111,7 @@ static struct uart_8250_port *serial8250
- }
+ arch/arm/mach-shmobile/clock-r8a7740.c |   23 ++++++++++++++++++++++-
+ 1 files changed, 22 insertions(+), 1 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index b095343..ce0930a 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -43,6 +43,8 @@
+ /* CPG registers */
+ #define FRQCRA		0xe6150000
+ #define FRQCRB		0xe6150004
++#define VCLKCR1		0xE6150008
++#define VCLKCR2		0xE615000c
+ #define FRQCRC		0xe61500e0
+ #define PLLC01CR	0xe6150028
  
- /**
-- *	serial8250_register_port - register a serial port
-+ *	serial8250_register_8250_port - register a serial port
-  *	@port: serial port template
-  *
-  *	Configure the serial port specified by the request. If the
-@@ -3123,52 +3123,56 @@ static struct uart_8250_port *serial8250
-  *
-  *	On success the port is ready to use and the line number is returned.
-  */
--int serial8250_register_port(struct uart_port *port)
-+int serial8250_register_8250_port(struct uart_8250_port *up)
- {
- 	struct uart_8250_port *uart;
- 	int ret = -ENOSPC;
+@@ -317,6 +319,7 @@ static struct clk_div4_table div4_table = {
+ /* DIV6 reparent */
+ enum {
+ 	DIV6_HDMI,
++	DIV6_VCLK1, DIV6_VCLK2,
+ 	DIV6_REPARENT_NR,
+ };
  
--	if (port->uartclk = 0)
-+	if (up->port.uartclk = 0)
- 		return -EINVAL;
+@@ -326,9 +329,21 @@ static struct clk *hdmi_parent[] = {
+ 	[2] = &dv_clk
+ };
  
- 	mutex_lock(&serial_mutex);
- 
--	uart = serial8250_find_match_or_unused(port);
-+	uart = serial8250_find_match_or_unused(&up->port);
- 	if (uart) {
- 		uart_remove_one_port(&serial8250_reg, &uart->port);
- 
--		uart->port.iobase       = port->iobase;
--		uart->port.membase      = port->membase;
--		uart->port.irq          = port->irq;
--		uart->port.irqflags     = port->irqflags;
--		uart->port.uartclk      = port->uartclk;
--		uart->port.fifosize     = port->fifosize;
--		uart->port.regshift     = port->regshift;
--		uart->port.iotype       = port->iotype;
--		uart->port.flags        = port->flags | UPF_BOOT_AUTOCONF;
--		uart->port.mapbase      = port->mapbase;
--		uart->port.private_data = port->private_data;
--		if (port->dev)
--			uart->port.dev = port->dev;
-+		uart->port.iobase       = up->port.iobase;
-+		uart->port.membase      = up->port.membase;
-+		uart->port.irq          = up->port.irq;
-+		uart->port.irqflags     = up->port.irqflags;
-+		uart->port.uartclk      = up->port.uartclk;
-+		uart->port.fifosize     = up->port.fifosize;
-+		uart->port.regshift     = up->port.regshift;
-+		uart->port.iotype       = up->port.iotype;
-+		uart->port.flags        = up->port.flags | UPF_BOOT_AUTOCONF;
-+		uart->port.mapbase      = up->port.mapbase;
-+		uart->port.private_data = up->port.private_data;
-+		if (up->port.dev)
-+			uart->port.dev = up->port.dev;
- 
--		if (port->flags & UPF_FIXED_TYPE)
--			serial8250_init_fixed_type_port(uart, port->type);
-+		if (up->port.flags & UPF_FIXED_TYPE)
-+			serial8250_init_fixed_type_port(uart, up->port.type);
- 
- 		set_io_from_upio(&uart->port);
- 		/* Possibly override default I/O functions.  */
--		if (port->serial_in)
--			uart->port.serial_in = port->serial_in;
--		if (port->serial_out)
--			uart->port.serial_out = port->serial_out;
--		if (port->handle_irq)
--			uart->port.handle_irq = port->handle_irq;
-+		if (up->port.serial_in)
-+			uart->port.serial_in = up->port.serial_in;
-+		if (up->port.serial_out)
-+			uart->port.serial_out = up->port.serial_out;
-+		if (up->port.handle_irq)
-+			uart->port.handle_irq = up->port.handle_irq;
- 		/*  Possibly override set_termios call */
--		if (port->set_termios)
--			uart->port.set_termios = port->set_termios;
--		if (port->pm)
--			uart->port.pm = port->pm;
--		if (port->handle_break)
--			uart->port.handle_break = port->handle_break;
-+		if (up->port.set_termios)
-+			uart->port.set_termios = up->port.set_termios;
-+		if (up->port.pm)
-+			uart->port.pm = up->port.pm;
-+		if (up->port.handle_break)
-+			uart->port.handle_break = up->port.handle_break;
-+		if (up->dl_read)
-+			uart->dl_read = up->dl_read;
-+		if (up->dl_write)
-+			uart->dl_write = up->dl_write;
- 
- 		if (serial8250_isa_config != NULL)
- 			serial8250_isa_config(0, &uart->port,
-@@ -3182,6 +3186,29 @@ int serial8250_register_port(struct uart
- 
- 	return ret;
- }
-+EXPORT_SYMBOL(serial8250_register_8250_port);
++static struct clk *vclk_parents[8] = {
++	[0] = &pllc1_div2_clk,
++	[2] = &dv_clk,
++	[3] = &usb24s_clk,
++	[4] = &extal1_div2_clk,
++	[5] = &extalr_clk,
++};
 +
-+/**
-+ *	serial8250_register_port - register a serial port
-+ *	@port: serial port template
-+ *
-+ *	Configure the serial port specified by the request. If the
-+ *	port exists and is in use, it is hung up and unregistered
-+ *	first.
-+ *
-+ *	The port is then probed and if necessary the IRQ is autodetected
-+ *	If this fails an error is returned.
-+ *
-+ *	On success the port is ready to use and the line number is returned.
-+ */
-+int serial8250_register_port(struct uart_port *port)
-+{
-+	struct uart_8250_port up;
-+
-+	memset(&up, 0, sizeof(up));
-+	memcpy(&up.port, port, sizeof(*port));
-+	return serial8250_register_8250_port(&up);
-+}
- EXPORT_SYMBOL(serial8250_register_port);
+ static struct clk div6_reparent_clks[DIV6_REPARENT_NR] = {
+ 	[DIV6_HDMI] = SH_CLK_DIV6_EXT(HDMICKCR, 0,
+ 				      hdmi_parent, ARRAY_SIZE(hdmi_parent), 6, 2),
++	[DIV6_VCLK1] = SH_CLK_DIV6_EXT(VCLKCR1, 0,
++				       vclk_parents, ARRAY_SIZE(vclk_parents), 12, 3),
++	[DIV6_VCLK2] = SH_CLK_DIV6_EXT(VCLKCR2, 0,
++				       vclk_parents, ARRAY_SIZE(vclk_parents), 12, 3),
+ };
  
- /**
---- 0001/include/linux/serial_8250.h
-+++ work/include/linux/serial_8250.h	2012-05-02 20:47:21.000000000 +0900
-@@ -69,6 +69,7 @@ enum {
- struct uart_port;
- struct uart_8250_port;
+ /* HDMI1/2 clock */
+@@ -417,7 +432,7 @@ static struct clk div6_clks[DIV6_NR] = {
+ };
  
-+int serial8250_register_8250_port(struct uart_8250_port *);
- int serial8250_register_port(struct uart_port *);
- void serial8250_unregister_port(int line);
- void serial8250_suspend_port(int line);
+ enum {
+-	MSTP125,
++	MSTP128, MSTP127, MSTP125,
+ 	MSTP116, MSTP111, MSTP100, MSTP117,
+ 
+ 	MSTP230,
+@@ -434,6 +449,8 @@ enum {
+ };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP128] = SH_CLK_MSTP32(&div4_clks[DIV4_S],	SMSTPCR1, 28, 0), /* CEU21 */
++	[MSTP127] = SH_CLK_MSTP32(&div4_clks[DIV4_S],	SMSTPCR1, 27, 0), /* CEU20 */
+ 	[MSTP125] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR1, 25, 0), /* TMU0 */
+ 	[MSTP117] = SH_CLK_MSTP32(&div4_clks[DIV4_B],	SMSTPCR1, 17, 0), /* LCDC1 */
+ 	[MSTP116] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR1, 16, 0), /* IIC0 */
+@@ -484,6 +501,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("usb24s",			&usb24s_clk),
+ 	CLKDEV_CON_ID("hdmi1",			&hdmi1_clk),
+ 	CLKDEV_CON_ID("hdmi2",			&hdmi2_clk),
++	CLKDEV_CON_ID("video1",			&div6_reparent_clks[DIV6_VCLK1]),
++	CLKDEV_CON_ID("video2",			&div6_reparent_clks[DIV6_VCLK2]),
+ 
+ 	/* DIV4 clocks */
+ 	CLKDEV_CON_ID("i_clk",			&div4_clks[DIV4_I]),
+@@ -506,6 +525,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.0",	&mstp_clks[MSTP116]),
+ 	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.1",	&mstp_clks[MSTP117]),
+ 	CLKDEV_DEV_ID("sh_tmu.0",		&mstp_clks[MSTP125]),
++	CLKDEV_DEV_ID("sh_mobile_ceu.0",	&mstp_clks[MSTP127]),
++	CLKDEV_DEV_ID("sh_mobile_ceu.1",	&mstp_clks[MSTP128]),
+ 
+ 	CLKDEV_DEV_ID("sh-sci.4",		&mstp_clks[MSTP200]),
+ 	CLKDEV_DEV_ID("sh-sci.3",		&mstp_clks[MSTP201]),
+-- 
+1.7.5.4
+
