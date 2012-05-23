@@ -1,321 +1,172 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 11 May 2012 19:42:20 +0000
-Subject: [PATCH 03/06] mach-shmobile: Emma Mobile EV2 SMP support V2
-Message-Id: <20120511194220.6567.56443.sendpatchset@w520>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 23 May 2012 01:35:34 +0000
+Subject: [PATCH 11/12 v2] ARM: mach-shmobile: armadillo800eva: Add FSI-WM8978 support
+Message-Id: <871umbvfvh.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120511194151.6567.53888.sendpatchset@w520>
-In-Reply-To: <20120511194151.6567.53888.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
-
-This is V2 of Emma Mobile EV2 SMP support.
-
-At this point only the most basic form of SMP operation
-is supported. TWD and CPU Hotplug support is excluded.
-
-Tied to both the Emma Mobile EV2 and the KZM9D board
-due to the need to switch on board in platsmp.c and
-the newly introduced need for static mappings.
-
-The static mappings are needed to allow hardware
-acces early during boot when SMP is initialized.
-This early requirement forces us to also map in
-the SMU registers.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
+v1 -> v2
 
- Changes since V1:
- - access SMU via separate function
- - rework SCU coherency setting function
- - make use of broken out emev2 header
+ - it use gpio_direction_none()
 
- arch/arm/mach-shmobile/Makefile             |    1 
- arch/arm/mach-shmobile/board-kzm9d.c        |    1 
- arch/arm/mach-shmobile/clock-emev2.c        |   18 +++++
- arch/arm/mach-shmobile/include/mach/emev2.h |    7 +
- arch/arm/mach-shmobile/platsmp.c            |   17 ++++
- arch/arm/mach-shmobile/setup-emev2.c        |   24 ++++++
- arch/arm/mach-shmobile/smp-emev2.c          |   97 +++++++++++++++++++++++++++
- 7 files changed, 165 insertions(+)
+ arch/arm/mach-shmobile/Kconfig                 |    1 +
+ arch/arm/mach-shmobile/board-armadillo800eva.c |   85 ++++++++++++++++++++++++
+ 2 files changed, 86 insertions(+), 0 deletions(-)
 
---- 0008/arch/arm/mach-shmobile/Makefile
-+++ work/arch/arm/mach-shmobile/Makefile	2012-05-12 02:48:35.000000000 +0900
-@@ -19,6 +19,7 @@ smp-y				:= platsmp.o headsmp.o
- smp-$(CONFIG_HOTPLUG_CPU)	+= hotplug.o
- smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o
- smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o
-+smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 250277a..bedb41f 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -106,6 +106,7 @@ config MACH_ARMADILLO800EVA
+ 	depends on ARCH_R8A7740
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select USE_OF
++	select SND_SOC_WM8978 if SND_SIMPLE_CARD
  
- # Pinmux setup
- pfc-y				:--- 0008/arch/arm/mach-shmobile/board-kzm9d.c
-+++ work/arch/arm/mach-shmobile/board-kzm9d.c	2012-05-12 03:23:09.000000000 +0900
-@@ -27,6 +27,7 @@
- #include <asm/hardware/gic.h>
+ config MACH_MARZEN
+ 	bool "MARZEN board"
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index d2d87d9..b7b226b 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -49,6 +49,8 @@
+ #include <asm/hardware/cache-l2x0.h>
+ #include <video/sh_mobile_lcdc.h>
+ #include <video/sh_mobile_hdmi.h>
++#include <sound/sh_fsi.h>
++#include <sound/simple_card.h>
  
- MACHINE_START(KZM9D, "kzm9d")
-+	.map_io		= emev2_map_io,
- 	.init_early	= emev2_add_early_devices,
- 	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_irq	= emev2_init_irq,
---- 0007/arch/arm/mach-shmobile/clock-emev2.c
-+++ work/arch/arm/mach-shmobile/clock-emev2.c	2012-05-12 03:34:20.000000000 +0900
-@@ -40,6 +40,7 @@
- #define USIB2SCLKDIV 0x65c
- #define USIB3SCLKDIV 0x660
- #define STI_CLKSEL 0x688
-+#define SMU_GENERAL_REG0 0x7c0
+ /*
+  * CON1		Camera Module
+@@ -112,6 +114,14 @@
+  */
  
- /* not pretty, but hey */
- static void __iomem *smu_base;
-@@ -50,6 +51,11 @@ static void emev2_smu_write(unsigned lon
- 	iowrite32(value, smu_base + offs);
- }
- 
-+void emev2_set_boot_vector(unsigned long value)
-+{
-+	emev2_smu_write(value, SMU_GENERAL_REG0);
-+}
+ /*
++ * FSI-WM8978
++ *
++ * this command is required when playback.
++ *
++ * # amixer set "Headphone" 50
++ */
 +
- static struct clk_mapping smu_mapping = {
- 	.phys	= EMEV2_SMU_BASE,
- 	.len	= PAGE_SIZE,
-@@ -194,6 +200,18 @@ static struct clk_lookup lookups[] = {
- void __init emev2_clock_init(void)
- {
- 	int k, ret = 0;
-+	static int is_setup;
-+
-+	/* yuck, this is ugly as hell, but the non-smp case of clocks
-+	 * code is now designed to rely on ioremap() instead of static
-+	 * entity maps. in the case of smp we need access to the SMU
-+	 * register earlier than ioremap() is actually working without
-+	 * any static maps. to enable SMP in ugly but with dynamic
-+	 * mappings we have to call emev2_clock_init() from different
-+	 * places depending on UP and SMP...
-+	 */
-+	if (is_setup++)
-+		return;
++/*
+  * USB function
+  *
+  * When you use USB Function,
+@@ -707,12 +717,71 @@ static struct platform_device ceu0_device = {
+ 	},
+ };
  
- 	smu_base = ioremap(EMEV2_SMU_BASE, PAGE_SIZE);
- 	BUG_ON(!smu_base);
---- 0007/arch/arm/mach-shmobile/include/mach/emev2.h
-+++ work/arch/arm/mach-shmobile/include/mach/emev2.h	2012-05-12 02:59:15.000000000 +0900
-@@ -1,9 +1,16 @@
- #ifndef __ASM_EMEV2_H__
- #define __ASM_EMEV2_H__
- 
-+extern void emev2_map_io(void);
- extern void emev2_init_irq(void);
- extern void emev2_add_early_devices(void);
- extern void emev2_add_standard_devices(void);
- extern void emev2_clock_init(void);
-+extern void emev2_set_boot_vector(unsigned long value);
-+extern unsigned int emev2_get_core_count(void);
-+extern int emev2_platform_cpu_kill(unsigned int cpu);
-+extern void emev2_secondary_init(unsigned int cpu);
-+extern int emev2_boot_secondary(unsigned int cpu);
-+extern void emev2_smp_prepare_cpus(void);
- 
- #endif /* __ASM_EMEV2_H__ */
---- 0001/arch/arm/mach-shmobile/platsmp.c
-+++ work/arch/arm/mach-shmobile/platsmp.c	2012-05-12 03:20:28.000000000 +0900
-@@ -19,9 +19,11 @@
- #include <asm/hardware/gic.h>
- #include <asm/mach-types.h>
- #include <mach/common.h>
-+#include <mach/emev2.h>
- 
- #define is_sh73a0() (machine_is_ag5evm() || machine_is_kota2() || machine_is_kzm9g())
- #define is_r8a7779() machine_is_marzen()
-+#define is_emev2() machine_is_kzm9d()
- 
- static unsigned int __init shmobile_smp_get_core_count(void)
- {
-@@ -31,6 +33,9 @@ static unsigned int __init shmobile_smp_
- 	if (is_r8a7779())
- 		return r8a7779_get_core_count();
- 
-+	if (is_emev2())
-+		return emev2_get_core_count();
-+
- 	return 1;
- }
- 
-@@ -41,6 +46,9 @@ static void __init shmobile_smp_prepare_
- 
- 	if (is_r8a7779())
- 		r8a7779_smp_prepare_cpus();
-+
-+	if (is_emev2())
-+		emev2_smp_prepare_cpus();
- }
- 
- int shmobile_platform_cpu_kill(unsigned int cpu)
-@@ -48,6 +56,9 @@ int shmobile_platform_cpu_kill(unsigned
- 	if (is_r8a7779())
- 		return r8a7779_platform_cpu_kill(cpu);
- 
-+	if (is_emev2())
-+		return emev2_platform_cpu_kill(cpu);
-+
- 	return 1;
- }
- 
-@@ -60,6 +71,9 @@ void __cpuinit platform_secondary_init(u
- 
- 	if (is_r8a7779())
- 		r8a7779_secondary_init(cpu);
-+
-+	if (is_emev2())
-+		emev2_secondary_init(cpu);
- }
- 
- int __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
-@@ -70,6 +84,9 @@ int __cpuinit boot_secondary(unsigned in
- 	if (is_r8a7779())
- 		return r8a7779_boot_secondary(cpu);
- 
-+	if (is_emev2())
-+		return emev2_boot_secondary(cpu);
-+
- 	return -ENOSYS;
- }
- 
---- 0007/arch/arm/mach-shmobile/setup-emev2.c
-+++ work/arch/arm/mach-shmobile/setup-emev2.c	2012-05-12 03:37:24.000000000 +0900
-@@ -34,6 +34,30 @@
- #include <asm/mach/time.h>
- #include <asm/hardware/gic.h>
- 
-+static struct map_desc emev2_io_desc[] __initdata = {
-+#ifdef CONFIG_SMP
-+	/* 128K entity map for 0xe0100000 (SMU) */
-+	{
-+		.virtual	= 0xe0100000,
-+		.pfn		= __phys_to_pfn(0xe0100000),
-+		.length		= SZ_128K,
-+		.type		= MT_DEVICE
++/* FSI */
++static struct sh_fsi_platform_info fsi_info = {
++	/* FSI-WM8978 */
++	.port_a = {
 +	},
-+	/* 2M mapping for SCU + L2 controller */
-+	{
-+		.virtual	= 0xf0000000,
-+		.pfn		= __phys_to_pfn(0x1e000000),
-+		.length		= SZ_2M,
-+		.type		= MT_DEVICE
-+	},
-+#endif
 +};
 +
-+void __init emev2_map_io(void)
-+{
-+	iotable_init(emev2_io_desc, ARRAY_SIZE(emev2_io_desc));
-+}
++static struct resource fsi_resources[] = {
++	[0] = {
++		.name	= "FSI",
++		.start	= 0xfe1f0000,
++		.end	= 0xfe1f8400 - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start  = evt2irq(0x1840),
++		.flags  = IORESOURCE_IRQ,
++	},
++};
 +
- /* UART */
- static struct resource uart0_resources[] = {
- 	[0]	= {
---- /dev/null
-+++ work/arch/arm/mach-shmobile/smp-emev2.c	2012-05-12 03:38:32.000000000 +0900
-@@ -0,0 +1,97 @@
-+/*
-+ * SMP support for Emma Mobile EV2
-+ *
-+ * Copyright (C) 2012  Renesas Solutions Corp.
-+ * Copyright (C) 2012  Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+ */
-+#include <linux/kernel.h>
-+#include <linux/init.h>
-+#include <linux/smp.h>
-+#include <linux/spinlock.h>
-+#include <linux/io.h>
-+#include <linux/delay.h>
-+#include <mach/common.h>
-+#include <mach/emev2.h>
-+#include <asm/smp_plat.h>
-+#include <asm/smp_scu.h>
-+#include <asm/hardware/gic.h>
-+#include <asm/cacheflush.h>
++static struct platform_device fsi_device = {
++	.name		= "sh_fsi2",
++	.id		= -1,
++	.num_resources	= ARRAY_SIZE(fsi_resources),
++	.resource	= fsi_resources,
++	.dev	= {
++		.platform_data	= &fsi_info,
++	},
++};
 +
-+#define EMEV2_SCU_BASE 0x1e000000
++/* FSI-WM8978 */
++static struct asoc_simple_dai_init_info fsi_wm8978_init_info = {
++	.fmt		= SND_SOC_DAIFMT_I2S,
++	.codec_daifmt	= SND_SOC_DAIFMT_CBM_CFM | SND_SOC_DAIFMT_NB_NF,
++	.cpu_daifmt	= SND_SOC_DAIFMT_CBS_CFS,
++	.sysclk		= 12288000,
++};
 +
-+static DEFINE_SPINLOCK(scu_lock);
-+static void __iomem *scu_base;
++static struct asoc_simple_card_info fsi_wm8978_info = {
++	.name		= "wm8978",
++	.card		= "FSI2A-WM8978",
++	.cpu_dai	= "fsia-dai",
++	.codec		= "wm8978.0-001a",
++	.platform	= "sh_fsi2",
++	.codec_dai	= "wm8978-hifi",
++	.init		= &fsi_wm8978_init_info,
++};
 +
-+static void modify_scu_cpu_psr(unsigned long set, unsigned long clr)
-+{
-+	unsigned long tmp;
++static struct platform_device fsi_wm8978_device = {
++	.name	= "asoc-simple-card",
++	.id	= 0,
++	.dev	= {
++		.platform_data	= &fsi_wm8978_info,
++	},
++};
 +
-+	/* we assume this code is running on a different cpu
-+	 * than the one that is changing coherency setting */
-+	spin_lock(&scu_lock);
-+	tmp = readl(scu_base + 8);
-+	tmp &= ~clr;
-+	tmp |= set;
-+	writel(tmp, scu_base + 8);
-+	spin_unlock(&scu_lock);
+ /* I2C */
+ static struct i2c_board_info i2c0_devices[] = {
+ 	{
+ 		I2C_BOARD_INFO("st1232-ts", 0x55),
+ 		.irq = evt2irq(0x0340),
+ 	},
++	{
++		I2C_BOARD_INFO("wm8978", 0x1a),
++	},
+ };
+ 
+ /*
+@@ -728,6 +797,8 @@ static struct platform_device *eva_devices[] __initdata = {
+ 	&hdmi_lcdc_device,
+ 	&camera_device,
+ 	&ceu0_device,
++	&fsi_device,
++	&fsi_wm8978_device,
+ };
+ 
+ static void __init eva_clock_init(void)
+@@ -770,6 +841,8 @@ clock_error:
+ /*
+  * board init
+  */
++#define GPIO_PORT7CR	0xe6050007
++#define GPIO_PORT8CR	0xe6050008
+ static void __init eva_init(void)
+ {
+ 	eva_clock_init();
+@@ -919,6 +992,18 @@ static void __init eva_init(void)
+ 	gpio_request(GPIO_PORT158, NULL); /* CAM_PON */
+ 	gpio_direction_output(GPIO_PORT158, 0); /* see mt9t111_power() */
+ 
++	/* FSI-WM8978 */
++	gpio_request(GPIO_FN_FSIAIBT,		NULL);
++	gpio_request(GPIO_FN_FSIAILR,		NULL);
++	gpio_request(GPIO_FN_FSIAOMC,		NULL);
++	gpio_request(GPIO_FN_FSIAOSLD,		NULL);
++	gpio_request(GPIO_FN_FSIAISLD_PORT5,	NULL);
 +
-+}
++	gpio_request(GPIO_PORT7, NULL);
++	gpio_request(GPIO_PORT8, NULL);
++	gpio_direction_none(GPIO_PORT7CR); /* FSIAOBT needs no direction */
++	gpio_direction_none(GPIO_PORT8CR); /* FSIAOLR needs no direction */
 +
-+unsigned int __init emev2_get_core_count(void)
-+{
-+	if (!scu_base) {
-+		scu_base = ioremap(EMEV2_SCU_BASE, PAGE_SIZE);
-+		emev2_clock_init(); /* need ioremapped SMU */
-+	}
-+
-+	WARN_ON_ONCE(!scu_base);
-+
-+	return scu_base ? scu_get_core_count(scu_base) : 1;
-+}
-+
-+int emev2_platform_cpu_kill(unsigned int cpu)
-+{
-+	return 0; /* not supported yet */
-+}
-+
-+void __cpuinit emev2_secondary_init(unsigned int cpu)
-+{
-+	gic_secondary_init(0);
-+}
-+
-+int __cpuinit emev2_boot_secondary(unsigned int cpu)
-+{
-+	cpu = cpu_logical_map(cpu);
-+
-+	/* enable cache coherency */
-+	modify_scu_cpu_psr(0, 3 << (cpu * 8));
-+
-+	/* Tell ROM loader about our vector (in headsmp.S) */
-+	emev2_set_boot_vector(__pa(shmobile_secondary_vector));
-+
-+	gic_raise_softirq(cpumask_of(cpu), 1);
-+	return 0;
-+}
-+
-+void __init emev2_smp_prepare_cpus(void)
-+{
-+	int cpu = cpu_logical_map(0);
-+
-+	scu_enable(scu_base);
-+
-+	/* enable cache coherency on CPU0 */
-+	modify_scu_cpu_psr(0, 3 << (cpu * 8));
-+}
+ 	/*
+ 	 * CAUTION
+ 	 *
+-- 
+1.7.5.4
+
