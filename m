@@ -1,144 +1,178 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 29 May 2012 08:14:47 +0000
-Subject: [PATCH v5 2/6] net: sh_eth: remove unnecessary members/definitions
-Message-Id: <4FC48577.5040507@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 23 May 2012 01:35:53 +0000
+Subject: [PATCH 12/12 v2] ARM: mach-shmobile: armadillo800eva: add FSI-HDMI support
+Message-Id: <87zk8zu1ah.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev <netdev@vger.kernel.org>
-Cc: SH-Linux <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-This patch removes unnecessary members in sh_th_private.
-This patch also removes unnecessary definitions in sh_eth.h
-
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- about v5:
-  - this patch is the same as v3
+v1 -> v2
 
- drivers/net/ethernet/renesas/sh_eth.c |    7 +---
- drivers/net/ethernet/renesas/sh_eth.h |   69 ---------------------------------
- 2 files changed, 1 insertions(+), 75 deletions(-)
+ - same as v1
 
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index c35084a..10f2a89 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -898,7 +898,6 @@ static int sh_eth_dev_init(struct net_device *ndev)
+ arch/arm/mach-shmobile/board-armadillo800eva.c |   82 +++++++++++++++++++++++-
+ 1 files changed, 79 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index b7b226b..1f0028f 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -718,10 +718,42 @@ static struct platform_device ceu0_device = {
+ };
+ 
+ /* FSI */
++static int fsi_hdmi_set_rate(struct device *dev, int rate, int enable)
++{
++	struct clk *fsib;
++	int ret;
++
++	/* it support 48KHz only */
++	if (48000 != rate)
++		return -EINVAL;
++
++	fsib = clk_get(dev, "ickb");
++	if (IS_ERR(fsib))
++		return -EINVAL;
++
++	if (enable) {
++		ret = SH_FSI_ACKMD_256 | SH_FSI_BPFMD_64;
++		clk_enable(fsib);
++	} else {
++		ret = 0;
++		clk_disable(fsib);
++	}
++
++	clk_put(fsib);
++
++	return ret;
++}
++
+ static struct sh_fsi_platform_info fsi_info = {
+ 	/* FSI-WM8978 */
+ 	.port_a = {
+ 	},
++	/* FSI-HDMI */
++	.port_b = {
++		.flags		= SH_FSI_FMT_SPDIF |
++				  SH_FSI_ENABLE_STREAM_MODE,
++		.set_rate	= fsi_hdmi_set_rate,
++	}
+ };
+ 
+ static struct resource fsi_resources[] = {
+@@ -773,6 +805,29 @@ static struct platform_device fsi_wm8978_device = {
+ 	},
+ };
+ 
++/* FSI-HDMI */
++static struct asoc_simple_dai_init_info fsi2_hdmi_init_info = {
++	.cpu_daifmt	= SND_SOC_DAIFMT_CBM_CFM,
++};
++
++static struct asoc_simple_card_info fsi2_hdmi_info = {
++	.name		= "HDMI",
++	.card		= "FSI2B-HDMI",
++	.cpu_dai	= "fsib-dai",
++	.codec		= "sh-mobile-hdmi",
++	.platform	= "sh_fsi2",
++	.codec_dai	= "sh_mobile_hdmi-hifi",
++	.init		= &fsi2_hdmi_init_info,
++};
++
++static struct platform_device fsi_hdmi_device = {
++	.name	= "asoc-simple-card",
++	.id	= 1,
++	.dev	= {
++		.platform_data	= &fsi2_hdmi_info,
++	},
++};
++
+ /* I2C */
+ static struct i2c_board_info i2c0_devices[] = {
+ 	{
+@@ -798,6 +853,7 @@ static struct platform_device *eva_devices[] __initdata = {
+ 	&camera_device,
+ 	&ceu0_device,
+ 	&fsi_device,
++	&fsi_hdmi_device,
+ 	&fsi_wm8978_device,
+ };
+ 
+@@ -806,10 +862,14 @@ static void __init eva_clock_init(void)
+ 	struct clk *system	= clk_get(NULL, "system_clk");
+ 	struct clk *xtal1	= clk_get(NULL, "extal1");
+ 	struct clk *usb24s	= clk_get(NULL, "usb24s");
++	struct clk *fsibck	= clk_get(NULL, "fsibck");
++	struct clk *fsib	= clk_get(&fsi_device.dev, "ickb");
+ 
+ 	if (IS_ERR(system)	||
+ 	    IS_ERR(xtal1)	||
+-	    IS_ERR(usb24s)) {
++	    IS_ERR(usb24s)	||
++	    IS_ERR(fsibck)	||
++	    IS_ERR(fsib)) {
+ 		pr_err("armadillo800eva board clock init failed\n");
+ 		goto clock_error;
+ 	}
+@@ -829,6 +889,11 @@ static void __init eva_clock_init(void)
+ 	/* video1 (= CON1 camera) expect 24MHz */
+ 	clk_set_rate(cam1_mclk, clk_round_rate(cam1_mclk, 24000000));
+ 
++	/* FSIBCK is 12.288MHz, and it is parent of FSI-B */
++	clk_set_parent(fsib, fsibck);
++	clk_set_rate(fsibck, 12288000);
++	clk_set_rate(fsib,   12288000);
++
+ clock_error:
+ 	if (!IS_ERR(system))
+ 		clk_put(system);
+@@ -836,6 +901,10 @@ clock_error:
+ 		clk_put(xtal1);
+ 	if (!IS_ERR(usb24s))
+ 		clk_put(usb24s);
++	if (!IS_ERR(fsibck))
++		clk_put(fsibck);
++	if (!IS_ERR(fsib))
++		clk_put(fsib);
+ }
+ 
+ /*
+@@ -845,8 +914,6 @@ clock_error:
+ #define GPIO_PORT8CR	0xe6050008
+ static void __init eva_init(void)
  {
- 	int ret = 0;
- 	struct sh_eth_private *mdp = netdev_priv(ndev);
--	u_int32_t rx_int_var, tx_int_var;
- 	u32 val;
-
- 	/* Soft Reset */
-@@ -926,9 +925,7 @@ static int sh_eth_dev_init(struct net_device *ndev)
- 	/* Frame recv control */
- 	sh_eth_write(ndev, mdp->cd->rmcr_value, RMCR);
-
--	rx_int_var = mdp->rx_int_var = DESC_I_RINT8 | DESC_I_RINT5;
--	tx_int_var = mdp->tx_int_var = DESC_I_TINT2;
--	sh_eth_write(ndev, rx_int_var | tx_int_var, TRSCER);
-+	sh_eth_write(ndev, DESC_I_RINT8 | DESC_I_RINT5 | DESC_I_TINT2, TRSCER);
-
- 	if (mdp->cd->bculr)
- 		sh_eth_write(ndev, 0x800, BCULR);	/* Burst sycle set */
-@@ -2286,8 +2283,6 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
-
- 	/* debug message level */
- 	mdp->msg_enable = SH_ETH_DEF_MSG_ENABLE;
--	mdp->post_rx = POST_RX >> (devno << 1);
--	mdp->post_fw = POST_FW >> (devno << 1);
-
- 	/* read and set MAC address */
- 	read_mac_address(ndev, pd->mac_addr);
-diff --git a/drivers/net/ethernet/renesas/sh_eth.h b/drivers/net/ethernet/renesas/sh_eth.h
-index 9e8e4d5..9525199 100644
---- a/drivers/net/ethernet/renesas/sh_eth.h
-+++ b/drivers/net/ethernet/renesas/sh_eth.h
-@@ -585,71 +585,6 @@ enum RPADIR_BIT {
- /* FDR */
- #define DEFAULT_FDR_INIT	0x00000707
-
--enum phy_offsets {
--	PHY_CTRL = 0, PHY_STAT = 1, PHY_IDT1 = 2, PHY_IDT2 = 3,
--	PHY_ANA = 4, PHY_ANL = 5, PHY_ANE = 6,
--	PHY_16 = 16,
--};
+-	eva_clock_init();
 -
--/* PHY_CTRL */
--enum PHY_CTRL_BIT {
--	PHY_C_RESET = 0x8000, PHY_C_LOOPBK = 0x4000, PHY_C_SPEEDSL = 0x2000,
--	PHY_C_ANEGEN = 0x1000, PHY_C_PWRDN = 0x0800, PHY_C_ISO = 0x0400,
--	PHY_C_RANEG = 0x0200, PHY_C_DUPLEX = 0x0100, PHY_C_COLT = 0x0080,
--};
--#define DM9161_PHY_C_ANEGEN 0	/* auto nego special */
--
--/* PHY_STAT */
--enum PHY_STAT_BIT {
--	PHY_S_100T4 = 0x8000, PHY_S_100X_F = 0x4000, PHY_S_100X_H = 0x2000,
--	PHY_S_10T_F = 0x1000, PHY_S_10T_H = 0x0800, PHY_S_ANEGC = 0x0020,
--	PHY_S_RFAULT = 0x0010, PHY_S_ANEGA = 0x0008, PHY_S_LINK = 0x0004,
--	PHY_S_JAB = 0x0002, PHY_S_EXTD = 0x0001,
--};
--
--/* PHY_ANA */
--enum PHY_ANA_BIT {
--	PHY_A_NP = 0x8000, PHY_A_ACK = 0x4000, PHY_A_RF = 0x2000,
--	PHY_A_FCS = 0x0400, PHY_A_T4 = 0x0200, PHY_A_FDX = 0x0100,
--	PHY_A_HDX = 0x0080, PHY_A_10FDX = 0x0040, PHY_A_10HDX = 0x0020,
--	PHY_A_SEL = 0x001e,
--};
--/* PHY_ANL */
--enum PHY_ANL_BIT {
--	PHY_L_NP = 0x8000, PHY_L_ACK = 0x4000, PHY_L_RF = 0x2000,
--	PHY_L_FCS = 0x0400, PHY_L_T4 = 0x0200, PHY_L_FDX = 0x0100,
--	PHY_L_HDX = 0x0080, PHY_L_10FDX = 0x0040, PHY_L_10HDX = 0x0020,
--	PHY_L_SEL = 0x001f,
--};
--
--/* PHY_ANE */
--enum PHY_ANE_BIT {
--	PHY_E_PDF = 0x0010, PHY_E_LPNPA = 0x0008, PHY_E_NPA = 0x0004,
--	PHY_E_PRX = 0x0002, PHY_E_LPANEGA = 0x0001,
--};
--
--/* DM9161 */
--enum PHY_16_BIT {
--	PHY_16_BP4B45 = 0x8000, PHY_16_BPSCR = 0x4000, PHY_16_BPALIGN = 0x2000,
--	PHY_16_BP_ADPOK = 0x1000, PHY_16_Repeatmode = 0x0800,
--	PHY_16_TXselect = 0x0400,
--	PHY_16_Rsvd = 0x0200, PHY_16_RMIIEnable = 0x0100,
--	PHY_16_Force100LNK = 0x0080,
--	PHY_16_APDLED_CTL = 0x0040, PHY_16_COLLED_CTL = 0x0020,
--	PHY_16_RPDCTR_EN = 0x0010,
--	PHY_16_ResetStMch = 0x0008, PHY_16_PreamSupr = 0x0004,
--	PHY_16_Sleepmode = 0x0002,
--	PHY_16_RemoteLoopOut = 0x0001,
--};
--
--#define POST_RX		0x08
--#define POST_FW		0x04
--#define POST0_RX	(POST_RX)
--#define POST0_FW	(POST_FW)
--#define POST1_RX	(POST_RX >> 2)
--#define POST1_FW	(POST_FW >> 2)
--#define POST_ALL	(POST0_RX | POST0_FW | POST1_RX | POST1_FW)
--
- /* ARSTR */
- enum ARSTR_BIT { ARSTR_ARSTR = 0x00000001, };
-
-@@ -785,10 +720,6 @@ struct sh_eth_private {
- 	int msg_enable;
- 	int speed;
- 	int duplex;
--	u32 rx_int_var, tx_int_var;	/* interrupt control variables */
--	char post_rx;		/* POST receive */
--	char post_fw;		/* POST forward */
--	struct net_device_stats tsu_stats;	/* TSU forward status */
- 	int port;		/* for TSU */
- 	int vlan_num_ids;	/* for VLAN tag filter */
-
+ 	r8a7740_pinmux_init();
+ 	r8a7740_meram_workaround();
+ 
+@@ -1004,6 +1071,13 @@ static void __init eva_init(void)
+ 	gpio_direction_none(GPIO_PORT7CR); /* FSIAOBT needs no direction */
+ 	gpio_direction_none(GPIO_PORT8CR); /* FSIAOLR needs no direction */
+ 
++	/* FSI-HDMI */
++	gpio_request(GPIO_FN_FSIBCK,		NULL);
++
++	/* HDMI */
++	gpio_request(GPIO_FN_HDMI_HPD,		NULL);
++	gpio_request(GPIO_FN_HDMI_CEC,		NULL);
++
+ 	/*
+ 	 * CAUTION
+ 	 *
+@@ -1050,6 +1124,8 @@ static void __init eva_init(void)
+ 
+ 	platform_add_devices(eva_devices,
+ 			     ARRAY_SIZE(eva_devices));
++
++	eva_clock_init();
+ }
+ 
+ static void __init eva_earlytimer_init(void)
 -- 
-1.7.1
+1.7.5.4
+
