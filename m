@@ -1,117 +1,277 @@
-From: Grant Likely <grant.likely@secretlab.ca>
-Date: Sat, 26 May 2012 01:50:49 +0000
-Subject: Re: [PATCH 2/2] irqdomain: Support for static IRQ mapping and association.
-Message-Id: <20120526015049.1616D3E2336@localhost>
+From: T Makphaibulchoke <tmac@hp.com>
+Date: Thu, 24 May 2012 16:03:56 +0000
+Subject: [PATCH] lib/decompress_unxz.c: removing all memory helper functions
+Message-Id: <1337875436-27640-1-git-send-email-tmac@hp.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1337576792-5347-1-git-send-email-lethal@linux-sh.org> <1337576792-5347-2-git-send-email-lethal@linux-sh.org>
-In-Reply-To: <1337576792-5347-2-git-send-email-lethal@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, 21 May 2012 14:06:32 +0900, Paul Mundt <lethal@linux-sh.org> wrote:
-> +/**
-> + * irq_domain_associate_many() - Associate a range of hw irqs with linux irqs
-> + * @domain: domain owning the interrupt range
-> + * @irq_base: beginning of linux IRQ range
-> + * @hwirq_base: beginning of hardware IRQ range
-> + * @count: Number of interrupts to associate
-> + *
-> + * This routine takes care of creating an association between a range of
-> + * hardware and linux IRQs using pre-existing IRQ allocations. For use by
-> + * controllers that do their own irq_desc management.
-> + */
-> +int irq_domain_associate_many(struct irq_domain *domain, unsigned int irq_base,
-> +			      irq_hw_number_t hwirq_base, int count)
-> +{
-> +	int i, ret;
-> +
-> +	for (i = 0; i < count; i++) {
-> +		ret = irq_domain_associate(domain, irq_base + i,
-> +					   hwirq_base + i);
-> +		if (unlikely(ret))
-> +			goto unmap;
-> +	}
-> +
-> +	return 0;
-> +
-> +unmap:
-> +	while (--i >= 0) {
-> +		if (domain->ops->unmap)
-> +			domain->ops->unmap(domain, irq_base + i);
-> +
-> +		irq_set_status_flags(irq_base + i, IRQ_NOREQUEST);
-> +	}
-> +
-> +	return ret;
-> +}
-> +EXPORT_SYMBOL_GPL(irq_domain_associate_many);
+The patch cleans up the file lib/decompress_unxz.c by removing all memory
+helper functions, e.g., memmove.  By doing so, any architecture's preboot
+environment supporting the XZ decompression needs to define its own copy of
+any of the missing memory helper functions.
 
-Looks good, but I've flipped around the patch to make
-irq_domain_associate() a simple wrapper around
-irq_domain_associate_many() instead of the other way around.  It makes
-for a bigger change to the existing irq_setup_virq() code, but in the
-end I think it makes more to keep all the logic in one place.  I'll
-post my revised version.
+The patch makes sure that all 4 architectures' preboot currently supporting
+the XZ decompressor, arm, s390, sh and x86, build without error when using
+the XZ compression.
 
-I've also added sanity checks to make sure only allocated irq_descs
-can get associated.  Otherwise the kernel will oops.
+Adding a prototype for the memcmp function required by the XZ decompressor to
+workaround compiler's implicit type error.  Also removing both the memmove and
+memcpy defines workaround, to disable lib/decompress_unxz.c from duplicating
+both functions.
 
-> +/**
-> + * irq_create_strict_mappings() - Map a range of hw irqs to fixed linux irqs
-> + * @domain: domain owning the interrupt range
-> + * @irq_base: beginning of linux IRQ range
-> + * @hwirq_base: beginning of hardware IRQ range
-> + * @count: Number of interrupts to map
-> + *
-> + * This routine is used for allocating and mapping a range of hardware
-> + * irqs to linux irqs where the linux irq numbers are at pre-defined
-> + * locations. For use by controllers that already have static mappings
-> + * to insert in to the domain.
-> + *
-> + * Non-linear users can use irq_create_identity_mapping() for IRQ-at-a-time
-> + * domain insertion.
-> + *
-> + * 0 is returned upon success, while any failure to establish a static
-> + * mapping is treated as an error.
-> + */
-> +int irq_create_strict_mappings(struct irq_domain *domain, unsigned int irq_base,
-> +			       irq_hw_number_t hwirq_base, int count)
-> +{
-> +	int ret;
-> +
-> +	ret = irq_alloc_descs(irq_base, irq_base, count,
-> +			      of_node_to_nid(domain->of_node));
-> +	if (unlikely(ret < 0))
-> +		return ret;
-> +
-> +	ret = irq_domain_associate_many(domain, irq_base, hwirq_base, count);
-> +	if (unlikely(ret < 0)) {
-> +		irq_free_descs(irq_base, count);
-> +		return ret;
-> +	}
+Adding the missing memcmp function, required by the XZ decompressor, to the
+s390 preboot environment.
 
-It would be really good to make sure the hwirqs aren't already
-associated before trying to associate them again.  Unfortunately that
-can't be done (nicely) until I get rid of the slow path lookup.  I've
-got a patch for that which I'll rebase on top of this one and post soon.
+Adding both the missing memmove and memcmp functions, required by the XZ
+decompressor, to the sh preboot environment.
 
-g.
+Adding the missing memmove function, required by XZ decompressor, to the x86
+preboot environment.
 
-> +
-> +	return 0;
-> +}
-> +EXPORT_SYMBOL_GPL(irq_create_strict_mappings);
-> +
->  unsigned int irq_create_of_mapping(struct device_node *controller,
->  				   const u32 *intspec, unsigned int intsize)
->  {
-> -- 
-> 1.7.9.rc0.28.g0e1cf
-> 
+Signed-off-by: T. Makphaibulchoke <tmac@hp.com>
+---
+ arch/arm/boot/compressed/decompress.c |    3 +-
+ arch/s390/boot/compressed/misc.c      |   14 +++++
+ arch/sh/boot/compressed/misc.c        |   32 ++++++++++++
+ arch/x86/boot/compressed/string.c     |   18 +++++++
+ lib/decompress_unxz.c                 |   85 +++++++--------------------------
+ lib/xz/xz_private.h                   |    7 ++-
+ 6 files changed, 87 insertions(+), 72 deletions(-)
 
+diff --git a/arch/arm/boot/compressed/decompress.c b/arch/arm/boot/compressed/decompress.c
+index f41b38c..80a2219 100644
+--- a/arch/arm/boot/compressed/decompress.c
++++ b/arch/arm/boot/compressed/decompress.c
+@@ -9,6 +9,7 @@
+ extern unsigned long free_mem_ptr;
+ extern unsigned long free_mem_end_ptr;
+ extern void error(char *);
++extern int memcmp(const void *, const void *, size_t);
+ 
+ #define STATIC static
+ #define STATIC_RW_DATA	/* non-static please */
+@@ -45,8 +46,6 @@ extern void error(char *);
+ #endif
+ 
+ #ifdef CONFIG_KERNEL_XZ
+-#define memmove memmove
+-#define memcpy memcpy
+ #include "../../../../lib/decompress_unxz.c"
+ #endif
+ 
+diff --git a/arch/s390/boot/compressed/misc.c b/arch/s390/boot/compressed/misc.c
+index 465eca7..b966af3 100644
+--- a/arch/s390/boot/compressed/misc.c
++++ b/arch/s390/boot/compressed/misc.c
+@@ -87,6 +87,20 @@ void *memcpy(void *__dest, __const void *__src, size_t __n)
+ 	return __builtin_memcpy(__dest, __src, __n);
+ }
+ 
++int memcmp(const void *cs, const void *ct, size_t count)
++{
++	const unsigned char *su1, *su2;
++	int res = 0;
++
++	for (su1 = cs, su2 = ct; 0 < count; ++su1, ++su2, count--) {
++		res = *su1 - *su2;
++		if (res != 0)
++			break;
++	}
++
++	return res;
++}
++
+ void *memmove(void *__dest, __const void *__src, size_t __n)
+ {
+ 	char *d;
+diff --git a/arch/sh/boot/compressed/misc.c b/arch/sh/boot/compressed/misc.c
+index 95470a4..09e740d 100644
+--- a/arch/sh/boot/compressed/misc.c
++++ b/arch/sh/boot/compressed/misc.c
+@@ -94,6 +94,38 @@ void* memcpy(void* __dest, __const void* __src,
+ 	return __dest;
+ }
+ 
++void *memmove(void *dest, const void *src, size_t size)
++{
++	uint8_t *d = dest;
++	const uint8_t *s = src;
++	size_t i;
++
++	if (d < s) {
++		for (i = 0; i < size; ++i)
++			d[i] = s[i];
++	} else if (d > s) {
++		i = size;
++		while (i-- > 0)
++			d[i] = s[i];
++	}
++
++	return dest;
++}
++
++int memcmp(const void *cs, const void *ct, size_t count)
++{
++	const unsigned char *su1, *su2;
++	int res = 0;
++
++	for (su1 = cs, su2 = ct; 0 < count; ++su1, ++su2, count--) {
++		res = *su1 - *su2;
++		if (res != 0)
++			break;
++	}
++
++	return res;
++}
++
+ static void error(char *x)
+ {
+ 	puts("\n\n");
+diff --git a/arch/x86/boot/compressed/string.c b/arch/x86/boot/compressed/string.c
+index ffb9c5c..2f4fdfa 100644
+--- a/arch/x86/boot/compressed/string.c
++++ b/arch/x86/boot/compressed/string.c
+@@ -8,4 +8,22 @@ int memcmp(const void *s1, const void *s2, size_t len)
+ 	return diff;
+ }
+ 
++void *memmove(void *dest, const void *src, size_t size)
++{
++	uint8_t *d = dest;
++	const uint8_t *s = src;
++	size_t i;
++
++	if (d < s) {
++		for (i = 0; i < size; ++i)
++			d[i] = s[i];
++	} else if (d > s) {
++		i = size;
++		while (i-- > 0)
++			d[i] = s[i];
++	}
++
++	return dest;
++}
++
+ #include "../string.c"
+diff --git a/lib/decompress_unxz.c b/lib/decompress_unxz.c
+index 9f34eb5..bd09c2f 100644
+--- a/lib/decompress_unxz.c
++++ b/lib/decompress_unxz.c
+@@ -160,75 +160,24 @@
+ #define vfree(ptr) do { if (ptr != NULL) free(ptr); } while (0)
+ 
+ /*
+- * FIXME: Not all basic memory functions are provided in architecture-specific
+- * files (yet). We define our own versions here for now, but this should be
+- * only a temporary solution.
++ * To support XZ-decompressed file in preboot environment, the following
++ * functions, memcmp, memset, memcpy and memmove, needed to be defined in
++ * architecture-specific preboot environment.
++ *
++ * Not all architecture-specific preboot environment currently support all of
++ * the above functions.
++ *
++ * If your architecture does not support any of the above functions, simply
++ * add the missing function(s) to the architecture-specific preboot string.c
++ * or misc.c file, for example arch/x86/boot/compressed/string.c for the x86
++ * architecture.
++ *
++ * memcmp is not used much and any remotely sane implementation is fast enough.
++ * memmove speed matters in multi-call mode.  Any missing memory helper
++ * functions, including a decent implementation of an in-place memmove function
++ * could be found in lib/string.c
+  *
+- * memeq and memzero are not used much and any remotely sane implementation
+- * is fast enough. memcpy/memmove speed matters in multi-call mode, but
+- * the kernel image is decompressed in single-call mode, in which only
+- * memcpy speed can matter and only if there is a lot of uncompressible data
+- * (LZMA2 stores uncompressible chunks in uncompressed form). Thus, the
+- * functions below should just be kept small; it's probably not worth
+- * optimizing for speed.
+- */
+-
+-#ifndef memeq
+-static bool memeq(const void *a, const void *b, size_t size)
+-{
+-	const uint8_t *x = a;
+-	const uint8_t *y = b;
+-	size_t i;
+-
+-	for (i = 0; i < size; ++i)
+-		if (x[i] != y[i])
+-			return false;
+-
+-	return true;
+-}
+-#endif
+-
+-#ifndef memzero
+-static void memzero(void *buf, size_t size)
+-{
+-	uint8_t *b = buf;
+-	uint8_t *e = b + size;
+-
+-	while (b != e)
+-		*b++ = '\0';
+-}
+-#endif
+-
+-#ifndef memmove
+-/* Not static to avoid a conflict with the prototype in the Linux headers. */
+-void *memmove(void *dest, const void *src, size_t size)
+-{
+-	uint8_t *d = dest;
+-	const uint8_t *s = src;
+-	size_t i;
+-
+-	if (d < s) {
+-		for (i = 0; i < size; ++i)
+-			d[i] = s[i];
+-	} else if (d > s) {
+-		i = size;
+-		while (i-- > 0)
+-			d[i] = s[i];
+-	}
+-
+-	return dest;
+-}
+-#endif
+-
+-/*
+- * Since we need memmove anyway, would use it as memcpy too.
+- * Commented out for now to avoid breaking things.
+  */
+-/*
+-#ifndef memcpy
+-#	define memcpy memmove
+-#endif
+-*/
+ 
+ #include "xz/xz_crc32.c"
+ #include "xz/xz_dec_stream.c"
+diff --git a/lib/xz/xz_private.h b/lib/xz/xz_private.h
+index 482b90f..a997dca 100644
+--- a/lib/xz/xz_private.h
++++ b/lib/xz/xz_private.h
+@@ -37,9 +37,12 @@
+ #		ifdef CONFIG_XZ_DEC_SPARC
+ #			define XZ_DEC_SPARC
+ #		endif
+-#		define memeq(a, b, size) (memcmp(a, b, size) = 0)
+-#		define memzero(buf, size) memset(buf, 0, size)
+ #	endif
++	/* Make all environments, including preboot, use memcmp for memeq */
++#	define memeq(a, b, size) (memcmp(a, b, size) = 0)
++	/* To suppress redefine warning in some architecture's preboot */
++#	undef memzero
++#	define memzero(buf, size) memset(buf, 0, size)
+ #	define get_le32(p) le32_to_cpup((const uint32_t *)(p))
+ #else
+ 	/*
 -- 
-Grant Likely, B.Sc, P.Eng.
-Secret Lab Technologies, Ltd.
+1.7.1
+
