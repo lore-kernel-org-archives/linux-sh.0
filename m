@@ -1,42 +1,65 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Wed, 02 May 2012 09:47:21 +0000
-Subject: Re: [PATCH v2 09/10] mtd: sh_flctl: Use user oob data in hardware ECC mode
-Message-Id: <CABYn4swN7PrGPVx2+FPkYx+g6Y=0v9e86KXVx2UVxDwhOaZPCg@mail.gmail.com>
+From: Paul Bolle <pebolle@tiscali.nl>
+Date: Thu, 24 May 2012 14:38:23 +0000
+Subject: [PATCH] Drop superfluous setting of i2c_board_info.type
+Message-Id: <1337870303.22505.20.camel@x61.thuisdomein>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1335362618-4559-1-git-send-email-hechtb@gmail.com>
- <1335362618-4559-10-git-send-email-hechtb@gmail.com>
- <CAN8TOE9fnQJb6ivwg997cE93g+PcxvvgZzGHsm2Ua6o_ZzH=HQ@mail.gmail.com>
-In-Reply-To: <CAN8TOE9fnQJb6ivwg997cE93g+PcxvvgZzGHsm2Ua6o_ZzH=HQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Brian Norris <computersforpeace@gmail.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-mtd@lists.infradead.org, Laurent Pichart <laurent.pinchart@ideasonboard.com>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Brian,
+Three instances of struct i2c_board_info have their "type" member set to
+"tsc2007" twice. First through the I2C_BOARD_INFO macro and then
+directly. Drop the superfluous second setting.
 
-> I don't know about the HW-specific details here, but read/write
-> data+OOB seems good.
->
-> Acked-by: Brian Norris <computersforpeace@gmail.com>
->
-> If these patches are accepted, I will try to make sure this driver
-> switches to conditionally reading/writing OOB in my patch series. Keep
-> an eye out for them, though.
+Signed-off-by: Paul Bolle <pebolle@tiscali.nl>
+---
+0) Entirely untested. I'm unsure what toolchain(s) is (are) needed to
+compile this and I am certain that I don't have the hardware.
 
-Thanks! I've submitted a new version of my patchset and they don't
-stack out of the box with your patch-set - either way if yours comes
-first or mine, it should require little to adapt.
+1) This is apparently legal. Doesn't gcc issue a warning for this?
 
-> BTW, from the changes I'm seeing in this patch series, your driver was
-> previously fairly broken. Or at least, several features of it were...
-> Good luck with the cleanup!
+ arch/arm/mach-imx/mach-cpuimx35.c     |    1 -
+ arch/arm/mach-imx/mach-cpuimx51sd.c   |    1 -
+ arch/arm/mach-shmobile/board-ap4evb.c |    1 -
+ 3 files changed, 0 insertions(+), 3 deletions(-)
 
-Yeah thanks! I like the driver and learned a lot from it - but the ECC
-part was broken like hell, true :)
+diff --git a/arch/arm/mach-imx/mach-cpuimx35.c b/arch/arm/mach-imx/mach-cpuimx35.c
+index 8ecc872..b1a4796 100644
+--- a/arch/arm/mach-imx/mach-cpuimx35.c
++++ b/arch/arm/mach-imx/mach-cpuimx35.c
+@@ -70,7 +70,6 @@ static struct i2c_board_info eukrea_cpuimx35_i2c_devices[] = {
+ 		I2C_BOARD_INFO("pcf8563", 0x51),
+ 	}, {
+ 		I2C_BOARD_INFO("tsc2007", 0x48),
+-		.type		= "tsc2007",
+ 		.platform_data	= &tsc2007_info,
+ 		.irq		= IMX_GPIO_TO_IRQ(TSC2007_IRQGPIO),
+ 	},
+diff --git a/arch/arm/mach-imx/mach-cpuimx51sd.c b/arch/arm/mach-imx/mach-cpuimx51sd.c
+index 9fbe923..89eb93c 100644
+--- a/arch/arm/mach-imx/mach-cpuimx51sd.c
++++ b/arch/arm/mach-imx/mach-cpuimx51sd.c
+@@ -124,7 +124,6 @@ static struct i2c_board_info eukrea_cpuimx51sd_i2c_devices[] = {
+ 		I2C_BOARD_INFO("pcf8563", 0x51),
+ 	}, {
+ 		I2C_BOARD_INFO("tsc2007", 0x49),
+-		.type		= "tsc2007",
+ 		.platform_data	= &tsc2007_info,
+ 		.irq		= IMX_GPIO_TO_IRQ(TSC2007_IRQGPIO),
+ 	},
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index b56dde2..801de4b 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -1168,7 +1168,6 @@ static struct tsc2007_platform_data tsc2007_info = {
+ 
+ static struct i2c_board_info tsc_device = {
+ 	I2C_BOARD_INFO("tsc2007", 0x48),
+-	.type		= "tsc2007",
+ 	.platform_data	= &tsc2007_info,
+ 	/*.irq is selected on ap4evb_init */
+ };
+-- 
+1.7.7.6
 
-Best regards,
-
- Bastian
-
-> Brian
