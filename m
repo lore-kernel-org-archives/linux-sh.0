@@ -1,195 +1,139 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 23 May 2012 01:30:38 +0000
-Subject: [PATCH 01/12 v2] ARM: mach-shmobile: shareing extra gpio setting functions
-Message-Id: <87fwarvg3p.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 25 May 2012 15:45:51 +0000
+Subject: [PATCH 2/3 v3] ARM: mach-shmobile: switch all SDHI instances on mackerel to use GPIO CD
+Message-Id: <1337960752-4944-37-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>
 
-Current gpio frame work doesn't have the method to control
-just pull up/down/free, but some SH-ARM boards need such kind of operation,
-and some boards already have such functions on each code.
+All 3 SDHI instances on mackerel use GPIOs for card-detection and can be
+switched to use the generic GPIO CD helper. SDHI0 card-detect is configured
+to produce interrupts, SDHI1 and SDHI2 are polled.
 
-This patch shares extra gpio method for SH-ARM.
-But these functions should be replaced by correct
-gpio function in the future.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-v1 -> v2
+ arch/arm/mach-shmobile/board-mackerel.c |   46 +++++++++++++++----------------
+ 1 files changed, 22 insertions(+), 24 deletions(-)
 
-- this patch is included in this v2 patch set
-
- arch/arm/mach-shmobile/board-ap4evb.c      |   19 +--------------
- arch/arm/mach-shmobile/board-g4evm.c       |   18 ---------------
- arch/arm/mach-shmobile/board-mackerel.c    |   30 +------------------------
- arch/arm/mach-shmobile/include/mach/gpio.h |   32 ++++++++++++++++++++++++++++
- 4 files changed, 36 insertions(+), 63 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index ace6024..d7417f3 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -1138,21 +1138,6 @@ static void __init fsi_init_pm_clock(void)
- 	clk_put(fsia_ick);
- }
- 
--/*
-- * FIXME !!
-- *
-- * gpio_no_direction
-- * are quick_hack.
-- *
-- * current gpio frame work doesn't have
-- * the method to control only pull up/down/free.
-- * this function should be replaced by correct gpio function
-- */
--static void __init gpio_no_direction(u32 addr)
--{
--	__raw_writeb(0x00, addr);
--}
--
- /* TouchScreen */
- #ifdef CONFIG_AP4EVB_QHD
- # define GPIO_TSC_IRQ	GPIO_FN_IRQ28_123
-@@ -1302,8 +1287,8 @@ static void __init ap4evb_init(void)
- 
- 	gpio_request(GPIO_PORT9, NULL);
- 	gpio_request(GPIO_PORT10, NULL);
--	gpio_no_direction(GPIO_PORT9CR);  /* FSIAOBT needs no direction */
--	gpio_no_direction(GPIO_PORT10CR); /* FSIAOLR needs no direction */
-+	gpio_direction_none(GPIO_PORT9CR);  /* FSIAOBT needs no direction */
-+	gpio_direction_none(GPIO_PORT10CR); /* FSIAOLR needs no direction */
- 
- 	/* card detect pin for MMC slot (CN7) */
- 	gpio_request(GPIO_PORT41, NULL);
-diff --git a/arch/arm/mach-shmobile/board-g4evm.c b/arch/arm/mach-shmobile/board-g4evm.c
-index f125732..6b6f028 100644
---- a/arch/arm/mach-shmobile/board-g4evm.c
-+++ b/arch/arm/mach-shmobile/board-g4evm.c
-@@ -271,24 +271,6 @@ static struct platform_device *g4evm_devices[] __initdata = {
- #define GPIO_SDHID1_D3	0xe6052106
- #define GPIO_SDHICMD1	0xe6052107
- 
--/*
-- * FIXME !!
-- *
-- * gpio_pull_up is quick_hack.
-- *
-- * current gpio frame work doesn't have
-- * the method to control only pull up/down/free.
-- * this function should be replaced by correct gpio function
-- */
--static void __init gpio_pull_up(u32 addr)
--{
--	u8 data = __raw_readb(addr);
--
--	data &= 0x0F;
--	data |= 0xC0;
--	__raw_writeb(data, addr);
--}
--
- static void __init g4evm_init(void)
- {
- 	sh7377_pinmux_init();
 diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index b577f7c..798be2b 100644
+index 5881bb1..45854a9 100644
 --- a/arch/arm/mach-shmobile/board-mackerel.c
 +++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -203,32 +203,6 @@
-  * amixer set "HPOUTR Mixer DACH" on
-  */
+@@ -1032,15 +1032,6 @@ static struct platform_device nand_flash_device = {
+ 	},
+ };
  
 -/*
-- * FIXME !!
-- *
-- * gpio_no_direction
-- * gpio_pull_down
-- * are quick_hack.
-- *
-- * current gpio frame work doesn't have
-- * the method to control only pull up/down/free.
-- * this function should be replaced by correct gpio function
+- * The card detect pin of the top SD/MMC slot (CN7) is active low and is
+- * connected to GPIO A22 of SH7372 (GPIO_PORT41).
 - */
--static void __init gpio_no_direction(u32 addr)
+-static int slot_cn7_get_cd(struct platform_device *pdev)
 -{
--	__raw_writeb(0x00, addr);
+-	return !gpio_get_value(GPIO_PORT41);
 -}
 -
--static void __init gpio_pull_down(u32 addr)
+ /* SDHI0 */
+ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+@@ -1084,14 +1075,17 @@ static struct platform_device sdhi0_device = {
+ 
+ #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
+ /* SDHI1 */
++
++/* GPIO_PORT41 can trigger IRQ8, but it is used by USBHS1, we have to poll */
+ static struct sh_mobile_sdhi_info sdhi1_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
+ 	.tmio_ocr_mask	= MMC_VDD_165_195,
+-	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE,
++	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_USE_GPIO_CD,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
+ 			  MMC_CAP_NEEDS_POLL,
+-	.get_cd		= slot_cn7_get_cd,
++	.tmio_caps2	= MMC_CAP2_INVERTED_CD,
++	.cd_gpio	= GPIO_PORT41,
+ };
+ 
+ static struct resource sdhi1_resources[] = {
+@@ -1129,23 +1123,20 @@ static struct platform_device sdhi1_device = {
+ };
+ #endif
+ 
++/* SDHI2 */
++
+ /*
+  * The card detect pin of the top SD/MMC slot (CN23) is active low and is
+  * connected to GPIO SCIFB_SCK of SH7372 (GPIO_PORT162).
+  */
+-static int slot_cn23_get_cd(struct platform_device *pdev)
 -{
--	u8 data = __raw_readb(addr);
--
--	data &= 0x0F;
--	data |= 0xA0;
--
--	__raw_writeb(data, addr);
+-	return !gpio_get_value(GPIO_PORT162);
 -}
 -
- /* MTD */
- static struct mtd_partition nor_flash_partitions[] = {
- 	{
-@@ -1475,8 +1449,8 @@ static void __init mackerel_init(void)
+-/* SDHI2 */
+ static struct sh_mobile_sdhi_info sdhi2_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI2_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI2_RX,
+-	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE,
++	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_USE_GPIO_CD,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
+ 			  MMC_CAP_NEEDS_POLL,
+-	.get_cd		= slot_cn23_get_cd,
++	.tmio_caps2	= MMC_CAP2_INVERTED_CD,
++	.cd_gpio	= GPIO_PORT162,
+ };
  
- 	gpio_request(GPIO_PORT9,  NULL);
- 	gpio_request(GPIO_PORT10, NULL);
--	gpio_no_direction(GPIO_PORT9CR);  /* FSIAOBT needs no direction */
--	gpio_no_direction(GPIO_PORT10CR); /* FSIAOLR needs no direction */
-+	gpio_direction_none(GPIO_PORT9CR);  /* FSIAOBT needs no direction */
-+	gpio_direction_none(GPIO_PORT10CR); /* FSIAOLR needs no direction */
+ static struct resource sdhi2_resources[] = {
+@@ -1183,6 +1174,16 @@ static struct platform_device sdhi2_device = {
+ };
  
- 	intc_set_priority(IRQ_FSI, 3); /* irq priority FSI(3) > SMSC911X(2) */
- 
-diff --git a/arch/arm/mach-shmobile/include/mach/gpio.h b/arch/arm/mach-shmobile/include/mach/gpio.h
-index de795b4..7c1e4ab 100644
---- a/arch/arm/mach-shmobile/include/mach/gpio.h
-+++ b/arch/arm/mach-shmobile/include/mach/gpio.h
-@@ -13,6 +13,7 @@
- #include <linux/kernel.h>
- #include <linux/errno.h>
- #include <linux/sh_pfc.h>
-+#include <asm/io.h>
- 
- #ifdef CONFIG_GPIOLIB
- 
-@@ -27,4 +28,35 @@ static inline int irq_to_gpio(unsigned int irq)
- 
- #endif /* CONFIG_GPIOLIB */
- 
+ /* SH_MMCIF */
++
 +/*
-+ * FIXME !!
-+ *
-+ * current gpio frame work doesn't have
-+ * the method to control only pull up/down/free.
-+ * this function should be replaced by correct gpio function
++ * The card detect pin of the top SD/MMC slot (CN7) is active low and is
++ * connected to GPIO A22 of SH7372 (GPIO_PORT41).
 + */
-+static inline void __init gpio_direction_none(u32 addr)
++static int slot_cn7_get_cd(struct platform_device *pdev)
 +{
-+	__raw_writeb(0x00, addr);
++	return !gpio_get_value(GPIO_PORT41);
 +}
 +
-+static inline void __init gpio_pull_up(u32 addr)
-+{
-+	u8 data = __raw_readb(addr);
-+
-+	data &= 0x0F;
-+	data |= 0xC0;
-+	__raw_writeb(data, addr);
-+}
-+
-+static inline void __init gpio_pull_down(u32 addr)
-+{
-+	u8 data = __raw_readb(addr);
-+
-+	data &= 0x0F;
-+	data |= 0xA0;
-+
-+	__raw_writeb(data, addr);
-+}
-+
- #endif /* __ASM_ARCH_GPIO_H */
+ static struct resource sh_mmcif_resources[] = {
+ 	[0] = {
+ 		.name	= "MMCIF",
+@@ -1521,10 +1522,11 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_SDHID1_2, NULL);
+ 	gpio_request(GPIO_FN_SDHID1_1, NULL);
+ 	gpio_request(GPIO_FN_SDHID1_0, NULL);
+-#endif
++#else
+ 	/* card detect pin for MMC slot (CN7) */
+ 	gpio_request(GPIO_PORT41, NULL);
+ 	gpio_direction_input(GPIO_PORT41);
++#endif
+ 
+ 	/* enable SDHI2 */
+ 	gpio_request(GPIO_FN_SDHICMD2, NULL);
+@@ -1534,10 +1536,6 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_SDHID2_1, NULL);
+ 	gpio_request(GPIO_FN_SDHID2_0, NULL);
+ 
+-	/* card detect pin for microSD slot (CN23) */
+-	gpio_request(GPIO_PORT162, NULL);
+-	gpio_direction_input(GPIO_PORT162);
+-
+ 	/* MMCIF */
+ 	gpio_request(GPIO_FN_MMCD0_0, NULL);
+ 	gpio_request(GPIO_FN_MMCD0_1, NULL);
 -- 
-1.7.5.4
+1.7.2.5
 
+--
+To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
