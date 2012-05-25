@@ -1,94 +1,53 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 22 May 2012 02:29:21 +0000
-Subject: [PATCH 07/11] ARM: mach-shmobile: pfc-r8a7740: add FSI-B (for HDMI) support
-Message-Id: <878vglaqyp.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 25 May 2012 15:45:45 +0000
+Subject: [PATCH 10/10 v3] mmc: tmio: use generic GPIO CD and WP handlers
+Message-Id: <1337960752-4944-31-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>
 
-This patch is based on v1.0 manual
+The tmio-mmc driver is already using the generic GPIO CD handler in IRQ
+mode. This patch adds support for CD polling mode and also checks for
+availability of a WP GPIO.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7740.h |    5 ++++-
- arch/arm/mach-shmobile/pfc-r8a7740.c          |   11 +++++++++--
- 2 files changed, 13 insertions(+), 3 deletions(-)
+ drivers/mmc/host/tmio_mmc_pio.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index 2764846..6468fcc 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -139,7 +139,7 @@ enum {
- 	GPIO_FN_DBGMD10,	GPIO_FN_DBGMD11,	GPIO_FN_DBGMD20,
- 	GPIO_FN_DBGMD21,
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 5261934..1eed200 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -871,6 +871,9 @@ static int tmio_mmc_get_ro(struct mmc_host *mmc)
+ {
+ 	struct tmio_mmc_host *host = mmc_priv(mmc);
+ 	struct tmio_mmc_data *pdata = host->pdata;
++	int ret = mmc_gpio_get_ro(mmc);
++	if (ret >= 0)
++		return ret;
  
--	/* FSI */
-+	/* FSI-A */
- 	GPIO_FN_FSIAISLD_PORT0,		/* FSIAISLD Port 0/5 */
- 	GPIO_FN_FSIAISLD_PORT5,
- 	GPIO_FN_FSIASPDIF_PORT9,	/* FSIASPDIF Port 9/18 */
-@@ -150,6 +150,9 @@ enum {
- 	GPIO_FN_FSIACK,		GPIO_FN_FSIAILR,
- 	GPIO_FN_FSIAIBT,
+ 	return !((pdata->flags & TMIO_MMC_WRPROTECT_DISABLE) ||
+ 		 (sd_ctrl_read32(host, CTL_STATUS) & TMIO_STAT_WRPROTECT));
+@@ -880,6 +883,9 @@ static int tmio_mmc_get_cd(struct mmc_host *mmc)
+ {
+ 	struct tmio_mmc_host *host = mmc_priv(mmc);
+ 	struct tmio_mmc_data *pdata = host->pdata;
++	int ret = mmc_gpio_get_cd(mmc);
++	if (ret >= 0)
++		return ret;
  
-+	/* FSI-B */
-+	GPIO_FN_FSIBCK,
-+
- 	/* FMSI */
- 	GPIO_FN_FMSISLD_PORT1, /* FMSISLD Port 1/6 */
- 	GPIO_FN_FMSISLD_PORT6,
-diff --git a/arch/arm/mach-shmobile/pfc-r8a7740.c b/arch/arm/mach-shmobile/pfc-r8a7740.c
-index 0dda816..03def0f 100644
---- a/arch/arm/mach-shmobile/pfc-r8a7740.c
-+++ b/arch/arm/mach-shmobile/pfc-r8a7740.c
-@@ -169,7 +169,7 @@ enum {
- 	DBGMD10_MARK,	DBGMD11_MARK,	DBGMD20_MARK,
- 	DBGMD21_MARK,
- 
--	/* FSI */
-+	/* FSI-A */
- 	FSIAISLD_PORT0_MARK,	/* FSIAISLD Port 0/5 */
- 	FSIAISLD_PORT5_MARK,
- 	FSIASPDIF_PORT9_MARK,	/* FSIASPDIF Port 9/18 */
-@@ -178,6 +178,9 @@ enum {
- 	FSIAOBT_MARK,	FSIAOSLD_MARK,	FSIAOMC_MARK,
- 	FSIACK_MARK,	FSIAILR_MARK,	FSIAIBT_MARK,
- 
-+	/* FSI-B */
-+	FSIBCK_MARK,
-+
- 	/* FMSI */
- 	FMSISLD_PORT1_MARK, /* FMSISLD Port 1/6 */
- 	FMSISLD_PORT6_MARK,
-@@ -774,6 +777,7 @@ static pinmux_enum_t pinmux_data[] = {
- 
- 	/* Port11 */
- 	PINMUX_DATA(FSIACK_MARK,		PORT11_FN1),
-+	PINMUX_DATA(FSIBCK_MARK,		PORT11_FN2),
- 	PINMUX_DATA(IRQ2_PORT11_MARK,		PORT11_FN0,	MSEL1CR_2_0),
- 
- 	/* Port12 */
-@@ -1696,7 +1700,7 @@ static struct pinmux_gpio pinmux_gpios[] = {
- 	GPIO_FN(DBGMD10),	GPIO_FN(DBGMD11),	GPIO_FN(DBGMD20),
- 	GPIO_FN(DBGMD21),
- 
--	/* FSI */
-+	/* FSI-A */
- 	GPIO_FN(FSIAISLD_PORT0),	/* FSIAISLD Port 0/5 */
- 	GPIO_FN(FSIAISLD_PORT5),
- 	GPIO_FN(FSIASPDIF_PORT9),	/* FSIASPDIF Port 9/18 */
-@@ -1705,6 +1709,9 @@ static struct pinmux_gpio pinmux_gpios[] = {
- 	GPIO_FN(FSIAOBT),	GPIO_FN(FSIAOSLD),	GPIO_FN(FSIAOMC),
- 	GPIO_FN(FSIACK),	GPIO_FN(FSIAILR),	GPIO_FN(FSIAIBT),
- 
-+	/* FSI-B */
-+	GPIO_FN(FSIBCK),
-+
- 	/* FMSI */
- 	GPIO_FN(FMSISLD_PORT1), /* FMSISLD Port 1/6 */
- 	GPIO_FN(FMSISLD_PORT6),
+ 	if (!pdata->get_cd)
+ 		return -ENOSYS;
 -- 
-1.7.5.4
+1.7.2.5
 
+--
+To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
