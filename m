@@ -1,25 +1,108 @@
-From: "robothroli company" <info@cagle.com>
-Date: Fri, 25 May 2012 13:45:54 +0000
-Subject: 
-Message-Id: <1179bde6ebe1caaacb0dddb6780534c7.squirrel@mail.cafconc.cd>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 25 May 2012 15:45:37 +0000
+Subject: [PATCH 02/10 v3] mmc: use a more generic name for slot function types and fields
+Message-Id: <1337960752-4944-23-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>
 
+struct mmc_host::hotplug is becoming a generic hook for slot functions.
+Rename it accordingly.
 
- i am robothroli, Purchase manager from roli Merchant Ltd. We are
-Import/export Company based in taiwan. We are interested in purchasing
-your product and I would like to make an inquiry. Please inform me on:
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/mmc/core/host.c      |    2 ++
+ drivers/mmc/core/slot-gpio.c |    8 ++++----
+ include/linux/mmc/host.h     |   17 ++++++++++++++---
+ 3 files changed, 20 insertions(+), 7 deletions(-)
 
-Sample availability and price
-Minimum order quantity
-FOB Prices
+diff --git a/drivers/mmc/core/host.c b/drivers/mmc/core/host.c
+index 91c84c7..b8c5290 100644
+--- a/drivers/mmc/core/host.c
++++ b/drivers/mmc/core/host.c
+@@ -327,6 +327,8 @@ struct mmc_host *mmc_alloc_host(int extra, struct device *dev)
+ 
+ 	mmc_host_clk_init(host);
+ 
++	host->slot.cd_irq = -EINVAL;
++
+ 	spin_lock_init(&host->lock);
+ 	init_waitqueue_head(&host->wq);
+ 	INIT_DELAYED_WORK(&host->detect, mmc_rescan);
+diff --git a/drivers/mmc/core/slot-gpio.c b/drivers/mmc/core/slot-gpio.c
+index 9796710..468e5a0 100644
+--- a/drivers/mmc/core/slot-gpio.c
++++ b/drivers/mmc/core/slot-gpio.c
+@@ -56,8 +56,8 @@ int mmc_gpio_request_cd(struct mmc_host *host, unsigned int gpio)
+ 		goto eirqreq;
+ 
+ 	ctx->cd_gpio = gpio;
+-	host->hotplug.irq = irq;
+-	host->hotplug.handler_priv = ctx;
++	host->slot.cd_irq = irq;
++	host->slot.handler_priv = ctx;
+ 
+ 	return 0;
+ 
+@@ -71,12 +71,12 @@ EXPORT_SYMBOL(mmc_gpio_request_cd);
+ 
+ void mmc_gpio_free_cd(struct mmc_host *host)
+ {
+-	struct mmc_gpio *ctx = host->hotplug.handler_priv;
++	struct mmc_gpio *ctx = host->slot.handler_priv;
+ 
+ 	if (!ctx)
+ 		return;
+ 
+-	free_irq(host->hotplug.irq, host);
++	free_irq(host->slot.cd_irq, host);
+ 	gpio_free(ctx->cd_gpio);
+ 	kfree(ctx);
+ }
+diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
+index 368b317..725413d 100644
+--- a/include/linux/mmc/host.h
++++ b/include/linux/mmc/host.h
+@@ -150,8 +150,19 @@ struct mmc_async_req {
+ 	int (*err_check) (struct mmc_card *, struct mmc_async_req *);
+ };
+ 
+-struct mmc_hotplug {
+-	unsigned int irq;
++/**
++ * struct mmc_slot - MMC slot functions
++ *
++ * @cd_irq:		MMC/SD-card slot hotplug detection IRQ or -EINVAL
++ * @handler_priv:	MMC/SD-card slot context
++ *
++ * Some MMC/SD host controllers implement slot-functions like card and
++ * write-protect detection natively. However, a large number of controllers
++ * leave these functions to the CPU. This struct provides a hook to attach
++ * such slot-function drivers.
++ */
++struct mmc_slot {
++	int cd_irq;
+ 	void *handler_priv;
+ };
+ 
+@@ -290,7 +301,7 @@ struct mmc_host {
+ 
+ 	struct delayed_work	detect;
+ 	int			detect_change;	/* card detect flag */
+-	struct mmc_hotplug	hotplug;
++	struct mmc_slot		slot;
+ 
+ 	const struct mmc_bus_ops *bus_ops;	/* current bus driver */
+ 	unsigned int		bus_refs;	/* reference counter */
+-- 
+1.7.2.5
 
-Sincerely
-Purchase Manager
-robothroli
-
-
-
+--
+To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
