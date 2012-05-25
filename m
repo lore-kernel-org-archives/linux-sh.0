@@ -1,38 +1,87 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 25 May 2012 15:45:15 +0000
-Subject: [PATCH 0/0/6 v3] mmc core, tmio / sdhi and sh-mmcif updates
-Message-Id: <1337960752-4944-1-git-send-email-g.liakhovetski@gmx.de>
+Date: Fri, 25 May 2012 16:01:18 +0000
+Subject: Re: [PATCH 0/0/6 v3] mmc core, tmio / sdhi and sh-mmcif updates
+Message-Id: <Pine.LNX.4.64.1205251759190.13353@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
+References: <Pine.LNX.4.64.1205251045490.13353@axis700.grange>
+ <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
 In-Reply-To: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Hi all
+On Fri, 25 May 2012, Guennadi Liakhovetski wrote:
 
-as follow ups to this email I'll send 6 patch series, which are updates to 
-the following 2 patch series:
+> On Fri, 25 May 2012, Guennadi Liakhovetski wrote:
+>=20
+> > Hi all
+> >=20
+> > as follow ups to this email I'll send 6 patch series, which are updates=
+ to=20
+> > the following 2 patch series:
+>=20
+> Ok, sure, this couldn't go without a glitch - I forgot to CC linux-sh. So=
+,=20
+> what I will do, I will push all these patches to linux-sh only - without =
 
-http://thread.gmane.org/gmane.linux.ports.sh.devel/14448
-http://thread.gmane.org/gmane.linux.ports.sh.devel/14673
+> other recepients. Would be nice, if reviewers could at least cc both MLs =
+-=20
+> linux-sh and linux-mmc, but even if someone replies to only one of them, =
 
-I have further split the latter of the above to make reviewing easier. 
-These series address different topics, but since they touch the same 
-files, it would be easier to also commit them in the same order. Some 
-patches also touch files under arch/arm and arch/sh, they will require 
-respective acks. The patches have been developed, based on "next" of 21 
-May.
+> I'll try to make sure to reply to all relevant recepients with a full=20
+> quote of the original review.
 
-Thanks
+Yes, I know, thank you for your kind words :-D It's Friday, 17:59, +30=B0=20
+Celsius (or more) :-)
+
+SORRY
+
 Guennadi
+
+> Sorry for the inconvenience.
+>=20
+> Thanks
+> Guennadi
+>=20
+> >=20
+> > http://thread.gmane.org/gmane.linux.ports.sh.devel/14448
+> > http://thread.gmane.org/gmane.linux.ports.sh.devel/14673
+> >=20
+> > I have further split the latter of the above to make reviewing easier. =
+
+> > These series address different topics, but since they touch the same=20
+> > files, it would be easier to also commit them in the same order. Some=20
+> > patches also touch files under arch/arm and arch/sh, they will require =
+
+> > respective acks. The patches have been developed, based on "next" of 21=
+=20
+> > May.
+> >=20
+> > Thanks
+> > Guennadi
+> > ---
+> > Guennadi Liakhovetski, Ph.D.
+> > Freelance Open-Source Software Developer
+> > http://www.open-technology.de/
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> >=20
+>=20
+> ---
+> Guennadi Liakhovetski, Ph.D.
+> Freelance Open-Source Software Developer
+> http://www.open-technology.de/
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>=20
+
 ---
 Guennadi Liakhovetski, Ph.D.
 Freelance Open-Source Software Developer
 http://www.open-technology.de/
---
-To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
