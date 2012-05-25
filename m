@@ -1,138 +1,73 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 02 May 2012 12:47:00 +0000
-Subject: [PATCH 02/06] serial8250: Use dl_read()/dl_write() on Alchemy
-Message-Id: <20120502124700.30480.63274.sendpatchset@w520>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 25 May 2012 15:45:30 +0000
+Subject: [PATCH 4/8 v3] mmc: sdhi: implement tmio-mmc clock enable-update and disable callbacks
+Message-Id: <1337960752-4944-16-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120502124642.30480.41373.sendpatchset@w520>
-In-Reply-To: <20120502124642.30480.41373.sendpatchset@w520>
+References: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-serial@vger.kernel.org
-Cc: horms@verge.net.au, arnd@arndb.de, linux-sh@vger.kernel.org, gregkh@linuxfoundation.org, swarren@wwwdotorg.org, linux-kernel@vger.kernel.org, rjw@sisk.pl, paul.gortmaker@windriver.com, lethal@linux-sh.org, olof@lixom.net, Magnus Damm <magnus.damm@gmail.com>, dan.j.williams@intel.com, alan@linux.intel.com
+To: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>
 
-From: Magnus Damm <damm@opensource.se>
+Instead of delivering one static clock frequency value, read from the
+hardware during probing, enable the tmio-mmc driver to re-read the
+frequency dynamically.
 
-Convert the 8250 Alchemy support code to make
-use of the new dl_read()/dl_write() callbacks.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ drivers/mmc/host/sh_mobile_sdhi.c |   24 +++++++++++++++++++++++-
+ 1 files changed, 23 insertions(+), 1 deletions(-)
 
- drivers/tty/serial/8250/8250.c |   67 +++++++++++++++-------------------------
- 1 file changed, 26 insertions(+), 41 deletions(-)
-
---- 0005/drivers/tty/serial/8250/8250.c
-+++ work/drivers/tty/serial/8250/8250.c	2012-05-01 22:51:07.000000000 +0900
-@@ -297,24 +297,7 @@ static void default_dl_write(struct uart
- 	serial_out(up, UART_DLM, value >> 8 & 0xff);
- }
- 
--#if defined(CONFIG_MIPS_ALCHEMY)
--/* Au1x00 haven't got a standard divisor latch */
--static int _serial_dl_read(struct uart_8250_port *up)
--{
--	if (up->port.iotype = UPIO_AU)
--		return __raw_readl(up->port.membase + 0x28);
--	else
--		return default_dl_read(up);
--}
--
--static void _serial_dl_write(struct uart_8250_port *up, int value)
--{
--	if (up->port.iotype = UPIO_AU)
--		__raw_writel(value, up->port.membase + 0x28);
--	else
--		default_dl_write(up, value);
--}
--#elif defined(CONFIG_SERIAL_8250_RM9K)
-+#if defined(CONFIG_SERIAL_8250_RM9K)
- static int _serial_dl_read(struct uart_8250_port *up)
- {
- 	return	(up->port.iotype = UPIO_RM9000) ?
-@@ -344,7 +327,7 @@ static void _serial_dl_write(struct uart
- }
- #endif
- 
--#if defined(CONFIG_MIPS_ALCHEMY)
-+#ifdef CONFIG_MIPS_ALCHEMY
- 
- /* Au1x00 UART hardware has a weird register layout */
- static const u8 au_io_in_map[] = {
-@@ -365,22 +348,32 @@ static const u8 au_io_out_map[] = {
- 	[UART_MCR] = 6,
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 934b68e..d8b167c 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -39,6 +39,27 @@ struct sh_mobile_sdhi {
+ 	struct tmio_mmc_dma dma_priv;
  };
  
--/* sane hardware needs no mapping */
--static inline int map_8250_in_reg(struct uart_port *p, int offset)
-+static unsigned int au_serial_in(struct uart_port *p, int offset)
- {
--	if (p->iotype != UPIO_AU)
--		return offset;
--	return au_io_in_map[offset];
-+	offset = au_io_in_map[offset] << p->regshift;
-+	return __raw_readl(p->membase + offset);
- }
- 
--static inline int map_8250_out_reg(struct uart_port *p, int offset)
-+static void au_serial_out(struct uart_port *p, int offset, int value)
- {
--	if (p->iotype != UPIO_AU)
--		return offset;
--	return au_io_out_map[offset];
-+	offset = au_io_out_map[offset] << p->regshift;
-+	__raw_writel(value, p->membase + offset);
++static int sh_mobile_sdhi_clk_enable(struct platform_device *pdev, unsigned int *f)
++{
++	struct mmc_host *mmc = dev_get_drvdata(&pdev->dev);
++	struct tmio_mmc_host *host = mmc_priv(mmc);
++	struct sh_mobile_sdhi *priv = container_of(host->pdata, struct sh_mobile_sdhi, mmc_data);
++	int ret = clk_enable(priv->clk);
++	if (ret < 0)
++		return ret;
++
++	*f = clk_get_rate(priv->clk);
++	return 0;
 +}
 +
-+/* Au1x00 haven't got a standard divisor latch */
-+static int au_serial_dl_read(struct uart_8250_port *up)
++static void sh_mobile_sdhi_clk_disable(struct platform_device *pdev)
 +{
-+	return __raw_readl(up->port.membase + 0x28);
++	struct mmc_host *mmc = dev_get_drvdata(&pdev->dev);
++	struct tmio_mmc_host *host = mmc_priv(mmc);
++	struct sh_mobile_sdhi *priv = container_of(host->pdata, struct sh_mobile_sdhi, mmc_data);
++	clk_disable(priv->clk);
 +}
 +
-+static void au_serial_dl_write(struct uart_8250_port *up, int value)
-+{
-+	__raw_writel(value, up->port.membase + 0x28);
- }
- 
--#elif defined(CONFIG_SERIAL_8250_RM9K)
-+#endif
-+
-+#if defined(CONFIG_SERIAL_8250_RM9K)
- 
- static const u8
- 	regmap_in[8] = {
-@@ -464,18 +457,6 @@ static unsigned int mem32_serial_in(stru
- 	return readl(p->membase + offset);
- }
- 
--static unsigned int au_serial_in(struct uart_port *p, int offset)
--{
--	offset = map_8250_in_reg(p, offset) << p->regshift;
--	return __raw_readl(p->membase + offset);
--}
--
--static void au_serial_out(struct uart_port *p, int offset, int value)
--{
--	offset = map_8250_out_reg(p, offset) << p->regshift;
--	__raw_writel(value, p->membase + offset);
--}
--
- static unsigned int io_serial_in(struct uart_port *p, int offset)
+ static void sh_mobile_sdhi_set_pwr(struct platform_device *pdev, int state)
  {
- 	offset = map_8250_in_reg(p, offset) << p->regshift;
-@@ -515,10 +496,14 @@ static void set_io_from_upio(struct uart
- 		p->serial_out = mem32_serial_out;
- 		break;
+ 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
+@@ -132,9 +153,10 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 		goto eclkget;
+ 	}
  
-+#ifdef CONFIG_MIPS_ALCHEMY
- 	case UPIO_AU:
- 		p->serial_in = au_serial_in;
- 		p->serial_out = au_serial_out;
-+		up->dl_read = au_serial_dl_read;
-+		up->dl_write = au_serial_dl_write;
- 		break;
-+#endif
- 
- 	default:
- 		p->serial_in = io_serial_in;
+-	mmc_data->hclk = clk_get_rate(priv->clk);
+ 	mmc_data->set_pwr = sh_mobile_sdhi_set_pwr;
+ 	mmc_data->get_cd = sh_mobile_sdhi_get_cd;
++	mmc_data->clk_enable = sh_mobile_sdhi_clk_enable;
++	mmc_data->clk_disable = sh_mobile_sdhi_clk_disable;
+ 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
+ 	if (p) {
+ 		mmc_data->flags = p->tmio_flags;
+-- 
+1.7.2.5
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
