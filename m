@@ -1,15 +1,15 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 03 May 2012 15:05:51 +0000
-Subject: [PATCH 22/29] mmc: add WP pin handler to slot functions
-Message-Id: <1336057558-11031-23-git-send-email-g.liakhovetski@gmx.de>
+Date: Fri, 25 May 2012 15:45:41 +0000
+Subject: [PATCH 06/10 v3] mmc: add WP pin handler to slot functions
+Message-Id: <1337960752-4944-27-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
+References: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>
 
 Card Write-Protect pin is often implemented, using a GPIO, which makes it
 simple to provide a generic handler for it.
@@ -21,7 +21,7 @@ Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
  2 files changed, 54 insertions(+), 1 deletions(-)
 
 diff --git a/drivers/mmc/core/slot-gpio.c b/drivers/mmc/core/slot-gpio.c
-index 7e16a50..eb04c06 100644
+index f14c8a1..074edc2 100644
 --- a/drivers/mmc/core/slot-gpio.c
 +++ b/drivers/mmc/core/slot-gpio.c
 @@ -18,7 +18,9 @@
@@ -96,7 +96,7 @@ index 7e16a50..eb04c06 100644
  int mmc_gpio_request_cd(struct mmc_host *host, unsigned int gpio)
  {
  	struct mmc_gpio *ctx;
-@@ -110,6 +148,17 @@ int mmc_gpio_request_cd(struct mmc_host *host, unsigned int gpio)
+@@ -117,6 +155,17 @@ int mmc_gpio_request_cd(struct mmc_host *host, unsigned int gpio)
  }
  EXPORT_SYMBOL(mmc_gpio_request_cd);
  
@@ -132,3 +132,7 @@ index 1a977d7..7d88d27 100644
 -- 
 1.7.2.5
 
+--
+To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
