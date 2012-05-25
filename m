@@ -1,35 +1,26 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Wed, 02 May 2012 09:41:50 +0000
-Subject: [PATCH v3 10/10] ARM: sh-mobile: mackerel: Use hardware error correction
-Message-Id: <1335951710-9390-11-git-send-email-hechtb@gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 25 May 2012 15:45:26 +0000
+Subject: [PATCH 0/8:3/6 v3] mmc: tmio: clock and PM updates
+Message-Id: <1337960752-4944-12-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1335951710-9390-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1335951710-9390-1-git-send-email-hechtb@gmail.com>
+References: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mtd@lists.infradead.org, linux-sh@vger.kernel.org
-Cc: Brian Norris <computersforpeace@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pichart <laurent.pinchart@ideasonboard.com>, Artem Bityutskiy <dedekind1@gmail.com>
+To: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>
 
-Use the built-in hardware error code correction of the sh_flctl.
+This is an update for patches 9-14,16,18 from
+http://thread.gmane.org/gmane.linux.ports.sh.devel/14673
 
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+Thanks
+Guennadi
 ---
- arch/arm/mach-shmobile/board-mackerel.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 1de1fb7..f8289f4 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1003,6 +1003,7 @@ static struct sh_flctl_platform_data nand_flash_data = {
- 	.flcmncr_val	= CLK_16B_12L_4H | TYPESEL_SET
- 			| SHBUSSEL | SEL_16BIT | SNAND_E,
- 	.use_holden	= 1,
-+	.has_hwecc	= 1,
- };
- 
- static struct platform_device nand_flash_device = {
--- 
-1.7.5.4
-
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
+--
+To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
