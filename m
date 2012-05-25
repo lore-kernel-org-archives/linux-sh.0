@@ -1,68 +1,137 @@
-From: Richard Weinberger <richard@nod.at>
-Date: Fri, 25 May 2012 22:04:26 +0000
-Subject: [PATCH 10/20] sh: Do not call do_signal() with irqs disabled
-Message-Id: <1337983476-22081-10-git-send-email-richard@nod.at>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 25 May 2012 15:45:17 +0000
+Subject: [PATCH 1/3 v3] mmc: sh_mmcif: simplify and use meaningful label names in error-handling
+Message-Id: <1337960752-4944-3-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1337983476-22081-1-git-send-email-richard@nod.at>
-In-Reply-To: <1337983476-22081-1-git-send-email-richard@nod.at>
+References: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-arch@vger.kernel.org, Richard Weinberger <richard@nod.at>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>
 
-get_signal_to_deliver() calls try_to_freeze() which might sleep.
+A check for NULL platform data can be conveniently made in the very
+beginning of probing. Replace numbered error-handling labels in .probe()
+with meaningful names to make any future reorganisation simpler.
 
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-sh@vger.kernel.org
-Signed-off-by: Richard Weinberger <richard@nod.at>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/sh/kernel/signal_32.c |    3 +++
- arch/sh/kernel/signal_64.c |    3 +++
- 2 files changed, 6 insertions(+), 0 deletions(-)
+ drivers/mmc/host/sh_mmcif.c |   41 ++++++++++++++++++++---------------------
+ 1 files changed, 20 insertions(+), 21 deletions(-)
 
-diff --git a/arch/sh/kernel/signal_32.c b/arch/sh/kernel/signal_32.c
-index cb4172c..4f1db5e 100644
---- a/arch/sh/kernel/signal_32.c
-+++ b/arch/sh/kernel/signal_32.c
-@@ -25,6 +25,7 @@
- #include <linux/freezer.h>
- #include <linux/io.h>
- #include <linux/tracehook.h>
-+#include <linux/irqflags.h>
- #include <asm/ucontext.h>
- #include <asm/uaccess.h>
- #include <asm/pgtable.h>
-@@ -619,6 +620,8 @@ static void do_signal(struct pt_regs *regs, unsigned int save_r0)
- asmlinkage void do_notify_resume(struct pt_regs *regs, unsigned int save_r0,
- 				 unsigned long thread_info_flags)
- {
-+	local_irq_enable();
-+
- 	/* deal with pending signal delivery */
- 	if (thread_info_flags & _TIF_SIGPENDING)
- 		do_signal(regs, save_r0);
-diff --git a/arch/sh/kernel/signal_64.c b/arch/sh/kernel/signal_64.c
-index b589a35..f92fdb7 100644
---- a/arch/sh/kernel/signal_64.c
-+++ b/arch/sh/kernel/signal_64.c
-@@ -23,6 +23,7 @@
- #include <linux/unistd.h>
- #include <linux/stddef.h>
- #include <linux/tracehook.h>
-+#include <linux/irqflags.h>
- #include <asm/ucontext.h>
- #include <asm/uaccess.h>
- #include <asm/pgtable.h>
-@@ -679,6 +680,8 @@ handle_signal(unsigned long sig, siginfo_t *info, struct k_sigaction *ka,
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 724b35e..01db31c 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -1247,11 +1247,16 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
+ 	int ret = 0, irq[2];
+ 	struct mmc_host *mmc;
+ 	struct sh_mmcif_host *host;
+-	struct sh_mmcif_plat_data *pd;
++	struct sh_mmcif_plat_data *pd = pdev->dev.platform_data;
+ 	struct resource *res;
+ 	void __iomem *reg;
+ 	char clk_name[8];
  
- asmlinkage void do_notify_resume(struct pt_regs *regs, unsigned long thread_info_flags)
- {
-+	local_irq_enable();
++	if (!pd) {
++		dev_err(&pdev->dev, "sh_mmcif plat data error.\n");
++		return -ENXIO;
++	}
 +
- 	if (thread_info_flags & _TIF_SIGPENDING)
- 		do_signal(regs);
+ 	irq[0] = platform_get_irq(pdev, 0);
+ 	irq[1] = platform_get_irq(pdev, 1);
+ 	if (irq[0] < 0 || irq[1] < 0) {
+@@ -1268,16 +1273,11 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
+ 		dev_err(&pdev->dev, "ioremap error.\n");
+ 		return -ENOMEM;
+ 	}
+-	pd = pdev->dev.platform_data;
+-	if (!pd) {
+-		dev_err(&pdev->dev, "sh_mmcif plat data error.\n");
+-		ret = -ENXIO;
+-		goto clean_up;
+-	}
++
+ 	mmc = mmc_alloc_host(sizeof(struct sh_mmcif_host), &pdev->dev);
+ 	if (!mmc) {
+ 		ret = -ENOMEM;
+-		goto clean_up;
++		goto ealloch;
+ 	}
+ 	host		= mmc_priv(mmc);
+ 	host->mmc	= mmc;
+@@ -1289,7 +1289,7 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
+ 	if (IS_ERR(host->hclk)) {
+ 		dev_err(&pdev->dev, "cannot get clock \"%s\"\n", clk_name);
+ 		ret = PTR_ERR(host->hclk);
+-		goto clean_up1;
++		goto eclkget;
+ 	}
+ 	clk_enable(host->hclk);
+ 	host->clk = clk_get_rate(host->hclk);
+@@ -1319,7 +1319,7 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
+ 
+ 	ret = pm_runtime_resume(&pdev->dev);
+ 	if (ret < 0)
+-		goto clean_up2;
++		goto eresume;
+ 
+ 	INIT_DELAYED_WORK(&host->timeout_work, mmcif_timeout_work);
+ 
+@@ -1328,17 +1328,17 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
+ 	ret = request_threaded_irq(irq[0], sh_mmcif_intr, sh_mmcif_irqt, 0, "sh_mmc:error", host);
+ 	if (ret) {
+ 		dev_err(&pdev->dev, "request_irq error (sh_mmc:error)\n");
+-		goto clean_up3;
++		goto ereqirq0;
+ 	}
+ 	ret = request_threaded_irq(irq[1], sh_mmcif_intr, sh_mmcif_irqt, 0, "sh_mmc:int", host);
+ 	if (ret) {
+ 		dev_err(&pdev->dev, "request_irq error (sh_mmc:int)\n");
+-		goto clean_up4;
++		goto ereqirq1;
+ 	}
+ 
+ 	ret = mmc_add_host(mmc);
+ 	if (ret < 0)
+-		goto clean_up5;
++		goto emmcaddh;
+ 
+ 	dev_pm_qos_expose_latency_limit(&pdev->dev, 100);
+ 
+@@ -1347,20 +1347,19 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
+ 		sh_mmcif_readl(host->addr, MMCIF_CE_VERSION) & 0x0000ffff);
+ 	return ret;
+ 
+-clean_up5:
++emmcaddh:
+ 	free_irq(irq[1], host);
+-clean_up4:
++ereqirq1:
+ 	free_irq(irq[0], host);
+-clean_up3:
++ereqirq0:
+ 	pm_runtime_suspend(&pdev->dev);
+-clean_up2:
++eresume:
+ 	pm_runtime_disable(&pdev->dev);
+ 	clk_disable(host->hclk);
+-clean_up1:
++eclkget:
+ 	mmc_free_host(mmc);
+-clean_up:
+-	if (reg)
+-		iounmap(reg);
++ealloch:
++	iounmap(reg);
+ 	return ret;
+ }
  
 -- 
-1.7.7.3
+1.7.2.5
 
+--
+To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
