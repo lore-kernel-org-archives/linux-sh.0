@@ -1,35 +1,47 @@
-From: "H. Peter Anvin" <hpa@zytor.com>
-Date: Thu, 24 May 2012 17:56:24 +0000
+From: Lasse Collin <lasse.collin@tukaani.org>
+Date: Fri, 25 May 2012 08:34:32 +0000
 Subject: Re: [PATCH] lib/decompress_unxz.c: removing all memory helper functions
-Message-Id: <4FBE7648.7060206@zytor.com>
+Message-Id: <20120525113432.3beea6ed@tukaani.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1337875436-27640-1-git-send-email-tmac@hp.com>
- <1337880371.5070.24.camel@joe2Laptop> <4FBE6FF6.5090904@zytor.com>
- <1337881229.5070.29.camel@joe2Laptop> <4FBE72C4.3040204@zytor.com>
- <1337881849.5070.32.camel@joe2Laptop>
-In-Reply-To: <1337881849.5070.32.camel@joe2Laptop>
+In-Reply-To: <1337875436-27640-1-git-send-email-tmac@hp.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 05/24/2012 10:50 AM, Joe Perches wrote:
-> On Thu, 2012-05-24 at 10:41 -0700, H. Peter Anvin wrote:
->> On 05/24/2012 10:40 AM, Joe Perches wrote:
->>> Many of these functions are only optimized in certain cases; if not
->>> optimized in a particular case, a call to the library function will be
->>> emitted.
->> Right, what part of that don't you understand?
+On 2012-05-24 T Makphaibulchoke wrote:
+> The patch cleans up the file lib/decompress_unxz.c by removing all
+> memory helper functions, e.g., memmove.  By doing so, any
+> architecture's preboot environment supporting the XZ decompression
+> needs to define its own copy of any of the missing memory helper
+> functions.
+
+Is it best to copy these functions to each arch, or would it be better
+to have a shared file from which these functions could be pulled for
+multiple archs? I wasn't sure when I wrote decompress_unxz.c, which is
+why I put the extra functions there as a temporary solution.
+
+> Adding both the missing memmove and memcmp functions, required by the
+> XZ decompressor, to the sh preboot environment.
 > 
-> :)
-> 
-> Whether or not the many applies to __builtin_mem<foo>.
-> I believe not.
-> 
+> Adding the missing memmove function, required by XZ decompressor, to
+> the x86 preboot environment.
 
-There are definitely cases where gcc can call these out of line.  I
-already told you that.
+These already have memcpy. It can save a few bytes if one reused
+memmove as memcpy when using XZ compression. I got a difference of 48
+bytes on x86_64.
 
-	-hpa
+Adding memmove to string.c on x86 means that memmove is included in the
+kernel image even when memmove isn't needed. With gzip compression I
+got 128 bytes bigger image on x86_64 after adding the unneeded memmove
+to string.c.
 
+I don't know if those size increases matter in practice.
 
+> + * To support XZ-decompressed file in preboot environment, the
+
+s/XZ-decompressed/XZ-compressed/ :-)
+
+-- 
+Lasse Collin  |  IRC: Larhzu @ IRCnet & Freenode
