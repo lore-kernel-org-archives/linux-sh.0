@@ -1,88 +1,88 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 25 May 2012 03:39:06 +0000
-Subject: Re: [PATCH 02/03] clocksource: em_sti: Emma Mobile STI driver V2
-Message-Id: <CANqRtoS24CUp3cpoWykJ5Ty5XT3Yn+LNvGL_kF5NdEPAQL0f4A@mail.gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 25 May 2012 15:45:24 +0000
+Subject: [PATCH 4/5 v3] mmc: add a function to get a regulator, supplying card's Vdd
+Message-Id: <1337960752-4944-10-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120509143926.27521.20342.sendpatchset@w520>
-	<20120509143942.27521.8595.sendpatchset@w520>
-	<alpine.LFD.2.02.1205250135340.3231@ionos>
-In-Reply-To: <alpine.LFD.2.02.1205250135340.3231@ionos>
+References: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Thomas Gleixner <tglx@linutronix.de>
-Cc: linux-kernel@vger.kernel.org, arnd@arndb.de, horms@verge.net.au, linux-sh@vger.kernel.org, johnstul@us.ibm.com, rjw@sisk.pl, lethal@linux-sh.org, gregkh@linuxfoundation.org, olof@lixom.net
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>, Mark Brown <broonie@opensource.wolfsonmicro.com>
 
-Hi Thomas,
+Add a function to get a regulator, supplying card's Vdd on a specific host.
+If such a regulator is found, the function checks, whether a valid OCR mask
+can be obtained from this regulator.
 
-On Fri, May 25, 2012 at 8:42 AM, Thomas Gleixner <tglx@linutronix.de> wrote:
-> On Wed, 9 May 2012, Magnus Damm wrote:
->> +static irqreturn_t em_sti_interrupt(int irq, void *dev_id)
->> +{
->> + =A0 =A0 struct em_sti_priv *p =3D dev_id;
->> +
->> + =A0 =A0 /* Always regprogram timer compare A */
->> + =A0 =A0 if (p->ced.mode =3D CLOCK_EVT_MODE_PERIODIC)
->> + =A0 =A0 =A0 =A0 =A0 =A0 em_sti_update(p);
->
-> Why do you want to do that? The core code already handles timers which
-> only support oneshot mode.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
 
-Oh, I wasn't aware that oneshot only is a valid combination. Thanks
-for pointing that out, the code will surely become cleaner!
+v3: remove bogus attempts to ignore the dummy regulator, drop the check 
+for whether the regulator can change status, do not assign 
+MMC_CAP_POWER_OFF_CARD automatically. Thanks to Mark and Magnus for 
+comments.
 
->> + =A0 =A0 spin_lock_irqsave(&p->lock, flags);
->
-> Please make that a raw_spinlock.
+ drivers/mmc/core/core.c  |   17 +++++++++++++++++
+ include/linux/mmc/host.h |    6 ++++++
+ 2 files changed, 23 insertions(+), 0 deletions(-)
 
-Ok!
+diff --git a/drivers/mmc/core/core.c b/drivers/mmc/core/core.c
+index 0b6141d..0f92ec0 100644
+--- a/drivers/mmc/core/core.c
++++ b/drivers/mmc/core/core.c
+@@ -1013,6 +1013,23 @@ int mmc_regulator_set_ocr(struct mmc_host *mmc,
+ }
+ EXPORT_SYMBOL(mmc_regulator_set_ocr);
+ 
++struct regulator *mmc_regulator_get_vmmc(struct mmc_host *mmc)
++{
++	struct device *dev = mmc_dev(mmc);
++	struct regulator *supply = devm_regulator_get(dev, "vmmc");
++	int ret;
++
++	if (IS_ERR(supply))
++		return NULL;
++
++	ret = mmc_regulator_get_ocrmask(supply);
++	if (ret > 0)
++		mmc->ocr_avail = ret;
++
++	return supply;
++}
++EXPORT_SYMBOL(mmc_regulator_get_vmmc);
++
+ #endif /* CONFIG_REGULATOR */
+ 
+ /*
+diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
+index 0707d22..368b317 100644
+--- a/include/linux/mmc/host.h
++++ b/include/linux/mmc/host.h
+@@ -364,6 +364,7 @@ int mmc_regulator_get_ocrmask(struct regulator *supply);
+ int mmc_regulator_set_ocr(struct mmc_host *mmc,
+ 			struct regulator *supply,
+ 			unsigned short vdd_bit);
++struct regulator *mmc_regulator_get_vmmc(struct mmc_host *mmc);
+ #else
+ static inline int mmc_regulator_get_ocrmask(struct regulator *supply)
+ {
+@@ -376,6 +377,11 @@ static inline int mmc_regulator_set_ocr(struct mmc_host *mmc,
+ {
+ 	return 0;
+ }
++
++static inline struct regulator *mmc_regulator_get_vmmc(struct mmc_host *mmc)
++{
++	return NULL;
++}
+ #endif
+ 
+ int mmc_card_awake(struct mmc_host *host);
+-- 
+1.7.2.5
 
->> +static void em_sti_clock_event_mode(enum clock_event_mode mode,
->> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 struct=
- clock_event_device *ced)
->> +{
->> + =A0 =A0 struct em_sti_priv *p =3D ced_to_em_sti(ced);
->> +
->> + =A0 =A0 /* deal with old setting first */
->> + =A0 =A0 switch (ced->mode) {
->> + =A0 =A0 case CLOCK_EVT_MODE_PERIODIC:
->> + =A0 =A0 case CLOCK_EVT_MODE_ONESHOT:
->> + =A0 =A0 =A0 =A0 =A0 =A0 em_sti_stop(p, USER_CLOCKEVENT);
->> + =A0 =A0 =A0 =A0 =A0 =A0 break;
->> + =A0 =A0 default:
->> + =A0 =A0 =A0 =A0 =A0 =A0 break;
->> + =A0 =A0 }
->> +
->> + =A0 =A0 switch (mode) {
->> + =A0 =A0 case CLOCK_EVT_MODE_PERIODIC:
->> + =A0 =A0 =A0 =A0 =A0 =A0 dev_info(&p->pdev->dev, "used for periodic clo=
-ck events\n");
->> + =A0 =A0 =A0 =A0 =A0 =A0 em_sti_start(p, USER_CLOCKEVENT);
->> + =A0 =A0 =A0 =A0 =A0 =A0 clockevents_config(&p->ced, p->rate);
->> + =A0 =A0 =A0 =A0 =A0 =A0 p->delta =3D (p->rate + HZ/2) / HZ;
->> + =A0 =A0 =A0 =A0 =A0 =A0 p->next =3D em_sti_count(p);
->> + =A0 =A0 =A0 =A0 =A0 =A0 em_sti_update(p);
->> + =A0 =A0 =A0 =A0 =A0 =A0 break;
->
-> All that code in this case can go away.
-
-Right!
-
->> +static void em_sti_register_clockevent(struct em_sti_priv *p)
->> +{
->> + =A0 =A0 struct clock_event_device *ced =3D &p->ced;
->> +
->> + =A0 =A0 memset(ced, 0, sizeof(*ced));
->> + =A0 =A0 ced->name =3D dev_name(&p->pdev->dev);
->> + =A0 =A0 ced->features =3D CLOCK_EVT_FEAT_PERIODIC;
->> + =A0 =A0 ced->features |=3D CLOCK_EVT_FEAT_ONESHOT;
->
-> If you make that:
->
-> =A0 =A0 =A0 =A0ced->features =3D CLOCK_EVT_FEAT_ONESHOT;
-
-Gotcha!
-
-Thanks,
-
-/ magnus
+--
+To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
