@@ -1,47 +1,35 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 18 May 2012 09:35:42 +0000
-Subject: Re: [PATCH 08/29] mmc: sh_mmcif: add regulator support
-Message-Id: <Pine.LNX.4.64.1205181132170.23140@axis700.grange>
+Date: Fri, 25 May 2012 14:24:53 +0000
+Subject: [PATCH] sh: fix sh7724 compilation
+Message-Id: <Pine.LNX.4.64.1205251620540.13353@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
- <1336057558-11031-9-git-send-email-g.liakhovetski@gmx.de>
- <20120503154532.GP3955@opensource.wolfsonmicro.com>
-In-Reply-To: <20120503154532.GP3955@opensource.wolfsonmicro.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Thu, 3 May 2012, Mark Brown wrote:
+Fix compile breakage:
 
-> On Thu, May 03, 2012 at 05:05:37PM +0200, Guennadi Liakhovetski wrote:
-> 
-> > +#include <linux/regulator/consumer.h>
-> 
-> Where's this used?
+arch/sh/kernel/process.c: In function 'arch_dup_task_struct':
+arch/sh/kernel/process.c:23: error: implicit declaration of function 'unlazy_fpu'
 
-You're right, it's not. A forward declaration of struct regulator would 
-suffice.
+Presumably, other 32-bit FPU-enabled SuperH SoCs are affected too.
 
-> > +static void sh_mmcif_set_power(struct sh_mmcif_host *host, struct mmc_ios *ios)
-> > +{
-> > +	struct sh_mmcif_plat_data *pd = host->pd->dev.platform_data;
-> > +
-> > +	if (!(host->mmc->caps & MMC_CAP_POWER_OFF_CARD))
-> > +		return;
-> 
-> Surely the core should be implementing this?
-
-Hm, actually, I don't think so. sh_mmcif_set_power() is called as a part 
-of the driver's .set_ios() method. The core has to call that method 
-regardless whether MMC_CAP_POWER_OFF_CARD is set or not. Only inside that 
-method we can decide, that a part of its functionality (power on / off) is 
-unavailable.
-
-Thanks
-Guennadi
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+
+This is for a 4-days old next, discard if already fixed.
+
+diff --git a/arch/sh/kernel/process.c b/arch/sh/kernel/process.c
+index 9b7a459..02a6f07 100644
+--- a/arch/sh/kernel/process.c
++++ b/arch/sh/kernel/process.c
+@@ -5,6 +5,8 @@
+ #include <linux/export.h>
+ #include <linux/stackprotector.h>
+ 
++#include <asm/fpu.h>
++
+ struct kmem_cache *task_xstate_cachep = NULL;
+ unsigned int xstate_size;
+ 
