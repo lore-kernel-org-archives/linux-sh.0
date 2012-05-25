@@ -1,77 +1,68 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 31 May 2012 00:23:41 +0000
-Subject: [PATCH 5/9] ARM: mach-shmobile: r8a7740: add SDHI DMAEngine support
-Message-Id: <87lik98agm.wl%kuninori.morimoto.gx@renesas.com>
+From: Richard Weinberger <richard@nod.at>
+Date: Fri, 25 May 2012 22:04:26 +0000
+Subject: [PATCH 10/20] sh: Do not call do_signal() with irqs disabled
+Message-Id: <1337983476-22081-10-git-send-email-richard@nod.at>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1337983476-22081-1-git-send-email-richard@nod.at>
+In-Reply-To: <1337983476-22081-1-git-send-email-richard@nod.at>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-arch@vger.kernel.org, Richard Weinberger <richard@nod.at>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+get_signal_to_deliver() calls try_to_freeze() which might sleep.
+
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Richard Weinberger <richard@nod.at>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7740.h |    6 +++++
- arch/arm/mach-shmobile/setup-r8a7740.c        |   30 +++++++++++++++++++++++++
- 2 files changed, 36 insertions(+), 0 deletions(-)
+ arch/sh/kernel/signal_32.c |    3 +++
+ arch/sh/kernel/signal_64.c |    3 +++
+ 2 files changed, 6 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index f71507b..0f14ce8 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -591,6 +591,12 @@ enum {
- /* DMA slave IDs */
- enum {
- 	SHDMA_SLAVE_INVALID,
-+	SHDMA_SLAVE_SDHI0_RX,
-+	SHDMA_SLAVE_SDHI0_TX,
-+	SHDMA_SLAVE_SDHI1_RX,
-+	SHDMA_SLAVE_SDHI1_TX,
-+	SHDMA_SLAVE_SDHI2_RX,
-+	SHDMA_SLAVE_SDHI2_TX,
- 	SHDMA_SLAVE_FSIA_RX,
- 	SHDMA_SLAVE_FSIA_TX,
- 	SHDMA_SLAVE_FSIB_TX,
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 31ef1fe..794afeb 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -282,6 +282,36 @@ static struct platform_device *r8a7740_early_devices[] __initdata = {
- /* DMA */
- static const struct sh_dmae_slave_config r8a7740_dmae_slaves[] = {
- 	{
-+		.slave_id	= SHDMA_SLAVE_SDHI0_TX,
-+		.addr		= 0xe6850030,
-+		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xc1,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI0_RX,
-+		.addr		= 0xe6850030,
-+		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xc2,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI1_TX,
-+		.addr		= 0xe6860030,
-+		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xc9,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI1_RX,
-+		.addr		= 0xe6860030,
-+		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xca,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI2_TX,
-+		.addr		= 0xe6870030,
-+		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xcd,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI2_RX,
-+		.addr		= 0xe6870030,
-+		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xce,
-+	}, {
- 		.slave_id	= SHDMA_SLAVE_FSIA_TX,
- 		.addr		= 0xfe1f0024,
- 		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
+diff --git a/arch/sh/kernel/signal_32.c b/arch/sh/kernel/signal_32.c
+index cb4172c..4f1db5e 100644
+--- a/arch/sh/kernel/signal_32.c
++++ b/arch/sh/kernel/signal_32.c
+@@ -25,6 +25,7 @@
+ #include <linux/freezer.h>
+ #include <linux/io.h>
+ #include <linux/tracehook.h>
++#include <linux/irqflags.h>
+ #include <asm/ucontext.h>
+ #include <asm/uaccess.h>
+ #include <asm/pgtable.h>
+@@ -619,6 +620,8 @@ static void do_signal(struct pt_regs *regs, unsigned int save_r0)
+ asmlinkage void do_notify_resume(struct pt_regs *regs, unsigned int save_r0,
+ 				 unsigned long thread_info_flags)
+ {
++	local_irq_enable();
++
+ 	/* deal with pending signal delivery */
+ 	if (thread_info_flags & _TIF_SIGPENDING)
+ 		do_signal(regs, save_r0);
+diff --git a/arch/sh/kernel/signal_64.c b/arch/sh/kernel/signal_64.c
+index b589a35..f92fdb7 100644
+--- a/arch/sh/kernel/signal_64.c
++++ b/arch/sh/kernel/signal_64.c
+@@ -23,6 +23,7 @@
+ #include <linux/unistd.h>
+ #include <linux/stddef.h>
+ #include <linux/tracehook.h>
++#include <linux/irqflags.h>
+ #include <asm/ucontext.h>
+ #include <asm/uaccess.h>
+ #include <asm/pgtable.h>
+@@ -679,6 +680,8 @@ handle_signal(unsigned long sig, siginfo_t *info, struct k_sigaction *ka,
+ 
+ asmlinkage void do_notify_resume(struct pt_regs *regs, unsigned long thread_info_flags)
+ {
++	local_irq_enable();
++
+ 	if (thread_info_flags & _TIF_SIGPENDING)
+ 		do_signal(regs);
+ 
 -- 
-1.7.5.4
+1.7.7.3
 
