@@ -1,66 +1,46 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 03 May 2012 15:05:43 +0000
-Subject: [PATCH 14/29] mmc: sdhi: do not install dummy callbacks
-Message-Id: <1336057558-11031-15-git-send-email-g.liakhovetski@gmx.de>
+Date: Fri, 25 May 2012 15:45:27 +0000
+Subject: [PATCH 1/8 v3] mmc: tmio: stop interface clock before runtime PM suspending
+Message-Id: <1337960752-4944-13-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
+References: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>
 
-Currently the SDHI glue for the TMIO MMC driver installs dummy .get_cd() and
-.set_pwr() callbacks even if the platform didn't supply them. This is not
-necessary, since the TMIO MMC driver itself checks for NULL callbacks. This
-is also dubious if the platform provides a regulator for SD-card power
-switching. It is better to only install those callbacks, if they are really
-provided by the platform.
+The call to pm_runtime_put() in tmio-mmc's .set_ios() method can switch
+off the supplying clock or even power down the whole unit. Therefore,
+calling tmio_mmc_clk_stop() after that can be redundant, put it before.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |   14 ++++++--------
- 1 files changed, 6 insertions(+), 8 deletions(-)
+ drivers/mmc/host/tmio_mmc_pio.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index a746ae8..ae2e3da 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -64,18 +64,14 @@ static void sh_mobile_sdhi_set_pwr(struct platform_device *pdev, int state)
- {
- 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
- 
--	if (p && p->set_pwr)
--		p->set_pwr(pdev, state);
-+	p->set_pwr(pdev, state);
- }
- 
- static int sh_mobile_sdhi_get_cd(struct platform_device *pdev)
- {
- 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
- 
--	if (p && p->get_cd)
--		return p->get_cd(pdev);
--	else
--		return -ENOSYS;
-+	return p->get_cd(pdev);
- }
- 
- static int sh_mobile_sdhi_wait_idle(struct tmio_mmc_host *host)
-@@ -151,8 +147,10 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
- 		goto eclkget;
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 9a7996a..0d2643b 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -809,11 +809,11 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 	} else if (ios->power_mode != MMC_POWER_UP) {
+ 		if (host->set_pwr && ios->power_mode = MMC_POWER_OFF)
+ 			host->set_pwr(host->pdev, 0);
++		tmio_mmc_clk_stop(host);
+ 		if (host->power) {
+ 			host->power = false;
+ 			pm_runtime_put(dev);
+ 		}
+-		tmio_mmc_clk_stop(host);
  	}
  
--	mmc_data->set_pwr = sh_mobile_sdhi_set_pwr;
--	mmc_data->get_cd = sh_mobile_sdhi_get_cd;
-+	if (p->set_pwr)
-+		mmc_data->set_pwr = sh_mobile_sdhi_set_pwr;
-+	if (p->get_cd)
-+		mmc_data->get_cd = sh_mobile_sdhi_get_cd;
- 	mmc_data->clk_enable = sh_mobile_sdhi_clk_enable;
- 	mmc_data->clk_disable = sh_mobile_sdhi_clk_disable;
- 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
+ 	switch (ios->bus_width) {
 -- 
 1.7.2.5
 
+--
+To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
