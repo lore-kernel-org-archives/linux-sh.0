@@ -1,7 +1,7 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 25 May 2012 15:45:26 +0000
-Subject: [PATCH 0/8:3/6 v3] mmc: tmio: clock and PM updates
-Message-Id: <1337960752-4944-12-git-send-email-g.liakhovetski@gmx.de>
+Date: Fri, 25 May 2012 15:45:23 +0000
+Subject: [PATCH 3/5 v3] mmc: sh_mmcif: remove unused .down_pwr() callback
+Message-Id: <1337960752-4944-9-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
 In-Reply-To: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
@@ -9,17 +9,33 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>
+Cc: Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>, Mark Brown <broonie@opensource.wolfsonmicro.com>
 
-This is an update for patches 9-14,16,18 from
-http://thread.gmane.org/gmane.linux.ports.sh.devel/14673
-
-Thanks
-Guennadi
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+
+This patch shall only be applied after the previous one. If the previous 
+one has to go via the sh tree, we can postpone this one until a later 
+merge, no big problem with that.
+
+ include/linux/mmc/sh_mmcif.h |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+diff --git a/include/linux/mmc/sh_mmcif.h b/include/linux/mmc/sh_mmcif.h
+index 05f0e3d..cb84340 100644
+--- a/include/linux/mmc/sh_mmcif.h
++++ b/include/linux/mmc/sh_mmcif.h
+@@ -39,7 +39,6 @@ struct sh_mmcif_dma {
+ 
+ struct sh_mmcif_plat_data {
+ 	void (*set_pwr)(struct platform_device *pdev, int state);
+-	void (*down_pwr)(struct platform_device *pdev);
+ 	int (*get_cd)(struct platform_device *pdef);
+ 	struct sh_mmcif_dma	*dma;		/* Deprecated. Instead */
+ 	unsigned int		slave_id_tx;	/* use embedded slave_id_[tr]x */
+-- 
+1.7.2.5
+
 --
 To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
 the body of a message to majordomo@vger.kernel.org
