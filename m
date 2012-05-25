@@ -1,35 +1,46 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 31 May 2012 17:21:03 +0000
-Subject: [PATCH 0/3] sh_mobile_lcdcfb overlays support
-Message-Id: <1338484866-12237-1-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 25 May 2012 15:45:21 +0000
+Subject: [PATCH 1/5 v3] mmc: sh_mmcif: remove redundant .down_pwr() callback
+Message-Id: <1337960752-4944-7-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>, Mark Brown <broonie@opensource.wolfsonmicro.com>
 
-Hello,
+From the original version of sh_mmcif the .set_pwr() callback has only been
+used to turn the card's power on, and the .down_pwr() callback has been
+used to turn it off. .set_pwr() can be used for both these tasks, which is
+also how it is implemented by the only user of this API: the SH7724 ecovec
+board.
 
-These three patches implement overlays support for the sh_mobile_lcdcfb driver.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/mmc/host/sh_mmcif.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-Compared to the previous version (posted as part of a larger patch set), the
-sysfs entries are documented in Documentation/ABI and the DMA coherent memory
-allocated for the planes is now freed at cleanup time.
-
-Laurent Pinchart (3):
-  fbdev: sh_mobile_lcdc: Constify sh_mobile_lcdc_fix structure
-  fbdev: sh_mobile_lcdc: Rename fb operation handlers with a common
-    prefix
-  fbdev: sh_mobile_lcdc: Implement overlays support
-
- .../sysfs-devices-platform-sh_mobile_lcdc_fb       |   59 ++
- drivers/video/sh_mobile_lcdcfb.c                   | 1011 ++++++++++++++++++--
- include/video/sh_mobile_lcdc.h                     |    7 +
- 3 files changed, 981 insertions(+), 96 deletions(-)
- create mode 100644 Documentation/ABI/testing/sysfs-devices-platform-sh_mobile_lcdc_fb
-
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index bdf42d5..3834b21 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -963,8 +963,8 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 			pm_runtime_put(&host->pd->dev);
+ 			clk_disable(host->hclk);
+ 			host->power = false;
+-			if (p->down_pwr && ios->power_mode = MMC_POWER_OFF)
+-				p->down_pwr(host->pd);
++			if (p->set_pwr && ios->power_mode = MMC_POWER_OFF)
++				p->set_pwr(host->pd, 0);
+ 		}
+ 		host->state = STATE_IDLE;
+ 		return;
 -- 
-Regards,
+1.7.2.5
 
-Laurent Pinchart
-
+--
+To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
