@@ -1,118 +1,56 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 03 May 2012 15:05:54 +0000
-Subject: [PATCH 25/29] mmc: tmio: add OF support
-Message-Id: <1336057558-11031-26-git-send-email-g.liakhovetski@gmx.de>
+Date: Fri, 25 May 2012 15:45:22 +0000
+Subject: [PATCH 2/5 v3] sh: ecovec: remove unused .down_pwr() MMCIF callback
+Message-Id: <1337960752-4944-8-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
+References: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Grant Likely <grant.likely@secretlab.ca>
+To: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>, Mark Brown <broonie@opensource.wolfsonmicro.com>, Paul Mundt <lethal@linux-sh.org>
 
-Add OF support to the TMIO MMC to parse both standard and driver-specific
-properties.
+.down_pwr() on ecovec was equivalent to .set_pwr(0). Now that .down_pwr()
+is no longer used by the driver, it can be removed.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Grant Likely <grant.likely@secretlab.ca>
 ---
- drivers/mmc/host/tmio_mmc_pio.c |   39 ++++++++++++++++++++++++++++++++++++---
- 1 files changed, 36 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 85daa53..efa7bde 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -39,6 +39,7 @@
- #include <linux/mmc/slot-gpio.h>
- #include <linux/mmc/tmio.h>
- #include <linux/module.h>
-+#include <linux/of.h>
- #include <linux/pagemap.h>
- #include <linux/platform_device.h>
- #include <linux/pm_qos.h>
-@@ -905,7 +906,7 @@ static const struct mmc_host_ops tmio_mmc_ops = {
- 	.enable_sdio_irq = tmio_mmc_enable_sdio_irq,
- };
- 
--static void tmio_mmc_init_ocr(struct tmio_mmc_host *host)
-+static void __devinit tmio_mmc_init_ocr(struct tmio_mmc_host *host)
- {
- 	struct tmio_mmc_data *pdata = host->pdata;
- 	struct mmc_host *mmc = host->mmc;
-@@ -923,6 +924,22 @@ static void tmio_mmc_init_ocr(struct tmio_mmc_host *host)
- 		mmc->ocr_avail = pdata->ocr_mask ? : MMC_VDD_32_33 | MMC_VDD_33_34;
+Paul, would be good to get your ack to this one to push all this patches 
+via one tree and make preserving the merge order easier. Thanks.
+
+ arch/sh/boards/mach-ecovec24/setup.c |    6 ------
+ 1 files changed, 0 insertions(+), 6 deletions(-)
+
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 4158d70..dbedfda 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -904,11 +904,6 @@ static void mmcif_set_pwr(struct platform_device *pdev, int state)
+ 	gpio_set_value(GPIO_PTB7, state);
  }
  
-+static void __devinit tmio_mmc_parse_of(struct tmio_mmc_host *host)
-+{
-+	struct device_node *node = host->pdev->dev.of_node;
-+	struct tmio_mmc_data *pdata = host->pdata;
-+
-+	if (!node || !of_device_is_available(node))
-+		return;
-+
-+	if (of_get_property(node, "tmio,high_speed", NULL))
-+		pdata->capabilities |= MMC_CAP_SD_HIGHSPEED;
-+	if (of_get_property(node, "tmio,wrprotect_disable", NULL))
-+		pdata->flags |= TMIO_MMC_WRPROTECT_DISABLE;
-+	if (of_get_property(node, "tmio,idle_wait", NULL))
-+		pdata->flags |= TMIO_MMC_HAS_IDLE_WAIT;
-+}
-+
- int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 				  struct platform_device *pdev,
- 				  struct tmio_mmc_data *pdata)
-@@ -960,8 +977,19 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 		goto host_free;
- 	}
+-static void mmcif_down_pwr(struct platform_device *pdev)
+-{
+-	gpio_set_value(GPIO_PTB7, 0);
+-}
+-
+ static struct resource sh_mmcif_resources[] = {
+ 	[0] = {
+ 		.name	= "SH_MMCIF",
+@@ -930,7 +925,6 @@ static struct resource sh_mmcif_resources[] = {
  
-+	tmio_mmc_parse_of(_host);
-+	/*
-+	 * After OF parsing we have 3 possibilities:
-+	 * 1. mmc->slot.cd_irq >= 0	- an IRQ-capable GPIO has been found and
-+	 *				  an ISR has been installed
-+	 * 2. MMC_CAP_NEEDS_POLL	- a GPIO has been found, polling will be
-+	 *				  used
-+	 * 3. none of the above		- no usable GPIO CD has been detected
-+	 */
-+	mmc_of_get(mmc);
-+
- 	mmc->ops = &tmio_mmc_ops;
--	mmc->caps = MMC_CAP_4_BIT_DATA | pdata->capabilities;
-+	mmc->caps |= MMC_CAP_4_BIT_DATA | pdata->capabilities;
- 	mmc->max_segs = 32;
- 	mmc->max_blk_size = 512;
- 	mmc->max_blk_count = (PAGE_CACHE_SIZE / mmc->max_blk_size) *
-@@ -972,7 +1000,8 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 
- 	_host->native_hotplug = !(pdata->flags & TMIO_MMC_USE_GPIO_CD ||
- 				  mmc->caps & MMC_CAP_NEEDS_POLL ||
--				  mmc->caps & MMC_CAP_NONREMOVABLE);
-+				  mmc->caps & MMC_CAP_NONREMOVABLE ||
-+				  mmc->slot.cd_irq >= 0);
- 
- 	_host->power = false;
- 	pm_runtime_enable(&pdev->dev);
-@@ -1053,6 +1082,7 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 
- pm_disable:
- 	pm_runtime_disable(&pdev->dev);
-+	mmc_of_put(mmc);
- 	iounmap(_host->ctl);
- host_free:
- 	mmc_free_host(mmc);
-@@ -1074,6 +1104,9 @@ void tmio_mmc_host_remove(struct tmio_mmc_host *host)
- 		 */
- 		mmc_gpio_free_cd(mmc);
- 
-+	/* This will disable OF-configured card-detection, do early */
-+	mmc_of_put(mmc);
-+
- 	if (!host->native_hotplug)
- 		pm_runtime_get_sync(&pdev->dev);
- 
+ static struct sh_mmcif_plat_data sh_mmcif_plat = {
+ 	.set_pwr	= mmcif_set_pwr,
+-	.down_pwr	= mmcif_down_pwr,
+ 	.sup_pclk	= 0, /* SH7724: Max Pclk/2 */
+ 	.caps		= MMC_CAP_4_BIT_DATA |
+ 			  MMC_CAP_8_BIT_DATA |
 -- 
 1.7.2.5
 
+--
+To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
