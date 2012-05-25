@@ -1,36 +1,125 @@
-From: "Mr.Saeed Ahmed." <seal@co.net>
-Date: Wed, 09 May 2012 06:27:58 +0000
-Subject: Will You Be Trusted?
-Message-Id: <20120509022758.yrl0e5oxkwcswg4w@webmail.educacao.niteroi.rj.gov.br>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 25 May 2012 15:45:31 +0000
+Subject: [PATCH 5/8 v3] mmc: tmio: add regulator support
+Message-Id: <1337960752-4944-17-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>, Mark Brown <broonie@opensource.wolfsonmicro.com>
 
+Currently the TMIO MMC driver derives the OCR mask from the platform data
+and uses a platform callback to turn card power on and off. This patch adds
+regulator support to the driver.
 
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
 
-Dear Friend,
+v3: similar to MMCIF don't prefer regulator over platform callback, call 
+both. Thanks to all, who commented.
 
-As you read this, I don't want you to feel sorry for me,because, I
-believe everyone will die someday,and am contacting you because
-I really do need your help and I want you to help me with all your
-effort and time for just seven to fourteen workings days of your time.I
-want you to be honest and truthful with me that you will help me
-with my last wish as a dying man.
+ drivers/mmc/host/tmio_mmc.h     |    3 +++
+ drivers/mmc/host/tmio_mmc_pio.c |   35 +++++++++++++++++++++++++++--------
+ 2 files changed, 30 insertions(+), 8 deletions(-)
 
-Please i need a reliable person who will usethe Money($18 milliondollars)to
-build orphanage home or charity organization.
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index d857f5c..3a8dcfb 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -39,6 +39,7 @@
+ #define TMIO_MASK_IRQ     (TMIO_MASK_READOP | TMIO_MASK_WRITEOP | TMIO_MASK_CMD)
+ 
+ struct tmio_mmc_data;
++struct regulator;
+ 
+ struct tmio_mmc_host {
+ 	void __iomem *ctl;
+@@ -55,6 +56,8 @@ struct tmio_mmc_host {
+ 	void (*set_pwr)(struct platform_device *host, int state);
+ 	void (*set_clk_div)(struct platform_device *host, int state);
+ 
++	struct regulator	*vdd;
++
+ 	/* pio related stuff */
+ 	struct scatterlist      *sg_ptr;
+ 	struct scatterlist      *sg_orig;
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 579f990..baa0959 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -767,6 +767,16 @@ static int tmio_mmc_clk_update(struct mmc_host *mmc)
+ 	return ret;
+ }
+ 
++static void tmio_mmc_set_power(struct tmio_mmc_host *host, struct mmc_ios *ios)
++{
++	if (host->set_pwr)
++		host->set_pwr(host->pdev, ios->power_mode != MMC_POWER_OFF);
++	if (host->vdd)
++		/* Errors ignored... */
++		mmc_regulator_set_ocr(host->mmc, host->vdd,
++				      ios->power_mode ? ios->vdd : 0);
++}
++
+ /* Set MMC clock / power.
+  * Note: This controller uses a simple divider scheme therefore it cannot
+  * run a MMC card at full speed (20MHz). The max clock is 24MHz on SD, but as
+@@ -819,13 +829,12 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 		}
+ 		tmio_mmc_set_clock(host, ios->clock);
+ 		/* power up SD bus */
+-		if (host->set_pwr)
+-			host->set_pwr(host->pdev, 1);
++		tmio_mmc_set_power(host, ios);
+ 		/* start bus clock */
+ 		tmio_mmc_clk_start(host);
+ 	} else if (ios->power_mode != MMC_POWER_UP) {
+-		if (host->set_pwr && ios->power_mode = MMC_POWER_OFF)
+-			host->set_pwr(host->pdev, 0);
++		if (ios->power_mode = MMC_POWER_OFF)
++			tmio_mmc_set_power(host, ios);
+ 		tmio_mmc_clk_stop(host);
+ 		if (host->power) {
+ 			struct tmio_mmc_data *pdata = host->pdata;
+@@ -885,6 +894,19 @@ static const struct mmc_host_ops tmio_mmc_ops = {
+ 	.enable_sdio_irq = tmio_mmc_enable_sdio_irq,
+ };
+ 
++static void tmio_mmc_init_ocr(struct tmio_mmc_host *host)
++{
++	struct tmio_mmc_data *pdata = host->pdata;
++	struct mmc_host *mmc = host->mmc;
++
++	host->vdd = mmc_regulator_get_vmmc(mmc);
++
++	if (!mmc->ocr_avail)
++		mmc->ocr_avail = pdata->ocr_mask ? : MMC_VDD_32_33 | MMC_VDD_33_34;
++	else if (pdata->ocr_mask)
++		dev_warn(mmc_dev(mmc), "Platform OCR mask is ignored\n");
++}
++
+ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 				  struct platform_device *pdev,
+ 				  struct tmio_mmc_data *pdata)
+@@ -930,10 +952,7 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 		mmc->max_segs;
+ 	mmc->max_req_size = mmc->max_blk_size * mmc->max_blk_count;
+ 	mmc->max_seg_size = mmc->max_req_size;
+-	if (pdata->ocr_mask)
+-		mmc->ocr_avail = pdata->ocr_mask;
+-	else
+-		mmc->ocr_avail = MMC_VDD_32_33 | MMC_VDD_33_34;
++	tmio_mmc_init_ocr(_host);
+ 
+ 	_host->native_hotplug = !(pdata->flags & TMIO_MMC_USE_GPIO_CD ||
+ 				  mmc->caps & MMC_CAP_NEEDS_POLL ||
+-- 
+1.7.2.5
 
-Please kindly reply to my most confidential email if you are really
-interested in helping me please: mr.saeed01@linuxmail.org
-
-
-God be with you.
-
-Mr.Saeed Ahmed.
-
-----------------------------------------------------------------
-FME Webmail
-www.educacao.niteroi.rj.gov.br
-
+--
+To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
