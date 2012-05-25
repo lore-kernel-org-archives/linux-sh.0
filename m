@@ -1,98 +1,37 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 14 May 2012 06:46:26 +0000
-Subject: [PATCH v3 1/6] net: sh_eth: remove unnecessary function
-Message-Id: <4FB0AA42.1080503@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 25 May 2012 15:45:34 +0000
+Subject: [PATCH 8/8 v3] mmc: tmio: remove a duplicated comment line
+Message-Id: <1337960752-4944-20-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev <netdev@vger.kernel.org>
-Cc: SH-Linux <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>
 
-The sh_eth_timer() called mod_timer() for itself.
-So, this patch removes the function.
-
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- about v3:
-  - this patch is the same as v2
+ drivers/mmc/host/tmio_mmc_pio.c |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
 
- drivers/net/ethernet/renesas/sh_eth.c |   22 ----------------------
- drivers/net/ethernet/renesas/sh_eth.h |    1 -
- 2 files changed, 0 insertions(+), 23 deletions(-)
-
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index be3c221..c35084a 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -1289,14 +1289,6 @@ other_irq:
- 	return ret;
- }
-
--static void sh_eth_timer(unsigned long data)
--{
--	struct net_device *ndev = (struct net_device *)data;
--	struct sh_eth_private *mdp = netdev_priv(ndev);
--
--	mod_timer(&mdp->timer, jiffies + (10 * HZ));
--}
--
- /* PHY state control function */
- static void sh_eth_adjust_link(struct net_device *ndev)
- {
-@@ -1544,11 +1536,6 @@ static int sh_eth_open(struct net_device *ndev)
- 	if (ret)
- 		goto out_free_irq;
-
--	/* Set the timer to check for link beat. */
--	init_timer(&mdp->timer);
--	mdp->timer.expires = (jiffies + (24 * HZ)) / 10;/* 2.4 sec. */
--	setup_timer(&mdp->timer, sh_eth_timer, (unsigned long)ndev);
--
- 	return ret;
-
- out_free_irq:
-@@ -1573,9 +1560,6 @@ static void sh_eth_tx_timeout(struct net_device *ndev)
- 	/* tx_errors count up */
- 	ndev->stats.tx_errors++;
-
--	/* timer off */
--	del_timer_sync(&mdp->timer);
--
- 	/* Free all the skbuffs in the Rx queue. */
- 	for (i = 0; i < RX_RING_SIZE; i++) {
- 		rxdesc = &mdp->rx_ring[i];
-@@ -1593,10 +1577,6 @@ static void sh_eth_tx_timeout(struct net_device *ndev)
-
- 	/* device init */
- 	sh_eth_dev_init(ndev);
--
--	/* timer on */
--	mdp->timer.expires = (jiffies + (24 * HZ)) / 10;/* 2.4 sec. */
--	add_timer(&mdp->timer);
- }
-
- /* Packet transmit function */
-@@ -1669,8 +1649,6 @@ static int sh_eth_close(struct net_device *ndev)
-
- 	free_irq(ndev->irq, ndev);
-
--	del_timer_sync(&mdp->timer);
--
- 	/* Free all the skbuffs in the Rx queue. */
- 	sh_eth_ring_free(ndev);
-
-diff --git a/drivers/net/ethernet/renesas/sh_eth.h b/drivers/net/ethernet/renesas/sh_eth.h
-index 57b8e1f..9e8e4d5 100644
---- a/drivers/net/ethernet/renesas/sh_eth.h
-+++ b/drivers/net/ethernet/renesas/sh_eth.h
-@@ -771,7 +771,6 @@ struct sh_eth_private {
- 	struct sh_eth_txdesc *tx_ring;
- 	struct sk_buff **rx_skbuff;
- 	struct sk_buff **tx_skbuff;
--	struct timer_list timer;
- 	spinlock_t lock;
- 	u32 cur_rx, dirty_rx;	/* Producer/consumer ring indices */
- 	u32 cur_tx, dirty_tx;
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index a4f1c59..b731859 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -980,7 +980,6 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	 *  While we increment the runtime PM counter for all scenarios when
+ 	 *  the mmc core activates us by calling an appropriate set_ios(), we
+ 	 *  must additionally ensure that in case 2) the tmio mmc hardware stays
+-	 *  additionally ensure that in case 2) the tmio mmc hardware stays
+ 	 *  powered on during runtime for the card detection to work.
+ 	 */
+ 	if (_host->native_hotplug)
 -- 
-1.7.1
+1.7.2.5
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
