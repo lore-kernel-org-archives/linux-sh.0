@@ -1,36 +1,54 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 16 May 2012 06:45:07 +0000
-Subject: [PATCH 02/08] ARM: Undelete KZM9D mach-type V3
-Message-Id: <20120516064507.32286.10714.sendpatchset@w520>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 25 May 2012 15:45:44 +0000
+Subject: [PATCH 09/10 v3] ARM: mach-shmobile: specify inverted SDHI card-detect signal polarity
+Message-Id: <1337960752-4944-30-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120516064449.32286.77941.sendpatchset@w520>
-In-Reply-To: <20120516064449.32286.77941.sendpatchset@w520>
+References: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
+Cc: Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>
 
-From: Magnus Damm <damm@opensource.se>
+On mackerel and ag5evm the SDHI0 CD signal is inverted (active low). To
+prepare for the generic GPIO CD handler the MMC_CAP2_INVERTED_CD flag
+has to be specified in platform data.
 
-Undelete the KZM9D mach-type to allow build of board
-for EMEV2 SoC support.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ arch/arm/mach-shmobile/board-ag5evm.c   |    1 +
+ arch/arm/mach-shmobile/board-mackerel.c |    1 +
+ 2 files changed, 2 insertions(+), 0 deletions(-)
 
- Changes since V1:
- - posted before in different series, here just bumped version to match V3
+diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
+index 5a6f22f..545fd06 100644
+--- a/arch/arm/mach-shmobile/board-ag5evm.c
++++ b/arch/arm/mach-shmobile/board-ag5evm.c
+@@ -370,6 +370,7 @@ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_USE_GPIO_CD,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
++	.tmio_caps2	= MMC_CAP2_INVERTED_CD,
+ 	.tmio_ocr_mask	= MMC_VDD_27_28 | MMC_VDD_28_29,
+ 	.cd_gpio	= GPIO_PORT251,
+ };
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index b577f7c..5881bb1 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1047,6 +1047,7 @@ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+ 	.tmio_flags	= TMIO_MMC_USE_GPIO_CD,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
++	.tmio_caps2	= MMC_CAP2_INVERTED_CD,
+ 	.cd_gpio	= GPIO_PORT172,
+ };
+ 
+-- 
+1.7.2.5
 
- arch/arm/tools/mach-types |    1 +
- 1 file changed, 1 insertion(+)
-
---- 0001/arch/arm/tools/mach-types
-+++ work/arch/arm/tools/mach-types	2012-05-14 19:38:03.000000000 +0900
-@@ -530,6 +530,7 @@ nokia_rm680		MACH_NOKIA_RM680	NOKIA_RM68
- msm8960_sim		MACH_MSM8960_SIM	MSM8960_SIM		3230
- msm8960_rumi3		MACH_MSM8960_RUMI3	MSM8960_RUMI3		3231
- gsia18s			MACH_GSIA18S		GSIA18S			3234
-+kzm9d			MACH_KZM9D		KZM9D			3246
- mx53_loco		MACH_MX53_LOCO		MX53_LOCO		3273
- tx53			MACH_TX53		TX53			3279
- encore			MACH_ENCORE		ENCORE			3284
+--
+To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
