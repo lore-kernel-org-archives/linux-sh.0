@@ -1,88 +1,50 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 25 May 2012 15:45:24 +0000
-Subject: [PATCH 4/5 v3] mmc: add a function to get a regulator, supplying card's Vdd
-Message-Id: <1337960752-4944-10-git-send-email-g.liakhovetski@gmx.de>
+From: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date: Mon, 28 May 2012 14:46:17 +0000
+Subject: Re: [PATCH 4/5 v3] mmc: add a function to get a regulator, supplying card's Vdd
+Message-Id: <20120528144616.GH4032@opensource.wolfsonmicro.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="qxfKREH7IwbezJ+T"
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>, Mark Brown <broonie@opensource.wolfsonmicro.com>
+ <1337960752-4944-10-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1337960752-4944-10-git-send-email-g.liakhovetski@gmx.de>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>
 
-Add a function to get a regulator, supplying card's Vdd on a specific host.
-If such a regulator is found, the function checks, whether a valid OCR mask
-can be obtained from this regulator.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
+--qxfKREH7IwbezJ+T
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-v3: remove bogus attempts to ignore the dummy regulator, drop the check 
-for whether the regulator can change status, do not assign 
-MMC_CAP_POWER_OFF_CARD automatically. Thanks to Mark and Magnus for 
-comments.
+On Fri, May 25, 2012 at 05:45:24PM +0200, Guennadi Liakhovetski wrote:
+> Add a function to get a regulator, supplying card's Vdd on a specific host.
+> If such a regulator is found, the function checks, whether a valid OCR mask
+> can be obtained from this regulator.
 
- drivers/mmc/core/core.c  |   17 +++++++++++++++++
- include/linux/mmc/host.h |    6 ++++++
- 2 files changed, 23 insertions(+), 0 deletions(-)
+This appears to be identical to the version I just reviewed...
 
-diff --git a/drivers/mmc/core/core.c b/drivers/mmc/core/core.c
-index 0b6141d..0f92ec0 100644
---- a/drivers/mmc/core/core.c
-+++ b/drivers/mmc/core/core.c
-@@ -1013,6 +1013,23 @@ int mmc_regulator_set_ocr(struct mmc_host *mmc,
- }
- EXPORT_SYMBOL(mmc_regulator_set_ocr);
- 
-+struct regulator *mmc_regulator_get_vmmc(struct mmc_host *mmc)
-+{
-+	struct device *dev = mmc_dev(mmc);
-+	struct regulator *supply = devm_regulator_get(dev, "vmmc");
-+	int ret;
-+
-+	if (IS_ERR(supply))
-+		return NULL;
-+
-+	ret = mmc_regulator_get_ocrmask(supply);
-+	if (ret > 0)
-+		mmc->ocr_avail = ret;
-+
-+	return supply;
-+}
-+EXPORT_SYMBOL(mmc_regulator_get_vmmc);
-+
- #endif /* CONFIG_REGULATOR */
- 
- /*
-diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
-index 0707d22..368b317 100644
---- a/include/linux/mmc/host.h
-+++ b/include/linux/mmc/host.h
-@@ -364,6 +364,7 @@ int mmc_regulator_get_ocrmask(struct regulator *supply);
- int mmc_regulator_set_ocr(struct mmc_host *mmc,
- 			struct regulator *supply,
- 			unsigned short vdd_bit);
-+struct regulator *mmc_regulator_get_vmmc(struct mmc_host *mmc);
- #else
- static inline int mmc_regulator_get_ocrmask(struct regulator *supply)
- {
-@@ -376,6 +377,11 @@ static inline int mmc_regulator_set_ocr(struct mmc_host *mmc,
- {
- 	return 0;
- }
-+
-+static inline struct regulator *mmc_regulator_get_vmmc(struct mmc_host *mmc)
-+{
-+	return NULL;
-+}
- #endif
- 
- int mmc_card_awake(struct mmc_host *host);
--- 
-1.7.2.5
+Reviwed-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--qxfKREH7IwbezJ+T
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJPw4+xAAoJEBus8iNuMP3d0wAP/iOVyMYl5MIwoDDVGfqFBHqn
+wNmsXkL9ZqtY1l8GITAHt23e8G4Jw46rL4LJqy8/N8PjCO7UEF5Y4liC8Q7RCrfx
+4G53uoM/sWiuKpAZf/6dENtLbgM67U+S5efngy9hEaLzF1Vwfrs/LjGN2qKrPKb5
+eA/zMPAp53SmNa86yDQNnFu+nPhnZ11SHI/hqCAPb8d6PaYEw3AueYtLhyZuko76
+JqW+epHIR9Y0yhpTw2ijmTgiQFNAoDSXsa67A0TNp3boUSAAoFwc/3HR99MzZE3H
+sU9dorwQyKN1O2VHi6ge8baoBEZRvexQ5sOTh7jimQ4YQVGrHB3pYQ8wDr7xMSXI
+R2T+tll1VPm+yDSg+wsxevQcq34Xq3Cyq8bSYYzJxOr48wZEkf57dmbgO5ANPQ3p
+Jr9qgBKyM0RVOBV2IwPfNRS9AFbjrpD5PHYXgP89SZBOutHIvxMJ55JsZycrMxjH
+RSIgDbPA0ksr2FK6Grcazzgg04+iJgfjZ7B3PeHgCesea4bG+NS9z7ZRbqehhrS5
+gvLdYmQOQ5dMS4cyanBFZ2K9fdXTaDa1olHRKJPWSYI+ATV6fvdMpaq54ehFTfAW
+UukCbNdiS4Or025MJ6tUntcRpNe+Nl0lUze7rlnW7qUzECezzd38XqvbWlc5MgEN
+qlRsTmN81p02aViaG55s
+=0OXC
+-----END PGP SIGNATURE-----
+
+--qxfKREH7IwbezJ+T--
