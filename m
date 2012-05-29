@@ -1,103 +1,49 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sat, 19 May 2012 19:27:18 +0000
-Subject: Re: [GIT PULL] Renesas Emma Mobile EV2 SoC and KZM9D board support for v3.5
-Message-Id: <201205192127.18612.rjw@sisk.pl>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 29 May 2012 09:07:55 +0000
+Subject: [PATCH] net: sh_eth: fix the rxdesc pointer when rx descriptor empty happens
+Message-Id: <4FC491EB.4040002@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201205182344.59703.rjw@sisk.pl> <201205182355.47754.rjw@sisk.pl>
- <CAOesGMgZ_rDFCQf33JYZmTLgzzyGm2w9Cfc1dmw1E7T74mwaxA@mail.gmail.com>
-In-Reply-To: <CAOesGMgZ_rDFCQf33JYZmTLgzzyGm2w9Cfc1dmw1E7T74mwaxA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: netdev <netdev@vger.kernel.org>
+Cc: SH-Linux <linux-sh@vger.kernel.org>
 
-On Saturday, May 19, 2012, Olof Johansson wrote:
-> Hi,
-> 
-> On Fri, May 18, 2012 at 2:55 PM, Rafael J. Wysocki <rjw@sisk.pl> wrote:
-> > Hi,
-> >
-> > Please pull changes since commit d48b97b403d23f6df0b990cee652bdf9a52337a3
-> >
-> >    Linux 3.4-rc6
-> >
-> > with top-most commit 450cca47d65b7500ba05d56770adbf8c758dc87d
-> >
-> >    mach-shmobile: Use DT_MACHINE for KZM9D V3
-> >
-> > from the git repository at:
-> >
-> >  git://git.kernel.org/pub/scm/linux/kernel/git/rafael/renesas.git emev2
-> >
-> > to receive commits adding support for the Emma Mobile EV2 SoC and the KZM9D
-> > board targeted at v3.5.
-> >
-> > This is based on material that I have just sent another pull request for.
-> >
-> > Thanks!
-> >
-> >
-> >  arch/arm/boot/dts/emev2-kzm9d.dts           |   26 ++
-> >  arch/arm/boot/dts/emev2.dtsi                |   63 ++++
-> >  arch/arm/mach-shmobile/Kconfig              |   11 +
-> >  arch/arm/mach-shmobile/Makefile             |    3 +
-> >  arch/arm/mach-shmobile/board-kzm9d.c        |   85 +++++
-> >  arch/arm/mach-shmobile/clock-emev2.c        |  249 +++++++++++++++
-> >  arch/arm/mach-shmobile/include/mach/emev2.h |   19 ++
-> >  arch/arm/mach-shmobile/platsmp.c            |   18 +
-> >  arch/arm/mach-shmobile/setup-emev2.c        |  452 +++++++++++++++++++++++++++
-> >  arch/arm/mach-shmobile/smp-emev2.c          |   97 ++++++
-> >  drivers/gpio/Kconfig                        |    6 +
-> >  drivers/gpio/Makefile                       |    1 +
-> >  drivers/gpio/gpio-em.c                      |  418 +++++++++++++++++++++++++
-> >  include/linux/platform_data/gpio-em.h       |   10 +
-> >  14 files changed, 1458 insertions(+), 0 deletions(-)
-> 
-> This is a bit odd. The pull request says "since v3.4-rc6", but the
-> branch is built on top of renesas/soc-core, so if I do a "git diff
-> --stat v3.4-rc6 FETCH_HEAD" I see the whole diffstat which doesn't
-> match. Did you mix and match the diffstat and the rest of the pull
-> request output, per chance?
-> 
-> > ---------------
-> >
-> > Magnus Damm (8):
-> >      gpio: Emma Mobile GPIO driver V2
-> >      mach-shmobile: Emma Mobile EV2 SoC base support V3
-> >      mach-shmobile: KZM9D board support V3
-> >      mach-shmobile: Emma Mobile EV2 SMP support V3
-> >      mach-shmobile: Emma Mobile EV2 GPIO support V3
-> >      mach-shmobile: KZM9D board Ethernet support V3
-> >      mach-shmobile: Emma Mobile EV2 DT support V3
-> >      mach-shmobile: Use DT_MACHINE for KZM9D V3
-> 
-> I was mislead for a while when looking at the contents here since you
-> introduce the board file without DT_MACHINE and switch in a later
-> commit. It would have been a bit cleaner to squash it in and add it
-> that way directly, especially since it's otherwise not buildable.
-> Anyway, not a huge deal.
-> 
-> Also, please remember to use ARM: shmobile: as prefix in the future.
-> 
-> All that being said, I've pulled this in as renesas/emev2 and into
-> next/soc.
+When Receive Descriptor Empty happens, rxdesc pointer of the driver
+and actual next descriptor of the controller may be mismatch.
+This patch fixes it.
 
-Thanks!
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ drivers/net/ethernet/renesas/sh_eth.c |    8 +++++---
+ 1 files changed, 5 insertions(+), 3 deletions(-)
 
-> There's an add/add conflict between this and the kzm9g board
-> addition but it's trivial to resolve; please double-check the for-next
-> contents in arm-soc though.
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index be3c221..667169b 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1101,8 +1101,12 @@ static int sh_eth_rx(struct net_device *ndev)
 
-I will.
+ 	/* Restart Rx engine if stopped. */
+ 	/* If we don't need to check status, don't. -KDU */
+-	if (!(sh_eth_read(ndev, EDRRR) & EDRRR_R))
++	if (!(sh_eth_read(ndev, EDRRR) & EDRRR_R)) {
++		/* fix the values for the next receiving */
++		mdp->cur_rx = mdp->dirty_rx = (sh_eth_read(ndev, RDFAR) -
++					       sh_eth_read(ndev, RDLAR)) >> 4;
+ 		sh_eth_write(ndev, EDRRR_R, EDRRR);
++	}
 
-> In the future, given the organization of arm-soc, it would be better
-> to do the SoC portion in one branch, and the board pieces on top of
-> that (in a separate branch that includes the SoC pieces), and send
-> them up separately. Main reason for that is because we try to separate
-> those two as topics. Again, not a huge deal but it would help a bit,
-> and I don't think it'll hinder your work flow too much.
+ 	return 0;
+ }
+@@ -1199,8 +1203,6 @@ static void sh_eth_error(struct net_device *ndev, int intr_status)
+ 		/* Receive Descriptor Empty int */
+ 		ndev->stats.rx_over_errors++;
 
-Sure, I'll remeber about that in the future.
-
-Many thanks,
-Rafael
+-		if (sh_eth_read(ndev, EDRRR) ^ EDRRR_R)
+-			sh_eth_write(ndev, EDRRR_R, EDRRR);
+ 		if (netif_msg_rx_err(mdp))
+ 			dev_err(&ndev->dev, "Receive Descriptor Empty\n");
+ 	}
+-- 
+1.7.1
