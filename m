@@ -1,122 +1,99 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 03 May 2012 15:05:40 +0000
-Subject: [PATCH 11/29] mmc: tmio: add callbacks to enable-update and disable the interface clock
-Message-Id: <1336057558-11031-12-git-send-email-g.liakhovetski@gmx.de>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 29 May 2012 08:14:57 +0000
+Subject: [PATCH v5 4/6] net: sh_eth: fix up the buffer pointers
+Message-Id: <4FC48581.5060004@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org
+To: netdev <netdev@vger.kernel.org>
+Cc: SH-Linux <linux-sh@vger.kernel.org>
 
-Every time the clockc is enabled after possibly being disabled, we have
-to re-read its frequency and update our configuration.
+After freeing the buffer, the driver should change the value of
+the pointer to NULL.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- drivers/mmc/host/tmio_mmc_pio.c |   35 ++++++++++++++++++++++++++++++++---
- include/linux/mfd/tmio.h        |    3 +++
- 2 files changed, 35 insertions(+), 3 deletions(-)
+ about v5:
+  - this patch is the same as v3
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 8cd3637..579f990 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -751,6 +751,22 @@ fail:
- 	mmc_request_done(mmc, mrq);
- }
- 
-+static int tmio_mmc_clk_update(struct mmc_host *mmc)
-+{
-+	struct tmio_mmc_host *host = mmc_priv(mmc);
-+	struct tmio_mmc_data *pdata = host->pdata;
-+	int ret;
-+
-+	if (!pdata->clk_enable)
-+		return -ENOTSUPP;
-+
-+	ret = pdata->clk_enable(host->pdev, &mmc->f_max);
-+	if (!ret)
-+		mmc->f_min = mmc->f_max / 512;
-+
-+	return ret;
-+}
-+
- /* Set MMC clock / power.
-  * Note: This controller uses a simple divider scheme therefore it cannot
-  * run a MMC card at full speed (20MHz). The max clock is 24MHz on SD, but as
-@@ -797,6 +813,7 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 	 */
- 	if (ios->power_mode = MMC_POWER_ON && ios->clock) {
- 		if (!host->power) {
-+			tmio_mmc_clk_update(mmc);
- 			pm_runtime_get_sync(dev);
- 			host->power = true;
- 		}
-@@ -811,8 +828,11 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 			host->set_pwr(host->pdev, 0);
- 		tmio_mmc_clk_stop(host);
- 		if (host->power) {
-+			struct tmio_mmc_data *pdata = host->pdata;
- 			host->power = false;
- 			pm_runtime_put(dev);
-+			if (pdata->clk_disable)
-+				pdata->clk_disable(host->pdev);
+ drivers/net/ethernet/renesas/sh_eth.c |   31 ++++++++++++++++++++++++-------
+ 1 files changed, 24 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 906e410..ff5a4a9 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -745,6 +745,7 @@ static void sh_eth_ring_free(struct net_device *ndev)
  		}
  	}
- 
-@@ -904,8 +924,6 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 
- 	mmc->ops = &tmio_mmc_ops;
- 	mmc->caps = MMC_CAP_4_BIT_DATA | pdata->capabilities;
--	mmc->f_max = pdata->hclk;
--	mmc->f_min = mmc->f_max / 512;
- 	mmc->max_segs = 32;
- 	mmc->max_blk_size = 512;
- 	mmc->max_blk_count = (PAGE_CACHE_SIZE / mmc->max_blk_size) *
-@@ -927,6 +945,11 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 	if (ret < 0)
- 		goto pm_disable;
- 
-+	if (tmio_mmc_clk_update(mmc) < 0) {
-+		mmc->f_max = pdata->hclk;
-+		mmc->f_min = mmc->f_max / 512;
+ 	kfree(mdp->rx_skbuff);
++	mdp->rx_skbuff = NULL;
+
+ 	/* Free Tx skb ringbuffer */
+ 	if (mdp->tx_skbuff) {
+@@ -754,6 +755,7 @@ static void sh_eth_ring_free(struct net_device *ndev)
+ 		}
+ 	}
+ 	kfree(mdp->tx_skbuff);
++	mdp->tx_skbuff = NULL;
+ }
+
+ /* format skb and descriptor buffer */
+@@ -890,10 +892,31 @@ desc_ring_free:
+ skb_ring_free:
+ 	/* Free Rx and Tx skb ring buffer */
+ 	sh_eth_ring_free(ndev);
++	mdp->tx_ring = NULL;
++	mdp->rx_ring = NULL;
+
+ 	return ret;
+ }
+
++static void sh_eth_free_dma_buffer(struct sh_eth_private *mdp)
++{
++	int ringsize;
++
++	if (mdp->rx_ring) {
++		ringsize = sizeof(struct sh_eth_rxdesc) * RX_RING_SIZE;
++		dma_free_coherent(NULL, ringsize, mdp->rx_ring,
++				  mdp->rx_desc_dma);
++		mdp->rx_ring = NULL;
 +	}
 +
- 	/*
- 	 * There are 4 different scenarios for the card detection:
- 	 *  1) an external gpio irq handles the cd (best for power savings)
-@@ -972,7 +995,13 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 	/* See if we also get DMA */
- 	tmio_mmc_request_dma(_host, pdata);
- 
--	mmc_add_host(mmc);
-+	ret = mmc_add_host(mmc);
-+	if (pdata->clk_disable)
-+		pdata->clk_disable(pdev);
-+	if (ret < 0) {
-+		tmio_mmc_host_remove(_host);
-+		return ret;
++	if (mdp->tx_ring) {
++		ringsize = sizeof(struct sh_eth_txdesc) * TX_RING_SIZE;
++		dma_free_coherent(NULL, ringsize, mdp->tx_ring,
++				  mdp->tx_desc_dma);
++		mdp->tx_ring = NULL;
 +	}
- 
- 	dev_pm_qos_expose_latency_limit(&pdev->dev, 100);
- 
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index f5171db..b332c4c 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -110,6 +110,9 @@ struct tmio_mmc_data {
- 	void (*set_clk_div)(struct platform_device *host, int state);
- 	int (*get_cd)(struct platform_device *host);
- 	int (*write16_hook)(struct tmio_mmc_host *host, int addr);
-+	/* clock management callbacks */
-+	int (*clk_enable)(struct platform_device *pdev, unsigned int *f);
-+	void (*clk_disable)(struct platform_device *pdev);
- };
- 
- /*
++}
++
+ static int sh_eth_dev_init(struct net_device *ndev)
+ {
+ 	int ret = 0;
+@@ -1629,7 +1652,6 @@ static int sh_eth_start_xmit(struct sk_buff *skb, struct net_device *ndev)
+ static int sh_eth_close(struct net_device *ndev)
+ {
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+-	int ringsize;
+
+ 	netif_stop_queue(ndev);
+
+@@ -1652,12 +1674,7 @@ static int sh_eth_close(struct net_device *ndev)
+ 	sh_eth_ring_free(ndev);
+
+ 	/* free DMA buffer */
+-	ringsize = sizeof(struct sh_eth_rxdesc) * RX_RING_SIZE;
+-	dma_free_coherent(NULL, ringsize, mdp->rx_ring, mdp->rx_desc_dma);
+-
+-	/* free DMA buffer */
+-	ringsize = sizeof(struct sh_eth_txdesc) * TX_RING_SIZE;
+-	dma_free_coherent(NULL, ringsize, mdp->tx_ring, mdp->tx_desc_dma);
++	sh_eth_free_dma_buffer(mdp);
+
+ 	pm_runtime_put_sync(&mdp->pdev->dev);
+
 -- 
-1.7.2.5
+1.7.1
 
