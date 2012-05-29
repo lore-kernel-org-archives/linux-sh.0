@@ -1,41 +1,53 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 09 May 2012 15:09:16 +0000
-Subject: [PATCH 4/9 v3] mmc: sh_mobile_sdhi: prepare for conversion to the shdma base library
-Message-Id: <1336576161-27082-5-git-send-email-g.liakhovetski@gmx.de>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 29 May 2012 08:14:54 +0000
+Subject: [PATCH v5 3/6] net: sh_eth: fix the rxdesc pointer when rx descriptor empty happens
+Message-Id: <4FC4857E.6020907@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1336576161-27082-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1336576161-27082-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>
-Cc: linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Chris Ball <cjb@laptop.org>
+To: netdev <netdev@vger.kernel.org>
+Cc: SH-Linux <linux-sh@vger.kernel.org>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Chris Ball <cjb@laptop.org>
+When Receive Descriptor Empty happens, rxdesc pointer of the driver
+and actual next descriptor of the controller may be mismatch.
+This patch fixes it.
+
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |    8 ++++----
- 1 files changed, 4 insertions(+), 4 deletions(-)
+ about v5:
+  - this patch is the same as v3
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 934b68e..b8d7004 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -145,10 +145,10 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
- 		mmc_data->cd_gpio = p->cd_gpio;
- 
- 		if (p->dma_slave_tx > 0 && p->dma_slave_rx > 0) {
--			priv->param_tx.slave_id = p->dma_slave_tx;
--			priv->param_rx.slave_id = p->dma_slave_rx;
--			priv->dma_priv.chan_priv_tx = &priv->param_tx;
--			priv->dma_priv.chan_priv_rx = &priv->param_rx;
-+			priv->param_tx.shdma_slave.slave_id = p->dma_slave_tx;
-+			priv->param_rx.shdma_slave.slave_id = p->dma_slave_rx;
-+			priv->dma_priv.chan_priv_tx = &priv->param_tx.shdma_slave;
-+			priv->dma_priv.chan_priv_rx = &priv->param_rx.shdma_slave;
- 			priv->dma_priv.alignment_shift = 1; /* 2-byte alignment */
- 			mmc_data->dma = &priv->dma_priv;
- 		}
+ drivers/net/ethernet/renesas/sh_eth.c |    8 +++++---
+ 1 files changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 10f2a89..906e410 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1098,8 +1098,12 @@ static int sh_eth_rx(struct net_device *ndev)
+
+ 	/* Restart Rx engine if stopped. */
+ 	/* If we don't need to check status, don't. -KDU */
+-	if (!(sh_eth_read(ndev, EDRRR) & EDRRR_R))
++	if (!(sh_eth_read(ndev, EDRRR) & EDRRR_R)) {
++		/* fix the values for the next receiving */
++		mdp->cur_rx = mdp->dirty_rx = (sh_eth_read(ndev, RDFAR) -
++					       sh_eth_read(ndev, RDLAR)) >> 4;
+ 		sh_eth_write(ndev, EDRRR_R, EDRRR);
++	}
+
+ 	return 0;
+ }
+@@ -1196,8 +1200,6 @@ static void sh_eth_error(struct net_device *ndev, int intr_status)
+ 		/* Receive Descriptor Empty int */
+ 		ndev->stats.rx_over_errors++;
+
+-		if (sh_eth_read(ndev, EDRRR) ^ EDRRR_R)
+-			sh_eth_write(ndev, EDRRR_R, EDRRR);
+ 		if (netif_msg_rx_err(mdp))
+ 			dev_err(&ndev->dev, "Receive Descriptor Empty\n");
+ 	}
 -- 
-1.7.2.5
+1.7.1
 
