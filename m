@@ -1,50 +1,44 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Mon, 28 May 2012 14:46:17 +0000
-Subject: Re: [PATCH 4/5 v3] mmc: add a function to get a regulator, supplying card's Vdd
-Message-Id: <20120528144616.GH4032@opensource.wolfsonmicro.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="qxfKREH7IwbezJ+T"
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 30 May 2012 05:17:26 +0000
+Subject: [PATCH][RFC] ARM: mach-shmobile: setup-sh7372: fixup chclr_offset base
+Message-Id: <87mx4q2qos.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
- <1337960752-4944-10-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1337960752-4944-10-git-send-email-g.liakhovetski@gmx.de>
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
+In shdma.c, chclr_write() will use (chan_reg + chclr_offset).
+In sh7372 case, for example DMA0 case,
+DMA1CHCLR_0 is located on 0xfe008220,
+and chan_reg is started from 0xfe008020 (= sh7372_dmae0_resources).
+Thus, chclr_offset should be (0x220 - 0x20) instead of 0x220.
 
---qxfKREH7IwbezJ+T
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+>> Guennadi
 
-On Fri, May 25, 2012 at 05:45:24PM +0200, Guennadi Liakhovetski wrote:
-> Add a function to get a regulator, supplying card's Vdd on a specific host.
-> If such a regulator is found, the function checks, whether a valid OCR mask
-> can be obtained from this regulator.
+I guess this is bugfix patch for sh7372 dmaengine chclr_offset.
+But I'm not sure detail of it.
+Please check this patch, and please give this patch your acked-by
+if you agree this.
 
-This appears to be identical to the version I just reviewed...
+ arch/arm/mach-shmobile/setup-sh7372.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-Reviwed-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index 35a3a9c..dfddad8 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -460,7 +460,7 @@ static const struct sh_dmae_slave_config sh7372_dmae_slaves[] = {
+ 	},
+ };
+ 
+-#define SH7372_CHCLR 0x220
++#define SH7372_CHCLR (0x220 - 0x20)
+ 
+ static const struct sh_dmae_channel sh7372_dmae_channels[] = {
+ 	{
+-- 
+1.7.5.4
 
---qxfKREH7IwbezJ+T
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJPw4+xAAoJEBus8iNuMP3d0wAP/iOVyMYl5MIwoDDVGfqFBHqn
-wNmsXkL9ZqtY1l8GITAHt23e8G4Jw46rL4LJqy8/N8PjCO7UEF5Y4liC8Q7RCrfx
-4G53uoM/sWiuKpAZf/6dENtLbgM67U+S5efngy9hEaLzF1Vwfrs/LjGN2qKrPKb5
-eA/zMPAp53SmNa86yDQNnFu+nPhnZ11SHI/hqCAPb8d6PaYEw3AueYtLhyZuko76
-JqW+epHIR9Y0yhpTw2ijmTgiQFNAoDSXsa67A0TNp3boUSAAoFwc/3HR99MzZE3H
-sU9dorwQyKN1O2VHi6ge8baoBEZRvexQ5sOTh7jimQ4YQVGrHB3pYQ8wDr7xMSXI
-R2T+tll1VPm+yDSg+wsxevQcq34Xq3Cyq8bSYYzJxOr48wZEkf57dmbgO5ANPQ3p
-Jr9qgBKyM0RVOBV2IwPfNRS9AFbjrpD5PHYXgP89SZBOutHIvxMJ55JsZycrMxjH
-RSIgDbPA0ksr2FK6Grcazzgg04+iJgfjZ7B3PeHgCesea4bG+NS9z7ZRbqehhrS5
-gvLdYmQOQ5dMS4cyanBFZ2K9fdXTaDa1olHRKJPWSYI+ATV6fvdMpaq54ehFTfAW
-UukCbNdiS4Or025MJ6tUntcRpNe+Nl0lUze7rlnW7qUzECezzd38XqvbWlc5MgEN
-qlRsTmN81p02aViaG55s
-=0OXC
------END PGP SIGNATURE-----
-
---qxfKREH7IwbezJ+T--
