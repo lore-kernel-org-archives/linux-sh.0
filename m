@@ -1,50 +1,49 @@
-From: kuninori.morimoto.gx@renesas.com
-Date: Wed, 09 May 2012 23:59:48 +0000
-Subject: Re: [PATCH 8/9 v3] ASoC: fsi: prepare for conversion to the shdma base library
-Message-Id: <87obpwq51q.wl%kuninori.morimoto.gx@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 30 May 2012 01:46:06 +0000
+Subject: [PATCH] driver core: fixup reversed deferred probe order
+Message-Id: <87pq9m30h1.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1336576161-27082-1-git-send-email-g.liakhovetski@gmx.de>
-	<1336576161-27082-9-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1336576161-27082-9-git-send-email-g.liakhovetski@gmx.de>
+References: <87mx4rmqzd.wl%kuninori.morimoto.gx@renesas.com>
+	<20120529064621.GB6166@verge.net.au>
+	<20120529070458.GB11445@linux-sh.org>
+	<20120529073313.GA21702@verge.net.au>
+	<87k3zvmo4r.wl%kuninori.morimoto.gx@renesas.com>
+	<20120529091129.GA26043@verge.net.au>
+	<87txyy347i.wl%kuninori.morimoto.gx@renesas.com>
+	<87sjei325k.wl%kuninori.morimoto.gx@renesas.com>
+	<20120530013056.GA31474@verge.net.au>
+	<87r4u2310j.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87r4u2310j.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Vinod Koul <vinod.koul@intel.com>, linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Liam Girdwood <lrg@ti.com>, Mark Brown <broonie@opensource.wolfsonmicro.com>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-kernel@vger.kernel.org
+Cc: Simon Horman <horms@verge.net.au>, Paul Mundt <lethal@linux-sh.org>, Rafael <rjw@sisk.pl>, Mark Brown <broonie@opensource.wolfsonmicro.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 
-At Wed, 09 May 2012 17:09:20 +0200,
-Guennadi wrote:
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> Cc: Liam Girdwood <lrg@ti.com>
-> Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>
-> ---
+If driver requests probe deferral,
+it will be added to deferred_probe_pending_list
+by driver_deferred_probe_add(), but, it used list_add().
+Because of that, deferred probe will be run as reversed order.
+This patch uses list_add_tail(), and solved this issue.
 
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ drivers/base/dd.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
+diff --git a/drivers/base/dd.c b/drivers/base/dd.c
+index 1b1cbb5..dcb8a6e 100644
+--- a/drivers/base/dd.c
++++ b/drivers/base/dd.c
+@@ -100,7 +100,7 @@ static void driver_deferred_probe_add(struct device *dev)
+ 	mutex_lock(&deferred_probe_mutex);
+ 	if (list_empty(&dev->p->deferred_probe)) {
+ 		dev_dbg(dev, "Added to deferred list\n");
+-		list_add(&dev->p->deferred_probe, &deferred_probe_pending_list);
++		list_add_tail(&dev->p->deferred_probe, &deferred_probe_pending_list);
+ 	}
+ 	mutex_unlock(&deferred_probe_mutex);
+ }
+-- 
+1.7.5.4
 
->  sound/soc/sh/fsi.c |    4 ++--
->  1 files changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/sound/soc/sh/fsi.c b/sound/soc/sh/fsi.c
-> index 74ed2df..c28314b 100644
-> --- a/sound/soc/sh/fsi.c
-> +++ b/sound/soc/sh/fsi.c
-> @@ -1532,8 +1532,8 @@ static void fsi_handler_init(struct fsi_priv *fsi)
->  	fsi->capture.priv	= fsi;
->  
->  	if (fsi->info->tx_id) {
-> -		fsi->playback.slave.slave_id	= fsi->info->tx_id;
-> -		fsi->playback.handler		= &fsi_dma_push_handler;
-> +		fsi->playback.slave.shdma_slave.slave_id = fsi->info->tx_id;
-> +		fsi->playback.handler = &fsi_dma_push_handler;
->  	}
->  }
->  
-> -- 
-> 1.7.2.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
