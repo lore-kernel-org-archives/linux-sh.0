@@ -1,7 +1,7 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 31 May 2012 16:10:52 +0000
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Thu, 31 May 2012 23:50:22 +0000
 Subject: Re: [PATCH][RFC] ARM: mach-shmobile: setup-sh7372: fixup chclr_offset base
-Message-Id: <alpine.DEB.2.00.1205302333300.3488@axis700.grange>
+Message-Id: <20120531235022.GF11445@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87mx4q2qos.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <87mx4q2qos.wl%kuninori.morimoto.gx@renesas.com>
@@ -10,50 +10,17 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Rafael
-
-On Wed, 30 May 2012, Rafael J. Wysocki wrote:
-
-> On Wednesday, May 30, 2012, Guennadi Liakhovetski wrote:
-> > On Wed, 30 May 2012, Kuninori Morimoto wrote:
-> > 
-> > > Hi Guennadi
-> > > 
-> > > > > Thanks.
-> > > > > But sorry. I didn't have any problem.
-> > > > > I noticed it from source-code only, not board behavior.
-> > > > 
-> > > > Ok, but did you at least run some tests, where this code-path would be 
-> > > > entered, including (runtime-) suspend and resume? If not yet, I think, it 
-> > > > would be good to at least run a couple of short tests to make sure we're 
-> > > > not causing any obvious regressions. I'll try to find some time later 
-> > > > today or tomorrow for this.
-> > > 
-> > > Yes. of course I tested my patch on FSI DMAEngine.
-> > > In my test, I didn't get any issue with/without this patch.
-> > > 
-> > > I double-checked this issue, but sh7372 has offset bug.
-> > > This is the reason why I added [RFC] on this patch.
-> > 
-> > I tested a 9-day old next tree with and without your patch with 
-> > runtime-suspend - both when the A3SP domain stays on and when it gets 
-> > switched off - both versions seem to work, so, at least I don't recognise 
-> > any regressions. Unfortunately, I couldn't test system-wide suspend 
-> > because of some NFS problem. So, you can also add a (partially-)
-> > 
-> > Tested-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+On Thu, May 31, 2012 at 06:10:52PM +0200, Guennadi Liakhovetski wrote:
+> On Wed, 30 May 2012, Rafael J. Wysocki wrote:
+> > I suppose this should go into v3.5, if possible, right?
 > 
-> I suppose this should go into v3.5, if possible, right?
-
-I'm not sure in fact. On the one hand the fix looks correct. On the other 
-hand we haven't got any reports of this bug causing problems, that this 
-patch would fix. IIUC, sh7372 is not a very widely used platform these 
-days, so, pushing for 3.5 should be safe enough. Paul and Magnus certainly 
-know the situation better.
-
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+> I'm not sure in fact. On the one hand the fix looks correct. On the other 
+> hand we haven't got any reports of this bug causing problems, that this 
+> patch would fix. IIUC, sh7372 is not a very widely used platform these 
+> days, so, pushing for 3.5 should be safe enough. Paul and Magnus certainly 
+> know the situation better.
+> 
+Given that this is a correctness fix it should go in to 3.5 and possibly
+marked for stable as well. The fact no one has reported bugs so far is
+immaterial, given that few customers are running on upstream kernels
+directly. The fact it's not in wide deployment helps, too.
