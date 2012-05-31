@@ -1,37 +1,51 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 25 May 2012 15:45:34 +0000
-Subject: [PATCH 8/8 v3] mmc: tmio: remove a duplicated comment line
-Message-Id: <1337960752-4944-20-git-send-email-g.liakhovetski@gmx.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 31 May 2012 00:24:03 +0000
+Subject: [PATCH 7/9] ARM: mach-shmobile: armadillo800eva: add FSI DMAEngine support
+Message-Id: <87ipfd8ag0.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/mmc/host/tmio_mmc_pio.c |    1 -
- 1 files changed, 0 insertions(+), 1 deletions(-)
+ arch/arm/configs/armadillo800eva_defconfig     |    2 ++
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    2 ++
+ 2 files changed, 4 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index a4f1c59..b731859 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -980,7 +980,6 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 	 *  While we increment the runtime PM counter for all scenarios when
- 	 *  the mmc core activates us by calling an appropriate set_ios(), we
- 	 *  must additionally ensure that in case 2) the tmio mmc hardware stays
--	 *  additionally ensure that in case 2) the tmio mmc hardware stays
- 	 *  powered on during runtime for the card detection to work.
- 	 */
- 	if (_host->native_hotplug)
+diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
+index df1ce54..16bbb3f 100644
+--- a/arch/arm/configs/armadillo800eva_defconfig
++++ b/arch/arm/configs/armadillo800eva_defconfig
+@@ -119,6 +119,8 @@ CONFIG_USB_ETH=m
+ CONFIG_MMC=y
+ CONFIG_MMC_SDHI=y
+ CONFIG_MMC_SH_MMCIF=y
++CONFIG_DMADEVICES=y
++CONFIG_SH_DMAE=y
+ CONFIG_UIO=y
+ CONFIG_UIO_PDRV_GENIRQ=y
+ # CONFIG_DNOTIFY is not set
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index a5c46da..b8c0e1b 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -747,12 +747,14 @@ static int fsi_hdmi_set_rate(struct device *dev, int rate, int enable)
+ static struct sh_fsi_platform_info fsi_info = {
+ 	/* FSI-WM8978 */
+ 	.port_a = {
++		.tx_id = SHDMA_SLAVE_FSIA_TX,
+ 	},
+ 	/* FSI-HDMI */
+ 	.port_b = {
+ 		.flags		= SH_FSI_FMT_SPDIF |
+ 				  SH_FSI_ENABLE_STREAM_MODE,
+ 		.set_rate	= fsi_hdmi_set_rate,
++		.tx_id		= SHDMA_SLAVE_FSIB_TX,
+ 	}
+ };
+ 
 -- 
-1.7.2.5
+1.7.5.4
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
