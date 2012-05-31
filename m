@@ -1,101 +1,64 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 23 May 2012 01:32:34 +0000
-Subject: [PATCH 05/12 v2] ARM: mach-shmobile: clock-r8a7740: add CEU support
-Message-Id: <87aa0zvg0h.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 31 May 2012 16:34:00 +0000
+Subject: [PATCH 2/2] fbdev: sh_mobile_lcdc: Use MERAM operations wrappers
+Message-Id: <1338482040-29827-3-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
-v1 -> v2
+ drivers/video/sh_mobile_lcdcfb.c |   18 +++++++-----------
+ 1 files changed, 7 insertions(+), 11 deletions(-)
 
- - same as v1
-
- arch/arm/mach-shmobile/clock-r8a7740.c |   23 ++++++++++++++++++++++-
- 1 files changed, 22 insertions(+), 1 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index b095343..ce0930a 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -43,6 +43,8 @@
- /* CPG registers */
- #define FRQCRA		0xe6150000
- #define FRQCRB		0xe6150004
-+#define VCLKCR1		0xE6150008
-+#define VCLKCR2		0xE615000c
- #define FRQCRC		0xe61500e0
- #define PLLC01CR	0xe6150028
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 7a0b301..671685d 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -857,7 +857,7 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
+ 		 * re-initialize them.
+ 		 */
+ 		if (ch->meram) {
+-			mdev->ops->meram_unregister(mdev, ch->meram);
++			sh_mobile_meram_unregister(mdev, ch->meram);
+ 			ch->meram = NULL;
+ 		}
  
-@@ -317,6 +319,7 @@ static struct clk_div4_table div4_table = {
- /* DIV6 reparent */
- enum {
- 	DIV6_HDMI,
-+	DIV6_VCLK1, DIV6_VCLK2,
- 	DIV6_REPARENT_NR,
- };
+@@ -880,11 +880,11 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
+ 			break;
+ 		}
  
-@@ -326,9 +329,21 @@ static struct clk *hdmi_parent[] = {
- 	[2] = &dv_clk
- };
+-		meram = mdev->ops->meram_register(mdev, ch->cfg->meram_cfg,
++		meram = sh_mobile_meram_register(mdev, ch->cfg->meram_cfg,
+ 					ch->pitch, ch->yres, pixelformat,
+ 					&ch->pitch);
+ 		if (!IS_ERR(meram)) {
+-			mdev->ops->meram_update(mdev, meram,
++			sh_mobile_meram_update(mdev, meram,
+ 					ch->base_addr_y, ch->base_addr_c,
+ 					&ch->base_addr_y, &ch->base_addr_c);
+ 			ch->meram = meram;
+@@ -1070,14 +1070,10 @@ static int sh_mobile_fb_pan_display(struct fb_var_screeninfo *var,
+ 			base_addr_c += var->xoffset;
+ 	}
  
-+static struct clk *vclk_parents[8] = {
-+	[0] = &pllc1_div2_clk,
-+	[2] = &dv_clk,
-+	[3] = &usb24s_clk,
-+	[4] = &extal1_div2_clk,
-+	[5] = &extalr_clk,
-+};
-+
- static struct clk div6_reparent_clks[DIV6_REPARENT_NR] = {
- 	[DIV6_HDMI] = SH_CLK_DIV6_EXT(HDMICKCR, 0,
- 				      hdmi_parent, ARRAY_SIZE(hdmi_parent), 6, 2),
-+	[DIV6_VCLK1] = SH_CLK_DIV6_EXT(VCLKCR1, 0,
-+				       vclk_parents, ARRAY_SIZE(vclk_parents), 12, 3),
-+	[DIV6_VCLK2] = SH_CLK_DIV6_EXT(VCLKCR2, 0,
-+				       vclk_parents, ARRAY_SIZE(vclk_parents), 12, 3),
- };
+-	if (ch->meram) {
+-		struct sh_mobile_meram_info *mdev;
+-
+-		mdev = priv->meram_dev;
+-		mdev->ops->meram_update(mdev, ch->meram,
+-					base_addr_y, base_addr_c,
+-					&base_addr_y, &base_addr_c);
+-	}
++	if (ch->meram)
++		sh_mobile_meram_update(priv->meram_dev, ch->meram,
++				       base_addr_y, base_addr_c,
++				       &base_addr_y, &base_addr_c);
  
- /* HDMI1/2 clock */
-@@ -417,7 +432,7 @@ static struct clk div6_clks[DIV6_NR] = {
- };
- 
- enum {
--	MSTP125,
-+	MSTP128, MSTP127, MSTP125,
- 	MSTP116, MSTP111, MSTP100, MSTP117,
- 
- 	MSTP230,
-@@ -434,6 +449,8 @@ enum {
- };
- 
- static struct clk mstp_clks[MSTP_NR] = {
-+	[MSTP128] = SH_CLK_MSTP32(&div4_clks[DIV4_S],	SMSTPCR1, 28, 0), /* CEU21 */
-+	[MSTP127] = SH_CLK_MSTP32(&div4_clks[DIV4_S],	SMSTPCR1, 27, 0), /* CEU20 */
- 	[MSTP125] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR1, 25, 0), /* TMU0 */
- 	[MSTP117] = SH_CLK_MSTP32(&div4_clks[DIV4_B],	SMSTPCR1, 17, 0), /* LCDC1 */
- 	[MSTP116] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR1, 16, 0), /* IIC0 */
-@@ -484,6 +501,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("usb24s",			&usb24s_clk),
- 	CLKDEV_CON_ID("hdmi1",			&hdmi1_clk),
- 	CLKDEV_CON_ID("hdmi2",			&hdmi2_clk),
-+	CLKDEV_CON_ID("video1",			&div6_reparent_clks[DIV6_VCLK1]),
-+	CLKDEV_CON_ID("video2",			&div6_reparent_clks[DIV6_VCLK2]),
- 
- 	/* DIV4 clocks */
- 	CLKDEV_CON_ID("i_clk",			&div4_clks[DIV4_I]),
-@@ -506,6 +525,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("i2c-sh_mobile.0",	&mstp_clks[MSTP116]),
- 	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.1",	&mstp_clks[MSTP117]),
- 	CLKDEV_DEV_ID("sh_tmu.0",		&mstp_clks[MSTP125]),
-+	CLKDEV_DEV_ID("sh_mobile_ceu.0",	&mstp_clks[MSTP127]),
-+	CLKDEV_DEV_ID("sh_mobile_ceu.1",	&mstp_clks[MSTP128]),
- 
- 	CLKDEV_DEV_ID("sh-sci.4",		&mstp_clks[MSTP200]),
- 	CLKDEV_DEV_ID("sh-sci.3",		&mstp_clks[MSTP201]),
+ 	ch->base_addr_y = base_addr_y;
+ 	ch->base_addr_c = base_addr_c;
 -- 
-1.7.5.4
+1.7.3.4
 
