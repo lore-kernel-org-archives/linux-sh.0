@@ -1,58 +1,33 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sat, 12 May 2012 20:39:07 +0000
-Subject: [PATCH 3/4] sh: Setup CROSS_COMPILE at the top
-Message-Id: <1336855148-18817-3-git-send-email-geert@linux-m68k.org>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 31 May 2012 17:21:04 +0000
+Subject: [PATCH 1/3] fbdev: sh_mobile_lcdc: Constify sh_mobile_lcdc_fix structure
+Message-Id: <1338484866-12237-2-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1336855148-18817-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1336855148-18817-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-CROSS_COMPILE must be setup before using e.g. cc-option (and a few other
-as-*, cc-*, ld-* macros), else they will check against the wrong compiler
-when cross-compiling, and may invoke the cross compiler with wrong or
-suboptimal compiler options.
+The structure is only read, make it const.
 
-Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-sh@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/sh/Makefile |   12 ++++++------
- 1 files changed, 6 insertions(+), 6 deletions(-)
+ drivers/video/sh_mobile_lcdcfb.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/arch/sh/Makefile b/arch/sh/Makefile
-index 46edf07..0d7bbaf 100644
---- a/arch/sh/Makefile
-+++ b/arch/sh/Makefile
-@@ -9,6 +9,12 @@
- # License.  See the file "COPYING" in the main directory of this archive
- # for more details.
- #
-+ifneq ($(SUBARCH),$(ARCH))
-+  ifeq ($(CROSS_COMPILE),)
-+    CROSS_COMPILE := $(call cc-cross-prefix, $(UTS_MACHINE)-linux-  $(UTS_MACHINE)-linux-gnu-  $(UTS_MACHINE)-unknown-linux-gnu-)
-+  endif
-+endif
-+
- isa-y					:= any
- isa-$(CONFIG_SH_DSP)			:= sh
- isa-$(CONFIG_CPU_SH2)			:= sh2
-@@ -106,12 +112,6 @@ LDFLAGS_vmlinux		+= --defsym phys_stext=_stext-$(CONFIG_PAGE_OFFSET) \
- KBUILD_DEFCONFIG	:= cayman_defconfig
- endif
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 7a0b301..b6fb8a4 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -1002,7 +1002,7 @@ static int sh_mobile_lcdc_setcolreg(u_int regno,
+ 	return 0;
+ }
  
--ifneq ($(SUBARCH),$(ARCH))
--  ifeq ($(CROSS_COMPILE),)
--    CROSS_COMPILE := $(call cc-cross-prefix, $(UTS_MACHINE)-linux-  $(UTS_MACHINE)-linux-gnu-  $(UTS_MACHINE)-unknown-linux-gnu-)
--  endif
--endif
--
- ifdef CONFIG_CPU_LITTLE_ENDIAN
- ld-bfd			:= elf32-$(UTS_MACHINE)-linux
- LDFLAGS_vmlinux		+= --defsym 'jiffies=jiffies_64' --oformat $(ld-bfd)
+-static struct fb_fix_screeninfo sh_mobile_lcdc_fix  = {
++static const struct fb_fix_screeninfo sh_mobile_lcdc_fix  = {
+ 	.id =		"SH Mobile LCDC",
+ 	.type =		FB_TYPE_PACKED_PIXELS,
+ 	.visual =	FB_VISUAL_TRUECOLOR,
 -- 
-1.7.0.4
+1.7.3.4
 
