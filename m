@@ -1,88 +1,77 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Wed, 02 May 2012 09:41:49 +0000
-Subject: [PATCH v3 09/10] mtd: sh_flctl: Use user oob data in hardware ECC mode
-Message-Id: <1335951710-9390-10-git-send-email-hechtb@gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 31 May 2012 00:23:41 +0000
+Subject: [PATCH 5/9] ARM: mach-shmobile: r8a7740: add SDHI DMAEngine support
+Message-Id: <87lik98agm.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1335951710-9390-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1335951710-9390-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mtd@lists.infradead.org, linux-sh@vger.kernel.org
-Cc: Brian Norris <computersforpeace@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, Laurent Pichart <laurent.pinchart@ideasonboard.com>, Artem Bityutskiy <dedekind1@gmail.com>
+To: linux-sh@vger.kernel.org
 
-In hardware ecc mode, the flctl now writes and reads the oob data
-provided by the user. Additionally the ECC is now returned in normal
-page reads, not only when using the explicit NAND_CMD_READOOB command.
-
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
-Acked-by: Brian Norris <computersforpeace@gmail.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/mtd/nand/sh_flctl.c |   23 +++++++++++++++++------
- 1 files changed, 17 insertions(+), 6 deletions(-)
+ arch/arm/mach-shmobile/include/mach/r8a7740.h |    6 +++++
+ arch/arm/mach-shmobile/setup-r8a7740.c        |   30 +++++++++++++++++++++++++
+ 2 files changed, 36 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
-index 95bf636..1b1dd7a 100644
---- a/drivers/mtd/nand/sh_flctl.c
-+++ b/drivers/mtd/nand/sh_flctl.c
-@@ -312,6 +312,19 @@ static void write_fiforeg(struct sh_flctl *flctl, int rlen, int offset)
- 	}
- }
- 
-+static void write_ec_fiforeg(struct sh_flctl *flctl, int rlen, int offset)
-+{
-+	int i, len_4align;
-+	unsigned long *data = (unsigned long *)&flctl->done_buff[offset];
-+	void *fifo_addr = (void *)FLECFIFO(flctl);
-+
-+	len_4align = (rlen + 3) / 4;
-+	for (i = 0; i < len_4align; i++) {
-+		wait_wecfifo_ready(flctl);
-+		writel(cpu_to_be32(data[i]), fifo_addr);
-+	}
-+}
-+
- static void set_cmd_regs(struct mtd_info *mtd, uint32_t cmd, uint32_t flcmcdr_val)
- {
- 	struct sh_flctl *flctl = mtd_to_flctl(mtd);
-@@ -378,6 +391,7 @@ static int flctl_read_page_hwecc(struct mtd_info *mtd, struct nand_chip *chip,
- 				uint8_t *buf, int page)
- {
- 	chip->read_buf(mtd, buf, mtd->writesize);
-+	chip->read_buf(mtd, chip->oob_poi, mtd->oobsize);
- 	return 0;
- }
- 
-@@ -385,6 +399,7 @@ static void flctl_write_page_hwecc(struct mtd_info *mtd, struct nand_chip *chip,
- 				   const uint8_t *buf)
- {
- 	chip->write_buf(mtd, buf, mtd->writesize);
-+	chip->write_buf(mtd, chip->oob_poi, mtd->oobsize);
- }
- 
- static void execmd_read_page_sector(struct mtd_info *mtd, int page_addr)
-@@ -470,7 +485,7 @@ static void execmd_read_oob(struct mtd_info *mtd, int page_addr)
- static void execmd_write_page_sector(struct mtd_info *mtd)
- {
- 	struct sh_flctl *flctl = mtd_to_flctl(mtd);
--	int i, page_addr = flctl->seqin_page_addr;
-+	int page_addr = flctl->seqin_page_addr;
- 	int sector, page_sectors;
- 
- 	page_sectors = flctl->page_size ? 4 : 1;
-@@ -486,11 +501,7 @@ static void execmd_write_page_sector(struct mtd_info *mtd)
- 
- 	for (sector = 0; sector < page_sectors; sector++) {
- 		write_fiforeg(flctl, 512, 512 * sector);
--
--		for (i = 0; i < 4; i++) {
--			wait_wecfifo_ready(flctl); /* wait for write ready */
--			writel(0xFFFFFFFF, FLECFIFO(flctl));
--		}
-+		write_ec_fiforeg(flctl, 16, mtd->writesize + 16 * sector);
- 	}
- 
- 	wait_completion(flctl);
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+index f71507b..0f14ce8 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+@@ -591,6 +591,12 @@ enum {
+ /* DMA slave IDs */
+ enum {
+ 	SHDMA_SLAVE_INVALID,
++	SHDMA_SLAVE_SDHI0_RX,
++	SHDMA_SLAVE_SDHI0_TX,
++	SHDMA_SLAVE_SDHI1_RX,
++	SHDMA_SLAVE_SDHI1_TX,
++	SHDMA_SLAVE_SDHI2_RX,
++	SHDMA_SLAVE_SDHI2_TX,
+ 	SHDMA_SLAVE_FSIA_RX,
+ 	SHDMA_SLAVE_FSIA_TX,
+ 	SHDMA_SLAVE_FSIB_TX,
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 31ef1fe..794afeb 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -282,6 +282,36 @@ static struct platform_device *r8a7740_early_devices[] __initdata = {
+ /* DMA */
+ static const struct sh_dmae_slave_config r8a7740_dmae_slaves[] = {
+ 	{
++		.slave_id	= SHDMA_SLAVE_SDHI0_TX,
++		.addr		= 0xe6850030,
++		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
++		.mid_rid	= 0xc1,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SDHI0_RX,
++		.addr		= 0xe6850030,
++		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
++		.mid_rid	= 0xc2,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SDHI1_TX,
++		.addr		= 0xe6860030,
++		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
++		.mid_rid	= 0xc9,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SDHI1_RX,
++		.addr		= 0xe6860030,
++		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
++		.mid_rid	= 0xca,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SDHI2_TX,
++		.addr		= 0xe6870030,
++		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
++		.mid_rid	= 0xcd,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SDHI2_RX,
++		.addr		= 0xe6870030,
++		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
++		.mid_rid	= 0xce,
++	}, {
+ 		.slave_id	= SHDMA_SLAVE_FSIA_TX,
+ 		.addr		= 0xfe1f0024,
+ 		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
 -- 
 1.7.5.4
 
