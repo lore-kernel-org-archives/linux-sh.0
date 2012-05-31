@@ -1,23 +1,35 @@
-From: kuninori.morimoto.gx@renesas.com
-Date: Tue, 22 May 2012 02:33:45 +0000
-Subject: [PATCH 0/2] ARM: mach-shmobile: kzm9g: add FSI support
-Message-Id: <871umdaqrd.wl%kuninori.morimoto.gx@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 31 May 2012 00:28:48 +0000
+Subject: [PATCH 0/2] ARM: mach-shmobile: kzm9g: add FSI DMAEngine support
+Message-Id: <87ehq18a82.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <871umdaqrd.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <871umdaqrd.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
 
-Hi Rafael, Magnus
-Cc Simon
+Hi Rafael, Paul
+Cc Magnus, Simon
 
-The necessary missing patches for kzm9g will be merged on v3.5 kernel.
-These are ASoC
-(and already exists on linux-next tree)
-
-These patch set add FSI sound support to kzm9g board for v3.5 kernel.
+These are kzm9g FSI DMAEngine support
 
 Kuninori Morimoto (2):
-      ARM: mach-shmobile: clock-sh73a0: add FSI clock
-      ARM: mach-shmobile: kzm9g: add FSI-AK4648 support
+      ARM: mach-shmobile: sh73a0: add MPDMAC support
+      ARM: mach-shmobile: kzm9g: add FSI DMAEngine support
+
+These patch set are base on my
+[ARM: mach-shmobile: kzm9g: add FSI support] patch set
+
+compile/boot is OK, but these need ASoC v3.5-rcX merge for FSI sound.
+Without this merge, 2) sound is noisy.
+
+fbe42f6		ASoC: fsi: bugfix: ensure dma is terminated
+4a1b09b		ASoC: fsi: bugfix: correct dma area
+
+
+Best regards
+---
+Kuninori Morimoto
