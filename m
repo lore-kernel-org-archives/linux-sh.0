@@ -1,15 +1,31 @@
-From: abi <abiokom88@yahoo.com>
-Date: Sat, 12 May 2012 16:55:42 +0000
-Subject: haalloo,
-Message-Id: <29067701.8670551336841742391.JavaMail.defaultUser@defaultHost>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 31 May 2012 16:33:58 +0000
+Subject: [PATCH 0/2] SH Mobile MERAM fix
+Message-Id: <1338482040-29827-1-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-haalloo,
-how are you doing,i hope you are fine,my name is miss abi okom i got your
-contact and want us to be a good friend,
-please try and write back to me so that i will give you my pictures and tell
-you more about me,
+Hello,
+
+These two patches add MERAM operations wrappers. As the MERAM is used by a new
+DRM driver I'm working on for the same hardware, I don't want the operations
+to be accessed directly. This is a first step in getting rid of the MERAM
+platform device pointer in the LCDC platform data.
+
+Laurent Pinchart (2):
+  fbdev: sh_mobile_meram: Add MERAM operations wrappers
+  fbdev: sh_mobile_lcdc: Use MERAM operations wrappers
+
+ drivers/video/sh_mobile_lcdcfb.c |   18 +++++++-----------
+ drivers/video/sh_mobile_meram.c  |   24 ++++++++++++------------
+ include/video/sh_mobile_meram.h  |   28 ++++++++++++++++++++++++++++
+ 3 files changed, 47 insertions(+), 23 deletions(-)
+
+-- 
+Regards,
+
+Laurent Pinchart
+
