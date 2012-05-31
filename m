@@ -1,108 +1,152 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 25 May 2012 15:45:37 +0000
-Subject: [PATCH 02/10 v3] mmc: use a more generic name for slot function types and fields
-Message-Id: <1337960752-4944-23-git-send-email-g.liakhovetski@gmx.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 31 May 2012 00:23:10 +0000
+Subject: [PATCH 3/9] ARM: mach-shmobile: share USBTS_HI/LOW value for USB DMAEngine
+Message-Id: <87obp58ahh.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1205251727260.13353@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org
-Cc: Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-struct mmc_host::hotplug is becoming a generic hook for slot functions.
-Rename it accordingly.
+In SH-ARM CPU (= sh7372/sh73a0/r8a7740),
+USB DMA's CHCR :: TS (= DMA Transfer Size Specify) bit is mapped as
+TS[1:0] = CHCR[7:6]
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+SH-ARM USB DMAEngine uses shdma.
+Then, it is easy to understand if sh_dmae_pdata / sh_dmae_slave_config
+settings are used defined value instead of raw value.
+This patch modify these.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/mmc/core/host.c      |    2 ++
- drivers/mmc/core/slot-gpio.c |    8 ++++----
- include/linux/mmc/host.h     |   17 ++++++++++++++---
- 3 files changed, 20 insertions(+), 7 deletions(-)
+ arch/arm/mach-shmobile/include/mach/dma-register.h |   30 +++++++++++++++++
+ arch/arm/mach-shmobile/setup-sh7372.c              |   35 +++++++------------
+ 2 files changed, 43 insertions(+), 22 deletions(-)
 
-diff --git a/drivers/mmc/core/host.c b/drivers/mmc/core/host.c
-index 91c84c7..b8c5290 100644
---- a/drivers/mmc/core/host.c
-+++ b/drivers/mmc/core/host.c
-@@ -327,6 +327,8 @@ struct mmc_host *mmc_alloc_host(int extra, struct device *dev)
+diff --git a/arch/arm/mach-shmobile/include/mach/dma-register.h b/arch/arm/mach-shmobile/include/mach/dma-register.h
+index 02bcfe4..e24bcc8 100644
+--- a/arch/arm/mach-shmobile/include/mach/dma-register.h
++++ b/arch/arm/mach-shmobile/include/mach/dma-register.h
+@@ -16,6 +16,10 @@
+ #ifndef DMA_REGISTER_H
+ #define DMA_REGISTER_H
  
- 	mmc_host_clk_init(host);
- 
-+	host->slot.cd_irq = -EINVAL;
-+
- 	spin_lock_init(&host->lock);
- 	init_waitqueue_head(&host->wq);
- 	INIT_DELAYED_WORK(&host->detect, mmc_rescan);
-diff --git a/drivers/mmc/core/slot-gpio.c b/drivers/mmc/core/slot-gpio.c
-index 9796710..468e5a0 100644
---- a/drivers/mmc/core/slot-gpio.c
-+++ b/drivers/mmc/core/slot-gpio.c
-@@ -56,8 +56,8 @@ int mmc_gpio_request_cd(struct mmc_host *host, unsigned int gpio)
- 		goto eirqreq;
- 
- 	ctx->cd_gpio = gpio;
--	host->hotplug.irq = irq;
--	host->hotplug.handler_priv = ctx;
-+	host->slot.cd_irq = irq;
-+	host->slot.handler_priv = ctx;
- 
- 	return 0;
- 
-@@ -71,12 +71,12 @@ EXPORT_SYMBOL(mmc_gpio_request_cd);
- 
- void mmc_gpio_free_cd(struct mmc_host *host)
- {
--	struct mmc_gpio *ctx = host->hotplug.handler_priv;
-+	struct mmc_gpio *ctx = host->slot.handler_priv;
- 
- 	if (!ctx)
- 		return;
- 
--	free_irq(host->hotplug.irq, host);
-+	free_irq(host->slot.cd_irq, host);
- 	gpio_free(ctx->cd_gpio);
- 	kfree(ctx);
- }
-diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
-index 368b317..725413d 100644
---- a/include/linux/mmc/host.h
-+++ b/include/linux/mmc/host.h
-@@ -150,8 +150,19 @@ struct mmc_async_req {
- 	int (*err_check) (struct mmc_card *, struct mmc_async_req *);
- };
- 
--struct mmc_hotplug {
--	unsigned int irq;
-+/**
-+ * struct mmc_slot - MMC slot functions
-+ *
-+ * @cd_irq:		MMC/SD-card slot hotplug detection IRQ or -EINVAL
-+ * @handler_priv:	MMC/SD-card slot context
-+ *
-+ * Some MMC/SD host controllers implement slot-functions like card and
-+ * write-protect detection natively. However, a large number of controllers
-+ * leave these functions to the CPU. This struct provides a hook to attach
-+ * such slot-function drivers.
++/*
++ *		Direct Memory Access Controller
 + */
-+struct mmc_slot {
-+	int cd_irq;
- 	void *handler_priv;
++
+ /* Transmit sizes and respective CHCR register values */
+ enum {
+ 	XMIT_SZ_8BIT		= 0,
+@@ -51,4 +55,30 @@ enum {
+ #define CHCR_TX(xmit_sz) (DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL((xmit_sz)))
+ #define CHCR_RX(xmit_sz) (DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL((xmit_sz)))
+ 
++
++/*
++ *		USB High-Speed DMAC
++ */
++/* Transmit sizes and respective CHCR register values */
++enum {
++	USBTS_XMIT_SZ_8BYTE		= 0,
++	USBTS_XMIT_SZ_16BYTE		= 1,
++	USBTS_XMIT_SZ_32BYTE		= 2,
++};
++
++/* log2(size / 8) - used to calculate number of transfers */
++#define USBTS_SHIFT {		\
++	[USBTS_XMIT_SZ_8BYTE]	= 3,	\
++	[USBTS_XMIT_SZ_16BYTE]	= 4,	\
++	[USBTS_XMIT_SZ_32BYTE]	= 5,	\
++}
++
++#define USBTS_LOW_BIT	0x3 /* --xx */
++#define USBTS_HI_BIT	0x0 /* ---- */
++
++#define USBTS_LOW_SHIFT	6
++#define USBTS_HI_SHIFT	0
++
++#define USBTS_INDEX2VAL(i) (((i) & 3) << 6)
++
+ #endif /* DMA_REGISTER_H */
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index a2333f3..35a3a9c 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -630,16 +630,7 @@ static struct platform_device dma2_device = {
+ /*
+  * USB-DMAC
+  */
+-
+-unsigned int usbts_shift[] = {3, 4, 5};
+-
+-enum {
+-	XMIT_SZ_8BYTE		= 0,
+-	XMIT_SZ_16BYTE		= 1,
+-	XMIT_SZ_32BYTE		= 2,
+-};
+-
+-#define USBTS_INDEX2VAL(i) (((i) & 3) << 6)
++unsigned int usbts_shift[] = USBTS_SHIFT;
+ 
+ static const struct sh_dmae_channel sh7372_usb_dmae_channels[] = {
+ 	{
+@@ -653,10 +644,10 @@ static const struct sh_dmae_channel sh7372_usb_dmae_channels[] = {
+ static const struct sh_dmae_slave_config sh7372_usb_dmae0_slaves[] = {
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_USB0_TX,
+-		.chcr		= USBTS_INDEX2VAL(XMIT_SZ_8BYTE),
++		.chcr		= USBTS_INDEX2VAL(USBTS_XMIT_SZ_8BYTE),
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_USB0_RX,
+-		.chcr		= USBTS_INDEX2VAL(XMIT_SZ_8BYTE),
++		.chcr		= USBTS_INDEX2VAL(USBTS_XMIT_SZ_8BYTE),
+ 	},
  };
  
-@@ -290,7 +301,7 @@ struct mmc_host {
+@@ -665,10 +656,10 @@ static struct sh_dmae_pdata usb_dma0_platform_data = {
+ 	.slave_num	= ARRAY_SIZE(sh7372_usb_dmae0_slaves),
+ 	.channel	= sh7372_usb_dmae_channels,
+ 	.channel_num	= ARRAY_SIZE(sh7372_usb_dmae_channels),
+-	.ts_low_shift	= 6,
+-	.ts_low_mask	= 0xc0,
+-	.ts_high_shift	= 0,
+-	.ts_high_mask	= 0,
++	.ts_low_shift	= USBTS_LOW_SHIFT,
++	.ts_low_mask	= USBTS_LOW_BIT << USBTS_LOW_SHIFT,
++	.ts_high_shift	= USBTS_HI_SHIFT,
++	.ts_high_mask	= USBTS_HI_BIT << USBTS_HI_SHIFT,
+ 	.ts_shift	= usbts_shift,
+ 	.ts_shift_num	= ARRAY_SIZE(usbts_shift),
+ 	.dmaor_init	= DMAOR_DME,
+@@ -715,10 +706,10 @@ static struct platform_device usb_dma0_device = {
+ static const struct sh_dmae_slave_config sh7372_usb_dmae1_slaves[] = {
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_USB1_TX,
+-		.chcr		= USBTS_INDEX2VAL(XMIT_SZ_8BYTE),
++		.chcr		= USBTS_INDEX2VAL(USBTS_XMIT_SZ_8BYTE),
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_USB1_RX,
+-		.chcr		= USBTS_INDEX2VAL(XMIT_SZ_8BYTE),
++		.chcr		= USBTS_INDEX2VAL(USBTS_XMIT_SZ_8BYTE),
+ 	},
+ };
  
- 	struct delayed_work	detect;
- 	int			detect_change;	/* card detect flag */
--	struct mmc_hotplug	hotplug;
-+	struct mmc_slot		slot;
- 
- 	const struct mmc_bus_ops *bus_ops;	/* current bus driver */
- 	unsigned int		bus_refs;	/* reference counter */
+@@ -727,10 +718,10 @@ static struct sh_dmae_pdata usb_dma1_platform_data = {
+ 	.slave_num	= ARRAY_SIZE(sh7372_usb_dmae1_slaves),
+ 	.channel	= sh7372_usb_dmae_channels,
+ 	.channel_num	= ARRAY_SIZE(sh7372_usb_dmae_channels),
+-	.ts_low_shift	= 6,
+-	.ts_low_mask	= 0xc0,
+-	.ts_high_shift	= 0,
+-	.ts_high_mask	= 0,
++	.ts_low_shift	= USBTS_LOW_SHIFT,
++	.ts_low_mask	= USBTS_LOW_BIT << USBTS_LOW_SHIFT,
++	.ts_high_shift	= USBTS_HI_SHIFT,
++	.ts_high_mask	= USBTS_HI_BIT << USBTS_HI_SHIFT,
+ 	.ts_shift	= usbts_shift,
+ 	.ts_shift_num	= ARRAY_SIZE(usbts_shift),
+ 	.dmaor_init	= DMAOR_DME,
 -- 
-1.7.2.5
+1.7.5.4
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
