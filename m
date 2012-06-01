@@ -1,59 +1,29 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 13 Jun 2012 07:31:14 +0000
-Subject: Re: [PATCH 2/2] irqdomain: Support for static IRQ mapping and association.
-Message-Id: <20120613073114.GM10170@linux-sh.org>
+From: Thavatchai Makphaibulcboke <thavatchai.makpahibulchoke@hp.com>
+Date: Fri, 01 Jun 2012 02:48:41 +0000
+Subject: Re: [PATCH] lib/decompress_unxz.c: removing all memory helper functions
+Message-Id: <4FC82D89.1040108@hp.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1337576792-5347-1-git-send-email-lethal@linux-sh.org>
- <1337576792-5347-2-git-send-email-lethal@linux-sh.org>
- <20120526015049.1616D3E2336@localhost>
- <20120611032547.GB10170@linux-sh.org>
- <CACxGe6sRVk3sef0X9Q_FDcMx5=y0mKJ-pUM-S2-CitUFQ7koGA@mail.gmail.com>
-In-Reply-To: <CACxGe6sRVk3sef0X9Q_FDcMx5=y0mKJ-pUM-S2-CitUFQ7koGA@mail.gmail.com>
+References: <1337875436-27640-1-git-send-email-tmac@hp.com>
+ <20120528070336.GM3377@game.jcrosoft.org>
+In-Reply-To: <20120528070336.GM3377@game.jcrosoft.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Grant Likely <grant.likely@secretlab.ca>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Sun, Jun 10, 2012 at 11:02:16PM -0600, Grant Likely wrote:
-> On Sun, Jun 10, 2012 at 9:25 PM, Paul Mundt <lethal@linux-sh.org> wrote:
-> > On Fri, May 25, 2012 at 07:50:49PM -0600, Grant Likely wrote:
-> >> It would be really good to make sure the hwirqs aren't already
-> >> associated before trying to associate them again. ?Unfortunately that
-> >> can't be done (nicely) until I get rid of the slow path lookup. ?I've
-> >> got a patch for that which I'll rebase on top of this one and post soon.
-> >>
-> > Any updates on this? I have quite a few more changes I intend on making,
-> > but there's no point in starting in on that until these existing patches
-> > are sorted out.
+On 05/28/2012 01:03 AM, Jean-Christophe PLAGNIOL-VILLARD wrote:
+
+> can we do not duplicate those functions?
 > 
-> Yeah, I made some progress and have a whole bunch of patches to post
-> which I had hoped to do last week.  Unfortunately the move to the UK
-> has meant that the last 7 days have been non-stop cleaning, packing
-> and throwing out stuff.  I've not been able to do a final cleanup.
-> The house gets cleaned on Tuesday so it can go on the market on
-> Wednesday which means all the house stuff must be done by Monday
-> evening.  Hopefully I'll get some time on Tuesday to do some hacking.
-> 
-No worries, life happens. Just wanted to make sure you hadn't forgotten
-about them!
+> Best Regards,
+> J.
 
-> If you want to look at them I've pushed them out to the irqdomain/test
-> branch on git.secretlab.ca.
-> 
-Thanks, I've fetched them and been hacking on them a bit. Fortunately you
-already did some the work I had intended on doing, particularly in
-relation to slow vs fast-path lookups, so there hasn't been much more for
-me to do.
+Thanks J for the comment.  Unfortunately, there is no easy way to share
+files among different architectures' preboot environment.  We have the
+choices either to have each architecture define its own copies or the
+decompressor defines them.  I believe the former is preferable.  As
+Lasse also pointed out, this way any specific architecture could provide
+an architectural dependent optimized version, if it chooses to.
 
-That being said, you forgot about legacy domains with non-zero hwirq
-bases in your legacy -> linear revmap conversion, so some (or all) of
-those IRQs will now find themselves stuffed in the radix tree instead..
-
-I already got bitten by this trying to figure out why my batched disposal
-helper wasn't doing its job and my linear domain was tripping over the
-non-zero radix root height warn at domain removal time, so that's fixed
-now.
-
-Patches to follow (also in the common/irqdomain topic branch in my github
-tree).
+Thanks,
+Mak.
