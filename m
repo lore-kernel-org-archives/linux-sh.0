@@ -1,55 +1,76 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 26 Jun 2012 22:50:01 +0000
-Subject: [PATCH 05/13 v2] sh: add fixed voltage regulators to polaris
-Message-Id: <1340751009-18663-6-git-send-email-g.liakhovetski@gmx.de>
+From: "Srivatsa S. Bhat" <srivatsa.bhat@linux.vnet.ibm.com>
+Date: Fri, 01 Jun 2012 09:24:43 +0000
+Subject: [PATCH 11/27] sh, smpboot: Use generic SMP booting infrastructure
+Message-Id: <20120601091238.31979.80347.stgit@srivatsabhat.in.ibm.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20120601090952.31979.24799.stgit@srivatsabhat.in.ibm.com>
+In-Reply-To: <20120601090952.31979.24799.stgit@srivatsabhat.in.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: peterz@infradead.org, paulmck@linux.vnet.ibm.com
+Cc: rusty@rustcorp.com.au, mingo@kernel.org, yong.zhang0@gmail.com, akpm@linux-foundation.org, vatsa@linux.vnet.ibm.com, rjw@sisk.pl, linux-arch@vger.kernel.org, linux-kernel@vger.kernel.org, srivatsa.bhat@linux.vnet.ibm.com, nikunj@linux.vnet.ibm.com, Paul Mundt <lethal@linux-sh.org>, Thomas Gleixner <tglx@linutronix.de>Andrew Morton <akpm@linux-foundation.org>Rusty Russell <rusty@rustcorp.com.au>, Mike Frysinger <vapier@gentoo.org>, linux-sh@vger.kernel.org
 
-On polaris provide a dummy regulator for the smsc911x driver.
+Convert sh to use the generic framework to boot secondary CPUs.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Notes:
+Postpone enabling local interrupts to after completing bringup of
+secondary CPU.
+
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: Andrew Morton <akpm@linux-foundation.org>
+Cc: Rusty Russell <rusty@rustcorp.com.au>
+Cc: Mike Frysinger <vapier@gentoo.org>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Srivatsa S. Bhat <srivatsa.bhat@linux.vnet.ibm.com>
 ---
- arch/sh/boards/board-polaris.c |   10 ++++++++++
- 1 files changed, 10 insertions(+), 0 deletions(-)
 
-diff --git a/arch/sh/boards/board-polaris.c b/arch/sh/boards/board-polaris.c
-index 37d03c0..758f432 100644
---- a/arch/sh/boards/board-polaris.c
-+++ b/arch/sh/boards/board-polaris.c
-@@ -9,6 +9,8 @@
- #include <linux/interrupt.h>
- #include <linux/irq.h>
- #include <linux/platform_device.h>
-+#include <linux/regulator/fixed.h>
-+#include <linux/regulator/machine.h>
- #include <linux/smsc911x.h>
- #include <linux/io.h>
- #include <asm/irq.h>
-@@ -22,6 +24,12 @@
- #define AREA5_WAIT_CTRL	(0x1C00)
- #define WAIT_STATES_10	(0x7)
+ arch/sh/kernel/smp.c |   19 +++++++++----------
+ 1 files changed, 9 insertions(+), 10 deletions(-)
+
+diff --git a/arch/sh/kernel/smp.c b/arch/sh/kernel/smp.c
+index 8e0fde0..d7f7faf 100644
+--- a/arch/sh/kernel/smp.c
++++ b/arch/sh/kernel/smp.c
+@@ -179,6 +179,11 @@ void native_play_dead(void)
  
-+/* Dummy supplies, where voltage doesn't matter */
-+static struct regulator_consumer_supply dummy_supplies[] = {
-+	REGULATOR_SUPPLY("vddvario", "smsc911x.0"),
-+	REGULATOR_SUPPLY("vdd33a", "smsc911x.0"),
-+};
+ asmlinkage void __cpuinit start_secondary(void)
+ {
++	smpboot_start_secondary(NULL);
++}
 +
- static struct resource smsc911x_resources[] = {
- 	[0] = {
- 		.name		= "smsc911x-memory",
-@@ -88,6 +96,8 @@ static int __init polaris_initialise(void)
++void __cpuinit __cpu_pre_starting(void *unused)
++{
+ 	unsigned int cpu = smp_processor_id();
+ 	struct mm_struct *mm = &init_mm;
  
- 	printk(KERN_INFO "Configuring Polaris external bus\n");
+@@ -190,23 +195,17 @@ asmlinkage void __cpuinit start_secondary(void)
+ 	local_flush_tlb_all();
  
-+	regulator_register_fixed(0, dummy_supplies, ARRAY_SIZE(dummy_supplies));
-+
- 	/* Configure area 5 with 2 wait states */
- 	wcr = __raw_readw(WCR2);
- 	wcr &= (~AREA5_WAIT_CTRL);
--- 
-1.7.2.5
+ 	per_cpu_trap_init();
++}
+ 
+-	preempt_disable();
+-
+-	notify_cpu_starting(cpu);
+-
+-	local_irq_enable();
++void __cpuinit __cpu_pre_online(void *unused)
++{
++	unsigned int cpu = smp_processor_id();
+ 
+ 	/* Enable local timers */
+ 	local_timer_setup(cpu);
+ 	calibrate_delay();
+ 
+ 	smp_store_cpu_info(cpu);
+-
+-	set_cpu_online(cpu, true);
+-	per_cpu(cpu_state, cpu) = CPU_ONLINE;
+-
+-	cpu_idle();
+ }
+ 
+ extern struct {
 
