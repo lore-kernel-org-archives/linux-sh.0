@@ -1,35 +1,50 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 27 Jun 2012 00:52:01 +0000
-Subject: Re: [PATCH 00/13 v2] sh: add regulators for mmc and smsc911x
-Message-Id: <20120627005201.GH24033@linux-sh.org>
+From: Jan Ceuleers <jan.ceuleers@computer.org>
+Date: Sat, 02 Jun 2012 10:05:32 +0000
+Subject: Re: [PATCH v5 6/6 resend] net: sh_eth: use NAPI
+Message-Id: <4FC9E56C.4000707@computer.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1340751009-18663-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1340751009-18663-1-git-send-email-g.liakhovetski@gmx.de>
+References: <4FC48589.6060009@renesas.com>
+In-Reply-To: <4FC48589.6060009@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Cc: netdev <netdev@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>
 
-On Wed, Jun 27, 2012 at 12:49:56AM +0200, Guennadi Liakhovetski wrote:
-> This is a respin of
+On 05/29/2012 10:15 AM, Shimoda, Yoshihiro wrote:
+> @@ -1087,13 +1088,17 @@ static int sh_eth_rx(struct net_device *ndev)
+>  				skb_reserve(skb, NET_IP_ALIGN);
+>  			skb_put(skb, pkt_len);
+>  			skb->protocol = eth_type_trans(skb, ndev);
+> -			netif_rx(skb);
+> -			ndev->stats.rx_packets++;
+> -			ndev->stats.rx_bytes += pkt_len;
+> +			if (netif_receive_skb(skb) = NET_RX_DROP) {
+> +				ndev->stats.rx_dropped++;
+> +			} else {
+> +				ndev->stats.rx_packets++;
+> +				ndev->stats.rx_bytes += pkt_len;
+> +			}
+>  		}
+>  		rxdesc->status |= cpu_to_edmac(mdp, RD_RACT);
+>  		entry = (++mdp->cur_rx) % mdp->num_rx_ring;
+>  		rxdesc = &mdp->rx_ring[entry];
+> +		(*work)++;
+>  	}
 > 
-> http://thread.gmane.org/gmane.linux.ports.sh.devel/15568
-> 
-> ported on top of the fixed regulator driver update patches from the
-> 
-> http://lkml.indiana.edu/hypermail/linux/kernel/1206.2/index.html#01395
-> 
-> patch-set, which thereby becomes a prerequisite for this series! Basing on 
-> top of those patches made the temporary macro redundant, which simplifies 
-> the whole work quite a bit. Other changes since v2 are listed in respective 
-> patches.
-> 
-> DEPENDENCY: the above fixed regulator patches can be obtained from
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git tags/topic/fixed
-> 
-Ok, this all looks fine. I'll pull this branch in to a topic branch of my
-own (probably sh/regulator due to a lack of originality on my part) and
-then layer your patch set on top of it. You can send an incremental patch
-for the gpio_request() thing if you like and then that can just be rolled
-on top.
+>  	/* Refill the Rx ring buffers. */
+
+Please forgive a newbie's question/comment; feel free to ignore if I'm
+wasting your time. Particularly because it's about an aspect of the
+driver that you're not changing in this patch. (And yes, I know that
+you've been asked to sit on this patch series until net-next opens up
+again).
+
+I see that most users of netif_receive_skb() ignore its return value.
+Some drivers (including this-one) do check it and use it to determine
+whether counters should be updated. But looking at netif_receive_skb()
+itself I see that there's counter infrastructure there already.
+
+So why this in-driver set of counters, I wonder?
+
+Thanks, Jan
