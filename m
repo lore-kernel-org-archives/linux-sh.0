@@ -1,35 +1,60 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 27 Jun 2012 14:22:34 +0000
-Subject: Re: [PATCH] asm-generic: fix compile breakage "'TAINT_WARN' undeclared"
-Message-Id: <20120627142233.GK24033@linux-sh.org>
+From: Paul Bolle <pebolle@tiscali.nl>
+Date: Fri, 08 Jun 2012 20:49:17 +0000
+Subject: [PATCH] sh: Kill off last dead UBC header
+Message-Id: <1339188557.30984.10.camel@x61.thuisdomein>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1206271507200.24173@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1206271507200.24173@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org
+To: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Wed, Jun 27, 2012 at 03:52:27PM +0200, Guennadi Liakhovetski wrote:
-> TAINT_WARN is defined in kernel.h and used in asm-generic/bug.h. Not 
-> including kernel.h there breaks build on sh:
-> 
-> In file included from linux/include/linux/thread_info.h:54,
->                  from linux/include/linux/preempt.h:9,
->                  from linux/include/linux/spinlock.h:50,
->                  from linux/include/linux/mmzone.h:7,
->                  from linux/include/linux/gfp.h:4,
->                  from linux/include/linux/mm.h:8,
->                  from linux/arch/sh/kernel/asm-offsets.c:13:
-> linux/arch/sh/include/asm/thread_info.h: In function 'set_restore_sigmask':
-> linux/arch/sh/include/asm/thread_info.h:172: error: 'TAINT_WARN' undeclared (first use in this function)
-> linux/arch/sh/include/asm/thread_info.h:172: error: (Each undeclared identifier is reported only once
-> linux/arch/sh/include/asm/thread_info.h:172: error: for each function it appears in.)
-> 
-> Also, since nothing in bug.h is usable from assembly, it is safe to extend 
-> the "#ifndef __ASSEMBLY__" block over all WARN() macros.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Commit 7025bec9125b0a02edcaf22c2dce753bf2c95480 ("sh: Kill off dead UBC
+headers.") skipped arch/sh/include/cpu-sh2a/cpu/ubc.h. Since nothing is
+using that header either, kill it off too.
 
-Already fixed in mainline.
+Signed-off-by: Paul Bolle <pebolle@tiscali.nl>
+---
+Tested with "git grep" only. Seems obviously correct anyway.
+
+ arch/sh/include/cpu-sh2a/cpu/ubc.h |   28 ----------------------------
+ 1 files changed, 0 insertions(+), 28 deletions(-)
+ delete mode 100644 arch/sh/include/cpu-sh2a/cpu/ubc.h
+
+diff --git a/arch/sh/include/cpu-sh2a/cpu/ubc.h b/arch/sh/include/cpu-sh2a/cpu/ubc.h
+deleted file mode 100644
+index 1192e1c..0000000
+--- a/arch/sh/include/cpu-sh2a/cpu/ubc.h
++++ /dev/null
+@@ -1,28 +0,0 @@
+-/*
+- * SH-2A UBC definitions
+- *
+- * Copyright (C) 2008 Kieran Bingham
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+- */
+-
+-#ifndef __ASM_CPU_SH2A_UBC_H
+-#define __ASM_CPU_SH2A_UBC_H
+-
+-#define UBC_BARA                0xfffc0400
+-#define UBC_BAMRA               0xfffc0404
+-#define UBC_BBRA                0xfffc04a0	/* 16 bit access */
+-#define UBC_BDRA                0xfffc0408
+-#define UBC_BDMRA               0xfffc040c
+-
+-#define UBC_BARB                0xfffc0410
+-#define UBC_BAMRB               0xfffc0414
+-#define UBC_BBRB                0xfffc04b0	/* 16 bit access */
+-#define UBC_BDRB                0xfffc0418
+-#define UBC_BDMRB               0xfffc041c
+-
+-#define UBC_BRCR                0xfffc04c0
+-
+-#endif /* __ASM_CPU_SH2A_UBC_H */
+-- 
+1.7.7.6
+
