@@ -1,42 +1,43 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 12 Jun 2012 22:28:24 +0000
-Subject: [PATCH 2/2] serial: sh-sci: Make probe fail for ports that exceed the maximum count
-Message-Id: <1339540104-25003-2-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Ezequiel Garcia <elezegarcia@gmail.com>
+Date: Sat, 09 Jun 2012 08:13:26 +0000
+Subject: =?UTF-8?q?=5BPATCH=201/6=5D=20sh=3A=20fix=20compiler=20warning=20by=20properly=20inlining=20flat=5Fs
+Message-Id: <1339229611-2326-1-git-send-email-elezegarcia@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1339540104-25003-1-git-send-email-laurent.pinchart@ideasonboard.com>
-In-Reply-To: <1339540104-25003-1-git-send-email-laurent.pinchart@ideasonboard.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-kernel@vger.kernel.org
+Cc: linux-arch@vger.kernel.org, Ezequiel Garcia <elezegarcia@gmail.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
 
-The driver supports a maximum number of ports configurable at compile
-time. Make sure the probe() method fails when registering a port that
-exceeds the maximum instead of returning success without registering the
-port.
+This patch removes the following warning:
+fs/binfmt_flat.c:752: warning: unused variable ‘persistent’
+There is neither change in functionality, nor extra code generated.
 
-This fixes a crash at system suspend time, when the driver tried to
-suspend a non-registered port using the UART core.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: <linux-sh@vger.kernel.org>
+Signed-off-by: Ezequiel Garcia <elezegarcia@gmail.com>
 ---
- drivers/tty/serial/sh-sci.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ arch/sh/include/asm/flat.h |    7 ++++++-
+ 1 files changed, 6 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index a779663..55dada3 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2352,7 +2352,7 @@ static int __devinit sci_probe_single(struct platform_device *dev,
- 			   index+1, SCI_NPORTS);
- 		dev_notice(&dev->dev, "Consider bumping "
- 			   "CONFIG_SERIAL_SH_SCI_NR_UARTS!\n");
--		return 0;
-+		return -EINVAL;
- 	}
+diff --git a/arch/sh/include/asm/flat.h b/arch/sh/include/asm/flat.h
+index 5d84df5..51dd7af 100644
+--- a/arch/sh/include/asm/flat.h
++++ b/arch/sh/include/asm/flat.h
+@@ -18,7 +18,12 @@
+ #define	flat_get_addr_from_rp(rp, relval, flags, p)	get_unaligned(rp)
+ #define	flat_put_addr_at_rp(rp, val, relval)	put_unaligned(val,rp)
+ #define	flat_get_relocate_addr(rel)		(rel)
+-#define	flat_set_persistent(relval, p)		({ (void)p; 0; })
++
++static inline int flat_set_persistent(unsigned long relval,
++				      unsigned long *persistent)
++{
++	return 0;
++}
  
- 	ret = sci_init_single(dev, sciport, index, p);
+ #define FLAT_PLAT_INIT(_r) \
+   do { _r->regs[0]=0; _r->regs[1]=0; _r->regs[2]=0; _r->regs[3]=0; \
 -- 
 1.7.3.4
 
