@@ -1,23 +1,24 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 11 Jun 2012 09:15:56 +0000
-Subject: Re: [PATCH 22/27] ARM: shmobile: armadillo800eva: enable DMAEngine on SDHI
-Message-Id: <20120611091555.GF22966@verge.net.au>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Sat, 09 Jun 2012 09:14:26 +0000
+Subject: Re: [PATCH 1/6] sh: fix compiler warning by properly inlining flat_set_persistent()
+Message-Id: <20120609091426.GA10170@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87r4tmpkj6.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87r4tmpkj6.wl%kuninori.morimoto.gx@renesas.com>
+References: <1339229611-2326-1-git-send-email-elezegarcia@gmail.com>
+In-Reply-To: <1339229611-2326-1-git-send-email-elezegarcia@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Ezequiel Garcia <elezegarcia@gmail.com>
+Cc: linux-kernel@vger.kernel.org, linux-arch@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Sun, Jun 10, 2012 at 08:58:09PM -0700, Kuninori Morimoto wrote:
-> It is possible to reduce CPU load if SDHI used DMAEngine.
-> This patch enabled it.
+On Sat, Jun 09, 2012 at 05:13:26AM -0300, Ezequiel Garcia wrote:
+> This patch removes the following warning:
+> fs/binfmt_flat.c:752: warning: unused variable ???persistent???
+> There is neither change in functionality, nor extra code generated.
 > 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> Cc: Paul Mundt <lethal@linux-sh.org>
+> Cc: <linux-sh@vger.kernel.org>
+> Signed-off-by: Ezequiel Garcia <elezegarcia@gmail.com>
 
-Tested-by: Simon Horman <horms@verge.net.au>
-
-> ---
->  arch/arm/mach-shmobile/board-armadillo800eva.c |    4 ++++
->  1 files changed, 4 insertions(+), 0 deletions(-)
+That's what the cast was for, with what gcc version did that stop
+working?
