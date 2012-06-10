@@ -1,7 +1,7 @@
 From: Ezequiel Garcia <elezegarcia@gmail.com>
-Date: Sat, 09 Jun 2012 12:01:50 +0000
+Date: Sun, 10 Jun 2012 21:33:10 +0000
 Subject: Re: [PATCH 1/6] sh: fix compiler warning by properly inlining flat_set_persistent()
-Message-Id: <CALF0-+WsZnEho0-bPonCjPnsUtaMUmMnDwKmrqBsNQW_cO0T+g@mail.gmail.com>
+Message-Id: <CALF0-+U-FHtb3Z+JEHoY9Jm9yhgeTasQR0nX5AwVM1Ah1+JKAg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1339229611-2326-1-git-send-email-elezegarcia@gmail.com>
 	<20120609091426.GA10170@linux-sh.org>
@@ -25,25 +25,11 @@ On Sat, Jun 9, 2012 at 6:14 AM, Paul Mundt <lethal@linux-sh.org> wrote:
 > That's what the cast was for, with what gcc version did that stop
 > working?
 
-Mmm. You're right. I did this change first for m68k [1] and when that
-went ok, I decided it
-was best to propagate this fix to every other arch.
+I just realized that I should send a v2 (not the whole series just this one)
+correcting the commit message, since there wasn't a warning to fix
+in first place.
 
-Originally, my first try was to propagate your cast:
+I'll do this soon.
 
-#define        flat_set_persistent(relval, p)          ({ (void)p; 0; })
-
-to the other arches, that just do:
-
-#define        flat_set_persistent(relval, p)          0
-
-But, then someone pointed out that inlining would produce some (nil) code
-and it seemed better.
-To conclude: sh was the only one doing it right, and there is no good
-reason to change
-it, except to make code more homogeneous.
-
-Hope it is clear now,
+Regards,
 Ezequiel.
-
-[1] https://lkml.org/lkml/2012/5/21/491
