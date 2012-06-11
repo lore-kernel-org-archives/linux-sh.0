@@ -1,184 +1,54 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 25 Jun 2012 10:32:50 +0000
-Subject: [PATCH 1/2] ARM: shmobile: armadillo800eva: enable FSI-WM8978 sound
-Message-Id: <87bok7lm0h.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 11 Jun 2012 11:38:13 +0000
+Subject: Re: [PATCH 05/29] regulator: use IS_ERR_OR_NULL() instead of open-coding
+Message-Id: <Pine.LNX.4.64.1206111332310.29799@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1336057558-11031-1-git-send-email-g.liakhovetski@gmx.de>
+ <1336057558-11031-6-git-send-email-g.liakhovetski@gmx.de>
+ <20120503153239.GN3955@opensource.wolfsonmicro.com> <20120518085749.GE24355@linux-sh.org>
+ <20120518150417.GA4039@opensource.wolfsonmicro.com>
+In-Reply-To: <20120518150417.GA4039@opensource.wolfsonmicro.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Cc: Paul Mundt <lethal@linux-sh.org>, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
 
-This patch enable sound support on CON11
+Hi Mark
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Fri, 18 May 2012, Mark Brown wrote:
+
+> On Fri, May 18, 2012 at 05:57:50PM +0900, Paul Mundt wrote:
+> > On Thu, May 03, 2012 at 04:32:39PM +0100, Mark Brown wrote:
+> > > On Thu, May 03, 2012 at 05:05:34PM +0200, Guennadi Liakhovetski wrote:
+> 
+> > > > -	if (regulator = NULL || IS_ERR(regulator))
+> > > > +	if (IS_ERR_OR_NULL(regulator))
+> 
+> > > The bigger question here is why we're accepting NULL in the first place.
+> 
+> > I'm not sure about the regulator case, but it's been useful to support
+> > passing NULL around in the clock framework case. There are plenty of
+> > cases where a struct clk is optional and if we fail to find the clock we
+> > just set clk to NULL and continue on without having to constantly check
+> > the value of the clk pointer, which helps considerably when you consider
+> > the number of clk_enable/disable() pairs some drivers have.
+> 
+> > Presumably the same applies for regulators?
+> 
+> This is checking the value of regulator_get(), NULL is a perfectly valid
+> regulator value to get passed back.
+
+Sorry, could you clarify, how it is valid? No, I'm not proposing to revive 
+this patch, just curious, what exactly you meant by this. AFAICS NULL is 
+never returned from regulator_get(). The value, that's returned by it is 
+then directly dereferenced in other regulator API calls, for which you 
+don't normally want a NULL. So, having a regulator pointer = NULL seems 
+to be as valid to me as causing a BUG() is? :-)
+
+Thanks
+Guennadi
 ---
- arch/arm/mach-shmobile/Kconfig                 |    1 +
- arch/arm/mach-shmobile/board-armadillo800eva.c |   99 ++++++++++++++++++++++++
- 2 files changed, 100 insertions(+), 0 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 4c3b031..a2045dc 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -106,6 +106,7 @@ config MACH_ARMADILLO800EVA
- 	depends on ARCH_R8A7740
- 	select ARCH_REQUIRE_GPIOLIB
- 	select USE_OF
-+	select SND_SOC_WM8978 if SND_SIMPLE_CARD
- 
- config MACH_MARZEN
- 	bool "MARZEN board"
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 2cce28b..08f0e7b 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -49,6 +49,8 @@
- #include <asm/hardware/cache-l2x0.h>
- #include <video/sh_mobile_lcdc.h>
- #include <video/sh_mobile_hdmi.h>
-+#include <sound/sh_fsi.h>
-+#include <sound/simple_card.h>
- 
- /*
-  * CON1		Camera Module
-@@ -112,6 +114,28 @@
-  */
- 
- /*
-+ * FSI-WM8978
-+ *
-+ * this command is required when playback.
-+ *
-+ * # amixer set "Headphone" 50
-+ */
-+
-+/*
-+ * FIXME !!
-+ *
-+ * gpio_no_direction
-+ *
-+ * current gpio frame work doesn't have
-+ * the method to control only pull up/down/free.
-+ * this function should be replaced by correct gpio function
-+ */
-+static void __init gpio_no_direction(u32 addr)
-+{
-+	__raw_writeb(0x00, addr);
-+}
-+
-+/*
-  * USB function
-  *
-  * When you use USB Function,
-@@ -714,12 +738,71 @@ static struct platform_device ceu0_device = {
- 	},
- };
- 
-+/* FSI */
-+static struct sh_fsi_platform_info fsi_info = {
-+	/* FSI-WM8978 */
-+	.port_a = {
-+	},
-+};
-+
-+static struct resource fsi_resources[] = {
-+	[0] = {
-+		.name	= "FSI",
-+		.start	= 0xfe1f0000,
-+		.end	= 0xfe1f8400 - 1,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start  = evt2irq(0x1840),
-+		.flags  = IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device fsi_device = {
-+	.name		= "sh_fsi2",
-+	.id		= -1,
-+	.num_resources	= ARRAY_SIZE(fsi_resources),
-+	.resource	= fsi_resources,
-+	.dev	= {
-+		.platform_data	= &fsi_info,
-+	},
-+};
-+
-+/* FSI-WM8978 */
-+static struct asoc_simple_dai_init_info fsi_wm8978_init_info = {
-+	.fmt		= SND_SOC_DAIFMT_I2S,
-+	.codec_daifmt	= SND_SOC_DAIFMT_CBM_CFM | SND_SOC_DAIFMT_NB_NF,
-+	.cpu_daifmt	= SND_SOC_DAIFMT_CBS_CFS,
-+	.sysclk		= 12288000,
-+};
-+
-+static struct asoc_simple_card_info fsi_wm8978_info = {
-+	.name		= "wm8978",
-+	.card		= "FSI2A-WM8978",
-+	.cpu_dai	= "fsia-dai",
-+	.codec		= "wm8978.0-001a",
-+	.platform	= "sh_fsi2",
-+	.codec_dai	= "wm8978-hifi",
-+	.init		= &fsi_wm8978_init_info,
-+};
-+
-+static struct platform_device fsi_wm8978_device = {
-+	.name	= "asoc-simple-card",
-+	.id	= 0,
-+	.dev	= {
-+		.platform_data	= &fsi_wm8978_info,
-+	},
-+};
-+
- /* I2C */
- static struct i2c_board_info i2c0_devices[] = {
- 	{
- 		I2C_BOARD_INFO("st1232-ts", 0x55),
- 		.irq = evt2irq(0x0340),
- 	},
-+	{
-+		I2C_BOARD_INFO("wm8978", 0x1a),
-+	},
- };
- 
- /*
-@@ -735,6 +818,8 @@ static struct platform_device *eva_devices[] __initdata = {
- 	&hdmi_lcdc_device,
- 	&camera_device,
- 	&ceu0_device,
-+	&fsi_device,
-+	&fsi_wm8978_device,
- };
- 
- static void __init eva_clock_init(void)
-@@ -768,6 +853,8 @@ clock_error:
- /*
-  * board init
-  */
-+#define GPIO_PORT7CR	0xe6050007
-+#define GPIO_PORT8CR	0xe6050008
- static void __init eva_init(void)
- {
- 	eva_clock_init();
-@@ -916,6 +1003,18 @@ static void __init eva_init(void)
- 	gpio_direction_output(GPIO_PORT172, 1);
- 	gpio_direction_output(GPIO_PORT158, 0); /* see mt9t111_power() */
- 
-+	/* FSI-WM8978 */
-+	gpio_request(GPIO_FN_FSIAIBT,		NULL);
-+	gpio_request(GPIO_FN_FSIAILR,		NULL);
-+	gpio_request(GPIO_FN_FSIAOMC,		NULL);
-+	gpio_request(GPIO_FN_FSIAOSLD,		NULL);
-+	gpio_request(GPIO_FN_FSIAISLD_PORT5,	NULL);
-+
-+	gpio_request(GPIO_PORT7, NULL);
-+	gpio_request(GPIO_PORT8, NULL);
-+	gpio_no_direction(GPIO_PORT7CR); /* FSIAOBT needs no direction */
-+	gpio_no_direction(GPIO_PORT8CR); /* FSIAOLR needs no direction */
-+
- 	/*
- 	 * CAUTION
- 	 *
--- 
-1.7.5.4
-
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
