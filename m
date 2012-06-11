@@ -1,49 +1,310 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 12 Jun 2012 09:31:04 +0000
-Subject: Re: [PATCH 0/27] ARM: shmobile: resend patch set
-Message-Id: <877gvcyizv.wl%kuninori.morimoto.gx@renesas.com>
+Date: Mon, 11 Jun 2012 03:52:30 +0000
+Subject: [PATCH 04/27] ARM: shmobile: shareing DMAEngine definitions
+Message-Id: <87hauiqzd0.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87mx4aqzhd.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87mx4aqzhd.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+Current shmobile have DMAEngine specific settings on each CPU code,
+but SH-ARM DMAC use same value.
+This patch will share DMAEngine definitions and reduce a waste of code
+on SH-ARM architecture.
 
-Hi Rafael, Paul
-Cc Magnus, Simon
-
-> These are resend/rebase version of my patch set (which are not applied yet)
-> It includes below patch set
-> 	[PATCH 0/11] ARM: mach-shmobile: armadillo: add FSI/HDMI/Camera support
-> 	[PATCH 0/2]  ARM: mach-shmobile: kzm9g: add FSI support
-> 	[PATCH][RFC] ARM: mach-shmobile: setup-sh7372: fixup chclr_offset base
-> 	[PATCH][RFC] ARM: mach-shmobile: sh73a0: bugfix: SY-DMAC number
-> 	[PATCH 0/9]  ARM: mach-shmobile: r8a7740: add DMAEngine support
-> 	[PATCH 0/2]  ARM: mach-shmobile: kzm9g: add FSI DMAEngine support
-> 
-> The diff are...
-> 	- all-in-one patch set
-> 	- I added what/why on log area as much as possible
-> 	- Subject : mach-shmobile -> shmobile 
-> 	- Subject : "add xxx support" -> "enable xxxx" on platform patch
->         - based on latest linus/master branch
->
-> Some of these patches have "WARNING: line over 80 characters" from checkpatch.pl
-> on setup/clock/pfc files.
-> But these are bacause traditional(?) its style.
-
-These are v2 patch set
-
-v1 -> v2
-
- - TS_SHIFT    -> static dma_ts_shift    on header
- - USBTS_SHIFT -> static dma_usbts_shift on header
- - #include <asm/io.h> -> #include <linux/io.h>
- - camera clock initialize on ->power function
- - Simon's Tested-by is added
-
-Best regards
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-Kuninori Morimoto
+ arch/arm/mach-shmobile/include/mach/dma-register.h |   45 ++++++++++++
+ arch/arm/mach-shmobile/setup-sh7372.c              |   74 +++++++-------------
+ arch/arm/mach-shmobile/setup-sh73a0.c              |   27 +-------
+ 3 files changed, 71 insertions(+), 75 deletions(-)
+ create mode 100644 arch/arm/mach-shmobile/include/mach/dma-register.h
+
+diff --git a/arch/arm/mach-shmobile/include/mach/dma-register.h b/arch/arm/mach-shmobile/include/mach/dma-register.h
+new file mode 100644
+index 0000000..72a874030
+--- /dev/null
++++ b/arch/arm/mach-shmobile/include/mach/dma-register.h
+@@ -0,0 +1,45 @@
++/*
++ * SH-ARM CPU-specific DMA definitions, used by both DMA drivers
++ *
++ * Copyright (C) 2012 Renesas Solutions Corp
++ *
++ * Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ *
++ * Based on arch/sh/include/cpu-sh4/cpu/dma-register.h
++ * Copyright (C) 2010 Guennadi Liakhovetski <g.liakhovetski@gmx.de>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#ifndef DMA_REGISTER_H
++#define DMA_REGISTER_H
++
++/* Transmit sizes and respective CHCR register values */
++enum {
++	XMIT_SZ_8BIT		= 0,
++	XMIT_SZ_16BIT		= 1,
++	XMIT_SZ_32BIT		= 2,
++	XMIT_SZ_64BIT		= 7,
++	XMIT_SZ_128BIT		= 3,
++	XMIT_SZ_256BIT		= 4,
++	XMIT_SZ_512BIT		= 5,
++};
++
++/* log2(size / 8) - used to calculate number of transfers */
++#define TS_SHIFT {			\
++	[XMIT_SZ_8BIT]		= 0,	\
++	[XMIT_SZ_16BIT]		= 1,	\
++	[XMIT_SZ_32BIT]		= 2,	\
++	[XMIT_SZ_64BIT]		= 3,	\
++	[XMIT_SZ_128BIT]	= 4,	\
++	[XMIT_SZ_256BIT]	= 5,	\
++	[XMIT_SZ_512BIT]	= 6,	\
++}
++
++#define TS_INDEX2VAL(i) ((((i) & 0x3) << 3) | (((i) & 0xc) << (20 - 2)))
++#define CHCR_TX(xmit_sz) (DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL((xmit_sz)))
++#define CHCR_RX(xmit_sz) (DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL((xmit_sz)))
++
++#endif /* DMA_REGISTER_H */
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index fafce9c..064d32b 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -33,6 +33,7 @@
+ #include <linux/sh_timer.h>
+ #include <linux/pm_domain.h>
+ #include <linux/dma-mapping.h>
++#include <mach/dma-register.h>
+ #include <mach/hardware.h>
+ #include <mach/irqs.h>
+ #include <mach/sh7372.h>
+@@ -335,151 +336,126 @@ static struct platform_device iic1_device = {
+ };
+ 
+ /* DMA */
+-/* Transmit sizes and respective CHCR register values */
+-enum {
+-	XMIT_SZ_8BIT		= 0,
+-	XMIT_SZ_16BIT		= 1,
+-	XMIT_SZ_32BIT		= 2,
+-	XMIT_SZ_64BIT		= 7,
+-	XMIT_SZ_128BIT		= 3,
+-	XMIT_SZ_256BIT		= 4,
+-	XMIT_SZ_512BIT		= 5,
+-};
+-
+-/* log2(size / 8) - used to calculate number of transfers */
+-#define TS_SHIFT {			\
+-	[XMIT_SZ_8BIT]		= 0,	\
+-	[XMIT_SZ_16BIT]		= 1,	\
+-	[XMIT_SZ_32BIT]		= 2,	\
+-	[XMIT_SZ_64BIT]		= 3,	\
+-	[XMIT_SZ_128BIT]	= 4,	\
+-	[XMIT_SZ_256BIT]	= 5,	\
+-	[XMIT_SZ_512BIT]	= 6,	\
+-}
+-
+-#define TS_INDEX2VAL(i) ((((i) & 3) << 3) | \
+-			 (((i) & 0xc) << (20 - 2)))
+-
+ static const struct sh_dmae_slave_config sh7372_dmae_slaves[] = {
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_SCIF0_TX,
+ 		.addr		= 0xe6c40020,
+-		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x21,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SCIF0_RX,
+ 		.addr		= 0xe6c40024,
+-		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x22,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SCIF1_TX,
+ 		.addr		= 0xe6c50020,
+-		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x25,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SCIF1_RX,
+ 		.addr		= 0xe6c50024,
+-		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x26,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SCIF2_TX,
+ 		.addr		= 0xe6c60020,
+-		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x29,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SCIF2_RX,
+ 		.addr		= 0xe6c60024,
+-		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x2a,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SCIF3_TX,
+ 		.addr		= 0xe6c70020,
+-		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x2d,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SCIF3_RX,
+ 		.addr		= 0xe6c70024,
+-		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x2e,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SCIF4_TX,
+ 		.addr		= 0xe6c80020,
+-		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x39,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SCIF4_RX,
+ 		.addr		= 0xe6c80024,
+-		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x3a,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SCIF5_TX,
+ 		.addr		= 0xe6cb0020,
+-		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x35,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SCIF5_RX,
+ 		.addr		= 0xe6cb0024,
+-		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x36,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SCIF6_TX,
+ 		.addr		= 0xe6c30040,
+-		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= CHCR_TX(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x3d,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SCIF6_RX,
+ 		.addr		= 0xe6c30060,
+-		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_8BIT),
++		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x3e,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SDHI0_TX,
+ 		.addr		= 0xe6850030,
+-		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
++		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
+ 		.mid_rid	= 0xc1,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SDHI0_RX,
+ 		.addr		= 0xe6850030,
+-		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
++		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
+ 		.mid_rid	= 0xc2,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SDHI1_TX,
+ 		.addr		= 0xe6860030,
+-		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
++		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
+ 		.mid_rid	= 0xc9,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SDHI1_RX,
+ 		.addr		= 0xe6860030,
+-		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
++		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
+ 		.mid_rid	= 0xca,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SDHI2_TX,
+ 		.addr		= 0xe6870030,
+-		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
++		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
+ 		.mid_rid	= 0xcd,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_SDHI2_RX,
+ 		.addr		= 0xe6870030,
+-		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
++		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
+ 		.mid_rid	= 0xce,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_FSIA_TX,
+ 		.addr		= 0xfe1f0024,
+-		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
++		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
+ 		.mid_rid	= 0xb1,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_FSIA_RX,
+ 		.addr		= 0xfe1f0020,
+-		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
++		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
+ 		.mid_rid	= 0xb2,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_MMCIF_TX,
+ 		.addr		= 0xe6bd0034,
+-		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
++		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
+ 		.mid_rid	= 0xd1,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_MMCIF_RX,
+ 		.addr		= 0xe6bd0034,
+-		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
++		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
+ 		.mid_rid	= 0xd2,
+ 	},
+ };
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 04a0dfe..2035101 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -30,6 +30,7 @@
+ #include <linux/sh_dma.h>
+ #include <linux/sh_intc.h>
+ #include <linux/sh_timer.h>
++#include <mach/dma-register.h>
+ #include <mach/hardware.h>
+ #include <mach/irqs.h>
+ #include <mach/sh73a0.h>
+@@ -415,32 +416,6 @@ static struct platform_device i2c4_device = {
+ 	.num_resources	= ARRAY_SIZE(i2c4_resources),
+ };
+ 
+-/* Transmit sizes and respective CHCR register values */
+-enum {
+-	XMIT_SZ_8BIT		= 0,
+-	XMIT_SZ_16BIT		= 1,
+-	XMIT_SZ_32BIT		= 2,
+-	XMIT_SZ_64BIT		= 7,
+-	XMIT_SZ_128BIT		= 3,
+-	XMIT_SZ_256BIT		= 4,
+-	XMIT_SZ_512BIT		= 5,
+-};
+-
+-/* log2(size / 8) - used to calculate number of transfers */
+-#define TS_SHIFT {			\
+-	[XMIT_SZ_8BIT]		= 0,	\
+-	[XMIT_SZ_16BIT]		= 1,	\
+-	[XMIT_SZ_32BIT]		= 2,	\
+-	[XMIT_SZ_64BIT]		= 3,	\
+-	[XMIT_SZ_128BIT]	= 4,	\
+-	[XMIT_SZ_256BIT]	= 5,	\
+-	[XMIT_SZ_512BIT]	= 6,	\
+-}
+-
+-#define TS_INDEX2VAL(i) ((((i) & 3) << 3) | (((i) & 0xc) << (20 - 2)))
+-#define CHCR_TX(xmit_sz) (DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL((xmit_sz)))
+-#define CHCR_RX(xmit_sz) (DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL((xmit_sz)))
+-
+ static const struct sh_dmae_slave_config sh73a0_dmae_slaves[] = {
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_SCIF0_TX,
+-- 
+1.7.5.4
+
