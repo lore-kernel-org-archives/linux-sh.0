@@ -1,25 +1,54 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 12 Jun 2012 02:08:10 +0000
-Subject: Re: [PATCH 16/27] ARM: shmobile: r8a7740: add DMAEngine support for USB
-Message-Id: <20120612020808.GM3557@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 11 Jun 2012 03:57:52 +0000
+Subject: [PATCH 21/27] ARM: shmobile: armadillo800eva: enable DMAEngine on FSI
+Message-Id: <87sje2pkjm.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87zk8apkll.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87zk8apkll.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Sun, Jun 10, 2012 at 08:56:42PM -0700, Kuninori Morimoto wrote:
-> Current shdmac can support USB DMAC on r8a7740.
-> This support reduce CPU load when USB access.
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+It is possible to reduce CPU load if FSI playback used DMAEngine.
+This patch enabled it.
 
-Tested-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/configs/armadillo800eva_defconfig     |    2 ++
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    2 ++
+ 2 files changed, 4 insertions(+), 0 deletions(-)
 
-> ---
->  arch/arm/mach-shmobile/clock-r8a7740.c        |    4 +-
->  arch/arm/mach-shmobile/include/mach/r8a7740.h |    2 +
->  arch/arm/mach-shmobile/setup-r8a7740.c        |   73 +++++++++++++++++++++++++
->  3 files changed, 78 insertions(+), 1 deletions(-)
+diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
+index df1ce54..16bbb3f 100644
+--- a/arch/arm/configs/armadillo800eva_defconfig
++++ b/arch/arm/configs/armadillo800eva_defconfig
+@@ -119,6 +119,8 @@ CONFIG_USB_ETH=m
+ CONFIG_MMC=y
+ CONFIG_MMC_SDHI=y
+ CONFIG_MMC_SH_MMCIF=y
++CONFIG_DMADEVICES=y
++CONFIG_SH_DMAE=y
+ CONFIG_UIO=y
+ CONFIG_UIO_PDRV_GENIRQ=y
+ # CONFIG_DNOTIFY is not set
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 1f0028f..aa288fe 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -747,12 +747,14 @@ static int fsi_hdmi_set_rate(struct device *dev, int rate, int enable)
+ static struct sh_fsi_platform_info fsi_info = {
+ 	/* FSI-WM8978 */
+ 	.port_a = {
++		.tx_id = SHDMA_SLAVE_FSIA_TX,
+ 	},
+ 	/* FSI-HDMI */
+ 	.port_b = {
+ 		.flags		= SH_FSI_FMT_SPDIF |
+ 				  SH_FSI_ENABLE_STREAM_MODE,
+ 		.set_rate	= fsi_hdmi_set_rate,
++		.tx_id		= SHDMA_SLAVE_FSIB_TX,
+ 	}
+ };
+ 
+-- 
+1.7.5.4
+
