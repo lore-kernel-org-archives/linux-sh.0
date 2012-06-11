@@ -1,80 +1,37 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 12 Jun 2012 09:35:58 +0000
-Subject: [PATCH 09/27 v2] ARM: shmobile: r8a7740: add HDMI GPIO support
-Message-Id: <87txygx479.wl%kuninori.morimoto.gx@renesas.com>
+Date: Mon, 11 Jun 2012 03:51:23 +0000
+Subject: [PATCH 02/27] ARM: shmobile: sh7372: bugfix: chclr_offset base
+Message-Id: <87k3zeqzew.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-In order to enable HDMI GPIO selection from platform board,
-this patch adds its interface to GPIO framework.
-
-This patch is based on v1.0 manual
+chclr_write() will use (chan_reg + chclr_offset).
+In sh7372 case, DMA1CHCLR is started from 0xfe008220,
+and chan_reg is started from 0xfe008020 (= sh7372_dmae0_resources).
+Thus, chclr_offset should be (0x220 - 0x20) instead of 0x220.
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Tested-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-v1 -> v2
+ arch/arm/mach-shmobile/setup-sh7372.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
- - no change
-
- arch/arm/mach-shmobile/include/mach/r8a7740.h |    4 ++++
- arch/arm/mach-shmobile/pfc-r8a7740.c          |    9 +++++++++
- 2 files changed, 13 insertions(+), 0 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index 9d447ab..2764846 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -565,6 +565,10 @@ enum {
- 	GPIO_FN_RESETP_PULLUP,
- 	GPIO_FN_RESETP_PLAIN,
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index 6a4bd58..fafce9c 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -484,7 +484,7 @@ static const struct sh_dmae_slave_config sh7372_dmae_slaves[] = {
+ 	},
+ };
  
-+	/* HDMI */
-+	GPIO_FN_HDMI_HPD,
-+	GPIO_FN_HDMI_CEC,
-+
- 	/* SDENC */
- 	GPIO_FN_SDENC_CPG,
- 	GPIO_FN_SDENC_DV_CLKI,
-diff --git a/arch/arm/mach-shmobile/pfc-r8a7740.c b/arch/arm/mach-shmobile/pfc-r8a7740.c
-index 670fe18..0dda816 100644
---- a/arch/arm/mach-shmobile/pfc-r8a7740.c
-+++ b/arch/arm/mach-shmobile/pfc-r8a7740.c
-@@ -560,6 +560,9 @@ enum {
- 	/* SDENC */
- 	SDENC_CPG_MARK,		SDENC_DV_CLKI_MARK,
+-#define SH7372_CHCLR 0x220
++#define SH7372_CHCLR (0x220 - 0x20)
  
-+	/* HDMI */
-+	HDMI_HPD_MARK, HDMI_CEC_MARK,
-+
- 	/* DEBUG */
- 	EDEBGREQ_PULLUP_MARK,	/* for JTAG */
- 	EDEBGREQ_PULLDOWN_MARK,
-@@ -1620,9 +1623,11 @@ static pinmux_enum_t pinmux_data[] = {
- 
- 	/* Port210 */
- 	PINMUX_DATA(IRQ9_PORT210_MARK,		PORT210_FN0,	MSEL1CR_9_1),
-+	PINMUX_DATA(HDMI_HPD_MARK,		PORT210_FN1),
- 
- 	/* Port211 */
- 	PINMUX_DATA(IRQ16_PORT211_MARK,		PORT211_FN0,	MSEL1CR_16_1),
-+	PINMUX_DATA(HDMI_CEC_MARK,		PORT211_FN1),
- 
- 	/* LCDC select */
- 	PINMUX_DATA(LCDC0_SELECT_MARK,				MSEL3CR_6_0),
-@@ -2097,6 +2102,10 @@ static struct pinmux_gpio pinmux_gpios[] = {
- 	GPIO_FN(SDENC_CPG),
- 	GPIO_FN(SDENC_DV_CLKI),
- 
-+	/* HDMI */
-+	GPIO_FN(HDMI_HPD),
-+	GPIO_FN(HDMI_CEC),
-+
- 	/* SYSC */
- 	GPIO_FN(RESETP_PULLUP),
- 	GPIO_FN(RESETP_PLAIN),
+ static const struct sh_dmae_channel sh7372_dmae_channels[] = {
+ 	{
 -- 
 1.7.5.4
 
