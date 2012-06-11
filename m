@@ -1,45 +1,170 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Wed, 20 Jun 2012 10:33:54 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: add missing GPIO IRQ configuration on mackerel
-Message-Id: <201206201233.55097.rjw@sisk.pl>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 11 Jun 2012 03:57:23 +0000
+Subject: [PATCH 19/27] ARM: shmobile: armadillo800eva: enable FSI-WM8978 sound
+Message-Id: <87vciypkkg.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <u7hovvdt9.wl%morimoto.kuninori@renesas.com>
-In-Reply-To: <u7hovvdt9.wl%morimoto.kuninori@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thursday, May 24, 2012, Guennadi Liakhovetski wrote:
-> SDHI0 card-detect GPIO IRQ on mackarel currently works, because it is the
-> default configuration of IRQ26. However, we should not rely on this and
-> should configure the function explicitly.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+This patch enable sound support on CON11
 
-Applied to the fixes branch of the renesas.git tree.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/Kconfig                 |    1 +
+ arch/arm/mach-shmobile/board-armadillo800eva.c |   85 ++++++++++++++++++++++++
+ 2 files changed, 86 insertions(+), 0 deletions(-)
 
-Thanks,
-Rafael
-
-
-> ---
->  arch/arm/mach-shmobile/board-mackerel.c |    3 +++
->  1 files changed, 3 insertions(+), 0 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-> index b577f7c..150122a 100644
-> --- a/arch/arm/mach-shmobile/board-mackerel.c
-> +++ b/arch/arm/mach-shmobile/board-mackerel.c
-> @@ -1512,6 +1512,9 @@ static void __init mackerel_init(void)
->  	gpio_request(GPIO_FN_SDHID0_1, NULL);
->  	gpio_request(GPIO_FN_SDHID0_0, NULL);
->  
-> +	/* SDHI0 PORT172 card-detect IRQ26 */
-> +	gpio_request(GPIO_FN_IRQ26_172, NULL);
-> +
->  #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
->  	/* enable SDHI1 */
->  	gpio_request(GPIO_FN_SDHICMD1, NULL);
-> 
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index df33909..1542e91 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -106,6 +106,7 @@ config MACH_ARMADILLO800EVA
+ 	depends on ARCH_R8A7740
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select USE_OF
++	select SND_SOC_WM8978 if SND_SIMPLE_CARD
+ 
+ config MACH_MARZEN
+ 	bool "MARZEN board"
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index d2d87d9..b7b226b 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -49,6 +49,8 @@
+ #include <asm/hardware/cache-l2x0.h>
+ #include <video/sh_mobile_lcdc.h>
+ #include <video/sh_mobile_hdmi.h>
++#include <sound/sh_fsi.h>
++#include <sound/simple_card.h>
+ 
+ /*
+  * CON1		Camera Module
+@@ -112,6 +114,14 @@
+  */
+ 
+ /*
++ * FSI-WM8978
++ *
++ * this command is required when playback.
++ *
++ * # amixer set "Headphone" 50
++ */
++
++/*
+  * USB function
+  *
+  * When you use USB Function,
+@@ -707,12 +717,71 @@ static struct platform_device ceu0_device = {
+ 	},
+ };
+ 
++/* FSI */
++static struct sh_fsi_platform_info fsi_info = {
++	/* FSI-WM8978 */
++	.port_a = {
++	},
++};
++
++static struct resource fsi_resources[] = {
++	[0] = {
++		.name	= "FSI",
++		.start	= 0xfe1f0000,
++		.end	= 0xfe1f8400 - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start  = evt2irq(0x1840),
++		.flags  = IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device fsi_device = {
++	.name		= "sh_fsi2",
++	.id		= -1,
++	.num_resources	= ARRAY_SIZE(fsi_resources),
++	.resource	= fsi_resources,
++	.dev	= {
++		.platform_data	= &fsi_info,
++	},
++};
++
++/* FSI-WM8978 */
++static struct asoc_simple_dai_init_info fsi_wm8978_init_info = {
++	.fmt		= SND_SOC_DAIFMT_I2S,
++	.codec_daifmt	= SND_SOC_DAIFMT_CBM_CFM | SND_SOC_DAIFMT_NB_NF,
++	.cpu_daifmt	= SND_SOC_DAIFMT_CBS_CFS,
++	.sysclk		= 12288000,
++};
++
++static struct asoc_simple_card_info fsi_wm8978_info = {
++	.name		= "wm8978",
++	.card		= "FSI2A-WM8978",
++	.cpu_dai	= "fsia-dai",
++	.codec		= "wm8978.0-001a",
++	.platform	= "sh_fsi2",
++	.codec_dai	= "wm8978-hifi",
++	.init		= &fsi_wm8978_init_info,
++};
++
++static struct platform_device fsi_wm8978_device = {
++	.name	= "asoc-simple-card",
++	.id	= 0,
++	.dev	= {
++		.platform_data	= &fsi_wm8978_info,
++	},
++};
++
+ /* I2C */
+ static struct i2c_board_info i2c0_devices[] = {
+ 	{
+ 		I2C_BOARD_INFO("st1232-ts", 0x55),
+ 		.irq = evt2irq(0x0340),
+ 	},
++	{
++		I2C_BOARD_INFO("wm8978", 0x1a),
++	},
+ };
+ 
+ /*
+@@ -728,6 +797,8 @@ static struct platform_device *eva_devices[] __initdata = {
+ 	&hdmi_lcdc_device,
+ 	&camera_device,
+ 	&ceu0_device,
++	&fsi_device,
++	&fsi_wm8978_device,
+ };
+ 
+ static void __init eva_clock_init(void)
+@@ -770,6 +841,8 @@ clock_error:
+ /*
+  * board init
+  */
++#define GPIO_PORT7CR	0xe6050007
++#define GPIO_PORT8CR	0xe6050008
+ static void __init eva_init(void)
+ {
+ 	eva_clock_init();
+@@ -919,6 +992,18 @@ static void __init eva_init(void)
+ 	gpio_request(GPIO_PORT158, NULL); /* CAM_PON */
+ 	gpio_direction_output(GPIO_PORT158, 0); /* see mt9t111_power() */
+ 
++	/* FSI-WM8978 */
++	gpio_request(GPIO_FN_FSIAIBT,		NULL);
++	gpio_request(GPIO_FN_FSIAILR,		NULL);
++	gpio_request(GPIO_FN_FSIAOMC,		NULL);
++	gpio_request(GPIO_FN_FSIAOSLD,		NULL);
++	gpio_request(GPIO_FN_FSIAISLD_PORT5,	NULL);
++
++	gpio_request(GPIO_PORT7, NULL);
++	gpio_request(GPIO_PORT8, NULL);
++	gpio_direction_none(GPIO_PORT7CR); /* FSIAOBT needs no direction */
++	gpio_direction_none(GPIO_PORT8CR); /* FSIAOLR needs no direction */
++
+ 	/*
+ 	 * CAUTION
+ 	 *
+-- 
+1.7.5.4
 
