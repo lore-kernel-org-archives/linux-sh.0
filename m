@@ -1,20 +1,100 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 20 Jun 2012 04:41:30 +0000
-Subject: Re: [PATCH 1/4] ARM: shmobile: sh73a0: add USB clock support
-Message-Id: <20120620044127.GA20030@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 11 Jun 2012 03:54:35 +0000
+Subject: [PATCH 11/27] ARM: shmobile: r8a7740: add CEU clock support
+Message-Id: <877gveqz9j.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87bokgt4ye.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87bokgt4ye.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Jun 18, 2012 at 07:23:41PM -0700, Kuninori Morimoto wrote:
-> It is required from renesas_usbhs driver.
-> This patch is based on v2.0 manual.
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+It is required from sh_mobile_ceu_camera driver.
+This patch is based on v1.0 manual
 
-Tested-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/clock-r8a7740.c |   23 ++++++++++++++++++++++-
+ 1 files changed, 22 insertions(+), 1 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index b095343..ce0930a 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -43,6 +43,8 @@
+ /* CPG registers */
+ #define FRQCRA		0xe6150000
+ #define FRQCRB		0xe6150004
++#define VCLKCR1		0xE6150008
++#define VCLKCR2		0xE615000c
+ #define FRQCRC		0xe61500e0
+ #define PLLC01CR	0xe6150028
+ 
+@@ -317,6 +319,7 @@ static struct clk_div4_table div4_table = {
+ /* DIV6 reparent */
+ enum {
+ 	DIV6_HDMI,
++	DIV6_VCLK1, DIV6_VCLK2,
+ 	DIV6_REPARENT_NR,
+ };
+ 
+@@ -326,9 +329,21 @@ static struct clk *hdmi_parent[] = {
+ 	[2] = &dv_clk
+ };
+ 
++static struct clk *vclk_parents[8] = {
++	[0] = &pllc1_div2_clk,
++	[2] = &dv_clk,
++	[3] = &usb24s_clk,
++	[4] = &extal1_div2_clk,
++	[5] = &extalr_clk,
++};
++
+ static struct clk div6_reparent_clks[DIV6_REPARENT_NR] = {
+ 	[DIV6_HDMI] = SH_CLK_DIV6_EXT(HDMICKCR, 0,
+ 				      hdmi_parent, ARRAY_SIZE(hdmi_parent), 6, 2),
++	[DIV6_VCLK1] = SH_CLK_DIV6_EXT(VCLKCR1, 0,
++				       vclk_parents, ARRAY_SIZE(vclk_parents), 12, 3),
++	[DIV6_VCLK2] = SH_CLK_DIV6_EXT(VCLKCR2, 0,
++				       vclk_parents, ARRAY_SIZE(vclk_parents), 12, 3),
+ };
+ 
+ /* HDMI1/2 clock */
+@@ -417,7 +432,7 @@ static struct clk div6_clks[DIV6_NR] = {
+ };
+ 
+ enum {
+-	MSTP125,
++	MSTP128, MSTP127, MSTP125,
+ 	MSTP116, MSTP111, MSTP100, MSTP117,
+ 
+ 	MSTP230,
+@@ -434,6 +449,8 @@ enum {
+ };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP128] = SH_CLK_MSTP32(&div4_clks[DIV4_S],	SMSTPCR1, 28, 0), /* CEU21 */
++	[MSTP127] = SH_CLK_MSTP32(&div4_clks[DIV4_S],	SMSTPCR1, 27, 0), /* CEU20 */
+ 	[MSTP125] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR1, 25, 0), /* TMU0 */
+ 	[MSTP117] = SH_CLK_MSTP32(&div4_clks[DIV4_B],	SMSTPCR1, 17, 0), /* LCDC1 */
+ 	[MSTP116] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR1, 16, 0), /* IIC0 */
+@@ -484,6 +501,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("usb24s",			&usb24s_clk),
+ 	CLKDEV_CON_ID("hdmi1",			&hdmi1_clk),
+ 	CLKDEV_CON_ID("hdmi2",			&hdmi2_clk),
++	CLKDEV_CON_ID("video1",			&div6_reparent_clks[DIV6_VCLK1]),
++	CLKDEV_CON_ID("video2",			&div6_reparent_clks[DIV6_VCLK2]),
+ 
+ 	/* DIV4 clocks */
+ 	CLKDEV_CON_ID("i_clk",			&div4_clks[DIV4_I]),
+@@ -506,6 +525,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.0",	&mstp_clks[MSTP116]),
+ 	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.1",	&mstp_clks[MSTP117]),
+ 	CLKDEV_DEV_ID("sh_tmu.0",		&mstp_clks[MSTP125]),
++	CLKDEV_DEV_ID("sh_mobile_ceu.0",	&mstp_clks[MSTP127]),
++	CLKDEV_DEV_ID("sh_mobile_ceu.1",	&mstp_clks[MSTP128]),
+ 
+ 	CLKDEV_DEV_ID("sh-sci.4",		&mstp_clks[MSTP200]),
+ 	CLKDEV_DEV_ID("sh-sci.3",		&mstp_clks[MSTP201]),
+-- 
+1.7.5.4
 
