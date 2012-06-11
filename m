@@ -1,30 +1,48 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 12 Jun 2012 01:32:46 +0000
-Subject: Re: [PATCH 10/27] ARM: shmobile: r8a7740: add MERAM work-around
-Message-Id: <20120612013244.GC3557@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 11 Jun 2012 11:03:26 +0000
+Subject: Re: [PATCH 4/5 v3] mmc: add a function to get a regulator, supplying card's Vdd
+Message-Id: <Pine.LNX.4.64.1206111259190.29799@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <878vfuqza0.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <878vfuqza0.wl%kuninori.morimoto.gx@renesas.com>
+References: <Pine.LNX.4.64.1205251045490.13353@axis700.grange>
+ <Pine.LNX.4.64.1205251208440.13353@axis700.grange>
+ <Pine.LNX.4.64.1205251230540.13353@axis700.grange>
+ <20120528144502.GG4032@opensource.wolfsonmicro.com>
+In-Reply-To: <20120528144502.GG4032@opensource.wolfsonmicro.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-On Sun, Jun 10, 2012 at 08:54:18PM -0700, Kuninori Morimoto wrote:
-> r8a7740 chip has lasting errata on MERAM buffer, and this patch adds
-> its work-around on setup-r8a7740.c
-> It solved CEU/VIO6C/2D-DMAC/VCP1/VPU5F/JPU/DISP memroy access error.
+Hi Mark
+
+On Mon, 28 May 2012, Mark Brown wrote:
+
+> On Fri, May 25, 2012 at 05:14:52PM +0200, Guennadi Liakhovetski wrote:
+> > Add a function to get a regulator, supplying card's Vdd on a specific host.
+> > If such a regulator is found, the function checks, whether a valid OCR mask
+> > can be obtained from this regulator.
 > 
-> But MERAM driver can't control this issue,
-> since this work-around requires access to non-MERAM register address.
-> So, This it will be called as board specific code at this point.
+> Reviwed-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
+
+Thanks for the review!
+
+> but
 > 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> > +EXPORT_SYMBOL(mmc_regulator_get_vmmc);
+> 
+> regulator is all _GPL...
 
-Tested-by: Simon Horman <horms@verge.net.au>
+Yes, but existing mmc-regulator functions use EXPORT_SYMBOL(), e.g.,
 
-> ---
->  arch/arm/mach-shmobile/board-armadillo800eva.c |    1 +
->  arch/arm/mach-shmobile/include/mach/common.h   |    1 +
->  arch/arm/mach-shmobile/setup-r8a7740.c         |   18 ++++++++++++++++++
->  3 files changed, 20 insertions(+), 0 deletions(-)
+EXPORT_SYMBOL(mmc_regulator_get_ocrmask);
+
+which indeed seem to do the "old evil binary-only module trick": re-export 
+functions, dropping the "_GPL" suffix. Looks like they should be fixed...
+
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
