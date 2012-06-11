@@ -1,48 +1,67 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 11 Jun 2012 11:03:26 +0000
+From: Chris Ball <cjb@laptop.org>
+Date: Mon, 11 Jun 2012 13:41:00 +0000
 Subject: Re: [PATCH 4/5 v3] mmc: add a function to get a regulator, supplying card's Vdd
-Message-Id: <Pine.LNX.4.64.1206111259190.29799@axis700.grange>
+Message-Id: <871ulm7yqb.fsf@octavius.laptop.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1205251045490.13353@axis700.grange>
- <Pine.LNX.4.64.1205251208440.13353@axis700.grange>
- <Pine.LNX.4.64.1205251230540.13353@axis700.grange>
- <20120528144502.GG4032@opensource.wolfsonmicro.com>
-In-Reply-To: <20120528144502.GG4032@opensource.wolfsonmicro.com>
+	<Pine.LNX.4.64.1205251208440.13353@axis700.grange>
+	<Pine.LNX.4.64.1205251230540.13353@axis700.grange>
+	<20120528144502.GG4032@opensource.wolfsonmicro.com>
+	<Pine.LNX.4.64.1206111259190.29799@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1206111259190.29799@axis700.grange> (Guennadi
+	Liakhovetski's message of "Mon, 11 Jun 2012 13:03:26 +0200 (CEST)")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Cc: linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>, linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Hi Mark
+Hi,
 
-On Mon, 28 May 2012, Mark Brown wrote:
+On Mon, Jun 11 2012, Guennadi Liakhovetski wrote:
+> Yes, but existing mmc-regulator functions use EXPORT_SYMBOL(), e.g.,
+>
+> EXPORT_SYMBOL(mmc_regulator_get_ocrmask);
+>
+> which indeed seem to do the "old evil binary-only module trick": re-export 
+> functions, dropping the "_GPL" suffix. Looks like they should be fixed...
 
-> On Fri, May 25, 2012 at 05:14:52PM +0200, Guennadi Liakhovetski wrote:
-> > Add a function to get a regulator, supplying card's Vdd on a specific host.
-> > If such a regulator is found, the function checks, whether a valid OCR mask
-> > can be obtained from this regulator.
-> 
-> Reviwed-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Yuck, thanks for noticing that.  Happy to fix it:
 
-Thanks for the review!
 
-> but
-> 
-> > +EXPORT_SYMBOL(mmc_regulator_get_vmmc);
-> 
-> regulator is all _GPL...
+Subject: [PATCH] mmc: core: Export regulator_* functions as GPL
 
-Yes, but existing mmc-regulator functions use EXPORT_SYMBOL(), e.g.,
+The regulator API functions we're wrapping are exported as GPL, so our
+wrappers for the same functions should be too.
 
-EXPORT_SYMBOL(mmc_regulator_get_ocrmask);
-
-which indeed seem to do the "old evil binary-only module trick": re-export 
-functions, dropping the "_GPL" suffix. Looks like they should be fixed...
-
-Thanks
-Guennadi
+Reported-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Chris Ball <cjb@laptop.org>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ drivers/mmc/core/core.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mmc/core/core.c b/drivers/mmc/core/core.c
+index 0b6141d..c689877 100644
+--- a/drivers/mmc/core/core.c
++++ b/drivers/mmc/core/core.c
+@@ -941,7 +941,7 @@ int mmc_regulator_get_ocrmask(struct regulator *supply)
+ 
+ 	return result;
+ }
+-EXPORT_SYMBOL(mmc_regulator_get_ocrmask);
++EXPORT_SYMBOL_GPL(mmc_regulator_get_ocrmask);
+ 
+ /**
+  * mmc_regulator_set_ocr - set regulator to match host->ios voltage
+@@ -1011,7 +1011,7 @@ int mmc_regulator_set_ocr(struct mmc_host *mmc,
+ 			"could not set regulator OCR (%d)\n", result);
+ 	return result;
+ }
+-EXPORT_SYMBOL(mmc_regulator_set_ocr);
++EXPORT_SYMBOL_GPL(mmc_regulator_set_ocr);
+ 
+ #endif /* CONFIG_REGULATOR */
+ 
+-- 
+Chris Ball   <cjb@laptop.org>   <http://printf.net/>
+One Laptop Per Child
