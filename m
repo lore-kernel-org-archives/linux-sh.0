@@ -1,58 +1,161 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 25 Jun 2012 21:24:28 +0000
-Subject: Re: [PATCH 01/11] ARM: mach-shmobile: add a temporary macro to define fixed voltage regulators
-Message-Id: <Pine.LNX.4.64.1206252322350.31660@axis700.grange>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 11 Jun 2012 03:59:19 +0000
+Subject: [PATCH 26/27] ARM: shmobile: kzm9g: enable FSI-AK4648
+Message-Id: <87lijupkh8.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1340179300-16452-2-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1340179300-16452-2-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Rafael
+This patch enable sound playback/capture on CN9/CN10.
 
-On Mon, 25 Jun 2012, Rafael J. Wysocki wrote:
-
-> On Thursday, June 21, 2012, Rafael J. Wysocki wrote:
-> > On Wednesday, June 20, 2012, Mark Brown wrote:
-> > > On Wed, Jun 20, 2012 at 10:01:30AM +0200, Guennadi Liakhovetski wrote:
-> > > > Providing fixed voltage permanently "on" regulators with different voltages
-> > > > shares a lot of identical code. It will be eliminated, once the
-> > > > regulator_register_fixed_volt() function becomes available. Until then we
-> > > > introduce a macro to define such regulators. This helps reduce the amount
-> > > > of added code in each platform file and keeps copy-paste errors to the
-> > > > minumum.
-> > > 
-> > > Or you could just pull in the topic branch I created for the purpose of
-> > > allowing other trees to pick this up:
-> > > 
-> > >   git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git tags/topic/fixed
-> > > 
-> > > which should save everyone work all round.  Just don't rebase.
-> > 
-> > Arnd, Olof,
-> > 
-> > Would it be fine with you if we merged the topic branch above into
-> > our soc branch?
-> 
-> Guennadi,
-> 
-> Since Olof says it's not a problem to pull the Mark's topic branch into
-> our soc tree, can you please rework the patchset on top of that branch?
-
-Sure, will do.
-
-> Or do you need me to combine it with the commits already in the next
-> branch of the renesas.git tree for this purpose?
-
-No, don't think it should be necessary - patches in that branch only touch 
-regulator internals, so, I don't think any merging with the sh-mobile 
-branches would be required.
-
-Thanks
-Guennadi
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ arch/arm/mach-shmobile/Kconfig       |    1 +
+ arch/arm/mach-shmobile/board-kzm9g.c |   79 ++++++++++++++++++++++++++++++++++
+ 2 files changed, 80 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 1542e91..a2045dc 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -123,6 +123,7 @@ config MACH_KZM9G
+ 	depends on ARCH_SH73A0
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select USE_OF
++	select SND_SOC_AK4642 if SND_SIMPLE_CARD
+ 
+ comment "SH-Mobile System Configuration"
+ 
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index d8e33b6..7523e9e 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -33,6 +33,8 @@
+ #include <linux/smsc911x.h>
+ #include <linux/usb/r8a66597.h>
+ #include <linux/videodev2.h>
++#include <sound/sh_fsi.h>
++#include <sound/simple_card.h>
+ #include <mach/irqs.h>
+ #include <mach/sh73a0.h>
+ #include <mach/common.h>
+@@ -54,6 +56,14 @@
+ #define GPIO_PCF8575_PORT15	(GPIO_NR + 13)
+ #define GPIO_PCF8575_PORT16	(GPIO_NR + 14)
+ 
++/*
++ * FSI-AK4648
++ *
++ * this command is required when playback.
++ *
++ * # amixer set "LINEOUT Mixer DACL" on
++ */
++
+ /* SMSC 9221 */
+ static struct resource smsc9221_resources[] = {
+ 	[0] = {
+@@ -267,11 +277,70 @@ static struct platform_device gpio_keys_device = {
+ 	},
+ };
+ 
++/* FSI-AK4648 */
++static struct sh_fsi_platform_info fsi_info = {
++	.port_a = {
++	},
++};
++
++static struct resource fsi_resources[] = {
++	[0] = {
++		.name	= "FSI",
++		.start	= 0xEC230000,
++		.end	= 0xEC230400 - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start  = gic_spi(146),
++		.flags  = IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device fsi_device = {
++	.name		= "sh_fsi2",
++	.id		= -1,
++	.num_resources	= ARRAY_SIZE(fsi_resources),
++	.resource	= fsi_resources,
++	.dev	= {
++		.platform_data	= &fsi_info,
++	},
++};
++
++static struct asoc_simple_dai_init_info fsi2_ak4648_init_info = {
++	.fmt		= SND_SOC_DAIFMT_LEFT_J,
++	.codec_daifmt	= SND_SOC_DAIFMT_CBM_CFM,
++	.cpu_daifmt	= SND_SOC_DAIFMT_CBS_CFS,
++	.sysclk		= 11289600,
++};
++
++static struct asoc_simple_card_info fsi2_ak4648_info = {
++	.name		= "AK4648",
++	.card		= "FSI2A-AK4648",
++	.cpu_dai	= "fsia-dai",
++	.codec		= "ak4642-codec.0-0012",
++	.platform	= "sh_fsi2",
++	.codec_dai	= "ak4642-hifi",
++	.init		= &fsi2_ak4648_init_info,
++};
++
++static struct platform_device fsi_ak4648_device = {
++	.name	= "asoc-simple-card",
++	.dev	= {
++		.platform_data	= &fsi2_ak4648_info,
++	},
++};
++
+ /* I2C */
+ static struct pcf857x_platform_data pcf8575_pdata = {
+ 	.gpio_base	= GPIO_PCF8575_BASE,
+ };
+ 
++static struct i2c_board_info i2c0_devices[] = {
++	{
++		I2C_BOARD_INFO("ak4648", 0x12),
++	}
++};
++
+ static struct i2c_board_info i2c1_devices[] = {
+ 	{
+ 		I2C_BOARD_INFO("st1232-ts", 0x55),
+@@ -293,6 +362,8 @@ static struct platform_device *kzm_devices[] __initdata = {
+ 	&mmc_device,
+ 	&sdhi0_device,
+ 	&gpio_keys_device,
++	&fsi_device,
++	&fsi_ak4648_device,
+ };
+ 
+ /*
+@@ -431,11 +502,19 @@ static void __init kzm_init(void)
+ 	gpio_request(GPIO_FN_PORT27_I2C_SCL3, NULL);
+ 	gpio_request(GPIO_FN_PORT28_I2C_SDA3, NULL);
+ 
++	/* enable FSI2 port A (ak4648) */
++	gpio_request(GPIO_FN_FSIACK,	NULL);
++	gpio_request(GPIO_FN_FSIAILR,	NULL);
++	gpio_request(GPIO_FN_FSIAIBT,	NULL);
++	gpio_request(GPIO_FN_FSIAISLD,	NULL);
++	gpio_request(GPIO_FN_FSIAOSLD,	NULL);
++
+ #ifdef CONFIG_CACHE_L2X0
+ 	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
+ 	l2x0_init(IOMEM(0xf0100000), 0x40460000, 0x82000fff);
+ #endif
+ 
++	i2c_register_board_info(0, i2c0_devices, ARRAY_SIZE(i2c0_devices));
+ 	i2c_register_board_info(1, i2c1_devices, ARRAY_SIZE(i2c1_devices));
+ 	i2c_register_board_info(3, i2c3_devices, ARRAY_SIZE(i2c3_devices));
+ 
+-- 
+1.7.5.4
+
