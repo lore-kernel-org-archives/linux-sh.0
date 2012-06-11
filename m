@@ -1,53 +1,82 @@
-From: Alan Stern <stern@rowland.harvard.edu>
-Date: Tue, 12 Jun 2012 13:57:41 +0000
-Subject: Re: [PATCH v2] usb: ehci-sh: fix illegal phy_init() running when platform_data is NULL
-Message-Id: <Pine.LNX.4.44L0.1206120957271.1429-100000@iolanthe.rowland.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 11 Jun 2012 03:53:11 +0000
+Subject: [PATCH 07/27] ARM: shmobile: r8a7740: add HDMI interrupt support
+Message-Id: <87d356qzbw.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4FD68E99.8020009@renesas.com>
-In-Reply-To: <4FD68E99.8020009@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, 12 Jun 2012, Shimoda, Yoshihiro wrote:
+It is required from sh_mobile_hdmi driver.
+This patch is based on v1.0 manual
 
-> If the platform_data is not set, pdata will be uninitialized value.
-> Since the driver has the following code, if the condition is true when
-> the pdata is uninitialized value, the driver may jump to the illegal
-> phy_init().
-> 
-> 	if (pdata && pdata->phy_init)
-> 		pdata->phy_init();
-> 
-> This patch also fixes the following warning:
-> 
->   CC      drivers/usb/host/ehci-hcd.o
-> drivers/usb/host/ehci-sh.c: In function ‘ehci_hcd_sh_probe’:
-> drivers/usb/host/ehci-sh.c:104: warning: ‘pdata’ may be used uninitialized in this function
-> 
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
-> ---
->  about v2:
->   - modify the patch description about phy_init()
-> 
->  drivers/usb/host/ehci-sh.c |    3 +--
->  1 files changed, 1 insertions(+), 2 deletions(-)
-> 
-> diff --git a/drivers/usb/host/ehci-sh.c b/drivers/usb/host/ehci-sh.c
-> index ca819cd..e7cb392 100644
-> --- a/drivers/usb/host/ehci-sh.c
-> +++ b/drivers/usb/host/ehci-sh.c
-> @@ -126,8 +126,7 @@ static int ehci_hcd_sh_probe(struct platform_device *pdev)
->  		goto fail_create_hcd;
->  	}
-> 
-> -	if (pdev->dev.platform_data != NULL)
-> -		pdata = pdev->dev.platform_data;
-> +	pdata = pdev->dev.platform_data;
-> 
->  	/* initialize hcd */
->  	hcd = usb_create_hcd(&ehci_sh_hc_driver, &pdev->dev,
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/intc-r8a7740.c |   13 +++++++++----
+ 1 files changed, 9 insertions(+), 4 deletions(-)
 
-Acked-by: Alan Stern <stern@rowland.harvard.edu>
+diff --git a/arch/arm/mach-shmobile/intc-r8a7740.c b/arch/arm/mach-shmobile/intc-r8a7740.c
+index 09c42af..9a69a31 100644
+--- a/arch/arm/mach-shmobile/intc-r8a7740.c
++++ b/arch/arm/mach-shmobile/intc-r8a7740.c
+@@ -71,10 +71,12 @@ enum {
+ 	DMAC3_1_DEI0, DMAC3_1_DEI1, DMAC3_1_DEI2, DMAC3_1_DEI3,
+ 	DMAC3_2_DEI4, DMAC3_2_DEI5, DMAC3_2_DADERR,
+ 	SHWYSTAT_RT, SHWYSTAT_HS, SHWYSTAT_COM,
++	HDMI,
+ 	USBH_INT, USBH_OHCI, USBH_EHCI, USBH_PME, USBH_BIND,
+ 	RSPI_OVRF, RSPI_SPTEF, RSPI_SPRF,
+ 	SPU2_0, SPU2_1,
+ 	FSI, FMSI,
++	HDMI_SSS, HDMI_KEY,
+ 	IPMMU,
+ 	AP_ARM_CTIIRQ, AP_ARM_PMURQ,
+ 	MFIS2,
+@@ -182,6 +184,7 @@ static struct intc_vect intca_vectors[] __initdata = {
+ 	INTC_VECT(USBH_EHCI,		0x1580),
+ 	INTC_VECT(USBH_PME,		0x15A0),
+ 	INTC_VECT(USBH_BIND,		0x15C0),
++	INTC_VECT(HDMI,			0x1700),
+ 	INTC_VECT(RSPI_OVRF,		0x1780),
+ 	INTC_VECT(RSPI_SPTEF,		0x17A0),
+ 	INTC_VECT(RSPI_SPRF,		0x17C0),
+@@ -189,6 +192,8 @@ static struct intc_vect intca_vectors[] __initdata = {
+ 	INTC_VECT(SPU2_1,		0x1820),
+ 	INTC_VECT(FSI,			0x1840),
+ 	INTC_VECT(FMSI,			0x1860),
++	INTC_VECT(HDMI_SSS,		0x18A0),
++	INTC_VECT(HDMI_KEY,		0x18C0),
+ 	INTC_VECT(IPMMU,		0x1920),
+ 	INTC_VECT(AP_ARM_CTIIRQ,	0x1980),
+ 	INTC_VECT(AP_ARM_PMURQ,		0x19A0),
+@@ -304,11 +309,11 @@ static struct intc_mask_reg intca_mask_registers[] __initdata = {
+ 	    USBH_EHCI, USBH_PME, USBH_BIND, 0 } },
+ 	  /* IMR3A3 / IMCR3A3 */
+ 	{ /* IMR4A3 / IMCR4A3 */ 0xe6950090, 0xe69500d0, 8,
+-	  { 0, 0, 0, 0,
++	  { HDMI, 0, 0, 0,
+ 	    RSPI_OVRF, RSPI_SPTEF, RSPI_SPRF, 0 } },
+ 	{ /* IMR5A3 / IMCR5A3 */ 0xe6950094, 0xe69500d4, 8,
+ 	  { SPU2_0, SPU2_1, FSI, FMSI,
+-	    0, 0, 0, 0 } },
++	    0, HDMI_SSS, HDMI_KEY, 0 } },
+ 	{ /* IMR6A3 / IMCR6A3 */ 0xe6950098, 0xe69500d8, 8,
+ 	  { 0, IPMMU, 0, 0,
+ 	    AP_ARM_CTIIRQ, AP_ARM_PMURQ, 0, 0 } },
+@@ -353,10 +358,10 @@ static struct intc_prio_reg intca_prio_registers[] __initdata = {
+ 	{ 0xe6950014, 0, 16, 4, /* IPRFA3 */ { USBH2, 0, 0, 0 } },
+ 				/* IPRGA3 */
+ 				/* IPRHA3 */
+-				/* IPRIA3 */
++	{ 0xe6950020, 0, 16, 4, /* IPRIA3 */ { HDMI, 0, 0, 0 } },
+ 	{ 0xe6950024, 0, 16, 4, /* IPRJA3 */ { RSPI, 0, 0, 0 } },
+ 	{ 0xe6950028, 0, 16, 4, /* IPRKA3 */ { SPU2, 0, FSI, FMSI } },
+-				/* IPRLA3 */
++	{ 0xe695002c, 0, 16, 4, /* IPRLA3 */ { 0, HDMI_SSS, HDMI_KEY, 0 } },
+ 	{ 0xe6950030, 0, 16, 4, /* IPRMA3 */ { IPMMU, 0, 0, 0 } },
+ 	{ 0xe6950034, 0, 16, 4, /* IPRNA3 */ { AP_ARM2, 0, 0, 0 } },
+ 	{ 0xe6950038, 0, 16, 4, /* IPROA3 */ { MFIS2, CPORTR2S,
+-- 
+1.7.5.4
 
