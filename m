@@ -1,51 +1,176 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 20 Jun 2012 15:12:20 +0000
-Subject: [PATCH 12/14] sh: add fixed voltage regulators to rsk
-Message-Id: <1340205142-32606-13-git-send-email-g.liakhovetski@gmx.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 11 Jun 2012 03:57:36 +0000
+Subject: [PATCH 20/27] ARM: shmobile: armadillo800eva: enable FSI-HDMI sound
+Message-Id: <87txyipkk3.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On rsk devices provide a dummy regulator for the smsc911x driver.
+This patch enable HDMI sound support on CON3
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/sh/boards/mach-rsk/setup.c |   10 ++++++++++
- 1 files changed, 10 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/board-armadillo800eva.c |   82 +++++++++++++++++++++++-
+ 1 files changed, 79 insertions(+), 3 deletions(-)
 
-diff --git a/arch/sh/boards/mach-rsk/setup.c b/arch/sh/boards/mach-rsk/setup.c
-index 895f030..2685ea0 100644
---- a/arch/sh/boards/mach-rsk/setup.c
-+++ b/arch/sh/boards/mach-rsk/setup.c
-@@ -16,9 +16,17 @@
- #include <linux/mtd/partitions.h>
- #include <linux/mtd/physmap.h>
- #include <linux/mtd/map.h>
-+#include <linux/regulator/fixed.h>
-+#include <linux/regulator/machine.h>
- #include <asm/machvec.h>
- #include <asm/io.h>
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index b7b226b..1f0028f 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -718,10 +718,42 @@ static struct platform_device ceu0_device = {
+ };
  
-+/* Dummy supplies, where voltage doesn't matter */
-+static struct regulator_consumer_supply dummy_supplies[] = {
-+	REGULATOR_SUPPLY("vddvario", "smsc911x"),
-+	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
+ /* FSI */
++static int fsi_hdmi_set_rate(struct device *dev, int rate, int enable)
++{
++	struct clk *fsib;
++	int ret;
++
++	/* it support 48KHz only */
++	if (48000 != rate)
++		return -EINVAL;
++
++	fsib = clk_get(dev, "ickb");
++	if (IS_ERR(fsib))
++		return -EINVAL;
++
++	if (enable) {
++		ret = SH_FSI_ACKMD_256 | SH_FSI_BPFMD_64;
++		clk_enable(fsib);
++	} else {
++		ret = 0;
++		clk_disable(fsib);
++	}
++
++	clk_put(fsib);
++
++	return ret;
++}
++
+ static struct sh_fsi_platform_info fsi_info = {
+ 	/* FSI-WM8978 */
+ 	.port_a = {
+ 	},
++	/* FSI-HDMI */
++	.port_b = {
++		.flags		= SH_FSI_FMT_SPDIF |
++				  SH_FSI_ENABLE_STREAM_MODE,
++		.set_rate	= fsi_hdmi_set_rate,
++	}
+ };
+ 
+ static struct resource fsi_resources[] = {
+@@ -773,6 +805,29 @@ static struct platform_device fsi_wm8978_device = {
+ 	},
+ };
+ 
++/* FSI-HDMI */
++static struct asoc_simple_dai_init_info fsi2_hdmi_init_info = {
++	.cpu_daifmt	= SND_SOC_DAIFMT_CBM_CFM,
 +};
 +
- static const char *part_probes[] = { "cmdlinepart", NULL };
- 
- static struct mtd_partition rsk_partitions[] = {
-@@ -67,6 +75,8 @@ static struct platform_device *rsk_devices[] __initdata = {
- 
- static int __init rsk_devices_setup(void)
- {
-+	regulator_register_fixed(0, dummy_supplies, ARRAY_SIZE(dummy_supplies));
++static struct asoc_simple_card_info fsi2_hdmi_info = {
++	.name		= "HDMI",
++	.card		= "FSI2B-HDMI",
++	.cpu_dai	= "fsib-dai",
++	.codec		= "sh-mobile-hdmi",
++	.platform	= "sh_fsi2",
++	.codec_dai	= "sh_mobile_hdmi-hifi",
++	.init		= &fsi2_hdmi_init_info,
++};
 +
- 	return platform_add_devices(rsk_devices,
- 				    ARRAY_SIZE(rsk_devices));
++static struct platform_device fsi_hdmi_device = {
++	.name	= "asoc-simple-card",
++	.id	= 1,
++	.dev	= {
++		.platform_data	= &fsi2_hdmi_info,
++	},
++};
++
+ /* I2C */
+ static struct i2c_board_info i2c0_devices[] = {
+ 	{
+@@ -798,6 +853,7 @@ static struct platform_device *eva_devices[] __initdata = {
+ 	&camera_device,
+ 	&ceu0_device,
+ 	&fsi_device,
++	&fsi_hdmi_device,
+ 	&fsi_wm8978_device,
+ };
+ 
+@@ -806,10 +862,14 @@ static void __init eva_clock_init(void)
+ 	struct clk *system	= clk_get(NULL, "system_clk");
+ 	struct clk *xtal1	= clk_get(NULL, "extal1");
+ 	struct clk *usb24s	= clk_get(NULL, "usb24s");
++	struct clk *fsibck	= clk_get(NULL, "fsibck");
++	struct clk *fsib	= clk_get(&fsi_device.dev, "ickb");
+ 
+ 	if (IS_ERR(system)	||
+ 	    IS_ERR(xtal1)	||
+-	    IS_ERR(usb24s)) {
++	    IS_ERR(usb24s)	||
++	    IS_ERR(fsibck)	||
++	    IS_ERR(fsib)) {
+ 		pr_err("armadillo800eva board clock init failed\n");
+ 		goto clock_error;
+ 	}
+@@ -829,6 +889,11 @@ static void __init eva_clock_init(void)
+ 	/* video1 (= CON1 camera) expect 24MHz */
+ 	clk_set_rate(cam1_mclk, clk_round_rate(cam1_mclk, 24000000));
+ 
++	/* FSIBCK is 12.288MHz, and it is parent of FSI-B */
++	clk_set_parent(fsib, fsibck);
++	clk_set_rate(fsibck, 12288000);
++	clk_set_rate(fsib,   12288000);
++
+ clock_error:
+ 	if (!IS_ERR(system))
+ 		clk_put(system);
+@@ -836,6 +901,10 @@ clock_error:
+ 		clk_put(xtal1);
+ 	if (!IS_ERR(usb24s))
+ 		clk_put(usb24s);
++	if (!IS_ERR(fsibck))
++		clk_put(fsibck);
++	if (!IS_ERR(fsib))
++		clk_put(fsib);
  }
+ 
+ /*
+@@ -845,8 +914,6 @@ clock_error:
+ #define GPIO_PORT8CR	0xe6050008
+ static void __init eva_init(void)
+ {
+-	eva_clock_init();
+-
+ 	r8a7740_pinmux_init();
+ 	r8a7740_meram_workaround();
+ 
+@@ -1004,6 +1071,13 @@ static void __init eva_init(void)
+ 	gpio_direction_none(GPIO_PORT7CR); /* FSIAOBT needs no direction */
+ 	gpio_direction_none(GPIO_PORT8CR); /* FSIAOLR needs no direction */
+ 
++	/* FSI-HDMI */
++	gpio_request(GPIO_FN_FSIBCK,		NULL);
++
++	/* HDMI */
++	gpio_request(GPIO_FN_HDMI_HPD,		NULL);
++	gpio_request(GPIO_FN_HDMI_CEC,		NULL);
++
+ 	/*
+ 	 * CAUTION
+ 	 *
+@@ -1050,6 +1124,8 @@ static void __init eva_init(void)
+ 
+ 	platform_add_devices(eva_devices,
+ 			     ARRAY_SIZE(eva_devices));
++
++	eva_clock_init();
+ }
+ 
+ static void __init eva_earlytimer_init(void)
 -- 
-1.7.2.5
+1.7.5.4
 
