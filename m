@@ -1,55 +1,97 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 26 Jun 2012 22:32:27 +0000
-Subject: [PATCH 05/10 v3] ARM: mach-shmobile: add fixed voltage regulators to bonito
-Message-Id: <1340749952-8534-6-git-send-email-g.liakhovetski@gmx.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 11 Jun 2012 03:55:26 +0000
+Subject: [PATCH 13/27] ARM: shmobile: r8a7740: add FSI-B (for HDMI) GPIO support
+Message-Id: <874nqiqz85.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On bonito provide a dummy regulator for the smsc911x driver.
+In order to enable FSI-B selection from platform board,
+this patch adds its interface to GPIO framework.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+This patch is based on v1.0 manual
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-bonito.c |   10 ++++++++++
- 1 files changed, 10 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/include/mach/r8a7740.h |    5 ++++-
+ arch/arm/mach-shmobile/pfc-r8a7740.c          |   11 +++++++++--
+ 2 files changed, 13 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-bonito.c b/arch/arm/mach-shmobile/board-bonito.c
-index e9b32cf..4129008 100644
---- a/arch/arm/mach-shmobile/board-bonito.c
-+++ b/arch/arm/mach-shmobile/board-bonito.c
-@@ -26,6 +26,8 @@
- #include <linux/irq.h>
- #include <linux/platform_device.h>
- #include <linux/gpio.h>
-+#include <linux/regulator/fixed.h>
-+#include <linux/regulator/machine.h>
- #include <linux/smsc911x.h>
- #include <linux/videodev2.h>
- #include <mach/common.h>
-@@ -75,6 +77,12 @@
-  * S38.2 = OFF
-  */
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+index 2764846..6468fcc 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+@@ -139,7 +139,7 @@ enum {
+ 	GPIO_FN_DBGMD10,	GPIO_FN_DBGMD11,	GPIO_FN_DBGMD20,
+ 	GPIO_FN_DBGMD21,
  
-+/* Dummy supplies, where voltage doesn't matter */
-+static struct regulator_consumer_supply dummy_supplies[] = {
-+	REGULATOR_SUPPLY("vddvario", "smsc911x"),
-+	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
-+};
+-	/* FSI */
++	/* FSI-A */
+ 	GPIO_FN_FSIAISLD_PORT0,		/* FSIAISLD Port 0/5 */
+ 	GPIO_FN_FSIAISLD_PORT5,
+ 	GPIO_FN_FSIASPDIF_PORT9,	/* FSIASPDIF Port 9/18 */
+@@ -150,6 +150,9 @@ enum {
+ 	GPIO_FN_FSIACK,		GPIO_FN_FSIAILR,
+ 	GPIO_FN_FSIAIBT,
+ 
++	/* FSI-B */
++	GPIO_FN_FSIBCK,
 +
- /*
-  * FPGA
-  */
-@@ -360,6 +368,8 @@ static void __init bonito_init(void)
- {
- 	u16 val;
+ 	/* FMSI */
+ 	GPIO_FN_FMSISLD_PORT1, /* FMSISLD Port 1/6 */
+ 	GPIO_FN_FMSISLD_PORT6,
+diff --git a/arch/arm/mach-shmobile/pfc-r8a7740.c b/arch/arm/mach-shmobile/pfc-r8a7740.c
+index 0dda816..03def0f 100644
+--- a/arch/arm/mach-shmobile/pfc-r8a7740.c
++++ b/arch/arm/mach-shmobile/pfc-r8a7740.c
+@@ -169,7 +169,7 @@ enum {
+ 	DBGMD10_MARK,	DBGMD11_MARK,	DBGMD20_MARK,
+ 	DBGMD21_MARK,
  
-+	regulator_register_fixed(0, dummy_supplies, ARRAY_SIZE(dummy_supplies));
+-	/* FSI */
++	/* FSI-A */
+ 	FSIAISLD_PORT0_MARK,	/* FSIAISLD Port 0/5 */
+ 	FSIAISLD_PORT5_MARK,
+ 	FSIASPDIF_PORT9_MARK,	/* FSIASPDIF Port 9/18 */
+@@ -178,6 +178,9 @@ enum {
+ 	FSIAOBT_MARK,	FSIAOSLD_MARK,	FSIAOMC_MARK,
+ 	FSIACK_MARK,	FSIAILR_MARK,	FSIAIBT_MARK,
+ 
++	/* FSI-B */
++	FSIBCK_MARK,
 +
- 	r8a7740_pinmux_init();
- 	bonito_fpga_init();
+ 	/* FMSI */
+ 	FMSISLD_PORT1_MARK, /* FMSISLD Port 1/6 */
+ 	FMSISLD_PORT6_MARK,
+@@ -774,6 +777,7 @@ static pinmux_enum_t pinmux_data[] = {
  
+ 	/* Port11 */
+ 	PINMUX_DATA(FSIACK_MARK,		PORT11_FN1),
++	PINMUX_DATA(FSIBCK_MARK,		PORT11_FN2),
+ 	PINMUX_DATA(IRQ2_PORT11_MARK,		PORT11_FN0,	MSEL1CR_2_0),
+ 
+ 	/* Port12 */
+@@ -1696,7 +1700,7 @@ static struct pinmux_gpio pinmux_gpios[] = {
+ 	GPIO_FN(DBGMD10),	GPIO_FN(DBGMD11),	GPIO_FN(DBGMD20),
+ 	GPIO_FN(DBGMD21),
+ 
+-	/* FSI */
++	/* FSI-A */
+ 	GPIO_FN(FSIAISLD_PORT0),	/* FSIAISLD Port 0/5 */
+ 	GPIO_FN(FSIAISLD_PORT5),
+ 	GPIO_FN(FSIASPDIF_PORT9),	/* FSIASPDIF Port 9/18 */
+@@ -1705,6 +1709,9 @@ static struct pinmux_gpio pinmux_gpios[] = {
+ 	GPIO_FN(FSIAOBT),	GPIO_FN(FSIAOSLD),	GPIO_FN(FSIAOMC),
+ 	GPIO_FN(FSIACK),	GPIO_FN(FSIAILR),	GPIO_FN(FSIAIBT),
+ 
++	/* FSI-B */
++	GPIO_FN(FSIBCK),
++
+ 	/* FMSI */
+ 	GPIO_FN(FMSISLD_PORT1), /* FMSISLD Port 1/6 */
+ 	GPIO_FN(FMSISLD_PORT6),
 -- 
-1.7.2.5
+1.7.5.4
 
