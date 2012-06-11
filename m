@@ -1,87 +1,76 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 26 Jun 2012 22:32:23 +0000
-Subject: [PATCH 01/10 v3] ARM: mach-shmobile: add 3.3V and 1.8V fixed regulators to mackerel
-Message-Id: <1340749952-8534-2-git-send-email-g.liakhovetski@gmx.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 11 Jun 2012 03:53:48 +0000
+Subject: [PATCH 09/27] ARM: shmobile: r8a7740: add HDMI GPIO support
+Message-Id: <87aa0aqzau.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Drivers for several devices on mackerel, including all SDHI instances, the
-MMCIF controller and the SMSC9220 ethernet chip use regulators to control
-power supply to their devices. MMC drivers need to be able to at least
-retrieve voltage values from supplying regulators, whereas the smsc911x
-driver only enables and disables chip power supplies without further looking
-at them. This patch adds two fixed voltage regulators to describe 1.8V and
-3.3V supplies on the board and a dummy regulator for SMSC9220.
+In order to enable HDMI GPIO selection from platform board,
+this patch adds its interface to GPIO framework.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+This patch is based on v1.0 manual
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
+ arch/arm/mach-shmobile/include/mach/r8a7740.h |    4 ++++
+ arch/arm/mach-shmobile/pfc-r8a7740.c          |    9 +++++++++
+ 2 files changed, 13 insertions(+), 0 deletions(-)
 
-v3: added comment about the J22 Vdd jumper
-
- arch/arm/mach-shmobile/board-mackerel.c |   35 +++++++++++++++++++++++++++++++
- 1 files changed, 35 insertions(+), 0 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index b577f7c..5b89dc8 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -41,6 +41,8 @@
- #include <linux/mtd/physmap.h>
- #include <linux/mtd/sh_flctl.h>
- #include <linux/pm_clock.h>
-+#include <linux/regulator/fixed.h>
-+#include <linux/regulator/machine.h>
- #include <linux/smsc911x.h>
- #include <linux/sh_intc.h>
- #include <linux/tca6416_keypad.h>
-@@ -229,6 +231,33 @@ static void __init gpio_pull_down(u32 addr)
- 	__raw_writeb(data, addr);
- }
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+index 9d447ab..2764846 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+@@ -565,6 +565,10 @@ enum {
+ 	GPIO_FN_RESETP_PULLUP,
+ 	GPIO_FN_RESETP_PLAIN,
  
-+/* Fixed 3.3V and 1.8V regulators to be used by multiple devices */
-+static struct regulator_consumer_supply fixed1v8_power_consumers[] +{
-+	/*
-+	 * J22 on mackerel switches mmcif.0 and sdhi.1 between 1.8V and 3.3V
-+	 * Since we cannot support both voltages, we support the default 1.8V
-+	 */
-+	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
-+	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.1"),
-+	REGULATOR_SUPPLY("vmmc", "sh_mmcif.0"),
-+	REGULATOR_SUPPLY("vqmmc", "sh_mmcif.0"),
-+};
++	/* HDMI */
++	GPIO_FN_HDMI_HPD,
++	GPIO_FN_HDMI_CEC,
 +
-+static struct regulator_consumer_supply fixed3v3_power_consumers[] +{
-+	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
-+	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
-+	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.2"),
-+	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.2"),
-+};
-+
-+/* Dummy supplies, where voltage doesn't matter */
-+static struct regulator_consumer_supply dummy_supplies[] = {
-+	REGULATOR_SUPPLY("vddvario", "smsc911x"),
-+	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
-+};
-+
- /* MTD */
- static struct mtd_partition nor_flash_partitions[] = {
- 	{
-@@ -1409,6 +1438,12 @@ static void __init mackerel_init(void)
- 	u32 srcr4;
- 	struct clk *clk;
+ 	/* SDENC */
+ 	GPIO_FN_SDENC_CPG,
+ 	GPIO_FN_SDENC_DV_CLKI,
+diff --git a/arch/arm/mach-shmobile/pfc-r8a7740.c b/arch/arm/mach-shmobile/pfc-r8a7740.c
+index 670fe18..0dda816 100644
+--- a/arch/arm/mach-shmobile/pfc-r8a7740.c
++++ b/arch/arm/mach-shmobile/pfc-r8a7740.c
+@@ -560,6 +560,9 @@ enum {
+ 	/* SDENC */
+ 	SDENC_CPG_MARK,		SDENC_DV_CLKI_MARK,
  
-+	regulator_register_always_on(0, "fixed-1.8V", fixed1v8_power_consumers,
-+				     ARRAY_SIZE(fixed1v8_power_consumers), 1800000);
-+	regulator_register_always_on(1, "fixed-3.3V", fixed3v3_power_consumers,
-+				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
-+	regulator_register_fixed(2, dummy_supplies, ARRAY_SIZE(dummy_supplies));
++	/* HDMI */
++	HDMI_HPD_MARK, HDMI_CEC_MARK,
 +
- 	/* External clock source */
- 	clk_set_rate(&sh7372_dv_clki_clk, 27000000);
+ 	/* DEBUG */
+ 	EDEBGREQ_PULLUP_MARK,	/* for JTAG */
+ 	EDEBGREQ_PULLDOWN_MARK,
+@@ -1620,9 +1623,11 @@ static pinmux_enum_t pinmux_data[] = {
  
+ 	/* Port210 */
+ 	PINMUX_DATA(IRQ9_PORT210_MARK,		PORT210_FN0,	MSEL1CR_9_1),
++	PINMUX_DATA(HDMI_HPD_MARK,		PORT210_FN1),
+ 
+ 	/* Port211 */
+ 	PINMUX_DATA(IRQ16_PORT211_MARK,		PORT211_FN0,	MSEL1CR_16_1),
++	PINMUX_DATA(HDMI_CEC_MARK,		PORT211_FN1),
+ 
+ 	/* LCDC select */
+ 	PINMUX_DATA(LCDC0_SELECT_MARK,				MSEL3CR_6_0),
+@@ -2097,6 +2102,10 @@ static struct pinmux_gpio pinmux_gpios[] = {
+ 	GPIO_FN(SDENC_CPG),
+ 	GPIO_FN(SDENC_DV_CLKI),
+ 
++	/* HDMI */
++	GPIO_FN(HDMI_HPD),
++	GPIO_FN(HDMI_CEC),
++
+ 	/* SYSC */
+ 	GPIO_FN(RESETP_PULLUP),
+ 	GPIO_FN(RESETP_PLAIN),
 -- 
-1.7.2.5
+1.7.5.4
 
