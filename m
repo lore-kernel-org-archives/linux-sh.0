@@ -1,40 +1,49 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 20 Jun 2012 15:30:19 +0000
-Subject: Re: [PATCH 01/14] sh: add a temporary macro to define fixed voltage regulators
-Message-Id: <Pine.LNX.4.64.1206201725040.20254@axis700.grange>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 11 Jun 2012 03:59:04 +0000
+Subject: [PATCH 25/27] ARM: shmobile: sh73a0: add FSI clock
+Message-Id: <87mx4apkhn.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1340205142-32606-2-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1340205142-32606-2-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, 21 Jun 2012, Paul Mundt wrote:
+This patch is required from FSI sound driver
 
-> On Wed, Jun 20, 2012 at 05:12:09PM +0200, Guennadi Liakhovetski wrote:
-> > Until the regulator_register_fixed_volt() function becomes available add a
-> > macro to define fixed-voltage always on regulators.
-> > 
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> 
-> Uh, no. If you have a dependency on something in another tree then we
-> pull that dependency in to a topic branch and layer on top of that.
-> Contrary to popular belief, a couple of changes in a topic branch in
-> someone else's tree is hardly a rare occurence, nor does it make you
-> special.
-> 
-> I can't even begin to imagine at what point making this header started to
-> look like a good idea, you must really go out of your way to avoid using
-> git in your workflow.
-
-Ah, sure, I'd much prefer to use that function directly than to have this 
-interim solution. Good, that this is also your preferred way of handling 
-this. Will re-send appropriately.
-
-Thanks
-Guennadi
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ arch/arm/mach-shmobile/clock-sh73a0.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index 081338c..76bdcca 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -477,7 +477,7 @@ enum { MSTP001,
+ 	MSTP129, MSTP128, MSTP127, MSTP126, MSTP125, MSTP118, MSTP116, MSTP100,
+ 	MSTP219, MSTP218, MSTP217,
+ 	MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
+-	MSTP331, MSTP329, MSTP325, MSTP323,
++	MSTP331, MSTP329, MSTP328, MSTP325, MSTP323,
+ 	MSTP314, MSTP313, MSTP312, MSTP311,
+ 	MSTP303, MSTP302, MSTP301, MSTP300,
+ 	MSTP411, MSTP410, MSTP403,
+@@ -508,6 +508,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP200] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 0, 0), /* SCIFA4 */
+ 	[MSTP331] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR3, 31, 0), /* SCIFA6 */
+ 	[MSTP329] = MSTP(&r_clk, SMSTPCR3, 29, 0), /* CMT10 */
++	[MSTP328] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 28, 0), /*FSI*/
+ 	[MSTP325] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR3, 25, 0), /* IrDA */
+ 	[MSTP323] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 23, 0), /* IIC1 */
+ 	[MSTP314] = MSTP(&div6_clks[DIV6_SDHI0], SMSTPCR3, 14, 0), /* SDHI0 */
+@@ -564,6 +565,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP200]), /* SCIFA4 */
+ 	CLKDEV_DEV_ID("sh-sci.6", &mstp_clks[MSTP331]), /* SCIFA6 */
+ 	CLKDEV_DEV_ID("sh_cmt.10", &mstp_clks[MSTP329]), /* CMT10 */
++	CLKDEV_DEV_ID("sh_fsi2", &mstp_clks[MSTP328]), /* FSI */
+ 	CLKDEV_DEV_ID("sh_irda.0", &mstp_clks[MSTP325]), /* IrDA */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.1", &mstp_clks[MSTP323]), /* I2C1 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]), /* SDHI0 */
+-- 
+1.7.5.4
+
