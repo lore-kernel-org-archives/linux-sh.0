@@ -1,62 +1,49 @@
-From: Lasse Collin <lasse.collin@tukaani.org>
-Date: Tue, 12 Jun 2012 16:18:04 +0000
+From: Nicolas Pitre <nicolas.pitre@linaro.org>
+Date: Tue, 12 Jun 2012 17:26:22 +0000
 Subject: Re: [PATCH v2] lib/decompress_unxz.c: removing all memory helper functions
-Message-Id: <20120612191804.4211462a@tukaani.org>
+Message-Id: <alpine.LFD.2.02.1206121316190.23555@xanadu.home>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1339470307-28223-1-git-send-email-tmac@hp.com>
-In-Reply-To: <1339470307-28223-1-git-send-email-tmac@hp.com>
+ <20120612191804.4211462a@tukaani.org>
+In-Reply-To: <20120612191804.4211462a@tukaani.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 2012-06-11 T Makphaibulchoke wrote:
-> --- /dev/null
-> +++ b/lib/boot/mem.c
-> @@ -0,0 +1,58 @@
-> +/*
-> + * Small subset of simple memory helper functions required by different
-> + * compressors for preboot environment.
-> + */
-> +
-> +#include <linux/string.h>
-> +
-> +#ifndef __HAVE_PREBOOT_ARCH_MEMCPY
-> +void *memcpy(void *__dest, __const void *__src, size_t __n)
-> +{
-> +	return __builtin_memcpy(__dest, __src, __n);
-> +}
-> +#endif
+On Tue, 12 Jun 2012, Lasse Collin wrote:
 
-GCC will replace __builtin_memcpy above with a call to memcpy, creating
-an infinite loop. I confirmed this on x86_64 by first uncommenting the
-memcpy from arch/x86/boot/compressed/string.c.
+> On 2012-06-11 T Makphaibulchoke wrote:
+> > +#ifndef __HAVE_PREBOOT_ARCH_MEMMOVE
+> > +void *memmove(void *__dest, __const void *__src, size_t count)
+> > +{
+> > +	unsigned char *d = __dest;
+> > +	const unsigned char *s = __src;
+> > +
+> > +	if (__dest = __src)
+> > +		return __dest;
+> > +
+> > +	if (__dest < __src)
+> > +		return memcpy(__dest, __src, count);
+> > +
+> > +	while (count--)
+> > +		d[count] = s[count];
+> > +	return __dest;
+> > +}
+> > +#endif
+> 
+> The use of memcpy when __dest < __src is OK with some memcpy
+> implementations, but in a generic case it isn't guaranteed to work.
 
-You need to provide a memcpy implementation yourself without using
-__builtin functions. For example, copy the memcpy implementation from
-lib/string.c.
+Of course, if the memcpy implementation is also provided along with this 
+memmove code, as it was the case on ARM before this patch, then you can 
+guarantee it.  And if that memcpy() happens to be slightly more 
+optimized then this is a win.
 
-> +#ifndef __HAVE_PREBOOT_ARCH_MEMMOVE
-> +void *memmove(void *__dest, __const void *__src, size_t count)
-> +{
-> +	unsigned char *d = __dest;
-> +	const unsigned char *s = __src;
-> +
-> +	if (__dest = __src)
-> +		return __dest;
-> +
-> +	if (__dest < __src)
-> +		return memcpy(__dest, __src, count);
-> +
-> +	while (count--)
-> +		d[count] = s[count];
-> +	return __dest;
-> +}
-> +#endif
+> I think it would be better to just copy memmove from lib/string.c.
 
-The use of memcpy when __dest < __src is OK with some memcpy
-implementations, but in a generic case it isn't guaranteed to work.
-I think it would be better to just copy memmove from lib/string.c.
+Instead of copying, maybe this would be much better to make the content 
+of lib/string.c usable in a pre-boot environment.
 
--- 
-Lasse Collin  |  IRC: Larhzu @ IRCnet & Freenode
+
+Nicolas
