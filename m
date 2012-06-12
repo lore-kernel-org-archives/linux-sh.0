@@ -1,29 +1,112 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 13 Jun 2012 00:52:52 +0000
-Subject: Re: [PATCH 27/27 v2] ARM: shmobile: kzm9g: enable DMAEngine on FSI
-Message-Id: <20120613005250.GZ16686@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 12 Jun 2012 15:57:05 +0000
+Subject: [PATCH v4] mmc: add a function to get regulators, supplying card's power
+Message-Id: <Pine.LNX.4.64.1206121743260.6800@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <874nqgx3tb.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <874nqgx3tb.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Adrian Hunter <adrian.hunter@intel.com>, Philip Rakity <prakity@marvell.com>, Ulf Hansson <ulf.hansson@linaro.org>, Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>, Mark Brown <broonie@opensource.wolfsonmicro.com>
 
-On Tue, Jun 12, 2012 at 02:44:20AM -0700, Kuninori Morimoto wrote:
-> It is possible to reduce CPU load if FSI playback used DMAEngine.
-> This patch enabled it.
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Add a function to get regulators, supplying card's Vdd and Vccq on a
+specific host. If a Vdd supplying regulator is found, the function checks,
+whether a valid OCR mask can be obtained from it. The Vccq regulator is
+optional. A failure to get it is not fatal.
 
-As I tested v1 of this patch:
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
 
-Tested-by: Simon Horman <horms@verge.net.au>
+v4:
 
-> ---
-> v1 -> v2
-> 
->  - no change
-> 
->  arch/arm/mach-shmobile/board-kzm9g.c |    1 +
->  1 files changed, 1 insertions(+), 0 deletions(-)
+1. add _GPL to EXPORT_SYMBOL (note: a recently posted patch changes 
+another occurrence of EXPORT_SYMBOL too, so, this patch will apply with a 
+fuzz, if merged after)
+
+2. add an optional vqmmc regulator, which also changes the function 
+prototype
+
+3. print a warning, if failed to get an OCR mask
+
+Thanks to all, who commented
+
+ drivers/mmc/core/core.c  |   27 +++++++++++++++++++++++++++
+ include/linux/mmc/host.h |   12 ++++++++++++
+ 2 files changed, 39 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/mmc/core/core.c b/drivers/mmc/core/core.c
+index 0b6141d..d77a238 100644
+--- a/drivers/mmc/core/core.c
++++ b/drivers/mmc/core/core.c
+@@ -1013,6 +1013,33 @@ int mmc_regulator_set_ocr(struct mmc_host *mmc,
+ }
+ EXPORT_SYMBOL(mmc_regulator_set_ocr);
+ 
++int mmc_regulator_get_supply(struct mmc_host *mmc, struct mmc_supply *s)
++{
++	struct device *dev = mmc_dev(mmc);
++	struct regulator *supply;
++	int ret;
++
++	if (!mmc || !s)
++		return -EINVAL;
++
++	supply = devm_regulator_get(dev, "vmmc");
++
++	if (IS_ERR(supply))
++		return PTR_ERR(supply);
++
++	s->vmmc = supply;
++	s->vqmmc = devm_regulator_get(dev, "vqmmc");
++
++	ret = mmc_regulator_get_ocrmask(supply);
++	if (ret > 0)
++		mmc->ocr_avail = ret;
++	else
++		dev_warn(mmc_dev(mmc), "Failed getting OCR mask: %d\n", ret);
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(mmc_regulator_get_supply);
++
+ #endif /* CONFIG_REGULATOR */
+ 
+ /*
+diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
+index 0707d22..3192335 100644
+--- a/include/linux/mmc/host.h
++++ b/include/linux/mmc/host.h
+@@ -359,11 +359,17 @@ static inline void mmc_signal_sdio_irq(struct mmc_host *host)
+ 
+ struct regulator;
+ 
++struct mmc_supply {
++	struct regulator *vmmc;		/* Card power supply */
++	struct regulator *vqmmc;	/* Optional Vccq supply */
++};
++
+ #ifdef CONFIG_REGULATOR
+ int mmc_regulator_get_ocrmask(struct regulator *supply);
+ int mmc_regulator_set_ocr(struct mmc_host *mmc,
+ 			struct regulator *supply,
+ 			unsigned short vdd_bit);
++int mmc_regulator_get_supply(struct mmc_host *mmc, struct mmc_supply *s);
+ #else
+ static inline int mmc_regulator_get_ocrmask(struct regulator *supply)
+ {
+@@ -376,6 +382,12 @@ static inline int mmc_regulator_set_ocr(struct mmc_host *mmc,
+ {
+ 	return 0;
+ }
++
++static inline int mmc_regulator_get_supply(struct mmc_host *mmc,
++					   struct mmc_supply *s)
++{
++	return 0;
++}
+ #endif
+ 
+ int mmc_card_awake(struct mmc_host *host);
+-- 
+1.7.2.5
+
