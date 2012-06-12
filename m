@@ -1,115 +1,95 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 25 Jun 2012 10:43:00 +0000
-Subject: [PATCH 1/4] ARM: shmobile: add common DMAEngine definitions
-Message-Id: <87d34nk6z3.wl%kuninori.morimoto.gx@renesas.com>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 12 Jun 2012 05:18:53 +0000
+Subject: [PATCH net-next 1/5] net: sh_eth: remove unnecessary function
+Message-Id: <4FD6D13D.50701@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: netdev <netdev@vger.kernel.org>
+Cc: SH-Linux <linux-sh@vger.kernel.org>
 
-Current shmobile have DMAEngine specific settings on each CPU code,
-but SH-ARM DMAC use same value.
+The sh_eth_timer() called mod_timer() for itself.
+So, this patch removes the function.
 
-This patch adds new dma-register.h header to share definitions
-and reduce a waste of code on SH-ARM architecture.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/arm/mach-shmobile/include/mach/dma-register.h |   84 ++++++++++++++++++++
- 1 files changed, 84 insertions(+), 0 deletions(-)
- create mode 100644 arch/arm/mach-shmobile/include/mach/dma-register.h
+ drivers/net/ethernet/renesas/sh_eth.c |   22 ----------------------
+ drivers/net/ethernet/renesas/sh_eth.h |    1 -
+ 2 files changed, 0 insertions(+), 23 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/dma-register.h b/arch/arm/mach-shmobile/include/mach/dma-register.h
-new file mode 100644
-index 0000000..97c40bd
---- /dev/null
-+++ b/arch/arm/mach-shmobile/include/mach/dma-register.h
-@@ -0,0 +1,84 @@
-+/*
-+ * SH-ARM CPU-specific DMA definitions, used by both DMA drivers
-+ *
-+ * Copyright (C) 2012 Renesas Solutions Corp
-+ *
-+ * Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-+ *
-+ * Based on arch/sh/include/cpu-sh4/cpu/dma-register.h
-+ * Copyright (C) 2010 Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
-+ */
-+
-+#ifndef DMA_REGISTER_H
-+#define DMA_REGISTER_H
-+
-+/*
-+ *		Direct Memory Access Controller
-+ */
-+
-+/* Transmit sizes and respective CHCR register values */
-+enum {
-+	XMIT_SZ_8BIT		= 0,
-+	XMIT_SZ_16BIT		= 1,
-+	XMIT_SZ_32BIT		= 2,
-+	XMIT_SZ_64BIT		= 7,
-+	XMIT_SZ_128BIT		= 3,
-+	XMIT_SZ_256BIT		= 4,
-+	XMIT_SZ_512BIT		= 5,
-+};
-+
-+/* log2(size / 8) - used to calculate number of transfers */
-+static const unsigned int dma_ts_shift[] = {
-+	[XMIT_SZ_8BIT]		= 0,
-+	[XMIT_SZ_16BIT]		= 1,
-+	[XMIT_SZ_32BIT]		= 2,
-+	[XMIT_SZ_64BIT]		= 3,
-+	[XMIT_SZ_128BIT]	= 4,
-+	[XMIT_SZ_256BIT]	= 5,
-+	[XMIT_SZ_512BIT]	= 6,
-+};
-+
-+#define TS_LOW_BIT	0x3 /* --xx */
-+#define TS_HI_BIT	0xc /* xx-- */
-+
-+#define TS_LOW_SHIFT	(3)
-+#define TS_HI_SHIFT	(20 - 2)	/* 2 bits for shifted low TS */
-+
-+#define TS_INDEX2VAL(i) \
-+	((((i) & TS_LOW_BIT) << TS_LOW_SHIFT) |\
-+	 (((i) & TS_HI_BIT)  << TS_HI_SHIFT))
-+
-+#define CHCR_TX(xmit_sz) (DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL((xmit_sz)))
-+#define CHCR_RX(xmit_sz) (DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL((xmit_sz)))
-+
-+
-+/*
-+ *		USB High-Speed DMAC
-+ */
-+/* Transmit sizes and respective CHCR register values */
-+enum {
-+	USBTS_XMIT_SZ_8BYTE		= 0,
-+	USBTS_XMIT_SZ_16BYTE		= 1,
-+	USBTS_XMIT_SZ_32BYTE		= 2,
-+};
-+
-+/* log2(size / 8) - used to calculate number of transfers */
-+static const unsigned int dma_usbts_shift[] = {
-+	[USBTS_XMIT_SZ_8BYTE]	= 3,
-+	[USBTS_XMIT_SZ_16BYTE]	= 4,
-+	[USBTS_XMIT_SZ_32BYTE]	= 5,
-+};
-+
-+#define USBTS_LOW_BIT	0x3 /* --xx */
-+#define USBTS_HI_BIT	0x0 /* ---- */
-+
-+#define USBTS_LOW_SHIFT	6
-+#define USBTS_HI_SHIFT	0
-+
-+#define USBTS_INDEX2VAL(i) (((i) & 3) << 6)
-+
-+#endif /* DMA_REGISTER_H */
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 667169b..4ccfd0f 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -1291,14 +1291,6 @@ other_irq:
+ 	return ret;
+ }
+
+-static void sh_eth_timer(unsigned long data)
+-{
+-	struct net_device *ndev = (struct net_device *)data;
+-	struct sh_eth_private *mdp = netdev_priv(ndev);
+-
+-	mod_timer(&mdp->timer, jiffies + (10 * HZ));
+-}
+-
+ /* PHY state control function */
+ static void sh_eth_adjust_link(struct net_device *ndev)
+ {
+@@ -1546,11 +1538,6 @@ static int sh_eth_open(struct net_device *ndev)
+ 	if (ret)
+ 		goto out_free_irq;
+
+-	/* Set the timer to check for link beat. */
+-	init_timer(&mdp->timer);
+-	mdp->timer.expires = (jiffies + (24 * HZ)) / 10;/* 2.4 sec. */
+-	setup_timer(&mdp->timer, sh_eth_timer, (unsigned long)ndev);
+-
+ 	return ret;
+
+ out_free_irq:
+@@ -1575,9 +1562,6 @@ static void sh_eth_tx_timeout(struct net_device *ndev)
+ 	/* tx_errors count up */
+ 	ndev->stats.tx_errors++;
+
+-	/* timer off */
+-	del_timer_sync(&mdp->timer);
+-
+ 	/* Free all the skbuffs in the Rx queue. */
+ 	for (i = 0; i < RX_RING_SIZE; i++) {
+ 		rxdesc = &mdp->rx_ring[i];
+@@ -1595,10 +1579,6 @@ static void sh_eth_tx_timeout(struct net_device *ndev)
+
+ 	/* device init */
+ 	sh_eth_dev_init(ndev);
+-
+-	/* timer on */
+-	mdp->timer.expires = (jiffies + (24 * HZ)) / 10;/* 2.4 sec. */
+-	add_timer(&mdp->timer);
+ }
+
+ /* Packet transmit function */
+@@ -1671,8 +1651,6 @@ static int sh_eth_close(struct net_device *ndev)
+
+ 	free_irq(ndev->irq, ndev);
+
+-	del_timer_sync(&mdp->timer);
+-
+ 	/* Free all the skbuffs in the Rx queue. */
+ 	sh_eth_ring_free(ndev);
+
+diff --git a/drivers/net/ethernet/renesas/sh_eth.h b/drivers/net/ethernet/renesas/sh_eth.h
+index 57b8e1f..9e8e4d5 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.h
++++ b/drivers/net/ethernet/renesas/sh_eth.h
+@@ -771,7 +771,6 @@ struct sh_eth_private {
+ 	struct sh_eth_txdesc *tx_ring;
+ 	struct sk_buff **rx_skbuff;
+ 	struct sk_buff **tx_skbuff;
+-	struct timer_list timer;
+ 	spinlock_t lock;
+ 	u32 cur_rx, dirty_rx;	/* Producer/consumer ring indices */
+ 	u32 cur_tx, dirty_tx;
 -- 
-1.7.5.4
-
+1.7.1
