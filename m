@@ -1,51 +1,104 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Wed, 13 Jun 2012 09:40:04 +0000
-Subject: Re: [PATCH v4] mmc: add a function to get regulators, supplying card's power
-Message-Id: <87fw9zzh1n.fsf@octavius.laptop.org>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 12 Jun 2012 22:28:23 +0000
+Subject: [PATCH 1/2] serial: sh-sci: Fix probe error paths
+Message-Id: <1339540104-25003-1-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1206121743260.6800@axis700.grange>
-	<4FD84DAA.30201@stericsson.com>
-	<Pine.LNX.4.64.1206131024300.17854@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1206131024300.17854@axis700.grange> (Guennadi
-	Liakhovetski's message of "Wed, 13 Jun 2012 10:28:22 +0200 (CEST)")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Ulf Hansson <ulf.hansson@stericsson.com>, "linux-mmc@vger.kernel.org" <linux-mmc@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Adrian Hunter <adrian.hunter@intel.com>, Philip Rakity <prakity@marvell.com>, Ulf Hansson <ulf.hansson@linaro.org>, Magnus Damm <magnus.damm@gmail.com>, Mark Brown <broonie@opensource.wolfsonmicro.com>
+To: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org
 
-Hi,
+When probing fails, the driver must not try to cleanup resources that
+have not been initialized. Fix this.
 
-On Wed, Jun 13 2012, Guennadi Liakhovetski wrote:
->> > +struct mmc_supply {
->> > +	struct regulator *vmmc;		/* Card power supply */
->> > +	struct regulator *vqmmc;	/* Optional Vccq supply */
->> > +};
->> 
->> I believe your intention is to provide this functionality for the host drivers
->> as the common way of handling card regulators. Then, I would suggest to
->> include these two new regulators in the mmc_host struct, instead of having
->> this in a separate struct, which then also needs to be handled by every host
->> driver.
->
-> I have no strong preference about this. Having an additional struct is how 
-> I interpreted Mark's proposal:
->
-> http://thread.gmane.org/gmane.linux.kernel.mmc/14624/focus876
->
-> but I'm also fine with putting it in mmc_host. Chris, what's your 
-> preference?
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+ drivers/tty/serial/sh-sci.c |   36 +++++++++++++++++++++++-------------
+ 1 files changed, 23 insertions(+), 13 deletions(-)
 
-I think Mark was just trying to help with your observation that the
-changes are messy.  I don't see any compelling reasons to avoid adding
-these to mmc_host -- does anyone else feel strongly?
-
-So, I'd say go ahead and post an updated patch that uses mmc_host,
-and we can see if Mark has any thoughts.
-
-Thanks,
-
-- Chris.
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 3158e17..a779663 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2140,6 +2140,16 @@ static int __devinit sci_init_single(struct platform_device *dev,
+ 	return 0;
+ }
+ 
++static void sci_cleanup_single(struct sci_port *port)
++{
++	sci_free_gpios(port);
++
++	clk_put(port->iclk);
++	clk_put(port->fclk);
++
++	pm_runtime_disable(port->port.dev);
++}
++
+ #ifdef CONFIG_SERIAL_SH_SCI_CONSOLE
+ static void serial_console_putchar(struct uart_port *port, int ch)
+ {
+@@ -2321,14 +2331,10 @@ static int sci_remove(struct platform_device *dev)
+ 	cpufreq_unregister_notifier(&port->freq_transition,
+ 				    CPUFREQ_TRANSITION_NOTIFIER);
+ 
+-	sci_free_gpios(port);
+-
+ 	uart_remove_one_port(&sci_uart_driver, &port->port);
+ 
+-	clk_put(port->iclk);
+-	clk_put(port->fclk);
++	sci_cleanup_single(port);
+ 
+-	pm_runtime_disable(&dev->dev);
+ 	return 0;
+ }
+ 
+@@ -2353,7 +2359,13 @@ static int __devinit sci_probe_single(struct platform_device *dev,
+ 	if (ret)
+ 		return ret;
+ 
+-	return uart_add_one_port(&sci_uart_driver, &sciport->port);
++	ret = uart_add_one_port(&sci_uart_driver, &sciport->port);
++	if (ret) {
++		sci_cleanup_single(sciport);
++		return ret;
++	}
++
++	return 0;
+ }
+ 
+ static int __devinit sci_probe(struct platform_device *dev)
+@@ -2374,24 +2386,22 @@ static int __devinit sci_probe(struct platform_device *dev)
+ 
+ 	ret = sci_probe_single(dev, dev->id, p, sp);
+ 	if (ret)
+-		goto err_unreg;
++		return ret;
+ 
+ 	sp->freq_transition.notifier_call = sci_notifier;
+ 
+ 	ret = cpufreq_register_notifier(&sp->freq_transition,
+ 					CPUFREQ_TRANSITION_NOTIFIER);
+-	if (unlikely(ret < 0))
+-		goto err_unreg;
++	if (unlikely(ret < 0)) {
++		sci_cleanup_single(sp);
++		return ret;
++	}
+ 
+ #ifdef CONFIG_SH_STANDARD_BIOS
+ 	sh_bios_gdb_detach();
+ #endif
+ 
+ 	return 0;
+-
+-err_unreg:
+-	sci_remove(dev);
+-	return ret;
+ }
+ 
+ static int sci_suspend(struct device *dev)
 -- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
+1.7.3.4
+
