@@ -1,56 +1,69 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 04 Jun 2012 11:17:22 +0000
-Subject: Re: [PATCH v5 6/6 resend] net: sh_eth: use NAPI
-Message-Id: <4FCC9942.5080809@renesas.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 12 Jun 2012 03:04:43 +0000
+Subject: Re: [PATCH (sh-2.6) 1/4] clksource: Generic timer infrastructure
+Message-Id: <20120612030442.GH10170@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4FC48589.6060009@renesas.com> <4FC9E56C.4000707@computer.org>
-In-Reply-To: <4FC9E56C.4000707@computer.org>
+References: <1298369864-24429-1-git-send-email-peppe.cavallaro@st.com>
+ <1298369864-24429-2-git-send-email-peppe.cavallaro@st.com>
+ <201102241820.55873.arnd@arndb.de>
+ <4D6D0EA3.9000504@st.com>
+ <alpine.LFD.2.00.1103011630080.2701@localhost6.localdomain6>
+In-Reply-To: <alpine.LFD.2.00.1103011630080.2701@localhost6.localdomain6>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Jan Ceuleers <jan.ceuleers@computer.org>
-Cc: netdev <netdev@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>
+To: Thomas Gleixner <tglx@linutronix.de>
+Cc: Stuart Menefy <stuart.menefy@st.com>, Arnd Bergmann <arnd@arndb.de>, Peppe CAVALLARO <peppe.cavallaro@st.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "netdev@vger.kernel.org" <netdev@vger.kernel.org>, John Stultz <johnstul@us.ibm.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 
-2012/06/02 19:05, Jan Ceuleers wrote:
-> On 05/29/2012 10:15 AM, Shimoda, Yoshihiro wrote:
->> @@ -1087,13 +1088,17 @@ static int sh_eth_rx(struct net_device *ndev)
->>  				skb_reserve(skb, NET_IP_ALIGN);
->>  			skb_put(skb, pkt_len);
->>  			skb->protocol = eth_type_trans(skb, ndev);
->> -			netif_rx(skb);
->> -			ndev->stats.rx_packets++;
->> -			ndev->stats.rx_bytes += pkt_len;
->> +			if (netif_receive_skb(skb) = NET_RX_DROP) {
->> +				ndev->stats.rx_dropped++;
->> +			} else {
->> +				ndev->stats.rx_packets++;
->> +				ndev->stats.rx_bytes += pkt_len;
->> +			}
->>  		}
->>  		rxdesc->status |= cpu_to_edmac(mdp, RD_RACT);
->>  		entry = (++mdp->cur_rx) % mdp->num_rx_ring;
->>  		rxdesc = &mdp->rx_ring[entry];
->> +		(*work)++;
->>  	}
->>
->>  	/* Refill the Rx ring buffers. */
+On Tue, Mar 01, 2011 at 05:48:33PM +0100, Thomas Gleixner wrote:
+> On Tue, 1 Mar 2011, Stuart Menefy wrote:
+> > On 24/02/11 17:20, Arnd Bergmann wrote:
+> > > On Tuesday 22 February 2011, Peppe CAVALLARO wrote:
+> > >> From: Stuart Menefy <stuart.menefy@st.com>
+> > >>
+> > >> Many devices targeted at the embedded market provide a number of
+> > >> generic timers which are capable of generating interrupts at a
+> > >> requested rate. These can then be used in the implementation of drivers
+> > >> for other peripherals which require a timer interrupt, without having
+> > >> to provide an additional timer as part of that peripheral.
 > 
-> Please forgive a newbie's question/comment; feel free to ignore if I'm
-> wasting your time. Particularly because it's about an aspect of the
-> driver that you're not changing in this patch. (And yes, I know that
-> you've been asked to sit on this patch series until net-next opens up
-> again).
+> Why can't you just use an hrtimer and be done with it? Just because
+> there is some extra hardware in the chip?
 > 
-> I see that most users of netif_receive_skb() ignore its return value.
-> Some drivers (including this-one) do check it and use it to determine
-> whether counters should be updated. But looking at netif_receive_skb()
-> itself I see that there's counter infrastructure there already.
-> 
-> So why this in-driver set of counters, I wonder?
+..
 
-Thank you for the comment.
-I also think that the driver should not update the rx_dropped counter
-when netif_receive_skb() returns NET_RX_DROP. I will fix this.
+> If we get some reasonable explanation why an extra timer interrupt is
+> solving a specific problem better than hrtimers we can do that, but
+> that needs more thought than picking the first available clockevent
+> from a list. If we come to the conclusion, that we want/need this kind
+> of functionality then I really prefer not to create yet another piece
+> of infrastructure which deals with timer devices.
+> 
 
-Best regards,
-Yoshihiro Shimoda
+I've run in to this issue again while working on local timer support on
+SH, as we're presently dependent on broadcast and dummy tick devices in
+the SMP case, while quite a few timer channels remain available for use.
+(Ironically, while the aforementioned driver was able to solve the
+problem with hrtimers, we have the same need to _provide_ hrtimers).
+
+In the sh_tmu/cmt/mtu2 case all timer channels are handed off as platform
+devices, and the block itself is global for all CPUs, though we can tweak
+the IRQ affinity relative to the cpumask. My tentative plan is to deal
+with the clockevent device as a percpu thing in the local timer case
+which will require some additional side infrastructure, but some
+additional work will need to be done in the clockevents code regardless.
+
+The ARM approach is a bit backwards from what we're interested in
+solving, as it uses its own local timer infrastructure and some
+TWD-specific API for registering per-cpu timers and only then inserting
+them in to the clockevents list. Whereas in our case we've got all of the
+timer channels available at platform probe time (earlier for the early
+timer case), and simply need a method for tracking unused channels as
+well as having a facility for picking them up and reconfiguring them
+later on when the secondary CPUs come up. I'm not at all interested in
+registering the same timer multiple times with slightly different APIs,
+having two different drivers fighting over the same register space is not
+a thought that fills me with joy.
+
+In any event, I'll hack on it a bit and see what falls out, patches
+later.
