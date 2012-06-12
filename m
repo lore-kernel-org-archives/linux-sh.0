@@ -1,46 +1,54 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 11 Jun 2012 09:48:24 +0000
-Subject: Re: [PATCH 01/27] ARM: shmobile: sh73a0: bugfix: SY-DMAC number
-Message-Id: <87ipeyp4bf.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 12 Jun 2012 12:57:18 +0000
+Subject: [PATCH] mmc: tmio: Don't access hardware registers after stopping clocks
+Message-Id: <1339505838-8831-1-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87lijuqzfs.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87lijuqzfs.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
 
+The tmio_mmc_set_ios() function configures the MMC power, clock and bus
+width. When the MMC controller gets powered off, runtime PM switches the
+MSTP clock off. Writing to to CTL_SD_MEM_CARD_OPT register afterwards
+fails and prints an error message to the kernel log.
 
-Hi Simon
-Cc Magnus
+As configuring the bus width is pointless when the interface gets
+powered down, skip the operation when power is off.
 
-Thank you for your reply
-
-> > 681e1b3eeb3606e06a7c4984e8058df84296f8bb
-> > (ARM: mach-shmobile: sh73a0 DMA Engine support for SY-DMAC)
-> > adds SY-DMAC, but it is 218, not 318
-> > 
-> > This patch is based on v2.0 manual
-> > 
-> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> Hi Morimoto-san,
-> 
-> I am unsure of how to test this change.
-> Is checking that DMAE works with FSI using subsequent patches
-> in this series a sufficient test?
-
-I'm not sure how to test.
-Because
- - original patch (681e1b3eeb3606e06a7c4984e8058df84296f8bb) has mistake
- - SY-DMAC was default ON
-
-This is bug fix patch, but it didn't run mischief
-
-Magnus
-
-Can you please review thsi patch ?
-
-Best regards
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
-Kuninori Morimoto
+ drivers/mmc/host/tmio_mmc_pio.c |   16 +++++++++-------
+ 1 files changed, 9 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 9a7996a..de1226d 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -816,13 +816,15 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 		tmio_mmc_clk_stop(host);
+ 	}
+ 
+-	switch (ios->bus_width) {
+-	case MMC_BUS_WIDTH_1:
+-		sd_ctrl_write16(host, CTL_SD_MEM_CARD_OPT, 0x80e0);
+-	break;
+-	case MMC_BUS_WIDTH_4:
+-		sd_ctrl_write16(host, CTL_SD_MEM_CARD_OPT, 0x00e0);
+-	break;
++	if (host->power) {
++		switch (ios->bus_width) {
++		case MMC_BUS_WIDTH_1:
++			sd_ctrl_write16(host, CTL_SD_MEM_CARD_OPT, 0x80e0);
++		break;
++		case MMC_BUS_WIDTH_4:
++			sd_ctrl_write16(host, CTL_SD_MEM_CARD_OPT, 0x00e0);
++		break;
++		}
+ 	}
+ 
+ 	/* Let things settle. delay taken from winCE driver */
+-- 
+1.7.3.4
+
