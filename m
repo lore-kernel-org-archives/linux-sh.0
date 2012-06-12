@@ -1,103 +1,165 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 20 Jun 2012 08:01:39 +0000
-Subject: [PATCH 10/11] ARM: mach-shmobile: add fixed voltage regulators to kzm9g
-Message-Id: <1340179300-16452-11-git-send-email-g.liakhovetski@gmx.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 12 Jun 2012 09:34:56 +0000
+Subject: [PATCH 06/27 v2] ARM: shmobile: shareing DMAEngine USBTS_HI/LOW value
+Message-Id: <87y5nsx48z.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On kzm9g provide 1.8V and 2.8V supplies for its SD/MMC-card interfaces
-and a dummy regulator for the smsc911x driver.
+In SH-ARM CPU (= sh7372/sh73a0/r8a7740),
+USB DMA :: CHCR :: TS (= DMA Transfer Size Specify) bit is mapped as
+TS[1:0] = CHCR[7:6]
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+SH-ARM USB DMAEngine uses shdma.
+Then, it is easy to understand if sh_dmae_pdata / sh_dmae_slave_config
+settings are used defined value instead of direct value.
+This patch modify these.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Tested-by: Simon Horman <horms@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-kzm9g.c |   33 +++++++++++++++++++++++++++++++++
- 1 files changed, 33 insertions(+), 0 deletions(-)
+v1 -> v2
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index f847a92..9a3741b 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -30,11 +30,14 @@
- #include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/mfd/tmio.h>
- #include <linux/platform_device.h>
-+#include <linux/regulator/fixed.h>
-+#include <linux/regulator/machine.h>
- #include <linux/smsc911x.h>
- #include <linux/usb/r8a66597.h>
- #include <linux/usb/renesas_usbhs.h>
- #include <linux/videodev2.h>
- #include <mach/irqs.h>
-+#include <mach/regulator.h>
- #include <mach/sh73a0.h>
- #include <mach/common.h>
- #include <asm/hardware/cache-l2x0.h>
-@@ -55,6 +58,12 @@
- #define GPIO_PCF8575_PORT15	(GPIO_NR + 13)
- #define GPIO_PCF8575_PORT16	(GPIO_NR + 14)
+ - USBTS_SHIFT -> static dma_usbts_shift
+
+ arch/arm/mach-shmobile/include/mach/dma-register.h |   30 ++++++++++++++
+ arch/arm/mach-shmobile/setup-sh7372.c              |   43 +++++++------------
+ 2 files changed, 46 insertions(+), 27 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/include/mach/dma-register.h b/arch/arm/mach-shmobile/include/mach/dma-register.h
+index 21b3dff..97c40bd 100644
+--- a/arch/arm/mach-shmobile/include/mach/dma-register.h
++++ b/arch/arm/mach-shmobile/include/mach/dma-register.h
+@@ -16,6 +16,10 @@
+ #ifndef DMA_REGISTER_H
+ #define DMA_REGISTER_H
  
-+/* Dummy supplies, where voltage doesn't matter */
-+static struct regulator_consumer_supply dummy_supplies[] = {
-+	REGULATOR_SUPPLY("vddvario", "smsc911x"),
-+	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
++/*
++ *		Direct Memory Access Controller
++ */
++
+ /* Transmit sizes and respective CHCR register values */
+ enum {
+ 	XMIT_SZ_8BIT		= 0,
+@@ -51,4 +55,30 @@ static const unsigned int dma_ts_shift[] = {
+ #define CHCR_TX(xmit_sz) (DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL((xmit_sz)))
+ #define CHCR_RX(xmit_sz) (DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL((xmit_sz)))
+ 
++
++/*
++ *		USB High-Speed DMAC
++ */
++/* Transmit sizes and respective CHCR register values */
++enum {
++	USBTS_XMIT_SZ_8BYTE		= 0,
++	USBTS_XMIT_SZ_16BYTE		= 1,
++	USBTS_XMIT_SZ_32BYTE		= 2,
 +};
 +
- /* SMSC 9221 */
- static struct resource smsc9221_resources[] = {
- 	[0] = {
-@@ -312,6 +321,15 @@ static struct platform_device lcdc_device = {
++/* log2(size / 8) - used to calculate number of transfers */
++static const unsigned int dma_usbts_shift[] = {
++	[USBTS_XMIT_SZ_8BYTE]	= 3,
++	[USBTS_XMIT_SZ_16BYTE]	= 4,
++	[USBTS_XMIT_SZ_32BYTE]	= 5,
++};
++
++#define USBTS_LOW_BIT	0x3 /* --xx */
++#define USBTS_HI_BIT	0x0 /* ---- */
++
++#define USBTS_LOW_SHIFT	6
++#define USBTS_HI_SHIFT	0
++
++#define USBTS_INDEX2VAL(i) (((i) & 3) << 6)
++
+ #endif /* DMA_REGISTER_H */
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index aa5c2ba..7873159 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -628,17 +628,6 @@ static struct platform_device dma2_device = {
+ /*
+  * USB-DMAC
+  */
+-
+-unsigned int usbts_shift[] = {3, 4, 5};
+-
+-enum {
+-	XMIT_SZ_8BYTE		= 0,
+-	XMIT_SZ_16BYTE		= 1,
+-	XMIT_SZ_32BYTE		= 2,
+-};
+-
+-#define USBTS_INDEX2VAL(i) (((i) & 3) << 6)
+-
+ static const struct sh_dmae_channel sh7372_usb_dmae_channels[] = {
+ 	{
+ 		.offset = 0,
+@@ -651,10 +640,10 @@ static const struct sh_dmae_channel sh7372_usb_dmae_channels[] = {
+ static const struct sh_dmae_slave_config sh7372_usb_dmae0_slaves[] = {
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_USB0_TX,
+-		.chcr		= USBTS_INDEX2VAL(XMIT_SZ_8BYTE),
++		.chcr		= USBTS_INDEX2VAL(USBTS_XMIT_SZ_8BYTE),
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_USB0_RX,
+-		.chcr		= USBTS_INDEX2VAL(XMIT_SZ_8BYTE),
++		.chcr		= USBTS_INDEX2VAL(USBTS_XMIT_SZ_8BYTE),
  	},
  };
  
-+/* Fixed 1.8V regulator to be used by MMCIF */
-+static struct regulator_consumer_supply fixed1v8_power_consumers[] +{
-+	REGULATOR_SUPPLY("vmmc", "sh_mmcif.0"),
-+	REGULATOR_SUPPLY("vqmmc", "sh_mmcif.0"),
-+};
-+
-+REGULATOR_FIXED(fixed1v8_power_consumers, 0, 1800000);
-+
- /* MMCIF */
- static struct resource sh_mmcif_resources[] = {
- 	[0] = {
-@@ -348,6 +366,17 @@ static struct platform_device mmc_device = {
- 	.resource	= sh_mmcif_resources,
+@@ -663,12 +652,12 @@ static struct sh_dmae_pdata usb_dma0_platform_data = {
+ 	.slave_num	= ARRAY_SIZE(sh7372_usb_dmae0_slaves),
+ 	.channel	= sh7372_usb_dmae_channels,
+ 	.channel_num	= ARRAY_SIZE(sh7372_usb_dmae_channels),
+-	.ts_low_shift	= 6,
+-	.ts_low_mask	= 0xc0,
+-	.ts_high_shift	= 0,
+-	.ts_high_mask	= 0,
+-	.ts_shift	= usbts_shift,
+-	.ts_shift_num	= ARRAY_SIZE(usbts_shift),
++	.ts_low_shift	= USBTS_LOW_SHIFT,
++	.ts_low_mask	= USBTS_LOW_BIT << USBTS_LOW_SHIFT,
++	.ts_high_shift	= USBTS_HI_SHIFT,
++	.ts_high_mask	= USBTS_HI_BIT << USBTS_HI_SHIFT,
++	.ts_shift	= dma_usbts_shift,
++	.ts_shift_num	= ARRAY_SIZE(dma_usbts_shift),
+ 	.dmaor_init	= DMAOR_DME,
+ 	.chcr_offset	= 0x14,
+ 	.chcr_ie_bit	= 1 << 5,
+@@ -713,10 +702,10 @@ static struct platform_device usb_dma0_device = {
+ static const struct sh_dmae_slave_config sh7372_usb_dmae1_slaves[] = {
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_USB1_TX,
+-		.chcr		= USBTS_INDEX2VAL(XMIT_SZ_8BYTE),
++		.chcr		= USBTS_INDEX2VAL(USBTS_XMIT_SZ_8BYTE),
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_USB1_RX,
+-		.chcr		= USBTS_INDEX2VAL(XMIT_SZ_8BYTE),
++		.chcr		= USBTS_INDEX2VAL(USBTS_XMIT_SZ_8BYTE),
+ 	},
  };
  
-+/* Fixed 2.8V regulators to be used by SDHI0, SDHI2 */
-+static struct regulator_consumer_supply fixed2v8_power_consumers[] +{
-+	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
-+	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
-+	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.2"),
-+	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.2"),
-+};
-+
-+REGULATOR_FIXED(fixed2v8_power_consumers, 1, 2800000);
-+
- /* SDHI */
- static struct sh_mobile_sdhi_info sdhi0_info = {
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
-@@ -479,6 +508,8 @@ static struct i2c_board_info i2c3_devices[] = {
- };
- 
- static struct platform_device *kzm_devices[] __initdata = {
-+	&fixed_power_0,
-+	&fixed_power_1,
- 	&smsc_device,
- 	&usb_host_device,
- 	&usbhs_device,
-@@ -544,6 +575,8 @@ device_initcall(as3711_enable_lcdc_backlight);
- 
- static void __init kzm_init(void)
- {
-+	regulator_register_fixed(2, dummy_supplies, ARRAY_SIZE(dummy_supplies));
-+
- 	sh73a0_pinmux_init();
- 
- 	/* enable SCIFA4 */
+@@ -725,12 +714,12 @@ static struct sh_dmae_pdata usb_dma1_platform_data = {
+ 	.slave_num	= ARRAY_SIZE(sh7372_usb_dmae1_slaves),
+ 	.channel	= sh7372_usb_dmae_channels,
+ 	.channel_num	= ARRAY_SIZE(sh7372_usb_dmae_channels),
+-	.ts_low_shift	= 6,
+-	.ts_low_mask	= 0xc0,
+-	.ts_high_shift	= 0,
+-	.ts_high_mask	= 0,
+-	.ts_shift	= usbts_shift,
+-	.ts_shift_num	= ARRAY_SIZE(usbts_shift),
++	.ts_low_shift	= USBTS_LOW_SHIFT,
++	.ts_low_mask	= USBTS_LOW_BIT << USBTS_LOW_SHIFT,
++	.ts_high_shift	= USBTS_HI_SHIFT,
++	.ts_high_mask	= USBTS_HI_BIT << USBTS_HI_SHIFT,
++	.ts_shift	= dma_usbts_shift,
++	.ts_shift_num	= ARRAY_SIZE(dma_usbts_shift),
+ 	.dmaor_init	= DMAOR_DME,
+ 	.chcr_offset	= 0x14,
+ 	.chcr_ie_bit	= 1 << 5,
 -- 
-1.7.2.5
+1.7.5.4
 
