@@ -1,51 +1,196 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 28 Jun 2012 09:22:13 +0000
-Subject: [GIT PULL] sh fixes for 3.5-rc5
-Message-Id: <20120628092213.GB28162@linux-sh.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 12 Jun 2012 09:32:51 +0000
+Subject: [PATCH 03/27 v2] ARM: shmobile: shareing extra gpio setting functions
+Message-Id: <873960yiww.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-The following changes since commit 47b514cd476db2eca066a2ad31501b079d6c9cce:
+Current gpio frame work doesn't have the method to control
+just pull up/down/free, but some SH-ARM boards need such kind of operation,
+and some boards already have such functions on each code.
 
-  Merge tag 'usb-3.5-rc5' of git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb (2012-06-27 12:54:05 -0700)
+This patch shares extra gpio method, and reduced a waste of code on SH-ARM.
+But these functions should be replaced by correct
+gpio function in the future.
 
-are available in the git repository at:
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Tested-by: Simon Horman <horms@verge.net.au>
+---
+v1 -> v2
 
+ - no change
 
-  git://github.com/pmundt/linux-sh.git tags/sh-for-linus
+ arch/arm/mach-shmobile/board-ap4evb.c      |   19 +--------------
+ arch/arm/mach-shmobile/board-g4evm.c       |   18 ---------------
+ arch/arm/mach-shmobile/board-mackerel.c    |   30 +------------------------
+ arch/arm/mach-shmobile/include/mach/gpio.h |   32 ++++++++++++++++++++++++++++
+ 4 files changed, 36 insertions(+), 63 deletions(-)
 
-for you to fetch changes up to e9bcd470d814473c31ffc5d09e249396a2196ad4:
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index ace6024..d7417f3 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -1138,21 +1138,6 @@ static void __init fsi_init_pm_clock(void)
+ 	clk_put(fsia_ick);
+ }
+ 
+-/*
+- * FIXME !!
+- *
+- * gpio_no_direction
+- * are quick_hack.
+- *
+- * current gpio frame work doesn't have
+- * the method to control only pull up/down/free.
+- * this function should be replaced by correct gpio function
+- */
+-static void __init gpio_no_direction(u32 addr)
+-{
+-	__raw_writeb(0x00, addr);
+-}
+-
+ /* TouchScreen */
+ #ifdef CONFIG_AP4EVB_QHD
+ # define GPIO_TSC_IRQ	GPIO_FN_IRQ28_123
+@@ -1302,8 +1287,8 @@ static void __init ap4evb_init(void)
+ 
+ 	gpio_request(GPIO_PORT9, NULL);
+ 	gpio_request(GPIO_PORT10, NULL);
+-	gpio_no_direction(GPIO_PORT9CR);  /* FSIAOBT needs no direction */
+-	gpio_no_direction(GPIO_PORT10CR); /* FSIAOLR needs no direction */
++	gpio_direction_none(GPIO_PORT9CR);  /* FSIAOBT needs no direction */
++	gpio_direction_none(GPIO_PORT10CR); /* FSIAOLR needs no direction */
+ 
+ 	/* card detect pin for MMC slot (CN7) */
+ 	gpio_request(GPIO_PORT41, NULL);
+diff --git a/arch/arm/mach-shmobile/board-g4evm.c b/arch/arm/mach-shmobile/board-g4evm.c
+index f125732..6b6f028 100644
+--- a/arch/arm/mach-shmobile/board-g4evm.c
++++ b/arch/arm/mach-shmobile/board-g4evm.c
+@@ -271,24 +271,6 @@ static struct platform_device *g4evm_devices[] __initdata = {
+ #define GPIO_SDHID1_D3	0xe6052106
+ #define GPIO_SDHICMD1	0xe6052107
+ 
+-/*
+- * FIXME !!
+- *
+- * gpio_pull_up is quick_hack.
+- *
+- * current gpio frame work doesn't have
+- * the method to control only pull up/down/free.
+- * this function should be replaced by correct gpio function
+- */
+-static void __init gpio_pull_up(u32 addr)
+-{
+-	u8 data = __raw_readb(addr);
+-
+-	data &= 0x0F;
+-	data |= 0xC0;
+-	__raw_writeb(data, addr);
+-}
+-
+ static void __init g4evm_init(void)
+ {
+ 	sh7377_pinmux_init();
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index b577f7c..798be2b 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -203,32 +203,6 @@
+  * amixer set "HPOUTR Mixer DACH" on
+  */
+ 
+-/*
+- * FIXME !!
+- *
+- * gpio_no_direction
+- * gpio_pull_down
+- * are quick_hack.
+- *
+- * current gpio frame work doesn't have
+- * the method to control only pull up/down/free.
+- * this function should be replaced by correct gpio function
+- */
+-static void __init gpio_no_direction(u32 addr)
+-{
+-	__raw_writeb(0x00, addr);
+-}
+-
+-static void __init gpio_pull_down(u32 addr)
+-{
+-	u8 data = __raw_readb(addr);
+-
+-	data &= 0x0F;
+-	data |= 0xA0;
+-
+-	__raw_writeb(data, addr);
+-}
+-
+ /* MTD */
+ static struct mtd_partition nor_flash_partitions[] = {
+ 	{
+@@ -1475,8 +1449,8 @@ static void __init mackerel_init(void)
+ 
+ 	gpio_request(GPIO_PORT9,  NULL);
+ 	gpio_request(GPIO_PORT10, NULL);
+-	gpio_no_direction(GPIO_PORT9CR);  /* FSIAOBT needs no direction */
+-	gpio_no_direction(GPIO_PORT10CR); /* FSIAOLR needs no direction */
++	gpio_direction_none(GPIO_PORT9CR);  /* FSIAOBT needs no direction */
++	gpio_direction_none(GPIO_PORT10CR); /* FSIAOLR needs no direction */
+ 
+ 	intc_set_priority(IRQ_FSI, 3); /* irq priority FSI(3) > SMSC911X(2) */
+ 
+diff --git a/arch/arm/mach-shmobile/include/mach/gpio.h b/arch/arm/mach-shmobile/include/mach/gpio.h
+index de795b4..cedcb5d 100644
+--- a/arch/arm/mach-shmobile/include/mach/gpio.h
++++ b/arch/arm/mach-shmobile/include/mach/gpio.h
+@@ -13,6 +13,7 @@
+ #include <linux/kernel.h>
+ #include <linux/errno.h>
+ #include <linux/sh_pfc.h>
++#include <linux/io.h>
+ 
+ #ifdef CONFIG_GPIOLIB
+ 
+@@ -27,4 +28,35 @@ static inline int irq_to_gpio(unsigned int irq)
+ 
+ #endif /* CONFIG_GPIOLIB */
+ 
++/*
++ * FIXME !!
++ *
++ * current gpio frame work doesn't have
++ * the method to control only pull up/down/free.
++ * this function should be replaced by correct gpio function
++ */
++static inline void __init gpio_direction_none(u32 addr)
++{
++	__raw_writeb(0x00, addr);
++}
++
++static inline void __init gpio_pull_up(u32 addr)
++{
++	u8 data = __raw_readb(addr);
++
++	data &= 0x0F;
++	data |= 0xC0;
++	__raw_writeb(data, addr);
++}
++
++static inline void __init gpio_pull_down(u32 addr)
++{
++	u8 data = __raw_readb(addr);
++
++	data &= 0x0F;
++	data |= 0xA0;
++
++	__raw_writeb(data, addr);
++}
++
+ #endif /* __ASM_ARCH_GPIO_H */
+-- 
+1.7.5.4
 
-  Merge branches 'sh/urgent' and 'sh/trivial' into sh-fixes-for-linus (2012-06-28 16:46:13 +0900)
-
-----------------------------------------------------------------
-
-SuperH fixes for 3.5-rc5
-
-----------------------------------------------------------------
-Guennadi Liakhovetski (1):
-      sh: kfr2r09: fix compile breakage
-
-Nobuhiro Iwamatsu (1):
-      sh: Convert sh_clk_mstp32_register to sh_clk_mstp_register
-
-Paul Mundt (1):
-      Merge branches 'sh/urgent' and 'sh/trivial' into sh-fixes-for-linus
-
- arch/sh/boards/mach-kfr2r09/setup.c    | 4 ++--
- arch/sh/drivers/pci/pcie-sh7786.c      | 2 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7343.c | 2 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7366.c | 2 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7722.c | 2 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7723.c | 2 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7724.c | 2 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7734.c | 2 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7757.c | 2 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7785.c | 2 +-
- arch/sh/kernel/cpu/sh4a/clock-sh7786.c | 2 +-
- arch/sh/kernel/cpu/sh4a/clock-shx3.c   | 2 +-
- 12 files changed, 13 insertions(+), 13 deletions(-)
