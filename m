@@ -1,155 +1,86 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 20 Jun 2012 15:12:10 +0000
-Subject: [PATCH 02/14] sh: ecovec: switch MMC power control to regulators
-Message-Id: <1340205142-32606-3-git-send-email-g.liakhovetski@gmx.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 12 Jun 2012 09:35:15 +0000
+Subject: [PATCH 07/27 v2] ARM: shmobile: r8a7740: add HDMI interrupt support
+Message-Id: <87wr3cx48g.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Power on the CN11 and CN12 SD/MMC slots on ecovec is controlled by GPIOs,
-which makes it possible to use the fixed voltage regulator driver to switch
-card power on and off.
+It is required from sh_mobile_hdmi driver.
+This patch is based on v1.0 manual
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/sh/boards/mach-ecovec24/setup.c |   73 ++++++++++++++++++++++++++++++++++
- 1 files changed, 73 insertions(+), 0 deletions(-)
+v1 -> v2
 
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index dbedfda..80f40d8 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -10,6 +10,7 @@
- 
- #include <linux/init.h>
- #include <linux/device.h>
-+#include <linux/kconfig.h>
- #include <linux/platform_device.h>
- #include <linux/mmc/host.h>
- #include <linux/mmc/sh_mmcif.h>
-@@ -19,6 +20,8 @@
- #include <linux/interrupt.h>
- #include <linux/io.h>
- #include <linux/delay.h>
-+#include <linux/regulator/fixed.h>
-+#include <linux/regulator/machine.h>
- #include <linux/usb/r8a66597.h>
- #include <linux/usb/renesas_usbhs.h>
- #include <linux/i2c.h>
-@@ -518,8 +521,70 @@ static struct i2c_board_info ts_i2c_clients = {
- 	.irq		= IRQ0,
- };
- 
-+static struct regulator_consumer_supply cn12_power_consumers[] +{
-+	REGULATOR_SUPPLY("vmmc", "sh_mmcif.0"),
-+	REGULATOR_SUPPLY("vqmmc", "sh_mmcif.0"),
-+	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
-+	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.1"),
-+};
-+
-+static struct regulator_init_data cn12_power_init_data = {
-+	.constraints = {
-+		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
-+	},
-+	.num_consumer_supplies  = ARRAY_SIZE(cn12_power_consumers),
-+	.consumer_supplies      = cn12_power_consumers,
-+};
-+
-+static struct fixed_voltage_config cn12_power_info = {
-+	.supply_name = "CN12 SD/MMC Vdd",
-+	.microvolts = 3300000,
-+	.gpio = GPIO_PTB7,
-+	.enable_high = 1,
-+	.init_data = &cn12_power_init_data,
-+};
-+
-+static struct platform_device cn12_power = {
-+	.name = "reg-fixed-voltage",
-+	.id   = 0,
-+	.dev  = {
-+		.platform_data = &cn12_power_info,
-+	},
-+};
-+
- #if defined(CONFIG_MMC_SDHI) || defined(CONFIG_MMC_SDHI_MODULE)
- /* SDHI0 */
-+static struct regulator_consumer_supply sdhi0_power_consumers[] +{
-+	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
-+	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
-+};
-+
-+static struct regulator_init_data sdhi0_power_init_data = {
-+	.constraints = {
-+		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
-+	},
-+	.num_consumer_supplies  = ARRAY_SIZE(sdhi0_power_consumers),
-+	.consumer_supplies      = sdhi0_power_consumers,
-+};
-+
-+static struct fixed_voltage_config sdhi0_power_info = {
-+	.supply_name = "CN11 SD/MMC Vdd",
-+	.microvolts = 3300000,
-+	.gpio = GPIO_PTB6,
-+	.enable_high = 1,
-+	.init_data = &sdhi0_power_init_data,
-+};
-+
-+static struct platform_device sdhi0_power = {
-+	.name = "reg-fixed-voltage",
-+	.id   = 1,
-+	.dev  = {
-+		.platform_data = &sdhi0_power_info,
-+	},
-+};
-+
- static void sdhi0_set_pwr(struct platform_device *pdev, int state)
- {
- 	gpio_set_value(GPIO_PTB6, state);
-@@ -954,7 +1019,9 @@ static struct platform_device *ecovec_devices[] __initdata = {
- 	&ceu0_device,
- 	&ceu1_device,
- 	&keysc_device,
-+	&cn12_power,
- #if defined(CONFIG_MMC_SDHI) || defined(CONFIG_MMC_SDHI_MODULE)
-+	&sdhi0_power,
- 	&sdhi0_device,
- #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
- 	&sdhi1_device,
-@@ -1252,8 +1319,10 @@ static int __init arch_setup(void)
- 	gpio_request(GPIO_FN_SDHI0D2,  NULL);
- 	gpio_request(GPIO_FN_SDHI0D1,  NULL);
- 	gpio_request(GPIO_FN_SDHI0D0,  NULL);
-+#if !IS_ENABLED(CONFIG_REGULATOR_FIXED_VOLTAGE)
- 	gpio_request(GPIO_PTB6, NULL);
- 	gpio_direction_output(GPIO_PTB6, 0);
-+#endif
- #else
- 	/* enable MSIOF0 on CN11 (needs DS2.4 set to OFF) */
- 	gpio_request(GPIO_FN_MSIOF0_TXD, NULL);
-@@ -1282,8 +1351,10 @@ static int __init arch_setup(void)
- 	gpio_request(GPIO_FN_MMC_D0, NULL);
- 	gpio_request(GPIO_FN_MMC_CLK, NULL);
- 	gpio_request(GPIO_FN_MMC_CMD, NULL);
-+#if !IS_ENABLED(CONFIG_REGULATOR_FIXED_VOLTAGE)
- 	gpio_request(GPIO_PTB7, NULL);
- 	gpio_direction_output(GPIO_PTB7, 0);
-+#endif
- 
- 	cn12_enabled = true;
- #elif defined(CONFIG_MMC_SDHI) || defined(CONFIG_MMC_SDHI_MODULE)
-@@ -1295,8 +1366,10 @@ static int __init arch_setup(void)
- 	gpio_request(GPIO_FN_SDHI1D2,  NULL);
- 	gpio_request(GPIO_FN_SDHI1D1,  NULL);
- 	gpio_request(GPIO_FN_SDHI1D0,  NULL);
-+#if !IS_ENABLED(CONFIG_REGULATOR_FIXED_VOLTAGE)
- 	gpio_request(GPIO_PTB7, NULL);
- 	gpio_direction_output(GPIO_PTB7, 0);
-+#endif
- 
- 	/* Card-detect, used on CN12 with SDHI1 */
- 	gpio_request(GPIO_PTW7, NULL);
+ - no change
+
+ arch/arm/mach-shmobile/intc-r8a7740.c |   13 +++++++++----
+ 1 files changed, 9 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/intc-r8a7740.c b/arch/arm/mach-shmobile/intc-r8a7740.c
+index 09c42af..9a69a31 100644
+--- a/arch/arm/mach-shmobile/intc-r8a7740.c
++++ b/arch/arm/mach-shmobile/intc-r8a7740.c
+@@ -71,10 +71,12 @@ enum {
+ 	DMAC3_1_DEI0, DMAC3_1_DEI1, DMAC3_1_DEI2, DMAC3_1_DEI3,
+ 	DMAC3_2_DEI4, DMAC3_2_DEI5, DMAC3_2_DADERR,
+ 	SHWYSTAT_RT, SHWYSTAT_HS, SHWYSTAT_COM,
++	HDMI,
+ 	USBH_INT, USBH_OHCI, USBH_EHCI, USBH_PME, USBH_BIND,
+ 	RSPI_OVRF, RSPI_SPTEF, RSPI_SPRF,
+ 	SPU2_0, SPU2_1,
+ 	FSI, FMSI,
++	HDMI_SSS, HDMI_KEY,
+ 	IPMMU,
+ 	AP_ARM_CTIIRQ, AP_ARM_PMURQ,
+ 	MFIS2,
+@@ -182,6 +184,7 @@ static struct intc_vect intca_vectors[] __initdata = {
+ 	INTC_VECT(USBH_EHCI,		0x1580),
+ 	INTC_VECT(USBH_PME,		0x15A0),
+ 	INTC_VECT(USBH_BIND,		0x15C0),
++	INTC_VECT(HDMI,			0x1700),
+ 	INTC_VECT(RSPI_OVRF,		0x1780),
+ 	INTC_VECT(RSPI_SPTEF,		0x17A0),
+ 	INTC_VECT(RSPI_SPRF,		0x17C0),
+@@ -189,6 +192,8 @@ static struct intc_vect intca_vectors[] __initdata = {
+ 	INTC_VECT(SPU2_1,		0x1820),
+ 	INTC_VECT(FSI,			0x1840),
+ 	INTC_VECT(FMSI,			0x1860),
++	INTC_VECT(HDMI_SSS,		0x18A0),
++	INTC_VECT(HDMI_KEY,		0x18C0),
+ 	INTC_VECT(IPMMU,		0x1920),
+ 	INTC_VECT(AP_ARM_CTIIRQ,	0x1980),
+ 	INTC_VECT(AP_ARM_PMURQ,		0x19A0),
+@@ -304,11 +309,11 @@ static struct intc_mask_reg intca_mask_registers[] __initdata = {
+ 	    USBH_EHCI, USBH_PME, USBH_BIND, 0 } },
+ 	  /* IMR3A3 / IMCR3A3 */
+ 	{ /* IMR4A3 / IMCR4A3 */ 0xe6950090, 0xe69500d0, 8,
+-	  { 0, 0, 0, 0,
++	  { HDMI, 0, 0, 0,
+ 	    RSPI_OVRF, RSPI_SPTEF, RSPI_SPRF, 0 } },
+ 	{ /* IMR5A3 / IMCR5A3 */ 0xe6950094, 0xe69500d4, 8,
+ 	  { SPU2_0, SPU2_1, FSI, FMSI,
+-	    0, 0, 0, 0 } },
++	    0, HDMI_SSS, HDMI_KEY, 0 } },
+ 	{ /* IMR6A3 / IMCR6A3 */ 0xe6950098, 0xe69500d8, 8,
+ 	  { 0, IPMMU, 0, 0,
+ 	    AP_ARM_CTIIRQ, AP_ARM_PMURQ, 0, 0 } },
+@@ -353,10 +358,10 @@ static struct intc_prio_reg intca_prio_registers[] __initdata = {
+ 	{ 0xe6950014, 0, 16, 4, /* IPRFA3 */ { USBH2, 0, 0, 0 } },
+ 				/* IPRGA3 */
+ 				/* IPRHA3 */
+-				/* IPRIA3 */
++	{ 0xe6950020, 0, 16, 4, /* IPRIA3 */ { HDMI, 0, 0, 0 } },
+ 	{ 0xe6950024, 0, 16, 4, /* IPRJA3 */ { RSPI, 0, 0, 0 } },
+ 	{ 0xe6950028, 0, 16, 4, /* IPRKA3 */ { SPU2, 0, FSI, FMSI } },
+-				/* IPRLA3 */
++	{ 0xe695002c, 0, 16, 4, /* IPRLA3 */ { 0, HDMI_SSS, HDMI_KEY, 0 } },
+ 	{ 0xe6950030, 0, 16, 4, /* IPRMA3 */ { IPMMU, 0, 0, 0 } },
+ 	{ 0xe6950034, 0, 16, 4, /* IPRNA3 */ { AP_ARM2, 0, 0, 0 } },
+ 	{ 0xe6950038, 0, 16, 4, /* IPROA3 */ { MFIS2, CPORTR2S,
 -- 
-1.7.2.5
+1.7.5.4
 
