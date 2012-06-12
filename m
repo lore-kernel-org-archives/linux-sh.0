@@ -1,77 +1,53 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 21 Jun 2012 01:19:40 +0000
-Subject: Re: [PATCH 1/2] irqdomain: Fix up linear revmap for non-zero hwirq displacement.
-Message-Id: <20120621011939.GB8008@linux-sh.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 12 Jun 2012 09:43:40 +0000
+Subject: [PATCH 25/27 v2] ARM: shmobile: sh73a0: add FSI clock
+Message-Id: <877gvcx3uf.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1339572841-26175-1-git-send-email-lethal@linux-sh.org>
- <20120615182540.489133E0ACE@localhost>
- <20120615231419.GC7357@linux-sh.org>
-In-Reply-To: <20120615231419.GC7357@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Grant Likely <grant.likely@secretlab.ca>
-Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Sat, Jun 16, 2012 at 08:14:19AM +0900, Paul Mundt wrote:
-> On Fri, Jun 15, 2012 at 12:25:40PM -0600, Grant Likely wrote:
-> > On Wed, 13 Jun 2012 16:34:00 +0900, Paul Mundt <lethal@linux-sh.org> wrote:
-> > > Presently the linear revmap code assumes that all hwirqs start at 0,
-> > > using the hwirq directly as an index value for the lookup. In the case of
-> > > legacy revmaps this isn't necessarily the case, as the first_hwirq value
-> > > passed in can be non-zero, causing those types of users to silently have
-> > > their IRQs placed in the radix tree instead.
-> > > 
-> > > With this change, hwirq displacement is factored in at association time
-> > > directly. This also makes it possible for non-legacy users to use linear
-> > > revmaps regardless of hwirq base position. This could potentially lead to
-> > > a bug if there's an attempt to associate multiple times in to the linear
-> > > map in a nonsensical and non-linear order, but at that point being
-> > > silently punted to the radix tree is likely to be the least of your
-> > > concerns (in such a case it's fairly trivial to simply extend
-> > > irq_domain_add_linear() to take a hwirq base and move the linear base
-> > > assignment there).
-> > 
-> > I actually hoped to be rid of the whole hwirq start offset thing.
-> > Doing without it simplifies the code, is slightly faster.  I suspect
-> > very few controllers actually need it, and for those that do I'm
-> > hoping the wasted space is in the order of 0-32 words.
-> > 
-> > Instead of this, can we change the affected controllers to use the
-> > maximum hwirq number when setting the size of the linear map?
-> > 
-> > Do you have hardware where the first hwirq is a >32 number?
-> > 
-> Yes. On the CPU I was just working on I have two linear ranges and a
-> tree, one of the linear ranges begins at hwirq 56. On other CPUs we have
-> linear ranges that begin at 64, 72, etc. most of which are fairly low in
-> the space. On newer parts on the ARM side there are also controllers with
-> ranges that begin > 400.
-> 
-> I don't particularly care for the linear_start hack myself either, but I
-> couldn't think of any cleaner approach for it. The simplest might be if
-> we can just bury these details in a domain-specific canonicalization op
-> (distinctly different from xlate), and plug it in for the few cases that
-> need a non-zero hwirq base. I don't mind hacking that up if you're more
-> agreeable to that approach.
+This patch is required from FSI sound driver
 
-Ping?
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
-We can't do away with the first_irq thing in the legacy->linear merge
-without at least having a strategy for getting existing users off of it.
-Requiring the linear revmap to always begin at 0 seems like a significant
-regression in functionality for marginal performance gain, so if you're
-not willing to have the linear_start factored in we do need some other
-alternative. I've proposed several, if you don't like any of those you
-are welcome to propose an alternative. I don't mind doing the work one
-way or the other, but I do mind losing the functionality.
+ - no change
 
-Punishing legacy users with leading gaps in their revmap is likewise
-undesirable, especially as that most of the in-tree users (regmap-irq
-especially) of this functionality are using this legacy behaviour without
-incident.
+ arch/arm/mach-shmobile/clock-sh73a0.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
 
-If you want to merge legacy in to linear in the name of simplification
-that's fine, but killing useful functionality that people are presently
-dependent on and others wish to use going forward in the name of
-simplification seems like more of a step back than one forward.
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index 081338c..76bdcca 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -477,7 +477,7 @@ enum { MSTP001,
+ 	MSTP129, MSTP128, MSTP127, MSTP126, MSTP125, MSTP118, MSTP116, MSTP100,
+ 	MSTP219, MSTP218, MSTP217,
+ 	MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
+-	MSTP331, MSTP329, MSTP325, MSTP323,
++	MSTP331, MSTP329, MSTP328, MSTP325, MSTP323,
+ 	MSTP314, MSTP313, MSTP312, MSTP311,
+ 	MSTP303, MSTP302, MSTP301, MSTP300,
+ 	MSTP411, MSTP410, MSTP403,
+@@ -508,6 +508,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP200] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 0, 0), /* SCIFA4 */
+ 	[MSTP331] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR3, 31, 0), /* SCIFA6 */
+ 	[MSTP329] = MSTP(&r_clk, SMSTPCR3, 29, 0), /* CMT10 */
++	[MSTP328] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 28, 0), /*FSI*/
+ 	[MSTP325] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR3, 25, 0), /* IrDA */
+ 	[MSTP323] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 23, 0), /* IIC1 */
+ 	[MSTP314] = MSTP(&div6_clks[DIV6_SDHI0], SMSTPCR3, 14, 0), /* SDHI0 */
+@@ -564,6 +565,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP200]), /* SCIFA4 */
+ 	CLKDEV_DEV_ID("sh-sci.6", &mstp_clks[MSTP331]), /* SCIFA6 */
+ 	CLKDEV_DEV_ID("sh_cmt.10", &mstp_clks[MSTP329]), /* CMT10 */
++	CLKDEV_DEV_ID("sh_fsi2", &mstp_clks[MSTP328]), /* FSI */
+ 	CLKDEV_DEV_ID("sh_irda.0", &mstp_clks[MSTP325]), /* IrDA */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.1", &mstp_clks[MSTP323]), /* I2C1 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]), /* SDHI0 */
+-- 
+1.7.5.4
+
