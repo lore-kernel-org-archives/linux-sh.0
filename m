@@ -1,44 +1,60 @@
-From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Date: Wed, 13 Jun 2012 00:33:46 +0000
-Subject: Re: [PATCH] driver core: fixup reversed deferred probe order
-Message-Id: <20120613003346.GB5321@kroah.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 12 Jun 2012 20:56:09 +0000
+Subject: [PATCH] mmc: sh_mmcif: Support MMC_SLEEP_AWAKE command
+Message-Id: <1339534569-27923-1-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120529073313.GA21702@verge.net.au>
- <87k3zvmo4r.wl%kuninori.morimoto.gx@renesas.com>
- <20120529091129.GA26043@verge.net.au>
- <87txyy347i.wl%kuninori.morimoto.gx@renesas.com>
- <87sjei325k.wl%kuninori.morimoto.gx@renesas.com>
- <20120530013056.GA31474@verge.net.au>
- <87r4u2310j.wl%kuninori.morimoto.gx@renesas.com>
- <87pq9m30h1.wl%kuninori.morimoto.gx@renesas.com>
- <20120612231705.GB6177@kroah.com>
- <874nqg84do.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <874nqg84do.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: linux-kernel@vger.kernel.org, Simon Horman <horms@verge.net.au>, Paul Mundt <lethal@linux-sh.org>, Rafael <rjw@sisk.pl>, Mark Brown <broonie@opensource.wolfsonmicro.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+To: linux-mmc@vger.kernel.org
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, linux-sh@vger.kernel.org
 
-On Tue, Jun 12, 2012 at 05:03:38PM -0700, Kuninori Morimoto wrote:
-> 
-> Hi Greg
-> 
-> Thank you for checking this patch
-> 
-> > > If driver requests probe deferral,
-> > > it will be added to deferred_probe_pending_list
-> > > by driver_deferred_probe_add(), but, it used list_add().
-> > > Because of that, deferred probe will be run as reversed order.
-> > > This patch uses list_add_tail(), and solved this issue.
-> > 
-> > Is this causing a problem with 3.5-rc2 on some systems, so it needs to
-> > get into 3.5-final, or can it wait for 3.6?
-> 
-> ALSA SoC sound card detection order was broken by this issue in v3.5-rcX
-> (on some board).
-> So, I'm happy if it was included in v3.5-final.
+The MMC_SLEEP_AWAKE and SD_IO_SEND_OP_COND commands share the same
+opcode. SD_IO_SEND_OP_COND isn't supported by the SH MMCIF, but
+MMC_SLEEP_AWAKE is. Discriminate between the two commands using the
+command flags, and reject SD_IO_SEND_OP_COND only.
 
-Ok, thanks for letting me know, will queue it up for that release.
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+ drivers/mmc/host/sh_mmcif.c |   14 ++++----------
+ 1 files changed, 4 insertions(+), 10 deletions(-)
 
-greg k-h
+Not supporting the MMC_SLEEP_AWAKE command makes system suspend fail if an MMC
+or eMMC device supporting sleep/wake is connected. The issue has been first
+noticed on the Armadillo 800 EVA board.
+
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 724b35e..e32da11 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -892,21 +892,15 @@ static void sh_mmcif_request(struct mmc_host *mmc, struct mmc_request *mrq)
+ 
+ 	switch (mrq->cmd->opcode) {
+ 	/* MMCIF does not support SD/SDIO command */
+-	case SD_IO_SEND_OP_COND:
++	case MMC_SLEEP_AWAKE: /* = SD_IO_SEND_OP_COND (5) */
++	case MMC_SEND_EXT_CSD: /* = SD_SEND_IF_COND (8) */
++		if ((mrq->cmd->flags & MMC_CMD_MASK) != MMC_CMD_BCR)
++			break;
+ 	case MMC_APP_CMD:
+ 		host->state = STATE_IDLE;
+ 		mrq->cmd->error = -ETIMEDOUT;
+ 		mmc_request_done(mmc, mrq);
+ 		return;
+-	case MMC_SEND_EXT_CSD: /* = SD_SEND_IF_COND (8) */
+-		if (!mrq->data) {
+-			/* send_if_cond cmd (not support) */
+-			host->state = STATE_IDLE;
+-			mrq->cmd->error = -ETIMEDOUT;
+-			mmc_request_done(mmc, mrq);
+-			return;
+-		}
+-		break;
+ 	default:
+ 		break;
+ 	}
+-- 
+Regards,
+
+Laurent Pinchart
+
