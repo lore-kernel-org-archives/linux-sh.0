@@ -1,84 +1,35 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Wed, 20 Jun 2012 09:48:24 +0000
-Subject: Re: [PATCH 01/27 v2] ARM: shmobile: sh73a0: bugfix: SY-DMAC number
-Message-Id: <201206201148.24304.rjw@sisk.pl>
+From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Date: Tue, 12 Jun 2012 23:17:05 +0000
+Subject: Re: [PATCH] driver core: fixup reversed deferred probe order
+Message-Id: <20120612231705.GB6177@kroah.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <8762awyiyf.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <8762awyiyf.wl%kuninori.morimoto.gx@renesas.com>
+References: <20120529064621.GB6166@verge.net.au>
+ <20120529070458.GB11445@linux-sh.org>
+ <20120529073313.GA21702@verge.net.au>
+ <87k3zvmo4r.wl%kuninori.morimoto.gx@renesas.com>
+ <20120529091129.GA26043@verge.net.au>
+ <87txyy347i.wl%kuninori.morimoto.gx@renesas.com>
+ <87sjei325k.wl%kuninori.morimoto.gx@renesas.com>
+ <20120530013056.GA31474@verge.net.au>
+ <87r4u2310j.wl%kuninori.morimoto.gx@renesas.com>
+ <87pq9m30h1.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87pq9m30h1.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: linux-kernel@vger.kernel.org, Simon Horman <horms@verge.net.au>, Paul Mundt <lethal@linux-sh.org>, Rafael <rjw@sisk.pl>, Mark Brown <broonie@opensource.wolfsonmicro.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 
-On Tuesday, June 12, 2012, Kuninori Morimoto wrote:
-> 681e1b3eeb3606e06a7c4984e8058df84296f8bb
-> (ARM: mach-shmobile: sh73a0 DMA Engine support for SY-DMAC)
-> adds SY-DMAC, but it is 218, not 318
-> 
-> This patch is based on v2.0 manual
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Tue, May 29, 2012 at 06:46:06PM -0700, Kuninori Morimoto wrote:
+> If driver requests probe deferral,
+> it will be added to deferred_probe_pending_list
+> by driver_deferred_probe_add(), but, it used list_add().
+> Because of that, deferred probe will be run as reversed order.
+> This patch uses list_add_tail(), and solved this issue.
 
-Applied to the fixes branch of the renesas.git tree.
+Is this causing a problem with 3.5-rc2 on some systems, so it needs to
+get into 3.5-final, or can it wait for 3.6?
 
-Thanks,
-Rafael
+thanks,
 
-
-> ---
-> v1 -> v2
->  - no change
-> 
->  arch/arm/mach-shmobile/clock-sh73a0.c |    8 ++++----
->  1 files changed, 4 insertions(+), 4 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-> index 472d1f5..3946c4b 100644
-> --- a/arch/arm/mach-shmobile/clock-sh73a0.c
-> +++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-> @@ -475,9 +475,9 @@ static struct clk *late_main_clks[] = {
->  
->  enum { MSTP001,
->  	MSTP129, MSTP128, MSTP127, MSTP126, MSTP125, MSTP118, MSTP116, MSTP100,
-> -	MSTP219,
-> +	MSTP219, MSTP218,
->  	MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
-> -	MSTP331, MSTP329, MSTP325, MSTP323, MSTP318,
-> +	MSTP331, MSTP329, MSTP325, MSTP323,
->  	MSTP314, MSTP313, MSTP312, MSTP311,
->  	MSTP303, MSTP302, MSTP301, MSTP300,
->  	MSTP411, MSTP410, MSTP403,
-> @@ -497,6 +497,7 @@ static struct clk mstp_clks[MSTP_NR] = {
->  	[MSTP116] = MSTP(&div4_clks[DIV4_HP], SMSTPCR1, 16, 0), /* IIC0 */
->  	[MSTP100] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 0, 0), /* LCDC0 */
->  	[MSTP219] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 19, 0), /* SCIFA7 */
-> +	[MSTP218] = MSTP(&div4_clks[DIV4_HP], SMSTPCR2, 18, 0), /* SY-DMAC */
->  	[MSTP207] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 7, 0), /* SCIFA5 */
->  	[MSTP206] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 6, 0), /* SCIFB */
->  	[MSTP204] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 4, 0), /* SCIFA0 */
-> @@ -508,7 +509,6 @@ static struct clk mstp_clks[MSTP_NR] = {
->  	[MSTP329] = MSTP(&r_clk, SMSTPCR3, 29, 0), /* CMT10 */
->  	[MSTP325] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR3, 25, 0), /* IrDA */
->  	[MSTP323] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 23, 0), /* IIC1 */
-> -	[MSTP318] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 18, 0), /* SY-DMAC */
->  	[MSTP314] = MSTP(&div6_clks[DIV6_SDHI0], SMSTPCR3, 14, 0), /* SDHI0 */
->  	[MSTP313] = MSTP(&div6_clks[DIV6_SDHI1], SMSTPCR3, 13, 0), /* SDHI1 */
->  	[MSTP312] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 12, 0), /* MMCIF0 */
-> @@ -552,6 +552,7 @@ static struct clk_lookup lookups[] = {
->  	CLKDEV_DEV_ID("i2c-sh_mobile.0", &mstp_clks[MSTP116]), /* I2C0 */
->  	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.0", &mstp_clks[MSTP100]), /* LCDC0 */
->  	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP219]), /* SCIFA7 */
-> +	CLKDEV_DEV_ID("sh-dma-engine.0", &mstp_clks[MSTP218]), /* SY-DMAC */
->  	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP207]), /* SCIFA5 */
->  	CLKDEV_DEV_ID("sh-sci.8", &mstp_clks[MSTP206]), /* SCIFB */
->  	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]), /* SCIFA0 */
-> @@ -563,7 +564,6 @@ static struct clk_lookup lookups[] = {
->  	CLKDEV_DEV_ID("sh_cmt.10", &mstp_clks[MSTP329]), /* CMT10 */
->  	CLKDEV_DEV_ID("sh_irda.0", &mstp_clks[MSTP325]), /* IrDA */
->  	CLKDEV_DEV_ID("i2c-sh_mobile.1", &mstp_clks[MSTP323]), /* I2C1 */
-> -	CLKDEV_DEV_ID("sh-dma-engine.0", &mstp_clks[MSTP318]), /* SY-DMAC */
->  	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]), /* SDHI0 */
->  	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]), /* SDHI1 */
->  	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP312]), /* MMCIF0 */
-> 
-
+greg k-h
