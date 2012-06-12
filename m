@@ -1,67 +1,196 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 20 Jun 2012 08:01:34 +0000
-Subject: [PATCH 05/11] ARM: mach-shmobile: add fixed voltage regulators to armadillo800eva
-Message-Id: <1340179300-16452-6-git-send-email-g.liakhovetski@gmx.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 12 Jun 2012 09:40:07 +0000
+Subject: [PATCH 18/27 v2] ARM: shmobile: armadillo800eva: enable camera
+Message-Id: <87haugx40c.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On armadillo800eva provide a 3.3V supply for its SD/MMC-card interfaces.
+This patch enable camera support on CON1
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Tested-by: Simon Horman <horms@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c |   16 ++++++++++++++++
- 1 files changed, 16 insertions(+), 0 deletions(-)
+v1 -> v2
 
+ - mclk initialised on ->power function
+
+ arch/arm/configs/armadillo800eva_defconfig     |   10 ++
+ arch/arm/mach-shmobile/board-armadillo800eva.c |  111 +++++++++++++++++++++++-
+ 2 files changed, 120 insertions(+), 1 deletions(-)
+
+diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
+index f6ebdde..df1ce54 100644
+--- a/arch/arm/configs/armadillo800eva_defconfig
++++ b/arch/arm/configs/armadillo800eva_defconfig
+@@ -86,6 +86,16 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ CONFIG_I2C=y
+ CONFIG_I2C_SH_MOBILE=y
+ # CONFIG_HWMON is not set
++CONFIG_MEDIA_SUPPORT=y
++CONFIG_VIDEO_DEV=y
++# CONFIG_RC_CORE is not set
++# CONFIG_VIDEO_HELPER_CHIPS_AUTO is not set
++# CONFIG_V4L_USB_DRIVERS is not set
++CONFIG_V4L_PLATFORM_DRIVERS=y
++CONFIG_SOC_CAMERA=y
++CONFIG_SOC_CAMERA_MT9T112=y
++CONFIG_VIDEO_SH_MOBILE_CEU=y
++# CONFIG_RADIO_ADAPTERS is not set
+ CONFIG_FB=y
+ CONFIG_FB_SH_MOBILE_LCDC=y
+ CONFIG_FB_SH_MOBILE_HDMI=y
 diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 9e37026..d11abcd 100644
+index 4e6893f..2cce28b 100644
 --- a/arch/arm/mach-shmobile/board-armadillo800eva.c
 +++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -28,6 +28,7 @@
- #include <linux/platform_device.h>
- #include <linux/gpio.h>
- #include <linux/gpio_keys.h>
-+#include <linux/regulator/machine.h>
- #include <linux/sh_eth.h>
- #include <linux/videodev2.h>
- #include <linux/usb/renesas_usbhs.h>
-@@ -44,6 +45,7 @@
+@@ -37,13 +37,16 @@
+ #include <linux/mmc/sh_mobile_sdhi.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
++#include <mach/r8a7740.h>
++#include <media/mt9t112.h>
++#include <media/sh_mobile_ceu.h>
++#include <media/soc_camera.h>
+ #include <asm/page.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/map.h>
  #include <asm/mach/time.h>
  #include <asm/hardware/cache-l2x0.h>
- #include <mach/r8a7740.h>
-+#include <mach/regulator.h>
+-#include <mach/r8a7740.h>
  #include <video/sh_mobile_lcdc.h>
+ #include <video/sh_mobile_hdmi.h>
  
- /*
-@@ -407,6 +409,19 @@ static struct platform_device gpio_keys_device = {
- 	},
+@@ -630,6 +633,87 @@ static struct platform_device sh_mmcif_device = {
+ 	.resource	= sh_mmcif_resources,
  };
  
-+/* Fixed 3.3V regulator to be used by SDHI0, SDHI1, MMCIF */
-+static struct regulator_consumer_supply fixed3v3_power_consumers[] +{
-+	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
-+	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
-+	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
-+	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.1"),
-+	REGULATOR_SUPPLY("vmmc", "sh_mmcif.0"),
-+	REGULATOR_SUPPLY("vqmmc", "sh_mmcif.0"),
++/* Camera */
++static int mt9t111_power(struct device *dev, int mode)
++{
++	struct clk *mclk = clk_get(NULL, "video1");
++
++	if (IS_ERR(mclk)) {
++		dev_err(dev, "can't get video1 clock\n");
++		return -EINVAL;
++	}
++
++	if (mode) {
++		/* video1 (= CON1 camera) expect 24MHz */
++		clk_set_rate(mclk, clk_round_rate(mclk, 24000000));
++		clk_enable(mclk);
++		gpio_direction_output(GPIO_PORT158, 1);
++	} else {
++		gpio_direction_output(GPIO_PORT158, 0);
++		clk_disable(mclk);
++	}
++
++	clk_put(mclk);
++
++	return 0;
++}
++
++static struct i2c_board_info i2c_camera_mt9t111 = {
++	I2C_BOARD_INFO("mt9t112", 0x3d),
 +};
 +
-+REGULATOR_FIXED(fixed3v3_power_consumers, 0, 3300000);
++static struct mt9t112_camera_info mt9t111_info = {
++	.divider = { 16, 0, 0, 7, 0, 10, 14, 7, 7 },
++};
 +
- /* SDHI0 */
- /*
-  * FIXME
-@@ -544,6 +559,7 @@ static struct i2c_board_info i2c0_devices[] = {
-  * board devices
-  */
- static struct platform_device *eva_devices[] __initdata = {
-+	&fixed_power_0,
- 	&lcdc0_device,
- 	&gpio_keys_device,
- 	&sh_eth_device,
++static struct soc_camera_link mt9t111_link = {
++	.i2c_adapter_id	= 0,
++	.bus_id		= 0,
++	.board_info	= &i2c_camera_mt9t111,
++	.power		= mt9t111_power,
++	.priv		= &mt9t111_info,
++};
++
++static struct platform_device camera_device = {
++	.name	= "soc-camera-pdrv",
++	.id	= 0,
++	.dev	= {
++		.platform_data = &mt9t111_link,
++	},
++};
++
++/* CEU0 */
++static struct sh_mobile_ceu_info sh_mobile_ceu0_info = {
++	.flags = SH_CEU_FLAG_LOWER_8BIT,
++};
++
++static struct resource ceu0_resources[] = {
++	[0] = {
++		.name	= "CEU",
++		.start	= 0xfe910000,
++		.end	= 0xfe91009f,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start  = intcs_evt2irq(0x0500),
++		.flags  = IORESOURCE_IRQ,
++	},
++	[2] = {
++		/* place holder for contiguous memory */
++	},
++};
++
++static struct platform_device ceu0_device = {
++	.name		= "sh_mobile_ceu",
++	.id		= 0,
++	.num_resources	= ARRAY_SIZE(ceu0_resources),
++	.resource	= ceu0_resources,
++	.dev	= {
++		.platform_data		= &sh_mobile_ceu0_info,
++		.coherent_dma_mask	= 0xffffffff,
++	},
++};
++
+ /* I2C */
+ static struct i2c_board_info i2c0_devices[] = {
+ 	{
+@@ -649,6 +733,8 @@ static struct platform_device *eva_devices[] __initdata = {
+ 	&sh_mmcif_device,
+ 	&hdmi_device,
+ 	&hdmi_lcdc_device,
++	&camera_device,
++	&ceu0_device,
+ };
+ 
+ static void __init eva_clock_init(void)
+@@ -807,6 +893,29 @@ static void __init eva_init(void)
+ 	gpio_request(GPIO_FN_MMC1_D6_PORT143,	NULL);
+ 	gpio_request(GPIO_FN_MMC1_D7_PORT142,	NULL);
+ 
++	/* CEU0 */
++	gpio_request(GPIO_FN_VIO0_D7,		NULL);
++	gpio_request(GPIO_FN_VIO0_D6,		NULL);
++	gpio_request(GPIO_FN_VIO0_D5,		NULL);
++	gpio_request(GPIO_FN_VIO0_D4,		NULL);
++	gpio_request(GPIO_FN_VIO0_D3,		NULL);
++	gpio_request(GPIO_FN_VIO0_D2,		NULL);
++	gpio_request(GPIO_FN_VIO0_D1,		NULL);
++	gpio_request(GPIO_FN_VIO0_D0,		NULL);
++	gpio_request(GPIO_FN_VIO0_CLK,		NULL);
++	gpio_request(GPIO_FN_VIO0_HD,		NULL);
++	gpio_request(GPIO_FN_VIO0_VD,		NULL);
++	gpio_request(GPIO_FN_VIO0_FIELD,	NULL);
++	gpio_request(GPIO_FN_VIO_CKO,		NULL);
++
++	/* CON1/CON15 Camera */
++	gpio_request(GPIO_PORT173, NULL); /* STANDBY */
++	gpio_request(GPIO_PORT172, NULL); /* RST */
++	gpio_request(GPIO_PORT158, NULL); /* CAM_PON */
++	gpio_direction_output(GPIO_PORT173, 0);
++	gpio_direction_output(GPIO_PORT172, 1);
++	gpio_direction_output(GPIO_PORT158, 0); /* see mt9t111_power() */
++
+ 	/*
+ 	 * CAUTION
+ 	 *
 -- 
-1.7.2.5
+1.7.5.4
 
