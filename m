@@ -1,152 +1,141 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 22 Jun 2012 13:23:17 +0000
-Subject: [PATCH 4/9 v4] mmc: add CD GPIO polling support to slot functions
-Message-Id: <1340371402-4801-5-git-send-email-g.liakhovetski@gmx.de>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Tue, 12 Jun 2012 05:19:08 +0000
+Subject: [PATCH net-next 2/5] net: sh_eth: remove unnecessary members/definitions
+Message-Id: <4FD6D14C.3070104@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1340371402-4801-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1340371402-4801-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>
+To: netdev <netdev@vger.kernel.org>
+Cc: SH-Linux <linux-sh@vger.kernel.org>
 
-A simple extension of mmc slot functions add support for CD GPIO polling
-for cases, where the GPIO cannot produce interrupts or this is for some
-reason not desired.
+This patch removes unnecessary members in sh_th_private.
+This patch also removes unnecessary definitions in sh_eth.h
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
+ drivers/net/ethernet/renesas/sh_eth.c |    7 +---
+ drivers/net/ethernet/renesas/sh_eth.h |   69 ---------------------------------
+ 2 files changed, 1 insertions(+), 75 deletions(-)
 
-v4:
-
-1. gpio variables are now signed
-2. take care to mark gpio variables as invalid in hotplug context
-3. MMC_CAP2_*_ACTIVE_HIGH inverted compared to v3
-
- drivers/mmc/core/slot-gpio.c  |   56 +++++++++++++++++++++++++++++++---------
- include/linux/mmc/slot-gpio.h |    2 +
- 2 files changed, 45 insertions(+), 13 deletions(-)
-
-diff --git a/drivers/mmc/core/slot-gpio.c b/drivers/mmc/core/slot-gpio.c
-index 468e5a0..92cba02 100644
---- a/drivers/mmc/core/slot-gpio.c
-+++ b/drivers/mmc/core/slot-gpio.c
-@@ -18,7 +18,7 @@
- #include <linux/slab.h>
- 
- struct mmc_gpio {
--	unsigned int cd_gpio;
-+	int cd_gpio;
- 	char cd_label[0];
- };
- 
-@@ -29,6 +29,18 @@ static irqreturn_t mmc_gpio_cd_irqt(int irq, void *dev_id)
- 	return IRQ_HANDLED;
- }
- 
-+int mmc_gpio_get_cd(struct mmc_host *host)
-+{
-+	struct mmc_gpio *ctx = host->slot.handler_priv;
-+
-+	if (!ctx || !gpio_is_valid(ctx->cd_gpio))
-+		return -ENOSYS;
-+
-+	return !gpio_get_value_cansleep(ctx->cd_gpio) ^
-+		!!(host->caps2 & MMC_CAP2_CD_ACTIVE_HIGH);
-+}
-+EXPORT_SYMBOL(mmc_gpio_get_cd);
-+
- int mmc_gpio_request_cd(struct mmc_host *host, unsigned int gpio)
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 4ccfd0f..906e410 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -898,7 +898,6 @@ static int sh_eth_dev_init(struct net_device *ndev)
  {
- 	size_t len = strlen(dev_name(host->parent)) + 4;
-@@ -36,9 +48,6 @@ int mmc_gpio_request_cd(struct mmc_host *host, unsigned int gpio)
- 	int irq = gpio_to_irq(gpio);
- 	int ret;
- 
--	if (irq < 0)
--		return irq;
+ 	int ret = 0;
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+-	u_int32_t rx_int_var, tx_int_var;
+ 	u32 val;
+
+ 	/* Soft Reset */
+@@ -926,9 +925,7 @@ static int sh_eth_dev_init(struct net_device *ndev)
+ 	/* Frame recv control */
+ 	sh_eth_write(ndev, mdp->cd->rmcr_value, RMCR);
+
+-	rx_int_var = mdp->rx_int_var = DESC_I_RINT8 | DESC_I_RINT5;
+-	tx_int_var = mdp->tx_int_var = DESC_I_TINT2;
+-	sh_eth_write(ndev, rx_int_var | tx_int_var, TRSCER);
++	sh_eth_write(ndev, DESC_I_RINT8 | DESC_I_RINT5 | DESC_I_TINT2, TRSCER);
+
+ 	if (mdp->cd->bculr)
+ 		sh_eth_write(ndev, 0x800, BCULR);	/* Burst sycle set */
+@@ -2288,8 +2285,6 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
+
+ 	/* debug message level */
+ 	mdp->msg_enable = SH_ETH_DEF_MSG_ENABLE;
+-	mdp->post_rx = POST_RX >> (devno << 1);
+-	mdp->post_fw = POST_FW >> (devno << 1);
+
+ 	/* read and set MAC address */
+ 	read_mac_address(ndev, pd->mac_addr);
+diff --git a/drivers/net/ethernet/renesas/sh_eth.h b/drivers/net/ethernet/renesas/sh_eth.h
+index 9e8e4d5..9525199 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.h
++++ b/drivers/net/ethernet/renesas/sh_eth.h
+@@ -585,71 +585,6 @@ enum RPADIR_BIT {
+ /* FDR */
+ #define DEFAULT_FDR_INIT	0x00000707
+
+-enum phy_offsets {
+-	PHY_CTRL = 0, PHY_STAT = 1, PHY_IDT1 = 2, PHY_IDT2 = 3,
+-	PHY_ANA = 4, PHY_ANL = 5, PHY_ANE = 6,
+-	PHY_16 = 16,
+-};
 -
- 	ctx = kmalloc(sizeof(*ctx) + len, GFP_KERNEL);
- 	if (!ctx)
- 		return -ENOMEM;
-@@ -49,20 +58,32 @@ int mmc_gpio_request_cd(struct mmc_host *host, unsigned int gpio)
- 	if (ret < 0)
- 		goto egpioreq;
- 
--	ret = request_threaded_irq(irq, NULL, mmc_gpio_cd_irqt,
-+	/*
-+	 * Even if gpio_to_irq() returns a valid IRQ number, the platform might
-+	 * still prefer to poll, e.g., because that IRQ number is already used
-+	 * by another unit and cannot be shared.
-+	 */
-+	if (irq >= 0 && host->caps & MMC_CAP_NEEDS_POLL)
-+		irq = -EINVAL;
-+
-+	if (irq >= 0) {
-+		ret = request_threaded_irq(irq, NULL, mmc_gpio_cd_irqt,
- 			IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING | IRQF_ONESHOT,
- 			ctx->cd_label, host);
--	if (ret < 0)
--		goto eirqreq;
-+		if (ret < 0)
-+			irq = ret;
-+	}
- 
--	ctx->cd_gpio = gpio;
- 	host->slot.cd_irq = irq;
-+
-+	if (irq < 0)
-+		host->caps |= MMC_CAP_NEEDS_POLL;
-+
-+	ctx->cd_gpio = gpio;
- 	host->slot.handler_priv = ctx;
- 
- 	return 0;
- 
--eirqreq:
--	gpio_free(gpio);
- egpioreq:
- 	kfree(ctx);
- 	return ret;
-@@ -72,12 +93,21 @@ EXPORT_SYMBOL(mmc_gpio_request_cd);
- void mmc_gpio_free_cd(struct mmc_host *host)
- {
- 	struct mmc_gpio *ctx = host->slot.handler_priv;
-+	int gpio;
- 
--	if (!ctx)
-+	if (!ctx || !gpio_is_valid(ctx->cd_gpio))
- 		return;
- 
--	free_irq(host->slot.cd_irq, host);
--	gpio_free(ctx->cd_gpio);
-+	if (host->slot.cd_irq >= 0) {
-+		free_irq(host->slot.cd_irq, host);
-+		host->slot.cd_irq = -EINVAL;
-+	}
-+
-+	gpio = ctx->cd_gpio;
-+	ctx->cd_gpio = -EINVAL;
-+
-+	gpio_free(gpio);
-+	host->slot.handler_priv = NULL;
- 	kfree(ctx);
- }
- EXPORT_SYMBOL(mmc_gpio_free_cd);
-diff --git a/include/linux/mmc/slot-gpio.h b/include/linux/mmc/slot-gpio.h
-index edfaa32..1a977d7 100644
---- a/include/linux/mmc/slot-gpio.h
-+++ b/include/linux/mmc/slot-gpio.h
-@@ -12,6 +12,8 @@
- #define MMC_SLOT_GPIO_H
- 
- struct mmc_host;
-+
-+int mmc_gpio_get_cd(struct mmc_host *host);
- int mmc_gpio_request_cd(struct mmc_host *host, unsigned int gpio);
- void mmc_gpio_free_cd(struct mmc_host *host);
- 
--- 
-1.7.2.5
+-/* PHY_CTRL */
+-enum PHY_CTRL_BIT {
+-	PHY_C_RESET = 0x8000, PHY_C_LOOPBK = 0x4000, PHY_C_SPEEDSL = 0x2000,
+-	PHY_C_ANEGEN = 0x1000, PHY_C_PWRDN = 0x0800, PHY_C_ISO = 0x0400,
+-	PHY_C_RANEG = 0x0200, PHY_C_DUPLEX = 0x0100, PHY_C_COLT = 0x0080,
+-};
+-#define DM9161_PHY_C_ANEGEN 0	/* auto nego special */
+-
+-/* PHY_STAT */
+-enum PHY_STAT_BIT {
+-	PHY_S_100T4 = 0x8000, PHY_S_100X_F = 0x4000, PHY_S_100X_H = 0x2000,
+-	PHY_S_10T_F = 0x1000, PHY_S_10T_H = 0x0800, PHY_S_ANEGC = 0x0020,
+-	PHY_S_RFAULT = 0x0010, PHY_S_ANEGA = 0x0008, PHY_S_LINK = 0x0004,
+-	PHY_S_JAB = 0x0002, PHY_S_EXTD = 0x0001,
+-};
+-
+-/* PHY_ANA */
+-enum PHY_ANA_BIT {
+-	PHY_A_NP = 0x8000, PHY_A_ACK = 0x4000, PHY_A_RF = 0x2000,
+-	PHY_A_FCS = 0x0400, PHY_A_T4 = 0x0200, PHY_A_FDX = 0x0100,
+-	PHY_A_HDX = 0x0080, PHY_A_10FDX = 0x0040, PHY_A_10HDX = 0x0020,
+-	PHY_A_SEL = 0x001e,
+-};
+-/* PHY_ANL */
+-enum PHY_ANL_BIT {
+-	PHY_L_NP = 0x8000, PHY_L_ACK = 0x4000, PHY_L_RF = 0x2000,
+-	PHY_L_FCS = 0x0400, PHY_L_T4 = 0x0200, PHY_L_FDX = 0x0100,
+-	PHY_L_HDX = 0x0080, PHY_L_10FDX = 0x0040, PHY_L_10HDX = 0x0020,
+-	PHY_L_SEL = 0x001f,
+-};
+-
+-/* PHY_ANE */
+-enum PHY_ANE_BIT {
+-	PHY_E_PDF = 0x0010, PHY_E_LPNPA = 0x0008, PHY_E_NPA = 0x0004,
+-	PHY_E_PRX = 0x0002, PHY_E_LPANEGA = 0x0001,
+-};
+-
+-/* DM9161 */
+-enum PHY_16_BIT {
+-	PHY_16_BP4B45 = 0x8000, PHY_16_BPSCR = 0x4000, PHY_16_BPALIGN = 0x2000,
+-	PHY_16_BP_ADPOK = 0x1000, PHY_16_Repeatmode = 0x0800,
+-	PHY_16_TXselect = 0x0400,
+-	PHY_16_Rsvd = 0x0200, PHY_16_RMIIEnable = 0x0100,
+-	PHY_16_Force100LNK = 0x0080,
+-	PHY_16_APDLED_CTL = 0x0040, PHY_16_COLLED_CTL = 0x0020,
+-	PHY_16_RPDCTR_EN = 0x0010,
+-	PHY_16_ResetStMch = 0x0008, PHY_16_PreamSupr = 0x0004,
+-	PHY_16_Sleepmode = 0x0002,
+-	PHY_16_RemoteLoopOut = 0x0001,
+-};
+-
+-#define POST_RX		0x08
+-#define POST_FW		0x04
+-#define POST0_RX	(POST_RX)
+-#define POST0_FW	(POST_FW)
+-#define POST1_RX	(POST_RX >> 2)
+-#define POST1_FW	(POST_FW >> 2)
+-#define POST_ALL	(POST0_RX | POST0_FW | POST1_RX | POST1_FW)
+-
+ /* ARSTR */
+ enum ARSTR_BIT { ARSTR_ARSTR = 0x00000001, };
 
+@@ -785,10 +720,6 @@ struct sh_eth_private {
+ 	int msg_enable;
+ 	int speed;
+ 	int duplex;
+-	u32 rx_int_var, tx_int_var;	/* interrupt control variables */
+-	char post_rx;		/* POST receive */
+-	char post_fw;		/* POST forward */
+-	struct net_device_stats tsu_stats;	/* TSU forward status */
+ 	int port;		/* for TSU */
+ 	int vlan_num_ids;	/* for VLAN tag filter */
+
+-- 
+1.7.1
