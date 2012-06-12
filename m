@@ -1,55 +1,42 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 26 Jun 2012 22:32:32 +0000
-Subject: [PATCH 10/10 v3] ARM: mach-shmobile: add fixed voltage regulators to marzen
-Message-Id: <1340749952-8534-11-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 12 Jun 2012 22:28:24 +0000
+Subject: [PATCH 2/2] serial: sh-sci: Make probe fail for ports that exceed the maximum count
+Message-Id: <1339540104-25003-2-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1339540104-25003-1-git-send-email-laurent.pinchart@ideasonboard.com>
+In-Reply-To: <1339540104-25003-1-git-send-email-laurent.pinchart@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-serial@vger.kernel.org, linux-sh@vger.kernel.org
 
-On marzen provide a dummy regulator for the smsc911x driver.
+The driver supports a maximum number of ports configurable at compile
+time. Make sure the probe() method fails when registering a port that
+exceeds the maximum instead of returning success without registering the
+port.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+This fixes a crash at system suspend time, when the driver tried to
+suspend a non-registered port using the UART core.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-marzen.c |   10 ++++++++++
- 1 files changed, 10 insertions(+), 0 deletions(-)
+ drivers/tty/serial/sh-sci.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index 14de378..3a528cf 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -27,6 +27,8 @@
- #include <linux/io.h>
- #include <linux/gpio.h>
- #include <linux/dma-mapping.h>
-+#include <linux/regulator/fixed.h>
-+#include <linux/regulator/machine.h>
- #include <linux/smsc911x.h>
- #include <mach/hardware.h>
- #include <mach/r8a7779.h>
-@@ -37,6 +39,12 @@
- #include <asm/hardware/gic.h>
- #include <asm/traps.h>
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index a779663..55dada3 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2352,7 +2352,7 @@ static int __devinit sci_probe_single(struct platform_device *dev,
+ 			   index+1, SCI_NPORTS);
+ 		dev_notice(&dev->dev, "Consider bumping "
+ 			   "CONFIG_SERIAL_SH_SCI_NR_UARTS!\n");
+-		return 0;
++		return -EINVAL;
+ 	}
  
-+/* Dummy supplies, where voltage doesn't matter */
-+static struct regulator_consumer_supply dummy_supplies[] = {
-+	REGULATOR_SUPPLY("vddvario", "smsc911x"),
-+	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
-+};
-+
- /* SMSC LAN89218 */
- static struct resource smsc911x_resources[] = {
- 	[0] = {
-@@ -73,6 +81,8 @@ static struct platform_device *marzen_devices[] __initdata = {
- 
- static void __init marzen_init(void)
- {
-+	regulator_register_fixed(0, dummy_supplies, ARRAY_SIZE(dummy_supplies));
-+
- 	r8a7779_pinmux_init();
- 
- 	/* SCIF2 (CN18: DEBUG0) */
+ 	ret = sci_init_single(dev, sciport, index, p);
 -- 
-1.7.2.5
+1.7.3.4
 
