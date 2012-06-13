@@ -1,174 +1,29 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 12 Jun 2012 09:40:31 +0000
-Subject: [PATCH 19/27 v2] ARM: shmobile: armadillo800eva: enable FSI-WM8978 sound
-Message-Id: <87fwa0x3zo.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 13 Jun 2012 00:50:07 +0000
+Subject: Re: [PATCH 19/27 v2] ARM: shmobile: armadillo800eva: enable FSI-WM8978 sound
+Message-Id: <20120613005005.GS16686@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87fwa0x3zo.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87fwa0x3zo.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This patch enable sound support on CON11
+On Tue, Jun 12, 2012 at 02:40:31AM -0700, Kuninori Morimoto wrote:
+> This patch enable sound support on CON11
+> 
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v1 -> v2
+As I tested v1 of this patch:
 
- - no change
+Tested-by: Simon Horman <horms@verge.net.au>
 
- arch/arm/mach-shmobile/Kconfig                 |    1 +
- arch/arm/mach-shmobile/board-armadillo800eva.c |   85 ++++++++++++++++++++++++
- 2 files changed, 86 insertions(+), 0 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index df33909..1542e91 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -106,6 +106,7 @@ config MACH_ARMADILLO800EVA
- 	depends on ARCH_R8A7740
- 	select ARCH_REQUIRE_GPIOLIB
- 	select USE_OF
-+	select SND_SOC_WM8978 if SND_SIMPLE_CARD
- 
- config MACH_MARZEN
- 	bool "MARZEN board"
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 2cce28b..a6c973a 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -49,6 +49,8 @@
- #include <asm/hardware/cache-l2x0.h>
- #include <video/sh_mobile_lcdc.h>
- #include <video/sh_mobile_hdmi.h>
-+#include <sound/sh_fsi.h>
-+#include <sound/simple_card.h>
- 
- /*
-  * CON1		Camera Module
-@@ -112,6 +114,14 @@
-  */
- 
- /*
-+ * FSI-WM8978
-+ *
-+ * this command is required when playback.
-+ *
-+ * # amixer set "Headphone" 50
-+ */
-+
-+/*
-  * USB function
-  *
-  * When you use USB Function,
-@@ -714,12 +724,71 @@ static struct platform_device ceu0_device = {
- 	},
- };
- 
-+/* FSI */
-+static struct sh_fsi_platform_info fsi_info = {
-+	/* FSI-WM8978 */
-+	.port_a = {
-+	},
-+};
-+
-+static struct resource fsi_resources[] = {
-+	[0] = {
-+		.name	= "FSI",
-+		.start	= 0xfe1f0000,
-+		.end	= 0xfe1f8400 - 1,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start  = evt2irq(0x1840),
-+		.flags  = IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device fsi_device = {
-+	.name		= "sh_fsi2",
-+	.id		= -1,
-+	.num_resources	= ARRAY_SIZE(fsi_resources),
-+	.resource	= fsi_resources,
-+	.dev	= {
-+		.platform_data	= &fsi_info,
-+	},
-+};
-+
-+/* FSI-WM8978 */
-+static struct asoc_simple_dai_init_info fsi_wm8978_init_info = {
-+	.fmt		= SND_SOC_DAIFMT_I2S,
-+	.codec_daifmt	= SND_SOC_DAIFMT_CBM_CFM | SND_SOC_DAIFMT_NB_NF,
-+	.cpu_daifmt	= SND_SOC_DAIFMT_CBS_CFS,
-+	.sysclk		= 12288000,
-+};
-+
-+static struct asoc_simple_card_info fsi_wm8978_info = {
-+	.name		= "wm8978",
-+	.card		= "FSI2A-WM8978",
-+	.cpu_dai	= "fsia-dai",
-+	.codec		= "wm8978.0-001a",
-+	.platform	= "sh_fsi2",
-+	.codec_dai	= "wm8978-hifi",
-+	.init		= &fsi_wm8978_init_info,
-+};
-+
-+static struct platform_device fsi_wm8978_device = {
-+	.name	= "asoc-simple-card",
-+	.id	= 0,
-+	.dev	= {
-+		.platform_data	= &fsi_wm8978_info,
-+	},
-+};
-+
- /* I2C */
- static struct i2c_board_info i2c0_devices[] = {
- 	{
- 		I2C_BOARD_INFO("st1232-ts", 0x55),
- 		.irq = evt2irq(0x0340),
- 	},
-+	{
-+		I2C_BOARD_INFO("wm8978", 0x1a),
-+	},
- };
- 
- /*
-@@ -735,6 +804,8 @@ static struct platform_device *eva_devices[] __initdata = {
- 	&hdmi_lcdc_device,
- 	&camera_device,
- 	&ceu0_device,
-+	&fsi_device,
-+	&fsi_wm8978_device,
- };
- 
- static void __init eva_clock_init(void)
-@@ -768,6 +839,8 @@ clock_error:
- /*
-  * board init
-  */
-+#define GPIO_PORT7CR	0xe6050007
-+#define GPIO_PORT8CR	0xe6050008
- static void __init eva_init(void)
- {
- 	eva_clock_init();
-@@ -916,6 +989,18 @@ static void __init eva_init(void)
- 	gpio_direction_output(GPIO_PORT172, 1);
- 	gpio_direction_output(GPIO_PORT158, 0); /* see mt9t111_power() */
- 
-+	/* FSI-WM8978 */
-+	gpio_request(GPIO_FN_FSIAIBT,		NULL);
-+	gpio_request(GPIO_FN_FSIAILR,		NULL);
-+	gpio_request(GPIO_FN_FSIAOMC,		NULL);
-+	gpio_request(GPIO_FN_FSIAOSLD,		NULL);
-+	gpio_request(GPIO_FN_FSIAISLD_PORT5,	NULL);
-+
-+	gpio_request(GPIO_PORT7, NULL);
-+	gpio_request(GPIO_PORT8, NULL);
-+	gpio_direction_none(GPIO_PORT7CR); /* FSIAOBT needs no direction */
-+	gpio_direction_none(GPIO_PORT8CR); /* FSIAOLR needs no direction */
-+
- 	/*
- 	 * CAUTION
- 	 *
--- 
-1.7.5.4
-
+> ---
+> v1 -> v2
+> 
+>  - no change
+> 
+>  arch/arm/mach-shmobile/Kconfig                 |    1 +
+>  arch/arm/mach-shmobile/board-armadillo800eva.c |   85 ++++++++++++++++++++++++
+>  2 files changed, 86 insertions(+), 0 deletions(-)
