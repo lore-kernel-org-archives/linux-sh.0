@@ -1,50 +1,36 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 25 Jun 2012 10:34:49 +0000
-Subject: [PATCH 1/3] ARM: shmobile: sh73a0: add USB clock support
-Message-Id: <877guvllx6.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 13 Jun 2012 13:37:10 +0000
+Subject: [PATCH 0/5 v4] mmc: sh_mmcif: clock and power updates
+Message-Id: <Pine.LNX.4.64.1206131515180.17854@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>, Mark Brown <broonie@opensource.wolfsonmicro.com>
 
-It is required from renesas_usbhs driver.
-This patch is based on v2.0 manual.
+This patch series supersedes this thread
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+http://thread.gmane.org/gmane.linux.kernel.mmc/14624/focus626
+
+and these patches:
+
+http://thread.gmane.org/gmane.linux.kernel.mmc/14624/focus630
+http://thread.gmane.org/gmane.linux.kernel.mmc/14624/focus638
+
+It has been decided to reorganise the above series to split it into 
+several smaller and simpler ones, to separate platform patches from driver 
+patches to reduce cross-dependencies as much as possible.
+
+It requires the recently posted v5 of "mmc: add a function to get 
+regulators, supplying card's power," and patch "mmc: sh_mmcif: Support 
+MMC_SLEEP_AWAKE command" from Laurent:
+
+http://thread.gmane.org/gmane.linux.kernel.mmc/14939
+
+Thanks
+Guennadi
 ---
- arch/arm/mach-shmobile/clock-sh73a0.c |    4 +++-
- 1 files changed, 3 insertions(+), 1 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-index ad6f9ad..06ffa4a 100644
---- a/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-@@ -477,7 +477,7 @@ enum { MSTP001,
- 	MSTP129, MSTP128, MSTP127, MSTP126, MSTP125, MSTP118, MSTP116, MSTP100,
- 	MSTP219, MSTP218,
- 	MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
--	MSTP331, MSTP329, MSTP328, MSTP325, MSTP323,
-+	MSTP331, MSTP329, MSTP328, MSTP325, MSTP323, MSTP322,
- 	MSTP314, MSTP313, MSTP312, MSTP311,
- 	MSTP303, MSTP302, MSTP301, MSTP300,
- 	MSTP411, MSTP410, MSTP403,
-@@ -510,6 +510,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP328] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 28, 0), /*FSI*/
- 	[MSTP325] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR3, 25, 0), /* IrDA */
- 	[MSTP323] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 23, 0), /* IIC1 */
-+	[MSTP322] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 22, 0), /* USB */
- 	[MSTP314] = MSTP(&div6_clks[DIV6_SDHI0], SMSTPCR3, 14, 0), /* SDHI0 */
- 	[MSTP313] = MSTP(&div6_clks[DIV6_SDHI1], SMSTPCR3, 13, 0), /* SDHI1 */
- 	[MSTP312] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 12, 0), /* MMCIF0 */
-@@ -566,6 +567,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_fsi2", &mstp_clks[MSTP328]), /* FSI */
- 	CLKDEV_DEV_ID("sh_irda.0", &mstp_clks[MSTP325]), /* IrDA */
- 	CLKDEV_DEV_ID("i2c-sh_mobile.1", &mstp_clks[MSTP323]), /* I2C1 */
-+	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP322]), /* USB */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]), /* SDHI0 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]), /* SDHI1 */
- 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP312]), /* MMCIF0 */
--- 
-1.7.5.4
-
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
