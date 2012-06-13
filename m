@@ -1,37 +1,29 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 12 Jun 2012 09:44:20 +0000
-Subject: [PATCH 27/27 v2] ARM: shmobile: kzm9g: enable DMAEngine on FSI
-Message-Id: <874nqgx3tb.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 13 Jun 2012 00:52:52 +0000
+Subject: Re: [PATCH 27/27 v2] ARM: shmobile: kzm9g: enable DMAEngine on FSI
+Message-Id: <20120613005250.GZ16686@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <874nqgx3tb.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <874nqgx3tb.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-It is possible to reduce CPU load if FSI playback used DMAEngine.
-This patch enabled it.
+On Tue, Jun 12, 2012 at 02:44:20AM -0700, Kuninori Morimoto wrote:
+> It is possible to reduce CPU load if FSI playback used DMAEngine.
+> This patch enabled it.
+> 
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v1 -> v2
+As I tested v1 of this patch:
 
- - no change
+Tested-by: Simon Horman <horms@verge.net.au>
 
- arch/arm/mach-shmobile/board-kzm9g.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index 7523e9e..d2feee1 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -280,6 +280,7 @@ static struct platform_device gpio_keys_device = {
- /* FSI-AK4648 */
- static struct sh_fsi_platform_info fsi_info = {
- 	.port_a = {
-+		.tx_id = SHDMA_SLAVE_FSI2A_TX,
- 	},
- };
- 
--- 
-1.7.5.4
-
+> ---
+> v1 -> v2
+> 
+>  - no change
+> 
+>  arch/arm/mach-shmobile/board-kzm9g.c |    1 +
+>  1 files changed, 1 insertions(+), 0 deletions(-)
