@@ -1,49 +1,42 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Wed, 20 Jun 2012 09:48:46 +0000
-Subject: Re: [PATCH 02/27 v2] ARM: shmobile: sh7372: bugfix: chclr_offset base
-Message-Id: <201206201148.46541.rjw@sisk.pl>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 13 Jun 2012 13:37:27 +0000
+Subject: [PATCH 4/5 v4] mmc: sh_mmcif: remove redundant .down_pwr() callback
+Message-Id: <Pine.LNX.4.64.1206131534250.17854@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <874nqgyixn.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <874nqgyixn.wl%kuninori.morimoto.gx@renesas.com>
+References: <Pine.LNX.4.64.1206131515180.17854@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1206131515180.17854@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>, Mark Brown <broonie@opensource.wolfsonmicro.com>
 
-On Tuesday, June 12, 2012, Kuninori Morimoto wrote:
-> chclr_write() will use (chan_reg + chclr_offset).
-> In sh7372 case, DMA1CHCLR is started from 0xfe008220,
-> and chan_reg is started from 0xfe008020 (= sh7372_dmae0_resources).
-> Thus, chclr_offset should be (0x220 - 0x20) instead of 0x220.
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From the original version of sh_mmcif the .set_pwr() callback has only been
+used to turn the card's power on, and the .down_pwr() callback has been
+used to turn it off. .set_pwr() can be used for both these tasks, which is
+also how it is implemented by the only user of this API: the SH7724 ecovec
+board.
 
-Applied to the fixes branch of the renesas.git tree.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/mmc/host/sh_mmcif.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-Thanks,
-Rafael
-
-
-> ---
-> v1 -> v2
-> 
-> - no change
-> 
->  arch/arm/mach-shmobile/setup-sh7372.c |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-> index 6a4bd58..fafce9c 100644
-> --- a/arch/arm/mach-shmobile/setup-sh7372.c
-> +++ b/arch/arm/mach-shmobile/setup-sh7372.c
-> @@ -484,7 +484,7 @@ static const struct sh_dmae_slave_config sh7372_dmae_slaves[] = {
->  	},
->  };
->  
-> -#define SH7372_CHCLR 0x220
-> +#define SH7372_CHCLR (0x220 - 0x20)
->  
->  static const struct sh_dmae_channel sh7372_dmae_channels[] = {
->  	{
-> 
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 3ffb92f..4680276 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -957,8 +957,8 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 			pm_runtime_put(&host->pd->dev);
+ 			clk_disable(host->hclk);
+ 			host->power = false;
+-			if (p->down_pwr && ios->power_mode = MMC_POWER_OFF)
+-				p->down_pwr(host->pd);
++			if (p->set_pwr && ios->power_mode = MMC_POWER_OFF)
++				p->set_pwr(host->pd, 0);
+ 		}
+ 		host->state = STATE_IDLE;
+ 		return;
+-- 
+1.7.2.5
 
