@@ -1,172 +1,168 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Sat, 30 Jun 2012 23:39:53 +0000
-Subject: Re: [PATCH/RFC] ARM: mach-shmobile: enable power switching on SDHI0 and SDHI2 on kzm9g
-Message-Id: <Pine.LNX.4.64.1207010135570.24651@axis700.grange>
+Date: Wed, 13 Jun 2012 13:37:19 +0000
+Subject: [PATCH 2/5 v4] mmc: sh_mmcif: fix clock management
+Message-Id: <Pine.LNX.4.64.1206131533240.17854@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1207010101280.24651@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1207010101280.24651@axis700.grange>
+References: <Pine.LNX.4.64.1206131515180.17854@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1206131515180.17854@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>, Mark Brown <broonie@opensource.wolfsonmicro.com>
 
-On Sun, 1 Jul 2012, Guennadi Liakhovetski wrote:
+Regardless, whether the MMC bus clock is the same, as the PM clock on this
+specific interface, it has to be managed separately. Its proper management
+should also include enabling and disabling of the clock, whenever the
+interface is becoming active or going idle respectively.
 
-> On the kzm9g board power for SDHI0 and SDHI2 interfaces is controlled by
-> GPIOs. Use a switchable fixed regulator for them.
-
-Hm, no, this is not the whole truth: this will leave both SDHI0 and SDHI2 
-slots unpowered is the fixed regulator is unavailable. This shall only be 
-applied after we "select CONFIG_REGULATOR_FIXED_VOLTAGE" so, don't think 
-we want this for 3.6. Still would be nice to know, whether those GPIOs can 
-be used for power switching at all.
-
-Thanks
-Guennadi
-
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> ---
-> 
-> This is NOT for immediate application. It doesn't have to go to 3.6. If we 
-> manage to confirm my guess and test this - we _could_ take it to 3.6. If 
-> not - it can absolutely wait for 3.7. This patch is a _guess_ - in the 
-> kzm9g init function GPIOs 15 and 14 are configured as output fixed high in 
-> SDHI0 and SDHI2 sections respectively with a comment "power." So, my guess 
-> was, that these GPIOs can also actually switch card power on those slots. 
-> Since I have no datasheet or schematics for that board or the board 
-> itself, I cannot confirm that my guess. Since Morimoto-san has worked 
-> pretty intensively with this board, maybe he could verify that, but again 
-> - nothing urgent.
-> 
->  arch/arm/mach-shmobile/board-kzm9g.c |   69 +++++++++++++++++++++++++++++-----
->  1 files changed, 59 insertions(+), 10 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-> index 53b7ea9..2230706 100644
-> --- a/arch/arm/mach-shmobile/board-kzm9g.c
-> +++ b/arch/arm/mach-shmobile/board-kzm9g.c
-> @@ -373,13 +373,35 @@ static struct platform_device mmc_device = {
->  	.resource	= sh_mmcif_resources,
->  };
->  
-> -/* Fixed 2.8V regulators to be used by SDHI0 and SDHI2 */
-> -static struct regulator_consumer_supply fixed2v8_power_consumers[] > +/* Fixed 2.8V regulators to be used by SDHI0 */
-> +static struct regulator_consumer_supply sdhi0_power_consumers[] >  {
->  	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
->  	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
-> -	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.2"),
-> -	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.2"),
-> +};
-> +
-> +static struct regulator_init_data sdhi0_power_init_data = {
-> +	.constraints = {
-> +		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
-> +	},
-> +	.num_consumer_supplies  = ARRAY_SIZE(sdhi0_power_consumers),
-> +	.consumer_supplies      = sdhi0_power_consumers,
-> +};
-> +
-> +static struct fixed_voltage_config sdhi0_power_info = {
-> +	.supply_name = "SDHI0 SD/MMC Vdd",
-> +	.microvolts = 2800000,
-> +	.gpio = GPIO_PORT15,
-> +	.enable_high = 1,
-> +	.init_data = &sdhi0_power_init_data,
-> +};
-> +
-> +static struct platform_device sdhi0_power = {
-> +	.name = "reg-fixed-voltage",
-> +	.id   = 1,
-> +	.dev  = {
-> +		.platform_data = &sdhi0_power_info,
-> +	},
->  };
->  
->  /* SDHI */
-> @@ -422,6 +444,37 @@ static struct platform_device sdhi0_device = {
->  	},
->  };
->  
-> +/* Fixed 2.8V regulators to be used by SDHI2 */
-> +static struct regulator_consumer_supply sdhi2_power_consumers[] > +{
-> +	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.2"),
-> +	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.2"),
-> +};
-> +
-> +static struct regulator_init_data sdhi2_power_init_data = {
-> +	.constraints = {
-> +		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
-> +	},
-> +	.num_consumer_supplies  = ARRAY_SIZE(sdhi2_power_consumers),
-> +	.consumer_supplies      = sdhi2_power_consumers,
-> +};
-> +
-> +static struct fixed_voltage_config sdhi2_power_info = {
-> +	.supply_name = "SDHI2 SD/MMC Vdd",
-> +	.microvolts = 2800000,
-> +	.gpio = GPIO_PORT14,
-> +	.enable_high = 1,
-> +	.init_data = &sdhi2_power_init_data,
-> +};
-> +
-> +static struct platform_device sdhi2_power = {
-> +	.name = "reg-fixed-voltage",
-> +	.id   = 3,
-> +	.dev  = {
-> +		.platform_data = &sdhi2_power_info,
-> +	},
-> +};
-> +
->  /* Micro SD */
->  static struct sh_mobile_sdhi_info sdhi2_info = {
->  	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
-> @@ -576,6 +629,8 @@ static struct i2c_board_info i2c3_devices[] = {
->  };
->  
->  static struct platform_device *kzm_devices[] __initdata = {
-> +	&sdhi0_power,
-> +	&sdhi2_power,
->  	&smsc_device,
->  	&usb_host_device,
->  	&usbhs_device,
-> @@ -645,8 +700,6 @@ static void __init kzm_init(void)
->  {
->  	regulator_register_always_on(0, "fixed-1.8V", fixed1v8_power_consumers,
->  				     ARRAY_SIZE(fixed1v8_power_consumers), 1800000);
-> -	regulator_register_always_on(1, "fixed-2.8V", fixed2v8_power_consumers,
-> -				     ARRAY_SIZE(fixed2v8_power_consumers), 2800000);
->  	regulator_register_fixed(2, dummy_supplies, ARRAY_SIZE(dummy_supplies));
->  
->  	sh73a0_pinmux_init();
-> @@ -723,8 +776,6 @@ static void __init kzm_init(void)
->  	gpio_request(GPIO_FN_SDHID0_1,		NULL);
->  	gpio_request(GPIO_FN_SDHID0_0,		NULL);
->  	gpio_request(GPIO_FN_SDHI0_VCCQ_MC0_ON,	NULL);
-> -	gpio_request(GPIO_PORT15, NULL);
-> -	gpio_direction_output(GPIO_PORT15, 1); /* power */
->  
->  	/* enable Micro SD */
->  	gpio_request(GPIO_FN_SDHID2_0,		NULL);
-> @@ -733,8 +784,6 @@ static void __init kzm_init(void)
->  	gpio_request(GPIO_FN_SDHID2_3,		NULL);
->  	gpio_request(GPIO_FN_SDHICMD2,		NULL);
->  	gpio_request(GPIO_FN_SDHICLK2,		NULL);
-> -	gpio_request(GPIO_PORT14, NULL);
-> -	gpio_direction_output(GPIO_PORT14, 1); /* power */
->  
->  	/* I2C 3 */
->  	gpio_request(GPIO_FN_PORT27_I2C_SCL3, NULL);
-> -- 
-> 1.7.2.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ drivers/mmc/host/sh_mmcif.c |   46 +++++++++++++++++++++---------------------
+ 1 files changed, 23 insertions(+), 23 deletions(-)
+
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index d6ffb05..6a93b04 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -942,6 +942,7 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 		}
+ 		if (host->power) {
+ 			pm_runtime_put(&host->pd->dev);
++			clk_disable(host->hclk);
+ 			host->power = false;
+ 			if (p->down_pwr && ios->power_mode = MMC_POWER_OFF)
+ 				p->down_pwr(host->pd);
+@@ -954,6 +955,7 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 		if (!host->power) {
+ 			if (p->set_pwr)
+ 				p->set_pwr(host->pd, ios->power_mode);
++			clk_enable(host->hclk);
+ 			pm_runtime_get_sync(&host->pd->dev);
+ 			host->power = true;
+ 			sh_mmcif_sync_reset(host);
+@@ -1278,22 +1280,11 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
+ 	host->addr	= reg;
+ 	host->timeout	= 1000;
+ 
+-	snprintf(clk_name, sizeof(clk_name), "mmc%d", pdev->id);
+-	host->hclk = clk_get(&pdev->dev, clk_name);
+-	if (IS_ERR(host->hclk)) {
+-		dev_err(&pdev->dev, "cannot get clock \"%s\"\n", clk_name);
+-		ret = PTR_ERR(host->hclk);
+-		goto eclkget;
+-	}
+-	clk_enable(host->hclk);
+-	host->clk = clk_get_rate(host->hclk);
+ 	host->pd = pdev;
+ 
+ 	spin_lock_init(&host->lock);
+ 
+ 	mmc->ops = &sh_mmcif_ops;
+-	mmc->f_max = host->clk / 2;
+-	mmc->f_min = host->clk / 512;
+ 	if (pd->ocr)
+ 		mmc->ocr_avail = pd->ocr;
+ 	mmc->caps = MMC_CAP_MMC_HIGHSPEED;
+@@ -1305,18 +1296,30 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
+ 	mmc->max_blk_count = mmc->max_req_size / mmc->max_blk_size;
+ 	mmc->max_seg_size = mmc->max_req_size;
+ 
+-	sh_mmcif_sync_reset(host);
+ 	platform_set_drvdata(pdev, host);
+ 
+ 	pm_runtime_enable(&pdev->dev);
+ 	host->power = false;
+ 
++	snprintf(clk_name, sizeof(clk_name), "mmc%d", pdev->id);
++	host->hclk = clk_get(&pdev->dev, clk_name);
++	if (IS_ERR(host->hclk)) {
++		ret = PTR_ERR(host->hclk);
++		dev_err(&pdev->dev, "cannot get clock \"%s\": %d\n", clk_name, ret);
++		goto eclkget;
++	}
++	clk_enable(host->hclk);
++	host->clk = clk_get_rate(host->hclk);
++	mmc->f_max = host->clk / 2;
++	mmc->f_min = host->clk / 512;
++
+ 	ret = pm_runtime_resume(&pdev->dev);
+ 	if (ret < 0)
+ 		goto eresume;
+ 
+ 	INIT_DELAYED_WORK(&host->timeout_work, mmcif_timeout_work);
+ 
++	sh_mmcif_sync_reset(host);
+ 	sh_mmcif_writel(host->addr, MMCIF_CE_INT_MASK, MASK_ALL);
+ 
+ 	ret = request_threaded_irq(irq[0], sh_mmcif_intr, sh_mmcif_irqt, 0, "sh_mmc:error", host);
+@@ -1330,6 +1333,7 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
+ 		goto ereqirq1;
+ 	}
+ 
++	clk_disable(host->hclk);
+ 	ret = mmc_add_host(mmc);
+ 	if (ret < 0)
+ 		goto emmcaddh;
+@@ -1348,9 +1352,10 @@ ereqirq1:
+ ereqirq0:
+ 	pm_runtime_suspend(&pdev->dev);
+ eresume:
+-	pm_runtime_disable(&pdev->dev);
+ 	clk_disable(host->hclk);
++	clk_put(host->hclk);
+ eclkget:
++	pm_runtime_disable(&pdev->dev);
+ 	mmc_free_host(mmc);
+ ealloch:
+ 	iounmap(reg);
+@@ -1363,6 +1368,7 @@ static int __devexit sh_mmcif_remove(struct platform_device *pdev)
+ 	int irq[2];
+ 
+ 	host->dying = true;
++	clk_enable(host->hclk);
+ 	pm_runtime_get_sync(&pdev->dev);
+ 
+ 	dev_pm_qos_hide_latency_limit(&pdev->dev);
+@@ -1388,9 +1394,9 @@ static int __devexit sh_mmcif_remove(struct platform_device *pdev)
+ 
+ 	platform_set_drvdata(pdev, NULL);
+ 
+-	clk_disable(host->hclk);
+ 	mmc_free_host(host->mmc);
+ 	pm_runtime_put_sync(&pdev->dev);
++	clk_disable(host->hclk);
+ 	pm_runtime_disable(&pdev->dev);
+ 
+ 	return 0;
+@@ -1399,24 +1405,18 @@ static int __devexit sh_mmcif_remove(struct platform_device *pdev)
+ #ifdef CONFIG_PM
+ static int sh_mmcif_suspend(struct device *dev)
+ {
+-	struct platform_device *pdev = to_platform_device(dev);
+-	struct sh_mmcif_host *host = platform_get_drvdata(pdev);
++	struct sh_mmcif_host *host = dev_get_drvdata(dev);
+ 	int ret = mmc_suspend_host(host->mmc);
+ 
+-	if (!ret) {
++	if (!ret)
+ 		sh_mmcif_writel(host->addr, MMCIF_CE_INT_MASK, MASK_ALL);
+-		clk_disable(host->hclk);
+-	}
+ 
+ 	return ret;
+ }
+ 
+ static int sh_mmcif_resume(struct device *dev)
+ {
+-	struct platform_device *pdev = to_platform_device(dev);
+-	struct sh_mmcif_host *host = platform_get_drvdata(pdev);
+-
+-	clk_enable(host->hclk);
++	struct sh_mmcif_host *host = dev_get_drvdata(dev);
+ 
+ 	return mmc_resume_host(host->mmc);
+ }
+-- 
+1.7.2.5
+
