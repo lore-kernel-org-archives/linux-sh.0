@@ -1,77 +1,105 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 29 Jun 2012 07:49:13 +0000
-Subject: Re: [PATCH 04/10 v3] ARM: mach-shmobile: add fixed voltage regulators to armadillo800eva
-Message-Id: <Pine.LNX.4.64.1206290939250.3929@axis700.grange>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Wed, 13 Jun 2012 07:34:00 +0000
+Subject: [PATCH 1/2] irqdomain: Fix up linear revmap for non-zero hwirq displacement.
+Message-Id: <1339572841-26175-1-git-send-email-lethal@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1340749952-8534-5-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1340749952-8534-5-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Grant Likely <grant.likely@secretlab.ca>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
 
-On Thu, 28 Jun 2012, Rafael J. Wysocki wrote:
+Presently the linear revmap code assumes that all hwirqs start at 0,
+using the hwirq directly as an index value for the lookup. In the case of
+legacy revmaps this isn't necessarily the case, as the first_hwirq value
+passed in can be non-zero, causing those types of users to silently have
+their IRQs placed in the radix tree instead.
 
-> On Wednesday, June 27, 2012, Guennadi Liakhovetski wrote:
-> > On Wed, 27 Jun 2012, Guennadi Liakhovetski wrote:
-> > 
-> > > On armadillo800eva provide a 3.3V supply for its SD/MMC-card interfaces.
-> > > 
-> > > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > > ---
-> > >  arch/arm/mach-shmobile/board-armadillo800eva.c |   16 ++++++++++++++++
-> > >  1 files changed, 16 insertions(+), 0 deletions(-)
-> > > 
-> > > diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-> > > index 9e37026..819cee5 100644
-> > > --- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-> > > +++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-> > > @@ -28,6 +28,8 @@
-> > >  #include <linux/platform_device.h>
-> > >  #include <linux/gpio.h>
-> > >  #include <linux/gpio_keys.h>
-> > > +#include <linux/regulator/fixed.h>
-> > > +#include <linux/regulator/machine.h>
-> > >  #include <linux/sh_eth.h>
-> > >  #include <linux/videodev2.h>
-> > >  #include <linux/usb/renesas_usbhs.h>
-> > > @@ -407,6 +409,17 @@ static struct platform_device gpio_keys_device = {
-> > >  	},
-> > >  };
-> > >  
-> > > +/* Fixed 3.3V regulator to be used by SDHI0, SDHI1, MMCIF */
-> > > +static struct regulator_consumer_supply fixed3v3_power_consumers[] > > > +{
-> > > +	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
-> > > +	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
-> > > +	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
-> > > +	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.1"),
-> > > +	REGULATOR_SUPPLY("vmmc", "sh_mmcif.0"),
-> > > +	REGULATOR_SUPPLY("vqmmc", "sh_mmcif.0"),
-> > 
-> > There is a slight problem with this patch: a1 (r8a7740) SoCs are currently 
-> > the only ones registering their MMCIF device without an index, i.e., with 
-> > .id = -1. This is reflected in board-armadillo800eva.c and in 
-> > clock-r8a7740.c. This patch erroneously uses sh_mmcif.0 for device name, 
-> > which is also what every single other ARM and sh platform in the mainline, 
-> > using mmcif, AFAICS, currently does.
-> > 
-> > Therefore question: Magnus, Rafael: what would you prefer - fix the above 
-> > regulator entries to not use a device ID, or unify a1 with other SoCs to 
-> > use .id = 0?
-> 
-> I wonder what's going to be more straightforward?
+With this change, hwirq displacement is factored in at association time
+directly. This also makes it possible for non-legacy users to use linear
+revmaps regardless of hwirq base position. This could potentially lead to
+a bug if there's an attempt to associate multiple times in to the linear
+map in a nonsensical and non-linear order, but at that point being
+silently punted to the radix tree is likely to be the least of your
+concerns (in such a case it's fairly trivial to simply extend
+irq_domain_add_linear() to take a hwirq base and move the linear base
+assignment there).
 
-The easier fix is, of course, to redo the above hunk with just "sh_mmcif" 
-as a device name. This is also what Magnus wanted to have and what I've 
-sent a few minutes ago. But I'm pretty certain - if we keep this one 
-platform different from the rest, I've made this mistake once, I'll do it 
-again :-) So, eventually, maybe trying to keep the error probability as 
-low as possible is good _if_ we don't have to make any further sacrifices 
-for that.
-
-Thanks
-Guennadi
+Signed-off-by: Paul Mundt <lethal@linux-sh.org>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ include/linux/irqdomain.h |    1 +
+ kernel/irq/irqdomain.c    |   18 +++++++++++++-----
+ 2 files changed, 14 insertions(+), 5 deletions(-)
+
+diff --git a/include/linux/irqdomain.h b/include/linux/irqdomain.h
+index 775765d..58defd5 100644
+--- a/include/linux/irqdomain.h
++++ b/include/linux/irqdomain.h
+@@ -97,6 +97,7 @@ struct irq_domain {
+ 	/* Reverse mapping data */
+ 	unsigned int nomap_max_irq;
+ 	struct radix_tree_root radix_tree;
++	unsigned int linear_start;
+ 	unsigned int linear_size;
+ 	unsigned int linear_revmap[];
+ };
+diff --git a/kernel/irq/irqdomain.c b/kernel/irq/irqdomain.c
+index 906307b..8591cb6 100644
+--- a/kernel/irq/irqdomain.c
++++ b/kernel/irq/irqdomain.c
+@@ -55,6 +55,7 @@ static struct irq_domain *irq_domain_alloc(struct device_node *of_node,
+ 	domain->ops = ops;
+ 	domain->host_data = host_data;
+ 	domain->of_node = of_node_get(of_node);
++	domain->linear_start = 0;
+ 	domain->linear_size = size;
+ 
+ 	return domain;
+@@ -268,8 +269,8 @@ static void irq_domain_disassociate_many(struct irq_domain *domain,
+ 		irq_data->hwirq = 0;
+ 
+ 		/* Clear reverse map */
+-		if (hwirq < domain->linear_size)
+-			domain->linear_revmap[hwirq] = 0;
++		if (hwirq - domain->linear_start < domain->linear_size)
++			domain->linear_revmap[hwirq - domain->linear_start] = 0;
+ 		else {
+ 			mutex_lock(&revmap_trees_mutex);
+ 			radix_tree_delete(&domain->radix_tree, hwirq);
+@@ -288,6 +289,13 @@ int irq_domain_associate_many(struct irq_domain *domain, unsigned int irq_base,
+ 	pr_debug("%s(%s, irqbase=%i, hwbase=%i, count=%i)\n", __func__,
+ 		of_node_full_name(domain->of_node), irq_base, (int)hwirq_base, count);
+ 
++	/*
++	 * The linear revmap may not begin at 0, factor in the hwirq
++	 * displacement here.
++	 */
++	if (domain->linear_size)
++		domain->linear_start = hwirq_base;
++
+ 	for (i = 0; i < count; i++) {
+ 		struct irq_data *irq_data = irq_get_irq_data(virq + i);
+ 
+@@ -311,8 +319,8 @@ int irq_domain_associate_many(struct irq_domain *domain, unsigned int irq_base,
+ 			goto err_unmap;
+ 		}
+ 
+-		if (hwirq < domain->linear_size)
+-			domain->linear_revmap[hwirq] = virq;
++		if (hwirq - domain->linear_start < domain->linear_size)
++			domain->linear_revmap[hwirq - domain->linear_start] = virq;
+ 		else {
+ 			mutex_lock(&revmap_trees_mutex);
+ 			radix_tree_insert(&domain->radix_tree, hwirq, irq_data);
+@@ -585,7 +593,7 @@ unsigned int irq_linear_revmap(struct irq_domain *domain,
+ 	BUG_ON(domain->revmap_type != IRQ_DOMAIN_MAP_LINEAR);
+ 
+ 	/* Check revmap bounds; complain if exceeded */
+-	if (hwirq >= domain->linear_size) {
++	if (hwirq - domain->linear_start >= domain->linear_size) {
+ 		rcu_read_lock();
+ 		data = radix_tree_lookup(&domain->radix_tree, hwirq);
+ 		rcu_read_unlock();
+-- 
+1.7.9.rc0.28.g0e1cf
+
