@@ -1,39 +1,116 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 24 Jun 2012 20:12:06 +0000
-Subject: Re: [PATCH] PM / shmobile: sh7372: remove unused sh7372_a3sp_init() on !CONFIG_PM
-Message-Id: <201206242212.06999.rjw@sisk.pl>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 13 Jun 2012 12:57:41 +0000
+Subject: [PATCH v5] mmc: add a function to get regulators, supplying card's power
+Message-Id: <Pine.LNX.4.64.1206131454260.17854@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87a9zwt15h.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87a9zwt15h.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Ulf Hansson <ulf.hansson@stericsson.com>, Adrian Hunter <adrian.hunter@intel.com>, Philip Rakity <prakity@marvell.com>, Ulf Hansson <ulf.hansson@linaro.org>, Magnus Damm <magnus.damm@gmail.com>, Mark Brown <broonie@opensource.wolfsonmicro.com>, Chris Ball <cjb@laptop.org>
 
-On Saturday, June 23, 2012, Simon Horman wrote:
-> On Thu, Jun 21, 2012 at 09:34:54PM -0700, Kuninori Morimoto wrote:
-> > 767c0f3aed74be56f268709f5347e6c86d52b408
-> > (PM / shmobile: Remove the stay_on flag from SH7372's PM domains)
-> > commit removed sh7372_a3sp_init().
-> > Now, there is no user for it.
-> > 
-> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> Reviewed-by: Simon Horman <horms@verge.net.au>
+Add a function to get regulators, supplying card's Vdd and Vccq on a
+specific host. If a Vdd supplying regulator is found, the function checks,
+whether a valid OCR mask can be obtained from it. The Vccq regulator is
+optional. A failure to get it is not fatal.
 
-Applied to the sh7372 branch of the renesas.git tree.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
 
-Thanks,
-Rafael
+v5: put struct mmc_supply inside struct mmc_host, thanks for all comments
 
+ drivers/mmc/core/core.c  |   24 ++++++++++++++++++++++++
+ include/linux/mmc/host.h |   16 ++++++++++++++--
+ 2 files changed, 38 insertions(+), 2 deletions(-)
 
-> > ---
-> >  arch/arm/mach-shmobile/pm-sh7372.c |    7 +------
-> >  1 files changed, 1 insertions(+), 6 deletions(-)
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
+diff --git a/drivers/mmc/core/core.c b/drivers/mmc/core/core.c
+index 0b6141d..4aa8658 100644
+--- a/drivers/mmc/core/core.c
++++ b/drivers/mmc/core/core.c
+@@ -1013,6 +1013,30 @@ int mmc_regulator_set_ocr(struct mmc_host *mmc,
+ }
+ EXPORT_SYMBOL(mmc_regulator_set_ocr);
+ 
++int mmc_regulator_get_supply(struct mmc_host *mmc)
++{
++	struct device *dev = mmc_dev(mmc);
++	struct regulator *supply;
++	int ret;
++
++	supply = devm_regulator_get(dev, "vmmc");
++
++	if (IS_ERR(supply))
++		return PTR_ERR(supply);
++
++	mmc->supply.vmmc = supply;
++	mmc->supply.vqmmc = devm_regulator_get(dev, "vqmmc");
++
++	ret = mmc_regulator_get_ocrmask(supply);
++	if (ret > 0)
++		mmc->ocr_avail = ret;
++	else
++		dev_warn(mmc_dev(mmc), "Failed getting OCR mask: %d\n", ret);
++
++	return 0;
++}
++EXPORT_SYMBOL_GPL(mmc_regulator_get_supply);
++
+ #endif /* CONFIG_REGULATOR */
+ 
+ /*
+diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
+index 0707d22..9deb725 100644
+--- a/include/linux/mmc/host.h
++++ b/include/linux/mmc/host.h
+@@ -155,6 +155,13 @@ struct mmc_hotplug {
+ 	void *handler_priv;
+ };
+ 
++struct regulator;
++
++struct mmc_supply {
++	struct regulator *vmmc;		/* Card power supply */
++	struct regulator *vqmmc;	/* Optional Vccq supply */
++};
++
+ struct mmc_host {
+ 	struct device		*parent;
+ 	struct device		class_dev;
+@@ -309,6 +316,7 @@ struct mmc_host {
+ #ifdef CONFIG_REGULATOR
+ 	bool			regulator_enabled; /* regulator state */
+ #endif
++	struct mmc_supply	supply;
+ 
+ 	struct dentry		*debugfs_root;
+ 
+@@ -357,13 +365,12 @@ static inline void mmc_signal_sdio_irq(struct mmc_host *host)
+ 	wake_up_process(host->sdio_irq_thread);
+ }
+ 
+-struct regulator;
+-
+ #ifdef CONFIG_REGULATOR
+ int mmc_regulator_get_ocrmask(struct regulator *supply);
+ int mmc_regulator_set_ocr(struct mmc_host *mmc,
+ 			struct regulator *supply,
+ 			unsigned short vdd_bit);
++int mmc_regulator_get_supply(struct mmc_host *mmc);
+ #else
+ static inline int mmc_regulator_get_ocrmask(struct regulator *supply)
+ {
+@@ -376,6 +383,11 @@ static inline int mmc_regulator_set_ocr(struct mmc_host *mmc,
+ {
+ 	return 0;
+ }
++
++static inline int mmc_regulator_get_supply(struct mmc_host *mmc)
++{
++	return 0;
++}
+ #endif
+ 
+ int mmc_card_awake(struct mmc_host *host);
+-- 
+1.7.2.5
 
