@@ -1,100 +1,101 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Fri, 15 Jun 2012 10:17:41 +0000
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Fri, 15 Jun 2012 19:08:13 +0000
 Subject: Re: [PATCH] mmc: tmio: Don't access hardware registers after stopping clocks
-Message-Id: <1740149.ZARlYKHO9G@avalon>
+Message-Id: <201206152108.13304.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1339505838-8831-1-git-send-email-laurent.pinchart@ideasonboard.com> <201206142348.44804.rjw@sisk.pl> <201206151203.02965.rjw@sisk.pl>
-In-Reply-To: <201206151203.02965.rjw@sisk.pl>
+References: <1339505838-8831-1-git-send-email-laurent.pinchart@ideasonboard.com> <201206151203.02965.rjw@sisk.pl> <1740149.ZARlYKHO9G@avalon>
+In-Reply-To: <1740149.ZARlYKHO9G@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Rafael J. Wysocki" <rjw@sisk.pl>
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 Cc: Magnus Damm <magnus.damm@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
 
-Hi Rafael,
-
-On Friday 15 June 2012 12:03:02 Rafael J. Wysocki wrote:
-> On Thursday, June 14, 2012, Rafael J. Wysocki wrote:
-> > On Thursday, June 14, 2012, Laurent Pinchart wrote:
-> > > On Thursday 14 June 2012 21:37:26 Rafael J. Wysocki wrote:
-> > > > On Thursday, June 14, 2012, Laurent Pinchart wrote:
-> > > > > On Thursday 14 June 2012 20:12:33 Magnus Damm wrote:
-> > > > > > On Tue, Jun 12, 2012 at 9:57 PM, Laurent Pinchart wrote:
-> > > > > > > The tmio_mmc_set_ios() function configures the MMC power, clock
-> > > > > > > and bus width. When the MMC controller gets powered off, runtime
-> > > > > > > PM switches the MSTP clock off. Writing to to
-> > > > > > > CTL_SD_MEM_CARD_OPT register afterwards fails and prints an
-> > > > > > > error message to the kernel log.
+On Friday, June 15, 2012, Laurent Pinchart wrote:
+> Hi Rafael,
+> 
+> On Friday 15 June 2012 12:03:02 Rafael J. Wysocki wrote:
+> > On Thursday, June 14, 2012, Rafael J. Wysocki wrote:
+> > > On Thursday, June 14, 2012, Laurent Pinchart wrote:
+> > > > On Thursday 14 June 2012 21:37:26 Rafael J. Wysocki wrote:
+> > > > > On Thursday, June 14, 2012, Laurent Pinchart wrote:
+> > > > > > On Thursday 14 June 2012 20:12:33 Magnus Damm wrote:
+> > > > > > > On Tue, Jun 12, 2012 at 9:57 PM, Laurent Pinchart wrote:
+> > > > > > > > The tmio_mmc_set_ios() function configures the MMC power, clock
+> > > > > > > > and bus width. When the MMC controller gets powered off, runtime
+> > > > > > > > PM switches the MSTP clock off. Writing to to
+> > > > > > > > CTL_SD_MEM_CARD_OPT register afterwards fails and prints an
+> > > > > > > > error message to the kernel log.
+> > > > > > > > 
+> > > > > > > > As configuring the bus width is pointless when the interface
+> > > > > > > > gets powered down, skip the operation when power is off.
+> > > > > > > > 
+> > > > > > > > Signed-off-by: Laurent Pinchart
+> > > > > > > > <laurent.pinchart@ideasonboard.com>
 > > > > > > > 
-> > > > > > > As configuring the bus width is pointless when the interface
-> > > > > > > gets powered down, skip the operation when power is off.
+> > > > > > > First of all, thanks for reporting this issue and coming up with a
+> > > > > > > fix!
+> > > > > > 
+> > > > > > You're welcome. You can expect more of them ;-)
+> > > > > > 
+> > > > > > > Can you please explain a bit more about when this triggers? Is
+> > > > > > > this related to suspend-to-ram perhaps? Which hardware platform?
+> > > > > > > Is CONFIG_PM_RUNTIME=y set?
+> > > > > > 
+> > > > > > I've noticed the problem on the Armadillo board with
+> > > > > > CONFIG_PM_RUNTIME=y.
+> > > > > > The driver spits out "timeout waiting for SD bus idle" error
+> > > > > > messages more or less continuously.
+> > > > > > 
+> > > > > > > I suspect that this may be a side effect of the current PM code
+> > > > > > > used on the A1 SoC (which is hooked up on the armadillo board).
 > > > > > > > 
-> > > > > > > Signed-off-by: Laurent Pinchart
-> > > > > > > <laurent.pinchart@ideasonboard.com>
+> > > > > > > In short, the A1 SoC does not yet make use of PM domains, but AP4
+> > > > > > > and the mackerel board (sh7372 based) is using PM domains.
 > > > > > > 
-> > > > > > First of all, thanks for reporting this issue and coming up with a
-> > > > > > fix!
+> > > > > > Does this mean that runtime PM is a no-op on A1 ? That would
+> > > > > > surprise me, as turning CONFIG_PM_RUNTIME off gets rid of the
+> > > > > > problem, so runtime PM is somehow involved. Even if the power domain
+> > > > > > does not get turned off, can't the MSTP clock be turned off ?
 > > > > > 
-> > > > > You're welcome. You can expect more of them ;-)
+> > > > > The problem is, most likely, that with CONFIG_PM_RUNTIME set the code
+> > > > > in drivers/sh/pm_runtime.c triggers and that causes default_pm_domain
+> > > > > to be used.
 > > > > > 
-> > > > > > Can you please explain a bit more about when this triggers? Is
-> > > > > > this related to suspend-to-ram perhaps? Which hardware platform?
-> > > > > > Is CONFIG_PM_RUNTIME=y set?
-> > > > > 
-> > > > > I've noticed the problem on the Armadillo board with
-> > > > > CONFIG_PM_RUNTIME=y.
-> > > > > The driver spits out "timeout waiting for SD bus idle" error
-> > > > > messages more or less continuously.
-> > > > > 
-> > > > > > I suspect that this may be a side effect of the current PM code
-> > > > > > used on the A1 SoC (which is hooked up on the armadillo board).
-> > > > > > 
-> > > > > > In short, the A1 SoC does not yet make use of PM domains, but AP4
-> > > > > > and the mackerel board (sh7372 based) is using PM domains.
-> > > > > 
-> > > > > Does this mean that runtime PM is a no-op on A1 ? That would
-> > > > > surprise me, as turning CONFIG_PM_RUNTIME off gets rid of the
-> > > > > problem, so runtime PM is somehow involved. Even if the power domain
-> > > > > does not get turned off, can't the MSTP clock be turned off ?
+> > > > > So, I don't really think we need to "fix" every driver in turn,
+> > > > > default_pm_domain seems to be what needs fixing.  I'm not exactly sure
+> > > > > how to fix it at the moment, though.
 > > > > 
-> > > > The problem is, most likely, that with CONFIG_PM_RUNTIME set the code
-> > > > in drivers/sh/pm_runtime.c triggers and that causes default_pm_domain
-> > > > to be used.
-> > > > 
-> > > > So, I don't really think we need to "fix" every driver in turn,
-> > > > default_pm_domain seems to be what needs fixing.  I'm not exactly sure
-> > > > how to fix it at the moment, though.
+> > > > But isn't there still an issue in the driver itself ? If my
+> > > > understanding is correct, calling pm_runtime_put() essentially means "I
+> > > > won't need to touch the device from now on, it can be suspended it
+> > > > needed/useful/appropriate/whatever". The runtime PM core is then free to
+> > > > turn the power domain and/or clock off synchronously or with a delay,
+> > > > or do nothing. After signaling that it won't need to touch the device,
+> > > > the driver should really avoid touching the device until the next
+> > > > pm_runtime_get_sync() call.
 > > > 
-> > > But isn't there still an issue in the driver itself ? If my
-> > > understanding is correct, calling pm_runtime_put() essentially means "I
-> > > won't need to touch the device from now on, it can be suspended it
-> > > needed/useful/appropriate/whatever". The runtime PM core is then free to
-> > > turn the power domain and/or clock off synchronously or with a delay,
-> > > or do nothing. After signaling that it won't need to touch the device,
-> > > the driver should really avoid touching the device until the next
-> > > pm_runtime_get_sync() call.
+> > > That's correct, the hardware shouldn't be touched after runtime suspend.
 > > 
-> > That's correct, the hardware shouldn't be touched after runtime suspend.
+> > On a second thought, runtime suspend should only happen when it is _known_
+> > that the hardware won't be accessed.  So, if the hardware _is_ accessed
+> > after runtime suspend, the runtime suspend shouldn't have happened in the
+> > first place.
+> > 
+> > That's why I don't think it is correct to "harden" code paths that shouldn't
+> > be entered after runtime suspend in the first place.
 > 
-> On a second thought, runtime suspend should only happen when it is _known_
-> that the hardware won't be accessed.  So, if the hardware _is_ accessed
-> after runtime suspend, the runtime suspend shouldn't have happened in the
-> first place.
-> 
-> That's why I don't think it is correct to "harden" code paths that shouldn't
-> be entered after runtime suspend in the first place.
+> I don't think we disagree is. The problem with the TMIO driver is that it 
+> entered after runtime suspend a code path that should not be entered. When the 
+> driver is notified by the MMC core that access to the card is not needed 
+> anymore, it correctly signal to the runtime PM core that the device can be 
+> suspended, but then tried to setup the device nonetheless.
 
-I don't think we disagree is. The problem with the TMIO driver is that it 
-entered after runtime suspend a code path that should not be entered. When the 
-driver is notified by the MMC core that access to the card is not needed 
-anymore, it correctly signal to the runtime PM core that the device can be 
-suspended, but then tried to setup the device nonetheless. There's no point in 
-setting up the device after we get told that we don't need it anymore, it will 
-be setup when resumed anyway. That's the code path that was wrong, and is 
-fixed by my patch.
+I see.
 
--- 
-Regards,
+> There's no point in 
+> setting up the device after we get told that we don't need it anymore, it will 
+> be setup when resumed anyway. That's the code path that was wrong, and is 
+> fixed by my patch.
 
-Laurent Pinchart
-
+OK, then.
