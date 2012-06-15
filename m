@@ -1,21 +1,113 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 13 Jun 2012 01:37:25 +0000
-Subject: Re: [PATCH] sh: Kill off last dead UBC header
-Message-Id: <20120613013724.GL10170@linux-sh.org>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 15 Jun 2012 15:17:04 +0000
+Subject: [PATCH 3/6] ARM: mach-shmobile: armadillo800eva: Add backlight support
+Message-Id: <1339773427-29508-4-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1339188557.30984.10.camel@x61.thuisdomein>
-In-Reply-To: <1339188557.30984.10.camel@x61.thuisdomein>
+References: <87lima4lxy.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87lima4lxy.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Bolle <pebolle@tiscali.nl>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Jun 08, 2012 at 10:49:17PM +0200, Paul Bolle wrote:
-> Commit 7025bec9125b0a02edcaf22c2dce753bf2c95480 ("sh: Kill off dead UBC
-> headers.") skipped arch/sh/include/cpu-sh2a/cpu/ubc.h. Since nothing is
-> using that header either, kill it off too.
-> 
-> Signed-off-by: Paul Bolle <pebolle@tiscali.nl>
+The flat panel backlight on the Armadillo 800 EVA board is driven by the
+TPU PWM output.
 
-Applied, thanks.
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/board-armadillo800eva.c |   51 ++++++++++++++++++++++--
+ 1 files changed, 47 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 376e92d..22a4921 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -28,6 +28,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/gpio.h>
+ #include <linux/gpio_keys.h>
++#include <linux/pwm_backlight.h>
+ #include <linux/sh_eth.h>
+ #include <linux/videodev2.h>
+ #include <linux/usb/renesas_usbhs.h>
+@@ -35,6 +36,7 @@
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mmcif.h>
+ #include <linux/mmc/sh_mobile_sdhi.h>
++#include <linux/platform_data/rmob-tpu-pwm.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/r8a7740.h>
+@@ -355,7 +357,49 @@ static struct platform_device sh_eth_device = {
+ 	.num_resources = ARRAY_SIZE(sh_eth_resources),
+ };
+ 
+-/* LCDC */
++/* PWM */
++static struct resource pwm_resources[] = {
++	[0] = {
++		.start = 0xe6600000,
++		.end = 0xe66000ff,
++		.flags = IORESOURCE_MEM,
++	},
++};
++
++static struct rmob_tpu_pwm_platform_data pwm_device_data = {
++	.channels[2] = {
++		.polarity = 0,
++		.pin_gpio = GPIO_PORT202,
++		.pin_gpio_fn = GPIO_FN_TPU0TO2_PORT202,
++	}
++};
++
++static struct platform_device pwm_device = {
++	.name = "rmob_tpu_pwm",
++	.id = 0,
++	.dev = {
++		.platform_data = &pwm_device_data,
++	},
++	.num_resources = ARRAY_SIZE(pwm_resources),
++	.resource = pwm_resources,
++};
++
++/* LCDC and backlight */
++static struct platform_pwm_backlight_data pwm_backlight_data = {
++	.pwm_id = 2,
++	.lth_brightness = 50,
++	.max_brightness = 255,
++	.dft_brightness = 255,
++	.pwm_period_ns = 33333, /* 30kHz */
++};
++
++static struct platform_device pwm_backlight_device = {
++	.name = "pwm-backlight",
++	.dev = {
++		.platform_data = &pwm_backlight_data,
++	},
++};
++
+ static struct fb_videomode lcdc0_mode = {
+ 	.name		= "AMPIER/AM-800480",
+ 	.xres		= 800,
+@@ -702,6 +746,8 @@ static struct platform_device gpio_keys_device = {
+  */
+ static struct platform_device *eva_devices[] __initdata = {
+ 	&lcdc0_device,
++	&pwm_device,
++	&pwm_backlight_device,
+ 	&gpio_keys_device,
+ 	&sh_eth_device,
+ 	&sdhi0_device,
+@@ -800,9 +846,6 @@ static void __init eva_init(void)
+ 	gpio_request(GPIO_PORT61, NULL); /* LCDDON */
+ 	gpio_direction_output(GPIO_PORT61, 1);
+ 
+-	gpio_request(GPIO_PORT202, NULL); /* LCD0_LED_CONT */
+-	gpio_direction_output(GPIO_PORT202, 0);
+-
+ 	/* Touchscreen */
+ 	gpio_request(GPIO_FN_IRQ10,	NULL); /* TP_INT */
+ 	gpio_request(GPIO_PORT166,	NULL); /* TP_RST_B */
+-- 
+1.7.3.4
+
