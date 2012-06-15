@@ -1,29 +1,39 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 28 Jun 2012 07:37:07 +0000
-Subject: Re: [PATCH] sh: kfr2r09: fix compile breakage
-Message-Id: <20120628073707.GA21764@linux-sh.org>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 15 Jun 2012 15:17:05 +0000
+Subject: [PATCH 4/6] pwm_backlight: Add deferred probe support
+Message-Id: <1339773427-29508-5-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1206271125530.24173@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1206271125530.24173@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-On Wed, Jun 27, 2012 at 11:26:34AM +0200, Guennadi Liakhovetski wrote:
-> Fix compile breakage caused by
-> 
-> commit aa82f9fcd0062782dcbe29a2c820ba7c04dbe572
-> Author: Paul Mundt <lethal@linux-sh.org>
-> 
->     sh: kfr2r09 evt2irq migration.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> ---
-> 
-> needed for 3.5
-> 
-Figures there was at least one. Oh well, I suppose one breakage out of
-hundreds isn't too bad.
+If the PWM instance is not available yet at probe time, request a
+deferred probe.
 
-Applied to sh/urgent, thanks.
+A better way to fix might be to create a PWM subsystem (possible
+integrated into the GPIO subsystem) to support generic PWM objects, and
+make sure the subsystem gets initialized first.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: linux-fbdev@vger.kernel.org
+---
+ drivers/video/backlight/pwm_bl.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/video/backlight/pwm_bl.c b/drivers/video/backlight/pwm_bl.c
+index 342b7d7..5df8b91 100644
+--- a/drivers/video/backlight/pwm_bl.c
++++ b/drivers/video/backlight/pwm_bl.c
+@@ -121,6 +121,8 @@ static int pwm_backlight_probe(struct platform_device *pdev)
+ 	if (IS_ERR(pb->pwm)) {
+ 		dev_err(&pdev->dev, "unable to request PWM for backlight\n");
+ 		ret = PTR_ERR(pb->pwm);
++		if (ret = -ENODEV)
++			ret = -EPROBE_DEFER;
+ 		goto err_alloc;
+ 	} else
+ 		dev_dbg(&pdev->dev, "got pwm for backlight\n");
+-- 
+1.7.3.4
+
