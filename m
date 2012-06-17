@@ -1,44 +1,100 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 11 Jun 2012 07:55:12 +0000
-Subject: Re: [PATCH 27/27] ARM: shmobile: kzm9g: enable DMAEngine on FSI
-Message-Id: <20120611075510.GA30048@verge.net.au>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 17 Jun 2012 19:56:59 +0000
+Subject: Re: Build regressions/improvements in v3.5-rc3
+Message-Id: <CAMuHMdVfLjgrtWoPpvbLf12+=ApE6W9dNcweqD-_2Benr-D7NQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87k3zepkgp.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87k3zepkgp.wl%kuninori.morimoto.gx@renesas.com>
+References: <1339962373-3224-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1339962373-3224-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: linux-kernel@vger.kernel.org
+Cc: Linuxppc-dev <linuxppc-dev@ozlabs.org>, Linux MIPS Mailing List <linux-mips@linux-mips.org>, Linux-sh list <linux-sh@vger.kernel.org>, Chris Zankel <chris@zankel.net>
 
-On Sun, Jun 10, 2012 at 08:59:37PM -0700, Kuninori Morimoto wrote:
-> It is possible to reduce CPU load if FSI playback used DMAEngine.
-> This patch enabled it.
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Sun, Jun 17, 2012 at 9:46 PM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> JFYI, when comparing v3.5-rc3 to v3.5-rc2[3], the summaries are:
+>  - build errors: +235/-10
 
-Tested-by: Simon Horman <horms@verge.net.au>
+Truckloads of powerpc "Unrecognized opcode" breakage, and
 
-> ---
->  arch/arm/mach-shmobile/board-kzm9g.c |    1 +
->  1 files changed, 1 insertions(+), 0 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-> index 7523e9e..d2feee1 100644
-> --- a/arch/arm/mach-shmobile/board-kzm9g.c
-> +++ b/arch/arm/mach-shmobile/board-kzm9g.c
-> @@ -280,6 +280,7 @@ static struct platform_device gpio_keys_device = {
->  /* FSI-AK4648 */
->  static struct sh_fsi_platform_info fsi_info = {
->  	.port_a = {
-> +		.tx_id = SHDMA_SLAVE_FSI2A_TX,
->  	},
->  };
->  
-> -- 
-> 1.7.5.4
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+  + arch/mips/include/asm/bitops.h: error: static declaration of 'fls'
+follows non-static declaration:  => 615:50
+  + include/asm-generic/bitops/fls64.h: error: static declaration of
+'fls64' follows non-static declaration:  => 26:81, 18:81
+  + include/linux/bitops.h: error: conflicting types for 'fls_long':  => 160:55
+
+various mips
+
+  + drivers/edac/mpc85xx_edac.c: error: too few arguments to function
+'edac_mc_alloc':  => 983:90
+
+powerpc-randconfig
+
+  + drivers/net/ethernet/dlink/de600.c: error: expected expression
+before 'do':  => 146:2, 301:3, 210:3, 150:2, 468:2, 404:2, 208:3,
+495:3, 328:2, 138:2, 499:2, 217:3, 417:2, 136:2, 300:3, 464:2, 501:2,
+493:2, 206:2, 216:3, 254:4, 350:2, 196:3, 137:2, 405:2, 463:2
+  + drivers/scsi/pcmcia/sym53c500_cs.c: error: expected expression
+before 'do':  => 453:4, 434:4, 574:2, 371:2
+  + drivers/scsi/qlogicfas408.c: error: expected expression before
+'do':  => 234:2, 221:2, 312:3, 583:2, 535:2, 324:3, 85:2, 406:2,
+316:5, 569:9, 89:3, 230:2, 546:2
+  + drivers/staging/wlags49_h2/hcf.c: error: expected expression
+before 'do':  => 3375:4, 3592:3, 4378:3, 1135:3, 1203:3, 3593:3,
+4731:3, 3653:3, 704:4, 3802:3, 1150:2, 1209:2, 3645:10, 4178:2,
+3699:5, 3007:5, 4033:2, 787:3, 2646:4, 1190:2, 3797:3, 717:3, 2630:3,
+4732:3, 703:4, 3582:2, 751:5, 2629:3, 755:5, 3507:3, 1153:2, 750:5,
+3057:4, 781:4, 2654:4, 3700:5
+  + drivers/staging/wlags49_h25/../wlags49_h2/hcf.c: error: expected
+expression before 'do':  => 3375:4, 3592:3, 4378:3, 1135:3, 1203:3,
+3593:3, 4731:3, 3653:3, 704:4, 3802:3, 1150:2, 1209:2, 3645:10,
+3699:5, 4033:2, 787:3, 2646:4, 1190:2, 717:3, 2630:3, 4732:3, 703:4,
+3582:2, 751:5, 2629:3, 755:5, 3507:3, 1153:2, 750:5, 3057:4, 781:4,
+2654:4, 3700:5
+
+sh-allyesconfig/sh-allmodconfig
+
+  + drivers/net/ethernet/stmicro/stmmac/stmmac_pci.c: error: implicit
+declaration of function 'pci_iomap'
+[-Werror=implicit-function-declaration]:  => 90:3
+  + drivers/net/ethernet/stmicro/stmmac/stmmac_pci.c: error: implicit
+declaration of function 'pci_iounmap'
+[-Werror=implicit-function-declaration]:  => 142:2
+
+xtensa
+
+  + error: "__ashrdi3" [fs/ntfs/ntfs.ko] undefined!:  => N/A
+  + error: "__lshrdi3" [fs/ntfs/ntfs.ko] undefined!:  => N/A
+
+sh4/landisk_defconfig
+
+  + error: "__ashrdi3" [fs/xfs/xfs.ko] undefined!:  => N/A
+  + error: "__lshrdi3" [drivers/mtd/mtd.ko] undefined!:  => N/A
+  + error: "__lshrdi3" [fs/xfs/xfs.ko] undefined!:  => N/A
+
+sh4/titan_defconfig
+
+  + error: No rule to make target include/config/auto.conf:  => N/A
+
+x86_64-randconfig
+
+  + kernel/sys.c: error: 'mmap_min_addr' undeclared (first use in this
+function):  => 1864:34, 1864:2
+  + security/security.c: error: 'BDI_CAP_EXEC_MAP' undeclared (first
+use in this function):  => 688:16, 688:3
+  + security/security.c: error: dereferencing pointer to incomplete
+type:  => 687:36
+
+sh-allyesconfig/sh-allmodconfig/sh-randconfig
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
