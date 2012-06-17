@@ -1,160 +1,48 @@
-From: Ulf Hansson <ulf.hansson@stericsson.com>
-Date: Fri, 15 Jun 2012 11:58:38 +0000
+From: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date: Sun, 17 Jun 2012 19:59:22 +0000
 Subject: Re: [PATCH v5] mmc: add a function to get regulators, supplying card's power
-Message-Id: <4FDB236E.8000300@stericsson.com>
+Message-Id: <20120617195921.GL4267@opensource.wolfsonmicro.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="yQDbd2FCF2Yhw41T"
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1206131454260.17854@axis700.grange> <4FD8973D.2010409@stericsson.com> <Pine.LNX.4.64.1206131543500.17854@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1206131543500.17854@axis700.grange>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+References: <Pine.LNX.4.64.1206131454260.17854@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1206131454260.17854@axis700.grange>
 To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: "linux-mmc@vger.kernel.org" <linux-mmc@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Adrian Hunter <adrian.hunter@intel.com>, Philip Rakity <prakity@marvell.com>, Ulf Hansson <ulf.hansson@linaro.org>, Magnus Damm <magnus.damm@gmail.com>, Mark Brown <broonie@opensource.wolfsonmicro.com>, Chris Ball <cjb@laptop.org>
+Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Ulf Hansson <ulf.hansson@stericsson.com>, Adrian Hunter <adrian.hunter@intel.com>, Philip Rakity <prakity@marvell.com>, Ulf Hansson <ulf.hansson@linaro.org>, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>
 
-Hi Guennadi,
 
-You have my ack on this then!
+--yQDbd2FCF2Yhw41T
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Acked-by: Ulf Hansson <ulf.hansson@linaro.org>
+On Wed, Jun 13, 2012 at 02:57:41PM +0200, Guennadi Liakhovetski wrote:
+> Add a function to get regulators, supplying card's Vdd and Vccq on a
+> specific host. If a Vdd supplying regulator is found, the function checks,
+> whether a valid OCR mask can be obtained from it. The Vccq regulator is
+> optional. A failure to get it is not fatal.
 
-Kind regards
-Ulf Hansson
+Reviwed-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
 
-On 06/13/2012 03:44 PM, Guennadi Liakhovetski wrote:
-> On Wed, 13 Jun 2012, Ulf Hansson wrote:
->
->> Hi Guennadi,
->>
->> On 06/13/2012 02:57 PM, Guennadi Liakhovetski wrote:
->>> Add a function to get regulators, supplying card's Vdd and Vccq on a
->>> specific host. If a Vdd supplying regulator is found, the function checks,
->>> whether a valid OCR mask can be obtained from it. The Vccq regulator is
->>> optional. A failure to get it is not fatal.
->>>
->>> Signed-off-by: Guennadi Liakhovetski<g.liakhovetski@gmx.de>
->>> ---
->>>
->>> v5: put struct mmc_supply inside struct mmc_host, thanks for all comments
->>>
->>>    drivers/mmc/core/core.c  |   24 ++++++++++++++++++++++++
->>>    include/linux/mmc/host.h |   16 ++++++++++++++--
->>>    2 files changed, 38 insertions(+), 2 deletions(-)
->>>
->>> diff --git a/drivers/mmc/core/core.c b/drivers/mmc/core/core.c
->>> index 0b6141d..4aa8658 100644
->>> --- a/drivers/mmc/core/core.c
->>> +++ b/drivers/mmc/core/core.c
->>> @@ -1013,6 +1013,30 @@ int mmc_regulator_set_ocr(struct mmc_host *mmc,
->>>    }
->>>    EXPORT_SYMBOL(mmc_regulator_set_ocr);
->>>
->>> +int mmc_regulator_get_supply(struct mmc_host *mmc)
->>> +{
->>> +	struct device *dev = mmc_dev(mmc);
->>> +	struct regulator *supply;
->>> +	int ret;
->>> +
->>> +	supply = devm_regulator_get(dev, "vmmc");
->>> +
->>> +	if (IS_ERR(supply))
->>> +		return PTR_ERR(supply);
->>> +
->>> +	mmc->supply.vmmc = supply;
->>> +	mmc->supply.vqmmc = devm_regulator_get(dev, "vqmmc");
->>> +
->>> +	ret = mmc_regulator_get_ocrmask(supply);
->>> +	if (ret>   0)
->>> +		mmc->ocr_avail = ret;
->>> +	else
->>> +		dev_warn(mmc_dev(mmc), "Failed getting OCR mask: %d\n", ret);
->>> +
->>> +	return 0;
->>> +}
->>> +EXPORT_SYMBOL_GPL(mmc_regulator_get_supply);
->>> +
->>>    #endif /* CONFIG_REGULATOR */
->>>
->>>    /*
->>> diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
->>> index 0707d22..9deb725 100644
->>> --- a/include/linux/mmc/host.h
->>> +++ b/include/linux/mmc/host.h
->>> @@ -155,6 +155,13 @@ struct mmc_hotplug {
->>>    	void *handler_priv;
->>>    };
->>>
->>> +struct regulator;
->>
->> Sorry for not spotting this before. Can we not remove this and instead do an
->> include in the top of this file like:
->> #include<linux/regulator/consumer.h>
->
-> No, forward-declaring a single struct is preferred over including a
-> complete header.
->
-> Thanks
-> Guennadi
->
->>
->>> +
->>> +struct mmc_supply {
->>> +	struct regulator *vmmc;		/* Card power supply */
->>> +	struct regulator *vqmmc;	/* Optional Vccq supply */
->>> +};
->>
->> Do we really need a new separate struct for this? I am in favor of having the
->> regulators directly in the mmc_host, just for simplicity.
->>
->>> +
->>>    struct mmc_host {
->>>    	struct device		*parent;
->>>    	struct device		class_dev;
->>> @@ -309,6 +316,7 @@ struct mmc_host {
->>>    #ifdef CONFIG_REGULATOR
->>>    	bool			regulator_enabled; /* regulator state */
->>>    #endif
->>> +	struct mmc_supply	supply;
->>>
->>>    	struct dentry		*debugfs_root;
->>>
->>> @@ -357,13 +365,12 @@ static inline void mmc_signal_sdio_irq(struct mmc_host
->>> *host)
->>>    	wake_up_process(host->sdio_irq_thread);
->>>    }
->>>
->>> -struct regulator;
->>> -
->>>    #ifdef CONFIG_REGULATOR
->>>    int mmc_regulator_get_ocrmask(struct regulator *supply);
->>>    int mmc_regulator_set_ocr(struct mmc_host *mmc,
->>>    			struct regulator *supply,
->>>    			unsigned short vdd_bit);
->>> +int mmc_regulator_get_supply(struct mmc_host *mmc);
->>>    #else
->>>    static inline int mmc_regulator_get_ocrmask(struct regulator *supply)
->>>    {
->>> @@ -376,6 +383,11 @@ static inline int mmc_regulator_set_ocr(struct mmc_host
->>> *mmc,
->>>    {
->>>    	return 0;
->>>    }
->>> +
->>> +static inline int mmc_regulator_get_supply(struct mmc_host *mmc)
->>> +{
->>> +	return 0;
->>> +}
->>>    #endif
->>>
->>>    int mmc_card_awake(struct mmc_host *host);
->>
->> Sorry being a bit picky, I am that mode today :-)
->>
->> Kind regards
->> Ulf Hansson
->>
->
-> ---
-> Guennadi Liakhovetski, Ph.D.
-> Freelance Open-Source Software Developer
-> http://www.open-technology.de/
+--yQDbd2FCF2Yhw41T
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJP3jcAAAoJEBus8iNuMP3dXikP/2FSoQLscicpsYOz+bwE7+Up
+n4zFbU6XAARnLFzSbcBZB0Zo+o1d5BQemu81UCQzvNhOTNTBu+Xm5S11uR0zVjNt
+L0fMFEP5Tib3icIWHXwvGgzqxQOnHz3iTOOWX9dO+y3lXrNHL8Bm04Jlg893FYT9
+QT8IJXX0PYaR72N/o68jZ4lskLYYkSBV0SILZOo1puNW5UGanhyWU7OQZYYP01aa
+zBuV6Ed54bN7FQxYSZZJsn6hTU9Cqp9v8UhD5dWFIuzZuO+pCF9KllWXL8FdK0uq
+r1tdpc1KVFfWMVCLc19Cnu5iUwb0qQrB0n72poLqI633K5MbS+8N8jd+l+p+y1Ur
+CRL+iKKCXw+CD8tTZylYckDZoHSa428zkEgxYN0dk11DexQqf88pzxnjgrXgsp8T
+/dEhVEdRCyOk9XExdrpEgeG4sF1FwxkwB0fxJg/oevKMTlbkv5zKe/HmINgA6xLt
+9YxMlOs+hUMcXyr5jDwmcP+uWoVfRdCcOwJUBLi7rh/xKivNJ4cHyN+v/KBsXEQw
+nIZ5a5dSo9yKogCsj29MEUGtkfF7fvp5xEKQGyneKZQ+2cTzFan1XDiAl9OLwE4Y
+WYAyKaBqFRRJu+YdrVEo/9f7uMBnz/vnnIBR74qtnb9IziICWS8wt2FT7jGSZ8zm
+8PNJ6xB4pd7gdi9fZonB
+=DLDa
+-----END PGP SIGNATURE-----
+
+--yQDbd2FCF2Yhw41T--
