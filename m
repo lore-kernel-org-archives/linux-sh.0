@@ -1,7 +1,7 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 19 Jun 2012 04:59:02 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 19 Jun 2012 08:26:58 +0000
 Subject: Re: [PATCH 2/4] ARM: shmobile: kzm9g: enable DMAEngine on MMCIF
-Message-Id: <87zk7zsxrh.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <20120619082656.GC25674@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87aa00t4y2.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <87aa00t4y2.wl%kuninori.morimoto.gx@renesas.com>
@@ -10,18 +10,11 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+On Mon, Jun 18, 2012 at 07:23:53PM -0700, Kuninori Morimoto wrote:
+> It is possible to reduce CPU load if MMCIF used DMAEngine.
+> This patch enabled it.
+> 
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Hi Kobayashi-san
+Tested-by: Simon Horman <horms@verge.net.au>
 
-Thank you for testing patch
-
-> After applying this patch, I can mount and read/write to eMMC.
-> Is it enough to test?
-> Or how do I know DMAEngine is working properly?
-
-Can you check /proc/interrupts ?
-Did your dmaeXX increment ?
-
-Best regards
----
-Kuninori Morimoto
