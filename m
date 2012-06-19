@@ -1,7 +1,7 @@
-From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
-Date: Tue, 19 Jun 2012 04:10:48 +0000
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 19 Jun 2012 04:18:20 +0000
 Subject: Re: [PATCH 4/4] ARM: shmobile: kzm9g: enable MicroSD
-Message-Id: <4FDFFBC8.8030901@kmckk.co.jp>
+Message-Id: <871ulcsznb.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <877gv4t4xk.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <877gv4t4xk.wl%kuninori.morimoto.gx@renesas.com>
@@ -10,120 +10,44 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi, Morimoto-san.
 
-I applied this patch set on v3.5-rc3
- after applying [PATCH 0/27] ARM: shmobile: resend patch set
+Hi Kobayashi-san
 
-It failed at probing the device.
-kernel log is:
-
-  ...
-sh_mobile_sdhi sh_mobile_sdhi.0: mmc0 base at 0xee100000 clock rate 69 MHz
-genirq: Threaded irq requested with handler=NULL and !ONESHOT for irq 802
-mmc0: new high speed SDHC card at address e624
-mmcblk0: mmc0:e624 SU04G 3.69 GiB
- mmcblk0: p1 p2
-sh_mobile_sdhi: probe of sh_mobile_sdhi.2 failed with error -22
-  ...
-
-Using debugger I found
-  drivers/mmc/host/sh_mobile_sdhi.c: 168 
-	ret = tmio_mmc_host_probe(&host, pdev, mmc_data);
-returns -22.
-
-It makes no difference with or without the following patch
-  mmc: tmio: Don't access hardware registers after stopping clocks
-
-
-
-(2012/06/19 11:24), Kuninori Morimoto wrote:
-> This patch enable MicroSD on CN20
+> genirq: Threaded irq requested with handler=NULL and !ONESHOT for irq 802
+> mmc0: new high speed SDHC card at address e624
+> mmcblk0: mmc0:e624 SU04G 3.69 GiB
+>  mmcblk0: p1 p2
+> sh_mobile_sdhi: probe of sh_mobile_sdhi.2 failed with error -22
+>   ...
 > 
-> Signed-off-by: Kuninori Morimoto<kuninori.morimoto.gx@renesas.com>
-> Signed-off-by: Tetsuyuki Kobayashi<koba@kmckk.co.jp>
-> ---
->   arch/arm/mach-shmobile/board-kzm9g.c |   55 ++++++++++++++++++++++++++++++++++
->   1 files changed, 55 insertions(+), 0 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-> index ade2d6f..43bb42f 100644
-> --- a/arch/arm/mach-shmobile/board-kzm9g.c
-> +++ b/arch/arm/mach-shmobile/board-kzm9g.c
-> @@ -398,6 +398,50 @@ static struct platform_device sdhi0_device = {
->   	},
->   };
-> 
-> +/* Micro SD */
-> +static struct sh_mobile_sdhi_info sdhi2_info = {
-> +	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
-> +			  TMIO_MMC_USE_GPIO_CD |
-> +			  TMIO_MMC_WRPROTECT_DISABLE,
-> +	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
-> +	.tmio_ocr_mask	= MMC_VDD_27_28 | MMC_VDD_28_29,
-> +	.cd_gpio	= GPIO_PORT13,
-> +};
-> +
-> +static struct resource sdhi2_resources[] = {
-> +	[0] = {
-> +		.name	= "SDHI2",
-> +		.start	= 0xee140000,
-> +		.end	= 0xee1400ff,
-> +		.flags	= IORESOURCE_MEM,
-> +	},
-> +	[1] = {
-> +		.name	= SH_MOBILE_SDHI_IRQ_CARD_DETECT,
-> +		.start	= gic_spi(103),
-> +		.flags	= IORESOURCE_IRQ,
-> +	},
-> +	[2] = {
-> +		.name	= SH_MOBILE_SDHI_IRQ_SDCARD,
-> +		.start	= gic_spi(104),
-> +		.flags	= IORESOURCE_IRQ,
-> +	},
-> +	[3] = {
-> +		.name	= SH_MOBILE_SDHI_IRQ_SDIO,
-> +		.start	= gic_spi(105),
-> +		.flags	= IORESOURCE_IRQ,
-> +	},
-> +};
-> +
-> +static struct platform_device sdhi2_device = {
-> +	.name		= "sh_mobile_sdhi",
-> +	.id		= 2,
-> +	.num_resources	= ARRAY_SIZE(sdhi2_resources),
-> +	.resource	= sdhi2_resources,
-> +	.dev	= {
-> +		.platform_data	=&sdhi2_info,
-> +	},
-> +};
-> +
->   /* KEY */
->   #define GPIO_KEY(c, g, d) { .code = c, .gpio = g, .desc = d, .active_low = 1 }
-> 
-> @@ -511,6 +555,7 @@ static struct platform_device *kzm_devices[] __initdata = {
->   	&lcdc_device,
->   	&mmc_device,
->   	&sdhi0_device,
-> +	&sdhi2_device,
->   	&gpio_keys_device,
->   	&fsi_device,
->   	&fsi_ak4648_device,
-> @@ -648,6 +693,16 @@ static void __init kzm_init(void)
->   	gpio_request(GPIO_PORT15, NULL);
->   	gpio_direction_output(GPIO_PORT15, 1); /* power */
-> 
-> +	/* enable Micro SD */
-> +	gpio_request(GPIO_FN_SDHID2_0,		NULL);
-> +	gpio_request(GPIO_FN_SDHID2_1,		NULL);
-> +	gpio_request(GPIO_FN_SDHID2_2,		NULL);
-> +	gpio_request(GPIO_FN_SDHID2_3,		NULL);
-> +	gpio_request(GPIO_FN_SDHICMD2,		NULL);
-> +	gpio_request(GPIO_FN_SDHICLK2,		NULL);
-> +	gpio_request(GPIO_PORT14, NULL);
-> +	gpio_direction_output(GPIO_PORT14, 1); /* power */
-> +
->   	/* I2C 3 */
->   	gpio_request(GPIO_FN_PORT27_I2C_SCL3, NULL);
->   	gpio_request(GPIO_FN_PORT28_I2C_SDA3, NULL);
+> Using debugger I found
+>   drivers/mmc/host/sh_mobile_sdhi.c: 168 
+> 	ret = tmio_mmc_host_probe(&host, pdev, mmc_data);
+> returns -22.
 
+Oops. yes indeed.
+Sorry, I didn't explain about this.
+It depends on latest mmc ML branch too.
+I'm not sure detail of mmc branch status,
+but is below patch solve your issue ?
+
+------------------------------------------
+diff --git a/drivers/mmc/core/cd-gpio.c b/drivers/mmc/core/cd-gpio.c
+index f13e38d..f303cbc 100644
+--- a/drivers/mmc/core/cd-gpio.c
++++ b/drivers/mmc/core/cd-gpio.c
+@@ -50,7 +50,7 @@ int mmc_cd_gpio_request(struct mmc_host *host, unsigned int gpio)
+ 		goto egpioreq;
+ 
+ 	ret = request_threaded_irq(irq, NULL, mmc_cd_gpio_irqt,
+-				   IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING,
++				   IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING | IRQF_ONESHOT,
+ 				   cd->label, host);
+ 	if (ret < 0)
+ 		goto eirqreq;
+------------------------------------------
+
+
+Best regards
+---
+Kuninori Morimoto
