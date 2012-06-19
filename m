@@ -1,20 +1,34 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 18 Jun 2012 02:11:06 +0000
-Subject: Re: [PATCH 1/6] ARM: mach-shmobile: clock-r8a7740: add TPU PWM support
-Message-Id: <20120618021106.GA17850@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 19 Jun 2012 02:23:53 +0000
+Subject: [PATCH 2/4] ARM: shmobile: kzm9g: enable DMAEngine on MMCIF
+Message-Id: <87aa00t4y2.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1339773427-29508-2-git-send-email-laurent.pinchart@ideasonboard.com>
-In-Reply-To: <1339773427-29508-2-git-send-email-laurent.pinchart@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Jun 15, 2012 at 05:17:02PM +0200, Laurent Pinchart wrote:
-> Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+It is possible to reduce CPU load if MMCIF used DMAEngine.
+This patch enabled it.
 
-Tested-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/board-kzm9g.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
-> ---
->  arch/arm/mach-shmobile/clock-r8a7740.c |    5 ++++-
->  1 files changed, 4 insertions(+), 1 deletions(-)
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index d2feee1..ba80e72 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -197,6 +197,8 @@ static struct resource sh_mmcif_resources[] = {
+ static struct sh_mmcif_plat_data sh_mmcif_platdata = {
+ 	.ocr		= MMC_VDD_165_195,
+ 	.caps		= MMC_CAP_8_BIT_DATA | MMC_CAP_NONREMOVABLE,
++	.slave_id_tx	= SHDMA_SLAVE_MMCIF_TX,
++	.slave_id_rx	= SHDMA_SLAVE_MMCIF_RX,
+ };
+ 
+ static struct platform_device mmc_device = {
+-- 
+1.7.5.4
+
