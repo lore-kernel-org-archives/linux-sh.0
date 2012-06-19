@@ -1,48 +1,50 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Tue, 12 Jun 2012 00:23:00 +0000
-Subject: Re: usb: ehci-sh: fix illegal phy_init() running when platform_data is NULL
-Message-Id: <4FD68BE4.2060401@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 19 Jun 2012 02:23:41 +0000
+Subject: [PATCH 1/4] ARM: shmobile: sh73a0: add USB clock support
+Message-Id: <87bokgt4ye.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4FD5AF09.7060707@renesas.com>
-In-Reply-To: <4FD5AF09.7060707@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-2012/06/11 22:53, Alan Stern wrote:
-> On Mon, 11 Jun 2012, Shimoda, Yoshihiro wrote:
-> 
->> If the platform_data is not set, pdata will be uninitialized value.
->> Then, the phy_init() may run on illegal address.
-> 
-> I don't see how this patch fixes that problem.
+It is required from renesas_usbhs driver.
+This patch is based on v2.0 manual.
 
-The driver has the following code:
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/clock-sh73a0.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
 
-	if (pdata && pdata->phy_init)
-		pdata->phy_init();
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index 76bdcca..37ba014 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -477,7 +477,7 @@ enum { MSTP001,
+ 	MSTP129, MSTP128, MSTP127, MSTP126, MSTP125, MSTP118, MSTP116, MSTP100,
+ 	MSTP219, MSTP218, MSTP217,
+ 	MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
+-	MSTP331, MSTP329, MSTP328, MSTP325, MSTP323,
++	MSTP331, MSTP329, MSTP328, MSTP325, MSTP323, MSTP322,
+ 	MSTP314, MSTP313, MSTP312, MSTP311,
+ 	MSTP303, MSTP302, MSTP301, MSTP300,
+ 	MSTP411, MSTP410, MSTP403,
+@@ -511,6 +511,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP328] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 28, 0), /*FSI*/
+ 	[MSTP325] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR3, 25, 0), /* IrDA */
+ 	[MSTP323] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 23, 0), /* IIC1 */
++	[MSTP322] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 22, 0), /* USB */
+ 	[MSTP314] = MSTP(&div6_clks[DIV6_SDHI0], SMSTPCR3, 14, 0), /* SDHI0 */
+ 	[MSTP313] = MSTP(&div6_clks[DIV6_SDHI1], SMSTPCR3, 13, 0), /* SDHI1 */
+ 	[MSTP312] = MSTP(&div4_clks[DIV4_HP], SMSTPCR3, 12, 0), /* MMCIF0 */
+@@ -568,6 +569,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_fsi2", &mstp_clks[MSTP328]), /* FSI */
+ 	CLKDEV_DEV_ID("sh_irda.0", &mstp_clks[MSTP325]), /* IrDA */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.1", &mstp_clks[MSTP323]), /* I2C1 */
++	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP322]), /* USB */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]), /* SDHI0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP312]), /* MMCIF0 */
+-- 
+1.7.5.4
 
-So, if the condition is true when the pdata is uninitialize value,
-the driver may jump the illegal pdata->phy_init().
-
-I will modify this patch to add this patch description.
-
->> This patch also fixes the following warning:
->>
->>   CC      drivers/usb/host/ehci-hcd.o
->> drivers/usb/host/ehci-sh.c: In function ‘ehci_hcd_sh_probe’:
->> drivers/usb/host/ehci-sh.c:104: warning: ‘pdata’ may be used uninitialized in this function
-> 
-> That alone is a good enough reason to accept the patch.  You might want
-> to update the patch description, though.
-> 
-< snip >
-> 
-> Acked-by: Alan Stern <stern@rowland.harvard.edu>
-> 
-
-Thank you for the Acked-by:
-
-Best regards,
-Yoshihiro Shimoda
