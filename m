@@ -1,69 +1,66 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 12 Jun 2012 03:04:43 +0000
-Subject: Re: [PATCH (sh-2.6) 1/4] clksource: Generic timer infrastructure
-Message-Id: <20120612030442.GH10170@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 20 Jun 2012 08:01:30 +0000
+Subject: [PATCH 01/11] ARM: mach-shmobile: add a temporary macro to define fixed voltage regulators
+Message-Id: <1340179300-16452-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1298369864-24429-1-git-send-email-peppe.cavallaro@st.com>
- <1298369864-24429-2-git-send-email-peppe.cavallaro@st.com>
- <201102241820.55873.arnd@arndb.de>
- <4D6D0EA3.9000504@st.com>
- <alpine.LFD.2.00.1103011630080.2701@localhost6.localdomain6>
-In-Reply-To: <alpine.LFD.2.00.1103011630080.2701@localhost6.localdomain6>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Thomas Gleixner <tglx@linutronix.de>
-Cc: Stuart Menefy <stuart.menefy@st.com>, Arnd Bergmann <arnd@arndb.de>, Peppe CAVALLARO <peppe.cavallaro@st.com>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "netdev@vger.kernel.org" <netdev@vger.kernel.org>, John Stultz <johnstul@us.ibm.com>, "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On Tue, Mar 01, 2011 at 05:48:33PM +0100, Thomas Gleixner wrote:
-> On Tue, 1 Mar 2011, Stuart Menefy wrote:
-> > On 24/02/11 17:20, Arnd Bergmann wrote:
-> > > On Tuesday 22 February 2011, Peppe CAVALLARO wrote:
-> > >> From: Stuart Menefy <stuart.menefy@st.com>
-> > >>
-> > >> Many devices targeted at the embedded market provide a number of
-> > >> generic timers which are capable of generating interrupts at a
-> > >> requested rate. These can then be used in the implementation of drivers
-> > >> for other peripherals which require a timer interrupt, without having
-> > >> to provide an additional timer as part of that peripheral.
-> 
-> Why can't you just use an hrtimer and be done with it? Just because
-> there is some extra hardware in the chip?
-> 
-..
+Providing fixed voltage permanently "on" regulators with different voltages
+shares a lot of identical code. It will be eliminated, once the
+regulator_register_fixed_volt() function becomes available. Until then we
+introduce a macro to define such regulators. This helps reduce the amount
+of added code in each platform file and keeps copy-paste errors to the
+minumum.
 
-> If we get some reasonable explanation why an extra timer interrupt is
-> solving a specific problem better than hrtimers we can do that, but
-> that needs more thought than picking the first available clockevent
-> from a list. If we come to the conclusion, that we want/need this kind
-> of functionality then I really prefer not to create yet another piece
-> of infrastructure which deals with timer devices.
-> 
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ arch/arm/mach-shmobile/include/mach/regulator.h |   34 +++++++++++++++++++++++
+ 1 files changed, 34 insertions(+), 0 deletions(-)
+ create mode 100644 arch/arm/mach-shmobile/include/mach/regulator.h
 
-I've run in to this issue again while working on local timer support on
-SH, as we're presently dependent on broadcast and dummy tick devices in
-the SMP case, while quite a few timer channels remain available for use.
-(Ironically, while the aforementioned driver was able to solve the
-problem with hrtimers, we have the same need to _provide_ hrtimers).
+diff --git a/arch/arm/mach-shmobile/include/mach/regulator.h b/arch/arm/mach-shmobile/include/mach/regulator.h
+new file mode 100644
+index 0000000..fe74995
+--- /dev/null
++++ b/arch/arm/mach-shmobile/include/mach/regulator.h
+@@ -0,0 +1,34 @@
++/*
++ * Temporary header until regulator_register_fixed_volt() is available.
++ * Licensed under GPLv2, see COPYING for details.
++ */
++
++#ifndef ASM_REGULATOR_H
++#define ASM_REGULATOR_H
++
++#include <linux/regulator/driver.h>
++#include <linux/regulator/fixed.h>
++#include <linux/regulator/machine.h>
++
++#define REGULATOR_FIXED(s, rid, v)					\
++static struct regulator_init_data fixed_power_init_data_ ## rid = {	\
++	.num_consumer_supplies  = ARRAY_SIZE(s),			\
++	.consumer_supplies      = (s),					\
++	.constraints.always_on	= 1,					\
++};									\
++static struct fixed_voltage_config fixed_power_info_ ## rid = {		\
++	.supply_name = "Fixed #" # rid,					\
++	.microvolts = (v),						\
++	.gpio = -EINVAL,						\
++	.init_data = &fixed_power_init_data_ ## rid,			\
++	.enabled_at_boot = 1,						\
++};									\
++static struct platform_device fixed_power_ ## rid = {			\
++	.name = "reg-fixed-voltage",					\
++	.id   = (rid),							\
++	.dev  = {							\
++		.platform_data = &fixed_power_info_ ## rid,		\
++	},								\
++}
++
++#endif
+-- 
+1.7.2.5
 
-In the sh_tmu/cmt/mtu2 case all timer channels are handed off as platform
-devices, and the block itself is global for all CPUs, though we can tweak
-the IRQ affinity relative to the cpumask. My tentative plan is to deal
-with the clockevent device as a percpu thing in the local timer case
-which will require some additional side infrastructure, but some
-additional work will need to be done in the clockevents code regardless.
-
-The ARM approach is a bit backwards from what we're interested in
-solving, as it uses its own local timer infrastructure and some
-TWD-specific API for registering per-cpu timers and only then inserting
-them in to the clockevents list. Whereas in our case we've got all of the
-timer channels available at platform probe time (earlier for the early
-timer case), and simply need a method for tracking unused channels as
-well as having a facility for picking them up and reconfiguring them
-later on when the secondary CPUs come up. I'm not at all interested in
-registering the same timer multiple times with slightly different APIs,
-having two different drivers fighting over the same register space is not
-a thought that fills me with joy.
-
-In any event, I'll hack on it a bit and see what falls out, patches
-later.
