@@ -1,42 +1,49 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 20 Jun 2012 06:57:02 +0000
-Subject: Re: [PATCH 4/5 v4] mmc: sh_mmcif: remove redundant .down_pwr() callback
-Message-Id: <20120620065702.GK20030@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 20 Jun 2012 17:10:29 +0000
+Subject: [PATCH 0/7 v4] mmc: tmio: clock and PM updates
+Message-Id: <1340212236-647-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1206131515180.17854@axis700.grange>
- <Pine.LNX.4.64.1206131534250.17854@axis700.grange>
- <20120620045808.GC20030@verge.net.au>
- <Pine.LNX.4.64.1206200818110.20254@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1206200818110.20254@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>, Mark Brown <broonie@opensource.wolfsonmicro.com>
+To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-On Wed, Jun 20, 2012 at 08:19:26AM +0200, Guennadi Liakhovetski wrote:
-> Hi Simon
-> 
-> On Wed, 20 Jun 2012, Simon Horman wrote:
-> 
-> > On Wed, Jun 13, 2012 at 03:37:27PM +0200, Guennadi Liakhovetski wrote:
-> > > >From the original version of sh_mmcif the .set_pwr() callback has only been
-> > > used to turn the card's power on, and the .down_pwr() callback has been
-> > > used to turn it off. .set_pwr() can be used for both these tasks, which is
-> > > also how it is implemented by the only user of this API: the SH7724 ecovec
-> > > board.
-> > > 
-> > > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > 
-> > Reviewed-by: Simon Horman <horms@verge.net.au>
-> > 
-> > Do you also intend to post patches for the following?
-> > 
-> > * Remove mmcif_down_pwr from ecovec
-> > * Remove down_pwr from struct sh_mmcif_plat_data
-> 
-> Sure, since these patches depend on each other we have to make sure this 
-> one gets applied first. The other two then can be applied in their time, 
-> they do not affect the functionality any more.
+This patch series is a respin of the sub-series 3/6 from 
+http://thread.gmane.org/gmane.linux.kernel.mmc/14624/focus633
+of which the first patch has been superseded by "mmc: tmio: Don't access 
+hardware registers after stopping clocks"
+http://www.mail-archive.com/linux-mmc@vger.kernel.org/msg14696.html
+This series also requires "mmc: add a function to get a regulator, 
+supplying card's Vdd"
+http://www.spinics.net/lists/linux-sh/msg12007.html
 
-Thanks, I agree entirely.
+Patch 4 of this series also contributes to part 3 of the scheme, described 
+in http://thread.gmane.org/gmane.linux.ports.sh.devel/15544
+
+Thanks
+Guennadi
+
+Guennadi Liakhovetski (7):
+  mmc: tmio: don't needlessly enable interrupts during probing
+  mmc: tmio: add callbacks to enable-update and disable the interface
+    clock
+  mmc: sdhi: implement tmio-mmc clock enable-update and disable
+    callbacks
+  mmc: tmio: add regulator support
+  mmc: sdhi: do not install dummy callbacks
+  mmc: tmio: use MMC opcode defines instead of numbers
+  mmc: tmio: remove a duplicated comment line
+
+ drivers/mmc/host/sh_mobile_sdhi.c |   38 +++++++++++---
+ drivers/mmc/host/tmio_mmc_pio.c   |  101 ++++++++++++++++++++++++++++---------
+ include/linux/mfd/tmio.h          |    3 +
+ 3 files changed, 108 insertions(+), 34 deletions(-)
+
+-- 
+1.7.2.5
+
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
