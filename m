@@ -1,49 +1,56 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 22 Jun 2012 13:23:20 +0000
-Subject: [PATCH 7/9 v4] mmc: tmio: support caps2 flags
-Message-Id: <1340371402-4801-8-git-send-email-g.liakhovetski@gmx.de>
+Date: Wed, 20 Jun 2012 17:10:35 +0000
+Subject: [PATCH 6/7 v4] mmc: tmio: use MMC opcode defines instead of numbers
+Message-Id: <1340212236-647-7-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1340371402-4801-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1340371402-4801-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1340212236-647-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1340212236-647-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>
+Cc: linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-Allow tmio mmc glue drivers pass mmc_host::caps2 flags down to the mmc
-layer.
+mmc.h defines macros for most frequently used MMC opcodes. Use them instead
+of hard-coded numbers.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/mmc/host/tmio_mmc_pio.c |    1 +
- include/linux/mfd/tmio.h        |    1 +
- 2 files changed, 2 insertions(+), 0 deletions(-)
+ drivers/mmc/host/tmio_mmc_pio.c |    7 ++++---
+ 1 files changed, 4 insertions(+), 3 deletions(-)
 
 diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index b204012f..f8df021 100644
+index 410b8cf..2050827 100644
 --- a/drivers/mmc/host/tmio_mmc_pio.c
 +++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -951,6 +951,7 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
+@@ -36,6 +36,7 @@
+ #include <linux/mfd/tmio.h>
+ #include <linux/mmc/cd-gpio.h>
+ #include <linux/mmc/host.h>
++#include <linux/mmc/mmc.h>
+ #include <linux/mmc/tmio.h>
+ #include <linux/module.h>
+ #include <linux/pagemap.h>
+@@ -305,8 +306,8 @@ static int tmio_mmc_start_command(struct tmio_mmc_host *host, struct mmc_command
+ 	int c = cmd->opcode;
+ 	u32 irq_mask = TMIO_MASK_CMD;
  
- 	mmc->ops = &tmio_mmc_ops;
- 	mmc->caps = MMC_CAP_4_BIT_DATA | pdata->capabilities;
-+	mmc->caps2 = pdata->capabilities2;
- 	mmc->max_segs = 32;
- 	mmc->max_blk_size = 512;
- 	mmc->max_blk_count = (PAGE_CACHE_SIZE / mmc->max_blk_size) *
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index b332c4c..d83af39 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -101,6 +101,7 @@ struct tmio_mmc_host;
- struct tmio_mmc_data {
- 	unsigned int			hclk;
- 	unsigned long			capabilities;
-+	unsigned long			capabilities2;
- 	unsigned long			flags;
- 	u32				ocr_mask;	/* available voltages */
- 	struct tmio_mmc_dma		*dma;
+-	/* Command 12 is handled by hardware */
+-	if (cmd->opcode = 12 && !cmd->arg) {
++	/* CMD12 is handled by hardware */
++	if (cmd->opcode = MMC_STOP_TRANSMISSION && !cmd->arg) {
+ 		sd_ctrl_write16(host, CTL_STOP_INTERNAL_ACTION, 0x001);
+ 		return 0;
+ 	}
+@@ -449,7 +450,7 @@ void tmio_mmc_do_data_irq(struct tmio_mmc_host *host)
+ 	}
+ 
+ 	if (stop) {
+-		if (stop->opcode = 12 && !stop->arg)
++		if (stop->opcode = MMC_STOP_TRANSMISSION && !stop->arg)
+ 			sd_ctrl_write16(host, CTL_STOP_INTERNAL_ACTION, 0x000);
+ 		else
+ 			BUG();
 -- 
 1.7.2.5
 
