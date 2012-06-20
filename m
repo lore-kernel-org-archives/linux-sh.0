@@ -1,59 +1,65 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 26 Jun 2012 22:50:09 +0000
-Subject: [PATCH 13/13 v2] sh: add fixed voltage regulators to se7724
-Message-Id: <1340751009-18663-14-git-send-email-g.liakhovetski@gmx.de>
+Date: Wed, 20 Jun 2012 15:12:16 +0000
+Subject: [PATCH 08/14] sh: add fixed voltage regulators to sh7757lcr
+Message-Id: <1340205142-32606-9-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On se7724 provide a 3.3V supply for its SD/MMC-card interfaces.
+On sh7757lcr provide a 3.3V supply for its SD/MMC-card interfaces.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/sh/boards/mach-se/7724/setup.c |   15 +++++++++++++++
- 1 files changed, 15 insertions(+), 0 deletions(-)
+ arch/sh/boards/board-sh7757lcr.c |   14 ++++++++++++++
+ 1 files changed, 14 insertions(+), 0 deletions(-)
 
-diff --git a/arch/sh/boards/mach-se/7724/setup.c b/arch/sh/boards/mach-se/7724/setup.c
-index ffbf5bc..35f6efa 100644
---- a/arch/sh/boards/mach-se/7724/setup.c
-+++ b/arch/sh/boards/mach-se/7724/setup.c
-@@ -18,6 +18,8 @@
- #include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/mtd/physmap.h>
- #include <linux/delay.h>
-+#include <linux/regulator/fixed.h>
-+#include <linux/regulator/machine.h>
- #include <linux/smc91x.h>
+diff --git a/arch/sh/boards/board-sh7757lcr.c b/arch/sh/boards/board-sh7757lcr.c
+index 5087f8b..dc3a036 100644
+--- a/arch/sh/boards/board-sh7757lcr.c
++++ b/arch/sh/boards/board-sh7757lcr.c
+@@ -12,6 +12,7 @@
+ #include <linux/platform_device.h>
  #include <linux/gpio.h>
- #include <linux/input.h>
-@@ -454,6 +456,15 @@ static struct platform_device sh7724_usb1_gadget_device = {
- 	.resource	= sh7724_usb1_gadget_resources,
+ #include <linux/irq.h>
++#include <linux/regulator/machine.h>
+ #include <linux/spi/spi.h>
+ #include <linux/spi/flash.h>
+ #include <linux/io.h>
+@@ -21,6 +22,7 @@
+ #include <linux/sh_eth.h>
+ #include <linux/sh_intc.h>
+ #include <linux/usb/renesas_usbhs.h>
++#include <mach/regulator.h>
+ #include <cpu/sh7757.h>
+ #include <asm/heartbeat.h>
+ 
+@@ -199,6 +201,17 @@ static struct platform_device sh7757_eth_giga1_device = {
+ 	},
  };
  
-+/* Fixed 3.3V regulator to be used by SDHI0, SDHI1 */
++/* Fixed 3.3V regulator to be used by SDHI0, MMCIF */
 +static struct regulator_consumer_supply fixed3v3_power_consumers[] +{
 +	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
 +	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
-+	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
-+	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.1"),
++	REGULATOR_SUPPLY("vmmc", "sh_mmcif.0"),
++	REGULATOR_SUPPLY("vqmmc", "sh_mmcif.0"),
 +};
 +
- static struct resource sdhi0_cn7_resources[] = {
++REGULATOR_FIXED(fixed3v3_power_consumers, 0, 3300000);
++
+ /* SH_MMCIF */
+ static struct resource sh_mmcif_resources[] = {
  	[0] = {
- 		.name	= "SDHI0",
-@@ -684,6 +695,10 @@ static int __init devices_setup(void)
- 					&ms7724se_sdram_enter_end,
- 					&ms7724se_sdram_leave_start,
- 					&ms7724se_sdram_leave_end);
-+
-+	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
-+				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
-+
- 	/* Reset Release */
- 	fpga_out = __raw_readw(FPGA_OUT);
- 	/* bit4: NTSC_PDN, bit5: NTSC_RESET */
+@@ -302,6 +315,7 @@ static struct platform_device usb0_device = {
+ };
+ 
+ static struct platform_device *sh7757lcr_devices[] __initdata = {
++	&fixed_power_0,
+ 	&heartbeat_device,
+ 	&sh7757_eth0_device,
+ 	&sh7757_eth1_device,
 -- 
 1.7.2.5
 
