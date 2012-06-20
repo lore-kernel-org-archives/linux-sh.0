@@ -1,80 +1,66 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 25 Jun 2012 10:37:00 +0000
-Subject: [PATCH 2/6] ARM: shmobile: r8a7740: add DMAEngine support for SDHI
-Message-Id: <87zk7rk793.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 20 Jun 2012 17:10:34 +0000
+Subject: [PATCH 5/7 v4] mmc: sdhi: do not install dummy callbacks
+Message-Id: <1340212236-647-6-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1340212236-647-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1340212236-647-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-Current shdmac can support SDHI DMAC on r8a7740.
-This support reduce CPU duty when SDHI access.
+Currently the SDHI glue for the TMIO MMC driver installs dummy .get_cd() and
+.set_pwr() callbacks even if the platform didn't supply them. This is not
+necessary, since the TMIO MMC driver itself checks for NULL callbacks. This
+is also dubious if the platform provides a regulator for SD-card power
+switching. It is better to only install those callbacks, if they are really
+provided by the platform.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7740.h |    6 +++++
- arch/arm/mach-shmobile/setup-r8a7740.c        |   30 +++++++++++++++++++++++++
- 2 files changed, 36 insertions(+), 0 deletions(-)
+ drivers/mmc/host/sh_mobile_sdhi.c |   14 ++++++--------
+ 1 files changed, 6 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index 5ea8245e..1798a48 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -593,6 +593,12 @@ enum {
- /* DMA slave IDs */
- enum {
- 	SHDMA_SLAVE_INVALID,
-+	SHDMA_SLAVE_SDHI0_RX,
-+	SHDMA_SLAVE_SDHI0_TX,
-+	SHDMA_SLAVE_SDHI1_RX,
-+	SHDMA_SLAVE_SDHI1_TX,
-+	SHDMA_SLAVE_SDHI2_RX,
-+	SHDMA_SLAVE_SDHI2_TX,
- 	SHDMA_SLAVE_FSIA_RX,
- 	SHDMA_SLAVE_FSIA_TX,
- 	SHDMA_SLAVE_FSIB_TX,
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 2202818..9b95c43 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -306,6 +306,36 @@ enum {
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index d8b167c..42f07fa 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -64,18 +64,14 @@ static void sh_mobile_sdhi_set_pwr(struct platform_device *pdev, int state)
+ {
+ 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
  
- static const struct sh_dmae_slave_config r8a7740_dmae_slaves[] = {
- 	{
-+		.slave_id	= SHDMA_SLAVE_SDHI0_TX,
-+		.addr		= 0xe6850030,
-+		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xc1,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI0_RX,
-+		.addr		= 0xe6850030,
-+		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xc2,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI1_TX,
-+		.addr		= 0xe6860030,
-+		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xc9,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI1_RX,
-+		.addr		= 0xe6860030,
-+		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xca,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI2_TX,
-+		.addr		= 0xe6870030,
-+		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xcd,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI2_RX,
-+		.addr		= 0xe6870030,
-+		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xce,
-+	}, {
- 		.slave_id	= SHDMA_SLAVE_FSIA_TX,
- 		.addr		= 0xfe1f0024,
- 		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
+-	if (p && p->set_pwr)
+-		p->set_pwr(pdev, state);
++	p->set_pwr(pdev, state);
+ }
+ 
+ static int sh_mobile_sdhi_get_cd(struct platform_device *pdev)
+ {
+ 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
+ 
+-	if (p && p->get_cd)
+-		return p->get_cd(pdev);
+-	else
+-		return -ENOSYS;
++	return p->get_cd(pdev);
+ }
+ 
+ static int sh_mobile_sdhi_wait_idle(struct tmio_mmc_host *host)
+@@ -153,8 +149,10 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 		goto eclkget;
+ 	}
+ 
+-	mmc_data->set_pwr = sh_mobile_sdhi_set_pwr;
+-	mmc_data->get_cd = sh_mobile_sdhi_get_cd;
++	if (p->set_pwr)
++		mmc_data->set_pwr = sh_mobile_sdhi_set_pwr;
++	if (p->get_cd)
++		mmc_data->get_cd = sh_mobile_sdhi_get_cd;
+ 	mmc_data->clk_enable = sh_mobile_sdhi_clk_enable;
+ 	mmc_data->clk_disable = sh_mobile_sdhi_clk_disable;
+ 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
 -- 
-1.7.5.4
+1.7.2.5
 
