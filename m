@@ -1,46 +1,74 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 19 Jun 2012 09:34:56 +0000
-Subject: Re: [PATCH] mmc: tmio: Don't access hardware registers after stopping clocks
-Message-Id: <5753942.6DRRAABTSC@avalon>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 20 Jun 2012 13:10:33 +0000
+Subject: Re: [PATCH] net: sh_eth: fix the rxdesc pointer when rx descriptor empty happens
+Message-Id: <Pine.LNX.4.64.1206201507260.20254@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1339505838-8831-1-git-send-email-laurent.pinchart@ideasonboard.com> <Pine.LNX.4.64.1206150907110.11729@axis700.grange> <CANqRtoQD+sneTT7tCYji7YGpX5eJEQrWCQoX8jWJ1hiChjFh_g@mail.gmail.com>
-In-Reply-To: <CANqRtoQD+sneTT7tCYji7YGpX5eJEQrWCQoX8jWJ1hiChjFh_g@mail.gmail.com>
+References: <4FC491EB.4040002@renesas.com>
+In-Reply-To: <4FC491EB.4040002@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, "Rafael J. Wysocki" <rjw@sisk.pl>, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+To: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Cc: netdev <netdev@vger.kernel.org>, SH-Linux <linux-sh@vger.kernel.org>
 
-Hi Magnus,
+Hello Shimoda-san
 
-On Tuesday 19 June 2012 15:53:30 Magnus Damm wrote:
-> On Fri, Jun 15, 2012 at 4:09 PM, Guennadi Liakhovetski wrote:
-> > On Fri, 15 Jun 2012, Magnus Damm wrote:
-> > 
-> > [snip]
-> > 
-> >> Guennadi, does this trigger on sh7372 as well? If not, why is that?
-> > 
-> > No. That message is produced by the sh_mobile_sdhi_wait_idle() function,
-> > which is only used, if the TMIO_MMC_HAS_IDLE_WAIT flag is set, which is
-> > not set on mackerel (or ap4evb).
+On Tue, 29 May 2012, Shimoda, Yoshihiro wrote:
+
+> When Receive Descriptor Empty happens, rxdesc pointer of the driver
+> and actual next descriptor of the controller may be mismatch.
+> This patch fixes it.
+
+Unfortunately, this patch breaks networking on ecovec (sh7724). Booting 
+with dhcp and NFS-root progresses very slowly with lots of "nfs: server 
+not responding / Ok" messages and never completes. Reverting it in current 
+Linus' tree fixes the problem.
+
+Thanks
+Guennadi
+
 > 
-> Ok, thanks for checking this. It seems that we are "lucky" to find
-> this breakage...
+> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+> ---
+>  drivers/net/ethernet/renesas/sh_eth.c |    8 +++++---
+>  1 files changed, 5 insertions(+), 3 deletions(-)
 > 
-> In the future, please take care to make sure this does not happen
-> again. This goes without saying, but the driver should not access the
-> hardware when it is Runtime PM suspended. I believe it should be
-> possible to verify the code paths by manual code inspection. Also, to
-> make the behavior more consistent you may want to make use of
-> "pm_runtime_put_sync()" instead of "pm_runtime_put()".
+> diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+> index be3c221..667169b 100644
+> --- a/drivers/net/ethernet/renesas/sh_eth.c
+> +++ b/drivers/net/ethernet/renesas/sh_eth.c
+> @@ -1101,8 +1101,12 @@ static int sh_eth_rx(struct net_device *ndev)
+> 
+>  	/* Restart Rx engine if stopped. */
+>  	/* If we don't need to check status, don't. -KDU */
+> -	if (!(sh_eth_read(ndev, EDRRR) & EDRRR_R))
+> +	if (!(sh_eth_read(ndev, EDRRR) & EDRRR_R)) {
+> +		/* fix the values for the next receiving */
+> +		mdp->cur_rx = mdp->dirty_rx = (sh_eth_read(ndev, RDFAR) -
+> +					       sh_eth_read(ndev, RDLAR)) >> 4;
+>  		sh_eth_write(ndev, EDRRR_R, EDRRR);
+> +	}
+> 
+>  	return 0;
+>  }
+> @@ -1199,8 +1203,6 @@ static void sh_eth_error(struct net_device *ndev, int intr_status)
+>  		/* Receive Descriptor Empty int */
+>  		ndev->stats.rx_over_errors++;
+> 
+> -		if (sh_eth_read(ndev, EDRRR) ^ EDRRR_R)
+> -			sh_eth_write(ndev, EDRRR_R, EDRRR);
+>  		if (netif_msg_rx_err(mdp))
+>  			dev_err(&ndev->dev, "Receive Descriptor Empty\n");
+>  	}
+> -- 
+> 1.7.1
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 
-For testing that's a good idea. That makes me wonder whether we should have a 
-Kconfig option to turn all pm_runtime_put() into pm_runtime_put_sync() for 
-stress-testing.
-
--- 
-Regards,
-
-Laurent Pinchart
-
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
