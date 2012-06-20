@@ -1,7 +1,7 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 26 Jun 2012 22:50:02 +0000
-Subject: [PATCH 06/13 v2] sh: add fixed voltage regulators to sh2007
-Message-Id: <1340751009-18663-7-git-send-email-g.liakhovetski@gmx.de>
+Date: Wed, 20 Jun 2012 15:12:15 +0000
+Subject: [PATCH 07/14] sh: add fixed voltage regulators to sh2007
+Message-Id: <1340205142-32606-8-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
