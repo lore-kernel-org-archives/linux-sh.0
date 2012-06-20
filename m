@@ -1,7 +1,7 @@
-From: John Crispin <john@phrozen.org>
-Date: Wed, 20 Jun 2012 07:09:14 +0000
+From: Sergei Shtylyov <sshtylyov@mvista.com>
+Date: Wed, 20 Jun 2012 10:40:41 +0000
 Subject: Re: [PATCH] MIPS: fix bug.h MIPS build regression
-Message-Id: <4FE1771A.8070703@phrozen.org>
+Message-Id: <4FE1A8A9.1040307@mvista.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1339962373-3224-1-git-send-email-geert@linux-m68k.org>        <CAMuHMdVfLjgrtWoPpvbLf12+=ApE6W9dNcweqD-_2Benr-D7NQ@mail.gmail.com> <20120620152759.2caceb8c.yuasa@linux-mips.org>
 In-Reply-To: <20120620152759.2caceb8c.yuasa@linux-mips.org>
@@ -9,18 +9,21 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Yoichi Yuasa <yuasa@linux-mips.org>
-Cc: linux-kernel@vger.kernel.org, Linuxppc-dev <linuxppc-dev@ozlabs.org>, Linux MIPS Mailing List <linux-mips@linux-mips.org>, Linux-sh list <linux-sh@vger.kernel.org>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, Paul Mundt <lethal@linux-sh.org>, linux-kernel@vger.kernel.org, Linuxppc-dev <linuxppc-dev@ozlabs.org>, Linux MIPS Mailing List <linux-mips@linux-mips.org>, Linux-sh list <linux-sh@vger.kernel.org>, Chris Zankel <chris@zankel.net>, Ralf Baechle <ralf@linux-mips.org>
 
-On 20/06/12 08:27, Yoichi Yuasa wrote:
-> Commit: 3777808873b0c49c5cf27e44c948dfb02675d578 breaks all MIPS builds.
-> 
+Hello.
 
-Hi Yoichi,
+On 20-06-2012 10:27, Yoichi Yuasa wrote:
 
-I stumbled across the same build regression last night and came up with
-almost the same fix :-)
+> Commit: 3777808873b0c49c5cf27e44c948dfb02675d578
 
-Tested-by: John Crispin <blogic@openwrt.org>
+    Please also specify the summary of that commit in parens.
 
-Thanks,
-John
+> breaks all MIPS builds.
+
+[...]
+
+> Signed-off-by: Yoichi Yuasa<yuasa@linux-mips.org>
+
+WBR, Sergei
+
