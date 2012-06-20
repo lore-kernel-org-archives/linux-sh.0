@@ -1,37 +1,53 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 26 Jun 2012 22:50:04 +0000
-Subject: [PATCH 08/13 v2] sh: add fixed voltage regulators to ap325rxa
-Message-Id: <1340751009-18663-9-git-send-email-g.liakhovetski@gmx.de>
+Date: Wed, 20 Jun 2012 08:01:32 +0000
+Subject: [PATCH 03/11] ARM: mach-shmobile: add fixed voltage regulators to ag5evm
+Message-Id: <1340179300-16452-4-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On ap325rxa provide a 3.3V supply for its SD/MMC-card interfaces and a
-dummy regulator for the smsc911x driver.
+On ag5evm provide 1.8V, 2.8V, and 3.3V supplies for its SD/MMC-card
+interfaces and a dummy regulator for the smsc911x driver.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/sh/boards/mach-ap325rxa/setup.c |   21 +++++++++++++++++++++
- 1 files changed, 21 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/board-ag5evm.c |   66 +++++++++++++++++++++++++++++++++
+ 1 files changed, 66 insertions(+), 0 deletions(-)
 
-diff --git a/arch/sh/boards/mach-ap325rxa/setup.c b/arch/sh/boards/mach-ap325rxa/setup.c
-index f33ebf4..9e963c1d 100644
---- a/arch/sh/boards/mach-ap325rxa/setup.c
-+++ b/arch/sh/boards/mach-ap325rxa/setup.c
-@@ -20,6 +20,8 @@
- #include <linux/mtd/sh_flctl.h>
+diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
+index 0891ec6..29f1822 100644
+--- a/arch/arm/mach-shmobile/board-ag5evm.c
++++ b/arch/arm/mach-shmobile/board-ag5evm.c
+@@ -19,6 +19,7 @@
+  *
+  */
+ 
++#include <linux/kconfig.h>
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+@@ -27,6 +28,8 @@
  #include <linux/delay.h>
- #include <linux/i2c.h>
+ #include <linux/io.h>
+ #include <linux/dma-mapping.h>
 +#include <linux/regulator/fixed.h>
 +#include <linux/regulator/machine.h>
+ #include <linux/serial_sci.h>
  #include <linux/smsc911x.h>
  #include <linux/gpio.h>
- #include <linux/videodev2.h>
-@@ -34,6 +36,12 @@
- #include <asm/suspend.h>
- #include <cpu/sh7723.h>
+@@ -44,6 +47,7 @@
+ #include <sound/sh_fsi.h>
+ #include <mach/hardware.h>
+ #include <mach/irqs.h>
++#include <mach/regulator.h>
+ #include <mach/sh73a0.h>
+ #include <mach/common.h>
+ #include <asm/mach-types.h>
+@@ -52,6 +56,12 @@
+ #include <asm/hardware/cache-l2x0.h>
+ #include <asm/traps.h>
  
 +/* Dummy supplies, where voltage doesn't matter */
 +static struct regulator_consumer_supply dummy_supplies[] = {
@@ -39,35 +55,106 @@ index f33ebf4..9e963c1d 100644
 +	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
 +};
 +
- static struct smsc911x_platform_config smsc911x_config = {
- 	.phy_interface	= PHY_INTERFACE_MODE_MII,
- 	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_LOW,
-@@ -423,6 +431,15 @@ static struct platform_device ceu_device = {
+ static struct resource smsc9220_resources[] = {
+ 	[0] = {
+ 		.start		= 0x14000000,
+@@ -142,6 +152,15 @@ static struct platform_device fsi_device = {
+ 	.resource	= fsi_resources,
+ };
+ 
++/* Fixed 1.8V regulator to be used by MMCIF */
++static struct regulator_consumer_supply fixed1v8_power_consumers[] +{
++	REGULATOR_SUPPLY("vmmc", "sh_mmcif.0"),
++	REGULATOR_SUPPLY("vqmmc", "sh_mmcif.0"),
++};
++
++REGULATOR_FIXED(fixed1v8_power_consumers, 0, 1800000);
++
+ static struct resource sh_mmcif_resources[] = {
+ 	[0] = {
+ 		.name	= "MMCIF",
+@@ -364,6 +383,15 @@ static struct platform_device mipidsi0_device = {
  	},
  };
  
-+/* Fixed 3.3V regulators to be used by SDHI0, SDHI1 */
-+static struct regulator_consumer_supply fixed3v3_power_consumers[] +{
++/* Fixed 2.8V regulators to be used by SDHI0 */
++static struct regulator_consumer_supply fixed2v8_power_consumers[] +{
 +	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
 +	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
++};
++
++REGULATOR_FIXED(fixed2v8_power_consumers, 1, 2800000);
++
+ /* SDHI0 */
+ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+@@ -408,6 +436,37 @@ static struct platform_device sdhi0_device = {
+ 	},
+ };
+ 
++/* Fixed 3.3V regulator to be used by SDHI1 */
++static struct regulator_consumer_supply cn4_power_consumers[] +{
 +	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
 +	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.1"),
 +};
 +
- static struct resource sdhi0_cn3_resources[] = {
- 	[0] = {
- 		.name	= "SDHI0",
-@@ -544,6 +561,10 @@ static int __init ap325rxa_devices_setup(void)
- 					&ap325rxa_sdram_leave_start,
- 					&ap325rxa_sdram_leave_end);
- 
-+	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
-+				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
-+	regulator_register_fixed(1, dummy_supplies, ARRAY_SIZE(dummy_supplies));
++static struct regulator_init_data cn4_power_init_data = {
++	.constraints = {
++		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
++	},
++	.num_consumer_supplies  = ARRAY_SIZE(cn4_power_consumers),
++	.consumer_supplies      = cn4_power_consumers,
++};
 +
- 	/* LD3 and LD4 LEDs */
- 	gpio_request(GPIO_PTX5, NULL); /* RUN */
- 	gpio_direction_output(GPIO_PTX5, 1);
++static struct fixed_voltage_config cn4_power_info = {
++	.supply_name = "CN4 SD/MMC Vdd",
++	.microvolts = 3300000,
++	.gpio = GPIO_PORT114,
++	.enable_high = 1,
++	.init_data = &cn4_power_init_data,
++};
++
++static struct platform_device cn4_power = {
++	.name = "reg-fixed-voltage",
++	.id   = 2,
++	.dev  = {
++		.platform_data = &cn4_power_info,
++	},
++};
++
+ void ag5evm_sdhi1_set_pwr(struct platform_device *pdev, int state)
+ {
+ 	gpio_set_value(GPIO_PORT114, state);
+@@ -455,6 +514,9 @@ static struct platform_device sdhi1_device = {
+ };
+ 
+ static struct platform_device *ag5evm_devices[] __initdata = {
++	&fixed_power_0,
++	&fixed_power_1,
++	&cn4_power,
+ 	&eth_device,
+ 	&keysc_device,
+ 	&fsi_device,
+@@ -468,6 +530,8 @@ static struct platform_device *ag5evm_devices[] __initdata = {
+ 
+ static void __init ag5evm_init(void)
+ {
++	regulator_register_fixed(3, dummy_supplies, ARRAY_SIZE(dummy_supplies));
++
+ 	sh73a0_pinmux_init();
+ 
+ 	/* enable SCIFA2 */
+@@ -562,8 +626,10 @@ static void __init ag5evm_init(void)
+ 	gpio_request(GPIO_FN_SDHID1_2_PU, NULL);
+ 	gpio_request(GPIO_FN_SDHID1_1_PU, NULL);
+ 	gpio_request(GPIO_FN_SDHID1_0_PU, NULL);
++#if !config_enabled(REGULATOR_FIXED_VOLTAGE)
+ 	gpio_request(GPIO_PORT114, "sdhi1_power");
+ 	gpio_direction_output(GPIO_PORT114, 0);
++#endif
+ 
+ #ifdef CONFIG_CACHE_L2X0
+ 	/* Shared attribute override enable, 64K*8way */
 -- 
 1.7.2.5
 
