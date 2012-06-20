@@ -1,36 +1,36 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 20 Jun 2012 08:01:35 +0000
-Subject: [PATCH 06/11] ARM: mach-shmobile: add fixed voltage regulators to bonito
-Message-Id: <1340179300-16452-7-git-send-email-g.liakhovetski@gmx.de>
+Date: Wed, 20 Jun 2012 15:12:13 +0000
+Subject: [PATCH 05/14] sh: add fixed voltage regulators to magicpanelr2
+Message-Id: <1340205142-32606-6-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On bonito provide a dummy regulator for the smsc911x driver.
+On magicpanelr2 provide a dummy regulator for the smsc911x driver.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/board-bonito.c |   10 ++++++++++
+ arch/sh/boards/board-magicpanelr2.c |   10 ++++++++++
  1 files changed, 10 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-bonito.c b/arch/arm/mach-shmobile/board-bonito.c
-index 63ab706..40bb604 100644
---- a/arch/arm/mach-shmobile/board-bonito.c
-+++ b/arch/arm/mach-shmobile/board-bonito.c
-@@ -26,6 +26,8 @@
- #include <linux/irq.h>
+diff --git a/arch/sh/boards/board-magicpanelr2.c b/arch/sh/boards/board-magicpanelr2.c
+index 90568f9..2050085 100644
+--- a/arch/sh/boards/board-magicpanelr2.c
++++ b/arch/sh/boards/board-magicpanelr2.c
+@@ -14,6 +14,8 @@
  #include <linux/platform_device.h>
+ #include <linux/delay.h>
  #include <linux/gpio.h>
 +#include <linux/regulator/fixed.h>
 +#include <linux/regulator/machine.h>
  #include <linux/smsc911x.h>
- #include <linux/videodev2.h>
- #include <mach/common.h>
-@@ -75,6 +77,12 @@
-  * S38.2 = OFF
-  */
+ #include <linux/mtd/mtd.h>
+ #include <linux/mtd/partitions.h>
+@@ -24,6 +26,12 @@
+ #include <asm/heartbeat.h>
+ #include <cpu/sh7720.h>
  
 +/* Dummy supplies, where voltage doesn't matter */
 +static struct regulator_consumer_supply dummy_supplies[] = {
@@ -38,18 +38,18 @@ index 63ab706..40bb604 100644
 +	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
 +};
 +
- /*
-  * FPGA
-  */
-@@ -360,6 +368,8 @@ static void __init bonito_init(void)
- {
- 	u16 val;
+ #define LAN9115_READY	(__raw_readl(0xA8000084UL) & 0x00000001UL)
  
+ /* Wait until reset finished. Timeout is 100ms. */
+@@ -348,6 +356,8 @@ static struct platform_device *mpr2_devices[] __initdata = {
+ 
+ static int __init mpr2_devices_setup(void)
+ {
 +	regulator_register_fixed(0, dummy_supplies, ARRAY_SIZE(dummy_supplies));
 +
- 	r8a7740_pinmux_init();
- 	bonito_fpga_init();
- 
+ 	return platform_add_devices(mpr2_devices, ARRAY_SIZE(mpr2_devices));
+ }
+ device_initcall(mpr2_devices_setup);
 -- 
 1.7.2.5
 
