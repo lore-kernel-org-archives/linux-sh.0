@@ -1,69 +1,61 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 20 Jun 2012 17:10:32 +0000
-Subject: [PATCH 3/7 v4] mmc: sdhi: implement tmio-mmc clock enable-update and disable callbacks
-Message-Id: <1340212236-647-4-git-send-email-g.liakhovetski@gmx.de>
+Date: Wed, 20 Jun 2012 15:12:08 +0000
+Subject: [PATCH 00/14] sh: add regulators for mmc and smsc911x
+Message-Id: <1340205142-32606-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1340212236-647-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1340212236-647-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-Instead of delivering one static clock frequency value, read from the
-hardware during probing, enable the tmio-mmc driver to re-read the
-frequency dynamically.
+This patch series is part two of the set, described in
+http://thread.gmane.org/gmane.linux.ports.sh.devel/15544
+It adds regulators for mmc devices and for the smsc911x driver to sh 
+platforms, similar to how the previous series has done this for
+arm/mach-shmobile. The auxiliary macro, added in patch 01/14 is also
+going to be dropped, as soon as we switch to using the new 
+regulator_register_always_on(), that macro will be dropped.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
- drivers/mmc/host/sh_mobile_sdhi.c |   24 +++++++++++++++++++++++-
- 1 files changed, 23 insertions(+), 1 deletions(-)
+Thanks
+Guennadi
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 934b68e..d8b167c 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -39,6 +39,27 @@ struct sh_mobile_sdhi {
- 	struct tmio_mmc_dma dma_priv;
- };
- 
-+static int sh_mobile_sdhi_clk_enable(struct platform_device *pdev, unsigned int *f)
-+{
-+	struct mmc_host *mmc = dev_get_drvdata(&pdev->dev);
-+	struct tmio_mmc_host *host = mmc_priv(mmc);
-+	struct sh_mobile_sdhi *priv = container_of(host->pdata, struct sh_mobile_sdhi, mmc_data);
-+	int ret = clk_enable(priv->clk);
-+	if (ret < 0)
-+		return ret;
-+
-+	*f = clk_get_rate(priv->clk);
-+	return 0;
-+}
-+
-+static void sh_mobile_sdhi_clk_disable(struct platform_device *pdev)
-+{
-+	struct mmc_host *mmc = dev_get_drvdata(&pdev->dev);
-+	struct tmio_mmc_host *host = mmc_priv(mmc);
-+	struct sh_mobile_sdhi *priv = container_of(host->pdata, struct sh_mobile_sdhi, mmc_data);
-+	clk_disable(priv->clk);
-+}
-+
- static void sh_mobile_sdhi_set_pwr(struct platform_device *pdev, int state)
- {
- 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
-@@ -132,9 +153,10 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
- 		goto eclkget;
- 	}
- 
--	mmc_data->hclk = clk_get_rate(priv->clk);
- 	mmc_data->set_pwr = sh_mobile_sdhi_set_pwr;
- 	mmc_data->get_cd = sh_mobile_sdhi_get_cd;
-+	mmc_data->clk_enable = sh_mobile_sdhi_clk_enable;
-+	mmc_data->clk_disable = sh_mobile_sdhi_clk_disable;
- 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
- 	if (p) {
- 		mmc_data->flags = p->tmio_flags;
+Guennadi Liakhovetski (14):
+  sh: add a temporary macro to define fixed voltage regulators
+  sh: ecovec: switch MMC power control to regulators
+  sh: add fixed voltage regulators to apsh4a3a
+  sh: add fixed voltage regulators to apsh4ad0a
+  sh: add fixed voltage regulators to magicpanelr2
+  sh: add fixed voltage regulators to polaris
+  sh: add fixed voltage regulators to sh2007
+  sh: add fixed voltage regulators to sh7757lcr
+  sh: add fixed voltage regulators to ap325rxa
+  sh: add fixed voltage regulators to kfr2r09
+  sh: add fixed voltage regulators to migor
+  sh: add fixed voltage regulators to rsk
+  sh: add fixed voltage regulators to sdk7786
+  sh: add fixed voltage regulators to se7724
+
+ arch/sh/boards/board-apsh4a3a.c              |   10 ++++
+ arch/sh/boards/board-apsh4ad0a.c             |   10 ++++
+ arch/sh/boards/board-magicpanelr2.c          |   10 ++++
+ arch/sh/boards/board-polaris.c               |   10 ++++
+ arch/sh/boards/board-sh2007.c                |   12 ++++
+ arch/sh/boards/board-sh7757lcr.c             |   14 +++++
+ arch/sh/boards/mach-ap325rxa/setup.c         |   23 ++++++++
+ arch/sh/boards/mach-ecovec24/setup.c         |   73 ++++++++++++++++++++++++++
+ arch/sh/boards/mach-kfr2r09/setup.c          |   12 ++++
+ arch/sh/boards/mach-migor/setup.c            |   12 ++++
+ arch/sh/boards/mach-rsk/setup.c              |   10 ++++
+ arch/sh/boards/mach-sdk7786/setup.c          |   10 ++++
+ arch/sh/boards/mach-se/7724/setup.c          |   14 +++++
+ arch/sh/include/mach-common/mach/regulator.h |   34 ++++++++++++
+ 14 files changed, 254 insertions(+), 0 deletions(-)
+ create mode 100644 arch/sh/include/mach-common/mach/regulator.h
+
 -- 
 1.7.2.5
 
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
