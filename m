@@ -1,71 +1,89 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 20 Jun 2012 10:51:34 +0000
+From: Ulf Hansson <ulf.hansson@linaro.org>
+Date: Wed, 20 Jun 2012 11:54:33 +0000
 Subject: Re: [PATCH] mmc: sh_mmcif: Support MMC_SLEEP_AWAKE command
-Message-Id: <4469877.ZyruNqIujY@avalon>
+Message-Id: <CAPDyKFo_my_+xQOKYooNawtJ1b3Ncm2osNg9TMN8YpftXfr+Jg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1339534569-27923-1-git-send-email-laurent.pinchart@ideasonboard.com> <47844351.ibBFGBYgKQ@avalon> <20120620064238.GH20030@verge.net.au>
-In-Reply-To: <20120620064238.GH20030@verge.net.au>
+References: <1339534569-27923-1-git-send-email-laurent.pinchart@ideasonboard.com>
+In-Reply-To: <1339534569-27923-1-git-send-email-laurent.pinchart@ideasonboard.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: linux-mmc@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: linux-mmc@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, linux-sh@vger.kernel.org, Saugata Das <saugata.das@linaro.org>, Girish Shivananjappa <girish.shivananjappa@linaro.org>
 
-Hi Simon,
+Hi Laurent,
 
-On Wednesday 20 June 2012 15:42:38 Simon Horman wrote:
-> On Wed, Jun 13, 2012 at 09:39:56AM +0200, Laurent Pinchart wrote:
-> > On Wednesday 13 June 2012 10:12:01 Simon Horman wrote:
-> > > On Tue, Jun 12, 2012 at 10:56:09PM +0200, Laurent Pinchart wrote:
-> > > > The MMC_SLEEP_AWAKE and SD_IO_SEND_OP_COND commands share the same
-> > > > opcode. SD_IO_SEND_OP_COND isn't supported by the SH MMCIF, but
-> > > > MMC_SLEEP_AWAKE is. Discriminate between the two commands using the
-> > > > command flags, and reject SD_IO_SEND_OP_COND only.
-> > > > 
-> > > > Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> > > > ---
-> > > > 
-> > > >  drivers/mmc/host/sh_mmcif.c |   14 ++++----------
-> > > >  1 files changed, 4 insertions(+), 10 deletions(-)
-> > > > 
-> > > > Not supporting the MMC_SLEEP_AWAKE command makes system suspend fail
-> > > > if an MMC or eMMC device supporting sleep/wake is connected. The issue
-> > > > has been first noticed on the Armadillo 800 EVA board.
-> > > 
-> > > Hi Laurent,
-> > > 
-> > > Do you have a test-case for this?
-> > 
-> > echo mem > /sys/power/state on Armadillo 800 EVA was my test case. It
-> > failed without the patch, and succeeds with it.
-> 
-> I'm not having much luck with or without your patch.
-> 
-> # echo mem > /sys/power/state
-> echo: write error: No such device
-> 
-> I am using 3.5-rc3. With the armadillo default config + EXT3 + SUSPEND.
-> Perhaps I am missing some options?
+Your issue seem more related to a mmc protocol problem. Likely caused
+by a bad patch for eMMC 4.5 poweroff notify. The patch I refer to is:
+"mmc: core: Fix PowerOff Notify suspend/resume"
 
-You're probably missing a patch. I'll send it as a reply to this e-mail.
+You may try to revert this patch and see if the same problem occurs for you.
 
-> > > Also, did you check to make sure that the Mackerel still works?
-> > 
-> > Yes it still works. However, I have no way to test the MMC_SLEEP_AWAKE
-> > command on the Mackerel board, as my MMC card doesn't support it (on the
-> > Armadillo the eMMC chip supports the MMC_SLEEP_AWAKE command).
-> > 
-> > BTW, I wonder whether the current implementation is really the best one.
-> > If the hardware doesn't support SD/SDIO commands, instead of intercepting
-> > commands and rejecting the ones used by SD/SDIO at probe time, wouldn't it
-> > be better for host drivers to tell that they don't support SD and/or SDIO
-> > using flags in the mmc_host structure ?
-> 
-> I don't have any strong thoughts on this but your approach
-> does sound interesting.
+We are trying to fix the issue inserted by the above commit in a patch name=
+d:
+"MMC-4.5 Power OFF Notify Rework", please have a look if you have the time.
 
--- 
-Regards,
+Kind regards
+Ulf Hansson
 
-Laurent Pinchart
-
+On 12 June 2012 22:56, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> The MMC_SLEEP_AWAKE and SD_IO_SEND_OP_COND commands share the same
+> opcode. SD_IO_SEND_OP_COND isn't supported by the SH MMCIF, but
+> MMC_SLEEP_AWAKE is. Discriminate between the two commands using the
+> command flags, and reject SD_IO_SEND_OP_COND only.
+>
+> Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+> ---
+> =A0drivers/mmc/host/sh_mmcif.c | =A0 14 ++++----------
+> =A01 files changed, 4 insertions(+), 10 deletions(-)
+>
+> Not supporting the MMC_SLEEP_AWAKE command makes system suspend fail if a=
+n MMC
+> or eMMC device supporting sleep/wake is connected. The issue has been fir=
+st
+> noticed on the Armadillo 800 EVA board.
+>
+> diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+> index 724b35e..e32da11 100644
+> --- a/drivers/mmc/host/sh_mmcif.c
+> +++ b/drivers/mmc/host/sh_mmcif.c
+> @@ -892,21 +892,15 @@ static void sh_mmcif_request(struct mmc_host *mmc, =
+struct mmc_request *mrq)
+>
+> =A0 =A0 =A0 =A0switch (mrq->cmd->opcode) {
+> =A0 =A0 =A0 =A0/* MMCIF does not support SD/SDIO command */
+> - =A0 =A0 =A0 case SD_IO_SEND_OP_COND:
+> + =A0 =A0 =A0 case MMC_SLEEP_AWAKE: /* =3D SD_IO_SEND_OP_COND (5) */
+> + =A0 =A0 =A0 case MMC_SEND_EXT_CSD: /* =3D SD_SEND_IF_COND (8) */
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if ((mrq->cmd->flags & MMC_CMD_MASK) !=3D M=
+MC_CMD_BCR)
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 break;
+> =A0 =A0 =A0 =A0case MMC_APP_CMD:
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0host->state =3D STATE_IDLE;
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0mrq->cmd->error =3D -ETIMEDOUT;
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0mmc_request_done(mmc, mrq);
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0return;
+> - =A0 =A0 =A0 case MMC_SEND_EXT_CSD: /* =3D SD_SEND_IF_COND (8) */
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (!mrq->data) {
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 /* send_if_cond cmd (not su=
+pport) */
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 host->state =3D STATE_IDLE;
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 mrq->cmd->error =3D -ETIMED=
+OUT;
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 mmc_request_done(mmc, mrq);
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 return;
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 }
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 break;
+> =A0 =A0 =A0 =A0default:
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0break;
+> =A0 =A0 =A0 =A0}
+> --
+> Regards,
+>
+> Laurent Pinchart
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-mmc" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
