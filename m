@@ -1,36 +1,35 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 13 Jun 2012 00:48:34 +0000
-Subject: Re: [PATCH 10/27 v2] ARM: shmobile: r8a7740: add MERAM work-around
-Message-Id: <20120613004833.GQ16686@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 20 Jun 2012 10:53:25 +0000
+Subject: [PATCH] ARM: mach-shmobile: armadillo800eva: Use late init machine hook
+Message-Id: <1340189605-22074-1-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87sje0x46l.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87sje0x46l.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Jun 12, 2012 at 02:36:21AM -0700, Kuninori Morimoto wrote:
-> r8a7740 chip has lasting errata on MERAM buffer, and this patch adds
-> its work-around on setup-r8a7740.c
-> It solved CEU/VIO6C/2D-DMAC/VCP1/VPU5F/JPU/DISP memroy access error.
-> 
-> But MERAM driver can't control this issue,
-> since this work-around requires access to non-MERAM register address.
-> So, This it will be called as board specific code at this point.
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Since commit 21cc1b7ede3cf456cf1d51f8a906093261f7c111 ("ARM: shmobile:
+use machine specific hook for late init") suspend and CPU idle are not
+initialized automatically anymore. Set shmobile_init_late() as the
+machine late init hook to initialize them.
 
-As I tested v1 of this patch:
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-Tested-by: Simon Horman <horms@verge.net.au>
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index c0ad535..a70993f 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -990,6 +990,7 @@ DT_MACHINE_START(ARMADILLO800EVA_DT, "armadillo800eva")
+ 	.init_irq	= r8a7740_init_irq,
+ 	.handle_irq	= shmobile_handle_irq_intc,
+ 	.init_machine	= eva_init,
++	.init_late	= shmobile_init_late,
+ 	.timer		= &shmobile_timer,
+ 	.dt_compat	= eva_boards_compat_dt,
+ MACHINE_END
+-- 
+1.7.3.4
 
-> ---
-> v1 -> v2
-> 
->  - no change
-> 
->  arch/arm/mach-shmobile/board-armadillo800eva.c |    1 +
->  arch/arm/mach-shmobile/include/mach/common.h   |    1 +
->  arch/arm/mach-shmobile/setup-r8a7740.c         |   18 ++++++++++++++++++
->  3 files changed, 20 insertions(+), 0 deletions(-)
