@@ -1,16 +1,32 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 20 Jun 2012 07:02:27 +0000
-Subject: Re: [PATCH] mmc: sh_mmcif: mmc->f_max heuristic
-Message-Id: <20120620070227.GN20030@verge.net.au>
+From: "Brandt, Chris" <Chris.Brandt@renesas.com>
+Date: Wed, 20 Jun 2012 14:56:44 +0000
+Subject: RE: [PATCH] mmc: sh_mmcif: mmc->f_max heuristic
+Message-Id: <A389CA2909F7E548A28A6A30A9446C0903651FAAD5@REAMBX.NA.RTA>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1340171905-12534-1-git-send-email-horms@verge.net.au>
  <Pine.LNX.4.64.1206200845590.20254@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1206200845590.20254@axis700.grange>
+ <20120620070227.GN20030@verge.net.au>
+In-Reply-To: <20120620070227.GN20030@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>
+To: Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: "linux-mmc@vger.kernel.org" <linux-mmc@vger.kernel.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>
+
+> I would be very happy if someone with access to
+> the documentation could shed some further light on this.
+
+According to the SH7757 manual, setting the CLKDIV[3:0] in the CE_CLK_CTRL register 0xF selects Pck as the bus clock frequency. So, unlike other devices where Pck/2 (CLKDIV[3:0]=0) is the max bus speed, the SH7757 can run at Pck when CLKDIV=0xF.
+
+- Chris
+
+
+-----Original Message-----
+From: linux-sh-owner@vger.kernel.org [mailto:linux-sh-owner@vger.kernel.org] On Behalf Of Simon Horman
+Sent: Wednesday, June 20, 2012 3:02 AM
+To: Guennadi Liakhovetski
+Cc: linux-mmc@vger.kernel.org; linux-sh@vger.kernel.org; Chris Ball; Magnus Damm
+Subject: Re: [PATCH] mmc: sh_mmcif: mmc->f_max heuristic
 
 On Wed, Jun 20, 2012 at 08:49:38AM +0200, Guennadi Liakhovetski wrote:
 > Hi Simon
@@ -46,3 +62,7 @@ the documentation could shed some further light on this. In particular,
 I would be happy if this heuristic was shown not to be necessary. But
 in lieu of access to the documentation I think this patch is reasonable.
 
+--
+To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
