@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 19 Jun 2012 08:06:46 +0000
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 20 Jun 2012 06:10:45 +0000
 Subject: Re: [PATCH] ARM: shmobile: kzm9g: Support Real Time Clock
-Message-Id: <20120619080646.GB25674@verge.net.au>
+Message-Id: <87a9zyfr8g.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <4FE00E7E.8030406@kmckk.co.jp>
 In-Reply-To: <4FE00E7E.8030406@kmckk.co.jp>
@@ -10,15 +10,9 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Jun 19, 2012 at 02:30:38PM +0900, Tetsuyuki Kobayashi wrote:
-> Hello, this is my first patch to this ML.
-> 
-> This depends on Morimoto-san's 
-> [PATCH 0/27] ARM: shmobile: resend patch set
-> 
-> 
-> 
-> 
+
+Hi
+
 > KZM-A9-GT board has RTC device r2025d at I2C channel 0
 > with slave address 0x64.
 > 
@@ -37,10 +31,10 @@ On Tue, Jun 19, 2012 at 02:30:38PM +0900, Tetsuyuki Kobayashi wrote:
 > Check RTC still keeps correct date.
 > 
 > Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+> ---
 
-Hi Kobayashi-san,
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-I have verified that your patch works using the hwclock commands above.
-
-Tested-by: Simon Horman <horms@verge.net.au>
-
+Best regards
+---
+Kuninori Morimoto
