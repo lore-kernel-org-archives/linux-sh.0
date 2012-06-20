@@ -1,48 +1,91 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Sun, 17 Jun 2012 19:59:22 +0000
-Subject: Re: [PATCH v5] mmc: add a function to get regulators, supplying card's power
-Message-Id: <20120617195921.GL4267@opensource.wolfsonmicro.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="yQDbd2FCF2Yhw41T"
+From: Yoichi Yuasa <yuasa@linux-mips.org>
+Date: Wed, 20 Jun 2012 06:27:59 +0000
+Subject: [PATCH] MIPS: fix bug.h MIPS build regression
+Message-Id: <20120620152759.2caceb8c.yuasa@linux-mips.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1206131454260.17854@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1206131454260.17854@axis700.grange>
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Ulf Hansson <ulf.hansson@stericsson.com>, Adrian Hunter <adrian.hunter@intel.com>, Philip Rakity <prakity@marvell.com>, Ulf Hansson <ulf.hansson@linaro.org>, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>
+References: <1339962373-3224-1-git-send-email-geert@linux-m68k.org>
+        <CAMuHMdVfLjgrtWoPpvbLf12+=ApE6W9dNcweqD-_2Benr-D7NQ@mail.gmail.com>
+In-Reply-To: <CAMuHMdVfLjgrtWoPpvbLf12+=ApE6W9dNcweqD-_2Benr-D7NQ@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Geert Uytterhoeven <geert@linux-m68k.org>, Paul Mundt <lethal@linux-sh.org>
+Cc: yuasa@linux-mips.org, linux-kernel@vger.kernel.org, Linuxppc-dev <linuxppc-dev@ozlabs.org>, Linux MIPS Mailing List <linux-mips@linux-mips.org>, Linux-sh list <linux-sh@vger.kernel.org>, Chris Zankel <chris@zankel.net>, Ralf Baechle <ralf@linux-mips.org>
 
+Commit: 3777808873b0c49c5cf27e44c948dfb02675d578 breaks all MIPS builds.
 
---yQDbd2FCF2Yhw41T
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+  CC      arch/mips/kernel/machine_kexec.o
+In file included from include/linux/kernel.h:20:0,
+                 from include/asm-generic/bug.h:35,
+                 from /home/yuasa/src/linux/kernel/git/linux-2.6/arch/mips/include/asm/bug.h:41,
+                 from /home/yuasa/src/linux/kernel/git/linux-2.6/arch/mips/include/asm/bitops.h:20,
+                 from include/linux/bitops.h:22,
+                 from include/linux/signal.h:38,
+                 from include/linux/elfcore.h:5,
+                 from include/linux/kexec.h:60,
+                 from arch/mips/kernel/machine_kexec.c:9:
+include/linux/log2.h: In function '__ilog2_u32':
+include/linux/log2.h:34:2: error: implicit declaration of function 'fls' [-Werror=implicit-function-declaration]
+include/linux/log2.h: In function '__ilog2_u64':
+include/linux/log2.h:42:2: error: implicit declaration of function 'fls64' [-Werror=implicit-function-declaration]
+include/linux/log2.h: In function '__roundup_pow_of_two':
+include/linux/log2.h:63:2: error: implicit declaration of function 'fls_long' [-Werror=implicit-function-declaration]
+In file included from include/linux/bitops.h:22:0,
+                 from include/linux/signal.h:38,
+                 from include/linux/elfcore.h:5,
+                 from include/linux/kexec.h:60,
+                 from arch/mips/kernel/machine_kexec.c:9:
+/home/yuasa/src/linux/kernel/git/linux-2.6/arch/mips/include/asm/bitops.h: At top level:
+/home/yuasa/src/linux/kernel/git/linux-2.6/arch/mips/include/asm/bitops.h:615:19: error: static declaration of 'fls' follows non-static declaration
+include/linux/log2.h:34:9: note: previous implicit declaration of 'fls' was here
+In file included from /home/yuasa/src/linux/kernel/git/linux-2.6/arch/mips/include/asm/bitops.h:651:0,
+                 from include/linux/bitops.h:22,
+                 from include/linux/signal.h:38,
+                 from include/linux/elfcore.h:5,
+                 from include/linux/kexec.h:60,
+                 from arch/mips/kernel/machine_kexec.c:9:
+include/asm-generic/bitops/fls64.h:18:28: error: static declaration of 'fls64' follows non-static declaration
+include/linux/log2.h:42:9: note: previous implicit declaration of 'fls64' was here
+In file included from include/linux/signal.h:38:0,
+                 from include/linux/elfcore.h:5,
+                 from include/linux/kexec.h:60,
+                 from arch/mips/kernel/machine_kexec.c:9:
+include/linux/bitops.h:160:24: error: conflicting types for 'fls_long'
+include/linux/log2.h:63:16: note: previous implicit declaration of 'fls_long' was here
+cc1: all warnings being treated as errors
 
-On Wed, Jun 13, 2012 at 02:57:41PM +0200, Guennadi Liakhovetski wrote:
-> Add a function to get regulators, supplying card's Vdd and Vccq on a
-> specific host. If a Vdd supplying regulator is found, the function checks,
-> whether a valid OCR mask can be obtained from it. The Vccq regulator is
-> optional. A failure to get it is not fatal.
+make[2]: *** [arch/mips/kernel/machine_kexec.o] Error 1
 
-Reviwed-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Signed-off-by: Yoichi Yuasa <yuasa@linux-mips.org>
+---
+ arch/mips/include/asm/bitops.h |    1 -
+ arch/mips/include/asm/io.h     |    1 +
+ 2 files changed, 1 insertions(+), 1 deletions(-)
 
---yQDbd2FCF2Yhw41T
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+diff --git a/arch/mips/include/asm/bitops.h b/arch/mips/include/asm/bitops.h
+index 2e1ad4c..82ad35c 100644
+--- a/arch/mips/include/asm/bitops.h
++++ b/arch/mips/include/asm/bitops.h
+@@ -17,7 +17,6 @@
+ #include <linux/irqflags.h>
+ #include <linux/types.h>
+ #include <asm/barrier.h>
+-#include <asm/bug.h>
+ #include <asm/byteorder.h>		/* sigh ... */
+ #include <asm/cpu-features.h>
+ #include <asm/sgidefs.h>
+diff --git a/arch/mips/include/asm/io.h b/arch/mips/include/asm/io.h
+index 37a8379..100f9a3 100644
+--- a/arch/mips/include/asm/io.h
++++ b/arch/mips/include/asm/io.h
+@@ -17,6 +17,7 @@
+ #include <linux/types.h>
+ 
+ #include <asm/addrspace.h>
++#include <asm/bug.h>
+ #include <asm/byteorder.h>
+ #include <asm/cpu.h>
+ #include <asm/cpu-features.h>
+-- 
+1.7.0.4
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJP3jcAAAoJEBus8iNuMP3dXikP/2FSoQLscicpsYOz+bwE7+Up
-n4zFbU6XAARnLFzSbcBZB0Zo+o1d5BQemu81UCQzvNhOTNTBu+Xm5S11uR0zVjNt
-L0fMFEP5Tib3icIWHXwvGgzqxQOnHz3iTOOWX9dO+y3lXrNHL8Bm04Jlg893FYT9
-QT8IJXX0PYaR72N/o68jZ4lskLYYkSBV0SILZOo1puNW5UGanhyWU7OQZYYP01aa
-zBuV6Ed54bN7FQxYSZZJsn6hTU9Cqp9v8UhD5dWFIuzZuO+pCF9KllWXL8FdK0uq
-r1tdpc1KVFfWMVCLc19Cnu5iUwb0qQrB0n72poLqI633K5MbS+8N8jd+l+p+y1Ur
-CRL+iKKCXw+CD8tTZylYckDZoHSa428zkEgxYN0dk11DexQqf88pzxnjgrXgsp8T
-/dEhVEdRCyOk9XExdrpEgeG4sF1FwxkwB0fxJg/oevKMTlbkv5zKe/HmINgA6xLt
-9YxMlOs+hUMcXyr5jDwmcP+uWoVfRdCcOwJUBLi7rh/xKivNJ4cHyN+v/KBsXEQw
-nIZ5a5dSo9yKogCsj29MEUGtkfF7fvp5xEKQGyneKZQ+2cTzFan1XDiAl9OLwE4Y
-WYAyKaBqFRRJu+YdrVEo/9f7uMBnz/vnnIBR74qtnb9IziICWS8wt2FT7jGSZ8zm
-8PNJ6xB4pd7gdi9fZonB
-=DLDa
------END PGP SIGNATURE-----
-
---yQDbd2FCF2Yhw41T--
