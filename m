@@ -1,72 +1,52 @@
-From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Wed, 20 Jun 2012 08:02:48 +0000
+From: Giuseppe CAVALLARO <peppe.cavallaro@st.com>
+Date: Wed, 20 Jun 2012 12:50:07 +0000
 Subject: Re: Build regressions/improvements in v3.5-rc3
-Message-Id: <CAMuHMdUmNgBsvVUGsfwKgVq2CfCnOje_4ZUSoig=vSbhN4vSJA@mail.gmail.com>
+Message-Id: <4FE1C6FF.9070302@st.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1339962373-3224-1-git-send-email-geert@linux-m68k.org>
-        <CAMuHMdVfLjgrtWoPpvbLf12+=ApE6W9dNcweqD-_2Benr-D7NQ@mail.gmail.com>
-        <20120620035951.GC5623@linux-sh.org>
+References: <1339962373-3224-1-git-send-email-geert@linux-m68k.org> <CAMuHMdVfLjgrtWoPpvbLf12+=ApE6W9dNcweqD-_2Benr-D7NQ@mail.gmail.com> <20120620035951.GC5623@linux-sh.org>
 In-Reply-To: <20120620035951.GC5623@linux-sh.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-kernel@vger.kernel.org, Linuxppc-dev <linuxppc-dev@ozlabs.org>, Linux MIPS Mailing List <linux-mips@linux-mips.org>, Linux-sh list <linux-sh@vger.kernel.org>, Chris Zankel <chris@zankel.net>, Giuseppe Cavallaro <peppe.cavallaro@st.com>
+Cc: Geert Uytterhoeven <geert@linux-m68k.org>, linux-kernel@vger.kernel.org, Linuxppc-dev <linuxppc-dev@ozlabs.org>, Linux MIPS Mailing List <linux-mips@linux-mips.org>, Linux-sh list <linux-sh@vger.kernel.org>, Chris Zankel <chris@zankel.net>
 
-On Wed, Jun 20, 2012 at 5:59 AM, Paul Mundt <lethal@linux-sh.org> wrote:
+Hello Paul
+
+On 6/20/2012 5:59 AM, Paul Mundt wrote:
 > On Sun, Jun 17, 2012 at 09:56:59PM +0200, Geert Uytterhoeven wrote:
 >> On Sun, Jun 17, 2012 at 9:46 PM, Geert Uytterhoeven
 >> <geert@linux-m68k.org> wrote:
->> > JFYI, when comparing v3.5-rc3 to v3.5-rc2[3], the summaries are:
->> > ??- build errors: +235/-10
+>>> JFYI, when comparing v3.5-rc3 to v3.5-rc2[3], the summaries are:
+>>> ??- build errors: +235/-10
 >>
 >> Truckloads of powerpc "Unrecognized opcode" breakage, and
 >>
 > That was my fault, should be fixed up by 2603efa31a.
->
->>   + drivers/net/ethernet/stmicro/stmmac/stmmac_pci.c: error: implicit
+> 
+>>   + drivers/net/ethernet/stmicro/stmmac/stmmac_pci.c: error: implicit
 >> declaration of function 'pci_iomap'
->> [-Werror=implicit-function-declaration]:  => 90:3
->>   + drivers/net/ethernet/stmicro/stmmac/stmmac_pci.c: error: implicit
+>> [-Werror=implicit-function-declaration]:  => 90:3
+>>   + drivers/net/ethernet/stmicro/stmmac/stmmac_pci.c: error: implicit
 >> declaration of function 'pci_iounmap'
->> [-Werror=implicit-function-declaration]:  => 142:2
+>> [-Werror=implicit-function-declaration]:  => 142:2
 >>
 > Not sure about this one, it should find everything alright via:
->
->        linux/io.h -> asm/io.h -> asm-generic/iomap.h -> asm-generic/pci_iomap.h
->
+> 
+> 	linux/io.h -> asm/io.h -> asm-generic/iomap.h -> asm-generic/pci_iomap.h
+> 
 > in the case that PCI is enabled. None of allyesconfig/modconfig enable
 > PCI for me though, so I'm unsure of how you got in to this configuration
 > to begin with?
 
-These were xtensa, not sh.
+Trying to reproduce the problem, I've also re-built the mainstream
+kernel 3.5-rc3 for se7724_defconfig platform plus the stmmac (pltf and
+pci) but all compiles fine.
 
-The ones above ("error: expected expression before 'do'") were sh.
+I've also verified that there is the 33d5e332b9c5 commit that is the
+latest one discussed/tested/committed in the network mailing list.
 
->>   + error: "__ashrdi3" [fs/ntfs/ntfs.ko] undefined!:  => N/A
->>   + error: "__lshrdi3" [fs/ntfs/ntfs.ko] undefined!:  => N/A
->>
->> sh4/landisk_defconfig
->>
->>   + error: "__ashrdi3" [fs/xfs/xfs.ko] undefined!:  => N/A
->>   + error: "__lshrdi3" [drivers/mtd/mtd.ko] undefined!:  => N/A
->>   + error: "__lshrdi3" [fs/xfs/xfs.ko] undefined!:  => N/A
->>
-> These seem to be the same issue on both platforms, EXPORT_SYMBOL()
-> doesn't work from lib-y. While it's straightforward to fix, I'm not able
-> to reproduce __lshrdi3/__ashrdi3 references in any of the above, which
-> compiler are you using?
+Can you tell me how to reproduce the problem? How can I help?
 
-http://kisskb.ellerman.id.au/kisskb/buildresult/6543287/ says
-sh4-linux-gcc (GCC) 4.6.3
-
-Gr{oetje,eeting}s,
-
-                        Geert
-
---
-Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
-
-In personal conversations with technical people, I call myself a hacker. But
-when I'm talking to journalists I just say "programmer" or something like that.
-                                -- Linus Torvalds
+Pls let me know,
+Peppe
