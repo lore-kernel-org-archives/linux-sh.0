@@ -1,67 +1,123 @@
-From: Mike Frysinger <vapier@gentoo.org>
-Date: Fri, 01 Jun 2012 04:36:35 +0000
-Subject: Re: [PATCH 5/9] blackfin: A couple of task->mm handling fixes
-Message-Id: <201206010036.40468.vapier@gentoo.org>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart4094434.0m95qSk5yE"
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 20 Jun 2012 17:10:31 +0000
+Subject: [PATCH 2/7 v4] mmc: tmio: add callbacks to enable-update and disable the interface clock
+Message-Id: <1340212236-647-3-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120423070641.GA27702@lizard> <20120423070901.GE30752@lizard>
-In-Reply-To: <20120423070901.GE30752@lizard>
-To: linux-arm-kernel@lists.infradead.org
+References: <1340212236-647-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1340212236-647-1-git-send-email-g.liakhovetski@gmx.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
---nextPart4094434.0m95qSk5yE
-Content-Type: Text/Plain;
-  charset="utf-8"
-Content-Transfer-Encoding: quoted-printable
+Every time the clock is enabled after possibly being disabled, we have
+to re-read its frequency and update our configuration.
 
-On Monday 23 April 2012 03:09:01 Anton Vorontsov wrote:
-> 1. Working with task->mm w/o getting mm or grabing the task lock is
->    dangerous as ->mm might disappear (exit_mm() assigns NULL under
->    task_lock(), so tasklist lock is not enough).
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/mmc/host/tmio_mmc_pio.c |   35 ++++++++++++++++++++++++++++++++---
+ include/linux/mfd/tmio.h        |    3 +++
+ 2 files changed, 35 insertions(+), 3 deletions(-)
 
-that isn't a problem for this code as it specifically checks if it's in an=
-=20
-atomic section.  if it is, then task->mm can't go away on us.
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 9069d4a..869ee69 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -751,6 +751,22 @@ fail:
+ 	mmc_request_done(mmc, mrq);
+ }
+ 
++static int tmio_mmc_clk_update(struct mmc_host *mmc)
++{
++	struct tmio_mmc_host *host = mmc_priv(mmc);
++	struct tmio_mmc_data *pdata = host->pdata;
++	int ret;
++
++	if (!pdata->clk_enable)
++		return -ENOTSUPP;
++
++	ret = pdata->clk_enable(host->pdev, &mmc->f_max);
++	if (!ret)
++		mmc->f_min = mmc->f_max / 512;
++
++	return ret;
++}
++
+ /* Set MMC clock / power.
+  * Note: This controller uses a simple divider scheme therefore it cannot
+  * run a MMC card at full speed (20MHz). The max clock is 24MHz on SD, but as
+@@ -797,6 +813,7 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 	 */
+ 	if (ios->power_mode = MMC_POWER_ON && ios->clock) {
+ 		if (!host->power) {
++			tmio_mmc_clk_update(mmc);
+ 			pm_runtime_get_sync(dev);
+ 			host->power = true;
+ 		}
+@@ -810,9 +827,12 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 		if (host->set_pwr && ios->power_mode = MMC_POWER_OFF)
+ 			host->set_pwr(host->pdev, 0);
+ 		if (host->power) {
++			struct tmio_mmc_data *pdata = host->pdata;
+ 			tmio_mmc_clk_stop(host);
+ 			host->power = false;
+ 			pm_runtime_put(dev);
++			if (pdata->clk_disable)
++				pdata->clk_disable(host->pdev);
+ 		}
+ 	}
+ 
+@@ -906,8 +926,6 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 
+ 	mmc->ops = &tmio_mmc_ops;
+ 	mmc->caps = MMC_CAP_4_BIT_DATA | pdata->capabilities;
+-	mmc->f_max = pdata->hclk;
+-	mmc->f_min = mmc->f_max / 512;
+ 	mmc->max_segs = 32;
+ 	mmc->max_blk_size = 512;
+ 	mmc->max_blk_count = (PAGE_CACHE_SIZE / mmc->max_blk_size) *
+@@ -929,6 +947,11 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	if (ret < 0)
+ 		goto pm_disable;
+ 
++	if (tmio_mmc_clk_update(mmc) < 0) {
++		mmc->f_max = pdata->hclk;
++		mmc->f_min = mmc->f_max / 512;
++	}
++
+ 	/*
+ 	 * There are 4 different scenarios for the card detection:
+ 	 *  1) an external gpio irq handles the cd (best for power savings)
+@@ -974,7 +997,13 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	/* See if we also get DMA */
+ 	tmio_mmc_request_dma(_host, pdata);
+ 
+-	mmc_add_host(mmc);
++	ret = mmc_add_host(mmc);
++	if (pdata->clk_disable)
++		pdata->clk_disable(pdev);
++	if (ret < 0) {
++		tmio_mmc_host_remove(_host);
++		return ret;
++	}
+ 
+ 	dev_pm_qos_expose_latency_limit(&pdev->dev, 100);
+ 
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index f5171db..b332c4c 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -110,6 +110,9 @@ struct tmio_mmc_data {
+ 	void (*set_clk_div)(struct platform_device *host, int state);
+ 	int (*get_cd)(struct platform_device *host);
+ 	int (*write16_hook)(struct tmio_mmc_host *host, int addr);
++	/* clock management callbacks */
++	int (*clk_enable)(struct platform_device *pdev, unsigned int *f);
++	void (*clk_disable)(struct platform_device *pdev);
+ };
+ 
+ /*
+-- 
+1.7.2.5
 
->    We can't use get_task_mm()/mmput() pair as mmput() might sleep,
->    so we have to take the task lock while handle its mm.
-
-if we're not in an atomic section, then sleeping is fine.
-
-> 2. Checking for process->mm is not enough because process' main
->    thread may exit or detach its mm via use_mm(), but other threads
->    may still have a valid mm.
-
-i don't think it matters for this code (per the reasons above).
-
->    To catch this we use find_lock_task_mm(), which walks up all
->    threads and returns an appropriate task (with task lock held).
-
-certainly fine for the non-atomic code path.  i guess we'll notice in crash=
-es=20
-if it causes a problem in atomic code paths as well.
-=2Dmike
-
---nextPart4094434.0m95qSk5yE
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.17 (GNU/Linux)
-
-iQIcBAABAgAGBQJPyEbYAAoJEEFjO5/oN/WBjkMP/jWhBHloIwNx3O8WdCb7Jkeb
-oKrprqZwAeiXIZdZz4ENCnxaVidCjzIhkmuRyCyqTGK89Qwz2EDP7mwmIstn88eQ
-XZn77Psp8Qa4F8ZmycV2u+rhqrZK+zybSNNuk05V7K5NrSXPDBSFCYnN0K0svApX
-bG4nRGqPE7gOfHDh62h+r7MIfdCavXgp66xm3cUJ8gDzWCsN8+epSJK/Oh/J8L9b
-FESfd6zyN25ij8+j6K8pY1n0HFBsSCgWFKgz41DDALeNxAspC9Fsn4fjeA8NnpQ6
-6K1COIvAcaQ6zcZlzjcn1igjGCpvkLoXT1nLGuN9cFr/H2JJ5kxxGhQ25I25Voxx
-cPiGjGqTAsl5+PavwNlt6q+dUHT04hdKcJmFad3LJneDmKVw9D/UGY21WWzu7vTP
-ZLotT0ntVjr/Cuqt0J3iBMxUdq2tncWrpXD4cr/TJvvALKXgLQTaO6iVMiptDYVq
-HtSnThyOfplo8vu/l7kYiYPzlGO/uccOrw5kk6lOCokzzzwGZwV+urrDffvH2iWz
-+OimgpLcSg8qoqDBQqb3qg5elIbroAcbSfHRDMs6c4Ld9iUcyNyjxJPQDvdU9Hyl
-qJve50YbbUEgcxGQTsVKuzWkrajjeCCQCabGiiHIlLPOSr5nK10WTGTXQVUTivt2
-bZv1rSS6aLk4w6YM4TVm
-=GWQm
------END PGP SIGNATURE-----
-
---nextPart4094434.0m95qSk5yE--
