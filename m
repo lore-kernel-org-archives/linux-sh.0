@@ -1,38 +1,62 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Thu, 28 Jun 2012 21:07:10 +0000
-Subject: Re: [PATCH 0/1][RFC] ARM: shmobile: r8a7740: basic PM domain support
-Message-Id: <201206282307.10203.rjw@sisk.pl>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 20 Jun 2012 15:12:09 +0000
+Subject: [PATCH 01/14] sh: add a temporary macro to define fixed voltage regulators
+Message-Id: <1340205142-32606-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87fw9jlm4q.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87fw9jlm4q.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thursday, June 28, 2012, Kuninori Morimoto wrote:
-> 
-> Hi Rafael, Magnus
-> 
-> > In general I think it looks good for a V1, but I wonder about upcoming
-> > patches for PM domain support for board-specific devices on the
-> > Armadillo board. Do you have any other Armadillo-specific patch that
-> > for instance hooks up the board specific LCDC device to the correct
-> > power domain?
-> > 
-> > I recommend you to test during runtime with subsystem specific
-> > interfaces - not only suspend-to-RAM. As an example, I believe the
-> > LCDC can be powered on and off using some fbdev specific "blanking"
-> > file in sysfs.
-> 
-> OK. now I created the incremental patches which enable USB/LCDC PM domain.
-> Can I send these patches ? or should I wait until Rafael's tree became update ?
+Until the regulator_register_fixed_volt() function becomes available add a
+macro to define fixed-voltage always on regulators.
 
-Actaully, please drop patch 1 (the RFC), rebase the rest so that they are
-not based on this one and repost (preferably organized like I described in
-my previous message).
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ arch/sh/include/mach-common/mach/regulator.h |   34 ++++++++++++++++++++++++++
+ 1 files changed, 34 insertions(+), 0 deletions(-)
+ create mode 100644 arch/sh/include/mach-common/mach/regulator.h
 
-And in the future, please never, _never_ base production patches on RFC ones.
+diff --git a/arch/sh/include/mach-common/mach/regulator.h b/arch/sh/include/mach-common/mach/regulator.h
+new file mode 100644
+index 0000000..fe74995
+--- /dev/null
++++ b/arch/sh/include/mach-common/mach/regulator.h
+@@ -0,0 +1,34 @@
++/*
++ * Temporary header until regulator_register_fixed_volt() is available.
++ * Licensed under GPLv2, see COPYING for details.
++ */
++
++#ifndef ASM_REGULATOR_H
++#define ASM_REGULATOR_H
++
++#include <linux/regulator/driver.h>
++#include <linux/regulator/fixed.h>
++#include <linux/regulator/machine.h>
++
++#define REGULATOR_FIXED(s, rid, v)					\
++static struct regulator_init_data fixed_power_init_data_ ## rid = {	\
++	.num_consumer_supplies  = ARRAY_SIZE(s),			\
++	.consumer_supplies      = (s),					\
++	.constraints.always_on	= 1,					\
++};									\
++static struct fixed_voltage_config fixed_power_info_ ## rid = {		\
++	.supply_name = "Fixed #" # rid,					\
++	.microvolts = (v),						\
++	.gpio = -EINVAL,						\
++	.init_data = &fixed_power_init_data_ ## rid,			\
++	.enabled_at_boot = 1,						\
++};									\
++static struct platform_device fixed_power_ ## rid = {			\
++	.name = "reg-fixed-voltage",					\
++	.id   = (rid),							\
++	.dev  = {							\
++		.platform_data = &fixed_power_info_ ## rid,		\
++	},								\
++}
++
++#endif
+-- 
+1.7.2.5
 
-Thanks,
-Rafael
