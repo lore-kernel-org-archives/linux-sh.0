@@ -1,56 +1,82 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 20 Jun 2012 17:10:35 +0000
-Subject: [PATCH 6/7 v4] mmc: tmio: use MMC opcode defines instead of numbers
-Message-Id: <1340212236-647-7-git-send-email-g.liakhovetski@gmx.de>
+Date: Wed, 20 Jun 2012 15:12:17 +0000
+Subject: [PATCH 09/14] sh: add fixed voltage regulators to ap325rxa
+Message-Id: <1340205142-32606-10-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1340212236-647-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1340212236-647-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-mmc.h defines macros for most frequently used MMC opcodes. Use them instead
-of hard-coded numbers.
+On ap325rxa provide a 3.3V supply for its SD/MMC-card interfaces and a
+dummy regulator for the smsc911x driver.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/mmc/host/tmio_mmc_pio.c |    7 ++++---
- 1 files changed, 4 insertions(+), 3 deletions(-)
+ arch/sh/boards/mach-ap325rxa/setup.c |   23 +++++++++++++++++++++++
+ 1 files changed, 23 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 410b8cf..2050827 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -36,6 +36,7 @@
- #include <linux/mfd/tmio.h>
- #include <linux/mmc/cd-gpio.h>
- #include <linux/mmc/host.h>
-+#include <linux/mmc/mmc.h>
- #include <linux/mmc/tmio.h>
- #include <linux/module.h>
- #include <linux/pagemap.h>
-@@ -305,8 +306,8 @@ static int tmio_mmc_start_command(struct tmio_mmc_host *host, struct mmc_command
- 	int c = cmd->opcode;
- 	u32 irq_mask = TMIO_MASK_CMD;
+diff --git a/arch/sh/boards/mach-ap325rxa/setup.c b/arch/sh/boards/mach-ap325rxa/setup.c
+index f33ebf4..6a89aec 100644
+--- a/arch/sh/boards/mach-ap325rxa/setup.c
++++ b/arch/sh/boards/mach-ap325rxa/setup.c
+@@ -20,6 +20,8 @@
+ #include <linux/mtd/sh_flctl.h>
+ #include <linux/delay.h>
+ #include <linux/i2c.h>
++#include <linux/regulator/fixed.h>
++#include <linux/regulator/machine.h>
+ #include <linux/smsc911x.h>
+ #include <linux/gpio.h>
+ #include <linux/videodev2.h>
+@@ -33,6 +35,13 @@
+ #include <asm/clock.h>
+ #include <asm/suspend.h>
+ #include <cpu/sh7723.h>
++#include <mach/regulator.h>
++
++/* Dummy supplies, where voltage doesn't matter */
++static struct regulator_consumer_supply dummy_supplies[] = {
++	REGULATOR_SUPPLY("vddvario", "smsc911x"),
++	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
++};
  
--	/* Command 12 is handled by hardware */
--	if (cmd->opcode = 12 && !cmd->arg) {
-+	/* CMD12 is handled by hardware */
-+	if (cmd->opcode = MMC_STOP_TRANSMISSION && !cmd->arg) {
- 		sd_ctrl_write16(host, CTL_STOP_INTERNAL_ACTION, 0x001);
- 		return 0;
- 	}
-@@ -449,7 +450,7 @@ void tmio_mmc_do_data_irq(struct tmio_mmc_host *host)
- 	}
+ static struct smsc911x_platform_config smsc911x_config = {
+ 	.phy_interface	= PHY_INTERFACE_MODE_MII,
+@@ -423,6 +432,17 @@ static struct platform_device ceu_device = {
+ 	},
+ };
  
- 	if (stop) {
--		if (stop->opcode = 12 && !stop->arg)
-+		if (stop->opcode = MMC_STOP_TRANSMISSION && !stop->arg)
- 			sd_ctrl_write16(host, CTL_STOP_INTERNAL_ACTION, 0x000);
- 		else
- 			BUG();
++/* Fixed 3.3V regulators to be used by SDHI0, SDHI1 */
++static struct regulator_consumer_supply fixed3v3_power_consumers[] +{
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
++	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
++	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.1"),
++};
++
++REGULATOR_FIXED(fixed3v3_power_consumers, 0, 3300000);
++
+ static struct resource sdhi0_cn3_resources[] = {
+ 	[0] = {
+ 		.name	= "SDHI0",
+@@ -519,6 +539,7 @@ static struct platform_device ap325rxa_camera[] = {
+ };
+ 
+ static struct platform_device *ap325rxa_devices[] __initdata = {
++	&fixed_power_0,
+ 	&smsc9118_device,
+ 	&ap325rxa_nor_flash_device,
+ 	&lcdc_device,
+@@ -544,6 +565,8 @@ static int __init ap325rxa_devices_setup(void)
+ 					&ap325rxa_sdram_leave_start,
+ 					&ap325rxa_sdram_leave_end);
+ 
++	regulator_register_fixed(1, dummy_supplies, ARRAY_SIZE(dummy_supplies));
++
+ 	/* LD3 and LD4 LEDs */
+ 	gpio_request(GPIO_PTX5, NULL); /* RUN */
+ 	gpio_direction_output(GPIO_PTX5, 1);
 -- 
 1.7.2.5
 
