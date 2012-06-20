@@ -1,31 +1,54 @@
-From: Andreas Schwab <schwab@linux-m68k.org>
-Date: Sun, 17 Jun 2012 22:30:16 +0000
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Wed, 20 Jun 2012 03:59:51 +0000
 Subject: Re: Build regressions/improvements in v3.5-rc3
-Message-Id: <m2vcip4lmv.fsf@igel.home>
+Message-Id: <20120620035951.GC5623@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1339962373-3224-1-git-send-email-geert@linux-m68k.org>
-        <CAMuHMdVfLjgrtWoPpvbLf12+=ApE6W9dNcweqD-_2Benr-D7NQ@mail.gmail.com>
-        <1339969995.9220.242.camel@pasglop>
-In-Reply-To: <1339969995.9220.242.camel@pasglop> (Benjamin Herrenschmidt's
-        message of "Mon, 18 Jun 2012 07:53:15 +1000")
+ <CAMuHMdVfLjgrtWoPpvbLf12+=ApE6W9dNcweqD-_2Benr-D7NQ@mail.gmail.com>
+In-Reply-To: <CAMuHMdVfLjgrtWoPpvbLf12+=ApE6W9dNcweqD-_2Benr-D7NQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-Cc: Geert Uytterhoeven <geert@linux-m68k.org>, linux-kernel@vger.kernel.org, Linuxppc-dev <linuxppc-dev@ozlabs.org>, Chris Zankel <chris@zankel.net>, Linux-sh list <linux-sh@vger.kernel.org>, Linux MIPS Mailing List <linux-mips@linux-mips.org>
+To: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: linux-kernel@vger.kernel.org, Linuxppc-dev <linuxppc-dev@ozlabs.org>, Linux MIPS Mailing List <linux-mips@linux-mips.org>, Linux-sh list <linux-sh@vger.kernel.org>, Chris Zankel <chris@zankel.net>, Giuseppe Cavallaro <peppe.cavallaro@st.com>
 
-Benjamin Herrenschmidt <benh@kernel.crashing.org> writes:
+On Sun, Jun 17, 2012 at 09:56:59PM +0200, Geert Uytterhoeven wrote:
+> On Sun, Jun 17, 2012 at 9:46 PM, Geert Uytterhoeven
+> <geert@linux-m68k.org> wrote:
+> > JFYI, when comparing v3.5-rc3 to v3.5-rc2[3], the summaries are:
+> > ??- build errors: +235/-10
+> 
+> Truckloads of powerpc "Unrecognized opcode" breakage, and
+> 
+That was my fault, should be fixed up by 2603efa31a.
 
-> On Sun, 2012-06-17 at 21:56 +0200, Geert Uytterhoeven wrote:
->> Truckloads of powerpc "Unrecognized opcode" breakage, and
->
-> Where ? The boot wrappers again ?
+>   + drivers/net/ethernet/stmicro/stmmac/stmmac_pci.c: error: implicit
+> declaration of function 'pci_iomap'
+> [-Werror=implicit-function-declaration]:  => 90:3
+>   + drivers/net/ethernet/stmicro/stmmac/stmmac_pci.c: error: implicit
+> declaration of function 'pci_iounmap'
+> [-Werror=implicit-function-declaration]:  => 142:2
+> 
+Not sure about this one, it should find everything alright via:
 
-<http://permalink.gmane.org/gmane.linux.kernel/1312778>
+	linux/io.h -> asm/io.h -> asm-generic/iomap.h -> asm-generic/pci_iomap.h
 
-Andreas.
+in the case that PCI is enabled. None of allyesconfig/modconfig enable
+PCI for me though, so I'm unsure of how you got in to this configuration
+to begin with?
 
--- 
-Andreas Schwab, schwab@linux-m68k.org
-GPG Key fingerprint = 58CA 54C7 6D53 942B 1756  01D3 44D5 214B 8276 4ED5
-"And now for something completely different."
+> xtensa
+> 
+>   + error: "__ashrdi3" [fs/ntfs/ntfs.ko] undefined!:  => N/A
+>   + error: "__lshrdi3" [fs/ntfs/ntfs.ko] undefined!:  => N/A
+> 
+> sh4/landisk_defconfig
+> 
+>   + error: "__ashrdi3" [fs/xfs/xfs.ko] undefined!:  => N/A
+>   + error: "__lshrdi3" [drivers/mtd/mtd.ko] undefined!:  => N/A
+>   + error: "__lshrdi3" [fs/xfs/xfs.ko] undefined!:  => N/A
+> 
+These seem to be the same issue on both platforms, EXPORT_SYMBOL()
+doesn't work from lib-y. While it's straightforward to fix, I'm not able
+to reproduce __lshrdi3/__ashrdi3 references in any of the above, which
+compiler are you using?
