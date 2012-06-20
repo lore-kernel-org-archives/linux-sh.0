@@ -1,34 +1,73 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 25 Jun 2012 10:37:47 +0000
-Subject: [PATCH 6/6] ARM: shmobile: armadillo800eva: enable DMAEngine on USB
-Message-Id: <87txxzk77s.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 20 Jun 2012 05:58:25 +0000
+Subject: [PATCH] mmc: sh_mmcif: mmc->f_max heuristic
+Message-Id: <1340171905-12534-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Chris Ball <cjb@laptop.org>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-It is possible to reduce CPU load if USB used DMAEngine.
-This patch enabled it.
+In 930f152cc9998388031af577843baae572ac8ab6 ("mmc: sh_mmcif: mmc->f_max
+should be half of the bus clock") I changed the setting of mmc->f_max from
+the bus clock to half the bus clock based on the manual for the sh7372 SoC.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Inspection of sh_mmcif_clock_control() reveals that it relies on
+mmc->f_max being set to the bus speed in order to enable the supplementary
+clock, a feature that does not exist on the sh7372.
+
+Armed with this information implement the following heuristic for setting
+mmc->f_max:
+
+* Use bus clock if the supplementary clock feature is present
+  - Assumed to work on the sh7757lcr board, the only board present
+    in the tree which has the feature.
+* Use half the bus clock otherwise
+  - As per the documentation for the sh7372 SoC.
+
+Reported-by: Magnus Damm <damm@opensource.se>
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index f7f9ac5..3066fa7 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -297,6 +297,8 @@ static struct usbhsf_private usbhsf_private = {
- 		.driver_param = {
- 			.buswait_bwait		= 5,
- 			.detection_delay	= 5,
-+			.d0_rx_id	= SHDMA_SLAVE_USBHS_RX,
-+			.d1_tx_id	= SHDMA_SLAVE_USBHS_TX,
- 		},
+Regression information:
+
+It seems likely that this resolves a regression for the sh7757lcr which was
+introduced by 930f152cc9998388031af577843baae572ac8ab6 ("mmc: sh_mmcif:
+mmc->f_max should be half of the bus clock"). However, although I have the
+hardware in question I am unsure how to exercise the code to test if there
+is a problem or not.
+
+930f152cc9998388031af577843baae572ac8ab6 was added between the 3.3 and 3.4.
+
+Dependency information:
+
+This patch is based on Guennadi Liakhovetski's recent series
+"[PATCH 0/5 v4] mmc: sh_mmcif: clock and power updates". It should
+be trivial to rebase it on 3.5-rc3.
+---
+ drivers/mmc/host/sh_mmcif.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index f0f518b..dfcfe83 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -919,10 +919,11 @@ static void sh_mmcif_request(struct mmc_host *mmc, struct mmc_request *mrq)
+ static int sh_mmcif_clk_update(struct sh_mmcif_host *host)
+ {
+ 	int ret = clk_enable(host->hclk);
++	struct sh_mmcif_plat_data *p = host->pd->dev.platform_data;
+ 
+ 	if (!ret) {
+ 		host->clk = clk_get_rate(host->hclk);
+-		host->mmc->f_max = host->clk / 2;
++		host->mmc->f_max = p->sup_pclk ? host->clk : host->clk / 2;
+ 		host->mmc->f_min = host->clk / 512;
  	}
- };
+ 
 -- 
-1.7.5.4
+1.7.10.2.484.gcd07cc5
 
