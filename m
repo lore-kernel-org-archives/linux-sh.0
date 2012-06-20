@@ -1,55 +1,102 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 20 Jun 2012 08:01:40 +0000
-Subject: [PATCH 11/11] ARM: mach-shmobile: add fixed voltage regulators to marzen
-Message-Id: <1340179300-16452-12-git-send-email-g.liakhovetski@gmx.de>
+Date: Wed, 20 Jun 2012 17:10:33 +0000
+Subject: [PATCH 4/7 v4] mmc: tmio: add regulator support
+Message-Id: <1340212236-647-5-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1340212236-647-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1340212236-647-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Liam Girdwood <lrg@ti.com>, Mark Brown <broonie@opensource.wolfsonmicro.com>
 
-On marzen provide a dummy regulator for the smsc911x driver.
+Currently the TMIO MMC driver derives the OCR mask from the platform data
+and uses a platform callback to turn card power on and off. This patch adds
+regulator support to the driver.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Liam Girdwood <lrg@ti.com>
+Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>
 ---
- arch/arm/mach-shmobile/board-marzen.c |   10 ++++++++++
- 1 files changed, 10 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index ef0e13b..bc12cbc 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -27,6 +27,8 @@
- #include <linux/io.h>
- #include <linux/gpio.h>
- #include <linux/dma-mapping.h>
-+#include <linux/regulator/fixed.h>
-+#include <linux/regulator/machine.h>
- #include <linux/smsc911x.h>
- #include <mach/hardware.h>
- #include <mach/r8a7779.h>
-@@ -37,6 +39,12 @@
- #include <asm/hardware/gic.h>
- #include <asm/traps.h>
+v4: updated to the new mmc_regulator_get_supply() implementation
+
+ drivers/mmc/host/tmio_mmc_pio.c |   37 +++++++++++++++++++++++++++++--------
+ 1 files changed, 29 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 869ee69..410b8cf 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -767,6 +767,18 @@ static int tmio_mmc_clk_update(struct mmc_host *mmc)
+ 	return ret;
+ }
  
-+/* Dummy supplies, where voltage doesn't matter */
-+static struct regulator_consumer_supply dummy_supplies[] = {
-+	REGULATOR_SUPPLY("vddvario", "smsc911x"),
-+	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
-+};
++static void tmio_mmc_set_power(struct tmio_mmc_host *host, struct mmc_ios *ios)
++{
++	struct mmc_host *mmc = host->mmc;
 +
- /* SMSC LAN89218 */
- static struct resource smsc911x_resources[] = {
- 	[0] = {
-@@ -73,6 +81,8 @@ static struct platform_device *marzen_devices[] __initdata = {
- 
- static void __init marzen_init(void)
- {
-+	regulator_register_fixed(0, dummy_supplies, ARRAY_SIZE(dummy_supplies));
++	if (host->set_pwr)
++		host->set_pwr(host->pdev, ios->power_mode != MMC_POWER_OFF);
++	if (!IS_ERR(mmc->supply.vmmc))
++		/* Errors ignored... */
++		mmc_regulator_set_ocr(mmc, mmc->supply.vmmc,
++				      ios->power_mode ? ios->vdd : 0);
++}
 +
- 	r8a7779_pinmux_init();
+ /* Set MMC clock / power.
+  * Note: This controller uses a simple divider scheme therefore it cannot
+  * run a MMC card at full speed (20MHz). The max clock is 24MHz on SD, but as
+@@ -819,13 +831,12 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 		}
+ 		tmio_mmc_set_clock(host, ios->clock);
+ 		/* power up SD bus */
+-		if (host->set_pwr)
+-			host->set_pwr(host->pdev, 1);
++		tmio_mmc_set_power(host, ios);
+ 		/* start bus clock */
+ 		tmio_mmc_clk_start(host);
+ 	} else if (ios->power_mode != MMC_POWER_UP) {
+-		if (host->set_pwr && ios->power_mode = MMC_POWER_OFF)
+-			host->set_pwr(host->pdev, 0);
++		if (ios->power_mode = MMC_POWER_OFF)
++			tmio_mmc_set_power(host, ios);
+ 		if (host->power) {
+ 			struct tmio_mmc_data *pdata = host->pdata;
+ 			tmio_mmc_clk_stop(host);
+@@ -887,6 +898,19 @@ static const struct mmc_host_ops tmio_mmc_ops = {
+ 	.enable_sdio_irq = tmio_mmc_enable_sdio_irq,
+ };
  
- 	/* SCIF2 (CN18: DEBUG0) */
++static void tmio_mmc_init_ocr(struct tmio_mmc_host *host)
++{
++	struct tmio_mmc_data *pdata = host->pdata;
++	struct mmc_host *mmc = host->mmc;
++
++	mmc_regulator_get_supply(mmc);
++
++	if (!mmc->ocr_avail)
++		mmc->ocr_avail = pdata->ocr_mask ? : MMC_VDD_32_33 | MMC_VDD_33_34;
++	else if (pdata->ocr_mask)
++		dev_warn(mmc_dev(mmc), "Platform OCR mask is ignored\n");
++}
++
+ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 				  struct platform_device *pdev,
+ 				  struct tmio_mmc_data *pdata)
+@@ -932,10 +956,7 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 		mmc->max_segs;
+ 	mmc->max_req_size = mmc->max_blk_size * mmc->max_blk_count;
+ 	mmc->max_seg_size = mmc->max_req_size;
+-	if (pdata->ocr_mask)
+-		mmc->ocr_avail = pdata->ocr_mask;
+-	else
+-		mmc->ocr_avail = MMC_VDD_32_33 | MMC_VDD_33_34;
++	tmio_mmc_init_ocr(_host);
+ 
+ 	_host->native_hotplug = !(pdata->flags & TMIO_MMC_USE_GPIO_CD ||
+ 				  mmc->caps & MMC_CAP_NEEDS_POLL ||
 -- 
 1.7.2.5
 
