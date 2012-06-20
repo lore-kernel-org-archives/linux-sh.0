@@ -1,114 +1,89 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 25 Jun 2012 10:43:28 +0000
-Subject: [PATCH 4/4] ARM: shmobile: use common DMAEngine definitions on sh73a0
-Message-Id: <878vfbk6yb.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 20 Jun 2012 08:01:33 +0000
+Subject: [PATCH 04/11] ARM: mach-shmobile: add fixed voltage regulators to ap4evb
+Message-Id: <1340179300-16452-5-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This patch switch over to use common DMAEngine definitions,
-and reduced a waste of code.
+On ap4evb provide 1.8V and 3.3V supplies for its SD/MMC-card interfaces
+and a dummy regulator for the smsc911x driver.
 
-It is easy to understand if sh_dmae_pdata / sh_dmae_slave_config
-settings are used defined value instead of direct value.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/setup-sh73a0.c |   53 ++++++++-------------------------
- 1 files changed, 13 insertions(+), 40 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c |   31 +++++++++++++++++++++++++++++++
+ 1 files changed, 31 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index 2c7bb03..d230af6 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -30,6 +30,7 @@
- #include <linux/sh_dma.h>
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 0c3caeba..fb86eff 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -34,6 +34,8 @@
+ #include <linux/i2c.h>
+ #include <linux/i2c/tsc2007.h>
+ #include <linux/io.h>
++#include <linux/regulator/fixed.h>
++#include <linux/regulator/machine.h>
+ #include <linux/smsc911x.h>
  #include <linux/sh_intc.h>
- #include <linux/sh_timer.h>
-+#include <mach/dma-register.h>
- #include <mach/hardware.h>
+ #include <linux/sh_clk.h>
+@@ -57,6 +59,7 @@
+ 
+ #include <mach/common.h>
  #include <mach/irqs.h>
- #include <mach/sh73a0.h>
-@@ -415,32 +416,6 @@ static struct platform_device i2c4_device = {
- 	.num_resources	= ARRAY_SIZE(i2c4_resources),
- };
++#include <mach/regulator.h>
+ #include <mach/sh7372.h>
  
--/* Transmit sizes and respective CHCR register values */
--enum {
--	XMIT_SZ_8BIT		= 0,
--	XMIT_SZ_16BIT		= 1,
--	XMIT_SZ_32BIT		= 2,
--	XMIT_SZ_64BIT		= 7,
--	XMIT_SZ_128BIT		= 3,
--	XMIT_SZ_256BIT		= 4,
--	XMIT_SZ_512BIT		= 5,
--};
--
--/* log2(size / 8) - used to calculate number of transfers */
--#define TS_SHIFT {			\
--	[XMIT_SZ_8BIT]		= 0,	\
--	[XMIT_SZ_16BIT]		= 1,	\
--	[XMIT_SZ_32BIT]		= 2,	\
--	[XMIT_SZ_64BIT]		= 3,	\
--	[XMIT_SZ_128BIT]	= 4,	\
--	[XMIT_SZ_256BIT]	= 5,	\
--	[XMIT_SZ_512BIT]	= 6,	\
--}
--
--#define TS_INDEX2VAL(i) ((((i) & 3) << 3) | (((i) & 0xc) << (20 - 2)))
--#define CHCR_TX(xmit_sz) (DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL((xmit_sz)))
--#define CHCR_RX(xmit_sz) (DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL((xmit_sz)))
--
- static const struct sh_dmae_slave_config sh73a0_dmae_slaves[] = {
+ #include <asm/mach-types.h>
+@@ -158,6 +161,30 @@
+  * CN12: 3.3v
+  */
+ 
++/* Dummy supplies, where voltage doesn't matter */
++static struct regulator_consumer_supply dummy_supplies[] = {
++	REGULATOR_SUPPLY("vddvario", "smsc911x"),
++	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
++};
++
++static struct regulator_consumer_supply fixed3v3_power_consumers[] +{
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
++	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
++};
++
++REGULATOR_FIXED(fixed3v3_power_consumers, 0, 3300000);
++
++static struct regulator_consumer_supply fixed1v8_power_consumers[] +{
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
++	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.1"),
++	REGULATOR_SUPPLY("vmmc", "sh_mmcif.0"),
++	REGULATOR_SUPPLY("vqmmc", "sh_mmcif.0"),
++};
++
++REGULATOR_FIXED(fixed1v8_power_consumers, 1, 1800000);
++
+ /* MTD */
+ static struct mtd_partition nor_flash_partitions[] = {
  	{
- 		.slave_id	= SHDMA_SLAVE_SCIF0_TX,
-@@ -604,19 +579,17 @@ static const struct sh_dmae_channel sh73a0_dmae_channels[] = {
- 	DMAE_CHANNEL(0x8980),
+@@ -1030,6 +1057,8 @@ static struct platform_device ceu_device = {
  };
  
--static const unsigned int ts_shift[] = TS_SHIFT;
--
- static struct sh_dmae_pdata sh73a0_dmae_platform_data = {
- 	.slave          = sh73a0_dmae_slaves,
- 	.slave_num      = ARRAY_SIZE(sh73a0_dmae_slaves),
- 	.channel        = sh73a0_dmae_channels,
- 	.channel_num    = ARRAY_SIZE(sh73a0_dmae_channels),
--	.ts_low_shift   = 3,
--	.ts_low_mask    = 0x18,
--	.ts_high_shift  = (20 - 2),     /* 2 bits for shifted low TS */
--	.ts_high_mask   = 0x00300000,
--	.ts_shift       = ts_shift,
--	.ts_shift_num   = ARRAY_SIZE(ts_shift),
-+	.ts_low_shift   = TS_LOW_SHIFT,
-+	.ts_low_mask    = TS_LOW_BIT << TS_LOW_SHIFT,
-+	.ts_high_shift  = TS_HI_SHIFT,
-+	.ts_high_mask   = TS_HI_BIT << TS_HI_SHIFT,
-+	.ts_shift       = dma_ts_shift,
-+	.ts_shift_num   = ARRAY_SIZE(dma_ts_shift),
- 	.dmaor_init     = DMAOR_DME,
- };
+ static struct platform_device *ap4evb_devices[] __initdata = {
++	&fixed_power_0,
++	&fixed_power_1,
+ 	&leds_device,
+ 	&nor_flash_device,
+ 	&smc911x_device,
+@@ -1197,6 +1226,8 @@ static void __init ap4evb_init(void)
+ 	u32 srcr4;
+ 	struct clk *clk;
  
-@@ -713,12 +686,12 @@ static struct sh_dmae_pdata sh73a0_mpdma_platform_data = {
- 	.slave_num	= ARRAY_SIZE(sh73a0_mpdma_slaves),
- 	.channel	= sh73a0_mpdma_channels,
- 	.channel_num	= ARRAY_SIZE(sh73a0_mpdma_channels),
--	.ts_low_shift	= 3,
--	.ts_low_mask	= 0x18,
--	.ts_high_shift	= (20 - 2),     /* 2 bits for shifted low TS */
--	.ts_high_mask	= 0x00300000,
--	.ts_shift	= ts_shift,
--	.ts_shift_num	= ARRAY_SIZE(ts_shift),
-+	.ts_low_shift	= TS_LOW_SHIFT,
-+	.ts_low_mask	= TS_LOW_BIT << TS_LOW_SHIFT,
-+	.ts_high_shift	= TS_HI_SHIFT,
-+	.ts_high_mask	= TS_HI_BIT << TS_HI_SHIFT,
-+	.ts_shift	= dma_ts_shift,
-+	.ts_shift_num	= ARRAY_SIZE(dma_ts_shift),
- 	.dmaor_init	= DMAOR_DME,
- 	.chclr_present	= 1,
- };
++	regulator_register_fixed(2, dummy_supplies, ARRAY_SIZE(dummy_supplies));
++
+ 	/* External clock source */
+ 	clk_set_rate(&sh7372_dv_clki_clk, 27000000);
+ 
 -- 
-1.7.5.4
+1.7.2.5
 
