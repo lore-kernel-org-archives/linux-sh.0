@@ -1,23 +1,35 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 18 Jun 2012 02:11:20 +0000
-Subject: Re: [PATCH 3/6] ARM: mach-shmobile: armadillo800eva: Add backlight support
-Message-Id: <20120618021119.GB17850@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 21 Jun 2012 05:40:08 +0000
+Subject: [PATCH 1/2] ARM: shmobile: kzm9g: use late init machine hook
+Message-Id: <87hau58bpn.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87lima4lxy.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87lima4lxy.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Jun 15, 2012 at 05:17:04PM +0200, Laurent Pinchart wrote:
-> The flat panel backlight on the Armadillo 800 EVA board is driven by the
-> TPU PWM output.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Since commit 21cc1b7ede3cf456cf1d51f8a906093261f7c111 ("ARM: shmobile:
+use machine specific hook for late init") suspend and CPU idle are not
+initialized automatically anymore. Set shmobile_init_late() as the
+machine late init hook to initialize them.
 
-Tested-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/board-kzm9g.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-> ---
->  arch/arm/mach-shmobile/board-armadillo800eva.c |   51 ++++++++++++++++++++++--
->  1 files changed, 47 insertions(+), 4 deletions(-)
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index d8e33b6..c0ae815 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -455,6 +455,7 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g")
+ 	.init_irq	= sh73a0_init_irq,
+ 	.handle_irq	= gic_handle_irq,
+ 	.init_machine	= kzm_init,
++	.init_late	= shmobile_init_late,
+ 	.timer		= &shmobile_timer,
+ 	.dt_compat	= kzm9g_boards_compat_dt,
+ MACHINE_END
+-- 
+1.7.5.4
+
