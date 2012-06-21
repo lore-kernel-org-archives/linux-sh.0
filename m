@@ -1,41 +1,35 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Wed, 20 Jun 2012 17:54:41 +0000
-Subject: Re: [PATCH 0/7 v4] mmc: tmio: clock and PM updates
-Message-Id: <87pq8t3m3i.fsf@octavius.laptop.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 21 Jun 2012 05:41:34 +0000
+Subject: [PATCH 2/2] ARM: shmobile: kzm9d: use late init machine hook
+Message-Id: <87fw9p8bn8.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1340212236-647-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1340212236-647-1-git-send-email-g.liakhovetski@gmx.de> (Guennadi
-	Liakhovetski's message of "Wed, 20 Jun 2012 19:10:29 +0200")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-Hi Guennadi,
+Since commit 21cc1b7ede3cf456cf1d51f8a906093261f7c111 ("ARM: shmobile:
+use machine specific hook for late init") suspend and CPU idle are not
+initialized automatically anymore. Set shmobile_init_late() as the
+machine late init hook to initialize them.
 
-On Wed, Jun 20 2012, Guennadi Liakhovetski wrote:
-> This patch series is a respin of the sub-series 3/6 from 
-> http://thread.gmane.org/gmane.linux.kernel.mmc/14624/focus633
-> of which the first patch has been superseded by "mmc: tmio: Don't access 
-> hardware registers after stopping clocks"
-> http://www.mail-archive.com/linux-mmc@vger.kernel.org/msg14696.html
-> This series also requires "mmc: add a function to get a regulator, 
-> supplying card's Vdd"
-> http://www.spinics.net/lists/linux-sh/msg12007.html
->
-> Patch 4 of this series also contributes to part 3 of the scheme, described 
-> in http://thread.gmane.org/gmane.linux.ports.sh.devel/15544
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/board-kzm9d.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-You've had these posted for quite a while, so I've pushed them to
-mmc-next for 3.6 now.  It would still be good to get some reviews on
-them, though -- reviewers, feel free to continue to look at these and
-I'll add your Reviewed-by tags (and the updates to the patches if
-necessary) as they come in.
-
-Thanks!
-
-- Chris.
+diff --git a/arch/arm/mach-shmobile/board-kzm9d.c b/arch/arm/mach-shmobile/board-kzm9d.c
+index 7bc5e7d..6a33cf3 100644
+--- a/arch/arm/mach-shmobile/board-kzm9d.c
++++ b/arch/arm/mach-shmobile/board-kzm9d.c
+@@ -80,6 +80,7 @@ DT_MACHINE_START(KZM9D_DT, "kzm9d")
+ 	.init_irq	= emev2_init_irq,
+ 	.handle_irq	= gic_handle_irq,
+ 	.init_machine	= kzm9d_add_standard_devices,
++	.init_late	= shmobile_init_late,
+ 	.timer		= &shmobile_timer,
+ 	.dt_compat	= kzm9d_boards_compat_dt,
+ MACHINE_END
 -- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
+1.7.5.4
+
