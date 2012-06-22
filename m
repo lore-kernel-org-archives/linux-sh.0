@@ -1,307 +1,42 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 25 Jun 2012 10:36:49 +0000
-Subject: [PATCH 1/6] ARM: shmobile: r8a7740: add DMAEngine support for FSI
-Message-Id: <871ul3lltu.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 22 Jun 2012 13:23:16 +0000
+Subject: [PATCH 3/9 v4] mmc: add two capability flags for CD and WP signal polarity
+Message-Id: <1340371402-4801-4-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1340371402-4801-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1340371402-4801-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>
 
-Current shdmac can support FSI DMAC on r8a7740.
-This support reduce CPU duty when sound was playback.
+To handle CD and WP SD/MMC slot pins we need generic flags to specify their
+polarity.
 
-This patch is based on v1.0 manual
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/clock-r8a7740.c        |    8 +-
- arch/arm/mach-shmobile/include/mach/r8a7740.h |    9 +-
- arch/arm/mach-shmobile/setup-r8a7740.c        |  198 +++++++++++++++++++++++++
- 3 files changed, 213 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index 7b9e4ab..39b1311 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -463,6 +463,7 @@ enum {
+v4:
+
+1. MMC_CAP2_*_ACTIVE_HIGH inverted compared to v3
+
+ include/linux/mmc/host.h |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
+index 90b6a38..c1a03ee 100644
+--- a/include/linux/mmc/host.h
++++ b/include/linux/mmc/host.h
+@@ -256,6 +256,8 @@ struct mmc_host {
+ #define MMC_CAP2_BROKEN_VOLTAGE	(1 << 7)	/* Use the broken voltage */
+ #define MMC_CAP2_DETECT_ON_ERR	(1 << 8)	/* On I/O err check card removal */
+ #define MMC_CAP2_HC_ERASE_SZ	(1 << 9)	/* High-capacity erase size */
++#define MMC_CAP2_CD_ACTIVE_HIGH	(1 << 10)	/* Card-detect signal active high */
++#define MMC_CAP2_RO_ACTIVE_HIGH	(1 << 11)	/* Write-protect signal active high */
  
- 	MSTP230,
- 	MSTP222,
-+	MSTP218, MSTP217, MSTP216,
- 	MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
- 
- 	MSTP329, MSTP328, MSTP323, MSTP320,
-@@ -485,6 +486,9 @@ static struct clk mstp_clks[MSTP_NR] = {
- 
- 	[MSTP230] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR2, 30, 0), /* SCIFA6 */
- 	[MSTP222] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR2, 22, 0), /* SCIFA7 */
-+	[MSTP218] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],  SMSTPCR2, 18, 0), /* DMAC1 */
-+	[MSTP217] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],  SMSTPCR2, 17, 0), /* DMAC2 */
-+	[MSTP216] = SH_CLK_MSTP32(&div4_clks[DIV4_HP],  SMSTPCR2, 16, 0), /* DMAC3 */
- 	[MSTP207] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR2,  7, 0), /* SCIFA5 */
- 	[MSTP206] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR2,  6, 0), /* SCIFB */
- 	[MSTP204] = SH_CLK_MSTP32(&div6_clks[DIV6_SUB],	SMSTPCR2,  4, 0), /* SCIFA0 */
-@@ -563,7 +567,9 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.0",		&mstp_clks[MSTP204]),
- 	CLKDEV_DEV_ID("sh-sci.8",		&mstp_clks[MSTP206]),
- 	CLKDEV_DEV_ID("sh-sci.5",		&mstp_clks[MSTP207]),
--
-+	CLKDEV_DEV_ID("sh-dma-engine.2",	&mstp_clks[MSTP216]),
-+	CLKDEV_DEV_ID("sh-dma-engine.1",	&mstp_clks[MSTP217]),
-+	CLKDEV_DEV_ID("sh-dma-engine.0",	&mstp_clks[MSTP218]),
- 	CLKDEV_DEV_ID("sh-sci.7",		&mstp_clks[MSTP222]),
- 	CLKDEV_DEV_ID("sh-sci.6",		&mstp_clks[MSTP230]),
- 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index 0dd6361..5ea8245e 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -590,6 +590,14 @@ enum {
- 	GPIO_FN_TRACEAUD_FROM_MEMC,
- };
- 
-+/* DMA slave IDs */
-+enum {
-+	SHDMA_SLAVE_INVALID,
-+	SHDMA_SLAVE_FSIA_RX,
-+	SHDMA_SLAVE_FSIA_TX,
-+	SHDMA_SLAVE_FSIB_TX,
-+};
-+
- struct platform_device;
- 
- struct r8a7740_pm_domain {
-@@ -622,5 +630,4 @@ extern void r8a7740_pm_add_subdomain(struct r8a7740_pm_domain *r8a7740_pd,
- #define r8a7740_pm_add_subdomain(pd, sd) do { } while (0)
- #endif /* CONFIG_PM */
- 
--
- #endif /* __ASM_R8A7740_H__ */
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 05a4660..2202818 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -24,7 +24,9 @@
- #include <linux/io.h>
- #include <linux/platform_device.h>
- #include <linux/serial_sci.h>
-+#include <linux/sh_dma.h>
- #include <linux/sh_timer.h>
-+#include <linux/dma-mapping.h>
- #include <mach/r8a7740.h>
- #include <mach/common.h>
- #include <mach/irqs.h>
-@@ -276,6 +278,199 @@ static struct platform_device *r8a7740_early_devices[] __initdata = {
- 	&cmt10_device,
- };
- 
-+/* DMA */
-+enum {
-+	XMIT_SZ_8BIT		= 0,
-+	XMIT_SZ_16BIT		= 1,
-+	XMIT_SZ_32BIT		= 2,
-+	XMIT_SZ_64BIT		= 7,
-+	XMIT_SZ_128BIT		= 3,
-+	XMIT_SZ_256BIT		= 4,
-+	XMIT_SZ_512BIT		= 5,
-+};
-+
-+/* log2(size / 8) - used to calculate number of transfers */
-+#define TS_SHIFT {			\
-+	[XMIT_SZ_8BIT]		= 0,	\
-+	[XMIT_SZ_16BIT]		= 1,	\
-+	[XMIT_SZ_32BIT]		= 2,	\
-+	[XMIT_SZ_64BIT]		= 3,	\
-+	[XMIT_SZ_128BIT]	= 4,	\
-+	[XMIT_SZ_256BIT]	= 5,	\
-+	[XMIT_SZ_512BIT]	= 6,	\
-+}
-+
-+#define TS_INDEX2VAL(i) ((((i) & 0x3) << 3) | (((i) & 0xc) << (20 - 2)))
-+#define CHCR_TX(xmit_sz) (DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL((xmit_sz)))
-+#define CHCR_RX(xmit_sz) (DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL((xmit_sz)))
-+
-+static const struct sh_dmae_slave_config r8a7740_dmae_slaves[] = {
-+	{
-+		.slave_id	= SHDMA_SLAVE_FSIA_TX,
-+		.addr		= 0xfe1f0024,
-+		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xb1,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_FSIA_RX,
-+		.addr		= 0xfe1f0020,
-+		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xb2,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_FSIB_TX,
-+		.addr		= 0xfe1f0064,
-+		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0xb5,
-+	},
-+};
-+
-+#define DMA_CHANNEL(a, b, c)			\
-+{						\
-+	.offset		= a,			\
-+	.dmars		= b,			\
-+	.dmars_bit	= c,			\
-+	.chclr_offset	= (0x220 - 0x20) + a	\
-+}
-+
-+static const struct sh_dmae_channel r8a7740_dmae_channels[] = {
-+	DMA_CHANNEL(0x00, 0, 0),
-+	DMA_CHANNEL(0x10, 0, 8),
-+	DMA_CHANNEL(0x20, 4, 0),
-+	DMA_CHANNEL(0x30, 4, 8),
-+	DMA_CHANNEL(0x50, 8, 0),
-+	DMA_CHANNEL(0x60, 8, 8),
-+};
-+
-+static const unsigned int ts_shift[] = TS_SHIFT;
-+
-+static struct sh_dmae_pdata dma_platform_data = {
-+	.slave		= r8a7740_dmae_slaves,
-+	.slave_num	= ARRAY_SIZE(r8a7740_dmae_slaves),
-+	.channel	= r8a7740_dmae_channels,
-+	.channel_num	= ARRAY_SIZE(r8a7740_dmae_channels),
-+	.ts_low_shift	= 3,
-+	.ts_low_mask	= 0x18,
-+	.ts_high_shift	= (20 - 2),
-+	.ts_high_mask	= 0x00300000,
-+	.ts_shift	= ts_shift,
-+	.ts_shift_num	= ARRAY_SIZE(ts_shift),
-+	.dmaor_init	= DMAOR_DME,
-+	.chclr_present	= 1,
-+};
-+
-+/* Resource order important! */
-+static struct resource r8a7740_dmae0_resources[] = {
-+	{
-+		/* Channel registers and DMAOR */
-+		.start	= 0xfe008020,
-+		.end	= 0xfe00828f,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	{
-+		/* DMARSx */
-+		.start	= 0xfe009000,
-+		.end	= 0xfe00900b,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	{
-+		.name	= "error_irq",
-+		.start	= evt2irq(0x20c0),
-+		.end	= evt2irq(0x20c0),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+	{
-+		/* IRQ for channels 0-5 */
-+		.start	= evt2irq(0x2000),
-+		.end	= evt2irq(0x20a0),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+/* Resource order important! */
-+static struct resource r8a7740_dmae1_resources[] = {
-+	{
-+		/* Channel registers and DMAOR */
-+		.start	= 0xfe018020,
-+		.end	= 0xfe01828f,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	{
-+		/* DMARSx */
-+		.start	= 0xfe019000,
-+		.end	= 0xfe01900b,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	{
-+		.name	= "error_irq",
-+		.start	= evt2irq(0x21c0),
-+		.end	= evt2irq(0x21c0),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+	{
-+		/* IRQ for channels 0-5 */
-+		.start	= evt2irq(0x2100),
-+		.end	= evt2irq(0x21a0),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+/* Resource order important! */
-+static struct resource r8a7740_dmae2_resources[] = {
-+	{
-+		/* Channel registers and DMAOR */
-+		.start	= 0xfe028020,
-+		.end	= 0xfe02828f,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	{
-+		/* DMARSx */
-+		.start	= 0xfe029000,
-+		.end	= 0xfe02900b,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	{
-+		.name	= "error_irq",
-+		.start	= evt2irq(0x22c0),
-+		.end	= evt2irq(0x22c0),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+	{
-+		/* IRQ for channels 0-5 */
-+		.start	= evt2irq(0x2200),
-+		.end	= evt2irq(0x22a0),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device dma0_device = {
-+	.name		= "sh-dma-engine",
-+	.id		= 0,
-+	.resource	= r8a7740_dmae0_resources,
-+	.num_resources	= ARRAY_SIZE(r8a7740_dmae0_resources),
-+	.dev		= {
-+		.platform_data	= &dma_platform_data,
-+	},
-+};
-+
-+static struct platform_device dma1_device = {
-+	.name		= "sh-dma-engine",
-+	.id		= 1,
-+	.resource	= r8a7740_dmae1_resources,
-+	.num_resources	= ARRAY_SIZE(r8a7740_dmae1_resources),
-+	.dev		= {
-+		.platform_data	= &dma_platform_data,
-+	},
-+};
-+
-+static struct platform_device dma2_device = {
-+	.name		= "sh-dma-engine",
-+	.id		= 2,
-+	.resource	= r8a7740_dmae2_resources,
-+	.num_resources	= ARRAY_SIZE(r8a7740_dmae2_resources),
-+	.dev		= {
-+		.platform_data	= &dma_platform_data,
-+	},
-+};
-+
- /* I2C */
- static struct resource i2c0_resources[] = {
- 	[0] = {
-@@ -322,6 +517,9 @@ static struct platform_device i2c1_device = {
- static struct platform_device *r8a7740_late_devices[] __initdata = {
- 	&i2c0_device,
- 	&i2c1_device,
-+	&dma0_device,
-+	&dma1_device,
-+	&dma2_device,
- };
- 
- /*
+ 	mmc_pm_flag_t		pm_caps;	/* supported pm features */
+ 	unsigned int        power_notify_type;
 -- 
-1.7.5.4
+1.7.2.5
 
