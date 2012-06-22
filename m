@@ -1,55 +1,143 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 20 Jun 2012 15:12:11 +0000
-Subject: [PATCH 03/14] sh: add fixed voltage regulators to apsh4a3a
-Message-Id: <1340205142-32606-4-git-send-email-g.liakhovetski@gmx.de>
+Date: Fri, 22 Jun 2012 13:23:19 +0000
+Subject: [PATCH 6/9 v4] mmc: add WP pin handler to slot functions
+Message-Id: <1340371402-4801-7-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1340371402-4801-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1340371402-4801-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>
 
-On apsh4a3a provide a dummy regulator for the smsc911x driver.
+Card Write-Protect pin is often implemented, using a GPIO, which makes it
+simple to provide a generic handler for it.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/sh/boards/board-apsh4a3a.c |   10 ++++++++++
- 1 files changed, 10 insertions(+), 0 deletions(-)
 
-diff --git a/arch/sh/boards/board-apsh4a3a.c b/arch/sh/boards/board-apsh4a3a.c
-index 2823619..0a39c24 100644
---- a/arch/sh/boards/board-apsh4a3a.c
-+++ b/arch/sh/boards/board-apsh4a3a.c
-@@ -13,6 +13,8 @@
- #include <linux/platform_device.h>
- #include <linux/io.h>
- #include <linux/mtd/physmap.h>
-+#include <linux/regulator/fixed.h>
-+#include <linux/regulator/machine.h>
- #include <linux/smsc911x.h>
- #include <linux/irq.h>
- #include <linux/clk.h>
-@@ -66,6 +68,12 @@ static struct platform_device nor_flash_device = {
- 	.resource	= nor_flash_resources,
+v4:
+
+1. gpio variables are now signed
+2. take care to mark gpio variables as invalid in hotplug context
+3. MMC_CAP2_*_ACTIVE_HIGH inverted compared to v3
+
+ drivers/mmc/core/slot-gpio.c  |   52 ++++++++++++++++++++++++++++++++++++++++-
+ include/linux/mmc/slot-gpio.h |    4 +++
+ 2 files changed, 55 insertions(+), 1 deletions(-)
+
+diff --git a/drivers/mmc/core/slot-gpio.c b/drivers/mmc/core/slot-gpio.c
+index 41689da..0582429 100644
+--- a/drivers/mmc/core/slot-gpio.c
++++ b/drivers/mmc/core/slot-gpio.c
+@@ -18,7 +18,9 @@
+ #include <linux/slab.h>
+ 
+ struct mmc_gpio {
++	int ro_gpio;
+ 	int cd_gpio;
++	char *ro_label;
+ 	char cd_label[0];
  };
  
-+/* Dummy supplies, where voltage doesn't matter */
-+static struct regulator_consumer_supply dummy_supplies[] = {
-+	REGULATOR_SUPPLY("vddvario", "smsc911x"),
-+	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
-+};
-+
- static struct resource smsc911x_resources[] = {
- 	[0] = {
- 		.name		= "smsc911x-memory",
-@@ -105,6 +113,8 @@ static struct platform_device *apsh4a3a_devices[] __initdata = {
- 
- static int __init apsh4a3a_devices_setup(void)
- {
-+	regulator_register_fixed(0, dummy_supplies, ARRAY_SIZE(dummy_supplies));
-+
- 	return platform_add_devices(apsh4a3a_devices,
- 				    ARRAY_SIZE(apsh4a3a_devices));
+@@ -43,11 +45,14 @@ static int mmc_gpio_alloc(struct mmc_host *host)
+ 		 * before device_add(), i.e., between mmc_alloc_host() and
+ 		 * mmc_add_host()
+ 		 */
+-		ctx = devm_kzalloc(&host->class_dev, sizeof(*ctx) + len,
++		ctx = devm_kzalloc(&host->class_dev, sizeof(*ctx) + 2 * len,
+ 				   GFP_KERNEL);
+ 		if (ctx) {
++			ctx->ro_label = ctx->cd_label + len;
+ 			snprintf(ctx->cd_label, len, "%s cd", dev_name(host->parent));
++			snprintf(ctx->ro_label, len, "%s ro", dev_name(host->parent));
+ 			ctx->cd_gpio = -EINVAL;
++			ctx->ro_gpio = -EINVAL;
+ 			host->slot.handler_priv = ctx;
+ 		}
+ 	}
+@@ -57,6 +62,18 @@ static int mmc_gpio_alloc(struct mmc_host *host)
+ 	return ctx ? 0 : -ENOMEM;
  }
+ 
++int mmc_gpio_get_ro(struct mmc_host *host)
++{
++	struct mmc_gpio *ctx = host->slot.handler_priv;
++
++	if (!ctx || !gpio_is_valid(ctx->ro_gpio))
++		return -ENOSYS;
++
++	return !gpio_get_value_cansleep(ctx->ro_gpio) ^
++		!!(host->caps2 & MMC_CAP2_RO_ACTIVE_HIGH);
++}
++EXPORT_SYMBOL(mmc_gpio_get_ro);
++
+ int mmc_gpio_get_cd(struct mmc_host *host)
+ {
+ 	struct mmc_gpio *ctx = host->slot.handler_priv;
+@@ -69,6 +86,24 @@ int mmc_gpio_get_cd(struct mmc_host *host)
+ }
+ EXPORT_SYMBOL(mmc_gpio_get_cd);
+ 
++int mmc_gpio_request_ro(struct mmc_host *host, unsigned int gpio)
++{
++	struct mmc_gpio *ctx;
++	int ret;
++
++	if (!gpio_is_valid(gpio))
++		return -EINVAL;
++
++	ret = mmc_gpio_alloc(host);
++	if (ret < 0)
++		return ret;
++
++	ctx = host->slot.handler_priv;
++
++	return gpio_request_one(gpio, GPIOF_DIR_IN, ctx->ro_label);
++}
++EXPORT_SYMBOL(mmc_gpio_request_ro);
++
+ int mmc_gpio_request_cd(struct mmc_host *host, unsigned int gpio)
+ {
+ 	struct mmc_gpio *ctx;
+@@ -117,6 +152,21 @@ int mmc_gpio_request_cd(struct mmc_host *host, unsigned int gpio)
+ }
+ EXPORT_SYMBOL(mmc_gpio_request_cd);
+ 
++void mmc_gpio_free_ro(struct mmc_host *host)
++{
++	struct mmc_gpio *ctx = host->slot.handler_priv;
++	int gpio;
++
++	if (!ctx || !gpio_is_valid(ctx->ro_gpio))
++		return;
++
++	gpio = ctx->ro_gpio;
++	ctx->ro_gpio = -EINVAL;
++
++	gpio_free(gpio);
++}
++EXPORT_SYMBOL(mmc_gpio_free_ro);
++
+ void mmc_gpio_free_cd(struct mmc_host *host)
+ {
+ 	struct mmc_gpio *ctx = host->slot.handler_priv;
+diff --git a/include/linux/mmc/slot-gpio.h b/include/linux/mmc/slot-gpio.h
+index 1a977d7..7d88d27 100644
+--- a/include/linux/mmc/slot-gpio.h
++++ b/include/linux/mmc/slot-gpio.h
+@@ -13,6 +13,10 @@
+ 
+ struct mmc_host;
+ 
++int mmc_gpio_get_ro(struct mmc_host *host);
++int mmc_gpio_request_ro(struct mmc_host *host, unsigned int gpio);
++void mmc_gpio_free_ro(struct mmc_host *host);
++
+ int mmc_gpio_get_cd(struct mmc_host *host);
+ int mmc_gpio_request_cd(struct mmc_host *host, unsigned int gpio);
+ void mmc_gpio_free_cd(struct mmc_host *host);
 -- 
 1.7.2.5
 
