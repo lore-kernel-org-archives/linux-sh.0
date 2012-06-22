@@ -1,196 +1,104 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 12 Jun 2012 09:32:51 +0000
-Subject: [PATCH 03/27 v2] ARM: shmobile: shareing extra gpio setting functions
-Message-Id: <873960yiww.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 22 Jun 2012 13:23:15 +0000
+Subject: [PATCH 2/9 v4] mmc: use a more generic name for slot function types and fields
+Message-Id: <1340371402-4801-3-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1340371402-4801-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1340371402-4801-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>
 
-Current gpio frame work doesn't have the method to control
-just pull up/down/free, but some SH-ARM boards need such kind of operation,
-and some boards already have such functions on each code.
+struct mmc_host::hotplug is becoming a generic hook for slot functions.
+Rename it accordingly.
 
-This patch shares extra gpio method, and reduced a waste of code on SH-ARM.
-But these functions should be replaced by correct
-gpio function in the future.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Tested-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-v1 -> v2
+ drivers/mmc/core/host.c      |    2 ++
+ drivers/mmc/core/slot-gpio.c |    8 ++++----
+ include/linux/mmc/host.h     |   17 ++++++++++++++---
+ 3 files changed, 20 insertions(+), 7 deletions(-)
 
- - no change
-
- arch/arm/mach-shmobile/board-ap4evb.c      |   19 +--------------
- arch/arm/mach-shmobile/board-g4evm.c       |   18 ---------------
- arch/arm/mach-shmobile/board-mackerel.c    |   30 +------------------------
- arch/arm/mach-shmobile/include/mach/gpio.h |   32 ++++++++++++++++++++++++++++
- 4 files changed, 36 insertions(+), 63 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index ace6024..d7417f3 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -1138,21 +1138,6 @@ static void __init fsi_init_pm_clock(void)
- 	clk_put(fsia_ick);
- }
+diff --git a/drivers/mmc/core/host.c b/drivers/mmc/core/host.c
+index 91c84c7..b8c5290 100644
+--- a/drivers/mmc/core/host.c
++++ b/drivers/mmc/core/host.c
+@@ -327,6 +327,8 @@ struct mmc_host *mmc_alloc_host(int extra, struct device *dev)
  
--/*
-- * FIXME !!
-- *
-- * gpio_no_direction
-- * are quick_hack.
-- *
-- * current gpio frame work doesn't have
-- * the method to control only pull up/down/free.
-- * this function should be replaced by correct gpio function
-- */
--static void __init gpio_no_direction(u32 addr)
--{
--	__raw_writeb(0x00, addr);
--}
--
- /* TouchScreen */
- #ifdef CONFIG_AP4EVB_QHD
- # define GPIO_TSC_IRQ	GPIO_FN_IRQ28_123
-@@ -1302,8 +1287,8 @@ static void __init ap4evb_init(void)
+ 	mmc_host_clk_init(host);
  
- 	gpio_request(GPIO_PORT9, NULL);
- 	gpio_request(GPIO_PORT10, NULL);
--	gpio_no_direction(GPIO_PORT9CR);  /* FSIAOBT needs no direction */
--	gpio_no_direction(GPIO_PORT10CR); /* FSIAOLR needs no direction */
-+	gpio_direction_none(GPIO_PORT9CR);  /* FSIAOBT needs no direction */
-+	gpio_direction_none(GPIO_PORT10CR); /* FSIAOLR needs no direction */
++	host->slot.cd_irq = -EINVAL;
++
+ 	spin_lock_init(&host->lock);
+ 	init_waitqueue_head(&host->wq);
+ 	INIT_DELAYED_WORK(&host->detect, mmc_rescan);
+diff --git a/drivers/mmc/core/slot-gpio.c b/drivers/mmc/core/slot-gpio.c
+index 9796710..468e5a0 100644
+--- a/drivers/mmc/core/slot-gpio.c
++++ b/drivers/mmc/core/slot-gpio.c
+@@ -56,8 +56,8 @@ int mmc_gpio_request_cd(struct mmc_host *host, unsigned int gpio)
+ 		goto eirqreq;
  
- 	/* card detect pin for MMC slot (CN7) */
- 	gpio_request(GPIO_PORT41, NULL);
-diff --git a/arch/arm/mach-shmobile/board-g4evm.c b/arch/arm/mach-shmobile/board-g4evm.c
-index f125732..6b6f028 100644
---- a/arch/arm/mach-shmobile/board-g4evm.c
-+++ b/arch/arm/mach-shmobile/board-g4evm.c
-@@ -271,24 +271,6 @@ static struct platform_device *g4evm_devices[] __initdata = {
- #define GPIO_SDHID1_D3	0xe6052106
- #define GPIO_SDHICMD1	0xe6052107
+ 	ctx->cd_gpio = gpio;
+-	host->hotplug.irq = irq;
+-	host->hotplug.handler_priv = ctx;
++	host->slot.cd_irq = irq;
++	host->slot.handler_priv = ctx;
  
--/*
-- * FIXME !!
-- *
-- * gpio_pull_up is quick_hack.
-- *
-- * current gpio frame work doesn't have
-- * the method to control only pull up/down/free.
-- * this function should be replaced by correct gpio function
-- */
--static void __init gpio_pull_up(u32 addr)
--{
--	u8 data = __raw_readb(addr);
--
--	data &= 0x0F;
--	data |= 0xC0;
--	__raw_writeb(data, addr);
--}
--
- static void __init g4evm_init(void)
+ 	return 0;
+ 
+@@ -71,12 +71,12 @@ EXPORT_SYMBOL(mmc_gpio_request_cd);
+ 
+ void mmc_gpio_free_cd(struct mmc_host *host)
  {
- 	sh7377_pinmux_init();
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index b577f7c..798be2b 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -203,32 +203,6 @@
-  * amixer set "HPOUTR Mixer DACH" on
-  */
+-	struct mmc_gpio *ctx = host->hotplug.handler_priv;
++	struct mmc_gpio *ctx = host->slot.handler_priv;
  
--/*
-- * FIXME !!
-- *
-- * gpio_no_direction
-- * gpio_pull_down
-- * are quick_hack.
-- *
-- * current gpio frame work doesn't have
-- * the method to control only pull up/down/free.
-- * this function should be replaced by correct gpio function
-- */
--static void __init gpio_no_direction(u32 addr)
--{
--	__raw_writeb(0x00, addr);
--}
--
--static void __init gpio_pull_down(u32 addr)
--{
--	u8 data = __raw_readb(addr);
--
--	data &= 0x0F;
--	data |= 0xA0;
--
--	__raw_writeb(data, addr);
--}
--
- /* MTD */
- static struct mtd_partition nor_flash_partitions[] = {
- 	{
-@@ -1475,8 +1449,8 @@ static void __init mackerel_init(void)
+ 	if (!ctx)
+ 		return;
  
- 	gpio_request(GPIO_PORT9,  NULL);
- 	gpio_request(GPIO_PORT10, NULL);
--	gpio_no_direction(GPIO_PORT9CR);  /* FSIAOBT needs no direction */
--	gpio_no_direction(GPIO_PORT10CR); /* FSIAOLR needs no direction */
-+	gpio_direction_none(GPIO_PORT9CR);  /* FSIAOBT needs no direction */
-+	gpio_direction_none(GPIO_PORT10CR); /* FSIAOLR needs no direction */
+-	free_irq(host->hotplug.irq, host);
++	free_irq(host->slot.cd_irq, host);
+ 	gpio_free(ctx->cd_gpio);
+ 	kfree(ctx);
+ }
+diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
+index 9deb725..90b6a38 100644
+--- a/include/linux/mmc/host.h
++++ b/include/linux/mmc/host.h
+@@ -150,8 +150,19 @@ struct mmc_async_req {
+ 	int (*err_check) (struct mmc_card *, struct mmc_async_req *);
+ };
  
- 	intc_set_priority(IRQ_FSI, 3); /* irq priority FSI(3) > SMSC911X(2) */
- 
-diff --git a/arch/arm/mach-shmobile/include/mach/gpio.h b/arch/arm/mach-shmobile/include/mach/gpio.h
-index de795b4..cedcb5d 100644
---- a/arch/arm/mach-shmobile/include/mach/gpio.h
-+++ b/arch/arm/mach-shmobile/include/mach/gpio.h
-@@ -13,6 +13,7 @@
- #include <linux/kernel.h>
- #include <linux/errno.h>
- #include <linux/sh_pfc.h>
-+#include <linux/io.h>
- 
- #ifdef CONFIG_GPIOLIB
- 
-@@ -27,4 +28,35 @@ static inline int irq_to_gpio(unsigned int irq)
- 
- #endif /* CONFIG_GPIOLIB */
- 
-+/*
-+ * FIXME !!
+-struct mmc_hotplug {
+-	unsigned int irq;
++/**
++ * struct mmc_slot - MMC slot functions
 + *
-+ * current gpio frame work doesn't have
-+ * the method to control only pull up/down/free.
-+ * this function should be replaced by correct gpio function
++ * @cd_irq:		MMC/SD-card slot hotplug detection IRQ or -EINVAL
++ * @handler_priv:	MMC/SD-card slot context
++ *
++ * Some MMC/SD host controllers implement slot-functions like card and
++ * write-protect detection natively. However, a large number of controllers
++ * leave these functions to the CPU. This struct provides a hook to attach
++ * such slot-function drivers.
 + */
-+static inline void __init gpio_direction_none(u32 addr)
-+{
-+	__raw_writeb(0x00, addr);
-+}
-+
-+static inline void __init gpio_pull_up(u32 addr)
-+{
-+	u8 data = __raw_readb(addr);
-+
-+	data &= 0x0F;
-+	data |= 0xC0;
-+	__raw_writeb(data, addr);
-+}
-+
-+static inline void __init gpio_pull_down(u32 addr)
-+{
-+	u8 data = __raw_readb(addr);
-+
-+	data &= 0x0F;
-+	data |= 0xA0;
-+
-+	__raw_writeb(data, addr);
-+}
-+
- #endif /* __ASM_ARCH_GPIO_H */
++struct mmc_slot {
++	int cd_irq;
+ 	void *handler_priv;
+ };
+ 
+@@ -297,7 +308,7 @@ struct mmc_host {
+ 
+ 	struct delayed_work	detect;
+ 	int			detect_change;	/* card detect flag */
+-	struct mmc_hotplug	hotplug;
++	struct mmc_slot		slot;
+ 
+ 	const struct mmc_bus_ops *bus_ops;	/* current bus driver */
+ 	unsigned int		bus_refs;	/* reference counter */
 -- 
-1.7.5.4
+1.7.2.5
 
