@@ -1,61 +1,49 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 25 Jun 2012 10:41:19 +0000
-Subject: [PATCH 2/5] ARM: shmobile: use common extra gpio functions on ap4evb
-Message-Id: <87k3yvk71w.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 22 Jun 2012 13:23:22 +0000
+Subject: [PATCH 9/9 v4] mmc: tmio: use generic GPIO CD and WP handlers
+Message-Id: <1340371402-4801-10-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1340371402-4801-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1340371402-4801-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>
 
-This patch switch over to use common extra gpio method,
-and reduced a waste of code on SH-ARM.
+The tmio-mmc driver is already using the generic GPIO CD handler in IRQ
+mode. This patch adds support for CD polling mode and also checks for
+availability of a WP GPIO.
 
-But these functions should be replaced by correct
-gpio function in the future.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c |   19 ++-----------------
- 1 files changed, 2 insertions(+), 17 deletions(-)
+ drivers/mmc/host/tmio_mmc_pio.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index ace6024..d7417f3 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -1138,21 +1138,6 @@ static void __init fsi_init_pm_clock(void)
- 	clk_put(fsia_ick);
- }
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index f8df021..0d8a9bb 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -875,6 +875,9 @@ static int tmio_mmc_get_ro(struct mmc_host *mmc)
+ {
+ 	struct tmio_mmc_host *host = mmc_priv(mmc);
+ 	struct tmio_mmc_data *pdata = host->pdata;
++	int ret = mmc_gpio_get_ro(mmc);
++	if (ret >= 0)
++		return ret;
  
--/*
-- * FIXME !!
-- *
-- * gpio_no_direction
-- * are quick_hack.
-- *
-- * current gpio frame work doesn't have
-- * the method to control only pull up/down/free.
-- * this function should be replaced by correct gpio function
-- */
--static void __init gpio_no_direction(u32 addr)
--{
--	__raw_writeb(0x00, addr);
--}
--
- /* TouchScreen */
- #ifdef CONFIG_AP4EVB_QHD
- # define GPIO_TSC_IRQ	GPIO_FN_IRQ28_123
-@@ -1302,8 +1287,8 @@ static void __init ap4evb_init(void)
+ 	return !((pdata->flags & TMIO_MMC_WRPROTECT_DISABLE) ||
+ 		 (sd_ctrl_read32(host, CTL_STATUS) & TMIO_STAT_WRPROTECT));
+@@ -884,6 +887,9 @@ static int tmio_mmc_get_cd(struct mmc_host *mmc)
+ {
+ 	struct tmio_mmc_host *host = mmc_priv(mmc);
+ 	struct tmio_mmc_data *pdata = host->pdata;
++	int ret = mmc_gpio_get_cd(mmc);
++	if (ret >= 0)
++		return ret;
  
- 	gpio_request(GPIO_PORT9, NULL);
- 	gpio_request(GPIO_PORT10, NULL);
--	gpio_no_direction(GPIO_PORT9CR);  /* FSIAOBT needs no direction */
--	gpio_no_direction(GPIO_PORT10CR); /* FSIAOLR needs no direction */
-+	gpio_direction_none(GPIO_PORT9CR);  /* FSIAOBT needs no direction */
-+	gpio_direction_none(GPIO_PORT10CR); /* FSIAOLR needs no direction */
- 
- 	/* card detect pin for MMC slot (CN7) */
- 	gpio_request(GPIO_PORT41, NULL);
+ 	if (!pdata->get_cd)
+ 		return -ENOSYS;
 -- 
-1.7.5.4
+1.7.2.5
 
