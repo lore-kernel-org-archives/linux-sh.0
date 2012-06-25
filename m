@@ -1,89 +1,80 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 20 Jun 2012 08:01:33 +0000
-Subject: [PATCH 04/11] ARM: mach-shmobile: add fixed voltage regulators to ap4evb
-Message-Id: <1340179300-16452-5-git-send-email-g.liakhovetski@gmx.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 25 Jun 2012 10:37:00 +0000
+Subject: [PATCH 2/6] ARM: shmobile: r8a7740: add DMAEngine support for SDHI
+Message-Id: <87zk7rk793.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On ap4evb provide 1.8V and 3.3V supplies for its SD/MMC-card interfaces
-and a dummy regulator for the smsc911x driver.
+Current shdmac can support SDHI DMAC on r8a7740.
+This support reduce CPU duty when SDHI access.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c |   31 +++++++++++++++++++++++++++++++
- 1 files changed, 31 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/include/mach/r8a7740.h |    6 +++++
+ arch/arm/mach-shmobile/setup-r8a7740.c        |   30 +++++++++++++++++++++++++
+ 2 files changed, 36 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 0c3caeba..fb86eff 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -34,6 +34,8 @@
- #include <linux/i2c.h>
- #include <linux/i2c/tsc2007.h>
- #include <linux/io.h>
-+#include <linux/regulator/fixed.h>
-+#include <linux/regulator/machine.h>
- #include <linux/smsc911x.h>
- #include <linux/sh_intc.h>
- #include <linux/sh_clk.h>
-@@ -57,6 +59,7 @@
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+index 5ea8245e..1798a48 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+@@ -593,6 +593,12 @@ enum {
+ /* DMA slave IDs */
+ enum {
+ 	SHDMA_SLAVE_INVALID,
++	SHDMA_SLAVE_SDHI0_RX,
++	SHDMA_SLAVE_SDHI0_TX,
++	SHDMA_SLAVE_SDHI1_RX,
++	SHDMA_SLAVE_SDHI1_TX,
++	SHDMA_SLAVE_SDHI2_RX,
++	SHDMA_SLAVE_SDHI2_TX,
+ 	SHDMA_SLAVE_FSIA_RX,
+ 	SHDMA_SLAVE_FSIA_TX,
+ 	SHDMA_SLAVE_FSIB_TX,
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 2202818..9b95c43 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -306,6 +306,36 @@ enum {
  
- #include <mach/common.h>
- #include <mach/irqs.h>
-+#include <mach/regulator.h>
- #include <mach/sh7372.h>
- 
- #include <asm/mach-types.h>
-@@ -158,6 +161,30 @@
-  * CN12: 3.3v
-  */
- 
-+/* Dummy supplies, where voltage doesn't matter */
-+static struct regulator_consumer_supply dummy_supplies[] = {
-+	REGULATOR_SUPPLY("vddvario", "smsc911x"),
-+	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
-+};
-+
-+static struct regulator_consumer_supply fixed3v3_power_consumers[] +{
-+	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
-+	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
-+};
-+
-+REGULATOR_FIXED(fixed3v3_power_consumers, 0, 3300000);
-+
-+static struct regulator_consumer_supply fixed1v8_power_consumers[] +{
-+	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
-+	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.1"),
-+	REGULATOR_SUPPLY("vmmc", "sh_mmcif.0"),
-+	REGULATOR_SUPPLY("vqmmc", "sh_mmcif.0"),
-+};
-+
-+REGULATOR_FIXED(fixed1v8_power_consumers, 1, 1800000);
-+
- /* MTD */
- static struct mtd_partition nor_flash_partitions[] = {
+ static const struct sh_dmae_slave_config r8a7740_dmae_slaves[] = {
  	{
-@@ -1030,6 +1057,8 @@ static struct platform_device ceu_device = {
- };
- 
- static struct platform_device *ap4evb_devices[] __initdata = {
-+	&fixed_power_0,
-+	&fixed_power_1,
- 	&leds_device,
- 	&nor_flash_device,
- 	&smc911x_device,
-@@ -1197,6 +1226,8 @@ static void __init ap4evb_init(void)
- 	u32 srcr4;
- 	struct clk *clk;
- 
-+	regulator_register_fixed(2, dummy_supplies, ARRAY_SIZE(dummy_supplies));
-+
- 	/* External clock source */
- 	clk_set_rate(&sh7372_dv_clki_clk, 27000000);
- 
++		.slave_id	= SHDMA_SLAVE_SDHI0_TX,
++		.addr		= 0xe6850030,
++		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
++		.mid_rid	= 0xc1,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SDHI0_RX,
++		.addr		= 0xe6850030,
++		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
++		.mid_rid	= 0xc2,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SDHI1_TX,
++		.addr		= 0xe6860030,
++		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
++		.mid_rid	= 0xc9,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SDHI1_RX,
++		.addr		= 0xe6860030,
++		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
++		.mid_rid	= 0xca,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SDHI2_TX,
++		.addr		= 0xe6870030,
++		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
++		.mid_rid	= 0xcd,
++	}, {
++		.slave_id	= SHDMA_SLAVE_SDHI2_RX,
++		.addr		= 0xe6870030,
++		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
++		.mid_rid	= 0xce,
++	}, {
+ 		.slave_id	= SHDMA_SLAVE_FSIA_TX,
+ 		.addr		= 0xfe1f0024,
+ 		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
 -- 
-1.7.2.5
+1.7.5.4
 
