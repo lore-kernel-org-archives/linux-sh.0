@@ -1,51 +1,29 @@
-From: David Miller <davem@davemloft.net>
-Date: Sat, 23 Jun 2012 04:51:02 +0000
-Subject: Re: [PATCH] net: sh_eth: fix the rxdesc pointer when rx descriptor empty happens
-Message-Id: <20120622.215102.2154734910994772908.davem@davemloft.net>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 25 Jun 2012 10:30:18 +0000
+Subject: [PATCH 0/1][RFC] ARM: shmobile: r8a7740: basic PM domain support
+Message-Id: <87fw9jlm4q.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1206201507260.20254@axis700.grange>
-	<4FE2784A.70208@renesas.com>
-	<Pine.LNX.4.64.1206221610350.17552@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1206221610350.17552@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: g.liakhovetski@gmx.de
-Cc: yoshihiro.shimoda.uh@renesas.com, netdev@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 22 Jun 2012 16:16:38 +0200 (CEST)
 
-> Hi Shimoda-san
-> 
-> On Thu, 21 Jun 2012, Shimoda, Yoshihiro wrote:
-> 
->> Hello Guennadi-san,
->> 
->> 2012/06/20 22:10, Guennadi Liakhovetski wrote:
->> > Hello Shimoda-san
->> > 
->> > On Tue, 29 May 2012, Shimoda, Yoshihiro wrote:
->> > 
->> >> When Receive Descriptor Empty happens, rxdesc pointer of the driver
->> >> and actual next descriptor of the controller may be mismatch.
->> >> This patch fixes it.
->> > 
->> > Unfortunately, this patch breaks networking on ecovec (sh7724). Booting 
->> > with dhcp and NFS-root progresses very slowly with lots of "nfs: server 
->> > not responding / Ok" messages and never completes. Reverting it in current 
->> > Linus' tree fixes the problem.
->> 
->> Thank you very much for the report.
->> The SH7724 doesn't set the RMCR register. So, the EDRRR will be clear after
->> the controller receives a freme every time.
->> So, the "fix the rxdesc pointer" had to check a condition.
->> 
->> I wrote a patch for the issue as the following.
->> If possible, would you try the patch?
-> 
-> Yes, it does seem to fix the problem.
-> 
-> Tested-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Hi Rafael, Magnus
+Cc Simon
 
-Applied, thanks.
+This patch adds very basic PM domain support to Armadillo board.
+
+On my debug, it seems accessed correctly to PM domain register.
+(saved PM register value when power up/down. and printed it in safety timing)
+
+I tested it on Armadillo board, and maybe OK from "register value" point of view.
+But I can't check from "real voltage" point, since ...
+ - I don't have measuring machine
+ - Armadillo doesn't have measuring spot (?)
+
+I added [RFC] on this patch, since I'm not good at PM frame work.
+
+I tested it by
+
+echo mem > /sys/power/state
