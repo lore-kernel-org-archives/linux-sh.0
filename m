@@ -1,55 +1,54 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 20 Jun 2012 15:12:14 +0000
-Subject: [PATCH 06/14] sh: add fixed voltage regulators to polaris
-Message-Id: <1340205142-32606-7-git-send-email-g.liakhovetski@gmx.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 25 Jun 2012 10:37:20 +0000
+Subject: [PATCH 4/6] ARM: shmobile: armadillo800eva: enable DMAEngine on FSI
+Message-Id: <87wr2vk78j.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On polaris provide a dummy regulator for the smsc911x driver.
+It is possible to reduce CPU load if FSI playback used DMAEngine.
+This patch enabled it.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/sh/boards/board-polaris.c |   10 ++++++++++
- 1 files changed, 10 insertions(+), 0 deletions(-)
+ arch/arm/configs/armadillo800eva_defconfig     |    2 ++
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    2 ++
+ 2 files changed, 4 insertions(+), 0 deletions(-)
 
-diff --git a/arch/sh/boards/board-polaris.c b/arch/sh/boards/board-polaris.c
-index 37d03c0..758f432 100644
---- a/arch/sh/boards/board-polaris.c
-+++ b/arch/sh/boards/board-polaris.c
-@@ -9,6 +9,8 @@
- #include <linux/interrupt.h>
- #include <linux/irq.h>
- #include <linux/platform_device.h>
-+#include <linux/regulator/fixed.h>
-+#include <linux/regulator/machine.h>
- #include <linux/smsc911x.h>
- #include <linux/io.h>
- #include <asm/irq.h>
-@@ -22,6 +24,12 @@
- #define AREA5_WAIT_CTRL	(0x1C00)
- #define WAIT_STATES_10	(0x7)
+diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
+index df1ce54..16bbb3f 100644
+--- a/arch/arm/configs/armadillo800eva_defconfig
++++ b/arch/arm/configs/armadillo800eva_defconfig
+@@ -119,6 +119,8 @@ CONFIG_USB_ETH=m
+ CONFIG_MMC=y
+ CONFIG_MMC_SDHI=y
+ CONFIG_MMC_SH_MMCIF=y
++CONFIG_DMADEVICES=y
++CONFIG_SH_DMAE=y
+ CONFIG_UIO=y
+ CONFIG_UIO_PDRV_GENIRQ=y
+ # CONFIG_DNOTIFY is not set
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index a642ce6..d63e559 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -768,12 +768,14 @@ static int fsi_hdmi_set_rate(struct device *dev, int rate, int enable)
+ static struct sh_fsi_platform_info fsi_info = {
+ 	/* FSI-WM8978 */
+ 	.port_a = {
++		.tx_id = SHDMA_SLAVE_FSIA_TX,
+ 	},
+ 	/* FSI-HDMI */
+ 	.port_b = {
+ 		.flags		= SH_FSI_FMT_SPDIF |
+ 				  SH_FSI_ENABLE_STREAM_MODE,
+ 		.set_rate	= fsi_hdmi_set_rate,
++		.tx_id		= SHDMA_SLAVE_FSIB_TX,
+ 	}
+ };
  
-+/* Dummy supplies, where voltage doesn't matter */
-+static struct regulator_consumer_supply dummy_supplies[] = {
-+	REGULATOR_SUPPLY("vddvario", "smsc911x.0"),
-+	REGULATOR_SUPPLY("vdd33a", "smsc911x.0"),
-+};
-+
- static struct resource smsc911x_resources[] = {
- 	[0] = {
- 		.name		= "smsc911x-memory",
-@@ -88,6 +96,8 @@ static int __init polaris_initialise(void)
- 
- 	printk(KERN_INFO "Configuring Polaris external bus\n");
- 
-+	regulator_register_fixed(0, dummy_supplies, ARRAY_SIZE(dummy_supplies));
-+
- 	/* Configure area 5 with 2 wait states */
- 	wcr = __raw_readw(WCR2);
- 	wcr &= (~AREA5_WAIT_CTRL);
 -- 
-1.7.2.5
+1.7.5.4
 
