@@ -1,61 +1,60 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 26 Jun 2012 22:32:22 +0000
-Subject: [PATCH 00/10 v3] ARM: mach-shmobile: add regulators for mmc and smsc911x
-Message-Id: <1340749952-8534-1-git-send-email-g.liakhovetski@gmx.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 25 Jun 2012 10:41:45 +0000
+Subject: [PATCH 5/5] ARM: shmobile: use common extra gpio functions on armadillo800eva
+Message-Id: <87fw9jk716.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This is a respin of
+This patch switch over to use common extra gpio method,
+and reduced a waste of code on SH-ARM.
 
-http://thread.gmane.org/gmane.linux.ports.sh.devel/15544
+But these functions should be replaced by correct
+gpio function in the future.
 
-ported on top of the fixed regulator driver update patches from the
-
-http://lkml.indiana.edu/hypermail/linux/kernel/1206.2/index.html#01395
-
-patch-set, which thereby becomes a prerequisite for this series! Basing on 
-top of those patches made the temporary macro redundant, which simplifies 
-the whole work quite a bit. Other changes since v2 are listed in respective 
-patches.
-
-DEPENDENCY: the above fixed regulator patches can be obtained from
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git tags/topic/fixed
-
-Thanks
-Guennadi
-
-Guennadi Liakhovetski (10):
-  ARM: mach-shmobile: add 3.3V and 1.8V fixed regulators to mackerel
-  ARM: mach-shmobile: add fixed voltage regulators to ag5evm
-  ARM: mach-shmobile: add fixed voltage regulators to ap4evb
-  ARM: mach-shmobile: add fixed voltage regulators to armadillo800eva
-  ARM: mach-shmobile: add fixed voltage regulators to bonito
-  ARM: mach-shmobile: add fixed voltage regulators to g4evm
-  ARM: mach-shmobile: add fixed voltage regulators to kota2
-  ARM: mach-shmobile: add fixed voltage regulators to kzm9d
-  ARM: mach-shmobile: add fixed voltage regulators to kzm9g
-  ARM: mach-shmobile: add fixed voltage regulators to marzen
-
- arch/arm/mach-shmobile/board-ag5evm.c          |   83 +++++++++++++++++++++++-
- arch/arm/mach-shmobile/board-ap4evb.c          |   29 ++++++++
- arch/arm/mach-shmobile/board-armadillo800eva.c |   16 +++++
- arch/arm/mach-shmobile/board-bonito.c          |   10 +++
- arch/arm/mach-shmobile/board-g4evm.c           |   14 ++++
- arch/arm/mach-shmobile/board-kota2.c           |   30 +++++++++
- arch/arm/mach-shmobile/board-kzm9d.c           |   10 +++
- arch/arm/mach-shmobile/board-kzm9g.c           |   28 ++++++++
- arch/arm/mach-shmobile/board-mackerel.c        |   35 ++++++++++
- arch/arm/mach-shmobile/board-marzen.c          |   10 +++
- 10 files changed, 262 insertions(+), 3 deletions(-)
-
--- 
-1.7.2.5
-
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ arch/arm/mach-shmobile/board-armadillo800eva.c |   18 ++----------------
+ 1 files changed, 2 insertions(+), 16 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 3066fa7..5f8f571 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -122,20 +122,6 @@
+  */
+ 
+ /*
+- * FIXME !!
+- *
+- * gpio_no_direction
+- *
+- * current gpio frame work doesn't have
+- * the method to control only pull up/down/free.
+- * this function should be replaced by correct gpio function
+- */
+-static void __init gpio_no_direction(u32 addr)
+-{
+-	__raw_writeb(0x00, addr);
+-}
+-
+-/*
+  * USB function
+  *
+  * When you use USB Function,
+@@ -1087,8 +1073,8 @@ static void __init eva_init(void)
+ 
+ 	gpio_request(GPIO_PORT7, NULL);
+ 	gpio_request(GPIO_PORT8, NULL);
+-	gpio_no_direction(GPIO_PORT7CR); /* FSIAOBT needs no direction */
+-	gpio_no_direction(GPIO_PORT8CR); /* FSIAOLR needs no direction */
++	gpio_direction_none(GPIO_PORT7CR); /* FSIAOBT needs no direction */
++	gpio_direction_none(GPIO_PORT8CR); /* FSIAOLR needs no direction */
+ 
+ 	/* FSI-HDMI */
+ 	gpio_request(GPIO_FN_FSIBCK,		NULL);
+-- 
+1.7.5.4
+
