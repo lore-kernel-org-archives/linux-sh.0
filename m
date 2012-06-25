@@ -1,56 +1,21 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 26 Jun 2012 22:50:05 +0000
-Subject: [PATCH 09/13 v2] sh: add fixed voltage regulators to kfr2r09
-Message-Id: <1340751009-18663-10-git-send-email-g.liakhovetski@gmx.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 25 Jun 2012 10:42:34 +0000
+Subject: [PATCH 0/4] ARM: shmobile: sharing DMAEngine
+Message-Id: <87ehp3k6zt.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On kfr2r09 provide a 3.3V supply for its SD/MMC-card interfaces.
+Hi Rafael, Magnus
+Cc Simon
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
- arch/sh/boards/mach-kfr2r09/setup.c |   12 ++++++++++++
- 1 files changed, 12 insertions(+), 0 deletions(-)
+These patch set try to sharing DMAEngine on SH-ARM.
+These depends on my rework patch set
 
-diff --git a/arch/sh/boards/mach-kfr2r09/setup.c b/arch/sh/boards/mach-kfr2r09/setup.c
-index 158c917..9dff4ff 100644
---- a/arch/sh/boards/mach-kfr2r09/setup.c
-+++ b/arch/sh/boards/mach-kfr2r09/setup.c
-@@ -21,6 +21,8 @@
- #include <linux/input.h>
- #include <linux/input/sh_keysc.h>
- #include <linux/i2c.h>
-+#include <linux/regulator/fixed.h>
-+#include <linux/regulator/machine.h>
- #include <linux/usb/r8a66597.h>
- #include <linux/videodev2.h>
- #include <linux/sh_intc.h>
-@@ -341,6 +343,13 @@ static struct platform_device kfr2r09_camera = {
- 	},
- };
- 
-+/* Fixed 3.3V regulator to be used by SDHI0 */
-+static struct regulator_consumer_supply fixed3v3_power_consumers[] +{
-+	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
-+	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
-+};
-+
- static struct resource kfr2r09_sh_sdhi0_resources[] = {
- 	[0] = {
- 		.name	= "SDHI0",
-@@ -523,6 +532,9 @@ static int __init kfr2r09_devices_setup(void)
- 					&kfr2r09_sdram_leave_start,
- 					&kfr2r09_sdram_leave_end);
- 
-+	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
-+				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
-+
- 	/* enable SCIF1 serial port for YC401 console support */
- 	gpio_request(GPIO_FN_SCIF1_RXD, NULL);
- 	gpio_request(GPIO_FN_SCIF1_TXD, NULL);
--- 
-1.7.2.5
-
+Kuninori Morimoto (4):
+      ARM: shmobile: add common DMAEngine definitions
+      ARM: shmobile: use common DMAEngine definitions on r8a7740
+      ARM: shmobile: use common DMAEngine definitions on sh7372
+      ARM: shmobile: use common DMAEngine definitions on sh73a0
