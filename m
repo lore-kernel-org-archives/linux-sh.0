@@ -1,105 +1,115 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 20 Jun 2012 08:01:37 +0000
-Subject: [PATCH 08/11] ARM: mach-shmobile: add fixed voltage regulators to kota2
-Message-Id: <1340179300-16452-9-git-send-email-g.liakhovetski@gmx.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 25 Jun 2012 10:43:00 +0000
+Subject: [PATCH 1/4] ARM: shmobile: add common DMAEngine definitions
+Message-Id: <87d34nk6z3.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On kota2 provide 1.8V and 3.3V supplies for its SD/MMC-card interfaces
-and a dummy regulator for the smsc911x driver.
+Current shmobile have DMAEngine specific settings on each CPU code,
+but SH-ARM DMAC use same value.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+This patch adds new dma-register.h header to share definitions
+and reduce a waste of code on SH-ARM architecture.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-kota2.c |   33 +++++++++++++++++++++++++++++++++
- 1 files changed, 33 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/include/mach/dma-register.h |   84 ++++++++++++++++++++
+ 1 files changed, 84 insertions(+), 0 deletions(-)
+ create mode 100644 arch/arm/mach-shmobile/include/mach/dma-register.h
 
-diff --git a/arch/arm/mach-shmobile/board-kota2.c b/arch/arm/mach-shmobile/board-kota2.c
-index 200dcd4..fff8c16 100644
---- a/arch/arm/mach-shmobile/board-kota2.c
-+++ b/arch/arm/mach-shmobile/board-kota2.c
-@@ -27,6 +27,8 @@
- #include <linux/platform_device.h>
- #include <linux/delay.h>
- #include <linux/io.h>
-+#include <linux/regulator/fixed.h>
-+#include <linux/regulator/machine.h>
- #include <linux/smsc911x.h>
- #include <linux/gpio.h>
- #include <linux/input.h>
-@@ -40,6 +42,7 @@
- #include <linux/mmc/sh_mobile_sdhi.h>
- #include <mach/hardware.h>
- #include <mach/irqs.h>
-+#include <mach/regulator.h>
- #include <mach/sh73a0.h>
- #include <mach/common.h>
- #include <asm/mach-types.h>
-@@ -49,6 +52,12 @@
- #include <asm/hardware/cache-l2x0.h>
- #include <asm/traps.h>
- 
-+/* Dummy supplies, where voltage doesn't matter */
-+static struct regulator_consumer_supply dummy_supplies[] = {
-+	REGULATOR_SUPPLY("vddvario", "smsc911x"),
-+	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
+diff --git a/arch/arm/mach-shmobile/include/mach/dma-register.h b/arch/arm/mach-shmobile/include/mach/dma-register.h
+new file mode 100644
+index 0000000..97c40bd
+--- /dev/null
++++ b/arch/arm/mach-shmobile/include/mach/dma-register.h
+@@ -0,0 +1,84 @@
++/*
++ * SH-ARM CPU-specific DMA definitions, used by both DMA drivers
++ *
++ * Copyright (C) 2012 Renesas Solutions Corp
++ *
++ * Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ *
++ * Based on arch/sh/include/cpu-sh4/cpu/dma-register.h
++ * Copyright (C) 2010 Guennadi Liakhovetski <g.liakhovetski@gmx.de>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#ifndef DMA_REGISTER_H
++#define DMA_REGISTER_H
++
++/*
++ *		Direct Memory Access Controller
++ */
++
++/* Transmit sizes and respective CHCR register values */
++enum {
++	XMIT_SZ_8BIT		= 0,
++	XMIT_SZ_16BIT		= 1,
++	XMIT_SZ_32BIT		= 2,
++	XMIT_SZ_64BIT		= 7,
++	XMIT_SZ_128BIT		= 3,
++	XMIT_SZ_256BIT		= 4,
++	XMIT_SZ_512BIT		= 5,
 +};
 +
- /* SMSC 9220 */
- static struct resource smsc9220_resources[] = {
- 	[0] = {
-@@ -288,6 +297,15 @@ static struct platform_device leds_tpu30_device = {
- 	.resource	= tpu30_resources,
- };
- 
-+/* Fixed 1.8V regulator to be used by MMCIF */
-+static struct regulator_consumer_supply fixed1v8_power_consumers[] +{
-+	REGULATOR_SUPPLY("vmmc", "sh_mmcif.0"),
-+	REGULATOR_SUPPLY("vqmmc", "sh_mmcif.0"),
++/* log2(size / 8) - used to calculate number of transfers */
++static const unsigned int dma_ts_shift[] = {
++	[XMIT_SZ_8BIT]		= 0,
++	[XMIT_SZ_16BIT]		= 1,
++	[XMIT_SZ_32BIT]		= 2,
++	[XMIT_SZ_64BIT]		= 3,
++	[XMIT_SZ_128BIT]	= 4,
++	[XMIT_SZ_256BIT]	= 5,
++	[XMIT_SZ_512BIT]	= 6,
 +};
 +
-+REGULATOR_FIXED(fixed1v8_power_consumers, 0, 1800000);
++#define TS_LOW_BIT	0x3 /* --xx */
++#define TS_HI_BIT	0xc /* xx-- */
 +
- /* MMCIF */
- static struct resource mmcif_resources[] = {
- 	[0] = {
-@@ -321,6 +339,17 @@ static struct platform_device mmcif_device = {
- 	.resource       = mmcif_resources,
- };
- 
-+/* Fixed 3.3V regulator to be used by SDHI0 and SDHI1 */
-+static struct regulator_consumer_supply fixed3v3_power_consumers[] +{
-+	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
-+	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
-+	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
-+	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.1"),
++#define TS_LOW_SHIFT	(3)
++#define TS_HI_SHIFT	(20 - 2)	/* 2 bits for shifted low TS */
++
++#define TS_INDEX2VAL(i) \
++	((((i) & TS_LOW_BIT) << TS_LOW_SHIFT) |\
++	 (((i) & TS_HI_BIT)  << TS_HI_SHIFT))
++
++#define CHCR_TX(xmit_sz) (DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL((xmit_sz)))
++#define CHCR_RX(xmit_sz) (DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL((xmit_sz)))
++
++
++/*
++ *		USB High-Speed DMAC
++ */
++/* Transmit sizes and respective CHCR register values */
++enum {
++	USBTS_XMIT_SZ_8BYTE		= 0,
++	USBTS_XMIT_SZ_16BYTE		= 1,
++	USBTS_XMIT_SZ_32BYTE		= 2,
 +};
 +
-+REGULATOR_FIXED(fixed3v3_power_consumers, 1, 3300000);
++/* log2(size / 8) - used to calculate number of transfers */
++static const unsigned int dma_usbts_shift[] = {
++	[USBTS_XMIT_SZ_8BYTE]	= 3,
++	[USBTS_XMIT_SZ_16BYTE]	= 4,
++	[USBTS_XMIT_SZ_32BYTE]	= 5,
++};
 +
- /* SDHI0 */
- static struct sh_mobile_sdhi_info sdhi0_info = {
- 	.tmio_caps      = MMC_CAP_SD_HIGHSPEED,
-@@ -396,6 +425,8 @@ static struct platform_device sdhi1_device = {
- };
- 
- static struct platform_device *kota2_devices[] __initdata = {
-+	&fixed_power_0,
-+	&fixed_power_1,
- 	&eth_device,
- 	&keysc_device,
- 	&gpio_keys_device,
-@@ -411,6 +442,8 @@ static struct platform_device *kota2_devices[] __initdata = {
- 
- static void __init kota2_init(void)
- {
-+	regulator_register_fixed(2, dummy_supplies, ARRAY_SIZE(dummy_supplies));
++#define USBTS_LOW_BIT	0x3 /* --xx */
++#define USBTS_HI_BIT	0x0 /* ---- */
 +
- 	sh73a0_pinmux_init();
- 
- 	/* SCIFA2 (UART2) */
++#define USBTS_LOW_SHIFT	6
++#define USBTS_HI_SHIFT	0
++
++#define USBTS_INDEX2VAL(i) (((i) & 3) << 6)
++
++#endif /* DMA_REGISTER_H */
 -- 
-1.7.2.5
+1.7.5.4
 
