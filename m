@@ -1,76 +1,114 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 11 Jun 2012 03:53:48 +0000
-Subject: [PATCH 09/27] ARM: shmobile: r8a7740: add HDMI GPIO support
-Message-Id: <87aa0aqzau.wl%kuninori.morimoto.gx@renesas.com>
+Date: Mon, 25 Jun 2012 10:43:28 +0000
+Subject: [PATCH 4/4] ARM: shmobile: use common DMAEngine definitions on sh73a0
+Message-Id: <878vfbk6yb.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-In order to enable HDMI GPIO selection from platform board,
-this patch adds its interface to GPIO framework.
+This patch switch over to use common DMAEngine definitions,
+and reduced a waste of code.
 
-This patch is based on v1.0 manual
+It is easy to understand if sh_dmae_pdata / sh_dmae_slave_config
+settings are used defined value instead of direct value.
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7740.h |    4 ++++
- arch/arm/mach-shmobile/pfc-r8a7740.c          |    9 +++++++++
- 2 files changed, 13 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/setup-sh73a0.c |   53 ++++++++-------------------------
+ 1 files changed, 13 insertions(+), 40 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index 9d447ab..2764846 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -565,6 +565,10 @@ enum {
- 	GPIO_FN_RESETP_PULLUP,
- 	GPIO_FN_RESETP_PLAIN,
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 2c7bb03..d230af6 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -30,6 +30,7 @@
+ #include <linux/sh_dma.h>
+ #include <linux/sh_intc.h>
+ #include <linux/sh_timer.h>
++#include <mach/dma-register.h>
+ #include <mach/hardware.h>
+ #include <mach/irqs.h>
+ #include <mach/sh73a0.h>
+@@ -415,32 +416,6 @@ static struct platform_device i2c4_device = {
+ 	.num_resources	= ARRAY_SIZE(i2c4_resources),
+ };
  
-+	/* HDMI */
-+	GPIO_FN_HDMI_HPD,
-+	GPIO_FN_HDMI_CEC,
-+
- 	/* SDENC */
- 	GPIO_FN_SDENC_CPG,
- 	GPIO_FN_SDENC_DV_CLKI,
-diff --git a/arch/arm/mach-shmobile/pfc-r8a7740.c b/arch/arm/mach-shmobile/pfc-r8a7740.c
-index 670fe18..0dda816 100644
---- a/arch/arm/mach-shmobile/pfc-r8a7740.c
-+++ b/arch/arm/mach-shmobile/pfc-r8a7740.c
-@@ -560,6 +560,9 @@ enum {
- 	/* SDENC */
- 	SDENC_CPG_MARK,		SDENC_DV_CLKI_MARK,
+-/* Transmit sizes and respective CHCR register values */
+-enum {
+-	XMIT_SZ_8BIT		= 0,
+-	XMIT_SZ_16BIT		= 1,
+-	XMIT_SZ_32BIT		= 2,
+-	XMIT_SZ_64BIT		= 7,
+-	XMIT_SZ_128BIT		= 3,
+-	XMIT_SZ_256BIT		= 4,
+-	XMIT_SZ_512BIT		= 5,
+-};
+-
+-/* log2(size / 8) - used to calculate number of transfers */
+-#define TS_SHIFT {			\
+-	[XMIT_SZ_8BIT]		= 0,	\
+-	[XMIT_SZ_16BIT]		= 1,	\
+-	[XMIT_SZ_32BIT]		= 2,	\
+-	[XMIT_SZ_64BIT]		= 3,	\
+-	[XMIT_SZ_128BIT]	= 4,	\
+-	[XMIT_SZ_256BIT]	= 5,	\
+-	[XMIT_SZ_512BIT]	= 6,	\
+-}
+-
+-#define TS_INDEX2VAL(i) ((((i) & 3) << 3) | (((i) & 0xc) << (20 - 2)))
+-#define CHCR_TX(xmit_sz) (DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL((xmit_sz)))
+-#define CHCR_RX(xmit_sz) (DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL((xmit_sz)))
+-
+ static const struct sh_dmae_slave_config sh73a0_dmae_slaves[] = {
+ 	{
+ 		.slave_id	= SHDMA_SLAVE_SCIF0_TX,
+@@ -604,19 +579,17 @@ static const struct sh_dmae_channel sh73a0_dmae_channels[] = {
+ 	DMAE_CHANNEL(0x8980),
+ };
  
-+	/* HDMI */
-+	HDMI_HPD_MARK, HDMI_CEC_MARK,
-+
- 	/* DEBUG */
- 	EDEBGREQ_PULLUP_MARK,	/* for JTAG */
- 	EDEBGREQ_PULLDOWN_MARK,
-@@ -1620,9 +1623,11 @@ static pinmux_enum_t pinmux_data[] = {
+-static const unsigned int ts_shift[] = TS_SHIFT;
+-
+ static struct sh_dmae_pdata sh73a0_dmae_platform_data = {
+ 	.slave          = sh73a0_dmae_slaves,
+ 	.slave_num      = ARRAY_SIZE(sh73a0_dmae_slaves),
+ 	.channel        = sh73a0_dmae_channels,
+ 	.channel_num    = ARRAY_SIZE(sh73a0_dmae_channels),
+-	.ts_low_shift   = 3,
+-	.ts_low_mask    = 0x18,
+-	.ts_high_shift  = (20 - 2),     /* 2 bits for shifted low TS */
+-	.ts_high_mask   = 0x00300000,
+-	.ts_shift       = ts_shift,
+-	.ts_shift_num   = ARRAY_SIZE(ts_shift),
++	.ts_low_shift   = TS_LOW_SHIFT,
++	.ts_low_mask    = TS_LOW_BIT << TS_LOW_SHIFT,
++	.ts_high_shift  = TS_HI_SHIFT,
++	.ts_high_mask   = TS_HI_BIT << TS_HI_SHIFT,
++	.ts_shift       = dma_ts_shift,
++	.ts_shift_num   = ARRAY_SIZE(dma_ts_shift),
+ 	.dmaor_init     = DMAOR_DME,
+ };
  
- 	/* Port210 */
- 	PINMUX_DATA(IRQ9_PORT210_MARK,		PORT210_FN0,	MSEL1CR_9_1),
-+	PINMUX_DATA(HDMI_HPD_MARK,		PORT210_FN1),
- 
- 	/* Port211 */
- 	PINMUX_DATA(IRQ16_PORT211_MARK,		PORT211_FN0,	MSEL1CR_16_1),
-+	PINMUX_DATA(HDMI_CEC_MARK,		PORT211_FN1),
- 
- 	/* LCDC select */
- 	PINMUX_DATA(LCDC0_SELECT_MARK,				MSEL3CR_6_0),
-@@ -2097,6 +2102,10 @@ static struct pinmux_gpio pinmux_gpios[] = {
- 	GPIO_FN(SDENC_CPG),
- 	GPIO_FN(SDENC_DV_CLKI),
- 
-+	/* HDMI */
-+	GPIO_FN(HDMI_HPD),
-+	GPIO_FN(HDMI_CEC),
-+
- 	/* SYSC */
- 	GPIO_FN(RESETP_PULLUP),
- 	GPIO_FN(RESETP_PLAIN),
+@@ -713,12 +686,12 @@ static struct sh_dmae_pdata sh73a0_mpdma_platform_data = {
+ 	.slave_num	= ARRAY_SIZE(sh73a0_mpdma_slaves),
+ 	.channel	= sh73a0_mpdma_channels,
+ 	.channel_num	= ARRAY_SIZE(sh73a0_mpdma_channels),
+-	.ts_low_shift	= 3,
+-	.ts_low_mask	= 0x18,
+-	.ts_high_shift	= (20 - 2),     /* 2 bits for shifted low TS */
+-	.ts_high_mask	= 0x00300000,
+-	.ts_shift	= ts_shift,
+-	.ts_shift_num	= ARRAY_SIZE(ts_shift),
++	.ts_low_shift	= TS_LOW_SHIFT,
++	.ts_low_mask	= TS_LOW_BIT << TS_LOW_SHIFT,
++	.ts_high_shift	= TS_HI_SHIFT,
++	.ts_high_mask	= TS_HI_BIT << TS_HI_SHIFT,
++	.ts_shift	= dma_ts_shift,
++	.ts_shift_num	= ARRAY_SIZE(dma_ts_shift),
+ 	.dmaor_init	= DMAOR_DME,
+ 	.chclr_present	= 1,
+ };
 -- 
 1.7.5.4
 
