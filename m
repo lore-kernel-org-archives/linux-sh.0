@@ -1,220 +1,35 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 25 Jun 2012 10:35:01 +0000
-Subject: [PATCH 2/3] ARM: shmobile: kzm9g: enable USB func
-Message-Id: <8762afllwu.wl%kuninori.morimoto.gx@renesas.com>
+Date: Mon, 25 Jun 2012 10:39:30 +0000
+Subject: [PATCH 2/3] ARM: shmobile: kzm9g: enable DMAEngine on FSI
+Message-Id: <87pq8nk74x.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <8762afllwu.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <8762afllwu.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This patch enable USB function on CN17
+It is possible to reduce CPU load if FSI playback used DMAEngine.
+This patch enabled it.
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/configs/kzm9g_defconfig     |    5 +
- arch/arm/mach-shmobile/board-kzm9g.c |  150 ++++++++++++++++++++++++++++++++++
- 2 files changed, 155 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/board-kzm9g.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
-index 686129f..7b2eecd 100644
---- a/arch/arm/configs/kzm9g_defconfig
-+++ b/arch/arm/configs/kzm9g_defconfig
-@@ -100,7 +100,12 @@ CONFIG_SND_SOC_SH4_FSI=y
- CONFIG_USB=y
- CONFIG_USB_DEVICEFS=y
- CONFIG_USB_R8A66597_HCD=y
-+CONFIG_USB_RENESAS_USBHS=y
- CONFIG_USB_STORAGE=y
-+CONFIG_USB_GADGET=y
-+CONFIG_USB_RENESAS_USBHS_UDC=y
-+CONFIG_USB_ETH=m
-+CONFIG_USB_MASS_STORAGE=m
- CONFIG_MMC=y
- # CONFIG_MMC_BLOCK_BOUNCE is not set
- CONFIG_MMC_SDHI=y
 diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index a5cb113..27194bc 100644
+index b056b7a..212c524 100644
 --- a/arch/arm/mach-shmobile/board-kzm9g.c
 +++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -32,6 +32,7 @@
- #include <linux/platform_device.h>
- #include <linux/smsc911x.h>
- #include <linux/usb/r8a66597.h>
-+#include <linux/usb/renesas_usbhs.h>
- #include <linux/videodev2.h>
- #include <sound/sh_fsi.h>
- #include <sound/simple_card.h>
-@@ -122,6 +123,151 @@ static struct platform_device usb_host_device = {
- 	.resource	= usb_resources,
+@@ -470,6 +470,7 @@ static struct platform_device gpio_keys_device = {
+ /* FSI-AK4648 */
+ static struct sh_fsi_platform_info fsi_info = {
+ 	.port_a = {
++		.tx_id = SHDMA_SLAVE_FSI2A_TX,
+ 	},
  };
  
-+/* USB Func CN17 */
-+struct usbhs_private {
-+	unsigned int phy;
-+	unsigned int cr2;
-+	struct renesas_usbhs_platform_info info;
-+};
-+
-+#define IRQ15			intcs_evt2irq(0x03e0)
-+#define USB_PHY_MODE		(1 << 4)
-+#define USB_PHY_INT_EN		((1 << 3) | (1 << 2))
-+#define USB_PHY_ON		(1 << 1)
-+#define USB_PHY_OFF		(1 << 0)
-+#define USB_PHY_INT_CLR		(USB_PHY_ON | USB_PHY_OFF)
-+
-+#define usbhs_get_priv(pdev) \
-+	container_of(renesas_usbhs_get_info(pdev), struct usbhs_private, info)
-+
-+static int usbhs_get_vbus(struct platform_device *pdev)
-+{
-+	struct usbhs_private *priv = usbhs_get_priv(pdev);
-+
-+	return !((1 << 7) & __raw_readw(priv->cr2));
-+}
-+
-+static void usbhs_phy_reset(struct platform_device *pdev)
-+{
-+	struct usbhs_private *priv = usbhs_get_priv(pdev);
-+
-+	/* init phy */
-+	__raw_writew(0x8a0a, priv->cr2);
-+}
-+
-+static int usbhs_get_id(struct platform_device *pdev)
-+{
-+	return USBHS_GADGET;
-+}
-+
-+static irqreturn_t usbhs_interrupt(int irq, void *data)
-+{
-+	struct platform_device *pdev = data;
-+	struct usbhs_private *priv = usbhs_get_priv(pdev);
-+
-+	renesas_usbhs_call_notify_hotplug(pdev);
-+
-+	/* clear status */
-+	__raw_writew(__raw_readw(priv->phy) | USB_PHY_INT_CLR, priv->phy);
-+
-+	return IRQ_HANDLED;
-+}
-+
-+static int usbhs_hardware_init(struct platform_device *pdev)
-+{
-+	struct usbhs_private *priv = usbhs_get_priv(pdev);
-+	int ret;
-+
-+	/* clear interrupt status */
-+	__raw_writew(USB_PHY_MODE | USB_PHY_INT_CLR, priv->phy);
-+
-+	ret = request_irq(IRQ15, usbhs_interrupt, IRQF_TRIGGER_HIGH,
-+			  dev_name(&pdev->dev), pdev);
-+	if (ret) {
-+		dev_err(&pdev->dev, "request_irq err\n");
-+		return ret;
-+	}
-+
-+	/* enable USB phy interrupt */
-+	__raw_writew(USB_PHY_MODE | USB_PHY_INT_EN, priv->phy);
-+
-+	return 0;
-+}
-+
-+static void usbhs_hardware_exit(struct platform_device *pdev)
-+{
-+	struct usbhs_private *priv = usbhs_get_priv(pdev);
-+
-+	/* clear interrupt status */
-+	__raw_writew(USB_PHY_MODE | USB_PHY_INT_CLR, priv->phy);
-+
-+	free_irq(IRQ15, pdev);
-+}
-+
-+static u32 usbhs_pipe_cfg[] = {
-+	USB_ENDPOINT_XFER_CONTROL,
-+	USB_ENDPOINT_XFER_ISOC,
-+	USB_ENDPOINT_XFER_ISOC,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_INT,
-+	USB_ENDPOINT_XFER_INT,
-+	USB_ENDPOINT_XFER_INT,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+	USB_ENDPOINT_XFER_BULK,
-+};
-+
-+static struct usbhs_private usbhs_private = {
-+	.phy	= 0xe60781e0,		/* USBPHYINT */
-+	.cr2	= 0xe605810c,		/* USBCR2 */
-+	.info = {
-+		.platform_callback = {
-+			.hardware_init	= usbhs_hardware_init,
-+			.hardware_exit	= usbhs_hardware_exit,
-+			.get_id		= usbhs_get_id,
-+			.phy_reset	= usbhs_phy_reset,
-+			.get_vbus	= usbhs_get_vbus,
-+		},
-+		.driver_param = {
-+			.buswait_bwait	= 4,
-+			.has_otg	= 1,
-+			.pipe_type	= usbhs_pipe_cfg,
-+			.pipe_size	= ARRAY_SIZE(usbhs_pipe_cfg),
-+		},
-+	},
-+};
-+
-+static struct resource usbhs_resources[] = {
-+	[0] = {
-+		.start	= 0xE6890000,
-+		.end	= 0xE68900e6 - 1,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= gic_spi(62),
-+		.end	= gic_spi(62),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device usbhs_device = {
-+	.name	= "renesas_usbhs",
-+	.id	= -1,
-+	.dev = {
-+		.dma_mask		= NULL,
-+		.coherent_dma_mask	= 0xffffffff,
-+		.platform_data		= &usbhs_private.info,
-+	},
-+	.num_resources	= ARRAY_SIZE(usbhs_resources),
-+	.resource	= usbhs_resources,
-+};
-+
- /* LCDC */
- static struct fb_videomode kzm_lcdc_mode = {
- 	.name		= "WVGA Panel",
-@@ -361,6 +507,7 @@ static struct i2c_board_info i2c3_devices[] = {
- static struct platform_device *kzm_devices[] __initdata = {
- 	&smsc_device,
- 	&usb_host_device,
-+	&usbhs_device,
- 	&lcdc_device,
- 	&mmc_device,
- 	&sdhi0_device,
-@@ -512,6 +659,9 @@ static void __init kzm_init(void)
- 	gpio_request(GPIO_FN_FSIAISLD,	NULL);
- 	gpio_request(GPIO_FN_FSIAOSLD,	NULL);
- 
-+	/* enable USB */
-+	gpio_request(GPIO_FN_VBUS_0,	NULL);
-+
- #ifdef CONFIG_CACHE_L2X0
- 	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
- 	l2x0_init(IOMEM(0xf0100000), 0x40460000, 0x82000fff);
 -- 
 1.7.5.4
 
