@@ -1,85 +1,55 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 12 Jun 2012 09:38:20 +0000
-Subject: [PATCH 15/27 v2] ARM: shmobile: r8a7740: add DMAEngine support for SDHI
-Message-Id: <87lijsx43b.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 26 Jun 2012 22:32:27 +0000
+Subject: [PATCH 05/10 v3] ARM: mach-shmobile: add fixed voltage regulators to bonito
+Message-Id: <1340749952-8534-6-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Current shdmac can support SDHI DMAC on r8a7740.
-This support reduce CPU duty when SDHI access.
+On bonito provide a dummy regulator for the smsc911x driver.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Tested-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-v1 -> v2
+ arch/arm/mach-shmobile/board-bonito.c |   10 ++++++++++
+ 1 files changed, 10 insertions(+), 0 deletions(-)
 
- - no change
-
- arch/arm/mach-shmobile/include/mach/r8a7740.h |    6 +++++
- arch/arm/mach-shmobile/setup-r8a7740.c        |   30 +++++++++++++++++++++++++
- 2 files changed, 36 insertions(+), 0 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index f71507b..0f14ce8 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -591,6 +591,12 @@ enum {
- /* DMA slave IDs */
- enum {
- 	SHDMA_SLAVE_INVALID,
-+	SHDMA_SLAVE_SDHI0_RX,
-+	SHDMA_SLAVE_SDHI0_TX,
-+	SHDMA_SLAVE_SDHI1_RX,
-+	SHDMA_SLAVE_SDHI1_TX,
-+	SHDMA_SLAVE_SDHI2_RX,
-+	SHDMA_SLAVE_SDHI2_TX,
- 	SHDMA_SLAVE_FSIA_RX,
- 	SHDMA_SLAVE_FSIA_TX,
- 	SHDMA_SLAVE_FSIB_TX,
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 37fa3e7..85aaf8e 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -282,6 +282,36 @@ static struct platform_device *r8a7740_early_devices[] __initdata = {
- /* DMA */
- static const struct sh_dmae_slave_config r8a7740_dmae_slaves[] = {
- 	{
-+		.slave_id	= SHDMA_SLAVE_SDHI0_TX,
-+		.addr		= 0xe6850030,
-+		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xc1,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI0_RX,
-+		.addr		= 0xe6850030,
-+		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xc2,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI1_TX,
-+		.addr		= 0xe6860030,
-+		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xc9,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI1_RX,
-+		.addr		= 0xe6860030,
-+		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xca,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI2_TX,
-+		.addr		= 0xe6870030,
-+		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xcd,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_SDHI2_RX,
-+		.addr		= 0xe6870030,
-+		.chcr		= CHCR_RX(XMIT_SZ_16BIT),
-+		.mid_rid	= 0xce,
-+	}, {
- 		.slave_id	= SHDMA_SLAVE_FSIA_TX,
- 		.addr		= 0xfe1f0024,
- 		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
+diff --git a/arch/arm/mach-shmobile/board-bonito.c b/arch/arm/mach-shmobile/board-bonito.c
+index e9b32cf..4129008 100644
+--- a/arch/arm/mach-shmobile/board-bonito.c
++++ b/arch/arm/mach-shmobile/board-bonito.c
+@@ -26,6 +26,8 @@
+ #include <linux/irq.h>
+ #include <linux/platform_device.h>
+ #include <linux/gpio.h>
++#include <linux/regulator/fixed.h>
++#include <linux/regulator/machine.h>
+ #include <linux/smsc911x.h>
+ #include <linux/videodev2.h>
+ #include <mach/common.h>
+@@ -75,6 +77,12 @@
+  * S38.2 = OFF
+  */
+ 
++/* Dummy supplies, where voltage doesn't matter */
++static struct regulator_consumer_supply dummy_supplies[] = {
++	REGULATOR_SUPPLY("vddvario", "smsc911x"),
++	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
++};
++
+ /*
+  * FPGA
+  */
+@@ -360,6 +368,8 @@ static void __init bonito_init(void)
+ {
+ 	u16 val;
+ 
++	regulator_register_fixed(0, dummy_supplies, ARRAY_SIZE(dummy_supplies));
++
+ 	r8a7740_pinmux_init();
+ 	bonito_fpga_init();
+ 
 -- 
-1.7.5.4
+1.7.2.5
 
