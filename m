@@ -1,60 +1,54 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 25 Jun 2012 10:41:45 +0000
-Subject: [PATCH 5/5] ARM: shmobile: use common extra gpio functions on armadillo800eva
-Message-Id: <87fw9jk716.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 26 Jun 2012 22:49:59 +0000
+Subject: [PATCH 03/13 v2] sh: add fixed voltage regulators to apsh4ad0a
+Message-Id: <1340751009-18663-4-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This patch switch over to use common extra gpio method,
-and reduced a waste of code on SH-ARM.
+On apsh4ad0a provide a dummy regulator for the smsc911x driver.
 
-But these functions should be replaced by correct
-gpio function in the future.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c |   18 ++----------------
- 1 files changed, 2 insertions(+), 16 deletions(-)
+ arch/sh/boards/board-apsh4ad0a.c |   10 ++++++++++
+ 1 files changed, 10 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 3066fa7..5f8f571 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -122,20 +122,6 @@
-  */
+diff --git a/arch/sh/boards/board-apsh4ad0a.c b/arch/sh/boards/board-apsh4ad0a.c
+index b4d6292..92eac3a 100644
+--- a/arch/sh/boards/board-apsh4ad0a.c
++++ b/arch/sh/boards/board-apsh4ad0a.c
+@@ -12,12 +12,20 @@
+ #include <linux/init.h>
+ #include <linux/platform_device.h>
+ #include <linux/io.h>
++#include <linux/regulator/fixed.h>
++#include <linux/regulator/machine.h>
+ #include <linux/smsc911x.h>
+ #include <linux/irq.h>
+ #include <linux/clk.h>
+ #include <asm/machvec.h>
+ #include <asm/sizes.h>
  
- /*
-- * FIXME !!
-- *
-- * gpio_no_direction
-- *
-- * current gpio frame work doesn't have
-- * the method to control only pull up/down/free.
-- * this function should be replaced by correct gpio function
-- */
--static void __init gpio_no_direction(u32 addr)
--{
--	__raw_writeb(0x00, addr);
--}
--
--/*
-  * USB function
-  *
-  * When you use USB Function,
-@@ -1087,8 +1073,8 @@ static void __init eva_init(void)
++/* Dummy supplies, where voltage doesn't matter */
++static struct regulator_consumer_supply dummy_supplies[] = {
++	REGULATOR_SUPPLY("vddvario", "smsc911x"),
++	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
++};
++
+ static struct resource smsc911x_resources[] = {
+ 	[0] = {
+ 		.name		= "smsc911x-memory",
+@@ -56,6 +64,8 @@ static struct platform_device *apsh4ad0a_devices[] __initdata = {
  
- 	gpio_request(GPIO_PORT7, NULL);
- 	gpio_request(GPIO_PORT8, NULL);
--	gpio_no_direction(GPIO_PORT7CR); /* FSIAOBT needs no direction */
--	gpio_no_direction(GPIO_PORT8CR); /* FSIAOLR needs no direction */
-+	gpio_direction_none(GPIO_PORT7CR); /* FSIAOBT needs no direction */
-+	gpio_direction_none(GPIO_PORT8CR); /* FSIAOLR needs no direction */
- 
- 	/* FSI-HDMI */
- 	gpio_request(GPIO_FN_FSIBCK,		NULL);
+ static int __init apsh4ad0a_devices_setup(void)
+ {
++	regulator_register_fixed(0, dummy_supplies, ARRAY_SIZE(dummy_supplies));
++
+ 	return platform_add_devices(apsh4ad0a_devices,
+ 				    ARRAY_SIZE(apsh4ad0a_devices));
+ }
 -- 
-1.7.5.4
+1.7.2.5
 
