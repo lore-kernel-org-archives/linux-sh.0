@@ -1,123 +1,73 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 20 Jun 2012 17:10:31 +0000
-Subject: [PATCH 2/7 v4] mmc: tmio: add callbacks to enable-update and disable the interface clock
-Message-Id: <1340212236-647-3-git-send-email-g.liakhovetski@gmx.de>
+Date: Tue, 26 Jun 2012 22:50:04 +0000
+Subject: [PATCH 08/13 v2] sh: add fixed voltage regulators to ap325rxa
+Message-Id: <1340751009-18663-9-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1340212236-647-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1340212236-647-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-Every time the clock is enabled after possibly being disabled, we have
-to re-read its frequency and update our configuration.
+On ap325rxa provide a 3.3V supply for its SD/MMC-card interfaces and a
+dummy regulator for the smsc911x driver.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/mmc/host/tmio_mmc_pio.c |   35 ++++++++++++++++++++++++++++++++---
- include/linux/mfd/tmio.h        |    3 +++
- 2 files changed, 35 insertions(+), 3 deletions(-)
+ arch/sh/boards/mach-ap325rxa/setup.c |   21 +++++++++++++++++++++
+ 1 files changed, 21 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 9069d4a..869ee69 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -751,6 +751,22 @@ fail:
- 	mmc_request_done(mmc, mrq);
- }
+diff --git a/arch/sh/boards/mach-ap325rxa/setup.c b/arch/sh/boards/mach-ap325rxa/setup.c
+index f33ebf4..9e963c1d 100644
+--- a/arch/sh/boards/mach-ap325rxa/setup.c
++++ b/arch/sh/boards/mach-ap325rxa/setup.c
+@@ -20,6 +20,8 @@
+ #include <linux/mtd/sh_flctl.h>
+ #include <linux/delay.h>
+ #include <linux/i2c.h>
++#include <linux/regulator/fixed.h>
++#include <linux/regulator/machine.h>
+ #include <linux/smsc911x.h>
+ #include <linux/gpio.h>
+ #include <linux/videodev2.h>
+@@ -34,6 +36,12 @@
+ #include <asm/suspend.h>
+ #include <cpu/sh7723.h>
  
-+static int tmio_mmc_clk_update(struct mmc_host *mmc)
-+{
-+	struct tmio_mmc_host *host = mmc_priv(mmc);
-+	struct tmio_mmc_data *pdata = host->pdata;
-+	int ret;
++/* Dummy supplies, where voltage doesn't matter */
++static struct regulator_consumer_supply dummy_supplies[] = {
++	REGULATOR_SUPPLY("vddvario", "smsc911x"),
++	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
++};
 +
-+	if (!pdata->clk_enable)
-+		return -ENOTSUPP;
-+
-+	ret = pdata->clk_enable(host->pdev, &mmc->f_max);
-+	if (!ret)
-+		mmc->f_min = mmc->f_max / 512;
-+
-+	return ret;
-+}
-+
- /* Set MMC clock / power.
-  * Note: This controller uses a simple divider scheme therefore it cannot
-  * run a MMC card at full speed (20MHz). The max clock is 24MHz on SD, but as
-@@ -797,6 +813,7 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 	 */
- 	if (ios->power_mode = MMC_POWER_ON && ios->clock) {
- 		if (!host->power) {
-+			tmio_mmc_clk_update(mmc);
- 			pm_runtime_get_sync(dev);
- 			host->power = true;
- 		}
-@@ -810,9 +827,12 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 		if (host->set_pwr && ios->power_mode = MMC_POWER_OFF)
- 			host->set_pwr(host->pdev, 0);
- 		if (host->power) {
-+			struct tmio_mmc_data *pdata = host->pdata;
- 			tmio_mmc_clk_stop(host);
- 			host->power = false;
- 			pm_runtime_put(dev);
-+			if (pdata->clk_disable)
-+				pdata->clk_disable(host->pdev);
- 		}
- 	}
- 
-@@ -906,8 +926,6 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 
- 	mmc->ops = &tmio_mmc_ops;
- 	mmc->caps = MMC_CAP_4_BIT_DATA | pdata->capabilities;
--	mmc->f_max = pdata->hclk;
--	mmc->f_min = mmc->f_max / 512;
- 	mmc->max_segs = 32;
- 	mmc->max_blk_size = 512;
- 	mmc->max_blk_count = (PAGE_CACHE_SIZE / mmc->max_blk_size) *
-@@ -929,6 +947,11 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 	if (ret < 0)
- 		goto pm_disable;
- 
-+	if (tmio_mmc_clk_update(mmc) < 0) {
-+		mmc->f_max = pdata->hclk;
-+		mmc->f_min = mmc->f_max / 512;
-+	}
-+
- 	/*
- 	 * There are 4 different scenarios for the card detection:
- 	 *  1) an external gpio irq handles the cd (best for power savings)
-@@ -974,7 +997,13 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 	/* See if we also get DMA */
- 	tmio_mmc_request_dma(_host, pdata);
- 
--	mmc_add_host(mmc);
-+	ret = mmc_add_host(mmc);
-+	if (pdata->clk_disable)
-+		pdata->clk_disable(pdev);
-+	if (ret < 0) {
-+		tmio_mmc_host_remove(_host);
-+		return ret;
-+	}
- 
- 	dev_pm_qos_expose_latency_limit(&pdev->dev, 100);
- 
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index f5171db..b332c4c 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -110,6 +110,9 @@ struct tmio_mmc_data {
- 	void (*set_clk_div)(struct platform_device *host, int state);
- 	int (*get_cd)(struct platform_device *host);
- 	int (*write16_hook)(struct tmio_mmc_host *host, int addr);
-+	/* clock management callbacks */
-+	int (*clk_enable)(struct platform_device *pdev, unsigned int *f);
-+	void (*clk_disable)(struct platform_device *pdev);
+ static struct smsc911x_platform_config smsc911x_config = {
+ 	.phy_interface	= PHY_INTERFACE_MODE_MII,
+ 	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_LOW,
+@@ -423,6 +431,15 @@ static struct platform_device ceu_device = {
+ 	},
  };
  
- /*
++/* Fixed 3.3V regulators to be used by SDHI0, SDHI1 */
++static struct regulator_consumer_supply fixed3v3_power_consumers[] +{
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
++	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
++	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.1"),
++};
++
+ static struct resource sdhi0_cn3_resources[] = {
+ 	[0] = {
+ 		.name	= "SDHI0",
+@@ -544,6 +561,10 @@ static int __init ap325rxa_devices_setup(void)
+ 					&ap325rxa_sdram_leave_start,
+ 					&ap325rxa_sdram_leave_end);
+ 
++	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
++				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
++	regulator_register_fixed(1, dummy_supplies, ARRAY_SIZE(dummy_supplies));
++
+ 	/* LD3 and LD4 LEDs */
+ 	gpio_request(GPIO_PTX5, NULL); /* RUN */
+ 	gpio_direction_output(GPIO_PTX5, 1);
 -- 
 1.7.2.5
 
