@@ -1,62 +1,55 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 22 Jun 2012 13:23:13 +0000
-Subject: [PATCH 0/9 v4] mmc: cd-gpio: extend to handle more slot functions
-Message-Id: <1340371402-4801-1-git-send-email-g.liakhovetski@gmx.de>
+Date: Tue, 26 Jun 2012 22:32:30 +0000
+Subject: [PATCH 08/10 v3] ARM: mach-shmobile: add fixed voltage regulators to kzm9d
+Message-Id: <1340749952-8534-9-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>
 
-This patch series extends the cd-gpio helper module to handle further common 
-slot functions, often implemented using GPIOs: CD polling and WP. It 
-supersedes patches 1-8 and 10/10 from
+On kzm9d provide a dummy regulator for the smsc911x driver.
 
-http://thread.gmane.org/gmane.linux.kernel.mmc/14624/focus644
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ arch/arm/mach-shmobile/board-kzm9d.c |   10 ++++++++++
+ 1 files changed, 10 insertions(+), 0 deletions(-)
 
-Patch 9/10 from it is not needed any more, because the default polarity of 
-CD and RO GPIOs is now active low, which is also what is used by all 
-initial users. This makes updating them unnecessary and allows us to apply 
-patch 10/10 (which now becomes 9/9) immediately without first having to 
-wait for platform updates.
-
-Thanks
-Guennadi
-
-Guennadi Liakhovetski (9):
-  mmc: extend and rename cd-gpio helpers to handle more slot GPIO
-    functions
-  mmc: use a more generic name for slot function types and fields
-  mmc: add two capability flags for CD and WP signal polarity
-  mmc: add CD GPIO polling support to slot functions
-  mmc: convert slot functions to managed allocation
-  mmc: add WP pin handler to slot functions
-  mmc: tmio: support caps2 flags
-  mmc: sh_mobile_sdhi: support caps2 flags
-  mmc: tmio: use generic GPIO CD and WP handlers
-
- drivers/mmc/core/Makefile          |    2 +-
- drivers/mmc/core/cd-gpio.c         |   83 ----------------
- drivers/mmc/core/host.c            |    4 +
- drivers/mmc/core/slot-gpio.c       |  188 ++++++++++++++++++++++++++++++++++++
- drivers/mmc/host/sh_mobile_sdhi.c  |    1 +
- drivers/mmc/host/tmio_mmc_pio.c    |   13 ++-
- include/linux/mfd/tmio.h           |    1 +
- include/linux/mmc/cd-gpio.h        |   18 ----
- include/linux/mmc/host.h           |   22 ++++-
- include/linux/mmc/sh_mobile_sdhi.h |    1 +
- include/linux/mmc/slot-gpio.h      |   24 +++++
- 11 files changed, 249 insertions(+), 108 deletions(-)
- delete mode 100644 drivers/mmc/core/cd-gpio.c
- create mode 100644 drivers/mmc/core/slot-gpio.c
- delete mode 100644 include/linux/mmc/cd-gpio.h
- create mode 100644 include/linux/mmc/slot-gpio.h
-
+diff --git a/arch/arm/mach-shmobile/board-kzm9d.c b/arch/arm/mach-shmobile/board-kzm9d.c
+index 7bc5e7d..21ddd12 100644
+--- a/arch/arm/mach-shmobile/board-kzm9d.c
++++ b/arch/arm/mach-shmobile/board-kzm9d.c
+@@ -21,6 +21,8 @@
+ #include <linux/kernel.h>
+ #include <linux/interrupt.h>
+ #include <linux/platform_device.h>
++#include <linux/regulator/fixed.h>
++#include <linux/regulator/machine.h>
+ #include <linux/smsc911x.h>
+ #include <mach/common.h>
+ #include <mach/emev2.h>
+@@ -28,6 +30,12 @@
+ #include <asm/mach/arch.h>
+ #include <asm/hardware/gic.h>
+ 
++/* Dummy supplies, where voltage doesn't matter */
++static struct regulator_consumer_supply dummy_supplies[] = {
++	REGULATOR_SUPPLY("vddvario", "smsc911x"),
++	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
++};
++
+ /* Ether */
+ static struct resource smsc911x_resources[] = {
+ 	[0] = {
+@@ -63,6 +71,8 @@ static struct platform_device *kzm9d_devices[] __initdata = {
+ 
+ void __init kzm9d_add_standard_devices(void)
+ {
++	regulator_register_fixed(0, dummy_supplies, ARRAY_SIZE(dummy_supplies));
++
+ 	emev2_add_standard_devices();
+ 
+ 	platform_add_devices(kzm9d_devices, ARRAY_SIZE(kzm9d_devices));
 -- 
 1.7.2.5
 
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
