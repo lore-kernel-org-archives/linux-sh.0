@@ -1,28 +1,55 @@
-From: kuninori.morimoto.gx@renesas.com
-Date: Tue, 19 Jun 2012 02:22:57 +0000
-Subject: [PATCH 0/4] ARM: shmobile: kzm9g: enable USB/SD/MMC-DMAEngine
-Message-Id: <87d34wt4zq.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 26 Jun 2012 22:50:08 +0000
+Subject: [PATCH 12/13 v2] sh: add fixed voltage regulators to sdk7786
+Message-Id: <1340751009-18663-13-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+On sdk7786 provide a dummy regulator for the smsc911x driver.
 
-Hi Rafael
-Cc Magnus Simon
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ arch/sh/boards/mach-sdk7786/setup.c |   10 ++++++++++
+ 1 files changed, 10 insertions(+), 0 deletions(-)
 
-These patch set enable USB/SD and MMC-DMAEngine for kzm9g board.
-These depend on my previous
-[PATCH 0/27] ARM: shmobile: resend patch set
-
-Kuninori Morimoto (4):
-      ARM: shmobile: sh73a0: add USB clock support
-      ARM: shmobile: kzm9g: enable DMAEngine of MMCIF
-      ARM: shmobile: kzm9g: enable USB func
-      ARM: shmobile: kzm9g: enable MicroSD
-
-#4 patch require Laurent's patch.
-      mmc: tmio: Don't access hardware registers after stopping clocks
-With out this patch, MicroSD will dead when boot.
+diff --git a/arch/sh/boards/mach-sdk7786/setup.c b/arch/sh/boards/mach-sdk7786/setup.c
+index 27a2314..c29268b 100644
+--- a/arch/sh/boards/mach-sdk7786/setup.c
++++ b/arch/sh/boards/mach-sdk7786/setup.c
+@@ -11,6 +11,8 @@
+ #include <linux/init.h>
+ #include <linux/platform_device.h>
+ #include <linux/io.h>
++#include <linux/regulator/fixed.h>
++#include <linux/regulator/machine.h>
+ #include <linux/smsc911x.h>
+ #include <linux/i2c.h>
+ #include <linux/irq.h>
+@@ -38,6 +40,12 @@ static struct platform_device heartbeat_device = {
+ 	.resource	= &heartbeat_resource,
+ };
+ 
++/* Dummy supplies, where voltage doesn't matter */
++static struct regulator_consumer_supply dummy_supplies[] = {
++	REGULATOR_SUPPLY("vddvario", "smsc911x"),
++	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
++};
++
+ static struct resource smsc911x_resources[] = {
+ 	[0] = {
+ 		.name		= "smsc911x-memory",
+@@ -236,6 +244,8 @@ static void __init sdk7786_setup(char **cmdline_p)
+ {
+ 	pr_info("Renesas Technology Europe SDK7786 support:\n");
+ 
++	regulator_register_fixed(0, dummy_supplies, ARRAY_SIZE(dummy_supplies));
++
+ 	sdk7786_fpga_init();
+ 	sdk7786_nmi_init();
+ 
+-- 
+1.7.2.5
 
