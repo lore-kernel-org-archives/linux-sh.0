@@ -1,150 +1,51 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 12 Jun 2012 09:35:36 +0000
-Subject: [PATCH 08/27 v2] ARM: shmobile: r8a7740: add HDMI clock support
-Message-Id: <87vciwx47v.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 26 Jun 2012 22:50:07 +0000
+Subject: [PATCH 11/13 v2] sh: add fixed voltage regulators to rsk
+Message-Id: <1340751009-18663-12-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-It is required from sh_mobile_hdmi driver.
-This patch is based on v1.0 manual
+On rsk devices provide a dummy regulator for the smsc911x driver.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-v1 -> v2
+ arch/sh/boards/mach-rsk/setup.c |   10 ++++++++++
+ 1 files changed, 10 insertions(+), 0 deletions(-)
 
- - no change
-
- arch/arm/mach-shmobile/clock-r8a7740.c |   84 ++++++++++++++++++++++++++++++++
- 1 files changed, 84 insertions(+), 0 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index 26eea5f..b095343 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -54,6 +54,7 @@
- #define MSTPSR2		0xe6150040
- #define MSTPSR3		0xe6150048
- #define MSTPSR4		0xe615004c
-+#define HDMICKCR	0xe6150094
- #define SMSTPCR0	0xe6150130
- #define SMSTPCR1	0xe6150134
- #define SMSTPCR2	0xe6150138
-@@ -313,6 +314,79 @@ static struct clk_div4_table div4_table = {
- 	.kick = div4_kick,
- };
+diff --git a/arch/sh/boards/mach-rsk/setup.c b/arch/sh/boards/mach-rsk/setup.c
+index 895f030..2685ea0 100644
+--- a/arch/sh/boards/mach-rsk/setup.c
++++ b/arch/sh/boards/mach-rsk/setup.c
+@@ -16,9 +16,17 @@
+ #include <linux/mtd/partitions.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/mtd/map.h>
++#include <linux/regulator/fixed.h>
++#include <linux/regulator/machine.h>
+ #include <asm/machvec.h>
+ #include <asm/io.h>
  
-+/* DIV6 reparent */
-+enum {
-+	DIV6_HDMI,
-+	DIV6_REPARENT_NR,
++/* Dummy supplies, where voltage doesn't matter */
++static struct regulator_consumer_supply dummy_supplies[] = {
++	REGULATOR_SUPPLY("vddvario", "smsc911x"),
++	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
 +};
 +
-+static struct clk *hdmi_parent[] = {
-+	[0] = &pllc1_div2_clk,
-+	[1] = &system_clk,
-+	[2] = &dv_clk
-+};
-+
-+static struct clk div6_reparent_clks[DIV6_REPARENT_NR] = {
-+	[DIV6_HDMI] = SH_CLK_DIV6_EXT(HDMICKCR, 0,
-+				      hdmi_parent, ARRAY_SIZE(hdmi_parent), 6, 2),
-+};
-+
-+/* HDMI1/2 clock */
-+static unsigned long hdmi12_recalc(struct clk *clk)
-+{
-+	u32 val = __raw_readl(HDMICKCR);
-+	int shift = (int)clk->priv;
-+
-+	val >>= shift;
-+	val &= 0x3;
-+
-+	return clk->parent->rate / (1 << val);
-+};
-+
-+static int hdmi12_set_rate(struct clk *clk, unsigned long rate)
-+{
-+	u32 val, mask;
-+	int i, shift;
-+
-+	for (i = 0; i < 3; i++)
-+		if (rate = clk->parent->rate / (1 << i))
-+			goto find;
-+	return -ENODEV;
-+
-+find:
-+	shift = (int)clk->priv;
-+
-+	val = __raw_readl(HDMICKCR);
-+	mask = ~(0x3 << shift);
-+	val = (val & mask) | i << shift;
-+	__raw_writel(val, HDMICKCR);
-+
-+	return 0;
-+};
-+
-+static struct sh_clk_ops hdmi12_clk_ops = {
-+	.recalc		= hdmi12_recalc,
-+	.set_rate	= hdmi12_set_rate,
-+};
-+
-+static struct clk hdmi1_clk = {
-+	.ops		= &hdmi12_clk_ops,
-+	.priv		= (void *)9,
-+	.parent		= &div6_reparent_clks[DIV6_HDMI],  /* late install */
-+};
-+
-+static struct clk hdmi2_clk = {
-+	.ops		= &hdmi12_clk_ops,
-+	.priv		= (void *)11,
-+	.parent		= &div6_reparent_clks[DIV6_HDMI], /* late install */
-+};
-+
-+static struct clk *late_main_clks[] = {
-+	&hdmi1_clk,
-+	&hdmi2_clk,
-+};
-+
-+/* MSTP */
- enum {
- 	DIV4_I, DIV4_ZG, DIV4_B, DIV4_M1, DIV4_HP,
- 	DIV4_HPP, DIV4_USBP, DIV4_S, DIV4_ZB, DIV4_M3, DIV4_CP,
-@@ -408,6 +482,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("pllc1_clk",		&pllc1_clk),
- 	CLKDEV_CON_ID("pllc1_div2_clk",		&pllc1_div2_clk),
- 	CLKDEV_CON_ID("usb24s",			&usb24s_clk),
-+	CLKDEV_CON_ID("hdmi1",			&hdmi1_clk),
-+	CLKDEV_CON_ID("hdmi2",			&hdmi2_clk),
+ static const char *part_probes[] = { "cmdlinepart", NULL };
  
- 	/* DIV4 clocks */
- 	CLKDEV_CON_ID("i_clk",			&div4_clks[DIV4_I]),
-@@ -459,6 +535,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("phy",	"renesas_usbhs",	&mstp_clks[MSTP406]),
- 	CLKDEV_ICK_ID("pci",	"renesas_usbhs",	&div4_clks[DIV4_USBP]),
- 	CLKDEV_ICK_ID("usb24",	"renesas_usbhs",	&usb24_clk),
-+	CLKDEV_ICK_ID("ick",	"sh-mobile-hdmi",	&div6_reparent_clks[DIV6_HDMI]),
- };
+ static struct mtd_partition rsk_partitions[] = {
+@@ -67,6 +75,8 @@ static struct platform_device *rsk_devices[] __initdata = {
  
- void __init r8a7740_clock_init(u8 md_ck)
-@@ -495,8 +572,15 @@ void __init r8a7740_clock_init(u8 md_ck)
- 		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
- 
- 	if (!ret)
-+		ret = sh_clk_div6_reparent_register(div6_reparent_clks,
-+						    DIV6_REPARENT_NR);
+ static int __init rsk_devices_setup(void)
+ {
++	regulator_register_fixed(0, dummy_supplies, ARRAY_SIZE(dummy_supplies));
 +
-+	if (!ret)
- 		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
- 
-+	for (k = 0; !ret && (k < ARRAY_SIZE(late_main_clks)); k++)
-+		ret = clk_register(late_main_clks[k]);
-+
- 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
- 
- 	if (!ret)
+ 	return platform_add_devices(rsk_devices,
+ 				    ARRAY_SIZE(rsk_devices));
+ }
 -- 
-1.7.5.4
+1.7.2.5
 
