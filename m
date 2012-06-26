@@ -1,67 +1,60 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Mon, 11 Jun 2012 13:41:00 +0000
-Subject: Re: [PATCH 4/5 v3] mmc: add a function to get a regulator, supplying card's Vdd
-Message-Id: <871ulm7yqb.fsf@octavius.laptop.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 26 Jun 2012 22:32:26 +0000
+Subject: [PATCH 04/10 v3] ARM: mach-shmobile: add fixed voltage regulators to armadillo800eva
+Message-Id: <1340749952-8534-5-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1205251045490.13353@axis700.grange>
-	<Pine.LNX.4.64.1205251208440.13353@axis700.grange>
-	<Pine.LNX.4.64.1205251230540.13353@axis700.grange>
-	<20120528144502.GG4032@opensource.wolfsonmicro.com>
-	<Pine.LNX.4.64.1206111259190.29799@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1206111259190.29799@axis700.grange> (Guennadi
-	Liakhovetski's message of "Mon, 11 Jun 2012 13:03:26 +0200 (CEST)")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>, linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi,
+On armadillo800eva provide a 3.3V supply for its SD/MMC-card interfaces.
 
-On Mon, Jun 11 2012, Guennadi Liakhovetski wrote:
-> Yes, but existing mmc-regulator functions use EXPORT_SYMBOL(), e.g.,
->
-> EXPORT_SYMBOL(mmc_regulator_get_ocrmask);
->
-> which indeed seem to do the "old evil binary-only module trick": re-export 
-> functions, dropping the "_GPL" suffix. Looks like they should be fixed...
-
-Yuck, thanks for noticing that.  Happy to fix it:
-
-
-Subject: [PATCH] mmc: core: Export regulator_* functions as GPL
-
-The regulator API functions we're wrapping are exported as GPL, so our
-wrappers for the same functions should be too.
-
-Reported-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Signed-off-by: Chris Ball <cjb@laptop.org>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/mmc/core/core.c |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/board-armadillo800eva.c |   16 ++++++++++++++++
+ 1 files changed, 16 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/mmc/core/core.c b/drivers/mmc/core/core.c
-index 0b6141d..c689877 100644
---- a/drivers/mmc/core/core.c
-+++ b/drivers/mmc/core/core.c
-@@ -941,7 +941,7 @@ int mmc_regulator_get_ocrmask(struct regulator *supply)
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 9e37026..819cee5 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -28,6 +28,8 @@
+ #include <linux/platform_device.h>
+ #include <linux/gpio.h>
+ #include <linux/gpio_keys.h>
++#include <linux/regulator/fixed.h>
++#include <linux/regulator/machine.h>
+ #include <linux/sh_eth.h>
+ #include <linux/videodev2.h>
+ #include <linux/usb/renesas_usbhs.h>
+@@ -407,6 +409,17 @@ static struct platform_device gpio_keys_device = {
+ 	},
+ };
  
- 	return result;
- }
--EXPORT_SYMBOL(mmc_regulator_get_ocrmask);
-+EXPORT_SYMBOL_GPL(mmc_regulator_get_ocrmask);
++/* Fixed 3.3V regulator to be used by SDHI0, SDHI1, MMCIF */
++static struct regulator_consumer_supply fixed3v3_power_consumers[] +{
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
++	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
++	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.1"),
++	REGULATOR_SUPPLY("vmmc", "sh_mmcif.0"),
++	REGULATOR_SUPPLY("vqmmc", "sh_mmcif.0"),
++};
++
+ /* SDHI0 */
+ /*
+  * FIXME
+@@ -584,6 +597,9 @@ clock_error:
+  */
+ static void __init eva_init(void)
+ {
++	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
++				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
++
+ 	eva_clock_init();
  
- /**
-  * mmc_regulator_set_ocr - set regulator to match host->ios voltage
-@@ -1011,7 +1011,7 @@ int mmc_regulator_set_ocr(struct mmc_host *mmc,
- 			"could not set regulator OCR (%d)\n", result);
- 	return result;
- }
--EXPORT_SYMBOL(mmc_regulator_set_ocr);
-+EXPORT_SYMBOL_GPL(mmc_regulator_set_ocr);
- 
- #endif /* CONFIG_REGULATOR */
- 
+ 	r8a7740_pinmux_init();
 -- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
+1.7.2.5
+
