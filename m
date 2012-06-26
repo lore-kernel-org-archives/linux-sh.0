@@ -1,201 +1,61 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 12 Jun 2012 09:39:11 +0000
-Subject: [PATCH 17/27 v2] ARM: shmobile: armadillo800eva: enable HDMI
-Message-Id: <87ipewx41w.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 26 Jun 2012 22:32:22 +0000
+Subject: [PATCH 00/10 v3] ARM: mach-shmobile: add regulators for mmc and smsc911x
+Message-Id: <1340749952-8534-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This patch enable HDMI support on CON3.
-And removed unnecessary CONFIG_SYSFS_DEPRECATED_xxx config.
+This is a respin of
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v1 -> v2
+http://thread.gmane.org/gmane.linux.ports.sh.devel/15544
 
- - no change
+ported on top of the fixed regulator driver update patches from the
 
- arch/arm/configs/armadillo800eva_defconfig     |   10 +--
- arch/arm/mach-shmobile/board-armadillo800eva.c |  100 ++++++++++++++++++++++++
- 2 files changed, 101 insertions(+), 9 deletions(-)
+http://lkml.indiana.edu/hypermail/linux/kernel/1206.2/index.html#01395
 
-diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
-index ddc9fe6..f6ebdde 100644
---- a/arch/arm/configs/armadillo800eva_defconfig
-+++ b/arch/arm/configs/armadillo800eva_defconfig
-@@ -5,10 +5,7 @@ CONFIG_IKCONFIG_PROC=y
- CONFIG_LOG_BUF_SHIFT
- # CONFIG_UTS_NS is not set
- # CONFIG_IPC_NS is not set
--# CONFIG_USER_NS is not set
- # CONFIG_PID_NS is not set
--CONFIG_SYSFS_DEPRECATED=y
--CONFIG_SYSFS_DEPRECATED_V2=y
- CONFIG_CC_OPTIMIZE_FOR_SIZE=y
- CONFIG_SLAB=y
- CONFIG_MODULES=y
-@@ -90,25 +87,21 @@ CONFIG_I2C=y
- CONFIG_I2C_SH_MOBILE=y
- # CONFIG_HWMON is not set
- CONFIG_FB=y
--CONFIG_FB_MODE_HELPERS=y
- CONFIG_FB_SH_MOBILE_LCDC=y
-+CONFIG_FB_SH_MOBILE_HDMI=y
- CONFIG_LCD_CLASS_DEVICE=y
- CONFIG_FRAMEBUFFER_CONSOLE=y
- CONFIG_FRAMEBUFFER_CONSOLE_DETECT_PRIMARY=y
- CONFIG_LOGO=y
- # CONFIG_LOGO_LINUX_MONO is not set
- # CONFIG_LOGO_LINUX_VGA16 is not set
--CONFIG_SOUND=y
--CONFIG_SND=y
- # CONFIG_SND_SUPPORT_OLD_API is not set
- # CONFIG_SND_VERBOSE_PROCFS is not set
- # CONFIG_SND_DRIVERS is not set
- # CONFIG_SND_ARM is not set
--CONFIG_SND_SOC=y
- CONFIG_SND_SOC_SH4_FSI=y
- # CONFIG_HID_SUPPORT is not set
- CONFIG_USB=y
--# CONFIG_USB_DEVICE_CLASS is not set
- CONFIG_USB_RENESAS_USBHS=y
- CONFIG_USB_GADGET=y
- CONFIG_USB_RENESAS_USBHS_UDC=y
-@@ -124,7 +117,6 @@ CONFIG_VFAT_FS=y
- CONFIG_TMPFS=y
- # CONFIG_MISC_FILESYSTEMS is not set
- CONFIG_NFS_FS=y
--CONFIG_NFS_V3=y
- CONFIG_NFS_V3_ACL=y
- CONFIG_NFS_V4=y
- CONFIG_NFS_V4_1=y
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 6e6839d..4e6893f 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -45,6 +45,7 @@
- #include <asm/hardware/cache-l2x0.h>
- #include <mach/r8a7740.h>
- #include <video/sh_mobile_lcdc.h>
-+#include <video/sh_mobile_hdmi.h>
- 
- /*
-  * CON1		Camera Module
-@@ -384,6 +385,103 @@ static struct platform_device lcdc0_device = {
- 	},
- };
- 
-+/*
-+ * LCDC1/HDMI
-+ */
-+static struct sh_mobile_hdmi_info hdmi_info = {
-+	.flags		= HDMI_OUTPUT_PUSH_PULL |
-+			  HDMI_OUTPUT_POLARITY_HI |
-+			  HDMI_32BIT_REG |
-+			  HDMI_HAS_HTOP1 |
-+			  HDMI_SND_SRC_SPDIF,
-+};
-+
-+static struct resource hdmi_resources[] = {
-+	[0] = {
-+		.name	= "HDMI",
-+		.start	= 0xe6be0000,
-+		.end	= 0xe6be03ff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= evt2irq(0x1700),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+	[2] = {
-+		.name	= "HDMI emma3pf",
-+		.start	= 0xe6be4000,
-+		.end	= 0xe6be43ff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+};
-+
-+static struct platform_device hdmi_device = {
-+	.name		= "sh-mobile-hdmi",
-+	.num_resources	= ARRAY_SIZE(hdmi_resources),
-+	.resource	= hdmi_resources,
-+	.id             = -1,
-+	.dev	= {
-+		.platform_data	= &hdmi_info,
-+	},
-+};
-+
-+static const struct fb_videomode lcdc1_mode = {
-+	.name		= "HDMI 720p",
-+	.xres		= 1280,
-+	.yres		= 720,
-+	.pixclock	= 13468,
-+	.left_margin	= 220,
-+	.right_margin	= 110,
-+	.hsync_len	= 40,
-+	.upper_margin	= 20,
-+	.lower_margin	= 5,
-+	.vsync_len	= 5,
-+	.refresh	= 60,
-+	.sync		= FB_SYNC_VERT_HIGH_ACT | FB_SYNC_HOR_HIGH_ACT,
-+};
-+
-+static struct sh_mobile_lcdc_info hdmi_lcdc_info = {
-+	.clock_source	= LCDC_CLK_PERIPHERAL, /* HDMI clock */
-+	.ch[0] = {
-+		.chan			= LCDC_CHAN_MAINLCD,
-+		.fourcc			= V4L2_PIX_FMT_RGB565,
-+		.interface_type		= RGB24,
-+		.clock_divider		= 1,
-+		.flags			= LCDC_FLAGS_DWPOL,
-+		.lcd_modes		= &lcdc1_mode,
-+		.num_modes		= 1,
-+		.tx_dev			= &hdmi_device,
-+		.panel_cfg = {
-+			.width	= 1280,
-+			.height = 720,
-+		},
-+	},
-+};
-+
-+static struct resource hdmi_lcdc_resources[] = {
-+	[0] = {
-+		.name	= "LCDC1",
-+		.start	= 0xfe944000,
-+		.end	= 0xfe948000 - 1,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= intcs_evt2irq(0x1780),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device hdmi_lcdc_device = {
-+	.name		= "sh_mobile_lcdc_fb",
-+	.num_resources	= ARRAY_SIZE(hdmi_lcdc_resources),
-+	.resource	= hdmi_lcdc_resources,
-+	.id		= 1,
-+	.dev	= {
-+		.platform_data	= &hdmi_lcdc_info,
-+		.coherent_dma_mask = ~0,
-+	},
-+};
-+
- /* GPIO KEY */
- #define GPIO_KEY(c, g, d) { .code = c, .gpio = g, .desc = d, .active_low = 1 }
- 
-@@ -549,6 +647,8 @@ static struct platform_device *eva_devices[] __initdata = {
- 	&sh_eth_device,
- 	&sdhi0_device,
- 	&sh_mmcif_device,
-+	&hdmi_device,
-+	&hdmi_lcdc_device,
- };
- 
- static void __init eva_clock_init(void)
+patch-set, which thereby becomes a prerequisite for this series! Basing on 
+top of those patches made the temporary macro redundant, which simplifies 
+the whole work quite a bit. Other changes since v2 are listed in respective 
+patches.
+
+DEPENDENCY: the above fixed regulator patches can be obtained from
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git tags/topic/fixed
+
+Thanks
+Guennadi
+
+Guennadi Liakhovetski (10):
+  ARM: mach-shmobile: add 3.3V and 1.8V fixed regulators to mackerel
+  ARM: mach-shmobile: add fixed voltage regulators to ag5evm
+  ARM: mach-shmobile: add fixed voltage regulators to ap4evb
+  ARM: mach-shmobile: add fixed voltage regulators to armadillo800eva
+  ARM: mach-shmobile: add fixed voltage regulators to bonito
+  ARM: mach-shmobile: add fixed voltage regulators to g4evm
+  ARM: mach-shmobile: add fixed voltage regulators to kota2
+  ARM: mach-shmobile: add fixed voltage regulators to kzm9d
+  ARM: mach-shmobile: add fixed voltage regulators to kzm9g
+  ARM: mach-shmobile: add fixed voltage regulators to marzen
+
+ arch/arm/mach-shmobile/board-ag5evm.c          |   83 +++++++++++++++++++++++-
+ arch/arm/mach-shmobile/board-ap4evb.c          |   29 ++++++++
+ arch/arm/mach-shmobile/board-armadillo800eva.c |   16 +++++
+ arch/arm/mach-shmobile/board-bonito.c          |   10 +++
+ arch/arm/mach-shmobile/board-g4evm.c           |   14 ++++
+ arch/arm/mach-shmobile/board-kota2.c           |   30 +++++++++
+ arch/arm/mach-shmobile/board-kzm9d.c           |   10 +++
+ arch/arm/mach-shmobile/board-kzm9g.c           |   28 ++++++++
+ arch/arm/mach-shmobile/board-mackerel.c        |   35 ++++++++++
+ arch/arm/mach-shmobile/board-marzen.c          |   10 +++
+ 10 files changed, 262 insertions(+), 3 deletions(-)
+
 -- 
-1.7.5.4
+1.7.2.5
 
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
