@@ -1,97 +1,58 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 12 Jun 2012 09:34:22 +0000
-Subject: [PATCH 05/27 v2] ARM: shmobile: shareing DMAEngine TS_HI/LOW value
-Message-Id: <87zk88x49x.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 26 Jun 2012 22:32:28 +0000
+Subject: [PATCH 06/10 v3] ARM: mach-shmobile: add fixed voltage regulators to g4evm
+Message-Id: <1340749952-8534-7-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-In SH-ARM CPU (= sh7372/sh73a0/r8a7740),
-DMAC :: CHCR :: TS (= DMA Transfer Size Specify) bit is mapped as
-TS[3:2] = CHCR[21:20]
-TS[1:0] = CHCR[4:3]
+On g4evm provide a 3.3V supply for its SD/MMC-card interfaces.
 
-Because of these mapping, shdma needs
-special settings on sh_dmae_pdata / sh_dmae_slave_config.
-
-But it is easy to understand if these settings use sharing value
-instead of using direct value.
-This patch modify these.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Tested-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-v1 -> v2
+ arch/arm/mach-shmobile/board-g4evm.c |   14 ++++++++++++++
+ 1 files changed, 14 insertions(+), 0 deletions(-)
 
- - no change
-
- arch/arm/mach-shmobile/include/mach/dma-register.h |   11 ++++++++++-
- arch/arm/mach-shmobile/setup-sh7372.c              |    8 ++++----
- arch/arm/mach-shmobile/setup-sh73a0.c              |    8 ++++----
- 3 files changed, 18 insertions(+), 9 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/include/mach/dma-register.h b/arch/arm/mach-shmobile/include/mach/dma-register.h
-index 0ed1e90..21b3dff 100644
---- a/arch/arm/mach-shmobile/include/mach/dma-register.h
-+++ b/arch/arm/mach-shmobile/include/mach/dma-register.h
-@@ -38,7 +38,16 @@ static const unsigned int dma_ts_shift[] = {
- 	[XMIT_SZ_512BIT]	= 6,
+diff --git a/arch/arm/mach-shmobile/board-g4evm.c b/arch/arm/mach-shmobile/board-g4evm.c
+index f125732..b5538cc 100644
+--- a/arch/arm/mach-shmobile/board-g4evm.c
++++ b/arch/arm/mach-shmobile/board-g4evm.c
+@@ -26,6 +26,8 @@
+ #include <linux/mtd/mtd.h>
+ #include <linux/mtd/partitions.h>
+ #include <linux/mtd/physmap.h>
++#include <linux/regulator/fixed.h>
++#include <linux/regulator/machine.h>
+ #include <linux/usb/r8a66597.h>
+ #include <linux/io.h>
+ #include <linux/input.h>
+@@ -196,6 +198,15 @@ static struct platform_device keysc_device = {
+ 	},
  };
  
--#define TS_INDEX2VAL(i) ((((i) & 0x3) << 3) | (((i) & 0xc) << (20 - 2)))
-+#define TS_LOW_BIT	0x3 /* --xx */
-+#define TS_HI_BIT	0xc /* xx-- */
++/* Fixed 3.3V regulator to be used by SDHI0 and SDHI1 */
++static struct regulator_consumer_supply fixed3v3_power_consumers[] +{
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
++	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
++	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.1"),
++};
 +
-+#define TS_LOW_SHIFT	(3)
-+#define TS_HI_SHIFT	(20 - 2)	/* 2 bits for shifted low TS */
-+
-+#define TS_INDEX2VAL(i) \
-+	((((i) & TS_LOW_BIT) << TS_LOW_SHIFT) |\
-+	 (((i) & TS_HI_BIT)  << TS_HI_SHIFT))
-+
- #define CHCR_TX(xmit_sz) (DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL((xmit_sz)))
- #define CHCR_RX(xmit_sz) (DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL((xmit_sz)))
+ /* SDHI */
+ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.tmio_caps	= MMC_CAP_SDIO_IRQ,
+@@ -291,6 +302,9 @@ static void __init gpio_pull_up(u32 addr)
  
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index a0e3113..aa5c2ba 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -501,10 +501,10 @@ static struct sh_dmae_pdata dma_platform_data = {
- 	.slave_num	= ARRAY_SIZE(sh7372_dmae_slaves),
- 	.channel	= sh7372_dmae_channels,
- 	.channel_num	= ARRAY_SIZE(sh7372_dmae_channels),
--	.ts_low_shift	= 3,
--	.ts_low_mask	= 0x18,
--	.ts_high_shift	= (20 - 2),	/* 2 bits for shifted low TS */
--	.ts_high_mask	= 0x00300000,
-+	.ts_low_shift	= TS_LOW_SHIFT,
-+	.ts_low_mask	= TS_LOW_BIT << TS_LOW_SHIFT,
-+	.ts_high_shift	= TS_HI_SHIFT,
-+	.ts_high_mask	= TS_HI_BIT << TS_HI_SHIFT,
- 	.ts_shift	= dma_ts_shift,
- 	.ts_shift_num	= ARRAY_SIZE(dma_ts_shift),
- 	.dmaor_init	= DMAOR_DME,
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index 69d6393..3617bc5 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -584,10 +584,10 @@ static struct sh_dmae_pdata sh73a0_dmae_platform_data = {
- 	.slave_num      = ARRAY_SIZE(sh73a0_dmae_slaves),
- 	.channel        = sh73a0_dmae_channels,
- 	.channel_num    = ARRAY_SIZE(sh73a0_dmae_channels),
--	.ts_low_shift   = 3,
--	.ts_low_mask    = 0x18,
--	.ts_high_shift  = (20 - 2),     /* 2 bits for shifted low TS */
--	.ts_high_mask   = 0x00300000,
-+	.ts_low_shift   = TS_LOW_SHIFT,
-+	.ts_low_mask    = TS_LOW_BIT << TS_LOW_SHIFT,
-+	.ts_high_shift  = TS_HI_SHIFT,
-+	.ts_high_mask   = TS_HI_BIT << TS_HI_SHIFT,
- 	.ts_shift       = dma_ts_shift,
- 	.ts_shift_num   = ARRAY_SIZE(dma_ts_shift),
- 	.dmaor_init     = DMAOR_DME,
+ static void __init g4evm_init(void)
+ {
++	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
++				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
++
+ 	sh7377_pinmux_init();
+ 
+ 	/* Lit DS14 LED */
 -- 
-1.7.5.4
+1.7.2.5
 
