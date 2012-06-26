@@ -1,65 +1,73 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 20 Jun 2012 15:12:16 +0000
-Subject: [PATCH 08/14] sh: add fixed voltage regulators to sh7757lcr
-Message-Id: <1340205142-32606-9-git-send-email-g.liakhovetski@gmx.de>
+Date: Tue, 26 Jun 2012 22:32:25 +0000
+Subject: [PATCH 03/10 v3] ARM: mach-shmobile: add fixed voltage regulators to ap4evb
+Message-Id: <1340749952-8534-4-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On sh7757lcr provide a 3.3V supply for its SD/MMC-card interfaces.
+On ap4evb provide 1.8V and 3.3V supplies for its SD/MMC-card interfaces
+and a dummy regulator for the smsc911x driver.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/sh/boards/board-sh7757lcr.c |   14 ++++++++++++++
- 1 files changed, 14 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c |   29 +++++++++++++++++++++++++++++
+ 1 files changed, 29 insertions(+), 0 deletions(-)
 
-diff --git a/arch/sh/boards/board-sh7757lcr.c b/arch/sh/boards/board-sh7757lcr.c
-index 5087f8b..dc3a036 100644
---- a/arch/sh/boards/board-sh7757lcr.c
-+++ b/arch/sh/boards/board-sh7757lcr.c
-@@ -12,6 +12,7 @@
- #include <linux/platform_device.h>
- #include <linux/gpio.h>
- #include <linux/irq.h>
-+#include <linux/regulator/machine.h>
- #include <linux/spi/spi.h>
- #include <linux/spi/flash.h>
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index ace6024..b572a0c 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -34,6 +34,8 @@
+ #include <linux/i2c.h>
+ #include <linux/i2c/tsc2007.h>
  #include <linux/io.h>
-@@ -21,6 +22,7 @@
- #include <linux/sh_eth.h>
++#include <linux/regulator/fixed.h>
++#include <linux/regulator/machine.h>
+ #include <linux/smsc911x.h>
  #include <linux/sh_intc.h>
- #include <linux/usb/renesas_usbhs.h>
-+#include <mach/regulator.h>
- #include <cpu/sh7757.h>
- #include <asm/heartbeat.h>
+ #include <linux/sh_clk.h>
+@@ -159,6 +161,27 @@
+  * CN12: 3.3v
+  */
  
-@@ -199,6 +201,17 @@ static struct platform_device sh7757_eth_giga1_device = {
- 	},
- };
- 
-+/* Fixed 3.3V regulator to be used by SDHI0, MMCIF */
-+static struct regulator_consumer_supply fixed3v3_power_consumers[] +{
-+	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
-+	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
++/* Dummy supplies, where voltage doesn't matter */
++static struct regulator_consumer_supply fixed1v8_power_consumers[] +{
++	/* J22 default position: 1.8V */
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
++	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.1"),
 +	REGULATOR_SUPPLY("vmmc", "sh_mmcif.0"),
 +	REGULATOR_SUPPLY("vqmmc", "sh_mmcif.0"),
 +};
 +
-+REGULATOR_FIXED(fixed3v3_power_consumers, 0, 3300000);
++static struct regulator_consumer_supply fixed3v3_power_consumers[] +{
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
++	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
++};
 +
- /* SH_MMCIF */
- static struct resource sh_mmcif_resources[] = {
- 	[0] = {
-@@ -302,6 +315,7 @@ static struct platform_device usb0_device = {
- };
++static struct regulator_consumer_supply dummy_supplies[] = {
++	REGULATOR_SUPPLY("vddvario", "smsc911x"),
++	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
++};
++
+ /* MTD */
+ static struct mtd_partition nor_flash_partitions[] = {
+ 	{
+@@ -1224,6 +1247,12 @@ static void __init ap4evb_init(void)
+ 	u32 srcr4;
+ 	struct clk *clk;
  
- static struct platform_device *sh7757lcr_devices[] __initdata = {
-+	&fixed_power_0,
- 	&heartbeat_device,
- 	&sh7757_eth0_device,
- 	&sh7757_eth1_device,
++	regulator_register_always_on(0, "fixed-1.8V", fixed1v8_power_consumers,
++				     ARRAY_SIZE(fixed1v8_power_consumers), 1800000);
++	regulator_register_always_on(1, "fixed-3.3V", fixed3v3_power_consumers,
++				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
++	regulator_register_fixed(2, dummy_supplies, ARRAY_SIZE(dummy_supplies));
++
+ 	/* External clock source */
+ 	clk_set_rate(&sh7372_dv_clki_clk, 27000000);
+ 
 -- 
 1.7.2.5
 
