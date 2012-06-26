@@ -1,86 +1,86 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 25 Jun 2012 10:41:36 +0000
-Subject: [PATCH 4/5] ARM: shmobile: use common extra gpio functions on mackrel
-Message-Id: <87hatzk71f.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 26 Jun 2012 22:32:31 +0000
+Subject: [PATCH 09/10 v3] ARM: mach-shmobile: add fixed voltage regulators to kzm9g
+Message-Id: <1340749952-8534-10-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This patch switch over to use common extra gpio method,
-and reduced a waste of code on SH-ARM.
+On kzm9g provide 1.8V and 2.8V supplies for its SD/MMC-card interfaces
+and a dummy regulator for the smsc911x driver.
 
-But these functions should be replaced by correct
-gpio function in the future.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/board-mackerel.c |   34 +++---------------------------
- 1 files changed, 4 insertions(+), 30 deletions(-)
+ arch/arm/mach-shmobile/board-kzm9g.c |   28 ++++++++++++++++++++++++++++
+ 1 files changed, 28 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 150122a..9424ae3 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -203,32 +203,6 @@
-  * amixer set "HPOUTR Mixer DACH" on
-  */
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index d8e33b6..4f75a18 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -30,6 +30,8 @@
+ #include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/mfd/tmio.h>
+ #include <linux/platform_device.h>
++#include <linux/regulator/fixed.h>
++#include <linux/regulator/machine.h>
+ #include <linux/smsc911x.h>
+ #include <linux/usb/r8a66597.h>
+ #include <linux/videodev2.h>
+@@ -54,6 +56,12 @@
+ #define GPIO_PCF8575_PORT15	(GPIO_NR + 13)
+ #define GPIO_PCF8575_PORT16	(GPIO_NR + 14)
  
--/*
-- * FIXME !!
-- *
-- * gpio_no_direction
-- * gpio_pull_down
-- * are quick_hack.
-- *
-- * current gpio frame work doesn't have
-- * the method to control only pull up/down/free.
-- * this function should be replaced by correct gpio function
-- */
--static void __init gpio_no_direction(u32 addr)
--{
--	__raw_writeb(0x00, addr);
--}
--
--static void __init gpio_pull_down(u32 addr)
--{
--	u8 data = __raw_readb(addr);
--
--	data &= 0x0F;
--	data |= 0xA0;
--
--	__raw_writeb(data, addr);
--}
--
- /* MTD */
- static struct mtd_partition nor_flash_partitions[] = {
- 	{
-@@ -1458,11 +1432,11 @@ static void __init mackerel_init(void)
++/* Dummy supplies, where voltage doesn't matter */
++static struct regulator_consumer_supply dummy_supplies[] = {
++	REGULATOR_SUPPLY("vddvario", "smsc911x"),
++	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
++};
++
+ /* SMSC 9221 */
+ static struct resource smsc9221_resources[] = {
+ 	[0] = {
+@@ -166,6 +174,13 @@ static struct platform_device lcdc_device = {
+ 	},
+ };
  
- 	/* USBHS0 */
- 	gpio_request(GPIO_FN_VBUS0_0, NULL);
--	gpio_pull_down(GPIO_PORT168CR); /* VBUS0_0 pull down */
-+	gpio_request_pulldown(GPIO_PORT168CR); /* VBUS0_0 pull down */
++/* Fixed 1.8V regulator to be used by MMCIF */
++static struct regulator_consumer_supply fixed1v8_power_consumers[] +{
++	REGULATOR_SUPPLY("vmmc", "sh_mmcif.0"),
++	REGULATOR_SUPPLY("vqmmc", "sh_mmcif.0"),
++};
++
+ /* MMCIF */
+ static struct resource sh_mmcif_resources[] = {
+ 	[0] = {
+@@ -200,6 +215,13 @@ static struct platform_device mmc_device = {
+ 	.resource	= sh_mmcif_resources,
+ };
  
- 	/* USBHS1 */
- 	gpio_request(GPIO_FN_VBUS0_1, NULL);
--	gpio_pull_down(GPIO_PORT167CR); /* VBUS0_1 pull down */
-+	gpio_request_pulldown(GPIO_PORT167CR); /* VBUS0_1 pull down */
- 	gpio_request(GPIO_FN_IDIN_1_113, NULL);
++/* Fixed 2.8V regulators to be used by SDHI0 */
++static struct regulator_consumer_supply fixed2v8_power_consumers[] +{
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
++	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
++};
++
+ /* SDHI */
+ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
+@@ -350,6 +372,12 @@ device_initcall(as3711_enable_lcdc_backlight);
  
- 	/* enable FSI2 port A (ak4643) */
-@@ -1475,8 +1449,8 @@ static void __init mackerel_init(void)
+ static void __init kzm_init(void)
+ {
++	regulator_register_always_on(0, "fixed-1.8V", fixed1v8_power_consumers,
++				     ARRAY_SIZE(fixed1v8_power_consumers), 1800000);
++	regulator_register_always_on(1, "fixed-2.8V", fixed2v8_power_consumers,
++				     ARRAY_SIZE(fixed2v8_power_consumers), 2800000);
++	regulator_register_fixed(2, dummy_supplies, ARRAY_SIZE(dummy_supplies));
++
+ 	sh73a0_pinmux_init();
  
- 	gpio_request(GPIO_PORT9,  NULL);
- 	gpio_request(GPIO_PORT10, NULL);
--	gpio_no_direction(GPIO_PORT9CR);  /* FSIAOBT needs no direction */
--	gpio_no_direction(GPIO_PORT10CR); /* FSIAOLR needs no direction */
-+	gpio_direction_none(GPIO_PORT9CR);  /* FSIAOBT needs no direction */
-+	gpio_direction_none(GPIO_PORT10CR); /* FSIAOLR needs no direction */
- 
- 	intc_set_priority(IRQ_FSI, 3); /* irq priority FSI(3) > SMSC911X(2) */
- 
+ 	/* enable SCIFA4 */
 -- 
-1.7.5.4
+1.7.2.5
 
