@@ -1,64 +1,87 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 20 Jun 2012 17:10:30 +0000
-Subject: [PATCH 1/7 v4] mmc: tmio: don't needlessly enable interrupts during probing
-Message-Id: <1340212236-647-2-git-send-email-g.liakhovetski@gmx.de>
+Date: Tue, 26 Jun 2012 22:32:23 +0000
+Subject: [PATCH 01/10 v3] ARM: mach-shmobile: add 3.3V and 1.8V fixed regulators to mackerel
+Message-Id: <1340749952-8534-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1340212236-647-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1340212236-647-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
-Cc: linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-We don't have to force-enable MMC interrupts in our .probe() method,
-mmc_add_host() will trigger card detection, that will enable all the
-necessary interrupts.
+Drivers for several devices on mackerel, including all SDHI instances, the
+MMCIF controller and the SMSC9220 ethernet chip use regulators to control
+power supply to their devices. MMC drivers need to be able to at least
+retrieve voltage values from supplying regulators, whereas the smsc911x
+driver only enables and disables chip power supplies without further looking
+at them. This patch adds two fixed voltage regulators to describe 1.8V and
+3.3V supplies on the board and a dummy regulator for SMSC9220.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/mmc/host/tmio_mmc_pio.c |   21 +++++++++++----------
- 1 files changed, 11 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 53d1de6..9069d4a 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -950,6 +950,17 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
+v3: added comment about the J22 Vdd jumper
+
+ arch/arm/mach-shmobile/board-mackerel.c |   35 +++++++++++++++++++++++++++++++
+ 1 files changed, 35 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index b577f7c..5b89dc8 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -41,6 +41,8 @@
+ #include <linux/mtd/physmap.h>
+ #include <linux/mtd/sh_flctl.h>
+ #include <linux/pm_clock.h>
++#include <linux/regulator/fixed.h>
++#include <linux/regulator/machine.h>
+ #include <linux/smsc911x.h>
+ #include <linux/sh_intc.h>
+ #include <linux/tca6416_keypad.h>
+@@ -229,6 +231,33 @@ static void __init gpio_pull_down(u32 addr)
+ 	__raw_writeb(data, addr);
+ }
  
- 	_host->sdcard_irq_mask = sd_ctrl_read32(_host, CTL_IRQ_MASK);
- 	tmio_mmc_disable_mmc_irqs(_host, TMIO_MASK_ALL);
++/* Fixed 3.3V and 1.8V regulators to be used by multiple devices */
++static struct regulator_consumer_supply fixed1v8_power_consumers[] +{
++	/*
++	 * J22 on mackerel switches mmcif.0 and sdhi.1 between 1.8V and 3.3V
++	 * Since we cannot support both voltages, we support the default 1.8V
++	 */
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
++	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.1"),
++	REGULATOR_SUPPLY("vmmc", "sh_mmcif.0"),
++	REGULATOR_SUPPLY("vqmmc", "sh_mmcif.0"),
++};
 +
-+	/* Unmask the IRQs we want to know about */
-+	if (!_host->chan_rx)
-+		irq_mask |= TMIO_MASK_READOP;
-+	if (!_host->chan_tx)
-+		irq_mask |= TMIO_MASK_WRITEOP;
-+	if (!_host->native_hotplug)
-+		irq_mask &= ~(TMIO_STAT_CARD_REMOVE | TMIO_STAT_CARD_INSERT);
++static struct regulator_consumer_supply fixed3v3_power_consumers[] +{
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
++	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.2"),
++	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.2"),
++};
 +
-+	_host->sdcard_irq_mask &= ~irq_mask;
++/* Dummy supplies, where voltage doesn't matter */
++static struct regulator_consumer_supply dummy_supplies[] = {
++	REGULATOR_SUPPLY("vddvario", "smsc911x"),
++	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
++};
 +
- 	if (pdata->flags & TMIO_MMC_SDIO_IRQ)
- 		tmio_mmc_enable_sdio_irq(mmc, 0);
+ /* MTD */
+ static struct mtd_partition nor_flash_partitions[] = {
+ 	{
+@@ -1409,6 +1438,12 @@ static void __init mackerel_init(void)
+ 	u32 srcr4;
+ 	struct clk *clk;
  
-@@ -967,16 +978,6 @@ int __devinit tmio_mmc_host_probe(struct tmio_mmc_host **host,
++	regulator_register_always_on(0, "fixed-1.8V", fixed1v8_power_consumers,
++				     ARRAY_SIZE(fixed1v8_power_consumers), 1800000);
++	regulator_register_always_on(1, "fixed-3.3V", fixed3v3_power_consumers,
++				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
++	regulator_register_fixed(2, dummy_supplies, ARRAY_SIZE(dummy_supplies));
++
+ 	/* External clock source */
+ 	clk_set_rate(&sh7372_dv_clki_clk, 27000000);
  
- 	dev_pm_qos_expose_latency_limit(&pdev->dev, 100);
- 
--	/* Unmask the IRQs we want to know about */
--	if (!_host->chan_rx)
--		irq_mask |= TMIO_MASK_READOP;
--	if (!_host->chan_tx)
--		irq_mask |= TMIO_MASK_WRITEOP;
--	if (!_host->native_hotplug)
--		irq_mask &= ~(TMIO_STAT_CARD_REMOVE | TMIO_STAT_CARD_INSERT);
--
--	tmio_mmc_enable_mmc_irqs(_host, irq_mask);
--
- 	if (pdata->flags & TMIO_MMC_USE_GPIO_CD) {
- 		ret = mmc_cd_gpio_request(mmc, pdata->cd_gpio);
- 		if (ret < 0) {
 -- 
 1.7.2.5
 
