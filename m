@@ -1,114 +1,105 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 19 Jun 2012 06:41:05 +0000
-Subject: Re: [PATCH 2/6] misc: Add Renesas Mobile TPU PWM driver
-Message-Id: <CANqRtoReT2F9yhcJPG4euA0TN5dkaFxZL8-RGbWPN5t6JY_Ggw@mail.gmail.com>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date: Wed, 27 Jun 2012 00:59:00 +0000
+Subject: [PATCH 2/3] ARM: mach-shmobile: Convert sh_clk_mstp32_register to sh_clk_mstp_register
+Message-Id: <1340758741-565-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1339773427-29508-3-git-send-email-laurent.pinchart@ideasonboard.com>
-In-Reply-To: <1339773427-29508-3-git-send-email-laurent.pinchart@ideasonboard.com>
+References: <Pine.LNX.4.64.1204162306540.29915@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1204162306540.29915@axis700.grange>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Laurent,
+sh_clk_mstp32_register is deprecated. This convert to sh_clk_mstp_register.
 
-On Sat, Jun 16, 2012 at 12:17 AM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> The Timer Pulse Unit (TPU is a 4-channels 16-bit timer used to generate
-> waveforms. This driver exposes PWM functions through the PWM API for
-> other drivers to use.
->
-> The code is loosely based on the leds-renesas-tpu driver by Magnus Damm
-> and the TPU PWM driver shipped in the Armadillo EVA 800 kernel sources.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> ---
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+---
+ arch/arm/mach-shmobile/clock-r8a7740.c |    2 +-
+ arch/arm/mach-shmobile/clock-r8a7779.c |    2 +-
+ arch/arm/mach-shmobile/clock-sh7367.c  |    2 +-
+ arch/arm/mach-shmobile/clock-sh7372.c  |    2 +-
+ arch/arm/mach-shmobile/clock-sh7377.c  |    2 +-
+ arch/arm/mach-shmobile/clock-sh73a0.c  |    2 +-
+ 6 files changed, 6 insertions(+), 6 deletions(-)
 
-I think this looks good in general, but I have one concern:
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index 26eea5f..29c397a 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -495,7 +495,7 @@ void __init r8a7740_clock_init(u8 md_ck)
+ 		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
+ 
+ 	if (!ret)
+-		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
++		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
+ 
+ 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+ 
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index 7d6e9fe4..339c62c 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -162,7 +162,7 @@ void __init r8a7779_clock_init(void)
+ 		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
+ 
+ 	if (!ret)
+-		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
++		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
+ 
+ 	for (k = 0; !ret && (k < ARRAY_SIZE(late_main_clks)); k++)
+ 		ret = clk_register(late_main_clks[k]);
+diff --git a/arch/arm/mach-shmobile/clock-sh7367.c b/arch/arm/mach-shmobile/clock-sh7367.c
+index 006e7b5..162b791 100644
+--- a/arch/arm/mach-shmobile/clock-sh7367.c
++++ b/arch/arm/mach-shmobile/clock-sh7367.c
+@@ -344,7 +344,7 @@ void __init sh7367_clock_init(void)
+ 		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
+ 
+ 	if (!ret)
+-		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
++		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
+ 
+ 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+ 
+diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
+index 94d1f88..5a2894b 100644
+--- a/arch/arm/mach-shmobile/clock-sh7372.c
++++ b/arch/arm/mach-shmobile/clock-sh7372.c
+@@ -704,7 +704,7 @@ void __init sh7372_clock_init(void)
+ 		ret = sh_clk_div6_reparent_register(div6_reparent_clks, DIV6_REPARENT_NR);
+ 
+ 	if (!ret)
+-		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
++		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
+ 
+ 	for (k = 0; !ret && (k < ARRAY_SIZE(late_main_clks)); k++)
+ 		ret = clk_register(late_main_clks[k]);
+diff --git a/arch/arm/mach-shmobile/clock-sh7377.c b/arch/arm/mach-shmobile/clock-sh7377.c
+index 0798a15..85f2a3e 100644
+--- a/arch/arm/mach-shmobile/clock-sh7377.c
++++ b/arch/arm/mach-shmobile/clock-sh7377.c
+@@ -355,7 +355,7 @@ void __init sh7377_clock_init(void)
+ 		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
+ 
+ 	if (!ret)
+-		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
++		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
+ 
+ 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+ 
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index 472d1f5..f6788be 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -612,7 +612,7 @@ void __init sh73a0_clock_init(void)
+ 		ret = sh_clk_div6_reparent_register(div6_clks, DIV6_NR);
+ 
+ 	if (!ret)
+-		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
++		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
+ 
+ 	for (k = 0; !ret && (k < ARRAY_SIZE(late_main_clks)); k++)
+ 		ret = clk_register(late_main_clks[k]);
+-- 
+1.7.10
 
-> +struct pwm_device {
-> + =A0 =A0 =A0 struct list_head list;
-> + =A0 =A0 =A0 enum tpu_pin_state pin_state;
-> + =A0 =A0 =A0 bool pwm_enabled; =A0 =A0 =A0 =A0 =A0 =A0 =A0 /* Whether th=
-e PWM output is enabled */
-> + =A0 =A0 =A0 bool timer_on; =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0/* Whethe=
-r the timer is running */
-> + =A0 =A0 =A0 bool in_use;
-> +
-> + =A0 =A0 =A0 struct rmob_tpu_pwm_channel_data *pdata;
-> + =A0 =A0 =A0 struct tpu_device *tpu;
-> + =A0 =A0 =A0 unsigned int id; =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0/* Global P=
-WM ID */
-
-So according to the comment above, this is a global identifier.
-
-> +struct pwm_device *pwm_request(int pwm_id, const char *label)
-> +{
-> + =A0 =A0 =A0 struct pwm_device *pwm;
-> +
-> + =A0 =A0 =A0 mutex_lock(&pwm_lock);
-> + =A0 =A0 =A0 list_for_each_entry(pwm, &pwm_list, list) {
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (pwm->id !=3D pwm_id)
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 continue;
-
-Here we check for it...
-
-> +static int __devinit tpu_probe(struct platform_device *pdev)
-> +{
-...
-> + =A0 =A0 =A0 for (i =3D 0; i < ARRAY_SIZE(tpu->pwms); ++i) {
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 struct pwm_device *pwm =3D &tpu->pwms[i];
-> +
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (!pdata->channels[i].pin_gpio &&
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 !pdata->channels[i].pin_gpio_fn)
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 continue;
-> +
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 pwm->tpu =3D tpu;
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 pwm->id =3D tpu->pdev->id * RMOB_TPU_CHANNE=
-L_MAX + i;
-
-And here we assign it based on RMOB_TPU_CHANNEL_MAX.
-
-This snippet is from the kota2 board code:
-
-+static struct led_pwm tpu_pwm_leds[] =3D {
-+       {
-+               .name           =3D "V2513",
-+               .pwm_id         =3D 6,
-+               .max_brightness =3D 1000,
-+       }, {
-+               .name           =3D "V2515",
-+               .pwm_id         =3D 9,
-+               .max_brightness =3D 1000,
-+       }, {
-+               .name           =3D "KEYLED",
-+               .pwm_id         =3D 12,
-+               .max_brightness =3D 1000,
-+       }, {
-+               .name           =3D "V2514",
-+               .pwm_id         =3D 17,
-+               .max_brightness =3D 1000,
-+       },
-+};
-
-So the above "pwm_id" values in the board code depend on
-RMOB_TPU_CHANNEL_MAX being set to 4. In the future I believe we want
-these described via DT.
-
-Which brings me to the my question: How can we expand the number of
-channels but not changing the board code? I predict that the number of
-channels will not remain at 4.
-
-Also, if this is supposed to be a global identifier, can't it clash
-with other ids provided by other drivers?
-
-My simple solution to this problem would be to allow the user to set
-the id via platform data, but I'm not sure if that's what we want
-together with DT.
-
-Also, before we add DT we surely want to make use of PINCTRL for pin
-function support, but we need to rework our SoC PFC code first.
-
-Cheers,
-
-/ magnus
