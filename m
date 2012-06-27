@@ -1,8 +1,10 @@
 From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Wed, 27 Jun 2012 00:59:01 +0000
+Date: Wed, 27 Jun 2012 00:59:42 +0000
 Subject: [PATCH 3/3] sh: clkfwk: Remove sh_clk_mstp32_register function
-Message-Id: <1340758741-565-2-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+Message-Id: <1340758782-605-3-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1340758741-565-2-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+In-Reply-To: <1340758741-565-2-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
