@@ -1,138 +1,144 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 20 Jun 2012 05:02:14 +0000
-Subject: Re: [PATCH 1/5 v4] mmc: sh_mmcif: simplify and use meaningful label names in error-handling
-Message-Id: <20120620050214.GD20030@verge.net.au>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 27 Jun 2012 05:59:58 +0000
+Subject: [PATCH net-next 2/4 v2] net: sh_eth: remove unnecessary members/definitions
+Message-Id: <4FEAA15E.2060402@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1206131515180.17854@axis700.grange>
- <Pine.LNX.4.64.1206131532490.17854@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1206131532490.17854@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>, Mark Brown <broonie@opensource.wolfsonmicro.com>
+To: netdev <netdev@vger.kernel.org>
+Cc: SH-Linux <linux-sh@vger.kernel.org>
 
-On Wed, Jun 13, 2012 at 03:37:15PM +0200, Guennadi Liakhovetski wrote:
-> A check for NULL platform data can be conveniently made in the very
-> beginning of probing. Replace numbered error-handling labels in .probe()
-> with meaningful names to make any future reorganisation simpler.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+This patch removes unnecessary members in sh_th_private.
+This patch also removes unnecessary definitions in sh_eth.h
 
-Reviewed-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ about v2:
+  - rebase the latest net-next.git
 
-> ---
->  drivers/mmc/host/sh_mmcif.c |   41 ++++++++++++++++++++---------------------
->  1 files changed, 20 insertions(+), 21 deletions(-)
-> 
-> diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-> index e32da11..d6ffb05 100644
-> --- a/drivers/mmc/host/sh_mmcif.c
-> +++ b/drivers/mmc/host/sh_mmcif.c
-> @@ -1241,11 +1241,16 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
->  	int ret = 0, irq[2];
->  	struct mmc_host *mmc;
->  	struct sh_mmcif_host *host;
-> -	struct sh_mmcif_plat_data *pd;
-> +	struct sh_mmcif_plat_data *pd = pdev->dev.platform_data;
->  	struct resource *res;
->  	void __iomem *reg;
->  	char clk_name[8];
->  
-> +	if (!pd) {
-> +		dev_err(&pdev->dev, "sh_mmcif plat data error.\n");
-> +		return -ENXIO;
-> +	}
-> +
->  	irq[0] = platform_get_irq(pdev, 0);
->  	irq[1] = platform_get_irq(pdev, 1);
->  	if (irq[0] < 0 || irq[1] < 0) {
-> @@ -1262,16 +1267,11 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
->  		dev_err(&pdev->dev, "ioremap error.\n");
->  		return -ENOMEM;
->  	}
-> -	pd = pdev->dev.platform_data;
-> -	if (!pd) {
-> -		dev_err(&pdev->dev, "sh_mmcif plat data error.\n");
-> -		ret = -ENXIO;
-> -		goto clean_up;
-> -	}
-> +
->  	mmc = mmc_alloc_host(sizeof(struct sh_mmcif_host), &pdev->dev);
->  	if (!mmc) {
->  		ret = -ENOMEM;
-> -		goto clean_up;
-> +		goto ealloch;
->  	}
->  	host		= mmc_priv(mmc);
->  	host->mmc	= mmc;
-> @@ -1283,7 +1283,7 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
->  	if (IS_ERR(host->hclk)) {
->  		dev_err(&pdev->dev, "cannot get clock \"%s\"\n", clk_name);
->  		ret = PTR_ERR(host->hclk);
-> -		goto clean_up1;
-> +		goto eclkget;
->  	}
->  	clk_enable(host->hclk);
->  	host->clk = clk_get_rate(host->hclk);
-> @@ -1313,7 +1313,7 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
->  
->  	ret = pm_runtime_resume(&pdev->dev);
->  	if (ret < 0)
-> -		goto clean_up2;
-> +		goto eresume;
->  
->  	INIT_DELAYED_WORK(&host->timeout_work, mmcif_timeout_work);
->  
-> @@ -1322,17 +1322,17 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
->  	ret = request_threaded_irq(irq[0], sh_mmcif_intr, sh_mmcif_irqt, 0, "sh_mmc:error", host);
->  	if (ret) {
->  		dev_err(&pdev->dev, "request_irq error (sh_mmc:error)\n");
-> -		goto clean_up3;
-> +		goto ereqirq0;
->  	}
->  	ret = request_threaded_irq(irq[1], sh_mmcif_intr, sh_mmcif_irqt, 0, "sh_mmc:int", host);
->  	if (ret) {
->  		dev_err(&pdev->dev, "request_irq error (sh_mmc:int)\n");
-> -		goto clean_up4;
-> +		goto ereqirq1;
->  	}
->  
->  	ret = mmc_add_host(mmc);
->  	if (ret < 0)
-> -		goto clean_up5;
-> +		goto emmcaddh;
->  
->  	dev_pm_qos_expose_latency_limit(&pdev->dev, 100);
->  
-> @@ -1341,20 +1341,19 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
->  		sh_mmcif_readl(host->addr, MMCIF_CE_VERSION) & 0x0000ffff);
->  	return ret;
->  
-> -clean_up5:
-> +emmcaddh:
->  	free_irq(irq[1], host);
-> -clean_up4:
-> +ereqirq1:
->  	free_irq(irq[0], host);
-> -clean_up3:
-> +ereqirq0:
->  	pm_runtime_suspend(&pdev->dev);
-> -clean_up2:
-> +eresume:
->  	pm_runtime_disable(&pdev->dev);
->  	clk_disable(host->hclk);
-> -clean_up1:
-> +eclkget:
->  	mmc_free_host(mmc);
-> -clean_up:
-> -	if (reg)
-> -		iounmap(reg);
+ drivers/net/ethernet/renesas/sh_eth.c |    7 +---
+ drivers/net/ethernet/renesas/sh_eth.h |   69 ---------------------------------
+ 2 files changed, 1 insertions(+), 75 deletions(-)
 
-It looks like this if (reg) was redundant: reg was always non-NULL if
-this path is executed. Good riddance :)
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index cf0bc31..43e76d2 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -941,7 +941,6 @@ static int sh_eth_dev_init(struct net_device *ndev)
+ {
+ 	int ret = 0;
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+-	u_int32_t rx_int_var, tx_int_var;
+ 	u32 val;
 
-> +ealloch:
-> +	iounmap(reg);
->  	return ret;
->  }
+ 	/* Soft Reset */
+@@ -971,9 +970,7 @@ static int sh_eth_dev_init(struct net_device *ndev)
+ 	/* Frame recv control */
+ 	sh_eth_write(ndev, mdp->cd->rmcr_value, RMCR);
+
+-	rx_int_var = mdp->rx_int_var = DESC_I_RINT8 | DESC_I_RINT5;
+-	tx_int_var = mdp->tx_int_var = DESC_I_TINT2;
+-	sh_eth_write(ndev, rx_int_var | tx_int_var, TRSCER);
++	sh_eth_write(ndev, DESC_I_RINT8 | DESC_I_RINT5 | DESC_I_TINT2, TRSCER);
+
+ 	if (mdp->cd->bculr)
+ 		sh_eth_write(ndev, 0x800, BCULR);	/* Burst sycle set */
+@@ -2336,8 +2333,6 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
+
+ 	/* debug message level */
+ 	mdp->msg_enable = SH_ETH_DEF_MSG_ENABLE;
+-	mdp->post_rx = POST_RX >> (devno << 1);
+-	mdp->post_fw = POST_FW >> (devno << 1);
+
+ 	/* read and set MAC address */
+ 	read_mac_address(ndev, pd->mac_addr);
+diff --git a/drivers/net/ethernet/renesas/sh_eth.h b/drivers/net/ethernet/renesas/sh_eth.h
+index 5af3f2a..37a0702 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.h
++++ b/drivers/net/ethernet/renesas/sh_eth.h
+@@ -585,71 +585,6 @@ enum RPADIR_BIT {
+ /* FDR */
+ #define DEFAULT_FDR_INIT	0x00000707
+
+-enum phy_offsets {
+-	PHY_CTRL = 0, PHY_STAT = 1, PHY_IDT1 = 2, PHY_IDT2 = 3,
+-	PHY_ANA = 4, PHY_ANL = 5, PHY_ANE = 6,
+-	PHY_16 = 16,
+-};
+-
+-/* PHY_CTRL */
+-enum PHY_CTRL_BIT {
+-	PHY_C_RESET = 0x8000, PHY_C_LOOPBK = 0x4000, PHY_C_SPEEDSL = 0x2000,
+-	PHY_C_ANEGEN = 0x1000, PHY_C_PWRDN = 0x0800, PHY_C_ISO = 0x0400,
+-	PHY_C_RANEG = 0x0200, PHY_C_DUPLEX = 0x0100, PHY_C_COLT = 0x0080,
+-};
+-#define DM9161_PHY_C_ANEGEN 0	/* auto nego special */
+-
+-/* PHY_STAT */
+-enum PHY_STAT_BIT {
+-	PHY_S_100T4 = 0x8000, PHY_S_100X_F = 0x4000, PHY_S_100X_H = 0x2000,
+-	PHY_S_10T_F = 0x1000, PHY_S_10T_H = 0x0800, PHY_S_ANEGC = 0x0020,
+-	PHY_S_RFAULT = 0x0010, PHY_S_ANEGA = 0x0008, PHY_S_LINK = 0x0004,
+-	PHY_S_JAB = 0x0002, PHY_S_EXTD = 0x0001,
+-};
+-
+-/* PHY_ANA */
+-enum PHY_ANA_BIT {
+-	PHY_A_NP = 0x8000, PHY_A_ACK = 0x4000, PHY_A_RF = 0x2000,
+-	PHY_A_FCS = 0x0400, PHY_A_T4 = 0x0200, PHY_A_FDX = 0x0100,
+-	PHY_A_HDX = 0x0080, PHY_A_10FDX = 0x0040, PHY_A_10HDX = 0x0020,
+-	PHY_A_SEL = 0x001e,
+-};
+-/* PHY_ANL */
+-enum PHY_ANL_BIT {
+-	PHY_L_NP = 0x8000, PHY_L_ACK = 0x4000, PHY_L_RF = 0x2000,
+-	PHY_L_FCS = 0x0400, PHY_L_T4 = 0x0200, PHY_L_FDX = 0x0100,
+-	PHY_L_HDX = 0x0080, PHY_L_10FDX = 0x0040, PHY_L_10HDX = 0x0020,
+-	PHY_L_SEL = 0x001f,
+-};
+-
+-/* PHY_ANE */
+-enum PHY_ANE_BIT {
+-	PHY_E_PDF = 0x0010, PHY_E_LPNPA = 0x0008, PHY_E_NPA = 0x0004,
+-	PHY_E_PRX = 0x0002, PHY_E_LPANEGA = 0x0001,
+-};
+-
+-/* DM9161 */
+-enum PHY_16_BIT {
+-	PHY_16_BP4B45 = 0x8000, PHY_16_BPSCR = 0x4000, PHY_16_BPALIGN = 0x2000,
+-	PHY_16_BP_ADPOK = 0x1000, PHY_16_Repeatmode = 0x0800,
+-	PHY_16_TXselect = 0x0400,
+-	PHY_16_Rsvd = 0x0200, PHY_16_RMIIEnable = 0x0100,
+-	PHY_16_Force100LNK = 0x0080,
+-	PHY_16_APDLED_CTL = 0x0040, PHY_16_COLLED_CTL = 0x0020,
+-	PHY_16_RPDCTR_EN = 0x0010,
+-	PHY_16_ResetStMch = 0x0008, PHY_16_PreamSupr = 0x0004,
+-	PHY_16_Sleepmode = 0x0002,
+-	PHY_16_RemoteLoopOut = 0x0001,
+-};
+-
+-#define POST_RX		0x08
+-#define POST_FW		0x04
+-#define POST0_RX	(POST_RX)
+-#define POST0_FW	(POST_FW)
+-#define POST1_RX	(POST_RX >> 2)
+-#define POST1_FW	(POST_FW >> 2)
+-#define POST_ALL	(POST0_RX | POST0_FW | POST1_RX | POST1_FW)
+-
+ /* ARSTR */
+ enum ARSTR_BIT { ARSTR_ARSTR = 0x00000001, };
+
+@@ -786,10 +721,6 @@ struct sh_eth_private {
+ 	int msg_enable;
+ 	int speed;
+ 	int duplex;
+-	u32 rx_int_var, tx_int_var;	/* interrupt control variables */
+-	char post_rx;		/* POST receive */
+-	char post_fw;		/* POST forward */
+-	struct net_device_stats tsu_stats;	/* TSU forward status */
+ 	int port;		/* for TSU */
+ 	int vlan_num_ids;	/* for VLAN tag filter */
+
+-- 
+1.7.1
