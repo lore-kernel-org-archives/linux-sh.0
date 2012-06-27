@@ -1,7 +1,7 @@
 From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Wed, 27 Jun 2012 00:59:00 +0000
+Date: Wed, 27 Jun 2012 00:59:41 +0000
 Subject: [PATCH 2/3] ARM: mach-shmobile: Convert sh_clk_mstp32_register to sh_clk_mstp_register
-Message-Id: <1340758741-565-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+Message-Id: <1340758782-605-2-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1204162306540.29915@axis700.grange>
 In-Reply-To: <Pine.LNX.4.64.1204162306540.29915@axis700.grange>
