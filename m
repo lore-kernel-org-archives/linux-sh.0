@@ -1,42 +1,98 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 20 Jun 2012 13:06:36 +0000
-Subject: Re: [PATCH] mmc: sh_mmcif: Support MMC_SLEEP_AWAKE command
-Message-Id: <2609967.tcqa2xCl8R@avalon>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Wed, 27 Jun 2012 06:00:01 +0000
+Subject: [PATCH net-next 3/4 v2] net: sh_eth: fix up the buffer pointers
+Message-Id: <4FEAA161.4030001@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1339534569-27923-1-git-send-email-laurent.pinchart@ideasonboard.com> <CAPDyKFo_my_+xQOKYooNawtJ1b3Ncm2osNg9TMN8YpftXfr+Jg@mail.gmail.com>
-In-Reply-To: <CAPDyKFo_my_+xQOKYooNawtJ1b3Ncm2osNg9TMN8YpftXfr+Jg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ulf Hansson <ulf.hansson@linaro.org>
-Cc: linux-mmc@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon Horman <horms@verge.net.au>, linux-sh@vger.kernel.org, Saugata Das <saugata.das@linaro.org>, Girish Shivananjappa <girish.shivananjappa@linaro.org>
+To: netdev <netdev@vger.kernel.org>
+Cc: SH-Linux <linux-sh@vger.kernel.org>
 
-Hi Ulf,
+After freeing the buffer, the driver should change the value of
+the pointer to NULL.
 
-On Wednesday 20 June 2012 13:54:33 Ulf Hansson wrote:
-> Hi Laurent,
-> 
-> Your issue seem more related to a mmc protocol problem. Likely caused
-> by a bad patch for eMMC 4.5 poweroff notify. The patch I refer to is:
-> "mmc: core: Fix PowerOff Notify suspend/resume"
-> 
-> You may try to revert this patch and see if the same problem occurs for you.
-> 
-> We are trying to fix the issue inserted by the above commit in a patch
-> named: "MMC-4.5 Power OFF Notify Rework", please have a look if you have
-> the time.
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ about v2:
+  - rebase the latest net-next.git
 
-I think the two issues are othorgonal (but please feel free to tell me if 
-there's something I'm missing).
+ drivers/net/ethernet/renesas/sh_eth.c |   31 ++++++++++++++++++++++++-------
+ 1 files changed, 24 insertions(+), 7 deletions(-)
 
-The MMCIF controller driver rejects the MMC_SLEEP_AWAKE command 
-unconditionally, even though it should be accepted, because it happens to 
-share the command number with an SDIO command (SD_IO_SEND_OP_COND) used to 
-probe SDIO support. My patch fixes this by accepting the MMC_SLEEP_AWAKE 
-command but still rejecting the SD_IO_SEND_OP_COND command.
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 43e76d2..2dd2ff5 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -788,6 +788,7 @@ static void sh_eth_ring_free(struct net_device *ndev)
+ 		}
+ 	}
+ 	kfree(mdp->rx_skbuff);
++	mdp->rx_skbuff = NULL;
+
+ 	/* Free Tx skb ringbuffer */
+ 	if (mdp->tx_skbuff) {
+@@ -797,6 +798,7 @@ static void sh_eth_ring_free(struct net_device *ndev)
+ 		}
+ 	}
+ 	kfree(mdp->tx_skbuff);
++	mdp->tx_skbuff = NULL;
+ }
+
+ /* format skb and descriptor buffer */
+@@ -933,10 +935,31 @@ desc_ring_free:
+ skb_ring_free:
+ 	/* Free Rx and Tx skb ring buffer */
+ 	sh_eth_ring_free(ndev);
++	mdp->tx_ring = NULL;
++	mdp->rx_ring = NULL;
+
+ 	return ret;
+ }
+
++static void sh_eth_free_dma_buffer(struct sh_eth_private *mdp)
++{
++	int ringsize;
++
++	if (mdp->rx_ring) {
++		ringsize = sizeof(struct sh_eth_rxdesc) * RX_RING_SIZE;
++		dma_free_coherent(NULL, ringsize, mdp->rx_ring,
++				  mdp->rx_desc_dma);
++		mdp->rx_ring = NULL;
++	}
++
++	if (mdp->tx_ring) {
++		ringsize = sizeof(struct sh_eth_txdesc) * TX_RING_SIZE;
++		dma_free_coherent(NULL, ringsize, mdp->tx_ring,
++				  mdp->tx_desc_dma);
++		mdp->tx_ring = NULL;
++	}
++}
++
+ static int sh_eth_dev_init(struct net_device *ndev)
+ {
+ 	int ret = 0;
+@@ -1677,7 +1700,6 @@ static int sh_eth_start_xmit(struct sk_buff *skb, struct net_device *ndev)
+ static int sh_eth_close(struct net_device *ndev)
+ {
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
+-	int ringsize;
+
+ 	netif_stop_queue(ndev);
+
+@@ -1700,12 +1722,7 @@ static int sh_eth_close(struct net_device *ndev)
+ 	sh_eth_ring_free(ndev);
+
+ 	/* free DMA buffer */
+-	ringsize = sizeof(struct sh_eth_rxdesc) * RX_RING_SIZE;
+-	dma_free_coherent(NULL, ringsize, mdp->rx_ring, mdp->rx_desc_dma);
+-
+-	/* free DMA buffer */
+-	ringsize = sizeof(struct sh_eth_txdesc) * TX_RING_SIZE;
+-	dma_free_coherent(NULL, ringsize, mdp->tx_ring, mdp->tx_desc_dma);
++	sh_eth_free_dma_buffer(mdp);
+
+ 	pm_runtime_put_sync(&mdp->pdev->dev);
 
 -- 
-Regards,
-
-Laurent Pinchart
-
+1.7.1
