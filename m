@@ -1,44 +1,51 @@
-From: Paul Bolle <pebolle@tiscali.nl>
-Date: Tue, 05 Jun 2012 10:16:29 +0000
-Subject: [PATCH v2] ARM: mach-shmobile: set i2c_board_info.type once
-Message-Id: <1338891389.4971.45.camel@x61.thuisdomein>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Thu, 28 Jun 2012 09:22:13 +0000
+Subject: [GIT PULL] sh fixes for 3.5-rc5
+Message-Id: <20120628092213.GB28162@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-tsc_device (of struct i2cboard_info) has its "type" member set to
-"tsc2007" twice. First through the I2C_BOARD_INFO macro and then
-directly. Drop the superfluous second instance.
+The following changes since commit 47b514cd476db2eca066a2ad31501b079d6c9cce:
 
-Signed-off-by: Paul Bolle <pebolle@tiscali.nl>
----
-0) v1 was called "Drop superfluous setting of i2c_board_info.type". v2
-drops the mach-imx bits. Those were already fixed with a patch called
-"ARM: imx: only specify i2c device type once" by Uwe Kleine-K=C3=B6nig.
-Sascha Hauer has committed that patch to some unknown to me branch.
-Rebased onto v3.5-rc1.
+  Merge tag 'usb-3.5-rc5' of git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb (2012-06-27 12:54:05 -0700)
 
-1) Still entirely untested. I'm unsure what toolchain is needed to
-compile this and I'm certain that I don't have the hardware.
+are available in the git repository at:
 
- arch/arm/mach-shmobile/board-ap4evb.c |    1 -
- 1 files changed, 0 insertions(+), 1 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile=
-/board-ap4evb.c
-index ace6024..b9f3122 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -1197,7 +1197,6 @@ static struct tsc2007_platform_data tsc2007_info =3D {
-=20
- static struct i2c_board_info tsc_device =3D {
- 	I2C_BOARD_INFO("tsc2007", 0x48),
--	.type		=3D "tsc2007",
- 	.platform_data	=3D &tsc2007_info,
- 	/*.irq is selected on ap4evb_init */
- };
---=20
-1.7.7.6
+  git://github.com/pmundt/linux-sh.git tags/sh-for-linus
 
+for you to fetch changes up to e9bcd470d814473c31ffc5d09e249396a2196ad4:
+
+  Merge branches 'sh/urgent' and 'sh/trivial' into sh-fixes-for-linus (2012-06-28 16:46:13 +0900)
+
+----------------------------------------------------------------
+
+SuperH fixes for 3.5-rc5
+
+----------------------------------------------------------------
+Guennadi Liakhovetski (1):
+      sh: kfr2r09: fix compile breakage
+
+Nobuhiro Iwamatsu (1):
+      sh: Convert sh_clk_mstp32_register to sh_clk_mstp_register
+
+Paul Mundt (1):
+      Merge branches 'sh/urgent' and 'sh/trivial' into sh-fixes-for-linus
+
+ arch/sh/boards/mach-kfr2r09/setup.c    | 4 ++--
+ arch/sh/drivers/pci/pcie-sh7786.c      | 2 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7343.c | 2 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7366.c | 2 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7722.c | 2 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7723.c | 2 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7724.c | 2 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7734.c | 2 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7757.c | 2 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7785.c | 2 +-
+ arch/sh/kernel/cpu/sh4a/clock-sh7786.c | 2 +-
+ arch/sh/kernel/cpu/sh4a/clock-shx3.c   | 2 +-
+ 12 files changed, 13 insertions(+), 13 deletions(-)
