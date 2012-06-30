@@ -1,148 +1,172 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Sat, 30 Jun 2012 23:12:10 +0000
-Subject: [PATCH/RFC] ARM: mach-shmobile: enable power switching on SDHI0 and SDHI2 on kzm9g
-Message-Id: <Pine.LNX.4.64.1207010101280.24651@axis700.grange>
+Date: Sat, 30 Jun 2012 23:39:53 +0000
+Subject: Re: [PATCH/RFC] ARM: mach-shmobile: enable power switching on SDHI0 and SDHI2 on kzm9g
+Message-Id: <Pine.LNX.4.64.1207010135570.24651@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1207010101280.24651@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1207010101280.24651@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On the kzm9g board power for SDHI0 and SDHI2 interfaces is controlled by
-GPIOs. Use a switchable fixed regulator for them.
+On Sun, 1 Jul 2012, Guennadi Liakhovetski wrote:
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> On the kzm9g board power for SDHI0 and SDHI2 interfaces is controlled by
+> GPIOs. Use a switchable fixed regulator for them.
+
+Hm, no, this is not the whole truth: this will leave both SDHI0 and SDHI2 
+slots unpowered is the fixed regulator is unavailable. This shall only be 
+applied after we "select CONFIG_REGULATOR_FIXED_VOLTAGE" so, don't think 
+we want this for 3.6. Still would be nice to know, whether those GPIOs can 
+be used for power switching at all.
+
+Thanks
+Guennadi
+
+> 
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> ---
+> 
+> This is NOT for immediate application. It doesn't have to go to 3.6. If we 
+> manage to confirm my guess and test this - we _could_ take it to 3.6. If 
+> not - it can absolutely wait for 3.7. This patch is a _guess_ - in the 
+> kzm9g init function GPIOs 15 and 14 are configured as output fixed high in 
+> SDHI0 and SDHI2 sections respectively with a comment "power." So, my guess 
+> was, that these GPIOs can also actually switch card power on those slots. 
+> Since I have no datasheet or schematics for that board or the board 
+> itself, I cannot confirm that my guess. Since Morimoto-san has worked 
+> pretty intensively with this board, maybe he could verify that, but again 
+> - nothing urgent.
+> 
+>  arch/arm/mach-shmobile/board-kzm9g.c |   69 +++++++++++++++++++++++++++++-----
+>  1 files changed, 59 insertions(+), 10 deletions(-)
+> 
+> diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+> index 53b7ea9..2230706 100644
+> --- a/arch/arm/mach-shmobile/board-kzm9g.c
+> +++ b/arch/arm/mach-shmobile/board-kzm9g.c
+> @@ -373,13 +373,35 @@ static struct platform_device mmc_device = {
+>  	.resource	= sh_mmcif_resources,
+>  };
+>  
+> -/* Fixed 2.8V regulators to be used by SDHI0 and SDHI2 */
+> -static struct regulator_consumer_supply fixed2v8_power_consumers[] > +/* Fixed 2.8V regulators to be used by SDHI0 */
+> +static struct regulator_consumer_supply sdhi0_power_consumers[] >  {
+>  	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
+>  	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
+> -	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.2"),
+> -	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.2"),
+> +};
+> +
+> +static struct regulator_init_data sdhi0_power_init_data = {
+> +	.constraints = {
+> +		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
+> +	},
+> +	.num_consumer_supplies  = ARRAY_SIZE(sdhi0_power_consumers),
+> +	.consumer_supplies      = sdhi0_power_consumers,
+> +};
+> +
+> +static struct fixed_voltage_config sdhi0_power_info = {
+> +	.supply_name = "SDHI0 SD/MMC Vdd",
+> +	.microvolts = 2800000,
+> +	.gpio = GPIO_PORT15,
+> +	.enable_high = 1,
+> +	.init_data = &sdhi0_power_init_data,
+> +};
+> +
+> +static struct platform_device sdhi0_power = {
+> +	.name = "reg-fixed-voltage",
+> +	.id   = 1,
+> +	.dev  = {
+> +		.platform_data = &sdhi0_power_info,
+> +	},
+>  };
+>  
+>  /* SDHI */
+> @@ -422,6 +444,37 @@ static struct platform_device sdhi0_device = {
+>  	},
+>  };
+>  
+> +/* Fixed 2.8V regulators to be used by SDHI2 */
+> +static struct regulator_consumer_supply sdhi2_power_consumers[] > +{
+> +	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.2"),
+> +	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.2"),
+> +};
+> +
+> +static struct regulator_init_data sdhi2_power_init_data = {
+> +	.constraints = {
+> +		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
+> +	},
+> +	.num_consumer_supplies  = ARRAY_SIZE(sdhi2_power_consumers),
+> +	.consumer_supplies      = sdhi2_power_consumers,
+> +};
+> +
+> +static struct fixed_voltage_config sdhi2_power_info = {
+> +	.supply_name = "SDHI2 SD/MMC Vdd",
+> +	.microvolts = 2800000,
+> +	.gpio = GPIO_PORT14,
+> +	.enable_high = 1,
+> +	.init_data = &sdhi2_power_init_data,
+> +};
+> +
+> +static struct platform_device sdhi2_power = {
+> +	.name = "reg-fixed-voltage",
+> +	.id   = 3,
+> +	.dev  = {
+> +		.platform_data = &sdhi2_power_info,
+> +	},
+> +};
+> +
+>  /* Micro SD */
+>  static struct sh_mobile_sdhi_info sdhi2_info = {
+>  	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
+> @@ -576,6 +629,8 @@ static struct i2c_board_info i2c3_devices[] = {
+>  };
+>  
+>  static struct platform_device *kzm_devices[] __initdata = {
+> +	&sdhi0_power,
+> +	&sdhi2_power,
+>  	&smsc_device,
+>  	&usb_host_device,
+>  	&usbhs_device,
+> @@ -645,8 +700,6 @@ static void __init kzm_init(void)
+>  {
+>  	regulator_register_always_on(0, "fixed-1.8V", fixed1v8_power_consumers,
+>  				     ARRAY_SIZE(fixed1v8_power_consumers), 1800000);
+> -	regulator_register_always_on(1, "fixed-2.8V", fixed2v8_power_consumers,
+> -				     ARRAY_SIZE(fixed2v8_power_consumers), 2800000);
+>  	regulator_register_fixed(2, dummy_supplies, ARRAY_SIZE(dummy_supplies));
+>  
+>  	sh73a0_pinmux_init();
+> @@ -723,8 +776,6 @@ static void __init kzm_init(void)
+>  	gpio_request(GPIO_FN_SDHID0_1,		NULL);
+>  	gpio_request(GPIO_FN_SDHID0_0,		NULL);
+>  	gpio_request(GPIO_FN_SDHI0_VCCQ_MC0_ON,	NULL);
+> -	gpio_request(GPIO_PORT15, NULL);
+> -	gpio_direction_output(GPIO_PORT15, 1); /* power */
+>  
+>  	/* enable Micro SD */
+>  	gpio_request(GPIO_FN_SDHID2_0,		NULL);
+> @@ -733,8 +784,6 @@ static void __init kzm_init(void)
+>  	gpio_request(GPIO_FN_SDHID2_3,		NULL);
+>  	gpio_request(GPIO_FN_SDHICMD2,		NULL);
+>  	gpio_request(GPIO_FN_SDHICLK2,		NULL);
+> -	gpio_request(GPIO_PORT14, NULL);
+> -	gpio_direction_output(GPIO_PORT14, 1); /* power */
+>  
+>  	/* I2C 3 */
+>  	gpio_request(GPIO_FN_PORT27_I2C_SCL3, NULL);
+> -- 
+> 1.7.2.5
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+
 ---
-
-This is NOT for immediate application. It doesn't have to go to 3.6. If we 
-manage to confirm my guess and test this - we _could_ take it to 3.6. If 
-not - it can absolutely wait for 3.7. This patch is a _guess_ - in the 
-kzm9g init function GPIOs 15 and 14 are configured as output fixed high in 
-SDHI0 and SDHI2 sections respectively with a comment "power." So, my guess 
-was, that these GPIOs can also actually switch card power on those slots. 
-Since I have no datasheet or schematics for that board or the board 
-itself, I cannot confirm that my guess. Since Morimoto-san has worked 
-pretty intensively with this board, maybe he could verify that, but again 
-- nothing urgent.
-
- arch/arm/mach-shmobile/board-kzm9g.c |   69 +++++++++++++++++++++++++++++-----
- 1 files changed, 59 insertions(+), 10 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index 53b7ea9..2230706 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -373,13 +373,35 @@ static struct platform_device mmc_device = {
- 	.resource	= sh_mmcif_resources,
- };
- 
--/* Fixed 2.8V regulators to be used by SDHI0 and SDHI2 */
--static struct regulator_consumer_supply fixed2v8_power_consumers[] +/* Fixed 2.8V regulators to be used by SDHI0 */
-+static struct regulator_consumer_supply sdhi0_power_consumers[]  {
- 	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
- 	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
--	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.2"),
--	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.2"),
-+};
-+
-+static struct regulator_init_data sdhi0_power_init_data = {
-+	.constraints = {
-+		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
-+	},
-+	.num_consumer_supplies  = ARRAY_SIZE(sdhi0_power_consumers),
-+	.consumer_supplies      = sdhi0_power_consumers,
-+};
-+
-+static struct fixed_voltage_config sdhi0_power_info = {
-+	.supply_name = "SDHI0 SD/MMC Vdd",
-+	.microvolts = 2800000,
-+	.gpio = GPIO_PORT15,
-+	.enable_high = 1,
-+	.init_data = &sdhi0_power_init_data,
-+};
-+
-+static struct platform_device sdhi0_power = {
-+	.name = "reg-fixed-voltage",
-+	.id   = 1,
-+	.dev  = {
-+		.platform_data = &sdhi0_power_info,
-+	},
- };
- 
- /* SDHI */
-@@ -422,6 +444,37 @@ static struct platform_device sdhi0_device = {
- 	},
- };
- 
-+/* Fixed 2.8V regulators to be used by SDHI2 */
-+static struct regulator_consumer_supply sdhi2_power_consumers[] +{
-+	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.2"),
-+	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.2"),
-+};
-+
-+static struct regulator_init_data sdhi2_power_init_data = {
-+	.constraints = {
-+		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
-+	},
-+	.num_consumer_supplies  = ARRAY_SIZE(sdhi2_power_consumers),
-+	.consumer_supplies      = sdhi2_power_consumers,
-+};
-+
-+static struct fixed_voltage_config sdhi2_power_info = {
-+	.supply_name = "SDHI2 SD/MMC Vdd",
-+	.microvolts = 2800000,
-+	.gpio = GPIO_PORT14,
-+	.enable_high = 1,
-+	.init_data = &sdhi2_power_init_data,
-+};
-+
-+static struct platform_device sdhi2_power = {
-+	.name = "reg-fixed-voltage",
-+	.id   = 3,
-+	.dev  = {
-+		.platform_data = &sdhi2_power_info,
-+	},
-+};
-+
- /* Micro SD */
- static struct sh_mobile_sdhi_info sdhi2_info = {
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
-@@ -576,6 +629,8 @@ static struct i2c_board_info i2c3_devices[] = {
- };
- 
- static struct platform_device *kzm_devices[] __initdata = {
-+	&sdhi0_power,
-+	&sdhi2_power,
- 	&smsc_device,
- 	&usb_host_device,
- 	&usbhs_device,
-@@ -645,8 +700,6 @@ static void __init kzm_init(void)
- {
- 	regulator_register_always_on(0, "fixed-1.8V", fixed1v8_power_consumers,
- 				     ARRAY_SIZE(fixed1v8_power_consumers), 1800000);
--	regulator_register_always_on(1, "fixed-2.8V", fixed2v8_power_consumers,
--				     ARRAY_SIZE(fixed2v8_power_consumers), 2800000);
- 	regulator_register_fixed(2, dummy_supplies, ARRAY_SIZE(dummy_supplies));
- 
- 	sh73a0_pinmux_init();
-@@ -723,8 +776,6 @@ static void __init kzm_init(void)
- 	gpio_request(GPIO_FN_SDHID0_1,		NULL);
- 	gpio_request(GPIO_FN_SDHID0_0,		NULL);
- 	gpio_request(GPIO_FN_SDHI0_VCCQ_MC0_ON,	NULL);
--	gpio_request(GPIO_PORT15, NULL);
--	gpio_direction_output(GPIO_PORT15, 1); /* power */
- 
- 	/* enable Micro SD */
- 	gpio_request(GPIO_FN_SDHID2_0,		NULL);
-@@ -733,8 +784,6 @@ static void __init kzm_init(void)
- 	gpio_request(GPIO_FN_SDHID2_3,		NULL);
- 	gpio_request(GPIO_FN_SDHICMD2,		NULL);
- 	gpio_request(GPIO_FN_SDHICLK2,		NULL);
--	gpio_request(GPIO_PORT14, NULL);
--	gpio_direction_output(GPIO_PORT14, 1); /* power */
- 
- 	/* I2C 3 */
- 	gpio_request(GPIO_FN_PORT27_I2C_SCL3, NULL);
--- 
-1.7.2.5
-
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
