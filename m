@@ -1,55 +1,112 @@
-From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
-Date: Tue, 24 Jul 2012 01:54:24 +0000
-Subject: Re: [PATCH v2] ARM: mach-shmobile: Add compilation support for dtbs using 'make dtbs'
-Message-Id: <500E0050.3090303@kmckk.co.jp>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Mon, 02 Jul 2012 21:59:25 +0000
+Subject: Re: [PATCH 2/3] ARM: mach-shmobile: Convert sh_clk_mstp32_register to sh_clk_mstp_register
+Message-Id: <201207030001.13310.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1343041036-13543-1-git-send-email-koba@kmckk.co.jp>
-In-Reply-To: <1343041036-13543-1-git-send-email-koba@kmckk.co.jp>
+References: <Pine.LNX.4.64.1204162306540.29915@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1204162306540.29915@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Thank you Simon-san. I am sorry about confusion.
+On Wednesday, June 27, 2012, Nobuhiro Iwamatsu wrote:
+> sh_clk_mstp32_register is deprecated. This convert to sh_clk_mstp_register.
+> 
+> Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
-(2012/07/24 10:21), Simon Horman wrote:
-> On Mon, Jul 23, 2012 at 07:57:16PM +0900, Tetsuyuki Kobayshi wrote:
->> From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
->>
->> Add compilation support for dtbs using 'make dtbs'
->>
->> Cc: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
->> Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->> Cc: Simon Horman <horms@verge.net.au>
->> Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
->> ---
->> Sorry, I found mistake. it should be dtb insted of dts.
->>
->> Changes for v2
->> - replace dts to dtb in the 3rd and 4th line of patch.
->
-> This version works for me.
->
-> Tested-by: Simon Horman <horms@verge.net.au>
->
->>
->>   arch/arm/mach-shmobile/Makefile.boot |    4 ++++
->>   1 file changed, 4 insertions(+)
->>
->> diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
->> index 498efd9..5e41019 100644
->> --- a/arch/arm/mach-shmobile/Makefile.boot
->> +++ b/arch/arm/mach-shmobile/Makefile.boot
->> @@ -7,3 +7,7 @@ __ZRELADDR	:= $(shell /bin/bash -c 'printf "0x%08x" \
->>   #
->>   #params_phys-y (Instead: Pass atags pointer in r2)
->>   #initrd_phys-y (Instead: Use compiled-in initramfs)
->> +
->> +dtb-$(CONFIG_MACH_KZM9G) += sh73a0-kzm9g.dtb
->> +dtb-$(CONFIG_MACH_KZM9D) += emev2-kzm9d.dtb
->> +dtb-$(CONFIG_MACH_ARMADILLO800EVA) += r8a7740-armadillo800eva.dtb
->> --
->> 1.7.9.5
->>
->
+Applied to the soc-core branch of the renesas.git tree.
+
+Thanks,
+Rafael
+
+
+> ---
+>  arch/arm/mach-shmobile/clock-r8a7740.c |    2 +-
+>  arch/arm/mach-shmobile/clock-r8a7779.c |    2 +-
+>  arch/arm/mach-shmobile/clock-sh7367.c  |    2 +-
+>  arch/arm/mach-shmobile/clock-sh7372.c  |    2 +-
+>  arch/arm/mach-shmobile/clock-sh7377.c  |    2 +-
+>  arch/arm/mach-shmobile/clock-sh73a0.c  |    2 +-
+>  6 files changed, 6 insertions(+), 6 deletions(-)
+> 
+> diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+> index 26eea5f..29c397a 100644
+> --- a/arch/arm/mach-shmobile/clock-r8a7740.c
+> +++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+> @@ -495,7 +495,7 @@ void __init r8a7740_clock_init(u8 md_ck)
+>  		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
+>  
+>  	if (!ret)
+> -		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
+> +		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
+>  
+>  	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+>  
+> diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+> index 7d6e9fe4..339c62c 100644
+> --- a/arch/arm/mach-shmobile/clock-r8a7779.c
+> +++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+> @@ -162,7 +162,7 @@ void __init r8a7779_clock_init(void)
+>  		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
+>  
+>  	if (!ret)
+> -		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
+> +		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
+>  
+>  	for (k = 0; !ret && (k < ARRAY_SIZE(late_main_clks)); k++)
+>  		ret = clk_register(late_main_clks[k]);
+> diff --git a/arch/arm/mach-shmobile/clock-sh7367.c b/arch/arm/mach-shmobile/clock-sh7367.c
+> index 006e7b5..162b791 100644
+> --- a/arch/arm/mach-shmobile/clock-sh7367.c
+> +++ b/arch/arm/mach-shmobile/clock-sh7367.c
+> @@ -344,7 +344,7 @@ void __init sh7367_clock_init(void)
+>  		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
+>  
+>  	if (!ret)
+> -		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
+> +		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
+>  
+>  	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+>  
+> diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
+> index 94d1f88..5a2894b 100644
+> --- a/arch/arm/mach-shmobile/clock-sh7372.c
+> +++ b/arch/arm/mach-shmobile/clock-sh7372.c
+> @@ -704,7 +704,7 @@ void __init sh7372_clock_init(void)
+>  		ret = sh_clk_div6_reparent_register(div6_reparent_clks, DIV6_REPARENT_NR);
+>  
+>  	if (!ret)
+> -		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
+> +		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
+>  
+>  	for (k = 0; !ret && (k < ARRAY_SIZE(late_main_clks)); k++)
+>  		ret = clk_register(late_main_clks[k]);
+> diff --git a/arch/arm/mach-shmobile/clock-sh7377.c b/arch/arm/mach-shmobile/clock-sh7377.c
+> index 0798a15..85f2a3e 100644
+> --- a/arch/arm/mach-shmobile/clock-sh7377.c
+> +++ b/arch/arm/mach-shmobile/clock-sh7377.c
+> @@ -355,7 +355,7 @@ void __init sh7377_clock_init(void)
+>  		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
+>  
+>  	if (!ret)
+> -		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
+> +		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
+>  
+>  	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+>  
+> diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+> index 472d1f5..f6788be 100644
+> --- a/arch/arm/mach-shmobile/clock-sh73a0.c
+> +++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+> @@ -612,7 +612,7 @@ void __init sh73a0_clock_init(void)
+>  		ret = sh_clk_div6_reparent_register(div6_clks, DIV6_NR);
+>  
+>  	if (!ret)
+> -		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
+> +		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
+>  
+>  	for (k = 0; !ret && (k < ARRAY_SIZE(late_main_clks)); k++)
+>  		ret = clk_register(late_main_clks[k]);
+> 
 
