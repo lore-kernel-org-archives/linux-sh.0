@@ -1,50 +1,163 @@
-From: Gerald Schaefer <gerald.schaefer@de.ibm.com>
-Date: Tue, 31 Jul 2012 12:22:51 +0000
-Subject: Re: [RFC PATCH v5 16/19] memory-hotplug: free memmap of sparse-vmemmap
-Message-Id: <20120731142251.5b2cae37@thinkpad>
+From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+Date: Mon, 02 Jul 2012 06:34:31 +0000
+Subject: Re: [PATCH/RFC] ARM: mach-shmobile: enable power switching on SDHI0 and SDHI2 on kzm9g
+Message-Id: <4FF140F7.9050101@kmckk.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <50126B83.3050201@cn.fujitsu.com>
-	<50126EBE.1020006@cn.fujitsu.com>
-In-Reply-To: <50126EBE.1020006@cn.fujitsu.com>
+References: <Pine.LNX.4.64.1207010101280.24651@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1207010101280.24651@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wen Congyang <wency@cn.fujitsu.com>
-Cc: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, Yasuaki ISIMATU <isimatu.yasuaki@jp.fujitsu.com>
+To: linux-sh@vger.kernel.org
 
-On Fri, 27 Jul 2012 18:34:38 +0800
-Wen Congyang <wency@cn.fujitsu.com> wrote:
+Hello, Guennadi
 
-> From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-> 
-> All pages of virtual mapping in removed memory cannot be freed, since
-> some pages used as PGD/PUD includes not only removed memory but also
-> other memory. So the patch checks whether page can be freed or not.
-> 
-> How to check whether page can be freed or not?
->  1. When removing memory, the page structs of the revmoved memory are
-> filled with 0FD.
->  2. All page structs are filled with 0xFD on PT/PMD, PT/PMD can be
-> cleared. In this case, the page used as PT/PMD can be freed.
-> 
-> Applying patch, __remove_section() of CONFIG_SPARSEMEM_VMEMMAP is
-> integrated into one. So __remove_section() of
-> CONFIG_SPARSEMEM_VMEMMAP is deleted.
+This is Tetsuyuki Kobayashi.  I have a KZM-A9-GT board (kzm9g).
+According to the board specification (written in Japanese),
+GPIOs 15 and 14 are connected to VDD of connector through PowerSW, 
+resptctively.
 
-There should also be generic or dummy versions of the functions
-vmemmap_free_bootmem(), vmemmap_kfree() and
-register_page_bootmem_memmap(). It doesn't compile on other
-archtitectures than x86 as it is now:
+I tried this patch with CONFIG_REGULATOR_FIXED_VOLTAGE=y, But
+both SD card and micro SD card are not recognized (as if they are
+not inserted).
+I guess something missing. Please tell me how to test this patch
+so that I will try again.
 
-mm/built-in.o: In function `sparse_remove_one_section':
-(.text+0x49fa6): undefined reference to `vmemmap_free_bootmem'
-mm/built-in.o: In function `sparse_remove_one_section':
-(.text+0x49fcc): undefined reference to `vmemmap_kfree'
-mm/built-in.o: In function `register_page_bootmem_info_node':
-(.text+0x57c06): undefined reference to `register_page_bootmem_memmap'
-mm/built-in.o: In function `sparse_add_one_section':
-(.meminit.text+0x2506): undefined reference to `vmemmap_kfree'
-mm/built-in.o: In function `sparse_add_one_section':
-(.meminit.text+0x2528): undefined reference to `vmemmap_kfree'
-make: *** [vmlinux] Error 1
+
+(2012/07/01 8:12), Guennadi Liakhovetski wrote:
+> On the kzm9g board power for SDHI0 and SDHI2 interfaces is controlled by
+> GPIOs. Use a switchable fixed regulator for them.
+>
+> Signed-off-by: Guennadi Liakhovetski<g.liakhovetski@gmx.de>
+> ---
+>
+> This is NOT for immediate application. It doesn't have to go to 3.6. If we
+> manage to confirm my guess and test this - we _could_ take it to 3.6. If
+> not - it can absolutely wait for 3.7. This patch is a _guess_ - in the
+> kzm9g init function GPIOs 15 and 14 are configured as output fixed high in
+> SDHI0 and SDHI2 sections respectively with a comment "power." So, my guess
+> was, that these GPIOs can also actually switch card power on those slots.
+> Since I have no datasheet or schematics for that board or the board
+> itself, I cannot confirm that my guess. Since Morimoto-san has worked
+> pretty intensively with this board, maybe he could verify that, but again
+> - nothing urgent.
+>
+>   arch/arm/mach-shmobile/board-kzm9g.c |   69 +++++++++++++++++++++++++++++-----
+>   1 files changed, 59 insertions(+), 10 deletions(-)
+>
+> diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+> index 53b7ea9..2230706 100644
+> --- a/arch/arm/mach-shmobile/board-kzm9g.c
+> +++ b/arch/arm/mach-shmobile/board-kzm9g.c
+> @@ -373,13 +373,35 @@ static struct platform_device mmc_device = {
+>   	.resource	= sh_mmcif_resources,
+>   };
+>
+> -/* Fixed 2.8V regulators to be used by SDHI0 and SDHI2 */
+> -static struct regulator_consumer_supply fixed2v8_power_consumers[] > +/* Fixed 2.8V regulators to be used by SDHI0 */
+> +static struct regulator_consumer_supply sdhi0_power_consumers[] >   {
+>   	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
+>   	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
+> -	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.2"),
+> -	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.2"),
+> +};
+> +
+> +static struct regulator_init_data sdhi0_power_init_data = {
+> +	.constraints = {
+> +		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
+> +	},
+> +	.num_consumer_supplies  = ARRAY_SIZE(sdhi0_power_consumers),
+> +	.consumer_supplies      = sdhi0_power_consumers,
+> +};
+> +
+> +static struct fixed_voltage_config sdhi0_power_info = {
+> +	.supply_name = "SDHI0 SD/MMC Vdd",
+> +	.microvolts = 2800000,
+> +	.gpio = GPIO_PORT15,
+> +	.enable_high = 1,
+> +	.init_data =&sdhi0_power_init_data,
+> +};
+> +
+> +static struct platform_device sdhi0_power = {
+> +	.name = "reg-fixed-voltage",
+> +	.id   = 1,
+> +	.dev  = {
+> +		.platform_data =&sdhi0_power_info,
+> +	},
+>   };
+>
+>   /* SDHI */
+> @@ -422,6 +444,37 @@ static struct platform_device sdhi0_device = {
+>   	},
+>   };
+>
+> +/* Fixed 2.8V regulators to be used by SDHI2 */
+> +static struct regulator_consumer_supply sdhi2_power_consumers[] > +{
+> +	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.2"),
+> +	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.2"),
+> +};
+> +
+> +static struct regulator_init_data sdhi2_power_init_data = {
+> +	.constraints = {
+> +		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
+> +	},
+> +	.num_consumer_supplies  = ARRAY_SIZE(sdhi2_power_consumers),
+> +	.consumer_supplies      = sdhi2_power_consumers,
+> +};
+> +
+> +static struct fixed_voltage_config sdhi2_power_info = {
+> +	.supply_name = "SDHI2 SD/MMC Vdd",
+> +	.microvolts = 2800000,
+> +	.gpio = GPIO_PORT14,
+> +	.enable_high = 1,
+> +	.init_data =&sdhi2_power_init_data,
+> +};
+> +
+> +static struct platform_device sdhi2_power = {
+> +	.name = "reg-fixed-voltage",
+> +	.id   = 3,
+> +	.dev  = {
+> +		.platform_data =&sdhi2_power_info,
+> +	},
+> +};
+> +
+>   /* Micro SD */
+>   static struct sh_mobile_sdhi_info sdhi2_info = {
+>   	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
+> @@ -576,6 +629,8 @@ static struct i2c_board_info i2c3_devices[] = {
+>   };
+>
+>   static struct platform_device *kzm_devices[] __initdata = {
+> +	&sdhi0_power,
+> +	&sdhi2_power,
+>   	&smsc_device,
+>   	&usb_host_device,
+>   	&usbhs_device,
+> @@ -645,8 +700,6 @@ static void __init kzm_init(void)
+>   {
+>   	regulator_register_always_on(0, "fixed-1.8V", fixed1v8_power_consumers,
+>   				     ARRAY_SIZE(fixed1v8_power_consumers), 1800000);
+> -	regulator_register_always_on(1, "fixed-2.8V", fixed2v8_power_consumers,
+> -				     ARRAY_SIZE(fixed2v8_power_consumers), 2800000);
+>   	regulator_register_fixed(2, dummy_supplies, ARRAY_SIZE(dummy_supplies));
+>
+>   	sh73a0_pinmux_init();
+> @@ -723,8 +776,6 @@ static void __init kzm_init(void)
+>   	gpio_request(GPIO_FN_SDHID0_1,		NULL);
+>   	gpio_request(GPIO_FN_SDHID0_0,		NULL);
+>   	gpio_request(GPIO_FN_SDHI0_VCCQ_MC0_ON,	NULL);
+> -	gpio_request(GPIO_PORT15, NULL);
+> -	gpio_direction_output(GPIO_PORT15, 1); /* power */
+>
+>   	/* enable Micro SD */
+>   	gpio_request(GPIO_FN_SDHID2_0,		NULL);
+> @@ -733,8 +784,6 @@ static void __init kzm_init(void)
+>   	gpio_request(GPIO_FN_SDHID2_3,		NULL);
+>   	gpio_request(GPIO_FN_SDHICMD2,		NULL);
+>   	gpio_request(GPIO_FN_SDHICLK2,		NULL);
+> -	gpio_request(GPIO_PORT14, NULL);
+> -	gpio_direction_output(GPIO_PORT14, 1); /* power */
+>
+>   	/* I2C 3 */
+>   	gpio_request(GPIO_FN_PORT27_I2C_SCL3, NULL);
 
