@@ -1,131 +1,82 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 19 Jul 2012 00:39:16 +0000
-Subject: [PATCH 3/9] sh_mobile_meram: Add direct MERAM allocation API
-Message-Id: <1342658362-19491-4-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 02 Jul 2012 20:30:53 +0000
+Subject: [PATCH 0.5/9] dma: move shdma driver to an own directory
+Message-Id: <Pine.LNX.4.64.1207022228470.15365@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1336576161-27082-1-git-send-email-g.liakhovetski@gmx.de> 
+ <1336576161-27082-2-git-send-email-g.liakhovetski@gmx.de> 
+ <1337055734.16185.5360.camel@vkoul-udesk3>  <Pine.LNX.4.64.1205171912140.10086@axis700.grange>
+ <1337933737.1580.8.camel@vkoul-udesk3> <Pine.LNX.4.64.1205251028530.13353@axis700.grange>
+ <Pine.LNX.4.64.1206281046320.31813@axis700.grange>
+ <Pine.LNX.4.64.1207021936490.15365@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1207021936490.15365@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: Vinod Koul <vinod.koul@linux.intel.com>
+Cc: linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Sascha Hauer <s.hauer@pengutronix.de>
 
-The API can be used to allocate and free MERAM blocks directly, without
-going through ICBs.
+The shdma driver is going to be split into multiple files. To make this more
+convenient move it to an own directory.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/video/sh_mobile_meram.c |   41 +++++++++++++++++++++++++++++++++++---
- include/video/sh_mobile_meram.h |   16 +++++++++++++++
- 2 files changed, 53 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
-index fdb6fc1..7a0ba8b 100644
---- a/drivers/video/sh_mobile_meram.c
-+++ b/drivers/video/sh_mobile_meram.c
-@@ -195,6 +195,21 @@ static inline unsigned long meram_read_reg(void __iomem *base, unsigned int off)
- }
+Sorry for the "0.5," please, just apply this patch before the whole shdma 
+splitting series.
+
+Thanks
+Guennadi
+
+ drivers/dma/Makefile         |    2 +-
+ drivers/dma/sh/Makefile      |    1 +
+ drivers/dma/{ => sh}/shdma.c |    2 +-
+ drivers/dma/{ => sh}/shdma.h |    0
+ 4 files changed, 3 insertions(+), 2 deletions(-)
+ create mode 100644 drivers/dma/sh/Makefile
+ rename drivers/dma/{ => sh}/shdma.c (99%)
+ rename drivers/dma/{ => sh}/shdma.h (100%)
+
+diff --git a/drivers/dma/Makefile b/drivers/dma/Makefile
+index 86b795b..59c10e5 100644
+--- a/drivers/dma/Makefile
++++ b/drivers/dma/Makefile
+@@ -14,7 +14,7 @@ obj-$(CONFIG_DW_DMAC) += dw_dmac.o
+ obj-$(CONFIG_AT_HDMAC) += at_hdmac.o
+ obj-$(CONFIG_MX3_IPU) += ipu/
+ obj-$(CONFIG_TXX9_DMAC) += txx9dmac.o
+-obj-$(CONFIG_SH_DMAE) += shdma.o
++obj-$(CONFIG_SH_DMAE) += sh/
+ obj-$(CONFIG_COH901318) += coh901318.o coh901318_lli.o
+ obj-$(CONFIG_AMCC_PPC440SPE_ADMA) += ppc4xx/
+ obj-$(CONFIG_IMX_SDMA) += imx-sdma.o
+diff --git a/drivers/dma/sh/Makefile b/drivers/dma/sh/Makefile
+new file mode 100644
+index 0000000..ad4981a
+--- /dev/null
++++ b/drivers/dma/sh/Makefile
+@@ -0,0 +1 @@
++obj-$(CONFIG_SH_DMAE) += shdma.o
+diff --git a/drivers/dma/shdma.c b/drivers/dma/sh/shdma.c
+similarity index 99%
+rename from drivers/dma/shdma.c
+rename to drivers/dma/sh/shdma.c
+index 19d7a8d..8ab4a1f 100644
+--- a/drivers/dma/shdma.c
++++ b/drivers/dma/sh/shdma.c
+@@ -31,7 +31,7 @@
+ #include <linux/spinlock.h>
+ #include <linux/rculist.h>
  
- /* -----------------------------------------------------------------------------
-+ * MERAM allocation and free
-+ */
-+
-+static unsigned long meram_alloc(struct sh_mobile_meram_priv *priv, size_t size)
-+{
-+	return gen_pool_alloc(priv->pool, size);
-+}
-+
-+static void meram_free(struct sh_mobile_meram_priv *priv, unsigned long mem,
-+		       size_t size)
-+{
-+	gen_pool_free(priv->pool, mem, size);
-+}
-+
-+/* -----------------------------------------------------------------------------
-  * LCDC cache planes allocation, init, cleanup and free
-  */
+-#include "dmaengine.h"
++#include "../dmaengine.h"
+ #include "shdma.h"
  
-@@ -216,7 +231,7 @@ static int meram_plane_alloc(struct sh_mobile_meram_priv *priv,
- 		return -ENOMEM;
- 	plane->marker = &priv->icbs[idx];
- 
--	mem = gen_pool_alloc(priv->pool, size * 1024);
-+	mem = meram_alloc(priv, size * 1024);
- 	if (mem = 0)
- 		return -ENOMEM;
- 
-@@ -233,8 +248,8 @@ static int meram_plane_alloc(struct sh_mobile_meram_priv *priv,
- static void meram_plane_free(struct sh_mobile_meram_priv *priv,
- 			     struct sh_mobile_meram_fb_plane *plane)
- {
--	gen_pool_free(priv->pool, priv->meram + plane->marker->offset,
--		      plane->marker->size * 1024);
-+	meram_free(priv, priv->meram + plane->marker->offset,
-+		   plane->marker->size * 1024);
- 
- 	__clear_bit(plane->marker->index, &priv->used_icb);
- 	__clear_bit(plane->cache->index, &priv->used_icb);
-@@ -386,9 +401,27 @@ static void meram_plane_cleanup(struct sh_mobile_meram_priv *priv,
- }
- 
- /* -----------------------------------------------------------------------------
-- * LCDC cache operations
-+ * MERAM operations
-  */
- 
-+unsigned long sh_mobile_meram_alloc(struct sh_mobile_meram_info *pdata,
-+				    size_t size)
-+{
-+	struct sh_mobile_meram_priv *priv = pdata->priv;
-+
-+	return meram_alloc(priv, size);
-+}
-+EXPORT_SYMBOL_GPL(sh_mobile_meram_alloc);
-+
-+void sh_mobile_meram_free(struct sh_mobile_meram_info *pdata, unsigned long mem,
-+			  size_t size)
-+{
-+	struct sh_mobile_meram_priv *priv = pdata->priv;
-+
-+	meram_free(priv, mem, size);
-+}
-+EXPORT_SYMBOL_GPL(sh_mobile_meram_free);
-+
- /* Allocate memory for the ICBs and mark them as used. */
- static struct sh_mobile_meram_fb_cache *
- meram_cache_alloc(struct sh_mobile_meram_priv *priv,
-diff --git a/include/video/sh_mobile_meram.h b/include/video/sh_mobile_meram.h
-index 1134837..062e6e7 100644
---- a/include/video/sh_mobile_meram.h
-+++ b/include/video/sh_mobile_meram.h
-@@ -38,6 +38,10 @@ struct sh_mobile_meram_cfg {
- 
- #if defined(CONFIG_FB_SH_MOBILE_MERAM) || \
-     defined(CONFIG_FB_SH_MOBILE_MERAM_MODULE)
-+unsigned long sh_mobile_meram_alloc(struct sh_mobile_meram_info *meram_dev,
-+				    size_t size);
-+void sh_mobile_meram_free(struct sh_mobile_meram_info *meram_dev,
-+			  unsigned long mem, size_t size);
- void *sh_mobile_meram_cache_alloc(struct sh_mobile_meram_info *dev,
- 				  const struct sh_mobile_meram_cfg *cfg,
- 				  unsigned int xres, unsigned int yres,
-@@ -50,6 +54,18 @@ void sh_mobile_meram_cache_update(struct sh_mobile_meram_info *dev, void *data,
- 				  unsigned long *icb_addr_y,
- 				  unsigned long *icb_addr_c);
- #else
-+static inline unsigned long
-+sh_mobile_meram_alloc(struct sh_mobile_meram_info *meram_dev, size_t size)
-+{
-+	return 0;
-+}
-+
-+static inline void
-+sh_mobile_meram_free(struct sh_mobile_meram_info *meram_dev,
-+		     unsigned long mem, size_t size)
-+{
-+}
-+
- static inline void *
- sh_mobile_meram_cache_alloc(struct sh_mobile_meram_info *dev,
- 			    const struct sh_mobile_meram_cfg *cfg,
+ /* DMA descriptor control */
+diff --git a/drivers/dma/shdma.h b/drivers/dma/sh/shdma.h
+similarity index 100%
+rename from drivers/dma/shdma.h
+rename to drivers/dma/sh/shdma.h
 -- 
-1.7.8.6
+1.7.2.5
 
