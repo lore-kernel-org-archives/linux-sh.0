@@ -1,46 +1,79 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Tue, 03 Jul 2012 10:06:56 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 03 Jul 2012 10:12:27 +0000
 Subject: Re: [PATCH] ARM: shmobile: kzm9g: add REGULATOR settings to kzm9g_defconfig
-Message-Id: <20120703100655.GF29030@opensource.wolfsonmicro.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="KJY2Ze80yH5MUxol"
+Message-Id: <Pine.LNX.4.64.1207031207110.29890@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <4FF2C282.5030000@kmckk.co.jp>
 In-Reply-To: <4FF2C282.5030000@kmckk.co.jp>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+Hello
 
---KJY2Ze80yH5MUxol
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+On Tue, 3 Jul 2012, Tetsuyuki Kobayashi wrote:
 
-On Tue, Jul 03, 2012 at 06:59:30PM +0900, Tetsuyuki Kobayashi wrote:
+> Add REGULATOR settings to kernel config file of kzm9g.
+> 
+> Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+> ---
+> Hello, 
+> 
+> I found Guennadi's
+> "ARM: mach-shmobile: add fixed voltage regulators to kzm9g"
+> requires REGULATOR setting in kernel config.
+> Without this, it causes these errors at boot time.
 
+Thanks for the patch. However, I think, this error will only appear if you 
+enable REGULATOR in the kernel, but both REGULATOR_FIXED_VOLTAGE and 
+REGULATOR_DUMMY are disabled. To fix this fixing the defconfig is good, 
+but not sufficient, I think. How about adding something like
+
+	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+
+to either the CPU or the arch section in respective Kconfig? I would 
+actually propose to add these to both arm/mach-shmobile and sh. Any 
+objections?
+
+Thanks
+Guennadi
+
+> smsc911x: Driver version 2008-10-21
+> smsc911x smsc911x.0: Failed to get supply 'vdd33a': -517
+> smsc911x smsc911x.0: (unregistered net_device): couldn't get regulators -517
+> platform smsc911x.0: Driver smsc911x requests probe deferral
+> 
+> 
+> After applying this patch,
+>  make kzm9g_defconfig
+>  make menuconfig (as you like)
+>  make uImage
+> 
+> smsc911x ethernet device works well as before.
+> 
+> 
+>  arch/arm/configs/kzm9g_defconfig |    3 +++
+>  1 file changed, 3 insertions(+)
+> 
+> diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
+> index 7b2eecd..d2df401 100644
+> --- a/arch/arm/configs/kzm9g_defconfig
+> +++ b/arch/arm/configs/kzm9g_defconfig
+> @@ -82,6 +82,9 @@ CONFIG_I2C_CHARDEV=y
+>  CONFIG_I2C_SH_MOBILE=y
+>  CONFIG_GPIO_PCF857X=y
+>  # CONFIG_HWMON is not set
+> +CONFIG_REGULATOR=y
 > +CONFIG_REGULATOR_DUMMY=y
+> +CONFIG_REGULATOR_FIXED_VOLTAGE=y
+>  CONFIG_FB=y
+>  CONFIG_FB_SH_MOBILE_LCDC=y
+>  CONFIG_FRAMEBUFFER_CONSOLE=y
+> -- 1.7.9.5 
+> 
 
-No, this should only ever be enabled as a crutch to get things working.
-It should not be enabled by default.
-
---KJY2Ze80yH5MUxol
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJP8sQ5AAoJEBus8iNuMP3d/GUP/RSGy6yUwgU4vJe+pgExNr6b
-b98RXsTI6UqdZSptBKjFCWDXaWUSBpQXIFLZ2qEQv3LPGevfQf6EiQZkgB455HdM
-SdV5hRgsH80jT35rzKjutyMADDEkREJPx5Te/c9I0Ls7Isggv5HiN0HYceBdovp/
-qfWHpiOlQPyX8pQ0bXu0T7bQykeDRhFv05hauN1uXedfMPjosQah6vUvqzVQHB+u
-jLWc0Ah4CJZNiFH7NhzLEautForvjsRpUZihncUNFFNe9YOzz3S4ndoXy9lkOcyo
-/sgc4CnmY/LwPmEpHlO9ZWheomLBu4WQ1EIvB/JI1q+L8LBGoV10vBGBuXWuXugl
-vCZi1qwgzbhgNm4OmsjGnMQkf5+n4LQBOI9hrRvZIKUDw96GopFibXsXZkRAI5+A
-Q3TqU7E7xTh2DbR+hSLoFQvGTb84fMk2Lk6e/RA1c36iWuWrGKpjZuWXHC8UVT1c
-xdcddBPB/Vkuwc30vwfr1V5kAjvKBAgTUjWe7GbAXXwPv+SxVe3xHu2neH+1W6fR
-WMgCh5kUi11Uqxt+/XiJiGFXhucdEyMHfmGWH+h/kyp6jFTdTzzJlhT6owHU6Zqg
-EAB56s9yJBB2KbA827weNMnvp0XVCUtMW37N897aWg4Hp8yS+SwizxrSvVrTDXhO
-xDvO+hJKn73wxJGqXbxN
-=mC0Y
------END PGP SIGNATURE-----
-
---KJY2Ze80yH5MUxol--
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
