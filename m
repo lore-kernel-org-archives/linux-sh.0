@@ -1,93 +1,94 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 09 Jul 2012 16:49:15 +0000
-Subject: Re: [PATCH] ARM: shmobile: Build code depending on PM only if PM is set
-Message-Id: <201207091849.15951.rjw@sisk.pl>
+From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+Date: Tue, 03 Jul 2012 06:32:58 +0000
+Subject: [RFC][PATCH] ARM: shmobile: kzm9g: add r8a66597_udc support
+Message-Id: <4FF2921A.2080803@kmckk.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201207090015.12531.rjw@sisk.pl>
-In-Reply-To: <201207090015.12531.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Monday, July 09, 2012, Magnus Damm wrote:
-> On Mon, Jul 9, 2012 at 5:13 PM, Rafael J. Wysocki <rjw@sisk.pl> wrote:
-> > On Monday, July 09, 2012, Simon Horman wrote:
-> >> On Mon, Jul 09, 2012 at 12:15:12AM +0200, Rafael J. Wysocki wrote:
-> >> > From: Rafael J. Wysocki <rjw@sisk.pl>
-> >> >
-> >> > There are a few files under arch/arm/mach-shmobile/ whose entire
-> >> > contents depend on CONFIG_PM, but they are compiled even if
-> >> > CONFIG_PM is unset.  It is cleaner to modify the Makefile to
-> >> > avoid building those files entirely for CONFIG_PM unset and
-> >> > remove #ifdef CONFIG_PM directives from them.
-> >> >
-> >> > Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
-> >> > ---
-> >> >  arch/arm/mach-shmobile/Makefile              |    4 +++-
-> >> >  arch/arm/mach-shmobile/include/mach/common.h |    4 ++++
-> >> >  arch/arm/mach-shmobile/pm-r8a7740.c          |    3 ---
-> >> >  arch/arm/mach-shmobile/pm-rmobile.c          |    2 --
-> >> >  arch/arm/mach-shmobile/pm-sh7372.c           |    4 ----
-> >> >  5 files changed, 7 insertions(+), 10 deletions(-)
-> >> >
-> >> > Index: linux/arch/arm/mach-shmobile/Makefile
-> >> > =================================> >> > --- linux.orig/arch/arm/mach-shmobile/Makefile
-> >> > +++ linux/arch/arm/mach-shmobile/Makefile
-> >> > @@ -37,11 +37,13 @@ obj-$(CONFIG_ARCH_SH7372)       += entry-intc.
-> >> >  obj-$(CONFIG_ARCH_R8A7740) += entry-intc.o
-> >> >
-> >> >  # PM objects
-> >> > -obj-$(CONFIG_SUSPEND)              += suspend.o
-> >> >  obj-$(CONFIG_CPU_IDLE)             += cpuidle.o
-> >> > +ifeq ($(CONFIG_PM),y)
-> >> > +obj-$(CONFIG_SUSPEND)              += suspend.o
-> >> >  obj-$(CONFIG_ARCH_SHMOBILE)        += pm-rmobile.o
-> >> >  obj-$(CONFIG_ARCH_SH7372)  += pm-sh7372.o sleep-sh7372.o
-> >> >  obj-$(CONFIG_ARCH_R8A7740) += pm-r8a7740.o
-> >> > +endif
-> >> >  obj-$(CONFIG_ARCH_R8A7779) += pm-r8a7779.o
-> >> >
-> >> >  # Board objects
-> >> > Index: linux/arch/arm/mach-shmobile/include/mach/common.h
-> >> > =================================> >> > --- linux.orig/arch/arm/mach-shmobile/include/mach/common.h
-> >> > +++ linux/arch/arm/mach-shmobile/include/mach/common.h
-> >> > @@ -41,7 +41,11 @@ extern void sh7372_add_early_devices(voi
-> >> >  extern void sh7372_add_standard_devices(void);
-> >> >  extern void sh7372_clock_init(void);
-> >> >  extern void sh7372_pinmux_init(void);
-> >> > +#ifdef CONFIG_PM
-> >> >  extern void sh7372_pm_init(void);
-> >> > +#else
-> >> > +static inline void sh7372_pm_init(void) {}
-> >>
-> >> This seems to slightly alter the behaviour in the case where
-> >> CONFIG_PM is not set. I'm unsure if that is a problem or not.
-> >
-> > I don't think it would be a problem, all of those settings are PM-related.
-> >
-> > Magnus, what do you think?
-> 
-> Cleaning up the code is always nice, but I wonder if you take the
-> following into consideration?
-> 
-> CONFIG_CPU_IDLE=y
-> CONFIG_PM=n
+Add r8a66597_udc support for CN6 connector on KZM-A9-GT board.
+r8a66597 USB controller can not use host mode and peripheral mode
+at the same time. At default r8a66597_udc is disabled.
+To use r8a66597_udc define USE_R8A66597_UDC.
 
-This actually doesn't work (please see below).
+Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+---
+Hello,
 
-> Also, slightly off topic, but on top of that we have the ARM specific
-> CONFIG_ARM_CPU_SUSPEND which is required to build cpu_resume() in
-> sleep-sh7372.c, and this in turn in needed for CPUIdle or
-> Suspend-to-RAM on sh7372.
-> 
-> It would be nice to simplify all this somehow. From the ARM arch code
-> we do want to use cpu_resume() and cpu_suspend() both from CPUIdle and
-> Suspend-to-RAM - this since the same low level sleep code is used for
-> both cases.
+This is an experimental patch to test if r8a66597_udc works or not.
+I think that using r8a66597_udc is very rare because usually r8a66597_hcd is used
+and they can not use at the same time. So this patch is really for test and 
+I add this patch code is all inside #ifdef USE_R8A66597_UDC.
 
-Yes, please see my fix for the build bug reported by Guennadi.
-cpu_resume() and cpu_suspend() are not available if CONFIG_SUSPEND is unset.
+My question, this kind of test code should not merge to mainline?
+Or, the define USE_R8A66597_UDC should be change to CONFIG_R8A66597_UDC or so, 
+and it to Kconfig?
 
-Thanks,
-Rafael
+ arch/arm/mach-shmobile/board-kzm9g.c |   40 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index 7d4ee5c..af3e110 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -131,6 +131,37 @@ static struct platform_device usb_host_device = {
+ 	.resource	= usb_resources,
+ };
+ 
++#ifdef USE_R8A66597_UDC
++static struct r8a66597_platdata usb1_gadget_data = {
++	.on_chip = 0,
++	.xtal		= R8A66597_PLATDATA_XTAL_48MHZ,
++};
++
++static struct resource usb1_gadget_resources[] = {
++	[0] = {
++		.start	= 0x10010000,
++		.end	= 0x1001ffff - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= intcs_evt2irq(0x220), /* IRQ1 */
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device usb1_gadget_device = {
++	.name		= "r8a66597_udc",
++	.id		= 1, /* USB1 */
++	.dev = {
++		.dma_mask		= NULL,         /*  not use dma */
++		.coherent_dma_mask	= 0xffffffff,
++		.platform_data		= &usb1_gadget_data,
++	},
++	.num_resources	= ARRAY_SIZE(usb1_gadget_resources),
++	.resource	= usb1_gadget_resources,
++};
++#endif
++
+ /* USB Func CN17 */
+ struct usbhs_private {
+ 	unsigned int phy;
+@@ -577,8 +608,17 @@ static struct i2c_board_info i2c3_devices[] = {
+ 
+ static struct platform_device *kzm_devices[] __initdata = {
+ 	&smsc_device,
++#ifdef USE_R8A66597_UDC
++	/*
++	 * Do not enable usb_host_device because r8a66597_udc and r8a66597_hcd
++	 * can not use at the same time.
++	 * Also, do not enable usbhs_device for simplify.
++	 */
++	&usb1_gadget_device,
++#else
+ 	&usb_host_device,
+ 	&usbhs_device,
++#endif
+ 	&lcdc_device,
+ 	&mmc_device,
+ 	&sdhi0_device,
+-- 
+1.7.9.5
+
