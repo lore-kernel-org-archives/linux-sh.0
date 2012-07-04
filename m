@@ -1,140 +1,233 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Thu, 05 Jul 2012 21:25:23 +0000
-Subject: Re: [PATCH] ARM: shmobile: Use INTCA with sh7372 A3SM power domain
-Message-Id: <201207052325.24082.rjw@sisk.pl>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 04 Jul 2012 16:17:42 +0000
+Subject: [PATCH 3/4] dma: sh: provide a migration path for slave drivers to stop using .private
+Message-Id: <1341418663-24432-4-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120705054607.29735.71129.sendpatchset@w520>
-In-Reply-To: <20120705054607.29735.71129.sendpatchset@w520>
+References: <1341418663-24432-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1341418663-24432-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Vinod Koul <vinod.koul@intel.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, linux-kernel@vger.kernel.org
 
-On Thursday, July 05, 2012, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Convert the sh7372 A3SM power domain code to allow
-> waking up through INTCA and SYSC instead of only
-> relying on SYSC for wakeups. This allows us to
-> enter A3SM more or less regardless of the state
-> of the rest of the system.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+This patch extends the sh dmaengine driver to support the preferred channel
+selection and configuration method, instead of using the "private" field
+from struct dma_chan. We add a standard filter function to be used by
+slave drivers instead of implementing their own ones, and add support for
+the DMA_SLAVE_CONFIG control operation, which must accompany the new
+channel selection method. We still support the legacy .private channel
+allocation method to cater for a smooth driver migration.
 
-Applied to the sh7372 branch of the renesas.git tree.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/dma/sh/shdma-base.c |  114 +++++++++++++++++++++++++++++++++---------
+ drivers/dma/sh/shdma.c      |    5 +-
+ include/linux/sh_dma.h      |    2 +
+ include/linux/shdma-base.h  |    2 +-
+ 4 files changed, 95 insertions(+), 28 deletions(-)
 
-Thanks,
-Rafael
-
-
-> ---
-> 
->  Written on top of the sh7372 topic branch in renesas.git
-> 
->  arch/arm/mach-shmobile/pm-sh7372.c |   57 +++++++++++++++++-------------------
->  1 file changed, 28 insertions(+), 29 deletions(-)
-> 
-> --- 0001/arch/arm/mach-shmobile/pm-sh7372.c
-> +++ work/arch/arm/mach-shmobile/pm-sh7372.c	2012-07-05 14:33:34.000000000 +0900
-> @@ -293,12 +293,6 @@ struct sh7372_pm_domain sh7372_a3sg = {
->  #endif /* CONFIG_PM */
->  
->  #if defined(CONFIG_SUSPEND) || defined(CONFIG_CPU_IDLE)
-> -static int sh7372_do_idle_core_standby(unsigned long unused)
-> -{
-> -	cpu_do_idle(); /* WFI when SYSTBCR = 0x10 -> Core Standby */
-> -	return 0;
-> -}
-> -
->  static void sh7372_set_reset_vector(unsigned long address)
->  {
->  	/* set reset vector, translate 4k */
-> @@ -306,18 +300,6 @@ static void sh7372_set_reset_vector(unsi
->  	__raw_writel(0, APARMBAREA);
->  }
->  
-> -static void sh7372_enter_core_standby(void)
-> -{
-> -	sh7372_set_reset_vector(__pa(sh7372_resume_core_standby_sysc));
-> -
-> -	/* enter sleep mode with SYSTBCR to 0x10 */
-> -	__raw_writel(0x10, SYSTBCR);
-> -	cpu_suspend(0, sh7372_do_idle_core_standby);
-> -	__raw_writel(0, SYSTBCR);
-> -
-> -	 /* disable reset vector translation */
-> -	__raw_writel(0, SBAR);
-> -}
->  #endif
->  
->  #ifdef CONFIG_SUSPEND
-> @@ -460,6 +442,8 @@ static void sh7372_setup_sysc(unsigned l
->  
->  static void sh7372_enter_a3sm_common(int pllc0_on)
->  {
-> +	/* use INTCA together with SYSC for wakeup */
-> +	sh7372_setup_sysc(1 << 0, 0);
->  	sh7372_set_reset_vector(__pa(sh7372_resume_core_standby_sysc));
->  	sh7372_enter_sysc(pllc0_on, 1 << 12);
->  }
-> @@ -476,6 +460,24 @@ static void sh7372_enter_a4s_common(int
->  #endif
->  
->  #ifdef CONFIG_CPU_IDLE
-> +static int sh7372_do_idle_core_standby(unsigned long unused)
-> +{
-> +	cpu_do_idle(); /* WFI when SYSTBCR = 0x10 -> Core Standby */
-> +	return 0;
-> +}
-> +
-> +static void sh7372_enter_core_standby(void)
-> +{
-> +	sh7372_set_reset_vector(__pa(sh7372_resume_core_standby_sysc));
-> +
-> +	/* enter sleep mode with SYSTBCR to 0x10 */
-> +	__raw_writel(0x10, SYSTBCR);
-> +	cpu_suspend(0, sh7372_do_idle_core_standby);
-> +	__raw_writel(0, SYSTBCR);
-> +
-> +	 /* disable reset vector translation */
-> +	__raw_writel(0, SBAR);
-> +}
->  
->  static void sh7372_cpuidle_setup(struct cpuidle_driver *drv)
->  {
-> @@ -507,24 +509,21 @@ static int sh7372_enter_suspend(suspend_
->  
->  	/* check active clocks to determine potential wakeup sources */
->  	if (sh7372_sysc_valid(&msk, &msk2)) {
-> -		/* convert INTC mask and sense to SYSC mask and sense */
-> -		sh7372_setup_sysc(msk, msk2);
-> -
->  		if (!console_suspend_enabled &&
->  		    sh7372_a4s.genpd.status = GPD_STATE_POWER_OFF) {
-> +			/* convert INTC mask/sense to SYSC mask/sense */
-> +			sh7372_setup_sysc(msk, msk2);
-> +
->  			/* enter A4S sleep with PLLC0 off */
->  			pr_debug("entering A4S\n");
->  			sh7372_enter_a4s_common(0);
-> -		} else {
-> -			/* enter A3SM sleep with PLLC0 off */
-> -			pr_debug("entering A3SM\n");
-> -			sh7372_enter_a3sm_common(0);
-> +			return 0;
->  		}
-> -	} else {
-> -		/* default to Core Standby that supports all wakeup sources */
-> -		pr_debug("entering Core Standby\n");
-> -		sh7372_enter_core_standby();
->  	}
-> +
-> +	/* default to enter A3SM sleep with PLLC0 off */
-> +	pr_debug("entering A3SM\n");
-> +	sh7372_enter_a3sm_common(0);
->  	return 0;
->  }
->  
-> 
-> 
+diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
+index 73db282..0c34c73 100644
+--- a/drivers/dma/sh/shdma-base.c
++++ b/drivers/dma/sh/shdma-base.c
+@@ -171,6 +171,65 @@ static struct shdma_desc *shdma_get_desc(struct shdma_chan *schan)
+ 	return NULL;
+ }
+ 
++static int shdma_setup_slave(struct shdma_chan *schan, int slave_id)
++{
++	struct shdma_dev *sdev = to_shdma_dev(schan->dma_chan.device);
++	const struct shdma_ops *ops = sdev->ops;
++	int ret;
++
++	if (slave_id < 0 || slave_id >= slave_num)
++		return -EINVAL;
++
++	if (test_and_set_bit(slave_id, shdma_slave_used))
++		return -EBUSY;
++
++	ret = ops->set_slave(schan, slave_id, false);
++	if (ret < 0) {
++		clear_bit(slave_id, shdma_slave_used);
++		return ret;
++	}
++
++	schan->slave_id = slave_id;
++
++	return 0;
++}
++
++/*
++ * This is the standard shdma filter function to be used as a replacement to the
++ * "old" method, using the .private pointer. If for some reason you allocate a
++ * channel without slave data, use something like ERR_PTR(-EINVAL) as a filter
++ * parameter. If this filter is used, the slave driver, after calling
++ * dma_request_channel(), will also have to call dmaengine_slave_config() with
++ * .slave_id, .direction, and either .src_addr or .dst_addr set.
++ * NOTE: this filter doesn't support multiple DMAC drivers with the DMA_SLAVE
++ * capability! If this becomes a requirement, hardware glue drivers, using this
++ * services would have to provide their own filters, which first would check
++ * the device driver, similar to how other DMAC drivers, e.g., sa11x0-dma.c, do
++ * this, and only then, in case of a match, call this common filter.
++ */
++bool shdma_chan_filter(struct dma_chan *chan, void *arg)
++{
++	struct shdma_chan *schan = to_shdma_chan(chan);
++	struct shdma_dev *sdev = to_shdma_dev(schan->dma_chan.device);
++	const struct shdma_ops *ops = sdev->ops;
++	int slave_id = (int)arg;
++	int ret;
++
++	if (slave_id < 0)
++		/* No slave requested - arbitrary channel */
++		return true;
++
++	if (slave_id >= slave_num)
++		return false;
++
++	ret = ops->set_slave(schan, slave_id, true);
++	if (ret < 0)
++		return false;
++
++	return true;
++}
++EXPORT_SYMBOL(shdma_chan_filter);
++
+ static int shdma_alloc_chan_resources(struct dma_chan *chan)
+ {
+ 	struct shdma_chan *schan = to_shdma_chan(chan);
+@@ -185,21 +244,10 @@ static int shdma_alloc_chan_resources(struct dma_chan *chan)
+ 	 * never runs concurrently with itself or free_chan_resources.
+ 	 */
+ 	if (slave) {
+-		if (slave->slave_id < 0 || slave->slave_id >= slave_num) {
+-			ret = -EINVAL;
+-			goto evalid;
+-		}
+-
+-		if (test_and_set_bit(slave->slave_id, shdma_slave_used)) {
+-			ret = -EBUSY;
+-			goto etestused;
+-		}
+-
+-		ret = ops->set_slave(schan, slave->slave_id);
++		/* Legacy mode: .private is set in filter */
++		ret = shdma_setup_slave(schan, slave->slave_id);
+ 		if (ret < 0)
+ 			goto esetslave;
+-
+-		schan->slave_id = slave->slave_id;
+ 	} else {
+ 		schan->slave_id = -EINVAL;
+ 	}
+@@ -228,8 +276,6 @@ edescalloc:
+ 	if (slave)
+ esetslave:
+ 		clear_bit(slave->slave_id, shdma_slave_used);
+-etestused:
+-evalid:
+ 	chan->private = NULL;
+ 	return ret;
+ }
+@@ -587,22 +633,40 @@ static int shdma_control(struct dma_chan *chan, enum dma_ctrl_cmd cmd,
+ 	struct shdma_chan *schan = to_shdma_chan(chan);
+ 	struct shdma_dev *sdev = to_shdma_dev(chan->device);
+ 	const struct shdma_ops *ops = sdev->ops;
++	struct dma_slave_config *config;
+ 	unsigned long flags;
+-
+-	/* Only supports DMA_TERMINATE_ALL */
+-	if (cmd != DMA_TERMINATE_ALL)
+-		return -ENXIO;
++	int ret;
+ 
+ 	if (!chan)
+ 		return -EINVAL;
+ 
+-	spin_lock_irqsave(&schan->chan_lock, flags);
+-
+-	ops->halt_channel(schan);
+-
+-	spin_unlock_irqrestore(&schan->chan_lock, flags);
++	switch (cmd) {
++	case DMA_TERMINATE_ALL:
++		spin_lock_irqsave(&schan->chan_lock, flags);
++		ops->halt_channel(schan);
++		spin_unlock_irqrestore(&schan->chan_lock, flags);
+ 
+-	shdma_chan_ld_cleanup(schan, true);
++		shdma_chan_ld_cleanup(schan, true);
++		break;
++	case DMA_SLAVE_CONFIG:
++		/*
++		 * So far only .slave_id is used, but the slave drivers are
++		 * encouraged to also set a transfer direction and an address.
++		 */
++		if (!arg)
++			return -EINVAL;
++		/*
++		 * We could lock this, but you shouldn't be configuring the
++		 * channel, while using it...
++		 */
++		config = (struct dma_slave_config*)arg;
++		ret = shdma_setup_slave(schan, config->slave_id);
++		if (ret < 0)
++			return ret;
++		break;
++	default:
++		return -ENXIO;
++	}
+ 
+ 	return 0;
+ }
+diff --git a/drivers/dma/sh/shdma.c b/drivers/dma/sh/shdma.c
+index 9a10d8b..027c9be 100644
+--- a/drivers/dma/sh/shdma.c
++++ b/drivers/dma/sh/shdma.c
+@@ -320,7 +320,7 @@ static const struct sh_dmae_slave_config *dmae_find_slave(
+ }
+ 
+ static int sh_dmae_set_slave(struct shdma_chan *schan,
+-			     int slave_id)
++			     int slave_id, bool try)
+ {
+ 	struct sh_dmae_chan *sh_chan = container_of(schan, struct sh_dmae_chan,
+ 						    shdma_chan);
+@@ -328,7 +328,8 @@ static int sh_dmae_set_slave(struct shdma_chan *schan,
+ 	if (!cfg)
+ 		return -ENODEV;
+ 
+-	sh_chan->config = cfg;
++	if (!try)
++		sh_chan->config = cfg;
+ 
+ 	return 0;
+ }
+diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
+index 4e83f3e..b64d6be 100644
+--- a/include/linux/sh_dma.h
++++ b/include/linux/sh_dma.h
+@@ -99,4 +99,6 @@ struct sh_dmae_pdata {
+ #define CHCR_TE	0x00000002
+ #define CHCR_IE	0x00000004
+ 
++bool shdma_chan_filter(struct dma_chan *chan, void *arg);
++
+ #endif
+diff --git a/include/linux/shdma-base.h b/include/linux/shdma-base.h
+index 6263ad2..93f9821 100644
+--- a/include/linux/shdma-base.h
++++ b/include/linux/shdma-base.h
+@@ -93,7 +93,7 @@ struct shdma_ops {
+ 	dma_addr_t (*slave_addr)(struct shdma_chan *);
+ 	int (*desc_setup)(struct shdma_chan *, struct shdma_desc *,
+ 			  dma_addr_t, dma_addr_t, size_t *);
+-	int (*set_slave)(struct shdma_chan *, int);
++	int (*set_slave)(struct shdma_chan *, int, bool);
+ 	void (*setup_xfer)(struct shdma_chan *, int);
+ 	void (*start_xfer)(struct shdma_chan *, struct shdma_desc *);
+ 	struct shdma_desc *(*embedded_desc)(void *, int);
+-- 
+1.7.2.5
 
