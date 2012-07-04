@@ -1,82 +1,223 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 02 Jul 2012 20:30:53 +0000
-Subject: [PATCH 0.5/9] dma: move shdma driver to an own directory
-Message-Id: <Pine.LNX.4.64.1207022228470.15365@axis700.grange>
+Date: Wed, 04 Jul 2012 16:17:41 +0000
+Subject: [PATCH 2/4] dma: sh: use an integer slave ID to improve API compatibility
+Message-Id: <1341418663-24432-3-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1336576161-27082-1-git-send-email-g.liakhovetski@gmx.de> 
- <1336576161-27082-2-git-send-email-g.liakhovetski@gmx.de> 
- <1337055734.16185.5360.camel@vkoul-udesk3>  <Pine.LNX.4.64.1205171912140.10086@axis700.grange>
- <1337933737.1580.8.camel@vkoul-udesk3> <Pine.LNX.4.64.1205251028530.13353@axis700.grange>
- <Pine.LNX.4.64.1206281046320.31813@axis700.grange>
- <Pine.LNX.4.64.1207021936490.15365@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1207021936490.15365@axis700.grange>
+References: <1341418663-24432-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1341418663-24432-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@linux.intel.com>
-Cc: linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Sascha Hauer <s.hauer@pengutronix.de>
+To: Vinod Koul <vinod.koul@intel.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, linux-kernel@vger.kernel.org
 
-The shdma driver is going to be split into multiple files. To make this more
-convenient move it to an own directory.
+Initially struct shdma_slave has been introduced with the only member - an
+unsigned slave ID - to describe common properties of DMA slaves in an
+extensible way. However, experience shows, that a slave ID is indeed the
+only parameter, needed to identify DMA slaves. This is also, what is used
+by the core dmaengine API in struct dma_slave_config. We switch to using
+the slave_id directly, instead of passing a pointer to struct shdma_slave
+to improve compatibility with the core. We also make the slave_id signed
+for easier error checking.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ drivers/dma/sh/shdma-base.c |   25 +++++++++++++------------
+ drivers/dma/sh/shdma.c      |   12 ++++++------
+ include/linux/sh_dma.h      |    8 ++++----
+ include/linux/shdma-base.h  |    8 ++++----
+ 4 files changed, 27 insertions(+), 26 deletions(-)
 
-Sorry for the "0.5," please, just apply this patch before the whole shdma 
-splitting series.
-
-Thanks
-Guennadi
-
- drivers/dma/Makefile         |    2 +-
- drivers/dma/sh/Makefile      |    1 +
- drivers/dma/{ => sh}/shdma.c |    2 +-
- drivers/dma/{ => sh}/shdma.h |    0
- 4 files changed, 3 insertions(+), 2 deletions(-)
- create mode 100644 drivers/dma/sh/Makefile
- rename drivers/dma/{ => sh}/shdma.c (99%)
- rename drivers/dma/{ => sh}/shdma.h (100%)
-
-diff --git a/drivers/dma/Makefile b/drivers/dma/Makefile
-index 86b795b..59c10e5 100644
---- a/drivers/dma/Makefile
-+++ b/drivers/dma/Makefile
-@@ -14,7 +14,7 @@ obj-$(CONFIG_DW_DMAC) += dw_dmac.o
- obj-$(CONFIG_AT_HDMAC) += at_hdmac.o
- obj-$(CONFIG_MX3_IPU) += ipu/
- obj-$(CONFIG_TXX9_DMAC) += txx9dmac.o
--obj-$(CONFIG_SH_DMAE) += shdma.o
-+obj-$(CONFIG_SH_DMAE) += sh/
- obj-$(CONFIG_COH901318) += coh901318.o coh901318_lli.o
- obj-$(CONFIG_AMCC_PPC440SPE_ADMA) += ppc4xx/
- obj-$(CONFIG_IMX_SDMA) += imx-sdma.o
-diff --git a/drivers/dma/sh/Makefile b/drivers/dma/sh/Makefile
-new file mode 100644
-index 0000000..ad4981a
---- /dev/null
-+++ b/drivers/dma/sh/Makefile
-@@ -0,0 +1 @@
-+obj-$(CONFIG_SH_DMAE) += shdma.o
-diff --git a/drivers/dma/shdma.c b/drivers/dma/sh/shdma.c
-similarity index 99%
-rename from drivers/dma/shdma.c
-rename to drivers/dma/sh/shdma.c
-index 19d7a8d..8ab4a1f 100644
---- a/drivers/dma/shdma.c
+diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
+index f75ebfa..73db282 100644
+--- a/drivers/dma/sh/shdma-base.c
++++ b/drivers/dma/sh/shdma-base.c
+@@ -76,7 +76,6 @@ static dma_cookie_t shdma_tx_submit(struct dma_async_tx_descriptor *tx)
+ 		container_of(tx, struct shdma_desc, async_tx),
+ 		*last = desc;
+ 	struct shdma_chan *schan = to_shdma_chan(tx->chan);
+-	struct shdma_slave *slave = schan->slave;
+ 	dma_async_tx_callback callback = tx->callback;
+ 	dma_cookie_t cookie;
+ 	bool power_up;
+@@ -138,7 +137,7 @@ static dma_cookie_t shdma_tx_submit(struct dma_async_tx_descriptor *tx)
+ 			 * Make it int then, on error remove chunks from the
+ 			 * queue again
+ 			 */
+-			ops->setup_xfer(schan, slave);
++			ops->setup_xfer(schan, schan->slave_id);
+ 
+ 			if (schan->pm_state = SHDMA_PM_PENDING)
+ 				shdma_chan_xfer_ld_queue(schan);
+@@ -186,7 +185,7 @@ static int shdma_alloc_chan_resources(struct dma_chan *chan)
+ 	 * never runs concurrently with itself or free_chan_resources.
+ 	 */
+ 	if (slave) {
+-		if (slave->slave_id >= slave_num) {
++		if (slave->slave_id < 0 || slave->slave_id >= slave_num) {
+ 			ret = -EINVAL;
+ 			goto evalid;
+ 		}
+@@ -196,9 +195,13 @@ static int shdma_alloc_chan_resources(struct dma_chan *chan)
+ 			goto etestused;
+ 		}
+ 
+-		ret = ops->set_slave(schan, slave);
++		ret = ops->set_slave(schan, slave->slave_id);
+ 		if (ret < 0)
+ 			goto esetslave;
++
++		schan->slave_id = slave->slave_id;
++	} else {
++		schan->slave_id = -EINVAL;
+ 	}
+ 
+ 	schan->desc = kcalloc(NR_DESCS_PER_CHANNEL,
+@@ -208,7 +211,6 @@ static int shdma_alloc_chan_resources(struct dma_chan *chan)
+ 		goto edescalloc;
+ 	}
+ 	schan->desc_num = NR_DESCS_PER_CHANNEL;
+-	schan->slave = slave;
+ 
+ 	for (i = 0; i < NR_DESCS_PER_CHANNEL; i++) {
+ 		desc = ops->embedded_desc(schan->desc, i);
+@@ -366,10 +368,9 @@ static void shdma_free_chan_resources(struct dma_chan *chan)
+ 	if (!list_empty(&schan->ld_queue))
+ 		shdma_chan_ld_cleanup(schan, true);
+ 
+-	if (schan->slave) {
++	if (schan->slave_id >= 0) {
+ 		/* The caller is holding dma_list_mutex */
+-		struct shdma_slave *slave = schan->slave;
+-		clear_bit(slave->slave_id, shdma_slave_used);
++		clear_bit(schan->slave_id, shdma_slave_used);
+ 		chan->private = NULL;
+ 	}
+ 
+@@ -559,7 +560,7 @@ static struct dma_async_tx_descriptor *shdma_prep_slave_sg(
+ 	struct shdma_chan *schan = to_shdma_chan(chan);
+ 	struct shdma_dev *sdev = to_shdma_dev(schan->dma_chan.device);
+ 	const struct shdma_ops *ops = sdev->ops;
+-	struct shdma_slave *slave = schan->slave;
++	int slave_id = schan->slave_id;
+ 	dma_addr_t slave_addr;
+ 
+ 	if (!chan)
+@@ -568,9 +569,9 @@ static struct dma_async_tx_descriptor *shdma_prep_slave_sg(
+ 	BUG_ON(!schan->desc_num);
+ 
+ 	/* Someone calling slave DMA on a generic channel? */
+-	if (!slave || !sg_len) {
+-		dev_warn(schan->dev, "%s: bad parameter: %p, %d, %d\n",
+-			 __func__, slave, sg_len, slave ? slave->slave_id : -1);
++	if (slave_id < 0 || !sg_len) {
++		dev_warn(schan->dev, "%s: bad parameter: len=%d, id=%d\n",
++			 __func__, sg_len, slave_id);
+ 		return NULL;
+ 	}
+ 
+diff --git a/drivers/dma/sh/shdma.c b/drivers/dma/sh/shdma.c
+index 9f0a2e5..9a10d8b 100644
+--- a/drivers/dma/sh/shdma.c
 +++ b/drivers/dma/sh/shdma.c
-@@ -31,7 +31,7 @@
- #include <linux/spinlock.h>
- #include <linux/rculist.h>
+@@ -285,12 +285,12 @@ static bool sh_dmae_channel_busy(struct shdma_chan *schan)
+ }
  
--#include "dmaengine.h"
-+#include "../dmaengine.h"
- #include "shdma.h"
+ static void sh_dmae_setup_xfer(struct shdma_chan *schan,
+-			       struct shdma_slave *sslave)
++			       int slave_id)
+ {
+ 	struct sh_dmae_chan *sh_chan = container_of(schan, struct sh_dmae_chan,
+ 						    shdma_chan);
  
- /* DMA descriptor control */
-diff --git a/drivers/dma/shdma.h b/drivers/dma/sh/shdma.h
-similarity index 100%
-rename from drivers/dma/shdma.h
-rename to drivers/dma/sh/shdma.h
+-	if (sslave) {
++	if (slave_id >= 0) {
+ 		const struct sh_dmae_slave_config *cfg  			sh_chan->config;
+ 
+@@ -302,7 +302,7 @@ static void sh_dmae_setup_xfer(struct shdma_chan *schan,
+ }
+ 
+ static const struct sh_dmae_slave_config *dmae_find_slave(
+-	struct sh_dmae_chan *sh_chan, unsigned int slave_id)
++	struct sh_dmae_chan *sh_chan, int slave_id)
+ {
+ 	struct sh_dmae_device *shdev = to_sh_dev(sh_chan);
+ 	struct sh_dmae_pdata *pdata = shdev->pdata;
+@@ -320,11 +320,11 @@ static const struct sh_dmae_slave_config *dmae_find_slave(
+ }
+ 
+ static int sh_dmae_set_slave(struct shdma_chan *schan,
+-			     struct shdma_slave *sslave)
++			     int slave_id)
+ {
+ 	struct sh_dmae_chan *sh_chan = container_of(schan, struct sh_dmae_chan,
+ 						    shdma_chan);
+-	const struct sh_dmae_slave_config *cfg = dmae_find_slave(sh_chan, sslave->slave_id);
++	const struct sh_dmae_slave_config *cfg = dmae_find_slave(sh_chan, slave_id);
+ 	if (!cfg)
+ 		return -ENODEV;
+ 
+@@ -579,7 +579,7 @@ static int sh_dmae_resume(struct device *dev)
+ 		if (!sh_chan->shdma_chan.desc_num)
+ 			continue;
+ 
+-		if (sh_chan->shdma_chan.slave) {
++		if (sh_chan->shdma_chan.slave_id >= 0) {
+ 			const struct sh_dmae_slave_config *cfg = sh_chan->config;
+ 			dmae_set_dmars(sh_chan, cfg->mid_rid);
+ 			dmae_set_chcr(sh_chan, cfg->chcr);
+diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
+index a79f10a..4e83f3e 100644
+--- a/include/linux/sh_dma.h
++++ b/include/linux/sh_dma.h
+@@ -27,10 +27,10 @@ struct sh_dmae_slave {
+  * a certain peripheral
+  */
+ struct sh_dmae_slave_config {
+-	unsigned int			slave_id;
+-	dma_addr_t			addr;
+-	u32				chcr;
+-	char				mid_rid;
++	int		slave_id;
++	dma_addr_t	addr;
++	u32		chcr;
++	char		mid_rid;
+ };
+ 
+ struct sh_dmae_channel {
+diff --git a/include/linux/shdma-base.h b/include/linux/shdma-base.h
+index c3a19e9..6263ad2 100644
+--- a/include/linux/shdma-base.h
++++ b/include/linux/shdma-base.h
+@@ -43,7 +43,7 @@ struct device;
+  */
+ 
+ struct shdma_slave {
+-	unsigned int slave_id;
++	int slave_id;
+ };
+ 
+ struct shdma_desc {
+@@ -66,7 +66,7 @@ struct shdma_chan {
+ 	size_t max_xfer_len;		/* max transfer length */
+ 	int id;				/* Raw id of this channel */
+ 	int irq;			/* Channel IRQ */
+-	struct shdma_slave *slave;	/* Client data for slave DMA */
++	int slave_id;			/* Client ID for slave DMA */
+ 	enum shdma_pm_state pm_state;
+ };
+ 
+@@ -93,8 +93,8 @@ struct shdma_ops {
+ 	dma_addr_t (*slave_addr)(struct shdma_chan *);
+ 	int (*desc_setup)(struct shdma_chan *, struct shdma_desc *,
+ 			  dma_addr_t, dma_addr_t, size_t *);
+-	int (*set_slave)(struct shdma_chan *, struct shdma_slave *);
+-	void (*setup_xfer)(struct shdma_chan *, struct shdma_slave *);
++	int (*set_slave)(struct shdma_chan *, int);
++	void (*setup_xfer)(struct shdma_chan *, int);
+ 	void (*start_xfer)(struct shdma_chan *, struct shdma_desc *);
+ 	struct shdma_desc *(*embedded_desc)(void *, int);
+ 	bool (*chan_irq)(struct shdma_chan *, int);
 -- 
 1.7.2.5
 
