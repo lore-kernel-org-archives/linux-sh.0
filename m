@@ -1,55 +1,97 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 04 Jul 2012 03:56:18 +0000
-Subject: [PATCH 7/7] ARM: shmobile: armadillo800eva: A3SP domain includes USB
-Message-Id: <87fw98tc0w.wl%kuninori.morimoto.gx@renesas.com>
+Date: Wed, 04 Jul 2012 03:55:37 +0000
+Subject: [PATCH 3/7] ARM: shmobile: r8a7740: add A3SP pm domain support
+Message-Id: <87lij0tc21.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Because USB Func is controlled by external IRQ mode,
-it is possible to control USB under A3SP domain to reduce power.
-This patch enables it.
+This patch adds basic A3SP pm domain support.
+Now, below devices can be controled by PM
 
-Armadillo800eva board switchs USB Host/Func by SW1.6,
-So, the device to adds into domain is selected on this patch.
+DMAC1/2/3, IPMMU, DDM, FLCTL, SYS-HPB, BBIF1, MSIOF1/2,
+SCIFA,SCIFB, IIC1, IrDA, USBH, USBDMAC, SDHI0/1/2, TPU,
+DREQPAK (Sys),  MMCIF, RSPI, SIM, USBF
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c |    5 +++++
- 1 files changed, 5 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/include/mach/r8a7740.h |    1 +
+ arch/arm/mach-shmobile/pm-r8a7740.c           |   16 ++++++++++++++++
+ arch/arm/mach-shmobile/setup-r8a7740.c        |   16 ++++++++++++++++
+ 3 files changed, 33 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 437a84c..2c7d50f 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -953,6 +953,8 @@ clock_error:
- #define GPIO_PORT8CR	0xe6050008
- static void __init eva_init(void)
- {
-+	struct platform_device *usb = NULL;
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+index 6937352..0bc8266 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+@@ -625,6 +625,7 @@ struct r8a7740_pm_domain *to_r8a7740_pd(struct generic_pm_domain *d)
+ 
+ #ifdef CONFIG_PM
+ extern struct r8a7740_pm_domain r8a7740_a4s;
++extern struct r8a7740_pm_domain r8a7740_a3sp;
+ 
+ extern void r8a7740_init_pm_domain(struct r8a7740_pm_domain *r8a7740_pd);
+ extern void r8a7740_add_device_to_domain(struct r8a7740_pm_domain *r8a7740_pd,
+diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
+index 5b0fc91..faa0254 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7740.c
++++ b/arch/arm/mach-shmobile/pm-r8a7740.c
+@@ -181,4 +181,20 @@ struct r8a7740_pm_domain r8a7740_a4s = {
+ 	.suspend	= r8a7740_a4s_suspend,
+ };
+ 
++static int r8a7740_a3sp_suspend(void)
++{
++	/*
++	 * Serial consoles make use of SCIF hardware located in A3SP,
++	 * keep such power domain on if "no_console_suspend" is set.
++	 */
++	return console_suspend_enabled ? 0 : -EBUSY;
++}
 +
- 	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
- 				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
++struct r8a7740_pm_domain r8a7740_a3sp = {
++	.genpd.name	= "A3SP",
++	.bit_shift	= 11,
++	.gov		= &pm_domain_always_on_gov,
++	.no_debug	= true,
++	.suspend	= r8a7740_a3sp_suspend,
++};
+ #endif /* CONFIG_PM */
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index c185ae4..1c95067 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -674,12 +674,28 @@ void __init r8a7740_add_standard_devices(void)
  
-@@ -1050,6 +1052,7 @@ static void __init eva_init(void)
- 		gpio_direction_input(GPIO_PORT209);
+ 	/* PM domain */
+ 	r8a7740_init_pm_domain(&r8a7740_a4s);
++	r8a7740_init_pm_domain(&r8a7740_a3sp);
++
++	r8a7740_pm_add_subdomain(&r8a7740_a4s, &r8a7740_a3sp);
  
- 		platform_device_register(&usbhsf_device);
-+		usb = &usbhsf_device;
- 	}
- 
- 	/* SDHI0 */
-@@ -1180,6 +1183,8 @@ static void __init eva_init(void)
- 
- 	r8a7740_add_device_to_domain(&r8a7740_a4lc, &lcdc0_device);
- 	r8a7740_add_device_to_domain(&r8a7740_a4lc, &hdmi_lcdc_device);
-+	if (usb)
-+		r8a7740_add_device_to_domain(&r8a7740_a3sp, usb);
+ 	/* add devices */
+ 	platform_add_devices(r8a7740_early_devices,
+ 			    ARRAY_SIZE(r8a7740_early_devices));
+ 	platform_add_devices(r8a7740_late_devices,
+ 			     ARRAY_SIZE(r8a7740_late_devices));
++
++	/* add devices to PM domain  */
++
++	r8a7740_add_device_to_domain(&r8a7740_a3sp,	&scif0_device);
++	r8a7740_add_device_to_domain(&r8a7740_a3sp,	&scif1_device);
++	r8a7740_add_device_to_domain(&r8a7740_a3sp,	&scif2_device);
++	r8a7740_add_device_to_domain(&r8a7740_a3sp,	&scif3_device);
++	r8a7740_add_device_to_domain(&r8a7740_a3sp,	&scif4_device);
++	r8a7740_add_device_to_domain(&r8a7740_a3sp,	&scif5_device);
++	r8a7740_add_device_to_domain(&r8a7740_a3sp,	&scif6_device);
++	r8a7740_add_device_to_domain(&r8a7740_a3sp,	&scif7_device);
++	r8a7740_add_device_to_domain(&r8a7740_a3sp,	&scifb_device);
++	r8a7740_add_device_to_domain(&r8a7740_a3sp,	&i2c1_device);
  }
  
- static void __init eva_earlytimer_init(void)
+ static void __init r8a7740_earlytimer_init(void)
 -- 
 1.7.5.4
 
