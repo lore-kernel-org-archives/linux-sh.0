@@ -1,89 +1,45 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 16 Jul 2012 21:19:14 +0000
-Subject: [RFC][PATCH 3/14] ARM: shmobile: Drop r8a7779_add_device_to_domain()
-Message-Id: <201207162319.14687.rjw@sisk.pl>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 04 Jul 2012 03:55:08 +0000
+Subject: [PATCH 1/7] ARM: shmobile: r8a7740: fixup: MSEL1CR 7bit control
+Message-Id: <87obnwtc2u.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201207032302.17805.rjw@sisk.pl> <201207052217.48086.rjw@sisk.pl> <201207162315.49073.rjw@sisk.pl>
-In-Reply-To: <201207162315.49073.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM list <linux-pm@vger.kernel.org>
-Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>, LKML <linux-kernel@vger.kernel.org>, Matthew Garrett <mjg59@srcf.ucam.org>, Magnus Damm <magnus.damm@gmail.com>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+MSEL1CR 7bit selects IRQ7 source pin which was
+VBUS pin or A21/MSIOF0_RSYNC/MSIOF1_TSYNC pin.
+But current pfc-r8a7740 MSEL1CR 7bit setting was wrong.
+This patch fix it up
 
-If the r8a7779's PM domains are given names, this SoC and its boards
-will be able to use rmobile_add_device_to_domain() for adding devices
-to those domains and r8a7779_add_device_to_domain(), which is not
-used anywhere at the moment anyway, may be dopped.
-
-Accordingly, give names to the r8a7779's PM domains and drop
-r8a7779_add_device_to_domain().
-
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7779.h |    3 ---
- arch/arm/mach-shmobile/pm-r8a7779.c           |   14 ++++----------
- 2 files changed, 4 insertions(+), 13 deletions(-)
+ arch/arm/mach-shmobile/pfc-r8a7740.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-Index: linux/arch/arm/mach-shmobile/include/mach/r8a7779.h
-=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ linux/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -353,11 +353,8 @@ extern struct r8a7779_pm_domain r8a7779_
- extern struct r8a7779_pm_domain r8a7779_impx3;
+diff --git a/arch/arm/mach-shmobile/pfc-r8a7740.c b/arch/arm/mach-shmobile/pfc-r8a7740.c
+index 03def0f..ce9e7fa 100644
+--- a/arch/arm/mach-shmobile/pfc-r8a7740.c
++++ b/arch/arm/mach-shmobile/pfc-r8a7740.c
+@@ -1261,7 +1261,7 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(A21_MARK,			PORT120_FN1),
+ 	PINMUX_DATA(MSIOF0_RSYNC_MARK,		PORT120_FN2),
+ 	PINMUX_DATA(MSIOF1_TSYNC_PORT120_MARK,	PORT120_FN3,	MSEL4CR_10_0),
+-	PINMUX_DATA(IRQ7_PORT120_MARK,		PORT120_FN0,	MSEL1CR_7_0),
++	PINMUX_DATA(IRQ7_PORT120_MARK,		PORT120_FN0,	MSEL1CR_7_1),
  
- extern void r8a7779_init_pm_domain(struct r8a7779_pm_domain *r8a7779_pd);
--extern void r8a7779_add_device_to_domain(struct r8a7779_pm_domain *r8a7779_pd,
--					struct platform_device *pdev);
- #else
- #define r8a7779_init_pm_domain(pd) do { } while (0)
--#define r8a7779_add_device_to_domain(pd, pdev) do { } while (0)
- #endif /* CONFIG_PM */
+ 	/* Port121 */
+ 	PINMUX_DATA(A20_MARK,			PORT121_FN1),
+@@ -1623,7 +1623,7 @@ static pinmux_enum_t pinmux_data[] = {
  
- #endif /* __ASM_R8A7779_H__ */
-Index: linux/arch/arm/mach-shmobile/pm-r8a7779.c
-=================================--- linux.orig/arch/arm/mach-shmobile/pm-r8a7779.c
-+++ linux/arch/arm/mach-shmobile/pm-r8a7779.c
-@@ -199,17 +199,8 @@ void r8a7779_init_pm_domain(struct r8a77
- 		pd_power_up(&r8a7779_pd->genpd);
- }
+ 	/* Port209 */
+ 	PINMUX_DATA(VBUS_MARK,			PORT209_FN1),
+-	PINMUX_DATA(IRQ7_PORT209_MARK,		PORT209_FN0,	MSEL1CR_7_1),
++	PINMUX_DATA(IRQ7_PORT209_MARK,		PORT209_FN0,	MSEL1CR_7_0),
  
--void r8a7779_add_device_to_domain(struct r8a7779_pm_domain *r8a7779_pd,
--				 struct platform_device *pdev)
--{
--	struct device *dev = &pdev->dev;
--
--	pm_genpd_add_device(&r8a7779_pd->genpd, dev);
--	if (pm_clk_no_clocks(dev))
--		pm_clk_add(dev, NULL);
--}
--
- struct r8a7779_pm_domain r8a7779_sh4a = {
-+	.genpd_name = "SH4A",
- 	.ch = {
- 		.chan_offs = 0x80, /* PWRSR1 .. PWRER1 */
- 		.isr_bit = 16, /* SH4A */
-@@ -217,6 +208,7 @@ struct r8a7779_pm_domain r8a7779_sh4a  };
- 
- struct r8a7779_pm_domain r8a7779_sgx = {
-+	.genpd_name = "SGX",
- 	.ch = {
- 		.chan_offs = 0xc0, /* PWRSR2 .. PWRER2 */
- 		.isr_bit = 20, /* SGX */
-@@ -224,6 +216,7 @@ struct r8a7779_pm_domain r8a7779_sgx = {
- };
- 
- struct r8a7779_pm_domain r8a7779_vdp1 = {
-+	.genpd_name = "VDP1",
- 	.ch = {
- 		.chan_offs = 0x100, /* PWRSR3 .. PWRER3 */
- 		.isr_bit = 21, /* VDP */
-@@ -231,6 +224,7 @@ struct r8a7779_pm_domain r8a7779_vdp1  };
- 
- struct r8a7779_pm_domain r8a7779_impx3 = {
-+	.genpd_name = "IMPX3",
- 	.ch = {
- 		.chan_offs = 0x140, /* PWRSR4 .. PWRER4 */
- 		.isr_bit = 24, /* IMP */
+ 	/* Port210 */
+ 	PINMUX_DATA(IRQ9_PORT210_MARK,		PORT210_FN0,	MSEL1CR_9_1),
+-- 
+1.7.5.4
 
