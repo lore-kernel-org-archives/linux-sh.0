@@ -1,72 +1,58 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 04 Jul 2012 13:31:34 +0000
+From: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date: Wed, 04 Jul 2012 14:29:13 +0000
 Subject: Re: [PATCH] ARM: shmobile: kzm9g: add REGULATOR settings to kzm9g_defconfig
-Message-Id: <CANqRtoTAOcj_r4_4kRn1CgH6KsqNAO5fMeXAb6x31wy=hFAUAQ@mail.gmail.com>
+Message-Id: <20120704142912.GD4111@opensource.wolfsonmicro.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="wbs6g7essDTrqL3S"
 List-Id: <linux-sh.vger.kernel.org>
 References: <4FF2C282.5030000@kmckk.co.jp>
 In-Reply-To: <4FF2C282.5030000@kmckk.co.jp>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Jul 4, 2012 at 8:22 PM, Rafael J. Wysocki <rjw@sisk.pl> wrote:
-> On Wednesday, July 04, 2012, Guennadi Liakhovetski wrote:
->> On Wed, 4 Jul 2012, Magnus Damm wrote:
->>
->> > On Wed, Jul 4, 2012 at 7:53 PM, Guennadi Liakhovetski
->> > <g.liakhovetski@gmx.de> wrote:
->> > > On Wed, 4 Jul 2012, Paul Mundt wrote:
->> > >
->> > >> On Wed, Jul 04, 2012 at 07:41:09PM +0900, Magnus Damm wrote:
->> > >> > On Wed, Jul 4, 2012 at 7:38 PM, Mark Brown
->> > >> > <broonie@opensource.wolfsonmicro.com> wrote:
->> > >> > > On Wed, Jul 04, 2012 at 12:40:56PM +0200, Rafael J. Wysocki wrote:
->> > >> > >
->> > >> > >> Well, if arch-wide, then perhaps we don't need REGULATOR_FIXED_VOLTAGE at all
->> > >> > >> and we can just make things depending on it depend on REGULATOR directly?
->> > >> > >
->> > >> > >> The meaning of what you're proposing above is pretty much
->> > >> > >> "REGULATOR_FIXED_VOLTAGE should be set whenever REGULATOR is" and I guess
->> > >> > >> REGULATOR_FIXED_VOLTAGE depends on REGULATOR, so they appear to be equivalent.
->> > >> > >
->> > >> > >> How much code does really depend on REGULATOR_FIXED_VOLTAGE which is not build
->> > >> > >> when REGULATOR is set?
->> > >> > >
->> > >> > > No, that won't help - the problem is that we want a specific regulator
->> > >> > > driver to be built in order to ensure that the services it provides are
->> > >> > > available.
->> > >> >
->> > >> > Right, so what's wrong with having a "select REGULATOR_FIXED_VOLTAGE"
->> > >> > on boards that make use of them? That seems to be the most
->> > >> > straightforward way to me.
->> > >> >
->> > >> Yes, agreed. This is not very different from the gpiolib have/want case,
->> > >> either, and going that on a board-specific level worked out fine.
->> > >
->> > > Ok, I'll make 2 patches then - for arch/sh/boards/Kconfig and
->> > > arch/arm/mach-shmobile/Kconfig, adding the proposed "select ... if ..."
->> > > line for each affected board.
->> >
->> > Thanks. Is the "if ..." part the preferred way? It seems very verbose to me.
->>
->> I tried without the "if," i.e. just
->>
->>       select REGULATOR_FIXED_VOLTAGE
->>
->> If REGULATOR is not enabled in the .config, this produces a peculiar
->> configuration of
->>
->> REGULATOR=n
->> REGULATOR_FIXED_VOLTAGE=y
->>
->> Which doesn't seem very meaningful to me. We could "select" both - that's
->> another possibility. My proposal with the "if" gives more flexibility in
->> kernel configuration - you can build a kernel without regulator support
->> that way, for whatever reason you might want to do that.
->
-> Yes, I think the "if" option is more flexible.
 
-Agreed. Thanks.
+--wbs6g7essDTrqL3S
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-/ magnus
+On Wed, Jul 04, 2012 at 07:58:15PM +0900, Magnus Damm wrote:
+> On Wed, Jul 4, 2012 at 7:48 PM, Mark Brown
+
+> > If the power on defaults for the system weren't suitable for whatever is
+> > being done you'd still have an issue even with the stubs but a lot of
+> > the time the main effect of the API is to allow drivers to do additional
+> > power optimisations.
+
+> I may misunderstand the situation, but I believe the issue here is
+> that the REGULATOR=n case works fine on the boards with smsc911x, but
+> it stops "working" whenever REGULATOR=y is turned on and
+> REGULATOR_DRIVER_FOOBAR=n. People probably enable regulators because
+> they want to use the PMIC (that most likely isn't hooked up to the
+> SMSC chip), but they get surprised to see the following SMSC error
+> message:
+
+Yes, of course, but then there's not really much else we can do here
+except for ignore errors which isn't awesome.
+
+--wbs6g7essDTrqL3S
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJP9FMyAAoJEBus8iNuMP3dIqYP/08i5Y5r+bmn9ydToY7QvCYf
+zZVTLJc0sUPyxoYMfZRr8oCmtvKqzFm/2xu8+m0n2u9d+v+mZZTpvR3AWytnbmpn
+MxWYPkV26fpMR0yzUbqD0UjbK7ssk4bREsjqExM7/y8st00JFkllg+jl/C/FkvWl
+KSTn4G3JxZVB/fcHaRI1gD3dHR+FeP9T7TrxeQjFWtnzmFa9XJXql8PhYlUbkDei
+SmACb/nLqSNLHYAckwfyTd6qFfRW0zkh6SvXS/YqnlbiQqf+XxDSz8roukOo6/Iv
+OMvK18ZFoPpR48EiVTlAoQ1oP9CjICZEiEw3SIDj7lbfOtIQphHa3GvfR1JspqvB
+Pbge/aGCs7FX74zX+fnw3pitOjzv4dQ1sewvyioMtEQ8JYrI07hmf7RfmV1/R2mG
+QHj30Ab59kVpl2modG2ynEmCRe71Wc5jNkd/HxLRj3wP6d+pam0kJGZg2KnPXXuC
+HE/ep+hGWqDUJzvWgjwJrXOKPbPHW4nO1QQKouTi6ZJMpvhdl94XLJTpPCD5BcQr
+73gBNud3tRVlhiA4aJSw9IyYxSjp+DBZknoC32Ym5s0SK0k+JLFq9Ve4JJOk3An4
+1AYUEO6lJktPIvJZO9I9h2D7qgo3yZPIxp11qJZdXRFkE30fMBkKU2oZ3r8KYpCD
+wB1QF8JJaGJC2jsT5ovc
+=HMlJ
+-----END PGP SIGNATURE-----
+
+--wbs6g7essDTrqL3S--
