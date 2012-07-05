@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 05 Jul 2012 00:05:37 +0000
+Date: Thu, 05 Jul 2012 01:08:00 +0000
 Subject: Re: [PATCH 2/7] ARM: shmobile: r8a7740: add basic pm domain support
-Message-Id: <87liizqdgz.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <87d34bqaky.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87mx3gtc2d.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <87mx3gtc2d.wl%kuninori.morimoto.gx@renesas.com>
@@ -11,37 +11,33 @@ Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
 
-Hi Paul, Magnus
+Hi Paul, Magnus, and Rafael
 
-> On Wed, Jul 4, 2012 at 7:45 PM, Paul Mundt <lethal@linux-sh.org> wrote:
-> > On Tue, Jul 03, 2012 at 08:55:25PM -0700, Kuninori Morimoto wrote:
-> >> +void r8a7740_init_pm_domain(struct r8a7740_pm_domain *r8a7740_pd)
-> >> +{
-> >> +     struct generic_pm_domain *genpd = &r8a7740_pd->genpd;
-> >> +     struct dev_power_governor *gov = r8a7740_pd->gov;
-> >> +
-> >> +     pm_genpd_init(genpd, gov ? : &simple_qos_governor, false);
-> >> +     genpd->dev_ops.stop             = r8a7740_stop_dev;
-> >> +     genpd->dev_ops.start            = r8a7740_start_dev;
-> >> +     genpd->dev_ops.active_wakeup    = pd_active_wakeup;
-> >> +     genpd->dev_irq_safe             = true;
-> >> +     genpd->power_off                = pd_power_down;
-> >> +     genpd->power_on                 = pd_power_up;
-> >> +     __pd_power_up(r8a7740_pd, false);
-> >> +}
-> >> +
-> > This pd_ naming really needs to go, it clashes too much with the generic
-> > code and it is far more confusing than it needs to be. If this is an
-> > r8a7740 specific routine then prefix with r8a7740 accordingly.
-> 
-> I agree that we want to use soc-specific prefixes for soc-specific code.
-> 
-> In this case it's not really soc-specific though, so code here needs
-> to be reworked for sharing between sh7372 and r8a7740 (and sh73a0 too
-> perhaps).
 
-I see.
-I fix this naming on v2 patch set.
+> > In this case it's not really soc-specific though, so code here needs
+> > to be reworked for sharing between sh7372 and r8a7740 (and sh73a0 too
+> > perhaps).
+> 
+> I see.
+> I fix this naming on v2 patch set.
+
+Sorry, not naming, sharing.
+
+>>> Rafael
+
+Kuninori Morimoto (7):
+      1 ARM: shmobile: r8a7740: fixup: MSEL1CR 7bit control
+      2 ARM: shmobile: r8a7740: add basic pm domain support
+      3 ARM: shmobile: r8a7740: add A3SP pm domain support
+      4 ARM: shmobile: r8a7740: add A4LC pm domain support
+      5 ARM: shmobile: armadillo800eva: USB Func enables external IRQ mode
+      6 ARM: shmobile: armadillo800eva: A4LC domain includes LCDC
+      7 ARM: shmobile: armadillo800eva: A3SP domain includes USB
+
+Then, #2/#3/#4/#6/#7 will be updated.
+but #1/#5 have no update.
+Should I re-send these too on v2?
+Or can you consider these 2 independently ?
 
 Best regards
 ---
