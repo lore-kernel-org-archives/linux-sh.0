@@ -1,47 +1,43 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Thu, 05 Jul 2012 12:08:26 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 05 Jul 2012 13:54:30 +0000
 Subject: Re: [PATCH 2/7 v2] ASoC: siu: don't use DMA device for channel filtering
-Message-Id: <20120705120826.GU4111@opensource.wolfsonmicro.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="m+1hRa/9CwYN9i9M"
+Message-Id: <Pine.LNX.4.64.1207051549010.30191@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1341484183-10757-1-git-send-email-g.liakhovetski@gmx.de>
  <1341484183-10757-3-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1341484183-10757-3-git-send-email-g.liakhovetski@gmx.de>
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+ <20120705120826.GU4111@opensource.wolfsonmicro.com>
+In-Reply-To: <20120705120826.GU4111@opensource.wolfsonmicro.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Mark Brown <broonie@opensource.wolfsonmicro.com>
 Cc: Vinod Koul <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
+On Thu, 5 Jul 2012, Mark Brown wrote:
 
---m+1hRa/9CwYN9i9M
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+> On Thu, Jul 05, 2012 at 12:29:38PM +0200, Guennadi Liakhovetski wrote:
+> > DMA channels are filtered based on slave IDs, no need to additionally filter
+> > on DMA device.
+> 
+> This doesn't apply, please regenerate against current code.
 
-On Thu, Jul 05, 2012 at 12:29:38PM +0200, Guennadi Liakhovetski wrote:
-> DMA channels are filtered based on slave IDs, no need to additionally filter
-> on DMA device.
+Sure, as I mentioned in my description mail: "This patch series goes on 
+top of my earlier patches to split shdma.c." And that patch series, also 
+available at
 
-This doesn't apply, please regenerate against current code.
+git://github.com/lyakh/linux.git shdma-base
 
---m+1hRa/9CwYN9i9M
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+contains this patch:
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+commit 553d9459a90e9cc6997da2c34bb637794d6a4ac5
+    ASoC: siu: prepare for conversion to the shdma base library
 
-iQIcBAEBAgAGBQJP9YOtAAoJEBus8iNuMP3dVRkP/iSlIm0435e5CiJPlx+S7Wqw
-63HfOLlMh0pbwb9fQdanjdtGFzPJkjddoBjyTP+Heqf9XAvhfkSQHouRNbswMNRm
-fWhQyoleD2p3ZIOvCBLyvrdKszEzpwerd/F2Ht5vmWuVU/SahNTWBbqQWgMIXuAi
-Wv1G3iGnpA5IxLt4UtL2xpfoE16AgVRv/OW+BpWYrhAYWBQmsrdXV1BAnf1j0vHT
-VgjXPJNhHvHW1N6EKNoBHVrHZiJWcYZr5JX73NCA4o6yLtwfhgLfbeEhRrAJFXi0
-HP85ex/OWPcoIuCRfENQi3RWSV5KEq4i2AtvxUiftVqfC4sJ76f59eZlZ8DgILRS
-0JneWDlYM4IxI4qmiufgCdWAfn8hZ1PZhXkY2irKEfPyMEU+3HCXQpxu8NEL7Ks2
-isuu3qEBUKZvlf944kEryySLYiD0FiVKfeLNdi4RRCfXuqWmv3CJE7ioSXvq5xRh
-eN5Un8xHq0V4QBykG0QYOv7AhhkgOk1m3A/ky0qeKnRoqVdWeYwVB3iHbQxmjn/E
-q6iE960zPVRkJyzC2KJyQJ+ZmGaxIXln3fKuHBXJssdL2OrYUePhK/nuHwELIa88
-t+DJ/GgdR6FuuBuyisSBXBGsQCJCLbMkLJmCHCjW3ExiCD6zLhPet6iwEIQNHn4R
-GQqAmbJgxYN76QxaB2KE
-=2YUn
------END PGP SIGNATURE-----
+Sorry, I should have mentioned, that various DMA slave drivers also have 
+dependencies in that series.
 
---m+1hRa/9CwYN9i9M--
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
