@@ -1,50 +1,32 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 05 Jul 2012 10:29:39 +0000
-Subject: [PATCH 3/7 v2] sh: remove unused DMA device pointer from SIU platform data
-Message-Id: <1341484183-10757-4-git-send-email-g.liakhovetski@gmx.de>
+From: Chris Ball <cjb@laptop.org>
+Date: Thu, 05 Jul 2012 17:35:56 +0000
+Subject: Re: [PATCH 3/9 v3] mmc: sh_mmcif: remove unneeded struct sh_mmcif_dma, prepare to shdma conversion
+Message-Id: <87a9zexg8z.fsf@octavius.laptop.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1341484183-10757-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1341484183-10757-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1336576161-27082-1-git-send-email-g.liakhovetski@gmx.de>
+	<1336576161-27082-4-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1336576161-27082-4-git-send-email-g.liakhovetski@gmx.de>
+	(Guennadi Liakhovetski's message of "Wed, 9 May 2012 17:09:15 +0200")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Vinod Koul <vinod.koul@intel.com>, linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
 
-The SIU ALSA driver is not using the DMA device pointer for DMA channel
-filtering any more, it can be now removed.
+Hi,
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Paul Mundt <lethal@linux-sh.org>
----
- arch/sh/include/asm/siu.h              |    1 -
- arch/sh/kernel/cpu/sh4a/setup-sh7722.c |    1 -
- 2 files changed, 0 insertions(+), 2 deletions(-)
+On Wed, May 09 2012, Guennadi Liakhovetski wrote:
+> Now that all users have been updated to use the embedded in struct
+> sh_mmcif_plat_data DMA slave IDs, struct sh_mmcif_dma is no longer needed
+> and can be removed. This also makes preparation to the shdma base library
+> conversion easier.
+>
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> Cc: Chris Ball <cjb@laptop.org>
 
-diff --git a/arch/sh/include/asm/siu.h b/arch/sh/include/asm/siu.h
-index 1d95c78..580b7ac 100644
---- a/arch/sh/include/asm/siu.h
-+++ b/arch/sh/include/asm/siu.h
-@@ -14,7 +14,6 @@
- struct device;
- 
- struct siu_platform {
--	struct device *dma_dev;
- 	unsigned int dma_slave_tx_a;
- 	unsigned int dma_slave_rx_a;
- 	unsigned int dma_slave_tx_b;
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
-index 0f5a219..65786c7 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
-@@ -512,7 +512,6 @@ static struct platform_device tmu2_device = {
- };
- 
- static struct siu_platform siu_platform_data = {
--	.dma_dev	= &dma_device.dev,
- 	.dma_slave_tx_a	= SHDMA_SLAVE_SIUA_TX,
- 	.dma_slave_rx_a	= SHDMA_SLAVE_SIUA_RX,
- 	.dma_slave_tx_b	= SHDMA_SLAVE_SIUB_TX,
+Acked-by: Chris Ball <cjb@laptop.org>
+
+- Chris.
 -- 
-1.7.2.5
-
+Chris Ball   <cjb@laptop.org>   <http://printf.net/>
+One Laptop Per Child
