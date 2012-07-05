@@ -1,47 +1,47 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 05 Jul 2012 10:29:38 +0000
-Subject: [PATCH 2/7 v2] ASoC: siu: don't use DMA device for channel filtering
-Message-Id: <1341484183-10757-3-git-send-email-g.liakhovetski@gmx.de>
+From: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date: Thu, 05 Jul 2012 12:08:26 +0000
+Subject: Re: [PATCH 2/7 v2] ASoC: siu: don't use DMA device for channel filtering
+Message-Id: <20120705120826.GU4111@opensource.wolfsonmicro.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="m+1hRa/9CwYN9i9M"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1341484183-10757-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1341484183-10757-1-git-send-email-g.liakhovetski@gmx.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>
+ <1341484183-10757-3-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1341484183-10757-3-git-send-email-g.liakhovetski@gmx.de>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Vinod Koul <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-DMA channels are filtered based on slave IDs, no need to additionally filter
-on DMA device.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>
----
- sound/soc/sh/siu_pcm.c |    4 ----
- 1 files changed, 0 insertions(+), 4 deletions(-)
+--m+1hRa/9CwYN9i9M
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-diff --git a/sound/soc/sh/siu_pcm.c b/sound/soc/sh/siu_pcm.c
-index 3fdc801..488f9be 100644
---- a/sound/soc/sh/siu_pcm.c
-+++ b/sound/soc/sh/siu_pcm.c
-@@ -332,9 +332,6 @@ static bool filter(struct dma_chan *chan, void *slave)
- 
- 	pr_debug("%s: slave ID %d\n", __func__, param->shdma_slave.slave_id);
- 
--	if (unlikely(param->dma_dev != chan->device->dev))
--		return false;
--
- 	chan->private = &param->shdma_slave;
- 	return true;
- }
-@@ -369,7 +366,6 @@ static int siu_pcm_open(struct snd_pcm_substream *ss)
- 			pdata->dma_slave_rx_a;
- 	}
- 
--	param->dma_dev = pdata->dma_dev;
- 	/* Get DMA channel */
- 	siu_stream->chan = dma_request_channel(mask, filter, param);
- 	if (!siu_stream->chan) {
--- 
-1.7.2.5
+On Thu, Jul 05, 2012 at 12:29:38PM +0200, Guennadi Liakhovetski wrote:
+> DMA channels are filtered based on slave IDs, no need to additionally filter
+> on DMA device.
 
+This doesn't apply, please regenerate against current code.
+
+--m+1hRa/9CwYN9i9M
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJP9YOtAAoJEBus8iNuMP3dVRkP/iSlIm0435e5CiJPlx+S7Wqw
+63HfOLlMh0pbwb9fQdanjdtGFzPJkjddoBjyTP+Heqf9XAvhfkSQHouRNbswMNRm
+fWhQyoleD2p3ZIOvCBLyvrdKszEzpwerd/F2Ht5vmWuVU/SahNTWBbqQWgMIXuAi
+Wv1G3iGnpA5IxLt4UtL2xpfoE16AgVRv/OW+BpWYrhAYWBQmsrdXV1BAnf1j0vHT
+VgjXPJNhHvHW1N6EKNoBHVrHZiJWcYZr5JX73NCA4o6yLtwfhgLfbeEhRrAJFXi0
+HP85ex/OWPcoIuCRfENQi3RWSV5KEq4i2AtvxUiftVqfC4sJ76f59eZlZ8DgILRS
+0JneWDlYM4IxI4qmiufgCdWAfn8hZ1PZhXkY2irKEfPyMEU+3HCXQpxu8NEL7Ks2
+isuu3qEBUKZvlf944kEryySLYiD0FiVKfeLNdi4RRCfXuqWmv3CJE7ioSXvq5xRh
+eN5Un8xHq0V4QBykG0QYOv7AhhkgOk1m3A/ky0qeKnRoqVdWeYwVB3iHbQxmjn/E
+q6iE960zPVRkJyzC2KJyQJ+ZmGaxIXln3fKuHBXJssdL2OrYUePhK/nuHwELIa88
+t+DJ/GgdR6FuuBuyisSBXBGsQCJCLbMkLJmCHCjW3ExiCD6zLhPet6iwEIQNHn4R
+GQqAmbJgxYN76QxaB2KE
+=2YUn
+-----END PGP SIGNATURE-----
+
+--m+1hRa/9CwYN9i9M--
