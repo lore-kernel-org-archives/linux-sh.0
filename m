@@ -1,77 +1,223 @@
-From: Chris Metcalf <cmetcalf@tilera.com>
-Date: Fri, 13 Jul 2012 16:46:11 +0000
-Subject: Re: [PATCH] fork: fix error handling in dup_task()
-Message-Id: <500050D3.2040403@tilera.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 05 Jul 2012 10:29:41 +0000
+Subject: [PATCH 5/7 v2] dma: sh: use an integer slave ID to improve API compatibility
+Message-Id: <1341484183-10757-6-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1342091093-1909-1-git-send-email-akinobu.mita@gmail.com> <20120712150623.06b2f71e.akpm@linux-foundation.org> <CAC5umyhPUZ_EVuMSFEzw5nYz6+DjkNLCe12Vvkx-9wig7nA+pA@mail.gmail.com>
-In-Reply-To: <CAC5umyhPUZ_EVuMSFEzw5nYz6+DjkNLCe12Vvkx-9wig7nA+pA@mail.gmail.com>
+References: <1341484183-10757-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1341484183-10757-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: Akinobu Mita <akinobu.mita@gmail.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, linux-kernel@vger.kernel.org, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, x86@kernel.org, David Howells <dhowells@redhat.com>, Koichi Yasutake <yasutake.koichi@jp.panasonic.com>, linux-am33-list@redhat.com, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Salman Qazi <sqazi@google.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Vinod Koul <vinod.koul@intel.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On 7/13/2012 6:07 AM, Akinobu Mita wrote:
-> 2012/7/13 Andrew Morton <akpm@linux-foundation.org>:
->> On Thu, 12 Jul 2012 20:04:53 +0900
->> Akinobu Mita <akinobu.mita@gmail.com> wrote:
->>
->>> The function dup_task() may fail at the following function calls in
->>> the following order.
->>>
->>> 0) alloc_task_struct_node()
->>> 1) alloc_thread_info_node()
->>> 2) arch_dup_task_struct()
->>>
->>> Error by 0) is not a matter, it can just return.  But error by 1)
->>> requires releasing task_struct allocated by 0) before it returns.
->>> Likewise, error by 2) requires releasing task_struct and thread_info
->>> allocated by 0) and 1).
->>>
->>> The existing error handling calls free_task_struct() and
->>> free_thread_info() which do not only release task_struct and
->>> thread_info, but also call architecture specific
->>> arch_release_task_struct() and arch_release_thread_info().
->>>
->>> The problem is that task_struct and thread_info are not fully
->>> initialized yet at this point, but arch_release_task_struct() and
->>> arch_release_thread_info() are called with them.
->>>
->>> For example, x86 defines its own arch_release_task_struct() that
->>> releases a task_xstate.  If alloc_thread_info_node() fails in
->>> dup_task(), arch_release_task_struct() is called with task_struct
->>> which is just allocated and filled with garbage in this error handling.
->>>
->>> This actually happened with tools/testing/fault-injection/failcmd.sh
->>>
->>>       # env FAILCMD_TYPE=FAil_page_alloc \
->>>               ./tools/testing/fault-injection/failcmd.sh --times=100 \
->>>               --min-order=3D0 --ignore-gfp-wait=3D0 \
->>>               -- make -C tools/testing/selftests/ run_tests
->>>
->>> In order to fix this issue, make free_{task_struct,thread_info}() not
->>> to call arch_release_{task_struct,thread_info}() and call
->>> arch_release_{task_struct,thread_info}() implicitly where needed.
->>>
->>> Default arch_release_task_struct() and arch_release_thread_info() are
->>> defined as empty by default.  So this change only affects the
->>> architectures which implement their own arch_release_task_struct() or
->>> arch_release_thread_info() as listed below.
->> This conflicts with Salman's fix (below) which is in linux-next via
->> Ingo's tree.
->>
->> It appears that we should drop Salman's patch altogether and use yours?
-> Yes.  Salman's patch fixes error handling for x86, sh, and mn10300.
-> But it doesn't fix for tile.  If tile's arch_release_thread_info() is
-> called after setup_thread_stack(tsk, orig), it may release original
-> task's step_state. (tsk->step_state will be cleared by tile's
-> copy_thread() after dup_task_struct()).
+Initially struct shdma_slave has been introduced with the only member - an
+unsigned slave ID - to describe common properties of DMA slaves in an
+extensible way. However, experience shows, that a slave ID is indeed the
+only parameter, needed to identify DMA slaves. This is also, what is used
+by the core dmaengine API in struct dma_slave_config. We switch to using
+the slave_id directly, instead of passing a pointer to struct shdma_slave
+to improve compatibility with the core. We also make the slave_id signed
+for easier error checking.
 
-Yes, I think Akinobu's patch is better.  Thanks.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/dma/sh/shdma-base.c |   25 +++++++++++++------------
+ drivers/dma/sh/shdma.c      |   12 ++++++------
+ include/linux/sh_dma.h      |    8 ++++----
+ include/linux/shdma-base.h  |    8 ++++----
+ 4 files changed, 27 insertions(+), 26 deletions(-)
 
---=20
-Chris Metcalf, Tilera Corp.
-http://www.tilera.com
-
-
+diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
+index f75ebfa..73db282 100644
+--- a/drivers/dma/sh/shdma-base.c
++++ b/drivers/dma/sh/shdma-base.c
+@@ -76,7 +76,6 @@ static dma_cookie_t shdma_tx_submit(struct dma_async_tx_descriptor *tx)
+ 		container_of(tx, struct shdma_desc, async_tx),
+ 		*last = desc;
+ 	struct shdma_chan *schan = to_shdma_chan(tx->chan);
+-	struct shdma_slave *slave = schan->slave;
+ 	dma_async_tx_callback callback = tx->callback;
+ 	dma_cookie_t cookie;
+ 	bool power_up;
+@@ -138,7 +137,7 @@ static dma_cookie_t shdma_tx_submit(struct dma_async_tx_descriptor *tx)
+ 			 * Make it int then, on error remove chunks from the
+ 			 * queue again
+ 			 */
+-			ops->setup_xfer(schan, slave);
++			ops->setup_xfer(schan, schan->slave_id);
+ 
+ 			if (schan->pm_state = SHDMA_PM_PENDING)
+ 				shdma_chan_xfer_ld_queue(schan);
+@@ -186,7 +185,7 @@ static int shdma_alloc_chan_resources(struct dma_chan *chan)
+ 	 * never runs concurrently with itself or free_chan_resources.
+ 	 */
+ 	if (slave) {
+-		if (slave->slave_id >= slave_num) {
++		if (slave->slave_id < 0 || slave->slave_id >= slave_num) {
+ 			ret = -EINVAL;
+ 			goto evalid;
+ 		}
+@@ -196,9 +195,13 @@ static int shdma_alloc_chan_resources(struct dma_chan *chan)
+ 			goto etestused;
+ 		}
+ 
+-		ret = ops->set_slave(schan, slave);
++		ret = ops->set_slave(schan, slave->slave_id);
+ 		if (ret < 0)
+ 			goto esetslave;
++
++		schan->slave_id = slave->slave_id;
++	} else {
++		schan->slave_id = -EINVAL;
+ 	}
+ 
+ 	schan->desc = kcalloc(NR_DESCS_PER_CHANNEL,
+@@ -208,7 +211,6 @@ static int shdma_alloc_chan_resources(struct dma_chan *chan)
+ 		goto edescalloc;
+ 	}
+ 	schan->desc_num = NR_DESCS_PER_CHANNEL;
+-	schan->slave = slave;
+ 
+ 	for (i = 0; i < NR_DESCS_PER_CHANNEL; i++) {
+ 		desc = ops->embedded_desc(schan->desc, i);
+@@ -366,10 +368,9 @@ static void shdma_free_chan_resources(struct dma_chan *chan)
+ 	if (!list_empty(&schan->ld_queue))
+ 		shdma_chan_ld_cleanup(schan, true);
+ 
+-	if (schan->slave) {
++	if (schan->slave_id >= 0) {
+ 		/* The caller is holding dma_list_mutex */
+-		struct shdma_slave *slave = schan->slave;
+-		clear_bit(slave->slave_id, shdma_slave_used);
++		clear_bit(schan->slave_id, shdma_slave_used);
+ 		chan->private = NULL;
+ 	}
+ 
+@@ -559,7 +560,7 @@ static struct dma_async_tx_descriptor *shdma_prep_slave_sg(
+ 	struct shdma_chan *schan = to_shdma_chan(chan);
+ 	struct shdma_dev *sdev = to_shdma_dev(schan->dma_chan.device);
+ 	const struct shdma_ops *ops = sdev->ops;
+-	struct shdma_slave *slave = schan->slave;
++	int slave_id = schan->slave_id;
+ 	dma_addr_t slave_addr;
+ 
+ 	if (!chan)
+@@ -568,9 +569,9 @@ static struct dma_async_tx_descriptor *shdma_prep_slave_sg(
+ 	BUG_ON(!schan->desc_num);
+ 
+ 	/* Someone calling slave DMA on a generic channel? */
+-	if (!slave || !sg_len) {
+-		dev_warn(schan->dev, "%s: bad parameter: %p, %d, %d\n",
+-			 __func__, slave, sg_len, slave ? slave->slave_id : -1);
++	if (slave_id < 0 || !sg_len) {
++		dev_warn(schan->dev, "%s: bad parameter: len=%d, id=%d\n",
++			 __func__, sg_len, slave_id);
+ 		return NULL;
+ 	}
+ 
+diff --git a/drivers/dma/sh/shdma.c b/drivers/dma/sh/shdma.c
+index 9f0a2e5..9a10d8b 100644
+--- a/drivers/dma/sh/shdma.c
++++ b/drivers/dma/sh/shdma.c
+@@ -285,12 +285,12 @@ static bool sh_dmae_channel_busy(struct shdma_chan *schan)
+ }
+ 
+ static void sh_dmae_setup_xfer(struct shdma_chan *schan,
+-			       struct shdma_slave *sslave)
++			       int slave_id)
+ {
+ 	struct sh_dmae_chan *sh_chan = container_of(schan, struct sh_dmae_chan,
+ 						    shdma_chan);
+ 
+-	if (sslave) {
++	if (slave_id >= 0) {
+ 		const struct sh_dmae_slave_config *cfg  			sh_chan->config;
+ 
+@@ -302,7 +302,7 @@ static void sh_dmae_setup_xfer(struct shdma_chan *schan,
+ }
+ 
+ static const struct sh_dmae_slave_config *dmae_find_slave(
+-	struct sh_dmae_chan *sh_chan, unsigned int slave_id)
++	struct sh_dmae_chan *sh_chan, int slave_id)
+ {
+ 	struct sh_dmae_device *shdev = to_sh_dev(sh_chan);
+ 	struct sh_dmae_pdata *pdata = shdev->pdata;
+@@ -320,11 +320,11 @@ static const struct sh_dmae_slave_config *dmae_find_slave(
+ }
+ 
+ static int sh_dmae_set_slave(struct shdma_chan *schan,
+-			     struct shdma_slave *sslave)
++			     int slave_id)
+ {
+ 	struct sh_dmae_chan *sh_chan = container_of(schan, struct sh_dmae_chan,
+ 						    shdma_chan);
+-	const struct sh_dmae_slave_config *cfg = dmae_find_slave(sh_chan, sslave->slave_id);
++	const struct sh_dmae_slave_config *cfg = dmae_find_slave(sh_chan, slave_id);
+ 	if (!cfg)
+ 		return -ENODEV;
+ 
+@@ -579,7 +579,7 @@ static int sh_dmae_resume(struct device *dev)
+ 		if (!sh_chan->shdma_chan.desc_num)
+ 			continue;
+ 
+-		if (sh_chan->shdma_chan.slave) {
++		if (sh_chan->shdma_chan.slave_id >= 0) {
+ 			const struct sh_dmae_slave_config *cfg = sh_chan->config;
+ 			dmae_set_dmars(sh_chan, cfg->mid_rid);
+ 			dmae_set_chcr(sh_chan, cfg->chcr);
+diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
+index a79f10a..4e83f3e 100644
+--- a/include/linux/sh_dma.h
++++ b/include/linux/sh_dma.h
+@@ -27,10 +27,10 @@ struct sh_dmae_slave {
+  * a certain peripheral
+  */
+ struct sh_dmae_slave_config {
+-	unsigned int			slave_id;
+-	dma_addr_t			addr;
+-	u32				chcr;
+-	char				mid_rid;
++	int		slave_id;
++	dma_addr_t	addr;
++	u32		chcr;
++	char		mid_rid;
+ };
+ 
+ struct sh_dmae_channel {
+diff --git a/include/linux/shdma-base.h b/include/linux/shdma-base.h
+index c3a19e9..6263ad2 100644
+--- a/include/linux/shdma-base.h
++++ b/include/linux/shdma-base.h
+@@ -43,7 +43,7 @@ struct device;
+  */
+ 
+ struct shdma_slave {
+-	unsigned int slave_id;
++	int slave_id;
+ };
+ 
+ struct shdma_desc {
+@@ -66,7 +66,7 @@ struct shdma_chan {
+ 	size_t max_xfer_len;		/* max transfer length */
+ 	int id;				/* Raw id of this channel */
+ 	int irq;			/* Channel IRQ */
+-	struct shdma_slave *slave;	/* Client data for slave DMA */
++	int slave_id;			/* Client ID for slave DMA */
+ 	enum shdma_pm_state pm_state;
+ };
+ 
+@@ -93,8 +93,8 @@ struct shdma_ops {
+ 	dma_addr_t (*slave_addr)(struct shdma_chan *);
+ 	int (*desc_setup)(struct shdma_chan *, struct shdma_desc *,
+ 			  dma_addr_t, dma_addr_t, size_t *);
+-	int (*set_slave)(struct shdma_chan *, struct shdma_slave *);
+-	void (*setup_xfer)(struct shdma_chan *, struct shdma_slave *);
++	int (*set_slave)(struct shdma_chan *, int);
++	void (*setup_xfer)(struct shdma_chan *, int);
+ 	void (*start_xfer)(struct shdma_chan *, struct shdma_desc *);
+ 	struct shdma_desc *(*embedded_desc)(void *, int);
+ 	bool (*chan_irq)(struct shdma_chan *, int);
+-- 
+1.7.2.5
 
