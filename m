@@ -1,48 +1,101 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 10 Jul 2012 07:46:30 +0000
-Subject: Re: Boot regression on Mackerel with current mainline
-Message-Id: <Pine.LNX.4.64.1207100945090.29825@axis700.grange>
+Date: Thu, 05 Jul 2012 13:17:42 +0000
+Subject: [PATCH] ARM: mach-shmobile: select the fixed regulator driver on several boards
+Message-Id: <Pine.LNX.4.64.1207051515190.30191@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201207031218.24797.rjw@sisk.pl> <Pine.LNX.4.64.1207031336320.29890@axis700.grange>
- <201207031910.24864.rjw@sisk.pl> <Pine.LNX.4.64.1207041125330.21042@axis700.grange>
- <87ipdws1mc.fsf@octavius.laptop.org> <Pine.LNX.4.64.1207100845130.29825@axis700.grange>
- <87r4skqe1n.fsf@octavius.laptop.org>
-In-Reply-To: <87r4skqe1n.fsf@octavius.laptop.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Chris Ball <cjb@laptop.org>
-Cc: "Rafael J. Wysocki" <rjw@sisk.pl>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, LKML <linux-kernel@vger.kernel.org>, Mark Brown <broonie@opensource.wolfsonmicro.com>, Thomas Gleixner <tglx@linutronix.de>
+To: linux-sh@vger.kernel.org
 
-On Tue, 10 Jul 2012, Chris Ball wrote:
+On systems, using regulators to supply power to devices, if the REGULATOR
+Kconfig option is disabled, regulator API stubs will be used, which often
+suffices to bring a default configuration up. If REGULATOR is enabled but
+respective regulator drivers are inactive, the real regulator API calls
+will be used, which in the absence of drivers will fail to provide
+services. This patch prevents such a problem on sh-mobile boards by
+forcing REGULATOR_FIXED_VOLTAGE on if REGULATOR is selected.
 
-> Hi Guennadi,
-> 
-> On Tue, Jul 10 2012, Guennadi Liakhovetski wrote:
-> >> > The latter one looks big because of a rename, but with "-M" it's pretty 
-> >> > trivial. Chris, do you agree?
-> >> 
-> >> Is the minimal fix to just add "| IRQF_ONESHOT" to the request_threaded_irq
-> >> argument?  If so, I'd rather push just that for 3.5, and I can take care of
-> >> having that change appear simultaneously in linux-next so that there aren't
-> >> any conflicts.  Is that okay with you?
-> >
-> > For that you'd have to rebase -next, right? you'd like to do that?
-> 
-> Yeah, I'm willing to rebase mmc-next for this -- I'd rather send the
-> simplest possible fix this late in 3.5-rc, and the rebase is simple.
-> Also, this fix is logically distinct from your rename patch.
-> 
-> I don't think I need you to send anything more, I'll add the initial
-> patch adding "| IRQF_ONESHOT", rebase your "extend and rename" patch on
-> top of that, push both to mmc-next, and then send the initial patch to
-> Linus in a few days.
-
-Great, thanks for taking care of this!
-
-Regards
-Guennadi
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ arch/arm/mach-shmobile/Kconfig |   10 ++++++++++
+ 1 files changed, 10 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index a2045dc..4a0d632 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -58,6 +58,7 @@ config MACH_G4EVM
+ 	bool "G4EVM board"
+ 	depends on ARCH_SH7377
+ 	select ARCH_REQUIRE_GPIOLIB
++	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 
+ config MACH_AP4EVB
+ 	bool "AP4EVB board"
+@@ -65,6 +66,7 @@ config MACH_AP4EVB
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select SH_LCD_MIPI_DSI
+ 	select SND_SOC_AK4642 if SND_SIMPLE_CARD
++	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 
+ choice
+ 	prompt "AP4EVB LCD panel selection"
+@@ -83,6 +85,7 @@ config MACH_AG5EVM
+ 	bool "AG5EVM board"
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select SH_LCD_MIPI_DSI
++	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	depends on ARCH_SH73A0
+ 
+ config MACH_MACKEREL
+@@ -90,15 +93,18 @@ config MACH_MACKEREL
+ 	depends on ARCH_SH7372
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select SND_SOC_AK4642 if SND_SIMPLE_CARD
++	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 
+ config MACH_KOTA2
+ 	bool "KOTA2 board"
+ 	select ARCH_REQUIRE_GPIOLIB
++	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	depends on ARCH_SH73A0
+ 
+ config MACH_BONITO
+ 	bool "bonito board"
+ 	select ARCH_REQUIRE_GPIOLIB
++	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	depends on ARCH_R8A7740
+ 
+ config MACH_ARMADILLO800EVA
+@@ -107,16 +113,19 @@ config MACH_ARMADILLO800EVA
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select USE_OF
+ 	select SND_SOC_WM8978 if SND_SIMPLE_CARD
++	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 
+ config MACH_MARZEN
+ 	bool "MARZEN board"
+ 	depends on ARCH_R8A7779
+ 	select ARCH_REQUIRE_GPIOLIB
++	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 
+ config MACH_KZM9D
+ 	bool "KZM9D board"
+ 	depends on ARCH_EMEV2
+ 	select USE_OF
++	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 
+ config MACH_KZM9G
+ 	bool "KZM-A9-GT board"
+@@ -124,6 +133,7 @@ config MACH_KZM9G
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select USE_OF
+ 	select SND_SOC_AK4642 if SND_SIMPLE_CARD
++	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 
+ comment "SH-Mobile System Configuration"
+ 
+-- 
+1.7.2.5
+
