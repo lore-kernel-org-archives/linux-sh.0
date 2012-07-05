@@ -1,48 +1,59 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 17 Jul 2012 10:53:53 +0000
-Subject: [PATCH/RFC 3/4] ARM: shmobile: extend MMCIF DMA client configuration entries
-Message-Id: <Pine.LNX.4.64.1207171248150.17060@axis700.grange>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 05 Jul 2012 08:28:00 +0000
+Subject: [PATCH 08/12 v2] ARM: shmobile: armadillo800eva: A3SP domain includes USB
+Message-Id: <87txxmpq7m.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1207171201550.11241@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1207171201550.11241@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-To prepare for MMCIF driver transition to the dma_request_slave_channel()
-API the MMCIF DMA client configuration entries in the slave configuration
-table have to be extended with device ID and DMA transfer direction fields.
+Because USB Func is controlled by external IRQ mode,
+it is possible to control USB under A3SP domain to reduce power.
+This patch enables it.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Armadillo800eva board switchs USB Host/Func by SW1.6,
+So, the device to adds into domain is selected on this patch.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
+v1 -> v2
 
-This is just an example. Eventually all DMA client configurations on all 
-affected platforms should be converted.
+ - based on pm-rmobile
 
- arch/arm/mach-shmobile/setup-sh7372.c |    4 ++++
- 1 files changed, 4 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index 7873159..f583e03 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -452,11 +452,15 @@ static const struct sh_dmae_slave_config sh7372_dmae_slaves[] = {
- 		.addr		= 0xe6bd0034,
- 		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
- 		.mid_rid	= 0xd1,
-+		.dev_id		= "sh_mmcif.0",
-+		.direction	= DMA_MEM_TO_DEV,
- 	}, {
- 		.slave_id	= SHDMA_SLAVE_MMCIF_RX,
- 		.addr		= 0xe6bd0034,
- 		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
- 		.mid_rid	= 0xd2,
-+		.dev_id		= "sh_mmcif.0",
-+		.direction	= DMA_DEV_TO_MEM,
- 	},
- };
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 101242a..cf10f92 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -953,6 +953,8 @@ clock_error:
+ #define GPIO_PORT8CR	0xe6050008
+ static void __init eva_init(void)
+ {
++	struct platform_device *usb = NULL;
++
+ 	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
+ 				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
  
+@@ -1050,6 +1052,7 @@ static void __init eva_init(void)
+ 		gpio_direction_input(GPIO_PORT209);
+ 
+ 		platform_device_register(&usbhsf_device);
++		usb = &usbhsf_device;
+ 	}
+ 
+ 	/* SDHI0 */
+@@ -1180,6 +1183,8 @@ static void __init eva_init(void)
+ 
+ 	rmobile_add_device_to_domain(&r8a7740_pd_a4lc, &lcdc0_device);
+ 	rmobile_add_device_to_domain(&r8a7740_pd_a4lc, &hdmi_lcdc_device);
++	if (usb)
++		rmobile_add_device_to_domain(&r8a7740_pd_a3sp, usb);
+ }
+ 
+ static void __init eva_earlytimer_init(void)
 -- 
-1.7.2.5
+1.7.5.4
 
