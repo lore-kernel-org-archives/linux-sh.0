@@ -1,93 +1,63 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Tue, 17 Jul 2012 11:53:59 +0000
-Subject: [PATCH 2/2] marzen: add SDHI0 support
-Message-Id: <1342526039-11128-3-git-send-email-phil.edworthy@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 05 Jul 2012 10:29:36 +0000
+Subject: [PATCH 0/7 v2] dma: sh: stop using .private
+Message-Id: <1341484183-10757-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Vinod Koul <vinod.koul@intel.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
+This patch series supersedes the one from yesterday with the same title. 
+The 4 patches from v1 are all unchanged, v2 just prepends them with 3 more 
+preparatory patches. From the original series description:
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
----
- arch/arm/mach-shmobile/board-marzen.c |   48 +++++++++++++++++++++++++++++++++
- 1 files changed, 48 insertions(+), 0 deletions(-)
+Here's an attempt to convert the shdma driver to a new method, whereby a 
+centrally provided filter function is used and the DMA_SLAVE_CONFIG command 
+is enabled for slave operation. The last patch is an illustration of how 
+this new method shall be used. If this approach is acceptable, I'll also 
+convert the remaining shdma user drivers. This patch series goes on top of 
+my earlier patches to split shdma.c.
 
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index 3a528cf..3c54a2f 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -30,6 +30,8 @@
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/machine.h>
- #include <linux/smsc911x.h>
-+#include <linux/mmc/sh_mobile_sdhi.h>
-+#include <linux/mfd/tmio.h>
- #include <mach/hardware.h>
- #include <mach/r8a7779.h>
- #include <mach/common.h>
-@@ -75,8 +77,44 @@ static struct platform_device eth_device = {
- 	.num_resources	= ARRAY_SIZE(smsc911x_resources),
- };
- 
-+/* Fixed 3.3V regulator to be used by SDHI0 */
-+static struct regulator_consumer_supply fixed3v3_power_consumers[] +{
-+	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
-+	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
-+};
-+
-+static struct resource sdhi0_resources[] = {
-+	[0] = {
-+		.name   = "sdhi0",
-+		.start  = 0xffe4c000,
-+		.end    = 0xffe4c0ff,
-+		.flags  = IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start  = gic_spi(104),
-+		.flags  = IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct sh_mobile_sdhi_info sdhi0_platform_data = {
-+	.tmio_flags	= (TMIO_MMC_WRPROTECT_DISABLE
-+			  | TMIO_MMC_HAS_IDLE_WAIT),
-+	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
-+};
-+
-+static struct platform_device sdhi0_device = {
-+	.name		= "sh_mobile_sdhi",
-+	.num_resources	= ARRAY_SIZE(sdhi0_resources),
-+	.resource	= sdhi0_resources,
-+	.id		= 0,
-+	.dev = {
-+		.platform_data = &sdhi0_platform_data,
-+	}
-+};
- static struct platform_device *marzen_devices[] __initdata = {
- 	&eth_device,
-+	&sdhi0_device,
- };
- 
- static void __init marzen_init(void)
-@@ -97,6 +135,16 @@ static void __init marzen_init(void)
- 	gpio_request(GPIO_FN_EX_CS0, NULL); /* nCS */
- 	gpio_request(GPIO_FN_IRQ1_B, NULL); /* IRQ + PME */
- 
-+	/* SD0 (CN20) */
-+	gpio_request(GPIO_FN_SD0_CLK, NULL);
-+	gpio_request(GPIO_FN_SD0_CMD, NULL);
-+	gpio_request(GPIO_FN_SD0_DAT0, NULL);
-+	gpio_request(GPIO_FN_SD0_DAT1, NULL);
-+	gpio_request(GPIO_FN_SD0_DAT2, NULL);
-+	gpio_request(GPIO_FN_SD0_DAT3, NULL);
-+	gpio_request(GPIO_FN_SD0_CD, NULL);
-+	gpio_request(GPIO_FN_SD0_WP, NULL);
-+
- 	r8a7779_add_standard_devices();
- 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
- }
+As suggested yesterday, I've pushed both my current shdma patch series to 
+github in branches:
+
+git://github.com/lyakh/linux.git shdma-base
+git://github.com/lyakh/linux.git shdma-config
+
+for the preceding base shdma-split series and for this one respectively.
+
+As before, the last patch in the series is FYI only for now.
+
+Guennadi Liakhovetski (7):
+  dmaengine: shdma: (cosmetic) simplify a static function
+  ASoC: siu: don't use DMA device for channel filtering
+  sh: remove unused DMA device pointer from SIU platform data
+  dmaengine: shdma: prepare to stop using struct dma_chan::private
+  dma: sh: use an integer slave ID to improve API compatibility
+  dma: sh: provide a migration path for slave drivers to stop using
+    .private
+  mmc: sh_mmcif: switch to the new DMA channel allocation and
+    configuration
+
+ arch/sh/include/asm/siu.h              |    1 -
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c |    1 -
+ drivers/dma/sh/shdma-base.c            |  130 ++++++++++++++++++++++++--------
+ drivers/dma/sh/shdma.c                 |   39 +++++-----
+ drivers/dma/sh/shdma.h                 |    2 +
+ drivers/mmc/host/sh_mmcif.c            |   90 +++++++++++++----------
+ include/linux/sh_dma.h                 |   12 ++--
+ include/linux/shdma-base.h             |    7 +-
+ sound/soc/sh/siu_pcm.c                 |    4 -
+ 9 files changed, 179 insertions(+), 107 deletions(-)
+
 -- 
-1.7.5.4
+1.7.2.5
 
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
