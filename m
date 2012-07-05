@@ -1,112 +1,233 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 02 Jul 2012 21:59:25 +0000
-Subject: Re: [PATCH 2/3] ARM: mach-shmobile: Convert sh_clk_mstp32_register to sh_clk_mstp_register
-Message-Id: <201207030001.13310.rjw@sisk.pl>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 05 Jul 2012 10:29:42 +0000
+Subject: [PATCH 6/7 v2] dma: sh: provide a migration path for slave drivers to stop using .private
+Message-Id: <1341484183-10757-7-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1204162306540.29915@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1204162306540.29915@axis700.grange>
+References: <1341484183-10757-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1341484183-10757-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Vinod Koul <vinod.koul@intel.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Wednesday, June 27, 2012, Nobuhiro Iwamatsu wrote:
-> sh_clk_mstp32_register is deprecated. This convert to sh_clk_mstp_register.
-> 
-> Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+This patch extends the sh dmaengine driver to support the preferred channel
+selection and configuration method, instead of using the "private" field
+from struct dma_chan. We add a standard filter function to be used by
+slave drivers instead of implementing their own ones, and add support for
+the DMA_SLAVE_CONFIG control operation, which must accompany the new
+channel selection method. We still support the legacy .private channel
+allocation method to cater for a smooth driver migration.
 
-Applied to the soc-core branch of the renesas.git tree.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/dma/sh/shdma-base.c |  114 +++++++++++++++++++++++++++++++++---------
+ drivers/dma/sh/shdma.c      |    5 +-
+ include/linux/sh_dma.h      |    2 +
+ include/linux/shdma-base.h  |    2 +-
+ 4 files changed, 95 insertions(+), 28 deletions(-)
 
-Thanks,
-Rafael
-
-
-> ---
->  arch/arm/mach-shmobile/clock-r8a7740.c |    2 +-
->  arch/arm/mach-shmobile/clock-r8a7779.c |    2 +-
->  arch/arm/mach-shmobile/clock-sh7367.c  |    2 +-
->  arch/arm/mach-shmobile/clock-sh7372.c  |    2 +-
->  arch/arm/mach-shmobile/clock-sh7377.c  |    2 +-
->  arch/arm/mach-shmobile/clock-sh73a0.c  |    2 +-
->  6 files changed, 6 insertions(+), 6 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-> index 26eea5f..29c397a 100644
-> --- a/arch/arm/mach-shmobile/clock-r8a7740.c
-> +++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-> @@ -495,7 +495,7 @@ void __init r8a7740_clock_init(u8 md_ck)
->  		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
->  
->  	if (!ret)
-> -		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
-> +		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
->  
->  	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
->  
-> diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-> index 7d6e9fe4..339c62c 100644
-> --- a/arch/arm/mach-shmobile/clock-r8a7779.c
-> +++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-> @@ -162,7 +162,7 @@ void __init r8a7779_clock_init(void)
->  		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
->  
->  	if (!ret)
-> -		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
-> +		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
->  
->  	for (k = 0; !ret && (k < ARRAY_SIZE(late_main_clks)); k++)
->  		ret = clk_register(late_main_clks[k]);
-> diff --git a/arch/arm/mach-shmobile/clock-sh7367.c b/arch/arm/mach-shmobile/clock-sh7367.c
-> index 006e7b5..162b791 100644
-> --- a/arch/arm/mach-shmobile/clock-sh7367.c
-> +++ b/arch/arm/mach-shmobile/clock-sh7367.c
-> @@ -344,7 +344,7 @@ void __init sh7367_clock_init(void)
->  		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
->  
->  	if (!ret)
-> -		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
-> +		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
->  
->  	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
->  
-> diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-> index 94d1f88..5a2894b 100644
-> --- a/arch/arm/mach-shmobile/clock-sh7372.c
-> +++ b/arch/arm/mach-shmobile/clock-sh7372.c
-> @@ -704,7 +704,7 @@ void __init sh7372_clock_init(void)
->  		ret = sh_clk_div6_reparent_register(div6_reparent_clks, DIV6_REPARENT_NR);
->  
->  	if (!ret)
-> -		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
-> +		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
->  
->  	for (k = 0; !ret && (k < ARRAY_SIZE(late_main_clks)); k++)
->  		ret = clk_register(late_main_clks[k]);
-> diff --git a/arch/arm/mach-shmobile/clock-sh7377.c b/arch/arm/mach-shmobile/clock-sh7377.c
-> index 0798a15..85f2a3e 100644
-> --- a/arch/arm/mach-shmobile/clock-sh7377.c
-> +++ b/arch/arm/mach-shmobile/clock-sh7377.c
-> @@ -355,7 +355,7 @@ void __init sh7377_clock_init(void)
->  		ret = sh_clk_div6_register(div6_clks, DIV6_NR);
->  
->  	if (!ret)
-> -		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
-> +		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
->  
->  	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
->  
-> diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-> index 472d1f5..f6788be 100644
-> --- a/arch/arm/mach-shmobile/clock-sh73a0.c
-> +++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-> @@ -612,7 +612,7 @@ void __init sh73a0_clock_init(void)
->  		ret = sh_clk_div6_reparent_register(div6_clks, DIV6_NR);
->  
->  	if (!ret)
-> -		ret = sh_clk_mstp32_register(mstp_clks, MSTP_NR);
-> +		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
->  
->  	for (k = 0; !ret && (k < ARRAY_SIZE(late_main_clks)); k++)
->  		ret = clk_register(late_main_clks[k]);
-> 
+diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
+index 73db282..0c34c73 100644
+--- a/drivers/dma/sh/shdma-base.c
++++ b/drivers/dma/sh/shdma-base.c
+@@ -171,6 +171,65 @@ static struct shdma_desc *shdma_get_desc(struct shdma_chan *schan)
+ 	return NULL;
+ }
+ 
++static int shdma_setup_slave(struct shdma_chan *schan, int slave_id)
++{
++	struct shdma_dev *sdev = to_shdma_dev(schan->dma_chan.device);
++	const struct shdma_ops *ops = sdev->ops;
++	int ret;
++
++	if (slave_id < 0 || slave_id >= slave_num)
++		return -EINVAL;
++
++	if (test_and_set_bit(slave_id, shdma_slave_used))
++		return -EBUSY;
++
++	ret = ops->set_slave(schan, slave_id, false);
++	if (ret < 0) {
++		clear_bit(slave_id, shdma_slave_used);
++		return ret;
++	}
++
++	schan->slave_id = slave_id;
++
++	return 0;
++}
++
++/*
++ * This is the standard shdma filter function to be used as a replacement to the
++ * "old" method, using the .private pointer. If for some reason you allocate a
++ * channel without slave data, use something like ERR_PTR(-EINVAL) as a filter
++ * parameter. If this filter is used, the slave driver, after calling
++ * dma_request_channel(), will also have to call dmaengine_slave_config() with
++ * .slave_id, .direction, and either .src_addr or .dst_addr set.
++ * NOTE: this filter doesn't support multiple DMAC drivers with the DMA_SLAVE
++ * capability! If this becomes a requirement, hardware glue drivers, using this
++ * services would have to provide their own filters, which first would check
++ * the device driver, similar to how other DMAC drivers, e.g., sa11x0-dma.c, do
++ * this, and only then, in case of a match, call this common filter.
++ */
++bool shdma_chan_filter(struct dma_chan *chan, void *arg)
++{
++	struct shdma_chan *schan = to_shdma_chan(chan);
++	struct shdma_dev *sdev = to_shdma_dev(schan->dma_chan.device);
++	const struct shdma_ops *ops = sdev->ops;
++	int slave_id = (int)arg;
++	int ret;
++
++	if (slave_id < 0)
++		/* No slave requested - arbitrary channel */
++		return true;
++
++	if (slave_id >= slave_num)
++		return false;
++
++	ret = ops->set_slave(schan, slave_id, true);
++	if (ret < 0)
++		return false;
++
++	return true;
++}
++EXPORT_SYMBOL(shdma_chan_filter);
++
+ static int shdma_alloc_chan_resources(struct dma_chan *chan)
+ {
+ 	struct shdma_chan *schan = to_shdma_chan(chan);
+@@ -185,21 +244,10 @@ static int shdma_alloc_chan_resources(struct dma_chan *chan)
+ 	 * never runs concurrently with itself or free_chan_resources.
+ 	 */
+ 	if (slave) {
+-		if (slave->slave_id < 0 || slave->slave_id >= slave_num) {
+-			ret = -EINVAL;
+-			goto evalid;
+-		}
+-
+-		if (test_and_set_bit(slave->slave_id, shdma_slave_used)) {
+-			ret = -EBUSY;
+-			goto etestused;
+-		}
+-
+-		ret = ops->set_slave(schan, slave->slave_id);
++		/* Legacy mode: .private is set in filter */
++		ret = shdma_setup_slave(schan, slave->slave_id);
+ 		if (ret < 0)
+ 			goto esetslave;
+-
+-		schan->slave_id = slave->slave_id;
+ 	} else {
+ 		schan->slave_id = -EINVAL;
+ 	}
+@@ -228,8 +276,6 @@ edescalloc:
+ 	if (slave)
+ esetslave:
+ 		clear_bit(slave->slave_id, shdma_slave_used);
+-etestused:
+-evalid:
+ 	chan->private = NULL;
+ 	return ret;
+ }
+@@ -587,22 +633,40 @@ static int shdma_control(struct dma_chan *chan, enum dma_ctrl_cmd cmd,
+ 	struct shdma_chan *schan = to_shdma_chan(chan);
+ 	struct shdma_dev *sdev = to_shdma_dev(chan->device);
+ 	const struct shdma_ops *ops = sdev->ops;
++	struct dma_slave_config *config;
+ 	unsigned long flags;
+-
+-	/* Only supports DMA_TERMINATE_ALL */
+-	if (cmd != DMA_TERMINATE_ALL)
+-		return -ENXIO;
++	int ret;
+ 
+ 	if (!chan)
+ 		return -EINVAL;
+ 
+-	spin_lock_irqsave(&schan->chan_lock, flags);
+-
+-	ops->halt_channel(schan);
+-
+-	spin_unlock_irqrestore(&schan->chan_lock, flags);
++	switch (cmd) {
++	case DMA_TERMINATE_ALL:
++		spin_lock_irqsave(&schan->chan_lock, flags);
++		ops->halt_channel(schan);
++		spin_unlock_irqrestore(&schan->chan_lock, flags);
+ 
+-	shdma_chan_ld_cleanup(schan, true);
++		shdma_chan_ld_cleanup(schan, true);
++		break;
++	case DMA_SLAVE_CONFIG:
++		/*
++		 * So far only .slave_id is used, but the slave drivers are
++		 * encouraged to also set a transfer direction and an address.
++		 */
++		if (!arg)
++			return -EINVAL;
++		/*
++		 * We could lock this, but you shouldn't be configuring the
++		 * channel, while using it...
++		 */
++		config = (struct dma_slave_config*)arg;
++		ret = shdma_setup_slave(schan, config->slave_id);
++		if (ret < 0)
++			return ret;
++		break;
++	default:
++		return -ENXIO;
++	}
+ 
+ 	return 0;
+ }
+diff --git a/drivers/dma/sh/shdma.c b/drivers/dma/sh/shdma.c
+index 9a10d8b..027c9be 100644
+--- a/drivers/dma/sh/shdma.c
++++ b/drivers/dma/sh/shdma.c
+@@ -320,7 +320,7 @@ static const struct sh_dmae_slave_config *dmae_find_slave(
+ }
+ 
+ static int sh_dmae_set_slave(struct shdma_chan *schan,
+-			     int slave_id)
++			     int slave_id, bool try)
+ {
+ 	struct sh_dmae_chan *sh_chan = container_of(schan, struct sh_dmae_chan,
+ 						    shdma_chan);
+@@ -328,7 +328,8 @@ static int sh_dmae_set_slave(struct shdma_chan *schan,
+ 	if (!cfg)
+ 		return -ENODEV;
+ 
+-	sh_chan->config = cfg;
++	if (!try)
++		sh_chan->config = cfg;
+ 
+ 	return 0;
+ }
+diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
+index 4e83f3e..b64d6be 100644
+--- a/include/linux/sh_dma.h
++++ b/include/linux/sh_dma.h
+@@ -99,4 +99,6 @@ struct sh_dmae_pdata {
+ #define CHCR_TE	0x00000002
+ #define CHCR_IE	0x00000004
+ 
++bool shdma_chan_filter(struct dma_chan *chan, void *arg);
++
+ #endif
+diff --git a/include/linux/shdma-base.h b/include/linux/shdma-base.h
+index 6263ad2..93f9821 100644
+--- a/include/linux/shdma-base.h
++++ b/include/linux/shdma-base.h
+@@ -93,7 +93,7 @@ struct shdma_ops {
+ 	dma_addr_t (*slave_addr)(struct shdma_chan *);
+ 	int (*desc_setup)(struct shdma_chan *, struct shdma_desc *,
+ 			  dma_addr_t, dma_addr_t, size_t *);
+-	int (*set_slave)(struct shdma_chan *, int);
++	int (*set_slave)(struct shdma_chan *, int, bool);
+ 	void (*setup_xfer)(struct shdma_chan *, int);
+ 	void (*start_xfer)(struct shdma_chan *, struct shdma_desc *);
+ 	struct shdma_desc *(*embedded_desc)(void *, int);
+-- 
+1.7.2.5
 
