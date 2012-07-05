@@ -1,121 +1,50 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 16 Jul 2012 21:25:17 +0000
-Subject: [RFC][PATCH 8/14] PM / Domains: Add power-on function using names to identify domains
-Message-Id: <201207162325.17728.rjw@sisk.pl>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 05 Jul 2012 10:29:39 +0000
+Subject: [PATCH 3/7 v2] sh: remove unused DMA device pointer from SIU platform data
+Message-Id: <1341484183-10757-4-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201207032302.17805.rjw@sisk.pl> <201207052217.48086.rjw@sisk.pl> <201207162315.49073.rjw@sisk.pl>
-In-Reply-To: <201207162315.49073.rjw@sisk.pl>
+References: <1341484183-10757-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1341484183-10757-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM list <linux-pm@vger.kernel.org>
-Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>, LKML <linux-kernel@vger.kernel.org>, Matthew Garrett <mjg59@srcf.ucam.org>, Magnus Damm <magnus.damm@gmail.com>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>, Linux-sh list <linux-sh@vger.kernel.org>
+To: Vinod Koul <vinod.koul@intel.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+The SIU ALSA driver is not using the DMA device pointer for DMA channel
+filtering any more, it can be now removed.
 
-It sometimes is necessary to turn on a given PM domain when only
-the name of it is known and the domain pointer is not readily
-available.  For this reason, add a new helper function,
-pm_genpd_name_poweron(), allowing the caller to turn on a PM domain
-using its name for identification.  To avoid code duplication,
-move the domain lookup code to a separate function.
-
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Paul Mundt <lethal@linux-sh.org>
 ---
- drivers/base/power/domain.c |   46 +++++++++++++++++++++++++++++---------------
- include/linux/pm_domain.h   |    5 ++++
- 2 files changed, 36 insertions(+), 15 deletions(-)
+ arch/sh/include/asm/siu.h              |    1 -
+ arch/sh/kernel/cpu/sh4a/setup-sh7722.c |    1 -
+ 2 files changed, 0 insertions(+), 2 deletions(-)
 
-Index: linux/drivers/base/power/domain.c
-=================================--- linux.orig/drivers/base/power/domain.c
-+++ linux/drivers/base/power/domain.c
-@@ -53,6 +53,24 @@
- static LIST_HEAD(gpd_list);
- static DEFINE_MUTEX(gpd_list_lock);
+diff --git a/arch/sh/include/asm/siu.h b/arch/sh/include/asm/siu.h
+index 1d95c78..580b7ac 100644
+--- a/arch/sh/include/asm/siu.h
++++ b/arch/sh/include/asm/siu.h
+@@ -14,7 +14,6 @@
+ struct device;
  
-+static struct generic_pm_domain *pm_genpd_lookup_name(const char *domain_name)
-+{
-+	struct generic_pm_domain *genpd = NULL, *gpd;
-+
-+	if (IS_ERR_OR_NULL(domain_name))
-+		return NULL;
-+
-+	mutex_lock(&gpd_list_lock);
-+	list_for_each_entry(gpd, &gpd_list, gpd_list_node) {
-+		if (!strcmp(gpd->name, domain_name)) {
-+			genpd = gpd;
-+			break;
-+		}
-+	}
-+	mutex_unlock(&gpd_list_lock);
-+	return genpd;
-+}
-+
- #ifdef CONFIG_PM
+ struct siu_platform {
+-	struct device *dma_dev;
+ 	unsigned int dma_slave_tx_a;
+ 	unsigned int dma_slave_rx_a;
+ 	unsigned int dma_slave_tx_b;
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
+index 0f5a219..65786c7 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7722.c
+@@ -512,7 +512,6 @@ static struct platform_device tmu2_device = {
+ };
  
- struct generic_pm_domain *dev_to_genpd(struct device *dev)
-@@ -258,6 +276,18 @@ int pm_genpd_poweron(struct generic_pm_d
- 	return ret;
- }
- 
-+/**
-+ * pm_genpd_name_poweron - Restore power to a given PM domain and its masters.
-+ * @domain_name: Name of the PM domain to power up.
-+ */
-+int pm_genpd_name_poweron(const char *domain_name)
-+{
-+	struct generic_pm_domain *genpd;
-+
-+	genpd = pm_genpd_lookup_name(domain_name);
-+	return genpd ? pm_genpd_poweron(genpd) : -EINVAL;
-+}
-+
- #endif /* CONFIG_PM */
- 
- #ifdef CONFIG_PM_RUNTIME
-@@ -1409,21 +1439,7 @@ int __pm_genpd_of_add_device(struct devi
- int __pm_genpd_name_add_device(const char *domain_name, struct device *dev,
- 			       struct gpd_timing_data *td)
- {
--	struct generic_pm_domain *genpd = NULL, *gpd;
--
--	if (IS_ERR_OR_NULL(domain_name) || IS_ERR_OR_NULL(dev))
--		return -EINVAL;
--
--	mutex_lock(&gpd_list_lock);
--	list_for_each_entry(gpd, &gpd_list, gpd_list_node) {
--		if (!strcmp(gpd->name, domain_name)) {
--			genpd = gpd;
--			break;
--		}
--	}
--	mutex_unlock(&gpd_list_lock);
--
--	return __pm_genpd_add_device(genpd, dev, td);
-+	return __pm_genpd_add_device(pm_genpd_lookup_name(domain_name), dev, td);
- }
- 
- /**
-Index: linux/include/linux/pm_domain.h
-=================================--- linux.orig/include/linux/pm_domain.h
-+++ linux/include/linux/pm_domain.h
-@@ -163,6 +163,7 @@ extern void pm_genpd_init(struct generic
- 			  struct dev_power_governor *gov, bool is_off);
- 
- extern int pm_genpd_poweron(struct generic_pm_domain *genpd);
-+extern int pm_genpd_name_poweron(const char *domain_name);
- 
- extern bool default_stop_ok(struct device *dev);
- 
-@@ -242,6 +243,10 @@ static inline int pm_genpd_poweron(struc
- {
- 	return -ENOSYS;
- }
-+static inline int pm_genpd_name_poweron(const char *domain_name)
-+{
-+	return -ENOSYS;
-+}
- static inline bool default_stop_ok(struct device *dev)
- {
- 	return false;
+ static struct siu_platform siu_platform_data = {
+-	.dma_dev	= &dma_device.dev,
+ 	.dma_slave_tx_a	= SHDMA_SLAVE_SIUA_TX,
+ 	.dma_slave_rx_a	= SHDMA_SLAVE_SIUA_RX,
+ 	.dma_slave_tx_b	= SHDMA_SLAVE_SIUB_TX,
+-- 
+1.7.2.5
 
