@@ -1,7 +1,7 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 04 Jul 2012 16:57:55 +0000
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 05 Jul 2012 00:05:37 +0000
 Subject: Re: [PATCH 2/7] ARM: shmobile: r8a7740: add basic pm domain support
-Message-Id: <20120704165755.GD15679@linux-sh.org>
+Message-Id: <87liizqdgz.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87mx3gtc2d.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <87mx3gtc2d.wl%kuninori.morimoto.gx@renesas.com>
@@ -10,7 +10,9 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Jul 04, 2012 at 07:48:41PM +0900, Magnus Damm wrote:
+
+Hi Paul, Magnus
+
 > On Wed, Jul 4, 2012 at 7:45 PM, Paul Mundt <lethal@linux-sh.org> wrote:
 > > On Tue, Jul 03, 2012 at 08:55:25PM -0700, Kuninori Morimoto wrote:
 > >> +void r8a7740_init_pm_domain(struct r8a7740_pm_domain *r8a7740_pd)
@@ -37,9 +39,10 @@ On Wed, Jul 04, 2012 at 07:48:41PM +0900, Magnus Damm wrote:
 > In this case it's not really soc-specific though, so code here needs
 > to be reworked for sharing between sh7372 and r8a7740 (and sh73a0 too
 > perhaps).
-> 
-How exactly is the fact it's used on more than one SoC less of a
-SoC-specific property? This is not generic infrastructure, and it is way
-too close to genpd naming conventions to follow clearly. The discrepancy
-between __ prefixing between this and the existing in-tree code already
-shows what a joke this is.
+
+I see.
+I fix this naming on v2 patch set.
+
+Best regards
+---
+Kuninori Morimoto
