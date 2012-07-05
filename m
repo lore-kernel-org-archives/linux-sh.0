@@ -1,113 +1,61 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Fri, 06 Jul 2012 19:10:36 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: select the fixed regulator driver on several boards
-Message-Id: <201207062110.36474.rjw@sisk.pl>
+From: Bastian Hecht <hechtb@googlemail.com>
+Date: Thu, 05 Jul 2012 10:41:01 +0000
+Subject: [PATCH 1/2] mtd: sh_flctl: Use memcpy() instead of using a loop
+Message-Id: <1341484862-24033-1-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1207051515190.30191@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1207051515190.30191@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mtd@lists.infradead.org
+Cc: Bastian Hecht <hechtb@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>
 
-On Thursday, July 05, 2012, Guennadi Liakhovetski wrote:
-> On systems, using regulators to supply power to devices, if the REGULATOR
-> Kconfig option is disabled, regulator API stubs will be used, which often
-> suffices to bring a default configuration up. If REGULATOR is enabled but
-> respective regulator drivers are inactive, the real regulator API calls
-> will be used, which in the absence of drivers will fail to provide
-> services. This patch prevents such a problem on sh-mobile boards by
-> forcing REGULATOR_FIXED_VOLTAGE on if REGULATOR is selected.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Elemets have been copied "manually" in a loop. Better use memcpy().
 
-Applied to the board-common branch of the renesas.git tree.
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+---
+ drivers/mtd/nand/sh_flctl.c |   13 +++++++------
+ 1 file changed, 7 insertions(+), 6 deletions(-)
 
-Due to the tree organization, there were two merge conflicts, so please
-the resulting 'next' branch for correctness.
-
-Thanks,
-Rafael
-
-
-> ---
->  arch/arm/mach-shmobile/Kconfig |   10 ++++++++++
->  1 files changed, 10 insertions(+), 0 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-> index a2045dc..4a0d632 100644
-> --- a/arch/arm/mach-shmobile/Kconfig
-> +++ b/arch/arm/mach-shmobile/Kconfig
-> @@ -58,6 +58,7 @@ config MACH_G4EVM
->  	bool "G4EVM board"
->  	depends on ARCH_SH7377
->  	select ARCH_REQUIRE_GPIOLIB
-> +	select REGULATOR_FIXED_VOLTAGE if REGULATOR
->  
->  config MACH_AP4EVB
->  	bool "AP4EVB board"
-> @@ -65,6 +66,7 @@ config MACH_AP4EVB
->  	select ARCH_REQUIRE_GPIOLIB
->  	select SH_LCD_MIPI_DSI
->  	select SND_SOC_AK4642 if SND_SIMPLE_CARD
-> +	select REGULATOR_FIXED_VOLTAGE if REGULATOR
->  
->  choice
->  	prompt "AP4EVB LCD panel selection"
-> @@ -83,6 +85,7 @@ config MACH_AG5EVM
->  	bool "AG5EVM board"
->  	select ARCH_REQUIRE_GPIOLIB
->  	select SH_LCD_MIPI_DSI
-> +	select REGULATOR_FIXED_VOLTAGE if REGULATOR
->  	depends on ARCH_SH73A0
->  
->  config MACH_MACKEREL
-> @@ -90,15 +93,18 @@ config MACH_MACKEREL
->  	depends on ARCH_SH7372
->  	select ARCH_REQUIRE_GPIOLIB
->  	select SND_SOC_AK4642 if SND_SIMPLE_CARD
-> +	select REGULATOR_FIXED_VOLTAGE if REGULATOR
->  
->  config MACH_KOTA2
->  	bool "KOTA2 board"
->  	select ARCH_REQUIRE_GPIOLIB
-> +	select REGULATOR_FIXED_VOLTAGE if REGULATOR
->  	depends on ARCH_SH73A0
->  
->  config MACH_BONITO
->  	bool "bonito board"
->  	select ARCH_REQUIRE_GPIOLIB
-> +	select REGULATOR_FIXED_VOLTAGE if REGULATOR
->  	depends on ARCH_R8A7740
->  
->  config MACH_ARMADILLO800EVA
-> @@ -107,16 +113,19 @@ config MACH_ARMADILLO800EVA
->  	select ARCH_REQUIRE_GPIOLIB
->  	select USE_OF
->  	select SND_SOC_WM8978 if SND_SIMPLE_CARD
-> +	select REGULATOR_FIXED_VOLTAGE if REGULATOR
->  
->  config MACH_MARZEN
->  	bool "MARZEN board"
->  	depends on ARCH_R8A7779
->  	select ARCH_REQUIRE_GPIOLIB
-> +	select REGULATOR_FIXED_VOLTAGE if REGULATOR
->  
->  config MACH_KZM9D
->  	bool "KZM9D board"
->  	depends on ARCH_EMEV2
->  	select USE_OF
-> +	select REGULATOR_FIXED_VOLTAGE if REGULATOR
->  
->  config MACH_KZM9G
->  	bool "KZM-A9-GT board"
-> @@ -124,6 +133,7 @@ config MACH_KZM9G
->  	select ARCH_REQUIRE_GPIOLIB
->  	select USE_OF
->  	select SND_SOC_AK4642 if SND_SIMPLE_CARD
-> +	select REGULATOR_FIXED_VOLTAGE if REGULATOR
->  
->  comment "SH-Mobile System Configuration"
->  
-> 
+diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
+index 0d9cce7..e4f31ef 100644
+--- a/drivers/mtd/nand/sh_flctl.c
++++ b/drivers/mtd/nand/sh_flctl.c
+@@ -29,6 +29,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/slab.h>
++#include <linux/string.h>
+ 
+ #include <linux/mtd/mtd.h>
+ #include <linux/mtd/nand.h>
+@@ -748,10 +749,9 @@ static void flctl_select_chip(struct mtd_info *mtd, int chipnr)
+ static void flctl_write_buf(struct mtd_info *mtd, const uint8_t *buf, int len)
+ {
+ 	struct sh_flctl *flctl = mtd_to_flctl(mtd);
+-	int i, index = flctl->index;
++	int index = flctl->index;
+ 
+-	for (i = 0; i < len; i++)
+-		flctl->done_buff[index + i] = buf[i];
++	memcpy(&flctl->done_buff[index], buf, len);
+ 	flctl->index += len;
+ }
+ 
+@@ -780,10 +780,11 @@ static uint16_t flctl_read_word(struct mtd_info *mtd)
+ 
+ static void flctl_read_buf(struct mtd_info *mtd, uint8_t *buf, int len)
+ {
+-	int i;
++	struct sh_flctl *flctl = mtd_to_flctl(mtd);
++	int index = flctl->index;
+ 
+-	for (i = 0; i < len; i++)
+-		buf[i] = flctl_read_byte(mtd);
++	memcpy(buf, &flctl->done_buff[index], len);
++	flctl->index += len;
+ }
+ 
+ static int flctl_verify_buf(struct mtd_info *mtd, const u_char *buf, int len)
+-- 
+1.7.9.5
 
