@@ -1,49 +1,264 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 04 Jul 2012 16:17:39 +0000
-Subject: [PATCH 0/4] dma: sh: stop using .private
-Message-Id: <1341418663-24432-1-git-send-email-g.liakhovetski@gmx.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 05 Jul 2012 08:24:46 +0000
+Subject: [PATCH 01/12 v2] ARM: shmobile: soc-core: add R-mobile PM domain common APIs
+Message-Id: <874npmr4xh.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi Vinod
+This patch adds Renesas R-mobile series common PM domain APIs.
+R-mobile CPU can use/switch this API
 
-Here's an attempt to convert the shdma driver to a new method, whereby a 
-centrally provided filter function is used and the DMA_SLAVE_CONFIG command 
-is enabled for slave operation. The last patch is an illustration of how 
-this new method shall be used. If this approach is acceptable, I'll also 
-convert the remaining shdma user drivers. This patch series goes on top of 
-my earlier patches to split shdma.c. It might be easier at some point for 
-you to have me provide you a git tree to pull from.
-
-Chris, this time the mmc patch is not yet to be applied. We first have to 
-sort out the dmaengine API.
-
-Guennadi Liakhovetski (4):
-  dmaengine: shdma: prepare to stop using struct dma_chan::private
-  dma: sh: use an integer slave ID to improve API compatibility
-  dma: sh: provide a migration path for slave drivers to stop using
-    .private
-  mmc: sh_mmcif: switch to the new DMA channel allocation and
-    configuration
-
- drivers/dma/sh/shdma-base.c |  130 ++++++++++++++++++++++++++++++++-----------
- drivers/dma/sh/shdma.c      |   35 +++++------
- drivers/dma/sh/shdma.h      |    2 +
- drivers/mmc/host/sh_mmcif.c |   90 +++++++++++++++++-------------
- include/linux/sh_dma.h      |   12 ++--
- include/linux/shdma-base.h  |    7 +-
- 6 files changed, 177 insertions(+), 99 deletions(-)
-
--- 
-1.7.2.5
-
-Thanks
-Guennadi
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+v1 -> v2
+
+ - add pm-rmobile common API
+
+ arch/arm/mach-shmobile/Makefile                  |    1 +
+ arch/arm/mach-shmobile/include/mach/pm-rmobile.h |   44 ++++++
+ arch/arm/mach-shmobile/pm-rmobile.c              |  167 ++++++++++++++++++++++
+ 3 files changed, 212 insertions(+), 0 deletions(-)
+ create mode 100644 arch/arm/mach-shmobile/include/mach/pm-rmobile.h
+ create mode 100644 arch/arm/mach-shmobile/pm-rmobile.c
+
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 8aa1962..3ffe412 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -39,6 +39,7 @@ obj-$(CONFIG_ARCH_R8A7740)	+= entry-intc.o
+ # PM objects
+ obj-$(CONFIG_SUSPEND)		+= suspend.o
+ obj-$(CONFIG_CPU_IDLE)		+= cpuidle.o
++obj-$(CONFIG_ARCH_SHMOBILE)	+= pm-rmobile.o
+ obj-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o sleep-sh7372.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o
+ 
+diff --git a/arch/arm/mach-shmobile/include/mach/pm-rmobile.h b/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
+new file mode 100644
+index 0000000..5a40284
+--- /dev/null
++++ b/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
+@@ -0,0 +1,44 @@
++/*
++ * Copyright (C) 2012 Renesas Solutions Corp.
++ *
++ * Kuninori Morimoto <morimoto.kuninori@renesas.com>
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++#ifndef PM_RMOBILE_H
++#define PM_RMOBILE_H
++
++#include <linux/pm_domain.h>
++
++struct platform_device;
++
++struct rmobile_pm_domain {
++	struct generic_pm_domain genpd;
++	struct dev_power_governor *gov;
++	int (*suspend)(void);
++	void (*resume)(void);
++	unsigned int bit_shift;
++	bool no_debug;
++};
++
++static inline
++struct rmobile_pm_domain *to_rmobile_pd(struct generic_pm_domain *d)
++{
++	return container_of(d, struct rmobile_pm_domain, genpd);
++}
++
++#ifdef CONFIG_PM
++extern void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd);
++extern void rmobile_add_device_to_domain(struct rmobile_pm_domain *rmobile_pd,
++					struct platform_device *pdev);
++extern void rmobile_pm_add_subdomain(struct rmobile_pm_domain *rmobile_pd,
++				    struct rmobile_pm_domain *rmobile_sd);
++#else
++#define rmobile_init_pm_domain(pd) do { } while (0)
++#define rmobile_add_device_to_domain(pd, pdev) do { } while (0)
++#define rmobile_pm_add_subdomain(pd, sd) do { } while (0)
++#endif /* CONFIG_PM */
++
++#endif /* PM_RMOBILE_H */
+diff --git a/arch/arm/mach-shmobile/pm-rmobile.c b/arch/arm/mach-shmobile/pm-rmobile.c
+new file mode 100644
+index 0000000..a856254
+--- /dev/null
++++ b/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -0,0 +1,167 @@
++/*
++ * rmobile power management support
++ *
++ * Copyright (C) 2012  Renesas Solutions Corp.
++ * Copyright (C) 2012  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ *
++ * based on pm-sh7372.c
++ *  Copyright (C) 2011 Magnus Damm
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++#include <linux/console.h>
++#include <linux/delay.h>
++#include <linux/platform_device.h>
++#include <linux/pm.h>
++#include <linux/pm_clock.h>
++#include <asm/io.h>
++#include <mach/pm-rmobile.h>
++
++/* SYSC */
++#define SPDCR		0xe6180008
++#define SWUCR		0xe6180014
++#define PSTR		0xe6180080
++
++#define PSTR_RETRIES	100
++#define PSTR_DELAY_US	10
++
++#ifdef CONFIG_PM
++static int rmobile_pd_power_down(struct generic_pm_domain *genpd)
++{
++	struct rmobile_pm_domain *rmobile_pd = to_rmobile_pd(genpd);
++	unsigned int mask = 1 << rmobile_pd->bit_shift;
++
++	if (rmobile_pd->suspend) {
++		int ret = rmobile_pd->suspend();
++
++		if (ret)
++			return ret;
++	}
++
++	if (__raw_readl(PSTR) & mask) {
++		unsigned int retry_count;
++		__raw_writel(mask, SPDCR);
++
++		for (retry_count = PSTR_RETRIES; retry_count; retry_count--) {
++			if (!(__raw_readl(SPDCR) & mask))
++				break;
++			cpu_relax();
++		}
++	}
++
++	if (!rmobile_pd->no_debug)
++		pr_debug("%s: Power off, 0x%08x -> PSTR = 0x%08x\n",
++			 genpd->name, mask, __raw_readl(PSTR));
++
++	return 0;
++}
++
++static int __rmobile_pd_power_up(struct rmobile_pm_domain *rmobile_pd,
++				 bool do_resume)
++{
++	unsigned int mask = 1 << rmobile_pd->bit_shift;
++	unsigned int retry_count;
++	int ret = 0;
++
++	if (__raw_readl(PSTR) & mask)
++		goto out;
++
++	__raw_writel(mask, SWUCR);
++
++	for (retry_count = 2 * PSTR_RETRIES; retry_count; retry_count--) {
++		if (!(__raw_readl(SWUCR) & mask))
++			break;
++		if (retry_count > PSTR_RETRIES)
++			udelay(PSTR_DELAY_US);
++		else
++			cpu_relax();
++	}
++	if (!retry_count)
++		ret = -EIO;
++
++	if (!rmobile_pd->no_debug)
++		pr_debug("%s: Power on, 0x%08x -> PSTR = 0x%08x\n",
++			 rmobile_pd->genpd.name, mask, __raw_readl(PSTR));
++
++out:
++	if (ret = 0 && rmobile_pd->resume && do_resume)
++		rmobile_pd->resume();
++
++	return ret;
++}
++
++static int rmobile_pd_power_up(struct generic_pm_domain *genpd)
++{
++	return __rmobile_pd_power_up(to_rmobile_pd(genpd), true);
++}
++
++static bool rmobile_pd_active_wakeup(struct device *dev)
++{
++	bool (*active_wakeup)(struct device *dev);
++
++	active_wakeup = dev_gpd_data(dev)->ops.active_wakeup;
++	return active_wakeup ? active_wakeup(dev) : true;
++}
++
++static int rmobile_pd_stop_dev(struct device *dev)
++{
++	int (*stop)(struct device *dev);
++
++	stop = dev_gpd_data(dev)->ops.stop;
++	if (stop) {
++		int ret = stop(dev);
++		if (ret)
++			return ret;
++	}
++	return pm_clk_suspend(dev);
++}
++
++static int rmobile_pd_start_dev(struct device *dev)
++{
++	int (*start)(struct device *dev);
++	int ret;
++
++	ret = pm_clk_resume(dev);
++	if (ret)
++		return ret;
++
++	start = dev_gpd_data(dev)->ops.start;
++	if (start)
++		ret = start(dev);
++
++	return ret;
++}
++
++void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
++{
++	struct generic_pm_domain *genpd = &rmobile_pd->genpd;
++	struct dev_power_governor *gov = rmobile_pd->gov;
++
++	pm_genpd_init(genpd, gov ? : &simple_qos_governor, false);
++	genpd->dev_ops.stop		= rmobile_pd_stop_dev;
++	genpd->dev_ops.start		= rmobile_pd_start_dev;
++	genpd->dev_ops.active_wakeup	= rmobile_pd_active_wakeup;
++	genpd->dev_irq_safe		= true;
++	genpd->power_off		= rmobile_pd_power_down;
++	genpd->power_on			= rmobile_pd_power_up;
++	__rmobile_pd_power_up(rmobile_pd, false);
++}
++
++void rmobile_add_device_to_domain(struct rmobile_pm_domain *rmobile_pd,
++				 struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++
++	pm_genpd_add_device(&rmobile_pd->genpd, dev);
++	if (pm_clk_no_clocks(dev))
++		pm_clk_add(dev, NULL);
++}
++
++void rmobile_pm_add_subdomain(struct rmobile_pm_domain *rmobile_pd,
++			     struct rmobile_pm_domain *rmobile_sd)
++{
++	pm_genpd_add_subdomain(&rmobile_pd->genpd, &rmobile_sd->genpd);
++}
++#endif /* CONFIG_PM */
+-- 
+1.7.5.4
+
