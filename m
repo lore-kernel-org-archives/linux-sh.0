@@ -1,154 +1,134 @@
-From: Wen Congyang <wency@cn.fujitsu.com>
-Date: Fri, 27 Jul 2012 10:25:46 +0000
-Subject: [RFC PATCH v5 01/19] memory-hotplug: rename remove_memory() to offline_memory()/offline_pages()
-Message-Id: <50126CAA.7070600@cn.fujitsu.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 05 Jul 2012 08:27:14 +0000
+Subject: [PATCH 06/12 v2] ARM: shmobile: armadillo800eva: USB Func enables external IRQ mode
+Message-Id: <87wr2ipq8w.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <50126B83.3050201@cn.fujitsu.com>
-In-Reply-To: <50126B83.3050201@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
-Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, Yasuaki ISIMATU <isimatu.yasuaki@jp.fujitsu.com>
+To: linux-sh@vger.kernel.org
 
-From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+We can control renesas_usbhs driver as 2 way which are
+autonomy mode and external IRQ trigger mode.
 
-remove_memory() only try to offline pages. It is called in two cases:
-1. hot remove a memory device
-2. echo offline >/sys/devices/system/memory/memoryXX/state
+Autonomy mode is very easy settings for platform,
+but it required USB power domain always ON,
+since its connection/disconnection IRQ come from it.
 
-In the 1st case, we should also change memory block's state, and notify
-the userspace that the memory block's state is changed after offlining
-pages.
+If platform uses external IRQ trigger mode,
+USB power domain can be OFF, since its
+connection/disconnection IRQ come from external IRQ.
 
-So rename remove_memory() to offline_memory()/offline_pages(). And in
-the 1st case, offline_memory() will be used. The function offline_memory()
-is not implemented. In the 2nd case, offline_pages() will be used.
+This patch enable external IRQ mode.
+Now it is possible to add USB support on A4SP domain.
 
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-CC: Paul Mackerras <paulus@samba.org>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/acpi/acpi_memhotplug.c |    2 +-
- drivers/base/memory.c          |    9 +++------
- include/linux/memory_hotplug.h |    3 ++-
- mm/memory_hotplug.c            |   22 ++++++++++++++--------
- 4 files changed, 20 insertions(+), 16 deletions(-)
+v1 -> v2
 
-diff --git a/drivers/acpi/acpi_memhotplug.c b/drivers/acpi/acpi_memhotplug.c
-index 81a9def..8957ed9 100644
---- a/drivers/acpi/acpi_memhotplug.c
-+++ b/drivers/acpi/acpi_memhotplug.c
-@@ -318,7 +318,7 @@ static int acpi_memory_disable_device(struct acpi_memory_device *mem_device)
- 	 */
- 	list_for_each_entry_safe(info, n, &mem_device->res_list, list) {
- 		if (info->enabled) {
--			result = remove_memory(info->start_addr, info->length);
-+			result = offline_memory(info->start_addr, info->length);
- 			if (result)
- 				return result;
- 		}
-diff --git a/drivers/base/memory.c b/drivers/base/memory.c
-index 7dda4f7..44e7de6 100644
---- a/drivers/base/memory.c
-+++ b/drivers/base/memory.c
-@@ -248,26 +248,23 @@ static bool pages_correctly_reserved(unsigned long start_pfn,
- static int
- memory_block_action(unsigned long phys_index, unsigned long action)
- {
--	unsigned long start_pfn, start_paddr;
-+	unsigned long start_pfn;
- 	unsigned long nr_pages = PAGES_PER_SECTION * sections_per_block;
- 	struct page *first_page;
- 	int ret;
- 
- 	first_page = pfn_to_page(phys_index << PFN_SECTION_SHIFT);
-+	start_pfn = page_to_pfn(first_page);
- 
- 	switch (action) {
- 		case MEM_ONLINE:
--			start_pfn = page_to_pfn(first_page);
--
- 			if (!pages_correctly_reserved(start_pfn, nr_pages))
- 				return -EBUSY;
- 
- 			ret = online_pages(start_pfn, nr_pages);
- 			break;
- 		case MEM_OFFLINE:
--			start_paddr = page_to_pfn(first_page) << PAGE_SHIFT;
--			ret = remove_memory(start_paddr,
--					    nr_pages << PAGE_SHIFT);
-+			ret = offline_pages(start_pfn, nr_pages);
- 			break;
- 		default:
- 			WARN(1, KERN_WARNING "%s(%ld, %ld) unknown action: "
-diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
-index 910550f..c183f39 100644
---- a/include/linux/memory_hotplug.h
-+++ b/include/linux/memory_hotplug.h
-@@ -233,7 +233,8 @@ static inline int is_mem_section_removable(unsigned long pfn,
- extern int mem_online_node(int nid);
- extern int add_memory(int nid, u64 start, u64 size);
- extern int arch_add_memory(int nid, u64 start, u64 size);
--extern int remove_memory(u64 start, u64 size);
-+extern int offline_pages(unsigned long start_pfn, unsigned long nr_pages);
-+extern int offline_memory(u64 start, u64 size);
- extern int sparse_add_one_section(struct zone *zone, unsigned long start_pfn,
- 								int nr_pages);
- extern void sparse_remove_one_section(struct zone *zone, struct mem_section *ms);
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index 427bb29..7a6659f 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -865,7 +865,7 @@ check_pages_isolated(unsigned long start_pfn, unsigned long end_pfn)
- 	return offlined;
+ - same as v1
+
+ arch/arm/mach-shmobile/board-armadillo800eva.c |   46 +++++++++++++++++++----
+ 1 files changed, 38 insertions(+), 8 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 7c77f07..5002f64 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -133,14 +133,8 @@
+  * These are a little bit complex.
+  * see
+  *	usbhsf_power_ctrl()
+- *
+- * CAUTION
+- *
+- * It uses autonomy mode for USB hotplug at this point
+- * (= usbhs_private.platform_callback.get_vbus is NULL),
+- * since we don't know what's happen on PM control
+- * on this workaround.
+  */
++#define IRQ7		evt2irq(0x02e0)
+ #define USBCR1		0xe605810a
+ #define USBH		0xC6700000
+ #define USBH_USBCTR	0x10834
+@@ -220,6 +214,20 @@ static void usbhsf_power_ctrl(struct platform_device *pdev,
+ 	}
  }
  
--static int __ref offline_pages(unsigned long start_pfn,
-+static int __ref __offline_pages(unsigned long start_pfn,
- 		  unsigned long end_pfn, unsigned long timeout)
- {
- 	unsigned long pfn, nr_pages, expire;
-@@ -990,18 +990,24 @@ out:
- 	return ret;
- }
- 
--int remove_memory(u64 start, u64 size)
-+int offline_pages(unsigned long start_pfn, unsigned long nr_pages)
- {
--	unsigned long start_pfn, end_pfn;
-+	return __offline_pages(start_pfn, start_pfn + nr_pages, 120 * HZ);
-+}
- 
--	start_pfn = PFN_DOWN(start);
--	end_pfn = start_pfn + PFN_DOWN(size);
--	return offline_pages(start_pfn, end_pfn, 120 * HZ);
-+int offline_memory(u64 start, u64 size)
++static int usbhsf_get_vbus(struct platform_device *pdev)
 +{
-+	return -EINVAL;
- }
- #else
--int remove_memory(u64 start, u64 size)
-+int offline_pages(u64 start, u64 size)
-+{
-+	return -EINVAL;
++	return gpio_get_value(GPIO_PORT209);
 +}
 +
-+int offline_memory(u64 start, u64 size)
++static irqreturn_t usbhsf_interrupt(int irq, void *data)
++{
++	struct platform_device *pdev = data;
++
++	renesas_usbhs_call_notify_hotplug(pdev);
++
++	return IRQ_HANDLED;
++}
++
+ static void usbhsf_hardware_exit(struct platform_device *pdev)
  {
- 	return -EINVAL;
+ 	struct usbhsf_private *priv = usbhsf_get_priv(pdev);
+@@ -243,11 +251,14 @@ static void usbhsf_hardware_exit(struct platform_device *pdev)
+ 	priv->host	= NULL;
+ 	priv->func	= NULL;
+ 	priv->usbh_base	= NULL;
++
++	free_irq(IRQ7, pdev);
  }
- #endif /* CONFIG_MEMORY_HOTREMOVE */
--EXPORT_SYMBOL_GPL(remove_memory);
-+EXPORT_SYMBOL_GPL(offline_memory);
+ 
+ static int usbhsf_hardware_init(struct platform_device *pdev)
+ {
+ 	struct usbhsf_private *priv = usbhsf_get_priv(pdev);
++	int ret;
+ 
+ 	priv->phy	= clk_get(&pdev->dev, "phy");
+ 	priv->usb24	= clk_get(&pdev->dev, "usb24");
+@@ -267,6 +278,14 @@ static int usbhsf_hardware_init(struct platform_device *pdev)
+ 		return -EIO;
+ 	}
+ 
++	ret = request_irq(IRQ7, usbhsf_interrupt, IRQF_TRIGGER_NONE,
++			  dev_name(&pdev->dev), pdev);
++	if (ret) {
++		dev_err(&pdev->dev, "request_irq err\n");
++		return ret;
++	}
++	irq_set_irq_type(IRQ7, IRQ_TYPE_EDGE_BOTH);
++
+ 	/* usb24 use 1/1 of parent clock (= usb24s = 24MHz) */
+ 	clk_set_rate(priv->usb24,
+ 		     clk_get_rate(clk_get_parent(priv->usb24)));
+@@ -278,6 +297,7 @@ static struct usbhsf_private usbhsf_private = {
+ 	.info = {
+ 		.platform_callback = {
+ 			.get_id		= usbhsf_get_id,
++			.get_vbus	= usbhsf_get_vbus,
+ 			.hardware_init	= usbhsf_hardware_init,
+ 			.hardware_exit	= usbhsf_hardware_exit,
+ 			.power_ctrl	= usbhsf_power_ctrl,
+@@ -1018,7 +1038,17 @@ static void __init eva_init(void)
+ 		/* USB Host */
+ 	} else {
+ 		/* USB Func */
+-		gpio_request(GPIO_FN_VBUS, NULL);
++		/*
++		 * A1 chip has 2 IRQ7 pin and it was controled by MSEL register.
++		 * OTOH, usbhs interrupt needs its value (HI/LOW) to decide
++		 * USB connection/disconnection (usbhsf_get_vbus()).
++		 * This means we needs to select GPIO_FN_IRQ7_PORT209 first,
++		 * and select GPIO_PORT209 here
++		 */
++		gpio_request(GPIO_FN_IRQ7_PORT209, NULL);
++		gpio_request(GPIO_PORT209, NULL);
++		gpio_direction_input(GPIO_PORT209);
++
+ 		platform_device_register(&usbhsf_device);
+ 	}
+ 
 -- 
-1.7.1
+1.7.5.4
 
