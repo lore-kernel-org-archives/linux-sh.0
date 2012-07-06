@@ -1,37 +1,45 @@
-From: Vinod Koul <vinod.koul@linux.intel.com>
-Date: Fri, 20 Jul 2012 06:12:28 +0000
-Subject: Re: [PATCH 0/7 v2] dma: sh: stop using .private
-Message-Id: <1342764028.1726.195.camel@vkoul-udesk3>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 06 Jul 2012 11:08:15 +0000
+Subject: [PATCH] ARM: mach-shmobile: armadillo800eva: defconfig Allow use of armhf userspace
+Message-Id: <1341572895-9523-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1341484183-10757-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1341484183-10757-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1340189605-22074-1-git-send-email-laurent.pinchart@ideasonboard.com>
+In-Reply-To: <1340189605-22074-1-git-send-email-laurent.pinchart@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Thu, 2012-07-05 at 12:29 +0200, Guennadi Liakhovetski wrote:
-> This patch series supersedes the one from yesterday with the same title. 
-> The 4 patches from v1 are all unchanged, v2 just prepends them with 3 more 
-> preparatory patches. From the original series description:
-> 
-> Here's an attempt to convert the shdma driver to a new method, whereby a 
-> centrally provided filter function is used and the DMA_SLAVE_CONFIG command 
-> is enabled for slave operation. The last patch is an illustration of how 
-> this new method shall be used. If this approach is acceptable, I'll also 
-> convert the remaining shdma user drivers. This patch series goes on top of 
-> my earlier patches to split shdma.c.
-Applied thanks.
+This allows use a Debian armhf usespace
+as well as the existing ability to use a Debian armel userspace.
 
-Fixed one checkpatch issue though!!
+Cc: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ arch/arm/configs/armadillo800eva_defconfig | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-ERROR: "(foo*)" should be "(foo *)"
-#996: FILE: drivers/dma/sh/shdma-base.c:662:
-+		config = (struct dma_slave_config*)arg;
-
-Please *always* run checkpatch on the patches you send
-
+diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
+index 16bbb3f..7d87184 100644
+--- a/arch/arm/configs/armadillo800eva_defconfig
++++ b/arch/arm/configs/armadillo800eva_defconfig
+@@ -18,7 +18,7 @@ CONFIG_ARCH_SHMOBILE=y
+ CONFIG_ARCH_R8A7740=y
+ CONFIG_MACH_ARMADILLO800EVA=y
+ # CONFIG_SH_TIMER_TMU is not set
+-# CONFIG_ARM_THUMB is not set
++CONFIG_ARM_THUMB=y
+ CONFIG_CPU_BPREDICT_DISABLE=y
+ # CONFIG_CACHE_L2X0 is not set
+ CONFIG_ARM_ERRATA_430973=y
+@@ -36,6 +36,7 @@ CONFIG_ZBOOT_ROM_BSS=0x0
+ CONFIG_CMDLINE="console=tty0 console=ttySC1,115200 earlyprintk=sh-sci.1,115200 ignore_loglevel root=/dev/nfs ip=dhcp nfsroot=,rsize@96,wsize@96"
+ CONFIG_CMDLINE_FORCE=y
+ CONFIG_KEXEC=y
++CONFIG_VFP=y
+ # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
+ # CONFIG_SUSPEND is not set
+ CONFIG_NET=y
 -- 
-~Vinod
+1.7.10.2.484.gcd07cc5
 
