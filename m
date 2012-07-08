@@ -1,35 +1,27 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Fri, 06 Jul 2012 20:32:16 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: fix platsmp.c build when ARCH_SH73A0=n
-Message-Id: <201207062232.16715.rjw@sisk.pl>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Sun, 08 Jul 2012 09:05:23 +0000
+Subject: ARM: mach-shmobile: recent next build failure
+Message-Id: <Pine.LNX.4.64.1207081101110.31002@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120706082005.30495.53308.sendpatchset@w520>
-In-Reply-To: <20120706082005.30495.53308.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Friday, July 06, 2012, Arnd Bergmann wrote:
-> On Friday 06 July 2012, Rafael J. Wysocki wrote:
-> > > 
-> > > It can actually be written a little nicer now, like
-> > > 
-> > > #define is_sh73a0() (machine_is_ag5evm() || machine_is_kota2() || \
-> > >                        (IS_ENABLED(CONFIG_ARCH_SH73A0) && \
-> > > 			of_machine_is_compatible("renesas,sh73a0")))
-> > > 
-> > > but that won't work for the backport and it's still a little
-> > > ugly.
-> > 
-> > Can you please take the $subject patch directly to the fixes branch?
-> > Or do you want me to generate a pull request with just this one patch?
-> 
-> Ok, applied to the fixes branch. My current plan is to send that branch
-> upstream on Monday.
-> 
-> I've added Simon's Tested-by tag and I'm taking your mail as an Acked-by.
+Hi
 
-Yes, thanks a lot!
+Got this build failure with Friday's next:
 
-Rafael
+linux/arch/arm/mach-shmobile/pm-sh7372.c: In function 'sh7372_pm_init':
+linux/arch/arm/mach-shmobile/pm-sh7372.c:598: error: implicit declaration of function 'sh7372_suspend_init'
+linux/arch/arm/mach-shmobile/pm-sh7372.c:599: error: implicit declaration of function 'sh7372_cpuidle_init'
+make[2]: *** [arch/arm/mach-shmobile/pm-sh7372.o] Error 1
+
+.config available on request.
+
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
