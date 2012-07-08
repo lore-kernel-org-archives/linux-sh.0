@@ -1,49 +1,114 @@
-From: Andrew Morton <akpm@linux-foundation.org>
-Date: Wed, 18 Jul 2012 21:07:38 +0000
-Subject: Re: [PATCH] MIPS: fix bug.h MIPS build regression
-Message-Id: <20120718140738.ca6f8f5a.akpm@linux-foundation.org>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sun, 08 Jul 2012 22:15:12 +0000
+Subject: [PATCH] ARM: shmobile: Build code depending on PM only if PM is set
+Message-Id: <201207090015.12531.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1339962373-3224-1-git-send-email-geert@linux-m68k.org>
-        <CAMuHMdVfLjgrtWoPpvbLf12+=ApE6W9dNcweqD-_2Benr-D7NQ@mail.gmail.com>
-        <20120620152759.2caceb8c.yuasa@linux-mips.org>
-        <20120620161249.GB29196@linux-mips.org>
-        <4FE4B13E.10709@caviumnetworks.com>
-        <CAMuHMdXSGgH+M_2+xuzY2t_sGZto24=atv3Kaj+R-dWAUPzW7w@mail.gmail.com>
-        <CAMuHMdWW=sAff-iw0EiHaejr34Z4u_X7w3nHf6Tfo-c2f=Qijg@mail.gmail.com>
-In-Reply-To: <CAMuHMdWW=sAff-iw0EiHaejr34Z4u_X7w3nHf6Tfo-c2f=Qijg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: David Daney <ddaney@caviumnetworks.com>, Ralf Baechle <ralf@linux-mips.org>, Yoichi Yuasa <yuasa@linux-mips.org>, Paul Mundt <lethal@linux-sh.org>, linux-kernel@vger.kernel.org, Linuxppc-dev <linuxppc-dev@ozlabs.org>, Linux MIPS Mailing List <linux-mips@linux-mips.org>, Linux-sh list <linux-sh@vger.kernel.org>, Chris Zankel <chris@zankel.net>
+To: linux-sh@vger.kernel.org
 
-On Wed, 18 Jul 2012 10:35:46 +0200
-Geert Uytterhoeven <geert@linux-m68k.org> wrote:
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-> On Mon, Jul 16, 2012 at 9:27 PM, Geert Uytterhoeven
-> <geert@linux-m68k.org> wrote:
-> > On Fri, Jun 22, 2012 at 7:54 PM, David Daney <ddaney@caviumnetworks.com> wrote:
-> >> On 06/20/2012 09:12 AM, Ralf Baechle wrote:
-> >>>
-> >>> On Wed, Jun 20, 2012 at 03:27:59PM +0900, Yoichi Yuasa wrote:
-> >>>
-> >>>> Commit: 3777808873b0c49c5cf27e44c948dfb02675d578 breaks all MIPS builds.
-> >>>
-> >>>
-> >>> Thanks, fix applied.
-> >>>
-> >>
-> >> Where was it applied?
-> >>
-> >> It doesn't show up in linux-next for 20120622, which is where it is needed.
-> >
-> > It's also desperately needed in mainline for 3.5.
-> >
-> > Ralf?
-> 
-> Andrew? This prevents any green MIPS builds.
-> 
+There are a few files under arch/arm/mach-shmobile/ whose entire
+contents depend on CONFIG_PM, but they are compiled even if
+CONFIG_PM is unset.  It is cleaner to modify the Makefile to
+avoid building those files entirely for CONFIG_PM unset and
+remove #ifdef CONFIG_PM directives from them.
 
-The patch is already in linux-next via Ralf's tree.
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
+ arch/arm/mach-shmobile/Makefile              |    4 +++-
+ arch/arm/mach-shmobile/include/mach/common.h |    4 ++++
+ arch/arm/mach-shmobile/pm-r8a7740.c          |    3 ---
+ arch/arm/mach-shmobile/pm-rmobile.c          |    2 --
+ arch/arm/mach-shmobile/pm-sh7372.c           |    4 ----
+ 5 files changed, 7 insertions(+), 10 deletions(-)
 
-Perhaps he nodded off - I'll send it at Linus right now.
+Index: linux/arch/arm/mach-shmobile/Makefile
+=================================--- linux.orig/arch/arm/mach-shmobile/Makefile
++++ linux/arch/arm/mach-shmobile/Makefile
+@@ -37,11 +37,13 @@ obj-$(CONFIG_ARCH_SH7372)	+= entry-intc.
+ obj-$(CONFIG_ARCH_R8A7740)	+= entry-intc.o
+ 
+ # PM objects
+-obj-$(CONFIG_SUSPEND)		+= suspend.o
+ obj-$(CONFIG_CPU_IDLE)		+= cpuidle.o
++ifeq ($(CONFIG_PM),y)
++obj-$(CONFIG_SUSPEND)		+= suspend.o
+ obj-$(CONFIG_ARCH_SHMOBILE)	+= pm-rmobile.o
+ obj-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o sleep-sh7372.o
+ obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o
++endif
+ obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o
+ 
+ # Board objects
+Index: linux/arch/arm/mach-shmobile/include/mach/common.h
+=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/common.h
++++ linux/arch/arm/mach-shmobile/include/mach/common.h
+@@ -41,7 +41,11 @@ extern void sh7372_add_early_devices(voi
+ extern void sh7372_add_standard_devices(void);
+ extern void sh7372_clock_init(void);
+ extern void sh7372_pinmux_init(void);
++#ifdef CONFIG_PM
+ extern void sh7372_pm_init(void);
++#else
++static inline void sh7372_pm_init(void) {}
++#endif
+ extern void sh7372_resume_core_standby_sysc(void);
+ extern int sh7372_do_idle_sysc(unsigned long sleep_mode);
+ extern struct clk sh7372_extal1_clk;
+Index: linux/arch/arm/mach-shmobile/pm-r8a7740.c
+=================================--- linux.orig/arch/arm/mach-shmobile/pm-r8a7740.c
++++ linux/arch/arm/mach-shmobile/pm-r8a7740.c
+@@ -11,7 +11,6 @@
+ #include <linux/console.h>
+ #include <mach/pm-rmobile.h>
+ 
+-#ifdef CONFIG_PM
+ static int r8a7740_pd_a4s_suspend(void)
+ {
+ 	/*
+@@ -50,5 +49,3 @@ struct rmobile_pm_domain r8a7740_pd_a4lc
+ 	.genpd.name	= "A4LC",
+ 	.bit_shift	= 1,
+ };
+-
+-#endif /* CONFIG_PM */
+Index: linux/arch/arm/mach-shmobile/pm-rmobile.c
+=================================--- linux.orig/arch/arm/mach-shmobile/pm-rmobile.c
++++ linux/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -27,7 +27,6 @@
+ #define PSTR_RETRIES	100
+ #define PSTR_DELAY_US	10
+ 
+-#ifdef CONFIG_PM
+ static int rmobile_pd_power_down(struct generic_pm_domain *genpd)
+ {
+ 	struct rmobile_pm_domain *rmobile_pd = to_rmobile_pd(genpd);
+@@ -164,4 +163,3 @@ void rmobile_pm_add_subdomain(struct rmo
+ {
+ 	pm_genpd_add_subdomain(&rmobile_pd->genpd, &rmobile_sd->genpd);
+ }
+-#endif /* CONFIG_PM */
+Index: linux/arch/arm/mach-shmobile/pm-sh7372.c
+=================================--- linux.orig/arch/arm/mach-shmobile/pm-sh7372.c
++++ linux/arch/arm/mach-shmobile/pm-sh7372.c
+@@ -69,8 +69,6 @@
+ /* AP-System Core */
+ #define APARMBAREA 0xe6f10020
+ 
+-#ifdef CONFIG_PM
+-
+ struct rmobile_pm_domain sh7372_pd_a4lc = {
+ 	.genpd.name = "A4LC",
+ 	.bit_shift = 1,
+@@ -149,8 +147,6 @@ struct rmobile_pm_domain sh7372_pd_a3sg
+ 	.bit_shift = 13,
+ };
+ 
+-#endif /* CONFIG_PM */
+-
+ #ifdef CONFIG_SUSPEND
+ static void sh7372_set_reset_vector(unsigned long address)
+ {
