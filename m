@@ -1,52 +1,65 @@
-From: Gerald Schaefer <gerald.schaefer@de.ibm.com>
-Date: Tue, 31 Jul 2012 12:40:00 +0000
-Subject: Re: [RFC PATCH v5 12/19] memory-hotplug: introduce new function arch_remove_memory()
-Message-Id: <20120731144000.33fd4a0a@thinkpad>
+From: Grant Likely <grant.likely@secretlab.ca>
+Date: Mon, 09 Jul 2012 21:56:03 +0000
+Subject: Re: [PATCH] driver core: fixup reversed deferred probe order
+Message-Id: <CACxGe6s+dKvQ07+dzH-84-7sDdmF3uOgTmk7PXS7CzMOHMBySg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <50126B83.3050201@cn.fujitsu.com>
-	<50126E2F.8010301@cn.fujitsu.com>
-	<20120730102305.GB3631@osiris.boeblingen.de.ibm.com>
-	<50166379.4090305@cn.fujitsu.com>
-In-Reply-To: <50166379.4090305@cn.fujitsu.com>
+References: <87mx4rmqzd.wl%kuninori.morimoto.gx@renesas.com>
+ <20120529064621.GB6166@verge.net.au> <20120529070458.GB11445@linux-sh.org>
+ <20120529073313.GA21702@verge.net.au> <87k3zvmo4r.wl%kuninori.morimoto.gx@renesas.com>
+ <20120529091129.GA26043@verge.net.au> <87txyy347i.wl%kuninori.morimoto.gx@renesas.com>
+ <87sjei325k.wl%kuninori.morimoto.gx@renesas.com> <20120530013056.GA31474@verge.net.au>
+ <87r4u2310j.wl%kuninori.morimoto.gx@renesas.com> <87pq9m30h1.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87pq9m30h1.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Wen Congyang <wency@cn.fujitsu.com>
-Cc: Heiko Carstens <heiko.carstens@de.ibm.com>, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, Yasuaki ISIMATU <isimatu.yasuaki@jp.fujitsu.com>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, linux-kernel@vger.kernel.org, Simon Horman <horms@verge.net.au>, Paul Mundt <lethal@linux-sh.org>, Rafael <rjw@sisk.pl>, Mark Brown <broonie@opensource.wolfsonmicro.com>, Magnus <magnus.damm@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 
-On Mon, 30 Jul 2012 18:35:37 +0800
-Wen Congyang <wency@cn.fujitsu.com> wrote:
+On Wed, May 30, 2012 at 2:46 AM, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
+> If driver requests probe deferral,
+> it will be added to deferred_probe_pending_list
+> by driver_deferred_probe_add(), but, it used list_add().
+> Because of that, deferred probe will be run as reversed order.
+> This patch uses list_add_tail(), and solved this issue.
+>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-> At 07/30/2012 06:23 PM, Heiko Carstens Wrote:
-> > On Fri, Jul 27, 2012 at 06:32:15PM +0800, Wen Congyang wrote:
-> >> We don't call __add_pages() directly in the function add_memory()
-> >> because some other architecture related things need to be done
-> >> before or after calling __add_pages(). So we should introduce
-> >> a new function arch_remove_memory() to revert the things
-> >> done in arch_add_memory().
-> >>
-> >> Note: the function for s390 is not implemented(I don't know how to
-> >> implement it for s390).
-> > 
-> > There is no hardware or firmware interface which could trigger a
-> > hot memory remove on s390. So there is nothing that needs to be
-> > implemented.
-> 
-> Thanks for providing this information.
-> 
-> According to this, arch_remove_memory() for s390 can just return
-> -EBUSY.
+Acked-by: Grant Likely <grant.likely@secretlab.ca>
 
-Yes, but there is a prototype mismatch for arch_remove_memory() on s390
-and also other architectures (u64 vs. unsigned long).
+(But not tested; I'm not in a position to test anything at the moment)  :-(
 
-arch/s390/mm/init.c:262: error: conflicting types for
-‘arch_remove_memory’ include/linux/memory_hotplug.h:88: error: previous
-declaration of ‘arch_remove_memory’ was here
+g.
 
-In memory_hotplug.h you have:
-extern int arch_remove_memory(unsigned long start, unsigned long size);
+> ---
+>  drivers/base/dd.c |    2 +-
+>  1 files changed, 1 insertions(+), 1 deletions(-)
+>
+> diff --git a/drivers/base/dd.c b/drivers/base/dd.c
+> index 1b1cbb5..dcb8a6e 100644
+> --- a/drivers/base/dd.c
+> +++ b/drivers/base/dd.c
+> @@ -100,7 +100,7 @@ static void driver_deferred_probe_add(struct device *dev)
+>         mutex_lock(&deferred_probe_mutex);
+>         if (list_empty(&dev->p->deferred_probe)) {
+>                 dev_dbg(dev, "Added to deferred list\n");
+> -               list_add(&dev->p->deferred_probe, &deferred_probe_pending_list);
+> +               list_add_tail(&dev->p->deferred_probe, &deferred_probe_pending_list);
+>         }
+>         mutex_unlock(&deferred_probe_mutex);
+>  }
+> --
+> 1.7.5.4
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Please read the FAQ at  http://www.tux.org/lkml/
 
-On all archs other than x86 you have:
-int arch_remove_memory(u64 start, u64 size)
 
+
+-- 
+Grant Likely, B.Sc., P.Eng.
+Secret Lab Technologies Ltd.
