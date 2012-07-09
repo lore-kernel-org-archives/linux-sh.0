@@ -1,32 +1,54 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sat, 28 Jul 2012 13:13:04 +0000
-Subject: Re: [PATCH] sh: pfc: Fix build issues in pinctrl.c
-Message-Id: <201207281513.04621.rjw@sisk.pl>
+From: minyard@acm.org
+Date: Mon, 09 Jul 2012 20:35:20 +0000
+Subject: [PATCH] SH: Convert out[bwl] macros to inline functions
+Message-Id: <1341866120-18640-1-git-send-email-minyard@acm.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201207280007.04480.rjw@sisk.pl> <20120728002911.GG30468@linux-sh.org>
-In-Reply-To: <20120728002911.GG30468@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-kernel@vger.kernel.org, lethal@linux-sh.org, linux-sh@vger.kernel.org
+Cc: Corey Minyard <cminyard@mvista.com>
 
-On Saturday, July 28, 2012, Paul Mundt wrote:
-> On Sat, Jul 28, 2012 at 12:07:04AM +0200, Rafael J. Wysocki wrote:
-> > 
-> > First off, drivers/sh/pfc/pinctrl.c doesn't build after commit
-> > 5d589b0 (pinctrl: remove pinctrl_remove_gpio_range), because
-> > sh_pfc_pinctrl_remove() uses the function that has been removed by
-> > that commit.  Fix this by removing the pinctrl_remove_gpio_range()
-> > call, which is not necessary any more, from sh_pfc_pinctrl_remove().
-> > 
-> > Second, the compiler complains correctly that there's an unused
-> > local variable in sh_pfc_pinconf_set().  Fix this by removing the
-> > definition of that variable.
-> > 
-> > Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
-> 
-> Already fixed in my tree, as pointed out when Iwamatsu-san sent the same
-> patch. 
+From: Corey Minyard <cminyard@mvista.com>
 
-I must have overlooked that one.  Thanks!
+The macros just called BUG(), but that results in unused variable
+warnings all over the place, like in the IPMI driver.  The build
+regression emails were annoying me, so here's the fix.  I have
+not even compile tested this, but it's rather obvious.
+
+Signed-off-by: Corey Minyard <cminyard@mvista.com>
+---
+ arch/sh/include/asm/io_noioport.h |   17 ++++++++++++++---
+ 1 files changed, 14 insertions(+), 3 deletions(-)
+
+diff --git a/arch/sh/include/asm/io_noioport.h b/arch/sh/include/asm/io_noioport.h
+index e136d28..8cf7084 100644
+--- a/arch/sh/include/asm/io_noioport.h
++++ b/arch/sh/include/asm/io_noioport.h
+@@ -19,9 +19,20 @@ static inline u32 inl(unsigned long addr)
+ 	return -1;
+ }
+ 
+-#define outb(x, y)	BUG()
+-#define outw(x, y)	BUG()
+-#define outl(x, y)	BUG()
++static inline void outb(unsigned char x, unsigned int port)
++{
++	BUG();
++}
++
++static inline void outw(unsigned short x, unsigned int port)
++{
++	BUG();
++}
++
++static inline void outl(unsigned int x, unsigned int port)
++{
++	BUG();
++}
+ 
+ #define inb_p(addr)	inb(addr)
+ #define inw_p(addr)	inw(addr)
+-- 
+1.7.4.1
+
