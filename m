@@ -1,54 +1,35 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 19 Jul 2012 00:39:19 +0000
-Subject: [PATCH 6/9] fbdev: sh_mobile_lcdc: Use channel configuration to initialize fb device
-Message-Id: <1342658362-19491-7-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 12 Jul 2012 07:38:11 +0000
+Subject: [ANNOUNCEMENT] (tentative) Android generic V4L2 camera HAL
+Message-Id: <Pine.LNX.4.64.1207120935360.19866@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Copy the x and y virtual resolutions from the channel information
-instead of recomputing them.
+(just forwarding an earlier mail, sent to the linux-media list in June)
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Hi all
+
+It's been a while since I've actually done this work. We have been waiting 
+for various formalities to be resolved to be able to publish this work 
+upstream. There are still a couple of formal issues to sort out before we 
+can begin the submission process, but at least it has been decided to 
+release patches for independent review and testing.
+
+For now I've uploaded a development snapshot to
+
+http://download.open-technology.de/android/20120625/
+
+In the future we probably will provide git trees at least for the 
+system/media/v4l_camera development.
+
+Enjoy:-) Any comments welcome.
+
+Thanks
+Guennadi
 ---
- drivers/video/sh_mobile_lcdcfb.c |   10 ++++++----
- 1 files changed, 6 insertions(+), 4 deletions(-)
-
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index 67877cc..68011b5 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -2214,14 +2214,14 @@ sh_mobile_lcdc_channel_fb_init(struct sh_mobile_lcdc_chan *ch,
- 		info->fix.ypanstep = 2;
- 
- 	/* Initialize variable screen information using the first mode as
--	 * default. The default Y virtual resolution is twice the panel size to
--	 * allow for double-buffering.
-+	 * default.
- 	 */
- 	var = &info->var;
- 	fb_videomode_to_var(var, mode);
- 	var->width = ch->cfg->panel_cfg.width;
- 	var->height = ch->cfg->panel_cfg.height;
--	var->yres_virtual = var->yres * 2;
-+	var->xres_virtual = ch->xres_virtual;
-+	var->yres_virtual = ch->yres_virtual;
- 	var->activate = FB_ACTIVATE_NOW;
- 
- 	/* Use the legacy API by default for RGB formats, and the FOURCC API
-@@ -2619,7 +2619,9 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
- 		num_modes = cfg->num_modes;
- 	}
- 
--	/* Use the first mode as default. */
-+	/* Use the first mode as default. The default Y virtual resolution is
-+	 * twice the panel size to allow for double-buffering.
-+	 */
- 	ch->format = format;
- 	ch->xres = mode->xres;
- 	ch->xres_virtual = mode->xres;
--- 
-1.7.8.6
-
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
