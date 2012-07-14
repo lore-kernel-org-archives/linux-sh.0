@@ -1,136 +1,111 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 16 Jul 2012 21:17:11 +0000
-Subject: [RFC][PATCH 1/14] PM / Domains: Make it possible to use domain names when adding devices
-Message-Id: <201207162317.11591.rjw@sisk.pl>
+Date: Sat, 14 Jul 2012 13:34:14 +0000
+Subject: [GIT PULL] Renesas ARM-based boards updates for v3.6
+Message-Id: <201207141534.15219.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201207032302.17805.rjw@sisk.pl> <201207052217.48086.rjw@sisk.pl> <201207162315.49073.rjw@sisk.pl>
-In-Reply-To: <201207162315.49073.rjw@sisk.pl>
+References: <201207112338.36939.rjw@sisk.pl> <201207141529.21534.rjw@sisk.pl>
+In-Reply-To: <201207141529.21534.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM list <linux-pm@vger.kernel.org>
-Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>, LKML <linux-kernel@vger.kernel.org>, Matthew Garrett <mjg59@srcf.ucam.org>, Magnus Damm <magnus.damm@gmail.com>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+Hi,
 
-Add a new helper function __pm_genpd_name_add_device() allowing
-a device to be added to a (registered) generic PM domain identified
-by name.  Add a wrapper around it, pm_genpd_name_add_device(),
-passing NULL as the last argument and reorganize pm_domains.h for the
-new functions to be defined consistently with the existing ones.
+Please pull changes since commit 0df8fa46611abc56e39f541495d667e4bf4f1060
 
-These functions are useful for adding devices to PM domains whose
-representations are stored in tables, when the caller doesn't know
-the index of the domain to add the device to, but it knows the
-domain's name.
+    Merge branch 'renesas-sh7377' into renesas-soc
 
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
----
- drivers/base/power/domain.c |   27 +++++++++++++++++++++++++++
- include/linux/pm_domain.h   |   42 +++++++++++++++++++++++++++++-------------
- 2 files changed, 56 insertions(+), 13 deletions(-)
+with top-most commit 45c7a01f070146e08f5c838315ffca5ade6e3844
 
-Index: linux/drivers/base/power/domain.c
-=================================--- linux.orig/drivers/base/power/domain.c
-+++ linux/drivers/base/power/domain.c
-@@ -1399,6 +1399,33 @@ int __pm_genpd_of_add_device(struct devi
- 	return __pm_genpd_add_device(genpd, dev, td);
- }
- 
-+
-+/**
-+ * __pm_genpd_name_add_device - Find I/O PM domain and add a device to it.
-+ * @domain_name: Name of the PM domain to add the device to.
-+ * @dev: Device to be added.
-+ * @td: Set of PM QoS timing parameters to attach to the device.
-+ */
-+int __pm_genpd_name_add_device(const char *domain_name, struct device *dev,
-+			       struct gpd_timing_data *td)
-+{
-+	struct generic_pm_domain *genpd = NULL, *gpd;
-+
-+	if (IS_ERR_OR_NULL(domain_name) || IS_ERR_OR_NULL(dev))
-+		return -EINVAL;
-+
-+	mutex_lock(&gpd_list_lock);
-+	list_for_each_entry(gpd, &gpd_list, gpd_list_node) {
-+		if (!strcmp(gpd->name, domain_name)) {
-+			genpd = gpd;
-+			break;
-+		}
-+	}
-+	mutex_unlock(&gpd_list_lock);
-+
-+	return __pm_genpd_add_device(genpd, dev, td);
-+}
-+
- /**
-  * pm_genpd_remove_device - Remove a device from an I/O PM domain.
-  * @genpd: PM domain to remove the device from.
-Index: linux/include/linux/pm_domain.h
-=================================--- linux.orig/include/linux/pm_domain.h
-+++ linux/include/linux/pm_domain.h
-@@ -139,17 +139,9 @@ extern int __pm_genpd_of_add_device(stru
- 				    struct device *dev,
- 				    struct gpd_timing_data *td);
- 
--static inline int pm_genpd_add_device(struct generic_pm_domain *genpd,
--				      struct device *dev)
--{
--	return __pm_genpd_add_device(genpd, dev, NULL);
--}
--
--static inline int pm_genpd_of_add_device(struct device_node *genpd_node,
--					 struct device *dev)
--{
--	return __pm_genpd_of_add_device(genpd_node, dev, NULL);
--}
-+extern int __pm_genpd_name_add_device(const char *domain_name,
-+				      struct device *dev,
-+				      struct gpd_timing_data *td);
- 
- extern int pm_genpd_remove_device(struct generic_pm_domain *genpd,
- 				  struct device *dev);
-@@ -189,8 +181,14 @@ static inline int __pm_genpd_add_device(
- {
- 	return -ENOSYS;
- }
--static inline int pm_genpd_add_device(struct generic_pm_domain *genpd,
--				      struct device *dev)
-+static inline int __pm_genpd_of_add_device(struct device_node *genpd_node,
-+					   struct device *dev)
-+{
-+	return -ENOSYS;
-+}
-+static inline int __pm_genpd_name_add_device(char *domain_name,
-+					     struct device *dev,
-+					     struct gpd_timing_data *td)
- {
- 	return -ENOSYS;
- }
-@@ -245,6 +243,24 @@ static inline bool default_stop_ok(struc
- #define pm_domain_always_on_gov NULL
- #endif
- 
-+static inline int pm_genpd_add_device(struct generic_pm_domain *genpd,
-+				      struct device *dev)
-+{
-+	return __pm_genpd_add_device(genpd, dev, NULL);
-+}
-+
-+static inline int pm_genpd_of_add_device(struct device_node *genpd_node,
-+					 struct device *dev)
-+{
-+	return __pm_genpd_of_add_device(genpd_node, dev, NULL);
-+}
-+
-+static inline int pm_genpd_name_add_device(const char *domain_name,
-+					   struct device *dev)
-+{
-+	return __pm_genpd_name_add_device(domain_name, dev, NULL);
-+}
-+
- static inline int pm_genpd_remove_callbacks(struct device *dev)
- {
- 	return __pm_genpd_remove_callbacks(dev, true);
+    Merge branch 'renesas-marzen' into renesas-board
+
+from the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/rafael/renesas.git board
+
+to receive updates for Renesas ARM-based boards for v3.6.  Included are:
+
+* Regulator support changes for multiple boards from Guennadi Liakhovetski.
+* armadillo800eva and kzm9g support updates from Kuninori Morimoto
+  and Tetsuyuki Kobayashi.
+* GPIO support update for multiple boards from Kuninori Morimoto.
+* defconfig updates from Magnus Damm and Simon Horman.
+
+This is based on the 'soc' branch I've just sent a pull request for and on
+the following topic branch from the Mark Brown's regulator tree:
+
+git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git tags/topic/fixed
+
+which is requisite for the merge.
+
+Thanks!
+
+
+ arch/arm/configs/armadillo800eva_defconfig     |  25 +-
+ arch/arm/configs/kzm9d_defconfig               |  89 +++++
+ arch/arm/configs/kzm9g_defconfig               |   8 +-
+ arch/arm/mach-shmobile/Kconfig                 |  12 +
+ arch/arm/mach-shmobile/board-ag5evm.c          |  82 ++++-
+ arch/arm/mach-shmobile/board-ap4evb.c          |  48 ++-
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 454 ++++++++++++++++++++++++-
+ arch/arm/mach-shmobile/board-bonito.c          |  10 +
+ arch/arm/mach-shmobile/board-g4evm.c           |  52 ++-
+ arch/arm/mach-shmobile/board-kota2.c           |  30 ++
+ arch/arm/mach-shmobile/board-kzm9d.c           |  10 +
+ arch/arm/mach-shmobile/board-kzm9g.c           | 320 +++++++++++++++++
+ arch/arm/mach-shmobile/board-mackerel.c        |  59 ++--
+ arch/arm/mach-shmobile/board-marzen.c          |  10 +
+ drivers/regulator/fixed-helper.c               |  19 +-
+ include/linux/regulator/fixed.h                |  11 +-
+ 16 files changed, 1135 insertions(+), 104 deletions(-)
+
+---------------
+
+Guennadi Liakhovetski (14):
+      regulator: support multiple dummy fixed regulators
+      regulator: extend the fixed dummy voltage regulator to accept voltage
+      ARM: mach-shmobile: add 3.3V and 1.8V fixed regulators to mackerel
+      ARM: mach-shmobile: add fixed voltage regulators to ag5evm
+      ARM: mach-shmobile: add fixed voltage regulators to ap4evb
+      ARM: mach-shmobile: add fixed voltage regulators to armadillo800eva
+      ARM: mach-shmobile: add fixed voltage regulators to bonito
+      ARM: mach-shmobile: add fixed voltage regulators to g4evm
+      ARM: mach-shmobile: add fixed voltage regulators to kota2
+      ARM: mach-shmobile: add fixed voltage regulators to kzm9d
+      ARM: mach-shmobile: add fixed voltage regulators to kzm9g
+      ARM: mach-shmobile: add fixed voltage regulators to marzen
+      ARM: mach-shmobile: add SDHI2 to the 2.8V fixed regulator consumers on kzm9g
+      ARM: mach-shmobile: select the fixed regulator driver on several boards
+
+Kuninori Morimoto (19):
+      ARM: shmobile: armadillo800eva: enable HDMI
+      ARM: shmobile: kzm9g: enable FSI-AK4648
+      ARM: shmobile: armadillo800eva: enable camera
+      ARM: shmobile: armadillo800eva: enable FSI-WM8978 sound
+      ARM: shmobile: armadillo800eva: enable FSI-HDMI sound
+      ARM: shmobile: armadillo800eva: enable DMAEngine on FSI
+      ARM: shmobile: armadillo800eva: enable DMAEngine on SDHI
+      ARM: shmobile: armadillo800eva: enable DMAEngine on USB
+      ARM: shmobile: use common extra gpio functions on armadillo800eva
+      ARM: shmobile: kzm9g: enable USB function
+      ARM: shmobile: kzm9g: enable MicroSD
+      ARM: shmobile: kzm9g: enable DMAEngine on FSI
+      ARM: shmobile: kzm9g: enable DMAEngine on MMCIF
+      ARM: shmobile: use common extra gpio functions on Mackerel
+      ARM: shmobile: use common extra gpio functions on ap4evb
+      ARM: shmobile: use common extra gpio functions on g4evm
+      ARM: shmobile: armadillo800eva: USB Func enables external IRQ mode
+      ARM: shmobile: armadillo800eva: A4LC domain includes LCDC
+      ARM: shmobile: armadillo800eva: A3SP domain includes USB
+
+Magnus Damm (1):
+      ARM: mach-shmobile: kzm9d: Add defconfig
+
+Simon Horman (2):
+      ARM: mach-shmobile: armadillo800eva: defconfig Allow use of armhf userspace
+      ARM: shmobile: kzm9g: defconfig enable INOTIFY_USER
+
+Tetsuyuki Kobayashi (1):
+      ARM: shmobile: kzm9g: Support Real Time Clock
 
