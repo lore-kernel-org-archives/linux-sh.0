@@ -1,67 +1,116 @@
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Fri, 20 Jul 2012 00:57:27 +0000
-Subject: Re: [PATCH] i2c: Add support SuperH SH7734 I2C bus controller
-Message-Id: <5008ACF7.6000009@renesas.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sat, 14 Jul 2012 13:29:21 +0000
+Subject: [GIT PULL] Renesas ARM-based SoCs updates for v3.5
+Message-Id: <201207141529.21534.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1334188641-14641-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
- <87d37d37ml.wl%kuninori.morimoto.gx@renesas.com>
- <CABMQnVKQAfdnQ+CfSuYSXQHmOyjQzPzngzTVLm6an2-haQAKZg@mail.gmail.com>
- <87y5q02cv2.wl%kuninori.morimoto.gx@renesas.com>
- <CABMQnVK8Jt1cZZA-w9xnfrMZNvRbe4r+Sjm3YeF3o6utX0g93Q@mail.gmail.com>
- <87aa2c7d2a.wl%kuninori.morimoto.gx@renesas.com>
- <4F8B7019.2030307@renesas.com>
- <OF7FE4858F.5425E857-ON80257A3F.002C2DA0-80257A3F.002E3111@eu.necel.com>
-In-Reply-To: <OF7FE4858F.5425E857-ON80257A3F.002C2DA0-80257A3F.002E3111-mWMTcI9IYFFWk0Htik3J/w@public.gmane.org>
+References: <201207112338.36939.rjw@sisk.pl>
+In-Reply-To: <201207112338.36939.rjw@sisk.pl>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-2022-jp"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: phil.edworthy-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org
-Cc: Kuninori Morimoto <kuninori.morimoto.gx-zM6kxYcvzFBBDgjK7y7TUQ@public.gmane.org>, Linux-I2C <linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, Linux-SH <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, linux-sh-owner-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi, Phil.
+Hi,
 
-phil.edworthy@renesas.com さんは書きました:
-> Hi Iwamatsu-san,
-> 
->> Date: 16/04/2012 01:58
->> Subject: Re: [PATCH] i2c: Add support SuperH SH7734 I2C bus controller
->> Sent by: linux-sh-owner@vger.kernel.org
->>
->> Kuninori Morimoto さんは書きました:
->>> Hi Iwamatsu-san
->>>
->>>>> I guess R-Car is not same as this I2C.
->>>>> And sorry, SH7734 seems not same as SH-NAVI.
->>>>> Now I'm checking the series.
->>>>> Please wait.
->>>>>
->>>> I already checked SH7775 and SH7776. These are SH-NAVI series.
->>>> But these CPU's are constitution unlike I2C of SH7734.
->>> I got the information about it this morning.
->>> SH7734 I2C came from SH7266, and it came from SH-NaviJ3.
->>>
->> I comfirmed these, thanks.
->> OK, I will rename file and update description.
-> 
-> I noticed your sh7734 i2c patch and realised that the registers are the same as sh7269 (sh2a). I tried this driver on sh7269, but I had to make some
-> changes to use it.
-> 
-> The following code is not suitable for sh7269:
-> +	/* Mask clear interrupts */
-> +	if (pd->adap.nr = 0)
-> +		__raw_writel(I2C_INT_ALL, I2C0_INTMASK_CLR);
-> +	else if (pd->adap.nr = 1)
-> +		__raw_writel(I2C_INT_ALL, I2C1_INTMASK_CLR);
-> 
-> +	/* Mask interrupts */
-> +	if (pd->adap.nr = 0)
-> +		__raw_writel(I2C_INT_ALL, I2C0_INTMASK);
-> +	else if (pd->adap.nr = 1)
-> +		__raw_writel(I2C_INT_ALL, I2C1_INTMASK);
-> 
-> Do you plan to send this driver again? If yes, maybe add #ifdef CPU_SUBTYPE_SH7734 around this code, or add platform data to enable it.
+Please pull changes since commit 485802a6c524e62b5924849dd727ddbb1497cc71
 
-I will resend patch with some fixes and your point.
+    Linux 3.5-rc3
 
-Best regards,
-  Nobuhiro
+with top-most commit 0df8fa46611abc56e39f541495d667e4bf4f1060
+
+    Merge branch 'renesas-sh7377' into renesas-soc
+
+from the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/rafael/renesas.git soc
+
+to receive updates for Renesas ARM-based SoCs for v3.6.  Included are:
+
+* Updates for the r8a7740, sh73a0 and sh7372 SoCs from Kuninori Morimoto.
+* Low-level power management code reorganization from Kuninori Morimoto.
+* Wakeup signaling rework for sh7372 and DT support bits for r8a7740 and
+  sh7377 from Magnus Damm.
+* Assorted fixes.
+
+This branch also includes fixes based on top of v3.5-rc3 that have been
+already merged into arm-soc and mainline, which are not listed below.
+
+Thanks!
+
+
+ arch/arm/boot/dts/r8a7740.dtsi                     |  21 ++
+ arch/arm/boot/dts/sh7377.dtsi                      |  21 ++
+ arch/arm/mach-shmobile/Kconfig                     |   1 +
+ arch/arm/mach-shmobile/Makefile                    |   2 +
+ arch/arm/mach-shmobile/board-ap4evb.c              |  16 +-
+ arch/arm/mach-shmobile/board-armadillo800eva.c     |   1 +
+ arch/arm/mach-shmobile/board-mackerel.c            |  24 +-
+ arch/arm/mach-shmobile/clock-r8a7740.c             | 150 ++++++++-
+ arch/arm/mach-shmobile/clock-r8a7779.c             |   2 +-
+ arch/arm/mach-shmobile/clock-sh7367.c              |   2 +-
+ arch/arm/mach-shmobile/clock-sh7372.c              |   2 +-
+ arch/arm/mach-shmobile/clock-sh7377.c              |   2 +-
+ arch/arm/mach-shmobile/clock-sh73a0.c              |  12 +-
+ arch/arm/mach-shmobile/include/mach/common.h       |   1 +
+ arch/arm/mach-shmobile/include/mach/dma-register.h |  84 +++++
+ arch/arm/mach-shmobile/include/mach/gpio.h         |  32 ++
+ arch/arm/mach-shmobile/include/mach/pm-rmobile.h   |  44 +++
+ arch/arm/mach-shmobile/include/mach/r8a7740.h      |  33 +-
+ arch/arm/mach-shmobile/include/mach/sh7372.h       |  45 +--
+ arch/arm/mach-shmobile/include/mach/sh73a0.h       |   7 +
+ arch/arm/mach-shmobile/intc-r8a7740.c              |  13 +-
+ arch/arm/mach-shmobile/pfc-r8a7740.c               |  24 +-
+ arch/arm/mach-shmobile/pm-r8a7740.c                |  54 ++++
+ arch/arm/mach-shmobile/pm-rmobile.c                | 167 ++++++++++
+ arch/arm/mach-shmobile/pm-sh7372.c                 | 297 +++++------------
+ arch/arm/mach-shmobile/setup-r8a7740.c             | 360 +++++++++++++++++++++
+ arch/arm/mach-shmobile/setup-sh7372.c              | 209 +++++-------
+ arch/arm/mach-shmobile/setup-sh7377.c              |  47 +++
+ arch/arm/mach-shmobile/setup-sh73a0.c              | 152 +++++++--
+ 29 files changed, 1383 insertions(+), 442 deletions(-)
+
+---------------
+
+Kuninori Morimoto (28):
+      ARM: shmobile: r8a7740: add HDMI interrupt support
+      ARM: shmobile: r8a7740: add HDMI clock support
+      ARM: shmobile: r8a7740: add HDMI GPIO support
+      ARM: shmobile: r8a7740: add MERAM work-around
+      ARM: shmobile: r8a7740: add CEU clock support
+      ARM: shmobile: r8a7740: add FSI parent clock support
+      ARM: shmobile: r8a7740: add FSI-B (for HDMI) GPIO support
+      ARM: shmobile: sh73a0: add FSI clock
+      ARM: shmobile: sh7372: remove unused sh7372_a3sp_init() on !CONFIG_PM
+      ARM: shmobile: add common extra gpio functions
+      ARM: shmobile: add common DMAEngine definitions
+      ARM: shmobile: r8a7740: add DMAEngine support for FSI
+      ARM: shmobile: r8a7740: add DMAEngine support for SDHI
+      ARM: shmobile: r8a7740: add DMAEngine support for USB
+      ARM: shmobile: use common DMAEngine definitions on r8a7740
+      ARM: shmobile: sh73a0: add USB clock support
+      ARM: shmobile: sh73a0: add DMAEngine support for MPDMAC
+      ARM: shmobile: use common DMAEngine definitions on sh73a0
+      ARM: shmobile: use common DMAEngine definitions on sh7372
+      ARM: shmobile: soc-core: add R-mobile PM domain common APIs
+      ARM: shmobile: r8a7740: fixup: MSEL1CR 7bit control
+      ARM: shmobile: r8a7740: add A4S pm domain support
+      ARM: shmobile: r8a7740: add A3SP pm domain support
+      ARM: shmobile: r8a7740: add A4LC pm domain support
+      ARM: shmobile: sh7372: add pm-rmobile domain support
+      ARM: shmobile: mackerel: switch to using pm-rmobile API
+      ARM: shmobile: ap4evb: switch to using pm-rmobile API
+      ARM: shmobile: sh7372: completely switch over to using pm-rmobile API
+
+Magnus Damm (5):
+      ARM: shmobile: Use INTCA with sh7372 A3SM power domain
+      ARM: shmobile: sh7372 A3SM CPUIdle support
+      ARM: mach-shmobile: r8a7740 generic board support via DT
+      ARM: mach-shmobile: sh7377 generic board support via DT
+      ARM: shmobile: Take cpuidle dependencies into account correctly
+
+Nobuhiro Iwamatsu (1):
+      ARM: mach-shmobile: Convert sh_clk_mstp32_register to sh_clk_mstp_register
+
+Rafael J. Wysocki (1):
+      ARM: shmobile: Fix build problem in pm-sh7372.c for unusual .config
+
