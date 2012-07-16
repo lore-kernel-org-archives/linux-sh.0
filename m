@@ -1,42 +1,62 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 24 Jul 2012 13:26:08 +0000
-Subject: [PATCH 1/2] ARM: mach-shmobile: armadillo800eva: Fix GPIO buttons descriptions
-Message-Id: <1343136369-14636-2-git-send-email-laurent.pinchart@ideasonboard.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Mon, 16 Jul 2012 21:15:48 +0000
+Subject: [RFC][PATCH 0/14] PM / shmobile: Pass power domain information via DT (was: Re: [RFD] PM: Device tre
+Message-Id: <201207162315.49073.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87bomfuove.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87bomfuove.wl%kuninori.morimoto.gx@renesas.com>
+References: <201207032302.17805.rjw@sisk.pl> <20120704115637.GS4111@opensource.wolfsonmicro.com> <201207052217.48086.rjw@sisk.pl>
+In-Reply-To: <201207052217.48086.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linux PM list <linux-pm@vger.kernel.org>
+Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>, LKML <linux-kernel@vger.kernel.org>, Matthew Garrett <mjg59@srcf.ucam.org>, Magnus Damm <magnus.damm@gmail.com>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>, Linux-sh list <linux-sh@vger.kernel.org>
 
-The GPIO buttons are named SW3, SW4, SW5 and SW6 on the board
-silkscreen. Update the buttons descriptions accordingly.
+On Thursday, July 05, 2012, Rafael J. Wysocki wrote:
+> On Wednesday, July 04, 2012, Mark Brown wrote:
+> > On Tue, Jul 03, 2012 at 11:02:17PM +0200, Rafael J. Wysocki wrote:
+> > 
+> > > I actually don't have any ideas how to do that at the moment, but I wonder
+> > > if anyone has already thought about it?
+> > 
+> > > For one, I don't think that representing a power domain as a platform device
+> > > would be a good approach and I'm not sure how to represent the relationships
+> > > between devices and the domains they belong to.
+> > 
+> > I guess the OMAP hwmod stuff is the closest thing we've got at the
+> > minute (I don't recall seeing any other implementations in mainline) but
+> > the hwmods themselves don't appear in the DTS right now.  They have a
+> > ti,hwmods property on each device naming the hwmod it's in, something
+> > like that seems like a reasonable approach, possibly a reference to
+> > another DT node rather than or as well as a string?  That seems fairly
+> > easy.
+> 
+> Well, it looks like (and please tell me if I'm wrong) the hwmons are just
+> string attributes that are parsed by the platform-specific code through
+> a platform bus type notifier.
+> 
+> We could do that for power domains too, but then each platform wanting to
+> use them would need to implement such a notifier and add its own routine
+> for parsing those strings.  Would that be acceptable to everyone concerned?
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
----
- arch/arm/mach-shmobile/board-armadillo800eva.c |    8 ++++----
- 1 files changed, 4 insertions(+), 4 deletions(-)
+I tried to follow the above suggestion and prepared the following patchset
+that allows power domain information for Renesas platforms to be passed as
+"renesas,pmdomain" string attribute of device nodes.  It adds functions
+allowing the generic PM domains framework to use names for domain
+identification in various situations and reworks the ARM/shmobile power domains
+support code to used those functions instead of the "raw" ones that take
+domain pointers as their arguments.  Finally, it defines a platform bus type
+notifier that will add devices whose DT nodes contain the "renesas,pmdomain"
+attribute to the power domains indicated by it (the value of that attribute
+should be the name of the PM domain to add the device to after it's been
+registered).  All of this should allow platform devices to be added to
+appropriate power domains automatically based on the information read from
+a DT.
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 6948212..04cb65a 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -415,10 +415,10 @@ static struct platform_device lcdc0_device = {
- #define GPIO_KEY(c, g, d) { .code = c, .gpio = g, .desc = d, .active_low = 1 }
- 
- static struct gpio_keys_button gpio_buttons[] = {
--	GPIO_KEY(KEY_POWER,	GPIO_PORT99,	"SW1"),
--	GPIO_KEY(KEY_BACK,	GPIO_PORT100,	"SW2"),
--	GPIO_KEY(KEY_MENU,	GPIO_PORT97,	"SW3"),
--	GPIO_KEY(KEY_HOME,	GPIO_PORT98,	"SW4"),
-+	GPIO_KEY(KEY_POWER,	GPIO_PORT99,	"SW3"),
-+	GPIO_KEY(KEY_BACK,	GPIO_PORT100,	"SW4"),
-+	GPIO_KEY(KEY_MENU,	GPIO_PORT97,	"SW5"),
-+	GPIO_KEY(KEY_HOME,	GPIO_PORT98,	"SW6"),
- };
- 
- static struct gpio_keys_platform_data gpio_key_info = {
--- 
-1.7.8.6
+The patches are on top of the current linux-next tree.
+
+I've tested the patches that could be tested on the Mackerel board, except
+for the last one (I'm still working on testing it).
+
+Thanks,
+Rafael
 
