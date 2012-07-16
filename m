@@ -1,140 +1,156 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 04 Jul 2012 16:17:43 +0000
-Subject: [PATCH 4/4] mmc: sh_mmcif: switch to the new DMA channel allocation and configuration
-Message-Id: <1341418663-24432-5-git-send-email-g.liakhovetski@gmx.de>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Mon, 16 Jul 2012 21:32:16 +0000
+Subject: [RFC][PATCH 14/14] ARM: shmobile: Add support for storing PM domain information in DTs
+Message-Id: <201207162332.16328.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1341418663-24432-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1341418663-24432-1-git-send-email-g.liakhovetski@gmx.de>
+References: <201207032302.17805.rjw@sisk.pl> <201207052217.48086.rjw@sisk.pl> <201207162315.49073.rjw@sisk.pl>
+In-Reply-To: <201207162315.49073.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, linux-kernel@vger.kernel.org
+To: Linux PM list <linux-pm@vger.kernel.org>
+Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>, LKML <linux-kernel@vger.kernel.org>, Matthew Garrett <mjg59@srcf.ucam.org>, Magnus Damm <magnus.damm@gmail.com>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Using the "private" field from struct dma_chan is deprecated. The sh
-dmaengine driver now also supports the preferred DMA channel allocation
-and configuration method, using a standard filter function and a channel
-configuration operation. This patch updates sh_mmcif to use this new
-method.
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Allow the common power management support code for Renesas SoCs to
+read the names of the power domains that platform devices belong to
+from a device tree describing the platform.
+
+The name of the power domain is stored within the given device's DT
+node as a case-sensitive string attribute of the name
+"renesas,pmdomain".  The values of those attributes are read by the
+platform code throuch a platform bus type notifier which is executed
+right after adding the device to the device hierarchy and are then
+used for adding devices to the given PM domains with the help of
+pm_genpd_name_add_device().
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- drivers/mmc/host/sh_mmcif.c |   90 ++++++++++++++++++++++++------------------
- 1 files changed, 51 insertions(+), 39 deletions(-)
+ arch/arm/mach-shmobile/pm-rmobile.c |   92 ++++++++++++++++++++++++++++++++----
+ 1 file changed, 83 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index 9e3b9b1..0f07d28 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -211,8 +211,6 @@ struct sh_mmcif_host {
- 	struct mmc_host *mmc;
- 	struct mmc_request *mrq;
- 	struct platform_device *pd;
--	struct sh_dmae_slave dma_slave_tx;
--	struct sh_dmae_slave dma_slave_rx;
- 	struct clk *hclk;
- 	unsigned int clk;
- 	int bus_width;
-@@ -371,52 +369,66 @@ static void sh_mmcif_start_dma_tx(struct sh_mmcif_host *host)
- 		desc, cookie);
+Index: linux/arch/arm/mach-shmobile/pm-rmobile.c
+=================================--- linux.orig/arch/arm/mach-shmobile/pm-rmobile.c
++++ linux/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -3,6 +3,7 @@
+  *
+  * Copyright (C) 2012  Renesas Solutions Corp.
+  * Copyright (C) 2012  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ * Copyright (C) 2012  Rafael J. Wysocki <rjw@sisk.pl>
+  *
+  * based on pm-sh7372.c
+  *  Copyright (C) 2011 Magnus Damm
+@@ -13,7 +14,9 @@
+  */
+ #include <linux/console.h>
+ #include <linux/delay.h>
++#include <linux/notifier.h>
+ #include <linux/platform_device.h>
++#include <linux/of_platform.h>
+ #include <linux/pm.h>
+ #include <linux/pm_clock.h>
+ #include <asm/io.h>
+@@ -149,21 +152,92 @@ static void rmobile_init_pm_domain(struc
+ 	__rmobile_pd_power_up(rmobile_pd, false);
  }
  
--static bool sh_mmcif_filter(struct dma_chan *chan, void *arg)
+-void rmobile_init_domains(struct rmobile_pm_domain domains[], int num)
 -{
--	dev_dbg(chan->device->dev, "%s: slave data %p\n", __func__, arg);
--	chan->private = arg;
--	return true;
+-	int j;
+-
+-	for (j = 0; j < num; j++)
+-		rmobile_init_pm_domain(&domains[j]);
 -}
 -
- static void sh_mmcif_request_dma(struct sh_mmcif_host *host,
- 				 struct sh_mmcif_plat_data *pdata)
+ void rmobile_add_device_to_domain(const char *domain_name,
+ 				 struct platform_device *pdev)
  {
--	struct sh_dmae_slave *tx, *rx;
-+	struct resource *res = platform_get_resource(host->pd, IORESOURCE_MEM, 0);
-+	struct dma_slave_config cfg;
-+	dma_cap_mask_t mask;
+ 	struct device *dev = &pdev->dev;
++	int ret;
+ 
+-	pm_genpd_name_add_device(domain_name, dev);
++	do
++		ret = pm_genpd_name_add_device(domain_name, dev);
++	while (ret = -EAGAIN);
+ 	if (pm_clk_no_clocks(dev))
+ 		pm_clk_add(dev, NULL);
+ }
++
++#ifdef CONFIG_USE_OF
++
++static void rmobile_read_domain_from_dt(struct device *dev)
++{
++	const char *domain_name;
 +	int ret;
 +
- 	host->dma_active = false;
- 
-+	if (pdata->slave_id_tx <= 0 || pdata->slave_id_rx <= 0)
-+		return;
++	ret = of_property_read_string(dev->of_node, "renesas,pmdomain",
++				      &domain_name);
++	if (!ret)
++		rmobile_add_device_to_domain(domain_name,
++					     to_platform_device(dev));
++}
 +
- 	/* We can only either use DMA for both Tx and Rx or not use it at all */
--	tx = &host->dma_slave_tx;
--	tx->shdma_slave.slave_id = pdata->slave_id_tx;
--	rx = &host->dma_slave_rx;
--	rx->shdma_slave.slave_id = pdata->slave_id_rx;
-+	dma_cap_zero(mask);
-+	dma_cap_set(DMA_SLAVE, mask);
++static void rmobile_remove_from_domain(struct device *dev)
++{
++	struct generic_pm_domain *genpd = dev_to_genpd(dev);
++	int ret;
 +
-+	host->chan_tx = dma_request_channel(mask, shdma_chan_filter,
-+					    (void *)pdata->slave_id_tx);
-+	dev_dbg(&host->pd->dev, "%s: TX: got channel %p\n", __func__,
-+		host->chan_tx);
- 
--	if (tx->shdma_slave.slave_id > 0 && rx->shdma_slave.slave_id > 0) {
--		dma_cap_mask_t mask;
-+	if (!host->chan_tx)
-+		return;
- 
--		dma_cap_zero(mask);
--		dma_cap_set(DMA_SLAVE, mask);
-+	cfg.slave_id = pdata->slave_id_tx;
-+	cfg.direction = DMA_MEM_TO_DEV;
-+	cfg.dst_addr = res->start + MMCIF_CE_DATA;
-+	cfg.src_addr = 0;
-+	ret = dmaengine_slave_config(host->chan_tx, &cfg);
-+	if (ret < 0)
-+		goto ecfgtx;
- 
--		host->chan_tx = dma_request_channel(mask, sh_mmcif_filter,
--						    &tx->shdma_slave);
--		dev_dbg(&host->pd->dev, "%s: TX: got channel %p\n", __func__,
--			host->chan_tx);
-+	host->chan_rx = dma_request_channel(mask, shdma_chan_filter,
-+					    (void *)pdata->slave_id_rx);
-+	dev_dbg(&host->pd->dev, "%s: RX: got channel %p\n", __func__,
-+		host->chan_rx);
- 
--		if (!host->chan_tx)
--			return;
-+	if (!host->chan_rx)
-+		goto erqrx;
- 
--		host->chan_rx = dma_request_channel(mask, sh_mmcif_filter,
--						    &rx->shdma_slave);
--		dev_dbg(&host->pd->dev, "%s: RX: got channel %p\n", __func__,
--			host->chan_rx);
-+	cfg.slave_id = pdata->slave_id_rx;
-+	cfg.direction = DMA_DEV_TO_MEM;
-+	cfg.dst_addr = 0;
-+	cfg.src_addr = res->start + MMCIF_CE_DATA;
-+	ret = dmaengine_slave_config(host->chan_rx, &cfg);
-+	if (ret < 0)
-+		goto ecfgrx;
- 
--		if (!host->chan_rx) {
--			dma_release_channel(host->chan_tx);
--			host->chan_tx = NULL;
--			return;
--		}
-+	init_completion(&host->dma_complete);
- 
--		init_completion(&host->dma_complete);
--	}
-+	return;
++	/*
++	 * The check below takes care of the situations in which the device's
++	 * pm_domain pointer contains a valid address, but that is not an
++	 * address of a generic PM domain object.
++	 */
++	if (pm_genpd_present(genpd)) {
++		do
++			ret = pm_genpd_remove_device(genpd, dev);
++		while (ret = -EAGAIN);
++	}
++}
 +
-+ecfgrx:
-+	dma_release_channel(host->chan_rx);
-+	host->chan_rx = NULL;
-+erqrx:
-+ecfgtx:
-+	dma_release_channel(host->chan_tx);
-+	host->chan_tx = NULL;
- }
- 
- static void sh_mmcif_release_dma(struct sh_mmcif_host *host)
--- 
-1.7.2.5
++static int rmobile_pm_notifier_call(struct notifier_block *nb,
++				    unsigned long event, void *data)
++{
++	struct device *dev = data;
++
++	switch (event) {
++	case BUS_NOTIFY_ADD_DEVICE:
++		if (dev->of_node)
++			rmobile_read_domain_from_dt(dev);
++
++		break;
++
++	case BUS_NOTIFY_DEL_DEVICE:
++		rmobile_remove_from_domain(dev);
++
++		break;
++	}
++	return NOTIFY_DONE;
++}
++
++static struct notifier_block platform_nb = {
++	.notifier_call = rmobile_pm_notifier_call,
++};
++
++static void rmobile_add_bus_notifier_for_domains(void)
++{
++	bus_register_notifier(&platform_bus_type, &platform_nb);
++}
++
++#else
++
++static inline void rmobile_add_bus_notifier_for_domains(void) {}
++
++#endif /* CONFIG_USE_OF */
++
++void rmobile_init_domains(struct rmobile_pm_domain domains[], int num)
++{
++	int j;
++
++	for (j = 0; j < num; j++)
++		rmobile_init_pm_domain(&domains[j]);
++
++	rmobile_add_bus_notifier_for_domains();
++}
+ #endif /* CONFIG_PM */
 
