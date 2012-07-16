@@ -1,158 +1,121 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 17 Jul 2012 10:53:49 +0000
-Subject: [PATCH/RFC 2/4] dma: shdma: add explicit support for client DMA channel multiplexing
-Message-Id: <Pine.LNX.4.64.1207171242500.17060@axis700.grange>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Mon, 16 Jul 2012 21:25:17 +0000
+Subject: [RFC][PATCH 8/14] PM / Domains: Add power-on function using names to identify domains
+Message-Id: <201207162325.17728.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1207171201550.11241@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1207171201550.11241@axis700.grange>
+References: <201207032302.17805.rjw@sisk.pl> <201207052217.48086.rjw@sisk.pl> <201207162315.49073.rjw@sisk.pl>
+In-Reply-To: <201207162315.49073.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linux PM list <linux-pm@vger.kernel.org>
+Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>, LKML <linux-kernel@vger.kernel.org>, Matthew Garrett <mjg59@srcf.ucam.org>, Magnus Damm <magnus.damm@gmail.com>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Add support for the new dmaengine multiplexer API. In shdma case the
-multiplexer is built-in into the DMAC, so, the multiplexer .request_chan()
-method only has to check, whether this client is supported by the specific
-DMAC instance. The routing is performed inside the .device_control()
-method.
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+It sometimes is necessary to turn on a given PM domain when only
+the name of it is known and the domain pointer is not readily
+available.  For this reason, add a new helper function,
+pm_genpd_name_poweron(), allowing the caller to turn on a PM domain
+using its name for identification.  To avoid code duplication,
+move the domain lookup code to a separate function.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- drivers/dma/sh/shdma-base.c |   28 +++++++++++++++++++++++++++-
- drivers/dma/sh/shdma.c      |   22 ++++++++++++++++++++++
- include/linux/sh_dma.h      |    3 +++
- include/linux/shdma-base.h  |    4 ++++
- 4 files changed, 56 insertions(+), 1 deletions(-)
+ drivers/base/power/domain.c |   46 +++++++++++++++++++++++++++++---------------
+ include/linux/pm_domain.h   |    5 ++++
+ 2 files changed, 36 insertions(+), 15 deletions(-)
 
-diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
-index 0c34c73..76e4854 100644
---- a/drivers/dma/sh/shdma-base.c
-+++ b/drivers/dma/sh/shdma-base.c
-@@ -808,6 +808,30 @@ static irqreturn_t chan_irqt(int irq, void *dev)
- 	return IRQ_HANDLED;
- }
+Index: linux/drivers/base/power/domain.c
+=================================--- linux.orig/drivers/base/power/domain.c
++++ linux/drivers/base/power/domain.c
+@@ -53,6 +53,24 @@
+ static LIST_HEAD(gpd_list);
+ static DEFINE_MUTEX(gpd_list_lock);
  
-+static struct dma_chan *shdma_mux_request_chan(struct dma_device *dmadev,
-+		struct device *dev, enum dma_transfer_direction direction,
-+		const char *name)
++static struct generic_pm_domain *pm_genpd_lookup_name(const char *domain_name)
 +{
-+	struct shdma_dev *sdev = to_shdma_dev(dmadev);
-+	const struct shdma_ops *ops = sdev->ops;
-+	struct shdma_chan *schan;
-+	int i;
++	struct generic_pm_domain *genpd = NULL, *gpd;
 +
-+	if (!ops->slave_supported(sdev, dev, direction, name))
++	if (IS_ERR_OR_NULL(domain_name))
 +		return NULL;
 +
-+	/* The DMAC supports this client, pick up the first free channel */
-+	shdma_for_each_chan(schan, sdev, i)
-+		if (!schan->dma_chan.client_count)
-+			return &schan->dma_chan;
-+
-+	return NULL;
++	mutex_lock(&gpd_list_lock);
++	list_for_each_entry(gpd, &gpd_list, gpd_list_node) {
++		if (!strcmp(gpd->name, domain_name)) {
++			genpd = gpd;
++			break;
++		}
++	}
++	mutex_unlock(&gpd_list_lock);
++	return genpd;
 +}
 +
-+static const struct dma_multiplexer shdma_mux = {
-+	.request_chan = shdma_mux_request_chan,
-+};
-+
- int shdma_request_irq(struct shdma_chan *schan, int irq,
- 			   unsigned long flags, const char *name)
- {
-@@ -880,7 +904,8 @@ int shdma_init(struct device *dev, struct shdma_dev *sdev,
- 	    !sdev->ops->slave_addr ||
- 	    !sdev->ops->channel_busy ||
- 	    !sdev->ops->halt_channel ||
--	    !sdev->ops->desc_completed)
-+	    !sdev->ops->desc_completed ||
-+	    !sdev->ops->slave_supported)
- 		return -EINVAL;
+ #ifdef CONFIG_PM
  
- 	sdev->schan = kcalloc(chan_num, sizeof(*sdev->schan), GFP_KERNEL);
-@@ -901,6 +926,7 @@ int shdma_init(struct device *dev, struct shdma_dev *sdev,
- 	dma_dev->device_prep_slave_sg = shdma_prep_slave_sg;
- 	dma_dev->device_control = shdma_control;
- 
-+	dma_dev->mux = &shdma_mux;
- 	dma_dev->dev = dev;
- 
- 	return 0;
-diff --git a/drivers/dma/sh/shdma.c b/drivers/dma/sh/shdma.c
-index 027c9be..ef3c018 100644
---- a/drivers/dma/sh/shdma.c
-+++ b/drivers/dma/sh/shdma.c
-@@ -424,6 +424,27 @@ static bool sh_dmae_desc_completed(struct shdma_chan *schan,
- 		 (sh_desc->hw.sar + sh_desc->hw.tcr) = sar_buf);
+ struct generic_pm_domain *dev_to_genpd(struct device *dev)
+@@ -258,6 +276,18 @@ int pm_genpd_poweron(struct generic_pm_d
+ 	return ret;
  }
  
-+static bool sh_dmae_slave_supported(struct shdma_dev *sdev, struct device *dev,
-+		enum dma_transfer_direction direction, const char *name)
++/**
++ * pm_genpd_name_poweron - Restore power to a given PM domain and its masters.
++ * @domain_name: Name of the PM domain to power up.
++ */
++int pm_genpd_name_poweron(const char *domain_name)
 +{
-+	struct sh_dmae_device *shdev = container_of(sdev, struct sh_dmae_device,
-+						    shdma_dev);
-+	struct sh_dmae_pdata *pdata = shdev->pdata;
-+	const struct sh_dmae_slave_config *cfg;
-+	int i;
++	struct generic_pm_domain *genpd;
 +
-+	if (!dev)
-+		return false;
-+
-+	for (i = 0, cfg = pdata->slave; i < pdata->slave_num; i++, cfg++)
-+		if (cfg->dev_id && !strcmp(cfg->dev_id, dev_name(dev)) &&
-+		    cfg->direction = direction &&
-+		    (!name || (cfg->name && !strcmp(name, cfg->name))))
-+			return true;
-+
-+	return false;
++	genpd = pm_genpd_lookup_name(domain_name);
++	return genpd ? pm_genpd_poweron(genpd) : -EINVAL;
 +}
 +
- static bool sh_dmae_nmi_notify(struct sh_dmae_device *shdev)
+ #endif /* CONFIG_PM */
+ 
+ #ifdef CONFIG_PM_RUNTIME
+@@ -1409,21 +1439,7 @@ int __pm_genpd_of_add_device(struct devi
+ int __pm_genpd_name_add_device(const char *domain_name, struct device *dev,
+ 			       struct gpd_timing_data *td)
  {
- 	/* Fast path out if NMIF is not asserted for this controller */
-@@ -632,6 +653,7 @@ static const struct shdma_ops sh_dmae_shdma_ops = {
- 	.start_xfer = sh_dmae_start_xfer,
- 	.embedded_desc = sh_dmae_embedded_desc,
- 	.chan_irq = sh_dmae_chan_irq,
-+	.slave_supported = sh_dmae_slave_supported,
- };
+-	struct generic_pm_domain *genpd = NULL, *gpd;
+-
+-	if (IS_ERR_OR_NULL(domain_name) || IS_ERR_OR_NULL(dev))
+-		return -EINVAL;
+-
+-	mutex_lock(&gpd_list_lock);
+-	list_for_each_entry(gpd, &gpd_list, gpd_list_node) {
+-		if (!strcmp(gpd->name, domain_name)) {
+-			genpd = gpd;
+-			break;
+-		}
+-	}
+-	mutex_unlock(&gpd_list_lock);
+-
+-	return __pm_genpd_add_device(genpd, dev, td);
++	return __pm_genpd_add_device(pm_genpd_lookup_name(domain_name), dev, td);
+ }
  
- static int __devinit sh_dmae_probe(struct platform_device *pdev)
-diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
-index b64d6be..86be8ab 100644
---- a/include/linux/sh_dma.h
-+++ b/include/linux/sh_dma.h
-@@ -31,6 +31,9 @@ struct sh_dmae_slave_config {
- 	dma_addr_t	addr;
- 	u32		chcr;
- 	char		mid_rid;
-+	enum dma_transfer_direction direction;
-+	const char	*name;
-+	const char	*dev_id;
- };
- 
- struct sh_dmae_channel {
-diff --git a/include/linux/shdma-base.h b/include/linux/shdma-base.h
-index 93f9821..3769518 100644
---- a/include/linux/shdma-base.h
-+++ b/include/linux/shdma-base.h
-@@ -70,6 +70,8 @@ struct shdma_chan {
- 	enum shdma_pm_state pm_state;
- };
- 
-+struct shdma_dev;
-+
  /**
-  * struct shdma_ops - simple DMA driver operations
-  * desc_completed:	return true, if this is the descriptor, that just has
-@@ -98,6 +100,8 @@ struct shdma_ops {
- 	void (*start_xfer)(struct shdma_chan *, struct shdma_desc *);
- 	struct shdma_desc *(*embedded_desc)(void *, int);
- 	bool (*chan_irq)(struct shdma_chan *, int);
-+	bool (*slave_supported)(struct shdma_dev *, struct device *,
-+				enum dma_transfer_direction, const char *);
- };
+Index: linux/include/linux/pm_domain.h
+=================================--- linux.orig/include/linux/pm_domain.h
++++ linux/include/linux/pm_domain.h
+@@ -163,6 +163,7 @@ extern void pm_genpd_init(struct generic
+ 			  struct dev_power_governor *gov, bool is_off);
  
- struct shdma_dev {
--- 
-1.7.2.5
+ extern int pm_genpd_poweron(struct generic_pm_domain *genpd);
++extern int pm_genpd_name_poweron(const char *domain_name);
+ 
+ extern bool default_stop_ok(struct device *dev);
+ 
+@@ -242,6 +243,10 @@ static inline int pm_genpd_poweron(struc
+ {
+ 	return -ENOSYS;
+ }
++static inline int pm_genpd_name_poweron(const char *domain_name)
++{
++	return -ENOSYS;
++}
+ static inline bool default_stop_ok(struct device *dev)
+ {
+ 	return false;
 
