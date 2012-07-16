@@ -1,7 +1,7 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 16 Jul 2012 21:30:59 +0000
-Subject: [RFC][PATCH 13/14] PM / Domains: Introduce pm_genpd_present()
-Message-Id: <201207162331.00295.rjw@sisk.pl>
+Date: Mon, 16 Jul 2012 21:28:48 +0000
+Subject: [RFC][PATCH 11/14] ARM: shmobile: Move r8a7779's PM domain objects to a table
+Message-Id: <201207162328.48655.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201207032302.17805.rjw@sisk.pl> <201207052217.48086.rjw@sisk.pl> <201207162315.49073.rjw@sisk.pl>
 In-Reply-To: <201207162315.49073.rjw@sisk.pl>
@@ -13,64 +13,134 @@ Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>, LKML <linux-kernel@vger.ke
 
 From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Introduce function pm_genpd_present() allowing the caller to check if
-the given generic PM domain has been initialized.
+Instead of giving a name to every r8a7779's PM domain object, put
+them all into a table and initialize them all together in a loop.
 
 Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- drivers/base/power/domain.c |   22 ++++++++++++++++++++++
- include/linux/pm_domain.h   |    5 +++++
- 2 files changed, 27 insertions(+)
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |    9 ---
+ arch/arm/mach-shmobile/pm-r8a7779.c           |   65 ++++++++++++++------------
+ arch/arm/mach-shmobile/setup-r8a7779.c        |    5 --
+ 3 files changed, 39 insertions(+), 40 deletions(-)
 
-Index: linux/drivers/base/power/domain.c
-=================================--- linux.orig/drivers/base/power/domain.c
-+++ linux/drivers/base/power/domain.c
-@@ -2089,3 +2089,25 @@ void pm_genpd_init(struct generic_pm_dom
- 	list_add(&genpd->gpd_list_node, &gpd_list);
- 	mutex_unlock(&gpd_list_lock);
- }
-+
-+/**
-+ * pm_genpd_present - Check if the given PM domain has been initialized
-+ * @genpd: PM domain to check.
-+ */
-+bool pm_genpd_present(struct generic_pm_domain *genpd)
-+{
-+	struct generic_pm_domain *gpd = NULL;
-+
-+	if (IS_ERR_OR_NULL(genpd))
-+		return false;
-+
-+	mutex_lock(&gpd_list_lock);
-+
-+	list_for_each_entry(gpd, &gpd_list, gpd_list_node)
-+		if (gpd = genpd)
-+			break;
-+
-+	mutex_unlock(&gpd_list_lock);
-+
-+	return gpd = genpd;
-+}
-Index: linux/include/linux/pm_domain.h
-=================================--- linux.orig/include/linux/pm_domain.h
-+++ linux/include/linux/pm_domain.h
-@@ -161,6 +161,7 @@ extern int genpd_attach_cpuidle(struct g
- extern int genpd_detach_cpuidle(struct generic_pm_domain *genpd);
- extern void pm_genpd_init(struct generic_pm_domain *genpd,
- 			  struct dev_power_governor *gov, bool is_off);
-+extern bool pm_genpd_present(struct generic_pm_domain *genpd);
+Index: linux/arch/arm/mach-shmobile/include/mach/r8a7779.h
+=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ linux/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -347,14 +347,9 @@ extern int r8a7779_sysc_power_down(struc
+ extern int r8a7779_sysc_power_up(struct r8a7779_pm_ch *r8a7779_ch);
  
- extern int pm_genpd_poweron(struct generic_pm_domain *genpd);
- extern int pm_genpd_name_poweron(const char *domain_name);
-@@ -239,6 +240,10 @@ static inline void pm_genpd_init(struct
- 				 struct dev_power_governor *gov, bool is_off)
- {
+ #ifdef CONFIG_PM
+-extern struct r8a7779_pm_domain r8a7779_sh4a;
+-extern struct r8a7779_pm_domain r8a7779_sgx;
+-extern struct r8a7779_pm_domain r8a7779_vdp1;
+-extern struct r8a7779_pm_domain r8a7779_impx3;
+-
+-extern void r8a7779_init_pm_domain(struct r8a7779_pm_domain *r8a7779_pd);
++extern void __init r8a7779_init_pm_domains(void);
+ #else
+-#define r8a7779_init_pm_domain(pd) do { } while (0)
++static inline void r8a7779_init_pm_domains(void) {}
+ #endif /* CONFIG_PM */
+ 
+ #endif /* __ASM_R8A7779_H__ */
+Index: linux/arch/arm/mach-shmobile/pm-r8a7779.c
+=================================--- linux.orig/arch/arm/mach-shmobile/pm-r8a7779.c
++++ linux/arch/arm/mach-shmobile/pm-r8a7779.c
+@@ -183,7 +183,7 @@ static bool pd_active_wakeup(struct devi
+ 	return true;
  }
-+static inline bool pm_genpd_present(struct generic_pm_domain *genpd)
-+{
-+	return false;
-+}
- static inline int pm_genpd_poweron(struct generic_pm_domain *genpd)
+ 
+-void r8a7779_init_pm_domain(struct r8a7779_pm_domain *r8a7779_pd)
++static void r8a7779_init_pm_domain(struct r8a7779_pm_domain *r8a7779_pd)
  {
- 	return -ENOSYS;
+ 	struct generic_pm_domain *genpd = &r8a7779_pd->genpd;
+ 
+@@ -199,37 +199,44 @@ void r8a7779_init_pm_domain(struct r8a77
+ 		pd_power_up(&r8a7779_pd->genpd);
+ }
+ 
+-struct r8a7779_pm_domain r8a7779_sh4a = {
+-	.genpd_name = "SH4A",
+-	.ch = {
+-		.chan_offs = 0x80, /* PWRSR1 .. PWRER1 */
+-		.isr_bit = 16, /* SH4A */
+-	}
++static struct r8a7779_pm_domain r8a7779_pm_domains[] = {
++	{
++		.genpd_name = "SH4A",
++		.ch = {
++			.chan_offs = 0x80, /* PWRSR1 .. PWRER1 */
++			.isr_bit = 16, /* SH4A */
++		},
++	},
++	{
++		.genpd_name = "SGX",
++		.ch = {
++			.chan_offs = 0xc0, /* PWRSR2 .. PWRER2 */
++			.isr_bit = 20, /* SGX */
++		},
++	},
++	{
++		.genpd_name = "VDP1",
++		.ch = {
++			.chan_offs = 0x100, /* PWRSR3 .. PWRER3 */
++			.isr_bit = 21, /* VDP */
++		},
++	},
++	{
++		.genpd_name = "IMPX3",
++		.ch = {
++			.chan_offs = 0x140, /* PWRSR4 .. PWRER4 */
++			.isr_bit = 24, /* IMP */
++		},
++	},
+ };
+ 
+-struct r8a7779_pm_domain r8a7779_sgx = {
+-	.genpd_name = "SGX",
+-	.ch = {
+-		.chan_offs = 0xc0, /* PWRSR2 .. PWRER2 */
+-		.isr_bit = 20, /* SGX */
+-	}
+-};
+-
+-struct r8a7779_pm_domain r8a7779_vdp1 = {
+-	.genpd_name = "VDP1",
+-	.ch = {
+-		.chan_offs = 0x100, /* PWRSR3 .. PWRER3 */
+-		.isr_bit = 21, /* VDP */
+-	}
+-};
++void __init r8a7779_init_pm_domains(void)
++{
++	int j;
+ 
+-struct r8a7779_pm_domain r8a7779_impx3 = {
+-	.genpd_name = "IMPX3",
+-	.ch = {
+-		.chan_offs = 0x140, /* PWRSR4 .. PWRER4 */
+-		.isr_bit = 24, /* IMP */
+-	}
+-};
++	for (j = 0; j < ARRAY_SIZE(r8a7779_pm_domains); j++)
++		r8a7779_init_pm_domain(&r8a7779_pm_domains[j]);
++}
+ 
+ #endif /* CONFIG_PM */
+ 
+Index: linux/arch/arm/mach-shmobile/setup-r8a7779.c
+=================================--- linux.orig/arch/arm/mach-shmobile/setup-r8a7779.c
++++ linux/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -251,10 +251,7 @@ void __init r8a7779_add_standard_devices
+ #endif
+ 	r8a7779_pm_init();
+ 
+-	r8a7779_init_pm_domain(&r8a7779_sh4a);
+-	r8a7779_init_pm_domain(&r8a7779_sgx);
+-	r8a7779_init_pm_domain(&r8a7779_vdp1);
+-	r8a7779_init_pm_domain(&r8a7779_impx3);
++	r8a7779_init_pm_domains();
+ 
+ 	platform_add_devices(r8a7779_early_devices,
+ 			    ARRAY_SIZE(r8a7779_early_devices));
 
