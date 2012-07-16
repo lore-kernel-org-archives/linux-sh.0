@@ -1,183 +1,89 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 05 Jul 2012 10:29:40 +0000
-Subject: [PATCH 4/7 v2] dmaengine: shdma: prepare to stop using struct dma_chan::private
-Message-Id: <1341484183-10757-5-git-send-email-g.liakhovetski@gmx.de>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Mon, 16 Jul 2012 21:19:14 +0000
+Subject: [RFC][PATCH 3/14] ARM: shmobile: Drop r8a7779_add_device_to_domain()
+Message-Id: <201207162319.14687.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1341484183-10757-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1341484183-10757-1-git-send-email-g.liakhovetski@gmx.de>
+References: <201207032302.17805.rjw@sisk.pl> <201207052217.48086.rjw@sisk.pl> <201207162315.49073.rjw@sisk.pl>
+In-Reply-To: <201207162315.49073.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Linux PM list <linux-pm@vger.kernel.org>
+Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>, LKML <linux-kernel@vger.kernel.org>, Matthew Garrett <mjg59@srcf.ucam.org>, Magnus Damm <magnus.damm@gmail.com>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Using struct dma_chan::private is deprecated. To update the shdma driver to
-stop using it we first have to eliminate internal runtime uses of it. After
-that we will also be able to stop using it for channel configuration.
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+If the r8a7779's PM domains are given names, this SoC and its boards
+will be able to use rmobile_add_device_to_domain() for adding devices
+to those domains and r8a7779_add_device_to_domain(), which is not
+used anywhere at the moment anyway, may be dopped.
+
+Accordingly, give names to the r8a7779's PM domains and drop
+r8a7779_add_device_to_domain().
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- drivers/dma/sh/shdma-base.c |    9 +++++----
- drivers/dma/sh/shdma.c      |   24 ++++++++++--------------
- drivers/dma/sh/shdma.h      |    2 ++
- include/linux/sh_dma.h      |    2 --
- include/linux/shdma-base.h  |    1 +
- 5 files changed, 18 insertions(+), 20 deletions(-)
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |    3 ---
+ arch/arm/mach-shmobile/pm-r8a7779.c           |   14 ++++----------
+ 2 files changed, 4 insertions(+), 13 deletions(-)
 
-diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
-index ff060d0..f75ebfa 100644
---- a/drivers/dma/sh/shdma-base.c
-+++ b/drivers/dma/sh/shdma-base.c
-@@ -76,7 +76,7 @@ static dma_cookie_t shdma_tx_submit(struct dma_async_tx_descriptor *tx)
- 		container_of(tx, struct shdma_desc, async_tx),
- 		*last = desc;
- 	struct shdma_chan *schan = to_shdma_chan(tx->chan);
--	struct shdma_slave *slave = tx->chan->private;
-+	struct shdma_slave *slave = schan->slave;
- 	dma_async_tx_callback callback = tx->callback;
- 	dma_cookie_t cookie;
- 	bool power_up;
-@@ -208,6 +208,7 @@ static int shdma_alloc_chan_resources(struct dma_chan *chan)
- 		goto edescalloc;
- 	}
- 	schan->desc_num = NR_DESCS_PER_CHANNEL;
-+	schan->slave = slave;
+Index: linux/arch/arm/mach-shmobile/include/mach/r8a7779.h
+=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ linux/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -353,11 +353,8 @@ extern struct r8a7779_pm_domain r8a7779_
+ extern struct r8a7779_pm_domain r8a7779_impx3;
  
- 	for (i = 0; i < NR_DESCS_PER_CHANNEL; i++) {
- 		desc = ops->embedded_desc(schan->desc, i);
-@@ -365,9 +366,9 @@ static void shdma_free_chan_resources(struct dma_chan *chan)
- 	if (!list_empty(&schan->ld_queue))
- 		shdma_chan_ld_cleanup(schan, true);
+ extern void r8a7779_init_pm_domain(struct r8a7779_pm_domain *r8a7779_pd);
+-extern void r8a7779_add_device_to_domain(struct r8a7779_pm_domain *r8a7779_pd,
+-					struct platform_device *pdev);
+ #else
+ #define r8a7779_init_pm_domain(pd) do { } while (0)
+-#define r8a7779_add_device_to_domain(pd, pdev) do { } while (0)
+ #endif /* CONFIG_PM */
  
--	if (chan->private) {
-+	if (schan->slave) {
- 		/* The caller is holding dma_list_mutex */
--		struct shdma_slave *slave = chan->private;
-+		struct shdma_slave *slave = schan->slave;
- 		clear_bit(slave->slave_id, shdma_slave_used);
- 		chan->private = NULL;
- 	}
-@@ -558,7 +559,7 @@ static struct dma_async_tx_descriptor *shdma_prep_slave_sg(
- 	struct shdma_chan *schan = to_shdma_chan(chan);
- 	struct shdma_dev *sdev = to_shdma_dev(schan->dma_chan.device);
- 	const struct shdma_ops *ops = sdev->ops;
--	struct shdma_slave *slave = chan->private;
-+	struct shdma_slave *slave = schan->slave;
- 	dma_addr_t slave_addr;
- 
- 	if (!chan)
-diff --git a/drivers/dma/sh/shdma.c b/drivers/dma/sh/shdma.c
-index f06906f..9f0a2e5 100644
---- a/drivers/dma/sh/shdma.c
-+++ b/drivers/dma/sh/shdma.c
-@@ -291,10 +291,8 @@ static void sh_dmae_setup_xfer(struct shdma_chan *schan,
- 						    shdma_chan);
- 
- 	if (sslave) {
--		struct sh_dmae_slave *slave = container_of(sslave,
--					struct sh_dmae_slave, shdma_slave);
- 		const struct sh_dmae_slave_config *cfg -			slave->config;
-+			sh_chan->config;
- 
- 		dmae_set_dmars(sh_chan, cfg->mid_rid);
- 		dmae_set_chcr(sh_chan, cfg->chcr);
-@@ -326,13 +324,11 @@ static int sh_dmae_set_slave(struct shdma_chan *schan,
- {
- 	struct sh_dmae_chan *sh_chan = container_of(schan, struct sh_dmae_chan,
- 						    shdma_chan);
--	struct sh_dmae_slave *slave = container_of(sslave, struct sh_dmae_slave,
--						   shdma_slave);
- 	const struct sh_dmae_slave_config *cfg = dmae_find_slave(sh_chan, sslave->slave_id);
- 	if (!cfg)
- 		return -ENODEV;
- 
--	slave->config = cfg;
-+	sh_chan->config = cfg;
- 
- 	return 0;
- }
-@@ -579,13 +575,12 @@ static int sh_dmae_resume(struct device *dev)
- 
- 	for (i = 0; i < shdev->pdata->channel_num; i++) {
- 		struct sh_dmae_chan *sh_chan = shdev->chan[i];
--		struct sh_dmae_slave *param = sh_chan->shdma_chan.dma_chan.private;
- 
- 		if (!sh_chan->shdma_chan.desc_num)
- 			continue;
- 
--		if (param) {
--			const struct sh_dmae_slave_config *cfg = param->config;
-+		if (sh_chan->shdma_chan.slave) {
-+			const struct sh_dmae_slave_config *cfg = sh_chan->config;
- 			dmae_set_dmars(sh_chan, cfg->mid_rid);
- 			dmae_set_chcr(sh_chan, cfg->chcr);
- 		} else {
-@@ -609,14 +604,15 @@ const struct dev_pm_ops sh_dmae_pm = {
- 
- static dma_addr_t sh_dmae_slave_addr(struct shdma_chan *schan)
- {
--	struct sh_dmae_slave *param = schan->dma_chan.private;
-+	struct sh_dmae_chan *sh_chan = container_of(schan,
-+					struct sh_dmae_chan, shdma_chan);
- 
- 	/*
--	 * Implicit BUG_ON(!param)
--	 * if (param != NULL), this is a successfully requested slave channel,
--	 * therefore param->config != NULL too.
-+	 * Implicit BUG_ON(!sh_chan->config)
-+	 * This is an exclusive slave DMA operation, may only be called after a
-+	 * successful slave configuration.
- 	 */
--	return param->config->addr;
-+	return sh_chan->config->addr;
+ #endif /* __ASM_R8A7779_H__ */
+Index: linux/arch/arm/mach-shmobile/pm-r8a7779.c
+=================================--- linux.orig/arch/arm/mach-shmobile/pm-r8a7779.c
++++ linux/arch/arm/mach-shmobile/pm-r8a7779.c
+@@ -199,17 +199,8 @@ void r8a7779_init_pm_domain(struct r8a77
+ 		pd_power_up(&r8a7779_pd->genpd);
  }
  
- static struct shdma_desc *sh_dmae_embedded_desc(void *buf, int i)
-diff --git a/drivers/dma/sh/shdma.h b/drivers/dma/sh/shdma.h
-index 840e47d..9314e93 100644
---- a/drivers/dma/sh/shdma.h
-+++ b/drivers/dma/sh/shdma.h
-@@ -13,6 +13,7 @@
- #ifndef __DMA_SHDMA_H
- #define __DMA_SHDMA_H
+-void r8a7779_add_device_to_domain(struct r8a7779_pm_domain *r8a7779_pd,
+-				 struct platform_device *pdev)
+-{
+-	struct device *dev = &pdev->dev;
+-
+-	pm_genpd_add_device(&r8a7779_pd->genpd, dev);
+-	if (pm_clk_no_clocks(dev))
+-		pm_clk_add(dev, NULL);
+-}
+-
+ struct r8a7779_pm_domain r8a7779_sh4a = {
++	.genpd_name = "SH4A",
+ 	.ch = {
+ 		.chan_offs = 0x80, /* PWRSR1 .. PWRER1 */
+ 		.isr_bit = 16, /* SH4A */
+@@ -217,6 +208,7 @@ struct r8a7779_pm_domain r8a7779_sh4a  };
  
-+#include <linux/sh_dma.h>
- #include <linux/shdma-base.h>
- #include <linux/dmaengine.h>
- #include <linux/interrupt.h>
-@@ -25,6 +26,7 @@ struct device;
- 
- struct sh_dmae_chan {
- 	struct shdma_chan shdma_chan;
-+	const struct sh_dmae_slave_config *config; /* Slave DMA configuration */
- 	int xmit_shift;			/* log_2(bytes_per_xfer) */
- 	u32 __iomem *base;
- 	char dev_id[16];		/* unique name per DMAC of channel */
-diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
-index 7c8ca41..a79f10a 100644
---- a/include/linux/sh_dma.h
-+++ b/include/linux/sh_dma.h
-@@ -20,8 +20,6 @@ struct device;
- /* Used by slave DMA clients to request DMA to/from a specific peripheral */
- struct sh_dmae_slave {
- 	struct shdma_slave		shdma_slave;	/* Set by the platform */
--	struct device			*dma_dev;	/* Set by the platform */
--	const struct sh_dmae_slave_config *config;	/* Set by the driver */
+ struct r8a7779_pm_domain r8a7779_sgx = {
++	.genpd_name = "SGX",
+ 	.ch = {
+ 		.chan_offs = 0xc0, /* PWRSR2 .. PWRER2 */
+ 		.isr_bit = 20, /* SGX */
+@@ -224,6 +216,7 @@ struct r8a7779_pm_domain r8a7779_sgx = {
  };
  
- /*
-diff --git a/include/linux/shdma-base.h b/include/linux/shdma-base.h
-index 83efd13..c3a19e9 100644
---- a/include/linux/shdma-base.h
-+++ b/include/linux/shdma-base.h
-@@ -66,6 +66,7 @@ struct shdma_chan {
- 	size_t max_xfer_len;		/* max transfer length */
- 	int id;				/* Raw id of this channel */
- 	int irq;			/* Channel IRQ */
-+	struct shdma_slave *slave;	/* Client data for slave DMA */
- 	enum shdma_pm_state pm_state;
- };
+ struct r8a7779_pm_domain r8a7779_vdp1 = {
++	.genpd_name = "VDP1",
+ 	.ch = {
+ 		.chan_offs = 0x100, /* PWRSR3 .. PWRER3 */
+ 		.isr_bit = 21, /* VDP */
+@@ -231,6 +224,7 @@ struct r8a7779_pm_domain r8a7779_vdp1  };
  
--- 
-1.7.2.5
+ struct r8a7779_pm_domain r8a7779_impx3 = {
++	.genpd_name = "IMPX3",
+ 	.ch = {
+ 		.chan_offs = 0x140, /* PWRSR4 .. PWRER4 */
+ 		.isr_bit = 24, /* IMP */
 
