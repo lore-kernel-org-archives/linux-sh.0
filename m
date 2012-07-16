@@ -1,239 +1,104 @@
-From: Wen Congyang <wency@cn.fujitsu.com>
-Date: Fri, 27 Jul 2012 10:35:22 +0000
-Subject: [RFC PATCH v5 17/19] memory_hotplug: clear zone when the memory is removed
-Message-Id: <50126EEA.4070209@cn.fujitsu.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Mon, 16 Jul 2012 21:20:51 +0000
+Subject: [RFC][PATCH 4/14] PM / Domains: Make it possible to use names when adding subdomains
+Message-Id: <201207162320.51396.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <50126B83.3050201@cn.fujitsu.com>
-In-Reply-To: <50126B83.3050201@cn.fujitsu.com>
+References: <201207032302.17805.rjw@sisk.pl> <201207052217.48086.rjw@sisk.pl> <201207162315.49073.rjw@sisk.pl>
+In-Reply-To: <201207162315.49073.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
-Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, Yasuaki ISIMATU <isimatu.yasuaki@jp.fujitsu.com>
+To: Linux PM list <linux-pm@vger.kernel.org>
+Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>, LKML <linux-kernel@vger.kernel.org>, Matthew Garrett <mjg59@srcf.ucam.org>, Magnus Damm <magnus.damm@gmail.com>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>, Linux-sh list <linux-sh@vger.kernel.org>
 
-From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-When a memory is added, we update zone's and pgdat's start_pfn and spanned_pages
-in the function __add_zone(). So we should revert these when the memory is
-removed. Add a new function __remove_zone() to do this.
+Add a new helper function, pm_genpd_add_subdomain_names(), allowing
+the caller to add a subdomain to a generic PM domain using names for
+domain identification (both domains have to be initialized before).
 
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-CC: Paul Mackerras <paulus@samba.org>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-CC: Wen Congyang <wency@cn.fujitsu.com>
-Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+This function is useful for adding subdomains to PM domains whose
+representations are stored in tables, when the caller doesn't know
+the indices of the domain to add the subdomain to and of the
+subdomain itself, but it knows the domains' names.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- mm/memory_hotplug.c |  181 +++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 181 insertions(+), 0 deletions(-)
+ drivers/base/power/domain.c |   32 +++++++++++++++++++++++++++++++-
+ include/linux/pm_domain.h   |    7 +++++++
+ 2 files changed, 38 insertions(+), 1 deletion(-)
 
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index 859425c..5ac035f 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -300,10 +300,187 @@ static int __meminit __add_section(int nid, struct zone *zone,
- 	return register_new_memory(nid, __pfn_to_section(phys_start_pfn));
+Index: linux/drivers/base/power/domain.c
+=================================--- linux.orig/drivers/base/power/domain.c
++++ linux/drivers/base/power/domain.c
+@@ -1538,7 +1538,8 @@ int pm_genpd_add_subdomain(struct generi
+ 	struct gpd_link *link;
+ 	int ret = 0;
+ 
+-	if (IS_ERR_OR_NULL(genpd) || IS_ERR_OR_NULL(subdomain))
++	if (IS_ERR_OR_NULL(genpd) || IS_ERR_OR_NULL(subdomain)
++	    || genpd = subdomain)
+ 		return -EINVAL;
+ 
+  start:
+@@ -1585,6 +1586,35 @@ int pm_genpd_add_subdomain(struct generi
  }
  
-+/* find the smallest valid pfn in the range [start_pfn, end_pfn) */
-+static int find_smallest_section_pfn(unsigned long start_pfn,
-+				     unsigned long end_pfn)
+ /**
++ * pm_genpd_add_subdomain_names - Add a subdomain to an I/O PM domain.
++ * @master_name: Name of the master PM domain to add the subdomain to.
++ * @subdomain_name: Name of the subdomain to be added.
++ */
++int pm_genpd_add_subdomain_names(const char *master_name,
++				 const char *subdomain_name)
 +{
-+	struct mem_section *ms;
++	struct generic_pm_domain *master = NULL, *subdomain = NULL, *gpd;
 +
-+	for (; start_pfn < end_pfn; start_pfn += PAGES_PER_SECTION) {
-+		ms = __pfn_to_section(start_pfn);
++	if (IS_ERR_OR_NULL(master_name) || IS_ERR_OR_NULL(subdomain_name))
++		return -EINVAL;
 +
-+		if (unlikely(!valid_section(ms)))
-+			continue;
++	mutex_lock(&gpd_list_lock);
++	list_for_each_entry(gpd, &gpd_list, gpd_list_node) {
++		if (!master && !strcmp(gpd->name, master_name))
++			master = gpd;
 +
-+		return start_pfn;
++		if (!subdomain && !strcmp(gpd->name, subdomain_name))
++			subdomain = gpd;
++
++		if (master && subdomain)
++			break;
 +	}
++	mutex_unlock(&gpd_list_lock);
 +
-+	return 0;
++	return pm_genpd_add_subdomain(master, subdomain);
 +}
 +
-+/* find the biggest valid pfn in the range [start_pfn, end_pfn). */
-+static int find_biggest_section_pfn(unsigned long start_pfn,
-+				    unsigned long end_pfn)
-+{
-+	struct mem_section *ms;
-+	unsigned long pfn;
-+
-+	/* pfn is the end pfn of a memory section. */
-+	pfn = end_pfn - 1;
-+	for (; pfn >= start_pfn; pfn -= PAGES_PER_SECTION) {
-+		ms = __pfn_to_section(pfn);
-+
-+		if (unlikely(!valid_section(ms)))
-+			continue;
-+
-+		return pfn;
-+	}
-+
-+	return 0;
-+}
-+
-+static void shrink_zone_span(struct zone *zone, unsigned long start_pfn,
-+			     unsigned long end_pfn)
-+{
-+	unsigned long zone_start_pfn =  zone->zone_start_pfn;
-+	unsigned long zone_end_pfn = zone->zone_start_pfn + zone->spanned_pages;
-+	unsigned long pfn;
-+	struct mem_section *ms;
-+
-+	zone_span_writelock(zone);
-+	if (zone_start_pfn = start_pfn) {
-+		/*
-+		 * If the section is smallest section in the zone, it need
-+		 * shrink zone->zone_start_pfn and zone->zone_spanned_pages.
-+		 * In this case, we find second smallest valid mem_section
-+		 * for shrinking zone.
-+		 */
-+		pfn = find_smallest_section_pfn(end_pfn, zone_end_pfn);
-+		if (pfn) {
-+			zone->zone_start_pfn = pfn;
-+			zone->spanned_pages = zone_end_pfn - pfn;
-+		}
-+	} else if (zone_end_pfn = end_pfn) {
-+		/*
-+		 * If the section is biggest section in the zone, it need
-+		 * shrink zone->spanned_pages.
-+		 * In this case, we find second biggest valid mem_section for
-+		 * shrinking zone.
-+		 */
-+		pfn = find_biggest_section_pfn(zone_start_pfn, start_pfn);
-+		if (pfn)
-+			zone->spanned_pages = pfn - zone_start_pfn + 1;
-+	}
-+
-+	/*
-+	 * The section is not biggest or smallest mem_section in the zone, it
-+	 * only creates a hole in the zone. So in this case, we need not
-+	 * change the zone. But perhaps, the zone has only hole data. Thus
-+	 * it check the zone has only hole or not.
-+	 */
-+	pfn = zone_start_pfn;
-+	for (; pfn < zone_end_pfn; pfn += PAGES_PER_SECTION) {
-+		ms = __pfn_to_section(pfn);
-+
-+		if (unlikely(!valid_section(ms)))
-+			continue;
-+
-+		 /* If the section is current section, it continues the loop */
-+		if (start_pfn = pfn)
-+			continue;
-+
-+		/* If we find valid section, we have nothing to do */
-+		zone_span_writeunlock(zone);
-+		return;
-+	}
-+
-+	/* The zone has no valid section */
-+	zone->zone_start_pfn = 0;
-+	zone->spanned_pages = 0;
-+	zone_span_writeunlock(zone);
-+}
-+
-+static void shrink_pgdat_span(struct pglist_data *pgdat,
-+			      unsigned long start_pfn, unsigned long end_pfn)
-+{
-+	unsigned long pgdat_start_pfn =  pgdat->node_start_pfn;
-+	unsigned long pgdat_end_pfn +		pgdat->node_start_pfn + pgdat->node_spanned_pages;
-+	unsigned long pfn;
-+	struct mem_section *ms;
-+
-+	if (pgdat_start_pfn = start_pfn) {
-+		/*
-+		 * If the section is smallest section in the pgdat, it need
-+		 * shrink pgdat->node_start_pfn and pgdat->node_spanned_pages.
-+		 * In this case, we find second smallest valid mem_section
-+		 * for shrinking zone.
-+		 */
-+		pfn = find_smallest_section_pfn(end_pfn, pgdat_end_pfn);
-+		if (pfn) {
-+			pgdat->node_start_pfn = pfn;
-+			pgdat->node_spanned_pages = pgdat_end_pfn - pfn;
-+		}
-+	} else if (pgdat_end_pfn = end_pfn) {
-+		/*
-+		 * If the section is biggest section in the pgdat, it need
-+		 * shrink pgdat->node_spanned_pages.
-+		 * In this case, we find second biggest valid mem_section for
-+		 * shrinking zone.
-+		 */
-+		pfn = find_biggest_section_pfn(pgdat_start_pfn, start_pfn);
-+		if (pfn)
-+			pgdat->node_spanned_pages = pfn - pgdat_start_pfn + 1;
-+	}
-+
-+	/*
-+	 * If the section is not biggest or smallest mem_section in the pgdat,
-+	 * it only creates a hole in the pgdat. So in this case, we need not
-+	 * change the pgdat.
-+	 * But perhaps, the pgdat has only hole data. Thus it check the pgdat
-+	 * has only hole or not.
-+	 */
-+	pfn = pgdat_start_pfn;
-+	for (; pfn < pgdat_end_pfn; pfn += PAGES_PER_SECTION) {
-+		ms = __pfn_to_section(pfn);
-+
-+		if (unlikely(!valid_section(ms)))
-+			continue;
-+
-+		 /* If the section is current section, it continues the loop */
-+		if (start_pfn = pfn)
-+			continue;
-+
-+		/* If we find valid section, we have nothing to do */
-+		return;
-+	}
-+
-+	/* The pgdat has no valid section */
-+	pgdat->node_start_pfn = 0;
-+	pgdat->node_spanned_pages = 0;
-+}
-+
-+static void __remove_zone(struct zone *zone, unsigned long start_pfn)
-+{
-+	struct pglist_data *pgdat = zone->zone_pgdat;
-+	int nr_pages = PAGES_PER_SECTION;
-+	int zone_type;
-+	unsigned long flags;
-+
-+	zone_type = zone - pgdat->node_zones;
-+
-+	pgdat_resize_lock(zone->zone_pgdat, &flags);
-+	shrink_zone_span(zone, start_pfn, start_pfn + nr_pages);
-+	shrink_pgdat_span(pgdat, start_pfn, start_pfn + nr_pages);
-+	pgdat_resize_unlock(zone->zone_pgdat, &flags);
-+}
-+
- static int __remove_section(struct zone *zone, struct mem_section *ms)
++/**
+  * pm_genpd_remove_subdomain - Remove a subdomain from an I/O PM domain.
+  * @genpd: Master PM domain to remove the subdomain from.
+  * @subdomain: Subdomain to be removed.
+Index: linux/include/linux/pm_domain.h
+=================================--- linux.orig/include/linux/pm_domain.h
++++ linux/include/linux/pm_domain.h
+@@ -149,6 +149,8 @@ extern void pm_genpd_dev_always_on(struc
+ extern void pm_genpd_dev_need_restore(struct device *dev, bool val);
+ extern int pm_genpd_add_subdomain(struct generic_pm_domain *genpd,
+ 				  struct generic_pm_domain *new_subdomain);
++extern int pm_genpd_add_subdomain_names(const char *master_name,
++					const char *subdomain_name);
+ extern int pm_genpd_remove_subdomain(struct generic_pm_domain *genpd,
+ 				     struct generic_pm_domain *target);
+ extern int pm_genpd_add_callbacks(struct device *dev,
+@@ -204,6 +206,11 @@ static inline int pm_genpd_add_subdomain
  {
- 	unsigned long flags;
- 	struct pglist_data *pgdat = zone->zone_pgdat;
-+	unsigned long start_pfn;
-+	int scn_nr;
- 	int ret = -EINVAL;
- 
- 	if (!valid_section(ms))
-@@ -313,6 +490,10 @@ static int __remove_section(struct zone *zone, struct mem_section *ms)
- 	if (ret)
- 		return ret;
- 
-+	scn_nr = __section_nr(ms);
-+	start_pfn = section_nr_to_pfn(scn_nr);
-+	__remove_zone(zone, start_pfn);
-+
- 	pgdat_resize_lock(pgdat, &flags);
- 	sparse_remove_one_section(zone, ms);
- 	pgdat_resize_unlock(pgdat, &flags);
--- 
-1.7.1
+ 	return -ENOSYS;
+ }
++static inline int pm_genpd_add_subdomain_names(const char *master_name,
++					       const char *subdomain_name)
++{
++	return -ENOSYS;
++}
+ static inline int pm_genpd_remove_subdomain(struct generic_pm_domain *genpd,
+ 					    struct generic_pm_domain *target)
+ {
 
