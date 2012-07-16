@@ -1,111 +1,236 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sat, 14 Jul 2012 13:34:14 +0000
-Subject: [GIT PULL] Renesas ARM-based boards updates for v3.6
-Message-Id: <201207141534.15219.rjw@sisk.pl>
+Date: Mon, 16 Jul 2012 21:18:16 +0000
+Subject: [RFC][PATCH 2/14] ARM: shmobile: Use names of power domains for adding devices to them
+Message-Id: <201207162318.16661.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201207112338.36939.rjw@sisk.pl> <201207141529.21534.rjw@sisk.pl>
-In-Reply-To: <201207141529.21534.rjw@sisk.pl>
+References: <201207032302.17805.rjw@sisk.pl> <201207052217.48086.rjw@sisk.pl> <201207162315.49073.rjw@sisk.pl>
+In-Reply-To: <201207162315.49073.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linux PM list <linux-pm@vger.kernel.org>
+Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>, LKML <linux-kernel@vger.kernel.org>, Matthew Garrett <mjg59@srcf.ucam.org>, Magnus Damm <magnus.damm@gmail.com>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>, Linux-sh list <linux-sh@vger.kernel.org>
 
-Hi,
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Please pull changes since commit 0df8fa46611abc56e39f541495d667e4bf4f1060
+Make the power management code under arch/arm/mach-shmobile/ use
+names of power domains instead of pointers to domain objects for
+adding devices to the domains.  This will allow us to put the
+domain objects into tables and register them all in one shot
+going forward.
 
-    Merge branch 'renesas-sh7377' into renesas-soc
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
+ arch/arm/mach-shmobile/board-ap4evb.c            |   14 +++---
+ arch/arm/mach-shmobile/board-armadillo800eva.c   |    6 +-
+ arch/arm/mach-shmobile/board-mackerel.c          |   24 +++++------
+ arch/arm/mach-shmobile/include/mach/pm-rmobile.h |    4 -
+ arch/arm/mach-shmobile/pm-rmobile.c              |    4 -
+ arch/arm/mach-shmobile/setup-r8a7740.c           |   20 ++++-----
+ arch/arm/mach-shmobile/setup-sh7372.c            |   48 +++++++++++------------
+ 7 files changed, 60 insertions(+), 60 deletions(-)
 
-with top-most commit 45c7a01f070146e08f5c838315ffca5ade6e3844
-
-    Merge branch 'renesas-marzen' into renesas-board
-
-from the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/rafael/renesas.git board
-
-to receive updates for Renesas ARM-based boards for v3.6.  Included are:
-
-* Regulator support changes for multiple boards from Guennadi Liakhovetski.
-* armadillo800eva and kzm9g support updates from Kuninori Morimoto
-  and Tetsuyuki Kobayashi.
-* GPIO support update for multiple boards from Kuninori Morimoto.
-* defconfig updates from Magnus Damm and Simon Horman.
-
-This is based on the 'soc' branch I've just sent a pull request for and on
-the following topic branch from the Mark Brown's regulator tree:
-
-git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator.git tags/topic/fixed
-
-which is requisite for the merge.
-
-Thanks!
-
-
- arch/arm/configs/armadillo800eva_defconfig     |  25 +-
- arch/arm/configs/kzm9d_defconfig               |  89 +++++
- arch/arm/configs/kzm9g_defconfig               |   8 +-
- arch/arm/mach-shmobile/Kconfig                 |  12 +
- arch/arm/mach-shmobile/board-ag5evm.c          |  82 ++++-
- arch/arm/mach-shmobile/board-ap4evb.c          |  48 ++-
- arch/arm/mach-shmobile/board-armadillo800eva.c | 454 ++++++++++++++++++++++++-
- arch/arm/mach-shmobile/board-bonito.c          |  10 +
- arch/arm/mach-shmobile/board-g4evm.c           |  52 ++-
- arch/arm/mach-shmobile/board-kota2.c           |  30 ++
- arch/arm/mach-shmobile/board-kzm9d.c           |  10 +
- arch/arm/mach-shmobile/board-kzm9g.c           | 320 +++++++++++++++++
- arch/arm/mach-shmobile/board-mackerel.c        |  59 ++--
- arch/arm/mach-shmobile/board-marzen.c          |  10 +
- drivers/regulator/fixed-helper.c               |  19 +-
- include/linux/regulator/fixed.h                |  11 +-
- 16 files changed, 1135 insertions(+), 104 deletions(-)
-
----------------
-
-Guennadi Liakhovetski (14):
-      regulator: support multiple dummy fixed regulators
-      regulator: extend the fixed dummy voltage regulator to accept voltage
-      ARM: mach-shmobile: add 3.3V and 1.8V fixed regulators to mackerel
-      ARM: mach-shmobile: add fixed voltage regulators to ag5evm
-      ARM: mach-shmobile: add fixed voltage regulators to ap4evb
-      ARM: mach-shmobile: add fixed voltage regulators to armadillo800eva
-      ARM: mach-shmobile: add fixed voltage regulators to bonito
-      ARM: mach-shmobile: add fixed voltage regulators to g4evm
-      ARM: mach-shmobile: add fixed voltage regulators to kota2
-      ARM: mach-shmobile: add fixed voltage regulators to kzm9d
-      ARM: mach-shmobile: add fixed voltage regulators to kzm9g
-      ARM: mach-shmobile: add fixed voltage regulators to marzen
-      ARM: mach-shmobile: add SDHI2 to the 2.8V fixed regulator consumers on kzm9g
-      ARM: mach-shmobile: select the fixed regulator driver on several boards
-
-Kuninori Morimoto (19):
-      ARM: shmobile: armadillo800eva: enable HDMI
-      ARM: shmobile: kzm9g: enable FSI-AK4648
-      ARM: shmobile: armadillo800eva: enable camera
-      ARM: shmobile: armadillo800eva: enable FSI-WM8978 sound
-      ARM: shmobile: armadillo800eva: enable FSI-HDMI sound
-      ARM: shmobile: armadillo800eva: enable DMAEngine on FSI
-      ARM: shmobile: armadillo800eva: enable DMAEngine on SDHI
-      ARM: shmobile: armadillo800eva: enable DMAEngine on USB
-      ARM: shmobile: use common extra gpio functions on armadillo800eva
-      ARM: shmobile: kzm9g: enable USB function
-      ARM: shmobile: kzm9g: enable MicroSD
-      ARM: shmobile: kzm9g: enable DMAEngine on FSI
-      ARM: shmobile: kzm9g: enable DMAEngine on MMCIF
-      ARM: shmobile: use common extra gpio functions on Mackerel
-      ARM: shmobile: use common extra gpio functions on ap4evb
-      ARM: shmobile: use common extra gpio functions on g4evm
-      ARM: shmobile: armadillo800eva: USB Func enables external IRQ mode
-      ARM: shmobile: armadillo800eva: A4LC domain includes LCDC
-      ARM: shmobile: armadillo800eva: A3SP domain includes USB
-
-Magnus Damm (1):
-      ARM: mach-shmobile: kzm9d: Add defconfig
-
-Simon Horman (2):
-      ARM: mach-shmobile: armadillo800eva: defconfig Allow use of armhf userspace
-      ARM: shmobile: kzm9g: defconfig enable INOTIFY_USER
-
-Tetsuyuki Kobayashi (1):
-      ARM: shmobile: kzm9g: Support Real Time Clock
+Index: linux/arch/arm/mach-shmobile/pm-rmobile.c
+=================================--- linux.orig/arch/arm/mach-shmobile/pm-rmobile.c
++++ linux/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -149,12 +149,12 @@ void rmobile_init_pm_domain(struct rmobi
+ 	__rmobile_pd_power_up(rmobile_pd, false);
+ }
+ 
+-void rmobile_add_device_to_domain(struct rmobile_pm_domain *rmobile_pd,
++void rmobile_add_device_to_domain(const char *domain_name,
+ 				 struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+ 
+-	pm_genpd_add_device(&rmobile_pd->genpd, dev);
++	pm_genpd_name_add_device(domain_name, dev);
+ 	if (pm_clk_no_clocks(dev))
+ 		pm_clk_add(dev, NULL);
+ }
+Index: linux/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
+=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
++++ linux/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
+@@ -31,13 +31,13 @@ struct rmobile_pm_domain *to_rmobile_pd(
+ 
+ #ifdef CONFIG_PM
+ extern void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd);
+-extern void rmobile_add_device_to_domain(struct rmobile_pm_domain *rmobile_pd,
++extern void rmobile_add_device_to_domain(const char *domain_name,
+ 					struct platform_device *pdev);
+ extern void rmobile_pm_add_subdomain(struct rmobile_pm_domain *rmobile_pd,
+ 				    struct rmobile_pm_domain *rmobile_sd);
+ #else
+ #define rmobile_init_pm_domain(pd) do { } while (0)
+-#define rmobile_add_device_to_domain(pd, pdev) do { } while (0)
++#define rmobile_add_device_to_domain(name, pdev) do { } while (0)
+ #define rmobile_pm_add_subdomain(pd, sd) do { } while (0)
+ #endif /* CONFIG_PM */
+ 
+Index: linux/arch/arm/mach-shmobile/board-mackerel.c
+=================================--- linux.orig/arch/arm/mach-shmobile/board-mackerel.c
++++ linux/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1623,20 +1623,20 @@ static void __init mackerel_init(void)
+ 
+ 	platform_add_devices(mackerel_devices, ARRAY_SIZE(mackerel_devices));
+ 
+-	rmobile_add_device_to_domain(&sh7372_pd_a4lc, &lcdc_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a4lc, &hdmi_lcdc_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a4lc, &meram_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a4mp, &fsi_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &usbhs0_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &usbhs1_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &nand_flash_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &sh_mmcif_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &sdhi0_device);
++	rmobile_add_device_to_domain("A4LC", &lcdc_device);
++	rmobile_add_device_to_domain("A4LC", &hdmi_lcdc_device);
++	rmobile_add_device_to_domain("A4LC", &meram_device);
++	rmobile_add_device_to_domain("A4MP", &fsi_device);
++	rmobile_add_device_to_domain("A3SP", &usbhs0_device);
++	rmobile_add_device_to_domain("A3SP", &usbhs1_device);
++	rmobile_add_device_to_domain("A3SP", &nand_flash_device);
++	rmobile_add_device_to_domain("A3SP", &sh_mmcif_device);
++	rmobile_add_device_to_domain("A3SP", &sdhi0_device);
+ #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
+-	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &sdhi1_device);
++	rmobile_add_device_to_domain("A3SP", &sdhi1_device);
+ #endif
+-	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &sdhi2_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a4r, &ceu_device);
++	rmobile_add_device_to_domain("A3SP", &sdhi2_device);
++	rmobile_add_device_to_domain("A4R", &ceu_device);
+ 
+ 	hdmi_init_pm_clock();
+ 	sh7372_pm_init();
+Index: linux/arch/arm/mach-shmobile/setup-sh7372.c
+=================================--- linux.orig/arch/arm/mach-shmobile/setup-sh7372.c
++++ linux/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -1023,30 +1023,30 @@ void __init sh7372_add_standard_devices(
+ 	platform_add_devices(sh7372_late_devices,
+ 			    ARRAY_SIZE(sh7372_late_devices));
+ 
+-	rmobile_add_device_to_domain(&sh7372_pd_a3rv, &vpu_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a4mp, &spu0_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a4mp, &spu1_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &scif0_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &scif1_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &scif2_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &scif3_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &scif4_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &scif5_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &scif6_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &iic1_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &dma0_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &dma1_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &dma2_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &usb_dma0_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &usb_dma1_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a4r, &iic0_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a4r, &veu0_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a4r, &veu1_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a4r, &veu2_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a4r, &veu3_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a4r, &jpu_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a4r, &tmu00_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a4r, &tmu01_device);
++	rmobile_add_device_to_domain("A3RV", &vpu_device);
++	rmobile_add_device_to_domain("A4MP", &spu0_device);
++	rmobile_add_device_to_domain("A4MP", &spu1_device);
++	rmobile_add_device_to_domain("A3SP", &scif0_device);
++	rmobile_add_device_to_domain("A3SP", &scif1_device);
++	rmobile_add_device_to_domain("A3SP", &scif2_device);
++	rmobile_add_device_to_domain("A3SP", &scif3_device);
++	rmobile_add_device_to_domain("A3SP", &scif4_device);
++	rmobile_add_device_to_domain("A3SP", &scif5_device);
++	rmobile_add_device_to_domain("A3SP", &scif6_device);
++	rmobile_add_device_to_domain("A3SP", &iic1_device);
++	rmobile_add_device_to_domain("A3SP", &dma0_device);
++	rmobile_add_device_to_domain("A3SP", &dma1_device);
++	rmobile_add_device_to_domain("A3SP", &dma2_device);
++	rmobile_add_device_to_domain("A3SP", &usb_dma0_device);
++	rmobile_add_device_to_domain("A3SP", &usb_dma1_device);
++	rmobile_add_device_to_domain("A4R", &iic0_device);
++	rmobile_add_device_to_domain("A4R", &veu0_device);
++	rmobile_add_device_to_domain("A4R", &veu1_device);
++	rmobile_add_device_to_domain("A4R", &veu2_device);
++	rmobile_add_device_to_domain("A4R", &veu3_device);
++	rmobile_add_device_to_domain("A4R", &jpu_device);
++	rmobile_add_device_to_domain("A4R", &tmu00_device);
++	rmobile_add_device_to_domain("A4R", &tmu01_device);
+ }
+ 
+ static void __init sh7372_earlytimer_init(void)
+Index: linux/arch/arm/mach-shmobile/board-ap4evb.c
+=================================--- linux.orig/arch/arm/mach-shmobile/board-ap4evb.c
++++ linux/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -1461,14 +1461,14 @@ static void __init ap4evb_init(void)
+ 
+ 	platform_add_devices(ap4evb_devices, ARRAY_SIZE(ap4evb_devices));
+ 
+-	rmobile_add_device_to_domain(&sh7372_pd_a4lc, &lcdc1_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a4lc, &lcdc_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a4mp, &fsi_device);
++	rmobile_add_device_to_domain("A4LC", &lcdc1_device);
++	rmobile_add_device_to_domain("A4LC", &lcdc_device);
++	rmobile_add_device_to_domain("A4MP", &fsi_device);
+ 
+-	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &sh_mmcif_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &sdhi0_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &sdhi1_device);
+-	rmobile_add_device_to_domain(&sh7372_pd_a4r, &ceu_device);
++	rmobile_add_device_to_domain("A3SP", &sh_mmcif_device);
++	rmobile_add_device_to_domain("A3SP", &sdhi0_device);
++	rmobile_add_device_to_domain("A3SP", &sdhi1_device);
++	rmobile_add_device_to_domain("A4R", &ceu_device);
+ 
+ 	hdmi_init_pm_clock();
+ 	fsi_init_pm_clock();
+Index: linux/arch/arm/mach-shmobile/setup-r8a7740.c
+=================================--- linux.orig/arch/arm/mach-shmobile/setup-r8a7740.c
++++ linux/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -688,16 +688,16 @@ void __init r8a7740_add_standard_devices
+ 
+ 	/* add devices to PM domain  */
+ 
+-	rmobile_add_device_to_domain(&r8a7740_pd_a3sp,	&scif0_device);
+-	rmobile_add_device_to_domain(&r8a7740_pd_a3sp,	&scif1_device);
+-	rmobile_add_device_to_domain(&r8a7740_pd_a3sp,	&scif2_device);
+-	rmobile_add_device_to_domain(&r8a7740_pd_a3sp,	&scif3_device);
+-	rmobile_add_device_to_domain(&r8a7740_pd_a3sp,	&scif4_device);
+-	rmobile_add_device_to_domain(&r8a7740_pd_a3sp,	&scif5_device);
+-	rmobile_add_device_to_domain(&r8a7740_pd_a3sp,	&scif6_device);
+-	rmobile_add_device_to_domain(&r8a7740_pd_a3sp,	&scif7_device);
+-	rmobile_add_device_to_domain(&r8a7740_pd_a3sp,	&scifb_device);
+-	rmobile_add_device_to_domain(&r8a7740_pd_a3sp,	&i2c1_device);
++	rmobile_add_device_to_domain("A3SP",	&scif0_device);
++	rmobile_add_device_to_domain("A3SP",	&scif1_device);
++	rmobile_add_device_to_domain("A3SP",	&scif2_device);
++	rmobile_add_device_to_domain("A3SP",	&scif3_device);
++	rmobile_add_device_to_domain("A3SP",	&scif4_device);
++	rmobile_add_device_to_domain("A3SP",	&scif5_device);
++	rmobile_add_device_to_domain("A3SP",	&scif6_device);
++	rmobile_add_device_to_domain("A3SP",	&scif7_device);
++	rmobile_add_device_to_domain("A3SP",	&scifb_device);
++	rmobile_add_device_to_domain("A3SP",	&i2c1_device);
+ }
+ 
+ static void __init r8a7740_earlytimer_init(void)
+Index: linux/arch/arm/mach-shmobile/board-armadillo800eva.c
+=================================--- linux.orig/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ linux/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -1181,10 +1181,10 @@ static void __init eva_init(void)
+ 
+ 	eva_clock_init();
+ 
+-	rmobile_add_device_to_domain(&r8a7740_pd_a4lc, &lcdc0_device);
+-	rmobile_add_device_to_domain(&r8a7740_pd_a4lc, &hdmi_lcdc_device);
++	rmobile_add_device_to_domain("A4LC", &lcdc0_device);
++	rmobile_add_device_to_domain("A4LC", &hdmi_lcdc_device);
+ 	if (usb)
+-		rmobile_add_device_to_domain(&r8a7740_pd_a3sp, usb);
++		rmobile_add_device_to_domain("A3SP", usb);
+ }
+ 
+ static void __init eva_earlytimer_init(void)
 
