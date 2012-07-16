@@ -1,111 +1,55 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 05 Jul 2012 08:26:31 +0000
-Subject: [PATCH 04/12 v2] ARM: shmobile: r8a7740: add A3SP pm domain support
-Message-Id: <87zk7epqa3.wl%kuninori.morimoto.gx@renesas.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Mon, 16 Jul 2012 21:29:39 +0000
+Subject: [RFC][PATCH 12/14] ARM: shmobile: Make rmobile_init_pm_domain() static
+Message-Id: <201207162329.40298.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201207032302.17805.rjw@sisk.pl> <201207052217.48086.rjw@sisk.pl> <201207162315.49073.rjw@sisk.pl>
+In-Reply-To: <201207162315.49073.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linux PM list <linux-pm@vger.kernel.org>
+Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>, LKML <linux-kernel@vger.kernel.org>, Matthew Garrett <mjg59@srcf.ucam.org>, Magnus Damm <magnus.damm@gmail.com>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>, Linux-sh list <linux-sh@vger.kernel.org>
 
-This patch adds basic A3SP pm domain support.
-Now, below devices can be controled by PM
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-DMAC1/2/3, IPMMU, DDM, FLCTL, SYS-HPB, BBIF1, MSIOF1/2,
-SCIFA,SCIFB, IIC1, IrDA, USBH, USBDMAC, SDHI0/1/2, TPU,
-DREQPAK (Sys),  MMCIF, RSPI, SIM, USBF
+Since rmobile_init_pm_domain() is not called anywhere outside of
+arch/arm/mach-shmobile/pm-rmobile.c any more, it can be made static
+and its header may be removed from pm-rmobile.h.  Modify the code
+accordingly.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
-v1 -> v2
+ arch/arm/mach-shmobile/include/mach/pm-rmobile.h |    2 --
+ arch/arm/mach-shmobile/pm-rmobile.c              |    2 +-
+ 2 files changed, 1 insertion(+), 3 deletions(-)
 
- - based on pm-rmobile
-
- arch/arm/mach-shmobile/include/mach/r8a7740.h |    1 +
- arch/arm/mach-shmobile/pm-r8a7740.c           |   19 +++++++++++++++++++
- arch/arm/mach-shmobile/setup-r8a7740.c        |   16 ++++++++++++++++
- 3 files changed, 36 insertions(+), 0 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index e8c87e9..a5691cf 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -608,6 +608,7 @@ enum {
- 
- #ifdef CONFIG_PM
- extern struct rmobile_pm_domain r8a7740_pd_a4s;
-+extern struct rmobile_pm_domain r8a7740_pd_a3sp;
- #endif /* CONFIG_PM */
- 
- #endif /* __ASM_R8A7740_H__ */
-diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
-index d2fe815..de7c621 100644
---- a/arch/arm/mach-shmobile/pm-r8a7740.c
-+++ b/arch/arm/mach-shmobile/pm-r8a7740.c
-@@ -8,6 +8,7 @@
-  * License.  See the file "COPYING" in the main directory of this archive
-  * for more details.
-  */
-+#include <linux/console.h>
- #include <mach/pm-rmobile.h>
- 
- #ifdef CONFIG_PM
-@@ -27,4 +28,22 @@ struct rmobile_pm_domain r8a7740_pd_a4s = {
- 	.no_debug	= true,
- 	.suspend	= r8a7740_pd_a4s_suspend,
- };
-+
-+static int r8a7740_pd_a3sp_suspend(void)
-+{
-+	/*
-+	 * Serial consoles make use of SCIF hardware located in A3SP,
-+	 * keep such power domain on if "no_console_suspend" is set.
-+	 */
-+	return console_suspend_enabled ? 0 : -EBUSY;
-+}
-+
-+struct rmobile_pm_domain r8a7740_pd_a3sp = {
-+	.genpd.name	= "A3SP",
-+	.bit_shift	= 11,
-+	.gov		= &pm_domain_always_on_gov,
-+	.no_debug	= true,
-+	.suspend	= r8a7740_pd_a3sp_suspend,
-+};
-+
- #endif /* CONFIG_PM */
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index c37ad75..59c79412 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -674,12 +674,28 @@ void __init r8a7740_add_standard_devices(void)
- 
- 	/* PM domain */
- 	rmobile_init_pm_domain(&r8a7740_pd_a4s);
-+	rmobile_init_pm_domain(&r8a7740_pd_a3sp);
-+
-+	rmobile_pm_add_subdomain(&r8a7740_pd_a4s, &r8a7740_pd_a3sp);
- 
- 	/* add devices */
- 	platform_add_devices(r8a7740_early_devices,
- 			    ARRAY_SIZE(r8a7740_early_devices));
- 	platform_add_devices(r8a7740_late_devices,
- 			     ARRAY_SIZE(r8a7740_late_devices));
-+
-+	/* add devices to PM domain  */
-+
-+	rmobile_add_device_to_domain(&r8a7740_pd_a3sp,	&scif0_device);
-+	rmobile_add_device_to_domain(&r8a7740_pd_a3sp,	&scif1_device);
-+	rmobile_add_device_to_domain(&r8a7740_pd_a3sp,	&scif2_device);
-+	rmobile_add_device_to_domain(&r8a7740_pd_a3sp,	&scif3_device);
-+	rmobile_add_device_to_domain(&r8a7740_pd_a3sp,	&scif4_device);
-+	rmobile_add_device_to_domain(&r8a7740_pd_a3sp,	&scif5_device);
-+	rmobile_add_device_to_domain(&r8a7740_pd_a3sp,	&scif6_device);
-+	rmobile_add_device_to_domain(&r8a7740_pd_a3sp,	&scif7_device);
-+	rmobile_add_device_to_domain(&r8a7740_pd_a3sp,	&scifb_device);
-+	rmobile_add_device_to_domain(&r8a7740_pd_a3sp,	&i2c1_device);
+Index: linux/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
+=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
++++ linux/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
+@@ -30,12 +30,10 @@ struct rmobile_pm_domain *to_rmobile_pd(
  }
  
- static void __init r8a7740_earlytimer_init(void)
--- 
-1.7.5.4
+ #ifdef CONFIG_PM
+-extern void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd);
+ extern void rmobile_init_domains(struct rmobile_pm_domain domains[], int num);
+ extern void rmobile_add_device_to_domain(const char *domain_name,
+ 					struct platform_device *pdev);
+ #else
+-#define rmobile_init_pm_domain(pd) do { } while (0)
+ #define rmobile_init_domains(domains, num) do { } while (0)
+ #define rmobile_add_device_to_domain(name, pdev) do { } while (0)
+ #endif /* CONFIG_PM */
+Index: linux/arch/arm/mach-shmobile/pm-rmobile.c
+=================================--- linux.orig/arch/arm/mach-shmobile/pm-rmobile.c
++++ linux/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -134,7 +134,7 @@ static int rmobile_pd_start_dev(struct d
+ 	return ret;
+ }
+ 
+-void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
++static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
+ {
+ 	struct generic_pm_domain *genpd = &rmobile_pd->genpd;
+ 	struct dev_power_governor *gov = rmobile_pd->gov;
 
