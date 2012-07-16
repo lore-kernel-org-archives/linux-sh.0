@@ -1,133 +1,139 @@
-From: Wen Congyang <wency@cn.fujitsu.com>
-Date: Fri, 27 Jul 2012 10:31:28 +0000
-Subject: [RFC PATCH v5 11/19] memory-hotplug: remove_memory calls __remove_pages
-Message-Id: <50126E00.9000906@cn.fujitsu.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Mon, 16 Jul 2012 21:24:08 +0000
+Subject: [RFC][PATCH 7/14] ARM: shmobile: Remove dead sh7372 power management code
+Message-Id: <201207162324.08995.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <50126B83.3050201@cn.fujitsu.com>
-In-Reply-To: <50126B83.3050201@cn.fujitsu.com>
+References: <201207032302.17805.rjw@sisk.pl> <201207052217.48086.rjw@sisk.pl> <201207162315.49073.rjw@sisk.pl>
+In-Reply-To: <201207162315.49073.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
-Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, Yasuaki ISIMATU <isimatu.yasuaki@jp.fujitsu.com>
+To: Linux PM list <linux-pm@vger.kernel.org>
+Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>, LKML <linux-kernel@vger.kernel.org>, Matthew Garrett <mjg59@srcf.ucam.org>, Magnus Damm <magnus.damm@gmail.com>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>, Linux-sh list <linux-sh@vger.kernel.org>
 
-From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-The patch adds __remove_pages() to remove_memory(). Then the range of
-phys_start_pfn argument and nr_pages argument in __remove_pagse() may
-have different zone. So zone argument is removed from __remove_pages()
-and __remove_pages() caluculates zone in each section.
+Since the sh7372_pd_a4s.genpd.status = GPD_STATE_POWER_OFF condition
+is never satisfied, remove the code depending on it for now.
+That (or equivalent) code will be added again when the cpuidle state
+involving the A4S domain is added to the sh7372's cpuidle driver.
 
-When CONFIG_SPARSEMEM_VMEMMAP is defined, there is no way to remove a memmap.
-So __remove_section only calls unregister_memory_section().
-
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-CC: Paul Mackerras <paulus@samba.org>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-CC: Wen Congyang <wency@cn.fujitsu.com>
-Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- arch/powerpc/platforms/pseries/hotplug-memory.c |    5 +----
- include/linux/memory_hotplug.h                  |    3 +--
- mm/memory_hotplug.c                             |   18 +++++++++++-------
- 3 files changed, 13 insertions(+), 13 deletions(-)
+ arch/arm/mach-shmobile/pm-sh7372.c |   94 -------------------------------------
+ 1 file changed, 94 deletions(-)
 
-diff --git a/arch/powerpc/platforms/pseries/hotplug-memory.c b/arch/powerpc/platforms/pseries/hotplug-memory.c
-index dc0a035..cc14da4 100644
---- a/arch/powerpc/platforms/pseries/hotplug-memory.c
-+++ b/arch/powerpc/platforms/pseries/hotplug-memory.c
-@@ -76,7 +76,6 @@ unsigned long memory_block_size_bytes(void)
- static int pseries_remove_memblock(unsigned long base, unsigned int memblock_size)
- {
- 	unsigned long start, start_pfn;
--	struct zone *zone;
- 	int i, ret;
- 	int sections_to_remove;
- 
-@@ -87,8 +86,6 @@ static int pseries_remove_memblock(unsigned long base, unsigned int memblock_siz
- 		return 0;
- 	}
- 
--	zone = page_zone(pfn_to_page(start_pfn));
--
- 	/*
- 	 * Remove section mappings and sysfs entries for the
- 	 * section of the memory we are removing.
-@@ -101,7 +98,7 @@ static int pseries_remove_memblock(unsigned long base, unsigned int memblock_siz
- 	sections_to_remove = (memblock_size >> PAGE_SHIFT) / PAGES_PER_SECTION;
- 	for (i = 0; i < sections_to_remove; i++) {
- 		unsigned long pfn = start_pfn + i * PAGES_PER_SECTION;
--		ret = __remove_pages(zone, start_pfn,  PAGES_PER_SECTION);
-+		ret = __remove_pages(start_pfn,  PAGES_PER_SECTION);
- 		if (ret)
- 			return ret;
- 	}
-diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
-index fd84ea9..8bf820d 100644
---- a/include/linux/memory_hotplug.h
-+++ b/include/linux/memory_hotplug.h
-@@ -90,8 +90,7 @@ extern bool is_pageblock_removable_nolock(struct page *page);
- /* reasonably generic interface to expand the physical pages in a zone  */
- extern int __add_pages(int nid, struct zone *zone, unsigned long start_pfn,
- 	unsigned long nr_pages);
--extern int __remove_pages(struct zone *zone, unsigned long start_pfn,
--	unsigned long nr_pages);
-+extern int __remove_pages(unsigned long start_pfn, unsigned long nr_pages);
- 
- #ifdef CONFIG_NUMA
- extern int memory_add_physaddr_to_nid(u64 start);
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index d360c5c..a9e1579 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -275,11 +275,14 @@ static int __meminit __add_section(int nid, struct zone *zone,
- #ifdef CONFIG_SPARSEMEM_VMEMMAP
- static int __remove_section(struct zone *zone, struct mem_section *ms)
- {
--	/*
--	 * XXX: Freeing memmap with vmemmap is not implement yet.
--	 *      This should be removed later.
--	 */
--	return -EBUSY;
-+	int ret = -EINVAL;
-+
-+	if (!valid_section(ms))
-+		return ret;
-+
-+	ret = unregister_memory_section(ms);
-+
-+	return ret;
+Index: linux/arch/arm/mach-shmobile/pm-sh7372.c
+=================================--- linux.orig/arch/arm/mach-shmobile/pm-sh7372.c
++++ linux/arch/arm/mach-shmobile/pm-sh7372.c
+@@ -174,75 +174,6 @@ static void sh7372_enter_sysc(int pllc0_
+ 	__raw_writel(0, SBAR);
  }
- #else
- static int __remove_section(struct zone *zone, struct mem_section *ms)
-@@ -346,11 +349,11 @@ EXPORT_SYMBOL_GPL(__add_pages);
-  * sure that pages are marked reserved and zones are adjust properly by
-  * calling offline_pages().
-  */
--int __remove_pages(struct zone *zone, unsigned long phys_start_pfn,
--		 unsigned long nr_pages)
-+int __remove_pages(unsigned long phys_start_pfn, unsigned long nr_pages)
- {
- 	unsigned long i, ret = 0;
- 	int sections_to_remove;
-+	struct zone *zone;
  
- 	/*
- 	 * We can only remove entire sections
-@@ -363,6 +366,7 @@ int __remove_pages(struct zone *zone, unsigned long phys_start_pfn,
- 	sections_to_remove = nr_pages / PAGES_PER_SECTION;
- 	for (i = 0; i < sections_to_remove; i++) {
- 		unsigned long pfn = phys_start_pfn + i*PAGES_PER_SECTION;
-+		zone = page_zone(pfn_to_page(pfn));
- 		ret = __remove_section(zone, __pfn_to_section(pfn));
- 		if (ret)
- 			break;
--- 
-1.7.1
+-static int sh7372_sysc_valid(unsigned long *mskp, unsigned long *msk2p)
+-{
+-	unsigned long mstpsr0, mstpsr1, mstpsr2, mstpsr3, mstpsr4;
+-	unsigned long msk, msk2;
+-
+-	/* check active clocks to determine potential wakeup sources */
+-
+-	mstpsr0 = __raw_readl(MSTPSR0);
+-	if ((mstpsr0 & 0x00000003) != 0x00000003) {
+-		pr_debug("sh7372 mstpsr0 0x%08lx\n", mstpsr0);
+-		return 0;
+-	}
+-
+-	mstpsr1 = __raw_readl(MSTPSR1);
+-	if ((mstpsr1 & 0xff079b7f) != 0xff079b7f) {
+-		pr_debug("sh7372 mstpsr1 0x%08lx\n", mstpsr1);
+-		return 0;
+-	}
+-
+-	mstpsr2 = __raw_readl(MSTPSR2);
+-	if ((mstpsr2 & 0x000741ff) != 0x000741ff) {
+-		pr_debug("sh7372 mstpsr2 0x%08lx\n", mstpsr2);
+-		return 0;
+-	}
+-
+-	mstpsr3 = __raw_readl(MSTPSR3);
+-	if ((mstpsr3 & 0x1a60f010) != 0x1a60f010) {
+-		pr_debug("sh7372 mstpsr3 0x%08lx\n", mstpsr3);
+-		return 0;
+-	}
+-
+-	mstpsr4 = __raw_readl(MSTPSR4);
+-	if ((mstpsr4 & 0x00008cf0) != 0x00008cf0) {
+-		pr_debug("sh7372 mstpsr4 0x%08lx\n", mstpsr4);
+-		return 0;
+-	}
+-
+-	msk = 0;
+-	msk2 = 0;
+-
+-	/* make bitmaps of limited number of wakeup sources */
+-
+-	if ((mstpsr2 & (1 << 23)) = 0) /* SPU2 */
+-		msk |= 1 << 31;
+-
+-	if ((mstpsr2 & (1 << 12)) = 0) /* MFI_MFIM */
+-		msk |= 1 << 21;
+-
+-	if ((mstpsr4 & (1 << 3)) = 0) /* KEYSC */
+-		msk |= 1 << 2;
+-
+-	if ((mstpsr1 & (1 << 24)) = 0) /* CMT0 */
+-		msk |= 1 << 1;
+-
+-	if ((mstpsr3 & (1 << 29)) = 0) /* CMT1 */
+-		msk |= 1 << 1;
+-
+-	if ((mstpsr4 & (1 << 0)) = 0) /* CMT2 */
+-		msk |= 1 << 1;
+-
+-	if ((mstpsr2 & (1 << 13)) = 0) /* MFI_MFIS */
+-		msk2 |= 1 << 17;
+-
+-	*mskp = msk;
+-	*msk2p = msk2;
+-
+-	return 1;
+-}
+-
+ static void sh7372_icr_to_irqcr(unsigned long icr, u16 *irqcr1p, u16 *irqcr2p)
+ {
+ 	u16 tmp, irqcr1, irqcr2;
+@@ -375,33 +306,8 @@ static void sh7372_cpuidle_init(void) {}
+ #endif
+ 
+ #ifdef CONFIG_SUSPEND
+-static void sh7372_enter_a4s_common(int pllc0_on)
+-{
+-	sh7372_intca_suspend();
+-	memcpy((void *)SMFRAM, sh7372_resume_core_standby_sysc, 0x100);
+-	sh7372_set_reset_vector(SMFRAM);
+-	sh7372_enter_sysc(pllc0_on, 1 << 10);
+-	sh7372_intca_resume();
+-}
+-
+ static int sh7372_enter_suspend(suspend_state_t suspend_state)
+ {
+-	unsigned long msk, msk2;
+-
+-	/* check active clocks to determine potential wakeup sources */
+-	if (sh7372_sysc_valid(&msk, &msk2)) {
+-		if (!console_suspend_enabled &&
+-		    sh7372_pd_a4s.genpd.status = GPD_STATE_POWER_OFF) {
+-			/* convert INTC mask/sense to SYSC mask/sense */
+-			sh7372_setup_sysc(msk, msk2);
+-
+-			/* enter A4S sleep with PLLC0 off */
+-			pr_debug("entering A4S\n");
+-			sh7372_enter_a4s_common(0);
+-			return 0;
+-		}
+-	}
+-
+ 	/* default to enter A3SM sleep with PLLC0 off */
+ 	pr_debug("entering A3SM\n");
+ 	sh7372_enter_a3sm_common(0);
 
