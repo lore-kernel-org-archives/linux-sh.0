@@ -1,7 +1,7 @@
 From: Vinod Koul <vinod.koul@linux.intel.com>
-Date: Fri, 13 Jul 2012 03:38:17 +0000
+Date: Mon, 16 Jul 2012 06:10:34 +0000
 Subject: Re: [PATCH 1/9 v3] dmaengine: add an shdma-base library
-Message-Id: <1342149977.1726.8.camel@vkoul-udesk3>
+Message-Id: <1342418314.1726.35.camel@vkoul-udesk3>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1336576161-27082-1-git-send-email-g.liakhovetski@gmx.de>
 	 <1336576161-27082-2-git-send-email-g.liakhovetski@gmx.de>
@@ -19,19 +19,6 @@ To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 Cc: linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Sascha Hauer <s.hauer@pengutronix.de>
 
 On Mon, 2012-07-02 at 22:28 +0200, Guennadi Liakhovetski wrote:
-> Hi Vinod
-> 
-> On Thu, 28 Jun 2012, Guennadi Liakhovetski wrote:
-> 
-> > Hi Vinod
-> > 
-> > On Fri, 25 May 2012, Guennadi Liakhovetski wrote:
-> > 
-> > > Hi Vinod
-> > > 
-> > > On Fri, 25 May 2012, Vinod Koul wrote:
-> > 
-> > [snip]
 > > 
 > > > > Let me know if you plan to fixing them or I will queue these up for 3.6
 > > > 
@@ -43,13 +30,10 @@ On Mon, 2012-07-02 at 22:28 +0200, Guennadi Liakhovetski wrote:
 > > some exposure and testing and (2) eventually speed up building on top of 
 > > them and fixing existing driver's shortcomings. Any approximate idea when 
 > > you'd be able to pull them in?
-Sorry my bad, I missed them afterwards.
-
-I will try them now. I assumed the two series I have in my inbox in on
-top of these 9 patches.
-
+> 
 > An update to this patch series: unfortunately, I forgot to include the 
 > very first patch in this series. I'll send it as a reply to this mail.
+Applied the series along with 0.5! patch ...
 
 -- 
 ~Vinod
