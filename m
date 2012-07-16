@@ -1,90 +1,48 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Tue, 03 Jul 2012 19:22:31 +0000
-Subject: Re: Build regressions/improvements in v3.5-rc5
-Message-Id: <CAMuHMdUcOrCwtj9iUQCu543zJhZTV_TscGfKPxfWG6w-aAoBGA@mail.gmail.com>
+Date: Mon, 16 Jul 2012 18:59:47 +0000
+Subject: Re: Build regressions/improvements in v3.5-rc7
+Message-Id: <CAMuHMdW39GoFf4or-7PJxW78zUPkZe+pyAqjN59FNTOZYWnQ6g@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1341342768-22221-1-git-send-email-geert@linux-m68k.org>
-In-Reply-To: <1341342768-22221-1-git-send-email-geert@linux-m68k.org>
+References: <1342464946-30236-1-git-send-email-geert@linux-m68k.org>
+In-Reply-To: <1342464946-30236-1-git-send-email-geert@linux-m68k.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-kernel@vger.kernel.org
-Cc: Linuxppc-dev <linuxppc-dev@ozlabs.org>, Haavard Skinnemoen <hskinnemoen@gmail.com>, Hans-Christian Egtvedt <egtvedt@samfundet.no>, Linux-sh list <linux-sh@vger.kernel.org>
+Cc: Linuxppc-dev <linuxppc-dev@ozlabs.org>, Chris Zankel <chris@zankel.net>, Linux-sh list <linux-sh@vger.kernel.org>
 
-On Tue, Jul 3, 2012 at 9:12 PM, Geert Uytterhoeven <geert@linux-m68k.org> wrote:
-> JFYI, when comparing v3.5-rc5 to v3.5-rc4[3], the summaries are:
->   - build errors: +20/-11
+On Mon, Jul 16, 2012 at 8:55 PM, Geert Uytterhoeven
+<geert@linux-m68k.org> wrote:
+> JFYI, when comparing v3.5-rc7 to v3.5-rc6[3], the summaries are:
+>   - build errors: +5/-24
 
-20 regressions:
-  + arch/powerpc/platforms/512x/mpc512x_shared.c: error:
-'FSL_DIU_PORT_DVI' undeclared (first use in this function):  => 189:9
-  + arch/powerpc/platforms/512x/mpc512x_shared.c: error: 'enum
-fsl_diu_monitor_port' declared inside parameter list [-Werror]:  =>
-70:9, 84:9, 88:36
-  + arch/powerpc/platforms/512x/mpc512x_shared.c: error: 'return' with
-a value, in function returning void [-Werror]:  => 189:2
-  + arch/powerpc/platforms/512x/mpc512x_shared.c: error: function
-declaration isn't a prototype [-Werror=strict-prototypes]:  => 69:5,
-88:6, 83:6, 187:1
-  + arch/powerpc/platforms/512x/mpc512x_shared.c: error: its scope is
-only this definition or declaration, which is probably not what you
-want [-Werror]:  => 70:9
-  + arch/powerpc/platforms/512x/mpc512x_shared.c: error: parameter 1
-('port') has incomplete type:  => 187:54, 83:56, 88:57, 69:56
-  + arch/powerpc/platforms/512x/mpc512x_shared.c: error: return type
-is an incomplete type:  => 187:1
-  + drivers/net/ethernet/3com/3c515.c: error: implicit declaration of
-function 'isa_bus_to_virt' [-Werror=implicit-function-declaration]:
-=> 1374:12
-  + drivers/net/ethernet/3com/3c515.c: error: implicit declaration of
-function 'isa_virt_to_bus' [-Werror=implicit-function-declaration]:
-=> 824:9
-  + drivers/net/ethernet/amd/ni65.c: error: implicit declaration of
-function 'isa_bus_to_virt' [-Werror=implicit-function-declaration]:
-=> 756:4
-  + drivers/net/ethernet/amd/ni65.c: error: implicit declaration of
-function 'isa_virt_to_bus' [-Werror=implicit-function-declaration]:
-=> 586:2
+5 regressions:
+  + arch/powerpc/sysdev/mpic.c: error: case label does not reduce to
+an integer constant:  => 890:9, 898:9, 886:9, 894:9
 
 powerpc-randconfig
 
+  + drivers/scsi/bnx2i/bnx2i_iscsi.c: error: implicit declaration of
+function 'pci_iomap' [-Werror=implicit-function-declaration]:  =>
+816:3
+  + drivers/scsi/bnx2i/bnx2i_iscsi.c: error: implicit declaration of
+function 'pci_iounmap' [-Werror=implicit-function-declaration]:  =>
+887:3
+
+xtensa-allmodconfig
+
   + error: idt77252.c: relocation truncated to fit: R_PPC64_REL24
-against symbol `.__raw_spin_lock_init' defined in .text section in
-lib/built-in.o:  => (.text+0x1ff8c5c)
-  + error: idt77252.c: relocation truncated to fit: R_PPC64_REL24
-against symbol `.del_timer' defined in .text section in
-kernel/built-in.o:  => (.text+0x1ff806c)
-  + error: idt77252.c: relocation truncated to fit: R_PPC64_REL24
-against symbol `.mutex_unlock' defined in .sched.text section in
-kernel/built-in.o:  => (.text+0x1ff8eec), (.text+0x1ff8c14),
-(.text+0x1ff8e80), (.text+0x1ff8e08), (.text+0x1ff8f30)
-  + error: solos-pci.c: relocation truncated to fit: R_PPC64_REL24
-against symbol `._raw_spin_lock_irqsave' defined in .spinlock.text
-section in kernel/built-in.o:  => (.text+0x1ff954c)
-  + error: solos-pci.c: relocation truncated to fit: R_PPC64_REL24
-against symbol `._raw_spin_unlock' defined in .spinlock.text section
-in kernel/built-in.o:  => (.text+0x1ff970c)
-  + error: solos-pci.c: relocation truncated to fit: R_PPC64_REL24
-against symbol `.iowrite32' defined in .text section in
-lib/built-in.o:  => (.text+0x1ff98e4)
+against symbol `_restgpr0_29' defined in .text section in
+arch/powerpc/lib/built-in.o:  => (.text+0x1ff83a0)
 
 powerpc-allyesconfig
 
-  + error: vsprintf.c: relocation truncated to fit: R_AVR32_9UW_PCREL
-against `.text'+b28:  => (.text+0x92a)
-
-avr32-allnoconfig
-
-  + include/linux/sh_pfc.h: error: field 'chip' has incomplete type:  => 121:19
-
-se7721_defconfig
-
   + kernel/sys.c: error: 'mmap_min_addr' undeclared (first use in this
-function): 1864:34 => 1864:37, 1864:34
+function): 1864:34 => 1868:37, 1868:34
 
 sh-randconfig, sh-allyesconfig, sh-allmodconfig
 
-> [1] http://kisskb.ellerman.id.au/kisskb/head/5202/ (all 116 configs)
+> [1] http://kisskb.ellerman.id.au/kisskb/head/5243/ (all 116 configs)
 
 Gr{oetje,eeting}s,
 
