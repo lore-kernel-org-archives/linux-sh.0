@@ -1,45 +1,60 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 04 Jul 2012 03:55:08 +0000
-Subject: [PATCH 1/7] ARM: shmobile: r8a7740: fixup: MSEL1CR 7bit control
-Message-Id: <87obnwtc2u.wl%kuninori.morimoto.gx@renesas.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Mon, 16 Jul 2012 21:23:15 +0000
+Subject: [RFC][PATCH 6/14] RM: shmobile: Add routine for automatic PM domains initialization
+Message-Id: <201207162323.16114.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201207032302.17805.rjw@sisk.pl> <201207052217.48086.rjw@sisk.pl> <201207162315.49073.rjw@sisk.pl>
+In-Reply-To: <201207162315.49073.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linux PM list <linux-pm@vger.kernel.org>
+Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>, LKML <linux-kernel@vger.kernel.org>, Matthew Garrett <mjg59@srcf.ucam.org>, Magnus Damm <magnus.damm@gmail.com>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>, Linux-sh list <linux-sh@vger.kernel.org>
 
-MSEL1CR 7bit selects IRQ7 source pin which was
-VBUS pin or A21/MSIOF0_RSYNC/MSIOF1_TSYNC pin.
-But current pfc-r8a7740 MSEL1CR 7bit setting was wrong.
-This patch fix it up
+From: Rafael J. Wysocki <rjw@sisk.pl>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Add a new routine, rmobile_init_domains(), allowing the caller
+to initialize all generic PM objects stored in a table in one
+operation.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- arch/arm/mach-shmobile/pfc-r8a7740.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/include/mach/pm-rmobile.h |    2 ++
+ arch/arm/mach-shmobile/pm-rmobile.c              |    8 ++++++++
+ 2 files changed, 10 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/pfc-r8a7740.c b/arch/arm/mach-shmobile/pfc-r8a7740.c
-index 03def0f..ce9e7fa 100644
---- a/arch/arm/mach-shmobile/pfc-r8a7740.c
-+++ b/arch/arm/mach-shmobile/pfc-r8a7740.c
-@@ -1261,7 +1261,7 @@ static pinmux_enum_t pinmux_data[] = {
- 	PINMUX_DATA(A21_MARK,			PORT120_FN1),
- 	PINMUX_DATA(MSIOF0_RSYNC_MARK,		PORT120_FN2),
- 	PINMUX_DATA(MSIOF1_TSYNC_PORT120_MARK,	PORT120_FN3,	MSEL4CR_10_0),
--	PINMUX_DATA(IRQ7_PORT120_MARK,		PORT120_FN0,	MSEL1CR_7_0),
-+	PINMUX_DATA(IRQ7_PORT120_MARK,		PORT120_FN0,	MSEL1CR_7_1),
+Index: linux/arch/arm/mach-shmobile/pm-rmobile.c
+=================================--- linux.orig/arch/arm/mach-shmobile/pm-rmobile.c
++++ linux/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -149,6 +149,14 @@ void rmobile_init_pm_domain(struct rmobi
+ 	__rmobile_pd_power_up(rmobile_pd, false);
+ }
  
- 	/* Port121 */
- 	PINMUX_DATA(A20_MARK,			PORT121_FN1),
-@@ -1623,7 +1623,7 @@ static pinmux_enum_t pinmux_data[] = {
++void rmobile_init_domains(struct rmobile_pm_domain domains[], int num)
++{
++	int j;
++
++	for (j = 0; j < num; j++)
++		rmobile_init_pm_domain(&domains[j]);
++}
++
+ void rmobile_add_device_to_domain(const char *domain_name,
+ 				 struct platform_device *pdev)
+ {
+Index: linux/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
+=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
++++ linux/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
+@@ -31,10 +31,12 @@ struct rmobile_pm_domain *to_rmobile_pd(
  
- 	/* Port209 */
- 	PINMUX_DATA(VBUS_MARK,			PORT209_FN1),
--	PINMUX_DATA(IRQ7_PORT209_MARK,		PORT209_FN0,	MSEL1CR_7_1),
-+	PINMUX_DATA(IRQ7_PORT209_MARK,		PORT209_FN0,	MSEL1CR_7_0),
+ #ifdef CONFIG_PM
+ extern void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd);
++extern void rmobile_init_domains(struct rmobile_pm_domain domains[], int num);
+ extern void rmobile_add_device_to_domain(const char *domain_name,
+ 					struct platform_device *pdev);
+ #else
+ #define rmobile_init_pm_domain(pd) do { } while (0)
++#define rmobile_init_domains(domains, num) do { } while (0)
+ #define rmobile_add_device_to_domain(name, pdev) do { } while (0)
+ #endif /* CONFIG_PM */
  
- 	/* Port210 */
- 	PINMUX_DATA(IRQ9_PORT210_MARK,		PORT210_FN0,	MSEL1CR_9_1),
--- 
-1.7.5.4
 
