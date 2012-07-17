@@ -1,104 +1,158 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 16 Jul 2012 21:20:51 +0000
-Subject: [RFC][PATCH 4/14] PM / Domains: Make it possible to use names when adding subdomains
-Message-Id: <201207162320.51396.rjw@sisk.pl>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 17 Jul 2012 10:53:49 +0000
+Subject: [PATCH/RFC 2/4] dma: shdma: add explicit support for client DMA channel multiplexing
+Message-Id: <Pine.LNX.4.64.1207171242500.17060@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201207032302.17805.rjw@sisk.pl> <201207052217.48086.rjw@sisk.pl> <201207162315.49073.rjw@sisk.pl>
-In-Reply-To: <201207162315.49073.rjw@sisk.pl>
+References: <Pine.LNX.4.64.1207171201550.11241@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1207171201550.11241@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM list <linux-pm@vger.kernel.org>
-Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>, LKML <linux-kernel@vger.kernel.org>, Matthew Garrett <mjg59@srcf.ucam.org>, Magnus Damm <magnus.damm@gmail.com>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+Add support for the new dmaengine multiplexer API. In shdma case the
+multiplexer is built-in into the DMAC, so, the multiplexer .request_chan()
+method only has to check, whether this client is supported by the specific
+DMAC instance. The routing is performed inside the .device_control()
+method.
 
-Add a new helper function, pm_genpd_add_subdomain_names(), allowing
-the caller to add a subdomain to a generic PM domain using names for
-domain identification (both domains have to be initialized before).
-
-This function is useful for adding subdomains to PM domains whose
-representations are stored in tables, when the caller doesn't know
-the indices of the domain to add the subdomain to and of the
-subdomain itself, but it knows the domains' names.
-
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/base/power/domain.c |   32 +++++++++++++++++++++++++++++++-
- include/linux/pm_domain.h   |    7 +++++++
- 2 files changed, 38 insertions(+), 1 deletion(-)
+ drivers/dma/sh/shdma-base.c |   28 +++++++++++++++++++++++++++-
+ drivers/dma/sh/shdma.c      |   22 ++++++++++++++++++++++
+ include/linux/sh_dma.h      |    3 +++
+ include/linux/shdma-base.h  |    4 ++++
+ 4 files changed, 56 insertions(+), 1 deletions(-)
 
-Index: linux/drivers/base/power/domain.c
-=================================--- linux.orig/drivers/base/power/domain.c
-+++ linux/drivers/base/power/domain.c
-@@ -1538,7 +1538,8 @@ int pm_genpd_add_subdomain(struct generi
- 	struct gpd_link *link;
- 	int ret = 0;
+diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
+index 0c34c73..76e4854 100644
+--- a/drivers/dma/sh/shdma-base.c
++++ b/drivers/dma/sh/shdma-base.c
+@@ -808,6 +808,30 @@ static irqreturn_t chan_irqt(int irq, void *dev)
+ 	return IRQ_HANDLED;
+ }
  
--	if (IS_ERR_OR_NULL(genpd) || IS_ERR_OR_NULL(subdomain))
-+	if (IS_ERR_OR_NULL(genpd) || IS_ERR_OR_NULL(subdomain)
-+	    || genpd = subdomain)
++static struct dma_chan *shdma_mux_request_chan(struct dma_device *dmadev,
++		struct device *dev, enum dma_transfer_direction direction,
++		const char *name)
++{
++	struct shdma_dev *sdev = to_shdma_dev(dmadev);
++	const struct shdma_ops *ops = sdev->ops;
++	struct shdma_chan *schan;
++	int i;
++
++	if (!ops->slave_supported(sdev, dev, direction, name))
++		return NULL;
++
++	/* The DMAC supports this client, pick up the first free channel */
++	shdma_for_each_chan(schan, sdev, i)
++		if (!schan->dma_chan.client_count)
++			return &schan->dma_chan;
++
++	return NULL;
++}
++
++static const struct dma_multiplexer shdma_mux = {
++	.request_chan = shdma_mux_request_chan,
++};
++
+ int shdma_request_irq(struct shdma_chan *schan, int irq,
+ 			   unsigned long flags, const char *name)
+ {
+@@ -880,7 +904,8 @@ int shdma_init(struct device *dev, struct shdma_dev *sdev,
+ 	    !sdev->ops->slave_addr ||
+ 	    !sdev->ops->channel_busy ||
+ 	    !sdev->ops->halt_channel ||
+-	    !sdev->ops->desc_completed)
++	    !sdev->ops->desc_completed ||
++	    !sdev->ops->slave_supported)
  		return -EINVAL;
  
-  start:
-@@ -1585,6 +1586,35 @@ int pm_genpd_add_subdomain(struct generi
+ 	sdev->schan = kcalloc(chan_num, sizeof(*sdev->schan), GFP_KERNEL);
+@@ -901,6 +926,7 @@ int shdma_init(struct device *dev, struct shdma_dev *sdev,
+ 	dma_dev->device_prep_slave_sg = shdma_prep_slave_sg;
+ 	dma_dev->device_control = shdma_control;
+ 
++	dma_dev->mux = &shdma_mux;
+ 	dma_dev->dev = dev;
+ 
+ 	return 0;
+diff --git a/drivers/dma/sh/shdma.c b/drivers/dma/sh/shdma.c
+index 027c9be..ef3c018 100644
+--- a/drivers/dma/sh/shdma.c
++++ b/drivers/dma/sh/shdma.c
+@@ -424,6 +424,27 @@ static bool sh_dmae_desc_completed(struct shdma_chan *schan,
+ 		 (sh_desc->hw.sar + sh_desc->hw.tcr) = sar_buf);
  }
  
++static bool sh_dmae_slave_supported(struct shdma_dev *sdev, struct device *dev,
++		enum dma_transfer_direction direction, const char *name)
++{
++	struct sh_dmae_device *shdev = container_of(sdev, struct sh_dmae_device,
++						    shdma_dev);
++	struct sh_dmae_pdata *pdata = shdev->pdata;
++	const struct sh_dmae_slave_config *cfg;
++	int i;
++
++	if (!dev)
++		return false;
++
++	for (i = 0, cfg = pdata->slave; i < pdata->slave_num; i++, cfg++)
++		if (cfg->dev_id && !strcmp(cfg->dev_id, dev_name(dev)) &&
++		    cfg->direction = direction &&
++		    (!name || (cfg->name && !strcmp(name, cfg->name))))
++			return true;
++
++	return false;
++}
++
+ static bool sh_dmae_nmi_notify(struct sh_dmae_device *shdev)
+ {
+ 	/* Fast path out if NMIF is not asserted for this controller */
+@@ -632,6 +653,7 @@ static const struct shdma_ops sh_dmae_shdma_ops = {
+ 	.start_xfer = sh_dmae_start_xfer,
+ 	.embedded_desc = sh_dmae_embedded_desc,
+ 	.chan_irq = sh_dmae_chan_irq,
++	.slave_supported = sh_dmae_slave_supported,
+ };
+ 
+ static int __devinit sh_dmae_probe(struct platform_device *pdev)
+diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
+index b64d6be..86be8ab 100644
+--- a/include/linux/sh_dma.h
++++ b/include/linux/sh_dma.h
+@@ -31,6 +31,9 @@ struct sh_dmae_slave_config {
+ 	dma_addr_t	addr;
+ 	u32		chcr;
+ 	char		mid_rid;
++	enum dma_transfer_direction direction;
++	const char	*name;
++	const char	*dev_id;
+ };
+ 
+ struct sh_dmae_channel {
+diff --git a/include/linux/shdma-base.h b/include/linux/shdma-base.h
+index 93f9821..3769518 100644
+--- a/include/linux/shdma-base.h
++++ b/include/linux/shdma-base.h
+@@ -70,6 +70,8 @@ struct shdma_chan {
+ 	enum shdma_pm_state pm_state;
+ };
+ 
++struct shdma_dev;
++
  /**
-+ * pm_genpd_add_subdomain_names - Add a subdomain to an I/O PM domain.
-+ * @master_name: Name of the master PM domain to add the subdomain to.
-+ * @subdomain_name: Name of the subdomain to be added.
-+ */
-+int pm_genpd_add_subdomain_names(const char *master_name,
-+				 const char *subdomain_name)
-+{
-+	struct generic_pm_domain *master = NULL, *subdomain = NULL, *gpd;
-+
-+	if (IS_ERR_OR_NULL(master_name) || IS_ERR_OR_NULL(subdomain_name))
-+		return -EINVAL;
-+
-+	mutex_lock(&gpd_list_lock);
-+	list_for_each_entry(gpd, &gpd_list, gpd_list_node) {
-+		if (!master && !strcmp(gpd->name, master_name))
-+			master = gpd;
-+
-+		if (!subdomain && !strcmp(gpd->name, subdomain_name))
-+			subdomain = gpd;
-+
-+		if (master && subdomain)
-+			break;
-+	}
-+	mutex_unlock(&gpd_list_lock);
-+
-+	return pm_genpd_add_subdomain(master, subdomain);
-+}
-+
-+/**
-  * pm_genpd_remove_subdomain - Remove a subdomain from an I/O PM domain.
-  * @genpd: Master PM domain to remove the subdomain from.
-  * @subdomain: Subdomain to be removed.
-Index: linux/include/linux/pm_domain.h
-=================================--- linux.orig/include/linux/pm_domain.h
-+++ linux/include/linux/pm_domain.h
-@@ -149,6 +149,8 @@ extern void pm_genpd_dev_always_on(struc
- extern void pm_genpd_dev_need_restore(struct device *dev, bool val);
- extern int pm_genpd_add_subdomain(struct generic_pm_domain *genpd,
- 				  struct generic_pm_domain *new_subdomain);
-+extern int pm_genpd_add_subdomain_names(const char *master_name,
-+					const char *subdomain_name);
- extern int pm_genpd_remove_subdomain(struct generic_pm_domain *genpd,
- 				     struct generic_pm_domain *target);
- extern int pm_genpd_add_callbacks(struct device *dev,
-@@ -204,6 +206,11 @@ static inline int pm_genpd_add_subdomain
- {
- 	return -ENOSYS;
- }
-+static inline int pm_genpd_add_subdomain_names(const char *master_name,
-+					       const char *subdomain_name)
-+{
-+	return -ENOSYS;
-+}
- static inline int pm_genpd_remove_subdomain(struct generic_pm_domain *genpd,
- 					    struct generic_pm_domain *target)
- {
+  * struct shdma_ops - simple DMA driver operations
+  * desc_completed:	return true, if this is the descriptor, that just has
+@@ -98,6 +100,8 @@ struct shdma_ops {
+ 	void (*start_xfer)(struct shdma_chan *, struct shdma_desc *);
+ 	struct shdma_desc *(*embedded_desc)(void *, int);
+ 	bool (*chan_irq)(struct shdma_chan *, int);
++	bool (*slave_supported)(struct shdma_dev *, struct device *,
++				enum dma_transfer_direction, const char *);
+ };
+ 
+ struct shdma_dev {
+-- 
+1.7.2.5
 
