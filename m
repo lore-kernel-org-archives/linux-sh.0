@@ -1,65 +1,51 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 04 Jul 2012 03:55:46 +0000
-Subject: [PATCH 4/7] ARM: shmobile: r8a7740: add A4LC pm domain support
-Message-Id: <87k3yktc1s.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 17 Jul 2012 10:53:57 +0000
+Subject: [PATCH/RFC 4/4] mmc: sh_mmcif: switch to using dma_request_slave_channel()
+Message-Id: <Pine.LNX.4.64.1207171243210.17060@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1207171201550.11241@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1207171201550.11241@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This patch adds basic A4LC pm domain support.
-Now, below devices can be controled by PM
+Use dma_request_slave_channel() to obtain DMA channels, which eliminates
+the need for a filter function.
 
-MERAM, LCDC, VOU, ICBS, SDENC-Link
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7740.h |    1 +
- arch/arm/mach-shmobile/pm-r8a7740.c           |    5 +++++
- arch/arm/mach-shmobile/setup-r8a7740.c        |    1 +
- 3 files changed, 7 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index 0bc8266..0f8321b 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -624,6 +624,7 @@ struct r8a7740_pm_domain *to_r8a7740_pd(struct generic_pm_domain *d)
- }
+This shall only be applied after all MMCIF users, using DMA, have been 
+converted
+
+ drivers/mmc/host/sh_mmcif.c |    6 ++----
+ 1 files changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 0f07d28..cb71410 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -386,8 +386,7 @@ static void sh_mmcif_request_dma(struct sh_mmcif_host *host,
+ 	dma_cap_zero(mask);
+ 	dma_cap_set(DMA_SLAVE, mask);
  
- #ifdef CONFIG_PM
-+extern struct r8a7740_pm_domain r8a7740_a4lc;
- extern struct r8a7740_pm_domain r8a7740_a4s;
- extern struct r8a7740_pm_domain r8a7740_a3sp;
+-	host->chan_tx = dma_request_channel(mask, shdma_chan_filter,
+-					    (void *)pdata->slave_id_tx);
++	host->chan_tx = dma_request_slave_channel(&host->pd->dev, DMA_MEM_TO_DEV, NULL);
+ 	dev_dbg(&host->pd->dev, "%s: TX: got channel %p\n", __func__,
+ 		host->chan_tx);
  
-diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
-index faa0254..82d330e 100644
---- a/arch/arm/mach-shmobile/pm-r8a7740.c
-+++ b/arch/arm/mach-shmobile/pm-r8a7740.c
-@@ -173,6 +173,11 @@ static int r8a7740_a4s_suspend(void)
- 	return -EBUSY;
- }
+@@ -402,8 +401,7 @@ static void sh_mmcif_request_dma(struct sh_mmcif_host *host,
+ 	if (ret < 0)
+ 		goto ecfgtx;
  
-+struct r8a7740_pm_domain r8a7740_a4lc = {
-+	.genpd.name	= "A4LC",
-+	.bit_shift	= 1,
-+};
-+
- struct r8a7740_pm_domain r8a7740_a4s = {
- 	.genpd.name	= "A4S",
- 	.bit_shift	= 10,
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 1c95067..b723469 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -675,6 +675,7 @@ void __init r8a7740_add_standard_devices(void)
- 	/* PM domain */
- 	r8a7740_init_pm_domain(&r8a7740_a4s);
- 	r8a7740_init_pm_domain(&r8a7740_a3sp);
-+	r8a7740_init_pm_domain(&r8a7740_a4lc);
- 
- 	r8a7740_pm_add_subdomain(&r8a7740_a4s, &r8a7740_a3sp);
+-	host->chan_rx = dma_request_channel(mask, shdma_chan_filter,
+-					    (void *)pdata->slave_id_rx);
++	host->chan_rx = dma_request_slave_channel(&host->pd->dev, DMA_DEV_TO_MEM, NULL);
+ 	dev_dbg(&host->pd->dev, "%s: RX: got channel %p\n", __func__,
+ 		host->chan_rx);
  
 -- 
-1.7.5.4
+1.7.2.5
 
