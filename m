@@ -1,37 +1,48 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 12 Jul 2012 04:26:46 +0000
-Subject: [GIT PULL] sh fixes for 3.5-rc7
-Message-Id: <20120712042646.GC16064@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 17 Jul 2012 10:53:53 +0000
+Subject: [PATCH/RFC 3/4] ARM: shmobile: extend MMCIF DMA client configuration entries
+Message-Id: <Pine.LNX.4.64.1207171248150.17060@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1207171201550.11241@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1207171201550.11241@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The following changes since commit ca24a145573124732152daff105ba68cc9a2b545:
+To prepare for MMCIF driver transition to the dma_request_slave_channel()
+API the MMCIF DMA client configuration entries in the slave configuration
+table have to be extended with device ID and DMA transfer direction fields.
 
-  Merge branch 'fixes' of git://git.linaro.org/people/rmk/linux-arm (2012-07-01 11:02:25 -0700)
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
 
-are available in the git repository at:
+This is just an example. Eventually all DMA client configurations on all 
+affected platforms should be converted.
 
+ arch/arm/mach-shmobile/setup-sh7372.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
 
-  git://github.com/pmundt/linux-sh.git tags/sh-for-linus
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index 7873159..f583e03 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -452,11 +452,15 @@ static const struct sh_dmae_slave_config sh7372_dmae_slaves[] = {
+ 		.addr		= 0xe6bd0034,
+ 		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
+ 		.mid_rid	= 0xd1,
++		.dev_id		= "sh_mmcif.0",
++		.direction	= DMA_MEM_TO_DEV,
+ 	}, {
+ 		.slave_id	= SHDMA_SLAVE_MMCIF_RX,
+ 		.addr		= 0xe6bd0034,
+ 		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
+ 		.mid_rid	= 0xd2,
++		.dev_id		= "sh_mmcif.0",
++		.direction	= DMA_DEV_TO_MEM,
+ 	},
+ };
+ 
+-- 
+1.7.2.5
 
-for you to fetch changes up to 44033109e99cf584d6285226ed521098f5ef7250:
-
-  SH: Convert out[bwl] macros to inline functions (2012-07-12 13:12:13 +0900)
-
-----------------------------------------------------------------
-SuperH fixes for 3.5-rc7
-
-----------------------------------------------------------------
-Corey Minyard (1):
-      SH: Convert out[bwl] macros to inline functions
-
-Paul Mundt (1):
-      sh: Fix up se7721 GPIOLIB=y build warnings.
-
- arch/sh/include/asm/io_noioport.h      | 17 ++++++++++++++---
- arch/sh/kernel/cpu/sh3/serial-sh7720.c |  2 +-
- 2 files changed, 15 insertions(+), 4 deletions(-)
