@@ -1,161 +1,52 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 29 Jul 2012 14:14:19 +0000
-Subject: [RFC][PATCH 2/6] PM / Domains: Add power off/on function for system core suspend stage
-Message-Id: <201207291614.19792.rjw@sisk.pl>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Tue, 17 Jul 2012 11:53:58 +0000
+Subject: [PATCH 1/2] r8a7779: add SDHI clock support
+Message-Id: <1342526039-11128-2-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201207291612.43138.rjw@sisk.pl>
-In-Reply-To: <201207291612.43138.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: LKML <linux-kernel@vger.kernel.org>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, Thomas Gleixner <tglx@linutronix.de>
+To: linux-sh@vger.kernel.org
 
 
-Introduce function pm_genpd_syscore_switch() and two wrappers around
-it, pm_genpd_syscore_poweroff() and pm_genpd_syscore_poweron(),
-allowing the callers to let the generic PM domains framework know
-that the given device is not necessary any more and its PM domain
-can be turned off (the former) or that the given device will be
-required immediately, so its PM domain has to be turned on (the
-latter) during the system core (syscore) stage of system suspend
-(or hibernation) and resume.
-
-These functions will be used for handling devices registered as
-clock sources and clock event devices that belong to PM domains.
-
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 ---
- drivers/base/power/domain.c |   60 +++++++++++++++++++++++++++++++++++++++-----
- include/linux/pm_domain.h   |   13 +++++++++
- 2 files changed, 67 insertions(+), 6 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7779.c |   13 ++++++++++---
+ 1 files changed, 10 insertions(+), 3 deletions(-)
 
-Index: linux/drivers/base/power/domain.c
-=================================--- linux.orig/drivers/base/power/domain.c
-+++ linux/drivers/base/power/domain.c
-@@ -63,6 +63,24 @@ struct generic_pm_domain *dev_to_genpd(s
- 	return pd_to_genpd(dev->pm_domain);
- }
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index 339c62c..8b35165 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -86,11 +86,14 @@ static struct clk div4_clks[DIV4_NR] = {
+ 				      0x0300, CLK_ENABLE_ON_INIT),
+ };
  
-+/**
-+ * pm_genpd_present - Check if the given PM domain has been initialized.
-+ * @genpd: PM domain to check.
-+ */
-+static bool pm_genpd_present(struct generic_pm_domain *genpd)
-+{
-+	struct generic_pm_domain *gpd;
-+
-+	if (IS_ERR_OR_NULL(genpd))
-+		return false;
-+
-+	list_for_each_entry(gpd, &gpd_list, gpd_list_node)
-+		if (gpd = genpd)
-+			return true;
-+
-+	return false;
-+}
-+
- static int genpd_stop_dev(struct generic_pm_domain *genpd, struct device *dev)
- {
- 	return GENPD_DEV_TIMED_CALLBACK(genpd, int, stop, dev,
-@@ -750,9 +768,10 @@ static int genpd_thaw_dev(struct generic
-  * Check if the given PM domain can be powered off (during system suspend or
-  * hibernation) and do that if so.  Also, in that case propagate to its masters.
-  *
-- * This function is only called in "noirq" stages of system power transitions,
-- * so it need not acquire locks (all of the "noirq" callbacks are executed
-- * sequentially, so it is guaranteed that it will never run twice in parallel).
-+ * This function is only called in "noirq" and "syscore" stages of system power
-+ * transitions, so it need not acquire locks (all of the "noirq" callbacks are
-+ * executed sequentially, so it is guaranteed that it will never run twice in
-+ * parallel).
-  */
- static void pm_genpd_sync_poweroff(struct generic_pm_domain *genpd)
- {
-@@ -780,9 +799,10 @@ static void pm_genpd_sync_poweroff(struc
-  * pm_genpd_sync_poweron - Synchronously power on a PM domain and its masters.
-  * @genpd: PM domain to power on.
-  *
-- * This function is only called in "noirq" stage of system power transitions, so
-- * it need not acquire locks (all of the "noirq" callbacks are executed
-- * sequentially, so it is guaranteed that it will never run twice in parallel).
-+ * This function is only called in "noirq" and "syscore" stages of system power
-+ * transitions, so it need not acquire locks (all of the "noirq" callbacks are
-+ * executed sequentially, so it is guaranteed that it will never run twice in
-+ * parallel).
-  */
- static void pm_genpd_sync_poweron(struct generic_pm_domain *genpd)
- {
-@@ -1272,6 +1292,34 @@ static void pm_genpd_complete(struct dev
- 	}
- }
+-enum { MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+-	MSTP016, MSTP015, MSTP014,
+-	MSTP_NR };
++enum { MSTP323, MSTP322, MSTP321, MSTP320, MSTP026, MSTP025, MSTP024, MSTP023,
++	MSTP022, MSTP021, MSTP016, MSTP015, MSTP014, MSTP_NR };
  
-+/**
-+ * pm_genpd_syscore_switch - Switch power during system core suspend or resume.
-+ * @dev: Device that normally is marked as "always on" to switch power for.
-+ *
-+ * This routine may only be called during the system core (syscore) suspend or
-+ * resume phase for devices whose "always on" flags are set.
-+ */
-+void pm_genpd_syscore_switch(struct device *dev, bool suspend)
-+{
-+	struct generic_pm_domain *genpd;
-+
-+	genpd = dev_to_genpd(dev);
-+	if (!pm_genpd_present(genpd))
-+		return;
-+
-+	if (!dev_gpd_data(dev)->always_on)
-+		return;
-+
-+	if (suspend) {
-+		genpd->suspended_count++;
-+		pm_genpd_sync_poweroff(genpd);
-+	} else {
-+		pm_genpd_sync_poweron(genpd);
-+		genpd->suspended_count--;
-+	}
-+}
-+EXPORT_SYMBOL_GPL(pm_genpd_syscore_switch);
-+
- #else
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP323] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 23, 0), /* SDHI0 */
++	[MSTP322] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 22, 0), /* SDHI1 */
++	[MSTP321] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 21, 0), /* SDHI2 */
++	[MSTP320] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 20, 0), /* SDHI3 */
+ 	[MSTP026] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 26, 0), /* SCIF0 */
+ 	[MSTP025] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 25, 0), /* SCIF1 */
+ 	[MSTP024] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 24, 0), /* SCIF2 */
+@@ -141,6 +144,10 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("peripheral_clk",	&div4_clks[DIV4_P]),
  
- #define pm_genpd_prepare		NULL
-Index: linux/include/linux/pm_domain.h
-=================================--- linux.orig/include/linux/pm_domain.h
-+++ linux/include/linux/pm_domain.h
-@@ -172,6 +172,8 @@ extern int pm_genpd_poweron(struct gener
- 
- extern bool default_stop_ok(struct device *dev);
- 
-+extern void pm_genpd_syscore_switch(struct device *dev, bool suspend);
-+
- extern struct dev_power_governor pm_domain_always_on_gov;
- #else
- 
-@@ -241,6 +243,7 @@ static inline bool default_stop_ok(struc
- {
- 	return false;
- }
-+static inline void pm_genpd_syscore_switch(struct device *dev, bool suspend) {}
- #define simple_qos_governor NULL
- #define pm_domain_always_on_gov NULL
- #endif
-@@ -250,6 +253,16 @@ static inline int pm_genpd_remove_callba
- 	return __pm_genpd_remove_callbacks(dev, true);
- }
- 
-+static inline void pm_genpd_syscore_poweroff(struct device *dev)
-+{
-+	pm_genpd_syscore_switch(dev, true);
-+}
-+
-+static inline void pm_genpd_syscore_poweron(struct device *dev)
-+{
-+	pm_genpd_syscore_switch(dev, false);
-+}
-+
- #ifdef CONFIG_PM_GENERIC_DOMAINS_RUNTIME
- extern void genpd_queue_power_off_work(struct generic_pm_domain *genpd);
- extern void pm_genpd_poweroff_unused(void);
+ 	/* MSTP32 clocks */
++	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
++	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
++	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
++	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP320]), /* SDHI3 */
+ 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
+ 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP016]), /* TMU01 */
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
+-- 
+1.7.5.4
 
