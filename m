@@ -1,46 +1,58 @@
-From: Vinod Koul <vinod.koul@linux.intel.com>
-Date: Wed, 18 Jul 2012 03:26:53 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 18 Jul 2012 08:34:03 +0000
 Subject: Re: [PATCH 5/7 v2] dma: sh: use an integer slave ID to improve API compatibility
-Message-Id: <1342581293.1726.66.camel@vkoul-udesk3>
+Message-Id: <Pine.LNX.4.64.1207181031560.8472@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1341484183-10757-1-git-send-email-g.liakhovetski@gmx.de>
-	 <1341484183-10757-6-git-send-email-g.liakhovetski@gmx.de>
-	 <1342418828.1726.37.camel@vkoul-udesk3>
-	 <Pine.LNX.4.64.1207160832540.12302@axis700.grange>
-	 <1342421587.1726.49.camel@vkoul-udesk3>
-	 <Pine.LNX.4.64.1207160907180.12302@axis700.grange>
-	 <1342427305.1726.50.camel@vkoul-udesk3>
-	 <Pine.LNX.4.64.1207161040070.12302@axis700.grange>
-	 <1342431452.1726.54.camel@vkoul-udesk3>
-	 <Pine.LNX.4.64.1207161155280.12302@axis700.grange>
-	 <1342434256.1726.57.camel@vkoul-udesk3>
-	 <Pine.LNX.4.64.1207161249260.18978@axis700.grange>
-	 <1342437179.1726.61.camel@vkoul-udesk3>
-	 <Pine.LNX.4.64.1207161445470.18978@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1207161445470.18978@axis700.grange>
+References: <1341484183-10757-1-git-send-email-g.liakhovetski@gmx.de> 
+ <1341484183-10757-6-git-send-email-g.liakhovetski@gmx.de> 
+ <1342418828.1726.37.camel@vkoul-udesk3>  <Pine.LNX.4.64.1207160832540.12302@axis700.grange>
+  <1342421587.1726.49.camel@vkoul-udesk3>  <Pine.LNX.4.64.1207160907180.12302@axis700.grange>
+  <1342427305.1726.50.camel@vkoul-udesk3>  <Pine.LNX.4.64.1207161040070.12302@axis700.grange>
+  <1342431452.1726.54.camel@vkoul-udesk3>  <Pine.LNX.4.64.1207161155280.12302@axis700.grange>
+  <1342434256.1726.57.camel@vkoul-udesk3>  <Pine.LNX.4.64.1207161249260.18978@axis700.grange>
+  <1342437179.1726.61.camel@vkoul-udesk3>  <Pine.LNX.4.64.1207161445470.18978@axis700.grange>
+ <1342581293.1726.66.camel@vkoul-udesk3>
+In-Reply-To: <1342581293.1726.66.camel@vkoul-udesk3>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: Vinod Koul <vinod.koul@linux.intel.com>
 Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Mon, 2012-07-16 at 14:47 +0200, Guennadi Liakhovetski wrote:
-> > > Yes, that's right - these values have to be written to DMAC channel 
-> > > configuration registers, so, we do not have to change anything, those 
-> > > values can remain DMAC parameters and be passed to it directly from 
-> > > platform data.
-> > Can you get that in future fixes.
-> 
-> Sorry, what exactly would you like to have fixed here? Above I just 
-> described how the driver already functions, what changes do you see 
-> necessary? 
-Why should client pass these two values. So the parameters which can be
-calculated should be, and rest should dmacs platform data and not
-clients.
-And after the removal of the slave and adddr fields, you find that you
-no longer need your specific slave structure and that can be elimnated
-completely.
+Hi Vinod
 
--- 
-~Vinod
+On Wed, 18 Jul 2012, Vinod Koul wrote:
 
+> On Mon, 2012-07-16 at 14:47 +0200, Guennadi Liakhovetski wrote:
+> > > > Yes, that's right - these values have to be written to DMAC channel 
+> > > > configuration registers, so, we do not have to change anything, those 
+> > > > values can remain DMAC parameters and be passed to it directly from 
+> > > > platform data.
+> > > Can you get that in future fixes.
+> > 
+> > Sorry, what exactly would you like to have fixed here? Above I just 
+> > described how the driver already functions, what changes do you see 
+> > necessary? 
+> Why should client pass these two values. So the parameters which can be
+> calculated should be, and rest should dmacs platform data and not
+> clients.
+
+Hm, let me try again:
+
+> > > > those
+> > > > values can remain DMAC parameters and be passed to it directly from
+> > > > platform data.
+
+i.e., from DMAC's platform data, they are _not_ passed from clients. Am I 
+still missing something?
+
+> And after the removal of the slave and adddr fields, you find that you
+> no longer need your specific slave structure and that can be elimnated
+> completely.
+
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
