@@ -1,105 +1,54 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Wed, 04 Jul 2012 14:05:26 +0000
-Subject: [PATCH] mtd: sh_flctl: Switch from tick-based to time-based timeout
-Message-Id: <1341410726-10562-1-git-send-email-hechtb@gmail.com>
+From: Artem Bityutskiy <dedekind1@gmail.com>
+Date: Wed, 18 Jul 2012 12:02:52 +0000
+Subject: Re: [PATCH] mtd: sh_flctl: Switch from tick-based to time-based timeout
+Message-Id: <1342612972.7530.19.camel@brekeke>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="=-AgJ6QFlEPV/EGajUF8wP"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+References: <1341410726-10562-1-git-send-email-hechtb@gmail.com>
+In-Reply-To: <1341410726-10562-1-git-send-email-hechtb@gmail.com>
+To: Bastian Hecht <hechtb@googlemail.com>
+Cc: Bastian Hecht <hechtb@gmail.com>, linux-mtd@lists.infradead.org, Linux-SH <linux-sh@vger.kernel.org>
+
+
+--=-AgJ6QFlEPV/EGajUF8wP
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+On Wed, 2012-07-04 at 16:05 +0200, Bastian Hecht wrote:
+> Instead of counting down a compile-time value, we use a value based on
+> jiffies.
+>=20
+> Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+
+Pushed to l2-mtd.git, thanks!
+
+--=20
+Best Regards,
+Artem Bityutskiy
+
+--=-AgJ6QFlEPV/EGajUF8wP
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
 Content-Transfer-Encoding: 7bit
-To: linux-mtd@lists.infradead.org
-Cc: Bastian Hecht <hechtb@gmail.com>, Artem Bityutskiy <dedekind1@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>
 
-Instead of counting down a compile-time value, we use a value based on
-jiffies.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
----
-Artem mentioned the idea a while ago - here is the simple implementation now.
+iQIcBAABAgAGBQJQBqXsAAoJECmIfjd9wqK0u94QAMU39xcd1UJTnb8LbX5biFSZ
+S4wZT3cQAbonwcB4AZ4t2yljOG6Qln6u4eK2HKyQMLjicc2djINRTpwzmeKFmZrf
++0s47Xxy9a5p3pgL1hfbUi7s7UQEUvHUwrgYDSBJRmxXKhXeI4M8jpkQrnp14KYH
+8oZZoknGB9Ljs0hZsZGnnRv01eQjlvy/AqKYVlSVmpkhXruwepSQcfcB5QvS71XW
+zED0z4ktEmFbJPBcX8k7qoEFzLl3OGUoKy/Oa7NFTCvW5wBhTyrW0VcCFo1i8VzN
+Em3pqW/1gLE4cqkkjpSQLkJegEwq7vkgmH6Cr4PrSGFIWJpBjSuymCg/+9zlBdeZ
++VwMrcta2OSg/wBRVo7R4yJ1DDfNSU2nRzVafWuYUjYLKpi8NUR8zpShxVP25ht7
+2gYrZLpjT+2zqzLPH2s4xsiLf13F/hH8Ixt6b3a2+esZDXoctlxa90aPE0H2mDq1
+aDyuNqPHr62CGDD+2/gjZ7Mx24E+FoF2ntkz9BASBfTzkxNdJ2qrqF5rCSDreSiD
+mnAj/Ts/4L6Kp+naCj0Ns8/n8olqS0Lpvnto5L8CTrW4K6UW/1JEZDTVaxap4fCD
+LelcRSLsgEUtYFLWNRsZc+G2fGIDVD5pdMgcs2cbE8iyqKWia7AvUMZqsB4vOIvW
+WG0y1sFXb0clvsqemACp
+=XToN
+-----END PGP SIGNATURE-----
 
- drivers/mtd/nand/sh_flctl.c  |   14 +++++++++-----
- include/linux/mtd/sh_flctl.h |    2 +-
- 2 files changed, 10 insertions(+), 6 deletions(-)
-
-diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
-index ed03ed2..0d9cce7 100644
---- a/drivers/mtd/nand/sh_flctl.c
-+++ b/drivers/mtd/nand/sh_flctl.c
-@@ -73,6 +73,8 @@ static struct nand_bbt_descr flctl_4secc_largepage = {
- 	.pattern = scan_ff_pattern,
- };
- 
-+static int loop_timeout_max;
-+
- static void empty_fifo(struct sh_flctl *flctl)
- {
- 	writel(flctl->flintdmacr_base | AC1CLR | AC0CLR, FLINTDMACR(flctl));
-@@ -91,7 +93,7 @@ static void timeout_error(struct sh_flctl *flctl, const char *str)
- 
- static void wait_completion(struct sh_flctl *flctl)
- {
--	uint32_t timeout = LOOP_TIMEOUT_MAX;
-+	uint32_t timeout = loop_timeout_max;
- 
- 	while (timeout--) {
- 		if (readb(FLTRCR(flctl)) & TREND) {
-@@ -138,7 +140,7 @@ static void set_addr(struct mtd_info *mtd, int column, int page_addr)
- 
- static void wait_rfifo_ready(struct sh_flctl *flctl)
- {
--	uint32_t timeout = LOOP_TIMEOUT_MAX;
-+	uint32_t timeout = loop_timeout_max;
- 
- 	while (timeout--) {
- 		uint32_t val;
-@@ -153,7 +155,7 @@ static void wait_rfifo_ready(struct sh_flctl *flctl)
- 
- static void wait_wfifo_ready(struct sh_flctl *flctl)
- {
--	uint32_t len, timeout = LOOP_TIMEOUT_MAX;
-+	uint32_t len, timeout = loop_timeout_max;
- 
- 	while (timeout--) {
- 		/* check FIFO */
-@@ -168,7 +170,7 @@ static void wait_wfifo_ready(struct sh_flctl *flctl)
- static enum flctl_ecc_res_t wait_recfifo_ready
- 		(struct sh_flctl *flctl, int sector_number)
- {
--	uint32_t timeout = LOOP_TIMEOUT_MAX;
-+	uint32_t timeout = loop_timeout_max;
- 	void __iomem *ecc_reg[4];
- 	int i;
- 	int state = FL_SUCCESS;
-@@ -247,7 +249,7 @@ static enum flctl_ecc_res_t wait_recfifo_ready
- 
- static void wait_wecfifo_ready(struct sh_flctl *flctl)
- {
--	uint32_t timeout = LOOP_TIMEOUT_MAX;
-+	uint32_t timeout = loop_timeout_max;
- 	uint32_t len;
- 
- 	while (timeout--) {
-@@ -939,6 +941,8 @@ static int __devinit flctl_probe(struct platform_device *pdev)
- 	pm_runtime_enable(&pdev->dev);
- 	pm_runtime_resume(&pdev->dev);
- 
-+	loop_timeout_max = loops_per_jiffy * msecs_to_jiffies(LOOP_TIMEOUT_MS);
-+
- 	ret = nand_scan_ident(flctl_mtd, 1, NULL);
- 	if (ret)
- 		goto err_chip;
-diff --git a/include/linux/mtd/sh_flctl.h b/include/linux/mtd/sh_flctl.h
-index 01e4b15..ade44c1 100644
---- a/include/linux/mtd/sh_flctl.h
-+++ b/include/linux/mtd/sh_flctl.h
-@@ -129,7 +129,7 @@
- #define	_4ECCEND	(0x1 << 1)	/* 4 symbols end */
- #define	_4ECCEXST	(0x1 << 0)	/* 4 symbols exist */
- 
--#define LOOP_TIMEOUT_MAX	0x00010000
-+#define LOOP_TIMEOUT_MS	100
- 
- enum flctl_ecc_res_t {
- 	FL_SUCCESS,
--- 
-1.7.9.5
+--=-AgJ6QFlEPV/EGajUF8wP--
 
