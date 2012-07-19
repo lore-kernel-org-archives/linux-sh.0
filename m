@@ -1,97 +1,74 @@
-From: Wen Congyang <wency@cn.fujitsu.com>
-Date: Fri, 27 Jul 2012 10:22:33 +0000
-Subject: [RFC PATCH 0/19] firmware_map : unify argument of firmware_map_add_early/hotplug
-Message-Id: <50126BE9.2010803@cn.fujitsu.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 19 Jul 2012 00:39:18 +0000
+Subject: [PATCH 5/9] fbdev: sh_mobile_lcdc: Fix line pitch computation
+Message-Id: <1342658362-19491-6-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <50126B83.3050201@cn.fujitsu.com>
-In-Reply-To: <50126B83.3050201@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
-Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, Yasuaki ISIMATU <isimatu.yasuaki@jp.fujitsu.com>
+To: linux-fbdev@vger.kernel.org
 
-From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Line pitch depends on the virtual horizontal resolution, compute it
+accordingly.
 
-There are two ways to create /sys/firmware/memmap/X sysfs:
-
-  - firmware_map_add_early
-    When the system starts, it is calledd from e820_reserve_resources()
-  - firmware_map_add_hotplug
-    When the memory is hot plugged, it is called from add_memory()
-
-But these functions are called without unifying value of end argument as below:
-
-  - end argument of firmware_map_add_early()   : start + size - 1
-  - end argument of firmware_map_add_hogplug() : start + size
-
-The patch unifies them to "start + size". Even if applying the patch,
-/sys/firmware/memmap/X/end file content does not change.
-
-CC: Thomas Gleixner <tglx@linutronix.de>
-CC: Ingo Molnar <mingo@kernel.org>
-CC: H. Peter Anvin <hpa@zytor.com>
-CC: Tejun Heo <tj@kernel.org>
-CC: Andrew Morton <akpm@linux-foundation.org>
-Reviewed-by: Dave Hansen <dave@linux.vnet.ibm.com>
-Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/x86/kernel/e820.c    |    2 +-
- drivers/firmware/memmap.c |    8 ++++----
- 2 files changed, 5 insertions(+), 5 deletions(-)
+ drivers/video/sh_mobile_lcdcfb.c |   16 ++++++++--------
+ 1 files changed, 8 insertions(+), 8 deletions(-)
 
-Index: linux-3.5-rc6/arch/x86/kernel/e820.c
-=================================--- linux-3.5-rc6.orig/arch/x86/kernel/e820.c	2012-07-18 17:19:38.391365260 +0900
-+++ linux-3.5-rc6/arch/x86/kernel/e820.c	2012-07-18 17:19:43.616300222 +0900
-@@ -944,7 +944,7 @@ void __init e820_reserve_resources(void)
- 	for (i = 0; i < e820_saved.nr_map; i++) {
- 		struct e820entry *entry = &e820_saved.map[i];
- 		firmware_map_add_early(entry->addr,
--			entry->addr + entry->size - 1,
-+			entry->addr + entry->size,
- 			e820_type_to_string(entry->type));
- 	}
- }
-Index: linux-3.5-rc6/drivers/firmware/memmap.c
-=================================--- linux-3.5-rc6.orig/drivers/firmware/memmap.c	2012-07-18 17:19:38.388365299 +0900
-+++ linux-3.5-rc6/drivers/firmware/memmap.c	2012-07-18 18:30:47.608390251 +0900
-@@ -98,7 +98,7 @@ static LIST_HEAD(map_entries);
- /**
-  * firmware_map_add_entry() - Does the real work to add a firmware memmap entry.
-  * @start: Start of the memory range.
-- * @end:   End of the memory range (inclusive).
-+ * @end:   End of the memory range.
-  * @type:  Type of the memory range.
-  * @entry: Pre-allocated (either kmalloc() or bootmem allocator), uninitialised
-  *         entry.
-@@ -113,7 +113,7 @@ static int firmware_map_add_entry(u64 st
- 	BUG_ON(start > end);
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 644c230..67877cc 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -1580,9 +1580,9 @@ static int sh_mobile_lcdc_overlay_set_par(struct fb_info *info)
+ 	ovl->yres_virtual = info->var.yres_virtual;
  
- 	entry->start = start;
--	entry->end = end;
-+	entry->end = end - 1;
- 	entry->type = type;
- 	INIT_LIST_HEAD(&entry->list);
- 	kobject_init(&entry->kobj, &memmap_ktype);
-@@ -148,7 +148,7 @@ static int add_sysfs_fw_map_entry(struct
-  * firmware_map_add_hotplug() - Adds a firmware mapping entry when we do
-  * memory hotplug.
-  * @start: Start of the memory range.
-- * @end:   End of the memory range (inclusive).
-+ * @end:   End of the memory range.
-  * @type:  Type of the memory range.
-  *
-  * Adds a firmware mapping entry. This function is for memory hotplug, it is
-@@ -175,7 +175,7 @@ int __meminit firmware_map_add_hotplug(u
- /**
-  * firmware_map_add_early() - Adds a firmware mapping entry.
-  * @start: Start of the memory range.
-- * @end:   End of the memory range (inclusive).
-+ * @end:   End of the memory range.
-  * @type:  Type of the memory range.
-  *
-  * Adds a firmware mapping entry. This function uses the bootmem allocator
-
-
+ 	if (ovl->format->yuv)
+-		ovl->pitch = info->var.xres;
++		ovl->pitch = info->var.xres_virtual;
+ 	else
+-		ovl->pitch = info->var.xres * ovl->format->bpp / 8;
++		ovl->pitch = info->var.xres_virtual * ovl->format->bpp / 8;
+ 
+ 	sh_mobile_lcdc_overlay_setup(ovl);
+ 
+@@ -2024,9 +2024,9 @@ static int sh_mobile_lcdc_set_par(struct fb_info *info)
+ 	ch->yres_virtual = info->var.yres_virtual;
+ 
+ 	if (ch->format->yuv)
+-		ch->pitch = info->var.xres;
++		ch->pitch = info->var.xres_virtual;
+ 	else
+-		ch->pitch = info->var.xres * ch->format->bpp / 8;
++		ch->pitch = info->var.xres_virtual * ch->format->bpp / 8;
+ 
+ 	ret = sh_mobile_lcdc_start(ch->lcdc);
+ 	if (ret < 0)
+@@ -2539,9 +2539,9 @@ sh_mobile_lcdc_overlay_init(struct sh_mobile_lcdc_priv *priv,
+ 	ovl->yres_virtual = ovl->yres * 2;
+ 
+ 	if (!format->yuv)
+-		ovl->pitch = ovl->xres * format->bpp / 8;
++		ovl->pitch = ovl->xres_virtual * format->bpp / 8;
+ 	else
+-		ovl->pitch = ovl->xres;
++		ovl->pitch = ovl->xres_virtual;
+ 
+ 	/* Allocate frame buffer memory. */
+ 	ovl->fb_size = ovl->cfg->max_xres * ovl->cfg->max_yres
+@@ -2628,10 +2628,10 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
+ 
+ 	if (!format->yuv) {
+ 		ch->colorspace = V4L2_COLORSPACE_SRGB;
+-		ch->pitch = ch->xres * format->bpp / 8;
++		ch->pitch = ch->xres_virtual * format->bpp / 8;
+ 	} else {
+ 		ch->colorspace = V4L2_COLORSPACE_REC709;
+-		ch->pitch = ch->xres;
++		ch->pitch = ch->xres_virtual;
+ 	}
+ 
+ 	ch->display.width = cfg->panel_cfg.width;
+-- 
+1.7.8.6
 
