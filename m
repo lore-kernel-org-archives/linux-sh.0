@@ -1,51 +1,131 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 17 Jul 2012 10:53:57 +0000
-Subject: [PATCH/RFC 4/4] mmc: sh_mmcif: switch to using dma_request_slave_channel()
-Message-Id: <Pine.LNX.4.64.1207171243210.17060@axis700.grange>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 19 Jul 2012 00:39:16 +0000
+Subject: [PATCH 3/9] sh_mobile_meram: Add direct MERAM allocation API
+Message-Id: <1342658362-19491-4-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1207171201550.11241@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1207171201550.11241@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-fbdev@vger.kernel.org
 
-Use dma_request_slave_channel() to obtain DMA channels, which eliminates
-the need for a filter function.
+The API can be used to allocate and free MERAM blocks directly, without
+going through ICBs.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
+ drivers/video/sh_mobile_meram.c |   41 +++++++++++++++++++++++++++++++++++---
+ include/video/sh_mobile_meram.h |   16 +++++++++++++++
+ 2 files changed, 53 insertions(+), 4 deletions(-)
 
-This shall only be applied after all MMCIF users, using DMA, have been 
-converted
-
- drivers/mmc/host/sh_mmcif.c |    6 ++----
- 1 files changed, 2 insertions(+), 4 deletions(-)
-
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index 0f07d28..cb71410 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -386,8 +386,7 @@ static void sh_mmcif_request_dma(struct sh_mmcif_host *host,
- 	dma_cap_zero(mask);
- 	dma_cap_set(DMA_SLAVE, mask);
+diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
+index fdb6fc1..7a0ba8b 100644
+--- a/drivers/video/sh_mobile_meram.c
++++ b/drivers/video/sh_mobile_meram.c
+@@ -195,6 +195,21 @@ static inline unsigned long meram_read_reg(void __iomem *base, unsigned int off)
+ }
  
--	host->chan_tx = dma_request_channel(mask, shdma_chan_filter,
--					    (void *)pdata->slave_id_tx);
-+	host->chan_tx = dma_request_slave_channel(&host->pd->dev, DMA_MEM_TO_DEV, NULL);
- 	dev_dbg(&host->pd->dev, "%s: TX: got channel %p\n", __func__,
- 		host->chan_tx);
+ /* -----------------------------------------------------------------------------
++ * MERAM allocation and free
++ */
++
++static unsigned long meram_alloc(struct sh_mobile_meram_priv *priv, size_t size)
++{
++	return gen_pool_alloc(priv->pool, size);
++}
++
++static void meram_free(struct sh_mobile_meram_priv *priv, unsigned long mem,
++		       size_t size)
++{
++	gen_pool_free(priv->pool, mem, size);
++}
++
++/* -----------------------------------------------------------------------------
+  * LCDC cache planes allocation, init, cleanup and free
+  */
  
-@@ -402,8 +401,7 @@ static void sh_mmcif_request_dma(struct sh_mmcif_host *host,
- 	if (ret < 0)
- 		goto ecfgtx;
+@@ -216,7 +231,7 @@ static int meram_plane_alloc(struct sh_mobile_meram_priv *priv,
+ 		return -ENOMEM;
+ 	plane->marker = &priv->icbs[idx];
  
--	host->chan_rx = dma_request_channel(mask, shdma_chan_filter,
--					    (void *)pdata->slave_id_rx);
-+	host->chan_rx = dma_request_slave_channel(&host->pd->dev, DMA_DEV_TO_MEM, NULL);
- 	dev_dbg(&host->pd->dev, "%s: RX: got channel %p\n", __func__,
- 		host->chan_rx);
+-	mem = gen_pool_alloc(priv->pool, size * 1024);
++	mem = meram_alloc(priv, size * 1024);
+ 	if (mem = 0)
+ 		return -ENOMEM;
  
+@@ -233,8 +248,8 @@ static int meram_plane_alloc(struct sh_mobile_meram_priv *priv,
+ static void meram_plane_free(struct sh_mobile_meram_priv *priv,
+ 			     struct sh_mobile_meram_fb_plane *plane)
+ {
+-	gen_pool_free(priv->pool, priv->meram + plane->marker->offset,
+-		      plane->marker->size * 1024);
++	meram_free(priv, priv->meram + plane->marker->offset,
++		   plane->marker->size * 1024);
+ 
+ 	__clear_bit(plane->marker->index, &priv->used_icb);
+ 	__clear_bit(plane->cache->index, &priv->used_icb);
+@@ -386,9 +401,27 @@ static void meram_plane_cleanup(struct sh_mobile_meram_priv *priv,
+ }
+ 
+ /* -----------------------------------------------------------------------------
+- * LCDC cache operations
++ * MERAM operations
+  */
+ 
++unsigned long sh_mobile_meram_alloc(struct sh_mobile_meram_info *pdata,
++				    size_t size)
++{
++	struct sh_mobile_meram_priv *priv = pdata->priv;
++
++	return meram_alloc(priv, size);
++}
++EXPORT_SYMBOL_GPL(sh_mobile_meram_alloc);
++
++void sh_mobile_meram_free(struct sh_mobile_meram_info *pdata, unsigned long mem,
++			  size_t size)
++{
++	struct sh_mobile_meram_priv *priv = pdata->priv;
++
++	meram_free(priv, mem, size);
++}
++EXPORT_SYMBOL_GPL(sh_mobile_meram_free);
++
+ /* Allocate memory for the ICBs and mark them as used. */
+ static struct sh_mobile_meram_fb_cache *
+ meram_cache_alloc(struct sh_mobile_meram_priv *priv,
+diff --git a/include/video/sh_mobile_meram.h b/include/video/sh_mobile_meram.h
+index 1134837..062e6e7 100644
+--- a/include/video/sh_mobile_meram.h
++++ b/include/video/sh_mobile_meram.h
+@@ -38,6 +38,10 @@ struct sh_mobile_meram_cfg {
+ 
+ #if defined(CONFIG_FB_SH_MOBILE_MERAM) || \
+     defined(CONFIG_FB_SH_MOBILE_MERAM_MODULE)
++unsigned long sh_mobile_meram_alloc(struct sh_mobile_meram_info *meram_dev,
++				    size_t size);
++void sh_mobile_meram_free(struct sh_mobile_meram_info *meram_dev,
++			  unsigned long mem, size_t size);
+ void *sh_mobile_meram_cache_alloc(struct sh_mobile_meram_info *dev,
+ 				  const struct sh_mobile_meram_cfg *cfg,
+ 				  unsigned int xres, unsigned int yres,
+@@ -50,6 +54,18 @@ void sh_mobile_meram_cache_update(struct sh_mobile_meram_info *dev, void *data,
+ 				  unsigned long *icb_addr_y,
+ 				  unsigned long *icb_addr_c);
+ #else
++static inline unsigned long
++sh_mobile_meram_alloc(struct sh_mobile_meram_info *meram_dev, size_t size)
++{
++	return 0;
++}
++
++static inline void
++sh_mobile_meram_free(struct sh_mobile_meram_info *meram_dev,
++		     unsigned long mem, size_t size)
++{
++}
++
+ static inline void *
+ sh_mobile_meram_cache_alloc(struct sh_mobile_meram_info *dev,
+ 			    const struct sh_mobile_meram_cfg *cfg,
 -- 
-1.7.2.5
+1.7.8.6
 
