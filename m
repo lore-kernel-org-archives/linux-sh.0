@@ -1,241 +1,267 @@
-From: Vinod Koul <vinod.koul@linux.intel.com>
-Date: Mon, 16 Jul 2012 06:31:20 +0000
-Subject: Re: [PATCH 6/7 v2] dma: sh: provide a migration path for slave drivers to stop using .private
-Message-Id: <1342419560.1726.41.camel@vkoul-udesk3>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 19 Jul 2012 00:39:15 +0000
+Subject: [PATCH 2/9] sh_mobile_meram: Use direct function calls for the public API
+Message-Id: <1342658362-19491-3-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1341484183-10757-1-git-send-email-g.liakhovetski@gmx.de>
-	 <1341484183-10757-7-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1341484183-10757-7-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-On Thu, 2012-07-05 at 12:29 +0200, Guennadi Liakhovetski wrote:
-> This patch extends the sh dmaengine driver to support the preferred channel
-> selection and configuration method, instead of using the "private" field
-> from struct dma_chan. We add a standard filter function to be used by
-> slave drivers instead of implementing their own ones, and add support for
-> the DMA_SLAVE_CONFIG control operation, which must accompany the new
-> channel selection method. We still support the legacy .private channel
-> allocation method to cater for a smooth driver migration.
-There seem to be two things done in this patch, one is to provide a
-filter function for people to use for channel filtering, and second the
-removal of .private. It would be good to split these two.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> ---
->  drivers/dma/sh/shdma-base.c |  114 +++++++++++++++++++++++++++++++++---------
->  drivers/dma/sh/shdma.c      |    5 +-
->  include/linux/sh_dma.h      |    2 +
->  include/linux/shdma-base.h  |    2 +-
->  4 files changed, 95 insertions(+), 28 deletions(-)
-> 
-> diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
-> index 73db282..0c34c73 100644
-> --- a/drivers/dma/sh/shdma-base.c
-> +++ b/drivers/dma/sh/shdma-base.c
-> @@ -171,6 +171,65 @@ static struct shdma_desc *shdma_get_desc(struct shdma_chan *schan)
->  	return NULL;
->  }
->  
-> +static int shdma_setup_slave(struct shdma_chan *schan, int slave_id)
-> +{
-> +	struct shdma_dev *sdev = to_shdma_dev(schan->dma_chan.device);
-> +	const struct shdma_ops *ops = sdev->ops;
-> +	int ret;
-> +
-> +	if (slave_id < 0 || slave_id >= slave_num)
-> +		return -EINVAL;
-> +
-> +	if (test_and_set_bit(slave_id, shdma_slave_used))
-> +		return -EBUSY;
-> +
-> +	ret = ops->set_slave(schan, slave_id, false);
-> +	if (ret < 0) {
-> +		clear_bit(slave_id, shdma_slave_used);
-> +		return ret;
-> +	}
-> +
-> +	schan->slave_id = slave_id;
-> +
-> +	return 0;
-> +}
-> +
-> +/*
-> + * This is the standard shdma filter function to be used as a replacement to the
-> + * "old" method, using the .private pointer. If for some reason you allocate a
-> + * channel without slave data, use something like ERR_PTR(-EINVAL) as a filter
-> + * parameter. If this filter is used, the slave driver, after calling
-> + * dma_request_channel(), will also have to call dmaengine_slave_config() with
-> + * .slave_id, .direction, and either .src_addr or .dst_addr set.
-> + * NOTE: this filter doesn't support multiple DMAC drivers with the DMA_SLAVE
-> + * capability! If this becomes a requirement, hardware glue drivers, using this
-> + * services would have to provide their own filters, which first would check
-> + * the device driver, similar to how other DMAC drivers, e.g., sa11x0-dma.c, do
-> + * this, and only then, in case of a match, call this common filter.
-> + */
-> +bool shdma_chan_filter(struct dma_chan *chan, void *arg)
-> +{
-> +	struct shdma_chan *schan = to_shdma_chan(chan);
-> +	struct shdma_dev *sdev = to_shdma_dev(schan->dma_chan.device);
-> +	const struct shdma_ops *ops = sdev->ops;
-> +	int slave_id = (int)arg;
-> +	int ret;
-> +
-> +	if (slave_id < 0)
-> +		/* No slave requested - arbitrary channel */
-> +		return true;
-> +
-> +	if (slave_id >= slave_num)
-> +		return false;
-> +
-> +	ret = ops->set_slave(schan, slave_id, true);
-> +	if (ret < 0)
-> +		return false;
-> +
-> +	return true;
-> +}
-> +EXPORT_SYMBOL(shdma_chan_filter);
-> +
->  static int shdma_alloc_chan_resources(struct dma_chan *chan)
->  {
->  	struct shdma_chan *schan = to_shdma_chan(chan);
-> @@ -185,21 +244,10 @@ static int shdma_alloc_chan_resources(struct dma_chan *chan)
->  	 * never runs concurrently with itself or free_chan_resources.
->  	 */
->  	if (slave) {
-> -		if (slave->slave_id < 0 || slave->slave_id >= slave_num) {
-> -			ret = -EINVAL;
-> -			goto evalid;
-> -		}
-> -
-> -		if (test_and_set_bit(slave->slave_id, shdma_slave_used)) {
-> -			ret = -EBUSY;
-> -			goto etestused;
-> -		}
-> -
-> -		ret = ops->set_slave(schan, slave->slave_id);
-> +		/* Legacy mode: .private is set in filter */
-> +		ret = shdma_setup_slave(schan, slave->slave_id);
->  		if (ret < 0)
->  			goto esetslave;
-> -
-> -		schan->slave_id = slave->slave_id;
->  	} else {
->  		schan->slave_id = -EINVAL;
->  	}
-> @@ -228,8 +276,6 @@ edescalloc:
->  	if (slave)
->  esetslave:
->  		clear_bit(slave->slave_id, shdma_slave_used);
-> -etestused:
-> -evalid:
->  	chan->private = NULL;
-you missed this one
->  	return ret;
->  }
-> @@ -587,22 +633,40 @@ static int shdma_control(struct dma_chan *chan, enum dma_ctrl_cmd cmd,
->  	struct shdma_chan *schan = to_shdma_chan(chan);
->  	struct shdma_dev *sdev = to_shdma_dev(chan->device);
->  	const struct shdma_ops *ops = sdev->ops;
-> +	struct dma_slave_config *config;
->  	unsigned long flags;
-> -
-> -	/* Only supports DMA_TERMINATE_ALL */
-> -	if (cmd != DMA_TERMINATE_ALL)
-> -		return -ENXIO;
-> +	int ret;
->  
->  	if (!chan)
->  		return -EINVAL;
->  
-> -	spin_lock_irqsave(&schan->chan_lock, flags);
-> -
-> -	ops->halt_channel(schan);
-> -
-> -	spin_unlock_irqrestore(&schan->chan_lock, flags);
-> +	switch (cmd) {
-> +	case DMA_TERMINATE_ALL:
-> +		spin_lock_irqsave(&schan->chan_lock, flags);
-> +		ops->halt_channel(schan);
-> +		spin_unlock_irqrestore(&schan->chan_lock, flags);
->  
-> -	shdma_chan_ld_cleanup(schan, true);
-> +		shdma_chan_ld_cleanup(schan, true);
-> +		break;
-> +	case DMA_SLAVE_CONFIG:
-> +		/*
-> +		 * So far only .slave_id is used, but the slave drivers are
-> +		 * encouraged to also set a transfer direction and an address.
-> +		 */
-> +		if (!arg)
-> +			return -EINVAL;
-> +		/*
-> +		 * We could lock this, but you shouldn't be configuring the
-> +		 * channel, while using it...
-> +		 */
-> +		config = (struct dma_slave_config*)arg;
-> +		ret = shdma_setup_slave(schan, config->slave_id);
-> +		if (ret < 0)
-> +			return ret;
-> +		break;
-> +	default:
-> +		return -ENXIO;
-> +	}
->  
->  	return 0;
->  }
-> diff --git a/drivers/dma/sh/shdma.c b/drivers/dma/sh/shdma.c
-> index 9a10d8b..027c9be 100644
-> --- a/drivers/dma/sh/shdma.c
-> +++ b/drivers/dma/sh/shdma.c
-> @@ -320,7 +320,7 @@ static const struct sh_dmae_slave_config *dmae_find_slave(
->  }
->  
->  static int sh_dmae_set_slave(struct shdma_chan *schan,
-> -			     int slave_id)
-> +			     int slave_id, bool try)
->  {
->  	struct sh_dmae_chan *sh_chan = container_of(schan, struct sh_dmae_chan,
->  						    shdma_chan);
-> @@ -328,7 +328,8 @@ static int sh_dmae_set_slave(struct shdma_chan *schan,
->  	if (!cfg)
->  		return -ENODEV;
->  
-> -	sh_chan->config = cfg;
-> +	if (!try)
-> +		sh_chan->config = cfg;
->  
->  	return 0;
->  }
-> diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
-> index 4e83f3e..b64d6be 100644
-> --- a/include/linux/sh_dma.h
-> +++ b/include/linux/sh_dma.h
-> @@ -99,4 +99,6 @@ struct sh_dmae_pdata {
->  #define CHCR_TE	0x00000002
->  #define CHCR_IE	0x00000004
->  
-> +bool shdma_chan_filter(struct dma_chan *chan, void *arg);
-> +
->  #endif
-> diff --git a/include/linux/shdma-base.h b/include/linux/shdma-base.h
-> index 6263ad2..93f9821 100644
-> --- a/include/linux/shdma-base.h
-> +++ b/include/linux/shdma-base.h
-> @@ -93,7 +93,7 @@ struct shdma_ops {
->  	dma_addr_t (*slave_addr)(struct shdma_chan *);
->  	int (*desc_setup)(struct shdma_chan *, struct shdma_desc *,
->  			  dma_addr_t, dma_addr_t, size_t *);
-> -	int (*set_slave)(struct shdma_chan *, int);
-> +	int (*set_slave)(struct shdma_chan *, int, bool);
->  	void (*setup_xfer)(struct shdma_chan *, int);
->  	void (*start_xfer)(struct shdma_chan *, struct shdma_desc *);
->  	struct shdma_desc *(*embedded_desc)(void *, int);
+There's no reason to use abstract operation pointers to implement the
+MERAM API. Replace them by direct function calls.
 
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+---
+ drivers/video/sh_mobile_lcdcfb.c |   27 +++++++-------------
+ drivers/video/sh_mobile_meram.c  |   40 +++++++++++++++---------------
+ include/video/sh_mobile_meram.h  |   50 ++++++++++++++++++++++++++-----------
+ 3 files changed, 65 insertions(+), 52 deletions(-)
 
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index e593e81..9da4b1b6 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -1115,13 +1115,12 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
+ 		ch->line_size = ch->pitch;
+ 
+ 		/* Enable MERAM if possible. */
+-		if (mdev = NULL || mdev->ops = NULL ||
+-		    ch->cfg->meram_cfg = NULL)
++		if (mdev = NULL || ch->cfg->meram_cfg = NULL)
+ 			continue;
+ 
+ 		/* Free the allocated MERAM cache. */
+ 		if (ch->cache) {
+-			mdev->ops->cache_free(mdev, ch->cache);
++			sh_mobile_meram_cache_free(mdev, ch->cache);
+ 			ch->cache = NULL;
+ 		}
+ 
+@@ -1144,11 +1143,11 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
+ 			break;
+ 		}
+ 
+-		cache = mdev->ops->cache_alloc(mdev, ch->cfg->meram_cfg,
++		cache = sh_mobile_meram_cache_alloc(mdev, ch->cfg->meram_cfg,
+ 					ch->pitch, ch->yres, pixelformat,
+ 					&ch->line_size);
+ 		if (!IS_ERR(cache)) {
+-			mdev->ops->cache_update(mdev, cache,
++			sh_mobile_meram_cache_update(mdev, cache,
+ 					ch->base_addr_y, ch->base_addr_c,
+ 					&ch->base_addr_y, &ch->base_addr_c);
+ 			ch->cache = cache;
+@@ -1223,9 +1222,7 @@ static void sh_mobile_lcdc_stop(struct sh_mobile_lcdc_priv *priv)
+ 
+ 		/* Free the MERAM cache. */
+ 		if (ch->cache) {
+-			struct sh_mobile_meram_info *mdev;
+-			mdev = priv->meram_dev;
+-			mdev->ops->cache_free(mdev, ch->cache);
++			sh_mobile_meram_cache_free(priv->meram_dev, ch->cache);
+ 			ch->cache = 0;
+ 		}
+ 
+@@ -1808,7 +1805,7 @@ static int sh_mobile_lcdc_pan(struct fb_var_screeninfo *var,
+ 	struct sh_mobile_lcdc_priv *priv = ch->lcdc;
+ 	unsigned long ldrcntr;
+ 	unsigned long new_pan_offset;
+-	unsigned long base_addr_y, base_addr_c;
++	unsigned long base_addr_y, base_addr_c = 0;
+ 	unsigned long c_offset;
+ 
+ 	if (!ch->format->yuv)
+@@ -1837,14 +1834,10 @@ static int sh_mobile_lcdc_pan(struct fb_var_screeninfo *var,
+ 			base_addr_c += var->xoffset;
+ 	}
+ 
+-	if (ch->cache) {
+-		struct sh_mobile_meram_info *mdev;
+-
+-		mdev = priv->meram_dev;
+-		mdev->ops->cache_update(mdev, ch->cache,
+-					base_addr_y, base_addr_c,
+-					&base_addr_y, &base_addr_c);
+-	}
++	if (ch->cache)
++		sh_mobile_meram_cache_update(priv->meram_dev, ch->cache,
++					     base_addr_y, base_addr_c,
++					     &base_addr_y, &base_addr_c);
+ 
+ 	ch->base_addr_y = base_addr_y;
+ 	ch->base_addr_c = base_addr_c;
+diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
+index 4aa3fcb..fdb6fc1 100644
+--- a/drivers/video/sh_mobile_meram.c
++++ b/drivers/video/sh_mobile_meram.c
+@@ -11,6 +11,7 @@
+ 
+ #include <linux/device.h>
+ #include <linux/err.h>
++#include <linux/export.h>
+ #include <linux/genalloc.h>
+ #include <linux/io.h>
+ #include <linux/kernel.h>
+@@ -429,11 +430,10 @@ error:
+ 	return ERR_PTR(-ENOMEM);
+ }
+ 
+-static void *sh_mobile_cache_alloc(struct sh_mobile_meram_info *pdata,
+-				   const struct sh_mobile_meram_cfg *cfg,
+-				   unsigned int xres, unsigned int yres,
+-				   unsigned int pixelformat,
+-				   unsigned int *pitch)
++void *sh_mobile_meram_cache_alloc(struct sh_mobile_meram_info *pdata,
++				  const struct sh_mobile_meram_cfg *cfg,
++				  unsigned int xres, unsigned int yres,
++				  unsigned int pixelformat, unsigned int *pitch)
+ {
+ 	struct sh_mobile_meram_fb_cache *cache;
+ 	struct sh_mobile_meram_priv *priv = pdata->priv;
+@@ -441,6 +441,9 @@ static void *sh_mobile_cache_alloc(struct sh_mobile_meram_info *pdata,
+ 	unsigned int nplanes = is_nvcolor(pixelformat) ? 2 : 1;
+ 	unsigned int out_pitch;
+ 
++	if (priv = NULL)
++		return ERR_PTR(-ENODEV);
++
+ 	if (pixelformat != SH_MOBILE_MERAM_PF_NV &&
+ 	    pixelformat != SH_MOBILE_MERAM_PF_NV24 &&
+ 	    pixelformat != SH_MOBILE_MERAM_PF_RGB)
+@@ -485,9 +488,10 @@ err:
+ 	mutex_unlock(&priv->lock);
+ 	return cache;
+ }
++EXPORT_SYMBOL_GPL(sh_mobile_meram_cache_alloc);
+ 
+-static void
+-sh_mobile_cache_free(struct sh_mobile_meram_info *pdata, void *data)
++void
++sh_mobile_meram_cache_free(struct sh_mobile_meram_info *pdata, void *data)
+ {
+ 	struct sh_mobile_meram_fb_cache *cache = data;
+ 	struct sh_mobile_meram_priv *priv = pdata->priv;
+@@ -507,11 +511,14 @@ sh_mobile_cache_free(struct sh_mobile_meram_info *pdata, void *data)
+ 
+ 	mutex_unlock(&priv->lock);
+ }
+-
+-static void
+-sh_mobile_cache_update(struct sh_mobile_meram_info *pdata, void *data,
+-		       unsigned long base_addr_y, unsigned long base_addr_c,
+-		       unsigned long *icb_addr_y, unsigned long *icb_addr_c)
++EXPORT_SYMBOL_GPL(sh_mobile_meram_cache_free);
++
++void
++sh_mobile_meram_cache_update(struct sh_mobile_meram_info *pdata, void *data,
++			     unsigned long base_addr_y,
++			     unsigned long base_addr_c,
++			     unsigned long *icb_addr_y,
++			     unsigned long *icb_addr_c)
+ {
+ 	struct sh_mobile_meram_fb_cache *cache = data;
+ 	struct sh_mobile_meram_priv *priv = pdata->priv;
+@@ -523,13 +530,7 @@ sh_mobile_cache_update(struct sh_mobile_meram_info *pdata, void *data,
+ 
+ 	mutex_unlock(&priv->lock);
+ }
+-
+-static struct sh_mobile_meram_ops sh_mobile_meram_ops = {
+-	.module			= THIS_MODULE,
+-	.cache_alloc		= sh_mobile_cache_alloc,
+-	.cache_free		= sh_mobile_cache_free,
+-	.cache_update		= sh_mobile_cache_update,
+-};
++EXPORT_SYMBOL_GPL(sh_mobile_meram_cache_update);
+ 
+ /* -----------------------------------------------------------------------------
+  * Power management
+@@ -620,7 +621,6 @@ static int __devinit sh_mobile_meram_probe(struct platform_device *pdev)
+ 	for (i = 0; i < MERAM_ICB_NUM; ++i)
+ 		priv->icbs[i].index = i;
+ 
+-	pdata->ops = &sh_mobile_meram_ops;
+ 	pdata->priv = priv;
+ 	pdata->pdev = pdev;
+ 
+diff --git a/include/video/sh_mobile_meram.h b/include/video/sh_mobile_meram.h
+index 8a5afaf..1134837 100644
+--- a/include/video/sh_mobile_meram.h
++++ b/include/video/sh_mobile_meram.h
+@@ -15,7 +15,6 @@ enum {
+ 
+ 
+ struct sh_mobile_meram_priv;
+-struct sh_mobile_meram_ops;
+ 
+ /*
+  * struct sh_mobile_meram_info - MERAM platform data
+@@ -24,7 +23,6 @@ struct sh_mobile_meram_ops;
+ struct sh_mobile_meram_info {
+ 	int				addr_mode;
+ 	u32				reserved_icbs;
+-	struct sh_mobile_meram_ops	*ops;
+ 	struct sh_mobile_meram_priv	*priv;
+ 	struct platform_device		*pdev;
+ };
+@@ -38,21 +36,43 @@ struct sh_mobile_meram_cfg {
+ 	struct sh_mobile_meram_icb_cfg icb[2];
+ };
+ 
+-struct module;
+-struct sh_mobile_meram_ops {
+-	struct module	*module;
+-
+-	/* LCDC cache management */
+-	void *(*cache_alloc)(struct sh_mobile_meram_info *meram_dev,
+-			     const struct sh_mobile_meram_cfg *cfg,
+-			     unsigned int xres, unsigned int yres,
+-			     unsigned int pixelformat, unsigned int *pitch);
+-	void (*cache_free)(struct sh_mobile_meram_info *meram_dev, void *data);
+-	void (*cache_update)(struct sh_mobile_meram_info *meram_dev, void *data,
++#if defined(CONFIG_FB_SH_MOBILE_MERAM) || \
++    defined(CONFIG_FB_SH_MOBILE_MERAM_MODULE)
++void *sh_mobile_meram_cache_alloc(struct sh_mobile_meram_info *dev,
++				  const struct sh_mobile_meram_cfg *cfg,
++				  unsigned int xres, unsigned int yres,
++				  unsigned int pixelformat,
++				  unsigned int *pitch);
++void sh_mobile_meram_cache_free(struct sh_mobile_meram_info *dev, void *data);
++void sh_mobile_meram_cache_update(struct sh_mobile_meram_info *dev, void *data,
++				  unsigned long base_addr_y,
++				  unsigned long base_addr_c,
++				  unsigned long *icb_addr_y,
++				  unsigned long *icb_addr_c);
++#else
++static inline void *
++sh_mobile_meram_cache_alloc(struct sh_mobile_meram_info *dev,
++			    const struct sh_mobile_meram_cfg *cfg,
++			    unsigned int xres, unsigned int yres,
++			    unsigned int pixelformat,
++			    unsigned int *pitch)
++{
++	return ERR_PTR(-ENODEV);
++}
++
++static inline void
++sh_mobile_meram_cache_free(struct sh_mobile_meram_info *dev, void *data)
++{
++}
++
++static inline void
++sh_mobile_meram_cache_update(struct sh_mobile_meram_info *dev, void *data,
+ 			     unsigned long base_addr_y,
+ 			     unsigned long base_addr_c,
+ 			     unsigned long *icb_addr_y,
+-			     unsigned long *icb_addr_c);
+-};
++			     unsigned long *icb_addr_c)
++{
++}
++#endif
+ 
+ #endif /* __VIDEO_SH_MOBILE_MERAM_H__  */
 -- 
-~Vinod
+1.7.8.6
 
