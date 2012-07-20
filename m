@@ -1,40 +1,56 @@
-From: Vinod Koul <vinod.koul@linux.intel.com>
-Date: Mon, 16 Jul 2012 06:10:34 +0000
-Subject: Re: [PATCH 1/9 v3] dmaengine: add an shdma-base library
-Message-Id: <1342418314.1726.35.camel@vkoul-udesk3>
+From: Tetsuyuki Kobayshi <koba@kmckk.co.jp>
+Date: Fri, 20 Jul 2012 06:16:30 +0000
+Subject: [PATCH] ARM: shmobile: kzm9g: enable restarting
+Message-Id: <1342764990-30715-1-git-send-email-koba@kmckk.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1336576161-27082-1-git-send-email-g.liakhovetski@gmx.de>
-	 <1336576161-27082-2-git-send-email-g.liakhovetski@gmx.de>
-	 <1337055734.16185.5360.camel@vkoul-udesk3>
-	 <Pine.LNX.4.64.1205171912140.10086@axis700.grange>
-	 <1337933737.1580.8.camel@vkoul-udesk3>
-	 <Pine.LNX.4.64.1205251028530.13353@axis700.grange>
-	 <Pine.LNX.4.64.1206281046320.31813@axis700.grange>
-	 <Pine.LNX.4.64.1207021936490.15365@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1207021936490.15365@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-kernel@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Sascha Hauer <s.hauer@pengutronix.de>
+To: linux-sh@vger.kernel.org
 
-On Mon, 2012-07-02 at 22:28 +0200, Guennadi Liakhovetski wrote:
-> > 
-> > > > Let me know if you plan to fixing them or I will queue these up for 3.6
-> > > 
-> > > Please, queue these patches for the next merge window, we will work on 
-> > > improving the driver after this split.
-> > 
-> > It's been a month since this mail - do I see it right, that these patches 
-> > are still not in your slave-dma tree? Having them there would (1) get them 
-> > some exposure and testing and (2) eventually speed up building on top of 
-> > them and fixing existing driver's shortcomings. Any approximate idea when 
-> > you'd be able to pull them in?
-> 
-> An update to this patch series: unfortunately, I forgot to include the 
-> very first patch in this series. I'll send it as a reply to this mail.
-Applied the series along with 0.5! patch ...
+From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
 
+Do soft-power-on-reset in sys_reboot system call.
+
+How to test this patch
+  Execute "sudo reboot" from command line. The system will start shutdown
+  sequence and finally reboot and U-Boot restarts.
+
+Cc: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Simon Horman <horms@verge.net.au>
+Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+---
+This patch is based on renesas.git next branch.
+
+ arch/arm/mach-shmobile/board-kzm9g.c |    8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index 53b7ea9..fd21fb6 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -763,6 +763,13 @@ static void __init kzm_init(void)
+ 	platform_add_devices(kzm_devices, ARRAY_SIZE(kzm_devices));
+ }
+ 
++static void kzm9g_restart(char mode, const char *cmd)
++{
++#define RESCNT2 0xe6188020
++	/* Do soft power on reset */
++	writel((1 << 31), RESCNT2);
++}
++
+ static const char *kzm9g_boards_compat_dt[] __initdata = {
+ 	"renesas,kzm9g",
+ 	NULL,
+@@ -777,5 +784,6 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g")
+ 	.init_machine	= kzm_init,
+ 	.init_late	= shmobile_init_late,
+ 	.timer		= &shmobile_timer,
++	.restart	= kzm9g_restart,
+ 	.dt_compat	= kzm9g_boards_compat_dt,
+ MACHINE_END
 -- 
-~Vinod
+1.7.9.5
 
