@@ -1,63 +1,105 @@
-From: Wen Congyang <wency@cn.fujitsu.com>
-Date: Fri, 27 Jul 2012 10:32:55 +0000
-Subject: [RFC PATCH v5 13/19] memory-hotplug: check page type in get_page_bootmem
-Message-Id: <50126E57.2090501@cn.fujitsu.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sat, 21 Jul 2012 21:54:58 +0000
+Subject: [RFC][PATCH 3/5] PM / shmobile: Specify device latencies for SH7372 devices directly
+Message-Id: <201207212354.58375.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <50126B83.3050201@cn.fujitsu.com>
-In-Reply-To: <50126B83.3050201@cn.fujitsu.com>
+References: <201207212349.18294.rjw@sisk.pl>
+In-Reply-To: <201207212349.18294.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
-Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, Yasuaki ISIMATU <isimatu.yasuaki@jp.fujitsu.com>
+To: Linux PM list <linux-pm@vger.kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Arnd Bergmann <arnd@arndb.de>, Linux-sh list <linux-sh@vger.kernel.org>, Olof Johansson <olof@lixom.net>
 
-From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-There is a possibility that get_page_bootmem() is called to the same page many
-times. So when get_page_bootmem is called to the same page, the function only
-increments page->_count.
+The results of adaptive latency computations in
+GENPD_DEV_TIMED_CALLBACK() show that the start/stop and save/restore
+state latencies of all devices on SH7372 I have tried are a little
+below 250 us.  Therefore, if the 250 us is used as the common initial
+value of the latency fields in struct gpd_timing_data for all devices
+on SH7372, the latency values will never have to change at run time
+and there won't be any overhead related to re-computation of the
+corresponding PM QoS data.
 
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-CC: Paul Mackerras <paulus@samba.org>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-CC: Wen Congyang <wency@cn.fujitsu.com>
-Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- mm/memory_hotplug.c |   15 +++++++++++----
- 1 files changed, 11 insertions(+), 4 deletions(-)
+ arch/arm/mach-shmobile/setup-sh7372.c |   57 +++++++++++++++++++---------------
+ 1 file changed, 33 insertions(+), 24 deletions(-)
 
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index 0c932e1..eae946b 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -95,10 +95,17 @@ static void release_memory_resource(struct resource *res)
- static void get_page_bootmem(unsigned long info,  struct page *page,
- 			     unsigned long type)
- {
--	page->lru.next = (struct list_head *) type;
--	SetPagePrivate(page);
--	set_page_private(page, info);
--	atomic_inc(&page->_count);
-+	unsigned long page_type;
+Index: linux/arch/arm/mach-shmobile/setup-sh7372.c
+=================================--- linux.orig/arch/arm/mach-shmobile/setup-sh7372.c
++++ linux/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -999,8 +999,17 @@ static struct platform_device *sh7372_la
+ 	&spu1_device,
+ };
+ 
++#define DEV_LATENCY_NS	250000
 +
-+	page_type = (unsigned long) page->lru.next;
-+	if (type < MEMORY_HOTPLUG_MIN_BOOTMEM_TYPE ||
-+	    type > MEMORY_HOTPLUG_MAX_BOOTMEM_TYPE){
-+		page->lru.next = (struct list_head *) type;
-+		SetPagePrivate(page);
-+		set_page_private(page, info);
-+		atomic_inc(&page->_count);
-+	} else
-+		atomic_inc(&page->_count);
+ void __init sh7372_add_standard_devices(void)
+ {
++	struct gpd_timing_data latencies = {
++		.stop_latency_ns = DEV_LATENCY_NS,
++		.start_latency_ns = DEV_LATENCY_NS,
++		.save_state_latency_ns = DEV_LATENCY_NS,
++		.restore_state_latency_ns = DEV_LATENCY_NS,
++	};
++
+ 	sh7372_init_pm_domains();
+ 
+ 	platform_add_devices(sh7372_early_devices,
+@@ -1009,30 +1018,30 @@ void __init sh7372_add_standard_devices(
+ 	platform_add_devices(sh7372_late_devices,
+ 			    ARRAY_SIZE(sh7372_late_devices));
+ 
+-	rmobile_add_device_to_domain("A3RV", &vpu_device);
+-	rmobile_add_device_to_domain("A4MP", &spu0_device);
+-	rmobile_add_device_to_domain("A4MP", &spu1_device);
+-	rmobile_add_device_to_domain("A3SP", &scif0_device);
+-	rmobile_add_device_to_domain("A3SP", &scif1_device);
+-	rmobile_add_device_to_domain("A3SP", &scif2_device);
+-	rmobile_add_device_to_domain("A3SP", &scif3_device);
+-	rmobile_add_device_to_domain("A3SP", &scif4_device);
+-	rmobile_add_device_to_domain("A3SP", &scif5_device);
+-	rmobile_add_device_to_domain("A3SP", &scif6_device);
+-	rmobile_add_device_to_domain("A3SP", &iic1_device);
+-	rmobile_add_device_to_domain("A3SP", &dma0_device);
+-	rmobile_add_device_to_domain("A3SP", &dma1_device);
+-	rmobile_add_device_to_domain("A3SP", &dma2_device);
+-	rmobile_add_device_to_domain("A3SP", &usb_dma0_device);
+-	rmobile_add_device_to_domain("A3SP", &usb_dma1_device);
+-	rmobile_add_device_to_domain("A4R", &iic0_device);
+-	rmobile_add_device_to_domain("A4R", &veu0_device);
+-	rmobile_add_device_to_domain("A4R", &veu1_device);
+-	rmobile_add_device_to_domain("A4R", &veu2_device);
+-	rmobile_add_device_to_domain("A4R", &veu3_device);
+-	rmobile_add_device_to_domain("A4R", &jpu_device);
+-	rmobile_add_device_to_domain("A4R", &tmu00_device);
+-	rmobile_add_device_to_domain("A4R", &tmu01_device);
++	rmobile_add_device_to_domain_td("A3RV", &vpu_device, &latencies);
++	rmobile_add_device_to_domain_td("A4MP", &spu0_device, &latencies);
++	rmobile_add_device_to_domain_td("A4MP", &spu1_device, &latencies);
++	rmobile_add_device_to_domain_td("A3SP", &scif0_device, &latencies);
++	rmobile_add_device_to_domain_td("A3SP", &scif1_device, &latencies);
++	rmobile_add_device_to_domain_td("A3SP", &scif2_device, &latencies);
++	rmobile_add_device_to_domain_td("A3SP", &scif3_device, &latencies);
++	rmobile_add_device_to_domain_td("A3SP", &scif4_device, &latencies);
++	rmobile_add_device_to_domain_td("A3SP", &scif5_device, &latencies);
++	rmobile_add_device_to_domain_td("A3SP", &scif6_device, &latencies);
++	rmobile_add_device_to_domain_td("A3SP", &iic1_device, &latencies);
++	rmobile_add_device_to_domain_td("A3SP", &dma0_device, &latencies);
++	rmobile_add_device_to_domain_td("A3SP", &dma1_device, &latencies);
++	rmobile_add_device_to_domain_td("A3SP", &dma2_device, &latencies);
++	rmobile_add_device_to_domain_td("A3SP", &usb_dma0_device, &latencies);
++	rmobile_add_device_to_domain_td("A3SP", &usb_dma1_device, &latencies);
++	rmobile_add_device_to_domain_td("A4R", &iic0_device, &latencies);
++	rmobile_add_device_to_domain_td("A4R", &veu0_device, &latencies);
++	rmobile_add_device_to_domain_td("A4R", &veu1_device, &latencies);
++	rmobile_add_device_to_domain_td("A4R", &veu2_device, &latencies);
++	rmobile_add_device_to_domain_td("A4R", &veu3_device, &latencies);
++	rmobile_add_device_to_domain_td("A4R", &jpu_device, &latencies);
++	rmobile_add_device_to_domain_td("A4R", &tmu00_device, &latencies);
++	rmobile_add_device_to_domain_td("A4R", &tmu01_device, &latencies);
  }
  
- /* reference to __meminit __free_pages_bootmem is valid
--- 
-1.7.1
+ static void __init sh7372_earlytimer_init(void)
 
