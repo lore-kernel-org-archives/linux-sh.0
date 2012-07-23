@@ -1,236 +1,135 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 16 Jul 2012 21:18:16 +0000
-Subject: [RFC][PATCH 2/14] ARM: shmobile: Use names of power domains for adding devices to them
-Message-Id: <201207162318.16661.rjw@sisk.pl>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Mon, 23 Jul 2012 06:13:46 +0000
+Subject: [GIT PULL] sh updates for 3.6-rc1
+Message-Id: <20120723061345.GA23783@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201207032302.17805.rjw@sisk.pl> <201207052217.48086.rjw@sisk.pl> <201207162315.49073.rjw@sisk.pl>
-In-Reply-To: <201207162315.49073.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM list <linux-pm@vger.kernel.org>
-Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>, LKML <linux-kernel@vger.kernel.org>, Matthew Garrett <mjg59@srcf.ucam.org>, Magnus Damm <magnus.damm@gmail.com>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>, Linux-sh list <linux-sh@vger.kernel.org>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+The following changes since commit 2437fccfbfc83bcb868ccc7fdfe2b5310bf07835:
 
-Make the power management code under arch/arm/mach-shmobile/ use
-names of power domains instead of pointers to domain objects for
-adding devices to the domains.  This will allow us to put the
-domain objects into tables and register them all in one shot
-going forward.
+  Merge tag 'regulator-3.5' of git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator (2012-07-09 13:43:02 -0700)
 
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
----
- arch/arm/mach-shmobile/board-ap4evb.c            |   14 +++---
- arch/arm/mach-shmobile/board-armadillo800eva.c   |    6 +-
- arch/arm/mach-shmobile/board-mackerel.c          |   24 +++++------
- arch/arm/mach-shmobile/include/mach/pm-rmobile.h |    4 -
- arch/arm/mach-shmobile/pm-rmobile.c              |    4 -
- arch/arm/mach-shmobile/setup-r8a7740.c           |   20 ++++-----
- arch/arm/mach-shmobile/setup-sh7372.c            |   48 +++++++++++------------
- 7 files changed, 60 insertions(+), 60 deletions(-)
+are available in the git repository at:
 
-Index: linux/arch/arm/mach-shmobile/pm-rmobile.c
-=================================--- linux.orig/arch/arm/mach-shmobile/pm-rmobile.c
-+++ linux/arch/arm/mach-shmobile/pm-rmobile.c
-@@ -149,12 +149,12 @@ void rmobile_init_pm_domain(struct rmobi
- 	__rmobile_pd_power_up(rmobile_pd, false);
- }
- 
--void rmobile_add_device_to_domain(struct rmobile_pm_domain *rmobile_pd,
-+void rmobile_add_device_to_domain(const char *domain_name,
- 				 struct platform_device *pdev)
- {
- 	struct device *dev = &pdev->dev;
- 
--	pm_genpd_add_device(&rmobile_pd->genpd, dev);
-+	pm_genpd_name_add_device(domain_name, dev);
- 	if (pm_clk_no_clocks(dev))
- 		pm_clk_add(dev, NULL);
- }
-Index: linux/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
-=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
-+++ linux/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
-@@ -31,13 +31,13 @@ struct rmobile_pm_domain *to_rmobile_pd(
- 
- #ifdef CONFIG_PM
- extern void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd);
--extern void rmobile_add_device_to_domain(struct rmobile_pm_domain *rmobile_pd,
-+extern void rmobile_add_device_to_domain(const char *domain_name,
- 					struct platform_device *pdev);
- extern void rmobile_pm_add_subdomain(struct rmobile_pm_domain *rmobile_pd,
- 				    struct rmobile_pm_domain *rmobile_sd);
- #else
- #define rmobile_init_pm_domain(pd) do { } while (0)
--#define rmobile_add_device_to_domain(pd, pdev) do { } while (0)
-+#define rmobile_add_device_to_domain(name, pdev) do { } while (0)
- #define rmobile_pm_add_subdomain(pd, sd) do { } while (0)
- #endif /* CONFIG_PM */
- 
-Index: linux/arch/arm/mach-shmobile/board-mackerel.c
-=================================--- linux.orig/arch/arm/mach-shmobile/board-mackerel.c
-+++ linux/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1623,20 +1623,20 @@ static void __init mackerel_init(void)
- 
- 	platform_add_devices(mackerel_devices, ARRAY_SIZE(mackerel_devices));
- 
--	rmobile_add_device_to_domain(&sh7372_pd_a4lc, &lcdc_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a4lc, &hdmi_lcdc_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a4lc, &meram_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a4mp, &fsi_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &usbhs0_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &usbhs1_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &nand_flash_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &sh_mmcif_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &sdhi0_device);
-+	rmobile_add_device_to_domain("A4LC", &lcdc_device);
-+	rmobile_add_device_to_domain("A4LC", &hdmi_lcdc_device);
-+	rmobile_add_device_to_domain("A4LC", &meram_device);
-+	rmobile_add_device_to_domain("A4MP", &fsi_device);
-+	rmobile_add_device_to_domain("A3SP", &usbhs0_device);
-+	rmobile_add_device_to_domain("A3SP", &usbhs1_device);
-+	rmobile_add_device_to_domain("A3SP", &nand_flash_device);
-+	rmobile_add_device_to_domain("A3SP", &sh_mmcif_device);
-+	rmobile_add_device_to_domain("A3SP", &sdhi0_device);
- #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
--	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &sdhi1_device);
-+	rmobile_add_device_to_domain("A3SP", &sdhi1_device);
- #endif
--	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &sdhi2_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a4r, &ceu_device);
-+	rmobile_add_device_to_domain("A3SP", &sdhi2_device);
-+	rmobile_add_device_to_domain("A4R", &ceu_device);
- 
- 	hdmi_init_pm_clock();
- 	sh7372_pm_init();
-Index: linux/arch/arm/mach-shmobile/setup-sh7372.c
-=================================--- linux.orig/arch/arm/mach-shmobile/setup-sh7372.c
-+++ linux/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -1023,30 +1023,30 @@ void __init sh7372_add_standard_devices(
- 	platform_add_devices(sh7372_late_devices,
- 			    ARRAY_SIZE(sh7372_late_devices));
- 
--	rmobile_add_device_to_domain(&sh7372_pd_a3rv, &vpu_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a4mp, &spu0_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a4mp, &spu1_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &scif0_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &scif1_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &scif2_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &scif3_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &scif4_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &scif5_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &scif6_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &iic1_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &dma0_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &dma1_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &dma2_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &usb_dma0_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &usb_dma1_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a4r, &iic0_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a4r, &veu0_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a4r, &veu1_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a4r, &veu2_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a4r, &veu3_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a4r, &jpu_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a4r, &tmu00_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a4r, &tmu01_device);
-+	rmobile_add_device_to_domain("A3RV", &vpu_device);
-+	rmobile_add_device_to_domain("A4MP", &spu0_device);
-+	rmobile_add_device_to_domain("A4MP", &spu1_device);
-+	rmobile_add_device_to_domain("A3SP", &scif0_device);
-+	rmobile_add_device_to_domain("A3SP", &scif1_device);
-+	rmobile_add_device_to_domain("A3SP", &scif2_device);
-+	rmobile_add_device_to_domain("A3SP", &scif3_device);
-+	rmobile_add_device_to_domain("A3SP", &scif4_device);
-+	rmobile_add_device_to_domain("A3SP", &scif5_device);
-+	rmobile_add_device_to_domain("A3SP", &scif6_device);
-+	rmobile_add_device_to_domain("A3SP", &iic1_device);
-+	rmobile_add_device_to_domain("A3SP", &dma0_device);
-+	rmobile_add_device_to_domain("A3SP", &dma1_device);
-+	rmobile_add_device_to_domain("A3SP", &dma2_device);
-+	rmobile_add_device_to_domain("A3SP", &usb_dma0_device);
-+	rmobile_add_device_to_domain("A3SP", &usb_dma1_device);
-+	rmobile_add_device_to_domain("A4R", &iic0_device);
-+	rmobile_add_device_to_domain("A4R", &veu0_device);
-+	rmobile_add_device_to_domain("A4R", &veu1_device);
-+	rmobile_add_device_to_domain("A4R", &veu2_device);
-+	rmobile_add_device_to_domain("A4R", &veu3_device);
-+	rmobile_add_device_to_domain("A4R", &jpu_device);
-+	rmobile_add_device_to_domain("A4R", &tmu00_device);
-+	rmobile_add_device_to_domain("A4R", &tmu01_device);
- }
- 
- static void __init sh7372_earlytimer_init(void)
-Index: linux/arch/arm/mach-shmobile/board-ap4evb.c
-=================================--- linux.orig/arch/arm/mach-shmobile/board-ap4evb.c
-+++ linux/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -1461,14 +1461,14 @@ static void __init ap4evb_init(void)
- 
- 	platform_add_devices(ap4evb_devices, ARRAY_SIZE(ap4evb_devices));
- 
--	rmobile_add_device_to_domain(&sh7372_pd_a4lc, &lcdc1_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a4lc, &lcdc_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a4mp, &fsi_device);
-+	rmobile_add_device_to_domain("A4LC", &lcdc1_device);
-+	rmobile_add_device_to_domain("A4LC", &lcdc_device);
-+	rmobile_add_device_to_domain("A4MP", &fsi_device);
- 
--	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &sh_mmcif_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &sdhi0_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a3sp, &sdhi1_device);
--	rmobile_add_device_to_domain(&sh7372_pd_a4r, &ceu_device);
-+	rmobile_add_device_to_domain("A3SP", &sh_mmcif_device);
-+	rmobile_add_device_to_domain("A3SP", &sdhi0_device);
-+	rmobile_add_device_to_domain("A3SP", &sdhi1_device);
-+	rmobile_add_device_to_domain("A4R", &ceu_device);
- 
- 	hdmi_init_pm_clock();
- 	fsi_init_pm_clock();
-Index: linux/arch/arm/mach-shmobile/setup-r8a7740.c
-=================================--- linux.orig/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ linux/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -688,16 +688,16 @@ void __init r8a7740_add_standard_devices
- 
- 	/* add devices to PM domain  */
- 
--	rmobile_add_device_to_domain(&r8a7740_pd_a3sp,	&scif0_device);
--	rmobile_add_device_to_domain(&r8a7740_pd_a3sp,	&scif1_device);
--	rmobile_add_device_to_domain(&r8a7740_pd_a3sp,	&scif2_device);
--	rmobile_add_device_to_domain(&r8a7740_pd_a3sp,	&scif3_device);
--	rmobile_add_device_to_domain(&r8a7740_pd_a3sp,	&scif4_device);
--	rmobile_add_device_to_domain(&r8a7740_pd_a3sp,	&scif5_device);
--	rmobile_add_device_to_domain(&r8a7740_pd_a3sp,	&scif6_device);
--	rmobile_add_device_to_domain(&r8a7740_pd_a3sp,	&scif7_device);
--	rmobile_add_device_to_domain(&r8a7740_pd_a3sp,	&scifb_device);
--	rmobile_add_device_to_domain(&r8a7740_pd_a3sp,	&i2c1_device);
-+	rmobile_add_device_to_domain("A3SP",	&scif0_device);
-+	rmobile_add_device_to_domain("A3SP",	&scif1_device);
-+	rmobile_add_device_to_domain("A3SP",	&scif2_device);
-+	rmobile_add_device_to_domain("A3SP",	&scif3_device);
-+	rmobile_add_device_to_domain("A3SP",	&scif4_device);
-+	rmobile_add_device_to_domain("A3SP",	&scif5_device);
-+	rmobile_add_device_to_domain("A3SP",	&scif6_device);
-+	rmobile_add_device_to_domain("A3SP",	&scif7_device);
-+	rmobile_add_device_to_domain("A3SP",	&scifb_device);
-+	rmobile_add_device_to_domain("A3SP",	&i2c1_device);
- }
- 
- static void __init r8a7740_earlytimer_init(void)
-Index: linux/arch/arm/mach-shmobile/board-armadillo800eva.c
-=================================--- linux.orig/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ linux/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1181,10 +1181,10 @@ static void __init eva_init(void)
- 
- 	eva_clock_init();
- 
--	rmobile_add_device_to_domain(&r8a7740_pd_a4lc, &lcdc0_device);
--	rmobile_add_device_to_domain(&r8a7740_pd_a4lc, &hdmi_lcdc_device);
-+	rmobile_add_device_to_domain("A4LC", &lcdc0_device);
-+	rmobile_add_device_to_domain("A4LC", &hdmi_lcdc_device);
- 	if (usb)
--		rmobile_add_device_to_domain(&r8a7740_pd_a3sp, usb);
-+		rmobile_add_device_to_domain("A3SP", usb);
- }
- 
- static void __init eva_earlytimer_init(void)
 
+  git://github.com/pmundt/linux-sh tags/sh-for-linus
+
+for you to fetch changes up to 9ff561fdf73493d757bbc74aa58627e1381650fb:
+
+  Merge branch 'common/pinctrl' into sh-latest (2012-07-20 16:42:59 +0900)
+
+----------------------------------------------------------------
+
+SuperH updates for 3.6-rc1 merge window
+
+- Migration off of old-style dynamic IRQ API.
+
+- irqdomain and generic irq chip propagation.
+
+- div4/6 clock consolidation, another step towards co-existing
+  with the common struct clk infrastructure.
+
+- Extensive PFC rework
+  - Decoupling GPIO from pin state.
+  - Initial pinctrl support to facilitate incremental migration
+    off of legacy pinmux.
+  - gpiolib support made optional, and made pinctrl-backed.
+
+----------------------------------------------------------------
+Paul Mundt (45):
+      sh: mach-se: Migrate 7724SE off of deprecated dynamic IRQ API.
+      sh: hd64461: Migrate off of deprecated dynamic IRQ API.
+      sh: dreamcast: Migrate off of deprecated dynamic IRQ API.
+      sh: Kill off now unused arch_probe_nr_irqs().
+      sh64: Convert to unwinder API.
+      sh64: Ensure KALLSYMS is enabled for unwinder use.
+      sh: mach-x3proto: Migrate to linear irq domain.
+      sh: se722: Move FPGA IRQs to irqdomain and generic irq chip.
+      sh: se7343: Move CPLD IRQs to irqdomain and generic irq chip.
+      sh: intc: Kill off deprecated dynamic IRQ API.
+      sh: clkfwk: Move to common clk_div_table accessors for div4/div6.
+      sh: clkfwk: Introduce a div_mask for variable div types.
+      sh: clkfwk: Use shared sh_clk_div_recalc().
+      sh: clkfwk: Use shared sh_clk_div_set_rate()
+      sh: clkfwk: Use shared sh_clk_div_enable/disable().
+      sh: clkfwk: Consolidate div6/div4 clk_ops definitions.
+      sh: clkfwk: Consolidate div clk registration helper.
+      sh: intc: Allocate subgroup virq backing desc directly.
+      Merge branch 'sh/multi-unwinders' into sh-latest
+      Merge branch 'sh/dynamic-irq-cleanup' into sh-latest
+      Merge branch 'sh/genirq' into sh-latest
+      sh64: Use generic unaligned access control/counters.
+      sh64: Kill off old exception debugging helpers.
+      sh: Consolidate die definitions for trap handlers.
+      sh64: Attempt to make reserved insn trap handler resemble C.
+      sh64: Fix up section mismatch warnings.
+      Merge branch 'sh/clkfwk' into sh-latest
+      sh: pfc: Split out gpio chip support.
+      sh: pfc: Make gpio chip support optional where possible.
+      sh: pfc: Kill off unused pinmux bias flags.
+      sh: pfc: Verify pin type encoding size at build time.
+      Merge branch 'common/pfc' into sh-latest
+      sh: pfc: Shuffle PFC support core.
+      Merge branch 'common/pfc' into common/pinctrl
+      sh: pfc: Dumb GPIO stringification.
+      sh: pfc: Rudimentary pinctrl-backed GPIO support.
+      sh: pfc: pinctrl legacy function support.
+      sh: pfc: Make pr_fmt consistent across pfc drivers.
+      sh: pfc: Error out on pinctrl init resolution failure.
+      sh: pfc: Export pinctrl binding init symbol.
+      sh: pfc: Ignore pinmux GPIOs with invalid enum IDs.
+      sh: pfc: pinctrl legacy group support.
+      sh: pfc: Prefer DRV_NAME over KBUILD_MODNAME.
+      sh: pfc: pin config get/set support.
+      Merge branch 'common/pinctrl' into sh-latest
+
+ arch/sh/Kconfig                       |   1 +
+ arch/sh/boards/Kconfig                |   5 +
+ arch/sh/boards/mach-dreamcast/irq.c   |  32 +-
+ arch/sh/boards/mach-se/7343/irq.c     | 129 ++++--
+ arch/sh/boards/mach-se/7343/setup.c   |  10 +-
+ arch/sh/boards/mach-se/7722/irq.c     | 131 +++---
+ arch/sh/boards/mach-se/7722/setup.c   |   6 +-
+ arch/sh/boards/mach-se/7724/irq.c     |  36 +-
+ arch/sh/boards/mach-x3proto/gpio.c    |  57 +--
+ arch/sh/cchips/hd6446x/hd64461.c      |  33 +-
+ arch/sh/include/asm/bug.h             |   4 +
+ arch/sh/include/asm/kdebug.h          |   2 +
+ arch/sh/include/mach-se/mach/se7343.h |   7 +-
+ arch/sh/include/mach-se/mach/se7722.h |  10 +-
+ arch/sh/kernel/cpu/sh5/unwind.c       |  63 ++-
+ arch/sh/kernel/dumpstack.c            |  58 +++
+ arch/sh/kernel/irq.c                  |  10 -
+ arch/sh/kernel/traps.c                |  71 ++++
+ arch/sh/kernel/traps_32.c             | 121 ------
+ arch/sh/kernel/traps_64.c             | 589 +++++++++++----------------
+ arch/sh/lib64/Makefile                |   2 +-
+ arch/sh/lib64/dbg.c                   | 248 ------------
+ arch/sh/mm/tlb-sh5.c                  |   2 +-
+ drivers/sh/Kconfig                    |   1 +
+ drivers/sh/Makefile                   |   3 +-
+ drivers/sh/clk/cpg.c                  | 333 +++++++--------
+ drivers/sh/intc/Makefile              |   2 +-
+ drivers/sh/intc/dynamic.c             |  57 ---
+ drivers/sh/intc/virq.c                |   4 +-
+ drivers/sh/pfc.c                      | 739 ----------------------------------
+ drivers/sh/pfc/Kconfig                |  26 ++
+ drivers/sh/pfc/Makefile               |   3 +
+ drivers/sh/pfc/core.c                 | 572 ++++++++++++++++++++++++++
+ drivers/sh/pfc/gpio.c                 | 239 +++++++++++
+ drivers/sh/pfc/pinctrl.c              | 530 ++++++++++++++++++++++++
+ include/linux/sh_clk.h                |  21 +-
+ include/linux/sh_pfc.h                |  65 ++-
+ 37 files changed, 2244 insertions(+), 1978 deletions(-)
+ delete mode 100644 arch/sh/lib64/dbg.c
+ delete mode 100644 drivers/sh/intc/dynamic.c
+ delete mode 100644 drivers/sh/pfc.c
+ create mode 100644 drivers/sh/pfc/Kconfig
+ create mode 100644 drivers/sh/pfc/Makefile
+ create mode 100644 drivers/sh/pfc/core.c
+ create mode 100644 drivers/sh/pfc/gpio.c
+ create mode 100644 drivers/sh/pfc/pinctrl.c
