@@ -1,53 +1,39 @@
-From: Artem Bityutskiy <dedekind1@gmail.com>
-Date: Wed, 18 Jul 2012 12:03:13 +0000
-Subject: Re: [PATCH 1/2] mtd: sh_flctl: Use memcpy() instead of using a loop
-Message-Id: <1342612993.7530.20.camel@brekeke>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="=-xOYfN2y9r7FE/8XlFyY9"
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 24 Jul 2012 14:40:21 +0000
+Subject: [PATCH v2 4/6] pwm_backlight: Add deferred probe support
+Message-Id: <1343140823-13754-5-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1341484862-24033-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1341484862-24033-1-git-send-email-hechtb@gmail.com>
-To: Bastian Hecht <hechtb@googlemail.com>
-Cc: Bastian Hecht <hechtb@gmail.com>, linux-mtd@lists.infradead.org, Linux-SH <linux-sh@vger.kernel.org>
-
-
---=-xOYfN2y9r7FE/8XlFyY9
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-
-On Thu, 2012-07-05 at 12:41 +0200, Bastian Hecht wrote:
-> Elemets have been copied "manually" in a loop. Better use memcpy().
->=20
-> Signed-off-by: Bastian Hecht <hechtb@gmail.com>
-
-Pushed both to l2-mtd.git, thanks!
-
---=20
-Best Regards,
-Artem Bityutskiy
-
---=-xOYfN2y9r7FE/8XlFyY9
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+If the PWM instance is not available yet at probe time, request a
+deferred probe.
 
-iQIcBAABAgAGBQJQBqYBAAoJECmIfjd9wqK0EqsP/20j4NoflJFW9AP2Ox/4G2dP
-YFO+xufLOAkN8MdgfIz4s0Jztd9kf866vcO9Dj/IdlmDgFN3YIx8Pf0zCfjL2JJu
-nufw+AVsrE1uqEYWOwqehCV2yXu37wVPnD2mCCXn7FnZDAfckTrTOdF7FAGHpuJ0
-keDAQBBAmMheqBjK0GgQJk4xnVRQjLPvihJ1q/Adq0jRDi9O7XOoXYN9cS/yEqrJ
-aXQ8ZOrIOVFGNrasI8GaEGrW8idVTO5Nc9m6FIgfjpMadz29xeAaBCDSzH0h6wL+
-iKHWqf7loR9Sj7O6Ya9pBJBj1z3ZVPth8BjV970Bqz4xkRYq36Jq3ObByoD7A0V6
-mkJ7JiibXOA+fKCyYwWVDlPQHgNdmiIn0HIvu7znjMN5OpXxEZhOU7wJtn+MZGoR
-OgUmYcxGZfn2ddC+/nair0DF4KNvxutiyU896qYHH+vu2XV3SP6kAyo9lWiBNvhs
-TsYeHjfR/ZcRG4+QrEA8U89DDM+MVYCdOneQL2M6VhOcIYbv64l4pyFsZoEEUCGz
-jlZnmF8Oehw+5l6BVmG6OS+3ddQqhwXcn+zzJ2zLwXC1ZFXrznEAx8vrw1HJVoI9
-2OO0Sq/92/r9A4gz9bMvxw4ZzznNW78OEHltk/h4sO8Eu7zgo0pHL6Bb5s49RKlY
-b5UlDKh4YpGUvzQvq+8P
-=ZvZ4
------END PGP SIGNATURE-----
+A better way to fix might be to create a PWM subsystem (possibly
+integrated into the GPIO subsystem) to support generic PWM objects, and
+make sure the subsystem gets initialized first.
 
---=-xOYfN2y9r7FE/8XlFyY9--
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Tested-by: Simon Horman <horms@verge.net.au>
+---
+ drivers/video/backlight/pwm_bl.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/video/backlight/pwm_bl.c b/drivers/video/backlight/pwm_bl.c
+index 342b7d7..5df8b91 100644
+--- a/drivers/video/backlight/pwm_bl.c
++++ b/drivers/video/backlight/pwm_bl.c
+@@ -121,6 +121,8 @@ static int pwm_backlight_probe(struct platform_device *pdev)
+ 	if (IS_ERR(pb->pwm)) {
+ 		dev_err(&pdev->dev, "unable to request PWM for backlight\n");
+ 		ret = PTR_ERR(pb->pwm);
++		if (ret = -ENODEV)
++			ret = -EPROBE_DEFER;
+ 		goto err_alloc;
+ 	} else
+ 		dev_dbg(&pdev->dev, "got pwm for backlight\n");
+-- 
+1.7.8.6
 
