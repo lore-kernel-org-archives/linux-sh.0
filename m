@@ -1,183 +1,579 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 04 Jul 2012 16:17:40 +0000
-Subject: [PATCH 1/4] dmaengine: shdma: prepare to stop using struct dma_chan::private
-Message-Id: <1341418663-24432-2-git-send-email-g.liakhovetski@gmx.de>
+From: Hideki EIRAKU <hdk@igel.co.jp>
+Date: Wed, 25 Jul 2012 06:29:01 +0000
+Subject: [PATCH 1/2] iommu/shmobile: Add iommu driver for Renesas IPMMU modules
+Message-Id: <1343197742-13630-2-git-send-email-hdk@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1341418663-24432-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1341418663-24432-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1343197742-13630-1-git-send-email-hdk@igel.co.jp>
+In-Reply-To: <1343197742-13630-1-git-send-email-hdk@igel.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org, Chris Ball <cjb@laptop.org>, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Using struct dma_chan::private is deprecated. To update the shdma driver to
-stop using it we first have to eliminate internal runtime uses of it. After
-that we will also be able to stop using it for channel configuration.
+This is the Renesas IPMMU driver and IOMMU API implementation.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+The IPMMU module supports the MMU function and the PMB function.  The
+MMU function provides address translation by pagetable compatible with
+ARMv6.  The PMB function provides address translation including
+tile-linear translation.  This patch implements the MMU function.
+
+The iommu driver does not register a platform driver directly because:
+- the register space of the MMU function and the PMB function
+  have a common register (used for settings flush), so they should ideally
+  have a way to appropriately share this register.
+- the MMU function uses the IOMMU API while the PMB function does not.
+- the two functions may be used independently.
+
+Signed-off-by: Hideki EIRAKU <hdk@igel.co.jp>
 ---
- drivers/dma/sh/shdma-base.c |    9 +++++----
- drivers/dma/sh/shdma.c      |   24 ++++++++++--------------
- drivers/dma/sh/shdma.h      |    2 ++
- include/linux/sh_dma.h      |    2 --
- include/linux/shdma-base.h  |    1 +
- 5 files changed, 18 insertions(+), 20 deletions(-)
+ arch/arm/mach-shmobile/Kconfig              |    6 +
+ arch/arm/mach-shmobile/Makefile             |    3 +
+ arch/arm/mach-shmobile/include/mach/ipmmu.h |   10 +
+ arch/arm/mach-shmobile/ipmmu.c              |  137 ++++++++++++
+ drivers/iommu/Kconfig                       |    7 +
+ drivers/iommu/Makefile                      |    1 +
+ drivers/iommu/shmobile-iommu.c              |  318 +++++++++++++++++++++++++++
+ 7 files changed, 482 insertions(+), 0 deletions(-)
+ create mode 100644 arch/arm/mach-shmobile/include/mach/ipmmu.h
+ create mode 100644 arch/arm/mach-shmobile/ipmmu.c
+ create mode 100644 drivers/iommu/shmobile-iommu.c
 
-diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
-index ff060d0..f75ebfa 100644
---- a/drivers/dma/sh/shdma-base.c
-+++ b/drivers/dma/sh/shdma-base.c
-@@ -76,7 +76,7 @@ static dma_cookie_t shdma_tx_submit(struct dma_async_tx_descriptor *tx)
- 		container_of(tx, struct shdma_desc, async_tx),
- 		*last = desc;
- 	struct shdma_chan *schan = to_shdma_chan(tx->chan);
--	struct shdma_slave *slave = tx->chan->private;
-+	struct shdma_slave *slave = schan->slave;
- 	dma_async_tx_callback callback = tx->callback;
- 	dma_cookie_t cookie;
- 	bool power_up;
-@@ -208,6 +208,7 @@ static int shdma_alloc_chan_resources(struct dma_chan *chan)
- 		goto edescalloc;
- 	}
- 	schan->desc_num = NR_DESCS_PER_CHANNEL;
-+	schan->slave = slave;
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index df33909..2ebe04d 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -197,6 +197,12 @@ endmenu
+ config SH_CLK_CPG
+ 	bool
  
- 	for (i = 0; i < NR_DESCS_PER_CHANNEL; i++) {
- 		desc = ops->embedded_desc(schan->desc, i);
-@@ -365,9 +366,9 @@ static void shdma_free_chan_resources(struct dma_chan *chan)
- 	if (!list_empty(&schan->ld_queue))
- 		shdma_chan_ld_cleanup(schan, true);
++config SHMOBILE_IPMMU
++	bool "IPMMU/IPMMUI driver"
++	default n
++	help
++	  This enables build of the IPMMU/IPMMUI driver.
++
+ source "drivers/sh/Kconfig"
  
--	if (chan->private) {
-+	if (schan->slave) {
- 		/* The caller is holding dma_list_mutex */
--		struct shdma_slave *slave = chan->private;
-+		struct shdma_slave *slave = schan->slave;
- 		clear_bit(slave->slave_id, shdma_slave_used);
- 		chan->private = NULL;
- 	}
-@@ -558,7 +559,7 @@ static struct dma_async_tx_descriptor *shdma_prep_slave_sg(
- 	struct shdma_chan *schan = to_shdma_chan(chan);
- 	struct shdma_dev *sdev = to_shdma_dev(schan->dma_chan.device);
- 	const struct shdma_ops *ops = sdev->ops;
--	struct shdma_slave *slave = chan->private;
-+	struct shdma_slave *slave = schan->slave;
- 	dma_addr_t slave_addr;
+ endif
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 8aa1962..ffca2b9 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -58,3 +58,6 @@ obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o
+ # Framework support
+ obj-$(CONFIG_SMP)		+= $(smp-y)
+ obj-$(CONFIG_GENERIC_GPIO)	+= $(pfc-y)
++
++# IPMMU/IPMMUI
++obj-$(CONFIG_SHMOBILE_IPMMU)	+= ipmmu.o
+diff --git a/arch/arm/mach-shmobile/include/mach/ipmmu.h b/arch/arm/mach-shmobile/include/mach/ipmmu.h
+new file mode 100644
+index 0000000..afbd9eb
+--- /dev/null
++++ b/arch/arm/mach-shmobile/include/mach/ipmmu.h
+@@ -0,0 +1,10 @@
++#ifdef CONFIG_SHMOBILE_IPMMU
++void ipmmu_tlb_flush(void);
++void ipmmu_tlb_set(unsigned long phys, int size, int asid);
++void ipmmu_add_device(struct device *dev);
++int ipmmu_iommu_init(struct device *dev);
++#else
++static inline void ipmmu_add_device(struct device *dev)
++{
++}
++#endif
+diff --git a/arch/arm/mach-shmobile/ipmmu.c b/arch/arm/mach-shmobile/ipmmu.c
+new file mode 100644
+index 0000000..b728a83
+--- /dev/null
++++ b/arch/arm/mach-shmobile/ipmmu.c
+@@ -0,0 +1,137 @@
++/*
++ * IPMMU/IPMMUI
++ * Copyright (C) 2012  Hideki EIRAKU
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ *
++ */
++
++#include <linux/platform_device.h>
++#include <linux/io.h>
++#include <linux/err.h>
++#include <linux/export.h>
++#include <mach/ipmmu.h>
++
++#define IMCTR1 0x000
++#define IMCTR2 0x004
++#define IMASID 0x010
++#define IMTTBR 0x014
++#define IMTTBCR 0x018
++
++static void __iomem *ipmmu_base;
++static int tlb_enabled;
++static int tlb_asid, tlb_size;
++static unsigned long tlb_phys;
++
++void __attribute__((weak)) ipmmu_add_device(struct device *dev)
++{
++}
++
++void ipmmu_tlb_flush(void)
++{
++	if (!ipmmu_base)
++		return;
++	if (tlb_enabled)
++		iowrite32(0x3, ipmmu_base + IMCTR1); /* flush the TLB */
++	else
++		iowrite32(0x2, ipmmu_base + IMCTR1);
++}
++
++static void update_tlb(void)
++{
++	if (!ipmmu_base)
++		return;
++	switch (tlb_size) {
++	default:
++		tlb_enabled = 0;
++		break;
++	case 0x2000:
++		iowrite32(1, ipmmu_base + IMTTBCR);
++		tlb_enabled = 1;
++		break;
++	case 0x1000:
++		iowrite32(2, ipmmu_base + IMTTBCR);
++		tlb_enabled = 1;
++		break;
++	case 0x800:
++		iowrite32(3, ipmmu_base + IMTTBCR);
++		tlb_enabled = 1;
++		break;
++	case 0x400:
++		iowrite32(4, ipmmu_base + IMTTBCR);
++		tlb_enabled = 1;
++		break;
++	case 0x200:
++		iowrite32(5, ipmmu_base + IMTTBCR);
++		tlb_enabled = 1;
++		break;
++	case 0x100:
++		iowrite32(6, ipmmu_base + IMTTBCR);
++		tlb_enabled = 1;
++		break;
++	case 0x80:
++		iowrite32(7, ipmmu_base + IMTTBCR);
++		tlb_enabled = 1;
++		break;
++	}
++	iowrite32(tlb_phys, ipmmu_base + IMTTBR);
++	iowrite32(tlb_asid, ipmmu_base + IMASID);
++}
++
++void ipmmu_tlb_set(unsigned long phys, int size, int asid)
++{
++	tlb_phys = phys;
++	tlb_size = size;
++	tlb_asid = asid;
++	update_tlb();
++}
++
++int __attribute__((weak)) ipmmu_iommu_init(struct device *dev)
++{
++	return 0;
++}
++
++static int __devinit ipmmu_probe(struct platform_device *pdev)
++{
++	struct resource *res;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!res) {
++		dev_err(&pdev->dev, "cannot get platform resources\n");
++		return -ENOENT;
++	}
++	ipmmu_base = ioremap_nocache(res->start, resource_size(res));
++	if (!ipmmu_base) {
++		dev_err(&pdev->dev, "ioremap_nocache failed\n");
++		return -ENOMEM;
++	}
++	iowrite32(0x0, ipmmu_base + IMCTR1); /* disable TLB */
++	iowrite32(0x0, ipmmu_base + IMCTR2); /* disable PMB */
++	ipmmu_iommu_init(&pdev->dev);
++	return 0;
++}
++
++static struct platform_driver ipmmu_driver = {
++	.probe = ipmmu_probe,
++	.driver = {
++		.owner = THIS_MODULE,
++		.name = "ipmmu",
++	},
++};
++
++static int __init ipmmu_init(void)
++{
++	return platform_driver_register(&ipmmu_driver);
++}
++subsys_initcall(ipmmu_init);
+diff --git a/drivers/iommu/Kconfig b/drivers/iommu/Kconfig
+index 3408937..2b9df1d 100644
+--- a/drivers/iommu/Kconfig
++++ b/drivers/iommu/Kconfig
+@@ -183,4 +183,11 @@ config EXYNOS_IOMMU_DEBUG
  
- 	if (!chan)
-diff --git a/drivers/dma/sh/shdma.c b/drivers/dma/sh/shdma.c
-index f06906f..9f0a2e5 100644
---- a/drivers/dma/sh/shdma.c
-+++ b/drivers/dma/sh/shdma.c
-@@ -291,10 +291,8 @@ static void sh_dmae_setup_xfer(struct shdma_chan *schan,
- 						    shdma_chan);
+ 	  Say N unless you need kernel log message for IOMMU debugging
  
- 	if (sslave) {
--		struct sh_dmae_slave *slave = container_of(sslave,
--					struct sh_dmae_slave, shdma_slave);
- 		const struct sh_dmae_slave_config *cfg -			slave->config;
-+			sh_chan->config;
- 
- 		dmae_set_dmars(sh_chan, cfg->mid_rid);
- 		dmae_set_chcr(sh_chan, cfg->chcr);
-@@ -326,13 +324,11 @@ static int sh_dmae_set_slave(struct shdma_chan *schan,
- {
- 	struct sh_dmae_chan *sh_chan = container_of(schan, struct sh_dmae_chan,
- 						    shdma_chan);
--	struct sh_dmae_slave *slave = container_of(sslave, struct sh_dmae_slave,
--						   shdma_slave);
- 	const struct sh_dmae_slave_config *cfg = dmae_find_slave(sh_chan, sslave->slave_id);
- 	if (!cfg)
- 		return -ENODEV;
- 
--	slave->config = cfg;
-+	sh_chan->config = cfg;
- 
- 	return 0;
- }
-@@ -579,13 +575,12 @@ static int sh_dmae_resume(struct device *dev)
- 
- 	for (i = 0; i < shdev->pdata->channel_num; i++) {
- 		struct sh_dmae_chan *sh_chan = shdev->chan[i];
--		struct sh_dmae_slave *param = sh_chan->shdma_chan.dma_chan.private;
- 
- 		if (!sh_chan->shdma_chan.desc_num)
- 			continue;
- 
--		if (param) {
--			const struct sh_dmae_slave_config *cfg = param->config;
-+		if (sh_chan->shdma_chan.slave) {
-+			const struct sh_dmae_slave_config *cfg = sh_chan->config;
- 			dmae_set_dmars(sh_chan, cfg->mid_rid);
- 			dmae_set_chcr(sh_chan, cfg->chcr);
- 		} else {
-@@ -609,14 +604,15 @@ const struct dev_pm_ops sh_dmae_pm = {
- 
- static dma_addr_t sh_dmae_slave_addr(struct shdma_chan *schan)
- {
--	struct sh_dmae_slave *param = schan->dma_chan.private;
-+	struct sh_dmae_chan *sh_chan = container_of(schan,
-+					struct sh_dmae_chan, shdma_chan);
- 
- 	/*
--	 * Implicit BUG_ON(!param)
--	 * if (param != NULL), this is a successfully requested slave channel,
--	 * therefore param->config != NULL too.
-+	 * Implicit BUG_ON(!sh_chan->config)
-+	 * This is an exclusive slave DMA operation, may only be called after a
-+	 * successful slave configuration.
- 	 */
--	return param->config->addr;
-+	return sh_chan->config->addr;
- }
- 
- static struct shdma_desc *sh_dmae_embedded_desc(void *buf, int i)
-diff --git a/drivers/dma/sh/shdma.h b/drivers/dma/sh/shdma.h
-index 840e47d..9314e93 100644
---- a/drivers/dma/sh/shdma.h
-+++ b/drivers/dma/sh/shdma.h
-@@ -13,6 +13,7 @@
- #ifndef __DMA_SHDMA_H
- #define __DMA_SHDMA_H
- 
-+#include <linux/sh_dma.h>
- #include <linux/shdma-base.h>
- #include <linux/dmaengine.h>
- #include <linux/interrupt.h>
-@@ -25,6 +26,7 @@ struct device;
- 
- struct sh_dmae_chan {
- 	struct shdma_chan shdma_chan;
-+	const struct sh_dmae_slave_config *config; /* Slave DMA configuration */
- 	int xmit_shift;			/* log_2(bytes_per_xfer) */
- 	u32 __iomem *base;
- 	char dev_id[16];		/* unique name per DMAC of channel */
-diff --git a/include/linux/sh_dma.h b/include/linux/sh_dma.h
-index 7c8ca41..a79f10a 100644
---- a/include/linux/sh_dma.h
-+++ b/include/linux/sh_dma.h
-@@ -20,8 +20,6 @@ struct device;
- /* Used by slave DMA clients to request DMA to/from a specific peripheral */
- struct sh_dmae_slave {
- 	struct shdma_slave		shdma_slave;	/* Set by the platform */
--	struct device			*dma_dev;	/* Set by the platform */
--	const struct sh_dmae_slave_config *config;	/* Set by the driver */
- };
- 
- /*
-diff --git a/include/linux/shdma-base.h b/include/linux/shdma-base.h
-index 83efd13..c3a19e9 100644
---- a/include/linux/shdma-base.h
-+++ b/include/linux/shdma-base.h
-@@ -66,6 +66,7 @@ struct shdma_chan {
- 	size_t max_xfer_len;		/* max transfer length */
- 	int id;				/* Raw id of this channel */
- 	int irq;			/* Channel IRQ */
-+	struct shdma_slave *slave;	/* Client data for slave DMA */
- 	enum shdma_pm_state pm_state;
- };
- 
++config SHMOBILE_IOMMU
++	bool "IOMMU for Renesas IPMMU/IPMMUI"
++	default n
++	depends on SHMOBILE_IPMMU
++	select IOMMU_API
++	select ARM_DMA_USE_IOMMU
++
+ endif # IOMMU_SUPPORT
+diff --git a/drivers/iommu/Makefile b/drivers/iommu/Makefile
+index 76e54ef..3e0cf7f 100644
+--- a/drivers/iommu/Makefile
++++ b/drivers/iommu/Makefile
+@@ -11,3 +11,4 @@ obj-$(CONFIG_OMAP_IOMMU_DEBUG) += omap-iommu-debug.o
+ obj-$(CONFIG_TEGRA_IOMMU_GART) += tegra-gart.o
+ obj-$(CONFIG_TEGRA_IOMMU_SMMU) += tegra-smmu.o
+ obj-$(CONFIG_EXYNOS_IOMMU) += exynos-iommu.o
++obj-$(CONFIG_SHMOBILE_IOMMU) += shmobile-iommu.o
+diff --git a/drivers/iommu/shmobile-iommu.c b/drivers/iommu/shmobile-iommu.c
+new file mode 100644
+index 0000000..bc2ae1a
+--- /dev/null
++++ b/drivers/iommu/shmobile-iommu.c
+@@ -0,0 +1,318 @@
++/*
++ * IOMMU for IPMMU/IPMMUI
++ * Copyright (C) 2012  Hideki EIRAKU
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ *
++ */
++
++#include <linux/io.h>
++#include <linux/dmapool.h>
++#include <linux/slab.h>
++#include <linux/platform_device.h>
++#include <linux/iommu.h>
++#include <linux/dma-mapping.h>
++#include <mach/ipmmu.h>
++#include <asm/dma-iommu.h>
++
++#define L1_LEN 0x800
++#define L1_SIZE 0x2000
++#define L1_ALIGN 0x2000
++#define L2_LEN 0x100
++#define L2_SIZE 0x400
++#define L2_ALIGN 0x400
++
++struct shmobile_iommu_domain_pgtable {
++	uint32_t *pgtable;
++	dma_addr_t handle;
++};
++
++struct shmobile_iommu_domain {
++	struct shmobile_iommu_domain_pgtable l1, l2[L1_LEN];
++	spinlock_t map_lock;
++	atomic_t active;
++};
++
++static struct dma_iommu_mapping *iommu_mapping;
++static struct device *ipmmu_devices;
++static struct dma_pool *l1p, *l2p;
++static spinlock_t lock;
++static DEFINE_SPINLOCK(lock_add);
++static struct shmobile_iommu_domain *attached;
++static int num_attached_devices;
++
++static int shmobile_iommu_domain_init(struct iommu_domain *domain)
++{
++	struct shmobile_iommu_domain *d;
++	int i;
++
++	d = kmalloc(sizeof *d, GFP_KERNEL);
++	if (!d)
++		return -ENOMEM;
++	d->l1.pgtable = dma_pool_alloc(l1p, GFP_KERNEL, &d->l1.handle);
++	if (!d->l1.pgtable) {
++		kfree(d);
++		return -ENOMEM;
++	}
++	for (i = 0; i < L1_LEN; i++)
++		d->l2[i].pgtable = NULL;
++	memset(d->l1.pgtable, 0, L1_SIZE);
++	spin_lock_init(&d->map_lock);
++	atomic_set(&d->active, 0);
++	domain->priv = d;
++	return 0;
++}
++
++static void shmobile_iommu_domain_destroy(struct iommu_domain *domain)
++{
++	struct shmobile_iommu_domain *d = domain->priv;
++	int i;
++
++	for (i = 0; i < L1_LEN; i++) {
++		if (d->l2[i].pgtable)
++			dma_pool_free(l2p, d->l2[i].pgtable, d->l2[i].handle);
++	}
++	dma_pool_free(l1p, d->l1.pgtable, d->l1.handle);
++	kfree(d);
++}
++
++static int shmobile_iommu_attach_device(struct iommu_domain *domain,
++					struct device *dev)
++{
++	struct shmobile_iommu_domain *d = domain->priv;
++	int ret = -EBUSY;
++
++	spin_lock(&lock);
++	if (attached != d) {
++		if (attached)
++			goto err;
++		atomic_set(&d->active, 1);
++		ipmmu_tlb_set(d->l1.handle, L1_SIZE, 0);
++		wmb();
++		ipmmu_tlb_flush();
++		attached = d;
++		num_attached_devices = 0;
++	}
++	num_attached_devices++;
++	ret = 0;
++err:
++	spin_unlock(&lock);
++	return ret;
++}
++
++static void shmobile_iommu_detach_device(struct iommu_domain *domain,
++					 struct device *dev)
++{
++	struct shmobile_iommu_domain *d = domain->priv;
++
++	spin_lock(&lock);
++	atomic_set(&d->active, 0);
++	num_attached_devices--;
++	if (!num_attached_devices) {
++		ipmmu_tlb_set(0, 0, 0);
++		ipmmu_tlb_flush();
++		attached = NULL;
++	}
++	spin_unlock(&lock);
++}
++
++static int
++l2alloc(struct shmobile_iommu_domain *d, unsigned int n)
++{
++	if (!d->l2[n].pgtable) {
++		d->l2[n].pgtable = dma_pool_alloc(l2p, GFP_KERNEL,
++						  &d->l2[n].handle);
++		if (!d->l2[n].pgtable)
++			return -ENOMEM;
++		memset(d->l2[n].pgtable, 0, L2_SIZE);
++	}
++	d->l1.pgtable[n] = d->l2[n].handle | 0x1;
++	return 0;
++}
++
++static int shmobile_iommu_map(struct iommu_domain *domain, unsigned long iova,
++			      phys_addr_t paddr, size_t size, int prot)
++{
++	struct shmobile_iommu_domain *d = domain->priv;
++	unsigned int l1n, l2n, i;
++	int ret;
++
++	l1n = iova >> 20;
++	switch (size) {
++	case 0x1000:
++		l2n = (iova >> 12) & 0xff;
++		spin_lock(&d->map_lock);
++		ret = l2alloc(d, l1n);
++		if (!ret)
++			d->l2[l1n].pgtable[l2n] = paddr | 0xff2;
++		spin_unlock(&d->map_lock);
++		break;
++	case 0x10000:
++		l2n = (iova >> 12) & 0xf0;
++		spin_lock(&d->map_lock);
++		ret = l2alloc(d, l1n);
++		if (!ret) {
++			for (i = 0; i < 0x10; i++)
++				d->l2[l1n].pgtable[l2n + i] = paddr | 0xff1;
++		}
++		spin_unlock(&d->map_lock);
++		break;
++	case 0x100000:
++		spin_lock(&d->map_lock);
++		d->l1.pgtable[l1n] = paddr | 0xc02;
++		spin_unlock(&d->map_lock);
++		ret = 0;
++		break;
++	default:
++		ret = -EINVAL;
++	}
++	if (!ret && atomic_read(&d->active)) {
++		wmb();
++		ipmmu_tlb_flush();
++	}
++	return ret;
++}
++
++static size_t shmobile_iommu_unmap(struct iommu_domain *domain,
++				   unsigned long iova, size_t size)
++{
++	struct shmobile_iommu_domain *d = domain->priv;
++	unsigned int l1n, l2n, i;
++
++	l1n = iova >> 20;
++	switch (size) {
++	case 0x1000:
++		l2n = (iova >> 12) & 0xff;
++		spin_lock(&d->map_lock);
++		if (d->l2[l1n].pgtable)
++			d->l2[l1n].pgtable[l2n] = 0;
++		spin_unlock(&d->map_lock);
++		break;
++	case 0x10000:
++		l2n = (iova >> 12) & 0xf0;
++		spin_lock(&d->map_lock);
++		if (d->l2[l1n].pgtable) {
++			for (i = 0; i < 0x10; i++)
++				d->l2[l1n].pgtable[l2n + i] = 0;
++		}
++		spin_unlock(&d->map_lock);
++		break;
++	case 0x100000:
++		spin_lock(&d->map_lock);
++		d->l1.pgtable[l1n] = 0;
++		spin_unlock(&d->map_lock);
++		break;
++	default:
++		return -EINVAL;
++	}
++	if (atomic_read(&d->active)) {
++		wmb();
++		ipmmu_tlb_flush();
++	}
++	return size;
++}
++
++static phys_addr_t shmobile_iommu_iova_to_phys(struct iommu_domain *domain,
++					       unsigned long iova)
++{
++	struct shmobile_iommu_domain *d = domain->priv;
++	uint32_t l1d = 0, l2d = 0;
++	unsigned int l1n, l2n;
++
++	l1n = iova >> 20;
++	l2n = (iova >> 12) & 0xff;
++	spin_lock(&d->map_lock);
++	if (d->l2[l1n].pgtable)
++		l2d = d->l2[l1n].pgtable[l2n];
++	else
++		l1d = d->l1.pgtable[l1n];
++	spin_unlock(&d->map_lock);
++	switch (l2d & 3) {
++	case 1:
++		return (l2d & ~0xffff) | (iova & 0xffff);
++	case 2:
++		return (l2d & ~0xfff) | (iova & 0xfff);
++	default:
++		if ((l1d & 3) = 2)
++			return (l1d & ~0xfffff) | (iova & 0xfffff);
++		return 0;
++	}
++}
++
++static struct iommu_ops shmobile_iommu_ops = {
++	.domain_init = shmobile_iommu_domain_init,
++	.domain_destroy = shmobile_iommu_domain_destroy,
++	.attach_dev = shmobile_iommu_attach_device,
++	.detach_dev = shmobile_iommu_detach_device,
++	.map = shmobile_iommu_map,
++	.unmap = shmobile_iommu_unmap,
++	.iova_to_phys = shmobile_iommu_iova_to_phys,
++	.pgsize_bitmap = 0x111000,
++};
++
++static int shmobile_iommu_attach_all_devices(void)
++{
++	struct device *dev;
++	int ret = 0;
++
++	spin_lock(&lock_add);
++	iommu_mapping = arm_iommu_create_mapping(&platform_bus_type, 0x0,
++						 0x80000000, 0);
++	if (IS_ERR_OR_NULL(iommu_mapping)) {
++		ret = PTR_ERR(iommu_mapping);
++		goto err;
++	}
++	for (dev = ipmmu_devices; dev; dev = dev->archdata.iommu) {
++		if (arm_iommu_attach_device(dev, iommu_mapping))
++			pr_err("arm_iommu_attach_device failed\n");
++	}
++err:
++	spin_unlock(&lock_add);
++	return 0;
++}
++
++void ipmmu_add_device(struct device *dev)
++{
++	spin_lock(&lock_add);
++	dev->archdata.iommu = ipmmu_devices;
++	ipmmu_devices = dev;
++	if (!IS_ERR_OR_NULL(iommu_mapping)) {
++		if (arm_iommu_attach_device(dev, iommu_mapping))
++			pr_err("arm_iommu_attach_device failed\n");
++	}
++	spin_unlock(&lock_add);
++}
++
++int ipmmu_iommu_init(struct device *dev)
++{
++	dma_set_coherent_mask(dev, DMA_BIT_MASK(32));
++	l1p = dma_pool_create("shmobile-iommu-pgtable1", dev,
++			      L1_SIZE, L1_ALIGN, 0);
++	if (!l1p)
++		goto nomem_pool1;
++	l2p = dma_pool_create("shmobile-iommu-pgtable2", dev,
++			      L2_SIZE, L2_ALIGN, 0);
++	if (!l2p)
++		goto nomem_pool2;
++	spin_lock_init(&lock);
++	attached = NULL;
++	bus_set_iommu(&platform_bus_type, &shmobile_iommu_ops);
++	if (shmobile_iommu_attach_all_devices())
++		pr_err("shmobile_iommu_attach_all_devices failed\n");
++	return 0;
++nomem_pool2:
++	dma_pool_destroy(l1p);
++nomem_pool1:
++	return -ENOMEM;
++}
 -- 
-1.7.2.5
+1.7.0.4
 
