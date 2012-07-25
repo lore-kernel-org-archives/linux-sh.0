@@ -1,49 +1,128 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 05 Jul 2012 08:25:24 +0000
-Subject: [PATCH 02/12 v2] ARM: shmobile: r8a7740: fixup: MSEL1CR 7bit control
-Message-Id: <873956r4wf.wl%kuninori.morimoto.gx@renesas.com>
+From: Hideki EIRAKU <hdk@igel.co.jp>
+Date: Wed, 25 Jul 2012 06:29:02 +0000
+Subject: [PATCH 2/2] ARM: mach-shmobile: sh7372: Add IPMMU device
+Message-Id: <1343197742-13630-3-git-send-email-hdk@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1343197742-13630-1-git-send-email-hdk@igel.co.jp>
+In-Reply-To: <1343197742-13630-1-git-send-email-hdk@igel.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-MSEL1CR 7bit selects IRQ7 source pin which was
-VBUS pin or A21/MSIOF0_RSYNC/MSIOF1_TSYNC pin.
-But current pfc-r8a7740 MSEL1CR 7bit setting was wrong.
-This patch fix it up
+This patch adds an IPMMU device and notifies the IPMMU driver which
+devices are connected via the IPMMU module.  All devices connected to the main
+memory bus via the IPMMU module MUST be registered when SHMOBILE_IPMMU and
+SHMOBILE_IOMMU are enabled because physical address cannot be used
+while the IPMMU module's MMU function is enabled.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Hideki EIRAKU <hdk@igel.co.jp>
 ---
-v1 -> v2
+ arch/arm/mach-shmobile/board-ap4evb.c   |    5 +++++
+ arch/arm/mach-shmobile/board-mackerel.c |    5 +++++
+ arch/arm/mach-shmobile/setup-sh7372.c   |   22 ++++++++++++++++++++++
+ 3 files changed, 32 insertions(+), 0 deletions(-)
 
- - same as v1
-
- arch/arm/mach-shmobile/pfc-r8a7740.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/pfc-r8a7740.c b/arch/arm/mach-shmobile/pfc-r8a7740.c
-index 03def0f..ce9e7fa 100644
---- a/arch/arm/mach-shmobile/pfc-r8a7740.c
-+++ b/arch/arm/mach-shmobile/pfc-r8a7740.c
-@@ -1261,7 +1261,7 @@ static pinmux_enum_t pinmux_data[] = {
- 	PINMUX_DATA(A21_MARK,			PORT120_FN1),
- 	PINMUX_DATA(MSIOF0_RSYNC_MARK,		PORT120_FN2),
- 	PINMUX_DATA(MSIOF1_TSYNC_PORT120_MARK,	PORT120_FN3,	MSEL4CR_10_0),
--	PINMUX_DATA(IRQ7_PORT120_MARK,		PORT120_FN0,	MSEL1CR_7_0),
-+	PINMUX_DATA(IRQ7_PORT120_MARK,		PORT120_FN0,	MSEL1CR_7_1),
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index ace6024..c35bb75 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -59,6 +59,7 @@
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/sh7372.h>
++#include <mach/ipmmu.h>
  
- 	/* Port121 */
- 	PINMUX_DATA(A20_MARK,			PORT121_FN1),
-@@ -1623,7 +1623,7 @@ static pinmux_enum_t pinmux_data[] = {
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+@@ -1434,6 +1435,10 @@ static void __init ap4evb_init(void)
  
- 	/* Port209 */
- 	PINMUX_DATA(VBUS_MARK,			PORT209_FN1),
--	PINMUX_DATA(IRQ7_PORT209_MARK,		PORT209_FN0,	MSEL1CR_7_1),
-+	PINMUX_DATA(IRQ7_PORT209_MARK,		PORT209_FN0,	MSEL1CR_7_0),
+ 	sh7372_add_standard_devices();
  
- 	/* Port210 */
- 	PINMUX_DATA(IRQ9_PORT210_MARK,		PORT210_FN0,	MSEL1CR_9_1),
++	ipmmu_add_device(&lcdc_device.dev);
++	ipmmu_add_device(&lcdc1_device.dev);
++	ipmmu_add_device(&ceu_device.dev);
++
+ 	/* HDMI */
+ 	gpio_request(GPIO_FN_HDMI_HPD, NULL);
+ 	gpio_request(GPIO_FN_HDMI_CEC, NULL);
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 150122a..1dc9f44 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -58,6 +58,7 @@
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/sh7372.h>
++#include <mach/ipmmu.h>
+ 
+ #include <asm/mach/arch.h>
+ #include <asm/mach-types.h>
+@@ -1612,6 +1613,10 @@ static void __init mackerel_init(void)
+ 
+ 	sh7372_add_standard_devices();
+ 
++	ipmmu_add_device(&lcdc_device.dev);
++	ipmmu_add_device(&hdmi_lcdc_device.dev);
++	ipmmu_add_device(&ceu_device.dev);
++
+ 	platform_add_devices(mackerel_devices, ARRAY_SIZE(mackerel_devices));
+ 
+ 	sh7372_add_device_to_domain(&sh7372_a4lc, &lcdc_device);
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index fafce9c..5045638 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -37,6 +37,7 @@
+ #include <mach/irqs.h>
+ #include <mach/sh7372.h>
+ #include <mach/common.h>
++#include <mach/ipmmu.h>
+ #include <asm/mach/map.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+@@ -1005,6 +1006,23 @@ static struct platform_device spu1_device = {
+ 	.num_resources	= ARRAY_SIZE(spu1_resources),
+ };
+ 
++/* IPMMUI (an IPMMU module for ICB/LMB) */
++static struct resource ipmmu_resources[] = {
++	[0] = {
++		.name	= "IPMMUI",
++		.start	= 0xfe951000,
++		.end	= 0xfe9510ff,
++		.flags	= IORESOURCE_MEM,
++	},
++};
++
++static struct platform_device ipmmu_device = {
++	.name           = "ipmmu",
++	.id             = -1,
++	.resource       = ipmmu_resources,
++	.num_resources  = ARRAY_SIZE(ipmmu_resources),
++};
++
+ static struct platform_device *sh7372_early_devices[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+@@ -1016,6 +1034,7 @@ static struct platform_device *sh7372_early_devices[] __initdata = {
+ 	&cmt2_device,
+ 	&tmu00_device,
+ 	&tmu01_device,
++	&ipmmu_device,
+ };
+ 
+ static struct platform_device *sh7372_late_devices[] __initdata = {
+@@ -1057,6 +1076,9 @@ void __init sh7372_add_standard_devices(void)
+ 	platform_add_devices(sh7372_early_devices,
+ 			    ARRAY_SIZE(sh7372_early_devices));
+ 
++	ipmmu_add_device(&vpu_device.dev);
++	ipmmu_add_device(&jpu_device.dev);
++
+ 	platform_add_devices(sh7372_late_devices,
+ 			    ARRAY_SIZE(sh7372_late_devices));
+ 
 -- 
-1.7.5.4
+1.7.0.4
 
