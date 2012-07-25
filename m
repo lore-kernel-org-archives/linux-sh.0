@@ -1,67 +1,37 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 05 Jul 2012 08:26:53 +0000
-Subject: [PATCH 05/12 v2] ARM: shmobile: r8a7740: add A4LC pm domain support
-Message-Id: <87y5mypq9h.wl%kuninori.morimoto.gx@renesas.com>
+From: Hideki EIRAKU <hdk@igel.co.jp>
+Date: Wed, 25 Jul 2012 06:29:00 +0000
+Subject: [PATCH 0/2] Renesas IPMMU driver for sh7372
+Message-Id: <1343197742-13630-1-git-send-email-hdk@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This patch adds basic A4LC pm domain support.
-Now, below devices can be controled by PM
+This is the Renesas IPMMU driver, IOMMU API implementation and IPMMU
+device support for sh7372 (AP4EVB and Mackerel).
 
-MERAM, LCDC, VOU, ICBS, SDENC-Link
+The IPMMU module supports the MMU function and the PMB function.  The
+MMU function provides address translation by pagetable compatible with
+ARMv6.  The PMB function provides address translation including
+tile-linear translation.  This is implementation of the MMU function.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v1 -> v2
+Hideki EIRAKU (2):
+  iommu/shmobile: Add iommu driver for Renesas IPMMU modules
+  ARM: mach-shmobile: sh7372: Add IPMMU device
 
- - based on pm-rmobile
-
- arch/arm/mach-shmobile/include/mach/r8a7740.h |    1 +
- arch/arm/mach-shmobile/pm-r8a7740.c           |    5 +++++
- arch/arm/mach-shmobile/setup-r8a7740.c        |    1 +
- 3 files changed, 7 insertions(+), 0 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index a5691cf..7143147 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -609,6 +609,7 @@ enum {
- #ifdef CONFIG_PM
- extern struct rmobile_pm_domain r8a7740_pd_a4s;
- extern struct rmobile_pm_domain r8a7740_pd_a3sp;
-+extern struct rmobile_pm_domain r8a7740_pd_a4lc;
- #endif /* CONFIG_PM */
- 
- #endif /* __ASM_R8A7740_H__ */
-diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
-index 0e54a11..e4d7d22 100644
---- a/arch/arm/mach-shmobile/pm-r8a7740.c
-+++ b/arch/arm/mach-shmobile/pm-r8a7740.c
-@@ -51,4 +51,9 @@ struct rmobile_pm_domain r8a7740_pd_a3sp = {
- 	.suspend	= r8a7740_pd_a3sp_suspend,
- };
- 
-+struct rmobile_pm_domain r8a7740_pd_a4lc = {
-+	.genpd.name	= "A4LC",
-+	.bit_shift	= 1,
-+};
-+
- #endif /* CONFIG_PM */
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 59c79412..c006d8d 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -675,6 +675,7 @@ void __init r8a7740_add_standard_devices(void)
- 	/* PM domain */
- 	rmobile_init_pm_domain(&r8a7740_pd_a4s);
- 	rmobile_init_pm_domain(&r8a7740_pd_a3sp);
-+	rmobile_init_pm_domain(&r8a7740_pd_a4lc);
- 
- 	rmobile_pm_add_subdomain(&r8a7740_pd_a4s, &r8a7740_pd_a3sp);
- 
--- 
-1.7.5.4
+ arch/arm/mach-shmobile/Kconfig              |    6 +
+ arch/arm/mach-shmobile/Makefile             |    3 +
+ arch/arm/mach-shmobile/board-ap4evb.c       |    5 +
+ arch/arm/mach-shmobile/board-mackerel.c     |    5 +
+ arch/arm/mach-shmobile/include/mach/ipmmu.h |   10 +
+ arch/arm/mach-shmobile/ipmmu.c              |  137 ++++++++++++
+ arch/arm/mach-shmobile/setup-sh7372.c       |   22 ++
+ drivers/iommu/Kconfig                       |    7 +
+ drivers/iommu/Makefile                      |    1 +
+ drivers/iommu/shmobile-iommu.c              |  318 +++++++++++++++++++++++++++
+ 10 files changed, 514 insertions(+), 0 deletions(-)
+ create mode 100644 arch/arm/mach-shmobile/include/mach/ipmmu.h
+ create mode 100644 arch/arm/mach-shmobile/ipmmu.c
+ create mode 100644 drivers/iommu/shmobile-iommu.c
 
