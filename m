@@ -1,17 +1,17 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Wed, 25 Jul 2012 09:29:44 +0000
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Wed, 25 Jul 2012 13:00:34 +0000
 Subject: Re: [RFC][PATCH 0/14] PM / shmobile: Pass power domain information via DT (was: Re: [RFD] PM: Device
-Message-Id: <201207251129.44930.rjw@sisk.pl>
+Message-Id: <201207251300.34892.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201207032302.17805.rjw@sisk.pl> <201207241956.06986.arnd@arndb.de> <201207242237.28051.rjw@sisk.pl>
 In-Reply-To: <201207242237.28051.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Bergmann <arnd@arndb.de>
+To: "Rafael J. Wysocki" <rjw@sisk.pl>, devicetree-discuss@lists.ozlabs.org
 Cc: Linux PM list <linux-pm@vger.kernel.org>, Mark Brown <broonie@opensource.wolfsonmicro.com>, LKML <linux-kernel@vger.kernel.org>, Matthew Garrett <mjg59@srcf.ucam.org>, Magnus Damm <magnus.damm@gmail.com>, Grant Likely <grant.likely@secretlab.ca>, Linux-sh list <linux-sh@vger.kernel.org>
 
-On Tuesday, July 24, 2012, Rafael J. Wysocki wrote:
+On Tuesday 24 July 2012, Rafael J. Wysocki wrote:
 > On Tuesday, July 24, 2012, Arnd Bergmann wrote:
 > > On Tuesday 24 July 2012, Rafael J. Wysocki wrote:
 > > > On Tuesday, July 24, 2012, Arnd Bergmann wrote:
@@ -44,12 +44,163 @@ On Tuesday, July 24, 2012, Rafael J. Wysocki wrote:
 > In this particular case the burden would be on Renesas, but I don't think it
 > would affect anybody else.
 
-Whereas, if we go for a generic binding and get it wrong (which is quite
-likely, given the general lack of information on what the needs are), we'll
-have a much bigger problem that _will_ affect everyone.
+[adding devicetree-discuss@lists.ozlabs.org]
 
-So, my opinion is to go for vendor-specific attributes of limited scope for now,
-that will be relatively easy to deprecate in the future.
+In case of user space interfaces, we also try very hard to avoid cases
+where we know that we will have to change things later.
 
-Thanks,
-Rafael
+I don't think it's that hard to define a generic binding here, we just
+need to make sure it's extensible.
+
+One thing I would like to avoid is having to add to every single
+device binding two separate optional properties defined like
+
+diff --git a/Documentation/devicetree/bindings/mmc/mmci.txt b/Documentation/devicetree/bindings/mmc/mmci.txt
+index 2b584ca..353152e 100644
+--- a/Documentation/devicetree/bindings/mmc/mmci.txt
++++ b/Documentation/devicetree/bindings/mmc/mmci.txt
+@@ -13,3 +13,9 @@ Required properties:
+ Optional properties:
+ - mmc-cap-mmc-highspeed  : indicates whether MMC is high speed capable
+ - mmc-cap-sd-highspeed   : indicates whether SD is high speed capable
++- pm-domain		 : a phandle pointing to the power domain
++			   controlling this device
++			   See ../pm-domain/generic.txt
++- renesas,pm-domain	 : a string with the name of the power domain
++			   controlling this device.
++			   See ../pm-domain/renesas.txt
+
+Even if you say that the burden is only on Renesas to maintain all those
+changes to every binding they use, there is also a burden on people trying
+to understand the binding and deciding which one to use.
+
+> > > >   You have used the "renesas,pmdomain" attribute, which is specific to
+> > > >   one vendor and requires platform specific code to read it.
+> > > >   Is there any reason not to put the code into the generic
+> > > >   drivers/base/power/domain.c file (or near it) and make a binding that
+> > > >   works for everyone?
+> > > 
+> > > Yes, there is.  A couple of them in fact.
+> > > 
+> > > First off, power domains will always need platform-specific code to support
+> > > them, no matter what.  The problem is that they tend to require special
+> > > handling, even within the same SoC, let alone different SoCs, and that handling
+> > > has to be implemented in an SoC-specific way, because it has to know various
+> > > things about the platform (like what to write to what register(s) at what time
+> > > and so on).  Of course, that platform-specific code needs to know which
+> > > domain the given description corresponds to and there doesn't seem to be any
+> > > useful way to specify that through DTs.
+> > 
+> > We have the same problem for a lot of other subsystems: clock, regulator,
+> > irq, gpio, pinctrl, dma, ...
+> > 
+> > In each of these cases, we want a driver to be able to associate some
+> > property with a driver (or platform code) from another subsystem.
+> > We try to handle those using generic subsystem code that interprets
+> > regular property names.
+> 
+> For power domains those properties would be SoC-specific.  That is, there may
+> be a different set of properties for each SoC in principle and it's going to
+> get quite messy relatively quickly.
+
+I don't see how power domains are any different from the other cases
+I listed. The differences should be contained in whatever provides
+the domains. For a device that is part of a power domain, you only need
+to know how to find that domain, not what that information means.
+
+> > > Second, the generic code needed to support such a binding would have to be
+> > > quite complex and I don't see any advantage from adding it.
+> > 
+> > The generic binding would only need to specify what the property
+> > looks like and how the possible values can be determined. We don't
+> > need to make that code generic right away but could wait until we
+> > have a couple of implementations before we pull out the common bits.
+> > 
+> > The important part to me is writing the binding in a way that allows
+> > us to do this.
+> 
+> Admittedly, I have a little experience with writing DT bindings.
+> 
+> The regulator bindings look like we could do something similar for power
+> domains, but for one I don't want platform device objects to be created
+> for them in any case (that would make as much sense as creating a platform
+> device for a bus type).
+
+We have lots of device nodes in the device tree that do not get
+added as platform devices in Linux, and they are used for all sorts
+of purposes. For instance most buses (amba, pci, usb, i2c, spi, ...)
+can have their devices represented in the device tree but register
+their own devices rather than platform devices.
+
+Other nodes are used internally in some code and have no "device"
+associated at all. Examples for these are parts of the system that
+we don't treat as devices in Linux (cpu, memory, command line)
+and things that are subsystem specific but structured (regulators,
+pincontrol, clock).
+
+> > > > * Mark suggested two options (string and phandle), and (you guessed it),
+> > > 
+> > > To me, the Mark's suggestion was to follow the example of TI hwmods, which
+> > > I did.  In fact, the power domains on Renesas platforms are an analogous
+> > > concept, so in my opinion handling them in analogy with hwmods makes a lot of
+> > > sense.
+> > 
+> > I had never seen the hwmod binding before and if I had I would have
+> > given them the same comments. I definitely don't think we should be
+> > using it as a good example for common code.
+> 
+> Well, good to know. :-)
+> 
+> > > >   IMHO using phandle makes it much easier to do this in a generic way,
+> > > >   without having to document every possible string that this can be
+> > > >   set to in the binding document. Obviously the phandle requires having
+> > > >   a node in the device tree for each domain, but I think having that
+> > > >   node is actually an advantage because it lets you describe the
+> > > >   hierarchy of the domains there.
+> > > 
+> > > I don't quite see how it is better.  I could (and should in fact) represent
+> > > that hierarchy as an array of pairs of strings without adding any special
+> > > parsing code to the kernel (except for a simple routine walking that table
+> > > and calling pm_genpd_add_subdomain_names() for every pair).
+> > > 
+> > > The only disadvantage of the current approach I can see is that whoever
+> > > creates a dts for a board based on the given SoC has to know the names of the
+> > > power domains to use in there.  I don't think this is an overly burdensome
+> > > requirement.
+> > 
+> > Well, it does mean that we need to maintain a separate binding document
+> > for each soc that has its own set of possible values.
+> 
+> I'm not sure we'll be able to avoid that anyway.
+
+True, but a different kind of document.
+
+The difference is that when using a string, each binding for a device that
+can be part of a domain should have a way to document which strings are
+possible for the property.
+If you use a phandle, the binding for that device just needs to document
+that it's a phandle that points to another device for which a binding
+exists.
+The binding for the SoC can then describe the power domains in a way
+that is detached from the devices.
+
+> > > The other way around, the platform code supposed to handle the power domains
+> > > would need a way to match DT nodes against the domains, which also would
+> > > require some string-based identification and that would have to be documented
+> > > as well.
+> > 
+> > The part that matches the pm-domain device nodes can and should be
+> > specific to the platform implementing the pm-domain. We can easily
+> > do the same thing we did for regulators, where each regulator can
+> > be either identified through its "reg" property in cases where that
+> > makes sense or through a "regulator-compatible" property in cases
+> > where we need a string representation.
+> 
+> Where can I find the code that parses the regulator bindings?
+
+The binding is in Documentation/devicetree/bindings/regulator/regulator.txt
+and the code is in drivers/regulator/of_regulator.c. Note that this
+has recently been extended, so be sure to look at the latest snapshot in
+git, not the v3.5 version.
+
+	Arnd
