@@ -1,34 +1,21 @@
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Thu, 26 Jul 2012 02:58:42 +0000
-Subject: [PATCH] sh: pfc: remove pinctrl_remove_gpio_range function
-Message-Id: <1343271522-3060-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Thu, 26 Jul 2012 05:15:30 +0000
+Subject: Re: [PATCH] sh: pfc: remove pinctrl_remove_gpio_range function
+Message-Id: <20120726051530.GD30468@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1343271522-3060-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+In-Reply-To: <1343271522-3060-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The pinctrl_remove_gpio_range was removed form pinctrl framework.
-And the ranges of GPIO will be automatically removed when the pinctrl
-driver is unregistered.
+On Thu, Jul 26, 2012 at 11:58:42AM +0900, Nobuhiro Iwamatsu wrote:
+> The pinctrl_remove_gpio_range was removed form pinctrl framework.
+> And the ranges of GPIO will be automatically removed when the pinctrl
+> driver is unregistered.
 
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
----
- drivers/sh/pfc/pinctrl.c |    1 -
- 1 file changed, 1 deletion(-)
+On Thu, Jul 26, 2012 at 12:14:11PM +0900, Nobuhiro Iwamatsu wrote:
+> pfc is never used, remove it.
 
-diff --git a/drivers/sh/pfc/pinctrl.c b/drivers/sh/pfc/pinctrl.c
-index 0802b6c..10a56d7 100644
---- a/drivers/sh/pfc/pinctrl.c
-+++ b/drivers/sh/pfc/pinctrl.c
-@@ -481,7 +481,6 @@ static int __devexit sh_pfc_pinctrl_remove(struct platform_device *pdev)
- {
- 	struct sh_pfc_pinctrl *pmx = platform_get_drvdata(pdev);
- 
--	pinctrl_remove_gpio_range(pmx->pctl, &sh_pfc_gpio_range);
- 	pinctrl_unregister(pmx->pctl);
- 
- 	platform_set_drvdata(pdev, NULL);
--- 
-1.7.10
-
+Both already fixed in my tree.
