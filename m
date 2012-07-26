@@ -1,39 +1,34 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 05 Jul 2012 14:08:31 +0000
-Subject: Re: [PATCH 2/7 v2] ASoC: siu: don't use DMA device for channel filtering
-Message-Id: <Pine.LNX.4.64.1207051608160.30191@axis700.grange>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date: Thu, 26 Jul 2012 02:58:42 +0000
+Subject: [PATCH] sh: pfc: remove pinctrl_remove_gpio_range function
+Message-Id: <1343271522-3060-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1341484183-10757-1-git-send-email-g.liakhovetski@gmx.de>
- <1341484183-10757-3-git-send-email-g.liakhovetski@gmx.de>
- <20120705120826.GU4111@opensource.wolfsonmicro.com>
- <Pine.LNX.4.64.1207051549010.30191@axis700.grange>
- <20120705140053.GL4111@opensource.wolfsonmicro.com>
-In-Reply-To: <20120705140053.GL4111@opensource.wolfsonmicro.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Cc: Vinod Koul <vinod.koul@intel.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Thu, 5 Jul 2012, Mark Brown wrote:
+The pinctrl_remove_gpio_range was removed form pinctrl framework.
+And the ranges of GPIO will be automatically removed when the pinctrl
+driver is unregistered.
 
-> On Thu, Jul 05, 2012 at 03:54:30PM +0200, Guennadi Liakhovetski wrote:
-> > On Thu, 5 Jul 2012, Mark Brown wrote:
-> 
-> > > This doesn't apply, please regenerate against current code.
-> 
-> > Sure, as I mentioned in my description mail: "This patch series goes on 
-> > top of my earlier patches to split shdma.c." And that patch series, also 
-> > available at
-> 
-> Ah, right.  You didn't send me your cover mail, you only CCed me on the
-> individual patch, so I hadn't seen this.
-
-Indeed, sorry again.
-
-Thanks
-Guennadi
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ drivers/sh/pfc/pinctrl.c |    1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/sh/pfc/pinctrl.c b/drivers/sh/pfc/pinctrl.c
+index 0802b6c..10a56d7 100644
+--- a/drivers/sh/pfc/pinctrl.c
++++ b/drivers/sh/pfc/pinctrl.c
+@@ -481,7 +481,6 @@ static int __devexit sh_pfc_pinctrl_remove(struct platform_device *pdev)
+ {
+ 	struct sh_pfc_pinctrl *pmx = platform_get_drvdata(pdev);
+ 
+-	pinctrl_remove_gpio_range(pmx->pctl, &sh_pfc_gpio_range);
+ 	pinctrl_unregister(pmx->pctl);
+ 
+ 	platform_set_drvdata(pdev, NULL);
+-- 
+1.7.10
+
