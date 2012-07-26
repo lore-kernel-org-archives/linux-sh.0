@@ -1,47 +1,57 @@
-From: Kevin Hilman <khilman@ti.com>
-Date: Thu, 26 Jul 2012 21:45:52 +0000
+From: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date: Thu, 26 Jul 2012 21:55:43 +0000
 Subject: Re: [RFC][PATCH 0/14] PM / shmobile: Pass power domain information via DT (was: Re: [RFD] PM: Device
-Message-Id: <87mx2mmc1b.fsf@ti.com>
+Message-Id: <20120726215543.GJ4560@opensource.wolfsonmicro.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="SLfjTIIQuAzj8yil"
 List-Id: <linux-sh.vger.kernel.org>
-References: <201207032302.17805.rjw@sisk.pl> <201207242237.28051.rjw@sisk.pl>
-	<201207251300.34892.arnd@arndb.de> <201207260032.40159.rjw@sisk.pl>
-	<87vchb4ar8.fsf@ti.com>
-	<20120726210952.GG4560@opensource.wolfsonmicro.com>
-In-Reply-To: <20120726210952.GG4560@opensource.wolfsonmicro.com> (Mark Brown's
-	message of "Thu, 26 Jul 2012 22:09:53 +0100")
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@opensource.wolfsonmicro.com>
+References: <201207032302.17805.rjw@sisk.pl>
+ <201207242237.28051.rjw@sisk.pl>
+ <201207251300.34892.arnd@arndb.de>
+ <201207260032.40159.rjw@sisk.pl>
+ <87vchb4ar8.fsf@ti.com>
+ <20120726210952.GG4560@opensource.wolfsonmicro.com>
+ <87mx2mmc1b.fsf@ti.com>
+In-Reply-To: <87mx2mmc1b.fsf@ti.com>
+To: Kevin Hilman <khilman@ti.com>
 Cc: "Rafael J. Wysocki" <rjw@sisk.pl>, Arnd Bergmann <arnd@arndb.de>, devicetree-discuss@lists.ozlabs.org, Linux PM list <linux-pm@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>, Matthew Garrett <mjg59@srcf.ucam.org>, Magnus Damm <magnus.damm@gmail.com>, Grant Likely <grant.likely@secretlab.ca>, Linux-sh list <linux-sh@vger.kernel.org>, Benoit Cousson <b-cousson@ti.com>
 
-Mark Brown <broonie@opensource.wolfsonmicro.com> writes:
 
-> On Wed, Jul 25, 2012 at 05:38:35PM -0700, Kevin Hilman wrote:
->
->> That being said, I'm not sure why ti,hwmods is being used as an example
->> for powerdomains.  hwmods describe the integration of SoC IP blocks
->> (base addr, IRQ, DMA channel etc., which are being moved to DT) as well
->> as a bunch of SoC specific PM register descriptions.  This stuff is
->> SoC-specific PM register layout, so being very SoC specific, it has the
->> 'ti' prefix in the DT binding.
->
-> I think the thing here is that one aspect of that SoC integration is
-> which power domain the blocks are in.  Describing which power domain an
-> IP is in isn't a million miles away from describing which hwmod applies
-> to an IP.
+--SLfjTIIQuAzj8yil
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Not a million miles, just a million transistors. ;)
+On Thu, Jul 26, 2012 at 02:45:52PM -0700, Kevin Hilman wrote:
 
-Ideally, we will eventually have a representation that can map
-from regulators all the way down to IP blocks.  regulator --> voltage
-domain --> power domain --> clock domain --> clocks --> IP block.
+> Ideally, we will eventually have a representation that can map
+> from regulators all the way down to IP blocks.  regulator --> voltage
+> domain --> power domain --> clock domain --> clocks --> IP block.
 
-Currently we have bindings for regulators,  IP blocks (ti,hwmods on
-OMAP) and clocks are in progress.  Eventually, we'll need everything
-else in between.
+Well, often the clock bit is something of a noop - a lot of SoCs can
+reparent the IP block clocks between the different clock domains happily
+and have core clock domains that are mostly orthogonal to the power
+domains.  But yes.
 
-Kevin
+--SLfjTIIQuAzj8yil
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
+iQIcBAEBAgAGBQJQEbzUAAoJEBus8iNuMP3dnXcP/jFLKtSMKjOVVPSJfE9TfobM
+ClesmABbQItO82QxziXieqbP0lqCW3gKjvHRPLNiPqmQg5YtQ4mx6Wqo9OFwxHdL
+OXwxKDybMDuN4x/x8SHbnpzrPm4CNQ7zOrSjYgMq+vv3zufAvOtO3QOaUPMdKVd2
+6+s7T3kf8esHf5hllCeNiJhrIcImbJlw2p4+X/GHDi2tVPs1d7b4V46ZvjtFqXG4
+G4Tsyli3aelMEml+w2E3hVWP+CJX7kygLvOAX3BzlDWtHVxpdYIxR6b/JS4Fhuhg
+X6P/BpZRTQthDMhI+9Xj5C/8HvYCN4ZUQ31NLdh4Gaov5Fu10N8kPL6JO4SxxOUQ
+T2aCUzT2hvpeeUG2w8hXvyUSdUri5MdPSHRgCl0hVaBWCLBgoxr62u1CHrh6z5m5
+3vITouilNQ+mvXwKx16whLxUcRKomYK/CNo7LYA7jiW6ftsWsw1xPPqkM3Qa9SzK
+XZPbdeTrM+bsH/utP1xoKQ3RR1d464bNMyeNikrRB46nXu3TrXyUGeyWS+XJU5RC
+9VC3CsD13S1he5EVJB6phJS+gVICqqAWmZdiaiD0Ts/O2EiOJuQbKx0LSteoAigb
+ac7XlAdqAW476w9AwtZP5ERMmurUlMi/VCr9cFIrb297ufZpJOooaQ/tG4qrRrBE
+Pp8SJQa/3s3uJl86XERp
+=Mioi
+-----END PGP SIGNATURE-----
 
+--SLfjTIIQuAzj8yil--
