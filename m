@@ -1,243 +1,100 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 19 Jul 2012 00:39:22 +0000
-Subject: [PATCH 9/9] fbdev: sh_mobile_lcdc: Fix pan offset computation in YUV mode
-Message-Id: <1342658362-19491-10-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Wen Congyang <wency@cn.fujitsu.com>
+Date: Fri, 27 Jul 2012 10:33:33 +0000
+Subject: [RFC PATCH v5 14/19] memory-hotplug: move register_page_bootmem_info_node and put_page_bootmem for s
+Message-Id: <50126E7D.1070807@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <50126B83.3050201@cn.fujitsu.com>
+In-Reply-To: <50126B83.3050201@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, Yasuaki ISIMATU <isimatu.yasuaki@jp.fujitsu.com>
 
-The chroma plane offset in memory is equal to the luma plane maximum
-size. Fix offset computations.
+From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+For implementing register_page_bootmem_info_node of sparse-vmemmap,
+register_page_bootmem_info_node and put_page_bootmem are moved to
+memory_hotplug.c
+
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+CC: Paul Mackerras <paulus@samba.org>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 ---
- drivers/video/sh_mobile_lcdcfb.c |  110 ++++++++++++++++++--------------------
- drivers/video/sh_mobile_lcdcfb.h |    3 +-
- 2 files changed, 54 insertions(+), 59 deletions(-)
+ include/linux/memory_hotplug.h |    9 ---------
+ mm/memory_hotplug.c            |    8 ++++++--
+ 2 files changed, 6 insertions(+), 11 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index 5c26c44..1b95822 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -161,7 +161,7 @@ enum sh_mobile_lcdc_overlay_mode {
-  * @dma_handle: Frame buffer DMA address
-  * @base_addr_y: Overlay base address (RGB or luma component)
-  * @base_addr_c: Overlay base address (chroma component)
-- * @pan_offset: Current pan offset in bytes
-+ * @pan_y_offset: Panning linear offset in bytes (luma component)
-  * @format: Current pixelf format
-  * @xres: Horizontal visible resolution
-  * @xres_virtual: Horizontal total resolution
-@@ -191,7 +191,7 @@ struct sh_mobile_lcdc_overlay {
- 	dma_addr_t dma_handle;
- 	unsigned long base_addr_y;
- 	unsigned long base_addr_c;
--	unsigned long pan_offset;
-+	unsigned long pan_y_offset;
+diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
+index 0d500be..fe50a9b 100644
+--- a/include/linux/memory_hotplug.h
++++ b/include/linux/memory_hotplug.h
+@@ -162,17 +162,8 @@ static inline void arch_refresh_nodedata(int nid, pg_data_t *pgdat)
+ #endif /* CONFIG_NUMA */
+ #endif /* CONFIG_HAVE_ARCH_NODEDATA_EXTENSION */
  
- 	const struct sh_mobile_lcdc_format_info *format;
- 	unsigned int xres;
-@@ -873,8 +873,8 @@ static void sh_mobile_lcdc_overlay_setup(struct sh_mobile_lcdc_overlay *ovl)
- 	}
+-#ifdef CONFIG_SPARSEMEM_VMEMMAP
+-static inline void register_page_bootmem_info_node(struct pglist_data *pgdat)
+-{
+-}
+-static inline void put_page_bootmem(struct page *page)
+-{
+-}
+-#else
+ extern void register_page_bootmem_info_node(struct pglist_data *pgdat);
+ extern void put_page_bootmem(struct page *page);
+-#endif
  
- 	ovl->base_addr_y = ovl->dma_handle;
--	ovl->base_addr_c = ovl->base_addr_y + ovl->xres
--			   * ovl->yres_virtual;
-+	ovl->base_addr_c = ovl->dma_handle
-+			 + ovl->xres_virtual * ovl->yres_virtual;
- 
- 	switch (ovl->mode) {
- 	case LCDC_OVERLAY_BLEND:
-@@ -1111,7 +1111,8 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
- 			continue;
- 
- 		ch->base_addr_y = ch->dma_handle;
--		ch->base_addr_c = ch->base_addr_y + ch->xres * ch->yres_virtual;
-+		ch->base_addr_c = ch->dma_handle
-+				+ ch->xres_virtual * ch->yres_virtual;
- 		ch->line_size = ch->pitch;
- 
- 		/* Enable MERAM if possible. */
-@@ -1505,39 +1506,36 @@ static int sh_mobile_lcdc_overlay_pan(struct fb_var_screeninfo *var,
- 	struct sh_mobile_lcdc_overlay *ovl = info->par;
- 	unsigned long base_addr_y;
- 	unsigned long base_addr_c;
--	unsigned long pan_offset;
-+	unsigned long y_offset;
- 	unsigned long c_offset;
- 
--	if (!ovl->format->yuv)
--		pan_offset = var->yoffset * ovl->pitch
--			   + var->xoffset * (ovl->format->bpp / 8);
--	else
--		pan_offset = var->yoffset * ovl->pitch + var->xoffset;
-+	if (!ovl->format->yuv) {
-+		y_offset = (var->yoffset * ovl->xres_virtual + var->xoffset)
-+			 * ovl->format->bpp / 8;
-+		c_offset = 0;
-+	} else {
-+		unsigned int xsub = ovl->format->bpp < 24 ? 2 : 1;
-+		unsigned int ysub = ovl->format->bpp < 16 ? 2 : 1;
-+
-+		y_offset = var->yoffset * ovl->xres_virtual + var->xoffset;
-+		c_offset = var->yoffset / ysub * ovl->xres_virtual * 2 / xsub
-+			 + var->xoffset * 2 / xsub;
-+	}
- 
--	if (pan_offset = ovl->pan_offset)
--		return 0;	/* No change, do nothing */
-+	/* If the Y offset hasn't changed, the C offset hasn't either. There's
-+	 * nothing to do in that case.
-+	 */
-+	if (y_offset = ovl->pan_y_offset)
-+		return 0;
- 
- 	/* Set the source address for the next refresh */
--	base_addr_y = ovl->dma_handle + pan_offset;
-+	base_addr_y = ovl->dma_handle + y_offset;
-+	base_addr_c = ovl->dma_handle + ovl->xres_virtual * ovl->yres_virtual
-+		    + c_offset;
- 
- 	ovl->base_addr_y = base_addr_y;
--	ovl->base_addr_c = base_addr_y;
--
--	if (ovl->format->yuv) {
--		/* Set Y offset */
--		c_offset = var->yoffset * ovl->pitch
--			 * (ovl->format->bpp - 8) / 8;
--		base_addr_c = ovl->dma_handle
--			    + ovl->xres * ovl->yres_virtual
--			    + c_offset;
--		/* Set X offset */
--		if (ovl->format->fourcc = V4L2_PIX_FMT_NV24)
--			base_addr_c += 2 * var->xoffset;
--		else
--			base_addr_c += var->xoffset;
--
--		ovl->base_addr_c = base_addr_c;
--	}
-+	ovl->base_addr_c = base_addr_c;
-+	ovl->pan_y_offset = y_offset;
- 
- 	lcdc_write(ovl->channel->lcdc, LDBCR, LDBCR_UPC(ovl->index));
- 
-@@ -1547,8 +1545,6 @@ static int sh_mobile_lcdc_overlay_pan(struct fb_var_screeninfo *var,
- 	lcdc_write(ovl->channel->lcdc, LDBCR,
- 		   LDBCR_UPF(ovl->index) | LDBCR_UPD(ovl->index));
- 
--	ovl->pan_offset = pan_offset;
--
- 	return 0;
+ /*
+  * Lock for memory hotplug guarantees 1) all callbacks for memory hotplug
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index eae946b..180d555 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -91,7 +91,6 @@ static void release_memory_resource(struct resource *res)
  }
  
-@@ -1814,35 +1810,33 @@ static int sh_mobile_lcdc_pan(struct fb_var_screeninfo *var,
- 	struct sh_mobile_lcdc_chan *ch = info->par;
- 	struct sh_mobile_lcdc_priv *priv = ch->lcdc;
- 	unsigned long ldrcntr;
--	unsigned long new_pan_offset;
--	unsigned long base_addr_y, base_addr_c = 0;
-+	unsigned long base_addr_y, base_addr_c;
-+	unsigned long y_offset;
- 	unsigned long c_offset;
+ #ifdef CONFIG_MEMORY_HOTPLUG_SPARSE
+-#ifndef CONFIG_SPARSEMEM_VMEMMAP
+ static void get_page_bootmem(unsigned long info,  struct page *page,
+ 			     unsigned long type)
+ {
+@@ -127,6 +126,7 @@ void __ref put_page_bootmem(struct page *page)
  
--	if (!ch->format->yuv)
--		new_pan_offset = var->yoffset * ch->pitch
--			       + var->xoffset * (ch->format->bpp / 8);
--	else
--		new_pan_offset = var->yoffset * ch->pitch + var->xoffset;
-+	if (!ch->format->yuv) {
-+		y_offset = (var->yoffset * ch->xres_virtual + var->xoffset)
-+			 * ch->format->bpp / 8;
-+		c_offset = 0;
-+	} else {
-+		unsigned int xsub = ch->format->bpp < 24 ? 2 : 1;
-+		unsigned int ysub = ch->format->bpp < 16 ? 2 : 1;
+ }
  
--	if (new_pan_offset = ch->pan_offset)
--		return 0;	/* No change, do nothing */
-+		y_offset = var->yoffset * ch->xres_virtual + var->xoffset;
-+		c_offset = var->yoffset / ysub * ch->xres_virtual * 2 / xsub
-+			 + var->xoffset * 2 / xsub;
-+	}
++#ifndef CONFIG_SPARSEMEM_VMEMMAP
+ static void register_page_bootmem_info_section(unsigned long start_pfn)
+ {
+ 	unsigned long *usemap, mapsize, section_nr, i;
+@@ -163,6 +163,11 @@ static void register_page_bootmem_info_section(unsigned long start_pfn)
+ 		get_page_bootmem(section_nr, page, MIX_SECTION_INFO);
  
--	ldrcntr = lcdc_read(priv, _LDRCNTR);
-+	/* If the Y offset hasn't changed, the C offset hasn't either. There's
-+	 * nothing to do in that case.
-+	 */
-+	if (y_offset = ch->pan_y_offset)
-+		return 0;
+ }
++#else
++static inline void register_page_bootmem_info_section(unsigned long start_pfn)
++{
++}
++#endif
  
- 	/* Set the source address for the next refresh */
--	base_addr_y = ch->dma_handle + new_pan_offset;
--	if (ch->format->yuv) {
--		/* Set y offset */
--		c_offset = var->yoffset * ch->pitch
--			 * (ch->format->bpp - 8) / 8;
--		base_addr_c = ch->dma_handle + ch->xres * ch->yres_virtual
--			    + c_offset;
--		/* Set x offset */
--		if (ch->format->fourcc = V4L2_PIX_FMT_NV24)
--			base_addr_c += 2 * var->xoffset;
--		else
--			base_addr_c += var->xoffset;
--	}
-+	base_addr_y = ch->dma_handle + y_offset;
-+	base_addr_c = ch->dma_handle + ch->xres_virtual * ch->yres_virtual
-+		    + c_offset;
+ void register_page_bootmem_info_node(struct pglist_data *pgdat)
+ {
+@@ -198,7 +203,6 @@ void register_page_bootmem_info_node(struct pglist_data *pgdat)
+ 		register_page_bootmem_info_section(pfn);
  
- 	if (ch->cache)
- 		sh_mobile_meram_cache_update(priv->meram_dev, ch->cache,
-@@ -1851,17 +1845,18 @@ static int sh_mobile_lcdc_pan(struct fb_var_screeninfo *var,
+ }
+-#endif /* !CONFIG_SPARSEMEM_VMEMMAP */
  
- 	ch->base_addr_y = base_addr_y;
- 	ch->base_addr_c = base_addr_c;
-+	ch->pan_y_offset = y_offset;
- 
- 	lcdc_write_chan_mirror(ch, LDSA1R, base_addr_y);
- 	if (ch->format->yuv)
- 		lcdc_write_chan_mirror(ch, LDSA2R, base_addr_c);
- 
-+	ldrcntr = lcdc_read(priv, _LDRCNTR);
- 	if (lcdc_chan_is_sublcd(ch))
- 		lcdc_write(ch->lcdc, _LDRCNTR, ldrcntr ^ LDRCNTR_SRS);
- 	else
- 		lcdc_write(ch->lcdc, _LDRCNTR, ldrcntr ^ LDRCNTR_MRS);
- 
--	ch->pan_offset = new_pan_offset;
- 
- 	sh_mobile_lcdc_deferred_io_touch(info);
- 
-@@ -2734,7 +2729,6 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
- 		}
- 		init_waitqueue_head(&ch->frame_end_wait);
- 		init_completion(&ch->vsync_completion);
--		ch->pan_offset = 0;
- 
- 		/* probe the backlight is there is one defined */
- 		if (ch->cfg->bl_info.max_brightness)
-diff --git a/drivers/video/sh_mobile_lcdcfb.h b/drivers/video/sh_mobile_lcdcfb.h
-index e53cd11..0f92f65 100644
---- a/drivers/video/sh_mobile_lcdcfb.h
-+++ b/drivers/video/sh_mobile_lcdcfb.h
-@@ -47,6 +47,7 @@ struct sh_mobile_lcdc_entity {
- /*
-  * struct sh_mobile_lcdc_chan - LCDC display channel
-  *
-+ * @pan_y_offset: Panning linear offset in bytes (luma component)
-  * @base_addr_y: Frame buffer viewport base address (luma component)
-  * @base_addr_c: Frame buffer viewport base address (chroma component)
-  * @pitch: Frame buffer line pitch
-@@ -68,7 +69,7 @@ struct sh_mobile_lcdc_chan {
- 	unsigned long fb_size;
- 
- 	dma_addr_t dma_handle;
--	unsigned long pan_offset;
-+	unsigned long pan_y_offset;
- 
- 	unsigned long frame_end;
- 	wait_queue_head_t frame_end_wait;
+ static void grow_zone_span(struct zone *zone, unsigned long start_pfn,
+ 			   unsigned long end_pfn)
 -- 
-1.7.8.6
+1.7.1
 
