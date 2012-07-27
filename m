@@ -1,37 +1,33 @@
-From: Hideki EIRAKU <hdk@igel.co.jp>
-Date: Wed, 25 Jul 2012 06:29:00 +0000
-Subject: [PATCH 0/2] Renesas IPMMU driver for sh7372
-Message-Id: <1343197742-13630-1-git-send-email-hdk@igel.co.jp>
+From: Wen Congyang <wency@cn.fujitsu.com>
+Date: Fri, 27 Jul 2012 10:24:58 +0000
+Subject: [PATCH 0.5/19] remove memory info from list before freeing it
+Message-Id: <50126C7A.1000508@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <50126B83.3050201@cn.fujitsu.com>
+In-Reply-To: <50126B83.3050201@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, Yasuaki ISIMATU <isimatu.yasuaki@jp.fujitsu.com>
 
-This is the Renesas IPMMU driver, IOMMU API implementation and IPMMU
-device support for sh7372 (AP4EVB and Mackerel).
+We free info, but we forget to remove it from the list. It will cause
+unexpected problem when we access the list next time.
 
-The IPMMU module supports the MMU function and the PMB function.  The
-MMU function provides address translation by pagetable compatible with
-ARMv6.  The PMB function provides address translation including
-tile-linear translation.  This is implementation of the MMU function.
+Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+---
+ drivers/acpi/acpi_memhotplug.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-Hideki EIRAKU (2):
-  iommu/shmobile: Add iommu driver for Renesas IPMMU modules
-  ARM: mach-shmobile: sh7372: Add IPMMU device
-
- arch/arm/mach-shmobile/Kconfig              |    6 +
- arch/arm/mach-shmobile/Makefile             |    3 +
- arch/arm/mach-shmobile/board-ap4evb.c       |    5 +
- arch/arm/mach-shmobile/board-mackerel.c     |    5 +
- arch/arm/mach-shmobile/include/mach/ipmmu.h |   10 +
- arch/arm/mach-shmobile/ipmmu.c              |  137 ++++++++++++
- arch/arm/mach-shmobile/setup-sh7372.c       |   22 ++
- drivers/iommu/Kconfig                       |    7 +
- drivers/iommu/Makefile                      |    1 +
- drivers/iommu/shmobile-iommu.c              |  318 +++++++++++++++++++++++++++
- 10 files changed, 514 insertions(+), 0 deletions(-)
- create mode 100644 arch/arm/mach-shmobile/include/mach/ipmmu.h
- create mode 100644 arch/arm/mach-shmobile/ipmmu.c
- create mode 100644 drivers/iommu/shmobile-iommu.c
+diff --git a/drivers/acpi/acpi_memhotplug.c b/drivers/acpi/acpi_memhotplug.c
+index 8fe0e02..5cafd6b 100644
+--- a/drivers/acpi/acpi_memhotplug.c
++++ b/drivers/acpi/acpi_memhotplug.c
+@@ -323,6 +323,7 @@ static int acpi_memory_disable_device(struct acpi_memory_device *mem_device)
+ 			if (result)
+ 				return result;
+ 		}
++		list_del(&info->list);
+ 		kfree(info);
+ 	}
 
