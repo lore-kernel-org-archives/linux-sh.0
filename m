@@ -1,141 +1,133 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 05 Jul 2012 10:29:43 +0000
-Subject: [PATCH 7/7 v2] mmc: sh_mmcif: switch to the new DMA channel allocation and configuration
-Message-Id: <1341484183-10757-8-git-send-email-g.liakhovetski@gmx.de>
+From: Wen Congyang <wency@cn.fujitsu.com>
+Date: Fri, 27 Jul 2012 10:31:28 +0000
+Subject: [RFC PATCH v5 11/19] memory-hotplug: remove_memory calls __remove_pages
+Message-Id: <50126E00.9000906@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1341484183-10757-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1341484183-10757-1-git-send-email-g.liakhovetski@gmx.de>
+References: <50126B83.3050201@cn.fujitsu.com>
+In-Reply-To: <50126B83.3050201@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Vinod Koul <vinod.koul@intel.com>
-Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Chris Ball <cjb@laptop.org>
+To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, Yasuaki ISIMATU <isimatu.yasuaki@jp.fujitsu.com>
 
-Using the "private" field from struct dma_chan is deprecated. The sh
-dmaengine driver now also supports the preferred DMA channel allocation
-and configuration method, using a standard filter function and a channel
-configuration operation. This patch updates sh_mmcif to use this new
-method.
+From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Chris Ball <cjb@laptop.org>
+The patch adds __remove_pages() to remove_memory(). Then the range of
+phys_start_pfn argument and nr_pages argument in __remove_pagse() may
+have different zone. So zone argument is removed from __remove_pages()
+and __remove_pages() caluculates zone in each section.
+
+When CONFIG_SPARSEMEM_VMEMMAP is defined, there is no way to remove a memmap.
+So __remove_section only calls unregister_memory_section().
+
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+CC: Paul Mackerras <paulus@samba.org>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 ---
- drivers/mmc/host/sh_mmcif.c |   90 ++++++++++++++++++++++++------------------
- 1 files changed, 51 insertions(+), 39 deletions(-)
+ arch/powerpc/platforms/pseries/hotplug-memory.c |    5 +----
+ include/linux/memory_hotplug.h                  |    3 +--
+ mm/memory_hotplug.c                             |   18 +++++++++++-------
+ 3 files changed, 13 insertions(+), 13 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index 9e3b9b1..0f07d28 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -211,8 +211,6 @@ struct sh_mmcif_host {
- 	struct mmc_host *mmc;
- 	struct mmc_request *mrq;
- 	struct platform_device *pd;
--	struct sh_dmae_slave dma_slave_tx;
--	struct sh_dmae_slave dma_slave_rx;
- 	struct clk *hclk;
- 	unsigned int clk;
- 	int bus_width;
-@@ -371,52 +369,66 @@ static void sh_mmcif_start_dma_tx(struct sh_mmcif_host *host)
- 		desc, cookie);
- }
- 
--static bool sh_mmcif_filter(struct dma_chan *chan, void *arg)
--{
--	dev_dbg(chan->device->dev, "%s: slave data %p\n", __func__, arg);
--	chan->private = arg;
--	return true;
--}
--
- static void sh_mmcif_request_dma(struct sh_mmcif_host *host,
- 				 struct sh_mmcif_plat_data *pdata)
+diff --git a/arch/powerpc/platforms/pseries/hotplug-memory.c b/arch/powerpc/platforms/pseries/hotplug-memory.c
+index dc0a035..cc14da4 100644
+--- a/arch/powerpc/platforms/pseries/hotplug-memory.c
++++ b/arch/powerpc/platforms/pseries/hotplug-memory.c
+@@ -76,7 +76,6 @@ unsigned long memory_block_size_bytes(void)
+ static int pseries_remove_memblock(unsigned long base, unsigned int memblock_size)
  {
--	struct sh_dmae_slave *tx, *rx;
-+	struct resource *res = platform_get_resource(host->pd, IORESOURCE_MEM, 0);
-+	struct dma_slave_config cfg;
-+	dma_cap_mask_t mask;
-+	int ret;
+ 	unsigned long start, start_pfn;
+-	struct zone *zone;
+ 	int i, ret;
+ 	int sections_to_remove;
+ 
+@@ -87,8 +86,6 @@ static int pseries_remove_memblock(unsigned long base, unsigned int memblock_siz
+ 		return 0;
+ 	}
+ 
+-	zone = page_zone(pfn_to_page(start_pfn));
+-
+ 	/*
+ 	 * Remove section mappings and sysfs entries for the
+ 	 * section of the memory we are removing.
+@@ -101,7 +98,7 @@ static int pseries_remove_memblock(unsigned long base, unsigned int memblock_siz
+ 	sections_to_remove = (memblock_size >> PAGE_SHIFT) / PAGES_PER_SECTION;
+ 	for (i = 0; i < sections_to_remove; i++) {
+ 		unsigned long pfn = start_pfn + i * PAGES_PER_SECTION;
+-		ret = __remove_pages(zone, start_pfn,  PAGES_PER_SECTION);
++		ret = __remove_pages(start_pfn,  PAGES_PER_SECTION);
+ 		if (ret)
+ 			return ret;
+ 	}
+diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
+index fd84ea9..8bf820d 100644
+--- a/include/linux/memory_hotplug.h
++++ b/include/linux/memory_hotplug.h
+@@ -90,8 +90,7 @@ extern bool is_pageblock_removable_nolock(struct page *page);
+ /* reasonably generic interface to expand the physical pages in a zone  */
+ extern int __add_pages(int nid, struct zone *zone, unsigned long start_pfn,
+ 	unsigned long nr_pages);
+-extern int __remove_pages(struct zone *zone, unsigned long start_pfn,
+-	unsigned long nr_pages);
++extern int __remove_pages(unsigned long start_pfn, unsigned long nr_pages);
+ 
+ #ifdef CONFIG_NUMA
+ extern int memory_add_physaddr_to_nid(u64 start);
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index d360c5c..a9e1579 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -275,11 +275,14 @@ static int __meminit __add_section(int nid, struct zone *zone,
+ #ifdef CONFIG_SPARSEMEM_VMEMMAP
+ static int __remove_section(struct zone *zone, struct mem_section *ms)
+ {
+-	/*
+-	 * XXX: Freeing memmap with vmemmap is not implement yet.
+-	 *      This should be removed later.
+-	 */
+-	return -EBUSY;
++	int ret = -EINVAL;
 +
- 	host->dma_active = false;
- 
-+	if (pdata->slave_id_tx <= 0 || pdata->slave_id_rx <= 0)
-+		return;
++	if (!valid_section(ms))
++		return ret;
 +
- 	/* We can only either use DMA for both Tx and Rx or not use it at all */
--	tx = &host->dma_slave_tx;
--	tx->shdma_slave.slave_id = pdata->slave_id_tx;
--	rx = &host->dma_slave_rx;
--	rx->shdma_slave.slave_id = pdata->slave_id_rx;
-+	dma_cap_zero(mask);
-+	dma_cap_set(DMA_SLAVE, mask);
++	ret = unregister_memory_section(ms);
 +
-+	host->chan_tx = dma_request_channel(mask, shdma_chan_filter,
-+					    (void *)pdata->slave_id_tx);
-+	dev_dbg(&host->pd->dev, "%s: TX: got channel %p\n", __func__,
-+		host->chan_tx);
- 
--	if (tx->shdma_slave.slave_id > 0 && rx->shdma_slave.slave_id > 0) {
--		dma_cap_mask_t mask;
-+	if (!host->chan_tx)
-+		return;
- 
--		dma_cap_zero(mask);
--		dma_cap_set(DMA_SLAVE, mask);
-+	cfg.slave_id = pdata->slave_id_tx;
-+	cfg.direction = DMA_MEM_TO_DEV;
-+	cfg.dst_addr = res->start + MMCIF_CE_DATA;
-+	cfg.src_addr = 0;
-+	ret = dmaengine_slave_config(host->chan_tx, &cfg);
-+	if (ret < 0)
-+		goto ecfgtx;
- 
--		host->chan_tx = dma_request_channel(mask, sh_mmcif_filter,
--						    &tx->shdma_slave);
--		dev_dbg(&host->pd->dev, "%s: TX: got channel %p\n", __func__,
--			host->chan_tx);
-+	host->chan_rx = dma_request_channel(mask, shdma_chan_filter,
-+					    (void *)pdata->slave_id_rx);
-+	dev_dbg(&host->pd->dev, "%s: RX: got channel %p\n", __func__,
-+		host->chan_rx);
- 
--		if (!host->chan_tx)
--			return;
-+	if (!host->chan_rx)
-+		goto erqrx;
- 
--		host->chan_rx = dma_request_channel(mask, sh_mmcif_filter,
--						    &rx->shdma_slave);
--		dev_dbg(&host->pd->dev, "%s: RX: got channel %p\n", __func__,
--			host->chan_rx);
-+	cfg.slave_id = pdata->slave_id_rx;
-+	cfg.direction = DMA_DEV_TO_MEM;
-+	cfg.dst_addr = 0;
-+	cfg.src_addr = res->start + MMCIF_CE_DATA;
-+	ret = dmaengine_slave_config(host->chan_rx, &cfg);
-+	if (ret < 0)
-+		goto ecfgrx;
- 
--		if (!host->chan_rx) {
--			dma_release_channel(host->chan_tx);
--			host->chan_tx = NULL;
--			return;
--		}
-+	init_completion(&host->dma_complete);
- 
--		init_completion(&host->dma_complete);
--	}
-+	return;
-+
-+ecfgrx:
-+	dma_release_channel(host->chan_rx);
-+	host->chan_rx = NULL;
-+erqrx:
-+ecfgtx:
-+	dma_release_channel(host->chan_tx);
-+	host->chan_tx = NULL;
++	return ret;
  }
+ #else
+ static int __remove_section(struct zone *zone, struct mem_section *ms)
+@@ -346,11 +349,11 @@ EXPORT_SYMBOL_GPL(__add_pages);
+  * sure that pages are marked reserved and zones are adjust properly by
+  * calling offline_pages().
+  */
+-int __remove_pages(struct zone *zone, unsigned long phys_start_pfn,
+-		 unsigned long nr_pages)
++int __remove_pages(unsigned long phys_start_pfn, unsigned long nr_pages)
+ {
+ 	unsigned long i, ret = 0;
+ 	int sections_to_remove;
++	struct zone *zone;
  
- static void sh_mmcif_release_dma(struct sh_mmcif_host *host)
+ 	/*
+ 	 * We can only remove entire sections
+@@ -363,6 +366,7 @@ int __remove_pages(struct zone *zone, unsigned long phys_start_pfn,
+ 	sections_to_remove = nr_pages / PAGES_PER_SECTION;
+ 	for (i = 0; i < sections_to_remove; i++) {
+ 		unsigned long pfn = phys_start_pfn + i*PAGES_PER_SECTION;
++		zone = page_zone(pfn_to_page(pfn));
+ 		ret = __remove_section(zone, __pfn_to_section(pfn));
+ 		if (ret)
+ 			break;
 -- 
-1.7.2.5
+1.7.1
 
