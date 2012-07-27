@@ -1,120 +1,46 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Wed, 25 Jul 2012 15:21:10 +0000
-Subject: Re: [PATCH] mtd: sh_flctl: Switch from tick-based to time-based timeout
-Message-Id: <CABYn4syMFh4smteHS-zCAy3ygKsyxoD2+FfaBeQxKvK_FA+5mA@mail.gmail.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Fri, 27 Jul 2012 22:07:04 +0000
+Subject: [PATCH] sh: pfc: Fix build issues in pinctrl.c
+Message-Id: <201207280007.04480.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1341410726-10562-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1341410726-10562-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Artem Bityutskiy <dedekind1@gmail.com>, linux-mtd@lists.infradead.org
-Cc: Bastian Hecht <hechtb@gmail.com>, Linux-SH <linux-sh@vger.kernel.org>
-
-Hello Artem!
-
-Could you please pull out this patch of your tree? While reworking the
-driver for IRQ-driven use, I've realized that this conversion makes no
-sense as all loops use a udelay(1) in them. So the timeout is already
-time based.
-
-Sorry for the inconvenience,
-
-Bastian Hecht
+To: Paul Mundt <lethal@linux-sh.org>
+Cc: Linux-sh list <linux-sh@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
 
 
-2012/7/4 Bastian Hecht <hechtb@googlemail.com>:
-> Instead of counting down a compile-time value, we use a value based on
-> jiffies.
->
-> Signed-off-by: Bastian Hecht <hechtb@gmail.com>
-> ---
-> Artem mentioned the idea a while ago - here is the simple implementation now.
->
->  drivers/mtd/nand/sh_flctl.c  |   14 +++++++++-----
->  include/linux/mtd/sh_flctl.h |    2 +-
->  2 files changed, 10 insertions(+), 6 deletions(-)
->
-> diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
-> index ed03ed2..0d9cce7 100644
-> --- a/drivers/mtd/nand/sh_flctl.c
-> +++ b/drivers/mtd/nand/sh_flctl.c
-> @@ -73,6 +73,8 @@ static struct nand_bbt_descr flctl_4secc_largepage = {
->         .pattern = scan_ff_pattern,
->  };
->
-> +static int loop_timeout_max;
-> +
->  static void empty_fifo(struct sh_flctl *flctl)
->  {
->         writel(flctl->flintdmacr_base | AC1CLR | AC0CLR, FLINTDMACR(flctl));
-> @@ -91,7 +93,7 @@ static void timeout_error(struct sh_flctl *flctl, const char *str)
->
->  static void wait_completion(struct sh_flctl *flctl)
->  {
-> -       uint32_t timeout = LOOP_TIMEOUT_MAX;
-> +       uint32_t timeout = loop_timeout_max;
->
->         while (timeout--) {
->                 if (readb(FLTRCR(flctl)) & TREND) {
-> @@ -138,7 +140,7 @@ static void set_addr(struct mtd_info *mtd, int column, int page_addr)
->
->  static void wait_rfifo_ready(struct sh_flctl *flctl)
->  {
-> -       uint32_t timeout = LOOP_TIMEOUT_MAX;
-> +       uint32_t timeout = loop_timeout_max;
->
->         while (timeout--) {
->                 uint32_t val;
-> @@ -153,7 +155,7 @@ static void wait_rfifo_ready(struct sh_flctl *flctl)
->
->  static void wait_wfifo_ready(struct sh_flctl *flctl)
->  {
-> -       uint32_t len, timeout = LOOP_TIMEOUT_MAX;
-> +       uint32_t len, timeout = loop_timeout_max;
->
->         while (timeout--) {
->                 /* check FIFO */
-> @@ -168,7 +170,7 @@ static void wait_wfifo_ready(struct sh_flctl *flctl)
->  static enum flctl_ecc_res_t wait_recfifo_ready
->                 (struct sh_flctl *flctl, int sector_number)
->  {
-> -       uint32_t timeout = LOOP_TIMEOUT_MAX;
-> +       uint32_t timeout = loop_timeout_max;
->         void __iomem *ecc_reg[4];
->         int i;
->         int state = FL_SUCCESS;
-> @@ -247,7 +249,7 @@ static enum flctl_ecc_res_t wait_recfifo_ready
->
->  static void wait_wecfifo_ready(struct sh_flctl *flctl)
->  {
-> -       uint32_t timeout = LOOP_TIMEOUT_MAX;
-> +       uint32_t timeout = loop_timeout_max;
->         uint32_t len;
->
->         while (timeout--) {
-> @@ -939,6 +941,8 @@ static int __devinit flctl_probe(struct platform_device *pdev)
->         pm_runtime_enable(&pdev->dev);
->         pm_runtime_resume(&pdev->dev);
->
-> +       loop_timeout_max = loops_per_jiffy * msecs_to_jiffies(LOOP_TIMEOUT_MS);
-> +
->         ret = nand_scan_ident(flctl_mtd, 1, NULL);
->         if (ret)
->                 goto err_chip;
-> diff --git a/include/linux/mtd/sh_flctl.h b/include/linux/mtd/sh_flctl.h
-> index 01e4b15..ade44c1 100644
-> --- a/include/linux/mtd/sh_flctl.h
-> +++ b/include/linux/mtd/sh_flctl.h
-> @@ -129,7 +129,7 @@
->  #define        _4ECCEND        (0x1 << 1)      /* 4 symbols end */
->  #define        _4ECCEXST       (0x1 << 0)      /* 4 symbols exist */
->
-> -#define LOOP_TIMEOUT_MAX       0x00010000
-> +#define LOOP_TIMEOUT_MS        100
->
->  enum flctl_ecc_res_t {
->         FL_SUCCESS,
-> --
-> 1.7.9.5
->
+First off, drivers/sh/pfc/pinctrl.c doesn't build after commit
+5d589b0 (pinctrl: remove pinctrl_remove_gpio_range), because
+sh_pfc_pinctrl_remove() uses the function that has been removed by
+that commit.  Fix this by removing the pinctrl_remove_gpio_range()
+call, which is not necessary any more, from sh_pfc_pinctrl_remove().
+
+Second, the compiler complains correctly that there's an unused
+local variable in sh_pfc_pinconf_set().  Fix this by removing the
+definition of that variable.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
+ drivers/sh/pfc/pinctrl.c |    2 --
+ 1 file changed, 2 deletions(-)
+
+Index: linux/drivers/sh/pfc/pinctrl.c
+=================================--- linux.orig/drivers/sh/pfc/pinctrl.c
++++ linux/drivers/sh/pfc/pinctrl.c
+@@ -276,7 +276,6 @@ static int sh_pfc_pinconf_set(struct pin
+ 			      unsigned long config)
+ {
+ 	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
+-	struct sh_pfc *pfc = pmx->pfc;
+ 
+ 	/* Validate the new type */
+ 	if (config >= PINMUX_FLAG_TYPE)
+@@ -481,7 +480,6 @@ static int __devexit sh_pfc_pinctrl_remo
+ {
+ 	struct sh_pfc_pinctrl *pmx = platform_get_drvdata(pdev);
+ 
+-	pinctrl_remove_gpio_range(pmx->pctl, &sh_pfc_gpio_range);
+ 	pinctrl_unregister(pmx->pctl);
+ 
+ 	platform_set_drvdata(pdev, NULL);
