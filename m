@@ -1,267 +1,179 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 19 Jul 2012 00:39:15 +0000
-Subject: [PATCH 2/9] sh_mobile_meram: Use direct function calls for the public API
-Message-Id: <1342658362-19491-3-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Wen Congyang <wency@cn.fujitsu.com>
+Date: Fri, 27 Jul 2012 10:26:31 +0000
+Subject: [RFC PATCH v5 02/19] memory-hotplug: implement offline_memory()
+Message-Id: <50126CD7.2080207@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <50126B83.3050201@cn.fujitsu.com>
+In-Reply-To: <50126B83.3050201@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, Yasuaki ISIMATU <isimatu.yasuaki@jp.fujitsu.com>
 
-There's no reason to use abstract operation pointers to implement the
-MERAM API. Replace them by direct function calls.
+The function offline_memory() will be called when hot removing a
+memory device. The memory device may contain more than one memory
+block. If the memory block has been offlined, __offline_pages()
+will fail. So we should try to offline one memory block at a
+time.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+If the memory block is offlined in offline_memory(), we also
+update it's state, and notify the userspace that its state is
+changed.
+
+The function offline_memory() also check each memory block's
+state. So there is no need to check the memory block's state
+before calling offline_memory().
+
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+CC: Paul Mackerras <paulus@samba.org>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+CC: Vasilis Liaskovitis <vasilis.liaskovitis@profitbricks.com>
+Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
 ---
- drivers/video/sh_mobile_lcdcfb.c |   27 +++++++-------------
- drivers/video/sh_mobile_meram.c  |   40 +++++++++++++++---------------
- include/video/sh_mobile_meram.h  |   50 ++++++++++++++++++++++++++-----------
- 3 files changed, 65 insertions(+), 52 deletions(-)
+ drivers/base/memory.c          |   31 +++++++++++++++++++++++++++----
+ include/linux/memory_hotplug.h |    2 ++
+ mm/memory_hotplug.c            |   37 ++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 65 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index e593e81..9da4b1b6 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -1115,13 +1115,12 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
- 		ch->line_size = ch->pitch;
+diff --git a/drivers/base/memory.c b/drivers/base/memory.c
+index 44e7de6..86c8821 100644
+--- a/drivers/base/memory.c
++++ b/drivers/base/memory.c
+@@ -275,13 +275,11 @@ memory_block_action(unsigned long phys_index, unsigned long action)
+ 	return ret;
+ }
  
- 		/* Enable MERAM if possible. */
--		if (mdev = NULL || mdev->ops = NULL ||
--		    ch->cfg->meram_cfg = NULL)
-+		if (mdev = NULL || ch->cfg->meram_cfg = NULL)
- 			continue;
+-static int memory_block_change_state(struct memory_block *mem,
++static int __memory_block_change_state(struct memory_block *mem,
+ 		unsigned long to_state, unsigned long from_state_req)
+ {
+ 	int ret = 0;
  
- 		/* Free the allocated MERAM cache. */
- 		if (ch->cache) {
--			mdev->ops->cache_free(mdev, ch->cache);
-+			sh_mobile_meram_cache_free(mdev, ch->cache);
- 			ch->cache = NULL;
- 		}
- 
-@@ -1144,11 +1143,11 @@ static int sh_mobile_lcdc_start(struct sh_mobile_lcdc_priv *priv)
- 			break;
- 		}
- 
--		cache = mdev->ops->cache_alloc(mdev, ch->cfg->meram_cfg,
-+		cache = sh_mobile_meram_cache_alloc(mdev, ch->cfg->meram_cfg,
- 					ch->pitch, ch->yres, pixelformat,
- 					&ch->line_size);
- 		if (!IS_ERR(cache)) {
--			mdev->ops->cache_update(mdev, cache,
-+			sh_mobile_meram_cache_update(mdev, cache,
- 					ch->base_addr_y, ch->base_addr_c,
- 					&ch->base_addr_y, &ch->base_addr_c);
- 			ch->cache = cache;
-@@ -1223,9 +1222,7 @@ static void sh_mobile_lcdc_stop(struct sh_mobile_lcdc_priv *priv)
- 
- 		/* Free the MERAM cache. */
- 		if (ch->cache) {
--			struct sh_mobile_meram_info *mdev;
--			mdev = priv->meram_dev;
--			mdev->ops->cache_free(mdev, ch->cache);
-+			sh_mobile_meram_cache_free(priv->meram_dev, ch->cache);
- 			ch->cache = 0;
- 		}
- 
-@@ -1808,7 +1805,7 @@ static int sh_mobile_lcdc_pan(struct fb_var_screeninfo *var,
- 	struct sh_mobile_lcdc_priv *priv = ch->lcdc;
- 	unsigned long ldrcntr;
- 	unsigned long new_pan_offset;
--	unsigned long base_addr_y, base_addr_c;
-+	unsigned long base_addr_y, base_addr_c = 0;
- 	unsigned long c_offset;
- 
- 	if (!ch->format->yuv)
-@@ -1837,14 +1834,10 @@ static int sh_mobile_lcdc_pan(struct fb_var_screeninfo *var,
- 			base_addr_c += var->xoffset;
+-	mutex_lock(&mem->state_mutex);
+-
+ 	if (mem->state != from_state_req) {
+ 		ret = -EINVAL;
+ 		goto out;
+@@ -309,10 +307,20 @@ static int memory_block_change_state(struct memory_block *mem,
+ 		break;
  	}
- 
--	if (ch->cache) {
--		struct sh_mobile_meram_info *mdev;
--
--		mdev = priv->meram_dev;
--		mdev->ops->cache_update(mdev, ch->cache,
--					base_addr_y, base_addr_c,
--					&base_addr_y, &base_addr_c);
--	}
-+	if (ch->cache)
-+		sh_mobile_meram_cache_update(priv->meram_dev, ch->cache,
-+					     base_addr_y, base_addr_c,
-+					     &base_addr_y, &base_addr_c);
- 
- 	ch->base_addr_y = base_addr_y;
- 	ch->base_addr_c = base_addr_c;
-diff --git a/drivers/video/sh_mobile_meram.c b/drivers/video/sh_mobile_meram.c
-index 4aa3fcb..fdb6fc1 100644
---- a/drivers/video/sh_mobile_meram.c
-+++ b/drivers/video/sh_mobile_meram.c
-@@ -11,6 +11,7 @@
- 
- #include <linux/device.h>
- #include <linux/err.h>
-+#include <linux/export.h>
- #include <linux/genalloc.h>
- #include <linux/io.h>
- #include <linux/kernel.h>
-@@ -429,11 +430,10 @@ error:
- 	return ERR_PTR(-ENOMEM);
+ out:
+-	mutex_unlock(&mem->state_mutex);
+ 	return ret;
  }
  
--static void *sh_mobile_cache_alloc(struct sh_mobile_meram_info *pdata,
--				   const struct sh_mobile_meram_cfg *cfg,
--				   unsigned int xres, unsigned int yres,
--				   unsigned int pixelformat,
--				   unsigned int *pitch)
-+void *sh_mobile_meram_cache_alloc(struct sh_mobile_meram_info *pdata,
-+				  const struct sh_mobile_meram_cfg *cfg,
-+				  unsigned int xres, unsigned int yres,
-+				  unsigned int pixelformat, unsigned int *pitch)
- {
- 	struct sh_mobile_meram_fb_cache *cache;
- 	struct sh_mobile_meram_priv *priv = pdata->priv;
-@@ -441,6 +441,9 @@ static void *sh_mobile_cache_alloc(struct sh_mobile_meram_info *pdata,
- 	unsigned int nplanes = is_nvcolor(pixelformat) ? 2 : 1;
- 	unsigned int out_pitch;
- 
-+	if (priv = NULL)
-+		return ERR_PTR(-ENODEV);
++static int memory_block_change_state(struct memory_block *mem,
++		unsigned long to_state, unsigned long from_state_req)
++{
++	int ret;
 +
- 	if (pixelformat != SH_MOBILE_MERAM_PF_NV &&
- 	    pixelformat != SH_MOBILE_MERAM_PF_NV24 &&
- 	    pixelformat != SH_MOBILE_MERAM_PF_RGB)
-@@ -485,9 +488,10 @@ err:
- 	mutex_unlock(&priv->lock);
- 	return cache;
- }
-+EXPORT_SYMBOL_GPL(sh_mobile_meram_cache_alloc);
- 
--static void
--sh_mobile_cache_free(struct sh_mobile_meram_info *pdata, void *data)
-+void
-+sh_mobile_meram_cache_free(struct sh_mobile_meram_info *pdata, void *data)
- {
- 	struct sh_mobile_meram_fb_cache *cache = data;
- 	struct sh_mobile_meram_priv *priv = pdata->priv;
-@@ -507,11 +511,14 @@ sh_mobile_cache_free(struct sh_mobile_meram_info *pdata, void *data)
- 
- 	mutex_unlock(&priv->lock);
- }
--
--static void
--sh_mobile_cache_update(struct sh_mobile_meram_info *pdata, void *data,
--		       unsigned long base_addr_y, unsigned long base_addr_c,
--		       unsigned long *icb_addr_y, unsigned long *icb_addr_c)
-+EXPORT_SYMBOL_GPL(sh_mobile_meram_cache_free);
++	mutex_lock(&mem->state_mutex);
++	ret = __memory_block_change_state(mem, to_state, from_state_req);
++	mutex_unlock(&mem->state_mutex);
 +
-+void
-+sh_mobile_meram_cache_update(struct sh_mobile_meram_info *pdata, void *data,
-+			     unsigned long base_addr_y,
-+			     unsigned long base_addr_c,
-+			     unsigned long *icb_addr_y,
-+			     unsigned long *icb_addr_c)
- {
- 	struct sh_mobile_meram_fb_cache *cache = data;
- 	struct sh_mobile_meram_priv *priv = pdata->priv;
-@@ -523,13 +530,7 @@ sh_mobile_cache_update(struct sh_mobile_meram_info *pdata, void *data,
- 
- 	mutex_unlock(&priv->lock);
++	return ret;
++}
+ static ssize_t
+ store_mem_state(struct device *dev,
+ 		struct device_attribute *attr, const char *buf, size_t count)
+@@ -653,6 +661,21 @@ int unregister_memory_section(struct mem_section *section)
  }
--
--static struct sh_mobile_meram_ops sh_mobile_meram_ops = {
--	.module			= THIS_MODULE,
--	.cache_alloc		= sh_mobile_cache_alloc,
--	.cache_free		= sh_mobile_cache_free,
--	.cache_update		= sh_mobile_cache_update,
--};
-+EXPORT_SYMBOL_GPL(sh_mobile_meram_cache_update);
- 
- /* -----------------------------------------------------------------------------
-  * Power management
-@@ -620,7 +621,6 @@ static int __devinit sh_mobile_meram_probe(struct platform_device *pdev)
- 	for (i = 0; i < MERAM_ICB_NUM; ++i)
- 		priv->icbs[i].index = i;
- 
--	pdata->ops = &sh_mobile_meram_ops;
- 	pdata->priv = priv;
- 	pdata->pdev = pdev;
- 
-diff --git a/include/video/sh_mobile_meram.h b/include/video/sh_mobile_meram.h
-index 8a5afaf..1134837 100644
---- a/include/video/sh_mobile_meram.h
-+++ b/include/video/sh_mobile_meram.h
-@@ -15,7 +15,6 @@ enum {
- 
- 
- struct sh_mobile_meram_priv;
--struct sh_mobile_meram_ops;
  
  /*
-  * struct sh_mobile_meram_info - MERAM platform data
-@@ -24,7 +23,6 @@ struct sh_mobile_meram_ops;
- struct sh_mobile_meram_info {
- 	int				addr_mode;
- 	u32				reserved_icbs;
--	struct sh_mobile_meram_ops	*ops;
- 	struct sh_mobile_meram_priv	*priv;
- 	struct platform_device		*pdev;
- };
-@@ -38,21 +36,43 @@ struct sh_mobile_meram_cfg {
- 	struct sh_mobile_meram_icb_cfg icb[2];
- };
- 
--struct module;
--struct sh_mobile_meram_ops {
--	struct module	*module;
--
--	/* LCDC cache management */
--	void *(*cache_alloc)(struct sh_mobile_meram_info *meram_dev,
--			     const struct sh_mobile_meram_cfg *cfg,
--			     unsigned int xres, unsigned int yres,
--			     unsigned int pixelformat, unsigned int *pitch);
--	void (*cache_free)(struct sh_mobile_meram_info *meram_dev, void *data);
--	void (*cache_update)(struct sh_mobile_meram_info *meram_dev, void *data,
-+#if defined(CONFIG_FB_SH_MOBILE_MERAM) || \
-+    defined(CONFIG_FB_SH_MOBILE_MERAM_MODULE)
-+void *sh_mobile_meram_cache_alloc(struct sh_mobile_meram_info *dev,
-+				  const struct sh_mobile_meram_cfg *cfg,
-+				  unsigned int xres, unsigned int yres,
-+				  unsigned int pixelformat,
-+				  unsigned int *pitch);
-+void sh_mobile_meram_cache_free(struct sh_mobile_meram_info *dev, void *data);
-+void sh_mobile_meram_cache_update(struct sh_mobile_meram_info *dev, void *data,
-+				  unsigned long base_addr_y,
-+				  unsigned long base_addr_c,
-+				  unsigned long *icb_addr_y,
-+				  unsigned long *icb_addr_c);
-+#else
-+static inline void *
-+sh_mobile_meram_cache_alloc(struct sh_mobile_meram_info *dev,
-+			    const struct sh_mobile_meram_cfg *cfg,
-+			    unsigned int xres, unsigned int yres,
-+			    unsigned int pixelformat,
-+			    unsigned int *pitch)
++ * offline one memory block. If the memory block has been offlined, do nothing.
++ */
++int offline_memory_block(struct memory_block *mem)
 +{
-+	return ERR_PTR(-ENODEV);
++	int ret = 0;
++
++	mutex_lock(&mem->state_mutex);
++	if (mem->state != MEM_OFFLINE)
++		ret = __memory_block_change_state(mem, MEM_OFFLINE, MEM_ONLINE);
++	mutex_unlock(&mem->state_mutex);
++
++	return ret;
 +}
 +
-+static inline void
-+sh_mobile_meram_cache_free(struct sh_mobile_meram_info *dev, void *data)
-+{
-+}
-+
-+static inline void
-+sh_mobile_meram_cache_update(struct sh_mobile_meram_info *dev, void *data,
- 			     unsigned long base_addr_y,
- 			     unsigned long base_addr_c,
- 			     unsigned long *icb_addr_y,
--			     unsigned long *icb_addr_c);
--};
-+			     unsigned long *icb_addr_c)
-+{
-+}
-+#endif
++/*
+  * Initialize the sysfs support for memory devices...
+  */
+ int __init memory_dev_init(void)
+diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
+index c183f39..0b040bb 100644
+--- a/include/linux/memory_hotplug.h
++++ b/include/linux/memory_hotplug.h
+@@ -10,6 +10,7 @@ struct page;
+ struct zone;
+ struct pglist_data;
+ struct mem_section;
++struct memory_block;
  
- #endif /* __VIDEO_SH_MOBILE_MERAM_H__  */
+ #ifdef CONFIG_MEMORY_HOTPLUG
+ 
+@@ -234,6 +235,7 @@ extern int mem_online_node(int nid);
+ extern int add_memory(int nid, u64 start, u64 size);
+ extern int arch_add_memory(int nid, u64 start, u64 size);
+ extern int offline_pages(unsigned long start_pfn, unsigned long nr_pages);
++extern int offline_memory_block(struct memory_block *mem);
+ extern int offline_memory(u64 start, u64 size);
+ extern int sparse_add_one_section(struct zone *zone, unsigned long start_pfn,
+ 								int nr_pages);
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index 7a6659f..992454a 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -997,7 +997,42 @@ int offline_pages(unsigned long start_pfn, unsigned long nr_pages)
+ 
+ int offline_memory(u64 start, u64 size)
+ {
+-	return -EINVAL;
++	struct memory_block *mem = NULL;
++	struct mem_section *section;
++	unsigned long start_pfn, end_pfn;
++	unsigned long pfn, section_nr;
++	int ret;
++
++	start_pfn = PFN_DOWN(start);
++	end_pfn = start_pfn + PFN_DOWN(size);
++
++	for (pfn = start_pfn; pfn < end_pfn; pfn += PAGES_PER_SECTION) {
++		section_nr = pfn_to_section_nr(pfn);
++		if (!present_section_nr(section_nr))
++			continue;
++
++		section = __nr_to_section(section_nr);
++		/* same memblock? */
++		if (mem)
++			if ((section_nr >= mem->start_section_nr) &&
++			    (section_nr <= mem->end_section_nr))
++				continue;
++
++		mem = find_memory_block_hinted(section, mem);
++		if (!mem)
++			continue;
++
++		ret = offline_memory_block(mem);
++		if (ret) {
++			kobject_put(&mem->dev.kobj);
++			return ret;
++		}
++	}
++
++	if (mem)
++		kobject_put(&mem->dev.kobj);
++
++	return 0;
+ }
+ #else
+ int offline_pages(u64 start, u64 size)
 -- 
-1.7.8.6
+1.7.1
 
