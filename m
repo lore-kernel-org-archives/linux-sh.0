@@ -1,100 +1,52 @@
-From: Grant Likely <grant.likely@secretlab.ca>
-Date: Wed, 11 Jul 2012 15:22:11 +0000
-Subject: Re: [PATCH 1/2] irqdomain: Fix up linear revmap for non-zero hwirq displacement.
-Message-Id: <20120711152211.6460E3E0E32@localhost>
+From: Wen Congyang <wency@cn.fujitsu.com>
+Date: Fri, 27 Jul 2012 10:36:17 +0000
+Subject: [RFC PATCH v5 19/19] memory-hotplug: remove sysfs file of node
+Message-Id: <50126F21.803@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1339572841-26175-1-git-send-email-lethal@linux-sh.org> <20120615182540.489133E0ACE@localhost> <20120615231419.GC7357@linux-sh.org> <20120621011939.GB8008@linux-sh.org>
-In-Reply-To: <20120621011939.GB8008@linux-sh.org>
+References: <50126B83.3050201@cn.fujitsu.com>
+In-Reply-To: <50126B83.3050201@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, Yasuaki ISIMATU <isimatu.yasuaki@jp.fujitsu.com>
 
-On Thu, 21 Jun 2012 10:19:40 +0900, Paul Mundt <lethal@linux-sh.org> wrote:
-> On Sat, Jun 16, 2012 at 08:14:19AM +0900, Paul Mundt wrote:
-> > On Fri, Jun 15, 2012 at 12:25:40PM -0600, Grant Likely wrote:
-> > > On Wed, 13 Jun 2012 16:34:00 +0900, Paul Mundt <lethal@linux-sh.org> wrote:
-> > > > Presently the linear revmap code assumes that all hwirqs start at 0,
-> > > > using the hwirq directly as an index value for the lookup. In the case of
-> > > > legacy revmaps this isn't necessarily the case, as the first_hwirq value
-> > > > passed in can be non-zero, causing those types of users to silently have
-> > > > their IRQs placed in the radix tree instead.
-> > > > 
-> > > > With this change, hwirq displacement is factored in at association time
-> > > > directly. This also makes it possible for non-legacy users to use linear
-> > > > revmaps regardless of hwirq base position. This could potentially lead to
-> > > > a bug if there's an attempt to associate multiple times in to the linear
-> > > > map in a nonsensical and non-linear order, but at that point being
-> > > > silently punted to the radix tree is likely to be the least of your
-> > > > concerns (in such a case it's fairly trivial to simply extend
-> > > > irq_domain_add_linear() to take a hwirq base and move the linear base
-> > > > assignment there).
-> > > 
-> > > I actually hoped to be rid of the whole hwirq start offset thing.
-> > > Doing without it simplifies the code, is slightly faster.  I suspect
-> > > very few controllers actually need it, and for those that do I'm
-> > > hoping the wasted space is in the order of 0-32 words.
-> > > 
-> > > Instead of this, can we change the affected controllers to use the
-> > > maximum hwirq number when setting the size of the linear map?
-> > > 
-> > > Do you have hardware where the first hwirq is a >32 number?
-> > > 
-> > Yes. On the CPU I was just working on I have two linear ranges and a
-> > tree, one of the linear ranges begins at hwirq 56. On other CPUs we have
-> > linear ranges that begin at 64, 72, etc. most of which are fairly low in
-> > the space. On newer parts on the ARM side there are also controllers with
-> > ranges that begin > 400.
-> > 
-> > I don't particularly care for the linear_start hack myself either, but I
-> > couldn't think of any cleaner approach for it. The simplest might be if
-> > we can just bury these details in a domain-specific canonicalization op
-> > (distinctly different from xlate), and plug it in for the few cases that
-> > need a non-zero hwirq base. I don't mind hacking that up if you're more
-> > agreeable to that approach.
-> 
-> Ping?
-> 
-> We can't do away with the first_irq thing in the legacy->linear merge
-> without at least having a strategy for getting existing users off of it.
-> Requiring the linear revmap to always begin at 0 seems like a significant
-> regression in functionality for marginal performance gain, so if you're
-> not willing to have the linear_start factored in we do need some other
-> alternative. I've proposed several, if you don't like any of those you
-> are welcome to propose an alternative. I don't mind doing the work one
-> way or the other, but I do mind losing the functionality.
+From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-From another perspective, even if irqs do start at 400, that is wasted
-space of 1600 bytes.  Less than half a page.  It still isn't a huge
-amount.  The choice to use a linear vs. radix map is a choice between
-speed and sparse flexability.  Considering that one of Ben's concerns is
-preserving the fastest lookup path possible, I greatly prefer the
-simplicity of a single offset between hwirq and irq.  If you want to
-avoid it in your driver, I won't object, but it seems to me a case of
-premature optimization.
+The patch adds node_set_offline() and unregister_one_node() to remove_memory()
+for removing sysfs file of node.
 
-However, I do agree that allocating 400 unused irq_descs would be a
-problem, but the patches don't work that way.  irq_domain_add_legacy()
-only calls irq_domain_associate_many() on the requested range of hwirqs
-by using the value of hwirq_base passed in.
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+CC: Paul Mackerras <paulus@samba.org>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+---
+ mm/memory_hotplug.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
 
-> Punishing legacy users with leading gaps in their revmap is likewise
-> undesirable, especially as that most of the in-tree users (regmap-irq
-> especially) of this functionality are using this legacy behaviour without
-> incident.
-
-Hardly punishment.  It is a different optimization decision.  The vast
-majority of _add_legacy calls use 0 for hwirq_base, and the ones that
-don't use a very small number.
-
-...ummm are we talking about the same things?  You mention regmap-irq
-specifically, but regmap irq also uses 0 for hwirq_start, so there is no
-leading gap.
-
-g.
-
-
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index 5ac035f..5681968 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -1267,6 +1267,11 @@ int __ref remove_memory(int nid, u64 start, u64 size)
+ 	/* remove memmap entry */
+ 	firmware_map_remove(start, start + size, "System RAM");
+ 
++	if (!node_present_pages(nid)) {
++		node_set_offline(nid);
++		unregister_one_node(nid);
++	}
++
+ 	arch_remove_memory(start, size);
+ out:
+ 	unlock_memory_hotplug();
 -- 
-Grant Likely, B.Sc, P.Eng.
-Secret Lab Technologies, Ltd.
+1.7.1
+
