@@ -1,81 +1,97 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sat, 21 Jul 2012 21:55:43 +0000
-Subject: [RFC][PATCH 4/5] PM / shmobile: Specify device latencies for Mackerel devices directly
-Message-Id: <201207212355.44071.rjw@sisk.pl>
+From: Wen Congyang <wency@cn.fujitsu.com>
+Date: Fri, 27 Jul 2012 10:22:33 +0000
+Subject: [RFC PATCH 0/19] firmware_map : unify argument of firmware_map_add_early/hotplug
+Message-Id: <50126BE9.2010803@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201207212349.18294.rjw@sisk.pl>
-In-Reply-To: <201207212349.18294.rjw@sisk.pl>
+References: <50126B83.3050201@cn.fujitsu.com>
+In-Reply-To: <50126B83.3050201@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM list <linux-pm@vger.kernel.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Arnd Bergmann <arnd@arndb.de>, Linux-sh list <linux-sh@vger.kernel.org>, Olof Johansson <olof@lixom.net>
+To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, Yasuaki ISIMATU <isimatu.yasuaki@jp.fujitsu.com>
 
+From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-The results of adaptive latency computations in
-GENPD_DEV_TIMED_CALLBACK() show that the start/stop and save/restore
-state latencies of all devices on the Mackerel board I have tried are
-a little below 250 us.  Therefore, if the 250 us is used as the
-common initial value of the latency fields in struct gpd_timing_data
-for all devices on Mackerel, the latency values will never have to
-change at run time and there won't be any overhead related to
-re-computation of the corresponding PM QoS data.
+There are two ways to create /sys/firmware/memmap/X sysfs:
 
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+  - firmware_map_add_early
+    When the system starts, it is calledd from e820_reserve_resources()
+  - firmware_map_add_hotplug
+    When the memory is hot plugged, it is called from add_memory()
+
+But these functions are called without unifying value of end argument as below:
+
+  - end argument of firmware_map_add_early()   : start + size - 1
+  - end argument of firmware_map_add_hogplug() : start + size
+
+The patch unifies them to "start + size". Even if applying the patch,
+/sys/firmware/memmap/X/end file content does not change.
+
+CC: Thomas Gleixner <tglx@linutronix.de>
+CC: Ingo Molnar <mingo@kernel.org>
+CC: H. Peter Anvin <hpa@zytor.com>
+CC: Tejun Heo <tj@kernel.org>
+CC: Andrew Morton <akpm@linux-foundation.org>
+Reviewed-by: Dave Hansen <dave@linux.vnet.ibm.com>
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+
 ---
- arch/arm/mach-shmobile/board-mackerel.c |   31 +++++++++++++++++++------------
- 1 file changed, 19 insertions(+), 12 deletions(-)
+ arch/x86/kernel/e820.c    |    2 +-
+ drivers/firmware/memmap.c |    8 ++++----
+ 2 files changed, 5 insertions(+), 5 deletions(-)
 
-Index: linux/arch/arm/mach-shmobile/board-mackerel.c
-=================================--- linux.orig/arch/arm/mach-shmobile/board-mackerel.c
-+++ linux/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1407,8 +1407,15 @@ static struct i2c_board_info i2c1_device
- #define GPIO_PORT168CR	0xE60520A8
- #define SRCR4		0xe61580bc
- #define USCCR1		0xE6058144
-+#define DEV_LATENCY_NS	250000
- static void __init mackerel_init(void)
- {
-+	struct gpd_timing_data latencies = {
-+		.stop_latency_ns = DEV_LATENCY_NS,
-+		.start_latency_ns = DEV_LATENCY_NS,
-+		.save_state_latency_ns = DEV_LATENCY_NS,
-+		.restore_state_latency_ns = DEV_LATENCY_NS,
-+	};
- 	u32 srcr4;
- 	struct clk *clk;
+Index: linux-3.5-rc6/arch/x86/kernel/e820.c
+=================================--- linux-3.5-rc6.orig/arch/x86/kernel/e820.c	2012-07-18 17:19:38.391365260 +0900
++++ linux-3.5-rc6/arch/x86/kernel/e820.c	2012-07-18 17:19:43.616300222 +0900
+@@ -944,7 +944,7 @@ void __init e820_reserve_resources(void)
+ 	for (i = 0; i < e820_saved.nr_map; i++) {
+ 		struct e820entry *entry = &e820_saved.map[i];
+ 		firmware_map_add_early(entry->addr,
+-			entry->addr + entry->size - 1,
++			entry->addr + entry->size,
+ 			e820_type_to_string(entry->type));
+ 	}
+ }
+Index: linux-3.5-rc6/drivers/firmware/memmap.c
+=================================--- linux-3.5-rc6.orig/drivers/firmware/memmap.c	2012-07-18 17:19:38.388365299 +0900
++++ linux-3.5-rc6/drivers/firmware/memmap.c	2012-07-18 18:30:47.608390251 +0900
+@@ -98,7 +98,7 @@ static LIST_HEAD(map_entries);
+ /**
+  * firmware_map_add_entry() - Does the real work to add a firmware memmap entry.
+  * @start: Start of the memory range.
+- * @end:   End of the memory range (inclusive).
++ * @end:   End of the memory range.
+  * @type:  Type of the memory range.
+  * @entry: Pre-allocated (either kmalloc() or bootmem allocator), uninitialised
+  *         entry.
+@@ -113,7 +113,7 @@ static int firmware_map_add_entry(u64 st
+ 	BUG_ON(start > end);
  
-@@ -1623,20 +1630,20 @@ static void __init mackerel_init(void)
- 
- 	platform_add_devices(mackerel_devices, ARRAY_SIZE(mackerel_devices));
- 
--	rmobile_add_device_to_domain("A4LC", &lcdc_device);
--	rmobile_add_device_to_domain("A4LC", &hdmi_lcdc_device);
--	rmobile_add_device_to_domain("A4LC", &meram_device);
--	rmobile_add_device_to_domain("A4MP", &fsi_device);
--	rmobile_add_device_to_domain("A3SP", &usbhs0_device);
--	rmobile_add_device_to_domain("A3SP", &usbhs1_device);
--	rmobile_add_device_to_domain("A3SP", &nand_flash_device);
--	rmobile_add_device_to_domain("A3SP", &sh_mmcif_device);
--	rmobile_add_device_to_domain("A3SP", &sdhi0_device);
-+	rmobile_add_device_to_domain_td("A4LC", &lcdc_device, &latencies);
-+	rmobile_add_device_to_domain_td("A4LC", &hdmi_lcdc_device, &latencies);
-+	rmobile_add_device_to_domain_td("A4LC", &meram_device, &latencies);
-+	rmobile_add_device_to_domain_td("A4MP", &fsi_device, &latencies);
-+	rmobile_add_device_to_domain_td("A3SP", &usbhs0_device, &latencies);
-+	rmobile_add_device_to_domain_td("A3SP", &usbhs1_device, &latencies);
-+	rmobile_add_device_to_domain_td("A3SP", &nand_flash_device, &latencies);
-+	rmobile_add_device_to_domain_td("A3SP", &sh_mmcif_device, &latencies);
-+	rmobile_add_device_to_domain_td("A3SP", &sdhi0_device, &latencies);
- #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
--	rmobile_add_device_to_domain("A3SP", &sdhi1_device);
-+	rmobile_add_device_to_domain_td("A3SP", &sdhi1_device, &latencies);
- #endif
--	rmobile_add_device_to_domain("A3SP", &sdhi2_device);
--	rmobile_add_device_to_domain("A4R", &ceu_device);
-+	rmobile_add_device_to_domain_td("A3SP", &sdhi2_device, &latencies);
-+	rmobile_add_device_to_domain_td("A4R", &ceu_device, &latencies);
- 
- 	hdmi_init_pm_clock();
- 	sh7372_pm_init();
+ 	entry->start = start;
+-	entry->end = end;
++	entry->end = end - 1;
+ 	entry->type = type;
+ 	INIT_LIST_HEAD(&entry->list);
+ 	kobject_init(&entry->kobj, &memmap_ktype);
+@@ -148,7 +148,7 @@ static int add_sysfs_fw_map_entry(struct
+  * firmware_map_add_hotplug() - Adds a firmware mapping entry when we do
+  * memory hotplug.
+  * @start: Start of the memory range.
+- * @end:   End of the memory range (inclusive).
++ * @end:   End of the memory range.
+  * @type:  Type of the memory range.
+  *
+  * Adds a firmware mapping entry. This function is for memory hotplug, it is
+@@ -175,7 +175,7 @@ int __meminit firmware_map_add_hotplug(u
+ /**
+  * firmware_map_add_early() - Adds a firmware mapping entry.
+  * @start: Start of the memory range.
+- * @end:   End of the memory range (inclusive).
++ * @end:   End of the memory range.
+  * @type:  Type of the memory range.
+  *
+  * Adds a firmware mapping entry. This function uses the bootmem allocator
+
+
 
