@@ -1,74 +1,92 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 19 Jul 2012 00:39:18 +0000
-Subject: [PATCH 5/9] fbdev: sh_mobile_lcdc: Fix line pitch computation
-Message-Id: <1342658362-19491-6-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Wen Congyang <wency@cn.fujitsu.com>
+Date: Fri, 27 Jul 2012 10:30:34 +0000
+Subject: [RFC PATCH v5 09/19] memory-hotplug: does not release memory region in PAGES_PER_SECTION chunks
+Message-Id: <50126DCA.9010201@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <50126B83.3050201@cn.fujitsu.com>
+In-Reply-To: <50126B83.3050201@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, Yasuaki ISIMATU <isimatu.yasuaki@jp.fujitsu.com>
 
-Line pitch depends on the virtual horizontal resolution, compute it
-accordingly.
+From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Since applying a patch(de7f0cba96786c), release_mem_region() has been changed
+as called in PAGES_PER_SECTION chunks because register_memory_resource() is
+called in PAGES_PER_SECTION chunks by add_memory(). But it seems firmware
+dependency. If CRS are written in the PAGES_PER_SECTION chunks in ACPI DSDT
+Table, register_memory_resource() is called in PAGES_PER_SECTION chunks.
+But if CRS are written in the DIMM unit in ACPI DSDT Table,
+register_memory_resource() is called in DIMM unit. So release_mem_region()
+should not be called in PAGES_PER_SECTION chunks. The patch fixes it.
+
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+CC: Paul Mackerras <paulus@samba.org>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 ---
- drivers/video/sh_mobile_lcdcfb.c |   16 ++++++++--------
- 1 files changed, 8 insertions(+), 8 deletions(-)
+ arch/powerpc/platforms/pseries/hotplug-memory.c |   13 +++++++++----
+ mm/memory_hotplug.c                             |    4 ++--
+ 2 files changed, 11 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index 644c230..67877cc 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -1580,9 +1580,9 @@ static int sh_mobile_lcdc_overlay_set_par(struct fb_info *info)
- 	ovl->yres_virtual = info->var.yres_virtual;
+diff --git a/arch/powerpc/platforms/pseries/hotplug-memory.c b/arch/powerpc/platforms/pseries/hotplug-memory.c
+index 11d8e05..dc0a035 100644
+--- a/arch/powerpc/platforms/pseries/hotplug-memory.c
++++ b/arch/powerpc/platforms/pseries/hotplug-memory.c
+@@ -77,7 +77,8 @@ static int pseries_remove_memblock(unsigned long base, unsigned int memblock_siz
+ {
+ 	unsigned long start, start_pfn;
+ 	struct zone *zone;
+-	int ret;
++	int i, ret;
++	int sections_to_remove;
  
- 	if (ovl->format->yuv)
--		ovl->pitch = info->var.xres;
-+		ovl->pitch = info->var.xres_virtual;
- 	else
--		ovl->pitch = info->var.xres * ovl->format->bpp / 8;
-+		ovl->pitch = info->var.xres_virtual * ovl->format->bpp / 8;
+ 	start_pfn = base >> PAGE_SHIFT;
  
- 	sh_mobile_lcdc_overlay_setup(ovl);
+@@ -97,9 +98,13 @@ static int pseries_remove_memblock(unsigned long base, unsigned int memblock_siz
+ 	 * to sysfs "state" file and we can't remove sysfs entries
+ 	 * while writing to it. So we have to defer it to here.
+ 	 */
+-	ret = __remove_pages(zone, start_pfn, memblock_size >> PAGE_SHIFT);
+-	if (ret)
+-		return ret;
++	sections_to_remove = (memblock_size >> PAGE_SHIFT) / PAGES_PER_SECTION;
++	for (i = 0; i < sections_to_remove; i++) {
++		unsigned long pfn = start_pfn + i * PAGES_PER_SECTION;
++		ret = __remove_pages(zone, start_pfn,  PAGES_PER_SECTION);
++		if (ret)
++			return ret;
++	}
  
-@@ -2024,9 +2024,9 @@ static int sh_mobile_lcdc_set_par(struct fb_info *info)
- 	ch->yres_virtual = info->var.yres_virtual;
+ 	/*
+ 	 * Update memory regions for memory remove
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index 5237d49..d360c5c 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -358,11 +358,11 @@ int __remove_pages(struct zone *zone, unsigned long phys_start_pfn,
+ 	BUG_ON(phys_start_pfn & ~PAGE_SECTION_MASK);
+ 	BUG_ON(nr_pages % PAGES_PER_SECTION);
  
- 	if (ch->format->yuv)
--		ch->pitch = info->var.xres;
-+		ch->pitch = info->var.xres_virtual;
- 	else
--		ch->pitch = info->var.xres * ch->format->bpp / 8;
-+		ch->pitch = info->var.xres_virtual * ch->format->bpp / 8;
- 
- 	ret = sh_mobile_lcdc_start(ch->lcdc);
- 	if (ret < 0)
-@@ -2539,9 +2539,9 @@ sh_mobile_lcdc_overlay_init(struct sh_mobile_lcdc_priv *priv,
- 	ovl->yres_virtual = ovl->yres * 2;
- 
- 	if (!format->yuv)
--		ovl->pitch = ovl->xres * format->bpp / 8;
-+		ovl->pitch = ovl->xres_virtual * format->bpp / 8;
- 	else
--		ovl->pitch = ovl->xres;
-+		ovl->pitch = ovl->xres_virtual;
- 
- 	/* Allocate frame buffer memory. */
- 	ovl->fb_size = ovl->cfg->max_xres * ovl->cfg->max_yres
-@@ -2628,10 +2628,10 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
- 
- 	if (!format->yuv) {
- 		ch->colorspace = V4L2_COLORSPACE_SRGB;
--		ch->pitch = ch->xres * format->bpp / 8;
-+		ch->pitch = ch->xres_virtual * format->bpp / 8;
- 	} else {
- 		ch->colorspace = V4L2_COLORSPACE_REC709;
--		ch->pitch = ch->xres;
-+		ch->pitch = ch->xres_virtual;
- 	}
- 
- 	ch->display.width = cfg->panel_cfg.width;
++	release_mem_region(phys_start_pfn << PAGE_SHIFT,  nr_pages * PAGE_SIZE);
++
+ 	sections_to_remove = nr_pages / PAGES_PER_SECTION;
+ 	for (i = 0; i < sections_to_remove; i++) {
+ 		unsigned long pfn = phys_start_pfn + i*PAGES_PER_SECTION;
+-		release_mem_region(pfn << PAGE_SHIFT,
+-				   PAGES_PER_SECTION << PAGE_SHIFT);
+ 		ret = __remove_section(zone, __pfn_to_section(pfn));
+ 		if (ret)
+ 			break;
 -- 
-1.7.8.6
+1.7.1
 
