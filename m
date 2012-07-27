@@ -1,146 +1,63 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 16 Jul 2012 21:28:48 +0000
-Subject: [RFC][PATCH 11/14] ARM: shmobile: Move r8a7779's PM domain objects to a table
-Message-Id: <201207162328.48655.rjw@sisk.pl>
+From: Wen Congyang <wency@cn.fujitsu.com>
+Date: Fri, 27 Jul 2012 10:32:55 +0000
+Subject: [RFC PATCH v5 13/19] memory-hotplug: check page type in get_page_bootmem
+Message-Id: <50126E57.2090501@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201207032302.17805.rjw@sisk.pl> <201207052217.48086.rjw@sisk.pl> <201207162315.49073.rjw@sisk.pl>
-In-Reply-To: <201207162315.49073.rjw@sisk.pl>
+References: <50126B83.3050201@cn.fujitsu.com>
+In-Reply-To: <50126B83.3050201@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM list <linux-pm@vger.kernel.org>
-Cc: Mark Brown <broonie@opensource.wolfsonmicro.com>, LKML <linux-kernel@vger.kernel.org>, Matthew Garrett <mjg59@srcf.ucam.org>, Magnus Damm <magnus.damm@gmail.com>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>, Linux-sh list <linux-sh@vger.kernel.org>
+To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, Yasuaki ISIMATU <isimatu.yasuaki@jp.fujitsu.com>
 
-From: Rafael J. Wysocki <rjw@sisk.pl>
+From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-Instead of giving a name to every r8a7779's PM domain object, put
-them all into a table and initialize them all together in a loop.
+There is a possibility that get_page_bootmem() is called to the same page many
+times. So when get_page_bootmem is called to the same page, the function only
+increments page->_count.
 
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+CC: Paul Mackerras <paulus@samba.org>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7779.h |    9 ---
- arch/arm/mach-shmobile/pm-r8a7779.c           |   65 ++++++++++++++------------
- arch/arm/mach-shmobile/setup-r8a7779.c        |    5 --
- 3 files changed, 39 insertions(+), 40 deletions(-)
+ mm/memory_hotplug.c |   15 +++++++++++----
+ 1 files changed, 11 insertions(+), 4 deletions(-)
 
-Index: linux/arch/arm/mach-shmobile/include/mach/r8a7779.h
-=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ linux/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -347,14 +347,9 @@ extern int r8a7779_sysc_power_down(struc
- extern int r8a7779_sysc_power_up(struct r8a7779_pm_ch *r8a7779_ch);
- 
- #ifdef CONFIG_PM
--extern struct r8a7779_pm_domain r8a7779_sh4a;
--extern struct r8a7779_pm_domain r8a7779_sgx;
--extern struct r8a7779_pm_domain r8a7779_vdp1;
--extern struct r8a7779_pm_domain r8a7779_impx3;
--
--extern void r8a7779_init_pm_domain(struct r8a7779_pm_domain *r8a7779_pd);
-+extern void __init r8a7779_init_pm_domains(void);
- #else
--#define r8a7779_init_pm_domain(pd) do { } while (0)
-+static inline void r8a7779_init_pm_domains(void) {}
- #endif /* CONFIG_PM */
- 
- #endif /* __ASM_R8A7779_H__ */
-Index: linux/arch/arm/mach-shmobile/pm-r8a7779.c
-=================================--- linux.orig/arch/arm/mach-shmobile/pm-r8a7779.c
-+++ linux/arch/arm/mach-shmobile/pm-r8a7779.c
-@@ -183,7 +183,7 @@ static bool pd_active_wakeup(struct devi
- 	return true;
- }
- 
--void r8a7779_init_pm_domain(struct r8a7779_pm_domain *r8a7779_pd)
-+static void r8a7779_init_pm_domain(struct r8a7779_pm_domain *r8a7779_pd)
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index 0c932e1..eae946b 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -95,10 +95,17 @@ static void release_memory_resource(struct resource *res)
+ static void get_page_bootmem(unsigned long info,  struct page *page,
+ 			     unsigned long type)
  {
- 	struct generic_pm_domain *genpd = &r8a7779_pd->genpd;
- 
-@@ -199,37 +199,44 @@ void r8a7779_init_pm_domain(struct r8a77
- 		pd_power_up(&r8a7779_pd->genpd);
+-	page->lru.next = (struct list_head *) type;
+-	SetPagePrivate(page);
+-	set_page_private(page, info);
+-	atomic_inc(&page->_count);
++	unsigned long page_type;
++
++	page_type = (unsigned long) page->lru.next;
++	if (type < MEMORY_HOTPLUG_MIN_BOOTMEM_TYPE ||
++	    type > MEMORY_HOTPLUG_MAX_BOOTMEM_TYPE){
++		page->lru.next = (struct list_head *) type;
++		SetPagePrivate(page);
++		set_page_private(page, info);
++		atomic_inc(&page->_count);
++	} else
++		atomic_inc(&page->_count);
  }
  
--struct r8a7779_pm_domain r8a7779_sh4a = {
--	.genpd_name = "SH4A",
--	.ch = {
--		.chan_offs = 0x80, /* PWRSR1 .. PWRER1 */
--		.isr_bit = 16, /* SH4A */
--	}
-+static struct r8a7779_pm_domain r8a7779_pm_domains[] = {
-+	{
-+		.genpd_name = "SH4A",
-+		.ch = {
-+			.chan_offs = 0x80, /* PWRSR1 .. PWRER1 */
-+			.isr_bit = 16, /* SH4A */
-+		},
-+	},
-+	{
-+		.genpd_name = "SGX",
-+		.ch = {
-+			.chan_offs = 0xc0, /* PWRSR2 .. PWRER2 */
-+			.isr_bit = 20, /* SGX */
-+		},
-+	},
-+	{
-+		.genpd_name = "VDP1",
-+		.ch = {
-+			.chan_offs = 0x100, /* PWRSR3 .. PWRER3 */
-+			.isr_bit = 21, /* VDP */
-+		},
-+	},
-+	{
-+		.genpd_name = "IMPX3",
-+		.ch = {
-+			.chan_offs = 0x140, /* PWRSR4 .. PWRER4 */
-+			.isr_bit = 24, /* IMP */
-+		},
-+	},
- };
- 
--struct r8a7779_pm_domain r8a7779_sgx = {
--	.genpd_name = "SGX",
--	.ch = {
--		.chan_offs = 0xc0, /* PWRSR2 .. PWRER2 */
--		.isr_bit = 20, /* SGX */
--	}
--};
--
--struct r8a7779_pm_domain r8a7779_vdp1 = {
--	.genpd_name = "VDP1",
--	.ch = {
--		.chan_offs = 0x100, /* PWRSR3 .. PWRER3 */
--		.isr_bit = 21, /* VDP */
--	}
--};
-+void __init r8a7779_init_pm_domains(void)
-+{
-+	int j;
- 
--struct r8a7779_pm_domain r8a7779_impx3 = {
--	.genpd_name = "IMPX3",
--	.ch = {
--		.chan_offs = 0x140, /* PWRSR4 .. PWRER4 */
--		.isr_bit = 24, /* IMP */
--	}
--};
-+	for (j = 0; j < ARRAY_SIZE(r8a7779_pm_domains); j++)
-+		r8a7779_init_pm_domain(&r8a7779_pm_domains[j]);
-+}
- 
- #endif /* CONFIG_PM */
- 
-Index: linux/arch/arm/mach-shmobile/setup-r8a7779.c
-=================================--- linux.orig/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ linux/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -251,10 +251,7 @@ void __init r8a7779_add_standard_devices
- #endif
- 	r8a7779_pm_init();
- 
--	r8a7779_init_pm_domain(&r8a7779_sh4a);
--	r8a7779_init_pm_domain(&r8a7779_sgx);
--	r8a7779_init_pm_domain(&r8a7779_vdp1);
--	r8a7779_init_pm_domain(&r8a7779_impx3);
-+	r8a7779_init_pm_domains();
- 
- 	platform_add_devices(r8a7779_early_devices,
- 			    ARRAY_SIZE(r8a7779_early_devices));
+ /* reference to __meminit __free_pages_bootmem is valid
+-- 
+1.7.1
 
