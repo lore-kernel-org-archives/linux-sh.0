@@ -1,66 +1,106 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sat, 21 Jul 2012 21:56:28 +0000
-Subject: [RFC][PATCH 5/5] PM / shmobile: Allow device latencies to be read from a DT
-Message-Id: <201207212356.28513.rjw@sisk.pl>
+Date: Sun, 29 Jul 2012 14:15:10 +0000
+Subject: [RFC][PATCH 3/6] timekeeping: Add suspend and resume of clock event devices
+Message-Id: <201207291615.10354.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201207212349.18294.rjw@sisk.pl>
-In-Reply-To: <201207212349.18294.rjw@sisk.pl>
+References: <201207291612.43138.rjw@sisk.pl>
+In-Reply-To: <201207291612.43138.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM list <linux-pm@vger.kernel.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Arnd Bergmann <arnd@arndb.de>, Linux-sh list <linux-sh@vger.kernel.org>, Olof Johansson <olof@lixom.net>
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: Linux-sh list <linux-sh@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, Thomas Gleixner <tglx@linutronix.de>
 
 
-Modify rmobile_read_domain_from_dt() so that it can read device
-latency information from the device tree along with the PM
-domain name and make it use rmobile_add_device_to_domain_td()
-for adding the device to the PM domain along with the device latency
-data.
+Some clock event devices, for example such that belong to PM domains,
+need to be handled in a spcial way during the timekeeping suspend
+and resume (which takes place in the system core, or "syscore",
+stages of system power transitions) in analogy with clock sources.
+
+Introduce .suspend() and .resume() callbacks for clock event devices
+that will be executed by timekeeping_suspend/_resume(), respectively,
+next the the clock sources' .suspend() and .resume() callbacks.
 
 Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- arch/arm/mach-shmobile/pm-rmobile.c |   24 ++++++++++++++++++++++--
- 1 file changed, 22 insertions(+), 2 deletions(-)
+ include/linux/clockchips.h |    5 +++++
+ kernel/time/clockevents.c  |   24 ++++++++++++++++++++++++
+ kernel/time/timekeeping.c  |    2 ++
+ 3 files changed, 31 insertions(+)
 
-Index: linux/arch/arm/mach-shmobile/pm-rmobile.c
-=================================--- linux.orig/arch/arm/mach-shmobile/pm-rmobile.c
-+++ linux/arch/arm/mach-shmobile/pm-rmobile.c
-@@ -170,14 +170,34 @@ void rmobile_add_device_to_domain_td(con
+Index: linux/include/linux/clockchips.h
+=================================--- linux.orig/include/linux/clockchips.h
++++ linux/include/linux/clockchips.h
+@@ -97,6 +97,8 @@ struct clock_event_device {
+ 	void			(*broadcast)(const struct cpumask *mask);
+ 	void			(*set_mode)(enum clock_event_mode mode,
+ 					    struct clock_event_device *);
++	void			(*suspend)(struct clock_event_device *);
++	void			(*resume)(struct clock_event_device *);
+ 	unsigned long		min_delta_ticks;
+ 	unsigned long		max_delta_ticks;
  
- static void rmobile_read_domain_from_dt(struct device *dev)
- {
-+	struct gpd_timing_data latencies = { 0 };
- 	const char *domain_name;
-+	u64 val;
- 	int ret;
- 
- 	ret = of_property_read_string(dev->of_node, "renesas,pmdomain",
- 				      &domain_name);
-+	if (ret)
-+		return;
-+
-+	ret = of_property_read_u64(dev->of_node, "pm-stop-latency", &val);
-+	if (!ret)
-+		latencies.stop_latency_ns = val;
-+
-+	ret = of_property_read_u64(dev->of_node, "pm-start-latency", &val);
-+	if (!ret)
-+		latencies.start_latency_ns = val;
-+
-+	ret = of_property_read_u64(dev->of_node, "pm-save-latency", &val);
-+	if (!ret)
-+		latencies.save_state_latency_ns = val;
-+
-+	ret = of_property_read_u64(dev->of_node, "pm-restore-latency", &val);
- 	if (!ret)
--		rmobile_add_device_to_domain(domain_name,
--					     to_platform_device(dev));
-+		latencies.restore_state_latency_ns = val;
-+
-+	rmobile_add_device_to_domain_td(domain_name, to_platform_device(dev),
-+					&latencies);
+@@ -156,6 +158,9 @@ clockevents_calc_mult_shift(struct clock
+ 				      freq, minsec);
  }
  
- static void rmobile_remove_from_domain(struct device *dev)
++extern void clockevents_suspend(void);
++extern void clockevents_resume(void);
++
+ #ifdef CONFIG_GENERIC_CLOCKEVENTS
+ extern void clockevents_notify(unsigned long reason, void *arg);
+ #else
+Index: linux/kernel/time/clockevents.c
+=================================--- linux.orig/kernel/time/clockevents.c
++++ linux/kernel/time/clockevents.c
+@@ -397,6 +397,30 @@ void clockevents_exchange_device(struct
+ 	local_irq_restore(flags);
+ }
+ 
++/**
++ * clockevents_suspend - suspend clock devices
++ */
++void clockevents_suspend(void)
++{
++	struct clock_event_device *dev;
++
++	list_for_each_entry_reverse(dev, &clockevent_devices, list)
++		if (dev->suspend)
++			dev->suspend(dev);
++}
++
++/**
++ * clockevents_resume - resume clock devices
++ */
++void clockevents_resume(void)
++{
++	struct clock_event_device *dev;
++
++	list_for_each_entry(dev, &clockevent_devices, list)
++		if (dev->resume)
++			dev->resume(dev);
++}
++
+ #ifdef CONFIG_GENERIC_CLOCKEVENTS
+ /**
+  * clockevents_notify - notification about relevant events
+Index: linux/kernel/time/timekeeping.c
+=================================--- linux.orig/kernel/time/timekeeping.c
++++ linux/kernel/time/timekeeping.c
+@@ -733,6 +733,7 @@ static void timekeeping_resume(void)
+ 
+ 	read_persistent_clock(&ts);
+ 
++	clockevents_resume();
+ 	clocksource_resume();
+ 
+ 	write_seqlock_irqsave(&timekeeper.lock, flags);
+@@ -791,6 +792,7 @@ static int timekeeping_suspend(void)
+ 
+ 	clockevents_notify(CLOCK_EVT_NOTIFY_SUSPEND, NULL);
+ 	clocksource_suspend();
++	clockevents_suspend();
+ 
+ 	return 0;
+ }
 
