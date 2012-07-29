@@ -1,52 +1,42 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Tue, 17 Jul 2012 11:53:58 +0000
-Subject: [PATCH 1/2] r8a7779: add SDHI clock support
-Message-Id: <1342526039-11128-2-git-send-email-phil.edworthy@renesas.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sun, 29 Jul 2012 14:12:42 +0000
+Subject: [RFC][PATCH 0/6] PM: Suspend/resume for clock sources/clock event devices in PM domains
+Message-Id: <201207291612.43138.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: Linux-sh list <linux-sh@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, Thomas Gleixner <tglx@linutronix.de>
 
+Hi all,
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
----
- arch/arm/mach-shmobile/clock-r8a7779.c |   13 ++++++++++---
- 1 files changed, 10 insertions(+), 3 deletions(-)
+There is a problem with clock sources and clock event devices belonging to PM
+domains that they have to be marked as "always on", to prevent those domains
+from being turned off unexpectedly, which also prevents the domains from
+being turned off during system suspend, although that might be done and would
+be desirable.
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index 339c62c..8b35165 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -86,11 +86,14 @@ static struct clk div4_clks[DIV4_NR] = {
- 				      0x0300, CLK_ENABLE_ON_INIT),
- };
- 
--enum { MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
--	MSTP016, MSTP015, MSTP014,
--	MSTP_NR };
-+enum { MSTP323, MSTP322, MSTP321, MSTP320, MSTP026, MSTP025, MSTP024, MSTP023,
-+	MSTP022, MSTP021, MSTP016, MSTP015, MSTP014, MSTP_NR };
- 
- static struct clk mstp_clks[MSTP_NR] = {
-+	[MSTP323] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 23, 0), /* SDHI0 */
-+	[MSTP322] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 22, 0), /* SDHI1 */
-+	[MSTP321] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 21, 0), /* SDHI2 */
-+	[MSTP320] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 20, 0), /* SDHI3 */
- 	[MSTP026] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 26, 0), /* SCIF0 */
- 	[MSTP025] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 25, 0), /* SCIF1 */
- 	[MSTP024] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 24, 0), /* SCIF2 */
-@@ -141,6 +144,10 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("peripheral_clk",	&div4_clks[DIV4_P]),
- 
- 	/* MSTP32 clocks */
-+	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
-+	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
-+	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
-+	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP320]), /* SDHI3 */
- 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
- 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP016]), /* TMU01 */
- 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
--- 
-1.7.5.4
+The following patch series introduces a mechanism by which the generic PM
+domains framework can be notified that a given domain may be turned off
+after timekeeping has been suspended, which allows the domains that contain
+clock sources and clock event devices to be turned off before the system
+enters the target sleep state (so that less power is used in that state).
 
+[1/6] Introduce simplified power on routine for PM domains (to be used during
+      system resume from suspend/hibernation and during "syscore" resume).
+[2/6] Introduce function for notifying the generic PM domains framework that
+      the given device may be treated as suspended (so its domain may be
+      turned off if this has been the last active device in it).
+[3/6] Introduce suspend/resume callbacks for clock event devices.
+[4/6] Make the SH TMU driver use suspend/resume callbacks for clock sources
+      and clock event devices to notify the generic PM domains framework that
+      those devices may be regarded as suspended (during system suspend) or
+      that they have to be turned on immediately (during system resume).
+[5/6] Like [4/6] but for the SH CMT driver.
+[6/6] Analogous to [4/6], but for the SH MTU2 driver.
+
+The patchset has been tested on the SH7372 Mackerel board.
+
+Thanks,
+Rafael
