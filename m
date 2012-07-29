@@ -1,69 +1,102 @@
-From: Wen Congyang <wency@cn.fujitsu.com>
-Date: Fri, 27 Jul 2012 10:28:57 +0000
-Subject: [RFC PATCH v5 06/19] memory-hotplug: export the function acpi_bus_remove()
-Message-Id: <50126D69.50409@cn.fujitsu.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sun, 29 Jul 2012 14:16:35 +0000
+Subject: [RFC][PATCH 5/6] sh: CMT: Introduce clocksource/clock events suspend/resume routines
+Message-Id: <201207291616.35450.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <50126B83.3050201@cn.fujitsu.com>
-In-Reply-To: <50126B83.3050201@cn.fujitsu.com>
+References: <201207291612.43138.rjw@sisk.pl>
+In-Reply-To: <201207291612.43138.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
-Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, Yasuaki ISIMATU <isimatu.yasuaki@jp.fujitsu.com>
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: Linux-sh list <linux-sh@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, Thomas Gleixner <tglx@linutronix.de>
 
-The function acpi_bus_remove() can remove a acpi device from acpi device.
-When a acpi device is removed, we need to call this function to remove
-the acpi device from acpi bus. So export this function.
 
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-CC: Paul Mackerras <paulus@samba.org>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-CC: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Introduce suspend/resume routines for SH CMT clock event devices and
+modify the suspend/resume routines for SH CMT clock sources such that
+if those devices belong to a PM domain, the generic PM domains
+framework will be notified that the given domain may be turned off
+(during system suspend) or that it has to be turned on (during system
+resume).
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- drivers/acpi/scan.c     |    3 ++-
- include/acpi/acpi_bus.h |    1 +
- 2 files changed, 3 insertions(+), 1 deletions(-)
+ drivers/clocksource/sh_cmt.c |   35 +++++++++++++++++++++++++++++++----
+ 1 file changed, 31 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/acpi/scan.c b/drivers/acpi/scan.c
-index d1ecca2..1cefc34 100644
---- a/drivers/acpi/scan.c
-+++ b/drivers/acpi/scan.c
-@@ -1224,7 +1224,7 @@ static int acpi_device_set_context(struct acpi_device *device)
- 	return -ENODEV;
+Index: linux/drivers/clocksource/sh_cmt.c
+=================================--- linux.orig/drivers/clocksource/sh_cmt.c
++++ linux/drivers/clocksource/sh_cmt.c
+@@ -464,9 +464,20 @@ static void sh_cmt_clocksource_disable(s
+ 	sh_cmt_stop(cs_to_sh_cmt(cs), FLAG_CLOCKSOURCE);
  }
  
--static int acpi_bus_remove(struct acpi_device *dev, int rmdevice)
-+int acpi_bus_remove(struct acpi_device *dev, int rmdevice)
++static void sh_cmt_clocksource_suspend(struct clocksource *cs)
++{
++	struct sh_cmt_priv *p = cs_to_sh_cmt(cs);
++
++	sh_cmt_stop(p, FLAG_CLOCKSOURCE);
++	pm_genpd_syscore_poweroff(&p->pdev->dev);
++}
++
+ static void sh_cmt_clocksource_resume(struct clocksource *cs)
  {
- 	if (!dev)
- 		return -EINVAL;
-@@ -1246,6 +1246,7 @@ static int acpi_bus_remove(struct acpi_device *dev, int rmdevice)
+-	sh_cmt_start(cs_to_sh_cmt(cs), FLAG_CLOCKSOURCE);
++	struct sh_cmt_priv *p = cs_to_sh_cmt(cs);
++
++	pm_genpd_syscore_poweron(&p->pdev->dev);
++	sh_cmt_start(p, FLAG_CLOCKSOURCE);
+ }
  
+ static int sh_cmt_register_clocksource(struct sh_cmt_priv *p,
+@@ -479,7 +490,7 @@ static int sh_cmt_register_clocksource(s
+ 	cs->read = sh_cmt_clocksource_read;
+ 	cs->enable = sh_cmt_clocksource_enable;
+ 	cs->disable = sh_cmt_clocksource_disable;
+-	cs->suspend = sh_cmt_clocksource_disable;
++	cs->suspend = sh_cmt_clocksource_suspend;
+ 	cs->resume = sh_cmt_clocksource_resume;
+ 	cs->mask = CLOCKSOURCE_MASK(sizeof(unsigned long) * 8);
+ 	cs->flags = CLOCK_SOURCE_IS_CONTINUOUS;
+@@ -562,6 +573,16 @@ static int sh_cmt_clock_event_next(unsig
  	return 0;
  }
-+EXPORT_SYMBOL(acpi_bus_remove);
  
- static int acpi_add_single_object(struct acpi_device **child,
- 				  acpi_handle handle, int type,
-diff --git a/include/acpi/acpi_bus.h b/include/acpi/acpi_bus.h
-index bde976e..2ccf109 100644
---- a/include/acpi/acpi_bus.h
-+++ b/include/acpi/acpi_bus.h
-@@ -360,6 +360,7 @@ bool acpi_bus_power_manageable(acpi_handle handle);
- bool acpi_bus_can_wakeup(acpi_handle handle);
- int acpi_power_resource_register_device(struct device *dev, acpi_handle handle);
- void acpi_power_resource_unregister_device(struct device *dev, acpi_handle handle);
-+int acpi_bus_remove(struct acpi_device *dev, int rmdevice);
- #ifdef CONFIG_ACPI_PROC_EVENT
- int acpi_bus_generate_proc_event(struct acpi_device *device, u8 type, int data);
- int acpi_bus_generate_proc_event4(const char *class, const char *bid, u8 type, int data);
--- 
-1.7.1
++static void sh_cmt_clock_event_suspend(struct clock_event_device *ced)
++{
++	pm_genpd_syscore_poweroff(&ced_to_sh_cmt(ced)->pdev->dev);
++}
++
++static void sh_cmt_clock_event_resume(struct clock_event_device *ced)
++{
++	pm_genpd_syscore_poweron(&ced_to_sh_cmt(ced)->pdev->dev);
++}
++
+ static void sh_cmt_register_clockevent(struct sh_cmt_priv *p,
+ 				       char *name, unsigned long rating)
+ {
+@@ -576,6 +597,8 @@ static void sh_cmt_register_clockevent(s
+ 	ced->cpumask = cpumask_of(0);
+ 	ced->set_next_event = sh_cmt_clock_event_next;
+ 	ced->set_mode = sh_cmt_clock_event_mode;
++	ced->suspend = sh_cmt_clock_event_suspend;
++	ced->resume = sh_cmt_clock_event_resume;
+ 
+ 	dev_info(&p->pdev->dev, "used for clock events\n");
+ 	clockevents_register_device(ced);
+@@ -690,8 +713,12 @@ static int __devinit sh_cmt_probe(struct
+ 	struct sh_cmt_priv *p = platform_get_drvdata(pdev);
+ 	int ret;
+ 
+-	if (!is_early_platform_device(pdev))
+-		pm_genpd_dev_always_on(&pdev->dev, true);
++	if (!is_early_platform_device(pdev)) {
++		struct sh_timer_config *cfg = pdev->dev.platform_data;
++
++		if (cfg->clocksource_rating || cfg->clockevent_rating)
++			pm_genpd_dev_always_on(&pdev->dev, true);
++	}
+ 
+ 	if (p) {
+ 		dev_info(&pdev->dev, "kept as earlytimer\n");
 
