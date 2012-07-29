@@ -1,67 +1,161 @@
-From: Wen Congyang <wency@cn.fujitsu.com>
-Date: Fri, 27 Jul 2012 10:35:57 +0000
-Subject: [RFC PATCH v5 18/19] memory-hotplug: add node_device_release
-Message-Id: <50126F0D.5060900@cn.fujitsu.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sun, 29 Jul 2012 14:14:19 +0000
+Subject: [RFC][PATCH 2/6] PM / Domains: Add power off/on function for system core suspend stage
+Message-Id: <201207291614.19792.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <50126B83.3050201@cn.fujitsu.com>
-In-Reply-To: <50126B83.3050201@cn.fujitsu.com>
+References: <201207291612.43138.rjw@sisk.pl>
+In-Reply-To: <201207291612.43138.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
-Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, Yasuaki ISIMATU <isimatu.yasuaki@jp.fujitsu.com>
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: Linux-sh list <linux-sh@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, Thomas Gleixner <tglx@linutronix.de>
 
-From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-When calling unregister_node(), the function shows following message at
-device_release().
+Introduce function pm_genpd_syscore_switch() and two wrappers around
+it, pm_genpd_syscore_poweroff() and pm_genpd_syscore_poweron(),
+allowing the callers to let the generic PM domains framework know
+that the given device is not necessary any more and its PM domain
+can be turned off (the former) or that the given device will be
+required immediately, so its PM domain has to be turned on (the
+latter) during the system core (syscore) stage of system suspend
+(or hibernation) and resume.
 
-Device 'node2' does not have a release() function, it is broken and must be
-fixed.
+These functions will be used for handling devices registered as
+clock sources and clock event devices that belong to PM domains.
 
-So the patch implements node_device_release()
-
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-CC: Paul Mackerras <paulus@samba.org>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- drivers/base/node.c |    8 ++++++++
- 1 files changed, 8 insertions(+), 0 deletions(-)
+ drivers/base/power/domain.c |   60 +++++++++++++++++++++++++++++++++++++++-----
+ include/linux/pm_domain.h   |   13 +++++++++
+ 2 files changed, 67 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/base/node.c b/drivers/base/node.c
-index af1a177..9bc2f57 100644
---- a/drivers/base/node.c
-+++ b/drivers/base/node.c
-@@ -252,6 +252,13 @@ static inline void hugetlb_register_node(struct node *node) {}
- static inline void hugetlb_unregister_node(struct node *node) {}
- #endif
+Index: linux/drivers/base/power/domain.c
+=================================--- linux.orig/drivers/base/power/domain.c
++++ linux/drivers/base/power/domain.c
+@@ -63,6 +63,24 @@ struct generic_pm_domain *dev_to_genpd(s
+ 	return pd_to_genpd(dev->pm_domain);
+ }
  
-+static void node_device_release(struct device *dev)
++/**
++ * pm_genpd_present - Check if the given PM domain has been initialized.
++ * @genpd: PM domain to check.
++ */
++static bool pm_genpd_present(struct generic_pm_domain *genpd)
 +{
-+	struct node *node_dev = to_node(dev);
++	struct generic_pm_domain *gpd;
 +
-+	flush_work(&node_dev->node_work);
-+	memset(node_dev, 0, sizeof(struct node));
++	if (IS_ERR_OR_NULL(genpd))
++		return false;
++
++	list_for_each_entry(gpd, &gpd_list, gpd_list_node)
++		if (gpd = genpd)
++			return true;
++
++	return false;
 +}
++
+ static int genpd_stop_dev(struct generic_pm_domain *genpd, struct device *dev)
+ {
+ 	return GENPD_DEV_TIMED_CALLBACK(genpd, int, stop, dev,
+@@ -750,9 +768,10 @@ static int genpd_thaw_dev(struct generic
+  * Check if the given PM domain can be powered off (during system suspend or
+  * hibernation) and do that if so.  Also, in that case propagate to its masters.
+  *
+- * This function is only called in "noirq" stages of system power transitions,
+- * so it need not acquire locks (all of the "noirq" callbacks are executed
+- * sequentially, so it is guaranteed that it will never run twice in parallel).
++ * This function is only called in "noirq" and "syscore" stages of system power
++ * transitions, so it need not acquire locks (all of the "noirq" callbacks are
++ * executed sequentially, so it is guaranteed that it will never run twice in
++ * parallel).
+  */
+ static void pm_genpd_sync_poweroff(struct generic_pm_domain *genpd)
+ {
+@@ -780,9 +799,10 @@ static void pm_genpd_sync_poweroff(struc
+  * pm_genpd_sync_poweron - Synchronously power on a PM domain and its masters.
+  * @genpd: PM domain to power on.
+  *
+- * This function is only called in "noirq" stage of system power transitions, so
+- * it need not acquire locks (all of the "noirq" callbacks are executed
+- * sequentially, so it is guaranteed that it will never run twice in parallel).
++ * This function is only called in "noirq" and "syscore" stages of system power
++ * transitions, so it need not acquire locks (all of the "noirq" callbacks are
++ * executed sequentially, so it is guaranteed that it will never run twice in
++ * parallel).
+  */
+ static void pm_genpd_sync_poweron(struct generic_pm_domain *genpd)
+ {
+@@ -1272,6 +1292,34 @@ static void pm_genpd_complete(struct dev
+ 	}
+ }
  
- /*
-  * register_node - Setup a sysfs device for a node.
-@@ -265,6 +272,7 @@ int register_node(struct node *node, int num, struct node *parent)
++/**
++ * pm_genpd_syscore_switch - Switch power during system core suspend or resume.
++ * @dev: Device that normally is marked as "always on" to switch power for.
++ *
++ * This routine may only be called during the system core (syscore) suspend or
++ * resume phase for devices whose "always on" flags are set.
++ */
++void pm_genpd_syscore_switch(struct device *dev, bool suspend)
++{
++	struct generic_pm_domain *genpd;
++
++	genpd = dev_to_genpd(dev);
++	if (!pm_genpd_present(genpd))
++		return;
++
++	if (!dev_gpd_data(dev)->always_on)
++		return;
++
++	if (suspend) {
++		genpd->suspended_count++;
++		pm_genpd_sync_poweroff(genpd);
++	} else {
++		pm_genpd_sync_poweron(genpd);
++		genpd->suspended_count--;
++	}
++}
++EXPORT_SYMBOL_GPL(pm_genpd_syscore_switch);
++
+ #else
  
- 	node->dev.id = num;
- 	node->dev.bus = &node_subsys;
-+	node->dev.release = node_device_release;
- 	error = device_register(&node->dev);
+ #define pm_genpd_prepare		NULL
+Index: linux/include/linux/pm_domain.h
+=================================--- linux.orig/include/linux/pm_domain.h
++++ linux/include/linux/pm_domain.h
+@@ -172,6 +172,8 @@ extern int pm_genpd_poweron(struct gener
  
- 	if (!error){
--- 
-1.7.1
+ extern bool default_stop_ok(struct device *dev);
+ 
++extern void pm_genpd_syscore_switch(struct device *dev, bool suspend);
++
+ extern struct dev_power_governor pm_domain_always_on_gov;
+ #else
+ 
+@@ -241,6 +243,7 @@ static inline bool default_stop_ok(struc
+ {
+ 	return false;
+ }
++static inline void pm_genpd_syscore_switch(struct device *dev, bool suspend) {}
+ #define simple_qos_governor NULL
+ #define pm_domain_always_on_gov NULL
+ #endif
+@@ -250,6 +253,16 @@ static inline int pm_genpd_remove_callba
+ 	return __pm_genpd_remove_callbacks(dev, true);
+ }
+ 
++static inline void pm_genpd_syscore_poweroff(struct device *dev)
++{
++	pm_genpd_syscore_switch(dev, true);
++}
++
++static inline void pm_genpd_syscore_poweron(struct device *dev)
++{
++	pm_genpd_syscore_switch(dev, false);
++}
++
+ #ifdef CONFIG_PM_GENERIC_DOMAINS_RUNTIME
+ extern void genpd_queue_power_off_work(struct generic_pm_domain *genpd);
+ extern void pm_genpd_poweroff_unused(void);
 
