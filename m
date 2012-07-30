@@ -1,93 +1,55 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 29 Jul 2012 14:13:39 +0000
-Subject: [RFC][PATCH 1/6] PM / Domains: Introduce simplified power on routine for system resume
-Message-Id: <201207291613.39334.rjw@sisk.pl>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 30 Jul 2012 19:28:47 +0000
+Subject: [PATCH 2/2] serial: sh-sci: fix compilation breakage, when DMA is enabled
+Message-Id: <Pine.LNX.4.64.1207302125390.28003@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201207291612.43138.rjw@sisk.pl>
-In-Reply-To: <201207291612.43138.rjw@sisk.pl>
+References: <Pine.LNX.4.64.1207302114440.28003@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1207302114440.28003@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: LKML <linux-kernel@vger.kernel.org>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, Thomas Gleixner <tglx@linutronix.de>
+To: linux-sh@vger.kernel.org
+Cc: "Koul, Vinod" <vinod.koul@intel.com>, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-kernel@vger.kernel.org
 
+A recent commit:
 
-Introduce function pm_genpd_sync_poweron() for restoring domain power
-during resume from system suspend and hibernation.  It can be much
-simpler than pm_genpd_poweron(), because it doesn't have to care
-about locking and it can skip many checks done by the latter.
+commit d6fa5a4e7ab605370fd6c982782f84ef2e6660e7
+Author: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+    serial: sh-sci: prepare for conversion to the shdma base library
 
-Modify pm_genpd_resume_noirq() and pm_genpd_restore_noirq() to use
-the new function.
+is not sufficient to update the sh-sci driver to the new shdma driver
+layout. This caused compilation breakage, when CONFIG_SERIAL_SH_SCI_DMA
+is enabled. This patch trivially fixes the problem by updating the DMA
+descriptor manipulation code.
 
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/base/power/domain.c |   34 ++++++++++++++++++++++++++++++----
- 1 file changed, 30 insertions(+), 4 deletions(-)
+ drivers/tty/serial/sh-sci.c |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
 
-Index: linux/drivers/base/power/domain.c
-=================================--- linux.orig/drivers/base/power/domain.c
-+++ linux/drivers/base/power/domain.c
-@@ -777,6 +777,32 @@ static void pm_genpd_sync_poweroff(struc
- }
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index d4d8c94..9be296c 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -25,6 +25,7 @@
  
- /**
-+ * pm_genpd_sync_poweron - Synchronously power on a PM domain and its masters.
-+ * @genpd: PM domain to power on.
-+ *
-+ * This function is only called in "noirq" stage of system power transitions, so
-+ * it need not acquire locks (all of the "noirq" callbacks are executed
-+ * sequentially, so it is guaranteed that it will never run twice in parallel).
-+ */
-+static void pm_genpd_sync_poweron(struct generic_pm_domain *genpd)
-+{
-+	struct gpd_link *link;
-+
-+	if (genpd->status != GPD_STATE_POWER_OFF)
-+		return;
-+
-+	list_for_each_entry(link, &genpd->slave_links, slave_node) {
-+		pm_genpd_sync_poweron(link->master);
-+		genpd_sd_counter_inc(link->master);
-+	}
-+
-+	if (genpd->power_on)
-+		genpd->power_on(genpd);
-+
-+	genpd->status = GPD_STATE_ACTIVE;
-+}
-+
-+/**
-  * resume_needed - Check whether to resume a device before system suspend.
-  * @dev: Device to check.
-  * @genpd: PM domain the device belongs to.
-@@ -979,7 +1005,7 @@ static int pm_genpd_resume_noirq(struct
- 	 * guaranteed that this function will never run twice in parallel for
- 	 * the same PM domain, so it is not necessary to use locking here.
- 	 */
--	pm_genpd_poweron(genpd);
-+	pm_genpd_sync_poweron(genpd);
- 	genpd->suspended_count--;
+ #include <linux/module.h>
+ #include <linux/errno.h>
++#include <linux/sh_dma.h>
+ #include <linux/timer.h>
+ #include <linux/interrupt.h>
+ #include <linux/tty.h>
+@@ -1410,8 +1411,8 @@ static void work_fn_rx(struct work_struct *work)
+ 		/* Handle incomplete DMA receive */
+ 		struct tty_struct *tty = port->state->port.tty;
+ 		struct dma_chan *chan = s->chan_rx;
+-		struct sh_desc *sh_desc = container_of(desc, struct sh_desc,
+-						       async_tx);
++		struct shdma_desc *sh_desc = container_of(desc,
++					struct shdma_desc, async_tx);
+ 		unsigned long flags;
+ 		int count;
  
- 	return genpd_start_dev(genpd, dev);
-@@ -1186,8 +1212,8 @@ static int pm_genpd_restore_noirq(struct
- 	if (genpd->suspended_count++ = 0) {
- 		/*
- 		 * The boot kernel might put the domain into arbitrary state,
--		 * so make it appear as powered off to pm_genpd_poweron(), so
--		 * that it tries to power it on in case it was really off.
-+		 * so make it appear as powered off to pm_genpd_sync_poweron(),
-+		 * so that it tries to power it on in case it was really off.
- 		 */
- 		genpd->status = GPD_STATE_POWER_OFF;
- 		if (genpd->suspend_power_off) {
-@@ -1205,7 +1231,7 @@ static int pm_genpd_restore_noirq(struct
- 	if (genpd->suspend_power_off)
- 		return 0;
- 
--	pm_genpd_poweron(genpd);
-+	pm_genpd_sync_poweron(genpd);
- 
- 	return dev_gpd_data(dev)->always_on ? 0 : genpd_start_dev(genpd, dev);
- }
+-- 
+1.7.2.5
 
