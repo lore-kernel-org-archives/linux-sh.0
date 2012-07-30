@@ -1,135 +1,104 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 23 Jul 2012 06:13:46 +0000
-Subject: [GIT PULL] sh updates for 3.6-rc1
-Message-Id: <20120723061345.GA23783@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 30 Jul 2012 19:28:27 +0000
+Subject: [PATCH 1/2] dmaengine: shdma: restore partial transfer calculation
+Message-Id: <Pine.LNX.4.64.1207302119320.28003@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1207302114440.28003@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1207302114440.28003@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
+Cc: "Koul, Vinod" <vinod.koul@intel.com>, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-kernel@vger.kernel.org
 
-The following changes since commit 2437fccfbfc83bcb868ccc7fdfe2b5310bf07835:
+The recent shdma driver split has mistakenly removed support for partial
+DMA transfer size calculation on forced termination. This patch restores
+it.
 
-  Merge tag 'regulator-3.5' of git://git.kernel.org/pub/scm/linux/kernel/git/broonie/regulator (2012-07-09 13:43:02 -0700)
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/dma/sh/shdma-base.c |    9 +++++++++
+ drivers/dma/sh/shdma.c      |   12 ++++++++++++
+ include/linux/shdma-base.h  |    2 ++
+ 3 files changed, 23 insertions(+), 0 deletions(-)
 
-are available in the git repository at:
+diff --git a/drivers/dma/sh/shdma-base.c b/drivers/dma/sh/shdma-base.c
+index 27f5c78..f4cd946 100644
+--- a/drivers/dma/sh/shdma-base.c
++++ b/drivers/dma/sh/shdma-base.c
+@@ -483,6 +483,7 @@ static struct shdma_desc *shdma_add_desc(struct shdma_chan *schan,
+ 	new->mark = DESC_PREPARED;
+ 	new->async_tx.flags = flags;
+ 	new->direction = direction;
++	new->partial = 0;
+ 
+ 	*len -= copy_size;
+ 	if (direction = DMA_MEM_TO_MEM || direction = DMA_MEM_TO_DEV)
+@@ -644,6 +645,14 @@ static int shdma_control(struct dma_chan *chan, enum dma_ctrl_cmd cmd,
+ 	case DMA_TERMINATE_ALL:
+ 		spin_lock_irqsave(&schan->chan_lock, flags);
+ 		ops->halt_channel(schan);
++
++		if (ops->get_partial && !list_empty(&schan->ld_queue)) {
++			/* Record partial transfer */
++			struct shdma_desc *desc = list_first_entry(&schan->ld_queue,
++						struct shdma_desc, node);
++			desc->partial = ops->get_partial(schan, desc);
++		}
++
+ 		spin_unlock_irqrestore(&schan->chan_lock, flags);
+ 
+ 		shdma_chan_ld_cleanup(schan, true);
+diff --git a/drivers/dma/sh/shdma.c b/drivers/dma/sh/shdma.c
+index 027c9be..f41bcc5 100644
+--- a/drivers/dma/sh/shdma.c
++++ b/drivers/dma/sh/shdma.c
+@@ -381,6 +381,17 @@ static bool sh_dmae_chan_irq(struct shdma_chan *schan, int irq)
+ 	return true;
+ }
+ 
++static size_t sh_dmae_get_partial(struct shdma_chan *schan,
++				  struct shdma_desc *sdesc)
++{
++	struct sh_dmae_chan *sh_chan = container_of(schan, struct sh_dmae_chan,
++						    shdma_chan);
++	struct sh_dmae_desc *sh_desc = container_of(sdesc,
++					struct sh_dmae_desc, shdma_desc);
++	return (sh_desc->hw.tcr - sh_dmae_readl(sh_chan, TCR)) <<
++		sh_chan->xmit_shift;
++}
++
+ /* Called from error IRQ or NMI */
+ static bool sh_dmae_reset(struct sh_dmae_device *shdev)
+ {
+@@ -632,6 +643,7 @@ static const struct shdma_ops sh_dmae_shdma_ops = {
+ 	.start_xfer = sh_dmae_start_xfer,
+ 	.embedded_desc = sh_dmae_embedded_desc,
+ 	.chan_irq = sh_dmae_chan_irq,
++	.get_partial = sh_dmae_get_partial,
+ };
+ 
+ static int __devinit sh_dmae_probe(struct platform_device *pdev)
+diff --git a/include/linux/shdma-base.h b/include/linux/shdma-base.h
+index 93f9821..a3728bf 100644
+--- a/include/linux/shdma-base.h
++++ b/include/linux/shdma-base.h
+@@ -50,6 +50,7 @@ struct shdma_desc {
+ 	struct list_head node;
+ 	struct dma_async_tx_descriptor async_tx;
+ 	enum dma_transfer_direction direction;
++	size_t partial;
+ 	dma_cookie_t cookie;
+ 	int chunks;
+ 	int mark;
+@@ -98,6 +99,7 @@ struct shdma_ops {
+ 	void (*start_xfer)(struct shdma_chan *, struct shdma_desc *);
+ 	struct shdma_desc *(*embedded_desc)(void *, int);
+ 	bool (*chan_irq)(struct shdma_chan *, int);
++	size_t (*get_partial)(struct shdma_chan *, struct shdma_desc *);
+ };
+ 
+ struct shdma_dev {
+-- 
+1.7.2.5
 
-
-  git://github.com/pmundt/linux-sh tags/sh-for-linus
-
-for you to fetch changes up to 9ff561fdf73493d757bbc74aa58627e1381650fb:
-
-  Merge branch 'common/pinctrl' into sh-latest (2012-07-20 16:42:59 +0900)
-
-----------------------------------------------------------------
-
-SuperH updates for 3.6-rc1 merge window
-
-- Migration off of old-style dynamic IRQ API.
-
-- irqdomain and generic irq chip propagation.
-
-- div4/6 clock consolidation, another step towards co-existing
-  with the common struct clk infrastructure.
-
-- Extensive PFC rework
-  - Decoupling GPIO from pin state.
-  - Initial pinctrl support to facilitate incremental migration
-    off of legacy pinmux.
-  - gpiolib support made optional, and made pinctrl-backed.
-
-----------------------------------------------------------------
-Paul Mundt (45):
-      sh: mach-se: Migrate 7724SE off of deprecated dynamic IRQ API.
-      sh: hd64461: Migrate off of deprecated dynamic IRQ API.
-      sh: dreamcast: Migrate off of deprecated dynamic IRQ API.
-      sh: Kill off now unused arch_probe_nr_irqs().
-      sh64: Convert to unwinder API.
-      sh64: Ensure KALLSYMS is enabled for unwinder use.
-      sh: mach-x3proto: Migrate to linear irq domain.
-      sh: se722: Move FPGA IRQs to irqdomain and generic irq chip.
-      sh: se7343: Move CPLD IRQs to irqdomain and generic irq chip.
-      sh: intc: Kill off deprecated dynamic IRQ API.
-      sh: clkfwk: Move to common clk_div_table accessors for div4/div6.
-      sh: clkfwk: Introduce a div_mask for variable div types.
-      sh: clkfwk: Use shared sh_clk_div_recalc().
-      sh: clkfwk: Use shared sh_clk_div_set_rate()
-      sh: clkfwk: Use shared sh_clk_div_enable/disable().
-      sh: clkfwk: Consolidate div6/div4 clk_ops definitions.
-      sh: clkfwk: Consolidate div clk registration helper.
-      sh: intc: Allocate subgroup virq backing desc directly.
-      Merge branch 'sh/multi-unwinders' into sh-latest
-      Merge branch 'sh/dynamic-irq-cleanup' into sh-latest
-      Merge branch 'sh/genirq' into sh-latest
-      sh64: Use generic unaligned access control/counters.
-      sh64: Kill off old exception debugging helpers.
-      sh: Consolidate die definitions for trap handlers.
-      sh64: Attempt to make reserved insn trap handler resemble C.
-      sh64: Fix up section mismatch warnings.
-      Merge branch 'sh/clkfwk' into sh-latest
-      sh: pfc: Split out gpio chip support.
-      sh: pfc: Make gpio chip support optional where possible.
-      sh: pfc: Kill off unused pinmux bias flags.
-      sh: pfc: Verify pin type encoding size at build time.
-      Merge branch 'common/pfc' into sh-latest
-      sh: pfc: Shuffle PFC support core.
-      Merge branch 'common/pfc' into common/pinctrl
-      sh: pfc: Dumb GPIO stringification.
-      sh: pfc: Rudimentary pinctrl-backed GPIO support.
-      sh: pfc: pinctrl legacy function support.
-      sh: pfc: Make pr_fmt consistent across pfc drivers.
-      sh: pfc: Error out on pinctrl init resolution failure.
-      sh: pfc: Export pinctrl binding init symbol.
-      sh: pfc: Ignore pinmux GPIOs with invalid enum IDs.
-      sh: pfc: pinctrl legacy group support.
-      sh: pfc: Prefer DRV_NAME over KBUILD_MODNAME.
-      sh: pfc: pin config get/set support.
-      Merge branch 'common/pinctrl' into sh-latest
-
- arch/sh/Kconfig                       |   1 +
- arch/sh/boards/Kconfig                |   5 +
- arch/sh/boards/mach-dreamcast/irq.c   |  32 +-
- arch/sh/boards/mach-se/7343/irq.c     | 129 ++++--
- arch/sh/boards/mach-se/7343/setup.c   |  10 +-
- arch/sh/boards/mach-se/7722/irq.c     | 131 +++---
- arch/sh/boards/mach-se/7722/setup.c   |   6 +-
- arch/sh/boards/mach-se/7724/irq.c     |  36 +-
- arch/sh/boards/mach-x3proto/gpio.c    |  57 +--
- arch/sh/cchips/hd6446x/hd64461.c      |  33 +-
- arch/sh/include/asm/bug.h             |   4 +
- arch/sh/include/asm/kdebug.h          |   2 +
- arch/sh/include/mach-se/mach/se7343.h |   7 +-
- arch/sh/include/mach-se/mach/se7722.h |  10 +-
- arch/sh/kernel/cpu/sh5/unwind.c       |  63 ++-
- arch/sh/kernel/dumpstack.c            |  58 +++
- arch/sh/kernel/irq.c                  |  10 -
- arch/sh/kernel/traps.c                |  71 ++++
- arch/sh/kernel/traps_32.c             | 121 ------
- arch/sh/kernel/traps_64.c             | 589 +++++++++++----------------
- arch/sh/lib64/Makefile                |   2 +-
- arch/sh/lib64/dbg.c                   | 248 ------------
- arch/sh/mm/tlb-sh5.c                  |   2 +-
- drivers/sh/Kconfig                    |   1 +
- drivers/sh/Makefile                   |   3 +-
- drivers/sh/clk/cpg.c                  | 333 +++++++--------
- drivers/sh/intc/Makefile              |   2 +-
- drivers/sh/intc/dynamic.c             |  57 ---
- drivers/sh/intc/virq.c                |   4 +-
- drivers/sh/pfc.c                      | 739 ----------------------------------
- drivers/sh/pfc/Kconfig                |  26 ++
- drivers/sh/pfc/Makefile               |   3 +
- drivers/sh/pfc/core.c                 | 572 ++++++++++++++++++++++++++
- drivers/sh/pfc/gpio.c                 | 239 +++++++++++
- drivers/sh/pfc/pinctrl.c              | 530 ++++++++++++++++++++++++
- include/linux/sh_clk.h                |  21 +-
- include/linux/sh_pfc.h                |  65 ++-
- 37 files changed, 2244 insertions(+), 1978 deletions(-)
- delete mode 100644 arch/sh/lib64/dbg.c
- delete mode 100644 drivers/sh/intc/dynamic.c
- delete mode 100644 drivers/sh/pfc.c
- create mode 100644 drivers/sh/pfc/Kconfig
- create mode 100644 drivers/sh/pfc/Makefile
- create mode 100644 drivers/sh/pfc/core.c
- create mode 100644 drivers/sh/pfc/gpio.c
- create mode 100644 drivers/sh/pfc/pinctrl.c
