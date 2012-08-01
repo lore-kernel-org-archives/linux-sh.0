@@ -1,32 +1,19 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Mon, 27 Aug 2012 08:39:11 +0000
-Subject: Re: [PATCH] sh: dma: fix request_irq usage
-Message-Id: <20120827083911.GE29274@verge.net.au>
+Date: Wed, 01 Aug 2012 04:59:33 +0000
+Subject: Re: [PATCH 1/2] ARM: mach-shmobile: armadillo800eva: Fix GPIO buttons descriptions
+Message-Id: <20120801045933.GD19796@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1344131645-10813-1-git-send-email-vapier@gentoo.org>
-In-Reply-To: <1344131645-10813-1-git-send-email-vapier@gentoo.org>
+References: <87bomfuove.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87bomfuove.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Mon, Aug 27, 2012 at 05:38:06PM +0900, Simon Horman wrote:
-> On Sat, Aug 04, 2012 at 09:54:05PM -0400, Mike Frysinger wrote:
-> > When calling request_irq with IRQF_SHARED, the dev cookie must be set
-> > (i.e. non-NULL), otherwise the code rejects it immediately with -EINVAL.
-> > So restore the logic here where we'd pass a pointer to the name as a
-> > dummy unique val.
-> > 
-> > Otherwise, booting up on my LANDISK system would fail with:
-> > 	DMAC Address Error0 request_irq fail
-> > 
-> > This was introduced in commit 7f47c7189b3e8f19a589f77a3ad169d7b691b582.
-> > 
-> > Signed-off-by: Mike Frysinger <vapier@gentoo.org>
+On Tue, Jul 24, 2012 at 03:26:08PM +0200, Laurent Pinchart wrote:
+> The GPIO buttons are named SW3, SW4, SW5 and SW6 on the board
+> silkscreen. Update the buttons descriptions accordingly.
 > 
-> This seems reasonable to me.
-> 
-> Paul, do you have any plans to merge this change?
-> I can pull it into my tree if that makes your life easier.
+> Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-Scratch that, I see that you have already merged this change.
+Acked-by: Simon Horman <horms@verge.net.au>
