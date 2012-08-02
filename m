@@ -1,60 +1,116 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 17 Aug 2012 09:10:09 +0000
-Subject: Re: [PATCH] ARM: shmobile: Add A4S cpuidle state on sh7372
-Message-Id: <CANqRtoSh0GvUws5hj9nZvVg4wZ0zDNB+-spuWt5RTVJUNe4h0A@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 02 Aug 2012 03:02:36 +0000
+Subject: Re: [PATCH 2/2] marzen: add SDHI0 support
+Message-Id: <87a9yec7xz.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201208162210.31058.rjw@sisk.pl>
-In-Reply-To: <201208162210.31058.rjw@sisk.pl>
+References: <1342526039-11128-3-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1342526039-11128-3-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Rafael J. Wysocki" <rjw@sisk.pl>
-Cc: Linux-sh list <linux-sh@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-Hi Rafael,
 
-Thanks for your patch. Please see below for my comment.
+Hi phil
 
-On Fri, Aug 17, 2012 at 5:10 AM, Rafael J. Wysocki <rjw@sisk.pl> wrote:
->
-> Add a "C5" cpuidle state to the SH7372 SoC connected to the A4S power
-> domain in such a way that A4S may be turned off by cpuidle if all
-> I/O devices in that domain have been suspended (or do not have
-> attached drivers).
->
-> This requires some reorganization of the initialization of SH7372
-> power management which affects the the boards based on it, Mackerel
-> and AP4EVB.
->
-> Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+I tested this patch, and it works well.
+But this is small comment from me.
+
 > ---
+>  arch/arm/mach-shmobile/board-marzen.c |   48 +++++++++++++++++++++++++++++++++
+>  1 files changed, 48 insertions(+), 0 deletions(-)
 
-[snip]
+it is better if this patch update defconfig
 
-> --- linux.orig/arch/arm/mach-shmobile/pm-sh7372.c
-> +++ linux/arch/arm/mach-shmobile/pm-sh7372.c
-> @@ -339,6 +339,21 @@ static void sh7372_enter_a3sm_common(int
->         sh7372_set_reset_vector(__pa(sh7372_resume_core_standby_sysc));
->         sh7372_enter_sysc(pllc0_on, 1 << 12);
+> diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+> index 3a528cf..3c54a2f 100644
+> --- a/arch/arm/mach-shmobile/board-marzen.c
+> +++ b/arch/arm/mach-shmobile/board-marzen.c
+> @@ -30,6 +30,8 @@
+>  #include <linux/regulator/fixed.h>
+>  #include <linux/regulator/machine.h>
+>  #include <linux/smsc911x.h>
+> +#include <linux/mmc/sh_mobile_sdhi.h>
+> +#include <linux/mfd/tmio.h>
+>  #include <mach/hardware.h>
+>  #include <mach/r8a7779.h>
+>  #include <mach/common.h>
+> @@ -75,8 +77,44 @@ static struct platform_device eth_device = {
+>  	.num_resources	= ARRAY_SIZE(smsc911x_resources),
+>  };
+>  
+> +/* Fixed 3.3V regulator to be used by SDHI0 */
+> +static struct regulator_consumer_supply fixed3v3_power_consumers[] > +{
+> +	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
+> +	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
+> +};
+
+I got warning
+
+${LINUX}/arch/arm/mach-shmobile/board-marzen.c:81:41: \
+   warning: 'fixed3v3_power_consumers' defined but not used [-Wunused-variable]
+
+> +
+> +static struct resource sdhi0_resources[] = {
+> +	[0] = {
+> +		.name   = "sdhi0",
+> +		.start  = 0xffe4c000,
+> +		.end    = 0xffe4c0ff,
+> +		.flags  = IORESOURCE_MEM,
+> +	},
+> +	[1] = {
+> +		.start  = gic_spi(104),
+> +		.flags  = IORESOURCE_IRQ,
+> +	},
+> +};
+> +
+> +static struct sh_mobile_sdhi_info sdhi0_platform_data = {
+> +	.tmio_flags	= (TMIO_MMC_WRPROTECT_DISABLE
+> +			  | TMIO_MMC_HAS_IDLE_WAIT),
+
+	.tmio_flags =	TMIO_MMC_WRPROTECT_DISABLE |
+			TMIO_MMC_HAS_IDLE_WAIT,
+
+is readable for me.
+
+> +	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
+> +};
+> +
+> +static struct platform_device sdhi0_device = {
+> +	.name		= "sh_mobile_sdhi",
+> +	.num_resources	= ARRAY_SIZE(sdhi0_resources),
+> +	.resource	= sdhi0_resources,
+> +	.id		= 0,
+> +	.dev = {
+> +		.platform_data = &sdhi0_platform_data,
+> +	}
+> +};
+>  static struct platform_device *marzen_devices[] __initdata = {
+>  	&eth_device,
+> +	&sdhi0_device,
+>  };
+>  
+>  static void __init marzen_init(void)
+> @@ -97,6 +135,16 @@ static void __init marzen_init(void)
+>  	gpio_request(GPIO_FN_EX_CS0, NULL); /* nCS */
+>  	gpio_request(GPIO_FN_IRQ1_B, NULL); /* IRQ + PME */
+>  
+> +	/* SD0 (CN20) */
+> +	gpio_request(GPIO_FN_SD0_CLK, NULL);
+> +	gpio_request(GPIO_FN_SD0_CMD, NULL);
+> +	gpio_request(GPIO_FN_SD0_DAT0, NULL);
+> +	gpio_request(GPIO_FN_SD0_DAT1, NULL);
+> +	gpio_request(GPIO_FN_SD0_DAT2, NULL);
+> +	gpio_request(GPIO_FN_SD0_DAT3, NULL);
+> +	gpio_request(GPIO_FN_SD0_CD, NULL);
+> +	gpio_request(GPIO_FN_SD0_WP, NULL);
+> +
+>  	r8a7779_add_standard_devices();
+>  	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
 >  }
-> +
-> +static void sh7372_enter_a4s_common(int pllc0_on)
-> +{
-> +       sh7372_intca_suspend();
-> +       sh7372_enter_sysc(pllc0_on, 1 << 10);
-> +       sh7372_intca_resume();
-> +}
-> +
-> +static void sh7372_pm_setup_smfram(void)
-> +{
-> +       memcpy((void *)SMFRAM, sh7372_resume_core_standby_sysc, 0x100);
-> +       sh7372_set_reset_vector(SMFRAM);
-> +}
+> -- 
 
-I believe the reset vector is being setup dynamically depending on the
-sleep mode, so you probably want to move sh7372_set_reset_vector()
-into sh7372_enter_a4s_common().
 
-Cheers,
-
-/ magnus
+Best regards
+---
+Kuninori Morimoto
