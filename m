@@ -1,50 +1,119 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Thu, 09 Aug 2012 21:20:22 +0000
-Subject: Re: [Regression, post-3.5] System suspend broken on the Mackerel board
-Message-Id: <201208092320.23075.rjw@sisk.pl>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Thu, 02 Aug 2012 08:17:33 +0000
+Subject: [PATCH] spi: spi-rspi: fix build error for the latest shdma driver
+Message-Id: <501A379D.6060009@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120801073004.GE15380@linux-sh.org> <201208081123.04850.rjw@sisk.pl> <20120809044057.GH1614@linux-sh.org>
-In-Reply-To: <20120809044057.GH1614@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: kuninori.morimoto.gx@renesas.com, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+To: Grant Likely <grant.likely@secretlab.ca>
+Cc: spi-devel-general@lists.sourceforge.net, SH-Linux <linux-sh@vger.kernel.org>
 
-On Thursday, August 09, 2012, Paul Mundt wrote:
-> On Wed, Aug 08, 2012 at 11:23:04AM +0200, Rafael J. Wysocki wrote:
-> > On Tuesday, August 07, 2012, Paul Mundt wrote:
-> > > On Sun, Aug 05, 2012 at 12:02:43AM +0200, Rafael J. Wysocki wrote:
-> > > > On Wednesday, August 01, 2012, Paul Mundt wrote:
-> > > > > Turns out we can just collapse the probe/init stuff anyways, so this
-> > > > > ought to fix it. I've verified that it fixes Morimoto-san's issue, my
-> > > > > expectation is that the mackerel case is likewise getting tripped up but
-> > > > > no one bothered implementing any error detecting logic for gpio_request()
-> > > > > failing, so it doesn't fail gracefully.
-> > > > > 
-> > > > > I'll be pushing this out to Linus shortly:
-> > > > 
-> > > > Thanks, this helped.  Resume works correctly on Mackerel with 3.6-rc1.
-> > > > 
-> > > > However, I'm now seeing a different problem related to system suspend on that,
-> > > > board which is that sh7372_enter_a3sm_common() returns immediately, as though
-> > > > at least one of the wakeup signals was permanently asserted.  This hadn't
-> > > > happened before your last pull request was merged, so I suspect that one
-> > > > of the irqdomain patches might introduce this behavior.
-> > > > 
-> > > Ok, I'll back off the irqdomain selection until we have a chance to test
-> > > it more on the other platforms.
-> > 
-> > If you mean removing the select from drivers/sh/intc/Kconfig, that alone doesn't
-> > help.  Reverting commit 1d6a21b0a672fb29b01ccf397d478e0541e17716
-> > (sh: intc: initial irqdomain support.) helps, though.
-> > 
-> Yeah, I see what happened now. I inadvertently trampled the -EEXIST
-> behaviour. I've taken care of it now, so hopefully you'll have better
-> luck with -rc2!
+Because the latest shdma driver changed, it caused build error in
+the spi-rspi driver. This patch fixed the build error.
 
-I tested your "sh: intc: Handle domain association for sparseirq pre-allocated
-vectors" patch in the meantime and it does fix the issue.
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+---
+ drivers/spi/spi-rspi.c |   56 +++++++++++++++++++++++++++++------------------
+ 1 files changed, 34 insertions(+), 22 deletions(-)
 
-Thanks,
-Rafael
+diff --git a/drivers/spi/spi-rspi.c b/drivers/spi/spi-rspi.c
+index 4894bde..30faf6d 100644
+--- a/drivers/spi/spi-rspi.c
++++ b/drivers/spi/spi-rspi.c
+@@ -147,8 +147,6 @@ struct rspi_data {
+ 	unsigned char spsr;
+
+ 	/* for dmaengine */
+-	struct sh_dmae_slave dma_tx;
+-	struct sh_dmae_slave dma_rx;
+ 	struct dma_chan *chan_tx;
+ 	struct dma_chan *chan_rx;
+ 	int irq;
+@@ -663,20 +661,16 @@ static irqreturn_t rspi_irq(int irq, void *_sr)
+ 	return ret;
+ }
+
+-static bool rspi_filter(struct dma_chan *chan, void *filter_param)
+-{
+-	chan->private = filter_param;
+-	return true;
+-}
+-
+-static void __devinit rspi_request_dma(struct rspi_data *rspi,
+-				       struct platform_device *pdev)
++static int __devinit rspi_request_dma(struct rspi_data *rspi,
++				      struct platform_device *pdev)
+ {
+ 	struct rspi_plat_data *rspi_pd = pdev->dev.platform_data;
+ 	dma_cap_mask_t mask;
++	struct dma_slave_config cfg;
++	int ret;
+
+ 	if (!rspi_pd)
+-		return;
++		return 0;	/* The driver assumes no error. */
+
+ 	rspi->dma_width_16bit = rspi_pd->dma_width_16bit;
+
+@@ -684,21 +678,35 @@ static void __devinit rspi_request_dma(struct rspi_data *rspi,
+ 	if (rspi_pd->dma_rx_id && rspi_pd->dma_tx_id) {
+ 		dma_cap_zero(mask);
+ 		dma_cap_set(DMA_SLAVE, mask);
+-		rspi->dma_rx.slave_id = rspi_pd->dma_rx_id;
+-		rspi->chan_rx = dma_request_channel(mask, rspi_filter,
+-						    &rspi->dma_rx);
+-		if (rspi->chan_rx)
+-			dev_info(&pdev->dev, "Use DMA when rx.\n");
++		rspi->chan_rx = dma_request_channel(mask, shdma_chan_filter,
++						    (void *)rspi_pd->dma_rx_id);
++		if (rspi->chan_rx) {
++			cfg.slave_id = rspi_pd->dma_rx_id;
++			cfg.direction = DMA_DEV_TO_MEM;
++			ret = dmaengine_slave_config(rspi->chan_rx, &cfg);
++			if (!ret)
++				dev_info(&pdev->dev, "Use DMA when rx.\n");
++			else
++				return ret;
++		}
+ 	}
+ 	if (rspi_pd->dma_tx_id) {
+ 		dma_cap_zero(mask);
+ 		dma_cap_set(DMA_SLAVE, mask);
+-		rspi->dma_tx.slave_id = rspi_pd->dma_tx_id;
+-		rspi->chan_tx = dma_request_channel(mask, rspi_filter,
+-						    &rspi->dma_tx);
+-		if (rspi->chan_tx)
+-			dev_info(&pdev->dev, "Use DMA when tx\n");
++		rspi->chan_tx = dma_request_channel(mask, shdma_chan_filter,
++						    (void *)rspi_pd->dma_tx_id);
++		if (rspi->chan_tx) {
++			cfg.slave_id = rspi_pd->dma_tx_id;
++			cfg.direction = DMA_MEM_TO_DEV;
++			ret = dmaengine_slave_config(rspi->chan_tx, &cfg);
++			if (!ret)
++				dev_info(&pdev->dev, "Use DMA when tx\n");
++			else
++				return ret;
++		}
+ 	}
++
++	return 0;
+ }
+
+ static void __devexit rspi_release_dma(struct rspi_data *rspi)
+@@ -788,7 +796,11 @@ static int __devinit rspi_probe(struct platform_device *pdev)
+ 	}
+
+ 	rspi->irq = irq;
+-	rspi_request_dma(rspi, pdev);
++	ret = rspi_request_dma(rspi, pdev);
++	if (ret < 0) {
++		dev_err(&pdev->dev, "rspi_request_dma failed.\n");
++		goto error4;
++	}
+
+ 	ret = spi_register_master(master);
+ 	if (ret < 0) {
+-- 
+1.7.1
