@@ -1,58 +1,63 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 30 Aug 2012 05:52:49 +0000
-Subject: [PATCH] ARM: shmobile: r8a7740: add USB24 clock explain and sample code
-Message-Id: <1346305969-27110-2-git-send-email-horms@verge.net.au>
+From: wency@cn.fujitsu.com
+Date: Fri, 03 Aug 2012 07:49:15 +0000
+Subject: [RFC PATCH V6 13/19] memory-hotplug: check page type in get_page_bootmem
+Message-Id: <1343980161-14254-14-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346305969-27110-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1346305969-27110-1-git-send-email-horms@verge.net.au>
+References: <1343980161-14254-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1343980161-14254-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-USBCKCR is controlling USB parent clock and divide rate.
-This parent clock is used as a "usb24s" from other devices,
-but the "divide rate" is not used.
-Further, this clock itself is known as "usb24".
-So, to set this clock is a little confusable.
-This patch adds quick explain and sample code for this clock.
+There is a possibility that get_page_bootmem() is called to the same page many
+times. So when get_page_bootmem is called to the same page, the function only
+increments page->_count.
 
-Cc: Damian Hobson-Garcia <dhobsong@igel.co.jp>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+CC: Paul Mackerras <paulus@samba.org>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7740.c | 16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
+ mm/memory_hotplug.c |   15 +++++++++++----
+ 1 files changed, 11 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index ad5fccc..a6a7583 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -188,6 +188,22 @@ static struct clk pllc1_div2_clk = {
- };
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index 5f9f8c7..710e593 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -95,10 +95,17 @@ static void release_memory_resource(struct resource *res)
+ static void get_page_bootmem(unsigned long info,  struct page *page,
+ 			     unsigned long type)
+ {
+-	page->lru.next = (struct list_head *) type;
+-	SetPagePrivate(page);
+-	set_page_private(page, info);
+-	atomic_inc(&page->_count);
++	unsigned long page_type;
++
++	page_type = (unsigned long) page->lru.next;
++	if (type < MEMORY_HOTPLUG_MIN_BOOTMEM_TYPE ||
++	    type > MEMORY_HOTPLUG_MAX_BOOTMEM_TYPE){
++		page->lru.next = (struct list_head *) type;
++		SetPagePrivate(page);
++		set_page_private(page, info);
++		atomic_inc(&page->_count);
++	} else
++		atomic_inc(&page->_count);
+ }
  
- /* USB clock */
-+/*
-+ * USBCKCR is controlling usb24 clock
-+ * bit[7] : parent clock
-+ * bit[6] : clock divide rate
-+ * And this bit[7] is used as a "usb24s" from other devices.
-+ * (Video clock / Sub clock / SPU clock)
-+ * You can controll this clock as a below.
-+ *
-+ * struct clk *usb24	= clk_get(dev,  "usb24");
-+ * struct clk *usb24s	= clk_get(NULL, "usb24s");
-+ * struct clk *system	= clk_get(NULL, "system_clk");
-+ * int rate = clk_get_rate(system);
-+ *
-+ * clk_set_parent(usb24s, system);  // for bit[7]
-+ * clk_set_rate(usb24, rate / 2);   // for bit[6]
-+ */
- static struct clk *usb24s_parents[] = {
- 	[0] = &system_clk,
- 	[1] = &extal2_clk
+ /* reference to __meminit __free_pages_bootmem is valid
 -- 
-1.7.10.2.484.gcd07cc5
+1.7.1
 
