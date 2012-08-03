@@ -1,31 +1,60 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 27 Aug 2012 09:08:51 +0000
-Subject: New Renesas Tree
-Message-Id: <20120827090851.GK29274@verge.net.au>
+From: wency@cn.fujitsu.com
+Date: Fri, 03 Aug 2012 07:49:05 +0000
+Subject: [RFC PATCH V6 03/19] memory-hotplug: store the node id in acpi_memory_device
+Message-Id: <1343980161-14254-4-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1343980161-14254-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1343980161-14254-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
 
-Hi,
+From: Wen Congyang <wency@cn.fujitsu.com>
 
-I am in the process of taking over the maintenance work that Rafael Wysocki
-was previously handling through his renesas tree. That is basically the ARM
-side of things for Renesas. As such I have created my own renesas tree:
+The memory device has only one node id. Store the node id when
+enable the memory device, and we can reuse it when removing the
+memory device.
 
-	git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+CC: Paul Mackerras <paulus@samba.org>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Reviewed-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+---
+ drivers/acpi/acpi_memhotplug.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
 
-The basic structure that I am aiming for is to have topic-branches that
-I will request that the arm-soc team pull. And a merge-branch next, which
-will be frequently rebased to include all pending topic-branches and
-should be included in linux-next.
-
-As things stand I have now sifted through the backlog of patches and I have
-either queued up or sent an email query about all patches that I could
-find. In either case, if you have an outstanding patch for the renesas tree
-and you have not received an email from me about it in the past few days
-that means that I have missed it, so please repost.
-
-I will endeavour to get all currently queued patches included in 3.7.
+diff --git a/drivers/acpi/acpi_memhotplug.c b/drivers/acpi/acpi_memhotplug.c
+index 8957ed9..293d718 100644
+--- a/drivers/acpi/acpi_memhotplug.c
++++ b/drivers/acpi/acpi_memhotplug.c
+@@ -83,6 +83,7 @@ struct acpi_memory_info {
+ struct acpi_memory_device {
+ 	struct acpi_device * device;
+ 	unsigned int state;	/* State of the memory device */
++	int nid;
+ 	struct list_head res_list;
+ };
+ 
+@@ -256,6 +257,9 @@ static int acpi_memory_enable_device(struct acpi_memory_device *mem_device)
+ 		info->enabled = 1;
+ 		num_enabled++;
+ 	}
++
++	mem_device->nid = node;
++
+ 	if (!num_enabled) {
+ 		printk(KERN_ERR PREFIX "add_memory failed\n");
+ 		mem_device->state = MEMORY_INVALID_STATE;
+-- 
+1.7.1
 
