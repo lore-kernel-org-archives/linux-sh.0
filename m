@@ -1,43 +1,78 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 06 Aug 2012 23:05:22 +0000
-Subject: [PATCH 0/12] PM: Make ARM/shmobile PM domains initialization more straightforward
-Message-Id: <201208070105.23262.rjw@sisk.pl>
+From: wency@cn.fujitsu.com
+Date: Fri, 03 Aug 2012 07:49:12 +0000
+Subject: [RFC PATCH V6 10/19] memory-hotplug: add memory_block_release
+Message-Id: <1343980161-14254-11-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1343980161-14254-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1343980161-14254-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux-sh list <linux-sh@vger.kernel.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
 
-Hi all,
+From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-The majority of patches in this series were sent previously in this RFC:
+When calling remove_memory_block(), the function shows following message at
+device_release().
 
-http://marc.info/?l=linux-pm&m4247432010192&w=4
+Device 'memory528' does not have a release() function, it is broken and must
+be fixed.
 
-but they do not have anything to do with DTs and clean up the code quite
-a bit, so I thought they are worth resending in a different context.
+remove_memory_block() calls kfree(mem). I think it shouled be called from
+device_release(). So the patch implements memory_block_release()
 
-Patch [8/12] is new and replaces a patch that removed some code I thought
-could never be used, which was wrong.
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+CC: Paul Mackerras <paulus@samba.org>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+---
+ drivers/base/memory.c |   11 ++++++++++-
+ 1 files changed, 10 insertions(+), 1 deletions(-)
 
-[1/12] - Make it possible to use domain names for adding devices to PM domains.
-[2/12] - Make ARM/shmobile use domain names for adding devices to PM domains.
-[3/12] - Drop the r8a7779's "add device to domain" function.
-[4/12] - Make it possible to use domain names for adding subdomains to PM domains.
-[5/12] - Make ARM/shmobile use domain names for adding subdomains to PM domains.
-[6/12] - Add ARM/shmobile function for "batch" initialization of PM domains.
-[7/12] - Make it possible to power on a PM domain using its name.
-[8/12] - Avoid accessing A4S internals directly in the SH7372 system suspend code.
-[9/12] - Put SH7372 PM domain objects into a table and initialize them in a loop.
-[10/12] - Put R8A7740 PM domain objects into a table and initialize them in a loop.
-[11/12] - Put R8A7779 PM domain objects into a table and initialize them in a loop.
-[12/12] - Unexport rmobile_init_pm_domain() which may be a static function now.
-
-The present series is on top of this patch set sent yesterday:
-
-http://marc.info/?l=linux-pm&m4421084022735&w=4
-
-Thanks,
-Rafael
+diff --git a/drivers/base/memory.c b/drivers/base/memory.c
+index 038be73..1cd3ef3 100644
+--- a/drivers/base/memory.c
++++ b/drivers/base/memory.c
+@@ -109,6 +109,15 @@ bool is_memblk_offline(unsigned long start, unsigned long size)
+ }
+ EXPORT_SYMBOL(is_memblk_offline);
+ 
++#define to_memory_block(device) container_of(device, struct memory_block, dev)
++
++static void release_memory_block(struct device *dev)
++{
++	struct memory_block *mem = to_memory_block(dev);
++
++	kfree(mem);
++}
++
+ /*
+  * register_memory - Setup a sysfs device for a memory block
+  */
+@@ -119,6 +128,7 @@ int register_memory(struct memory_block *memory)
+ 
+ 	memory->dev.bus = &memory_subsys;
+ 	memory->dev.id = memory->start_section_nr / sections_per_block;
++	memory->dev.release = release_memory_block;
+ 
+ 	error = device_register(&memory->dev);
+ 	return error;
+@@ -674,7 +684,6 @@ int remove_memory_block(unsigned long node_id, struct mem_section *section,
+ 		mem_remove_simple_file(mem, phys_device);
+ 		mem_remove_simple_file(mem, removable);
+ 		unregister_memory(mem);
+-		kfree(mem);
+ 	} else
+ 		kobject_put(&mem->dev.kobj);
+ 
+-- 
+1.7.1
 
