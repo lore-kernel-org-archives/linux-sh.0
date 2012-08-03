@@ -1,95 +1,239 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 13 Aug 2012 22:23:49 +0000
-Subject: [PATCH 3/3] PM / Domains: Add operations related to cpuidle using domain names
-Message-Id: <201208140023.49263.rjw@sisk.pl>
+From: wency@cn.fujitsu.com
+Date: Fri, 03 Aug 2012 07:49:19 +0000
+Subject: [RFC PATCH V6 17/19] memory_hotplug: clear zone when the memory is removed
+Message-Id: <1343980161-14254-18-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201208140019.19288.rjw@sisk.pl>
-In-Reply-To: <201208140019.19288.rjw@sisk.pl>
+References: <1343980161-14254-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1343980161-14254-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM list <linux-pm@vger.kernel.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
 
+From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-Make it possible to use domain names in operations connecting cpuidle
-to and disconnecting it from a PM domain.  This is useful on
-platforms where PM domain objects are organized in such a way that
-the names of the domains are easier to use than the addresses of
-those objects.
+When a memory is added, we update zone's and pgdat's start_pfn and spanned_pages
+in the function __add_zone(). So we should revert these when the memory is
+removed. Add a new function __remove_zone() to do this.
 
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+CC: Paul Mackerras <paulus@samba.org>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 ---
- drivers/base/power/domain.c |   19 +++++++++++++++++++
- include/linux/pm_domain.h   |   10 ++++++++++
- 2 files changed, 29 insertions(+)
+ mm/memory_hotplug.c |  181 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 181 insertions(+), 0 deletions(-)
 
-Index: linux/drivers/base/power/domain.c
-=================================--- linux.orig/drivers/base/power/domain.c
-+++ linux/drivers/base/power/domain.c
-@@ -1888,6 +1888,16 @@ int pm_genpd_attach_cpuidle(struct gener
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index a1f3490..68d7123 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -300,10 +300,187 @@ static int __meminit __add_section(int nid, struct zone *zone,
+ 	return register_new_memory(nid, __pfn_to_section(phys_start_pfn));
  }
  
- /**
-+ * pm_genpd_name_attach_cpuidle - Find PM domain and connect cpuidle to it.
-+ * @name: Name of the domain to connect to cpuidle.
-+ * @state: cpuidle state this domain can manipulate.
-+ */
-+int pm_genpd_name_attach_cpuidle(const char *name, int state)
++/* find the smallest valid pfn in the range [start_pfn, end_pfn) */
++static int find_smallest_section_pfn(unsigned long start_pfn,
++				     unsigned long end_pfn)
 +{
-+	return pm_genpd_attach_cpuidle(pm_genpd_lookup_name(name), state);
++	struct mem_section *ms;
++
++	for (; start_pfn < end_pfn; start_pfn += PAGES_PER_SECTION) {
++		ms = __pfn_to_section(start_pfn);
++
++		if (unlikely(!valid_section(ms)))
++			continue;
++
++		return start_pfn;
++	}
++
++	return 0;
 +}
 +
-+/**
-  * pm_genpd_detach_cpuidle - Remove the cpuidle connection from a PM domain.
-  * @genpd: PM domain to remove the cpuidle connection from.
-  *
-@@ -1925,6 +1935,15 @@ int pm_genpd_detach_cpuidle(struct gener
- 	return ret;
- }
- 
-+/**
-+ * pm_genpd_name_detach_cpuidle - Find PM domain and disconnect cpuidle from it.
-+ * @name: Name of the domain to disconnect cpuidle from.
-+ */
-+int pm_genpd_name_detach_cpuidle(const char *name)
++/* find the biggest valid pfn in the range [start_pfn, end_pfn). */
++static int find_biggest_section_pfn(unsigned long start_pfn,
++				    unsigned long end_pfn)
 +{
-+	return pm_genpd_detach_cpuidle(pm_genpd_lookup_name(name));
++	struct mem_section *ms;
++	unsigned long pfn;
++
++	/* pfn is the end pfn of a memory section. */
++	pfn = end_pfn - 1;
++	for (; pfn >= start_pfn; pfn -= PAGES_PER_SECTION) {
++		ms = __pfn_to_section(pfn);
++
++		if (unlikely(!valid_section(ms)))
++			continue;
++
++		return pfn;
++	}
++
++	return 0;
 +}
 +
- /* Default device callbacks for generic PM domains. */
- 
- /**
-Index: linux/include/linux/pm_domain.h
-=================================--- linux.orig/include/linux/pm_domain.h
-+++ linux/include/linux/pm_domain.h
-@@ -156,7 +156,9 @@ extern int pm_genpd_add_callbacks(struct
- 				  struct gpd_timing_data *td);
- extern int __pm_genpd_remove_callbacks(struct device *dev, bool clear_td);
- extern int pm_genpd_attach_cpuidle(struct generic_pm_domain *genpd, int state);
-+extern int pm_genpd_name_attach_cpuidle(const char *name, int state);
- extern int pm_genpd_detach_cpuidle(struct generic_pm_domain *genpd);
-+extern int pm_genpd_name_detach_cpuidle(const char *name);
- extern void pm_genpd_init(struct generic_pm_domain *genpd,
- 			  struct dev_power_governor *gov, bool is_off);
- 
-@@ -229,10 +231,18 @@ static inline int pm_genpd_attach_cpuidl
- {
- 	return -ENOSYS;
- }
-+static inline int pm_genpd_name_attach_cpuidle(const char *name, int state)
++static void shrink_zone_span(struct zone *zone, unsigned long start_pfn,
++			     unsigned long end_pfn)
 +{
-+	return -ENOSYS;
++	unsigned long zone_start_pfn =  zone->zone_start_pfn;
++	unsigned long zone_end_pfn = zone->zone_start_pfn + zone->spanned_pages;
++	unsigned long pfn;
++	struct mem_section *ms;
++
++	zone_span_writelock(zone);
++	if (zone_start_pfn = start_pfn) {
++		/*
++		 * If the section is smallest section in the zone, it need
++		 * shrink zone->zone_start_pfn and zone->zone_spanned_pages.
++		 * In this case, we find second smallest valid mem_section
++		 * for shrinking zone.
++		 */
++		pfn = find_smallest_section_pfn(end_pfn, zone_end_pfn);
++		if (pfn) {
++			zone->zone_start_pfn = pfn;
++			zone->spanned_pages = zone_end_pfn - pfn;
++		}
++	} else if (zone_end_pfn = end_pfn) {
++		/*
++		 * If the section is biggest section in the zone, it need
++		 * shrink zone->spanned_pages.
++		 * In this case, we find second biggest valid mem_section for
++		 * shrinking zone.
++		 */
++		pfn = find_biggest_section_pfn(zone_start_pfn, start_pfn);
++		if (pfn)
++			zone->spanned_pages = pfn - zone_start_pfn + 1;
++	}
++
++	/*
++	 * The section is not biggest or smallest mem_section in the zone, it
++	 * only creates a hole in the zone. So in this case, we need not
++	 * change the zone. But perhaps, the zone has only hole data. Thus
++	 * it check the zone has only hole or not.
++	 */
++	pfn = zone_start_pfn;
++	for (; pfn < zone_end_pfn; pfn += PAGES_PER_SECTION) {
++		ms = __pfn_to_section(pfn);
++
++		if (unlikely(!valid_section(ms)))
++			continue;
++
++		 /* If the section is current section, it continues the loop */
++		if (start_pfn = pfn)
++			continue;
++
++		/* If we find valid section, we have nothing to do */
++		zone_span_writeunlock(zone);
++		return;
++	}
++
++	/* The zone has no valid section */
++	zone->zone_start_pfn = 0;
++	zone->spanned_pages = 0;
++	zone_span_writeunlock(zone);
 +}
- static inline int pm_genpd_detach_cpuidle(struct generic_pm_domain *genpd)
- {
- 	return -ENOSYS;
- }
-+static inline int pm_genpd_name_detach_cpuidle(const char *name)
++
++static void shrink_pgdat_span(struct pglist_data *pgdat,
++			      unsigned long start_pfn, unsigned long end_pfn)
 +{
-+	return -ENOSYS;
++	unsigned long pgdat_start_pfn =  pgdat->node_start_pfn;
++	unsigned long pgdat_end_pfn +		pgdat->node_start_pfn + pgdat->node_spanned_pages;
++	unsigned long pfn;
++	struct mem_section *ms;
++
++	if (pgdat_start_pfn = start_pfn) {
++		/*
++		 * If the section is smallest section in the pgdat, it need
++		 * shrink pgdat->node_start_pfn and pgdat->node_spanned_pages.
++		 * In this case, we find second smallest valid mem_section
++		 * for shrinking zone.
++		 */
++		pfn = find_smallest_section_pfn(end_pfn, pgdat_end_pfn);
++		if (pfn) {
++			pgdat->node_start_pfn = pfn;
++			pgdat->node_spanned_pages = pgdat_end_pfn - pfn;
++		}
++	} else if (pgdat_end_pfn = end_pfn) {
++		/*
++		 * If the section is biggest section in the pgdat, it need
++		 * shrink pgdat->node_spanned_pages.
++		 * In this case, we find second biggest valid mem_section for
++		 * shrinking zone.
++		 */
++		pfn = find_biggest_section_pfn(pgdat_start_pfn, start_pfn);
++		if (pfn)
++			pgdat->node_spanned_pages = pfn - pgdat_start_pfn + 1;
++	}
++
++	/*
++	 * If the section is not biggest or smallest mem_section in the pgdat,
++	 * it only creates a hole in the pgdat. So in this case, we need not
++	 * change the pgdat.
++	 * But perhaps, the pgdat has only hole data. Thus it check the pgdat
++	 * has only hole or not.
++	 */
++	pfn = pgdat_start_pfn;
++	for (; pfn < pgdat_end_pfn; pfn += PAGES_PER_SECTION) {
++		ms = __pfn_to_section(pfn);
++
++		if (unlikely(!valid_section(ms)))
++			continue;
++
++		 /* If the section is current section, it continues the loop */
++		if (start_pfn = pfn)
++			continue;
++
++		/* If we find valid section, we have nothing to do */
++		return;
++	}
++
++	/* The pgdat has no valid section */
++	pgdat->node_start_pfn = 0;
++	pgdat->node_spanned_pages = 0;
 +}
- static inline void pm_genpd_init(struct generic_pm_domain *genpd,
- 				 struct dev_power_governor *gov, bool is_off)
++
++static void __remove_zone(struct zone *zone, unsigned long start_pfn)
++{
++	struct pglist_data *pgdat = zone->zone_pgdat;
++	int nr_pages = PAGES_PER_SECTION;
++	int zone_type;
++	unsigned long flags;
++
++	zone_type = zone - pgdat->node_zones;
++
++	pgdat_resize_lock(zone->zone_pgdat, &flags);
++	shrink_zone_span(zone, start_pfn, start_pfn + nr_pages);
++	shrink_pgdat_span(pgdat, start_pfn, start_pfn + nr_pages);
++	pgdat_resize_unlock(zone->zone_pgdat, &flags);
++}
++
+ static int __remove_section(struct zone *zone, struct mem_section *ms)
  {
+ 	unsigned long flags;
+ 	struct pglist_data *pgdat = zone->zone_pgdat;
++	unsigned long start_pfn;
++	int scn_nr;
+ 	int ret = -EINVAL;
+ 
+ 	if (!valid_section(ms))
+@@ -313,6 +490,10 @@ static int __remove_section(struct zone *zone, struct mem_section *ms)
+ 	if (ret)
+ 		return ret;
+ 
++	scn_nr = __section_nr(ms);
++	start_pfn = section_nr_to_pfn(scn_nr);
++	__remove_zone(zone, start_pfn);
++
+ 	pgdat_resize_lock(pgdat, &flags);
+ 	sparse_remove_one_section(zone, ms);
+ 	pgdat_resize_unlock(pgdat, &flags);
+-- 
+1.7.1
 
