@@ -1,59 +1,221 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 06 Aug 2012 23:10:22 +0000
-Subject: [PATCH 6/12] ARM: shmobile: Add routine for automatic PM domains initialization
-Message-Id: <201208070110.22312.rjw@sisk.pl>
+From: wency@cn.fujitsu.com
+Date: Fri, 03 Aug 2012 07:49:10 +0000
+Subject: [RFC PATCH V6 08/19] memory-hotplug: remove /sys/firmware/memmap/X sysfs
+Message-Id: <1343980161-14254-9-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201208070105.23262.rjw@sisk.pl>
-In-Reply-To: <201208070105.23262.rjw@sisk.pl>
+References: <1343980161-14254-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1343980161-14254-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux-sh list <linux-sh@vger.kernel.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
 
+From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-Add a new routine, rmobile_init_domains(), allowing the caller
-to initialize all generic PM objects stored in a table in one
-operation.
+When (hot)adding memory into system, /sys/firmware/memmap/X/{end, start, type}
+sysfs files are created. But there is no code to remove these files. The patch
+implements the function to remove them.
 
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Note : The code does not free firmware_map_entry since there is no way to free
+       memory which is allocated by bootmem.
+
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+CC: Paul Mackerras <paulus@samba.org>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 ---
- arch/arm/mach-shmobile/include/mach/pm-rmobile.h |    2 ++
- arch/arm/mach-shmobile/pm-rmobile.c              |    8 ++++++++
- 2 files changed, 10 insertions(+)
+ drivers/firmware/memmap.c    |   78 +++++++++++++++++++++++++++++++++++++++++-
+ include/linux/firmware-map.h |    6 +++
+ mm/memory_hotplug.c          |    9 ++++-
+ 3 files changed, 90 insertions(+), 3 deletions(-)
 
-Index: linux/arch/arm/mach-shmobile/pm-rmobile.c
-=================================--- linux.orig/arch/arm/mach-shmobile/pm-rmobile.c
-+++ linux/arch/arm/mach-shmobile/pm-rmobile.c
-@@ -149,6 +149,14 @@ void rmobile_init_pm_domain(struct rmobi
- 	__rmobile_pd_power_up(rmobile_pd, false);
- }
+diff --git a/drivers/firmware/memmap.c b/drivers/firmware/memmap.c
+index c1cdc92..b2e7e5e 100644
+--- a/drivers/firmware/memmap.c
++++ b/drivers/firmware/memmap.c
+@@ -21,6 +21,7 @@
+ #include <linux/types.h>
+ #include <linux/bootmem.h>
+ #include <linux/slab.h>
++#include <linux/mm.h>
  
-+void rmobile_init_domains(struct rmobile_pm_domain domains[], int num)
-+{
-+	int j;
+ /*
+  * Data types ------------------------------------------------------------------
+@@ -79,7 +80,22 @@ static const struct sysfs_ops memmap_attr_ops = {
+ 	.show = memmap_attr_show,
+ };
+ 
++#define to_memmap_entry(obj) container_of(obj, struct firmware_map_entry, kobj)
 +
-+	for (j = 0; j < num; j++)
-+		rmobile_init_pm_domain(&domains[j]);
++static void release_firmware_map_entry(struct kobject *kobj)
++{
++	struct firmware_map_entry *entry = to_memmap_entry(kobj);
++	struct page *page;
++
++	page = virt_to_page(entry);
++	if (PageSlab(page) || PageCompound(page))
++		kfree(entry);
++
++	/* There is no way to free memory allocated from bootmem*/
 +}
 +
- void rmobile_add_device_to_domain(const char *domain_name,
- 				 struct platform_device *pdev)
+ static struct kobj_type memmap_ktype = {
++	.release	= release_firmware_map_entry,
+ 	.sysfs_ops	= &memmap_attr_ops,
+ 	.default_attrs	= def_attrs,
+ };
+@@ -123,6 +139,16 @@ static int firmware_map_add_entry(u64 start, u64 end,
+ 	return 0;
+ }
+ 
++/**
++ * firmware_map_remove_entry() - Does the real work to remove a firmware
++ * memmap entry.
++ * @entry: removed entry.
++ **/
++static inline void firmware_map_remove_entry(struct firmware_map_entry *entry)
++{
++	list_del(&entry->list);
++}
++
+ /*
+  * Add memmap entry on sysfs
+  */
+@@ -144,6 +170,31 @@ static int add_sysfs_fw_map_entry(struct firmware_map_entry *entry)
+ 	return 0;
+ }
+ 
++/*
++ * Remove memmap entry on sysfs
++ */
++static inline void remove_sysfs_fw_map_entry(struct firmware_map_entry *entry)
++{
++	kobject_put(&entry->kobj);
++}
++
++/*
++ * Search memmap entry
++ */
++
++struct firmware_map_entry * __meminit
++find_firmware_map_entry(u64 start, u64 end, const char *type)
++{
++	struct firmware_map_entry *entry;
++
++	list_for_each_entry(entry, &map_entries, list)
++		if ((entry->start = start) && (entry->end = end) &&
++		    (!strcmp(entry->type, type)))
++			return entry;
++
++	return NULL;
++}
++
+ /**
+  * firmware_map_add_hotplug() - Adds a firmware mapping entry when we do
+  * memory hotplug.
+@@ -196,6 +247,32 @@ int __init firmware_map_add_early(u64 start, u64 end, const char *type)
+ 	return firmware_map_add_entry(start, end, type, entry);
+ }
+ 
++/**
++ * firmware_map_remove() - remove a firmware mapping entry
++ * @start: Start of the memory range.
++ * @end:   End of the memory range.
++ * @type:  Type of the memory range.
++ *
++ * removes a firmware mapping entry.
++ *
++ * Returns 0 on success, or -EINVAL if no entry.
++ **/
++int __meminit firmware_map_remove(u64 start, u64 end, const char *type)
++{
++	struct firmware_map_entry *entry;
++
++	entry = find_firmware_map_entry(start, end - 1, type);
++	if (!entry)
++		return -EINVAL;
++
++	firmware_map_remove_entry(entry);
++
++	/* remove the memmap entry */
++	remove_sysfs_fw_map_entry(entry);
++
++	return 0;
++}
++
+ /*
+  * Sysfs functions -------------------------------------------------------------
+  */
+@@ -218,7 +295,6 @@ static ssize_t type_show(struct firmware_map_entry *entry, char *buf)
+ }
+ 
+ #define to_memmap_attr(_attr) container_of(_attr, struct memmap_attribute, attr)
+-#define to_memmap_entry(obj) container_of(obj, struct firmware_map_entry, kobj)
+ 
+ static ssize_t memmap_attr_show(struct kobject *kobj,
+ 				struct attribute *attr, char *buf)
+diff --git a/include/linux/firmware-map.h b/include/linux/firmware-map.h
+index 43fe52f..71d4fa7 100644
+--- a/include/linux/firmware-map.h
++++ b/include/linux/firmware-map.h
+@@ -25,6 +25,7 @@
+ 
+ int firmware_map_add_early(u64 start, u64 end, const char *type);
+ int firmware_map_add_hotplug(u64 start, u64 end, const char *type);
++int firmware_map_remove(u64 start, u64 end, const char *type);
+ 
+ #else /* CONFIG_FIRMWARE_MEMMAP */
+ 
+@@ -38,6 +39,11 @@ static inline int firmware_map_add_hotplug(u64 start, u64 end, const char *type)
+ 	return 0;
+ }
+ 
++static inline int firmware_map_remove(u64 start, u64 end, const char *type)
++{
++	return 0;
++}
++
+ #endif /* CONFIG_FIRMWARE_MEMMAP */
+ 
+ #endif /* _LINUX_FIRMWARE_MAP_H */
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index 3f1d7c5..45b03b3 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -1052,9 +1052,9 @@ int offline_memory(u64 start, u64 size)
+ 	return 0;
+ }
+ 
+-int remove_memory(int nid, u64 start, u64 size)
++int __ref remove_memory(int nid, u64 start, u64 size)
  {
-Index: linux/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
-=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
-+++ linux/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
-@@ -31,10 +31,12 @@ struct rmobile_pm_domain *to_rmobile_pd(
+-	int ret = -EBUSY;
++	int ret = 0;
+ 	lock_memory_hotplug();
+ 	/*
+ 	 * The memory might become online by other task, even if you offine it.
+@@ -1065,8 +1065,13 @@ int remove_memory(int nid, u64 start, u64 size)
+ 			"because the memmory range is online\n",
+ 			start, start + size);
+ 		ret = -EAGAIN;
++		goto out;
+ 	}
  
- #ifdef CONFIG_PM
- extern void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd);
-+extern void rmobile_init_domains(struct rmobile_pm_domain domains[], int num);
- extern void rmobile_add_device_to_domain(const char *domain_name,
- 					struct platform_device *pdev);
- #else
- #define rmobile_init_pm_domain(pd) do { } while (0)
-+#define rmobile_init_domains(domains, num) do { } while (0)
- #define rmobile_add_device_to_domain(name, pdev) do { } while (0)
- #endif /* CONFIG_PM */
++	/* remove memmap entry */
++	firmware_map_remove(start, start + size, "System RAM");
++
++out:
+ 	unlock_memory_hotplug();
+ 	return ret;
  
+-- 
+1.7.1
 
