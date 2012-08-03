@@ -1,10 +1,10 @@
 From: wency@cn.fujitsu.com
-Date: Mon, 20 Aug 2012 09:35:30 +0000
-Subject: [RFC V7 PATCH 07/19] memory-hotplug: call acpi_bus_remove() to remove memory device
-Message-Id: <1345455342-27752-8-git-send-email-wency@cn.fujitsu.com>
+Date: Fri, 03 Aug 2012 07:49:09 +0000
+Subject: [RFC PATCH V6 07/19] memory-hotplug: call acpi_bus_remove() to remove memory device
+Message-Id: <1343980161-14254-8-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1345455342-27752-1-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1345455342-27752-1-git-send-email-wency@cn.fujitsu.com>
+References: <1343980161-14254-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1343980161-14254-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -32,10 +32,10 @@ Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
  1 files changed, 2 insertions(+), 1 deletions(-)
 
 diff --git a/drivers/acpi/acpi_memhotplug.c b/drivers/acpi/acpi_memhotplug.c
-index 9d47458..b152767 100644
+index ed37fc2..755cc31 100644
 --- a/drivers/acpi/acpi_memhotplug.c
 +++ b/drivers/acpi/acpi_memhotplug.c
-@@ -425,8 +425,9 @@ static void acpi_memory_device_notify(acpi_handle handle, u32 event, void *data)
+@@ -423,8 +423,9 @@ static void acpi_memory_device_notify(acpi_handle handle, u32 event, void *data)
  		}
  
  		/*
