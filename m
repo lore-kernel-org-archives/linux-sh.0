@@ -1,52 +1,106 @@
-From: wency@cn.fujitsu.com
-Date: Mon, 20 Aug 2012 09:35:42 +0000
-Subject: [RFC V7 PATCH 19/19] memory-hotplug: remove sysfs file of node
-Message-Id: <1345455342-27752-20-git-send-email-wency@cn.fujitsu.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sun, 05 Aug 2012 23:40:41 +0000
+Subject: [PATCH 3/15] timekeeping: Add suspend and resume of clock event devices
+Message-Id: <201208060140.41761.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1345455342-27752-1-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1345455342-27752-1-git-send-email-wency@cn.fujitsu.com>
+References: <201207291612.43138.rjw@sisk.pl> <201208060138.03950.rjw@sisk.pl>
+In-Reply-To: <201208060138.03950.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
-Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
+To: Linux PM list <linux-pm@vger.kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, Thomas Gleixner <tglx@linutronix.de>
 
-From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-The patch adds node_set_offline() and unregister_one_node() to remove_memory()
-for removing sysfs file of node.
+Some clock event devices, for example such that belong to PM domains,
+need to be handled in a spcial way during the timekeeping suspend
+and resume (which takes place in the system core, or "syscore",
+stages of system power transitions) in analogy with clock sources.
 
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-CC: Paul Mackerras <paulus@samba.org>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-CC: Wen Congyang <wency@cn.fujitsu.com>
-Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Introduce .suspend() and .resume() callbacks for clock event devices
+that will be executed by timekeeping_suspend/_resume(), respectively,
+next the the clock sources' .suspend() and .resume() callbacks.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- mm/memory_hotplug.c |    5 +++++
- 1 files changed, 5 insertions(+), 0 deletions(-)
+ include/linux/clockchips.h |    5 +++++
+ kernel/time/clockevents.c  |   24 ++++++++++++++++++++++++
+ kernel/time/timekeeping.c  |    2 ++
+ 3 files changed, 31 insertions(+)
 
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index 00c050f..e5928c7 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -1279,6 +1279,11 @@ int __ref remove_memory(int nid, u64 start, u64 size)
- 	/* remove memmap entry */
- 	firmware_map_remove(start, start + size, "System RAM");
+Index: linux/include/linux/clockchips.h
+=================================--- linux.orig/include/linux/clockchips.h
++++ linux/include/linux/clockchips.h
+@@ -97,6 +97,8 @@ struct clock_event_device {
+ 	void			(*broadcast)(const struct cpumask *mask);
+ 	void			(*set_mode)(enum clock_event_mode mode,
+ 					    struct clock_event_device *);
++	void			(*suspend)(struct clock_event_device *);
++	void			(*resume)(struct clock_event_device *);
+ 	unsigned long		min_delta_ticks;
+ 	unsigned long		max_delta_ticks;
  
-+	if (!node_present_pages(nid)) {
-+		node_set_offline(nid);
-+		unregister_one_node(nid);
-+	}
+@@ -156,6 +158,9 @@ clockevents_calc_mult_shift(struct clock
+ 				      freq, minsec);
+ }
+ 
++extern void clockevents_suspend(void);
++extern void clockevents_resume(void);
 +
- 	arch_remove_memory(start, size);
- out:
- 	unlock_memory_hotplug();
--- 
-1.7.1
+ #ifdef CONFIG_GENERIC_CLOCKEVENTS
+ extern void clockevents_notify(unsigned long reason, void *arg);
+ #else
+Index: linux/kernel/time/clockevents.c
+=================================--- linux.orig/kernel/time/clockevents.c
++++ linux/kernel/time/clockevents.c
+@@ -397,6 +397,30 @@ void clockevents_exchange_device(struct
+ 	local_irq_restore(flags);
+ }
+ 
++/**
++ * clockevents_suspend - suspend clock devices
++ */
++void clockevents_suspend(void)
++{
++	struct clock_event_device *dev;
++
++	list_for_each_entry_reverse(dev, &clockevent_devices, list)
++		if (dev->suspend)
++			dev->suspend(dev);
++}
++
++/**
++ * clockevents_resume - resume clock devices
++ */
++void clockevents_resume(void)
++{
++	struct clock_event_device *dev;
++
++	list_for_each_entry(dev, &clockevent_devices, list)
++		if (dev->resume)
++			dev->resume(dev);
++}
++
+ #ifdef CONFIG_GENERIC_CLOCKEVENTS
+ /**
+  * clockevents_notify - notification about relevant events
+Index: linux/kernel/time/timekeeping.c
+=================================--- linux.orig/kernel/time/timekeeping.c
++++ linux/kernel/time/timekeeping.c
+@@ -750,6 +750,7 @@ static void timekeeping_resume(void)
+ 
+ 	read_persistent_clock(&ts);
+ 
++	clockevents_resume();
+ 	clocksource_resume();
+ 
+ 	write_seqlock_irqsave(&tk->lock, flags);
+@@ -809,6 +810,7 @@ static int timekeeping_suspend(void)
+ 
+ 	clockevents_notify(CLOCK_EVT_NOTIFY_SUSPEND, NULL);
+ 	clocksource_suspend();
++	clockevents_suspend();
+ 
+ 	return 0;
+ }
 
