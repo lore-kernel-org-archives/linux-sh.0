@@ -1,108 +1,93 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 31 Aug 2012 00:34:39 +0000
-Subject: [PATCH 04/10] ARM: shmobile: r8a7779: PFC rename PENCx -> USB_PENCx
-Message-Id: <1346373285-19588-5-git-send-email-horms@verge.net.au>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sun, 05 Aug 2012 23:39:16 +0000
+Subject: [PATCH 1/15] PM / Domains: Introduce simplified power on routine for system resume
+Message-Id: <201208060139.17136.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346373285-19588-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1346373285-19588-1-git-send-email-horms@verge.net.au>
+References: <201207291612.43138.rjw@sisk.pl> <201208060138.03950.rjw@sisk.pl>
+In-Reply-To: <201208060138.03950.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linux PM list <linux-pm@vger.kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, Thomas Gleixner <tglx@linutronix.de>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-PENCx is Power Enable Control pin for USB.
+Introduce function pm_genpd_sync_poweron() for restoring domain power
+during resume from system suspend and hibernation.  It can be much
+simpler than pm_genpd_poweron(), because it doesn't have to care
+about locking and it can skip many checks done by the latter.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Modify pm_genpd_resume_noirq() and pm_genpd_restore_noirq() to use
+the new function.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7779.h |  2 +-
- arch/arm/mach-shmobile/pfc-r8a7779.c          | 16 ++++++++--------
- 2 files changed, 9 insertions(+), 9 deletions(-)
+ drivers/base/power/domain.c |   34 ++++++++++++++++++++++++++++++----
+ 1 file changed, 30 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-index b07ad31..7597a37 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -71,7 +71,7 @@ enum {
- 	GPIO_FN_A19,
+Index: linux/drivers/base/power/domain.c
+=================================--- linux.orig/drivers/base/power/domain.c
++++ linux/drivers/base/power/domain.c
+@@ -777,6 +777,32 @@ static void pm_genpd_sync_poweroff(struc
+ }
  
- 	/* IPSR0 */
--	GPIO_FN_PENC2, GPIO_FN_SCK0, GPIO_FN_PWM1, GPIO_FN_PWMFSW0,
-+	GPIO_FN_USB_PENC2, GPIO_FN_SCK0, GPIO_FN_PWM1, GPIO_FN_PWMFSW0,
- 	GPIO_FN_SCIF_CLK, GPIO_FN_TCLK0_C, GPIO_FN_BS, GPIO_FN_SD1_DAT2,
- 	GPIO_FN_MMC0_D2, GPIO_FN_FD2, GPIO_FN_ATADIR0, GPIO_FN_SDSELF,
- 	GPIO_FN_HCTS1, GPIO_FN_TX4_C, GPIO_FN_A0, GPIO_FN_SD1_DAT3,
-diff --git a/arch/arm/mach-shmobile/pfc-r8a7779.c b/arch/arm/mach-shmobile/pfc-r8a7779.c
-index d14c9b0..9fac32e4 100644
---- a/arch/arm/mach-shmobile/pfc-r8a7779.c
-+++ b/arch/arm/mach-shmobile/pfc-r8a7779.c
-@@ -140,7 +140,7 @@ enum {
- 	FN_IP7_3_2, FN_IP7_6_4, FN_IP7_9_7, FN_IP7_12_10,
- 	FN_IP7_14_13, FN_IP2_7_4, FN_IP2_11_8, FN_IP2_15_12,
- 	FN_IP1_28_25, FN_IP2_3_0, FN_IP8_3_0, FN_IP8_7_4,
--	FN_IP8_11_8, FN_IP8_15_12, FN_PENC0, FN_PENC1,
-+	FN_IP8_11_8, FN_IP8_15_12, FN_USB_PENC0, FN_USB_PENC1,
- 	FN_IP0_2_0, FN_IP8_17_16, FN_IP8_18, FN_IP8_19,
+ /**
++ * pm_genpd_sync_poweron - Synchronously power on a PM domain and its masters.
++ * @genpd: PM domain to power on.
++ *
++ * This function is only called in "noirq" stage of system power transitions, so
++ * it need not acquire locks (all of the "noirq" callbacks are executed
++ * sequentially, so it is guaranteed that it will never run twice in parallel).
++ */
++static void pm_genpd_sync_poweron(struct generic_pm_domain *genpd)
++{
++	struct gpd_link *link;
++
++	if (genpd->status != GPD_STATE_POWER_OFF)
++		return;
++
++	list_for_each_entry(link, &genpd->slave_links, slave_node) {
++		pm_genpd_sync_poweron(link->master);
++		genpd_sd_counter_inc(link->master);
++	}
++
++	if (genpd->power_on)
++		genpd->power_on(genpd);
++
++	genpd->status = GPD_STATE_ACTIVE;
++}
++
++/**
+  * resume_needed - Check whether to resume a device before system suspend.
+  * @dev: Device to check.
+  * @genpd: PM domain the device belongs to.
+@@ -979,7 +1005,7 @@ static int pm_genpd_resume_noirq(struct
+ 	 * guaranteed that this function will never run twice in parallel for
+ 	 * the same PM domain, so it is not necessary to use locking here.
+ 	 */
+-	pm_genpd_poweron(genpd);
++	pm_genpd_sync_poweron(genpd);
+ 	genpd->suspended_count--;
  
- 	/* GPSR5 */
-@@ -176,7 +176,7 @@ enum {
- 	FN_A0, FN_SD1_DAT3, FN_MMC0_D3, FN_FD3,
- 	FN_BS, FN_SD1_DAT2, FN_MMC0_D2, FN_FD2,
- 	FN_ATADIR0, FN_SDSELF, FN_HCTS1, FN_TX4_C,
--	FN_PENC2, FN_SCK0, FN_PWM1, FN_PWMFSW0,
-+	FN_USB_PENC2, FN_SCK0, FN_PWM1, FN_PWMFSW0,
- 	FN_SCIF_CLK, FN_TCLK0_C,
+ 	return genpd_start_dev(genpd, dev);
+@@ -1186,8 +1212,8 @@ static int pm_genpd_restore_noirq(struct
+ 	if (genpd->suspended_count++ = 0) {
+ 		/*
+ 		 * The boot kernel might put the domain into arbitrary state,
+-		 * so make it appear as powered off to pm_genpd_poweron(), so
+-		 * that it tries to power it on in case it was really off.
++		 * so make it appear as powered off to pm_genpd_sync_poweron(),
++		 * so that it tries to power it on in case it was really off.
+ 		 */
+ 		genpd->status = GPD_STATE_POWER_OFF;
+ 		if (genpd->suspend_power_off) {
+@@ -1205,7 +1231,7 @@ static int pm_genpd_restore_noirq(struct
+ 	if (genpd->suspend_power_off)
+ 		return 0;
  
- 	/* IPSR1 */
-@@ -447,7 +447,7 @@ enum {
- 	A0_MARK, SD1_DAT3_MARK, MMC0_D3_MARK, FD3_MARK,
- 	BS_MARK, SD1_DAT2_MARK, MMC0_D2_MARK, FD2_MARK,
- 	ATADIR0_MARK, SDSELF_MARK, HCTS1_MARK, TX4_C_MARK,
--	PENC2_MARK, SCK0_MARK, PWM1_MARK, PWMFSW0_MARK,
-+	USB_PENC2_MARK, SCK0_MARK, PWM1_MARK, PWMFSW0_MARK,
- 	SCIF_CLK_MARK, TCLK0_C_MARK,
+-	pm_genpd_poweron(genpd);
++	pm_genpd_sync_poweron(genpd);
  
- 	EX_CS0_MARK, RX3_C_IRDA_RX_C_MARK, MMC0_D6_MARK,
-@@ -658,7 +658,7 @@ static pinmux_enum_t pinmux_data[] = {
- 	PINMUX_DATA(A18_MARK, FN_A18),
- 	PINMUX_DATA(A19_MARK, FN_A19),
- 
--	PINMUX_IPSR_DATA(IP0_2_0, PENC2),
-+	PINMUX_IPSR_DATA(IP0_2_0, USB_PENC2),
- 	PINMUX_IPSR_MODSEL_DATA(IP0_2_0, SCK0, SEL_SCIF0_0),
- 	PINMUX_IPSR_DATA(IP0_2_0, PWM1),
- 	PINMUX_IPSR_MODSEL_DATA(IP0_2_0, PWMFSW0, SEL_PWMFSW_0),
-@@ -1456,7 +1456,7 @@ static struct pinmux_gpio pinmux_gpios[] = {
- 	GPIO_FN(A19),
- 
- 	/* IPSR0 */
--	GPIO_FN(PENC2), GPIO_FN(SCK0), GPIO_FN(PWM1), GPIO_FN(PWMFSW0),
-+	GPIO_FN(USB_PENC2), GPIO_FN(SCK0), GPIO_FN(PWM1), GPIO_FN(PWMFSW0),
- 	GPIO_FN(SCIF_CLK), GPIO_FN(TCLK0_C), GPIO_FN(BS), GPIO_FN(SD1_DAT2),
- 	GPIO_FN(MMC0_D2), GPIO_FN(FD2), GPIO_FN(ATADIR0), GPIO_FN(SDSELF),
- 	GPIO_FN(HCTS1), GPIO_FN(TX4_C), GPIO_FN(A0), GPIO_FN(SD1_DAT3),
-@@ -1865,8 +1865,8 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
- 		GP_4_30_FN, FN_IP8_18,
- 		GP_4_29_FN, FN_IP8_17_16,
- 		GP_4_28_FN, FN_IP0_2_0,
--		GP_4_27_FN, FN_PENC1,
--		GP_4_26_FN, FN_PENC0,
-+		GP_4_27_FN, FN_USB_PENC1,
-+		GP_4_26_FN, FN_USB_PENC0,
- 		GP_4_25_FN, FN_IP8_15_12,
- 		GP_4_24_FN, FN_IP8_11_8,
- 		GP_4_23_FN, FN_IP8_7_4,
-@@ -1981,7 +1981,7 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
- 		FN_BS, FN_SD1_DAT2, FN_MMC0_D2, FN_FD2,
- 		FN_ATADIR0, FN_SDSELF, FN_HCTS1, FN_TX4_C,
- 		/* IP0_2_0 [3] */
--		FN_PENC2, FN_SCK0, FN_PWM1, FN_PWMFSW0,
-+		FN_USB_PENC2, FN_SCK0, FN_PWM1, FN_PWMFSW0,
- 		FN_SCIF_CLK, FN_TCLK0_C, 0, 0 }
- 	},
- 	{ PINMUX_CFG_REG_VAR("IPSR1", 0xfffc0024, 32,
--- 
-1.7.10.2.484.gcd07cc5
+ 	return dev_gpd_data(dev)->always_on ? 0 : genpd_start_dev(genpd, dev);
+ }
 
