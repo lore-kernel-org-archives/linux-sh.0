@@ -1,108 +1,142 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 16 Aug 2012 13:00:53 +0000
-Subject: [PATCH 18/19] sh: kfr2r09: Use the backlight API for brightness control
-Message-Id: <1345122054-16013-19-git-send-email-laurent.pinchart@ideasonboard.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sun, 05 Aug 2012 23:41:20 +0000
+Subject: [PATCH 4/15] sh: TMU: Introduce clocksource/clock events suspend/resume routines
+Message-Id: <201208060141.21064.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201207291612.43138.rjw@sisk.pl> <201208060138.03950.rjw@sisk.pl>
+In-Reply-To: <201208060138.03950.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: Linux PM list <linux-pm@vger.kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, Thomas Gleixner <tglx@linutronix.de>
 
-Don't hook up brightness control in the display on/off operations, use
-the backlight API instead.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Introduce suspend/resume routines for SH TMU clock source and
+clock event device such that if those devices belong to a PM domain,
+the generic PM domains framework will be notified that the given
+domain may be turned off (during system suspend) or that it has to
+be turned on (during system resume).
+
+This change allows the A4R domain on SH7372 to be turned off during
+system suspend (tested on the Mackerel board) if the TMU clock source
+and/or clock event device is in use.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- arch/sh/boards/mach-kfr2r09/lcd_wqvga.c     |   16 +++-------------
- arch/sh/boards/mach-kfr2r09/setup.c         |    7 +++++--
- arch/sh/include/mach-kfr2r09/mach/kfr2r09.h |    6 ++----
- 3 files changed, 10 insertions(+), 19 deletions(-)
+ drivers/clocksource/sh_tmu.c |   54 +++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 50 insertions(+), 4 deletions(-)
 
-diff --git a/arch/sh/boards/mach-kfr2r09/lcd_wqvga.c b/arch/sh/boards/mach-kfr2r09/lcd_wqvga.c
-index c148b36..c620503 100644
---- a/arch/sh/boards/mach-kfr2r09/lcd_wqvga.c
-+++ b/arch/sh/boards/mach-kfr2r09/lcd_wqvga.c
-@@ -283,7 +283,7 @@ void kfr2r09_lcd_start(void *sohandle, struct sh_mobile_lcdc_sys_bus_ops *so)
- #define MAIN_MLED4      0x40
- #define MAIN_MSW        0x80
+Index: linux/drivers/clocksource/sh_tmu.c
+=================================--- linux.orig/drivers/clocksource/sh_tmu.c
++++ linux/drivers/clocksource/sh_tmu.c
+@@ -33,6 +33,7 @@
+ #include <linux/slab.h>
+ #include <linux/module.h>
+ #include <linux/pm_domain.h>
++#include <linux/pm_runtime.h>
  
--static int kfr2r09_lcd_backlight(int on)
-+int kfr2r09_lcd_set_brightness(int brightness)
+ struct sh_tmu_priv {
+ 	void __iomem *mapbase;
+@@ -43,6 +44,7 @@ struct sh_tmu_priv {
+ 	unsigned long periodic;
+ 	struct clock_event_device ced;
+ 	struct clocksource cs;
++	bool cs_enabled;
+ };
+ 
+ static DEFINE_RAW_SPINLOCK(sh_tmu_lock);
+@@ -204,14 +206,40 @@ static int sh_tmu_clocksource_enable(str
+ 	int ret;
+ 
+ 	ret = sh_tmu_enable(p);
+-	if (!ret)
++	if (!ret) {
+ 		__clocksource_updatefreq_hz(cs, p->rate);
++		p->cs_enabled = true;
++	}
+ 	return ret;
+ }
+ 
+ static void sh_tmu_clocksource_disable(struct clocksource *cs)
  {
- 	struct i2c_adapter *a;
- 	struct i2c_msg msg;
-@@ -295,7 +295,7 @@ static int kfr2r09_lcd_backlight(int on)
- 		return -ENODEV;
+-	sh_tmu_disable(cs_to_sh_tmu(cs));
++	struct sh_tmu_priv *p = cs_to_sh_tmu(cs);
++
++	WARN_ON(!p->cs_enabled);
++
++	sh_tmu_disable(p);
++	p->cs_enabled = false;
++}
++
++static void sh_tmu_clocksource_suspend(struct clocksource *cs)
++{
++	struct sh_tmu_priv *p = cs_to_sh_tmu(cs);
++
++	if (p->cs_enabled)
++		sh_tmu_disable(p);
++
++	pm_genpd_syscore_poweroff(&p->pdev->dev);
++}
++
++static void sh_tmu_clocksource_resume(struct clocksource *cs)
++{
++	struct sh_tmu_priv *p = cs_to_sh_tmu(cs);
++
++	pm_genpd_syscore_poweron(&p->pdev->dev);
++	if (p->cs_enabled)
++		sh_tmu_enable(p);
+ }
  
- 	buf[0] = 0x00;
--	if (on)
-+	if (brightness)
- 		buf[1] = CTRL_CPSW | CTRL_C10 | CTRL_CKSW;
- 	else
- 		buf[1] = 0;
-@@ -309,7 +309,7 @@ static int kfr2r09_lcd_backlight(int on)
- 		return -ENODEV;
+ static int sh_tmu_register_clocksource(struct sh_tmu_priv *p,
+@@ -224,6 +252,8 @@ static int sh_tmu_register_clocksource(s
+ 	cs->read = sh_tmu_clocksource_read;
+ 	cs->enable = sh_tmu_clocksource_enable;
+ 	cs->disable = sh_tmu_clocksource_disable;
++	cs->suspend = sh_tmu_clocksource_suspend;
++	cs->resume = sh_tmu_clocksource_resume;
+ 	cs->mask = CLOCKSOURCE_MASK(32);
+ 	cs->flags = CLOCK_SOURCE_IS_CONTINUOUS;
  
- 	buf[0] = 0x01;
--	if (on)
-+	if (brightness)
- 		buf[1] = MAIN_MSW | MAIN_MLED4 | 0x0c;
- 	else
- 		buf[1] = 0;
-@@ -324,13 +324,3 @@ static int kfr2r09_lcd_backlight(int on)
- 
+@@ -301,6 +331,16 @@ static int sh_tmu_clock_event_next(unsig
  	return 0;
  }
--
--void kfr2r09_lcd_on(void)
--{
--	kfr2r09_lcd_backlight(1);
--}
--
--void kfr2r09_lcd_off(void)
--{
--	kfr2r09_lcd_backlight(0);
--}
-diff --git a/arch/sh/boards/mach-kfr2r09/setup.c b/arch/sh/boards/mach-kfr2r09/setup.c
-index 158c917..ecf40b8 100644
---- a/arch/sh/boards/mach-kfr2r09/setup.c
-+++ b/arch/sh/boards/mach-kfr2r09/setup.c
-@@ -156,8 +156,11 @@ static struct sh_mobile_lcdc_info kfr2r09_sh_lcdc_info = {
- 			.height = 58,
- 			.setup_sys = kfr2r09_lcd_setup,
- 			.start_transfer = kfr2r09_lcd_start,
--			.display_on = kfr2r09_lcd_on,
--			.display_off = kfr2r09_lcd_off,
-+		},
-+		.bl_info = {
-+			.name = "sh_mobile_lcdc_bl",
-+			.max_brightness = 1,
-+			.set_brightness = kfr2r09_lcd_set_brightness,
- 		},
- 		.sys_bus_cfg = {
- 			.ldmt2r = 0x07010904,
-diff --git a/arch/sh/include/mach-kfr2r09/mach/kfr2r09.h b/arch/sh/include/mach-kfr2r09/mach/kfr2r09.h
-index ba3d93d..c20c9e5 100644
---- a/arch/sh/include/mach-kfr2r09/mach/kfr2r09.h
-+++ b/arch/sh/include/mach-kfr2r09/mach/kfr2r09.h
-@@ -4,15 +4,13 @@
- #include <video/sh_mobile_lcdc.h>
  
- #if defined(CONFIG_FB_SH_MOBILE_LCDC) || defined(CONFIG_FB_SH_MOBILE_LCDC_MODULE)
--void kfr2r09_lcd_on(void);
--void kfr2r09_lcd_off(void);
-+int kfr2r09_lcd_set_brightness(int brightness);
- int kfr2r09_lcd_setup(void *sys_ops_handle,
- 		      struct sh_mobile_lcdc_sys_bus_ops *sys_ops);
- void kfr2r09_lcd_start(void *sys_ops_handle,
- 		       struct sh_mobile_lcdc_sys_bus_ops *sys_ops);
- #else
--static void kfr2r09_lcd_on(void) {}
--static void kfr2r09_lcd_off(void) {}
-+static int kfr2r09_lcd_set_brightness(int brightness) {}
- static int kfr2r09_lcd_setup(void *sys_ops_handle,
- 				struct sh_mobile_lcdc_sys_bus_ops *sys_ops)
++static void sh_tmu_clock_event_suspend(struct clock_event_device *ced)
++{
++	pm_genpd_syscore_poweroff(&ced_to_sh_tmu(ced)->pdev->dev);
++}
++
++static void sh_tmu_clock_event_resume(struct clock_event_device *ced)
++{
++	pm_genpd_syscore_poweron(&ced_to_sh_tmu(ced)->pdev->dev);
++}
++
+ static void sh_tmu_register_clockevent(struct sh_tmu_priv *p,
+ 				       char *name, unsigned long rating)
  {
--- 
-1.7.8.6
+@@ -316,6 +356,8 @@ static void sh_tmu_register_clockevent(s
+ 	ced->cpumask = cpumask_of(0);
+ 	ced->set_next_event = sh_tmu_clock_event_next;
+ 	ced->set_mode = sh_tmu_clock_event_mode;
++	ced->suspend = sh_tmu_clock_event_suspend;
++	ced->resume = sh_tmu_clock_event_resume;
+ 
+ 	dev_info(&p->pdev->dev, "used for clock events\n");
+ 
+@@ -407,8 +449,12 @@ static int __devinit sh_tmu_probe(struct
+ 	struct sh_tmu_priv *p = platform_get_drvdata(pdev);
+ 	int ret;
+ 
+-	if (!is_early_platform_device(pdev))
+-		pm_genpd_dev_always_on(&pdev->dev, true);
++	if (!is_early_platform_device(pdev)) {
++		struct sh_timer_config *cfg = pdev->dev.platform_data;
++
++		if (cfg->clocksource_rating || cfg->clockevent_rating)
++			pm_genpd_dev_always_on(&pdev->dev, true);
++	}
+ 
+ 	if (p) {
+ 		dev_info(&pdev->dev, "kept as earlytimer\n");
 
