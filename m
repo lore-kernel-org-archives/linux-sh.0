@@ -1,73 +1,70 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Tue, 07 Aug 2012 22:27:52 +0000
-Subject: [PATCH 2/4] PM / shmobile: Allow device latencies to be specified directly
-Message-Id: <201208080027.52891.rjw@sisk.pl>
+Date: Sun, 05 Aug 2012 23:43:41 +0000
+Subject: [PATCH 6/15] sh: MTU2: Introduce clock events suspend/resume routines
+Message-Id: <201208060143.42216.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201207212349.18294.rjw@sisk.pl> <201208080026.01738.rjw@sisk.pl>
-In-Reply-To: <201208080026.01738.rjw@sisk.pl>
+References: <201207291612.43138.rjw@sisk.pl> <201208060138.03950.rjw@sisk.pl>
+In-Reply-To: <201208060138.03950.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux-sh list <linux-sh@vger.kernel.org>
-Cc: Linux PM list <linux-pm@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
+To: Linux PM list <linux-pm@vger.kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, Thomas Gleixner <tglx@linutronix.de>
 
 
-Make it possible to specify device start/stop and save/restore
-state latencies directy when adding devices to PM domains.  For
-this purpose, introduce rmobile_add_device_to_domain_td() whose
-third argument is a pointer to a struct gpd_timing_data object
-containing device latency data.
+Introduce suspend/resume routines for SH MTU2 clock event devices
+such that if those devices belong to a PM domain, the generic PM
+domains framework will be notified that the given domain may be
+turned off (during system suspend) or that it has to be turned on
+(during system resume).
 
 Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- arch/arm/mach-shmobile/include/mach/pm-rmobile.h |   14 ++++++++++++--
- arch/arm/mach-shmobile/pm-rmobile.c              |    7 ++++---
- 2 files changed, 16 insertions(+), 5 deletions(-)
+ drivers/clocksource/sh_mtu2.c |   20 ++++++++++++++++++--
+ 1 file changed, 18 insertions(+), 2 deletions(-)
 
-Index: linux/arch/arm/mach-shmobile/pm-rmobile.c
-=================================--- linux.orig/arch/arm/mach-shmobile/pm-rmobile.c
-+++ linux/arch/arm/mach-shmobile/pm-rmobile.c
-@@ -157,12 +157,13 @@ void rmobile_init_domains(struct rmobile
- 		rmobile_init_pm_domain(&domains[j]);
+Index: linux/drivers/clocksource/sh_mtu2.c
+=================================--- linux.orig/drivers/clocksource/sh_mtu2.c
++++ linux/drivers/clocksource/sh_mtu2.c
+@@ -208,6 +208,16 @@ static void sh_mtu2_clock_event_mode(enu
+ 	}
  }
  
--void rmobile_add_device_to_domain(const char *domain_name,
--				 struct platform_device *pdev)
-+void rmobile_add_device_to_domain_td(const char *domain_name,
-+				     struct platform_device *pdev,
-+				     struct gpd_timing_data *td)
- {
- 	struct device *dev = &pdev->dev;
- 
--	pm_genpd_name_add_device(domain_name, dev);
-+	__pm_genpd_name_add_device(domain_name, dev, td);
- 	if (pm_clk_no_clocks(dev))
- 		pm_clk_add(dev, NULL);
- }
-Index: linux/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
-=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
-+++ linux/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
-@@ -31,10 +31,20 @@ struct rmobile_pm_domain *to_rmobile_pd(
- 
- #ifdef CONFIG_PM
- extern void rmobile_init_domains(struct rmobile_pm_domain domains[], int num);
--extern void rmobile_add_device_to_domain(const char *domain_name,
--					struct platform_device *pdev);
-+extern void rmobile_add_device_to_domain_td(const char *domain_name,
-+					    struct platform_device *pdev,
-+					    struct gpd_timing_data *td);
-+
-+static inline void rmobile_add_device_to_domain(const char *domain_name,
-+						struct platform_device *pdev)
++static void sh_mtu2_clock_event_suspend(struct clock_event_device *ced)
 +{
-+	rmobile_add_device_to_domain_td(domain_name, pdev, NULL);
++	pm_genpd_syscore_poweroff(&ced_to_sh_mtu2(ced)->pdev->dev);
 +}
 +
- #else
++static void sh_mtu2_clock_event_resume(struct clock_event_device *ced)
++{
++	pm_genpd_syscore_poweron(&ced_to_sh_mtu2(ced)->pdev->dev);
++}
 +
- #define rmobile_init_domains(domains, num) do { } while (0)
-+#define rmobile_add_device_to_domain_td(name, pdev, td) do { } while (0)
- #define rmobile_add_device_to_domain(name, pdev) do { } while (0)
- #endif /* CONFIG_PM */
+ static void sh_mtu2_register_clockevent(struct sh_mtu2_priv *p,
+ 				       char *name, unsigned long rating)
+ {
+@@ -221,6 +231,8 @@ static void sh_mtu2_register_clockevent(
+ 	ced->rating = rating;
+ 	ced->cpumask = cpumask_of(0);
+ 	ced->set_mode = sh_mtu2_clock_event_mode;
++	ced->suspend = sh_mtu2_clock_event_suspend;
++	ced->resume = sh_mtu2_clock_event_resume;
  
+ 	dev_info(&p->pdev->dev, "used for clock events\n");
+ 	clockevents_register_device(ced);
+@@ -307,8 +319,12 @@ static int __devinit sh_mtu2_probe(struc
+ 	struct sh_mtu2_priv *p = platform_get_drvdata(pdev);
+ 	int ret;
+ 
+-	if (!is_early_platform_device(pdev))
+-		pm_genpd_dev_always_on(&pdev->dev, true);
++	if (!is_early_platform_device(pdev)) {
++		struct sh_timer_config *cfg = pdev->dev.platform_data;
++
++		if (cfg->clockevent_rating)
++			pm_genpd_dev_always_on(&pdev->dev, true);
++	}
+ 
+ 	if (p) {
+ 		dev_info(&pdev->dev, "kept as earlytimer\n");
 
