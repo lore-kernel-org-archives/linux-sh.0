@@ -1,198 +1,65 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 05 Aug 2012 23:48:17 +0000
-Subject: [PATCH 12/15] sh: TMU: Basic runtime PM support
-Message-Id: <201208060148.17592.rjw@sisk.pl>
+Date: Sun, 05 Aug 2012 23:38:03 +0000
+Subject: [PATCH 0/15] PM: Suspend/resume and runtime PM for clock sources/clock event devices in PM domains
+Message-Id: <201208060138.03950.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201207291612.43138.rjw@sisk.pl> <201208060138.03950.rjw@sisk.pl>
-In-Reply-To: <201208060138.03950.rjw@sisk.pl>
+References: <201207291612.43138.rjw@sisk.pl>
+In-Reply-To: <201207291612.43138.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Linux PM list <linux-pm@vger.kernel.org>
 Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, Thomas Gleixner <tglx@linutronix.de>
 
+Hi all,
 
-Modify the SH TMU clock source/clock event device driver to support
-runtime PM at a basic level (i.e. device clocks can be disabled and
-enabled, but domain power must be on, because the devices have to
-be marked as "irq safe").
+On Sunday, July 29, 2012, Rafael J. Wysocki wrote:
+> There is a problem with clock sources and clock event devices belonging to PM
+> domains that they have to be marked as "always on", to prevent those domains
+> from being turned off unexpectedly, which also prevents the domains from
+> being turned off during system suspend, although that might be done and would
+> be desirable.
+> 
+> The following patch series introduces a mechanism by which the generic PM
+> domains framework can be notified that a given domain may be turned off
+> after timekeeping has been suspended, which allows the domains that contain
+> clock sources and clock event devices to be turned off before the system
+> enters the target sleep state (so that less power is used in that state).
+> 
+> [1/6] Introduce simplified power on routine for PM domains (to be used during
+>       system resume from suspend/hibernation and during "syscore" resume).
+> [2/6] Introduce function for notifying the generic PM domains framework that
+>       the given device may be treated as suspended (so its domain may be
+>       turned off if this has been the last active device in it).
+> [3/6] Introduce suspend/resume callbacks for clock event devices.
+> [4/6] Make the SH TMU driver use suspend/resume callbacks for clock sources
+>       and clock event devices to notify the generic PM domains framework that
+>       those devices may be regarded as suspended (during system suspend) or
+>       that they have to be turned on immediately (during system resume).
+> [5/6] Like [4/6] but for the SH CMT driver.
+> [6/6] Analogous to [4/6], but for the SH MTU2 driver.
+> 
+> The patchset has been tested on the SH7372 Mackerel board.
 
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
----
- drivers/clocksource/sh_tmu.c |   80 ++++++++++++++++++++++++++++++++++---------
- 1 file changed, 65 insertions(+), 15 deletions(-)
+There were no comments, so I think I can go a bit further and add runtime PM
+support to those drivers too. :-)
 
-Index: linux/drivers/clocksource/sh_tmu.c
-=================================--- linux.orig/drivers/clocksource/sh_tmu.c
-+++ linux/drivers/clocksource/sh_tmu.c
-@@ -45,6 +45,7 @@ struct sh_tmu_priv {
- 	struct clock_event_device ced;
- 	struct clocksource cs;
- 	bool cs_enabled;
-+	unsigned int enable_count;
- };
- 
- static DEFINE_RAW_SPINLOCK(sh_tmu_lock);
-@@ -109,7 +110,7 @@ static void sh_tmu_start_stop_ch(struct
- 	raw_spin_unlock_irqrestore(&sh_tmu_lock, flags);
- }
- 
--static int sh_tmu_enable(struct sh_tmu_priv *p)
-+static int __sh_tmu_enable(struct sh_tmu_priv *p)
- {
- 	int ret;
- 
-@@ -137,7 +138,18 @@ static int sh_tmu_enable(struct sh_tmu_p
- 	return 0;
- }
- 
--static void sh_tmu_disable(struct sh_tmu_priv *p)
-+static int sh_tmu_enable(struct sh_tmu_priv *p)
-+{
-+	if (p->enable_count++ > 0)
-+		return 0;
-+
-+	pm_runtime_get_sync(&p->pdev->dev);
-+	dev_pm_syscore_device(&p->pdev->dev, true);
-+
-+	return __sh_tmu_enable(p);
-+}
-+
-+static void __sh_tmu_disable(struct sh_tmu_priv *p)
- {
- 	/* disable channel */
- 	sh_tmu_start_stop_ch(p, 0);
-@@ -149,6 +161,20 @@ static void sh_tmu_disable(struct sh_tmu
- 	clk_disable(p->clk);
- }
- 
-+static void sh_tmu_disable(struct sh_tmu_priv *p)
-+{
-+	if (WARN_ON(p->enable_count = 0))
-+		return;
-+
-+	if (--p->enable_count > 0)
-+		return;
-+
-+	__sh_tmu_disable(p);
-+
-+	dev_pm_syscore_device(&p->pdev->dev, false);
-+	pm_runtime_put(&p->pdev->dev);
-+}
-+
- static void sh_tmu_set_next(struct sh_tmu_priv *p, unsigned long delta,
- 			    int periodic)
- {
-@@ -205,11 +231,15 @@ static int sh_tmu_clocksource_enable(str
- 	struct sh_tmu_priv *p = cs_to_sh_tmu(cs);
- 	int ret;
- 
-+	if (WARN_ON(p->cs_enabled))
-+		return 0;
-+
- 	ret = sh_tmu_enable(p);
- 	if (!ret) {
- 		__clocksource_updatefreq_hz(cs, p->rate);
- 		p->cs_enabled = true;
- 	}
-+
- 	return ret;
- }
- 
-@@ -217,7 +247,8 @@ static void sh_tmu_clocksource_disable(s
- {
- 	struct sh_tmu_priv *p = cs_to_sh_tmu(cs);
- 
--	WARN_ON(!p->cs_enabled);
-+	if (WARN_ON(!p->cs_enabled))
-+		return;
- 
- 	sh_tmu_disable(p);
- 	p->cs_enabled = false;
-@@ -227,19 +258,26 @@ static void sh_tmu_clocksource_suspend(s
- {
- 	struct sh_tmu_priv *p = cs_to_sh_tmu(cs);
- 
--	if (p->cs_enabled)
--		sh_tmu_disable(p);
-+	if (!p->cs_enabled)
-+		return;
- 
--	pm_genpd_syscore_poweroff(&p->pdev->dev);
-+	if (--p->enable_count = 0) {
-+		__sh_tmu_disable(p);
-+		pm_genpd_syscore_poweroff(&p->pdev->dev);
-+	}
- }
- 
- static void sh_tmu_clocksource_resume(struct clocksource *cs)
- {
- 	struct sh_tmu_priv *p = cs_to_sh_tmu(cs);
- 
--	pm_genpd_syscore_poweron(&p->pdev->dev);
--	if (p->cs_enabled)
--		sh_tmu_enable(p);
-+	if (!p->cs_enabled)
-+		return;
-+
-+	if (p->enable_count++ = 0) {
-+		pm_genpd_syscore_poweron(&p->pdev->dev);
-+		__sh_tmu_enable(p);
-+	}
- }
- 
- static int sh_tmu_register_clocksource(struct sh_tmu_priv *p,
-@@ -434,6 +472,8 @@ static int sh_tmu_setup(struct sh_tmu_pr
- 		ret = PTR_ERR(p->clk);
- 		goto err1;
- 	}
-+	p->cs_enabled = false;
-+	p->enable_count = 0;
- 
- 	return sh_tmu_register(p, (char *)dev_name(&p->pdev->dev),
- 			       cfg->clockevent_rating,
-@@ -447,18 +487,17 @@ static int sh_tmu_setup(struct sh_tmu_pr
- static int __devinit sh_tmu_probe(struct platform_device *pdev)
- {
- 	struct sh_tmu_priv *p = platform_get_drvdata(pdev);
-+	struct sh_timer_config *cfg = pdev->dev.platform_data;
- 	int ret;
- 
- 	if (!is_early_platform_device(pdev)) {
--		struct sh_timer_config *cfg = pdev->dev.platform_data;
--
--		if (cfg->clocksource_rating || cfg->clockevent_rating)
--			dev_pm_syscore_device(&pdev->dev, true);
-+		pm_runtime_set_active(&pdev->dev);
-+		pm_runtime_enable(&pdev->dev);
- 	}
- 
- 	if (p) {
- 		dev_info(&pdev->dev, "kept as earlytimer\n");
--		return 0;
-+		goto out;
- 	}
- 
- 	p = kmalloc(sizeof(*p), GFP_KERNEL);
-@@ -471,8 +510,19 @@ static int __devinit sh_tmu_probe(struct
- 	if (ret) {
- 		kfree(p);
- 		platform_set_drvdata(pdev, NULL);
-+		pm_runtime_idle(&pdev->dev);
-+		return ret;
- 	}
--	return ret;
-+	if (is_early_platform_device(pdev))
-+		return 0;
-+
-+ out:
-+	if (cfg->clockevent_rating || cfg->clocksource_rating)
-+		pm_runtime_irq_safe(&pdev->dev);
-+	else
-+		pm_runtime_idle(&pdev->dev);
-+
-+	return 0;
- }
- 
- static int __devexit sh_tmu_remove(struct platform_device *pdev)
+This requires some core changes, but they aren't too invasive in my opinion.
+
+Patches [1-6/15] are more-or-less the same as before modulo some fixes for bugs
+found during more thorough testing.  The remaining patches make the following
+changes:
+
+[7/15] - Clean up device PM initialization.
+[8/15] - Allow early platform device drivers to use runtime PM helper functions.
+[9/15] - Rename the "always_on" device flag to "syscore".
+[10/15] - Move the "syscore" flag to the core (from PM domains framework).
+[11/15] - Rework the "starting" of devices flagged as "irq safe" in PM domains.
+[12/15] - Add runtime PM support to the SH TMU driver.
+[13/15] - Add runtime PM support to the SH CMT driver.
+[14/15] - Add runtime PM support to the SH MTU2 driver.
+[15/15] - Stop using the "syscore" device flag for runtime PM.
+
+Thanks,
+Rafael
 
