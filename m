@@ -1,133 +1,101 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 16 Aug 2012 13:00:44 +0000
-Subject: [PATCH 09/19] fbdev: sh_mipi_dsi: Remove last reference to LCDC platform data
-Message-Id: <1345122054-16013-10-git-send-email-laurent.pinchart@ideasonboard.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sun, 05 Aug 2012 23:43:03 +0000
+Subject: [PATCH 5/15] sh: CMT: Introduce clocksource/clock events suspend/resume routines
+Message-Id: <201208060143.03787.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201207291612.43138.rjw@sisk.pl> <201208060138.03950.rjw@sisk.pl>
+In-Reply-To: <201208060138.03950.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: Linux PM list <linux-pm@vger.kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, Thomas Gleixner <tglx@linutronix.de>
 
-The format check that references LCDC platform data isn't needed, as the
-mismatch between LCDC and MIPI-DSI platform it detects would result in a
-badly displayed image, which isn't worse than a complete failure to
-setup the transmitter.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Introduce suspend/resume routines for SH CMT clock event devices and
+modify the suspend/resume routines for SH CMT clock sources such that
+if those devices belong to a PM domain, the generic PM domains
+framework will be notified that the given domain may be turned off
+(during system suspend) or that it has to be turned on (during system
+resume).
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- drivers/video/sh_mipi_dsi.c |   18 ------------------
- 1 files changed, 0 insertions(+), 18 deletions(-)
+ drivers/clocksource/sh_cmt.c |   35 +++++++++++++++++++++++++++++++----
+ 1 file changed, 31 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/video/sh_mipi_dsi.c b/drivers/video/sh_mipi_dsi.c
-index f88b204..f496229 100644
---- a/drivers/video/sh_mipi_dsi.c
-+++ b/drivers/video/sh_mipi_dsi.c
-@@ -131,10 +131,8 @@ static int sh_mipi_setup(struct sh_mipi *mipi, const struct fb_videomode *mode)
+Index: linux/drivers/clocksource/sh_cmt.c
+=================================--- linux.orig/drivers/clocksource/sh_cmt.c
++++ linux/drivers/clocksource/sh_cmt.c
+@@ -464,9 +464,20 @@ static void sh_cmt_clocksource_disable(s
+ 	sh_cmt_stop(cs_to_sh_cmt(cs), FLAG_CLOCKSOURCE);
+ }
+ 
++static void sh_cmt_clocksource_suspend(struct clocksource *cs)
++{
++	struct sh_cmt_priv *p = cs_to_sh_cmt(cs);
++
++	sh_cmt_stop(p, FLAG_CLOCKSOURCE);
++	pm_genpd_syscore_poweroff(&p->pdev->dev);
++}
++
+ static void sh_cmt_clocksource_resume(struct clocksource *cs)
  {
- 	void __iomem *base = mipi->base;
- 	struct sh_mipi_dsi_info *pdata = mipi->pdev->dev.platform_data;
--	struct sh_mobile_lcdc_chan_cfg *ch = pdata->lcd_chan;
- 	u32 pctype, datatype, pixfmt, linelength, vmctr2;
- 	u32 tmp, top, bottom, delay, div;
--	bool yuv;
- 	int bpp;
+-	sh_cmt_start(cs_to_sh_cmt(cs), FLAG_CLOCKSOURCE);
++	struct sh_cmt_priv *p = cs_to_sh_cmt(cs);
++
++	pm_genpd_syscore_poweron(&p->pdev->dev);
++	sh_cmt_start(p, FLAG_CLOCKSOURCE);
+ }
  
- 	/*
-@@ -148,77 +146,66 @@ static int sh_mipi_setup(struct sh_mipi *mipi, const struct fb_videomode *mode)
- 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_24;
- 		pixfmt = MIPI_DCS_PIXEL_FMT_24BIT;
- 		linelength = mode->xres * 3;
--		yuv = false;
- 		break;
- 	case MIPI_RGB565:
- 		pctype = 1;
- 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_16;
- 		pixfmt = MIPI_DCS_PIXEL_FMT_16BIT;
- 		linelength = mode->xres * 2;
--		yuv = false;
- 		break;
- 	case MIPI_RGB666_LP:
- 		pctype = 2;
- 		datatype = MIPI_DSI_PIXEL_STREAM_3BYTE_18;
- 		pixfmt = MIPI_DCS_PIXEL_FMT_24BIT;
- 		linelength = mode->xres * 3;
--		yuv = false;
- 		break;
- 	case MIPI_RGB666:
- 		pctype = 3;
- 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_18;
- 		pixfmt = MIPI_DCS_PIXEL_FMT_18BIT;
- 		linelength = (mode->xres * 18 + 7) / 8;
--		yuv = false;
- 		break;
- 	case MIPI_BGR888:
- 		pctype = 8;
- 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_24;
- 		pixfmt = MIPI_DCS_PIXEL_FMT_24BIT;
- 		linelength = mode->xres * 3;
--		yuv = false;
- 		break;
- 	case MIPI_BGR565:
- 		pctype = 9;
- 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_16;
- 		pixfmt = MIPI_DCS_PIXEL_FMT_16BIT;
- 		linelength = mode->xres * 2;
--		yuv = false;
- 		break;
- 	case MIPI_BGR666_LP:
- 		pctype = 0xa;
- 		datatype = MIPI_DSI_PIXEL_STREAM_3BYTE_18;
- 		pixfmt = MIPI_DCS_PIXEL_FMT_24BIT;
- 		linelength = mode->xres * 3;
--		yuv = false;
- 		break;
- 	case MIPI_BGR666:
- 		pctype = 0xb;
- 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_18;
- 		pixfmt = MIPI_DCS_PIXEL_FMT_18BIT;
- 		linelength = (mode->xres * 18 + 7) / 8;
--		yuv = false;
- 		break;
- 	case MIPI_YUYV:
- 		pctype = 4;
- 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_YCBCR16;
- 		pixfmt = MIPI_DCS_PIXEL_FMT_16BIT;
- 		linelength = mode->xres * 2;
--		yuv = true;
- 		break;
- 	case MIPI_UYVY:
- 		pctype = 5;
- 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_YCBCR16;
- 		pixfmt = MIPI_DCS_PIXEL_FMT_16BIT;
- 		linelength = mode->xres * 2;
--		yuv = true;
- 		break;
- 	case MIPI_YUV420_L:
- 		pctype = 6;
- 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_YCBCR12;
- 		pixfmt = MIPI_DCS_PIXEL_FMT_12BIT;
- 		linelength = (mode->xres * 12 + 7) / 8;
--		yuv = true;
- 		break;
- 	case MIPI_YUV420:
- 		pctype = 7;
-@@ -226,16 +213,11 @@ static int sh_mipi_setup(struct sh_mipi *mipi, const struct fb_videomode *mode)
- 		pixfmt = MIPI_DCS_PIXEL_FMT_12BIT;
- 		/* Length of U/V line */
- 		linelength = (mode->xres + 1) / 2;
--		yuv = true;
- 		break;
- 	default:
- 		return -EINVAL;
- 	}
+ static int sh_cmt_register_clocksource(struct sh_cmt_priv *p,
+@@ -479,7 +490,7 @@ static int sh_cmt_register_clocksource(s
+ 	cs->read = sh_cmt_clocksource_read;
+ 	cs->enable = sh_cmt_clocksource_enable;
+ 	cs->disable = sh_cmt_clocksource_disable;
+-	cs->suspend = sh_cmt_clocksource_disable;
++	cs->suspend = sh_cmt_clocksource_suspend;
+ 	cs->resume = sh_cmt_clocksource_resume;
+ 	cs->mask = CLOCKSOURCE_MASK(sizeof(unsigned long) * 8);
+ 	cs->flags = CLOCK_SOURCE_IS_CONTINUOUS;
+@@ -562,6 +573,16 @@ static int sh_cmt_clock_event_next(unsig
+ 	return 0;
+ }
  
--	if ((yuv && ch->interface_type != YUV422) ||
--	    (!yuv && ch->interface_type != RGB24))
--		return -EINVAL;
--
- 	if (!pdata->lane)
- 		return -EINVAL;
++static void sh_cmt_clock_event_suspend(struct clock_event_device *ced)
++{
++	pm_genpd_syscore_poweroff(&ced_to_sh_cmt(ced)->pdev->dev);
++}
++
++static void sh_cmt_clock_event_resume(struct clock_event_device *ced)
++{
++	pm_genpd_syscore_poweron(&ced_to_sh_cmt(ced)->pdev->dev);
++}
++
+ static void sh_cmt_register_clockevent(struct sh_cmt_priv *p,
+ 				       char *name, unsigned long rating)
+ {
+@@ -576,6 +597,8 @@ static void sh_cmt_register_clockevent(s
+ 	ced->cpumask = cpumask_of(0);
+ 	ced->set_next_event = sh_cmt_clock_event_next;
+ 	ced->set_mode = sh_cmt_clock_event_mode;
++	ced->suspend = sh_cmt_clock_event_suspend;
++	ced->resume = sh_cmt_clock_event_resume;
  
--- 
-1.7.8.6
-
+ 	dev_info(&p->pdev->dev, "used for clock events\n");
+ 	clockevents_register_device(ced);
+@@ -690,8 +713,12 @@ static int __devinit sh_cmt_probe(struct
+ 	struct sh_cmt_priv *p = platform_get_drvdata(pdev);
+ 	int ret;
+ 
+-	if (!is_early_platform_device(pdev))
+-		pm_genpd_dev_always_on(&pdev->dev, true);
++	if (!is_early_platform_device(pdev)) {
++		struct sh_timer_config *cfg = pdev->dev.platform_data;
++
++		if (cfg->clocksource_rating || cfg->clockevent_rating)
++			pm_genpd_dev_always_on(&pdev->dev, true);
++	}
+ 
+ 	if (p) {
+ 		dev_info(&pdev->dev, "kept as earlytimer\n");
