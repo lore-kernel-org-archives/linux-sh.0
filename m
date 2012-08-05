@@ -1,77 +1,96 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 31 Aug 2012 06:24:38 +0000
-Subject: Re: [GIT PULL v2] Renesas ARM-based SoC: Marzen and r8a7779 for 3.7
-Message-Id: <20120831062438.GB7014@verge.net.au>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sun, 05 Aug 2012 23:49:37 +0000
+Subject: [PATCH 14/15] sh: MTU2: Basic runtime PM support
+Message-Id: <201208060149.37972.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346376502-12114-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1346376502-12114-1-git-send-email-horms@verge.net.au>
+References: <201207291612.43138.rjw@sisk.pl> <201208060138.03950.rjw@sisk.pl>
+In-Reply-To: <201208060138.03950.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linux PM list <linux-pm@vger.kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, Thomas Gleixner <tglx@linutronix.de>
 
-On Fri, Aug 31, 2012 at 10:28:11AM +0900, Simon Horman wrote:
-> Hi Olof, Hi Arnd,
-> 
-> please consider the following enhancements to the Marzen board
-> and r8a7779 SoC by Phil Edworthy, Morimoto-san and myself for 3.7.
-> 
-> * This pull requests superceedes the previous request,
->   "[GIT PULL v2] Renesas ARM-based SoC: Marzen and r8a7779 for 3.7"
 
-    The line above should be:
+Modify the SH MTU2 clock event device driver to support runtime PM at
+a basic level (i.e. device clocks can be disabled and enabled, but
+domain power must be on, because the device has to be marked as
+"irq safe").
 
-    "[GIT PULL] Renesas ARM-based SoC: Marzen and r8a7779 for 3.7"
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
+ drivers/clocksource/sh_mtu2.c |   28 ++++++++++++++++++++++------
+ 1 file changed, 22 insertions(+), 6 deletions(-)
 
->   which I made earlier today. The difference to that request is that
->   I have pushed one more patch. There was no rebase.
-> 
-> * This pull request is based on the usb-next branch of Greg KH's USB tree,
->   git://git.kernel.org/pub/scm/linux/kernel/git/gregkh/usb.git,
->   which is based on v3.6-rc3.
-> 
->   This is to satisfy compile-time dependencies.
->   Please let me know if you would like this handled a different way.
-> 
-> ----------------------------------------------------------------
-> The following changes since commit a7bdf7fa33127bf08eb0810698bca607a9462df4:
-> 
->   Merge v3.6-rc3 into usb-next (2012-08-27 07:15:30 -0700)
-> 
-> are available in the git repository at:
-> 
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git marzen
-> 
-> for you to fetch changes up to 3553395437f2ac42a73255a0ffac09efc9acf5c4:
-> 
->   ARM: shmobile: marzen: add USB OHCI driver support (2012-08-31 09:41:44 +0900)
-> 
-> ----------------------------------------------------------------
-> Kuninori Morimoto (8):
->       ARM: shmobile: r8a7779: PFC rename PENCx -> USB_PENCx
->       ARM: shmobile: r8a7779: add USB common phy initializer
->       ARM: shmobile: r8a7779: add USB EHCI clock support
->       ARM: shmobile: r8a7779: add USB OHCI clock support
->       ARM: shmobile: marzen: add USB EHCI driver support
->       ARM: shmobile: marzen: fixup regulator id for smsc911x
->       ARM: shmobile: marzen: enable thermal sensor
->       ARM: shmobile: marzen: add USB OHCI driver support
-> 
-> Phil Edworthy (2):
->       r8a7779: add SDHI clock support
->       marzen: add SDHI0 support
-> 
-> Simon Horman (1):
->       ARM: mach-shmobile: marzen: defconfig update
-> 
->  arch/arm/configs/marzen_defconfig             |  30 ++--
->  arch/arm/mach-shmobile/Kconfig                |   2 +
->  arch/arm/mach-shmobile/board-marzen.c         | 213 +++++++++++++++++++++++++-
->  arch/arm/mach-shmobile/clock-r8a7779.c        |  18 ++-
->  arch/arm/mach-shmobile/include/mach/common.h  |   1 +
->  arch/arm/mach-shmobile/include/mach/r8a7779.h |   2 +-
->  arch/arm/mach-shmobile/pfc-r8a7779.c          |  16 +-
->  arch/arm/mach-shmobile/setup-r8a7779.c        |  93 +++++++++++
->  8 files changed, 355 insertions(+), 20 deletions(-)
-> 
+Index: linux/drivers/clocksource/sh_mtu2.c
+=================================--- linux.orig/drivers/clocksource/sh_mtu2.c
++++ linux/drivers/clocksource/sh_mtu2.c
+@@ -32,6 +32,7 @@
+ #include <linux/slab.h>
+ #include <linux/module.h>
+ #include <linux/pm_domain.h>
++#include <linux/pm_runtime.h>
+ 
+ struct sh_mtu2_priv {
+ 	void __iomem *mapbase;
+@@ -123,6 +124,9 @@ static int sh_mtu2_enable(struct sh_mtu2
+ {
+ 	int ret;
+ 
++	pm_runtime_get_sync(&p->pdev->dev);
++	dev_pm_syscore_device(&p->pdev->dev, true);
++
+ 	/* enable clock */
+ 	ret = clk_enable(p->clk);
+ 	if (ret) {
+@@ -157,6 +161,9 @@ static void sh_mtu2_disable(struct sh_mt
+ 
+ 	/* stop clock */
+ 	clk_disable(p->clk);
++
++	dev_pm_syscore_device(&p->pdev->dev, false);
++	pm_runtime_put(&p->pdev->dev);
+ }
+ 
+ static irqreturn_t sh_mtu2_interrupt(int irq, void *dev_id)
+@@ -320,15 +327,13 @@ static int __devinit sh_mtu2_probe(struc
+ 	int ret;
+ 
+ 	if (!is_early_platform_device(pdev)) {
+-		struct sh_timer_config *cfg = pdev->dev.platform_data;
+-
+-		if (cfg->clockevent_rating)
+-			dev_pm_syscore_device(&pdev->dev, true);
++		pm_runtime_set_active(&pdev->dev);
++		pm_runtime_enable(&pdev->dev);
+ 	}
+ 
+ 	if (p) {
+ 		dev_info(&pdev->dev, "kept as earlytimer\n");
+-		return 0;
++		goto out;
+ 	}
+ 
+ 	p = kmalloc(sizeof(*p), GFP_KERNEL);
+@@ -341,8 +346,19 @@ static int __devinit sh_mtu2_probe(struc
+ 	if (ret) {
+ 		kfree(p);
+ 		platform_set_drvdata(pdev, NULL);
++		pm_runtime_idle(&pdev->dev);
++		return ret;
+ 	}
+-	return ret;
++	if (is_early_platform_device(pdev))
++		return 0;
++
++ out:
++	if (cfg->clockevent_rating)
++		pm_runtime_irq_safe(&pdev->dev);
++	else
++		pm_runtime_idle(&pdev->dev);
++
++	return 0;
+ }
+ 
+ static int __devexit sh_mtu2_remove(struct platform_device *pdev)
+
