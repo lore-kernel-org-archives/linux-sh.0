@@ -1,145 +1,103 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 06 Aug 2012 23:14:14 +0000
-Subject: [PATCH 11/12] ARM: shmobile: Move r8a7779's PM domain objects to a table
-Message-Id: <201208070114.15231.rjw@sisk.pl>
+Date: Sun, 05 Aug 2012 23:44:28 +0000
+Subject: [PATCH 7/15] PM: Reorganize device PM initialization
+Message-Id: <201208060144.29037.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201208070105.23262.rjw@sisk.pl>
-In-Reply-To: <201208070105.23262.rjw@sisk.pl>
+References: <201207291612.43138.rjw@sisk.pl> <201208060138.03950.rjw@sisk.pl>
+In-Reply-To: <201208060138.03950.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux-sh list <linux-sh@vger.kernel.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
+To: Linux PM list <linux-pm@vger.kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, Thomas Gleixner <tglx@linutronix.de>
 
 
-Instead of giving a name to every r8a7779's PM domain object, put
-them all into a table and initialize them all together in a loop.
+Make the device power management initialization more straightforward
+by moving the initialization of common (i.e. used by both runtime PM
+and system suspend) fields to a separate routine.
 
 Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7779.h |    9 ---
- arch/arm/mach-shmobile/pm-r8a7779.c           |   65 ++++++++++++++------------
- arch/arm/mach-shmobile/setup-r8a7779.c        |    5 --
- 3 files changed, 39 insertions(+), 40 deletions(-)
+ drivers/base/power/main.c  |    7 ++-----
+ drivers/base/power/power.h |   22 +++++++++++++++-------
+ 2 files changed, 17 insertions(+), 12 deletions(-)
 
-Index: linux/arch/arm/mach-shmobile/include/mach/r8a7779.h
-=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ linux/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -347,14 +347,9 @@ extern int r8a7779_sysc_power_down(struc
- extern int r8a7779_sysc_power_up(struct r8a7779_pm_ch *r8a7779_ch);
+Index: linux/drivers/base/power/main.c
+=================================--- linux.orig/drivers/base/power/main.c
++++ linux/drivers/base/power/main.c
+@@ -57,20 +57,17 @@ static pm_message_t pm_transition;
+ static int async_error;
  
- #ifdef CONFIG_PM
--extern struct r8a7779_pm_domain r8a7779_sh4a;
--extern struct r8a7779_pm_domain r8a7779_sgx;
--extern struct r8a7779_pm_domain r8a7779_vdp1;
--extern struct r8a7779_pm_domain r8a7779_impx3;
--
--extern void r8a7779_init_pm_domain(struct r8a7779_pm_domain *r8a7779_pd);
-+extern void __init r8a7779_init_pm_domains(void);
- #else
--#define r8a7779_init_pm_domain(pd) do { } while (0)
-+static inline void r8a7779_init_pm_domains(void) {}
- #endif /* CONFIG_PM */
- 
- #endif /* __ASM_R8A7779_H__ */
-Index: linux/arch/arm/mach-shmobile/pm-r8a7779.c
-=================================--- linux.orig/arch/arm/mach-shmobile/pm-r8a7779.c
-+++ linux/arch/arm/mach-shmobile/pm-r8a7779.c
-@@ -183,7 +183,7 @@ static bool pd_active_wakeup(struct devi
- 	return true;
- }
- 
--void r8a7779_init_pm_domain(struct r8a7779_pm_domain *r8a7779_pd)
-+static void r8a7779_init_pm_domain(struct r8a7779_pm_domain *r8a7779_pd)
+ /**
+- * device_pm_init - Initialize the PM-related part of a device object.
++ * device_pm_sleep_init - Initialize system suspend-related device fields.
+  * @dev: Device object being initialized.
+  */
+-void device_pm_init(struct device *dev)
++void device_pm_sleep_init(struct device *dev)
  {
- 	struct generic_pm_domain *genpd = &r8a7779_pd->genpd;
- 
-@@ -199,37 +199,44 @@ void r8a7779_init_pm_domain(struct r8a77
- 		pd_power_up(&r8a7779_pd->genpd);
+ 	dev->power.is_prepared = false;
+ 	dev->power.is_suspended = false;
+ 	init_completion(&dev->power.completion);
+ 	complete_all(&dev->power.completion);
+ 	dev->power.wakeup = NULL;
+-	spin_lock_init(&dev->power.lock);
+-	pm_runtime_init(dev);
+ 	INIT_LIST_HEAD(&dev->power.entry);
+-	dev->power.power_state = PMSG_INVALID;
  }
  
--struct r8a7779_pm_domain r8a7779_sh4a = {
--	.genpd_name = "SH4A",
--	.ch = {
--		.chan_offs = 0x80, /* PWRSR1 .. PWRER1 */
--		.isr_bit = 16, /* SH4A */
--	}
-+static struct r8a7779_pm_domain r8a7779_pm_domains[] = {
-+	{
-+		.genpd_name = "SH4A",
-+		.ch = {
-+			.chan_offs = 0x80, /* PWRSR1 .. PWRER1 */
-+			.isr_bit = 16, /* SH4A */
-+		},
-+	},
-+	{
-+		.genpd_name = "SGX",
-+		.ch = {
-+			.chan_offs = 0xc0, /* PWRSR2 .. PWRER2 */
-+			.isr_bit = 20, /* SGX */
-+		},
-+	},
-+	{
-+		.genpd_name = "VDP1",
-+		.ch = {
-+			.chan_offs = 0x100, /* PWRSR3 .. PWRER3 */
-+			.isr_bit = 21, /* VDP */
-+		},
-+	},
-+	{
-+		.genpd_name = "IMPX3",
-+		.ch = {
-+			.chan_offs = 0x140, /* PWRSR4 .. PWRER4 */
-+			.isr_bit = 24, /* IMP */
-+		},
-+	},
- };
+ /**
+Index: linux/drivers/base/power/power.h
+=================================--- linux.orig/drivers/base/power/power.h
++++ linux/drivers/base/power/power.h
+@@ -1,5 +1,11 @@
+ #include <linux/pm_qos.h>
  
--struct r8a7779_pm_domain r8a7779_sgx = {
--	.genpd_name = "SGX",
--	.ch = {
--		.chan_offs = 0xc0, /* PWRSR2 .. PWRER2 */
--		.isr_bit = 20, /* SGX */
--	}
--};
--
--struct r8a7779_pm_domain r8a7779_vdp1 = {
--	.genpd_name = "VDP1",
--	.ch = {
--		.chan_offs = 0x100, /* PWRSR3 .. PWRER3 */
--		.isr_bit = 21, /* VDP */
--	}
--};
-+void __init r8a7779_init_pm_domains(void)
++static inline void device_pm_init_common(struct device *dev)
 +{
-+	int j;
- 
--struct r8a7779_pm_domain r8a7779_impx3 = {
--	.genpd_name = "IMPX3",
--	.ch = {
--		.chan_offs = 0x140, /* PWRSR4 .. PWRER4 */
--		.isr_bit = 24, /* IMP */
--	}
--};
-+	for (j = 0; j < ARRAY_SIZE(r8a7779_pm_domains); j++)
-+		r8a7779_init_pm_domain(&r8a7779_pm_domains[j]);
++	spin_lock_init(&dev->power.lock);
++	dev->power.power_state = PMSG_INVALID;
 +}
++
+ #ifdef CONFIG_PM_RUNTIME
  
- #endif /* CONFIG_PM */
+ extern void pm_runtime_init(struct device *dev);
+@@ -25,7 +31,7 @@ static inline struct device *to_device(s
+ 	return container_of(entry, struct device, power.entry);
+ }
  
-Index: linux/arch/arm/mach-shmobile/setup-r8a7779.c
-=================================--- linux.orig/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ linux/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -251,10 +251,7 @@ void __init r8a7779_add_standard_devices
- #endif
- 	r8a7779_pm_init();
+-extern void device_pm_init(struct device *dev);
++extern void device_pm_sleep_init(struct device *dev);
+ extern void device_pm_add(struct device *);
+ extern void device_pm_remove(struct device *);
+ extern void device_pm_move_before(struct device *, struct device *);
+@@ -34,12 +40,7 @@ extern void device_pm_move_last(struct d
  
--	r8a7779_init_pm_domain(&r8a7779_sh4a);
--	r8a7779_init_pm_domain(&r8a7779_sgx);
--	r8a7779_init_pm_domain(&r8a7779_vdp1);
--	r8a7779_init_pm_domain(&r8a7779_impx3);
-+	r8a7779_init_pm_domains();
+ #else /* !CONFIG_PM_SLEEP */
  
- 	platform_add_devices(r8a7779_early_devices,
- 			    ARRAY_SIZE(r8a7779_early_devices));
+-static inline void device_pm_init(struct device *dev)
+-{
+-	spin_lock_init(&dev->power.lock);
+-	dev->power.power_state = PMSG_INVALID;
+-	pm_runtime_init(dev);
+-}
++static inline void device_pm_sleep_init(struct device *dev) {}
+ 
+ static inline void device_pm_add(struct device *dev)
+ {
+@@ -60,6 +61,13 @@ static inline void device_pm_move_last(s
+ 
+ #endif /* !CONFIG_PM_SLEEP */
+ 
++static inline void device_pm_init(struct device *dev)
++{
++	device_pm_init_common(dev);
++	device_pm_sleep_init(dev);
++	pm_runtime_init(dev);
++}
++
+ #ifdef CONFIG_PM
+ 
+ /*
 
