@@ -1,55 +1,91 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 31 Aug 2012 00:34:41 +0000
-Subject: [PATCH 06/10] ARM: shmobile: r8a7779: add USB EHCI clock support
-Message-Id: <1346373285-19588-7-git-send-email-horms@verge.net.au>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Mon, 06 Aug 2012 23:09:31 +0000
+Subject: [PATCH 5/12] ARM: shmobile: Use domain names when adding subdomains to power domains
+Message-Id: <201208070109.31453.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346373285-19588-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1346373285-19588-1-git-send-email-horms@verge.net.au>
+References: <201208070105.23262.rjw@sisk.pl>
+In-Reply-To: <201208070105.23262.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linux-sh list <linux-sh@vger.kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-ehci-platform driver require these clocks
+Make the power management code under arch/arm/mach-shmobile/
+use pm_genpd_add_subdomain_names() for adding subdomains to power
+domains, which makes it possible to drop
+rmobile_pm_add_subdomain() and will allow us to carry out those
+operations for domain objects stored in tables in a straightforward
+way.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- arch/arm/mach-shmobile/clock-r8a7779.c | 5 +++++
- 1 file changed, 5 insertions(+)
+ arch/arm/mach-shmobile/include/mach/pm-rmobile.h |    3 ---
+ arch/arm/mach-shmobile/pm-rmobile.c              |    6 ------
+ arch/arm/mach-shmobile/setup-r8a7740.c           |    2 +-
+ arch/arm/mach-shmobile/setup-sh7372.c            |    8 ++++----
+ 4 files changed, 5 insertions(+), 14 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index 3cafb6a..1d8842b 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -87,6 +87,7 @@ static struct clk div4_clks[DIV4_NR] = {
- };
+Index: linux/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
+=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
++++ linux/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
+@@ -33,12 +33,9 @@ struct rmobile_pm_domain *to_rmobile_pd(
+ extern void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd);
+ extern void rmobile_add_device_to_domain(const char *domain_name,
+ 					struct platform_device *pdev);
+-extern void rmobile_pm_add_subdomain(struct rmobile_pm_domain *rmobile_pd,
+-				    struct rmobile_pm_domain *rmobile_sd);
+ #else
+ #define rmobile_init_pm_domain(pd) do { } while (0)
+ #define rmobile_add_device_to_domain(name, pdev) do { } while (0)
+-#define rmobile_pm_add_subdomain(pd, sd) do { } while (0)
+ #endif /* CONFIG_PM */
  
- enum { MSTP323, MSTP322, MSTP321, MSTP320,
-+	MSTP101, MSTP100,
- 	MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
- 	MSTP016, MSTP015, MSTP014,
- 	MSTP_NR };
-@@ -96,6 +97,8 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP322] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 22, 0), /* SDHI1 */
- 	[MSTP321] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 21, 0), /* SDHI2 */
- 	[MSTP320] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 20, 0), /* SDHI3 */
-+	[MSTP101] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  1, 0), /* USB2 */
-+	[MSTP100] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  0, 0), /* USB0/1 */
- 	[MSTP026] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 26, 0), /* SCIF0 */
- 	[MSTP025] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 25, 0), /* SCIF1 */
- 	[MSTP024] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 24, 0), /* SCIF2 */
-@@ -154,6 +157,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP023]), /* SCIF3 */
- 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP022]), /* SCIF4 */
- 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP021]), /* SCIF6 */
-+	CLKDEV_DEV_ID("ehci-platform.1", &mstp_clks[MSTP101]), /* USB EHCI port2 */
-+	CLKDEV_DEV_ID("ehci-platform.0", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
--- 
-1.7.10.2.484.gcd07cc5
+ #endif /* PM_RMOBILE_H */
+Index: linux/arch/arm/mach-shmobile/pm-rmobile.c
+=================================--- linux.orig/arch/arm/mach-shmobile/pm-rmobile.c
++++ linux/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -158,10 +158,4 @@ void rmobile_add_device_to_domain(const
+ 	if (pm_clk_no_clocks(dev))
+ 		pm_clk_add(dev, NULL);
+ }
+-
+-void rmobile_pm_add_subdomain(struct rmobile_pm_domain *rmobile_pd,
+-			     struct rmobile_pm_domain *rmobile_sd)
+-{
+-	pm_genpd_add_subdomain(&rmobile_pd->genpd, &rmobile_sd->genpd);
+-}
+ #endif /* CONFIG_PM */
+Index: linux/arch/arm/mach-shmobile/setup-r8a7740.c
+=================================--- linux.orig/arch/arm/mach-shmobile/setup-r8a7740.c
++++ linux/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -678,7 +678,7 @@ void __init r8a7740_add_standard_devices
+ 	rmobile_init_pm_domain(&r8a7740_pd_a3sp);
+ 	rmobile_init_pm_domain(&r8a7740_pd_a4lc);
+ 
+-	rmobile_pm_add_subdomain(&r8a7740_pd_a4s, &r8a7740_pd_a3sp);
++	pm_genpd_add_subdomain_names("A4S", "A3SP");
+ 
+ 	/* add devices */
+ 	platform_add_devices(r8a7740_early_devices,
+Index: linux/arch/arm/mach-shmobile/setup-sh7372.c
+=================================--- linux.orig/arch/arm/mach-shmobile/setup-sh7372.c
++++ linux/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -1011,11 +1011,11 @@ void __init sh7372_add_standard_devices(
+ 	rmobile_init_pm_domain(&sh7372_pd_a3sp);
+ 	rmobile_init_pm_domain(&sh7372_pd_a3sg);
+ 
+-	rmobile_pm_add_subdomain(&sh7372_pd_a4lc, &sh7372_pd_a3rv);
+-	rmobile_pm_add_subdomain(&sh7372_pd_a4r, &sh7372_pd_a4lc);
++	pm_genpd_add_subdomain_names("A4LC", "A3RV");
++	pm_genpd_add_subdomain_names("A4R", "A4LC");
+ 
+-	rmobile_pm_add_subdomain(&sh7372_pd_a4s, &sh7372_pd_a3sg);
+-	rmobile_pm_add_subdomain(&sh7372_pd_a4s, &sh7372_pd_a3sp);
++	pm_genpd_add_subdomain_names("A4S", "A3SG");
++	pm_genpd_add_subdomain_names("A4S", "A3SP");
+ 
+ 	platform_add_devices(sh7372_early_devices,
+ 			    ARRAY_SIZE(sh7372_early_devices));
 
