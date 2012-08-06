@@ -1,96 +1,120 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 31 Aug 2012 00:34:38 +0000
-Subject: [PATCH 03/10] ARM: mach-shmobile: marzen: defconfig update
-Message-Id: <1346373285-19588-4-git-send-email-horms@verge.net.au>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Mon, 06 Aug 2012 23:11:14 +0000
+Subject: [PATCH 7/12] PM / Domains: Add power-on function using names to identify domains
+Message-Id: <201208070111.15171.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346373285-19588-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1346373285-19588-1-git-send-email-horms@verge.net.au>
+References: <201208070105.23262.rjw@sisk.pl>
+In-Reply-To: <201208070105.23262.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linux-sh list <linux-sh@vger.kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
 
-Update marzen defconfig
-* Enable MMC Block device as SDHI hw is now supported.
-* Default to NFS root, this is consistent with many other
-  shmobile boards
-* Enable UNIX which is required by udevd
 
-Other changes are noise due to using make savedefconfig
-to create the new defconfig.
+It sometimes is necessary to turn on a given PM domain when only
+the name of it is known and the domain pointer is not readily
+available.  For this reason, add a new helper function,
+pm_genpd_name_poweron(), allowing the caller to turn on a PM domain
+using its name for identification.  To avoid code duplication,
+move the domain lookup code to a separate function.
 
-Cc: Phil Edworthy <phil.edworthy@renesas.com>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- arch/arm/configs/marzen_defconfig | 13 ++++++++-----
- 1 file changed, 8 insertions(+), 5 deletions(-)
+ drivers/base/power/domain.c |   46 +++++++++++++++++++++++++++++---------------
+ include/linux/pm_domain.h   |    5 ++++
+ 2 files changed, 36 insertions(+), 15 deletions(-)
 
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index bf42ad2..cd2dc21 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -1,13 +1,14 @@
- # CONFIG_ARM_PATCH_PHYS_VIRT is not set
- CONFIG_EXPERIMENTAL=y
- CONFIG_KERNEL_LZMA=y
-+CONFIG_NO_HZ=y
- CONFIG_IKCONFIG=y
- CONFIG_IKCONFIG_PROC=y
- CONFIG_LOG_BUF_SHIFT
- CONFIG_SYSCTL_SYSCALL=y
- CONFIG_EMBEDDED=y
- CONFIG_SLAB=y
--# CONFIG_BLOCK is not set
-+# CONFIG_IOSCHED_CFQ is not set
- CONFIG_ARCH_SHMOBILE=y
- CONFIG_ARCH_R8A7779=y
- CONFIG_MACH_MARZEN=y
-@@ -21,7 +22,6 @@ CONFIG_ARM_ERRATA_458693=y
- CONFIG_ARM_ERRATA_460075=y
- CONFIG_ARM_ERRATA_743622=y
- CONFIG_ARM_ERRATA_754322=y
--CONFIG_NO_HZ=y
- CONFIG_SMP=y
- # CONFIG_ARM_CPU_TOPOLOGY is not set
- CONFIG_AEABI=y
-@@ -29,13 +29,16 @@ CONFIG_AEABI=y
- CONFIG_HIGHMEM=y
- CONFIG_ZBOOT_ROM_TEXT=0x0
- CONFIG_ZBOOT_ROM_BSS=0x0
--CONFIG_CMDLINE="console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel"
-+CONFIG_CMDLINE="console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel root=/dev/nfs ip=on"
- CONFIG_CMDLINE_FORCE=y
- CONFIG_KEXEC=y
- # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
- CONFIG_PM_RUNTIME=y
- CONFIG_NET=y
-+CONFIG_UNIX=y
- CONFIG_INET=y
-+CONFIG_IP_PNP=y
-+CONFIG_IP_PNP_DHCP=y
- # CONFIG_IPV6 is not set
- # CONFIG_WIRELESS is not set
- CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
-@@ -69,16 +72,16 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
- CONFIG_GPIO_SYSFS=y
- # CONFIG_HWMON is not set
- CONFIG_SSB=y
--# CONFIG_HID_SUPPORT is not set
- # CONFIG_USB_SUPPORT is not set
- CONFIG_MMC=y
- CONFIG_MMC_SDHI=y
- CONFIG_UIO=y
- CONFIG_UIO_PDRV_GENIRQ=y
- # CONFIG_IOMMU_SUPPORT is not set
--# CONFIG_FILE_LOCKING is not set
- CONFIG_TMPFS=y
- # CONFIG_MISC_FILESYSTEMS is not set
-+CONFIG_NFS_FS=y
-+CONFIG_ROOT_NFS=y
- CONFIG_MAGIC_SYSRQ=y
- CONFIG_DEBUG_INFO=y
- CONFIG_DEBUG_INFO_REDUCED=y
--- 
-1.7.10.2.484.gcd07cc5
+Index: linux/drivers/base/power/domain.c
+=================================--- linux.orig/drivers/base/power/domain.c
++++ linux/drivers/base/power/domain.c
+@@ -53,6 +53,24 @@
+ static LIST_HEAD(gpd_list);
+ static DEFINE_MUTEX(gpd_list_lock);
+ 
++static struct generic_pm_domain *pm_genpd_lookup_name(const char *domain_name)
++{
++	struct generic_pm_domain *genpd = NULL, *gpd;
++
++	if (IS_ERR_OR_NULL(domain_name))
++		return NULL;
++
++	mutex_lock(&gpd_list_lock);
++	list_for_each_entry(gpd, &gpd_list, gpd_list_node) {
++		if (!strcmp(gpd->name, domain_name)) {
++			genpd = gpd;
++			break;
++		}
++	}
++	mutex_unlock(&gpd_list_lock);
++	return genpd;
++}
++
+ #ifdef CONFIG_PM
+ 
+ struct generic_pm_domain *dev_to_genpd(struct device *dev)
+@@ -262,6 +280,18 @@ int pm_genpd_poweron(struct generic_pm_d
+ 	return ret;
+ }
+ 
++/**
++ * pm_genpd_name_poweron - Restore power to a given PM domain and its masters.
++ * @domain_name: Name of the PM domain to power up.
++ */
++int pm_genpd_name_poweron(const char *domain_name)
++{
++	struct generic_pm_domain *genpd;
++
++	genpd = pm_genpd_lookup_name(domain_name);
++	return genpd ? pm_genpd_poweron(genpd) : -EINVAL;
++}
++
+ #endif /* CONFIG_PM */
+ 
+ #ifdef CONFIG_PM_RUNTIME
+@@ -1475,21 +1505,7 @@ int __pm_genpd_of_add_device(struct devi
+ int __pm_genpd_name_add_device(const char *domain_name, struct device *dev,
+ 			       struct gpd_timing_data *td)
+ {
+-	struct generic_pm_domain *genpd = NULL, *gpd;
+-
+-	if (IS_ERR_OR_NULL(domain_name) || IS_ERR_OR_NULL(dev))
+-		return -EINVAL;
+-
+-	mutex_lock(&gpd_list_lock);
+-	list_for_each_entry(gpd, &gpd_list, gpd_list_node) {
+-		if (!strcmp(gpd->name, domain_name)) {
+-			genpd = gpd;
+-			break;
+-		}
+-	}
+-	mutex_unlock(&gpd_list_lock);
+-
+-	return __pm_genpd_add_device(genpd, dev, td);
++	return __pm_genpd_add_device(pm_genpd_lookup_name(domain_name), dev, td);
+ }
+ 
+ /**
+Index: linux/include/linux/pm_domain.h
+=================================--- linux.orig/include/linux/pm_domain.h
++++ linux/include/linux/pm_domain.h
+@@ -161,6 +161,7 @@ extern void pm_genpd_init(struct generic
+ 			  struct dev_power_governor *gov, bool is_off);
+ 
+ extern int pm_genpd_poweron(struct generic_pm_domain *genpd);
++extern int pm_genpd_name_poweron(const char *domain_name);
+ 
+ extern bool default_stop_ok(struct device *dev);
+ 
+@@ -239,6 +240,10 @@ static inline int pm_genpd_poweron(struc
+ {
+ 	return -ENOSYS;
+ }
++static inline int pm_genpd_name_poweron(const char *domain_name)
++{
++	return -ENOSYS;
++}
+ static inline bool default_stop_ok(struct device *dev)
+ {
+ 	return false;
 
