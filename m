@@ -1,128 +1,59 @@
-From: Hideki EIRAKU <hdk@igel.co.jp>
-Date: Thu, 16 Aug 2012 07:42:04 +0000
-Subject: [PATCH v2 2/2] ARM: mach-shmobile: sh7372: Add IPMMU device
-Message-Id: <1345102924-22045-3-git-send-email-hdk@igel.co.jp>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Mon, 06 Aug 2012 23:10:22 +0000
+Subject: [PATCH 6/12] ARM: shmobile: Add routine for automatic PM domains initialization
+Message-Id: <201208070110.22312.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1345102924-22045-1-git-send-email-hdk@igel.co.jp>
-In-Reply-To: <1345102924-22045-1-git-send-email-hdk@igel.co.jp>
+References: <201208070105.23262.rjw@sisk.pl>
+In-Reply-To: <201208070105.23262.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linux-sh list <linux-sh@vger.kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
 
-This patch adds an IPMMU device and notifies the IPMMU driver which
-devices are connected via the IPMMU module.  All devices connected to the main
-memory bus via the IPMMU module MUST be registered when SHMOBILE_IPMMU and
-SHMOBILE_IOMMU are enabled because physical address cannot be used
-while the IPMMU module's MMU function is enabled.
 
-Signed-off-by: Hideki EIRAKU <hdk@igel.co.jp>
+Add a new routine, rmobile_init_domains(), allowing the caller
+to initialize all generic PM objects stored in a table in one
+operation.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c   |    5 +++++
- arch/arm/mach-shmobile/board-mackerel.c |    5 +++++
- arch/arm/mach-shmobile/setup-sh7372.c   |   22 ++++++++++++++++++++++
- 3 files changed, 32 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/include/mach/pm-rmobile.h |    2 ++
+ arch/arm/mach-shmobile/pm-rmobile.c              |    8 ++++++++
+ 2 files changed, 10 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index f172ca8..ce6d796 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -61,6 +61,7 @@
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/sh7372.h>
-+#include <mach/ipmmu.h>
+Index: linux/arch/arm/mach-shmobile/pm-rmobile.c
+=================================--- linux.orig/arch/arm/mach-shmobile/pm-rmobile.c
++++ linux/arch/arm/mach-shmobile/pm-rmobile.c
+@@ -149,6 +149,14 @@ void rmobile_init_pm_domain(struct rmobi
+ 	__rmobile_pd_power_up(rmobile_pd, false);
+ }
  
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
-@@ -1448,6 +1449,10 @@ static void __init ap4evb_init(void)
- 
- 	sh7372_add_standard_devices();
- 
-+	ipmmu_add_device(&lcdc_device.dev);
-+	ipmmu_add_device(&lcdc1_device.dev);
-+	ipmmu_add_device(&ceu_device.dev);
++void rmobile_init_domains(struct rmobile_pm_domain domains[], int num)
++{
++	int j;
 +
- 	/* HDMI */
- 	gpio_request(GPIO_FN_HDMI_HPD, NULL);
- 	gpio_request(GPIO_FN_HDMI_CEC, NULL);
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 7ea2b31..ac1adb5 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -60,6 +60,7 @@
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/sh7372.h>
-+#include <mach/ipmmu.h>
- 
- #include <asm/mach/arch.h>
- #include <asm/mach-types.h>
-@@ -1621,6 +1622,10 @@ static void __init mackerel_init(void)
- 
- 	sh7372_add_standard_devices();
- 
-+	ipmmu_add_device(&lcdc_device.dev);
-+	ipmmu_add_device(&hdmi_lcdc_device.dev);
-+	ipmmu_add_device(&ceu_device.dev);
++	for (j = 0; j < num; j++)
++		rmobile_init_pm_domain(&domains[j]);
++}
 +
- 	platform_add_devices(mackerel_devices, ARRAY_SIZE(mackerel_devices));
+ void rmobile_add_device_to_domain(const char *domain_name,
+ 				 struct platform_device *pdev)
+ {
+Index: linux/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
+=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
++++ linux/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
+@@ -31,10 +31,12 @@ struct rmobile_pm_domain *to_rmobile_pd(
  
- 	rmobile_add_device_to_domain(&sh7372_pd_a4lc, &lcdc_device);
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index 838a87b..1106b4f 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -38,6 +38,7 @@
- #include <mach/irqs.h>
- #include <mach/sh7372.h>
- #include <mach/common.h>
-+#include <mach/ipmmu.h>
- #include <asm/mach/map.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
-@@ -968,6 +969,23 @@ static struct platform_device spu1_device = {
- 	.num_resources	= ARRAY_SIZE(spu1_resources),
- };
+ #ifdef CONFIG_PM
+ extern void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd);
++extern void rmobile_init_domains(struct rmobile_pm_domain domains[], int num);
+ extern void rmobile_add_device_to_domain(const char *domain_name,
+ 					struct platform_device *pdev);
+ #else
+ #define rmobile_init_pm_domain(pd) do { } while (0)
++#define rmobile_init_domains(domains, num) do { } while (0)
+ #define rmobile_add_device_to_domain(name, pdev) do { } while (0)
+ #endif /* CONFIG_PM */
  
-+/* IPMMUI (an IPMMU module for ICB/LMB) */
-+static struct resource ipmmu_resources[] = {
-+	[0] = {
-+		.name	= "IPMMUI",
-+		.start	= 0xfe951000,
-+		.end	= 0xfe9510ff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+};
-+
-+static struct platform_device ipmmu_device = {
-+	.name           = "ipmmu",
-+	.id             = -1,
-+	.resource       = ipmmu_resources,
-+	.num_resources  = ARRAY_SIZE(ipmmu_resources),
-+};
-+
- static struct platform_device *sh7372_early_devices[] __initdata = {
- 	&scif0_device,
- 	&scif1_device,
-@@ -979,6 +997,7 @@ static struct platform_device *sh7372_early_devices[] __initdata = {
- 	&cmt2_device,
- 	&tmu00_device,
- 	&tmu01_device,
-+	&ipmmu_device,
- };
- 
- static struct platform_device *sh7372_late_devices[] __initdata = {
-@@ -1020,6 +1039,9 @@ void __init sh7372_add_standard_devices(void)
- 	platform_add_devices(sh7372_early_devices,
- 			    ARRAY_SIZE(sh7372_early_devices));
- 
-+	ipmmu_add_device(&vpu_device.dev);
-+	ipmmu_add_device(&jpu_device.dev);
-+
- 	platform_add_devices(sh7372_late_devices,
- 			    ARRAY_SIZE(sh7372_late_devices));
- 
--- 
-1.7.0.4
 
