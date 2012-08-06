@@ -1,46 +1,57 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 27 Aug 2012 06:40:09 +0000
-Subject: [PATCH 1/2] ARM: mach-shmobile: armadillo800eva: Fix GPIO buttons descriptions
-Message-Id: <1346049610-2266-2-git-send-email-horms@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 06 Aug 2012 05:47:00 +0000
+Subject: [PATCH] ARM: shmobile: mackerel: fixup usb module order
+Message-Id: <87obmoefn2.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346049610-2266-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1346049610-2266-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+renesas_usbhs driver can play role as both Host and Gadget.
+In case of Gadget, it requires not only renesas_usbhs
+but also usb gadget module (like g_ether).
+So, renesas_usbhs driver calls usb_add_gadget_udc() on probe time.
 
-The GPIO buttons are named SW3, SW4, SW5 and SW6 on the board
-silkscreen. Update the buttons descriptions accordingly.
+Because of this behavior,
+Host port plays also Gadget role if kernel has both Host/Gadget support.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+In mackerel case, from 0ada2da51800a4914887a9bcf22d563be80e50be
+(ARM: mach-shmobile: mackerel: use renesas_usbhs instead of r8a66597_hcd)
+usb0 plays Gadget role, and usb1 plays Host role,
+and current mackerel board probes as usb1 -> usb0.
+Thus, 1st installed usb gadget module (like g_ether) will be
+assigned to usb1 (= usb Host port), and 2nd module to usb0 (= usb Gadget port).
+It is very confusable for user.
+This patch fixup usb modes probing order as usb0 -> usb1.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ arch/arm/mach-shmobile/board-mackerel.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index cf10f92..a002504 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -523,10 +523,10 @@ static struct platform_device hdmi_lcdc_device = {
- #define GPIO_KEY(c, g, d) { .code = c, .gpio = g, .desc = d, .active_low = 1 }
- 
- static struct gpio_keys_button gpio_buttons[] = {
--	GPIO_KEY(KEY_POWER,	GPIO_PORT99,	"SW1"),
--	GPIO_KEY(KEY_BACK,	GPIO_PORT100,	"SW2"),
--	GPIO_KEY(KEY_MENU,	GPIO_PORT97,	"SW3"),
--	GPIO_KEY(KEY_HOME,	GPIO_PORT98,	"SW4"),
-+	GPIO_KEY(KEY_POWER,	GPIO_PORT99,	"SW3"),
-+	GPIO_KEY(KEY_BACK,	GPIO_PORT100,	"SW4"),
-+	GPIO_KEY(KEY_MENU,	GPIO_PORT97,	"SW5"),
-+	GPIO_KEY(KEY_HOME,	GPIO_PORT98,	"SW6"),
- };
- 
- static struct gpio_keys_platform_data gpio_key_info = {
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 7b53cda..725bff5 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -679,6 +679,7 @@ static struct platform_device usbhs0_device = {
+  *  - J30 "open"
+  *  - modify usbhs1_get_id() USBHS_HOST -> USBHS_GADGET
+  *  - add .get_vbus = usbhs_get_vbus in usbhs1_private
++ *  - check usbhs0_device(pio)/usbhs1_device(irq) order in mackerel_devices.
+  */
+ #define IRQ8 evt2irq(0x0300)
+ #define USB_PHY_MODE		(1 << 4)
+@@ -1262,8 +1263,8 @@ static struct platform_device *mackerel_devices[] __initdata = {
+ 	&nor_flash_device,
+ 	&smc911x_device,
+ 	&lcdc_device,
+-	&usbhs1_device,
+ 	&usbhs0_device,
++	&usbhs1_device,
+ 	&leds_device,
+ 	&fsi_device,
+ 	&fsi_ak4643_device,
 -- 
-1.7.10.2.484.gcd07cc5
+1.7.5.4
 
