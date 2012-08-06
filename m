@@ -1,100 +1,145 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 16 Aug 2012 13:00:52 +0000
-Subject: [PATCH 17/19] ARM: mach-shmobile: ag5evm: Use the backlight API for brightness control
-Message-Id: <1345122054-16013-18-git-send-email-laurent.pinchart@ideasonboard.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Mon, 06 Aug 2012 23:14:14 +0000
+Subject: [PATCH 11/12] ARM: shmobile: Move r8a7779's PM domain objects to a table
+Message-Id: <201208070114.15231.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201208070105.23262.rjw@sisk.pl>
+In-Reply-To: <201208070105.23262.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: Linux-sh list <linux-sh@vger.kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
 
-Don't hook up brightness control in the display on/off operations, use
-the backlight API instead.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Instead of giving a name to every r8a7779's PM domain object, put
+them all into a table and initialize them all together in a loop.
+
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- arch/arm/mach-shmobile/board-ag5evm.c |   45 +++++++++++++++++++++-----------
- 1 files changed, 29 insertions(+), 16 deletions(-)
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |    9 ---
+ arch/arm/mach-shmobile/pm-r8a7779.c           |   65 ++++++++++++++------------
+ arch/arm/mach-shmobile/setup-r8a7779.c        |    5 --
+ 3 files changed, 39 insertions(+), 40 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
-index 7d6b96b..826ac13 100644
---- a/arch/arm/mach-shmobile/board-ag5evm.c
-+++ b/arch/arm/mach-shmobile/board-ag5evm.c
-@@ -281,28 +281,38 @@ static unsigned char lcd_backlight_seq[3][2] = {
- 	{ 0x03, 0x01 },
- };
+Index: linux/arch/arm/mach-shmobile/include/mach/r8a7779.h
+=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ linux/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -347,14 +347,9 @@ extern int r8a7779_sysc_power_down(struc
+ extern int r8a7779_sysc_power_up(struct r8a7779_pm_ch *r8a7779_ch);
  
--static void lcd_backlight_on(void)
-+static int lcd_backlight_set_brightness(int brightness)
- {
--	struct i2c_adapter *a;
-+	struct i2c_adapter *adap;
- 	struct i2c_msg msg;
--	int k;
-+	unsigned int i;
-+	int ret;
-+
-+	if (brightness = 0) {
-+		/* Reset the chip */
-+		gpio_set_value(GPIO_PORT235, 0);
-+		mdelay(24);
-+		gpio_set_value(GPIO_PORT235, 1);
-+		return 0;
-+	}
-+
-+	adap = i2c_get_adapter(1);
-+	if (adap = NULL)
-+		return -ENODEV;
+ #ifdef CONFIG_PM
+-extern struct r8a7779_pm_domain r8a7779_sh4a;
+-extern struct r8a7779_pm_domain r8a7779_sgx;
+-extern struct r8a7779_pm_domain r8a7779_vdp1;
+-extern struct r8a7779_pm_domain r8a7779_impx3;
+-
+-extern void r8a7779_init_pm_domain(struct r8a7779_pm_domain *r8a7779_pd);
++extern void __init r8a7779_init_pm_domains(void);
+ #else
+-#define r8a7779_init_pm_domain(pd) do { } while (0)
++static inline void r8a7779_init_pm_domains(void) {}
+ #endif /* CONFIG_PM */
  
--	a = i2c_get_adapter(1);
--	for (k = 0; a && k < 3; k++) {
-+	for (i = 0; i < ARRAY_SIZE(lcd_backlight_seq); i++) {
- 		msg.addr = 0x6d;
--		msg.buf = &lcd_backlight_seq[k][0];
-+		msg.buf = &lcd_backlight_seq[i][0];
- 		msg.len = 2;
- 		msg.flags = 0;
--		if (i2c_transfer(a, &msg, 1) != 1)
-+
-+		ret = i2c_transfer(adap, &msg, 1);
-+		if (ret < 0)
- 			break;
- 	}
--}
- 
--static void lcd_backlight_reset(void)
--{
--	gpio_set_value(GPIO_PORT235, 0);
--	mdelay(24);
--	gpio_set_value(GPIO_PORT235, 1);
-+	i2c_put_adapter(adap);
-+	return ret < 0 ? ret : 0;
+ #endif /* __ASM_R8A7779_H__ */
+Index: linux/arch/arm/mach-shmobile/pm-r8a7779.c
+=================================--- linux.orig/arch/arm/mach-shmobile/pm-r8a7779.c
++++ linux/arch/arm/mach-shmobile/pm-r8a7779.c
+@@ -183,7 +183,7 @@ static bool pd_active_wakeup(struct devi
+ 	return true;
  }
  
- /* LCDC0 */
-@@ -334,8 +344,11 @@ static struct sh_mobile_lcdc_info lcdc0_info = {
- 		.panel_cfg = {
- 			.width = 44,
- 			.height = 79,
--			.display_on = lcd_backlight_on,
--			.display_off = lcd_backlight_reset,
-+		},
-+		.bl_info = {
-+			.name = "sh_mobile_lcdc_bl",
-+			.max_brightness = 1,
-+			.set_brightness = lcd_backlight_set_brightness,
- 		},
- 		.tx_dev = &mipidsi0_device,
- 	}
-@@ -545,7 +558,7 @@ static void __init ag5evm_init(void)
- 	/* LCD backlight controller */
- 	gpio_request(GPIO_PORT235, NULL); /* RESET */
- 	gpio_direction_output(GPIO_PORT235, 0);
--	lcd_backlight_reset();
-+	lcd_backlight_set_brightness(0);
+-void r8a7779_init_pm_domain(struct r8a7779_pm_domain *r8a7779_pd)
++static void r8a7779_init_pm_domain(struct r8a7779_pm_domain *r8a7779_pd)
+ {
+ 	struct generic_pm_domain *genpd = &r8a7779_pd->genpd;
  
- 	/* enable SDHI0 on CN15 [SD I/F] */
- 	gpio_request(GPIO_FN_SDHIWP0, NULL);
--- 
-1.7.8.6
+@@ -199,37 +199,44 @@ void r8a7779_init_pm_domain(struct r8a77
+ 		pd_power_up(&r8a7779_pd->genpd);
+ }
+ 
+-struct r8a7779_pm_domain r8a7779_sh4a = {
+-	.genpd_name = "SH4A",
+-	.ch = {
+-		.chan_offs = 0x80, /* PWRSR1 .. PWRER1 */
+-		.isr_bit = 16, /* SH4A */
+-	}
++static struct r8a7779_pm_domain r8a7779_pm_domains[] = {
++	{
++		.genpd_name = "SH4A",
++		.ch = {
++			.chan_offs = 0x80, /* PWRSR1 .. PWRER1 */
++			.isr_bit = 16, /* SH4A */
++		},
++	},
++	{
++		.genpd_name = "SGX",
++		.ch = {
++			.chan_offs = 0xc0, /* PWRSR2 .. PWRER2 */
++			.isr_bit = 20, /* SGX */
++		},
++	},
++	{
++		.genpd_name = "VDP1",
++		.ch = {
++			.chan_offs = 0x100, /* PWRSR3 .. PWRER3 */
++			.isr_bit = 21, /* VDP */
++		},
++	},
++	{
++		.genpd_name = "IMPX3",
++		.ch = {
++			.chan_offs = 0x140, /* PWRSR4 .. PWRER4 */
++			.isr_bit = 24, /* IMP */
++		},
++	},
+ };
+ 
+-struct r8a7779_pm_domain r8a7779_sgx = {
+-	.genpd_name = "SGX",
+-	.ch = {
+-		.chan_offs = 0xc0, /* PWRSR2 .. PWRER2 */
+-		.isr_bit = 20, /* SGX */
+-	}
+-};
+-
+-struct r8a7779_pm_domain r8a7779_vdp1 = {
+-	.genpd_name = "VDP1",
+-	.ch = {
+-		.chan_offs = 0x100, /* PWRSR3 .. PWRER3 */
+-		.isr_bit = 21, /* VDP */
+-	}
+-};
++void __init r8a7779_init_pm_domains(void)
++{
++	int j;
+ 
+-struct r8a7779_pm_domain r8a7779_impx3 = {
+-	.genpd_name = "IMPX3",
+-	.ch = {
+-		.chan_offs = 0x140, /* PWRSR4 .. PWRER4 */
+-		.isr_bit = 24, /* IMP */
+-	}
+-};
++	for (j = 0; j < ARRAY_SIZE(r8a7779_pm_domains); j++)
++		r8a7779_init_pm_domain(&r8a7779_pm_domains[j]);
++}
+ 
+ #endif /* CONFIG_PM */
+ 
+Index: linux/arch/arm/mach-shmobile/setup-r8a7779.c
+=================================--- linux.orig/arch/arm/mach-shmobile/setup-r8a7779.c
++++ linux/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -251,10 +251,7 @@ void __init r8a7779_add_standard_devices
+ #endif
+ 	r8a7779_pm_init();
+ 
+-	r8a7779_init_pm_domain(&r8a7779_sh4a);
+-	r8a7779_init_pm_domain(&r8a7779_sgx);
+-	r8a7779_init_pm_domain(&r8a7779_vdp1);
+-	r8a7779_init_pm_domain(&r8a7779_impx3);
++	r8a7779_init_pm_domains();
+ 
+ 	platform_add_devices(r8a7779_early_devices,
+ 			    ARRAY_SIZE(r8a7779_early_devices));
 
