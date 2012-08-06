@@ -1,88 +1,135 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 06 Aug 2012 23:07:46 +0000
-Subject: [PATCH 3/12] ARM: shmobile: Drop r8a7779_add_device_to_domain()
-Message-Id: <201208070107.46751.rjw@sisk.pl>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Mon, 06 Aug 2012 12:31:05 +0000
+Subject: [PATCH 2/2 v2] marzen: add SDHI0 support
+Message-Id: <1344256265-9802-3-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201208070105.23262.rjw@sisk.pl>
-In-Reply-To: <201208070105.23262.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux-sh list <linux-sh@vger.kernel.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
 
-If the r8a7779's PM domains are given names, this SoC and its boards
-will be able to use rmobile_add_device_to_domain() for adding devices
-to those domains and r8a7779_add_device_to_domain(), which is not
-used anywhere at the moment anyway, may be dopped.
-
-Accordingly, give names to the r8a7779's PM domains and drop
-r8a7779_add_device_to_domain().
-
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7779.h |    3 ---
- arch/arm/mach-shmobile/pm-r8a7779.c           |   14 ++++----------
- 2 files changed, 4 insertions(+), 13 deletions(-)
+v2:
+  Added SDHI to defconfig.
+  Moved function to better match other boards.
+  Register the fixed voltage regulator.
+  Minor formatting change.
 
-Index: linux/arch/arm/mach-shmobile/include/mach/r8a7779.h
-=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ linux/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -353,11 +353,8 @@ extern struct r8a7779_pm_domain r8a7779_
- extern struct r8a7779_pm_domain r8a7779_impx3;
+ arch/arm/configs/marzen_defconfig     |    4 +-
+ arch/arm/mach-shmobile/board-marzen.c |   52 ++++++++++++++++++++++++++++++++-
+ 2 files changed, 53 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index 864f9a5..bf42ad2 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -71,12 +71,12 @@ CONFIG_GPIO_SYSFS=y
+ CONFIG_SSB=y
+ # CONFIG_HID_SUPPORT is not set
+ # CONFIG_USB_SUPPORT is not set
++CONFIG_MMC=y
++CONFIG_MMC_SDHI=y
+ CONFIG_UIO=y
+ CONFIG_UIO_PDRV_GENIRQ=y
+ # CONFIG_IOMMU_SUPPORT is not set
+ # CONFIG_FILE_LOCKING is not set
+-# CONFIG_DNOTIFY is not set
+-# CONFIG_INOTIFY_USER is not set
+ CONFIG_TMPFS=y
+ # CONFIG_MISC_FILESYSTEMS is not set
+ CONFIG_MAGIC_SYSRQ=y
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index 3a528cf..dec3ffc 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -30,6 +30,8 @@
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/smsc911x.h>
++#include <linux/mmc/sh_mobile_sdhi.h>
++#include <linux/mfd/tmio.h>
+ #include <mach/hardware.h>
+ #include <mach/r8a7779.h>
+ #include <mach/common.h>
+@@ -39,6 +41,12 @@
+ #include <asm/hardware/gic.h>
+ #include <asm/traps.h>
  
- extern void r8a7779_init_pm_domain(struct r8a7779_pm_domain *r8a7779_pd);
--extern void r8a7779_add_device_to_domain(struct r8a7779_pm_domain *r8a7779_pd,
--					struct platform_device *pdev);
- #else
- #define r8a7779_init_pm_domain(pd) do { } while (0)
--#define r8a7779_add_device_to_domain(pd, pdev) do { } while (0)
- #endif /* CONFIG_PM */
- 
- #endif /* __ASM_R8A7779_H__ */
-Index: linux/arch/arm/mach-shmobile/pm-r8a7779.c
-=================================--- linux.orig/arch/arm/mach-shmobile/pm-r8a7779.c
-+++ linux/arch/arm/mach-shmobile/pm-r8a7779.c
-@@ -199,17 +199,8 @@ void r8a7779_init_pm_domain(struct r8a77
- 		pd_power_up(&r8a7779_pd->genpd);
- }
- 
--void r8a7779_add_device_to_domain(struct r8a7779_pm_domain *r8a7779_pd,
--				 struct platform_device *pdev)
--{
--	struct device *dev = &pdev->dev;
--
--	pm_genpd_add_device(&r8a7779_pd->genpd, dev);
--	if (pm_clk_no_clocks(dev))
--		pm_clk_add(dev, NULL);
--}
--
- struct r8a7779_pm_domain r8a7779_sh4a = {
-+	.genpd_name = "SH4A",
- 	.ch = {
- 		.chan_offs = 0x80, /* PWRSR1 .. PWRER1 */
- 		.isr_bit = 16, /* SH4A */
-@@ -217,6 +208,7 @@ struct r8a7779_pm_domain r8a7779_sh4a  };
- 
- struct r8a7779_pm_domain r8a7779_sgx = {
-+	.genpd_name = "SGX",
- 	.ch = {
- 		.chan_offs = 0xc0, /* PWRSR2 .. PWRER2 */
- 		.isr_bit = 20, /* SGX */
-@@ -224,6 +216,7 @@ struct r8a7779_pm_domain r8a7779_sgx = {
++/* Fixed 3.3V regulator to be used by SDHI0 */
++static struct regulator_consumer_supply fixed3v3_power_consumers[] = {
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
++	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
++};
++
+ /* Dummy supplies, where voltage doesn't matter */
+ static struct regulator_consumer_supply dummy_supplies[] = {
+ 	REGULATOR_SUPPLY("vddvario", "smsc911x"),
+@@ -75,13 +83,45 @@ static struct platform_device eth_device = {
+ 	.num_resources	= ARRAY_SIZE(smsc911x_resources),
  };
  
- struct r8a7779_pm_domain r8a7779_vdp1 = {
-+	.genpd_name = "VDP1",
- 	.ch = {
- 		.chan_offs = 0x100, /* PWRSR3 .. PWRER3 */
- 		.isr_bit = 21, /* VDP */
-@@ -231,6 +224,7 @@ struct r8a7779_pm_domain r8a7779_vdp1  };
++static struct resource sdhi0_resources[] = {
++	[0] = {
++		.name	= "sdhi0",
++		.start	= 0xffe4c000,
++		.end	= 0xffe4c0ff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= gic_spi(104),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct sh_mobile_sdhi_info sdhi0_platform_data = {
++	.tmio_flags = TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_HAS_IDLE_WAIT,
++	.tmio_caps = MMC_CAP_SD_HIGHSPEED,
++};
++
++static struct platform_device sdhi0_device = {
++	.name = "sh_mobile_sdhi",
++	.num_resources = ARRAY_SIZE(sdhi0_resources),
++	.resource = sdhi0_resources,
++	.id = 0,
++	.dev = {
++		.platform_data = &sdhi0_platform_data,
++	}
++};
++
+ static struct platform_device *marzen_devices[] __initdata = {
+ 	&eth_device,
++	&sdhi0_device,
+ };
  
- struct r8a7779_pm_domain r8a7779_impx3 = {
-+	.genpd_name = "IMPX3",
- 	.ch = {
- 		.chan_offs = 0x140, /* PWRSR4 .. PWRER4 */
- 		.isr_bit = 24, /* IMP */
+ static void __init marzen_init(void)
+ {
+-	regulator_register_fixed(0, dummy_supplies, ARRAY_SIZE(dummy_supplies));
++	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
++				ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
++	regulator_register_fixed(0, dummy_supplies,
++				ARRAY_SIZE(dummy_supplies));
+ 
+ 	r8a7779_pinmux_init();
+ 
+@@ -97,6 +137,16 @@ static void __init marzen_init(void)
+ 	gpio_request(GPIO_FN_EX_CS0, NULL); /* nCS */
+ 	gpio_request(GPIO_FN_IRQ1_B, NULL); /* IRQ + PME */
+ 
++	/* SD0 (CN20) */
++	gpio_request(GPIO_FN_SD0_CLK, NULL);
++	gpio_request(GPIO_FN_SD0_CMD, NULL);
++	gpio_request(GPIO_FN_SD0_DAT0, NULL);
++	gpio_request(GPIO_FN_SD0_DAT1, NULL);
++	gpio_request(GPIO_FN_SD0_DAT2, NULL);
++	gpio_request(GPIO_FN_SD0_DAT3, NULL);
++	gpio_request(GPIO_FN_SD0_CD, NULL);
++	gpio_request(GPIO_FN_SD0_WP, NULL);
++
+ 	r8a7779_add_standard_devices();
+ 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
+ }
+-- 
+1.7.5.4
 
