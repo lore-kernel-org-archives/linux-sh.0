@@ -1,48 +1,103 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Thu, 09 Aug 2012 22:02:40 +0000
-Subject: [PATCH] ARM: shmobile: Remove the console check from sh7372_enter_suspend()
-Message-Id: <201208100002.40911.rjw@sisk.pl>
+Date: Mon, 06 Aug 2012 23:08:37 +0000
+Subject: [PATCH 4/12] PM / Domains: Make it possible to use names when adding subdomains
+Message-Id: <201208070108.38081.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201208070105.23262.rjw@sisk.pl>
+In-Reply-To: <201208070105.23262.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linux-sh list <linux-sh@vger.kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
 
 
-The !console_suspend_enabled check in sh7372_enter_suspend() seems
-to be reversed and the condition it is supposed to catch (console
-clock enabled) should be detected by the sh7372_sysc_valid() check
-anyway, so remove it.
+Add a new helper function, pm_genpd_add_subdomain_names(), allowing
+the caller to add a subdomain to a generic PM domain using names for
+domain identification (both domains have to be initialized before).
+
+This function is useful for adding subdomains to PM domains whose
+representations are stored in tables, when the caller doesn't know
+the indices of the domain to add the subdomain to and of the
+subdomain itself, but it knows the domains' names.
 
 Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- arch/arm/mach-shmobile/pm-sh7372.c |   16 +++++++---------
- 1 file changed, 7 insertions(+), 9 deletions(-)
+ drivers/base/power/domain.c |   32 +++++++++++++++++++++++++++++++-
+ include/linux/pm_domain.h   |    7 +++++++
+ 2 files changed, 38 insertions(+), 1 deletion(-)
 
-Index: linux/arch/arm/mach-shmobile/pm-sh7372.c
-=================================--- linux.orig/arch/arm/mach-shmobile/pm-sh7372.c
-+++ linux/arch/arm/mach-shmobile/pm-sh7372.c
-@@ -424,16 +424,14 @@ static int sh7372_enter_suspend(suspend_
- 	unsigned long msk, msk2;
+Index: linux/drivers/base/power/domain.c
+=================================--- linux.orig/drivers/base/power/domain.c
++++ linux/drivers/base/power/domain.c
+@@ -1584,7 +1584,8 @@ int pm_genpd_add_subdomain(struct generi
+ 	struct gpd_link *link;
+ 	int ret = 0;
  
- 	/* check active clocks to determine potential wakeup sources */
--	if (sh7372_sysc_valid(&msk, &msk2)) {
--		if (!console_suspend_enabled && a4s_suspend_ready) {
--			/* convert INTC mask/sense to SYSC mask/sense */
--			sh7372_setup_sysc(msk, msk2);
-+	if (sh7372_sysc_valid(&msk, &msk2) && a4s_suspend_ready) {
-+		/* convert INTC mask/sense to SYSC mask/sense */
-+		sh7372_setup_sysc(msk, msk2);
+-	if (IS_ERR_OR_NULL(genpd) || IS_ERR_OR_NULL(subdomain))
++	if (IS_ERR_OR_NULL(genpd) || IS_ERR_OR_NULL(subdomain)
++	    || genpd = subdomain)
+ 		return -EINVAL;
  
--			/* enter A4S sleep with PLLC0 off */
--			pr_debug("entering A4S\n");
--			sh7372_enter_a4s_common(0);
--			return 0;
--		}
-+		/* enter A4S sleep with PLLC0 off */
-+		pr_debug("entering A4S\n");
-+		sh7372_enter_a4s_common(0);
-+		return 0;
- 	}
+  start:
+@@ -1631,6 +1632,35 @@ int pm_genpd_add_subdomain(struct generi
+ }
  
- 	/* default to enter A3SM sleep with PLLC0 off */
+ /**
++ * pm_genpd_add_subdomain_names - Add a subdomain to an I/O PM domain.
++ * @master_name: Name of the master PM domain to add the subdomain to.
++ * @subdomain_name: Name of the subdomain to be added.
++ */
++int pm_genpd_add_subdomain_names(const char *master_name,
++				 const char *subdomain_name)
++{
++	struct generic_pm_domain *master = NULL, *subdomain = NULL, *gpd;
++
++	if (IS_ERR_OR_NULL(master_name) || IS_ERR_OR_NULL(subdomain_name))
++		return -EINVAL;
++
++	mutex_lock(&gpd_list_lock);
++	list_for_each_entry(gpd, &gpd_list, gpd_list_node) {
++		if (!master && !strcmp(gpd->name, master_name))
++			master = gpd;
++
++		if (!subdomain && !strcmp(gpd->name, subdomain_name))
++			subdomain = gpd;
++
++		if (master && subdomain)
++			break;
++	}
++	mutex_unlock(&gpd_list_lock);
++
++	return pm_genpd_add_subdomain(master, subdomain);
++}
++
++/**
+  * pm_genpd_remove_subdomain - Remove a subdomain from an I/O PM domain.
+  * @genpd: Master PM domain to remove the subdomain from.
+  * @subdomain: Subdomain to be removed.
+Index: linux/include/linux/pm_domain.h
+=================================--- linux.orig/include/linux/pm_domain.h
++++ linux/include/linux/pm_domain.h
+@@ -147,6 +147,8 @@ extern int pm_genpd_remove_device(struct
+ extern void pm_genpd_dev_need_restore(struct device *dev, bool val);
+ extern int pm_genpd_add_subdomain(struct generic_pm_domain *genpd,
+ 				  struct generic_pm_domain *new_subdomain);
++extern int pm_genpd_add_subdomain_names(const char *master_name,
++					const char *subdomain_name);
+ extern int pm_genpd_remove_subdomain(struct generic_pm_domain *genpd,
+ 				     struct generic_pm_domain *target);
+ extern int pm_genpd_add_callbacks(struct device *dev,
+@@ -201,6 +203,11 @@ static inline int pm_genpd_add_subdomain
+ {
+ 	return -ENOSYS;
+ }
++static inline int pm_genpd_add_subdomain_names(const char *master_name,
++					       const char *subdomain_name)
++{
++	return -ENOSYS;
++}
+ static inline int pm_genpd_remove_subdomain(struct generic_pm_domain *genpd,
+ 					    struct generic_pm_domain *target)
+ {
+
