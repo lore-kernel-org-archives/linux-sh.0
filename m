@@ -1,368 +1,88 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 05 Aug 2012 23:46:39 +0000
-Subject: [PATCH 10/15] PM / Domains: Move syscore flag from subsys data to struct device
-Message-Id: <201208060146.40219.rjw@sisk.pl>
+Date: Mon, 06 Aug 2012 23:07:46 +0000
+Subject: [PATCH 3/12] ARM: shmobile: Drop r8a7779_add_device_to_domain()
+Message-Id: <201208070107.46751.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201207291612.43138.rjw@sisk.pl> <201208060138.03950.rjw@sisk.pl>
-In-Reply-To: <201208060138.03950.rjw@sisk.pl>
+References: <201208070105.23262.rjw@sisk.pl>
+In-Reply-To: <201208070105.23262.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM list <linux-pm@vger.kernel.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, Thomas Gleixner <tglx@linutronix.de>
+To: Linux-sh list <linux-sh@vger.kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
 
 
-The syscore device PM flag is used to mark the devices (belonging to
-a PM domain) that should never be turned off, except for the system
-core (syscore) suspend/hibernation and resume stages.  That flag is
-stored in the device's struct pm_subsys_data object whose address is
-available from struct device.  However, in some situations it may be
-convenient to set that flag before the device is added to a PM
-domain, so it is better to move it directly to the "power" member of
-struct device.  Then, it can be checked by the routines in
-drivers/base/power/runtime.c and drivers/base/power/main.c, which is
-more straightforward.
+If the r8a7779's PM domains are given names, this SoC and its boards
+will be able to use rmobile_add_device_to_domain() for adding devices
+to those domains and r8a7779_add_device_to_domain(), which is not
+used anywhere at the moment anyway, may be dopped.
 
-This also reduces the number of dev_gpd_data() invocations in the
-generic PM domains framework, so the overhead related to the syscore
-flag is slightly smaller.
+Accordingly, give names to the r8a7779's PM domains and drop
+r8a7779_add_device_to_domain().
 
 Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- drivers/base/power/common.c   |   15 +++++++++++++++
- drivers/base/power/domain.c   |   37 ++++++-------------------------------
- drivers/base/power/main.c     |   28 ++++++++++++++++++++++++++++
- drivers/base/power/runtime.c  |    2 +-
- drivers/clocksource/sh_cmt.c  |    2 +-
- drivers/clocksource/sh_mtu2.c |    2 +-
- drivers/clocksource/sh_tmu.c  |    2 +-
- include/linux/pm.h            |    5 +++++
- include/linux/pm_domain.h     |    3 ---
- 9 files changed, 58 insertions(+), 38 deletions(-)
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |    3 ---
+ arch/arm/mach-shmobile/pm-r8a7779.c           |   14 ++++----------
+ 2 files changed, 4 insertions(+), 13 deletions(-)
 
-Index: linux/drivers/base/power/common.c
-=================================--- linux.orig/drivers/base/power/common.c
-+++ linux/drivers/base/power/common.c
-@@ -85,3 +85,18 @@ int dev_pm_put_subsys_data(struct device
- 	return ret;
- }
- EXPORT_SYMBOL_GPL(dev_pm_put_subsys_data);
-+
-+/**
-+ * dev_pm_syscore_device - Set/unset the given device's power.syscore flag.
-+ * @dev: Device whose flag is to be modified.
-+ * @val: New value of the flag.
-+ */
-+void dev_pm_syscore_device(struct device *dev, bool val)
-+{
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&dev->power.lock, flags);
-+	dev->power.syscore = val;
-+	spin_unlock_irqrestore(&dev->power.lock, flags);
-+}
-+EXPORT_SYMBOL_GPL(dev_pm_syscore_device);
-Index: linux/drivers/clocksource/sh_cmt.c
-=================================--- linux.orig/drivers/clocksource/sh_cmt.c
-+++ linux/drivers/clocksource/sh_cmt.c
-@@ -717,7 +717,7 @@ static int __devinit sh_cmt_probe(struct
- 		struct sh_timer_config *cfg = pdev->dev.platform_data;
+Index: linux/arch/arm/mach-shmobile/include/mach/r8a7779.h
+=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ linux/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -353,11 +353,8 @@ extern struct r8a7779_pm_domain r8a7779_
+ extern struct r8a7779_pm_domain r8a7779_impx3;
  
- 		if (cfg->clocksource_rating || cfg->clockevent_rating)
--			pm_genpd_dev_syscore(&pdev->dev, true);
-+			dev_pm_syscore_device(&pdev->dev, true);
- 	}
- 
- 	if (p) {
-Index: linux/drivers/clocksource/sh_mtu2.c
-=================================--- linux.orig/drivers/clocksource/sh_mtu2.c
-+++ linux/drivers/clocksource/sh_mtu2.c
-@@ -323,7 +323,7 @@ static int __devinit sh_mtu2_probe(struc
- 		struct sh_timer_config *cfg = pdev->dev.platform_data;
- 
- 		if (cfg->clockevent_rating)
--			pm_genpd_dev_syscore(&pdev->dev, true);
-+			dev_pm_syscore_device(&pdev->dev, true);
- 	}
- 
- 	if (p) {
-Index: linux/drivers/clocksource/sh_tmu.c
-=================================--- linux.orig/drivers/clocksource/sh_tmu.c
-+++ linux/drivers/clocksource/sh_tmu.c
-@@ -453,7 +453,7 @@ static int __devinit sh_tmu_probe(struct
- 		struct sh_timer_config *cfg = pdev->dev.platform_data;
- 
- 		if (cfg->clocksource_rating || cfg->clockevent_rating)
--			pm_genpd_dev_syscore(&pdev->dev, true);
-+			dev_pm_syscore_device(&pdev->dev, true);
- 	}
- 
- 	if (p) {
-Index: linux/include/linux/pm.h
-=================================--- linux.orig/include/linux/pm.h
-+++ linux/include/linux/pm.h
-@@ -43,8 +43,12 @@ struct device;
- 
- #ifdef CONFIG_PM
- extern const char power_group_name[];		/* = "power" */
-+
-+extern void dev_pm_syscore_device(struct device *dev, bool val);
+ extern void r8a7779_init_pm_domain(struct r8a7779_pm_domain *r8a7779_pd);
+-extern void r8a7779_add_device_to_domain(struct r8a7779_pm_domain *r8a7779_pd,
+-					struct platform_device *pdev);
  #else
- #define power_group_name	NULL
-+
-+static inline void dev_pm_syscore_device(struct device *dev, bool val) {}
- #endif
+ #define r8a7779_init_pm_domain(pd) do { } while (0)
+-#define r8a7779_add_device_to_domain(pd, pdev) do { } while (0)
+ #endif /* CONFIG_PM */
  
- typedef struct pm_message {
-@@ -511,6 +515,7 @@ struct dev_pm_info {
- 	bool			is_suspended:1;	/* Ditto */
- 	bool			ignore_children:1;
- 	bool			early_init:1;	/* Owned by the PM core */
-+	bool			syscore:1;
- 	spinlock_t		lock;
- #ifdef CONFIG_PM_SLEEP
- 	struct list_head	entry;
-Index: linux/drivers/base/power/runtime.c
-=================================--- linux.orig/drivers/base/power/runtime.c
-+++ linux/drivers/base/power/runtime.c
-@@ -134,7 +134,7 @@ static int rpm_check_suspend_allowed(str
- 
- 	if (dev->power.runtime_error)
- 		retval = -EINVAL;
--	else if (dev->power.disable_depth > 0)
-+	else if (dev->power.disable_depth > 0 || dev->power.syscore)
- 		retval = -EACCES;
- 	else if (atomic_read(&dev->power.usage_count) > 0)
- 		retval = -EAGAIN;
-Index: linux/drivers/base/power/main.c
-=================================--- linux.orig/drivers/base/power/main.c
-+++ linux/drivers/base/power/main.c
-@@ -405,6 +405,9 @@ static int device_resume_noirq(struct de
- 	TRACE_DEVICE(dev);
- 	TRACE_RESUME(0);
- 
-+	if (dev->power.syscore)
-+		goto Out;
-+
- 	if (dev->pm_domain) {
- 		info = "noirq power domain ";
- 		callback = pm_noirq_op(&dev->pm_domain->ops, state);
-@@ -426,6 +429,7 @@ static int device_resume_noirq(struct de
- 
- 	error = dpm_run_callback(callback, dev, state, info);
- 
-+ Out:
- 	TRACE_RESUME(error);
- 	return error;
- }
-@@ -483,6 +487,9 @@ static int device_resume_early(struct de
- 	TRACE_DEVICE(dev);
- 	TRACE_RESUME(0);
- 
-+	if (dev->power.syscore)
-+		goto Out;
-+
- 	if (dev->pm_domain) {
- 		info = "early power domain ";
- 		callback = pm_late_early_op(&dev->pm_domain->ops, state);
-@@ -504,6 +511,7 @@ static int device_resume_early(struct de
- 
- 	error = dpm_run_callback(callback, dev, state, info);
- 
-+ Out:
- 	TRACE_RESUME(error);
- 	return error;
- }
-@@ -567,6 +575,9 @@ static int device_resume(struct device *
- 	TRACE_DEVICE(dev);
- 	TRACE_RESUME(0);
- 
-+	if (dev->power.syscore)
-+		goto Complete;
-+
- 	dpm_wait(dev->parent, async);
- 	device_lock(dev);
- 
-@@ -629,6 +640,8 @@ static int device_resume(struct device *
- 
-  Unlock:
- 	device_unlock(dev);
-+
-+ Complete:
- 	complete_all(&dev->power.completion);
- 
- 	TRACE_RESUME(error);
-@@ -719,6 +732,9 @@ static void device_complete(struct devic
- 	void (*callback)(struct device *) = NULL;
- 	char *info = NULL;
- 
-+	if (dev->power.syscore)
-+		return;
-+
- 	device_lock(dev);
- 
- 	if (dev->pm_domain) {
-@@ -831,6 +847,9 @@ static int device_suspend_noirq(struct d
- 	pm_callback_t callback = NULL;
- 	char *info = NULL;
- 
-+	if (dev->power.syscore)
-+		return 0;
-+
- 	if (dev->pm_domain) {
- 		info = "noirq power domain ";
- 		callback = pm_noirq_op(&dev->pm_domain->ops, state);
-@@ -914,6 +933,9 @@ static int device_suspend_late(struct de
- 	pm_callback_t callback = NULL;
- 	char *info = NULL;
- 
-+	if (dev->power.syscore)
-+		return 0;
-+
- 	if (dev->pm_domain) {
- 		info = "late power domain ";
- 		callback = pm_late_early_op(&dev->pm_domain->ops, state);
-@@ -1050,6 +1072,9 @@ static int __device_suspend(struct devic
- 		goto Complete;
- 	}
- 
-+	if (dev->power.syscore)
-+		goto Complete;
-+
- 	device_lock(dev);
- 
- 	if (dev->pm_domain) {
-@@ -1206,6 +1231,9 @@ static int device_prepare(struct device
- 	char *info = NULL;
- 	int error = 0;
- 
-+	if (dev->power.syscore)
-+		return 0;
-+
- 	device_lock(dev);
- 
- 	dev->power.wakeup_path = device_may_wakeup(dev);
-Index: linux/drivers/base/power/domain.c
-=================================--- linux.orig/drivers/base/power/domain.c
-+++ linux/drivers/base/power/domain.c
-@@ -436,7 +436,7 @@ static int pm_genpd_poweroff(struct gene
- 	not_suspended = 0;
- 	list_for_each_entry(pdd, &genpd->dev_list, list_node)
- 		if (pdd->dev->driver && (!pm_runtime_suspended(pdd->dev)
--		    || pdd->dev->power.irq_safe || to_gpd_data(pdd)->syscore))
-+		    || pdd->dev->power.irq_safe || pdd->dev->power.syscore))
- 			not_suspended++;
- 
- 	if (not_suspended > genpd->in_progress)
-@@ -578,9 +578,6 @@ static int pm_genpd_runtime_suspend(stru
- 
- 	might_sleep_if(!genpd->dev_irq_safe);
- 
--	if (dev_gpd_data(dev)->syscore)
--		return -EBUSY;
--
- 	stop_ok = genpd->gov ? genpd->gov->stop_ok : NULL;
- 	if (stop_ok && !stop_ok(dev))
- 		return -EBUSY;
-@@ -983,7 +980,7 @@ static int pm_genpd_suspend_noirq(struct
- 	if (IS_ERR(genpd))
- 		return -EINVAL;
- 
--	if (genpd->suspend_power_off || dev_gpd_data(dev)->syscore
-+	if (genpd->suspend_power_off
- 	    || (dev->power.wakeup_path && genpd_dev_active_wakeup(genpd, dev)))
- 		return 0;
- 
-@@ -1016,7 +1013,7 @@ static int pm_genpd_resume_noirq(struct
- 	if (IS_ERR(genpd))
- 		return -EINVAL;
- 
--	if (genpd->suspend_power_off || dev_gpd_data(dev)->syscore
-+	if (genpd->suspend_power_off
- 	    || (dev->power.wakeup_path && genpd_dev_active_wakeup(genpd, dev)))
- 		return 0;
- 
-@@ -1136,8 +1133,7 @@ static int pm_genpd_freeze_noirq(struct
- 	if (IS_ERR(genpd))
- 		return -EINVAL;
- 
--	return genpd->suspend_power_off || dev_gpd_data(dev)->syscore ?
--		0 : genpd_stop_dev(genpd, dev);
-+	return genpd->suspend_power_off ? 0 : genpd_stop_dev(genpd, dev);
+ #endif /* __ASM_R8A7779_H__ */
+Index: linux/arch/arm/mach-shmobile/pm-r8a7779.c
+=================================--- linux.orig/arch/arm/mach-shmobile/pm-r8a7779.c
++++ linux/arch/arm/mach-shmobile/pm-r8a7779.c
+@@ -199,17 +199,8 @@ void r8a7779_init_pm_domain(struct r8a77
+ 		pd_power_up(&r8a7779_pd->genpd);
  }
  
- /**
-@@ -1157,8 +1153,7 @@ static int pm_genpd_thaw_noirq(struct de
- 	if (IS_ERR(genpd))
- 		return -EINVAL;
- 
--	return genpd->suspend_power_off || dev_gpd_data(dev)->syscore ?
--		0 : genpd_start_dev(genpd, dev);
-+	return genpd->suspend_power_off ? 0 : genpd_start_dev(genpd, dev);
- }
- 
- /**
-@@ -1253,7 +1248,7 @@ static int pm_genpd_restore_noirq(struct
- 
- 	pm_genpd_sync_poweron(genpd);
- 
--	return dev_gpd_data(dev)->syscore ? 0 : genpd_start_dev(genpd, dev);
-+	return genpd_start_dev(genpd, dev);
- }
- 
- /**
-@@ -1526,26 +1521,6 @@ int pm_genpd_remove_device(struct generi
- }
- 
- /**
-- * pm_genpd_dev_syscore - Set/unset the "syscore" flag for a given device.
-- * @dev: Device to set/unset the flag for.
-- * @val: The new value of the device's "syscore" flag.
-- */
--void pm_genpd_dev_syscore(struct device *dev, bool val)
+-void r8a7779_add_device_to_domain(struct r8a7779_pm_domain *r8a7779_pd,
+-				 struct platform_device *pdev)
 -{
--	struct pm_subsys_data *psd;
--	unsigned long flags;
+-	struct device *dev = &pdev->dev;
 -
--	spin_lock_irqsave(&dev->power.lock, flags);
--
--	psd = dev_to_psd(dev);
--	if (psd && psd->domain_data)
--		to_gpd_data(psd->domain_data)->syscore = val;
--
--	spin_unlock_irqrestore(&dev->power.lock, flags);
+-	pm_genpd_add_device(&r8a7779_pd->genpd, dev);
+-	if (pm_clk_no_clocks(dev))
+-		pm_clk_add(dev, NULL);
 -}
--EXPORT_SYMBOL_GPL(pm_genpd_dev_syscore);
 -
--/**
-  * pm_genpd_dev_need_restore - Set/unset the device's "need restore" flag.
-  * @dev: Device to set/unset the flag for.
-  * @val: The new value of the device's "need restore" flag.
-Index: linux/include/linux/pm_domain.h
-=================================--- linux.orig/include/linux/pm_domain.h
-+++ linux/include/linux/pm_domain.h
-@@ -114,7 +114,6 @@ struct generic_pm_domain_data {
- 	struct mutex lock;
- 	unsigned int refcount;
- 	bool need_restore;
--	bool syscore;
+ struct r8a7779_pm_domain r8a7779_sh4a = {
++	.genpd_name = "SH4A",
+ 	.ch = {
+ 		.chan_offs = 0x80, /* PWRSR1 .. PWRER1 */
+ 		.isr_bit = 16, /* SH4A */
+@@ -217,6 +208,7 @@ struct r8a7779_pm_domain r8a7779_sh4a  };
+ 
+ struct r8a7779_pm_domain r8a7779_sgx = {
++	.genpd_name = "SGX",
+ 	.ch = {
+ 		.chan_offs = 0xc0, /* PWRSR2 .. PWRER2 */
+ 		.isr_bit = 20, /* SGX */
+@@ -224,6 +216,7 @@ struct r8a7779_pm_domain r8a7779_sgx = {
  };
  
- #ifdef CONFIG_PM_GENERIC_DOMAINS
-@@ -153,7 +152,6 @@ static inline int pm_genpd_of_add_device
+ struct r8a7779_pm_domain r8a7779_vdp1 = {
++	.genpd_name = "VDP1",
+ 	.ch = {
+ 		.chan_offs = 0x100, /* PWRSR3 .. PWRER3 */
+ 		.isr_bit = 21, /* VDP */
+@@ -231,6 +224,7 @@ struct r8a7779_pm_domain r8a7779_vdp1  };
  
- extern int pm_genpd_remove_device(struct generic_pm_domain *genpd,
- 				  struct device *dev);
--extern void pm_genpd_dev_syscore(struct device *dev, bool val);
- extern void pm_genpd_dev_need_restore(struct device *dev, bool val);
- extern int pm_genpd_add_subdomain(struct generic_pm_domain *genpd,
- 				  struct generic_pm_domain *new_subdomain);
-@@ -199,7 +197,6 @@ static inline int pm_genpd_remove_device
- {
- 	return -ENOSYS;
- }
--static inline void pm_genpd_dev_syscore(struct device *dev, bool val) {}
- static inline void pm_genpd_dev_need_restore(struct device *dev, bool val) {}
- static inline int pm_genpd_add_subdomain(struct generic_pm_domain *genpd,
- 					 struct generic_pm_domain *new_sd)
+ struct r8a7779_pm_domain r8a7779_impx3 = {
++	.genpd_name = "IMPX3",
+ 	.ch = {
+ 		.chan_offs = 0x140, /* PWRSR4 .. PWRER4 */
+ 		.isr_bit = 24, /* IMP */
 
