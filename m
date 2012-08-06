@@ -1,42 +1,43 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 16 Aug 2012 13:00:50 +0000
-Subject: [PATCH 15/19] sh: ecovec24: Remove unused get_brightness LCDC callback
-Message-Id: <1345122054-16013-16-git-send-email-laurent.pinchart@ideasonboard.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Mon, 06 Aug 2012 23:05:22 +0000
+Subject: [PATCH 0/12] PM: Make ARM/shmobile PM domains initialization more straightforward
+Message-Id: <201208070105.23262.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: Linux-sh list <linux-sh@vger.kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
----
- arch/sh/boards/mach-ecovec24/setup.c |    6 ------
- 1 files changed, 0 insertions(+), 6 deletions(-)
+Hi all,
 
-diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-index 4158d70..d9b0a76 100644
---- a/arch/sh/boards/mach-ecovec24/setup.c
-+++ b/arch/sh/boards/mach-ecovec24/setup.c
-@@ -319,11 +319,6 @@ static int ecovec24_set_brightness(int brightness)
- 	return 0;
- }
- 
--static int ecovec24_get_brightness(void)
--{
--	return gpio_get_value(GPIO_PTR1);
--}
--
- static struct sh_mobile_lcdc_info lcdc_info = {
- 	.ch[0] = {
- 		.interface_type = RGB18,
-@@ -337,7 +332,6 @@ static struct sh_mobile_lcdc_info lcdc_info = {
- 			.name = "sh_mobile_lcdc_bl",
- 			.max_brightness = 1,
- 			.set_brightness = ecovec24_set_brightness,
--			.get_brightness = ecovec24_get_brightness,
- 		},
- 	}
- };
--- 
-1.7.8.6
+The majority of patches in this series were sent previously in this RFC:
+
+http://marc.info/?l=linux-pm&m4247432010192&w=4
+
+but they do not have anything to do with DTs and clean up the code quite
+a bit, so I thought they are worth resending in a different context.
+
+Patch [8/12] is new and replaces a patch that removed some code I thought
+could never be used, which was wrong.
+
+[1/12] - Make it possible to use domain names for adding devices to PM domains.
+[2/12] - Make ARM/shmobile use domain names for adding devices to PM domains.
+[3/12] - Drop the r8a7779's "add device to domain" function.
+[4/12] - Make it possible to use domain names for adding subdomains to PM domains.
+[5/12] - Make ARM/shmobile use domain names for adding subdomains to PM domains.
+[6/12] - Add ARM/shmobile function for "batch" initialization of PM domains.
+[7/12] - Make it possible to power on a PM domain using its name.
+[8/12] - Avoid accessing A4S internals directly in the SH7372 system suspend code.
+[9/12] - Put SH7372 PM domain objects into a table and initialize them in a loop.
+[10/12] - Put R8A7740 PM domain objects into a table and initialize them in a loop.
+[11/12] - Put R8A7779 PM domain objects into a table and initialize them in a loop.
+[12/12] - Unexport rmobile_init_pm_domain() which may be a static function now.
+
+The present series is on top of this patch set sent yesterday:
+
+http://marc.info/?l=linux-pm&m4421084022735&w=4
+
+Thanks,
+Rafael
 
