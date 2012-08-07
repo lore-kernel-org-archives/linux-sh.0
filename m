@@ -1,55 +1,81 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 31 Aug 2012 01:28:17 +0000
-Subject: [PATCH 06/11] ARM: shmobile: r8a7779: add USB EHCI clock support
-Message-Id: <1346376502-12114-7-git-send-email-horms@verge.net.au>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Tue, 07 Aug 2012 22:29:16 +0000
+Subject: [PATCH 4/4] PM / shmobile: Specify device latencies for Mackerel devices directly
+Message-Id: <201208080029.16394.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346376502-12114-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1346376502-12114-1-git-send-email-horms@verge.net.au>
+References: <201207212349.18294.rjw@sisk.pl> <201208080026.01738.rjw@sisk.pl>
+In-Reply-To: <201208080026.01738.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linux-sh list <linux-sh@vger.kernel.org>
+Cc: Linux PM list <linux-pm@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-ehci-platform driver require these clocks
+The results of adaptive latency computations in
+GENPD_DEV_TIMED_CALLBACK() show that the start/stop and save/restore
+state latencies of all devices on the Mackerel board I have tried are
+a little below 250 us.  Therefore, if the 250 us is used as the
+common initial value of the latency fields in struct gpd_timing_data
+for all devices on Mackerel, the latency values will never have to
+change at run time and there won't be any overhead related to
+re-computation of the corresponding PM QoS data.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- arch/arm/mach-shmobile/clock-r8a7779.c | 5 +++++
- 1 file changed, 5 insertions(+)
+ arch/arm/mach-shmobile/board-mackerel.c |   31 +++++++++++++++++++------------
+ 1 file changed, 19 insertions(+), 12 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index 3cafb6a..1d8842b 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -87,6 +87,7 @@ static struct clk div4_clks[DIV4_NR] = {
- };
+Index: linux/arch/arm/mach-shmobile/board-mackerel.c
+=================================--- linux.orig/arch/arm/mach-shmobile/board-mackerel.c
++++ linux/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1407,8 +1407,15 @@ static struct i2c_board_info i2c1_device
+ #define GPIO_PORT168CR	0xE60520A8
+ #define SRCR4		0xe61580bc
+ #define USCCR1		0xE6058144
++#define DEV_LATENCY_NS	250000
+ static void __init mackerel_init(void)
+ {
++	struct gpd_timing_data latencies = {
++		.stop_latency_ns = DEV_LATENCY_NS,
++		.start_latency_ns = DEV_LATENCY_NS,
++		.save_state_latency_ns = DEV_LATENCY_NS,
++		.restore_state_latency_ns = DEV_LATENCY_NS,
++	};
+ 	u32 srcr4;
+ 	struct clk *clk;
  
- enum { MSTP323, MSTP322, MSTP321, MSTP320,
-+	MSTP101, MSTP100,
- 	MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
- 	MSTP016, MSTP015, MSTP014,
- 	MSTP_NR };
-@@ -96,6 +97,8 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP322] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 22, 0), /* SDHI1 */
- 	[MSTP321] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 21, 0), /* SDHI2 */
- 	[MSTP320] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 20, 0), /* SDHI3 */
-+	[MSTP101] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  1, 0), /* USB2 */
-+	[MSTP100] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  0, 0), /* USB0/1 */
- 	[MSTP026] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 26, 0), /* SCIF0 */
- 	[MSTP025] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 25, 0), /* SCIF1 */
- 	[MSTP024] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 24, 0), /* SCIF2 */
-@@ -154,6 +157,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP023]), /* SCIF3 */
- 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP022]), /* SCIF4 */
- 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP021]), /* SCIF6 */
-+	CLKDEV_DEV_ID("ehci-platform.1", &mstp_clks[MSTP101]), /* USB EHCI port2 */
-+	CLKDEV_DEV_ID("ehci-platform.0", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
--- 
-1.7.10.2.484.gcd07cc5
+@@ -1623,20 +1630,20 @@ static void __init mackerel_init(void)
+ 
+ 	platform_add_devices(mackerel_devices, ARRAY_SIZE(mackerel_devices));
+ 
+-	rmobile_add_device_to_domain("A4LC", &lcdc_device);
+-	rmobile_add_device_to_domain("A4LC", &hdmi_lcdc_device);
+-	rmobile_add_device_to_domain("A4LC", &meram_device);
+-	rmobile_add_device_to_domain("A4MP", &fsi_device);
+-	rmobile_add_device_to_domain("A3SP", &usbhs0_device);
+-	rmobile_add_device_to_domain("A3SP", &usbhs1_device);
+-	rmobile_add_device_to_domain("A3SP", &nand_flash_device);
+-	rmobile_add_device_to_domain("A3SP", &sh_mmcif_device);
+-	rmobile_add_device_to_domain("A3SP", &sdhi0_device);
++	rmobile_add_device_to_domain_td("A4LC", &lcdc_device, &latencies);
++	rmobile_add_device_to_domain_td("A4LC", &hdmi_lcdc_device, &latencies);
++	rmobile_add_device_to_domain_td("A4LC", &meram_device, &latencies);
++	rmobile_add_device_to_domain_td("A4MP", &fsi_device, &latencies);
++	rmobile_add_device_to_domain_td("A3SP", &usbhs0_device, &latencies);
++	rmobile_add_device_to_domain_td("A3SP", &usbhs1_device, &latencies);
++	rmobile_add_device_to_domain_td("A3SP", &nand_flash_device, &latencies);
++	rmobile_add_device_to_domain_td("A3SP", &sh_mmcif_device, &latencies);
++	rmobile_add_device_to_domain_td("A3SP", &sdhi0_device, &latencies);
+ #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
+-	rmobile_add_device_to_domain("A3SP", &sdhi1_device);
++	rmobile_add_device_to_domain_td("A3SP", &sdhi1_device, &latencies);
+ #endif
+-	rmobile_add_device_to_domain("A3SP", &sdhi2_device);
+-	rmobile_add_device_to_domain("A4R", &ceu_device);
++	rmobile_add_device_to_domain_td("A3SP", &sdhi2_device, &latencies);
++	rmobile_add_device_to_domain_td("A4R", &ceu_device, &latencies);
+ 
+ 	hdmi_init_pm_clock();
+ 	sh7372_pm_init();
 
