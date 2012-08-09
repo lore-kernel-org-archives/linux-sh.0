@@ -1,48 +1,96 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 16 Aug 2012 13:00:36 +0000
-Subject: [PATCH 01/19] fbdev: sh_mobile_lcdc: Get display dimensions from the channel structure
-Message-Id: <1345122054-16013-2-git-send-email-laurent.pinchart@ideasonboard.com>
+From: "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>
+Date: Thu, 09 Aug 2012 15:03:02 +0000
+Subject: [PATCH v2 5/6] mm: make clear_huge_page cache clear only around the fault address
+Message-Id: <1344524583-1096-6-git-send-email-kirill.shutemov@linux.intel.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1344524583-1096-1-git-send-email-kirill.shutemov@linux.intel.com>
+In-Reply-To: <1344524583-1096-1-git-send-email-kirill.shutemov@linux.intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-mm@kvack.org
+Cc: Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, x86@kernel.org, Andi Kleen <ak@linux.intel.com>, "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>, Tim Chen <tim.c.chen@linux.intel.com>, Alex Shi <alex.shu@intel.com>, Jan Beulich <jbeulich@novell.com>, Robert Richter <robert.richter@amd.com>, Andy Lutomirski <luto@amacapital.net>, Andrew Morton <akpm@linux-foundation.org>, Andrea Arcangeli <aarcange@redhat.com>, Johannes Weiner <hannes@cmpxchg.org>, Hugh Dickins <hughd@google.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Mel Gorman <mgorman@suse.de>, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org
 
-Get the display dimensions directly from the channel structure instead
-of recomputing them from the monitor specs or accessing the platform
-data.
+From: Andi Kleen <ak@linux.intel.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Clearing a 2MB huge page will typically blow away several levels
+of CPU caches. To avoid this only cache clear the 4K area
+around the fault address and use a cache avoiding clears
+for the rest of the 2MB area.
+
+Signed-off-by: Andi Kleen <ak@linux.intel.com>
+Signed-off-by: Kirill A. Shutemov <kirill.shutemov@linux.intel.com>
 ---
- drivers/video/sh_mobile_lcdcfb.c |    8 ++++----
- 1 files changed, 4 insertions(+), 4 deletions(-)
+ mm/memory.c |   30 +++++++++++++++++++++++++++---
+ 1 files changed, 27 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index bccfd7e..7375dbf 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -586,8 +586,8 @@ static int sh_mobile_lcdc_display_notify(struct sh_mobile_lcdc_chan *ch,
- 				 * Just turn on, if we run a resume here, the
- 				 * logo disappears.
- 				 */
--				info->var.width = monspec->max_x * 10;
--				info->var.height = monspec->max_y * 10;
-+				info->var.width = ch->display.width;
-+				info->var.height = ch->display.height;
- 				sh_mobile_lcdc_display_on(ch);
- 			} else {
- 				/* New monitor or have to wake up */
-@@ -2248,8 +2248,8 @@ sh_mobile_lcdc_channel_fb_init(struct sh_mobile_lcdc_chan *ch,
- 	 */
- 	var = &info->var;
- 	fb_videomode_to_var(var, mode);
--	var->width = ch->cfg->panel_cfg.width;
--	var->height = ch->cfg->panel_cfg.height;
-+	var->width = ch->display.width;
-+	var->height = ch->display.height;
- 	var->xres_virtual = ch->xres_virtual;
- 	var->yres_virtual = ch->yres_virtual;
- 	var->activate = FB_ACTIVATE_NOW;
+diff --git a/mm/memory.c b/mm/memory.c
+index b47199a..e9a75c2 100644
+--- a/mm/memory.c
++++ b/mm/memory.c
+@@ -3969,18 +3969,35 @@ EXPORT_SYMBOL(might_fault);
+ #endif
+ 
+ #if defined(CONFIG_TRANSPARENT_HUGEPAGE) || defined(CONFIG_HUGETLBFS)
++
++#ifndef ARCH_HAS_USER_NOCACHE
++#define ARCH_HAS_USER_NOCACHE 0
++#endif
++
++#if ARCH_HAS_USER_NOCACHE = 0
++#define clear_user_highpage_nocache clear_user_highpage
++#endif
++
+ static void clear_gigantic_page(struct page *page,
+ 				unsigned long addr,
+ 				unsigned int pages_per_huge_page)
+ {
+ 	int i;
+ 	struct page *p = page;
++	unsigned long vaddr;
++	unsigned long haddr = addr & HPAGE_PMD_MASK;
++	int target = (addr - haddr) >> PAGE_SHIFT;
+ 
+ 	might_sleep();
++	vaddr = haddr;
+ 	for (i = 0; i < pages_per_huge_page;
+ 	     i++, p = mem_map_next(p, page, i)) {
+ 		cond_resched();
+-		clear_user_highpage(p, addr + i * PAGE_SIZE);
++		vaddr = haddr + i*PAGE_SIZE;
++		if (!ARCH_HAS_USER_NOCACHE  || i = target)
++			clear_user_highpage(p, vaddr);
++		else
++			clear_user_highpage_nocache(p, vaddr);
+ 	}
+ }
+ void clear_huge_page(struct page *page,
+@@ -3988,16 +4005,23 @@ void clear_huge_page(struct page *page,
+ {
+ 	int i;
+ 	unsigned long haddr = addr & HPAGE_PMD_MASK;
++	unsigned long vaddr;
++	int target = (addr - haddr) >> PAGE_SHIFT;
+ 
+ 	if (unlikely(pages_per_huge_page > MAX_ORDER_NR_PAGES)) {
+-		clear_gigantic_page(page, haddr, pages_per_huge_page);
++		clear_gigantic_page(page, addr, pages_per_huge_page);
+ 		return;
+ 	}
+ 
+ 	might_sleep();
++	vaddr = haddr;
+ 	for (i = 0; i < pages_per_huge_page; i++) {
+ 		cond_resched();
+-		clear_user_highpage(page + i, haddr + i * PAGE_SIZE);
++		vaddr = haddr + i*PAGE_SIZE;
++		if (!ARCH_HAS_USER_NOCACHE || i = target)
++			clear_user_highpage(page + i, vaddr);
++		else
++			clear_user_highpage_nocache(page + i, vaddr);
+ 	}
+ }
+ 
 -- 
-1.7.8.6
+1.7.7.6
 
