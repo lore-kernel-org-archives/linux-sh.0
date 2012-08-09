@@ -1,49 +1,18 @@
-From: "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>
-Date: Thu, 16 Aug 2012 15:15:49 +0000
-Subject: [PATCH v3 2/7] THP: Pass fault address to __do_huge_pmd_anonymous_page()
-Message-Id: <1345130154-9602-3-git-send-email-kirill.shutemov@linux.intel.com>
+From: Bonelli Emanuela <emanuela.bonelli@unicatt.it>
+Date: Thu, 09 Aug 2012 17:27:10 +0000
+Subject: contact (Mrs. Maris Sharon Email: mrsmarissharon@live.co.uk
+Message-Id: <D8DAD1BFB2468340B547B31F94584F0D047FA3734657@MIGE332.unicatt.it>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1345130154-9602-1-git-send-email-kirill.shutemov@linux.intel.com>
-In-Reply-To: <1345130154-9602-1-git-send-email-kirill.shutemov@linux.intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org
-Cc: Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, x86@kernel.org, Andi Kleen <ak@linux.intel.com>, "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>, Tim Chen <tim.c.chen@linux.intel.com>, Alex Shi <alex.shu@intel.com>, Jan Beulich <jbeulich@novell.com>, Robert Richter <robert.richter@amd.com>, Andy Lutomirski <luto@amacapital.net>, Andrew Morton <akpm@linux-foundation.org>, Andrea Arcangeli <aarcange@redhat.com>, Johannes Weiner <hannes@cmpxchg.org>, Hugh Dickins <hughd@google.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Mel Gorman <mgorman@suse.de>, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Andi Kleen <ak@linux.intel.com>
 
-Signed-off-by: Andi Kleen <ak@linux.intel.com>
-Signed-off-by: Kirill A. Shutemov <kirill.shutemov@linux.intel.com>
----
- mm/huge_memory.c |    7 ++++---
- 1 files changed, 4 insertions(+), 3 deletions(-)
+Good Day
 
-diff --git a/mm/huge_memory.c b/mm/huge_memory.c
-index 70737ec..6f0825b611 100644
---- a/mm/huge_memory.c
-+++ b/mm/huge_memory.c
-@@ -633,7 +633,8 @@ static inline pmd_t maybe_pmd_mkwrite(pmd_t pmd, struct vm_area_struct *vma)
- 
- static int __do_huge_pmd_anonymous_page(struct mm_struct *mm,
- 					struct vm_area_struct *vma,
--					unsigned long haddr, pmd_t *pmd,
-+					unsigned long haddr,
-+					unsigned long address, pmd_t *pmd,
- 					struct page *page)
- {
- 	pgtable_t pgtable;
-@@ -720,8 +721,8 @@ int do_huge_pmd_anonymous_page(struct mm_struct *mm, struct vm_area_struct *vma,
- 			put_page(page);
- 			goto out;
- 		}
--		if (unlikely(__do_huge_pmd_anonymous_page(mm, vma, haddr, pmd,
--							  page))) {
-+		if (unlikely(__do_huge_pmd_anonymous_page(mm, vma, haddr,
-+						address, pmd, page))) {
- 			mem_cgroup_uncharge_page(page);
- 			put_page(page);
- 			goto out;
--- 
-1.7.7.6
+You are eligible to receive a compensation payment of $500,000 USD.Ref: UN-
+Habitat023/6
+contact me. (Mrs. Maris Sharon Email: mrsmarissharon@live.co.uk
 
+contact (Mrs. Maris Sharon Email: mrsmarissharon@live.co.uk
