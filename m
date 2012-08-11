@@ -1,154 +1,233 @@
-From: wency@cn.fujitsu.com
-Date: Mon, 20 Aug 2012 09:35:24 +0000
-Subject: [RFC V7 PATCH 01/19] memory-hotplug: rename remove_memory() to offline_memory()/offline_pages()
-Message-Id: <1345455342-27752-2-git-send-email-wency@cn.fujitsu.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Sat, 11 Aug 2012 22:18:45 +0000
+Subject: [PATCH 2/2] ARM: shmobile: Make sh7372 cpuidle handling more straightforward
+Message-Id: <201208120018.45935.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1345455342-27752-1-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1345455342-27752-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
-Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
+To: linux-sh@vger.kernel.org
 
-From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-remove_memory() only try to offline pages. It is called in two cases:
-1. hot remove a memory device
-2. echo offline >/sys/devices/system/memory/memoryXX/state
+The sh7372 cpuidle code uses the same artificially designed routine
+shmobile_cpuidle_enter() as the .enter() callback for all of its
+cpuidle states.  However, shmobile_cpuidle_enter() calls a different
+"enter" function for each state using an array of function pointers
+populated by the sh7372 PM initialization code.  Moreover, the
+states[] array of the shmobile cpuidle driver is populated by that
+code as well, although in principle it just might have been filled
+with static data.
 
-In the 1st case, we should also change memory block's state, and notify
-the userspace that the memory block's state is changed after offlining
-pages.
+All of that complexity goes away if the sh7372 cpuidle code is
+allowed to define its own cpuidle driver structure that can be passed
+for registration to the common shmobile cpuidle initialization
+routine, so modify the code accordingly.
 
-So rename remove_memory() to offline_memory()/offline_pages(). And in
-the 1st case, offline_memory() will be used. The function offline_memory()
-is not implemented. In the 2nd case, offline_pages() will be used.
-
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-CC: Paul Mackerras <paulus@samba.org>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- drivers/acpi/acpi_memhotplug.c |    2 +-
- drivers/base/memory.c          |    9 +++------
- include/linux/memory_hotplug.h |    3 ++-
- mm/memory_hotplug.c            |   22 ++++++++++++++--------
- 4 files changed, 20 insertions(+), 16 deletions(-)
+ arch/arm/mach-shmobile/cpuidle.c             |   39 ++++---------
+ arch/arm/mach-shmobile/include/mach/common.h |    6 +-
+ arch/arm/mach-shmobile/pm-sh7372.c           |   79 +++++++++++++++------------
+ 3 files changed, 62 insertions(+), 62 deletions(-)
 
-diff --git a/drivers/acpi/acpi_memhotplug.c b/drivers/acpi/acpi_memhotplug.c
-index 24c807f..2a7beac 100644
---- a/drivers/acpi/acpi_memhotplug.c
-+++ b/drivers/acpi/acpi_memhotplug.c
-@@ -318,7 +318,7 @@ static int acpi_memory_disable_device(struct acpi_memory_device *mem_device)
- 	 */
- 	list_for_each_entry_safe(info, n, &mem_device->res_list, list) {
- 		if (info->enabled) {
--			result = remove_memory(info->start_addr, info->length);
-+			result = offline_memory(info->start_addr, info->length);
- 			if (result)
- 				return result;
- 		}
-diff --git a/drivers/base/memory.c b/drivers/base/memory.c
-index 7dda4f7..44e7de6 100644
---- a/drivers/base/memory.c
-+++ b/drivers/base/memory.c
-@@ -248,26 +248,23 @@ static bool pages_correctly_reserved(unsigned long start_pfn,
- static int
- memory_block_action(unsigned long phys_index, unsigned long action)
+Index: linux/arch/arm/mach-shmobile/cpuidle.c
+=================================--- linux.orig/arch/arm/mach-shmobile/cpuidle.c
++++ linux/arch/arm/mach-shmobile/cpuidle.c
+@@ -16,51 +16,38 @@
+ #include <asm/cpuidle.h>
+ #include <asm/io.h>
+ 
+-static void shmobile_enter_wfi(void)
++int shmobile_enter_wfi(struct cpuidle_device *dev, struct cpuidle_driver *drv,
++		       int index)
  {
--	unsigned long start_pfn, start_paddr;
-+	unsigned long start_pfn;
- 	unsigned long nr_pages = PAGES_PER_SECTION * sections_per_block;
- 	struct page *first_page;
- 	int ret;
- 
- 	first_page = pfn_to_page(phys_index << PFN_SECTION_SHIFT);
-+	start_pfn = page_to_pfn(first_page);
- 
- 	switch (action) {
- 		case MEM_ONLINE:
--			start_pfn = page_to_pfn(first_page);
+ 	cpu_do_idle();
+-}
 -
- 			if (!pages_correctly_reserved(start_pfn, nr_pages))
- 				return -EBUSY;
- 
- 			ret = online_pages(start_pfn, nr_pages);
- 			break;
- 		case MEM_OFFLINE:
--			start_paddr = page_to_pfn(first_page) << PAGE_SHIFT;
--			ret = remove_memory(start_paddr,
--					    nr_pages << PAGE_SHIFT);
-+			ret = offline_pages(start_pfn, nr_pages);
- 			break;
- 		default:
- 			WARN(1, KERN_WARNING "%s(%ld, %ld) unknown action: "
-diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
-index 910550f..c183f39 100644
---- a/include/linux/memory_hotplug.h
-+++ b/include/linux/memory_hotplug.h
-@@ -233,7 +233,8 @@ static inline int is_mem_section_removable(unsigned long pfn,
- extern int mem_online_node(int nid);
- extern int add_memory(int nid, u64 start, u64 size);
- extern int arch_add_memory(int nid, u64 start, u64 size);
--extern int remove_memory(u64 start, u64 size);
-+extern int offline_pages(unsigned long start_pfn, unsigned long nr_pages);
-+extern int offline_memory(u64 start, u64 size);
- extern int sparse_add_one_section(struct zone *zone, unsigned long start_pfn,
- 								int nr_pages);
- extern void sparse_remove_one_section(struct zone *zone, struct mem_section *ms);
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index 3ad25f9..c182c76 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -866,7 +866,7 @@ check_pages_isolated(unsigned long start_pfn, unsigned long end_pfn)
- 	return offlined;
+-void (*shmobile_cpuidle_modes[CPUIDLE_STATE_MAX])(void) = {
+-	shmobile_enter_wfi, /* regular sleep mode */
+-};
+-
+-static int shmobile_cpuidle_enter(struct cpuidle_device *dev,
+-				  struct cpuidle_driver *drv,
+-				  int index)
+-{
+-	shmobile_cpuidle_modes[index]();
+-
+-	return index;
++	return 0;
  }
  
--static int __ref offline_pages(unsigned long start_pfn,
-+static int __ref __offline_pages(unsigned long start_pfn,
- 		  unsigned long end_pfn, unsigned long timeout)
- {
- 	unsigned long pfn, nr_pages, expire;
-@@ -994,18 +994,24 @@ out:
- 	return ret;
- }
+ static struct cpuidle_device shmobile_cpuidle_dev;
+-static struct cpuidle_driver shmobile_cpuidle_driver = {
++static struct cpuidle_driver shmobile_cpuidle_default_driver = {
+ 	.name			= "shmobile_cpuidle",
+ 	.owner			= THIS_MODULE,
+ 	.en_core_tk_irqen	= 1,
+ 	.states[0]		= ARM_CPUIDLE_WFI_STATE,
++	.states[0].enter	= shmobile_enter_wfi,
+ 	.safe_state_index	= 0, /* C1 */
+ 	.state_count		= 1,
+ };
  
--int remove_memory(u64 start, u64 size)
-+int offline_pages(unsigned long start_pfn, unsigned long nr_pages)
- {
--	unsigned long start_pfn, end_pfn;
-+	return __offline_pages(start_pfn, start_pfn + nr_pages, 120 * HZ);
+-void (*shmobile_cpuidle_setup)(struct cpuidle_driver *drv);
++static struct cpuidle_driver *cpuidle_drv = &shmobile_cpuidle_default_driver;
++
++void shmobile_cpuidle_set_driver(struct cpuidle_driver *drv)
++{
++	cpuidle_drv = drv;
 +}
  
--	start_pfn = PFN_DOWN(start);
--	end_pfn = start_pfn + PFN_DOWN(size);
--	return offline_pages(start_pfn, end_pfn, 120 * HZ);
-+int offline_memory(u64 start, u64 size)
-+{
-+	return -EINVAL;
+ int shmobile_cpuidle_init(void)
+ {
+ 	struct cpuidle_device *dev = &shmobile_cpuidle_dev;
+-	struct cpuidle_driver *drv = &shmobile_cpuidle_driver;
+-	int i;
+-
+-	for (i = 0; i < CPUIDLE_STATE_MAX; i++)
+-		drv->states[i].enter = shmobile_cpuidle_enter;
+-
+-	if (shmobile_cpuidle_setup)
+-		shmobile_cpuidle_setup(drv);
+ 
+-	cpuidle_register_driver(drv);
++	cpuidle_register_driver(cpuidle_drv);
+ 
+-	dev->state_count = drv->state_count;
++	dev->state_count = cpuidle_drv->state_count;
+ 	cpuidle_register_device(dev);
+ 
+ 	return 0;
+Index: linux/arch/arm/mach-shmobile/include/mach/common.h
+=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/common.h
++++ linux/arch/arm/mach-shmobile/include/mach/common.h
+@@ -14,8 +14,10 @@ extern int shmobile_clk_init(void);
+ extern void shmobile_handle_irq_intc(struct pt_regs *);
+ extern struct platform_suspend_ops shmobile_suspend_ops;
+ struct cpuidle_driver;
+-extern void (*shmobile_cpuidle_modes[])(void);
+-extern void (*shmobile_cpuidle_setup)(struct cpuidle_driver *drv);
++struct cpuidle_device;
++extern int shmobile_enter_wfi(struct cpuidle_device *dev,
++			      struct cpuidle_driver *drv, int index);
++extern void shmobile_cpuidle_set_driver(struct cpuidle_driver *drv);
+ 
+ extern void sh7367_init_irq(void);
+ extern void sh7367_map_io(void);
+Index: linux/arch/arm/mach-shmobile/pm-sh7372.c
+=================================--- linux.orig/arch/arm/mach-shmobile/pm-sh7372.c
++++ linux/arch/arm/mach-shmobile/pm-sh7372.c
+@@ -21,6 +21,7 @@
+ #include <linux/irq.h>
+ #include <linux/bitrev.h>
+ #include <linux/console.h>
++#include <asm/cpuidle.h>
+ #include <asm/io.h>
+ #include <asm/tlbflush.h>
+ #include <asm/suspend.h>
+@@ -347,7 +348,8 @@ static int sh7372_do_idle_core_standby(u
+ 	return 0;
+ }
+ 
+-static void sh7372_enter_core_standby(void)
++static int sh7372_enter_core_standby(struct cpuidle_device *dev,
++				     struct cpuidle_driver *drv, int index)
+ {
+ 	sh7372_set_reset_vector(__pa(sh7372_resume_core_standby_sysc));
+ 
+@@ -358,52 +360,61 @@ static void sh7372_enter_core_standby(vo
+ 
+ 	 /* disable reset vector translation */
+ 	__raw_writel(0, SBAR);
++
++	return 1;
+ }
+ 
+-static void sh7372_enter_a3sm_pll_on(void)
++static int sh7372_enter_a3sm_pll_on(struct cpuidle_device *dev,
++				    struct cpuidle_driver *drv, int index)
+ {
+ 	sh7372_enter_a3sm_common(1);
++	return 2;
+ }
+ 
+-static void sh7372_enter_a3sm_pll_off(void)
++static int sh7372_enter_a3sm_pll_off(struct cpuidle_device *dev,
++				     struct cpuidle_driver *drv, int index)
+ {
+ 	sh7372_enter_a3sm_common(0);
++	return 3;
+ }
+ 
+-static void sh7372_cpuidle_setup(struct cpuidle_driver *drv)
+-{
+-	struct cpuidle_state *state = &drv->states[drv->state_count];
+-
+-	snprintf(state->name, CPUIDLE_NAME_LEN, "C2");
+-	strncpy(state->desc, "Core Standby Mode", CPUIDLE_DESC_LEN);
+-	state->exit_latency = 10;
+-	state->target_residency = 20 + 10;
+-	state->flags = CPUIDLE_FLAG_TIME_VALID;
+-	shmobile_cpuidle_modes[drv->state_count] = sh7372_enter_core_standby;
+-	drv->state_count++;
+-
+-	state = &drv->states[drv->state_count];
+-	snprintf(state->name, CPUIDLE_NAME_LEN, "C3");
+-	strncpy(state->desc, "A3SM PLL ON", CPUIDLE_DESC_LEN);
+-	state->exit_latency = 20;
+-	state->target_residency = 30 + 20;
+-	state->flags = CPUIDLE_FLAG_TIME_VALID;
+-	shmobile_cpuidle_modes[drv->state_count] = sh7372_enter_a3sm_pll_on;
+-	drv->state_count++;
+-
+-	state = &drv->states[drv->state_count];
+-	snprintf(state->name, CPUIDLE_NAME_LEN, "C4");
+-	strncpy(state->desc, "A3SM PLL OFF", CPUIDLE_DESC_LEN);
+-	state->exit_latency = 120;
+-	state->target_residency = 30 + 120;
+-	state->flags = CPUIDLE_FLAG_TIME_VALID;
+-	shmobile_cpuidle_modes[drv->state_count] = sh7372_enter_a3sm_pll_off;
+-	drv->state_count++;
+-}
++static struct cpuidle_driver sh7372_cpuidle_driver = {
++	.name			= "sh7372_cpuidle",
++	.owner			= THIS_MODULE,
++	.en_core_tk_irqen	= 1,
++	.state_count		= 4,
++	.safe_state_index	= 0, /* C1 */
++	.states[0] = ARM_CPUIDLE_WFI_STATE,
++	.states[0].enter = shmobile_enter_wfi,
++	.states[1] = {
++		.name = "C2",
++		.desc = "Core Standby Mode",
++		.exit_latency = 10,
++		.target_residency = 20 + 10,
++		.flags = CPUIDLE_FLAG_TIME_VALID,
++		.enter = sh7372_enter_core_standby,
++	},
++	.states[2] = {
++		.name = "C3",
++		.desc = "A3SM PLL ON",
++		.exit_latency = 20,
++		.target_residency = 30 + 20,
++		.flags = CPUIDLE_FLAG_TIME_VALID,
++		.enter = sh7372_enter_a3sm_pll_on,
++	},
++	.states[3] = {
++		.name = "C4",
++		.desc = "A3SM PLL OFF",
++		.exit_latency = 120,
++		.target_residency = 30 + 120,
++		.flags = CPUIDLE_FLAG_TIME_VALID,
++		.enter = sh7372_enter_a3sm_pll_off,
++	},
++};
+ 
+ static void sh7372_cpuidle_init(void)
+ {
+-	shmobile_cpuidle_setup = sh7372_cpuidle_setup;
++	shmobile_cpuidle_set_driver(&sh7372_cpuidle_driver);
  }
  #else
--int remove_memory(u64 start, u64 size)
-+int offline_pages(u64 start, u64 size)
-+{
-+	return -EINVAL;
-+}
-+
-+int offline_memory(u64 start, u64 size)
- {
- 	return -EINVAL;
- }
- #endif /* CONFIG_MEMORY_HOTREMOVE */
--EXPORT_SYMBOL_GPL(remove_memory);
-+EXPORT_SYMBOL_GPL(offline_memory);
--- 
-1.7.1
+ static void sh7372_cpuidle_init(void) {}
 
