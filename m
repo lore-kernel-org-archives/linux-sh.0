@@ -1,39 +1,46 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 31 Aug 2012 00:34:44 +0000
-Subject: [PATCH 09/10] ARM: shmobile: marzen: fixup regulator id for smsc911x
-Message-Id: <1346373285-19588-10-git-send-email-horms@verge.net.au>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Mon, 13 Aug 2012 22:22:11 +0000
+Subject: [PATCH 2/3] PM / cpuidle: Make ladder governor use the "disabled" state flag
+Message-Id: <201208140022.12197.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346373285-19588-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1346373285-19588-1-git-send-email-horms@verge.net.au>
+References: <201208140019.19288.rjw@sisk.pl>
+In-Reply-To: <201208140019.19288.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linux PM list <linux-pm@vger.kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-regulator id = 0 is used for sh_mobile_sdhi.
-smsc911x's regulator can use id = 1
+For the mechanism introduced by commit cbc9ef0 (PM / Domains: Add
+preliminary support for cpuidle, v2) to work with the ladder
+governor, that governor should respect the "disabled" state flag
+added by that commit.  Change the ladder governor accordingly.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- arch/arm/mach-shmobile/board-marzen.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/cpuidle/governors/ladder.c |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index 0249c0e..91e81e9 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -196,7 +196,7 @@ static void __init marzen_init(void)
- {
- 	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
- 				ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
--	regulator_register_fixed(0, dummy_supplies,
-+	regulator_register_fixed(1, dummy_supplies,
- 				ARRAY_SIZE(dummy_supplies));
+Index: linux/drivers/cpuidle/governors/ladder.c
+=================================--- linux.orig/drivers/cpuidle/governors/ladder.c
++++ linux/drivers/cpuidle/governors/ladder.c
+@@ -88,6 +88,7 @@ static int ladder_select_state(struct cp
  
- 	r8a7779_pinmux_init();
--- 
-1.7.10.2.484.gcd07cc5
+ 	/* consider promotion */
+ 	if (last_idx < drv->state_count - 1 &&
++	    !drv->states[last_idx + 1].disabled &&
+ 	    !dev->states_usage[last_idx + 1].disable &&
+ 	    last_residency > last_state->threshold.promotion_time &&
+ 	    drv->states[last_idx + 1].exit_latency <= latency_req) {
+@@ -101,7 +102,8 @@ static int ladder_select_state(struct cp
+ 
+ 	/* consider demotion */
+ 	if (last_idx > CPUIDLE_DRIVER_STATE_START &&
+-	    (dev->states_usage[last_idx].disable ||
++	    (drv->states[last_idx].disabled ||
++	    dev->states_usage[last_idx].disable ||
+ 	    drv->states[last_idx].exit_latency > latency_req)) {
+ 		int i;
+ 
 
