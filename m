@@ -1,142 +1,59 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 31 Aug 2012 01:28:22 +0000
-Subject: [PATCH 11/11] ARM: shmobile: marzen: add USB OHCI driver support
-Message-Id: <1346376502-12114-12-git-send-email-horms@verge.net.au>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Mon, 13 Aug 2012 12:34:26 +0000
+Subject: [PATCH 2/2] ARM: shmobile: Rework adding devices to PM domains on AP4EVB
+Message-Id: <201208131434.27135.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346376502-12114-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1346376502-12114-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This patch supports CN21/CN22 USB 1.x (port 0/1/2),
-and enable input event on defconfig
+Use the function rmobile_add_devices_to_domains() introduced
+previously for adding devices to PM domains during the AP4EVB
+initialization instead of a series of rmobile_add_device_to_domain*()
+calls.  This also causes the default device PM QoS latencies to be
+used on that board in analogy with Mackerel.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- arch/arm/configs/marzen_defconfig     |  5 +--
- arch/arm/mach-shmobile/Kconfig        |  1 +
- arch/arm/mach-shmobile/board-marzen.c | 57 +++++++++++++++++++++++++++++++++++
- 3 files changed, 61 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c |   19 +++++++++++--------
+ 1 file changed, 11 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index c30ea5e..30f2714 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -61,9 +61,8 @@ CONFIG_SMSC911X=y
- # CONFIG_NET_VENDOR_STMICRO is not set
- # CONFIG_WLAN is not set
- # CONFIG_INPUT_MOUSEDEV is not set
--# CONFIG_INPUT_KEYBOARD is not set
-+CONFIG_INPUT_EVDEV=y
- # CONFIG_INPUT_MOUSE is not set
--# CONFIG_SERIO is not set
- # CONFIG_VT is not set
- # CONFIG_LEGACY_PTYS is not set
- # CONFIG_DEVKMEM is not set
-@@ -81,6 +80,8 @@ CONFIG_MMC=y
- CONFIG_MMC_SDHI=y
- CONFIG_USB=y
- CONFIG_USB_EHCI_HCD=y
-+CONFIG_USB_OHCI_HCD=y
-+CONFIG_USB_OHCI_HCD_PLATFORM=y
- CONFIG_USB_EHCI_HCD_PLATFORM=y
- CONFIG_USB_STORAGE=y
- CONFIG_UIO=y
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 8937d69..66befbc 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -42,6 +42,7 @@ config ARCH_R8A7779
- 	select ARM_GIC
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select USB_ARCH_HAS_EHCI
-+	select USB_ARCH_HAS_OHCI
+Index: linux/arch/arm/mach-shmobile/board-ap4evb.c
+=================================--- linux.orig/arch/arm/mach-shmobile/board-ap4evb.c
++++ linux/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -1229,6 +1229,15 @@ static struct i2c_board_info i2c1_device
+ #define USCCR1		0xE6058144
+ static void __init ap4evb_init(void)
+ {
++	struct pm_domain_device domain_devices[] = {
++		{ "A4LC", &lcdc1_device, },
++		{ "A4LC", &lcdc_device, },
++		{ "A4MP", &fsi_device, },
++		{ "A3SP", &sh_mmcif_device, },
++		{ "A3SP", &sdhi0_device, },
++		{ "A3SP", &sdhi1_device, },
++		{ "A4R", &ceu_device, },
++	};
+ 	u32 srcr4;
+ 	struct clk *clk;
  
- config ARCH_EMEV2
- 	bool "Emma Mobile EV2"
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index eb0a05a..30c794b 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -33,6 +33,7 @@
- #include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/mfd/tmio.h>
- #include <linux/usb/ehci_pdriver.h>
-+#include <linux/usb/ohci_pdriver.h>
- #include <linux/pm_runtime.h>
- #include <mach/hardware.h>
- #include <mach/r8a7779.h>
-@@ -203,9 +204,65 @@ static struct platform_device ehci1_device = {
- 	.resource	= ehci1_resources,
- };
+@@ -1461,14 +1470,8 @@ static void __init ap4evb_init(void)
  
-+static struct usb_ohci_pdata ohcix_pdata = {
-+	.power_on	= xhci_power_on,
-+	.power_off	= xhci_power_off,
-+	.power_suspend	= xhci_power_off,
-+};
-+
-+static struct resource ohci0_resources[] = {
-+	[0] = {
-+		.start	= 0xffe70400,
-+		.end	= 0xffe70800 - 1,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= gic_spi(44),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device ohci0_device = {
-+	.name	= "ohci-platform",
-+	.id	= 0,
-+	.dev	= {
-+		.dma_mask		= &ohci0_device.dev.coherent_dma_mask,
-+		.coherent_dma_mask	= 0xffffffff,
-+		.platform_data		= &ohcix_pdata,
-+	},
-+	.num_resources	= ARRAY_SIZE(ohci0_resources),
-+	.resource	= ohci0_resources,
-+};
-+
-+static struct resource ohci1_resources[] = {
-+	[0] = {
-+		.start	= 0xfff70400,
-+		.end	= 0xfff70800 - 1,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= gic_spi(45),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device ohci1_device = {
-+	.name	= "ohci-platform",
-+	.id	= 1,
-+	.dev	= {
-+		.dma_mask		= &ohci1_device.dev.coherent_dma_mask,
-+		.coherent_dma_mask	= 0xffffffff,
-+		.platform_data		= &ohcix_pdata,
-+	},
-+	.num_resources	= ARRAY_SIZE(ohci1_resources),
-+	.resource	= ohci1_resources,
-+};
-+
- static struct platform_device *marzen_usb_devices[] __initdata = {
- 	&ehci0_device,
- 	&ehci1_device,
-+	&ohci0_device,
-+	&ohci1_device,
- };
+ 	platform_add_devices(ap4evb_devices, ARRAY_SIZE(ap4evb_devices));
  
- static void __init marzen_init(void)
--- 
-1.7.10.2.484.gcd07cc5
+-	rmobile_add_device_to_domain("A4LC", &lcdc1_device);
+-	rmobile_add_device_to_domain("A4LC", &lcdc_device);
+-	rmobile_add_device_to_domain("A4MP", &fsi_device);
+-
+-	rmobile_add_device_to_domain("A3SP", &sh_mmcif_device);
+-	rmobile_add_device_to_domain("A3SP", &sdhi0_device);
+-	rmobile_add_device_to_domain("A3SP", &sdhi1_device);
+-	rmobile_add_device_to_domain("A4R", &ceu_device);
++	rmobile_add_devices_to_domains(domain_devices,
++				       ARRAY_SIZE(domain_devices));
+ 
+ 	hdmi_init_pm_clock();
+ 	fsi_init_pm_clock();
 
