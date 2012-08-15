@@ -1,58 +1,74 @@
-From: Wen Congyang <wency@cn.fujitsu.com>
-Date: Fri, 27 Jul 2012 10:27:16 +0000
-Subject: [RFC PATCH v5 03/19] memory-hotplug: store the node id in acpi_memory_device
-Message-Id: <50126D04.6060707@cn.fujitsu.com>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Wed, 15 Aug 2012 06:33:29 +0000
+Subject: [PATCH] net: sh_eth: Add eth support for R8A7779 device
+Message-Id: <1345012409-12915-1-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <50126B83.3050201@cn.fujitsu.com>
-In-Reply-To: <50126B83.3050201@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
-Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, Yasuaki ISIMATU <isimatu.yasuaki@jp.fujitsu.com>
+To: netdev@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Phil Edworthy <phil.edworthy@renesas.com>
 
-The memory device has only one node id. Store the node id when
-enable the memory device, and we can reuse it when removing the
-memory device.
 
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-CC: Paul Mackerras <paulus@samba.org>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-CC: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
-Reviewed-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 ---
- drivers/acpi/acpi_memhotplug.c |    4 ++++
- 1 files changed, 4 insertions(+), 0 deletions(-)
+ drivers/net/ethernet/renesas/Kconfig  |    4 ++--
+ drivers/net/ethernet/renesas/sh_eth.c |   11 ++++++++---
+ 2 files changed, 10 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/acpi/acpi_memhotplug.c b/drivers/acpi/acpi_memhotplug.c
-index 8957ed9..293d718 100644
---- a/drivers/acpi/acpi_memhotplug.c
-+++ b/drivers/acpi/acpi_memhotplug.c
-@@ -83,6 +83,7 @@ struct acpi_memory_info {
- struct acpi_memory_device {
- 	struct acpi_device * device;
- 	unsigned int state;	/* State of the memory device */
-+	int nid;
- 	struct list_head res_list;
- };
+diff --git a/drivers/net/ethernet/renesas/Kconfig b/drivers/net/ethernet/renesas/Kconfig
+index 46df3a0..24c2305 100644
+--- a/drivers/net/ethernet/renesas/Kconfig
++++ b/drivers/net/ethernet/renesas/Kconfig
+@@ -8,7 +8,7 @@ config SH_ETH
+ 		(CPU_SUBTYPE_SH7710 || CPU_SUBTYPE_SH7712 || \
+ 		 CPU_SUBTYPE_SH7763 || CPU_SUBTYPE_SH7619 || \
+ 		 CPU_SUBTYPE_SH7724 || CPU_SUBTYPE_SH7734 || \
+-		 CPU_SUBTYPE_SH7757 || ARCH_R8A7740)
++		 CPU_SUBTYPE_SH7757 || ARCH_R8A7740 || ARCH_R8A7779)
+ 	select CRC32
+ 	select NET_CORE
+ 	select MII
+@@ -18,4 +18,4 @@ config SH_ETH
+ 	  Renesas SuperH Ethernet device driver.
+ 	  This driver supporting CPUs are:
+ 		- SH7619, SH7710, SH7712, SH7724, SH7734, SH7763, SH7757,
+-		  and R8A7740.
++		  R8A7740 and R8A7779.
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index af0b867..bad8f2e 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -78,7 +78,7 @@ static void sh_eth_select_mii(struct net_device *ndev)
+ #endif
  
-@@ -256,6 +257,9 @@ static int acpi_memory_enable_device(struct acpi_memory_device *mem_device)
- 		info->enabled = 1;
- 		num_enabled++;
- 	}
+ /* There is CPU dependent code */
+-#if defined(CONFIG_CPU_SUBTYPE_SH7724)
++#if defined(CONFIG_CPU_SUBTYPE_SH7724) || defined(CONFIG_ARCH_R8A7779)
+ #define SH_ETH_RESET_DEFAULT	1
+ static void sh_eth_set_duplex(struct net_device *ndev)
+ {
+@@ -93,13 +93,18 @@ static void sh_eth_set_duplex(struct net_device *ndev)
+ static void sh_eth_set_rate(struct net_device *ndev)
+ {
+ 	struct sh_eth_private *mdp = netdev_priv(ndev);
++	unsigned int bits = ECMR_RTM;
 +
-+	mem_device->nid = node;
-+
- 	if (!num_enabled) {
- 		printk(KERN_ERR PREFIX "add_memory failed\n");
- 		mem_device->state = MEMORY_INVALID_STATE;
++#if defined(CONFIG_ARCH_R8A7779)
++	bits |= ECMR_ELB;
++#endif
+ 
+ 	switch (mdp->speed) {
+ 	case 10: /* 10BASE */
+-		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) & ~ECMR_RTM, ECMR);
++		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) & ~bits, ECMR);
+ 		break;
+ 	case 100:/* 100BASE */
+-		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) | ECMR_RTM, ECMR);
++		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) | bits, ECMR);
+ 		break;
+ 	default:
+ 		break;
 -- 
-1.7.1
+1.7.5.4
 
