@@ -1,211 +1,62 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 16 Aug 2012 13:00:39 +0000
-Subject: [PATCH 04/19] ARM: mach-shmobile: ag5evm: Add LCDC tx_dev field to platform data
-Message-Id: <1345122054-16013-5-git-send-email-laurent.pinchart@ideasonboard.com>
+From: "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>
+Date: Thu, 16 Aug 2012 15:15:47 +0000
+Subject: [PATCH v3 0/7] Avoid cache trashing on clearing huge/gigantic page
+Message-Id: <1345130154-9602-1-git-send-email-kirill.shutemov@linux.intel.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-mm@kvack.org
+Cc: Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, x86@kernel.org, Andi Kleen <ak@linux.intel.com>, "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>, Tim Chen <tim.c.chen@linux.intel.com>, Alex Shi <alex.shu@intel.com>, Jan Beulich <jbeulich@novell.com>, Robert Richter <robert.richter@amd.com>, Andy Lutomirski <luto@amacapital.net>, Andrew Morton <akpm@linux-foundation.org>, Andrea Arcangeli <aarcange@redhat.com>, Johannes Weiner <hannes@cmpxchg.org>, Hugh Dickins <hughd@google.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Mel Gorman <mgorman@suse.de>, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org
 
-Reference the MIPI-DSI transceiver in the LCDC platform data and make
-sure it gets registered before the LCDC.
+From: "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
----
- arch/arm/mach-shmobile/board-ag5evm.c |  157 +++++++++++++++++----------------
- 1 files changed, 80 insertions(+), 77 deletions(-)
+Clearing a 2MB huge page will typically blow away several levels of CPU
+caches.  To avoid this only cache clear the 4K area around the fault
+address and use a cache avoiding clears for the rest of the 2MB area.
 
-diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
-index 5a6f22f..afae573 100644
---- a/arch/arm/mach-shmobile/board-ag5evm.c
-+++ b/arch/arm/mach-shmobile/board-ag5evm.c
-@@ -199,6 +199,84 @@ static struct platform_device irda_device = {
- 	.num_resources  = ARRAY_SIZE(irda_resources),
- };
- 
-+/* MIPI-DSI */
-+static struct resource mipidsi0_resources[] = {
-+	[0] = {
-+		.name	= "DSI0",
-+		.start  = 0xfeab0000,
-+		.end    = 0xfeab3fff,
-+		.flags  = IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.name	= "DSI0",
-+		.start  = 0xfeab4000,
-+		.end    = 0xfeab7fff,
-+		.flags  = IORESOURCE_MEM,
-+	},
-+};
-+
-+static int sh_mipi_set_dot_clock(struct platform_device *pdev,
-+				 void __iomem *base,
-+				 int enable)
-+{
-+	struct clk *pck, *phy;
-+	int ret;
-+
-+	pck = clk_get(&pdev->dev, "dsip_clk");
-+	if (IS_ERR(pck)) {
-+		ret = PTR_ERR(pck);
-+		goto sh_mipi_set_dot_clock_pck_err;
-+	}
-+
-+	phy = clk_get(&pdev->dev, "dsiphy_clk");
-+	if (IS_ERR(phy)) {
-+		ret = PTR_ERR(phy);
-+		goto sh_mipi_set_dot_clock_phy_err;
-+	}
-+
-+	if (enable) {
-+		clk_set_rate(pck, clk_round_rate(pck,  24000000));
-+		clk_set_rate(phy, clk_round_rate(pck, 510000000));
-+		clk_enable(pck);
-+		clk_enable(phy);
-+	} else {
-+		clk_disable(pck);
-+		clk_disable(phy);
-+	}
-+
-+	ret = 0;
-+
-+	clk_put(phy);
-+sh_mipi_set_dot_clock_phy_err:
-+	clk_put(pck);
-+sh_mipi_set_dot_clock_pck_err:
-+	return ret;
-+}
-+
-+static struct sh_mobile_lcdc_info lcdc0_info;
-+
-+static struct sh_mipi_dsi_info mipidsi0_info = {
-+	.data_format	= MIPI_RGB888,
-+	.lcd_chan	= &lcdc0_info.ch[0],
-+	.lane		= 2,
-+	.vsynw_offset	= 20,
-+	.clksrc		= 1,
-+	.flags		= SH_MIPI_DSI_HSABM		|
-+			  SH_MIPI_DSI_SYNC_PULSES_MODE	|
-+			  SH_MIPI_DSI_HSbyteCLK,
-+	.set_dot_clock	= sh_mipi_set_dot_clock,
-+};
-+
-+static struct platform_device mipidsi0_device = {
-+	.name           = "sh-mipi-dsi",
-+	.num_resources  = ARRAY_SIZE(mipidsi0_resources),
-+	.resource       = mipidsi0_resources,
-+	.id             = 0,
-+	.dev	= {
-+		.platform_data	= &mipidsi0_info,
-+	},
-+};
-+
- static unsigned char lcd_backlight_seq[3][2] = {
- 	{ 0x04, 0x07 },
- 	{ 0x23, 0x80 },
-@@ -261,6 +339,7 @@ static struct sh_mobile_lcdc_info lcdc0_info = {
- 			.display_on = lcd_backlight_on,
- 			.display_off = lcd_backlight_reset,
- 		},
-+		.tx_dev = &mipidsi0_device,
- 	}
- };
- 
-@@ -288,82 +367,6 @@ static struct platform_device lcdc0_device = {
- 	},
- };
- 
--/* MIPI-DSI */
--static struct resource mipidsi0_resources[] = {
--	[0] = {
--		.name	= "DSI0",
--		.start  = 0xfeab0000,
--		.end    = 0xfeab3fff,
--		.flags  = IORESOURCE_MEM,
--	},
--	[1] = {
--		.name	= "DSI0",
--		.start  = 0xfeab4000,
--		.end    = 0xfeab7fff,
--		.flags  = IORESOURCE_MEM,
--	},
--};
--
--static int sh_mipi_set_dot_clock(struct platform_device *pdev,
--				 void __iomem *base,
--				 int enable)
--{
--	struct clk *pck, *phy;
--	int ret;
--
--	pck = clk_get(&pdev->dev, "dsip_clk");
--	if (IS_ERR(pck)) {
--		ret = PTR_ERR(pck);
--		goto sh_mipi_set_dot_clock_pck_err;
--	}
--
--	phy = clk_get(&pdev->dev, "dsiphy_clk");
--	if (IS_ERR(phy)) {
--		ret = PTR_ERR(phy);
--		goto sh_mipi_set_dot_clock_phy_err;
--	}
--
--	if (enable) {
--		clk_set_rate(pck, clk_round_rate(pck,  24000000));
--		clk_set_rate(phy, clk_round_rate(pck, 510000000));
--		clk_enable(pck);
--		clk_enable(phy);
--	} else {
--		clk_disable(pck);
--		clk_disable(phy);
--	}
--
--	ret = 0;
--
--	clk_put(phy);
--sh_mipi_set_dot_clock_phy_err:
--	clk_put(pck);
--sh_mipi_set_dot_clock_pck_err:
--	return ret;
--}
--
--static struct sh_mipi_dsi_info mipidsi0_info = {
--	.data_format	= MIPI_RGB888,
--	.lcd_chan	= &lcdc0_info.ch[0],
--	.lane		= 2,
--	.vsynw_offset	= 20,
--	.clksrc		= 1,
--	.flags		= SH_MIPI_DSI_HSABM		|
--			  SH_MIPI_DSI_SYNC_PULSES_MODE	|
--			  SH_MIPI_DSI_HSbyteCLK,
--	.set_dot_clock	= sh_mipi_set_dot_clock,
--};
--
--static struct platform_device mipidsi0_device = {
--	.name           = "sh-mipi-dsi",
--	.num_resources  = ARRAY_SIZE(mipidsi0_resources),
--	.resource       = mipidsi0_resources,
--	.id             = 0,
--	.dev	= {
--		.platform_data	= &mipidsi0_info,
--	},
--};
--
- /* SDHI0 */
- static struct sh_mobile_sdhi_info sdhi0_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
-@@ -460,8 +463,8 @@ static struct platform_device *ag5evm_devices[] __initdata = {
- 	&fsi_device,
- 	&mmc_device,
- 	&irda_device,
--	&lcdc0_device,
- 	&mipidsi0_device,
-+	&lcdc0_device,
- 	&sdhi0_device,
- 	&sdhi1_device,
- };
+This patchset implements cache avoiding version of clear_page only for
+x86. If an architecture wants to provide cache avoiding version of
+clear_page it should to define ARCH_HAS_USER_NOCACHE to 1 and implement
+clear_page_nocache() and clear_user_highpage_nocache().
+
+v3:
+  - Rebased to current Linus' tree. kmap_atomic() build issue is fixed;
+  - Pass fault address to clear_huge_page(). v2 had problem with clearing
+    for sizes other than HPAGE_SIZE
+  - x86: fix 32bit variant. Fallback version of clear_page_nocache() has
+    been added for non-SSE2 systems;
+  - x86: clear_page_nocache() moved to clear_page_{32,64}.S;
+  - x86: use pushq_cfi/popq_cfi instead of push/pop;
+v2:
+  - No code change. Only commit messages are updated.
+  - RFC mark is dropped.
+
+Andi Kleen (5):
+  THP: Use real address for NUMA policy
+  THP: Pass fault address to __do_huge_pmd_anonymous_page()
+  x86: Add clear_page_nocache
+  mm: make clear_huge_page cache clear only around the fault address
+  x86: switch the 64bit uncached page clear to SSE/AVX v2
+
+Kirill A. Shutemov (2):
+  hugetlb: pass fault address to hugetlb_no_page()
+  mm: pass fault address to clear_huge_page()
+
+ arch/x86/include/asm/page.h      |    2 +
+ arch/x86/include/asm/string_32.h |    5 ++
+ arch/x86/include/asm/string_64.h |    5 ++
+ arch/x86/lib/Makefile            |    3 +-
+ arch/x86/lib/clear_page_32.S     |   72 +++++++++++++++++++++++++++++++++++
+ arch/x86/lib/clear_page_64.S     |   78 ++++++++++++++++++++++++++++++++++++++
+ arch/x86/mm/fault.c              |    7 +++
+ include/linux/mm.h               |    2 +-
+ mm/huge_memory.c                 |   17 ++++----
+ mm/hugetlb.c                     |   39 ++++++++++---------
+ mm/memory.c                      |   37 +++++++++++++++---
+ 11 files changed, 232 insertions(+), 35 deletions(-)
+ create mode 100644 arch/x86/lib/clear_page_32.S
+
 -- 
-1.7.8.6
+1.7.7.6
 
