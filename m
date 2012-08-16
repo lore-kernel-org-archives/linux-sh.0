@@ -1,96 +1,128 @@
-From: "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>
-Date: Thu, 09 Aug 2012 15:03:02 +0000
-Subject: [PATCH v2 5/6] mm: make clear_huge_page cache clear only around the fault address
-Message-Id: <1344524583-1096-6-git-send-email-kirill.shutemov@linux.intel.com>
+From: Hideki EIRAKU <hdk@igel.co.jp>
+Date: Thu, 16 Aug 2012 07:42:04 +0000
+Subject: [PATCH v2 2/2] ARM: mach-shmobile: sh7372: Add IPMMU device
+Message-Id: <1345102924-22045-3-git-send-email-hdk@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1344524583-1096-1-git-send-email-kirill.shutemov@linux.intel.com>
-In-Reply-To: <1344524583-1096-1-git-send-email-kirill.shutemov@linux.intel.com>
+References: <1345102924-22045-1-git-send-email-hdk@igel.co.jp>
+In-Reply-To: <1345102924-22045-1-git-send-email-hdk@igel.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org
-Cc: Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, x86@kernel.org, Andi Kleen <ak@linux.intel.com>, "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>, Tim Chen <tim.c.chen@linux.intel.com>, Alex Shi <alex.shu@intel.com>, Jan Beulich <jbeulich@novell.com>, Robert Richter <robert.richter@amd.com>, Andy Lutomirski <luto@amacapital.net>, Andrew Morton <akpm@linux-foundation.org>, Andrea Arcangeli <aarcange@redhat.com>, Johannes Weiner <hannes@cmpxchg.org>, Hugh Dickins <hughd@google.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Mel Gorman <mgorman@suse.de>, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Andi Kleen <ak@linux.intel.com>
+This patch adds an IPMMU device and notifies the IPMMU driver which
+devices are connected via the IPMMU module.  All devices connected to the main
+memory bus via the IPMMU module MUST be registered when SHMOBILE_IPMMU and
+SHMOBILE_IOMMU are enabled because physical address cannot be used
+while the IPMMU module's MMU function is enabled.
 
-Clearing a 2MB huge page will typically blow away several levels
-of CPU caches. To avoid this only cache clear the 4K area
-around the fault address and use a cache avoiding clears
-for the rest of the 2MB area.
-
-Signed-off-by: Andi Kleen <ak@linux.intel.com>
-Signed-off-by: Kirill A. Shutemov <kirill.shutemov@linux.intel.com>
+Signed-off-by: Hideki EIRAKU <hdk@igel.co.jp>
 ---
- mm/memory.c |   30 +++++++++++++++++++++++++++---
- 1 files changed, 27 insertions(+), 3 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c   |    5 +++++
+ arch/arm/mach-shmobile/board-mackerel.c |    5 +++++
+ arch/arm/mach-shmobile/setup-sh7372.c   |   22 ++++++++++++++++++++++
+ 3 files changed, 32 insertions(+), 0 deletions(-)
 
-diff --git a/mm/memory.c b/mm/memory.c
-index b47199a..e9a75c2 100644
---- a/mm/memory.c
-+++ b/mm/memory.c
-@@ -3969,18 +3969,35 @@ EXPORT_SYMBOL(might_fault);
- #endif
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index f172ca8..ce6d796 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -61,6 +61,7 @@
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/sh7372.h>
++#include <mach/ipmmu.h>
  
- #if defined(CONFIG_TRANSPARENT_HUGEPAGE) || defined(CONFIG_HUGETLBFS)
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+@@ -1448,6 +1449,10 @@ static void __init ap4evb_init(void)
+ 
+ 	sh7372_add_standard_devices();
+ 
++	ipmmu_add_device(&lcdc_device.dev);
++	ipmmu_add_device(&lcdc1_device.dev);
++	ipmmu_add_device(&ceu_device.dev);
 +
-+#ifndef ARCH_HAS_USER_NOCACHE
-+#define ARCH_HAS_USER_NOCACHE 0
-+#endif
+ 	/* HDMI */
+ 	gpio_request(GPIO_FN_HDMI_HPD, NULL);
+ 	gpio_request(GPIO_FN_HDMI_CEC, NULL);
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 7ea2b31..ac1adb5 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -60,6 +60,7 @@
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/sh7372.h>
++#include <mach/ipmmu.h>
+ 
+ #include <asm/mach/arch.h>
+ #include <asm/mach-types.h>
+@@ -1621,6 +1622,10 @@ static void __init mackerel_init(void)
+ 
+ 	sh7372_add_standard_devices();
+ 
++	ipmmu_add_device(&lcdc_device.dev);
++	ipmmu_add_device(&hdmi_lcdc_device.dev);
++	ipmmu_add_device(&ceu_device.dev);
 +
-+#if ARCH_HAS_USER_NOCACHE = 0
-+#define clear_user_highpage_nocache clear_user_highpage
-+#endif
+ 	platform_add_devices(mackerel_devices, ARRAY_SIZE(mackerel_devices));
+ 
+ 	rmobile_add_device_to_domain(&sh7372_pd_a4lc, &lcdc_device);
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index 838a87b..1106b4f 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -38,6 +38,7 @@
+ #include <mach/irqs.h>
+ #include <mach/sh7372.h>
+ #include <mach/common.h>
++#include <mach/ipmmu.h>
+ #include <asm/mach/map.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+@@ -968,6 +969,23 @@ static struct platform_device spu1_device = {
+ 	.num_resources	= ARRAY_SIZE(spu1_resources),
+ };
+ 
++/* IPMMUI (an IPMMU module for ICB/LMB) */
++static struct resource ipmmu_resources[] = {
++	[0] = {
++		.name	= "IPMMUI",
++		.start	= 0xfe951000,
++		.end	= 0xfe9510ff,
++		.flags	= IORESOURCE_MEM,
++	},
++};
 +
- static void clear_gigantic_page(struct page *page,
- 				unsigned long addr,
- 				unsigned int pages_per_huge_page)
- {
- 	int i;
- 	struct page *p = page;
-+	unsigned long vaddr;
-+	unsigned long haddr = addr & HPAGE_PMD_MASK;
-+	int target = (addr - haddr) >> PAGE_SHIFT;
++static struct platform_device ipmmu_device = {
++	.name           = "ipmmu",
++	.id             = -1,
++	.resource       = ipmmu_resources,
++	.num_resources  = ARRAY_SIZE(ipmmu_resources),
++};
++
+ static struct platform_device *sh7372_early_devices[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+@@ -979,6 +997,7 @@ static struct platform_device *sh7372_early_devices[] __initdata = {
+ 	&cmt2_device,
+ 	&tmu00_device,
+ 	&tmu01_device,
++	&ipmmu_device,
+ };
  
- 	might_sleep();
-+	vaddr = haddr;
- 	for (i = 0; i < pages_per_huge_page;
- 	     i++, p = mem_map_next(p, page, i)) {
- 		cond_resched();
--		clear_user_highpage(p, addr + i * PAGE_SIZE);
-+		vaddr = haddr + i*PAGE_SIZE;
-+		if (!ARCH_HAS_USER_NOCACHE  || i = target)
-+			clear_user_highpage(p, vaddr);
-+		else
-+			clear_user_highpage_nocache(p, vaddr);
- 	}
- }
- void clear_huge_page(struct page *page,
-@@ -3988,16 +4005,23 @@ void clear_huge_page(struct page *page,
- {
- 	int i;
- 	unsigned long haddr = addr & HPAGE_PMD_MASK;
-+	unsigned long vaddr;
-+	int target = (addr - haddr) >> PAGE_SHIFT;
+ static struct platform_device *sh7372_late_devices[] __initdata = {
+@@ -1020,6 +1039,9 @@ void __init sh7372_add_standard_devices(void)
+ 	platform_add_devices(sh7372_early_devices,
+ 			    ARRAY_SIZE(sh7372_early_devices));
  
- 	if (unlikely(pages_per_huge_page > MAX_ORDER_NR_PAGES)) {
--		clear_gigantic_page(page, haddr, pages_per_huge_page);
-+		clear_gigantic_page(page, addr, pages_per_huge_page);
- 		return;
- 	}
- 
- 	might_sleep();
-+	vaddr = haddr;
- 	for (i = 0; i < pages_per_huge_page; i++) {
- 		cond_resched();
--		clear_user_highpage(page + i, haddr + i * PAGE_SIZE);
-+		vaddr = haddr + i*PAGE_SIZE;
-+		if (!ARCH_HAS_USER_NOCACHE || i = target)
-+			clear_user_highpage(page + i, vaddr);
-+		else
-+			clear_user_highpage_nocache(page + i, vaddr);
- 	}
- }
++	ipmmu_add_device(&vpu_device.dev);
++	ipmmu_add_device(&jpu_device.dev);
++
+ 	platform_add_devices(sh7372_late_devices,
+ 			    ARRAY_SIZE(sh7372_late_devices));
  
 -- 
-1.7.7.6
+1.7.0.4
 
