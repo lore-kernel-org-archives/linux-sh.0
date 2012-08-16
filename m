@@ -1,99 +1,159 @@
-From: Mike Frysinger <vapier@gentoo.org>
-Date: Sun, 05 Aug 2012 02:35:40 +0000
-Subject: Re: pci dma addresses missing offset on sh7750
-Message-Id: <201208042235.41320.vapier@gentoo.org>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="nextPart2168334.40fjMfJ7dO"
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Thu, 16 Aug 2012 20:10:30 +0000
+Subject: [PATCH] ARM: shmobile: Add A4S cpuidle state on sh7372
+Message-Id: <201208162210.31058.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201208042201.58615.vapier@gentoo.org>
-In-Reply-To: <201208042201.58615.vapier@gentoo.org>
-To: linux-sh@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: Linux-sh list <linux-sh@vger.kernel.org>
+Cc: LKML <linux-kernel@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
 
---nextPart2168334.40fjMfJ7dO
-Content-Type: Text/Plain;
-  charset="utf-8"
-Content-Transfer-Encoding: quoted-printable
 
-On Saturday 04 August 2012 22:01:58 Mike Frysinger wrote:
-> i got back to looking at the landisk not working since 2.6.31.  linux-3.5
-> boots up with better information, so we can get further in figuring out
-> what went wrong.  for a recap, 99f95f117848088f2708b45c70be73152e78bb8a
-> was the last rev i could boot.
->=20
-> with 2.6.30.9, i see these address ranges:
-> Autoconfig PCI channel 0x8c3543e0
-> Scanning bus 00, I/O 0xfe240000:0xfe280000, Mem 0xfd000000:0xfe000000
-> 00:00.0 Class 0200: 10ec:8139 (rev 20)
->         I/O at 0xfe240000 [size=3D0x100]
->         Mem at 0xfd000000 [size=3D0x100]
-> 00:01.0 Class 0180: 1191:0009 (rev 07)
->         I/O at 0xfe240100 [size=3D0x8]
->         I/O at 0xfe240108 [size=3D0x4]
->         I/O at 0xfe240110 [size=3D0x8]
->         I/O at 0xfe240118 [size=3D0x4]
->         I/O at 0xfe240120 [size=3D0x10]
-> 00:02.0 Class 0c03: 1033:0035 (rev 43)
->         Mem at 0xfd001000 [size=3D0x1000]
-> 00:02.1 Class 0c03: 1033:0035 (rev 43)
->         Mem at 0xfd002000 [size=3D0x1000]
-> 00:02.2 Class 0c03: 1033:00e0 (rev 04)
->         Mem at 0xfd003000 [size=3D0x100]
->=20
-> but with 3.5, i see:
-> PCI host bridge to bus 0000:00
-> pci_bus 0000:00: root bus resource [io  0x1000-0x3fffff]
-> pci_bus 0000:00: root bus resource [mem 0xfd000000-0xfdffffff]
-> pci 0000:00:01.0: BAR 6: assigned [mem 0xfd000000-0xfd00ffff pref]
-> pci 0000:00:02.0: BAR 0: assigned [mem 0xfd010000-0xfd010fff]
-> pci 0000:00:02.1: BAR 0: assigned [mem 0xfd011000-0xfd011fff]
-> pci 0000:00:00.0: BAR 0: assigned [io  0x1000-0x10ff]
-> pci 0000:00:00.0: BAR 1: assigned [mem 0xfd012000-0xfd0120ff]
-> pci 0000:00:02.2: BAR 0: assigned [mem 0xfd012100-0xfd0121ff]
-> pci 0000:00:01.0: BAR 4: assigned [io  0x1400-0x140f]
-> pci 0000:00:01.0: BAR 0: assigned [io  0x1410-0x1417]
-> pci 0000:00:01.0: BAR 2: assigned [io  0x1418-0x141f]
-> pci 0000:00:01.0: BAR 1: assigned [io  0x1420-0x1423]
-> pci 0000:00:01.0: BAR 3: assigned [io  0x1424-0x1427]
->=20
-> notice how the dma ranges are completely in the wrong region.  any quick
-> ideas where to fix this ? :)
+Add a "C5" cpuidle state to the SH7372 SoC connected to the A4S power
+domain in such a way that A4S may be turned off by cpuidle if all
+I/O devices in that domain have been suspended (or do not have
+attached drivers).
 
-hrm, reverting this got me further:
+This requires some reorganization of the initialization of SH7372
+power management which affects the the boards based on it, Mackerel
+and AP4EVB.
 
-commit e3a4317e1d9970c56ba19d29393e4289809a1aa5
-Author: Magnus Damm <damm@opensource.se>
-Date:   Thu Apr 22 06:21:10 2010 +0000
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+---
+ arch/arm/mach-shmobile/board-ap4evb.c        |    2 
+ arch/arm/mach-shmobile/board-mackerel.c      |    2 
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    2 
+ arch/arm/mach-shmobile/pm-sh7372.c           |   56 ++++++++++++++++++++++-----
+ 4 files changed, 50 insertions(+), 12 deletions(-)
 
-    sh: sh7751 pci controller io port fix
-
-maybe the sh7751 pci/dma logic is missing some offset adjustment that the=20
-sh7780 core has ?
-
-btw, the display above isn't just informational ... i get an oops because t=
-he=20
-code tries to access memory in the 0x1400 range.
-=2Dmike
-
---nextPart2168334.40fjMfJ7dO
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.17 (GNU/Linux)
-
-iQIcBAABAgAGBQJQHdv9AAoJEEFjO5/oN/WBG9QQAL+3KW9KjR+re4wSPeAhCS54
-wmgQVb1DQ/KiS/dnI9RXBEiycskwItu0zCpNlOU+Ll5dRIN3Rq9UyaekkiFMU8Jd
-7x4sgBdjb7bK02f36+Q/DbOdlCynIYEnDBsEd4CLZCxaAY5QoGQTg1h/hvLJnLwh
-zUceMd0QZdCx63PuGW62ZrvdGMsBGo7HYP/JB9T8W7XbksAueGiKQlBeVrMC3R7W
-7DajFUrS167r/w8poUyLurHYcTY51Wsz8Ze8wtiVnvby9fZRTXCcoDTf/Wegi9SS
-GDIR9/K52X0wilWUDIFC2bSBdEFNhMfqudVj+1MX1aQwoIbUCGuFPUJREBAJQfCH
-CxuaJJFfZuKss1Q0F8oXFoAzEOSYvunI4DmiHamCyT7eTbewjT5LDQS0h8pnIWqf
-tK9VFh8KhPV9Pz9uLHuYebpA2kK1RV5zIGFzjc0GW37efJhFnIFOigrLdBG2B2Na
-qtBR4cMZudr1sOSJsAvEVIaX9BZCIN/Vec6r0FLBJp0Usab5leLkuybDHwV83aUS
-9G1vVEwn6eQ/UeH0zm6Adfs3fOhdPxmwdxM/cViIOAwIctgpaMrsXEEPmTnuA99T
-FGuwLub+4vq0nvK4eTiqtv/UyhCyLbiEi2kYdK3y5mTqnfWuHcP19qcrDuFe8jTE
-KJOmpiHGV0BqfLOEcg7c
-=uoAz
------END PGP SIGNATURE-----
-
---nextPart2168334.40fjMfJ7dO--
+Index: linux/arch/arm/mach-shmobile/board-ap4evb.c
+=================================--- linux.orig/arch/arm/mach-shmobile/board-ap4evb.c
++++ linux/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -1486,6 +1486,6 @@ MACHINE_START(AP4EVB, "ap4evb")
+ 	.init_irq	= sh7372_init_irq,
+ 	.handle_irq	= shmobile_handle_irq_intc,
+ 	.init_machine	= ap4evb_init,
+-	.init_late	= shmobile_init_late,
++	.init_late	= sh7372_pm_init_late,
+ 	.timer		= &shmobile_timer,
+ MACHINE_END
+Index: linux/arch/arm/mach-shmobile/board-mackerel.c
+=================================--- linux.orig/arch/arm/mach-shmobile/board-mackerel.c
++++ linux/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1654,6 +1654,6 @@ MACHINE_START(MACKEREL, "mackerel")
+ 	.init_irq	= sh7372_init_irq,
+ 	.handle_irq	= shmobile_handle_irq_intc,
+ 	.init_machine	= mackerel_init,
+-	.init_late	= shmobile_init_late,
++	.init_late	= sh7372_pm_init_late,
+ 	.timer		= &shmobile_timer,
+ MACHINE_END
+Index: linux/arch/arm/mach-shmobile/include/mach/sh7372.h
+=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ linux/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -489,4 +489,6 @@ extern void __init sh7372_init_pm_domain
+ static inline void sh7372_init_pm_domains(void) {}
+ #endif
+ 
++extern void __init sh7372_pm_init_late(void);
++
+ #endif /* __ASM_SH7372_H__ */
+Index: linux/arch/arm/mach-shmobile/pm-sh7372.c
+=================================--- linux.orig/arch/arm/mach-shmobile/pm-sh7372.c
++++ linux/arch/arm/mach-shmobile/pm-sh7372.c
+@@ -339,6 +339,21 @@ static void sh7372_enter_a3sm_common(int
+ 	sh7372_set_reset_vector(__pa(sh7372_resume_core_standby_sysc));
+ 	sh7372_enter_sysc(pllc0_on, 1 << 12);
+ }
++
++static void sh7372_enter_a4s_common(int pllc0_on)
++{
++	sh7372_intca_suspend();
++	sh7372_enter_sysc(pllc0_on, 1 << 10);
++	sh7372_intca_resume();
++}
++
++static void sh7372_pm_setup_smfram(void)
++{
++	memcpy((void *)SMFRAM, sh7372_resume_core_standby_sysc, 0x100);
++	sh7372_set_reset_vector(SMFRAM);
++}
++#else
++static inline void sh7372_pm_setup_smfram(void) {}
+ #endif /* CONFIG_SUSPEND || CONFIG_CPU_IDLE */
+ 
+ #ifdef CONFIG_CPU_IDLE
+@@ -378,11 +393,24 @@ static int sh7372_enter_a3sm_pll_off(str
+ 	return 3;
+ }
+ 
++static int sh7372_enter_a4s(struct cpuidle_device *dev,
++			    struct cpuidle_driver *drv, int index)
++{
++	unsigned long msk, msk2;
++
++	if (!sh7372_sysc_valid(&msk, &msk2))
++		return sh7372_enter_a3sm_pll_off(dev, drv, index);
++
++	sh7372_setup_sysc(msk, msk2);
++	sh7372_enter_a4s_common(0);
++	return 4;
++}
++
+ static struct cpuidle_driver sh7372_cpuidle_driver = {
+ 	.name			= "sh7372_cpuidle",
+ 	.owner			= THIS_MODULE,
+ 	.en_core_tk_irqen	= 1,
+-	.state_count		= 4,
++	.state_count		= 5,
+ 	.safe_state_index	= 0, /* C1 */
+ 	.states[0] = ARM_CPUIDLE_WFI_STATE,
+ 	.states[0].enter = shmobile_enter_wfi,
+@@ -410,6 +438,15 @@ static struct cpuidle_driver sh7372_cpui
+ 		.flags = CPUIDLE_FLAG_TIME_VALID,
+ 		.enter = sh7372_enter_a3sm_pll_off,
+ 	},
++	.states[4] = {
++		.name = "C5",
++		.desc = "A4S PLL OFF",
++		.exit_latency = 240,
++		.target_residency = 30 + 240,
++		.flags = CPUIDLE_FLAG_TIME_VALID,
++		.enter = sh7372_enter_a4s,
++		.disabled = true,
++	},
+ };
+ 
+ static void sh7372_cpuidle_init(void)
+@@ -421,15 +458,6 @@ static void sh7372_cpuidle_init(void) {}
+ #endif
+ 
+ #ifdef CONFIG_SUSPEND
+-static void sh7372_enter_a4s_common(int pllc0_on)
+-{
+-	sh7372_intca_suspend();
+-	memcpy((void *)SMFRAM, sh7372_resume_core_standby_sysc, 0x100);
+-	sh7372_set_reset_vector(SMFRAM);
+-	sh7372_enter_sysc(pllc0_on, 1 << 10);
+-	sh7372_intca_resume();
+-}
+-
+ static int sh7372_enter_suspend(suspend_state_t suspend_state)
+ {
+ 	unsigned long msk, msk2;
+@@ -497,6 +525,14 @@ void __init sh7372_pm_init(void)
+ 	/* do not convert A3SM, A3SP, A3SG, A4R power down into A4S */
+ 	__raw_writel(0, PDNSEL);
+ 
++	sh7372_pm_setup_smfram();
++
+ 	sh7372_suspend_init();
+ 	sh7372_cpuidle_init();
+ }
++
++void __init sh7372_pm_init_late(void)
++{
++	shmobile_init_late();
++	pm_genpd_name_attach_cpuidle("A4S", 4);
++}
