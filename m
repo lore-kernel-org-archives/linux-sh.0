@@ -1,154 +1,165 @@
-From: wency@cn.fujitsu.com
-Date: Tue, 28 Aug 2012 10:00:08 +0000
-Subject: [RFC v8 PATCH 01/20] memory-hotplug: rename remove_memory() to offline_memory()/offline_pages()
-Message-Id: <1346148027-24468-2-git-send-email-wency@cn.fujitsu.com>
+From: "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>
+Date: Thu, 16 Aug 2012 15:15:50 +0000
+Subject: [PATCH v3 3/7] hugetlb: pass fault address to hugetlb_no_page()
+Message-Id: <1345130154-9602-4-git-send-email-kirill.shutemov@linux.intel.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346148027-24468-1-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1346148027-24468-1-git-send-email-wency@cn.fujitsu.com>
+References: <1345130154-9602-1-git-send-email-kirill.shutemov@linux.intel.com>
+In-Reply-To: <1345130154-9602-1-git-send-email-kirill.shutemov@linux.intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
-Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
+To: linux-mm@kvack.org
+Cc: Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, x86@kernel.org, Andi Kleen <ak@linux.intel.com>, "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>, Tim Chen <tim.c.chen@linux.intel.com>, Alex Shi <alex.shu@intel.com>, Jan Beulich <jbeulich@novell.com>, Robert Richter <robert.richter@amd.com>, Andy Lutomirski <luto@amacapital.net>, Andrew Morton <akpm@linux-foundation.org>, Andrea Arcangeli <aarcange@redhat.com>, Johannes Weiner <hannes@cmpxchg.org>, Hugh Dickins <hughd@google.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Mel Gorman <mgorman@suse.de>, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org
 
-From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+From: "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>
 
-remove_memory() only try to offline pages. It is called in two cases:
-1. hot remove a memory device
-2. echo offline >/sys/devices/system/memory/memoryXX/state
-
-In the 1st case, we should also change memory block's state, and notify
-the userspace that the memory block's state is changed after offlining
-pages.
-
-So rename remove_memory() to offline_memory()/offline_pages(). And in
-the 1st case, offline_memory() will be used. The function offline_memory()
-is not implemented. In the 2nd case, offline_pages() will be used.
-
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-CC: Paul Mackerras <paulus@samba.org>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Kirill A. Shutemov <kirill.shutemov@linux.intel.com>
 ---
- drivers/acpi/acpi_memhotplug.c |    2 +-
- drivers/base/memory.c          |    9 +++------
- include/linux/memory_hotplug.h |    3 ++-
- mm/memory_hotplug.c            |   22 ++++++++++++++--------
- 4 files changed, 20 insertions(+), 16 deletions(-)
+ mm/hugetlb.c |   38 +++++++++++++++++++-------------------
+ 1 files changed, 19 insertions(+), 19 deletions(-)
 
-diff --git a/drivers/acpi/acpi_memhotplug.c b/drivers/acpi/acpi_memhotplug.c
-index 24c807f..2a7beac 100644
---- a/drivers/acpi/acpi_memhotplug.c
-+++ b/drivers/acpi/acpi_memhotplug.c
-@@ -318,7 +318,7 @@ static int acpi_memory_disable_device(struct acpi_memory_device *mem_device)
- 	 */
- 	list_for_each_entry_safe(info, n, &mem_device->res_list, list) {
- 		if (info->enabled) {
--			result = remove_memory(info->start_addr, info->length);
-+			result = offline_memory(info->start_addr, info->length);
- 			if (result)
- 				return result;
+diff --git a/mm/hugetlb.c b/mm/hugetlb.c
+index bc72712..3c86d3d 100644
+--- a/mm/hugetlb.c
++++ b/mm/hugetlb.c
+@@ -2672,7 +2672,8 @@ static bool hugetlbfs_pagecache_present(struct hstate *h,
+ }
+ 
+ static int hugetlb_no_page(struct mm_struct *mm, struct vm_area_struct *vma,
+-			unsigned long address, pte_t *ptep, unsigned int flags)
++			unsigned long haddr, unsigned long fault_address,
++			pte_t *ptep, unsigned int flags)
+ {
+ 	struct hstate *h = hstate_vma(vma);
+ 	int ret = VM_FAULT_SIGBUS;
+@@ -2696,7 +2697,7 @@ static int hugetlb_no_page(struct mm_struct *mm, struct vm_area_struct *vma,
+ 	}
+ 
+ 	mapping = vma->vm_file->f_mapping;
+-	idx = vma_hugecache_offset(h, vma, address);
++	idx = vma_hugecache_offset(h, vma, haddr);
+ 
+ 	/*
+ 	 * Use page lock to guard against racing truncation
+@@ -2708,7 +2709,7 @@ retry:
+ 		size = i_size_read(mapping->host) >> huge_page_shift(h);
+ 		if (idx >= size)
+ 			goto out;
+-		page = alloc_huge_page(vma, address, 0);
++		page = alloc_huge_page(vma, haddr, 0);
+ 		if (IS_ERR(page)) {
+ 			ret = PTR_ERR(page);
+ 			if (ret = -ENOMEM)
+@@ -2717,7 +2718,7 @@ retry:
+ 				ret = VM_FAULT_SIGBUS;
+ 			goto out;
  		}
-diff --git a/drivers/base/memory.c b/drivers/base/memory.c
-index 7dda4f7..44e7de6 100644
---- a/drivers/base/memory.c
-+++ b/drivers/base/memory.c
-@@ -248,26 +248,23 @@ static bool pages_correctly_reserved(unsigned long start_pfn,
- static int
- memory_block_action(unsigned long phys_index, unsigned long action)
- {
--	unsigned long start_pfn, start_paddr;
-+	unsigned long start_pfn;
- 	unsigned long nr_pages = PAGES_PER_SECTION * sections_per_block;
- 	struct page *first_page;
- 	int ret;
+-		clear_huge_page(page, address, pages_per_huge_page(h));
++		clear_huge_page(page, haddr, pages_per_huge_page(h));
+ 		__SetPageUptodate(page);
  
- 	first_page = pfn_to_page(phys_index << PFN_SECTION_SHIFT);
-+	start_pfn = page_to_pfn(first_page);
+ 		if (vma->vm_flags & VM_MAYSHARE) {
+@@ -2763,7 +2764,7 @@ retry:
+ 	 * the spinlock.
+ 	 */
+ 	if ((flags & FAULT_FLAG_WRITE) && !(vma->vm_flags & VM_SHARED))
+-		if (vma_needs_reservation(h, vma, address) < 0) {
++		if (vma_needs_reservation(h, vma, haddr) < 0) {
+ 			ret = VM_FAULT_OOM;
+ 			goto backout_unlocked;
+ 		}
+@@ -2778,16 +2779,16 @@ retry:
+ 		goto backout;
  
- 	switch (action) {
- 		case MEM_ONLINE:
--			start_pfn = page_to_pfn(first_page);
+ 	if (anon_rmap)
+-		hugepage_add_new_anon_rmap(page, vma, address);
++		hugepage_add_new_anon_rmap(page, vma, haddr);
+ 	else
+ 		page_dup_rmap(page);
+ 	new_pte = make_huge_pte(vma, page, ((vma->vm_flags & VM_WRITE)
+ 				&& (vma->vm_flags & VM_SHARED)));
+-	set_huge_pte_at(mm, address, ptep, new_pte);
++	set_huge_pte_at(mm, haddr, ptep, new_pte);
+ 
+ 	if ((flags & FAULT_FLAG_WRITE) && !(vma->vm_flags & VM_SHARED)) {
+ 		/* Optimization, do the COW without a second fault */
+-		ret = hugetlb_cow(mm, vma, address, ptep, new_pte, page);
++		ret = hugetlb_cow(mm, vma, haddr, ptep, new_pte, page);
+ 	}
+ 
+ 	spin_unlock(&mm->page_table_lock);
+@@ -2813,21 +2814,20 @@ int hugetlb_fault(struct mm_struct *mm, struct vm_area_struct *vma,
+ 	struct page *pagecache_page = NULL;
+ 	static DEFINE_MUTEX(hugetlb_instantiation_mutex);
+ 	struct hstate *h = hstate_vma(vma);
++	unsigned long haddr = address & huge_page_mask(h);
+ 
+-	address &= huge_page_mask(h);
 -
- 			if (!pages_correctly_reserved(start_pfn, nr_pages))
- 				return -EBUSY;
+-	ptep = huge_pte_offset(mm, address);
++	ptep = huge_pte_offset(mm, haddr);
+ 	if (ptep) {
+ 		entry = huge_ptep_get(ptep);
+ 		if (unlikely(is_hugetlb_entry_migration(entry))) {
+-			migration_entry_wait(mm, (pmd_t *)ptep, address);
++			migration_entry_wait(mm, (pmd_t *)ptep, haddr);
+ 			return 0;
+ 		} else if (unlikely(is_hugetlb_entry_hwpoisoned(entry)))
+ 			return VM_FAULT_HWPOISON_LARGE |
+ 				VM_FAULT_SET_HINDEX(hstate_index(h));
+ 	}
  
- 			ret = online_pages(start_pfn, nr_pages);
- 			break;
- 		case MEM_OFFLINE:
--			start_paddr = page_to_pfn(first_page) << PAGE_SHIFT;
--			ret = remove_memory(start_paddr,
--					    nr_pages << PAGE_SHIFT);
-+			ret = offline_pages(start_pfn, nr_pages);
- 			break;
- 		default:
- 			WARN(1, KERN_WARNING "%s(%ld, %ld) unknown action: "
-diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
-index 910550f..c183f39 100644
---- a/include/linux/memory_hotplug.h
-+++ b/include/linux/memory_hotplug.h
-@@ -233,7 +233,8 @@ static inline int is_mem_section_removable(unsigned long pfn,
- extern int mem_online_node(int nid);
- extern int add_memory(int nid, u64 start, u64 size);
- extern int arch_add_memory(int nid, u64 start, u64 size);
--extern int remove_memory(u64 start, u64 size);
-+extern int offline_pages(unsigned long start_pfn, unsigned long nr_pages);
-+extern int offline_memory(u64 start, u64 size);
- extern int sparse_add_one_section(struct zone *zone, unsigned long start_pfn,
- 								int nr_pages);
- extern void sparse_remove_one_section(struct zone *zone, struct mem_section *ms);
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index 3ad25f9..c182c76 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -866,7 +866,7 @@ check_pages_isolated(unsigned long start_pfn, unsigned long end_pfn)
- 	return offlined;
- }
+-	ptep = huge_pte_alloc(mm, address, huge_page_size(h));
++	ptep = huge_pte_alloc(mm, haddr, huge_page_size(h));
+ 	if (!ptep)
+ 		return VM_FAULT_OOM;
  
--static int __ref offline_pages(unsigned long start_pfn,
-+static int __ref __offline_pages(unsigned long start_pfn,
- 		  unsigned long end_pfn, unsigned long timeout)
- {
- 	unsigned long pfn, nr_pages, expire;
-@@ -994,18 +994,24 @@ out:
- 	return ret;
- }
+@@ -2839,7 +2839,7 @@ int hugetlb_fault(struct mm_struct *mm, struct vm_area_struct *vma,
+ 	mutex_lock(&hugetlb_instantiation_mutex);
+ 	entry = huge_ptep_get(ptep);
+ 	if (huge_pte_none(entry)) {
+-		ret = hugetlb_no_page(mm, vma, address, ptep, flags);
++		ret = hugetlb_no_page(mm, vma, haddr, address, ptep, flags);
+ 		goto out_mutex;
+ 	}
  
--int remove_memory(u64 start, u64 size)
-+int offline_pages(unsigned long start_pfn, unsigned long nr_pages)
- {
--	unsigned long start_pfn, end_pfn;
-+	return __offline_pages(start_pfn, start_pfn + nr_pages, 120 * HZ);
-+}
+@@ -2854,14 +2854,14 @@ int hugetlb_fault(struct mm_struct *mm, struct vm_area_struct *vma,
+ 	 * consumed.
+ 	 */
+ 	if ((flags & FAULT_FLAG_WRITE) && !pte_write(entry)) {
+-		if (vma_needs_reservation(h, vma, address) < 0) {
++		if (vma_needs_reservation(h, vma, haddr) < 0) {
+ 			ret = VM_FAULT_OOM;
+ 			goto out_mutex;
+ 		}
  
--	start_pfn = PFN_DOWN(start);
--	end_pfn = start_pfn + PFN_DOWN(size);
--	return offline_pages(start_pfn, end_pfn, 120 * HZ);
-+int offline_memory(u64 start, u64 size)
-+{
-+	return -EINVAL;
- }
- #else
--int remove_memory(u64 start, u64 size)
-+int offline_pages(u64 start, u64 size)
-+{
-+	return -EINVAL;
-+}
-+
-+int offline_memory(u64 start, u64 size)
- {
- 	return -EINVAL;
- }
- #endif /* CONFIG_MEMORY_HOTREMOVE */
--EXPORT_SYMBOL_GPL(remove_memory);
-+EXPORT_SYMBOL_GPL(offline_memory);
+ 		if (!(vma->vm_flags & VM_MAYSHARE))
+ 			pagecache_page = hugetlbfs_pagecache_page(h,
+-								vma, address);
++								vma, haddr);
+ 	}
+ 
+ 	/*
+@@ -2884,16 +2884,16 @@ int hugetlb_fault(struct mm_struct *mm, struct vm_area_struct *vma,
+ 
+ 	if (flags & FAULT_FLAG_WRITE) {
+ 		if (!pte_write(entry)) {
+-			ret = hugetlb_cow(mm, vma, address, ptep, entry,
++			ret = hugetlb_cow(mm, vma, haddr, ptep, entry,
+ 							pagecache_page);
+ 			goto out_page_table_lock;
+ 		}
+ 		entry = pte_mkdirty(entry);
+ 	}
+ 	entry = pte_mkyoung(entry);
+-	if (huge_ptep_set_access_flags(vma, address, ptep, entry,
++	if (huge_ptep_set_access_flags(vma, haddr, ptep, entry,
+ 						flags & FAULT_FLAG_WRITE))
+-		update_mmu_cache(vma, address, ptep);
++		update_mmu_cache(vma, haddr, ptep);
+ 
+ out_page_table_lock:
+ 	spin_unlock(&mm->page_table_lock);
 -- 
-1.7.1
+1.7.7.6
 
