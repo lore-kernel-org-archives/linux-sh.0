@@ -1,77 +1,133 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 20 Aug 2012 09:39:23 +0000
-Subject: [PATCH] usb: renesas_usbhs: modify the irq handler for sharing irq
-Message-Id: <503205CB.5010109@renesas.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 16 Aug 2012 13:00:44 +0000
+Subject: [PATCH 09/19] fbdev: sh_mipi_dsi: Remove last reference to LCDC platform data
+Message-Id: <1345122054-16013-10-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-When IORESOURCE_IRQ_SHAREABLE is set, the irq handler may be called
-even if the interupt of the USB module doesn't happen. So, it may
-clear the interrupt flags by mistake. This patch fixes it.
+The format check that references LCDC platform data isn't needed, as the
+mismatch between LCDC and MIPI-DSI platform it detects would result in a
+badly displayed image, which isn't worse than a complete failure to
+setup the transmitter.
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- drivers/usb/renesas_usbhs/mod.c |   25 ++++++++++++++++++++++---
- 1 files changed, 22 insertions(+), 3 deletions(-)
+ drivers/video/sh_mipi_dsi.c |   18 ------------------
+ 1 files changed, 0 insertions(+), 18 deletions(-)
 
-diff --git a/drivers/usb/renesas_usbhs/mod.c b/drivers/usb/renesas_usbhs/mod.c
-index 82a628f..35c5208 100644
---- a/drivers/usb/renesas_usbhs/mod.c
-+++ b/drivers/usb/renesas_usbhs/mod.c
-@@ -209,14 +209,18 @@ int usbhs_status_get_ctrl_stage(struct usbhs_irq_state *irq_state)
- 	return (int)irq_state->intsts0 & CTSQ_MASK;
- }
-
--static void usbhs_status_get_each_irq(struct usbhs_priv *priv,
--				      struct usbhs_irq_state *state)
-+static int usbhs_status_get_each_irq(struct usbhs_priv *priv,
-+				     struct usbhs_irq_state *state)
+diff --git a/drivers/video/sh_mipi_dsi.c b/drivers/video/sh_mipi_dsi.c
+index f88b204..f496229 100644
+--- a/drivers/video/sh_mipi_dsi.c
++++ b/drivers/video/sh_mipi_dsi.c
+@@ -131,10 +131,8 @@ static int sh_mipi_setup(struct sh_mipi *mipi, const struct fb_videomode *mode)
  {
- 	struct usbhs_mod *mod = usbhs_mod_get_current(priv);
-+	u16 intenb0, intenb1;
-
- 	state->intsts0 = usbhs_read(priv, INTSTS0);
- 	state->intsts1 = usbhs_read(priv, INTSTS1);
-
-+	intenb0 = usbhs_read(priv, INTENB0);
-+	intenb1 = usbhs_read(priv, INTENB1);
-+
- 	/* mask */
- 	if (mod) {
- 		state->brdysts = usbhs_read(priv, BRDYSTS);
-@@ -226,6 +230,20 @@ static void usbhs_status_get_each_irq(struct usbhs_priv *priv,
- 		state->bempsts &= mod->irq_bempsts;
- 		state->brdysts &= mod->irq_brdysts;
- 	}
-+
-+	/*
-+	 * Check whether the irq enable registers and the irq status are set
-+	 * when IRQF_SHARED is set.
-+	 */
-+	if (priv->irqflags & IRQF_SHARED) {
-+		if (!(intenb0 & state->intsts0) &&
-+		    !(intenb1 & state->intsts1) &&
-+		    !(state->bempsts) &&
-+		    !(state->brdysts))
-+			return -EIO;
-+	}
-+
-+	return 0;
- }
-
- /*
-@@ -238,7 +256,8 @@ static irqreturn_t usbhs_interrupt(int irq, void *data)
- 	struct usbhs_priv *priv = data;
- 	struct usbhs_irq_state irq_state;
-
--	usbhs_status_get_each_irq(priv, &irq_state);
-+	if (usbhs_status_get_each_irq(priv, &irq_state) < 0)
-+		return IRQ_NONE;
-
+ 	void __iomem *base = mipi->base;
+ 	struct sh_mipi_dsi_info *pdata = mipi->pdev->dev.platform_data;
+-	struct sh_mobile_lcdc_chan_cfg *ch = pdata->lcd_chan;
+ 	u32 pctype, datatype, pixfmt, linelength, vmctr2;
+ 	u32 tmp, top, bottom, delay, div;
+-	bool yuv;
+ 	int bpp;
+ 
  	/*
- 	 * clear interrupt
+@@ -148,77 +146,66 @@ static int sh_mipi_setup(struct sh_mipi *mipi, const struct fb_videomode *mode)
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_24;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_24BIT;
+ 		linelength = mode->xres * 3;
+-		yuv = false;
+ 		break;
+ 	case MIPI_RGB565:
+ 		pctype = 1;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_16;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_16BIT;
+ 		linelength = mode->xres * 2;
+-		yuv = false;
+ 		break;
+ 	case MIPI_RGB666_LP:
+ 		pctype = 2;
+ 		datatype = MIPI_DSI_PIXEL_STREAM_3BYTE_18;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_24BIT;
+ 		linelength = mode->xres * 3;
+-		yuv = false;
+ 		break;
+ 	case MIPI_RGB666:
+ 		pctype = 3;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_18;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_18BIT;
+ 		linelength = (mode->xres * 18 + 7) / 8;
+-		yuv = false;
+ 		break;
+ 	case MIPI_BGR888:
+ 		pctype = 8;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_24;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_24BIT;
+ 		linelength = mode->xres * 3;
+-		yuv = false;
+ 		break;
+ 	case MIPI_BGR565:
+ 		pctype = 9;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_16;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_16BIT;
+ 		linelength = mode->xres * 2;
+-		yuv = false;
+ 		break;
+ 	case MIPI_BGR666_LP:
+ 		pctype = 0xa;
+ 		datatype = MIPI_DSI_PIXEL_STREAM_3BYTE_18;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_24BIT;
+ 		linelength = mode->xres * 3;
+-		yuv = false;
+ 		break;
+ 	case MIPI_BGR666:
+ 		pctype = 0xb;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_18;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_18BIT;
+ 		linelength = (mode->xres * 18 + 7) / 8;
+-		yuv = false;
+ 		break;
+ 	case MIPI_YUYV:
+ 		pctype = 4;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_YCBCR16;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_16BIT;
+ 		linelength = mode->xres * 2;
+-		yuv = true;
+ 		break;
+ 	case MIPI_UYVY:
+ 		pctype = 5;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_YCBCR16;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_16BIT;
+ 		linelength = mode->xres * 2;
+-		yuv = true;
+ 		break;
+ 	case MIPI_YUV420_L:
+ 		pctype = 6;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_YCBCR12;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_12BIT;
+ 		linelength = (mode->xres * 12 + 7) / 8;
+-		yuv = true;
+ 		break;
+ 	case MIPI_YUV420:
+ 		pctype = 7;
+@@ -226,16 +213,11 @@ static int sh_mipi_setup(struct sh_mipi *mipi, const struct fb_videomode *mode)
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_12BIT;
+ 		/* Length of U/V line */
+ 		linelength = (mode->xres + 1) / 2;
+-		yuv = true;
+ 		break;
+ 	default:
+ 		return -EINVAL;
+ 	}
+ 
+-	if ((yuv && ch->interface_type != YUV422) ||
+-	    (!yuv && ch->interface_type != RGB24))
+-		return -EINVAL;
+-
+ 	if (!pdata->lane)
+ 		return -EINVAL;
+ 
 -- 
-1.7.1
+1.7.8.6
+
