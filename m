@@ -1,86 +1,61 @@
-From: Jianguo Wu <wujianguo106@gmail.com>
-Date: Mon, 20 Aug 2012 14:09:40 +0000
-Subject: Re: [RFC V7 PATCH 18/19] memory-hotplug: add node_device_release
-Message-Id: <50324524.5000501@gmail.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 16 Aug 2012 13:00:35 +0000
+Subject: [PATCH 00/19] SH Mobile LCDC panel cleanup (including board code)
+Message-Id: <1345122054-16013-1-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1345455342-27752-1-git-send-email-wency@cn.fujitsu.com> <1345455342-27752-19-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1345455342-27752-19-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: wency@cn.fujitsu.com
-Cc: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com
+To: linux-fbdev@vger.kernel.org
 
-On 2012/8/20 17:35, wency@cn.fujitsu.com wrote:
-> From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-> 
-> When calling unregister_node(), the function shows following message at
-> device_release().
-> 
-> Device 'node2' does not have a release() function, it is broken and must be
-> fixed.
-> 
-> So the patch implements node_device_release()
-> 
-> CC: David Rientjes <rientjes@google.com>
-> CC: Jiang Liu <liuj97@gmail.com>
-> CC: Len Brown <len.brown@intel.com>
-> CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-> CC: Paul Mackerras <paulus@samba.org>
-> CC: Christoph Lameter <cl@linux.com>
-> Cc: Minchan Kim <minchan.kim@gmail.com>
-> CC: Andrew Morton <akpm@linux-foundation.org>
-> CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-> Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-> Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
-> ---
->  drivers/base/node.c |    8 ++++++++
->  1 files changed, 8 insertions(+), 0 deletions(-)
-> 
-> diff --git a/drivers/base/node.c b/drivers/base/node.c
-> index af1a177..9bc2f57 100644
-> --- a/drivers/base/node.c
-> +++ b/drivers/base/node.c
-> @@ -252,6 +252,13 @@ static inline void hugetlb_register_node(struct node *node) {}
->  static inline void hugetlb_unregister_node(struct node *node) {}
->  #endif
->  
-> +static void node_device_release(struct device *dev)
-> +{
-> +	struct node *node_dev = to_node(dev);
-> +
-> +	flush_work(&node_dev->node_work);
+Hi everybody,
 
-Hi Congyang,
-	I think this should be:
-#if defined(CONFIG_MEMORY_HOTPLUG_SPARSE) && defined(CONFIG_HUGETLBFS)
-	flush_work(&node_dev->node_work);
-#endif
+As part of a general panel API implementation (more on that a bit later), I've
+cleaned up panel support in the LCDC driver and in the related board code. The
+result is 19 patches independent of the generic panel API that I would like to
+get reviewed by the respective board maintainers.
 
-	As struct node defined in node.h:
-struct node {
-	struct sys_device	sysdev;
+Laurent Pinchart (19):
+  fbdev: sh_mobile_lcdc: Get display dimensions from the channel
+    structure
+  fbdev: sh_mobile_lcdc: Rename mode argument to modes
+  fbdev: sh_mobile_lcdc: Remove priv argument from channel and overlay
+    init
+  ARM: mach-shmobile: ag5evm: Add LCDC tx_dev field to platform data
+  fbdev: sh_mipi_dsi: Add channel field to platform data
+  ARM: mach-shmobile: Initiliaze the new sh_mipi_dsi_info channel field
+  fbdev: sh_mipi_dsi: Use the sh_mipi_dsi_info channel field
+  fbdev: sh_mipi_dsi: Use the LCDC entity default mode
+  fbdev: sh_mipi_dsi: Remove last reference to LCDC platform data
+  ARM: mach-shmobile: Remove the unused sh_mipi_dsi_info lcd_chan field
+  fbdev: sh_mipi_dsi: Remove the unused sh_mipi_dsi_info lcd_chan field
+  fbdev: sh_mobile_lcdc: Store the backlight brightness internally
+  ARM: mach-shmobile: mackerel: Removed unused get_brightness callback
+  sh: ap325rxa: Remove unused get_brightness LCDC callback
+  sh: ecovec24: Remove unused get_brightness LCDC callback
+  fbdev: sh_mobile_lcdc: Remove unused get_brightness pdata callback
+  ARM: mach-shmobile: ag5evm: Use the backlight API for brightness
+    control
+  sh: kfr2r09: Use the backlight API for brightness control
+  fbdev: sh_mobile_lcdc: Make sh_mobile_lcdc_sys_bus_ops static
 
-#if defined(CONFIG_MEMORY_HOTPLUG_SPARSE) && defined(CONFIG_HUGETLBFS)
-	struct work_struct	node_work;
-#endif
-};
+ arch/arm/mach-shmobile/board-ag5evm.c       |  198 ++++++++++++++-------------
+ arch/arm/mach-shmobile/board-ap4evb.c       |    4 +-
+ arch/arm/mach-shmobile/board-mackerel.c     |    6 -
+ arch/sh/boards/mach-ap325rxa/setup.c        |    6 -
+ arch/sh/boards/mach-ecovec24/setup.c        |    6 -
+ arch/sh/boards/mach-kfr2r09/lcd_wqvga.c     |   16 +--
+ arch/sh/boards/mach-kfr2r09/setup.c         |    7 +-
+ arch/sh/include/mach-kfr2r09/mach/kfr2r09.h |    6 +-
+ drivers/video/sh_mipi_dsi.c                 |   69 ++++------
+ drivers/video/sh_mobile_lcdcfb.c            |   54 ++++----
+ drivers/video/sh_mobile_lcdcfb.h            |    1 +
+ include/video/sh_mipi_dsi.h                 |    4 +-
+ include/video/sh_mobile_lcdc.h              |    1 -
+ 13 files changed, 172 insertions(+), 206 deletions(-)
 
-	Thanks
-	Jianguo Wu
+-- 
+Regards,
 
-> +	memset(node_dev, 0, sizeof(struct node));
-> +}
->  
->  /*
->   * register_node - Setup a sysfs device for a node.
-> @@ -265,6 +272,7 @@ int register_node(struct node *node, int num, struct node *parent)
->  
->  	node->dev.id = num;
->  	node->dev.bus = &node_subsys;
-> +	node->dev.release = node_device_release;
->  	error = device_register(&node->dev);
->  
->  	if (!error){
-> 
+Laurent Pinchart
 
