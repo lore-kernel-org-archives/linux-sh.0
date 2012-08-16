@@ -1,94 +1,211 @@
-From: "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>
-Date: Mon, 20 Aug 2012 13:52:33 +0000
-Subject: [PATCH v4 4/8] mm: pass fault address to clear_huge_page()
-Message-Id: <1345470757-12005-5-git-send-email-kirill.shutemov@linux.intel.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 16 Aug 2012 13:00:39 +0000
+Subject: [PATCH 04/19] ARM: mach-shmobile: ag5evm: Add LCDC tx_dev field to platform data
+Message-Id: <1345122054-16013-5-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1345470757-12005-1-git-send-email-kirill.shutemov@linux.intel.com>
-In-Reply-To: <1345470757-12005-1-git-send-email-kirill.shutemov@linux.intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org
-Cc: Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, x86@kernel.org, Andi Kleen <ak@linux.intel.com>, "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>, Tim Chen <tim.c.chen@linux.intel.com>, Alex Shi <alex.shu@intel.com>, Jan Beulich <jbeulich@novell.com>, Robert Richter <robert.richter@amd.com>, Andy Lutomirski <luto@amacapital.net>, Andrew Morton <akpm@linux-foundation.org>, Andrea Arcangeli <aarcange@redhat.com>, Johannes Weiner <hannes@cmpxchg.org>, Hugh Dickins <hughd@google.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Mel Gorman <mgorman@suse.de>, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-From: "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>
+Reference the MIPI-DSI transceiver in the LCDC platform data and make
+sure it gets registered before the LCDC.
 
-Signed-off-by: Kirill A. Shutemov <kirill.shutemov@linux.intel.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- include/linux/mm.h |    2 +-
- mm/huge_memory.c   |    2 +-
- mm/hugetlb.c       |    3 ++-
- mm/memory.c        |    7 ++++---
- 4 files changed, 8 insertions(+), 6 deletions(-)
+ arch/arm/mach-shmobile/board-ag5evm.c |  157 +++++++++++++++++----------------
+ 1 files changed, 80 insertions(+), 77 deletions(-)
 
-diff --git a/include/linux/mm.h b/include/linux/mm.h
-index 311be90..2858723 100644
---- a/include/linux/mm.h
-+++ b/include/linux/mm.h
-@@ -1638,7 +1638,7 @@ extern void dump_page(struct page *page);
+diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
+index 5a6f22f..afae573 100644
+--- a/arch/arm/mach-shmobile/board-ag5evm.c
++++ b/arch/arm/mach-shmobile/board-ag5evm.c
+@@ -199,6 +199,84 @@ static struct platform_device irda_device = {
+ 	.num_resources  = ARRAY_SIZE(irda_resources),
+ };
  
- #if defined(CONFIG_TRANSPARENT_HUGEPAGE) || defined(CONFIG_HUGETLBFS)
- extern void clear_huge_page(struct page *page,
--			    unsigned long addr,
-+			    unsigned long haddr, unsigned long fault_address,
- 			    unsigned int pages_per_huge_page);
- extern void copy_user_huge_page(struct page *dst, struct page *src,
- 				unsigned long addr, struct vm_area_struct *vma,
-diff --git a/mm/huge_memory.c b/mm/huge_memory.c
-index 6f0825b611..070bf89 100644
---- a/mm/huge_memory.c
-+++ b/mm/huge_memory.c
-@@ -644,7 +644,7 @@ static int __do_huge_pmd_anonymous_page(struct mm_struct *mm,
- 	if (unlikely(!pgtable))
- 		return VM_FAULT_OOM;
- 
--	clear_huge_page(page, haddr, HPAGE_PMD_NR);
-+	clear_huge_page(page, haddr, address, HPAGE_PMD_NR);
- 	__SetPageUptodate(page);
- 
- 	spin_lock(&mm->page_table_lock);
-diff --git a/mm/hugetlb.c b/mm/hugetlb.c
-index 3c86d3d..5182192 100644
---- a/mm/hugetlb.c
-+++ b/mm/hugetlb.c
-@@ -2718,7 +2718,8 @@ retry:
- 				ret = VM_FAULT_SIGBUS;
- 			goto out;
- 		}
--		clear_huge_page(page, haddr, pages_per_huge_page(h));
-+		clear_huge_page(page, haddr, fault_address,
-+				pages_per_huge_page(h));
- 		__SetPageUptodate(page);
- 
- 		if (vma->vm_flags & VM_MAYSHARE) {
-diff --git a/mm/memory.c b/mm/memory.c
-index 5736170..dfc179b 100644
---- a/mm/memory.c
-+++ b/mm/memory.c
-@@ -3984,19 +3984,20 @@ static void clear_gigantic_page(struct page *page,
++/* MIPI-DSI */
++static struct resource mipidsi0_resources[] = {
++	[0] = {
++		.name	= "DSI0",
++		.start  = 0xfeab0000,
++		.end    = 0xfeab3fff,
++		.flags  = IORESOURCE_MEM,
++	},
++	[1] = {
++		.name	= "DSI0",
++		.start  = 0xfeab4000,
++		.end    = 0xfeab7fff,
++		.flags  = IORESOURCE_MEM,
++	},
++};
++
++static int sh_mipi_set_dot_clock(struct platform_device *pdev,
++				 void __iomem *base,
++				 int enable)
++{
++	struct clk *pck, *phy;
++	int ret;
++
++	pck = clk_get(&pdev->dev, "dsip_clk");
++	if (IS_ERR(pck)) {
++		ret = PTR_ERR(pck);
++		goto sh_mipi_set_dot_clock_pck_err;
++	}
++
++	phy = clk_get(&pdev->dev, "dsiphy_clk");
++	if (IS_ERR(phy)) {
++		ret = PTR_ERR(phy);
++		goto sh_mipi_set_dot_clock_phy_err;
++	}
++
++	if (enable) {
++		clk_set_rate(pck, clk_round_rate(pck,  24000000));
++		clk_set_rate(phy, clk_round_rate(pck, 510000000));
++		clk_enable(pck);
++		clk_enable(phy);
++	} else {
++		clk_disable(pck);
++		clk_disable(phy);
++	}
++
++	ret = 0;
++
++	clk_put(phy);
++sh_mipi_set_dot_clock_phy_err:
++	clk_put(pck);
++sh_mipi_set_dot_clock_pck_err:
++	return ret;
++}
++
++static struct sh_mobile_lcdc_info lcdc0_info;
++
++static struct sh_mipi_dsi_info mipidsi0_info = {
++	.data_format	= MIPI_RGB888,
++	.lcd_chan	= &lcdc0_info.ch[0],
++	.lane		= 2,
++	.vsynw_offset	= 20,
++	.clksrc		= 1,
++	.flags		= SH_MIPI_DSI_HSABM		|
++			  SH_MIPI_DSI_SYNC_PULSES_MODE	|
++			  SH_MIPI_DSI_HSbyteCLK,
++	.set_dot_clock	= sh_mipi_set_dot_clock,
++};
++
++static struct platform_device mipidsi0_device = {
++	.name           = "sh-mipi-dsi",
++	.num_resources  = ARRAY_SIZE(mipidsi0_resources),
++	.resource       = mipidsi0_resources,
++	.id             = 0,
++	.dev	= {
++		.platform_data	= &mipidsi0_info,
++	},
++};
++
+ static unsigned char lcd_backlight_seq[3][2] = {
+ 	{ 0x04, 0x07 },
+ 	{ 0x23, 0x80 },
+@@ -261,6 +339,7 @@ static struct sh_mobile_lcdc_info lcdc0_info = {
+ 			.display_on = lcd_backlight_on,
+ 			.display_off = lcd_backlight_reset,
+ 		},
++		.tx_dev = &mipidsi0_device,
  	}
- }
- void clear_huge_page(struct page *page,
--		     unsigned long addr, unsigned int pages_per_huge_page)
-+		     unsigned long haddr, unsigned long fault_address,
-+		     unsigned int pages_per_huge_page)
- {
- 	int i;
+ };
  
- 	if (unlikely(pages_per_huge_page > MAX_ORDER_NR_PAGES)) {
--		clear_gigantic_page(page, addr, pages_per_huge_page);
-+		clear_gigantic_page(page, haddr, pages_per_huge_page);
- 		return;
- 	}
+@@ -288,82 +367,6 @@ static struct platform_device lcdc0_device = {
+ 	},
+ };
  
- 	might_sleep();
- 	for (i = 0; i < pages_per_huge_page; i++) {
- 		cond_resched();
--		clear_user_highpage(page + i, addr + i * PAGE_SIZE);
-+		clear_user_highpage(page + i, haddr + i * PAGE_SIZE);
- 	}
- }
- 
+-/* MIPI-DSI */
+-static struct resource mipidsi0_resources[] = {
+-	[0] = {
+-		.name	= "DSI0",
+-		.start  = 0xfeab0000,
+-		.end    = 0xfeab3fff,
+-		.flags  = IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.name	= "DSI0",
+-		.start  = 0xfeab4000,
+-		.end    = 0xfeab7fff,
+-		.flags  = IORESOURCE_MEM,
+-	},
+-};
+-
+-static int sh_mipi_set_dot_clock(struct platform_device *pdev,
+-				 void __iomem *base,
+-				 int enable)
+-{
+-	struct clk *pck, *phy;
+-	int ret;
+-
+-	pck = clk_get(&pdev->dev, "dsip_clk");
+-	if (IS_ERR(pck)) {
+-		ret = PTR_ERR(pck);
+-		goto sh_mipi_set_dot_clock_pck_err;
+-	}
+-
+-	phy = clk_get(&pdev->dev, "dsiphy_clk");
+-	if (IS_ERR(phy)) {
+-		ret = PTR_ERR(phy);
+-		goto sh_mipi_set_dot_clock_phy_err;
+-	}
+-
+-	if (enable) {
+-		clk_set_rate(pck, clk_round_rate(pck,  24000000));
+-		clk_set_rate(phy, clk_round_rate(pck, 510000000));
+-		clk_enable(pck);
+-		clk_enable(phy);
+-	} else {
+-		clk_disable(pck);
+-		clk_disable(phy);
+-	}
+-
+-	ret = 0;
+-
+-	clk_put(phy);
+-sh_mipi_set_dot_clock_phy_err:
+-	clk_put(pck);
+-sh_mipi_set_dot_clock_pck_err:
+-	return ret;
+-}
+-
+-static struct sh_mipi_dsi_info mipidsi0_info = {
+-	.data_format	= MIPI_RGB888,
+-	.lcd_chan	= &lcdc0_info.ch[0],
+-	.lane		= 2,
+-	.vsynw_offset	= 20,
+-	.clksrc		= 1,
+-	.flags		= SH_MIPI_DSI_HSABM		|
+-			  SH_MIPI_DSI_SYNC_PULSES_MODE	|
+-			  SH_MIPI_DSI_HSbyteCLK,
+-	.set_dot_clock	= sh_mipi_set_dot_clock,
+-};
+-
+-static struct platform_device mipidsi0_device = {
+-	.name           = "sh-mipi-dsi",
+-	.num_resources  = ARRAY_SIZE(mipidsi0_resources),
+-	.resource       = mipidsi0_resources,
+-	.id             = 0,
+-	.dev	= {
+-		.platform_data	= &mipidsi0_info,
+-	},
+-};
+-
+ /* SDHI0 */
+ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+@@ -460,8 +463,8 @@ static struct platform_device *ag5evm_devices[] __initdata = {
+ 	&fsi_device,
+ 	&mmc_device,
+ 	&irda_device,
+-	&lcdc0_device,
+ 	&mipidsi0_device,
++	&lcdc0_device,
+ 	&sdhi0_device,
+ 	&sdhi1_device,
+ };
 -- 
-1.7.7.6
+1.7.8.6
 
