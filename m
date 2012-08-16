@@ -1,71 +1,186 @@
-From: wency@cn.fujitsu.com
-Date: Fri, 03 Aug 2012 07:49:08 +0000
-Subject: [RFC PATCH V6 06/19] memory-hotplug: export the function acpi_bus_remove()
-Message-Id: <1343980161-14254-7-git-send-email-wency@cn.fujitsu.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 16 Aug 2012 13:00:43 +0000
+Subject: [PATCH 08/19] fbdev: sh_mipi_dsi: Use the LCDC entity default mode
+Message-Id: <1345122054-16013-9-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1343980161-14254-1-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1343980161-14254-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
-Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
+To: linux-fbdev@vger.kernel.org
 
-From: Wen Congyang <wency@cn.fujitsu.com>
+Configure the MIPI-DSI transmitter using the LCDC entity default mode
+instead of accessing the mode through the LCDC platform data.
 
-The function acpi_bus_remove() can remove a acpi device from acpi device.
-When a acpi device is removed, we need to call this function to remove
-the acpi device from acpi bus. So export this function.
-
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-CC: Paul Mackerras <paulus@samba.org>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-CC: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- drivers/acpi/scan.c     |    3 ++-
- include/acpi/acpi_bus.h |    1 +
- 2 files changed, 3 insertions(+), 1 deletions(-)
+ drivers/video/sh_mipi_dsi.c |   43 ++++++++++++++++++++++---------------------
+ 1 files changed, 22 insertions(+), 21 deletions(-)
 
-diff --git a/drivers/acpi/scan.c b/drivers/acpi/scan.c
-index d1ecca2..1cefc34 100644
---- a/drivers/acpi/scan.c
-+++ b/drivers/acpi/scan.c
-@@ -1224,7 +1224,7 @@ static int acpi_device_set_context(struct acpi_device *device)
- 	return -ENODEV;
+diff --git a/drivers/video/sh_mipi_dsi.c b/drivers/video/sh_mipi_dsi.c
+index 7f6ce65..f88b204 100644
+--- a/drivers/video/sh_mipi_dsi.c
++++ b/drivers/video/sh_mipi_dsi.c
+@@ -127,9 +127,10 @@ static void sh_mipi_shutdown(struct platform_device *pdev)
+ 	sh_mipi_dsi_enable(mipi, false);
  }
  
--static int acpi_bus_remove(struct acpi_device *dev, int rmdevice)
-+int acpi_bus_remove(struct acpi_device *dev, int rmdevice)
+-static int sh_mipi_setup(struct sh_mipi *mipi, struct sh_mipi_dsi_info *pdata)
++static int sh_mipi_setup(struct sh_mipi *mipi, const struct fb_videomode *mode)
  {
- 	if (!dev)
- 		return -EINVAL;
-@@ -1246,6 +1246,7 @@ static int acpi_bus_remove(struct acpi_device *dev, int rmdevice)
+ 	void __iomem *base = mipi->base;
++	struct sh_mipi_dsi_info *pdata = mipi->pdev->dev.platform_data;
+ 	struct sh_mobile_lcdc_chan_cfg *ch = pdata->lcd_chan;
+ 	u32 pctype, datatype, pixfmt, linelength, vmctr2;
+ 	u32 tmp, top, bottom, delay, div;
+@@ -146,77 +147,77 @@ static int sh_mipi_setup(struct sh_mipi *mipi, struct sh_mipi_dsi_info *pdata)
+ 		pctype = 0;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_24;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_24BIT;
+-		linelength = ch->lcd_modes[0].xres * 3;
++		linelength = mode->xres * 3;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_RGB565:
+ 		pctype = 1;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_16;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_16BIT;
+-		linelength = ch->lcd_modes[0].xres * 2;
++		linelength = mode->xres * 2;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_RGB666_LP:
+ 		pctype = 2;
+ 		datatype = MIPI_DSI_PIXEL_STREAM_3BYTE_18;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_24BIT;
+-		linelength = ch->lcd_modes[0].xres * 3;
++		linelength = mode->xres * 3;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_RGB666:
+ 		pctype = 3;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_18;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_18BIT;
+-		linelength = (ch->lcd_modes[0].xres * 18 + 7) / 8;
++		linelength = (mode->xres * 18 + 7) / 8;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_BGR888:
+ 		pctype = 8;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_24;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_24BIT;
+-		linelength = ch->lcd_modes[0].xres * 3;
++		linelength = mode->xres * 3;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_BGR565:
+ 		pctype = 9;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_16;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_16BIT;
+-		linelength = ch->lcd_modes[0].xres * 2;
++		linelength = mode->xres * 2;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_BGR666_LP:
+ 		pctype = 0xa;
+ 		datatype = MIPI_DSI_PIXEL_STREAM_3BYTE_18;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_24BIT;
+-		linelength = ch->lcd_modes[0].xres * 3;
++		linelength = mode->xres * 3;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_BGR666:
+ 		pctype = 0xb;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_18;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_18BIT;
+-		linelength = (ch->lcd_modes[0].xres * 18 + 7) / 8;
++		linelength = (mode->xres * 18 + 7) / 8;
+ 		yuv = false;
+ 		break;
+ 	case MIPI_YUYV:
+ 		pctype = 4;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_YCBCR16;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_16BIT;
+-		linelength = ch->lcd_modes[0].xres * 2;
++		linelength = mode->xres * 2;
+ 		yuv = true;
+ 		break;
+ 	case MIPI_UYVY:
+ 		pctype = 5;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_YCBCR16;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_16BIT;
+-		linelength = ch->lcd_modes[0].xres * 2;
++		linelength = mode->xres * 2;
+ 		yuv = true;
+ 		break;
+ 	case MIPI_YUV420_L:
+ 		pctype = 6;
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_YCBCR12;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_12BIT;
+-		linelength = (ch->lcd_modes[0].xres * 12 + 7) / 8;
++		linelength = (mode->xres * 12 + 7) / 8;
+ 		yuv = true;
+ 		break;
+ 	case MIPI_YUV420:
+@@ -224,7 +225,7 @@ static int sh_mipi_setup(struct sh_mipi *mipi, struct sh_mipi_dsi_info *pdata)
+ 		datatype = MIPI_DSI_PACKED_PIXEL_STREAM_YCBCR12;
+ 		pixfmt = MIPI_DCS_PIXEL_FMT_12BIT;
+ 		/* Length of U/V line */
+-		linelength = (ch->lcd_modes[0].xres + 1) / 2;
++		linelength = (mode->xres + 1) / 2;
+ 		yuv = true;
+ 		break;
+ 	default:
+@@ -293,7 +294,7 @@ static int sh_mipi_setup(struct sh_mipi *mipi, struct sh_mipi_dsi_info *pdata)
+ 	 */
+ 	iowrite32(0x00000006, mipi->linkbase + DTCTR);
+ 	/* VSYNC width = 2 (<< 17) */
+-	iowrite32((ch->lcd_modes[0].vsync_len << pdata->vsynw_offset) |
++	iowrite32((mode->vsync_len << pdata->vsynw_offset) |
+ 		  (pdata->clksrc << 16) | (pctype << 12) | datatype,
+ 		  mipi->linkbase + VMCTR1);
  
- 	return 0;
- }
-+EXPORT_SYMBOL(acpi_bus_remove);
+@@ -327,7 +328,7 @@ static int sh_mipi_setup(struct sh_mipi *mipi, struct sh_mipi_dsi_info *pdata)
+ 	top = linelength << 16; /* RGBLEN */
+ 	bottom = 0x00000001;
+ 	if (pdata->flags & SH_MIPI_DSI_HSABM) /* HSALEN */
+-		bottom = (pdata->lane * ch->lcd_modes[0].hsync_len) - 10;
++		bottom = (pdata->lane * mode->hsync_len) - 10;
+ 	iowrite32(top | bottom , mipi->linkbase + VMLEN1);
  
- static int acpi_add_single_object(struct acpi_device **child,
- 				  acpi_handle handle, int type,
-diff --git a/include/acpi/acpi_bus.h b/include/acpi/acpi_bus.h
-index bde976e..2ccf109 100644
---- a/include/acpi/acpi_bus.h
-+++ b/include/acpi/acpi_bus.h
-@@ -360,6 +360,7 @@ bool acpi_bus_power_manageable(acpi_handle handle);
- bool acpi_bus_can_wakeup(acpi_handle handle);
- int acpi_power_resource_register_device(struct device *dev, acpi_handle handle);
- void acpi_power_resource_unregister_device(struct device *dev, acpi_handle handle);
-+int acpi_bus_remove(struct acpi_device *dev, int rmdevice);
- #ifdef CONFIG_ACPI_PROC_EVENT
- int acpi_bus_generate_proc_event(struct acpi_device *device, u8 type, int data);
- int acpi_bus_generate_proc_event4(const char *class, const char *bid, u8 type, int data);
+ 	/*
+@@ -347,18 +348,18 @@ static int sh_mipi_setup(struct sh_mipi *mipi, struct sh_mipi_dsi_info *pdata)
+ 		div = 2;
+ 
+ 	if (pdata->flags & SH_MIPI_DSI_HFPBM) {	/* HBPLEN */
+-		top = ch->lcd_modes[0].hsync_len + ch->lcd_modes[0].left_margin;
++		top = mode->hsync_len + mode->left_margin;
+ 		top = ((pdata->lane * top / div) - 10) << 16;
+ 	}
+ 	if (pdata->flags & SH_MIPI_DSI_HBPBM) { /* HFPLEN */
+-		bottom = ch->lcd_modes[0].right_margin;
++		bottom = mode->right_margin;
+ 		bottom = (pdata->lane * bottom / div) - 12;
+ 	}
+ 
+-	bpp = linelength / ch->lcd_modes[0].xres; /* byte / pixel */
++	bpp = linelength / mode->xres; /* byte / pixel */
+ 	if ((pdata->lane / div) > bpp) {
+-		tmp = ch->lcd_modes[0].xres / bpp; /* output cycle */
+-		tmp = ch->lcd_modes[0].xres - tmp; /* (input - output) cycle */
++		tmp = mode->xres / bpp; /* output cycle */
++		tmp = mode->xres - tmp; /* (input - output) cycle */
+ 		delay = (pdata->lane * tmp);
+ 	}
+ 
+@@ -405,7 +406,7 @@ static int mipi_display_on(struct sh_mobile_lcdc_entity *entity)
+ 	if (ret < 0)
+ 		goto mipi_display_on_fail1;
+ 
+-	ret = sh_mipi_setup(mipi, pdata);
++	ret = sh_mipi_setup(mipi, &entity->def_mode);
+ 	if (ret < 0)
+ 		goto mipi_display_on_fail2;
+ 
 -- 
-1.7.1
+1.7.8.6
 
