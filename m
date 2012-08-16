@@ -1,181 +1,134 @@
-From: wency@cn.fujitsu.com
-Date: Fri, 03 Aug 2012 07:49:04 +0000
-Subject: [RFC PATCH V6 02/19] memory-hotplug: implement offline_memory()
-Message-Id: <1343980161-14254-3-git-send-email-wency@cn.fujitsu.com>
+From: "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>
+Date: Thu, 16 Aug 2012 15:15:54 +0000
+Subject: [PATCH v3 7/7] x86: switch the 64bit uncached page clear to SSE/AVX v2
+Message-Id: <1345130154-9602-8-git-send-email-kirill.shutemov@linux.intel.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1343980161-14254-1-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1343980161-14254-1-git-send-email-wency@cn.fujitsu.com>
+References: <1345130154-9602-1-git-send-email-kirill.shutemov@linux.intel.com>
+In-Reply-To: <1345130154-9602-1-git-send-email-kirill.shutemov@linux.intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
-Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>, Vasilis Liaskovitis <vasilis.liaskovitis@profitbricks.com>
+To: linux-mm@kvack.org
+Cc: Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, x86@kernel.org, Andi Kleen <ak@linux.intel.com>, "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>, Tim Chen <tim.c.chen@linux.intel.com>, Alex Shi <alex.shu@intel.com>, Jan Beulich <jbeulich@novell.com>, Robert Richter <robert.richter@amd.com>, Andy Lutomirski <luto@amacapital.net>, Andrew Morton <akpm@linux-foundation.org>, Andrea Arcangeli <aarcange@redhat.com>, Johannes Weiner <hannes@cmpxchg.org>, Hugh Dickins <hughd@google.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Mel Gorman <mgorman@suse.de>, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org
 
-From: Wen Congyang <wency@cn.fujitsu.com>
+From: Andi Kleen <ak@linux.intel.com>
 
-The function offline_memory() will be called when hot removing a
-memory device. The memory device may contain more than one memory
-block. If the memory block has been offlined, __offline_pages()
-will fail. So we should try to offline one memory block at a
-time.
+With multiple threads vector stores are more efficient, so use them.
+This will cause the page clear to run non preemptable and add some
+overhead. However on 32bit it was already non preempable (due to
+kmap_atomic) and there is an preemption opportunity every 4K unit.
 
-If the memory block is offlined in offline_memory(), we also
-update it's state, and notify the userspace that its state is
-changed.
+On a NPB (Nasa Parallel Benchmark) 128GB run on a Westmere this improves
+the performance regression of enabling transparent huge pages
+by ~2% (2.81% to 0.81%), near the runtime variability now.
+On a system with AVX support more is expected.
 
-The function offline_memory() also check each memory block's
-state. So there is no need to check the memory block's state
-before calling offline_memory().
-
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-CC: Paul Mackerras <paulus@samba.org>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-CC: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-CC: Vasilis Liaskovitis <vasilis.liaskovitis@profitbricks.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Andi Kleen <ak@linux.intel.com>
+[kirill.shutemov@linux.intel.com: Properly save/restore arguments]
+Signed-off-by: Kirill A. Shutemov <kirill.shutemov@linux.intel.com>
 ---
- drivers/base/memory.c          |   31 +++++++++++++++++++++++++++----
- include/linux/memory_hotplug.h |    2 ++
- mm/memory_hotplug.c            |   37 ++++++++++++++++++++++++++++++++++++-
- 3 files changed, 65 insertions(+), 5 deletions(-)
+ arch/x86/lib/clear_page_64.S |   79 ++++++++++++++++++++++++++++++++++--------
+ 1 files changed, 64 insertions(+), 15 deletions(-)
 
-diff --git a/drivers/base/memory.c b/drivers/base/memory.c
-index 44e7de6..86c8821 100644
---- a/drivers/base/memory.c
-+++ b/drivers/base/memory.c
-@@ -275,13 +275,11 @@ memory_block_action(unsigned long phys_index, unsigned long action)
- 	return ret;
- }
+diff --git a/arch/x86/lib/clear_page_64.S b/arch/x86/lib/clear_page_64.S
+index 9d2f3c2..b302cff 100644
+--- a/arch/x86/lib/clear_page_64.S
++++ b/arch/x86/lib/clear_page_64.S
+@@ -73,30 +73,79 @@ ENDPROC(clear_page)
+ 			     .Lclear_page_end-clear_page,3b-2b
+ 	.previous
  
--static int memory_block_change_state(struct memory_block *mem,
-+static int __memory_block_change_state(struct memory_block *mem,
- 		unsigned long to_state, unsigned long from_state_req)
- {
- 	int ret = 0;
- 
--	mutex_lock(&mem->state_mutex);
--
- 	if (mem->state != from_state_req) {
- 		ret = -EINVAL;
- 		goto out;
-@@ -309,10 +307,20 @@ static int memory_block_change_state(struct memory_block *mem,
- 		break;
- 	}
- out:
--	mutex_unlock(&mem->state_mutex);
- 	return ret;
- }
- 
-+static int memory_block_change_state(struct memory_block *mem,
-+		unsigned long to_state, unsigned long from_state_req)
-+{
-+	int ret;
++#define SSE_UNROLL 128
 +
-+	mutex_lock(&mem->state_mutex);
-+	ret = __memory_block_change_state(mem, to_state, from_state_req);
-+	mutex_unlock(&mem->state_mutex);
-+
-+	return ret;
-+}
- static ssize_t
- store_mem_state(struct device *dev,
- 		struct device_attribute *attr, const char *buf, size_t count)
-@@ -653,6 +661,21 @@ int unregister_memory_section(struct mem_section *section)
- }
- 
  /*
-+ * offline one memory block. If the memory block has been offlined, do nothing.
-+ */
-+int offline_memory_block(struct memory_block *mem)
-+{
-+	int ret = 0;
-+
-+	mutex_lock(&mem->state_mutex);
-+	if (mem->state != MEM_OFFLINE)
-+		ret = __memory_block_change_state(mem, MEM_OFFLINE, MEM_ONLINE);
-+	mutex_unlock(&mem->state_mutex);
-+
-+	return ret;
-+}
-+
-+/*
-  * Initialize the sysfs support for memory devices...
+  * Zero a page avoiding the caches
+  * rdi	page
   */
- int __init memory_dev_init(void)
-diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
-index c183f39..0b040bb 100644
---- a/include/linux/memory_hotplug.h
-+++ b/include/linux/memory_hotplug.h
-@@ -10,6 +10,7 @@ struct page;
- struct zone;
- struct pglist_data;
- struct mem_section;
-+struct memory_block;
- 
- #ifdef CONFIG_MEMORY_HOTPLUG
- 
-@@ -234,6 +235,7 @@ extern int mem_online_node(int nid);
- extern int add_memory(int nid, u64 start, u64 size);
- extern int arch_add_memory(int nid, u64 start, u64 size);
- extern int offline_pages(unsigned long start_pfn, unsigned long nr_pages);
-+extern int offline_memory_block(struct memory_block *mem);
- extern int offline_memory(u64 start, u64 size);
- extern int sparse_add_one_section(struct zone *zone, unsigned long start_pfn,
- 								int nr_pages);
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index c182c76..3113cd4 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -1001,7 +1001,42 @@ int offline_pages(unsigned long start_pfn, unsigned long nr_pages)
- 
- int offline_memory(u64 start, u64 size)
- {
--	return -EINVAL;
-+	struct memory_block *mem = NULL;
-+	struct mem_section *section;
-+	unsigned long start_pfn, end_pfn;
-+	unsigned long pfn, section_nr;
-+	int ret;
+ ENTRY(clear_page_nocache)
+ 	CFI_STARTPROC
+-	xorl   %eax,%eax
+-	movl   $4096/64,%ecx
++	pushq_cfi %rdi
++	call   kernel_fpu_begin
++	popq_cfi  %rdi
++	sub    $16,%rsp
++	CFI_ADJUST_CFA_OFFSET 16
++	movdqu %xmm0,(%rsp)
++	xorpd  %xmm0,%xmm0
++	movl   $4096/SSE_UNROLL,%ecx
+ 	.p2align 4
+ .Lloop_nocache:
+ 	decl	%ecx
+-#define PUT(x) movnti %rax,x*8(%rdi)
+-	movnti %rax,(%rdi)
+-	PUT(1)
+-	PUT(2)
+-	PUT(3)
+-	PUT(4)
+-	PUT(5)
+-	PUT(6)
+-	PUT(7)
+-#undef PUT
+-	leaq	64(%rdi),%rdi
++	.set x,0
++	.rept SSE_UNROLL/16
++	movntdq %xmm0,x(%rdi)
++	.set x,x+16
++	.endr
++	leaq	SSE_UNROLL(%rdi),%rdi
+ 	jnz	.Lloop_nocache
+-	nop
+-	ret
++	movdqu (%rsp),%xmm0
++	addq   $16,%rsp
++	CFI_ADJUST_CFA_OFFSET -16
++	jmp   kernel_fpu_end
+ 	CFI_ENDPROC
+ ENDPROC(clear_page_nocache)
 +
-+	start_pfn = PFN_DOWN(start);
-+	end_pfn = start_pfn + PFN_DOWN(size);
++#ifdef CONFIG_AS_AVX
 +
-+	for (pfn = start_pfn; pfn < end_pfn; pfn += PAGES_PER_SECTION) {
-+		section_nr = pfn_to_section_nr(pfn);
-+		if (!present_section_nr(section_nr))
-+			continue;
++	.section .altinstr_replacement,"ax"
++1:	.byte 0xeb					/* jmp <disp8> */
++	.byte (clear_page_nocache_avx - clear_page_nocache) - (2f - 1b)
++	/* offset */
++2:
++	.previous
++	.section .altinstructions,"a"
++	altinstruction_entry clear_page_nocache,1b,X86_FEATURE_AVX,\
++	                     16, 2b-1b
++	.previous
 +
-+		section = __nr_to_section(section_nr);
-+		/* same memblock? */
-+		if (mem)
-+			if ((section_nr >= mem->start_section_nr) &&
-+			    (section_nr <= mem->end_section_nr))
-+				continue;
++#define AVX_UNROLL 256 /* TUNE ME */
 +
-+		mem = find_memory_block_hinted(section, mem);
-+		if (!mem)
-+			continue;
++ENTRY(clear_page_nocache_avx)
++	CFI_STARTPROC
++	pushq_cfi %rdi
++	call   kernel_fpu_begin
++	popq_cfi  %rdi
++	sub    $32,%rsp
++	CFI_ADJUST_CFA_OFFSET 32
++	vmovdqu %ymm0,(%rsp)
++	vxorpd  %ymm0,%ymm0,%ymm0
++	movl   $4096/AVX_UNROLL,%ecx
++	.p2align 4
++.Lloop_avx:
++	decl	%ecx
++	.set x,0
++	.rept AVX_UNROLL/32
++	vmovntdq %ymm0,x(%rdi)
++	.set x,x+32
++	.endr
++	leaq	AVX_UNROLL(%rdi),%rdi
++	jnz	.Lloop_avx
++	vmovdqu (%rsp),%ymm0
++	addq   $32,%rsp
++	CFI_ADJUST_CFA_OFFSET -32
++	jmp   kernel_fpu_end
++	CFI_ENDPROC
++ENDPROC(clear_page_nocache_avx)
 +
-+		ret = offline_memory_block(mem);
-+		if (ret) {
-+			kobject_put(&mem->dev.kobj);
-+			return ret;
-+		}
-+	}
-+
-+	if (mem)
-+		kobject_put(&mem->dev.kobj);
-+
-+	return 0;
- }
- #else
- int offline_pages(u64 start, u64 size)
++#endif
 -- 
-1.7.1
+1.7.7.6
 
