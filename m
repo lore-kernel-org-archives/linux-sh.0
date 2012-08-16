@@ -1,106 +1,34 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 05 Aug 2012 23:40:41 +0000
-Subject: [PATCH 3/15] timekeeping: Add suspend and resume of clock event devices
-Message-Id: <201208060140.41761.rjw@sisk.pl>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 16 Aug 2012 13:00:40 +0000
+Subject: [PATCH 05/19] fbdev: sh_mipi_dsi: Add channel field to platform data
+Message-Id: <1345122054-16013-6-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201207291612.43138.rjw@sisk.pl> <201208060138.03950.rjw@sisk.pl>
-In-Reply-To: <201208060138.03950.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM list <linux-pm@vger.kernel.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, Thomas Gleixner <tglx@linutronix.de>
+To: linux-fbdev@vger.kernel.org
 
+The channel field stores the LCDC channel corresponding to the MIPI-DSI
+transmitter. The information is currently obtained through the lcd_chan
+field that will be removed.
 
-Some clock event devices, for example such that belong to PM domains,
-need to be handled in a spcial way during the timekeeping suspend
-and resume (which takes place in the system core, or "syscore",
-stages of system power transitions) in analogy with clock sources.
-
-Introduce .suspend() and .resume() callbacks for clock event devices
-that will be executed by timekeeping_suspend/_resume(), respectively,
-next the the clock sources' .suspend() and .resume() callbacks.
-
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- include/linux/clockchips.h |    5 +++++
- kernel/time/clockevents.c  |   24 ++++++++++++++++++++++++
- kernel/time/timekeeping.c  |    2 ++
- 3 files changed, 31 insertions(+)
+ include/video/sh_mipi_dsi.h |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-Index: linux/include/linux/clockchips.h
-=================================--- linux.orig/include/linux/clockchips.h
-+++ linux/include/linux/clockchips.h
-@@ -97,6 +97,8 @@ struct clock_event_device {
- 	void			(*broadcast)(const struct cpumask *mask);
- 	void			(*set_mode)(enum clock_event_mode mode,
- 					    struct clock_event_device *);
-+	void			(*suspend)(struct clock_event_device *);
-+	void			(*resume)(struct clock_event_device *);
- 	unsigned long		min_delta_ticks;
- 	unsigned long		max_delta_ticks;
- 
-@@ -156,6 +158,9 @@ clockevents_calc_mult_shift(struct clock
- 				      freq, minsec);
- }
- 
-+extern void clockevents_suspend(void);
-+extern void clockevents_resume(void);
-+
- #ifdef CONFIG_GENERIC_CLOCKEVENTS
- extern void clockevents_notify(unsigned long reason, void *arg);
- #else
-Index: linux/kernel/time/clockevents.c
-=================================--- linux.orig/kernel/time/clockevents.c
-+++ linux/kernel/time/clockevents.c
-@@ -397,6 +397,30 @@ void clockevents_exchange_device(struct
- 	local_irq_restore(flags);
- }
- 
-+/**
-+ * clockevents_suspend - suspend clock devices
-+ */
-+void clockevents_suspend(void)
-+{
-+	struct clock_event_device *dev;
-+
-+	list_for_each_entry_reverse(dev, &clockevent_devices, list)
-+		if (dev->suspend)
-+			dev->suspend(dev);
-+}
-+
-+/**
-+ * clockevents_resume - resume clock devices
-+ */
-+void clockevents_resume(void)
-+{
-+	struct clock_event_device *dev;
-+
-+	list_for_each_entry(dev, &clockevent_devices, list)
-+		if (dev->resume)
-+			dev->resume(dev);
-+}
-+
- #ifdef CONFIG_GENERIC_CLOCKEVENTS
- /**
-  * clockevents_notify - notification about relevant events
-Index: linux/kernel/time/timekeeping.c
-=================================--- linux.orig/kernel/time/timekeeping.c
-+++ linux/kernel/time/timekeeping.c
-@@ -750,6 +750,7 @@ static void timekeeping_resume(void)
- 
- 	read_persistent_clock(&ts);
- 
-+	clockevents_resume();
- 	clocksource_resume();
- 
- 	write_seqlock_irqsave(&tk->lock, flags);
-@@ -809,6 +810,7 @@ static int timekeeping_suspend(void)
- 
- 	clockevents_notify(CLOCK_EVT_NOTIFY_SUSPEND, NULL);
- 	clocksource_suspend();
-+	clockevents_suspend();
- 
- 	return 0;
- }
+diff --git a/include/video/sh_mipi_dsi.h b/include/video/sh_mipi_dsi.h
+index 06c67fb..eae71d9 100644
+--- a/include/video/sh_mipi_dsi.h
++++ b/include/video/sh_mipi_dsi.h
+@@ -48,6 +48,7 @@ struct sh_mobile_lcdc_chan_cfg;
+ struct sh_mipi_dsi_info {
+ 	enum sh_mipi_dsi_data_fmt	data_format;
+ 	struct sh_mobile_lcdc_chan_cfg	*lcd_chan;
++	int				channel;
+ 	int				lane;
+ 	unsigned long			flags;
+ 	u32				clksrc;
+-- 
+1.7.8.6
 
