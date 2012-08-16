@@ -1,93 +1,108 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 27 Aug 2012 08:25:21 +0000
-Subject: [PATCH v2] ARM: mach-shmobile: marzen: defconfig update
-Message-Id: <20120827082521.GA32414@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 16 Aug 2012 13:00:53 +0000
+Subject: [PATCH 18/19] sh: kfr2r09: Use the backlight API for brightness control
+Message-Id: <1345122054-16013-19-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-Update marzen defconfig
-* Enable MMC Block device as SDHI hw is now supported.
-* Default to NFS root, this is consistent with many other
-  shmobile boards
-* Enable UNIX which is required by udevd
+Don't hook up brightness control in the display on/off operations, use
+the backlight API instead.
 
-Other changes are noise due to using make savedefconfig
-to create the new defconfig.
-
-Cc: Phil Edworthy <phil.edworthy@renesas.com>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/arm/configs/marzen_defconfig | 13 ++++++++-----
- 1 file changed, 8 insertions(+), 5 deletions(-)
+ arch/sh/boards/mach-kfr2r09/lcd_wqvga.c     |   16 +++-------------
+ arch/sh/boards/mach-kfr2r09/setup.c         |    7 +++++--
+ arch/sh/include/mach-kfr2r09/mach/kfr2r09.h |    6 ++----
+ 3 files changed, 10 insertions(+), 19 deletions(-)
 
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index bf42ad2..cd2dc21 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -1,13 +1,14 @@
- # CONFIG_ARM_PATCH_PHYS_VIRT is not set
- CONFIG_EXPERIMENTAL=y
- CONFIG_KERNEL_LZMA=y
-+CONFIG_NO_HZ=y
- CONFIG_IKCONFIG=y
- CONFIG_IKCONFIG_PROC=y
- CONFIG_LOG_BUF_SHIFT
- CONFIG_SYSCTL_SYSCALL=y
- CONFIG_EMBEDDED=y
- CONFIG_SLAB=y
--# CONFIG_BLOCK is not set
-+# CONFIG_IOSCHED_CFQ is not set
- CONFIG_ARCH_SHMOBILE=y
- CONFIG_ARCH_R8A7779=y
- CONFIG_MACH_MARZEN=y
-@@ -21,7 +22,6 @@ CONFIG_ARM_ERRATA_458693=y
- CONFIG_ARM_ERRATA_460075=y
- CONFIG_ARM_ERRATA_743622=y
- CONFIG_ARM_ERRATA_754322=y
--CONFIG_NO_HZ=y
- CONFIG_SMP=y
- # CONFIG_ARM_CPU_TOPOLOGY is not set
- CONFIG_AEABI=y
-@@ -29,13 +29,16 @@ CONFIG_AEABI=y
- CONFIG_HIGHMEM=y
- CONFIG_ZBOOT_ROM_TEXT=0x0
- CONFIG_ZBOOT_ROM_BSS=0x0
--CONFIG_CMDLINE="console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel"
-+CONFIG_CMDLINE="console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel root=/dev/nfs ip=on"
- CONFIG_CMDLINE_FORCE=y
- CONFIG_KEXEC=y
- # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
- CONFIG_PM_RUNTIME=y
- CONFIG_NET=y
-+CONFIG_UNIX=y
- CONFIG_INET=y
-+CONFIG_IP_PNP=y
-+CONFIG_IP_PNP_DHCP=y
- # CONFIG_IPV6 is not set
- # CONFIG_WIRELESS is not set
- CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
-@@ -69,16 +72,16 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
- CONFIG_GPIO_SYSFS=y
- # CONFIG_HWMON is not set
- CONFIG_SSB=y
--# CONFIG_HID_SUPPORT is not set
- # CONFIG_USB_SUPPORT is not set
- CONFIG_MMC=y
- CONFIG_MMC_SDHI=y
- CONFIG_UIO=y
- CONFIG_UIO_PDRV_GENIRQ=y
- # CONFIG_IOMMU_SUPPORT is not set
--# CONFIG_FILE_LOCKING is not set
- CONFIG_TMPFS=y
- # CONFIG_MISC_FILESYSTEMS is not set
-+CONFIG_NFS_FS=y
-+CONFIG_ROOT_NFS=y
- CONFIG_MAGIC_SYSRQ=y
- CONFIG_DEBUG_INFO=y
- CONFIG_DEBUG_INFO_REDUCED=y
+diff --git a/arch/sh/boards/mach-kfr2r09/lcd_wqvga.c b/arch/sh/boards/mach-kfr2r09/lcd_wqvga.c
+index c148b36..c620503 100644
+--- a/arch/sh/boards/mach-kfr2r09/lcd_wqvga.c
++++ b/arch/sh/boards/mach-kfr2r09/lcd_wqvga.c
+@@ -283,7 +283,7 @@ void kfr2r09_lcd_start(void *sohandle, struct sh_mobile_lcdc_sys_bus_ops *so)
+ #define MAIN_MLED4      0x40
+ #define MAIN_MSW        0x80
+ 
+-static int kfr2r09_lcd_backlight(int on)
++int kfr2r09_lcd_set_brightness(int brightness)
+ {
+ 	struct i2c_adapter *a;
+ 	struct i2c_msg msg;
+@@ -295,7 +295,7 @@ static int kfr2r09_lcd_backlight(int on)
+ 		return -ENODEV;
+ 
+ 	buf[0] = 0x00;
+-	if (on)
++	if (brightness)
+ 		buf[1] = CTRL_CPSW | CTRL_C10 | CTRL_CKSW;
+ 	else
+ 		buf[1] = 0;
+@@ -309,7 +309,7 @@ static int kfr2r09_lcd_backlight(int on)
+ 		return -ENODEV;
+ 
+ 	buf[0] = 0x01;
+-	if (on)
++	if (brightness)
+ 		buf[1] = MAIN_MSW | MAIN_MLED4 | 0x0c;
+ 	else
+ 		buf[1] = 0;
+@@ -324,13 +324,3 @@ static int kfr2r09_lcd_backlight(int on)
+ 
+ 	return 0;
+ }
+-
+-void kfr2r09_lcd_on(void)
+-{
+-	kfr2r09_lcd_backlight(1);
+-}
+-
+-void kfr2r09_lcd_off(void)
+-{
+-	kfr2r09_lcd_backlight(0);
+-}
+diff --git a/arch/sh/boards/mach-kfr2r09/setup.c b/arch/sh/boards/mach-kfr2r09/setup.c
+index 158c917..ecf40b8 100644
+--- a/arch/sh/boards/mach-kfr2r09/setup.c
++++ b/arch/sh/boards/mach-kfr2r09/setup.c
+@@ -156,8 +156,11 @@ static struct sh_mobile_lcdc_info kfr2r09_sh_lcdc_info = {
+ 			.height = 58,
+ 			.setup_sys = kfr2r09_lcd_setup,
+ 			.start_transfer = kfr2r09_lcd_start,
+-			.display_on = kfr2r09_lcd_on,
+-			.display_off = kfr2r09_lcd_off,
++		},
++		.bl_info = {
++			.name = "sh_mobile_lcdc_bl",
++			.max_brightness = 1,
++			.set_brightness = kfr2r09_lcd_set_brightness,
+ 		},
+ 		.sys_bus_cfg = {
+ 			.ldmt2r = 0x07010904,
+diff --git a/arch/sh/include/mach-kfr2r09/mach/kfr2r09.h b/arch/sh/include/mach-kfr2r09/mach/kfr2r09.h
+index ba3d93d..c20c9e5 100644
+--- a/arch/sh/include/mach-kfr2r09/mach/kfr2r09.h
++++ b/arch/sh/include/mach-kfr2r09/mach/kfr2r09.h
+@@ -4,15 +4,13 @@
+ #include <video/sh_mobile_lcdc.h>
+ 
+ #if defined(CONFIG_FB_SH_MOBILE_LCDC) || defined(CONFIG_FB_SH_MOBILE_LCDC_MODULE)
+-void kfr2r09_lcd_on(void);
+-void kfr2r09_lcd_off(void);
++int kfr2r09_lcd_set_brightness(int brightness);
+ int kfr2r09_lcd_setup(void *sys_ops_handle,
+ 		      struct sh_mobile_lcdc_sys_bus_ops *sys_ops);
+ void kfr2r09_lcd_start(void *sys_ops_handle,
+ 		       struct sh_mobile_lcdc_sys_bus_ops *sys_ops);
+ #else
+-static void kfr2r09_lcd_on(void) {}
+-static void kfr2r09_lcd_off(void) {}
++static int kfr2r09_lcd_set_brightness(int brightness) {}
+ static int kfr2r09_lcd_setup(void *sys_ops_handle,
+ 				struct sh_mobile_lcdc_sys_bus_ops *sys_ops)
+ {
 -- 
-1.7.10.2.484.gcd07cc5
+1.7.8.6
+
