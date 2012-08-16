@@ -1,70 +1,51 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 31 Aug 2012 00:34:45 +0000
-Subject: [PATCH 10/10] ARM: shmobile: marzen: enable thermal sensor
-Message-Id: <1346373285-19588-11-git-send-email-horms@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 16 Aug 2012 13:00:45 +0000
+Subject: [PATCH 10/19] ARM: mach-shmobile: Remove the unused sh_mipi_dsi_info lcd_chan field
+Message-Id: <1345122054-16013-11-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346373285-19588-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1346373285-19588-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-fbdev@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-Marzen board can measure its thermal by this patch.
-	cat /sys/class/thermal/thermal_zoneX/temp
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/arm/configs/marzen_defconfig     |  2 ++
- arch/arm/mach-shmobile/board-marzen.c | 16 ++++++++++++++++
- 2 files changed, 18 insertions(+)
+ arch/arm/mach-shmobile/board-ag5evm.c |    3 ---
+ arch/arm/mach-shmobile/board-ap4evb.c |    3 ---
+ 2 files changed, 0 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index 61d1c55..c30ea5e 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -73,6 +73,8 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
- # CONFIG_HW_RANDOM is not set
- CONFIG_GPIO_SYSFS=y
- # CONFIG_HWMON is not set
-+CONFIG_THERMAL=y
-+CONFIG_RCAR_THERMAL=y
- CONFIG_SSB=y
- # CONFIG_USB_SUPPORT is not set
- CONFIG_MMC=y
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index 91e81e9..eb0a05a 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -113,9 +113,25 @@ static struct platform_device sdhi0_device = {
- 	}
+diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
+index 5523bc8..7d6b96b 100644
+--- a/arch/arm/mach-shmobile/board-ag5evm.c
++++ b/arch/arm/mach-shmobile/board-ag5evm.c
+@@ -253,11 +253,8 @@ sh_mipi_set_dot_clock_pck_err:
+ 	return ret;
+ }
+ 
+-static struct sh_mobile_lcdc_info lcdc0_info;
+-
+ static struct sh_mipi_dsi_info mipidsi0_info = {
+ 	.data_format	= MIPI_RGB888,
+-	.lcd_chan	= &lcdc0_info.ch[0],
+ 	.channel	= LCDC_CHAN_MAINLCD,
+ 	.lane		= 2,
+ 	.vsynw_offset	= 20,
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 5fbd176..09f4e0a 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -527,11 +527,8 @@ static struct resource mipidsi0_resources[] = {
+ 	},
  };
  
-+/* Thermal */
-+static struct resource thermal_resources[] = {
-+	[0] = {
-+		.start		= 0xFFC48000,
-+		.end		= 0xFFC48038 - 1,
-+		.flags		= IORESOURCE_MEM,
-+	},
-+};
-+
-+static struct platform_device thermal_device = {
-+	.name		= "rcar_thermal",
-+	.resource	= thermal_resources,
-+	.num_resources	= ARRAY_SIZE(thermal_resources),
-+};
-+
- static struct platform_device *marzen_devices[] __initdata = {
- 	&eth_device,
- 	&sdhi0_device,
-+	&thermal_device,
- };
- 
- /* USB */
+-static struct sh_mobile_lcdc_info lcdc_info;
+-
+ static struct sh_mipi_dsi_info mipidsi0_info = {
+ 	.data_format	= MIPI_RGB888,
+-	.lcd_chan	= &lcdc_info.ch[0],
+ 	.channel	= LCDC_CHAN_MAINLCD,
+ 	.lane		= 2,
+ 	.vsynw_offset	= 17,
 -- 
-1.7.10.2.484.gcd07cc5
+1.7.8.6
 
