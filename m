@@ -1,40 +1,60 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 31 Aug 2012 00:23:06 +0000
-Subject: Re: [PATCH 0/8] ARM: shmobile: r8a7779/marzen/kzm9g patches for v3.7
-Message-Id: <20120831002305.GK7721@verge.net.au>
+From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+Date: Fri, 17 Aug 2012 05:54:31 +0000
+Subject: kzm9g boot fail (was Re: irqdomain breaks ap4 boot)
+Message-Id: <502DDC97.5080501@kmckk.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87mx1fdbgl.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87mx1fdbgl.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Aug 30, 2012 at 04:48:43PM -0700, Kuninori Morimoto wrote:
-> 
-> Hi Simon
-> 
-> Thank you for checking my patches
-> 
-> > * v3.6-rc3
-> > * usb-next
-> > * exynos_v6_thermal_tree
-> > * My marzen branch
-> > * Patches 1-7 of this series
-> > 
-> > And the R-Car Thermal driver selected in the kernel .config I see the following:
-> > 
-> > # make
-> >   CC      drivers/thermal/rcar_thermal.o
-> > drivers/thermal/rcar_thermal.c: In function 'rcar_thermal_probe':
-> > drivers/thermal/rcar_thermal.c:214:10: warning: passing argument 3 of 'thermal_zone_device_register' makes integer from pointer without a cast include/linux/thermal.h:166:29: note: expected 'int' but argument is of type 'struct rcar_thermal_priv *'
-> > drivers/thermal/rcar_thermal.c:214:10: error: too few arguments to function 'thermal_zone_device_register'
-> > include/linux/thermal.h:166:29: note: declared here
-> > make[2]: *** [drivers/thermal/rcar_thermal.o] Error 1
-> > make[1]: *** [drivers/thermal] Error 2
-> > make: *** [drivers] Error 2
-> 
-> Someone had sent fixup patch for this issue to ML, but it seems still not applied.
+Hello, Paul
 
-Thanks, I think that as this is a driver problem not a board problem it
-should be ok to push the board patch now. I will do so via my marzen branch.
+I tried kzm9g board on v3.6-rc2 and got the same error as Morimoto's.
+
+(2012/08/10 21:38), Paul Mundt wrote:
+> On Thu, Aug 09, 2012 at 11:10:43PM -0700, Kuninori Morimoto wrote:
+
+>> ecovec/armadillo/marzen board were OK on this patch,
+>> but kzm9g board still has problem.
+>> I'm using "linus/master + paul/sh-latest"
+>>
+>> ========= kernel log ==============-
+>> ....
+>> Preemptible hierarchical RCU implementation.
+>>          RCU restricting CPUs from NR_CPUS=4 to nr_cpu_ids=1.
+>> NR_IRQS:16 nr_irqs:16 16
+>> intc: Registered controller 'sh73a0-intcs' with 77 IRQs
+>> intc: Registered controller 'sh73a0-intca-irq-pins' with 32 IRQs
+>> ------------[ cut here ]------------
+>> WARNING: at /opt/usr/src/WORK/morimoto/gitlinux/linux-2.6/kernel/irq/irqdomain.)
+>> error: irq_desc already associated; irqU2 hwirq=0x228
+>
+> I screwed up the multi-evt case, it should be trying to associate irq2,
+> not irq. Try this:
+>
+> ---
+>
+> diff --git a/drivers/sh/intc/core.c b/drivers/sh/intc/core.c
+> index 32c26d7..8f32a13 100644
+> --- a/drivers/sh/intc/core.c
+> +++ b/drivers/sh/intc/core.c
+> @@ -355,7 +355,7 @@ int __init register_intc_controller(struct intc_desc *desc)
+>   			if (unlikely(res)) {
+>   				if (res = -EEXIST) {
+>   					res = irq_domain_associate(d->domain,
+> -								   irq, irq);
+> +								   irq2, irq2);
+>   					if (unlikely(res)) {
+>   						pr_err("domain association "
+>   						       "failure\n");
+
+I tried this patch but there is still the same error.
+I checked quickly by debugger, and I found the failing 
+irq_domain_associate() is not called here (line 357) but the one at line 
+328.
+
+
+
+
+
