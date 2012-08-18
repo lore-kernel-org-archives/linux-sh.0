@@ -1,129 +1,220 @@
 From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 05 Aug 2012 23:53:11 +0000
-Subject: [PATCH 15/15] PM: Do not use the syscore flag for runtime PM
-Message-Id: <201208060153.11582.rjw@sisk.pl>
+Date: Sat, 18 Aug 2012 22:10:36 +0000
+Subject: [Update][PATCH] ARM: shmobile: Add A4S cpuidle state on sh7372
+Message-Id: <201208190010.36593.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201207291612.43138.rjw@sisk.pl> <201208060138.03950.rjw@sisk.pl>
-In-Reply-To: <201208060138.03950.rjw@sisk.pl>
+References: <201208162210.31058.rjw@sisk.pl> <CANqRtoSh0GvUws5hj9nZvVg4wZ0zDNB+-spuWt5RTVJUNe4h0A@mail.gmail.com>
+In-Reply-To: <CANqRtoSh0GvUws5hj9nZvVg4wZ0zDNB+-spuWt5RTVJUNe4h0A@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM list <linux-pm@vger.kernel.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, Thomas Gleixner <tglx@linutronix.de>
+To: Magnus Damm <magnus.damm@gmail.com>
+Cc: Linux-sh list <linux-sh@vger.kernel.org>, LKML <linux-kernel@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>
+
+Hi,
+
+On Friday, August 17, 2012, Magnus Damm wrote:
+> Hi Rafael,
+> 
+> Thanks for your patch. Please see below for my comment.
+> 
+> On Fri, Aug 17, 2012 at 5:10 AM, Rafael J. Wysocki <rjw@sisk.pl> wrote:
+> >
+> > Add a "C5" cpuidle state to the SH7372 SoC connected to the A4S power
+> > domain in such a way that A4S may be turned off by cpuidle if all
+> > I/O devices in that domain have been suspended (or do not have
+> > attached drivers).
+> >
+> > This requires some reorganization of the initialization of SH7372
+> > power management which affects the the boards based on it, Mackerel
+> > and AP4EVB.
+> >
+> > Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+> > ---
+> 
+> [snip]
+> 
+> > --- linux.orig/arch/arm/mach-shmobile/pm-sh7372.c
+> > +++ linux/arch/arm/mach-shmobile/pm-sh7372.c
+> > @@ -339,6 +339,21 @@ static void sh7372_enter_a3sm_common(int
+> >         sh7372_set_reset_vector(__pa(sh7372_resume_core_standby_sysc));
+> >         sh7372_enter_sysc(pllc0_on, 1 << 12);
+> >  }
+> > +
+> > +static void sh7372_enter_a4s_common(int pllc0_on)
+> > +{
+> > +       sh7372_intca_suspend();
+> > +       sh7372_enter_sysc(pllc0_on, 1 << 10);
+> > +       sh7372_intca_resume();
+> > +}
+> > +
+> > +static void sh7372_pm_setup_smfram(void)
+> > +{
+> > +       memcpy((void *)SMFRAM, sh7372_resume_core_standby_sysc, 0x100);
+> > +       sh7372_set_reset_vector(SMFRAM);
+> > +}
+> 
+> I believe the reset vector is being setup dynamically depending on the
+> sleep mode,
+
+Yes, it is, sorry for overlooking that!
+
+> so you probably want to move sh7372_set_reset_vector()
+> into sh7372_enter_a4s_common().
+
+Thanks for the review, updated patch follows.
+
+Rafael
 
 
-The syscore device PM flag used to mark the devices (belonging to
-PM domains) that should never be turned off, except for the system
-core (syscore) suspend/hibernation and resume stages, need not be
-accessed by the runtime PM core functions, because all of the devices
-it is set for need to be marked as "irq safe" anyway and are
-protected from being turned off by runtime PM by ensuring that their
-usage counters are always set.
+---
+From: Rafael J. Wysocki <rjw@sisk.pl>
+Subject: ARM: shmobile: Add A4S cpuidle state on sh7372
 
-For this reason, make the syscore flag system-wide PM-specific
-and simplify the code used for manipulating it, because it need not
-acquire the device's power.lock any more.
+Add a "C5" cpuidle state to the SH7372 SoC connected to the A4S power
+domain in such a way that A4S may be turned off by cpuidle if all
+I/O devices in that domain have been suspended (or do not have
+attached drivers).
+
+This requires some reorganization of the initialization of SH7372
+power management which affects the the boards based on it, Mackerel
+and AP4EVB.
 
 Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
 ---
- drivers/base/power/common.c  |   15 ---------------
- drivers/base/power/domain.c  |    2 +-
- drivers/base/power/runtime.c |    2 +-
- include/linux/device.h       |    7 +++++++
- include/linux/pm.h           |    6 +-----
- 5 files changed, 10 insertions(+), 22 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c        |    2 
+ arch/arm/mach-shmobile/board-mackerel.c      |    2 
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    2 
+ arch/arm/mach-shmobile/pm-sh7372.c           |   56 ++++++++++++++++++++++-----
+ 4 files changed, 50 insertions(+), 12 deletions(-)
 
-Index: linux/include/linux/pm.h
-=================================--- linux.orig/include/linux/pm.h
-+++ linux/include/linux/pm.h
-@@ -43,12 +43,8 @@ struct device;
- 
- #ifdef CONFIG_PM
- extern const char power_group_name[];		/* = "power" */
--
--extern void dev_pm_syscore_device(struct device *dev, bool val);
- #else
- #define power_group_name	NULL
--
--static inline void dev_pm_syscore_device(struct device *dev, bool val) {}
+Index: linux/arch/arm/mach-shmobile/board-ap4evb.c
+=================================--- linux.orig/arch/arm/mach-shmobile/board-ap4evb.c
++++ linux/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -1486,6 +1486,6 @@ MACHINE_START(AP4EVB, "ap4evb")
+ 	.init_irq	= sh7372_init_irq,
+ 	.handle_irq	= shmobile_handle_irq_intc,
+ 	.init_machine	= ap4evb_init,
+-	.init_late	= shmobile_init_late,
++	.init_late	= sh7372_pm_init_late,
+ 	.timer		= &shmobile_timer,
+ MACHINE_END
+Index: linux/arch/arm/mach-shmobile/board-mackerel.c
+=================================--- linux.orig/arch/arm/mach-shmobile/board-mackerel.c
++++ linux/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1654,6 +1654,6 @@ MACHINE_START(MACKEREL, "mackerel")
+ 	.init_irq	= sh7372_init_irq,
+ 	.handle_irq	= shmobile_handle_irq_intc,
+ 	.init_machine	= mackerel_init,
+-	.init_late	= shmobile_init_late,
++	.init_late	= sh7372_pm_init_late,
+ 	.timer		= &shmobile_timer,
+ MACHINE_END
+Index: linux/arch/arm/mach-shmobile/include/mach/sh7372.h
+=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ linux/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -489,4 +489,6 @@ extern void __init sh7372_init_pm_domain
+ static inline void sh7372_init_pm_domains(void) {}
  #endif
  
- typedef struct pm_message {
-@@ -515,13 +511,13 @@ struct dev_pm_info {
- 	bool			is_suspended:1;	/* Ditto */
- 	bool			ignore_children:1;
- 	bool			early_init:1;	/* Owned by the PM core */
--	bool			syscore:1;
- 	spinlock_t		lock;
- #ifdef CONFIG_PM_SLEEP
- 	struct list_head	entry;
- 	struct completion	completion;
- 	struct wakeup_source	*wakeup;
- 	bool			wakeup_path:1;
-+	bool			syscore:1;
- #else
- 	unsigned int		should_wakeup:1;
- #endif
-Index: linux/drivers/base/power/common.c
-=================================--- linux.orig/drivers/base/power/common.c
-+++ linux/drivers/base/power/common.c
-@@ -85,18 +85,3 @@ int dev_pm_put_subsys_data(struct device
- 	return ret;
++extern void __init sh7372_pm_init_late(void);
++
+ #endif /* __ASM_SH7372_H__ */
+Index: linux/arch/arm/mach-shmobile/pm-sh7372.c
+=================================--- linux.orig/arch/arm/mach-shmobile/pm-sh7372.c
++++ linux/arch/arm/mach-shmobile/pm-sh7372.c
+@@ -339,6 +339,21 @@ static void sh7372_enter_a3sm_common(int
+ 	sh7372_set_reset_vector(__pa(sh7372_resume_core_standby_sysc));
+ 	sh7372_enter_sysc(pllc0_on, 1 << 12);
  }
- EXPORT_SYMBOL_GPL(dev_pm_put_subsys_data);
--
--/**
-- * dev_pm_syscore_device - Set/unset the given device's power.syscore flag.
-- * @dev: Device whose flag is to be modified.
-- * @val: New value of the flag.
-- */
--void dev_pm_syscore_device(struct device *dev, bool val)
--{
--	unsigned long flags;
--
--	spin_lock_irqsave(&dev->power.lock, flags);
--	dev->power.syscore = val;
--	spin_unlock_irqrestore(&dev->power.lock, flags);
--}
--EXPORT_SYMBOL_GPL(dev_pm_syscore_device);
-Index: linux/drivers/base/power/runtime.c
-=================================--- linux.orig/drivers/base/power/runtime.c
-+++ linux/drivers/base/power/runtime.c
-@@ -134,7 +134,7 @@ static int rpm_check_suspend_allowed(str
- 
- 	if (dev->power.runtime_error)
- 		retval = -EINVAL;
--	else if (dev->power.disable_depth > 0 || dev->power.syscore)
-+	else if (dev->power.disable_depth > 0)
- 		retval = -EACCES;
- 	else if (atomic_read(&dev->power.usage_count) > 0)
- 		retval = -EAGAIN;
-Index: linux/include/linux/device.h
-=================================--- linux.orig/include/linux/device.h
-+++ linux/include/linux/device.h
-@@ -772,6 +772,13 @@ static inline void pm_suspend_ignore_chi
- 	dev->power.ignore_children = enable;
- }
- 
-+static inline void dev_pm_syscore_device(struct device *dev, bool val)
++
++static void sh7372_enter_a4s_common(int pllc0_on)
 +{
-+#ifdef CONFIG_PM_SLEEP
-+	dev->power.syscore = val;
-+#endif
++	sh7372_intca_suspend();
++	sh7372_set_reset_vector(SMFRAM);
++	sh7372_enter_sysc(pllc0_on, 1 << 10);
++	sh7372_intca_resume();
 +}
 +
- static inline void device_lock(struct device *dev)
- {
- 	mutex_lock(&dev->mutex);
-Index: linux/drivers/base/power/domain.c
-=================================--- linux.orig/drivers/base/power/domain.c
-+++ linux/drivers/base/power/domain.c
-@@ -442,7 +442,7 @@ static int pm_genpd_poweroff(struct gene
- 	not_suspended = 0;
- 	list_for_each_entry(pdd, &genpd->dev_list, list_node)
- 		if (pdd->dev->driver && (!pm_runtime_suspended(pdd->dev)
--		    || pdd->dev->power.irq_safe || pdd->dev->power.syscore))
-+		    || pdd->dev->power.irq_safe))
- 			not_suspended++;
++static void sh7372_pm_setup_smfram(void)
++{
++	memcpy((void *)SMFRAM, sh7372_resume_core_standby_sysc, 0x100);
++}
++#else
++static inline void sh7372_pm_setup_smfram(void) {}
+ #endif /* CONFIG_SUSPEND || CONFIG_CPU_IDLE */
  
- 	if (not_suspended > genpd->in_progress)
+ #ifdef CONFIG_CPU_IDLE
+@@ -378,11 +393,24 @@ static int sh7372_enter_a3sm_pll_off(str
+ 	return 3;
+ }
+ 
++static int sh7372_enter_a4s(struct cpuidle_device *dev,
++			    struct cpuidle_driver *drv, int index)
++{
++	unsigned long msk, msk2;
++
++	if (!sh7372_sysc_valid(&msk, &msk2))
++		return sh7372_enter_a3sm_pll_off(dev, drv, index);
++
++	sh7372_setup_sysc(msk, msk2);
++	sh7372_enter_a4s_common(0);
++	return 4;
++}
++
+ static struct cpuidle_driver sh7372_cpuidle_driver = {
+ 	.name			= "sh7372_cpuidle",
+ 	.owner			= THIS_MODULE,
+ 	.en_core_tk_irqen	= 1,
+-	.state_count		= 4,
++	.state_count		= 5,
+ 	.safe_state_index	= 0, /* C1 */
+ 	.states[0] = ARM_CPUIDLE_WFI_STATE,
+ 	.states[0].enter = shmobile_enter_wfi,
+@@ -410,6 +438,15 @@ static struct cpuidle_driver sh7372_cpui
+ 		.flags = CPUIDLE_FLAG_TIME_VALID,
+ 		.enter = sh7372_enter_a3sm_pll_off,
+ 	},
++	.states[4] = {
++		.name = "C5",
++		.desc = "A4S PLL OFF",
++		.exit_latency = 240,
++		.target_residency = 30 + 240,
++		.flags = CPUIDLE_FLAG_TIME_VALID,
++		.enter = sh7372_enter_a4s,
++		.disabled = true,
++	},
+ };
+ 
+ static void sh7372_cpuidle_init(void)
+@@ -421,15 +458,6 @@ static void sh7372_cpuidle_init(void) {}
+ #endif
+ 
+ #ifdef CONFIG_SUSPEND
+-static void sh7372_enter_a4s_common(int pllc0_on)
+-{
+-	sh7372_intca_suspend();
+-	memcpy((void *)SMFRAM, sh7372_resume_core_standby_sysc, 0x100);
+-	sh7372_set_reset_vector(SMFRAM);
+-	sh7372_enter_sysc(pllc0_on, 1 << 10);
+-	sh7372_intca_resume();
+-}
+-
+ static int sh7372_enter_suspend(suspend_state_t suspend_state)
+ {
+ 	unsigned long msk, msk2;
+@@ -497,6 +525,14 @@ void __init sh7372_pm_init(void)
+ 	/* do not convert A3SM, A3SP, A3SG, A4R power down into A4S */
+ 	__raw_writel(0, PDNSEL);
+ 
++	sh7372_pm_setup_smfram();
++
+ 	sh7372_suspend_init();
+ 	sh7372_cpuidle_init();
+ }
++
++void __init sh7372_pm_init_late(void)
++{
++	shmobile_init_late();
++	pm_genpd_name_attach_cpuidle("A4S", 4);
++}
