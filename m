@@ -1,74 +1,19 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Wed, 15 Aug 2012 06:33:29 +0000
-Subject: [PATCH] net: sh_eth: Add eth support for R8A7779 device
-Message-Id: <1345012409-12915-1-git-send-email-phil.edworthy@renesas.com>
+From: David Miller <davem@davemloft.net>
+Date: Mon, 20 Aug 2012 09:17:05 +0000
+Subject: Re: [PATCH] net: sh_eth: Add eth support for R8A7779 device
+Message-Id: <20120820.021705.1632095368417765033.davem@davemloft.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1345012409-12915-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1345012409-12915-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: netdev@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, Phil Edworthy <phil.edworthy@renesas.com>
+To: phil.edworthy@renesas.com
+Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, kuninori.morimoto.gx@renesas.com, yoshihiro.shimoda.uh@renesas.com
 
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Wed, 15 Aug 2012 07:33:29 +0100
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
----
- drivers/net/ethernet/renesas/Kconfig  |    4 ++--
- drivers/net/ethernet/renesas/sh_eth.c |   11 ++++++++---
- 2 files changed, 10 insertions(+), 5 deletions(-)
+> Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 
-diff --git a/drivers/net/ethernet/renesas/Kconfig b/drivers/net/ethernet/renesas/Kconfig
-index 46df3a0..24c2305 100644
---- a/drivers/net/ethernet/renesas/Kconfig
-+++ b/drivers/net/ethernet/renesas/Kconfig
-@@ -8,7 +8,7 @@ config SH_ETH
- 		(CPU_SUBTYPE_SH7710 || CPU_SUBTYPE_SH7712 || \
- 		 CPU_SUBTYPE_SH7763 || CPU_SUBTYPE_SH7619 || \
- 		 CPU_SUBTYPE_SH7724 || CPU_SUBTYPE_SH7734 || \
--		 CPU_SUBTYPE_SH7757 || ARCH_R8A7740)
-+		 CPU_SUBTYPE_SH7757 || ARCH_R8A7740 || ARCH_R8A7779)
- 	select CRC32
- 	select NET_CORE
- 	select MII
-@@ -18,4 +18,4 @@ config SH_ETH
- 	  Renesas SuperH Ethernet device driver.
- 	  This driver supporting CPUs are:
- 		- SH7619, SH7710, SH7712, SH7724, SH7734, SH7763, SH7757,
--		  and R8A7740.
-+		  R8A7740 and R8A7779.
-diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-index af0b867..bad8f2e 100644
---- a/drivers/net/ethernet/renesas/sh_eth.c
-+++ b/drivers/net/ethernet/renesas/sh_eth.c
-@@ -78,7 +78,7 @@ static void sh_eth_select_mii(struct net_device *ndev)
- #endif
- 
- /* There is CPU dependent code */
--#if defined(CONFIG_CPU_SUBTYPE_SH7724)
-+#if defined(CONFIG_CPU_SUBTYPE_SH7724) || defined(CONFIG_ARCH_R8A7779)
- #define SH_ETH_RESET_DEFAULT	1
- static void sh_eth_set_duplex(struct net_device *ndev)
- {
-@@ -93,13 +93,18 @@ static void sh_eth_set_duplex(struct net_device *ndev)
- static void sh_eth_set_rate(struct net_device *ndev)
- {
- 	struct sh_eth_private *mdp = netdev_priv(ndev);
-+	unsigned int bits = ECMR_RTM;
-+
-+#if defined(CONFIG_ARCH_R8A7779)
-+	bits |= ECMR_ELB;
-+#endif
- 
- 	switch (mdp->speed) {
- 	case 10: /* 10BASE */
--		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) & ~ECMR_RTM, ECMR);
-+		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) & ~bits, ECMR);
- 		break;
- 	case 100:/* 100BASE */
--		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) | ECMR_RTM, ECMR);
-+		sh_eth_write(ndev, sh_eth_read(ndev, ECMR) | bits, ECMR);
- 		break;
- 	default:
- 		break;
--- 
-1.7.5.4
-
+Applied, thanks.
