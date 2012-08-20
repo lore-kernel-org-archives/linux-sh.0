@@ -1,145 +1,71 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 05 Aug 2012 23:48:57 +0000
-Subject: [PATCH 13/15] sh: CMT: Basic runtime PM support
-Message-Id: <201208060148.57556.rjw@sisk.pl>
+From: wency@cn.fujitsu.com
+Date: Mon, 20 Aug 2012 09:35:29 +0000
+Subject: [RFC V7 PATCH 06/19] memory-hotplug: export the function acpi_bus_remove()
+Message-Id: <1345455342-27752-7-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201207291612.43138.rjw@sisk.pl> <201208060138.03950.rjw@sisk.pl>
-In-Reply-To: <201208060138.03950.rjw@sisk.pl>
+References: <1345455342-27752-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1345455342-27752-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM list <linux-pm@vger.kernel.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, Thomas Gleixner <tglx@linutronix.de>
+To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
 
+From: Wen Congyang <wency@cn.fujitsu.com>
 
-Modify the SH CMT clock source/clock event device driver to support
-runtime PM at a basic level (i.e. device clocks can be disabled and
-enabled, but domain power must be on, because the devices have to
-be marked as "irq safe").
+The function acpi_bus_remove() can remove a acpi device from acpi device.
+When a acpi device is removed, we need to call this function to remove
+the acpi device from acpi bus. So export this function.
 
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+CC: Paul Mackerras <paulus@samba.org>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
 ---
- drivers/clocksource/sh_cmt.c |   44 +++++++++++++++++++++++++++++++++++--------
- 1 file changed, 36 insertions(+), 8 deletions(-)
+ drivers/acpi/scan.c     |    3 ++-
+ include/acpi/acpi_bus.h |    1 +
+ 2 files changed, 3 insertions(+), 1 deletions(-)
 
-Index: linux/drivers/clocksource/sh_cmt.c
-=================================--- linux.orig/drivers/clocksource/sh_cmt.c
-+++ linux/drivers/clocksource/sh_cmt.c
-@@ -33,6 +33,7 @@
- #include <linux/slab.h>
- #include <linux/module.h>
- #include <linux/pm_domain.h>
-+#include <linux/pm_runtime.h>
+diff --git a/drivers/acpi/scan.c b/drivers/acpi/scan.c
+index d1ecca2..1cefc34 100644
+--- a/drivers/acpi/scan.c
++++ b/drivers/acpi/scan.c
+@@ -1224,7 +1224,7 @@ static int acpi_device_set_context(struct acpi_device *device)
+ 	return -ENODEV;
+ }
  
- struct sh_cmt_priv {
- 	void __iomem *mapbase;
-@@ -52,6 +53,7 @@ struct sh_cmt_priv {
- 	struct clock_event_device ced;
- 	struct clocksource cs;
- 	unsigned long total_cycles;
-+	bool cs_enabled;
- };
- 
- static DEFINE_RAW_SPINLOCK(sh_cmt_lock);
-@@ -155,6 +157,9 @@ static int sh_cmt_enable(struct sh_cmt_p
+-static int acpi_bus_remove(struct acpi_device *dev, int rmdevice)
++int acpi_bus_remove(struct acpi_device *dev, int rmdevice)
  {
- 	int k, ret;
+ 	if (!dev)
+ 		return -EINVAL;
+@@ -1246,6 +1246,7 @@ static int acpi_bus_remove(struct acpi_device *dev, int rmdevice)
  
-+	pm_runtime_get_sync(&p->pdev->dev);
-+	dev_pm_syscore_device(&p->pdev->dev, true);
-+
- 	/* enable clock */
- 	ret = clk_enable(p->clk);
- 	if (ret) {
-@@ -221,6 +226,9 @@ static void sh_cmt_disable(struct sh_cmt
- 
- 	/* stop clock */
- 	clk_disable(p->clk);
-+
-+	dev_pm_syscore_device(&p->pdev->dev, false);
-+	pm_runtime_put(&p->pdev->dev);
+ 	return 0;
  }
++EXPORT_SYMBOL(acpi_bus_remove);
  
- /* private flags */
-@@ -451,17 +459,26 @@ static int sh_cmt_clocksource_enable(str
- 	int ret;
- 	struct sh_cmt_priv *p = cs_to_sh_cmt(cs);
- 
-+	WARN_ON(p->cs_enabled);
-+
- 	p->total_cycles = 0;
- 
- 	ret = sh_cmt_start(p, FLAG_CLOCKSOURCE);
--	if (!ret)
-+	if (!ret) {
- 		__clocksource_updatefreq_hz(cs, p->rate);
-+		p->cs_enabled = true;
-+	}
- 	return ret;
- }
- 
- static void sh_cmt_clocksource_disable(struct clocksource *cs)
- {
--	sh_cmt_stop(cs_to_sh_cmt(cs), FLAG_CLOCKSOURCE);
-+	struct sh_cmt_priv *p = cs_to_sh_cmt(cs);
-+
-+	WARN_ON(!p->cs_enabled);
-+
-+	sh_cmt_stop(p, FLAG_CLOCKSOURCE);
-+	p->cs_enabled = false;
- }
- 
- static void sh_cmt_clocksource_suspend(struct clocksource *cs)
-@@ -693,6 +710,7 @@ static int sh_cmt_setup(struct sh_cmt_pr
- 		dev_err(&p->pdev->dev, "registration failed\n");
- 		goto err1;
- 	}
-+	p->cs_enabled = false;
- 
- 	ret = setup_irq(irq, &p->irqaction);
- 	if (ret) {
-@@ -711,18 +729,17 @@ err0:
- static int __devinit sh_cmt_probe(struct platform_device *pdev)
- {
- 	struct sh_cmt_priv *p = platform_get_drvdata(pdev);
-+	struct sh_timer_config *cfg = pdev->dev.platform_data;
- 	int ret;
- 
- 	if (!is_early_platform_device(pdev)) {
--		struct sh_timer_config *cfg = pdev->dev.platform_data;
--
--		if (cfg->clocksource_rating || cfg->clockevent_rating)
--			dev_pm_syscore_device(&pdev->dev, true);
-+		pm_runtime_set_active(&pdev->dev);
-+		pm_runtime_enable(&pdev->dev);
- 	}
- 
- 	if (p) {
- 		dev_info(&pdev->dev, "kept as earlytimer\n");
--		return 0;
-+		goto out;
- 	}
- 
- 	p = kmalloc(sizeof(*p), GFP_KERNEL);
-@@ -735,8 +752,19 @@ static int __devinit sh_cmt_probe(struct
- 	if (ret) {
- 		kfree(p);
- 		platform_set_drvdata(pdev, NULL);
-+		pm_runtime_idle(&pdev->dev);
-+		return ret;
- 	}
--	return ret;
-+	if (is_early_platform_device(pdev))
-+		return 0;
-+
-+ out:
-+	if (cfg->clockevent_rating || cfg->clocksource_rating)
-+		pm_runtime_irq_safe(&pdev->dev);
-+	else
-+		pm_runtime_idle(&pdev->dev);
-+
-+	return 0;
- }
- 
- static int __devexit sh_cmt_remove(struct platform_device *pdev)
+ static int acpi_add_single_object(struct acpi_device **child,
+ 				  acpi_handle handle, int type,
+diff --git a/include/acpi/acpi_bus.h b/include/acpi/acpi_bus.h
+index bde976e..2ccf109 100644
+--- a/include/acpi/acpi_bus.h
++++ b/include/acpi/acpi_bus.h
+@@ -360,6 +360,7 @@ bool acpi_bus_power_manageable(acpi_handle handle);
+ bool acpi_bus_can_wakeup(acpi_handle handle);
+ int acpi_power_resource_register_device(struct device *dev, acpi_handle handle);
+ void acpi_power_resource_unregister_device(struct device *dev, acpi_handle handle);
++int acpi_bus_remove(struct acpi_device *dev, int rmdevice);
+ #ifdef CONFIG_ACPI_PROC_EVENT
+ int acpi_bus_generate_proc_event(struct acpi_device *device, u8 type, int data);
+ int acpi_bus_generate_proc_event4(const char *class, const char *bid, u8 type, int data);
+-- 
+1.7.1
 
