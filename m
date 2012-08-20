@@ -1,91 +1,100 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 06 Aug 2012 23:09:31 +0000
-Subject: [PATCH 5/12] ARM: shmobile: Use domain names when adding subdomains to power domains
-Message-Id: <201208070109.31453.rjw@sisk.pl>
+From: wency@cn.fujitsu.com
+Date: Mon, 20 Aug 2012 09:35:37 +0000
+Subject: [RFC V7 PATCH 14/19] memory-hotplug: move register_page_bootmem_info_node and put_page_bootmem for s
+Message-Id: <1345455342-27752-15-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201208070105.23262.rjw@sisk.pl>
-In-Reply-To: <201208070105.23262.rjw@sisk.pl>
+References: <1345455342-27752-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1345455342-27752-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux-sh list <linux-sh@vger.kernel.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
 
+From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-Make the power management code under arch/arm/mach-shmobile/
-use pm_genpd_add_subdomain_names() for adding subdomains to power
-domains, which makes it possible to drop
-rmobile_pm_add_subdomain() and will allow us to carry out those
-operations for domain objects stored in tables in a straightforward
-way.
+For implementing register_page_bootmem_info_node of sparse-vmemmap,
+register_page_bootmem_info_node and put_page_bootmem are moved to
+memory_hotplug.c
 
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+CC: Paul Mackerras <paulus@samba.org>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 ---
- arch/arm/mach-shmobile/include/mach/pm-rmobile.h |    3 ---
- arch/arm/mach-shmobile/pm-rmobile.c              |    6 ------
- arch/arm/mach-shmobile/setup-r8a7740.c           |    2 +-
- arch/arm/mach-shmobile/setup-sh7372.c            |    8 ++++----
- 4 files changed, 5 insertions(+), 14 deletions(-)
+ include/linux/memory_hotplug.h |    9 ---------
+ mm/memory_hotplug.c            |    8 ++++++--
+ 2 files changed, 6 insertions(+), 11 deletions(-)
 
-Index: linux/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
-=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
-+++ linux/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
-@@ -33,12 +33,9 @@ struct rmobile_pm_domain *to_rmobile_pd(
- extern void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd);
- extern void rmobile_add_device_to_domain(const char *domain_name,
- 					struct platform_device *pdev);
--extern void rmobile_pm_add_subdomain(struct rmobile_pm_domain *rmobile_pd,
--				    struct rmobile_pm_domain *rmobile_sd);
- #else
- #define rmobile_init_pm_domain(pd) do { } while (0)
- #define rmobile_add_device_to_domain(name, pdev) do { } while (0)
--#define rmobile_pm_add_subdomain(pd, sd) do { } while (0)
- #endif /* CONFIG_PM */
+diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
+index cdbbd79..1133e63 100644
+--- a/include/linux/memory_hotplug.h
++++ b/include/linux/memory_hotplug.h
+@@ -162,17 +162,8 @@ static inline void arch_refresh_nodedata(int nid, pg_data_t *pgdat)
+ #endif /* CONFIG_NUMA */
+ #endif /* CONFIG_HAVE_ARCH_NODEDATA_EXTENSION */
  
- #endif /* PM_RMOBILE_H */
-Index: linux/arch/arm/mach-shmobile/pm-rmobile.c
-=================================--- linux.orig/arch/arm/mach-shmobile/pm-rmobile.c
-+++ linux/arch/arm/mach-shmobile/pm-rmobile.c
-@@ -158,10 +158,4 @@ void rmobile_add_device_to_domain(const
- 	if (pm_clk_no_clocks(dev))
- 		pm_clk_add(dev, NULL);
- }
--
--void rmobile_pm_add_subdomain(struct rmobile_pm_domain *rmobile_pd,
--			     struct rmobile_pm_domain *rmobile_sd)
+-#ifdef CONFIG_SPARSEMEM_VMEMMAP
+-static inline void register_page_bootmem_info_node(struct pglist_data *pgdat)
 -{
--	pm_genpd_add_subdomain(&rmobile_pd->genpd, &rmobile_sd->genpd);
 -}
- #endif /* CONFIG_PM */
-Index: linux/arch/arm/mach-shmobile/setup-r8a7740.c
-=================================--- linux.orig/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ linux/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -678,7 +678,7 @@ void __init r8a7740_add_standard_devices
- 	rmobile_init_pm_domain(&r8a7740_pd_a3sp);
- 	rmobile_init_pm_domain(&r8a7740_pd_a4lc);
+-static inline void put_page_bootmem(struct page *page)
+-{
+-}
+-#else
+ extern void register_page_bootmem_info_node(struct pglist_data *pgdat);
+ extern void put_page_bootmem(struct page *page);
+-#endif
  
--	rmobile_pm_add_subdomain(&r8a7740_pd_a4s, &r8a7740_pd_a3sp);
-+	pm_genpd_add_subdomain_names("A4S", "A3SP");
+ /*
+  * Lock for memory hotplug guarantees 1) all callbacks for memory hotplug
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index d85af6d..3ca66bc 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -91,7 +91,6 @@ static void release_memory_resource(struct resource *res)
+ }
  
- 	/* add devices */
- 	platform_add_devices(r8a7740_early_devices,
-Index: linux/arch/arm/mach-shmobile/setup-sh7372.c
-=================================--- linux.orig/arch/arm/mach-shmobile/setup-sh7372.c
-+++ linux/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -1011,11 +1011,11 @@ void __init sh7372_add_standard_devices(
- 	rmobile_init_pm_domain(&sh7372_pd_a3sp);
- 	rmobile_init_pm_domain(&sh7372_pd_a3sg);
+ #ifdef CONFIG_MEMORY_HOTPLUG_SPARSE
+-#ifndef CONFIG_SPARSEMEM_VMEMMAP
+ static void get_page_bootmem(unsigned long info,  struct page *page,
+ 			     unsigned long type)
+ {
+@@ -127,6 +126,7 @@ void __ref put_page_bootmem(struct page *page)
  
--	rmobile_pm_add_subdomain(&sh7372_pd_a4lc, &sh7372_pd_a3rv);
--	rmobile_pm_add_subdomain(&sh7372_pd_a4r, &sh7372_pd_a4lc);
-+	pm_genpd_add_subdomain_names("A4LC", "A3RV");
-+	pm_genpd_add_subdomain_names("A4R", "A4LC");
+ }
  
--	rmobile_pm_add_subdomain(&sh7372_pd_a4s, &sh7372_pd_a3sg);
--	rmobile_pm_add_subdomain(&sh7372_pd_a4s, &sh7372_pd_a3sp);
-+	pm_genpd_add_subdomain_names("A4S", "A3SG");
-+	pm_genpd_add_subdomain_names("A4S", "A3SP");
++#ifndef CONFIG_SPARSEMEM_VMEMMAP
+ static void register_page_bootmem_info_section(unsigned long start_pfn)
+ {
+ 	unsigned long *usemap, mapsize, section_nr, i;
+@@ -163,6 +163,11 @@ static void register_page_bootmem_info_section(unsigned long start_pfn)
+ 		get_page_bootmem(section_nr, page, MIX_SECTION_INFO);
  
- 	platform_add_devices(sh7372_early_devices,
- 			    ARRAY_SIZE(sh7372_early_devices));
+ }
++#else
++static inline void register_page_bootmem_info_section(unsigned long start_pfn)
++{
++}
++#endif
+ 
+ void register_page_bootmem_info_node(struct pglist_data *pgdat)
+ {
+@@ -198,7 +203,6 @@ void register_page_bootmem_info_node(struct pglist_data *pgdat)
+ 		register_page_bootmem_info_section(pfn);
+ 
+ }
+-#endif /* !CONFIG_SPARSEMEM_VMEMMAP */
+ 
+ static void grow_zone_span(struct zone *zone, unsigned long start_pfn,
+ 			   unsigned long end_pfn)
+-- 
+1.7.1
 
