@@ -1,146 +1,64 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 16 Aug 2012 13:00:38 +0000
-Subject: [PATCH 03/19] fbdev: sh_mobile_lcdc: Remove priv argument from channel and overlay init
-Message-Id: <1345122054-16013-4-git-send-email-laurent.pinchart@ideasonboard.com>
+From: "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>
+Date: Mon, 20 Aug 2012 13:52:30 +0000
+Subject: [PATCH v4 1/8] THP: Use real address for NUMA policy
+Message-Id: <1345470757-12005-2-git-send-email-kirill.shutemov@linux.intel.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1345470757-12005-1-git-send-email-kirill.shutemov@linux.intel.com>
+In-Reply-To: <1345470757-12005-1-git-send-email-kirill.shutemov@linux.intel.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-mm@kvack.org
+Cc: Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, x86@kernel.org, Andi Kleen <ak@linux.intel.com>, "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>, Tim Chen <tim.c.chen@linux.intel.com>, Alex Shi <alex.shu@intel.com>, Jan Beulich <jbeulich@novell.com>, Robert Richter <robert.richter@amd.com>, Andy Lutomirski <luto@amacapital.net>, Andrew Morton <akpm@linux-foundation.org>, Andrea Arcangeli <aarcange@redhat.com>, Johannes Weiner <hannes@cmpxchg.org>, Hugh Dickins <hughd@google.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Mel Gorman <mgorman@suse.de>, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org
 
-The channel and overlay init functions operate on a channel and an
-overlay, don't pass the priv parameter explicitly.
+From: Andi Kleen <ak@linux.intel.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Use the fault address, not the rounded down hpage address for NUMA
+policy purposes. In some circumstances this can give more exact
+NUMA policy.
+
+Signed-off-by: Andi Kleen <ak@linux.intel.com>
+Signed-off-by: Kirill A. Shutemov <kirill.shutemov@linux.intel.com>
 ---
- drivers/video/sh_mobile_lcdcfb.c |   35 +++++++++++++++++------------------
- 1 files changed, 17 insertions(+), 18 deletions(-)
+ mm/huge_memory.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index 82b53f7..c169581 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -2536,10 +2536,10 @@ static int __devinit sh_mobile_lcdc_check_interface(struct sh_mobile_lcdc_chan *
+diff --git a/mm/huge_memory.c b/mm/huge_memory.c
+index 57c4b93..70737ec 100644
+--- a/mm/huge_memory.c
++++ b/mm/huge_memory.c
+@@ -681,11 +681,11 @@ static inline gfp_t alloc_hugepage_gfpmask(int defrag, gfp_t extra_gfp)
+ 
+ static inline struct page *alloc_hugepage_vma(int defrag,
+ 					      struct vm_area_struct *vma,
+-					      unsigned long haddr, int nd,
++					      unsigned long address, int nd,
+ 					      gfp_t extra_gfp)
+ {
+ 	return alloc_pages_vma(alloc_hugepage_gfpmask(defrag, extra_gfp),
+-			       HPAGE_PMD_ORDER, vma, haddr, nd);
++			       HPAGE_PMD_ORDER, vma, address, nd);
  }
  
- static int __devinit
--sh_mobile_lcdc_overlay_init(struct sh_mobile_lcdc_priv *priv,
--			  struct sh_mobile_lcdc_overlay *ovl)
-+sh_mobile_lcdc_overlay_init(struct sh_mobile_lcdc_overlay *ovl)
- {
- 	const struct sh_mobile_lcdc_format_info *format;
-+	struct device *dev = ovl->channel->lcdc->dev;
- 	int ret;
- 
- 	if (ovl->cfg->fourcc = 0)
-@@ -2548,7 +2548,7 @@ sh_mobile_lcdc_overlay_init(struct sh_mobile_lcdc_priv *priv,
- 	/* Validate the format. */
- 	format = sh_mobile_format_info(ovl->cfg->fourcc);
- 	if (format = NULL) {
--		dev_err(priv->dev, "Invalid FOURCC %08x\n", ovl->cfg->fourcc);
-+		dev_err(dev, "Invalid FOURCC %08x\n", ovl->cfg->fourcc);
- 		return -EINVAL;
- 	}
- 
-@@ -2576,10 +2576,10 @@ sh_mobile_lcdc_overlay_init(struct sh_mobile_lcdc_priv *priv,
- 	/* Allocate frame buffer memory. */
- 	ovl->fb_size = ovl->cfg->max_xres * ovl->cfg->max_yres
- 		       * format->bpp / 8 * 2;
--	ovl->fb_mem = dma_alloc_coherent(priv->dev, ovl->fb_size,
--					   &ovl->dma_handle, GFP_KERNEL);
-+	ovl->fb_mem = dma_alloc_coherent(dev, ovl->fb_size, &ovl->dma_handle,
-+					 GFP_KERNEL);
- 	if (!ovl->fb_mem) {
--		dev_err(priv->dev, "unable to allocate buffer\n");
-+		dev_err(dev, "unable to allocate buffer\n");
- 		return -ENOMEM;
- 	}
- 
-@@ -2591,11 +2591,11 @@ sh_mobile_lcdc_overlay_init(struct sh_mobile_lcdc_priv *priv,
- }
- 
- static int __devinit
--sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
--			    struct sh_mobile_lcdc_chan *ch)
-+sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_chan *ch)
- {
- 	const struct sh_mobile_lcdc_format_info *format;
- 	const struct sh_mobile_lcdc_chan_cfg *cfg = ch->cfg;
-+	struct device *dev = ch->lcdc->dev;
- 	const struct fb_videomode *max_mode;
- 	const struct fb_videomode *mode;
- 	unsigned int num_modes;
-@@ -2608,7 +2608,7 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
- 	/* Validate the format. */
- 	format = sh_mobile_format_info(cfg->fourcc);
- 	if (format = NULL) {
--		dev_err(priv->dev, "Invalid FOURCC %08x.\n", cfg->fourcc);
-+		dev_err(dev, "Invalid FOURCC %08x.\n", cfg->fourcc);
- 		return -EINVAL;
- 	}
- 
-@@ -2624,7 +2624,7 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
- 		/* NV12/NV21 buffers must have even number of lines */
- 		if ((cfg->fourcc = V4L2_PIX_FMT_NV12 ||
- 		     cfg->fourcc = V4L2_PIX_FMT_NV21) && (mode->yres & 0x1)) {
--			dev_err(priv->dev, "yres must be multiple of 2 for "
-+			dev_err(dev, "yres must be multiple of 2 for "
- 				"YCbCr420 mode.\n");
- 			return -EINVAL;
- 		}
-@@ -2638,7 +2638,7 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
- 	if (!max_size)
- 		max_size = MAX_XRES * MAX_YRES;
+ #ifndef CONFIG_NUMA
+@@ -710,7 +710,7 @@ int do_huge_pmd_anonymous_page(struct mm_struct *mm, struct vm_area_struct *vma,
+ 		if (unlikely(khugepaged_enter(vma)))
+ 			return VM_FAULT_OOM;
+ 		page = alloc_hugepage_vma(transparent_hugepage_defrag(vma),
+-					  vma, haddr, numa_node_id(), 0);
++					  vma, address, numa_node_id(), 0);
+ 		if (unlikely(!page)) {
+ 			count_vm_event(THP_FAULT_FALLBACK);
+ 			goto out;
+@@ -944,7 +944,7 @@ int do_huge_pmd_wp_page(struct mm_struct *mm, struct vm_area_struct *vma,
+ 	if (transparent_hugepage_enabled(vma) &&
+ 	    !transparent_hugepage_debug_cow())
+ 		new_page = alloc_hugepage_vma(transparent_hugepage_defrag(vma),
+-					      vma, haddr, numa_node_id(), 0);
++					      vma, address, numa_node_id(), 0);
  	else
--		dev_dbg(priv->dev, "Found largest videomode %ux%u\n",
-+		dev_dbg(dev, "Found largest videomode %ux%u\n",
- 			max_mode->xres, max_mode->yres);
+ 		new_page = NULL;
  
- 	if (cfg->lcd_modes = NULL) {
-@@ -2672,10 +2672,10 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
- 
- 	/* Allocate frame buffer memory. */
- 	ch->fb_size = max_size * format->bpp / 8 * 2;
--	ch->fb_mem = dma_alloc_coherent(priv->dev, ch->fb_size, &ch->dma_handle,
-+	ch->fb_mem = dma_alloc_coherent(dev, ch->fb_size, &ch->dma_handle,
- 					GFP_KERNEL);
- 	if (ch->fb_mem = NULL) {
--		dev_err(priv->dev, "unable to allocate buffer\n");
-+		dev_err(dev, "unable to allocate buffer\n");
- 		return -ENOMEM;
- 	}
- 
-@@ -2683,8 +2683,7 @@ sh_mobile_lcdc_channel_init(struct sh_mobile_lcdc_priv *priv,
- 	if (cfg->tx_dev) {
- 		if (!cfg->tx_dev->dev.driver ||
- 		    !try_module_get(cfg->tx_dev->dev.driver->owner)) {
--			dev_warn(priv->dev,
--				 "unable to get transmitter device\n");
-+			dev_warn(dev, "unable to get transmitter device\n");
- 			return -EINVAL;
- 		}
- 		ch->tx_dev = platform_get_drvdata(cfg->tx_dev);
-@@ -2792,9 +2791,9 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
- 	pm_runtime_enable(&pdev->dev);
- 
- 	for (i = 0; i < num_channels; i++) {
--		struct sh_mobile_lcdc_chan *ch = priv->ch + i;
-+		struct sh_mobile_lcdc_chan *ch = &priv->ch[i];
- 
--		error = sh_mobile_lcdc_channel_init(priv, ch);
-+		error = sh_mobile_lcdc_channel_init(ch);
- 		if (error)
- 			goto err1;
- 	}
-@@ -2805,7 +2804,7 @@ static int __devinit sh_mobile_lcdc_probe(struct platform_device *pdev)
- 		ovl->cfg = &pdata->overlays[i];
- 		ovl->channel = &priv->ch[0];
- 
--		error = sh_mobile_lcdc_overlay_init(priv, ovl);
-+		error = sh_mobile_lcdc_overlay_init(ovl);
- 		if (error)
- 			goto err1;
- 	}
 -- 
-1.7.8.6
+1.7.7.6
 
