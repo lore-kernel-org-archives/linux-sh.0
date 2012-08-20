@@ -1,253 +1,77 @@
-From: wency@cn.fujitsu.com
-Date: Tue, 28 Aug 2012 10:00:22 +0000
-Subject: [RFC v8 PATCH 15/20] memory-hotplug: implement register_page_bootmem_info_section of sparse-vmemmap
-Message-Id: <1346148027-24468-16-git-send-email-wency@cn.fujitsu.com>
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 20 Aug 2012 09:39:23 +0000
+Subject: [PATCH] usb: renesas_usbhs: modify the irq handler for sharing irq
+Message-Id: <503205CB.5010109@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346148027-24468-1-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1346148027-24468-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
-Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
+To: linux-sh@vger.kernel.org
 
-From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+When IORESOURCE_IRQ_SHAREABLE is set, the irq handler may be called
+even if the interupt of the USB module doesn't happen. So, it may
+clear the interrupt flags by mistake. This patch fixes it.
 
-For removing memmap region of sparse-vmemmap which is allocated bootmem,
-memmap region of sparse-vmemmap needs to be registered by get_page_bootmem().
-So the patch searches pages of virtual mapping and registers the pages by
-get_page_bootmem().
-
-Note: register_page_bootmem_memmap() is not implemented for ia64, ppc, s390,
-and sparc.
-
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-CC: Paul Mackerras <paulus@samba.org>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/ia64/mm/discontig.c       |    6 ++++
- arch/powerpc/mm/init_64.c      |    6 ++++
- arch/s390/mm/vmem.c            |    6 ++++
- arch/sparc/mm/init_64.c        |    6 ++++
- arch/x86/mm/init_64.c          |   52 ++++++++++++++++++++++++++++++++++++++++
- include/linux/memory_hotplug.h |    2 +
- include/linux/mm.h             |    3 +-
- mm/memory_hotplug.c            |   31 +++++++++++++++++++++--
- 8 files changed, 108 insertions(+), 4 deletions(-)
+ drivers/usb/renesas_usbhs/mod.c |   25 ++++++++++++++++++++++---
+ 1 files changed, 22 insertions(+), 3 deletions(-)
 
-diff --git a/arch/ia64/mm/discontig.c b/arch/ia64/mm/discontig.c
-index c641333..33943db 100644
---- a/arch/ia64/mm/discontig.c
-+++ b/arch/ia64/mm/discontig.c
-@@ -822,4 +822,10 @@ int __meminit vmemmap_populate(struct page *start_page,
+diff --git a/drivers/usb/renesas_usbhs/mod.c b/drivers/usb/renesas_usbhs/mod.c
+index 82a628f..35c5208 100644
+--- a/drivers/usb/renesas_usbhs/mod.c
++++ b/drivers/usb/renesas_usbhs/mod.c
+@@ -209,14 +209,18 @@ int usbhs_status_get_ctrl_stage(struct usbhs_irq_state *irq_state)
+ 	return (int)irq_state->intsts0 & CTSQ_MASK;
+ }
+
+-static void usbhs_status_get_each_irq(struct usbhs_priv *priv,
+-				      struct usbhs_irq_state *state)
++static int usbhs_status_get_each_irq(struct usbhs_priv *priv,
++				     struct usbhs_irq_state *state)
  {
- 	return vmemmap_populate_basepages(start_page, size, node);
- }
+ 	struct usbhs_mod *mod = usbhs_mod_get_current(priv);
++	u16 intenb0, intenb1;
+
+ 	state->intsts0 = usbhs_read(priv, INTSTS0);
+ 	state->intsts1 = usbhs_read(priv, INTSTS1);
+
++	intenb0 = usbhs_read(priv, INTENB0);
++	intenb1 = usbhs_read(priv, INTENB1);
 +
-+void register_page_bootmem_memmap(unsigned long section_nr,
-+				  struct page *start_page, unsigned long size)
-+{
-+	/* TODO */
-+}
- #endif
-diff --git a/arch/powerpc/mm/init_64.c b/arch/powerpc/mm/init_64.c
-index 620b7ac..3690c44 100644
---- a/arch/powerpc/mm/init_64.c
-+++ b/arch/powerpc/mm/init_64.c
-@@ -298,5 +298,11 @@ int __meminit vmemmap_populate(struct page *start_page,
- 
- 	return 0;
- }
-+
-+void register_page_bootmem_memmap(unsigned long section_nr,
-+				  struct page *start_page, unsigned long size)
-+{
-+	/* TODO */
-+}
- #endif /* CONFIG_SPARSEMEM_VMEMMAP */
- 
-diff --git a/arch/s390/mm/vmem.c b/arch/s390/mm/vmem.c
-index 6f896e7..eda55cd 100644
---- a/arch/s390/mm/vmem.c
-+++ b/arch/s390/mm/vmem.c
-@@ -227,6 +227,12 @@ out:
- 	return ret;
- }
- 
-+void register_page_bootmem_memmap(unsigned long section_nr,
-+				  struct page *start_page, unsigned long size)
-+{
-+	/* TODO */
-+}
-+
- /*
-  * Add memory segment to the segment list if it doesn't overlap with
-  * an already present segment.
-diff --git a/arch/sparc/mm/init_64.c b/arch/sparc/mm/init_64.c
-index d58edf5..add1cc7 100644
---- a/arch/sparc/mm/init_64.c
-+++ b/arch/sparc/mm/init_64.c
-@@ -2077,6 +2077,12 @@ void __meminit vmemmap_populate_print_last(void)
- 		node_start = 0;
+ 	/* mask */
+ 	if (mod) {
+ 		state->brdysts = usbhs_read(priv, BRDYSTS);
+@@ -226,6 +230,20 @@ static void usbhs_status_get_each_irq(struct usbhs_priv *priv,
+ 		state->bempsts &= mod->irq_bempsts;
+ 		state->brdysts &= mod->irq_brdysts;
  	}
- }
 +
-+void register_page_bootmem_memmap(unsigned long section_nr,
-+				  struct page *start_page, unsigned long size)
-+{
-+	/* TODO */
-+}
- #endif /* CONFIG_SPARSEMEM_VMEMMAP */
- 
- static void prot_init_common(unsigned long page_none,
-diff --git a/arch/x86/mm/init_64.c b/arch/x86/mm/init_64.c
-index e0d88ba..0075592 100644
---- a/arch/x86/mm/init_64.c
-+++ b/arch/x86/mm/init_64.c
-@@ -1138,6 +1138,58 @@ vmemmap_populate(struct page *start_page, unsigned long size, int node)
- 	return 0;
- }
- 
-+void register_page_bootmem_memmap(unsigned long section_nr,
-+				  struct page *start_page, unsigned long size)
-+{
-+	unsigned long addr = (unsigned long)start_page;
-+	unsigned long end = (unsigned long)(start_page + size);
-+	unsigned long next;
-+	pgd_t *pgd;
-+	pud_t *pud;
-+	pmd_t *pmd;
-+
-+	for (; addr < end; addr = next) {
-+		pte_t *pte = NULL;
-+
-+		pgd = pgd_offset_k(addr);
-+		if (pgd_none(*pgd)) {
-+			next = (addr + PAGE_SIZE) & PAGE_MASK;
-+			continue;
-+		}
-+		get_page_bootmem(section_nr, pgd_page(*pgd), MIX_SECTION_INFO);
-+
-+		pud = pud_offset(pgd, addr);
-+		if (pud_none(*pud)) {
-+			next = (addr + PAGE_SIZE) & PAGE_MASK;
-+			continue;
-+		}
-+		get_page_bootmem(section_nr, pud_page(*pud), MIX_SECTION_INFO);
-+
-+		if (!cpu_has_pse) {
-+			next = (addr + PAGE_SIZE) & PAGE_MASK;
-+			pmd = pmd_offset(pud, addr);
-+			if (pmd_none(*pmd))
-+				continue;
-+			get_page_bootmem(section_nr, pmd_page(*pmd),
-+					 MIX_SECTION_INFO);
-+
-+			pte = pte_offset_kernel(pmd, addr);
-+			if (pte_none(*pte))
-+				continue;
-+			get_page_bootmem(section_nr, pte_page(*pte),
-+					 SECTION_INFO);
-+		} else {
-+			next = pmd_addr_end(addr, end);
-+
-+			pmd = pmd_offset(pud, addr);
-+			if (pmd_none(*pmd))
-+				continue;
-+			get_page_bootmem(section_nr, pmd_page(*pmd),
-+					 SECTION_INFO);
-+		}
++	/*
++	 * Check whether the irq enable registers and the irq status are set
++	 * when IRQF_SHARED is set.
++	 */
++	if (priv->irqflags & IRQF_SHARED) {
++		if (!(intenb0 & state->intsts0) &&
++		    !(intenb1 & state->intsts1) &&
++		    !(state->bempsts) &&
++		    !(state->brdysts))
++			return -EIO;
 +	}
-+}
 +
- void __meminit vmemmap_populate_print_last(void)
- {
- 	if (p_start) {
-diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
-index 1133e63..2d18235 100644
---- a/include/linux/memory_hotplug.h
-+++ b/include/linux/memory_hotplug.h
-@@ -164,6 +164,8 @@ static inline void arch_refresh_nodedata(int nid, pg_data_t *pgdat)
- 
- extern void register_page_bootmem_info_node(struct pglist_data *pgdat);
- extern void put_page_bootmem(struct page *page);
-+extern void get_page_bootmem(unsigned long ingo, struct page *page,
-+			     unsigned long type);
- 
++	return 0;
+ }
+
  /*
-  * Lock for memory hotplug guarantees 1) all callbacks for memory hotplug
-diff --git a/include/linux/mm.h b/include/linux/mm.h
-index 311be90..c607913 100644
---- a/include/linux/mm.h
-+++ b/include/linux/mm.h
-@@ -1618,7 +1618,8 @@ int vmemmap_populate_basepages(struct page *start_page,
- 						unsigned long pages, int node);
- int vmemmap_populate(struct page *start_page, unsigned long pages, int node);
- void vmemmap_populate_print_last(void);
--
-+void register_page_bootmem_memmap(unsigned long section_nr, struct page *map,
-+				  unsigned long size);
- 
- enum mf_flags {
- 	MF_COUNT_INCREASED = 1 << 0,
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index 3ca66bc..d8495ff 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -91,8 +91,8 @@ static void release_memory_resource(struct resource *res)
- }
- 
- #ifdef CONFIG_MEMORY_HOTPLUG_SPARSE
--static void get_page_bootmem(unsigned long info,  struct page *page,
--			     unsigned long type)
-+void get_page_bootmem(unsigned long info,  struct page *page,
-+		      unsigned long type)
- {
- 	unsigned long page_type;
- 
-@@ -164,8 +164,33 @@ static void register_page_bootmem_info_section(unsigned long start_pfn)
- 
- }
- #else
--static inline void register_page_bootmem_info_section(unsigned long start_pfn)
-+static void register_page_bootmem_info_section(unsigned long start_pfn)
- {
-+	unsigned long *usemap, mapsize, section_nr, i;
-+	struct mem_section *ms;
-+	struct page *page, *memmap;
-+
-+	if (!pfn_valid(start_pfn))
-+		return;
-+
-+	section_nr = pfn_to_section_nr(start_pfn);
-+	ms = __nr_to_section(section_nr);
-+
-+	memmap = sparse_decode_mem_map(ms->section_mem_map, section_nr);
-+
-+	page = virt_to_page(memmap);
-+	mapsize = sizeof(struct page) * PAGES_PER_SECTION;
-+	mapsize = PAGE_ALIGN(mapsize) >> PAGE_SHIFT;
-+
-+	register_page_bootmem_memmap(section_nr, memmap, PAGES_PER_SECTION);
-+
-+	usemap = __nr_to_section(section_nr)->pageblock_flags;
-+	page = virt_to_page(usemap);
-+
-+	mapsize = PAGE_ALIGN(usemap_size()) >> PAGE_SHIFT;
-+
-+	for (i = 0; i < mapsize; i++, page++)
-+		get_page_bootmem(section_nr, page, MIX_SECTION_INFO);
- }
- #endif
- 
+@@ -238,7 +256,8 @@ static irqreturn_t usbhs_interrupt(int irq, void *data)
+ 	struct usbhs_priv *priv = data;
+ 	struct usbhs_irq_state irq_state;
+
+-	usbhs_status_get_each_irq(priv, &irq_state);
++	if (usbhs_status_get_each_irq(priv, &irq_state) < 0)
++		return IRQ_NONE;
+
+ 	/*
+ 	 * clear interrupt
 -- 
 1.7.1
-
