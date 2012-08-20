@@ -1,225 +1,221 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 13 Aug 2012 12:33:44 +0000
-Subject: [PATCH 1/2] ARM: shmobile: Rework adding devices to PM domains on Mackerel
-Message-Id: <201208131433.45102.rjw@sisk.pl>
+From: wency@cn.fujitsu.com
+Date: Mon, 20 Aug 2012 09:35:31 +0000
+Subject: [RFC V7 PATCH 08/19] memory-hotplug: remove /sys/firmware/memmap/X sysfs
+Message-Id: <1345455342-27752-9-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1345455342-27752-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1345455342-27752-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
 
+From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-On SH7372 and Mackerel devices are added to PM domains through a
-series of rmobile_add_device_to_domain_td() calls where the last
-argument is always the same.  This is quite inefficient, so add
-a common function for adding devices to PM domains that reads the
-domain-device pairs information from a table and use it during SH7372
-and Mackerel initialization.
+When (hot)adding memory into system, /sys/firmware/memmap/X/{end, start, type}
+sysfs files are created. But there is no code to remove these files. The patch
+implements the function to remove them.
 
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Note : The code does not free firmware_map_entry since there is no way to free
+       memory which is allocated by bootmem.
+
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+CC: Paul Mackerras <paulus@samba.org>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 ---
- arch/arm/mach-shmobile/board-mackerel.c          |   37 ++++++--------
- arch/arm/mach-shmobile/include/mach/pm-rmobile.h |   12 ++++
- arch/arm/mach-shmobile/pm-rmobile.c              |   16 ++++++
- arch/arm/mach-shmobile/setup-sh7372.c            |   58 ++++++++++-------------
- 4 files changed, 72 insertions(+), 51 deletions(-)
+ drivers/firmware/memmap.c    |   78 +++++++++++++++++++++++++++++++++++++++++-
+ include/linux/firmware-map.h |    6 +++
+ mm/memory_hotplug.c          |    9 ++++-
+ 3 files changed, 90 insertions(+), 3 deletions(-)
 
-Index: linux/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
-=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
-+++ linux/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
-@@ -12,6 +12,8 @@
+diff --git a/drivers/firmware/memmap.c b/drivers/firmware/memmap.c
+index c1cdc92..b2e7e5e 100644
+--- a/drivers/firmware/memmap.c
++++ b/drivers/firmware/memmap.c
+@@ -21,6 +21,7 @@
+ #include <linux/types.h>
+ #include <linux/bootmem.h>
+ #include <linux/slab.h>
++#include <linux/mm.h>
  
- #include <linux/pm_domain.h>
- 
-+#define DEFAULT_DEV_LATENCY_NS	250000
-+
- struct platform_device;
- 
- struct rmobile_pm_domain {
-@@ -29,6 +31,11 @@ struct rmobile_pm_domain *to_rmobile_pd(
- 	return container_of(d, struct rmobile_pm_domain, genpd);
- }
- 
-+struct pm_domain_device {
-+	const char *domain_name;
-+	struct platform_device *pdev;
-+};
-+
- #ifdef CONFIG_PM
- extern void rmobile_init_domains(struct rmobile_pm_domain domains[], int num);
- extern void rmobile_add_device_to_domain_td(const char *domain_name,
-@@ -41,11 +48,16 @@ static inline void rmobile_add_device_to
- 	rmobile_add_device_to_domain_td(domain_name, pdev, NULL);
- }
- 
-+extern void rmobile_add_devices_to_domains(struct pm_domain_device data[],
-+					   int size);
- #else
- 
- #define rmobile_init_domains(domains, num) do { } while (0)
- #define rmobile_add_device_to_domain_td(name, pdev, td) do { } while (0)
- #define rmobile_add_device_to_domain(name, pdev) do { } while (0)
-+
-+static inline void rmobile_add_devices_to_domains(struct pm_domain_device d[],
-+						  int size) {}
- #endif /* CONFIG_PM */
- 
- #endif /* PM_RMOBILE_H */
-Index: linux/arch/arm/mach-shmobile/setup-sh7372.c
-=================================--- linux.orig/arch/arm/mach-shmobile/setup-sh7372.c
-+++ linux/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -999,15 +999,33 @@ static struct platform_device *sh7372_la
- 	&spu1_device,
+ /*
+  * Data types ------------------------------------------------------------------
+@@ -79,7 +80,22 @@ static const struct sysfs_ops memmap_attr_ops = {
+ 	.show = memmap_attr_show,
  };
  
--#define DEV_LATENCY_NS	250000
--
- void __init sh7372_add_standard_devices(void)
- {
--	struct gpd_timing_data latencies = {
--		.stop_latency_ns = DEV_LATENCY_NS,
--		.start_latency_ns = DEV_LATENCY_NS,
--		.save_state_latency_ns = DEV_LATENCY_NS,
--		.restore_state_latency_ns = DEV_LATENCY_NS,
-+	struct pm_domain_device domain_devices[] = {
-+		{ "A3RV", &vpu_device, },
-+		{ "A4MP", &spu0_device, },
-+		{ "A4MP", &spu1_device, },
-+		{ "A3SP", &scif0_device, },
-+		{ "A3SP", &scif1_device, },
-+		{ "A3SP", &scif2_device, },
-+		{ "A3SP", &scif3_device, },
-+		{ "A3SP", &scif4_device, },
-+		{ "A3SP", &scif5_device, },
-+		{ "A3SP", &scif6_device, },
-+		{ "A3SP", &iic1_device, },
-+		{ "A3SP", &dma0_device, },
-+		{ "A3SP", &dma1_device, },
-+		{ "A3SP", &dma2_device, },
-+		{ "A3SP", &usb_dma0_device, },
-+		{ "A3SP", &usb_dma1_device, },
-+		{ "A4R", &iic0_device, },
-+		{ "A4R", &veu0_device, },
-+		{ "A4R", &veu1_device, },
-+		{ "A4R", &veu2_device, },
-+		{ "A4R", &veu3_device, },
-+		{ "A4R", &jpu_device, },
-+		{ "A4R", &tmu00_device, },
-+		{ "A4R", &tmu01_device, },
- 	};
- 
- 	sh7372_init_pm_domains();
-@@ -1018,30 +1036,8 @@ void __init sh7372_add_standard_devices(
- 	platform_add_devices(sh7372_late_devices,
- 			    ARRAY_SIZE(sh7372_late_devices));
- 
--	rmobile_add_device_to_domain_td("A3RV", &vpu_device, &latencies);
--	rmobile_add_device_to_domain_td("A4MP", &spu0_device, &latencies);
--	rmobile_add_device_to_domain_td("A4MP", &spu1_device, &latencies);
--	rmobile_add_device_to_domain_td("A3SP", &scif0_device, &latencies);
--	rmobile_add_device_to_domain_td("A3SP", &scif1_device, &latencies);
--	rmobile_add_device_to_domain_td("A3SP", &scif2_device, &latencies);
--	rmobile_add_device_to_domain_td("A3SP", &scif3_device, &latencies);
--	rmobile_add_device_to_domain_td("A3SP", &scif4_device, &latencies);
--	rmobile_add_device_to_domain_td("A3SP", &scif5_device, &latencies);
--	rmobile_add_device_to_domain_td("A3SP", &scif6_device, &latencies);
--	rmobile_add_device_to_domain_td("A3SP", &iic1_device, &latencies);
--	rmobile_add_device_to_domain_td("A3SP", &dma0_device, &latencies);
--	rmobile_add_device_to_domain_td("A3SP", &dma1_device, &latencies);
--	rmobile_add_device_to_domain_td("A3SP", &dma2_device, &latencies);
--	rmobile_add_device_to_domain_td("A3SP", &usb_dma0_device, &latencies);
--	rmobile_add_device_to_domain_td("A3SP", &usb_dma1_device, &latencies);
--	rmobile_add_device_to_domain_td("A4R", &iic0_device, &latencies);
--	rmobile_add_device_to_domain_td("A4R", &veu0_device, &latencies);
--	rmobile_add_device_to_domain_td("A4R", &veu1_device, &latencies);
--	rmobile_add_device_to_domain_td("A4R", &veu2_device, &latencies);
--	rmobile_add_device_to_domain_td("A4R", &veu3_device, &latencies);
--	rmobile_add_device_to_domain_td("A4R", &jpu_device, &latencies);
--	rmobile_add_device_to_domain_td("A4R", &tmu00_device, &latencies);
--	rmobile_add_device_to_domain_td("A4R", &tmu01_device, &latencies);
-+	rmobile_add_devices_to_domains(domain_devices,
-+				       ARRAY_SIZE(domain_devices));
- }
- 
- static void __init sh7372_earlytimer_init(void)
-Index: linux/arch/arm/mach-shmobile/pm-rmobile.c
-=================================--- linux.orig/arch/arm/mach-shmobile/pm-rmobile.c
-+++ linux/arch/arm/mach-shmobile/pm-rmobile.c
-@@ -167,4 +167,20 @@ void rmobile_add_device_to_domain_td(con
- 	if (pm_clk_no_clocks(dev))
- 		pm_clk_add(dev, NULL);
- }
++#define to_memmap_entry(obj) container_of(obj, struct firmware_map_entry, kobj)
 +
-+void rmobile_add_devices_to_domains(struct pm_domain_device data[],
-+				    int size)
++static void release_firmware_map_entry(struct kobject *kobj)
 +{
-+	struct gpd_timing_data latencies = {
-+		.stop_latency_ns = DEFAULT_DEV_LATENCY_NS,
-+		.start_latency_ns = DEFAULT_DEV_LATENCY_NS,
-+		.save_state_latency_ns = DEFAULT_DEV_LATENCY_NS,
-+		.restore_state_latency_ns = DEFAULT_DEV_LATENCY_NS,
-+	};
-+	int j;
++	struct firmware_map_entry *entry = to_memmap_entry(kobj);
++	struct page *page;
 +
-+	for (j = 0; j < size; j++)
-+		rmobile_add_device_to_domain_td(data[j].domain_name,
-+						data[j].pdev, &latencies);
++	page = virt_to_page(entry);
++	if (PageSlab(page) || PageCompound(page))
++		kfree(entry);
++
++	/* There is no way to free memory allocated from bootmem*/
 +}
- #endif /* CONFIG_PM */
-Index: linux/arch/arm/mach-shmobile/board-mackerel.c
-=================================--- linux.orig/arch/arm/mach-shmobile/board-mackerel.c
-+++ linux/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1407,14 +1407,23 @@ static struct i2c_board_info i2c1_device
- #define GPIO_PORT168CR	0xE60520A8
- #define SRCR4		0xe61580bc
- #define USCCR1		0xE6058144
--#define DEV_LATENCY_NS	250000
- static void __init mackerel_init(void)
++
+ static struct kobj_type memmap_ktype = {
++	.release	= release_firmware_map_entry,
+ 	.sysfs_ops	= &memmap_attr_ops,
+ 	.default_attrs	= def_attrs,
+ };
+@@ -123,6 +139,16 @@ static int firmware_map_add_entry(u64 start, u64 end,
+ 	return 0;
+ }
+ 
++/**
++ * firmware_map_remove_entry() - Does the real work to remove a firmware
++ * memmap entry.
++ * @entry: removed entry.
++ **/
++static inline void firmware_map_remove_entry(struct firmware_map_entry *entry)
++{
++	list_del(&entry->list);
++}
++
+ /*
+  * Add memmap entry on sysfs
+  */
+@@ -144,6 +170,31 @@ static int add_sysfs_fw_map_entry(struct firmware_map_entry *entry)
+ 	return 0;
+ }
+ 
++/*
++ * Remove memmap entry on sysfs
++ */
++static inline void remove_sysfs_fw_map_entry(struct firmware_map_entry *entry)
++{
++	kobject_put(&entry->kobj);
++}
++
++/*
++ * Search memmap entry
++ */
++
++struct firmware_map_entry * __meminit
++find_firmware_map_entry(u64 start, u64 end, const char *type)
++{
++	struct firmware_map_entry *entry;
++
++	list_for_each_entry(entry, &map_entries, list)
++		if ((entry->start = start) && (entry->end = end) &&
++		    (!strcmp(entry->type, type)))
++			return entry;
++
++	return NULL;
++}
++
+ /**
+  * firmware_map_add_hotplug() - Adds a firmware mapping entry when we do
+  * memory hotplug.
+@@ -196,6 +247,32 @@ int __init firmware_map_add_early(u64 start, u64 end, const char *type)
+ 	return firmware_map_add_entry(start, end, type, entry);
+ }
+ 
++/**
++ * firmware_map_remove() - remove a firmware mapping entry
++ * @start: Start of the memory range.
++ * @end:   End of the memory range.
++ * @type:  Type of the memory range.
++ *
++ * removes a firmware mapping entry.
++ *
++ * Returns 0 on success, or -EINVAL if no entry.
++ **/
++int __meminit firmware_map_remove(u64 start, u64 end, const char *type)
++{
++	struct firmware_map_entry *entry;
++
++	entry = find_firmware_map_entry(start, end - 1, type);
++	if (!entry)
++		return -EINVAL;
++
++	firmware_map_remove_entry(entry);
++
++	/* remove the memmap entry */
++	remove_sysfs_fw_map_entry(entry);
++
++	return 0;
++}
++
+ /*
+  * Sysfs functions -------------------------------------------------------------
+  */
+@@ -218,7 +295,6 @@ static ssize_t type_show(struct firmware_map_entry *entry, char *buf)
+ }
+ 
+ #define to_memmap_attr(_attr) container_of(_attr, struct memmap_attribute, attr)
+-#define to_memmap_entry(obj) container_of(obj, struct firmware_map_entry, kobj)
+ 
+ static ssize_t memmap_attr_show(struct kobject *kobj,
+ 				struct attribute *attr, char *buf)
+diff --git a/include/linux/firmware-map.h b/include/linux/firmware-map.h
+index 43fe52f..71d4fa7 100644
+--- a/include/linux/firmware-map.h
++++ b/include/linux/firmware-map.h
+@@ -25,6 +25,7 @@
+ 
+ int firmware_map_add_early(u64 start, u64 end, const char *type);
+ int firmware_map_add_hotplug(u64 start, u64 end, const char *type);
++int firmware_map_remove(u64 start, u64 end, const char *type);
+ 
+ #else /* CONFIG_FIRMWARE_MEMMAP */
+ 
+@@ -38,6 +39,11 @@ static inline int firmware_map_add_hotplug(u64 start, u64 end, const char *type)
+ 	return 0;
+ }
+ 
++static inline int firmware_map_remove(u64 start, u64 end, const char *type)
++{
++	return 0;
++}
++
+ #endif /* CONFIG_FIRMWARE_MEMMAP */
+ 
+ #endif /* _LINUX_FIRMWARE_MAP_H */
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index 3f1d7c5..45b03b3 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -1052,9 +1052,9 @@ int offline_memory(u64 start, u64 size)
+ 	return 0;
+ }
+ 
+-int remove_memory(int nid, u64 start, u64 size)
++int __ref remove_memory(int nid, u64 start, u64 size)
  {
--	struct gpd_timing_data latencies = {
--		.stop_latency_ns = DEV_LATENCY_NS,
--		.start_latency_ns = DEV_LATENCY_NS,
--		.save_state_latency_ns = DEV_LATENCY_NS,
--		.restore_state_latency_ns = DEV_LATENCY_NS,
-+	struct pm_domain_device domain_devices[] = {
-+		{ "A4LC", &lcdc_device, },
-+		{ "A4LC", &hdmi_lcdc_device, },
-+		{ "A4LC", &meram_device, },
-+		{ "A4MP", &fsi_device, },
-+		{ "A3SP", &usbhs0_device, },
-+		{ "A3SP", &usbhs1_device, },
-+		{ "A3SP", &nand_flash_device, },
-+		{ "A3SP", &sh_mmcif_device, },
-+		{ "A3SP", &sdhi0_device, },
-+#if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
-+		{ "A3SP", &sdhi1_device, },
-+#endif
-+		{ "A3SP", &sdhi2_device, },
-+		{ "A4R", &ceu_device, },
- 	};
- 	u32 srcr4;
- 	struct clk *clk;
-@@ -1630,20 +1639,8 @@ static void __init mackerel_init(void)
+-	int ret = -EBUSY;
++	int ret = 0;
+ 	lock_memory_hotplug();
+ 	/*
+ 	 * The memory might become online by other task, even if you offine it.
+@@ -1065,8 +1065,13 @@ int remove_memory(int nid, u64 start, u64 size)
+ 			"because the memmory range is online\n",
+ 			start, start + size);
+ 		ret = -EAGAIN;
++		goto out;
+ 	}
  
- 	platform_add_devices(mackerel_devices, ARRAY_SIZE(mackerel_devices));
++	/* remove memmap entry */
++	firmware_map_remove(start, start + size, "System RAM");
++
++out:
+ 	unlock_memory_hotplug();
+ 	return ret;
  
--	rmobile_add_device_to_domain_td("A4LC", &lcdc_device, &latencies);
--	rmobile_add_device_to_domain_td("A4LC", &hdmi_lcdc_device, &latencies);
--	rmobile_add_device_to_domain_td("A4LC", &meram_device, &latencies);
--	rmobile_add_device_to_domain_td("A4MP", &fsi_device, &latencies);
--	rmobile_add_device_to_domain_td("A3SP", &usbhs0_device, &latencies);
--	rmobile_add_device_to_domain_td("A3SP", &usbhs1_device, &latencies);
--	rmobile_add_device_to_domain_td("A3SP", &nand_flash_device, &latencies);
--	rmobile_add_device_to_domain_td("A3SP", &sh_mmcif_device, &latencies);
--	rmobile_add_device_to_domain_td("A3SP", &sdhi0_device, &latencies);
--#if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
--	rmobile_add_device_to_domain_td("A3SP", &sdhi1_device, &latencies);
--#endif
--	rmobile_add_device_to_domain_td("A3SP", &sdhi2_device, &latencies);
--	rmobile_add_device_to_domain_td("A4R", &ceu_device, &latencies);
-+	rmobile_add_devices_to_domains(domain_devices,
-+				       ARRAY_SIZE(domain_devices));
- 
- 	hdmi_init_pm_clock();
- 	sh7372_pm_init();
+-- 
+1.7.1
 
