@@ -1,56 +1,63 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 16 Aug 2012 13:00:47 +0000
-Subject: [PATCH 12/19] fbdev: sh_mobile_lcdc: Store the backlight brightness internally
-Message-Id: <1345122054-16013-13-git-send-email-laurent.pinchart@ideasonboard.com>
+From: wency@cn.fujitsu.com
+Date: Mon, 20 Aug 2012 09:35:36 +0000
+Subject: [RFC V7 PATCH 13/19] memory-hotplug: check page type in get_page_bootmem
+Message-Id: <1345455342-27752-14-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1345455342-27752-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1345455342-27752-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
 
-There's no need to query the hardware for the currenty brightness value
-through a platform data callback when we can cache the value internally
-in the LCDC driver.
+From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+There is a possibility that get_page_bootmem() is called to the same page many
+times. So when get_page_bootmem is called to the same page, the function only
+increments page->_count.
+
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+CC: Paul Mackerras <paulus@samba.org>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 ---
- drivers/video/sh_mobile_lcdcfb.c |    3 ++-
- drivers/video/sh_mobile_lcdcfb.h |    1 +
- 2 files changed, 3 insertions(+), 1 deletions(-)
+ mm/memory_hotplug.c |   15 +++++++++++----
+ 1 files changed, 11 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
-index c169581..dd8dd41 100644
---- a/drivers/video/sh_mobile_lcdcfb.c
-+++ b/drivers/video/sh_mobile_lcdcfb.c
-@@ -2282,6 +2282,7 @@ static int sh_mobile_lcdc_update_bl(struct backlight_device *bdev)
- 	    bdev->props.state & (BL_CORE_SUSPENDED | BL_CORE_FBBLANK))
- 		brightness = 0;
- 
-+	ch->bl_brightness = brightness;
- 	return ch->cfg->bl_info.set_brightness(brightness);
- }
- 
-@@ -2289,7 +2290,7 @@ static int sh_mobile_lcdc_get_brightness(struct backlight_device *bdev)
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index 5f9f8c7..d85af6d 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -95,10 +95,17 @@ static void release_memory_resource(struct resource *res)
+ static void get_page_bootmem(unsigned long info,  struct page *page,
+ 			     unsigned long type)
  {
- 	struct sh_mobile_lcdc_chan *ch = bl_get_data(bdev);
- 
--	return ch->cfg->bl_info.get_brightness();
-+	return ch->bl_brightness;
+-	page->lru.next = (struct list_head *) type;
+-	SetPagePrivate(page);
+-	set_page_private(page, info);
+-	atomic_inc(&page->_count);
++	unsigned long page_type;
++
++	page_type = (unsigned long) page->lru.next;
++	if (page_type < MEMORY_HOTPLUG_MIN_BOOTMEM_TYPE ||
++	    page_type > MEMORY_HOTPLUG_MAX_BOOTMEM_TYPE){
++		page->lru.next = (struct list_head *) type;
++		SetPagePrivate(page);
++		set_page_private(page, info);
++		atomic_inc(&page->_count);
++	} else
++		atomic_inc(&page->_count);
  }
  
- static int sh_mobile_lcdc_check_fb(struct backlight_device *bdev,
-diff --git a/drivers/video/sh_mobile_lcdcfb.h b/drivers/video/sh_mobile_lcdcfb.h
-index 0f92f65..f839ade 100644
---- a/drivers/video/sh_mobile_lcdcfb.h
-+++ b/drivers/video/sh_mobile_lcdcfb.h
-@@ -94,6 +94,7 @@ struct sh_mobile_lcdc_chan {
- 
- 	/* Backlight */
- 	struct backlight_device *bl;
-+	unsigned int bl_brightness;
- 
- 	/* FB */
- 	struct fb_info *info;
+ /* reference to __meminit __free_pages_bootmem is valid
 -- 
-1.7.8.6
+1.7.1
 
