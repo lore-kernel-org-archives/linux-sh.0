@@ -1,101 +1,154 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 05 Aug 2012 23:43:03 +0000
-Subject: [PATCH 5/15] sh: CMT: Introduce clocksource/clock events suspend/resume routines
-Message-Id: <201208060143.03787.rjw@sisk.pl>
+From: wency@cn.fujitsu.com
+Date: Mon, 20 Aug 2012 09:35:24 +0000
+Subject: [RFC V7 PATCH 01/19] memory-hotplug: rename remove_memory() to offline_memory()/offline_pages()
+Message-Id: <1345455342-27752-2-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201207291612.43138.rjw@sisk.pl> <201208060138.03950.rjw@sisk.pl>
-In-Reply-To: <201208060138.03950.rjw@sisk.pl>
+References: <1345455342-27752-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1345455342-27752-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM list <linux-pm@vger.kernel.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, Thomas Gleixner <tglx@linutronix.de>
+To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
 
+From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-Introduce suspend/resume routines for SH CMT clock event devices and
-modify the suspend/resume routines for SH CMT clock sources such that
-if those devices belong to a PM domain, the generic PM domains
-framework will be notified that the given domain may be turned off
-(during system suspend) or that it has to be turned on (during system
-resume).
+remove_memory() only try to offline pages. It is called in two cases:
+1. hot remove a memory device
+2. echo offline >/sys/devices/system/memory/memoryXX/state
 
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+In the 1st case, we should also change memory block's state, and notify
+the userspace that the memory block's state is changed after offlining
+pages.
+
+So rename remove_memory() to offline_memory()/offline_pages(). And in
+the 1st case, offline_memory() will be used. The function offline_memory()
+is not implemented. In the 2nd case, offline_pages() will be used.
+
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+CC: Paul Mackerras <paulus@samba.org>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
 ---
- drivers/clocksource/sh_cmt.c |   35 +++++++++++++++++++++++++++++++----
- 1 file changed, 31 insertions(+), 4 deletions(-)
+ drivers/acpi/acpi_memhotplug.c |    2 +-
+ drivers/base/memory.c          |    9 +++------
+ include/linux/memory_hotplug.h |    3 ++-
+ mm/memory_hotplug.c            |   22 ++++++++++++++--------
+ 4 files changed, 20 insertions(+), 16 deletions(-)
 
-Index: linux/drivers/clocksource/sh_cmt.c
-=================================--- linux.orig/drivers/clocksource/sh_cmt.c
-+++ linux/drivers/clocksource/sh_cmt.c
-@@ -464,9 +464,20 @@ static void sh_cmt_clocksource_disable(s
- 	sh_cmt_stop(cs_to_sh_cmt(cs), FLAG_CLOCKSOURCE);
- }
- 
-+static void sh_cmt_clocksource_suspend(struct clocksource *cs)
-+{
-+	struct sh_cmt_priv *p = cs_to_sh_cmt(cs);
-+
-+	sh_cmt_stop(p, FLAG_CLOCKSOURCE);
-+	pm_genpd_syscore_poweroff(&p->pdev->dev);
-+}
-+
- static void sh_cmt_clocksource_resume(struct clocksource *cs)
+diff --git a/drivers/acpi/acpi_memhotplug.c b/drivers/acpi/acpi_memhotplug.c
+index 24c807f..2a7beac 100644
+--- a/drivers/acpi/acpi_memhotplug.c
++++ b/drivers/acpi/acpi_memhotplug.c
+@@ -318,7 +318,7 @@ static int acpi_memory_disable_device(struct acpi_memory_device *mem_device)
+ 	 */
+ 	list_for_each_entry_safe(info, n, &mem_device->res_list, list) {
+ 		if (info->enabled) {
+-			result = remove_memory(info->start_addr, info->length);
++			result = offline_memory(info->start_addr, info->length);
+ 			if (result)
+ 				return result;
+ 		}
+diff --git a/drivers/base/memory.c b/drivers/base/memory.c
+index 7dda4f7..44e7de6 100644
+--- a/drivers/base/memory.c
++++ b/drivers/base/memory.c
+@@ -248,26 +248,23 @@ static bool pages_correctly_reserved(unsigned long start_pfn,
+ static int
+ memory_block_action(unsigned long phys_index, unsigned long action)
  {
--	sh_cmt_start(cs_to_sh_cmt(cs), FLAG_CLOCKSOURCE);
-+	struct sh_cmt_priv *p = cs_to_sh_cmt(cs);
-+
-+	pm_genpd_syscore_poweron(&p->pdev->dev);
-+	sh_cmt_start(p, FLAG_CLOCKSOURCE);
- }
- 
- static int sh_cmt_register_clocksource(struct sh_cmt_priv *p,
-@@ -479,7 +490,7 @@ static int sh_cmt_register_clocksource(s
- 	cs->read = sh_cmt_clocksource_read;
- 	cs->enable = sh_cmt_clocksource_enable;
- 	cs->disable = sh_cmt_clocksource_disable;
--	cs->suspend = sh_cmt_clocksource_disable;
-+	cs->suspend = sh_cmt_clocksource_suspend;
- 	cs->resume = sh_cmt_clocksource_resume;
- 	cs->mask = CLOCKSOURCE_MASK(sizeof(unsigned long) * 8);
- 	cs->flags = CLOCK_SOURCE_IS_CONTINUOUS;
-@@ -562,6 +573,16 @@ static int sh_cmt_clock_event_next(unsig
- 	return 0;
- }
- 
-+static void sh_cmt_clock_event_suspend(struct clock_event_device *ced)
-+{
-+	pm_genpd_syscore_poweroff(&ced_to_sh_cmt(ced)->pdev->dev);
-+}
-+
-+static void sh_cmt_clock_event_resume(struct clock_event_device *ced)
-+{
-+	pm_genpd_syscore_poweron(&ced_to_sh_cmt(ced)->pdev->dev);
-+}
-+
- static void sh_cmt_register_clockevent(struct sh_cmt_priv *p,
- 				       char *name, unsigned long rating)
- {
-@@ -576,6 +597,8 @@ static void sh_cmt_register_clockevent(s
- 	ced->cpumask = cpumask_of(0);
- 	ced->set_next_event = sh_cmt_clock_event_next;
- 	ced->set_mode = sh_cmt_clock_event_mode;
-+	ced->suspend = sh_cmt_clock_event_suspend;
-+	ced->resume = sh_cmt_clock_event_resume;
- 
- 	dev_info(&p->pdev->dev, "used for clock events\n");
- 	clockevents_register_device(ced);
-@@ -690,8 +713,12 @@ static int __devinit sh_cmt_probe(struct
- 	struct sh_cmt_priv *p = platform_get_drvdata(pdev);
+-	unsigned long start_pfn, start_paddr;
++	unsigned long start_pfn;
+ 	unsigned long nr_pages = PAGES_PER_SECTION * sections_per_block;
+ 	struct page *first_page;
  	int ret;
  
--	if (!is_early_platform_device(pdev))
--		pm_genpd_dev_always_on(&pdev->dev, true);
-+	if (!is_early_platform_device(pdev)) {
-+		struct sh_timer_config *cfg = pdev->dev.platform_data;
-+
-+		if (cfg->clocksource_rating || cfg->clockevent_rating)
-+			pm_genpd_dev_always_on(&pdev->dev, true);
-+	}
+ 	first_page = pfn_to_page(phys_index << PFN_SECTION_SHIFT);
++	start_pfn = page_to_pfn(first_page);
  
- 	if (p) {
- 		dev_info(&pdev->dev, "kept as earlytimer\n");
+ 	switch (action) {
+ 		case MEM_ONLINE:
+-			start_pfn = page_to_pfn(first_page);
+-
+ 			if (!pages_correctly_reserved(start_pfn, nr_pages))
+ 				return -EBUSY;
+ 
+ 			ret = online_pages(start_pfn, nr_pages);
+ 			break;
+ 		case MEM_OFFLINE:
+-			start_paddr = page_to_pfn(first_page) << PAGE_SHIFT;
+-			ret = remove_memory(start_paddr,
+-					    nr_pages << PAGE_SHIFT);
++			ret = offline_pages(start_pfn, nr_pages);
+ 			break;
+ 		default:
+ 			WARN(1, KERN_WARNING "%s(%ld, %ld) unknown action: "
+diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
+index 910550f..c183f39 100644
+--- a/include/linux/memory_hotplug.h
++++ b/include/linux/memory_hotplug.h
+@@ -233,7 +233,8 @@ static inline int is_mem_section_removable(unsigned long pfn,
+ extern int mem_online_node(int nid);
+ extern int add_memory(int nid, u64 start, u64 size);
+ extern int arch_add_memory(int nid, u64 start, u64 size);
+-extern int remove_memory(u64 start, u64 size);
++extern int offline_pages(unsigned long start_pfn, unsigned long nr_pages);
++extern int offline_memory(u64 start, u64 size);
+ extern int sparse_add_one_section(struct zone *zone, unsigned long start_pfn,
+ 								int nr_pages);
+ extern void sparse_remove_one_section(struct zone *zone, struct mem_section *ms);
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index 3ad25f9..c182c76 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -866,7 +866,7 @@ check_pages_isolated(unsigned long start_pfn, unsigned long end_pfn)
+ 	return offlined;
+ }
+ 
+-static int __ref offline_pages(unsigned long start_pfn,
++static int __ref __offline_pages(unsigned long start_pfn,
+ 		  unsigned long end_pfn, unsigned long timeout)
+ {
+ 	unsigned long pfn, nr_pages, expire;
+@@ -994,18 +994,24 @@ out:
+ 	return ret;
+ }
+ 
+-int remove_memory(u64 start, u64 size)
++int offline_pages(unsigned long start_pfn, unsigned long nr_pages)
+ {
+-	unsigned long start_pfn, end_pfn;
++	return __offline_pages(start_pfn, start_pfn + nr_pages, 120 * HZ);
++}
+ 
+-	start_pfn = PFN_DOWN(start);
+-	end_pfn = start_pfn + PFN_DOWN(size);
+-	return offline_pages(start_pfn, end_pfn, 120 * HZ);
++int offline_memory(u64 start, u64 size)
++{
++	return -EINVAL;
+ }
+ #else
+-int remove_memory(u64 start, u64 size)
++int offline_pages(u64 start, u64 size)
++{
++	return -EINVAL;
++}
++
++int offline_memory(u64 start, u64 size)
+ {
+ 	return -EINVAL;
+ }
+ #endif /* CONFIG_MEMORY_HOTREMOVE */
+-EXPORT_SYMBOL_GPL(remove_memory);
++EXPORT_SYMBOL_GPL(offline_memory);
+-- 
+1.7.1
+
