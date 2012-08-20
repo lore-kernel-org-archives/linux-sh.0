@@ -1,7 +1,7 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 20 Aug 2012 06:13:06 +0000
+Date: Mon, 20 Aug 2012 06:24:51 +0000
 Subject: Re: kzm9g boot fail (was Re: irqdomain breaks ap4 boot)
-Message-Id: <87k3wurt01.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <87ipcersgg.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <502DDC97.5080501@kmckk.co.jp>
 In-Reply-To: <502DDC97.5080501@kmckk.co.jp>
@@ -11,29 +11,18 @@ Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
 
-Hi Kobayashi-san
+Hi Paul
 
-> > -------------------------------------------
-> > diff --git a/arch/arm/mach-shmobile/intc-sh73a0.c b/arch/arm/mach-shmobile/intc-
-> > index ee44740..a6eae4f 100644
-> > --- a/arch/arm/mach-shmobile/intc-sh73a0.c
-> > +++ b/arch/arm/mach-shmobile/intc-sh73a0.c
-> > @@ -259,7 +259,7 @@ static int sh73a0_set_wake(struct irq_data *data, unsigned i
-> >          return 0; /* always allow wakeup */
-> >   }
-> >   
-> > -#define RELOC_BASE 0x1000
-> > +#define RELOC_BASE 0x1200
-> >   
-> >   /* INTCA IRQ pins at INTCS + 0x1000 to make space for GIC+INTC handling */
-> >   #define INTCS_VECT_RELOC(n, vect) INTCS_VECT((n), (vect) + RELOC_BASE)
+> > I'm not sure why, but this patch solved problem ?
 > > 
-> > 
-> 
-> FYI, 
-> I tried this patch, too. I got the following log. It seems no conflicts.
+> I'll let Magnus figure this one out, as it was his hack in the first
 
-Thank you for your checking/testing
+Thank you !
+
+> place. At least we know the irqdomain code isn't at fault anymore.
+
+We have irq2 fix patch for multi-evt from you ?
+        ~~~~
 
 Best regards
 ---
