@@ -1,70 +1,91 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 31 Aug 2012 01:28:21 +0000
-Subject: [PATCH 10/11] ARM: shmobile: marzen: enable thermal sensor
-Message-Id: <1346376502-12114-11-git-send-email-horms@verge.net.au>
+From: wency@cn.fujitsu.com
+Date: Mon, 20 Aug 2012 09:35:28 +0000
+Subject: [RFC V7 PATCH 05/19] memory-hotplug: check whether memory is present or not
+Message-Id: <1345455342-27752-6-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346376502-12114-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1346376502-12114-1-git-send-email-horms@verge.net.au>
+References: <1345455342-27752-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1345455342-27752-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-Marzen board can measure its thermal by this patch.
-	cat /sys/class/thermal/thermal_zoneX/temp
+If system supports memory hot-remove, online_pages() may online removed pages.
+So online_pages() need to check whether onlining pages are present or not.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+CC: Paul Mackerras <paulus@samba.org>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 ---
- arch/arm/configs/marzen_defconfig     |  2 ++
- arch/arm/mach-shmobile/board-marzen.c | 16 ++++++++++++++++
- 2 files changed, 18 insertions(+)
+ include/linux/mmzone.h |   19 +++++++++++++++++++
+ mm/memory_hotplug.c    |   13 +++++++++++++
+ 2 files changed, 32 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index 61d1c55..c30ea5e 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -73,6 +73,8 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
- # CONFIG_HW_RANDOM is not set
- CONFIG_GPIO_SYSFS=y
- # CONFIG_HWMON is not set
-+CONFIG_THERMAL=y
-+CONFIG_RCAR_THERMAL=y
- CONFIG_SSB=y
- # CONFIG_USB_SUPPORT is not set
- CONFIG_MMC=y
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index 91e81e9..eb0a05a 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -113,9 +113,25 @@ static struct platform_device sdhi0_device = {
- 	}
- };
+diff --git a/include/linux/mmzone.h b/include/linux/mmzone.h
+index 2daa54f..ac3ae30 100644
+--- a/include/linux/mmzone.h
++++ b/include/linux/mmzone.h
+@@ -1180,6 +1180,25 @@ void sparse_init(void);
+ #define sparse_index_init(_sec, _nid)  do {} while (0)
+ #endif /* CONFIG_SPARSEMEM */
  
-+/* Thermal */
-+static struct resource thermal_resources[] = {
-+	[0] = {
-+		.start		= 0xFFC48000,
-+		.end		= 0xFFC48038 - 1,
-+		.flags		= IORESOURCE_MEM,
-+	},
-+};
++#ifdef CONFIG_SPARSEMEM
++static inline int pfns_present(unsigned long pfn, unsigned long nr_pages)
++{
++	int i;
++	for (i = 0; i < nr_pages; i++) {
++		if (pfn_present(pfn + i))
++			continue;
++		else
++			return -EINVAL;
++	}
++	return 0;
++}
++#else
++static inline int pfns_present(unsigned long pfn, unsigned long nr_pages)
++{
++	return 0;
++}
++#endif /* CONFIG_SPARSEMEM*/
 +
-+static struct platform_device thermal_device = {
-+	.name		= "rcar_thermal",
-+	.resource	= thermal_resources,
-+	.num_resources	= ARRAY_SIZE(thermal_resources),
-+};
-+
- static struct platform_device *marzen_devices[] __initdata = {
- 	&eth_device,
- 	&sdhi0_device,
-+	&thermal_device,
- };
+ #ifdef CONFIG_NODES_SPAN_OTHER_NODES
+ bool early_pfn_in_nid(unsigned long pfn, int nid);
+ #else
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index 80cded7..3f1d7c5 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -467,6 +467,19 @@ int __ref online_pages(unsigned long pfn, unsigned long nr_pages)
+ 	struct memory_notify arg;
  
- /* USB */
+ 	lock_memory_hotplug();
++	/*
++	 * If system supports memory hot-remove, the memory may have been
++	 * removed. So we check whether the memory has been removed or not.
++	 *
++	 * Note: When CONFIG_SPARSEMEM is defined, pfns_present() become
++	 *       effective. If CONFIG_SPARSEMEM is not defined, pfns_present()
++	 *       always returns 0.
++	 */
++	ret = pfns_present(pfn, nr_pages);
++	if (ret) {
++		unlock_memory_hotplug();
++		return ret;
++	}
+ 	arg.start_pfn = pfn;
+ 	arg.nr_pages = nr_pages;
+ 	arg.status_change_nid = -1;
 -- 
-1.7.10.2.484.gcd07cc5
+1.7.1
 
