@@ -1,94 +1,133 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 13 Aug 2012 22:20:52 +0000
-Subject: [PATCH 1/3] PM / Domains: Document cpuidle-related functions and change their names
-Message-Id: <201208140020.52270.rjw@sisk.pl>
+From: wency@cn.fujitsu.com
+Date: Mon, 20 Aug 2012 09:35:34 +0000
+Subject: [RFC V7 PATCH 11/19] memory-hotplug: remove_memory calls __remove_pages
+Message-Id: <1345455342-27752-12-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201208140019.19288.rjw@sisk.pl>
-In-Reply-To: <201208140019.19288.rjw@sisk.pl>
+References: <1345455342-27752-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1345455342-27752-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM list <linux-pm@vger.kernel.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
 
+From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-The names of the cpuidle-related functions in
-drivers/base/power/domain.c are inconsistent with the names of the
-other exported functions in that file (the "pm_" prefix is missing
-from them) and they are missing kerneldoc comments.
+The patch adds __remove_pages() to remove_memory(). Then the range of
+phys_start_pfn argument and nr_pages argument in __remove_pagse() may
+have different zone. So zone argument is removed from __remove_pages()
+and __remove_pages() caluculates zone in each section.
 
-Fix that by adding the missing "pm_" prefix to the names of those
-functions and add kerneldoc comments documenting them.
+When CONFIG_SPARSEMEM_VMEMMAP is defined, there is no way to remove a memmap.
+So __remove_section only calls unregister_memory_section().
 
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+CC: Paul Mackerras <paulus@samba.org>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 ---
- drivers/base/power/domain.c |   20 ++++++++++++++++++--
- include/linux/pm_domain.h   |    8 ++++----
- 2 files changed, 22 insertions(+), 6 deletions(-)
+ arch/powerpc/platforms/pseries/hotplug-memory.c |    5 +----
+ include/linux/memory_hotplug.h                  |    3 +--
+ mm/memory_hotplug.c                             |   18 +++++++++++-------
+ 3 files changed, 13 insertions(+), 13 deletions(-)
 
-Index: linux/drivers/base/power/domain.c
-=================================--- linux.orig/drivers/base/power/domain.c
-+++ linux/drivers/base/power/domain.c
-@@ -1829,7 +1829,16 @@ int __pm_genpd_remove_callbacks(struct d
- }
- EXPORT_SYMBOL_GPL(__pm_genpd_remove_callbacks);
+diff --git a/arch/powerpc/platforms/pseries/hotplug-memory.c b/arch/powerpc/platforms/pseries/hotplug-memory.c
+index dc0a035..cc14da4 100644
+--- a/arch/powerpc/platforms/pseries/hotplug-memory.c
++++ b/arch/powerpc/platforms/pseries/hotplug-memory.c
+@@ -76,7 +76,6 @@ unsigned long memory_block_size_bytes(void)
+ static int pseries_remove_memblock(unsigned long base, unsigned int memblock_size)
+ {
+ 	unsigned long start, start_pfn;
+-	struct zone *zone;
+ 	int i, ret;
+ 	int sections_to_remove;
  
--int genpd_attach_cpuidle(struct generic_pm_domain *genpd, int state)
-+/**
-+ * pm_genpd_attach_cpuidle - Connect the given PM domain with cpuidle.
-+ * @genpd: PM domain to be connected with cpuidle.
-+ * @state: cpuidle state this domain can disable/enable.
-+ *
-+ * Make a PM domain behave as though it contained a CPU core, that is, instead
-+ * of calling its power down routine it will enable the given cpuidle state so
-+ * that the cpuidle subsystem can power it down (if possible and desirable).
-+ */
-+int pm_genpd_attach_cpuidle(struct generic_pm_domain *genpd, int state)
- {
- 	struct cpuidle_driver *cpuidle_drv;
- 	struct gpd_cpu_data *cpu_data;
-@@ -1878,7 +1887,14 @@ int genpd_attach_cpuidle(struct generic_
- 	goto out;
- }
+@@ -87,8 +86,6 @@ static int pseries_remove_memblock(unsigned long base, unsigned int memblock_siz
+ 		return 0;
+ 	}
  
--int genpd_detach_cpuidle(struct generic_pm_domain *genpd)
-+/**
-+ * pm_genpd_detach_cpuidle - Remove the cpuidle connection from a PM domain.
-+ * @genpd: PM domain to remove the cpuidle connection from.
-+ *
-+ * Remove the cpuidle connection set up by pm_genpd_attach_cpuidle() from the
-+ * given PM domain.
-+ */
-+int pm_genpd_detach_cpuidle(struct generic_pm_domain *genpd)
- {
- 	struct gpd_cpu_data *cpu_data;
- 	struct cpuidle_state *idle_state;
-Index: linux/include/linux/pm_domain.h
-=================================--- linux.orig/include/linux/pm_domain.h
-+++ linux/include/linux/pm_domain.h
-@@ -155,8 +155,8 @@ extern int pm_genpd_add_callbacks(struct
- 				  struct gpd_dev_ops *ops,
- 				  struct gpd_timing_data *td);
- extern int __pm_genpd_remove_callbacks(struct device *dev, bool clear_td);
--extern int genpd_attach_cpuidle(struct generic_pm_domain *genpd, int state);
--extern int genpd_detach_cpuidle(struct generic_pm_domain *genpd);
-+extern int pm_genpd_attach_cpuidle(struct generic_pm_domain *genpd, int state);
-+extern int pm_genpd_detach_cpuidle(struct generic_pm_domain *genpd);
- extern void pm_genpd_init(struct generic_pm_domain *genpd,
- 			  struct dev_power_governor *gov, bool is_off);
+-	zone = page_zone(pfn_to_page(start_pfn));
+-
+ 	/*
+ 	 * Remove section mappings and sysfs entries for the
+ 	 * section of the memory we are removing.
+@@ -101,7 +98,7 @@ static int pseries_remove_memblock(unsigned long base, unsigned int memblock_siz
+ 	sections_to_remove = (memblock_size >> PAGE_SHIFT) / PAGES_PER_SECTION;
+ 	for (i = 0; i < sections_to_remove; i++) {
+ 		unsigned long pfn = start_pfn + i * PAGES_PER_SECTION;
+-		ret = __remove_pages(zone, start_pfn,  PAGES_PER_SECTION);
++		ret = __remove_pages(start_pfn,  PAGES_PER_SECTION);
+ 		if (ret)
+ 			return ret;
+ 	}
+diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
+index fd84ea9..8bf820d 100644
+--- a/include/linux/memory_hotplug.h
++++ b/include/linux/memory_hotplug.h
+@@ -90,8 +90,7 @@ extern bool is_pageblock_removable_nolock(struct page *page);
+ /* reasonably generic interface to expand the physical pages in a zone  */
+ extern int __add_pages(int nid, struct zone *zone, unsigned long start_pfn,
+ 	unsigned long nr_pages);
+-extern int __remove_pages(struct zone *zone, unsigned long start_pfn,
+-	unsigned long nr_pages);
++extern int __remove_pages(unsigned long start_pfn, unsigned long nr_pages);
  
-@@ -225,11 +225,11 @@ static inline int __pm_genpd_remove_call
+ #ifdef CONFIG_NUMA
+ extern int memory_add_physaddr_to_nid(u64 start);
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index 29aff4d..713f1b9 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -275,11 +275,14 @@ static int __meminit __add_section(int nid, struct zone *zone,
+ #ifdef CONFIG_SPARSEMEM_VMEMMAP
+ static int __remove_section(struct zone *zone, struct mem_section *ms)
  {
- 	return -ENOSYS;
+-	/*
+-	 * XXX: Freeing memmap with vmemmap is not implement yet.
+-	 *      This should be removed later.
+-	 */
+-	return -EBUSY;
++	int ret = -EINVAL;
++
++	if (!valid_section(ms))
++		return ret;
++
++	ret = unregister_memory_section(ms);
++
++	return ret;
  }
--static inline int genpd_attach_cpuidle(struct generic_pm_domain *genpd, int st)
-+static inline int pm_genpd_attach_cpuidle(struct generic_pm_domain *genpd, int st)
+ #else
+ static int __remove_section(struct zone *zone, struct mem_section *ms)
+@@ -346,11 +349,11 @@ EXPORT_SYMBOL_GPL(__add_pages);
+  * sure that pages are marked reserved and zones are adjust properly by
+  * calling offline_pages().
+  */
+-int __remove_pages(struct zone *zone, unsigned long phys_start_pfn,
+-		 unsigned long nr_pages)
++int __remove_pages(unsigned long phys_start_pfn, unsigned long nr_pages)
  {
- 	return -ENOSYS;
- }
--static inline int genpd_detach_cpuidle(struct generic_pm_domain *genpd)
-+static inline int pm_genpd_detach_cpuidle(struct generic_pm_domain *genpd)
- {
- 	return -ENOSYS;
- }
+ 	unsigned long i, ret = 0;
+ 	int sections_to_remove;
++	struct zone *zone;
+ 
+ 	/*
+ 	 * We can only remove entire sections
+@@ -363,6 +366,7 @@ int __remove_pages(struct zone *zone, unsigned long phys_start_pfn,
+ 	sections_to_remove = nr_pages / PAGES_PER_SECTION;
+ 	for (i = 0; i < sections_to_remove; i++) {
+ 		unsigned long pfn = phys_start_pfn + i*PAGES_PER_SECTION;
++		zone = page_zone(pfn_to_page(pfn));
+ 		ret = __remove_section(zone, __pfn_to_section(pfn));
+ 		if (ret)
+ 			break;
+-- 
+1.7.1
 
