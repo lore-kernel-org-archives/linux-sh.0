@@ -1,96 +1,92 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 31 Aug 2012 01:28:14 +0000
-Subject: [PATCH 03/11] ARM: mach-shmobile: marzen: defconfig update
-Message-Id: <1346376502-12114-4-git-send-email-horms@verge.net.au>
+From: wency@cn.fujitsu.com
+Date: Mon, 20 Aug 2012 09:35:32 +0000
+Subject: [RFC V7 PATCH 09/19] memory-hotplug: does not release memory region in PAGES_PER_SECTION chunks
+Message-Id: <1345455342-27752-10-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346376502-12114-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1346376502-12114-1-git-send-email-horms@verge.net.au>
+References: <1345455342-27752-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1345455342-27752-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
 
-Update marzen defconfig
-* Enable MMC Block device as SDHI hw is now supported.
-* Default to NFS root, this is consistent with many other
-  shmobile boards
-* Enable UNIX which is required by udevd
+From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-Other changes are noise due to using make savedefconfig
-to create the new defconfig.
+Since applying a patch(de7f0cba96786c), release_mem_region() has been changed
+as called in PAGES_PER_SECTION chunks because register_memory_resource() is
+called in PAGES_PER_SECTION chunks by add_memory(). But it seems firmware
+dependency. If CRS are written in the PAGES_PER_SECTION chunks in ACPI DSDT
+Table, register_memory_resource() is called in PAGES_PER_SECTION chunks.
+But if CRS are written in the DIMM unit in ACPI DSDT Table,
+register_memory_resource() is called in DIMM unit. So release_mem_region()
+should not be called in PAGES_PER_SECTION chunks. The patch fixes it.
 
-Cc: Phil Edworthy <phil.edworthy@renesas.com>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+CC: Paul Mackerras <paulus@samba.org>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 ---
- arch/arm/configs/marzen_defconfig | 13 ++++++++-----
- 1 file changed, 8 insertions(+), 5 deletions(-)
+ arch/powerpc/platforms/pseries/hotplug-memory.c |   13 +++++++++----
+ mm/memory_hotplug.c                             |    4 ++--
+ 2 files changed, 11 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index bf42ad2..cd2dc21 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -1,13 +1,14 @@
- # CONFIG_ARM_PATCH_PHYS_VIRT is not set
- CONFIG_EXPERIMENTAL=y
- CONFIG_KERNEL_LZMA=y
-+CONFIG_NO_HZ=y
- CONFIG_IKCONFIG=y
- CONFIG_IKCONFIG_PROC=y
- CONFIG_LOG_BUF_SHIFT
- CONFIG_SYSCTL_SYSCALL=y
- CONFIG_EMBEDDED=y
- CONFIG_SLAB=y
--# CONFIG_BLOCK is not set
-+# CONFIG_IOSCHED_CFQ is not set
- CONFIG_ARCH_SHMOBILE=y
- CONFIG_ARCH_R8A7779=y
- CONFIG_MACH_MARZEN=y
-@@ -21,7 +22,6 @@ CONFIG_ARM_ERRATA_458693=y
- CONFIG_ARM_ERRATA_460075=y
- CONFIG_ARM_ERRATA_743622=y
- CONFIG_ARM_ERRATA_754322=y
--CONFIG_NO_HZ=y
- CONFIG_SMP=y
- # CONFIG_ARM_CPU_TOPOLOGY is not set
- CONFIG_AEABI=y
-@@ -29,13 +29,16 @@ CONFIG_AEABI=y
- CONFIG_HIGHMEM=y
- CONFIG_ZBOOT_ROM_TEXT=0x0
- CONFIG_ZBOOT_ROM_BSS=0x0
--CONFIG_CMDLINE="console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel"
-+CONFIG_CMDLINE="console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel root=/dev/nfs ip=on"
- CONFIG_CMDLINE_FORCE=y
- CONFIG_KEXEC=y
- # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
- CONFIG_PM_RUNTIME=y
- CONFIG_NET=y
-+CONFIG_UNIX=y
- CONFIG_INET=y
-+CONFIG_IP_PNP=y
-+CONFIG_IP_PNP_DHCP=y
- # CONFIG_IPV6 is not set
- # CONFIG_WIRELESS is not set
- CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
-@@ -69,16 +72,16 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
- CONFIG_GPIO_SYSFS=y
- # CONFIG_HWMON is not set
- CONFIG_SSB=y
--# CONFIG_HID_SUPPORT is not set
- # CONFIG_USB_SUPPORT is not set
- CONFIG_MMC=y
- CONFIG_MMC_SDHI=y
- CONFIG_UIO=y
- CONFIG_UIO_PDRV_GENIRQ=y
- # CONFIG_IOMMU_SUPPORT is not set
--# CONFIG_FILE_LOCKING is not set
- CONFIG_TMPFS=y
- # CONFIG_MISC_FILESYSTEMS is not set
-+CONFIG_NFS_FS=y
-+CONFIG_ROOT_NFS=y
- CONFIG_MAGIC_SYSRQ=y
- CONFIG_DEBUG_INFO=y
- CONFIG_DEBUG_INFO_REDUCED=y
+diff --git a/arch/powerpc/platforms/pseries/hotplug-memory.c b/arch/powerpc/platforms/pseries/hotplug-memory.c
+index 11d8e05..dc0a035 100644
+--- a/arch/powerpc/platforms/pseries/hotplug-memory.c
++++ b/arch/powerpc/platforms/pseries/hotplug-memory.c
+@@ -77,7 +77,8 @@ static int pseries_remove_memblock(unsigned long base, unsigned int memblock_siz
+ {
+ 	unsigned long start, start_pfn;
+ 	struct zone *zone;
+-	int ret;
++	int i, ret;
++	int sections_to_remove;
+ 
+ 	start_pfn = base >> PAGE_SHIFT;
+ 
+@@ -97,9 +98,13 @@ static int pseries_remove_memblock(unsigned long base, unsigned int memblock_siz
+ 	 * to sysfs "state" file and we can't remove sysfs entries
+ 	 * while writing to it. So we have to defer it to here.
+ 	 */
+-	ret = __remove_pages(zone, start_pfn, memblock_size >> PAGE_SHIFT);
+-	if (ret)
+-		return ret;
++	sections_to_remove = (memblock_size >> PAGE_SHIFT) / PAGES_PER_SECTION;
++	for (i = 0; i < sections_to_remove; i++) {
++		unsigned long pfn = start_pfn + i * PAGES_PER_SECTION;
++		ret = __remove_pages(zone, start_pfn,  PAGES_PER_SECTION);
++		if (ret)
++			return ret;
++	}
+ 
+ 	/*
+ 	 * Update memory regions for memory remove
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index 45b03b3..29aff4d 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -358,11 +358,11 @@ int __remove_pages(struct zone *zone, unsigned long phys_start_pfn,
+ 	BUG_ON(phys_start_pfn & ~PAGE_SECTION_MASK);
+ 	BUG_ON(nr_pages % PAGES_PER_SECTION);
+ 
++	release_mem_region(phys_start_pfn << PAGE_SHIFT,  nr_pages * PAGE_SIZE);
++
+ 	sections_to_remove = nr_pages / PAGES_PER_SECTION;
+ 	for (i = 0; i < sections_to_remove; i++) {
+ 		unsigned long pfn = phys_start_pfn + i*PAGES_PER_SECTION;
+-		release_mem_region(pfn << PAGE_SHIFT,
+-				   PAGES_PER_SECTION << PAGE_SHIFT);
+ 		ret = __remove_section(zone, __pfn_to_section(pfn));
+ 		if (ret)
+ 			break;
 -- 
-1.7.10.2.484.gcd07cc5
+1.7.1
 
