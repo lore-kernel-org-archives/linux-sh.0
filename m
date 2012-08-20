@@ -1,629 +1,69 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Mon, 20 Aug 2012 09:39:04 +0000
-Subject: [PATCH] dma: sudmac: add support for SUDMAC
-Message-Id: <503205B8.7060308@renesas.com>
+From: "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>
+Date: Mon, 20 Aug 2012 13:52:29 +0000
+Subject: [PATCH v4 0/8] Avoid cache trashing on clearing huge/gigantic page
+Message-Id: <1345470757-12005-1-git-send-email-kirill.shutemov@linux.intel.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mm@kvack.org
+Cc: Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, x86@kernel.org, Andi Kleen <ak@linux.intel.com>, "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>, Tim Chen <tim.c.chen@linux.intel.com>, Alex Shi <alex.shu@intel.com>, Jan Beulich <jbeulich@novell.com>, Robert Richter <robert.richter@amd.com>, Andy Lutomirski <luto@amacapital.net>, Andrew Morton <akpm@linux-foundation.org>, Andrea Arcangeli <aarcange@redhat.com>, Johannes Weiner <hannes@cmpxchg.org>, Hugh Dickins <hughd@google.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Mel Gorman <mgorman@suse.de>, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org
 
-Some Renesas USB modules have SUDMAC. This patch supports it using
-the shdma-base driver.
+From: "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
----
- drivers/dma/Kconfig     |    8 +
- drivers/dma/Makefile    |    1 +
- drivers/dma/sh/Makefile |    1 +
- drivers/dma/sh/sudmac.c |  429 +++++++++++++++++++++++++++++++++++++++++++++++
- drivers/dma/sh/sudmac.h |   47 +++++
- include/linux/sudmac.h  |   68 ++++++++
- 6 files changed, 554 insertions(+), 0 deletions(-)
- create mode 100644 drivers/dma/sh/sudmac.c
- create mode 100644 drivers/dma/sh/sudmac.h
- create mode 100644 include/linux/sudmac.h
+Clearing a 2MB huge page will typically blow away several levels of CPU
+caches.  To avoid this only cache clear the 4K area around the fault
+address and use a cache avoiding clears for the rest of the 2MB area.
 
-diff --git a/drivers/dma/Kconfig b/drivers/dma/Kconfig
-index d06ea29..fdd7bbe 100644
---- a/drivers/dma/Kconfig
-+++ b/drivers/dma/Kconfig
-@@ -171,6 +171,14 @@ config SH_DMAE
- 	help
- 	  Enable support for the Renesas SuperH DMA controllers.
+This patchset implements cache avoiding version of clear_page only for
+x86. If an architecture wants to provide cache avoiding version of
+clear_page it should to define ARCH_HAS_USER_NOCACHE to 1 and implement
+clear_page_nocache() and clear_user_highpage_nocache().
 
-+config SUDMAC
-+	tristate "Renesas SUDMAC support"
-+	depends on (SUPERH && SH_DMA) || (ARM && ARCH_SHMOBILE)
-+	depends on !SH_DMA_API
-+	select DMA_ENGINE
-+	help
-+	  Enable support for the Renesas SUDMAC controllers.
-+
- config COH901318
- 	bool "ST-Ericsson COH901318 DMA support"
- 	select DMA_ENGINE
-diff --git a/drivers/dma/Makefile b/drivers/dma/Makefile
-index 4cf6b12..b680e5e 100644
---- a/drivers/dma/Makefile
-+++ b/drivers/dma/Makefile
-@@ -16,6 +16,7 @@ obj-$(CONFIG_AT_HDMAC) += at_hdmac.o
- obj-$(CONFIG_MX3_IPU) += ipu/
- obj-$(CONFIG_TXX9_DMAC) += txx9dmac.o
- obj-$(CONFIG_SH_DMAE) += sh/
-+obj-$(CONFIG_SUDMAC) += sh/
- obj-$(CONFIG_COH901318) += coh901318.o coh901318_lli.o
- obj-$(CONFIG_AMCC_PPC440SPE_ADMA) += ppc4xx/
- obj-$(CONFIG_IMX_SDMA) += imx-sdma.o
-diff --git a/drivers/dma/sh/Makefile b/drivers/dma/sh/Makefile
-index 54ae957..16f9225 100644
---- a/drivers/dma/sh/Makefile
-+++ b/drivers/dma/sh/Makefile
-@@ -1,2 +1,3 @@
- obj-$(CONFIG_SH_DMAE) += shdma-base.o
- obj-$(CONFIG_SH_DMAE) += shdma.o
-+obj-$(CONFIG_SUDMAC) += shdma-base.o sudmac.o
-diff --git a/drivers/dma/sh/sudmac.c b/drivers/dma/sh/sudmac.c
-new file mode 100644
-index 0000000..2454623
---- /dev/null
-+++ b/drivers/dma/sh/sudmac.c
-@@ -0,0 +1,429 @@
-+/*
-+ * Renesas SUDMAC support
-+ *
-+ * Copyright (C) 2012 Renesas Solutions Corp.
-+ *
-+ * based on drivers/dma/sh/shdma.c:
-+ * Copyright (C) 2011-2012 Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-+ * Copyright (C) 2009 Nobuhiro Iwamatsu <iwamatsu.nobuhiro@renesas.com>
-+ * Copyright (C) 2009 Renesas Solutions, Inc. All rights reserved.
-+ * Copyright (C) 2007 Freescale Semiconductor, Inc. All rights reserved.
-+ *
-+ * This is free software; you can redistribute it and/or modify
-+ * it under the terms of version 2 of the GNU General Public License as
-+ * published by the Free Software Foundation.
-+ */
-+
-+#include <linux/init.h>
-+#include <linux/module.h>
-+#include <linux/slab.h>
-+#include <linux/interrupt.h>
-+#include <linux/dmaengine.h>
-+#include <linux/platform_device.h>
-+#include <linux/pm_runtime.h>
-+#include <linux/sudmac.h>
-+
-+#include "sudmac.h"
-+
-+#define SUDMAC_DRV_NAME "sudmac"
-+
-+static void sudmac_writel(struct sudmac_chan *sc, u32 data, u32 reg)
-+{
-+	iowrite32(data, sc->base + reg);
-+}
-+
-+static u32 sudmac_readl(struct sudmac_chan *sc, u32 reg)
-+{
-+	return ioread32(sc->base + reg);
-+}
-+
-+static bool sudmac_is_busy(struct sudmac_chan *sc)
-+{
-+	u32 den = sudmac_readl(sc, CH0DEN + sc->offset);
-+
-+	if (den)
-+		return true; /* working */
-+
-+	return false; /* waiting */
-+}
-+
-+static void sudmac_set_reg(struct sudmac_chan *sc, struct sudmac_regs *hw,
-+			   struct shdma_desc *sdesc)
-+{
-+	sudmac_writel(sc, sc->cfg, CH0CFG + sc->offset);
-+	sudmac_writel(sc, hw->ba, CH0BA + sc->offset);
-+	sudmac_writel(sc, hw->bbc, CH0BBC + sc->offset);
-+}
-+
-+static void sudmac_start(struct sudmac_chan *sc)
-+{
-+	u32 dintctrl = sudmac_readl(sc, DINTCTRL);
-+
-+	sudmac_writel(sc, dintctrl | sc->dint_end_bit, DINTCTRL);
-+	sudmac_writel(sc, DEN, CH0DEN + sc->offset);
-+}
-+
-+static void sudmac_start_xfer(struct shdma_chan *schan,
-+			      struct shdma_desc *sdesc)
-+{
-+	struct sudmac_chan *sc = to_chan(schan);
-+	struct sudmac_desc *sd = to_desc(sdesc);
-+
-+	sudmac_set_reg(sc, &sd->hw, sdesc);
-+	sudmac_start(sc);
-+}
-+
-+static bool sudmac_channel_busy(struct shdma_chan *schan)
-+{
-+	struct sudmac_chan *sc = to_chan(schan);
-+
-+	return sudmac_is_busy(sc);
-+}
-+
-+static void sudmac_setup_xfer(struct shdma_chan *schan, int slave_id)
-+{
-+}
-+
-+static const struct sudmac_slave_config *sudmac_find_slave(
-+	struct sudmac_chan *sc, int slave_id)
-+{
-+	struct sudmac_device *sdev = to_sdev(sc);
-+	struct sudmac_pdata *pdata = sdev->pdata;
-+	const struct sudmac_slave_config *cfg;
-+	int i;
-+
-+	for (i = 0, cfg = pdata->slave; i < pdata->slave_num; i++, cfg++)
-+		if (cfg->slave_id = slave_id)
-+			return cfg;
-+
-+	return NULL;
-+}
-+
-+static int sudmac_set_slave(struct shdma_chan *schan, int slave_id, bool try)
-+{
-+	struct sudmac_chan *sc = to_chan(schan);
-+	const struct sudmac_slave_config *cfg = sudmac_find_slave(sc, slave_id);
-+
-+	if (!cfg)
-+		return -ENODEV;
-+
-+	return 0;
-+}
-+
-+static void sudmac_dma_halt(struct sudmac_chan *sc)
-+{
-+	u32 dintctrl = sudmac_readl(sc, DINTCTRL);
-+
-+	sudmac_writel(sc, 0, CH0DEN + sc->offset);
-+	sudmac_writel(sc, dintctrl & ~sc->dint_end_bit, DINTCTRL);
-+	sudmac_writel(sc, sc->dint_end_bit, DINTSTSCLR);
-+}
-+
-+static int sudmac_desc_setup(struct shdma_chan *schan,
-+			     struct shdma_desc *sdesc,
-+			     dma_addr_t src, dma_addr_t dst, size_t *len)
-+{
-+	struct sudmac_chan *sc = to_chan(schan);
-+	struct sudmac_desc *sd = to_desc(sdesc);
-+
-+	dev_dbg(sc->shdma_chan.dev, "%s: src=%x, dst=%x, len=%d\n",
-+		__func__, src, dst, *len);
-+
-+	if (*len > schan->max_xfer_len)
-+		*len = schan->max_xfer_len;
-+
-+	if (dst)
-+		sd->hw.ba = dst;
-+	else if (src)
-+		sd->hw.ba = src;
-+	sd->hw.bbc = *len;
-+
-+	return 0;
-+}
-+
-+static void sudmac_halt(struct shdma_chan *schan)
-+{
-+	struct sudmac_chan *sc = to_chan(schan);
-+
-+	sudmac_dma_halt(sc);
-+}
-+
-+static bool sudmac_chan_irq(struct shdma_chan *schan, int irq)
-+{
-+	struct sudmac_chan *sc = to_chan(schan);
-+	u32 dintsts = sudmac_readl(sc, DINTSTS);
-+
-+	if (!(dintsts & sc->dint_end_bit))
-+		return false;
-+
-+	/* DMA stop */
-+	sudmac_dma_halt(sc);
-+
-+	return true;
-+}
-+
-+static size_t sudmac_get_partial(struct shdma_chan *schan,
-+				 struct shdma_desc *sdesc)
-+{
-+	struct sudmac_chan *sc = to_chan(schan);
-+	struct sudmac_desc *sd = to_desc(sdesc);
-+	u32 cbc = sudmac_readl(sc, CH0CBC + sc->offset);
-+
-+	return sd->hw.bbc - cbc;
-+}
-+
-+static bool sudmac_desc_completed(struct shdma_chan *schan,
-+				  struct shdma_desc *sdesc)
-+{
-+	struct sudmac_chan *sc = to_chan(schan);
-+	struct sudmac_desc *sd = to_desc(sdesc);
-+	u32 ca = sudmac_readl(sc, CH0CA + sc->offset);
-+
-+	return sd->hw.ba + sd->hw.bbc = ca;
-+}
-+
-+static int __devinit sudmac_chan_probe(struct sudmac_device *su_dev, int id,
-+				       int irq, unsigned long flags)
-+{
-+	struct shdma_dev *sdev = &su_dev->shdma_dev;
-+	struct platform_device *pdev = to_platform_device(sdev->dma_dev.dev);
-+	struct sudmac_chan *sc;
-+	struct shdma_chan *schan;
-+	int err;
-+
-+	sc = kzalloc(sizeof(struct sudmac_chan), GFP_KERNEL);
-+	if (!sc) {
-+		dev_err(sdev->dma_dev.dev,
-+			"No free memory for allocating dma channels!\n");
-+		return -ENOMEM;
-+	}
-+
-+	schan = &sc->shdma_chan;
-+	schan->max_xfer_len = 64 * 1024 * 1024 - 1;
-+
-+	shdma_chan_probe(sdev, schan, id);
-+
-+	sc->base = su_dev->chan_reg;
-+
-+	sc->offset = su_dev->pdata->channel->offset;
-+	sc->cfg = su_dev->pdata->channel->config;
-+	sc->dint_end_bit = su_dev->pdata->channel->dint_end_bit;
-+
-+	/* set up channel irq */
-+	if (pdev->id >= 0)
-+		snprintf(sc->dev_id, sizeof(sc->dev_id), "sudmac%d.%d",
-+			 pdev->id, id);
-+	else
-+		snprintf(sc->dev_id, sizeof(sc->dev_id), "sudmac%d", id);
-+
-+	err = shdma_request_irq(schan, irq, flags, sc->dev_id);
-+	if (err) {
-+		dev_err(sdev->dma_dev.dev,
-+			"DMA channel %d request_irq failed %d\n", id, err);
-+		goto err_no_irq;
-+	}
-+
-+	su_dev->chan[id] = sc;
-+	return 0;
-+
-+err_no_irq:
-+	/* remove from dmaengine device node */
-+	shdma_chan_remove(schan);
-+	kfree(sc);
-+	return err;
-+}
-+
-+static void sudmac_chan_remove(struct sudmac_device *su_dev)
-+{
-+	struct dma_device *dma_dev = &su_dev->shdma_dev.dma_dev;
-+	struct shdma_chan *schan;
-+	int i;
-+
-+	shdma_for_each_chan(schan, &su_dev->shdma_dev, i) {
-+		struct sudmac_chan *sc = to_chan(schan);
-+
-+		BUG_ON(!schan);
-+
-+		shdma_free_irq(&sc->shdma_chan);
-+		shdma_chan_remove(schan);
-+		kfree(sc);
-+	}
-+	dma_dev->chancnt = 0;
-+}
-+
-+static void sudmac_shutdown(struct platform_device *pdev)
-+{
-+}
-+
-+static int sudmac_runtime_suspend(struct device *dev)
-+{
-+	return 0;
-+}
-+
-+static int sudmac_runtime_resume(struct device *dev)
-+{
-+	return 0;
-+}
-+
-+#ifdef CONFIG_PM
-+static int sudmac_suspend(struct device *dev)
-+{
-+	return 0;
-+}
-+
-+static int sudmac_resume(struct device *dev)
-+{
-+	return 0;
-+}
-+#else
-+#define sudmac_suspend NULL
-+#define sudmac_resume NULL
-+#endif
-+
-+const struct dev_pm_ops sudmac_pm = {
-+	.suspend		= sudmac_suspend,
-+	.resume			= sudmac_resume,
-+	.runtime_suspend	= sudmac_runtime_suspend,
-+	.runtime_resume		= sudmac_runtime_resume,
-+};
-+
-+static dma_addr_t sudmac_slave_addr(struct shdma_chan *schan)
-+{
-+	/* SUDMAC doesn't need the address */
-+	return 0;
-+}
-+
-+static struct shdma_desc *sudmac_embedded_desc(void *buf, int i)
-+{
-+	return &((struct sudmac_desc *)buf)[i].shdma_desc;
-+}
-+
-+static const struct shdma_ops sudmac_shdma_ops = {
-+	.desc_completed = sudmac_desc_completed,
-+	.halt_channel = sudmac_halt,
-+	.channel_busy = sudmac_channel_busy,
-+	.slave_addr = sudmac_slave_addr,
-+	.desc_setup = sudmac_desc_setup,
-+	.set_slave = sudmac_set_slave,
-+	.setup_xfer = sudmac_setup_xfer,
-+	.start_xfer = sudmac_start_xfer,
-+	.embedded_desc = sudmac_embedded_desc,
-+	.chan_irq = sudmac_chan_irq,
-+	.get_partial = sudmac_get_partial,
-+};
-+
-+static int __devinit sudmac_probe(struct platform_device *pdev)
-+{
-+	struct sudmac_pdata *pdata = pdev->dev.platform_data;
-+	int err, i;
-+	struct sudmac_device *su_dev;
-+	struct dma_device *dma_dev;
-+	struct resource *chan, *irq_res;
-+
-+	/* get platform data */
-+	if (!pdata)
-+		return -ENODEV;
-+
-+	chan = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	irq_res = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
-+	if (!chan || !irq_res)
-+		return -ENODEV;
-+
-+	err = -ENOMEM;
-+	su_dev = kzalloc(sizeof(struct sudmac_device), GFP_KERNEL);
-+	if (!su_dev) {
-+		dev_err(&pdev->dev, "Not enough memory\n");
-+		goto ealloc;
-+	}
-+
-+	dma_dev = &su_dev->shdma_dev.dma_dev;
-+
-+	su_dev->chan_reg = ioremap(chan->start, resource_size(chan));
-+	if (!su_dev->chan_reg)
-+		goto emapchan;
-+
-+	dma_cap_set(DMA_SLAVE, dma_dev->cap_mask);
-+
-+	su_dev->shdma_dev.ops = &sudmac_shdma_ops;
-+	su_dev->shdma_dev.desc_size = sizeof(struct sudmac_desc);
-+	err = shdma_init(&pdev->dev, &su_dev->shdma_dev, pdata->channel_num);
-+	if (err < 0)
-+		goto eshdma;
-+
-+	/* platform data */
-+	su_dev->pdata = pdev->dev.platform_data;
-+
-+	platform_set_drvdata(pdev, su_dev);
-+
-+	pm_runtime_enable(&pdev->dev);
-+	err = pm_runtime_get_sync(&pdev->dev);
-+	if (err < 0)
-+		dev_err(&pdev->dev, "%s(): GET = %d\n", __func__, err);
-+
-+	/* Create DMA Channel */
-+	for (i = 0; i < pdata->channel_num; i++) {
-+		err = sudmac_chan_probe(su_dev, i, irq_res->start, IRQF_SHARED);
-+		if (err)
-+			goto chan_probe_err;
-+	}
-+
-+	pm_runtime_put(&pdev->dev);
-+
-+	err = dma_async_device_register(&su_dev->shdma_dev.dma_dev);
-+	if (err < 0)
-+		goto edmadevreg;
-+
-+	return err;
-+
-+edmadevreg:
-+	pm_runtime_get(&pdev->dev);
-+
-+chan_probe_err:
-+	sudmac_chan_remove(su_dev);
-+
-+	pm_runtime_put(&pdev->dev);
-+	pm_runtime_disable(&pdev->dev);
-+
-+	platform_set_drvdata(pdev, NULL);
-+	shdma_cleanup(&su_dev->shdma_dev);
-+eshdma:
-+	iounmap(su_dev->chan_reg);
-+emapchan:
-+	kfree(su_dev);
-+ealloc:
-+
-+	return err;
-+}
-+
-+static int __devexit sudmac_remove(struct platform_device *pdev)
-+{
-+	struct sudmac_device *su_dev = platform_get_drvdata(pdev);
-+	struct dma_device *dma_dev = &su_dev->shdma_dev.dma_dev;
-+
-+	dma_async_device_unregister(dma_dev);
-+	pm_runtime_disable(&pdev->dev);
-+	sudmac_chan_remove(su_dev);
-+	shdma_cleanup(&su_dev->shdma_dev);
-+	iounmap(su_dev->chan_reg);
-+	platform_set_drvdata(pdev, NULL);
-+	kfree(su_dev);
-+
-+	return 0;
-+}
-+
-+static struct platform_driver sudmac_driver = {
-+	.driver 	= {
-+		.owner	= THIS_MODULE,
-+		.pm	= &sudmac_pm,
-+		.name	= SUDMAC_DRV_NAME,
-+	},
-+	.probe		= sudmac_probe,
-+	.remove		= __devexit_p(sudmac_remove),
-+	.shutdown	= sudmac_shutdown,
-+};
-+module_platform_driver(sudmac_driver);
-+
-+MODULE_AUTHOR("Yoshihiro Shimoda");
-+MODULE_DESCRIPTION("Renesas SUDMAC driver");
-+MODULE_LICENSE("GPL v2");
-+MODULE_ALIAS("platform:" SUDMAC_DRV_NAME);
-diff --git a/drivers/dma/sh/sudmac.h b/drivers/dma/sh/sudmac.h
-new file mode 100644
-index 0000000..4463b9a
---- /dev/null
-+++ b/drivers/dma/sh/sudmac.h
-@@ -0,0 +1,47 @@
-+/*
-+ * Renesas SUDMAC support
-+ *
-+ * Copyright (C) 2012 Renesas Solutions Corp.
-+ *
-+ * This is free software; you can redistribute it and/or modify
-+ * it under the terms of version 2 of the GNU General Public License as
-+ * published by the Free Software Foundation.
-+ */
-+#ifndef __DMA_SUDMAC_H
-+#define __DMA_SUDMAC_H
-+
-+#define SUDMAC_MAX_CHANNELS 2
-+
-+struct sudmac_chan {
-+	struct shdma_chan shdma_chan;
-+	void __iomem *base;
-+	char dev_id[16];	/* unique name per DMAC of channel */
-+
-+	u32 offset;		/* for CFG, BA, BBC, CA, CBC, DEN */
-+	u32 cfg;
-+	u32 dint_end_bit;
-+};
-+
-+struct sudmac_device {
-+	struct shdma_dev shdma_dev;
-+	struct sudmac_chan *chan[SUDMAC_MAX_CHANNELS];
-+	struct sudmac_pdata *pdata;
-+	void __iomem *chan_reg;
-+};
-+
-+struct sudmac_regs {
-+	u32 ba;
-+	u32 bbc;
-+};
-+
-+struct sudmac_desc {
-+	struct sudmac_regs hw;
-+	struct shdma_desc shdma_desc;
-+};
-+
-+#define to_chan(schan) container_of(schan, struct sudmac_chan, shdma_chan)
-+#define to_desc(sdesc) container_of(sdesc, struct sudmac_desc, shdma_desc)
-+#define to_sdev(sc) container_of(sc->shdma_chan.dma_chan.device, \
-+				 struct sudmac_device, shdma_dev.dma_dev)
-+
-+#endif	/* __DMA_SUDMAC_H */
-diff --git a/include/linux/sudmac.h b/include/linux/sudmac.h
-new file mode 100644
-index 0000000..064966a
---- /dev/null
-+++ b/include/linux/sudmac.h
-@@ -0,0 +1,68 @@
-+/*
-+ * Header for the SUDMAC driver
-+ *
-+ * Copyright (C) 2012 Renesas Solutions Corp.
-+ *
-+ * based on include/linux/sh_dma.h:
-+ * Copyright (C) 2010 Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-+ *
-+ * This is free software; you can redistribute it and/or modify
-+ * it under the terms of version 2 of the GNU General Public License as
-+ * published by the Free Software Foundation.
-+ */
-+#ifndef SUDMAC_H
-+#define SUDMAC_H
-+
-+#include <linux/dmaengine.h>
-+#include <linux/shdma-base.h>
-+#include <linux/types.h>
-+
-+/* Used by slave DMA clients to request DMA to/from a specific peripheral */
-+struct sudmac_slave {
-+	struct shdma_slave	shdma_slave;	/* Set by the platform */
-+};
-+
-+/*
-+ * Supplied by platforms to specify, how a DMA channel has to be configured for
-+ * a certain peripheral
-+ */
-+struct sudmac_slave_config {
-+	int		slave_id;
-+};
-+
-+struct sudmac_channel {
-+	unsigned long	offset;
-+	unsigned long	config;
-+	unsigned long	dint_end_bit;
-+};
-+
-+struct sudmac_pdata {
-+	const struct sudmac_slave_config *slave;
-+	int slave_num;
-+	const struct sudmac_channel *channel;
-+	int channel_num;
-+};
-+
-+/* SUDMAC register */
-+#define CH0CFG		0x00
-+#define CH0BA		0x10
-+#define CH0BBC		0x18
-+#define CH0CA		0x20
-+#define CH0CBC		0x28
-+#define CH0DEN		0x30
-+#define DSTSCLR		0x38
-+#define DBUFCTRL	0x3C
-+#define DINTCTRL	0x40
-+#define DINTSTS		0x44
-+#define DINTSTSCLR	0x48
-+#define CH0SHCTRL	0x50
-+
-+/* Definitions for the SUDMAC */
-+#define SENDBUFM	0x1000 /* b12: Transmit Buffer Mode */
-+#define RCVENDM		0x0100 /* b8: Receive Data Transfer End Mode */
-+#define LBA_WAIT	0x0030 /* b5-4: Local Bus Access Wait */
-+#define DEN		0x0001 /* b0: DMA Transfer Enable */
-+#define CH1ENDE		0x0002 /* b1: Ch1 DMA Transfer End Int Enable */
-+#define CH0ENDE		0x0001 /* b0: Ch0 DMA Transfer End Int Enable */
-+
-+#endif
+v4:
+  - vm.clear_huge_page_nocache sysctl;
+  - rework page iteration in clear_{huge,gigantic}_page according to
+    Andrea Arcangeli suggestion;
+v3:
+  - Rebased to current Linus' tree. kmap_atomic() build issue is fixed;
+  - Pass fault address to clear_huge_page(). v2 had problem with clearing
+    for sizes other than HPAGE_SIZE;
+  - x86: fix 32bit variant. Fallback version of clear_page_nocache() has
+    been added for non-SSE2 systems;
+  - x86: clear_page_nocache() moved to clear_page_{32,64}.S;
+  - x86: use pushq_cfi/popq_cfi instead of push/pop;
+v2:
+  - No code change. Only commit messages are updated;
+  - RFC mark is dropped;
+
+Andi Kleen (5):
+  THP: Use real address for NUMA policy
+  THP: Pass fault address to __do_huge_pmd_anonymous_page()
+  x86: Add clear_page_nocache
+  mm: make clear_huge_page cache clear only around the fault address
+  x86: switch the 64bit uncached page clear to SSE/AVX v2
+
+Kirill A. Shutemov (3):
+  hugetlb: pass fault address to hugetlb_no_page()
+  mm: pass fault address to clear_huge_page()
+  mm: implement vm.clear_huge_page_nocache sysctl
+
+ Documentation/sysctl/vm.txt      |   13 ++++++
+ arch/x86/include/asm/page.h      |    2 +
+ arch/x86/include/asm/string_32.h |    5 ++
+ arch/x86/include/asm/string_64.h |    5 ++
+ arch/x86/lib/Makefile            |    3 +-
+ arch/x86/lib/clear_page_32.S     |   72 +++++++++++++++++++++++++++++++++++
+ arch/x86/lib/clear_page_64.S     |   78 ++++++++++++++++++++++++++++++++++++++
+ arch/x86/mm/fault.c              |    7 +++
+ include/linux/mm.h               |    7 +++-
+ kernel/sysctl.c                  |   12 ++++++
+ mm/huge_memory.c                 |   17 ++++----
+ mm/hugetlb.c                     |   39 ++++++++++---------
+ mm/memory.c                      |   72 ++++++++++++++++++++++++++++++----
+ 13 files changed, 294 insertions(+), 38 deletions(-)
+ create mode 100644 arch/x86/lib/clear_page_32.S
+
 -- 
-1.7.1
+1.7.7.6
+
