@@ -1,20 +1,49 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 09 Aug 2012 04:22:05 +0000
-Subject: Re: [PATCH] sh: sh7269: Fix LCD pinmux
-Message-Id: <20120809042205.GE1614@linux-sh.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 21 Aug 2012 00:35:52 +0000
+Subject: [PATCH] ARM: shmobile: sh73a0: fixup RELOC_BASE of intca_irq_pins_desc
+Message-Id: <87y5l95bfg.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1344323440-11451-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1344323440-11451-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Aug 07, 2012 at 08:10:40AM +0100, Phil Edworthy wrote:
-> There are two ports that can output the LCD data, therefore
-> they have to use separate pimux identifiers so we can select
-> the one we want to use.
-> 
-> Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+sh73a0 :: intca_irq_pins_desc irq table had conflict
+from irq 552 to irq 557 before.
+But the second controller was simply trampling the
+first one by way of the -EEXIST case from irq_alloc_desc_at().
 
-Applied, thanks.
+But now, we have irqdomain support from
+1d6a21b0a672fb29b01ccf397d478e0541e17716
+(sh: intc: initial irqdomain support)
+
+The irqdomain code has simply tightened down the sanity checks and
+error path. So, sh73a0 CPU board got some WARNING when booting now.
+This patch fixup RELOC_BASE to solve this issue.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+This patch is for paul/sh-latest branch
+
+ arch/arm/mach-shmobile/intc-sh73a0.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/intc-sh73a0.c b/arch/arm/mach-shmobile/intc-sh73a0.c
+index ee44740..588555a 100644
+--- a/arch/arm/mach-shmobile/intc-sh73a0.c
++++ b/arch/arm/mach-shmobile/intc-sh73a0.c
+@@ -259,9 +259,9 @@ static int sh73a0_set_wake(struct irq_data *data, unsigned int on)
+ 	return 0; /* always allow wakeup */
+ }
+ 
+-#define RELOC_BASE 0x1000
++#define RELOC_BASE 0x1200
+ 
+-/* INTCA IRQ pins at INTCS + 0x1000 to make space for GIC+INTC handling */
++/* INTCA IRQ pins at INTCS + RELOC_BASE to make space for GIC+INTC handling */
+ #define INTCS_VECT_RELOC(n, vect) INTCS_VECT((n), (vect) + RELOC_BASE)
+ 
+ INTC_IRQ_PINS_32(intca_irq_pins, 0xe6900000,
+-- 
+1.7.5.4
+
