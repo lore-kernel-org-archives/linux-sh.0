@@ -1,168 +1,39 @@
-From: Andrew Morton <akpm@linux-foundation.org>
-Date: Fri, 31 Aug 2012 21:06:23 +0000
-Subject: Re: [RFC v8 PATCH 08/20] memory-hotplug: remove /sys/firmware/memmap/X sysfs
-Message-Id: <20120831140623.8d13bd2c.akpm@linux-foundation.org>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Thu, 23 Aug 2012 23:18:16 +0000
+Subject: [GIT PULL] Renesas ARM-based SoC fix for v3.6
+Message-Id: <201208240118.16563.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346148027-24468-1-git-send-email-wency@cn.fujitsu.com>
-	<1346148027-24468-9-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1346148027-24468-9-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: wency@cn.fujitsu.com
-Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, 28 Aug 2012 18:00:15 +0800
-wency@cn.fujitsu.com wrote:
+Hi,
 
-> From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-> 
-> When (hot)adding memory into system, /sys/firmware/memmap/X/{end, start, type}
-> sysfs files are created. But there is no code to remove these files. The patch
-> implements the function to remove them.
-> 
-> Note : The code does not free firmware_map_entry since there is no way to free
->        memory which is allocated by bootmem.
-> 
-> ....
->
-> +#define to_memmap_entry(obj) container_of(obj, struct firmware_map_entry, kobj)
+Please pull from the git repository at
 
-It would be better to implement this as an inlined C function.  That
-has improved type safety and improved readability.
+  git://git.kernel.org/pub/scm/linux/kernel/git/rafael/renesas.git fixes
 
-> +static void release_firmware_map_entry(struct kobject *kobj)
-> +{
-> +	struct firmware_map_entry *entry = to_memmap_entry(kobj);
-> +	struct page *page;
-> +
-> +	page = virt_to_page(entry);
-> +	if (PageSlab(page) || PageCompound(page))
+to receive one fix for the sh73a0 SoC support code as commit
+6c0274cbe63ec265f842537825684a619e6cce93
 
-That PageCompound() test looks rather odd.  Why is this done?
+  ARM: shmobile: sh73a0: fixup RELOC_BASE of intca_irq_pins_desc
 
-> +		kfree(entry);
-> +
-> +	/* There is no way to free memory allocated from bootmem*/
-> +}
+on top of commit d9875690d9b89a866022ff49e3fcea892345ad92
 
-This function is a bit ugly - poking around in page flags to determine
-whether or not the memory came from bootmem.  It would be cleaner to
-use a separate boolean.  Although I guess we can live with it as you
-have it here.
+  Linux 3.6-rc2
 
->  static struct kobj_type memmap_ktype = {
-> +	.release	= release_firmware_map_entry,
->  	.sysfs_ops	= &memmap_attr_ops,
->  	.default_attrs	= def_attrs,
->  };
-> @@ -123,6 +139,16 @@ static int firmware_map_add_entry(u64 start, u64 end,
->  	return 0;
->  }
->  
-> +/**
-> + * firmware_map_remove_entry() - Does the real work to remove a firmware
-> + * memmap entry.
-> + * @entry: removed entry.
-> + **/
-> +static inline void firmware_map_remove_entry(struct firmware_map_entry *entry)
-> +{
-> +	list_del(&entry->list);
-> +}
+It fixes an IRQ configuration issue uncovered by the addition of
+preliminary irqdomain support.
 
-Is there no locking  to protect that list?
+Thanks!
 
->  /*
->   * Add memmap entry on sysfs
->   */
-> @@ -144,6 +170,31 @@ static int add_sysfs_fw_map_entry(struct firmware_map_entry *entry)
->  	return 0;
->  }
->  
-> +/*
-> + * Remove memmap entry on sysfs
-> + */
-> +static inline void remove_sysfs_fw_map_entry(struct firmware_map_entry *entry)
-> +{
-> +	kobject_put(&entry->kobj);
-> +}
-> +
-> +/*
-> + * Search memmap entry
-> + */
-> +
-> +struct firmware_map_entry * __meminit
-> +find_firmware_map_entry(u64 start, u64 end, const char *type)
 
-A better name would be firmware_map_find_entry().  To retain the (good)
-convention that symbols exported from here all start with
-"firmware_map_".
+ arch/arm/mach-shmobile/intc-sh73a0.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-> +{
-> +	struct firmware_map_entry *entry;
-> +
-> +	list_for_each_entry(entry, &map_entries, list)
-> +		if ((entry->start = start) && (entry->end = end) &&
-> +		    (!strcmp(entry->type, type)))
-> +			return entry;
-> +
-> +	return NULL;
-> +}
-> +
->  /**
->   * firmware_map_add_hotplug() - Adds a firmware mapping entry when we do
->   * memory hotplug.
-> @@ -196,6 +247,32 @@ int __init firmware_map_add_early(u64 start, u64 end, const char *type)
->  	return firmware_map_add_entry(start, end, type, entry);
->  }
->  
-> +/**
-> + * firmware_map_remove() - remove a firmware mapping entry
-> + * @start: Start of the memory range.
-> + * @end:   End of the memory range.
-> + * @type:  Type of the memory range.
-> + *
-> + * removes a firmware mapping entry.
-> + *
-> + * Returns 0 on success, or -EINVAL if no entry.
-> + **/
-> +int __meminit firmware_map_remove(u64 start, u64 end, const char *type)
-> +{
-> +	struct firmware_map_entry *entry;
-> +
-> +	entry = find_firmware_map_entry(start, end - 1, type);
-> +	if (!entry)
-> +		return -EINVAL;
-> +
-> +	firmware_map_remove_entry(entry);
-> +
-> +	/* remove the memmap entry */
-> +	remove_sysfs_fw_map_entry(entry);
-> +
-> +	return 0;
-> +}
+---------------
 
-Again, the lack of locking looks bad.
+Kuninori Morimoto (1):
+      ARM: shmobile: sh73a0: fixup RELOC_BASE of intca_irq_pins_desc
 
-> ...
->
-> --- a/mm/memory_hotplug.c
-> +++ b/mm/memory_hotplug.c
-> @@ -1052,9 +1052,9 @@ int offline_memory(u64 start, u64 size)
->  	return 0;
->  }
->  
-> -int remove_memory(int nid, u64 start, u64 size)
-> +int __ref remove_memory(int nid, u64 start, u64 size)
-
-Why was __ref added?
-
->  {
-> -	int ret = -EBUSY;
-> +	int ret = 0;
->  	lock_memory_hotplug();
->  	/*
->  	 * The memory might become online by other task, even if you offine it.
->
-> ...
->
