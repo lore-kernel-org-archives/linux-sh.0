@@ -1,43 +1,48 @@
 From: Geert Uytterhoeven <geert@linux-m68k.org>
-Date: Sat, 18 Aug 2012 13:41:39 +0000
-Subject: Re: Build regressions/improvements in v3.6-rc2
-Message-Id: <alpine.DEB.2.00.1208181538320.22662@ayla.of.borg>
+Date: Fri, 24 Aug 2012 07:34:33 +0000
+Subject: Re: Build regressions/improvements in v3.6-rc3
+Message-Id: <CAMuHMdVK0M4eadPsazmTtBTVaXvo5WXDFS+VTaLaXcgCeDk2NQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <alpine.DEB.2.00.1208181538001.21972@ayla.of.borg>
-In-Reply-To: <alpine.DEB.2.00.1208181538001.21972@ayla.of.borg>
+References: <1345754768-4634-1-git-send-email-geert@linux-m68k.org>
+	<5036AC23.8020309@xenotime.net>
+	<20120824003315.GA3360@roeck-us.net>
+In-Reply-To: <20120824003315.GA3360@roeck-us.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux Kernel Development <linux-kernel@vger.kernel.org>
-Cc: linux-sh@vger.kernel.org, Chris Zankel <chris@zankel.net>
+To: Guenter Roeck <linux@roeck-us.net>
+Cc: Randy Dunlap <rdunlap@xenotime.net>, linux-kernel@vger.kernel.org, Wim Van Sebroeck <wim@iguana.be>, Linux-sh list <linux-sh@vger.kernel.org>
 
-On Sat, 18 Aug 2012, Geert Uytterhoeven wrote:
-> JFYI, when comparing v3.6-rc2 to v3.6-rc1[3], the summaries are:
->   - build errors: +4/-6
+On Fri, Aug 24, 2012 at 2:33 AM, Guenter Roeck <linux@roeck-us.net> wrote:
+> On Thu, Aug 23, 2012 at 03:18:11PM -0700, Randy Dunlap wrote:
+>> On 08/23/2012 01:46 PM, Geert Uytterhoeven wrote:
+>>
+>> > *** ERRORS ***
+>> >
+>> > 54 regressions:
+>>
+>>
+>> >   + drivers/net/can/usb/peak_usb/pcan_usb_core.c: error: conflicting types for 'dump_mem':  => 56:6
+>> >   + drivers/net/can/usb/peak_usb/pcan_usb_core.h: error: conflicting types for 'dump_mem':  => 134:6
+>>
+>> Anyone see what causes this?  I looked but failed to see
+>> the problem.
+>>
+> sh target, maybe ? dump_mem is declared as global function in arch/sh/include/asm/kdebug.h.
+> Does not seem to be the best name for a global function.
 
-  + arch/sh/lib/mcount.S: Error: pcrel too far:  => 89
+Yep, sh-allyesconfig/sh-allmodconfig.
 
-sh-allyesconfig
-
-  + drivers/input/touchscreen/eeti_ts.c: error: implicit declaration of function 'gpio_free' [-Werror=implicit-function-declaration]:  => 243:2
-  + drivers/input/touchscreen/eeti_ts.c: error: implicit declaration of function 'gpio_request_one' [-Werror=implicit-function-declaration]:  => 205:2
-
-xtensa-allmodconfig
-
-  + error: No rule to make target /scratch/kisskb/build/linus_m68k-allmodconfig_m68k/usr/include/linux/kvm_para.h:  => N/A
-
-Known issue with kvm_para.h header export
-
-> [1] http://kisskb.ellerman.id.au/kisskb/head/5338/ (all 116 configs)
-> [3] http://kisskb.ellerman.id.au/kisskb/head/5315/ (all 116 configs)
+arch/sh/include/asm/kdebug.h:15:13: note: previous declaration of
+'dump_mem' was here
 
 Gr{oetje,eeting}s,
 
-						Geert
+                        Geert
 
 --
 Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
 
 In personal conversations with technical people, I call myself a hacker. But
 when I'm talking to journalists I just say "programmer" or something like that.
-							    -- Linus Torvalds
+                                -- Linus Torvalds
