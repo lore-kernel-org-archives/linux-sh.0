@@ -1,40 +1,47 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Thu, 30 Aug 2012 05:36:03 +0000
-Subject: [PATCH] ARM: mach-shmobile: Add compilation support for dtbs using 'make dtbs'
-Message-Id: <1346304963-23457-2-git-send-email-horms@verge.net.au>
+Date: Sat, 25 Aug 2012 05:31:51 +0000
+Subject: Re: [PATCH 0/9] SH Mobile LCDC and MERAM patches
+Message-Id: <20120825053151.GA29755@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346304963-23457-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1346304963-23457-1-git-send-email-horms@verge.net.au>
+References: <1342658362-19491-1-git-send-email-laurent.pinchart@ideasonboard.com>
+In-Reply-To: <1342658362-19491-1-git-send-email-laurent.pinchart@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-fbdev@vger.kernel.org
 
-From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+On Thu, Jul 19, 2012 at 02:39:13AM +0200, Laurent Pinchart wrote:
+> Hi,
+> 
+> Here are 9 patches for the SH Mobile LCDC and MERAM drivers. Patches 1/9 to
+> 4/9 and 9/9 have previously been posted as part of the "SH Mobile LCDC
+> MERAM-based frame buffer backing store" RFC series. Patch 5/9 has also been
+> posted as part of the same series, albeit included in patch 9/9.
+> 
+> As most of those patches have already been posted for review (patches 6/9 to
+> 8/9 that haven't been posted already are small fixes), I plan to send a pull
+> request soon, to get the patches in v3.6 if possible.
 
-Add compilation support for dtbs using 'make dtbs'
+Hi Laurent,
 
-Cc: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Simon Horman <horms@verge.net.au>
-Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
-Signed-off-by: Simon Horman <horms@verge.net.au>
----
- arch/arm/mach-shmobile/Makefile.boot | 4 ++++
- 1 file changed, 4 insertions(+)
+could you let me know what the status of these patches is with regards to
+merging.
 
-diff --git a/arch/arm/mach-shmobile/Makefile.boot b/arch/arm/mach-shmobile/Makefile.boot
-index 498efd9..5e41019 100644
---- a/arch/arm/mach-shmobile/Makefile.boot
-+++ b/arch/arm/mach-shmobile/Makefile.boot
-@@ -7,3 +7,7 @@ __ZRELADDR	:= $(shell /bin/bash -c 'printf "0x%08x" \
- #
- #params_phys-y (Instead: Pass atags pointer in r2)
- #initrd_phys-y (Instead: Use compiled-in initramfs)
-+
-+dtb-$(CONFIG_MACH_KZM9G) += sh73a0-kzm9g.dtb
-+dtb-$(CONFIG_MACH_KZM9D) += emev2-kzm9d.dtb
-+dtb-$(CONFIG_MACH_ARMADILLO800EVA) += r8a7740-armadillo800eva.dtb
--- 
-1.7.10.2.484.gcd07cc5
-
+> Laurent Pinchart (9):
+>   sh_mobile_meram: Rename operations to cache_[alloc|free|update]
+>   sh_mobile_meram: Use direct function calls for the public API
+>   sh_mobile_meram: Add direct MERAM allocation API
+>   fbdev: sh_mobile_lcdc: Destroy mutex at remove time
+>   fbdev: sh_mobile_lcdc: Fix line pitch computation
+>   fbdev: sh_mobile_lcdc: Use channel configuration to initialize fb
+>     device
+>   fbdev: sh_mobile_lcdc: Support horizontal panning
+>   fbdev: sh_mobile_lcdc: Fix overlay registers update during pan
+>     operation
+>   fbdev: sh_mobile_lcdc: Fix pan offset computation in YUV mode
+> 
+>  drivers/video/sh_mobile_lcdcfb.c |  209 +++++++++++++++++----------------
+>  drivers/video/sh_mobile_lcdcfb.h |    5 +-
+>  drivers/video/sh_mobile_meram.c  |  235 +++++++++++++++++++++-----------------
+>  include/video/sh_mobile_meram.h  |   71 ++++++++----
+>  4 files changed, 293 insertions(+), 227 deletions(-)
