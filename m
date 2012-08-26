@@ -1,160 +1,34 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sun, 05 Aug 2012 23:39:57 +0000
-Subject: [PATCH 2/15] PM / Domains: Add power off/on function for system core suspend stage
-Message-Id: <201208060139.57494.rjw@sisk.pl>
+From: Wei Yongjun <weiyj.lk@gmail.com>
+Date: Sun, 26 Aug 2012 01:50:27 +0000
+Subject: [PATCH] sh: mach-dreamcast: remove duplicated include from irq.c
+Message-Id: <CAPgLHd-CLCwAruq8ruat8p-PahpEgS7nPXAj2UN0rq9wR4p+wg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201207291612.43138.rjw@sisk.pl> <201208060138.03950.rjw@sisk.pl>
-In-Reply-To: <201208060138.03950.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux PM list <linux-pm@vger.kernel.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, Thomas Gleixner <tglx@linutronix.de>
+To: linux-sh@vger.kernel.org
 
+From: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
 
-Introduce function pm_genpd_syscore_switch() and two wrappers around
-it, pm_genpd_syscore_poweroff() and pm_genpd_syscore_poweron(),
-allowing the callers to let the generic PM domains framework know
-that the given device is not necessary any more and its PM domain
-can be turned off (the former) or that the given device will be
-required immediately, so its PM domain has to be turned on (the
-latter) during the system core (syscore) stage of system suspend
-(or hibernation) and resume.
+From: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
 
-These functions will be used for handling devices registered as
-clock sources and clock event devices that belong to PM domains.
+Remove duplicated include.
 
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
 ---
- drivers/base/power/domain.c |   57 +++++++++++++++++++++++++++++++++++++++-----
- include/linux/pm_domain.h   |   16 ++++++++++++
- kernel/power/Kconfig        |    4 +++
- 3 files changed, 71 insertions(+), 6 deletions(-)
+ arch/sh/boards/mach-dreamcast/irq.c | 1 -
+ 1 file changed, 1 deletion(-)
 
-Index: linux/drivers/base/power/domain.c
-=================================--- linux.orig/drivers/base/power/domain.c
-+++ linux/drivers/base/power/domain.c
-@@ -697,6 +697,24 @@ static inline void genpd_power_off_work_
- 
- #ifdef CONFIG_PM_SLEEP
- 
-+/**
-+ * pm_genpd_present - Check if the given PM domain has been initialized.
-+ * @genpd: PM domain to check.
-+ */
-+static bool pm_genpd_present(struct generic_pm_domain *genpd)
-+{
-+	struct generic_pm_domain *gpd;
-+
-+	if (IS_ERR_OR_NULL(genpd))
-+		return false;
-+
-+	list_for_each_entry(gpd, &gpd_list, gpd_list_node)
-+		if (gpd = genpd)
-+			return true;
-+
-+	return false;
-+}
-+
- static bool genpd_dev_active_wakeup(struct generic_pm_domain *genpd,
- 				    struct device *dev)
- {
-@@ -750,9 +768,10 @@ static int genpd_thaw_dev(struct generic
-  * Check if the given PM domain can be powered off (during system suspend or
-  * hibernation) and do that if so.  Also, in that case propagate to its masters.
-  *
-- * This function is only called in "noirq" stages of system power transitions,
-- * so it need not acquire locks (all of the "noirq" callbacks are executed
-- * sequentially, so it is guaranteed that it will never run twice in parallel).
-+ * This function is only called in "noirq" and "syscore" stages of system power
-+ * transitions, so it need not acquire locks (all of the "noirq" callbacks are
-+ * executed sequentially, so it is guaranteed that it will never run twice in
-+ * parallel).
+diff --git a/arch/sh/boards/mach-dreamcast/irq.c b/arch/sh/boards/mach-dreamcast/irq.c
+index 2789647..69fa91c 100644
+--- a/arch/sh/boards/mach-dreamcast/irq.c
++++ b/arch/sh/boards/mach-dreamcast/irq.c
+@@ -10,7 +10,6 @@
   */
- static void pm_genpd_sync_poweroff(struct generic_pm_domain *genpd)
- {
-@@ -780,9 +799,10 @@ static void pm_genpd_sync_poweroff(struc
-  * pm_genpd_sync_poweron - Synchronously power on a PM domain and its masters.
-  * @genpd: PM domain to power on.
-  *
-- * This function is only called in "noirq" stage of system power transitions, so
-- * it need not acquire locks (all of the "noirq" callbacks are executed
-- * sequentially, so it is guaranteed that it will never run twice in parallel).
-+ * This function is only called in "noirq" and "syscore" stages of system power
-+ * transitions, so it need not acquire locks (all of the "noirq" callbacks are
-+ * executed sequentially, so it is guaranteed that it will never run twice in
-+ * parallel).
-  */
- static void pm_genpd_sync_poweron(struct generic_pm_domain *genpd)
- {
-@@ -1272,6 +1292,31 @@ static void pm_genpd_complete(struct dev
- 	}
- }
- 
-+/**
-+ * pm_genpd_syscore_switch - Switch power during system core suspend or resume.
-+ * @dev: Device that normally is marked as "always on" to switch power for.
-+ *
-+ * This routine may only be called during the system core (syscore) suspend or
-+ * resume phase for devices whose "always on" flags are set.
-+ */
-+void pm_genpd_syscore_switch(struct device *dev, bool suspend)
-+{
-+	struct generic_pm_domain *genpd;
-+
-+	genpd = dev_to_genpd(dev);
-+	if (!pm_genpd_present(genpd))
-+		return;
-+
-+	if (suspend) {
-+		genpd->suspended_count++;
-+		pm_genpd_sync_poweroff(genpd);
-+	} else {
-+		pm_genpd_sync_poweron(genpd);
-+		genpd->suspended_count--;
-+	}
-+}
-+EXPORT_SYMBOL_GPL(pm_genpd_syscore_switch);
-+
- #else
- 
- #define pm_genpd_prepare		NULL
-Index: linux/include/linux/pm_domain.h
-=================================--- linux.orig/include/linux/pm_domain.h
-+++ linux/include/linux/pm_domain.h
-@@ -258,4 +258,20 @@ static inline void genpd_queue_power_off
- static inline void pm_genpd_poweroff_unused(void) {}
- #endif
- 
-+#ifdef CONFIG_PM_GENERIC_DOMAINS_SLEEP
-+extern void pm_genpd_syscore_switch(struct device *dev, bool suspend);
-+#else
-+static inline void pm_genpd_syscore_switch(struct device *dev, bool suspend) {}
-+#endif
-+
-+static inline void pm_genpd_syscore_poweroff(struct device *dev)
-+{
-+	pm_genpd_syscore_switch(dev, true);
-+}
-+
-+static inline void pm_genpd_syscore_poweron(struct device *dev)
-+{
-+	pm_genpd_syscore_switch(dev, false);
-+}
-+
- #endif /* _LINUX_PM_DOMAIN_H */
-Index: linux/kernel/power/Kconfig
-=================================--- linux.orig/kernel/power/Kconfig
-+++ linux/kernel/power/Kconfig
-@@ -263,6 +263,10 @@ config PM_GENERIC_DOMAINS
- 	bool
- 	depends on PM
- 
-+config PM_GENERIC_DOMAINS_SLEEP
-+	def_bool y
-+	depends on PM_SLEEP && PM_GENERIC_DOMAINS
-+
- config PM_GENERIC_DOMAINS_RUNTIME
- 	def_bool y
- 	depends on PM_RUNTIME && PM_GENERIC_DOMAINS
+ #include <linux/irq.h>
+ #include <linux/io.h>
+-#include <linux/irq.h>
+ #include <linux/export.h>
+ #include <linux/err.h>
+ #include <mach/sysasic.h>
 
