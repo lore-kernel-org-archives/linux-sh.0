@@ -1,22 +1,27 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 27 Aug 2012 08:28:02 +0000
+From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
+Date: Mon, 27 Aug 2012 08:56:39 +0000
 Subject: Re: [PATCH] spi: spi-rspi: fix build error for the latest shdma driver
-Message-Id: <20120827082801.GB29274@verge.net.au>
+Message-Id: <503B3647.2060807@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <501A379D.6060009@renesas.com>
-In-Reply-To: <501A379D.6060009@renesas.com>
+	<20120827082801.GB29274@verge.net.au>
+In-Reply-To: <20120827082801.GB29274-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Cc: Grant Likely <grant.likely@secretlab.ca>, spi-devel-general@lists.sourceforge.net, SH-Linux <linux-sh@vger.kernel.org>
+To: Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
+Cc: spi-devel-general-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, SH-Linux <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-On Thu, Aug 02, 2012 at 05:17:33PM +0900, Shimoda, Yoshihiro wrote:
-> Because the latest shdma driver changed, it caused build error in
-> the spi-rspi driver. This patch fixed the build error.
+2012/08/27 17:28, Simon Horman wrote:
 > 
-> Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
+> could you let me know what the merge-status of this patch is?
+> 
 
-Hi Shimoda-san,
+Hi Simon-san,
 
-could you let me know what the merge-status of this patch is?
+The patch needs Grant's review. So, the patch is not merged to
+his repository yet.
+
+Best regards,
+Yoshihiro Shimoda
+
