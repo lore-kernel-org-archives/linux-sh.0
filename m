@@ -1,16 +1,12 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 31 Aug 2012 01:28:16 +0000
-Subject: [PATCH 05/11] ARM: shmobile: r8a7779: add USB common phy initializer
-Message-Id: <1346376502-12114-6-git-send-email-horms@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 28 Aug 2012 01:59:17 +0000
+Subject: [PATCH 2/8] ARM: shmobile: r8a7779: add USB common phy initializer
+Message-Id: <87k3wjdbf1.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346376502-12114-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1346376502-12114-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
-
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linux-sh@vger.kernel.org
 
 This patch adds common USB phy ports initializer for r8a7779.
 
@@ -20,11 +16,10 @@ but this USB phy needs USB clock.
 Each USB driver / platform should keep USB MSTP clock somehow.
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/arm/mach-shmobile/include/mach/common.h |  1 +
- arch/arm/mach-shmobile/setup-r8a7779.c       | 93 ++++++++++++++++++++++++++++
- 2 files changed, 94 insertions(+)
+ arch/arm/mach-shmobile/include/mach/common.h |    1 +
+ arch/arm/mach-shmobile/setup-r8a7779.c       |   93 ++++++++++++++++++++++++++
+ 2 files changed, 94 insertions(+), 0 deletions(-)
 
 diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
 index 45e61da..00b2eb5 100644
@@ -150,5 +145,5 @@ index e98e46f..17fdd1f 100644
  {
  #ifdef CONFIG_CACHE_L2X0
 -- 
-1.7.10.2.484.gcd07cc5
+1.7.5.4
 
