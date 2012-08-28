@@ -1,39 +1,56 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 27 Aug 2012 06:40:08 +0000
-Subject: 
-Message-Id: <1346049610-2266-1-git-send-email-horms@verge.net.au>
+From: wency@cn.fujitsu.com
+Date: Tue, 28 Aug 2012 10:00:27 +0000
+Subject: [RFC v8 PATCH 20/20] memory-hotplug: clear hwpoisoned flag when onlining pages
+Message-Id: <1346148027-24468-21-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1346148027-24468-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1346148027-24468-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
 
-Hi Arnd, Hi Olaf,
+From: Wen Congyang <wency@cn.fujitsu.com>
 
-please consider the following enhancements for the Armadillo800EVA board
-from Laurent Pinchart for inclusion in 3.7.
+hwpoisoned may set when we offline a page by the sysfs interface
+/sys/devices/system/memory/soft_offline_page or
+/sys/devices/system/memory/hard_offline_page. If we don't clear
+this flag when onlining pages, this page can't be freed, and will
+not in free list. So we can't offline these pages again. So we
+should clear this flag when onlining pages.
 
-I am currently in the processes of taking over maintenance
-of shmoble from Rafael Wysocki and this my the first pull request
-in that role.
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+CC: Paul Mackerras <paulus@samba.org>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+---
+ mm/memory_hotplug.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
 
-----------------------------------------------------------------
-The following changes since commit fea7a08acb13524b47711625eebea40a0ede69a0:
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index fb8af64..85603c4 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -661,6 +661,11 @@ EXPORT_SYMBOL_GPL(__online_page_increment_counters);
+ 
+ void __online_page_free(struct page *page)
+ {
++#ifdef CONFIG_MEMORY_FAILURE
++	/* The page may be marked HWPoisoned by soft/hard offline page */
++	ClearPageHWPoison(page);
++#endif
++
+ 	ClearPageReserved(page);
+ 	init_page_count(page);
+ 	__free_page(page);
+-- 
+1.7.1
 
-  Linux 3.6-rc3 (2012-08-22 13:29:06 -0700)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git armadillo800eva
-
-for you to fetch changes up to 5c1d2d16772e2d7d4e2e8da99a92d6f50b9102f0:
-
-  ARM: mach-shmobile: armadillo800eva: Enable power button as wakeup source (2012-08-25 15:44:53 +0900)
-
-----------------------------------------------------------------
-Laurent Pinchart (2):
-      ARM: mach-shmobile: armadillo800eva: Fix GPIO buttons descriptions
-      ARM: mach-shmobile: armadillo800eva: Enable power button as wakeup source
-
- arch/arm/mach-shmobile/board-armadillo800eva.c | 11 ++++++-----
- 1 file changed, 6 insertions(+), 5 deletions(-)
