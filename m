@@ -1,243 +1,51 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 06 Aug 2012 23:12:56 +0000
-Subject: [PATCH 9/12] ARM: shmobile: Move sh7372's PM domain objects to a table
-Message-Id: <201208070112.56980.rjw@sisk.pl>
+From: wency@cn.fujitsu.com
+Date: Tue, 28 Aug 2012 10:00:14 +0000
+Subject: [RFC v8 PATCH 07/20] memory-hotplug: call acpi_bus_remove() to remove memory device
+Message-Id: <1346148027-24468-8-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201208070105.23262.rjw@sisk.pl>
-In-Reply-To: <201208070105.23262.rjw@sisk.pl>
+References: <1346148027-24468-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1346148027-24468-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux-sh list <linux-sh@vger.kernel.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
+To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
 
+From: Wen Congyang <wency@cn.fujitsu.com>
 
-Instead of giving a name to every sh7372's PM domain object, put them
-all into a table and use rmobile_init_domains(), introduced by a
-previous patch, for initializing them all altogether.  Also, use
-pm_genpd_add_subdomain_names() for adding subdomains to the PM
-domains and pm_genpd_poweron_name() for turning on the A4S domain
-when preparing for system suspend.
+The memory device has been ejected and powoffed, so we can call
+acpi_bus_remove() to remove the memory device from acpi bus.
 
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+CC: Paul Mackerras <paulus@samba.org>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
 ---
- arch/arm/mach-shmobile/include/mach/sh7372.h |   18 +---
- arch/arm/mach-shmobile/pm-sh7372.c           |  111 +++++++++++++--------------
- arch/arm/mach-shmobile/setup-sh7372.c        |   16 ---
- 3 files changed, 64 insertions(+), 81 deletions(-)
+ drivers/acpi/acpi_memhotplug.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-Index: linux/arch/arm/mach-shmobile/pm-sh7372.c
-=================================--- linux.orig/arch/arm/mach-shmobile/pm-sh7372.c
-+++ linux/arch/arm/mach-shmobile/pm-sh7372.c
-@@ -71,21 +71,6 @@
+diff --git a/drivers/acpi/acpi_memhotplug.c b/drivers/acpi/acpi_memhotplug.c
+index 9d47458..b152767 100644
+--- a/drivers/acpi/acpi_memhotplug.c
++++ b/drivers/acpi/acpi_memhotplug.c
+@@ -425,8 +425,9 @@ static void acpi_memory_device_notify(acpi_handle handle, u32 event, void *data)
+ 		}
  
- #ifdef CONFIG_PM
- 
--struct rmobile_pm_domain sh7372_pd_a4lc = {
--	.genpd.name = "A4LC",
--	.bit_shift = 1,
--};
--
--struct rmobile_pm_domain sh7372_pd_a4mp = {
--	.genpd.name = "A4MP",
--	.bit_shift = 2,
--};
--
--struct rmobile_pm_domain sh7372_pd_d4 = {
--	.genpd.name = "D4",
--	.bit_shift = 3,
--};
--
- static int sh7372_a4r_pd_suspend(void)
- {
- 	sh7372_intcs_suspend();
-@@ -93,26 +78,9 @@ static int sh7372_a4r_pd_suspend(void)
- 	return 0;
- }
- 
--struct rmobile_pm_domain sh7372_pd_a4r = {
--	.genpd.name = "A4R",
--	.bit_shift = 5,
--	.suspend = sh7372_a4r_pd_suspend,
--	.resume = sh7372_intcs_resume,
--};
--
--struct rmobile_pm_domain sh7372_pd_a3rv = {
--	.genpd.name = "A3RV",
--	.bit_shift = 6,
--};
--
--struct rmobile_pm_domain sh7372_pd_a3ri = {
--	.genpd.name = "A3RI",
--	.bit_shift = 8,
--};
--
- static bool a4s_suspend_ready;
- 
--static int sh7372_pd_a4s_suspend(void)
-+static int sh7372_a4s_pd_suspend(void)
- {
- 	/*
- 	 * The A4S domain contains the CPU core and therefore it should
-@@ -125,20 +93,11 @@ static int sh7372_pd_a4s_suspend(void)
- 	return -EBUSY;
- }
- 
--static void sh7372_pd_a4s_resume(void)
-+static void sh7372_a4s_pd_resume(void)
- {
- 	a4s_suspend_ready = false;
- }
- 
--struct rmobile_pm_domain sh7372_pd_a4s = {
--	.genpd.name = "A4S",
--	.bit_shift = 10,
--	.gov = &pm_domain_always_on_gov,
--	.no_debug = true,
--	.suspend = sh7372_pd_a4s_suspend,
--	.resume = sh7372_pd_a4s_resume,
--};
--
- static int sh7372_a3sp_pd_suspend(void)
- {
- 	/*
-@@ -148,18 +107,62 @@ static int sh7372_a3sp_pd_suspend(void)
- 	return console_suspend_enabled ? 0 : -EBUSY;
- }
- 
--struct rmobile_pm_domain sh7372_pd_a3sp = {
--	.genpd.name = "A3SP",
--	.bit_shift = 11,
--	.gov = &pm_domain_always_on_gov,
--	.no_debug = true,
--	.suspend = sh7372_a3sp_pd_suspend,
-+static struct rmobile_pm_domain sh7372_pm_domains[] = {
-+	{
-+		.genpd.name = "A4LC",
-+		.bit_shift = 1,
-+	},
-+	{
-+		.genpd.name = "A4MP",
-+		.bit_shift = 2,
-+	},
-+	{
-+		.genpd.name = "D4",
-+		.bit_shift = 3,
-+	},
-+	{
-+		.genpd.name = "A4R",
-+		.bit_shift = 5,
-+		.suspend = sh7372_a4r_pd_suspend,
-+		.resume = sh7372_intcs_resume,
-+	},
-+	{
-+		.genpd.name = "A3RV",
-+		.bit_shift = 6,
-+	},
-+	{
-+		.genpd.name = "A3RI",
-+		.bit_shift = 8,
-+	},
-+	{
-+		.genpd.name = "A4S",
-+		.bit_shift = 10,
-+		.gov = &pm_domain_always_on_gov,
-+		.no_debug = true,
-+		.suspend = sh7372_a4s_pd_suspend,
-+		.resume = sh7372_a4s_pd_resume,
-+	},
-+	{
-+		.genpd.name = "A3SP",
-+		.bit_shift = 11,
-+		.gov = &pm_domain_always_on_gov,
-+		.no_debug = true,
-+		.suspend = sh7372_a3sp_pd_suspend,
-+	},
-+	{
-+		.genpd.name = "A3SG",
-+		.bit_shift = 13,
-+	},
- };
- 
--struct rmobile_pm_domain sh7372_pd_a3sg = {
--	.genpd.name = "A3SG",
--	.bit_shift = 13,
--};
-+void __init sh7372_init_pm_domains(void)
-+{
-+	rmobile_init_domains(sh7372_pm_domains, ARRAY_SIZE(sh7372_pm_domains));
-+	pm_genpd_add_subdomain_names("A4LC", "A3RV");
-+	pm_genpd_add_subdomain_names("A4R", "A4LC");
-+	pm_genpd_add_subdomain_names("A4S", "A3SG");
-+	pm_genpd_add_subdomain_names("A4S", "A3SP");
-+}
- 
- #endif /* CONFIG_PM */
- 
-@@ -436,7 +439,7 @@ static int sh7372_pm_notifier_fn(struct
- 		 * executed during system suspend and resume, respectively, so
- 		 * that those functions don't crash while accessing the INTCS.
+ 		/*
+-		 * TBD: Invoke acpi_bus_remove to cleanup data structures
++		 * Invoke acpi_bus_remove() to remove memory device
  		 */
--		pm_genpd_poweron(&sh7372_pd_a4r.genpd);
-+		pm_genpd_name_poweron("A4R");
- 		break;
- 	case PM_POST_SUSPEND:
- 		pm_genpd_poweroff_unused();
-Index: linux/arch/arm/mach-shmobile/setup-sh7372.c
-=================================--- linux.orig/arch/arm/mach-shmobile/setup-sh7372.c
-+++ linux/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -1001,21 +1001,7 @@ static struct platform_device *sh7372_la
++		acpi_bus_remove(device, 1);
  
- void __init sh7372_add_standard_devices(void)
- {
--	rmobile_init_pm_domain(&sh7372_pd_a4lc);
--	rmobile_init_pm_domain(&sh7372_pd_a4mp);
--	rmobile_init_pm_domain(&sh7372_pd_d4);
--	rmobile_init_pm_domain(&sh7372_pd_a4r);
--	rmobile_init_pm_domain(&sh7372_pd_a3rv);
--	rmobile_init_pm_domain(&sh7372_pd_a3ri);
--	rmobile_init_pm_domain(&sh7372_pd_a4s);
--	rmobile_init_pm_domain(&sh7372_pd_a3sp);
--	rmobile_init_pm_domain(&sh7372_pd_a3sg);
--
--	pm_genpd_add_subdomain_names("A4LC", "A3RV");
--	pm_genpd_add_subdomain_names("A4R", "A4LC");
--
--	pm_genpd_add_subdomain_names("A4S", "A3SG");
--	pm_genpd_add_subdomain_names("A4S", "A3SP");
-+	sh7372_init_pm_domains();
- 
- 	platform_add_devices(sh7372_early_devices,
- 			    ARRAY_SIZE(sh7372_early_devices));
-Index: linux/arch/arm/mach-shmobile/include/mach/sh7372.h
-=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/sh7372.h
-+++ linux/arch/arm/mach-shmobile/include/mach/sh7372.h
-@@ -478,21 +478,15 @@ extern struct clk sh7372_fsibck_clk;
- extern struct clk sh7372_fsidiva_clk;
- extern struct clk sh7372_fsidivb_clk;
- 
--#ifdef CONFIG_PM
--extern struct rmobile_pm_domain sh7372_pd_a4lc;
--extern struct rmobile_pm_domain sh7372_pd_a4mp;
--extern struct rmobile_pm_domain sh7372_pd_d4;
--extern struct rmobile_pm_domain sh7372_pd_a4r;
--extern struct rmobile_pm_domain sh7372_pd_a3rv;
--extern struct rmobile_pm_domain sh7372_pd_a3ri;
--extern struct rmobile_pm_domain sh7372_pd_a4s;
--extern struct rmobile_pm_domain sh7372_pd_a3sp;
--extern struct rmobile_pm_domain sh7372_pd_a3sg;
--#endif /* CONFIG_PM */
--
- extern void sh7372_intcs_suspend(void);
- extern void sh7372_intcs_resume(void);
- extern void sh7372_intca_suspend(void);
- extern void sh7372_intca_resume(void);
- 
-+#ifdef CONFIG_PM
-+extern void __init sh7372_init_pm_domains(void);
-+#else
-+static inline void sh7372_init_pm_domains(void) {}
-+#endif
-+
- #endif /* __ASM_SH7372_H__ */
+ 		/* _EJ0 succeeded; _OST is not necessary */
+ 		return;
+-- 
+1.7.1
 
