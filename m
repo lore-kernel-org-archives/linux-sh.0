@@ -1,135 +1,70 @@
-From: Phil Edworthy <phil.edworthy@renesas.com>
-Date: Mon, 06 Aug 2012 12:31:05 +0000
-Subject: [PATCH 2/2 v2] marzen: add SDHI0 support
-Message-Id: <1344256265-9802-3-git-send-email-phil.edworthy@renesas.com>
+From: wency@cn.fujitsu.com
+Date: Tue, 28 Aug 2012 10:00:25 +0000
+Subject: [RFC v8 PATCH 18/20] memory-hotplug: add node_device_release
+Message-Id: <1346148027-24468-19-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1346148027-24468-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1346148027-24468-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
 
+From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+When calling unregister_node(), the function shows following message at
+device_release().
+
+Device 'node2' does not have a release() function, it is broken and must be
+fixed.
+
+So the patch implements node_device_release()
+
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+CC: Paul Mackerras <paulus@samba.org>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
 ---
-v2:
-  Added SDHI to defconfig.
-  Moved function to better match other boards.
-  Register the fixed voltage regulator.
-  Minor formatting change.
+ drivers/base/node.c |   11 +++++++++++
+ 1 files changed, 11 insertions(+), 0 deletions(-)
 
- arch/arm/configs/marzen_defconfig     |    4 +-
- arch/arm/mach-shmobile/board-marzen.c |   52 ++++++++++++++++++++++++++++++++-
- 2 files changed, 53 insertions(+), 3 deletions(-)
-
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index 864f9a5..bf42ad2 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -71,12 +71,12 @@ CONFIG_GPIO_SYSFS=y
- CONFIG_SSB=y
- # CONFIG_HID_SUPPORT is not set
- # CONFIG_USB_SUPPORT is not set
-+CONFIG_MMC=y
-+CONFIG_MMC_SDHI=y
- CONFIG_UIO=y
- CONFIG_UIO_PDRV_GENIRQ=y
- # CONFIG_IOMMU_SUPPORT is not set
- # CONFIG_FILE_LOCKING is not set
--# CONFIG_DNOTIFY is not set
--# CONFIG_INOTIFY_USER is not set
- CONFIG_TMPFS=y
- # CONFIG_MISC_FILESYSTEMS is not set
- CONFIG_MAGIC_SYSRQ=y
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index 3a528cf..dec3ffc 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -30,6 +30,8 @@
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/machine.h>
- #include <linux/smsc911x.h>
-+#include <linux/mmc/sh_mobile_sdhi.h>
-+#include <linux/mfd/tmio.h>
- #include <mach/hardware.h>
- #include <mach/r8a7779.h>
- #include <mach/common.h>
-@@ -39,6 +41,12 @@
- #include <asm/hardware/gic.h>
- #include <asm/traps.h>
+diff --git a/drivers/base/node.c b/drivers/base/node.c
+index af1a177..07523fb 100644
+--- a/drivers/base/node.c
++++ b/drivers/base/node.c
+@@ -252,6 +252,16 @@ static inline void hugetlb_register_node(struct node *node) {}
+ static inline void hugetlb_unregister_node(struct node *node) {}
+ #endif
  
-+/* Fixed 3.3V regulator to be used by SDHI0 */
-+static struct regulator_consumer_supply fixed3v3_power_consumers[] = {
-+	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
-+	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
-+};
++static void node_device_release(struct device *dev)
++{
++	struct node *node_dev = to_node(dev);
 +
- /* Dummy supplies, where voltage doesn't matter */
- static struct regulator_consumer_supply dummy_supplies[] = {
- 	REGULATOR_SUPPLY("vddvario", "smsc911x"),
-@@ -75,13 +83,45 @@ static struct platform_device eth_device = {
- 	.num_resources	= ARRAY_SIZE(smsc911x_resources),
- };
- 
-+static struct resource sdhi0_resources[] = {
-+	[0] = {
-+		.name	= "sdhi0",
-+		.start	= 0xffe4c000,
-+		.end	= 0xffe4c0ff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= gic_spi(104),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
++#if defined(CONFIG_MEMORY_HOTPLUG_SPARSE) && defined(CONFIG_HUGETLBFS)
++	flush_work(&node_dev->node_work);
++#endif
 +
-+static struct sh_mobile_sdhi_info sdhi0_platform_data = {
-+	.tmio_flags = TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_HAS_IDLE_WAIT,
-+	.tmio_caps = MMC_CAP_SD_HIGHSPEED,
-+};
-+
-+static struct platform_device sdhi0_device = {
-+	.name = "sh_mobile_sdhi",
-+	.num_resources = ARRAY_SIZE(sdhi0_resources),
-+	.resource = sdhi0_resources,
-+	.id = 0,
-+	.dev = {
-+		.platform_data = &sdhi0_platform_data,
-+	}
-+};
-+
- static struct platform_device *marzen_devices[] __initdata = {
- 	&eth_device,
-+	&sdhi0_device,
- };
++	memset(node_dev, 0, sizeof(struct node));
++}
  
- static void __init marzen_init(void)
- {
--	regulator_register_fixed(0, dummy_supplies, ARRAY_SIZE(dummy_supplies));
-+	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
-+				ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
-+	regulator_register_fixed(0, dummy_supplies,
-+				ARRAY_SIZE(dummy_supplies));
+ /*
+  * register_node - Setup a sysfs device for a node.
+@@ -265,6 +275,7 @@ int register_node(struct node *node, int num, struct node *parent)
  
- 	r8a7779_pinmux_init();
+ 	node->dev.id = num;
+ 	node->dev.bus = &node_subsys;
++	node->dev.release = node_device_release;
+ 	error = device_register(&node->dev);
  
-@@ -97,6 +137,16 @@ static void __init marzen_init(void)
- 	gpio_request(GPIO_FN_EX_CS0, NULL); /* nCS */
- 	gpio_request(GPIO_FN_IRQ1_B, NULL); /* IRQ + PME */
- 
-+	/* SD0 (CN20) */
-+	gpio_request(GPIO_FN_SD0_CLK, NULL);
-+	gpio_request(GPIO_FN_SD0_CMD, NULL);
-+	gpio_request(GPIO_FN_SD0_DAT0, NULL);
-+	gpio_request(GPIO_FN_SD0_DAT1, NULL);
-+	gpio_request(GPIO_FN_SD0_DAT2, NULL);
-+	gpio_request(GPIO_FN_SD0_DAT3, NULL);
-+	gpio_request(GPIO_FN_SD0_CD, NULL);
-+	gpio_request(GPIO_FN_SD0_WP, NULL);
-+
- 	r8a7779_add_standard_devices();
- 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
- }
+ 	if (!error){
 -- 
-1.7.5.4
+1.7.1
 
