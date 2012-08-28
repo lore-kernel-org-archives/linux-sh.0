@@ -1,57 +1,137 @@
-From: Artem Bityutskiy <dedekind1@gmail.com>
-Date: Mon, 20 Aug 2012 09:19:35 +0000
-Subject: Re: [PATCH] mtd: sh_flctl: Switch from tick-based to time-based timeout
-Message-Id: <1345454375.2848.21.camel@sauron.fi.intel.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="=-2RAvyhNkP3WAQkuM0X0c"
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 28 Aug 2012 02:00:00 +0000
+Subject: [PATCH 6/8] ARM: shmobile: marzen: add USB OHCI driver support
+Message-Id: <87ehmrdbdu.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1341410726-10562-1-git-send-email-hechtb@gmail.com>
- <CABYn4syMFh4smteHS-zCAy3ygKsyxoD2+FfaBeQxKvK_FA+5mA@mail.gmail.com>
-In-Reply-To: <CABYn4syMFh4smteHS-zCAy3ygKsyxoD2+FfaBeQxKvK_FA+5mA@mail.gmail.com>
-To: Bastian Hecht <hechtb@googlemail.com>
-Cc: Bastian Hecht <hechtb@gmail.com>, linux-mtd@lists.infradead.org, Linux-SH <linux-sh@vger.kernel.org>
-
-
---=-2RAvyhNkP3WAQkuM0X0c
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-
-On Wed, 2012-07-25 at 17:21 +0200, Bastian Hecht wrote:
-> Hello Artem!
->=20
-> Could you please pull out this patch of your tree? While reworking the
-> driver for IRQ-driven use, I've realized that this conversion makes no
-> sense as all loops use a udelay(1) in them. So the timeout is already
-> time based.
-
-Dropped, thanks!
-
---=20
-Best Regards,
-Artem Bityutskiy
-
---=-2RAvyhNkP3WAQkuM0X0c
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+This patch supports CN21/CN22 USB 1.x (port 0/1/2),
+and enable input event on defconfig
 
-iQIcBAABAgAGBQJQMgEnAAoJECmIfjd9wqK0FLwQALkvfvpQJUgo5e8zDrL3svYb
-tO7gMRXSQE+HRWpwqmXBH+RRK89Ez6Hz8jRzj3N24uF7jqih6sWPU0g7tp2WA3ZW
-xRgAbWwj/C0Qi+2dmYR8ClAbBaOQUgheIuvdcPqjQZuvkXwxGoUV/NqM7LvQDr+6
-gibgte7wTPhs1QfiWDiJkQ3SQC2f4Xu0++/88LJvcHaqbaYADC//PSGE2EK2S4aw
-X62JV2XNr664iTpIxCu3FcrJ+dhW0rBfwRFnbGXlN5mYCuFCesICLiSMo3iLh+X7
-Ic7gCdOrwsWKfwJ2/bauRwUNqHAE4uezS7b9e/eHRTTTJYCa4BzkqXWOJwI5s6VA
-fgz/le9n0a4F6jaLUI+E12glCfudvg3VbIl2sBbFj8vY99MLTJwLNL8Xy+iR//Jk
-2Eac4mSHOVI5npdHew5H2Ycrkz+YXJDDjQOjTknbCUHxPe0Io0HLFKkntBy/XWGx
-mC2y0F4h5ntrSsw0oOuab8WGkUSNcwZDVjXdkvLGWhD7Mjs9JQKz9iSx7LwCe1E5
-xGa5kkRVUHI9iWQBt227ccAfn0QYU8Aw5RBlnMUnXSh0JuSFBNkk1Se5bhEg4cMa
-cJ/Ezf1Kjk6JY0qkkhbfKcxhV5o9G8vkX7QuGlImmKr6pmOvbTFzV1xVo0muM7SC
-8qtMU5zMf7dMxyrWhckp
-=mw5T
------END PGP SIGNATURE-----
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/configs/marzen_defconfig     |    5 ++-
+ arch/arm/mach-shmobile/Kconfig        |    1 +
+ arch/arm/mach-shmobile/board-marzen.c |   57 +++++++++++++++++++++++++++++++++
+ 3 files changed, 61 insertions(+), 2 deletions(-)
 
---=-2RAvyhNkP3WAQkuM0X0c--
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index ab0341b..00e7216 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -61,9 +61,8 @@ CONFIG_SMSC911X=y
+ # CONFIG_NET_VENDOR_STMICRO is not set
+ # CONFIG_WLAN is not set
+ # CONFIG_INPUT_MOUSEDEV is not set
+-# CONFIG_INPUT_KEYBOARD is not set
++CONFIG_INPUT_EVDEV=y
+ # CONFIG_INPUT_MOUSE is not set
+-# CONFIG_SERIO is not set
+ # CONFIG_VT is not set
+ # CONFIG_LEGACY_PTYS is not set
+ # CONFIG_DEVKMEM is not set
+@@ -79,6 +78,8 @@ CONFIG_MMC=y
+ CONFIG_MMC_SDHI=y
+ CONFIG_USB=y
+ CONFIG_USB_EHCI_HCD=y
++CONFIG_USB_OHCI_HCD=y
++CONFIG_USB_OHCI_HCD_PLATFORM=y
+ CONFIG_USB_EHCI_HCD_PLATFORM=y
+ CONFIG_USB_STORAGE=y
+ CONFIG_UIO=y
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 8937d69..66befbc 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -42,6 +42,7 @@ config ARCH_R8A7779
+ 	select ARM_GIC
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select USB_ARCH_HAS_EHCI
++	select USB_ARCH_HAS_OHCI
+ 
+ config ARCH_EMEV2
+ 	bool "Emma Mobile EV2"
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index 0249c0e..a74a07c 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -33,6 +33,7 @@
+ #include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/mfd/tmio.h>
+ #include <linux/usb/ehci_pdriver.h>
++#include <linux/usb/ohci_pdriver.h>
+ #include <linux/pm_runtime.h>
+ #include <mach/hardware.h>
+ #include <mach/r8a7779.h>
+@@ -187,9 +188,65 @@ static struct platform_device ehci1_device = {
+ 	.resource	= ehci1_resources,
+ };
+ 
++static struct usb_ohci_pdata ohcix_pdata = {
++	.power_on	= xhci_power_on,
++	.power_off	= xhci_power_off,
++	.power_suspend	= xhci_power_off,
++};
++
++static struct resource ohci0_resources[] = {
++	[0] = {
++		.start	= 0xffe70400,
++		.end	= 0xffe70800 - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= gic_spi(44),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device ohci0_device = {
++	.name	= "ohci-platform",
++	.id	= 0,
++	.dev	= {
++		.dma_mask		= &ohci0_device.dev.coherent_dma_mask,
++		.coherent_dma_mask	= 0xffffffff,
++		.platform_data		= &ohcix_pdata,
++	},
++	.num_resources	= ARRAY_SIZE(ohci0_resources),
++	.resource	= ohci0_resources,
++};
++
++static struct resource ohci1_resources[] = {
++	[0] = {
++		.start	= 0xfff70400,
++		.end	= 0xfff70800 - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= gic_spi(45),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device ohci1_device = {
++	.name	= "ohci-platform",
++	.id	= 1,
++	.dev	= {
++		.dma_mask		= &ohci1_device.dev.coherent_dma_mask,
++		.coherent_dma_mask	= 0xffffffff,
++		.platform_data		= &ohcix_pdata,
++	},
++	.num_resources	= ARRAY_SIZE(ohci1_resources),
++	.resource	= ohci1_resources,
++};
++
+ static struct platform_device *marzen_usb_devices[] __initdata = {
+ 	&ehci0_device,
+ 	&ehci1_device,
++	&ohci0_device,
++	&ohci1_device,
+ };
+ 
+ static void __init marzen_init(void)
+-- 
+1.7.5.4
 
