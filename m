@@ -1,20 +1,26 @@
 From: wency@cn.fujitsu.com
-Date: Mon, 20 Aug 2012 09:35:28 +0000
-Subject: [RFC V7 PATCH 05/19] memory-hotplug: check whether memory is present or not
-Message-Id: <1345455342-27752-6-git-send-email-wency@cn.fujitsu.com>
+Date: Tue, 28 Aug 2012 10:00:17 +0000
+Subject: [RFC v8 PATCH 10/20] memory-hotplug: add memory_block_release
+Message-Id: <1346148027-24468-11-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1345455342-27752-1-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1345455342-27752-1-git-send-email-wency@cn.fujitsu.com>
+References: <1346148027-24468-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1346148027-24468-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
+To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
 Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
 
 From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-If system supports memory hot-remove, online_pages() may online removed pages.
-So online_pages() need to check whether onlining pages are present or not.
+When calling remove_memory_block(), the function shows following message at
+device_release().
+
+Device 'memory528' does not have a release() function, it is broken and must
+be fixed.
+
+remove_memory_block() calls kfree(mem). I think it shouled be called from
+device_release(). So the patch implements memory_block_release()
 
 CC: David Rientjes <rientjes@google.com>
 CC: Jiang Liu <liuj97@gmail.com>
@@ -28,64 +34,45 @@ CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
 CC: Wen Congyang <wency@cn.fujitsu.com>
 Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 ---
- include/linux/mmzone.h |   19 +++++++++++++++++++
- mm/memory_hotplug.c    |   13 +++++++++++++
- 2 files changed, 32 insertions(+), 0 deletions(-)
+ drivers/base/memory.c |   11 ++++++++++-
+ 1 files changed, 10 insertions(+), 1 deletions(-)
 
-diff --git a/include/linux/mmzone.h b/include/linux/mmzone.h
-index 2daa54f..ac3ae30 100644
---- a/include/linux/mmzone.h
-+++ b/include/linux/mmzone.h
-@@ -1180,6 +1180,25 @@ void sparse_init(void);
- #define sparse_index_init(_sec, _nid)  do {} while (0)
- #endif /* CONFIG_SPARSEMEM */
+diff --git a/drivers/base/memory.c b/drivers/base/memory.c
+index 038be73..1cd3ef3 100644
+--- a/drivers/base/memory.c
++++ b/drivers/base/memory.c
+@@ -109,6 +109,15 @@ bool is_memblk_offline(unsigned long start, unsigned long size)
+ }
+ EXPORT_SYMBOL(is_memblk_offline);
  
-+#ifdef CONFIG_SPARSEMEM
-+static inline int pfns_present(unsigned long pfn, unsigned long nr_pages)
-+{
-+	int i;
-+	for (i = 0; i < nr_pages; i++) {
-+		if (pfn_present(pfn + i))
-+			continue;
-+		else
-+			return -EINVAL;
-+	}
-+	return 0;
-+}
-+#else
-+static inline int pfns_present(unsigned long pfn, unsigned long nr_pages)
-+{
-+	return 0;
-+}
-+#endif /* CONFIG_SPARSEMEM*/
++#define to_memory_block(device) container_of(device, struct memory_block, dev)
 +
- #ifdef CONFIG_NODES_SPAN_OTHER_NODES
- bool early_pfn_in_nid(unsigned long pfn, int nid);
- #else
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index 80cded7..3f1d7c5 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -467,6 +467,19 @@ int __ref online_pages(unsigned long pfn, unsigned long nr_pages)
- 	struct memory_notify arg;
++static void release_memory_block(struct device *dev)
++{
++	struct memory_block *mem = to_memory_block(dev);
++
++	kfree(mem);
++}
++
+ /*
+  * register_memory - Setup a sysfs device for a memory block
+  */
+@@ -119,6 +128,7 @@ int register_memory(struct memory_block *memory)
  
- 	lock_memory_hotplug();
-+	/*
-+	 * If system supports memory hot-remove, the memory may have been
-+	 * removed. So we check whether the memory has been removed or not.
-+	 *
-+	 * Note: When CONFIG_SPARSEMEM is defined, pfns_present() become
-+	 *       effective. If CONFIG_SPARSEMEM is not defined, pfns_present()
-+	 *       always returns 0.
-+	 */
-+	ret = pfns_present(pfn, nr_pages);
-+	if (ret) {
-+		unlock_memory_hotplug();
-+		return ret;
-+	}
- 	arg.start_pfn = pfn;
- 	arg.nr_pages = nr_pages;
- 	arg.status_change_nid = -1;
+ 	memory->dev.bus = &memory_subsys;
+ 	memory->dev.id = memory->start_section_nr / sections_per_block;
++	memory->dev.release = release_memory_block;
+ 
+ 	error = device_register(&memory->dev);
+ 	return error;
+@@ -674,7 +684,6 @@ int remove_memory_block(unsigned long node_id, struct mem_section *section,
+ 		mem_remove_simple_file(mem, phys_device);
+ 		mem_remove_simple_file(mem, removable);
+ 		unregister_memory(mem);
+-		kfree(mem);
+ 	} else
+ 		kobject_put(&mem->dev.kobj);
+ 
 -- 
 1.7.1
 
