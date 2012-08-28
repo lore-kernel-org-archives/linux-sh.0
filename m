@@ -1,23 +1,59 @@
-From: Stephen Boyd <sboyd@codeaurora.org>
-Date: Tue, 28 Aug 2012 00:27:05 +0000
+From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+Date: Tue, 28 Aug 2012 01:00:08 +0000
 Subject: Re: [PATCH] ARM: mach-shmobile: Add compilation support for dtbs using 'make dtbs'
-Message-Id: <503C1059.10300@codeaurora.org>
+Message-Id: <503C1818.7020402@kmckk.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1346113322-21133-1-git-send-email-horms@verge.net.au>
  <1346113322-21133-2-git-send-email-horms@verge.net.au>
-In-Reply-To: <1346113322-21133-2-git-send-email-horms@verge.net.au>
+ <503C1059.10300@codeaurora.org>
+In-Reply-To: <503C1059.10300@codeaurora.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 8/27/2012 5:22 PM, Simon Horman wrote:
-> +dtb-$(CONFIG_MACH_KZM9D) += emev2-kzm9d.dts
-> +dtb-$(CONFIG_MACH_ARMADILLO800EVA) += r8a7740-armadillo800eva.dts
+Simon-san,
 
-Shouldn't these be dtb instead of dts?
+(2012/08/28 9:27), Stephen Boyd wrote:
+> On 8/27/2012 5:22 PM, Simon Horman wrote:
+>> +dtb-$(CONFIG_MACH_KZM9D) += emev2-kzm9d.dts
+>> +dtb-$(CONFIG_MACH_ARMADILLO800EVA) += r8a7740-armadillo800eva.dts
+>
+> Shouldn't these be dtb instead of dts?
+>
 
--- 
-Sent by an employee of the Qualcomm Innovation Center, Inc.
-The Qualcomm Innovation Center, Inc. is a member of the Code Aurora Forum.
+Please use my v2 patch.
+I paste v2 patch here. (It was posted on 2012/07/23)
 
+===============================
+From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+
+Add compilation support for dtbs using 'make dtbs'
+
+Cc: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Simon Horman <horms@verge.net.au>
+Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+---
+Sorry, I found mistake. it should be dtb insted of dts.
+
+Changes for v2
+- replace dts to dtb in the 3rd and 4th line of patch.
+
+  arch/arm/mach-shmobile/Makefile.boot |    4 ++++
+  1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/Makefile.boot 
+b/arch/arm/mach-shmobile/Makefile.boot
+index 498efd9..5e41019 100644
+--- a/arch/arm/mach-shmobile/Makefile.boot
++++ b/arch/arm/mach-shmobile/Makefile.boot
+@@ -7,3 +7,7 @@ __ZRELADDR	:= $(shell /bin/bash -c 'printf "0x%08x" \
+  #
+  #params_phys-y (Instead: Pass atags pointer in r2)
+  #initrd_phys-y (Instead: Use compiled-in initramfs)
++
++dtb-$(CONFIG_MACH_KZM9G) += sh73a0-kzm9g.dtb
++dtb-$(CONFIG_MACH_KZM9D) += emev2-kzm9d.dtb
++dtb-$(CONFIG_MACH_ARMADILLO800EVA) += r8a7740-armadillo800eva.dtb
+-- 1.7.9.5
