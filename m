@@ -1,25 +1,21 @@
 From: wency@cn.fujitsu.com
-Date: Fri, 03 Aug 2012 07:49:20 +0000
-Subject: [RFC PATCH V6 18/19] memory-hotplug: add node_device_release
-Message-Id: <1343980161-14254-19-git-send-email-wency@cn.fujitsu.com>
+Date: Tue, 28 Aug 2012 10:00:21 +0000
+Subject: [RFC v8 PATCH 14/20] memory-hotplug: move register_page_bootmem_info_node and put_page_bootmem for s
+Message-Id: <1346148027-24468-15-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1343980161-14254-1-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1343980161-14254-1-git-send-email-wency@cn.fujitsu.com>
+References: <1346148027-24468-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1346148027-24468-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
+To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
 Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
 
 From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-When calling unregister_node(), the function shows following message at
-device_release().
-
-Device 'node2' does not have a release() function, it is broken and must be
-fixed.
-
-So the patch implements node_device_release()
+For implementing register_page_bootmem_info_node of sparse-vmemmap,
+register_page_bootmem_info_node and put_page_bootmem are moved to
+memory_hotplug.c
 
 CC: David Rientjes <rientjes@google.com>
 CC: Jiang Liu <liuj97@gmail.com>
@@ -30,38 +26,75 @@ CC: Christoph Lameter <cl@linux.com>
 Cc: Minchan Kim <minchan.kim@gmail.com>
 CC: Andrew Morton <akpm@linux-foundation.org>
 CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Wen Congyang <wency@cn.fujitsu.com>
 Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
 ---
- drivers/base/node.c |    8 ++++++++
- 1 files changed, 8 insertions(+), 0 deletions(-)
+ include/linux/memory_hotplug.h |    9 ---------
+ mm/memory_hotplug.c            |    8 ++++++--
+ 2 files changed, 6 insertions(+), 11 deletions(-)
 
-diff --git a/drivers/base/node.c b/drivers/base/node.c
-index af1a177..9bc2f57 100644
---- a/drivers/base/node.c
-+++ b/drivers/base/node.c
-@@ -252,6 +252,13 @@ static inline void hugetlb_register_node(struct node *node) {}
- static inline void hugetlb_unregister_node(struct node *node) {}
- #endif
+diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
+index cdbbd79..1133e63 100644
+--- a/include/linux/memory_hotplug.h
++++ b/include/linux/memory_hotplug.h
+@@ -162,17 +162,8 @@ static inline void arch_refresh_nodedata(int nid, pg_data_t *pgdat)
+ #endif /* CONFIG_NUMA */
+ #endif /* CONFIG_HAVE_ARCH_NODEDATA_EXTENSION */
  
-+static void node_device_release(struct device *dev)
-+{
-+	struct node *node_dev = to_node(dev);
-+
-+	flush_work(&node_dev->node_work);
-+	memset(node_dev, 0, sizeof(struct node));
-+}
+-#ifdef CONFIG_SPARSEMEM_VMEMMAP
+-static inline void register_page_bootmem_info_node(struct pglist_data *pgdat)
+-{
+-}
+-static inline void put_page_bootmem(struct page *page)
+-{
+-}
+-#else
+ extern void register_page_bootmem_info_node(struct pglist_data *pgdat);
+ extern void put_page_bootmem(struct page *page);
+-#endif
  
  /*
-  * register_node - Setup a sysfs device for a node.
-@@ -265,6 +272,7 @@ int register_node(struct node *node, int num, struct node *parent)
+  * Lock for memory hotplug guarantees 1) all callbacks for memory hotplug
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index d85af6d..3ca66bc 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -91,7 +91,6 @@ static void release_memory_resource(struct resource *res)
+ }
  
- 	node->dev.id = num;
- 	node->dev.bus = &node_subsys;
-+	node->dev.release = node_device_release;
- 	error = device_register(&node->dev);
+ #ifdef CONFIG_MEMORY_HOTPLUG_SPARSE
+-#ifndef CONFIG_SPARSEMEM_VMEMMAP
+ static void get_page_bootmem(unsigned long info,  struct page *page,
+ 			     unsigned long type)
+ {
+@@ -127,6 +126,7 @@ void __ref put_page_bootmem(struct page *page)
  
- 	if (!error){
+ }
+ 
++#ifndef CONFIG_SPARSEMEM_VMEMMAP
+ static void register_page_bootmem_info_section(unsigned long start_pfn)
+ {
+ 	unsigned long *usemap, mapsize, section_nr, i;
+@@ -163,6 +163,11 @@ static void register_page_bootmem_info_section(unsigned long start_pfn)
+ 		get_page_bootmem(section_nr, page, MIX_SECTION_INFO);
+ 
+ }
++#else
++static inline void register_page_bootmem_info_section(unsigned long start_pfn)
++{
++}
++#endif
+ 
+ void register_page_bootmem_info_node(struct pglist_data *pgdat)
+ {
+@@ -198,7 +203,6 @@ void register_page_bootmem_info_node(struct pglist_data *pgdat)
+ 		register_page_bootmem_info_section(pfn);
+ 
+ }
+-#endif /* !CONFIG_SPARSEMEM_VMEMMAP */
+ 
+ static void grow_zone_span(struct zone *zone, unsigned long start_pfn,
+ 			   unsigned long end_pfn)
 -- 
 1.7.1
 
