@@ -1,62 +1,75 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 31 Aug 2012 16:05:11 +0000
-Subject: Re: V4L DT @ plumbers (was Re: [RFC v4] V4L DT bindings)
-Message-Id: <Pine.LNX.4.64.1208311754360.25088@axis700.grange>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 30 Aug 2012 05:47:28 +0000
+Subject: [PATCH] ARM: shmobile: kzm9g: use gpio-keys instead of gpio-keys-polled
+Message-Id: <1346305648-25263-2-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <le0u47eut2t0gh4pxyuu5vse.1346374764563@email.android.com>
-In-Reply-To: <le0u47eut2t0gh4pxyuu5vse.1346374764563-2ueSQiBKiTY7tOexoI0I+QC/G2K4zDHf@public.gmane.org>
+References: <1346305648-25263-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1346305648-25263-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Hans Verkuil <hverkuil-qWit8jRvyhVmR6Xm/wNWPw@public.gmane.org>
-Cc: Benjamin GAIGNARD <benjamin.gaignard-qxv4g6HH51o@public.gmane.org>, "linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, devicetree-discuss <devicetree-discuss-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org>, Mark Brown <broonie-yzvPICuk2AATkU/dhu1WVueM+bqZidxxQQ4Iyu8u01E@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Nicolas THERY <nicolas.thery-qxv4g6HH51o@public.gmane.org>, Willy POISSON <willy.poisson-qxv4g6HH51o@public.gmane.org>, Mauro Carvalho Chehab <mchehab-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, Pierre-yves TALOUD <pierre-yves.taloud-qxv4g6HH51o@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Sylwester Nawrocki <s.nawrocki-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>, Sylwester Nawrocki <sylvester.nawrocki-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Jean-Marc VOLLE <jean-marc.volle-qxv4g6HH51o@public.gmane.org>, Linux Media Mailing List <linux-media-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, 30 Aug 2012, Hans Verkuil wrote:
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-> Fine by me!
+6e20a0a429bd4dc07d6de16d9c247270e04e4aa0
+(gpio: pcf857x: enable gpio_to_irq() support) supports
+gpio_to_irq() on pcf857x driver.
+Now, we can use gpio-keys driver instead of gpio-keys-polled.
 
-Good, then let's meet at 11:55 in front of Nautilus 3 / 4 and then see 
-what's available.
-
-Thanks
-Guennadi
-
-> 
->       Hans
-> 
-> Guennadi Liakhovetski <g.liakhovetski@gmx.de> wrote:
-> 
-> >On Fri, 31 Aug 2012, Laurent Pinchart wrote:
-> >
-> >> Hi Guennadi,
-> >> 
-> >> On Thursday 30 August 2012 22:58:17 Guennadi Liakhovetski wrote:
-> >> > Hi all
-> >> > 
-> >> > Do we still want to try to organise a short discussion of this while at
-> >> > plumbers? Maybe tomorrow during or around lunch? Or any other time for
-> >> > that matter?
-> >> 
-> >> I'm certainly interested. I have a meeting tomorrow at a still unknown type, 
-> >> apart from that I'm free.
-> >
-> >How about beginning tomorrow at 11:55 (Nautilus 3 & 4 are still free 
-> >according to the schedule) and then continuing after the lunch for another 
-> >hour if needed (first talk in the afternoon tomorrow is at 14:10).
-> >
-> >Thanks
-> >Guennadi
-> >---
-> >Guennadi Liakhovetski, Ph.D.
-> >Freelance Open-Source Software Developer
-> >http://www.open-technology.de/
-> >--
-> >To unsubscribe from this list: send the line "unsubscribe linux-media" in
-> >the body of a message to majordomo@vger.kernel.org
-> >More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ arch/arm/configs/kzm9g_defconfig     | 2 +-
+ arch/arm/mach-shmobile/board-kzm9g.c | 5 ++---
+ 2 files changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
+index 2388c86..175804e 100644
+--- a/arch/arm/configs/kzm9g_defconfig
++++ b/arch/arm/configs/kzm9g_defconfig
+@@ -22,7 +22,6 @@ CONFIG_MODULE_UNLOAD=y
+ # CONFIG_IOSCHED_DEADLINE is not set
+ # CONFIG_IOSCHED_CFQ is not set
+ CONFIG_ARCH_SHMOBILE=y
+-CONFIG_KEYBOARD_GPIO_POLLED=y
+ CONFIG_ARCH_SH73A0=y
+ CONFIG_MACH_KZM9G=y
+ CONFIG_MEMORY_START=0x41000000
+@@ -70,6 +69,7 @@ CONFIG_INPUT_SPARSEKMAP=y
+ # CONFIG_INPUT_MOUSEDEV is not set
+ CONFIG_INPUT_EVDEV=y
+ # CONFIG_KEYBOARD_ATKBD is not set
++CONFIG_KEYBOARD_GPIO=y
+ # CONFIG_INPUT_MOUSE is not set
+ CONFIG_INPUT_TOUCHSCREEN=y
+ CONFIG_TOUCHSCREEN_ST1232=y
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index 53b7ea9..4d1348e 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -482,12 +482,10 @@ static struct gpio_keys_button gpio_buttons[] = {
+ static struct gpio_keys_platform_data gpio_key_info = {
+ 	.buttons	= gpio_buttons,
+ 	.nbuttons	= ARRAY_SIZE(gpio_buttons),
+-	.poll_interval	= 250, /* poling at this point */
+ };
+ 
+ static struct platform_device gpio_keys_device = {
+-	/* gpio-pcf857x.c driver doesn't support gpio_to_irq() */
+-	.name	= "gpio-keys-polled",
++	.name	= "gpio-keys",
+ 	.dev	= {
+ 		.platform_data  = &gpio_key_info,
+ 	},
+@@ -550,6 +548,7 @@ static struct platform_device fsi_ak4648_device = {
+ /* I2C */
+ static struct pcf857x_platform_data pcf8575_pdata = {
+ 	.gpio_base	= GPIO_PCF8575_BASE,
++	.irq		= intcs_evt2irq(0x3260), /* IRQ19 */
+ };
+ 
+ static struct i2c_board_info i2c0_devices[] = {
+-- 
+1.7.10.2.484.gcd07cc5
+
