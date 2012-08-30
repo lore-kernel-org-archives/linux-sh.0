@@ -1,45 +1,25 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 31 Aug 2012 06:33:23 +0000
-Subject: Re: [PATCH] ARM: shmobile: mackerel: fixup usb module order
-Message-Id: <20120831063321.GC7014@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 30 Aug 2012 20:58:17 +0000
+Subject: V4L DT @ plumbers (was Re: [RFC v4] V4L DT bindings)
+Message-Id: <alpine.DEB.2.00.1208302255210.4516@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87obmoefn2.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87obmoefn2.wl%kuninori.morimoto.gx@renesas.com>
+References: <Pine.LNX.4.64.1208242356051.20710@axis700.grange> <503F8471.5000406@st.com> <503FCB37.5080706@gmail.com>
+In-Reply-To: <503FCB37.5080706@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
+Cc: Nicolas THERY <nicolas.thery@st.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Linux Media Mailing List <linux-media@vger.kernel.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Magnus Damm <magnus.damm@gmail.com>, devicetree-discuss <devicetree-discuss@lists.ozlabs.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Mark Brown <broonie@opensource.wolfsonmicro.com>, Stephen Warren <swarren@wwwdotorg.org>, Benjamin GAIGNARD <benjamin.gaignard@st.com>, Willy POISSON <willy.poisson@st.com>, Jean-Marc VOLLE <jean-marc.volle@st.com>, Pierre-yves TALOUD <pierre-yves.taloud@st.com>, Hans Verkuil <hverkuil@xs4all.nl>, Mauro Carvalho Chehab <mchehab@infradead.org>
 
-On Mon, Aug 27, 2012 at 05:41:13PM +0900, Simon Horman wrote:
-> On Mon, Aug 06, 2012 at 05:19:12PM +0900, Simon Horman wrote:
-> > On Sun, Aug 05, 2012 at 10:47:00PM -0700, Kuninori Morimoto wrote:
-> > > renesas_usbhs driver can play role as both Host and Gadget.
-> > > In case of Gadget, it requires not only renesas_usbhs
-> > > but also usb gadget module (like g_ether).
-> > > So, renesas_usbhs driver calls usb_add_gadget_udc() on probe time.
-> > > 
-> > > Because of this behavior,
-> > > Host port plays also Gadget role if kernel has both Host/Gadget support.
-> > > 
-> > > In mackerel case, from 0ada2da51800a4914887a9bcf22d563be80e50be
-> > > (ARM: mach-shmobile: mackerel: use renesas_usbhs instead of r8a66597_hcd)
-> > > usb0 plays Gadget role, and usb1 plays Host role,
-> > > and current mackerel board probes as usb1 -> usb0.
-> > > Thus, 1st installed usb gadget module (like g_ether) will be
-> > > assigned to usb1 (= usb Host port), and 2nd module to usb0 (= usb Gadget port).
-> > > It is very confusable for user.
-> > > This patch fixup usb modes probing order as usb0 -> usb1.
-> > > 
-> > > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > 
-> > Reviewed-by: Simon Horman <horms@verge.net.au>
-> 
-> I have pushed this to the mackerel branch of my renesas tree,
-> git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git
-> 
-> I will endeavour to get it included in 3.7.
+Hi all
 
-On further consideration I have moved this patch to the
-fixes branch (and removed the now empty mackerel branch).
+Do we still want to try to organise a short discussion of this while at 
+plumbers? Maybe tomorrow during or around lunch? Or any other time for 
+that matter?
 
-I will endeavour to get it included in 3.6.
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
