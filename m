@@ -1,48 +1,23 @@
-From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
-Date: Tue, 28 Aug 2012 01:15:03 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 30 Aug 2012 05:43:13 +0000
 Subject: Re: [GIT PULL] Renesas ARM-based SoC: KZM-9A-GT for 3.7
-Message-Id: <503C1B97.3070004@kmckk.co.jp>
+Message-Id: <20120830054313.GA25362@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1346113116-20252-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1346113116-20252-1-git-send-email-horms@verge.net.au>
+ <503C1B97.3070004@kmckk.co.jp>
+In-Reply-To: <503C1B97.3070004@kmckk.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-(2012/08/28 9:18), Simon Horman wrote:
-> Hi Olaf, Hi Arnd,
+On Tue, Aug 28, 2012 at 10:15:03AM +0900, Tetsuyuki Kobayashi wrote:
+> (2012/08/28 9:18), Simon Horman wrote:
+> > Hi Olaf, Hi Arnd,
+> > 
+> > please consider the following enhancement for the KZM-9A-GT board
 > 
-> please consider the following enhancement for the KZM-9A-GT board
+> Just a minor correction :)
+> The board name is KZM-A9-GT.
 
-Just a minor correction :)
-The board name is KZM-A9-GT.
-
-
-> from Tetsuyuki Kobayashi for inclusion in 3.7.
-> 
-> ----------------------------------------------------------------
-> The following changes since commit fea7a08acb13524b47711625eebea40a0ede69a0:
-> 
->    Linux 3.6-rc3 (2012-08-22 13:29:06 -0700)
-> 
-> are available in the git repository at:
-> 
->    git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git kzm9g
-> 
-> for you to fetch changes up to 7952717adb69efc1d2443a1858f96d23c2fb93e0:
-> 
->    ARM: shmobile: kzm9g: enable restarting (2012-08-25 14:39:44 +0900)
-> 
-> ----------------------------------------------------------------
-> Tetsuyuki Kobayashi (1):
->        ARM: shmobile: kzm9g: enable restarting
-> 
->   arch/arm/mach-shmobile/board-kzm9g.c | 8 ++++++++
->   1 file changed, 8 insertions(+)
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
+Thanks, sorry about that.
