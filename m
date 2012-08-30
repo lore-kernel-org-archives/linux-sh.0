@@ -1,43 +1,39 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 16 Aug 2012 13:00:41 +0000
-Subject: [PATCH 06/19] ARM: mach-shmobile: Initiliaze the new sh_mipi_dsi_info channel field
-Message-Id: <1345122054-16013-7-git-send-email-laurent.pinchart@ideasonboard.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 30 Aug 2012 05:38:59 +0000
+Subject: [PATCH] ARM: shmobile: marzen: fixup smsc911x id for regulator
+Message-Id: <1346305139-24337-2-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1346305139-24337-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1346305139-24337-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+dummy_supplies for smsc911x are registered as "smsc911x".
+smsc911x driver needs id = -1
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-ag5evm.c |    1 +
- arch/arm/mach-shmobile/board-ap4evb.c |    1 +
- 2 files changed, 2 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/board-marzen.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
-index afae573..5523bc8 100644
---- a/arch/arm/mach-shmobile/board-ag5evm.c
-+++ b/arch/arm/mach-shmobile/board-ag5evm.c
-@@ -258,6 +258,7 @@ static struct sh_mobile_lcdc_info lcdc0_info;
- static struct sh_mipi_dsi_info mipidsi0_info = {
- 	.data_format	= MIPI_RGB888,
- 	.lcd_chan	= &lcdc0_info.ch[0],
-+	.channel	= LCDC_CHAN_MAINLCD,
- 	.lane		= 2,
- 	.vsynw_offset	= 20,
- 	.clksrc		= 1,
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index ace6024..5fbd176 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -532,6 +532,7 @@ static struct sh_mobile_lcdc_info lcdc_info;
- static struct sh_mipi_dsi_info mipidsi0_info = {
- 	.data_format	= MIPI_RGB888,
- 	.lcd_chan	= &lcdc_info.ch[0],
-+	.channel	= LCDC_CHAN_MAINLCD,
- 	.lane		= 2,
- 	.vsynw_offset	= 17,
- 	.phyctrl	= 0x6 << 8,
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index 3a528cf..fcf5a47 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -67,7 +67,7 @@ static struct smsc911x_platform_config smsc911x_platdata = {
+ 
+ static struct platform_device eth_device = {
+ 	.name		= "smsc911x",
+-	.id		= 0,
++	.id		= -1,
+ 	.dev  = {
+ 		.platform_data = &smsc911x_platdata,
+ 	},
 -- 
-1.7.8.6
+1.7.10.2.484.gcd07cc5
 
