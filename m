@@ -1,7 +1,7 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Mon, 27 Aug 2012 23:33:57 +0000
-Subject: Re: [GIT PULL] Renesas ARM-based SoC fix for v3.6
-Message-Id: <20120827233357.GA3571@quad.lixom.net>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 30 Aug 2012 05:38:58 +0000
+Subject: [GIT PULL] Renesas ARM-based SoC fix for v3.6
+Message-Id: <1346305139-24337-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201208240118.16563.rjw@sisk.pl>
 In-Reply-To: <201208240118.16563.rjw@sisk.pl>
@@ -10,22 +10,27 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Aug 24, 2012 at 01:18:16AM +0200, Rafael J. Wysocki wrote:
-> Hi,
-> 
-> Please pull from the git repository at
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/rafael/renesas.git fixes
-> 
-> to receive one fix for the sh73a0 SoC support code as commit
-> 6c0274cbe63ec265f842537825684a619e6cce93
-> 
->   ARM: shmobile: sh73a0: fixup RELOC_BASE of intca_irq_pins_desc
-> 
-> on top of commit d9875690d9b89a866022ff49e3fcea892345ad92
-> 
->   Linux 3.6-rc2
+Hi Olof, Hi Arnd,
 
-Thanks, pulled.
+please consider the following boot-failure fix for the Marzen board from
+Morimoto-san for inclusion in 3.6.
 
--Olof
+----------------------------------------------------------------
+The following changes since commit fea7a08acb13524b47711625eebea40a0ede69a0:
+
+  Linux 3.6-rc3 (2012-08-22 13:29:06 -0700)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git fixes
+
+for you to fetch changes up to 497dcf6fc355f0734faf851662b6957386715d24:
+
+  ARM: shmobile: marzen: fixup smsc911x id for regulator (2012-08-30 14:10:08 +0900)
+
+----------------------------------------------------------------
+Kuninori Morimoto (1):
+      ARM: shmobile: marzen: fixup smsc911x id for regulator
+
+ arch/arm/mach-shmobile/board-marzen.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
