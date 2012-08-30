@@ -1,46 +1,48 @@
-From: Vasilis Liaskovitis <vasilis.liaskovitis@profitbricks.com>
-Date: Thu, 09 Aug 2012 15:41:04 +0000
-Subject: Re: [RFC PATCH V6 04/19] memory-hotplug: offline and remove memory when removing the memory device
-Message-Id: <CAFEPiEY7gBeLoEJggSjFsF92X1Lw9DzPvEfCxhBx75NKCiL6XQ@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 30 Aug 2012 05:47:27 +0000
+Subject: [GIT PULL] Renesas ARM-based SoC: KZM-A9-GT for 3.7 #2
+Message-Id: <1346305648-25263-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1343980161-14254-1-git-send-email-wency@cn.fujitsu.com>
-	<1343980161-14254-5-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1343980161-14254-5-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: wency@cn.fujitsu.com
-Cc: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com
+To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+Hi Olof, Hi Arnd,
 
-> We should offline and remove memory when removing the memory device.
-> The memory device can be removed by 2 ways:
-> 1. send eject request by SCI
-> 2. echo 1 >/sys/bus/pci/devices/PNP0C80:XX/eject
->
+please consider the following enhancement to the KZM-A9-GT board by
+from Morimoto-san for inclusion in 3.7.
 
-[snip]
+* This pull request is based on the devel branch of
+  git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git
+  which is based on v3.6-rc2.
 
-> +
-> +static int acpi_memory_disable_device(struct acpi_memory_device *mem_device)
-> +{
-> +       int result;
-> +
-> +       /*
-> +        * Ask the VM to offline this memory range.
-> +        * Note: Assume that this function returns zero on success
-> +        */
-> +       result = acpi_memory_device_remove_memory(mem_device);
-> +
+  This is to satisfy compile-time dependencies.
+  Please let me know if you would like this handled a different way.
 
-here we should check the result of acpi_memory_device_remove_memory()
-and not continue if it failed.
+* This and a previous pull request,
+  "Renesas ARM-based SoC: KZM-9A-GT for 3.7", both touch board-kzm9g.c
+  but I do not believe there is a conflict.
 
->         /* Power-off and eject the device */
->         result = acpi_memory_powerdown_device(mem_device);
->         if (result) {
+  Please let me know if you would like this handled a different way.
 
-thanks,
+----------------------------------------------------------------
+The following changes since commit f24a9172233cfc205ef7a999370412ab577783b1:
 
-- Vasilis
+  gpio/mxs: adopt irq_domain support for mxs gpio driver (2012-08-23 23:49:17 +0200)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git kzm9g-gpio
+
+for you to fetch changes up to af26b952cca1a87f31b09015fb3f7c77232036e1:
+
+  ARM: shmobile: kzm9g: use gpio-keys instead of gpio-keys-polled (2012-08-30 13:59:31 +0900)
+
+----------------------------------------------------------------
+Kuninori Morimoto (1):
+      ARM: shmobile: kzm9g: use gpio-keys instead of gpio-keys-polled
+
+ arch/arm/configs/kzm9g_defconfig     | 2 +-
+ arch/arm/mach-shmobile/board-kzm9g.c | 5 ++---
+ 2 files changed, 3 insertions(+), 4 deletions(-)
