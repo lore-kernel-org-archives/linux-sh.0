@@ -1,100 +1,55 @@
-From: wency@cn.fujitsu.com
-Date: Mon, 20 Aug 2012 09:35:37 +0000
-Subject: [RFC V7 PATCH 14/19] memory-hotplug: move register_page_bootmem_info_node and put_page_bootmem for s
-Message-Id: <1345455342-27752-15-git-send-email-wency@cn.fujitsu.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 31 Aug 2012 01:28:17 +0000
+Subject: [PATCH 06/11] ARM: shmobile: r8a7779: add USB EHCI clock support
+Message-Id: <1346376502-12114-7-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1345455342-27752-1-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1345455342-27752-1-git-send-email-wency@cn.fujitsu.com>
+References: <1346376502-12114-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1346376502-12114-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
-Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-For implementing register_page_bootmem_info_node of sparse-vmemmap,
-register_page_bootmem_info_node and put_page_bootmem are moved to
-memory_hotplug.c
+ehci-platform driver require these clocks
 
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-CC: Paul Mackerras <paulus@samba.org>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-CC: Wen Congyang <wency@cn.fujitsu.com>
-Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- include/linux/memory_hotplug.h |    9 ---------
- mm/memory_hotplug.c            |    8 ++++++--
- 2 files changed, 6 insertions(+), 11 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7779.c | 5 +++++
+ 1 file changed, 5 insertions(+)
 
-diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
-index cdbbd79..1133e63 100644
---- a/include/linux/memory_hotplug.h
-+++ b/include/linux/memory_hotplug.h
-@@ -162,17 +162,8 @@ static inline void arch_refresh_nodedata(int nid, pg_data_t *pgdat)
- #endif /* CONFIG_NUMA */
- #endif /* CONFIG_HAVE_ARCH_NODEDATA_EXTENSION */
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index 3cafb6a..1d8842b 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -87,6 +87,7 @@ static struct clk div4_clks[DIV4_NR] = {
+ };
  
--#ifdef CONFIG_SPARSEMEM_VMEMMAP
--static inline void register_page_bootmem_info_node(struct pglist_data *pgdat)
--{
--}
--static inline void put_page_bootmem(struct page *page)
--{
--}
--#else
- extern void register_page_bootmem_info_node(struct pglist_data *pgdat);
- extern void put_page_bootmem(struct page *page);
--#endif
- 
- /*
-  * Lock for memory hotplug guarantees 1) all callbacks for memory hotplug
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index d85af6d..3ca66bc 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -91,7 +91,6 @@ static void release_memory_resource(struct resource *res)
- }
- 
- #ifdef CONFIG_MEMORY_HOTPLUG_SPARSE
--#ifndef CONFIG_SPARSEMEM_VMEMMAP
- static void get_page_bootmem(unsigned long info,  struct page *page,
- 			     unsigned long type)
- {
-@@ -127,6 +126,7 @@ void __ref put_page_bootmem(struct page *page)
- 
- }
- 
-+#ifndef CONFIG_SPARSEMEM_VMEMMAP
- static void register_page_bootmem_info_section(unsigned long start_pfn)
- {
- 	unsigned long *usemap, mapsize, section_nr, i;
-@@ -163,6 +163,11 @@ static void register_page_bootmem_info_section(unsigned long start_pfn)
- 		get_page_bootmem(section_nr, page, MIX_SECTION_INFO);
- 
- }
-+#else
-+static inline void register_page_bootmem_info_section(unsigned long start_pfn)
-+{
-+}
-+#endif
- 
- void register_page_bootmem_info_node(struct pglist_data *pgdat)
- {
-@@ -198,7 +203,6 @@ void register_page_bootmem_info_node(struct pglist_data *pgdat)
- 		register_page_bootmem_info_section(pfn);
- 
- }
--#endif /* !CONFIG_SPARSEMEM_VMEMMAP */
- 
- static void grow_zone_span(struct zone *zone, unsigned long start_pfn,
- 			   unsigned long end_pfn)
+ enum { MSTP323, MSTP322, MSTP321, MSTP320,
++	MSTP101, MSTP100,
+ 	MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+ 	MSTP016, MSTP015, MSTP014,
+ 	MSTP_NR };
+@@ -96,6 +97,8 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP322] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 22, 0), /* SDHI1 */
+ 	[MSTP321] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 21, 0), /* SDHI2 */
+ 	[MSTP320] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 20, 0), /* SDHI3 */
++	[MSTP101] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  1, 0), /* USB2 */
++	[MSTP100] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  0, 0), /* USB0/1 */
+ 	[MSTP026] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 26, 0), /* SCIF0 */
+ 	[MSTP025] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 25, 0), /* SCIF1 */
+ 	[MSTP024] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 24, 0), /* SCIF2 */
+@@ -154,6 +157,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP023]), /* SCIF3 */
+ 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP022]), /* SCIF4 */
+ 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP021]), /* SCIF6 */
++	CLKDEV_DEV_ID("ehci-platform.1", &mstp_clks[MSTP101]), /* USB EHCI port2 */
++	CLKDEV_DEV_ID("ehci-platform.0", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
 -- 
-1.7.1
+1.7.10.2.484.gcd07cc5
 
