@@ -1,7 +1,7 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Fri, 31 Aug 2012 00:38:29 +0000
+Date: Fri, 31 Aug 2012 00:39:00 +0000
 Subject: Re: [PATCH 4/8] ARM: shmobile: r8a7779: add USB OHCI clock support
-Message-Id: <20120831003827.GO7721@verge.net.au>
+Message-Id: <20120831003859.GB21634@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87harndbee.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <87harndbee.wl%kuninori.morimoto.gx@renesas.com>
