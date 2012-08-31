@@ -1,100 +1,179 @@
-From: wency@cn.fujitsu.com
-Date: Fri, 03 Aug 2012 07:49:16 +0000
-Subject: [RFC PATCH V6 14/19] memory-hotplug: move register_page_bootmem_info_node and put_page_bootmem for s
-Message-Id: <1343980161-14254-15-git-send-email-wency@cn.fujitsu.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 31 Aug 2012 01:28:19 +0000
+Subject: [PATCH 08/11] ARM: shmobile: marzen: add USB EHCI driver support
+Message-Id: <1346376502-12114-9-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1343980161-14254-1-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1343980161-14254-1-git-send-email-wency@cn.fujitsu.com>
+References: <1346376502-12114-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1346376502-12114-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
-Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-For implementing register_page_bootmem_info_node of sparse-vmemmap,
-register_page_bootmem_info_node and put_page_bootmem are moved to
-memory_hotplug.c
+This patch supports CN21/CN22 USB 2.0 (port 0/1/2),
+and enable USB momery on defconfig
 
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-CC: Paul Mackerras <paulus@samba.org>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-CC: Wen Congyang <wency@cn.fujitsu.com>
-Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- include/linux/memory_hotplug.h |    9 ---------
- mm/memory_hotplug.c            |    8 ++++++--
- 2 files changed, 6 insertions(+), 11 deletions(-)
+ arch/arm/configs/marzen_defconfig     |  6 +++
+ arch/arm/mach-shmobile/Kconfig        |  1 +
+ arch/arm/mach-shmobile/board-marzen.c | 88 +++++++++++++++++++++++++++++++++++
+ 3 files changed, 95 insertions(+)
 
-diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
-index cdbbd79..1133e63 100644
---- a/include/linux/memory_hotplug.h
-+++ b/include/linux/memory_hotplug.h
-@@ -162,17 +162,8 @@ static inline void arch_refresh_nodedata(int nid, pg_data_t *pgdat)
- #endif /* CONFIG_NUMA */
- #endif /* CONFIG_HAVE_ARCH_NODEDATA_EXTENSION */
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index cd2dc21..61d1c55 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -47,6 +47,8 @@ CONFIG_DEVTMPFS_MOUNT=y
+ # CONFIG_STANDALONE is not set
+ # CONFIG_PREVENT_FIRMWARE_BUILD is not set
+ # CONFIG_FW_LOADER is not set
++CONFIG_SCSI=y
++CONFIG_BLK_DEV_SD=y
+ CONFIG_NETDEVICES=y
+ # CONFIG_NET_VENDOR_BROADCOM is not set
+ # CONFIG_NET_VENDOR_FARADAY is not set
+@@ -75,6 +77,10 @@ CONFIG_SSB=y
+ # CONFIG_USB_SUPPORT is not set
+ CONFIG_MMC=y
+ CONFIG_MMC_SDHI=y
++CONFIG_USB=y
++CONFIG_USB_EHCI_HCD=y
++CONFIG_USB_EHCI_HCD_PLATFORM=y
++CONFIG_USB_STORAGE=y
+ CONFIG_UIO=y
+ CONFIG_UIO_PDRV_GENIRQ=y
+ # CONFIG_IOMMU_SUPPORT is not set
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 4cacc2d..8937d69 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -41,6 +41,7 @@ config ARCH_R8A7779
+ 	select SH_CLK_CPG
+ 	select ARM_GIC
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
++	select USB_ARCH_HAS_EHCI
  
--#ifdef CONFIG_SPARSEMEM_VMEMMAP
--static inline void register_page_bootmem_info_node(struct pglist_data *pgdat)
--{
--}
--static inline void put_page_bootmem(struct page *page)
--{
--}
--#else
- extern void register_page_bootmem_info_node(struct pglist_data *pgdat);
- extern void put_page_bootmem(struct page *page);
--#endif
+ config ARCH_EMEV2
+ 	bool "Emma Mobile EV2"
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index dec3ffc..0249c0e 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -32,6 +32,8 @@
+ #include <linux/smsc911x.h>
+ #include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/mfd/tmio.h>
++#include <linux/usb/ehci_pdriver.h>
++#include <linux/pm_runtime.h>
+ #include <mach/hardware.h>
+ #include <mach/r8a7779.h>
+ #include <mach/common.h>
+@@ -116,6 +118,80 @@ static struct platform_device *marzen_devices[] __initdata = {
+ 	&sdhi0_device,
+ };
  
- /*
-  * Lock for memory hotplug guarantees 1) all callbacks for memory hotplug
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index 710e593..3a264a5 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -91,7 +91,6 @@ static void release_memory_resource(struct resource *res)
- }
- 
- #ifdef CONFIG_MEMORY_HOTPLUG_SPARSE
--#ifndef CONFIG_SPARSEMEM_VMEMMAP
- static void get_page_bootmem(unsigned long info,  struct page *page,
- 			     unsigned long type)
- {
-@@ -127,6 +126,7 @@ void __ref put_page_bootmem(struct page *page)
- 
- }
- 
-+#ifndef CONFIG_SPARSEMEM_VMEMMAP
- static void register_page_bootmem_info_section(unsigned long start_pfn)
- {
- 	unsigned long *usemap, mapsize, section_nr, i;
-@@ -163,6 +163,11 @@ static void register_page_bootmem_info_section(unsigned long start_pfn)
- 		get_page_bootmem(section_nr, page, MIX_SECTION_INFO);
- 
- }
-+#else
-+static inline void register_page_bootmem_info_section(unsigned long start_pfn)
++/* USB */
++static int xhci_power_on(struct platform_device *pdev)
 +{
++	pm_runtime_enable(&pdev->dev);
++	pm_runtime_get_sync(&pdev->dev);
++
++	return 0;
 +}
-+#endif
- 
- void register_page_bootmem_info_node(struct pglist_data *pgdat)
++
++static void xhci_power_off(struct platform_device *pdev)
++{
++	pm_runtime_put_sync(&pdev->dev);
++	pm_runtime_disable(&pdev->dev);
++}
++
++static struct usb_ehci_pdata ehcix_pdata = {
++	.power_on	= xhci_power_on,
++	.power_off	= xhci_power_off,
++	.power_suspend	= xhci_power_off,
++};
++
++static struct resource ehci0_resources[] = {
++	[0] = {
++		.start	= 0xffe70000,
++		.end	= 0xffe70400 - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= gic_spi(44),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device ehci0_device = {
++	.name	= "ehci-platform",
++	.id	= 0,
++	.dev	= {
++		.dma_mask		= &ehci0_device.dev.coherent_dma_mask,
++		.coherent_dma_mask	= 0xffffffff,
++		.platform_data		= &ehcix_pdata,
++	},
++	.num_resources	= ARRAY_SIZE(ehci0_resources),
++	.resource	= ehci0_resources,
++};
++
++static struct resource ehci1_resources[] = {
++	[0] = {
++		.start	= 0xfff70000,
++		.end	= 0xfff70400 - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= gic_spi(45),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device ehci1_device = {
++	.name	= "ehci-platform",
++	.id	= 1,
++	.dev	= {
++		.dma_mask		= &ehci1_device.dev.coherent_dma_mask,
++		.coherent_dma_mask	= 0xffffffff,
++		.platform_data		= &ehcix_pdata,
++	},
++	.num_resources	= ARRAY_SIZE(ehci1_resources),
++	.resource	= ehci1_resources,
++};
++
++static struct platform_device *marzen_usb_devices[] __initdata = {
++	&ehci0_device,
++	&ehci1_device,
++};
++
+ static void __init marzen_init(void)
  {
-@@ -198,7 +203,6 @@ void register_page_bootmem_info_node(struct pglist_data *pgdat)
- 		register_page_bootmem_info_section(pfn);
+ 	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
+@@ -147,8 +223,20 @@ static void __init marzen_init(void)
+ 	gpio_request(GPIO_FN_SD0_CD, NULL);
+ 	gpio_request(GPIO_FN_SD0_WP, NULL);
  
++	/* USB (CN21) */
++	gpio_request(GPIO_FN_USB_OVC0, NULL);
++	gpio_request(GPIO_FN_USB_OVC1, NULL);
++	gpio_request(GPIO_FN_USB_OVC2, NULL);
++
++	/* USB (CN22) */
++	gpio_request(GPIO_FN_USB_PENC2, NULL);
++
+ 	r8a7779_add_standard_devices();
+ 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
++
++	if (0 = r8a7779_usb_phy_init(0))
++		platform_add_devices(marzen_usb_devices,
++				     ARRAY_SIZE(marzen_usb_devices));
  }
--#endif /* !CONFIG_SPARSEMEM_VMEMMAP */
  
- static void grow_zone_span(struct zone *zone, unsigned long start_pfn,
- 			   unsigned long end_pfn)
+ MACHINE_START(MARZEN, "marzen")
 -- 
-1.7.1
+1.7.10.2.484.gcd07cc5
 
