@@ -1,143 +1,96 @@
-From: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
-Date: Thu, 30 Aug 2012 20:21:11 +0000
+From: Nicolas THERY <nicolas.thery@st.com>
+Date: Fri, 31 Aug 2012 06:46:23 +0000
 Subject: Re: [RFC v4] V4L DT bindings
-Message-Id: <503FCB37.5080706@gmail.com>
+Message-Id: <50405DBF.9000209@st.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1208242356051.20710@axis700.grange> <503F8471.5000406@st.com>
-In-Reply-To: <503F8471.5000406@st.com>
+References: <Pine.LNX.4.64.1208242356051.20710@axis700.grange>
+ <503F8471.5000406@st.com> <503FCB37.5080706@gmail.com>
+In-Reply-To: <503FCB37.5080706@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Nicolas THERY <nicolas.thery@st.com>
+To: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
 Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Linux Media Mailing List <linux-media@vger.kernel.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Magnus Damm <magnus.damm@gmail.com>, devicetree-discuss <devicetree-discuss@lists.ozlabs.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Mark Brown <broonie@opensource.wolfsonmicro.com>, Stephen Warren <swarren@wwwdotorg.org>, Benjamin GAIGNARD <benjamin.gaignard@st.com>, Willy POISSON <willy.poisson@st.com>, Jean-Marc VOLLE <jean-marc.volle@st.com>, Pierre-yves TALOUD <pierre-yves.taloud@st.com>
 
-On 08/30/2012 05:19 PM, Nicolas THERY wrote:
->> 	i2c0: i2c@0xfff20000 {
->> 		...
->> 		ov772x_1: ov772x@0x21 {
->> 			compatible = "omnivision,ov772x";
->> 			reg =<0x21>;
->> 			vddio-supply =<&regulator1>;
->> 			vddcore-supply =<&regulator2>;
->> 			bus-width =<10>;
->>
->> 			clock-frequency =<20000000>;
->> 			clocks =<&mclk 0>;
->> 			clock-names = "mclk"
->>
->> 			#address-cells =<1>;
->> 			#size-cells =<0>;
->> 			...
->> 			ceu0_1: videolink@0 {
->> 				reg =<0>;		/* link configuration to local pad #0 */
->> 				bus-width =<8>;
->> 				hsync-active =<1>;
->> 				hsync-active =<0>;	/* who came up with an inverter here?... */
->> 				pclk-sample =<1>;
->> 			};
->> 		};
->>
->> 		imx074: imx074@0x1a {
->> 			compatible = "sony,imx074";
->> 			reg =<0x1a>;
->> 			vddio-supply =<&regulator1>;
->> 			vddcore-supply =<&regulator2>;
->> 			clock-lanes =<0>;
->> 			data-lanes =<1>,<2>;
->>
->> 			clock-frequency =<30000000>;	/* shared clock with ov772x_1 */
->> 			clocks =<&mclk 0>;
->> 			clock-names = "mclk"
->>
->> 			#address-cells =<1>;
->> 			#size-cells =<0>;
->> 			...
->> 			csi2_0_1: videolink@0 {
->> 				reg =<0>;		/* link configuration to local pad #0 */
->> 				bus-width =<2>;	/* 2 lanes, fixed roles, also described above */
->> 			};
->> 		};
->> 		...
->> 	};
->>
->> 	csi2: csi2@0xffc90000 {
->> 		compatible = "renesas,sh-mobile-csi2";
->> 		reg =<0xffc90000 0x1000>;
->> 		interrupts =<0x17a0>;
->> 		#address-cells =<1>;
->> 		#size-cells =<0>;
->>
->> 		/* Ok to have them global? */
+Hello,
 
-I'm not sure, maybe it's better to move it under videolink@1 node,
-to keep it together with 'bus-width' property ?
+Thanks for the feedback.
 
->> 		clock-lanes =<0>;
->> 		data-lanes =<2>,<1>;
+On 2012-08-30 22:21, Sylwester Nawrocki wrote:
+> On 08/30/2012 05:19 PM, Nicolas THERY wrote:
+
+[snip]
+
+>> In imx074@0x1a above, the data-lanes property is<1>,<2>.  Is it
+>> reversed here to show that lanes are swapped between the sensor and the
+>> CSI rx?  If not, how to express lane swapping?
 > 
-> In imx074@0x1a above, the data-lanes property is<1>,<2>.  Is it
-> reversed here to show that lanes are swapped between the sensor and the
-> CSI rx?  If not, how to express lane swapping?
+> Yes, this indicates lanes remapping at the receiver.
+> 
+> Probably we could make it a single value with length determined by
+> 'bus-width', since we're going to use 'bus-width' for CSI buses as well, 
+> (optionally) in addition to 'clock-lanes' and 'data-lanes' ?
 
-Yes, this indicates lanes remapping at the receiver.
+Looks good to me.
 
-Probably we could make it a single value with length determined by
-'bus-width', since we're going to use 'bus-width' for CSI buses as well, 
-(optionally) in addition to 'clock-lanes' and 'data-lanes' ?
+[snip]
 
->> 		...
->> 		imx074_1: videolink@1 {
->> 			reg =<1>;
->> 			client =<&imx074 0>;
->> 			bus-width =<2>;
+>> How to express that the positive and negative signals of a given
+>> clock/data lane are inversed?  Is it somehow with the hsync-active
+>> property?
+> 
+> Hmm, I don't think this is covered in this RFC. hsync-active is mostly
+> intended for the parallel buses. We need to come up with new properties
+> to handle CSI data/clock lane polarity swapping. There was a short
+> discussion about that already:
+> http://www.mail-archive.com/linux-media@vger.kernel.org/msg41724.html
+> 
+>> Actually there may be two positive/negative inversion cases to consider:
 >>
->> 			csi2-ecc;
->> 			csi2-crc;
+>> - the positive/negative signals are inversed both in low-power and
+>>    high-speed modes (e.g. physical lines between sensor module and SoC
+>>    are swapped on the PCB);
 >>
->> 			renesas,csi2-phy =<0>;
->> 		};
->> 		ceu0: videolink@0 {
->> 			reg =<0>;
->> 			immutable;
->> 		};
->> 	};
+>> - the positive/negative signals are inversed in high-speed mode only
+>>    (the sensor and CSI rx use opposite polarities in high-speed mode).
 > 
-> How to express that the positive and negative signals of a given
-> clock/data lane are inversed?  Is it somehow with the hsync-active
-> property?
+> Then is this positive/negative LVDS lines swapping separately configurable
+> in hardware for low-power and high-speed mode ? 
 
-Hmm, I don't think this is covered in this RFC. hsync-active is mostly
-intended for the parallel buses. We need to come up with new properties
-to handle CSI data/clock lane polarity swapping. There was a short
-discussion about that already:
-http://www.mail-archive.com/linux-media@vger.kernel.org/msg41724.html
+Yes.
 
-> Actually there may be two positive/negative inversion cases to consider:
+> What is an advantage of it ?
+
+I suspect our hardware people after years of experience with
+not-so-compliant sensors and weird PCBs have adopted a
+belt-and-suspenders approach and made configurable everything they
+thought could go wrong.
+
+In the "inversion in high-speed mode only" case, that could be because
+the sensor does not use the standard-specified polarity.
+
+> One possible solution would be to have a one to two elements array property,
+> e.g.
 > 
-> - the positive/negative signals are inversed both in low-power and
->    high-speed modes (e.g. physical lines between sensor module and SoC
->    are swapped on the PCB);
+> lanes-polarity = <0 0 0 0 0>, <1 1 1 1 1>;
 > 
-> - the positive/negative signals are inversed in high-speed mode only
->    (the sensor and CSI rx use opposite polarities in high-speed mode).
+> where the first entry would indicate lanes polarity for high speed mode and
+> the second one for low power mode. For receivers/transmitters that don't
+> allow to configure the polarities separately for different bus states there
+> could be just one entry. The width of each element could be determined by 
+> value of the 'bus-width' property + 1.
+> 
+> Would it make sense ?
 
-Then is this positive/negative LVDS lines swapping separately configurable
-in hardware for low-power and high-speed mode ? What is an advantage of it ?
+Yes, that looks fine.
 
-One possible solution would be to have a one to two elements array property,
-e.g.
+Incidentally is it okay to extend DT nodes with manufacturer-specific
+properties?  I'm asking because our CSI rx supports other esoteric
+lane-related configuration knobs, e.g. for impedance tuning.  We'd like
+to put them in the DT but they probably don't warrant an official
+property.
 
-lanes-polarity = <0 0 0 0 0>, <1 1 1 1 1>;
+Thanks a lot again.
 
-where the first entry would indicate lanes polarity for high speed mode and
-the second one for low power mode. For receivers/transmitters that don't
-allow to configure the polarities separately for different bus states there
-could be just one entry. The width of each element could be determined by 
-value of the 'bus-width' property + 1.
-
-Would it make sense ?
-
---
-
-Regards,
-Sylwester
+Best regards,
+Nicolas
