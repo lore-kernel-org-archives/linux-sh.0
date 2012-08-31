@@ -1,28 +1,39 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 30 Aug 2012 01:57:21 +0000
-Subject: [PATCH 0/2] ARM: shmobile: marzen: fixup regulator setting
-Message-Id: <87y5kxxhtt.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 31 Aug 2012 01:28:20 +0000
+Subject: [PATCH 09/11] ARM: shmobile: marzen: fixup regulator id for smsc911x
+Message-Id: <1346376502-12114-10-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1346376502-12114-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1346376502-12114-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Hi Simon
+regulator id = 0 is used for sh_mobile_sdhi.
+smsc911x's regulator can use id = 1
 
-These are bug fix patches for marzen board.
-
-Kuninori Morimoto (2):
-      ARM: shmobile: marzen: fixup smsc911x id for regulator
-      ARM: shmobile: marzen: fixup regulator id for smsc911x
-
- arch/arm/mach-shmobile/board-marzen.c |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-marzen board will got WARNING and can't boot without these patches
-if it has CONFIG_REGULATOR on .config
-
-Best regards
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
-Kuninori Morimoto
+ arch/arm/mach-shmobile/board-marzen.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index 0249c0e..91e81e9 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -196,7 +196,7 @@ static void __init marzen_init(void)
+ {
+ 	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
+ 				ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
+-	regulator_register_fixed(0, dummy_supplies,
++	regulator_register_fixed(1, dummy_supplies,
+ 				ARRAY_SIZE(dummy_supplies));
+ 
+ 	r8a7779_pinmux_init();
+-- 
+1.7.10.2.484.gcd07cc5
+
