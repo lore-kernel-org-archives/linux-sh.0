@@ -1,32 +1,62 @@
-From: Hans Verkuil <hverkuil@xs4all.nl>
-Date: Fri, 31 Aug 2012 00:59:24 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 31 Aug 2012 16:05:11 +0000
 Subject: Re: V4L DT @ plumbers (was Re: [RFC v4] V4L DT bindings)
-Message-Id: <le0u47eut2t0gh4pxyuu5vse.1346374764563@email.android.com>
+Message-Id: <Pine.LNX.4.64.1208311754360.25088@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <alpine.DEB.2.00.1208302255210.4516@axis700.grange>
-In-Reply-To: <alpine.DEB.2.00.1208302255210.4516@axis700.grange>
+References: <le0u47eut2t0gh4pxyuu5vse.1346374764563@email.android.com>
+In-Reply-To: <le0u47eut2t0gh4pxyuu5vse.1346374764563-2ueSQiBKiTY7tOexoI0I+QC/G2K4zDHf@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, Nicolas THERY <nicolas.thery@st.com>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Linux Media Mailing List <linux-media@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>, devicetree-discuss <devicetree-discuss@lists.ozlabs.org>, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, Mark Brown <broonie@opensource.wolfsonmicro.com>, Stephen Warren <swarren@wwwdotorg.org>, Benjamin GAIGNARD <benjamin.gaignard@st.com>, Willy POISSON <willy.poisson@st.com>, Jean-Marc VOLLE <jean-marc.volle@st.com>, Pierre-yves TALOUD <pierre-yves.taloud@st.com>, Mauro Carvalho Chehab <mchehab@infradead.org>
+To: Hans Verkuil <hverkuil-qWit8jRvyhVmR6Xm/wNWPw@public.gmane.org>
+Cc: Benjamin GAIGNARD <benjamin.gaignard-qxv4g6HH51o@public.gmane.org>, "linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org" <linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>, devicetree-discuss <devicetree-discuss-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org>, Mark Brown <broonie-yzvPICuk2AATkU/dhu1WVueM+bqZidxxQQ4Iyu8u01E@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Nicolas THERY <nicolas.thery-qxv4g6HH51o@public.gmane.org>, Willy POISSON <willy.poisson-qxv4g6HH51o@public.gmane.org>, Mauro Carvalho Chehab <mchehab-wEGCiKHe2LqWVfeAwA7xHQ@public.gmane.org>, Pierre-yves TALOUD <pierre-yves.taloud-qxv4g6HH51o@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Sylwester Nawrocki <s.nawrocki-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>, Sylwester Nawrocki <sylvester.nawrocki-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Jean-Marc VOLLE <jean-marc.volle-qxv4g6HH51o@public.gmane.org>, Linux Media Mailing List <linux-media-u79uwXL29TY76Z2rM5mHXA@public.gmane.org>
 
-RmluZSBieSBtZSEKCiAgICAgIEhhbnMKCkd1ZW5uYWRpIExpYWtob3ZldHNraSA8Zy5saWFraG92
-ZXRza2lAZ214LmRlPiB3cm90ZToKCj5PbiBGcmksIDMxIEF1ZyAyMDEyLCBMYXVyZW50IFBpbmNo
-YXJ0IHdyb3RlOgo+Cj4+IEhpIEd1ZW5uYWRpLAo+PiAKPj4gT24gVGh1cnNkYXkgMzAgQXVndXN0
-IDIwMTIgMjI6NTg6MTcgR3Vlbm5hZGkgTGlha2hvdmV0c2tpIHdyb3RlOgo+PiA+IEhpIGFsbAo+
-PiA+IAo+PiA+IERvIHdlIHN0aWxsIHdhbnQgdG8gdHJ5IHRvIG9yZ2FuaXNlIGEgc2hvcnQgZGlz
-Y3Vzc2lvbiBvZiB0aGlzIHdoaWxlIGF0Cj4+ID4gcGx1bWJlcnM/IE1heWJlIHRvbW9ycm93IGR1
-cmluZyBvciBhcm91bmQgbHVuY2g/IE9yIGFueSBvdGhlciB0aW1lIGZvcgo+PiA+IHRoYXQgbWF0
-dGVyPwo+PiAKPj4gSSdtIGNlcnRhaW5seSBpbnRlcmVzdGVkLiBJIGhhdmUgYSBtZWV0aW5nIHRv
-bW9ycm93IGF0IGEgc3RpbGwgdW5rbm93biB0eXBlLCAKPj4gYXBhcnQgZnJvbSB0aGF0IEknbSBm
-cmVlLgo+Cj5Ib3cgYWJvdXQgYmVnaW5uaW5nIHRvbW9ycm93IGF0IDExOjU1IChOYXV0aWx1cyAz
-ICYgNCBhcmUgc3RpbGwgZnJlZSAKPmFjY29yZGluZyB0byB0aGUgc2NoZWR1bGUpIGFuZCB0aGVu
-IGNvbnRpbnVpbmcgYWZ0ZXIgdGhlIGx1bmNoIGZvciBhbm90aGVyIAo+aG91ciBpZiBuZWVkZWQg
-KGZpcnN0IHRhbGsgaW4gdGhlIGFmdGVybm9vbiB0b21vcnJvdyBpcyBhdCAxNDoxMCkuCj4KPlRo
-YW5rcwo+R3Vlbm5hZGkKPi0tLQo+R3Vlbm5hZGkgTGlha2hvdmV0c2tpLCBQaC5ELgo+RnJlZWxh
-bmNlIE9wZW4tU291cmNlIFNvZnR3YXJlIERldmVsb3Blcgo+aHR0cDovL3d3dy5vcGVuLXRlY2hu
-b2xvZ3kuZGUvCj4tLQo+VG8gdW5zdWJzY3JpYmUgZnJvbSB0aGlzIGxpc3Q6IHNlbmQgdGhlIGxp
-bmUgInVuc3Vic2NyaWJlIGxpbnV4LW1lZGlhIiBpbgo+dGhlIGJvZHkgb2YgYSBtZXNzYWdlIHRv
-IG1ham9yZG9tb0B2Z2VyLmtlcm5lbC5vcmcKPk1vcmUgbWFqb3Jkb21vIGluZm8gYXQgIGh0dHA6
-Ly92Z2VyLmtlcm5lbC5vcmcvbWFqb3Jkb21vLWluZm8uaHRtbAo
+On Thu, 30 Aug 2012, Hans Verkuil wrote:
+
+> Fine by me!
+
+Good, then let's meet at 11:55 in front of Nautilus 3 / 4 and then see 
+what's available.
+
+Thanks
+Guennadi
+
+> 
+>       Hans
+> 
+> Guennadi Liakhovetski <g.liakhovetski@gmx.de> wrote:
+> 
+> >On Fri, 31 Aug 2012, Laurent Pinchart wrote:
+> >
+> >> Hi Guennadi,
+> >> 
+> >> On Thursday 30 August 2012 22:58:17 Guennadi Liakhovetski wrote:
+> >> > Hi all
+> >> > 
+> >> > Do we still want to try to organise a short discussion of this while at
+> >> > plumbers? Maybe tomorrow during or around lunch? Or any other time for
+> >> > that matter?
+> >> 
+> >> I'm certainly interested. I have a meeting tomorrow at a still unknown type, 
+> >> apart from that I'm free.
+> >
+> >How about beginning tomorrow at 11:55 (Nautilus 3 & 4 are still free 
+> >according to the schedule) and then continuing after the lunch for another 
+> >hour if needed (first talk in the afternoon tomorrow is at 14:10).
+> >
+> >Thanks
+> >Guennadi
+> >---
+> >Guennadi Liakhovetski, Ph.D.
+> >Freelance Open-Source Software Developer
+> >http://www.open-technology.de/
+> >--
+> >To unsubscribe from this list: send the line "unsubscribe linux-media" in
+> >the body of a message to majordomo@vger.kernel.org
+> >More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
