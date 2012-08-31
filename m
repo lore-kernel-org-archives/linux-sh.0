@@ -1,233 +1,179 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Sat, 11 Aug 2012 22:18:45 +0000
-Subject: [PATCH 2/2] ARM: shmobile: Make sh7372 cpuidle handling more straightforward
-Message-Id: <201208120018.45935.rjw@sisk.pl>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 31 Aug 2012 00:34:43 +0000
+Subject: [PATCH 08/10] ARM: shmobile: marzen: add USB EHCI driver support
+Message-Id: <1346373285-19588-9-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1346373285-19588-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1346373285-19588-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-The sh7372 cpuidle code uses the same artificially designed routine
-shmobile_cpuidle_enter() as the .enter() callback for all of its
-cpuidle states.  However, shmobile_cpuidle_enter() calls a different
-"enter" function for each state using an array of function pointers
-populated by the sh7372 PM initialization code.  Moreover, the
-states[] array of the shmobile cpuidle driver is populated by that
-code as well, although in principle it just might have been filled
-with static data.
+This patch supports CN21/CN22 USB 2.0 (port 0/1/2),
+and enable USB momery on defconfig
 
-All of that complexity goes away if the sh7372 cpuidle code is
-allowed to define its own cpuidle driver structure that can be passed
-for registration to the common shmobile cpuidle initialization
-routine, so modify the code accordingly.
-
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/arm/mach-shmobile/cpuidle.c             |   39 ++++---------
- arch/arm/mach-shmobile/include/mach/common.h |    6 +-
- arch/arm/mach-shmobile/pm-sh7372.c           |   79 +++++++++++++++------------
- 3 files changed, 62 insertions(+), 62 deletions(-)
+ arch/arm/configs/marzen_defconfig     |  6 +++
+ arch/arm/mach-shmobile/Kconfig        |  1 +
+ arch/arm/mach-shmobile/board-marzen.c | 88 +++++++++++++++++++++++++++++++++++
+ 3 files changed, 95 insertions(+)
 
-Index: linux/arch/arm/mach-shmobile/cpuidle.c
-=================================--- linux.orig/arch/arm/mach-shmobile/cpuidle.c
-+++ linux/arch/arm/mach-shmobile/cpuidle.c
-@@ -16,51 +16,38 @@
- #include <asm/cpuidle.h>
- #include <asm/io.h>
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index cd2dc21..61d1c55 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -47,6 +47,8 @@ CONFIG_DEVTMPFS_MOUNT=y
+ # CONFIG_STANDALONE is not set
+ # CONFIG_PREVENT_FIRMWARE_BUILD is not set
+ # CONFIG_FW_LOADER is not set
++CONFIG_SCSI=y
++CONFIG_BLK_DEV_SD=y
+ CONFIG_NETDEVICES=y
+ # CONFIG_NET_VENDOR_BROADCOM is not set
+ # CONFIG_NET_VENDOR_FARADAY is not set
+@@ -75,6 +77,10 @@ CONFIG_SSB=y
+ # CONFIG_USB_SUPPORT is not set
+ CONFIG_MMC=y
+ CONFIG_MMC_SDHI=y
++CONFIG_USB=y
++CONFIG_USB_EHCI_HCD=y
++CONFIG_USB_EHCI_HCD_PLATFORM=y
++CONFIG_USB_STORAGE=y
+ CONFIG_UIO=y
+ CONFIG_UIO_PDRV_GENIRQ=y
+ # CONFIG_IOMMU_SUPPORT is not set
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 4cacc2d..8937d69 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -41,6 +41,7 @@ config ARCH_R8A7779
+ 	select SH_CLK_CPG
+ 	select ARM_GIC
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
++	select USB_ARCH_HAS_EHCI
  
--static void shmobile_enter_wfi(void)
-+int shmobile_enter_wfi(struct cpuidle_device *dev, struct cpuidle_driver *drv,
-+		       int index)
- {
- 	cpu_do_idle();
--}
--
--void (*shmobile_cpuidle_modes[CPUIDLE_STATE_MAX])(void) = {
--	shmobile_enter_wfi, /* regular sleep mode */
--};
--
--static int shmobile_cpuidle_enter(struct cpuidle_device *dev,
--				  struct cpuidle_driver *drv,
--				  int index)
--{
--	shmobile_cpuidle_modes[index]();
--
--	return index;
-+	return 0;
- }
- 
- static struct cpuidle_device shmobile_cpuidle_dev;
--static struct cpuidle_driver shmobile_cpuidle_driver = {
-+static struct cpuidle_driver shmobile_cpuidle_default_driver = {
- 	.name			= "shmobile_cpuidle",
- 	.owner			= THIS_MODULE,
- 	.en_core_tk_irqen	= 1,
- 	.states[0]		= ARM_CPUIDLE_WFI_STATE,
-+	.states[0].enter	= shmobile_enter_wfi,
- 	.safe_state_index	= 0, /* C1 */
- 	.state_count		= 1,
+ config ARCH_EMEV2
+ 	bool "Emma Mobile EV2"
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index dec3ffc..0249c0e 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -32,6 +32,8 @@
+ #include <linux/smsc911x.h>
+ #include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/mfd/tmio.h>
++#include <linux/usb/ehci_pdriver.h>
++#include <linux/pm_runtime.h>
+ #include <mach/hardware.h>
+ #include <mach/r8a7779.h>
+ #include <mach/common.h>
+@@ -116,6 +118,80 @@ static struct platform_device *marzen_devices[] __initdata = {
+ 	&sdhi0_device,
  };
  
--void (*shmobile_cpuidle_setup)(struct cpuidle_driver *drv);
-+static struct cpuidle_driver *cpuidle_drv = &shmobile_cpuidle_default_driver;
-+
-+void shmobile_cpuidle_set_driver(struct cpuidle_driver *drv)
++/* USB */
++static int xhci_power_on(struct platform_device *pdev)
 +{
-+	cpuidle_drv = drv;
-+}
- 
- int shmobile_cpuidle_init(void)
- {
- 	struct cpuidle_device *dev = &shmobile_cpuidle_dev;
--	struct cpuidle_driver *drv = &shmobile_cpuidle_driver;
--	int i;
--
--	for (i = 0; i < CPUIDLE_STATE_MAX; i++)
--		drv->states[i].enter = shmobile_cpuidle_enter;
--
--	if (shmobile_cpuidle_setup)
--		shmobile_cpuidle_setup(drv);
- 
--	cpuidle_register_driver(drv);
-+	cpuidle_register_driver(cpuidle_drv);
- 
--	dev->state_count = drv->state_count;
-+	dev->state_count = cpuidle_drv->state_count;
- 	cpuidle_register_device(dev);
- 
- 	return 0;
-Index: linux/arch/arm/mach-shmobile/include/mach/common.h
-=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/common.h
-+++ linux/arch/arm/mach-shmobile/include/mach/common.h
-@@ -14,8 +14,10 @@ extern int shmobile_clk_init(void);
- extern void shmobile_handle_irq_intc(struct pt_regs *);
- extern struct platform_suspend_ops shmobile_suspend_ops;
- struct cpuidle_driver;
--extern void (*shmobile_cpuidle_modes[])(void);
--extern void (*shmobile_cpuidle_setup)(struct cpuidle_driver *drv);
-+struct cpuidle_device;
-+extern int shmobile_enter_wfi(struct cpuidle_device *dev,
-+			      struct cpuidle_driver *drv, int index);
-+extern void shmobile_cpuidle_set_driver(struct cpuidle_driver *drv);
- 
- extern void sh7367_init_irq(void);
- extern void sh7367_map_io(void);
-Index: linux/arch/arm/mach-shmobile/pm-sh7372.c
-=================================--- linux.orig/arch/arm/mach-shmobile/pm-sh7372.c
-+++ linux/arch/arm/mach-shmobile/pm-sh7372.c
-@@ -21,6 +21,7 @@
- #include <linux/irq.h>
- #include <linux/bitrev.h>
- #include <linux/console.h>
-+#include <asm/cpuidle.h>
- #include <asm/io.h>
- #include <asm/tlbflush.h>
- #include <asm/suspend.h>
-@@ -347,7 +348,8 @@ static int sh7372_do_idle_core_standby(u
- 	return 0;
- }
- 
--static void sh7372_enter_core_standby(void)
-+static int sh7372_enter_core_standby(struct cpuidle_device *dev,
-+				     struct cpuidle_driver *drv, int index)
- {
- 	sh7372_set_reset_vector(__pa(sh7372_resume_core_standby_sysc));
- 
-@@ -358,52 +360,61 @@ static void sh7372_enter_core_standby(vo
- 
- 	 /* disable reset vector translation */
- 	__raw_writel(0, SBAR);
++	pm_runtime_enable(&pdev->dev);
++	pm_runtime_get_sync(&pdev->dev);
 +
-+	return 1;
- }
- 
--static void sh7372_enter_a3sm_pll_on(void)
-+static int sh7372_enter_a3sm_pll_on(struct cpuidle_device *dev,
-+				    struct cpuidle_driver *drv, int index)
- {
- 	sh7372_enter_a3sm_common(1);
-+	return 2;
- }
- 
--static void sh7372_enter_a3sm_pll_off(void)
-+static int sh7372_enter_a3sm_pll_off(struct cpuidle_device *dev,
-+				     struct cpuidle_driver *drv, int index)
- {
- 	sh7372_enter_a3sm_common(0);
-+	return 3;
- }
- 
--static void sh7372_cpuidle_setup(struct cpuidle_driver *drv)
--{
--	struct cpuidle_state *state = &drv->states[drv->state_count];
--
--	snprintf(state->name, CPUIDLE_NAME_LEN, "C2");
--	strncpy(state->desc, "Core Standby Mode", CPUIDLE_DESC_LEN);
--	state->exit_latency = 10;
--	state->target_residency = 20 + 10;
--	state->flags = CPUIDLE_FLAG_TIME_VALID;
--	shmobile_cpuidle_modes[drv->state_count] = sh7372_enter_core_standby;
--	drv->state_count++;
--
--	state = &drv->states[drv->state_count];
--	snprintf(state->name, CPUIDLE_NAME_LEN, "C3");
--	strncpy(state->desc, "A3SM PLL ON", CPUIDLE_DESC_LEN);
--	state->exit_latency = 20;
--	state->target_residency = 30 + 20;
--	state->flags = CPUIDLE_FLAG_TIME_VALID;
--	shmobile_cpuidle_modes[drv->state_count] = sh7372_enter_a3sm_pll_on;
--	drv->state_count++;
--
--	state = &drv->states[drv->state_count];
--	snprintf(state->name, CPUIDLE_NAME_LEN, "C4");
--	strncpy(state->desc, "A3SM PLL OFF", CPUIDLE_DESC_LEN);
--	state->exit_latency = 120;
--	state->target_residency = 30 + 120;
--	state->flags = CPUIDLE_FLAG_TIME_VALID;
--	shmobile_cpuidle_modes[drv->state_count] = sh7372_enter_a3sm_pll_off;
--	drv->state_count++;
--}
-+static struct cpuidle_driver sh7372_cpuidle_driver = {
-+	.name			= "sh7372_cpuidle",
-+	.owner			= THIS_MODULE,
-+	.en_core_tk_irqen	= 1,
-+	.state_count		= 4,
-+	.safe_state_index	= 0, /* C1 */
-+	.states[0] = ARM_CPUIDLE_WFI_STATE,
-+	.states[0].enter = shmobile_enter_wfi,
-+	.states[1] = {
-+		.name = "C2",
-+		.desc = "Core Standby Mode",
-+		.exit_latency = 10,
-+		.target_residency = 20 + 10,
-+		.flags = CPUIDLE_FLAG_TIME_VALID,
-+		.enter = sh7372_enter_core_standby,
++	return 0;
++}
++
++static void xhci_power_off(struct platform_device *pdev)
++{
++	pm_runtime_put_sync(&pdev->dev);
++	pm_runtime_disable(&pdev->dev);
++}
++
++static struct usb_ehci_pdata ehcix_pdata = {
++	.power_on	= xhci_power_on,
++	.power_off	= xhci_power_off,
++	.power_suspend	= xhci_power_off,
++};
++
++static struct resource ehci0_resources[] = {
++	[0] = {
++		.start	= 0xffe70000,
++		.end	= 0xffe70400 - 1,
++		.flags	= IORESOURCE_MEM,
 +	},
-+	.states[2] = {
-+		.name = "C3",
-+		.desc = "A3SM PLL ON",
-+		.exit_latency = 20,
-+		.target_residency = 30 + 20,
-+		.flags = CPUIDLE_FLAG_TIME_VALID,
-+		.enter = sh7372_enter_a3sm_pll_on,
-+	},
-+	.states[3] = {
-+		.name = "C4",
-+		.desc = "A3SM PLL OFF",
-+		.exit_latency = 120,
-+		.target_residency = 30 + 120,
-+		.flags = CPUIDLE_FLAG_TIME_VALID,
-+		.enter = sh7372_enter_a3sm_pll_off,
++	[1] = {
++		.start	= gic_spi(44),
++		.flags	= IORESOURCE_IRQ,
 +	},
 +};
- 
- static void sh7372_cpuidle_init(void)
++
++static struct platform_device ehci0_device = {
++	.name	= "ehci-platform",
++	.id	= 0,
++	.dev	= {
++		.dma_mask		= &ehci0_device.dev.coherent_dma_mask,
++		.coherent_dma_mask	= 0xffffffff,
++		.platform_data		= &ehcix_pdata,
++	},
++	.num_resources	= ARRAY_SIZE(ehci0_resources),
++	.resource	= ehci0_resources,
++};
++
++static struct resource ehci1_resources[] = {
++	[0] = {
++		.start	= 0xfff70000,
++		.end	= 0xfff70400 - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= gic_spi(45),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device ehci1_device = {
++	.name	= "ehci-platform",
++	.id	= 1,
++	.dev	= {
++		.dma_mask		= &ehci1_device.dev.coherent_dma_mask,
++		.coherent_dma_mask	= 0xffffffff,
++		.platform_data		= &ehcix_pdata,
++	},
++	.num_resources	= ARRAY_SIZE(ehci1_resources),
++	.resource	= ehci1_resources,
++};
++
++static struct platform_device *marzen_usb_devices[] __initdata = {
++	&ehci0_device,
++	&ehci1_device,
++};
++
+ static void __init marzen_init(void)
  {
--	shmobile_cpuidle_setup = sh7372_cpuidle_setup;
-+	shmobile_cpuidle_set_driver(&sh7372_cpuidle_driver);
+ 	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
+@@ -147,8 +223,20 @@ static void __init marzen_init(void)
+ 	gpio_request(GPIO_FN_SD0_CD, NULL);
+ 	gpio_request(GPIO_FN_SD0_WP, NULL);
+ 
++	/* USB (CN21) */
++	gpio_request(GPIO_FN_USB_OVC0, NULL);
++	gpio_request(GPIO_FN_USB_OVC1, NULL);
++	gpio_request(GPIO_FN_USB_OVC2, NULL);
++
++	/* USB (CN22) */
++	gpio_request(GPIO_FN_USB_PENC2, NULL);
++
+ 	r8a7779_add_standard_devices();
+ 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
++
++	if (0 = r8a7779_usb_phy_init(0))
++		platform_add_devices(marzen_usb_devices,
++				     ARRAY_SIZE(marzen_usb_devices));
  }
- #else
- static void sh7372_cpuidle_init(void) {}
+ 
+ MACHINE_START(MARZEN, "marzen")
+-- 
+1.7.10.2.484.gcd07cc5
 
