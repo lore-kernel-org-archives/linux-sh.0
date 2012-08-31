@@ -1,47 +1,37 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 13 Aug 2012 22:40:55 +0000
-Subject: [Demo/RFC][PATCH 0/2] ARM: shmobile: PM domain with cpuidle on Mackerel
-Message-Id: <201208140040.55978.rjw@sisk.pl>
+From: Daniel Lezcano <daniel.lezcano@linaro.org>
+Date: Fri, 31 Aug 2012 17:47:04 +0000
+Subject: Re: [Demo/RFC][PATCH 0/2] ARM: shmobile: PM domain with cpuidle on Mackerel
+Message-Id: <5040F898.5090907@linaro.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <201208140040.55978.rjw@sisk.pl>
+In-Reply-To: <201208140040.55978.rjw@sisk.pl>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-Hi,
+On 08/14/2012 12:40 AM, Rafael J. Wysocki wrote:
+> Hi,
+>=20
+> I normally don't post demo patches, but in this particular case it would =
+be
+> quite difficult to implement the desired functionality on the actual hard=
+ware,
+> due to some complicated dependencies present in there.
 
-I normally don't post demo patches, but in this particular case it would be
-quite difficult to implement the desired functionality on the actual hardware,
-due to some complicated dependencies present in there.
+Thanks a lot Rafael for taking the time to write this demo code.
 
-The first of the following two patches adds a software-only "device" to the
-Mackerel configuration and a driver for it allowing it to be turned "off"
-and "on" on demand from user space, via sysfs (the device is initially "on").
-This is just a variant of the very simple code I used during my LinuxCon Japan
-presentation earlier this way.
+It is very interesting and probably what should do in the other cpuidle
+drivers.
 
-The second patch adds a PM domain object and makes the "fake" device added
-by the previous patch belong to it.  At the same time, it uses the mechanism
-introduced by commit cbc9ef0 (PM / Domains: Add preliminary support for
-cpuidle, v2) to connect cpuidle state 3 to that PM domain.  This way, cpuidle
-state 3 is not used initially until the "fake" device is turned "off" via
-sysfs (which makes the A3SM domain to be turned "off" and enable cpuidle state
-3).  Then, if the "fake" device is turned "on" via sysfs (which makes the A3SM
-domain turn "on") cpuidle state 3 is disabled and state 2 becomes the deepest
-one available.
+Thanks
+  -- Daniel
 
-The patches in this series are on top of the current linux-next branch of the
-linux-pm.git tree with the following patches applied:
+--=20
+ <http://www.linaro.org/> Linaro.org =E2=94=82 Open source software for ARM=
+ SoCs
 
-https://patchwork.kernel.org/patch/1303111/
-https://patchwork.kernel.org/patch/1309171/
-https://patchwork.kernel.org/patch/1309151/
-https://patchwork.kernel.org/patch/1312431/
-https://patchwork.kernel.org/patch/1312421/
-https://patchwork.kernel.org/patch/1317311/
-https://patchwork.kernel.org/patch/1317271/
-https://patchwork.kernel.org/patch/1317251/
-
-Thanks,
-Rafael
+Follow Linaro:  <http://www.facebook.com/pages/Linaro> Facebook |
+<http://twitter.com/#!/linaroorg> Twitter |
+<http://www.linaro.org/linaro-blog/> Blog
 
