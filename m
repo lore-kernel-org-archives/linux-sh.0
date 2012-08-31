@@ -1,331 +1,108 @@
-From: wency@cn.fujitsu.com
-Date: Mon, 20 Aug 2012 09:35:39 +0000
-Subject: [RFC V7 PATCH 16/19] memory-hotplug: free memmap of sparse-vmemmap
-Message-Id: <1345455342-27752-17-git-send-email-wency@cn.fujitsu.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 31 Aug 2012 01:28:15 +0000
+Subject: [PATCH 04/11] ARM: shmobile: r8a7779: PFC rename PENCx -> USB_PENCx
+Message-Id: <1346376502-12114-5-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1345455342-27752-1-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1345455342-27752-1-git-send-email-wency@cn.fujitsu.com>
+References: <1346376502-12114-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1346376502-12114-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
-Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-All pages of virtual mapping in removed memory cannot be freed, since some pages
-used as PGD/PUD includes not only removed memory but also other memory. So the
-patch checks whether page can be freed or not.
+PENCx is Power Enable Control pin for USB.
 
-How to check whether page can be freed or not?
- 1. When removing memory, the page structs of the revmoved memory are filled
-    with 0FD.
- 2. All page structs are filled with 0xFD on PT/PMD, PT/PMD can be cleared.
-    In this case, the page used as PT/PMD can be freed.
-
-Applying patch, __remove_section() of CONFIG_SPARSEMEM_VMEMMAP is integrated
-into one. So __remove_section() of CONFIG_SPARSEMEM_VMEMMAP is deleted.
-
-Note:  vmemmap_kfree() and vmemmap_free_bootmem() are not implemented for ia64,
-ppc, s390, and sparc.
-
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-CC: Paul Mackerras <paulus@samba.org>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-CC: Wen Congyang <wency@cn.fujitsu.com>
-Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/ia64/mm/discontig.c  |    8 +++
- arch/powerpc/mm/init_64.c |    8 +++
- arch/s390/mm/vmem.c       |    8 +++
- arch/sparc/mm/init_64.c   |    8 +++
- arch/x86/mm/init_64.c     |  119 +++++++++++++++++++++++++++++++++++++++++++++
- include/linux/mm.h        |    2 +
- mm/memory_hotplug.c       |   17 +------
- mm/sparse.c               |    5 +-
- 8 files changed, 158 insertions(+), 17 deletions(-)
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |  2 +-
+ arch/arm/mach-shmobile/pfc-r8a7779.c          | 16 ++++++++--------
+ 2 files changed, 9 insertions(+), 9 deletions(-)
 
-diff --git a/arch/ia64/mm/discontig.c b/arch/ia64/mm/discontig.c
-index 33943db..0d23b69 100644
---- a/arch/ia64/mm/discontig.c
-+++ b/arch/ia64/mm/discontig.c
-@@ -823,6 +823,14 @@ int __meminit vmemmap_populate(struct page *start_page,
- 	return vmemmap_populate_basepages(start_page, size, node);
- }
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+index b07ad31..7597a37 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -71,7 +71,7 @@ enum {
+ 	GPIO_FN_A19,
  
-+void vmemmap_kfree(struct page *memmap, unsigned long nr_pages)
-+{
-+}
-+
-+void vmemmap_free_bootmem(struct page *memmap, unsigned long nr_pages)
-+{
-+}
-+
- void register_page_bootmem_memmap(unsigned long section_nr,
- 				  struct page *start_page, unsigned long size)
- {
-diff --git a/arch/powerpc/mm/init_64.c b/arch/powerpc/mm/init_64.c
-index 3690c44..835a2b3 100644
---- a/arch/powerpc/mm/init_64.c
-+++ b/arch/powerpc/mm/init_64.c
-@@ -299,6 +299,14 @@ int __meminit vmemmap_populate(struct page *start_page,
- 	return 0;
- }
+ 	/* IPSR0 */
+-	GPIO_FN_PENC2, GPIO_FN_SCK0, GPIO_FN_PWM1, GPIO_FN_PWMFSW0,
++	GPIO_FN_USB_PENC2, GPIO_FN_SCK0, GPIO_FN_PWM1, GPIO_FN_PWMFSW0,
+ 	GPIO_FN_SCIF_CLK, GPIO_FN_TCLK0_C, GPIO_FN_BS, GPIO_FN_SD1_DAT2,
+ 	GPIO_FN_MMC0_D2, GPIO_FN_FD2, GPIO_FN_ATADIR0, GPIO_FN_SDSELF,
+ 	GPIO_FN_HCTS1, GPIO_FN_TX4_C, GPIO_FN_A0, GPIO_FN_SD1_DAT3,
+diff --git a/arch/arm/mach-shmobile/pfc-r8a7779.c b/arch/arm/mach-shmobile/pfc-r8a7779.c
+index d14c9b0..9fac32e4 100644
+--- a/arch/arm/mach-shmobile/pfc-r8a7779.c
++++ b/arch/arm/mach-shmobile/pfc-r8a7779.c
+@@ -140,7 +140,7 @@ enum {
+ 	FN_IP7_3_2, FN_IP7_6_4, FN_IP7_9_7, FN_IP7_12_10,
+ 	FN_IP7_14_13, FN_IP2_7_4, FN_IP2_11_8, FN_IP2_15_12,
+ 	FN_IP1_28_25, FN_IP2_3_0, FN_IP8_3_0, FN_IP8_7_4,
+-	FN_IP8_11_8, FN_IP8_15_12, FN_PENC0, FN_PENC1,
++	FN_IP8_11_8, FN_IP8_15_12, FN_USB_PENC0, FN_USB_PENC1,
+ 	FN_IP0_2_0, FN_IP8_17_16, FN_IP8_18, FN_IP8_19,
  
-+void vmemmap_kfree(struct page *memmap, unsigned long nr_pages)
-+{
-+}
-+
-+void vmemmap_free_bootmem(struct page *memmap, unsigned long nr_pages)
-+{
-+}
-+
- void register_page_bootmem_memmap(unsigned long section_nr,
- 				  struct page *start_page, unsigned long size)
- {
-diff --git a/arch/s390/mm/vmem.c b/arch/s390/mm/vmem.c
-index eda55cd..4b42b0b 100644
---- a/arch/s390/mm/vmem.c
-+++ b/arch/s390/mm/vmem.c
-@@ -227,6 +227,14 @@ out:
- 	return ret;
- }
+ 	/* GPSR5 */
+@@ -176,7 +176,7 @@ enum {
+ 	FN_A0, FN_SD1_DAT3, FN_MMC0_D3, FN_FD3,
+ 	FN_BS, FN_SD1_DAT2, FN_MMC0_D2, FN_FD2,
+ 	FN_ATADIR0, FN_SDSELF, FN_HCTS1, FN_TX4_C,
+-	FN_PENC2, FN_SCK0, FN_PWM1, FN_PWMFSW0,
++	FN_USB_PENC2, FN_SCK0, FN_PWM1, FN_PWMFSW0,
+ 	FN_SCIF_CLK, FN_TCLK0_C,
  
-+void vmemmap_kfree(struct page *memmap, unsigned long nr_pages)
-+{
-+}
-+
-+void vmemmap_free_bootmem(struct page *memmap, unsigned long nr_pages)
-+{
-+}
-+
- void register_page_bootmem_memmap(unsigned long section_nr,
- 				  struct page *start_page, unsigned long size)
- {
-diff --git a/arch/sparc/mm/init_64.c b/arch/sparc/mm/init_64.c
-index add1cc7..1384826 100644
---- a/arch/sparc/mm/init_64.c
-+++ b/arch/sparc/mm/init_64.c
-@@ -2078,6 +2078,14 @@ void __meminit vmemmap_populate_print_last(void)
- 	}
- }
+ 	/* IPSR1 */
+@@ -447,7 +447,7 @@ enum {
+ 	A0_MARK, SD1_DAT3_MARK, MMC0_D3_MARK, FD3_MARK,
+ 	BS_MARK, SD1_DAT2_MARK, MMC0_D2_MARK, FD2_MARK,
+ 	ATADIR0_MARK, SDSELF_MARK, HCTS1_MARK, TX4_C_MARK,
+-	PENC2_MARK, SCK0_MARK, PWM1_MARK, PWMFSW0_MARK,
++	USB_PENC2_MARK, SCK0_MARK, PWM1_MARK, PWMFSW0_MARK,
+ 	SCIF_CLK_MARK, TCLK0_C_MARK,
  
-+void vmemmap_kfree(struct page *memmap, unsigned long nr_pages)
-+{
-+}
-+
-+void vmemmap_free_bootmem(struct page *memmap, unsigned long nr_pages)
-+{
-+}
-+
- void register_page_bootmem_memmap(unsigned long section_nr,
- 				  struct page *start_page, unsigned long size)
- {
-diff --git a/arch/x86/mm/init_64.c b/arch/x86/mm/init_64.c
-index 0075592..4e8f8a4 100644
---- a/arch/x86/mm/init_64.c
-+++ b/arch/x86/mm/init_64.c
-@@ -1138,6 +1138,125 @@ vmemmap_populate(struct page *start_page, unsigned long size, int node)
- 	return 0;
- }
+ 	EX_CS0_MARK, RX3_C_IRDA_RX_C_MARK, MMC0_D6_MARK,
+@@ -658,7 +658,7 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(A18_MARK, FN_A18),
+ 	PINMUX_DATA(A19_MARK, FN_A19),
  
-+#define PAGE_INUSE 0xFD
-+
-+unsigned long find_and_clear_pte_page(unsigned long addr, unsigned long end,
-+			    struct page **pp, int *page_size)
-+{
-+	pgd_t *pgd;
-+	pud_t *pud;
-+	pmd_t *pmd;
-+	pte_t *pte;
-+	void *page_addr;
-+	unsigned long next;
-+
-+	*pp = NULL;
-+
-+	pgd = pgd_offset_k(addr);
-+	if (pgd_none(*pgd))
-+		return pgd_addr_end(addr, end);
-+
-+	pud = pud_offset(pgd, addr);
-+	if (pud_none(*pud))
-+		return pud_addr_end(addr, end);
-+
-+	if (!cpu_has_pse) {
-+		next = (addr + PAGE_SIZE) & PAGE_MASK;
-+		pmd = pmd_offset(pud, addr);
-+		if (pmd_none(*pmd))
-+			return next;
-+
-+		pte = pte_offset_kernel(pmd, addr);
-+		if (pte_none(*pte))
-+			return next;
-+
-+		*page_size = PAGE_SIZE;
-+		*pp = pte_page(*pte);
-+	} else {
-+		next = pmd_addr_end(addr, end);
-+
-+		pmd = pmd_offset(pud, addr);
-+		if (pmd_none(*pmd))
-+			return next;
-+
-+		*page_size = PMD_SIZE;
-+		*pp = pmd_page(*pmd);
-+	}
-+
-+	/*
-+	 * Removed page structs are filled with 0xFD.
-+	 */
-+	memset((void *)addr, PAGE_INUSE, next - addr);
-+
-+	page_addr = page_address(*pp);
-+
-+	/*
-+	 * Check the page is filled with 0xFD or not.
-+	 * memchr_inv() returns the address. In this case, we cannot
-+	 * clear PTE/PUD entry, since the page is used by other.
-+	 * So we cannot also free the page.
-+	 *
-+	 * memchr_inv() returns NULL. In this case, we can clear
-+	 * PTE/PUD entry, since the page is not used by other.
-+	 * So we can also free the page.
-+	 */
-+	if (memchr_inv(page_addr, PAGE_INUSE, *page_size)) {
-+		*pp = NULL;
-+		return next;
-+	}
-+
-+	if (!cpu_has_pse)
-+		pte_clear(&init_mm, addr, pte);
-+	else
-+		pmd_clear(pmd);
-+
-+	return next;
-+}
-+
-+void vmemmap_kfree(struct page *memmap, unsigned long nr_pages)
-+{
-+	unsigned long addr = (unsigned long)memmap;
-+	unsigned long end = (unsigned long)(memmap + nr_pages);
-+	unsigned long next;
-+	struct page *page;
-+	int page_size;
-+
-+	for (; addr < end; addr = next) {
-+		page = NULL;
-+		page_size = 0;
-+		next = find_and_clear_pte_page(addr, end, &page, &page_size);
-+		if (!page)
-+			continue;
-+
-+		free_pages((unsigned long)page_address(page),
-+			    get_order(page_size));
-+		__flush_tlb_one(addr);
-+	}
-+}
-+
-+void vmemmap_free_bootmem(struct page *memmap, unsigned long nr_pages)
-+{
-+	unsigned long addr = (unsigned long)memmap;
-+	unsigned long end = (unsigned long)(memmap + nr_pages);
-+	unsigned long next;
-+	struct page *page;
-+	int page_size;
-+	unsigned long magic;
-+
-+	for (; addr < end; addr = next) {
-+		page = NULL;
-+		page_size = 0;
-+		next = find_and_clear_pte_page(addr, end, &page, &page_size);
-+		if (!page)
-+			continue;
-+
-+		magic = (unsigned long) page->lru.next;
-+		if (magic = SECTION_INFO)
-+			put_page_bootmem(page);
-+		flush_tlb_kernel_range(addr, end);
-+	}
-+}
-+
- void register_page_bootmem_memmap(unsigned long section_nr,
- 				  struct page *start_page, unsigned long size)
- {
-diff --git a/include/linux/mm.h b/include/linux/mm.h
-index c607913..fb0d1fc 100644
---- a/include/linux/mm.h
-+++ b/include/linux/mm.h
-@@ -1620,6 +1620,8 @@ int vmemmap_populate(struct page *start_page, unsigned long pages, int node);
- void vmemmap_populate_print_last(void);
- void register_page_bootmem_memmap(unsigned long section_nr, struct page *map,
- 				  unsigned long size);
-+void vmemmap_kfree(struct page *memmpa, unsigned long nr_pages);
-+void vmemmap_free_bootmem(struct page *memmpa, unsigned long nr_pages);
+-	PINMUX_IPSR_DATA(IP0_2_0, PENC2),
++	PINMUX_IPSR_DATA(IP0_2_0, USB_PENC2),
+ 	PINMUX_IPSR_MODSEL_DATA(IP0_2_0, SCK0, SEL_SCIF0_0),
+ 	PINMUX_IPSR_DATA(IP0_2_0, PWM1),
+ 	PINMUX_IPSR_MODSEL_DATA(IP0_2_0, PWMFSW0, SEL_PWMFSW_0),
+@@ -1456,7 +1456,7 @@ static struct pinmux_gpio pinmux_gpios[] = {
+ 	GPIO_FN(A19),
  
- enum mf_flags {
- 	MF_COUNT_INCREASED = 1 << 0,
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index d8495ff..3aa0766 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -308,19 +308,6 @@ static int __meminit __add_section(int nid, struct zone *zone,
- 	return register_new_memory(nid, __pfn_to_section(phys_start_pfn));
- }
- 
--#ifdef CONFIG_SPARSEMEM_VMEMMAP
--static int __remove_section(struct zone *zone, struct mem_section *ms)
--{
--	int ret = -EINVAL;
--
--	if (!valid_section(ms))
--		return ret;
--
--	ret = unregister_memory_section(ms);
--
--	return ret;
--}
--#else
- static int __remove_section(struct zone *zone, struct mem_section *ms)
- {
- 	unsigned long flags;
-@@ -337,9 +324,9 @@ static int __remove_section(struct zone *zone, struct mem_section *ms)
- 	pgdat_resize_lock(pgdat, &flags);
- 	sparse_remove_one_section(zone, ms);
- 	pgdat_resize_unlock(pgdat, &flags);
--	return 0;
-+
-+	return ret;
- }
--#endif
- 
- /*
-  * Reasonably generic function for adding memory.  It is
-diff --git a/mm/sparse.c b/mm/sparse.c
-index fac95f2..ab9d755 100644
---- a/mm/sparse.c
-+++ b/mm/sparse.c
-@@ -613,12 +613,13 @@ static inline struct page *kmalloc_section_memmap(unsigned long pnum, int nid,
- 	/* This will make the necessary allocations eventually. */
- 	return sparse_mem_map_populate(pnum, nid);
- }
--static void __kfree_section_memmap(struct page *memmap, unsigned long nr_pages)
-+static void __kfree_section_memmap(struct page *page, unsigned long nr_pages)
- {
--	return; /* XXX: Not implemented yet */
-+	vmemmap_kfree(page, nr_pages);
- }
- static void free_map_bootmem(struct page *page, unsigned long nr_pages)
- {
-+	vmemmap_free_bootmem(page, nr_pages);
- }
- #else
- static struct page *__kmalloc_section_memmap(unsigned long nr_pages)
+ 	/* IPSR0 */
+-	GPIO_FN(PENC2), GPIO_FN(SCK0), GPIO_FN(PWM1), GPIO_FN(PWMFSW0),
++	GPIO_FN(USB_PENC2), GPIO_FN(SCK0), GPIO_FN(PWM1), GPIO_FN(PWMFSW0),
+ 	GPIO_FN(SCIF_CLK), GPIO_FN(TCLK0_C), GPIO_FN(BS), GPIO_FN(SD1_DAT2),
+ 	GPIO_FN(MMC0_D2), GPIO_FN(FD2), GPIO_FN(ATADIR0), GPIO_FN(SDSELF),
+ 	GPIO_FN(HCTS1), GPIO_FN(TX4_C), GPIO_FN(A0), GPIO_FN(SD1_DAT3),
+@@ -1865,8 +1865,8 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		GP_4_30_FN, FN_IP8_18,
+ 		GP_4_29_FN, FN_IP8_17_16,
+ 		GP_4_28_FN, FN_IP0_2_0,
+-		GP_4_27_FN, FN_PENC1,
+-		GP_4_26_FN, FN_PENC0,
++		GP_4_27_FN, FN_USB_PENC1,
++		GP_4_26_FN, FN_USB_PENC0,
+ 		GP_4_25_FN, FN_IP8_15_12,
+ 		GP_4_24_FN, FN_IP8_11_8,
+ 		GP_4_23_FN, FN_IP8_7_4,
+@@ -1981,7 +1981,7 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		FN_BS, FN_SD1_DAT2, FN_MMC0_D2, FN_FD2,
+ 		FN_ATADIR0, FN_SDSELF, FN_HCTS1, FN_TX4_C,
+ 		/* IP0_2_0 [3] */
+-		FN_PENC2, FN_SCK0, FN_PWM1, FN_PWMFSW0,
++		FN_USB_PENC2, FN_SCK0, FN_PWM1, FN_PWMFSW0,
+ 		FN_SCIF_CLK, FN_TCLK0_C, 0, 0 }
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("IPSR1", 0xfffc0024, 32,
 -- 
-1.7.1
+1.7.10.2.484.gcd07cc5
 
