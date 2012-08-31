@@ -1,7 +1,7 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Fri, 31 Aug 2012 01:28:12 +0000
-Subject: [PATCH 01/11] r8a7779: add SDHI clock support
-Message-Id: <1346376502-12114-2-git-send-email-horms@verge.net.au>
+Date: Fri, 31 Aug 2012 01:28:21 +0000
+Subject: [PATCH 10/11] ARM: shmobile: marzen: enable thermal sensor
+Message-Id: <1346376502-12114-11-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1346376502-12114-1-git-send-email-horms@verge.net.au>
 In-Reply-To: <1346376502-12114-1-git-send-email-horms@verge.net.au>
@@ -10,48 +10,61 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Phil Edworthy <phil.edworthy@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Marzen board can measure its thermal by this patch.
+	cat /sys/class/thermal/thermal_zoneX/temp
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7779.c | 11 ++++++++++-
- 1 file changed, 10 insertions(+), 1 deletion(-)
+ arch/arm/configs/marzen_defconfig     |  2 ++
+ arch/arm/mach-shmobile/board-marzen.c | 16 ++++++++++++++++
+ 2 files changed, 18 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index 339c62c..3cafb6a 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -86,11 +86,16 @@ static struct clk div4_clks[DIV4_NR] = {
- 				      0x0300, CLK_ENABLE_ON_INIT),
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index 61d1c55..c30ea5e 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -73,6 +73,8 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ # CONFIG_HW_RANDOM is not set
+ CONFIG_GPIO_SYSFS=y
+ # CONFIG_HWMON is not set
++CONFIG_THERMAL=y
++CONFIG_RCAR_THERMAL=y
+ CONFIG_SSB=y
+ # CONFIG_USB_SUPPORT is not set
+ CONFIG_MMC=y
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index 91e81e9..eb0a05a 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -113,9 +113,25 @@ static struct platform_device sdhi0_device = {
+ 	}
  };
  
--enum { MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
-+enum { MSTP323, MSTP322, MSTP321, MSTP320,
-+	MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
- 	MSTP016, MSTP015, MSTP014,
- 	MSTP_NR };
- 
- static struct clk mstp_clks[MSTP_NR] = {
-+	[MSTP323] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 23, 0), /* SDHI0 */
-+	[MSTP322] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 22, 0), /* SDHI1 */
-+	[MSTP321] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 21, 0), /* SDHI2 */
-+	[MSTP320] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 20, 0), /* SDHI3 */
- 	[MSTP026] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 26, 0), /* SCIF0 */
- 	[MSTP025] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 25, 0), /* SCIF1 */
- 	[MSTP024] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 24, 0), /* SCIF2 */
-@@ -149,6 +154,10 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP023]), /* SCIF3 */
- 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP022]), /* SCIF4 */
- 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP021]), /* SCIF6 */
-+	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
-+	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
-+	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
-+	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP320]), /* SDHI3 */
++/* Thermal */
++static struct resource thermal_resources[] = {
++	[0] = {
++		.start		= 0xFFC48000,
++		.end		= 0xFFC48038 - 1,
++		.flags		= IORESOURCE_MEM,
++	},
++};
++
++static struct platform_device thermal_device = {
++	.name		= "rcar_thermal",
++	.resource	= thermal_resources,
++	.num_resources	= ARRAY_SIZE(thermal_resources),
++};
++
+ static struct platform_device *marzen_devices[] __initdata = {
+ 	&eth_device,
+ 	&sdhi0_device,
++	&thermal_device,
  };
  
- void __init r8a7779_clock_init(void)
+ /* USB */
 -- 
 1.7.10.2.484.gcd07cc5
 
