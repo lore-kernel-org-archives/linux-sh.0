@@ -1,51 +1,57 @@
-From: wency@cn.fujitsu.com
-Date: Tue, 28 Aug 2012 10:00:14 +0000
-Subject: [RFC v8 PATCH 07/20] memory-hotplug: call acpi_bus_remove() to remove memory device
-Message-Id: <1346148027-24468-8-git-send-email-wency@cn.fujitsu.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 31 Aug 2012 01:28:12 +0000
+Subject: [PATCH 01/11] r8a7779: add SDHI clock support
+Message-Id: <1346376502-12114-2-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346148027-24468-1-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1346148027-24468-1-git-send-email-wency@cn.fujitsu.com>
+References: <1346376502-12114-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1346376502-12114-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
-Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wen Congyang <wency@cn.fujitsu.com>
+From: Phil Edworthy <phil.edworthy@renesas.com>
 
-The memory device has been ejected and powoffed, so we can call
-acpi_bus_remove() to remove the memory device from acpi bus.
-
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-CC: Paul Mackerras <paulus@samba.org>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-CC: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- drivers/acpi/acpi_memhotplug.c |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7779.c | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/acpi/acpi_memhotplug.c b/drivers/acpi/acpi_memhotplug.c
-index 9d47458..b152767 100644
---- a/drivers/acpi/acpi_memhotplug.c
-+++ b/drivers/acpi/acpi_memhotplug.c
-@@ -425,8 +425,9 @@ static void acpi_memory_device_notify(acpi_handle handle, u32 event, void *data)
- 		}
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index 339c62c..3cafb6a 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -86,11 +86,16 @@ static struct clk div4_clks[DIV4_NR] = {
+ 				      0x0300, CLK_ENABLE_ON_INIT),
+ };
  
- 		/*
--		 * TBD: Invoke acpi_bus_remove to cleanup data structures
-+		 * Invoke acpi_bus_remove() to remove memory device
- 		 */
-+		acpi_bus_remove(device, 1);
+-enum { MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
++enum { MSTP323, MSTP322, MSTP321, MSTP320,
++	MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+ 	MSTP016, MSTP015, MSTP014,
+ 	MSTP_NR };
  
- 		/* _EJ0 succeeded; _OST is not necessary */
- 		return;
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP323] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 23, 0), /* SDHI0 */
++	[MSTP322] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 22, 0), /* SDHI1 */
++	[MSTP321] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 21, 0), /* SDHI2 */
++	[MSTP320] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 20, 0), /* SDHI3 */
+ 	[MSTP026] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 26, 0), /* SCIF0 */
+ 	[MSTP025] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 25, 0), /* SCIF1 */
+ 	[MSTP024] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 24, 0), /* SCIF2 */
+@@ -149,6 +154,10 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP023]), /* SCIF3 */
+ 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP022]), /* SCIF4 */
+ 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP021]), /* SCIF6 */
++	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
++	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
++	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
++	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP320]), /* SDHI3 */
+ };
+ 
+ void __init r8a7779_clock_init(void)
 -- 
-1.7.1
+1.7.10.2.484.gcd07cc5
 
