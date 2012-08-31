@@ -1,70 +1,39 @@
-From: phil.edworthy@renesas.com
-Date: Mon, 06 Aug 2012 08:51:05 +0000
-Subject: Re: [PATCH 2/2] marzen: add SDHI0 support
-Message-Id: <OFBF1C5F7B.37783A37-ON80257A52.0030979F-80257A52.00309F16@eu.necel.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 31 Aug 2012 01:28:18 +0000
+Subject: [PATCH 07/11] ARM: shmobile: r8a7779: add USB OHCI clock support
+Message-Id: <1346376502-12114-8-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1342526039-11128-3-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1342526039-11128-3-git-send-email-phil.edworthy@renesas.com>
+References: <1346376502-12114-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1346376502-12114-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Morimoto-san,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-> I tested this patch, and it works well.
-> But this is small comment from me.
-Thanks for testing.
+ohci-platform driver require these clocks
 
-> > ---
-> >  arch/arm/mach-shmobile/board-marzen.c |   48 ++++++++++++++++++++
-> +++++++++++++
-> >  1 files changed, 48 insertions(+), 0 deletions(-)
-> 
-> it is better if this patch update defconfig
-Ok, will do.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-r8a7779.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-> > diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/
-> mach-shmobile/board-marzen.c
-> > index 3a528cf..3c54a2f 100644
-> > --- a/arch/arm/mach-shmobile/board-marzen.c
-> > +++ b/arch/arm/mach-shmobile/board-marzen.c
-> > @@ -30,6 +30,8 @@
-> >  #include <linux/regulator/fixed.h>
-> >  #include <linux/regulator/machine.h>
-> >  #include <linux/smsc911x.h>
-> > +#include <linux/mmc/sh_mobile_sdhi.h>
-> > +#include <linux/mfd/tmio.h>
-> >  #include <mach/hardware.h>
-> >  #include <mach/r8a7779.h>
-> >  #include <mach/common.h>
-> > @@ -75,8 +77,44 @@ static struct platform_device eth_device = {
-> >     .num_resources   = ARRAY_SIZE(smsc911x_resources),
-> >  };
-> > 
-> > +/* Fixed 3.3V regulator to be used by SDHI0 */
-> > +static struct regulator_consumer_supply fixed3v3_power_consumers[] > > +{
-> > +   REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
-> > +   REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
-> > +};
-> 
-> I got warning
-> 
-> ${LINUX}/arch/arm/mach-shmobile/board-marzen.c:81:41: \
->    warning: 'fixed3v3_power_consumers' defined but not used [-
-> Wunused-variable]
-I missed the setup of the regulator, I'll fix this.
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index 1d8842b..7c62e3d 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -158,7 +158,9 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP022]), /* SCIF4 */
+ 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP021]), /* SCIF6 */
+ 	CLKDEV_DEV_ID("ehci-platform.1", &mstp_clks[MSTP101]), /* USB EHCI port2 */
++	CLKDEV_DEV_ID("ohci-platform.1", &mstp_clks[MSTP101]), /* USB OHCI port2 */
+ 	CLKDEV_DEV_ID("ehci-platform.0", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
++	CLKDEV_DEV_ID("ohci-platform.0", &mstp_clks[MSTP100]), /* USB OHCI port0/1 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
+-- 
+1.7.10.2.484.gcd07cc5
 
-<snip>
-> > +static struct sh_mobile_sdhi_info sdhi0_platform_data = {
-> > +   .tmio_flags   = (TMIO_MMC_WRPROTECT_DISABLE
-> > +           | TMIO_MMC_HAS_IDLE_WAIT),
-> 
->    .tmio_flags =   TMIO_MMC_WRPROTECT_DISABLE |
->          TMIO_MMC_HAS_IDLE_WAIT,
-> 
-> is readable for me.
-Ok, I'll fix.
-
-Thanks
-Phil
