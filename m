@@ -1,91 +1,134 @@
-From: wency@cn.fujitsu.com
-Date: Fri, 03 Aug 2012 07:49:07 +0000
-Subject: [RFC PATCH V6 05/19] memory-hotplug: check whether memory is present or not
-Message-Id: <1343980161-14254-6-git-send-email-wency@cn.fujitsu.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 31 Aug 2012 00:34:37 +0000
+Subject: [PATCH 02/10] marzen: add SDHI0 support
+Message-Id: <1346373285-19588-3-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1343980161-14254-1-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1343980161-14254-1-git-send-email-wency@cn.fujitsu.com>
+References: <1346373285-19588-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1346373285-19588-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com
-Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+From: Phil Edworthy <phil.edworthy@renesas.com>
 
-If system supports memory hot-remove, online_pages() may online removed pages.
-So online_pages() need to check whether onlining pages are present or not.
-
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-CC: Paul Mackerras <paulus@samba.org>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-CC: Wen Congyang <wency@cn.fujitsu.com>
-Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- include/linux/mmzone.h |   19 +++++++++++++++++++
- mm/memory_hotplug.c    |   13 +++++++++++++
- 2 files changed, 32 insertions(+), 0 deletions(-)
+ arch/arm/configs/marzen_defconfig     |  4 +--
+ arch/arm/mach-shmobile/board-marzen.c | 52 ++++++++++++++++++++++++++++++++++-
+ 2 files changed, 53 insertions(+), 3 deletions(-)
 
-diff --git a/include/linux/mmzone.h b/include/linux/mmzone.h
-index 2daa54f..ac3ae30 100644
---- a/include/linux/mmzone.h
-+++ b/include/linux/mmzone.h
-@@ -1180,6 +1180,25 @@ void sparse_init(void);
- #define sparse_index_init(_sec, _nid)  do {} while (0)
- #endif /* CONFIG_SPARSEMEM */
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index 864f9a5..bf42ad2 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -71,12 +71,12 @@ CONFIG_GPIO_SYSFS=y
+ CONFIG_SSB=y
+ # CONFIG_HID_SUPPORT is not set
+ # CONFIG_USB_SUPPORT is not set
++CONFIG_MMC=y
++CONFIG_MMC_SDHI=y
+ CONFIG_UIO=y
+ CONFIG_UIO_PDRV_GENIRQ=y
+ # CONFIG_IOMMU_SUPPORT is not set
+ # CONFIG_FILE_LOCKING is not set
+-# CONFIG_DNOTIFY is not set
+-# CONFIG_INOTIFY_USER is not set
+ CONFIG_TMPFS=y
+ # CONFIG_MISC_FILESYSTEMS is not set
+ CONFIG_MAGIC_SYSRQ=y
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index 3a528cf..dec3ffc 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -30,6 +30,8 @@
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/smsc911x.h>
++#include <linux/mmc/sh_mobile_sdhi.h>
++#include <linux/mfd/tmio.h>
+ #include <mach/hardware.h>
+ #include <mach/r8a7779.h>
+ #include <mach/common.h>
+@@ -39,6 +41,12 @@
+ #include <asm/hardware/gic.h>
+ #include <asm/traps.h>
  
-+#ifdef CONFIG_SPARSEMEM
-+static inline int pfns_present(unsigned long pfn, unsigned long nr_pages)
-+{
-+	int i;
-+	for (i = 0; i < nr_pages; i++) {
-+		if (pfn_present(pfn + i))
-+			continue;
-+		else
-+			return -EINVAL;
-+	}
-+	return 0;
-+}
-+#else
-+static inline int pfns_present(unsigned long pfn, unsigned long nr_pages)
-+{
-+	return 0;
-+}
-+#endif /* CONFIG_SPARSEMEM*/
++/* Fixed 3.3V regulator to be used by SDHI0 */
++static struct regulator_consumer_supply fixed3v3_power_consumers[] = {
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
++	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
++};
 +
- #ifdef CONFIG_NODES_SPAN_OTHER_NODES
- bool early_pfn_in_nid(unsigned long pfn, int nid);
- #else
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index 80cded7..3f1d7c5 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -467,6 +467,19 @@ int __ref online_pages(unsigned long pfn, unsigned long nr_pages)
- 	struct memory_notify arg;
+ /* Dummy supplies, where voltage doesn't matter */
+ static struct regulator_consumer_supply dummy_supplies[] = {
+ 	REGULATOR_SUPPLY("vddvario", "smsc911x"),
+@@ -75,13 +83,45 @@ static struct platform_device eth_device = {
+ 	.num_resources	= ARRAY_SIZE(smsc911x_resources),
+ };
  
- 	lock_memory_hotplug();
-+	/*
-+	 * If system supports memory hot-remove, the memory may have been
-+	 * removed. So we check whether the memory has been removed or not.
-+	 *
-+	 * Note: When CONFIG_SPARSEMEM is defined, pfns_present() become
-+	 *       effective. If CONFIG_SPARSEMEM is not defined, pfns_present()
-+	 *       always returns 0.
-+	 */
-+	ret = pfns_present(pfn, nr_pages);
-+	if (ret) {
-+		unlock_memory_hotplug();
-+		return ret;
++static struct resource sdhi0_resources[] = {
++	[0] = {
++		.name	= "sdhi0",
++		.start	= 0xffe4c000,
++		.end	= 0xffe4c0ff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= gic_spi(104),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct sh_mobile_sdhi_info sdhi0_platform_data = {
++	.tmio_flags = TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_HAS_IDLE_WAIT,
++	.tmio_caps = MMC_CAP_SD_HIGHSPEED,
++};
++
++static struct platform_device sdhi0_device = {
++	.name = "sh_mobile_sdhi",
++	.num_resources = ARRAY_SIZE(sdhi0_resources),
++	.resource = sdhi0_resources,
++	.id = 0,
++	.dev = {
++		.platform_data = &sdhi0_platform_data,
 +	}
- 	arg.start_pfn = pfn;
- 	arg.nr_pages = nr_pages;
- 	arg.status_change_nid = -1;
++};
++
+ static struct platform_device *marzen_devices[] __initdata = {
+ 	&eth_device,
++	&sdhi0_device,
+ };
+ 
+ static void __init marzen_init(void)
+ {
+-	regulator_register_fixed(0, dummy_supplies, ARRAY_SIZE(dummy_supplies));
++	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
++				ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
++	regulator_register_fixed(0, dummy_supplies,
++				ARRAY_SIZE(dummy_supplies));
+ 
+ 	r8a7779_pinmux_init();
+ 
+@@ -97,6 +137,16 @@ static void __init marzen_init(void)
+ 	gpio_request(GPIO_FN_EX_CS0, NULL); /* nCS */
+ 	gpio_request(GPIO_FN_IRQ1_B, NULL); /* IRQ + PME */
+ 
++	/* SD0 (CN20) */
++	gpio_request(GPIO_FN_SD0_CLK, NULL);
++	gpio_request(GPIO_FN_SD0_CMD, NULL);
++	gpio_request(GPIO_FN_SD0_DAT0, NULL);
++	gpio_request(GPIO_FN_SD0_DAT1, NULL);
++	gpio_request(GPIO_FN_SD0_DAT2, NULL);
++	gpio_request(GPIO_FN_SD0_DAT3, NULL);
++	gpio_request(GPIO_FN_SD0_CD, NULL);
++	gpio_request(GPIO_FN_SD0_WP, NULL);
++
+ 	r8a7779_add_standard_devices();
+ 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
+ }
 -- 
-1.7.1
+1.7.10.2.484.gcd07cc5
 
