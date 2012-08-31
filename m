@@ -1,95 +1,134 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 02 Aug 2012 06:45:00 +0000
-Subject: [GIT PULL] sh updates for 3.6-rc1, round 2.
-Message-Id: <20120802064500.GC9596@linux-sh.org>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 31 Aug 2012 01:28:13 +0000
+Subject: [PATCH 02/11] marzen: add SDHI0 support
+Message-Id: <1346376502-12114-3-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1346376502-12114-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1346376502-12114-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The following changes since commit 2d534926205db9ffce4bbbde67cb9b2cee4b835c:
+From: Phil Edworthy <phil.edworthy@renesas.com>
 
-  Merge tag 'irqdomain-for-linus' of git://git.secretlab.ca/git/linux-2.6 (2012-07-31 20:44:03 -0700)
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ arch/arm/configs/marzen_defconfig     |  4 +--
+ arch/arm/mach-shmobile/board-marzen.c | 52 ++++++++++++++++++++++++++++++++++-
+ 2 files changed, 53 insertions(+), 3 deletions(-)
 
-are available in the git repository at:
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index 864f9a5..bf42ad2 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -71,12 +71,12 @@ CONFIG_GPIO_SYSFS=y
+ CONFIG_SSB=y
+ # CONFIG_HID_SUPPORT is not set
+ # CONFIG_USB_SUPPORT is not set
++CONFIG_MMC=y
++CONFIG_MMC_SDHI=y
+ CONFIG_UIO=y
+ CONFIG_UIO_PDRV_GENIRQ=y
+ # CONFIG_IOMMU_SUPPORT is not set
+ # CONFIG_FILE_LOCKING is not set
+-# CONFIG_DNOTIFY is not set
+-# CONFIG_INOTIFY_USER is not set
+ CONFIG_TMPFS=y
+ # CONFIG_MISC_FILESYSTEMS is not set
+ CONFIG_MAGIC_SYSRQ=y
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index 3a528cf..dec3ffc 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -30,6 +30,8 @@
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/smsc911x.h>
++#include <linux/mmc/sh_mobile_sdhi.h>
++#include <linux/mfd/tmio.h>
+ #include <mach/hardware.h>
+ #include <mach/r8a7779.h>
+ #include <mach/common.h>
+@@ -39,6 +41,12 @@
+ #include <asm/hardware/gic.h>
+ #include <asm/traps.h>
+ 
++/* Fixed 3.3V regulator to be used by SDHI0 */
++static struct regulator_consumer_supply fixed3v3_power_consumers[] = {
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
++	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
++};
++
+ /* Dummy supplies, where voltage doesn't matter */
+ static struct regulator_consumer_supply dummy_supplies[] = {
+ 	REGULATOR_SUPPLY("vddvario", "smsc911x"),
+@@ -75,13 +83,45 @@ static struct platform_device eth_device = {
+ 	.num_resources	= ARRAY_SIZE(smsc911x_resources),
+ };
+ 
++static struct resource sdhi0_resources[] = {
++	[0] = {
++		.name	= "sdhi0",
++		.start	= 0xffe4c000,
++		.end	= 0xffe4c0ff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= gic_spi(104),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct sh_mobile_sdhi_info sdhi0_platform_data = {
++	.tmio_flags = TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_HAS_IDLE_WAIT,
++	.tmio_caps = MMC_CAP_SD_HIGHSPEED,
++};
++
++static struct platform_device sdhi0_device = {
++	.name = "sh_mobile_sdhi",
++	.num_resources = ARRAY_SIZE(sdhi0_resources),
++	.resource = sdhi0_resources,
++	.id = 0,
++	.dev = {
++		.platform_data = &sdhi0_platform_data,
++	}
++};
++
+ static struct platform_device *marzen_devices[] __initdata = {
+ 	&eth_device,
++	&sdhi0_device,
+ };
+ 
+ static void __init marzen_init(void)
+ {
+-	regulator_register_fixed(0, dummy_supplies, ARRAY_SIZE(dummy_supplies));
++	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
++				ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
++	regulator_register_fixed(0, dummy_supplies,
++				ARRAY_SIZE(dummy_supplies));
+ 
+ 	r8a7779_pinmux_init();
+ 
+@@ -97,6 +137,16 @@ static void __init marzen_init(void)
+ 	gpio_request(GPIO_FN_EX_CS0, NULL); /* nCS */
+ 	gpio_request(GPIO_FN_IRQ1_B, NULL); /* IRQ + PME */
+ 
++	/* SD0 (CN20) */
++	gpio_request(GPIO_FN_SD0_CLK, NULL);
++	gpio_request(GPIO_FN_SD0_CMD, NULL);
++	gpio_request(GPIO_FN_SD0_DAT0, NULL);
++	gpio_request(GPIO_FN_SD0_DAT1, NULL);
++	gpio_request(GPIO_FN_SD0_DAT2, NULL);
++	gpio_request(GPIO_FN_SD0_DAT3, NULL);
++	gpio_request(GPIO_FN_SD0_CD, NULL);
++	gpio_request(GPIO_FN_SD0_WP, NULL);
++
+ 	r8a7779_add_standard_devices();
+ 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
+ }
+-- 
+1.7.10.2.484.gcd07cc5
 
-
-  git://github.com/pmundt/linux-sh tags/sh-for-linus
-
-for you to fetch changes up to 08298f0612e5e369d1da89b92cac5d2c71ddb9af:
-
-  sh: explicitly include sh_dma.h in setup-sh7722.c (2012-08-02 15:37:26 +0900)
-
-----------------------------------------------------------------
-SuperH fixes for 3.6-rc1 merge window
-
-----------------------------------------------------------------
-Guennadi Liakhovetski (17):
-      sh: add fixed voltage regulators to apsh4a3a
-      sh: add fixed voltage regulators to apsh4ad0a
-      sh: add fixed voltage regulators to magicpanelr2
-      sh: add fixed voltage regulators to polaris
-      sh: add fixed voltage regulators to sh2007
-      sh: add fixed voltage regulators to sh7757lcr
-      sh: add fixed voltage regulators to ap325rxa
-      sh: add fixed voltage regulators to kfr2r09
-      sh: add fixed voltage regulators to migor
-      sh: add fixed voltage regulators to rsk
-      sh: add fixed voltage regulators to sdk7786
-      sh: add fixed voltage regulators to se7724
-      sh: ecovec: switch MMC power control to regulators
-      sh: select the fixed regulator driver on several boards
-      dmaengine: shdma: restore partial transfer calculation
-      serial: sh-sci: fix compilation breakage, when DMA is enabled
-      sh: explicitly include sh_dma.h in setup-sh7722.c
-
-Kuninori Morimoto (2):
-      sh: sh7724: fixup renesas_usbhs clock settings
-      sh: ecovec: care CN5 VBUS if USB host mode
-
-Paul Mundt (8):
-      sh: pfc: Build fix for pinctrl_remove_gpio_range() changes.
-      sh: Fix up recursive fault in oops with unset TTB.
-      Merge branches 'sh/urgent' and 'sh/regulator' into sh-latest
-      Merge branch 'sh/dmaengine' into sh-latest
-      sh: pfc: Fix up init ordering mess.
-      Merge branch 'common/pinctrl' into sh-latest
-      sh: intc: initial irqdomain support.
-      Merge branch 'common/irqdomain' into sh-latest
-
-Shimoda, Yoshihiro (1):
-      sh: modify the sh_dmae_slave_config for RSPI in setup-sh7757
-
- arch/sh/boards/Kconfig                 |  13 ++++
- arch/sh/boards/board-apsh4a3a.c        |  10 +++
- arch/sh/boards/board-apsh4ad0a.c       |  10 +++
- arch/sh/boards/board-magicpanelr2.c    |  10 +++
- arch/sh/boards/board-polaris.c         |  10 +++
- arch/sh/boards/board-sh2007.c          |  12 ++++
- arch/sh/boards/board-sh7757lcr.c       |  14 ++++
- arch/sh/boards/mach-ap325rxa/setup.c   |  21 ++++++
- arch/sh/boards/mach-ecovec24/setup.c   | 125 ++++++++++++++++++++++++++++-----
- arch/sh/boards/mach-kfr2r09/setup.c    |  12 ++++
- arch/sh/boards/mach-migor/setup.c      |  13 ++++
- arch/sh/boards/mach-rsk/setup.c        |  10 +++
- arch/sh/boards/mach-sdk7786/setup.c    |  10 +++
- arch/sh/boards/mach-se/7724/setup.c    |  15 ++++
- arch/sh/include/cpu-sh4/cpu/sh7757.h   |   2 +
- arch/sh/kernel/cpu/sh4a/clock-sh7724.c |   4 +-
- arch/sh/kernel/cpu/sh4a/setup-sh7722.c |   1 +
- arch/sh/kernel/cpu/sh4a/setup-sh7757.c |  14 ++++
- arch/sh/mm/fault.c                     |   8 ++-
- drivers/dma/sh/shdma-base.c            |   9 +++
- drivers/dma/sh/shdma.c                 |  12 ++++
- drivers/sh/intc/Kconfig                |   4 ++
- drivers/sh/intc/Makefile               |   2 +-
- drivers/sh/intc/core.c                 |  11 +--
- drivers/sh/intc/internals.h            |   5 ++
- drivers/sh/intc/irqdomain.c            |  68 ++++++++++++++++++
- drivers/sh/pfc/pinctrl.c               |  34 ++++-----
- drivers/tty/serial/sh-sci.c            |   5 +-
- include/linux/shdma-base.h             |   2 +
- 29 files changed, 419 insertions(+), 47 deletions(-)
- create mode 100644 drivers/sh/intc/irqdomain.c
