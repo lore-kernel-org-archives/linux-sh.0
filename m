@@ -1,57 +1,86 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Sat, 29 Sep 2012 11:54:08 +0000
-Subject: Re: [PATCH v2 1/2] mtd: sh_flctl: Setup and release DMA channels
-Message-Id: <CABYn4szzM-UeBxjEr7Hs62ohAGFpOBVhG0np=jbAWh6W6xLF0A@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 03 Sep 2012 08:54:29 +0000
+Subject: Booting DT kernel on a non-DT bootloader
+Message-Id: <20120903085428.GA18323@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1348478315-10789-1-git-send-email-hechtb@gmail.com>
- <Pine.LNX.4.64.1209271656020.7862@axis700.grange>
- <CABYn4sw6uXtA7V-goLGv3H7AZ1zbWLAHZqGd+5w9eB_e8yua9w@mail.gmail.com>
- <Pine.LNX.4.64.1209281152130.5428@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1209281152130.5428@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Vikram Narayanan <vikram186@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, linux-mtd@lists.infradead.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-2012/9/28 Guennadi Liakhovetski <g.liakhovetski@gmx.de>:
-> On Fri, 28 Sep 2012, Bastian Hecht wrote:
->
-> [snip]
->
->> Oh yes, I'll add <linux/completion.h>.
->> About the forward declration: Do I really need it? We use a struct
->> pointer and I am unsure if the compiler just needs to know the name
->> and nothing more. I've tested it and included sh_flctl.h (without any
->> DMA headers) in some driver that has no idea about DMA.
->> gcc didn't complain.
->
-> I'm not sure about this, I think, sometimes there might be cases, when gcc
-> doesn't complain. Or (more likely) the header is pulled in via another
-> one, or some other header has this forward-declaration. But in any case I
-> wouldn't rely on either of those and declare what's needed explicitly.
->
->> Adding a non-pointer member
->> + struct sh_dma test;
->> lead to an error, so struct sh_dma is really unknown.
->
-> Of course, the compiler has to know the size of the struct to allocate
-> space for it:-)
->
+Hi,
 
-Ah sure - I thought I catch any header pull-ins by this test but yeah
-- it can be just forward declarations too...
+it has come to pass that for some of the boards under mach-shmobile
+we are in the following situation:
 
-So I will post a merged v3 under the new title: "mtd: sh_flctl: Add
-DMA capabilty".
-It includes the critics from here plus 2 other things:
- - "Fall back to PIO" now actually falls back for the current read
-operation and not just for future reads
- - I removed the init_completion() after each DMA read. The completion
-gets set up at probe time and what I read on the internet and in
-researched in the sources we don't need to reset it then after each
-usage.
+* The kernel requires a device tree for booting
+* The default boot loader for the board does not support device tree;
+  and in general it is not practical for developers to upload the
+  boot-loader.
 
-thanks,
+Fortunately there is a solution, which is to append a device tree to
+the kernel image and boot that by the normal means supported by the
+boot loader.
 
- Bastian
+Here is how to achieve that:
+
+1. Make sure you have CONFIG_ARM_APPENDED_DTB=y in your .config
+
+2. Create original zImage
+
+    ARCH=arm make zImage
+
+3. Create flattened device tree (run this in kernel tree)
+
+   i) There is code in the next branch of my renesas tree to allow
+      this to be achieved using
+
+      # make dtbs
+
+      This will create the device tree for the prevaling kernel config,
+      if one exists.
+
+      e.g For Armadillo 800 EVA
+
+      # make dtbs
+      scripts/kconfig/conf --silentoldconfig Kconfig
+        DTC     arch/arm/boot/r8a7740-armadillo800eva.dtb
+      DTC: dts->dtb  on file "arch/arm/boot/dts/r8a7740-armadillo800eva.dts"
+
+      Else it will do nothing
+      # make dtbs
+      scripts/kconfig/conf --silentoldconfig Kconfig
+      make[1]: Nothing to be done for `arch/arm/boot/dtbs'.
+
+
+   ii) If you are running a current or other kernel, which does not
+       support "make dtbs" for mach-shmobile boards, then the dtb
+       may manually be compiled using dtc.
+
+       e.g. For the Armadillo 800 EVA
+
+       dtc -I dts -O dtb arch/arm/boot/dts/r8a7740-armadillo800eva.dts \
+           -o arch/arm/boot/dts/r8a7740-armadillo800eva.dtb
+
+    Note: Please make sure you have a recent version of dtc.
+          I have verified that the above works with DTC 1.3.0 from
+	  the Debian device-tree-compiler 1.3.0-2 package.
+	  I have had reports that it fails using DTC 1.2.0.
+
+4. Append device tree to zImage (very high-tech!)
+
+   cat arch/arm/boot/zImage \
+	arch/arm/boot/dts/r8a7740-armadillo800eva.dtb >
+	arch/arm/boot/zImage.dtb
+
+5. Create uImage (optional)
+
+   If you need to create a uImage then this may be done using
+   the new zImage + dtb as follows:
+
+   # cp arch/arm/boot/zImage.dtb arch/arm/boot/zImage
+   # $(cut -f 3- -d ' ' < arch/arm/boot/.uImage.cmd)
+
+6. You should now be able to either boot the resulting zImage.dtb
+   or uImage, use whichever suits the needs of the bootloader in use.
+
