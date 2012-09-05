@@ -1,60 +1,73 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Wed, 26 Sep 2012 10:04:51 +0000
-Subject: Re: [PATCH] mmc: sh-mmcif: avoid Oops on spurious interrupts
-Message-Id: <m3a9wdksl8.fsf@pullcord.laptop.org>
+From: Tetsuyuki Kobayshi <koba@kmckk.co.jp>
+Date: Wed, 05 Sep 2012 02:48:37 +0000
+Subject: [PATCH 2/2] ARM: shmobile: emev2: enable PMU(Performance Monitoring Unit)
+Message-Id: <1346813317-4030-3-git-send-email-koba@kmckk.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <878vdxd3mq.wl%kuninori.morimoto.gx@renesas.com>
-	<20120803050039.GA1614@linux-sh.org>
-	<20120809042844.GF1614@linux-sh.org>
-	<87hasc3bv5.wl%kuninori.morimoto.gx@renesas.com>
-	<874nobqntv.wl%kuninori.morimoto.gx@renesas.com>
-	<20120810123804.GK1614@linux-sh.org> <502DDC97.5080501@kmckk.co.jp>
-	<87wr0us6tg.wl%kuninori.morimoto.gx@renesas.com>
-	<20120820031352.GC25767@linux-sh.org>
-	<87obm6ry98.wl%kuninori.morimoto.gx@renesas.com>
-	<20120820043853.GD25767@linux-sh.org>
-	<87mx1qrx1x.wl%kuninori.morimoto.gx@renesas.com>
-	<5031D9FF.8060801@kmckk.co.jp>
-	<Pine.LNX.4.64.1208220840400.26767@axis700.grange>
-	<505932DD.8010703@kmckk.co.jp> <50625ECB.6020601@kmckk.co.jp>
-In-Reply-To: <50625ECB.6020601@kmckk.co.jp> (Tetsuyuki Kobayashi's message of
-	"Wed, 26 Sep 2012 10:47:55 +0900")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
-Cc: linux-mmc@vger.kernel.org, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, yusuke.goda.sx@renesas.com, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Paul Mundt <lethal@linux-sh.org>, Magnus <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+To: linux-sh@vger.kernel.org
 
-Hi Kobayashi,
+From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
 
-On Tue, Sep 25 2012, Tetsuyuki Kobayashi wrote:
-> (09/19/2012 11:50 AM), Tetsuyuki Kobayashi wrote:
->> (2012/08/22 15:49), Guennadi Liakhovetski wrote:
->>> On some systems, e.g., kzm9g, MMCIF interfaces can produce spurious
->>> interrupts without any active request. To prevent the Oops, that results
->>> in such cases, don't dereference the mmc request pointer until we make
->>> sure, that we are indeed processing such a request.
->>>
->>> Reported-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
->>> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
->> 
->> I verified on kzm9g.
->> This works with
->> [PATCH] mmc: sh-mmcif: properly handle MMC_WRITE_MULTIPLE_BLOCK 
->> completion IRQ
->> 
->> Tested-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
->
-> Without this patch, the following Oops occurs. (kzm9g on v3.6-rc7)
-> Please push this to v3.6, not only 3.7-next.
+This patch enables PMU(Performance Monitoring Unit) for emev2 when compiled with CONFIG_HW_PERF_EVENTS.
 
-I'm traveling from Shanghai to Boston (home) at the moment, so I can't
-push this immediately.  I'll either get it into 3.6, or 3.7 with a tag
-for 3.6-stable.
+Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+---
+ arch/arm/mach-shmobile/setup-emev2.c |   26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
 
-Thanks,
-
-- Chris.
+diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
+index dae9aa6..f3ff171 100644
+--- a/arch/arm/mach-shmobile/setup-emev2.c
++++ b/arch/arm/mach-shmobile/setup-emev2.c
+@@ -36,6 +36,7 @@
+ #include <asm/mach/map.h>
+ #include <asm/mach/time.h>
+ #include <asm/hardware/gic.h>
++#include <asm/pmu.h>
+ 
+ static struct map_desc emev2_io_desc[] __initdata = {
+ #ifdef CONFIG_SMP
+@@ -356,6 +357,28 @@ static struct platform_device gio4_device = {
+ 	},
+ };
+ 
++#ifdef CONFIG_HW_PERF_EVENTS
++static struct resource pmu_resources[] = {
++	[0] = {
++		.start	= 152,
++		.end	= 152,
++		.flags	= IORESOURCE_IRQ,
++	},
++	[1] = {
++		.start	= 153,
++		.end	= 153,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device pmu_device = {
++	.name		= "arm-pmu",
++	.id		= ARM_PMU_DEVICE_CPU,
++	.num_resources	= ARRAY_SIZE(pmu_resources),
++	.resource	= pmu_resources,
++};
++#endif
++
+ static struct platform_device *emev2_early_devices[] __initdata = {
+ 	&uart0_device,
+ 	&uart1_device,
+@@ -370,6 +393,9 @@ static struct platform_device *emev2_late_devices[] __initdata = {
+ 	&gio2_device,
+ 	&gio3_device,
+ 	&gio4_device,
++#ifdef CONFIG_HW_PERF_EVENTS
++	&pmu_device,
++#endif
+ };
+ 
+ void __init emev2_add_standard_devices(void)
 -- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
+1.7.9.5
+
