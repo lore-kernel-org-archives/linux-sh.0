@@ -1,48 +1,166 @@
-From: Catalin Marinas <catalin.marinas@arm.com>
-Date: Fri, 21 Sep 2012 08:29:16 +0000
-Subject: Re: [PATCH 1/2] arm: Add ARM ERRATA 775420 workaround
-Message-Id: <20120921082915.GA21464@arm.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 05 Sep 2012 10:57:37 +0000
+Subject: [RFC v5] V4L DT bindings
+Message-Id: <Pine.LNX.4.64.1209051030230.16676@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1347434097-7924-1-git-send-email-horms@verge.net.au>
- <1347434097-7924-2-git-send-email-horms@verge.net.au>
- <CAHkRjk6vbM8f=bK_GkgpDmnYh-UU_M3T9TeOj6Ti7UZB-5U2cg@mail.gmail.com>
- <20120921010404.GJ21660@verge.net.au>
-In-Reply-To: <20120921010404.GJ21660@verge.net.au>
+References: <Pine.LNX.4.64.1208242356051.20710@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1208242356051.20710@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Sylwester Nawrocki <s.nawrocki@samsung.com>
+Cc: Linux Media Mailing List <linux-media@vger.kernel.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Magnus Damm <magnus.damm@gmail.com>, devicetree-discuss <devicetree-discuss@lists.ozlabs.org>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Stephen Warren <swarren@wwwdotorg.org>, Hans Verkuil <hverkuil@xs4all.nl>, Marek Szyprowski <m.szyprowski@samsung.com>
 
-On Fri, Sep 21, 2012 at 02:04:04AM +0100, Simon Horman wrote:
-> On Thu, Sep 20, 2012 at 10:58:53AM +0100, Catalin Marinas wrote:
-> > On 12 September 2012 08:14, Simon Horman <horms@verge.net.au> wrote:
-> > > +config ARM_ERRATA_775420
-> > > +       bool "ARM errata: A data cache maintenance operation which aborts, might lead to deadlock"
-> > > +       depends on CPU_V7
-> > > +       help
-> > > +         This option enables the workaround for the 775420 Cortex-A9 (r2p2,
-> > > +         r2p6,r2p8,r2p10,r3p0) erratum. In case a date cache maintenance
-> > > +         operation aborts with MMU exception, it might cause the processor
-> > > +         deadlock. This workaround puts DSB before executing ISB at the
-> > > +         beginning of the abort exception handler.
-> > > +
-> > >  endmenu
-> > 
-> > The only case where we can get an abort on cache maintenance is
-> > v7_coherent_user_range(). I don't think we have any ISB on the
-> > exception handling path for this function, so we could just add the
-> > DSB there:
-> 
-> I think that an advantage of Abe-san's implementation is that
-> it might to be a bit more robust. But your proposal is certainly
-> much cleaner and for that reason I agree it is a good option.
+Hi all
 
-It is more robust but I'm not sure it's worth putting a DSB a any data
-abort.
+Version 5 of this RFC is a result of a discussion of its version 4, which 
+took place during the recent Linux Plumbers conference in San Diego. 
+Changes are:
 
-> I've updated the patch, but since the code is now all yours
-> I'm unsure if the author should be changed or not.
+(1) remove bus-width properties from device (bridge and client) top level. 
+This has actually already been decided upon during our discussions with 
+Sylwester, I just forgot to actually remove them, sorry.
 
-But the Kconfig entry is yours and it has more lines :)
+(2) links are now grouped under "ports." This should help better describe 
+device connection topology by making clearer, which interfaces links are 
+attached to. (help needed: in my notes I see "port" optional if only one 
+port is present, but I seem to remember, that the final decision was - 
+make ports compulsory for uniformity. Which one is true?)
 
-Acked-by: Catalin Marinas <catalin.marinas@arm.com>
+(3) "videolink" is renamed to just "link."
+
+(4) "client" is renamed to "remote" and is now used on both sides of 
+links.
+
+(5) clock-names in clock consumer nodes (e.g., camera sensors) should 
+reflect clock input pin names from respective datasheets
+
+(6) also serial bus description should be placed under respective link 
+nodes.
+
+(7) reference remote link DT nodes in "remote" properties, not to the 
+parent.
+
+(8) use standard names for "SoC-external" (e.g., i2c) devices on their 
+respective busses. "Sensor" has been proposed, maybe "camera" is a better 
+match though.
+
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
+
+// Describe an imaginary configuration: a CEU serving either a parallel ov7725
+// sensor, or a serial imx074 sensor, connected over a CSI-2 SoC interface
+
+	ceu0: ceu@0xfe910000 {
+		compatible = "renesas,sh-mobile-ceu";
+		reg = <0xfe910000 0xa0>;
+		interrupts = <0x880>;
+
+		mclk: master_clock {
+			compatible = "renesas,ceu-clock";
+			#clock-cells = <1>;
+			clock-frequency = <50000000>;	/* max clock frequency */
+			clock-output-names = "mclk";
+		};
+
+		...
+		port@0 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			ov772x_1_1: link@1 {
+				reg = <1>;		/* local pad # */
+				remote = <&ceu0_1>;	/* remote phandle and pad # */
+				bus-width = <8>;	/* used data lines */
+				data-shift = <0>;	/* lines 7:0 are used */
+	
+				/* If [hv]sync-active are missing, embedded bt.605 sync is used */
+				hsync-active = <1>;	/* active high */
+				vsync-active = <1>;	/* active high */
+				pclk-sample = <1>;	/* rising */
+			};
+
+			csi2_0: link@0 {
+				reg = <0>;
+				remote = <&ceu0_2>;
+				immutable;
+			};
+		};
+	};
+
+	i2c0: i2c@0xfff20000 {
+		...
+		ov772x_1: camera@0x21 {
+			compatible = "omnivision,ov772x";
+			reg = <0x21>;
+			vddio-supply = <&regulator1>;
+			vddcore-supply = <&regulator2>;
+
+			clock-frequency = <20000000>;
+			clocks = <&mclk 0>;
+			clock-names = "xclk";
+
+			...
+			port {
+				/* With 1 link per port no need in addresses */
+				ceu0_1: link@0 {
+					bus-width = <8>;
+					remote = <&ov772x_1_1>;
+					hsync-active = <1>;
+					hsync-active = <0>;	/* who came up with an inverter here?... */
+					pclk-sample = <1>;
+				};
+			};
+		};
+
+		imx074: camera@0x1a {
+			compatible = "sony,imx074";
+			reg = <0x1a>;
+			vddio-supply = <&regulator1>;
+			vddcore-supply = <&regulator2>;
+
+			clock-frequency = <30000000>;	/* shared clock with ov772x_1 */
+			clocks = <&mclk 0>;
+			clock-names = "sysclk";		/* assuming this is the name in the datasheet */
+			...
+			port {
+				csi2_1: link@0 {
+					clock-lanes = <0>;
+					data-lanes = <1>, <2>;
+					remote = <&imx074_1>;
+				};
+			};
+		};
+		...
+	};
+
+	csi2: csi2@0xffc90000 {
+		compatible = "renesas,sh-mobile-csi2";
+		reg = <0xffc90000 0x1000>;
+		interrupts = <0x17a0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		...
+		port {
+			compatible = "renesas,csi2c";	/* one of CSI2I and CSI2C */
+			reg = <1>;			/* CSI-2 PHY #1 of 2: PHY_S, PHY_M has port address 0, is unused */
+
+			imx074_1: link@1 {
+				client = <&imx074 0>;
+				clock-lanes = <0>;
+				data-lanes = <2>, <1>;
+				remote = <&csi2_1>;
+			};
+		};
+		port {
+			reg = <2>;			/* port 2: link to the CEU */
+			ceu0_2: link@0 {
+				immutable;
+				remote = <&csi2_0>;
+			};
+		};
+	};
