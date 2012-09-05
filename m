@@ -1,35 +1,39 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 25 Sep 2012 14:42:07 +0000
-Subject: [GIT PULL] sh fixes for 3.6-final
-Message-Id: <20120925144207.GK13568@linux-sh.org>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 05 Sep 2012 08:20:43 +0000
+Subject: [PATCH 4/5] ARM: shmobile: marzen: fixup regulator id for smsc911x
+Message-Id: <1346833244-30432-5-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1346833244-30432-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1346833244-30432-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-One last minute regression fix..
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-The following changes since commit 56d27adcb536b7430d5f8a6240df8ad261eb00bd:
+regulator id = 0 is used for sh_mobile_sdhi.
+smsc911x's regulator can use id = 1
 
-  Merge git://git.kernel.org/pub/scm/linux/kernel/git/cmetcalf/linux-tile (2012-09-24 16:17:17 -0700)
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-marzen.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-are available in the git repository at:
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index dec3ffc..cbf9f25 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -120,7 +120,7 @@ static void __init marzen_init(void)
+ {
+ 	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
+ 				ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
+-	regulator_register_fixed(0, dummy_supplies,
++	regulator_register_fixed(1, dummy_supplies,
+ 				ARRAY_SIZE(dummy_supplies));
+ 
+ 	r8a7779_pinmux_init();
+-- 
+1.7.10.4
 
-
-  git://github.com/pmundt/linux-sh tags/sh-for-linus
-
-for you to fetch changes up to 16d74ebeb1b056dfc80e69b44cc3a26515db1925:
-
-  sh: pfc: Fix up GPIO mux type reconfig case. (2012-09-25 11:51:05 +0900)
-
-----------------------------------------------------------------
-SuperH fixes for 3.6-final
-
-----------------------------------------------------------------
-Paul Mundt (1):
-      sh: pfc: Fix up GPIO mux type reconfig case.
-
- drivers/sh/pfc/pinctrl.c | 2 ++
- 1 file changed, 2 insertions(+)
