@@ -1,83 +1,70 @@
-From: wujianguo <wujianguo106@gmail.com>
-Date: Thu, 06 Sep 2012 07:06:50 +0000
-Subject: Re: [RFC PATCH V6 10/19] memory-hotplug: add memory_block_release
-Message-Id: <50484B8A.4090009@gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 05 Sep 2012 08:20:44 +0000
+Subject: [PATCH 5/5] ARM: shmobile: marzen: enable thermal sensor
+Message-Id: <1346833244-30432-6-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1343980161-14254-1-git-send-email-wency@cn.fujitsu.com> <1343980161-14254-11-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1343980161-14254-11-git-send-email-wency@cn.fujitsu.com>
+References: <1346833244-30432-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1346833244-30432-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: wency@cn.fujitsu.com
-Cc: linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com
+To: linux-arm-kernel@lists.infradead.org
 
-On 2012-8-3 15:49, wency@cn.fujitsu.com wrote:
-> From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-> 
-> When calling remove_memory_block(), the function shows following message at
-> device_release().
-> 
-> Device 'memory528' does not have a release() function, it is broken and must
-> be fixed.
-> 
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-I found this warning too when doing memory-hotplug,
-why not send as a bug fix patch?
-The same as [RFC PATCH V6 18/19] memory-hotplug: add node_device_release
+Marzen board can measure its thermal by this patch.
+	cat /sys/class/thermal/thermal_zoneX/temp
 
-> remove_memory_block() calls kfree(mem). I think it shouled be called from
-> device_release(). So the patch implements memory_block_release()
-> 
-> CC: David Rientjes <rientjes@google.com>
-> CC: Jiang Liu <liuj97@gmail.com>
-> CC: Len Brown <len.brown@intel.com>
-> CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-> CC: Paul Mackerras <paulus@samba.org>
-> CC: Christoph Lameter <cl@linux.com>
-> Cc: Minchan Kim <minchan.kim@gmail.com>
-> CC: Andrew Morton <akpm@linux-foundation.org>
-> CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-> CC: Wen Congyang <wency@cn.fujitsu.com>
-> Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-> ---
->  drivers/base/memory.c |   11 ++++++++++-
->  1 files changed, 10 insertions(+), 1 deletions(-)
-> 
-> diff --git a/drivers/base/memory.c b/drivers/base/memory.c
-> index 038be73..1cd3ef3 100644
-> --- a/drivers/base/memory.c
-> +++ b/drivers/base/memory.c
-> @@ -109,6 +109,15 @@ bool is_memblk_offline(unsigned long start, unsigned long size)
->  }
->  EXPORT_SYMBOL(is_memblk_offline);
->  
-> +#define to_memory_block(device) container_of(device, struct memory_block, dev)
-> +
-> +static void release_memory_block(struct device *dev)
-> +{
-> +	struct memory_block *mem = to_memory_block(dev);
-> +
-> +	kfree(mem);
-> +}
-> +
->  /*
->   * register_memory - Setup a sysfs device for a memory block
->   */
-> @@ -119,6 +128,7 @@ int register_memory(struct memory_block *memory)
->  
->  	memory->dev.bus = &memory_subsys;
->  	memory->dev.id = memory->start_section_nr / sections_per_block;
-> +	memory->dev.release = release_memory_block;
->  
->  	error = device_register(&memory->dev);
->  	return error;
-> @@ -674,7 +684,6 @@ int remove_memory_block(unsigned long node_id, struct mem_section *section,
->  		mem_remove_simple_file(mem, phys_device);
->  		mem_remove_simple_file(mem, removable);
->  		unregister_memory(mem);
-> -		kfree(mem);
->  	} else
->  		kobject_put(&mem->dev.kobj);
->  
-> 
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ arch/arm/configs/marzen_defconfig     |    2 ++
+ arch/arm/mach-shmobile/board-marzen.c |   16 ++++++++++++++++
+ 2 files changed, 18 insertions(+)
+
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index cd2dc21..b46914f 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -71,6 +71,8 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ # CONFIG_HW_RANDOM is not set
+ CONFIG_GPIO_SYSFS=y
+ # CONFIG_HWMON is not set
++CONFIG_THERMAL=y
++CONFIG_RCAR_THERMAL=y
+ CONFIG_SSB=y
+ # CONFIG_USB_SUPPORT is not set
+ CONFIG_MMC=y
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index cbf9f25..2e884b6 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -111,9 +111,25 @@ static struct platform_device sdhi0_device = {
+ 	}
+ };
+ 
++/* Thermal */
++static struct resource thermal_resources[] = {
++	[0] = {
++		.start		= 0xFFC48000,
++		.end		= 0xFFC48038 - 1,
++		.flags		= IORESOURCE_MEM,
++	},
++};
++
++static struct platform_device thermal_device = {
++	.name		= "rcar_thermal",
++	.resource	= thermal_resources,
++	.num_resources	= ARRAY_SIZE(thermal_resources),
++};
++
+ static struct platform_device *marzen_devices[] __initdata = {
+ 	&eth_device,
+ 	&sdhi0_device,
++	&thermal_device,
+ };
+ 
+ static void __init marzen_init(void)
+-- 
+1.7.10.4
 
