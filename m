@@ -1,48 +1,92 @@
-From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
-Date: Tue, 25 Sep 2012 06:09:10 +0000
-Subject: [v2 PATCH 0/2] Add UIO device supporting dynamic memory allocation
-Message-Id: <1348553352-14334-1-git-send-email-dhobsong@igel.co.jp>
+From: wency@cn.fujitsu.com
+Date: Wed, 05 Sep 2012 09:25:43 +0000
+Subject: [RFC v9 PATCH 09/21] memory-hotplug: does not release memory region in PAGES_PER_SECTION chunks
+Message-Id: <1346837155-534-10-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1346837155-534-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1346837155-534-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: hjk@hansjkoch.de, gregkh@linuxfoundation.org, magnus.damm@gmail.com, horms@verge.net.au
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, hdk@igel.co.jp, Damian Hobson-Garcia <dhobsong@igel.co.jp>
+To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
 
-Hello all,
+From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-I've been using this UIO driver for allocation/deallocation
-of memory regions through an IOMMU via the dma-mapping API, but
-it seems that it would be more generally useful for userspace drivers
-to access CMA memory regions. I've kept all dynamic memory handling in
-the specific device driver.
+Since applying a patch(de7f0cba96786c), release_mem_region() has been changed
+as called in PAGES_PER_SECTION chunks because register_memory_resource() is
+called in PAGES_PER_SECTION chunks by add_memory(). But it seems firmware
+dependency. If CRS are written in the PAGES_PER_SECTION chunks in ACPI DSDT
+Table, register_memory_resource() is called in PAGES_PER_SECTION chunks.
+But if CRS are written in the DIMM unit in ACPI DSDT Table,
+register_memory_resource() is called in DIMM unit. So release_mem_region()
+should not be called in PAGES_PER_SECTION chunks. The patch fixes it.
 
-The number and size of the dynamically allocatable regions is defined
-statically in the device platform data, and the actually memory is
-allocated and deallocated when the device is opened/closed.
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+CC: Paul Mackerras <paulus@samba.org>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+---
+ arch/powerpc/platforms/pseries/hotplug-memory.c |   13 +++++++++----
+ mm/memory_hotplug.c                             |    4 ++--
+ 2 files changed, 11 insertions(+), 6 deletions(-)
 
-Details of the dynamically allocated regions are available from sysfs in
-exactly the same was as for static regions. The total number of
-dynamic and static regions combined cannot exceed MAX_UIO_MAPS.
-
-Changes from v1/RFC
-
-* Add driver documentation to UIO HOWTO 
-* Remove sh7372 specific example code
-
-Damian Hobson-Garcia (2):
-  Add new uio device for dynamic memory allocation
-  Add uio_dmem_genirq description to UIO documentation
-
- Documentation/DocBook/uio-howto.tmpl          |   55 ++++
- drivers/uio/Kconfig                           |   16 ++
- drivers/uio/Makefile                          |    1 +
- drivers/uio/uio_dmem_genirq.c                 |  354 +++++++++++++++++++++++++
- include/linux/platform_data/uio_dmem_genirq.h |   26 ++
- 6 files changed, 466 insertions(+), 5 deletions(-)
- create mode 100644 drivers/uio/uio_dmem_genirq.c
- create mode 100644 include/linux/platform_data/uio_dmem_genirq.h
-
+diff --git a/arch/powerpc/platforms/pseries/hotplug-memory.c b/arch/powerpc/platforms/pseries/hotplug-memory.c
+index 11d8e05..dc0a035 100644
+--- a/arch/powerpc/platforms/pseries/hotplug-memory.c
++++ b/arch/powerpc/platforms/pseries/hotplug-memory.c
+@@ -77,7 +77,8 @@ static int pseries_remove_memblock(unsigned long base, unsigned int memblock_siz
+ {
+ 	unsigned long start, start_pfn;
+ 	struct zone *zone;
+-	int ret;
++	int i, ret;
++	int sections_to_remove;
+ 
+ 	start_pfn = base >> PAGE_SHIFT;
+ 
+@@ -97,9 +98,13 @@ static int pseries_remove_memblock(unsigned long base, unsigned int memblock_siz
+ 	 * to sysfs "state" file and we can't remove sysfs entries
+ 	 * while writing to it. So we have to defer it to here.
+ 	 */
+-	ret = __remove_pages(zone, start_pfn, memblock_size >> PAGE_SHIFT);
+-	if (ret)
+-		return ret;
++	sections_to_remove = (memblock_size >> PAGE_SHIFT) / PAGES_PER_SECTION;
++	for (i = 0; i < sections_to_remove; i++) {
++		unsigned long pfn = start_pfn + i * PAGES_PER_SECTION;
++		ret = __remove_pages(zone, start_pfn,  PAGES_PER_SECTION);
++		if (ret)
++			return ret;
++	}
+ 
+ 	/*
+ 	 * Update memory regions for memory remove
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index e74a01d..2353887 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -358,11 +358,11 @@ int __remove_pages(struct zone *zone, unsigned long phys_start_pfn,
+ 	BUG_ON(phys_start_pfn & ~PAGE_SECTION_MASK);
+ 	BUG_ON(nr_pages % PAGES_PER_SECTION);
+ 
++	release_mem_region(phys_start_pfn << PAGE_SHIFT,  nr_pages * PAGE_SIZE);
++
+ 	sections_to_remove = nr_pages / PAGES_PER_SECTION;
+ 	for (i = 0; i < sections_to_remove; i++) {
+ 		unsigned long pfn = phys_start_pfn + i*PAGES_PER_SECTION;
+-		release_mem_region(pfn << PAGE_SHIFT,
+-				   PAGES_PER_SECTION << PAGE_SHIFT);
+ 		ret = __remove_section(zone, __pfn_to_section(pfn));
+ 		if (ret)
+ 			break;
 -- 
-1.7.5.4
+1.7.1
 
