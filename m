@@ -1,100 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 11 Sep 2012 05:18:38 +0000
-Subject: Re: Booting DT kernel on a non-DT bootloader
-Message-Id: <20120911051838.GH23356@verge.net.au>
+From: Tetsuyuki Kobayshi <koba@kmckk.co.jp>
+Date: Wed, 05 Sep 2012 08:11:48 +0000
+Subject: [PATCH 1/3] ARM: shmobile: sh73a0: Select ERRATAs in Kconfig
+Message-Id: <1346832708-7369-1-git-send-email-koba@kmckk.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120903085428.GA18323@verge.net.au>
-In-Reply-To: <20120903085428.GA18323@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Sep 03, 2012 at 05:54:29PM +0900, Simon Horman wrote:
-> Hi,
-> 
-> it has come to pass that for some of the boards under mach-shmobile
-> we are in the following situation:
-> 
-> * The kernel requires a device tree for booting
-> * The default boot loader for the board does not support device tree;
->   and in general it is not practical for developers to upload the
->   boot-loader.
-> 
-> Fortunately there is a solution, which is to append a device tree to
-> the kernel image and boot that by the normal means supported by the
-> boot loader.
-> 
-> Here is how to achieve that:
-> 
-> 1. Make sure you have CONFIG_ARM_APPENDED_DTB=y in your .config
-> 
-> 2. Create original zImage
-> 
->     ARCH=arm make zImage
+From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
 
-      If you intend to create a uImage (step 5) then you should run
+SH73a0 SoC has Cortex-A9 core which revision is r2p8.
+This patch selects ERRATAs for this revision in Kconfig file.
 
-      ARCH=arm make uImage
+Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+---
+ arch/arm/mach-shmobile/Kconfig |    7 +++++++
+ 1 file changed, 7 insertions(+)
 
-      This ensures that arch/arm/boot/.uImage.cmd is up to date
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 4cacc2d..a80836c 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -28,6 +28,13 @@ config ARCH_SH73A0
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select I2C
++	select ARM_ERRATA_743622
++	select ARM_ERRATA_751472
++	select ARM_ERRATA_754322
++	select ARM_ERRATA_764369
++	select PL310_ERRATA_588369 if CACHE_PL310
++	select PL310_ERRATA_727915 if CACHE_PL310
++	select PL310_ERRATA_769419 if CACHE_PL310
+ 
+ config ARCH_R8A7740
+ 	bool "R-Mobile A1 (R8A77400)"
+-- 
+1.7.9.5
 
-> 3. Create flattened device tree (run this in kernel tree)
-> 
->    i) There is code in the next branch of my renesas tree to allow
->       this to be achieved using
-> 
->       # make dtbs
-> 
->       This will create the device tree for the prevaling kernel config,
->       if one exists.
-> 
->       e.g For Armadillo 800 EVA
-> 
->       # make dtbs
->       scripts/kconfig/conf --silentoldconfig Kconfig
->         DTC     arch/arm/boot/r8a7740-armadillo800eva.dtb
->       DTC: dts->dtb  on file "arch/arm/boot/dts/r8a7740-armadillo800eva.dts"
-> 
->       Else it will do nothing
->       # make dtbs
->       scripts/kconfig/conf --silentoldconfig Kconfig
->       make[1]: Nothing to be done for `arch/arm/boot/dtbs'.
-> 
-> 
->    ii) If you are running a current or other kernel, which does not
->        support "make dtbs" for mach-shmobile boards, then the dtb
->        may manually be compiled using dtc.
-> 
->        e.g. For the Armadillo 800 EVA
-> 
->        dtc -I dts -O dtb arch/arm/boot/dts/r8a7740-armadillo800eva.dts \
->            -o arch/arm/boot/dts/r8a7740-armadillo800eva.dtb
-> 
->     Note: Please make sure you have a recent version of dtc.
->           I have verified that the above works with DTC 1.3.0 from
-> 	  the Debian device-tree-compiler 1.3.0-2 package.
-> 	  I have had reports that it fails using DTC 1.2.0.
-> 
-> 4. Append device tree to zImage (very high-tech!)
-> 
->    cat arch/arm/boot/zImage \
-> 	arch/arm/boot/dts/r8a7740-armadillo800eva.dtb >
-> 	arch/arm/boot/zImage.dtb
-> 
-> 5. Create uImage (optional)
-> 
->    If you need to create a uImage then this may be done using
->    the new zImage + dtb as follows:
-> 
->    # cp arch/arm/boot/zImage.dtb arch/arm/boot/zImage
->    # $(cut -f 3- -d ' ' < arch/arm/boot/.uImage.cmd)
-> 
-> 6. You should now be able to either boot the resulting zImage.dtb
->    or uImage, use whichever suits the needs of the bootloader in use.
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
