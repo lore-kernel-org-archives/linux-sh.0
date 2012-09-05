@@ -1,143 +1,96 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 27 Sep 2012 14:07:31 +0000
-Subject: [PATCH 12/14] media: sh-mobile-ceu-camera: add primitive OF support
-Message-Id: <1348754853-28619-13-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 05 Sep 2012 08:20:42 +0000
+Subject: [PATCH 3/5] ARM: mach-shmobile: marzen: defconfig update
+Message-Id: <1346833244-30432-4-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1346833244-30432-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1346833244-30432-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: devicetree-discuss@lists.ozlabs.org, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Stephen Warren <swarren@wwwdotorg.org>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>
+To: linux-arm-kernel@lists.infradead.org
 
-Add an OF hook to sh_mobile_ceu_camera.c, no properties so far. Booting
-with DT also requires platform data to be optional.
+Update marzen defconfig
+* Enable MMC Block device as SDHI hw is now supported.
+* Default to NFS root, this is consistent with many other
+  shmobile boards
+* Enable UNIX which is required by udevd
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Other changes are noise due to using make savedefconfig
+to create the new defconfig.
+
+Cc: Phil Edworthy <phil.edworthy@renesas.com>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- .../platform/soc_camera/sh_mobile_ceu_camera.c     |   34 ++++++++++++++------
- 1 files changed, 24 insertions(+), 10 deletions(-)
+ arch/arm/configs/marzen_defconfig |   13 ++++++++-----
+ 1 file changed, 8 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c b/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
-index 41e4664..61ee459 100644
---- a/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
-+++ b/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
-@@ -26,6 +26,7 @@
- #include <linux/kernel.h>
- #include <linux/mm.h>
- #include <linux/moduleparam.h>
-+#include <linux/of.h>
- #include <linux/time.h>
- #include <linux/slab.h>
- #include <linux/device.h>
-@@ -118,6 +119,7 @@ struct sh_mobile_ceu_dev {
- 
- 	enum v4l2_field field;
- 	int sequence;
-+	unsigned long flags;
- 
- 	unsigned int image_mode:1;
- 	unsigned int is_16bit:1;
-@@ -704,7 +706,7 @@ static void sh_mobile_ceu_set_rect(struct soc_camera_device *icd)
- 	}
- 
- 	/* CSI2 special configuration */
--	if (pcdev->pdata->csi2) {
-+	if (pcdev->csi2_pdev) {
- 		in_width = ((in_width - 2) * 2);
- 		left_offset *= 2;
- 	}
-@@ -808,7 +810,7 @@ static int sh_mobile_ceu_set_bus_param(struct soc_camera_device *icd)
- 	/* Make choises, based on platform preferences */
- 	if ((common_flags & V4L2_MBUS_HSYNC_ACTIVE_HIGH) &&
- 	    (common_flags & V4L2_MBUS_HSYNC_ACTIVE_LOW)) {
--		if (pcdev->pdata->flags & SH_CEU_FLAG_HSYNC_LOW)
-+		if (pcdev->flags & SH_CEU_FLAG_HSYNC_LOW)
- 			common_flags &= ~V4L2_MBUS_HSYNC_ACTIVE_HIGH;
- 		else
- 			common_flags &= ~V4L2_MBUS_HSYNC_ACTIVE_LOW;
-@@ -816,7 +818,7 @@ static int sh_mobile_ceu_set_bus_param(struct soc_camera_device *icd)
- 
- 	if ((common_flags & V4L2_MBUS_VSYNC_ACTIVE_HIGH) &&
- 	    (common_flags & V4L2_MBUS_VSYNC_ACTIVE_LOW)) {
--		if (pcdev->pdata->flags & SH_CEU_FLAG_VSYNC_LOW)
-+		if (pcdev->flags & SH_CEU_FLAG_VSYNC_LOW)
- 			common_flags &= ~V4L2_MBUS_VSYNC_ACTIVE_HIGH;
- 		else
- 			common_flags &= ~V4L2_MBUS_VSYNC_ACTIVE_LOW;
-@@ -871,11 +873,11 @@ static int sh_mobile_ceu_set_bus_param(struct soc_camera_device *icd)
- 	value |= common_flags & V4L2_MBUS_VSYNC_ACTIVE_LOW ? 1 << 1 : 0;
- 	value |= common_flags & V4L2_MBUS_HSYNC_ACTIVE_LOW ? 1 << 0 : 0;
- 
--	if (pcdev->pdata->csi2) /* CSI2 mode */
-+	if (pcdev->csi2_pdev) /* CSI2 mode */
- 		value |= 3 << 12;
- 	else if (pcdev->is_16bit)
- 		value |= 1 << 12;
--	else if (pcdev->pdata->flags & SH_CEU_FLAG_LOWER_8BIT)
-+	else if (pcdev->flags & SH_CEU_FLAG_LOWER_8BIT)
- 		value |= 2 << 12;
- 
- 	ceu_write(pcdev, CAMCR, value);
-@@ -1050,7 +1052,7 @@ static int sh_mobile_ceu_get_formats(struct soc_camera_device *icd, unsigned int
- 		return 0;
- 	}
- 
--	if (!pcdev->pdata->csi2) {
-+	if (!pcdev->csi2_pdev) {
- 		/* Are there any restrictions in the CSI-2 case? */
- 		ret = sh_mobile_ceu_try_bus_param(icd, fmt->bits_per_sample);
- 		if (ret < 0)
-@@ -2103,14 +2105,19 @@ static int __devinit sh_mobile_ceu_probe(struct platform_device *pdev)
- 	init_completion(&pcdev->complete);
- 
- 	pcdev->pdata = pdev->dev.platform_data;
--	if (!pcdev->pdata) {
-+	if (!pcdev->pdata && !pdev->dev.of_node) {
- 		err = -EINVAL;
- 		dev_err(&pdev->dev, "CEU platform data not set.\n");
- 		goto exit_kfree;
- 	}
- 
--	pcdev->max_width = pcdev->pdata->max_width ? : 2560;
--	pcdev->max_height = pcdev->pdata->max_height ? : 1920;
-+	/* TODO: implement per-device bus flags */
-+
-+	if (pcdev->pdata) {
-+		pcdev->max_width = pcdev->pdata->max_width;
-+		pcdev->max_height = pcdev->pdata->max_height;
-+		pcdev->flags = pcdev->pdata->flags;
-+	}
- 
- 	base = ioremap_nocache(res->start, resource_size(res));
- 	if (!base) {
-@@ -2169,7 +2176,7 @@ static int __devinit sh_mobile_ceu_probe(struct platform_device *pdev)
- 		goto exit_free_ctx;
- 
- 	/* CSI2 interfacing */
--	csi2 = pcdev->pdata->csi2;
-+	csi2 = pcdev->pdata ? pcdev->pdata->csi2 : NULL;
- 	if (csi2) {
- 		struct platform_device *csi2_pdev  			platform_device_alloc("sh-mobile-csi2", csi2->id);
-@@ -2300,10 +2307,17 @@ static const struct dev_pm_ops sh_mobile_ceu_dev_pm_ops = {
- 	.runtime_resume = sh_mobile_ceu_runtime_nop,
- };
- 
-+static const struct of_device_id sh_mobile_ceu_of_match[] = {
-+	{ .compatible = "renesas,sh-mobile-ceu" },
-+	{ }
-+};
-+MODULE_DEVICE_TABLE(of, sh_mobile_ceu_of_match);
-+
- static struct platform_driver sh_mobile_ceu_driver = {
- 	.driver 	= {
- 		.name	= "sh_mobile_ceu",
- 		.pm	= &sh_mobile_ceu_dev_pm_ops,
-+		.of_match_table = sh_mobile_ceu_of_match,
- 	},
- 	.probe		= sh_mobile_ceu_probe,
- 	.remove		= __devexit_p(sh_mobile_ceu_remove),
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index bf42ad2..cd2dc21 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -1,13 +1,14 @@
+ # CONFIG_ARM_PATCH_PHYS_VIRT is not set
+ CONFIG_EXPERIMENTAL=y
+ CONFIG_KERNEL_LZMA=y
++CONFIG_NO_HZ=y
+ CONFIG_IKCONFIG=y
+ CONFIG_IKCONFIG_PROC=y
+ CONFIG_LOG_BUF_SHIFT
+ CONFIG_SYSCTL_SYSCALL=y
+ CONFIG_EMBEDDED=y
+ CONFIG_SLAB=y
+-# CONFIG_BLOCK is not set
++# CONFIG_IOSCHED_CFQ is not set
+ CONFIG_ARCH_SHMOBILE=y
+ CONFIG_ARCH_R8A7779=y
+ CONFIG_MACH_MARZEN=y
+@@ -21,7 +22,6 @@ CONFIG_ARM_ERRATA_458693=y
+ CONFIG_ARM_ERRATA_460075=y
+ CONFIG_ARM_ERRATA_743622=y
+ CONFIG_ARM_ERRATA_754322=y
+-CONFIG_NO_HZ=y
+ CONFIG_SMP=y
+ # CONFIG_ARM_CPU_TOPOLOGY is not set
+ CONFIG_AEABI=y
+@@ -29,13 +29,16 @@ CONFIG_AEABI=y
+ CONFIG_HIGHMEM=y
+ CONFIG_ZBOOT_ROM_TEXT=0x0
+ CONFIG_ZBOOT_ROM_BSS=0x0
+-CONFIG_CMDLINE="console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel"
++CONFIG_CMDLINE="console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel root=/dev/nfs ip=on"
+ CONFIG_CMDLINE_FORCE=y
+ CONFIG_KEXEC=y
+ # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
+ CONFIG_PM_RUNTIME=y
+ CONFIG_NET=y
++CONFIG_UNIX=y
+ CONFIG_INET=y
++CONFIG_IP_PNP=y
++CONFIG_IP_PNP_DHCP=y
+ # CONFIG_IPV6 is not set
+ # CONFIG_WIRELESS is not set
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+@@ -69,16 +72,16 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ CONFIG_GPIO_SYSFS=y
+ # CONFIG_HWMON is not set
+ CONFIG_SSB=y
+-# CONFIG_HID_SUPPORT is not set
+ # CONFIG_USB_SUPPORT is not set
+ CONFIG_MMC=y
+ CONFIG_MMC_SDHI=y
+ CONFIG_UIO=y
+ CONFIG_UIO_PDRV_GENIRQ=y
+ # CONFIG_IOMMU_SUPPORT is not set
+-# CONFIG_FILE_LOCKING is not set
+ CONFIG_TMPFS=y
+ # CONFIG_MISC_FILESYSTEMS is not set
++CONFIG_NFS_FS=y
++CONFIG_ROOT_NFS=y
+ CONFIG_MAGIC_SYSRQ=y
+ CONFIG_DEBUG_INFO=y
+ CONFIG_DEBUG_INFO_REDUCED=y
 -- 
-1.7.2.5
+1.7.10.4
 
