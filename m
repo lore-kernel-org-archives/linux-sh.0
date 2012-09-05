@@ -1,25 +1,32 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 11 Sep 2012 08:10:52 +0000
-Subject: Re: [PATCH v3 0/2] ARM: shmobile: enable PMU(Performance Monitoring Unit)
-Message-Id: <20120911081052.GA13563@verge.net.au>
+From: Olof Johansson <olof@lixom.net>
+Date: Wed, 05 Sep 2012 22:34:16 +0000
+Subject: Re: [GIT PULL] Renesas ARM-based SoC: KZM-9A-GT for 3.7
+Message-Id: <20120905223416.GA32084@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <50487370.6000409@kmckk.co.jp>
- <1346930047-9541-1-git-send-email-koba@kmckk.co.jp>
-In-Reply-To: <1346930047-9541-1-git-send-email-koba@kmckk.co.jp>
+References: <1346113116-20252-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1346113116-20252-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Sep 06, 2012 at 08:14:05PM +0900, Tetsuyuki Kobayshi wrote:
-> From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+On Tue, Aug 28, 2012 at 09:18:35AM +0900, Simon Horman wrote:
+> Hi Olaf, Hi Arnd,
 > 
-> Hello, Will
+> please consider the following enhancement for the KZM-9A-GT board
+> from Tetsuyuki Kobayashi for inclusion in 3.7.
 > 
-> Could you apply this patch set to your pmu/cleanup branch on arm-soc?
+> ----------------------------------------------------------------
+> The following changes since commit fea7a08acb13524b47711625eebea40a0ede69a0:
 > 
-> The follewing patches enables PMU(Performance Monitoring Unit) for sh73a0 and emev2 SoCs. I tested these patches on kzm9g board and kzm9d board.
+>   Linux 3.6-rc3 (2012-08-22 13:29:06 -0700)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git kzm9g
 
-Thanks, I have pushed this to the pmu/cleanup branch of my renesas tree
-and sent a pull-request to Will.
+Thanks, pulled into next/soc.
+
+
+-Olof
 
