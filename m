@@ -1,96 +1,62 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Tue, 11 Sep 2012 06:51:41 +0000
-Subject: Re: [PATCH] ARM: shmobile: Build code depending on PM only if PM is set
-Message-Id: <20120911065139.GA32585@verge.net.au>
+Date: Wed, 05 Sep 2012 01:34:52 +0000
+Subject: [PATCH 2/3] ARM: shmobile: mackerel: fixup usb module order
+Message-Id: <1346808893-14124-3-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1346808893-14124-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1346808893-14124-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Jul 09, 2012 at 06:49:15PM +0200, Rafael J. Wysocki wrote:
-> On Monday, July 09, 2012, Magnus Damm wrote:
-> > On Mon, Jul 9, 2012 at 5:13 PM, Rafael J. Wysocki <rjw@sisk.pl> wrote:
-> > > On Monday, July 09, 2012, Simon Horman wrote:
-> > >> On Mon, Jul 09, 2012 at 12:15:12AM +0200, Rafael J. Wysocki wrote:
-> > >> > From: Rafael J. Wysocki <rjw@sisk.pl>
-> > >> >
-> > >> > There are a few files under arch/arm/mach-shmobile/ whose entire
-> > >> > contents depend on CONFIG_PM, but they are compiled even if
-> > >> > CONFIG_PM is unset.  It is cleaner to modify the Makefile to
-> > >> > avoid building those files entirely for CONFIG_PM unset and
-> > >> > remove #ifdef CONFIG_PM directives from them.
-> > >> >
-> > >> > Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
-> > >> > ---
-> > >> >  arch/arm/mach-shmobile/Makefile              |    4 +++-
-> > >> >  arch/arm/mach-shmobile/include/mach/common.h |    4 ++++
-> > >> >  arch/arm/mach-shmobile/pm-r8a7740.c          |    3 ---
-> > >> >  arch/arm/mach-shmobile/pm-rmobile.c          |    2 --
-> > >> >  arch/arm/mach-shmobile/pm-sh7372.c           |    4 ----
-> > >> >  5 files changed, 7 insertions(+), 10 deletions(-)
-> > >> >
-> > >> > Index: linux/arch/arm/mach-shmobile/Makefile
-> > >> > =================================> > >> > --- linux.orig/arch/arm/mach-shmobile/Makefile
-> > >> > +++ linux/arch/arm/mach-shmobile/Makefile
-> > >> > @@ -37,11 +37,13 @@ obj-$(CONFIG_ARCH_SH7372)       += entry-intc.
-> > >> >  obj-$(CONFIG_ARCH_R8A7740) += entry-intc.o
-> > >> >
-> > >> >  # PM objects
-> > >> > -obj-$(CONFIG_SUSPEND)              += suspend.o
-> > >> >  obj-$(CONFIG_CPU_IDLE)             += cpuidle.o
-> > >> > +ifeq ($(CONFIG_PM),y)
-> > >> > +obj-$(CONFIG_SUSPEND)              += suspend.o
-> > >> >  obj-$(CONFIG_ARCH_SHMOBILE)        += pm-rmobile.o
-> > >> >  obj-$(CONFIG_ARCH_SH7372)  += pm-sh7372.o sleep-sh7372.o
-> > >> >  obj-$(CONFIG_ARCH_R8A7740) += pm-r8a7740.o
-> > >> > +endif
-> > >> >  obj-$(CONFIG_ARCH_R8A7779) += pm-r8a7779.o
-> > >> >
-> > >> >  # Board objects
-> > >> > Index: linux/arch/arm/mach-shmobile/include/mach/common.h
-> > >> > =================================> > >> > --- linux.orig/arch/arm/mach-shmobile/include/mach/common.h
-> > >> > +++ linux/arch/arm/mach-shmobile/include/mach/common.h
-> > >> > @@ -41,7 +41,11 @@ extern void sh7372_add_early_devices(voi
-> > >> >  extern void sh7372_add_standard_devices(void);
-> > >> >  extern void sh7372_clock_init(void);
-> > >> >  extern void sh7372_pinmux_init(void);
-> > >> > +#ifdef CONFIG_PM
-> > >> >  extern void sh7372_pm_init(void);
-> > >> > +#else
-> > >> > +static inline void sh7372_pm_init(void) {}
-> > >>
-> > >> This seems to slightly alter the behaviour in the case where
-> > >> CONFIG_PM is not set. I'm unsure if that is a problem or not.
-> > >
-> > > I don't think it would be a problem, all of those settings are PM-related.
-> > >
-> > > Magnus, what do you think?
-> > 
-> > Cleaning up the code is always nice, but I wonder if you take the
-> > following into consideration?
-> > 
-> > CONFIG_CPU_IDLE=y
-> > CONFIG_PM=n
-> 
-> This actually doesn't work (please see below).
-> 
-> > Also, slightly off topic, but on top of that we have the ARM specific
-> > CONFIG_ARM_CPU_SUSPEND which is required to build cpu_resume() in
-> > sleep-sh7372.c, and this in turn in needed for CPUIdle or
-> > Suspend-to-RAM on sh7372.
-> > 
-> > It would be nice to simplify all this somehow. From the ARM arch code
-> > we do want to use cpu_resume() and cpu_suspend() both from CPUIdle and
-> > Suspend-to-RAM - this since the same low level sleep code is used for
-> > both cases.
-> 
-> Yes, please see my fix for the build bug reported by Guennadi.
-> cpu_resume() and cpu_suspend() are not available if CONFIG_SUSPEND is unset.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Hi Rafael,
+renesas_usbhs driver can play role as both Host and Gadget.
+In case of Gadget, it requires not only renesas_usbhs
+but also usb gadget module (like g_ether).
+So, renesas_usbhs driver calls usb_add_gadget_udc() on probe time.
 
-I may have missed something, but it seems that this patch wasn't merged.
-Aside from whether it still applies or not, is it still appropriate?
-And if so, is it appropriate to go through the linux-pm tree?
+Because of this behavior,
+Host port plays also Gadget role if kernel has both Host/Gadget support.
+
+In mackerel case, from 0ada2da51800a4914887a9bcf22d563be80e50be
+(ARM: mach-shmobile: mackerel: use renesas_usbhs instead of r8a66597_hcd)
+usb0 plays Gadget role, and usb1 plays Host role,
+and current mackerel board probes as usb1 -> usb0.
+Thus, 1st installed usb gadget module (like g_ether) will be
+assigned to usb1 (= usb Host port), and 2nd module to usb0 (= usb Gadget port).
+It is very confusable for user.
+This patch fixup usb modes probing order as usb0 -> usb1.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-mackerel.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 7ea2b31..c129542 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -695,6 +695,7 @@ static struct platform_device usbhs0_device = {
+  *  - J30 "open"
+  *  - modify usbhs1_get_id() USBHS_HOST -> USBHS_GADGET
+  *  - add .get_vbus = usbhs_get_vbus in usbhs1_private
++ *  - check usbhs0_device(pio)/usbhs1_device(irq) order in mackerel_devices.
+  */
+ #define IRQ8 evt2irq(0x0300)
+ #define USB_PHY_MODE		(1 << 4)
+@@ -1325,8 +1326,8 @@ static struct platform_device *mackerel_devices[] __initdata = {
+ 	&nor_flash_device,
+ 	&smc911x_device,
+ 	&lcdc_device,
+-	&usbhs1_device,
+ 	&usbhs0_device,
++	&usbhs1_device,
+ 	&leds_device,
+ 	&fsi_device,
+ 	&fsi_ak4643_device,
+-- 
+1.7.10.4
 
