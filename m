@@ -1,27 +1,37 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Wed, 12 Sep 2012 15:47:30 +0000
-Subject: Re: [PATCH] ARM: shmobile: kzm9g: use gpio-keys instead of gpio-keys-polled
-Message-Id: <CACRpkdbP-gw3_RAmBUc=eJaTKwn1Q0eyk-xrpynZrDApYi8Vgg@mail.gmail.com>
+From: Olof Johansson <olof@lixom.net>
+Date: Wed, 05 Sep 2012 22:44:13 +0000
+Subject: Re: [GIT PULL] Renesas ARM-based SoC: KZM-A9-GT for 3.7 #2
+Message-Id: <20120905224413.GC32084@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1347341165-15573-1-git-send-email-horms@verge.net.au>
- <1347341165-15573-2-git-send-email-horms@verge.net.au>
-In-Reply-To: <1347341165-15573-2-git-send-email-horms@verge.net.au>
+References: <1346305648-25263-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1346305648-25263-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Sep 11, 2012 at 7:26 AM, Simon Horman <horms@verge.net.au> wrote:
+On Thu, Aug 30, 2012 at 02:47:27PM +0900, Simon Horman wrote:
+> Hi Olof, Hi Arnd,
+> 
+> please consider the following enhancement to the KZM-A9-GT board by
+> from Morimoto-san for inclusion in 3.7.
+> 
+> * This pull request is based on the devel branch of
+>   git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git
+>   which is based on v3.6-rc2.
+> 
+>   This is to satisfy compile-time dependencies.
+>   Please let me know if you would like this handled a different way.
 
-> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->
-> 6e20a0a429bd4dc07d6de16d9c247270e04e4aa0
-> (gpio: pcf857x: enable gpio_to_irq() support) supports
-> gpio_to_irq() on pcf857x driver.
-> Now, we can use gpio-keys driver instead of gpio-keys-polled.
->
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> Signed-off-by: Simon Horman <horms@verge.net.au>
+Hi,
 
-Applied, thanks!
-Linus Walleij
+It seems like Linus W's devel branch is not a stable one, since at least the
+topmost commit you pulled in from his branch is no longer available on it. This
+means we can't pull it in as a dependency in arm-soc without risking merge
+conflicts, etc.
+
+So, we can't pull in this branch with its dependency without an agreement that
+Linus holds a branch stable with at least the pcf857x patch on it. Linus?
+
+
+-Olof
