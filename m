@@ -1,66 +1,56 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 06 Sep 2012 03:12:47 +0000
-Subject: Renesas tree branch changes
-Message-Id: <20120906031247.GA2934@verge.net.au>
+From: wency@cn.fujitsu.com
+Date: Wed, 05 Sep 2012 09:25:55 +0000
+Subject: [RFC v9 PATCH 21/21] memory-hotplug: auto offline page_cgroup when onlining memory block failed
+Message-Id: <1346837155-534-22-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1346837155-534-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1346837155-534-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
 
-Hi,
+From: Wen Congyang <wency@cn.fujitsu.com>
 
-in order to more closely align my renesas tree[1] with the arm-soc[2] tree
-I have re-arranged the branches as follows.
+When a memory block is onlined, we will try allocate memory on that node
+to store page_cgroup. If onlining the memory block failed, we don't
+offline the page cgroup, and we have no chance to offline this page cgroup
+unless the memory block is onlined successfully again. It will cause
+that we can't hot-remove the memory device on that node, because some
+memory is used to store page cgroup. If onlining the memory block
+is failed, there is no need to stort page cgroup for this memory. So
+auto offline page_cgroup when onlining memory block failed.
 
-* Renamed branches
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+CC: Paul Mackerras <paulus@samba.org>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+---
+ mm/page_cgroup.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
 
-  - ag5evm -> cleanup
-  - soc-core -> dt
-  - kzm9g -> soc
-  - armadillo800eva -> armadillo800eva-fixes
-    - This was merged into the fixes branch of the arm-soc tree
-    - In future changes of this nature will be added to the fixes branch
-
-* Split branches
-
-  - marzen
-    + "ARM: shmobile: marzen: enable thermal sensor"
-      - Moved to boards branch
-    + "ARM: shmobile: marzen: fixup regulator id for smsc911x"
-      - Moved to boards branch
-    + "ARM: mach-shmobile: marzen: defconfig update"
-      - Renamed "ARM: shmobile: marzen: defconfig update"
-      - Moved to defconfig branch
-    + "marzen: add SDHI0 support"
-      - Renamed "ARM: shmobile: marzen: add SDHI0 support"
-      - Non-defconfig portion moved into boards branch
-      - defconfig portion rolled into "ARM: shmobile: marzen: defconfig update"
-    + "r8a7779: add SDHI clock support"
-      - Moved to soc branch
-
-* Unchanged branches
-
-  - fixes
-
-* Removed branches
-
-  - r8a7740
-    + The only patch in the branch needs further work
-      "ARM: shmobile: r8a7740: add USB24 clock explain and sample code"
-
-  - kzm9g-gpio
-    + This needs to be rebased as its current base, the devel branch of
-      git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git
-      turns out to be unstable (= rebase has occurred).
-    + There was one patch in this branch
-      "ARM: shmobile: kzm9g: use gpio-keys instead of gpio-keys-polled"
-
-
-[1] git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git
-[2] git://git.kernel.org/pub/scm/linux/kernel/git/arm/arm-soc.git
-
-
-
-
+diff --git a/mm/page_cgroup.c b/mm/page_cgroup.c
+index 5ddad0c..44db00e 100644
+--- a/mm/page_cgroup.c
++++ b/mm/page_cgroup.c
+@@ -251,6 +251,9 @@ static int __meminit page_cgroup_callback(struct notifier_block *self,
+ 				mn->nr_pages, mn->status_change_nid);
+ 		break;
+ 	case MEM_CANCEL_ONLINE:
++		offline_page_cgroup(mn->start_pfn,
++				mn->nr_pages, mn->status_change_nid);
++		break;
+ 	case MEM_GOING_OFFLINE:
+ 		break;
+ 	case MEM_ONLINE:
+-- 
+1.7.1
 
