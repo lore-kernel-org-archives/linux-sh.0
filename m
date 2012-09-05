@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 05 Sep 2012 02:58:48 +0000
+From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+Date: Wed, 05 Sep 2012 04:25:40 +0000
 Subject: Re: [PATCH 2/2] ARM: shmobile: emev2: enable PMU(Performance Monitoring Unit)
-Message-Id: <20120905025848.GH4232@verge.net.au>
+Message-Id: <5046D444.5000008@kmckk.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1346813317-4030-3-git-send-email-koba@kmckk.co.jp>
 In-Reply-To: <1346813317-4030-3-git-send-email-koba@kmckk.co.jp>
@@ -10,73 +10,80 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Sep 05, 2012 at 11:48:37AM +0900, Tetsuyuki Kobayshi wrote:
-> From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
-> 
-> This patch enables PMU(Performance Monitoring Unit) for emev2 when compiled with CONFIG_HW_PERF_EVENTS.
+Simon-san,
 
-Hi Kobayshi-san,
+(2012/09/05 11:58), Simon Horman wrote:
+> On Wed, Sep 05, 2012 at 11:48:37AM +0900, Tetsuyuki Kobayshi wrote:
+>> From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+>>
+>> This patch enables PMU(Performance Monitoring Unit) for emev2 when compiled with CONFIG_HW_PERF_EVENTS.
+>
+> Hi Kobayshi-san,
+>
+> Is it appropriate to enable this in the defconfig?
+> If so, could you send an updated patch?
+>
+OK. I will post v2 patch with defconfig.
 
-Is it appropriate to enable this in the defconfig?
-If so, could you send an updated patch?
+>>
+>> Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+>> ---
+>>   arch/arm/mach-shmobile/setup-emev2.c |   26 ++++++++++++++++++++++++++
+>>   1 file changed, 26 insertions(+)
+>>
+>> diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
+>> index dae9aa6..f3ff171 100644
+>> --- a/arch/arm/mach-shmobile/setup-emev2.c
+>> +++ b/arch/arm/mach-shmobile/setup-emev2.c
+>> @@ -36,6 +36,7 @@
+>>   #include <asm/mach/map.h>
+>>   #include <asm/mach/time.h>
+>>   #include <asm/hardware/gic.h>
+>> +#include <asm/pmu.h>
+>>
+>>   static struct map_desc emev2_io_desc[] __initdata = {
+>>   #ifdef CONFIG_SMP
+>> @@ -356,6 +357,28 @@ static struct platform_device gio4_device = {
+>>   	},
+>>   };
+>>
+>> +#ifdef CONFIG_HW_PERF_EVENTS
+>> +static struct resource pmu_resources[] = {
+>> +	[0] = {
+>> +		.start	= 152,
+>> +		.end	= 152,
+>> +		.flags	= IORESOURCE_IRQ,
+>> +	},
+>> +	[1] = {
+>> +		.start	= 153,
+>> +		.end	= 153,
+>> +		.flags	= IORESOURCE_IRQ,
+>> +	},
+>> +};
+>> +
+>> +static struct platform_device pmu_device = {
+>> +	.name		= "arm-pmu",
+>> +	.id		= ARM_PMU_DEVICE_CPU,
+>> +	.num_resources	= ARRAY_SIZE(pmu_resources),
+>> +	.resource	= pmu_resources,
+>> +};
+>> +#endif
+>> +
+>>   static struct platform_device *emev2_early_devices[] __initdata = {
+>>   	&uart0_device,
+>>   	&uart1_device,
+>> @@ -370,6 +393,9 @@ static struct platform_device *emev2_late_devices[] __initdata = {
+>>   	&gio2_device,
+>>   	&gio3_device,
+>>   	&gio4_device,
+>> +#ifdef CONFIG_HW_PERF_EVENTS
+>> +	&pmu_device,
+>> +#endif
+>>   };
+>>
+>>   void __init emev2_add_standard_devices(void)
+>> --
+>> 1.7.9.5
+>>
+>
 
-> 
-> Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
-> ---
->  arch/arm/mach-shmobile/setup-emev2.c |   26 ++++++++++++++++++++++++++
->  1 file changed, 26 insertions(+)
-> 
-> diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
-> index dae9aa6..f3ff171 100644
-> --- a/arch/arm/mach-shmobile/setup-emev2.c
-> +++ b/arch/arm/mach-shmobile/setup-emev2.c
-> @@ -36,6 +36,7 @@
->  #include <asm/mach/map.h>
->  #include <asm/mach/time.h>
->  #include <asm/hardware/gic.h>
-> +#include <asm/pmu.h>
->  
->  static struct map_desc emev2_io_desc[] __initdata = {
->  #ifdef CONFIG_SMP
-> @@ -356,6 +357,28 @@ static struct platform_device gio4_device = {
->  	},
->  };
->  
-> +#ifdef CONFIG_HW_PERF_EVENTS
-> +static struct resource pmu_resources[] = {
-> +	[0] = {
-> +		.start	= 152,
-> +		.end	= 152,
-> +		.flags	= IORESOURCE_IRQ,
-> +	},
-> +	[1] = {
-> +		.start	= 153,
-> +		.end	= 153,
-> +		.flags	= IORESOURCE_IRQ,
-> +	},
-> +};
-> +
-> +static struct platform_device pmu_device = {
-> +	.name		= "arm-pmu",
-> +	.id		= ARM_PMU_DEVICE_CPU,
-> +	.num_resources	= ARRAY_SIZE(pmu_resources),
-> +	.resource	= pmu_resources,
-> +};
-> +#endif
-> +
->  static struct platform_device *emev2_early_devices[] __initdata = {
->  	&uart0_device,
->  	&uart1_device,
-> @@ -370,6 +393,9 @@ static struct platform_device *emev2_late_devices[] __initdata = {
->  	&gio2_device,
->  	&gio3_device,
->  	&gio4_device,
-> +#ifdef CONFIG_HW_PERF_EVENTS
-> +	&pmu_device,
-> +#endif
->  };
->  
->  void __init emev2_add_standard_devices(void)
-> -- 
-> 1.7.9.5
-> 
