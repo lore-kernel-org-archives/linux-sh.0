@@ -1,81 +1,65 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 20 Sep 2012 11:23:06 +0000
-Subject: Re: [PATCH v2] dma: sudmac: add support for SUDMAC
-Message-Id: <505AFC9A.6040903@renesas.com>
+From: wency@cn.fujitsu.com
+Date: Wed, 05 Sep 2012 09:25:47 +0000
+Subject: [RFC v9 PATCH 13/21] memory-hotplug: check page type in get_page_bootmem
+Message-Id: <1346837155-534-14-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <505AA372.4050303@renesas.com>
-In-Reply-To: <505AA372.4050303@renesas.com>
+References: <1346837155-534-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1346837155-534-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
 
-Hi Guennadi-san,
+From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-2012/09/20 19:29, Guennadi Liakhovetski wrote:
-> Hi Shimoda-san
-> 
-> Thanks for an update. This version is moving in the right direction, but I 
-> think, it has to be further improved. The point of device-managed function 
-> versions is that resources, allocated with their help (memory, IRQs, 
-> IO-regions, etc.) do not have to be explicitly freed on error paths or 
-> device unloading. They are managed automatically and will be released once 
-> the driver is unbound from the device or if the probing fails. So, all 
-> calls to devm_kfree(), devm_ioremap_release() shall be removed. In my 
-> original review I also suggested to use devm_request_and_ioremap(), which 
-> also does request_mem_region() internally. Is there any specific reason 
-> why you didn't use it?
+The function get_page_bootmem() may be called more than one time to the same
+page. There is no need to set page's type, private if the function is not
+the first time called to the page.
 
-Thank you very much for the review. I understood about device-managed function.
-(I should have read the Documentation/driver-model/devres.txt before I submitted
- this patch.)
-And, I didn't have any reason to use devm_ioremap(). So, I will fix it.
+Note: the patch is just optimization and does not fix any problem.
 
-> Also, see below.
-> 
-> On Thu, 20 Sep 2012, Shimoda, Yoshihiro wrote:
-< snip >
->> +#define DEN		0x0001 /* b0: DMA Transfer Enable */
-> 
-> Personally, I would hard-code "1" instead of the DEN macro and put 
-> everything from this header directly into the .c file, but that's just my 
-> personal preference, it's up to you to decide.
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+CC: Paul Mackerras <paulus@samba.org>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+---
+ mm/memory_hotplug.c |   15 +++++++++++----
+ 1 files changed, 11 insertions(+), 4 deletions(-)
 
-I think so. I will fix it.
-
-< snip >
->> +struct sudmac_channel {
->> +	unsigned long	offset;
->> +	unsigned long	config;
->> +	unsigned long	dint_end_bit;
->> +};
-< snip >
->> +/* Definitions for the SUDMAC */
->> +#define SUDMAC_SENDBUFM	0x1000 /* b12: Transmit Buffer Mode */
->> +#define SUDMAC_RCVENDM	0x0100 /* b8: Receive Data Transfer End Mode */
->> +#define SUDMAC_LBA_WAIT	0x0030 /* b5-4: Local Bus Access Wait */
->> +#define SUDMAC_CH1ENDE	0x0002 /* b1: Ch1 DMA Transfer End Int Enable */
->> +#define SUDMAC_CH0ENDE	0x0001 /* b0: Ch0 DMA Transfer End Int Enable */
-> 
-> What are these macros needed for? I didn't find any of them in the driver.
-
-The "struct sudmac_channel" needs these macros.
-I will add some comments.
-
-Best regards,
-Yoshihiro Shimoda
-
->> +
->> +#endif
->> -- 
->> 1.7.1
->>
-> 
-> Thanks
-> Guennadi
-> ---
-> Guennadi Liakhovetski, Ph.D.
-> Freelance Open-Source Software Developer
-> http://www.open-technology.de/
-> 
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index d736df3..26a5012 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -95,10 +95,17 @@ static void release_memory_resource(struct resource *res)
+ static void get_page_bootmem(unsigned long info,  struct page *page,
+ 			     unsigned long type)
+ {
+-	page->lru.next = (struct list_head *) type;
+-	SetPagePrivate(page);
+-	set_page_private(page, info);
+-	atomic_inc(&page->_count);
++	unsigned long page_type;
++
++	page_type = (unsigned long)page->lru.next;
++	if (page_type < MEMORY_HOTPLUG_MIN_BOOTMEM_TYPE ||
++	    page_type > MEMORY_HOTPLUG_MAX_BOOTMEM_TYPE){
++		page->lru.next = (struct list_head *)type;
++		SetPagePrivate(page);
++		set_page_private(page, info);
++		atomic_inc(&page->_count);
++	} else
++		atomic_inc(&page->_count);
+ }
+ 
+ /* reference to __meminit __free_pages_bootmem is valid
+-- 
+1.7.1
 
