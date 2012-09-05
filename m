@@ -1,99 +1,91 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 06 Sep 2012 02:06:24 +0000
-Subject: [PATCH] ARM: mach-shmobile: marzen: defconfig update
-Message-Id: <1346897184-6928-2-git-send-email-horms@verge.net.au>
+From: wency@cn.fujitsu.com
+Date: Wed, 05 Sep 2012 09:25:39 +0000
+Subject: [RFC v9 PATCH 05/21] memory-hotplug: check whether memory is present or not
+Message-Id: <1346837155-534-6-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346897184-6928-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1346897184-6928-1-git-send-email-horms@verge.net.au>
+References: <1346837155-534-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1346837155-534-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
 
-Update marzen defconfig
-* Enable MMC Block device as SDHI hw is now supported.
-* Default to NFS root, this is consistent with many other
-  shmobile boards
-* Enable UNIX which is required by udevd
-* Enable SDHI
+From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-Other changes are noise due to using make savedefconfig
-to create the new defconfig.
+If system supports memory hot-remove, online_pages() may online removed pages.
+So online_pages() need to check whether onlining pages are present or not.
 
-Cc: Phil Edworthy <phil.edworthy@renesas.com>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+CC: Paul Mackerras <paulus@samba.org>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 ---
- arch/arm/configs/marzen_defconfig |   15 ++++++++++-----
- 1 file changed, 10 insertions(+), 5 deletions(-)
+ include/linux/mmzone.h |   19 +++++++++++++++++++
+ mm/memory_hotplug.c    |   13 +++++++++++++
+ 2 files changed, 32 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index 864f9a5..737e498 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -1,13 +1,14 @@
- # CONFIG_ARM_PATCH_PHYS_VIRT is not set
- CONFIG_EXPERIMENTAL=y
- CONFIG_KERNEL_LZMA=y
-+CONFIG_NO_HZ=y
- CONFIG_IKCONFIG=y
- CONFIG_IKCONFIG_PROC=y
- CONFIG_LOG_BUF_SHIFT
- CONFIG_SYSCTL_SYSCALL=y
- CONFIG_EMBEDDED=y
- CONFIG_SLAB=y
--# CONFIG_BLOCK is not set
-+# CONFIG_IOSCHED_CFQ is not set
- CONFIG_ARCH_SHMOBILE=y
- CONFIG_ARCH_R8A7779=y
- CONFIG_MACH_MARZEN=y
-@@ -21,7 +22,6 @@ CONFIG_ARM_ERRATA_458693=y
- CONFIG_ARM_ERRATA_460075=y
- CONFIG_ARM_ERRATA_743622=y
- CONFIG_ARM_ERRATA_754322=y
--CONFIG_NO_HZ=y
- CONFIG_SMP=y
- # CONFIG_ARM_CPU_TOPOLOGY is not set
- CONFIG_AEABI=y
-@@ -29,13 +29,16 @@ CONFIG_AEABI=y
- CONFIG_HIGHMEM=y
- CONFIG_ZBOOT_ROM_TEXT=0x0
- CONFIG_ZBOOT_ROM_BSS=0x0
--CONFIG_CMDLINE="console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel"
-+CONFIG_CMDLINE="console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel root=/dev/nfs ip=on"
- CONFIG_CMDLINE_FORCE=y
- CONFIG_KEXEC=y
- # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
- CONFIG_PM_RUNTIME=y
- CONFIG_NET=y
-+CONFIG_UNIX=y
- CONFIG_INET=y
-+CONFIG_IP_PNP=y
-+CONFIG_IP_PNP_DHCP=y
- # CONFIG_IPV6 is not set
- # CONFIG_WIRELESS is not set
- CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
-@@ -69,16 +72,18 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
- CONFIG_GPIO_SYSFS=y
- # CONFIG_HWMON is not set
- CONFIG_SSB=y
--# CONFIG_HID_SUPPORT is not set
- # CONFIG_USB_SUPPORT is not set
-+CONFIG_MMC=y
-+CONFIG_MMC_SDHI=y
- CONFIG_UIO=y
- CONFIG_UIO_PDRV_GENIRQ=y
- # CONFIG_IOMMU_SUPPORT is not set
--# CONFIG_FILE_LOCKING is not set
- # CONFIG_DNOTIFY is not set
- # CONFIG_INOTIFY_USER is not set
- CONFIG_TMPFS=y
- # CONFIG_MISC_FILESYSTEMS is not set
-+CONFIG_NFS_FS=y
-+CONFIG_ROOT_NFS=y
- CONFIG_MAGIC_SYSRQ=y
- CONFIG_DEBUG_INFO=y
- CONFIG_DEBUG_INFO_REDUCED=y
+diff --git a/include/linux/mmzone.h b/include/linux/mmzone.h
+index 2daa54f..ac3ae30 100644
+--- a/include/linux/mmzone.h
++++ b/include/linux/mmzone.h
+@@ -1180,6 +1180,25 @@ void sparse_init(void);
+ #define sparse_index_init(_sec, _nid)  do {} while (0)
+ #endif /* CONFIG_SPARSEMEM */
+ 
++#ifdef CONFIG_SPARSEMEM
++static inline int pfns_present(unsigned long pfn, unsigned long nr_pages)
++{
++	int i;
++	for (i = 0; i < nr_pages; i++) {
++		if (pfn_present(pfn + i))
++			continue;
++		else
++			return -EINVAL;
++	}
++	return 0;
++}
++#else
++static inline int pfns_present(unsigned long pfn, unsigned long nr_pages)
++{
++	return 0;
++}
++#endif /* CONFIG_SPARSEMEM*/
++
+ #ifdef CONFIG_NODES_SPAN_OTHER_NODES
+ bool early_pfn_in_nid(unsigned long pfn, int nid);
+ #else
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index 49f7747..299747d 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -467,6 +467,19 @@ int __ref online_pages(unsigned long pfn, unsigned long nr_pages)
+ 	struct memory_notify arg;
+ 
+ 	lock_memory_hotplug();
++	/*
++	 * If system supports memory hot-remove, the memory may have been
++	 * removed. So we check whether the memory has been removed or not.
++	 *
++	 * Note: When CONFIG_SPARSEMEM is defined, pfns_present() become
++	 *       effective. If CONFIG_SPARSEMEM is not defined, pfns_present()
++	 *       always returns 0.
++	 */
++	ret = pfns_present(pfn, nr_pages);
++	if (ret) {
++		unlock_memory_hotplug();
++		return ret;
++	}
+ 	arg.start_pfn = pfn;
+ 	arg.nr_pages = nr_pages;
+ 	arg.status_change_nid = -1;
 -- 
-1.7.10.4
+1.7.1
 
