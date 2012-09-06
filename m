@@ -1,33 +1,89 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 18 Sep 2012 23:56:21 +0000
-Subject: Re: [PATCH 01/24] ARM: shmobile: use __iomem pointers for MMIO
-Message-Id: <20120918235619.GA12583@verge.net.au>
+From: Tetsuyuki Kobayshi <koba@kmckk.co.jp>
+Date: Thu, 06 Sep 2012 05:30:46 +0000
+Subject: [PATCH v2 1/2] ARM: shmobile: sh73a0: enable PMU(Performance Monitoring Unit)
+Message-Id: <1346909447-12526-2-git-send-email-koba@kmckk.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1347658492-11608-1-git-send-email-arnd@arndb.de>
- <201209180831.06572.arnd@arndb.de>
- <20120918115038.GB3198@verge.net.au>
- <201209181604.49562.arnd@arndb.de>
-In-Reply-To: <201209181604.49562.arnd@arndb.de>
+References: <1346813317-4030-1-git-send-email-koba@kmckk.co.jp>
+ <1346909447-12526-1-git-send-email-koba@kmckk.co.jp>
+In-Reply-To: <1346909447-12526-1-git-send-email-koba@kmckk.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Sep 18, 2012 at 04:04:49PM +0000, Arnd Bergmann wrote:
-> On Tuesday 18 September 2012, Simon Horman wrote:
-> > > I agree it's not nice to have to do this, but this is largely because
-> > > of shmobile doing things differently from all other ARM platforms, on
-> > > which the respective patches tend to clean up things and reduce the
-> > > number of type casts.
-> > > 
-> > > The only alternative I can see is for shmobile to introduce its own
-> > > mach/io.h file with the relaxed type checking, but that would only
-> > > defer the problem until the point where you want shmobile to be part
-> > > of the common multiplatform kernel binary.
-> > 
-> > If it is needed in the long term, then I'm happy with it going in now.
-> > Could you remove the portion that Paul objected to?
-> 
-> Yes, I already did that.
+From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
 
-Great, thanks.
+This patch enables PMU(Performance Monitoring Unit) for sh73a0.
+
+Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+---
+Changes for v2:
+- Removed #ifdef CONFIG_HW_PERF_EVENTS
+- Added kzm9g_defconfig
+
+ arch/arm/configs/kzm9g_defconfig      |    1 +
+ arch/arm/mach-shmobile/setup-sh73a0.c |   22 ++++++++++++++++++++++
+ 2 files changed, 23 insertions(+)
+
+diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
+index 2388c86..5d0c667 100644
+--- a/arch/arm/configs/kzm9g_defconfig
++++ b/arch/arm/configs/kzm9g_defconfig
+@@ -14,6 +14,7 @@ CONFIG_NAMESPACES=y
+ CONFIG_CC_OPTIMIZE_FOR_SIZE=y
+ CONFIG_SYSCTL_SYSCALL=y
+ CONFIG_EMBEDDED=y
++CONFIG_PERF_EVENTS=y
+ CONFIG_SLAB=y
+ CONFIG_MODULES=y
+ CONFIG_MODULE_FORCE_LOAD=y
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index d230af6..8186a08 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -39,6 +39,7 @@
+ #include <asm/mach/map.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/time.h>
++#include <asm/pmu.h>
+ 
+ static struct map_desc sh73a0_io_desc[] __initdata = {
+ 	/* create a 1:1 entity map for 0xe6xxxxxx
+@@ -734,6 +735,26 @@ static struct platform_device mpdma0_device = {
+ 	},
+ };
+ 
++static struct resource pmu_resources[] = {
++	[0] = {
++		.start	= gic_spi(55),
++		.end	= gic_spi(55),
++		.flags	= IORESOURCE_IRQ,
++	},
++	[1] = {
++		.start	= gic_spi(56),
++		.end	= gic_spi(56),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device pmu_device = {
++	.name		= "arm-pmu",
++	.id		= ARM_PMU_DEVICE_CPU,
++	.num_resources	= ARRAY_SIZE(pmu_resources),
++	.resource	= pmu_resources,
++};
++
+ static struct platform_device *sh73a0_early_devices[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+@@ -757,6 +778,7 @@ static struct platform_device *sh73a0_late_devices[] __initdata = {
+ 	&i2c4_device,
+ 	&dma0_device,
+ 	&mpdma0_device,
++	&pmu_device,
+ };
+ 
+ #define SRCR2          0xe61580b0
+-- 
+1.7.9.5
+
