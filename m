@@ -1,181 +1,57 @@
-From: wency@cn.fujitsu.com
-Date: Wed, 05 Sep 2012 09:25:36 +0000
-Subject: [RFC v9 PATCH 02/21] memory-hotplug: implement offline_memory()
-Message-Id: <1346837155-534-3-git-send-email-wency@cn.fujitsu.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 06 Sep 2012 02:02:08 +0000
+Subject: [PATCH] r8a7779: add SDHI clock support
+Message-Id: <1346896928-5750-2-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346837155-534-1-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1346837155-534-1-git-send-email-wency@cn.fujitsu.com>
+References: <1346896928-5750-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1346896928-5750-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
-Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>, Vasilis Liaskovitis <vasilis.liaskovitis@profitbricks.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wen Congyang <wency@cn.fujitsu.com>
+From: Phil Edworthy <phil.edworthy@renesas.com>
 
-The function offline_memory() will be called when hot removing a
-memory device. The memory device may contain more than one memory
-block. If the memory block has been offlined, __offline_pages()
-will fail. So we should try to offline one memory block at a
-time.
-
-If the memory block is offlined in offline_memory(), we also
-update it's state, and notify the userspace that its state is
-changed.
-
-The function offline_memory() also check each memory block's
-state. So there is no need to check the memory block's state
-before calling offline_memory().
-
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-CC: Paul Mackerras <paulus@samba.org>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-CC: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-CC: Vasilis Liaskovitis <vasilis.liaskovitis@profitbricks.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- drivers/base/memory.c          |   31 +++++++++++++++++++++++++++----
- include/linux/memory_hotplug.h |    2 ++
- mm/memory_hotplug.c            |   37 ++++++++++++++++++++++++++++++++++++-
- 3 files changed, 65 insertions(+), 5 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7779.c |   11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/base/memory.c b/drivers/base/memory.c
-index 44e7de6..86c8821 100644
---- a/drivers/base/memory.c
-+++ b/drivers/base/memory.c
-@@ -275,13 +275,11 @@ memory_block_action(unsigned long phys_index, unsigned long action)
- 	return ret;
- }
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index 339c62c..3cafb6a 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -86,11 +86,16 @@ static struct clk div4_clks[DIV4_NR] = {
+ 				      0x0300, CLK_ENABLE_ON_INIT),
+ };
  
--static int memory_block_change_state(struct memory_block *mem,
-+static int __memory_block_change_state(struct memory_block *mem,
- 		unsigned long to_state, unsigned long from_state_req)
- {
- 	int ret = 0;
+-enum { MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
++enum { MSTP323, MSTP322, MSTP321, MSTP320,
++	MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+ 	MSTP016, MSTP015, MSTP014,
+ 	MSTP_NR };
  
--	mutex_lock(&mem->state_mutex);
--
- 	if (mem->state != from_state_req) {
- 		ret = -EINVAL;
- 		goto out;
-@@ -309,10 +307,20 @@ static int memory_block_change_state(struct memory_block *mem,
- 		break;
- 	}
- out:
--	mutex_unlock(&mem->state_mutex);
- 	return ret;
- }
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP323] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 23, 0), /* SDHI0 */
++	[MSTP322] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 22, 0), /* SDHI1 */
++	[MSTP321] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 21, 0), /* SDHI2 */
++	[MSTP320] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 20, 0), /* SDHI3 */
+ 	[MSTP026] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 26, 0), /* SCIF0 */
+ 	[MSTP025] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 25, 0), /* SCIF1 */
+ 	[MSTP024] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 24, 0), /* SCIF2 */
+@@ -149,6 +154,10 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP023]), /* SCIF3 */
+ 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP022]), /* SCIF4 */
+ 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP021]), /* SCIF6 */
++	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
++	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
++	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
++	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP320]), /* SDHI3 */
+ };
  
-+static int memory_block_change_state(struct memory_block *mem,
-+		unsigned long to_state, unsigned long from_state_req)
-+{
-+	int ret;
-+
-+	mutex_lock(&mem->state_mutex);
-+	ret = __memory_block_change_state(mem, to_state, from_state_req);
-+	mutex_unlock(&mem->state_mutex);
-+
-+	return ret;
-+}
- static ssize_t
- store_mem_state(struct device *dev,
- 		struct device_attribute *attr, const char *buf, size_t count)
-@@ -653,6 +661,21 @@ int unregister_memory_section(struct mem_section *section)
- }
- 
- /*
-+ * offline one memory block. If the memory block has been offlined, do nothing.
-+ */
-+int offline_memory_block(struct memory_block *mem)
-+{
-+	int ret = 0;
-+
-+	mutex_lock(&mem->state_mutex);
-+	if (mem->state != MEM_OFFLINE)
-+		ret = __memory_block_change_state(mem, MEM_OFFLINE, MEM_ONLINE);
-+	mutex_unlock(&mem->state_mutex);
-+
-+	return ret;
-+}
-+
-+/*
-  * Initialize the sysfs support for memory devices...
-  */
- int __init memory_dev_init(void)
-diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
-index c183f39..0b040bb 100644
---- a/include/linux/memory_hotplug.h
-+++ b/include/linux/memory_hotplug.h
-@@ -10,6 +10,7 @@ struct page;
- struct zone;
- struct pglist_data;
- struct mem_section;
-+struct memory_block;
- 
- #ifdef CONFIG_MEMORY_HOTPLUG
- 
-@@ -234,6 +235,7 @@ extern int mem_online_node(int nid);
- extern int add_memory(int nid, u64 start, u64 size);
- extern int arch_add_memory(int nid, u64 start, u64 size);
- extern int offline_pages(unsigned long start_pfn, unsigned long nr_pages);
-+extern int offline_memory_block(struct memory_block *mem);
- extern int offline_memory(u64 start, u64 size);
- extern int sparse_add_one_section(struct zone *zone, unsigned long start_pfn,
- 								int nr_pages);
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index bb42316..6fc1908 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -1001,7 +1001,42 @@ int offline_pages(unsigned long start_pfn, unsigned long nr_pages)
- 
- int offline_memory(u64 start, u64 size)
- {
--	return -EINVAL;
-+	struct memory_block *mem = NULL;
-+	struct mem_section *section;
-+	unsigned long start_pfn, end_pfn;
-+	unsigned long pfn, section_nr;
-+	int ret;
-+
-+	start_pfn = PFN_DOWN(start);
-+	end_pfn = start_pfn + PFN_DOWN(size);
-+
-+	for (pfn = start_pfn; pfn < end_pfn; pfn += PAGES_PER_SECTION) {
-+		section_nr = pfn_to_section_nr(pfn);
-+		if (!present_section_nr(section_nr))
-+			continue;
-+
-+		section = __nr_to_section(section_nr);
-+		/* same memblock? */
-+		if (mem)
-+			if ((section_nr >= mem->start_section_nr) &&
-+			    (section_nr <= mem->end_section_nr))
-+				continue;
-+
-+		mem = find_memory_block_hinted(section, mem);
-+		if (!mem)
-+			continue;
-+
-+		ret = offline_memory_block(mem);
-+		if (ret) {
-+			kobject_put(&mem->dev.kobj);
-+			return ret;
-+		}
-+	}
-+
-+	if (mem)
-+		kobject_put(&mem->dev.kobj);
-+
-+	return 0;
- }
- #else
- int offline_pages(unsigned long start, unsigned long size)
+ void __init r8a7779_clock_init(void)
 -- 
-1.7.1
+1.7.10.4
 
