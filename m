@@ -1,34 +1,70 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Thu, 20 Sep 2012 01:52:31 +0000
-Subject: Re: [PATCH v2 4/6] pwm_backlight: Add deferred probe support
-Message-Id: <20120920015231.GB6873@verge.net.au>
+Date: Thu, 06 Sep 2012 02:04:34 +0000
+Subject: [PATCH 3/3] ARM: shmobile: marzen: enable thermal sensor
+Message-Id: <1346897074-6276-4-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1343140823-13754-5-git-send-email-laurent.pinchart@ideasonboard.com>
-In-Reply-To: <1343140823-13754-5-git-send-email-laurent.pinchart@ideasonboard.com>
+References: <1346897074-6276-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1346897074-6276-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Sep 19, 2012 at 08:27:55PM +0200, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> On Saturday 25 August 2012 15:57:12 Simon Horman wrote:
-> > On Tue, Jul 24, 2012 at 04:40:21PM +0200, Laurent Pinchart wrote:
-> > > If the PWM instance is not available yet at probe time, request a
-> > > deferred probe.
-> > > 
-> > > A better way to fix might be to create a PWM subsystem (possibly
-> > > integrated into the GPIO subsystem) to support generic PWM objects, and
-> > > make sure the subsystem gets initialized first.
-> > 
-> > Hi Richard,
-> > 
-> > I am wondering if you have had a chance to review this change.
-> > I believe that it is a pre-requisite for work that Laurent has
-> > done to enable the backlight on the Armadillo 800 EVA board.
-> 
-> The PWM core now returns -EPROBE_DEFER if pwm_get() or pwm_request() can't 
-> find the requested device, so this patch isn't needed anymore.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks, case closed.
+Marzen board can measure its thermal by this patch.
+	cat /sys/class/thermal/thermal_zoneX/temp
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ arch/arm/configs/marzen_defconfig     |    2 ++
+ arch/arm/mach-shmobile/board-marzen.c |   16 ++++++++++++++++
+ 2 files changed, 18 insertions(+)
+
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index 864f9a5..f513ace 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -68,6 +68,8 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ # CONFIG_HW_RANDOM is not set
+ CONFIG_GPIO_SYSFS=y
+ # CONFIG_HWMON is not set
++CONFIG_THERMAL=y
++CONFIG_RCAR_THERMAL=y
+ CONFIG_SSB=y
+ # CONFIG_HID_SUPPORT is not set
+ # CONFIG_USB_SUPPORT is not set
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index cbf9f25..2e884b6 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -111,9 +111,25 @@ static struct platform_device sdhi0_device = {
+ 	}
+ };
+ 
++/* Thermal */
++static struct resource thermal_resources[] = {
++	[0] = {
++		.start		= 0xFFC48000,
++		.end		= 0xFFC48038 - 1,
++		.flags		= IORESOURCE_MEM,
++	},
++};
++
++static struct platform_device thermal_device = {
++	.name		= "rcar_thermal",
++	.resource	= thermal_resources,
++	.num_resources	= ARRAY_SIZE(thermal_resources),
++};
++
+ static struct platform_device *marzen_devices[] __initdata = {
+ 	&eth_device,
+ 	&sdhi0_device,
++	&thermal_device,
+ };
+ 
+ static void __init marzen_init(void)
+-- 
+1.7.10.4
+
