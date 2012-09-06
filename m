@@ -1,24 +1,32 @@
-From: "DR.NED OKOH" <emailinfo@ok.net>
-Date: Mon, 10 Sep 2012 14:17:16 +0000
-Subject: NICE DAY
-Message-Id: <SERVER2aiVklUVhjNIj000080f6@offline.co.il>
+From: Tetsuyuki Kobayshi <koba@kmckk.co.jp>
+Date: Thu, 06 Sep 2012 05:30:45 +0000
+Subject: [PATCH v2 0/2] ARM: shmobile: enable PMU(Performance Monitoring Unit)
+Message-Id: <1346909447-12526-1-git-send-email-koba@kmckk.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1346813317-4030-1-git-send-email-koba@kmckk.co.jp>
+In-Reply-To: <1346813317-4030-1-git-send-email-koba@kmckk.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Good day my dear,
-I am writing to acknowledged you that this is the second time we are notifying you about your payment worth of US$16.5m USD,with foreign Remittance payment department office which is due to be released into your Account As we begin the first fiscal payment of the year 2012.Please send the information below as needed for your fund release to you OK.
+From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
 
-1)Your Full Name__________________________ _____________
-2)Your Address_______________________ ______________________________
-3)Your Age___________________________ _______________________
-4)Your Direct Telephone Number________________________ ________________
-5)Fax Number________________________ _________________
-6)Occupation____________________ __________________________
+Hello, Simon-san
 
-We sincerely apologies for our late contact with you, We are committed to serve you better OK and you have been advice to get back to me immediately for more details OK.
+ARM core has hardware performance counters and perf command uses these counters for detailed profiling information.
+The follewing patches enables PMU(Performance Monitoring Unit) for sh73a0 and emev2 SoCs. I tested these patches on kzm9g board and kzm9d board.
 
-Yours in service
-Dr.Ned Okoh
+Tetsuyuki Kobayashi (2):
+  ARM: shmobile: sh73a0: enable PMU(Performance Monitoring Unit)
+  ARM: shmobile: emev2: enable PMU(Performance Monitoring Unit)
+
+ arch/arm/configs/kzm9d_defconfig      |    1 +
+ arch/arm/configs/kzm9g_defconfig      |    1 +
+ arch/arm/mach-shmobile/setup-emev2.c  |   22 ++++++++++++++++++++++
+ arch/arm/mach-shmobile/setup-sh73a0.c |   22 ++++++++++++++++++++++
+ 4 files changed, 46 insertions(+)
+
+-- 
+1.7.9.5
+
