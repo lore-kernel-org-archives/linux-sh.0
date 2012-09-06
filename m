@@ -1,29 +1,33 @@
-From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
-Date: Tue, 18 Sep 2012 02:15:24 +0000
-Subject: Re: irqdomain breaks ap4 boot
-Message-Id: <5057D93C.8020902@kmckk.co.jp>
+From: Tetsuyuki Kobayshi <koba@kmckk.co.jp>
+Date: Thu, 06 Sep 2012 11:14:05 +0000
+Subject: [PATCH v3 0/2] ARM: shmobile: enable PMU(Performance Monitoring Unit)
+Message-Id: <1346930047-9541-1-git-send-email-koba@kmckk.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <878vdxd3mq.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <878vdxd3mq.wl%kuninori.morimoto.gx@renesas.com>
+References: <50487370.6000409@kmckk.co.jp>
+In-Reply-To: <50487370.6000409@kmckk.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Paul-san,
+From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
 
-(2012/08/31 19:36), Paul Mundt wrote:
-> On Fri, Aug 31, 2012 at 04:17:16PM +0900, Simon Horman wrote:
->> Hi Kobayashi-san,
->>
->> I'd rather only apply patches that are ready for upstream.
->> Is this patch suitable for merging upstream?
->>
-> Yes, it's already in my tree and Linus-bound, I just haven't sent it yet
-> as I was waiting to see if anything else was broken first. The multi-evt
-> case is pretty uncommon, so there shouldn't be many platforms that even
-> care about this (I'd be surprised if anything on the ARM side does for
-> example).
->
-Could you post this patch ?
+Hello, Will
+
+Could you apply this patch set to your pmu/cleanup branch on arm-soc?
+
+The follewing patches enables PMU(Performance Monitoring Unit) for sh73a0 and emev2 SoCs. I tested these patches on kzm9g board and kzm9d board.
+
+Tetsuyuki Kobayashi (2):
+  ARM: shmobile: sh73a0: enable PMU(Performance Monitoring Unit)
+  ARM: shmobile: emev2: enable PMU(Performance Monitoring Unit)
+
+ arch/arm/configs/kzm9d_defconfig      |    1 +
+ arch/arm/configs/kzm9g_defconfig      |    1 +
+ arch/arm/mach-shmobile/setup-emev2.c  |   21 +++++++++++++++++++++
+ arch/arm/mach-shmobile/setup-sh73a0.c |   21 +++++++++++++++++++++
+ 4 files changed, 44 insertions(+)
+
+-- 
+1.7.9.5
 
