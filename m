@@ -1,37 +1,30 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Wed, 05 Sep 2012 22:44:13 +0000
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Thu, 06 Sep 2012 05:58:02 +0000
 Subject: Re: [GIT PULL] Renesas ARM-based SoC: KZM-A9-GT for 3.7 #2
-Message-Id: <20120905224413.GC32084@quad.lixom.net>
+Message-Id: <CACRpkdZBOjO124w3WwPpL7ekf2dU1w2HCub9EG=LUxFSPn8Ayw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1346305648-25263-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1346305648-25263-1-git-send-email-horms@verge.net.au>
+ <20120905224413.GC32084@quad.lixom.net>
+In-Reply-To: <20120905224413.GC32084@quad.lixom.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Aug 30, 2012 at 02:47:27PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Arnd,
-> 
-> please consider the following enhancement to the KZM-A9-GT board by
-> from Morimoto-san for inclusion in 3.7.
-> 
-> * This pull request is based on the devel branch of
->   git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git
->   which is based on v3.6-rc2.
-> 
->   This is to satisfy compile-time dependencies.
->   Please let me know if you would like this handled a different way.
+On Thu, Sep 6, 2012 at 12:44 AM, Olof Johansson <olof@lixom.net> wrote:
 
-Hi,
+> So, we can't pull in this branch with its dependency without an agreement that
+> Linus holds a branch stable with at least the pcf857x patch on it. Linus?
 
-It seems like Linus W's devel branch is not a stable one, since at least the
-topmost commit you pulled in from his branch is no longer available on it. This
-means we can't pull it in as a dependency in arm-soc without risking merge
-conflicts, etc.
+OMG! OK let's claim that it's stable now then, it's close enough
+to the merge window.
 
-So, we can't pull in this branch with its dependency without an agreement that
-Linus holds a branch stable with at least the pcf857x patch on it. Linus?
+Ironically his was caused by a Samsung commit (IIRC) which I
+applied to the GPIO tree but shouldn't be there (instead to be
+funneled through ARM SoC) so I had to take it out after
+a week. So maybe we're not so good off with these mixtures
+of "ARM SoC pulls GPIO" vs "ACK and push it all through ARM SoC"
+hm, maybe it's just one of those things we have to live with...
 
-
--Olof
+Yours,
+Linus Walleij
