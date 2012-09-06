@@ -1,306 +1,99 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 27 Sep 2012 14:07:24 +0000
-Subject: [PATCH 05/14] media: add a V4L2 OF parser
-Message-Id: <1348754853-28619-6-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 06 Sep 2012 02:06:24 +0000
+Subject: [PATCH] ARM: mach-shmobile: marzen: defconfig update
+Message-Id: <1346897184-6928-2-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1346897184-6928-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1346897184-6928-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: devicetree-discuss@lists.ozlabs.org, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Stephen Warren <swarren@wwwdotorg.org>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>
+To: linux-arm-kernel@lists.infradead.org
 
-Add a V4L2 OF parser, implementing bindings, documented in
-Documentation/devicetree/bindings/media/v4l2.txt.
+Update marzen defconfig
+* Enable MMC Block device as SDHI hw is now supported.
+* Default to NFS root, this is consistent with many other
+  shmobile boards
+* Enable UNIX which is required by udevd
+* Enable SDHI
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Other changes are noise due to using make savedefconfig
+to create the new defconfig.
+
+Cc: Phil Edworthy <phil.edworthy@renesas.com>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- drivers/media/v4l2-core/Makefile  |    3 +
- drivers/media/v4l2-core/v4l2-of.c |  190 +++++++++++++++++++++++++++++++++++++
- include/media/v4l2-of.h           |   62 ++++++++++++
- 3 files changed, 255 insertions(+), 0 deletions(-)
- create mode 100644 drivers/media/v4l2-core/v4l2-of.c
- create mode 100644 include/media/v4l2-of.h
+ arch/arm/configs/marzen_defconfig |   15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/media/v4l2-core/Makefile b/drivers/media/v4l2-core/Makefile
-index c2d61d4..00f64d6 100644
---- a/drivers/media/v4l2-core/Makefile
-+++ b/drivers/media/v4l2-core/Makefile
-@@ -9,6 +9,9 @@ videodev-objs	:=	v4l2-dev.o v4l2-ioctl.o v4l2-device.o v4l2-fh.o \
- ifeq ($(CONFIG_COMPAT),y)
-   videodev-objs += v4l2-compat-ioctl32.o
- endif
-+ifeq ($(CONFIG_OF),y)
-+  videodev-objs += v4l2-of.o
-+endif
- 
- obj-$(CONFIG_VIDEO_DEV) += videodev.o v4l2-int-device.o
- obj-$(CONFIG_VIDEO_V4L2) += v4l2-common.o
-diff --git a/drivers/media/v4l2-core/v4l2-of.c b/drivers/media/v4l2-core/v4l2-of.c
-new file mode 100644
-index 0000000..f45d64b
---- /dev/null
-+++ b/drivers/media/v4l2-core/v4l2-of.c
-@@ -0,0 +1,190 @@
-+/*
-+ * V4L2 OF binding parsing library
-+ *
-+ * Copyright (C) 2012 Renesas Electronics Corp.
-+ * Author: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of version 2 of the GNU General Public License as
-+ * published by the Free Software Foundation.
-+ */
-+#include <linux/kernel.h>
-+#include <linux/module.h>
-+#include <linux/of.h>
-+#include <linux/types.h>
-+
-+#include <media/v4l2-of.h>
-+
-+/*
-+ * All properties are optional. If none are found, we don't set any flags. This
-+ * means, the port has a static configuration and no properties have to be
-+ * specified explicitly.
-+ * If any properties are found, that identify the bus as parallel, and
-+ * slave-mode isn't set, we set V4L2_MBUS_MASTER. Similarly, if we recognise the
-+ * bus as serial CSI-2 and clock-noncontinuous isn't set, we set the
-+ * V4L2_MBUS_CSI2_CONTINUOUS_CLOCK flag.
-+ * The caller should hold a reference to "node."
-+ */
-+void v4l2_of_parse_link(const struct device_node *node,
-+			struct v4l2_of_link *link)
-+{
-+	const struct device_node *port_node = of_get_parent(node);
-+	int size;
-+	unsigned int v;
-+	u32 data_lanes[ARRAY_SIZE(link->mipi_csi_2.data_lanes)];
-+	bool data_lanes_present;
-+
-+	memset(link, 0, sizeof(*link));
-+
-+	link->local_node = node;
-+
-+	/* Doesn't matter, whether the below two calls succeed */
-+	of_property_read_u32(port_node, "reg", &link->port);
-+	of_property_read_u32(node, "reg", &link->addr);
-+
-+	if (!of_property_read_u32(node, "bus-width", &v))
-+		link->parallel.bus_width = v;
-+
-+	if (!of_property_read_u32(node, "data-shift", &v))
-+		link->parallel.data_shift = v;
-+
-+	if (!of_property_read_u32(node, "hsync-active", &v))
-+		link->mbus_flags |= v ? V4L2_MBUS_HSYNC_ACTIVE_HIGH :
-+			V4L2_MBUS_HSYNC_ACTIVE_LOW;
-+
-+	if (!of_property_read_u32(node, "vsync-active", &v))
-+		link->mbus_flags |= v ? V4L2_MBUS_VSYNC_ACTIVE_HIGH :
-+			V4L2_MBUS_VSYNC_ACTIVE_LOW;
-+
-+	if (!of_property_read_u32(node, "data-active", &v))
-+		link->mbus_flags |= v ? V4L2_MBUS_DATA_ACTIVE_HIGH :
-+			V4L2_MBUS_DATA_ACTIVE_LOW;
-+
-+	if (!of_property_read_u32(node, "pclk-sample", &v))
-+		link->mbus_flags |= v ? V4L2_MBUS_PCLK_SAMPLE_RISING :
-+			V4L2_MBUS_PCLK_SAMPLE_FALLING;
-+
-+	if (!of_property_read_u32(node, "field-even-active", &v))
-+		link->mbus_flags |= v ? V4L2_MBUS_FIELD_EVEN_HIGH :
-+			V4L2_MBUS_FIELD_EVEN_LOW;
-+
-+	if (of_get_property(node, "slave-mode", &size))
-+		link->mbus_flags |= V4L2_MBUS_SLAVE;
-+
-+	/* If any parallel-bus properties have been found, skip serial ones */
-+	if (link->parallel.bus_width || link->parallel.data_shift ||
-+	    link->mbus_flags) {
-+		/* Default parallel bus-master */
-+		if (!(link->mbus_flags & V4L2_MBUS_SLAVE))
-+			link->mbus_flags |= V4L2_MBUS_MASTER;
-+		return;
-+	}
-+
-+	if (!of_property_read_u32(node, "clock-lanes", &v))
-+		link->mipi_csi_2.clock_lane = v;
-+
-+	if (!of_property_read_u32_array(node, "data-lanes", data_lanes,
-+					ARRAY_SIZE(data_lanes))) {
-+		int i;
-+		for (i = 0; i < ARRAY_SIZE(data_lanes); i++)
-+			link->mipi_csi_2.data_lanes[i] = data_lanes[i];
-+		data_lanes_present = true;
-+	} else {
-+		data_lanes_present = false;
-+	}
-+
-+	if (of_get_property(node, "clock-noncontinuous", &size))
-+		link->mbus_flags |= V4L2_MBUS_CSI2_NONCONTINUOUS_CLOCK;
-+
-+	if ((link->mipi_csi_2.clock_lane || data_lanes_present) &&
-+	    !(link->mbus_flags & V4L2_MBUS_CSI2_NONCONTINUOUS_CLOCK))
-+		/* Default CSI-2: continuous clock */
-+		link->mbus_flags |= V4L2_MBUS_CSI2_CONTINUOUS_CLOCK;
-+}
-+EXPORT_SYMBOL(v4l2_of_parse_link);
-+
-+/*
-+ * Return a refcounted next "link" DT node. Contrary to the common OF practice,
-+ * we do not drop the reference to previous, users have to do it themselves,
-+ * when they're done with the node.
-+ */
-+struct device_node *v4l2_of_get_next_link(const struct device_node *parent,
-+					struct device_node *previous)
-+{
-+	struct device_node *child, *port;
-+
-+	if (!parent)
-+		return NULL;
-+
-+	if (!previous) {
-+		/*
-+		 * If this is the first call, we have to find a port within this
-+		 * node
-+		 */
-+		for_each_child_of_node(parent, port) {
-+			if (!of_node_cmp(port->name, "port"))
-+				break;
-+		}
-+		if (port) {
-+			/* Found a port, get a link */
-+			child = of_get_next_child(port, NULL);
-+			of_node_put(port);
-+		} else {
-+			child = NULL;
-+		}
-+		if (!child)
-+			pr_err("%s(): Invalid DT: %s has no link children!\n",
-+			       __func__, parent->name);
-+	} else {
-+		port = of_get_parent(previous);
-+		if (!port)
-+			/* Hm, has someone given us the root node?... */
-+			return NULL;
-+
-+		/* Avoid dropping previous refcount to 0 */
-+		of_node_get(previous);
-+		child = of_get_next_child(port, previous);
-+		if (child) {
-+			of_node_put(port);
-+			return child;
-+		}
-+
-+		/* No more links under this port, try the next one */
-+		do {
-+			port = of_get_next_child(parent, port);
-+			if (!port)
-+				return NULL;
-+		} while (of_node_cmp(port->name, "port"));
-+
-+		/* Pick up the first link on this port */
-+		child = of_get_next_child(port, NULL);
-+		of_node_put(port);
-+	}
-+
-+	return child;
-+}
-+EXPORT_SYMBOL(v4l2_of_get_next_link);
-+
-+/* Return a refcounted DT node, owning the link, referenced by "remote" */
-+struct device_node *v4l2_of_get_remote(const struct device_node *node)
-+{
-+	struct device_node *remote, *tmp;
-+
-+	/* Get remote link DT node */
-+	remote = of_parse_phandle(node, "remote", 0);
-+	if (!remote)
-+		return NULL;
-+
-+	/* remote port */
-+	tmp = of_get_parent(remote);
-+	of_node_put(remote);
-+	if (!tmp)
-+		return NULL;
-+
-+	/* remote DT node */
-+	remote = of_get_parent(tmp);
-+	of_node_put(tmp);
-+
-+	return remote;
-+}
-+EXPORT_SYMBOL(v4l2_of_get_remote);
-diff --git a/include/media/v4l2-of.h b/include/media/v4l2-of.h
-new file mode 100644
-index 0000000..6fafedb
---- /dev/null
-+++ b/include/media/v4l2-of.h
-@@ -0,0 +1,62 @@
-+/*
-+ * V4L2 OF binding parsing library
-+ *
-+ * Copyright (C) 2012 Renesas Electronics Corp.
-+ * Author: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of version 2 of the GNU General Public License as
-+ * published by the Free Software Foundation.
-+ */
-+#ifndef _V4L2_OF_H
-+#define _V4L2_OF_H
-+
-+#include <linux/list.h>
-+#include <linux/types.h>
-+
-+#include <media/v4l2-mediabus.h>
-+
-+struct device_node;
-+
-+struct v4l2_of_link {
-+	unsigned int port;
-+	unsigned int addr;
-+	struct list_head head;
-+	const struct device_node *local_node;
-+	const __be32 *remote;
-+	unsigned int mbus_flags;
-+	union {
-+		struct {
-+			unsigned char bus_width;
-+			unsigned char data_shift;
-+		} parallel;
-+		struct {
-+			unsigned char data_lanes[4];
-+			unsigned char clock_lane;
-+		} mipi_csi_2;
-+	};
-+};
-+
-+#ifdef CONFIG_OF
-+void v4l2_of_parse_link(const struct device_node *node,
-+			struct v4l2_of_link *link);
-+struct device_node *v4l2_of_get_next_link(const struct device_node *parent,
-+					struct device_node *previous);
-+struct device_node *v4l2_of_get_remote(const struct device_node *node);
-+#else
-+static inline void v4l2_of_parse_link(const struct device_node *node,
-+				      struct v4l2_of_link *link)
-+{
-+}
-+static inline struct device_node *v4l2_of_get_next_link(const struct device_node *parent,
-+						struct device_node *previous)
-+{
-+	return NULL;
-+}
-+static inline struct device_node *v4l2_of_get_remote(const struct device_node *node)
-+{
-+	return NULL;
-+}
-+#endif
-+
-+#endif
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index 864f9a5..737e498 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -1,13 +1,14 @@
+ # CONFIG_ARM_PATCH_PHYS_VIRT is not set
+ CONFIG_EXPERIMENTAL=y
+ CONFIG_KERNEL_LZMA=y
++CONFIG_NO_HZ=y
+ CONFIG_IKCONFIG=y
+ CONFIG_IKCONFIG_PROC=y
+ CONFIG_LOG_BUF_SHIFT
+ CONFIG_SYSCTL_SYSCALL=y
+ CONFIG_EMBEDDED=y
+ CONFIG_SLAB=y
+-# CONFIG_BLOCK is not set
++# CONFIG_IOSCHED_CFQ is not set
+ CONFIG_ARCH_SHMOBILE=y
+ CONFIG_ARCH_R8A7779=y
+ CONFIG_MACH_MARZEN=y
+@@ -21,7 +22,6 @@ CONFIG_ARM_ERRATA_458693=y
+ CONFIG_ARM_ERRATA_460075=y
+ CONFIG_ARM_ERRATA_743622=y
+ CONFIG_ARM_ERRATA_754322=y
+-CONFIG_NO_HZ=y
+ CONFIG_SMP=y
+ # CONFIG_ARM_CPU_TOPOLOGY is not set
+ CONFIG_AEABI=y
+@@ -29,13 +29,16 @@ CONFIG_AEABI=y
+ CONFIG_HIGHMEM=y
+ CONFIG_ZBOOT_ROM_TEXT=0x0
+ CONFIG_ZBOOT_ROM_BSS=0x0
+-CONFIG_CMDLINE="console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel"
++CONFIG_CMDLINE="console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel root=/dev/nfs ip=on"
+ CONFIG_CMDLINE_FORCE=y
+ CONFIG_KEXEC=y
+ # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
+ CONFIG_PM_RUNTIME=y
+ CONFIG_NET=y
++CONFIG_UNIX=y
+ CONFIG_INET=y
++CONFIG_IP_PNP=y
++CONFIG_IP_PNP_DHCP=y
+ # CONFIG_IPV6 is not set
+ # CONFIG_WIRELESS is not set
+ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
+@@ -69,16 +72,18 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ CONFIG_GPIO_SYSFS=y
+ # CONFIG_HWMON is not set
+ CONFIG_SSB=y
+-# CONFIG_HID_SUPPORT is not set
+ # CONFIG_USB_SUPPORT is not set
++CONFIG_MMC=y
++CONFIG_MMC_SDHI=y
+ CONFIG_UIO=y
+ CONFIG_UIO_PDRV_GENIRQ=y
+ # CONFIG_IOMMU_SUPPORT is not set
+-# CONFIG_FILE_LOCKING is not set
+ # CONFIG_DNOTIFY is not set
+ # CONFIG_INOTIFY_USER is not set
+ CONFIG_TMPFS=y
+ # CONFIG_MISC_FILESYSTEMS is not set
++CONFIG_NFS_FS=y
++CONFIG_ROOT_NFS=y
+ CONFIG_MAGIC_SYSRQ=y
+ CONFIG_DEBUG_INFO=y
+ CONFIG_DEBUG_INFO_REDUCED=y
 -- 
-1.7.2.5
+1.7.10.4
 
