@@ -1,33 +1,31 @@
-From: Tetsuyuki Kobayshi <koba@kmckk.co.jp>
-Date: Thu, 06 Sep 2012 11:14:05 +0000
-Subject: [PATCH v3 0/2] ARM: shmobile: enable PMU(Performance Monitoring Unit)
-Message-Id: <1346930047-9541-1-git-send-email-koba@kmckk.co.jp>
+From: Will Deacon <will.deacon@arm.com>
+Date: Thu, 06 Sep 2012 11:21:09 +0000
+Subject: Re: [PATCH v3 0/2] ARM: shmobile: enable PMU(Performance Monitoring Unit)
+Message-Id: <20120906112109.GG858@mudshark.cambridge.arm.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <50487370.6000409@kmckk.co.jp>
-In-Reply-To: <50487370.6000409@kmckk.co.jp>
+ <1346930047-9541-1-git-send-email-koba@kmckk.co.jp>
+In-Reply-To: <1346930047-9541-1-git-send-email-koba@kmckk.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+On Thu, Sep 06, 2012 at 12:14:05PM +0100, Tetsuyuki Kobayshi wrote:
+> From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+> 
+> Hello, Will
 
-Hello, Will
+Hi,
 
-Could you apply this patch set to your pmu/cleanup branch on arm-soc?
+Thanks for updating the patches.
 
-The follewing patches enables PMU(Performance Monitoring Unit) for sh73a0 and emev2 SoCs. I tested these patches on kzm9g board and kzm9d board.
+> Could you apply this patch set to your pmu/cleanup branch on arm-soc?
 
-Tetsuyuki Kobayashi (2):
-  ARM: shmobile: sh73a0: enable PMU(Performance Monitoring Unit)
-  ARM: shmobile: emev2: enable PMU(Performance Monitoring Unit)
+Actually, it's better if you just base your branch against that one when you
+send it to arm-soc for merging. That way, other SoCs can also develop
+against that branch without having to worry about each other.
 
- arch/arm/configs/kzm9d_defconfig      |    1 +
- arch/arm/configs/kzm9g_defconfig      |    1 +
- arch/arm/mach-shmobile/setup-emev2.c  |   21 +++++++++++++++++++++
- arch/arm/mach-shmobile/setup-sh73a0.c |   21 +++++++++++++++++++++
- 4 files changed, 44 insertions(+)
+Cheers,
 
--- 
-1.7.9.5
-
+Will
