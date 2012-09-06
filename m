@@ -1,30 +1,32 @@
 From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 06 Sep 2012 07:16:14 +0000
+Date: Thu, 06 Sep 2012 07:35:21 +0000
 Subject: Re: [GIT PULL] Renesas ARM-based SoC: KZM-A9-GT for 3.7 #2
-Message-Id: <CACRpkdYe1pa6udnw6UTEewcCdzzyLRLZ6dSo2pYG4nLu_DAMrg@mail.gmail.com>
+Message-Id: <CACRpkdaj0Jc3TKgkC6AUt-j4t+hQg5weGrceTfROHaYmW1KsBw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1346305648-25263-1-git-send-email-horms@verge.net.au>
  <20120905224413.GC32084@quad.lixom.net>
  <CACRpkdZBOjO124w3WwPpL7ekf2dU1w2HCub9EG=LUxFSPn8Ayw@mail.gmail.com>
- <20120906061807.GA3326@verge.net.au>
-In-Reply-To: <20120906061807.GA3326@verge.net.au>
+In-Reply-To: <CACRpkdZBOjO124w3WwPpL7ekf2dU1w2HCub9EG=LUxFSPn8Ayw@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Sep 6, 2012 at 8:18 AM, Simon Horman <horms@verge.net.au> wrote:
+On Thu, Sep 6, 2012 at 7:58 AM, Linus Walleij <linus.walleij@linaro.org> wrote:
+> On Thu, Sep 6, 2012 at 12:44 AM, Olof Johansson <olof@lixom.net> wrote:
+>
+>> So, we can't pull in this branch with its dependency without an agreement that
+>> Linus holds a branch stable with at least the pcf857x patch on it. Linus?
+>
+> OMG! OK let's claim that it's stable now then, it's close enough
+> to the merge window.
 
-> It seems to me that I should rebase the my branch and it can
-> then go through either the ARM SoC or GPIO tree. Either is fine by me.
+Oh! And by the way, make sure you pull in the "devel" branch:
 
-Me too...
+git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git devel
 
-> As an aside, the patch does include a defconfig change.
-> Olof, Should that be broken out into a separate patch?
-
-IIRC Arnd told me he actually likes when we patch defconfigs as
-part of other fixes so leave it in.
+My "for-next" is a mixdown of fixes and devel, so the stuff that
+will really go into next merge window is on devel.
 
 Yours,
 Linus Walleij
