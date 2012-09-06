@@ -1,41 +1,43 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 12 Sep 2012 07:19:47 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7779: remove USB phy initializer
-Message-Id: <20120912071945.GC8435@verge.net.au>
+From: Tetsuyuki Kobayshi <koba@kmckk.co.jp>
+Date: Thu, 06 Sep 2012 09:09:31 +0000
+Subject: [PATCH] ARM: shmobile: kzm9g: enable DMAEngine on SHDI0 and SDHI2
+Message-Id: <1346922571-16271-1-git-send-email-koba@kmckk.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120904003402.GE6095@verge.net.au>
- <87ehmifl3b.wl%kuninori.morimoto.gx@renesas.com>
- <20120905012056.GC4232@verge.net.au>
- <20120905012337.GD4232@verge.net.au>
- <w3p4nndz0st.wl%kuninori.morimoto.gx@renesas.com>
- <20120905081319.GD11575@verge.net.au>
- <20120912051614.GA5718@verge.net.au>
- <87d31rn6xe.wl%kuninori.morimoto.gx@renesas.com>
- <20120912063020.GE18563@arwen.pp.htv.fi>
- <878vcfn237.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <878vcfn237.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Sep 12, 2012 at 12:16:00AM -0700, Kuninori Morimoto wrote:
-> 
-> Hi Simon, Felipe
-> 
-> > > >> Felipe
-> > > 
-> > > Please let us know current status of this patch ?
-> > 
-> > It will have to wait for v3.8... there wasn't enough time for me to pick
-> > that up, sorry.
-> 
-> OK. no worry
-> 
-> >> Simon
-> 
-> Marzen board USB depends on this phy driver.
-> So, let's aim to v3.8.
-> Is is OK ?
+From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
 
-Its ok by me.
+This patch enables DMAEngine on SHDI0 and SDHI2 for kzm9g.
+
+Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+---
+ arch/arm/mach-shmobile/board-kzm9g.c |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index 87ec4ce..d849e6d 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -384,6 +384,8 @@ static struct regulator_consumer_supply fixed2v8_power_consumers[]  
+ /* SDHI */
+ static struct sh_mobile_sdhi_info sdhi0_info = {
++	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
++	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
+ 	.tmio_ocr_mask	= MMC_VDD_27_28 | MMC_VDD_28_29,
+@@ -424,6 +426,8 @@ static struct platform_device sdhi0_device = {
+ 
+ /* Micro SD */
+ static struct sh_mobile_sdhi_info sdhi2_info = {
++	.dma_slave_tx	= SHDMA_SLAVE_SDHI2_TX,
++	.dma_slave_rx	= SHDMA_SLAVE_SDHI2_RX,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
+ 			  TMIO_MMC_USE_GPIO_CD |
+ 			  TMIO_MMC_WRPROTECT_DISABLE,
+-- 
+1.7.9.5
+
