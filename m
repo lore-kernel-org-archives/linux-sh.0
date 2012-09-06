@@ -1,116 +1,89 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 06 Sep 2012 02:04:32 +0000
-Subject: [PATCH 1/3] ARM: shmobile: marzen: add SDHI0 support
-Message-Id: <1346897074-6276-2-git-send-email-horms@verge.net.au>
+From: Tetsuyuki Kobayshi <koba@kmckk.co.jp>
+Date: Thu, 06 Sep 2012 05:30:47 +0000
+Subject: [PATCH v2 2/2] ARM: shmobile: emev2: enable PMU(Performance Monitoring Unit)
+Message-Id: <1346909447-12526-3-git-send-email-koba@kmckk.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346897074-6276-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1346897074-6276-1-git-send-email-horms@verge.net.au>
+References: <1346813317-4030-1-git-send-email-koba@kmckk.co.jp>
+ <1346909447-12526-1-git-send-email-koba@kmckk.co.jp>
+In-Reply-To: <1346909447-12526-1-git-send-email-koba@kmckk.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Phil Edworthy <phil.edworthy@renesas.com>
+From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
 
-[horms@verge.net.au: moved defconfig portion into a separate patch]
-[horms@verge.net.au: added "ARM: shmobile:" to title]
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+This patch enables PMU(Performance Monitoring Unit) for emev2.
+
+Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
 ---
- arch/arm/mach-shmobile/board-marzen.c |   52 ++++++++++++++++++++++++++++++++-
- 1 file changed, 51 insertions(+), 1 deletion(-)
+Changes for v2:
+- Removed #ifdef CONFIG_HW_PERF_EVENTS
+- Added kzm9d_defconfig
 
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index 3a528cf..dec3ffc 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -30,6 +30,8 @@
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/machine.h>
- #include <linux/smsc911x.h>
-+#include <linux/mmc/sh_mobile_sdhi.h>
-+#include <linux/mfd/tmio.h>
- #include <mach/hardware.h>
- #include <mach/r8a7779.h>
- #include <mach/common.h>
-@@ -39,6 +41,12 @@
+ arch/arm/configs/kzm9d_defconfig     |    1 +
+ arch/arm/mach-shmobile/setup-emev2.c |   22 ++++++++++++++++++++++
+ 2 files changed, 23 insertions(+)
+
+diff --git a/arch/arm/configs/kzm9d_defconfig b/arch/arm/configs/kzm9d_defconfig
+index 26146ff..8c49df6 100644
+--- a/arch/arm/configs/kzm9d_defconfig
++++ b/arch/arm/configs/kzm9d_defconfig
+@@ -8,6 +8,7 @@ CONFIG_LOG_BUF_SHIFT
+ CONFIG_CC_OPTIMIZE_FOR_SIZE=y
+ CONFIG_SYSCTL_SYSCALL=y
+ CONFIG_EMBEDDED=y
++CONFIG_PERF_EVENTS=y
+ CONFIG_SLAB=y
+ # CONFIG_BLK_DEV_BSG is not set
+ # CONFIG_IOSCHED_DEADLINE is not set
+diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
+index dae9aa6..e1219a3 100644
+--- a/arch/arm/mach-shmobile/setup-emev2.c
++++ b/arch/arm/mach-shmobile/setup-emev2.c
+@@ -36,6 +36,7 @@
+ #include <asm/mach/map.h>
+ #include <asm/mach/time.h>
  #include <asm/hardware/gic.h>
- #include <asm/traps.h>
++#include <asm/pmu.h>
  
-+/* Fixed 3.3V regulator to be used by SDHI0 */
-+static struct regulator_consumer_supply fixed3v3_power_consumers[] = {
-+	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
-+	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
-+};
-+
- /* Dummy supplies, where voltage doesn't matter */
- static struct regulator_consumer_supply dummy_supplies[] = {
- 	REGULATOR_SUPPLY("vddvario", "smsc911x"),
-@@ -75,13 +83,45 @@ static struct platform_device eth_device = {
- 	.num_resources	= ARRAY_SIZE(smsc911x_resources),
+ static struct map_desc emev2_io_desc[] __initdata = {
+ #ifdef CONFIG_SMP
+@@ -356,6 +357,26 @@ static struct platform_device gio4_device = {
+ 	},
  };
  
-+static struct resource sdhi0_resources[] = {
++static struct resource pmu_resources[] = {
 +	[0] = {
-+		.name	= "sdhi0",
-+		.start	= 0xffe4c000,
-+		.end	= 0xffe4c0ff,
-+		.flags	= IORESOURCE_MEM,
++		.start	= 152,
++		.end	= 152,
++		.flags	= IORESOURCE_IRQ,
 +	},
 +	[1] = {
-+		.start	= gic_spi(104),
++		.start	= 153,
++		.end	= 153,
 +		.flags	= IORESOURCE_IRQ,
 +	},
 +};
 +
-+static struct sh_mobile_sdhi_info sdhi0_platform_data = {
-+	.tmio_flags = TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_HAS_IDLE_WAIT,
-+	.tmio_caps = MMC_CAP_SD_HIGHSPEED,
++static struct platform_device pmu_device = {
++	.name		= "arm-pmu",
++	.id		= ARM_PMU_DEVICE_CPU,
++	.num_resources	= ARRAY_SIZE(pmu_resources),
++	.resource	= pmu_resources,
 +};
 +
-+static struct platform_device sdhi0_device = {
-+	.name = "sh_mobile_sdhi",
-+	.num_resources = ARRAY_SIZE(sdhi0_resources),
-+	.resource = sdhi0_resources,
-+	.id = 0,
-+	.dev = {
-+		.platform_data = &sdhi0_platform_data,
-+	}
-+};
-+
- static struct platform_device *marzen_devices[] __initdata = {
- 	&eth_device,
-+	&sdhi0_device,
+ static struct platform_device *emev2_early_devices[] __initdata = {
+ 	&uart0_device,
+ 	&uart1_device,
+@@ -370,6 +391,7 @@ static struct platform_device *emev2_late_devices[] __initdata = {
+ 	&gio2_device,
+ 	&gio3_device,
+ 	&gio4_device,
++	&pmu_device,
  };
  
- static void __init marzen_init(void)
- {
--	regulator_register_fixed(0, dummy_supplies, ARRAY_SIZE(dummy_supplies));
-+	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
-+				ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
-+	regulator_register_fixed(0, dummy_supplies,
-+				ARRAY_SIZE(dummy_supplies));
- 
- 	r8a7779_pinmux_init();
- 
-@@ -97,6 +137,16 @@ static void __init marzen_init(void)
- 	gpio_request(GPIO_FN_EX_CS0, NULL); /* nCS */
- 	gpio_request(GPIO_FN_IRQ1_B, NULL); /* IRQ + PME */
- 
-+	/* SD0 (CN20) */
-+	gpio_request(GPIO_FN_SD0_CLK, NULL);
-+	gpio_request(GPIO_FN_SD0_CMD, NULL);
-+	gpio_request(GPIO_FN_SD0_DAT0, NULL);
-+	gpio_request(GPIO_FN_SD0_DAT1, NULL);
-+	gpio_request(GPIO_FN_SD0_DAT2, NULL);
-+	gpio_request(GPIO_FN_SD0_DAT3, NULL);
-+	gpio_request(GPIO_FN_SD0_CD, NULL);
-+	gpio_request(GPIO_FN_SD0_WP, NULL);
-+
- 	r8a7779_add_standard_devices();
- 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
- }
+ void __init emev2_add_standard_devices(void)
 -- 
-1.7.10.4
+1.7.9.5
 
