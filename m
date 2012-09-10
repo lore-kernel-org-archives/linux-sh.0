@@ -1,45 +1,66 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 05 Sep 2012 01:34:53 +0000
-Subject: [PATCH 3/3] ARM: shmobile: armadillo800eva: enable rw rootfs mount
-Message-Id: <1346808893-14124-4-git-send-email-horms@verge.net.au>
+From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+Date: Mon, 10 Sep 2012 10:30:55 +0000
+Subject: [RFC PATCH 2/2] ARM: shmobile: sh7372: Change VPU UIO to uio_dmem_genirq
+Message-Id: <1347273055-10311-3-git-send-email-dhobsong@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346808893-14124-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1346808893-14124-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This allows the VPU memory to be allocated dynamically only when it
+is needed.
 
-armadillo800eva default boot loader is "hermit",
-and it's tag->u.core.flags has flag when kernel boots.
-Because of this, ${LINUX}/arch/arm/kernel/setup.c :: parse_tag_core()
-didn't remove MS_RDONLY flag from root_mountflags.
-Thus, the rootfs is mounted as "readonly".
-This patch adds "rw" kernel parameter,
-and enable read/write mounts for rootfs
-
-Cc: Masahiro Nakai <nakai@atmark-techno.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
 ---
- arch/arm/configs/armadillo800eva_defconfig |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/setup-sh7372.c |   19 ++++++++++++++-----
+ 1 files changed, 14 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
-index 7d87184..90610c7 100644
---- a/arch/arm/configs/armadillo800eva_defconfig
-+++ b/arch/arm/configs/armadillo800eva_defconfig
-@@ -33,7 +33,7 @@ CONFIG_AEABI=y
- CONFIG_FORCE_MAX_ZONEORDER
- CONFIG_ZBOOT_ROM_TEXT=0x0
- CONFIG_ZBOOT_ROM_BSS=0x0
--CONFIG_CMDLINE="console=tty0 console=ttySC1,115200 earlyprintk=sh-sci.1,115200 ignore_loglevel root=/dev/nfs ip=dhcp nfsroot=,rsize@96,wsize@96"
-+CONFIG_CMDLINE="console=tty0 console=ttySC1,115200 earlyprintk=sh-sci.1,115200 ignore_loglevel root=/dev/nfs ip=dhcp nfsroot=,rsize@96,wsize@96 rw"
- CONFIG_CMDLINE_FORCE=y
- CONFIG_KEXEC=y
- CONFIG_VFP=y
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index 1106b4f..fe75701 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -21,6 +21,7 @@
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+ #include <linux/irq.h>
++#include <linux/platform_data/uio_dmem_genirq.h>
+ #include <linux/platform_device.h>
+ #include <linux/of_platform.h>
+ #include <linux/uio_driver.h>
+@@ -761,11 +762,19 @@ static struct platform_device usb_dma1_device = {
+ 	},
+ };
+ 
++static unsigned int region_sizes[] = {
++	(32 << 20),
++};
++
+ /* VPU */
+-static struct uio_info vpu_platform_data = {
+-	.name = "VPU5HG",
+-	.version = "0",
+-	.irq = intcs_evt2irq(0x980),
++static struct uio_dmem_genirq_pdata vpu_platform_data = {
++	.uioinfo = {
++		.name = "VPU5HG",
++		.version = "0",
++		.irq = intcs_evt2irq(0x980),
++	},
++	.dynamic_region_sizes	= region_sizes,
++	.num_dynamic_regions	= ARRAY_SIZE(region_sizes),
+ };
+ 
+ static struct resource vpu_resources[] = {
+@@ -778,7 +787,7 @@ static struct resource vpu_resources[] = {
+ };
+ 
+ static struct platform_device vpu_device = {
+-	.name		= "uio_pdrv_genirq",
++	.name		= "uio_dmem_genirq",
+ 	.id		= 0,
+ 	.dev = {
+ 		.platform_data	= &vpu_platform_data,
 -- 
-1.7.10.4
+1.7.5.4
 
