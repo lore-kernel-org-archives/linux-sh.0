@@ -1,112 +1,75 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Thu, 06 Sep 2012 00:02:43 +0000
-Subject: Re: [GIT PULL v3] Renesas ARM-based SoC: Marzen and r8a7779 for 3.7
-Message-Id: <20120906000240.GA31810@verge.net.au>
+Date: Tue, 11 Sep 2012 05:26:05 +0000
+Subject: [PATCH] ARM: shmobile: kzm9g: use gpio-keys instead of gpio-keys-polled
+Message-Id: <1347341165-15573-2-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346833244-30432-1-git-send-email-horms@verge.net.au>
- <20120905231357.GF32084@quad.lixom.net>
-In-Reply-To: <20120905231357.GF32084@quad.lixom.net>
+References: <1347341165-15573-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1347341165-15573-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Sep 05, 2012 at 04:13:57PM -0700, Olof Johansson wrote:
-> On Wed, Sep 05, 2012 at 05:20:39PM +0900, Simon Horman wrote:
-> > Hi Olof, Hi Arnd,
-> > 
-> > please consider the following enhancements to the Marzen board
-> > and r8a7779 SoC by Phil Edworthy, Morimoto-san and myself for 3.7.
-> > 
-> > This pull-request differs from v2 in that USB-related changes
-> > have been omitted and the pull-request is no longer based on usb-next.
-> > 
-> > ----------------------------------------------------------------------
-> > The following changes since commit fea7a08acb13524b47711625eebea40a0ede69a0:
-> > 
-> >   Linux 3.6-rc3 (2012-08-22 13:29:06 -0700)
-> > 
-> > are available in the git repository at:
-> > 
-> >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git marzen
-> > 
-> > for you to fetch changes up to 978792e04b58985eda62aa8cc97c6d46433103f2:
-> > 
-> >   ARM: shmobile: marzen: enable thermal sensor (2012-09-05 10:22:48 +0900)
-> > 
-> Hi,
-> 
-> This is the first pull request that has a few patches on the same branch,
-> so while it's something I was thinking about on previous pull request,
-> for this one it's more obvious. So here we go :-)
-> 
-> For background, we tend to organize the arm-soc tree a little different from
-> how some other maintainer trees are organized, to aggregate work across vendor
-> branches and make it more obvious which kind of patches are adding and removing
-> cod ein the tree.
-> 
-> Our organization of the arm-soc tree is in a few broad topics that cut across
-> all platforms. They tend to be, in rough order:
-> 
-> * Fixes that weren't critical for the previous release (fixes-non-critical)
-> * Cleanups that removes or refactors code
-> * New SoC support or major updates
-> * SoC drivers updates
-> * board support / changes
-> * defconfigs
-> * device tree
-> 
-> + sometimes other special topic branches depending on what's going on that
-> merge window, like pinctrl updates (SoC side) or clock updates.
-> 
-> You can have one branch depend/build on top of another, we can normally resolve
-> those dependencies. We prefer them in the same rough order as above to avoid
-> cyclical dependencies between different vendors though.
-> 
-> 
-> So, on your branch:
-> 
-> You seem to be organizing your branches more along the topics of which chip
-> they relate to, for example Marzen and r8a7779 above. That worked out well when
-> there were only one or two patches per branch since we could just file them
-> into the area where we consider they fit (i.e. see my replies to those emails
-> about where they fit in).
-> 
-> This is the first larger branch, and I think you should split it up to:
-> 
-> 
-> > ----------------------------------------------------------------
-> > Kuninori Morimoto (2):
-> >       ARM: shmobile: marzen: fixup regulator id for smsc911x
-> >       ARM: shmobile: marzen: enable thermal sensor
-> 
-> Those are board updates
-> 
-> > 
-> > Phil Edworthy (2):
-> >       r8a7779: add SDHI clock support
-> 
-> SoC update since it seems to mostly be clock related.
-> 
-> >       marzen: add SDHI0 support
-> 
-> defconfig for part of the change, board for the other. Why was I/DNOTIFY
-> updated in the defconfig, by the way?
-> 
-> 
-> > Simon Horman (1):
-> >       ARM: mach-shmobile: marzen: defconfig update
-> 
-> This would fit on a defconfig branch as well.
-> 
-> 
-> For future pull request as well, feel free to think about how the patches
-> would fit into similar topics to above as well and organize them as such
-> at your level too. If you want several branches of the same kind, that's
-> no problem, but it's by far preferrably if they're organized along the
-> rouch topics above.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Hi Olof,
+6e20a0a429bd4dc07d6de16d9c247270e04e4aa0
+(gpio: pcf857x: enable gpio_to_irq() support) supports
+gpio_to_irq() on pcf857x driver.
+Now, we can use gpio-keys driver instead of gpio-keys-polled.
 
-thanks for the advice. I'll split up this series as you suggest and
-try to align my branches with those in the arm-soc tree.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ arch/arm/configs/kzm9g_defconfig     |    2 +-
+ arch/arm/mach-shmobile/board-kzm9g.c |    5 ++---
+ 2 files changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
+index 2388c86..175804e 100644
+--- a/arch/arm/configs/kzm9g_defconfig
++++ b/arch/arm/configs/kzm9g_defconfig
+@@ -22,7 +22,6 @@ CONFIG_MODULE_UNLOAD=y
+ # CONFIG_IOSCHED_DEADLINE is not set
+ # CONFIG_IOSCHED_CFQ is not set
+ CONFIG_ARCH_SHMOBILE=y
+-CONFIG_KEYBOARD_GPIO_POLLED=y
+ CONFIG_ARCH_SH73A0=y
+ CONFIG_MACH_KZM9G=y
+ CONFIG_MEMORY_START=0x41000000
+@@ -70,6 +69,7 @@ CONFIG_INPUT_SPARSEKMAP=y
+ # CONFIG_INPUT_MOUSEDEV is not set
+ CONFIG_INPUT_EVDEV=y
+ # CONFIG_KEYBOARD_ATKBD is not set
++CONFIG_KEYBOARD_GPIO=y
+ # CONFIG_INPUT_MOUSE is not set
+ CONFIG_INPUT_TOUCHSCREEN=y
+ CONFIG_TOUCHSCREEN_ST1232=y
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index 53b7ea9..4d1348e 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -482,12 +482,10 @@ static struct gpio_keys_button gpio_buttons[] = {
+ static struct gpio_keys_platform_data gpio_key_info = {
+ 	.buttons	= gpio_buttons,
+ 	.nbuttons	= ARRAY_SIZE(gpio_buttons),
+-	.poll_interval	= 250, /* poling at this point */
+ };
+ 
+ static struct platform_device gpio_keys_device = {
+-	/* gpio-pcf857x.c driver doesn't support gpio_to_irq() */
+-	.name	= "gpio-keys-polled",
++	.name	= "gpio-keys",
+ 	.dev	= {
+ 		.platform_data  = &gpio_key_info,
+ 	},
+@@ -550,6 +548,7 @@ static struct platform_device fsi_ak4648_device = {
+ /* I2C */
+ static struct pcf857x_platform_data pcf8575_pdata = {
+ 	.gpio_base	= GPIO_PCF8575_BASE,
++	.irq		= intcs_evt2irq(0x3260), /* IRQ19 */
+ };
+ 
+ static struct i2c_board_info i2c0_devices[] = {
+-- 
+1.7.10.4
+
