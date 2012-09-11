@@ -1,75 +1,38 @@
-From: Andrea Arcangeli <aarcange@redhat.com>
-Date: Tue, 25 Sep 2012 19:33:57 +0000
-Subject: Re: [PATCH v4 0/8] Avoid cache trashing on clearing huge/gigantic page
-Message-Id: <20120925193356.GX7620@redhat.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 11 Sep 2012 08:05:25 +0000
+Subject: [GIT] Renesas ARM-based SoC: pmu/cleanup for 3.7
+Message-Id: <1347350727-11962-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1345470757-12005-1-git-send-email-kirill.shutemov@linux.intel.com>
- <20120913160506.d394392a.akpm@linux-foundation.org>
- <20120914055210.GC9043@gmail.com>
- <20120925142703.GA1598@otc-wbsnb-06>
-In-Reply-To: <20120925142703.GA1598@otc-wbsnb-06>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>
-Cc: Ingo Molnar <mingo@kernel.org>, Andrew Morton <akpm@linux-foundation.org>, linux-mm@kvack.org, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, x86@kernel.org, Andi Kleen <ak@linux.intel.com>, Tim Chen <tim.c.chen@linux.intel.com>, Alex Shi <alex.shu@intel.com>, Jan Beulich <jbeulich@novell.com>, Robert Richter <robert.richter@amd.com>, Andy Lutomirski <luto@amacapital.net>, Johannes Weiner <hannes@cmpxchg.org>, Hugh Dickins <hughd@google.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Mel Gorman <mgorman@suse.de>, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Kirill,
+Hi Will,
 
-On Tue, Sep 25, 2012 at 05:27:03PM +0300, Kirill A. Shutemov wrote:
-> On Fri, Sep 14, 2012 at 07:52:10AM +0200, Ingo Molnar wrote:
-> > Without repeatable hard numbers such code just gets into the 
-> > kernel and bitrots there as new CPU generations come in - a few 
-> > years down the line the original decisions often degrade to pure 
-> > noise. We've been there, we've done that, we don't want to 
-> > repeat it.
-> 
-> <sorry, for late answer..>
-> 
-> Hard numbers are hard.
-> I've checked some workloads: Mosbench, NPB, specjvm2008. Most of time the
-> patchset doesn't show any difference (within run-to-run deviation).
-> On NPB it recovers THP regression, but it's probably not enough to make
-> decision.
-> 
-> It would be nice if somebody test the patchset on other system or
-> workload. Especially, if the configuration shows regression with
-> THP enabled.
+please consider the following changes from Kobayashi-san
+for the pmu/cleanup branch.
 
-If the only workload that gets a benefit is NPB then we've the proof
-this is too hardware dependend to be a conclusive result.
+----------------------------------------------------------------
+The following changes since commit 051f1b13144dd8553d5a5104dde94c7263ae3ba7:
 
-It may have been slower by an accident, things like cache
-associativity off by one bit, combined with the implicit coloring
-provided to the lowest 512 colors could hurts more if the cache
-associativity is low.
+  ARM: perf: move irq registration into pmu implementation (2012-08-23 11:35:52 +0100)
 
-I'm saying this because NPB on a thinkpad (Intel CPU I assume) is the
-benchmark that shows the most benefit among all benchmarks run on that
-hardware.
+are available in the git repository at:
 
-http://www.phoronix.com/scan.php?page=article&item=linux_transparent_hugepages&num=2
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git pmu/cleanup
 
-I've once seen certain computations that run much slower with perfect
-cache coloring but most others runs much faster with the page
-coloring. Doesn't mean page coloring is bad per se. So the NPB on that
-specific hardware may have been the exception and not the interesting
-case. Especially considering the effect of cache-copying is opposite
-on slightly different hw.
+for you to fetch changes up to e433d4440bf7dd5955a4616cfb9bffd1ec6ab839:
 
-I think the the static_key should be off by default whenever the CPU
-L2 cache size is >= the size of the copy (2*HPAGE_PMD_SIZE). Now the
-cache does random replacement so maybe we could also allow cache
-copies for twice the size of the copy (L2size >4*HPAGE_PMD_SIZE). Current CPUs have caches much larger than 2*2MB...
+  ARM: shmobile: emev2: enable PMU(Performance Monitoring Unit) (2012-09-11 16:27:41 +0900)
 
-It would make a whole lot more sense for hugetlbfs giga pages than for
-THP (unlike for THP, cache trashing with giga pages is guaranteed),
-but even with giga pages, it's not like they're allocated frequently
-(maybe once per OS reboot) so that's also sure totally lost in the
-noise as it only saves a few accesses after the cache copy is
-finished.
+----------------------------------------------------------------
+Tetsuyuki Kobayashi (2):
+      ARM: shmobile: sh73a0: enable PMU(Performance Monitoring Unit)
+      ARM: shmobile: emev2: enable PMU(Performance Monitoring Unit)
 
-It's good to have tested it though.
-
-Thanks,
-Andrea
+ arch/arm/configs/kzm9d_defconfig      |    1 +
+ arch/arm/configs/kzm9g_defconfig      |    1 +
+ arch/arm/mach-shmobile/setup-emev2.c  |   21 +++++++++++++++++++++
+ arch/arm/mach-shmobile/setup-sh73a0.c |   21 +++++++++++++++++++++
+ 4 files changed, 44 insertions(+)
