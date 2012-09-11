@@ -1,44 +1,25 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Fri, 07 Sep 2012 13:25:59 +0000
+Date: Tue, 11 Sep 2012 08:10:52 +0000
 Subject: Re: [PATCH v3 0/2] ARM: shmobile: enable PMU(Performance Monitoring Unit)
-Message-Id: <20120907132559.GD32187@verge.net.au>
+Message-Id: <20120911081052.GA13563@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <50487370.6000409@kmckk.co.jp>
  <1346930047-9541-1-git-send-email-koba@kmckk.co.jp>
- <20120906112109.GG858@mudshark.cambridge.arm.com>
- <504952F7.6090906@kmckk.co.jp>
-In-Reply-To: <504952F7.6090906@kmckk.co.jp>
+In-Reply-To: <1346930047-9541-1-git-send-email-koba@kmckk.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Sep 07, 2012 at 10:50:47AM +0900, Tetsuyuki Kobayashi wrote:
-> Hi, Will
-> Hi, Simon
+On Thu, Sep 06, 2012 at 08:14:05PM +0900, Tetsuyuki Kobayshi wrote:
+> From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
 > 
-> (2012/09/06 20:21), Will Deacon wrote:
-> >On Thu, Sep 06, 2012 at 12:14:05PM +0100, Tetsuyuki Kobayshi wrote:
-> >>From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
-> >>
-> >>Hello, Will
-> >
-> >Hi,
-> >
-> >Thanks for updating the patches.
-> >
-> >>Could you apply this patch set to your pmu/cleanup branch on arm-soc?
-> >
-> >Actually, it's better if you just base your branch against that one when you
-> >send it to arm-soc for merging. That way, other SoCs can also develop
-> >against that branch without having to worry about each other.
-> >
-> I see.
-> I thought that removing ARM_PMU_DEVICE_CPU depends on your
-> pmu/cleanup branch, but I found it does not.
-> I verified this v3 patch can apply cleanly to soc branch on renesus.git
-> and works fine.
+> Hello, Will
 > 
-> Simon-san, could you apply this v3 patch to soc branch after review ?
+> Could you apply this patch set to your pmu/cleanup branch on arm-soc?
+> 
+> The follewing patches enables PMU(Performance Monitoring Unit) for sh73a0 and emev2 SoCs. I tested these patches on kzm9g board and kzm9d board.
 
-Sure, will do.
+Thanks, I have pushed this to the pmu/cleanup branch of my renesas tree
+and sent a pull-request to Will.
+
