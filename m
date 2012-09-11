@@ -1,63 +1,108 @@
-From: Ni zhan Chen <nizhan.chen@gmail.com>
-Date: Fri, 28 Sep 2012 03:21:37 +0000
-Subject: Re: [RFC v9 PATCH 03/21] memory-hotplug: store the node id in acpi_memory_device
-Message-Id: <506517C1.7050909@gmail.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Tue, 11 Sep 2012 20:44:40 +0000
+Subject: Re: [PATCH] ARM: shmobile: Build code depending on PM only if PM is set
+Message-Id: <201209112244.41182.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346837155-534-1-git-send-email-wency@cn.fujitsu.com> <1346837155-534-4-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1346837155-534-4-git-send-email-wency@cn.fujitsu.com>
+References: <201207090015.12531.rjw@sisk.pl>
+In-Reply-To: <201207090015.12531.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: wency@cn.fujitsu.com
-Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com
+To: linux-sh@vger.kernel.org
 
-On 09/05/2012 05:25 PM, wency@cn.fujitsu.com wrote:
-> From: Wen Congyang <wency@cn.fujitsu.com>
->
-> The memory device has only one node id. Store the node id when
-> enable the memory device, and we can reuse it when removing the
-> memory device.
+On Tuesday, September 11, 2012, Simon Horman wrote:
+> On Mon, Jul 09, 2012 at 06:49:15PM +0200, Rafael J. Wysocki wrote:
+> > On Monday, July 09, 2012, Magnus Damm wrote:
+> > > On Mon, Jul 9, 2012 at 5:13 PM, Rafael J. Wysocki <rjw@sisk.pl> wrote:
+> > > > On Monday, July 09, 2012, Simon Horman wrote:
+> > > >> On Mon, Jul 09, 2012 at 12:15:12AM +0200, Rafael J. Wysocki wrote:
+> > > >> > From: Rafael J. Wysocki <rjw@sisk.pl>
+> > > >> >
+> > > >> > There are a few files under arch/arm/mach-shmobile/ whose entire
+> > > >> > contents depend on CONFIG_PM, but they are compiled even if
+> > > >> > CONFIG_PM is unset.  It is cleaner to modify the Makefile to
+> > > >> > avoid building those files entirely for CONFIG_PM unset and
+> > > >> > remove #ifdef CONFIG_PM directives from them.
+> > > >> >
+> > > >> > Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+> > > >> > ---
+> > > >> >  arch/arm/mach-shmobile/Makefile              |    4 +++-
+> > > >> >  arch/arm/mach-shmobile/include/mach/common.h |    4 ++++
+> > > >> >  arch/arm/mach-shmobile/pm-r8a7740.c          |    3 ---
+> > > >> >  arch/arm/mach-shmobile/pm-rmobile.c          |    2 --
+> > > >> >  arch/arm/mach-shmobile/pm-sh7372.c           |    4 ----
+> > > >> >  5 files changed, 7 insertions(+), 10 deletions(-)
+> > > >> >
+> > > >> > Index: linux/arch/arm/mach-shmobile/Makefile
+> > > >> > =================================> > > >> > --- linux.orig/arch/arm/mach-shmobile/Makefile
+> > > >> > +++ linux/arch/arm/mach-shmobile/Makefile
+> > > >> > @@ -37,11 +37,13 @@ obj-$(CONFIG_ARCH_SH7372)       += entry-intc.
+> > > >> >  obj-$(CONFIG_ARCH_R8A7740) += entry-intc.o
+> > > >> >
+> > > >> >  # PM objects
+> > > >> > -obj-$(CONFIG_SUSPEND)              += suspend.o
+> > > >> >  obj-$(CONFIG_CPU_IDLE)             += cpuidle.o
+> > > >> > +ifeq ($(CONFIG_PM),y)
+> > > >> > +obj-$(CONFIG_SUSPEND)              += suspend.o
+> > > >> >  obj-$(CONFIG_ARCH_SHMOBILE)        += pm-rmobile.o
+> > > >> >  obj-$(CONFIG_ARCH_SH7372)  += pm-sh7372.o sleep-sh7372.o
+> > > >> >  obj-$(CONFIG_ARCH_R8A7740) += pm-r8a7740.o
+> > > >> > +endif
+> > > >> >  obj-$(CONFIG_ARCH_R8A7779) += pm-r8a7779.o
+> > > >> >
+> > > >> >  # Board objects
+> > > >> > Index: linux/arch/arm/mach-shmobile/include/mach/common.h
+> > > >> > =================================> > > >> > --- linux.orig/arch/arm/mach-shmobile/include/mach/common.h
+> > > >> > +++ linux/arch/arm/mach-shmobile/include/mach/common.h
+> > > >> > @@ -41,7 +41,11 @@ extern void sh7372_add_early_devices(voi
+> > > >> >  extern void sh7372_add_standard_devices(void);
+> > > >> >  extern void sh7372_clock_init(void);
+> > > >> >  extern void sh7372_pinmux_init(void);
+> > > >> > +#ifdef CONFIG_PM
+> > > >> >  extern void sh7372_pm_init(void);
+> > > >> > +#else
+> > > >> > +static inline void sh7372_pm_init(void) {}
+> > > >>
+> > > >> This seems to slightly alter the behaviour in the case where
+> > > >> CONFIG_PM is not set. I'm unsure if that is a problem or not.
+> > > >
+> > > > I don't think it would be a problem, all of those settings are PM-related.
+> > > >
+> > > > Magnus, what do you think?
+> > > 
+> > > Cleaning up the code is always nice, but I wonder if you take the
+> > > following into consideration?
+> > > 
+> > > CONFIG_CPU_IDLE=y
+> > > CONFIG_PM=n
+> > 
+> > This actually doesn't work (please see below).
+> > 
+> > > Also, slightly off topic, but on top of that we have the ARM specific
+> > > CONFIG_ARM_CPU_SUSPEND which is required to build cpu_resume() in
+> > > sleep-sh7372.c, and this in turn in needed for CPUIdle or
+> > > Suspend-to-RAM on sh7372.
+> > > 
+> > > It would be nice to simplify all this somehow. From the ARM arch code
+> > > we do want to use cpu_resume() and cpu_suspend() both from CPUIdle and
+> > > Suspend-to-RAM - this since the same low level sleep code is used for
+> > > both cases.
+> > 
+> > Yes, please see my fix for the build bug reported by Guennadi.
+> > cpu_resume() and cpu_suspend() are not available if CONFIG_SUSPEND is unset.
+> 
+> Hi Rafael,
+> 
+> I may have missed something, but it seems that this patch wasn't merged.
 
-one question:
-if use numa emulation, memory device will associated to one node or ...?
+No, it wasn't, because we addressed the problem in a different way.
 
->
-> CC: David Rientjes <rientjes@google.com>
-> CC: Jiang Liu <liuj97@gmail.com>
-> CC: Len Brown <len.brown@intel.com>
-> CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-> CC: Paul Mackerras <paulus@samba.org>
-> CC: Christoph Lameter <cl@linux.com>
-> Cc: Minchan Kim <minchan.kim@gmail.com>
-> CC: Andrew Morton <akpm@linux-foundation.org>
-> CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-> CC: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-> Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
-> Reviewed-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-> ---
->   drivers/acpi/acpi_memhotplug.c |    4 ++++
->   1 files changed, 4 insertions(+), 0 deletions(-)
->
-> diff --git a/drivers/acpi/acpi_memhotplug.c b/drivers/acpi/acpi_memhotplug.c
-> index 2a7beac..7873832 100644
-> --- a/drivers/acpi/acpi_memhotplug.c
-> +++ b/drivers/acpi/acpi_memhotplug.c
-> @@ -83,6 +83,7 @@ struct acpi_memory_info {
->   struct acpi_memory_device {
->   	struct acpi_device * device;
->   	unsigned int state;	/* State of the memory device */
-> +	int nid;
->   	struct list_head res_list;
->   };
->   
-> @@ -256,6 +257,9 @@ static int acpi_memory_enable_device(struct acpi_memory_device *mem_device)
->   		info->enabled = 1;
->   		num_enabled++;
->   	}
-> +
-> +	mem_device->nid = node;
-> +
->   	if (!num_enabled) {
->   		printk(KERN_ERR PREFIX "add_memory failed\n");
->   		mem_device->state = MEMORY_INVALID_STATE;
+> Aside from whether it still applies or not, is it still appropriate?
+> And if so, is it appropriate to go through the linux-pm tree?
 
+I believe commit a1ee61b8f4b56e5e6ced16b83d5098e0f4238a45
+(ARM: shmobile: Take cpuidle dependencies into account correctly) from Magnus
+fixed this particular problem.
+
+Thanks,
+Rafael
