@@ -1,36 +1,22 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 11 Sep 2012 05:26:04 +0000
-Subject: [GIT PULL] GPIO: KZM-A9-GT for 3.7
-Message-Id: <1347341165-15573-1-git-send-email-horms@verge.net.au>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Tue, 11 Sep 2012 17:25:36 +0000
+Subject: Re: [GIT PULL] GPIO: KZM-A9-GT for 3.7
+Message-Id: <CACRpkdbhzvuUZVQoQVjZxebm_7Lamp5npTUjw2ZjtXJw7RCqDg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1347341165-15573-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1347341165-15573-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Linus,
+On Tue, Sep 11, 2012 at 7:26 AM, Simon Horman <horms@verge.net.au> wrote:
 
-please consider the following GPIO enhancement for the kzm9g board
-for 3.7. As discussed previously it depends on changes in devel tree
-and thus seems to be appropriate to merge there.
+> please consider the following GPIO enhancement for the kzm9g board
+> for 3.7. As discussed previously it depends on changes in devel tree
+> and thus seems to be appropriate to merge there.
 
-----------------------------------------------------------------
-The following changes since commit a3b930815d07e2a8a25e85496839f80facb3654d:
+I'll rather apply the raw patch, I'll comment on that one...
 
-  gpio: sx150x: Use irq_data_get_irq_chip_data() at appropriate places (2012-09-06 09:19:04 +0200)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git gpio
-
-for you to fetch changes up to b7a3ce41bb1ca65954029fb002373524bafb3161:
-
-  ARM: shmobile: kzm9g: use gpio-keys instead of gpio-keys-polled (2012-09-11 13:54:57 +0900)
-
-----------------------------------------------------------------
-Kuninori Morimoto (1):
-      ARM: shmobile: kzm9g: use gpio-keys instead of gpio-keys-polled
-
- arch/arm/configs/kzm9g_defconfig     |    2 +-
- arch/arm/mach-shmobile/board-kzm9g.c |    5 ++---
- 2 files changed, 3 insertions(+), 4 deletions(-)
+Yours,
+Linus Walleij
