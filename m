@@ -1,179 +1,96 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Sun, 23 Sep 2012 12:01:23 +0000
-Subject: [PATCH 2/2] mtd: sh_flctl: Use DMA for data fifo FLTDFIFO when available
-Message-Id: <1348401683-15698-2-git-send-email-hechtb@gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 11 Sep 2012 06:51:41 +0000
+Subject: Re: [PATCH] ARM: shmobile: Build code depending on PM only if PM is set
+Message-Id: <20120911065139.GA32585@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1348401683-15698-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1348401683-15698-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mtd@lists.infradead.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Map and unmap DMA buffers, trigger the DMA and wait for the completion.
-On failure we fallback to PIO mode.
+On Mon, Jul 09, 2012 at 06:49:15PM +0200, Rafael J. Wysocki wrote:
+> On Monday, July 09, 2012, Magnus Damm wrote:
+> > On Mon, Jul 9, 2012 at 5:13 PM, Rafael J. Wysocki <rjw@sisk.pl> wrote:
+> > > On Monday, July 09, 2012, Simon Horman wrote:
+> > >> On Mon, Jul 09, 2012 at 12:15:12AM +0200, Rafael J. Wysocki wrote:
+> > >> > From: Rafael J. Wysocki <rjw@sisk.pl>
+> > >> >
+> > >> > There are a few files under arch/arm/mach-shmobile/ whose entire
+> > >> > contents depend on CONFIG_PM, but they are compiled even if
+> > >> > CONFIG_PM is unset.  It is cleaner to modify the Makefile to
+> > >> > avoid building those files entirely for CONFIG_PM unset and
+> > >> > remove #ifdef CONFIG_PM directives from them.
+> > >> >
+> > >> > Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+> > >> > ---
+> > >> >  arch/arm/mach-shmobile/Makefile              |    4 +++-
+> > >> >  arch/arm/mach-shmobile/include/mach/common.h |    4 ++++
+> > >> >  arch/arm/mach-shmobile/pm-r8a7740.c          |    3 ---
+> > >> >  arch/arm/mach-shmobile/pm-rmobile.c          |    2 --
+> > >> >  arch/arm/mach-shmobile/pm-sh7372.c           |    4 ----
+> > >> >  5 files changed, 7 insertions(+), 10 deletions(-)
+> > >> >
+> > >> > Index: linux/arch/arm/mach-shmobile/Makefile
+> > >> > =================================> > >> > --- linux.orig/arch/arm/mach-shmobile/Makefile
+> > >> > +++ linux/arch/arm/mach-shmobile/Makefile
+> > >> > @@ -37,11 +37,13 @@ obj-$(CONFIG_ARCH_SH7372)       += entry-intc.
+> > >> >  obj-$(CONFIG_ARCH_R8A7740) += entry-intc.o
+> > >> >
+> > >> >  # PM objects
+> > >> > -obj-$(CONFIG_SUSPEND)              += suspend.o
+> > >> >  obj-$(CONFIG_CPU_IDLE)             += cpuidle.o
+> > >> > +ifeq ($(CONFIG_PM),y)
+> > >> > +obj-$(CONFIG_SUSPEND)              += suspend.o
+> > >> >  obj-$(CONFIG_ARCH_SHMOBILE)        += pm-rmobile.o
+> > >> >  obj-$(CONFIG_ARCH_SH7372)  += pm-sh7372.o sleep-sh7372.o
+> > >> >  obj-$(CONFIG_ARCH_R8A7740) += pm-r8a7740.o
+> > >> > +endif
+> > >> >  obj-$(CONFIG_ARCH_R8A7779) += pm-r8a7779.o
+> > >> >
+> > >> >  # Board objects
+> > >> > Index: linux/arch/arm/mach-shmobile/include/mach/common.h
+> > >> > =================================> > >> > --- linux.orig/arch/arm/mach-shmobile/include/mach/common.h
+> > >> > +++ linux/arch/arm/mach-shmobile/include/mach/common.h
+> > >> > @@ -41,7 +41,11 @@ extern void sh7372_add_early_devices(voi
+> > >> >  extern void sh7372_add_standard_devices(void);
+> > >> >  extern void sh7372_clock_init(void);
+> > >> >  extern void sh7372_pinmux_init(void);
+> > >> > +#ifdef CONFIG_PM
+> > >> >  extern void sh7372_pm_init(void);
+> > >> > +#else
+> > >> > +static inline void sh7372_pm_init(void) {}
+> > >>
+> > >> This seems to slightly alter the behaviour in the case where
+> > >> CONFIG_PM is not set. I'm unsure if that is a problem or not.
+> > >
+> > > I don't think it would be a problem, all of those settings are PM-related.
+> > >
+> > > Magnus, what do you think?
+> > 
+> > Cleaning up the code is always nice, but I wonder if you take the
+> > following into consideration?
+> > 
+> > CONFIG_CPU_IDLE=y
+> > CONFIG_PM=n
+> 
+> This actually doesn't work (please see below).
+> 
+> > Also, slightly off topic, but on top of that we have the ARM specific
+> > CONFIG_ARM_CPU_SUSPEND which is required to build cpu_resume() in
+> > sleep-sh7372.c, and this in turn in needed for CPUIdle or
+> > Suspend-to-RAM on sh7372.
+> > 
+> > It would be nice to simplify all this somehow. From the ARM arch code
+> > we do want to use cpu_resume() and cpu_suspend() both from CPUIdle and
+> > Suspend-to-RAM - this since the same low level sleep code is used for
+> > both cases.
+> 
+> Yes, please see my fix for the build bug reported by Guennadi.
+> cpu_resume() and cpu_suspend() are not available if CONFIG_SUSPEND is unset.
 
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
----
- drivers/mtd/nand/sh_flctl.c  |   99 +++++++++++++++++++++++++++++++++++++++++-
- include/linux/mtd/sh_flctl.h |    1 +
- 2 files changed, 98 insertions(+), 2 deletions(-)
+Hi Rafael,
 
-diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
-index 2cf6871..00211f9 100644
---- a/drivers/mtd/nand/sh_flctl.c
-+++ b/drivers/mtd/nand/sh_flctl.c
-@@ -24,6 +24,8 @@
- #include <linux/module.h>
- #include <linux/kernel.h>
- #include <linux/delay.h>
-+#include <linux/dmaengine.h>
-+#include <linux/dma-mapping.h>
- #include <linux/interrupt.h>
- #include <linux/io.h>
- #include <linux/platform_device.h>
-@@ -106,6 +108,13 @@ static void wait_completion(struct sh_flctl *flctl)
- 	writeb(0x0, FLTRCR(flctl));
- }
- 
-+static void flctl_dma_complete(void *param)
-+{
-+	struct sh_flctl *flctl = param;
-+
-+	complete(&flctl->dma_complete);
-+}
-+
- static void set_addr(struct mtd_info *mtd, int column, int page_addr)
- {
- 	struct sh_flctl *flctl = mtd_to_flctl(mtd);
-@@ -261,6 +270,71 @@ static void wait_wecfifo_ready(struct sh_flctl *flctl)
- 	timeout_error(flctl, __func__);
- }
- 
-+static void flctl_release_dma(struct sh_flctl *flctl);
-+
-+static void flctl_dma_fifo0_transfer(struct sh_flctl *flctl, unsigned long *buf,
-+					int len, enum dma_data_direction dir)
-+{
-+	struct dma_async_tx_descriptor *desc = NULL;
-+	struct dma_chan *chan;
-+	enum dma_transfer_direction tr_dir;
-+	dma_addr_t dma_addr;
-+	dma_cookie_t cookie = -EINVAL;
-+	uint32_t reg;
-+	int ret;
-+
-+	if (dir = DMA_FROM_DEVICE) {
-+		chan = flctl->chan_fifo0_rx;
-+		tr_dir = DMA_DEV_TO_MEM;
-+	} else {
-+		chan = flctl->chan_fifo0_tx;
-+		tr_dir = DMA_MEM_TO_DEV;
-+	}
-+
-+	dma_addr = dma_map_single(chan->device->dev, buf, len, dir);
-+
-+	if (dma_addr)
-+		desc = dmaengine_prep_slave_single(chan, dma_addr, len,
-+			tr_dir, DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
-+
-+	if (desc) {
-+		reg = readl(FLINTDMACR(flctl));
-+		reg |= DREQ0EN;
-+		writel(reg, FLINTDMACR(flctl));
-+
-+		desc->callback = flctl_dma_complete;
-+		desc->callback_param = flctl;
-+		cookie = dmaengine_submit(desc);
-+
-+		dma_async_issue_pending(chan);
-+	}
-+
-+	if (!desc) {
-+		/* DMA failed, fall back to PIO */
-+		flctl_release_dma(flctl);
-+		dev_warn(&flctl->pdev->dev,
-+			 "DMA failed, falling back to PIO\n");
-+		goto out;
-+	}
-+
-+	ret +	wait_for_completion_timeout(&flctl->dma_complete,
-+				msecs_to_jiffies(3000));
-+
-+	if (ret <= 0) {
-+		chan->device->device_control(chan, DMA_TERMINATE_ALL, 0);
-+		dev_err(&flctl->pdev->dev, "wait_for_completion_timeout\n");
-+	}
-+
-+out:
-+	reg = readl(FLINTDMACR(flctl));
-+	reg &= ~DREQ0EN;
-+	writel(reg, FLINTDMACR(flctl));
-+
-+	dma_unmap_single(chan->device->dev, dma_addr, len, dir);
-+	init_completion(&flctl->dma_complete);
-+}
-+
- static void read_datareg(struct sh_flctl *flctl, int offset)
- {
- 	unsigned long data;
-@@ -279,6 +353,16 @@ static void read_fiforeg(struct sh_flctl *flctl, int rlen, int offset)
- 
- 	len_4align = (rlen + 3) / 4;
- 
-+	/* initiate DMA transfer */
-+	if (flctl->chan_fifo0_rx && rlen >= 32) {
-+		flctl_dma_fifo0_transfer(flctl, buf, rlen, DMA_DEV_TO_MEM);
-+		for (i = 0; i < len_4align; i++)
-+			buf[i] = be32_to_cpu(buf[i]);
-+
-+		return;
-+	}
-+
-+	/* do polling transfer */
- 	for (i = 0; i < len_4align; i++) {
- 		wait_rfifo_ready(flctl);
- 		buf[i] = readl(FLDTFIFO(flctl));
-@@ -308,13 +392,24 @@ static enum flctl_ecc_res_t read_ecfiforeg
- static void write_fiforeg(struct sh_flctl *flctl, int rlen, int offset)
- {
- 	int i, len_4align;
--	unsigned long *data = (unsigned long *)&flctl->done_buff[offset];
-+	unsigned long *buf = (unsigned long *)&flctl->done_buff[offset];
- 	void *fifo_addr = (void *)FLDTFIFO(flctl);
- 
- 	len_4align = (rlen + 3) / 4;
-+
-+	/* initiate DMA transfer */
-+	if (flctl->chan_fifo0_tx && rlen >= 32) {
-+		for (i = 0; i < len_4align; i++)
-+			buf[i] = cpu_to_be32(buf[i]);
-+
-+		flctl_dma_fifo0_transfer(flctl, buf, rlen, DMA_MEM_TO_DEV);
-+		return;
-+	}
-+
-+	/* do polling transfer */
- 	for (i = 0; i < len_4align; i++) {
- 		wait_wfifo_ready(flctl);
--		writel(cpu_to_be32(data[i]), fifo_addr);
-+		writel(cpu_to_be32(buf[i]), fifo_addr);
- 	}
- }
- 
-diff --git a/include/linux/mtd/sh_flctl.h b/include/linux/mtd/sh_flctl.h
-index 20d3f48..d55ec25 100644
---- a/include/linux/mtd/sh_flctl.h
-+++ b/include/linux/mtd/sh_flctl.h
-@@ -109,6 +109,7 @@
- #define ESTERINTE	(0x1 << 24)	/* ECC error interrupt enable */
- #define AC1CLR		(0x1 << 19)	/* ECC FIFO clear */
- #define AC0CLR		(0x1 << 18)	/* Data FIFO clear */
-+#define DREQ0EN		(0x1 << 16)	/* FLDTFIFODMA Request Enable */
- #define ECERB		(0x1 << 9)	/* ECC error */
- #define STERB		(0x1 << 8)	/* Status error */
- #define STERINTE	(0x1 << 4)	/* Status error enable */
--- 
-1.7.5.4
+I may have missed something, but it seems that this patch wasn't merged.
+Aside from whether it still applies or not, is it still appropriate?
+And if so, is it appropriate to go through the linux-pm tree?
 
