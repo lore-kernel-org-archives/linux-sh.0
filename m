@@ -1,43 +1,77 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 05 Sep 2012 05:45:22 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: sh73a0: enable PMU(Performance Monitoring Unit)
-Message-Id: <20120905054521.GA13568@linux-sh.org>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 11 Sep 2012 08:05:26 +0000
+Subject: [PATCH 1/2] ARM: shmobile: sh73a0: enable PMU(Performance Monitoring Unit)
+Message-Id: <1347350727-11962-2-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346813317-4030-2-git-send-email-koba@kmckk.co.jp>
-In-Reply-To: <1346813317-4030-2-git-send-email-koba@kmckk.co.jp>
+References: <1347350727-11962-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1347350727-11962-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Sep 05, 2012 at 11:48:36AM +0900, Tetsuyuki Kobayshi wrote:
-> +#ifdef CONFIG_HW_PERF_EVENTS
-> +static struct resource pmu_resources[] = {
-> +	[0] = {
-> +		.start	= gic_spi(55),
-> +		.end	= gic_spi(55),
-> +		.flags	= IORESOURCE_IRQ,
-> +	},
-> +	[1] = {
-> +		.start	= gic_spi(56),
-> +		.end	= gic_spi(56),
-> +		.flags	= IORESOURCE_IRQ,
-> +	},
-> +};
-> +
-> +static struct platform_device pmu_device = {
-> +	.name		= "arm-pmu",
-> +	.id		= ARM_PMU_DEVICE_CPU,
-> +	.num_resources	= ARRAY_SIZE(pmu_resources),
-> +	.resource	= pmu_resources,
-> +};
-> +#endif
-> +
-There is no need for the ifdef for any of these, if perf events aren't
-enabled then the arm-pmu driver to claim the platform device won't exist
-and this is all harmless, as with every other platform device.
+From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
 
-In general you should try to avoid adding ifdefs as much as possible, as
-they make things not only uglier, but they lock you down to one static
-configuration, while all the infrastructure exists to manage thingn for
-you in a dynamic fashion.
+This patch enables PMU(Performance Monitoring Unit) for sh73a0.
+
+Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ arch/arm/configs/kzm9g_defconfig      |    1 +
+ arch/arm/mach-shmobile/setup-sh73a0.c |   21 +++++++++++++++++++++
+ 2 files changed, 22 insertions(+)
+
+diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
+index 2388c86..5d0c667 100644
+--- a/arch/arm/configs/kzm9g_defconfig
++++ b/arch/arm/configs/kzm9g_defconfig
+@@ -14,6 +14,7 @@ CONFIG_NAMESPACES=y
+ CONFIG_CC_OPTIMIZE_FOR_SIZE=y
+ CONFIG_SYSCTL_SYSCALL=y
+ CONFIG_EMBEDDED=y
++CONFIG_PERF_EVENTS=y
+ CONFIG_SLAB=y
+ CONFIG_MODULES=y
+ CONFIG_MODULE_FORCE_LOAD=y
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index d230af6..38ed2dd 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -734,6 +734,26 @@ static struct platform_device mpdma0_device = {
+ 	},
+ };
+ 
++static struct resource pmu_resources[] = {
++	[0] = {
++		.start	= gic_spi(55),
++		.end	= gic_spi(55),
++		.flags	= IORESOURCE_IRQ,
++	},
++	[1] = {
++		.start	= gic_spi(56),
++		.end	= gic_spi(56),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device pmu_device = {
++	.name		= "arm-pmu",
++	.id		= -1,
++	.num_resources	= ARRAY_SIZE(pmu_resources),
++	.resource	= pmu_resources,
++};
++
+ static struct platform_device *sh73a0_early_devices[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+@@ -757,6 +777,7 @@ static struct platform_device *sh73a0_late_devices[] __initdata = {
+ 	&i2c4_device,
+ 	&dma0_device,
+ 	&mpdma0_device,
++	&pmu_device,
+ };
+ 
+ #define SRCR2          0xe61580b0
+-- 
+1.7.10.4
+
