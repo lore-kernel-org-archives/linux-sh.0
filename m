@@ -1,56 +1,133 @@
-From: wency@cn.fujitsu.com
-Date: Wed, 05 Sep 2012 09:25:55 +0000
-Subject: [RFC v9 PATCH 21/21] memory-hotplug: auto offline page_cgroup when onlining memory block failed
-Message-Id: <1346837155-534-22-git-send-email-wency@cn.fujitsu.com>
+From: Hideki EIRAKU <hdk@igel.co.jp>
+Date: Tue, 11 Sep 2012 06:10:14 +0000
+Subject: [PATCH v3 2/2] ARM: mach-shmobile: sh7372: Add IPMMU device
+Message-Id: <1347343814-32299-3-git-send-email-hdk@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346837155-534-1-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1346837155-534-1-git-send-email-wency@cn.fujitsu.com>
+References: <1347343814-32299-1-git-send-email-hdk@igel.co.jp>
+In-Reply-To: <1347343814-32299-1-git-send-email-hdk@igel.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
-Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wen Congyang <wency@cn.fujitsu.com>
+This patch adds an IPMMU device and notifies the IPMMU driver which
+devices are connected via the IPMMU module.  All devices connected to the main
+memory bus via the IPMMU module MUST be registered when SHMOBILE_IPMMU and
+SHMOBILE_IOMMU are enabled because physical address cannot be used
+while the IPMMU module's MMU function is enabled.
 
-When a memory block is onlined, we will try allocate memory on that node
-to store page_cgroup. If onlining the memory block failed, we don't
-offline the page cgroup, and we have no chance to offline this page cgroup
-unless the memory block is onlined successfully again. It will cause
-that we can't hot-remove the memory device on that node, because some
-memory is used to store page cgroup. If onlining the memory block
-is failed, there is no need to stort page cgroup for this memory. So
-auto offline page_cgroup when onlining memory block failed.
-
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-CC: Paul Mackerras <paulus@samba.org>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-CC: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Hideki EIRAKU <hdk@igel.co.jp>
+Tested-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
 ---
- mm/page_cgroup.c |    3 +++
- 1 files changed, 3 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c   |    5 +++++
+ arch/arm/mach-shmobile/board-mackerel.c |    5 +++++
+ arch/arm/mach-shmobile/setup-sh7372.c   |   26 ++++++++++++++++++++++++++
+ 3 files changed, 36 insertions(+), 0 deletions(-)
 
-diff --git a/mm/page_cgroup.c b/mm/page_cgroup.c
-index 5ddad0c..44db00e 100644
---- a/mm/page_cgroup.c
-+++ b/mm/page_cgroup.c
-@@ -251,6 +251,9 @@ static int __meminit page_cgroup_callback(struct notifier_block *self,
- 				mn->nr_pages, mn->status_change_nid);
- 		break;
- 	case MEM_CANCEL_ONLINE:
-+		offline_page_cgroup(mn->start_pfn,
-+				mn->nr_pages, mn->status_change_nid);
-+		break;
- 	case MEM_GOING_OFFLINE:
- 		break;
- 	case MEM_ONLINE:
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index f172ca8..ce6d796 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -61,6 +61,7 @@
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/sh7372.h>
++#include <mach/ipmmu.h>
+ 
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+@@ -1448,6 +1449,10 @@ static void __init ap4evb_init(void)
+ 
+ 	sh7372_add_standard_devices();
+ 
++	ipmmu_add_device(&lcdc_device.dev);
++	ipmmu_add_device(&lcdc1_device.dev);
++	ipmmu_add_device(&ceu_device.dev);
++
+ 	/* HDMI */
+ 	gpio_request(GPIO_FN_HDMI_HPD, NULL);
+ 	gpio_request(GPIO_FN_HDMI_CEC, NULL);
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index c129542..8bc4faf 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -60,6 +60,7 @@
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/sh7372.h>
++#include <mach/ipmmu.h>
+ 
+ #include <asm/mach/arch.h>
+ #include <asm/mach-types.h>
+@@ -1622,6 +1623,10 @@ static void __init mackerel_init(void)
+ 
+ 	sh7372_add_standard_devices();
+ 
++	ipmmu_add_device(&lcdc_device.dev);
++	ipmmu_add_device(&hdmi_lcdc_device.dev);
++	ipmmu_add_device(&ceu_device.dev);
++
+ 	platform_add_devices(mackerel_devices, ARRAY_SIZE(mackerel_devices));
+ 
+ 	rmobile_add_device_to_domain(&sh7372_pd_a4lc, &lcdc_device);
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index 838a87b..399d26d 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -38,6 +38,7 @@
+ #include <mach/irqs.h>
+ #include <mach/sh7372.h>
+ #include <mach/common.h>
++#include <mach/ipmmu.h>
+ #include <asm/mach/map.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+@@ -968,6 +969,23 @@ static struct platform_device spu1_device = {
+ 	.num_resources	= ARRAY_SIZE(spu1_resources),
+ };
+ 
++/* IPMMUI (an IPMMU module for ICB/LMB) */
++static struct resource ipmmu_resources[] = {
++	[0] = {
++		.name	= "IPMMUI",
++		.start	= 0xfe951000,
++		.end	= 0xfe9510ff,
++		.flags	= IORESOURCE_MEM,
++	},
++};
++
++static struct platform_device ipmmu_device = {
++	.name           = "ipmmu",
++	.id             = -1,
++	.resource       = ipmmu_resources,
++	.num_resources  = ARRAY_SIZE(ipmmu_resources),
++};
++
+ static struct platform_device *sh7372_early_devices[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+@@ -979,6 +997,7 @@ static struct platform_device *sh7372_early_devices[] __initdata = {
+ 	&cmt2_device,
+ 	&tmu00_device,
+ 	&tmu01_device,
++	&ipmmu_device,
+ };
+ 
+ static struct platform_device *sh7372_late_devices[] __initdata = {
+@@ -1020,6 +1039,13 @@ void __init sh7372_add_standard_devices(void)
+ 	platform_add_devices(sh7372_early_devices,
+ 			    ARRAY_SIZE(sh7372_early_devices));
+ 
++	ipmmu_add_device(&vpu_device.dev);
++	ipmmu_add_device(&jpu_device.dev);
++	ipmmu_add_device(&veu0_device.dev);
++	ipmmu_add_device(&veu1_device.dev);
++	ipmmu_add_device(&veu2_device.dev);
++	ipmmu_add_device(&veu3_device.dev);
++
+ 	platform_add_devices(sh7372_late_devices,
+ 			    ARRAY_SIZE(sh7372_late_devices));
+ 
 -- 
-1.7.1
+1.7.0.4
 
