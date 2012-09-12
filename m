@@ -1,11 +1,9 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 12 Sep 2012 07:16:00 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 12 Sep 2012 07:19:47 +0000
 Subject: Re: [PATCH] ARM: shmobile: r8a7779: remove USB phy initializer
-Message-Id: <878vcfn237.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <20120912071945.GC8435@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201209032138.41485.arnd@arndb.de>
- <87k3wafxj4.wl%kuninori.morimoto.gx@renesas.com>
- <20120904003402.GE6095@verge.net.au>
+References: <20120904003402.GE6095@verge.net.au>
  <87ehmifl3b.wl%kuninori.morimoto.gx@renesas.com>
  <20120905012056.GC4232@verge.net.au>
  <20120905012337.GD4232@verge.net.au>
@@ -14,30 +12,30 @@ References: <201209032138.41485.arnd@arndb.de>
  <20120912051614.GA5718@verge.net.au>
  <87d31rn6xe.wl%kuninori.morimoto.gx@renesas.com>
  <20120912063020.GE18563@arwen.pp.htv.fi>
-In-Reply-To: <20120912063020.GE18563@arwen.pp.htv.fi>
+ <878vcfn237.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <878vcfn237.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-
-Hi Simon, Felipe
-
-> > >> Felipe
-> > 
-> > Please let us know current status of this patch ?
+On Wed, Sep 12, 2012 at 12:16:00AM -0700, Kuninori Morimoto wrote:
 > 
-> It will have to wait for v3.8... there wasn't enough time for me to pick
-> that up, sorry.
+> Hi Simon, Felipe
+> 
+> > > >> Felipe
+> > > 
+> > > Please let us know current status of this patch ?
+> > 
+> > It will have to wait for v3.8... there wasn't enough time for me to pick
+> > that up, sorry.
+> 
+> OK. no worry
+> 
+> >> Simon
+> 
+> Marzen board USB depends on this phy driver.
+> So, let's aim to v3.8.
+> Is is OK ?
 
-OK. no worry
-
->> Simon
-
-Marzen board USB depends on this phy driver.
-So, let's aim to v3.8.
-Is is OK ?
-
-Best regards
----
-Kuninori Morimoto
+Its ok by me.
