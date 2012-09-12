@@ -1,12 +1,15 @@
 From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
-Date: Mon, 10 Sep 2012 10:30:55 +0000
+Date: Wed, 12 Sep 2012 05:29:45 +0000
 Subject: [RFC PATCH 2/2] ARM: shmobile: sh7372: Change VPU UIO to uio_dmem_genirq
-Message-Id: <1347273055-10311-3-git-send-email-dhobsong@igel.co.jp>
+Message-Id: <1347427785-9767-3-git-send-email-dhobsong@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1347427785-9767-1-git-send-email-dhobsong@igel.co.jp>
+In-Reply-To: <1347427785-9767-1-git-send-email-dhobsong@igel.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: horms@verge.net.au, magnus.damm@gmail.com
+Cc: hjk@hansjkoch.de, linux-sh@vger.kernel.org, hdk@igel.co.jp, linux-kernel@vger.kernel.org, Damian Hobson-Garcia <dhobsong@igel.co.jp>
 
 This allows the VPU memory to be allocated dynamically only when it
 is needed.
