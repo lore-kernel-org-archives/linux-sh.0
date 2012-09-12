@@ -1,80 +1,48 @@
-From: Stephen Warren <swarren@wwwdotorg.org>
-Date: Tue, 11 Sep 2012 15:22:59 +0000
-Subject: Re: [RFC v5] V4L DT bindings
-Message-Id: <504F5753.60407@wwwdotorg.org>
+From: "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>
+Date: Wed, 12 Sep 2012 10:09:41 +0000
+Subject: Re: [PATCH v4 0/8] Avoid cache trashing on clearing huge/gigantic page
+Message-Id: <20120912100941.GA26582@otc-wbsnb-06>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="9amGYk9869ThD9tj"
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1208242356051.20710@axis700.grange>
- <Pine.LNX.4.64.1209051030230.16676@axis700.grange>
- <5047DEE6.9020607@wwwdotorg.org>
- <Pine.LNX.4.64.1209111555010.22084@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1209111555010.22084@axis700.grange>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+References: <1345470757-12005-1-git-send-email-kirill.shutemov@linux.intel.com>
+In-Reply-To: <1345470757-12005-1-git-send-email-kirill.shutemov@linux.intel.com>
+To: linux-mm@kvack.org
+Cc: Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, x86@kernel.org, Andi Kleen <ak@linux.intel.com>, Tim Chen <tim.c.chen@linux.intel.com>, Alex Shi <alex.shu@intel.com>, Jan Beulich <jbeulich@novell.com>, Robert Richter <robert.richter@amd.com>, Andy Lutomirski <luto@amacapital.net>, Andrew Morton <akpm@linux-foundation.org>, Andrea Arcangeli <aarcange@redhat.com>, Johannes Weiner <hannes@cmpxchg.org>, Hugh Dickins <hughd@google.com>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Mel Gorman <mgorman@suse.de>, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org
 
-On 09/11/2012 08:02 AM, Guennadi Liakhovetski wrote:
-> Hi Stephen
-> 
-> Thanks for the review.
-> 
-> On Wed, 5 Sep 2012, Stephen Warren wrote:
-> 
->> On 09/05/2012 04:57 AM, Guennadi Liakhovetski wrote:
->>> Hi all
->>>
->>> Version 5 of this RFC is a result of a discussion of its version 4, which 
->>> took place during the recent Linux Plumbers conference in San Diego. 
->>> Changes are:
->>>
->>> (1) remove bus-width properties from device (bridge and client) top level. 
->>> This has actually already been decided upon during our discussions with 
->>> Sylwester, I just forgot to actually remove them, sorry.
->>>
->>> (2) links are now grouped under "ports." This should help better describe 
->>> device connection topology by making clearer, which interfaces links are 
->>> attached to. (help needed: in my notes I see "port" optional if only one 
->>> port is present, but I seem to remember, that the final decision was - 
->>> make ports compulsory for uniformity. Which one is true?)
->>
->> I'd tend to make the port node compulsory.
->>
->> A related question: What code is going to parse all the port/link
->> sub-nodes in a device?
-> 
-> I think we'll have to make a generic V4L DT parser. We certainly don't 
-> want each driver reimplement this.
-> 
->> And, how does it know which sub-nodes are ports,
->> and which are something else entirely? Perhaps the algorithm is that all
->> port nodes must be named "port"?
-> 
-> Yes, that was the idea. Is anything speaking against it?
 
-I think that's fine; it's certainly a nice and simple requirement. It's
-just a rule that will have to be thought about when designing bindings
-for all the devices that use this feature, to make sure they don't
-define any other kind of "port" node that would confuse the parser.
+--9amGYk9869ThD9tj
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-I suppose if this ever becomes a problem, an individual binding could
-choose to avoid conflicts by placing the "port" nodes in some specific
-child node of its device node, and the driver would pass the name of
-that node into the common parsing code, which would default to using the
-device's main node when not otherwise specified. However, we should
-avoid the conflicts if we can. In other words:
+Hi,
 
-Normal:
+Any feedback?
 
-/foo {
-    port@0 { ... };
-    port@1 { ... };
-};
+--=20
+ Kirill A. Shutemov
 
-If there's ever a need to resolve some conflict with that standard layout:
+--9amGYk9869ThD9tj
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-/foo {
-    media-ports {
-        port@0 { ... };
-        port@1 { ... };
-    };
-};
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJQUF9lAAoJEAd+omnVudOMqvgP/A9oBD+NU+NuFlm6b32IkUIR
+2jlEFuSzAp3dAS+aQWVcjLz88pNu7ZjD2m9dTWwVr03UKSlfc/UUcHctWmjrhj+B
+trkuGQ7qVadFTaunqj1z1NZGCrXwGTdw2f+soGtJ+cmwmOqxrqyDJlbJyyOfpiJe
+iYyOU522V7Rc/cnyjY+OxOkaHDBy3RIpo6DhVpSC4Ws6wH6bkuiM2ZYAx+fiRDnj
+Ii60Iel88rjQ0uSeTQ+Jznu16czL4q4bRB9IeT24jUQRgTp7kYKNyjzgy4/zrjOL
+Dlkck9VihPQhZ3QxAjqcxQQCwclB0GctZDFUIrP97+REFlvd3u7yVzgxpeVuqtsz
+K6aXJDcPqfTGyEe0OgOGVb+M6ylvIvsXjNXkym85PTCZNnw9smem1S2HY5689bH+
+ELP9ruYagr1yb+LTX3CQmFuvmoCyuzES/tgw97AJbFP3prkt0K44WhBsJCaflJjl
+efJg6qWTwTrIK8hq0ulcWnwa2oi9zbNwV2SVgDdVQmOfwtzKAp69ijF0Rd4lwpZf
+47ch8oZDVcn8Fv2nhv9FrFr8JiAZ07eIwzeAGiSfpIRpcKXoKUp8y950i++mlxNq
+xoGPDY1odKCKoVsbwYtW/E9l/tmUhTljqExfn9pzcHqMz4YUMGob7xnZOP0ljY5y
+ikNOztWkQPhLD2Cj1nLx
+=p8ME
+-----END PGP SIGNATURE-----
+
+--9amGYk9869ThD9tj--
