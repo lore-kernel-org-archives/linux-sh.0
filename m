@@ -1,12 +1,15 @@
 From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
-Date: Mon, 10 Sep 2012 10:30:54 +0000
+Date: Wed, 12 Sep 2012 05:29:44 +0000
 Subject: [RFC PATCH 1/2] Add new uio device for dynamic memory allocation
-Message-Id: <1347273055-10311-2-git-send-email-dhobsong@igel.co.jp>
+Message-Id: <1347427785-9767-2-git-send-email-dhobsong@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1347427785-9767-1-git-send-email-dhobsong@igel.co.jp>
+In-Reply-To: <1347427785-9767-1-git-send-email-dhobsong@igel.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: horms@verge.net.au, magnus.damm@gmail.com
+Cc: hjk@hansjkoch.de, linux-sh@vger.kernel.org, hdk@igel.co.jp, linux-kernel@vger.kernel.org, Damian Hobson-Garcia <dhobsong@igel.co.jp>
 
 This device extends the uio_pdrv_genirq driver to provide limited
 dynamic memory allocation for UIO devices.  This allows UIO devices
