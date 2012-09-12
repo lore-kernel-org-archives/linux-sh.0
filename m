@@ -1,96 +1,153 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 05 Sep 2012 08:20:42 +0000
-Subject: [PATCH 3/5] ARM: mach-shmobile: marzen: defconfig update
-Message-Id: <1346833244-30432-4-git-send-email-horms@verge.net.au>
+From: Cyril Chemparathy <cyril@ti.com>
+Date: Wed, 12 Sep 2012 16:04:06 +0000
+Subject: [PATCH] /dev/mem: use phys_addr_t for physical addresses
+Message-Id: <1347465846-6844-1-git-send-email-cyril@ti.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346833244-30432-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1346833244-30432-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Update marzen defconfig
-* Enable MMC Block device as SDHI hw is now supported.
-* Default to NFS root, this is consistent with many other
-  shmobile boards
-* Enable UNIX which is required by udevd
-
-Other changes are noise due to using make savedefconfig
-to create the new defconfig.
-
-Cc: Phil Edworthy <phil.edworthy@renesas.com>
-Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+This patch fixes the /dev/mem driver to use phys_addr_t for physical
+addresses.  This is required on PAE systems, especially those that run
+entirely out of >4G physical memory space.
 ---
- arch/arm/configs/marzen_defconfig |   13 ++++++++-----
- 1 file changed, 8 insertions(+), 5 deletions(-)
+ arch/arm/include/asm/io.h  |    2 +-
+ arch/arm/mm/mmap.c         |    2 +-
+ arch/ia64/include/asm/io.h |    2 +-
+ arch/ia64/kernel/efi.c     |    2 +-
+ arch/sh/include/asm/io.h   |    2 +-
+ arch/sh/mm/mmap.c          |    2 +-
+ drivers/char/mem.c         |   10 +++++-----
+ 7 files changed, 11 insertions(+), 11 deletions(-)
 
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index bf42ad2..cd2dc21 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -1,13 +1,14 @@
- # CONFIG_ARM_PATCH_PHYS_VIRT is not set
- CONFIG_EXPERIMENTAL=y
- CONFIG_KERNEL_LZMA=y
-+CONFIG_NO_HZ=y
- CONFIG_IKCONFIG=y
- CONFIG_IKCONFIG_PROC=y
- CONFIG_LOG_BUF_SHIFT
- CONFIG_SYSCTL_SYSCALL=y
- CONFIG_EMBEDDED=y
- CONFIG_SLAB=y
--# CONFIG_BLOCK is not set
-+# CONFIG_IOSCHED_CFQ is not set
- CONFIG_ARCH_SHMOBILE=y
- CONFIG_ARCH_R8A7779=y
- CONFIG_MACH_MARZEN=y
-@@ -21,7 +22,6 @@ CONFIG_ARM_ERRATA_458693=y
- CONFIG_ARM_ERRATA_460075=y
- CONFIG_ARM_ERRATA_743622=y
- CONFIG_ARM_ERRATA_754322=y
--CONFIG_NO_HZ=y
- CONFIG_SMP=y
- # CONFIG_ARM_CPU_TOPOLOGY is not set
- CONFIG_AEABI=y
-@@ -29,13 +29,16 @@ CONFIG_AEABI=y
- CONFIG_HIGHMEM=y
- CONFIG_ZBOOT_ROM_TEXT=0x0
- CONFIG_ZBOOT_ROM_BSS=0x0
--CONFIG_CMDLINE="console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel"
-+CONFIG_CMDLINE="console=ttySC2,115200 earlyprintk=sh-sci.2,115200 ignore_loglevel root=/dev/nfs ip=on"
- CONFIG_CMDLINE_FORCE=y
- CONFIG_KEXEC=y
- # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
- CONFIG_PM_RUNTIME=y
- CONFIG_NET=y
-+CONFIG_UNIX=y
- CONFIG_INET=y
-+CONFIG_IP_PNP=y
-+CONFIG_IP_PNP_DHCP=y
- # CONFIG_IPV6 is not set
- # CONFIG_WIRELESS is not set
- CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
-@@ -69,16 +72,16 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
- CONFIG_GPIO_SYSFS=y
- # CONFIG_HWMON is not set
- CONFIG_SSB=y
--# CONFIG_HID_SUPPORT is not set
- # CONFIG_USB_SUPPORT is not set
- CONFIG_MMC=y
- CONFIG_MMC_SDHI=y
- CONFIG_UIO=y
- CONFIG_UIO_PDRV_GENIRQ=y
- # CONFIG_IOMMU_SUPPORT is not set
--# CONFIG_FILE_LOCKING is not set
- CONFIG_TMPFS=y
- # CONFIG_MISC_FILESYSTEMS is not set
-+CONFIG_NFS_FS=y
-+CONFIG_ROOT_NFS=y
- CONFIG_MAGIC_SYSRQ=y
- CONFIG_DEBUG_INFO=y
- CONFIG_DEBUG_INFO_REDUCED=y
+diff --git a/arch/arm/include/asm/io.h b/arch/arm/include/asm/io.h
+index 35c1ed8..f52a93d 100644
+--- a/arch/arm/include/asm/io.h
++++ b/arch/arm/include/asm/io.h
+@@ -374,7 +374,7 @@ extern void pci_iounmap(struct pci_dev *dev, void __iomem *addr);
+ 
+ #ifdef CONFIG_MMU
+ #define ARCH_HAS_VALID_PHYS_ADDR_RANGE
+-extern int valid_phys_addr_range(unsigned long addr, size_t size);
++extern int valid_phys_addr_range(phys_addr_t addr, size_t size);
+ extern int valid_mmap_phys_addr_range(unsigned long pfn, size_t size);
+ extern int devmem_is_allowed(unsigned long pfn);
+ #endif
+diff --git a/arch/arm/mm/mmap.c b/arch/arm/mm/mmap.c
+index ce8cb19..89f2b7f 100644
+--- a/arch/arm/mm/mmap.c
++++ b/arch/arm/mm/mmap.c
+@@ -279,7 +279,7 @@ void arch_pick_mmap_layout(struct mm_struct *mm)
+  * You really shouldn't be using read() or write() on /dev/mem.  This
+  * might go away in the future.
+  */
+-int valid_phys_addr_range(unsigned long addr, size_t size)
++int valid_phys_addr_range(phys_addr_t addr, size_t size)
+ {
+ 	if (addr < PHYS_OFFSET)
+ 		return 0;
+diff --git a/arch/ia64/include/asm/io.h b/arch/ia64/include/asm/io.h
+index 2c26321..74a7cc3 100644
+--- a/arch/ia64/include/asm/io.h
++++ b/arch/ia64/include/asm/io.h
+@@ -90,7 +90,7 @@ phys_to_virt (unsigned long address)
+ 
+ #define ARCH_HAS_VALID_PHYS_ADDR_RANGE
+ extern u64 kern_mem_attribute (unsigned long phys_addr, unsigned long size);
+-extern int valid_phys_addr_range (unsigned long addr, size_t count); /* efi.c */
++extern int valid_phys_addr_range (phys_addr_t addr, size_t count); /* efi.c */
+ extern int valid_mmap_phys_addr_range (unsigned long pfn, size_t count);
+ 
+ /*
+diff --git a/arch/ia64/kernel/efi.c b/arch/ia64/kernel/efi.c
+index d37bbd4..f034563 100644
+--- a/arch/ia64/kernel/efi.c
++++ b/arch/ia64/kernel/efi.c
+@@ -870,7 +870,7 @@ kern_mem_attribute (unsigned long phys_addr, unsigned long size)
+ EXPORT_SYMBOL(kern_mem_attribute);
+ 
+ int
+-valid_phys_addr_range (unsigned long phys_addr, unsigned long size)
++valid_phys_addr_range (phys_addr_t phys_addr, unsigned long size)
+ {
+ 	u64 attr;
+ 
+diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
+index 0cf60a6..c4302a5 100644
+--- a/arch/sh/include/asm/io.h
++++ b/arch/sh/include/asm/io.h
+@@ -382,7 +382,7 @@ static inline int iounmap_fixed(void __iomem *addr) { return -EINVAL; }
+ #define xlate_dev_kmem_ptr(p)	p
+ 
+ #define ARCH_HAS_VALID_PHYS_ADDR_RANGE
+-int valid_phys_addr_range(unsigned long addr, size_t size);
++int valid_phys_addr_range(phys_addr_t addr, size_t size);
+ int valid_mmap_phys_addr_range(unsigned long pfn, size_t size);
+ 
+ #endif /* __KERNEL__ */
+diff --git a/arch/sh/mm/mmap.c b/arch/sh/mm/mmap.c
+index afeb710..80bf494 100644
+--- a/arch/sh/mm/mmap.c
++++ b/arch/sh/mm/mmap.c
+@@ -238,7 +238,7 @@ bottomup:
+  * You really shouldn't be using read() or write() on /dev/mem.  This
+  * might go away in the future.
+  */
+-int valid_phys_addr_range(unsigned long addr, size_t count)
++int valid_phys_addr_range(phys_addr_t addr, size_t count)
+ {
+ 	if (addr < __MEMORY_START)
+ 		return 0;
+diff --git a/drivers/char/mem.c b/drivers/char/mem.c
+index 0537903..c6fa3bc 100644
+--- a/drivers/char/mem.c
++++ b/drivers/char/mem.c
+@@ -48,7 +48,7 @@ static inline unsigned long size_inside_page(unsigned long start,
+ }
+ 
+ #ifndef ARCH_HAS_VALID_PHYS_ADDR_RANGE
+-static inline int valid_phys_addr_range(unsigned long addr, size_t count)
++static inline int valid_phys_addr_range(phys_addr_t addr, size_t count)
+ {
+ 	return addr + count <= __pa(high_memory);
+ }
+@@ -96,7 +96,7 @@ void __weak unxlate_dev_mem_ptr(unsigned long phys, void *addr)
+ static ssize_t read_mem(struct file *file, char __user *buf,
+ 			size_t count, loff_t *ppos)
+ {
+-	unsigned long p = *ppos;
++	phys_addr_t p = *ppos;
+ 	ssize_t read, sz;
+ 	char *ptr;
+ 
+@@ -153,7 +153,7 @@ static ssize_t read_mem(struct file *file, char __user *buf,
+ static ssize_t write_mem(struct file *file, const char __user *buf,
+ 			 size_t count, loff_t *ppos)
+ {
+-	unsigned long p = *ppos;
++	phys_addr_t p = *ppos;
+ 	ssize_t written, sz;
+ 	unsigned long copied;
+ 	void *ptr;
+@@ -226,7 +226,7 @@ int __weak phys_mem_access_prot_allowed(struct file *file,
+  *
+  */
+ #ifdef pgprot_noncached
+-static int uncached_access(struct file *file, unsigned long addr)
++static int uncached_access(struct file *file, phys_addr_t addr)
+ {
+ #if defined(CONFIG_IA64)
+ 	/*
+@@ -258,7 +258,7 @@ static pgprot_t phys_mem_access_prot(struct file *file, unsigned long pfn,
+ 				     unsigned long size, pgprot_t vma_prot)
+ {
+ #ifdef pgprot_noncached
+-	unsigned long offset = pfn << PAGE_SHIFT;
++	phys_addr_t offset = pfn << PAGE_SHIFT;
+ 
+ 	if (uncached_access(file, offset))
+ 		return pgprot_noncached(vma_prot);
 -- 
-1.7.10.4
+1.7.9.5
 
