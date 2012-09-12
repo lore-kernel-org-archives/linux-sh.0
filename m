@@ -1,93 +1,67 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 12 Sep 2012 19:28:34 +0000
+From: Stephen Warren <swarren@wwwdotorg.org>
+Date: Wed, 12 Sep 2012 20:53:39 +0000
 Subject: Re: [PATCH] media: add V4L2 DT binding documentation
-Message-Id: <Pine.LNX.4.64.1209122111100.28968@axis700.grange>
+Message-Id: <5050F653.5070404@wwwdotorg.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1209111746420.22084@axis700.grange>
  <5050DA40.8050105@wwwdotorg.org>
-In-Reply-To: <5050DA40.8050105@wwwdotorg.org>
+ <Pine.LNX.4.64.1209122111100.28968@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1209122111100.28968@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Stephen
-
-On Wed, 12 Sep 2012, Stephen Warren wrote:
-
-> On 09/11/2012 09:51 AM, Guennadi Liakhovetski wrote:
-> > This patch adds a document, describing common V4L2 device tree bindings.
-> > 
-> > Co-authored-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+On 09/12/2012 01:28 PM, Guennadi Liakhovetski wrote:
+> Hi Stephen
 > 
-> Overall, I think this looks pretty reasonable, so:
-
-Good, thanks!
-
-> Acked-by: Stephen Warren <swarren@wwwdotorg.org>
+> On Wed, 12 Sep 2012, Stephen Warren wrote:
 > 
-> Just a couple comments:
+>> On 09/11/2012 09:51 AM, Guennadi Liakhovetski wrote:
+>>> This patch adds a document, describing common V4L2 device tree bindings.
+>>>
+>>> Co-authored-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
+>>> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+>>
+>> Overall, I think this looks pretty reasonable, so:
+...
+>>
+>>> +			clock-frequency = <50000000>;	/* max clock frequency */
+>>> +			clock-output-names = "mclk";
+>>> +		};
+>>> +
+>>> +		port {
+>> ...
+>>> +			ceu0_0: link@0 {
+>>> +				reg = <0>;
+>>> +				remote = <&csi2_2>;
+>>> +				immutable;
+>>
+>> Did we decide "immutable" was actually needed? Presumably the driver for
+>> the HW in question knows the HW isn't configurable, and would simply not
+>> attempt to apply any configuration even if the .dts author erroneously
+>> provided some?
 > 
-> > +++ b/Documentation/devicetree/bindings/media/v4l2.txt
-> 
-> > +	ceu0: ceu@0xfe910000 {
-> 
-> > +		mclk: master_clock {
-> > +			compatible = "renesas,ceu-clock";
-> > +			#clock-cells = <1>;
-> 
-> Why 1? If there's only 1 clock output from this provider, I don't see a
-> need for any cells, unless there are some configuration flags?
+> Well, I've been thinking about this today. I think, bridge drivers will 
 
-Yes, indeed, that's also what's suggested in the clock bindings 
-documentation, thanks for pointing out.
+Sorry, I'm not sure what a "bridge" driver is; is it any v4l2 device?
 
-> 
-> > +			clock-frequency = <50000000>;	/* max clock frequency */
-> > +			clock-output-names = "mclk";
-> > +		};
-> > +
-> > +		port {
-> ...
-> > +			ceu0_0: link@0 {
-> > +				reg = <0>;
-> > +				remote = <&csi2_2>;
-> > +				immutable;
-> 
-> Did we decide "immutable" was actually needed? Presumably the driver for
-> the HW in question knows the HW isn't configurable, and would simply not
-> attempt to apply any configuration even if the .dts author erroneously
-> provided some?
+> call centrally provided helper functions to enumerate links inside ports. 
 
-Well, I've been thinking about this today. I think, bridge drivers will 
-call centrally provided helper functions to enumerate links inside ports. 
-While doing that they will want to differentiate between links to external 
-devices with explicit configuration, and links to internal devices, whose 
-configuration drivers might be able to figure out themselves. How should a 
-driver find out what device this link is pointing to? Should it follow the 
-"remote" phandle and then check the "compatible" property? The word 
-"immutable" is a hint, that this is a link to an internal device, but it 
-might either be unneeded or be transformed into something more 
-informative.
+Presumably a given driver would only parse the ports/links of its own DT
+node, and hence would be able to provide a parameter to any helper
+function that indicated the same information that "immutable" would?
 
-> > +			};
-> > +		};
-> > +	};
-> > +
-> > +	i2c0: i2c@0xfff20000 {
-> ...
-> > +		ov772x_1: camera@0x21 {
-> ...
-> > +			clocks = <&mclk 0>;
-> 
-> So presumably that could just be "clocks = <&mclk>;"?
+> While doing that they will want to differentiate between links to external 
+> devices with explicit configuration, and links to internal devices, whose 
+> configuration drivers might be able to figure out themselves. How should a 
+> driver find out what device this link is pointing to? Should it follow the 
+> "remote" phandle and then check the "compatible" property? The word 
+> "immutable" is a hint, that this is a link to an internal device, but it 
+> might either be unneeded or be transformed into something more 
+> informative.
 
-Right.
-
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+I would imagine that a given driver would only ever parse its own DT
+node; the far end of any link is purely the domain of the other driver.
+I thought that each link node would contain whatever hsync-active,
+data-lanes, ... properties that were needed to configure the local device?
