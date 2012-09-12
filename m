@@ -1,21 +1,27 @@
 From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
-Date: Mon, 10 Sep 2012 10:30:53 +0000
+Date: Wed, 12 Sep 2012 05:29:43 +0000
 Subject: [RFC PATCH 0/2] Add UIO device supporting dynamic memory allocation
-Message-Id: <1347273055-10311-1-git-send-email-dhobsong@igel.co.jp>
+Message-Id: <1347427785-9767-1-git-send-email-dhobsong@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1347273055-10311-1-git-send-email-dhobsong@igel.co.jp>
+In-Reply-To: <1347273055-10311-1-git-send-email-dhobsong@igel.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: horms@verge.net.au, magnus.damm@gmail.com
+Cc: hjk@hansjkoch.de, linux-sh@vger.kernel.org, hdk@igel.co.jp, linux-kernel@vger.kernel.org, Damian Hobson-Garcia <dhobsong@igel.co.jp>
+
+Reposting: I realized that this series should have gone out to a broader list.
+My apologies to those who those who will recieve a duplicate post. 
 
 Hello all,
 
-I've been using this device on the mackerel board for allocation/deallocation
-of memory regions through the IOMMU (IPMMU) via the dma-mapping API, but
-it can also be used by userspace drivers for accessing CMA memory
-regions. I don't know if it's better to try to add this functionality into
-the core uio driver or not, so for now I've kept all dynamic memory handling
-in the specific device driver.
+I've been using this UIO driver for allocation/deallocation
+of memory regions through an IOMMU via the dma-mapping API, but
+it seems that it would be more generally useful for userspace drivers
+to access CMA memory regions. I don't know if it's useful to try to add
+this functionality into the core uio driver or not, so for now I've kept
+all dynamic memory handling in the specific device driver.
 
 The number and size of the dynamically allocatable regions is defined
 statically in the device platform data, and the actually memory is
