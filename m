@@ -1,38 +1,40 @@
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Thu, 13 Sep 2012 05:10:10 +0000
-Subject: [PATCH v2] ARM: shmobile: armadillo800eva: Add support RTC
-Message-Id: <1347513011-18316-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 13 Sep 2012 06:13:38 +0000
+Subject: Re: [PATCH v2] ARM: shmobile: armadillo800eva: Add support RTC
+Message-Id: <20120913061338.GA29882@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1347513011-18316-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+In-Reply-To: <1347513011-18316-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The armadillo800eva has S35390A which is RTC. This is controlled
-using I2C of GPIO.
-This commit supports RTC of armadillo800eva.
+On Thu, Sep 13, 2012 at 02:10:10PM +0900, Nobuhiro Iwamatsu wrote:
+> The armadillo800eva has S35390A which is RTC. This is controlled
+> using I2C of GPIO.
+> This commit supports RTC of armadillo800eva.
 
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
----
- v2: Update and add defconfig for armadillo800eva
+Thanks, I have applied the following to the boards branch:
 
- arch/arm/configs/armadillo800eva_defconfig     |   12 +++++-------
- arch/arm/mach-shmobile/board-armadillo800eva.c |   25 ++++++++++++++++++++++++
- 2 files changed, 30 insertions(+), 7 deletions(-)
+commit b22f6bb030ee0c98839fe2445571c57c9f89594e
+Author: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date:   Thu Sep 13 14:10:10 2012 +0900
+
+    ARM: shmobile: armadillo800eva: Add support RTC
+    
+    The armadillo800eva has S35390A which is RTC. This is controlled
+    using I2C of GPIO.
+    This commit supports RTC of armadillo800eva.
+    
+    Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+    Signed-off-by: Simon Horman <horms@verge.net.au>
 
 diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
-index 7d87184..62861bd 100644
+index 7d87184..05f523d 100644
 --- a/arch/arm/configs/armadillo800eva_defconfig
 +++ b/arch/arm/configs/armadillo800eva_defconfig
-@@ -18,7 +18,6 @@ CONFIG_ARCH_SHMOBILE=y
- CONFIG_ARCH_R8A7740=y
- CONFIG_MACH_ARMADILLO800EVA=y
- # CONFIG_SH_TIMER_TMU is not set
--CONFIG_ARM_THUMB=y
- CONFIG_CPU_BPREDICT_DISABLE=y
- # CONFIG_CACHE_L2X0 is not set
- CONFIG_ARM_ERRATA_430973=y
-@@ -85,18 +84,16 @@ CONFIG_SERIAL_SH_SCI_NR_UARTS=8
+@@ -85,6 +85,7 @@ CONFIG_SERIAL_SH_SCI_NR_UARTS=8
  CONFIG_SERIAL_SH_SCI_CONSOLE=y
  # CONFIG_HW_RANDOM is not set
  CONFIG_I2C=y
@@ -40,29 +42,7 @@ index 7d87184..62861bd 100644
  CONFIG_I2C_SH_MOBILE=y
  # CONFIG_HWMON is not set
  CONFIG_MEDIA_SUPPORT=y
--CONFIG_VIDEO_DEV=y
--# CONFIG_RC_CORE is not set
--# CONFIG_VIDEO_HELPER_CHIPS_AUTO is not set
--# CONFIG_V4L_USB_DRIVERS is not set
-+CONFIG_MEDIA_CAMERA_SUPPORT=y
-+# CONFIG_USB_GSPCA is not set
- CONFIG_V4L_PLATFORM_DRIVERS=y
- CONFIG_SOC_CAMERA=y
- CONFIG_SOC_CAMERA_MT9T112=y
- CONFIG_VIDEO_SH_MOBILE_CEU=y
--# CONFIG_RADIO_ADAPTERS is not set
- CONFIG_FB=y
- CONFIG_FB_SH_MOBILE_LCDC=y
- CONFIG_FB_SH_MOBILE_HDMI=y
-@@ -111,7 +108,6 @@ CONFIG_LOGO=y
- # CONFIG_SND_DRIVERS is not set
- # CONFIG_SND_ARM is not set
- CONFIG_SND_SOC_SH4_FSI=y
--# CONFIG_HID_SUPPORT is not set
- CONFIG_USB=y
- CONFIG_USB_RENESAS_USBHS=y
- CONFIG_USB_GADGET=y
-@@ -120,6 +116,8 @@ CONFIG_USB_ETH=m
+@@ -120,6 +121,8 @@ CONFIG_USB_ETH=m
  CONFIG_MMC=y
  CONFIG_MMC_SDHI=y
  CONFIG_MMC_SH_MMCIF=y
@@ -135,6 +115,3 @@ index cf10f92..81dfb88 100644
  
  	r8a7740_add_standard_devices();
  
--- 
-1.7.10.4
-
