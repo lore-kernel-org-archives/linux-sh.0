@@ -1,47 +1,28 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Tue, 18 Sep 2012 08:01:47 +0000
-Subject: Re: [PATCH 19/24] sh: use __iomem pointers for MMIO
-Message-Id: <201209180801.48038.arnd@arndb.de>
+From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+Date: Fri, 14 Sep 2012 09:14:27 +0000
+Subject: [PATCH 0/2] ARM; shmobile: kzm9g: enable sensors on the board
+Message-Id: <1347614069-23345-1-git-send-email-koba@kmckk.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1347658492-11608-1-git-send-email-arnd@arndb.de>
- <1347658492-11608-20-git-send-email-arnd@arndb.de>
- <20120918073741.GN13568@linux-sh.org>
-In-Reply-To: <20120918073741.GN13568@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tuesday 18 September 2012, Paul Mundt wrote:
-> On Fri, Sep 14, 2012 at 11:34:47PM +0200, Arnd Bergmann wrote:
-> > ARM is moving to stricter checks on readl/write functions,
-> > so we need to use the correct types everywhere.
-> > 
-> > I'm not completely sure about this patch, and it will
-> > probably require some arch/sh changes to go along with it,
-> > but it's clear that something has to be done to avoid
-> > getting hundreds of new warnings on each shmobile build
-> > in v3.7.
-> > Please see this as a prototype.
-> > 
-> I have no intention of making this change for arch/sh.
-> 
-> The __raw variants already accept both __iomem pointers and integer
-> addresses, which was largely intentional. New code could use the __iomem
-> annotations while older code could continue to use the integer addresses
-> without issue.
+Hello, simon-san
 
-Ok, I'm dropping this patch from the series then.
+KZM-A9-GT board (kzm9g) has 2 sensor chip on the board.
+ - magnetometer AK8975
+ - three-axis digital accelerometer ADXL345
+This patch registers device driver and assign I2C slave address and IRQ.
 
-> If you wish to go through the kernel and audit every
-> single __raw user, you're certainly welcome to, but until then such a
-> change is premature.
+Tetsuyuki Kobayashi (2):
+  ARM: shmobile: kzm9g: enable magnetometer ak8975.
+  ARM: shmobile: kzm9g: enable three-axis digital accelerometer ADXL345
 
-I've done it for all the defconfig files for now, which probably covers
-most of the drivers that are relevant on ARM. I still have a backlog
-of unrelated warning fixes from that. Once I'm done with those, I'm planning
-to do another round of randconfig builds, which hopefully catches the
-rest. I'll just exclude drivers/sh from those builds for now.
+ arch/arm/configs/kzm9g_defconfig     |    4 ++++
+ arch/arm/mach-shmobile/board-kzm9g.c |   10 +++++++++-
+ 2 files changed, 13 insertions(+), 1 deletion(-)
 
-	Arnd
+-- 
+1.7.9.5
 
