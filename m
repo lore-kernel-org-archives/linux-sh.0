@@ -1,124 +1,52 @@
-From: Hideki EIRAKU <hdk@igel.co.jp>
-Date: Fri, 28 Sep 2012 04:29:11 +0000
-Subject: Re: [PATCH v3 1/2] iommu/shmobile: Add iommu driver for Renesas IPMMU modules
-Message-Id: <20120928.132911.321770401.hdk@igel.co.jp>
+From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+Date: Fri, 14 Sep 2012 09:14:29 +0000
+Subject: [PATCH 2/2] ARM: shmobile: kzm9g: enable three-axis digital accelerometer ADXL345
+Message-Id: <1347614069-23345-3-git-send-email-koba@kmckk.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1347343814-32299-1-git-send-email-hdk@igel.co.jp>
- <1347343814-32299-2-git-send-email-hdk@igel.co.jp>
- <CABMQnVKiZyKMy_T7iAArc48zKnwzHpEUZY9+iqTRzCf9v9tJ0g@mail.gmail.com>
-In-Reply-To: <CABMQnVKiZyKMy_T7iAArc48zKnwzHpEUZY9+iqTRzCf9v9tJ0g@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi,
+This patch enables three-axis digital accelerometer ADXL345.
+Test:
+  sudo cat /dev/input/event2
+then tip up the board. You get something from /dev/input/event2.
 
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Subject: Re: [PATCH v3 1/2] iommu/shmobile: Add iommu driver for Renesas IPMMU modules
-Date: Wed, 12 Sep 2012 17:07:00 +0900
+Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+---
+ arch/arm/configs/kzm9g_defconfig     |    2 ++
+ arch/arm/mach-shmobile/board-kzm9g.c |    4 ++++
+ 2 files changed, 6 insertions(+)
 
->> +static inline void ipmmu_add_device(struct device *dev)
->> +{
->> +}
-> 
-> Please use 'do { } while (0)'.
-
-Do you mean using #define macro is better than this inline function?
-I chose the inline function because:
-
-- The function's argument type is checked by a compiler.
-- Its output code should be exactly the same as a macro in this case.
-- The Linux kernel coding style says "Generally, inline functions are
-  preferable to macros resembling functions."
-
->> +       switch (size) {
->> +       default:
->> +               priv->tlb_enabled = 0;
->> +               break;
->> +       case 0x2000:
->> +               ipmmu_reg_write(priv, IMTTBCR, 1);
->> +               priv->tlb_enabled = 1;
->> +               break;
->> +       case 0x1000:
->> +               ipmmu_reg_write(priv, IMTTBCR, 2);
->> +               priv->tlb_enabled = 1;
->> +               break;
->> +       case 0x800:
->> +               ipmmu_reg_write(priv, IMTTBCR, 3);
->> +               priv->tlb_enabled = 1;
->> +               break;
->> +       case 0x400:
->> +               ipmmu_reg_write(priv, IMTTBCR, 4);
->> +               priv->tlb_enabled = 1;
->> +               break;
->> +       case 0x200:
->> +               ipmmu_reg_write(priv, IMTTBCR, 5);
->> +               priv->tlb_enabled = 1;
->> +               break;
->> +       case 0x100:
->> +               ipmmu_reg_write(priv, IMTTBCR, 6);
->> +               priv->tlb_enabled = 1;
->> +               break;
->> +       case 0x80:
->> +               ipmmu_reg_write(priv, IMTTBCR, 7);
->> +               priv->tlb_enabled = 1;
->> +               break;
->> +       }
-> 
-> I thought that you could describe more briefly if ffs() is used.
-
-This is simply converted from a hardware manual.  ffs() can be used
-like below:
-
-	bit = ffs(size);
-	if (bit >= 7 && bit <= 13 && (1 << bit) = size) {
-		ipmmu_reg_write(priv, IMTTBCR, 14 - bit);
-		priv->tlb_enabled = 1;
-	} else {
-		priv->tlb_enabled = 0;
-	}
-
-Checking size is still needed because only 7 sizes are allowed here.
-I think using switch() is easier to understand.
-
->> +#ifdef CONFIG_SHMOBILE_IOMMU_L1SIZE_8192
->> +#define L1_SIZE 8192
->> +#endif
->> +#ifdef CONFIG_SHMOBILE_IOMMU_L1SIZE_4096
->> +#define L1_SIZE 4096
->> +#endif
->> +#ifdef CONFIG_SHMOBILE_IOMMU_L1SIZE_2048
->> +#define L1_SIZE 2048
->> +#endif
->> +#ifdef CONFIG_SHMOBILE_IOMMU_L1SIZE_1024
->> +#define L1_SIZE 1024
->> +#endif
->> +#ifdef CONFIG_SHMOBILE_IOMMU_L1SIZE_512
->> +#define L1_SIZE 512
->> +#endif
->> +#ifdef CONFIG_SHMOBILE_IOMMU_L1SIZE_256
->> +#define L1_SIZE 256
->> +#endif
->> +#ifdef CONFIG_SHMOBILE_IOMMU_L1SIZE_128
->> +#define L1_SIZE 128
->> +#endif
-> 
-> I think that it was better to define by kconfig.
-> For example, following codes.
-> 
-> +config SHMOBILE_IOMMU_L1SIZE
-> +       hex
-> +       default "0x00002000" if SHMOBILE_IOMMU_L1SIZE_8192
-> +       default "0x00001000" if SHMOBILE_IOMMU_L1SIZE_4096
-> +       default "0x00000800" if SHMOBILE_IOMMU_L1SIZE_2048
-> +       default "0x00000400" if SHMOBILE_IOMMU_L1SIZE_1024
-> +       default "0x00000200" if SHMOBILE_IOMMU_L1SIZE_512
-> +       default "0x00000100" if SHMOBILE_IOMMU_L1SIZE_256
-> +       default "0x00000080" if SHMOBILE_IOMMU_L1SIZE_128
-
-I did not know that way.  It looks good for me too.
-Thank you.
-
+diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
+index 2aaa2ff..83047e0 100644
+--- a/arch/arm/configs/kzm9g_defconfig
++++ b/arch/arm/configs/kzm9g_defconfig
+@@ -73,6 +73,8 @@ CONFIG_INPUT_EVDEV=y
+ # CONFIG_INPUT_MOUSE is not set
+ CONFIG_INPUT_TOUCHSCREEN=y
+ CONFIG_TOUCHSCREEN_ST1232=y
++CONFIG_INPUT_MISC=y
++CONFIG_INPUT_ADXL34X=y
+ # CONFIG_LEGACY_PTYS is not set
+ CONFIG_SERIAL_SH_SCI=y
+ CONFIG_SERIAL_SH_SCI_NR_UARTS=9
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index 9c045d4..350be1d 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -567,6 +567,10 @@ static struct i2c_board_info i2c0_devices[] = {
+ 		I2C_BOARD_INFO("ak8975", 0x0c),
+ 		.irq = intcs_evt2irq(0x3380), /* IRQ28 */
+ 	},
++	{
++		I2C_BOARD_INFO("adxl34x", 0x1d),
++		.irq = intcs_evt2irq(0x3340), /* IRQ26 */
++	},
+ };
+ 
+ static struct i2c_board_info i2c1_devices[] = {
 -- 
-Hideki EIRAKU <hdk@igel.co.jp>
+1.7.9.5
+
