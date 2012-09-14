@@ -1,76 +1,119 @@
-From: Catalin Marinas <catalin.marinas@arm.com>
-Date: Fri, 28 Sep 2012 08:38:19 +0000
-Subject: Re: [PATCH 2/2] arm: Add ARM ERRATA 782773 workaround
-Message-Id: <20120928083819.GA21542@arm.com>
+From: Thierry Reding <thierry.reding@avionic-design.de>
+Date: Fri, 14 Sep 2012 20:44:15 +0000
+Subject: [PATCH 1/2] PCI: Annotate pci_fixup_irqs with __devinit
+Message-Id: <1347655456-2542-1-git-send-email-thierry.reding@avionic-design.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1347434097-7924-1-git-send-email-horms@verge.net.au>
- <1347434097-7924-3-git-send-email-horms@verge.net.au>
- <5050CD87.4020800@codeaurora.org>
- <20120913010041.GD7622@verge.net.au>
- <CAHkRjk500KGTeBD67YMWy2qSdaoO_=Y9WBT_Q78n9Zxgqtmo4w@mail.gmail.com>
- <20120921010037.GI21660@verge.net.au>
- <20120928010246.GA13133@verge.net.au>
-In-Reply-To: <20120928010246.GA13133@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Sep 28, 2012 at 02:02:46AM +0100, Simon Horman wrote:
-> On Fri, Sep 21, 2012 at 10:00:37AM +0900, Simon Horman wrote:
-> > On Thu, Sep 20, 2012 at 10:35:50AM +0100, Catalin Marinas wrote:
-> > > On 13 September 2012 02:00, Simon Horman <horms@verge.net.au> wrote:
-> > > > On Wed, Sep 12, 2012 at 10:59:35AM -0700, Stephen Boyd wrote:
-> > > >> On 09/12/12 00:14, Simon Horman wrote:
-> > > >> > @@ -1423,6 +1423,15 @@ config ARM_ERRATA_775420
-> > > >> >           deadlock. This workaround puts DSB before executing ISB at the
-> > > >> >           beginning of the abort exception handler.
-> > > >> >
-> > > >> > +config ARM_ERRATA_782773
-> > > >> > +   bool "ARM errata: Updating a translation entry might cause an unexpected translation fault"
-> > > >> > +   depends on CPU_V7
-> > > >> > +   help
-> > > >> > +     This option enables the workaround for the 782773 Cortex-A9 (all r0,
-> > > >> > +     ,r2 and r3 revisions) erratum. It might cause MMU exception in case
-> > > >>
-> > > >> Seems to be an extra comma here.
-> > > >
-> > > > Thanks, here is an updated version.
-> > > >
-> > > > From: Kouei Abe <kouei.abe.cp@rms.renesas.com>
-> > > >
-> > > > arm: Add ARM ERRATA 782773 workaround
-> > > >
-> > > > Signed-off-by: Kouei Abe <kouei.abe.cp@rms.renesas.com>
-> > > > Signed-off-by: Simon Horman <horms@verge.net.au>
-> > > 
-> > > I would add some text to the commit log as well, even though it
-> > > matches the Kconfig entry.
-> > 
-> > Sure, an updated patch is below.
-> > I also reworded the text to make it easier on my eyes,
-> > I don't think the meaning has been altered.
-> > 
-> > > Have you hit this in practice? In general the kernel shouldn't access
-> > > kernel virtual address corresponding to a page table that is being
-> > > changed. For user address space it is possible but the kernel can
-> > > handle use translation faults, even though they may be spurious.
-> > 
-> > I believe that Abe-san's team have come up against this,
-> > I can confirm that if it is important.
-> 
-> I was wondering if I could get an Ack on this as you indicated
-> in another email that you feel that the implementation is an
-> appropriate workaround.
+In order to keep pci_fixup_irqs() around after init (e.g. for hotplug),
+mark it __devinit instead of __init. This requires the same change for
+the implementation of the pcibios_update_irq() function on all
+architectures.
 
-I'd like to know whether this is actually hit in practice and the
-conditions. The only time when we write live (i.e. translation that's
-currently in use) kernel mappings is during boot, alloc_init_section()
-replacing (though with the same value) the initial memory map. But if
-that's the scenario you are getting, I would rather add another
-flush_pmd_entry() call before setting the pmd in alloc_init_section().
+Signed-off-by: Thierry Reding <thierry.reding@avionic-design.de>
+---
+Note: Ideally these annotations should go away completely in order to
+be independent of the HOTPLUG symbol. However, there is work underway
+to get rid of HOTPLUG altogether, so I've kept the __devinit for now.
 
-I'm not convinced a costly run-time workaround in set_pte is needed.
+ arch/alpha/kernel/pci.c   | 2 +-
+ arch/mips/pci/pci.c       | 2 +-
+ arch/sh/drivers/pci/pci.c | 2 +-
+ arch/x86/pci/visws.c      | 2 +-
+ arch/xtensa/kernel/pci.c  | 2 +-
+ drivers/pci/setup-irq.c   | 4 ++--
+ 6 files changed, 7 insertions(+), 7 deletions(-)
 
+diff --git a/arch/alpha/kernel/pci.c b/arch/alpha/kernel/pci.c
+index 9816d5a..6192b35 100644
+--- a/arch/alpha/kernel/pci.c
++++ b/arch/alpha/kernel/pci.c
+@@ -256,7 +256,7 @@ pcibios_fixup_bus(struct pci_bus *bus)
+ 	}
+ }
+ 
+-void __init
++void __devinit
+ pcibios_update_irq(struct pci_dev *dev, int irq)
+ {
+ 	pci_write_config_byte(dev, PCI_INTERRUPT_LINE, irq);
+diff --git a/arch/mips/pci/pci.c b/arch/mips/pci/pci.c
+index 6903568..af3dc05 100644
+--- a/arch/mips/pci/pci.c
++++ b/arch/mips/pci/pci.c
+@@ -313,7 +313,7 @@ void __devinit pcibios_fixup_bus(struct pci_bus *bus)
+ 	}
+ }
+ 
+-void __init
++void __devinit
+ pcibios_update_irq(struct pci_dev *dev, int irq)
+ {
+ 	pci_write_config_byte(dev, PCI_INTERRUPT_LINE, irq);
+diff --git a/arch/sh/drivers/pci/pci.c b/arch/sh/drivers/pci/pci.c
+index 40db2d0..d16fabe 100644
+--- a/arch/sh/drivers/pci/pci.c
++++ b/arch/sh/drivers/pci/pci.c
+@@ -192,7 +192,7 @@ int pcibios_enable_device(struct pci_dev *dev, int mask)
+ 	return pci_enable_resources(dev, mask);
+ }
+ 
+-void __init pcibios_update_irq(struct pci_dev *dev, int irq)
++void __devinit pcibios_update_irq(struct pci_dev *dev, int irq)
+ {
+ 	pci_write_config_byte(dev, PCI_INTERRUPT_LINE, irq);
+ }
+diff --git a/arch/x86/pci/visws.c b/arch/x86/pci/visws.c
+index 6f2f8ee..15bdfbf 100644
+--- a/arch/x86/pci/visws.c
++++ b/arch/x86/pci/visws.c
+@@ -62,7 +62,7 @@ out:
+ 	return irq;
+ }
+ 
+-void __init pcibios_update_irq(struct pci_dev *dev, int irq)
++void __devinit pcibios_update_irq(struct pci_dev *dev, int irq)
+ {
+ 	pci_write_config_byte(dev, PCI_INTERRUPT_LINE, irq);
+ }
+diff --git a/arch/xtensa/kernel/pci.c b/arch/xtensa/kernel/pci.c
+index 69759e9..efc3369 100644
+--- a/arch/xtensa/kernel/pci.c
++++ b/arch/xtensa/kernel/pci.c
+@@ -212,7 +212,7 @@ void pcibios_set_master(struct pci_dev *dev)
+ 
+ /* the next one is stolen from the alpha port... */
+ 
+-void __init
++void __devinit
+ pcibios_update_irq(struct pci_dev *dev, int irq)
+ {
+ 	pci_write_config_byte(dev, PCI_INTERRUPT_LINE, irq);
+diff --git a/drivers/pci/setup-irq.c b/drivers/pci/setup-irq.c
+index eb219a1..f0bcd56 100644
+--- a/drivers/pci/setup-irq.c
++++ b/drivers/pci/setup-irq.c
+@@ -18,7 +18,7 @@
+ #include <linux/cache.h>
+ 
+ 
+-static void __init
++static void __devinit
+ pdev_fixup_irq(struct pci_dev *dev,
+ 	       u8 (*swizzle)(struct pci_dev *, u8 *),
+ 	       int (*map_irq)(const struct pci_dev *, u8, u8))
+@@ -54,7 +54,7 @@ pdev_fixup_irq(struct pci_dev *dev,
+ 	pcibios_update_irq(dev, irq);
+ }
+ 
+-void __init
++void __devinit
+ pci_fixup_irqs(u8 (*swizzle)(struct pci_dev *, u8 *),
+ 	       int (*map_irq)(const struct pci_dev *, u8, u8))
+ {
 -- 
-Catalin
+1.7.12
+
