@@ -1,77 +1,40 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 11 Sep 2012 08:05:27 +0000
-Subject: [PATCH 2/2] ARM: shmobile: emev2: enable PMU(Performance Monitoring Unit)
-Message-Id: <1347350727-11962-3-git-send-email-horms@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 14 Sep 2012 18:25:48 +0000
+Subject: [PATCH] sh: pfc: Release spinlock in sh_pfc_gpio_request_enable() error path
+Message-Id: <1347647148-28117-1-git-send-email-laurent.pinchart@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1347350727-11962-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1347350727-11962-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+The sh_pfc_gpio_request_enable() function acquires a spinlock but fails
+to release it before returning if the requested mux type is not
+supported. Fix this.
 
-This patch enables PMU(Performance Monitoring Unit) for emev2.
-
-Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 ---
- arch/arm/configs/kzm9d_defconfig     |    1 +
- arch/arm/mach-shmobile/setup-emev2.c |   21 +++++++++++++++++++++
- 2 files changed, 22 insertions(+)
+ drivers/sh/pfc/pinctrl.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-diff --git a/arch/arm/configs/kzm9d_defconfig b/arch/arm/configs/kzm9d_defconfig
-index 26146ff..8c49df6 100644
---- a/arch/arm/configs/kzm9d_defconfig
-+++ b/arch/arm/configs/kzm9d_defconfig
-@@ -8,6 +8,7 @@ CONFIG_LOG_BUF_SHIFT
- CONFIG_CC_OPTIMIZE_FOR_SIZE=y
- CONFIG_SYSCTL_SYSCALL=y
- CONFIG_EMBEDDED=y
-+CONFIG_PERF_EVENTS=y
- CONFIG_SLAB=y
- # CONFIG_BLK_DEV_BSG is not set
- # CONFIG_IOSCHED_DEADLINE is not set
-diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
-index dae9aa6..61446f3 100644
---- a/arch/arm/mach-shmobile/setup-emev2.c
-+++ b/arch/arm/mach-shmobile/setup-emev2.c
-@@ -356,6 +356,26 @@ static struct platform_device gio4_device = {
- 	},
- };
+This is a v3.6 regression.
+
+diff --git a/drivers/sh/pfc/pinctrl.c b/drivers/sh/pfc/pinctrl.c
+index 2804eaa..a3ac39b 100644
+--- a/drivers/sh/pfc/pinctrl.c
++++ b/drivers/sh/pfc/pinctrl.c
+@@ -211,7 +211,8 @@ static int sh_pfc_gpio_request_enable(struct pinctrl_dev *pctldev,
+ 		break;
+ 	default:
+ 		pr_err("Unsupported mux type (%d), bailing...\n", pinmux_type);
+-		return -ENOTSUPP;
++		ret = -ENOTSUPP;
++		goto err;
+ 	}
  
-+static struct resource pmu_resources[] = {
-+	[0] = {
-+		.start	= 152,
-+		.end	= 152,
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+	[1] = {
-+		.start	= 153,
-+		.end	= 153,
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device pmu_device = {
-+	.name		= "arm-pmu",
-+	.id		= -1,
-+	.num_resources	= ARRAY_SIZE(pmu_resources),
-+	.resource	= pmu_resources,
-+};
-+
- static struct platform_device *emev2_early_devices[] __initdata = {
- 	&uart0_device,
- 	&uart1_device,
-@@ -370,6 +390,7 @@ static struct platform_device *emev2_late_devices[] __initdata = {
- 	&gio2_device,
- 	&gio3_device,
- 	&gio4_device,
-+	&pmu_device,
- };
- 
- void __init emev2_add_standard_devices(void)
+ 	ret = 0;
 -- 
-1.7.10.4
+Regards,
+
+Laurent Pinchart
 
