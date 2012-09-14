@@ -1,82 +1,399 @@
-From: Vasilis Liaskovitis <vasilis.liaskovitis@profitbricks.com>
-Date: Wed, 19 Sep 2012 17:02:05 +0000
-Subject: Re: [RFC v8 PATCH 00/20] memory-hotplug: hot-remove physical memory
-Message-Id: <20120919170205.GA15549@dhcp-192-168-178-175.profitbricks.localdomain>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Fri, 14 Sep 2012 21:34:47 +0000
+Subject: [PATCH 19/24] sh: use __iomem pointers for MMIO
+Message-Id: <1347658492-11608-20-git-send-email-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346148027-24468-1-git-send-email-wency@cn.fujitsu.com>
- <20120831134956.fec0f681.akpm@linux-foundation.org>
- <504D467D.2080201@jp.fujitsu.com>
- <504D4A08.7090602@cn.fujitsu.com>
- <20120910135213.GA1550@dhcp-192-168-178-175.profitbricks.localdomain>
- <50501B9C.7000200@cn.fujitsu.com>
- <20120912171814.GB5253@dhcp-192-168-178-175.profitbricks.localdomain>
- <50584159.3020403@cn.fujitsu.com>
-In-Reply-To: <50584159.3020403@cn.fujitsu.com>
+References: <1347658492-11608-1-git-send-email-arnd@arndb.de>
+In-Reply-To: <1347658492-11608-1-git-send-email-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wen Congyang <wency@cn.fujitsu.com>
-Cc: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>, Andrew Morton <akpm@linux-foundation.org>, x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com
+To: linux-arm-kernel@lists.infradead.org
 
-Hi,
-On Tue, Sep 18, 2012 at 05:39:37PM +0800, Wen Congyang wrote:
-> At 09/13/2012 01:18 AM, Vasilis Liaskovitis Wrote:
-> > Hi,
-> > 
-> > On Wed, Sep 12, 2012 at 01:20:28PM +0800, Wen Congyang wrote:
-> >> Hmm, seabios doesn't support ACPI table SLIT. We can specify node it for dimm
-> >> device, so I think we should support SLIT in seabios. Otherwise we may meet
-> >> the following kernel messages:
-> >> [  325.016769] init_memory_mapping: [mem 0x40000000-0x5fffffff]
-> >> [  325.018060]  [mem 0x40000000-0x5fffffff] page 2M
-> >> [  325.019168] [ffffea0001000000-ffffea00011fffff] potential offnode page_structs
-> >> [  325.024172] [ffffea0001200000-ffffea00013fffff] potential offnode page_structs
-> >> [  325.028596]  [ffffea0001400000-ffffea00017fffff] PMD -> [ffff880035000000-ffff8800353fffff] on node 1
-> >> [  325.031775] [ffffea0001600000-ffffea00017fffff] potential offnode page_structs
-> >>
-> >> Do you have plan to do it?
-> > thanks for testing.
-> > 
-> > commit 5294828 from https://github.com/vliaskov/seabios/commits/memhp-v2
-> > implements a SLIT table for the given numa nodes.
-> 
-> Hmm, why do you set node_distance(i, j) to REMOTE_DISTANCE if i != j?
+ARM is moving to stricter checks on readl/write functions,
+so we need to use the correct types everywhere.
 
-What's the alternative?
+I'm not completely sure about this patch, and it will
+probably require some arch/sh changes to go along with it,
+but it's clear that something has to be done to avoid
+getting hundreds of new warnings on each shmobile build
+in v3.7.
+Please see this as a prototype.
 
-Afaik SLIT[i][j] shows the distance between proximity domains (_PXM) i and j. It
-doesn't correspond to individual SRAT entries. So i and j here are not memory
-ranges associated with 2 different dimms. They denote domains i and j, which map
-to 2 different logical nodeids in the kernel.
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Cc: Simon Horman <horms@verge.net.au>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: linux-sh@vger.kernel.org
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+---
+ drivers/sh/intc/access.c    |   56 +++++++++++++++++++++----------------------
+ drivers/sh/intc/chip.c      |    8 +++----
+ drivers/sh/intc/core.c      |    6 +++--
+ drivers/sh/intc/handle.c    |    6 ++---
+ drivers/sh/intc/internals.h |   18 +++++++-------
+ drivers/sh/intc/virq.c      |    3 ++-
+ include/linux/sh_clk.h      |    4 ++--
+ 7 files changed, 52 insertions(+), 49 deletions(-)
 
-A default setting would be to set the entry to REMOTE_DISTANCE for all different
-domains (i!=j). So this SLIT implementation is not useful, since it results
-in the same numa_distance values as the non-SLIT kernel calculation in
-include/linux/topology.h
+diff --git a/drivers/sh/intc/access.c b/drivers/sh/intc/access.c
+index f892ae1..5bd0a56 100644
+--- a/drivers/sh/intc/access.c
++++ b/drivers/sh/intc/access.c
+@@ -11,7 +11,7 @@
+ #include <linux/io.h>
+ #include "internals.h"
+ 
+-unsigned long intc_phys_to_virt(struct intc_desc_int *d, unsigned long address)
++void __iomem *intc_phys_to_virt(struct intc_desc_int *d, unsigned long address)
+ {
+ 	struct intc_window *window;
+ 	int k;
+@@ -27,23 +27,23 @@ unsigned long intc_phys_to_virt(struct intc_desc_int *d, unsigned long address)
+ 			continue;
+ 
+ 		address -= window->phys;
+-		address += (unsigned long)window->virt;
+ 
+-		return address;
++		return window->virt + address;
+ 	}
+ 
+ 	/* no windows defined, register must be 1:1 mapped virt:phys */
+-	return address;
++	return (void __iomem *)address;
+ }
+ 
+ unsigned int intc_get_reg(struct intc_desc_int *d, unsigned long address)
+ {
+ 	unsigned int k;
++	void __iomem *virt;
+ 
+-	address = intc_phys_to_virt(d, address);
++	virt = intc_phys_to_virt(d, address);
+ 
+ 	for (k = 0; k < d->nr_reg; k++) {
+-		if (d->reg[k] = address)
++		if (d->reg[k] = virt)
+ 			return k;
+ 	}
+ 
+@@ -72,25 +72,25 @@ unsigned long intc_get_field_from_handle(unsigned int value, unsigned int handle
+ 	return (value & mask) >> shift;
+ }
+ 
+-static unsigned long test_8(unsigned long addr, unsigned long h,
++static unsigned long test_8(void __iomem * addr, unsigned long h,
+ 			    unsigned long ignore)
+ {
+ 	return intc_get_field_from_handle(__raw_readb(addr), h);
+ }
+ 
+-static unsigned long test_16(unsigned long addr, unsigned long h,
++static unsigned long test_16(void __iomem * addr, unsigned long h,
+ 			     unsigned long ignore)
+ {
+ 	return intc_get_field_from_handle(__raw_readw(addr), h);
+ }
+ 
+-static unsigned long test_32(unsigned long addr, unsigned long h,
++static unsigned long test_32(void __iomem * addr, unsigned long h,
+ 			     unsigned long ignore)
+ {
+ 	return intc_get_field_from_handle(__raw_readl(addr), h);
+ }
+ 
+-static unsigned long write_8(unsigned long addr, unsigned long h,
++static unsigned long write_8(void __iomem * addr, unsigned long h,
+ 			     unsigned long data)
+ {
+ 	__raw_writeb(intc_set_field_from_handle(0, data, h), addr);
+@@ -98,7 +98,7 @@ static unsigned long write_8(unsigned long addr, unsigned long h,
+ 	return 0;
+ }
+ 
+-static unsigned long write_16(unsigned long addr, unsigned long h,
++static unsigned long write_16(void __iomem * addr, unsigned long h,
+ 			      unsigned long data)
+ {
+ 	__raw_writew(intc_set_field_from_handle(0, data, h), addr);
+@@ -106,7 +106,7 @@ static unsigned long write_16(unsigned long addr, unsigned long h,
+ 	return 0;
+ }
+ 
+-static unsigned long write_32(unsigned long addr, unsigned long h,
++static unsigned long write_32(void __iomem * addr, unsigned long h,
+ 			      unsigned long data)
+ {
+ 	__raw_writel(intc_set_field_from_handle(0, data, h), addr);
+@@ -114,7 +114,7 @@ static unsigned long write_32(unsigned long addr, unsigned long h,
+ 	return 0;
+ }
+ 
+-static unsigned long modify_8(unsigned long addr, unsigned long h,
++static unsigned long modify_8(void __iomem * addr, unsigned long h,
+ 			      unsigned long data)
+ {
+ 	unsigned long flags;
+@@ -127,7 +127,7 @@ static unsigned long modify_8(unsigned long addr, unsigned long h,
+ 	return 0;
+ }
+ 
+-static unsigned long modify_16(unsigned long addr, unsigned long h,
++static unsigned long modify_16(void __iomem * addr, unsigned long h,
+ 			       unsigned long data)
+ {
+ 	unsigned long flags;
+@@ -140,7 +140,7 @@ static unsigned long modify_16(unsigned long addr, unsigned long h,
+ 	return 0;
+ }
+ 
+-static unsigned long modify_32(unsigned long addr, unsigned long h,
++static unsigned long modify_32(void __iomem * addr, unsigned long h,
+ 			       unsigned long data)
+ {
+ 	unsigned long flags;
+@@ -153,9 +153,9 @@ static unsigned long modify_32(unsigned long addr, unsigned long h,
+ 	return 0;
+ }
+ 
+-static unsigned long intc_mode_field(unsigned long addr,
++static unsigned long intc_mode_field(void __iomem * addr,
+ 				     unsigned long handle,
+-				     unsigned long (*fn)(unsigned long,
++				     unsigned long (*fn)(void __iomem *addr,
+ 						unsigned long,
+ 						unsigned long),
+ 				     unsigned int irq)
+@@ -163,9 +163,9 @@ static unsigned long intc_mode_field(unsigned long addr,
+ 	return fn(addr, handle, ((1 << _INTC_WIDTH(handle)) - 1));
+ }
+ 
+-static unsigned long intc_mode_zero(unsigned long addr,
++static unsigned long intc_mode_zero(void __iomem * addr,
+ 				    unsigned long handle,
+-				    unsigned long (*fn)(unsigned long,
++				    unsigned long (*fn)(void __iomem *addr,
+ 					       unsigned long,
+ 					       unsigned long),
+ 				    unsigned int irq)
+@@ -173,9 +173,9 @@ static unsigned long intc_mode_zero(unsigned long addr,
+ 	return fn(addr, handle, 0);
+ }
+ 
+-static unsigned long intc_mode_prio(unsigned long addr,
++static unsigned long intc_mode_prio(void __iomem * addr,
+ 				    unsigned long handle,
+-				    unsigned long (*fn)(unsigned long,
++				    unsigned long (*fn)(void __iomem *addr,
+ 					       unsigned long,
+ 					       unsigned long),
+ 				    unsigned int irq)
+@@ -183,7 +183,7 @@ static unsigned long intc_mode_prio(unsigned long addr,
+ 	return fn(addr, handle, intc_get_prio_level(irq));
+ }
+ 
+-unsigned long (*intc_reg_fns[])(unsigned long addr,
++unsigned long (*intc_reg_fns[])(void __iomem * addr,
+ 				unsigned long h,
+ 				unsigned long data) = {
+ 	[REG_FN_TEST_BASE + 0] = test_8,
+@@ -197,9 +197,9 @@ unsigned long (*intc_reg_fns[])(unsigned long addr,
+ 	[REG_FN_MODIFY_BASE + 3] = modify_32,
+ };
+ 
+-unsigned long (*intc_enable_fns[])(unsigned long addr,
++unsigned long (*intc_enable_fns[])(void __iomem * addr,
+ 				   unsigned long handle,
+-				   unsigned long (*fn)(unsigned long,
++				   unsigned long (*fn)(void __iomem *,
+ 					    unsigned long,
+ 					    unsigned long),
+ 				   unsigned int irq) = {
+@@ -210,9 +210,9 @@ unsigned long (*intc_enable_fns[])(unsigned long addr,
+ 	[MODE_PCLR_REG] = intc_mode_prio,
+ };
+ 
+-unsigned long (*intc_disable_fns[])(unsigned long addr,
++unsigned long (*intc_disable_fns[])(void __iomem * addr,
+ 				    unsigned long handle,
+-				    unsigned long (*fn)(unsigned long,
++				    unsigned long (*fn)(void __iomem *,
+ 					     unsigned long,
+ 					     unsigned long),
+ 				    unsigned int irq) = {
+@@ -223,9 +223,9 @@ unsigned long (*intc_disable_fns[])(unsigned long addr,
+ 	[MODE_PCLR_REG] = intc_mode_field,
+ };
+ 
+-unsigned long (*intc_enable_noprio_fns[])(unsigned long addr,
++unsigned long (*intc_enable_noprio_fns[])(void __iomem * addr,
+ 					  unsigned long handle,
+-					  unsigned long (*fn)(unsigned long,
++					  unsigned long (*fn)(void __iomem *,
+ 						unsigned long,
+ 						unsigned long),
+ 					  unsigned int irq) = {
+diff --git a/drivers/sh/intc/chip.c b/drivers/sh/intc/chip.c
+index 012df26..2928264 100644
+--- a/drivers/sh/intc/chip.c
++++ b/drivers/sh/intc/chip.c
+@@ -17,7 +17,7 @@ void _intc_enable(struct irq_data *data, unsigned long handle)
+ {
+ 	unsigned int irq = data->irq;
+ 	struct intc_desc_int *d = get_intc_desc(irq);
+-	unsigned long addr;
++	void __iomem *addr;
+ 	unsigned int cpu;
+ 
+ 	for (cpu = 0; cpu < SMP_NR(d, _INTC_ADDR_E(handle)); cpu++) {
+@@ -43,7 +43,7 @@ static void intc_disable(struct irq_data *data)
+ 	unsigned int irq = data->irq;
+ 	struct intc_desc_int *d = get_intc_desc(irq);
+ 	unsigned long handle = (unsigned long)irq_data_get_irq_chip_data(data);
+-	unsigned long addr;
++	void __iomem *addr;
+ 	unsigned int cpu;
+ 
+ 	intc_balancing_disable(irq);
+@@ -83,7 +83,7 @@ static void intc_mask_ack(struct irq_data *data)
+ 	unsigned int irq = data->irq;
+ 	struct intc_desc_int *d = get_intc_desc(irq);
+ 	unsigned long handle = intc_get_ack_handle(irq);
+-	unsigned long addr;
++	void __iomem * addr;
+ 
+ 	intc_disable(data);
+ 
+@@ -177,7 +177,7 @@ static int intc_set_type(struct irq_data *data, unsigned int type)
+ 	struct intc_desc_int *d = get_intc_desc(irq);
+ 	unsigned char value = intc_irq_sense_table[type & IRQ_TYPE_SENSE_MASK];
+ 	struct intc_handle_int *ihp;
+-	unsigned long addr;
++	void __iomem *addr;
+ 
+ 	if (!value)
+ 		return -EINVAL;
+diff --git a/drivers/sh/intc/core.c b/drivers/sh/intc/core.c
+index 32c26d7..1ddbba0 100644
+--- a/drivers/sh/intc/core.c
++++ b/drivers/sh/intc/core.c
+@@ -172,10 +172,12 @@ static unsigned int __init save_reg(struct intc_desc_int *d,
+ 				    unsigned long value,
+ 				    unsigned int smp)
+ {
++	void __iomem *virt;
++
+ 	if (value) {
+-		value = intc_phys_to_virt(d, value);
++		virt = intc_phys_to_virt(d, value);
+ 
+-		d->reg[cnt] = value;
++		d->reg[cnt] = virt;
+ #ifdef CONFIG_SMP
+ 		d->smp[cnt] = smp;
+ #endif
+diff --git a/drivers/sh/intc/handle.c b/drivers/sh/intc/handle.c
+index 7863a44..1971ef1 100644
+--- a/drivers/sh/intc/handle.c
++++ b/drivers/sh/intc/handle.c
+@@ -206,10 +206,10 @@ static unsigned int intc_ack_data(struct intc_desc *desc,
+ static void intc_enable_disable(struct intc_desc_int *d,
+ 				unsigned long handle, int do_enable)
+ {
+-	unsigned long addr;
++	void __iomem *addr;
+ 	unsigned int cpu;
+-	unsigned long (*fn)(unsigned long, unsigned long,
+-		   unsigned long (*)(unsigned long, unsigned long,
++	unsigned long(*fn)(void __iomem *, unsigned long,
++		   unsigned long (*)(void __iomem *, unsigned long,
+ 				     unsigned long),
+ 		   unsigned int);
+ 
+diff --git a/drivers/sh/intc/internals.h b/drivers/sh/intc/internals.h
+index 7dff08e..29e4299 100644
+--- a/drivers/sh/intc/internals.h
++++ b/drivers/sh/intc/internals.h
+@@ -56,7 +56,7 @@ struct intc_desc_int {
+ 	struct radix_tree_root tree;
+ 	raw_spinlock_t lock;
+ 	unsigned int index;
+-	unsigned long *reg;
++	void * __iomem *reg;
+ #ifdef CONFIG_SMP
+ 	unsigned long *smp;
+ #endif
+@@ -120,25 +120,25 @@ static inline int intc_handle_int_cmp(const void *a, const void *b)
+ 
+ /* access.c */
+ extern unsigned long
+-(*intc_reg_fns[])(unsigned long addr, unsigned long h, unsigned long data);
++(*intc_reg_fns[])(void __iomem * addr, unsigned long h, unsigned long data);
+ 
+ extern unsigned long
+-(*intc_enable_fns[])(unsigned long addr, unsigned long handle,
+-		     unsigned long (*fn)(unsigned long,
++(*intc_enable_fns[])(void __iomem * addr, unsigned long handle,
++		     unsigned long (*fn)(void __iomem *,
+ 				unsigned long, unsigned long),
+ 		     unsigned int irq);
+ extern unsigned long
+-(*intc_disable_fns[])(unsigned long addr, unsigned long handle,
+-		      unsigned long (*fn)(unsigned long,
++(*intc_disable_fns[])(void __iomem * addr, unsigned long handle,
++		      unsigned long (*fn)(void __iomem *,
+ 				unsigned long, unsigned long),
+ 		      unsigned int irq);
+ extern unsigned long
+-(*intc_enable_noprio_fns[])(unsigned long addr, unsigned long handle,
+-		            unsigned long (*fn)(unsigned long,
++(*intc_enable_noprio_fns[])(void __iomem * addr, unsigned long handle,
++		            unsigned long (*fn)(void __iomem *,
+ 				unsigned long, unsigned long),
+ 			    unsigned int irq);
+ 
+-unsigned long intc_phys_to_virt(struct intc_desc_int *d, unsigned long address);
++void __iomem * intc_phys_to_virt(struct intc_desc_int *d, unsigned long address);
+ unsigned int intc_get_reg(struct intc_desc_int *d, unsigned long address);
+ unsigned int intc_set_field_from_handle(unsigned int value,
+ 			    unsigned int field_value,
+diff --git a/drivers/sh/intc/virq.c b/drivers/sh/intc/virq.c
+index f30ac93..d45cfcd 100644
+--- a/drivers/sh/intc/virq.c
++++ b/drivers/sh/intc/virq.c
+@@ -117,7 +117,8 @@ static void intc_virq_handler(unsigned int irq, struct irq_desc *desc)
+ 	chip->irq_mask_ack(data);
+ 
+ 	for_each_virq(entry, vlist) {
+-		unsigned long addr, handle;
++		void __iomem *addr;
++		unsigned long handle;
+ 
+ 		handle = (unsigned long)irq_get_handler_data(entry->irq);
+ 		addr = INTC_REG(d, _INTC_ADDR_E(handle), 0);
+diff --git a/include/linux/sh_clk.h b/include/linux/sh_clk.h
+index 5091091..6579041 100644
+--- a/include/linux/sh_clk.h
++++ b/include/linux/sh_clk.h
+@@ -173,7 +173,7 @@ int sh_clk_div4_reparent_register(struct clk *clks, int nr,
+ #define SH_CLK_DIV6_EXT(_reg, _flags, _parents,			\
+ 			_num_parents, _src_shift, _src_width)	\
+ {								\
+-	.enable_reg = (void __iomem *)_reg,			\
++	.enable_reg = _reg,					\
+ 	.enable_bit = 0, /* unused */				\
+ 	.flags = _flags | CLK_MASK_DIV_ON_DISABLE,		\
+ 	.div_mask = SH_CLK_DIV6_MSK,				\
+@@ -186,7 +186,7 @@ int sh_clk_div4_reparent_register(struct clk *clks, int nr,
+ #define SH_CLK_DIV6(_parent, _reg, _flags)			\
+ {								\
+ 	.parent		= _parent,				\
+-	.enable_reg	= (void __iomem *)_reg,			\
++	.enable_reg	= _reg,					\
+ 	.enable_bit	= 0,	/* unused */			\
+ 	.div_mask	= SH_CLK_DIV6_MSK,			\
+ 	.flags		= _flags | CLK_MASK_DIV_ON_DISABLE,	\
+-- 
+1.7.10
 
-> 
-> > 
-> > However I am not sure the SLIT is the problem. The kernel builds a default
-> > numa_distance table in arch/x86/mm/numa.c: numa_alloc_distance(). If the BIOS
-> > doesn't present a SLIT, this should take effect (numactl --hardware should
-> > report this table)
-> 
-> If the BIOS doesn't present a SLIT, numa_distance_cnt is set to 0 in the
-> function numa_reset_distance(). So node_distance(i, j) is REMOTE_DISTANCE(i != j).
-> 
-> > 
-> > Do you have more details on how to reproduce the warning? e.g. how many dimms
-> > are present in the system? Does this happen on the first dimm hot-plugged?
-> > Are all SRAT entries parsed correctly at boot-time or do you see any other
-> > warnings at boot-time?
-> 
-> I can't reproduce it again. IIRC, I only do the following things:
-> hotplug a memory device, online the pages, offline the pages and hot remove
-> the memory device.
-
-Is the sparse_vmemmap allocation supposed to guarantee no off-node allocations?
-If not, then the warning could be valid.
-
-thanks,
-
-- Vasilis
