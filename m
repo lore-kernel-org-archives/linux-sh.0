@@ -1,44 +1,67 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Wed, 19 Sep 2012 06:25:41 +0000
-Subject: Re: [PATCH] mmc: sh-mmcif: properly handle MMC_WRITE_MULTIPLE_BLOCK completion IRQ
-Message-Id: <m37grqil5m.fsf@pullcord.laptop.org>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date: Fri, 14 Sep 2012 04:27:13 +0000
+Subject: [PATCH] ARM: shmobile: r8a7740: Enable PMU
+Message-Id: <1347596833-19064-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1209190105080.31203@axis700.grange>
-	<505932E9.8050202@kmckk.co.jp>
-In-Reply-To: <505932E9.8050202@kmckk.co.jp> (Tetsuyuki Kobayashi's message of
-	"Wed, 19 Sep 2012 11:50:17 +0900")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-mmc@vger.kernel.org, yusuke.goda.sx@renesas.com, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
+To: linux-sh@vger.kernel.org
 
-Hi,
+This patch enables PMU for r8a7740.
 
-On Tue, Sep 18 2012, Tetsuyuki Kobayashi wrote:
-> (2012/09/19 8:10), Guennadi Liakhovetski wrote:
->> Upon completion of a MMC_WRITE_MULTIPLE_BLOCK command MMCIF issues an IRQ
->> with the DTRANE bit set and often with one or several of CMD12 bits set.
->> If those interrupts are not acknowledged, an additional interrupt can be
->> produced and will be delivered later, possibly, when the transaction has
->> already been completed. To prevent this from happening, CMD12 completion
->> interrupt sources have to be cleared too upon reception of an DTRANE IRQ.
->>
->> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
->> ---
->>
->> Tested on kzm9g and mackerel. Kobayashi-san, this fixes spurious
->> interrupts, that you are observing.
->
-> I verified on kzm9g.
-> This works with
-> [PATCH] mmc: sh-mmcif: avoid Oops on spurious interrupts
->
-> Tested-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+---
+ arch/arm/configs/armadillo800eva_defconfig |    1 +
+ arch/arm/mach-shmobile/setup-r8a7740.c     |   16 ++++++++++++++++
+ 2 files changed, 17 insertions(+)
 
-Thanks, pushed to mmc-next for 3.7.
-
-- Chris.
+diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
+index 62861bd..d952f62 100644
+--- a/arch/arm/configs/armadillo800eva_defconfig
++++ b/arch/arm/configs/armadillo800eva_defconfig
+@@ -7,6 +7,7 @@ CONFIG_LOG_BUF_SHIFT
+ # CONFIG_IPC_NS is not set
+ # CONFIG_PID_NS is not set
+ CONFIG_CC_OPTIMIZE_FOR_SIZE=y
++CONFIG_PERF_EVENTS=y
+ CONFIG_SLAB=y
+ CONFIG_MODULES=y
+ CONFIG_MODULE_UNLOAD=y
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 78948a9..d3d6295 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -590,6 +590,21 @@ static struct platform_device i2c1_device = {
+ 	.num_resources	= ARRAY_SIZE(i2c1_resources),
+ };
+ 
++static struct resource pmu_resources[] = {
++	[0] = {
++		.start	= evt2irq(0x19a0),
++		.end	= evt2irq(0x19a0),
++		.flags  = IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device pmu_device = {
++	.name	= "arm-pmu",
++	.id		= -1,
++	.num_resources = ARRAY_SIZE(pmu_resources),
++	.resource = pmu_resources,
++};
++
+ static struct platform_device *r8a7740_late_devices[] __initdata = {
+ 	&i2c0_device,
+ 	&i2c1_device,
+@@ -597,6 +612,7 @@ static struct platform_device *r8a7740_late_devices[] __initdata = {
+ 	&dma1_device,
+ 	&dma2_device,
+ 	&usb_dma_device,
++	&pmu_device,
+ };
+ 
+ /*
 -- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
+1.7.10.4
+
