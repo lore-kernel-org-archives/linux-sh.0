@@ -1,43 +1,18 @@
-From: Tetsuyuki Kobayshi <koba@kmckk.co.jp>
-Date: Thu, 06 Sep 2012 09:09:31 +0000
-Subject: [PATCH] ARM: shmobile: kzm9g: enable DMAEngine on SHDI0 and SDHI2
-Message-Id: <1346922571-16271-1-git-send-email-koba@kmckk.co.jp>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 18 Sep 2012 02:25:37 +0000
+Subject: Re: [PATCH] ARM: shmobile: kzm9g: enable DMAEngine on SHDI0 and SDHI2
+Message-Id: <20120918022537.GF28305@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1346922571-16271-1-git-send-email-koba@kmckk.co.jp>
+In-Reply-To: <1346922571-16271-1-git-send-email-koba@kmckk.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+On Thu, Sep 06, 2012 at 06:09:31PM +0900, Tetsuyuki Kobayshi wrote:
+> From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+> 
+> This patch enables DMAEngine on SHDI0 and SDHI2 for kzm9g.
 
-This patch enables DMAEngine on SHDI0 and SDHI2 for kzm9g.
-
-Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
----
- arch/arm/mach-shmobile/board-kzm9g.c |    4 ++++
- 1 file changed, 4 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index 87ec4ce..d849e6d 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -384,6 +384,8 @@ static struct regulator_consumer_supply fixed2v8_power_consumers[]  
- /* SDHI */
- static struct sh_mobile_sdhi_info sdhi0_info = {
-+	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
-+	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
- 	.tmio_ocr_mask	= MMC_VDD_27_28 | MMC_VDD_28_29,
-@@ -424,6 +426,8 @@ static struct platform_device sdhi0_device = {
- 
- /* Micro SD */
- static struct sh_mobile_sdhi_info sdhi2_info = {
-+	.dma_slave_tx	= SHDMA_SLAVE_SDHI2_TX,
-+	.dma_slave_rx	= SHDMA_SLAVE_SDHI2_RX,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
- 			  TMIO_MMC_USE_GPIO_CD |
- 			  TMIO_MMC_WRPROTECT_DISABLE,
--- 
-1.7.9.5
-
+Thanks, applied to boards.
