@@ -1,293 +1,228 @@
-From: "Karicheri, Muralidharan" <m-karicheri2@ti.com>
-Date: Tue, 18 Sep 2012 21:18:51 +0000
-Subject: RE: Summary of changes for v3.7
-Message-Id: <3E54258959B69E4282D79E01AB1F32B7041D147D@DFLE12.ent.ti.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="_002_3E54258959B69E4282D79E01AB1F32B7041D147DDFLE12entticom_"
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Tue, 18 Sep 2012 21:36:20 +0000
+Subject: Re: Summary of changes for v3.7
+Message-Id: <201209182336.20497.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201209182219.00649.rjw@sisk.pl>
-In-Reply-To: <201209182219.00649.rjw@sisk.pl>
-To: "Rafael J. Wysocki" <rjw@sisk.pl>, LKML <linux-kernel@vger.kernel.org>
-Cc: ACPI Devel Mailing List <linux-acpi@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Len Brown <lenb@kernel.org>
-
---_002_3E54258959B69E4282D79E01AB1F32B7041D147DDFLE12entticom_
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: base64
-
-UmFmYWVsLA0KDQpDb3VsZCB5b3UgcmV2aWV3IHRoZSBhdHRhY2hlZCBwYXRjaCB3aGljaCBpcyBz
-ZW50IHRvIHRoZSBsaXN0IGFuZCBtZXJnZSBpdCBpZiBpdCBsb29rcyBvaz8gSWYgbm90LCBwbGVh
-c2UgcHJvdmlkZSB5b3VyIGNvbW1lbnQuDQoNCk11cmFsaSBLYXJpY2hlcmkNClNvZnR3YXJlIERl
-c2lnbiBFbmdpbmVlcg0KDQoNCj4+IC0tLS0tT3JpZ2luYWwgTWVzc2FnZS0tLS0tDQo+PiBGcm9t
-OiBsaW51eC1wbS1vd25lckB2Z2VyLmtlcm5lbC5vcmcgW21haWx0bzpsaW51eC1wbS1vd25lckB2
-Z2VyLmtlcm5lbC5vcmddIE9uDQo+PiBCZWhhbGYgT2YgUmFmYWVsIEouIFd5c29ja2kNCj4+IFNl
-bnQ6IFR1ZXNkYXksIFNlcHRlbWJlciAxOCwgMjAxMiA0OjE5IFBNDQo+PiBUbzogTEtNTA0KPj4g
-Q2M6IEFDUEkgRGV2ZWwgTWFpbGluZyBMaXN0OyBMaW51eCBQTSBsaXN0OyBMaW51eC1zaCBsaXN0
-OyBMZW4gQnJvd24NCj4+IFN1YmplY3Q6IFBNOiBTdW1tYXJ5IG9mIGNoYW5nZXMgZm9yIHYzLjcN
-Cj4+IA0KPj4gSGkgYWxsLA0KPj4gDQo+PiBBbGwgb2YgdGhlIGNoYW5nZXMgSSdkIGxpa2UgdG8g
-aW5jbHVkZSBpbnRvIHRoZSBmaXJzdCBQTSBwdWxsIHJlcXVlc3QgZHVyaW5nDQo+PiB0aGUgdjMu
-NyBtZXJnZSB3aW5kb3csIGV4Y2VwdCBtYXliZSBmb3IgYSBjb3VwbGUgb2YgcGF0Y2hlcyBJIGtu
-b3cgb2YsIGJ1dA0KPj4gaGF2ZW4ndCBkZWNpZGVkIHdoYXQgdG8gZG8gd2l0aCB0aGVtIHlldCwg
-aXMgb24gdGhlICdsaW51eC1uZXh0JyBicmFuY2ggb2YgdGhlDQo+PiBsaW51eC1wbS5naXQgdHJl
-ZSBub3cuDQo+PiANCj4+IFRoZSBzdW1tYXJ5IG9mIHRob3NlIGNoYW5nZXMgaXMgYXBwZW5kZWQu
-ICBJZiBhbnlvbmUgZmluZHMgYW55IG9mIHRoZW0NCj4+IG9iamVjdGlvbmFibGUsIHBsZWFzZSBs
-ZXQgbWUga25vdyBBU0FQLiAgQWxzbyBwbGVhc2UgbGV0IG1lIGtub3cgaWYgdGhlcmUgYXJlDQo+
-PiBhbnkgcG93ZXIgbWFuYWdlbWVudCBwYXRjaGVzIEkndmUgc2VlbiBhbHJlYWR5IHRoYXQgeW91
-J2QgbGlrZSBtZSB0byB0YWtlIGZvcg0KPj4gdjMuNyAoaWYgSSBoYXZlbid0IHNlZW4gdGhlbSB5
-ZXQsIHRoZXkgY2xlYXJseSBhcmUgbm90IHYzLjcgbWF0ZXJpYWwsIHVubGVzcw0KPj4gdGhleSBh
-cmUgdXJnZW50IGZpeGVzKS4NCj4+IA0KPj4gVGhhbmtzLA0KPj4gUmFmYWVsDQo+PiANCj4+IC0t
-LQ0KPj4gDQo+PiAgRG9jdW1lbnRhdGlvbi9BQkkvdGVzdGluZy9zeXNmcy1kZXZpY2VzLXN5c3Rl
-bS1jcHUgfCAgMTEgKw0KPj4gIERvY3VtZW50YXRpb24vY3B1LWZyZXEvYm9vc3QudHh0ICAgICAg
-ICAgICAgICAgICAgIHwgIDkzICsrKysrDQo+PiAgRG9jdW1lbnRhdGlvbi9jcHVpZGxlL3N5c2Zz
-LnR4dCAgICAgICAgICAgICAgICAgICAgfCAgMTAgKy0NCj4+ICAuLi4vZGV2aWNldHJlZS9iaW5k
-aW5ncy9jcHVmcmVxL2NwdWZyZXEtY3B1MC50eHQgICB8ICA1NSArKysNCj4+ICBEb2N1bWVudGF0
-aW9uL2RldmljZXRyZWUvYmluZGluZ3MvcG93ZXIvb3BwLnR4dCAgICB8ICAyNSArKw0KPj4gIGFy
-Y2gvYXJtL2tlcm5lbC9zbXAuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgIDU0ICsr
-Kw0KPj4gIGFyY2gvYXJtL21hY2gtc2htb2JpbGUvTWFrZWZpbGUgICAgICAgICAgICAgICAgICAg
-IHwgICAyICstDQo+PiAgYXJjaC9hcm0vbWFjaC1zaG1vYmlsZS9ib2FyZC1hcDRldmIuYyAgICAg
-ICAgICAgICAgfCAgMjEgKy0NCj4+ICBhcmNoL2FybS9tYWNoLXNobW9iaWxlL2JvYXJkLWFybWFk
-aWxsbzgwMGV2YS5jICAgICB8ICAgNiArLQ0KPj4gIGFyY2gvYXJtL21hY2gtc2htb2JpbGUvYm9h
-cmQtbWFja2VyZWwuYyAgICAgICAgICAgIHwgIDM0ICstDQo+PiAgYXJjaC9hcm0vbWFjaC1zaG1v
-YmlsZS9jb21tb24uYyAgICAgICAgICAgICAgICAgICAgfCAgMjQgLS0NCj4+ICBhcmNoL2FybS9t
-YWNoLXNobW9iaWxlL2NwdWlkbGUuYyAgICAgICAgICAgICAgICAgICB8ICAzOSArLQ0KPj4gIGFy
-Y2gvYXJtL21hY2gtc2htb2JpbGUvaW5jbHVkZS9tYWNoL2NvbW1vbi5oICAgICAgIHwgIDE0ICst
-DQo+PiAgYXJjaC9hcm0vbWFjaC1zaG1vYmlsZS9pbmNsdWRlL21hY2gvcG0tcm1vYmlsZS5oICAg
-fCAgMzUgKy0NCj4+ICBhcmNoL2FybS9tYWNoLXNobW9iaWxlL2luY2x1ZGUvbWFjaC9yOGE3NzQw
-LmggICAgICB8ICAgNiArLQ0KPj4gIGFyY2gvYXJtL21hY2gtc2htb2JpbGUvaW5jbHVkZS9tYWNo
-L3I4YTc3NzkuaCAgICAgIHwgIDEyICstDQo+PiAgYXJjaC9hcm0vbWFjaC1zaG1vYmlsZS9pbmNs
-dWRlL21hY2gvc2g3MzcyLmggICAgICAgfCAgMjAgKy0NCj4+ICBhcmNoL2FybS9tYWNoLXNobW9i
-aWxlL3BtLXI4YTc3NDAuYyAgICAgICAgICAgICAgICB8ICA0MiArKy0NCj4+ICBhcmNoL2FybS9t
-YWNoLXNobW9iaWxlL3BtLXI4YTc3NzkuYyAgICAgICAgICAgICAgICB8ICA3MSArKy0tDQo+PiAg
-YXJjaC9hcm0vbWFjaC1zaG1vYmlsZS9wbS1ybW9iaWxlLmMgICAgICAgICAgICAgICAgfCAgMzMg
-Ky0NCj4+ICBhcmNoL2FybS9tYWNoLXNobW9iaWxlL3BtLXNoNzM3Mi5jICAgICAgICAgICAgICAg
-ICB8IDI4MyArKysrKysrKy0tLS0tLQ0KPj4gIGFyY2gvYXJtL21hY2gtc2htb2JpbGUvc2V0dXAt
-cjhhNzc0MC5jICAgICAgICAgICAgIHwgIDI3ICstDQo+PiAgYXJjaC9hcm0vbWFjaC1zaG1vYmls
-ZS9zZXR1cC1yOGE3Nzc5LmMgICAgICAgICAgICAgfCAgIDUgKy0NCj4+ICBhcmNoL2FybS9tYWNo
-LXNobW9iaWxlL3NldHVwLXNoNzM3Mi5jICAgICAgICAgICAgICB8ICA2OSArKy0tDQo+PiAgYXJj
-aC94ODYvaW5jbHVkZS9hc20vbXNyLWluZGV4LmggICAgICAgICAgICAgICAgICAgfCAgIDMgKw0K
-Pj4gIGRyaXZlcnMvYWNwaS9wcm9jZXNzb3JfZHJpdmVyLmMgICAgICAgICAgICAgICAgICAgIHwg
-ICA4ICstDQo+PiAgZHJpdmVycy9hY3BpL3Byb2Nlc3Nvcl9pZGxlLmMgICAgICAgICAgICAgICAg
-ICAgICAgfCAgNDAgKy0NCj4+ICBkcml2ZXJzL2FjcGkvcHJvY2Vzc29yX3BlcmZsaWIuYyAgICAg
-ICAgICAgICAgICAgICB8ICAzMCArKw0KPj4gIGRyaXZlcnMvYmFzZS9wbGF0Zm9ybS5jICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgIHwgICAyICsNCj4+ICBkcml2ZXJzL2Jhc2UvcG93ZXIvZG9t
-YWluLmMgICAgICAgICAgICAgICAgICAgICAgICB8IDI0NCArKysrKysrKysrLS0tDQo+PiAgZHJp
-dmVycy9iYXNlL3Bvd2VyL21haW4uYyAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgMzUgKy0N
-Cj4+ICBkcml2ZXJzL2Jhc2UvcG93ZXIvb3BwLmMgICAgICAgICAgICAgICAgICAgICAgICAgICB8
-ICA0NyArKysNCj4+ICBkcml2ZXJzL2Jhc2UvcG93ZXIvcG93ZXIuaCAgICAgICAgICAgICAgICAg
-ICAgICAgICB8ICAzNiArLQ0KPj4gIGRyaXZlcnMvYmFzZS9wb3dlci93YWtldXAuYyAgICAgICAg
-ICAgICAgICAgICAgICAgIHwgIDQ2ICsrLQ0KPj4gIGRyaXZlcnMvY2xvY2tzb3VyY2Uvc2hfY210
-LmMgICAgICAgICAgICAgICAgICAgICAgIHwgIDcxICsrKy0NCj4+ICBkcml2ZXJzL2Nsb2Nrc291
-cmNlL3NoX210dTIuYyAgICAgICAgICAgICAgICAgICAgICB8ICA0MSArKy0NCj4+ICBkcml2ZXJz
-L2Nsb2Nrc291cmNlL3NoX3RtdS5jICAgICAgICAgICAgICAgICAgICAgICB8IDExMiArKysrKy0N
-Cj4+ICBkcml2ZXJzL2NwdWZyZXEvS2NvbmZpZyAgICAgICAgICAgICAgICAgICAgICAgICAgICB8
-ICAxMSArDQo+PiAgZHJpdmVycy9jcHVmcmVxL0tjb25maWcueDg2ICAgICAgICAgICAgICAgICAg
-ICAgICAgfCAgMTggKy0NCj4+ICBkcml2ZXJzL2NwdWZyZXEvTWFrZWZpbGUgICAgICAgICAgICAg
-ICAgICAgICAgICAgICB8ICAgNCArLQ0KPj4gIGRyaXZlcnMvY3B1ZnJlcS9hY3BpLWNwdWZyZXEu
-YyAgICAgICAgICAgICAgICAgICAgIHwgMjcyICsrKysrKysrKysrKystDQo+PiAgZHJpdmVycy9j
-cHVmcmVxL2NwdWZyZXEtY3B1MC5jICAgICAgICAgICAgICAgICAgICAgfCAyNjkgKysrKysrKysr
-KysrKysNCj4+ICBkcml2ZXJzL2NwdWZyZXEvY3B1ZnJlcV9jb25zZXJ2YXRpdmUuYyAgICAgICAg
-ICAgICB8ICAgMiArDQo+PiAgZHJpdmVycy9jcHVmcmVxL2NwdWZyZXFfb25kZW1hbmQuYyAgICAg
-ICAgICAgICAgICAgfCAgIDEgKw0KPj4gIGRyaXZlcnMvY3B1ZnJlcS9sb25naGF1bC5oICAgICAg
-ICAgICAgICAgICAgICAgICAgIHwgIDI2ICstDQo+PiAgZHJpdmVycy9jcHVmcmVxL29tYXAtY3B1
-ZnJlcS5jICAgICAgICAgICAgICAgICAgICAgfCAgMzUgLS0NCj4+ICBkcml2ZXJzL2NwdWZyZXEv
-cG93ZXJub3ctazguYyAgICAgICAgICAgICAgICAgICAgICB8IDQwNiArKy0tLS0tLS0tLS0tLS0t
-LS0tLS0NCj4+ICBkcml2ZXJzL2NwdWZyZXEvcG93ZXJub3ctazguaCAgICAgICAgICAgICAgICAg
-ICAgICB8ICAzMiAtLQ0KPj4gIGRyaXZlcnMvY3B1aWRsZS9nb3Zlcm5vcnMvbGFkZGVyLmMgICAg
-ICAgICAgICAgICAgIHwgICA2ICstDQo+PiAgZHJpdmVycy94ZW4veGVuLWFjcGktcHJvY2Vzc29y
-LmMgICAgICAgICAgICAgICAgICAgfCAgIDEgLQ0KPj4gIGluY2x1ZGUvYWNwaS9wcm9jZXNzb3Iu
-aCAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICA5ICstDQo+PiAgaW5jbHVkZS9saW51eC9j
-bG9ja2NoaXBzLmggICAgICAgICAgICAgICAgICAgICAgICAgfCAgIDggKw0KPj4gIGluY2x1ZGUv
-bGludXgvZGV2aWNlLmggICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICA3ICsNCj4+ICBp
-bmNsdWRlL2xpbnV4L29wcC5oICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgOCAr
-DQo+PiAgaW5jbHVkZS9saW51eC9wbS5oICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-fCAgIDIgKw0KPj4gIGluY2x1ZGUvbGludXgvcG1fZG9tYWluLmggICAgICAgICAgICAgICAgICAg
-ICAgICAgIHwgIDkyICsrKystDQo+PiAga2VybmVsL3Bvd2VyL0tjb25maWcgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgfCAgIDQgKw0KPj4gIGtlcm5lbC9wb3dlci9wb3dlcm9mZi5jICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAyICstDQo+PiAga2VybmVsL3Bvd2VyL3Byb2Nl
-c3MuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgIDIgKy0NCj4+ICBrZXJuZWwvcG93
-ZXIvcW9zLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgMSArDQo+PiAga2Vy
-bmVsL3RpbWUvY2xvY2tldmVudHMuYyAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgMjQgKysN
-Cj4+ICBrZXJuZWwvdGltZS90aW1la2VlcGluZy5jICAgICAgICAgICAgICAgICAgICAgICAgICB8
-ICAgMiArDQo+PiAgNjIgZmlsZXMgY2hhbmdlZCwgMjAyOCBpbnNlcnRpb25zKCspLCA5MjIgZGVs
-ZXRpb25zKC0pDQo+PiANCj4+IC0tLS0tLS0tLS0tLS0tLQ0KPj4gDQo+PiBBbWl0IERhbmllbCBL
-YWNoaGFwICgxKToNCj4+ICAgICAgIFBNIC8gY3B1ZnJlcTogSW5pdGlhbGlzZSB0aGUgY3B1IGZp
-ZWxkIGR1cmluZyBjb25zZXJ2YXRpdmUgZ292ZXJub3Igc3RhcnQNCj4+IA0KPj4gQW5kaSBLbGVl
-biAoMSk6DQo+PiAgICAgICBzZWN0aW9uczogZml4IHNlY3Rpb24gY29uZmxpY3RzIGluIGRyaXZl
-cnMvY3B1ZnJlcQ0KPj4gDQo+PiBBbmRyZSBQcnp5d2FyYSAoNSk6DQo+PiAgICAgICBhY3BpLWNw
-dWZyZXE6IEFkZCBxdWlyayB0byBkaXNhYmxlIF9QU0QgdXNhZ2Ugb24gYWxsIEFNRCBDUFVzDQo+
-PiAgICAgICBjcHVmcmVxOiBBZGQgd2FybmluZyBtZXNzYWdlIHRvIHBvd2Vybm93LWs4DQo+PiAg
-ICAgICBwb3dlcm5vdy1rODogZGVsYXkgaW5mbyBtZXNzYWdlcyB1bnRpbCBpbml0aWFsaXphdGlv
-biBoYXMgc3VjY2VlZGVkDQo+PiAgICAgICBhY3BpLWNwdWZyZXE6IEFkZCBzdXBwb3J0IGZvciBk
-aXNhYmxpbmcgZHluYW1pYyBvdmVyY2xvY2tpbmcNCj4+ICAgICAgIGFjcGktY3B1ZnJlcTogQWRk
-IGNvbXBhdGliaWxpdHkgZm9yIGxlZ2FjeSBBTUQgY3BiIHN5c2ZzIGtub2INCj4+IA0KPj4gQm9y
-aXNsYXYgUGV0a292ICgxKToNCj4+ICAgICAgIGNwdWZyZXEgLyBwb3dlcm5vdy1rODogRml4dXAg
-bWlzc2luZyBfUFNTIG9iamVjdHMgbWVzc2FnZQ0KPj4gDQo+PiBDYXJzdGVuIEVtZGUgKDEpOg0K
-Pj4gICAgICAgSG9ub3Igc3RhdGUgZGlzYWJsaW5nIGluIHRoZSBjcHVpZGxlIGxhZGRlciBnb3Zl
-cm5vcg0KPj4gDQo+PiBEYW5pZWwgTGV6Y2FubyAoNCk6DQo+PiAgICAgICBjcHVpZGxlIC8gQUNQ
-SSA6IHJlbW92ZSBwb3dlciBmcm9tIGFjcGlfcHJvY2Vzc29yX2N4IHN0cnVjdHVyZQ0KPj4gICAg
-ICAgQUNQSSAvIHByb2Nlc3NvcjogcmVtb3ZlIHVudXNlZCBmdW5jdGlvbiBwYXJhbWV0ZXINCj4+
-ICAgICAgIEFDUEkgLyBwcm9jZXNzb3I6IHJlbW92ZSBwb2ludGxlc3MgdmFyaWFibGUgaW5pdGlh
-bGl6YXRpb24NCj4+ICAgICAgIGNwdWlkbGUgLyBBQ1BJIDogbW92ZSBjcHVpZGxlX2RldmljZSBm
-aWVsZCBvdXQgb2YgdGhlIGFjcGlfcHJvY2Vzc29yX3Bvd2VyIHN0cnVjdHVyZQ0KPj4gDQo+PiBK
-YW4gQmV1bGljaCAoMSk6DQo+PiAgICAgICBwcm9wZXJseSBfX2luaXQtYW5ub3RhdGUgcG1fc3lz
-cnFfaW5pdCgpDQo+PiANCj4+IEpvaG4gU3R1bHR6ICgxKToNCj4+ICAgICAgIFBNIC8gd2FrZXVw
-OiBVc2UgaXJxc2F2ZS9pcnFyZXN0b3JlIGZvciBldmVudHNfbG9jaw0KPj4gDQo+PiBMdWlzIEdv
-bnphbGV6IEZlcm5hbmRleiAoMSk6DQo+PiAgICAgICBQTSAvIFFvUzogQWRkIHJldHVybiBjb2Rl
-IHRvIHBtX3Fvc19nZXRfdmFsdWUgZnVuY3Rpb24uDQo+PiANCj4+IE1hdHRoZXcgR2FycmV0dCAo
-Myk6DQo+PiAgICAgICBhY3BpLWNwdWZyZXE6IEFkZCBzdXBwb3J0IGZvciBtb2Rlcm4gQU1EIENQ
-VXMNCj4+ICAgICAgIEFDUEk6IEFkZCBmaXh1cHMgZm9yIEFNRCBQLXN0YXRlIGZpZ3VyZXMNCj4+
-ICAgICAgIGNwdWZyZXE6IFJlbW92ZSBzdXBwb3J0IGZvciBoYXJkd2FyZSBQLXN0YXRlIGNoaXBz
-IGZyb20gcG93ZXJub3ctazgNCj4+IA0KPj4gTWljaGFsIFBlY2lvICgyKToNCj4+ICAgICAgIGNw
-dWZyZXEgLyBvbmRlbWFuZDogdXBkYXRlIGZyZXF1ZW5jeSB3aGVuIGxpbWl0cyBhcmUgcmVsYXhl
-ZA0KPj4gICAgICAgY3B1ZnJlcTogY29uc2VydmF0aXZlOiB1cGRhdGUgZnJlcXVlbmN5IHdoZW4g
-bGltaXRzIGFyZSByZWxheGVkDQo+PiANCj4+IFJhZmFlbCBKLiBXeXNvY2tpICg0MCk6DQo+PiAg
-ICAgICBQTSAvIGNwdWlkbGU6IE1ha2UgbGFkZGVyIGdvdmVybm9yIHVzZSB0aGUgImRpc2FibGVk
-IiBzdGF0ZSBmbGFnDQo+PiAgICAgICBQTSAvIERvbWFpbnM6IEludHJvZHVjZSBzaW1wbGlmaWVk
-IHBvd2VyIG9uIHJvdXRpbmUgZm9yIHN5c3RlbSByZXN1bWUNCj4+ICAgICAgIFBNIC8gRG9tYWlu
-czogQWRkIHBvd2VyIG9mZi9vbiBmdW5jdGlvbiBmb3Igc3lzdGVtIGNvcmUgc3VzcGVuZCBzdGFn
-ZQ0KPj4gICAgICAgdGltZWtlZXBpbmc6IEFkZCBzdXNwZW5kIGFuZCByZXN1bWUgb2YgY2xvY2sg
-ZXZlbnQgZGV2aWNlcw0KPj4gICAgICAgc2g6IFRNVTogSW50cm9kdWNlIGNsb2Nrc291cmNlL2Ns
-b2NrIGV2ZW50cyBzdXNwZW5kL3Jlc3VtZSByb3V0aW5lcw0KPj4gICAgICAgc2g6IENNVDogSW50
-cm9kdWNlIGNsb2Nrc291cmNlL2Nsb2NrIGV2ZW50cyBzdXNwZW5kL3Jlc3VtZSByb3V0aW5lcw0K
-Pj4gICAgICAgc2g6IE1UVTI6IEludHJvZHVjZSBjbG9jayBldmVudHMgc3VzcGVuZC9yZXN1bWUg
-cm91dGluZXMNCj4+ICAgICAgIFBNOiBSZW9yZ2FuaXplIGRldmljZSBQTSBpbml0aWFsaXphdGlv
-bg0KPj4gICAgICAgUE0gLyBSdW50aW1lOiBBbGxvdyBoZWxwZXJzIHRvIGJlIGNhbGxlZCBieSBl
-YXJseSBwbGF0Zm9ybSBkcml2ZXJzDQo+PiAgICAgICBQTSAvIERvbWFpbnM6IFJlbmFtZSB0aGUg
-YWx3YXlzX29uIGRldmljZSBmbGFnIHRvIHN5c2NvcmUNCj4+ICAgICAgIFBNIC8gRG9tYWluczog
-TW92ZSBzeXNjb3JlIGZsYWcgZnJvbSBzdWJzeXMgZGF0YSB0byBzdHJ1Y3QgZGV2aWNlDQo+PiAg
-ICAgICBQTSAvIERvbWFpbnM6IERvIG5vdCBtZWFzdXJlIHN0YXJ0IHRpbWUgZm9yICJpcnEgc2Fm
-ZSIgZGV2aWNlcw0KPj4gICAgICAgc2g6IFRNVTogQmFzaWMgcnVudGltZSBQTSBzdXBwb3J0DQo+
-PiAgICAgICBzaDogQ01UOiBCYXNpYyBydW50aW1lIFBNIHN1cHBvcnQNCj4+ICAgICAgIHNoOiBN
-VFUyOiBCYXNpYyBydW50aW1lIFBNIHN1cHBvcnQNCj4+ICAgICAgIFBNOiBEbyBub3QgdXNlIHRo
-ZSBzeXNjb3JlIGZsYWcgZm9yIHJ1bnRpbWUgUE0NCj4+ICAgICAgIFBNIC8gRG9tYWluczogTWFr
-ZSBpdCBwb3NzaWJsZSB0byB1c2UgZG9tYWluIG5hbWVzIHdoZW4gYWRkaW5nIGRldmljZXMNCj4+
-ICAgICAgIFBNIC8gRG9tYWluczogTWFrZSBpdCBwb3NzaWJsZSB0byB1c2UgbmFtZXMgd2hlbiBh
-ZGRpbmcgc3ViZG9tYWlucw0KPj4gICAgICAgUE0gLyBEb21haW5zOiBBZGQgcG93ZXItb24gZnVu
-Y3Rpb24gdXNpbmcgbmFtZXMgdG8gaWRlbnRpZnkgZG9tYWlucw0KPj4gICAgICAgUE0gLyBEb21h
-aW5zOiBEb2N1bWVudCBjcHVpZGxlLXJlbGF0ZWQgZnVuY3Rpb25zIGFuZCBjaGFuZ2UgdGhlaXIg
-bmFtZXMNCj4+ICAgICAgIFBNIC8gRG9tYWluczogT3BlcmF0aW9ucyByZWxhdGVkIHRvIGNwdWlk
-bGUgdXNpbmcgZG9tYWluIG5hbWVzDQo+PiAgICAgICBBUk06IHNobW9iaWxlOiBVc2UgbmFtZXMg
-b2YgcG93ZXIgZG9tYWlucyBmb3IgYWRkaW5nIGRldmljZXMgdG8gdGhlbQ0KPj4gICAgICAgQVJN
-OiBzaG1vYmlsZTogRHJvcCByOGE3Nzc5X2FkZF9kZXZpY2VfdG9fZG9tYWluKCkNCj4+ICAgICAg
-IEFSTTogc2htb2JpbGU6IFVzZSBkb21haW4gbmFtZXMgd2hlbiBhZGRpbmcgc3ViZG9tYWlucyB0
-byBwb3dlciBkb21haW5zDQo+PiAgICAgICBBUk06IHNobW9iaWxlOiBBZGQgcm91dGluZSBmb3Ig
-YXV0b21hdGljIFBNIGRvbWFpbnMgaW5pdGlhbGl6YXRpb24NCj4+ICAgICAgIEFSTTogc2htb2Jp
-bGU6IERvIG5vdCBhY2Nlc3Mgc2g3MzcyIEE0UyBkb21haW4gaW50ZXJuYWxzIGRpcmVjdGx5DQo+
-PiAgICAgICBBUk06IHNobW9iaWxlOiBNb3ZlIHNoNzM3MidzIFBNIGRvbWFpbiBvYmplY3RzIHRv
-IGEgdGFibGUNCj4+ICAgICAgIEFSTTogc2htb2JpbGU6IE1vdmUgcjhhNzc0MCdzIFBNIGRvbWFp
-biBvYmplY3RzIHRvIGEgdGFibGUNCj4+ICAgICAgIEFSTTogc2htb2JpbGU6IE1vdmUgcjhhNzc3
-OSdzIFBNIGRvbWFpbiBvYmplY3RzIHRvIGEgdGFibGUNCj4+ICAgICAgIEFSTTogc2htb2JpbGU6
-IE1ha2Ugcm1vYmlsZV9pbml0X3BtX2RvbWFpbigpIHN0YXRpYw0KPj4gICAgICAgQVJNOiBzaG1v
-YmlsZTogU2V0IFBNIGRvbWFpbiBvbi9vZmYgbGF0ZW5jaWVzIGRpcmVjdGx5DQo+PiAgICAgICBB
-Uk06IHNobW9iaWxlOiBBbGxvdyBkZXZpY2UgbGF0ZW5jaWVzIHRvIGJlIHNwZWNpZmllZCBkaXJl
-Y3RseQ0KPj4gICAgICAgQVJNOiBzaG1vYmlsZTogU3BlY2lmeSBkZXZpY2UgbGF0ZW5jaWVzIGZv
-ciBTSDczNzIgZGV2aWNlcyBkaXJlY3RseQ0KPj4gICAgICAgQVJNOiBzaG1vYmlsZTogU3BlY2lm
-eSBkZXZpY2UgbGF0ZW5jaWVzIGZvciBNYWNrZXJlbCBkZXZpY2VzIGRpcmVjdGx5DQo+PiAgICAg
-ICBBUk06IHNobW9iaWxlOiBSZXdvcmsgYWRkaW5nIGRldmljZXMgdG8gUE0gZG9tYWlucyBvbiBN
-YWNrZXJlbA0KPj4gICAgICAgQVJNOiBzaG1vYmlsZTogUmV3b3JrIGFkZGluZyBkZXZpY2VzIHRv
-IFBNIGRvbWFpbnMgb24gQVA0RVZCDQo+PiAgICAgICBBUk06IHNobW9iaWxlOiBSZW1vdmUgdGhl
-IGNvbnNvbGUgY2hlY2sgZnJvbSBzaDczNzJfZW50ZXJfc3VzcGVuZCgpDQo+PiAgICAgICBBUk06
-IHNobW9iaWxlOiBNb3ZlIGRlZmluaXRpb24gb2Ygc2htb2JpbGVfaW5pdF9sYXRlKCkgdG8gaGVh
-ZGVyDQo+PiAgICAgICBBUk06IHNobW9iaWxlOiBNYWtlIHNoNzM3MiBjcHVpZGxlIGhhbmRsaW5n
-IG1vcmUgc3RyYWlnaHRmb3J3YXJkDQo+PiAgICAgICBBUk06IHNobW9iaWxlOiBBZGQgQTRTIGNw
-dWlkbGUgc3RhdGUgb24gc2g3MzcyDQo+PiANCj4+IFJpY2hhcmQgWmhhbyAoMik6DQo+PiAgICAg
-ICBBUk06IGFkZCBjcHVmcmVxIHRyYW5zaXRvbiBub3RpZmllciB0byBhZGp1c3QgbG9vcHNfcGVy
-X2ppZmZ5IGZvciBzbXANCj4+ICAgICAgIGNwdWZyZXE6IE9NQVA6IHJlbW92ZSBsb29wc19wZXJf
-amlmZnkgcmVjYWxjdWxhdGUgZm9yIHNtcA0KPj4gDQo+PiBTYWNoaW4gS2FtYXQgKDEpOg0KPj4g
-ICAgICAgUE0gLyBEb21haW5zOiBGaXggY29tcGlsYXRpb24gd2FybmluZyByZWxhdGVkIHRvIGdl
-bnBkX3N0YXJ0X2Rldl9ub190aW1pbmcoKQ0KPj4gDQo+PiBTZWRhdCBEaWxlayAoMSk6DQo+PiAg
-ICAgICBQTSAvIEZyZWV6ZXI6IEZpeCBzbWFsbCB0eXBvICJyZWdyaWdlcmF0b3IiDQo+PiANCj4+
-IFNoYXduIEd1byAoMik6DQo+PiAgICAgICBQTSAvIE9QUDogSW5pdGlhbGl6ZSBPUFAgdGFibGUg
-ZnJvbSBkZXZpY2UgdHJlZQ0KPj4gICAgICAgY3B1ZnJlcTogQWRkIGEgZ2VuZXJpYyBjcHVmcmVx
-LWNwdTAgZHJpdmVyDQo+PiANCj4+IFRvZGQgUG95bm9yICgxKToNCj4+ICAgICAgIFBNIC8gU2xl
-ZXA6IFByaW50IG5hbWUgb2Ygd2FrZXVwIHNvdXJjZSB0aGF0IGFib3J0cyBzdXNwZW5kDQo+PiAN
-Cj4+IC0tDQo+PiBUbyB1bnN1YnNjcmliZSBmcm9tIHRoaXMgbGlzdDogc2VuZCB0aGUgbGluZSAi
-dW5zdWJzY3JpYmUgbGludXgtcG0iIGluDQo+PiB0aGUgYm9keSBvZiBhIG1lc3NhZ2UgdG8gbWFq
-b3Jkb21vQHZnZXIua2VybmVsLm9yZw0KPj4gTW9yZSBtYWpvcmRvbW8gaW5mbyBhdCAgaHR0cDov
-L3ZnZXIua2VybmVsLm9yZy9tYWpvcmRvbW8taW5mby5odG1sDQo=
-
---_002_3E54258959B69E4282D79E01AB1F32B7041D147DDFLE12entticom_
-Content-Type: message/rfc822
-Content-Disposition: attachment;
-	creation-date="Tue, 18 Sep 2012 21:18:51 GMT";
-	modification-date="Tue, 18 Sep 2012 21:18:51 GMT"
-
-Received: from dlelxv22.itg.ti.com (172.17.1.197) by DLEE74.ent.ti.com
- (157.170.170.8) with Microsoft SMTP Server id 14.1.323.3; Fri, 14 Sep 2012
- 17:19:36 -0500
-Received: from ares-ubuntu.am.dhcp.ti.com (ares-ubuntu.am.dhcp.ti.com
- [158.218.103.17])	by dlelxv22.itg.ti.com (8.13.8/8.13.8) with ESMTP id
- q8EMJaIt025836;	Fri, 14 Sep 2012 17:19:36 -0500
-Received: from a0868495 by ares-ubuntu.am.dhcp.ti.com with local (Exim 4.76)
-	(envelope-from <a0868495@ares-ubuntu>)	id 1TCeEa-00041V-Bn; Fri, 14 Sep 2012
- 18:19:36 -0400
-From: "Karicheri, Muralidharan" <m-karicheri2@ti.com>
-To: "pavel@ucw.cz" <pavel@ucw.cz>, "rjw@sisk.pl" <rjw@sisk.pl>,
-	"len.brown@intel.com" <len.brown@intel.com>, "gregkh@linuxfoundation.org"
-	<gregkh@linuxfoundation.org>, "linux-pm@vger.kernel.org"
-	<linux-pm@vger.kernel.org>, "linux-kernel@vger.kernel.org"
-	<linux-kernel@vger.kernel.org>, "Chemparathy, Cyril" <cyril@ti.com>,
-	"mturquette@linaro.org" <mturquette@linaro.org>
-CC: "Karicheri, Muralidharan" <m-karicheri2@ti.com>
-Subject: [RFC - PATCH] base:pm: prepare driver for common clock framework
-Thread-Topic: [RFC - PATCH] base:pm: prepare driver for common clock
- framework
-Thread-Index: AQHNkscGQnhzdlyu5EK+tSnspVAZNA==
-Date: Fri, 14 Sep 2012 22:19:34 +0000
-Message-ID: <1347661174-15404-1-git-send-email-m-karicheri2@ti.com>
-Content-Language: en-US
-X-MS-Exchange-Organization-AuthAs: Internal
-X-MS-Exchange-Organization-AuthMechanism: 10
-X-MS-Exchange-Organization-AuthSource: DLEE74.ent.ti.com
-X-MS-Has-Attach: 
-X-MS-TNEF-Correlator: 
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+References: <201209182219.00649.rjw@sisk.pl> <3E54258959B69E4282D79E01AB1F32B7041D147D@DFLE12.ent.ti.com>
+In-Reply-To: <3E54258959B69E4282D79E01AB1F32B7041D147D@DFLE12.ent.ti.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: "Karicheri, Muralidharan" <m-karicheri2@ti.com>
+Cc: LKML <linux-kernel@vger.kernel.org>, ACPI Devel Mailing List <linux-acpi@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Len Brown <lenb@kernel.org>
 
-As part of my work to migrate davinci SoC code to
-use common clk framework, I encountered an issue with this driver
-which is calling clk_enable() and clk_disable() without prepare()/
-unprepare(). This change is needed to enable common clock migration
-for davinci SoCs.
+On Tuesday, September 18, 2012, Karicheri, Muralidharan wrote:
+> Rafael,
+> 
+> Could you review the attached patch which is sent to the list and merge it
+> if it looks ok? If not, please provide your comment.
 
-Signed-off-by: Murali Karicheri <m-karicheri2@ti.com>
+You've sent it as an RFC and never submitted again, so I thought it was
+dropped.
 
-diff --git a/drivers/base/power/clock_ops.c b/drivers/base/power/clock_ops.=
-c
-index eb78e96..9d8fde7 100644
---- a/drivers/base/power/clock_ops.c
-+++ b/drivers/base/power/clock_ops.c
-@@ -99,7 +99,7 @@ static void __pm_clk_remove(struct pm_clock_entry *ce)
+Please see my comment in a reply to the original patch message I've just sent.
 
-        if (ce->status < PCE_STATUS_ERROR) {
-                if (ce->status =3D=3D PCE_STATUS_ENABLED)
--                       clk_disable(ce->clk);
-+                       clk_disable_unprepare(ce->clk);
-
-                if (ce->status >=3D PCE_STATUS_ACQUIRED)
-                        clk_put(ce->clk);
-@@ -396,7 +396,7 @@ static void enable_clock(struct device *dev, const char=
- *con_id)
-
-        clk =3D clk_get(dev, con_id);
-        if (!IS_ERR(clk)) {
--               clk_enable(clk);
-+               clk_prepare_enable(clk);
-                clk_put(clk);
-                dev_info(dev, "Runtime PM disabled, clock forced on.\n");
-        }
-@@ -413,7 +413,7 @@ static void disable_clock(struct device *dev, const cha=
-r *con_id)
-
-        clk =3D clk_get(dev, con_id);
-        if (!IS_ERR(clk)) {
--               clk_disable(clk);
-+               clk_disable_unprepare(clk);
-                clk_put(clk);
-                dev_info(dev, "Runtime PM disabled, clock forced off.\n");
-        }
---
-1.7.9.5
+Thanks,
+Rafael
 
 
---_002_3E54258959B69E4282D79E01AB1F32B7041D147DDFLE12entticom_--
+> >> -----Original Message-----
+> >> From: linux-pm-owner@vger.kernel.org [mailto:linux-pm-owner@vger.kernel.org] On
+> >> Behalf Of Rafael J. Wysocki
+> >> Sent: Tuesday, September 18, 2012 4:19 PM
+> >> To: LKML
+> >> Cc: ACPI Devel Mailing List; Linux PM list; Linux-sh list; Len Brown
+> >> Subject: PM: Summary of changes for v3.7
+> >> 
+> >> Hi all,
+> >> 
+> >> All of the changes I'd like to include into the first PM pull request during
+> >> the v3.7 merge window, except maybe for a couple of patches I know of, but
+> >> haven't decided what to do with them yet, is on the 'linux-next' branch of the
+> >> linux-pm.git tree now.
+> >> 
+> >> The summary of those changes is appended.  If anyone finds any of them
+> >> objectionable, please let me know ASAP.  Also please let me know if there are
+> >> any power management patches I've seen already that you'd like me to take for
+> >> v3.7 (if I haven't seen them yet, they clearly are not v3.7 material, unless
+> >> they are urgent fixes).
+> >> 
+> >> Thanks,
+> >> Rafael
+> >> 
+> >> ---
+> >> 
+> >>  Documentation/ABI/testing/sysfs-devices-system-cpu |  11 +
+> >>  Documentation/cpu-freq/boost.txt                   |  93 +++++
+> >>  Documentation/cpuidle/sysfs.txt                    |  10 +-
+> >>  .../devicetree/bindings/cpufreq/cpufreq-cpu0.txt   |  55 +++
+> >>  Documentation/devicetree/bindings/power/opp.txt    |  25 ++
+> >>  arch/arm/kernel/smp.c                              |  54 +++
+> >>  arch/arm/mach-shmobile/Makefile                    |   2 +-
+> >>  arch/arm/mach-shmobile/board-ap4evb.c              |  21 +-
+> >>  arch/arm/mach-shmobile/board-armadillo800eva.c     |   6 +-
+> >>  arch/arm/mach-shmobile/board-mackerel.c            |  34 +-
+> >>  arch/arm/mach-shmobile/common.c                    |  24 --
+> >>  arch/arm/mach-shmobile/cpuidle.c                   |  39 +-
+> >>  arch/arm/mach-shmobile/include/mach/common.h       |  14 +-
+> >>  arch/arm/mach-shmobile/include/mach/pm-rmobile.h   |  35 +-
+> >>  arch/arm/mach-shmobile/include/mach/r8a7740.h      |   6 +-
+> >>  arch/arm/mach-shmobile/include/mach/r8a7779.h      |  12 +-
+> >>  arch/arm/mach-shmobile/include/mach/sh7372.h       |  20 +-
+> >>  arch/arm/mach-shmobile/pm-r8a7740.c                |  42 ++-
+> >>  arch/arm/mach-shmobile/pm-r8a7779.c                |  71 ++--
+> >>  arch/arm/mach-shmobile/pm-rmobile.c                |  33 +-
+> >>  arch/arm/mach-shmobile/pm-sh7372.c                 | 283 ++++++++------
+> >>  arch/arm/mach-shmobile/setup-r8a7740.c             |  27 +-
+> >>  arch/arm/mach-shmobile/setup-r8a7779.c             |   5 +-
+> >>  arch/arm/mach-shmobile/setup-sh7372.c              |  69 ++--
+> >>  arch/x86/include/asm/msr-index.h                   |   3 +
+> >>  drivers/acpi/processor_driver.c                    |   8 +-
+> >>  drivers/acpi/processor_idle.c                      |  40 +-
+> >>  drivers/acpi/processor_perflib.c                   |  30 ++
+> >>  drivers/base/platform.c                            |   2 +
+> >>  drivers/base/power/domain.c                        | 244 ++++++++++---
+> >>  drivers/base/power/main.c                          |  35 +-
+> >>  drivers/base/power/opp.c                           |  47 +++
+> >>  drivers/base/power/power.h                         |  36 +-
+> >>  drivers/base/power/wakeup.c                        |  46 ++-
+> >>  drivers/clocksource/sh_cmt.c                       |  71 +++-
+> >>  drivers/clocksource/sh_mtu2.c                      |  41 ++-
+> >>  drivers/clocksource/sh_tmu.c                       | 112 +++++-
+> >>  drivers/cpufreq/Kconfig                            |  11 +
+> >>  drivers/cpufreq/Kconfig.x86                        |  18 +-
+> >>  drivers/cpufreq/Makefile                           |   4 +-
+> >>  drivers/cpufreq/acpi-cpufreq.c                     | 272 +++++++++++++-
+> >>  drivers/cpufreq/cpufreq-cpu0.c                     | 269 ++++++++++++++
+> >>  drivers/cpufreq/cpufreq_conservative.c             |   2 +
+> >>  drivers/cpufreq/cpufreq_ondemand.c                 |   1 +
+> >>  drivers/cpufreq/longhaul.h                         |  26 +-
+> >>  drivers/cpufreq/omap-cpufreq.c                     |  35 --
+> >>  drivers/cpufreq/powernow-k8.c                      | 406 ++-------------------
+> >>  drivers/cpufreq/powernow-k8.h                      |  32 --
+> >>  drivers/cpuidle/governors/ladder.c                 |   6 +-
+> >>  drivers/xen/xen-acpi-processor.c                   |   1 -
+> >>  include/acpi/processor.h                           |   9 +-
+> >>  include/linux/clockchips.h                         |   8 +
+> >>  include/linux/device.h                             |   7 +
+> >>  include/linux/opp.h                                |   8 +
+> >>  include/linux/pm.h                                 |   2 +
+> >>  include/linux/pm_domain.h                          |  92 ++++-
+> >>  kernel/power/Kconfig                               |   4 +
+> >>  kernel/power/poweroff.c                            |   2 +-
+> >>  kernel/power/process.c                             |   2 +-
+> >>  kernel/power/qos.c                                 |   1 +
+> >>  kernel/time/clockevents.c                          |  24 ++
+> >>  kernel/time/timekeeping.c                          |   2 +
+> >>  62 files changed, 2028 insertions(+), 922 deletions(-)
+> >> 
+> >> ---------------
+> >> 
+> >> Amit Daniel Kachhap (1):
+> >>       PM / cpufreq: Initialise the cpu field during conservative governor start
+> >> 
+> >> Andi Kleen (1):
+> >>       sections: fix section conflicts in drivers/cpufreq
+> >> 
+> >> Andre Przywara (5):
+> >>       acpi-cpufreq: Add quirk to disable _PSD usage on all AMD CPUs
+> >>       cpufreq: Add warning message to powernow-k8
+> >>       powernow-k8: delay info messages until initialization has succeeded
+> >>       acpi-cpufreq: Add support for disabling dynamic overclocking
+> >>       acpi-cpufreq: Add compatibility for legacy AMD cpb sysfs knob
+> >> 
+> >> Borislav Petkov (1):
+> >>       cpufreq / powernow-k8: Fixup missing _PSS objects message
+> >> 
+> >> Carsten Emde (1):
+> >>       Honor state disabling in the cpuidle ladder governor
+> >> 
+> >> Daniel Lezcano (4):
+> >>       cpuidle / ACPI : remove power from acpi_processor_cx structure
+> >>       ACPI / processor: remove unused function parameter
+> >>       ACPI / processor: remove pointless variable initialization
+> >>       cpuidle / ACPI : move cpuidle_device field out of the acpi_processor_power structure
+> >> 
+> >> Jan Beulich (1):
+> >>       properly __init-annotate pm_sysrq_init()
+> >> 
+> >> John Stultz (1):
+> >>       PM / wakeup: Use irqsave/irqrestore for events_lock
+> >> 
+> >> Luis Gonzalez Fernandez (1):
+> >>       PM / QoS: Add return code to pm_qos_get_value function.
+> >> 
+> >> Matthew Garrett (3):
+> >>       acpi-cpufreq: Add support for modern AMD CPUs
+> >>       ACPI: Add fixups for AMD P-state figures
+> >>       cpufreq: Remove support for hardware P-state chips from powernow-k8
+> >> 
+> >> Michal Pecio (2):
+> >>       cpufreq / ondemand: update frequency when limits are relaxed
+> >>       cpufreq: conservative: update frequency when limits are relaxed
+> >> 
+> >> Rafael J. Wysocki (40):
+> >>       PM / cpuidle: Make ladder governor use the "disabled" state flag
+> >>       PM / Domains: Introduce simplified power on routine for system resume
+> >>       PM / Domains: Add power off/on function for system core suspend stage
+> >>       timekeeping: Add suspend and resume of clock event devices
+> >>       sh: TMU: Introduce clocksource/clock events suspend/resume routines
+> >>       sh: CMT: Introduce clocksource/clock events suspend/resume routines
+> >>       sh: MTU2: Introduce clock events suspend/resume routines
+> >>       PM: Reorganize device PM initialization
+> >>       PM / Runtime: Allow helpers to be called by early platform drivers
+> >>       PM / Domains: Rename the always_on device flag to syscore
+> >>       PM / Domains: Move syscore flag from subsys data to struct device
+> >>       PM / Domains: Do not measure start time for "irq safe" devices
+> >>       sh: TMU: Basic runtime PM support
+> >>       sh: CMT: Basic runtime PM support
+> >>       sh: MTU2: Basic runtime PM support
+> >>       PM: Do not use the syscore flag for runtime PM
+> >>       PM / Domains: Make it possible to use domain names when adding devices
+> >>       PM / Domains: Make it possible to use names when adding subdomains
+> >>       PM / Domains: Add power-on function using names to identify domains
+> >>       PM / Domains: Document cpuidle-related functions and change their names
+> >>       PM / Domains: Operations related to cpuidle using domain names
+> >>       ARM: shmobile: Use names of power domains for adding devices to them
+> >>       ARM: shmobile: Drop r8a7779_add_device_to_domain()
+> >>       ARM: shmobile: Use domain names when adding subdomains to power domains
+> >>       ARM: shmobile: Add routine for automatic PM domains initialization
+> >>       ARM: shmobile: Do not access sh7372 A4S domain internals directly
+> >>       ARM: shmobile: Move sh7372's PM domain objects to a table
+> >>       ARM: shmobile: Move r8a7740's PM domain objects to a table
+> >>       ARM: shmobile: Move r8a7779's PM domain objects to a table
+> >>       ARM: shmobile: Make rmobile_init_pm_domain() static
+> >>       ARM: shmobile: Set PM domain on/off latencies directly
+> >>       ARM: shmobile: Allow device latencies to be specified directly
+> >>       ARM: shmobile: Specify device latencies for SH7372 devices directly
+> >>       ARM: shmobile: Specify device latencies for Mackerel devices directly
+> >>       ARM: shmobile: Rework adding devices to PM domains on Mackerel
+> >>       ARM: shmobile: Rework adding devices to PM domains on AP4EVB
+> >>       ARM: shmobile: Remove the console check from sh7372_enter_suspend()
+> >>       ARM: shmobile: Move definition of shmobile_init_late() to header
+> >>       ARM: shmobile: Make sh7372 cpuidle handling more straightforward
+> >>       ARM: shmobile: Add A4S cpuidle state on sh7372
+> >> 
+> >> Richard Zhao (2):
+> >>       ARM: add cpufreq transiton notifier to adjust loops_per_jiffy for smp
+> >>       cpufreq: OMAP: remove loops_per_jiffy recalculate for smp
+> >> 
+> >> Sachin Kamat (1):
+> >>       PM / Domains: Fix compilation warning related to genpd_start_dev_no_timing()
+> >> 
+> >> Sedat Dilek (1):
+> >>       PM / Freezer: Fix small typo "regrigerator"
+> >> 
+> >> Shawn Guo (2):
+> >>       PM / OPP: Initialize OPP table from device tree
+> >>       cpufreq: Add a generic cpufreq-cpu0 driver
+> >> 
+> >> Todd Poynor (1):
+> >>       PM / Sleep: Print name of wakeup source that aborts suspend
+> >> 
+> >> --
+> >> To unsubscribe from this list: send the line "unsubscribe linux-pm" in
+> >> the body of a message to majordomo@vger.kernel.org
+> >> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+
