@@ -1,57 +1,48 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 18 Sep 2012 01:54:18 +0000
-Subject: [PATCH 2/2] ARM: shmobile: kzm9g: enable three-axis digital accelerometer ADXL345
-Message-Id: <1347933258-4372-3-git-send-email-horms@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 18 Sep 2012 22:52:26 +0000
+Subject: [PATCH] ARM: shmobile: fix MMCIF IRQ assignment on kzm9g
+Message-Id: <Pine.LNX.4.64.1209190042440.31203@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1347933258-4372-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1347933258-4372-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: Tetsuyuki Kobayashi <koba@kmckk.co.jp>, yusuke.goda.sx@renesas.com, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Simon Horman <horms@verge.net.au>
 
-From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+Error and operation IRQs are swapped in kzm9g platform data, this patch
+fixes their order. The only problem this bug causes is the confusing IRQ 
+count in /proc/interrupts output, otherwise functionality is unaffected, 
+since the driver doesn't really differentiate between the two IRQs.
 
-This patch enables three-axis digital accelerometer ADXL345.
-Test:
-  sudo cat /dev/input/event2
-then tip up the board. You get something from /dev/input/event2.
-
-Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/configs/kzm9g_defconfig     |    2 ++
- arch/arm/mach-shmobile/board-kzm9g.c |    4 ++++
- 2 files changed, 6 insertions(+)
 
-diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
-index 2aaa2ff..83047e0 100644
---- a/arch/arm/configs/kzm9g_defconfig
-+++ b/arch/arm/configs/kzm9g_defconfig
-@@ -73,6 +73,8 @@ CONFIG_INPUT_EVDEV=y
- # CONFIG_INPUT_MOUSE is not set
- CONFIG_INPUT_TOUCHSCREEN=y
- CONFIG_TOUCHSCREEN_ST1232=y
-+CONFIG_INPUT_MISC=y
-+CONFIG_INPUT_ADXL34X=y
- # CONFIG_LEGACY_PTYS is not set
- CONFIG_SERIAL_SH_SCI=y
- CONFIG_SERIAL_SH_SCI_NR_UARTS=9
+The error is easy to see in /proc/interrupts output, kota2 has the correct 
+IRQ assignment, ag5evm has the same problem, as kzm9g, so, it might need 
+fixing too. I certainly could cook up a similar trivial patch for it, but 
+someone will have to test it.
+
+ arch/arm/mach-shmobile/board-kzm9g.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
 diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index 7965012..72f75e2 100644
+index 29cca80..21c90c4 100644
 --- a/arch/arm/mach-shmobile/board-kzm9g.c
 +++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -563,6 +563,10 @@ static struct i2c_board_info i2c0_devices[] = {
- 		I2C_BOARD_INFO("ak8975", 0x0c),
- 		.irq = intcs_evt2irq(0x3380), /* IRQ28 */
+@@ -346,11 +346,11 @@ static struct resource sh_mmcif_resources[] = {
+ 		.flags	= IORESOURCE_MEM,
  	},
-+	{
-+		I2C_BOARD_INFO("adxl34x", 0x1d),
-+		.irq = intcs_evt2irq(0x3340), /* IRQ26 */
-+	},
+ 	[1] = {
+-		.start	= gic_spi(141),
++		.start	= gic_spi(140),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ 	[2] = {
+-		.start	= gic_spi(140),
++		.start	= gic_spi(141),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
  };
- 
- static struct i2c_board_info i2c1_devices[] = {
 -- 
-1.7.10.4
+1.7.2.5
 
