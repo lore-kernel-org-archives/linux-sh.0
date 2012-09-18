@@ -1,17 +1,22 @@
-From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
-Date: Fri, 14 Sep 2012 09:14:28 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 18 Sep 2012 01:54:17 +0000
 Subject: [PATCH 1/2] ARM: shmobile: kzm9g: enable magnetometer ak8975.
-Message-Id: <1347614069-23345-2-git-send-email-koba@kmckk.co.jp>
+Message-Id: <1347933258-4372-2-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1347933258-4372-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1347933258-4372-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
+
+From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
 
 This patch enables magnetometer ak8975.
 I checked ak8975_probe() returns successfully.
 
 Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
  arch/arm/configs/kzm9g_defconfig     |    2 ++
  arch/arm/mach-shmobile/board-kzm9g.c |    6 +++++-
@@ -31,10 +36,10 @@ index 2388c86..2aaa2ff 100644
  CONFIG_INOTIFY_USER=y
  CONFIG_VFAT_FS=y
 diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index 04c836d..9c045d4 100644
+index 53b7ea9..7965012 100644
 --- a/arch/arm/mach-shmobile/board-kzm9g.c
 +++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -562,7 +562,11 @@ static struct i2c_board_info i2c0_devices[] = {
+@@ -558,7 +558,11 @@ static struct i2c_board_info i2c0_devices[] = {
  	},
  	{
  		I2C_BOARD_INFO("r2025sd", 0x32),
@@ -48,5 +53,5 @@ index 04c836d..9c045d4 100644
  
  static struct i2c_board_info i2c1_devices[] = {
 -- 
-1.7.9.5
+1.7.10.4
 
