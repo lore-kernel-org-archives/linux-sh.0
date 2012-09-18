@@ -1,57 +1,42 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 05 Sep 2012 08:20:40 +0000
-Subject: [PATCH 1/5] r8a7779: add SDHI clock support
-Message-Id: <1346833244-30432-2-git-send-email-horms@verge.net.au>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 18 Sep 2012 08:11:08 +0000
+Subject: [GIT PULL] sh fixes for 3.6-rc7
+Message-Id: <20120918081106.GR13568@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346833244-30432-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1346833244-30432-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-From: Phil Edworthy <phil.edworthy@renesas.com>
+The following changes since commit 6dab7ede9390d4d937cb89feca932e4fd575d2da:
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-Tested-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
----
- arch/arm/mach-shmobile/clock-r8a7779.c |   11 ++++++++++-
- 1 file changed, 10 insertions(+), 1 deletion(-)
+  Merge branch 'fixes' of git://git.linaro.org/people/rmk/linux-arm (2012-08-18 16:20:05 -0700)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index 339c62c..3cafb6a 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -86,11 +86,16 @@ static struct clk div4_clks[DIV4_NR] = {
- 				      0x0300, CLK_ENABLE_ON_INIT),
- };
- 
--enum { MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
-+enum { MSTP323, MSTP322, MSTP321, MSTP320,
-+	MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
- 	MSTP016, MSTP015, MSTP014,
- 	MSTP_NR };
- 
- static struct clk mstp_clks[MSTP_NR] = {
-+	[MSTP323] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 23, 0), /* SDHI0 */
-+	[MSTP322] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 22, 0), /* SDHI1 */
-+	[MSTP321] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 21, 0), /* SDHI2 */
-+	[MSTP320] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 20, 0), /* SDHI3 */
- 	[MSTP026] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 26, 0), /* SCIF0 */
- 	[MSTP025] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 25, 0), /* SCIF1 */
- 	[MSTP024] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 24, 0), /* SCIF2 */
-@@ -149,6 +154,10 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP023]), /* SCIF3 */
- 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP022]), /* SCIF4 */
- 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP021]), /* SCIF6 */
-+	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
-+	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
-+	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
-+	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP320]), /* SDHI3 */
- };
- 
- void __init r8a7779_clock_init(void)
--- 
-1.7.10.4
+are available in the git repository at:
 
+
+  git://github.com/pmundt/linux-sh tags/sh-for-linus
+
+for you to fetch changes up to 5e071e2b4b82599f07cce5e1d2d272feb462950c:
+
+  sh: Fix up TIF_NOTIFY_RESUME sans TIF_SIGPENDING handling. (2012-09-18 17:04:37 +0900)
+
+----------------------------------------------------------------
+SuperH fixes for 3.6-rc7
+
+----------------------------------------------------------------
+Al Viro (1):
+      sh: Fix up TIF_NOTIFY_RESUME sans TIF_SIGPENDING handling.
+
+Laurent Pinchart (1):
+      sh: pfc: Release spinlock in sh_pfc_gpio_request_enable() error path
+
+Paul Mundt (1):
+      sh: intc: Fix up multi-evt irq association.
+
+ arch/sh/kernel/cpu/sh5/entry.S | 2 +-
+ arch/sh/kernel/entry-common.S  | 2 +-
+ drivers/sh/intc/core.c         | 2 +-
+ drivers/sh/pfc/pinctrl.c       | 3 ++-
+ 4 files changed, 5 insertions(+), 4 deletions(-)
