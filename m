@@ -1,35 +1,29 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 18 Sep 2012 04:46:58 +0000
-Subject: [GIT PULL] Renesas ARM-based SoC fix for v3.6 #3
-Message-Id: <1347943619-27649-1-git-send-email-horms@verge.net.au>
+From: Olof Johansson <olof@lixom.net>
+Date: Tue, 18 Sep 2012 14:41:46 +0000
+Subject: Re: [GIT PULL] Renesas ARM-based SoC fix for v3.6 #3
+Message-Id: <CAOesGMhvNQoKNOOeFNcV78MnYk+Xph9iWXL-xYMD0f0qj=8F2w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201208240118.16563.rjw@sisk.pl>
-In-Reply-To: <201208240118.16563.rjw@sisk.pl>
+References: <1347943619-27649-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1347943619-27649-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Arnd,
+On Mon, Sep 17, 2012 at 9:46 PM, Simon Horman <horms@verge.net.au> wrote:
+> Hi Olof, Hi Arnd,
+>
+> please consider the following fix for the KZM-A9-GT board for 3.6.
+>
+> ----------------------------------------------------------------
+> The following changes since commit 28e515878f8896b33c325ff9767cb0237210fb4c:
+>
+>   ARM: shmobile: armadillo800eva: enable rw rootfs mount (2012-09-03 17:31:34 +0900)
+>
+> are available in the git repository at:
+>
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git fixes
 
-please consider the following fix for the KZM-A9-GT board for 3.6.
+Pulled, thanks!
 
-----------------------------------------------------------------
-The following changes since commit 28e515878f8896b33c325ff9767cb0237210fb4c:
-
-  ARM: shmobile: armadillo800eva: enable rw rootfs mount (2012-09-03 17:31:34 +0900)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git fixes
-
-for you to fetch changes up to a704835d6a7a8254067a1be60d614cd5c0c73e44:
-
-  ARM: shmobile: kzm9g: bugfix: correct mmcif interrupt settings (2012-09-18 11:19:44 +0900)
-
-----------------------------------------------------------------
-Tetsuyuki Kobayashi (1):
-      ARM: shmobile: kzm9g: bugfix: correct mmcif interrupt settings
-
- arch/arm/mach-shmobile/board-kzm9g.c |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+-Olof
