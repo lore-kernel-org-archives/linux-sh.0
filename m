@@ -1,78 +1,62 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 27 Sep 2012 14:07:19 +0000
-Subject: [PATCH 00/14] V4L2 DT support
-Message-Id: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Tue, 18 Sep 2012 21:34:08 +0000
+Subject: Re: [RFC - PATCH] base:pm: prepare driver for common clock framework
+Message-Id: <201209182334.08229.rjw@sisk.pl>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1347661174-15404-1-git-send-email-m-karicheri2@ti.com>
+In-Reply-To: <1347661174-15404-1-git-send-email-m-karicheri2@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: devicetree-discuss@lists.ozlabs.org, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Stephen Warren <swarren@wwwdotorg.org>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>
+To: Murali Karicheri <m-karicheri2@ti.com>
+Cc: linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, cyril@ti.com, mturquette@linaro.org, Magnus Damm <magnus.damm@gmail.com>, Linux-sh list <linux-sh@vger.kernel.org>
 
-The last version of the V4L2 DT binding RFC only raised some cosmetic
-improvement suggestions, which are addressed in the respective patch in this
-series.
+On Saturday, September 15, 2012, Murali Karicheri wrote:
+> As part of my work to migrate davinci SoC code to
+> use common clk framework, I encountered an issue with this driver
+> which is calling clk_enable() and clk_disable() without prepare()/
+> unprepare(). This change is needed to enable common clock migration
+> for davinci SoCs.
+> 
+> Signed-off-by: Murali Karicheri <m-karicheri2@ti.com>
 
-The rest of patches add a simple V4L2 DT parser for common properties, and an
-implementation for soc-camera, the sh_mobile_ceu_camera host driver and the
-mt9t112 camera sensor driver. This has been tested on an sh7372 SoC based
-mackerel board, using a dummy I2C driver to simulate a proper one (the onboard
-sensor has no driver and simply continuously produces video frames in a fixed
-format). Only patches 4 and 5 are actually core V4L2 changes.
+There are other users of this code than davinci.  For example, sh
+and ARM/shmobile both use it.  Have you verified that your changes will
+work for them too?
 
-Some comments:
+Rafael
 
-1. generic clock framework support is needed for a proper V4L2 DT
-implementation. For now patch 6/14 exports an soc-camera specific function to
-attach and detach a client to / from a host. Yes, I know this is bad from
-several PoVs, and has to be fixed. If we don't want to depend on the clock
-framework progress, we could implement V4L2 generic functions to do the same
-until clocks become available.
 
-2. the two driver-specific DT properties in patch 13/14 are just an RFC and
-can be modified / discussed.
+> diff --git a/drivers/base/power/clock_ops.c b/drivers/base/power/clock_ops.c
+> index eb78e96..9d8fde7 100644
+> --- a/drivers/base/power/clock_ops.c
+> +++ b/drivers/base/power/clock_ops.c
+> @@ -99,7 +99,7 @@ static void __pm_clk_remove(struct pm_clock_entry *ce)
+>  
+>  	if (ce->status < PCE_STATUS_ERROR) {
+>  		if (ce->status = PCE_STATUS_ENABLED)
+> -			clk_disable(ce->clk);
+> +			clk_disable_unprepare(ce->clk);
+>  
+>  		if (ce->status >= PCE_STATUS_ACQUIRED)
+>  			clk_put(ce->clk);
+> @@ -396,7 +396,7 @@ static void enable_clock(struct device *dev, const char *con_id)
+>  
+>  	clk = clk_get(dev, con_id);
+>  	if (!IS_ERR(clk)) {
+> -		clk_enable(clk);
+> +		clk_prepare_enable(clk);
+>  		clk_put(clk);
+>  		dev_info(dev, "Runtime PM disabled, clock forced on.\n");
+>  	}
+> @@ -413,7 +413,7 @@ static void disable_clock(struct device *dev, const char *con_id)
+>  
+>  	clk = clk_get(dev, con_id);
+>  	if (!IS_ERR(clk)) {
+> -		clk_disable(clk);
+> +		clk_disable_unprepare(clk);
+>  		clk_put(clk);
+>  		dev_info(dev, "Runtime PM disabled, clock forced off.\n");
+>  	}
+> 
 
-Thanks
-Guennadi
-
-Guennadi Liakhovetski (14):
-  i2c: add dummy inline functions for when CONFIG_OF_I2C(_MODULE) isn't
-    defined
-  of: add a dummy inline function for when CONFIG_OF is not defined
-  OF: make a function pointer argument const
-  media: add V4L2 DT binding documentation
-  media: add a V4L2 OF parser
-  media: soc-camera: prepare for asynchronous client probing
-  media: soc-camera: support deferred probing of clients
-  media: soc-camera: use managed devm_regulator_bulk_get()
-  media: mt9t112: support deferred probing
-  media: soc-camera: support OF cameras
-  media: sh-mobile-ceu-camera: runtime PM suspending doesn't have to be
-    synchronous
-  media: sh-mobile-ceu-camera: add primitive OF support
-  media: sh-mobile-ceu-driver: support max width and height in DT
-  media: sh_mobile_ceu_camera: support all standard V4L2 DT properties
-
- Documentation/devicetree/bindings/media/v4l2.txt   |  162 +++++
- drivers/media/i2c/soc_camera/mt9t112.c             |   18 +-
- .../platform/soc_camera/sh_mobile_ceu_camera.c     |  177 ++++--
- drivers/media/platform/soc_camera/soc_camera.c     |  650 +++++++++++++++++---
- drivers/media/v4l2-core/Makefile                   |    3 +
- drivers/media/v4l2-core/v4l2-of.c                  |  190 ++++++
- drivers/of/base.c                                  |    4 +-
- include/linux/of.h                                 |   11 +-
- include/linux/of_i2c.h                             |   12 +
- include/media/soc_camera.h                         |   10 +
- include/media/v4l2-of.h                            |   62 ++
- 11 files changed, 1153 insertions(+), 146 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/media/v4l2.txt
- create mode 100644 drivers/media/v4l2-core/v4l2-of.c
- create mode 100644 include/media/v4l2-of.h
-
--- 
-1.7.2.5
-
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
