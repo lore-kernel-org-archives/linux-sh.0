@@ -1,62 +1,99 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 28 Sep 2012 11:05:27 +0000
-Subject: [PATCH 15/14] OF:  define of_*_cmp() macros also if CONFIG_OF isn't set
-Message-Id: <Pine.LNX.4.64.1209281302390.5428@axis700.grange>
+From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+Date: Tue, 18 Sep 2012 05:51:00 +0000
+Subject: [PATCH] ARM: shmobile: kzm9g: Add ERRATAs in defconfig
+Message-Id: <1347947460-15959-1-git-send-email-koba@kmckk.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de>
- <1348754853-28619-3-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1348754853-28619-3-git-send-email-g.liakhovetski@gmx.de>
+References: <5057F3AD.7020200@kmckk.co.jp>
+In-Reply-To: <5057F3AD.7020200@kmckk.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: devicetree-discuss@lists.ozlabs.org, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Stephen Warren <swarren@wwwdotorg.org>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>
+To: linux-arm-kernel@lists.infradead.org
 
-of_*_cmp() macros do not depend on any OF functions and can be defined also
-if CONFIG_OF isn't set. Also include linux/string.h, required by those
-macros.
+SH73a0 SoC has Cortex-A9 core which revision is r2p8.
+This patch adds the following ERRATAs to kzm9g_defconfig file.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+ARM_ERRATA_743622
+ARM_ERRATA_751472
+ARM_ERRATA_754322
+ARM_ERRATA_764369
+PL310_ERRATA_588369
+PL310_ERRATA_727915
+PL310_ERRATA_769419
+
+I updated kzm9g_defconfig by follwing commands
+
+ make kzm9g_defconfig
+ make kzm9g menuconfig
+ (add above ERRATAs)
+ make kzm9g savedefconfig
+ cp defconfig arch/arm/configs/kzm9g_defconfig 
+
+Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
 ---
+ arch/arm/configs/kzm9g_defconfig |   15 ++++++++-------
+ 1 file changed, 8 insertions(+), 7 deletions(-)
 
-These definitions are also required for "# CONFIG_OF is not set" builds.
-
- include/linux/of.h |   15 ++++++++-------
- 1 files changed, 8 insertions(+), 7 deletions(-)
-
-diff --git a/include/linux/of.h b/include/linux/of.h
-index 3636fae..ad2e79b 100644
---- a/include/linux/of.h
-+++ b/include/linux/of.h
-@@ -85,6 +85,14 @@ static inline struct device_node *of_node_get(struct device_node *node)
- static inline void of_node_put(struct device_node *node) { }
- #endif /* !CONFIG_OF_DYNAMIC */
- 
-+/* Default string compare functions, Allow arch asm/prom.h to override */
-+#if !defined(of_compat_cmp)
-+#include <linux/string.h>
-+#define of_compat_cmp(s1, s2, l)	strcasecmp((s1), (s2))
-+#define of_prop_cmp(s1, s2)		strcmp((s1), (s2))
-+#define of_node_cmp(s1, s2)		strcasecmp((s1), (s2))
-+#endif
-+
- #ifdef CONFIG_OF
- 
- /* Pointer for first entry in chain of all nodes. */
-@@ -143,13 +151,6 @@ static inline unsigned long of_read_ulong(const __be32 *cell, int size)
- #define OF_ROOT_NODE_SIZE_CELLS_DEFAULT 1
- #endif
- 
--/* Default string compare functions, Allow arch asm/prom.h to override */
--#if !defined(of_compat_cmp)
--#define of_compat_cmp(s1, s2, l)	strcasecmp((s1), (s2))
--#define of_prop_cmp(s1, s2)		strcmp((s1), (s2))
--#define of_node_cmp(s1, s2)		strcasecmp((s1), (s2))
--#endif
--
- /* flag descriptions */
- #define OF_DYNAMIC	1 /* node and properties were allocated via kmalloc */
- #define OF_DETACHED	2 /* node has been detached from the device tree */
+diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
+index 2388c86..80fa8ab 100644
+--- a/arch/arm/configs/kzm9g_defconfig
++++ b/arch/arm/configs/kzm9g_defconfig
+@@ -2,13 +2,14 @@
+ CONFIG_EXPERIMENTAL=y
+ # CONFIG_LOCALVERSION_AUTO is not set
+ CONFIG_SYSVIPC=y
++CONFIG_NO_HZ=y
++CONFIG_HIGH_RES_TIMERS=y
+ CONFIG_IKCONFIG=y
+ CONFIG_IKCONFIG_PROC=y
+ CONFIG_LOG_BUF_SHIFT
+ CONFIG_NAMESPACES=y
+ # CONFIG_UTS_NS is not set
+ # CONFIG_IPC_NS is not set
+-# CONFIG_USER_NS is not set
+ # CONFIG_PID_NS is not set
+ # CONFIG_NET_NS is not set
+ CONFIG_CC_OPTIMIZE_FOR_SIZE=y
+@@ -27,10 +28,14 @@ CONFIG_ARCH_SH73A0=y
+ CONFIG_MACH_KZM9G=y
+ CONFIG_MEMORY_START=0x41000000
+ CONFIG_MEMORY_SIZE=0x1f000000
++CONFIG_PL310_ERRATA_588369=y
++CONFIG_PL310_ERRATA_727915=y
+ CONFIG_ARM_ERRATA_743622=y
++CONFIG_ARM_ERRATA_751472=y
+ CONFIG_ARM_ERRATA_754322=y
+-CONFIG_NO_HZ=y
+-CONFIG_HIGH_RES_TIMERS=y
++CONFIG_ARM_ERRATA_754327=y
++CONFIG_ARM_ERRATA_764369=y
++CONFIG_PL310_ERRATA_769419=y
+ CONFIG_SMP=y
+ CONFIG_SCHED_MC=y
+ CONFIG_PREEMPT=y
+@@ -96,9 +101,7 @@ CONFIG_SND=y
+ # CONFIG_SND_USB is not set
+ CONFIG_SND_SOC=y
+ CONFIG_SND_SOC_SH4_FSI=y
+-# CONFIG_HID_SUPPORT is not set
+ CONFIG_USB=y
+-CONFIG_USB_DEVICEFS=y
+ CONFIG_USB_R8A66597_HCD=y
+ CONFIG_USB_RENESAS_USBHS=y
+ CONFIG_USB_STORAGE=y
+@@ -119,12 +122,10 @@ CONFIG_SH_DMAE=y
+ CONFIG_ASYNC_TX_DMA=y
+ CONFIG_STAGING=y
+ # CONFIG_DNOTIFY is not set
+-CONFIG_INOTIFY_USER=y
+ CONFIG_VFAT_FS=y
+ CONFIG_TMPFS=y
+ # CONFIG_MISC_FILESYSTEMS is not set
+ CONFIG_NFS_FS=y
+-CONFIG_NFS_V3=y
+ CONFIG_NFS_V3_ACL=y
+ CONFIG_NFS_V4=y
+ CONFIG_NFS_V4_1=y
 -- 
-1.7.2.5
+1.7.9.5
 
