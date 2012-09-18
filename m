@@ -1,40 +1,47 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 18 Sep 2012 07:42:44 +0000
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Tue, 18 Sep 2012 08:31:06 +0000
 Subject: Re: [PATCH 01/24] ARM: shmobile: use __iomem pointers for MMIO
-Message-Id: <20120918074244.GO13568@linux-sh.org>
+Message-Id: <201209180831.06572.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1347658492-11608-1-git-send-email-arnd@arndb.de>
  <1347658492-11608-2-git-send-email-arnd@arndb.de>
-In-Reply-To: <1347658492-11608-2-git-send-email-arnd@arndb.de>
+ <20120918071131.GB31953@verge.net.au>
+In-Reply-To: <20120918071131.GB31953@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Sep 14, 2012 at 11:34:29PM +0200, Arnd Bergmann wrote:
-> ARM is moving to stricter checks on readl/write functions,
-> so we need to use the correct types everywhere.
+On Tuesday 18 September 2012, Simon Horman wrote:
+> On Fri, Sep 14, 2012 at 11:34:29PM +0200, Arnd Bergmann wrote:
+> > ARM is moving to stricter checks on readl/write functions,
+> > so we need to use the correct types everywhere.
+> > 
+> > This patch is a bit ugly for shmobile, which is the only platform
+> > that just uses integer literals all over the place, but I can't
+> > see a better way to do this.
+> > 
+> > Cc: Magnus Damm <magnus.damm@gmail.com>
+> > Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> > Cc: Simon Horman <horms@verge.net.au>
+> > Cc: Paul Mundt <lethal@linux-sh.org>
+> > Cc: linux-sh@vger.kernel.org
+> > Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 > 
-> This patch is a bit ugly for shmobile, which is the only platform
-> that just uses integer literals all over the place, but I can't
-> see a better way to do this.
+> Wow, thats a lot of chrun, but if we must
 > 
-If you want to crap up the ARM side with this stuff, that's fine, but
-leave sh-sci out of it.
+> Acked-by: Simon Horman <horms@verge.net.au>
+> 
 
-So, NAK on this part:
+I agree it's not nice to have to do this, but this is largely because
+of shmobile doing things differently from all other ARM platforms, on
+which the respective patches tend to clean up things and reduce the
+number of type casts.
 
-> diff --git a/include/linux/serial_sci.h b/include/linux/serial_sci.h
-> index eb763ad..d323290 100644
-> --- a/include/linux/serial_sci.h
-> +++ b/include/linux/serial_sci.h
-> @@ -150,7 +150,7 @@ struct plat_sci_port {
->  	int		overrun_bit;
->  	unsigned int	error_mask;
->  
-> -	int		port_reg;
-> +	void __iomem   *port_reg;
->  	unsigned char	regshift;
->  	unsigned char	regtype;
->  
-but I don't mind if you cast the callsite in drivers/tty/serial/sh-sci.c
+The only alternative I can see is for shmobile to introduce its own
+mach/io.h file with the relaxed type checking, but that would only
+defer the problem until the point where you want shmobile to be part
+of the common multiplatform kernel binary.
+
+	Arnd
+
