@@ -1,473 +1,293 @@
-From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
-Date: Wed, 12 Sep 2012 05:29:44 +0000
-Subject: [RFC PATCH 1/2] Add new uio device for dynamic memory allocation
-Message-Id: <1347427785-9767-2-git-send-email-dhobsong@igel.co.jp>
+From: "Karicheri, Muralidharan" <m-karicheri2@ti.com>
+Date: Tue, 18 Sep 2012 21:18:51 +0000
+Subject: RE: Summary of changes for v3.7
+Message-Id: <3E54258959B69E4282D79E01AB1F32B7041D147D@DFLE12.ent.ti.com>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="_002_3E54258959B69E4282D79E01AB1F32B7041D147DDFLE12entticom_"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1347427785-9767-1-git-send-email-dhobsong@igel.co.jp>
-In-Reply-To: <1347427785-9767-1-git-send-email-dhobsong@igel.co.jp>
+References: <201209182219.00649.rjw@sisk.pl>
+In-Reply-To: <201209182219.00649.rjw@sisk.pl>
+To: "Rafael J. Wysocki" <rjw@sisk.pl>, LKML <linux-kernel@vger.kernel.org>
+Cc: ACPI Devel Mailing List <linux-acpi@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Linux-sh list <linux-sh@vger.kernel.org>, Len Brown <lenb@kernel.org>
+
+--_002_3E54258959B69E4282D79E01AB1F32B7041D147DDFLE12entticom_
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+
+UmFmYWVsLA0KDQpDb3VsZCB5b3UgcmV2aWV3IHRoZSBhdHRhY2hlZCBwYXRjaCB3aGljaCBpcyBz
+ZW50IHRvIHRoZSBsaXN0IGFuZCBtZXJnZSBpdCBpZiBpdCBsb29rcyBvaz8gSWYgbm90LCBwbGVh
+c2UgcHJvdmlkZSB5b3VyIGNvbW1lbnQuDQoNCk11cmFsaSBLYXJpY2hlcmkNClNvZnR3YXJlIERl
+c2lnbiBFbmdpbmVlcg0KDQoNCj4+IC0tLS0tT3JpZ2luYWwgTWVzc2FnZS0tLS0tDQo+PiBGcm9t
+OiBsaW51eC1wbS1vd25lckB2Z2VyLmtlcm5lbC5vcmcgW21haWx0bzpsaW51eC1wbS1vd25lckB2
+Z2VyLmtlcm5lbC5vcmddIE9uDQo+PiBCZWhhbGYgT2YgUmFmYWVsIEouIFd5c29ja2kNCj4+IFNl
+bnQ6IFR1ZXNkYXksIFNlcHRlbWJlciAxOCwgMjAxMiA0OjE5IFBNDQo+PiBUbzogTEtNTA0KPj4g
+Q2M6IEFDUEkgRGV2ZWwgTWFpbGluZyBMaXN0OyBMaW51eCBQTSBsaXN0OyBMaW51eC1zaCBsaXN0
+OyBMZW4gQnJvd24NCj4+IFN1YmplY3Q6IFBNOiBTdW1tYXJ5IG9mIGNoYW5nZXMgZm9yIHYzLjcN
+Cj4+IA0KPj4gSGkgYWxsLA0KPj4gDQo+PiBBbGwgb2YgdGhlIGNoYW5nZXMgSSdkIGxpa2UgdG8g
+aW5jbHVkZSBpbnRvIHRoZSBmaXJzdCBQTSBwdWxsIHJlcXVlc3QgZHVyaW5nDQo+PiB0aGUgdjMu
+NyBtZXJnZSB3aW5kb3csIGV4Y2VwdCBtYXliZSBmb3IgYSBjb3VwbGUgb2YgcGF0Y2hlcyBJIGtu
+b3cgb2YsIGJ1dA0KPj4gaGF2ZW4ndCBkZWNpZGVkIHdoYXQgdG8gZG8gd2l0aCB0aGVtIHlldCwg
+aXMgb24gdGhlICdsaW51eC1uZXh0JyBicmFuY2ggb2YgdGhlDQo+PiBsaW51eC1wbS5naXQgdHJl
+ZSBub3cuDQo+PiANCj4+IFRoZSBzdW1tYXJ5IG9mIHRob3NlIGNoYW5nZXMgaXMgYXBwZW5kZWQu
+ICBJZiBhbnlvbmUgZmluZHMgYW55IG9mIHRoZW0NCj4+IG9iamVjdGlvbmFibGUsIHBsZWFzZSBs
+ZXQgbWUga25vdyBBU0FQLiAgQWxzbyBwbGVhc2UgbGV0IG1lIGtub3cgaWYgdGhlcmUgYXJlDQo+
+PiBhbnkgcG93ZXIgbWFuYWdlbWVudCBwYXRjaGVzIEkndmUgc2VlbiBhbHJlYWR5IHRoYXQgeW91
+J2QgbGlrZSBtZSB0byB0YWtlIGZvcg0KPj4gdjMuNyAoaWYgSSBoYXZlbid0IHNlZW4gdGhlbSB5
+ZXQsIHRoZXkgY2xlYXJseSBhcmUgbm90IHYzLjcgbWF0ZXJpYWwsIHVubGVzcw0KPj4gdGhleSBh
+cmUgdXJnZW50IGZpeGVzKS4NCj4+IA0KPj4gVGhhbmtzLA0KPj4gUmFmYWVsDQo+PiANCj4+IC0t
+LQ0KPj4gDQo+PiAgRG9jdW1lbnRhdGlvbi9BQkkvdGVzdGluZy9zeXNmcy1kZXZpY2VzLXN5c3Rl
+bS1jcHUgfCAgMTEgKw0KPj4gIERvY3VtZW50YXRpb24vY3B1LWZyZXEvYm9vc3QudHh0ICAgICAg
+ICAgICAgICAgICAgIHwgIDkzICsrKysrDQo+PiAgRG9jdW1lbnRhdGlvbi9jcHVpZGxlL3N5c2Zz
+LnR4dCAgICAgICAgICAgICAgICAgICAgfCAgMTAgKy0NCj4+ICAuLi4vZGV2aWNldHJlZS9iaW5k
+aW5ncy9jcHVmcmVxL2NwdWZyZXEtY3B1MC50eHQgICB8ICA1NSArKysNCj4+ICBEb2N1bWVudGF0
+aW9uL2RldmljZXRyZWUvYmluZGluZ3MvcG93ZXIvb3BwLnR4dCAgICB8ICAyNSArKw0KPj4gIGFy
+Y2gvYXJtL2tlcm5lbC9zbXAuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgIDU0ICsr
+Kw0KPj4gIGFyY2gvYXJtL21hY2gtc2htb2JpbGUvTWFrZWZpbGUgICAgICAgICAgICAgICAgICAg
+IHwgICAyICstDQo+PiAgYXJjaC9hcm0vbWFjaC1zaG1vYmlsZS9ib2FyZC1hcDRldmIuYyAgICAg
+ICAgICAgICAgfCAgMjEgKy0NCj4+ICBhcmNoL2FybS9tYWNoLXNobW9iaWxlL2JvYXJkLWFybWFk
+aWxsbzgwMGV2YS5jICAgICB8ICAgNiArLQ0KPj4gIGFyY2gvYXJtL21hY2gtc2htb2JpbGUvYm9h
+cmQtbWFja2VyZWwuYyAgICAgICAgICAgIHwgIDM0ICstDQo+PiAgYXJjaC9hcm0vbWFjaC1zaG1v
+YmlsZS9jb21tb24uYyAgICAgICAgICAgICAgICAgICAgfCAgMjQgLS0NCj4+ICBhcmNoL2FybS9t
+YWNoLXNobW9iaWxlL2NwdWlkbGUuYyAgICAgICAgICAgICAgICAgICB8ICAzOSArLQ0KPj4gIGFy
+Y2gvYXJtL21hY2gtc2htb2JpbGUvaW5jbHVkZS9tYWNoL2NvbW1vbi5oICAgICAgIHwgIDE0ICst
+DQo+PiAgYXJjaC9hcm0vbWFjaC1zaG1vYmlsZS9pbmNsdWRlL21hY2gvcG0tcm1vYmlsZS5oICAg
+fCAgMzUgKy0NCj4+ICBhcmNoL2FybS9tYWNoLXNobW9iaWxlL2luY2x1ZGUvbWFjaC9yOGE3NzQw
+LmggICAgICB8ICAgNiArLQ0KPj4gIGFyY2gvYXJtL21hY2gtc2htb2JpbGUvaW5jbHVkZS9tYWNo
+L3I4YTc3NzkuaCAgICAgIHwgIDEyICstDQo+PiAgYXJjaC9hcm0vbWFjaC1zaG1vYmlsZS9pbmNs
+dWRlL21hY2gvc2g3MzcyLmggICAgICAgfCAgMjAgKy0NCj4+ICBhcmNoL2FybS9tYWNoLXNobW9i
+aWxlL3BtLXI4YTc3NDAuYyAgICAgICAgICAgICAgICB8ICA0MiArKy0NCj4+ICBhcmNoL2FybS9t
+YWNoLXNobW9iaWxlL3BtLXI4YTc3NzkuYyAgICAgICAgICAgICAgICB8ICA3MSArKy0tDQo+PiAg
+YXJjaC9hcm0vbWFjaC1zaG1vYmlsZS9wbS1ybW9iaWxlLmMgICAgICAgICAgICAgICAgfCAgMzMg
+Ky0NCj4+ICBhcmNoL2FybS9tYWNoLXNobW9iaWxlL3BtLXNoNzM3Mi5jICAgICAgICAgICAgICAg
+ICB8IDI4MyArKysrKysrKy0tLS0tLQ0KPj4gIGFyY2gvYXJtL21hY2gtc2htb2JpbGUvc2V0dXAt
+cjhhNzc0MC5jICAgICAgICAgICAgIHwgIDI3ICstDQo+PiAgYXJjaC9hcm0vbWFjaC1zaG1vYmls
+ZS9zZXR1cC1yOGE3Nzc5LmMgICAgICAgICAgICAgfCAgIDUgKy0NCj4+ICBhcmNoL2FybS9tYWNo
+LXNobW9iaWxlL3NldHVwLXNoNzM3Mi5jICAgICAgICAgICAgICB8ICA2OSArKy0tDQo+PiAgYXJj
+aC94ODYvaW5jbHVkZS9hc20vbXNyLWluZGV4LmggICAgICAgICAgICAgICAgICAgfCAgIDMgKw0K
+Pj4gIGRyaXZlcnMvYWNwaS9wcm9jZXNzb3JfZHJpdmVyLmMgICAgICAgICAgICAgICAgICAgIHwg
+ICA4ICstDQo+PiAgZHJpdmVycy9hY3BpL3Byb2Nlc3Nvcl9pZGxlLmMgICAgICAgICAgICAgICAg
+ICAgICAgfCAgNDAgKy0NCj4+ICBkcml2ZXJzL2FjcGkvcHJvY2Vzc29yX3BlcmZsaWIuYyAgICAg
+ICAgICAgICAgICAgICB8ICAzMCArKw0KPj4gIGRyaXZlcnMvYmFzZS9wbGF0Zm9ybS5jICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgIHwgICAyICsNCj4+ICBkcml2ZXJzL2Jhc2UvcG93ZXIvZG9t
+YWluLmMgICAgICAgICAgICAgICAgICAgICAgICB8IDI0NCArKysrKysrKysrLS0tDQo+PiAgZHJp
+dmVycy9iYXNlL3Bvd2VyL21haW4uYyAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgMzUgKy0N
+Cj4+ICBkcml2ZXJzL2Jhc2UvcG93ZXIvb3BwLmMgICAgICAgICAgICAgICAgICAgICAgICAgICB8
+ICA0NyArKysNCj4+ICBkcml2ZXJzL2Jhc2UvcG93ZXIvcG93ZXIuaCAgICAgICAgICAgICAgICAg
+ICAgICAgICB8ICAzNiArLQ0KPj4gIGRyaXZlcnMvYmFzZS9wb3dlci93YWtldXAuYyAgICAgICAg
+ICAgICAgICAgICAgICAgIHwgIDQ2ICsrLQ0KPj4gIGRyaXZlcnMvY2xvY2tzb3VyY2Uvc2hfY210
+LmMgICAgICAgICAgICAgICAgICAgICAgIHwgIDcxICsrKy0NCj4+ICBkcml2ZXJzL2Nsb2Nrc291
+cmNlL3NoX210dTIuYyAgICAgICAgICAgICAgICAgICAgICB8ICA0MSArKy0NCj4+ICBkcml2ZXJz
+L2Nsb2Nrc291cmNlL3NoX3RtdS5jICAgICAgICAgICAgICAgICAgICAgICB8IDExMiArKysrKy0N
+Cj4+ICBkcml2ZXJzL2NwdWZyZXEvS2NvbmZpZyAgICAgICAgICAgICAgICAgICAgICAgICAgICB8
+ICAxMSArDQo+PiAgZHJpdmVycy9jcHVmcmVxL0tjb25maWcueDg2ICAgICAgICAgICAgICAgICAg
+ICAgICAgfCAgMTggKy0NCj4+ICBkcml2ZXJzL2NwdWZyZXEvTWFrZWZpbGUgICAgICAgICAgICAg
+ICAgICAgICAgICAgICB8ICAgNCArLQ0KPj4gIGRyaXZlcnMvY3B1ZnJlcS9hY3BpLWNwdWZyZXEu
+YyAgICAgICAgICAgICAgICAgICAgIHwgMjcyICsrKysrKysrKysrKystDQo+PiAgZHJpdmVycy9j
+cHVmcmVxL2NwdWZyZXEtY3B1MC5jICAgICAgICAgICAgICAgICAgICAgfCAyNjkgKysrKysrKysr
+KysrKysNCj4+ICBkcml2ZXJzL2NwdWZyZXEvY3B1ZnJlcV9jb25zZXJ2YXRpdmUuYyAgICAgICAg
+ICAgICB8ICAgMiArDQo+PiAgZHJpdmVycy9jcHVmcmVxL2NwdWZyZXFfb25kZW1hbmQuYyAgICAg
+ICAgICAgICAgICAgfCAgIDEgKw0KPj4gIGRyaXZlcnMvY3B1ZnJlcS9sb25naGF1bC5oICAgICAg
+ICAgICAgICAgICAgICAgICAgIHwgIDI2ICstDQo+PiAgZHJpdmVycy9jcHVmcmVxL29tYXAtY3B1
+ZnJlcS5jICAgICAgICAgICAgICAgICAgICAgfCAgMzUgLS0NCj4+ICBkcml2ZXJzL2NwdWZyZXEv
+cG93ZXJub3ctazguYyAgICAgICAgICAgICAgICAgICAgICB8IDQwNiArKy0tLS0tLS0tLS0tLS0t
+LS0tLS0NCj4+ICBkcml2ZXJzL2NwdWZyZXEvcG93ZXJub3ctazguaCAgICAgICAgICAgICAgICAg
+ICAgICB8ICAzMiAtLQ0KPj4gIGRyaXZlcnMvY3B1aWRsZS9nb3Zlcm5vcnMvbGFkZGVyLmMgICAg
+ICAgICAgICAgICAgIHwgICA2ICstDQo+PiAgZHJpdmVycy94ZW4veGVuLWFjcGktcHJvY2Vzc29y
+LmMgICAgICAgICAgICAgICAgICAgfCAgIDEgLQ0KPj4gIGluY2x1ZGUvYWNwaS9wcm9jZXNzb3Iu
+aCAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICA5ICstDQo+PiAgaW5jbHVkZS9saW51eC9j
+bG9ja2NoaXBzLmggICAgICAgICAgICAgICAgICAgICAgICAgfCAgIDggKw0KPj4gIGluY2x1ZGUv
+bGludXgvZGV2aWNlLmggICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgICA3ICsNCj4+ICBp
+bmNsdWRlL2xpbnV4L29wcC5oICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgOCAr
+DQo+PiAgaW5jbHVkZS9saW51eC9wbS5oICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+fCAgIDIgKw0KPj4gIGluY2x1ZGUvbGludXgvcG1fZG9tYWluLmggICAgICAgICAgICAgICAgICAg
+ICAgICAgIHwgIDkyICsrKystDQo+PiAga2VybmVsL3Bvd2VyL0tjb25maWcgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgfCAgIDQgKw0KPj4gIGtlcm5lbC9wb3dlci9wb3dlcm9mZi5jICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgIHwgICAyICstDQo+PiAga2VybmVsL3Bvd2VyL3Byb2Nl
+c3MuYyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgIDIgKy0NCj4+ICBrZXJuZWwvcG93
+ZXIvcW9zLmMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8ICAgMSArDQo+PiAga2Vy
+bmVsL3RpbWUvY2xvY2tldmVudHMuYyAgICAgICAgICAgICAgICAgICAgICAgICAgfCAgMjQgKysN
+Cj4+ICBrZXJuZWwvdGltZS90aW1la2VlcGluZy5jICAgICAgICAgICAgICAgICAgICAgICAgICB8
+ICAgMiArDQo+PiAgNjIgZmlsZXMgY2hhbmdlZCwgMjAyOCBpbnNlcnRpb25zKCspLCA5MjIgZGVs
+ZXRpb25zKC0pDQo+PiANCj4+IC0tLS0tLS0tLS0tLS0tLQ0KPj4gDQo+PiBBbWl0IERhbmllbCBL
+YWNoaGFwICgxKToNCj4+ICAgICAgIFBNIC8gY3B1ZnJlcTogSW5pdGlhbGlzZSB0aGUgY3B1IGZp
+ZWxkIGR1cmluZyBjb25zZXJ2YXRpdmUgZ292ZXJub3Igc3RhcnQNCj4+IA0KPj4gQW5kaSBLbGVl
+biAoMSk6DQo+PiAgICAgICBzZWN0aW9uczogZml4IHNlY3Rpb24gY29uZmxpY3RzIGluIGRyaXZl
+cnMvY3B1ZnJlcQ0KPj4gDQo+PiBBbmRyZSBQcnp5d2FyYSAoNSk6DQo+PiAgICAgICBhY3BpLWNw
+dWZyZXE6IEFkZCBxdWlyayB0byBkaXNhYmxlIF9QU0QgdXNhZ2Ugb24gYWxsIEFNRCBDUFVzDQo+
+PiAgICAgICBjcHVmcmVxOiBBZGQgd2FybmluZyBtZXNzYWdlIHRvIHBvd2Vybm93LWs4DQo+PiAg
+ICAgICBwb3dlcm5vdy1rODogZGVsYXkgaW5mbyBtZXNzYWdlcyB1bnRpbCBpbml0aWFsaXphdGlv
+biBoYXMgc3VjY2VlZGVkDQo+PiAgICAgICBhY3BpLWNwdWZyZXE6IEFkZCBzdXBwb3J0IGZvciBk
+aXNhYmxpbmcgZHluYW1pYyBvdmVyY2xvY2tpbmcNCj4+ICAgICAgIGFjcGktY3B1ZnJlcTogQWRk
+IGNvbXBhdGliaWxpdHkgZm9yIGxlZ2FjeSBBTUQgY3BiIHN5c2ZzIGtub2INCj4+IA0KPj4gQm9y
+aXNsYXYgUGV0a292ICgxKToNCj4+ICAgICAgIGNwdWZyZXEgLyBwb3dlcm5vdy1rODogRml4dXAg
+bWlzc2luZyBfUFNTIG9iamVjdHMgbWVzc2FnZQ0KPj4gDQo+PiBDYXJzdGVuIEVtZGUgKDEpOg0K
+Pj4gICAgICAgSG9ub3Igc3RhdGUgZGlzYWJsaW5nIGluIHRoZSBjcHVpZGxlIGxhZGRlciBnb3Zl
+cm5vcg0KPj4gDQo+PiBEYW5pZWwgTGV6Y2FubyAoNCk6DQo+PiAgICAgICBjcHVpZGxlIC8gQUNQ
+SSA6IHJlbW92ZSBwb3dlciBmcm9tIGFjcGlfcHJvY2Vzc29yX2N4IHN0cnVjdHVyZQ0KPj4gICAg
+ICAgQUNQSSAvIHByb2Nlc3NvcjogcmVtb3ZlIHVudXNlZCBmdW5jdGlvbiBwYXJhbWV0ZXINCj4+
+ICAgICAgIEFDUEkgLyBwcm9jZXNzb3I6IHJlbW92ZSBwb2ludGxlc3MgdmFyaWFibGUgaW5pdGlh
+bGl6YXRpb24NCj4+ICAgICAgIGNwdWlkbGUgLyBBQ1BJIDogbW92ZSBjcHVpZGxlX2RldmljZSBm
+aWVsZCBvdXQgb2YgdGhlIGFjcGlfcHJvY2Vzc29yX3Bvd2VyIHN0cnVjdHVyZQ0KPj4gDQo+PiBK
+YW4gQmV1bGljaCAoMSk6DQo+PiAgICAgICBwcm9wZXJseSBfX2luaXQtYW5ub3RhdGUgcG1fc3lz
+cnFfaW5pdCgpDQo+PiANCj4+IEpvaG4gU3R1bHR6ICgxKToNCj4+ICAgICAgIFBNIC8gd2FrZXVw
+OiBVc2UgaXJxc2F2ZS9pcnFyZXN0b3JlIGZvciBldmVudHNfbG9jaw0KPj4gDQo+PiBMdWlzIEdv
+bnphbGV6IEZlcm5hbmRleiAoMSk6DQo+PiAgICAgICBQTSAvIFFvUzogQWRkIHJldHVybiBjb2Rl
+IHRvIHBtX3Fvc19nZXRfdmFsdWUgZnVuY3Rpb24uDQo+PiANCj4+IE1hdHRoZXcgR2FycmV0dCAo
+Myk6DQo+PiAgICAgICBhY3BpLWNwdWZyZXE6IEFkZCBzdXBwb3J0IGZvciBtb2Rlcm4gQU1EIENQ
+VXMNCj4+ICAgICAgIEFDUEk6IEFkZCBmaXh1cHMgZm9yIEFNRCBQLXN0YXRlIGZpZ3VyZXMNCj4+
+ICAgICAgIGNwdWZyZXE6IFJlbW92ZSBzdXBwb3J0IGZvciBoYXJkd2FyZSBQLXN0YXRlIGNoaXBz
+IGZyb20gcG93ZXJub3ctazgNCj4+IA0KPj4gTWljaGFsIFBlY2lvICgyKToNCj4+ICAgICAgIGNw
+dWZyZXEgLyBvbmRlbWFuZDogdXBkYXRlIGZyZXF1ZW5jeSB3aGVuIGxpbWl0cyBhcmUgcmVsYXhl
+ZA0KPj4gICAgICAgY3B1ZnJlcTogY29uc2VydmF0aXZlOiB1cGRhdGUgZnJlcXVlbmN5IHdoZW4g
+bGltaXRzIGFyZSByZWxheGVkDQo+PiANCj4+IFJhZmFlbCBKLiBXeXNvY2tpICg0MCk6DQo+PiAg
+ICAgICBQTSAvIGNwdWlkbGU6IE1ha2UgbGFkZGVyIGdvdmVybm9yIHVzZSB0aGUgImRpc2FibGVk
+IiBzdGF0ZSBmbGFnDQo+PiAgICAgICBQTSAvIERvbWFpbnM6IEludHJvZHVjZSBzaW1wbGlmaWVk
+IHBvd2VyIG9uIHJvdXRpbmUgZm9yIHN5c3RlbSByZXN1bWUNCj4+ICAgICAgIFBNIC8gRG9tYWlu
+czogQWRkIHBvd2VyIG9mZi9vbiBmdW5jdGlvbiBmb3Igc3lzdGVtIGNvcmUgc3VzcGVuZCBzdGFn
+ZQ0KPj4gICAgICAgdGltZWtlZXBpbmc6IEFkZCBzdXNwZW5kIGFuZCByZXN1bWUgb2YgY2xvY2sg
+ZXZlbnQgZGV2aWNlcw0KPj4gICAgICAgc2g6IFRNVTogSW50cm9kdWNlIGNsb2Nrc291cmNlL2Ns
+b2NrIGV2ZW50cyBzdXNwZW5kL3Jlc3VtZSByb3V0aW5lcw0KPj4gICAgICAgc2g6IENNVDogSW50
+cm9kdWNlIGNsb2Nrc291cmNlL2Nsb2NrIGV2ZW50cyBzdXNwZW5kL3Jlc3VtZSByb3V0aW5lcw0K
+Pj4gICAgICAgc2g6IE1UVTI6IEludHJvZHVjZSBjbG9jayBldmVudHMgc3VzcGVuZC9yZXN1bWUg
+cm91dGluZXMNCj4+ICAgICAgIFBNOiBSZW9yZ2FuaXplIGRldmljZSBQTSBpbml0aWFsaXphdGlv
+bg0KPj4gICAgICAgUE0gLyBSdW50aW1lOiBBbGxvdyBoZWxwZXJzIHRvIGJlIGNhbGxlZCBieSBl
+YXJseSBwbGF0Zm9ybSBkcml2ZXJzDQo+PiAgICAgICBQTSAvIERvbWFpbnM6IFJlbmFtZSB0aGUg
+YWx3YXlzX29uIGRldmljZSBmbGFnIHRvIHN5c2NvcmUNCj4+ICAgICAgIFBNIC8gRG9tYWluczog
+TW92ZSBzeXNjb3JlIGZsYWcgZnJvbSBzdWJzeXMgZGF0YSB0byBzdHJ1Y3QgZGV2aWNlDQo+PiAg
+ICAgICBQTSAvIERvbWFpbnM6IERvIG5vdCBtZWFzdXJlIHN0YXJ0IHRpbWUgZm9yICJpcnEgc2Fm
+ZSIgZGV2aWNlcw0KPj4gICAgICAgc2g6IFRNVTogQmFzaWMgcnVudGltZSBQTSBzdXBwb3J0DQo+
+PiAgICAgICBzaDogQ01UOiBCYXNpYyBydW50aW1lIFBNIHN1cHBvcnQNCj4+ICAgICAgIHNoOiBN
+VFUyOiBCYXNpYyBydW50aW1lIFBNIHN1cHBvcnQNCj4+ICAgICAgIFBNOiBEbyBub3QgdXNlIHRo
+ZSBzeXNjb3JlIGZsYWcgZm9yIHJ1bnRpbWUgUE0NCj4+ICAgICAgIFBNIC8gRG9tYWluczogTWFr
+ZSBpdCBwb3NzaWJsZSB0byB1c2UgZG9tYWluIG5hbWVzIHdoZW4gYWRkaW5nIGRldmljZXMNCj4+
+ICAgICAgIFBNIC8gRG9tYWluczogTWFrZSBpdCBwb3NzaWJsZSB0byB1c2UgbmFtZXMgd2hlbiBh
+ZGRpbmcgc3ViZG9tYWlucw0KPj4gICAgICAgUE0gLyBEb21haW5zOiBBZGQgcG93ZXItb24gZnVu
+Y3Rpb24gdXNpbmcgbmFtZXMgdG8gaWRlbnRpZnkgZG9tYWlucw0KPj4gICAgICAgUE0gLyBEb21h
+aW5zOiBEb2N1bWVudCBjcHVpZGxlLXJlbGF0ZWQgZnVuY3Rpb25zIGFuZCBjaGFuZ2UgdGhlaXIg
+bmFtZXMNCj4+ICAgICAgIFBNIC8gRG9tYWluczogT3BlcmF0aW9ucyByZWxhdGVkIHRvIGNwdWlk
+bGUgdXNpbmcgZG9tYWluIG5hbWVzDQo+PiAgICAgICBBUk06IHNobW9iaWxlOiBVc2UgbmFtZXMg
+b2YgcG93ZXIgZG9tYWlucyBmb3IgYWRkaW5nIGRldmljZXMgdG8gdGhlbQ0KPj4gICAgICAgQVJN
+OiBzaG1vYmlsZTogRHJvcCByOGE3Nzc5X2FkZF9kZXZpY2VfdG9fZG9tYWluKCkNCj4+ICAgICAg
+IEFSTTogc2htb2JpbGU6IFVzZSBkb21haW4gbmFtZXMgd2hlbiBhZGRpbmcgc3ViZG9tYWlucyB0
+byBwb3dlciBkb21haW5zDQo+PiAgICAgICBBUk06IHNobW9iaWxlOiBBZGQgcm91dGluZSBmb3Ig
+YXV0b21hdGljIFBNIGRvbWFpbnMgaW5pdGlhbGl6YXRpb24NCj4+ICAgICAgIEFSTTogc2htb2Jp
+bGU6IERvIG5vdCBhY2Nlc3Mgc2g3MzcyIEE0UyBkb21haW4gaW50ZXJuYWxzIGRpcmVjdGx5DQo+
+PiAgICAgICBBUk06IHNobW9iaWxlOiBNb3ZlIHNoNzM3MidzIFBNIGRvbWFpbiBvYmplY3RzIHRv
+IGEgdGFibGUNCj4+ICAgICAgIEFSTTogc2htb2JpbGU6IE1vdmUgcjhhNzc0MCdzIFBNIGRvbWFp
+biBvYmplY3RzIHRvIGEgdGFibGUNCj4+ICAgICAgIEFSTTogc2htb2JpbGU6IE1vdmUgcjhhNzc3
+OSdzIFBNIGRvbWFpbiBvYmplY3RzIHRvIGEgdGFibGUNCj4+ICAgICAgIEFSTTogc2htb2JpbGU6
+IE1ha2Ugcm1vYmlsZV9pbml0X3BtX2RvbWFpbigpIHN0YXRpYw0KPj4gICAgICAgQVJNOiBzaG1v
+YmlsZTogU2V0IFBNIGRvbWFpbiBvbi9vZmYgbGF0ZW5jaWVzIGRpcmVjdGx5DQo+PiAgICAgICBB
+Uk06IHNobW9iaWxlOiBBbGxvdyBkZXZpY2UgbGF0ZW5jaWVzIHRvIGJlIHNwZWNpZmllZCBkaXJl
+Y3RseQ0KPj4gICAgICAgQVJNOiBzaG1vYmlsZTogU3BlY2lmeSBkZXZpY2UgbGF0ZW5jaWVzIGZv
+ciBTSDczNzIgZGV2aWNlcyBkaXJlY3RseQ0KPj4gICAgICAgQVJNOiBzaG1vYmlsZTogU3BlY2lm
+eSBkZXZpY2UgbGF0ZW5jaWVzIGZvciBNYWNrZXJlbCBkZXZpY2VzIGRpcmVjdGx5DQo+PiAgICAg
+ICBBUk06IHNobW9iaWxlOiBSZXdvcmsgYWRkaW5nIGRldmljZXMgdG8gUE0gZG9tYWlucyBvbiBN
+YWNrZXJlbA0KPj4gICAgICAgQVJNOiBzaG1vYmlsZTogUmV3b3JrIGFkZGluZyBkZXZpY2VzIHRv
+IFBNIGRvbWFpbnMgb24gQVA0RVZCDQo+PiAgICAgICBBUk06IHNobW9iaWxlOiBSZW1vdmUgdGhl
+IGNvbnNvbGUgY2hlY2sgZnJvbSBzaDczNzJfZW50ZXJfc3VzcGVuZCgpDQo+PiAgICAgICBBUk06
+IHNobW9iaWxlOiBNb3ZlIGRlZmluaXRpb24gb2Ygc2htb2JpbGVfaW5pdF9sYXRlKCkgdG8gaGVh
+ZGVyDQo+PiAgICAgICBBUk06IHNobW9iaWxlOiBNYWtlIHNoNzM3MiBjcHVpZGxlIGhhbmRsaW5n
+IG1vcmUgc3RyYWlnaHRmb3J3YXJkDQo+PiAgICAgICBBUk06IHNobW9iaWxlOiBBZGQgQTRTIGNw
+dWlkbGUgc3RhdGUgb24gc2g3MzcyDQo+PiANCj4+IFJpY2hhcmQgWmhhbyAoMik6DQo+PiAgICAg
+ICBBUk06IGFkZCBjcHVmcmVxIHRyYW5zaXRvbiBub3RpZmllciB0byBhZGp1c3QgbG9vcHNfcGVy
+X2ppZmZ5IGZvciBzbXANCj4+ICAgICAgIGNwdWZyZXE6IE9NQVA6IHJlbW92ZSBsb29wc19wZXJf
+amlmZnkgcmVjYWxjdWxhdGUgZm9yIHNtcA0KPj4gDQo+PiBTYWNoaW4gS2FtYXQgKDEpOg0KPj4g
+ICAgICAgUE0gLyBEb21haW5zOiBGaXggY29tcGlsYXRpb24gd2FybmluZyByZWxhdGVkIHRvIGdl
+bnBkX3N0YXJ0X2Rldl9ub190aW1pbmcoKQ0KPj4gDQo+PiBTZWRhdCBEaWxlayAoMSk6DQo+PiAg
+ICAgICBQTSAvIEZyZWV6ZXI6IEZpeCBzbWFsbCB0eXBvICJyZWdyaWdlcmF0b3IiDQo+PiANCj4+
+IFNoYXduIEd1byAoMik6DQo+PiAgICAgICBQTSAvIE9QUDogSW5pdGlhbGl6ZSBPUFAgdGFibGUg
+ZnJvbSBkZXZpY2UgdHJlZQ0KPj4gICAgICAgY3B1ZnJlcTogQWRkIGEgZ2VuZXJpYyBjcHVmcmVx
+LWNwdTAgZHJpdmVyDQo+PiANCj4+IFRvZGQgUG95bm9yICgxKToNCj4+ICAgICAgIFBNIC8gU2xl
+ZXA6IFByaW50IG5hbWUgb2Ygd2FrZXVwIHNvdXJjZSB0aGF0IGFib3J0cyBzdXNwZW5kDQo+PiAN
+Cj4+IC0tDQo+PiBUbyB1bnN1YnNjcmliZSBmcm9tIHRoaXMgbGlzdDogc2VuZCB0aGUgbGluZSAi
+dW5zdWJzY3JpYmUgbGludXgtcG0iIGluDQo+PiB0aGUgYm9keSBvZiBhIG1lc3NhZ2UgdG8gbWFq
+b3Jkb21vQHZnZXIua2VybmVsLm9yZw0KPj4gTW9yZSBtYWpvcmRvbW8gaW5mbyBhdCAgaHR0cDov
+L3ZnZXIua2VybmVsLm9yZy9tYWpvcmRvbW8taW5mby5odG1sDQo=
+
+--_002_3E54258959B69E4282D79E01AB1F32B7041D147DDFLE12entticom_
+Content-Type: message/rfc822
+Content-Disposition: attachment;
+	creation-date="Tue, 18 Sep 2012 21:18:51 GMT";
+	modification-date="Tue, 18 Sep 2012 21:18:51 GMT"
+
+Received: from dlelxv22.itg.ti.com (172.17.1.197) by DLEE74.ent.ti.com
+ (157.170.170.8) with Microsoft SMTP Server id 14.1.323.3; Fri, 14 Sep 2012
+ 17:19:36 -0500
+Received: from ares-ubuntu.am.dhcp.ti.com (ares-ubuntu.am.dhcp.ti.com
+ [158.218.103.17])	by dlelxv22.itg.ti.com (8.13.8/8.13.8) with ESMTP id
+ q8EMJaIt025836;	Fri, 14 Sep 2012 17:19:36 -0500
+Received: from a0868495 by ares-ubuntu.am.dhcp.ti.com with local (Exim 4.76)
+	(envelope-from <a0868495@ares-ubuntu>)	id 1TCeEa-00041V-Bn; Fri, 14 Sep 2012
+ 18:19:36 -0400
+From: "Karicheri, Muralidharan" <m-karicheri2@ti.com>
+To: "pavel@ucw.cz" <pavel@ucw.cz>, "rjw@sisk.pl" <rjw@sisk.pl>,
+	"len.brown@intel.com" <len.brown@intel.com>, "gregkh@linuxfoundation.org"
+	<gregkh@linuxfoundation.org>, "linux-pm@vger.kernel.org"
+	<linux-pm@vger.kernel.org>, "linux-kernel@vger.kernel.org"
+	<linux-kernel@vger.kernel.org>, "Chemparathy, Cyril" <cyril@ti.com>,
+	"mturquette@linaro.org" <mturquette@linaro.org>
+CC: "Karicheri, Muralidharan" <m-karicheri2@ti.com>
+Subject: [RFC - PATCH] base:pm: prepare driver for common clock framework
+Thread-Topic: [RFC - PATCH] base:pm: prepare driver for common clock
+ framework
+Thread-Index: AQHNkscGQnhzdlyu5EK+tSnspVAZNA==
+Date: Fri, 14 Sep 2012 22:19:34 +0000
+Message-ID: <1347661174-15404-1-git-send-email-m-karicheri2@ti.com>
+Content-Language: en-US
+X-MS-Exchange-Organization-AuthAs: Internal
+X-MS-Exchange-Organization-AuthMechanism: 10
+X-MS-Exchange-Organization-AuthSource: DLEE74.ent.ti.com
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: horms@verge.net.au, magnus.damm@gmail.com
-Cc: hjk@hansjkoch.de, linux-sh@vger.kernel.org, hdk@igel.co.jp, linux-kernel@vger.kernel.org, Damian Hobson-Garcia <dhobsong@igel.co.jp>
 
-This device extends the uio_pdrv_genirq driver to provide limited
-dynamic memory allocation for UIO devices.  This allows UIO devices
-to use CMA and IOMMU allocated memory regions. This driver is based
-on the uio_pdrv_genirq driver and provides the same generic interrupt
-handling capabilities.  Like uio_prdv_genirq,
-a fixed number of memory regions, defined in the platform device's
-.resources field are exported to userpace. This driver adds the ability
-to export additional regions whose number and size are known at boot time,
-but whose memory is not allocated until the uio device file is opened for
-the first time.  When the device file is closed, the allocated memory block
-is freed.  Physical (DMA) addresses for the dynamic regions are provided to
-the userspace via /sys/class/uio/uioN/maps/mapM/addr in the same way as
-static addresses are when the uio device file is open, when no processes
-are holding the device file open, the address returned to userspace is
-DMA_ERROR_CODE.
+As part of my work to migrate davinci SoC code to
+use common clk framework, I encountered an issue with this driver
+which is calling clk_enable() and clk_disable() without prepare()/
+unprepare(). This change is needed to enable common clock migration
+for davinci SoCs.
 
-Signed-off-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
----
- drivers/uio/Kconfig                           |   16 ++
- drivers/uio/Makefile                          |    1 +
- drivers/uio/uio_dmem_genirq.c                 |  356 +++++++++++++++++++++++++
- include/linux/platform_data/uio_dmem_genirq.h |   26 ++
- 4 files changed, 399 insertions(+), 0 deletions(-)
- create mode 100644 drivers/uio/uio_dmem_genirq.c
- create mode 100644 include/linux/platform_data/uio_dmem_genirq.h
+Signed-off-by: Murali Karicheri <m-karicheri2@ti.com>
 
-diff --git a/drivers/uio/Kconfig b/drivers/uio/Kconfig
-index 6f3ea9b..ee4226b 100644
---- a/drivers/uio/Kconfig
-+++ b/drivers/uio/Kconfig
-@@ -44,6 +44,22 @@ config UIO_PDRV_GENIRQ
- 
- 	  If you don't know what to do here, say N.
- 
-+config UIO_DMEM_GENIRQ
-+	tristate "Userspace platform driver with generic irq and dynamic memory"
-+	help
-+	  Platform driver for Userspace I/O devices, including generic
-+	  interrupt handling code. Shared interrupts are not supported.
-+
-+	  Memory regions can be specified with the same platform device
-+	  resources as the UIO_PDRV drivers, but dynamic regions can also
-+	  be specified.
-+	  The number and size of these regions is static,
-+	  but the memory allocation is not performed until
-+	  the associated device file is opened. The
-+	  memory is freed once the uio device is closed.
-+
-+	  If you don't know what to do here, say N.
-+
- config UIO_AEC
- 	tristate "AEC video timestamp device"
- 	depends on PCI
-diff --git a/drivers/uio/Makefile b/drivers/uio/Makefile
-index d4dd9a5..b354c53 100644
---- a/drivers/uio/Makefile
-+++ b/drivers/uio/Makefile
-@@ -2,6 +2,7 @@ obj-$(CONFIG_UIO)	+= uio.o
- obj-$(CONFIG_UIO_CIF)	+= uio_cif.o
- obj-$(CONFIG_UIO_PDRV)	+= uio_pdrv.o
- obj-$(CONFIG_UIO_PDRV_GENIRQ)	+= uio_pdrv_genirq.o
-+obj-$(CONFIG_UIO_DMEM_GENIRQ)	+= uio_dmem_genirq.o
- obj-$(CONFIG_UIO_AEC)	+= uio_aec.o
- obj-$(CONFIG_UIO_SERCOS3)	+= uio_sercos3.o
- obj-$(CONFIG_UIO_PCI_GENERIC)	+= uio_pci_generic.o
-diff --git a/drivers/uio/uio_dmem_genirq.c b/drivers/uio/uio_dmem_genirq.c
-new file mode 100644
-index 0000000..ef3e0fd
---- /dev/null
-+++ b/drivers/uio/uio_dmem_genirq.c
-@@ -0,0 +1,354 @@
-+/*
-+ * drivers/uio/uio_dmem_genirq.c
-+ *
-+ * Userspace I/O platform driver with generic IRQ handling code.
-+ *
-+ * Copyright (C) 2012 Damian Hobson-Garcia
-+ *
-+ * Based on uio_pdrv_genirq.c by Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify it
-+ * under the terms of the GNU General Public License version 2 as published by
-+ * the Free Software Foundation.
-+ */
-+
-+#include <linux/platform_device.h>
-+#include <linux/uio_driver.h>
-+#include <linux/spinlock.h>
-+#include <linux/bitops.h>
-+#include <linux/module.h>
-+#include <linux/interrupt.h>
-+#include <linux/platform_data/uio_dmem_genirq.h>
-+#include <linux/stringify.h>
-+#include <linux/pm_runtime.h>
-+#include <linux/dma-mapping.h>
-+#include <linux/slab.h>
-+
-+#include <linux/of.h>
-+#include <linux/of_platform.h>
-+#include <linux/of_address.h>
-+
-+#define DRIVER_NAME "uio_dmem_genirq"
-+
-+struct uio_dmem_genirq_platdata {
-+	struct uio_info *uioinfo;
-+	spinlock_t lock;
-+	unsigned long flags;
-+	struct platform_device *pdev;
-+	unsigned int dmem_region_start;
-+	unsigned int num_dmem_regions;
-+	struct mutex alloc_lock;
-+	unsigned int refcnt;
-+};
-+
-+static int uio_dmem_genirq_open(struct uio_info *info, struct inode *inode)
-+{
-+	struct uio_dmem_genirq_platdata *priv = info->priv;
-+	struct uio_mem *uiomem;
-+	int ret = 0;
-+
-+	uiomem = &priv->uioinfo->mem[priv->dmem_region_start];
-+
-+	mutex_lock(&priv->alloc_lock);
-+	while (!priv->refcnt && uiomem < &priv->uioinfo->mem[MAX_UIO_MAPS]) {
-+		void *addr;
-+		if (!uiomem->size)
-+			break;
-+
-+		addr = dma_alloc_coherent(&priv->pdev->dev, uiomem->size,
-+				(dma_addr_t *)&uiomem->addr, GFP_KERNEL);
-+		if (!addr) {
-+			ret = -ENOMEM;
-+			break;
-+		}
-+
-+		uiomem->internal_addr = addr;
-+		++uiomem;
-+	}
-+	priv->refcnt++;
-+
-+	mutex_unlock(&priv->alloc_lock);
-+	/* Wait until the Runtime PM code has woken up the device */
-+	pm_runtime_get_sync(&priv->pdev->dev);
-+	return ret;
-+}
-+
-+static int uio_dmem_genirq_release(struct uio_info *info, struct inode *inode)
-+{
-+	struct uio_dmem_genirq_platdata *priv = info->priv;
-+	struct uio_mem *uiomem;
-+
-+	/* Tell the Runtime PM code that the device has become idle */
-+	pm_runtime_put_sync(&priv->pdev->dev);
-+
-+	uiomem = &priv->uioinfo->mem[priv->dmem_region_start];
-+
-+	mutex_lock(&priv->alloc_lock);
-+
-+	priv->refcnt--;
-+	while (!priv->refcnt && uiomem < &priv->uioinfo->mem[MAX_UIO_MAPS]) {
-+		if (!uiomem->size)
-+			break;
-+
-+		dma_free_coherent(&priv->pdev->dev, uiomem->size,
-+				uiomem->internal_addr, uiomem->addr);
-+		uiomem->addr = DMA_ERROR_CODE;
-+		++uiomem;
-+	}
-+
-+	mutex_unlock(&priv->alloc_lock);
-+	return 0;
-+}
-+
-+static irqreturn_t uio_dmem_genirq_handler(int irq, struct uio_info *dev_info)
-+{
-+	struct uio_dmem_genirq_platdata *priv = dev_info->priv;
-+
-+	/* Just disable the interrupt in the interrupt controller, and
-+	 * remember the state so we can allow user space to enable it later.
-+	 */
-+
-+	if (!test_and_set_bit(0, &priv->flags))
-+		disable_irq_nosync(irq);
-+
-+	return IRQ_HANDLED;
-+}
-+
-+static int uio_dmem_genirq_irqcontrol(struct uio_info *dev_info, s32 irq_on)
-+{
-+	struct uio_dmem_genirq_platdata *priv = dev_info->priv;
-+	unsigned long flags;
-+
-+	/* Allow user space to enable and disable the interrupt
-+	 * in the interrupt controller, but keep track of the
-+	 * state to prevent per-irq depth damage.
-+	 *
-+	 * Serialize this operation to support multiple tasks.
-+	 */
-+
-+	spin_lock_irqsave(&priv->lock, flags);
-+	if (irq_on) {
-+		if (test_and_clear_bit(0, &priv->flags))
-+			enable_irq(dev_info->irq);
-+	} else {
-+		if (!test_and_set_bit(0, &priv->flags))
-+			disable_irq(dev_info->irq);
-+	}
-+	spin_unlock_irqrestore(&priv->lock, flags);
-+
-+	return 0;
-+}
-+
-+static int uio_dmem_genirq_probe(struct platform_device *pdev)
-+{
-+	struct uio_dmem_genirq_pdata *pdata = pdev->dev.platform_data;
-+	struct uio_info *uioinfo = &pdata->uioinfo;
-+	struct uio_dmem_genirq_platdata *priv;
-+	struct uio_mem *uiomem;
-+	int ret = -EINVAL;
-+	int i;
-+
-+	if (!uioinfo) {
-+		int irq;
-+
-+		/* alloc uioinfo for one device */
-+		uioinfo = kzalloc(sizeof(*uioinfo), GFP_KERNEL);
-+		if (!uioinfo) {
-+			ret = -ENOMEM;
-+			dev_err(&pdev->dev, "unable to kmalloc\n");
-+			goto bad2;
-+		}
-+		uioinfo->name = pdev->dev.of_node->name;
-+		uioinfo->version = "devicetree";
-+
-+		/* Multiple IRQs are not supported */
-+		irq = platform_get_irq(pdev, 0);
-+		if (irq = -ENXIO)
-+			uioinfo->irq = UIO_IRQ_NONE;
-+		else
-+			uioinfo->irq = irq;
-+	}
-+
-+	if (!uioinfo || !uioinfo->name || !uioinfo->version) {
-+		dev_err(&pdev->dev, "missing platform_data\n");
-+		goto bad0;
-+	}
-+
-+	if (uioinfo->handler || uioinfo->irqcontrol ||
-+	    uioinfo->irq_flags & IRQF_SHARED) {
-+		dev_err(&pdev->dev, "interrupt configuration error\n");
-+		goto bad0;
-+	}
-+
-+	priv = kzalloc(sizeof(*priv), GFP_KERNEL);
-+	if (!priv) {
-+		ret = -ENOMEM;
-+		dev_err(&pdev->dev, "unable to kmalloc\n");
-+		goto bad0;
-+	}
-+
-+	dma_set_coherent_mask(&pdev->dev, DMA_BIT_MASK(32));
-+
-+	priv->uioinfo = uioinfo;
-+	spin_lock_init(&priv->lock);
-+	priv->flags = 0; /* interrupt is enabled to begin with */
-+	priv->pdev = pdev;
-+	mutex_init(&priv->alloc_lock);
-+
-+	if (!uioinfo->irq) {
-+		ret = platform_get_irq(pdev, 0);
-+		if (ret < 0) {
-+			dev_err(&pdev->dev, "failed to get IRQ\n");
-+			goto bad0;
-+		}
-+		uioinfo->irq = ret;
-+	}
-+	uiomem = &uioinfo->mem[0];
-+
-+	for (i = 0; i < pdev->num_resources; ++i) {
-+		struct resource *r = &pdev->resource[i];
-+
-+		if (r->flags != IORESOURCE_MEM)
-+			continue;
-+
-+		if (uiomem >= &uioinfo->mem[MAX_UIO_MAPS]) {
-+			dev_warn(&pdev->dev, "device has more than "
-+					__stringify(MAX_UIO_MAPS)
-+					" I/O memory resources.\n");
-+			break;
-+		}
-+
-+		uiomem->memtype = UIO_MEM_PHYS;
-+		uiomem->addr = r->start;
-+		uiomem->size = resource_size(r);
-+		++uiomem;
-+	}
-+
-+	priv->dmem_region_start = i;
-+	priv->num_dmem_regions = pdata->num_dynamic_regions;
-+
-+	for (i = 0; i < pdata->num_dynamic_regions; ++i) {
-+		if (uiomem >= &uioinfo->mem[MAX_UIO_MAPS]) {
-+			dev_warn(&pdev->dev, "device has more than "
-+					__stringify(MAX_UIO_MAPS)
-+					" dynamic and fixed memory regions.\n");
-+			break;
-+		}
-+		uiomem->memtype = UIO_MEM_PHYS;
-+		uiomem->addr = DMA_ERROR_CODE;
-+		uiomem->size = pdata->dynamic_region_sizes[i];
-+		++uiomem;
-+	}
-+
-+	while (uiomem < &uioinfo->mem[MAX_UIO_MAPS]) {
-+		uiomem->size = 0;
-+		++uiomem;
-+	}
-+
-+	/* This driver requires no hardware specific kernel code to handle
-+	 * interrupts. Instead, the interrupt handler simply disables the
-+	 * interrupt in the interrupt controller. User space is responsible
-+	 * for performing hardware specific acknowledge and re-enabling of
-+	 * the interrupt in the interrupt controller.
-+	 *
-+	 * Interrupt sharing is not supported.
-+	 */
-+
-+	uioinfo->handler = uio_dmem_genirq_handler;
-+	uioinfo->irqcontrol = uio_dmem_genirq_irqcontrol;
-+	uioinfo->open = uio_dmem_genirq_open;
-+	uioinfo->release = uio_dmem_genirq_release;
-+	uioinfo->priv = priv;
-+
-+	/* Enable Runtime PM for this device:
-+	 * The device starts in suspended state to allow the hardware to be
-+	 * turned off by default. The Runtime PM bus code should power on the
-+	 * hardware and enable clocks at open().
-+	 */
-+	pm_runtime_enable(&pdev->dev);
-+
-+	ret = uio_register_device(&pdev->dev, priv->uioinfo);
-+	if (ret) {
-+		dev_err(&pdev->dev, "unable to register uio device\n");
-+		goto bad1;
-+	}
-+
-+	platform_set_drvdata(pdev, priv);
-+	return 0;
-+ bad1:
-+	kfree(priv);
-+	pm_runtime_disable(&pdev->dev);
-+ bad0:
-+	/* kfree uioinfo for OF */
-+	if (pdev->dev.of_node)
-+		kfree(uioinfo);
-+ bad2:
-+	return ret;
-+}
-+
-+static int uio_dmem_genirq_remove(struct platform_device *pdev)
-+{
-+	struct uio_dmem_genirq_platdata *priv = platform_get_drvdata(pdev);
-+
-+	uio_unregister_device(priv->uioinfo);
-+	pm_runtime_disable(&pdev->dev);
-+
-+	priv->uioinfo->handler = NULL;
-+	priv->uioinfo->irqcontrol = NULL;
-+
-+	/* kfree uioinfo for OF */
-+	if (pdev->dev.of_node)
-+		kfree(priv->uioinfo);
-+
-+	kfree(priv);
-+	return 0;
-+}
-+
-+static int uio_dmem_genirq_runtime_nop(struct device *dev)
-+{
-+	/* Runtime PM callback shared between ->runtime_suspend()
-+	 * and ->runtime_resume(). Simply returns success.
-+	 *
-+	 * In this driver pm_runtime_get_sync() and pm_runtime_put_sync()
-+	 * are used at open() and release() time. This allows the
-+	 * Runtime PM code to turn off power to the device while the
-+	 * device is unused, ie before open() and after release().
-+	 *
-+	 * This Runtime PM callback does not need to save or restore
-+	 * any registers since user space is responsbile for hardware
-+	 * register reinitialization after open().
-+	 */
-+	return 0;
-+}
-+
-+static const struct dev_pm_ops uio_dmem_genirq_dev_pm_ops = {
-+	.runtime_suspend = uio_dmem_genirq_runtime_nop,
-+	.runtime_resume = uio_dmem_genirq_runtime_nop,
-+};
-+
-+#ifdef CONFIG_OF
-+static const struct of_device_id uio_of_genirq_match[] = {
-+	{ /* empty for now */ },
-+};
-+MODULE_DEVICE_TABLE(of, uio_of_genirq_match);
-+#else
-+# define uio_of_genirq_match NULL
-+#endif
-+
-+static struct platform_driver uio_dmem_genirq = {
-+	.probe = uio_dmem_genirq_probe,
-+	.remove = uio_dmem_genirq_remove,
-+	.driver = {
-+		.name = DRIVER_NAME,
-+		.owner = THIS_MODULE,
-+		.pm = &uio_dmem_genirq_dev_pm_ops,
-+		.of_match_table = uio_of_genirq_match,
-+	},
-+};
-+
-+module_platform_driver(uio_dmem_genirq);
-+
-+MODULE_AUTHOR("Damian Hobson-Garcia");
-+MODULE_DESCRIPTION("Userspace I/O platform driver with dynamic memory.");
-+MODULE_LICENSE("GPL v2");
-+MODULE_ALIAS("platform:" DRIVER_NAME);
-diff --git a/include/linux/platform_data/uio_dmem_genirq.h b/include/linux/platform_data/uio_dmem_genirq.h
-new file mode 100644
-index 0000000..973c1bb
---- /dev/null
-+++ b/include/linux/platform_data/uio_dmem_genirq.h
-@@ -0,0 +1,26 @@
-+/*
-+ * include/linux/platform_data/uio_dmem_genirq.h
-+ *
-+ * Copyright (C) 2012 Damian Hobson-Garcia
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License as
-+ * published by the Free Software Foundation version 2.
-+ *
-+ * This program is distributed "as is" WITHOUT ANY WARRANTY of any
-+ * kind, whether express or implied; without even the implied warranty
-+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ */
-+
-+#ifndef _UIO_DMEM_GENIRQ_H
-+#define _UIO_DMEM_GENIRQ_H
-+
-+#include <linux/uio_driver.h>
-+
-+struct uio_dmem_genirq_pdata {
-+	struct uio_info	uioinfo;
-+	unsigned int *dynamic_region_sizes;
-+	unsigned int num_dynamic_regions;
-+};
-+#endif /* _UIO_DMEM_GENIRQ_H */
--- 
-1.7.5.4
+diff --git a/drivers/base/power/clock_ops.c b/drivers/base/power/clock_ops.=
+c
+index eb78e96..9d8fde7 100644
+--- a/drivers/base/power/clock_ops.c
++++ b/drivers/base/power/clock_ops.c
+@@ -99,7 +99,7 @@ static void __pm_clk_remove(struct pm_clock_entry *ce)
 
+        if (ce->status < PCE_STATUS_ERROR) {
+                if (ce->status =3D=3D PCE_STATUS_ENABLED)
+-                       clk_disable(ce->clk);
++                       clk_disable_unprepare(ce->clk);
+
+                if (ce->status >=3D PCE_STATUS_ACQUIRED)
+                        clk_put(ce->clk);
+@@ -396,7 +396,7 @@ static void enable_clock(struct device *dev, const char=
+ *con_id)
+
+        clk =3D clk_get(dev, con_id);
+        if (!IS_ERR(clk)) {
+-               clk_enable(clk);
++               clk_prepare_enable(clk);
+                clk_put(clk);
+                dev_info(dev, "Runtime PM disabled, clock forced on.\n");
+        }
+@@ -413,7 +413,7 @@ static void disable_clock(struct device *dev, const cha=
+r *con_id)
+
+        clk =3D clk_get(dev, con_id);
+        if (!IS_ERR(clk)) {
+-               clk_disable(clk);
++               clk_disable_unprepare(clk);
+                clk_put(clk);
+                dev_info(dev, "Runtime PM disabled, clock forced off.\n");
+        }
+--
+1.7.9.5
+
+
+--_002_3E54258959B69E4282D79E01AB1F32B7041D147DDFLE12entticom_--
