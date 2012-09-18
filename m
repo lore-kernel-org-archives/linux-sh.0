@@ -1,43 +1,35 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Wed, 05 Sep 2012 04:53:28 +0000
-Subject: Re: [GIT PULL] Renesas ARM-based SoC fix for v3.6 #2
-Message-Id: <20120905045326.GA24040@verge.net.au>
+Date: Tue, 18 Sep 2012 04:46:58 +0000
+Subject: [GIT PULL] Renesas ARM-based SoC fix for v3.6 #3
+Message-Id: <1347943619-27649-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346808893-14124-1-git-send-email-horms@verge.net.au>
- <20120905044441.GD6747@quad.lixom.net>
-In-Reply-To: <20120905044441.GD6747@quad.lixom.net>
+References: <201208240118.16563.rjw@sisk.pl>
+In-Reply-To: <201208240118.16563.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Sep 04, 2012 at 09:44:41PM -0700, Olof Johansson wrote:
-> On Wed, Sep 05, 2012 at 10:34:50AM +0900, Simon Horman wrote:
-> > Hi Olof, Hi Arnd,
-> > 
-> > please consider the following fixes for the Armadillo800 EVA and
-> > Mackerel boards from Morimoto-san.
-> > 
-> > * "ARM: shmobile: armadillo800eva: fixup: sound card detection order"
-> >   is a regression fix.
-> > * "ARM: shmobile: mackerel: fixup usb module order"
-> >   is a regression fix.
-> > * "ARM: shmobile: armadillo800eva: enable rw rootfs mount"
-> >   is a boot-loader compatibility fix.
-> > 
-> > All of the changes are aimed at improving the end-user experience.
-> > 
-> > Notes:
-> > 
-> > * This pull request is based on my previous
-> >   "[GIT PULL] Renesas ARM-based SoC fix for v3.6" pull request
-> >   which was recently pulled by Olof. Please let me know
-> >   if you would like me to handle this a different way.
-> 
-> That's exactly the way to do it. In this case it meant I have two pulls
-> after each other from the same tree, and I suppose I could replace the
-> older one with the newer one but that means rebasing so I just pulled it
-> in. Either way, you just need to send a delta pull request like you did,
-> the rest would be up to us.
+Hi Olof, Hi Arnd,
 
-Thanks, its good to know what to do.
+please consider the following fix for the KZM-A9-GT board for 3.6.
+
+----------------------------------------------------------------
+The following changes since commit 28e515878f8896b33c325ff9767cb0237210fb4c:
+
+  ARM: shmobile: armadillo800eva: enable rw rootfs mount (2012-09-03 17:31:34 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git fixes
+
+for you to fetch changes up to a704835d6a7a8254067a1be60d614cd5c0c73e44:
+
+  ARM: shmobile: kzm9g: bugfix: correct mmcif interrupt settings (2012-09-18 11:19:44 +0900)
+
+----------------------------------------------------------------
+Tetsuyuki Kobayashi (1):
+      ARM: shmobile: kzm9g: bugfix: correct mmcif interrupt settings
+
+ arch/arm/mach-shmobile/board-kzm9g.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
