@@ -1,27 +1,69 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 18 Sep 2012 08:09:41 +0000
-Subject: Re: [ANNOUNCE] CC of patches to linux-arm-kernel
-Message-Id: <20120918080941.GA18441@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 19 Sep 2012 18:27:55 +0000
+Subject: Re: [PATCH v2 4/6] pwm_backlight: Add deferred probe support
+Message-Id: <1697155.mRXUHrIIe9@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120918013140.GA31315@verge.net.au>
-In-Reply-To: <20120918013140.GA31315@verge.net.au>
+References: <1343140823-13754-5-git-send-email-laurent.pinchart@ideasonboard.com>
+In-Reply-To: <1343140823-13754-5-git-send-email-laurent.pinchart@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Sep 18, 2012 at 04:47:09PM +0900, Paul Mundt wrote:
-> On Tue, Sep 18, 2012 at 10:31:40AM +0900, Simon Horman wrote:
-> > I would like to request that all patches for mach-shmobile,
-> > and in general anything under /arch/arm, be CCed to
-> > linux-arm-kernel@lists.infradead.org as well as linux-sh@vger.kernel.org
-> > to broaden the scope of review. This has been requested by the arm-soc
-> > maintainers.
+Hi Simon,
+
+On Saturday 25 August 2012 15:57:12 Simon Horman wrote:
+> On Tue, Jul 24, 2012 at 04:40:21PM +0200, Laurent Pinchart wrote:
+> > If the PWM instance is not available yet at probe time, request a
+> > deferred probe.
 > > 
-> Does it still spew moderation messages? If so, no thanks.
+> > A better way to fix might be to create a PWM subsystem (possibly
+> > integrated into the GPIO subsystem) to support generic PWM objects, and
+> > make sure the subsystem gets initialized first.
+> 
+> Hi Richard,
+> 
+> I am wondering if you have had a chance to review this change.
+> I believe that it is a pre-requisite for work that Laurent has
+> done to enable the backlight on the Armadillo 800 EVA board.
 
-I'm unsure, but I haven't encountered one myself.
+The PWM core now returns -EPROBE_DEFER if pwm_get() or pwm_request() can't 
+find the requested device, so this patch isn't needed anymore.
 
-If anyone encounters such a problem please feel free to
-a) drop the CC and;
-b) let me know.
+> If the change is ok I am happy to take it through
+> my shmobile tree if that makes life easier for you.
+> 
+> Below is an updated version of the patch which applies on top of 3.6-rc3.
+> 
+> From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+> 
+> pwm_backlight: Add deferred probe support
+> 
+> If the PWM instance is not available yet at probe time, request a
+> deferred probe.
+> 
+> A better way to fix might be to create a PWM subsystem (possibly
+> integrated into the GPIO subsystem) to support generic PWM objects, and
+> make sure the subsystem gets initialized first.
+> 
+> Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+> Signed-off-by: Simon Horman <horms@verge.net.au>
+> 
+> diff --git a/drivers/video/backlight/pwm_bl.c
+> b/drivers/video/backlight/pwm_bl.c index 995f016..cc71f87 100644
+> --- a/drivers/video/backlight/pwm_bl.c
+> +++ b/drivers/video/backlight/pwm_bl.c
+> @@ -221,6 +221,8 @@ static int pwm_backlight_probe(struct platform_device
+> *pdev) if (IS_ERR(pb->pwm)) {
+>  			dev_err(&pdev->dev, "unable to request legacy PWM\n");
+>  			ret = PTR_ERR(pb->pwm);
+> +			if (ret = -ENODEV)
+> +				ret = -EPROBE_DEFER;
+>  			goto err_alloc;
+>  		}
+>  	}
+-- 
+Regards,
+
+Laurent Pinchart
+
