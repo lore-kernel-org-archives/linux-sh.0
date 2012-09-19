@@ -1,48 +1,26 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 18 Sep 2012 22:52:26 +0000
-Subject: [PATCH] ARM: shmobile: fix MMCIF IRQ assignment on kzm9g
-Message-Id: <Pine.LNX.4.64.1209190042440.31203@axis700.grange>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 19 Sep 2012 00:14:03 +0000
+Subject: Re: [PATCH] ARM: shmobile: fix MMCIF IRQ assignment on kzm9g
+Message-Id: <20120919001403.GF12583@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1209190042440.31203@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1209190042440.31203@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: Tetsuyuki Kobayashi <koba@kmckk.co.jp>, yusuke.goda.sx@renesas.com, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, Simon Horman <horms@verge.net.au>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-mmc@vger.kernel.org, Tetsuyuki Kobayashi <koba@kmckk.co.jp>, yusuke.goda.sx@renesas.com, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>
 
-Error and operation IRQs are swapped in kzm9g platform data, this patch
-fixes their order. The only problem this bug causes is the confusing IRQ 
-count in /proc/interrupts output, otherwise functionality is unaffected, 
-since the driver doesn't really differentiate between the two IRQs.
+On Wed, Sep 19, 2012 at 12:52:26AM +0200, Guennadi Liakhovetski wrote:
+> Error and operation IRQs are swapped in kzm9g platform data, this patch
+> fixes their order. The only problem this bug causes is the confusing IRQ 
+> count in /proc/interrupts output, otherwise functionality is unaffected, 
+> since the driver doesn't really differentiate between the two IRQs.
+> 
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
+Thanks Guennadi,
 
-The error is easy to see in /proc/interrupts output, kota2 has the correct 
-IRQ assignment, ag5evm has the same problem, as kzm9g, so, it might need 
-fixing too. I certainly could cook up a similar trivial patch for it, but 
-someone will have to test it.
-
- arch/arm/mach-shmobile/board-kzm9g.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index 29cca80..21c90c4 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -346,11 +346,11 @@ static struct resource sh_mmcif_resources[] = {
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
--		.start	= gic_spi(141),
-+		.start	= gic_spi(140),
- 		.flags	= IORESOURCE_IRQ,
- 	},
- 	[2] = {
--		.start	= gic_spi(140),
-+		.start	= gic_spi(141),
- 		.flags	= IORESOURCE_IRQ,
- 	},
- };
--- 
-1.7.2.5
-
+as it happens I merged a very similar (same?) patch into the
+fixes branch of my renesas tree yesterday. It has been accepted
+by the arm-soc people and should appear in 3.6.
