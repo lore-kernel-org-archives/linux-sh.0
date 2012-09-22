@@ -1,73 +1,70 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 04 Sep 2012 00:34:04 +0000
-Subject: Re: [PATCH 05/11] ARM: shmobile: r8a7779: add USB common phy initializer
-Message-Id: <20120904003402.GE6095@verge.net.au>
+From: Bastian Hecht <hechtb@googlemail.com>
+Date: Sat, 22 Sep 2012 12:06:38 +0000
+Subject: [PATCH] ARM: mach-shmobile: add FLCTL DMA slave definitions for sh7372
+Message-Id: <1348315598-3980-1-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346376502-12114-1-git-send-email-horms@verge.net.au>
- <1346376502-12114-6-git-send-email-horms@verge.net.au>
- <201209032138.41485.arnd@arndb.de>
- <87k3wafxj4.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87k3wafxj4.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Sep 03, 2012 at 05:21:22PM -0700, Kuninori Morimoto wrote:
-> 
-> Hi Arnd, Simon
-> 
-> > > From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > > 
-> > > This patch adds common USB phy ports initializer for r8a7779.
-> > > 
-> > > The note is that each USB IP have own MSTP clock bit,
-> > > and common USB phy port doesn't have MSTP clock,
-> > > but this USB phy needs USB clock.
-> > > Each USB driver / platform should keep USB MSTP clock somehow.
-> > > 
-> > > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > > Signed-off-by: Simon Horman <horms@verge.net.au>
-> > > ---
-> > >  arch/arm/mach-shmobile/include/mach/common.h |  1 +
-> > >  arch/arm/mach-shmobile/setup-r8a7779.c       | 93 ++++++++++++++++++++++++++++
-> > >  2 files changed, 94 insertions(+)
-> > 
-> > Shouldn't the USB PHY driver go to drivers/usb/phy/ or
-> > drivers/usb/host/ehci-sh.c?
-> > 
-> > We are trying hard to move driver code out of the platform and into driver
-> > directories these days, and having it wired up as part of the platform
-> > the way you do also means it is always powered on.
-> 
-> I see.
-> I can move this code to under driver.
-> Can I send additional patch for it ?
->  - move usb phy code to driver (to Simon, USB ML)
-> 
-> Or should I send multi patches ?
->  - remove this patch (to Simon)
->  - add usb phy driver patch (to USB ML)
->  - use usb phy driver patch (to Simon)
+SH7372 can use DMA with the FLCTL flash controller. Add required slave
+IDs and slave descriptors.
 
-I think that the best approach would be for
-a) me to remove the patches in question from your tree
-b) you to send fresh patches, perhaps the USB ones need
-   to go through another tree (= other than my renesas tree)
-c) I will send a fresh pull request.
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+---
+Sort order is .mid_rid.
 
-I am guessing this may take a little time. If so, as the end of opportunity
-to get fresh code into 3.7 is approaching I may post an intermediate pull
-request that omits the USB changes.
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    4 ++++
+ arch/arm/mach-shmobile/setup-sh7372.c        |   20 ++++++++++++++++++++
+ 2 files changed, 24 insertions(+), 0 deletions(-)
 
-> > I see neither big-endian support on shmobile, nor any XHCI (USB-3.0) driver, just
-> > the old EHCI (USB-2.0) and OHCI (USB-1.1) drivers. Are you submitting the XHCI
-> > support and big-endian platform code separately?
-> 
-> Sorry for very confusing naming.
-> I fix it
-> 
-> Best regards
-> ---
-> Kuninori Morimoto
-> 
+diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
+index b59048e..0ad4220 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -452,6 +452,10 @@ enum {
+ 	SHDMA_SLAVE_SCIF5_RX,
+ 	SHDMA_SLAVE_SCIF6_TX,
+ 	SHDMA_SLAVE_SCIF6_RX,
++	SHDMA_SLAVE_FLCTL0_TX,
++	SHDMA_SLAVE_FLCTL0_RX,
++	SHDMA_SLAVE_FLCTL1_TX,
++	SHDMA_SLAVE_FLCTL1_RX,
+ 	SHDMA_SLAVE_SDHI0_RX,
+ 	SHDMA_SLAVE_SDHI0_TX,
+ 	SHDMA_SLAVE_SDHI1_RX,
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index 838a87b..64af6ea 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -408,6 +408,26 @@ static const struct sh_dmae_slave_config sh7372_dmae_slaves[] = {
+ 		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x3e,
+ 	}, {
++		.slave_id	= SHDMA_SLAVE_FLCTL0_TX,
++		.addr		= 0xe6a30050,
++		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
++		.mid_rid	= 0x83,
++	}, {
++		.slave_id	= SHDMA_SLAVE_FLCTL0_RX,
++		.addr		= 0xe6a30050,
++		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
++		.mid_rid	= 0x83,
++	}, {
++		.slave_id	= SHDMA_SLAVE_FLCTL1_TX,
++		.addr		= 0xe6a30060,
++		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
++		.mid_rid	= 0x87,
++	}, {
++		.slave_id	= SHDMA_SLAVE_FLCTL1_RX,
++		.addr		= 0xe6a30060,
++		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
++		.mid_rid	= 0x87,
++	}, {
+ 		.slave_id	= SHDMA_SLAVE_SDHI0_TX,
+ 		.addr		= 0xe6850030,
+ 		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
+-- 
+1.7.5.4
+
