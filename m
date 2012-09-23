@@ -1,28 +1,179 @@
-From: Tetsuyuki Kobayshi <koba@kmckk.co.jp>
-Date: Wed, 05 Sep 2012 02:48:35 +0000
-Subject: [PATCH 0/2] ARM: shmobile: enable PMU(Performance Monitoring Unit)
-Message-Id: <1346813317-4030-1-git-send-email-koba@kmckk.co.jp>
+From: Bastian Hecht <hechtb@googlemail.com>
+Date: Sun, 23 Sep 2012 12:01:23 +0000
+Subject: [PATCH 2/2] mtd: sh_flctl: Use DMA for data fifo FLTDFIFO when available
+Message-Id: <1348401683-15698-2-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1348401683-15698-1-git-send-email-hechtb@gmail.com>
+In-Reply-To: <1348401683-15698-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mtd@lists.infradead.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-sh@vger.kernel.org
 
-From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+Map and unmap DMA buffers, trigger the DMA and wait for the completion.
+On failure we fallback to PIO mode.
 
-Hello, Simon-san
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+---
+ drivers/mtd/nand/sh_flctl.c  |   99 +++++++++++++++++++++++++++++++++++++++++-
+ include/linux/mtd/sh_flctl.h |    1 +
+ 2 files changed, 98 insertions(+), 2 deletions(-)
 
-ARM core has hardware performance counters and perf command uses these counters for detailed profiling information.
-The follewing patches enables PMU(Performance Monitoring Unit) for sh73a0 and emev2 SoCs. I tested these patches on kzm9g board and kzm9d board.
-
-Tetsuyuki Kobayashi (2):
-  ARM: shmobile: sh73a0: enable PMU(Performance Monitoring Unit) 
-  ARM: shmobile: emev2: enable PMU(Performance Monitoring Unit) 
-
- arch/arm/mach-shmobile/setup-emev2.c  |   26 ++++++++++++++++++++++++++
- arch/arm/mach-shmobile/setup-sh73a0.c |   26 ++++++++++++++++++++++++++
- 2 files changed, 52 insertions(+)
-
+diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
+index 2cf6871..00211f9 100644
+--- a/drivers/mtd/nand/sh_flctl.c
++++ b/drivers/mtd/nand/sh_flctl.c
+@@ -24,6 +24,8 @@
+ #include <linux/module.h>
+ #include <linux/kernel.h>
+ #include <linux/delay.h>
++#include <linux/dmaengine.h>
++#include <linux/dma-mapping.h>
+ #include <linux/interrupt.h>
+ #include <linux/io.h>
+ #include <linux/platform_device.h>
+@@ -106,6 +108,13 @@ static void wait_completion(struct sh_flctl *flctl)
+ 	writeb(0x0, FLTRCR(flctl));
+ }
+ 
++static void flctl_dma_complete(void *param)
++{
++	struct sh_flctl *flctl = param;
++
++	complete(&flctl->dma_complete);
++}
++
+ static void set_addr(struct mtd_info *mtd, int column, int page_addr)
+ {
+ 	struct sh_flctl *flctl = mtd_to_flctl(mtd);
+@@ -261,6 +270,71 @@ static void wait_wecfifo_ready(struct sh_flctl *flctl)
+ 	timeout_error(flctl, __func__);
+ }
+ 
++static void flctl_release_dma(struct sh_flctl *flctl);
++
++static void flctl_dma_fifo0_transfer(struct sh_flctl *flctl, unsigned long *buf,
++					int len, enum dma_data_direction dir)
++{
++	struct dma_async_tx_descriptor *desc = NULL;
++	struct dma_chan *chan;
++	enum dma_transfer_direction tr_dir;
++	dma_addr_t dma_addr;
++	dma_cookie_t cookie = -EINVAL;
++	uint32_t reg;
++	int ret;
++
++	if (dir = DMA_FROM_DEVICE) {
++		chan = flctl->chan_fifo0_rx;
++		tr_dir = DMA_DEV_TO_MEM;
++	} else {
++		chan = flctl->chan_fifo0_tx;
++		tr_dir = DMA_MEM_TO_DEV;
++	}
++
++	dma_addr = dma_map_single(chan->device->dev, buf, len, dir);
++
++	if (dma_addr)
++		desc = dmaengine_prep_slave_single(chan, dma_addr, len,
++			tr_dir, DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
++
++	if (desc) {
++		reg = readl(FLINTDMACR(flctl));
++		reg |= DREQ0EN;
++		writel(reg, FLINTDMACR(flctl));
++
++		desc->callback = flctl_dma_complete;
++		desc->callback_param = flctl;
++		cookie = dmaengine_submit(desc);
++
++		dma_async_issue_pending(chan);
++	}
++
++	if (!desc) {
++		/* DMA failed, fall back to PIO */
++		flctl_release_dma(flctl);
++		dev_warn(&flctl->pdev->dev,
++			 "DMA failed, falling back to PIO\n");
++		goto out;
++	}
++
++	ret +	wait_for_completion_timeout(&flctl->dma_complete,
++				msecs_to_jiffies(3000));
++
++	if (ret <= 0) {
++		chan->device->device_control(chan, DMA_TERMINATE_ALL, 0);
++		dev_err(&flctl->pdev->dev, "wait_for_completion_timeout\n");
++	}
++
++out:
++	reg = readl(FLINTDMACR(flctl));
++	reg &= ~DREQ0EN;
++	writel(reg, FLINTDMACR(flctl));
++
++	dma_unmap_single(chan->device->dev, dma_addr, len, dir);
++	init_completion(&flctl->dma_complete);
++}
++
+ static void read_datareg(struct sh_flctl *flctl, int offset)
+ {
+ 	unsigned long data;
+@@ -279,6 +353,16 @@ static void read_fiforeg(struct sh_flctl *flctl, int rlen, int offset)
+ 
+ 	len_4align = (rlen + 3) / 4;
+ 
++	/* initiate DMA transfer */
++	if (flctl->chan_fifo0_rx && rlen >= 32) {
++		flctl_dma_fifo0_transfer(flctl, buf, rlen, DMA_DEV_TO_MEM);
++		for (i = 0; i < len_4align; i++)
++			buf[i] = be32_to_cpu(buf[i]);
++
++		return;
++	}
++
++	/* do polling transfer */
+ 	for (i = 0; i < len_4align; i++) {
+ 		wait_rfifo_ready(flctl);
+ 		buf[i] = readl(FLDTFIFO(flctl));
+@@ -308,13 +392,24 @@ static enum flctl_ecc_res_t read_ecfiforeg
+ static void write_fiforeg(struct sh_flctl *flctl, int rlen, int offset)
+ {
+ 	int i, len_4align;
+-	unsigned long *data = (unsigned long *)&flctl->done_buff[offset];
++	unsigned long *buf = (unsigned long *)&flctl->done_buff[offset];
+ 	void *fifo_addr = (void *)FLDTFIFO(flctl);
+ 
+ 	len_4align = (rlen + 3) / 4;
++
++	/* initiate DMA transfer */
++	if (flctl->chan_fifo0_tx && rlen >= 32) {
++		for (i = 0; i < len_4align; i++)
++			buf[i] = cpu_to_be32(buf[i]);
++
++		flctl_dma_fifo0_transfer(flctl, buf, rlen, DMA_MEM_TO_DEV);
++		return;
++	}
++
++	/* do polling transfer */
+ 	for (i = 0; i < len_4align; i++) {
+ 		wait_wfifo_ready(flctl);
+-		writel(cpu_to_be32(data[i]), fifo_addr);
++		writel(cpu_to_be32(buf[i]), fifo_addr);
+ 	}
+ }
+ 
+diff --git a/include/linux/mtd/sh_flctl.h b/include/linux/mtd/sh_flctl.h
+index 20d3f48..d55ec25 100644
+--- a/include/linux/mtd/sh_flctl.h
++++ b/include/linux/mtd/sh_flctl.h
+@@ -109,6 +109,7 @@
+ #define ESTERINTE	(0x1 << 24)	/* ECC error interrupt enable */
+ #define AC1CLR		(0x1 << 19)	/* ECC FIFO clear */
+ #define AC0CLR		(0x1 << 18)	/* Data FIFO clear */
++#define DREQ0EN		(0x1 << 16)	/* FLDTFIFODMA Request Enable */
+ #define ECERB		(0x1 << 9)	/* ECC error */
+ #define STERB		(0x1 << 8)	/* Status error */
+ #define STERINTE	(0x1 << 4)	/* Status error enable */
 -- 
-1.7.9.5
+1.7.5.4
 
