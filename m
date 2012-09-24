@@ -1,54 +1,176 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 06 Aug 2012 23:15:02 +0000
-Subject: [PATCH 12/12] ARM: shmobile: Make rmobile_init_pm_domain() static
-Message-Id: <201208070115.02328.rjw@sisk.pl>
+From: Bastian Hecht <hechtb@googlemail.com>
+Date: Mon, 24 Sep 2012 09:18:34 +0000
+Subject: [PATCH v2 1/2] mtd: sh_flctl: Setup and release DMA channels
+Message-Id: <1348478315-10789-1-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201208070105.23262.rjw@sisk.pl>
-In-Reply-To: <201208070105.23262.rjw@sisk.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux-sh list <linux-sh@vger.kernel.org>
-Cc: LKML <linux-kernel@vger.kernel.org>, Linux PM list <linux-pm@vger.kernel.org>, Magnus Damm <magnus.damm@gmail.com>
+To: linux-mtd@lists.infradead.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-sh@vger.kernel.org
 
+The code probes if DMA channels can get allocated and tears them down at
+removal/failure if needed.
 
-Since rmobile_init_pm_domain() is not called anywhere outside of
-arch/arm/mach-shmobile/pm-rmobile.c any more, it can be made static
-and its header may be removed from pm-rmobile.h.  Modify the code
-accordingly.
+Based on Guennadi Liakhovetski's code from the sh_mmcif driver.
 
-Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
 ---
- arch/arm/mach-shmobile/include/mach/pm-rmobile.h |    2 --
- arch/arm/mach-shmobile/pm-rmobile.c              |    2 +-
- 2 files changed, 1 insertion(+), 3 deletions(-)
+v2: incorporated Vikram Narayanan's thoughts
+	- added a missing "static".
+	- reordered things to get rid of a forward declaration
 
-Index: linux/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
-=================================--- linux.orig/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
-+++ linux/arch/arm/mach-shmobile/include/mach/pm-rmobile.h
-@@ -30,12 +30,10 @@ struct rmobile_pm_domain *to_rmobile_pd(
+Based on l2-mtd with reverted commit e26c113b4130aefa1d8446602bb5b05cfd646bfe.
+
+ drivers/mtd/nand/sh_flctl.c  |   74 ++++++++++++++++++++++++++++++++++++++++++
+ include/linux/mtd/sh_flctl.h |   10 ++++++
+ 2 files changed, 84 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
+index 4fbfe96..9659483 100644
+--- a/drivers/mtd/nand/sh_flctl.c
++++ b/drivers/mtd/nand/sh_flctl.c
+@@ -106,6 +106,76 @@ static void wait_completion(struct sh_flctl *flctl)
+ 	writeb(0x0, FLTRCR(flctl));
  }
  
- #ifdef CONFIG_PM
--extern void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd);
- extern void rmobile_init_domains(struct rmobile_pm_domain domains[], int num);
- extern void rmobile_add_device_to_domain(const char *domain_name,
- 					struct platform_device *pdev);
- #else
--#define rmobile_init_pm_domain(pd) do { } while (0)
- #define rmobile_init_domains(domains, num) do { } while (0)
- #define rmobile_add_device_to_domain(name, pdev) do { } while (0)
- #endif /* CONFIG_PM */
-Index: linux/arch/arm/mach-shmobile/pm-rmobile.c
-=================================--- linux.orig/arch/arm/mach-shmobile/pm-rmobile.c
-+++ linux/arch/arm/mach-shmobile/pm-rmobile.c
-@@ -134,7 +134,7 @@ static int rmobile_pd_start_dev(struct d
- 	return ret;
- }
- 
--void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
-+static void rmobile_init_pm_domain(struct rmobile_pm_domain *rmobile_pd)
++static void flctl_release_dma(struct sh_flctl *flctl)
++{
++	if (flctl->chan_fifo0_rx) {
++		dma_release_channel(flctl->chan_fifo0_rx);
++		flctl->chan_fifo0_rx = NULL;
++	}
++	if (flctl->chan_fifo0_tx) {
++		dma_release_channel(flctl->chan_fifo0_tx);
++		flctl->chan_fifo0_tx = NULL;
++	}
++}
++
++static void flctl_setup_dma(struct sh_flctl *flctl)
++{
++	dma_cap_mask_t mask;
++	struct dma_slave_config cfg;
++	struct platform_device *pdev = flctl->pdev;
++	struct sh_flctl_platform_data *pdata = pdev->dev.platform_data;
++	int ret;
++
++	if (!pdata)
++		return;
++
++	if (pdata->slave_id_fifo0_tx <= 0 || pdata->slave_id_fifo0_rx <= 0)
++		return;
++
++	/* We can only either use DMA for both Tx and Rx or not use it at all */
++	dma_cap_zero(mask);
++	dma_cap_set(DMA_SLAVE, mask);
++
++	flctl->chan_fifo0_tx = dma_request_channel(mask, shdma_chan_filter,
++					    (void *)pdata->slave_id_fifo0_tx);
++	dev_dbg(&pdev->dev, "%s: TX: got channel %p\n", __func__,
++		flctl->chan_fifo0_tx);
++
++	if (!flctl->chan_fifo0_tx)
++		return;
++
++	cfg.slave_id = pdata->slave_id_fifo0_tx;
++	cfg.direction = DMA_MEM_TO_DEV;
++	cfg.dst_addr = (dma_addr_t)FLDTFIFO(flctl);
++	cfg.src_addr = 0;
++	ret = dmaengine_slave_config(flctl->chan_fifo0_tx, &cfg);
++	if (ret < 0)
++		goto err;
++
++	flctl->chan_fifo0_rx = dma_request_channel(mask, shdma_chan_filter,
++					    (void *)pdata->slave_id_fifo0_rx);
++	dev_dbg(&pdev->dev, "%s: RX: got channel %p\n", __func__,
++		flctl->chan_fifo0_rx);
++
++	if (!flctl->chan_fifo0_rx)
++		goto err;
++
++	cfg.slave_id = pdata->slave_id_fifo0_rx;
++	cfg.direction = DMA_DEV_TO_MEM;
++	cfg.dst_addr = 0;
++	cfg.src_addr = (dma_addr_t)FLDTFIFO(flctl);
++	ret = dmaengine_slave_config(flctl->chan_fifo0_rx, &cfg);
++	if (ret < 0)
++		goto err;
++
++	init_completion(&flctl->dma_complete);
++
++	return;
++
++err:
++	flctl_release_dma(flctl);
++}
++
+ static void set_addr(struct mtd_info *mtd, int column, int page_addr)
  {
- 	struct generic_pm_domain *genpd = &rmobile_pd->genpd;
- 	struct dev_power_governor *gov = rmobile_pd->gov;
+ 	struct sh_flctl *flctl = mtd_to_flctl(mtd);
+@@ -930,6 +1000,8 @@ static int __devinit flctl_probe(struct platform_device *pdev)
+ 	pm_runtime_enable(&pdev->dev);
+ 	pm_runtime_resume(&pdev->dev);
+ 
++	flctl_setup_dma(flctl);
++
+ 	ret = nand_scan_ident(flctl_mtd, 1, NULL);
+ 	if (ret)
+ 		goto err_chip;
+@@ -947,6 +1019,7 @@ static int __devinit flctl_probe(struct platform_device *pdev)
+ 	return 0;
+ 
+ err_chip:
++	flctl_release_dma(flctl);
+ 	pm_runtime_disable(&pdev->dev);
+ 	free_irq(irq, flctl);
+ err_flste:
+@@ -960,6 +1033,7 @@ static int __devexit flctl_remove(struct platform_device *pdev)
+ {
+ 	struct sh_flctl *flctl = platform_get_drvdata(pdev);
+ 
++	flctl_release_dma(flctl);
+ 	nand_release(&flctl->mtd);
+ 	pm_runtime_disable(&pdev->dev);
+ 	free_irq(platform_get_irq(pdev, 0), flctl);
+diff --git a/include/linux/mtd/sh_flctl.h b/include/linux/mtd/sh_flctl.h
+index 01e4b15..20d3f48 100644
+--- a/include/linux/mtd/sh_flctl.h
++++ b/include/linux/mtd/sh_flctl.h
+@@ -20,10 +20,12 @@
+ #ifndef __SH_FLCTL_H__
+ #define __SH_FLCTL_H__
+ 
++#include <linux/dmaengine.h>
+ #include <linux/mtd/mtd.h>
+ #include <linux/mtd/nand.h>
+ #include <linux/mtd/partitions.h>
+ #include <linux/pm_qos.h>
++#include <linux/sh_dma.h>
+ 
+ /* FLCTL registers */
+ #define FLCMNCR(f)		(f->reg + 0x0)
+@@ -161,6 +163,11 @@ struct sh_flctl {
+ 	unsigned hwecc:1;	/* Hardware ECC (0 = disabled, 1 = enabled) */
+ 	unsigned holden:1;	/* Hardware has FLHOLDCR and HOLDEN is set */
+ 	unsigned qos_request:1;	/* QoS request to prevent deep power shutdown */
++
++	/* DMA related objects */
++	struct dma_chan		*chan_fifo0_rx;
++	struct dma_chan		*chan_fifo0_tx;
++	struct completion	dma_complete;
+ };
+ 
+ struct sh_flctl_platform_data {
+@@ -170,6 +177,9 @@ struct sh_flctl_platform_data {
+ 
+ 	unsigned has_hwecc:1;
+ 	unsigned use_holden:1;
++
++	unsigned int            slave_id_fifo0_tx;
++	unsigned int            slave_id_fifo0_rx;
+ };
+ 
+ static inline struct sh_flctl *mtd_to_flctl(struct mtd_info *mtdinfo)
+-- 
+1.7.5.4
 
