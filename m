@@ -1,107 +1,265 @@
-From: Stephen Warren <swarren@wwwdotorg.org>
-Date: Wed, 12 Sep 2012 22:59:59 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 25 Sep 2012 14:59:09 +0000
 Subject: Re: [PATCH] media: add V4L2 DT binding documentation
-Message-Id: <505113EF.5010303@wwwdotorg.org>
+Message-Id: <Pine.LNX.4.64.1209251632240.9446@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1209111746420.22084@axis700.grange>
- <5050DA40.8050105@wwwdotorg.org>
- <Pine.LNX.4.64.1209122111100.28968@axis700.grange>
- <5050F653.5070404@wwwdotorg.org>
- <Pine.LNX.4.64.1209122302410.28968@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1209122302410.28968@axis700.grange>
+ <504F6F20.5080103@samsung.com>
+In-Reply-To: <504F6F20.5080103@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 09/12/2012 03:17 PM, Guennadi Liakhovetski wrote:
-> On Wed, 12 Sep 2012, Stephen Warren wrote:
-> 
->> On 09/12/2012 01:28 PM, Guennadi Liakhovetski wrote:
->>> Hi Stephen
->>>
->>> On Wed, 12 Sep 2012, Stephen Warren wrote:
->>>
->>>> On 09/11/2012 09:51 AM, Guennadi Liakhovetski wrote:
->>>>> This patch adds a document, describing common V4L2 device tree bindings.
->>>>>
->>>>> Co-authored-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
->>>>> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
->>>>
->>>> Overall, I think this looks pretty reasonable, so:
->> ...
->>>>
->>>>> +			clock-frequency = <50000000>;	/* max clock frequency */
->>>>> +			clock-output-names = "mclk";
->>>>> +		};
->>>>> +
->>>>> +		port {
->>>> ...
->>>>> +			ceu0_0: link@0 {
->>>>> +				reg = <0>;
->>>>> +				remote = <&csi2_2>;
->>>>> +				immutable;
->>>>
->>>> Did we decide "immutable" was actually needed? Presumably the driver for
->>>> the HW in question knows the HW isn't configurable, and would simply not
->>>> attempt to apply any configuration even if the .dts author erroneously
->>>> provided some?
->>>
->>> Well, I've been thinking about this today. I think, bridge drivers will 
->>
->> Sorry, I'm not sure what a "bridge" driver is; is it any v4l2 device?
-> 
-> Right, sorry for not explaining. We call a bridge a device, that's sitting 
-> on a bus like USB, PCI or - as in the SoC case - on an internal one and 
-> interfacing to, say, a video sensor or a TV decoder or encoder. In the SoC 
-> case most primitive bridges just take data from video sensors attached 
-> over, say, an 8-bit parallel bus and DMA it into RAM buffers. Some bridges 
-> can also perform some data processing.
-> 
->>> call centrally provided helper functions to enumerate links inside ports. 
->>
->> Presumably a given driver would only parse the ports/links of its own DT
->> node, and hence would be able to provide a parameter to any helper
->> function that indicated the same information that "immutable" would?
-> 
-> Well, let's drop "immutable" for now, since we don't have a good idea 
-> whether we need it or not. If we do need it, we'll add it later, removing 
-> a part of a standart is more difficult.
-> 
->>> While doing that they will want to differentiate between links to external 
->>> devices with explicit configuration, and links to internal devices, whose 
->>> configuration drivers might be able to figure out themselves. How should a 
->>> driver find out what device this link is pointing to? Should it follow the 
->>> "remote" phandle and then check the "compatible" property? The word 
->>> "immutable" is a hint, that this is a link to an internal device, but it 
->>> might either be unneeded or be transformed into something more 
->>> informative.
->>
->> I would imagine that a given driver would only ever parse its own DT
->> node; the far end of any link is purely the domain of the other driver.
->> I thought that each link node would contain whatever hsync-active,
->> data-lanes, ... properties that were needed to configure the local device?
-> 
-> I think, information needed to configure a bridge device to connect to a 
-> camera sensor, like sync polarities etc., might not be sufficient to 
-> configure it to interface to an SoC internal unit, like a MIPI CSI-2 
-> interface. I can see 2 possibilities to recognise, that this link is going 
-> to an internal device: (1) follow the remote phandle, (2) use a 
-> vendor-specific property to specify the remote device type. I guess, you'd 
-> prefer the latter?
+Hi Sylwester
 
-I guess I'm still not exactly clear on what/why the bridge device needs
-to know; a concrete example might help.
+Ok, looks like there are no more comments coming, so, we can submit a new 
+version:-)
 
-Either way though, (2) sounds like it's probably best; all information
-required to configure a given device is within that device's node.
+Thanks for your comments:
 
-Being pedantic, I'm not sure precisely what you mean by vendor-specific.
-If you mean the DT property name would include a vendor prefix, then
-yes, I imagine that's quite possible, although it'd be good to try and
-create standardized properties that multiple vendors and devices can use
-if it makes sense. If you mean something more than that, then I'd argue
-that those properties aren't just vendor-specific, but rather specific
-to the individual binding for the individual device (which does imply
-the vendor prefix, but not the general applicability of the property to
-all of a vendor's devices).
+On Tue, 11 Sep 2012, Sylwester Nawrocki wrote:
+
+> Hi Guennadi,
+> 
+> On 09/11/2012 05:51 PM, Guennadi Liakhovetski wrote:
+> > This patch adds a document, describing common V4L2 device tree bindings.
+> > 
+> > Co-authored-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
+> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> > ---
+> >  Documentation/devicetree/bindings/media/v4l2.txt |  143 ++++++++++++++++++++++
+> >  1 files changed, 143 insertions(+), 0 deletions(-)
+> >  create mode 100644 Documentation/devicetree/bindings/media/v4l2.txt
+> > 
+> > diff --git a/Documentation/devicetree/bindings/media/v4l2.txt b/Documentation/devicetree/bindings/media/v4l2.txt
+> > new file mode 100644
+> > index 0000000..55da6de
+> > --- /dev/null
+> > +++ b/Documentation/devicetree/bindings/media/v4l2.txt
+> > @@ -0,0 +1,143 @@
+> > +Video4Linux Version 2 (V4L2)
+> > +
+> > +General concept:
+> > +- video pipelines consist of external devices, e.g., camera sensors, controlled
+> > +  over an I2C bus, and SoC internal IP blocks, including video DMA engines and
+> > +  video data processors.
+> > +- this document describes common bindings of all video pipeline devices.
+> > +- SoC internal blocks are described by DT nodes, placed similarly to other SoC
+> > +  blocks.
+> > +- external devices are places on their respective control busses, e.g., I2C
+> > +- data interfaces on all video devices are described by "port" child DT nodes
+> > +- port configuration depends on other devices, participating in the data
+> > +  transfer, and is described by "link" DT nodes, specified as children of
+> > +  all "port" nodes, connected to this bus.
+> > +- if a port can be configured to work with more than one other device on the
+> > +  same bus, a "link" child DT node must be provided for each of them.
+> > +- if more than one port is present on a device or more than one link is
+> > +  connected to a port, a common scheme, using "#address-cells," "#size-cells"
+> > +  and "reg" properties is used.
+> 
+> How about rephrasing/rearranging this to:
+> 
+> This document describes common bindings of all video pipeline devices.
+> 
+> General concept
+> ---------------
+> 
+> Video pipelines consist of external devices, e.g. camera sensors, controlled
+> over an I2C, SPI or UART bus, and SoC internal IP blocks, including video DMA
+> engines and video data processors.
+> SoC internal blocks are described by DT nodes, placed similarly to other SoC
+> blocks. External devices are represented as child nodes of their respective
+> bus controller nodes, e.g. I2C.
+
+Well, I don't mind. I looked at a random file under 
+Documentation/devicetree/bindings and used the same style, but we can use 
+a free-flowing text too.
+
+> Data interfaces on all video devices are described by "port" child DT nodes.
+> Configuration of a port depends on other devices participating in the data
+> transfer and is described by "link" DT nodes, specified as children of the
+> "port" nodes:
+> 
+> /foo {
+> 	port@0 {
+> 		link@0 { ... };
+> 		link@1 { ... };
+> 	};
+> 	port@1 { ... };
+> };
+> 
+> If a port can be configured to work with more than one other device on the
+> same bus, a "link" child DT node must be provided for each of them.
+> If more than one port is present on a device or more than one link is
+> connected to a port, a common scheme, using "#address-cells" "#size-cells"
+> and "reg" properties is used.
+> 
+> > +Optional link properties:
+> > +- remote: phandle to the other endpoint link DT node.
+> > +- data-shift: on parallel data busses, if data-width is used to specify the
+> 
+> s/busses/buses
+
+Nnnnooo... I think, "busses" is British and "buses" is American English, 
+and I'm usually trying to follow the former, as much as I can:-) Also see 
+"drivers/i2c/busses/"
+
+> > +  number of data lines, data-shift can be used to specify which data lines are
+> > +  used, e.g., "data-width=<10>; data-shift=<2>;" means, that lines 9:2 are used.
+> > +- hsync-active: 1 or 0 for active-high or -low HSYNC signal polarity
+> > +  respectively.
+> > +- vsync-active: ditto for VSYNC. Note, that if HSYNC and VSYNC polarities are
+> > +  not specified, embedded synchronisation may be required, where supported.
+> > +- pclk-sample: rising (1) or falling (0) edge to sample the pixel clock pin.
+> > +- immutable: used for SoC-internal links, if no configuration is required.
+> > +- data-lanes: array of serial, e.g., MIPI CSI-2, data hardware lane numbers in
+> 
+> nit: s/e.g.,/e.g. ?
+
+This is a good question, actually. Until now I've been following a 
+suggestion by some well-educated British friend of mine, who told me to 
+use commas on either side of "e.g." and "i.e." But in most textx I read I 
+indeed see only one comma - before those. So, I tried to search and got a 
+couple of hits, which suggest, that putting a comma on both sides or at 
+least _after_ those abbreviations is more American grammar, and only 
+before is more British... So, I think I'll follow your advise on this too 
+and switch to the no-comma-after style, thanks.
+
+> > +  the ascending order, beginning with logical lane 0.
+> > +- clock-lanes: hardware lane number, used for the clock lane.
+> 
+> s/clock lane/clock ?
+
+Well, to me both make sense. The meanings are a bit different, but none 
+seems wrong to me. My version seems a bit more specific - not just "some" 
+clock, but the CSI-2 clock lane?
+
+> > +
+> > +Example:
+> > +
+> > +	ceu0: ceu@0xfe910000 {
+> > +		compatible = "renesas,sh-mobile-ceu";
+> > +		reg = <0xfe910000 0xa0>;
+> > +		interrupts = <0x880>;
+> > +
+> > +		mclk: master_clock {
+> > +			compatible = "renesas,ceu-clock";
+> > +			#clock-cells = <1>;
+> > +			clock-frequency = <50000000>;	/* max clock frequency */
+> > +			clock-output-names = "mclk";
+> > +		};
+> > +
+> > +		port {
+> > +			#address-cells = <1>;
+> > +			#size-cells = <0>;
+> > +
+> > +			ceu0_1: link@1 {
+> > +				reg = <1>;		/* local link # */
+> > +				remote = <&ov772x_1_1>;	/* remote phandle */
+> > +				bus-width = <8>;	/* used data lines */
+> > +				data-shift = <0>;	/* lines 7:0 are used */
+> > +	
+> > +				/* If [hv]sync-active are missing, embedded bt.605 sync is used */
+> > +				hsync-active = <1>;	/* active high */
+> > +				vsync-active = <1>;	/* active high */
+> > +				pclk-sample = <1>;	/* rising */
+> > +			};
+> > +
+> > +			ceu0_0: link@0 {
+> > +				reg = <0>;
+> > +				remote = <&csi2_2>;
+> > +				immutable;
+> > +			};
+> > +		};
+> > +	};
+> > +
+> > +	i2c0: i2c@0xfff20000 {
+> > +		...
+> > +		ov772x_1: camera@0x21 {
+> > +			compatible = "omnivision,ov772x";
+> > +			reg = <0x21>;
+> > +			vddio-supply = <&regulator1>;
+> > +			vddcore-supply = <&regulator2>;
+> > +
+> > +			clock-frequency = <20000000>;
+> > +			clocks = <&mclk 0>;
+> > +			clock-names = "xclk";
+> > +
+> > +			port {
+> > +				/* With 1 link per port no need in addresses */
+> 
+> s/in/for ?
+
+Ehm, no idea either. Both "no need in" and "no need for" produce enough 
+hits in search engines:-)
+
+> > +				ov772x_1_1: link {
+> > +					bus-width = <8>;
+> > +					remote = <&ceu0_1>;
+> > +					hsync-active = <1>;
+> > +					hsync-active = <0>;	/* who came up with an inverter here?... */
+> > +					pclk-sample = <1>;
+> > +				};
+> > +			};
+> > +		};
+> > +
+> > +		imx074: camera@0x1a {
+> > +			compatible = "sony,imx074";
+> > +			reg = <0x1a>;
+> > +			vddio-supply = <&regulator1>;
+> > +			vddcore-supply = <&regulator2>;
+> > +
+> > +			clock-frequency = <30000000>;	/* shared clock with ov772x_1 */
+> > +			clocks = <&mclk 0>;
+> > +			clock-names = "sysclk";		/* assuming this is the name in the datasheet */
+> > +
+> > +			port {
+> > +				imx074_1: link {
+> > +					clock-lanes = <0>;
+> > +					data-lanes = <1>, <2>;
+> > +					remote = <&csi2_1>;
+> > +				};
+> > +			};
+> > +		};
+> > +	};
+> > +
+> > +	csi2: csi2@0xffc90000 {
+> > +		compatible = "renesas,sh-mobile-csi2";
+> > +		reg = <0xffc90000 0x1000>;
+> > +		interrupts = <0x17a0>;
+> > +		#address-cells = <1>;
+> > +		#size-cells = <0>;
+> > +
+> > +		port@1 {
+> > +			compatible = "renesas,csi2c";	/* one of CSI2I and CSI2C */
+> > +			reg = <1>;			/* CSI-2 PHY #1 of 2: PHY_S, PHY_M has port address 0, is unused */
+> > +
+> > +			csi2_1: link {
+> > +				clock-lanes = <0>;
+> > +				data-lanes = <2>, <1>;
+> > +				remote = <&imx074_1>;
+> > +			};
+> > +		};
+> > +		port@2 {
+> > +			reg = <2>;			/* port 2: link to the CEU */
+> > +
+> > +			csi2_2: link {
+> > +				immutable;
+> > +				remote = <&ceu0_0>;
+> > +			};
+> > +		};
+> > +	};
+> 
+> --
+> 
+> Regards,
+> Sylwester
+> 
+
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
