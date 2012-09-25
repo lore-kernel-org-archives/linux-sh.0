@@ -1,53 +1,35 @@
-From: Hideki EIRAKU <hdk@igel.co.jp>
-Date: Tue, 11 Sep 2012 06:10:12 +0000
-Subject: [PATCH v3 0/2] Renesas IPMMU driver for sh7372
-Message-Id: <1347343814-32299-1-git-send-email-hdk@igel.co.jp>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 25 Sep 2012 14:42:07 +0000
+Subject: [GIT PULL] sh fixes for 3.6-final
+Message-Id: <20120925144207.GK13568@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-This is the Renesas IPMMU driver, IOMMU API implementation and IPMMU
-device support for sh7372 (AP4EVB and Mackerel).
+One last minute regression fix..
 
-The IPMMU module supports the MMU function and the PMB function.  The
-MMU function provides address translation by pagetable compatible with
-ARMv6.  The PMB function provides address translation including
-tile-linear translation.  This is implementation of the MMU function.
+The following changes since commit 56d27adcb536b7430d5f8a6240df8ad261eb00bd:
 
-v3:
-- Rebased on 3.6-rc5.
-- Simplify configs.  SHMOBILE_IPMMU is now selected by setting
-  SHMOBILE_IOMMU.
-- Remove weak symbols.
-- Use drvdata to store private driver data.
-- Make a function for writing to a register of IPMMU.
-- Add a lock to accessing the tlb_enabled member.
-- Make unmap work correctly with size larger than map size.
-- Free L2 page table when 1MiB page is mapped or unmapped.
-- Add VEU devices as IP blocks on the ICB.
-v2:
-- Rebased on v3.6-rc1.
-- Make variable names clear.
-- Page table size can now be selected by config.
+  Merge git://git.kernel.org/pub/scm/linux/kernel/git/cmetcalf/linux-tile (2012-09-24 16:17:17 -0700)
 
-Hideki EIRAKU (2):
-  iommu/shmobile: Add iommu driver for Renesas IPMMU modules
-  ARM: mach-shmobile: sh7372: Add IPMMU device
+are available in the git repository at:
 
- arch/arm/mach-shmobile/Kconfig              |    6 +
- arch/arm/mach-shmobile/Makefile             |    3 +
- arch/arm/mach-shmobile/board-ap4evb.c       |    5 +
- arch/arm/mach-shmobile/board-mackerel.c     |    5 +
- arch/arm/mach-shmobile/include/mach/ipmmu.h |   16 ++
- arch/arm/mach-shmobile/ipmmu.c              |  150 +++++++++++
- arch/arm/mach-shmobile/setup-sh7372.c       |   26 ++
- drivers/iommu/Kconfig                       |   36 +++
- drivers/iommu/Makefile                      |    1 +
- drivers/iommu/shmobile-iommu.c              |  372 +++++++++++++++++++++++++++
- 10 files changed, 620 insertions(+), 0 deletions(-)
- create mode 100644 arch/arm/mach-shmobile/include/mach/ipmmu.h
- create mode 100644 arch/arm/mach-shmobile/ipmmu.c
- create mode 100644 drivers/iommu/shmobile-iommu.c
 
+  git://github.com/pmundt/linux-sh tags/sh-for-linus
+
+for you to fetch changes up to 16d74ebeb1b056dfc80e69b44cc3a26515db1925:
+
+  sh: pfc: Fix up GPIO mux type reconfig case. (2012-09-25 11:51:05 +0900)
+
+----------------------------------------------------------------
+SuperH fixes for 3.6-final
+
+----------------------------------------------------------------
+Paul Mundt (1):
+      sh: pfc: Fix up GPIO mux type reconfig case.
+
+ drivers/sh/pfc/pinctrl.c | 2 ++
+ 1 file changed, 2 insertions(+)
