@@ -1,51 +1,88 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 25 Sep 2012 17:27:13 +0000
-Subject: Re: [PATCH] net: sh-eth: fix sleeping in atomic context
-Message-Id: <Pine.LNX.4.64.1209251918230.9446@axis700.grange>
+From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+Date: Tue, 25 Sep 2012 06:09:12 +0000
+Subject: [v2 PATCH 2/2] Add uio_dmem_genirq description to UIO documentation
+Message-Id: <1348553352-14334-3-git-send-email-dhobsong@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1209251143210.9446@axis700.grange>
- <20120925.130831.369798738695859924.davem@davemloft.net>
-In-Reply-To: <20120925.130831.369798738695859924.davem@davemloft.net>
+References: <1348553352-14334-1-git-send-email-dhobsong@igel.co.jp>
+In-Reply-To: <1348553352-14334-1-git-send-email-dhobsong@igel.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: David Miller <davem@davemloft.net>
-Cc: linux-sh@vger.kernel.org, lethal@linux-sh.org, netdev@vger.kernel.org
+To: hjk@hansjkoch.de, gregkh@linuxfoundation.org, magnus.damm@gmail.com, horms@verge.net.au
+Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, hdk@igel.co.jp, Damian Hobson-Garcia <dhobsong@igel.co.jp>
 
-Hi David
-
-On Tue, 25 Sep 2012, David Miller wrote:
-
-> From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> Date: Tue, 25 Sep 2012 12:38:59 +0200 (CEST)
-> 
-> > I'm not sure, whether this is the correct fix, i.e., whether this function 
-> > is guaranteed to be called on a resumed device, but at least this fixes 
-> > this specific issue in 3.6-rc7, but leaves another BUG open:
-> 
-> Someone added the runtime PM calls for a reason.
-
-Sure they did.
-
-> I cannot seriously consider your change until you are able to adequately
-> consider that aspect.
-
-I did too - as adequately as I could:-) My understanding is the following: 
-assuming the networking stack is right, calling .ndo_get_stats() under a 
-lock, I see 2 possibilities: (1) the method is only called during a 
-running IO, i.e. the hardware cannot possibly be runtime-suspended at that 
-time, so, no need to resume it; (2) the method can be called at any time, 
-also when the hardware is suspended, then no IO shall be perdormed there, 
-because it might involve having to wait for hardware to wake up from 
-suspend. My patch fixes the former case, in the latter case statistics has 
-to be collected outside of that method and inside it it only has to be 
-atomically returned. This is a bigger change, if this indeed is the case, 
-of course, my patch is wrong and an alternative, likely, more complex 
-solution has to be found.
-
-Thanks
-Guennadi
+Signed-off-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ Documentation/DocBook/uio-howto.tmpl |   56 ++++++++++++++++++++++++++++++++++
+ 1 files changed, 56 insertions(+), 0 deletions(-)
+
+diff --git a/Documentation/DocBook/uio-howto.tmpl b/Documentation/DocBook/uio-howto.tmpl
+index ac3d001..db08c1a 100644
+--- a/Documentation/DocBook/uio-howto.tmpl
++++ b/Documentation/DocBook/uio-howto.tmpl
+@@ -719,6 +719,62 @@ framework to set up sysfs files for this region. Simply leave it alone.
+ 	</para>
+ </sect1>
+ 
++<sect1 id="using uio_dmem_genirq">
++<title>Using uio_dmem_genirq for platform devices</title>
++	<para>
++	In addition to statically allocated memory ranges, they may also be
++	a desire to use dynamically allocated regions in a user space driver.
++	In particular, being able to access memory made available through the
++	dma-mapping API, may be particularly useful.  The
++	<varname>uio_dmem_genirq</varname> driver provides a way to accomplish
++	this.
++	</para>
++	<para>
++	This driver is used in a similar manner to the
++	<varname>"uio_pdrv_genirq"</varname> driver with respect to interrupt
++	configuration and handling.
++	</para>
++	<para>
++	Set the <varname>.name</varname> element of
++	<varname>struct platform_device</varname> to
++	<varname>"uio_dmem_genirq"</varname> to use this driver.
++	</para>
++	<para>
++	When using this driver, fill in the <varname>.platform_data</varname>
++	element of <varname>struct platform_device</varname>, which is of type
++	<varname>struct uio_dmem_genirq_pdata</varname> and which contains the
++	following elements:
++	</para>
++	<itemizedlist>
++	<listitem><varname>struct uio_info uioinfo</varname>: The same
++	structure used as the  <varname>uio_pdrv_genirq</varname> platform
++	data</listitem>
++	<listitem><varname>unsigned int *dynamic_region_sizes</varname>:
++	Pointer to list of sizes of dynamic memory regions to be mapped into
++	user space.
++	</listitem>
++	<listitem><varname>unsigned int num_dynamic_regions</varname>:
++	Number of elements in <varname>dynamic_region_sizes</varname> array.
++	</listitem>
++	</itemizedlist>
++	<para>
++	The dynamic regions defined in the platform data will be appended to
++	the <varname> mem[] </varname> array after the platform device
++	resources, which implies that the total number of static and dynamic
++	memory regions cannot exceed <varname>MAX_UIO_MAPS</varname>.
++	</para>
++	<para>
++	The dynamic memory regions will be allocated when the UIO device file,
++	<varname>/dev/uioX</varname> is opened.
++	Simiar to static memory resources, the memory region information for
++	dynamic regions is then visible via sysfs at
++	<varname>/sys/class/uio/uioX/maps/mapY/*</varname>.
++	The dynmaic memory regions will be freed when the UIO device file is
++	closed. When no processes are holding the device file open, the address
++	returned to userspace is DMA_ERROR_CODE.
++	</para>
++</sect1>
++
+ </chapter>
+ 
+ <chapter id="userspace_driver" xreflabel="Writing a driver in user space">
+-- 
+1.7.5.4
+
