@@ -1,76 +1,41 @@
-From: wency@cn.fujitsu.com
-Date: Wed, 05 Sep 2012 09:25:44 +0000
-Subject: [RFC v9 PATCH 10/21] memory-hotplug: add memory_block_release
-Message-Id: <1346837155-534-11-git-send-email-wency@cn.fujitsu.com>
+From: Bastian Hecht <hechtb@googlemail.com>
+Date: Wed, 26 Sep 2012 09:05:04 +0000
+Subject: [PATCH 1/3] mtd: sh_flctl: Probe SNAND_E flag from NAND chip
+Message-Id: <1348650306-15492-1-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346837155-534-1-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1346837155-534-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
-Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
+To: linux-mtd@lists.infradead.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+SNAND_E indicates whether we deal with 512kB or 2048kB page sizes. We
+can probe this from the NAND chip itself and don't need to specify it in
+the platform data anymore.
 
-When calling remove_memory_block(), the function shows following message at
-device_release().
-
-Device 'memory528' does not have a release() function, it is broken and must
-be fixed.
-
-remove_memory_block() calls kfree(mem). I think it shouled be called from
-device_release(). So the patch implements memory_block_release()
-
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-CC: Paul Mackerras <paulus@samba.org>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-CC: Wen Congyang <wency@cn.fujitsu.com>
-Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
 ---
- drivers/base/memory.c |    9 ++++++++-
- 1 files changed, 8 insertions(+), 1 deletions(-)
+Based on l2-mtd with reverted commit e26c113b4130aefa1d8446602bb5b05cfd646bfe
+and the 2 patches posted 3 days ago (09/23)
+mtd: sh_flctl: Setup and release DMA channels
+and
+mtd: sh_flctl: Use DMA for data fifo FLTDFIFO when available
 
-diff --git a/drivers/base/memory.c b/drivers/base/memory.c
-index 038be73..f44d624 100644
---- a/drivers/base/memory.c
-+++ b/drivers/base/memory.c
-@@ -109,6 +109,13 @@ bool is_memblk_offline(unsigned long start, unsigned long size)
- }
- EXPORT_SYMBOL(is_memblk_offline);
- 
-+static void release_memory_block(struct device *dev)
-+{
-+	struct memory_block *mem = container_of(dev, struct memory_block, dev);
-+
-+	kfree(mem);
-+}
-+
- /*
-  * register_memory - Setup a sysfs device for a memory block
-  */
-@@ -119,6 +126,7 @@ int register_memory(struct memory_block *memory)
- 
- 	memory->dev.bus = &memory_subsys;
- 	memory->dev.id = memory->start_section_nr / sections_per_block;
-+	memory->dev.release = release_memory_block;
- 
- 	error = device_register(&memory->dev);
- 	return error;
-@@ -674,7 +682,6 @@ int remove_memory_block(unsigned long node_id, struct mem_section *section,
- 		mem_remove_simple_file(mem, phys_device);
- 		mem_remove_simple_file(mem, removable);
- 		unregister_memory(mem);
--		kfree(mem);
- 	} else
- 		kobject_put(&mem->dev.kobj);
- 
+ drivers/mtd/nand/sh_flctl.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
+index 0d90af8..8f0bed1 100644
+--- a/drivers/mtd/nand/sh_flctl.c
++++ b/drivers/mtd/nand/sh_flctl.c
+@@ -970,6 +970,7 @@ static int flctl_chip_init_tail(struct mtd_info *mtd)
+ 		}
+ 	} else {
+ 		flctl->page_size = 1;
++		flctl->flcmncr_base |= SNAND_E;
+ 		if (chip->chipsize > (128 << 20)) {
+ 			/* big than 128MB */
+ 			flctl->rw_ADRCNT = ADRCNT2_E;
 -- 
-1.7.1
+1.7.5.4
 
