@@ -1,132 +1,78 @@
-From: Ni zhan Chen <nizhan.chen@gmail.com>
-Date: Fri, 28 Sep 2012 03:37:27 +0000
-Subject: Re: [RFC v9 PATCH 05/21] memory-hotplug: check whether memory is present or not
-Message-Id: <50651B77.1070809@gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 27 Sep 2012 14:07:19 +0000
+Subject: [PATCH 00/14] V4L2 DT support
+Message-Id: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346837155-534-1-git-send-email-wency@cn.fujitsu.com> <1346837155-534-6-git-send-email-wency@cn.fujitsu.com> <504E9EBE.1040403@cn.fujitsu.com> <504EA0F7.5090805@jp.fujitsu.com>
-In-Reply-To: <504EA0F7.5090805@jp.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Cc: Wen Congyang <wency@cn.fujitsu.com>, x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com
+To: linux-media@vger.kernel.org
+Cc: devicetree-discuss@lists.ozlabs.org, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Stephen Warren <swarren@wwwdotorg.org>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>
 
-On 09/11/2012 10:24 AM, Yasuaki Ishimatsu wrote:
-> Hi Wen,
->
-> 2012/09/11 11:15, Wen Congyang wrote:
->> Hi, ishimatsu
->>
->> At 09/05/2012 05:25 PM, wency@cn.fujitsu.com Wrote:
->>> From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
->>>
->>> If system supports memory hot-remove, online_pages() may online 
->>> removed pages.
->>> So online_pages() need to check whether onlining pages are present 
->>> or not.
->>
->> Because we use memory_block_change_state() to hotremoving memory, I 
->> think
->> this patch can be removed. What do you think?
->
-> Pleae teach me detals a little more. If we use 
-> memory_block_change_state(),
-> does the conflict never occur? Why?
+The last version of the V4L2 DT binding RFC only raised some cosmetic
+improvement suggestions, which are addressed in the respective patch in this
+series.
 
-since memory hot-add or hot-remove is based on memblock, if check in 
-memory_block_change_state()
-can guarantee conflict never occur?
+The rest of patches add a simple V4L2 DT parser for common properties, and an
+implementation for soc-camera, the sh_mobile_ceu_camera host driver and the
+mt9t112 camera sensor driver. This has been tested on an sh7372 SoC based
+mackerel board, using a dummy I2C driver to simulate a proper one (the onboard
+sensor has no driver and simply continuously produces video frames in a fixed
+format). Only patches 4 and 5 are actually core V4L2 changes.
 
->
-> Thansk,
-> Yasuaki Ishimatsu
->
->> Thanks
->> Wen Congyang
->>
->>>
->>> CC: David Rientjes <rientjes@google.com>
->>> CC: Jiang Liu <liuj97@gmail.com>
->>> CC: Len Brown <len.brown@intel.com>
->>> CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
->>> CC: Paul Mackerras <paulus@samba.org>
->>> CC: Christoph Lameter <cl@linux.com>
->>> Cc: Minchan Kim <minchan.kim@gmail.com>
->>> CC: Andrew Morton <akpm@linux-foundation.org>
->>> CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
->>> CC: Wen Congyang <wency@cn.fujitsu.com>
->>> Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
->>> ---
->>>   include/linux/mmzone.h |   19 +++++++++++++++++++
->>>   mm/memory_hotplug.c    |   13 +++++++++++++
->>>   2 files changed, 32 insertions(+), 0 deletions(-)
->>>
->>> diff --git a/include/linux/mmzone.h b/include/linux/mmzone.h
->>> index 2daa54f..ac3ae30 100644
->>> --- a/include/linux/mmzone.h
->>> +++ b/include/linux/mmzone.h
->>> @@ -1180,6 +1180,25 @@ void sparse_init(void);
->>>   #define sparse_index_init(_sec, _nid)  do {} while (0)
->>>   #endif /* CONFIG_SPARSEMEM */
->>>
->>> +#ifdef CONFIG_SPARSEMEM
->>> +static inline int pfns_present(unsigned long pfn, unsigned long 
->>> nr_pages)
->>> +{
->>> +    int i;
->>> +    for (i = 0; i < nr_pages; i++) {
->>> +        if (pfn_present(pfn + i))
->>> +            continue;
->>> +        else
->>> +            return -EINVAL;
->>> +    }
->>> +    return 0;
->>> +}
->>> +#else
->>> +static inline int pfns_present(unsigned long pfn, unsigned long 
->>> nr_pages)
->>> +{
->>> +    return 0;
->>> +}
->>> +#endif /* CONFIG_SPARSEMEM*/
->>> +
->>>   #ifdef CONFIG_NODES_SPAN_OTHER_NODES
->>>   bool early_pfn_in_nid(unsigned long pfn, int nid);
->>>   #else
->>> diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
->>> index 49f7747..299747d 100644
->>> --- a/mm/memory_hotplug.c
->>> +++ b/mm/memory_hotplug.c
->>> @@ -467,6 +467,19 @@ int __ref online_pages(unsigned long pfn, 
->>> unsigned long nr_pages)
->>>       struct memory_notify arg;
->>>
->>>       lock_memory_hotplug();
->>> +    /*
->>> +     * If system supports memory hot-remove, the memory may have been
->>> +     * removed. So we check whether the memory has been removed or 
->>> not.
->>> +     *
->>> +     * Note: When CONFIG_SPARSEMEM is defined, pfns_present() become
->>> +     *       effective. If CONFIG_SPARSEMEM is not defined, 
->>> pfns_present()
->>> +     *       always returns 0.
->>> +     */
->>> +    ret = pfns_present(pfn, nr_pages);
->>> +    if (ret) {
->>> +        unlock_memory_hotplug();
->>> +        return ret;
->>> +    }
->>>       arg.start_pfn = pfn;
->>>       arg.nr_pages = nr_pages;
->>>       arg.status_change_nid = -1;
->>
->
->
-> -- 
-> To unsubscribe, send a message with 'unsubscribe linux-mm' in
-> the body to majordomo@kvack.org.  For more info on Linux MM,
-> see: http://www.linux-mm.org/ .
-> Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
->
+Some comments:
 
+1. generic clock framework support is needed for a proper V4L2 DT
+implementation. For now patch 6/14 exports an soc-camera specific function to
+attach and detach a client to / from a host. Yes, I know this is bad from
+several PoVs, and has to be fixed. If we don't want to depend on the clock
+framework progress, we could implement V4L2 generic functions to do the same
+until clocks become available.
+
+2. the two driver-specific DT properties in patch 13/14 are just an RFC and
+can be modified / discussed.
+
+Thanks
+Guennadi
+
+Guennadi Liakhovetski (14):
+  i2c: add dummy inline functions for when CONFIG_OF_I2C(_MODULE) isn't
+    defined
+  of: add a dummy inline function for when CONFIG_OF is not defined
+  OF: make a function pointer argument const
+  media: add V4L2 DT binding documentation
+  media: add a V4L2 OF parser
+  media: soc-camera: prepare for asynchronous client probing
+  media: soc-camera: support deferred probing of clients
+  media: soc-camera: use managed devm_regulator_bulk_get()
+  media: mt9t112: support deferred probing
+  media: soc-camera: support OF cameras
+  media: sh-mobile-ceu-camera: runtime PM suspending doesn't have to be
+    synchronous
+  media: sh-mobile-ceu-camera: add primitive OF support
+  media: sh-mobile-ceu-driver: support max width and height in DT
+  media: sh_mobile_ceu_camera: support all standard V4L2 DT properties
+
+ Documentation/devicetree/bindings/media/v4l2.txt   |  162 +++++
+ drivers/media/i2c/soc_camera/mt9t112.c             |   18 +-
+ .../platform/soc_camera/sh_mobile_ceu_camera.c     |  177 ++++--
+ drivers/media/platform/soc_camera/soc_camera.c     |  650 +++++++++++++++++---
+ drivers/media/v4l2-core/Makefile                   |    3 +
+ drivers/media/v4l2-core/v4l2-of.c                  |  190 ++++++
+ drivers/of/base.c                                  |    4 +-
+ include/linux/of.h                                 |   11 +-
+ include/linux/of_i2c.h                             |   12 +
+ include/media/soc_camera.h                         |   10 +
+ include/media/v4l2-of.h                            |   62 ++
+ 11 files changed, 1153 insertions(+), 146 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/media/v4l2.txt
+ create mode 100644 drivers/media/v4l2-core/v4l2-of.c
+ create mode 100644 include/media/v4l2-of.h
+
+-- 
+1.7.2.5
+
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
