@@ -1,133 +1,40 @@
-From: Hideki EIRAKU <hdk@igel.co.jp>
-Date: Tue, 11 Sep 2012 06:10:14 +0000
-Subject: [PATCH v3 2/2] ARM: mach-shmobile: sh7372: Add IPMMU device
-Message-Id: <1347343814-32299-3-git-send-email-hdk@igel.co.jp>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 27 Sep 2012 14:07:28 +0000
+Subject: [PATCH 09/14] media: mt9t112: support deferred probing
+Message-Id: <1348754853-28619-10-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1347343814-32299-1-git-send-email-hdk@igel.co.jp>
-In-Reply-To: <1347343814-32299-1-git-send-email-hdk@igel.co.jp>
+References: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: devicetree-discuss@lists.ozlabs.org, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Stephen Warren <swarren@wwwdotorg.org>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>
 
-This patch adds an IPMMU device and notifies the IPMMU driver which
-devices are connected via the IPMMU module.  All devices connected to the main
-memory bus via the IPMMU module MUST be registered when SHMOBILE_IPMMU and
-SHMOBILE_IOMMU are enabled because physical address cannot be used
-while the IPMMU module's MMU function is enabled.
+If .probe() is called without our private data, this might mean, that the
+host driver hasn't probed yet. Defer probing in this case.
 
-Signed-off-by: Hideki EIRAKU <hdk@igel.co.jp>
-Tested-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c   |    5 +++++
- arch/arm/mach-shmobile/board-mackerel.c |    5 +++++
- arch/arm/mach-shmobile/setup-sh7372.c   |   26 ++++++++++++++++++++++++++
- 3 files changed, 36 insertions(+), 0 deletions(-)
+ drivers/media/i2c/soc_camera/mt9t112.c |    5 ++++-
+ 1 files changed, 4 insertions(+), 1 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index f172ca8..ce6d796 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -61,6 +61,7 @@
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/sh7372.h>
-+#include <mach/ipmmu.h>
+diff --git a/drivers/media/i2c/soc_camera/mt9t112.c b/drivers/media/i2c/soc_camera/mt9t112.c
+index dfa03f0..9e0837c 100644
+--- a/drivers/media/i2c/soc_camera/mt9t112.c
++++ b/drivers/media/i2c/soc_camera/mt9t112.c
+@@ -1094,7 +1094,10 @@ static int mt9t112_probe(struct i2c_client *client,
+ 	};
+ 	int ret;
  
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
-@@ -1448,6 +1449,10 @@ static void __init ap4evb_init(void)
- 
- 	sh7372_add_standard_devices();
- 
-+	ipmmu_add_device(&lcdc_device.dev);
-+	ipmmu_add_device(&lcdc1_device.dev);
-+	ipmmu_add_device(&ceu_device.dev);
+-	if (!icl || !icl->priv) {
++	if (!icl)
++		return -EPROBE_DEFER;
 +
- 	/* HDMI */
- 	gpio_request(GPIO_FN_HDMI_HPD, NULL);
- 	gpio_request(GPIO_FN_HDMI_CEC, NULL);
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index c129542..8bc4faf 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -60,6 +60,7 @@
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/sh7372.h>
-+#include <mach/ipmmu.h>
- 
- #include <asm/mach/arch.h>
- #include <asm/mach-types.h>
-@@ -1622,6 +1623,10 @@ static void __init mackerel_init(void)
- 
- 	sh7372_add_standard_devices();
- 
-+	ipmmu_add_device(&lcdc_device.dev);
-+	ipmmu_add_device(&hdmi_lcdc_device.dev);
-+	ipmmu_add_device(&ceu_device.dev);
-+
- 	platform_add_devices(mackerel_devices, ARRAY_SIZE(mackerel_devices));
- 
- 	rmobile_add_device_to_domain(&sh7372_pd_a4lc, &lcdc_device);
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index 838a87b..399d26d 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -38,6 +38,7 @@
- #include <mach/irqs.h>
- #include <mach/sh7372.h>
- #include <mach/common.h>
-+#include <mach/ipmmu.h>
- #include <asm/mach/map.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
-@@ -968,6 +969,23 @@ static struct platform_device spu1_device = {
- 	.num_resources	= ARRAY_SIZE(spu1_resources),
- };
- 
-+/* IPMMUI (an IPMMU module for ICB/LMB) */
-+static struct resource ipmmu_resources[] = {
-+	[0] = {
-+		.name	= "IPMMUI",
-+		.start	= 0xfe951000,
-+		.end	= 0xfe9510ff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+};
-+
-+static struct platform_device ipmmu_device = {
-+	.name           = "ipmmu",
-+	.id             = -1,
-+	.resource       = ipmmu_resources,
-+	.num_resources  = ARRAY_SIZE(ipmmu_resources),
-+};
-+
- static struct platform_device *sh7372_early_devices[] __initdata = {
- 	&scif0_device,
- 	&scif1_device,
-@@ -979,6 +997,7 @@ static struct platform_device *sh7372_early_devices[] __initdata = {
- 	&cmt2_device,
- 	&tmu00_device,
- 	&tmu01_device,
-+	&ipmmu_device,
- };
- 
- static struct platform_device *sh7372_late_devices[] __initdata = {
-@@ -1020,6 +1039,13 @@ void __init sh7372_add_standard_devices(void)
- 	platform_add_devices(sh7372_early_devices,
- 			    ARRAY_SIZE(sh7372_early_devices));
- 
-+	ipmmu_add_device(&vpu_device.dev);
-+	ipmmu_add_device(&jpu_device.dev);
-+	ipmmu_add_device(&veu0_device.dev);
-+	ipmmu_add_device(&veu1_device.dev);
-+	ipmmu_add_device(&veu2_device.dev);
-+	ipmmu_add_device(&veu3_device.dev);
-+
- 	platform_add_devices(sh7372_late_devices,
- 			    ARRAY_SIZE(sh7372_late_devices));
- 
++	if (!icl->priv) {
+ 		dev_err(&client->dev, "mt9t112: missing platform data!\n");
+ 		return -EINVAL;
+ 	}
 -- 
-1.7.0.4
+1.7.2.5
 
