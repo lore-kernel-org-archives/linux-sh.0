@@ -1,334 +1,201 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Sat, 29 Sep 2012 11:57:40 +0000
-Subject: [PATCH] mtd: sh_flctl: Add DMA capabilty
-Message-Id: <1348919860-8761-1-git-send-email-hechtb@gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 27 Sep 2012 14:07:33 +0000
+Subject: [PATCH 14/14] media: sh_mobile_ceu_camera: support all standard V4L2 DT properties
+Message-Id: <1348754853-28619-15-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mtd@lists.infradead.org
-Cc: Vikram Narayanan <vikram186@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: devicetree-discuss@lists.ozlabs.org, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Stephen Warren <swarren@wwwdotorg.org>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>
 
-The code probes if DMA channels can get allocated and tears them down at
-removal/failure if needed.
-If available it uses them to transfer the data part (not ECC). On
-failure we fall back to PIO mode.
+Additionally to the basic DT support, added to the driver in previous
+patches, this patch implements complete interface configuration from DT.
 
-Based on Guennadi Liakhovetski's code from the sh_mmcif driver.
-
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-This patch is a merged v3 version of
-[PATCH 1/2] mtd: sh_flctl: Setup and release DMA channels
-[PATCH 2/2] mtd: sh_flctl: Use DMA for data fifo FLTDFIFO when available
+ .../platform/soc_camera/sh_mobile_ceu_camera.c     |  126 ++++++++++++--------
+ 1 files changed, 78 insertions(+), 48 deletions(-)
 
-changes from v2:
- patches merged
- headers adjusted to reviews
- fall back to PIO mode now actually falls back for current read
- removed init_completion after each DMA usage. It is initialized at probe time. 
-
- drivers/mtd/nand/sh_flctl.c  |  174 +++++++++++++++++++++++++++++++++++++++++-
- include/linux/mtd/sh_flctl.h |   12 +++
- 2 files changed, 183 insertions(+), 3 deletions(-)
-
-diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
-index 4fbfe96..0fead2a 100644
---- a/drivers/mtd/nand/sh_flctl.c
-+++ b/drivers/mtd/nand/sh_flctl.c
-@@ -24,10 +24,13 @@
- #include <linux/module.h>
- #include <linux/kernel.h>
- #include <linux/delay.h>
-+#include <linux/dmaengine.h>
-+#include <linux/dma-mapping.h>
- #include <linux/interrupt.h>
- #include <linux/io.h>
- #include <linux/platform_device.h>
- #include <linux/pm_runtime.h>
-+#include <linux/sh_dma.h>
- #include <linux/slab.h>
- #include <linux/string.h>
+diff --git a/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c b/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
+index 1fd03f6..78bcf23 100644
+--- a/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
++++ b/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
+@@ -37,6 +37,7 @@
  
-@@ -106,6 +109,84 @@ static void wait_completion(struct sh_flctl *flctl)
- 	writeb(0x0, FLTRCR(flctl));
- }
- 
-+static void flctl_dma_complete(void *param)
-+{
-+	struct sh_flctl *flctl = param;
-+
-+	complete(&flctl->dma_complete);
-+}
-+
-+static void flctl_release_dma(struct sh_flctl *flctl)
-+{
-+	if (flctl->chan_fifo0_rx) {
-+		dma_release_channel(flctl->chan_fifo0_rx);
-+		flctl->chan_fifo0_rx = NULL;
-+	}
-+	if (flctl->chan_fifo0_tx) {
-+		dma_release_channel(flctl->chan_fifo0_tx);
-+		flctl->chan_fifo0_tx = NULL;
-+	}
-+}
-+
-+static void flctl_setup_dma(struct sh_flctl *flctl)
-+{
-+	dma_cap_mask_t mask;
-+	struct dma_slave_config cfg;
-+	struct platform_device *pdev = flctl->pdev;
-+	struct sh_flctl_platform_data *pdata = pdev->dev.platform_data;
-+	int ret;
-+
-+	if (!pdata)
-+		return;
-+
-+	if (pdata->slave_id_fifo0_tx <= 0 || pdata->slave_id_fifo0_rx <= 0)
-+		return;
-+
-+	/* We can only either use DMA for both Tx and Rx or not use it at all */
-+	dma_cap_zero(mask);
-+	dma_cap_set(DMA_SLAVE, mask);
-+
-+	flctl->chan_fifo0_tx = dma_request_channel(mask, shdma_chan_filter,
-+					    (void *)pdata->slave_id_fifo0_tx);
-+	dev_dbg(&pdev->dev, "%s: TX: got channel %p\n", __func__,
-+		flctl->chan_fifo0_tx);
-+
-+	if (!flctl->chan_fifo0_tx)
-+		return;
-+
-+	memset(&cfg, 0, sizeof(cfg));
-+	cfg.slave_id = pdata->slave_id_fifo0_tx;
-+	cfg.direction = DMA_MEM_TO_DEV;
-+	cfg.dst_addr = (dma_addr_t)FLDTFIFO(flctl);
-+	cfg.src_addr = 0;
-+	ret = dmaengine_slave_config(flctl->chan_fifo0_tx, &cfg);
-+	if (ret < 0)
-+		goto err;
-+
-+	flctl->chan_fifo0_rx = dma_request_channel(mask, shdma_chan_filter,
-+					    (void *)pdata->slave_id_fifo0_rx);
-+	dev_dbg(&pdev->dev, "%s: RX: got channel %p\n", __func__,
-+		flctl->chan_fifo0_rx);
-+
-+	if (!flctl->chan_fifo0_rx)
-+		goto err;
-+
-+	cfg.slave_id = pdata->slave_id_fifo0_rx;
-+	cfg.direction = DMA_DEV_TO_MEM;
-+	cfg.dst_addr = 0;
-+	cfg.src_addr = (dma_addr_t)FLDTFIFO(flctl);
-+	ret = dmaengine_slave_config(flctl->chan_fifo0_rx, &cfg);
-+	if (ret < 0)
-+		goto err;
-+
-+	init_completion(&flctl->dma_complete);
-+
-+	return;
-+
-+err:
-+	flctl_release_dma(flctl);
-+}
-+
- static void set_addr(struct mtd_info *mtd, int column, int page_addr)
+ #include <media/v4l2-common.h>
+ #include <media/v4l2-dev.h>
++#include <media/v4l2-of.h>
+ #include <media/soc_camera.h>
+ #include <media/sh_mobile_ceu.h>
+ #include <media/sh_mobile_csi2.h>
+@@ -784,50 +785,61 @@ static struct v4l2_subdev *find_bus_subdev(struct sh_mobile_ceu_dev *pcdev,
+ static int sh_mobile_ceu_set_bus_param(struct soc_camera_device *icd)
  {
- 	struct sh_flctl *flctl = mtd_to_flctl(mtd);
-@@ -261,6 +342,70 @@ static void wait_wecfifo_ready(struct sh_flctl *flctl)
- 	timeout_error(flctl, __func__);
- }
+ 	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
++	struct soc_camera_link *icl = icd->link;
+ 	struct sh_mobile_ceu_dev *pcdev = ici->priv;
+ 	struct v4l2_subdev *sd = find_bus_subdev(pcdev, icd);
+ 	struct sh_mobile_ceu_cam *cam = icd->host_priv;
+-	struct v4l2_mbus_config cfg = {.type = V4L2_MBUS_PARALLEL,};
+-	unsigned long value, common_flags = CEU_BUS_FLAGS;
++	unsigned long value, common_flags;
+ 	u32 capsr = capture_save_reset(pcdev);
+ 	unsigned int yuv_lineskip;
+ 	int ret;
  
-+static int flctl_dma_fifo0_transfer(struct sh_flctl *flctl, unsigned long *buf,
-+					int len, enum dma_data_direction dir)
-+{
-+	struct dma_async_tx_descriptor *desc = NULL;
-+	struct dma_chan *chan;
-+	enum dma_transfer_direction tr_dir;
-+	dma_addr_t dma_addr;
-+	dma_cookie_t cookie = -EINVAL;
-+	uint32_t reg;
-+	int ret;
-+
-+	if (dir = DMA_FROM_DEVICE) {
-+		chan = flctl->chan_fifo0_rx;
-+		tr_dir = DMA_DEV_TO_MEM;
+-	/*
+-	 * If the client doesn't implement g_mbus_config, we just use our
+-	 * platform data
+-	 */
+-	ret = v4l2_subdev_call(sd, video, g_mbus_config, &cfg);
+-	if (!ret) {
+-		common_flags = soc_mbus_config_compatible(&cfg,
+-							  common_flags);
+-		if (!common_flags)
+-			return -EINVAL;
+-	} else if (ret != -ENOIOCTLCMD) {
+-		return ret;
+-	}
++	if (icl->of_link) {
++		/*
++		 * OF configuration validity verified in
++		 * sh_mobile_ceu_try_bus_param()
++		 */
++		common_flags = icl->of_link->mbus_flags;
 +	} else {
-+		chan = flctl->chan_fifo0_tx;
-+		tr_dir = DMA_MEM_TO_DEV;
++		struct v4l2_mbus_config cfg = {.type = V4L2_MBUS_PARALLEL,};
+ 
+-	/* Make choises, based on platform preferences */
+-	if ((common_flags & V4L2_MBUS_HSYNC_ACTIVE_HIGH) &&
+-	    (common_flags & V4L2_MBUS_HSYNC_ACTIVE_LOW)) {
+-		if (pcdev->flags & SH_CEU_FLAG_HSYNC_LOW)
+-			common_flags &= ~V4L2_MBUS_HSYNC_ACTIVE_HIGH;
+-		else
+-			common_flags &= ~V4L2_MBUS_HSYNC_ACTIVE_LOW;
+-	}
++		common_flags = CEU_BUS_FLAGS;
++		/*
++		 * If the client doesn't implement g_mbus_config, we just use
++		 * our platform data
++		 */
++		ret = v4l2_subdev_call(sd, video, g_mbus_config, &cfg);
++		if (!ret) {
++			common_flags = soc_mbus_config_compatible(&cfg,
++								  common_flags);
++			if (!common_flags)
++				return -EINVAL;
++		} else if (ret != -ENOIOCTLCMD) {
++			return ret;
++		}
+ 
+-	if ((common_flags & V4L2_MBUS_VSYNC_ACTIVE_HIGH) &&
+-	    (common_flags & V4L2_MBUS_VSYNC_ACTIVE_LOW)) {
+-		if (pcdev->flags & SH_CEU_FLAG_VSYNC_LOW)
+-			common_flags &= ~V4L2_MBUS_VSYNC_ACTIVE_HIGH;
+-		else
+-			common_flags &= ~V4L2_MBUS_VSYNC_ACTIVE_LOW;
+-	}
++		/* Make choises, based on platform preferences */
++		if ((common_flags & V4L2_MBUS_HSYNC_ACTIVE_HIGH) &&
++		    (common_flags & V4L2_MBUS_HSYNC_ACTIVE_LOW)) {
++			if (pcdev->flags & SH_CEU_FLAG_HSYNC_LOW)
++				common_flags &= ~V4L2_MBUS_HSYNC_ACTIVE_HIGH;
++			else
++				common_flags &= ~V4L2_MBUS_HSYNC_ACTIVE_LOW;
++		}
+ 
+-	cfg.flags = common_flags;
+-	ret = v4l2_subdev_call(sd, video, s_mbus_config, &cfg);
+-	if (ret < 0 && ret != -ENOIOCTLCMD)
+-		return ret;
++		if ((common_flags & V4L2_MBUS_VSYNC_ACTIVE_HIGH) &&
++		    (common_flags & V4L2_MBUS_VSYNC_ACTIVE_LOW)) {
++			if (pcdev->flags & SH_CEU_FLAG_VSYNC_LOW)
++				common_flags &= ~V4L2_MBUS_VSYNC_ACTIVE_HIGH;
++			else
++				common_flags &= ~V4L2_MBUS_VSYNC_ACTIVE_LOW;
++		}
++
++		cfg.flags = common_flags;
++		ret = v4l2_subdev_call(sd, video, s_mbus_config, &cfg);
++		if (ret < 0 && ret != -ENOIOCTLCMD)
++			return ret;
 +	}
-+
-+	dma_addr = dma_map_single(chan->device->dev, buf, len, dir);
-+
-+	if (dma_addr)
-+		desc = dmaengine_prep_slave_single(chan, dma_addr, len,
-+			tr_dir, DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
-+
-+	if (desc) {
-+		reg = readl(FLINTDMACR(flctl));
-+		reg |= DREQ0EN;
-+		writel(reg, FLINTDMACR(flctl));
-+
-+		desc->callback = flctl_dma_complete;
-+		desc->callback_param = flctl;
-+		cookie = dmaengine_submit(desc);
-+
-+		dma_async_issue_pending(chan);
+ 
+ 	if (icd->current_fmt->host_fmt->bits_per_sample > 8)
+ 		pcdev->is_16bit = 1;
+@@ -877,7 +889,9 @@ static int sh_mobile_ceu_set_bus_param(struct soc_camera_device *icd)
+ 		value |= 3 << 12;
+ 	else if (pcdev->is_16bit)
+ 		value |= 1 << 12;
+-	else if (pcdev->flags & SH_CEU_FLAG_LOWER_8BIT)
++	else if (pcdev->flags & SH_CEU_FLAG_LOWER_8BIT ||
++		 (icl->of_link &&
++		  !icl->of_link->parallel.data_shift))
+ 		value |= 2 << 12;
+ 
+ 	ceu_write(pcdev, CAMCR, value);
+@@ -931,21 +945,36 @@ static int sh_mobile_ceu_try_bus_param(struct soc_camera_device *icd,
+ 				       unsigned char buswidth)
+ {
+ 	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
+-	struct sh_mobile_ceu_dev *pcdev = ici->priv;
+-	struct v4l2_subdev *sd = find_bus_subdev(pcdev, icd);
+-	unsigned long common_flags = CEU_BUS_FLAGS;
+-	struct v4l2_mbus_config cfg = {.type = V4L2_MBUS_PARALLEL,};
+-	int ret;
++	struct soc_camera_link *icl = icd->link;
+ 
+-	ret = v4l2_subdev_call(sd, video, g_mbus_config, &cfg);
+-	if (!ret)
+-		common_flags = soc_mbus_config_compatible(&cfg,
+-							  common_flags);
+-	else if (ret != -ENOIOCTLCMD)
+-		return ret;
++	if (icl->of_link) {
++		unsigned int bus_width = icl->of_link->parallel.bus_width,
++			data_shift = icl->of_link->parallel.data_shift;
++		/*
++		 * CEU can use either lower (data shift = 0) or upper (data
++		 * shift = 8) data lines out of 16 available
++		 */
++		if (icl->of_link->mbus_flags & ~CEU_BUS_FLAGS ||
++		    bus_width < buswidth || bus_width > 16 ||
++		    (data_shift && (data_shift != 8 || bus_width > 8)))
++			return -EINVAL;
 +	} else {
-+		/* DMA failed, fall back to PIO */
-+		flctl_release_dma(flctl);
-+		dev_warn(&flctl->pdev->dev,
-+			 "DMA failed, falling back to PIO\n");
-+		ret = -EIO;
-+		goto out;
++		struct v4l2_mbus_config cfg = {.type = V4L2_MBUS_PARALLEL,};
++		struct sh_mobile_ceu_dev *pcdev = ici->priv;
++		struct v4l2_subdev *sd = find_bus_subdev(pcdev, icd);
++		unsigned long common_flags = CEU_BUS_FLAGS;
++		int ret;
+ 
+-	if (!common_flags || buswidth > 16)
+-		return -EINVAL;
++		ret = v4l2_subdev_call(sd, video, g_mbus_config, &cfg);
++		if (!ret)
++			common_flags = soc_mbus_config_compatible(&cfg,
++								  common_flags);
++		else if (ret != -ENOIOCTLCMD)
++			return ret;
++
++		if (!common_flags || buswidth > 16)
++			return -EINVAL;
 +	}
-+
-+	ret +	wait_for_completion_timeout(&flctl->dma_complete,
-+				msecs_to_jiffies(3000));
-+
-+	if (ret <= 0) {
-+		chan->device->device_control(chan, DMA_TERMINATE_ALL, 0);
-+		dev_err(&flctl->pdev->dev, "wait_for_completion_timeout\n");
-+	}
-+
-+out:
-+	reg = readl(FLINTDMACR(flctl));
-+	reg &= ~DREQ0EN;
-+	writel(reg, FLINTDMACR(flctl));
-+
-+	dma_unmap_single(chan->device->dev, dma_addr, len, dir);
-+
-+	/* ret > 0 is success */
-+	return ret;
-+}
-+
- static void read_datareg(struct sh_flctl *flctl, int offset)
- {
- 	unsigned long data;
-@@ -279,11 +424,20 @@ static void read_fiforeg(struct sh_flctl *flctl, int rlen, int offset)
  
- 	len_4align = (rlen + 3) / 4;
- 
-+	/* initiate DMA transfer */
-+	if (flctl->chan_fifo0_rx && rlen >= 32 &&
-+		flctl_dma_fifo0_transfer(flctl, buf, rlen, DMA_DEV_TO_MEM) > 0)
-+			goto convert;	/* DMA success */
-+
-+	/* do polling transfer */
- 	for (i = 0; i < len_4align; i++) {
- 		wait_rfifo_ready(flctl);
- 		buf[i] = readl(FLDTFIFO(flctl));
--		buf[i] = be32_to_cpu(buf[i]);
- 	}
-+
-+convert:
-+	for (i = 0; i < len_4align; i++)
-+		buf[i] = be32_to_cpu(buf[i]);
- }
- 
- static enum flctl_ecc_res_t read_ecfiforeg
-@@ -308,13 +462,23 @@ static enum flctl_ecc_res_t read_ecfiforeg
- static void write_fiforeg(struct sh_flctl *flctl, int rlen, int offset)
- {
- 	int i, len_4align;
--	unsigned long *data = (unsigned long *)&flctl->done_buff[offset];
-+	unsigned long *buf = (unsigned long *)&flctl->done_buff[offset];
- 	void *fifo_addr = (void *)FLDTFIFO(flctl);
- 
- 	len_4align = (rlen + 3) / 4;
-+
-+	for (i = 0; i < len_4align; i++)
-+			buf[i] = cpu_to_be32(buf[i]);
-+
-+	/* initiate DMA transfer */
-+	if (flctl->chan_fifo0_tx && rlen >= 32 &&
-+		flctl_dma_fifo0_transfer(flctl, buf, rlen, DMA_MEM_TO_DEV) > 0)
-+			return;	/* DMA success */
-+
-+	/* do polling transfer */
- 	for (i = 0; i < len_4align; i++) {
- 		wait_wfifo_ready(flctl);
--		writel(cpu_to_be32(data[i]), fifo_addr);
-+		writel(buf[i], fifo_addr);
- 	}
- }
- 
-@@ -930,6 +1094,8 @@ static int __devinit flctl_probe(struct platform_device *pdev)
- 	pm_runtime_enable(&pdev->dev);
- 	pm_runtime_resume(&pdev->dev);
- 
-+	flctl_setup_dma(flctl);
-+
- 	ret = nand_scan_ident(flctl_mtd, 1, NULL);
- 	if (ret)
- 		goto err_chip;
-@@ -947,6 +1113,7 @@ static int __devinit flctl_probe(struct platform_device *pdev)
  	return 0;
- 
- err_chip:
-+	flctl_release_dma(flctl);
- 	pm_runtime_disable(&pdev->dev);
- 	free_irq(irq, flctl);
- err_flste:
-@@ -960,6 +1127,7 @@ static int __devexit flctl_remove(struct platform_device *pdev)
- {
- 	struct sh_flctl *flctl = platform_get_drvdata(pdev);
- 
-+	flctl_release_dma(flctl);
- 	nand_release(&flctl->mtd);
- 	pm_runtime_disable(&pdev->dev);
- 	free_irq(platform_get_irq(pdev, 0), flctl);
-diff --git a/include/linux/mtd/sh_flctl.h b/include/linux/mtd/sh_flctl.h
-index 01e4b15..e98fe7e 100644
---- a/include/linux/mtd/sh_flctl.h
-+++ b/include/linux/mtd/sh_flctl.h
-@@ -20,6 +20,7 @@
- #ifndef __SH_FLCTL_H__
- #define __SH_FLCTL_H__
- 
-+#include <linux/completion.h>
- #include <linux/mtd/mtd.h>
- #include <linux/mtd/nand.h>
- #include <linux/mtd/partitions.h>
-@@ -107,6 +108,7 @@
- #define ESTERINTE	(0x1 << 24)	/* ECC error interrupt enable */
- #define AC1CLR		(0x1 << 19)	/* ECC FIFO clear */
- #define AC0CLR		(0x1 << 18)	/* Data FIFO clear */
-+#define DREQ0EN		(0x1 << 16)	/* FLDTFIFODMA Request Enable */
- #define ECERB		(0x1 << 9)	/* ECC error */
- #define STERB		(0x1 << 8)	/* Status error */
- #define STERINTE	(0x1 << 4)	/* Status error enable */
-@@ -138,6 +140,8 @@ enum flctl_ecc_res_t {
- 	FL_TIMEOUT
- };
- 
-+struct dma_chan;
-+
- struct sh_flctl {
- 	struct mtd_info		mtd;
- 	struct nand_chip	chip;
-@@ -161,6 +165,11 @@ struct sh_flctl {
- 	unsigned hwecc:1;	/* Hardware ECC (0 = disabled, 1 = enabled) */
- 	unsigned holden:1;	/* Hardware has FLHOLDCR and HOLDEN is set */
- 	unsigned qos_request:1;	/* QoS request to prevent deep power shutdown */
-+
-+	/* DMA related objects */
-+	struct dma_chan		*chan_fifo0_rx;
-+	struct dma_chan		*chan_fifo0_tx;
-+	struct completion	dma_complete;
- };
- 
- struct sh_flctl_platform_data {
-@@ -170,6 +179,9 @@ struct sh_flctl_platform_data {
- 
- 	unsigned has_hwecc:1;
- 	unsigned use_holden:1;
-+
-+	unsigned int            slave_id_fifo0_tx;
-+	unsigned int            slave_id_fifo0_rx;
- };
- 
- static inline struct sh_flctl *mtd_to_flctl(struct mtd_info *mtdinfo)
+ }
+@@ -2335,6 +2364,7 @@ MODULE_DEVICE_TABLE(of, sh_mobile_ceu_of_match);
+ static struct platform_driver sh_mobile_ceu_driver = {
+ 	.driver 	= {
+ 		.name	= "sh_mobile_ceu",
++		.owner	= THIS_MODULE,
+ 		.pm	= &sh_mobile_ceu_dev_pm_ops,
+ 		.of_match_table = sh_mobile_ceu_of_match,
+ 	},
 -- 
-1.7.5.4
+1.7.2.5
 
