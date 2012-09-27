@@ -1,117 +1,49 @@
-From: wency@cn.fujitsu.com
-Date: Wed, 05 Sep 2012 09:25:53 +0000
-Subject: [RFC v9 PATCH 19/21] memory-hotplug: remove sysfs file of node
-Message-Id: <1346837155-534-20-git-send-email-wency@cn.fujitsu.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 27 Sep 2012 14:07:20 +0000
+Subject: [PATCH 01/14] i2c: add dummy inline functions for when CONFIG_OF_I2C(_MODULE) isn't defined
+Message-Id: <1348754853-28619-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346837155-534-1-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1346837155-534-1-git-send-email-wency@cn.fujitsu.com>
+References: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
-Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
+To: linux-media@vger.kernel.org
+Cc: devicetree-discuss@lists.ozlabs.org, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Stephen Warren <swarren@wwwdotorg.org>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>, Ben Dooks <ben-linux@fluff.org>
 
-From: Wen Congyang <wency@cn.fujitsu.com>
+If CONFIG_OF_I2C and CONFIG_OF_I2C_MODULE are undefined no declaration of
+of_find_i2c_device_by_node and of_find_i2c_adapter_by_node will be
+available. Add dummy inline functions to avoid compilation breakage.
 
-This patch introduces a new function try_offline_node() to
-remove sysfs file of node when all memory sections of this
-node are removed. If some memory sections of this node are
-not removed, this function does nothing.
-
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-CC: Paul Mackerras <paulus@samba.org>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-CC: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Ben Dooks <ben-linux@fluff.org>
 ---
- mm/memory_hotplug.c |   54 +++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 54 insertions(+), 0 deletions(-)
+ include/linux/of_i2c.h |   12 ++++++++++++
+ 1 files changed, 12 insertions(+), 0 deletions(-)
 
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index afda7e9..270c249 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -29,6 +29,7 @@
- #include <linux/suspend.h>
- #include <linux/mm_inline.h>
- #include <linux/firmware-map.h>
-+#include <linux/stop_machine.h>
- 
- #include <asm/tlbflush.h>
- 
-@@ -1285,6 +1286,57 @@ int offline_memory(u64 start, u64 size)
- 	return 0;
- }
- 
-+static int check_cpu_on_node(void *data)
-+{
-+	struct pglist_data *pgdat = data;
-+	int cpu;
-+
-+	for_each_online_cpu(cpu) {
-+		if (cpu_to_node(cpu) = pgdat->node_id)
-+			/*
-+			 * the cpu on this node is onlined, and we can't
-+			 * offline this node.
-+			 */
-+			return -EBUSY;
-+	}
-+
-+	return 0;
-+}
-+
-+/* offline the node if all memory sections of this node are removed */
-+static void try_offline_node(int nid)
-+{
-+	unsigned long start_pfn = NODE_DATA(nid)->node_start_pfn;
-+	unsigned long end_pfn = start_pfn + NODE_DATA(nid)->node_spanned_pages;
-+	unsigned long pfn;
-+
-+	for (pfn = start_pfn; pfn < end_pfn; pfn += PAGES_PER_SECTION) {
-+		unsigned long section_nr = pfn_to_section_nr(pfn);
-+
-+		if (!present_section_nr(section_nr))
-+			continue;
-+
-+		if (pfn_to_nid(pfn) != nid)
-+			continue;
-+
-+		/*
-+		 * some memory sections of this node are not removed, and we
-+		 * can't offline node now.
-+		 */
-+		return;
-+	}
-+
-+	if (stop_machine(check_cpu_on_node, NODE_DATA(nid), NULL))
-+		return;
-+
-+	/*
-+	 * all memory sections of this node are removed, we can offline this
-+	 * node now.
-+	 */
-+	node_set_offline(nid);
-+	unregister_one_node(nid);
-+}
-+
- int __ref remove_memory(int nid, u64 start, u64 size)
+diff --git a/include/linux/of_i2c.h b/include/linux/of_i2c.h
+index 1cb775f..cfb545c 100644
+--- a/include/linux/of_i2c.h
++++ b/include/linux/of_i2c.h
+@@ -29,6 +29,18 @@ static inline void of_i2c_register_devices(struct i2c_adapter *adap)
  {
- 	int ret = 0;
-@@ -1305,6 +1357,8 @@ int __ref remove_memory(int nid, u64 start, u64 size)
- 	firmware_map_remove(start, start + size, "System RAM");
- 
- 	arch_remove_memory(start, size);
+ 	return;
+ }
 +
-+	try_offline_node(nid);
- out:
- 	unlock_memory_hotplug();
- 	return ret;
++static inline struct i2c_client *of_find_i2c_device_by_node(struct device_node *node)
++{
++	return NULL;
++}
++
++/* must call put_device() when done with returned i2c_adapter device */
++static inline struct i2c_adapter *of_find_i2c_adapter_by_node(
++						struct device_node *node)
++{
++	return NULL;
++}
+ #endif /* CONFIG_OF_I2C */
+ 
+ #endif /* __LINUX_OF_I2C_H */
 -- 
-1.7.1
+1.7.2.5
 
