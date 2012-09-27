@@ -1,32 +1,64 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 06 Sep 2012 07:35:21 +0000
-Subject: Re: [GIT PULL] Renesas ARM-based SoC: KZM-A9-GT for 3.7 #2
-Message-Id: <CACRpkdaj0Jc3TKgkC6AUt-j4t+hQg5weGrceTfROHaYmW1KsBw@mail.gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 27 Sep 2012 14:07:27 +0000
+Subject: [PATCH 08/14] media: soc-camera: use managed devm_regulator_bulk_get()
+Message-Id: <1348754853-28619-9-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346305648-25263-1-git-send-email-horms@verge.net.au>
- <20120905224413.GC32084@quad.lixom.net>
- <CACRpkdZBOjO124w3WwPpL7ekf2dU1w2HCub9EG=LUxFSPn8Ayw@mail.gmail.com>
-In-Reply-To: <CACRpkdZBOjO124w3WwPpL7ekf2dU1w2HCub9EG=LUxFSPn8Ayw@mail.gmail.com>
+References: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: devicetree-discuss@lists.ozlabs.org, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Stephen Warren <swarren@wwwdotorg.org>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>
 
-On Thu, Sep 6, 2012 at 7:58 AM, Linus Walleij <linus.walleij@linaro.org> wrote:
-> On Thu, Sep 6, 2012 at 12:44 AM, Olof Johansson <olof@lixom.net> wrote:
->
->> So, we can't pull in this branch with its dependency without an agreement that
->> Linus holds a branch stable with at least the pcf857x patch on it. Linus?
->
-> OMG! OK let's claim that it's stable now then, it's close enough
-> to the merge window.
+Using device-managed devm_regulator_bulk_get() eliminates the need to
+release regulators explicitly.
 
-Oh! And by the way, make sure you pull in the "devel" branch:
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/media/platform/soc_camera/soc_camera.c |    8 ++------
+ 1 files changed, 2 insertions(+), 6 deletions(-)
 
-git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-gpio.git devel
+diff --git a/drivers/media/platform/soc_camera/soc_camera.c b/drivers/media/platform/soc_camera/soc_camera.c
+index 997be15..c2a5fa3 100644
+--- a/drivers/media/platform/soc_camera/soc_camera.c
++++ b/drivers/media/platform/soc_camera/soc_camera.c
+@@ -1249,7 +1249,6 @@ static int soc_camera_i2c_notify(struct notifier_block *nb,
+ 		video_device_release(icd->vdev);
+ 		icd->vdev = NULL;
+ 	}
+-	regulator_bulk_free(icl->num_regulators, icl->regulators);
+ 	v4l2_ctrl_handler_free(&icd->ctrl_handler);
+ 
+ 	return NOTIFY_DONE;
+@@ -1358,8 +1357,8 @@ static int soc_camera_probe(struct soc_camera_device *icd)
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	ret = regulator_bulk_get(icd->pdev, icl->num_regulators,
+-				 icl->regulators);
++	ret = devm_regulator_bulk_get(icd->pdev, icl->num_regulators,
++				      icl->regulators);
+ 	if (ret < 0)
+ 		goto ereg;
+ 
+@@ -1423,7 +1422,6 @@ eadddev:
+ 		icd->vdev = NULL;
+ 	}
+ evdc:
+-	regulator_bulk_free(icl->num_regulators, icl->regulators);
+ ereg:
+ 	v4l2_ctrl_handler_free(&icd->ctrl_handler);
+ 	return ret;
+@@ -1460,8 +1458,6 @@ static int soc_camera_remove(struct soc_camera_device *icd)
+ 	}
+ 	soc_camera_free_user_formats(icd);
+ 
+-	regulator_bulk_free(icl->num_regulators, icl->regulators);
+-
+ 	return 0;
+ }
+ 
+-- 
+1.7.2.5
 
-My "for-next" is a mixdown of fixes and devel, so the stuff that
-will really go into next merge window is on devel.
-
-Yours,
-Linus Walleij
