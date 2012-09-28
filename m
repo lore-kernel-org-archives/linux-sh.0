@@ -1,153 +1,62 @@
-From: Cyril Chemparathy <cyril@ti.com>
-Date: Wed, 12 Sep 2012 16:04:06 +0000
-Subject: [PATCH] /dev/mem: use phys_addr_t for physical addresses
-Message-Id: <1347465846-6844-1-git-send-email-cyril@ti.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 28 Sep 2012 11:05:27 +0000
+Subject: [PATCH 15/14] OF:  define of_*_cmp() macros also if CONFIG_OF isn't set
+Message-Id: <Pine.LNX.4.64.1209281302390.5428@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de>
+ <1348754853-28619-3-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1348754853-28619-3-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: devicetree-discuss@lists.ozlabs.org, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Stephen Warren <swarren@wwwdotorg.org>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>
 
-This patch fixes the /dev/mem driver to use phys_addr_t for physical
-addresses.  This is required on PAE systems, especially those that run
-entirely out of >4G physical memory space.
+of_*_cmp() macros do not depend on any OF functions and can be defined also
+if CONFIG_OF isn't set. Also include linux/string.h, required by those
+macros.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/include/asm/io.h  |    2 +-
- arch/arm/mm/mmap.c         |    2 +-
- arch/ia64/include/asm/io.h |    2 +-
- arch/ia64/kernel/efi.c     |    2 +-
- arch/sh/include/asm/io.h   |    2 +-
- arch/sh/mm/mmap.c          |    2 +-
- drivers/char/mem.c         |   10 +++++-----
- 7 files changed, 11 insertions(+), 11 deletions(-)
 
-diff --git a/arch/arm/include/asm/io.h b/arch/arm/include/asm/io.h
-index 35c1ed8..f52a93d 100644
---- a/arch/arm/include/asm/io.h
-+++ b/arch/arm/include/asm/io.h
-@@ -374,7 +374,7 @@ extern void pci_iounmap(struct pci_dev *dev, void __iomem *addr);
+These definitions are also required for "# CONFIG_OF is not set" builds.
+
+ include/linux/of.h |   15 ++++++++-------
+ 1 files changed, 8 insertions(+), 7 deletions(-)
+
+diff --git a/include/linux/of.h b/include/linux/of.h
+index 3636fae..ad2e79b 100644
+--- a/include/linux/of.h
++++ b/include/linux/of.h
+@@ -85,6 +85,14 @@ static inline struct device_node *of_node_get(struct device_node *node)
+ static inline void of_node_put(struct device_node *node) { }
+ #endif /* !CONFIG_OF_DYNAMIC */
  
- #ifdef CONFIG_MMU
- #define ARCH_HAS_VALID_PHYS_ADDR_RANGE
--extern int valid_phys_addr_range(unsigned long addr, size_t size);
-+extern int valid_phys_addr_range(phys_addr_t addr, size_t size);
- extern int valid_mmap_phys_addr_range(unsigned long pfn, size_t size);
- extern int devmem_is_allowed(unsigned long pfn);
++/* Default string compare functions, Allow arch asm/prom.h to override */
++#if !defined(of_compat_cmp)
++#include <linux/string.h>
++#define of_compat_cmp(s1, s2, l)	strcasecmp((s1), (s2))
++#define of_prop_cmp(s1, s2)		strcmp((s1), (s2))
++#define of_node_cmp(s1, s2)		strcasecmp((s1), (s2))
++#endif
++
+ #ifdef CONFIG_OF
+ 
+ /* Pointer for first entry in chain of all nodes. */
+@@ -143,13 +151,6 @@ static inline unsigned long of_read_ulong(const __be32 *cell, int size)
+ #define OF_ROOT_NODE_SIZE_CELLS_DEFAULT 1
  #endif
-diff --git a/arch/arm/mm/mmap.c b/arch/arm/mm/mmap.c
-index ce8cb19..89f2b7f 100644
---- a/arch/arm/mm/mmap.c
-+++ b/arch/arm/mm/mmap.c
-@@ -279,7 +279,7 @@ void arch_pick_mmap_layout(struct mm_struct *mm)
-  * You really shouldn't be using read() or write() on /dev/mem.  This
-  * might go away in the future.
-  */
--int valid_phys_addr_range(unsigned long addr, size_t size)
-+int valid_phys_addr_range(phys_addr_t addr, size_t size)
- {
- 	if (addr < PHYS_OFFSET)
- 		return 0;
-diff --git a/arch/ia64/include/asm/io.h b/arch/ia64/include/asm/io.h
-index 2c26321..74a7cc3 100644
---- a/arch/ia64/include/asm/io.h
-+++ b/arch/ia64/include/asm/io.h
-@@ -90,7 +90,7 @@ phys_to_virt (unsigned long address)
  
- #define ARCH_HAS_VALID_PHYS_ADDR_RANGE
- extern u64 kern_mem_attribute (unsigned long phys_addr, unsigned long size);
--extern int valid_phys_addr_range (unsigned long addr, size_t count); /* efi.c */
-+extern int valid_phys_addr_range (phys_addr_t addr, size_t count); /* efi.c */
- extern int valid_mmap_phys_addr_range (unsigned long pfn, size_t count);
- 
- /*
-diff --git a/arch/ia64/kernel/efi.c b/arch/ia64/kernel/efi.c
-index d37bbd4..f034563 100644
---- a/arch/ia64/kernel/efi.c
-+++ b/arch/ia64/kernel/efi.c
-@@ -870,7 +870,7 @@ kern_mem_attribute (unsigned long phys_addr, unsigned long size)
- EXPORT_SYMBOL(kern_mem_attribute);
- 
- int
--valid_phys_addr_range (unsigned long phys_addr, unsigned long size)
-+valid_phys_addr_range (phys_addr_t phys_addr, unsigned long size)
- {
- 	u64 attr;
- 
-diff --git a/arch/sh/include/asm/io.h b/arch/sh/include/asm/io.h
-index 0cf60a6..c4302a5 100644
---- a/arch/sh/include/asm/io.h
-+++ b/arch/sh/include/asm/io.h
-@@ -382,7 +382,7 @@ static inline int iounmap_fixed(void __iomem *addr) { return -EINVAL; }
- #define xlate_dev_kmem_ptr(p)	p
- 
- #define ARCH_HAS_VALID_PHYS_ADDR_RANGE
--int valid_phys_addr_range(unsigned long addr, size_t size);
-+int valid_phys_addr_range(phys_addr_t addr, size_t size);
- int valid_mmap_phys_addr_range(unsigned long pfn, size_t size);
- 
- #endif /* __KERNEL__ */
-diff --git a/arch/sh/mm/mmap.c b/arch/sh/mm/mmap.c
-index afeb710..80bf494 100644
---- a/arch/sh/mm/mmap.c
-+++ b/arch/sh/mm/mmap.c
-@@ -238,7 +238,7 @@ bottomup:
-  * You really shouldn't be using read() or write() on /dev/mem.  This
-  * might go away in the future.
-  */
--int valid_phys_addr_range(unsigned long addr, size_t count)
-+int valid_phys_addr_range(phys_addr_t addr, size_t count)
- {
- 	if (addr < __MEMORY_START)
- 		return 0;
-diff --git a/drivers/char/mem.c b/drivers/char/mem.c
-index 0537903..c6fa3bc 100644
---- a/drivers/char/mem.c
-+++ b/drivers/char/mem.c
-@@ -48,7 +48,7 @@ static inline unsigned long size_inside_page(unsigned long start,
- }
- 
- #ifndef ARCH_HAS_VALID_PHYS_ADDR_RANGE
--static inline int valid_phys_addr_range(unsigned long addr, size_t count)
-+static inline int valid_phys_addr_range(phys_addr_t addr, size_t count)
- {
- 	return addr + count <= __pa(high_memory);
- }
-@@ -96,7 +96,7 @@ void __weak unxlate_dev_mem_ptr(unsigned long phys, void *addr)
- static ssize_t read_mem(struct file *file, char __user *buf,
- 			size_t count, loff_t *ppos)
- {
--	unsigned long p = *ppos;
-+	phys_addr_t p = *ppos;
- 	ssize_t read, sz;
- 	char *ptr;
- 
-@@ -153,7 +153,7 @@ static ssize_t read_mem(struct file *file, char __user *buf,
- static ssize_t write_mem(struct file *file, const char __user *buf,
- 			 size_t count, loff_t *ppos)
- {
--	unsigned long p = *ppos;
-+	phys_addr_t p = *ppos;
- 	ssize_t written, sz;
- 	unsigned long copied;
- 	void *ptr;
-@@ -226,7 +226,7 @@ int __weak phys_mem_access_prot_allowed(struct file *file,
-  *
-  */
- #ifdef pgprot_noncached
--static int uncached_access(struct file *file, unsigned long addr)
-+static int uncached_access(struct file *file, phys_addr_t addr)
- {
- #if defined(CONFIG_IA64)
- 	/*
-@@ -258,7 +258,7 @@ static pgprot_t phys_mem_access_prot(struct file *file, unsigned long pfn,
- 				     unsigned long size, pgprot_t vma_prot)
- {
- #ifdef pgprot_noncached
--	unsigned long offset = pfn << PAGE_SHIFT;
-+	phys_addr_t offset = pfn << PAGE_SHIFT;
- 
- 	if (uncached_access(file, offset))
- 		return pgprot_noncached(vma_prot);
+-/* Default string compare functions, Allow arch asm/prom.h to override */
+-#if !defined(of_compat_cmp)
+-#define of_compat_cmp(s1, s2, l)	strcasecmp((s1), (s2))
+-#define of_prop_cmp(s1, s2)		strcmp((s1), (s2))
+-#define of_node_cmp(s1, s2)		strcasecmp((s1), (s2))
+-#endif
+-
+ /* flag descriptions */
+ #define OF_DYNAMIC	1 /* node and properties were allocated via kmalloc */
+ #define OF_DETACHED	2 /* node has been detached from the device tree */
 -- 
-1.7.9.5
+1.7.2.5
 
