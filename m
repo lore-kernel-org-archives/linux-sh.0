@@ -1,36 +1,63 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 31 Oct 2012 07:08:26 +0000
-Subject: Re: [PATCH 0/3] sh/ARM: shmobile: add sh_clk_fsidiv_register()
-Message-Id: <20121031070817.GE31555@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 01 Oct 2012 03:08:54 +0000
+Subject: [PATCH] ARM: shmobile: mackerel: defconfig update
+Message-Id: <87ehlirirj.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87ip9rmjcb.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87ip9rmjcb.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Tue, Oct 30, 2012 at 08:05:59PM -0700, Kuninori Morimoto wrote:
-> 
-> Hi Paul, Simon
-> 
-> These patches add sh_clk_fsidiv_register() for FSI-DIV clock control.
-> This is 1st step of FSI-DT support.
-> My plan is...
-> 
->  1st : sh/ARM: add FSI-DIV clock control functions
->  2nd : FSI driver supports audio clock calculation method
->  3rd : sh/ARM: remove old style .set_rate callback from platform
->  4th : FSI support DT
->  5th : platform use DT for FSI
-> 
-> Kuninori Morimoto (3):
->       sh: clkfwk: add sh_clk_fsidiv_register()
->       ARM: shmobile: sh7372: sh7372_fsidivX_clk become non-global
->       ARM: shmobile: sh7372: use sh_clk_fsidiv_register() for FSI-DIV clocks
+This patch enables following devices by default
+ - I2C
+ - HDMI
+ - USB (host/gadget)
+ - ALSA (FSI)
+ - DMAEngine
 
-I am slightly confused about why 4 patches, but its not a big deal.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/configs/mackerel_defconfig |   18 ++++++++++++++++--
+ 1 file changed, 16 insertions(+), 2 deletions(-)
 
-Paul, how do you want to handle merging this?  The 1st patch looks like its
-appropriate for your tree while the rest seem to belong in my tree. But I'm
-happy for all the changes to go through one tree if that makes sense.
+diff --git a/arch/arm/configs/mackerel_defconfig b/arch/arm/configs/mackerel_defconfig
+index 306a2e2..7b79a0b 100644
+--- a/arch/arm/configs/mackerel_defconfig
++++ b/arch/arm/configs/mackerel_defconfig
+@@ -70,17 +70,31 @@ CONFIG_SERIAL_SH_SCI_NR_UARTS=8
+ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ # CONFIG_LEGACY_PTYS is not set
+ # CONFIG_HW_RANDOM is not set
++CONFIG_I2C=y
++CONFIG_I2C_SH_MOBILE=y
+ # CONFIG_HWMON is not set
+ # CONFIG_MFD_SUPPORT is not set
+ CONFIG_FB=y
+ CONFIG_FB_MODE_HELPERS=y
+ CONFIG_FB_SH_MOBILE_LCDC=y
++CONFIG_FB_SH_MOBILE_HDMI=y
+ CONFIG_FRAMEBUFFER_CONSOLE=y
+ CONFIG_LOGO=y
+ # CONFIG_LOGO_LINUX_MONO is not set
+ # CONFIG_LOGO_LINUX_CLUT224 is not set
+-# CONFIG_HID_SUPPORT is not set
+-# CONFIG_USB_SUPPORT is not set
++# CONFIG_SND_SUPPORT_OLD_API is not set
++# CONFIG_SND_VERBOSE_PROCFS is not set
++# CONFIG_SND_DRIVERS is not set
++# CONFIG_SND_ARM is not set
++CONFIG_SND_SOC_SH4_FSI=y
++CONFIG_USB=y
++CONFIG_USB_RENESAS_USBHS_HCD=y
++CONFIG_USB_RENESAS_USBHS=y
++CONFIG_USB_STORAGE=y
++CONFIG_USB_GADGET=y
++CONFIG_USB_RENESAS_USBHS_UDC=y
++CONFIG_DMADEVICES=y
++CONFIG_SH_DMAE=y
+ CONFIG_EXT2_FS=y
+ CONFIG_EXT2_FS_XATTR=y
+ CONFIG_EXT2_FS_POSIX_ACL=y
+-- 
+1.7.9.5
+
