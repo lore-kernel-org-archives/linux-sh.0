@@ -1,27 +1,26 @@
-From: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
-Date: Mon, 01 Oct 2012 20:45:39 +0000
+From: Rob Herring <robherring2@gmail.com>
+Date: Tue, 02 Oct 2012 14:15:34 +0000
 Subject: Re: [PATCH 04/14] media: add V4L2 DT binding documentation
-Message-Id: <506A00F3.40909@gmail.com>
+Message-Id: <506AF706.3090003@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de> <1348754853-28619-5-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1348754853-28619-5-git-send-email-g.liakhovetski@gmx.de>
+References: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de>
+ <1348754853-28619-5-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1348754853-28619-5-git-send-email-g.liakhovetski-Mmb7MZpHnFY@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-media@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Stephen Warren <swarren@wwwdotorg.org>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>
+To: Guennadi Liakhovetski <g.liakhovetski-Mmb7MZpHnFY@public.gmane.org>
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-discuss-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, Mark Brown <broonie-yzvPICuk2AATkU/dhu1WVueM+bqZidxxQQ4Iyu8u01E@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Hans Verkuil <hverkuil-qWit8jRvyhVmR6Xm/wNWPw@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Sylwester Nawrocki <sylvester.nawrocki-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-media-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Hi Guennadi,
-
-On 09/27/2012 04:07 PM, Guennadi Liakhovetski wrote:
+On 09/27/2012 09:07 AM, Guennadi Liakhovetski wrote:
 > This patch adds a document, describing common V4L2 device tree bindings.
 > 
-> Co-authored-by: Sylwester Nawrocki<s.nawrocki@samsung.com>
-> Signed-off-by: Guennadi Liakhovetski<g.liakhovetski@gmx.de>
+> Co-authored-by: Sylwester Nawrocki <s.nawrocki@samsung.com>
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 > ---
->   Documentation/devicetree/bindings/media/v4l2.txt |  162 ++++++++++++++++++++++
->   1 files changed, 162 insertions(+), 0 deletions(-)
->   create mode 100644 Documentation/devicetree/bindings/media/v4l2.txt
+>  Documentation/devicetree/bindings/media/v4l2.txt |  162 ++++++++++++++++++++++
+>  1 files changed, 162 insertions(+), 0 deletions(-)
+>  create mode 100644 Documentation/devicetree/bindings/media/v4l2.txt
 > 
 > diff --git a/Documentation/devicetree/bindings/media/v4l2.txt b/Documentation/devicetree/bindings/media/v4l2.txt
 > new file mode 100644
@@ -30,6 +29,14 @@ On 09/27/2012 04:07 PM, Guennadi Liakhovetski wrote:
 > +++ b/Documentation/devicetree/bindings/media/v4l2.txt
 > @@ -0,0 +1,162 @@
 > +Video4Linux Version 2 (V4L2)
+
+DT describes the h/w, but V4L2 is Linux specific. I think the binding
+looks pretty good in terms of it is describing the h/w and not V4L2
+components or settings. So in this case it's really just the name of the
+file and title I have issue with.
+
+One other comment below:
+
 > +
 > +General concept
 > +---------------
@@ -63,6 +70,11 @@ On 09/27/2012 04:07 PM, Guennadi Liakhovetski wrote:
 > +
 > +Optional link properties:
 > +- remote: phandle to the other endpoint link DT node.
+
+This name is a little vague. Perhaps "endpoint" would be better.
+
+Rob
+
 > +- slave-mode: a boolean property, run the link in slave mode. Default is master
 > +  mode.
 > +- data-shift: on parallel data busses, if data-width is used to specify the
@@ -78,20 +90,118 @@ On 09/27/2012 04:07 PM, Guennadi Liakhovetski wrote:
 > +- data-lanes: array of serial, e.g. MIPI CSI-2, data hardware lane numbers in
 > +  the ascending order, beginning with logical lane 0.
 > +- clock-lanes: hardware lane number, used for the clock lane.
+> +- clock-noncontinuous: a boolean property to allow MIPI CSI-2 non-continuous
+> +  clock mode.
+> +
+> +Example:
+> +
+> +	ceu0: ceu@0xfe910000 {
+> +		compatible = "renesas,sh-mobile-ceu";
+> +		reg = <0xfe910000 0xa0>;
+> +		interrupts = <0x880>;
+> +
+> +		mclk: master_clock {
+> +			compatible = "renesas,ceu-clock";
+> +			#clock-cells = <1>;
+> +			clock-frequency = <50000000>;	/* max clock frequency */
+> +			clock-output-names = "mclk";
+> +		};
+> +
+> +		port {
+> +			#address-cells = <1>;
+> +			#size-cells = <0>;
+> +
+> +			ceu0_1: link@1 {
+> +				reg = <1>;		/* local link # */
+> +				remote = <&ov772x_1_1>;	/* remote phandle */
+> +				bus-width = <8>;	/* used data lines */
+> +				data-shift = <0>;	/* lines 7:0 are used */
+> +
+> +				/* If [hv]sync-active are missing, embedded bt.605 sync is used */
+> +				hsync-active = <1>;	/* active high */
+> +				vsync-active = <1>;	/* active high */
+> +				data-active = <1>;	/* active high */
+> +				pclk-sample = <1>;	/* rising */
+> +			};
+> +
+> +			ceu0_0: link@0 {
+> +				reg = <0>;
+> +				remote = <&csi2_2>;
+> +				immutable;
+> +			};
+> +		};
+> +	};
+> +
+> +	i2c0: i2c@0xfff20000 {
+> +		...
+> +		ov772x_1: camera@0x21 {
+> +			compatible = "omnivision,ov772x";
+> +			reg = <0x21>;
+> +			vddio-supply = <&regulator1>;
+> +			vddcore-supply = <&regulator2>;
+> +
+> +			clock-frequency = <20000000>;
+> +			clocks = <&mclk 0>;
+> +			clock-names = "xclk";
+> +
+> +			port {
+> +				/* With 1 link per port no need in addresses */
+> +				ov772x_1_1: link {
+> +					bus-width = <8>;
+> +					remote = <&ceu0_1>;
+> +					hsync-active = <1>;
+> +					vsync-active = <0>;	/* who came up with an inverter here?... */
+> +					data-active = <1>;
+> +					pclk-sample = <1>;
+> +				};
+> +			};
+> +		};
+> +
+> +		imx074: camera@0x1a {
+> +			compatible = "sony,imx074";
+> +			reg = <0x1a>;
+> +			vddio-supply = <&regulator1>;
+> +			vddcore-supply = <&regulator2>;
+> +
+> +			clock-frequency = <30000000>;	/* shared clock with ov772x_1 */
+> +			clocks = <&mclk 0>;
+> +			clock-names = "sysclk";		/* assuming this is the name in the datasheet */
+> +
+> +			port {
+> +				imx074_1: link {
+> +					clock-lanes = <0>;
+> +					data-lanes = <1>, <2>;
+> +					remote = <&csi2_1>;
+> +				};
+> +			};
+> +		};
+> +	};
+> +
+> +	csi2: csi2@0xffc90000 {
+> +		compatible = "renesas,sh-mobile-csi2";
+> +		reg = <0xffc90000 0x1000>;
+> +		interrupts = <0x17a0>;
+> +		#address-cells = <1>;
+> +		#size-cells = <0>;
+> +
+> +		port@1 {
+> +			compatible = "renesas,csi2c";	/* one of CSI2I and CSI2C */
+> +			reg = <1>;			/* CSI-2 PHY #1 of 2: PHY_S, PHY_M has port address 0, is unused */
+> +
+> +			csi2_1: link {
+> +				clock-lanes = <0>;
+> +				data-lanes = <2>, <1>;
+> +				remote = <&imx074_1>;
+> +			};
+> +		};
+> +		port@2 {
+> +			reg = <2>;			/* port 2: link to the CEU */
+> +
+> +			csi2_2: link {
+> +				immutable;
+> +				remote = <&ceu0_0>;
+> +			};
+> +		};
+> +	};
+> 
 
-It is not very clear we are using common contiguous range of logical indexes
-for the clock and the data lanes, IMO. Maybe something like this would be
-more explicit:
-
-- data-lanes: an array of hardware data lane indexes. Position of an entry 
-  determines logical lane number, while the value of an entry indicates hardware
-  lane number, e.g. for 2-lane MIPI CSI-2 bus we could have data-lanes = <1>, <2>;,
-  assuming the clock lane is on hardware lane 0. This property is applicable to
-  serial buses only (e.g. MIPI CSI-2). 
-
-?
-
---
-
-Thanks,
-Sylwester
