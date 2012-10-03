@@ -1,102 +1,83 @@
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Mon, 29 Oct 2012 06:10:15 +0000
-Subject: Re: [PATCH 2/2] sh: intc: Add support OF of IRQ
-Message-Id: <CABMQnV+ySuBw=JWKYQxKRuNcSBu7tz3CbM6k9PNeysrtcbu6bQ@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 03 Oct 2012 02:19:22 +0000
+Subject: Re: [PATCH 2/2] arm: Add ARM ERRATA 782773 workaround
+Message-Id: <20121003021922.GK31207@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1350342930-25581-2-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
-In-Reply-To: <1350342930-25581-2-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+References: <1347434097-7924-1-git-send-email-horms@verge.net.au>
+ <1347434097-7924-3-git-send-email-horms@verge.net.au>
+ <5050CD87.4020800@codeaurora.org>
+ <20120913010041.GD7622@verge.net.au>
+ <CAHkRjk500KGTeBD67YMWy2qSdaoO_=Y9WBT_Q78n9Zxgqtmo4w@mail.gmail.com>
+ <20120921010037.GI21660@verge.net.au>
+ <20120928010246.GA13133@verge.net.au>
+ <20120928083819.GA21542@arm.com>
+In-Reply-To: <20120928083819.GA21542@arm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Paul, do you have a comment?
-If no problem, could you apply?
+On Fri, Sep 28, 2012 at 09:38:19AM +0100, Catalin Marinas wrote:
+> On Fri, Sep 28, 2012 at 02:02:46AM +0100, Simon Horman wrote:
+> > On Fri, Sep 21, 2012 at 10:00:37AM +0900, Simon Horman wrote:
+> > > On Thu, Sep 20, 2012 at 10:35:50AM +0100, Catalin Marinas wrote:
+> > > > On 13 September 2012 02:00, Simon Horman <horms@verge.net.au> wrote:
+> > > > > On Wed, Sep 12, 2012 at 10:59:35AM -0700, Stephen Boyd wrote:
+> > > > >> On 09/12/12 00:14, Simon Horman wrote:
+> > > > >> > @@ -1423,6 +1423,15 @@ config ARM_ERRATA_775420
+> > > > >> >           deadlock. This workaround puts DSB before executing ISB at the
+> > > > >> >           beginning of the abort exception handler.
+> > > > >> >
+> > > > >> > +config ARM_ERRATA_782773
+> > > > >> > +   bool "ARM errata: Updating a translation entry might cause an unexpected translation fault"
+> > > > >> > +   depends on CPU_V7
+> > > > >> > +   help
+> > > > >> > +     This option enables the workaround for the 782773 Cortex-A9 (all r0,
+> > > > >> > +     ,r2 and r3 revisions) erratum. It might cause MMU exception in case
+> > > > >>
+> > > > >> Seems to be an extra comma here.
+> > > > >
+> > > > > Thanks, here is an updated version.
+> > > > >
+> > > > > From: Kouei Abe <kouei.abe.cp@rms.renesas.com>
+> > > > >
+> > > > > arm: Add ARM ERRATA 782773 workaround
+> > > > >
+> > > > > Signed-off-by: Kouei Abe <kouei.abe.cp@rms.renesas.com>
+> > > > > Signed-off-by: Simon Horman <horms@verge.net.au>
+> > > > 
+> > > > I would add some text to the commit log as well, even though it
+> > > > matches the Kconfig entry.
+> > > 
+> > > Sure, an updated patch is below.
+> > > I also reworded the text to make it easier on my eyes,
+> > > I don't think the meaning has been altered.
+> > > 
+> > > > Have you hit this in practice? In general the kernel shouldn't access
+> > > > kernel virtual address corresponding to a page table that is being
+> > > > changed. For user address space it is possible but the kernel can
+> > > > handle use translation faults, even though they may be spurious.
+> > > 
+> > > I believe that Abe-san's team have come up against this,
+> > > I can confirm that if it is important.
+> > 
+> > I was wondering if I could get an Ack on this as you indicated
+> > in another email that you feel that the implementation is an
+> > appropriate workaround.
+> 
+> I'd like to know whether this is actually hit in practice and the
+> conditions. The only time when we write live (i.e. translation that's
+> currently in use) kernel mappings is during boot, alloc_init_section()
+> replacing (though with the same value) the initial memory map. But if
+> that's the scenario you are getting, I would rather add another
+> flush_pmd_entry() call before setting the pmd in alloc_init_section().
+> 
+> I'm not convinced a costly run-time workaround in set_pte is needed.
 
-Nobuhiro
+Hi Catalin,
 
-On Tue, Oct 16, 2012 at 8:15 AM, Nobuhiro Iwamatsu
-<nobuhiro.iwamatsu.yj@renesas.com> wrote:
-> Add infomation of device node to struct intc_desc.
->
-> Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-> ---
->  drivers/sh/intc/core.c      |    2 +-
->  drivers/sh/intc/internals.h |    3 ++-
->  drivers/sh/intc/irqdomain.c |    6 +++---
->  include/linux/sh_intc.h     |    1 +
->  4 files changed, 7 insertions(+), 5 deletions(-)
->
-> diff --git a/drivers/sh/intc/core.c b/drivers/sh/intc/core.c
-> index 8f32a13..3963af3 100644
-> --- a/drivers/sh/intc/core.c
-> +++ b/drivers/sh/intc/core.c
-> @@ -311,7 +311,7 @@ int __init register_intc_controller(struct intc_desc *desc)
->
->         BUG_ON(k > 256); /* _INTC_ADDR_E() and _INTC_ADDR_D() are 8 bits */
->
-> -       intc_irq_domain_init(d, hw);
-> +       intc_irq_domain_init(d, hw, desc->of_node);
->
->         /* register the vectors one by one */
->         for (i = 0; i < hw->nr_vectors; i++) {
-> diff --git a/drivers/sh/intc/internals.h b/drivers/sh/intc/internals.h
-> index 7dff08e..e6f64bf 100644
-> --- a/drivers/sh/intc/internals.h
-> +++ b/drivers/sh/intc/internals.h
-> @@ -190,7 +190,8 @@ void intc_enable_disable_enum(struct intc_desc *desc, struct intc_desc_int *d,
->                               intc_enum enum_id, int enable);
->
->  /* irqdomain.c */
-> -void intc_irq_domain_init(struct intc_desc_int *d, struct intc_hw_desc *hw);
-> +void intc_irq_domain_init(struct intc_desc_int *d, struct intc_hw_desc *hw,
-> +                               struct device_node *of_node);
->
->  /* virq.c */
->  void intc_subgroup_init(struct intc_desc *desc, struct intc_desc_int *d);
-> diff --git a/drivers/sh/intc/irqdomain.c b/drivers/sh/intc/irqdomain.c
-> index 3968f1c..22ab7af 100644
-> --- a/drivers/sh/intc/irqdomain.c
-> +++ b/drivers/sh/intc/irqdomain.c
-> @@ -42,7 +42,7 @@ static const struct irq_domain_ops intc_evt_ops = {
->  };
->
->  void __init intc_irq_domain_init(struct intc_desc_int *d,
-> -                                struct intc_hw_desc *hw)
-> +                                struct intc_hw_desc *hw, struct device_node *np)
->  {
->         unsigned int irq_base, irq_end;
->
-> @@ -59,10 +59,10 @@ void __init intc_irq_domain_init(struct intc_desc_int *d,
->          * tree penalty for linear cases with non-zero hwirq bases.
->          */
->         if (irq_base = 0 && irq_end = (irq_base + hw->nr_vectors - 1))
-> -               d->domain = irq_domain_add_linear(NULL, hw->nr_vectors,
-> +               d->domain = irq_domain_add_linear(np, hw->nr_vectors,
->                                                   &intc_evt_ops, NULL);
->         else
-> -               d->domain = irq_domain_add_tree(NULL, &intc_evt_ops, NULL);
-> +               d->domain = irq_domain_add_tree(np, &intc_evt_ops, NULL);
->
->         BUG_ON(!d->domain);
->  }
-> diff --git a/include/linux/sh_intc.h b/include/linux/sh_intc.h
-> index 455b1cc..75287cc 100644
-> --- a/include/linux/sh_intc.h
-> +++ b/include/linux/sh_intc.h
-> @@ -118,6 +118,7 @@ struct intc_desc {
->         intc_enum force_disable;
->         bool skip_syscore_suspend;
->         struct intc_hw_desc hw;
-> +       struct device_node *of_node;
->  };
->
->  #define DECLARE_INTC_DESC(symbol, chipname, vectors, groups,           \
-> --
-> 1.7.10.4
->
-
-
-
--- 
-Nobuhiro Iwamatsu
+I have discussed this the issue that you raised above with the platform
+team that provided me with the workaround. Although they have not encountered a
+situation in which the errata is hit they would like the workaround
+considered for merging as it is needed for compliance with customer
+requirements, in this case an automotive customer (I do not know which one).
