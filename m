@@ -1,269 +1,199 @@
-From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Date: Fri, 05 Oct 2012 02:33:27 +0000
-Subject: [PATCH 6/10] memory-hotplug : implement register_page_bootmem_info_section of sparse-vmemmap
-Message-Id: <506E46F7.4080006@jp.fujitsu.com>
+From: David Howells <dhowells@redhat.com>
+Date: Thu, 04 Oct 2012 19:51:50 +0000
+Subject: [GIT PULL] Disintegrate UAPI for sh
+Message-Id: <17432.1349380310@warthog.procyon.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <506E43E0.70507@jp.fujitsu.com>
-In-Reply-To: <506E43E0.70507@jp.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
-Cc: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, wency@cn.fujitsu.com
+To: lethal@linux-sh.org
+Cc: dhowells@redhat.com, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-For removing memmap region of sparse-vmemmap which is allocated bootmem,
-memmap region of sparse-vmemmap needs to be registered by get_page_bootmem().
-So the patch searches pages of virtual mapping and registers the pages by
-get_page_bootmem().
+Can you merge the following branch into the sh tree please.
 
-Note: register_page_bootmem_memmap() is not implemented for ia64, ppc, s390,
-and sparc.
+This is to complete part of the UAPI disintegration for which the preparatory
+patches were pulled recently.
 
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
-Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
----
- arch/ia64/mm/discontig.c       |    6 ++++
- arch/powerpc/mm/init_64.c      |    6 ++++
- arch/s390/mm/vmem.c            |    6 ++++
- arch/sparc/mm/init_64.c        |    6 ++++
- arch/x86/mm/init_64.c          |   52 +++++++++++++++++++++++++++++++++++++++++
- include/linux/memory_hotplug.h |   11 +-------
- include/linux/mm.h             |    3 +-
- mm/memory_hotplug.c            |   37 ++++++++++++++++++++++++++---
- 8 files changed, 113 insertions(+), 14 deletions(-)
+Note that there are some fixup patches which are at the base of the branch
+aimed at you, plus all arches get the asm-generic branch merged in too.
 
-Index: linux-3.6/include/linux/memory_hotplug.h
-=================================--- linux-3.6.orig/include/linux/memory_hotplug.h	2012-10-04 17:15:03.029828127 +0900
-+++ linux-3.6/include/linux/memory_hotplug.h	2012-10-04 17:15:59.010833688 +0900
-@@ -163,17 +163,10 @@ static inline void arch_refresh_nodedata
- #endif /* CONFIG_NUMA */
- #endif /* CONFIG_HAVE_ARCH_NODEDATA_EXTENSION */
- 
--#ifdef CONFIG_SPARSEMEM_VMEMMAP
--static inline void register_page_bootmem_info_node(struct pglist_data *pgdat)
--{
--}
--static inline void put_page_bootmem(struct page *page)
--{
--}
--#else
- extern void register_page_bootmem_info_node(struct pglist_data *pgdat);
- extern void put_page_bootmem(struct page *page);
--#endif
-+extern void get_page_bootmem(unsigned long ingo, struct page *page,
-+			     unsigned long type);
- 
- /*
-  * Lock for memory hotplug guarantees 1) all callbacks for memory hotplug
-Index: linux-3.6/mm/memory_hotplug.c
-=================================--- linux-3.6.orig/mm/memory_hotplug.c	2012-10-04 17:15:27.213831361 +0900
-+++ linux-3.6/mm/memory_hotplug.c	2012-10-04 17:37:00.176401540 +0900
-@@ -91,9 +91,8 @@ static void release_memory_resource(stru
- }
- 
- #ifdef CONFIG_MEMORY_HOTPLUG_SPARSE
--#ifndef CONFIG_SPARSEMEM_VMEMMAP
--static void get_page_bootmem(unsigned long info,  struct page *page,
--			     unsigned long type)
-+void get_page_bootmem(unsigned long info,  struct page *page,
-+		      unsigned long type)
- {
- 	unsigned long page_type;
- 
-@@ -127,6 +126,7 @@ void __ref put_page_bootmem(struct page 
- 
- }
- 
-+#ifndef CONFIG_SPARSEMEM_VMEMMAP
- static void register_page_bootmem_info_section(unsigned long start_pfn)
- {
- 	unsigned long *usemap, mapsize, section_nr, i;
-@@ -160,6 +160,36 @@ static void register_page_bootmem_info_s
- 		get_page_bootmem(section_nr, page, MIX_SECTION_INFO);
- 
- }
-+#else
-+static void register_page_bootmem_info_section(unsigned long start_pfn)
-+{
-+	unsigned long *usemap, mapsize, section_nr, i;
-+	struct mem_section *ms;
-+	struct page *page, *memmap;
-+
-+	if (!pfn_valid(start_pfn))
-+		return;
-+
-+	section_nr = pfn_to_section_nr(start_pfn);
-+	ms = __nr_to_section(section_nr);
-+
-+	memmap = sparse_decode_mem_map(ms->section_mem_map, section_nr);
-+
-+	page = virt_to_page(memmap);
-+	mapsize = sizeof(struct page) * PAGES_PER_SECTION;
-+	mapsize = PAGE_ALIGN(mapsize) >> PAGE_SHIFT;
-+
-+	register_page_bootmem_memmap(section_nr, memmap, PAGES_PER_SECTION);
-+
-+	usemap = __nr_to_section(section_nr)->pageblock_flags;
-+	page = virt_to_page(usemap);
-+
-+	mapsize = PAGE_ALIGN(usemap_size()) >> PAGE_SHIFT;
-+
-+	for (i = 0; i < mapsize; i++, page++)
-+		get_page_bootmem(section_nr, page, MIX_SECTION_INFO);
-+}
-+#endif
- 
- void register_page_bootmem_info_node(struct pglist_data *pgdat)
- {
-@@ -202,7 +232,6 @@ void register_page_bootmem_info_node(str
- 			register_page_bootmem_info_section(pfn);
- 	}
- }
--#endif /* !CONFIG_SPARSEMEM_VMEMMAP */
- 
- static void grow_zone_span(struct zone *zone, unsigned long start_pfn,
- 			   unsigned long end_pfn)
-Index: linux-3.6/arch/ia64/mm/discontig.c
-=================================--- linux-3.6.orig/arch/ia64/mm/discontig.c	2012-10-01 08:47:46.000000000 +0900
-+++ linux-3.6/arch/ia64/mm/discontig.c	2012-10-04 17:15:59.209833459 +0900
-@@ -822,4 +822,10 @@ int __meminit vmemmap_populate(struct pa
- {
- 	return vmemmap_populate_basepages(start_page, size, node);
- }
-+
-+void register_page_bootmem_memmap(unsigned long section_nr,
-+				  struct page *start_page, unsigned long size)
-+{
-+	/* TODO */
-+}
- #endif
-Index: linux-3.6/arch/powerpc/mm/init_64.c
-=================================--- linux-3.6.orig/arch/powerpc/mm/init_64.c	2012-10-01 08:47:46.000000000 +0900
-+++ linux-3.6/arch/powerpc/mm/init_64.c	2012-10-04 17:15:59.217833663 +0900
-@@ -298,5 +298,11 @@ int __meminit vmemmap_populate(struct pa
- 
- 	return 0;
- }
-+
-+void register_page_bootmem_memmap(unsigned long section_nr,
-+				  struct page *start_page, unsigned long size)
-+{
-+	/* TODO */
-+}
- #endif /* CONFIG_SPARSEMEM_VMEMMAP */
- 
-Index: linux-3.6/arch/s390/mm/vmem.c
-=================================--- linux-3.6.orig/arch/s390/mm/vmem.c	2012-10-01 08:47:46.000000000 +0900
-+++ linux-3.6/arch/s390/mm/vmem.c	2012-10-04 17:15:59.227833764 +0900
-@@ -227,6 +227,12 @@ out:
- 	return ret;
- }
- 
-+void register_page_bootmem_memmap(unsigned long section_nr,
-+				  struct page *start_page, unsigned long size)
-+{
-+	/* TODO */
-+}
-+
- /*
-  * Add memory segment to the segment list if it doesn't overlap with
-  * an already present segment.
-Index: linux-3.6/arch/sparc/mm/init_64.c
-=================================--- linux-3.6.orig/arch/sparc/mm/init_64.c	2012-10-01 08:47:46.000000000 +0900
-+++ linux-3.6/arch/sparc/mm/init_64.c	2012-10-04 17:15:59.232833747 +0900
-@@ -2077,6 +2077,12 @@ void __meminit vmemmap_populate_print_la
- 		node_start = 0;
- 	}
- }
-+
-+void register_page_bootmem_memmap(unsigned long section_nr,
-+				  struct page *start_page, unsigned long size)
-+{
-+	/* TODO */
-+}
- #endif /* CONFIG_SPARSEMEM_VMEMMAP */
- 
- static void prot_init_common(unsigned long page_none,
-Index: linux-3.6/arch/x86/mm/init_64.c
-=================================--- linux-3.6.orig/arch/x86/mm/init_64.c	2012-10-04 17:15:03.021828121 +0900
-+++ linux-3.6/arch/x86/mm/init_64.c	2012-10-04 17:15:59.240833769 +0900
-@@ -993,6 +993,58 @@ vmemmap_populate(struct page *start_page
- 	return 0;
- }
- 
-+void register_page_bootmem_memmap(unsigned long section_nr,
-+				  struct page *start_page, unsigned long size)
-+{
-+	unsigned long addr = (unsigned long)start_page;
-+	unsigned long end = (unsigned long)(start_page + size);
-+	unsigned long next;
-+	pgd_t *pgd;
-+	pud_t *pud;
-+	pmd_t *pmd;
-+
-+	for (; addr < end; addr = next) {
-+		pte_t *pte = NULL;
-+
-+		pgd = pgd_offset_k(addr);
-+		if (pgd_none(*pgd)) {
-+			next = (addr + PAGE_SIZE) & PAGE_MASK;
-+			continue;
-+		}
-+		get_page_bootmem(section_nr, pgd_page(*pgd), MIX_SECTION_INFO);
-+
-+		pud = pud_offset(pgd, addr);
-+		if (pud_none(*pud)) {
-+			next = (addr + PAGE_SIZE) & PAGE_MASK;
-+			continue;
-+		}
-+		get_page_bootmem(section_nr, pud_page(*pud), MIX_SECTION_INFO);
-+
-+		if (!cpu_has_pse) {
-+			next = (addr + PAGE_SIZE) & PAGE_MASK;
-+			pmd = pmd_offset(pud, addr);
-+			if (pmd_none(*pmd))
-+				continue;
-+			get_page_bootmem(section_nr, pmd_page(*pmd),
-+					 MIX_SECTION_INFO);
-+
-+			pte = pte_offset_kernel(pmd, addr);
-+			if (pte_none(*pte))
-+				continue;
-+			get_page_bootmem(section_nr, pte_page(*pte),
-+					 SECTION_INFO);
-+		} else {
-+			next = pmd_addr_end(addr, end);
-+
-+			pmd = pmd_offset(pud, addr);
-+			if (pmd_none(*pmd))
-+				continue;
-+			get_page_bootmem(section_nr, pmd_page(*pmd),
-+					 SECTION_INFO);
-+		}
-+	}
-+}
-+
- void __meminit vmemmap_populate_print_last(void)
- {
- 	if (p_start) {
-Index: linux-3.6/include/linux/mm.h
-=================================--- linux-3.6.orig/include/linux/mm.h	2012-10-01 08:47:46.000000000 +0900
-+++ linux-3.6/include/linux/mm.h	2012-10-04 17:15:59.246833767 +0900
-@@ -1618,7 +1618,8 @@ int vmemmap_populate_basepages(struct pa
- 						unsigned long pages, int node);
- int vmemmap_populate(struct page *start_page, unsigned long pages, int node);
- void vmemmap_populate_print_last(void);
--
-+void register_page_bootmem_memmap(unsigned long section_nr, struct page *map,
-+				  unsigned long size);
- 
- enum mf_flags {
- 	MF_COUNT_INCREASED = 1 << 0,
+The following changes since commit 612a9aab56a93533e76e3ad91642db7033e03b69:
 
+  Merge branch 'drm-next' of git://people.freedesktop.org/~airlied/linux (2012-10-03 23:29:23 -0700)
+
+are available in the git repository at:
+
+
+  git://git.infradead.org/users/dhowells/linux-headers.git disintegrate-sh
+
+for you to fetch changes up to c7d4fbbc3985e65500dc73c241284a19e968fc04:
+
+  UAPI: (Scripted) Disintegrate arch/sh/include/asm (2012-10-04 18:21:28 +0100)
+
+----------------------------------------------------------------
+David Howells (6):
+      UAPI: Fix the guards on various asm/unistd.h files
+      UAPI: Split compound conditionals containing __KERNEL__ in Arm64
+      Merge remote-tracking branch 'c6x/for-linux-next' into uapi-prep
+      UAPI: Fix conditional header installation handling (notably kvm_para.h on m68k)
+      UAPI: (Scripted) Disintegrate include/asm-generic
+      UAPI: (Scripted) Disintegrate arch/sh/include/asm
+
+Mark Salter (2):
+      c6x: make dsk6455 the default config
+      c6x: remove c6x signal.h
+
+ arch/arm64/include/asm/hwcap.h                  |   4 +-
+ arch/arm64/include/asm/stat.h                   |   4 +-
+ arch/arm64/include/asm/unistd.h                 |   8 +-
+ arch/arm64/include/asm/unistd32.h               |   4 -
+ arch/c6x/Makefile                               |   2 +
+ arch/c6x/include/asm/Kbuild                     |   1 +
+ arch/c6x/include/asm/signal.h                   |  17 -
+ arch/c6x/include/asm/unistd.h                   |   4 -
+ arch/hexagon/include/asm/unistd.h               |   5 -
+ arch/openrisc/include/asm/unistd.h              |   5 -
+ arch/score/include/asm/unistd.h                 |   5 -
+ arch/sh/include/asm/Kbuild                      |  11 -
+ arch/sh/include/asm/hw_breakpoint.h             |   4 +-
+ arch/sh/include/asm/posix_types.h               |   8 -
+ arch/sh/include/asm/ptrace.h                    |  34 +-
+ arch/sh/include/asm/ptrace_32.h                 |  75 +-
+ arch/sh/include/asm/ptrace_64.h                 |  12 +-
+ arch/sh/include/asm/setup.h                     |   5 +-
+ arch/sh/include/asm/types.h                     |   5 +-
+ arch/sh/include/asm/unistd.h                    |   9 +-
+ arch/sh/include/uapi/asm/Kbuild                 |  22 +
+ arch/sh/include/{ => uapi}/asm/auxvec.h         |   0
+ arch/sh/include/{ => uapi}/asm/byteorder.h      |   0
+ arch/sh/include/{ => uapi}/asm/cachectl.h       |   0
+ arch/sh/include/{ => uapi}/asm/cpu-features.h   |   0
+ arch/sh/include/{ => uapi}/asm/ioctls.h         |   0
+ arch/sh/include/uapi/asm/posix_types.h          |   7 +
+ arch/sh/include/{ => uapi}/asm/posix_types_32.h |   0
+ arch/sh/include/{ => uapi}/asm/posix_types_64.h |   0
+ arch/sh/include/uapi/asm/ptrace.h               |  34 +
+ arch/sh/include/uapi/asm/ptrace_32.h            |  77 ++
+ arch/sh/include/uapi/asm/ptrace_64.h            |  14 +
+ arch/sh/include/uapi/asm/setup.h                |   1 +
+ arch/sh/include/{ => uapi}/asm/sigcontext.h     |   0
+ arch/sh/include/{ => uapi}/asm/signal.h         |   0
+ arch/sh/include/{ => uapi}/asm/sockios.h        |   0
+ arch/sh/include/{ => uapi}/asm/stat.h           |   0
+ arch/sh/include/{ => uapi}/asm/swab.h           |   0
+ arch/sh/include/uapi/asm/types.h                |   1 +
+ arch/sh/include/uapi/asm/unistd.h               |   7 +
+ arch/sh/include/{ => uapi}/asm/unistd_32.h      |   0
+ arch/sh/include/{ => uapi}/asm/unistd_64.h      |   0
+ arch/tile/include/asm/unistd.h                  |   5 -
+ arch/unicore32/include/asm/unistd.h             |   4 -
+ include/asm-generic/Kbuild                      |  35 -
+ include/asm-generic/bitsperlong.h               |  13 +-
+ include/asm-generic/int-l64.h                   |  26 +-
+ include/asm-generic/int-ll64.h                  |  31 +-
+ include/asm-generic/ioctl.h                     |  95 +--
+ include/asm-generic/kvm_para.h                  |   5 +-
+ include/asm-generic/param.h                     |  17 +-
+ include/asm-generic/resource.h                  |  66 +-
+ include/asm-generic/siginfo.h                   | 297 +-------
+ include/asm-generic/signal.h                    | 117 +--
+ include/asm-generic/statfs.h                    |  81 +--
+ include/asm-generic/termios.h                   |  49 +-
+ include/asm-generic/unistd.h                    | 911 +-----------------------
+ include/linux/Kbuild                            |   9 +-
+ include/uapi/asm-generic/Kbuild                 |  35 +
+ include/{ => uapi}/asm-generic/auxvec.h         |   0
+ include/uapi/asm-generic/bitsperlong.h          |  15 +
+ include/{ => uapi}/asm-generic/errno-base.h     |   0
+ include/{ => uapi}/asm-generic/errno.h          |   0
+ include/{ => uapi}/asm-generic/fcntl.h          |   0
+ include/uapi/asm-generic/int-l64.h              |  34 +
+ include/uapi/asm-generic/int-ll64.h             |  39 +
+ include/uapi/asm-generic/ioctl.h                |  98 +++
+ include/{ => uapi}/asm-generic/ioctls.h         |   0
+ include/{ => uapi}/asm-generic/ipcbuf.h         |   0
+ include/{ => uapi}/asm-generic/mman-common.h    |   0
+ include/{ => uapi}/asm-generic/mman.h           |   0
+ include/{ => uapi}/asm-generic/msgbuf.h         |   0
+ include/uapi/asm-generic/param.h                |  19 +
+ include/{ => uapi}/asm-generic/poll.h           |   0
+ include/{ => uapi}/asm-generic/posix_types.h    |   0
+ include/uapi/asm-generic/resource.h             |  68 ++
+ include/{ => uapi}/asm-generic/sembuf.h         |   0
+ include/{ => uapi}/asm-generic/setup.h          |   0
+ include/{ => uapi}/asm-generic/shmbuf.h         |   0
+ include/{ => uapi}/asm-generic/shmparam.h       |   0
+ include/uapi/asm-generic/siginfo.h              | 298 ++++++++
+ include/{ => uapi}/asm-generic/signal-defs.h    |   0
+ include/uapi/asm-generic/signal.h               | 123 ++++
+ include/{ => uapi}/asm-generic/socket.h         |   0
+ include/{ => uapi}/asm-generic/sockios.h        |   0
+ include/{ => uapi}/asm-generic/stat.h           |   0
+ include/uapi/asm-generic/statfs.h               |  83 +++
+ include/{ => uapi}/asm-generic/swab.h           |   0
+ include/{ => uapi}/asm-generic/termbits.h       |   0
+ include/uapi/asm-generic/termios.h              |  50 ++
+ include/{ => uapi}/asm-generic/types.h          |   0
+ include/{ => uapi}/asm-generic/ucontext.h       |   0
+ include/uapi/asm-generic/unistd.h               | 902 +++++++++++++++++++++++
+ security/apparmor/Makefile                      |   2 +-
+ 94 files changed, 1966 insertions(+), 1946 deletions(-)
+ delete mode 100644 arch/c6x/include/asm/signal.h
+ rename arch/sh/include/{ => uapi}/asm/auxvec.h (100%)
+ rename arch/sh/include/{ => uapi}/asm/byteorder.h (100%)
+ rename arch/sh/include/{ => uapi}/asm/cachectl.h (100%)
+ rename arch/sh/include/{ => uapi}/asm/cpu-features.h (100%)
+ create mode 100644 arch/sh/include/uapi/asm/hw_breakpoint.h
+ rename arch/sh/include/{ => uapi}/asm/ioctls.h (100%)
+ create mode 100644 arch/sh/include/uapi/asm/posix_types.h
+ rename arch/sh/include/{ => uapi}/asm/posix_types_32.h (100%)
+ rename arch/sh/include/{ => uapi}/asm/posix_types_64.h (100%)
+ create mode 100644 arch/sh/include/uapi/asm/ptrace.h
+ create mode 100644 arch/sh/include/uapi/asm/ptrace_32.h
+ create mode 100644 arch/sh/include/uapi/asm/ptrace_64.h
+ create mode 100644 arch/sh/include/uapi/asm/setup.h
+ rename arch/sh/include/{ => uapi}/asm/sigcontext.h (100%)
+ rename arch/sh/include/{ => uapi}/asm/signal.h (100%)
+ rename arch/sh/include/{ => uapi}/asm/sockios.h (100%)
+ rename arch/sh/include/{ => uapi}/asm/stat.h (100%)
+ rename arch/sh/include/{ => uapi}/asm/swab.h (100%)
+ create mode 100644 arch/sh/include/uapi/asm/types.h
+ create mode 100644 arch/sh/include/uapi/asm/unistd.h
+ rename arch/sh/include/{ => uapi}/asm/unistd_32.h (100%)
+ rename arch/sh/include/{ => uapi}/asm/unistd_64.h (100%)
+ rename include/{ => uapi}/asm-generic/auxvec.h (100%)
+ create mode 100644 include/uapi/asm-generic/bitsperlong.h
+ rename include/{ => uapi}/asm-generic/errno-base.h (100%)
+ rename include/{ => uapi}/asm-generic/errno.h (100%)
+ rename include/{ => uapi}/asm-generic/fcntl.h (100%)
+ create mode 100644 include/uapi/asm-generic/int-l64.h
+ create mode 100644 include/uapi/asm-generic/int-ll64.h
+ create mode 100644 include/uapi/asm-generic/ioctl.h
+ rename include/{ => uapi}/asm-generic/ioctls.h (100%)
+ rename include/{ => uapi}/asm-generic/ipcbuf.h (100%)
+ create mode 100644 include/uapi/asm-generic/kvm_para.h
+ rename include/{ => uapi}/asm-generic/mman-common.h (100%)
+ rename include/{ => uapi}/asm-generic/mman.h (100%)
+ rename include/{ => uapi}/asm-generic/msgbuf.h (100%)
+ create mode 100644 include/uapi/asm-generic/param.h
+ rename include/{ => uapi}/asm-generic/poll.h (100%)
+ rename include/{ => uapi}/asm-generic/posix_types.h (100%)
+ create mode 100644 include/uapi/asm-generic/resource.h
+ rename include/{ => uapi}/asm-generic/sembuf.h (100%)
+ rename include/{ => uapi}/asm-generic/setup.h (100%)
+ rename include/{ => uapi}/asm-generic/shmbuf.h (100%)
+ rename include/{ => uapi}/asm-generic/shmparam.h (100%)
+ create mode 100644 include/uapi/asm-generic/siginfo.h
+ rename include/{ => uapi}/asm-generic/signal-defs.h (100%)
+ create mode 100644 include/uapi/asm-generic/signal.h
+ rename include/{ => uapi}/asm-generic/socket.h (100%)
+ rename include/{ => uapi}/asm-generic/sockios.h (100%)
+ rename include/{ => uapi}/asm-generic/stat.h (100%)
+ create mode 100644 include/uapi/asm-generic/statfs.h
+ rename include/{ => uapi}/asm-generic/swab.h (100%)
+ rename include/{ => uapi}/asm-generic/termbits.h (100%)
+ create mode 100644 include/uapi/asm-generic/termios.h
+ rename include/{ => uapi}/asm-generic/types.h (100%)
+ rename include/{ => uapi}/asm-generic/ucontext.h (100%)
+ create mode 100644 include/uapi/asm-generic/unistd.h
+.
