@@ -1,176 +1,142 @@
-From: wency@cn.fujitsu.com
-Date: Tue, 23 Oct 2012 10:30:41 +0000
-Subject: [PATCH v2 03/12] memory-hotplug: remove redundant codes
-Message-Id: <1350988250-31294-4-git-send-email-wency@cn.fujitsu.com>
+From: Florian Fainelli <florian@openwrt.org>
+Date: Thu, 04 Oct 2012 15:17:49 +0000
+Subject: [PATCH 21/24 v2] sh: convert boards to use the OHCI platform driver
+Message-Id: <1349363872-27004-22-git-send-email-florian@openwrt.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1350988250-31294-1-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1350988250-31294-1-git-send-email-wency@cn.fujitsu.com>
+References: <1349363872-27004-1-git-send-email-florian@openwrt.org>
+In-Reply-To: <1349363872-27004-1-git-send-email-florian@openwrt.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
-Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
+To: stern@rowland.harvard.edu
+Cc: linux-usb@vger.kernel.org, Florian Fainelli <florian@openwrt.org>, Paul Mundt <lethal@linux-sh.org>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-From: Wen Congyang <wency@cn.fujitsu.com>
-
-offlining memory blocks and checking whether memory blocks are offlined
-are very similar. This patch introduces a new function to remove
-redundant codes.
-
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-CC: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Florian Fainelli <florian@openwrt.org>
 ---
- mm/memory_hotplug.c |  101 ++++++++++++++++++++++++++++-----------------------
- 1 files changed, 55 insertions(+), 46 deletions(-)
+No changes since v1
 
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index f4fdedd..80fc70c 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -1012,20 +1012,14 @@ int offline_pages(unsigned long start_pfn, unsigned long nr_pages)
- 	return __offline_pages(start_pfn, start_pfn + nr_pages, 120 * HZ);
- }
+ arch/sh/kernel/cpu/sh3/setup-sh7720.c  |    6 +++++-
+ arch/sh/kernel/cpu/sh4a/setup-sh7757.c |    6 +++++-
+ arch/sh/kernel/cpu/sh4a/setup-sh7763.c |    6 +++++-
+ arch/sh/kernel/cpu/sh4a/setup-sh7786.c |    6 +++++-
+ 4 files changed, 20 insertions(+), 4 deletions(-)
+
+diff --git a/arch/sh/kernel/cpu/sh3/setup-sh7720.c b/arch/sh/kernel/cpu/sh3/setup-sh7720.c
+index 0c2f1b2..42d991f 100644
+--- a/arch/sh/kernel/cpu/sh3/setup-sh7720.c
++++ b/arch/sh/kernel/cpu/sh3/setup-sh7720.c
+@@ -20,6 +20,7 @@
+ #include <linux/serial_sci.h>
+ #include <linux/sh_timer.h>
+ #include <linux/sh_intc.h>
++#include <linux/usb/ohci_pdriver.h>
+ #include <asm/rtc.h>
+ #include <cpu/serial.h>
  
--int remove_memory(u64 start, u64 size)
-+static int walk_memory_range(unsigned long start_pfn, unsigned long end_pfn,
-+		void *arg, int (*func)(struct memory_block *, void *))
- {
- 	struct memory_block *mem = NULL;
- 	struct mem_section *section;
--	unsigned long start_pfn, end_pfn;
- 	unsigned long pfn, section_nr;
- 	int ret;
--	int return_on_error = 0;
--	int retry = 0;
--
--	start_pfn = PFN_DOWN(start);
--	end_pfn = start_pfn + PFN_DOWN(size);
+@@ -103,12 +104,15 @@ static struct resource usb_ohci_resources[] = {
  
--repeat:
- 	for (pfn = start_pfn; pfn < end_pfn; pfn += PAGES_PER_SECTION) {
- 		section_nr = pfn_to_section_nr(pfn);
- 		if (!present_section_nr(section_nr))
-@@ -1042,22 +1036,61 @@ repeat:
- 		if (!mem)
- 			continue;
+ static u64 usb_ohci_dma_mask = 0xffffffffUL;
  
--		ret = offline_memory_block(mem);
-+		ret = func(mem, arg);
- 		if (ret) {
--			if (return_on_error) {
--				kobject_put(&mem->dev.kobj);
--				return ret;
--			} else {
--				retry = 1;
--			}
-+			kobject_put(&mem->dev.kobj);
-+			return ret;
- 		}
- 	}
++static struct usb_ohci_pdata usb_ohci_pdata;
++
+ static struct platform_device usb_ohci_device = {
+-	.name		= "sh_ohci",
++	.name		= "ohci-platform",
+ 	.id		= -1,
+ 	.dev = {
+ 		.dma_mask		= &usb_ohci_dma_mask,
+ 		.coherent_dma_mask	= 0xffffffff,
++		.platform_data		= &usb_ohci_pdata,
+ 	},
+ 	.num_resources	= ARRAY_SIZE(usb_ohci_resources),
+ 	.resource	= usb_ohci_resources,
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
+index 4a2f357..9079a0f 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
+@@ -19,6 +19,7 @@
+ #include <linux/sh_timer.h>
+ #include <linux/sh_dma.h>
+ #include <linux/sh_intc.h>
++#include <linux/usb/ohci_pdriver.h>
+ #include <cpu/dma-register.h>
+ #include <cpu/sh7757.h>
  
- 	if (mem)
- 		kobject_put(&mem->dev.kobj);
+@@ -750,12 +751,15 @@ static struct resource usb_ohci_resources[] = {
+ 	},
+ };
  
--	if (retry) {
--		return_on_error = 1;
-+	return 0;
-+}
++static struct usb_ohci_pdata usb_ohci_pdata;
 +
-+static int offline_memory_block_cb(struct memory_block *mem, void *arg)
-+{
-+	int *ret = arg;
-+	int error = offline_memory_block(mem);
-+
-+	if (error != 0 && *ret = 0)
-+		*ret = error;
-+
-+	return 0;
-+}
-+
-+static int is_memblock_offlined_cb(struct memory_block *mem, void *arg)
-+{
-+	int ret = !is_memblock_offlined(mem);
-+
-+	if (unlikely(ret))
-+		pr_warn("removing memory fails, because memory "
-+			"[%#010llx-%#010llx] is onlined\n",
-+			PFN_PHYS(section_nr_to_pfn(mem->start_section_nr)),
-+			PFN_PHYS(section_nr_to_pfn(mem->end_section_nr + 1))-1);
-+
-+	return ret;
-+}
-+
-+int remove_memory(u64 start, u64 size)
-+{
-+	unsigned long start_pfn, end_pfn;
-+	int ret = 0;
-+	int retry = 1;
-+
-+	start_pfn = PFN_DOWN(start);
-+	end_pfn = start_pfn + PFN_DOWN(size);
-+
-+repeat:
-+	walk_memory_range(start_pfn, end_pfn, &ret,
-+			  offline_memory_block_cb);
-+	if (ret) {
-+		if (!retry)
-+			return ret;
-+
-+		retry = 0;
-+		ret = 0;
- 		goto repeat;
- 	}
+ static struct platform_device usb_ohci_device = {
+-	.name		= "sh_ohci",
++	.name		= "ohci-platform",
+ 	.id		= -1,
+ 	.dev = {
+ 		.dma_mask = &usb_ohci_device.dev.coherent_dma_mask,
+ 		.coherent_dma_mask = DMA_BIT_MASK(32),
++		.platform_data	= &usb_ohci_pdata,
+ 	},
+ 	.num_resources	= ARRAY_SIZE(usb_ohci_resources),
+ 	.resource	= usb_ohci_resources,
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7763.c b/arch/sh/kernel/cpu/sh4a/setup-sh7763.c
+index bd0a8fb..1686aca 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7763.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7763.c
+@@ -16,6 +16,7 @@
+ #include <linux/sh_intc.h>
+ #include <linux/io.h>
+ #include <linux/serial_sci.h>
++#include <linux/usb/ohci_pdriver.h>
  
-@@ -1075,37 +1108,13 @@ repeat:
- 	 * memory blocks are offlined.
- 	 */
+ static struct plat_sci_port scif0_platform_data = {
+ 	.mapbase	= 0xffe00000,
+@@ -106,12 +107,15 @@ static struct resource usb_ohci_resources[] = {
  
--	for (pfn = start_pfn; pfn < end_pfn; pfn += PAGES_PER_SECTION) {
--		section_nr = pfn_to_section_nr(pfn);
--		if (!present_section_nr(section_nr))
--			continue;
--
--		section = __nr_to_section(section_nr);
--		/* same memblock? */
--		if (mem)
--			if ((section_nr >= mem->start_section_nr) &&
--			    (section_nr <= mem->end_section_nr))
--				continue;
--
--		mem = find_memory_block_hinted(section, mem);
--		if (!mem)
--			continue;
--
--		ret = is_memblock_offlined(mem);
--		if (!ret) {
--			pr_warn("removing memory fails, because memory "
--				"[%#010llx-%#010llx] is onlined\n",
--				PFN_PHYS(section_nr_to_pfn(mem->start_section_nr)),
--				PFN_PHYS(section_nr_to_pfn(mem->end_section_nr + 1)) - 1);
--
--			kobject_put(&mem->dev.kobj);
--			unlock_memory_hotplug();
--			return ret;
--		}
-+	ret = walk_memory_range(start_pfn, end_pfn, NULL,
-+				is_memblock_offlined_cb);
-+	if (ret) {
-+		unlock_memory_hotplug();
-+		return ret;
- 	}
+ static u64 usb_ohci_dma_mask = 0xffffffffUL;
  
--	if (mem)
--		kobject_put(&mem->dev.kobj);
- 	unlock_memory_hotplug();
++static struct usb_ohci_pdata usb_ohci_pdata;
++
+ static struct platform_device usb_ohci_device = {
+-	.name		= "sh_ohci",
++	.name		= "ohci-platform",
+ 	.id		= -1,
+ 	.dev = {
+ 		.dma_mask		= &usb_ohci_dma_mask,
+ 		.coherent_dma_mask	= 0xffffffff,
++		.platform_data		= &usb_ohci_pdata,
+ 	},
+ 	.num_resources	= ARRAY_SIZE(usb_ohci_resources),
+ 	.resource	= usb_ohci_resources,
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7786.c b/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
+index 2e6952f..ab52d4d 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
+@@ -23,6 +23,7 @@
+ #include <linux/sh_timer.h>
+ #include <linux/sh_dma.h>
+ #include <linux/sh_intc.h>
++#include <linux/usb/ohci_pdriver.h>
+ #include <cpu/dma-register.h>
+ #include <asm/mmzone.h>
  
- 	return 0;
+@@ -583,12 +584,15 @@ static struct resource usb_ohci_resources[] = {
+ 	},
+ };
+ 
++static struct usb_ohci_pdata usb_ohci_pdata;
++
+ static struct platform_device usb_ohci_device = {
+-	.name		= "sh_ohci",
++	.name		= "ohci-platform",
+ 	.id		= -1,
+ 	.dev = {
+ 		.dma_mask		= &usb_ohci_device.dev.coherent_dma_mask,
+ 		.coherent_dma_mask	= DMA_BIT_MASK(32),
++		.platform_data		= &usb_ohci_pdata,
+ 	},
+ 	.num_resources	= ARRAY_SIZE(usb_ohci_resources),
+ 	.resource	= usb_ohci_resources,
 -- 
-1.7.1
+1.7.9.5
 
