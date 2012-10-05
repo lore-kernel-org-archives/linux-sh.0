@@ -1,37 +1,39 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 04 Oct 2012 08:58:57 +0000
-Subject: Re: [PATCH 01/17] ARM: shmobile: fix memory size for kota2_defconfig
-Message-Id: <20121004085857.GA7240@verge.net.au>
+From: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
+Date: Fri, 05 Oct 2012 12:32:04 +0000
+Subject: Re: [PATCH 00/14] V4L2 DT support
+Message-Id: <506ED344.2020407@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1349195816-2225-1-git-send-email-arnd@arndb.de>
- <1349195816-2225-2-git-send-email-arnd@arndb.de>
- <20121003003759.GD31207@verge.net.au>
- <201210040834.55096.arnd@arndb.de>
-In-Reply-To: <201210040834.55096.arnd@arndb.de>
+References: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Bergmann <arnd@arndb.de>
-Cc: linux-arm-kernel@infradead.org, arm@kernel.org, linux-kernel@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-media@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Stephen Warren <swarren@wwwdotorg.org>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>
 
-On Thu, Oct 04, 2012 at 08:34:54AM +0000, Arnd Bergmann wrote:
-> On Wednesday 03 October 2012, Simon Horman wrote:
-> > I looked through my fines and found a config that I believe
-> > worked with a derivative of 2.6.35.7.
-> > 
-> > It has CONFIG_MEMORY_SIZE=0x1e800000.
-> > 
-> > So what I suspect has happened is that an extra zero has crept into
-> > arch/arm/configs/kota2_defconfig and the intended value is:
-> > 
-> > CONFIG_MEMORY_SIZE=0x1e000000
-> > 
-> > Unfortunately I do not have access to a board to test this,
-> > nor am I aware of anyone who does.
-> 
-> Ok, I'll drop this patch for now then, so we keep the warning around
-> to remind us of the problem.
+Hi Guennadi,
 
-Thanks. I have subsequently located a Kota2 board,
-however it may be a little while before I get my hands on it.
+Any chance for a GIT tree including this patch series ? I'd like
+to see all these pieces put together and I don't seem to find any
+base tree that this series would have applied cleanly to.
 
+...(20121005_media_for_v3.7-dt)$ git am -3 \[PATCH\ *
+Applying: i2c: add dummy inline functions for when CONFIG_OF_I2C(_MODULE) isn't defined
+Applying: of: add a dummy inline function for when CONFIG_OF is not defined
+Applying: OF: make a function pointer argument const
+Applying: media: add V4L2 DT binding documentation
+Applying: media: add a V4L2 OF parser
+Applying: media: soc-camera: prepare for asynchronous client probing
+Applying: media: soc-camera: support deferred probing of clients
+fatal: sha1 information is lacking or useless (drivers/media/platform/soc_camera/soc_camera.c).
+Repository lacks necessary blobs to fall back on 3-way merge.
+Cannot fall back to three-way merge.
+Patch failed at 0007 media: soc-camera: support deferred probing of clients
+When you have resolved this problem run "git am --resolved".
+If you would prefer to skip this patch, instead run "git am --skip".
+To restore the original branch and stop patching run "git am --abort".
+
+--
+
+Thanks,
+Sylwester
