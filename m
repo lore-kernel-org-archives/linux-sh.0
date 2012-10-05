@@ -1,20 +1,17 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 02 Oct 2012 11:04:23 +0000
+From: Hans Verkuil <hverkuil@xs4all.nl>
+Date: Fri, 05 Oct 2012 10:41:52 +0000
 Subject: Re: [PATCH 05/14] media: add a V4L2 OF parser
-Message-Id: <Pine.LNX.4.64.1210021241170.15778@axis700.grange>
+Message-Id: <201210051241.52205.hverkuil@xs4all.nl>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de>
- <1348754853-28619-6-git-send-email-g.liakhovetski@gmx.de> <506A0D28.10505@gmail.com>
- <Pine.LNX.4.64.1210021142210.15778@axis700.grange> <506ABE40.9070504@samsung.com>
+References: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de> <Pine.LNX.4.64.1210021142210.15778@axis700.grange> <506ABE40.9070504@samsung.com>
 In-Reply-To: <506ABE40.9070504@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Sylwester Nawrocki <s.nawrocki@samsung.com>
-Cc: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-media@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Stephen Warren <swarren@wwwdotorg.org>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-media@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Stephen Warren <swarren@wwwdotorg.org>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>
 
-On Tue, 2 Oct 2012, Sylwester Nawrocki wrote:
-
+On Tue October 2 2012 12:13:20 Sylwester Nawrocki wrote:
 > Hi Guennadi,
 > 
 > On 10/02/2012 11:49 AM, Guennadi Liakhovetski wrote:
@@ -50,58 +47,26 @@ On Tue, 2 Oct 2012, Sylwester Nawrocki wrote:
 > 
 > With regards to the remaining patches, it looks a bit scary to me how
 > complicated it got, perhaps mostly because of requirement to reference
-> host devices from subdevs.
-
-If you mean uses of the v4l2_of_get_remote() function, then it's the other 
-way round: I'm accessing subdevices from bridges, which is also 
-understandable - you need the subdevice.
-
-Or do you mean the need to turn the master clock on and off from the 
-subdevice driver? This shall be eliminated, once we switch to using the 
-generic clock framework.
-
-> And it seems to rely on the existing SoC
+> host devices from subdevs. And it seems to rely on the existing SoC
 > camera infrastructure, which might imply lot's of work need to be done
-> for non soc-camera drivers.
-
-Sorry, what "it" is relying on soc-camera? The patch series consists of 
-several generic patches, which have nothing to do with soc-camera, and 
-patches, porting soc-camera to use OF with cameras. I think, complexity 
-with soc-camera is also higher, than what you'd need with specific single 
-bridge drivers, because it is generic.
-
-A big part of the complexity is supporting deferred subdevice (sensor) 
-probing. Beginning with what most bridge drivers currently use - static 
-subdevice lists in platform data, for which they then register I2C 
-devices, it is natural to implement that in 2 steps: (1) support directly 
-registered I2C sensors from platform data, that request deferred probing 
-until the bridge driver has been probed and is ready to handle them; (2) 
-support I2C subdevices in DT. After this your bridge driver will support 3 
-(!) modes in which subdevices can be initialised. In principle you could 
-drop step (1) - supporting that isn't really required, but then the jump 
-to (2) will be larger.
-
-Another part of the complexity is specific to soc-camera, it comes from 
-the way, how subdevices are represented in platform data - as platform 
-devices with a bus ID, used to link bridges and subdevices. With DT those 
-platform devices and bus ID have to be generated dynamically.
-
-And you're right - soc-camera bridge drivers have the advantage, that the 
-soc-camera core has taken the most work on supporting DT on itself, so, DT 
-support will come to them at only a fraction of the cost;-)
-
-Thanks
-Guennadi
-
-> But I'm going to take a closer look and
+> for non soc-camera drivers. But I'm going to take a closer look and
 > comment more on the details at the corresponding patches.
-> 
-> --
-> 
-> Regards,
-> Sylwester
 
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+I have to say that I agree with Sylwester here. It seems awfully complicated,
+but I can't really put my finger on the actual cause. It would be really
+interesting to see this implemented for a non-SoC device and to compare the
+two.
+
+One area that I do not yet completely understand is the i2c bus notifications
+(or asynchronous loading or i2c modules).
+
+I would have expected that using OF the i2c devices are still initialized
+before the host/bridge driver is initialized. But I gather that's not the
+case?
+
+If this deferred probing is a general problem, then I think we need a general
+solution as well that's part of the v4l2 core.
+
+Regards,
+
+	Hans
