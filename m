@@ -1,76 +1,81 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 29 Oct 2012 05:11:40 +0000
-Subject: Re: [PATCH 01/12] ARM: shmobile: r8a7740: Enable PMU
-Message-Id: <20121029051140.GA10408@verge.net.au>
+From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Date: Fri, 05 Oct 2012 02:20:16 +0000
+Subject: [PATCH 0/10] memory-hotplug: hot-remove physical memory
+Message-Id: <506E43E0.70507@jp.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1351391173-32379-1-git-send-email-horms@verge.net.au>
- <1351391173-32379-2-git-send-email-horms@verge.net.au>
- <508D16EF.7030800@mvista.com>
-In-Reply-To: <508D16EF.7030800@mvista.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, wency@cn.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com
 
-On Sun, Oct 28, 2012 at 03:28:47PM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 28-10-2012 6:26, Simon Horman wrote:
-> 
-> >From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-> 
-> >This patch enables PMU for r8a7740.
-> 
->    And enables performance events on the Armadillo board. Perhaps
-> the defconfig part was worth a separate patch...
+The patch-set was divided from following thread's patch-set.
 
-As I understand things, the Armadillo is currently the only
-board in-tree that uses the r8a7740 SoC and it seems
-reasonable to enable performance events to activate the
-code that comprises the rest of the patch.
+https://lkml.org/lkml/2012/9/5/201
 
-So while I don't feel strongly about this I do have a slight preference
-for the current single-patch approach.
+If you want to know the reason, please read following thread.
 
-> >Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-> >Signed-off-by: Simon Horman <horms@verge.net.au>
-> [...]
-> 
-> >diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-> >index 11bb1d9..1e032cb 100644
-> >--- a/arch/arm/mach-shmobile/setup-r8a7740.c
-> >+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-> >@@ -590,6 +590,21 @@ static struct platform_device i2c1_device = {
-> >  	.num_resources	= ARRAY_SIZE(i2c1_resources),
-> >  };
-> >
-> >+static struct resource pmu_resources[] = {
-> >+	[0] = {
-> >+		.start	= evt2irq(0x19a0),
-> >+		.end	= evt2irq(0x19a0),
-> >+		.flags  = IORESOURCE_IRQ,
-> >+	},
-> >+};
-> >+
-> >+static struct platform_device pmu_device = {
-> >+	.name	= "arm-pmu",
-> >+	.id		= -1,
-> 
->    I think you should either align '=' with tabs, or not bother
-> doing this, not both. :-)
+https://lkml.org/lkml/2012/10/2/83
 
-Thanks, there seems to be an extra tab there.
+The patch-set has only the function of kernel core side for physical
+memory hot remove. So if you use the patch, please apply following
+patches.
 
-I'll roll this into an updated patch and series once
-we come to a consensus about the defconfig change.
+- bug fix for memory hot remove
+  https://lkml.org/lkml/2012/9/27/39
+  https://lkml.org/lkml/2012/10/2/83
+  http://www.spinics.net/lists/linux-mm/msg42982.html
+  
+- acpi framework
+  https://lkml.org/lkml/2012/10/3/126
+  https://lkml.org/lkml/2012/10/3/641
 
-> >+	.num_resources = ARRAY_SIZE(pmu_resources),
-> >+	.resource = pmu_resources,
-> >+};
-> >+
-> >  static struct platform_device *r8a7740_late_devices[] __initdata = {
-> >  	&i2c0_device,
-> >  	&i2c1_device,
-> 
-> WBR, Sergei
-> 
+The patches can free/remove the following things:
+
+  - /sys/firmware/memmap/X/{end, start, type} : [PATCH 2/10]
+  - mem_section and related sysfs files       : [PATCH 3-4/10]
+  - memmap of sparse-vmemmap                  : [PATCH 5-7/10]
+  - page table of removed memory              : [RFC PATCH 8/10]
+  - node and related sysfs files              : [RFC PATCH 9-10/10]
+
+* [PATCH 1/10] checks whether the memory can be removed or not.
+
+If you find lack of function for physical memory hot-remove, please let me
+know.
+
+How to test this patchset?
+1. apply this patchset and build the kernel. MEMORY_HOTPLUG, MEMORY_HOTREMOVE,
+   ACPI_HOTPLUG_MEMORY must be selected.
+2. load the module acpi_memhotplug
+3. hotplug the memory device(it depends on your hardware)
+   You will see the memory device under the directory /sys/bus/acpi/devices/.
+   Its name is PNP0C80:XX.
+4. online/offline pages provided by this memory device
+   You can write online/offline to /sys/devices/system/memory/memoryX/state to
+   online/offline pages provided by this memory device
+5. hotremove the memory device
+   You can hotremove the memory device by the hardware, or writing 1 to
+   /sys/bus/acpi/devices/PNP0C80:XX/eject.
+
+Note: if the memory provided by the memory device is used by the kernel, it
+can't be offlined. It is not a bug.
+
+Known problems:
+1. memory can't be offlined when CONFIG_MEMCG is selected.
+   For example: there is a memory device on node 1. The address range
+   is [1G, 1.5G). You will find 4 new directories memory8, memory9, memory10,
+   and memory11 under the directory /sys/devices/system/memory/.
+   If CONFIG_MEMCG is selected, we will allocate memory to store page cgroup
+   when we online pages. When we online memory8, the memory stored page cgroup
+   is not provided by this memory device. But when we online memory9, the memory
+   stored page cgroup may be provided by memory8. So we can't offline memory8
+   now. We should offline the memory in the reversed order.
+   When the memory device is hotremoved, we will auto offline memory provided
+   by this memory device. But we don't know which memory is onlined first, so
+   offlining memory may fail. In such case, you should offline the memory by
+   hand before hotremoving the memory device.
+2. hotremoving memory device may cause kernel panicked
+   This bug will be fixed by Liu Jiang's patch:
+   https://lkml.org/lkml/2012/7/3/1
+
+
