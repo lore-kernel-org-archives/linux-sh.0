@@ -1,147 +1,148 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 31 Oct 2012 03:07:59 +0000
-Subject: [PATCH 3/3] ARM: shmobile: sh7372: use sh_clk_fsidiv_register() for FSI-DIV clocks
-Message-Id: <87ehkfmj8z.wl%kuninori.morimoto.gx@renesas.com>
+From: Florian Fainelli <florian@openwrt.org>
+Date: Fri, 05 Oct 2012 16:20:54 +0000
+Subject: [PATCH 22/32 v3] sh: convert boards to use the OHCI platform driver
+Message-Id: <1349454064-11606-23-git-send-email-florian@openwrt.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1349454064-11606-1-git-send-email-florian@openwrt.org>
+In-Reply-To: <1349454064-11606-1-git-send-email-florian@openwrt.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: stern@rowland.harvard.edu
+Cc: linux-usb@vger.kernel.org, Florian Fainelli <florian@openwrt.org>, Paul Mundt <lethal@linux-sh.org>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Now, sh7372 can use sh_clk_fsidiv_register() for FSI-DIV clocks.
+This patch makes all SuperH boards using the ohci-sh platform driver to use
+the ohci-platform driver instead, which is suitable for use by these boards.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Florian Fainelli <florian@openwrt.org>
 ---
- arch/arm/mach-shmobile/clock-sh7372.c |   94 ++++-----------------------------
- 1 file changed, 10 insertions(+), 84 deletions(-)
+Changes in v3:
+- improved commit message
 
-diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-index 18dcff7..bee2d05 100644
---- a/arch/arm/mach-shmobile/clock-sh7372.c
-+++ b/arch/arm/mach-shmobile/clock-sh7372.c
-@@ -420,87 +420,11 @@ static struct clk div6_reparent_clks[DIV6_REPARENT_NR] = {
+No changes between v1 and v2
+
+ arch/sh/kernel/cpu/sh3/setup-sh7720.c  |    6 +++++-
+ arch/sh/kernel/cpu/sh4a/setup-sh7757.c |    6 +++++-
+ arch/sh/kernel/cpu/sh4a/setup-sh7763.c |    6 +++++-
+ arch/sh/kernel/cpu/sh4a/setup-sh7786.c |    6 +++++-
+ 4 files changed, 20 insertions(+), 4 deletions(-)
+
+diff --git a/arch/sh/kernel/cpu/sh3/setup-sh7720.c b/arch/sh/kernel/cpu/sh3/setup-sh7720.c
+index 0c2f1b2..42d991f 100644
+--- a/arch/sh/kernel/cpu/sh3/setup-sh7720.c
++++ b/arch/sh/kernel/cpu/sh3/setup-sh7720.c
+@@ -20,6 +20,7 @@
+ #include <linux/serial_sci.h>
+ #include <linux/sh_timer.h>
+ #include <linux/sh_intc.h>
++#include <linux/usb/ohci_pdriver.h>
+ #include <asm/rtc.h>
+ #include <cpu/serial.h>
+ 
+@@ -103,12 +104,15 @@ static struct resource usb_ohci_resources[] = {
+ 
+ static u64 usb_ohci_dma_mask = 0xffffffffUL;
+ 
++static struct usb_ohci_pdata usb_ohci_pdata;
++
+ static struct platform_device usb_ohci_device = {
+-	.name		= "sh_ohci",
++	.name		= "ohci-platform",
+ 	.id		= -1,
+ 	.dev = {
+ 		.dma_mask		= &usb_ohci_dma_mask,
+ 		.coherent_dma_mask	= 0xffffffff,
++		.platform_data		= &usb_ohci_pdata,
+ 	},
+ 	.num_resources	= ARRAY_SIZE(usb_ohci_resources),
+ 	.resource	= usb_ohci_resources,
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
+index 4a2f357..9079a0f 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
+@@ -19,6 +19,7 @@
+ #include <linux/sh_timer.h>
+ #include <linux/sh_dma.h>
+ #include <linux/sh_intc.h>
++#include <linux/usb/ohci_pdriver.h>
+ #include <cpu/dma-register.h>
+ #include <cpu/sh7757.h>
+ 
+@@ -750,12 +751,15 @@ static struct resource usb_ohci_resources[] = {
+ 	},
  };
  
- /* FSI DIV */
--static unsigned long fsidiv_recalc(struct clk *clk)
--{
--	unsigned long value;
--
--	value = __raw_readl(clk->mapping->base);
--
--	value >>= 16;
--	if (value < 2)
--		return 0;
--
--	return clk->parent->rate / value;
--}
--
--static long fsidiv_round_rate(struct clk *clk, unsigned long rate)
--{
--	return clk_rate_div_range_round(clk, 2, 0xffff, rate);
--}
--
--static void fsidiv_disable(struct clk *clk)
--{
--	__raw_writel(0, clk->mapping->base);
--}
--
--static int fsidiv_enable(struct clk *clk)
--{
--	unsigned long value;
--
--	value  = __raw_readl(clk->mapping->base) >> 16;
--	if (value < 2)
--		return -EIO;
--
--	__raw_writel((value << 16) | 0x3, clk->mapping->base);
--
--	return 0;
--}
-+enum { FSIDIV_A, FSIDIV_B, FSIDIV_REPARENT_NR };
++static struct usb_ohci_pdata usb_ohci_pdata;
++
+ static struct platform_device usb_ohci_device = {
+-	.name		= "sh_ohci",
++	.name		= "ohci-platform",
+ 	.id		= -1,
+ 	.dev = {
+ 		.dma_mask = &usb_ohci_device.dev.coherent_dma_mask,
+ 		.coherent_dma_mask = DMA_BIT_MASK(32),
++		.platform_data	= &usb_ohci_pdata,
+ 	},
+ 	.num_resources	= ARRAY_SIZE(usb_ohci_resources),
+ 	.resource	= usb_ohci_resources,
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7763.c b/arch/sh/kernel/cpu/sh4a/setup-sh7763.c
+index bd0a8fb..1686aca 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7763.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7763.c
+@@ -16,6 +16,7 @@
+ #include <linux/sh_intc.h>
+ #include <linux/io.h>
+ #include <linux/serial_sci.h>
++#include <linux/usb/ohci_pdriver.h>
  
--static int fsidiv_set_rate(struct clk *clk, unsigned long rate)
--{
--	int idx;
--
--	idx = (clk->parent->rate / rate) & 0xffff;
--	if (idx < 2)
--		return -EINVAL;
--
--	__raw_writel(idx << 16, clk->mapping->base);
--	return 0;
--}
--
--static struct sh_clk_ops fsidiv_clk_ops = {
--	.recalc		= fsidiv_recalc,
--	.round_rate	= fsidiv_round_rate,
--	.set_rate	= fsidiv_set_rate,
--	.enable		= fsidiv_enable,
--	.disable	= fsidiv_disable,
--};
--
--static struct clk_mapping fsidiva_clk_mapping = {
--	.phys	= FSIDIVA,
--	.len	= 8,
--};
--
--static struct clk fsidiva_clk = {
--	.ops		= &fsidiv_clk_ops,
--	.parent		= &div6_reparent_clks[DIV6_FSIA], /* late install */
--	.mapping	= &fsidiva_clk_mapping,
--};
--
--static struct clk_mapping fsidivb_clk_mapping = {
--	.phys	= FSIDIVB,
--	.len	= 8,
--};
--
--static struct clk fsidivb_clk = {
--	.ops		= &fsidiv_clk_ops,
--	.parent		= &div6_reparent_clks[DIV6_FSIB],  /* late install */
--	.mapping	= &fsidivb_clk_mapping,
--};
--
--static struct clk *late_main_clks[] = {
--	&fsidiva_clk,
--	&fsidivb_clk,
-+static struct clk fsidivs[] = {
-+	[FSIDIV_A] = SH_CLK_FSIDIV(FSIDIVA, &div6_reparent_clks[DIV6_FSIA]),
-+	[FSIDIV_B] = SH_CLK_FSIDIV(FSIDIVB, &div6_reparent_clks[DIV6_FSIB]),
+ static struct plat_sci_port scif0_platform_data = {
+ 	.mapbase	= 0xffe00000,
+@@ -106,12 +107,15 @@ static struct resource usb_ohci_resources[] = {
+ 
+ static u64 usb_ohci_dma_mask = 0xffffffffUL;
+ 
++static struct usb_ohci_pdata usb_ohci_pdata;
++
+ static struct platform_device usb_ohci_device = {
+-	.name		= "sh_ohci",
++	.name		= "ohci-platform",
+ 	.id		= -1,
+ 	.dev = {
+ 		.dma_mask		= &usb_ohci_dma_mask,
+ 		.coherent_dma_mask	= 0xffffffff,
++		.platform_data		= &usb_ohci_pdata,
+ 	},
+ 	.num_resources	= ARRAY_SIZE(usb_ohci_resources),
+ 	.resource	= usb_ohci_resources,
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7786.c b/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
+index 2e6952f..ab52d4d 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
+@@ -23,6 +23,7 @@
+ #include <linux/sh_timer.h>
+ #include <linux/sh_dma.h>
+ #include <linux/sh_intc.h>
++#include <linux/usb/ohci_pdriver.h>
+ #include <cpu/dma-register.h>
+ #include <asm/mmzone.h>
+ 
+@@ -583,12 +584,15 @@ static struct resource usb_ohci_resources[] = {
+ 	},
  };
  
- enum { MSTP001, MSTP000,
-@@ -583,8 +507,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("pllc1_clk", &pllc1_clk),
- 	CLKDEV_CON_ID("pllc1_div2_clk", &pllc1_div2_clk),
- 	CLKDEV_CON_ID("pllc2_clk", &sh7372_pllc2_clk),
--	CLKDEV_CON_ID("fsidiva", &fsidiva_clk),
--	CLKDEV_CON_ID("fsidivb", &fsidivb_clk),
-+	CLKDEV_CON_ID("fsidiva", &fsidivs[FSIDIV_A]),
-+	CLKDEV_CON_ID("fsidivb", &fsidivs[FSIDIV_B]),
- 
- 	/* DIV4 clocks */
- 	CLKDEV_CON_ID("i_clk", &div4_clks[DIV4_I]),
-@@ -680,6 +604,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("icka", "sh_fsi2", &div6_reparent_clks[DIV6_FSIA]),
- 	CLKDEV_ICK_ID("ickb", "sh_fsi2", &div6_reparent_clks[DIV6_FSIB]),
- 	CLKDEV_ICK_ID("spu2", "sh_fsi2", &mstp_clks[MSTP223]),
-+	CLKDEV_ICK_ID("diva", "sh_fsi2", &fsidivs[FSIDIV_A]),
-+	CLKDEV_ICK_ID("divb", "sh_fsi2", &fsidivs[FSIDIV_B]),
- };
- 
- void __init sh7372_clock_init(void)
-@@ -708,8 +634,8 @@ void __init sh7372_clock_init(void)
- 	if (!ret)
- 		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
- 
--	for (k = 0; !ret && (k < ARRAY_SIZE(late_main_clks)); k++)
--		ret = clk_register(late_main_clks[k]);
-+	if (!ret)
-+		ret = sh_clk_fsidiv_register(fsidivs, FSIDIV_REPARENT_NR);
- 
- 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
- 
++static struct usb_ohci_pdata usb_ohci_pdata;
++
+ static struct platform_device usb_ohci_device = {
+-	.name		= "sh_ohci",
++	.name		= "ohci-platform",
+ 	.id		= -1,
+ 	.dev = {
+ 		.dma_mask		= &usb_ohci_device.dev.coherent_dma_mask,
+ 		.coherent_dma_mask	= DMA_BIT_MASK(32),
++		.platform_data		= &usb_ohci_pdata,
+ 	},
+ 	.num_resources	= ARRAY_SIZE(usb_ohci_resources),
+ 	.resource	= usb_ohci_resources,
 -- 
 1.7.9.5
 
