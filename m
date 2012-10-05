@@ -1,87 +1,61 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Thu, 25 Oct 2012 10:58:21 +0000
-Subject: [PATCH 2/3] ARM: shmobile: sh73a0: Replace modify_scu_cpu_psr with scu_power_mode
-Message-Id: <1351162702-8391-3-git-send-email-hechtb@gmail.com>
+From: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
+Date: Fri, 05 Oct 2012 19:11:36 +0000
+Subject: Re: [PATCH 10/14] media: soc-camera: support OF cameras
+Message-Id: <506F30E8.10206@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1351162702-8391-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1351162702-8391-1-git-send-email-hechtb@gmail.com>
+References: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de> <1348754853-28619-11-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1348754853-28619-11-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-media@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Stephen Warren <swarren@wwwdotorg.org>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>
 
-We can remove the extra code of modify_scu_cpu_psr() and use the cleaner
-generic ARM helper scu_power_mode(). As every CPU only deals with its
-own power register and scu_power_mode() operates with 8-bit accesses,
-we save the locking overhead too.
+On 09/27/2012 04:07 PM, Guennadi Liakhovetski wrote:
+> With OF we aren't getting platform data any more. To minimise changes we
+> create all the missing data ourselves, including compulsory struct
+> soc_camera_link objects. Host-client linking is now done, based on the OF
+> data. Media bus numbers also have to be assigned dynamically.
+>
+> Signed-off-by: Guennadi Liakhovetski<g.liakhovetski@gmx.de>
+> ---
+...
+>   static int soc_camera_i2c_notify(struct notifier_block *nb,
+>   				 unsigned long action, void *data)
+>   {
+> @@ -1203,13 +1434,20 @@ static int soc_camera_i2c_notify(struct notifier_block *nb,
+>   	struct v4l2_subdev *subdev;
+>   	int ret;
+>
+> -	if (client->addr != icl->board_info->addr ||
+> -	    client->adapter->nr != icl->i2c_adapter_id)
+> +	dev_dbg(dev, "%s(%lu): %x on %u\n", __func__, action,
+> +		client->addr, client->adapter->nr);
+> +
+> +	if (!soc_camera_i2c_client_match(icl, client))
+>   		return NOTIFY_DONE;
+>
+>   	switch (action) {
+>   	case BUS_NOTIFY_BIND_DRIVER:
+>   		client->dev.platform_data = icl;
+> +		if (icl->of_link) {
+> +			struct soc_camera_of_client *sofc = container_of(icl->of_link,
+> +						struct soc_camera_of_client, of_link);
+> +			soc_camera_of_i2c_ifill(sofc, client);
+> +		}
+>
+>   		return NOTIFY_OK;
+>   	case BUS_NOTIFY_BOUND_DRIVER:
 
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
----
- arch/arm/mach-shmobile/smp-sh73a0.c |   23 ++---------------------
- 1 file changed, 2 insertions(+), 21 deletions(-)
+There is no need for different handling of this event as well ?
+Further, there is code like:
 
-diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
-index 624f00f..96ddb97 100644
---- a/arch/arm/mach-shmobile/smp-sh73a0.c
-+++ b/arch/arm/mach-shmobile/smp-sh73a0.c
-@@ -41,9 +41,6 @@ static void __iomem *scu_base_addr(void)
- 	return (void __iomem *)0xf0000000;
- }
- 
--static DEFINE_SPINLOCK(scu_lock);
--static unsigned long tmp;
--
- #ifdef CONFIG_HAVE_ARM_TWD
- static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, 0xf0000600, 29);
- void __init sh73a0_register_twd(void)
-@@ -52,20 +49,6 @@ void __init sh73a0_register_twd(void)
- }
- #endif
- 
--static void modify_scu_cpu_psr(unsigned long set, unsigned long clr)
--{
--	void __iomem *scu_base = scu_base_addr();
--
--	spin_lock(&scu_lock);
--	tmp = __raw_readl(scu_base + 8);
--	tmp &= ~clr;
--	tmp |= set;
--	spin_unlock(&scu_lock);
--
--	/* disable cache coherency after releasing the lock */
--	__raw_writel(tmp, scu_base + 8);
--}
--
- static unsigned int __init sh73a0_get_core_count(void)
- {
- 	void __iomem *scu_base = scu_base_addr();
-@@ -83,7 +66,7 @@ static int __cpuinit sh73a0_boot_secondary(unsigned int cpu, struct task_struct
- 	cpu = cpu_logical_map(cpu);
- 
- 	/* enable cache coherency */
--	modify_scu_cpu_psr(0, 3 << (cpu * 8));
-+	scu_power_mode(scu_base_addr(), 0);
- 
- 	if (((__raw_readl(PSTR) >> (4 * cpu)) & 3) = 3)
- 		__raw_writel(1 << cpu, WUPCR);	/* wake up */
-@@ -95,8 +78,6 @@ static int __cpuinit sh73a0_boot_secondary(unsigned int cpu, struct task_struct
- 
- static void __init sh73a0_smp_prepare_cpus(unsigned int max_cpus)
- {
--	int cpu = cpu_logical_map(0);
--
- 	scu_enable(scu_base_addr());
- 
- 	/* Map the reset vector (in headsmp.S) */
-@@ -104,7 +85,7 @@ static void __init sh73a0_smp_prepare_cpus(unsigned int max_cpus)
- 	__raw_writel(__pa(shmobile_secondary_vector), SBAR);
- 
- 	/* enable cache coherency on CPU0 */
--	modify_scu_cpu_psr(0, 3 << (cpu * 8));
-+	scu_power_mode(scu_base_addr(), 0);
- }
- 
- static void __init sh73a0_smp_init_cpus(void)
--- 
-1.7.9.5
+	adap = i2c_get_adapter(icl->i2c_adapter_id);
 
+which is clearly not going to work in OF case. Could you clarify how
+it is supposed to work ?
+
+--
+
+Thanks,
+Sylwester
