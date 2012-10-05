@@ -1,73 +1,55 @@
-From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Date: Wed, 24 Oct 2012 10:58:10 +0000
-Subject: [PATCH 4/5] i2c: i2c-sh_mobile: support I2C hardware block with a faster operating clock
-Message-Id: <5087C9C2.7010000@renesas.com>
+From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Date: Fri, 05 Oct 2012 02:31:07 +0000
+Subject: [PATCH 4/10] memory-hotplug : unregister memory section on SPARSEMEM_VMEMMAP
+Message-Id: <506E466B.4050903@jp.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5087C93F.6080601@renesas.com>
-In-Reply-To: <5087C93F.6080601@renesas.com>
+References: <506E43E0.70507@jp.fujitsu.com>
+In-Reply-To: <506E43E0.70507@jp.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+Cc: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, wency@cn.fujitsu.com
 
-On newer SH-/R-Mobile SoCs, a clock supply to the I2C hardware block,
-which is used to generate the SCL clock output, is getting faster than
-before, while on the other hand, the SCL clock control registers, ICCH
-and ICCL, stay unchanged in 9-bit-wide (8+1).
+Currently __remove_section for SPARSEMEM_VMEMMAP does nothing. But even if
+we use SPARSEMEM_VMEMMAP, we can unregister the memory_section.
 
-On such silicons, the internal SCL clock counter gets incremented every
-2 clocks of the operating clock.
+So the patch add unregister_memory_section() into __remove_section().
 
-This patch makes it configurable through platform data.
-
-Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com> 
+CC: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 ---
- drivers/i2c/busses/i2c-sh_mobile.c | 5 +++++
- include/linux/i2c/i2c-sh_mobile.h  | 1 +
- 2 files changed, 6 insertions(+)
+ mm/memory_hotplug.c |   13 ++++++++-----
+ 1 file changed, 8 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
-index 4dc0cc3..4c28358 100644
---- a/drivers/i2c/busses/i2c-sh_mobile.c
-+++ b/drivers/i2c/busses/i2c-sh_mobile.c
-@@ -120,6 +120,7 @@ struct sh_mobile_i2c_data {
- 	void __iomem *reg;
- 	struct i2c_adapter adap;
- 	unsigned long bus_speed;
-+	unsigned int clks_per_count;
- 	struct clk *clk;
- 	u_int8_t icic;
- 	u_int8_t flags;
-@@ -231,6 +232,7 @@ static void sh_mobile_i2c_init(struct sh_mobile_i2c_data *pd)
- 	/* Get clock rate after clock is enabled */
- 	clk_enable(pd->clk);
- 	i2c_clk_khz = clk_get_rate(pd->clk) / 1000;
-+	i2c_clk_khz /= pd->clks_per_count;
- 
- 	if (pd->bus_speed = STANDARD_MODE) {
- 		tLOW	= 47;	/* tLOW = 4.7 us */
-@@ -658,6 +660,9 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
- 	pd->bus_speed = STANDARD_MODE;
- 	if (pdata && pdata->bus_speed)
- 		pd->bus_speed = pdata->bus_speed;
-+	pd->clks_per_count = 1;
-+	if (pdata && pdata->clks_per_count)
-+		pd->clks_per_count = pdata->clks_per_count;
- 
- 	/* The IIC blocks on SH-Mobile ARM processors
- 	 * come with two new bits in ICIC.
-diff --git a/include/linux/i2c/i2c-sh_mobile.h b/include/linux/i2c/i2c-sh_mobile.h
-index beda708..06e3089 100644
---- a/include/linux/i2c/i2c-sh_mobile.h
-+++ b/include/linux/i2c/i2c-sh_mobile.h
-@@ -5,6 +5,7 @@
- 
- struct i2c_sh_mobile_platform_data {
- 	unsigned long bus_speed;
-+	unsigned int clks_per_count;
- };
- 
- #endif /* __I2C_SH_MOBILE_H__ */
--- 
-1.7.12.4
+Index: linux-3.6/mm/memory_hotplug.c
+=================================--- linux-3.6.orig/mm/memory_hotplug.c	2012-10-04 18:29:50.577668254 +0900
++++ linux-3.6/mm/memory_hotplug.c	2012-10-04 18:29:58.284676075 +0900
+@@ -279,11 +279,14 @@ static int __meminit __add_section(int n
+ #ifdef CONFIG_SPARSEMEM_VMEMMAP
+ static int __remove_section(struct zone *zone, struct mem_section *ms)
+ {
+-	/*
+-	 * XXX: Freeing memmap with vmemmap is not implement yet.
+-	 *      This should be removed later.
+-	 */
+-	return -EBUSY;
++	int ret = -EINVAL;
++
++	if (!valid_section(ms))
++		return ret;
++
++	ret = unregister_memory_section(ms);
++
++	return ret;
+ }
+ #else
+ static int __remove_section(struct zone *zone, struct mem_section *ms)
 
