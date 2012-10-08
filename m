@@ -1,257 +1,125 @@
-From: Sylwester Nawrocki <s.nawrocki@samsung.com>
-Date: Mon, 08 Oct 2012 10:03:45 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 08 Oct 2012 12:23:25 +0000
 Subject: Re: [PATCH 05/14] media: add a V4L2 OF parser
-Message-Id: <5072A501.6020602@samsung.com>
+Message-Id: <Pine.LNX.4.64.1210081306240.12203@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de>
- <1348754853-28619-6-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1348754853-28619-6-git-send-email-g.liakhovetski@gmx.de>
+ <201210051241.52205.hverkuil@xs4all.nl> <Pine.LNX.4.64.1210051250210.13761@axis700.grange>
+ <201210051323.45571.hverkuil@xs4all.nl>
+In-Reply-To: <201210051323.45571.hverkuil@xs4all.nl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-media@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Stephen Warren <swarren@wwwdotorg.org>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>
+To: Hans Verkuil <hverkuil@xs4all.nl>
+Cc: Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-media@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Stephen Warren <swarren@wwwdotorg.org>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>
 
-Hi Guennadi,
+Hi Hans
 
-On 09/27/2012 04:07 PM, Guennadi Liakhovetski wrote:
-> Add a V4L2 OF parser, implementing bindings, documented in
-> Documentation/devicetree/bindings/media/v4l2.txt.
+On Fri, 5 Oct 2012, Hans Verkuil wrote:
+
+[snip]
+
+> I think the soc_camera patches should be left out for now. I suspect that
+> by adding core support for async i2c handling first,
+
+Ok, let's think, what this meacs - async I2C in media / V4L2 core.
+
+The main reason for our probing order problem is the master clock, 
+typically supplied from the camera bridge to I2C subdevices, which we only 
+want to start when necessary, i.e. when accessing the subdevice. And the 
+subdevice driver needs that clock running during its .probe() to be able 
+to access and verify or configure the hardware. Our current solution is to 
+not register I2C subdevices from the platform data, as is usual for all 
+I2C devices, but from the bridge driver and only after it has switched on 
+the master clock. After the subdevice driver has completed its probing we 
+switch the clock back off until the subdevice has to be activated, e.g. 
+for video capture.
+
+Also important - when we want to unregister the bridge driver we just also 
+unregister the I2C device.
+
+Now, to reverse the whole thing and to allow I2C devices be registered as 
+usual - via platform data or OF, first of all we have to teach I2C 
+subdevice drivers to recognise the "too early" situation and request 
+deferred probing in such a case. Then it will be reprobed after each new 
+successful probe or unregister on the system. After the bridge driver has 
+successfully probed the subdevice driver will be re-probed and at that 
+time it should succeed. Now, there is a problem here too: who should 
+switch on and off the master clock?
+
+If we do it from the bridge driver, we could install an I2C bus-notifier, 
+_before_ the subdevice driver is probed, i.e. upon the 
+BUS_NOTIFY_BIND_DRIVER event we could turn on the clock. If subdevice 
+probing was successful, we can then wait for the BUS_NOTIFY_BOUND_DRIVER 
+event to switch the clock back off. BUT - if the subdevice fails probing? 
+How do we find out about that and turn the clock back off? There is no 
+notification event for that... Possible solutions:
+
+1. timer - ugly and unreliable.
+2. add a "probing failed" notifier event to the device core - would this 
+   be accepted?
+3. let the subdevice turn the master clock on and off for the duration of 
+   probing.
+
+My vote goes for (3). Ideally this should be done using the generic clock 
+framework. But can we really expect all drivers and platforms to switch to 
+it quickly enough? If not, we need a V4L2-specific callback from subdevice 
+drivers to bridge drivers to turn the clock on and off. That's what I've 
+done "temporarily" in this patch series for soc-camera.
+
+Suppose we decide to do the same for V4L2 centrally - add call-backs. Then 
+we can think what else we need to add to V4L2 to support asynchronous 
+subdevice driver probing.
+
+1. We'll have to create these V4L2 clock start and stop functions, that, 
+supplied (in case of I2C) with client address and adapter number will find 
+the correct v4l2_device instance and call its callbacks.
+
+2. The I2C notifier. I'm not sure, whether this one should be common. Of 
+common tasks we have to refcount the I2C adapter and register the 
+subdevice. Then we'd have to call the bridge driver's callback. Is it 
+worth it doing this centrally or rather allow individual drivers to do 
+that themselves?
+
+Also, ideally OF-compatible (I2C) drivers should run with no platform 
+data, but soc-camera is using I2C device platform data intensively. To 
+avoid modifying the soc-camera core and all drivers, I also trigger on the 
+BUS_NOTIFY_BIND_DRIVER event and assign a reference to the dynamically 
+created platform data to the I2C device. Would we also want to do this for 
+all V4L2 bridge drivers? We could call this a "prepare" callback or 
+something similar...
+
+3. Bridge driver unregistering. Here we have to put the subdevice driver 
+back into the deferred-probe state... Ugliness alert: I'm doing this by 
+unregistering and re-registering the I2C device... For that I also have to 
+create a copy of devices I2C board-info data. Lovely, ain't it? This I'd 
+be happy to move to the V4L2 core;-)
+
+Thanks
+Guennadi
+
+> the soc_camera patches
+> will become a lot easier to understand.
 > 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> ---
->  drivers/media/v4l2-core/Makefile  |    3 +
->  drivers/media/v4l2-core/v4l2-of.c |  190 +++++++++++++++++++++++++++++++++++++
->  include/media/v4l2-of.h           |   62 ++++++++++++
->  3 files changed, 255 insertions(+), 0 deletions(-)
->  create mode 100644 drivers/media/v4l2-core/v4l2-of.c
->  create mode 100644 include/media/v4l2-of.h
+> Regards,
 > 
-> diff --git a/drivers/media/v4l2-core/Makefile b/drivers/media/v4l2-core/Makefile
-> index c2d61d4..00f64d6 100644
-> --- a/drivers/media/v4l2-core/Makefile
-> +++ b/drivers/media/v4l2-core/Makefile
-> @@ -9,6 +9,9 @@ videodev-objs	:=	v4l2-dev.o v4l2-ioctl.o v4l2-device.o v4l2-fh.o \
->  ifeq ($(CONFIG_COMPAT),y)
->    videodev-objs += v4l2-compat-ioctl32.o
->  endif
-> +ifeq ($(CONFIG_OF),y)
-> +  videodev-objs += v4l2-of.o
-> +endif
->  
->  obj-$(CONFIG_VIDEO_DEV) += videodev.o v4l2-int-device.o
->  obj-$(CONFIG_VIDEO_V4L2) += v4l2-common.o
-> diff --git a/drivers/media/v4l2-core/v4l2-of.c b/drivers/media/v4l2-core/v4l2-of.c
-> new file mode 100644
-> index 0000000..f45d64b
-> --- /dev/null
-> +++ b/drivers/media/v4l2-core/v4l2-of.c
-> @@ -0,0 +1,190 @@
-> +/*
-> + * V4L2 OF binding parsing library
-> + *
-> + * Copyright (C) 2012 Renesas Electronics Corp.
-> + * Author: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> + *
-> + * This program is free software; you can redistribute it and/or modify
-> + * it under the terms of version 2 of the GNU General Public License as
-> + * published by the Free Software Foundation.
-> + */
-> +#include <linux/kernel.h>
-> +#include <linux/module.h>
-> +#include <linux/of.h>
-> +#include <linux/types.h>
-> +
-> +#include <media/v4l2-of.h>
-> +
-> +/*
-> + * All properties are optional. If none are found, we don't set any flags. This
-> + * means, the port has a static configuration and no properties have to be
-> + * specified explicitly.
-> + * If any properties are found, that identify the bus as parallel, and
-> + * slave-mode isn't set, we set V4L2_MBUS_MASTER. Similarly, if we recognise the
-> + * bus as serial CSI-2 and clock-noncontinuous isn't set, we set the
-> + * V4L2_MBUS_CSI2_CONTINUOUS_CLOCK flag.
-> + * The caller should hold a reference to "node."
-> + */
+> 	Hans
+> 
+> > 
+> > Thanks
+> > Guennadi
+> > ---
+> > Guennadi Liakhovetski, Ph.D.
+> > Freelance Open-Source Software Developer
+> > http://www.open-technology.de/
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-media" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> > 
+> 
 
-Since this is a library function, how about converting this description
-to kernel-doc ?
-
-> +void v4l2_of_parse_link(const struct device_node *node,
-> +			struct v4l2_of_link *link)
-> +{
-> +	const struct device_node *port_node = of_get_parent(node);
-> +	int size;
-> +	unsigned int v;
-> +	u32 data_lanes[ARRAY_SIZE(link->mipi_csi_2.data_lanes)];
-> +	bool data_lanes_present;
-> +
-> +	memset(link, 0, sizeof(*link));
-> +
-> +	link->local_node = node;
-> +
-> +	/* Doesn't matter, whether the below two calls succeed */
-> +	of_property_read_u32(port_node, "reg", &link->port);
-> +	of_property_read_u32(node, "reg", &link->addr);
-> +
-> +	if (!of_property_read_u32(node, "bus-width", &v))
-> +		link->parallel.bus_width = v;
-> +
-> +	if (!of_property_read_u32(node, "data-shift", &v))
-> +		link->parallel.data_shift = v;
-> +
-> +	if (!of_property_read_u32(node, "hsync-active", &v))
-> +		link->mbus_flags |= v ? V4L2_MBUS_HSYNC_ACTIVE_HIGH :
-> +			V4L2_MBUS_HSYNC_ACTIVE_LOW;
-> +
-> +	if (!of_property_read_u32(node, "vsync-active", &v))
-> +		link->mbus_flags |= v ? V4L2_MBUS_VSYNC_ACTIVE_HIGH :
-> +			V4L2_MBUS_VSYNC_ACTIVE_LOW;
-> +
-> +	if (!of_property_read_u32(node, "data-active", &v))
-> +		link->mbus_flags |= v ? V4L2_MBUS_DATA_ACTIVE_HIGH :
-> +			V4L2_MBUS_DATA_ACTIVE_LOW;
-> +
-> +	if (!of_property_read_u32(node, "pclk-sample", &v))
-> +		link->mbus_flags |= v ? V4L2_MBUS_PCLK_SAMPLE_RISING :
-> +			V4L2_MBUS_PCLK_SAMPLE_FALLING;
-> +
-> +	if (!of_property_read_u32(node, "field-even-active", &v))
-> +		link->mbus_flags |= v ? V4L2_MBUS_FIELD_EVEN_HIGH :
-> +			V4L2_MBUS_FIELD_EVEN_LOW;
-> +
-> +	if (of_get_property(node, "slave-mode", &size))
-> +		link->mbus_flags |= V4L2_MBUS_SLAVE;
-> +
-> +	/* If any parallel-bus properties have been found, skip serial ones */
-> +	if (link->parallel.bus_width || link->parallel.data_shift ||
-> +	    link->mbus_flags) {
-> +		/* Default parallel bus-master */
-> +		if (!(link->mbus_flags & V4L2_MBUS_SLAVE))
-> +			link->mbus_flags |= V4L2_MBUS_MASTER;
-> +		return;
-> +	}
-> +
-> +	if (!of_property_read_u32(node, "clock-lanes", &v))
-> +		link->mipi_csi_2.clock_lane = v;
-> +
-> +	if (!of_property_read_u32_array(node, "data-lanes", data_lanes,
-> +					ARRAY_SIZE(data_lanes))) {
-> +		int i;
-> +		for (i = 0; i < ARRAY_SIZE(data_lanes); i++)
-> +			link->mipi_csi_2.data_lanes[i] = data_lanes[i];
-> +		data_lanes_present = true;
-> +	} else {
-> +		data_lanes_present = false;
-> +	}
-> +
-> +	if (of_get_property(node, "clock-noncontinuous", &size))
-> +		link->mbus_flags |= V4L2_MBUS_CSI2_NONCONTINUOUS_CLOCK;
-> +
-> +	if ((link->mipi_csi_2.clock_lane || data_lanes_present) &&
-> +	    !(link->mbus_flags & V4L2_MBUS_CSI2_NONCONTINUOUS_CLOCK))
-> +		/* Default CSI-2: continuous clock */
-> +		link->mbus_flags |= V4L2_MBUS_CSI2_CONTINUOUS_CLOCK;
-> +}
-> +EXPORT_SYMBOL(v4l2_of_parse_link);
-> +
-> +/*
-> + * Return a refcounted next "link" DT node. Contrary to the common OF practice,
-> + * we do not drop the reference to previous, users have to do it themselves,
-> + * when they're done with the node.
-> + */
-> +struct device_node *v4l2_of_get_next_link(const struct device_node *parent,
-> +					struct device_node *previous)
-
-Looks good to me. Only a proper kernel-doc description seems to be missing.
-> +{
-> +	struct device_node *child, *port;
-> +
-> +	if (!parent)
-> +		return NULL;
-> +
-> +	if (!previous) {
-> +		/*
-> +		 * If this is the first call, we have to find a port within this
-> +		 * node
-> +		 */
-> +		for_each_child_of_node(parent, port) {
-> +			if (!of_node_cmp(port->name, "port"))
-> +				break;
-> +		}
-> +		if (port) {
-> +			/* Found a port, get a link */
-> +			child = of_get_next_child(port, NULL);
-> +			of_node_put(port);
-> +		} else {
-> +			child = NULL;
-> +		}
-> +		if (!child)
-> +			pr_err("%s(): Invalid DT: %s has no link children!\n",
-> +			       __func__, parent->name);
-> +	} else {
-> +		port = of_get_parent(previous);
-> +		if (!port)
-> +			/* Hm, has someone given us the root node?... */
-> +			return NULL;
-> +
-> +		/* Avoid dropping previous refcount to 0 */
-> +		of_node_get(previous);
-> +		child = of_get_next_child(port, previous);
-> +		if (child) {
-> +			of_node_put(port);
-> +			return child;
-> +		}
-> +
-> +		/* No more links under this port, try the next one */
-> +		do {
-> +			port = of_get_next_child(parent, port);
-> +			if (!port)
-> +				return NULL;
-> +		} while (of_node_cmp(port->name, "port"));
-> +
-> +		/* Pick up the first link on this port */
-> +		child = of_get_next_child(port, NULL);
-> +		of_node_put(port);
-> +	}
-> +
-> +	return child;
-> +}
-> +EXPORT_SYMBOL(v4l2_of_get_next_link);
-> +
-> +/* Return a refcounted DT node, owning the link, referenced by "remote" */
-
-Since this returns parent node of of a port on the other end of the link,
-how about changing the name to v4l2_of_get_remote_link_parent() ?
-
-Also kernel-doc description would be useful, so one doesn't have to
-necessarily dig into the code to see what this function does exactly.
-
-> +struct device_node *v4l2_of_get_remote(const struct device_node *node)
-> +{
-> +	struct device_node *remote, *tmp;
-> +
-> +	/* Get remote link DT node */
-> +	remote = of_parse_phandle(node, "remote", 0);
-> +	if (!remote)
-> +		return NULL;
-> +
-> +	/* remote port */
-> +	tmp = of_get_parent(remote);
-> +	of_node_put(remote);
-> +	if (!tmp)
-> +		return NULL;
-> +
-> +	/* remote DT node */
-> +	remote = of_get_parent(tmp);
-> +	of_node_put(tmp);
-> +
-> +	return remote;
-> +}
-> +EXPORT_SYMBOL(v4l2_of_get_remote);
-
---
-
-Thanks,
-Sylwester
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
