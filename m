@@ -1,49 +1,151 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 24 Oct 2012 13:36:40 +0000
-Subject: Re: [Q] "console=" command line ignored?
-Message-Id: <Pine.LNX.4.64.1210241535560.2683@axis700.grange>
+From: Florian Fainelli <florian@openwrt.org>
+Date: Mon, 08 Oct 2012 13:11:36 +0000
+Subject: [PATCH 22/32 v4] sh: convert boards to use the OHCI platform driver
+Message-Id: <1349701906-16481-23-git-send-email-florian@openwrt.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1210241226060.31768@axis700.grange>
- <CACVXFVOv-zMj_cEyRuehhWMjCF1nvd-tkW7c8o5raHZoMbCZiQ@mail.gmail.com>
-In-Reply-To: <CACVXFVOv-zMj_cEyRuehhWMjCF1nvd-tkW7c8o5raHZoMbCZiQ@mail.gmail.com>
+References: <1349701906-16481-1-git-send-email-florian@openwrt.org>
+In-Reply-To: <1349701906-16481-1-git-send-email-florian@openwrt.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Ming Lei <tom.leiming@gmail.com>
-Cc: linux-kernel@vger.kernel.org, Joe Perches <joe@perches.com>, linux-sh@vger.kernel.org
+To: stern@rowland.harvard.edu
+Cc: linux-usb@vger.kernel.org, Florian Fainelli <florian@openwrt.org>, Paul Mundt <lethal@linux-sh.org>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Wed, 24 Oct 2012, Ming Lei wrote:
+This patch makes all SuperH boards using the ohci-sh platform driver to use
+the ohci-platform driver instead, which is suitable for use by these boards.
 
-> On Wed, Oct 24, 2012 at 6:49 PM, Guennadi Liakhovetski
-> <g.liakhovetski@gmx.de> wrote:
-> > Hi
-> >
-> > I cannot seem to force selection of a serial console by specifying
-> > "console=ttySC0..." on the command line with modern (yesterday's "next")
-> > kernels. The kernel insists on
-> >
-> > console [tty0] enabled
-> 
-> Please see https://lkml.org/lkml/2012/10/23/307
-
-Perfect, thanks! Fixes my problem too.
-
-Regards
-Guennadi
-
-> > The reason might also well be, that the respective "sh-sci" driver is
-> > only registered later. I'll try to look at this in more detail - since
-> > when this is broken and how the registration order looked before. This is
-> > just a first heads-up in case someone has a solution immediately at hand.
-> 
-> 
-> 
-> Thanks,
-> -- 
-> Ming Lei
-> 
-
+Signed-off-by: Florian Fainelli <florian@openwrt.org>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+Changes in v4:
+- rebased against greg's latest usb-next
+
+Changes in v3:
+- improved commit message
+
+No changes between v1 and v2
+
+ arch/sh/kernel/cpu/sh3/setup-sh7720.c  |    6 +++++-
+ arch/sh/kernel/cpu/sh4a/setup-sh7757.c |    6 +++++-
+ arch/sh/kernel/cpu/sh4a/setup-sh7763.c |    6 +++++-
+ arch/sh/kernel/cpu/sh4a/setup-sh7786.c |    6 +++++-
+ 4 files changed, 20 insertions(+), 4 deletions(-)
+
+diff --git a/arch/sh/kernel/cpu/sh3/setup-sh7720.c b/arch/sh/kernel/cpu/sh3/setup-sh7720.c
+index 0c2f1b2..42d991f 100644
+--- a/arch/sh/kernel/cpu/sh3/setup-sh7720.c
++++ b/arch/sh/kernel/cpu/sh3/setup-sh7720.c
+@@ -20,6 +20,7 @@
+ #include <linux/serial_sci.h>
+ #include <linux/sh_timer.h>
+ #include <linux/sh_intc.h>
++#include <linux/usb/ohci_pdriver.h>
+ #include <asm/rtc.h>
+ #include <cpu/serial.h>
+ 
+@@ -103,12 +104,15 @@ static struct resource usb_ohci_resources[] = {
+ 
+ static u64 usb_ohci_dma_mask = 0xffffffffUL;
+ 
++static struct usb_ohci_pdata usb_ohci_pdata;
++
+ static struct platform_device usb_ohci_device = {
+-	.name		= "sh_ohci",
++	.name		= "ohci-platform",
+ 	.id		= -1,
+ 	.dev = {
+ 		.dma_mask		= &usb_ohci_dma_mask,
+ 		.coherent_dma_mask	= 0xffffffff,
++		.platform_data		= &usb_ohci_pdata,
+ 	},
+ 	.num_resources	= ARRAY_SIZE(usb_ohci_resources),
+ 	.resource	= usb_ohci_resources,
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
+index 4a2f357..9079a0f 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
+@@ -19,6 +19,7 @@
+ #include <linux/sh_timer.h>
+ #include <linux/sh_dma.h>
+ #include <linux/sh_intc.h>
++#include <linux/usb/ohci_pdriver.h>
+ #include <cpu/dma-register.h>
+ #include <cpu/sh7757.h>
+ 
+@@ -750,12 +751,15 @@ static struct resource usb_ohci_resources[] = {
+ 	},
+ };
+ 
++static struct usb_ohci_pdata usb_ohci_pdata;
++
+ static struct platform_device usb_ohci_device = {
+-	.name		= "sh_ohci",
++	.name		= "ohci-platform",
+ 	.id		= -1,
+ 	.dev = {
+ 		.dma_mask = &usb_ohci_device.dev.coherent_dma_mask,
+ 		.coherent_dma_mask = DMA_BIT_MASK(32),
++		.platform_data	= &usb_ohci_pdata,
+ 	},
+ 	.num_resources	= ARRAY_SIZE(usb_ohci_resources),
+ 	.resource	= usb_ohci_resources,
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7763.c b/arch/sh/kernel/cpu/sh4a/setup-sh7763.c
+index bd0a8fb..1686aca 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7763.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7763.c
+@@ -16,6 +16,7 @@
+ #include <linux/sh_intc.h>
+ #include <linux/io.h>
+ #include <linux/serial_sci.h>
++#include <linux/usb/ohci_pdriver.h>
+ 
+ static struct plat_sci_port scif0_platform_data = {
+ 	.mapbase	= 0xffe00000,
+@@ -106,12 +107,15 @@ static struct resource usb_ohci_resources[] = {
+ 
+ static u64 usb_ohci_dma_mask = 0xffffffffUL;
+ 
++static struct usb_ohci_pdata usb_ohci_pdata;
++
+ static struct platform_device usb_ohci_device = {
+-	.name		= "sh_ohci",
++	.name		= "ohci-platform",
+ 	.id		= -1,
+ 	.dev = {
+ 		.dma_mask		= &usb_ohci_dma_mask,
+ 		.coherent_dma_mask	= 0xffffffff,
++		.platform_data		= &usb_ohci_pdata,
+ 	},
+ 	.num_resources	= ARRAY_SIZE(usb_ohci_resources),
+ 	.resource	= usb_ohci_resources,
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7786.c b/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
+index 2e6952f..ab52d4d 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
+@@ -23,6 +23,7 @@
+ #include <linux/sh_timer.h>
+ #include <linux/sh_dma.h>
+ #include <linux/sh_intc.h>
++#include <linux/usb/ohci_pdriver.h>
+ #include <cpu/dma-register.h>
+ #include <asm/mmzone.h>
+ 
+@@ -583,12 +584,15 @@ static struct resource usb_ohci_resources[] = {
+ 	},
+ };
+ 
++static struct usb_ohci_pdata usb_ohci_pdata;
++
+ static struct platform_device usb_ohci_device = {
+-	.name		= "sh_ohci",
++	.name		= "ohci-platform",
+ 	.id		= -1,
+ 	.dev = {
+ 		.dma_mask		= &usb_ohci_device.dev.coherent_dma_mask,
+ 		.coherent_dma_mask	= DMA_BIT_MASK(32),
++		.platform_data		= &usb_ohci_pdata,
+ 	},
+ 	.num_resources	= ARRAY_SIZE(usb_ohci_resources),
+ 	.resource	= usb_ohci_resources,
+-- 
+1.7.9.5
+
