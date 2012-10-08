@@ -1,30 +1,69 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Fri, 05 Oct 2012 18:45:14 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 08 Oct 2012 09:40:41 +0000
 Subject: Re: [PATCH 05/14] media: add a V4L2 OF parser
-Message-Id: <20121005184514.GF4360@opensource.wolfsonmicro.com>
+Message-Id: <Pine.LNX.4.64.1210081126140.12203@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de>
- <Pine.LNX.4.64.1210021142210.15778@axis700.grange>
- <506ABE40.9070504@samsung.com>
- <201210051241.52205.hverkuil@xs4all.nl>
- <Pine.LNX.4.64.1210051250210.13761@axis700.grange>
+ <Pine.LNX.4.64.1210021142210.15778@axis700.grange> <506ABE40.9070504@samsung.com>
+ <201210051241.52205.hverkuil@xs4all.nl> <Pine.LNX.4.64.1210051250210.13761@axis700.grange>
  <506F2763.6050808@gmail.com>
 In-Reply-To: <506F2763.6050808@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, linux-media@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Stephen Warren <swarren@wwwdotorg.org>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>
+Cc: Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, linux-media@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Stephen Warren <swarren@wwwdotorg.org>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>
 
-On Fri, Oct 05, 2012 at 08:30:59PM +0200, Sylwester Nawrocki wrote:
+Hi Sylwester
 
+On Fri, 5 Oct 2012, Sylwester Nawrocki wrote:
+
+> On 10/05/2012 12:58 PM, Guennadi Liakhovetski wrote:
+> >> One area that I do not yet completely understand is the i2c bus notifications
+> >> (or asynchronous loading of i2c modules).
+> >>
+> >> I would have expected that using OF the i2c devices are still initialized
+> >> before the host/bridge driver is initialized. But I gather that's not the
+> >> case?
+> > 
+> > No, it's not. I'm not sure, whether it depends on the order of devices in
+> > the .dts, but, I think, it's better to not have to mandate a certain order
+> > and I also seem to have seen devices being registered in different order
+> > with the same DT, but I'm not 100% sure about that.
+> 
+> The device instantiation (and initialization) order is not something that
+> is supposed to be ensured by a specific device tree source layout, IIUC.
+> The initialization sequence is probably something that is specific to a
+> particular operating system. I checked the device tree compiler but couldn't
+> find if it is free to reorder anything when converting from the human 
+> readable device tree to its binary representation.
+> 
 > The deferred probing was introduced in Linux to resolve resource 
 > inter-dependencies in case of FDT based booting AFAIK.
+> 
+> >> If this deferred probing is a general problem, then I think we need a general
+> >> solution as well that's part of the v4l2 core.
+> > 
+> > That can be done, perhaps. But we can do it as a next step. As soon as
+> > we're happy with the OF implementation as such, we can commit that,
+> > possibly leaving soc-camera patches out for now, then we can think where
+> > to put async I2C handling.
+> 
+> I would really like to see more than one user until we add any core code.
+> No that it couldn't be changed afterwards, but it would be nice to ensure 
+> the concepts are right and proven in real life.
 
-It's completely unrelated to FDT, it's a general issue.  There's no sane
-way to use hacks like link ordering to resolve boot time dependencies -
-start getting things like regulators connected to I2C or SPI controllers
-which may also use GPIOs for some signals and may be parents for other
-regulators and mapping out the dependency graph becomes unreasonably
-complicated.  Deferred probing is designed to solve this problem by
-working things out dynamically at runtime.
+Unfortunately I don't have any more systems on which I could easily enough 
+try this. I've got a beagleboard with a camera, but I don't think I'm a 
+particularly good candidate for implementing DT support for OMAP3 camera 
+drivers;-) Apart from that I've only got soc-camera based systems, of 
+which none are _really_ DT-ready... At best I could try an i.MX31 based 
+board, but that doesn't have a very well developed .dts and that would be 
+soc-camera too anyway.
+
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
