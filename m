@@ -1,95 +1,102 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 08 Oct 2012 16:00:45 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Mon, 08 Oct 2012 21:30:58 +0000
 Subject: Re: [PATCH 05/14] media: add a V4L2 OF parser
-Message-Id: <Pine.LNX.4.64.1210081758280.14454@axis700.grange>
+Message-Id: <12735748.ZBbT3nyMls@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de>
- <201210081653.55984.hverkuil@xs4all.nl>
- <Pine.LNX.4.64.1210081708240.14454@axis700.grange>
- <201210081741.43546.hverkuil@xs4all.nl>
- <Pine.LNX.4.64.1210081748390.14454@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1210081748390.14454-0199iw4Nj15frtckUFj5Ag@public.gmane.org>
+References: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de> <201210051241.52205.hverkuil@xs4all.nl> <Pine.LNX.4.64.1210051250210.13761@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1210051250210.13761@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Hans Verkuil <hverkuil-qWit8jRvyhVmR6Xm/wNWPw@public.gmane.org>
-Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-discuss-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, Mark Brown <broonie-yzvPICuk2AATkU/dhu1WVueM+bqZidxxQQ4Iyu8u01E@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Laurent Pinchart <laurent.pinchart-ryLnwIuWjnjg/C1BVhZhaw@public.gmane.org>, Sylwester Nawrocki <s.nawrocki-Sze3O3UU22JBDgjK7y7TUQ@public.gmane.org>, Sylwester Nawrocki <sylvester.nawrocki-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-media-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-media@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Stephen Warren <swarren@wwwdotorg.org>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>
 
-On Mon, 8 Oct 2012, Guennadi Liakhovetski wrote:
-
-> On Mon, 8 Oct 2012, Hans Verkuil wrote:
-> 
-> > On Mon October 8 2012 17:15:53 Guennadi Liakhovetski wrote:
-
-[snip]
-
-> > > No, I don't think there is a way to get a device pointer from a DT node.
-> > 
-> > Not a device pointer, but the i2c bus and i2c address. With that information
-> > you can get the i2c_client, and with that you can get the subdev pointer.
-> 
-> How? How can you get a client pointer from adapter and i2c device address? 
-> I haven't found anything suitable in i2c.h.
-
-Ok, you could use of_find_i2c_device_by_node(), but the second argument 
-remains - if you need notifiers in one case, I don't think it makes sense 
-to implement multiple methods.
-
-Thanks
-Guennadi
-
-> > If there is no way to get that information from the proposed V4L2 DT, then
-> > it needs to be modified since a bridge driver really needs to know which
-> > subdevs it has to register with the v4l2_device struct. That information is
-> > also board specific so it should be part of the DT.
-> > 
-> > > 
-> > > > In my view you cannot do a proper initialization unless you have both the
-> > > > bridge driver and all subdev drivers loaded and instantiated. They need one
-> > > > another. So I am perfectly fine with letting the probe function do next to
-> > > > nothing and postponing that until register() is called. I2C and actual probing
-> > > > to check if it's the right device is a bad idea in general since you have no
-> > > > idea what a hardware access to an unknown i2c device will do. There are still
-> > > > some corner cases where that is needed, but I do not think that that is an
-> > > > issue here.
+On Friday 05 October 2012 12:58:21 Guennadi Liakhovetski wrote:
+> On Fri, 5 Oct 2012, Hans Verkuil wrote:
+> > On Tue October 2 2012 12:13:20 Sylwester Nawrocki wrote:
+> > > On 10/02/2012 11:49 AM, Guennadi Liakhovetski wrote:
+> > > >>> +	if (!of_property_read_u32_array(node, "data-lanes", data_lanes,
+> > > >>> +					ARRAY_SIZE(data_lanes))) {
+> > > >>> +		int i;
+> > > >>> +		for (i = 0; i<  ARRAY_SIZE(data_lanes); i++)
+> > > >>> +			link->mipi_csi_2.data_lanes[i] = data_lanes[i];
+> > > >> 
+> > > >> It doesn't look like what we aimed for. The data-lanes array is
+> > > >> supposed to be of variable length, thus I don't think it can be
+> > > >> parsed like that. Or am I missing something ? I think we need more
+> > > >> something like below
 > > > > 
-> > > > It would simplify things a lot IMHO. Also note that the register() op will
-> > > > work with any device, not just i2c. That may be a useful property as well.
+> > > >> (based on of_property_read_u32_array(), not tested):
+> > > > Ok, you're right, that my version only was suitable for fixed-size
+> > > > arrays, which wasn't our goal. But I don't think we should go down to
+> > > > manually parsing property data. How about (tested;-))
+> > > > 
+> > > > 	data = of_find_property(node, "data-lanes", NULL);
+> > > > 	if (data) {
+> > > > 	
+> > > > 		int i = 0;
+> > > > 		const __be32 *lane = NULL;
+> > > > 		do {
+> > > > 		
+> > > > 			lane = of_prop_next_u32(data, lane, &data_lanes[i]);
+> > > > 		
+> > > > 		} while (lane && i++ < ARRAY_SIZE(data_lanes));
+> > > > 		link->mipi_csi_2.num_data_lanes = i;
+> > > > 		while (i--)
+> > > > 		
+> > > > 			link->mipi_csi_2.data_lanes[i] = data_lanes[i];
+> > > > 	
+> > > > 	}
 > > > 
-> > > And what if the subdevice device is not yet instantiated by OF by the time 
-> > > your bridge driver probes?
+> > > Yes, that looks neat and does what it is supposed to do. :) Thanks!
+> > > For now, I'll trust you it works ;)
+> > > 
+> > > With regards to the remaining patches, it looks a bit scary to me how
+> > > complicated it got, perhaps mostly because of requirement to reference
+> > > host devices from subdevs. And it seems to rely on the existing SoC
+> > > camera infrastructure, which might imply lot's of work need to be done
+> > > for non soc-camera drivers. But I'm going to take a closer look and
+> > > comment more on the details at the corresponding patches.
 > > 
-> > That is where you still need to have a bus notifier mechanism. You have to be
-> > able to wait until all dependent drivers are loaded/instantiated,
+> > I have to say that I agree with Sylwester here. It seems awfully
+> > complicated, but I can't really put my finger on the actual cause.
 > 
-> No, drivers are not the problem, as you say, you can load them. Devices 
-> are the problem. You don't know when they will be registered.
+> Well, which exactly part? The V4L2 OF part is quite simple.
 > 
-> > or
-> > alternatively you have to be able to load them explicitly. But this should
-> > be relatively easy to implement in a generic manner.
+> > It would be really interesting to see this implemented for a non-SoC
+> > device and to compare the two.
 > 
-> So, if you need notifiers anyway, why not use them in all cases instead of 
-> mixing multiple methods?
-> 
-> Thanks
-> Guennadi
-> 
-> > I still think this sucks (excuse my language), but I see no way around it as
-> > long as there is no explicit probe order one can rely on.
-> > 
-> > Regards,
-> > 
-> > 	Hans
-> > 
-> 
-> ---
-> Guennadi Liakhovetski, Ph.D.
-> Freelance Open-Source Software Developer
-> http://www.open-technology.de/
-> 
+> Sure, volunteers? ;-) In principle, if I find time, I could try to convert
+> sh_vou, which is also interesting, because it's an output driver.
 
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+The OMAP3 ISP is on my to-do list, but that depends on the generic clock 
+availability on the OMAP3, so I have to wait.
+
+> > One area that I do not yet completely understand is the i2c bus
+> > notifications (or asynchronous loading or i2c modules).
+> > 
+> > I would have expected that using OF the i2c devices are still initialized
+> > before the host/bridge driver is initialized. But I gather that's not the
+> > case?
+> 
+> No, it's not. I'm not sure, whether it depends on the order of devices in
+> the .dts, but, I think, it's better to not have to mandate a certain order
+> and I also seem to have seen devices being registered in different order
+> with the same DT, but I'm not 100% sure about that.
+>
+> > If this deferred probing is a general problem, then I think we need a
+> > general solution as well that's part of the v4l2 core.
+> 
+> That can be done, perhaps. But we can do it as a next step. As soon as
+> we're happy with the OF implementation as such, we can commit that,
+> possibly leaving soc-camera patches out for now, then we can think where
+> to put async I2C handling.
+
+I agree that async I2C handling should have V4L2 core helpers, otherwise it's 
+going to be pretty complex for ISP drivers.
+
+-- 
+Regards,
+
+Laurent Pinchart
+
