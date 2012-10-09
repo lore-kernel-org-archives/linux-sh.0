@@ -1,102 +1,53 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 08 Oct 2012 21:30:58 +0000
+From: Sylwester Nawrocki <s.nawrocki@samsung.com>
+Date: Tue, 09 Oct 2012 10:34:48 +0000
 Subject: Re: [PATCH 05/14] media: add a V4L2 OF parser
-Message-Id: <12735748.ZBbT3nyMls@avalon>
+Message-Id: <5073FDC8.8090909@samsung.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de> <201210051241.52205.hverkuil@xs4all.nl> <Pine.LNX.4.64.1210051250210.13761@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1210051250210.13761@axis700.grange>
+References: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de>
+ <Pine.LNX.4.64.1210021142210.15778@axis700.grange>
+ <506ABE40.9070504@samsung.com> <201210051241.52205.hverkuil@xs4all.nl>
+ <Pine.LNX.4.64.1210051250210.13761@axis700.grange>
+ <506F2763.6050808@gmail.com> <Pine.LNX.4.64.1210081126140.12203@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1210081126140.12203@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-media@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Stephen Warren <swarren@wwwdotorg.org>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>
+Cc: Hans Verkuil <hverkuil@xs4all.nl>, linux-media@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Stephen Warren <swarren@wwwdotorg.org>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>, Thomas Abraham <thomas.abraham@linaro.org>, Tomasz Figa <t.figa@samsung.com>
 
-On Friday 05 October 2012 12:58:21 Guennadi Liakhovetski wrote:
-> On Fri, 5 Oct 2012, Hans Verkuil wrote:
-> > On Tue October 2 2012 12:13:20 Sylwester Nawrocki wrote:
-> > > On 10/02/2012 11:49 AM, Guennadi Liakhovetski wrote:
-> > > >>> +	if (!of_property_read_u32_array(node, "data-lanes", data_lanes,
-> > > >>> +					ARRAY_SIZE(data_lanes))) {
-> > > >>> +		int i;
-> > > >>> +		for (i = 0; i<  ARRAY_SIZE(data_lanes); i++)
-> > > >>> +			link->mipi_csi_2.data_lanes[i] = data_lanes[i];
-> > > >> 
-> > > >> It doesn't look like what we aimed for. The data-lanes array is
-> > > >> supposed to be of variable length, thus I don't think it can be
-> > > >> parsed like that. Or am I missing something ? I think we need more
-> > > >> something like below
-> > > > 
-> > > >> (based on of_property_read_u32_array(), not tested):
-> > > > Ok, you're right, that my version only was suitable for fixed-size
-> > > > arrays, which wasn't our goal. But I don't think we should go down to
-> > > > manually parsing property data. How about (tested;-))
-> > > > 
-> > > > 	data = of_find_property(node, "data-lanes", NULL);
-> > > > 	if (data) {
-> > > > 	
-> > > > 		int i = 0;
-> > > > 		const __be32 *lane = NULL;
-> > > > 		do {
-> > > > 		
-> > > > 			lane = of_prop_next_u32(data, lane, &data_lanes[i]);
-> > > > 		
-> > > > 		} while (lane && i++ < ARRAY_SIZE(data_lanes));
-> > > > 		link->mipi_csi_2.num_data_lanes = i;
-> > > > 		while (i--)
-> > > > 		
-> > > > 			link->mipi_csi_2.data_lanes[i] = data_lanes[i];
-> > > > 	
-> > > > 	}
-> > > 
-> > > Yes, that looks neat and does what it is supposed to do. :) Thanks!
-> > > For now, I'll trust you it works ;)
-> > > 
-> > > With regards to the remaining patches, it looks a bit scary to me how
-> > > complicated it got, perhaps mostly because of requirement to reference
-> > > host devices from subdevs. And it seems to rely on the existing SoC
-> > > camera infrastructure, which might imply lot's of work need to be done
-> > > for non soc-camera drivers. But I'm going to take a closer look and
-> > > comment more on the details at the corresponding patches.
-> > 
-> > I have to say that I agree with Sylwester here. It seems awfully
-> > complicated, but I can't really put my finger on the actual cause.
-> 
-> Well, which exactly part? The V4L2 OF part is quite simple.
-> 
-> > It would be really interesting to see this implemented for a non-SoC
-> > device and to compare the two.
-> 
-> Sure, volunteers? ;-) In principle, if I find time, I could try to convert
-> sh_vou, which is also interesting, because it's an output driver.
+Hi Guennadi,
 
-The OMAP3 ISP is on my to-do list, but that depends on the generic clock 
-availability on the OMAP3, so I have to wait.
-
-> > One area that I do not yet completely understand is the i2c bus
-> > notifications (or asynchronous loading or i2c modules).
-> > 
-> > I would have expected that using OF the i2c devices are still initialized
-> > before the host/bridge driver is initialized. But I gather that's not the
-> > case?
+On 10/08/2012 11:40 AM, Guennadi Liakhovetski wrote:
+> On Fri, 5 Oct 2012, Sylwester Nawrocki wrote:
+>> I would really like to see more than one user until we add any core code.
+>> No that it couldn't be changed afterwards, but it would be nice to ensure 
+>> the concepts are right and proven in real life.
 > 
-> No, it's not. I'm not sure, whether it depends on the order of devices in
-> the .dts, but, I think, it's better to not have to mandate a certain order
-> and I also seem to have seen devices being registered in different order
-> with the same DT, but I'm not 100% sure about that.
->
-> > If this deferred probing is a general problem, then I think we need a
-> > general solution as well that's part of the v4l2 core.
-> 
-> That can be done, perhaps. But we can do it as a next step. As soon as
-> we're happy with the OF implementation as such, we can commit that,
-> possibly leaving soc-camera patches out for now, then we can think where
-> to put async I2C handling.
+> Unfortunately I don't have any more systems on which I could easily enough 
+> try this. I've got a beagleboard with a camera, but I don't think I'm a 
+> particularly good candidate for implementing DT support for OMAP3 camera 
+> drivers;-) Apart from that I've only got soc-camera based systems, of 
+> which none are _really_ DT-ready... At best I could try an i.MX31 based 
+> board, but that doesn't have a very well developed .dts and that would be 
+> soc-camera too anyway.
 
-I agree that async I2C handling should have V4L2 core helpers, otherwise it's 
-going to be pretty complex for ISP drivers.
+I certainly wouldn't expect you would do all the job. I mean it would be good
+to possibly have some other developers adding device tree support based on that 
+new bindings and new infrastructure related to them. 
 
--- 
+There have been recently some progress in device tree support for Exynos SoCs,
+including common clock framework support and we hope to add FDT support to the 
+Samsung SoC camera devices during this kernel cycle, based on the newly designed 
+media bindings. This is going to be a second attempt, after our initial RFC from 
+May [1]. It would still be SoC specific implementation, but not soc-camera based.
+ 
+I wasn't a big fan of this asynchronous sub-devices probing, but it now seems
+to be a most complete solution to me. I think it just need to be done right
+at the v4l2-core so individual drivers don't get complicated too much.
+
+--
+
 Regards,
+Sylwester
 
-Laurent Pinchart
-
+[1] http://www.spinics.net/lists/linux-media/msg48341.html
