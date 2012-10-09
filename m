@@ -1,58 +1,97 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 17 Oct 2012 04:39:11 +0000
-Subject: [GIT PULL] Renesas ARM-based SoC boards for v3.8
-Message-Id: <1350448761-27346-1-git-send-email-horms@verge.net.au>
+From: David Howells <dhowells@redhat.com>
+Date: Tue, 09 Oct 2012 09:15:57 +0000
+Subject: [GIT PULL] Disintegrate UAPI for sh [ver #2]
+Message-Id: <21197.1349774157@warthog.procyon.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: lethal@linux-sh.org
+Cc: dhowells@redhat.com, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Hi Olof, Hi Arnd,
+Can you merge the following branch into the sh tree please.
 
-please consider the following board enhancements for 3.8.
+This is to complete part of the UAPI disintegration for which the preparatory
+patches were pulled recently.
 
-----------------------------------------------------------------
-The following changes since commit ddffeb8c4d0331609ef2581d84de4d763607bd37:
+Now that the fixups and the asm-generic chunk have been merged, I've
+regenerated the patches to get rid of those dependencies and to take account of
+any changes made so far in the merge window.  If you have already pulled the
+older version of the branch aimed at you, then please feel free to ignore this
+request.
 
-  Linux 3.7-rc1 (2012-10-14 14:41:04 -0700)
+The following changes since commit 9e2d8656f5e8aa214e66b462680cf86b210b74a8:
+
+  Merge branch 'akpm' (Andrew's patch-bomb) (2012-10-09 16:23:15 +0900)
 
 are available in the git repository at:
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git boards
 
-for you to fetch changes up to 5f9f3d29d35cdf6907272e407b4fcf7eabe6b88a:
+  git://git.infradead.org/users/dhowells/linux-headers.git tags/disintegrate-sh-20121009
 
-  ARM: shmobile: marzen: add HSPI support (2012-10-15 09:56:42 +0900)
+for you to fetch changes up to 0a9426df1858f71ac84eb7eef500b4247de5e3bb:
+
+  UAPI: (Scripted) Disintegrate arch/sh/include/asm (2012-10-09 09:47:37 +0100)
 
 ----------------------------------------------------------------
-Bastian Hecht (1):
-      ARM: mach-shmobile: add FLCTL DMA slave definitions for sh7372
+UAPI Disintegration 2012-10-09
 
-Kuninori Morimoto (5):
-      ARM: shmobile: armadillo800eva: enable restart
-      ARM: shmobile: r8a7779: add HSPI clock support
-      ARM: shmobile: r8a7779: add I2C clock support
-      ARM: shmobile: r8a7779: add I2C driver support
-      ARM: shmobile: marzen: add HSPI support
+----------------------------------------------------------------
+David Howells (1):
+      UAPI: (Scripted) Disintegrate arch/sh/include/asm
 
-Nobuhiro Iwamatsu (1):
-      ARM: shmobile: r8a7740: Enable PMU
-
-Tetsuyuki Kobayashi (3):
-      ARM: shmobile: kzm9g: enable magnetometer ak8975.
-      ARM: shmobile: kzm9g: enable three-axis digital accelerometer ADXL345
-      ARM: shmobile: kzm9g: enable DMAEngine on SHDI0 and SDHI2
-
- arch/arm/configs/armadillo800eva_defconfig     |    1 +
- arch/arm/configs/kzm9g_defconfig               |    4 ++
- arch/arm/configs/marzen_defconfig              |    4 ++
- arch/arm/mach-shmobile/board-armadillo800eva.c |    8 +++
- arch/arm/mach-shmobile/board-kzm9g.c           |   14 ++++-
- arch/arm/mach-shmobile/board-marzen.c          |   25 ++++++++
- arch/arm/mach-shmobile/clock-r8a7779.c         |   16 ++++-
- arch/arm/mach-shmobile/include/mach/sh7372.h   |    4 ++
- arch/arm/mach-shmobile/setup-r8a7740.c         |   16 +++++
- arch/arm/mach-shmobile/setup-r8a7779.c         |   77 ++++++++++++++++++++++++
- arch/arm/mach-shmobile/setup-sh7372.c          |   20 ++++++
- 11 files changed, 187 insertions(+), 2 deletions(-)
+ arch/sh/include/asm/Kbuild                      | 11 ----
+ arch/sh/include/asm/hw_breakpoint.h             |  4 +-
+ arch/sh/include/asm/posix_types.h               |  8 ---
+ arch/sh/include/asm/ptrace.h                    | 34 +----------
+ arch/sh/include/asm/ptrace_32.h                 | 75 +-----------------------
+ arch/sh/include/asm/ptrace_64.h                 | 12 +---
+ arch/sh/include/asm/setup.h                     |  5 +-
+ arch/sh/include/asm/types.h                     |  5 +-
+ arch/sh/include/asm/unistd.h                    |  9 +--
+ arch/sh/include/uapi/asm/Kbuild                 | 22 +++++++
+ arch/sh/include/{ => uapi}/asm/auxvec.h         |  0
+ arch/sh/include/{ => uapi}/asm/byteorder.h      |  0
+ arch/sh/include/{ => uapi}/asm/cachectl.h       |  0
+ arch/sh/include/{ => uapi}/asm/cpu-features.h   |  0
+ arch/sh/include/{ => uapi}/asm/ioctls.h         |  0
+ arch/sh/include/uapi/asm/posix_types.h          |  7 +++
+ arch/sh/include/{ => uapi}/asm/posix_types_32.h |  0
+ arch/sh/include/{ => uapi}/asm/posix_types_64.h |  0
+ arch/sh/include/uapi/asm/ptrace.h               | 34 +++++++++++
+ arch/sh/include/uapi/asm/ptrace_32.h            | 77 +++++++++++++++++++++++++
+ arch/sh/include/uapi/asm/ptrace_64.h            | 14 +++++
+ arch/sh/include/uapi/asm/setup.h                |  1 +
+ arch/sh/include/{ => uapi}/asm/sigcontext.h     |  0
+ arch/sh/include/{ => uapi}/asm/signal.h         |  0
+ arch/sh/include/{ => uapi}/asm/sockios.h        |  0
+ arch/sh/include/{ => uapi}/asm/stat.h           |  0
+ arch/sh/include/{ => uapi}/asm/swab.h           |  0
+ arch/sh/include/uapi/asm/types.h                |  1 +
+ arch/sh/include/uapi/asm/unistd.h               |  7 +++
+ arch/sh/include/{ => uapi}/asm/unistd_32.h      |  0
+ arch/sh/include/{ => uapi}/asm/unistd_64.h      |  0
+ 31 files changed, 173 insertions(+), 153 deletions(-)
+ rename arch/sh/include/{ => uapi}/asm/auxvec.h (100%)
+ rename arch/sh/include/{ => uapi}/asm/byteorder.h (100%)
+ rename arch/sh/include/{ => uapi}/asm/cachectl.h (100%)
+ rename arch/sh/include/{ => uapi}/asm/cpu-features.h (100%)
+ create mode 100644 arch/sh/include/uapi/asm/hw_breakpoint.h
+ rename arch/sh/include/{ => uapi}/asm/ioctls.h (100%)
+ create mode 100644 arch/sh/include/uapi/asm/posix_types.h
+ rename arch/sh/include/{ => uapi}/asm/posix_types_32.h (100%)
+ rename arch/sh/include/{ => uapi}/asm/posix_types_64.h (100%)
+ create mode 100644 arch/sh/include/uapi/asm/ptrace.h
+ create mode 100644 arch/sh/include/uapi/asm/ptrace_32.h
+ create mode 100644 arch/sh/include/uapi/asm/ptrace_64.h
+ create mode 100644 arch/sh/include/uapi/asm/setup.h
+ rename arch/sh/include/{ => uapi}/asm/sigcontext.h (100%)
+ rename arch/sh/include/{ => uapi}/asm/signal.h (100%)
+ rename arch/sh/include/{ => uapi}/asm/sockios.h (100%)
+ rename arch/sh/include/{ => uapi}/asm/stat.h (100%)
+ rename arch/sh/include/{ => uapi}/asm/swab.h (100%)
+ create mode 100644 arch/sh/include/uapi/asm/types.h
+ create mode 100644 arch/sh/include/uapi/asm/unistd.h
+ rename arch/sh/include/{ => uapi}/asm/unistd_32.h (100%)
+ rename arch/sh/include/{ => uapi}/asm/unistd_64.h (100%)
+.
