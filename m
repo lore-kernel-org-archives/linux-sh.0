@@ -1,51 +1,46 @@
-From: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
-Date: Wed, 10 Oct 2012 21:12:55 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 10 Oct 2012 22:51:09 +0000
 Subject: Re: [PATCH 05/14] media: add a V4L2 OF parser
-Message-Id: <5075E4D7.4010706@gmail.com>
+Message-Id: <2098605.jat554dMFe@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de> <5073FDC8.8090909@samsung.com> <201210091300.24124.hverkuil@xs4all.nl> <1398413.j3yGqyN4Du@avalon> <5075D947.3080903@gmail.com> <Pine.LNX.4.64.1210102229200.31291@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1210102229200.31291@axis700.grange>
+References: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de> <2002286.8sbBLyKbDe@avalon> <5075A74C.80106@wwwdotorg.org>
+In-Reply-To: <5075A74C.80106@wwwdotorg.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, linux-media@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Stephen Warren <swarren@wwwdotorg.org>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>, Thomas Abraham <thomas.abraham@linaro.org>, Tomasz Figa <t.figa@samsung.com>
+To: Stephen Warren <swarren@wwwdotorg.org>
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-media@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>
 
-On 10/10/2012 10:32 PM, Guennadi Liakhovetski wrote:
->>> We might actually not need that, it might be easier to handle the circular
->>> dependency problem from the other end. We could add a way (ioctl, sysfs, ...)
->>> to force a V4L2 bridge driver to release its subdevs. Once done, the subdev
->>> driver could be unloaded and/or the subdev device unregistered, which would
->>> release the resources used by the subdev, such as clocks. The bridge driver
->>> could then be unregistered.
->>
->> That sounds like an option. Perhaps it could be done by v4l2-core, e.g. a sysfs
->> entry could be registered for a media or video device if driver requests it.
->> I'm not sure if we should allow subdevs in "released" state, perhaps it's better
->> to just unregister subdevs entirely right away ?
+On Wednesday 10 October 2012 10:50:20 Stephen Warren wrote:
+> On 10/10/2012 07:18 AM, Laurent Pinchart wrote:
+> > On Monday 08 October 2012 17:15:53 Guennadi Liakhovetski wrote:
+> ...
 > 
-> What speaks against holding a clock reference only during streaming, or at
-> least between open and close? Wouldn't that solve the problem naturally?
-> Yes, after giving up your reference to a clock at close() and re-acquiring
-> it at open() you will have to make sure the frequency hasn't change, resp.
-> adjust it, but I don't see it as a huge problem, I don't think many users
-> on embedded systems will compete for your camera master clock. And if they
-> do, you have a different problem, IMHO;-)
+> >> But how do you get the subdev pointer? With the notifier I get it from
+> >> i2c_get_clientdata(client) and what do you do without it? How do you get
+> >> to the client?
+> >> 
+> >>> And can't it get that from DT as well?
+> >> 
+> >> No, I don't think there is a way to get a device pointer from a DT node.
+> 
+> I don't believe there's a generic API for this (although perhaps there
+> could be), but it can be implemented quite easily.
+>
+> For example, on Tegra, the SMMU needs to flip a bit in the AHB register
+> space in order to enable itself. The SMMU DT node contains a phandle
+> that points at the AHB DT node. The SMMU driver parses the phandle and
+> passes the DT node pointer to the AHB driver. The AHB driver looks up
+> the struct device that was instantiated for that node. See
+> drivers/amba/tegra-ahb.c:tegra_ahb_enable_smmu(). There are a few other
+> cases of similar code in the kernel, although I can't remember the others!
 
-I agree, normally nobody should touch these clocks except the subdev (or as of 
-now the host) drivers. It depends on a sensor, video encoder, etc. how much it 
-tolerates switching the clock on/off. I suppose it's best to acquire/release it
-in .s_power callback, since only then the proper voltage supply, GPIO, clock 
-enable/disable sequences could be ensured. I know those things are currently 
-mostly ignored, but some sensors might be picky WRT their initialization/shutdown
-sequences and it would be good to ensure these sequences are fully controllable 
-by the sensor driver itsels, where the host's architecture allows that.
+That's a very naive approach, but what about storing the struct device in 
+struct device_node when the device is instantiated ? It's so simple that 
+there's probably a good reason why that hasn't been implemented though.
 
-To summarize, I can't see how holding a clock only when a device is active
-could cause any problems, in case of camera sensors. I'm not sure about other
-devices, like e.g. tuners.
-
---
-
+-- 
 Regards,
-Sylwester
+
+Laurent Pinchart
+
