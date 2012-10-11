@@ -1,94 +1,129 @@
-From: wency@cn.fujitsu.com
-Date: Tue, 23 Oct 2012 10:30:39 +0000
-Subject: [PATCH v2 01/12] memory-hotplug: try to offline the memory twice to avoid dependence
-Message-Id: <1350988250-31294-2-git-send-email-wency@cn.fujitsu.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 11 Oct 2012 02:56:51 +0000
+Subject: [PATCH 3/4] ARM: shmobile: r8a7779: add I2C driver support
+Message-Id: <87zk3tvhqn.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1350988250-31294-1-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1350988250-31294-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
-Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
+To: linux-sh@vger.kernel.org
 
-From: Wen Congyang <wency@cn.fujitsu.com>
+This patch enable R-Car I2C driver
 
-memory can't be offlined when CONFIG_MEMCG is selected.
-For example: there is a memory device on node 1. The address range
-is [1G, 1.5G). You will find 4 new directories memory8, memory9, memory10,
-and memory11 under the directory /sys/devices/system/memory/.
-
-If CONFIG_MEMCG is selected, we will allocate memory to store page cgroup
-when we online pages. When we online memory8, the memory stored page cgroup
-is not provided by this memory device. But when we online memory9, the memory
-stored page cgroup may be provided by memory8. So we can't offline memory8
-now. We should offline the memory in the reversed order.
-
-When the memory device is hotremoved, we will auto offline memory provided
-by this memory device. But we don't know which memory is onlined first, so
-offlining memory may fail. In such case, iterate twice to offline the memory.
-1st iterate: offline every non primary memory block.
-2nd iterate: offline primary (i.e. first added) memory block.
-
-This idea is suggested by KOSAKI Motohiro.
-
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-CC: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- mm/memory_hotplug.c |   16 ++++++++++++++--
- 1 files changed, 14 insertions(+), 2 deletions(-)
+ arch/arm/configs/marzen_defconfig      |    2 +
+ arch/arm/mach-shmobile/setup-r8a7779.c |   77 ++++++++++++++++++++++++++++++++
+ 2 files changed, 79 insertions(+)
 
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index 56b758a..600e200 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -1019,10 +1019,13 @@ int remove_memory(u64 start, u64 size)
- 	unsigned long start_pfn, end_pfn;
- 	unsigned long pfn, section_nr;
- 	int ret;
-+	int return_on_error = 0;
-+	int retry = 0;
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index 53382b6..f79b55c 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -69,6 +69,8 @@ CONFIG_SERIAL_SH_SCI=y
+ CONFIG_SERIAL_SH_SCI_NR_UARTS=6
+ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ # CONFIG_HW_RANDOM is not set
++CONFIG_I2C=y
++CONFIG_I2C_RCAR=y
+ CONFIG_GPIO_SYSFS=y
+ # CONFIG_HWMON is not set
+ CONFIG_THERMAL=y
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 2917668..63de5cb 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -229,6 +229,79 @@ static struct platform_device tmu01_device = {
+ 	.num_resources	= ARRAY_SIZE(tmu01_resources),
+ };
  
- 	start_pfn = PFN_DOWN(start);
- 	end_pfn = start_pfn + PFN_DOWN(size);
- 
-+repeat:
- 	for (pfn = start_pfn; pfn < end_pfn; pfn += PAGES_PER_SECTION) {
- 		section_nr = pfn_to_section_nr(pfn);
- 		if (!present_section_nr(section_nr))
-@@ -1041,14 +1044,23 @@ int remove_memory(u64 start, u64 size)
- 
- 		ret = offline_memory_block(mem);
- 		if (ret) {
--			kobject_put(&mem->dev.kobj);
--			return ret;
-+			if (return_on_error) {
-+				kobject_put(&mem->dev.kobj);
-+				return ret;
-+			} else {
-+				retry = 1;
-+			}
- 		}
- 	}
- 
- 	if (mem)
- 		kobject_put(&mem->dev.kobj);
- 
-+	if (retry) {
-+		return_on_error = 1;
-+		goto repeat;
-+	}
++/* I2C */
++static struct resource rcar_i2c0_res[] = {
++	{
++		.start  = 0xffc70000,
++		.end    = 0xffc70fff,
++		.flags  = IORESOURCE_MEM,
++	}, {
++		.start  = gic_spi(79),
++		.flags  = IORESOURCE_IRQ,
++	},
++};
 +
- 	return 0;
- }
- #else
++static struct platform_device i2c0_device = {
++	.name		= "i2c-rcar",
++	.id		= 0,
++	.resource	= rcar_i2c0_res,
++	.num_resources	= ARRAY_SIZE(rcar_i2c0_res),
++};
++
++static struct resource rcar_i2c1_res[] = {
++	{
++		.start  = 0xffc71000,
++		.end    = 0xffc71fff,
++		.flags  = IORESOURCE_MEM,
++	}, {
++		.start  = gic_spi(82),
++		.flags  = IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device i2c1_device = {
++	.name		= "i2c-rcar",
++	.id		= 1,
++	.resource	= rcar_i2c1_res,
++	.num_resources	= ARRAY_SIZE(rcar_i2c1_res),
++};
++
++static struct resource rcar_i2c2_res[] = {
++	{
++		.start  = 0xffc72000,
++		.end    = 0xffc72fff,
++		.flags  = IORESOURCE_MEM,
++	}, {
++		.start  = gic_spi(80),
++		.flags  = IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device i2c2_device = {
++	.name		= "i2c-rcar",
++	.id		= 2,
++	.resource	= rcar_i2c2_res,
++	.num_resources	= ARRAY_SIZE(rcar_i2c2_res),
++};
++
++static struct resource rcar_i2c3_res[] = {
++	{
++		.start  = 0xffc73000,
++		.end    = 0xffc73fff,
++		.flags  = IORESOURCE_MEM,
++	}, {
++		.start  = gic_spi(81),
++		.flags  = IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device i2c3_device = {
++	.name		= "i2c-rcar",
++	.id		= 3,
++	.resource	= rcar_i2c3_res,
++	.num_resources	= ARRAY_SIZE(rcar_i2c3_res),
++};
++
+ static struct platform_device *r8a7779_early_devices[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+@@ -238,6 +311,10 @@ static struct platform_device *r8a7779_early_devices[] __initdata = {
+ 	&scif5_device,
+ 	&tmu00_device,
+ 	&tmu01_device,
++	&i2c0_device,
++	&i2c1_device,
++	&i2c2_device,
++	&i2c3_device,
+ };
+ 
+ static struct platform_device *r8a7779_late_devices[] __initdata = {
 -- 
-1.7.1
+1.7.9.5
 
