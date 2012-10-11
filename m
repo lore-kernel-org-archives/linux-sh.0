@@ -1,56 +1,61 @@
-From: Stephen Warren <swarren@wwwdotorg.org>
-Date: Thu, 11 Oct 2012 16:15:37 +0000
+From: Sakari Ailus <sakari.ailus@iki.fi>
+Date: Thu, 11 Oct 2012 19:48:46 +0000
 Subject: Re: [PATCH 05/14] media: add a V4L2 OF parser
-Message-Id: <5076F0A9.6020101@wwwdotorg.org>
+Message-Id: <20121011194845.GQ14107@valkosipuli.retiisi.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de> <2002286.8sbBLyKbDe@avalon> <5075A74C.80106@wwwdotorg.org> <2098605.jat554dMFe@avalon>
-In-Reply-To: <2098605.jat554dMFe@avalon>
+References: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de>
+ <201210051241.52205.hverkuil@xs4all.nl>
+ <Pine.LNX.4.64.1210051250210.13761@axis700.grange>
+ <201210051323.45571.hverkuil@xs4all.nl>
+ <Pine.LNX.4.64.1210081306240.12203@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1210081306240.12203@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-media@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-media@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Stephen Warren <swarren@wwwdotorg.org>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>
 
-On 10/10/2012 04:51 PM, Laurent Pinchart wrote:
-> On Wednesday 10 October 2012 10:50:20 Stephen Warren wrote:
->> On 10/10/2012 07:18 AM, Laurent Pinchart wrote:
->>> On Monday 08 October 2012 17:15:53 Guennadi Liakhovetski wrote:
->> ...
->>
->>>> But how do you get the subdev pointer? With the notifier I get it from
->>>> i2c_get_clientdata(client) and what do you do without it? How do you get
->>>> to the client?
->>>>
->>>>> And can't it get that from DT as well?
->>>>
->>>> No, I don't think there is a way to get a device pointer from a DT node.
->>
->> I don't believe there's a generic API for this (although perhaps there
->> could be), but it can be implemented quite easily.
->>
->> For example, on Tegra, the SMMU needs to flip a bit in the AHB register
->> space in order to enable itself. The SMMU DT node contains a phandle
->> that points at the AHB DT node. The SMMU driver parses the phandle and
->> passes the DT node pointer to the AHB driver. The AHB driver looks up
->> the struct device that was instantiated for that node. See
->> drivers/amba/tegra-ahb.c:tegra_ahb_enable_smmu(). There are a few other
->> cases of similar code in the kernel, although I can't remember the others!
+Hi Guennadi,
+
+On Mon, Oct 08, 2012 at 02:23:25PM +0200, Guennadi Liakhovetski wrote:
+...
+> If we do it from the bridge driver, we could install an I2C bus-notifier, 
+> _before_ the subdevice driver is probed, i.e. upon the 
+> BUS_NOTIFY_BIND_DRIVER event we could turn on the clock. If subdevice 
+> probing was successful, we can then wait for the BUS_NOTIFY_BOUND_DRIVER 
+> event to switch the clock back off. BUT - if the subdevice fails probing? 
+> How do we find out about that and turn the clock back off? There is no 
+> notification event for that... Possible solutions:
 > 
-> That's a very naive approach, but what about storing the struct device in 
-> struct device_node when the device is instantiated ? It's so simple that 
-> there's probably a good reason why that hasn't been implemented though.
+> 1. timer - ugly and unreliable.
+> 2. add a "probing failed" notifier event to the device core - would this 
+>    be accepted?
+> 3. let the subdevice turn the master clock on and off for the duration of 
+>    probing.
+> 
+> My vote goes for (3). Ideally this should be done using the generic clock 
+> framework. But can we really expect all drivers and platforms to switch to 
+> it quickly enough? If not, we need a V4L2-specific callback from subdevice 
+> drivers to bridge drivers to turn the clock on and off. That's what I've 
+> done "temporarily" in this patch series for soc-camera.
 
-It sounds like that would work.
+I'd say the clock has to be controlled by the sub-device driver. Sensors
+also have a power-up (and power-down) sequences that should be followed.
+Usually they also involve switching the external clock on (and off) at a
+given point of time.
 
-The advantage of calling a function in the driver for the node, rather
-than just grabbing something from the node directly in code unrelated to
-the driver for the node, is that it any knowledge of what kind of
-device/driver is handling that node is embedded into a function in the
-driver for the node, not the driver using the node, which makes
-everything a bit more type-safe.
+Also the OMAP 3 provides that clock through ISP so it, too, requires the
+generic clock framework to function with DT.
 
-Now, perhaps the implementation of that function could just pull a field
-out of struct of_node rather than calling driver_find_device(), but it'd
-then have to validate that the struct device that was found was truly
-managed by the expected driver, for safety. I assume that's pretty
-simple, but haven't checked.
+> Suppose we decide to do the same for V4L2 centrally - add call-backs. Then 
+
+I'd prefer to use the generic clock framework, albeit I admit it may take
+some time till all the relevant platforms support it. Nevertheless, if
+there's going to be a temporary solution it should be removed once the
+clock framework support is there.
+
+Kind regards,
+
+-- 
+Sakari Ailus
+e-mail: sakari.ailus@iki.fi	XMPP: sailus@retiisi.org.uk
