@@ -1,168 +1,86 @@
-From: wency@cn.fujitsu.com
-Date: Tue, 23 Oct 2012 10:30:49 +0000
-Subject: [PATCH v2 11/12] memory-hotplug: remove sysfs file of node
-Message-Id: <1350988250-31294-12-git-send-email-wency@cn.fujitsu.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 11 Oct 2012 02:57:02 +0000
+Subject: [PATCH 4/4] ARM: shmobile: marzen: add HSPI support
+Message-Id: <87y5jdvhqc.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1350988250-31294-1-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1350988250-31294-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
-Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
+To: linux-sh@vger.kernel.org
 
-From: Wen Congyang <wency@cn.fujitsu.com>
-
-This patch introduces a new function try_offline_node() to
-remove sysfs file of node when all memory sections of this
-node are removed. If some memory sections of this node are
-not removed, this function does nothing.
-
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-CC: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/acpi/acpi_memhotplug.c |    8 +++++-
- include/linux/memory_hotplug.h |    2 +-
- mm/memory_hotplug.c            |   58 ++++++++++++++++++++++++++++++++++++++-
- 3 files changed, 64 insertions(+), 4 deletions(-)
+ arch/arm/configs/marzen_defconfig     |    2 ++
+ arch/arm/mach-shmobile/board-marzen.c |   25 +++++++++++++++++++++++++
+ 2 files changed, 27 insertions(+)
 
-diff --git a/drivers/acpi/acpi_memhotplug.c b/drivers/acpi/acpi_memhotplug.c
-index 24c807f..0780f99 100644
---- a/drivers/acpi/acpi_memhotplug.c
-+++ b/drivers/acpi/acpi_memhotplug.c
-@@ -310,7 +310,9 @@ static int acpi_memory_disable_device(struct acpi_memory_device *mem_device)
- {
- 	int result;
- 	struct acpi_memory_info *info, *n;
-+	int node;
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index f79b55c..5b8215f 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -71,6 +71,8 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ # CONFIG_HW_RANDOM is not set
+ CONFIG_I2C=y
+ CONFIG_I2C_RCAR=y
++CONFIG_SPI=y
++CONFIG_SPI_SH_HSPI=y
+ CONFIG_GPIO_SYSFS=y
+ # CONFIG_HWMON is not set
+ CONFIG_THERMAL=y
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index b8a7525..69f7f46 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -30,6 +30,8 @@
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/smsc911x.h>
++#include <linux/spi/spi.h>
++#include <linux/spi/sh_hspi.h>
+ #include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/mfd/tmio.h>
+ #include <mach/hardware.h>
+@@ -126,10 +128,27 @@ static struct platform_device thermal_device = {
+ 	.num_resources	= ARRAY_SIZE(thermal_resources),
+ };
  
-+	node = acpi_get_node(mem_device->device->handle);
++/* HSPI */
++static struct resource hspi_resources[] = {
++	[0] = {
++		.start		= 0xFFFC7000,
++		.end		= 0xFFFC7018 - 1,
++		.flags		= IORESOURCE_MEM,
++	},
++};
++
++static struct platform_device hspi_device = {
++	.name	= "sh-hspi",
++	.id	= 0,
++	.resource	= hspi_resources,
++	.num_resources	= ARRAY_SIZE(hspi_resources),
++};
++
+ static struct platform_device *marzen_devices[] __initdata = {
+ 	&eth_device,
+ 	&sdhi0_device,
+ 	&thermal_device,
++	&hspi_device,
+ };
  
- 	/*
- 	 * Ask the VM to offline this memory range.
-@@ -318,7 +320,11 @@ static int acpi_memory_disable_device(struct acpi_memory_device *mem_device)
- 	 */
- 	list_for_each_entry_safe(info, n, &mem_device->res_list, list) {
- 		if (info->enabled) {
--			result = remove_memory(info->start_addr, info->length);
-+			if (node < 0)
-+				node = memory_add_physaddr_to_nid(
-+					info->start_addr);
-+			result = remove_memory(node, info->start_addr,
-+				info->length);
- 			if (result)
- 				return result;
- 		}
-diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
-index d4c4402..7b4cfe6 100644
---- a/include/linux/memory_hotplug.h
-+++ b/include/linux/memory_hotplug.h
-@@ -231,7 +231,7 @@ extern int arch_add_memory(int nid, u64 start, u64 size);
- extern int offline_pages(unsigned long start_pfn, unsigned long nr_pages);
- extern int offline_memory_block(struct memory_block *mem);
- extern bool is_memblock_offlined(struct memory_block *mem);
--extern int remove_memory(u64 start, u64 size);
-+extern int remove_memory(int node, u64 start, u64 size);
- extern int sparse_add_one_section(struct zone *zone, unsigned long start_pfn,
- 								int nr_pages);
- extern void sparse_remove_one_section(struct zone *zone, struct mem_section *ms);
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index 55a228d..b1fe41d 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -29,6 +29,7 @@
- #include <linux/suspend.h>
- #include <linux/mm_inline.h>
- #include <linux/firmware-map.h>
-+#include <linux/stop_machine.h>
+ static void __init marzen_init(void)
+@@ -163,6 +182,12 @@ static void __init marzen_init(void)
+ 	gpio_request(GPIO_FN_SD0_CD, NULL);
+ 	gpio_request(GPIO_FN_SD0_WP, NULL);
  
- #include <asm/tlbflush.h>
- 
-@@ -1299,7 +1300,58 @@ static int is_memblock_offlined_cb(struct memory_block *mem, void *arg)
- 	return ret;
- }
- 
--int __ref remove_memory(u64 start, u64 size)
-+static int check_cpu_on_node(void *data)
-+{
-+	struct pglist_data *pgdat = data;
-+	int cpu;
++	/* HSPI 0 */
++	gpio_request(GPIO_FN_HSPI_CLK0,	NULL);
++	gpio_request(GPIO_FN_HSPI_CS0,	NULL);
++	gpio_request(GPIO_FN_HSPI_TX0,	NULL);
++	gpio_request(GPIO_FN_HSPI_RX0,	NULL);
 +
-+	for_each_present_cpu(cpu) {
-+		if (cpu_to_node(cpu) = pgdat->node_id)
-+			/*
-+			 * the cpu on this node isn't removed, and we can't
-+			 * offline this node.
-+			 */
-+			return -EBUSY;
-+	}
-+
-+	return 0;
-+}
-+
-+/* offline the node if all memory sections of this node are removed */
-+static void try_offline_node(int nid)
-+{
-+	unsigned long start_pfn = NODE_DATA(nid)->node_start_pfn;
-+	unsigned long end_pfn = start_pfn + NODE_DATA(nid)->node_spanned_pages;
-+	unsigned long pfn;
-+
-+	for (pfn = start_pfn; pfn < end_pfn; pfn += PAGES_PER_SECTION) {
-+		unsigned long section_nr = pfn_to_section_nr(pfn);
-+
-+		if (!present_section_nr(section_nr))
-+			continue;
-+
-+		if (pfn_to_nid(pfn) != nid)
-+			continue;
-+
-+		/*
-+		 * some memory sections of this node are not removed, and we
-+		 * can't offline node now.
-+		 */
-+		return;
-+	}
-+
-+	if (stop_machine(check_cpu_on_node, NODE_DATA(nid), NULL))
-+		return;
-+
-+	/*
-+	 * all memory/cpu of this node are removed, we can offline this
-+	 * node now.
-+	 */
-+	node_set_offline(nid);
-+	unregister_one_node(nid);
-+}
-+
-+int __ref remove_memory(int nid, u64 start, u64 size)
- {
- 	unsigned long start_pfn, end_pfn;
- 	int ret = 0;
-@@ -1346,6 +1398,8 @@ repeat:
- 
- 	arch_remove_memory(start, size);
- 
-+	try_offline_node(nid);
-+
- 	unlock_memory_hotplug();
- 
- 	return 0;
-@@ -1355,7 +1409,7 @@ int offline_pages(unsigned long start_pfn, unsigned long nr_pages)
- {
- 	return -EINVAL;
- }
--int remove_memory(u64 start, u64 size)
-+int remove_memory(int nid, u64 start, u64 size)
- {
- 	return -EINVAL;
+ 	r8a7779_add_standard_devices();
+ 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
  }
 -- 
-1.7.1
+1.7.9.5
 
