@@ -1,21 +1,35 @@
-From: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-Date: Tue, 02 Oct 2012 17:29:19 +0000
-Subject: Re: [RFC v9 PATCH 01/21] memory-hotplug: rename remove_memory() to offline_memory()/offline_pages()
-Message-Id: <CAHGf_=rNSmtxw2JL2g+b-yq9KTFZPWBp90KtERJouDS-vv3zWw@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 12 Oct 2012 05:01:11 +0000
+Subject: [PATCH 2/2 v2] ARM: shmobile: armadillo800eva: enable L2X0 cache on defconfig
+Message-Id: <87k3uwb7xo.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346837155-534-1-git-send-email-wency@cn.fujitsu.com>
- <1346837155-534-2-git-send-email-wency@cn.fujitsu.com> <506509E4.1090000@gmail.com>
- <50651E68.3040208@jp.fujitsu.com> <CAHGf_=oJ_Jmjqcdr4cPJghf7PX+vfmZe=CV2sdQQhS5agzG15w@mail.gmail.com>
- <506A4100.7070305@jp.fujitsu.com>
-In-Reply-To: <506A4100.7070305@jp.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Cc: Ni zhan Chen <nizhan.chen@gmail.com>, wency@cn.fujitsu.com, x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org
+To: linux-sh@vger.kernel.org
 
->> Then, you introduced bisect breakage. It is definitely unacceptable.
->
-> What is "bisect breakage" meaning?
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+>> Simon
 
-Think what's happen when only applying path [1/21].
+very enough for v3.8 ?
+
+ arch/arm/configs/armadillo800eva_defconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
+index f78d259..a18593d 100644
+--- a/arch/arm/configs/armadillo800eva_defconfig
++++ b/arch/arm/configs/armadillo800eva_defconfig
+@@ -20,7 +20,7 @@ CONFIG_MACH_ARMADILLO800EVA=y
+ # CONFIG_SH_TIMER_TMU is not set
+ CONFIG_ARM_THUMB=y
+ CONFIG_CPU_BPREDICT_DISABLE=y
+-# CONFIG_CACHE_L2X0 is not set
++CONFIG_CACHE_L2X0=y
+ CONFIG_ARM_ERRATA_430973=y
+ CONFIG_ARM_ERRATA_458693=y
+ CONFIG_ARM_ERRATA_460075=y
+-- 
+1.7.9.5
+
