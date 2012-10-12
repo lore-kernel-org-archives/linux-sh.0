@@ -1,45 +1,29 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 17 Oct 2012 04:39:15 +0000
-Subject: [PATCH 04/10] ARM: shmobile: kzm9g: enable DMAEngine on SHDI0 and SDHI2
-Message-Id: <1350448761-27346-5-git-send-email-horms@verge.net.au>
+From: Royaldoc International Globe <bensonblake_co@yahoo.com>
+Date: Fri, 12 Oct 2012 23:37:19 +0000
+Subject: enquiry
+Message-Id: <20121013083719.59176q18jivprbsw@27.120.95.201>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1350448761-27346-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1350448761-27346-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
 
-This patch enables DMAEngine on SHDI0 and SDHI2 for kzm9g.
 
-Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
----
- arch/arm/mach-shmobile/board-kzm9g.c |    4 ++++
- 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index 1a46422..f63f2ee 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -384,6 +384,8 @@ static struct regulator_consumer_supply fixed2v8_power_consumers[]  
- /* SDHI */
- static struct sh_mobile_sdhi_info sdhi0_info = {
-+	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
-+	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
- 	.tmio_ocr_mask	= MMC_VDD_27_28 | MMC_VDD_28_29,
-@@ -424,6 +426,8 @@ static struct platform_device sdhi0_device = {
- 
- /* Micro SD */
- static struct sh_mobile_sdhi_info sdhi2_info = {
-+	.dma_slave_tx	= SHDMA_SLAVE_SDHI2_TX,
-+	.dma_slave_rx	= SHDMA_SLAVE_SDHI2_RX,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
- 			  TMIO_MMC_USE_GPIO_CD |
- 			  TMIO_MMC_WRPROTECT_DISABLE,
--- 
-1.7.10.4
+Royaldoc International Globe,
+103, Park son road,
+Carlifonia,USA.
+63-1-3522 2501
+royaldoc@inbox.org.tw
+
+   We are interested in purchasing your products and I would like to  
+make an inquiry. can you inform me of your minimum order quantity? and  
+also your maximum order quantity, if there is any available sample do  
+let me know.
+
+
+Sincerely,
+Purchase Manager
+Alan Smith
 
