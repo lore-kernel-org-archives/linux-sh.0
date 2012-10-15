@@ -1,73 +1,132 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sun, 28 Oct 2012 02:26:06 +0000
-Subject: [PATCH 05/12] ARM: mach-shmobile: add FLCTL DMA slave definitions for sh7372
-Message-Id: <1351391173-32379-6-git-send-email-horms@verge.net.au>
+From: Hideki EIRAKU <hdk@igel.co.jp>
+Date: Mon, 15 Oct 2012 08:34:53 +0000
+Subject: [PATCH v4 2/2] ARM: mach-shmobile: sh7372: Add IPMMU device
+Message-Id: <1350290093-998-3-git-send-email-hdk@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1351391173-32379-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1351391173-32379-1-git-send-email-horms@verge.net.au>
+References: <1350290093-998-1-git-send-email-hdk@igel.co.jp>
+In-Reply-To: <1350290093-998-1-git-send-email-hdk@igel.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Bastian Hecht <hechtb@googlemail.com>
+This patch adds an IPMMU device and notifies the IPMMU driver which
+devices are connected via the IPMMU module.  All devices connected to the main
+memory bus via the IPMMU module MUST be registered when SHMOBILE_IPMMU and
+SHMOBILE_IOMMU are enabled because physical address cannot be used
+while the IPMMU module's MMU function is enabled.
 
-SH7372 can use DMA with the FLCTL flash controller. Add required slave
-IDs and slave descriptors.
-
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Hideki EIRAKU <hdk@igel.co.jp>
 ---
- arch/arm/mach-shmobile/include/mach/sh7372.h |    4 ++++
- arch/arm/mach-shmobile/setup-sh7372.c        |   20 ++++++++++++++++++++
- 2 files changed, 24 insertions(+)
+ arch/arm/mach-shmobile/board-ap4evb.c   |    5 +++++
+ arch/arm/mach-shmobile/board-mackerel.c |    5 +++++
+ arch/arm/mach-shmobile/setup-sh7372.c   |   26 ++++++++++++++++++++++++++
+ 3 files changed, 36 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
-index eb98b45..d65fbbe 100644
---- a/arch/arm/mach-shmobile/include/mach/sh7372.h
-+++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
-@@ -452,6 +452,10 @@ enum {
- 	SHDMA_SLAVE_SCIF5_RX,
- 	SHDMA_SLAVE_SCIF6_TX,
- 	SHDMA_SLAVE_SCIF6_RX,
-+	SHDMA_SLAVE_FLCTL0_TX,
-+	SHDMA_SLAVE_FLCTL0_RX,
-+	SHDMA_SLAVE_FLCTL1_TX,
-+	SHDMA_SLAVE_FLCTL1_RX,
- 	SHDMA_SLAVE_SDHI0_RX,
- 	SHDMA_SLAVE_SDHI0_TX,
- 	SHDMA_SLAVE_SDHI1_RX,
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 790dc68..7006abb 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -61,6 +61,7 @@
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/sh7372.h>
++#include <mach/ipmmu.h>
+ 
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+@@ -1459,6 +1460,10 @@ static void __init ap4evb_init(void)
+ 
+ 	sh7372_add_standard_devices();
+ 
++	ipmmu_add_device(&lcdc_device.dev);
++	ipmmu_add_device(&lcdc1_device.dev);
++	ipmmu_add_device(&ceu_device.dev);
++
+ 	/* HDMI */
+ 	gpio_request(GPIO_FN_HDMI_HPD, NULL);
+ 	gpio_request(GPIO_FN_HDMI_CEC, NULL);
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 0c27c81..1c34520 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -60,6 +60,7 @@
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/sh7372.h>
++#include <mach/ipmmu.h>
+ 
+ #include <asm/mach/arch.h>
+ #include <asm/mach-types.h>
+@@ -1640,6 +1641,10 @@ static void __init mackerel_init(void)
+ 
+ 	sh7372_add_standard_devices();
+ 
++	ipmmu_add_device(&lcdc_device.dev);
++	ipmmu_add_device(&hdmi_lcdc_device.dev);
++	ipmmu_add_device(&ceu_device.dev);
++
+ 	platform_add_devices(mackerel_devices, ARRAY_SIZE(mackerel_devices));
+ 
+ 	rmobile_add_devices_to_domains(domain_devices,
 diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index a07954f..a360111 100644
+index a07954f..aadb769 100644
 --- a/arch/arm/mach-shmobile/setup-sh7372.c
 +++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -408,6 +408,26 @@ static const struct sh_dmae_slave_config sh7372_dmae_slaves[] = {
- 		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
- 		.mid_rid	= 0x3e,
- 	}, {
-+		.slave_id	= SHDMA_SLAVE_FLCTL0_TX,
-+		.addr		= 0xe6a30050,
-+		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0x83,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_FLCTL0_RX,
-+		.addr		= 0xe6a30050,
-+		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0x83,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_FLCTL1_TX,
-+		.addr		= 0xe6a30060,
-+		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0x87,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_FLCTL1_RX,
-+		.addr		= 0xe6a30060,
-+		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0x87,
-+	}, {
- 		.slave_id	= SHDMA_SLAVE_SDHI0_TX,
- 		.addr		= 0xe6850030,
- 		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
+@@ -38,6 +38,7 @@
+ #include <mach/irqs.h>
+ #include <mach/sh7372.h>
+ #include <mach/common.h>
++#include <mach/ipmmu.h>
+ #include <asm/mach/map.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+@@ -968,6 +969,23 @@ static struct platform_device spu1_device = {
+ 	.num_resources	= ARRAY_SIZE(spu1_resources),
+ };
+ 
++/* IPMMUI (an IPMMU module for ICB/LMB) */
++static struct resource ipmmu_resources[] = {
++	[0] = {
++		.name	= "IPMMUI",
++		.start	= 0xfe951000,
++		.end	= 0xfe9510ff,
++		.flags	= IORESOURCE_MEM,
++	},
++};
++
++static struct platform_device ipmmu_device = {
++	.name           = "ipmmu",
++	.id             = -1,
++	.resource       = ipmmu_resources,
++	.num_resources  = ARRAY_SIZE(ipmmu_resources),
++};
++
+ static struct platform_device *sh7372_early_devices[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+@@ -979,6 +997,7 @@ static struct platform_device *sh7372_early_devices[] __initdata = {
+ 	&cmt2_device,
+ 	&tmu00_device,
+ 	&tmu01_device,
++	&ipmmu_device,
+ };
+ 
+ static struct platform_device *sh7372_late_devices[] __initdata = {
+@@ -1033,6 +1052,13 @@ void __init sh7372_add_standard_devices(void)
+ 	platform_add_devices(sh7372_early_devices,
+ 			    ARRAY_SIZE(sh7372_early_devices));
+ 
++	ipmmu_add_device(&vpu_device.dev);
++	ipmmu_add_device(&jpu_device.dev);
++	ipmmu_add_device(&veu0_device.dev);
++	ipmmu_add_device(&veu1_device.dev);
++	ipmmu_add_device(&veu2_device.dev);
++	ipmmu_add_device(&veu3_device.dev);
++
+ 	platform_add_devices(sh7372_late_devices,
+ 			    ARRAY_SIZE(sh7372_late_devices));
+ 
 -- 
-1.7.10.4
+1.7.0.4
 
