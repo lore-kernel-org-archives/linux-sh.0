@@ -1,39 +1,94 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sun, 28 Oct 2012 02:26:12 +0000
-Subject: [PATCH 11/12] ARM: shmobile: r8a7740: fixup DT machine desc name typo
-Message-Id: <1351391173-32379-12-git-send-email-horms@verge.net.au>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Mon, 15 Oct 2012 06:35:58 +0000
+Subject: [GIT PULL] sh updates for 3.7-rc2
+Message-Id: <20121015063557.GB32566@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1351391173-32379-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1351391173-32379-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The following changes since commit ddffeb8c4d0331609ef2581d84de4d763607bd37:
 
-r8a7740 machine desc name should be R8A7740,
-not SH7372
+  Linux 3.7-rc1 (2012-10-14 14:41:04 -0700)
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
----
- arch/arm/mach-shmobile/setup-r8a7740.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+are available in the git repository at:
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 1e032cb..6649a77 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -763,7 +763,7 @@ static const char *r8a7740_boards_compat_dt[] __initdata = {
- 	NULL,
- };
- 
--DT_MACHINE_START(SH7372_DT, "Generic R8A7740 (Flattened Device Tree)")
-+DT_MACHINE_START(R8A7740_DT, "Generic R8A7740 (Flattened Device Tree)")
- 	.map_io		= r8a7740_map_io,
- 	.init_early	= r8a7740_add_early_devices_dt,
- 	.init_irq	= r8a7740_init_irq,
--- 
-1.7.10.4
+  git://github.com/pmundt/linux-sh tags/sh-for-linus
 
+for you to fetch changes up to 0dd4d5cbe4c38165dc9b3ad329ebb23f24d74fdb:
+
+  sh: Fix up more fallout from pointless ARM __iomem churn. (2012-10-15 14:08:48 +0900)
+
+----------------------------------------------------------------
+SuperH updates for 3.7-rc2
+
+----------------------------------------------------------------
+David Howells (1):
+      UAPI: (Scripted) Disintegrate arch/sh/include/asm
+
+Paul Mundt (3):
+      Merge tag 'disintegrate-sh-20121009' of git://git.infradead.org/users/dhowells/linux-headers into sh-latest
+      sh: Wire up kcmp syscall.
+      sh: Fix up more fallout from pointless ARM __iomem churn.
+
+ arch/sh/include/asm/Kbuild                      | 11 ----
+ arch/sh/include/asm/hw_breakpoint.h             |  4 +-
+ arch/sh/include/asm/posix_types.h               |  8 ---
+ arch/sh/include/asm/ptrace.h                    | 34 +----------
+ arch/sh/include/asm/ptrace_32.h                 | 75 +-----------------------
+ arch/sh/include/asm/ptrace_64.h                 | 12 +---
+ arch/sh/include/asm/setup.h                     |  5 +-
+ arch/sh/include/asm/types.h                     |  5 +-
+ arch/sh/include/asm/unistd.h                    |  9 +--
+ arch/sh/include/uapi/asm/Kbuild                 | 22 +++++++
+ arch/sh/include/{ => uapi}/asm/auxvec.h         |  0
+ arch/sh/include/{ => uapi}/asm/byteorder.h      |  0
+ arch/sh/include/{ => uapi}/asm/cachectl.h       |  0
+ arch/sh/include/{ => uapi}/asm/cpu-features.h   |  0
+ arch/sh/include/{ => uapi}/asm/ioctls.h         |  0
+ arch/sh/include/uapi/asm/posix_types.h          |  7 +++
+ arch/sh/include/{ => uapi}/asm/posix_types_32.h |  0
+ arch/sh/include/{ => uapi}/asm/posix_types_64.h |  0
+ arch/sh/include/uapi/asm/ptrace.h               | 34 +++++++++++
+ arch/sh/include/uapi/asm/ptrace_32.h            | 77 +++++++++++++++++++++++++
+ arch/sh/include/uapi/asm/ptrace_64.h            | 14 +++++
+ arch/sh/include/uapi/asm/setup.h                |  1 +
+ arch/sh/include/{ => uapi}/asm/sigcontext.h     |  0
+ arch/sh/include/{ => uapi}/asm/signal.h         |  0
+ arch/sh/include/{ => uapi}/asm/sockios.h        |  0
+ arch/sh/include/{ => uapi}/asm/stat.h           |  0
+ arch/sh/include/{ => uapi}/asm/swab.h           |  0
+ arch/sh/include/uapi/asm/types.h                |  1 +
+ arch/sh/include/uapi/asm/unistd.h               |  7 +++
+ arch/sh/include/{ => uapi}/asm/unistd_32.h      |  3 +-
+ arch/sh/include/{ => uapi}/asm/unistd_64.h      |  3 +-
+ arch/sh/kernel/syscalls_32.S                    |  1 +
+ arch/sh/kernel/syscalls_64.S                    |  1 +
+ drivers/sh/intc/access.c                        | 45 +++++++++------
+ drivers/sh/intc/chip.c                          |  4 +-
+ drivers/tty/serial/sh-sci.c                     |  3 +-
+ 36 files changed, 210 insertions(+), 176 deletions(-)
+ rename arch/sh/include/{ => uapi}/asm/auxvec.h (100%)
+ rename arch/sh/include/{ => uapi}/asm/byteorder.h (100%)
+ rename arch/sh/include/{ => uapi}/asm/cachectl.h (100%)
+ rename arch/sh/include/{ => uapi}/asm/cpu-features.h (100%)
+ create mode 100644 arch/sh/include/uapi/asm/hw_breakpoint.h
+ rename arch/sh/include/{ => uapi}/asm/ioctls.h (100%)
+ create mode 100644 arch/sh/include/uapi/asm/posix_types.h
+ rename arch/sh/include/{ => uapi}/asm/posix_types_32.h (100%)
+ rename arch/sh/include/{ => uapi}/asm/posix_types_64.h (100%)
+ create mode 100644 arch/sh/include/uapi/asm/ptrace.h
+ create mode 100644 arch/sh/include/uapi/asm/ptrace_32.h
+ create mode 100644 arch/sh/include/uapi/asm/ptrace_64.h
+ create mode 100644 arch/sh/include/uapi/asm/setup.h
+ rename arch/sh/include/{ => uapi}/asm/sigcontext.h (100%)
+ rename arch/sh/include/{ => uapi}/asm/signal.h (100%)
+ rename arch/sh/include/{ => uapi}/asm/sockios.h (100%)
+ rename arch/sh/include/{ => uapi}/asm/stat.h (100%)
+ rename arch/sh/include/{ => uapi}/asm/swab.h (100%)
+ create mode 100644 arch/sh/include/uapi/asm/types.h
+ create mode 100644 arch/sh/include/uapi/asm/unistd.h
+ rename arch/sh/include/{ => uapi}/asm/unistd_32.h (99%)
+ rename arch/sh/include/{ => uapi}/asm/unistd_64.h (99%)
