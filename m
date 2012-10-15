@@ -1,240 +1,923 @@
-From: wency@cn.fujitsu.com
-Date: Tue, 23 Oct 2012 10:30:43 +0000
-Subject: [PATCH v2 05/12] memory-hotplug: introduce new function arch_remove_memory() for removing page table
-Message-Id: <1350988250-31294-6-git-send-email-wency@cn.fujitsu.com>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date: Mon, 15 Oct 2012 23:15:29 +0000
+Subject: [PATCH 1/2] sh: of: Add support OF for INTC
+Message-Id: <1350342930-25581-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1350988250-31294-1-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1350988250-31294-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
-Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
+To: linux-sh@vger.kernel.org
 
-From: Wen Congyang <wency@cn.fujitsu.com>
+This provides OF support of SH/INTC.
 
-For removing memory, we need to remove page table. But it depends
-on architecture. So the patch introduce arch_remove_memory() for
-removing page table. Now it only calls __remove_pages().
+The SH/INTC driver is used by SuperH and ARM/SH-MOBILE.
+At the moment, SuperH does not have the plan corresponding to DT.
+DT of SH/INTC has taken the form where the table data of the C
+is managed by DT, in order to maintain compatibility.
 
-Note: __remove_pages() for some archtecuture is not implemented
-      (I don't know how to implement it for s390).
-
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-CC: Paul Mackerras <paulus@samba.org>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-CC: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 ---
- arch/ia64/mm/init.c            |   18 ++++++++++++++++++
- arch/powerpc/mm/mem.c          |   12 ++++++++++++
- arch/s390/mm/init.c            |   12 ++++++++++++
- arch/sh/mm/init.c              |   17 +++++++++++++++++
- arch/tile/mm/init.c            |    8 ++++++++
- arch/x86/mm/init_32.c          |   12 ++++++++++++
- arch/x86/mm/init_64.c          |   15 +++++++++++++++
- include/linux/memory_hotplug.h |    1 +
- mm/memory_hotplug.c            |    2 ++
- 9 files changed, 97 insertions(+), 0 deletions(-)
+ Documentation/devicetree/bindings/sh/intc.txt |  163 +++++++
+ drivers/sh/intc/Kconfig                       |    7 +
+ drivers/sh/intc/Makefile                      |    1 +
+ drivers/sh/intc/of_intc.c                     |  602 +++++++++++++++++++++++++
+ include/linux/sh_intc.h                       |   78 ++++
+ 5 files changed, 851 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/sh/intc.txt
+ create mode 100644 drivers/sh/intc/of_intc.c
 
-diff --git a/arch/ia64/mm/init.c b/arch/ia64/mm/init.c
-index acd5b68..1d36ba2 100644
---- a/arch/ia64/mm/init.c
-+++ b/arch/ia64/mm/init.c
-@@ -690,6 +690,24 @@ int arch_add_memory(int nid, u64 start, u64 size)
+diff --git a/Documentation/devicetree/bindings/sh/intc.txt b/Documentation/devicetree/bindings/sh/intc.txt
+new file mode 100644
+index 0000000..ebb2398
+--- /dev/null
++++ b/Documentation/devicetree/bindings/sh/intc.txt
+@@ -0,0 +1,163 @@
++* Renesas SuperH / SH-MOBILE Interrupt Controller
++
++The SH/INTC driver is used by SuperH and ARM/SH-MOBILE.
++At the moment, SuperH does not have the plan corresponding to DT.
++DT of SH/INTC has taken the form where the table data of the C
++is managed by DT, in order to maintain compatibility.
++
++Main node required properties:
++
++- compatible : should be one of:
++	"renesas,sh_intca"
++	"renesas,sh_intcs"
++	"renesas,sh_intca_irq_pins"
++
++- interrupt-controller : Identifies the node as an interrupt controller
++- #interrupt-cells	: Set already 1.
++- #address-cells	: Set already 1.
++- #size-cells	: Set already 1.
++- ranges        : Non value.
++- reg 			: Specifies base physical address(s) and size of the INTC
++				  registers.
++- intsrc*		: This sets up the vector for every device.
++
++- *_registers	: There are vector table, mask, priority, ack, and sense
++				  register in INTC.  In order to hold these data, it is
++				  necessary to set up the following contents.
++
++ -- intc_vectors: This needs to have vector_table.
++				  This specifies phandle which intsrc* defined.
++
++ -- intc_mask_registers	: This specifies the contents of the mask register.
++    This node required properties:
++	* address-cells	: Set already 1.
++	* size-cells 	: Set already 1.
++	* ranges		: Non value.
++	* intc_mask*	: This has regs and reginfo.
++	 ** reg	: This specifies the address of mask register. First specifies
++			  mask register, and 2nd specifies mask clear register.
++			  First cell is address, and 2nd sell is address size. 1 is 8bit.
++			  2 is 16bit, 4 is 32bit.
++	 ** reginfo: This specifies phandle of devices.
++
++ -- intc_prio_registers	: This sets up the contents of the priority register.
++    This node required properties:
++	* address-cells	: Set already 1.
++	* size-cells 	: Set already 1.
++	* ranges		: Non value.
++	* intc_prio*: This has regs and reginfo.
++	 ** reg	: This specifies the address of priority register. First specifies
++			  priority set register, and 2nd specifies priority clear register.
++			  If there is not priority clear register, specifies 0x00.
++			  First cell is address, and 2nd sell is address size. 1 is 8bit.
++			  2 is 16bit, 4 is 32bit.
++	 ** field-width : Bit size is specified for every device.
++	 ** reginfo: This specifies phandle of devices.
++
++ -- intc_sense_registers	: This sets up the contents of the sense register.
++    This node required properties:
++	* address-cells	: Set already 1.
++	* size-cells 	: Set already 1.
++	* ranges		: Non value.
++	* intc_sense*: This has regs and reginfo.
++	 ** reg	: This specifies the address of sense register.
++			  First cell is address, and 2nd sell is address size. 1 is 8bit.
++			  2 is 16bit, 4 is 32bit.
++	 ** field-width : Bit size is specified for every device.
++	 ** reginfo: This specifies phandle of devices.
++
++-- intc_ack_registers	: This sets up the contents of the ACK register.
++   This node required properties:
++	* address-cells	: Set already 1.
++	* size-cells 	: Set already 1.
++	* ranges		: Non value.
++	* intc_ack*: This has regs and reginfo.
++	 ** reg	: This specifies the address of ack register.
++			  First cell is address, and 2nd sell is address size. 1 is 8bit.
++			  2 is 16bit, 4 is 32bit.
++	 ** reginfo: This specifies phandle of devices.
++
++Optional:
++
++- group_size	: If this INTC register has Group, set up this value.
++- intc_group*	: This needs to have group, If INTC device have group.
++   This node required properties:
++    * group : This specifies the address phandle of group.
++	  For example, when TMU1 of priority regisdter is sharing with TMU1_0,
++	  TMU1_1 and TMU1_2, it describes like below.
++
++	     TMU1:   intc_group2 { group = <&TMU1_0 &TMU1_1 &TMU1_2>; };
++
++	  And the phandle is specified as priority regisdter.
++
++         intc_prio11 {
++             reg = <0xffd50030 2>, <0x0 0>;
++             field-width = <4>;
++			 reginfo = <&TMU1 0 0 0>;
++		 };
++
++- intc_intevtsa	: This set up the contents of INTEVTSA.
++	This node required properties:
++	  * vector : This specifies the address phandle of INTCS.
++
++Note:
++- "renesas,sh_intca" needs group_size, intc_group*, intc_vectors,
++  intc_mask_registers and intc_prio_registers.
++- "renesas,sh_intcs" needs group_size, intc_group*, intc_vectors,
++  intc_mask_registers, intc_prio_registers and  intc_intevtsa.
++- "renesas,sh_intca_irq_pins" needs intc_vectors, intc_mask_registers,
++  intc_prio_registers, intc_sense_registers and intc_ack_registers.
++
++Example:
++
++	intca: interrupt-controller@0 {
++		compatible = "renesas,sh_intca";
++		interrupt-controller;
++		#address-cells = <1>;
++		#size-cells = <1>;
++		#interrupt-cells = <1>;
++		ranges;
++
++		reg = <0xe6940000 0x200>, <0xe6950000 0x200>;
++		group_size = <19>;
++
++		DIRC: intsrc1 { vector = <0x0560>; };
++		ATAPI: intsrc2 { vector = <0x05E0>; };
++		....
++
++		DMAC1_1: intc_group0 { group = <&DMAC1_1_DEI0 &DMAC1_1_DEI1
++				&DMAC1_1_DEI2 &DMAC1_1_DEI3>; };
++		DMAC1_2: intc_group1 { group = <&DMAC1_2_DEI4 &DMAC1_2_DEI5
++						 &DMAC1_2_DADERR>; };
++		....
++		intc_vectors {
++			vector_table = <&DIRC &ATAPI &IIC1_ALI &IIC1_TACKI &IIC1_WAITI,
++		....
++		};
++
++		intc_mask_registers {
++			#address-cells = <1>;
++			#size-cells = <1>;
++			ranges;
++
++			intc_mask0 {
++				reg = <0xe6940080 1>, <0xe69400c0 1>;
++				reginfo = <&DMAC2_1_DEI3 &DMAC2_1_DEI2 &DMAC2_1_DEI1
++					&DMAC2_1_DEI0 0 0 &AP_ARM_COMMTX &AP_ARM_COMMRX>;
++			};
++			....
++		};
++
++		intc_prio_registers {
++			#address-cells = <1>;
++			#size-cells = <1>;
++			ranges;
++
++			intc_prio0 {
++				reg = <0xe6940000 2>, <0x0 0>;
++				field-width = <4>;
++				reginfo = <&DMAC3_1 &DMAC3_2 &CMT2 &ICBS0>;
++			};
++			....
++		};
++	};
+diff --git a/drivers/sh/intc/Kconfig b/drivers/sh/intc/Kconfig
+index a305731..23af977 100644
+--- a/drivers/sh/intc/Kconfig
++++ b/drivers/sh/intc/Kconfig
+@@ -37,3 +37,10 @@ config INTC_MAPPING_DEBUG
+ 	  between system IRQs and the per-controller id tables.
  
- 	return ret;
- }
+ 	  If in doubt, say N.
 +
-+#ifdef CONFIG_MEMORY_HOTREMOVE
-+int arch_remove_memory(u64 start, u64 size)
++config OF_SH_INTC
++	bool "INTC Device tree support"
++	depends on ARCH_SHMOBILE && OF
++	help
++	  This enables support OF for INTC of SH.
++	  But SH does not work, supports ARM/SH-MOBILE only.
+diff --git a/drivers/sh/intc/Makefile b/drivers/sh/intc/Makefile
+index 54ec2a0..918c471 100644
+--- a/drivers/sh/intc/Makefile
++++ b/drivers/sh/intc/Makefile
+@@ -3,3 +3,4 @@ obj-y 	:= access.o chip.o core.o handle.o irqdomain.o virq.o
+ obj-$(CONFIG_INTC_BALANCING)		+= balancing.o
+ obj-$(CONFIG_INTC_USERIMASK)		+= userimask.o
+ obj-$(CONFIG_INTC_MAPPING_DEBUG)	+= virq-debugfs.o
++obj-$(CONFIG_OF_SH_INTC)			+= of_intc.o
+diff --git a/drivers/sh/intc/of_intc.c b/drivers/sh/intc/of_intc.c
+new file mode 100644
+index 0000000..9df5aad
+--- /dev/null
++++ b/drivers/sh/intc/of_intc.c
+@@ -0,0 +1,602 @@
++/*
++ * OF helpers for SH intc
++ *
++ * Copyright (C) 2012  Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
++ * Copyright (C) 2012  Renesas Solutions Corp.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ */
++
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/interrupt.h>
++#include <linux/string.h>
++#include <linux/irq.h>
++#include <linux/io.h>
++#include <linux/slab.h>
++#include <linux/sh_intc.h>
++#include <linux/of.h>
++#include <linux/of_irq.h>
++#include <linux/of_platform.h>
++#include <linux/of_address.h>
++
++static void __init of_sh_intc_get_reg_addrs(struct device_node *np,
++				unsigned long *set_reg, unsigned long *clr_reg,
++				unsigned long *reg_width,
++				unsigned long *field_width)
 +{
-+	unsigned long start_pfn = start >> PAGE_SHIFT;
-+	unsigned long nr_pages = size >> PAGE_SHIFT;
-+	struct zone *zone;
-+	int ret;
++	struct resource res;
 +
-+	zone = page_zone(pfn_to_page(start_pfn));
-+	ret = __remove_pages(zone, start_pfn, nr_pages);
++	if (set_reg) {
++		of_address_to_resource(np, 0, &res);
++		*set_reg = res.start;
++	}
++
++	if (resource_size(&res) && reg_width)
++		*reg_width = resource_size(&res) * 8; /* byte */
++
++	if (clr_reg) {
++		of_address_to_resource(np, 1, &res);
++		*clr_reg = res.start;
++	}
++
++	if (field_width) {
++		u32 width;
++		of_property_read_u32(np, "field-width", &width);
++		*field_width = width;
++	}
++}
++
++static int of_sh_intc_parse_vector(struct device_node *np, uint32_t *vect)
++{
++	return of_property_read_u32(np, "vector", vect);
++}
++
++static int of_sh_intc_parse_group(struct device_node *np,
++				struct intc_group *grp)
++{
++	const __be32 *list, *list_end;
++	int size, ret = 0, count = 0;
++	phandle phandle;
++
++	/* Retrieve the phandle list property */
++	list = of_get_property(np, "group", &size);
++	if (!list)
++		return -ENOENT;
++
++	list_end = list + size / sizeof(*list);
++
++	grp->enum_id = np->phandle;
++	/* Loop over the phandles until all the requested entry is found */
++	while (list < list_end) {
++		/* If phandle is 0, then it is an empty entry with
++		   no arguments. */
++		phandle = be32_to_cpup(list);
++		if (phandle)
++			grp->enum_ids[count] = phandle;
++		list++;
++		count++;
++	}
++
++	pr_debug("%d:[", grp->enum_id);
++	for (size = 0 ; size < count ; size++)
++		pr_debug(" %d ", grp->enum_ids[size]);
++
++	pr_debug("]\n");
++
++	return ret;
++}
++
++static int of_sh_intc_parse_vectortbl(struct device_node *np,
++				struct intc_vect **vect, int *tbl_size)
++{
++	const __be32 *list, *list_end;
++	int size, ret = 0, count = 0;
++	struct device_node *node = NULL;
++	phandle phandle;
++
++	/* Retrieve the phandle list property */
++	list = of_get_property(np, "vector_table", &size);
++	if (!list)
++		return -ENOENT;
++
++	*tbl_size = size / sizeof(*list);
++
++	pr_debug("vector table size: %d\n", *tbl_size);
++
++	*vect = kzalloc(sizeof(struct intc_vect) * *tbl_size,
++					GFP_KERNEL);
++	if (!*vect)
++		return -ENOMEM;
++
++	list_end = list + *tbl_size;
++
++	/* Loop over the phandles until all the requested entry is found */
++	while (list < list_end) {
++		/* If phandle is 0, then it is an empty entry with
++		   no arguments. */
++		phandle = be32_to_cpup(list);
++		if (phandle) {
++			uint32_t vector_id;
++
++			(*vect)[count].enum_id = phandle;
++			node = of_find_node_by_phandle(phandle);
++
++			ret = of_sh_intc_parse_vector(node, &vector_id);
++			if (ret)
++				return ret;
++
++			(*vect)[count].vect = vector_id;
++			pr_debug("id %d : vector 0x%x\n",
++				(*vect)[count].enum_id, (*vect)[count].vect);
++		} else {
++			ret = -EINVAL;
++			goto error;
++		}
++		list++;
++		count++;
++	}
++	return ret;
++
++error:
++	kfree(*vect);
++
++	return ret;
++}
++
++static int of_sh_intc_parse_reginfo(struct device_node *np,
++				struct intc_mask_reg *mask,
++				struct intc_prio_reg *prio,
++				struct intc_sense_reg *sense)
++{
++	const __be32 *list, *list_end;
++	int size, id, ret = 0, count = 0;
++	phandle phandle;
++
++	/* Retrieve the phandle list property */
++	list = of_get_property(np, "reginfo", &size);
++	if (!list)
++		return -ENOENT;
++
++	list_end = list + size / sizeof(*list);
++
++	/* Loop over the phandles until all the requested entry is found */
++	while (list < list_end) {
++		/* If phandle is 0, then it is an empty entry with
++		   no arguments. */
++		phandle = be32_to_cpup(list);
++		if (phandle)
++			id = phandle;
++		else
++			id = 0;
++
++		if (mask)
++			mask->enum_ids[count] = id;
++		if (prio)
++			prio->enum_ids[count] = id;
++		if (sense)
++			sense->enum_ids[count] = id;
++
++		pr_debug("reg: [%d] %d\n", count, id);
++		list++;
++		count++;
++	}
++
++	return ret;
++}
++
++static struct device_node *
++__init of_sh_intc_check_base_node(struct device_node *np,
++		const char *node_name, int *tbl_size)
++{
++	struct device_node *node;
++
++	node = of_find_node_by_name(np, node_name);
++	if (!node) {
++		pr_err("%s table not found\n", node_name);
++		return NULL;
++	}
++
++	pr_debug("%s\n", node->full_name);
++
++	*tbl_size = of_get_child_count(node);
++
++	pr_debug("Size of %s: %d\n", node_name, *tbl_size);
++
++	return node;
++}
++
++static int __init of_sh_intc_get_mask_ack(struct device_node *np,
++				struct intc_mask_reg **masks, int *tbl_size,
++				const char *base_name, const char *reg_name)
++{
++	struct device_node *intc_node, *reg_node;
++	int i, ret;
++	char node_name[13]; /* intc_mask + 999 */
++
++	intc_node = of_sh_intc_check_base_node(np, base_name, tbl_size);
++	if (intc_node = NULL)
++		return -EINVAL;
++
++	*masks = kzalloc(sizeof(struct intc_mask_reg) * *tbl_size, GFP_KERNEL);
++	if (!*masks)
++		return -ENOMEM;
++
++	for (i = 0 ; i < *tbl_size; i++) {
++		memset(node_name, 0, sizeof(node_name));
++		snprintf(node_name, sizeof(node_name), "%s%d", reg_name, i);
++
++		pr_debug("intc node[%d]: name: %s\n", i, node_name);
++
++		reg_node = of_find_node_by_name(intc_node, node_name);
++		if (!reg_node) {
++			pr_warn("%s not found\n", node_name);
++			ret = -EINVAL;
++			goto error;
++		}
++
++		of_sh_intc_get_reg_addrs(reg_node, &(*masks)[i].set_reg,
++					&(*masks)[i].clr_reg,
++					&(*masks)[i].reg_width, NULL);
++
++#ifdef CONFIG_INTC_BALANCING
++		of_property_read_u32(reg_node, "dist_reg", &(*masks)[i].dist_reg);
++#endif
++#ifdef CONFIG_SMP
++		of_property_read_u32(reg_node, "smp", &(*masks)[i].smp);
++#endif
++
++		pr_debug("set reg: 0x%lx clr reg: 0x%lx reg_width: %ld\n",
++				(*masks)[i].set_reg, (*masks)[i].clr_reg,
++				(*masks)[i].reg_width);
++
++		ret = of_sh_intc_parse_reginfo(reg_node, &(*masks)[i], NULL,
++						NULL);
++		if (ret)
++			goto error;
++	}
++
++	return ret;
++
++error:
++	kfree(*masks);
++	return ret;
++}
++
++static int __init of_sh_intc_get_vector(struct device_node *np,
++				struct intc_vect **vectors, int *tbl_size)
++{
++	struct device_node *intc_node;
++
++	/* Get INTCA vector register info */
++	intc_node = of_find_node_by_name(np, "intc_vectors");
++	if (!intc_node) {
++		pr_err("Get INTC vector table not found\n");
++		return -EINVAL;
++	}
++
++	return of_sh_intc_parse_vectortbl(intc_node, vectors, tbl_size);
++}
++
++static int __init of_sh_intc_get_prio(struct device_node *np,
++				struct intc_prio_reg **prios, int *tbl_size)
++{
++	struct device_node *intc_node, *reg_node;
++	int i, ret;
++	char node_name[13]; /* intc_prio + 999 */
++
++	intc_node = of_sh_intc_check_base_node(np, "intc_prio_registers",
++					tbl_size);
++	if (!intc_node)
++		return -EINVAL;
++
++	*prios = kzalloc(sizeof(struct intc_prio_reg) * *tbl_size, GFP_KERNEL);
++	if (!*prios)
++		return -ENOMEM;
++
++	/* Get INTC priority register info */
++	for (i = 0 ; i < *tbl_size; i++) {
++		memset(node_name, 0, sizeof(node_name));
++		snprintf(node_name, sizeof(node_name), "intc_prio%d", i);
++
++		pr_debug("INTC node name: %s\n", node_name);
++
++		reg_node = of_find_node_by_name(intc_node, node_name);
++
++		if (!intc_node) {
++			pr_err("INTC prio register not found\n");
++			ret = -EINVAL;
++			goto error;
++		}
++
++		of_sh_intc_get_reg_addrs(reg_node, &(*prios)[i].set_reg,
++				&(*prios)[i].clr_reg, &(*prios)[i].reg_width,
++				&(*prios)[i].field_width);
++
++		pr_debug("\tset reg: 0x%lx clr reg: 0x%lx\n"
++					, (*prios)[i].set_reg, (*prios)[i].clr_reg);
++		pr_debug("\treg_width: %ld field_width: %ld\n",
++				(*prios)[i].reg_width, (*prios)[i].field_width);
++
++		ret = of_sh_intc_parse_reginfo(reg_node, NULL, &(*prios)[i],
++						NULL);
++		if (ret)
++			goto error;
++	}
++
++	return ret;
++
++error:
++	kfree(*prios);
++	return ret;
++}
++
++static int __init of_sh_intc_get_sense(struct device_node *np,
++				struct intc_sense_reg **senses, int *tbl_size)
++{
++	struct device_node *intc_node, *reg_node;
++	int i, ret;
++	char node_name[14]; /* intc_sense + 999 */
++
++	intc_node = of_sh_intc_check_base_node(np, "intc_sense_registers",
++					tbl_size);
++	if (intc_node = NULL)
++		return -EINVAL;
++
++	*senses = kzalloc(sizeof(struct intc_sense_reg) * *tbl_size,
++					GFP_KERNEL);
++	if (!*senses)
++		return -ENOMEM;
++
++	/* Get INTC priority register info */
++	for (i = 0 ; i < *tbl_size; i++) {
++		memset(node_name, 0, sizeof(node_name));
++		snprintf(node_name, sizeof(node_name), "intc_sense%d", i);
++
++		pr_debug("INTC node name: %s\n", node_name);
++
++		reg_node = of_find_node_by_name(intc_node, node_name);
++
++		if (!intc_node) {
++			pr_err("INTC senses register not found\n");
++			ret = -EINVAL;
++			goto error;
++		}
++
++		of_sh_intc_get_reg_addrs(reg_node, &(*senses)[i].reg, NULL,
++					&(*senses)[i].reg_width,
++					&(*senses)[i].field_width);
++
++		pr_debug("\tset reg: 0x%lx\n", (*senses)[i].reg);
++		pr_debug("\treg_width: %ld field_width: %ld\n",
++					(*senses)[i].reg_width,
++					(*senses)[i].field_width);
++
++		ret = of_sh_intc_parse_reginfo(reg_node, NULL, NULL,
++						&(*senses)[i]);
++		if (ret)
++			goto error;
++	}
++
++	return ret;
++
++error:
++	kfree(*senses);
++	return ret;
++}
++
++static int __init of_sh_intc_get_ack(struct device_node *np,
++				struct intc_mask_reg **masks, int *tbl_size)
++{
++	return of_sh_intc_get_mask_ack(np, masks, tbl_size,
++					"intc_ack_registers", "intc_ack");
++}
++
++static int __init of_sh_intc_get_mask(struct device_node *np,
++				struct intc_mask_reg **masks, int *tbl_size)
++{
++	return of_sh_intc_get_mask_ack(np, masks, tbl_size,
++					"intc_mask_registers", "intc_mask");
++}
++
++static int __init of_sh_intc_get_group(struct device_node *np,
++				struct intc_group **groups, int *tbl_size)
++{
++	int i, ret, size;
++	const __be32 *list;
++	struct device_node *grp_node;
++	char node_name[15]; /* intc_group@999 */
++
++	/* Get size of group */
++	if (of_property_read_u32(np, "group_size", tbl_size)) {
++		pr_debug("%s size infomation not found\n", node_name);
++		return -EINVAL;
++	}
++
++	pr_debug("Group size %d\n", *tbl_size);
++	pr_debug("%s\n", np->full_name);
++
++	*groups = kzalloc(sizeof(struct intc_group) * *tbl_size, GFP_KERNEL);
++	if (!*groups)
++		return -ENOMEM;
++
++	/* Get INTCA node info */
++	for (i = 0 ; i < *tbl_size; i++) {
++		memset(node_name, 0, sizeof(node_name));
++		snprintf(node_name, sizeof(node_name), "intc_group%d", i);
++
++		pr_debug("intc group[%d]: name: %s\n", i, node_name);
++
++		grp_node = of_find_node_by_name(np, node_name);
++		if (!grp_node) {
++			pr_warn("%s not found\n", node_name);
++			ret = -EINVAL;
++			goto error;
++		}
++
++		list = of_get_property(np, node_name, &size);
++		ret = of_sh_intc_parse_group(grp_node, &(*groups)[i]);
++		if (ret) {
++			pr_err("intc group not found\n");
++			goto error;
++		}
++	}
++
++	return ret;
++
++error:
++	kfree(*groups);
++	return ret;
++}
++
++int __init of_sh_intc_get_intevtsa_vect(struct device_node *np,
++				unsigned short *vect)
++{
++	int size;
++	const __be32 *list;
++	struct device_node *node;
++	phandle phandle;
++
++	node = of_find_node_by_name(np, "intc_intevtsa");
++	if (!node) {
++		pr_err("intc_intevtsa table not found\n");
++		return -EINVAL;
++	}
++
++	/* Retrieve the phandle list property */
++	list = of_get_property(node, "vector", &size);
++	if (!list)
++		return -ENOENT;
++
++	phandle = be32_to_cpup(list);
++	if (phandle) {
++		uint32_t tmp;
++		struct device_node *vect_node +				of_find_node_by_phandle(phandle);
++
++		if (!of_sh_intc_parse_vector(vect_node, &tmp))
++			*vect = tmp;
++		else
++			return -ENOENT;
++	}
++
++	return 0;
++}
++
++static int of_sh_intc_get_force_flags(struct device_node *np,
++				const char *node_name)
++{
++	int size;
++	const __be32 *list = of_get_property(np, node_name, &size);
++	if (list)
++		return be32_to_cpup(list);
++
++	return 0;
++}
++
++void __init of_sh_intc_get_force_enable(struct device_node *np,
++				struct intc_desc *d)
++{
++	d->force_enable +		of_sh_intc_get_force_flags(np, "force_enable");
++}
++
++void __init of_sh_intc_get_force_disable(struct device_node *np,
++				struct intc_desc *d)
++{
++	d->force_disable +		of_sh_intc_get_force_flags(np, "force_disable");
++}
++
++void __init of_sh_intc_get_skip_syscore_suspend(struct device_node *np,
++				struct intc_desc *d)
++{
++	if (of_find_property(np, "skip_syscore_suspend", NULL))
++		d->skip_syscore_suspend = true;
++	else
++		d->skip_syscore_suspend = false;
++}
++
++int __init of_sh_intc_get_meminfo(struct device_node *np,
++				struct resource *res, int res_no)
++{
++	int ret = 0, i;
++	for (i = 0 ; i < res_no ; i++) {
++		ret = of_address_to_resource(np, i, &res[i]);
++		if (ret) {
++			pr_err("could not determine device base address\n");
++			return ret;
++		}
++
++		pr_debug("%s: Address 0x%x, size %d\n",
++					__func__, res[i].start, resource_size(&res[i]));
++	}
++
++	return ret;
++}
++
++int __init of_sh_intc_get_intc(struct device_node *np, struct intc_desc *d)
++{
++	int ret = of_sh_intc_get_vector(np, &d->hw.vectors,
++				&d->hw.nr_vectors);
 +	if (ret)
-+		pr_warn("%s: Problem encountered in __remove_pages() as"
-+			" ret=%d\n", __func__,  ret);
++		goto error;
++	ret = of_sh_intc_get_group(np,  &d->hw.groups,
++				&d->hw.nr_groups);
++	if (ret)
++		goto error;
++	ret = of_sh_intc_get_mask(np, &d->hw.mask_regs,
++				&d->hw.nr_mask_regs);
++	if (ret)
++		goto error;
++	ret = of_sh_intc_get_prio(np, &d->hw.prio_regs,
++				&d->hw.nr_prio_regs);
++	if (ret)
++		goto error;
 +
++	d->of_node = np;
++
++error:
 +	return ret;
 +}
-+#endif
- #endif
- 
- /*
-diff --git a/arch/powerpc/mm/mem.c b/arch/powerpc/mm/mem.c
-index 0dba506..09c6451 100644
---- a/arch/powerpc/mm/mem.c
-+++ b/arch/powerpc/mm/mem.c
-@@ -133,6 +133,18 @@ int arch_add_memory(int nid, u64 start, u64 size)
- 
- 	return __add_pages(nid, zone, start_pfn, nr_pages);
- }
 +
-+#ifdef CONFIG_MEMORY_HOTREMOVE
-+int arch_remove_memory(u64 start, u64 size)
++int __init of_sh_intc_get_intc_pins(struct device_node *np,
++				struct intc_desc *d)
 +{
-+	unsigned long start_pfn = start >> PAGE_SHIFT;
-+	unsigned long nr_pages = size >> PAGE_SHIFT;
-+	struct zone *zone;
++	int ret = of_sh_intc_get_vector(np, &d->hw.vectors,
++				&d->hw.nr_vectors);
++	if (ret)
++		goto error;
++	ret = of_sh_intc_get_mask(np, &d->hw.mask_regs,
++				&d->hw.nr_mask_regs);
++	if (ret)
++		goto error;
++	ret = of_sh_intc_get_prio(np, &d->hw.prio_regs,
++				&d->hw.nr_prio_regs);
++	if (ret)
++		goto error;
++	ret = of_sh_intc_get_sense(np, &d->hw.sense_regs,
++				&d->hw.nr_sense_regs);
++	if (ret)
++		goto error;
++	ret = of_sh_intc_get_ack(np, &d->hw.ack_regs,
++				&d->hw.nr_ack_regs);
++	if (ret)
++		goto error;
 +
-+	zone = page_zone(pfn_to_page(start_pfn));
-+	return __remove_pages(zone, start_pfn, nr_pages);
-+}
-+#endif
- #endif /* CONFIG_MEMORY_HOTPLUG */
- 
- /*
-diff --git a/arch/s390/mm/init.c b/arch/s390/mm/init.c
-index 81e596c..b565190 100644
---- a/arch/s390/mm/init.c
-+++ b/arch/s390/mm/init.c
-@@ -257,4 +257,16 @@ int arch_add_memory(int nid, u64 start, u64 size)
- 		vmem_remove_mapping(start, size);
- 	return rc;
- }
++	d->of_node = np;
 +
-+#ifdef CONFIG_MEMORY_HOTREMOVE
-+int arch_remove_memory(u64 start, u64 size)
-+{
-+	/*
-+	 * There is no hardware or firmware interface which could trigger a
-+	 * hot memory remove on s390. So there is nothing that needs to be
-+	 * implemented.
-+	 */
-+	return -EBUSY;
-+}
-+#endif
- #endif /* CONFIG_MEMORY_HOTPLUG */
-diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
-index 82cc576..1057940 100644
---- a/arch/sh/mm/init.c
-+++ b/arch/sh/mm/init.c
-@@ -558,4 +558,21 @@ int memory_add_physaddr_to_nid(u64 addr)
- EXPORT_SYMBOL_GPL(memory_add_physaddr_to_nid);
- #endif
- 
-+#ifdef CONFIG_MEMORY_HOTREMOVE
-+int arch_remove_memory(u64 start, u64 size)
-+{
-+	unsigned long start_pfn = start >> PAGE_SHIFT;
-+	unsigned long nr_pages = size >> PAGE_SHIFT;
-+	struct zone *zone;
-+	int ret;
-+
-+	zone = page_zone(pfn_to_page(start_pfn));
-+	ret = __remove_pages(zone, start_pfn, nr_pages);
-+	if (unlikely(ret))
-+		pr_warn("%s: Failed, __remove_pages() = %d\n", __func__,
-+			ret);
-+
++error:
 +	return ret;
 +}
-+#endif
- #endif /* CONFIG_MEMORY_HOTPLUG */
-diff --git a/arch/tile/mm/init.c b/arch/tile/mm/init.c
-index ef29d6c..2749515 100644
---- a/arch/tile/mm/init.c
-+++ b/arch/tile/mm/init.c
-@@ -935,6 +935,14 @@ int remove_memory(u64 start, u64 size)
- {
- 	return -EINVAL;
+diff --git a/include/linux/sh_intc.h b/include/linux/sh_intc.h
+index 3238328..455b1cc 100644
+--- a/include/linux/sh_intc.h
++++ b/include/linux/sh_intc.h
+@@ -2,6 +2,10 @@
+ #define __SH_INTC_H
+ 
+ #include <linux/ioport.h>
++#include <linux/of.h>
++#include <linux/of_irq.h>
++#include <linux/of_platform.h>
++#include <linux/of_address.h>
+ 
+ #ifdef CONFIG_SUPERH
+ #define INTC_NR_IRQS	512
+@@ -146,4 +150,78 @@ static inline int register_intc_userimask(unsigned long addr)
  }
-+
-+#ifdef CONFIG_MEMORY_HOTREMOVE
-+int arch_remove_memory(u64 start, u64 size)
-+{
-+	/* TODO */
-+	return -EBUSY;
-+}
-+#endif
  #endif
  
- struct kmem_cache *pgd_cache;
-diff --git a/arch/x86/mm/init_32.c b/arch/x86/mm/init_32.c
-index 11a5800..b19eba4 100644
---- a/arch/x86/mm/init_32.c
-+++ b/arch/x86/mm/init_32.c
-@@ -839,6 +839,18 @@ int arch_add_memory(int nid, u64 start, u64 size)
- 
- 	return __add_pages(nid, zone, start_pfn, nr_pages);
- }
++#ifdef CONFIG_OF_SH_INTC
 +
-+#ifdef CONFIG_MEMORY_HOTREMOVE
-+int arch_remove_memory(u64 start, u64 size)
-+{
-+	unsigned long start_pfn = start >> PAGE_SHIFT;
-+	unsigned long nr_pages = size >> PAGE_SHIFT;
-+	struct zone *zone;
++/*
++ * of_sh_initc_get_intc() - Get INTC table.
++ * @np:     device node to get INTC from
++ * @d:      a pointer of intc table
++ *
++ * Return: one of the errno value on the error condition
++ */
++int of_sh_intc_get_intc(struct device_node *np, struct intc_desc *d);
 +
-+	zone = page_zone(pfn_to_page(start_pfn));
-+	return __remove_pages(zone, start_pfn, nr_pages);
-+}
-+#endif
- #endif
- 
- /*
-diff --git a/arch/x86/mm/init_64.c b/arch/x86/mm/init_64.c
-index 2b6b4a3..2309cf0 100644
---- a/arch/x86/mm/init_64.c
-+++ b/arch/x86/mm/init_64.c
-@@ -675,6 +675,21 @@ int arch_add_memory(int nid, u64 start, u64 size)
- }
- EXPORT_SYMBOL_GPL(arch_add_memory);
- 
-+#ifdef CONFIG_MEMORY_HOTREMOVE
-+int __ref arch_remove_memory(u64 start, u64 size)
-+{
-+	unsigned long start_pfn = start >> PAGE_SHIFT;
-+	unsigned long nr_pages = size >> PAGE_SHIFT;
-+	struct zone *zone;
-+	int ret;
++/*
++ * of_sh_initc_get_intc_pins() - Get INTC Pins table.
++ * @np:     device node to get INTC from
++ * @d:      a pointer of intc pins table
++ *
++ * Return: one of the errno value on the error condition
++ */
++int of_sh_intc_get_intc_pins(struct device_node *np, struct intc_desc *d);
 +
-+	zone = page_zone(pfn_to_page(start_pfn));
-+	ret = __remove_pages(zone, start_pfn, nr_pages);
-+	WARN_ON_ONCE(ret);
++/*
++ * of_sh_intc_get_meminfo() - Get and set INTC register of memory.
++ * @np:     device node to get INTC from
++ * @res_mem:   a pointer of resource
++ * @res_no:  resource number
++ *
++ * Return: one of the errno value on the error condition
++ */
++int of_sh_intc_get_meminfo(struct device_node *np,
++				struct resource *res_mem, int resno);
 +
-+	return ret;
-+}
-+#endif
- #endif /* CONFIG_MEMORY_HOTPLUG */
- 
- static struct kcore_list kcore_vsyscall;
-diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
-index 38675e9..191b2d9 100644
---- a/include/linux/memory_hotplug.h
-+++ b/include/linux/memory_hotplug.h
-@@ -85,6 +85,7 @@ extern void __online_page_free(struct page *page);
- 
- #ifdef CONFIG_MEMORY_HOTREMOVE
- extern bool is_pageblock_removable_nolock(struct page *page);
-+extern int arch_remove_memory(u64 start, u64 size);
- #endif /* CONFIG_MEMORY_HOTREMOVE */
- 
- /* reasonably generic interface to expand the physical pages in a zone  */
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index 050ddb0..ca07433 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -1118,6 +1118,8 @@ repeat:
- 	/* remove memmap entry */
- 	firmware_map_remove(start, start + size, "System RAM");
- 
-+	arch_remove_memory(start, size);
++/*
++ * of_sh_intc_get_force_enable - Get and set force_enable vector in
++ *                               struct intc_desc.
++ * @np:  device node to get INTC from
++ * @d:   a pointer of struct intc_desc
++ *
++ * Return: none
++ */
++void of_sh_intc_get_force_enable(struct device_node *np,
++				struct intc_desc *d);
 +
- 	unlock_memory_hotplug();
- 
- 	return 0;
++/*
++ * of_sh_intc_get_force_disable - Get and set force_disable vector in
++ *                                struct intc_desc.
++ * @np:  device node to get INTC from
++ * @d:   a pointer of struct intc_desc
++ *
++ * Return: none
++ */
++void of_sh_intc_get_force_disable(struct device_node *np,
++				struct intc_desc *d);
++
++/*
++ * of_sh_intc_get_skip_syscore_suspend - Get and set skip_syscore_suspend
++ *                                       flag in struct intc_desc.
++ * @np:  device node to get INTC from
++ * @d:   a pointer of struct intc_desc
++ *
++ * Return: none
++ */
++void of_sh_intc_get_skip_syscore_suspend(struct device_node *np,
++				struct intc_desc *d);
++
++/*
++ * of_sh_intc_get_intevtsa_vect  - Get using vector by intevtsa
++ * @np:  device node to get INTC from
++ * @vect:a pointer of value for vector
++ *
++ * Return: one of the errno value on the error condition
++ */
++int of_sh_intc_get_intevtsa_vect(struct device_node *np, unsigned short *vect);
++
++#endif /* CONFIG_OF_SH_INTC */
+ #endif /* __SH_INTC_H */
 -- 
-1.7.1
+1.7.10.4
 
