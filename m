@@ -1,107 +1,63 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 31 Oct 2012 03:07:25 +0000
-Subject: [PATCH 2/3] ARM: shmobile: sh7372: sh7372_fsidivX_clk become non-global
-Message-Id: <87fw4vmj9x.wl%kuninori.morimoto.gx@renesas.com>
+From: "Rafael J. Wysocki" <rjw@sisk.pl>
+Date: Mon, 15 Oct 2012 06:25:14 +0000
+Subject: Re: [PATCH] base: power - use clk_prepare_enable and clk_prepare_disable
+Message-Id: <2015319.CVFbHOo6Yt@vostro.rjw.lan>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1348155576-18881-1-git-send-email-m-karicheri2@ti.com>
+In-Reply-To: <1348155576-18881-1-git-send-email-m-karicheri2@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Murali Karicheri <m-karicheri2@ti.com>
+Cc: pavel@ucw.cz, len.brown@intel.com, gregkh@linuxfoundation.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, mturquette@linaro.org, linux-sh@vger.kernel.org, cyril@ti.com
 
-Not only sh7372 but also many Renesas chip has FSI-DIV clock,
-and we can share its sh_clk_ops.
-To support common FSI-DIV clock, sh7372_fsidivX_clk
-becomes non-global by this patch.
-This is preparation for FSI DT support.
+On Thursday 20 of September 2012 11:39:36 Murali Karicheri wrote:
+> When PM runtime is enabled in DaVinci and the machine migrates to
+> common clk framework, the clk_enable() gets called without
+> clk_prepare(). This patch is to fix this issue so that PM run
+> time can inter work with common clk framework.
+> 
+> Signed-off-by: Murali Karicheri <m-karicheri2@ti.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm/mach-shmobile/board-ap4evb.c        |    2 +-
- arch/arm/mach-shmobile/board-mackerel.c      |    2 +-
- arch/arm/mach-shmobile/clock-sh7372.c        |   10 ++++++----
- arch/arm/mach-shmobile/include/mach/sh7372.h |    2 --
- 4 files changed, 8 insertions(+), 8 deletions(-)
+OK.  I'm not seeing people having problems with this patch, so I'll tentatively
+queue it up for v3.8.
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 790dc68..cefdd03 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -728,7 +728,7 @@ fsia_ick_out:
- static int fsi_hdmi_set_rate(struct device *dev, int rate, int enable)
- {
- 	struct clk *fsib_clk;
--	struct clk *fdiv_clk = &sh7372_fsidivb_clk;
-+	struct clk *fdiv_clk = clk_get(NULL, "fsidivb");
- 	long fsib_rate = 0;
- 	long fdiv_rate = 0;
- 	int ackmd_bpfmd;
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 0c27c81..c826d77 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -882,7 +882,7 @@ static int __fsi_set_round_rate(struct clk *clk, long rate, int enable)
- static int fsi_b_set_rate(struct device *dev, int rate, int enable)
- {
- 	struct clk *fsib_clk;
--	struct clk *fdiv_clk = &sh7372_fsidivb_clk;
-+	struct clk *fdiv_clk = clk_get(NULL, "fsidivb");
- 	long fsib_rate = 0;
- 	long fdiv_rate = 0;
- 	int ackmd_bpfmd;
-diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-index 430a90f..18dcff7 100644
---- a/arch/arm/mach-shmobile/clock-sh7372.c
-+++ b/arch/arm/mach-shmobile/clock-sh7372.c
-@@ -481,7 +481,7 @@ static struct clk_mapping fsidiva_clk_mapping = {
- 	.len	= 8,
- };
- 
--struct clk sh7372_fsidiva_clk = {
-+static struct clk fsidiva_clk = {
- 	.ops		= &fsidiv_clk_ops,
- 	.parent		= &div6_reparent_clks[DIV6_FSIA], /* late install */
- 	.mapping	= &fsidiva_clk_mapping,
-@@ -492,15 +492,15 @@ static struct clk_mapping fsidivb_clk_mapping = {
- 	.len	= 8,
- };
- 
--struct clk sh7372_fsidivb_clk = {
-+static struct clk fsidivb_clk = {
- 	.ops		= &fsidiv_clk_ops,
- 	.parent		= &div6_reparent_clks[DIV6_FSIB],  /* late install */
- 	.mapping	= &fsidivb_clk_mapping,
- };
- 
- static struct clk *late_main_clks[] = {
--	&sh7372_fsidiva_clk,
--	&sh7372_fsidivb_clk,
-+	&fsidiva_clk,
-+	&fsidivb_clk,
- };
- 
- enum { MSTP001, MSTP000,
-@@ -583,6 +583,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("pllc1_clk", &pllc1_clk),
- 	CLKDEV_CON_ID("pllc1_div2_clk", &pllc1_div2_clk),
- 	CLKDEV_CON_ID("pllc2_clk", &sh7372_pllc2_clk),
-+	CLKDEV_CON_ID("fsidiva", &fsidiva_clk),
-+	CLKDEV_CON_ID("fsidivb", &fsidivb_clk),
- 
- 	/* DIV4 clocks */
- 	CLKDEV_CON_ID("i_clk", &div4_clks[DIV4_I]),
-diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
-index eb98b45..bf93a86 100644
---- a/arch/arm/mach-shmobile/include/mach/sh7372.h
-+++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
-@@ -475,8 +475,6 @@ extern struct clk sh7372_dv_clki_div2_clk;
- extern struct clk sh7372_pllc2_clk;
- extern struct clk sh7372_fsiack_clk;
- extern struct clk sh7372_fsibck_clk;
--extern struct clk sh7372_fsidiva_clk;
--extern struct clk sh7372_fsidivb_clk;
- 
- extern void sh7372_intcs_suspend(void);
- extern void sh7372_intcs_resume(void);
+Thanks,
+Rafael
+
+
+> diff --git a/drivers/base/power/clock_ops.c b/drivers/base/power/clock_ops.c
+> index eb78e96..9d8fde7 100644
+> --- a/drivers/base/power/clock_ops.c
+> +++ b/drivers/base/power/clock_ops.c
+> @@ -99,7 +99,7 @@ static void __pm_clk_remove(struct pm_clock_entry *ce)
+>  
+>  	if (ce->status < PCE_STATUS_ERROR) {
+>  		if (ce->status = PCE_STATUS_ENABLED)
+> -			clk_disable(ce->clk);
+> +			clk_disable_unprepare(ce->clk);
+>  
+>  		if (ce->status >= PCE_STATUS_ACQUIRED)
+>  			clk_put(ce->clk);
+> @@ -396,7 +396,7 @@ static void enable_clock(struct device *dev, const char *con_id)
+>  
+>  	clk = clk_get(dev, con_id);
+>  	if (!IS_ERR(clk)) {
+> -		clk_enable(clk);
+> +		clk_prepare_enable(clk);
+>  		clk_put(clk);
+>  		dev_info(dev, "Runtime PM disabled, clock forced on.\n");
+>  	}
+> @@ -413,7 +413,7 @@ static void disable_clock(struct device *dev, const char *con_id)
+>  
+>  	clk = clk_get(dev, con_id);
+>  	if (!IS_ERR(clk)) {
+> -		clk_disable(clk);
+> +		clk_disable_unprepare(clk);
+>  		clk_put(clk);
+>  		dev_info(dev, "Runtime PM disabled, clock forced off.\n");
+>  	}
+> 
 -- 
-1.7.9.5
-
+I speak only for myself.
+Rafael J. Wysocki, Intel Open Source Technology Center.
