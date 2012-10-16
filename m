@@ -1,28 +1,26 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 22 Oct 2012 07:24:22 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7740: fixup DT machine desc name typo
-Message-Id: <20121022072418.GA13042@verge.net.au>
+From: Tung Pham <tungps@gcs-vn.com>
+Date: Tue, 16 Oct 2012 13:23:33 +0000
+Subject: SH kernel boot up issue
+Message-Id: <507D5FD5.4050501@gcs-vn.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87sj97rstd.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87sj97rstd.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Sun, Oct 21, 2012 at 11:10:49PM -0700, Kuninori Morimoto wrote:
-> 
-> Hi Simon
-> 
-> > On Sun, Oct 21, 2012 at 10:15:13PM -0700, Kuninori Morimoto wrote:
-> > > r8a7740 machine desc name should be R8A7740,
-> > > not SH7372
-> > 
-> > Hi Morimoto-san,
-> > 
-> > this looks like 3.8 material to me. Do you agree?
-> 
-> Yes. I agree
+Hi,
 
-Thanks. I have applied it to the boards branch and updated the next
-branch accordingly.
+I have an old working kernel for my SH board and now I'm trying to move
+it to a newer version. The approach is to merge some patches of old
+kernel to new one.
+
+Currently I have an issue with boot up new board. The board can be boot
+up successfully but after awhile the board reboot automatically. There's
+nothing inside the dmesg and syslog. I tried to add printk in some
+suspend/shutdown function but nothing logged out.
+
+Do you have any idea to fix this issue?
+
+Thanks,
+-Tung
+
