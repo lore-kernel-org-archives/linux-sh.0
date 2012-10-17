@@ -1,24 +1,57 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 02 Oct 2012 22:16:54 +0000
-Subject: mail lost due to a hard-drive crash
-Message-Id: <Pine.LNX.4.64.1210030009460.15778@axis700.grange>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 17 Oct 2012 04:39:14 +0000
+Subject: [PATCH 03/10] ARM: shmobile: kzm9g: enable three-axis digital accelerometer ADXL345
+Message-Id: <1350448761-27346-4-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1350448761-27346-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1350448761-27346-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi all
+From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
 
-The hard-drive of my mail server died last Sunday and my last back up was 
-from Friday evening, so, I lost about 1.5 days worth of mail. I don't 
-think I lost anything important: I saw all mails in my INBOX before 
-powering down the system to not be able to bring it back up again:-) But 
-if anyone thinks, that I missed their mail, please, re-send.
+This patch enables three-axis digital accelerometer ADXL345.
+Test:
+  sudo cat /dev/input/event2
+then tip up the board. You get something from /dev/input/event2.
 
-Thanks
-Guennadi
+Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ arch/arm/configs/kzm9g_defconfig     |    2 ++
+ arch/arm/mach-shmobile/board-kzm9g.c |    4 ++++
+ 2 files changed, 6 insertions(+)
+
+diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
+index 1404b04..ce99e3e 100644
+--- a/arch/arm/configs/kzm9g_defconfig
++++ b/arch/arm/configs/kzm9g_defconfig
+@@ -74,6 +74,8 @@ CONFIG_KEYBOARD_GPIO=y
+ # CONFIG_INPUT_MOUSE is not set
+ CONFIG_INPUT_TOUCHSCREEN=y
+ CONFIG_TOUCHSCREEN_ST1232=y
++CONFIG_INPUT_MISC=y
++CONFIG_INPUT_ADXL34X=y
+ # CONFIG_LEGACY_PTYS is not set
+ CONFIG_SERIAL_SH_SCI=y
+ CONFIG_SERIAL_SH_SCI_NR_UARTS=9
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index a37da78..1a46422 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -562,6 +562,10 @@ static struct i2c_board_info i2c0_devices[] = {
+ 		I2C_BOARD_INFO("ak8975", 0x0c),
+ 		.irq = intcs_evt2irq(0x3380), /* IRQ28 */
+ 	},
++	{
++		I2C_BOARD_INFO("adxl34x", 0x1d),
++		.irq = intcs_evt2irq(0x3340), /* IRQ26 */
++	},
+ };
+ 
+ static struct i2c_board_info i2c1_devices[] = {
+-- 
+1.7.10.4
+
