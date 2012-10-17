@@ -1,19 +1,73 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Tue, 30 Oct 2012 07:16:39 +0000
-Subject: Re: [PATCH 4/4] ARM: shmobile: Remove SH7377 support
-Message-Id: <20121030071638.GF12329@verge.net.au>
+Date: Wed, 17 Oct 2012 04:39:16 +0000
+Subject: [PATCH 05/10] ARM: mach-shmobile: add FLCTL DMA slave definitions for sh7372
+Message-Id: <1350448761-27346-6-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1351490760-2394-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
- <1351490760-2394-4-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
-In-Reply-To: <1351490760-2394-4-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+References: <1350448761-27346-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1350448761-27346-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Oct 29, 2012 at 03:06:00PM +0900, Nobuhiro Iwamatsu wrote:
-> This is old CPU of shmobile, and the machine by which this CPU is
-> used cannot be obtained.
-> Therefore, remove SH7377 support.
+From: Bastian Hecht <hechtb@googlemail.com>
 
-Thanks, I will apply this to the soc branch of my renesas tree.
+SH7372 can use DMA with the FLCTL flash controller. Add required slave
+IDs and slave descriptors.
+
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    4 ++++
+ arch/arm/mach-shmobile/setup-sh7372.c        |   20 ++++++++++++++++++++
+ 2 files changed, 24 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
+index eb98b45..d65fbbe 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -452,6 +452,10 @@ enum {
+ 	SHDMA_SLAVE_SCIF5_RX,
+ 	SHDMA_SLAVE_SCIF6_TX,
+ 	SHDMA_SLAVE_SCIF6_RX,
++	SHDMA_SLAVE_FLCTL0_TX,
++	SHDMA_SLAVE_FLCTL0_RX,
++	SHDMA_SLAVE_FLCTL1_TX,
++	SHDMA_SLAVE_FLCTL1_RX,
+ 	SHDMA_SLAVE_SDHI0_RX,
+ 	SHDMA_SLAVE_SDHI0_TX,
+ 	SHDMA_SLAVE_SDHI1_RX,
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index a07954f..a360111 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -408,6 +408,26 @@ static const struct sh_dmae_slave_config sh7372_dmae_slaves[] = {
+ 		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x3e,
+ 	}, {
++		.slave_id	= SHDMA_SLAVE_FLCTL0_TX,
++		.addr		= 0xe6a30050,
++		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
++		.mid_rid	= 0x83,
++	}, {
++		.slave_id	= SHDMA_SLAVE_FLCTL0_RX,
++		.addr		= 0xe6a30050,
++		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
++		.mid_rid	= 0x83,
++	}, {
++		.slave_id	= SHDMA_SLAVE_FLCTL1_TX,
++		.addr		= 0xe6a30060,
++		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
++		.mid_rid	= 0x87,
++	}, {
++		.slave_id	= SHDMA_SLAVE_FLCTL1_RX,
++		.addr		= 0xe6a30060,
++		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
++		.mid_rid	= 0x87,
++	}, {
+ 		.slave_id	= SHDMA_SLAVE_SDHI0_TX,
+ 		.addr		= 0xe6850030,
+ 		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
+-- 
+1.7.10.4
+
