@@ -1,56 +1,45 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Tue, 02 Oct 2012 13:12:00 +0000
-Subject: [PATCH 0/2] Add DMA and device tree support to the flash controller FLCTL
-Message-Id: <1349183522-15321-1-git-send-email-hechtb@gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 17 Oct 2012 04:39:15 +0000
+Subject: [PATCH 04/10] ARM: shmobile: kzm9g: enable DMAEngine on SHDI0 and SDHI2
+Message-Id: <1350448761-27346-5-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1350448761-27346-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1350448761-27346-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This mini-series consists of 2 separately posted patch-sets that shrunk
-to one patch each. It adds DMA support for the data part (not ECC) as
-well as device tree support to the FLCTL flash controller.
-As the 2nd patch is based on the 1st, I've decided to
-collect them here to avoid any confusion.
+From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
 
-The first set contained
-[PATCH 1/2] mtd: sh_flctl: Setup and release DMA channels
-[PATCH 2/2] mtd: sh_flctl: Use DMA for data fifo FLTDFIFO when available
-and was merged after 2 reviews to
-[PATCH] mtd: sh_flctl: Add DMA capabilty (same patch as in here)
+This patch enables DMAEngine on SHDI0 and SDHI2 for kzm9g.
 
-The second set contained
-[PATCH 1/3] mtd: sh_flctl: Probe SNAND_E flag from NAND chip
-[PATCH 2/3] mtd: sh_flctl: Add device tree support
-[PATCH 3/3] mtd: sh_flctl: Add sh7372 device tree config
-and is merged here to
-mtd: sh_flctl: Add device tree support
+Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+---
+ arch/arm/mach-shmobile/board-kzm9g.c |    4 ++++
+ 1 file changed, 4 insertions(+)
 
-Patch 1 can be omitted as SNAND_E is handled in the FLCTL source anyway
-correctly in set_cmd_regs() and the flag can be removed from existing board
-codes without this patch.
-Patch 2 without patch 3 may be confusing so I merged them too. Documentation
-is added as well.
-
-I've added linux-arm-kernel@lists.infradead.org as recipient for the
-device tree part.
-
-The patchset is based on
-l2-mtd	git://git.infradead.org/users/dedekind/l2-mtd.git
-with reverted commit e26c113b4130aefa1d8446602bb5b05cfd646bfe.
-
-
-Bastian Hecht (2):
-  mtd: sh_flctl: Add DMA capabilty
-  mtd: sh_flctl: Add device tree support
-
- .../devicetree/bindings/mtd/flctl-nand.txt         |   37 +++
- drivers/mtd/nand/sh_flctl.c                        |  266 +++++++++++++++++++-
- include/linux/mtd/sh_flctl.h                       |   12 +
- 3 files changed, 305 insertions(+), 10 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/mtd/flctl-nand.txt
-
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index 1a46422..f63f2ee 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -384,6 +384,8 @@ static struct regulator_consumer_supply fixed2v8_power_consumers[]  
+ /* SDHI */
+ static struct sh_mobile_sdhi_info sdhi0_info = {
++	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
++	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
+ 	.tmio_ocr_mask	= MMC_VDD_27_28 | MMC_VDD_28_29,
+@@ -424,6 +426,8 @@ static struct platform_device sdhi0_device = {
+ 
+ /* Micro SD */
+ static struct sh_mobile_sdhi_info sdhi2_info = {
++	.dma_slave_tx	= SHDMA_SLAVE_SDHI2_TX,
++	.dma_slave_rx	= SHDMA_SLAVE_SDHI2_RX,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
+ 			  TMIO_MMC_USE_GPIO_CD |
+ 			  TMIO_MMC_WRPROTECT_DISABLE,
 -- 
-1.7.5.4
+1.7.10.4
 
