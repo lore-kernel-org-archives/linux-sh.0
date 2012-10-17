@@ -1,334 +1,134 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Fri, 19 Oct 2012 10:15:35 +0000
-Subject: [PATCH v3 2/3] mtd: sh_flctl: Add DMA capabilty
-Message-Id: <1350641736-18192-3-git-send-email-hechtb@gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 17 Oct 2012 04:39:20 +0000
+Subject: [PATCH 09/10] ARM: shmobile: r8a7779: add I2C driver support
+Message-Id: <1350448761-27346-10-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1350641736-18192-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1350641736-18192-1-git-send-email-hechtb@gmail.com>
+References: <1350448761-27346-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1350448761-27346-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The code probes if DMA channels can get allocated and tears them down at
-removal/failure if needed.
-If available it uses them to transfer the data part (not ECC). On
-failure we fall back to PIO mode.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Based on Guennadi Liakhovetski's code from the sh_mmcif driver.
+This patch enable R-Car I2C driver
 
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
-Reviewed-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
-v3: no changes. I don't know if the error
+ arch/arm/configs/marzen_defconfig      |    2 +
+ arch/arm/mach-shmobile/setup-r8a7779.c |   77 ++++++++++++++++++++++++++++++++
+ 2 files changed, 79 insertions(+)
 
-	warning: cast removes address space of expression [sparse]
-
-because of line
-
-	+       cfg.dst_addr = (dma_addr_t)FLDTFIFO(flctl);
-
-can be fixed. dma_addr_t is loosly defined as u32 and I see no way how to make
-a proper conversion.
-
- drivers/mtd/nand/sh_flctl.c  |  173 +++++++++++++++++++++++++++++++++++++++++-
- include/linux/mtd/sh_flctl.h |   12 +++
- 2 files changed, 183 insertions(+), 2 deletions(-)
-
-diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
-index 78d18c0f..6dc0369 100644
---- a/drivers/mtd/nand/sh_flctl.c
-+++ b/drivers/mtd/nand/sh_flctl.c
-@@ -23,11 +23,15 @@
- 
- #include <linux/module.h>
- #include <linux/kernel.h>
-+#include <linux/completion.h>
- #include <linux/delay.h>
-+#include <linux/dmaengine.h>
-+#include <linux/dma-mapping.h>
- #include <linux/interrupt.h>
- #include <linux/io.h>
- #include <linux/platform_device.h>
- #include <linux/pm_runtime.h>
-+#include <linux/sh_dma.h>
- #include <linux/slab.h>
- #include <linux/string.h>
- 
-@@ -106,6 +110,84 @@ static void wait_completion(struct sh_flctl *flctl)
- 	writeb(0x0, FLTRCR(flctl));
- }
- 
-+static void flctl_dma_complete(void *param)
-+{
-+	struct sh_flctl *flctl = param;
-+
-+	complete(&flctl->dma_complete);
-+}
-+
-+static void flctl_release_dma(struct sh_flctl *flctl)
-+{
-+	if (flctl->chan_fifo0_rx) {
-+		dma_release_channel(flctl->chan_fifo0_rx);
-+		flctl->chan_fifo0_rx = NULL;
-+	}
-+	if (flctl->chan_fifo0_tx) {
-+		dma_release_channel(flctl->chan_fifo0_tx);
-+		flctl->chan_fifo0_tx = NULL;
-+	}
-+}
-+
-+static void flctl_setup_dma(struct sh_flctl *flctl)
-+{
-+	dma_cap_mask_t mask;
-+	struct dma_slave_config cfg;
-+	struct platform_device *pdev = flctl->pdev;
-+	struct sh_flctl_platform_data *pdata = pdev->dev.platform_data;
-+	int ret;
-+
-+	if (!pdata)
-+		return;
-+
-+	if (pdata->slave_id_fifo0_tx <= 0 || pdata->slave_id_fifo0_rx <= 0)
-+		return;
-+
-+	/* We can only either use DMA for both Tx and Rx or not use it at all */
-+	dma_cap_zero(mask);
-+	dma_cap_set(DMA_SLAVE, mask);
-+
-+	flctl->chan_fifo0_tx = dma_request_channel(mask, shdma_chan_filter,
-+					    (void *)pdata->slave_id_fifo0_tx);
-+	dev_dbg(&pdev->dev, "%s: TX: got channel %p\n", __func__,
-+		flctl->chan_fifo0_tx);
-+
-+	if (!flctl->chan_fifo0_tx)
-+		return;
-+
-+	memset(&cfg, 0, sizeof(cfg));
-+	cfg.slave_id = pdata->slave_id_fifo0_tx;
-+	cfg.direction = DMA_MEM_TO_DEV;
-+	cfg.dst_addr = (dma_addr_t)FLDTFIFO(flctl);
-+	cfg.src_addr = 0;
-+	ret = dmaengine_slave_config(flctl->chan_fifo0_tx, &cfg);
-+	if (ret < 0)
-+		goto err;
-+
-+	flctl->chan_fifo0_rx = dma_request_channel(mask, shdma_chan_filter,
-+					    (void *)pdata->slave_id_fifo0_rx);
-+	dev_dbg(&pdev->dev, "%s: RX: got channel %p\n", __func__,
-+		flctl->chan_fifo0_rx);
-+
-+	if (!flctl->chan_fifo0_rx)
-+		goto err;
-+
-+	cfg.slave_id = pdata->slave_id_fifo0_rx;
-+	cfg.direction = DMA_DEV_TO_MEM;
-+	cfg.dst_addr = 0;
-+	cfg.src_addr = (dma_addr_t)FLDTFIFO(flctl);
-+	ret = dmaengine_slave_config(flctl->chan_fifo0_rx, &cfg);
-+	if (ret < 0)
-+		goto err;
-+
-+	init_completion(&flctl->dma_complete);
-+
-+	return;
-+
-+err:
-+	flctl_release_dma(flctl);
-+}
-+
- static void set_addr(struct mtd_info *mtd, int column, int page_addr)
- {
- 	struct sh_flctl *flctl = mtd_to_flctl(mtd);
-@@ -261,6 +343,70 @@ static void wait_wecfifo_ready(struct sh_flctl *flctl)
- 	timeout_error(flctl, __func__);
- }
- 
-+static int flctl_dma_fifo0_transfer(struct sh_flctl *flctl, unsigned long *buf,
-+					int len, enum dma_data_direction dir)
-+{
-+	struct dma_async_tx_descriptor *desc = NULL;
-+	struct dma_chan *chan;
-+	enum dma_transfer_direction tr_dir;
-+	dma_addr_t dma_addr;
-+	dma_cookie_t cookie = -EINVAL;
-+	uint32_t reg;
-+	int ret;
-+
-+	if (dir = DMA_FROM_DEVICE) {
-+		chan = flctl->chan_fifo0_rx;
-+		tr_dir = DMA_DEV_TO_MEM;
-+	} else {
-+		chan = flctl->chan_fifo0_tx;
-+		tr_dir = DMA_MEM_TO_DEV;
-+	}
-+
-+	dma_addr = dma_map_single(chan->device->dev, buf, len, dir);
-+
-+	if (dma_addr)
-+		desc = dmaengine_prep_slave_single(chan, dma_addr, len,
-+			tr_dir, DMA_PREP_INTERRUPT | DMA_CTRL_ACK);
-+
-+	if (desc) {
-+		reg = readl(FLINTDMACR(flctl));
-+		reg |= DREQ0EN;
-+		writel(reg, FLINTDMACR(flctl));
-+
-+		desc->callback = flctl_dma_complete;
-+		desc->callback_param = flctl;
-+		cookie = dmaengine_submit(desc);
-+
-+		dma_async_issue_pending(chan);
-+	} else {
-+		/* DMA failed, fall back to PIO */
-+		flctl_release_dma(flctl);
-+		dev_warn(&flctl->pdev->dev,
-+			 "DMA failed, falling back to PIO\n");
-+		ret = -EIO;
-+		goto out;
-+	}
-+
-+	ret +	wait_for_completion_timeout(&flctl->dma_complete,
-+				msecs_to_jiffies(3000));
-+
-+	if (ret <= 0) {
-+		chan->device->device_control(chan, DMA_TERMINATE_ALL, 0);
-+		dev_err(&flctl->pdev->dev, "wait_for_completion_timeout\n");
-+	}
-+
-+out:
-+	reg = readl(FLINTDMACR(flctl));
-+	reg &= ~DREQ0EN;
-+	writel(reg, FLINTDMACR(flctl));
-+
-+	dma_unmap_single(chan->device->dev, dma_addr, len, dir);
-+
-+	/* ret > 0 is success */
-+	return ret;
-+}
-+
- static void read_datareg(struct sh_flctl *flctl, int offset)
- {
- 	unsigned long data;
-@@ -279,11 +425,20 @@ static void read_fiforeg(struct sh_flctl *flctl, int rlen, int offset)
- 
- 	len_4align = (rlen + 3) / 4;
- 
-+	/* initiate DMA transfer */
-+	if (flctl->chan_fifo0_rx && rlen >= 32 &&
-+		flctl_dma_fifo0_transfer(flctl, buf, rlen, DMA_DEV_TO_MEM) > 0)
-+			goto convert;	/* DMA success */
-+
-+	/* do polling transfer */
- 	for (i = 0; i < len_4align; i++) {
- 		wait_rfifo_ready(flctl);
- 		buf[i] = readl(FLDTFIFO(flctl));
--		buf[i] = be32_to_cpu(buf[i]);
- 	}
-+
-+convert:
-+	for (i = 0; i < len_4align; i++)
-+		buf[i] = be32_to_cpu(buf[i]);
- }
- 
- static enum flctl_ecc_res_t read_ecfiforeg
-@@ -325,9 +480,19 @@ static void write_ec_fiforeg(struct sh_flctl *flctl, int rlen,
- 	unsigned long *buf = (unsigned long *)&flctl->done_buff[offset];
- 
- 	len_4align = (rlen + 3) / 4;
-+
-+	for (i = 0; i < len_4align; i++)
-+		buf[i] = cpu_to_be32(buf[i]);
-+
-+	/* initiate DMA transfer */
-+	if (flctl->chan_fifo0_tx && rlen >= 32 &&
-+		flctl_dma_fifo0_transfer(flctl, buf, rlen, DMA_MEM_TO_DEV) > 0)
-+			return;	/* DMA success */
-+
-+	/* do polling transfer */
- 	for (i = 0; i < len_4align; i++) {
- 		wait_wecfifo_ready(flctl);
--		writel(cpu_to_be32(buf[i]), FLECFIFO(flctl));
-+		writel(buf[i], FLECFIFO(flctl));
- 	}
- }
- 
-@@ -925,6 +1090,8 @@ static int __devinit flctl_probe(struct platform_device *pdev)
- 	pm_runtime_enable(&pdev->dev);
- 	pm_runtime_resume(&pdev->dev);
- 
-+	flctl_setup_dma(flctl);
-+
- 	ret = nand_scan_ident(flctl_mtd, 1, NULL);
- 	if (ret)
- 		goto err_chip;
-@@ -942,6 +1109,7 @@ static int __devinit flctl_probe(struct platform_device *pdev)
- 	return 0;
- 
- err_chip:
-+	flctl_release_dma(flctl);
- 	pm_runtime_disable(&pdev->dev);
- 	free_irq(irq, flctl);
- err_flste:
-@@ -955,6 +1123,7 @@ static int __devexit flctl_remove(struct platform_device *pdev)
- {
- 	struct sh_flctl *flctl = platform_get_drvdata(pdev);
- 
-+	flctl_release_dma(flctl);
- 	nand_release(&flctl->mtd);
- 	pm_runtime_disable(&pdev->dev);
- 	free_irq(platform_get_irq(pdev, 0), flctl);
-diff --git a/include/linux/mtd/sh_flctl.h b/include/linux/mtd/sh_flctl.h
-index 4815576..1c28f88 100644
---- a/include/linux/mtd/sh_flctl.h
-+++ b/include/linux/mtd/sh_flctl.h
-@@ -20,6 +20,7 @@
- #ifndef __SH_FLCTL_H__
- #define __SH_FLCTL_H__
- 
-+#include <linux/completion.h>
- #include <linux/mtd/mtd.h>
- #include <linux/mtd/nand.h>
- #include <linux/mtd/partitions.h>
-@@ -107,6 +108,7 @@
- #define ESTERINTE	(0x1 << 24)	/* ECC error interrupt enable */
- #define AC1CLR		(0x1 << 19)	/* ECC FIFO clear */
- #define AC0CLR		(0x1 << 18)	/* Data FIFO clear */
-+#define DREQ0EN		(0x1 << 16)	/* FLDTFIFODMA Request Enable */
- #define ECERB		(0x1 << 9)	/* ECC error */
- #define STERB		(0x1 << 8)	/* Status error */
- #define STERINTE	(0x1 << 4)	/* Status error enable */
-@@ -138,6 +140,8 @@ enum flctl_ecc_res_t {
- 	FL_TIMEOUT
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index 53382b6..f79b55c 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -69,6 +69,8 @@ CONFIG_SERIAL_SH_SCI=y
+ CONFIG_SERIAL_SH_SCI_NR_UARTS=6
+ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ # CONFIG_HW_RANDOM is not set
++CONFIG_I2C=y
++CONFIG_I2C_RCAR=y
+ CONFIG_GPIO_SYSFS=y
+ # CONFIG_HWMON is not set
+ CONFIG_THERMAL=y
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 2917668..63de5cb 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -229,6 +229,79 @@ static struct platform_device tmu01_device = {
+ 	.num_resources	= ARRAY_SIZE(tmu01_resources),
  };
  
-+struct dma_chan;
++/* I2C */
++static struct resource rcar_i2c0_res[] = {
++	{
++		.start  = 0xffc70000,
++		.end    = 0xffc70fff,
++		.flags  = IORESOURCE_MEM,
++	}, {
++		.start  = gic_spi(79),
++		.flags  = IORESOURCE_IRQ,
++	},
++};
 +
- struct sh_flctl {
- 	struct mtd_info		mtd;
- 	struct nand_chip	chip;
-@@ -161,6 +165,11 @@ struct sh_flctl {
- 	unsigned hwecc:1;	/* Hardware ECC (0 = disabled, 1 = enabled) */
- 	unsigned holden:1;	/* Hardware has FLHOLDCR and HOLDEN is set */
- 	unsigned qos_request:1;	/* QoS request to prevent deep power shutdown */
++static struct platform_device i2c0_device = {
++	.name		= "i2c-rcar",
++	.id		= 0,
++	.resource	= rcar_i2c0_res,
++	.num_resources	= ARRAY_SIZE(rcar_i2c0_res),
++};
 +
-+	/* DMA related objects */
-+	struct dma_chan		*chan_fifo0_rx;
-+	struct dma_chan		*chan_fifo0_tx;
-+	struct completion	dma_complete;
++static struct resource rcar_i2c1_res[] = {
++	{
++		.start  = 0xffc71000,
++		.end    = 0xffc71fff,
++		.flags  = IORESOURCE_MEM,
++	}, {
++		.start  = gic_spi(82),
++		.flags  = IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device i2c1_device = {
++	.name		= "i2c-rcar",
++	.id		= 1,
++	.resource	= rcar_i2c1_res,
++	.num_resources	= ARRAY_SIZE(rcar_i2c1_res),
++};
++
++static struct resource rcar_i2c2_res[] = {
++	{
++		.start  = 0xffc72000,
++		.end    = 0xffc72fff,
++		.flags  = IORESOURCE_MEM,
++	}, {
++		.start  = gic_spi(80),
++		.flags  = IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device i2c2_device = {
++	.name		= "i2c-rcar",
++	.id		= 2,
++	.resource	= rcar_i2c2_res,
++	.num_resources	= ARRAY_SIZE(rcar_i2c2_res),
++};
++
++static struct resource rcar_i2c3_res[] = {
++	{
++		.start  = 0xffc73000,
++		.end    = 0xffc73fff,
++		.flags  = IORESOURCE_MEM,
++	}, {
++		.start  = gic_spi(81),
++		.flags  = IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device i2c3_device = {
++	.name		= "i2c-rcar",
++	.id		= 3,
++	.resource	= rcar_i2c3_res,
++	.num_resources	= ARRAY_SIZE(rcar_i2c3_res),
++};
++
+ static struct platform_device *r8a7779_early_devices[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+@@ -238,6 +311,10 @@ static struct platform_device *r8a7779_early_devices[] __initdata = {
+ 	&scif5_device,
+ 	&tmu00_device,
+ 	&tmu01_device,
++	&i2c0_device,
++	&i2c1_device,
++	&i2c2_device,
++	&i2c3_device,
  };
  
- struct sh_flctl_platform_data {
-@@ -170,6 +179,9 @@ struct sh_flctl_platform_data {
- 
- 	unsigned has_hwecc:1;
- 	unsigned use_holden:1;
-+
-+	unsigned int            slave_id_fifo0_tx;
-+	unsigned int            slave_id_fifo0_rx;
- };
- 
- static inline struct sh_flctl *mtd_to_flctl(struct mtd_info *mtdinfo)
+ static struct platform_device *r8a7779_late_devices[] __initdata = {
 -- 
-1.7.9.5
+1.7.10.4
 
