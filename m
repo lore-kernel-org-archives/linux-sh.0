@@ -1,67 +1,53 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sun, 28 Oct 2012 23:33:15 +0000
-Subject: [GIT PULL] SH Mobile LCDC patches
-Message-Id: <2212352.tFvayVAU4W@avalon>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 17 Oct 2012 04:39:18 +0000
+Subject: [PATCH 07/10] ARM: shmobile: r8a7779: add HSPI clock support
+Message-Id: <1350448761-27346-8-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1350448761-27346-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1350448761-27346-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Florian,
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-The following changes since commit cd9d6f10d07f26dd8a70e519c22b6b4f8a9e3e7a:
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-r8a7779.c |    5 +++++
+ 1 file changed, 5 insertions(+)
 
-  gbefb: fix compile error (2012-10-11 00:23:15 +0000)
-
-are available in the git repository at:
-  git://linuxtv.org/pinchartl/fbdev.git lcdc-next
-
-Both Paul Mundt (arch/sh maintainer) and Simon Horman (arch/arm/mach-shmobile 
-maintainer) have agreed to get the arch patches in through your tree.
-
-Hideki EIRAKU (1):
-      fbdev: sh_mobile_lcdc: use dma_mmap_coherent
-
-Laurent Pinchart (19):
-      fbdev: sh_mobile_lcdc: Get display dimensions from the channel structure
-      fbdev: sh_mobile_lcdc: Rename mode argument to modes
-      fbdev: sh_mobile_lcdc: Remove priv argument from channel and overlay 
-init
-      ARM: mach-shmobile: ag5evm: Add LCDC tx_dev field to platform data
-      fbdev: sh_mipi_dsi: Add channel field to platform data
-      ARM: mach-shmobile: Initiliaze the new sh_mipi_dsi_info channel field
-      fbdev: sh_mipi_dsi: Use the sh_mipi_dsi_info channel field
-      fbdev: sh_mipi_dsi: Use the LCDC entity default mode
-      fbdev: sh_mipi_dsi: Remove last reference to LCDC platform data
-      ARM: mach-shmobile: Remove the unused sh_mipi_dsi_info lcd_chan field
-      fbdev: sh_mipi_dsi: Remove the unused sh_mipi_dsi_info lcd_chan field
-      fbdev: sh_mobile_lcdc: Store the backlight brightness internally
-      ARM: mach-shmobile: mackerel: Removed unused get_brightness callback
-      sh: ap325rxa: Remove unused get_brightness LCDC callback
-      sh: ecovec24: Remove unused get_brightness LCDC callback
-      fbdev: sh_mobile_lcdc: Remove unused get_brightness pdata callback
-      ARM: mach-shmobile: ag5evm: Use the backlight API for brightness control
-      sh: kfr2r09: Use the backlight API for brightness control
-      fbdev: sh_mobile_lcdc: Make sh_mobile_lcdc_sys_bus_ops static
-
- arch/arm/mach-shmobile/board-ag5evm.c       |  198 ++++++++++++++------------
- arch/arm/mach-shmobile/board-ap4evb.c       |    4 +-
- arch/arm/mach-shmobile/board-mackerel.c     |    6 -
- arch/sh/boards/mach-ap325rxa/setup.c        |    6 -
- arch/sh/boards/mach-ecovec24/setup.c        |    6 -
- arch/sh/boards/mach-kfr2r09/lcd_wqvga.c     |   16 +--
- arch/sh/boards/mach-kfr2r09/setup.c         |    7 +-
- arch/sh/include/mach-kfr2r09/mach/kfr2r09.h |    6 +-
- drivers/video/sh_mipi_dsi.c                 |   69 ++++------
- drivers/video/sh_mobile_lcdcfb.c            |   74 +++++++----
- drivers/video/sh_mobile_lcdcfb.h            |    1 +
- include/video/sh_mipi_dsi.h                 |    4 +-
- include/video/sh_mobile_lcdc.h              |    1 -
- 13 files changed, 192 insertions(+), 206 deletions(-)
-
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index 3cafb6a..90d717b 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -89,6 +89,7 @@ static struct clk div4_clks[DIV4_NR] = {
+ enum { MSTP323, MSTP322, MSTP321, MSTP320,
+ 	MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+ 	MSTP016, MSTP015, MSTP014,
++	MSTP007,
+ 	MSTP_NR };
+ 
+ static struct clk mstp_clks[MSTP_NR] = {
+@@ -105,6 +106,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP016] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 16, 0), /* TMU0 */
+ 	[MSTP015] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 15, 0), /* TMU1 */
+ 	[MSTP014] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 14, 0), /* TMU2 */
++	[MSTP007] = SH_CLK_MSTP32(&div4_clks[DIV4_S], MSTPCR0,  7, 0), /* HSPI */
+ };
+ 
+ static unsigned long mul4_recalc(struct clk *clk)
+@@ -154,6 +156,9 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP023]), /* SCIF3 */
+ 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP022]), /* SCIF4 */
+ 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP021]), /* SCIF6 */
++	CLKDEV_DEV_ID("sh-hspi.0", &mstp_clks[MSTP007]), /* HSPI0 */
++	CLKDEV_DEV_ID("sh-hspi.1", &mstp_clks[MSTP007]), /* HSPI1 */
++	CLKDEV_DEV_ID("sh-hspi.2", &mstp_clks[MSTP007]), /* HSPI2 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.10.4
 
