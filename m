@@ -1,198 +1,62 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 29 Oct 2012 08:15:34 +0000
-Subject: [PATCH 6/7] ARM: shmobile: marzen: add USB EHCI driver support
-Message-Id: <87d3014rto.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 17 Oct 2012 04:36:25 +0000
+Subject: [PATCH 2/2] ARM: shmobile: r8a7779: use __iomem pointers for MMIO
+Message-Id: <1350448585-26403-3-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1350448585-26403-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1350448585-26403-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This patch supports CN21/CN22 USB 2.0 (port 0/1/2),
-and enable USB momery on defconfig
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+0a4b04dc299dfb691827a4001b3d8d7e443b71c9
+(ARM: shmobile: use __iomem pointers for MMIO)
+modified iomem pointers so that IOMEM() macro will be used,
+but clock-r8a7779.c was out of target.
+This patch fixes it up.
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/arm/configs/marzen_defconfig     |    6 ++
- arch/arm/mach-shmobile/Kconfig        |    1 +
- arch/arm/mach-shmobile/board-marzen.c |  108 ++++++++++++++++++++++++++++++++-
- 3 files changed, 114 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/clock-r8a7779.c |   22 +++++++++++-----------
+ 1 file changed, 11 insertions(+), 11 deletions(-)
 
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index 8a861b7..6540dfb 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -47,6 +47,8 @@ CONFIG_DEVTMPFS_MOUNT=y
- # CONFIG_STANDALONE is not set
- # CONFIG_PREVENT_FIRMWARE_BUILD is not set
- # CONFIG_FW_LOADER is not set
-+CONFIG_SCSI=y
-+CONFIG_BLK_DEV_SD=y
- CONFIG_NETDEVICES=y
- # CONFIG_NET_VENDOR_BROADCOM is not set
- # CONFIG_NET_VENDOR_FARADAY is not set
-@@ -82,6 +84,10 @@ CONFIG_USB=y
- CONFIG_USB_RCAR_PHY=y
- CONFIG_MMC=y
- CONFIG_MMC_SDHI=y
-+CONFIG_USB=y
-+CONFIG_USB_EHCI_HCD=y
-+CONFIG_USB_EHCI_HCD_PLATFORM=y
-+CONFIG_USB_STORAGE=y
- CONFIG_UIO=y
- CONFIG_UIO_PDRV_GENIRQ=y
- # CONFIG_IOMMU_SUPPORT is not set
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 0750d9c..89f590b 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -41,6 +41,7 @@ config ARCH_R8A7779
- 	select ARM_GIC
- 	select CPU_V7
- 	select SH_CLK_CPG
-+	select USB_ARCH_HAS_EHCI
- 
- config ARCH_EMEV2
- 	bool "Emma Mobile EV2"
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index 74c7f0b..707b3bd 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -34,6 +34,9 @@
- #include <linux/spi/sh_hspi.h>
- #include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/mfd/tmio.h>
-+#include <linux/usb/otg.h>
-+#include <linux/usb/ehci_pdriver.h>
-+#include <linux/pm_runtime.h>
- #include <mach/hardware.h>
- #include <mach/r8a7779.h>
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index 3cafb6a..37b2a31 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -24,17 +24,17 @@
+ #include <linux/clkdev.h>
  #include <mach/common.h>
-@@ -172,6 +175,101 @@ static struct platform_device *marzen_devices[] __initdata = {
- 	&usb_phy_device,
- };
  
-+/* USB */
-+static struct usb_phy *phy;
-+static int usb_power_on(struct platform_device *pdev)
-+{
-+	if (!phy)
-+		return -EIO;
-+
-+	pm_runtime_enable(&pdev->dev);
-+	pm_runtime_get_sync(&pdev->dev);
-+
-+	usb_phy_init(phy);
-+
-+	return 0;
-+}
-+
-+static void usb_power_off(struct platform_device *pdev)
-+{
-+	if (!phy)
-+		return;
-+
-+	usb_phy_shutdown(phy);
-+
-+	pm_runtime_put_sync(&pdev->dev);
-+	pm_runtime_disable(&pdev->dev);
-+}
-+
-+static struct usb_ehci_pdata ehcix_pdata = {
-+	.power_on	= usb_power_on,
-+	.power_off	= usb_power_off,
-+	.power_suspend	= usb_power_off,
-+};
-+
-+static struct resource ehci0_resources[] = {
-+	[0] = {
-+		.start	= 0xffe70000,
-+		.end	= 0xffe70400 - 1,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= gic_spi(44),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device ehci0_device = {
-+	.name	= "ehci-platform",
-+	.id	= 0,
-+	.dev	= {
-+		.dma_mask		= &ehci0_device.dev.coherent_dma_mask,
-+		.coherent_dma_mask	= 0xffffffff,
-+		.platform_data		= &ehcix_pdata,
-+	},
-+	.num_resources	= ARRAY_SIZE(ehci0_resources),
-+	.resource	= ehci0_resources,
-+};
-+
-+static struct resource ehci1_resources[] = {
-+	[0] = {
-+		.start	= 0xfff70000,
-+		.end	= 0xfff70400 - 1,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= gic_spi(45),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device ehci1_device = {
-+	.name	= "ehci-platform",
-+	.id	= 1,
-+	.dev	= {
-+		.dma_mask		= &ehci1_device.dev.coherent_dma_mask,
-+		.coherent_dma_mask	= 0xffffffff,
-+		.platform_data		= &ehcix_pdata,
-+	},
-+	.num_resources	= ARRAY_SIZE(ehci1_resources),
-+	.resource	= ehci1_resources,
-+};
-+
-+static struct platform_device *marzen_late_devices[] __initdata = {
-+	&ehci0_device,
-+	&ehci1_device,
-+};
-+
-+void __init marzen_init_late(void)
-+{
-+	/* get usb phy */
-+	phy = usb_get_phy(USB_PHY_TYPE_USB2);
-+
-+	shmobile_init_late();
-+	platform_add_devices(marzen_late_devices,
-+			     ARRAY_SIZE(marzen_late_devices));
-+}
-+
- static void __init marzen_init(void)
- {
- 	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
-@@ -209,6 +307,14 @@ static void __init marzen_init(void)
- 	gpio_request(GPIO_FN_HSPI_TX0,	NULL);
- 	gpio_request(GPIO_FN_HSPI_RX0,	NULL);
+-#define FRQMR   0xffc80014
+-#define MSTPCR0 0xffc80030
+-#define MSTPCR1 0xffc80034
+-#define MSTPCR3 0xffc8003c
+-#define MSTPSR1 0xffc80044
+-#define MSTPSR4 0xffc80048
+-#define MSTPSR6 0xffc8004c
+-#define MSTPCR4 0xffc80050
+-#define MSTPCR5 0xffc80054
+-#define MSTPCR6 0xffc80058
+-#define MSTPCR7 0xffc80040
++#define FRQMR		IOMEM(0xffc80014)
++#define MSTPCR0		IOMEM(0xffc80030)
++#define MSTPCR1		IOMEM(0xffc80034)
++#define MSTPCR3		IOMEM(0xffc8003c)
++#define MSTPSR1		IOMEM(0xffc80044)
++#define MSTPSR4		IOMEM(0xffc80048)
++#define MSTPSR6		IOMEM(0xffc8004c)
++#define MSTPCR4		IOMEM(0xffc80050)
++#define MSTPCR5		IOMEM(0xffc80054)
++#define MSTPCR6		IOMEM(0xffc80058)
++#define MSTPCR7		IOMEM(0xffc80040)
  
-+	/* USB (CN21) */
-+	gpio_request(GPIO_FN_USB_OVC0, NULL);
-+	gpio_request(GPIO_FN_USB_OVC1, NULL);
-+	gpio_request(GPIO_FN_USB_OVC2, NULL);
-+
-+	/* USB (CN22) */
-+	gpio_request(GPIO_FN_USB_PENC2, NULL);
-+
- 	r8a7779_add_standard_devices();
- 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
- }
-@@ -221,6 +327,6 @@ MACHINE_START(MARZEN, "marzen")
- 	.init_irq	= r8a7779_init_irq,
- 	.handle_irq	= gic_handle_irq,
- 	.init_machine	= marzen_init,
--	.init_late	= shmobile_init_late,
-+	.init_late	= marzen_init_late,
- 	.timer		= &shmobile_timer,
- MACHINE_END
+ /* ioremap() through clock mapping mandatory to avoid
+  * collision with ARM coherent DMA virtual memory range.
 -- 
-1.7.9.5
+1.7.10.4
 
