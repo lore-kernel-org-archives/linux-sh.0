@@ -1,151 +1,57 @@
-From: Florian Fainelli <florian@openwrt.org>
-Date: Mon, 08 Oct 2012 13:11:36 +0000
-Subject: [PATCH 22/32 v4] sh: convert boards to use the OHCI platform driver
-Message-Id: <1349701906-16481-23-git-send-email-florian@openwrt.org>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 17 Oct 2012 04:39:13 +0000
+Subject: [PATCH 02/10] ARM: shmobile: kzm9g: enable magnetometer ak8975.
+Message-Id: <1350448761-27346-3-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1349701906-16481-1-git-send-email-florian@openwrt.org>
-In-Reply-To: <1349701906-16481-1-git-send-email-florian@openwrt.org>
+References: <1350448761-27346-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1350448761-27346-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: stern@rowland.harvard.edu
-Cc: linux-usb@vger.kernel.org, Florian Fainelli <florian@openwrt.org>, Paul Mundt <lethal@linux-sh.org>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This patch makes all SuperH boards using the ohci-sh platform driver to use
-the ohci-platform driver instead, which is suitable for use by these boards.
+From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
 
-Signed-off-by: Florian Fainelli <florian@openwrt.org>
+This patch enables magnetometer ak8975.
+I checked ak8975_probe() returns successfully.
+
+Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
-Changes in v4:
-- rebased against greg's latest usb-next
+ arch/arm/configs/kzm9g_defconfig     |    2 ++
+ arch/arm/mach-shmobile/board-kzm9g.c |    6 +++++-
+ 2 files changed, 7 insertions(+), 1 deletion(-)
 
-Changes in v3:
-- improved commit message
-
-No changes between v1 and v2
-
- arch/sh/kernel/cpu/sh3/setup-sh7720.c  |    6 +++++-
- arch/sh/kernel/cpu/sh4a/setup-sh7757.c |    6 +++++-
- arch/sh/kernel/cpu/sh4a/setup-sh7763.c |    6 +++++-
- arch/sh/kernel/cpu/sh4a/setup-sh7786.c |    6 +++++-
- 4 files changed, 20 insertions(+), 4 deletions(-)
-
-diff --git a/arch/sh/kernel/cpu/sh3/setup-sh7720.c b/arch/sh/kernel/cpu/sh3/setup-sh7720.c
-index 0c2f1b2..42d991f 100644
---- a/arch/sh/kernel/cpu/sh3/setup-sh7720.c
-+++ b/arch/sh/kernel/cpu/sh3/setup-sh7720.c
-@@ -20,6 +20,7 @@
- #include <linux/serial_sci.h>
- #include <linux/sh_timer.h>
- #include <linux/sh_intc.h>
-+#include <linux/usb/ohci_pdriver.h>
- #include <asm/rtc.h>
- #include <cpu/serial.h>
- 
-@@ -103,12 +104,15 @@ static struct resource usb_ohci_resources[] = {
- 
- static u64 usb_ohci_dma_mask = 0xffffffffUL;
- 
-+static struct usb_ohci_pdata usb_ohci_pdata;
-+
- static struct platform_device usb_ohci_device = {
--	.name		= "sh_ohci",
-+	.name		= "ohci-platform",
- 	.id		= -1,
- 	.dev = {
- 		.dma_mask		= &usb_ohci_dma_mask,
- 		.coherent_dma_mask	= 0xffffffff,
-+		.platform_data		= &usb_ohci_pdata,
+diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
+index c88b578..1404b04 100644
+--- a/arch/arm/configs/kzm9g_defconfig
++++ b/arch/arm/configs/kzm9g_defconfig
+@@ -119,6 +119,8 @@ CONFIG_DMADEVICES=y
+ CONFIG_SH_DMAE=y
+ CONFIG_ASYNC_TX_DMA=y
+ CONFIG_STAGING=y
++CONFIG_SENSORS_AK8975=y
++CONFIG_IIO=y
+ # CONFIG_DNOTIFY is not set
+ CONFIG_INOTIFY_USER=y
+ CONFIG_VFAT_FS=y
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index 0a43f31..a37da78 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -557,7 +557,11 @@ static struct i2c_board_info i2c0_devices[] = {
  	},
- 	.num_resources	= ARRAY_SIZE(usb_ohci_resources),
- 	.resource	= usb_ohci_resources,
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
-index 4a2f357..9079a0f 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
-@@ -19,6 +19,7 @@
- #include <linux/sh_timer.h>
- #include <linux/sh_dma.h>
- #include <linux/sh_intc.h>
-+#include <linux/usb/ohci_pdriver.h>
- #include <cpu/dma-register.h>
- #include <cpu/sh7757.h>
- 
-@@ -750,12 +751,15 @@ static struct resource usb_ohci_resources[] = {
- 	},
+ 	{
+ 		I2C_BOARD_INFO("r2025sd", 0x32),
+-	}
++	},
++	{
++		I2C_BOARD_INFO("ak8975", 0x0c),
++		.irq = intcs_evt2irq(0x3380), /* IRQ28 */
++	},
  };
  
-+static struct usb_ohci_pdata usb_ohci_pdata;
-+
- static struct platform_device usb_ohci_device = {
--	.name		= "sh_ohci",
-+	.name		= "ohci-platform",
- 	.id		= -1,
- 	.dev = {
- 		.dma_mask = &usb_ohci_device.dev.coherent_dma_mask,
- 		.coherent_dma_mask = DMA_BIT_MASK(32),
-+		.platform_data	= &usb_ohci_pdata,
- 	},
- 	.num_resources	= ARRAY_SIZE(usb_ohci_resources),
- 	.resource	= usb_ohci_resources,
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7763.c b/arch/sh/kernel/cpu/sh4a/setup-sh7763.c
-index bd0a8fb..1686aca 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7763.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7763.c
-@@ -16,6 +16,7 @@
- #include <linux/sh_intc.h>
- #include <linux/io.h>
- #include <linux/serial_sci.h>
-+#include <linux/usb/ohci_pdriver.h>
- 
- static struct plat_sci_port scif0_platform_data = {
- 	.mapbase	= 0xffe00000,
-@@ -106,12 +107,15 @@ static struct resource usb_ohci_resources[] = {
- 
- static u64 usb_ohci_dma_mask = 0xffffffffUL;
- 
-+static struct usb_ohci_pdata usb_ohci_pdata;
-+
- static struct platform_device usb_ohci_device = {
--	.name		= "sh_ohci",
-+	.name		= "ohci-platform",
- 	.id		= -1,
- 	.dev = {
- 		.dma_mask		= &usb_ohci_dma_mask,
- 		.coherent_dma_mask	= 0xffffffff,
-+		.platform_data		= &usb_ohci_pdata,
- 	},
- 	.num_resources	= ARRAY_SIZE(usb_ohci_resources),
- 	.resource	= usb_ohci_resources,
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7786.c b/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
-index 2e6952f..ab52d4d 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
-@@ -23,6 +23,7 @@
- #include <linux/sh_timer.h>
- #include <linux/sh_dma.h>
- #include <linux/sh_intc.h>
-+#include <linux/usb/ohci_pdriver.h>
- #include <cpu/dma-register.h>
- #include <asm/mmzone.h>
- 
-@@ -583,12 +584,15 @@ static struct resource usb_ohci_resources[] = {
- 	},
- };
- 
-+static struct usb_ohci_pdata usb_ohci_pdata;
-+
- static struct platform_device usb_ohci_device = {
--	.name		= "sh_ohci",
-+	.name		= "ohci-platform",
- 	.id		= -1,
- 	.dev = {
- 		.dma_mask		= &usb_ohci_device.dev.coherent_dma_mask,
- 		.coherent_dma_mask	= DMA_BIT_MASK(32),
-+		.platform_data		= &usb_ohci_pdata,
- 	},
- 	.num_resources	= ARRAY_SIZE(usb_ohci_resources),
- 	.resource	= usb_ohci_resources,
+ static struct i2c_board_info i2c1_devices[] = {
 -- 
-1.7.9.5
+1.7.10.4
 
