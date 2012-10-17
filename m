@@ -1,30 +1,36 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Mon, 01 Oct 2012 05:24:28 +0000
-Subject: Re: [PATCH] ARM: shmobile: mackerel: defconfig update
-Message-Id: <20121001052427.GB1857@verge.net.au>
+Date: Wed, 17 Oct 2012 04:38:18 +0000
+Subject: [PATCH 2/2] ARM: shmobile: armadillo800eva: enable L2X0 cache on defconfig
+Message-Id: <1350448698-26985-3-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87ehlirirj.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87ehlirirj.wl%kuninori.morimoto.gx@renesas.com>
+References: <1350448698-26985-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1350448698-26985-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Sun, Sep 30, 2012 at 08:08:54PM -0700, Kuninori Morimoto wrote:
-> This patch enables following devices by default
->  - I2C
->  - HDMI
->  - USB (host/gadget)
->  - ALSA (FSI)
->  - DMAEngine
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
->
-> ---
->  arch/arm/configs/mackerel_defconfig |   18 ++++++++++++++++--
->  1 file changed, 16 insertions(+), 2 deletions(-)
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks Morimoto-san,
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ arch/arm/configs/armadillo800eva_defconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-I have applied this to the defconfig branch of my renesas tree.
-I anticipate it will be included in 3.8.
+diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
+index f78d259..a18593d 100644
+--- a/arch/arm/configs/armadillo800eva_defconfig
++++ b/arch/arm/configs/armadillo800eva_defconfig
+@@ -20,7 +20,7 @@ CONFIG_MACH_ARMADILLO800EVA=y
+ # CONFIG_SH_TIMER_TMU is not set
+ CONFIG_ARM_THUMB=y
+ CONFIG_CPU_BPREDICT_DISABLE=y
+-# CONFIG_CACHE_L2X0 is not set
++CONFIG_CACHE_L2X0=y
+ CONFIG_ARM_ERRATA_430973=y
+ CONFIG_ARM_ERRATA_458693=y
+ CONFIG_ARM_ERRATA_460075=y
+-- 
+1.7.10.4
+
