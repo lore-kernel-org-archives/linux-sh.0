@@ -1,142 +1,61 @@
-From: Florian Fainelli <florian@openwrt.org>
-Date: Thu, 04 Oct 2012 15:17:49 +0000
-Subject: [PATCH 21/24 v2] sh: convert boards to use the OHCI platform driver
-Message-Id: <1349363872-27004-22-git-send-email-florian@openwrt.org>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 17 Oct 2012 04:39:19 +0000
+Subject: [PATCH 08/10] ARM: shmobile: r8a7779: add I2C clock support
+Message-Id: <1350448761-27346-9-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1349363872-27004-1-git-send-email-florian@openwrt.org>
-In-Reply-To: <1349363872-27004-1-git-send-email-florian@openwrt.org>
+References: <1350448761-27346-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1350448761-27346-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: stern@rowland.harvard.edu
-Cc: linux-usb@vger.kernel.org, Florian Fainelli <florian@openwrt.org>, Paul Mundt <lethal@linux-sh.org>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Florian Fainelli <florian@openwrt.org>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+
+This patch is required from R-Car I2C driver
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
-No changes since v1
+ arch/arm/mach-shmobile/clock-r8a7779.c |   11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
 
- arch/sh/kernel/cpu/sh3/setup-sh7720.c  |    6 +++++-
- arch/sh/kernel/cpu/sh4a/setup-sh7757.c |    6 +++++-
- arch/sh/kernel/cpu/sh4a/setup-sh7763.c |    6 +++++-
- arch/sh/kernel/cpu/sh4a/setup-sh7786.c |    6 +++++-
- 4 files changed, 20 insertions(+), 4 deletions(-)
-
-diff --git a/arch/sh/kernel/cpu/sh3/setup-sh7720.c b/arch/sh/kernel/cpu/sh3/setup-sh7720.c
-index 0c2f1b2..42d991f 100644
---- a/arch/sh/kernel/cpu/sh3/setup-sh7720.c
-+++ b/arch/sh/kernel/cpu/sh3/setup-sh7720.c
-@@ -20,6 +20,7 @@
- #include <linux/serial_sci.h>
- #include <linux/sh_timer.h>
- #include <linux/sh_intc.h>
-+#include <linux/usb/ohci_pdriver.h>
- #include <asm/rtc.h>
- #include <cpu/serial.h>
- 
-@@ -103,12 +104,15 @@ static struct resource usb_ohci_resources[] = {
- 
- static u64 usb_ohci_dma_mask = 0xffffffffUL;
- 
-+static struct usb_ohci_pdata usb_ohci_pdata;
-+
- static struct platform_device usb_ohci_device = {
--	.name		= "sh_ohci",
-+	.name		= "ohci-platform",
- 	.id		= -1,
- 	.dev = {
- 		.dma_mask		= &usb_ohci_dma_mask,
- 		.coherent_dma_mask	= 0xffffffff,
-+		.platform_data		= &usb_ohci_pdata,
- 	},
- 	.num_resources	= ARRAY_SIZE(usb_ohci_resources),
- 	.resource	= usb_ohci_resources,
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
-index 4a2f357..9079a0f 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
-@@ -19,6 +19,7 @@
- #include <linux/sh_timer.h>
- #include <linux/sh_dma.h>
- #include <linux/sh_intc.h>
-+#include <linux/usb/ohci_pdriver.h>
- #include <cpu/dma-register.h>
- #include <cpu/sh7757.h>
- 
-@@ -750,12 +751,15 @@ static struct resource usb_ohci_resources[] = {
- 	},
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index 90d717b..24f5a84 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -87,7 +87,8 @@ static struct clk div4_clks[DIV4_NR] = {
  };
  
-+static struct usb_ohci_pdata usb_ohci_pdata;
-+
- static struct platform_device usb_ohci_device = {
--	.name		= "sh_ohci",
-+	.name		= "ohci-platform",
- 	.id		= -1,
- 	.dev = {
- 		.dma_mask = &usb_ohci_device.dev.coherent_dma_mask,
- 		.coherent_dma_mask = DMA_BIT_MASK(32),
-+		.platform_data	= &usb_ohci_pdata,
- 	},
- 	.num_resources	= ARRAY_SIZE(usb_ohci_resources),
- 	.resource	= usb_ohci_resources,
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7763.c b/arch/sh/kernel/cpu/sh4a/setup-sh7763.c
-index bd0a8fb..1686aca 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7763.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7763.c
-@@ -16,6 +16,7 @@
- #include <linux/sh_intc.h>
- #include <linux/io.h>
- #include <linux/serial_sci.h>
-+#include <linux/usb/ohci_pdriver.h>
- 
- static struct plat_sci_port scif0_platform_data = {
- 	.mapbase	= 0xffe00000,
-@@ -106,12 +107,15 @@ static struct resource usb_ohci_resources[] = {
- 
- static u64 usb_ohci_dma_mask = 0xffffffffUL;
- 
-+static struct usb_ohci_pdata usb_ohci_pdata;
-+
- static struct platform_device usb_ohci_device = {
--	.name		= "sh_ohci",
-+	.name		= "ohci-platform",
- 	.id		= -1,
- 	.dev = {
- 		.dma_mask		= &usb_ohci_dma_mask,
- 		.coherent_dma_mask	= 0xffffffff,
-+		.platform_data		= &usb_ohci_pdata,
- 	},
- 	.num_resources	= ARRAY_SIZE(usb_ohci_resources),
- 	.resource	= usb_ohci_resources,
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7786.c b/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
-index 2e6952f..ab52d4d 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
-@@ -23,6 +23,7 @@
- #include <linux/sh_timer.h>
- #include <linux/sh_dma.h>
- #include <linux/sh_intc.h>
-+#include <linux/usb/ohci_pdriver.h>
- #include <cpu/dma-register.h>
- #include <asm/mmzone.h>
- 
-@@ -583,12 +584,15 @@ static struct resource usb_ohci_resources[] = {
- 	},
- };
- 
-+static struct usb_ohci_pdata usb_ohci_pdata;
-+
- static struct platform_device usb_ohci_device = {
--	.name		= "sh_ohci",
-+	.name		= "ohci-platform",
- 	.id		= -1,
- 	.dev = {
- 		.dma_mask		= &usb_ohci_device.dev.coherent_dma_mask,
- 		.coherent_dma_mask	= DMA_BIT_MASK(32),
-+		.platform_data		= &usb_ohci_pdata,
- 	},
- 	.num_resources	= ARRAY_SIZE(usb_ohci_resources),
- 	.resource	= usb_ohci_resources,
+ enum { MSTP323, MSTP322, MSTP321, MSTP320,
+-	MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
++	MSTP030,
++	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+ 	MSTP016, MSTP015, MSTP014,
+ 	MSTP007,
+ 	MSTP_NR };
+@@ -97,6 +98,10 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP322] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 22, 0), /* SDHI1 */
+ 	[MSTP321] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 21, 0), /* SDHI2 */
+ 	[MSTP320] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 20, 0), /* SDHI3 */
++	[MSTP030] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 30, 0), /* I2C0 */
++	[MSTP029] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 29, 0), /* I2C1 */
++	[MSTP028] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 28, 0), /* I2C2 */
++	[MSTP027] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 27, 0), /* I2C3 */
+ 	[MSTP026] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 26, 0), /* SCIF0 */
+ 	[MSTP025] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 25, 0), /* SCIF1 */
+ 	[MSTP024] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 24, 0), /* SCIF2 */
+@@ -150,6 +155,10 @@ static struct clk_lookup lookups[] = {
+ 	/* MSTP32 clocks */
+ 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
+ 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP016]), /* TMU01 */
++	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
++	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP029]), /* I2C1 */
++	CLKDEV_DEV_ID("i2c-rcar.2", &mstp_clks[MSTP028]), /* I2C2 */
++	CLKDEV_DEV_ID("i2c-rcar.3", &mstp_clks[MSTP027]), /* I2C3 */
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
+ 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP024]), /* SCIF2 */
 -- 
-1.7.9.5
+1.7.10.4
 
