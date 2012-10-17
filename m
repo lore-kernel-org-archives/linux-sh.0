@@ -1,7 +1,7 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Wed, 17 Oct 2012 04:39:21 +0000
-Subject: [PATCH 10/10] ARM: shmobile: marzen: add HSPI support
-Message-Id: <1350448761-27346-11-git-send-email-horms@verge.net.au>
+Date: Wed, 17 Oct 2012 04:39:17 +0000
+Subject: [PATCH 06/10] ARM: shmobile: armadillo800eva: enable restart
+Message-Id: <1350448761-27346-7-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1350448761-27346-1-git-send-email-horms@verge.net.au>
 In-Reply-To: <1350448761-27346-1-git-send-email-horms@verge.net.au>
@@ -12,80 +12,37 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
+Cc: Masahiro Nakai <nakai@atmark-techno.com>
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/arm/configs/marzen_defconfig     |    2 ++
- arch/arm/mach-shmobile/board-marzen.c |   25 +++++++++++++++++++++++++
- 2 files changed, 27 insertions(+)
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index f79b55c..5b8215f 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -71,6 +71,8 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
- # CONFIG_HW_RANDOM is not set
- CONFIG_I2C=y
- CONFIG_I2C_RCAR=y
-+CONFIG_SPI=y
-+CONFIG_SPI_SH_HSPI=y
- CONFIG_GPIO_SYSFS=y
- # CONFIG_HWMON is not set
- CONFIG_THERMAL=y
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index b8a7525..69f7f46 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -30,6 +30,8 @@
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/machine.h>
- #include <linux/smsc911x.h>
-+#include <linux/spi/spi.h>
-+#include <linux/spi/sh_hspi.h>
- #include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/mfd/tmio.h>
- #include <mach/hardware.h>
-@@ -126,10 +128,27 @@ static struct platform_device thermal_device = {
- 	.num_resources	= ARRAY_SIZE(thermal_resources),
- };
- 
-+/* HSPI */
-+static struct resource hspi_resources[] = {
-+	[0] = {
-+		.start		= 0xFFFC7000,
-+		.end		= 0xFFFC7018 - 1,
-+		.flags		= IORESOURCE_MEM,
-+	},
-+};
-+
-+static struct platform_device hspi_device = {
-+	.name	= "sh-hspi",
-+	.id	= 0,
-+	.resource	= hspi_resources,
-+	.num_resources	= ARRAY_SIZE(hspi_resources),
-+};
-+
- static struct platform_device *marzen_devices[] __initdata = {
- 	&eth_device,
- 	&sdhi0_device,
- 	&thermal_device,
-+	&hspi_device,
- };
- 
- static void __init marzen_init(void)
-@@ -163,6 +182,12 @@ static void __init marzen_init(void)
- 	gpio_request(GPIO_FN_SD0_CD, NULL);
- 	gpio_request(GPIO_FN_SD0_WP, NULL);
- 
-+	/* HSPI 0 */
-+	gpio_request(GPIO_FN_HSPI_CLK0,	NULL);
-+	gpio_request(GPIO_FN_HSPI_CS0,	NULL);
-+	gpio_request(GPIO_FN_HSPI_TX0,	NULL);
-+	gpio_request(GPIO_FN_HSPI_RX0,	NULL);
-+
- 	r8a7779_add_standard_devices();
- 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 2912eab..fe27d7e 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -1229,6 +1229,13 @@ static void __init eva_add_early_devices(void)
+ 	shmobile_timer.init = eva_earlytimer_init;
  }
+ 
++#define RESCNT2 IOMEM(0xe6188020)
++static void eva_restart(char mode, const char *cmd)
++{
++	/* Do soft power on reset */
++	writel((1 << 31), RESCNT2);
++}
++
+ static const char *eva_boards_compat_dt[] __initdata = {
+ 	"renesas,armadillo800eva",
+ 	NULL,
+@@ -1243,4 +1250,5 @@ DT_MACHINE_START(ARMADILLO800EVA_DT, "armadillo800eva")
+ 	.init_late	= shmobile_init_late,
+ 	.timer		= &shmobile_timer,
+ 	.dt_compat	= eva_boards_compat_dt,
++	.restart	= eva_restart,
+ MACHINE_END
 -- 
 1.7.10.4
 
