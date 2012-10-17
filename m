@@ -1,199 +1,91 @@
-From: David Howells <dhowells@redhat.com>
-Date: Thu, 04 Oct 2012 19:51:50 +0000
-Subject: [GIT PULL] Disintegrate UAPI for sh
-Message-Id: <17432.1349380310@warthog.procyon.org.uk>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 17 Oct 2012 04:39:21 +0000
+Subject: [PATCH 10/10] ARM: shmobile: marzen: add HSPI support
+Message-Id: <1350448761-27346-11-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1350448761-27346-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1350448761-27346-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: lethal@linux-sh.org
-Cc: dhowells@redhat.com, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Can you merge the following branch into the sh tree please.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This is to complete part of the UAPI disintegration for which the preparatory
-patches were pulled recently.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ arch/arm/configs/marzen_defconfig     |    2 ++
+ arch/arm/mach-shmobile/board-marzen.c |   25 +++++++++++++++++++++++++
+ 2 files changed, 27 insertions(+)
 
-Note that there are some fixup patches which are at the base of the branch
-aimed at you, plus all arches get the asm-generic branch merged in too.
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index f79b55c..5b8215f 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -71,6 +71,8 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ # CONFIG_HW_RANDOM is not set
+ CONFIG_I2C=y
+ CONFIG_I2C_RCAR=y
++CONFIG_SPI=y
++CONFIG_SPI_SH_HSPI=y
+ CONFIG_GPIO_SYSFS=y
+ # CONFIG_HWMON is not set
+ CONFIG_THERMAL=y
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index b8a7525..69f7f46 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -30,6 +30,8 @@
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/smsc911x.h>
++#include <linux/spi/spi.h>
++#include <linux/spi/sh_hspi.h>
+ #include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/mfd/tmio.h>
+ #include <mach/hardware.h>
+@@ -126,10 +128,27 @@ static struct platform_device thermal_device = {
+ 	.num_resources	= ARRAY_SIZE(thermal_resources),
+ };
+ 
++/* HSPI */
++static struct resource hspi_resources[] = {
++	[0] = {
++		.start		= 0xFFFC7000,
++		.end		= 0xFFFC7018 - 1,
++		.flags		= IORESOURCE_MEM,
++	},
++};
++
++static struct platform_device hspi_device = {
++	.name	= "sh-hspi",
++	.id	= 0,
++	.resource	= hspi_resources,
++	.num_resources	= ARRAY_SIZE(hspi_resources),
++};
++
+ static struct platform_device *marzen_devices[] __initdata = {
+ 	&eth_device,
+ 	&sdhi0_device,
+ 	&thermal_device,
++	&hspi_device,
+ };
+ 
+ static void __init marzen_init(void)
+@@ -163,6 +182,12 @@ static void __init marzen_init(void)
+ 	gpio_request(GPIO_FN_SD0_CD, NULL);
+ 	gpio_request(GPIO_FN_SD0_WP, NULL);
+ 
++	/* HSPI 0 */
++	gpio_request(GPIO_FN_HSPI_CLK0,	NULL);
++	gpio_request(GPIO_FN_HSPI_CS0,	NULL);
++	gpio_request(GPIO_FN_HSPI_TX0,	NULL);
++	gpio_request(GPIO_FN_HSPI_RX0,	NULL);
++
+ 	r8a7779_add_standard_devices();
+ 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
+ }
+-- 
+1.7.10.4
 
-The following changes since commit 612a9aab56a93533e76e3ad91642db7033e03b69:
-
-  Merge branch 'drm-next' of git://people.freedesktop.org/~airlied/linux (2012-10-03 23:29:23 -0700)
-
-are available in the git repository at:
-
-
-  git://git.infradead.org/users/dhowells/linux-headers.git disintegrate-sh
-
-for you to fetch changes up to c7d4fbbc3985e65500dc73c241284a19e968fc04:
-
-  UAPI: (Scripted) Disintegrate arch/sh/include/asm (2012-10-04 18:21:28 +0100)
-
-----------------------------------------------------------------
-David Howells (6):
-      UAPI: Fix the guards on various asm/unistd.h files
-      UAPI: Split compound conditionals containing __KERNEL__ in Arm64
-      Merge remote-tracking branch 'c6x/for-linux-next' into uapi-prep
-      UAPI: Fix conditional header installation handling (notably kvm_para.h on m68k)
-      UAPI: (Scripted) Disintegrate include/asm-generic
-      UAPI: (Scripted) Disintegrate arch/sh/include/asm
-
-Mark Salter (2):
-      c6x: make dsk6455 the default config
-      c6x: remove c6x signal.h
-
- arch/arm64/include/asm/hwcap.h                  |   4 +-
- arch/arm64/include/asm/stat.h                   |   4 +-
- arch/arm64/include/asm/unistd.h                 |   8 +-
- arch/arm64/include/asm/unistd32.h               |   4 -
- arch/c6x/Makefile                               |   2 +
- arch/c6x/include/asm/Kbuild                     |   1 +
- arch/c6x/include/asm/signal.h                   |  17 -
- arch/c6x/include/asm/unistd.h                   |   4 -
- arch/hexagon/include/asm/unistd.h               |   5 -
- arch/openrisc/include/asm/unistd.h              |   5 -
- arch/score/include/asm/unistd.h                 |   5 -
- arch/sh/include/asm/Kbuild                      |  11 -
- arch/sh/include/asm/hw_breakpoint.h             |   4 +-
- arch/sh/include/asm/posix_types.h               |   8 -
- arch/sh/include/asm/ptrace.h                    |  34 +-
- arch/sh/include/asm/ptrace_32.h                 |  75 +-
- arch/sh/include/asm/ptrace_64.h                 |  12 +-
- arch/sh/include/asm/setup.h                     |   5 +-
- arch/sh/include/asm/types.h                     |   5 +-
- arch/sh/include/asm/unistd.h                    |   9 +-
- arch/sh/include/uapi/asm/Kbuild                 |  22 +
- arch/sh/include/{ => uapi}/asm/auxvec.h         |   0
- arch/sh/include/{ => uapi}/asm/byteorder.h      |   0
- arch/sh/include/{ => uapi}/asm/cachectl.h       |   0
- arch/sh/include/{ => uapi}/asm/cpu-features.h   |   0
- arch/sh/include/{ => uapi}/asm/ioctls.h         |   0
- arch/sh/include/uapi/asm/posix_types.h          |   7 +
- arch/sh/include/{ => uapi}/asm/posix_types_32.h |   0
- arch/sh/include/{ => uapi}/asm/posix_types_64.h |   0
- arch/sh/include/uapi/asm/ptrace.h               |  34 +
- arch/sh/include/uapi/asm/ptrace_32.h            |  77 ++
- arch/sh/include/uapi/asm/ptrace_64.h            |  14 +
- arch/sh/include/uapi/asm/setup.h                |   1 +
- arch/sh/include/{ => uapi}/asm/sigcontext.h     |   0
- arch/sh/include/{ => uapi}/asm/signal.h         |   0
- arch/sh/include/{ => uapi}/asm/sockios.h        |   0
- arch/sh/include/{ => uapi}/asm/stat.h           |   0
- arch/sh/include/{ => uapi}/asm/swab.h           |   0
- arch/sh/include/uapi/asm/types.h                |   1 +
- arch/sh/include/uapi/asm/unistd.h               |   7 +
- arch/sh/include/{ => uapi}/asm/unistd_32.h      |   0
- arch/sh/include/{ => uapi}/asm/unistd_64.h      |   0
- arch/tile/include/asm/unistd.h                  |   5 -
- arch/unicore32/include/asm/unistd.h             |   4 -
- include/asm-generic/Kbuild                      |  35 -
- include/asm-generic/bitsperlong.h               |  13 +-
- include/asm-generic/int-l64.h                   |  26 +-
- include/asm-generic/int-ll64.h                  |  31 +-
- include/asm-generic/ioctl.h                     |  95 +--
- include/asm-generic/kvm_para.h                  |   5 +-
- include/asm-generic/param.h                     |  17 +-
- include/asm-generic/resource.h                  |  66 +-
- include/asm-generic/siginfo.h                   | 297 +-------
- include/asm-generic/signal.h                    | 117 +--
- include/asm-generic/statfs.h                    |  81 +--
- include/asm-generic/termios.h                   |  49 +-
- include/asm-generic/unistd.h                    | 911 +-----------------------
- include/linux/Kbuild                            |   9 +-
- include/uapi/asm-generic/Kbuild                 |  35 +
- include/{ => uapi}/asm-generic/auxvec.h         |   0
- include/uapi/asm-generic/bitsperlong.h          |  15 +
- include/{ => uapi}/asm-generic/errno-base.h     |   0
- include/{ => uapi}/asm-generic/errno.h          |   0
- include/{ => uapi}/asm-generic/fcntl.h          |   0
- include/uapi/asm-generic/int-l64.h              |  34 +
- include/uapi/asm-generic/int-ll64.h             |  39 +
- include/uapi/asm-generic/ioctl.h                |  98 +++
- include/{ => uapi}/asm-generic/ioctls.h         |   0
- include/{ => uapi}/asm-generic/ipcbuf.h         |   0
- include/{ => uapi}/asm-generic/mman-common.h    |   0
- include/{ => uapi}/asm-generic/mman.h           |   0
- include/{ => uapi}/asm-generic/msgbuf.h         |   0
- include/uapi/asm-generic/param.h                |  19 +
- include/{ => uapi}/asm-generic/poll.h           |   0
- include/{ => uapi}/asm-generic/posix_types.h    |   0
- include/uapi/asm-generic/resource.h             |  68 ++
- include/{ => uapi}/asm-generic/sembuf.h         |   0
- include/{ => uapi}/asm-generic/setup.h          |   0
- include/{ => uapi}/asm-generic/shmbuf.h         |   0
- include/{ => uapi}/asm-generic/shmparam.h       |   0
- include/uapi/asm-generic/siginfo.h              | 298 ++++++++
- include/{ => uapi}/asm-generic/signal-defs.h    |   0
- include/uapi/asm-generic/signal.h               | 123 ++++
- include/{ => uapi}/asm-generic/socket.h         |   0
- include/{ => uapi}/asm-generic/sockios.h        |   0
- include/{ => uapi}/asm-generic/stat.h           |   0
- include/uapi/asm-generic/statfs.h               |  83 +++
- include/{ => uapi}/asm-generic/swab.h           |   0
- include/{ => uapi}/asm-generic/termbits.h       |   0
- include/uapi/asm-generic/termios.h              |  50 ++
- include/{ => uapi}/asm-generic/types.h          |   0
- include/{ => uapi}/asm-generic/ucontext.h       |   0
- include/uapi/asm-generic/unistd.h               | 902 +++++++++++++++++++++++
- security/apparmor/Makefile                      |   2 +-
- 94 files changed, 1966 insertions(+), 1946 deletions(-)
- delete mode 100644 arch/c6x/include/asm/signal.h
- rename arch/sh/include/{ => uapi}/asm/auxvec.h (100%)
- rename arch/sh/include/{ => uapi}/asm/byteorder.h (100%)
- rename arch/sh/include/{ => uapi}/asm/cachectl.h (100%)
- rename arch/sh/include/{ => uapi}/asm/cpu-features.h (100%)
- create mode 100644 arch/sh/include/uapi/asm/hw_breakpoint.h
- rename arch/sh/include/{ => uapi}/asm/ioctls.h (100%)
- create mode 100644 arch/sh/include/uapi/asm/posix_types.h
- rename arch/sh/include/{ => uapi}/asm/posix_types_32.h (100%)
- rename arch/sh/include/{ => uapi}/asm/posix_types_64.h (100%)
- create mode 100644 arch/sh/include/uapi/asm/ptrace.h
- create mode 100644 arch/sh/include/uapi/asm/ptrace_32.h
- create mode 100644 arch/sh/include/uapi/asm/ptrace_64.h
- create mode 100644 arch/sh/include/uapi/asm/setup.h
- rename arch/sh/include/{ => uapi}/asm/sigcontext.h (100%)
- rename arch/sh/include/{ => uapi}/asm/signal.h (100%)
- rename arch/sh/include/{ => uapi}/asm/sockios.h (100%)
- rename arch/sh/include/{ => uapi}/asm/stat.h (100%)
- rename arch/sh/include/{ => uapi}/asm/swab.h (100%)
- create mode 100644 arch/sh/include/uapi/asm/types.h
- create mode 100644 arch/sh/include/uapi/asm/unistd.h
- rename arch/sh/include/{ => uapi}/asm/unistd_32.h (100%)
- rename arch/sh/include/{ => uapi}/asm/unistd_64.h (100%)
- rename include/{ => uapi}/asm-generic/auxvec.h (100%)
- create mode 100644 include/uapi/asm-generic/bitsperlong.h
- rename include/{ => uapi}/asm-generic/errno-base.h (100%)
- rename include/{ => uapi}/asm-generic/errno.h (100%)
- rename include/{ => uapi}/asm-generic/fcntl.h (100%)
- create mode 100644 include/uapi/asm-generic/int-l64.h
- create mode 100644 include/uapi/asm-generic/int-ll64.h
- create mode 100644 include/uapi/asm-generic/ioctl.h
- rename include/{ => uapi}/asm-generic/ioctls.h (100%)
- rename include/{ => uapi}/asm-generic/ipcbuf.h (100%)
- create mode 100644 include/uapi/asm-generic/kvm_para.h
- rename include/{ => uapi}/asm-generic/mman-common.h (100%)
- rename include/{ => uapi}/asm-generic/mman.h (100%)
- rename include/{ => uapi}/asm-generic/msgbuf.h (100%)
- create mode 100644 include/uapi/asm-generic/param.h
- rename include/{ => uapi}/asm-generic/poll.h (100%)
- rename include/{ => uapi}/asm-generic/posix_types.h (100%)
- create mode 100644 include/uapi/asm-generic/resource.h
- rename include/{ => uapi}/asm-generic/sembuf.h (100%)
- rename include/{ => uapi}/asm-generic/setup.h (100%)
- rename include/{ => uapi}/asm-generic/shmbuf.h (100%)
- rename include/{ => uapi}/asm-generic/shmparam.h (100%)
- create mode 100644 include/uapi/asm-generic/siginfo.h
- rename include/{ => uapi}/asm-generic/signal-defs.h (100%)
- create mode 100644 include/uapi/asm-generic/signal.h
- rename include/{ => uapi}/asm-generic/socket.h (100%)
- rename include/{ => uapi}/asm-generic/sockios.h (100%)
- rename include/{ => uapi}/asm-generic/stat.h (100%)
- create mode 100644 include/uapi/asm-generic/statfs.h
- rename include/{ => uapi}/asm-generic/swab.h (100%)
- rename include/{ => uapi}/asm-generic/termbits.h (100%)
- create mode 100644 include/uapi/asm-generic/termios.h
- rename include/{ => uapi}/asm-generic/types.h (100%)
- rename include/{ => uapi}/asm-generic/ucontext.h (100%)
- create mode 100644 include/uapi/asm-generic/unistd.h
-.
