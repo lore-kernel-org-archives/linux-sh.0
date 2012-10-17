@@ -1,45 +1,68 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Sun, 28 Oct 2012 02:26:05 +0000
-Subject: [PATCH 04/12] ARM: shmobile: kzm9g: enable DMAEngine on SHDI0 and SDHI2
-Message-Id: <1351391173-32379-5-git-send-email-horms@verge.net.au>
+Date: Wed, 17 Oct 2012 04:38:17 +0000
+Subject: [PATCH 1/2] ARM: shmobile: mackerel: defconfig update
+Message-Id: <1350448698-26985-2-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1351391173-32379-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1351391173-32379-1-git-send-email-horms@verge.net.au>
+References: <1350448698-26985-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1350448698-26985-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This patch enables DMAEngine on SHDI0 and SDHI2 for kzm9g.
+This patch enables following devices by default
+ - I2C
+ - HDMI
+ - USB (host/gadget)
+ - ALSA (FSI)
+ - DMAEngine
 
-Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-kzm9g.c |    4 ++++
- 1 file changed, 4 insertions(+)
+ arch/arm/configs/mackerel_defconfig |   18 ++++++++++++++++--
+ 1 file changed, 16 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index 1a46422..f63f2ee 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -384,6 +384,8 @@ static struct regulator_consumer_supply fixed2v8_power_consumers[]  
- /* SDHI */
- static struct sh_mobile_sdhi_info sdhi0_info = {
-+	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
-+	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
- 	.tmio_ocr_mask	= MMC_VDD_27_28 | MMC_VDD_28_29,
-@@ -424,6 +426,8 @@ static struct platform_device sdhi0_device = {
- 
- /* Micro SD */
- static struct sh_mobile_sdhi_info sdhi2_info = {
-+	.dma_slave_tx	= SHDMA_SLAVE_SDHI2_TX,
-+	.dma_slave_rx	= SHDMA_SLAVE_SDHI2_RX,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
- 			  TMIO_MMC_USE_GPIO_CD |
- 			  TMIO_MMC_WRPROTECT_DISABLE,
+diff --git a/arch/arm/configs/mackerel_defconfig b/arch/arm/configs/mackerel_defconfig
+index 306a2e2..7b79a0b 100644
+--- a/arch/arm/configs/mackerel_defconfig
++++ b/arch/arm/configs/mackerel_defconfig
+@@ -70,17 +70,31 @@ CONFIG_SERIAL_SH_SCI_NR_UARTS=8
+ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ # CONFIG_LEGACY_PTYS is not set
+ # CONFIG_HW_RANDOM is not set
++CONFIG_I2C=y
++CONFIG_I2C_SH_MOBILE=y
+ # CONFIG_HWMON is not set
+ # CONFIG_MFD_SUPPORT is not set
+ CONFIG_FB=y
+ CONFIG_FB_MODE_HELPERS=y
+ CONFIG_FB_SH_MOBILE_LCDC=y
++CONFIG_FB_SH_MOBILE_HDMI=y
+ CONFIG_FRAMEBUFFER_CONSOLE=y
+ CONFIG_LOGO=y
+ # CONFIG_LOGO_LINUX_MONO is not set
+ # CONFIG_LOGO_LINUX_CLUT224 is not set
+-# CONFIG_HID_SUPPORT is not set
+-# CONFIG_USB_SUPPORT is not set
++# CONFIG_SND_SUPPORT_OLD_API is not set
++# CONFIG_SND_VERBOSE_PROCFS is not set
++# CONFIG_SND_DRIVERS is not set
++# CONFIG_SND_ARM is not set
++CONFIG_SND_SOC_SH4_FSI=y
++CONFIG_USB=y
++CONFIG_USB_RENESAS_USBHS_HCD=y
++CONFIG_USB_RENESAS_USBHS=y
++CONFIG_USB_STORAGE=y
++CONFIG_USB_GADGET=y
++CONFIG_USB_RENESAS_USBHS_UDC=y
++CONFIG_DMADEVICES=y
++CONFIG_SH_DMAE=y
+ CONFIG_EXT2_FS=y
+ CONFIG_EXT2_FS_XATTR=y
+ CONFIG_EXT2_FS_POSIX_ACL=y
 -- 
 1.7.10.4
 
