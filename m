@@ -1,12 +1,15 @@
 From: David Howells <dhowells@redhat.com>
-Date: Wed, 17 Oct 2012 14:01:42 +0000
+Date: Wed, 17 Oct 2012 14:16:28 +0000
 Subject: [PATCH 09/10] UAPI: Make arch/sh/include/uapi/asm/hw_breakpoint.h non-empty
-Message-Id: <20121017140142.28541.69603.stgit@warthog.procyon.org.uk>
+Message-Id: <20121017141628.29084.20868.stgit@warthog.procyon.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20121017141521.29084.36722.stgit@warthog.procyon.org.uk>
+In-Reply-To: <20121017141521.29084.36722.stgit@warthog.procyon.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: torvalds@osdl.org
+Cc: dhowells@redhat.com, linux-kernel@vger.kernel.orgDavid Howells <dhowells@redhat.com>, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
 
 arch/sh/include/uapi/asm/hw_breakpoint.h was emitted by the UAPI disintegration
 script as an empty file because the parent file had no UAPI stuff in it,
