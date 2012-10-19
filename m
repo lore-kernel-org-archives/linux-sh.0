@@ -1,134 +1,29 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sun, 28 Oct 2012 02:26:10 +0000
-Subject: [PATCH 09/12] ARM: shmobile: r8a7779: add I2C driver support
-Message-Id: <1351391173-32379-10-git-send-email-horms@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 19 Oct 2012 22:20:16 +0000
+Subject: [PATCH 0/2] media: V4L2: clock and asynchronous registration
+Message-Id: <Pine.LNX.4.64.1210192358520.28993@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1351391173-32379-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1351391173-32379-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Linux Media Mailing List <linux-media@vger.kernel.org>
+Cc: Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hi all
 
-This patch enable R-Car I2C driver
+During a recent discussion of a V4L2 DT RFC it has become apparent, that 
+we first need two more preliminary steps, before implementing DT: we need 
+a (temporary) V4L2 clock implementation and asynchronous subdevice 
+registration. As follow ups to this mail I'm posting two patches, 
+implementing those. I have actually been able to get that to work with an 
+soc-camera system (sh7372), but respective soc-camera and bridge patches 
+are still raw, need a lot of clean up, and I don't know when I'll be able 
+to do that. So, I decided to first dump these two patches to the list, and 
+then see when I find time for the rest.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Thanks
+Guennadi
 ---
- arch/arm/configs/marzen_defconfig      |    2 +
- arch/arm/mach-shmobile/setup-r8a7779.c |   77 ++++++++++++++++++++++++++++++++
- 2 files changed, 79 insertions(+)
-
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index 53382b6..f79b55c 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -69,6 +69,8 @@ CONFIG_SERIAL_SH_SCI=y
- CONFIG_SERIAL_SH_SCI_NR_UARTS=6
- CONFIG_SERIAL_SH_SCI_CONSOLE=y
- # CONFIG_HW_RANDOM is not set
-+CONFIG_I2C=y
-+CONFIG_I2C_RCAR=y
- CONFIG_GPIO_SYSFS=y
- # CONFIG_HWMON is not set
- CONFIG_THERMAL=y
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 2917668..63de5cb 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -229,6 +229,79 @@ static struct platform_device tmu01_device = {
- 	.num_resources	= ARRAY_SIZE(tmu01_resources),
- };
- 
-+/* I2C */
-+static struct resource rcar_i2c0_res[] = {
-+	{
-+		.start  = 0xffc70000,
-+		.end    = 0xffc70fff,
-+		.flags  = IORESOURCE_MEM,
-+	}, {
-+		.start  = gic_spi(79),
-+		.flags  = IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device i2c0_device = {
-+	.name		= "i2c-rcar",
-+	.id		= 0,
-+	.resource	= rcar_i2c0_res,
-+	.num_resources	= ARRAY_SIZE(rcar_i2c0_res),
-+};
-+
-+static struct resource rcar_i2c1_res[] = {
-+	{
-+		.start  = 0xffc71000,
-+		.end    = 0xffc71fff,
-+		.flags  = IORESOURCE_MEM,
-+	}, {
-+		.start  = gic_spi(82),
-+		.flags  = IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device i2c1_device = {
-+	.name		= "i2c-rcar",
-+	.id		= 1,
-+	.resource	= rcar_i2c1_res,
-+	.num_resources	= ARRAY_SIZE(rcar_i2c1_res),
-+};
-+
-+static struct resource rcar_i2c2_res[] = {
-+	{
-+		.start  = 0xffc72000,
-+		.end    = 0xffc72fff,
-+		.flags  = IORESOURCE_MEM,
-+	}, {
-+		.start  = gic_spi(80),
-+		.flags  = IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device i2c2_device = {
-+	.name		= "i2c-rcar",
-+	.id		= 2,
-+	.resource	= rcar_i2c2_res,
-+	.num_resources	= ARRAY_SIZE(rcar_i2c2_res),
-+};
-+
-+static struct resource rcar_i2c3_res[] = {
-+	{
-+		.start  = 0xffc73000,
-+		.end    = 0xffc73fff,
-+		.flags  = IORESOURCE_MEM,
-+	}, {
-+		.start  = gic_spi(81),
-+		.flags  = IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device i2c3_device = {
-+	.name		= "i2c-rcar",
-+	.id		= 3,
-+	.resource	= rcar_i2c3_res,
-+	.num_resources	= ARRAY_SIZE(rcar_i2c3_res),
-+};
-+
- static struct platform_device *r8a7779_early_devices[] __initdata = {
- 	&scif0_device,
- 	&scif1_device,
-@@ -238,6 +311,10 @@ static struct platform_device *r8a7779_early_devices[] __initdata = {
- 	&scif5_device,
- 	&tmu00_device,
- 	&tmu01_device,
-+	&i2c0_device,
-+	&i2c1_device,
-+	&i2c2_device,
-+	&i2c3_device,
- };
- 
- static struct platform_device *r8a7779_late_devices[] __initdata = {
--- 
-1.7.10.4
-
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
