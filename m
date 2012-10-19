@@ -1,111 +1,233 @@
-From: Ni zhan Chen <nizhan.chen@gmail.com>
-Date: Tue, 02 Oct 2012 12:24:00 +0000
-Subject: Re: [RFC v9 PATCH 13/21] memory-hotplug: check page type in get_page_bootmem
-Message-Id: <506ADCE0.1020602@gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 19 Oct 2012 22:20:20 +0000
+Subject: [PATCH 1/2] media: V4L2: add temporary clock helpers
+Message-Id: <Pine.LNX.4.64.1210200007310.28993@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346837155-534-1-git-send-email-wency@cn.fujitsu.com> <1346837155-534-14-git-send-email-wency@cn.fujitsu.com> <506659D7.9080904@gmail.com> <506907E5.2080609@jp.fujitsu.com>
-In-Reply-To: <506907E5.2080609@jp.fujitsu.com>
+References: <Pine.LNX.4.64.1210192358520.28993@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1210192358520.28993@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
+To: Linux Media Mailing List <linux-media@vger.kernel.org>
+Cc: Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-On 10/01/2012 11:03 AM, Yasuaki Ishimatsu wrote:
-> Hi Chen,
->
-> 2012/09/29 11:15, Ni zhan Chen wrote:
->> On 09/05/2012 05:25 PM, wency@cn.fujitsu.com wrote:
->>> From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
->>>
->>> The function get_page_bootmem() may be called more than one time to 
->>> the same
->>> page. There is no need to set page's type, private if the function 
->>> is not
->>> the first time called to the page.
->>>
->>> Note: the patch is just optimization and does not fix any problem.
->>
->> Hi Yasuaki,
->>
->> this patch is reasonable to me. I have another question associated to 
->> get_page_bootmem(), the question is from another fujitsu guy's patch 
->> changelog [commit : 04753278769f3], the changelog said  that:
->>
->>   1) When the memmap of removing section is allocated on other
->>       section by bootmem, it should/can be free.
->>   2) When the memmap of removing section is allocated on the
->>       same section, it shouldn't be freed. Because the section has to be
->>       logical memory offlined already and all pages must be isolated 
->> against
->>       page allocater. If it is freed, page allocator may use it which 
->> will
->>       be removed physically soon.
->>
->> but I don't see his patch guarantee 2), it means that his patch 
->> doesn't guarantee the memmap of removing section which is allocated 
->> on other section by bootmem doesn't be freed. Hopefully get your 
->> explaination in details, thanks in advance. :-)
->
-> In my understanding, the patch does not guarantee it.
-> Please see [commit : 0c0a4a517a31e]. free_map_bootmem() in the commit
-> guarantees it.
+Typical video devices like camera sensors require an external clock source.
+Many such devices cannot even access their hardware registers without a
+running clock. These clock sources should be controlled by their consumers.
+This should be performed, using the generic clock framework. Unfortunately
+so far only very few systems have been ported to that framework. This patch
+adds a set of temporary helpers, mimicking the generic clock API, to V4L2.
+Platforms, adopting the clock API, should switch to using it. Eventually
+this temporary API should be removed.
 
-Thanks Yasuaki, I have already seen the commit you mentioned. But the 
-changelog of the commit I point out 2), why it said that "If it is 
-freed, page allocator may use it which will be removed physically soon", 
-does it mean that use-after-free ? AFAK, the isolated pages will be free 
-if no users use it, so why not free the associated memmap?
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/media/v4l2-core/Makefile   |    2 +-
+ drivers/media/v4l2-core/v4l2-clk.c |  126 ++++++++++++++++++++++++++++++++++++
+ include/media/v4l2-clk.h           |   48 ++++++++++++++
+ 3 files changed, 175 insertions(+), 1 deletions(-)
+ create mode 100644 drivers/media/v4l2-core/v4l2-clk.c
+ create mode 100644 include/media/v4l2-clk.h
 
->
-> Thanks,
-> Yasuaki Ishimatsu
->
->>
->>>
->>> CC: David Rientjes <rientjes@google.com>
->>> CC: Jiang Liu <liuj97@gmail.com>
->>> CC: Len Brown <len.brown@intel.com>
->>> CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
->>> CC: Paul Mackerras <paulus@samba.org>
->>> CC: Christoph Lameter <cl@linux.com>
->>> Cc: Minchan Kim <minchan.kim@gmail.com>
->>> CC: Andrew Morton <akpm@linux-foundation.org>
->>> CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
->>> CC: Wen Congyang <wency@cn.fujitsu.com>
->>> Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
->>> ---
->>>   mm/memory_hotplug.c |   15 +++++++++++----
->>>   1 files changed, 11 insertions(+), 4 deletions(-)
->>>
->>> diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
->>> index d736df3..26a5012 100644
->>> --- a/mm/memory_hotplug.c
->>> +++ b/mm/memory_hotplug.c
->>> @@ -95,10 +95,17 @@ static void release_memory_resource(struct 
->>> resource *res)
->>>   static void get_page_bootmem(unsigned long info,  struct page *page,
->>>                    unsigned long type)
->>>   {
->>> -    page->lru.next = (struct list_head *) type;
->>> -    SetPagePrivate(page);
->>> -    set_page_private(page, info);
->>> -    atomic_inc(&page->_count);
->>> +    unsigned long page_type;
->>> +
->>> +    page_type = (unsigned long)page->lru.next;
->>> +    if (page_type < MEMORY_HOTPLUG_MIN_BOOTMEM_TYPE ||
->>> +        page_type > MEMORY_HOTPLUG_MAX_BOOTMEM_TYPE){
->>> +        page->lru.next = (struct list_head *)type;
->>> +        SetPagePrivate(page);
->>> +        set_page_private(page, info);
->>> +        atomic_inc(&page->_count);
->>> +    } else
->>> +        atomic_inc(&page->_count);
->>>   }
->>>   /* reference to __meminit __free_pages_bootmem is valid
->>
->
->
->
+diff --git a/drivers/media/v4l2-core/Makefile b/drivers/media/v4l2-core/Makefile
+index 00f64d6..cb5fede 100644
+--- a/drivers/media/v4l2-core/Makefile
++++ b/drivers/media/v4l2-core/Makefile
+@@ -5,7 +5,7 @@
+ tuner-objs	:=	tuner-core.o
+ 
+ videodev-objs	:=	v4l2-dev.o v4l2-ioctl.o v4l2-device.o v4l2-fh.o \
+-			v4l2-event.o v4l2-ctrls.o v4l2-subdev.o
++			v4l2-event.o v4l2-ctrls.o v4l2-subdev.o v4l2-clk.o
+ ifeq ($(CONFIG_COMPAT),y)
+   videodev-objs += v4l2-compat-ioctl32.o
+ endif
+diff --git a/drivers/media/v4l2-core/v4l2-clk.c b/drivers/media/v4l2-core/v4l2-clk.c
+new file mode 100644
+index 0000000..7d457e4
+--- /dev/null
++++ b/drivers/media/v4l2-core/v4l2-clk.c
+@@ -0,0 +1,126 @@
++/*
++ * V4L2 clock service
++ *
++ * Copyright (C) 2012, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#include <linux/errno.h>
++#include <linux/list.h>
++#include <linux/module.h>
++#include <linux/mutex.h>
++#include <linux/string.h>
++
++#include <media/v4l2-clk.h>
++#include <media/v4l2-subdev.h>
++
++static DEFINE_MUTEX(clk_lock);
++static LIST_HEAD(v4l2_clk);
++
++struct v4l2_clk *v4l2_clk_get(struct v4l2_subdev *sd, const char *id)
++{
++	struct v4l2_clk *clk = NULL;
++
++	mutex_lock(&clk_lock);
++	if (!id) {
++		if (list_is_singular(&v4l2_clk)) {
++			clk = list_entry(&v4l2_clk, struct v4l2_clk, list);
++			if (!strstr(sd->name, clk->dev_id))
++				clk = ERR_PTR(-ENODEV);
++		} else {
++			clk = ERR_PTR(-EINVAL);
++		}
++	} else {
++		list_for_each_entry(clk, &v4l2_clk, list) {
++			if (!strcmp(id, clk->id) &&
++			    !strcmp(sd->name, clk->dev_id))
++				break;
++		}
++		if (&clk->list = &v4l2_clk)
++			clk = ERR_PTR(-ENODEV);
++	}
++	mutex_unlock(&clk_lock);
++
++	if (!IS_ERR(clk) &&
++	    !try_module_get(clk->ops->owner))
++		clk = ERR_PTR(-ENODEV);
++
++	return clk;
++}
++EXPORT_SYMBOL(v4l2_clk_get);
++
++void v4l2_clk_put(struct v4l2_clk *clk)
++{
++	if (!IS_ERR(clk))
++		module_put(clk->ops->owner);
++}
++EXPORT_SYMBOL(v4l2_clk_put);
++
++int v4l2_clk_enable(struct v4l2_clk *clk)
++{
++	if (!clk->ops->enable)
++		return -ENOSYS;
++	return clk->ops->enable(clk);
++}
++EXPORT_SYMBOL(v4l2_clk_enable);
++
++void v4l2_clk_disable(struct v4l2_clk *clk)
++{
++	if (clk->ops->disable)
++		clk->ops->disable(clk);
++}
++EXPORT_SYMBOL(v4l2_clk_disable);
++
++unsigned long v4l2_clk_get_rate(struct v4l2_clk *clk)
++{
++	if (!clk->ops->get_rate)
++		return -ENOSYS;
++	return clk->ops->get_rate(clk);
++}
++EXPORT_SYMBOL(v4l2_clk_get_rate);
++
++int v4l2_clk_set_rate(struct v4l2_clk *clk, unsigned long rate)
++{
++	if (!clk->ops->set_rate)
++		return -ENOSYS;
++	return clk->ops->set_rate(clk, rate);
++}
++EXPORT_SYMBOL(v4l2_clk_set_rate);
++
++struct v4l2_clk *v4l2_clk_register(const struct v4l2_clk_ops *ops,
++				   const char *dev_name,
++				   const char *name)
++{
++	struct v4l2_clk *clk;
++
++	if (!ops || !ops->owner || (!list_empty(&v4l2_clk) && !name))
++		return ERR_PTR(-EINVAL);
++
++	clk = kzalloc(sizeof(struct v4l2_clk), GFP_KERNEL);
++	if (!clk)
++		return ERR_PTR(-ENOMEM);
++
++	clk->ops = ops;
++	clk->id = name;
++	clk->dev_id = dev_name;
++
++	mutex_lock(&clk_lock);
++	list_add_tail(&clk->list, &v4l2_clk);
++	mutex_unlock(&clk_lock);
++
++	return clk;
++}
++EXPORT_SYMBOL(v4l2_clk_register);
++
++void v4l2_clk_unregister(struct v4l2_clk *clk)
++{
++	mutex_lock(&clk_lock);
++	list_del(&clk->list);
++	mutex_unlock(&clk_lock);
++
++	kfree(clk);
++}
++EXPORT_SYMBOL(v4l2_clk_unregister);
+diff --git a/include/media/v4l2-clk.h b/include/media/v4l2-clk.h
+new file mode 100644
+index 0000000..0c05ab3
+--- /dev/null
++++ b/include/media/v4l2-clk.h
+@@ -0,0 +1,48 @@
++/*
++ * V4L2 clock service
++ *
++ * Copyright (C) 2012, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ * ATTENTION: This is a temporary API and it shall be replaced by the generic
++ * clock API, when the latter becomes widely available.
++ */
++
++#ifndef MEDIA_V4L2_CLK_H
++#define MEDIA_V4L2_CLK_H
++
++#include <linux/list.h>
++
++struct module;
++struct v4l2_subdev;
++
++struct v4l2_clk {
++	struct list_head list;
++	const struct v4l2_clk_ops *ops;
++	const char *dev_id;
++	const char *id;
++};
++
++struct v4l2_clk_ops {
++	struct module	*owner;
++	int		(*enable)(struct v4l2_clk *clk);
++	void		(*disable)(struct v4l2_clk *clk);
++	unsigned long	(*get_rate)(struct v4l2_clk *clk);
++	int		(*set_rate)(struct v4l2_clk *clk, unsigned long);
++};
++
++struct v4l2_clk *v4l2_clk_register(const struct v4l2_clk_ops *ops,
++				   const char *dev_name,
++				   const char *name);
++void v4l2_clk_unregister(struct v4l2_clk *clk);
++struct v4l2_clk *v4l2_clk_get(struct v4l2_subdev *sd, const char *id);
++void v4l2_clk_put(struct v4l2_clk *clk);
++int v4l2_clk_enable(struct v4l2_clk *clk);
++void v4l2_clk_disable(struct v4l2_clk *clk);
++unsigned long v4l2_clk_get_rate(struct v4l2_clk *clk);
++int v4l2_clk_set_rate(struct v4l2_clk *clk, unsigned long rate);
++
++#endif
+-- 
+1.7.2.5
 
