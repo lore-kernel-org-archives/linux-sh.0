@@ -1,212 +1,149 @@
-From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Date: Wed, 24 Oct 2012 10:57:27 +0000
-Subject: [PATCH 2/5] i2c: i2c-sh_mobile: optimize ICCH/ICCL values according to I2C bus speed
-Message-Id: <5087C997.5040503@renesas.com>
+From: Bastian Hecht <hechtb@googlemail.com>
+Date: Fri, 19 Oct 2012 10:15:34 +0000
+Subject: [PATCH v3 1/3] mtd: sh_flctl: Minor cleanups
+Message-Id: <1350641736-18192-2-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5087C93F.6080601@renesas.com>
-In-Reply-To: <5087C93F.6080601@renesas.com>
+References: <1350641736-18192-1-git-send-email-hechtb@gmail.com>
+In-Reply-To: <1350641736-18192-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-ICCH/ICCL values is supposed to be calculated/optimized to strictly meet
-the timing specs required by the I2C standard.  The resulting I2C bus
-speed does not matter at all, if it's less than 100 or 400 kHz.
+Some small fixes to avoid sparse and smatch complain. Other cosmetic fixes
+as well.
 
-Also fix a typo in the comment, print icch/iccl values at probe, etc.
+- Change of the type of the member index in struct sh_flctl from signed
+to unsigned. We use index by addressing array members, so unsigned is more
+concise here. Adapt functions relying on sh_flctl::index.
+- Remove a blurring cast in write_fiforeg().
+- Apply consistent naming scheme when refering to the data buffer.
+- Shorten some unnecessarily verbose functions.
+- Remove spaces at start of lines.
 
-Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
 ---
- drivers/i2c/busses/i2c-sh_mobile.c | 121 ++++++++++++++++++++++---------------
- 1 file changed, 72 insertions(+), 49 deletions(-)
+v3: This is a newly added patch (v3 is misleading here) in reaction to the
+aiaiai output of Artem. My smatch (git head) didn't complain about the
+range problem mentioned in Artem's comment of v2 but I thought switching
+to unsigned int can't hurt here and seems more clean.
 
-diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
-index 309d0d5..1ad80c9 100644
---- a/drivers/i2c/busses/i2c-sh_mobile.c
-+++ b/drivers/i2c/busses/i2c-sh_mobile.c
-@@ -122,9 +122,9 @@ struct sh_mobile_i2c_data {
- 	unsigned long bus_speed;
- 	struct clk *clk;
- 	u_int8_t icic;
--	u_int8_t iccl;
--	u_int8_t icch;
- 	u_int8_t flags;
-+	u_int16_t iccl;
-+	u_int16_t icch;
+ drivers/mtd/nand/sh_flctl.c  |   37 ++++++++++++++++---------------------
+ include/linux/mtd/sh_flctl.h |    2 +-
+ 2 files changed, 17 insertions(+), 22 deletions(-)
+
+diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
+index 4fbfe96..78d18c0f 100644
+--- a/drivers/mtd/nand/sh_flctl.c
++++ b/drivers/mtd/nand/sh_flctl.c
+@@ -225,7 +225,7 @@ static enum flctl_ecc_res_t wait_recfifo_ready
  
- 	spinlock_t lock;
- 	wait_queue_head_t wait;
-@@ -135,7 +135,8 @@ struct sh_mobile_i2c_data {
+ 		for (i = 0; i < 3; i++) {
+ 			uint8_t org;
+-			int index;
++			unsigned int index;
  
- #define IIC_FLAG_HAS_ICIC67	(1 << 0)
+ 			data = readl(ecc_reg[i]);
  
--#define NORMAL_SPEED		100000 /* FAST_SPEED 400000 */
-+#define STANDARD_MODE		100000
-+#define FAST_MODE		400000
- 
- /* Register offsets */
- #define ICDR			0x00
-@@ -187,55 +188,76 @@ static void iic_set_clr(struct sh_mobile_i2c_data *pd, int offs,
- 	iic_wr(pd, offs, (iic_rd(pd, offs) | set) & ~clr);
+@@ -305,28 +305,29 @@ static enum flctl_ecc_res_t read_ecfiforeg
+ 	return res;
  }
  
-+static u32 sh_mobile_i2c_iccl(unsigned long count_khz, u32 tLOW, u32 tf, int offset)
-+{
-+	/*
-+	 * Conditional expression:
-+	 *   ICCL >= COUNT_CLK * (tLOW + tf)
-+	 *
-+	 * SH-Mobile IIC hardware starts counting the LOW period of
-+	 * the SCL signal (tLOW) as soon as it pulls the SCL line.
-+	 * In order to meet the tLOW timing spec, we need to take into
-+	 * account the fall time of SCL signal (tf).  Default tf value
-+	 * should be 0.3 us, for safety.
-+	 */
-+	return (((count_khz * (tLOW + tf)) + 5000) / 10000) + offset;
-+}
-+
-+static u32 sh_mobile_i2c_icch(unsigned long count_khz, u32 tHIGH, int offset)
-+{
-+	/*
-+	 * Conditional expression:
-+	 *   ICCH >= COUNT_CLK * tHIGH
-+	 *
-+	 * SH-Mobile IIC hardware is aware of SCL transition period 'tr',
-+	 * and can ignore it.  SH-Mobile IIC controller starts counting
-+	 * the HIGH period of the SCL signal (tHIGH) after the SCL input
-+	 * voltage increases at VIH.
-+	 */
-+	return ((count_khz * tHIGH) + 5000) / 10000 + offset;
-+}
-+
- static void sh_mobile_i2c_init(struct sh_mobile_i2c_data *pd)
+-static void write_fiforeg(struct sh_flctl *flctl, int rlen, int offset)
++static void write_fiforeg(struct sh_flctl *flctl, int rlen,
++						unsigned int offset)
  {
--	unsigned long i2c_clk;
--	u_int32_t num;
--	u_int32_t denom;
--	u_int32_t tmp;
-+	unsigned long i2c_clk_khz;
-+	u32 tHIGH, tLOW, tf;
-+	int offset;
+ 	int i, len_4align;
+-	unsigned long *data = (unsigned long *)&flctl->done_buff[offset];
+-	void *fifo_addr = (void *)FLDTFIFO(flctl);
++	unsigned long *buf = (unsigned long *)&flctl->done_buff[offset];
  
- 	/* Get clock rate after clock is enabled */
- 	clk_enable(pd->clk);
--	i2c_clk = clk_get_rate(pd->clk);
--
--	/* Calculate the value for iccl. From the data sheet:
--	 * iccl = (p clock / transfer rate) * (L / (L + H))
--	 * where L and H are the SCL low/high ratio (5/4 in this case).
--	 * We also round off the result.
--	 */
--	num = i2c_clk * 5;
--	denom = pd->bus_speed * 9;
--	tmp = num * 10 / denom;
--	if (tmp % 10 >= 5)
--		pd->iccl = (u_int8_t)((num/denom) + 1);
--	else
--		pd->iccl = (u_int8_t)(num/denom);
--
--	/* one more bit of ICCL in ICIC */
--	if (pd->flags & IIC_FLAG_HAS_ICIC67) {
--		if ((num/denom) > 0xff)
--			pd->icic |= ICIC_ICCLB8;
--		else
--			pd->icic &= ~ICIC_ICCLB8;
-+	i2c_clk_khz = clk_get_rate(pd->clk) / 1000;
-+
-+	if (pd->bus_speed = STANDARD_MODE) {
-+		tLOW	= 47;	/* tLOW = 4.7 us */
-+		tHIGH	= 40;	/* tHD;STA = tHIGH = 4.0 us */
-+		tf	= 3;	/* tf = 0.3 us */
-+		offset	= 0;	/* No offset */
-+	} else if (pd->bus_speed = FAST_MODE) {
-+		tLOW	= 13;	/* tLOW = 1.3 us */
-+		tHIGH	= 6;	/* tHD;STA = tHIGH = 0.6 us */
-+		tf	= 3;	/* tf = 0.3 us */
-+		offset	= 0;	/* No offset */
-+	} else {
-+		dev_err(pd->dev, "unrecognized bus speed %lu Hz\n",
-+			pd->bus_speed);
-+		goto out;
+ 	len_4align = (rlen + 3) / 4;
+ 	for (i = 0; i < len_4align; i++) {
+ 		wait_wfifo_ready(flctl);
+-		writel(cpu_to_be32(data[i]), fifo_addr);
++		writel(cpu_to_be32(buf[i]), FLDTFIFO(flctl));
  	}
- 
--	/* Calculate the value for icch. From the data sheet:
--	   icch = (p clock / transfer rate) * (H / (L + H)) */
--	num = i2c_clk * 4;
--	tmp = num * 10 / denom;
--	if (tmp % 10 >= 5)
--		pd->icch = (u_int8_t)((num/denom) + 1);
-+	pd->iccl = sh_mobile_i2c_iccl(i2c_clk_khz, tLOW, tf, offset);
-+	/* one more bit of ICCL in ICIC */
-+	if ((pd->iccl > 0xff) && (pd->flags & IIC_FLAG_HAS_ICIC67))
-+		pd->icic |= ICIC_ICCLB8;
- 	else
--		pd->icch = (u_int8_t)(num/denom);
-+		pd->icic &= ~ICIC_ICCLB8;
- 
-+	pd->icch = sh_mobile_i2c_icch(i2c_clk_khz, tHIGH, offset);
- 	/* one more bit of ICCH in ICIC */
--	if (pd->flags & IIC_FLAG_HAS_ICIC67) {
--		if ((num/denom) > 0xff)
--			pd->icic |= ICIC_ICCHB8;
--		else
--			pd->icic &= ~ICIC_ICCHB8;
--	}
-+	if ((pd->icch > 0xff) && (pd->flags & IIC_FLAG_HAS_ICIC67))
-+		pd->icic |= ICIC_ICCHB8;
-+	else
-+		pd->icic &= ~ICIC_ICCHB8;
- 
-+out:
- 	clk_disable(pd->clk);
  }
  
-@@ -252,8 +274,8 @@ static void activate_ch(struct sh_mobile_i2c_data *pd)
- 	iic_wr(pd, ICIC, 0);
+-static void write_ec_fiforeg(struct sh_flctl *flctl, int rlen, int offset)
++static void write_ec_fiforeg(struct sh_flctl *flctl, int rlen,
++						unsigned int offset)
+ {
+ 	int i, len_4align;
+-	unsigned long *data = (unsigned long *)&flctl->done_buff[offset];
++	unsigned long *buf = (unsigned long *)&flctl->done_buff[offset];
  
- 	/* Set the clock */
--	iic_wr(pd, ICCL, pd->iccl);
--	iic_wr(pd, ICCH, pd->icch);
-+	iic_wr(pd, ICCL, pd->iccl & 0xff);
-+	iic_wr(pd, ICCH, pd->icch & 0xff);
+ 	len_4align = (rlen + 3) / 4;
+ 	for (i = 0; i < len_4align; i++) {
+ 		wait_wecfifo_ready(flctl);
+-		writel(cpu_to_be32(data[i]), FLECFIFO(flctl));
++		writel(cpu_to_be32(buf[i]), FLECFIFO(flctl));
+ 	}
  }
  
- static void deactivate_ch(struct sh_mobile_i2c_data *pd)
-@@ -457,8 +479,8 @@ static int start_ch(struct sh_mobile_i2c_data *pd, struct i2c_msg *usr_msg)
- 	iic_set_clr(pd, ICCR, ICCR_ICE, 0);
+@@ -748,41 +749,35 @@ static void flctl_select_chip(struct mtd_info *mtd, int chipnr)
+ static void flctl_write_buf(struct mtd_info *mtd, const uint8_t *buf, int len)
+ {
+ 	struct sh_flctl *flctl = mtd_to_flctl(mtd);
+-	int index = flctl->index;
  
- 	/* Set the clock */
--	iic_wr(pd, ICCL, pd->iccl);
--	iic_wr(pd, ICCH, pd->icch);
-+	iic_wr(pd, ICCL, pd->iccl & 0xff);
-+	iic_wr(pd, ICCH, pd->icch & 0xff);
+-	memcpy(&flctl->done_buff[index], buf, len);
++	memcpy(&flctl->done_buff[flctl->index], buf, len);
+ 	flctl->index += len;
+ }
  
- 	pd->msg = usr_msg;
- 	pd->pos = -1;
-@@ -627,8 +649,8 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
- 		goto err_irq;
- 	}
+ static uint8_t flctl_read_byte(struct mtd_info *mtd)
+ {
+ 	struct sh_flctl *flctl = mtd_to_flctl(mtd);
+-	int index = flctl->index;
+ 	uint8_t data;
  
--	/* Use platformd data bus speed or NORMAL_SPEED */
--	pd->bus_speed = NORMAL_SPEED;
-+	/* Use platform data bus speed or STANDARD_MODE */
-+	pd->bus_speed = STANDARD_MODE;
- 	if (pdata && pdata->bus_speed)
- 		pd->bus_speed = pdata->bus_speed;
+-	data = flctl->done_buff[index];
++	data = flctl->done_buff[flctl->index];
+ 	flctl->index++;
+ 	return data;
+ }
  
-@@ -675,8 +697,9 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
- 		goto err_all;
- 	}
+ static uint16_t flctl_read_word(struct mtd_info *mtd)
+ {
+-       struct sh_flctl *flctl = mtd_to_flctl(mtd);
+-       int index = flctl->index;
+-       uint16_t data;
+-       uint16_t *buf = (uint16_t *)&flctl->done_buff[index];
++	struct sh_flctl *flctl = mtd_to_flctl(mtd);
++	uint16_t *buf = (uint16_t *)&flctl->done_buff[flctl->index];
  
--	dev_info(&dev->dev, "I2C adapter %d with bus speed %lu Hz\n",
--		 adap->nr, pd->bus_speed);
-+	dev_info(&dev->dev,
-+		 "I2C adapter %d with bus speed %lu Hz (L/H=%x/%x)\n",
-+		 adap->nr, pd->bus_speed, pd->iccl, pd->icch);
+-       data = *buf;
+-       flctl->index += 2;
+-       return data;
++	flctl->index += 2;
++	return *buf;
+ }
  
- 	of_i2c_register_devices(adap);
- 	return 0;
+ static void flctl_read_buf(struct mtd_info *mtd, uint8_t *buf, int len)
+ {
+ 	struct sh_flctl *flctl = mtd_to_flctl(mtd);
+-	int index = flctl->index;
+ 
+-	memcpy(buf, &flctl->done_buff[index], len);
++	memcpy(buf, &flctl->done_buff[flctl->index], len);
+ 	flctl->index += len;
+ }
+ 
+diff --git a/include/linux/mtd/sh_flctl.h b/include/linux/mtd/sh_flctl.h
+index 01e4b15..4815576 100644
+--- a/include/linux/mtd/sh_flctl.h
++++ b/include/linux/mtd/sh_flctl.h
+@@ -147,7 +147,7 @@ struct sh_flctl {
+ 
+ 	uint8_t	done_buff[2048 + 64];	/* max size 2048 + 64 */
+ 	int	read_bytes;
+-	int	index;
++	unsigned int index;
+ 	int	seqin_column;		/* column in SEQIN cmd */
+ 	int	seqin_page_addr;	/* page_addr in SEQIN cmd */
+ 	uint32_t seqin_read_cmd;		/* read cmd in SEQIN cmd */
 -- 
-1.7.12.4
+1.7.9.5
 
