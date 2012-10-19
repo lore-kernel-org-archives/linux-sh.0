@@ -1,12 +1,16 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 15 Oct 2012 06:35:24 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 19 Oct 2012 06:49:20 +0000
 Subject: [PATCH] ARM: shmobile: r8a7779: I/O address abuse cleanup
-Message-Id: <874nlwckev.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <1350629360-27438-2-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1350629360-27438-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1350629360-27438-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
+
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
 a2a47ca36642e3995e982957bc42678cf11ca6ac
 (ARM: __io abuse cleanup) cleanuped __io() -> IOMEM(),
@@ -15,13 +19,8 @@ since it directly used (void __iomem __force *) instead of __io().
 This patch cleanup it.
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
->> Simon
-
-Original a2a47ca36642e3995e982957bc42678cf11ca6ac was in v3.7,
-so, this should go to v3.7 ?
-But this is not bug fix patch, v3.8 is enough ?
-
  arch/arm/mach-shmobile/setup-r8a7779.c |    2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
@@ -39,5 +38,5 @@ index 2917668..ebbffc2 100644
  	r8a7779_pm_init();
  
 -- 
-1.7.9.5
+1.7.10.4
 
