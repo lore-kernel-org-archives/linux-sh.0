@@ -1,63 +1,65 @@
-From: "Rafael J. Wysocki" <rjw@sisk.pl>
-Date: Mon, 15 Oct 2012 06:25:14 +0000
-Subject: Re: [PATCH] base: power - use clk_prepare_enable and clk_prepare_disable
-Message-Id: <2015319.CVFbHOo6Yt@vostro.rjw.lan>
+From: Bastian Hecht <hechtb@googlemail.com>
+Date: Fri, 19 Oct 2012 10:15:33 +0000
+Subject: [PATCH v3 0/3] Add DMA and device tree support to the flash controller FLCTL
+Message-Id: <1350641736-18192-1-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1348155576-18881-1-git-send-email-m-karicheri2@ti.com>
-In-Reply-To: <1348155576-18881-1-git-send-email-m-karicheri2@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Murali Karicheri <m-karicheri2@ti.com>
-Cc: pavel@ucw.cz, len.brown@intel.com, gregkh@linuxfoundation.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, mturquette@linaro.org, linux-sh@vger.kernel.org, cyril@ti.com
+To: linux-arm-kernel@lists.infradead.org
 
-On Thursday 20 of September 2012 11:39:36 Murali Karicheri wrote:
-> When PM runtime is enabled in DaVinci and the machine migrates to
-> common clk framework, the clk_enable() gets called without
-> clk_prepare(). This patch is to fix this issue so that PM run
-> time can inter work with common clk framework.
-> 
-> Signed-off-by: Murali Karicheri <m-karicheri2@ti.com>
+changelog v3:	- due to shame on me by letting aiaiai complain, I've added
+		  a third patch (1/3) that cleans up some parts of the driver
+		  and added a correct error path to probe() in patch 3 (formerly 2/2).
+		  I found no way to fix this though:
++drivers/mtd/nand/sh_flctl.c:181:25: warning: cast removes address space of expression [sparse]
+		
+changelog v2: 	- cosmetic fixes in patch 1
+		- added dmas and dma-names field in patch 2
 
-OK.  I'm not seeing people having problems with this patch, so I'll tentatively
-queue it up for v3.8.
+This mini-series consists of 2 separately posted patch-sets that shrunk
+to one patch each. It adds DMA support for the data part (not ECC) as
+well as device tree support to the FLCTL flash controller.
+As the 2nd patch is based on the 1st, I've decided to
+collect them here to avoid any confusion.
 
-Thanks,
-Rafael
+The first set contained
+[PATCH 1/2] mtd: sh_flctl: Setup and release DMA channels
+[PATCH 2/2] mtd: sh_flctl: Use DMA for data fifo FLTDFIFO when available
+and was merged after 2 reviews to
+[PATCH] mtd: sh_flctl: Add DMA capabilty (same patch as in here)
+
+The second set contained
+[PATCH 1/3] mtd: sh_flctl: Probe SNAND_E flag from NAND chip
+[PATCH 2/3] mtd: sh_flctl: Add device tree support
+[PATCH 3/3] mtd: sh_flctl: Add sh7372 device tree config
+and is merged here to
+mtd: sh_flctl: Add device tree support
+
+Patch 1 can be omitted as SNAND_E is handled in the FLCTL source anyway
+correctly in set_cmd_regs() and the flag can be removed from existing board
+codes without this patch.
+Patch 2 without patch 3 may be confusing so I merged them too. Documentation
+is added as well.
+
+I've added linux-arm-kernel@lists.infradead.org as recipient for the
+device tree part.
+
+The patchset is based on
+l2-mtd	git://git.infradead.org/users/dedekind/l2-mtd.git
+with reverted commit e26c113b4130aefa1d8446602bb5b05cfd646bfe.
 
 
-> diff --git a/drivers/base/power/clock_ops.c b/drivers/base/power/clock_ops.c
-> index eb78e96..9d8fde7 100644
-> --- a/drivers/base/power/clock_ops.c
-> +++ b/drivers/base/power/clock_ops.c
-> @@ -99,7 +99,7 @@ static void __pm_clk_remove(struct pm_clock_entry *ce)
->  
->  	if (ce->status < PCE_STATUS_ERROR) {
->  		if (ce->status = PCE_STATUS_ENABLED)
-> -			clk_disable(ce->clk);
-> +			clk_disable_unprepare(ce->clk);
->  
->  		if (ce->status >= PCE_STATUS_ACQUIRED)
->  			clk_put(ce->clk);
-> @@ -396,7 +396,7 @@ static void enable_clock(struct device *dev, const char *con_id)
->  
->  	clk = clk_get(dev, con_id);
->  	if (!IS_ERR(clk)) {
-> -		clk_enable(clk);
-> +		clk_prepare_enable(clk);
->  		clk_put(clk);
->  		dev_info(dev, "Runtime PM disabled, clock forced on.\n");
->  	}
-> @@ -413,7 +413,7 @@ static void disable_clock(struct device *dev, const char *con_id)
->  
->  	clk = clk_get(dev, con_id);
->  	if (!IS_ERR(clk)) {
-> -		clk_disable(clk);
-> +		clk_disable_unprepare(clk);
->  		clk_put(clk);
->  		dev_info(dev, "Runtime PM disabled, clock forced off.\n");
->  	}
-> 
+Bastian Hecht (2):
+  mtd: sh_flctl: Add DMA capabilty
+  mtd: sh_flctl: Add device tree support
+
+ .../devicetree/bindings/mtd/flctl-nand.txt         |   37 +++
+ drivers/mtd/nand/sh_flctl.c                        |  266 +++++++++++++++++++-
+ include/linux/mtd/sh_flctl.h                       |   12 +
+ 3 files changed, 305 insertions(+), 10 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/mtd/flctl-nand.txt
+
 -- 
-I speak only for myself.
-Rafael J. Wysocki, Intel Open Source Technology Center.
+1.7.5.4
+
