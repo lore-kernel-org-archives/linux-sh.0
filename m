@@ -1,41 +1,34 @@
-From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Date: Wed, 24 Oct 2012 10:55:59 +0000
-Subject: [PATCH 0/5] i2c-sh_mobile non-urgent changes
-Message-Id: <5087C93F.6080601@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 22 Oct 2012 05:15:13 +0000
+Subject: [PATCH] ARM: shmobile: r8a7740: fixup DT machine desc name typo
+Message-Id: <87sj97rstd.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hello,
+r8a7740 machine desc name should be R8A7740,
+not SH7372
 
-This is the first batch to fix the i2c-sh_mobile driver.  As a first
-step, this comprises of the SCL optimization work and a simple fix to
-annoying spurious WAIT interrupt issue; in other words, this does not
-change tx/rx data handling logic.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/setup-r8a7740.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-This driver has an architectural problem with send/receive procedures
-and needs a fundamental overhaul.  I've been working on splitting into
-logical chunks, but not yet completed.
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 11bb1d9..9777e2d 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -747,7 +747,7 @@ static const char *r8a7740_boards_compat_dt[] __initdata = {
+ 	NULL,
+ };
+ 
+-DT_MACHINE_START(SH7372_DT, "Generic R8A7740 (Flattened Device Tree)")
++DT_MACHINE_START(R8A7740_DT, "Generic R8A7740 (Flattened Device Tree)")
+ 	.map_io		= r8a7740_map_io,
+ 	.init_early	= r8a7740_add_early_devices_dt,
+ 	.init_irq	= r8a7740_init_irq,
+-- 
+1.7.9.5
 
-Patches are prepared against the vanilla v3.6.  I don't have a chance
-to give it a try with v3.6+ kernels myself, but tend to be optimistic
-about that.  I have been cooking these patches over a year, and they
-work perfectly fine with older kernels ..v3.4 so far.
-
-
-Shinya Kuribayashi (5):
-      i2c: i2c-sh_mobile: calculate clock parameters at driver probing time
-      i2c: i2c-sh_mobile: optimize ICCH/ICCL values according to I2C bus speed
-      i2c: i2c-sh_mobile: fix ICCH to avoid violation of the tHD;STA timing spec
-      i2c: i2c-sh_mobile: support I2C hardware block with a faster operating clock
-      i2c: i2c-sh_mobile: fix spurious transfer request timed out
-
- drivers/i2c/busses/i2c-sh_mobile.c | 150 ++++++++++++++++++++++++-------------
- include/linux/i2c/i2c-sh_mobile.h  |   1 +
- 2 files changed, 98 insertions(+), 53 deletions(-)
-
---
-Shinya Kuribayashi
-Renesas Electronics
