@@ -1,7 +1,7 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 22 Oct 2012 12:55:33 +0000
+Date: Mon, 22 Oct 2012 12:59:05 +0000
 Subject: Re: [PATCH 1/2] media: V4L2: add temporary clock helpers
-Message-Id: <10639536.MyZHsyuauD@avalon>
+Message-Id: <8606973.tSZEGDGpZz@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1210192358520.28993@axis700.grange> <Pine.LNX.4.64.1210200007310.28993@axis700.grange>
 In-Reply-To: <Pine.LNX.4.64.1210200007310.28993@axis700.grange>
@@ -13,8 +13,7 @@ Cc: Linux Media Mailing List <linux-media@vger.kernel.org>, Hans Verkuil <hverku
 
 Hi Guennadi,
 
-Thanks for the patch. Here are a few comments in addition to what Sylwester 
-already mentioned.
+A couple more comments.
 
 On Saturday 20 October 2012 00:20:20 Guennadi Liakhovetski wrote:
 > Typical video devices like camera sensors require an external clock source.
@@ -119,6 +118,11 @@ On Saturday 20 October 2012 00:20:20 Guennadi Liakhovetski wrote:
 > +{
 > +	if (!clk->ops->enable)
 > +		return -ENOSYS;
+
+Are enable/disable supposed to be refcounted ? What about adding the refcount 
+(or a boolean enable field) to struct v4l2_clk and handling it here and in 
+v4l2_clk_disable() ?
+
 > +	return clk->ops->enable(clk);
 > +}
 > +EXPORT_SYMBOL(v4l2_clk_enable);
@@ -143,6 +147,10 @@ On Saturday 20 October 2012 00:20:20 Guennadi Liakhovetski wrote:
 > +	if (!clk->ops->set_rate)
 > +		return -ENOSYS;
 > +	return clk->ops->set_rate(clk, rate);
+
+What's the expected behaviour when calling v4l2_clk_get/set_rate on a disabled 
+clock ?
+
 > +}
 > +EXPORT_SYMBOL(v4l2_clk_set_rate);
 > +
@@ -162,13 +170,6 @@ On Saturday 20 October 2012 00:20:20 Guennadi Liakhovetski wrote:
 > +	clk->ops = ops;
 > +	clk->id = name;
 > +	clk->dev_id = dev_name;
-
-What about kstrdup() ing name and dev_name here ? Otherwise callers would need 
-to make sure that names are not stored in temporary locations (on the stack 
-for instance), leading to possibly difficult to debug crashes.
-
-We would then need a priv field in struct v4l2_clk/
-
 > +
 > +	mutex_lock(&clk_lock);
 > +	list_add_tail(&clk->list, &v4l2_clk);
@@ -217,9 +218,6 @@ We would then need a priv field in struct v4l2_clk/
 > +struct v4l2_clk {
 > +	struct list_head list;
 > +	const struct v4l2_clk_ops *ops;
-
-You should forward-declare struct v4l2_clk_ops.
-
 > +	const char *dev_id;
 > +	const char *id;
 > +};
