@@ -1,73 +1,60 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 17 Oct 2012 04:39:16 +0000
-Subject: [PATCH 05/10] ARM: mach-shmobile: add FLCTL DMA slave definitions for sh7372
-Message-Id: <1350448761-27346-6-git-send-email-horms@verge.net.au>
+From: wency@cn.fujitsu.com
+Date: Tue, 23 Oct 2012 10:30:44 +0000
+Subject: [PATCH v2 06/12] memory-hotplug: unregister memory section on SPARSEMEM_VMEMMAP
+Message-Id: <1350988250-31294-7-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1350448761-27346-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1350448761-27346-1-git-send-email-horms@verge.net.au>
+References: <1350988250-31294-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1350988250-31294-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
 
-From: Bastian Hecht <hechtb@googlemail.com>
+From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-SH7372 can use DMA with the FLCTL flash controller. Add required slave
-IDs and slave descriptors.
+Currently __remove_section for SPARSEMEM_VMEMMAP does nothing. But even if
+we use SPARSEMEM_VMEMMAP, we can unregister the memory_section.
 
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+So the patch add unregister_memory_section() into __remove_section().
+
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 ---
- arch/arm/mach-shmobile/include/mach/sh7372.h |    4 ++++
- arch/arm/mach-shmobile/setup-sh7372.c        |   20 ++++++++++++++++++++
- 2 files changed, 24 insertions(+)
+ mm/memory_hotplug.c |   13 ++++++++-----
+ 1 files changed, 8 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
-index eb98b45..d65fbbe 100644
---- a/arch/arm/mach-shmobile/include/mach/sh7372.h
-+++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
-@@ -452,6 +452,10 @@ enum {
- 	SHDMA_SLAVE_SCIF5_RX,
- 	SHDMA_SLAVE_SCIF6_TX,
- 	SHDMA_SLAVE_SCIF6_RX,
-+	SHDMA_SLAVE_FLCTL0_TX,
-+	SHDMA_SLAVE_FLCTL0_RX,
-+	SHDMA_SLAVE_FLCTL1_TX,
-+	SHDMA_SLAVE_FLCTL1_RX,
- 	SHDMA_SLAVE_SDHI0_RX,
- 	SHDMA_SLAVE_SDHI0_TX,
- 	SHDMA_SLAVE_SDHI1_RX,
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index a07954f..a360111 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -408,6 +408,26 @@ static const struct sh_dmae_slave_config sh7372_dmae_slaves[] = {
- 		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
- 		.mid_rid	= 0x3e,
- 	}, {
-+		.slave_id	= SHDMA_SLAVE_FLCTL0_TX,
-+		.addr		= 0xe6a30050,
-+		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0x83,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_FLCTL0_RX,
-+		.addr		= 0xe6a30050,
-+		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0x83,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_FLCTL1_TX,
-+		.addr		= 0xe6a30060,
-+		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0x87,
-+	}, {
-+		.slave_id	= SHDMA_SLAVE_FLCTL1_RX,
-+		.addr		= 0xe6a30060,
-+		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
-+		.mid_rid	= 0x87,
-+	}, {
- 		.slave_id	= SHDMA_SLAVE_SDHI0_TX,
- 		.addr		= 0xe6850030,
- 		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index ca07433..66a79a7 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -286,11 +286,14 @@ static int __meminit __add_section(int nid, struct zone *zone,
+ #ifdef CONFIG_SPARSEMEM_VMEMMAP
+ static int __remove_section(struct zone *zone, struct mem_section *ms)
+ {
+-	/*
+-	 * XXX: Freeing memmap with vmemmap is not implement yet.
+-	 *      This should be removed later.
+-	 */
+-	return -EBUSY;
++	int ret = -EINVAL;
++
++	if (!valid_section(ms))
++		return ret;
++
++	ret = unregister_memory_section(ms);
++
++	return ret;
+ }
+ #else
+ static int __remove_section(struct zone *zone, struct mem_section *ms)
 -- 
-1.7.10.4
+1.7.1
 
