@@ -1,236 +1,133 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Fri, 19 Oct 2012 10:15:36 +0000
-Subject: [PATCH v3 3/3] mtd: sh_flctl: Add device tree support
-Message-Id: <1350641736-18192-4-git-send-email-hechtb@gmail.com>
+From: wency@cn.fujitsu.com
+Date: Tue, 23 Oct 2012 10:30:40 +0000
+Subject: [PATCH v2 02/12] memory-hotplug: check whether all memory blocks are offlined or not when removing m
+Message-Id: <1350988250-31294-3-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1350641736-18192-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1350641736-18192-1-git-send-email-hechtb@gmail.com>
+References: <1350988250-31294-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1350988250-31294-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
 
-The flctl can now be probed via device tree setup in addition to the
-existing platform data way.
+From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-SoC specific setup data is set in the .data member of the OF match, so
-kept within the driver itself, while board/user specific setup - like
-partitioning - is taken from the device tree.
+We remove the memory like this:
+1. lock memory hotplug
+2. offline a memory block
+3. unlock memory hotplug
+4. repeat 1-3 to offline all memory blocks
+5. lock memory hotplug
+6. remove memory(TODO)
+7. unlock memory hotplug
 
-Actual configuration is added for the SoC sh7372.
+All memory blocks must be offlined before removing memory. But we don't hold
+the lock in the whole operation. So we should check whether all memory blocks
+are offlined before step6. Otherwise, kernel maybe panicked.
 
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 ---
-v3: Now a proper cleanup path is taken in case of a missing platform or
-faulty DT config. Fixes coccinelle and smatch errors from Artem's aiaiaia
-output.
+ drivers/base/memory.c          |    6 +++++
+ include/linux/memory_hotplug.h |    1 +
+ mm/memory_hotplug.c            |   47 ++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 54 insertions(+), 0 deletions(-)
 
- .../devicetree/bindings/mtd/flctl-nand.txt         |   49 ++++++++++
- drivers/mtd/nand/sh_flctl.c                        |   94 ++++++++++++++++++--
- 2 files changed, 136 insertions(+), 7 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/mtd/flctl-nand.txt
-
-diff --git a/Documentation/devicetree/bindings/mtd/flctl-nand.txt b/Documentation/devicetree/bindings/mtd/flctl-nand.txt
-new file mode 100644
-index 0000000..427f46d
---- /dev/null
-+++ b/Documentation/devicetree/bindings/mtd/flctl-nand.txt
-@@ -0,0 +1,49 @@
-+FLCTL NAND controller
-+
-+Required properties:
-+- compatible : "renesas,shmobile-flctl-sh7372"
-+- reg : Address range of the FLCTL
-+- interrupts : flste IRQ number
-+- nand-bus-width : bus width to NAND chip
-+
-+Optional properties:
-+- dmas: DMA specifier(s)
-+- dma-names: name for each DMA specifier. Valid names are
-+	     "data_tx", "data_rx", "ecc_tx", "ecc_rx"
-+
-+The DMA fields are not used yet in the driver but are listed here for
-+completing the bindings.
-+
-+The device tree may optionally contain sub-nodes describing partitions of the
-+address space. See partition.txt for more detail.
-+
-+Example:
-+
-+	flctl@e6a30000 {
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+		compatible = "renesas,shmobile-flctl-sh7372";
-+		reg = <0xe6a30000 0x100>;
-+		interrupts = <0x0d80>;
-+
-+		nand-bus-width = <16>;
-+
-+		dmas = <&dmac 1 /* data_tx */
-+			&dmac 2;> /* data_rx */
-+		dma-names = "data_tx", "data_rx";
-+
-+		system@0 {
-+			label = "system";
-+			reg = <0x0 0x8000000>;
-+		};
-+
-+		userdata@8000000 {
-+			label = "userdata";
-+			reg = <0x8000000 0x10000000>;
-+		};
-+
-+		cache@18000000 {
-+			label = "cache";
-+			reg = <0x18000000 0x8000000>;
-+		};
-+	};
-diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
-index 6dc0369..d51e3c1 100644
---- a/drivers/mtd/nand/sh_flctl.c
-+++ b/drivers/mtd/nand/sh_flctl.c
-@@ -29,6 +29,9 @@
- #include <linux/dma-mapping.h>
- #include <linux/interrupt.h>
- #include <linux/io.h>
-+#include <linux/of.h>
-+#include <linux/of_device.h>
-+#include <linux/of_mtd.h>
- #include <linux/platform_device.h>
- #include <linux/pm_runtime.h>
- #include <linux/sh_dma.h>
-@@ -1016,6 +1019,73 @@ static irqreturn_t flctl_handle_flste(int irq, void *dev_id)
- 	return IRQ_HANDLED;
+diff --git a/drivers/base/memory.c b/drivers/base/memory.c
+index 86c8821..badb025 100644
+--- a/drivers/base/memory.c
++++ b/drivers/base/memory.c
+@@ -675,6 +675,12 @@ int offline_memory_block(struct memory_block *mem)
+ 	return ret;
  }
  
-+#ifdef CONFIG_OF
-+struct flctl_soc_config {
-+	unsigned long flcmncr_val;
-+	unsigned has_hwecc:1;
-+	unsigned use_holden:1;
-+};
-+
-+static struct flctl_soc_config flctl_sh7372_config = {
-+	.flcmncr_val = CLK_16B_12L_4H | TYPESEL_SET | SHBUSSEL,
-+	.has_hwecc = 1,
-+	.use_holden = 1,
-+};
-+
-+static const struct of_device_id of_flctl_match[] = {
-+	{ .compatible = "renesas,shmobile-flctl-sh7372",
-+				.data = &flctl_sh7372_config },
-+	{},
-+};
-+MODULE_DEVICE_TABLE(of, of_flctl_match);
-+
-+static struct sh_flctl_platform_data *flctl_parse_dt(struct device *dev)
++/* return true if the memory block is offlined, otherwise, return false */
++bool is_memblock_offlined(struct memory_block *mem)
 +{
-+	const struct of_device_id *match;
-+	struct flctl_soc_config *config;
-+	struct sh_flctl_platform_data *pdata;
-+	struct device_node *dn = dev->of_node;
-+	int ret;
-+
-+	match = of_match_device(of_flctl_match, dev);
-+	if (match)
-+		config = (struct flctl_soc_config *)match->data;
-+	else {
-+		dev_err(dev, "%s: no OF configuration attached\n", __func__);
-+		return NULL;
-+	}
-+
-+	pdata = devm_kzalloc(dev, sizeof(struct sh_flctl_platform_data),
-+								GFP_KERNEL);
-+	if (!pdata) {
-+		dev_err(dev, "%s: failed to allocate config data\n", __func__);
-+		return NULL;
-+	}
-+
-+	/* set SoC specific options */
-+	pdata->flcmncr_val = config->flcmncr_val;
-+	pdata->has_hwecc = config->has_hwecc;
-+	pdata->use_holden = config->use_holden;
-+
-+	/* parse user defined options */
-+	ret = of_get_nand_bus_width(dn);
-+	if (ret = 16)
-+		pdata->flcmncr_val |= SEL_16BIT;
-+	else if (ret != 8) {
-+		dev_err(dev, "%s: invalid bus width\n", __func__);
-+		return NULL;
-+	}
-+
-+	return pdata;
++	return mem->state = MEM_OFFLINE;
 +}
-+#else /* CONFIG_OF */
-+#define of_flctl_match NULL
-+static struct sh_flctl_platform_data *flctl_parse_dt(struct device *dev)
-+{
-+	return NULL;
-+}
-+#endif /* CONFIG_OF */
 +
- static int __devinit flctl_probe(struct platform_device *pdev)
- {
- 	struct resource *res;
-@@ -1025,12 +1095,7 @@ static int __devinit flctl_probe(struct platform_device *pdev)
- 	struct sh_flctl_platform_data *pdata;
- 	int ret = -ENXIO;
- 	int irq;
--
--	pdata = pdev->dev.platform_data;
--	if (pdata = NULL) {
--		dev_err(&pdev->dev, "no platform data defined\n");
--		return -EINVAL;
--	}
-+	struct mtd_part_parser_data ppdata = {};
- 
- 	flctl = kzalloc(sizeof(struct sh_flctl), GFP_KERNEL);
- 	if (!flctl) {
-@@ -1062,6 +1127,17 @@ static int __devinit flctl_probe(struct platform_device *pdev)
- 		goto err_flste;
+ /*
+  * Initialize the sysfs support for memory devices...
+  */
+diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
+index 95573ec..38675e9 100644
+--- a/include/linux/memory_hotplug.h
++++ b/include/linux/memory_hotplug.h
+@@ -236,6 +236,7 @@ extern int add_memory(int nid, u64 start, u64 size);
+ extern int arch_add_memory(int nid, u64 start, u64 size);
+ extern int offline_pages(unsigned long start_pfn, unsigned long nr_pages);
+ extern int offline_memory_block(struct memory_block *mem);
++extern bool is_memblock_offlined(struct memory_block *mem);
+ extern int remove_memory(u64 start, u64 size);
+ extern int sparse_add_one_section(struct zone *zone, unsigned long start_pfn,
+ 								int nr_pages);
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index 600e200..f4fdedd 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -1061,6 +1061,53 @@ repeat:
+ 		goto repeat;
  	}
  
-+	if (pdev->dev.of_node)
-+		pdata = flctl_parse_dt(&pdev->dev);
-+	else
-+		pdata = pdev->dev.platform_data;
++	lock_memory_hotplug();
 +
-+	if (!pdata) {
-+		dev_err(&pdev->dev, "no setup data defined\n");
-+		ret = -EINVAL;
-+		goto err_pdata;
++	/*
++	 * we have offlined all memory blocks like this:
++	 *   1. lock memory hotplug
++	 *   2. offline a memory block
++	 *   3. unlock memory hotplug
++	 *
++	 * repeat step1-3 to offline the memory block. All memory blocks
++	 * must be offlined before removing memory. But we don't hold the
++	 * lock in the whole operation. So we should check whether all
++	 * memory blocks are offlined.
++	 */
++
++	for (pfn = start_pfn; pfn < end_pfn; pfn += PAGES_PER_SECTION) {
++		section_nr = pfn_to_section_nr(pfn);
++		if (!present_section_nr(section_nr))
++			continue;
++
++		section = __nr_to_section(section_nr);
++		/* same memblock? */
++		if (mem)
++			if ((section_nr >= mem->start_section_nr) &&
++			    (section_nr <= mem->end_section_nr))
++				continue;
++
++		mem = find_memory_block_hinted(section, mem);
++		if (!mem)
++			continue;
++
++		ret = is_memblock_offlined(mem);
++		if (!ret) {
++			pr_warn("removing memory fails, because memory "
++				"[%#010llx-%#010llx] is onlined\n",
++				PFN_PHYS(section_nr_to_pfn(mem->start_section_nr)),
++				PFN_PHYS(section_nr_to_pfn(mem->end_section_nr + 1)) - 1);
++
++			kobject_put(&mem->dev.kobj);
++			unlock_memory_hotplug();
++			return ret;
++		}
 +	}
 +
- 	platform_set_drvdata(pdev, flctl);
- 	flctl_mtd = &flctl->mtd;
- 	nand = &flctl->chip;
-@@ -1104,13 +1180,16 @@ static int __devinit flctl_probe(struct platform_device *pdev)
- 	if (ret)
- 		goto err_chip;
- 
--	mtd_device_register(flctl_mtd, pdata->parts, pdata->nr_parts);
-+	ppdata.of_node = pdev->dev.of_node;
-+	ret = mtd_device_parse_register(flctl_mtd, NULL, &ppdata, pdata->parts,
-+			pdata->nr_parts);
- 
++	if (mem)
++		kobject_put(&mem->dev.kobj);
++	unlock_memory_hotplug();
++
  	return 0;
- 
- err_chip:
- 	flctl_release_dma(flctl);
- 	pm_runtime_disable(&pdev->dev);
-+err_pdata:
- 	free_irq(irq, flctl);
- err_flste:
- 	iounmap(flctl->reg);
-@@ -1138,6 +1217,7 @@ static struct platform_driver flctl_driver = {
- 	.driver = {
- 		.name	= "sh_flctl",
- 		.owner	= THIS_MODULE,
-+		.of_match_table = of_flctl_match,
- 	},
- };
- 
+ }
+ #else
 -- 
-1.7.9.5
+1.7.1
 
