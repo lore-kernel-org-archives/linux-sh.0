@@ -1,72 +1,76 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 17 Oct 2012 04:39:12 +0000
-Subject: [PATCH 01/10] ARM: shmobile: r8a7740: Enable PMU
-Message-Id: <1350448761-27346-2-git-send-email-horms@verge.net.au>
+From: wency@cn.fujitsu.com
+Date: Tue, 23 Oct 2012 10:30:50 +0000
+Subject: [PATCH v2 12/12] memory-hotplug: free node_data when a node is offlined
+Message-Id: <1350988250-31294-13-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1350448761-27346-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1350448761-27346-1-git-send-email-horms@verge.net.au>
+References: <1350988250-31294-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1350988250-31294-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
 
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+From: Wen Congyang <wency@cn.fujitsu.com>
 
-This patch enables PMU for r8a7740.
+We call hotadd_new_pgdat() to allocate memory to store node_data. So we
+should free it when removing a node.
 
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+CC: Paul Mackerras <paulus@samba.org>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
 ---
- arch/arm/configs/armadillo800eva_defconfig |    1 +
- arch/arm/mach-shmobile/setup-r8a7740.c     |   16 ++++++++++++++++
- 2 files changed, 17 insertions(+)
+ mm/memory_hotplug.c |   20 +++++++++++++++++++-
+ 1 files changed, 19 insertions(+), 1 deletions(-)
 
-diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
-index f78d259..3d76407 100644
---- a/arch/arm/configs/armadillo800eva_defconfig
-+++ b/arch/arm/configs/armadillo800eva_defconfig
-@@ -7,6 +7,7 @@ CONFIG_LOG_BUF_SHIFT
- # CONFIG_IPC_NS is not set
- # CONFIG_PID_NS is not set
- CONFIG_CC_OPTIMIZE_FOR_SIZE=y
-+CONFIG_PERF_EVENTS=y
- CONFIG_SLAB=y
- CONFIG_MODULES=y
- CONFIG_MODULE_UNLOAD=y
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 11bb1d9..1e032cb 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -590,6 +590,21 @@ static struct platform_device i2c1_device = {
- 	.num_resources	= ARRAY_SIZE(i2c1_resources),
- };
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index b1fe41d..6b4cd53 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -1320,9 +1320,12 @@ static int check_cpu_on_node(void *data)
+ /* offline the node if all memory sections of this node are removed */
+ static void try_offline_node(int nid)
+ {
++	pg_data_t *pgdat = NODE_DATA(nid);
+ 	unsigned long start_pfn = NODE_DATA(nid)->node_start_pfn;
+-	unsigned long end_pfn = start_pfn + NODE_DATA(nid)->node_spanned_pages;
++	unsigned long end_pfn = start_pfn + pgdat->node_spanned_pages;
+ 	unsigned long pfn;
++	struct page *pgdat_page = virt_to_page(pgdat);
++	int i;
  
-+static struct resource pmu_resources[] = {
-+	[0] = {
-+		.start	= evt2irq(0x19a0),
-+		.end	= evt2irq(0x19a0),
-+		.flags  = IORESOURCE_IRQ,
-+	},
-+};
+ 	for (pfn = start_pfn; pfn < end_pfn; pfn += PAGES_PER_SECTION) {
+ 		unsigned long section_nr = pfn_to_section_nr(pfn);
+@@ -1349,6 +1352,21 @@ static void try_offline_node(int nid)
+ 	 */
+ 	node_set_offline(nid);
+ 	unregister_one_node(nid);
 +
-+static struct platform_device pmu_device = {
-+	.name	= "arm-pmu",
-+	.id		= -1,
-+	.num_resources = ARRAY_SIZE(pmu_resources),
-+	.resource = pmu_resources,
-+};
++	if (!PageSlab(pgdat_page) && !PageCompound(pgdat_page))
++		/* node data is allocated from boot memory */
++		return;
 +
- static struct platform_device *r8a7740_late_devices[] __initdata = {
- 	&i2c0_device,
- 	&i2c1_device,
-@@ -597,6 +612,7 @@ static struct platform_device *r8a7740_late_devices[] __initdata = {
- 	&dma1_device,
- 	&dma2_device,
- 	&usb_dma_device,
-+	&pmu_device,
- };
++	/* free waittable in each zone */
++	for (i = 0; i < MAX_NR_ZONES; i++) {
++		struct zone *zone = pgdat->node_zones + i;
++
++		if (zone->wait_table)
++			vfree(zone->wait_table);
++	}
++
++	arch_refresh_nodedata(nid, NULL);
++	arch_free_nodedata(pgdat);
+ }
  
- /*
+ int __ref remove_memory(int nid, u64 start, u64 size)
 -- 
-1.7.10.4
+1.7.1
 
