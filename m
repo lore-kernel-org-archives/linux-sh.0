@@ -1,430 +1,329 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 26 Oct 2012 13:38:51 +0000
-Subject: [PATCH v3 5/5] leds: Remove leds-renesas-tpu driver
-Message-Id: <1351258731-14111-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: wency@cn.fujitsu.com
+Date: Tue, 23 Oct 2012 10:30:46 +0000
+Subject: [PATCH v2 08/12] memory-hotplug: remove memmap of sparse-vmemmap
+Message-Id: <1350988250-31294-9-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1350988250-31294-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1350988250-31294-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+Cc: rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, Wen Congyang <wency@cn.fujitsu.com>
 
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-The driver is superseded by the generic rmob-tpu-pwm driver used with
-leds-pwm.
+All pages of virtual mapping in removed memory cannot be freed, since some pages
+used as PGD/PUD includes not only removed memory but also other memory. So the
+patch checks whether page can be freed or not.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+How to check whether page can be freed or not?
+ 1. When removing memory, the page structs of the revmoved memory are filled
+    with 0FD.
+ 2. All page structs are filled with 0xFD on PT/PMD, PT/PMD can be cleared.
+    In this case, the page used as PT/PMD can be freed.
+
+Applying patch, __remove_section() of CONFIG_SPARSEMEM_VMEMMAP is integrated
+into one. So __remove_section() of CONFIG_SPARSEMEM_VMEMMAP is deleted.
+
+Note:  vmemmap_kfree() and vmemmap_free_bootmem() are not implemented for ia64,
+ppc, s390, and sparc.
+
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 ---
- drivers/leds/Kconfig                           |   12 -
- drivers/leds/Makefile                          |    1 -
- drivers/leds/leds-renesas-tpu.c                |  341 ------------------------
- include/linux/platform_data/leds-renesas-tpu.h |   14 -
- 4 files changed, 0 insertions(+), 368 deletions(-)
- delete mode 100644 drivers/leds/leds-renesas-tpu.c
- delete mode 100644 include/linux/platform_data/leds-renesas-tpu.h
+ arch/ia64/mm/discontig.c  |    8 +++
+ arch/powerpc/mm/init_64.c |    8 +++
+ arch/s390/mm/vmem.c       |    8 +++
+ arch/sparc/mm/init_64.c   |    8 +++
+ arch/x86/mm/init_64.c     |  119 +++++++++++++++++++++++++++++++++++++++++++++
+ include/linux/mm.h        |    2 +
+ mm/memory_hotplug.c       |   17 +------
+ mm/sparse.c               |    5 +-
+ 8 files changed, 158 insertions(+), 17 deletions(-)
 
-diff --git a/drivers/leds/Kconfig b/drivers/leds/Kconfig
-index f508def..248e7f1 100644
---- a/drivers/leds/Kconfig
-+++ b/drivers/leds/Kconfig
-@@ -407,18 +407,6 @@ config LEDS_ASIC3
- 	  cannot be used. This driver supports hardware blinking with an on+off
- 	  period from 62ms to 125s. Say Y to enable LEDs on the HP iPAQ hx4700.
+diff --git a/arch/ia64/mm/discontig.c b/arch/ia64/mm/discontig.c
+index 33943db..0d23b69 100644
+--- a/arch/ia64/mm/discontig.c
++++ b/arch/ia64/mm/discontig.c
+@@ -823,6 +823,14 @@ int __meminit vmemmap_populate(struct page *start_page,
+ 	return vmemmap_populate_basepages(start_page, size, node);
+ }
  
--config LEDS_RENESAS_TPU
--	bool "LED support for Renesas TPU"
--	depends on LEDS_CLASS=y && HAVE_CLK && GENERIC_GPIO
--	help
--	  This option enables build of the LED TPU platform driver,
--	  suitable to drive any TPU channel on newer Renesas SoCs.
--	  The driver controls the GPIO pin connected to the LED via
--	  the GPIO framework and expects the LED to be connected to
--	  a pin that can be driven in both GPIO mode and using TPU
--	  pin function. The latter to support brightness control.
--	  Brightness control is supported but hardware blinking is not.
--
- config LEDS_TCA6507
- 	tristate "LED Support for TCA6507 I2C chip"
- 	depends on LEDS_CLASS && I2C
-diff --git a/drivers/leds/Makefile b/drivers/leds/Makefile
-index 3fb9641..7bdafc2 100644
---- a/drivers/leds/Makefile
-+++ b/drivers/leds/Makefile
-@@ -47,7 +47,6 @@ obj-$(CONFIG_LEDS_MC13783)		+= leds-mc13783.o
- obj-$(CONFIG_LEDS_NS2)			+= leds-ns2.o
- obj-$(CONFIG_LEDS_NETXBIG)		+= leds-netxbig.o
- obj-$(CONFIG_LEDS_ASIC3)		+= leds-asic3.o
--obj-$(CONFIG_LEDS_RENESAS_TPU)		+= leds-renesas-tpu.o
- obj-$(CONFIG_LEDS_MAX8997)		+= leds-max8997.o
- obj-$(CONFIG_LEDS_LM355x)		+= leds-lm355x.o
- obj-$(CONFIG_LEDS_BLINKM)		+= leds-blinkm.o
-diff --git a/drivers/leds/leds-renesas-tpu.c b/drivers/leds/leds-renesas-tpu.c
-deleted file mode 100644
-index 771ea06..0000000
---- a/drivers/leds/leds-renesas-tpu.c
-+++ /dev/null
-@@ -1,341 +0,0 @@
--/*
-- * LED control using Renesas TPU
-- *
-- *  Copyright (C) 2011 Magnus Damm
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; either version 2 of the License
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with this program; if not, write to the Free Software
-- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-- */
--
--#include <linux/module.h>
--#include <linux/init.h>
--#include <linux/platform_device.h>
--#include <linux/spinlock.h>
--#include <linux/printk.h>
--#include <linux/ioport.h>
--#include <linux/io.h>
--#include <linux/clk.h>
--#include <linux/leds.h>
--#include <linux/platform_data/leds-renesas-tpu.h>
--#include <linux/gpio.h>
--#include <linux/err.h>
--#include <linux/slab.h>
--#include <linux/pm_runtime.h>
--#include <linux/workqueue.h>
--
--enum r_tpu_pin { R_TPU_PIN_UNUSED, R_TPU_PIN_GPIO, R_TPU_PIN_GPIO_FN };
--enum r_tpu_timer { R_TPU_TIMER_UNUSED, R_TPU_TIMER_ON };
--
--struct r_tpu_priv {
--	struct led_classdev ldev;
--	void __iomem *mapbase;
--	struct clk *clk;
--	struct platform_device *pdev;
--	enum r_tpu_pin pin_state;
--	enum r_tpu_timer timer_state;
--	unsigned long min_rate;
--	unsigned int refresh_rate;
--	struct work_struct work;
--	enum led_brightness new_brightness;
--};
--
--static DEFINE_SPINLOCK(r_tpu_lock);
--
--#define TSTR -1 /* Timer start register (shared register) */
--#define TCR  0 /* Timer control register (+0x00) */
--#define TMDR 1 /* Timer mode register (+0x04) */
--#define TIOR 2 /* Timer I/O control register (+0x08) */
--#define TIER 3 /* Timer interrupt enable register (+0x0c) */
--#define TSR  4 /* Timer status register (+0x10) */
--#define TCNT 5 /* Timer counter (+0x14) */
--#define TGRA 6 /* Timer general register A (+0x18) */
--#define TGRB 7 /* Timer general register B (+0x1c) */
--#define TGRC 8 /* Timer general register C (+0x20) */
--#define TGRD 9 /* Timer general register D (+0x24) */
--
--static inline unsigned short r_tpu_read(struct r_tpu_priv *p, int reg_nr)
++void vmemmap_kfree(struct page *memmap, unsigned long nr_pages)
++{
++}
++
++void vmemmap_free_bootmem(struct page *memmap, unsigned long nr_pages)
++{
++}
++
+ void register_page_bootmem_memmap(unsigned long section_nr,
+ 				  struct page *start_page, unsigned long size)
+ {
+diff --git a/arch/powerpc/mm/init_64.c b/arch/powerpc/mm/init_64.c
+index 6466440..df7d155 100644
+--- a/arch/powerpc/mm/init_64.c
++++ b/arch/powerpc/mm/init_64.c
+@@ -298,6 +298,14 @@ int __meminit vmemmap_populate(struct page *start_page,
+ 	return 0;
+ }
+ 
++void vmemmap_kfree(struct page *memmap, unsigned long nr_pages)
++{
++}
++
++void vmemmap_free_bootmem(struct page *memmap, unsigned long nr_pages)
++{
++}
++
+ void register_page_bootmem_memmap(unsigned long section_nr,
+ 				  struct page *start_page, unsigned long size)
+ {
+diff --git a/arch/s390/mm/vmem.c b/arch/s390/mm/vmem.c
+index 4f4803a..ab69c34 100644
+--- a/arch/s390/mm/vmem.c
++++ b/arch/s390/mm/vmem.c
+@@ -236,6 +236,14 @@ out:
+ 	return ret;
+ }
+ 
++void vmemmap_kfree(struct page *memmap, unsigned long nr_pages)
++{
++}
++
++void vmemmap_free_bootmem(struct page *memmap, unsigned long nr_pages)
++{
++}
++
+ void register_page_bootmem_memmap(unsigned long section_nr,
+ 				  struct page *start_page, unsigned long size)
+ {
+diff --git a/arch/sparc/mm/init_64.c b/arch/sparc/mm/init_64.c
+index 75a984b..546855d 100644
+--- a/arch/sparc/mm/init_64.c
++++ b/arch/sparc/mm/init_64.c
+@@ -2232,6 +2232,14 @@ void __meminit vmemmap_populate_print_last(void)
+ 	}
+ }
+ 
++void vmemmap_kfree(struct page *memmap, unsigned long nr_pages)
++{
++}
++
++void vmemmap_free_bootmem(struct page *memmap, unsigned long nr_pages)
++{
++}
++
+ void register_page_bootmem_memmap(unsigned long section_nr,
+ 				  struct page *start_page, unsigned long size)
+ {
+diff --git a/arch/x86/mm/init_64.c b/arch/x86/mm/init_64.c
+index f1e2c21..73b1b6a 100644
+--- a/arch/x86/mm/init_64.c
++++ b/arch/x86/mm/init_64.c
+@@ -993,6 +993,125 @@ vmemmap_populate(struct page *start_page, unsigned long size, int node)
+ 	return 0;
+ }
+ 
++#define PAGE_INUSE 0xFD
++
++unsigned long find_and_clear_pte_page(unsigned long addr, unsigned long end,
++			    struct page **pp, int *page_size)
++{
++	pgd_t *pgd;
++	pud_t *pud;
++	pmd_t *pmd;
++	pte_t *pte = NULL;
++	void *page_addr;
++	unsigned long next;
++
++	*pp = NULL;
++
++	pgd = pgd_offset_k(addr);
++	if (pgd_none(*pgd))
++		return pgd_addr_end(addr, end);
++
++	pud = pud_offset(pgd, addr);
++	if (pud_none(*pud))
++		return pud_addr_end(addr, end);
++
++	if (!cpu_has_pse) {
++		next = (addr + PAGE_SIZE) & PAGE_MASK;
++		pmd = pmd_offset(pud, addr);
++		if (pmd_none(*pmd))
++			return next;
++
++		pte = pte_offset_kernel(pmd, addr);
++		if (pte_none(*pte))
++			return next;
++
++		*page_size = PAGE_SIZE;
++		*pp = pte_page(*pte);
++	} else {
++		next = pmd_addr_end(addr, end);
++
++		pmd = pmd_offset(pud, addr);
++		if (pmd_none(*pmd))
++			return next;
++
++		*page_size = PMD_SIZE;
++		*pp = pmd_page(*pmd);
++	}
++
++	/*
++	 * Removed page structs are filled with 0xFD.
++	 */
++	memset((void *)addr, PAGE_INUSE, next - addr);
++
++	page_addr = page_address(*pp);
++
++	/*
++	 * Check the page is filled with 0xFD or not.
++	 * memchr_inv() returns the address. In this case, we cannot
++	 * clear PTE/PUD entry, since the page is used by other.
++	 * So we cannot also free the page.
++	 *
++	 * memchr_inv() returns NULL. In this case, we can clear
++	 * PTE/PUD entry, since the page is not used by other.
++	 * So we can also free the page.
++	 */
++	if (memchr_inv(page_addr, PAGE_INUSE, *page_size)) {
++		*pp = NULL;
++		return next;
++	}
++
++	if (!cpu_has_pse)
++		pte_clear(&init_mm, addr, pte);
++	else
++		pmd_clear(pmd);
++
++	return next;
++}
++
++void vmemmap_kfree(struct page *memmap, unsigned long nr_pages)
++{
++	unsigned long addr = (unsigned long)memmap;
++	unsigned long end = (unsigned long)(memmap + nr_pages);
++	unsigned long next;
++	struct page *page;
++	int page_size;
++
++	for (; addr < end; addr = next) {
++		page = NULL;
++		page_size = 0;
++		next = find_and_clear_pte_page(addr, end, &page, &page_size);
++		if (!page)
++			continue;
++
++		free_pages((unsigned long)page_address(page),
++			    get_order(page_size));
++		__flush_tlb_one(addr);
++	}
++}
++
++void vmemmap_free_bootmem(struct page *memmap, unsigned long nr_pages)
++{
++	unsigned long addr = (unsigned long)memmap;
++	unsigned long end = (unsigned long)(memmap + nr_pages);
++	unsigned long next;
++	struct page *page;
++	int page_size;
++	unsigned long magic;
++
++	for (; addr < end; addr = next) {
++		page = NULL;
++		page_size = 0;
++		next = find_and_clear_pte_page(addr, end, &page, &page_size);
++		if (!page)
++			continue;
++
++		magic = (unsigned long) page->lru.next;
++		if (magic = SECTION_INFO)
++			put_page_bootmem(page);
++		flush_tlb_kernel_range(addr, end);
++	}
++}
++
+ void register_page_bootmem_memmap(unsigned long section_nr,
+ 				  struct page *start_page, unsigned long size)
+ {
+diff --git a/include/linux/mm.h b/include/linux/mm.h
+index 8e5a56f..42b8723 100644
+--- a/include/linux/mm.h
++++ b/include/linux/mm.h
+@@ -1642,6 +1642,8 @@ int vmemmap_populate(struct page *start_page, unsigned long pages, int node);
+ void vmemmap_populate_print_last(void);
+ void register_page_bootmem_memmap(unsigned long section_nr, struct page *map,
+ 				  unsigned long size);
++void vmemmap_kfree(struct page *memmpa, unsigned long nr_pages);
++void vmemmap_free_bootmem(struct page *memmpa, unsigned long nr_pages);
+ 
+ enum mf_flags {
+ 	MF_COUNT_INCREASED = 1 << 0,
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index db9806c..03153cf 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -312,19 +312,6 @@ static int __meminit __add_section(int nid, struct zone *zone,
+ 	return register_new_memory(nid, __pfn_to_section(phys_start_pfn));
+ }
+ 
+-#ifdef CONFIG_SPARSEMEM_VMEMMAP
+-static int __remove_section(struct zone *zone, struct mem_section *ms)
 -{
--	struct led_renesas_tpu_config *cfg = p->pdev->dev.platform_data;
--	void __iomem *base = p->mapbase;
--	unsigned long offs = reg_nr << 2;
+-	int ret = -EINVAL;
 -
--	if (reg_nr = TSTR)
--		return ioread16(base - cfg->channel_offset);
--
--	return ioread16(base + offs);
--}
--
--static inline void r_tpu_write(struct r_tpu_priv *p, int reg_nr,
--			       unsigned short value)
--{
--	struct led_renesas_tpu_config *cfg = p->pdev->dev.platform_data;
--	void __iomem *base = p->mapbase;
--	unsigned long offs = reg_nr << 2;
--
--	if (reg_nr = TSTR) {
--		iowrite16(value, base - cfg->channel_offset);
--		return;
--	}
--
--	iowrite16(value, base + offs);
--}
--
--static void r_tpu_start_stop_ch(struct r_tpu_priv *p, int start)
--{
--	struct led_renesas_tpu_config *cfg = p->pdev->dev.platform_data;
--	unsigned long flags, value;
--
--	/* start stop register shared by multiple timer channels */
--	spin_lock_irqsave(&r_tpu_lock, flags);
--	value = r_tpu_read(p, TSTR);
--
--	if (start)
--		value |= 1 << cfg->timer_bit;
--	else
--		value &= ~(1 << cfg->timer_bit);
--
--	r_tpu_write(p, TSTR, value);
--	spin_unlock_irqrestore(&r_tpu_lock, flags);
--}
--
--static int r_tpu_enable(struct r_tpu_priv *p, enum led_brightness brightness)
--{
--	struct led_renesas_tpu_config *cfg = p->pdev->dev.platform_data;
--	int prescaler[] = { 1, 4, 16, 64 };
--	int k, ret;
--	unsigned long rate, tmp;
--
--	if (p->timer_state = R_TPU_TIMER_ON)
--		return 0;
--
--	/* wake up device and enable clock */
--	pm_runtime_get_sync(&p->pdev->dev);
--	ret = clk_enable(p->clk);
--	if (ret) {
--		dev_err(&p->pdev->dev, "cannot enable clock\n");
+-	if (!valid_section(ms))
 -		return ret;
--	}
 -
--	/* make sure channel is disabled */
--	r_tpu_start_stop_ch(p, 0);
+-	ret = unregister_memory_section(ms);
 -
--	/* get clock rate after enabling it */
--	rate = clk_get_rate(p->clk);
--
--	/* pick the lowest acceptable rate */
--	for (k = 0; k < ARRAY_SIZE(prescaler); k++)
--		if ((rate / prescaler[k]) < p->min_rate)
--			break;
--
--	if (!k) {
--		dev_err(&p->pdev->dev, "clock rate mismatch\n");
--		goto err0;
--	}
--	dev_dbg(&p->pdev->dev, "rate = %lu, prescaler %u\n",
--		rate, prescaler[k - 1]);
--
--	/* clear TCNT on TGRB match, count on rising edge, set prescaler */
--	r_tpu_write(p, TCR, 0x0040 | (k - 1));
--
--	/* output 0 until TGRA, output 1 until TGRB */
--	r_tpu_write(p, TIOR, 0x0002);
--
--	rate /= prescaler[k - 1] * p->refresh_rate;
--	r_tpu_write(p, TGRB, rate);
--	dev_dbg(&p->pdev->dev, "TRGB = 0x%04lx\n", rate);
--
--	tmp = (cfg->max_brightness - brightness) * rate;
--	r_tpu_write(p, TGRA, tmp / cfg->max_brightness);
--	dev_dbg(&p->pdev->dev, "TRGA = 0x%04lx\n", tmp / cfg->max_brightness);
--
--	/* PWM mode */
--	r_tpu_write(p, TMDR, 0x0002);
--
--	/* enable channel */
--	r_tpu_start_stop_ch(p, 1);
--
--	p->timer_state = R_TPU_TIMER_ON;
--	return 0;
-- err0:
--	clk_disable(p->clk);
--	pm_runtime_put_sync(&p->pdev->dev);
--	return -ENOTSUPP;
--}
--
--static void r_tpu_disable(struct r_tpu_priv *p)
--{
--	if (p->timer_state = R_TPU_TIMER_UNUSED)
--		return;
--
--	/* disable channel */
--	r_tpu_start_stop_ch(p, 0);
--
--	/* stop clock and mark device as idle */
--	clk_disable(p->clk);
--	pm_runtime_put_sync(&p->pdev->dev);
--
--	p->timer_state = R_TPU_TIMER_UNUSED;
--}
--
--static void r_tpu_set_pin(struct r_tpu_priv *p, enum r_tpu_pin new_state,
--			  enum led_brightness brightness)
--{
--	struct led_renesas_tpu_config *cfg = p->pdev->dev.platform_data;
--
--	if (p->pin_state = new_state) {
--		if (p->pin_state = R_TPU_PIN_GPIO)
--			gpio_set_value(cfg->pin_gpio, brightness);
--		return;
--	}
--
--	if (p->pin_state = R_TPU_PIN_GPIO)
--		gpio_free(cfg->pin_gpio);
--
--	if (p->pin_state = R_TPU_PIN_GPIO_FN)
--		gpio_free(cfg->pin_gpio_fn);
--
--	if (new_state = R_TPU_PIN_GPIO) {
--		gpio_request(cfg->pin_gpio, cfg->name);
--		gpio_direction_output(cfg->pin_gpio, !!brightness);
--	}
--	if (new_state = R_TPU_PIN_GPIO_FN)
--		gpio_request(cfg->pin_gpio_fn, cfg->name);
--
--	p->pin_state = new_state;
--}
--
--static void r_tpu_work(struct work_struct *work)
--{
--	struct r_tpu_priv *p = container_of(work, struct r_tpu_priv, work);
--	enum led_brightness brightness = p->new_brightness;
--
--	r_tpu_disable(p);
--
--	/* off and maximum are handled as GPIO pins, in between PWM */
--	if ((brightness = 0) || (brightness = p->ldev.max_brightness))
--		r_tpu_set_pin(p, R_TPU_PIN_GPIO, brightness);
--	else {
--		r_tpu_set_pin(p, R_TPU_PIN_GPIO_FN, 0);
--		r_tpu_enable(p, brightness);
--	}
--}
--
--static void r_tpu_set_brightness(struct led_classdev *ldev,
--				 enum led_brightness brightness)
--{
--	struct r_tpu_priv *p = container_of(ldev, struct r_tpu_priv, ldev);
--	p->new_brightness = brightness;
--	schedule_work(&p->work);
--}
--
--static int __devinit r_tpu_probe(struct platform_device *pdev)
--{
--	struct led_renesas_tpu_config *cfg = pdev->dev.platform_data;
--	struct r_tpu_priv *p;
--	struct resource *res;
--	int ret;
--
--	if (!cfg) {
--		dev_err(&pdev->dev, "missing platform data\n");
--		return -ENODEV;
--	}
--
--	p = devm_kzalloc(&pdev->dev, sizeof(*p), GFP_KERNEL);
--	if (p = NULL) {
--		dev_err(&pdev->dev, "failed to allocate driver data\n");
--		return -ENOMEM;
--	}
--
--	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
--	if (!res) {
--		dev_err(&pdev->dev, "failed to get I/O memory\n");
--		return -ENXIO;
--	}
--
--	/* map memory, let mapbase point to our channel */
--	p->mapbase = ioremap_nocache(res->start, resource_size(res));
--	if (p->mapbase = NULL) {
--		dev_err(&pdev->dev, "failed to remap I/O memory\n");
--		return -ENXIO;
--	}
--
--	/* get hold of clock */
--	p->clk = clk_get(&pdev->dev, NULL);
--	if (IS_ERR(p->clk)) {
--		dev_err(&pdev->dev, "cannot get clock\n");
--		ret = PTR_ERR(p->clk);
--		goto err0;
--	}
--
--	p->pdev = pdev;
--	p->pin_state = R_TPU_PIN_UNUSED;
--	p->timer_state = R_TPU_TIMER_UNUSED;
--	p->refresh_rate = cfg->refresh_rate ? cfg->refresh_rate : 100;
--	r_tpu_set_pin(p, R_TPU_PIN_GPIO, LED_OFF);
--	platform_set_drvdata(pdev, p);
--
--	INIT_WORK(&p->work, r_tpu_work);
--
--	p->ldev.name = cfg->name;
--	p->ldev.brightness = LED_OFF;
--	p->ldev.max_brightness = cfg->max_brightness;
--	p->ldev.brightness_set = r_tpu_set_brightness;
--	p->ldev.flags |= LED_CORE_SUSPENDRESUME;
--	ret = led_classdev_register(&pdev->dev, &p->ldev);
--	if (ret < 0)
--		goto err1;
--
--	/* max_brightness may be updated by the LED core code */
--	p->min_rate = p->ldev.max_brightness * p->refresh_rate;
--
--	pm_runtime_enable(&pdev->dev);
--	return 0;
--
-- err1:
--	r_tpu_set_pin(p, R_TPU_PIN_UNUSED, LED_OFF);
--	clk_put(p->clk);
-- err0:
--	iounmap(p->mapbase);
 -	return ret;
 -}
--
--static int __devexit r_tpu_remove(struct platform_device *pdev)
--{
--	struct r_tpu_priv *p = platform_get_drvdata(pdev);
--
--	r_tpu_set_brightness(&p->ldev, LED_OFF);
--	led_classdev_unregister(&p->ldev);
--	cancel_work_sync(&p->work);
--	r_tpu_disable(p);
--	r_tpu_set_pin(p, R_TPU_PIN_UNUSED, LED_OFF);
--
--	pm_runtime_disable(&pdev->dev);
--	clk_put(p->clk);
--
--	iounmap(p->mapbase);
+-#else
+ static int __remove_section(struct zone *zone, struct mem_section *ms)
+ {
+ 	unsigned long flags;
+@@ -341,9 +328,9 @@ static int __remove_section(struct zone *zone, struct mem_section *ms)
+ 	pgdat_resize_lock(pgdat, &flags);
+ 	sparse_remove_one_section(zone, ms);
+ 	pgdat_resize_unlock(pgdat, &flags);
 -	return 0;
--}
--
--static struct platform_driver r_tpu_device_driver = {
--	.probe		= r_tpu_probe,
--	.remove		= __devexit_p(r_tpu_remove),
--	.driver		= {
--		.name	= "leds-renesas-tpu",
--	}
--};
--
--module_platform_driver(r_tpu_device_driver);
--
--MODULE_AUTHOR("Magnus Damm");
--MODULE_DESCRIPTION("Renesas TPU LED Driver");
--MODULE_LICENSE("GPL v2");
-diff --git a/include/linux/platform_data/leds-renesas-tpu.h b/include/linux/platform_data/leds-renesas-tpu.h
-deleted file mode 100644
-index 0553870..0000000
---- a/include/linux/platform_data/leds-renesas-tpu.h
-+++ /dev/null
-@@ -1,14 +0,0 @@
--#ifndef __LEDS_RENESAS_TPU_H__
--#define __LEDS_RENESAS_TPU_H__
--
--struct led_renesas_tpu_config {
--	char *name;
--	unsigned pin_gpio_fn;
--	unsigned pin_gpio;
--	unsigned int channel_offset;
--	unsigned int timer_bit;
--	unsigned int max_brightness;
--	unsigned int refresh_rate;
--};
--
--#endif /* __LEDS_RENESAS_TPU_H__ */
++
++	return ret;
+ }
+-#endif
+ 
+ /*
+  * Reasonably generic function for adding memory.  It is
+diff --git a/mm/sparse.c b/mm/sparse.c
+index fac95f2..ab9d755 100644
+--- a/mm/sparse.c
++++ b/mm/sparse.c
+@@ -613,12 +613,13 @@ static inline struct page *kmalloc_section_memmap(unsigned long pnum, int nid,
+ 	/* This will make the necessary allocations eventually. */
+ 	return sparse_mem_map_populate(pnum, nid);
+ }
+-static void __kfree_section_memmap(struct page *memmap, unsigned long nr_pages)
++static void __kfree_section_memmap(struct page *page, unsigned long nr_pages)
+ {
+-	return; /* XXX: Not implemented yet */
++	vmemmap_kfree(page, nr_pages);
+ }
+ static void free_map_bootmem(struct page *page, unsigned long nr_pages)
+ {
++	vmemmap_free_bootmem(page, nr_pages);
+ }
+ #else
+ static struct page *__kmalloc_section_memmap(unsigned long nr_pages)
 -- 
-1.7.8.6
+1.7.1
 
