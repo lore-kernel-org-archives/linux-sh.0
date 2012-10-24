@@ -1,94 +1,68 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Mon, 15 Oct 2012 06:35:58 +0000
-Subject: [GIT PULL] sh updates for 3.7-rc2
-Message-Id: <20121015063557.GB32566@linux-sh.org>
+From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Date: Wed, 24 Oct 2012 10:57:51 +0000
+Subject: [PATCH 3/5] i2c: i2c-sh_mobile: fix ICCH to avoid violation of the tHD;STA timing spec
+Message-Id: <5087C9AF.409@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <5087C93F.6080601@renesas.com>
+In-Reply-To: <5087C93F.6080601@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The following changes since commit ddffeb8c4d0331609ef2581d84de4d763607bd37:
+The optimized ICCH/ICCL values in the previous commit afterward turned
+out to violate tHD;STA timing spec.  We had to take into account the
+fall time of SDA signal (tf) at START condition.  Fix it accordingly.
 
-  Linux 3.7-rc1 (2012-10-14 14:41:04 -0700)
+With this change, sh_mobile_i2c_icch() is virtually identical to
+sh_mobile_i2c_iccl(), but they're providing good descriptions of
+SH-/R-Mobile I2C hardware spec, and I'd leave them as separated.
 
-are available in the git repository at:
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+---
+ drivers/i2c/busses/i2c-sh_mobile.c | 13 +++++++++----
+ 1 file changed, 9 insertions(+), 4 deletions(-)
 
-  git://github.com/pmundt/linux-sh tags/sh-for-linus
+diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
+index 1ad80c9..4dc0cc3 100644
+--- a/drivers/i2c/busses/i2c-sh_mobile.c
++++ b/drivers/i2c/busses/i2c-sh_mobile.c
+@@ -203,18 +203,23 @@ static u32 sh_mobile_i2c_iccl(unsigned long count_khz, u32 tLOW, u32 tf, int off
+ 	return (((count_khz * (tLOW + tf)) + 5000) / 10000) + offset;
+ }
+ 
+-static u32 sh_mobile_i2c_icch(unsigned long count_khz, u32 tHIGH, int offset)
++static u32 sh_mobile_i2c_icch(unsigned long count_khz, u32 tHIGH, u32 tf, int offset)
+ {
+ 	/*
+ 	 * Conditional expression:
+-	 *   ICCH >= COUNT_CLK * tHIGH
++	 *   ICCH >= COUNT_CLK * (tHIGH + tf)
+ 	 *
+ 	 * SH-Mobile IIC hardware is aware of SCL transition period 'tr',
+ 	 * and can ignore it.  SH-Mobile IIC controller starts counting
+ 	 * the HIGH period of the SCL signal (tHIGH) after the SCL input
+ 	 * voltage increases at VIH.
++	 *
++	 * Afterward it turned out calculating ICCH using only tHIGH spec
++	 * will result in violation of the tHD;STA timing spec.  We need
++	 * to take into account the fall time of SDA signal (tf) at START
++	 * condition, in order to meet both tHIGH and tHD;STA specs.
+ 	 */
+-	return ((count_khz * tHIGH) + 5000) / 10000 + offset;
++	return (((count_khz * (tHIGH + tf)) + 5000) / 10000) + offset;
+ }
+ 
+ static void sh_mobile_i2c_init(struct sh_mobile_i2c_data *pd)
+@@ -250,7 +255,7 @@ static void sh_mobile_i2c_init(struct sh_mobile_i2c_data *pd)
+ 	else
+ 		pd->icic &= ~ICIC_ICCLB8;
+ 
+-	pd->icch = sh_mobile_i2c_icch(i2c_clk_khz, tHIGH, offset);
++	pd->icch = sh_mobile_i2c_icch(i2c_clk_khz, tHIGH, tf, offset);
+ 	/* one more bit of ICCH in ICIC */
+ 	if ((pd->icch > 0xff) && (pd->flags & IIC_FLAG_HAS_ICIC67))
+ 		pd->icic |= ICIC_ICCHB8;
+-- 
+1.7.12.4
 
-for you to fetch changes up to 0dd4d5cbe4c38165dc9b3ad329ebb23f24d74fdb:
-
-  sh: Fix up more fallout from pointless ARM __iomem churn. (2012-10-15 14:08:48 +0900)
-
-----------------------------------------------------------------
-SuperH updates for 3.7-rc2
-
-----------------------------------------------------------------
-David Howells (1):
-      UAPI: (Scripted) Disintegrate arch/sh/include/asm
-
-Paul Mundt (3):
-      Merge tag 'disintegrate-sh-20121009' of git://git.infradead.org/users/dhowells/linux-headers into sh-latest
-      sh: Wire up kcmp syscall.
-      sh: Fix up more fallout from pointless ARM __iomem churn.
-
- arch/sh/include/asm/Kbuild                      | 11 ----
- arch/sh/include/asm/hw_breakpoint.h             |  4 +-
- arch/sh/include/asm/posix_types.h               |  8 ---
- arch/sh/include/asm/ptrace.h                    | 34 +----------
- arch/sh/include/asm/ptrace_32.h                 | 75 +-----------------------
- arch/sh/include/asm/ptrace_64.h                 | 12 +---
- arch/sh/include/asm/setup.h                     |  5 +-
- arch/sh/include/asm/types.h                     |  5 +-
- arch/sh/include/asm/unistd.h                    |  9 +--
- arch/sh/include/uapi/asm/Kbuild                 | 22 +++++++
- arch/sh/include/{ => uapi}/asm/auxvec.h         |  0
- arch/sh/include/{ => uapi}/asm/byteorder.h      |  0
- arch/sh/include/{ => uapi}/asm/cachectl.h       |  0
- arch/sh/include/{ => uapi}/asm/cpu-features.h   |  0
- arch/sh/include/{ => uapi}/asm/ioctls.h         |  0
- arch/sh/include/uapi/asm/posix_types.h          |  7 +++
- arch/sh/include/{ => uapi}/asm/posix_types_32.h |  0
- arch/sh/include/{ => uapi}/asm/posix_types_64.h |  0
- arch/sh/include/uapi/asm/ptrace.h               | 34 +++++++++++
- arch/sh/include/uapi/asm/ptrace_32.h            | 77 +++++++++++++++++++++++++
- arch/sh/include/uapi/asm/ptrace_64.h            | 14 +++++
- arch/sh/include/uapi/asm/setup.h                |  1 +
- arch/sh/include/{ => uapi}/asm/sigcontext.h     |  0
- arch/sh/include/{ => uapi}/asm/signal.h         |  0
- arch/sh/include/{ => uapi}/asm/sockios.h        |  0
- arch/sh/include/{ => uapi}/asm/stat.h           |  0
- arch/sh/include/{ => uapi}/asm/swab.h           |  0
- arch/sh/include/uapi/asm/types.h                |  1 +
- arch/sh/include/uapi/asm/unistd.h               |  7 +++
- arch/sh/include/{ => uapi}/asm/unistd_32.h      |  3 +-
- arch/sh/include/{ => uapi}/asm/unistd_64.h      |  3 +-
- arch/sh/kernel/syscalls_32.S                    |  1 +
- arch/sh/kernel/syscalls_64.S                    |  1 +
- drivers/sh/intc/access.c                        | 45 +++++++++------
- drivers/sh/intc/chip.c                          |  4 +-
- drivers/tty/serial/sh-sci.c                     |  3 +-
- 36 files changed, 210 insertions(+), 176 deletions(-)
- rename arch/sh/include/{ => uapi}/asm/auxvec.h (100%)
- rename arch/sh/include/{ => uapi}/asm/byteorder.h (100%)
- rename arch/sh/include/{ => uapi}/asm/cachectl.h (100%)
- rename arch/sh/include/{ => uapi}/asm/cpu-features.h (100%)
- create mode 100644 arch/sh/include/uapi/asm/hw_breakpoint.h
- rename arch/sh/include/{ => uapi}/asm/ioctls.h (100%)
- create mode 100644 arch/sh/include/uapi/asm/posix_types.h
- rename arch/sh/include/{ => uapi}/asm/posix_types_32.h (100%)
- rename arch/sh/include/{ => uapi}/asm/posix_types_64.h (100%)
- create mode 100644 arch/sh/include/uapi/asm/ptrace.h
- create mode 100644 arch/sh/include/uapi/asm/ptrace_32.h
- create mode 100644 arch/sh/include/uapi/asm/ptrace_64.h
- create mode 100644 arch/sh/include/uapi/asm/setup.h
- rename arch/sh/include/{ => uapi}/asm/sigcontext.h (100%)
- rename arch/sh/include/{ => uapi}/asm/signal.h (100%)
- rename arch/sh/include/{ => uapi}/asm/sockios.h (100%)
- rename arch/sh/include/{ => uapi}/asm/stat.h (100%)
- rename arch/sh/include/{ => uapi}/asm/swab.h (100%)
- create mode 100644 arch/sh/include/uapi/asm/types.h
- create mode 100644 arch/sh/include/uapi/asm/unistd.h
- rename arch/sh/include/{ => uapi}/asm/unistd_32.h (99%)
- rename arch/sh/include/{ => uapi}/asm/unistd_64.h (99%)
