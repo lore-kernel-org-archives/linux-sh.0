@@ -1,42 +1,30 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 17 Oct 2012 04:36:24 +0000
-Subject: [PATCH 1/2] ARM: shmobile: armadillo800eva: __io abuse cleanup
-Message-Id: <1350448585-26403-2-git-send-email-horms@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 24 Oct 2012 10:49:50 +0000
+Subject: [Q] "console=" command line ignored?
+Message-Id: <Pine.LNX.4.64.1210241226060.31768@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1350448585-26403-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1350448585-26403-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: Joe Perches <joe@perches.com>, linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hi
 
-a2a47ca36642e3995e982957bc42678cf11ca6ac
-(ARM: __io abuse cleanup) cleanuped __io() -> IOMEM(),
-but armadillo800eva was a outside of a target,
-since "merge window" timing issue.
-This patch cleanup it.
+I cannot seem to force selection of a serial console by specifying 
+"console=ttySC0..." on the command line with modern (yesterday's "next") 
+kernels. The kernel insists on
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+console [tty0] enabled
+
+The reason might also well be, that the respective "sh-sci" driver is 
+only registered later. I'll try to look at this in more detail - since 
+when this is broken and how the registration order looked before. This is 
+just a first heads-up in case someone has a solution immediately at hand.
+
+Thanks
+Guennadi
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 2912eab..3cc8b1c 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1196,7 +1196,7 @@ static void __init eva_init(void)
- 
- #ifdef CONFIG_CACHE_L2X0
- 	/* Early BRESP enable, Shared attribute override enable, 32K*8way */
--	l2x0_init(__io(0xf0002000), 0x40440000, 0x82000fff);
-+	l2x0_init(IOMEM(0xf0002000), 0x40440000, 0x82000fff);
- #endif
- 
- 	i2c_register_board_info(0, i2c0_devices, ARRAY_SIZE(i2c0_devices));
--- 
-1.7.10.4
-
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
