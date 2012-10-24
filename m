@@ -1,56 +1,104 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 15 Oct 2012 01:49:56 +0000
-Subject: [README] mach-shmobile changes for 3.8
-Message-Id: <20121015014956.GD20403@verge.net.au>
+From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Date: Wed, 24 Oct 2012 10:56:51 +0000
+Subject: [PATCH 1/5] i2c: i2c-sh_mobile: calculate clock parameters at driver probing time
+Message-Id: <5087C973.4010305@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <5087C93F.6080601@renesas.com>
+In-Reply-To: <5087C93F.6080601@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+Currently SCL clock parameters (ICCH/ICCL) are calculated in
+activate_ch(), which gets called every time sh_mobile_i2c_xfer() is
+processed, while each I2C bus speed is system-defined and in general
+those parameters do not have to be updated over I2C transactions.
 
-I would like to provide everyone with an update of the status
-of my renesas tree and thus patches for mach-shmobile.
+The only reason I could see having it transaction-time is to adjust
+ICCH/ICCL values according to the operating frequency of the I2C
+hardware block, in the face of DFS (Dynamic Frequency Scaling).
 
-git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git
+However, this won't be necessary.
 
+The operating frequency of the I2C hardware block can change _even_
+in the middle of I2C transactions.  There is no way to prevent it
+from happening, and I2C hardware block can work with such dynamic
+frequency change, of course.
 
-Status:
+Another is that ICCH/ICCL clock parameters optimized for the faster
+operating frequency, can also be applied to the slower operating
+frequency, as long as slave devices work.  However, the converse is
+not true.  It would violate SCL timing specs of the I2C standard.
 
-* I have rebased the branches of my tree on top of v3.7-rc1.
+What we can do now is to calculate the ICCH/ICCL clock parameters
+according to the fastest operating clock of the I2C hardware block.
+And if that's the case, that calculation should be done just once
+at driver-module-init time.
 
-* I have applied all patches that I am aware of.
+This patch moves ICCH/ICCL calculating part from activate_ch() into
+sh_mobile_i2c_init(), and call it from sh_mobile_i2c_probe().
 
-  If you have patches outstanding then please check the next branch.
-  If your patch is not there then please either repost it or ping me.
+Note that sh_mobile_i2c_init() just prepares clock parameters using
+the clock rate and platform data provided, but does _not_ make any
+hardware I/O accesses.  We don't have to care about run-time PM
+maintenance here.
 
-* I plan to start sending pull-requests to soc-arm (upstream)
-  later this week. And to send subsequent pull-requests as necessary.
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+---
+ drivers/i2c/busses/i2c-sh_mobile.c | 18 +++++++++++++-----
+ 1 file changed, 13 insertions(+), 5 deletions(-)
 
+diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
+index 8110ca4..309d0d5 100644
+--- a/drivers/i2c/busses/i2c-sh_mobile.c
++++ b/drivers/i2c/busses/i2c-sh_mobile.c
+@@ -187,18 +187,15 @@ static void iic_set_clr(struct sh_mobile_i2c_data *pd, int offs,
+ 	iic_wr(pd, offs, (iic_rd(pd, offs) | set) & ~clr);
+ }
+ 
+-static void activate_ch(struct sh_mobile_i2c_data *pd)
++static void sh_mobile_i2c_init(struct sh_mobile_i2c_data *pd)
+ {
+ 	unsigned long i2c_clk;
+ 	u_int32_t num;
+ 	u_int32_t denom;
+ 	u_int32_t tmp;
+ 
+-	/* Wake up device and enable clock */
+-	pm_runtime_get_sync(pd->dev);
+-	clk_enable(pd->clk);
+-
+ 	/* Get clock rate after clock is enabled */
++	clk_enable(pd->clk);
+ 	i2c_clk = clk_get_rate(pd->clk);
+ 
+ 	/* Calculate the value for iccl. From the data sheet:
+@@ -239,6 +236,15 @@ static void activate_ch(struct sh_mobile_i2c_data *pd)
+ 			pd->icic &= ~ICIC_ICCHB8;
+ 	}
+ 
++	clk_disable(pd->clk);
++}
++
++static void activate_ch(struct sh_mobile_i2c_data *pd)
++{
++	/* Wake up device and enable clock */
++	pm_runtime_get_sync(pd->dev);
++	clk_enable(pd->clk);
++
+ 	/* Enable channel and configure rx ack */
+ 	iic_set_clr(pd, ICCR, ICCR_ICE, 0);
+ 
+@@ -632,6 +638,8 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
+ 	if (size > 0x17)
+ 		pd->flags |= IIC_FLAG_HAS_ICIC67;
+ 
++	sh_mobile_i2c_init(pd);
++
+ 	/* Enable Runtime PM for this device.
+ 	 *
+ 	 * Also tell the Runtime PM core to ignore children
+-- 
+1.7.12.4
 
-Guidance for Developers:
-
-* Fixes for 3.7
-
-  + Please post fixes for 3.7 if/when you have them so that
-    I can apply them to the fixes branch and endeavour to have
-    them included in 3.7.
-
-  + Please clearly mark if a patch is a fix and intended for 3.7
-
-* Non-fixes (for 3.8)
-
-  + All non-fixes should be targeted for 3.8 and should have been
-    posted, reviewed and merged by me by the time 3.7-rc5 is released.
-
-  + Please post early and often, this will give me the best chance
-    of getting your changes included. A flood of patches just
-    before 3.7-rc5 is not the path of least resistance.
-
-* Please include the following on the To/Cc list of patches that
-  you wish to be reviewed and considered for merging.
-
-  + linux-sh@vger.kernel.org
-  + linux-arm-kernel@lists.infradead.org
-  + Simon Horman <horms@verge.net.au>
