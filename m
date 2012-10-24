@@ -1,37 +1,93 @@
-From: "Do Q.Thang" <dq-thang@jinso.co.jp>
-Date: Tue, 02 Oct 2012 03:41:31 +0000
-Subject: Re: [PATCH] ASoC: fixup simple-card probe order
-Message-Id: <506A626B.4030404@jinso.co.jp>
+From: Bastian Hecht <hechtb@googlemail.com>
+Date: Wed, 24 Oct 2012 08:54:18 +0000
+Subject: [PATCH 3/3] ARM: shmobile: r8a7779: Replace modify_scu_cpu_psr with scu_power_mode
+Message-Id: <1351068858-7255-4-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5068E775.7040601@jinso.co.jp> <20121001100154.GA4360@opensource.wolfsonmicro.com>
-In-Reply-To: <20121001100154.GA4360@opensource.wolfsonmicro.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Cc: alsa-devel@alsa-project.org, linux-sh@vger.kernel.org, Simon Horman <horms@verge.net.au>
+To: linux-sh@vger.kernel.org
 
-On 10/01/2012 07:01 PM, Mark Brown wrote:
-> On Mon, Oct 01, 2012 at 09:44:37AM +0900, Do Q.Thang wrote:
->> Hi all,
->>
->> KZM-A9-GT board and Armadillo-800eva board use the asoc-simple-card.
->> but probe of this sound card needs the fsi-dai's registered before.
->> So this message appear in the bootlog.
->>
->> " asoc-simple-card asoc-simple-card.0: CPU DAI fsia-dai not registered
->> platform asoc-simple-card.0: Driver asoc-simple-card requests probe
->> deferral "
->>
->> The asoc-simple-card was probed while fsi-dai probe hasn't run yet.
->> So asoc-simple-card probe deferral is requested.
->> I think the simple-card should be probed after the fsi-dai probe.
->> I think this patch can fix this issue.
->>
->> What do you think about this?
-> The above is normal and expected behaviour, there is no issue here.
->
+We can remove the extra code of modify_scu_cpu_psr() and use the cleaner
+generic ARM helper scu_power_mode(). As every CPU only deals with its
+own power register and scu_power_mode() operates with 8-bit accesses,
+we save the locking overhead too.
 
-thanks.
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+---
+ arch/arm/mach-shmobile/smp-r8a7779.c |   25 +++----------------------
+ 1 file changed, 3 insertions(+), 22 deletions(-)
 
+diff --git a/arch/arm/mach-shmobile/smp-r8a7779.c b/arch/arm/mach-shmobile/smp-r8a7779.c
+index 2ce6af9..9def0f2 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7779.c
++++ b/arch/arm/mach-shmobile/smp-r8a7779.c
+@@ -61,9 +61,6 @@ static void __iomem *scu_base_addr(void)
+ 	return (void __iomem *)0xf0000000;
+ }
+ 
+-static DEFINE_SPINLOCK(scu_lock);
+-static unsigned long tmp;
+-
+ #ifdef CONFIG_HAVE_ARM_TWD
+ static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, 0xf0000600, 29);
+ 
+@@ -73,20 +70,6 @@ void __init r8a7779_register_twd(void)
+ }
+ #endif
+ 
+-static void modify_scu_cpu_psr(unsigned long set, unsigned long clr)
+-{
+-	void __iomem *scu_base = scu_base_addr();
+-
+-	spin_lock(&scu_lock);
+-	tmp = __raw_readl(scu_base + 8);
+-	tmp &= ~clr;
+-	tmp |= set;
+-	spin_unlock(&scu_lock);
+-
+-	/* disable cache coherency after releasing the lock */
+-	__raw_writel(tmp, scu_base + 8);
+-}
+-
+ static unsigned int __init r8a7779_get_core_count(void)
+ {
+ 	void __iomem *scu_base = scu_base_addr();
+@@ -102,7 +85,7 @@ static int r8a7779_platform_cpu_kill(unsigned int cpu)
+ 	cpu = cpu_logical_map(cpu);
+ 
+ 	/* disable cache coherency */
+-	modify_scu_cpu_psr(3 << (cpu * 8), 0);
++	scu_power_mode(scu_base_addr(), 3);
+ 
+ 	if (cpu < ARRAY_SIZE(r8a7779_ch_cpu))
+ 		ch = r8a7779_ch_cpu[cpu];
+@@ -145,7 +128,7 @@ static int __cpuinit r8a7779_boot_secondary(unsigned int cpu, struct task_struct
+ 	cpu = cpu_logical_map(cpu);
+ 
+ 	/* enable cache coherency */
+-	modify_scu_cpu_psr(0, 3 << (cpu * 8));
++	scu_power_mode(scu_base_addr(), 0);
+ 
+ 	if (cpu < ARRAY_SIZE(r8a7779_ch_cpu))
+ 		ch = r8a7779_ch_cpu[cpu];
+@@ -158,15 +141,13 @@ static int __cpuinit r8a7779_boot_secondary(unsigned int cpu, struct task_struct
+ 
+ static void __init r8a7779_smp_prepare_cpus(unsigned int max_cpus)
+ {
+-	int cpu = cpu_logical_map(0);
+-
+ 	scu_enable(scu_base_addr());
+ 
+ 	/* Map the reset vector (in headsmp.S) */
+ 	__raw_writel(__pa(shmobile_secondary_vector), AVECR);
+ 
+ 	/* enable cache coherency on CPU0 */
+-	modify_scu_cpu_psr(0, 3 << (cpu * 8));
++	scu_power_mode(scu_base_addr(), 0);
+ 
+ 	r8a7779_pm_init();
+ 
+-- 
+1.7.9.5
 
