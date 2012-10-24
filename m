@@ -1,66 +1,73 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 31 Oct 2012 05:57:25 +0000
-Subject: [PATCH 4/3] ARM: shmobile: r8a7740: add FSI-DVI clocks
-Message-Id: <878vanmbem.wl%kuninori.morimoto.gx@renesas.com>
+From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Date: Wed, 24 Oct 2012 10:58:10 +0000
+Subject: [PATCH 4/5] i2c: i2c-sh_mobile: support I2C hardware block with a faster operating clock
+Message-Id: <5087C9C2.7010000@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <5087C93F.6080601@renesas.com>
+In-Reply-To: <5087C93F.6080601@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On newer SH-/R-Mobile SoCs, a clock supply to the I2C hardware block,
+which is used to generate the SCL clock output, is getting faster than
+before, while on the other hand, the SCL clock control registers, ICCH
+and ICCL, stay unchanged in 9-bit-wide (8+1).
+
+On such silicons, the internal SCL clock counter gets incremented every
+2 clocks of the operating clock.
+
+This patch makes it configurable through platform data.
+
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7740.c |   16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
+ drivers/i2c/busses/i2c-sh_mobile.c | 5 +++++
+ include/linux/i2c/i2c-sh_mobile.h  | 1 +
+ 2 files changed, 6 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index 6729e00..71ee224 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -65,6 +65,9 @@
- #define SMSTPCR3	IOMEM(0xe615013c)
- #define SMSTPCR4	IOMEM(0xe6150140)
+diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
+index 4dc0cc3..4c28358 100644
+--- a/drivers/i2c/busses/i2c-sh_mobile.c
++++ b/drivers/i2c/busses/i2c-sh_mobile.c
+@@ -120,6 +120,7 @@ struct sh_mobile_i2c_data {
+ 	void __iomem *reg;
+ 	struct i2c_adapter adap;
+ 	unsigned long bus_speed;
++	unsigned int clks_per_count;
+ 	struct clk *clk;
+ 	u_int8_t icic;
+ 	u_int8_t flags;
+@@ -231,6 +232,7 @@ static void sh_mobile_i2c_init(struct sh_mobile_i2c_data *pd)
+ 	/* Get clock rate after clock is enabled */
+ 	clk_enable(pd->clk);
+ 	i2c_clk_khz = clk_get_rate(pd->clk) / 1000;
++	i2c_clk_khz /= pd->clks_per_count;
  
-+#define FSIDIVA		IOMEM(0xFE1F8000)
-+#define FSIDIVB		IOMEM(0xFE1F8008)
-+
- /* Fixed 32 KHz root clock from EXTALR pin */
- static struct clk extalr_clk = {
- 	.rate	= 32768,
-@@ -427,6 +430,14 @@ static struct clk *late_main_clks[] = {
- 	&hdmi2_clk,
+ 	if (pd->bus_speed = STANDARD_MODE) {
+ 		tLOW	= 47;	/* tLOW = 4.7 us */
+@@ -658,6 +660,9 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
+ 	pd->bus_speed = STANDARD_MODE;
+ 	if (pdata && pdata->bus_speed)
+ 		pd->bus_speed = pdata->bus_speed;
++	pd->clks_per_count = 1;
++	if (pdata && pdata->clks_per_count)
++		pd->clks_per_count = pdata->clks_per_count;
+ 
+ 	/* The IIC blocks on SH-Mobile ARM processors
+ 	 * come with two new bits in ICIC.
+diff --git a/include/linux/i2c/i2c-sh_mobile.h b/include/linux/i2c/i2c-sh_mobile.h
+index beda708..06e3089 100644
+--- a/include/linux/i2c/i2c-sh_mobile.h
++++ b/include/linux/i2c/i2c-sh_mobile.h
+@@ -5,6 +5,7 @@
+ 
+ struct i2c_sh_mobile_platform_data {
+ 	unsigned long bus_speed;
++	unsigned int clks_per_count;
  };
  
-+/* FSI DIV */
-+enum { FSIDIV_A, FSIDIV_B, FSIDIV_REPARENT_NR };
-+
-+static struct clk fsidivs[] = {
-+	[FSIDIV_A] = SH_CLK_FSIDIV(FSIDIVA, &div6_reparent_clks[DIV6_FSIA]),
-+	[FSIDIV_B] = SH_CLK_FSIDIV(FSIDIVB, &div6_reparent_clks[DIV6_FSIB]),
-+};
-+
- /* MSTP */
- enum {
- 	DIV4_I, DIV4_ZG, DIV4_B, DIV4_M1, DIV4_HP,
-@@ -596,6 +607,8 @@ static struct clk_lookup lookups[] = {
- 
- 	CLKDEV_ICK_ID("icka", "sh_fsi2",	&div6_reparent_clks[DIV6_FSIA]),
- 	CLKDEV_ICK_ID("ickb", "sh_fsi2",	&div6_reparent_clks[DIV6_FSIB]),
-+	CLKDEV_ICK_ID("diva", "sh_fsi2",	&fsidivs[FSIDIV_A]),
-+	CLKDEV_ICK_ID("divb", "sh_fsi2",	&fsidivs[FSIDIV_B]),
- };
- 
- void __init r8a7740_clock_init(u8 md_ck)
-@@ -641,6 +654,9 @@ void __init r8a7740_clock_init(u8 md_ck)
- 	for (k = 0; !ret && (k < ARRAY_SIZE(late_main_clks)); k++)
- 		ret = clk_register(late_main_clks[k]);
- 
-+	if (!ret)
-+		ret = sh_clk_fsidiv_register(fsidivs, FSIDIV_REPARENT_NR);
-+
- 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
- 
- 	if (!ret)
+ #endif /* __I2C_SH_MOBILE_H__ */
 -- 
-1.7.9.5
+1.7.12.4
 
