@@ -1,289 +1,507 @@
-From: Sylwester Nawrocki <s.nawrocki@samsung.com>
-Date: Wed, 24 Oct 2012 12:00:15 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 24 Oct 2012 13:54:20 +0000
 Subject: Re: [PATCH 2/2] media: V4L2: support asynchronous subdevice registration
-Message-Id: <5087D84F.6050407@samsung.com>
+Message-Id: <Pine.LNX.4.64.1210241548300.2683@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1210192358520.28993@axis700.grange>
- <201210221354.44944.hverkuil@xs4all.nl>
- <Pine.LNX.4.64.1210221421020.26216@axis700.grange>
- <201210221536.03112.hverkuil@xs4all.nl>
- <Pine.LNX.4.64.1210221553390.26216@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1210221553390.26216@axis700.grange>
+ <Pine.LNX.4.64.1210200007580.28993@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1210200007580.28993@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Hans Verkuil <hverkuil@xs4all.nl>, Linux Media Mailing List <linux-media@vger.kernel.org>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Linux Media Mailing List <linux-media@vger.kernel.org>
 
-Hi Gueanndi,
+Hi Greg
 
-On 10/22/2012 04:48 PM, Guennadi Liakhovetski wrote:
-> On Mon, 22 Oct 2012, Hans Verkuil wrote:
->> On Mon October 22 2012 14:50:14 Guennadi Liakhovetski wrote:
->>> On Mon, 22 Oct 2012, Hans Verkuil wrote:
->>>> On Mon October 22 2012 13:08:12 Guennadi Liakhovetski wrote:
->>>>> On Mon, 22 Oct 2012, Hans Verkuil wrote:
->>>>>> On Sat October 20 2012 00:20:24 Guennadi Liakhovetski wrote:
->>>>>>> Currently bridge device drivers register devices for all subdevices
->>>>>>> synchronously, tupically, during their probing. E.g. if an I2C CMOS sensor
->>>>>>> is attached to a video bridge device, the bridge driver will create an I2C
->>>>>>> device and wait for the respective I2C driver to probe. This makes linking
->>>>>>> of devices straight forward, but this approach cannot be used with
->>>>>>> intrinsically asynchronous and unordered device registration systems like
->>>>>>> the Flattened Device Tree. To support such systems this patch adds an
->>>>>>> asynchronous subdevice registration framework to V4L2. To use it respective
->>>>>>> (e.g. I2C) subdevice drivers must request deferred probing as long as their
->>>>>>> bridge driver hasn't probed. The bridge driver during its probing submits a
->>>>>>> an arbitrary number of subdevice descriptor groups to the framework to
->>>>>>> manage. After that it can add callbacks to each of those groups to be
->>>>>>> called at various stages during subdevice probing, e.g. after completion.
->>>>>>> Then the bridge driver can request single groups to be probed, finish its
->>>>>>> own probing and continue its video subsystem configuration from its
->>>>>>> callbacks.
->>>>>>
->>>>>> What is the purpose of allowing multiple groups?
->>>>>
->>>>> To support, e.g. multiple sensors connected to a single bridge.
->>>>
->>>> So, isn't that one group with two sensor subdevs?
->>>
->>> No, one group consists of all subdevices, necessary to operate a single 
->>> video pipeline. A simple group only contains a sensor. More complex groups 
->>> can contain a CSI-2 interface, a line shifter, or anything else.
->>
->> Why? Why would you want to wait for completion of multiple groups? You need all
->> subdevs to be registered. If you split them up in multiple groups, then you
->> have to wait until all those groups have completed, which only makes the bridge
->> driver more complex. It adds nothing to the problem that we're trying to solve.
-> 
-> I see it differently. Firstly, there's no waiting. Secondly, you don't 
-> need all of them. With groups as soon as one group is complete you can 
-> start using it. If you require all your subdevices to complete their 
-> probing before you can use anything. In fact, some subdevices might never 
-> probe, but groups, that don't need them can be used regardless.
+On Sat, 20 Oct 2012, Guennadi Liakhovetski wrote:
 
-Isn't that host drivers that create video and subdev devnodes (directly or
-indirectly) when all required devices according to platform data or device tree
-structure are initialized ? I would expect a driver to respond to user requests
-only when it is fully initialized. Or in a known state, that e.g. something has
-failed and there is no (or nearly none) chance to get everything complete
-and then a host driver can decide if it continues with limited functionality 
-or not. After all subdev probing shouldn't be relatively significantly time 
-consuming.
+> Currently bridge device drivers register devices for all subdevices
+> synchronously, tupically, during their probing. E.g. if an I2C CMOS sensor
+> is attached to a video bridge device, the bridge driver will create an I2C
+> device and wait for the respective I2C driver to probe. This makes linking
+> of devices straight forward, but this approach cannot be used with
+> intrinsically asynchronous and unordered device registration systems like
+> the Flattened Device Tree. To support such systems this patch adds an
+> asynchronous subdevice registration framework to V4L2. To use it respective
+> (e.g. I2C) subdevice drivers must request deferred probing as long as their
+> bridge driver hasn't probed. The bridge driver during its probing submits a
+> an arbitrary number of subdevice descriptor groups to the framework to
+> manage. After that it can add callbacks to each of those groups to be
+> called at various stages during subdevice probing, e.g. after completion.
+> Then the bridge driver can request single groups to be probed, finish its
+> own probing and continue its video subsystem configuration from its
+> callbacks.
+> 
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
->>>> A bridge driver has a list of subdevs. There is no concept of 'groups'. Perhaps
->>>> I misunderstand?
->>>
->>> Well, we have a group ID, which can be used for what I'm proposing groups 
->>> for. At least on soc-camera we use the group ID exactly for this purpose. 
->>> We attach all subdevices to a V4L2 device, but assign group IDs according 
->>> to pipelines. Then subdevice operations only act on members of one 
->>> pipeline. I know that we currently don't specify precisely what that group 
->>> ID should be used for in general. So, this my group concept is an 
->>> extension of what we currently have in V4L2.
->>
->> How the grp_id field is used is entirely up to the bridge driver. It may not
->> be used at all, it may uniquely identify each subdev, it may put each subdev
->> in a particular group and perhaps a single subdev might belong to multiple
->> groups. There is no standard concept of a group. It's just a simple method
->> (actually, more of a hack) of allowing bridge drivers to call ops for some
->> subset of the sub-devices.
-> 
-> Yes, I know, at least it's something that loosely indicates a group 
-> concept in the current code:-)
-> 
->> Frankly, I wonder if most of the drivers that use grp_id actually need it at
->> all.
->>
->> Just drop the group concept, things can be simplified quite a bit without it.
-> 
-> So far I think we should keep it. Also think about our DT layout. A bridge 
-> can have several ports each with multiple links (maybe it has already been 
-> decided to change names, don't remember by heart, sorry). Each of them 
-> would then start a group.
+Sorry, I did indeed forget to include you on CC for this patch as promised 
+in https://lkml.org/lkml/2012/10/17/306. In the patch below just look for 
+the only occurrance of the device_release_driver() / device_attach(). In 
+your mail you said, that only bus drivers should do this. In fact this is 
+indeed what is happening here. A device is attached to two busses: 
+(typically) I2C and "media." And the code below is called when the device 
+is detached from the media bus.
 
-Hmm, until now I can see it mostly as a complication. How would those
-groups be defined, who decides what device goes where ? I think it might
-be difficult to even assign devices to such groups.
+Thanks
+Guennadi
 
->>>>>> I can't think of any reason
->>>>>> why you would want to have more than one group. If you have just one group
->>>>>> you can simplify this code quite a bit: most of the v4l2_async_group fields
->>>>>> can just become part of struct v4l2_device, you don't need the 'list' and
->>>>>> 'v4l2_dev' fields anymore and the 'bind' and 'complete' callbacks can be
->>>>>> implemented using the v4l2_device notify callback which we already have.
->>>>>>
->>>>>>>
->>>>>>> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
->>>>>>> ---
->>>>>>>
->>>>>>> One more thing to note about this patch. Subdevice drivers, supporting 
->>>>>>> asynchronous probing, and using this framework, need a unified way to 
->>>>>>> detect, whether their probing should succeed or they should request 
->>>>>>> deferred probing. I implement this using device platform data. This means, 
->>>>>>> that all subdevice drivers, wishing to use this API will have to use the 
->>>>>>> same platform data struct. I don't think this is a major inconvenience, 
->>>>>>> but if we decide against this, we'll have to add a V4L2 function to verify 
->>>>>>> "are you ready for me or not." The latter would be inconvenient, because 
->>>>>>> then we would have to look through all registered subdevice descriptor 
->>>>>>> groups for this specific subdevice.
->>>>>>
->>>>>> I have to admit that I don't quite follow this. I guess I would need to see
->>>>>> this being used in an actual driver.
->>>>>
->>>>> The issue is simple: subdevice drivers have to recognise, when it's still 
->>>>> too early to probe and return -EPROBE_DEFER. If you have a sensor, whose 
->>>>> master clock is supplied from an external oscillator. You load its driver, 
->>>>> it will happily get a clock reference and find no reason to fail probe(). 
->>>>> It will initialise its subdevice and return from probing. Then, when your 
->>>>> bridge driver probes, it will have no way to find that subdevice.
->>>>
->>>> This problem is specific to platform subdev drivers, right? Since for i2c
->>>> subdevs you can use i2c_get_clientdata().
->>>
->>> But how do you get the client? With DT you can follow our "remote" 
->>> phandle, and without DT?
->>
->> You would need a i2c_find_client() function for that. I would like to see some
->> more opinions about this.
+> ---
 > 
-> And then the same for SPI, UART... and platform devices cannot use it 
-> anyway... Why not just handle all uniformly?
+> One more thing to note about this patch. Subdevice drivers, supporting 
+> asynchronous probing, and using this framework, need a unified way to 
+> detect, whether their probing should succeed or they should request 
+> deferred probing. I implement this using device platform data. This means, 
+> that all subdevice drivers, wishing to use this API will have to use the 
+> same platform data struct. I don't think this is a major inconvenience, 
+> but if we decide against this, we'll have to add a V4L2 function to verify 
+> "are you ready for me or not." The latter would be inconvenient, because 
+> then we would have to look through all registered subdevice descriptor 
+> groups for this specific subdevice.
+> 
+>  drivers/media/v4l2-core/Makefile      |    3 +-
+>  drivers/media/v4l2-core/v4l2-async.c  |  249 +++++++++++++++++++++++++++++++++
+>  drivers/media/v4l2-core/v4l2-device.c |    2 +
+>  include/media/v4l2-async.h            |   88 ++++++++++++
+>  include/media/v4l2-device.h           |    6 +
+>  include/media/v4l2-subdev.h           |   16 ++
+>  6 files changed, 363 insertions(+), 1 deletions(-)
+>  create mode 100644 drivers/media/v4l2-core/v4l2-async.c
+>  create mode 100644 include/media/v4l2-async.h
+> 
+> diff --git a/drivers/media/v4l2-core/Makefile b/drivers/media/v4l2-core/Makefile
+> index cb5fede..074e01c 100644
+> --- a/drivers/media/v4l2-core/Makefile
+> +++ b/drivers/media/v4l2-core/Makefile
+> @@ -5,7 +5,8 @@
+>  tuner-objs	:=	tuner-core.o
+>  
+>  videodev-objs	:=	v4l2-dev.o v4l2-ioctl.o v4l2-device.o v4l2-fh.o \
+> -			v4l2-event.o v4l2-ctrls.o v4l2-subdev.o v4l2-clk.o
+> +			v4l2-event.o v4l2-ctrls.o v4l2-subdev.o v4l2-clk.o \
+> +			v4l2-async.o
+>  ifeq ($(CONFIG_COMPAT),y)
+>    videodev-objs += v4l2-compat-ioctl32.o
+>  endif
+> diff --git a/drivers/media/v4l2-core/v4l2-async.c b/drivers/media/v4l2-core/v4l2-async.c
+> new file mode 100644
+> index 0000000..871f116
+> --- /dev/null
+> +++ b/drivers/media/v4l2-core/v4l2-async.c
+> @@ -0,0 +1,249 @@
+> +/*
+> + * V4L2 asynchronous subdevice registration API
+> + *
+> + * Copyright (C) 2012, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> + *
+> + * This program is free software; you can redistribute it and/or modify
+> + * it under the terms of the GNU General Public License version 2 as
+> + * published by the Free Software Foundation.
+> + */
+> +
+> +#include <linux/device.h>
+> +#include <linux/err.h>
+> +#include <linux/i2c.h>
+> +#include <linux/list.h>
+> +#include <linux/module.h>
+> +#include <linux/mutex.h>
+> +#include <linux/notifier.h>
+> +#include <linux/platform_device.h>
+> +#include <linux/slab.h>
+> +#include <linux/types.h>
+> +
+> +#include <media/v4l2-async.h>
+> +#include <media/v4l2-device.h>
+> +#include <media/v4l2-subdev.h>
+> +
+> +static bool match_i2c(struct device *dev, struct v4l2_async_hw_device *hw_dev)
+> +{
+> +	struct i2c_client *client = to_i2c_client(dev);
+> +	return hw_dev->bus_type = V4L2_ASYNC_BUS_I2C &&
+> +		hw_dev->match.i2c.adapter_id = client->adapter->nr &&
+> +		hw_dev->match.i2c.address = client->addr;
+> +}
+> +
+> +static bool match_platform(struct device *dev, struct v4l2_async_hw_device *hw_dev)
+> +{
+> +	return hw_dev->bus_type = V4L2_ASYNC_BUS_PLATFORM &&
+> +		!strcmp(hw_dev->match.platform.name, dev_name(dev));
+> +}
+> +
+> +/*
+> + * I think, notifiers on different busses can run concurrently, so, we have to
+> + * protect common data, e.g. sub-device lists.
+> + */
+> +static int async_notifier_cb(struct v4l2_async_group *group,
+> +		unsigned long action, struct device *dev,
+> +		bool (*match)(struct device *, struct v4l2_async_hw_device *))
+> +{
+> +	struct v4l2_device *v4l2_dev = group->v4l2_dev;
+> +	struct v4l2_async_subdev *asd;
+> +	bool done;
+> +	int ret;
+> +
+> +	if (action != BUS_NOTIFY_BOUND_DRIVER &&
+> +	    action != BUS_NOTIFY_BIND_DRIVER)
+> +		return NOTIFY_DONE;
+> +
+> +	/* Asynchronous: have to lock */
+> +	mutex_lock(&v4l2_dev->group_lock);
+> +
+> +	list_for_each_entry(asd, &group->group, list) {
+> +		if (match(dev, &asd->hw))
+> +			break;
+> +	}
+> +
+> +	if (&asd->list = &group->group) {
+> +		/* Not our device */
+> +		mutex_unlock(&v4l2_dev->group_lock);
+> +		return NOTIFY_DONE;
+> +	}
+> +
+> +	asd->dev = dev;
+> +
+> +	if (action = BUS_NOTIFY_BIND_DRIVER) {
+> +		/*
+> +		 * Provide platform data to the driver: it can complete probing
+> +		 * now.
+> +		 */
+> +		dev->platform_data = &asd->sdpd;
+> +		mutex_unlock(&v4l2_dev->group_lock);
+> +		if (group->bind_cb)
+> +			group->bind_cb(group, asd);
+> +		return NOTIFY_OK;
+> +	}
+> +
+> +	/* BUS_NOTIFY_BOUND_DRIVER */
+> +	if (asd->hw.bus_type = V4L2_ASYNC_BUS_I2C)
+> +		asd->sdpd.subdev = i2c_get_clientdata(to_i2c_client(dev));
+> +	/*
+> +	 * Non-I2C subdevice drivers should take care to assign their subdevice
+> +	 * pointers
+> +	 */
+> +	ret = v4l2_device_register_subdev(v4l2_dev,
+> +					  asd->sdpd.subdev);
+> +	if (ret < 0) {
+> +		mutex_unlock(&v4l2_dev->group_lock);
+> +		/* FIXME: error, clean up world? */
+> +		dev_err(dev, "Failed registering a subdev: %d\n", ret);
+> +		return NOTIFY_OK;
+> +	}
+> +	list_move(&asd->list, &group->done);
+> +
+> +	/* Client probed & all subdev drivers collected */
+> +	done = list_empty(&group->group);
+> +
+> +	mutex_unlock(&v4l2_dev->group_lock);
+> +
+> +	if (group->bound_cb)
+> +		group->bound_cb(group, asd);
+> +
+> +	if (done && group->complete_cb)
+> +		group->complete_cb(group);
+> +
+> +	return NOTIFY_OK;
+> +}
+> +
+> +static int platform_cb(struct notifier_block *nb,
+> +		       unsigned long action, void *data)
+> +{
+> +	struct device *dev = data;
+> +	struct v4l2_async_group *group = container_of(nb, struct v4l2_async_group,
+> +						     platform_notifier);
+> +
+> +	return async_notifier_cb(group, action, dev, match_platform);
+> +}
+> +
+> +static int i2c_cb(struct notifier_block *nb,
+> +		  unsigned long action, void *data)
+> +{
+> +	struct device *dev = data;
+> +	struct v4l2_async_group *group = container_of(nb, struct v4l2_async_group,
+> +						     i2c_notifier);
+> +
+> +	return async_notifier_cb(group, action, dev, match_i2c);
+> +}
+> +
+> +/*
+> + * Typically this function will be called during bridge driver probing. It
+> + * installs bus notifiers to handle asynchronously probing subdevice drivers.
+> + * Once the bridge driver probing completes, subdevice drivers, waiting in
+> + * EPROBE_DEFER state are re-probed, at which point they get their platform
+> + * data, which allows them to complete probing.
+> + */
+> +int v4l2_async_group_probe(struct v4l2_async_group *group)
+> +{
+> +	struct v4l2_async_subdev *asd, *tmp;
+> +	bool i2c_used = false, platform_used = false;
+> +	int ret;
+> +
+> +	/* This group is inactive so far - no notifiers yet */
+> +	list_for_each_entry_safe(asd, tmp, &group->group, list) {
+> +		if (asd->sdpd.subdev) {
+> +			/* Simulate a BIND event */
+> +			if (group->bind_cb)
+> +				group->bind_cb(group, asd);
+> +
+> +			/* Already probed, don't wait for it */
+> +			ret = v4l2_device_register_subdev(group->v4l2_dev,
+> +							  asd->sdpd.subdev);
+> +
+> +			if (ret < 0)
+> +				return ret;
+> +
+> +			list_move(&asd->list, &group->done);
+> +			continue;
+> +		}
+> +
+> +		switch (asd->hw.bus_type) {
+> +		case V4L2_ASYNC_BUS_PLATFORM:
+> +			platform_used = true;
+> +			break;
+> +		case V4L2_ASYNC_BUS_I2C:
+> +			i2c_used = true;
+> +		}
+> +	}
+> +
+> +	if (list_empty(&group->group)) {
+> +		if (group->complete_cb)
+> +			group->complete_cb(group);
+> +		return 0;
+> +	}
+> +
+> +	/* TODO: so far bus_register_notifier() never fails */
+> +	if (platform_used) {
+> +		group->platform_notifier.notifier_call = platform_cb;
+> +		bus_register_notifier(&platform_bus_type,
+> +				      &group->platform_notifier);
+> +	}
+> +
+> +	if (i2c_used) {
+> +		group->i2c_notifier.notifier_call = i2c_cb;
+> +		bus_register_notifier(&i2c_bus_type,
+> +				      &group->i2c_notifier);
+> +	}
+> +
+> +	return 0;
+> +}
+> +EXPORT_SYMBOL(v4l2_async_group_probe);
+> +
+> +int v4l2_async_group_init(struct v4l2_device *v4l2_dev,
+> +			  struct v4l2_async_group *group,
+> +			  struct v4l2_async_subdev *asd, int cnt)
+> +{
+> +	int i;
+> +
+> +	if (!group)
+> +		return -EINVAL;
+> +
+> +	INIT_LIST_HEAD(&group->group);
+> +	INIT_LIST_HEAD(&group->done);
+> +	group->v4l2_dev = v4l2_dev;
+> +
+> +	for (i = 0; i < cnt; i++)
+> +		list_add_tail(&asd[i].list, &group->group);
+> +
+> +	/* Protect the global V4L2 device group list */
+> +	mutex_lock(&v4l2_dev->group_lock);
+> +	list_add_tail(&group->list, &v4l2_dev->group_head);
+> +	mutex_unlock(&v4l2_dev->group_lock);
+> +
+> +	return 0;
+> +}
+> +EXPORT_SYMBOL(v4l2_async_group_init);
+> +
+> +void v4l2_async_group_release(struct v4l2_async_group *group)
+> +{
+> +	struct v4l2_async_subdev *asd, *tmp;
+> +
+> +	/* Also no problem, if notifiers haven't been registered */
+> +	bus_unregister_notifier(&platform_bus_type,
+> +				&group->platform_notifier);
+> +	bus_unregister_notifier(&i2c_bus_type,
+> +				&group->i2c_notifier);
+> +
+> +	mutex_lock(&group->v4l2_dev->group_lock);
+> +	list_del(&group->list);
+> +	mutex_unlock(&group->v4l2_dev->group_lock);
+> +
+> +	list_for_each_entry_safe(asd, tmp, &group->done, list) {
+> +		v4l2_device_unregister_subdev(asd->sdpd.subdev);
+> +		/* If we handled USB devices, we'd have to lock the parent too */
+> +		device_release_driver(asd->dev);
+> +		asd->dev->platform_data = NULL;
+> +		if (device_attach(asd->dev) <= 0)
+> +			dev_dbg(asd->dev, "Failed to re-probe to %s\n", asd->dev->driver ?
+> +				asd->dev->driver->name : "(none)");
+> +		list_del(&asd->list);
+> +	}
+> +}
+> +EXPORT_SYMBOL(v4l2_async_group_release);
+> diff --git a/drivers/media/v4l2-core/v4l2-device.c b/drivers/media/v4l2-core/v4l2-device.c
+> index 513969f..52faf2f 100644
+> --- a/drivers/media/v4l2-core/v4l2-device.c
+> +++ b/drivers/media/v4l2-core/v4l2-device.c
+> @@ -40,6 +40,8 @@ int v4l2_device_register(struct device *dev, struct v4l2_device *v4l2_dev)
+>  	mutex_init(&v4l2_dev->ioctl_lock);
+>  	v4l2_prio_init(&v4l2_dev->prio);
+>  	kref_init(&v4l2_dev->ref);
+> +	INIT_LIST_HEAD(&v4l2_dev->group_head);
+> +	mutex_init(&v4l2_dev->group_lock);
+>  	get_device(dev);
+>  	v4l2_dev->dev = dev;
+>  	if (dev = NULL) {
+> diff --git a/include/media/v4l2-async.h b/include/media/v4l2-async.h
+> new file mode 100644
+> index 0000000..8f7bc06
+> --- /dev/null
+> +++ b/include/media/v4l2-async.h
+> @@ -0,0 +1,88 @@
+> +/*
+> + * V4L2 asynchronous subdevice registration API
+> + *
+> + * Copyright (C) 2012, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> + *
+> + * This program is free software; you can redistribute it and/or modify
+> + * it under the terms of the GNU General Public License version 2 as
+> + * published by the Free Software Foundation.
+> + */
+> +
+> +#ifndef V4L2_ASYNC_H
+> +#define V4L2_ASYNC_H
+> +
+> +#include <linux/list.h>
+> +#include <linux/mutex.h>
+> +#include <linux/notifier.h>
+> +
+> +#include <media/v4l2-subdev.h>
+> +
+> +struct device;
+> +struct v4l2_device;
+> +
+> +enum v4l2_async_bus_type {
+> +	V4L2_ASYNC_BUS_PLATFORM,
+> +	V4L2_ASYNC_BUS_I2C,
+> +};
+> +
+> +struct v4l2_async_hw_device {
+> +	enum v4l2_async_bus_type bus_type;
+> +	union {
+> +		struct {
+> +			const char *name;
+> +		} platform;
+> +		struct {
+> +			int adapter_id;
+> +			unsigned short address;
+> +		} i2c;
+> +	} match;
+> +};
+> +
+> +/**
+> + * struct v4l2_async_subdev - device descriptor
+> + * @hw:		this device descriptor
+> + * @list:	member in the group
+> + * @dev:	corresponding hardware device (I2C, platform,...)
+> + * @sdpd:	embedded subdevice platform data
+> + * @role:	this subdevice role in the video pipeline
+> + */
+> +struct v4l2_async_subdev {
+> +	struct v4l2_async_hw_device hw;
+> +	struct list_head list;
+> +	struct device *dev;
+> +	struct v4l2_subdev_platform_data sdpd;
+> +	enum v4l2_subdev_role role;
+> +};
+> +
+> +/**
+> + * struct v4l2_async_group - list of device descriptors
+> + * @list:		member in the v4l2 group list
+> + * @group:		head of device list
+> + * @done:		head of probed device list
+> + * @platform_notifier:	platform bus notifier block
+> + * @i2c_notifier:	I2C bus notifier block
+> + * @v4l2_dev:		link to the respective struct v4l2_device
+> + * @bind:		callback, called upon BUS_NOTIFY_BIND_DRIVER for each
+> + *			subdevice
+> + * @complete:		callback, called once after all subdevices in the group
+> + *			have been bound
+> + */
+> +struct v4l2_async_group {
+> +	struct list_head list;
+> +	struct list_head group;
+> +	struct list_head done;
+> +	struct notifier_block platform_notifier;
+> +	struct notifier_block i2c_notifier;
+> +	struct v4l2_device *v4l2_dev;
+> +	int (*bind)(struct v4l2_async_group *group,
+> +		    struct v4l2_async_subdev *asd);
+> +	int (*complete)(struct v4l2_async_group *group);
+> +};
+> +
+> +int v4l2_async_group_init(struct v4l2_device *v4l2_dev,
+> +			  struct v4l2_async_group *group,
+> +			  struct v4l2_async_subdev *asd, int cnt);
+> +int v4l2_async_group_probe(struct v4l2_async_group *group);
+> +void v4l2_async_group_release(struct v4l2_async_group *group);
+> +
+> +#endif
+> diff --git a/include/media/v4l2-device.h b/include/media/v4l2-device.h
+> index d61febf..84b18c9 100644
+> --- a/include/media/v4l2-device.h
+> +++ b/include/media/v4l2-device.h
+> @@ -21,6 +21,9 @@
+>  #ifndef _V4L2_DEVICE_H
+>  #define _V4L2_DEVICE_H
+>  
+> +#include <linux/list.h>
+> +#include <linux/mutex.h>
+> +
+>  #include <media/media-device.h>
+>  #include <media/v4l2-subdev.h>
+>  #include <media/v4l2-dev.h>
+> @@ -60,6 +63,9 @@ struct v4l2_device {
+>  	struct v4l2_prio_state prio;
+>  	/* BKL replacement mutex. Temporary solution only. */
+>  	struct mutex ioctl_lock;
+> +	/* Subdevice group handling */
+> +	struct mutex group_lock;
+> +	struct list_head group_head;
+>  	/* Keep track of the references to this struct. */
+>  	struct kref ref;
+>  	/* Release function that is called when the ref count goes to 0. */
+> diff --git a/include/media/v4l2-subdev.h b/include/media/v4l2-subdev.h
+> index 2ecd737..1756c6c 100644
+> --- a/include/media/v4l2-subdev.h
+> +++ b/include/media/v4l2-subdev.h
+> @@ -574,6 +574,22 @@ struct v4l2_subdev_fh {
+>  #endif
+>  };
+>  
+> +enum v4l2_subdev_role {
+> +	V4L2_SUBDEV_DATA_SOURCE = 1,
+> +	V4L2_SUBDEV_DATA_SINK,
+> +	V4L2_SUBDEV_DATA_PROCESSOR,
+> +};
+> +
+> +/**
+> + * struct v4l2_subdev_platform_data - subdev platform data
+> + * @subdev:		subdevice
+> + * @platform_data:	subdevice driver platform data
+> + */
+> +struct v4l2_subdev_platform_data {
+> +	struct v4l2_subdev *subdev;
+> +	void *platform_data;
+> +};
+> +
+>  #define to_v4l2_subdev_fh(fh)	\
+>  	container_of(fh, struct v4l2_subdev_fh, vfh)
+>  
+> -- 
+> 1.7.2.5
+> 
+> 
 
-I'm not against handling it uniformly, but it likely shouldn't be enforced
-on drivers to use asynchronous platform subdev registration. With deferred
-probing mechanism we have all what is needed to support that already - 
-driver_for_each_device(), bus_find_device(), of_find_device_by_node(), ...
-
->>>> I wonder whether it isn't a better idea to have platform_data embed a standard
->>>> struct containing a v4l2_subdev pointer. Subdevs can use container_of to get
->>>> from the address of that struct to the full platform_data, and you don't have
->>>> that extra dereference (i.e. a pointer to the new struct which has a pointer
->>>> to the actual platform_data). The impact of that change is much smaller for
->>>> existing subdevs.
->>>
->>> This standard platform data object is allocated by the bridge driver, so, 
->>> it will not know where it is embedded in the subdevice specific platform 
->>> data.
->>
->> It should. The platform_data is specific to the subdev, so whoever is allocating
->> the platform_data has to know the size and contents of the struct. Normally this
->> structure is part of the board code for embedded systems.
-> 
-> Sorry, probably I didn't explain well enough. Let's take a no-DT case for 
-> simplicity. Say, we have a bridge and a single sensor. The board code 
-> provides platform data for each of the two drivers. The platform data for 
-> the bridge driver is supplied directly to its platform device as
-> 
-> static struct platform_device ceu_device = {
-> 	...
-> 	.dev	= {
-> 		.platform_data		= &sh_mobile_ceu_info,
-> 		...
-> 	},
-> };
-> 
-> Normally, you would also provide platform data to I2C devices like
-> 
-> static struct i2c_board_info sensor_device = {
-> 	I2C_BOARD_INFO("sensor", 0x22),
-> 	.platform_data	= &sensor_pdata,
-> 	...
-> };
-> 
-> but in our case we don't want to do that, instead we want to supply a 
-> pointer to that sensor_data to the bridge driver, to later be supplied to 
-> the sensor driver. Currently in the bus notifier upon BIND event (before 
-> sensor driver's probe() is called) I supply the platform data to a 
-> standard platform data holder struct to dev->platform_data and that holder 
-> points to the original platform data from the board code (roughly):
-> 
-> 	struct v4l2_subdev_platform_data *sdpd = kzalloc();
-> 
-> 	sdpd->platform_data = board_platform_data;
-> 	dev->platform_data = sdpd;
-> 
-> Then, upon BOUND (after sensor driver's probe() has completed 
-> successfully) we make sure sdpd->subdev points to the sensor's subdevice. 
-> This works for all device types - I2C or anything else.
-> 
-> Now, you're suggesting to embed sdpd into the platform data. The first 
-> part would still work, we just would pass the original platform data down 
-> to the sensor's driver. But upon BOUND - how do we find the subdevice 
-> pointer??
-
-Do we really need platform_data to retrive the subdev pointer ? Can't 
-i2c_get_clientdata() or platform_get_drvdata() be used for that ?
-Sorry, I'm not quite following...
-
->> That soc-camera doesn't do this is a major soc-camera design flaw. Soc-camera
->> should not force the platform_data contents for subdev drivers.
-> 
-> Soc-camera does approximately the same - it has a compulsory standard 
-> platform data part and an optional driver-specific part.
-> 
->>>> And if it isn't necessary for i2c subdev drivers, then I think we should do
->>>> this only for platform drivers.
->>>
->>> See above, and I don't think we should implement 2 different methods. 
->>> Besides, the change is very small. You anyway have to adapt sensor drivers 
->>> to return -EPROBE_DEFER. This takes 2 lines of code:
->>>
->>> +	if (!client->dev.platform_data)
->>> +		return -EPROBE_DEFER;
->>>
->>> If the driver isn't using platform data, that's it. If it is, you add two 
->>> more lines:
->>>
->>> -	struct my_platform_data *pdata = client->dev.platform_data;
->>> +	struct v4l2_subdev_platform_data *sdpd = client->dev.platform_data;
->>> +	struct my_platform_data *pdata = sdpd->platform_data;
->>>
->>> That's it. Of course, you have to do this everywhere, where the driver 
->>> dereferences client->dev.platform_data, but even that shouldn't be too 
->>> difficult.
->>
->> I'd like to see other people's opinions on this as well. I do think I prefer
->> embedding it (in most if not all cases such a standard struct would be at the
->> beginning of the platform_data).
->>
->>>> That said, how does this new framework take care of timeouts if one of the
->>>> subdevs is never bound?
->>>
->>> It doesn't.
->>>
->>>> You don't want to have this wait indefinitely, I think.
->>>
->>> There's no waiting:-) The bridge and other subdev drivers just remain 
->>> loaded and inactive.
->>
->> Is that what we want? I definitely would like to get other people's opinions
->> on this.
-
-I assume some sort of timeout might be useful here. For instance if camera
-sensor fails for some reason the host could continue after figuring that out,
-with e.g. mem-to-mem functionality only. Now it is not known at the host 
-whether a subdev is broken or simply not yet initialized. This seems a general
-problem with deferred probing though.
-
->> For the record: while it is waiting, can you safely rmmod the module?
->> Looking at the code I think you can, but I'm not 100% certain.
-> 
-> It certainly should work. If it doesn't, we have to fix it.
-> 
-> And I really think it'd be better not to use the term "waiting" here. The 
-> current code is waiting _synchronously_ after registering a new I2C device 
-> until its driver has probed. We want to get rid of that and switch to 
-> asynchronous notifications. Whetever becomes available can be used. 
-> There's no waiting instance in the new concept.
-
-Still some drivers will simply wait for their subdevs to be initialized,
-or at least a group of subdevs, until they create device node(s) usable 
-at user space. These asynchronous make sense in case the list of 
-sub-devices is determined only at run time. But here we simply specify
-them in the device tree or in the board code.
-
---
-
-Thanks,
-Sylwester
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
