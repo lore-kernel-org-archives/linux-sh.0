@@ -1,90 +1,75 @@
-From: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
-Date: Wed, 31 Oct 2012 23:25:46 +0000
-Subject: Re: [PATCH 2/2] media: V4L2: support asynchronous subdevice registration
-Message-Id: <5091B37A.30509@gmail.com>
+From: Bastian Hecht <hechtb@googlemail.com>
+Date: Wed, 24 Oct 2012 08:54:16 +0000
+Subject: [PATCH 1/3] ARM: shmobile: emev2: Replace modify_scu_cpu_psr with scu_power_mode
+Message-Id: <1351068858-7255-2-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1210192358520.28993@axis700.grange> <Pine.LNX.4.64.1210200007580.28993@axis700.grange> <Pine.LNX.4.64.1210241548300.2683@axis700.grange> <508D4F79.2000204@gmail.com> <Pine.LNX.4.64.1210290841200.17869@axis700.grange> <5091AF97.7010804@gmail.com>
-In-Reply-To: <5091AF97.7010804@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Linux Media Mailing List <linux-media@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-On 11/01/2012 12:09 AM, Sylwester Nawrocki wrote:
-> Hi Guennadi,
->
-> On 10/29/2012 08:52 AM, Guennadi Liakhovetski wrote:
->>>>> +/*
->>>>> + * Typically this function will be called during bridge driver probing. It
->>>>> + * installs bus notifiers to handle asynchronously probing subdevice drivers.
->>>>> + * Once the bridge driver probing completes, subdevice drivers, waiting in
->>>>> + * EPROBE_DEFER state are re-probed, at which point they get their platform
->>>>> + * data, which allows them to complete probing.
->>>>> + */
->>>>> +int v4l2_async_group_probe(struct v4l2_async_group *group)
->>>>> +{
->>>>> +	struct v4l2_async_subdev *asd, *tmp;
->>>>> +	bool i2c_used = false, platform_used = false;
->>>>> +	int ret;
->>>>> +
->>>>> +	/* This group is inactive so far - no notifiers yet */
->>>>> +	list_for_each_entry_safe(asd, tmp,&group->group, list) {
->>>>> +		if (asd->sdpd.subdev) {
->>>>> +			/* Simulate a BIND event */
->>>>> +			if (group->bind_cb)
->>>>> +				group->bind_cb(group, asd);
->>>>> +
->>>
->>> Still we can't be sure at this moment asd->sdpd.subdev's driver is
->>> valid and not unloaded, can we ?
->>>
->>> In the case when a sub-device driver is probed after the host driver
->>> (a caller of this function) I assume doing
->>>
->>> 	asd->sdpd.subdev = i2c_get_clientdata(to_i2c_client(dev));
->>> 	...
->>> 	ret = v4l2_device_register_subdev(v4l2_dev, asd->sdpd.subdev);
->>>
->>> is safe, because it is done in the i2c bus notifier callback itself,
->>> i.e. under device_lock(dev).
->>>
->>> But for these already probed sub-devices, how do we prevent races from
->>> subdev module unloading ? By not setting CONFIG_MODULE_UNLOAD?... ;)
->>
->> Right, I also think there's a race there. I have a solution for it - in
->> the current mainline version of sh_mobile_ceu_camera.c look at the code
->> around the line
->>
->> 		err = bus_register_notifier(&platform_bus_type,&wait.notifier);
->>
->> sh_mobile_ceu_probe(). I think, that guarantees, that we either lock the
->> module _safely_ in memory per try_module_get(dev->driver->owner) or get
->> notified, that the module is unavailable. It looks ugly, but I don't have
->> a better solution ATM. We could do the same here too.
->
-> IMHO even "ugly" solution is better than completely ignoring the problem.
->
-> I have some doubts whether your method eliminates the race issue. Firstly,
-> shouldn't the bus_notify callback [1] be active on BUS_NOTIFY_UNBIND_DRIVER,
-> rather than US_NOTIFY_UNBOUND_DRIVER ? Upon US_NOTIFY_UNBOUND_DRIVER
-> dev->driver is already NULL and still it is being referenced in a call to
-> try_module_get() (line 2224, [1]).
->
-> Secondly, what guarantees that before bus_register_notifier() call [1],
-> we are not already after blocking_notifier_call_chain() (line 504, [2])
-> which means we miss the notification and the sub-device driver is going
-> away together with its module under our feet ?
+We can remove the extra code of modify_scu_cpu_psr() and use the cleaner
+generic ARM helper scu_power_mode(). As every CPU only deals with its
+own power register and scu_power_mode() operates with 8-bit accesses,
+we save the locking overhead too.
 
-Hmm, please ignore that one, of course in this case dev->driver is NULL 
-and branch after this line
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+---
+ arch/arm/mach-shmobile/smp-emev2.c |   22 ++--------------------
+ 1 file changed, 2 insertions(+), 20 deletions(-)
 
-		if (!csi2_pdev->dev.driver) {
-is entered.
+diff --git a/arch/arm/mach-shmobile/smp-emev2.c b/arch/arm/mach-shmobile/smp-emev2.c
+index f674562..535426c 100644
+--- a/arch/arm/mach-shmobile/smp-emev2.c
++++ b/arch/arm/mach-shmobile/smp-emev2.c
+@@ -32,24 +32,8 @@
+ 
+ #define EMEV2_SCU_BASE 0x1e000000
+ 
+-static DEFINE_SPINLOCK(scu_lock);
+ static void __iomem *scu_base;
+ 
+-static void modify_scu_cpu_psr(unsigned long set, unsigned long clr)
+-{
+-	unsigned long tmp;
+-
+-	/* we assume this code is running on a different cpu
+-	 * than the one that is changing coherency setting */
+-	spin_lock(&scu_lock);
+-	tmp = readl(scu_base + 8);
+-	tmp &= ~clr;
+-	tmp |= set;
+-	writel(tmp, scu_base + 8);
+-	spin_unlock(&scu_lock);
+-
+-}
+-
+ static unsigned int __init emev2_get_core_count(void)
+ {
+ 	if (!scu_base) {
+@@ -95,7 +79,7 @@ static int __cpuinit emev2_boot_secondary(unsigned int cpu, struct task_struct *
+ 	cpu = cpu_logical_map(cpu);
+ 
+ 	/* enable cache coherency */
+-	modify_scu_cpu_psr(0, 3 << (cpu * 8));
++	scu_power_mode(scu_base, 0);
+ 
+ 	/* Tell ROM loader about our vector (in headsmp.S) */
+ 	emev2_set_boot_vector(__pa(shmobile_secondary_vector));
+@@ -106,12 +90,10 @@ static int __cpuinit emev2_boot_secondary(unsigned int cpu, struct task_struct *
+ 
+ static void __init emev2_smp_prepare_cpus(unsigned int max_cpus)
+ {
+-	int cpu = cpu_logical_map(0);
+-
+ 	scu_enable(scu_base);
+ 
+ 	/* enable cache coherency on CPU0 */
+-	modify_scu_cpu_psr(0, 3 << (cpu * 8));
++	scu_power_mode(scu_base, 0);
+ }
+ 
+ static void __init emev2_smp_init_cpus(void)
+-- 
+1.7.9.5
 
-> [1] http://lxr.linux.no/#linux+v3.6/drivers/media/video/sh_mobile_ceu_camera.c#L2055
-> [2] http://lxr.linux.no/#linux+v3.6/drivers/base/dd.c#L478
->
-> --
-> Thanks,
-> Sylwester
