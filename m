@@ -1,91 +1,42 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sun, 28 Oct 2012 02:26:11 +0000
-Subject: [PATCH 10/12] ARM: shmobile: marzen: add HSPI support
-Message-Id: <1351391173-32379-11-git-send-email-horms@verge.net.au>
+From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Date: Wed, 24 Oct 2012 10:58:31 +0000
+Subject: [PATCH 5/5] i2c: i2c-sh_mobile: fix spurious transfer request timed out
+Message-Id: <5087C9D7.1040108@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1351391173-32379-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1351391173-32379-1-git-send-email-horms@verge.net.au>
+References: <5087C93F.6080601@renesas.com>
+In-Reply-To: <5087C93F.6080601@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Ensure that any of preceding register write operations to the I2C
+hardware block reached the module, and the write data is reflected
+in the registers, before leaving the interrupt handler.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Otherwise, we'll suffer from spurious WAIT interrupts that lead to
+'Transfer request timed out' message, and the transaction failed.
+
+Tracked-down-by: Teppei Kamijou <teppei.kamijou.yb@renesas.com>
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 ---
- arch/arm/configs/marzen_defconfig     |    2 ++
- arch/arm/mach-shmobile/board-marzen.c |   25 +++++++++++++++++++++++++
- 2 files changed, 27 insertions(+)
+ drivers/i2c/busses/i2c-sh_mobile.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index f79b55c..5b8215f 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -71,6 +71,8 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
- # CONFIG_HW_RANDOM is not set
- CONFIG_I2C=y
- CONFIG_I2C_RCAR=y
-+CONFIG_SPI=y
-+CONFIG_SPI_SH_HSPI=y
- CONFIG_GPIO_SYSFS=y
- # CONFIG_HWMON is not set
- CONFIG_THERMAL=y
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index b8a7525..69f7f46 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -30,6 +30,8 @@
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/machine.h>
- #include <linux/smsc911x.h>
-+#include <linux/spi/spi.h>
-+#include <linux/spi/sh_hspi.h>
- #include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/mfd/tmio.h>
- #include <mach/hardware.h>
-@@ -126,10 +128,27 @@ static struct platform_device thermal_device = {
- 	.num_resources	= ARRAY_SIZE(thermal_resources),
- };
+diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
+index 4c28358..9411c1b 100644
+--- a/drivers/i2c/busses/i2c-sh_mobile.c
++++ b/drivers/i2c/busses/i2c-sh_mobile.c
+@@ -469,6 +469,9 @@ static irqreturn_t sh_mobile_i2c_isr(int irq, void *dev_id)
+ 		wake_up(&pd->wait);
+ 	}
  
-+/* HSPI */
-+static struct resource hspi_resources[] = {
-+	[0] = {
-+		.start		= 0xFFFC7000,
-+		.end		= 0xFFFC7018 - 1,
-+		.flags		= IORESOURCE_MEM,
-+	},
-+};
++	/* defeat write posting to avoid spurious WAIT interrupts */
++	iic_rd(pd, ICSR);
 +
-+static struct platform_device hspi_device = {
-+	.name	= "sh-hspi",
-+	.id	= 0,
-+	.resource	= hspi_resources,
-+	.num_resources	= ARRAY_SIZE(hspi_resources),
-+};
-+
- static struct platform_device *marzen_devices[] __initdata = {
- 	&eth_device,
- 	&sdhi0_device,
- 	&thermal_device,
-+	&hspi_device,
- };
- 
- static void __init marzen_init(void)
-@@ -163,6 +182,12 @@ static void __init marzen_init(void)
- 	gpio_request(GPIO_FN_SD0_CD, NULL);
- 	gpio_request(GPIO_FN_SD0_WP, NULL);
- 
-+	/* HSPI 0 */
-+	gpio_request(GPIO_FN_HSPI_CLK0,	NULL);
-+	gpio_request(GPIO_FN_HSPI_CS0,	NULL);
-+	gpio_request(GPIO_FN_HSPI_TX0,	NULL);
-+	gpio_request(GPIO_FN_HSPI_RX0,	NULL);
-+
- 	r8a7779_add_standard_devices();
- 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
+ 	return IRQ_HANDLED;
  }
+ 
 -- 
-1.7.10.4
+1.7.12.4
 
