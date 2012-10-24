@@ -1,227 +1,212 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Tue, 09 Oct 2012 09:58:49 +0000
-Subject: [PATCH v2 2/2] mtd: sh_flctl: Add device tree support
-Message-Id: <1349776729-9311-3-git-send-email-hechtb@gmail.com>
+From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Date: Wed, 24 Oct 2012 10:57:27 +0000
+Subject: [PATCH 2/5] i2c: i2c-sh_mobile: optimize ICCH/ICCL values according to I2C bus speed
+Message-Id: <5087C997.5040503@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1349776729-9311-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1349776729-9311-1-git-send-email-hechtb@gmail.com>
+References: <5087C93F.6080601@renesas.com>
+In-Reply-To: <5087C93F.6080601@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The flctl can now be probed via device tree setup in addition to the
-existing platform data way.
+ICCH/ICCL values is supposed to be calculated/optimized to strictly meet
+the timing specs required by the I2C standard.  The resulting I2C bus
+speed does not matter at all, if it's less than 100 or 400 kHz.
 
-SoC specific setup data is set in the .data member of the OF match, so
-kept within the driver itself, while board/user specific setup - like
-partitioning - is taken from the device tree.
+Also fix a typo in the comment, print icch/iccl values at probe, etc.
 
-Actual configuration is added for the SoC sh7372.
-
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 ---
-v2: added dmas and dma-names fields to the bindings. These are not used yet
-but are added for completing the bindings and will be needed later.
+ drivers/i2c/busses/i2c-sh_mobile.c | 121 ++++++++++++++++++++++---------------
+ 1 file changed, 72 insertions(+), 49 deletions(-)
 
- .../devicetree/bindings/mtd/flctl-nand.txt         |   49 +++++++++++
- drivers/mtd/nand/sh_flctl.c                        |   92 ++++++++++++++++++--
- 2 files changed, 134 insertions(+), 7 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/mtd/flctl-nand.txt
-
-diff --git a/Documentation/devicetree/bindings/mtd/flctl-nand.txt b/Documentation/devicetree/bindings/mtd/flctl-nand.txt
-new file mode 100644
-index 0000000..427f46d
---- /dev/null
-+++ b/Documentation/devicetree/bindings/mtd/flctl-nand.txt
-@@ -0,0 +1,49 @@
-+FLCTL NAND controller
-+
-+Required properties:
-+- compatible : "renesas,shmobile-flctl-sh7372"
-+- reg : Address range of the FLCTL
-+- interrupts : flste IRQ number
-+- nand-bus-width : bus width to NAND chip
-+
-+Optional properties:
-+- dmas: DMA specifier(s)
-+- dma-names: name for each DMA specifier. Valid names are
-+	     "data_tx", "data_rx", "ecc_tx", "ecc_rx"
-+
-+The DMA fields are not used yet in the driver but are listed here for
-+completing the bindings.
-+
-+The device tree may optionally contain sub-nodes describing partitions of the
-+address space. See partition.txt for more detail.
-+
-+Example:
-+
-+	flctl@e6a30000 {
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+		compatible = "renesas,shmobile-flctl-sh7372";
-+		reg = <0xe6a30000 0x100>;
-+		interrupts = <0x0d80>;
-+
-+		nand-bus-width = <16>;
-+
-+		dmas = <&dmac 1 /* data_tx */
-+			&dmac 2;> /* data_rx */
-+		dma-names = "data_tx", "data_rx";
-+
-+		system@0 {
-+			label = "system";
-+			reg = <0x0 0x8000000>;
-+		};
-+
-+		userdata@8000000 {
-+			label = "userdata";
-+			reg = <0x8000000 0x10000000>;
-+		};
-+
-+		cache@18000000 {
-+			label = "cache";
-+			reg = <0x18000000 0x8000000>;
-+		};
-+	};
-diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
-index 1105fbb..02ff9d1 100644
---- a/drivers/mtd/nand/sh_flctl.c
-+++ b/drivers/mtd/nand/sh_flctl.c
-@@ -29,6 +29,9 @@
- #include <linux/dma-mapping.h>
- #include <linux/interrupt.h>
- #include <linux/io.h>
-+#include <linux/of.h>
-+#include <linux/of_device.h>
-+#include <linux/of_mtd.h>
- #include <linux/platform_device.h>
- #include <linux/pm_runtime.h>
- #include <linux/sh_dma.h>
-@@ -1021,6 +1024,73 @@ static irqreturn_t flctl_handle_flste(int irq, void *dev_id)
- 	return IRQ_HANDLED;
+diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
+index 309d0d5..1ad80c9 100644
+--- a/drivers/i2c/busses/i2c-sh_mobile.c
++++ b/drivers/i2c/busses/i2c-sh_mobile.c
+@@ -122,9 +122,9 @@ struct sh_mobile_i2c_data {
+ 	unsigned long bus_speed;
+ 	struct clk *clk;
+ 	u_int8_t icic;
+-	u_int8_t iccl;
+-	u_int8_t icch;
+ 	u_int8_t flags;
++	u_int16_t iccl;
++	u_int16_t icch;
+ 
+ 	spinlock_t lock;
+ 	wait_queue_head_t wait;
+@@ -135,7 +135,8 @@ struct sh_mobile_i2c_data {
+ 
+ #define IIC_FLAG_HAS_ICIC67	(1 << 0)
+ 
+-#define NORMAL_SPEED		100000 /* FAST_SPEED 400000 */
++#define STANDARD_MODE		100000
++#define FAST_MODE		400000
+ 
+ /* Register offsets */
+ #define ICDR			0x00
+@@ -187,55 +188,76 @@ static void iic_set_clr(struct sh_mobile_i2c_data *pd, int offs,
+ 	iic_wr(pd, offs, (iic_rd(pd, offs) | set) & ~clr);
  }
  
-+#ifdef CONFIG_OF
-+struct flctl_soc_config {
-+	unsigned long flcmncr_val;
-+	unsigned has_hwecc:1;
-+	unsigned use_holden:1;
-+};
-+
-+static struct flctl_soc_config flctl_sh7372_config = {
-+	.flcmncr_val = CLK_16B_12L_4H | TYPESEL_SET | SHBUSSEL,
-+	.has_hwecc = 1,
-+	.use_holden = 1,
-+};
-+
-+static const struct of_device_id of_flctl_match[] = {
-+	{ .compatible = "renesas,shmobile-flctl-sh7372",
-+				.data = &flctl_sh7372_config },
-+	{},
-+};
-+MODULE_DEVICE_TABLE(of, of_flctl_match);
-+
-+static struct sh_flctl_platform_data *flctl_parse_dt(struct device *dev)
++static u32 sh_mobile_i2c_iccl(unsigned long count_khz, u32 tLOW, u32 tf, int offset)
 +{
-+	const struct of_device_id *match;
-+	struct flctl_soc_config *config;
-+	struct sh_flctl_platform_data *pdata;
-+	struct device_node *dn = dev->of_node;
-+	int ret;
-+
-+	match = of_match_device(of_flctl_match, dev);
-+	if (match)
-+		config = (struct flctl_soc_config *)match->data;
-+	else {
-+		dev_err(dev, "%s: no OF configuration attached\n", __func__);
-+		return NULL;
-+	}
-+
-+	pdata = devm_kzalloc(dev, sizeof(struct sh_flctl_platform_data),
-+								GFP_KERNEL);
-+	if (!pdata) {
-+		dev_err(dev, "%s: failed to allocate config data\n", __func__);
-+		return NULL;
-+	}
-+
-+	/* set SoC specific options */
-+	pdata->flcmncr_val = config->flcmncr_val;
-+	pdata->has_hwecc = config->has_hwecc;
-+	pdata->use_holden = config->use_holden;
-+
-+	/* parse user defined options */
-+	ret = of_get_nand_bus_width(dn);
-+	if (ret = 16)
-+		pdata->flcmncr_val |= SEL_16BIT;
-+	else if (ret != 8) {
-+		dev_err(dev, "%s: invalid bus width\n", __func__);
-+		return NULL;
-+	}
-+
-+	return pdata;
++	/*
++	 * Conditional expression:
++	 *   ICCL >= COUNT_CLK * (tLOW + tf)
++	 *
++	 * SH-Mobile IIC hardware starts counting the LOW period of
++	 * the SCL signal (tLOW) as soon as it pulls the SCL line.
++	 * In order to meet the tLOW timing spec, we need to take into
++	 * account the fall time of SCL signal (tf).  Default tf value
++	 * should be 0.3 us, for safety.
++	 */
++	return (((count_khz * (tLOW + tf)) + 5000) / 10000) + offset;
 +}
-+#else /* CONFIG_OF */
-+#define of_flctl_match NULL
-+static struct sh_flctl_platform_data *flctl_parse_dt(struct device *dev)
++
++static u32 sh_mobile_i2c_icch(unsigned long count_khz, u32 tHIGH, int offset)
 +{
-+	return NULL;
++	/*
++	 * Conditional expression:
++	 *   ICCH >= COUNT_CLK * tHIGH
++	 *
++	 * SH-Mobile IIC hardware is aware of SCL transition period 'tr',
++	 * and can ignore it.  SH-Mobile IIC controller starts counting
++	 * the HIGH period of the SCL signal (tHIGH) after the SCL input
++	 * voltage increases at VIH.
++	 */
++	return ((count_khz * tHIGH) + 5000) / 10000 + offset;
 +}
-+#endif /* CONFIG_OF */
 +
- static int __devinit flctl_probe(struct platform_device *pdev)
+ static void sh_mobile_i2c_init(struct sh_mobile_i2c_data *pd)
  {
- 	struct resource *res;
-@@ -1030,12 +1100,7 @@ static int __devinit flctl_probe(struct platform_device *pdev)
- 	struct sh_flctl_platform_data *pdata;
- 	int ret = -ENXIO;
- 	int irq;
--
--	pdata = pdev->dev.platform_data;
--	if (pdata = NULL) {
--		dev_err(&pdev->dev, "no platform data defined\n");
--		return -EINVAL;
--	}
-+	struct mtd_part_parser_data ppdata = {};
+-	unsigned long i2c_clk;
+-	u_int32_t num;
+-	u_int32_t denom;
+-	u_int32_t tmp;
++	unsigned long i2c_clk_khz;
++	u32 tHIGH, tLOW, tf;
++	int offset;
  
- 	flctl = kzalloc(sizeof(struct sh_flctl), GFP_KERNEL);
- 	if (!flctl) {
-@@ -1067,6 +1132,16 @@ static int __devinit flctl_probe(struct platform_device *pdev)
- 		goto err_flste;
+ 	/* Get clock rate after clock is enabled */
+ 	clk_enable(pd->clk);
+-	i2c_clk = clk_get_rate(pd->clk);
+-
+-	/* Calculate the value for iccl. From the data sheet:
+-	 * iccl = (p clock / transfer rate) * (L / (L + H))
+-	 * where L and H are the SCL low/high ratio (5/4 in this case).
+-	 * We also round off the result.
+-	 */
+-	num = i2c_clk * 5;
+-	denom = pd->bus_speed * 9;
+-	tmp = num * 10 / denom;
+-	if (tmp % 10 >= 5)
+-		pd->iccl = (u_int8_t)((num/denom) + 1);
+-	else
+-		pd->iccl = (u_int8_t)(num/denom);
+-
+-	/* one more bit of ICCL in ICIC */
+-	if (pd->flags & IIC_FLAG_HAS_ICIC67) {
+-		if ((num/denom) > 0xff)
+-			pd->icic |= ICIC_ICCLB8;
+-		else
+-			pd->icic &= ~ICIC_ICCLB8;
++	i2c_clk_khz = clk_get_rate(pd->clk) / 1000;
++
++	if (pd->bus_speed = STANDARD_MODE) {
++		tLOW	= 47;	/* tLOW = 4.7 us */
++		tHIGH	= 40;	/* tHD;STA = tHIGH = 4.0 us */
++		tf	= 3;	/* tf = 0.3 us */
++		offset	= 0;	/* No offset */
++	} else if (pd->bus_speed = FAST_MODE) {
++		tLOW	= 13;	/* tLOW = 1.3 us */
++		tHIGH	= 6;	/* tHD;STA = tHIGH = 0.6 us */
++		tf	= 3;	/* tf = 0.3 us */
++		offset	= 0;	/* No offset */
++	} else {
++		dev_err(pd->dev, "unrecognized bus speed %lu Hz\n",
++			pd->bus_speed);
++		goto out;
  	}
  
-+	if (pdev->dev.of_node)
-+		pdata = flctl_parse_dt(&pdev->dev);
+-	/* Calculate the value for icch. From the data sheet:
+-	   icch = (p clock / transfer rate) * (H / (L + H)) */
+-	num = i2c_clk * 4;
+-	tmp = num * 10 / denom;
+-	if (tmp % 10 >= 5)
+-		pd->icch = (u_int8_t)((num/denom) + 1);
++	pd->iccl = sh_mobile_i2c_iccl(i2c_clk_khz, tLOW, tf, offset);
++	/* one more bit of ICCL in ICIC */
++	if ((pd->iccl > 0xff) && (pd->flags & IIC_FLAG_HAS_ICIC67))
++		pd->icic |= ICIC_ICCLB8;
+ 	else
+-		pd->icch = (u_int8_t)(num/denom);
++		pd->icic &= ~ICIC_ICCLB8;
+ 
++	pd->icch = sh_mobile_i2c_icch(i2c_clk_khz, tHIGH, offset);
+ 	/* one more bit of ICCH in ICIC */
+-	if (pd->flags & IIC_FLAG_HAS_ICIC67) {
+-		if ((num/denom) > 0xff)
+-			pd->icic |= ICIC_ICCHB8;
+-		else
+-			pd->icic &= ~ICIC_ICCHB8;
+-	}
++	if ((pd->icch > 0xff) && (pd->flags & IIC_FLAG_HAS_ICIC67))
++		pd->icic |= ICIC_ICCHB8;
 +	else
-+		pdata = pdev->dev.platform_data;
-+
-+	if (!pdata) {
-+		dev_err(&pdev->dev, "no setup data defined\n");
-+		return -EINVAL;
-+	}
-+
- 	platform_set_drvdata(pdev, flctl);
- 	flctl_mtd = &flctl->mtd;
- 	nand = &flctl->chip;
-@@ -1109,7 +1184,9 @@ static int __devinit flctl_probe(struct platform_device *pdev)
- 	if (ret)
- 		goto err_chip;
++		pd->icic &= ~ICIC_ICCHB8;
  
--	mtd_device_register(flctl_mtd, pdata->parts, pdata->nr_parts);
-+	ppdata.of_node = pdev->dev.of_node;
-+	ret = mtd_device_parse_register(flctl_mtd, NULL, &ppdata, pdata->parts,
-+			pdata->nr_parts);
++out:
+ 	clk_disable(pd->clk);
+ }
  
+@@ -252,8 +274,8 @@ static void activate_ch(struct sh_mobile_i2c_data *pd)
+ 	iic_wr(pd, ICIC, 0);
+ 
+ 	/* Set the clock */
+-	iic_wr(pd, ICCL, pd->iccl);
+-	iic_wr(pd, ICCH, pd->icch);
++	iic_wr(pd, ICCL, pd->iccl & 0xff);
++	iic_wr(pd, ICCH, pd->icch & 0xff);
+ }
+ 
+ static void deactivate_ch(struct sh_mobile_i2c_data *pd)
+@@ -457,8 +479,8 @@ static int start_ch(struct sh_mobile_i2c_data *pd, struct i2c_msg *usr_msg)
+ 	iic_set_clr(pd, ICCR, ICCR_ICE, 0);
+ 
+ 	/* Set the clock */
+-	iic_wr(pd, ICCL, pd->iccl);
+-	iic_wr(pd, ICCH, pd->icch);
++	iic_wr(pd, ICCL, pd->iccl & 0xff);
++	iic_wr(pd, ICCH, pd->icch & 0xff);
+ 
+ 	pd->msg = usr_msg;
+ 	pd->pos = -1;
+@@ -627,8 +649,8 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
+ 		goto err_irq;
+ 	}
+ 
+-	/* Use platformd data bus speed or NORMAL_SPEED */
+-	pd->bus_speed = NORMAL_SPEED;
++	/* Use platform data bus speed or STANDARD_MODE */
++	pd->bus_speed = STANDARD_MODE;
+ 	if (pdata && pdata->bus_speed)
+ 		pd->bus_speed = pdata->bus_speed;
+ 
+@@ -675,8 +697,9 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
+ 		goto err_all;
+ 	}
+ 
+-	dev_info(&dev->dev, "I2C adapter %d with bus speed %lu Hz\n",
+-		 adap->nr, pd->bus_speed);
++	dev_info(&dev->dev,
++		 "I2C adapter %d with bus speed %lu Hz (L/H=%x/%x)\n",
++		 adap->nr, pd->bus_speed, pd->iccl, pd->icch);
+ 
+ 	of_i2c_register_devices(adap);
  	return 0;
- 
-@@ -1143,6 +1220,7 @@ static struct platform_driver flctl_driver = {
- 	.driver = {
- 		.name	= "sh_flctl",
- 		.owner	= THIS_MODULE,
-+		.of_match_table = of_flctl_match,
- 	},
- };
- 
 -- 
-1.7.5.4
+1.7.12.4
 
