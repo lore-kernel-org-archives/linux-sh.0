@@ -1,33 +1,41 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 31 Oct 2012 07:01:03 +0000
-Subject: Re: [PATCH] sh: clkfwk: bugfix: sh_clk_div_enable() care sh_clk_div_set_rate() if div6
-Message-Id: <87625rm8gj.wl%kuninori.morimoto.gx@renesas.com>
+From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Date: Wed, 24 Oct 2012 10:55:59 +0000
+Subject: [PATCH 0/5] i2c-sh_mobile non-urgent changes
+Message-Id: <5087C93F.6080601@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87pq45mxd9.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87pq45mxd9.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
+
+Hello,
+
+This is the first batch to fix the i2c-sh_mobile driver.  As a first
+step, this comprises of the SCL optimization work and a simple fix to
+annoying spurious WAIT interrupt issue; in other words, this does not
+change tx/rx data handling logic.
+
+This driver has an architectural problem with send/receive procedures
+and needs a fundamental overhaul.  I've been working on splitting into
+logical chunks, but not yet completed.
+
+Patches are prepared against the vanilla v3.6.  I don't have a chance
+to give it a try with v3.6+ kernels myself, but tend to be optimistic
+about that.  I have been cooking these patches over a year, and they
+work perfectly fine with older kernels ..v3.4 so far.
 
 
-Hi Paul
+Shinya Kuribayashi (5):
+      i2c: i2c-sh_mobile: calculate clock parameters at driver probing time
+      i2c: i2c-sh_mobile: optimize ICCH/ICCL values according to I2C bus speed
+      i2c: i2c-sh_mobile: fix ICCH to avoid violation of the tHD;STA timing spec
+      i2c: i2c-sh_mobile: support I2C hardware block with a faster operating clock
+      i2c: i2c-sh_mobile: fix spurious transfer request timed out
 
-> > 764f4e4e33d18cde4dcaf8a0d860b749c6d6d08b
-> > (sh: clkfwk: Use shared sh_clk_div_enable/disable())
-> > shared enable/disable funcions for div4/div6.
-> > But new sh_clk_div_enable() didn't care sh_clk_div_set_rate()
-> > which is required on div6 clock.
-> > This patch fixes it, and is tested by HDMI sound output on armadillo800eva
-> > 
-> > Reported-by: Cao Minh Hiep <hiepcm@gmail.com>
-> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> 
-> Looks good, I'll queue it up, thanks.
+ drivers/i2c/busses/i2c-sh_mobile.c | 150 ++++++++++++++++++++++++-------------
+ include/linux/i2c/i2c-sh_mobile.h  |   1 +
+ 2 files changed, 98 insertions(+), 53 deletions(-)
 
-Thanks.
-But which branch can I find it ?
-
-Best regards
----
-Kuninori Morimoto
+--
+Shinya Kuribayashi
+Renesas Electronics
