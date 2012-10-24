@@ -1,54 +1,85 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Tue, 30 Oct 2012 22:37:19 +0000
-Subject: Re: [PATCH] mmc: sh_mmcif: fix use after free
-Message-Id: <878vanio2o.fsf@octavius.laptop.org>
+From: Bastian Hecht <hechtb@googlemail.com>
+Date: Wed, 24 Oct 2012 08:54:17 +0000
+Subject: [PATCH 2/3] ARM: shmobile: sh73a0: Replace modify_scu_cpu_psr with scu_power_mode
+Message-Id: <1351068858-7255-3-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1210231406080.13115@axis700.grange>
-	<878vapq8fj.fsf@octavius.laptop.org>
-	<Pine.LNX.4.64.1210302306190.29432@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1210302306190.29432@axis700.grange> (Guennadi
-	Liakhovetski's message of "Tue, 30 Oct 2012 23:08:57 +0100 (CET)")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi Guennadi,
+We can remove the extra code of modify_scu_cpu_psr() and use the cleaner
+generic ARM helper scu_power_mode(). As every CPU only deals with its
+own power register and scu_power_mode() operates with 8-bit accesses,
+we save the locking overhead too.
 
-On Tue, Oct 30 2012, Guennadi Liakhovetski wrote:
->> In future, feel free to note the
->> stable@ situation by adding:
->> 
->>    Cc: stable@vger.kernel.org [3.6]
->
-> Hm, a bit confused. I seem to remember, that one of subsystem maintainers, 
-> to whom I also submitted a patch, that should also have been forwarded to 
-> stable, told me, that adding this "Cc: stable@..." tag was a task of 
-> subsystem maintainers, in that case his task, and not of individual 
-> submitters, which might only indicate their opinion in this respect. Am I 
-> wrong?
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+---
+ arch/arm/mach-shmobile/smp-sh73a0.c |   23 ++---------------------
+ 1 file changed, 2 insertions(+), 21 deletions(-)
 
-Oh, interesting; I haven't seen that complaint myself.  I don't think
-there's a kernel-wide rule about this, but I might be wrong.
-
-Personally, I'm happy with receiving the stable@ tag because I like it
-when patch authors think about -stable and I want to encourage them to
-do so.  (Often they know whether a patch is needed in -stable better
-than I do.)
-
-Of course, the stable@ team isn't going to do anything until the patch
-enters mainline, and the patch is only going to enter mainline through
-my tree after I've had a chance to change the stable@ tag if necessary,
-so there's no problem for me there.
-
-Sorry to leave you in the middle of conflicting advice. :-)  The stable@
-hint is appreciated in either form; I was just trying to save you some
-typing.
-
-Thanks!
-
-- Chris.
+diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
+index 624f00f..96ddb97 100644
+--- a/arch/arm/mach-shmobile/smp-sh73a0.c
++++ b/arch/arm/mach-shmobile/smp-sh73a0.c
+@@ -41,9 +41,6 @@ static void __iomem *scu_base_addr(void)
+ 	return (void __iomem *)0xf0000000;
+ }
+ 
+-static DEFINE_SPINLOCK(scu_lock);
+-static unsigned long tmp;
+-
+ #ifdef CONFIG_HAVE_ARM_TWD
+ static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, 0xf0000600, 29);
+ void __init sh73a0_register_twd(void)
+@@ -52,20 +49,6 @@ void __init sh73a0_register_twd(void)
+ }
+ #endif
+ 
+-static void modify_scu_cpu_psr(unsigned long set, unsigned long clr)
+-{
+-	void __iomem *scu_base = scu_base_addr();
+-
+-	spin_lock(&scu_lock);
+-	tmp = __raw_readl(scu_base + 8);
+-	tmp &= ~clr;
+-	tmp |= set;
+-	spin_unlock(&scu_lock);
+-
+-	/* disable cache coherency after releasing the lock */
+-	__raw_writel(tmp, scu_base + 8);
+-}
+-
+ static unsigned int __init sh73a0_get_core_count(void)
+ {
+ 	void __iomem *scu_base = scu_base_addr();
+@@ -83,7 +66,7 @@ static int __cpuinit sh73a0_boot_secondary(unsigned int cpu, struct task_struct
+ 	cpu = cpu_logical_map(cpu);
+ 
+ 	/* enable cache coherency */
+-	modify_scu_cpu_psr(0, 3 << (cpu * 8));
++	scu_power_mode(scu_base_addr(), 0);
+ 
+ 	if (((__raw_readl(PSTR) >> (4 * cpu)) & 3) = 3)
+ 		__raw_writel(1 << cpu, WUPCR);	/* wake up */
+@@ -95,8 +78,6 @@ static int __cpuinit sh73a0_boot_secondary(unsigned int cpu, struct task_struct
+ 
+ static void __init sh73a0_smp_prepare_cpus(unsigned int max_cpus)
+ {
+-	int cpu = cpu_logical_map(0);
+-
+ 	scu_enable(scu_base_addr());
+ 
+ 	/* Map the reset vector (in headsmp.S) */
+@@ -104,7 +85,7 @@ static void __init sh73a0_smp_prepare_cpus(unsigned int max_cpus)
+ 	__raw_writel(__pa(shmobile_secondary_vector), SBAR);
+ 
+ 	/* enable cache coherency on CPU0 */
+-	modify_scu_cpu_psr(0, 3 << (cpu * 8));
++	scu_power_mode(scu_base_addr(), 0);
+ }
+ 
+ static void __init sh73a0_smp_init_cpus(void)
 -- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
+1.7.9.5
+
