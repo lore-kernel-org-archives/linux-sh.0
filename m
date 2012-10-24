@@ -1,60 +1,31 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 05 Oct 2012 14:41:14 +0000
-Subject: Re: [PATCH 00/14] V4L2 DT support
-Message-Id: <Pine.LNX.4.64.1210051639160.13761@axis700.grange>
+From: Bastian Hecht <hechtb@googlemail.com>
+Date: Wed, 24 Oct 2012 08:54:15 +0000
+Subject: [PATCH 0/3] Use generic helper scu_power_mode()
+Message-Id: <1351068858-7255-1-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de>
- <506ED344.2020407@gmail.com>
-In-Reply-To: <506ED344.2020407@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
-Cc: linux-media@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Stephen Warren <swarren@wwwdotorg.org>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>
+To: linux-sh@vger.kernel.org
 
-Hi Sylwester
+The shmobile series implements its own code for setting the SCU power
+register of the ARM MPCore. It uses 32-bit wide access and thus needs
+locking as multiple CPUs might access it simultaneously for change. There is
+already a small helper function that avoids the overhead by using 8-bit
+wide access: As every CPU only accesses its own field we can drop the
+lock and use it.
 
-On Fri, 5 Oct 2012, Sylwester Nawrocki wrote:
+Bastian Hecht (3):
+  ARM: shmobile: emev2: Replace modify_scu_cpu_psr with scu_power_mode
+  ARM: shmobile: sh73a0: Replace modify_scu_cpu_psr with scu_power_mode
+  ARM: shmobile: r8a7779: Replace modify_scu_cpu_psr with
+    scu_power_mode
 
-> Hi Guennadi,
-> 
-> Any chance for a GIT tree including this patch series ? I'd like
-> to see all these pieces put together and I don't seem to find any
-> base tree that this series would have applied cleanly to.
+ arch/arm/mach-shmobile/smp-emev2.c   |   22 ++--------------------
+ arch/arm/mach-shmobile/smp-r8a7779.c |   25 +++----------------------
+ arch/arm/mach-shmobile/smp-sh73a0.c  |   23 ++---------------------
+ 3 files changed, 7 insertions(+), 63 deletions(-)
 
-Ok, I pushed the patches to
+-- 
+1.7.9.5
 
-git://linuxtv.org/gliakhovetski/v4l-dvb.git dt-soc_camera
-
-Please, give it a go.
-
-Thanks
-Guennadi
-
-> 
-> ...(20121005_media_for_v3.7-dt)$ git am -3 \[PATCH\ *
-> Applying: i2c: add dummy inline functions for when CONFIG_OF_I2C(_MODULE) isn't defined
-> Applying: of: add a dummy inline function for when CONFIG_OF is not defined
-> Applying: OF: make a function pointer argument const
-> Applying: media: add V4L2 DT binding documentation
-> Applying: media: add a V4L2 OF parser
-> Applying: media: soc-camera: prepare for asynchronous client probing
-> Applying: media: soc-camera: support deferred probing of clients
-> fatal: sha1 information is lacking or useless (drivers/media/platform/soc_camera/soc_camera.c).
-> Repository lacks necessary blobs to fall back on 3-way merge.
-> Cannot fall back to three-way merge.
-> Patch failed at 0007 media: soc-camera: support deferred probing of clients
-> When you have resolved this problem run "git am --resolved".
-> If you would prefer to skip this patch, instead run "git am --skip".
-> To restore the original branch and stop patching run "git am --abort".
-> 
-> --
-> 
-> Thanks,
-> Sylwester
-> 
-
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
