@@ -1,12 +1,14 @@
 From: Bastian Hecht <hechtb@googlemail.com>
-Date: Wed, 24 Oct 2012 08:54:18 +0000
+Date: Thu, 25 Oct 2012 10:58:22 +0000
 Subject: [PATCH 3/3] ARM: shmobile: r8a7779: Replace modify_scu_cpu_psr with scu_power_mode
-Message-Id: <1351068858-7255-4-git-send-email-hechtb@gmail.com>
+Message-Id: <1351162702-8391-4-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1351162702-8391-1-git-send-email-hechtb@gmail.com>
+In-Reply-To: <1351162702-8391-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
 We can remove the extra code of modify_scu_cpu_psr() and use the cleaner
 generic ARM helper scu_power_mode(). As every CPU only deals with its
