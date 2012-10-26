@@ -1,54 +1,65 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Wed, 10 Oct 2012 10:46:16 +0000
-Subject: Re: [PATCH 04/14] media: add V4L2 DT binding documentation
-Message-Id: <20121010104615.GK17288@opensource.wolfsonmicro.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 26 Oct 2012 10:16:12 +0000
+Subject: RE: mainlining tps80031
+Message-Id: <Pine.LNX.4.64.1210261212170.20835@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de>
- <1348754853-28619-5-git-send-email-g.liakhovetski@gmx.de>
- <20121005151057.GA5125@pengutronix.de>
- <Pine.LNX.4.64.1210051735360.13761@axis700.grange>
- <20121005160242.GX1322@pengutronix.de>
- <Pine.LNX.4.64.1210080950350.11034@axis700.grange>
- <20121010084006.GQ27665@pengutronix.de>
- <20121010085124.GJ17288@opensource.wolfsonmicro.com>
- <20121010092115.GW27665@pengutronix.de>
-In-Reply-To: <20121010092115.GW27665@pengutronix.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sascha Hauer <s.hauer@pengutronix.de>
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-media@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Stephen Warren <swarren@wwwdotorg.org>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>
+To: linux-sh@vger.kernel.org
 
-On Wed, Oct 10, 2012 at 11:21:15AM +0200, Sascha Hauer wrote:
-> On Wed, Oct 10, 2012 at 05:51:27PM +0900, Mark Brown wrote:
+Hi Laxman
 
-> > Well, I'm unlikely to work on it as I don't have any systems which can
-> > boot with device tree.
+On Fri, 26 Oct 2012, Laxman Dewangan wrote:
 
-> If it's only that I'm sure we could spare a i.MX53 LOCO ;)
+> We have also plan for upstreaming this driver but lack of time, we were 
+> not able to do this.
+> We are targeting this for k3.8.
 
-Well, something with Wolfson hardware would be helpful.
+This is very good to hear! 3.8 would also be my goal. In fact U have 
+already merged your relevant patches on top of current next, at least they 
+compile. Would you mind if I post the resulting source as several patches 
+- for the beginning 1 for the MFD and 1 for the regulator drivers. I would 
+certainly preserve the original authorship and Sob's from all contributors 
+would be appropriate. Would this be ok?
 
-> > The big, big problem you've got doing this is lots of dynamic changes at 
-> > runtime and in general complicated systems.  It's trivial to describe
-> > the physical links but they don't provide anything like enough
-> > information to use things.  Quite frankly I'm not sure device tree is a
-> > useful investment of time for advanced audio systems anyway, it's really
-> > not solving any problems people actually have.
+Thanks
+Guennadi
 
-> Right now the i.MX audmux binding is only enough to say which ports
-> should be connected, but not which format should be used. Just today
+> -----Original Message-----
+> From: Guennadi Liakhovetski [mailto:g.liakhovetski@gmx.de] 
+> Sent: Friday, October 26, 2012 12:13 PM
+> To: Laxman Dewangan
+> Cc: Venu Byravarasu; android-porting@googlegroups.com
+> Subject: mainlining tps80031
+> 
+> Hi Laxman, all
+> 
+> I have been tasked with mainlining a tps80031 driver and your driver, 
+> available in
+> 
+> https://android.googlesource.com/kernel/tegra	android-tegra3-grouper-3.1-jb-fr2
+> 
+> seems to be a good starting point. Is anyone already working on mainlining 
+> it or are there any plans at all? Would it be ok if I do that, could you 
+> or someone else at Nvidia review and re-test my patches and provide their 
+> Signed-off-by tags to support the original patch authorship?
+> 
+> Thanks
+> Guennadi
+> ---
+> Guennadi Liakhovetski, Ph.D.
+> Freelance Open-Source Software Developer
+> http://www.open-technology.de/
+> -----------------------------------------------------------------------------------
+> This email message is for the sole use of the intended recipient(s) and may contain
+> confidential information.  Any unauthorized review, use, disclosure or distribution
+> is prohibited.  If you are not the intended recipient, please contact the sender by
+> reply email and destroy all copies of the original message.
+> -----------------------------------------------------------------------------------
+> 
 
-Why should that be in DT?  For most things it's either fixed by the
-hardware or makes no odds.
-
-> we had the problem where a codec has two DAIs and wanted to add the
-> information on which port our SSI unit is connected to the devicetree.
-
-There's nothing stopping you doing that right now, the existing DT 
-
-> So I think it's worthwile to do, but that would be a big big task...
-
-For simple devices there's already stuff there and it's not hard to add
-new machine bindings, it's trying to cover the general case that's far
-too much effort.
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
