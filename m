@@ -1,48 +1,38 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 17 Oct 2012 04:39:17 +0000
-Subject: [PATCH 06/10] ARM: shmobile: armadillo800eva: enable restart
-Message-Id: <1350448761-27346-7-git-send-email-horms@verge.net.au>
+From: Shuah Khan <shuah.khan@hp.com>
+Date: Fri, 26 Oct 2012 16:20:03 +0000
+Subject: [PATCH RFT linux-next] sh: dma-mapping: support debug_dma_mapping_error
+Message-Id: <1351268403.4013.24.camel@lorien2>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1350448761-27346-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1350448761-27346-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: lethal@linux-sh.org, kyungmin.park@samsung.com, m.szyprowski@samsung.com, arnd@arndb.de, andrzej.p@samsung.com
+Cc: linux-sh@vger.kernel.org, LKML <linux-kernel@vger.kernel.org>, shuahkhan@gmail.com
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Add support for debug_dma_mapping_error() call to avoid warning from
+debug_dma_unmap() interface when it checks for mapping error checked
+status. Without this patch, device driver failed to check map error
+warning is generated.
 
-Cc: Masahiro Nakai <nakai@atmark-techno.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Shuah Khan <shuah.khan@hp.com>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c |    8 ++++++++
- 1 file changed, 8 insertions(+)
+ arch/sh/include/asm/dma-mapping.h |    1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 2912eab..fe27d7e 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1229,6 +1229,13 @@ static void __init eva_add_early_devices(void)
- 	shmobile_timer.init = eva_earlytimer_init;
- }
+diff --git a/arch/sh/include/asm/dma-mapping.h b/arch/sh/include/asm/dma-mapping.h
+index 8bd965e..b437f2c 100644
+--- a/arch/sh/include/asm/dma-mapping.h
++++ b/arch/sh/include/asm/dma-mapping.h
+@@ -46,6 +46,7 @@ static inline int dma_mapping_error(struct device *dev, dma_addr_t dma_addr)
+ {
+ 	struct dma_map_ops *ops = get_dma_ops(dev);
  
-+#define RESCNT2 IOMEM(0xe6188020)
-+static void eva_restart(char mode, const char *cmd)
-+{
-+	/* Do soft power on reset */
-+	writel((1 << 31), RESCNT2);
-+}
-+
- static const char *eva_boards_compat_dt[] __initdata = {
- 	"renesas,armadillo800eva",
- 	NULL,
-@@ -1243,4 +1250,5 @@ DT_MACHINE_START(ARMADILLO800EVA_DT, "armadillo800eva")
- 	.init_late	= shmobile_init_late,
- 	.timer		= &shmobile_timer,
- 	.dt_compat	= eva_boards_compat_dt,
-+	.restart	= eva_restart,
- MACHINE_END
++	debug_dma_mapping_error(dev, dma_addr);
+ 	if (ops->mapping_error)
+ 		return ops->mapping_error(dev, dma_addr);
+ 
 -- 
-1.7.10.4
+1.7.9.5
+
+
 
