@@ -1,228 +1,114 @@
-From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Date: Fri, 05 Oct 2012 02:29:42 +0000
-Subject: [PATCH 3/10] memory-hotplug : introduce new function arch_remove_memory() for removing page table de
-Message-Id: <506E4616.10904@jp.fujitsu.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 26 Oct 2012 13:38:49 +0000
+Subject: [PATCH v3 3/5] ARM: mach-shmobile: armadillo800eva: Add backlight support
+Message-Id: <1351258731-14111-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <506E43E0.70507@jp.fujitsu.com>
-In-Reply-To: <506E43E0.70507@jp.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
-Cc: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, wency@cn.fujitsu.com
+To: linux-sh@vger.kernel.org
 
-From: Wen Congyang <wency@cn.fujitsu.com>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-For removing memory, we need to remove page table. But it depends
-on architecture. So the patch introduce arch_remove_memory() for
-removing page table. Now it only calls __remove_pages().
+The flat panel backlight on the Armadillo 800 EVA board is driven by the
+TPU PWM output.
 
-Note: __remove_pages() for some archtecuture is not implemented
-      (I don't know how to implement it for s390).
-
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-CC: Paul Mackerras <paulus@samba.org>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-CC: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Tested-by: Simon Horman <horms@verge.net.au>
 ---
- arch/ia64/mm/init.c            |   18 ++++++++++++++++++
- arch/powerpc/mm/mem.c          |   12 ++++++++++++
- arch/s390/mm/init.c            |   12 ++++++++++++
- arch/sh/mm/init.c              |   17 +++++++++++++++++
- arch/tile/mm/init.c            |    8 ++++++++
- arch/x86/mm/init_32.c          |   12 ++++++++++++
- arch/x86/mm/init_64.c          |   15 +++++++++++++++
- include/linux/memory_hotplug.h |    1 +
- mm/memory_hotplug.c            |    1 +
- 9 files changed, 96 insertions(+)
+ arch/arm/mach-shmobile/board-armadillo800eva.c |   51 ++++++++++++++++++++++--
+ 1 files changed, 47 insertions(+), 4 deletions(-)
 
-Index: linux-3.6/arch/ia64/mm/init.c
-=================================--- linux-3.6.orig/arch/ia64/mm/init.c	2012-10-04 18:27:03.082498276 +0900
-+++ linux-3.6/arch/ia64/mm/init.c	2012-10-04 18:28:50.087606867 +0900
-@@ -688,6 +688,24 @@ int arch_add_memory(int nid, u64 start, 
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 3cc8b1c..7ac7c41 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -28,6 +28,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/gpio.h>
+ #include <linux/gpio_keys.h>
++#include <linux/pwm_backlight.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/sh_eth.h>
+@@ -37,6 +38,7 @@
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mmcif.h>
+ #include <linux/mmc/sh_mobile_sdhi.h>
++#include <linux/platform_data/pwm-rmob.h>
+ #include <linux/i2c-gpio.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+@@ -370,7 +372,49 @@ static struct platform_device sh_eth_device = {
+ 	.num_resources = ARRAY_SIZE(sh_eth_resources),
+ };
  
- 	return ret;
- }
+-/* LCDC */
++/* PWM */
++static struct resource pwm_resources[] = {
++	[0] = {
++		.start = 0xe6600000,
++		.end = 0xe66000ff,
++		.flags = IORESOURCE_MEM,
++	},
++};
 +
-+#ifdef CONFIG_MEMORY_HOTREMOVE
-+int arch_remove_memory(u64 start, u64 size)
-+{
-+	unsigned long start_pfn = start >> PAGE_SHIFT;
-+	unsigned long nr_pages = size >> PAGE_SHIFT;
-+	struct zone *zone;
-+	int ret;
++static struct rmob_tpu_pwm_platform_data pwm_device_data = {
++	.channels[2] = {
++		.polarity = 0,
++		.pin_gpio = GPIO_PORT202,
++		.pin_gpio_fn = GPIO_FN_TPU0TO2_PORT202,
++	}
++};
 +
-+	zone = page_zone(pfn_to_page(start_pfn));
-+	ret = __remove_pages(zone, start_pfn, nr_pages);
-+	if (ret)
-+		pr_warn("%s: Problem encountered in __remove_pages() as"
-+			" ret=%d\n", __func__,  ret);
++static struct platform_device pwm_device = {
++	.name = "rmob_tpu_pwm",
++	.id = 0,
++	.dev = {
++		.platform_data = &pwm_device_data,
++	},
++	.num_resources = ARRAY_SIZE(pwm_resources),
++	.resource = pwm_resources,
++};
 +
-+	return ret;
-+}
-+#endif
- #endif
++/* LCDC and backlight */
++static struct platform_pwm_backlight_data pwm_backlight_data = {
++	.pwm_id = RMOB_TPU_PWM_ID(0, 2),
++	.lth_brightness = 50,
++	.max_brightness = 255,
++	.dft_brightness = 255,
++	.pwm_period_ns = 33333, /* 30kHz */
++};
++
++static struct platform_device pwm_backlight_device = {
++	.name = "pwm-backlight",
++	.dev = {
++		.platform_data = &pwm_backlight_data,
++	},
++};
++
+ static struct fb_videomode lcdc0_mode = {
+ 	.name		= "AMPIER/AM-800480",
+ 	.xres		= 800,
+@@ -918,6 +962,8 @@ static struct i2c_board_info i2c2_devices[] = {
+  */
+ static struct platform_device *eva_devices[] __initdata = {
+ 	&lcdc0_device,
++	&pwm_device,
++	&pwm_backlight_device,
+ 	&gpio_keys_device,
+ 	&sh_eth_device,
+ 	&sdhi0_device,
+@@ -1027,9 +1073,6 @@ static void __init eva_init(void)
+ 	gpio_request(GPIO_PORT61, NULL); /* LCDDON */
+ 	gpio_direction_output(GPIO_PORT61, 1);
  
- /*
-Index: linux-3.6/arch/powerpc/mm/mem.c
-=================================--- linux-3.6.orig/arch/powerpc/mm/mem.c	2012-10-04 18:27:03.084498278 +0900
-+++ linux-3.6/arch/powerpc/mm/mem.c	2012-10-04 18:28:50.094606874 +0900
-@@ -133,6 +133,18 @@ int arch_add_memory(int nid, u64 start, 
- 
- 	return __add_pages(nid, zone, start_pfn, nr_pages);
- }
-+
-+#ifdef CONFIG_MEMORY_HOTREMOVE
-+int arch_remove_memory(u64 start, u64 size)
-+{
-+	unsigned long start_pfn = start >> PAGE_SHIFT;
-+	unsigned long nr_pages = size >> PAGE_SHIFT;
-+	struct zone *zone;
-+
-+	zone = page_zone(pfn_to_page(start_pfn));
-+	return __remove_pages(zone, start_pfn, nr_pages);
-+}
-+#endif
- #endif /* CONFIG_MEMORY_HOTPLUG */
- 
- /*
-Index: linux-3.6/arch/s390/mm/init.c
-=================================--- linux-3.6.orig/arch/s390/mm/init.c	2012-10-04 18:27:03.080498274 +0900
-+++ linux-3.6/arch/s390/mm/init.c	2012-10-04 18:28:50.104606884 +0900
-@@ -257,4 +257,16 @@ int arch_add_memory(int nid, u64 start, 
- 		vmem_remove_mapping(start, size);
- 	return rc;
- }
-+
-+#ifdef CONFIG_MEMORY_HOTREMOVE
-+int arch_remove_memory(u64 start, u64 size)
-+{
-+	/*
-+	 * There is no hardware or firmware interface which could trigger a
-+	 * hot memory remove on s390. So there is nothing that needs to be
-+	 * implemented.
-+	 */
-+	return -EBUSY;
-+}
-+#endif
- #endif /* CONFIG_MEMORY_HOTPLUG */
-Index: linux-3.6/arch/sh/mm/init.c
-=================================--- linux-3.6.orig/arch/sh/mm/init.c	2012-10-04 18:27:03.091498285 +0900
-+++ linux-3.6/arch/sh/mm/init.c	2012-10-04 18:28:50.116606897 +0900
-@@ -558,4 +558,21 @@ int memory_add_physaddr_to_nid(u64 addr)
- EXPORT_SYMBOL_GPL(memory_add_physaddr_to_nid);
- #endif
- 
-+#ifdef CONFIG_MEMORY_HOTREMOVE
-+int arch_remove_memory(u64 start, u64 size)
-+{
-+	unsigned long start_pfn = start >> PAGE_SHIFT;
-+	unsigned long nr_pages = size >> PAGE_SHIFT;
-+	struct zone *zone;
-+	int ret;
-+
-+	zone = page_zone(pfn_to_page(start_pfn));
-+	ret = __remove_pages(zone, start_pfn, nr_pages);
-+	if (unlikely(ret))
-+		pr_warn("%s: Failed, __remove_pages() = %d\n", __func__,
-+			ret);
-+
-+	return ret;
-+}
-+#endif
- #endif /* CONFIG_MEMORY_HOTPLUG */
-Index: linux-3.6/arch/tile/mm/init.c
-=================================--- linux-3.6.orig/arch/tile/mm/init.c	2012-10-04 18:27:03.078498272 +0900
-+++ linux-3.6/arch/tile/mm/init.c	2012-10-04 18:28:50.122606903 +0900
-@@ -935,6 +935,14 @@ int remove_memory(u64 start, u64 size)
- {
- 	return -EINVAL;
- }
-+
-+#ifdef CONFIG_MEMORY_HOTREMOVE
-+int arch_remove_memory(u64 start, u64 size)
-+{
-+	/* TODO */
-+	return -EBUSY;
-+}
-+#endif
- #endif
- 
- struct kmem_cache *pgd_cache;
-Index: linux-3.6/arch/x86/mm/init_32.c
-=================================--- linux-3.6.orig/arch/x86/mm/init_32.c	2012-10-04 18:27:03.089498283 +0900
-+++ linux-3.6/arch/x86/mm/init_32.c	2012-10-04 18:28:50.128606909 +0900
-@@ -842,6 +842,18 @@ int arch_add_memory(int nid, u64 start, 
- 
- 	return __add_pages(nid, zone, start_pfn, nr_pages);
- }
-+
-+#ifdef CONFIG_MEMORY_HOTREMOVE
-+int arch_remove_memory(u64 start, u64 size)
-+{
-+	unsigned long start_pfn = start >> PAGE_SHIFT;
-+	unsigned long nr_pages = size >> PAGE_SHIFT;
-+	struct zone *zone;
-+
-+	zone = page_zone(pfn_to_page(start_pfn));
-+	return __remove_pages(zone, start_pfn, nr_pages);
-+}
-+#endif
- #endif
- 
- /*
-Index: linux-3.6/arch/x86/mm/init_64.c
-=================================--- linux-3.6.orig/arch/x86/mm/init_64.c	2012-10-04 18:27:03.086498280 +0900
-+++ linux-3.6/arch/x86/mm/init_64.c	2012-10-04 18:28:50.132606913 +0900
-@@ -675,6 +675,21 @@ int arch_add_memory(int nid, u64 start, 
- }
- EXPORT_SYMBOL_GPL(arch_add_memory);
- 
-+#ifdef CONFIG_MEMORY_HOTREMOVE
-+int __ref arch_remove_memory(u64 start, u64 size)
-+{
-+	unsigned long start_pfn = start >> PAGE_SHIFT;
-+	unsigned long nr_pages = size >> PAGE_SHIFT;
-+	struct zone *zone;
-+	int ret;
-+
-+	zone = page_zone(pfn_to_page(start_pfn));
-+	ret = __remove_pages(zone, start_pfn, nr_pages);
-+	WARN_ON_ONCE(ret);
-+
-+	return ret;
-+}
-+#endif
- #endif /* CONFIG_MEMORY_HOTPLUG */
- 
- static struct kcore_list kcore_vsyscall;
-Index: linux-3.6/include/linux/memory_hotplug.h
-=================================--- linux-3.6.orig/include/linux/memory_hotplug.h	2012-10-04 18:27:03.094498288 +0900
-+++ linux-3.6/include/linux/memory_hotplug.h	2012-10-04 18:28:50.137606918 +0900
-@@ -85,6 +85,7 @@ extern void __online_page_free(struct pa
- 
- #ifdef CONFIG_MEMORY_HOTREMOVE
- extern bool is_pageblock_removable_nolock(struct page *page);
-+extern int arch_remove_memory(u64 start, u64 size);
- #endif /* CONFIG_MEMORY_HOTREMOVE */
- 
- /* reasonably generic interface to expand the physical pages in a zone  */
-Index: linux-3.6/mm/memory_hotplug.c
-=================================--- linux-3.6.orig/mm/memory_hotplug.c	2012-10-04 18:28:42.851599524 +0900
-+++ linux-3.6/mm/memory_hotplug.c	2012-10-04 18:29:50.577668254 +0900
-@@ -1062,6 +1062,7 @@ int __ref remove_memory(int nid, u64 sta
- 	/* remove memmap entry */
- 	firmware_map_remove(start, start + size, "System RAM");
- 
-+	arch_remove_memory(start, size);
- out:
- 	unlock_memory_hotplug();
- 	return ret;
+-	gpio_request(GPIO_PORT202, NULL); /* LCD0_LED_CONT */
+-	gpio_direction_output(GPIO_PORT202, 0);
+-
+ 	/* Touchscreen */
+ 	gpio_request(GPIO_FN_IRQ10,	NULL); /* TP_INT */
+ 	gpio_request(GPIO_PORT166,	NULL); /* TP_RST_B */
+-- 
+1.7.8.6
 
