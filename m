@@ -1,27 +1,52 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sun, 28 Oct 2012 03:11:17 +0000
-Subject: Re: [PATCH 0/3] Use generic helper scu_power_mode()
-Message-Id: <20121028031117.GS3743@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 26 Oct 2012 08:49:26 +0000
+Subject: [PATCH] sh: clkfwk: bugfix: sh_clk_div_enable() care sh_clk_div_set_rate() if div6
+Message-Id: <87pq45mxd9.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1351162702-8391-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1351162702-8391-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Thu, Oct 25, 2012 at 12:58:19PM +0200, Bastian Hecht wrote:
-> Reposted to include the arch/arm mailing list.
-> 
-> The shmobile series implements its own code for setting the SCU power
-> register of the ARM MPCore. It uses 32-bit wide access and thus needs
-> locking as multiple CPUs might access it simultaneously for change. There is
-> already a small helper function that avoids the overhead by using 8-bit
-> wide access: As every CPU only accesses its own field we can drop the
-> lock and use it.
+764f4e4e33d18cde4dcaf8a0d860b749c6d6d08b
+(sh: clkfwk: Use shared sh_clk_div_enable/disable())
+shared enable/disable funcions for div4/div6.
+But new sh_clk_div_enable() didn't care sh_clk_div_set_rate()
+which is required on div6 clock.
+This patch fixes it, and is tested by HDMI sound output on armadillo800eva
 
-Thanks,
+Reported-by: Cao Minh Hiep <hiepcm@gmail.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+Paul
 
-these look good to me. I will push them to the boards branch once
-its current pull request has been processed by the arm-soc people.
+This is bugfix patch which should go to v3.6/v3.7.
+But please check this style.
+It is checking CLK_MASK_DIV_ON_DISABLE for div6 or not.
+
+ drivers/sh/clk/cpg.c |    9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/sh/clk/cpg.c b/drivers/sh/clk/cpg.c
+index 07e9fb4..fe6dbef 100644
+--- a/drivers/sh/clk/cpg.c
++++ b/drivers/sh/clk/cpg.c
+@@ -126,7 +126,14 @@ static int sh_clk_div_set_rate(struct clk *clk, unsigned long rate)
+ 
+ static int sh_clk_div_enable(struct clk *clk)
+ {
+-	sh_clk_write(sh_clk_read(clk) & ~CPG_CKSTP_BIT, clk);
++	int ret = 0;
++
++	if (clk->flags & CLK_MASK_DIV_ON_DISABLE)
++		ret = sh_clk_div_set_rate(clk, clk->rate);
++
++	if (ret = 0)
++		sh_clk_write(sh_clk_read(clk) & ~CPG_CKSTP_BIT, clk);
++
+ 	return 0;
+ }
+ 
+-- 
+1.7.9.5
 
