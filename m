@@ -1,104 +1,134 @@
-From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Date: Wed, 24 Oct 2012 10:56:51 +0000
-Subject: [PATCH 1/5] i2c: i2c-sh_mobile: calculate clock parameters at driver probing time
-Message-Id: <5087C973.4010305@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Sun, 28 Oct 2012 02:26:10 +0000
+Subject: [PATCH 09/12] ARM: shmobile: r8a7779: add I2C driver support
+Message-Id: <1351391173-32379-10-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5087C93F.6080601@renesas.com>
-In-Reply-To: <5087C93F.6080601@renesas.com>
+References: <1351391173-32379-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1351391173-32379-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Currently SCL clock parameters (ICCH/ICCL) are calculated in
-activate_ch(), which gets called every time sh_mobile_i2c_xfer() is
-processed, while each I2C bus speed is system-defined and in general
-those parameters do not have to be updated over I2C transactions.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-The only reason I could see having it transaction-time is to adjust
-ICCH/ICCL values according to the operating frequency of the I2C
-hardware block, in the face of DFS (Dynamic Frequency Scaling).
+This patch enable R-Car I2C driver
 
-However, this won't be necessary.
-
-The operating frequency of the I2C hardware block can change _even_
-in the middle of I2C transactions.  There is no way to prevent it
-from happening, and I2C hardware block can work with such dynamic
-frequency change, of course.
-
-Another is that ICCH/ICCL clock parameters optimized for the faster
-operating frequency, can also be applied to the slower operating
-frequency, as long as slave devices work.  However, the converse is
-not true.  It would violate SCL timing specs of the I2C standard.
-
-What we can do now is to calculate the ICCH/ICCL clock parameters
-according to the fastest operating clock of the I2C hardware block.
-And if that's the case, that calculation should be done just once
-at driver-module-init time.
-
-This patch moves ICCH/ICCL calculating part from activate_ch() into
-sh_mobile_i2c_init(), and call it from sh_mobile_i2c_probe().
-
-Note that sh_mobile_i2c_init() just prepares clock parameters using
-the clock rate and platform data provided, but does _not_ make any
-hardware I/O accesses.  We don't have to care about run-time PM
-maintenance here.
-
-Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- drivers/i2c/busses/i2c-sh_mobile.c | 18 +++++++++++++-----
- 1 file changed, 13 insertions(+), 5 deletions(-)
+ arch/arm/configs/marzen_defconfig      |    2 +
+ arch/arm/mach-shmobile/setup-r8a7779.c |   77 ++++++++++++++++++++++++++++++++
+ 2 files changed, 79 insertions(+)
 
-diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
-index 8110ca4..309d0d5 100644
---- a/drivers/i2c/busses/i2c-sh_mobile.c
-+++ b/drivers/i2c/busses/i2c-sh_mobile.c
-@@ -187,18 +187,15 @@ static void iic_set_clr(struct sh_mobile_i2c_data *pd, int offs,
- 	iic_wr(pd, offs, (iic_rd(pd, offs) | set) & ~clr);
- }
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index 53382b6..f79b55c 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -69,6 +69,8 @@ CONFIG_SERIAL_SH_SCI=y
+ CONFIG_SERIAL_SH_SCI_NR_UARTS=6
+ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ # CONFIG_HW_RANDOM is not set
++CONFIG_I2C=y
++CONFIG_I2C_RCAR=y
+ CONFIG_GPIO_SYSFS=y
+ # CONFIG_HWMON is not set
+ CONFIG_THERMAL=y
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 2917668..63de5cb 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -229,6 +229,79 @@ static struct platform_device tmu01_device = {
+ 	.num_resources	= ARRAY_SIZE(tmu01_resources),
+ };
  
--static void activate_ch(struct sh_mobile_i2c_data *pd)
-+static void sh_mobile_i2c_init(struct sh_mobile_i2c_data *pd)
- {
- 	unsigned long i2c_clk;
- 	u_int32_t num;
- 	u_int32_t denom;
- 	u_int32_t tmp;
- 
--	/* Wake up device and enable clock */
--	pm_runtime_get_sync(pd->dev);
--	clk_enable(pd->clk);
--
- 	/* Get clock rate after clock is enabled */
-+	clk_enable(pd->clk);
- 	i2c_clk = clk_get_rate(pd->clk);
- 
- 	/* Calculate the value for iccl. From the data sheet:
-@@ -239,6 +236,15 @@ static void activate_ch(struct sh_mobile_i2c_data *pd)
- 			pd->icic &= ~ICIC_ICCHB8;
- 	}
- 
-+	clk_disable(pd->clk);
-+}
++/* I2C */
++static struct resource rcar_i2c0_res[] = {
++	{
++		.start  = 0xffc70000,
++		.end    = 0xffc70fff,
++		.flags  = IORESOURCE_MEM,
++	}, {
++		.start  = gic_spi(79),
++		.flags  = IORESOURCE_IRQ,
++	},
++};
 +
-+static void activate_ch(struct sh_mobile_i2c_data *pd)
-+{
-+	/* Wake up device and enable clock */
-+	pm_runtime_get_sync(pd->dev);
-+	clk_enable(pd->clk);
++static struct platform_device i2c0_device = {
++	.name		= "i2c-rcar",
++	.id		= 0,
++	.resource	= rcar_i2c0_res,
++	.num_resources	= ARRAY_SIZE(rcar_i2c0_res),
++};
 +
- 	/* Enable channel and configure rx ack */
- 	iic_set_clr(pd, ICCR, ICCR_ICE, 0);
- 
-@@ -632,6 +638,8 @@ static int sh_mobile_i2c_probe(struct platform_device *dev)
- 	if (size > 0x17)
- 		pd->flags |= IIC_FLAG_HAS_ICIC67;
- 
-+	sh_mobile_i2c_init(pd);
++static struct resource rcar_i2c1_res[] = {
++	{
++		.start  = 0xffc71000,
++		.end    = 0xffc71fff,
++		.flags  = IORESOURCE_MEM,
++	}, {
++		.start  = gic_spi(82),
++		.flags  = IORESOURCE_IRQ,
++	},
++};
 +
- 	/* Enable Runtime PM for this device.
- 	 *
- 	 * Also tell the Runtime PM core to ignore children
++static struct platform_device i2c1_device = {
++	.name		= "i2c-rcar",
++	.id		= 1,
++	.resource	= rcar_i2c1_res,
++	.num_resources	= ARRAY_SIZE(rcar_i2c1_res),
++};
++
++static struct resource rcar_i2c2_res[] = {
++	{
++		.start  = 0xffc72000,
++		.end    = 0xffc72fff,
++		.flags  = IORESOURCE_MEM,
++	}, {
++		.start  = gic_spi(80),
++		.flags  = IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device i2c2_device = {
++	.name		= "i2c-rcar",
++	.id		= 2,
++	.resource	= rcar_i2c2_res,
++	.num_resources	= ARRAY_SIZE(rcar_i2c2_res),
++};
++
++static struct resource rcar_i2c3_res[] = {
++	{
++		.start  = 0xffc73000,
++		.end    = 0xffc73fff,
++		.flags  = IORESOURCE_MEM,
++	}, {
++		.start  = gic_spi(81),
++		.flags  = IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device i2c3_device = {
++	.name		= "i2c-rcar",
++	.id		= 3,
++	.resource	= rcar_i2c3_res,
++	.num_resources	= ARRAY_SIZE(rcar_i2c3_res),
++};
++
+ static struct platform_device *r8a7779_early_devices[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+@@ -238,6 +311,10 @@ static struct platform_device *r8a7779_early_devices[] __initdata = {
+ 	&scif5_device,
+ 	&tmu00_device,
+ 	&tmu01_device,
++	&i2c0_device,
++	&i2c1_device,
++	&i2c2_device,
++	&i2c3_device,
+ };
+ 
+ static struct platform_device *r8a7779_late_devices[] __initdata = {
 -- 
-1.7.12.4
+1.7.10.4
 
