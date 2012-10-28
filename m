@@ -1,50 +1,110 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Sat, 13 Oct 2012 00:16:10 +0000
-Subject: Re: [PATCH 05/14] media: add a V4L2 OF parser
-Message-Id: <Pine.LNX.4.64.1210130155490.23713@axis700.grange>
+From: Simon Horman <horms@verge.net.au>
+Date: Sun, 28 Oct 2012 02:26:13 +0000
+Subject: [PATCH 12/12] ARM: mach-shmobile: Use DT_MACHINE for mackerel
+Message-Id: <1351391173-32379-13-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de>
- <201210051241.52205.hverkuil@xs4all.nl> <Pine.LNX.4.64.1210051250210.13761@axis700.grange>
- <201210051323.45571.hverkuil@xs4all.nl> <Pine.LNX.4.64.1210081306240.12203@axis700.grange>
- <20121011194845.GQ14107@valkosipuli.retiisi.org.uk>
-In-Reply-To: <20121011194845.GQ14107@valkosipuli.retiisi.org.uk>
+References: <1351391173-32379-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1351391173-32379-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sakari Ailus <sakari.ailus@iki.fi>
-Cc: Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-media@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Stephen Warren <swarren@wwwdotorg.org>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
-Bearing in mind the local time, I hope my brevity will be excused:-) Just 
-wanted to give a sign, that I just finished a first successful run of a 
-fully asynchronous and uniform multi-component non-DT video (soc-camera) 
-pipeline probing, verified by a sample capture. What this means:
+Use DT_MACHINE_START() on the sh7372 based mackerel board.
 
-The pipeline consists of 3 components: a sensor, a CSI-2 interface, and a 
-bridge. The platform code registers 3 devices: 2 platform devices for the 
-bridge and CSI-2 and an I2C device for the sensor. The bridge driver gets 
-a list of device descriptors, which it passes to the (soc-camera) generic 
-code. That is used to initialise internal data and install bus (platform- 
-and i2c-) notifiers. After all components have been collected the normal 
-probing continues.
+Also include a tiny DTS file to describe the board and update the
+Kconfig dependencies to select CONFIG_USE_OF.
 
-Next week I'll (hopefully) be cleaning all this up and converting from 
-soc-camera to V4L2 core... After that I'll start posting, beginning with 
-v2 of this DT series, taking into account possibly many comments:-)
-
-I think, it might make sense to first post and have a look at the purely 
-asynchronous code, first without DT additions, that we planned to 
-implement for bus notifiers and whatever is related to them. If that looks 
-reasonable, we can move on with adding DT. (One of) the ugly part(s) is 
-going to be, that with this we'll be supporting 3 (!) pipeline 
-initialisation modes: current (legacy) mode, generating I2C devices on the 
-fly, non-DT asynchronous with all devices probing independently, and DT... 
-Let's see if all this actually flies.
-
-Thanks
-Guennadi
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ arch/arm/boot/dts/Makefile              |    3 ++-
+ arch/arm/boot/dts/sh7372-mackerel.dts   |   22 ++++++++++++++++++++++
+ arch/arm/mach-shmobile/Kconfig          |    1 +
+ arch/arm/mach-shmobile/board-mackerel.c |    8 +++++++-
+ 4 files changed, 32 insertions(+), 2 deletions(-)
+ create mode 100644 arch/arm/boot/dts/sh7372-mackerel.dts
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index c1ce813..0632239 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -75,7 +75,8 @@ dtb-$(CONFIG_ARCH_PRIMA2) += prima2-evb.dtb
+ dtb-$(CONFIG_ARCH_U8500) += snowball.dtb
+ dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm9d.dtb \
+ 	r8a7740-armadillo800eva.dtb \
+-	sh73a0-kzm9g.dtb
++	sh73a0-kzm9g.dtb \
++	sh7372-mackerel.dtb
+ dtb-$(CONFIG_ARCH_SPEAR13XX) += spear1310-evb.dtb \
+ 	spear1340-evb.dtb
+ dtb-$(CONFIG_ARCH_SPEAR3XX)+= spear300-evb.dtb \
+diff --git a/arch/arm/boot/dts/sh7372-mackerel.dts b/arch/arm/boot/dts/sh7372-mackerel.dts
+new file mode 100644
+index 0000000..286f0ca
+--- /dev/null
++++ b/arch/arm/boot/dts/sh7372-mackerel.dts
+@@ -0,0 +1,22 @@
++/*
++ * Device Tree Source for the mackerel board
++ *
++ * Copyright (C) 2012 Renesas Solutions Corp.
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++
++/dts-v1/;
++/include/ "skeleton.dtsi"
++
++/ {
++	model = "Mackerel (AP4 EVM 2nd)";
++	compatible = "renesas,mackerel";
++
++	memory {
++		device_type = "memory";
++		reg = <0x40000000 0x10000000>;
++	};
++};
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 8ae100c..0750d9c 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -95,6 +95,7 @@ config MACH_MACKEREL
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	select SND_SOC_AK4642 if SND_SIMPLE_CARD
++	select USE_OF
+ 
+ config MACH_KOTA2
+ 	bool "KOTA2 board"
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 0c27c81..39b8f2e 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1651,7 +1651,12 @@ static void __init mackerel_init(void)
+ 	pm_clk_add(&hdmi_lcdc_device.dev, "hdmi");
+ }
+ 
+-MACHINE_START(MACKEREL, "mackerel")
++static const char *mackerel_boards_compat_dt[] __initdata = {
++	"renesas,mackerel",
++	NULL,
++};
++
++DT_MACHINE_START(MACKEREL_DT, "mackerel")
+ 	.map_io		= sh7372_map_io,
+ 	.init_early	= sh7372_add_early_devices,
+ 	.init_irq	= sh7372_init_irq,
+@@ -1659,4 +1664,5 @@ MACHINE_START(MACKEREL, "mackerel")
+ 	.init_machine	= mackerel_init,
+ 	.init_late	= sh7372_pm_init_late,
+ 	.timer		= &shmobile_timer,
++	.dt_compat  = mackerel_boards_compat_dt,
+ MACHINE_END
+-- 
+1.7.10.4
+
