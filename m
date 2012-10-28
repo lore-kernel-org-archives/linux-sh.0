@@ -1,7 +1,7 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Sun, 28 Oct 2012 02:26:07 +0000
-Subject: [PATCH 06/12] ARM: shmobile: armadillo800eva: enable restart
-Message-Id: <1351391173-32379-7-git-send-email-horms@verge.net.au>
+Date: Sun, 28 Oct 2012 02:26:06 +0000
+Subject: [PATCH 05/12] ARM: mach-shmobile: add FLCTL DMA slave definitions for sh7372
+Message-Id: <1351391173-32379-6-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1351391173-32379-1-git-send-email-horms@verge.net.au>
 In-Reply-To: <1351391173-32379-1-git-send-email-horms@verge.net.au>
@@ -10,39 +10,64 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Bastian Hecht <hechtb@googlemail.com>
 
-Cc: Masahiro Nakai <nakai@atmark-techno.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+SH7372 can use DMA with the FLCTL flash controller. Add required slave
+IDs and slave descriptors.
+
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
 Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c |    8 ++++++++
- 1 file changed, 8 insertions(+)
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    4 ++++
+ arch/arm/mach-shmobile/setup-sh7372.c        |   20 ++++++++++++++++++++
+ 2 files changed, 24 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 2912eab..fe27d7e 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1229,6 +1229,13 @@ static void __init eva_add_early_devices(void)
- 	shmobile_timer.init = eva_earlytimer_init;
- }
- 
-+#define RESCNT2 IOMEM(0xe6188020)
-+static void eva_restart(char mode, const char *cmd)
-+{
-+	/* Do soft power on reset */
-+	writel((1 << 31), RESCNT2);
-+}
-+
- static const char *eva_boards_compat_dt[] __initdata = {
- 	"renesas,armadillo800eva",
- 	NULL,
-@@ -1243,4 +1250,5 @@ DT_MACHINE_START(ARMADILLO800EVA_DT, "armadillo800eva")
- 	.init_late	= shmobile_init_late,
- 	.timer		= &shmobile_timer,
- 	.dt_compat	= eva_boards_compat_dt,
-+	.restart	= eva_restart,
- MACHINE_END
+diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
+index eb98b45..d65fbbe 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -452,6 +452,10 @@ enum {
+ 	SHDMA_SLAVE_SCIF5_RX,
+ 	SHDMA_SLAVE_SCIF6_TX,
+ 	SHDMA_SLAVE_SCIF6_RX,
++	SHDMA_SLAVE_FLCTL0_TX,
++	SHDMA_SLAVE_FLCTL0_RX,
++	SHDMA_SLAVE_FLCTL1_TX,
++	SHDMA_SLAVE_FLCTL1_RX,
+ 	SHDMA_SLAVE_SDHI0_RX,
+ 	SHDMA_SLAVE_SDHI0_TX,
+ 	SHDMA_SLAVE_SDHI1_RX,
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index a07954f..a360111 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -408,6 +408,26 @@ static const struct sh_dmae_slave_config sh7372_dmae_slaves[] = {
+ 		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x3e,
+ 	}, {
++		.slave_id	= SHDMA_SLAVE_FLCTL0_TX,
++		.addr		= 0xe6a30050,
++		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
++		.mid_rid	= 0x83,
++	}, {
++		.slave_id	= SHDMA_SLAVE_FLCTL0_RX,
++		.addr		= 0xe6a30050,
++		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
++		.mid_rid	= 0x83,
++	}, {
++		.slave_id	= SHDMA_SLAVE_FLCTL1_TX,
++		.addr		= 0xe6a30060,
++		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
++		.mid_rid	= 0x87,
++	}, {
++		.slave_id	= SHDMA_SLAVE_FLCTL1_RX,
++		.addr		= 0xe6a30060,
++		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
++		.mid_rid	= 0x87,
++	}, {
+ 		.slave_id	= SHDMA_SLAVE_SDHI0_TX,
+ 		.addr		= 0xe6850030,
+ 		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
 -- 
 1.7.10.4
 
