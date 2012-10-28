@@ -1,132 +1,61 @@
-From: Hideki EIRAKU <hdk@igel.co.jp>
-Date: Mon, 15 Oct 2012 08:34:53 +0000
-Subject: [PATCH v4 2/2] ARM: mach-shmobile: sh7372: Add IPMMU device
-Message-Id: <1350290093-998-3-git-send-email-hdk@igel.co.jp>
+From: Simon Horman <horms@verge.net.au>
+Date: Sun, 28 Oct 2012 02:26:09 +0000
+Subject: [PATCH 08/12] ARM: shmobile: r8a7779: add I2C clock support
+Message-Id: <1351391173-32379-9-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1350290093-998-1-git-send-email-hdk@igel.co.jp>
-In-Reply-To: <1350290093-998-1-git-send-email-hdk@igel.co.jp>
+References: <1351391173-32379-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1351391173-32379-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This patch adds an IPMMU device and notifies the IPMMU driver which
-devices are connected via the IPMMU module.  All devices connected to the main
-memory bus via the IPMMU module MUST be registered when SHMOBILE_IPMMU and
-SHMOBILE_IOMMU are enabled because physical address cannot be used
-while the IPMMU module's MMU function is enabled.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Hideki EIRAKU <hdk@igel.co.jp>
+This patch is required from R-Car I2C driver
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c   |    5 +++++
- arch/arm/mach-shmobile/board-mackerel.c |    5 +++++
- arch/arm/mach-shmobile/setup-sh7372.c   |   26 ++++++++++++++++++++++++++
- 3 files changed, 36 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7779.c |   11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 790dc68..7006abb 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -61,6 +61,7 @@
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/sh7372.h>
-+#include <mach/ipmmu.h>
- 
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
-@@ -1459,6 +1460,10 @@ static void __init ap4evb_init(void)
- 
- 	sh7372_add_standard_devices();
- 
-+	ipmmu_add_device(&lcdc_device.dev);
-+	ipmmu_add_device(&lcdc1_device.dev);
-+	ipmmu_add_device(&ceu_device.dev);
-+
- 	/* HDMI */
- 	gpio_request(GPIO_FN_HDMI_HPD, NULL);
- 	gpio_request(GPIO_FN_HDMI_CEC, NULL);
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 0c27c81..1c34520 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -60,6 +60,7 @@
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/sh7372.h>
-+#include <mach/ipmmu.h>
- 
- #include <asm/mach/arch.h>
- #include <asm/mach-types.h>
-@@ -1640,6 +1641,10 @@ static void __init mackerel_init(void)
- 
- 	sh7372_add_standard_devices();
- 
-+	ipmmu_add_device(&lcdc_device.dev);
-+	ipmmu_add_device(&hdmi_lcdc_device.dev);
-+	ipmmu_add_device(&ceu_device.dev);
-+
- 	platform_add_devices(mackerel_devices, ARRAY_SIZE(mackerel_devices));
- 
- 	rmobile_add_devices_to_domains(domain_devices,
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index a07954f..aadb769 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -38,6 +38,7 @@
- #include <mach/irqs.h>
- #include <mach/sh7372.h>
- #include <mach/common.h>
-+#include <mach/ipmmu.h>
- #include <asm/mach/map.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
-@@ -968,6 +969,23 @@ static struct platform_device spu1_device = {
- 	.num_resources	= ARRAY_SIZE(spu1_resources),
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index 90d717b..24f5a84 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -87,7 +87,8 @@ static struct clk div4_clks[DIV4_NR] = {
  };
  
-+/* IPMMUI (an IPMMU module for ICB/LMB) */
-+static struct resource ipmmu_resources[] = {
-+	[0] = {
-+		.name	= "IPMMUI",
-+		.start	= 0xfe951000,
-+		.end	= 0xfe9510ff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+};
-+
-+static struct platform_device ipmmu_device = {
-+	.name           = "ipmmu",
-+	.id             = -1,
-+	.resource       = ipmmu_resources,
-+	.num_resources  = ARRAY_SIZE(ipmmu_resources),
-+};
-+
- static struct platform_device *sh7372_early_devices[] __initdata = {
- 	&scif0_device,
- 	&scif1_device,
-@@ -979,6 +997,7 @@ static struct platform_device *sh7372_early_devices[] __initdata = {
- 	&cmt2_device,
- 	&tmu00_device,
- 	&tmu01_device,
-+	&ipmmu_device,
- };
- 
- static struct platform_device *sh7372_late_devices[] __initdata = {
-@@ -1033,6 +1052,13 @@ void __init sh7372_add_standard_devices(void)
- 	platform_add_devices(sh7372_early_devices,
- 			    ARRAY_SIZE(sh7372_early_devices));
- 
-+	ipmmu_add_device(&vpu_device.dev);
-+	ipmmu_add_device(&jpu_device.dev);
-+	ipmmu_add_device(&veu0_device.dev);
-+	ipmmu_add_device(&veu1_device.dev);
-+	ipmmu_add_device(&veu2_device.dev);
-+	ipmmu_add_device(&veu3_device.dev);
-+
- 	platform_add_devices(sh7372_late_devices,
- 			    ARRAY_SIZE(sh7372_late_devices));
- 
+ enum { MSTP323, MSTP322, MSTP321, MSTP320,
+-	MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
++	MSTP030,
++	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+ 	MSTP016, MSTP015, MSTP014,
+ 	MSTP007,
+ 	MSTP_NR };
+@@ -97,6 +98,10 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP322] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 22, 0), /* SDHI1 */
+ 	[MSTP321] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 21, 0), /* SDHI2 */
+ 	[MSTP320] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 20, 0), /* SDHI3 */
++	[MSTP030] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 30, 0), /* I2C0 */
++	[MSTP029] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 29, 0), /* I2C1 */
++	[MSTP028] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 28, 0), /* I2C2 */
++	[MSTP027] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 27, 0), /* I2C3 */
+ 	[MSTP026] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 26, 0), /* SCIF0 */
+ 	[MSTP025] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 25, 0), /* SCIF1 */
+ 	[MSTP024] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 24, 0), /* SCIF2 */
+@@ -150,6 +155,10 @@ static struct clk_lookup lookups[] = {
+ 	/* MSTP32 clocks */
+ 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
+ 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP016]), /* TMU01 */
++	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
++	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP029]), /* I2C1 */
++	CLKDEV_DEV_ID("i2c-rcar.2", &mstp_clks[MSTP028]), /* I2C2 */
++	CLKDEV_DEV_ID("i2c-rcar.3", &mstp_clks[MSTP027]), /* I2C3 */
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
+ 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP024]), /* SCIF2 */
 -- 
-1.7.0.4
+1.7.10.4
 
