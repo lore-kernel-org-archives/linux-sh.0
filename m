@@ -1,42 +1,45 @@
-From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Date: Wed, 24 Oct 2012 10:58:31 +0000
-Subject: [PATCH 5/5] i2c: i2c-sh_mobile: fix spurious transfer request timed out
-Message-Id: <5087C9D7.1040108@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Sun, 28 Oct 2012 02:26:05 +0000
+Subject: [PATCH 04/12] ARM: shmobile: kzm9g: enable DMAEngine on SHDI0 and SDHI2
+Message-Id: <1351391173-32379-5-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5087C93F.6080601@renesas.com>
-In-Reply-To: <5087C93F.6080601@renesas.com>
+References: <1351391173-32379-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1351391173-32379-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Ensure that any of preceding register write operations to the I2C
-hardware block reached the module, and the write data is reflected
-in the registers, before leaving the interrupt handler.
+From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
 
-Otherwise, we'll suffer from spurious WAIT interrupts that lead to
-'Transfer request timed out' message, and the transaction failed.
+This patch enables DMAEngine on SHDI0 and SDHI2 for kzm9g.
 
-Tracked-down-by: Teppei Kamijou <teppei.kamijou.yb@renesas.com>
-Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
 ---
- drivers/i2c/busses/i2c-sh_mobile.c | 3 +++
- 1 file changed, 3 insertions(+)
+ arch/arm/mach-shmobile/board-kzm9g.c |    4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
-index 4c28358..9411c1b 100644
---- a/drivers/i2c/busses/i2c-sh_mobile.c
-+++ b/drivers/i2c/busses/i2c-sh_mobile.c
-@@ -469,6 +469,9 @@ static irqreturn_t sh_mobile_i2c_isr(int irq, void *dev_id)
- 		wake_up(&pd->wait);
- 	}
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index 1a46422..f63f2ee 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -384,6 +384,8 @@ static struct regulator_consumer_supply fixed2v8_power_consumers[]  
+ /* SDHI */
+ static struct sh_mobile_sdhi_info sdhi0_info = {
++	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
++	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
+ 	.tmio_ocr_mask	= MMC_VDD_27_28 | MMC_VDD_28_29,
+@@ -424,6 +426,8 @@ static struct platform_device sdhi0_device = {
  
-+	/* defeat write posting to avoid spurious WAIT interrupts */
-+	iic_rd(pd, ICSR);
-+
- 	return IRQ_HANDLED;
- }
- 
+ /* Micro SD */
+ static struct sh_mobile_sdhi_info sdhi2_info = {
++	.dma_slave_tx	= SHDMA_SLAVE_SDHI2_TX,
++	.dma_slave_rx	= SHDMA_SLAVE_SDHI2_RX,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
+ 			  TMIO_MMC_USE_GPIO_CD |
+ 			  TMIO_MMC_WRPROTECT_DISABLE,
 -- 
-1.7.12.4
+1.7.10.4
 
