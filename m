@@ -1,7 +1,7 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Sun, 28 Oct 2012 02:26:04 +0000
-Subject: [PATCH 03/12] ARM: shmobile: kzm9g: enable three-axis digital accelerometer ADXL345
-Message-Id: <1351391173-32379-4-git-send-email-horms@verge.net.au>
+Date: Sun, 28 Oct 2012 02:26:03 +0000
+Subject: [PATCH 02/12] ARM: shmobile: kzm9g: enable magnetometer ak8975.
+Message-Id: <1351391173-32379-3-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1351391173-32379-1-git-send-email-horms@verge.net.au>
 In-Reply-To: <1351391173-32379-1-git-send-email-horms@verge.net.au>
@@ -12,42 +12,42 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
 
-This patch enables three-axis digital accelerometer ADXL345.
-Test:
-  sudo cat /dev/input/event2
-then tip up the board. You get something from /dev/input/event2.
+This patch enables magnetometer ak8975.
+I checked ak8975_probe() returns successfully.
 
 Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
 Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
  arch/arm/configs/kzm9g_defconfig     |    2 ++
- arch/arm/mach-shmobile/board-kzm9g.c |    4 ++++
- 2 files changed, 6 insertions(+)
+ arch/arm/mach-shmobile/board-kzm9g.c |    6 +++++-
+ 2 files changed, 7 insertions(+), 1 deletion(-)
 
 diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
-index 1404b04..ce99e3e 100644
+index c88b578..1404b04 100644
 --- a/arch/arm/configs/kzm9g_defconfig
 +++ b/arch/arm/configs/kzm9g_defconfig
-@@ -74,6 +74,8 @@ CONFIG_KEYBOARD_GPIO=y
- # CONFIG_INPUT_MOUSE is not set
- CONFIG_INPUT_TOUCHSCREEN=y
- CONFIG_TOUCHSCREEN_ST1232=y
-+CONFIG_INPUT_MISC=y
-+CONFIG_INPUT_ADXL34X=y
- # CONFIG_LEGACY_PTYS is not set
- CONFIG_SERIAL_SH_SCI=y
- CONFIG_SERIAL_SH_SCI_NR_UARTS=9
+@@ -119,6 +119,8 @@ CONFIG_DMADEVICES=y
+ CONFIG_SH_DMAE=y
+ CONFIG_ASYNC_TX_DMA=y
+ CONFIG_STAGING=y
++CONFIG_SENSORS_AK8975=y
++CONFIG_IIO=y
+ # CONFIG_DNOTIFY is not set
+ CONFIG_INOTIFY_USER=y
+ CONFIG_VFAT_FS=y
 diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index a37da78..1a46422 100644
+index 0a43f31..a37da78 100644
 --- a/arch/arm/mach-shmobile/board-kzm9g.c
 +++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -562,6 +562,10 @@ static struct i2c_board_info i2c0_devices[] = {
- 		I2C_BOARD_INFO("ak8975", 0x0c),
- 		.irq = intcs_evt2irq(0x3380), /* IRQ28 */
+@@ -557,7 +557,11 @@ static struct i2c_board_info i2c0_devices[] = {
  	},
+ 	{
+ 		I2C_BOARD_INFO("r2025sd", 0x32),
+-	}
++	},
 +	{
-+		I2C_BOARD_INFO("adxl34x", 0x1d),
-+		.irq = intcs_evt2irq(0x3340), /* IRQ26 */
++		I2C_BOARD_INFO("ak8975", 0x0c),
++		.irq = intcs_evt2irq(0x3380), /* IRQ28 */
 +	},
  };
  
