@@ -1,83 +1,72 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Wed, 03 Oct 2012 02:19:22 +0000
-Subject: Re: [PATCH 2/2] arm: Add ARM ERRATA 782773 workaround
-Message-Id: <20121003021922.GK31207@verge.net.au>
+Date: Sun, 28 Oct 2012 02:26:02 +0000
+Subject: [PATCH 01/12] ARM: shmobile: r8a7740: Enable PMU
+Message-Id: <1351391173-32379-2-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1347434097-7924-1-git-send-email-horms@verge.net.au>
- <1347434097-7924-3-git-send-email-horms@verge.net.au>
- <5050CD87.4020800@codeaurora.org>
- <20120913010041.GD7622@verge.net.au>
- <CAHkRjk500KGTeBD67YMWy2qSdaoO_=Y9WBT_Q78n9Zxgqtmo4w@mail.gmail.com>
- <20120921010037.GI21660@verge.net.au>
- <20120928010246.GA13133@verge.net.au>
- <20120928083819.GA21542@arm.com>
-In-Reply-To: <20120928083819.GA21542@arm.com>
+References: <1351391173-32379-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1351391173-32379-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Sep 28, 2012 at 09:38:19AM +0100, Catalin Marinas wrote:
-> On Fri, Sep 28, 2012 at 02:02:46AM +0100, Simon Horman wrote:
-> > On Fri, Sep 21, 2012 at 10:00:37AM +0900, Simon Horman wrote:
-> > > On Thu, Sep 20, 2012 at 10:35:50AM +0100, Catalin Marinas wrote:
-> > > > On 13 September 2012 02:00, Simon Horman <horms@verge.net.au> wrote:
-> > > > > On Wed, Sep 12, 2012 at 10:59:35AM -0700, Stephen Boyd wrote:
-> > > > >> On 09/12/12 00:14, Simon Horman wrote:
-> > > > >> > @@ -1423,6 +1423,15 @@ config ARM_ERRATA_775420
-> > > > >> >           deadlock. This workaround puts DSB before executing ISB at the
-> > > > >> >           beginning of the abort exception handler.
-> > > > >> >
-> > > > >> > +config ARM_ERRATA_782773
-> > > > >> > +   bool "ARM errata: Updating a translation entry might cause an unexpected translation fault"
-> > > > >> > +   depends on CPU_V7
-> > > > >> > +   help
-> > > > >> > +     This option enables the workaround for the 782773 Cortex-A9 (all r0,
-> > > > >> > +     ,r2 and r3 revisions) erratum. It might cause MMU exception in case
-> > > > >>
-> > > > >> Seems to be an extra comma here.
-> > > > >
-> > > > > Thanks, here is an updated version.
-> > > > >
-> > > > > From: Kouei Abe <kouei.abe.cp@rms.renesas.com>
-> > > > >
-> > > > > arm: Add ARM ERRATA 782773 workaround
-> > > > >
-> > > > > Signed-off-by: Kouei Abe <kouei.abe.cp@rms.renesas.com>
-> > > > > Signed-off-by: Simon Horman <horms@verge.net.au>
-> > > > 
-> > > > I would add some text to the commit log as well, even though it
-> > > > matches the Kconfig entry.
-> > > 
-> > > Sure, an updated patch is below.
-> > > I also reworded the text to make it easier on my eyes,
-> > > I don't think the meaning has been altered.
-> > > 
-> > > > Have you hit this in practice? In general the kernel shouldn't access
-> > > > kernel virtual address corresponding to a page table that is being
-> > > > changed. For user address space it is possible but the kernel can
-> > > > handle use translation faults, even though they may be spurious.
-> > > 
-> > > I believe that Abe-san's team have come up against this,
-> > > I can confirm that if it is important.
-> > 
-> > I was wondering if I could get an Ack on this as you indicated
-> > in another email that you feel that the implementation is an
-> > appropriate workaround.
-> 
-> I'd like to know whether this is actually hit in practice and the
-> conditions. The only time when we write live (i.e. translation that's
-> currently in use) kernel mappings is during boot, alloc_init_section()
-> replacing (though with the same value) the initial memory map. But if
-> that's the scenario you are getting, I would rather add another
-> flush_pmd_entry() call before setting the pmd in alloc_init_section().
-> 
-> I'm not convinced a costly run-time workaround in set_pte is needed.
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
-Hi Catalin,
+This patch enables PMU for r8a7740.
 
-I have discussed this the issue that you raised above with the platform
-team that provided me with the workaround. Although they have not encountered a
-situation in which the errata is hit they would like the workaround
-considered for merging as it is needed for compliance with customer
-requirements, in this case an automotive customer (I do not know which one).
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ arch/arm/configs/armadillo800eva_defconfig |    1 +
+ arch/arm/mach-shmobile/setup-r8a7740.c     |   16 ++++++++++++++++
+ 2 files changed, 17 insertions(+)
+
+diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
+index f78d259..3d76407 100644
+--- a/arch/arm/configs/armadillo800eva_defconfig
++++ b/arch/arm/configs/armadillo800eva_defconfig
+@@ -7,6 +7,7 @@ CONFIG_LOG_BUF_SHIFT
+ # CONFIG_IPC_NS is not set
+ # CONFIG_PID_NS is not set
+ CONFIG_CC_OPTIMIZE_FOR_SIZE=y
++CONFIG_PERF_EVENTS=y
+ CONFIG_SLAB=y
+ CONFIG_MODULES=y
+ CONFIG_MODULE_UNLOAD=y
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 11bb1d9..1e032cb 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -590,6 +590,21 @@ static struct platform_device i2c1_device = {
+ 	.num_resources	= ARRAY_SIZE(i2c1_resources),
+ };
+ 
++static struct resource pmu_resources[] = {
++	[0] = {
++		.start	= evt2irq(0x19a0),
++		.end	= evt2irq(0x19a0),
++		.flags  = IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device pmu_device = {
++	.name	= "arm-pmu",
++	.id		= -1,
++	.num_resources = ARRAY_SIZE(pmu_resources),
++	.resource = pmu_resources,
++};
++
+ static struct platform_device *r8a7740_late_devices[] __initdata = {
+ 	&i2c0_device,
+ 	&i2c1_device,
+@@ -597,6 +612,7 @@ static struct platform_device *r8a7740_late_devices[] __initdata = {
+ 	&dma1_device,
+ 	&dma2_device,
+ 	&usb_dma_device,
++	&pmu_device,
+ };
+ 
+ /*
+-- 
+1.7.10.4
+
