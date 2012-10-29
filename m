@@ -1,112 +1,70 @@
-From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Date: Fri, 05 Oct 2012 02:38:20 +0000
-Subject: [PATCH 10/10] memory-hotplug : remove sysfs file of node
-Message-Id: <506E481C.8050804@jp.fujitsu.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 29 Oct 2012 08:15:25 +0000
+Subject: [PATCH 5/7] ARM: shmobile: marzen: add USB phy support
+Message-Id: <87ehkh4rty.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <506E43E0.70507@jp.fujitsu.com>
-In-Reply-To: <506E43E0.70507@jp.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
-Cc: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, wency@cn.fujitsu.com
+To: linux-sh@vger.kernel.org
 
-From: Wen Congyang <wency@cn.fujitsu.com>
-
-This patch introduces a new function try_offline_node() to
-remove sysfs file of node when all memory sections of this
-node are removed. If some memory sections of this node are
-not removed, this function does nothing.
-
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-CC: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- mm/memory_hotplug.c |   54 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 54 insertions(+)
+ arch/arm/configs/marzen_defconfig     |    3 ++-
+ arch/arm/mach-shmobile/board-marzen.c |   21 +++++++++++++++++++++
+ 2 files changed, 23 insertions(+), 1 deletion(-)
 
-Index: linux-3.6/mm/memory_hotplug.c
-=================================--- linux-3.6.orig/mm/memory_hotplug.c	2012-10-04 18:30:31.767709165 +0900
-+++ linux-3.6/mm/memory_hotplug.c	2012-10-04 18:32:46.907842637 +0900
-@@ -29,6 +29,7 @@
- #include <linux/suspend.h>
- #include <linux/mm_inline.h>
- #include <linux/firmware-map.h>
-+#include <linux/stop_machine.h>
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index 5b8215f..8a861b7 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -78,7 +78,8 @@ CONFIG_GPIO_SYSFS=y
+ CONFIG_THERMAL=y
+ CONFIG_RCAR_THERMAL=y
+ CONFIG_SSB=y
+-# CONFIG_USB_SUPPORT is not set
++CONFIG_USB=y
++CONFIG_USB_RCAR_PHY=y
+ CONFIG_MMC=y
+ CONFIG_MMC_SDHI=y
+ CONFIG_UIO=y
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index 69f7f46..74c7f0b 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -144,11 +144,32 @@ static struct platform_device hspi_device = {
+ 	.num_resources	= ARRAY_SIZE(hspi_resources),
+ };
  
- #include <asm/tlbflush.h>
++/* USB PHY */
++static struct resource usb_phy_resources[] = {
++	[0] = {
++		.start		= 0xffe70000,
++		.end		= 0xffe70900 - 1,
++		.flags		= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start		= 0xfff70000,
++		.end		= 0xfff70900 - 1,
++		.flags		= IORESOURCE_MEM,
++	},
++};
++
++static struct platform_device usb_phy_device = {
++	.name		= "rcar_usb_phy",
++	.resource	= usb_phy_resources,
++	.num_resources	= ARRAY_SIZE(usb_phy_resources),
++};
++
+ static struct platform_device *marzen_devices[] __initdata = {
+ 	&eth_device,
+ 	&sdhi0_device,
+ 	&thermal_device,
+ 	&hspi_device,
++	&usb_phy_device,
+ };
  
-@@ -1276,6 +1277,57 @@ int offline_memory(u64 start, u64 size)
- 	return 0;
- }
- 
-+static int check_cpu_on_node(void *data)
-+{
-+	struct pglist_data *pgdat = data;
-+	int cpu;
-+
-+	for_each_online_cpu(cpu) {
-+		if (cpu_to_node(cpu) = pgdat->node_id)
-+			/*
-+			 * the cpu on this node is onlined, and we can't
-+			 * offline this node.
-+			 */
-+			return -EBUSY;
-+	}
-+
-+	return 0;
-+}
-+
-+/* offline the node if all memory sections of this node are removed */
-+static void try_offline_node(int nid)
-+{
-+	unsigned long start_pfn = NODE_DATA(nid)->node_start_pfn;
-+	unsigned long end_pfn = start_pfn + NODE_DATA(nid)->node_spanned_pages;
-+	unsigned long pfn;
-+
-+	for (pfn = start_pfn; pfn < end_pfn; pfn += PAGES_PER_SECTION) {
-+		unsigned long section_nr = pfn_to_section_nr(pfn);
-+
-+		if (!present_section_nr(section_nr))
-+			continue;
-+
-+		if (pfn_to_nid(pfn) != nid)
-+			continue;
-+
-+		/*
-+		 * some memory sections of this node are not removed, and we
-+		 * can't offline node now.
-+		 */
-+		return;
-+	}
-+
-+	if (stop_machine(check_cpu_on_node, NODE_DATA(nid), NULL))
-+		return;
-+
-+	/*
-+	 * all memory sections of this node are removed, we can offline this
-+	 * node now.
-+	 */
-+	node_set_offline(nid);
-+	unregister_one_node(nid);
-+}
-+
- int __ref remove_memory(int nid, u64 start, u64 size)
- {
- 	int ret = 0;
-@@ -1296,6 +1348,8 @@ int __ref remove_memory(int nid, u64 sta
- 	firmware_map_remove(start, start + size, "System RAM");
- 
- 	arch_remove_memory(start, size);
-+
-+	try_offline_node(nid);
- out:
- 	unlock_memory_hotplug();
- 	return ret;
+ static void __init marzen_init(void)
+-- 
+1.7.9.5
 
