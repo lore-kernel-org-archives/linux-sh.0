@@ -1,149 +1,137 @@
-From: Bastian Hecht <hechtb@googlemail.com>
-Date: Fri, 19 Oct 2012 10:15:34 +0000
-Subject: [PATCH v3 1/3] mtd: sh_flctl: Minor cleanups
-Message-Id: <1350641736-18192-2-git-send-email-hechtb@gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 29 Oct 2012 08:15:43 +0000
+Subject: [PATCH 7/7] ARM: shmobile: marzen: add USB OHCI driver support
+Message-Id: <87bofl4rtg.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1350641736-18192-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1350641736-18192-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Some small fixes to avoid sparse and smatch complain. Other cosmetic fixes
-as well.
+This patch supports CN21/CN22 USB 1.x (port 0/1/2),
+and enable input event on defconfig
 
-- Change of the type of the member index in struct sh_flctl from signed
-to unsigned. We use index by addressing array members, so unsigned is more
-concise here. Adapt functions relying on sh_flctl::index.
-- Remove a blurring cast in write_fiforeg().
-- Apply consistent naming scheme when refering to the data buffer.
-- Shorten some unnecessarily verbose functions.
-- Remove spaces at start of lines.
-
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-v3: This is a newly added patch (v3 is misleading here) in reaction to the
-aiaiai output of Artem. My smatch (git head) didn't complain about the
-range problem mentioned in Artem's comment of v2 but I thought switching
-to unsigned int can't hurt here and seems more clean.
+ arch/arm/configs/marzen_defconfig     |    5 +--
+ arch/arm/mach-shmobile/Kconfig        |    1 +
+ arch/arm/mach-shmobile/board-marzen.c |   57 +++++++++++++++++++++++++++++++++
+ 3 files changed, 61 insertions(+), 2 deletions(-)
 
- drivers/mtd/nand/sh_flctl.c  |   37 ++++++++++++++++---------------------
- include/linux/mtd/sh_flctl.h |    2 +-
- 2 files changed, 17 insertions(+), 22 deletions(-)
-
-diff --git a/drivers/mtd/nand/sh_flctl.c b/drivers/mtd/nand/sh_flctl.c
-index 4fbfe96..78d18c0f 100644
---- a/drivers/mtd/nand/sh_flctl.c
-+++ b/drivers/mtd/nand/sh_flctl.c
-@@ -225,7 +225,7 @@ static enum flctl_ecc_res_t wait_recfifo_ready
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index 6540dfb..728a43c 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -61,9 +61,8 @@ CONFIG_SMSC911X=y
+ # CONFIG_NET_VENDOR_STMICRO is not set
+ # CONFIG_WLAN is not set
+ # CONFIG_INPUT_MOUSEDEV is not set
+-# CONFIG_INPUT_KEYBOARD is not set
++CONFIG_INPUT_EVDEV=y
+ # CONFIG_INPUT_MOUSE is not set
+-# CONFIG_SERIO is not set
+ # CONFIG_VT is not set
+ # CONFIG_LEGACY_PTYS is not set
+ # CONFIG_DEVKMEM is not set
+@@ -86,6 +85,8 @@ CONFIG_MMC=y
+ CONFIG_MMC_SDHI=y
+ CONFIG_USB=y
+ CONFIG_USB_EHCI_HCD=y
++CONFIG_USB_OHCI_HCD=y
++CONFIG_USB_OHCI_HCD_PLATFORM=y
+ CONFIG_USB_EHCI_HCD_PLATFORM=y
+ CONFIG_USB_STORAGE=y
+ CONFIG_UIO=y
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 89f590b..f66270c 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -42,6 +42,7 @@ config ARCH_R8A7779
+ 	select CPU_V7
+ 	select SH_CLK_CPG
+ 	select USB_ARCH_HAS_EHCI
++	select USB_ARCH_HAS_OHCI
  
- 		for (i = 0; i < 3; i++) {
- 			uint8_t org;
--			int index;
-+			unsigned int index;
+ config ARCH_EMEV2
+ 	bool "Emma Mobile EV2"
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index 707b3bd..449f928 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -36,6 +36,7 @@
+ #include <linux/mfd/tmio.h>
+ #include <linux/usb/otg.h>
+ #include <linux/usb/ehci_pdriver.h>
++#include <linux/usb/ohci_pdriver.h>
+ #include <linux/pm_runtime.h>
+ #include <mach/hardware.h>
+ #include <mach/r8a7779.h>
+@@ -255,9 +256,65 @@ static struct platform_device ehci1_device = {
+ 	.resource	= ehci1_resources,
+ };
  
- 			data = readl(ecc_reg[i]);
++static struct usb_ohci_pdata ohcix_pdata = {
++	.power_on	= usb_power_on,
++	.power_off	= usb_power_off,
++	.power_suspend	= usb_power_off,
++};
++
++static struct resource ohci0_resources[] = {
++	[0] = {
++		.start	= 0xffe70400,
++		.end	= 0xffe70800 - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= gic_spi(44),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device ohci0_device = {
++	.name	= "ohci-platform",
++	.id	= 0,
++	.dev	= {
++		.dma_mask		= &ohci0_device.dev.coherent_dma_mask,
++		.coherent_dma_mask	= 0xffffffff,
++		.platform_data		= &ohcix_pdata,
++	},
++	.num_resources	= ARRAY_SIZE(ohci0_resources),
++	.resource	= ohci0_resources,
++};
++
++static struct resource ohci1_resources[] = {
++	[0] = {
++		.start	= 0xfff70400,
++		.end	= 0xfff70800 - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= gic_spi(45),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device ohci1_device = {
++	.name	= "ohci-platform",
++	.id	= 1,
++	.dev	= {
++		.dma_mask		= &ohci1_device.dev.coherent_dma_mask,
++		.coherent_dma_mask	= 0xffffffff,
++		.platform_data		= &ohcix_pdata,
++	},
++	.num_resources	= ARRAY_SIZE(ohci1_resources),
++	.resource	= ohci1_resources,
++};
++
+ static struct platform_device *marzen_late_devices[] __initdata = {
+ 	&ehci0_device,
+ 	&ehci1_device,
++	&ohci0_device,
++	&ohci1_device,
+ };
  
-@@ -305,28 +305,29 @@ static enum flctl_ecc_res_t read_ecfiforeg
- 	return res;
- }
- 
--static void write_fiforeg(struct sh_flctl *flctl, int rlen, int offset)
-+static void write_fiforeg(struct sh_flctl *flctl, int rlen,
-+						unsigned int offset)
- {
- 	int i, len_4align;
--	unsigned long *data = (unsigned long *)&flctl->done_buff[offset];
--	void *fifo_addr = (void *)FLDTFIFO(flctl);
-+	unsigned long *buf = (unsigned long *)&flctl->done_buff[offset];
- 
- 	len_4align = (rlen + 3) / 4;
- 	for (i = 0; i < len_4align; i++) {
- 		wait_wfifo_ready(flctl);
--		writel(cpu_to_be32(data[i]), fifo_addr);
-+		writel(cpu_to_be32(buf[i]), FLDTFIFO(flctl));
- 	}
- }
- 
--static void write_ec_fiforeg(struct sh_flctl *flctl, int rlen, int offset)
-+static void write_ec_fiforeg(struct sh_flctl *flctl, int rlen,
-+						unsigned int offset)
- {
- 	int i, len_4align;
--	unsigned long *data = (unsigned long *)&flctl->done_buff[offset];
-+	unsigned long *buf = (unsigned long *)&flctl->done_buff[offset];
- 
- 	len_4align = (rlen + 3) / 4;
- 	for (i = 0; i < len_4align; i++) {
- 		wait_wecfifo_ready(flctl);
--		writel(cpu_to_be32(data[i]), FLECFIFO(flctl));
-+		writel(cpu_to_be32(buf[i]), FLECFIFO(flctl));
- 	}
- }
- 
-@@ -748,41 +749,35 @@ static void flctl_select_chip(struct mtd_info *mtd, int chipnr)
- static void flctl_write_buf(struct mtd_info *mtd, const uint8_t *buf, int len)
- {
- 	struct sh_flctl *flctl = mtd_to_flctl(mtd);
--	int index = flctl->index;
- 
--	memcpy(&flctl->done_buff[index], buf, len);
-+	memcpy(&flctl->done_buff[flctl->index], buf, len);
- 	flctl->index += len;
- }
- 
- static uint8_t flctl_read_byte(struct mtd_info *mtd)
- {
- 	struct sh_flctl *flctl = mtd_to_flctl(mtd);
--	int index = flctl->index;
- 	uint8_t data;
- 
--	data = flctl->done_buff[index];
-+	data = flctl->done_buff[flctl->index];
- 	flctl->index++;
- 	return data;
- }
- 
- static uint16_t flctl_read_word(struct mtd_info *mtd)
- {
--       struct sh_flctl *flctl = mtd_to_flctl(mtd);
--       int index = flctl->index;
--       uint16_t data;
--       uint16_t *buf = (uint16_t *)&flctl->done_buff[index];
-+	struct sh_flctl *flctl = mtd_to_flctl(mtd);
-+	uint16_t *buf = (uint16_t *)&flctl->done_buff[flctl->index];
- 
--       data = *buf;
--       flctl->index += 2;
--       return data;
-+	flctl->index += 2;
-+	return *buf;
- }
- 
- static void flctl_read_buf(struct mtd_info *mtd, uint8_t *buf, int len)
- {
- 	struct sh_flctl *flctl = mtd_to_flctl(mtd);
--	int index = flctl->index;
- 
--	memcpy(buf, &flctl->done_buff[index], len);
-+	memcpy(buf, &flctl->done_buff[flctl->index], len);
- 	flctl->index += len;
- }
- 
-diff --git a/include/linux/mtd/sh_flctl.h b/include/linux/mtd/sh_flctl.h
-index 01e4b15..4815576 100644
---- a/include/linux/mtd/sh_flctl.h
-+++ b/include/linux/mtd/sh_flctl.h
-@@ -147,7 +147,7 @@ struct sh_flctl {
- 
- 	uint8_t	done_buff[2048 + 64];	/* max size 2048 + 64 */
- 	int	read_bytes;
--	int	index;
-+	unsigned int index;
- 	int	seqin_column;		/* column in SEQIN cmd */
- 	int	seqin_page_addr;	/* page_addr in SEQIN cmd */
- 	uint32_t seqin_read_cmd;		/* read cmd in SEQIN cmd */
+ void __init marzen_init_late(void)
 -- 
 1.7.9.5
 
