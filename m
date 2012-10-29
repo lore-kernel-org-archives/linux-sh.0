@@ -1,42 +1,54 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 19 Oct 2012 06:49:20 +0000
-Subject: [PATCH] ARM: shmobile: r8a7779: I/O address abuse cleanup
-Message-Id: <1350629360-27438-2-git-send-email-horms@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 29 Oct 2012 08:14:41 +0000
+Subject: [PATCH 2/7] ARM: shmobile: r8a7740: add USB24 clock explain
+Message-Id: <87ip9t4rv5.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1350629360-27438-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1350629360-27438-1-git-send-email-horms@verge.net.au>
+References: <87mx3gtc2d.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87mx3gtc2d.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-a2a47ca36642e3995e982957bc42678cf11ca6ac
-(ARM: __io abuse cleanup) cleanuped __io() -> IOMEM(),
-but setup-r8a7779.c was out of target,
-since it directly used (void __iomem __force *) instead of __io().
-This patch cleanup it.
+USBCKCR is controlling USB parent clock and divide rate.
+This parent clock is used as a "usb24s" from other devices,
+but the "divide rate" is not used.
+Further, this clock itself is known as "usb24".
+So, to set this clock is a little confusable.
+This patch adds quick explain and sample settings for this clock.
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7779.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/clock-r8a7740.c |   16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 2917668..ebbffc2 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -247,7 +247,7 @@ void __init r8a7779_add_standard_devices(void)
- {
- #ifdef CONFIG_CACHE_L2X0
- 	/* Early BRESP enable, Shared attribute override enable, 64K*16way */
--	l2x0_init((void __iomem __force *)(0xf0100000), 0x40470000, 0x82000fff);
-+	l2x0_init(IOMEM(0xf0100000), 0x40470000, 0x82000fff);
- #endif
- 	r8a7779_pm_init();
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index 6729e00..c012bbf 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -188,6 +188,22 @@ static struct clk pllc1_div2_clk = {
+ };
  
+ /* USB clock */
++/*
++ * USBCKCR is controlling usb24 clock
++ * bit[7] : parent clock
++ * bit[6] : clock divide rate
++ * And this bit[7] is used as a "usb24s" from other devices.
++ * (Video clock / Sub clock / SPU clock)
++ * You can controll this clock as a below.
++ *
++ * struct clk *usb24	= clk_get(dev,  "usb24");
++ * struct clk *usb24s	= clk_get(NULL, "usb24s");
++ * struct clk *system	= clk_get(NULL, "system_clk");
++ * int rate = clk_get_rate(system);
++ *
++ * clk_set_parent(usb24s, system);  // for bit[7]
++ * clk_set_rate(usb24, rate / 2);   // for bit[6]
++ */
+ static struct clk *usb24s_parents[] = {
+ 	[0] = &system_clk,
+ 	[1] = &extal2_clk
 -- 
-1.7.10.4
+1.7.9.5
 
