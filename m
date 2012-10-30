@@ -1,7 +1,7 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 30 Oct 2012 07:13:37 +0000
-Subject: Re: mainlining tps80031
-Message-Id: <Pine.LNX.4.64.1210300811280.29432@axis700.grange>
+From: Laxman Dewangan <ldewangan@nvidia.com>
+Date: Tue, 30 Oct 2012 12:41:12 +0000
+Subject: RE: mainlining tps80031
+Message-Id: <96C9D994977DD0439FB6D3FE3B13DD907DE8EFC559@BGMAIL01.nvidia.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <Pine.LNX.4.64.1210261212170.20835@axis700.grange>
 In-Reply-To: <Pine.LNX.4.64.1210261212170.20835@axis700.grange>
@@ -9,6 +9,19 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+
+I am discussing with our release team that where they have kept the releases.
+I will let you know once I will have information.
+
+Thanks,
+Laxman
+
+-----Original Message-----
+From: Guennadi Liakhovetski [mailto:g.liakhovetski@gmx.de] 
+Sent: Tuesday, October 30, 2012 12:44 PM
+To: Laxman Dewangan
+Cc: Venu Byravarasu; android-porting@googlegroups.com; Magnus Damm; linux-sh@vger.kernel.org
+Subject: Re: mainlining tps80031
 
 Hi Laxman
 
@@ -50,3 +63,9 @@ Guennadi
 Guennadi Liakhovetski, Ph.D.
 Freelance Open-Source Software Developer
 http://www.open-technology.de/
+-----------------------------------------------------------------------------------
+This email message is for the sole use of the intended recipient(s) and may contain
+confidential information.  Any unauthorized review, use, disclosure or distribution
+is prohibited.  If you are not the intended recipient, please contact the sender by
+reply email and destroy all copies of the original message.
+-----------------------------------------------------------------------------------
