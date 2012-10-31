@@ -1,51 +1,40 @@
-From: Sylwester Nawrocki <s.nawrocki@samsung.com>
-Date: Mon, 08 Oct 2012 09:28:58 +0000
-Subject: Re: [PATCH 10/14] media: soc-camera: support OF cameras
-Message-Id: <50729CDA.5030500@samsung.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 31 Oct 2012 03:05:59 +0000
+Subject: [PATCH 0/3] sh/ARM: shmobile: add sh_clk_fsidiv_register()
+Message-Id: <87ip9rmjcb.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1348754853-28619-1-git-send-email-g.liakhovetski@gmx.de>
- <1348754853-28619-11-git-send-email-g.liakhovetski@gmx.de>
- <506F30E8.10206@gmail.com> <Pine.LNX.4.64.1210081028270.11034@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1210081028270.11034@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-media@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>, Stephen Warren <swarren@wwwdotorg.org>, Arnd Bergmann <arnd@arndb.de>, Grant Likely <grant.likely@secretlab.ca>
+To: linux-sh@vger.kernel.org
 
-Hi Guennadi,
 
-On 10/08/2012 10:37 AM, Guennadi Liakhovetski wrote:
->>>   	case BUS_NOTIFY_BOUND_DRIVER:
->>
->> There is no need for different handling of this event as well ?
-> 
-> There is. The former is entered before the sensor I2C probe method is 
-> called and prepares the data for probing, the latter is entered after a 
-> successful sensor I2C probing.
-> 
->> Further, there is code like:
->>
->> 	adap = i2c_get_adapter(icl->i2c_adapter_id);
->>
->> which is clearly not going to work in OF case.
-> 
-> It does work. See the call to soc_camera_of_i2c_ifill() under 
-> BUS_NOTIFY_BIND_DRIVER above. In it
-> 
-> 	icl->i2c_adapter_id = client->adapter->nr;
-> 
->> Could you clarify how it is supposed to work ?
-> 
-> It is not only supposed to work, it actually does work. Does the above 
-> explain it sufficiently?
+Hi Paul, Simon
 
-Sorry, my fault. Somehow I didn't realize there is being passed
-an I2C adapter already assigned by the I2C core. I confused it with
-some static adapter nr, which would be -1 for dt case.
-Apologies for wasting your time with those non-constructive questions.
+These patches add sh_clk_fsidiv_register() for FSI-DIV clock control.
+This is 1st step of FSI-DT support.
+My plan is...
 
---
+ 1st : sh/ARM: add FSI-DIV clock control functions
+ 2nd : FSI driver supports audio clock calculation method
+ 3rd : sh/ARM: remove old style .set_rate callback from platform
+ 4th : FSI support DT
+ 5th : platform use DT for FSI
 
-Thanks,
-Sylwester
+Kuninori Morimoto (3):
+      sh: clkfwk: add sh_clk_fsidiv_register()
+      ARM: shmobile: sh7372: sh7372_fsidivX_clk become non-global
+      ARM: shmobile: sh7372: use sh_clk_fsidiv_register() for FSI-DIV clocks
+
+ arch/arm/mach-shmobile/board-ap4evb.c        |    2 +-
+ arch/arm/mach-shmobile/board-mackerel.c      |    2 +-
+ arch/arm/mach-shmobile/clock-sh7372.c        |   92 +++-----------------------
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    2 -
+ drivers/sh/clk/cpg.c                         |   86 ++++++++++++++++++++++++
+ include/linux/sh_clk.h                       |    9 +++
+ 6 files changed, 107 insertions(+), 86 deletions(-)
+
+
+Best regards
+---
+Kuninori Morimoto
