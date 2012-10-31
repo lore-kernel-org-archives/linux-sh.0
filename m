@@ -1,137 +1,147 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 29 Oct 2012 08:15:43 +0000
-Subject: [PATCH 7/7] ARM: shmobile: marzen: add USB OHCI driver support
-Message-Id: <87bofl4rtg.wl%kuninori.morimoto.gx@renesas.com>
+Date: Wed, 31 Oct 2012 03:07:59 +0000
+Subject: [PATCH 3/3] ARM: shmobile: sh7372: use sh_clk_fsidiv_register() for FSI-DIV clocks
+Message-Id: <87ehkfmj8z.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This patch supports CN21/CN22 USB 1.x (port 0/1/2),
-and enable input event on defconfig
+Now, sh7372 can use sh_clk_fsidiv_register() for FSI-DIV clocks.
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/configs/marzen_defconfig     |    5 +--
- arch/arm/mach-shmobile/Kconfig        |    1 +
- arch/arm/mach-shmobile/board-marzen.c |   57 +++++++++++++++++++++++++++++++++
- 3 files changed, 61 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/clock-sh7372.c |   94 ++++-----------------------------
+ 1 file changed, 10 insertions(+), 84 deletions(-)
 
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index 6540dfb..728a43c 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -61,9 +61,8 @@ CONFIG_SMSC911X=y
- # CONFIG_NET_VENDOR_STMICRO is not set
- # CONFIG_WLAN is not set
- # CONFIG_INPUT_MOUSEDEV is not set
--# CONFIG_INPUT_KEYBOARD is not set
-+CONFIG_INPUT_EVDEV=y
- # CONFIG_INPUT_MOUSE is not set
--# CONFIG_SERIO is not set
- # CONFIG_VT is not set
- # CONFIG_LEGACY_PTYS is not set
- # CONFIG_DEVKMEM is not set
-@@ -86,6 +85,8 @@ CONFIG_MMC=y
- CONFIG_MMC_SDHI=y
- CONFIG_USB=y
- CONFIG_USB_EHCI_HCD=y
-+CONFIG_USB_OHCI_HCD=y
-+CONFIG_USB_OHCI_HCD_PLATFORM=y
- CONFIG_USB_EHCI_HCD_PLATFORM=y
- CONFIG_USB_STORAGE=y
- CONFIG_UIO=y
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 89f590b..f66270c 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -42,6 +42,7 @@ config ARCH_R8A7779
- 	select CPU_V7
- 	select SH_CLK_CPG
- 	select USB_ARCH_HAS_EHCI
-+	select USB_ARCH_HAS_OHCI
- 
- config ARCH_EMEV2
- 	bool "Emma Mobile EV2"
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index 707b3bd..449f928 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -36,6 +36,7 @@
- #include <linux/mfd/tmio.h>
- #include <linux/usb/otg.h>
- #include <linux/usb/ehci_pdriver.h>
-+#include <linux/usb/ohci_pdriver.h>
- #include <linux/pm_runtime.h>
- #include <mach/hardware.h>
- #include <mach/r8a7779.h>
-@@ -255,9 +256,65 @@ static struct platform_device ehci1_device = {
- 	.resource	= ehci1_resources,
+diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
+index 18dcff7..bee2d05 100644
+--- a/arch/arm/mach-shmobile/clock-sh7372.c
++++ b/arch/arm/mach-shmobile/clock-sh7372.c
+@@ -420,87 +420,11 @@ static struct clk div6_reparent_clks[DIV6_REPARENT_NR] = {
  };
  
-+static struct usb_ohci_pdata ohcix_pdata = {
-+	.power_on	= usb_power_on,
-+	.power_off	= usb_power_off,
-+	.power_suspend	= usb_power_off,
-+};
-+
-+static struct resource ohci0_resources[] = {
-+	[0] = {
-+		.start	= 0xffe70400,
-+		.end	= 0xffe70800 - 1,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= gic_spi(44),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device ohci0_device = {
-+	.name	= "ohci-platform",
-+	.id	= 0,
-+	.dev	= {
-+		.dma_mask		= &ohci0_device.dev.coherent_dma_mask,
-+		.coherent_dma_mask	= 0xffffffff,
-+		.platform_data		= &ohcix_pdata,
-+	},
-+	.num_resources	= ARRAY_SIZE(ohci0_resources),
-+	.resource	= ohci0_resources,
-+};
-+
-+static struct resource ohci1_resources[] = {
-+	[0] = {
-+		.start	= 0xfff70400,
-+		.end	= 0xfff70800 - 1,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= gic_spi(45),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device ohci1_device = {
-+	.name	= "ohci-platform",
-+	.id	= 1,
-+	.dev	= {
-+		.dma_mask		= &ohci1_device.dev.coherent_dma_mask,
-+		.coherent_dma_mask	= 0xffffffff,
-+		.platform_data		= &ohcix_pdata,
-+	},
-+	.num_resources	= ARRAY_SIZE(ohci1_resources),
-+	.resource	= ohci1_resources,
-+};
-+
- static struct platform_device *marzen_late_devices[] __initdata = {
- 	&ehci0_device,
- 	&ehci1_device,
-+	&ohci0_device,
-+	&ohci1_device,
+ /* FSI DIV */
+-static unsigned long fsidiv_recalc(struct clk *clk)
+-{
+-	unsigned long value;
+-
+-	value = __raw_readl(clk->mapping->base);
+-
+-	value >>= 16;
+-	if (value < 2)
+-		return 0;
+-
+-	return clk->parent->rate / value;
+-}
+-
+-static long fsidiv_round_rate(struct clk *clk, unsigned long rate)
+-{
+-	return clk_rate_div_range_round(clk, 2, 0xffff, rate);
+-}
+-
+-static void fsidiv_disable(struct clk *clk)
+-{
+-	__raw_writel(0, clk->mapping->base);
+-}
+-
+-static int fsidiv_enable(struct clk *clk)
+-{
+-	unsigned long value;
+-
+-	value  = __raw_readl(clk->mapping->base) >> 16;
+-	if (value < 2)
+-		return -EIO;
+-
+-	__raw_writel((value << 16) | 0x3, clk->mapping->base);
+-
+-	return 0;
+-}
++enum { FSIDIV_A, FSIDIV_B, FSIDIV_REPARENT_NR };
+ 
+-static int fsidiv_set_rate(struct clk *clk, unsigned long rate)
+-{
+-	int idx;
+-
+-	idx = (clk->parent->rate / rate) & 0xffff;
+-	if (idx < 2)
+-		return -EINVAL;
+-
+-	__raw_writel(idx << 16, clk->mapping->base);
+-	return 0;
+-}
+-
+-static struct sh_clk_ops fsidiv_clk_ops = {
+-	.recalc		= fsidiv_recalc,
+-	.round_rate	= fsidiv_round_rate,
+-	.set_rate	= fsidiv_set_rate,
+-	.enable		= fsidiv_enable,
+-	.disable	= fsidiv_disable,
+-};
+-
+-static struct clk_mapping fsidiva_clk_mapping = {
+-	.phys	= FSIDIVA,
+-	.len	= 8,
+-};
+-
+-static struct clk fsidiva_clk = {
+-	.ops		= &fsidiv_clk_ops,
+-	.parent		= &div6_reparent_clks[DIV6_FSIA], /* late install */
+-	.mapping	= &fsidiva_clk_mapping,
+-};
+-
+-static struct clk_mapping fsidivb_clk_mapping = {
+-	.phys	= FSIDIVB,
+-	.len	= 8,
+-};
+-
+-static struct clk fsidivb_clk = {
+-	.ops		= &fsidiv_clk_ops,
+-	.parent		= &div6_reparent_clks[DIV6_FSIB],  /* late install */
+-	.mapping	= &fsidivb_clk_mapping,
+-};
+-
+-static struct clk *late_main_clks[] = {
+-	&fsidiva_clk,
+-	&fsidivb_clk,
++static struct clk fsidivs[] = {
++	[FSIDIV_A] = SH_CLK_FSIDIV(FSIDIVA, &div6_reparent_clks[DIV6_FSIA]),
++	[FSIDIV_B] = SH_CLK_FSIDIV(FSIDIVB, &div6_reparent_clks[DIV6_FSIB]),
  };
  
- void __init marzen_init_late(void)
+ enum { MSTP001, MSTP000,
+@@ -583,8 +507,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("pllc1_clk", &pllc1_clk),
+ 	CLKDEV_CON_ID("pllc1_div2_clk", &pllc1_div2_clk),
+ 	CLKDEV_CON_ID("pllc2_clk", &sh7372_pllc2_clk),
+-	CLKDEV_CON_ID("fsidiva", &fsidiva_clk),
+-	CLKDEV_CON_ID("fsidivb", &fsidivb_clk),
++	CLKDEV_CON_ID("fsidiva", &fsidivs[FSIDIV_A]),
++	CLKDEV_CON_ID("fsidivb", &fsidivs[FSIDIV_B]),
+ 
+ 	/* DIV4 clocks */
+ 	CLKDEV_CON_ID("i_clk", &div4_clks[DIV4_I]),
+@@ -680,6 +604,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("icka", "sh_fsi2", &div6_reparent_clks[DIV6_FSIA]),
+ 	CLKDEV_ICK_ID("ickb", "sh_fsi2", &div6_reparent_clks[DIV6_FSIB]),
+ 	CLKDEV_ICK_ID("spu2", "sh_fsi2", &mstp_clks[MSTP223]),
++	CLKDEV_ICK_ID("diva", "sh_fsi2", &fsidivs[FSIDIV_A]),
++	CLKDEV_ICK_ID("divb", "sh_fsi2", &fsidivs[FSIDIV_B]),
+ };
+ 
+ void __init sh7372_clock_init(void)
+@@ -708,8 +634,8 @@ void __init sh7372_clock_init(void)
+ 	if (!ret)
+ 		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
+ 
+-	for (k = 0; !ret && (k < ARRAY_SIZE(late_main_clks)); k++)
+-		ret = clk_register(late_main_clks[k]);
++	if (!ret)
++		ret = sh_clk_fsidiv_register(fsidivs, FSIDIV_REPARENT_NR);
+ 
+ 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+ 
 -- 
 1.7.9.5
 
