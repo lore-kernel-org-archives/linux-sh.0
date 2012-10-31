@@ -1,134 +1,133 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 17 Oct 2012 04:39:20 +0000
-Subject: [PATCH 09/10] ARM: shmobile: r8a7779: add I2C driver support
-Message-Id: <1350448761-27346-10-git-send-email-horms@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 31 Oct 2012 03:06:55 +0000
+Subject: [PATCH 1/3] sh: clkfwk: add sh_clk_fsidiv_register()
+Message-Id: <87hapbmjar.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1350448761-27346-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1350448761-27346-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-This patch enable R-Car I2C driver
+This patch adds sh_clk_fsidiv_register() to share FSI-DIV clock code
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/arm/configs/marzen_defconfig      |    2 +
- arch/arm/mach-shmobile/setup-r8a7779.c |   77 ++++++++++++++++++++++++++++++++
- 2 files changed, 79 insertions(+)
+ drivers/sh/clk/cpg.c   |   86 ++++++++++++++++++++++++++++++++++++++++++++++++
+ include/linux/sh_clk.h |    9 +++++
+ 2 files changed, 95 insertions(+)
 
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index 53382b6..f79b55c 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -69,6 +69,8 @@ CONFIG_SERIAL_SH_SCI=y
- CONFIG_SERIAL_SH_SCI_NR_UARTS=6
- CONFIG_SERIAL_SH_SCI_CONSOLE=y
- # CONFIG_HW_RANDOM is not set
-+CONFIG_I2C=y
-+CONFIG_I2C_RCAR=y
- CONFIG_GPIO_SYSFS=y
- # CONFIG_HWMON is not set
- CONFIG_THERMAL=y
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 2917668..63de5cb 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -229,6 +229,79 @@ static struct platform_device tmu01_device = {
- 	.num_resources	= ARRAY_SIZE(tmu01_resources),
- };
+diff --git a/drivers/sh/clk/cpg.c b/drivers/sh/clk/cpg.c
+index fe6dbef..b05e543 100644
+--- a/drivers/sh/clk/cpg.c
++++ b/drivers/sh/clk/cpg.c
+@@ -368,3 +368,89 @@ int __init sh_clk_div4_reparent_register(struct clk *clks, int nr,
+ 	return sh_clk_div_register_ops(clks, nr, table,
+ 				       &sh_clk_div4_reparent_clk_ops);
+ }
++
++/* FSI-DIV */
++static unsigned long fsidiv_recalc(struct clk *clk)
++{
++	u32 value;
++
++	value = __raw_readl(clk->mapping->base);
++
++	value >>= 16;
++	if (value < 2)
++		return clk->parent->rate;
++
++	return clk->parent->rate / value;
++}
++
++static long fsidiv_round_rate(struct clk *clk, unsigned long rate)
++{
++	return clk_rate_div_range_round(clk, 1, 0xffff, rate);
++}
++
++static void fsidiv_disable(struct clk *clk)
++{
++	__raw_writel(0, clk->mapping->base);
++}
++
++static int fsidiv_enable(struct clk *clk)
++{
++	u32 value;
++
++	value  = __raw_readl(clk->mapping->base) >> 16;
++	if (value < 2)
++		return 0;
++
++	__raw_writel((value << 16) | 0x3, clk->mapping->base);
++
++	return 0;
++}
++
++static int fsidiv_set_rate(struct clk *clk, unsigned long rate)
++{
++	u32 val;
++	int idx;
++
++	idx = (clk->parent->rate / rate) & 0xffff;
++	if (idx < 2)
++		__raw_writel(0, clk->mapping->base);
++	else
++		__raw_writel(idx << 16, clk->mapping->base);
++
++	return 0;
++}
++
++static struct sh_clk_ops fsidiv_clk_ops = {
++	.recalc		= fsidiv_recalc,
++	.round_rate	= fsidiv_round_rate,
++	.set_rate	= fsidiv_set_rate,
++	.enable		= fsidiv_enable,
++	.disable	= fsidiv_disable,
++};
++
++int __init sh_clk_fsidiv_register(struct clk *clks, int nr)
++{
++	struct clk_mapping *map;
++	int i;
++
++	for (i = 0; i < nr; i++) {
++
++		map = kzalloc(sizeof(struct clk_mapping), GFP_KERNEL);
++		if (!map) {
++			pr_err("%s: unable to alloc memory\n", __func__);
++			return -ENOMEM;
++		}
++
++		/* clks[i].enable_reg came from SH_CLK_FSIDIV() */
++		map->phys		= (phys_addr_t)clks[i].enable_reg;
++		map->len		= 8;
++
++		clks[i].enable_reg	= 0; /* remove .enable_reg */
++		clks[i].ops		= &fsidiv_clk_ops;
++		clks[i].mapping		= map;
++
++		clk_register(&clks[i]);
++	}
++
++	return 0;
++}
+diff --git a/include/linux/sh_clk.h b/include/linux/sh_clk.h
+index 5091091..60c7239 100644
+--- a/include/linux/sh_clk.h
++++ b/include/linux/sh_clk.h
+@@ -199,4 +199,13 @@ int sh_clk_div6_reparent_register(struct clk *clks, int nr);
+ #define CLKDEV_DEV_ID(_id, _clk) { .dev_id = _id, .clk = _clk }
+ #define CLKDEV_ICK_ID(_cid, _did, _clk) { .con_id = _cid, .dev_id = _did, .clk = _clk }
  
-+/* I2C */
-+static struct resource rcar_i2c0_res[] = {
-+	{
-+		.start  = 0xffc70000,
-+		.end    = 0xffc70fff,
-+		.flags  = IORESOURCE_MEM,
-+	}, {
-+		.start  = gic_spi(79),
-+		.flags  = IORESOURCE_IRQ,
-+	},
-+};
++/* .enable_reg will be updated to .mapping on sh_clk_fsidiv_register() */
++#define SH_CLK_FSIDIV(_reg, _parent)		\
++{						\
++	.enable_reg = (void __iomem *)_reg,	\
++	.parent		= _parent,		\
++}
 +
-+static struct platform_device i2c0_device = {
-+	.name		= "i2c-rcar",
-+	.id		= 0,
-+	.resource	= rcar_i2c0_res,
-+	.num_resources	= ARRAY_SIZE(rcar_i2c0_res),
-+};
++int sh_clk_fsidiv_register(struct clk *clks, int nr);
 +
-+static struct resource rcar_i2c1_res[] = {
-+	{
-+		.start  = 0xffc71000,
-+		.end    = 0xffc71fff,
-+		.flags  = IORESOURCE_MEM,
-+	}, {
-+		.start  = gic_spi(82),
-+		.flags  = IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device i2c1_device = {
-+	.name		= "i2c-rcar",
-+	.id		= 1,
-+	.resource	= rcar_i2c1_res,
-+	.num_resources	= ARRAY_SIZE(rcar_i2c1_res),
-+};
-+
-+static struct resource rcar_i2c2_res[] = {
-+	{
-+		.start  = 0xffc72000,
-+		.end    = 0xffc72fff,
-+		.flags  = IORESOURCE_MEM,
-+	}, {
-+		.start  = gic_spi(80),
-+		.flags  = IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device i2c2_device = {
-+	.name		= "i2c-rcar",
-+	.id		= 2,
-+	.resource	= rcar_i2c2_res,
-+	.num_resources	= ARRAY_SIZE(rcar_i2c2_res),
-+};
-+
-+static struct resource rcar_i2c3_res[] = {
-+	{
-+		.start  = 0xffc73000,
-+		.end    = 0xffc73fff,
-+		.flags  = IORESOURCE_MEM,
-+	}, {
-+		.start  = gic_spi(81),
-+		.flags  = IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device i2c3_device = {
-+	.name		= "i2c-rcar",
-+	.id		= 3,
-+	.resource	= rcar_i2c3_res,
-+	.num_resources	= ARRAY_SIZE(rcar_i2c3_res),
-+};
-+
- static struct platform_device *r8a7779_early_devices[] __initdata = {
- 	&scif0_device,
- 	&scif1_device,
-@@ -238,6 +311,10 @@ static struct platform_device *r8a7779_early_devices[] __initdata = {
- 	&scif5_device,
- 	&tmu00_device,
- 	&tmu01_device,
-+	&i2c0_device,
-+	&i2c1_device,
-+	&i2c2_device,
-+	&i2c3_device,
- };
- 
- static struct platform_device *r8a7779_late_devices[] __initdata = {
+ #endif /* __SH_CLOCK_H */
 -- 
-1.7.10.4
+1.7.9.5
 
