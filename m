@@ -1,50 +1,66 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 29 Oct 2012 08:15:00 +0000
-Subject: [PATCH 3/7] ARM: shmobile: r8a7779: add USB EHCI clock support
-Message-Id: <87hapd4run.wl%kuninori.morimoto.gx@renesas.com>
+Date: Wed, 31 Oct 2012 05:57:25 +0000
+Subject: [PATCH 4/3] ARM: shmobile: r8a7740: add FSI-DVI clocks
+Message-Id: <878vanmbem.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-ehci-platform driver require these clocks
-
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7779.c |    5 +++++
- 1 file changed, 5 insertions(+)
+ arch/arm/mach-shmobile/clock-r8a7740.c |   16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index e48509b..8dea307 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -87,6 +87,7 @@ static struct clk div4_clks[DIV4_NR] = {
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index 6729e00..71ee224 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -65,6 +65,9 @@
+ #define SMSTPCR3	IOMEM(0xe615013c)
+ #define SMSTPCR4	IOMEM(0xe6150140)
+ 
++#define FSIDIVA		IOMEM(0xFE1F8000)
++#define FSIDIVB		IOMEM(0xFE1F8008)
++
+ /* Fixed 32 KHz root clock from EXTALR pin */
+ static struct clk extalr_clk = {
+ 	.rate	= 32768,
+@@ -427,6 +430,14 @@ static struct clk *late_main_clks[] = {
+ 	&hdmi2_clk,
  };
  
- enum { MSTP323, MSTP322, MSTP321, MSTP320,
-+	MSTP101, MSTP100,
- 	MSTP030,
- 	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
- 	MSTP016, MSTP015, MSTP014,
-@@ -98,6 +99,8 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP322] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 22, 0), /* SDHI1 */
- 	[MSTP321] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 21, 0), /* SDHI2 */
- 	[MSTP320] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 20, 0), /* SDHI3 */
-+	[MSTP101] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  1, 0), /* USB2 */
-+	[MSTP100] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  0, 0), /* USB0/1 */
- 	[MSTP030] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 30, 0), /* I2C0 */
- 	[MSTP029] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 29, 0), /* I2C1 */
- 	[MSTP028] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 28, 0), /* I2C2 */
-@@ -153,6 +156,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("peripheral_clk",	&div4_clks[DIV4_P]),
++/* FSI DIV */
++enum { FSIDIV_A, FSIDIV_B, FSIDIV_REPARENT_NR };
++
++static struct clk fsidivs[] = {
++	[FSIDIV_A] = SH_CLK_FSIDIV(FSIDIVA, &div6_reparent_clks[DIV6_FSIA]),
++	[FSIDIV_B] = SH_CLK_FSIDIV(FSIDIVB, &div6_reparent_clks[DIV6_FSIB]),
++};
++
+ /* MSTP */
+ enum {
+ 	DIV4_I, DIV4_ZG, DIV4_B, DIV4_M1, DIV4_HP,
+@@ -596,6 +607,8 @@ static struct clk_lookup lookups[] = {
  
- 	/* MSTP32 clocks */
-+	CLKDEV_DEV_ID("ehci-platform.1", &mstp_clks[MSTP101]), /* USB EHCI port2 */
-+	CLKDEV_DEV_ID("ehci-platform.0", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
- 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
- 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP016]), /* TMU01 */
- 	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
+ 	CLKDEV_ICK_ID("icka", "sh_fsi2",	&div6_reparent_clks[DIV6_FSIA]),
+ 	CLKDEV_ICK_ID("ickb", "sh_fsi2",	&div6_reparent_clks[DIV6_FSIB]),
++	CLKDEV_ICK_ID("diva", "sh_fsi2",	&fsidivs[FSIDIV_A]),
++	CLKDEV_ICK_ID("divb", "sh_fsi2",	&fsidivs[FSIDIV_B]),
+ };
+ 
+ void __init r8a7740_clock_init(u8 md_ck)
+@@ -641,6 +654,9 @@ void __init r8a7740_clock_init(u8 md_ck)
+ 	for (k = 0; !ret && (k < ARRAY_SIZE(late_main_clks)); k++)
+ 		ret = clk_register(late_main_clks[k]);
+ 
++	if (!ret)
++		ret = sh_clk_fsidiv_register(fsidivs, FSIDIV_REPARENT_NR);
++
+ 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+ 
+ 	if (!ret)
 -- 
 1.7.9.5
 
