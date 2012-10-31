@@ -1,287 +1,107 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 26 Oct 2012 13:38:50 +0000
-Subject: [PATCH v3 4/5] ARM: mach-shmobile: Kota2: Use leds-pwm + pwm-rmob
-Message-Id: <1351258731-14111-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 31 Oct 2012 03:07:25 +0000
+Subject: [PATCH 2/3] ARM: shmobile: sh7372: sh7372_fsidivX_clk become non-global
+Message-Id: <87fw4vmj9x.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Not only sh7372 but also many Renesas chip has FSI-DIV clock,
+and we can share its sh_clk_ops.
+To support common FSI-DIV clock, sh7372_fsidivX_clk
+becomes non-global by this patch.
+This is preparation for FSI DT support.
 
-Instead of using the LED-specific TPU PWM driver, switch to the generic
-TPU PWM driver with leds-pwm.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-kota2.c  |  173 +++++++++++++++++++--------------
- arch/arm/mach-shmobile/clock-sh73a0.c |    8 +-
- 2 files changed, 104 insertions(+), 77 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c        |    2 +-
+ arch/arm/mach-shmobile/board-mackerel.c      |    2 +-
+ arch/arm/mach-shmobile/clock-sh7372.c        |   10 ++++++----
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    2 --
+ 4 files changed, 8 insertions(+), 8 deletions(-)
 
-Magnus (or anyone else with a Kota2 board),
-
-Would you be able to test this patch set with the Kota2 LEDs ?
-
-diff --git a/arch/arm/mach-shmobile/board-kota2.c b/arch/arm/mach-shmobile/board-kota2.c
-index bf88f9a..d972595 100644
---- a/arch/arm/mach-shmobile/board-kota2.c
-+++ b/arch/arm/mach-shmobile/board-kota2.c
-@@ -35,7 +35,8 @@
- #include <linux/input/sh_keysc.h>
- #include <linux/gpio_keys.h>
- #include <linux/leds.h>
--#include <linux/platform_data/leds-renesas-tpu.h>
-+#include <linux/leds_pwm.h>
-+#include <linux/platform_data/pwm-rmob.h>
- #include <linux/mmc/host.h>
- #include <linux/mmc/sh_mmcif.h>
- #include <linux/mfd/tmio.h>
-@@ -184,116 +185,141 @@ static struct platform_device gpio_leds_device = {
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 790dc68..cefdd03 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -728,7 +728,7 @@ fsia_ick_out:
+ static int fsi_hdmi_set_rate(struct device *dev, int rate, int enable)
+ {
+ 	struct clk *fsib_clk;
+-	struct clk *fdiv_clk = &sh7372_fsidivb_clk;
++	struct clk *fdiv_clk = clk_get(NULL, "fsidivb");
+ 	long fsib_rate = 0;
+ 	long fdiv_rate = 0;
+ 	int ackmd_bpfmd;
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 0c27c81..c826d77 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -882,7 +882,7 @@ static int __fsi_set_round_rate(struct clk *clk, long rate, int enable)
+ static int fsi_b_set_rate(struct device *dev, int rate, int enable)
+ {
+ 	struct clk *fsib_clk;
+-	struct clk *fdiv_clk = &sh7372_fsidivb_clk;
++	struct clk *fdiv_clk = clk_get(NULL, "fsidivb");
+ 	long fsib_rate = 0;
+ 	long fdiv_rate = 0;
+ 	int ackmd_bpfmd;
+diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
+index 430a90f..18dcff7 100644
+--- a/arch/arm/mach-shmobile/clock-sh7372.c
++++ b/arch/arm/mach-shmobile/clock-sh7372.c
+@@ -481,7 +481,7 @@ static struct clk_mapping fsidiva_clk_mapping = {
+ 	.len	= 8,
  };
  
- /* TPU LED */
--static struct led_renesas_tpu_config led_renesas_tpu12_pdata = {
--	.name		= "V2513",
--	.pin_gpio_fn	= GPIO_FN_TPU1TO2,
--	.pin_gpio	= GPIO_PORT153,
--	.channel_offset = 0x90,
--	.timer_bit = 2,
--	.max_brightness = 1000,
-+static struct rmob_tpu_pwm_platform_data tpu1_pwm_pdata = {
-+	.channels[2] = {
-+		.polarity	= 1,
-+		.pin_gpio	= GPIO_PORT153,
-+		.pin_gpio_fn	= GPIO_FN_TPU1TO2,
-+	},
+-struct clk sh7372_fsidiva_clk = {
++static struct clk fsidiva_clk = {
+ 	.ops		= &fsidiv_clk_ops,
+ 	.parent		= &div6_reparent_clks[DIV6_FSIA], /* late install */
+ 	.mapping	= &fsidiva_clk_mapping,
+@@ -492,15 +492,15 @@ static struct clk_mapping fsidivb_clk_mapping = {
+ 	.len	= 8,
  };
  
--static struct resource tpu12_resources[] = {
-+static struct resource tpu1_pwm_resources[] = {
- 	[0] = {
--		.name	= "TPU12",
--		.start	= 0xe6610090,
--		.end	= 0xe66100b5,
-+		.start	= 0xe6610000,
-+		.end	= 0xe66100ff,
- 		.flags	= IORESOURCE_MEM,
- 	},
+-struct clk sh7372_fsidivb_clk = {
++static struct clk fsidivb_clk = {
+ 	.ops		= &fsidiv_clk_ops,
+ 	.parent		= &div6_reparent_clks[DIV6_FSIB],  /* late install */
+ 	.mapping	= &fsidivb_clk_mapping,
  };
  
--static struct platform_device leds_tpu12_device = {
--	.name = "leds-renesas-tpu",
--	.id = 12,
-+static struct platform_device tpu1_pwm_device = {
-+	.name = "rmob_tpu_pwm",
-+	.id = 1,
- 	.dev = {
--		.platform_data  = &led_renesas_tpu12_pdata,
-+		.platform_data  = &tpu1_pwm_pdata,
- 	},
--	.num_resources	= ARRAY_SIZE(tpu12_resources),
--	.resource	= tpu12_resources,
-+	.num_resources	= ARRAY_SIZE(tpu1_pwm_resources),
-+	.resource	= tpu1_pwm_resources,
+ static struct clk *late_main_clks[] = {
+-	&sh7372_fsidiva_clk,
+-	&sh7372_fsidivb_clk,
++	&fsidiva_clk,
++	&fsidivb_clk,
  };
  
--static struct led_renesas_tpu_config led_renesas_tpu41_pdata = {
--	.name		= "V2514",
--	.pin_gpio_fn	= GPIO_FN_TPU4TO1,
--	.pin_gpio	= GPIO_PORT199,
--	.channel_offset = 0x50,
--	.timer_bit = 1,
--	.max_brightness = 1000,
-+static struct rmob_tpu_pwm_platform_data tpu2_pwm_pdata = {
-+	.channels[1] = {
-+		.polarity	= 1,
-+		.pin_gpio	= GPIO_PORT197,
-+		.pin_gpio_fn	= GPIO_FN_TPU2TO1,
-+	},
- };
+ enum { MSTP001, MSTP000,
+@@ -583,6 +583,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("pllc1_clk", &pllc1_clk),
+ 	CLKDEV_CON_ID("pllc1_div2_clk", &pllc1_div2_clk),
+ 	CLKDEV_CON_ID("pllc2_clk", &sh7372_pllc2_clk),
++	CLKDEV_CON_ID("fsidiva", &fsidiva_clk),
++	CLKDEV_CON_ID("fsidivb", &fsidivb_clk),
  
--static struct resource tpu41_resources[] = {
-+static struct resource tpu2_pwm_resources[] = {
- 	[0] = {
--		.name	= "TPU41",
--		.start	= 0xe6640050,
--		.end	= 0xe6640075,
-+		.start	= 0xe6620000,
-+		.end	= 0xe66200ff,
- 		.flags	= IORESOURCE_MEM,
- 	},
- };
+ 	/* DIV4 clocks */
+ 	CLKDEV_CON_ID("i_clk", &div4_clks[DIV4_I]),
+diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
+index eb98b45..bf93a86 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -475,8 +475,6 @@ extern struct clk sh7372_dv_clki_div2_clk;
+ extern struct clk sh7372_pllc2_clk;
+ extern struct clk sh7372_fsiack_clk;
+ extern struct clk sh7372_fsibck_clk;
+-extern struct clk sh7372_fsidiva_clk;
+-extern struct clk sh7372_fsidivb_clk;
  
--static struct platform_device leds_tpu41_device = {
--	.name = "leds-renesas-tpu",
--	.id = 41,
-+static struct platform_device tpu2_pwm_device = {
-+	.name = "rmob_tpu_pwm",
-+	.id = 2,
- 	.dev = {
--		.platform_data  = &led_renesas_tpu41_pdata,
-+		.platform_data  = &tpu2_pwm_pdata,
- 	},
--	.num_resources	= ARRAY_SIZE(tpu41_resources),
--	.resource	= tpu41_resources,
-+	.num_resources	= ARRAY_SIZE(tpu2_pwm_resources),
-+	.resource	= tpu2_pwm_resources,
- };
- 
--static struct led_renesas_tpu_config led_renesas_tpu21_pdata = {
--	.name		= "V2515",
--	.pin_gpio_fn	= GPIO_FN_TPU2TO1,
--	.pin_gpio	= GPIO_PORT197,
--	.channel_offset = 0x50,
--	.timer_bit = 1,
--	.max_brightness = 1000,
-+static struct rmob_tpu_pwm_platform_data tpu3_pwm_pdata = {
-+	.channels[0] = {
-+		.polarity	= 1,
-+		.pin_gpio	= GPIO_PORT163,
-+		.pin_gpio_fn	= GPIO_FN_TPU3TO0,
-+	},
- };
- 
--static struct resource tpu21_resources[] = {
-+static struct resource tpu3_pwm_resources[] = {
- 	[0] = {
--		.name	= "TPU21",
--		.start	= 0xe6620050,
--		.end	= 0xe6620075,
-+		.start	= 0xe6630000,
-+		.end	= 0xe66300ff,
- 		.flags	= IORESOURCE_MEM,
- 	},
- };
- 
--static struct platform_device leds_tpu21_device = {
--	.name = "leds-renesas-tpu",
--	.id = 21,
-+static struct platform_device tpu3_pwm_device = {
-+	.name = "rmob_tpu_pwm",
-+	.id = 3,
- 	.dev = {
--		.platform_data  = &led_renesas_tpu21_pdata,
-+		.platform_data  = &tpu3_pwm_pdata,
- 	},
--	.num_resources	= ARRAY_SIZE(tpu21_resources),
--	.resource	= tpu21_resources,
-+	.num_resources	= ARRAY_SIZE(tpu3_pwm_resources),
-+	.resource	= tpu3_pwm_resources,
- };
- 
--static struct led_renesas_tpu_config led_renesas_tpu30_pdata = {
--	.name		= "KEYLED",
--	.pin_gpio_fn	= GPIO_FN_TPU3TO0,
--	.pin_gpio	= GPIO_PORT163,
--	.channel_offset = 0x10,
--	.timer_bit = 0,
--	.max_brightness = 1000,
-+static struct rmob_tpu_pwm_platform_data tpu4_pwm_pdata = {
-+	.channels[1] = {
-+		.polarity	= 1,
-+		.pin_gpio	= GPIO_PORT199,
-+		.pin_gpio_fn	= GPIO_FN_TPU4TO1,
-+	},
- };
- 
--static struct resource tpu30_resources[] = {
-+static struct resource tpu4_pwm_resources[] = {
- 	[0] = {
--		.name	= "TPU30",
--		.start	= 0xe6630010,
--		.end	= 0xe6630035,
-+		.start	= 0xe6640000,
-+		.end	= 0xe66400ff,
- 		.flags	= IORESOURCE_MEM,
- 	},
- };
- 
--static struct platform_device leds_tpu30_device = {
--	.name = "leds-renesas-tpu",
--	.id = 30,
-+static struct platform_device tpu4_pwm_device = {
-+	.name = "rmob_tpu_pwm",
-+	.id = 4,
-+	.dev = {
-+		.platform_data  = &tpu4_pwm_pdata,
-+	},
-+	.num_resources	= ARRAY_SIZE(tpu4_pwm_resources),
-+	.resource	= tpu4_pwm_resources,
-+};
-+
-+static struct led_pwm tpu_pwm_leds[] = {
-+	{
-+		.name		= "V2513",
-+		.pwm_id		= RMOB_TPU_PWM_ID(1, 2),
-+		.max_brightness	= 1000,
-+	}, {
-+		.name		= "V2515",
-+		.pwm_id		= RMOB_TPU_PWM_ID(2, 1),
-+		.max_brightness	= 1000,
-+	}, {
-+		.name		= "KEYLED",
-+		.pwm_id		= RMOB_TPU_PWM_ID(3, 0),
-+		.max_brightness	= 1000,
-+	}, {
-+		.name		= "V2514",
-+		.pwm_id		= RMOB_TPU_PWM_ID(4, 1),
-+		.max_brightness	= 1000,
-+	},
-+};
-+
-+static struct led_pwm_platform_data leds_pwm_pdata = {
-+	.num_leds = ARRAY_SIZE(tpu_pwm_leds),
-+	.leds = tpu_pwm_leds,
-+};
-+
-+static struct platform_device leds_pwm_device = {
-+	.name = "leds-pwm",
-+	.id = 0,
- 	.dev = {
--		.platform_data  = &led_renesas_tpu30_pdata,
-+		.platform_data = &leds_pwm_pdata,
- 	},
--	.num_resources	= ARRAY_SIZE(tpu30_resources),
--	.resource	= tpu30_resources,
- };
- 
- /* Fixed 1.8V regulator to be used by MMCIF */
-@@ -424,10 +450,11 @@ static struct platform_device *kota2_devices[] __initdata = {
- 	&keysc_device,
- 	&gpio_keys_device,
- 	&gpio_leds_device,
--	&leds_tpu12_device,
--	&leds_tpu41_device,
--	&leds_tpu21_device,
--	&leds_tpu30_device,
-+	&tpu1_pwm_device,
-+	&tpu2_pwm_device,
-+	&tpu3_pwm_device,
-+	&tpu4_pwm_device,
-+	&leds_pwm_device,
- 	&mmcif_device,
- 	&sdhi0_device,
- 	&sdhi1_device,
-diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-index 516ff7f..ad1af42 100644
---- a/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-@@ -574,10 +574,10 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]), /* SDHI1 */
- 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP312]), /* MMCIF0 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]), /* SDHI2 */
--	CLKDEV_DEV_ID("leds-renesas-tpu.12", &mstp_clks[MSTP303]), /* TPU1 */
--	CLKDEV_DEV_ID("leds-renesas-tpu.21", &mstp_clks[MSTP302]), /* TPU2 */
--	CLKDEV_DEV_ID("leds-renesas-tpu.30", &mstp_clks[MSTP301]), /* TPU3 */
--	CLKDEV_DEV_ID("leds-renesas-tpu.41", &mstp_clks[MSTP300]), /* TPU4 */
-+	CLKDEV_DEV_ID("rmob_tpu_pwm.1", &mstp_clks[MSTP303]), /* TPU1 */
-+	CLKDEV_DEV_ID("rmob_tpu_pwm.2", &mstp_clks[MSTP302]), /* TPU2 */
-+	CLKDEV_DEV_ID("rmob_tpu_pwm.3", &mstp_clks[MSTP301]), /* TPU3 */
-+	CLKDEV_DEV_ID("rmob_tpu_pwm.4", &mstp_clks[MSTP300]), /* TPU4 */
- 	CLKDEV_DEV_ID("i2c-sh_mobile.3", &mstp_clks[MSTP411]), /* I2C3 */
- 	CLKDEV_DEV_ID("i2c-sh_mobile.4", &mstp_clks[MSTP410]), /* I2C4 */
- 	CLKDEV_DEV_ID("sh_keysc.0", &mstp_clks[MSTP403]), /* KEYSC */
+ extern void sh7372_intcs_suspend(void);
+ extern void sh7372_intcs_resume(void);
 -- 
-1.7.8.6
+1.7.9.5
 
