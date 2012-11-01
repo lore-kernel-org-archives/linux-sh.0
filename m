@@ -1,33 +1,45 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 08 Nov 2012 03:09:38 +0000
-Subject: [PATCH 7/8] ARM: shmobile: sh7372: remove fsidivx clock
-Message-Id: <87vcdgzt74.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 01 Nov 2012 00:40:06 +0000
+Subject: [PATCH 3/8] ARM: shmobile: kzm9g: enable DMAEngine on SHDI0 and SDHI2
+Message-Id: <1351730411-1874-4-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1351730411-1874-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1351730411-1874-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-fsidivx clock is no longer needed.
+From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This patch enables DMAEngine on SHDI0 and SDHI2 for kzm9g.
+
+Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
 ---
- arch/arm/mach-shmobile/clock-sh7372.c |    2 --
- 1 file changed, 2 deletions(-)
+ arch/arm/mach-shmobile/board-kzm9g.c |    4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-index 4d57e34..fbd1863 100644
---- a/arch/arm/mach-shmobile/clock-sh7372.c
-+++ b/arch/arm/mach-shmobile/clock-sh7372.c
-@@ -507,8 +507,6 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("pllc1_clk", &pllc1_clk),
- 	CLKDEV_CON_ID("pllc1_div2_clk", &pllc1_div2_clk),
- 	CLKDEV_CON_ID("pllc2_clk", &sh7372_pllc2_clk),
--	CLKDEV_CON_ID("fsidiva", &fsidivs[FSIDIV_A]),
--	CLKDEV_CON_ID("fsidivb", &fsidivs[FSIDIV_B]),
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index 1a46422..f63f2ee 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -384,6 +384,8 @@ static struct regulator_consumer_supply fixed2v8_power_consumers[]  
+ /* SDHI */
+ static struct sh_mobile_sdhi_info sdhi0_info = {
++	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
++	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
+ 	.tmio_ocr_mask	= MMC_VDD_27_28 | MMC_VDD_28_29,
+@@ -424,6 +426,8 @@ static struct platform_device sdhi0_device = {
  
- 	/* DIV4 clocks */
- 	CLKDEV_CON_ID("i_clk", &div4_clks[DIV4_I]),
+ /* Micro SD */
+ static struct sh_mobile_sdhi_info sdhi2_info = {
++	.dma_slave_tx	= SHDMA_SLAVE_SDHI2_TX,
++	.dma_slave_rx	= SHDMA_SLAVE_SDHI2_RX,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
+ 			  TMIO_MMC_USE_GPIO_CD |
+ 			  TMIO_MMC_WRPROTECT_DISABLE,
 -- 
-1.7.9.5
+1.7.10.4
 
