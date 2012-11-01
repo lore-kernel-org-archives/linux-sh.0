@@ -1,25 +1,39 @@
-From: Andrew Morton <akpm@linux-foundation.org>
-Date: Tue, 06 Nov 2012 22:38:30 +0000
-Subject: Re: [PATCH 10/16] mm: use vm_unmapped_area() on mips architecture
-Message-Id: <20121106143830.29de3bad.akpm@linux-foundation.org>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 01 Nov 2012 00:41:48 +0000
+Subject: [PATCH 06/11] ARM: shmobile: r8a7740: fixup DT machine desc name typo
+Message-Id: <1351730513-2952-7-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352155633-8648-1-git-send-email-walken@google.com>
- <1352155633-8648-11-git-send-email-walken@google.com>
-In-Reply-To: <1352155633-8648-11-git-send-email-walken@google.com>
+References: <1351730513-2952-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1351730513-2952-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon,  5 Nov 2012 14:47:07 -0800
-Michel Lespinasse <walken@google.com> wrote:
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-> Update the mips arch_get_unmapped_area[_topdown] functions to make
-> use of vm_unmapped_area() instead of implementing a brute force search.
-> 
+r8a7740 machine desc name should be R8A7740,
+not SH7372
 
-Are the changes to the coloring equivalent to what was there before? 
-It's unobvious..
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ arch/arm/mach-shmobile/setup-r8a7740.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-COLOUR_ALIGN_DOWN() is now unused and should be removed?
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 11bb1d9..9777e2d 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -747,7 +747,7 @@ static const char *r8a7740_boards_compat_dt[] __initdata = {
+ 	NULL,
+ };
+ 
+-DT_MACHINE_START(SH7372_DT, "Generic R8A7740 (Flattened Device Tree)")
++DT_MACHINE_START(R8A7740_DT, "Generic R8A7740 (Flattened Device Tree)")
+ 	.map_io		= r8a7740_map_io,
+ 	.init_early	= r8a7740_add_early_devices_dt,
+ 	.init_irq	= r8a7740_init_irq,
+-- 
+1.7.10.4
 
