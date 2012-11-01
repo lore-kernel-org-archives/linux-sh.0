@@ -1,52 +1,73 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Thu, 22 Nov 2012 01:27:59 +0000
-Subject: Re: [PATCH 2/2] regulator: add a regulator driver for the AS3711 PMIC
-Message-Id: <20121122012757.GF4371@opensource.wolfsonmicro.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="tmoQ0UElFV5VgXgH"
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 01 Nov 2012 00:41:52 +0000
+Subject: [PATCH 10/11] ARM: mach-shmobile: add FLCTL DMA slave definitions for sh7372
+Message-Id: <1351730513-2952-11-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1211211916160.842@axis700.grange>
- <Pine.LNX.4.64.1211211918330.842@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1211211918330.842@axis700.grange>
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Samuel Ortiz <sameo@linux.intel.com>, linux-kernel@vger.kernel.org
+References: <1351730513-2952-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1351730513-2952-1-git-send-email-horms@verge.net.au>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
+From: Bastian Hecht <hechtb@googlemail.com>
 
---tmoQ0UElFV5VgXgH
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+SH7372 can use DMA with the FLCTL flash controller. Add required slave
+IDs and slave descriptors.
 
-On Wed, Nov 21, 2012 at 07:21:11PM +0100, Guennadi Liakhovetski wrote:
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    4 ++++
+ arch/arm/mach-shmobile/setup-sh7372.c        |   20 ++++++++++++++++++++
+ 2 files changed, 24 insertions(+)
 
-> +	if (!pdata) {
-> +		dev_err(&pdev->dev, "No platform data, exiting...\n");
-> +		return -ENODEV;
-> +	}
+diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
+index eb98b45..d65fbbe 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -452,6 +452,10 @@ enum {
+ 	SHDMA_SLAVE_SCIF5_RX,
+ 	SHDMA_SLAVE_SCIF6_TX,
+ 	SHDMA_SLAVE_SCIF6_RX,
++	SHDMA_SLAVE_FLCTL0_TX,
++	SHDMA_SLAVE_FLCTL0_RX,
++	SHDMA_SLAVE_FLCTL1_TX,
++	SHDMA_SLAVE_FLCTL1_RX,
+ 	SHDMA_SLAVE_SDHI0_RX,
+ 	SHDMA_SLAVE_SDHI0_TX,
+ 	SHDMA_SLAVE_SDHI1_RX,
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index a07954f..a360111 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -408,6 +408,26 @@ static const struct sh_dmae_slave_config sh7372_dmae_slaves[] = {
+ 		.chcr		= CHCR_RX(XMIT_SZ_8BIT),
+ 		.mid_rid	= 0x3e,
+ 	}, {
++		.slave_id	= SHDMA_SLAVE_FLCTL0_TX,
++		.addr		= 0xe6a30050,
++		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
++		.mid_rid	= 0x83,
++	}, {
++		.slave_id	= SHDMA_SLAVE_FLCTL0_RX,
++		.addr		= 0xe6a30050,
++		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
++		.mid_rid	= 0x83,
++	}, {
++		.slave_id	= SHDMA_SLAVE_FLCTL1_TX,
++		.addr		= 0xe6a30060,
++		.chcr		= CHCR_TX(XMIT_SZ_32BIT),
++		.mid_rid	= 0x87,
++	}, {
++		.slave_id	= SHDMA_SLAVE_FLCTL1_RX,
++		.addr		= 0xe6a30060,
++		.chcr		= CHCR_RX(XMIT_SZ_32BIT),
++		.mid_rid	= 0x87,
++	}, {
+ 		.slave_id	= SHDMA_SLAVE_SDHI0_TX,
+ 		.addr		= 0xe6850030,
+ 		.chcr		= CHCR_TX(XMIT_SZ_16BIT),
+-- 
+1.7.10.4
 
-There's no reason to require platform data, the driver can still support
-readback of the current device state for diagnostic purposes with no
-configuration.
-
---tmoQ0UElFV5VgXgH
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJQrX+VAAoJELSic+t+oim9UrsP/0t2AMfE2IlSLTnEIOwAgWK6
-3hcav0fXJNJdU5bGLFiGj4Fm3qkuwb+9jTQQuEUFy5vhk3FnVskNanAIYcflgAwF
-8u4wDgMBD+1d/eyimtLvHjN+3QoF0as6gWaVlzy1cSGAPNY2077yHrUhN70b3hxE
-u6Qf9EF+SfyYGLCn/mJK+gAAB7dS6JEu+iGoaJoD1kFIbKBEVmwtKgcoutbiWrAU
-r6xcHpCYtu9yh1VCn5tbPCFxbyC8OI8936QIaXnj9wl5t3xm6q4F/ElbZnGCNAAe
-hCnnJfrupqSNSSopXLxcz46ITrNIRc/86rMmr1RTuJpnycQHasQZdFLqeuL1JJ3d
-i5DoBdvBkqTOwcO5lKaAyHGkt9MCu1XM8elh7USBNZPTZE+tKimuBxwCAfZBQaSZ
-L3GAFI/geNwEd+3PQ3n2FKI94yIajuWYPkNthSTxmPwjmtCrvbfQ/ZBJbFT/M8c/
-ItO0VhNoGOKmQjBTkTxj+bo1qocJy6M1DOpiL78O82uUl4VLRlfV6rrUPxPd+wj7
-V/2+ZiUXw7JHw2qmAy4fDh7HVzkuhB2h8Eg5BbfhxdxGI74KK1h+UTPxtYYb8aYT
-b+gO86li5kKUuwXMMeS748DwVDmnzkIzb3yL5xcRlmitxyWwaEn9veaHtmQmVDz8
-g6W9FlPsPFvY12x4zqch
-=BLZV
------END PGP SIGNATURE-----
-
---tmoQ0UElFV5VgXgH--
