@@ -1,77 +1,134 @@
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Thu, 22 Nov 2012 01:48:30 +0000
-Subject: Re: [PATCH 00/04] ARM: mach-shmobile: sh7372 INTC DT update
-Message-Id: <CABMQnV+ibY_hmegkJJyHcSkpD9GUf43stpmkLcqPeqbambeV4A@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 01 Nov 2012 00:41:51 +0000
+Subject: [PATCH 09/11] ARM: shmobile: r8a7779: add I2C driver support
+Message-Id: <1351730513-2952-10-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20121116103433.4231.27004.sendpatchset@w520>
-In-Reply-To: <20121116103433.4231.27004.sendpatchset@w520>
+References: <1351730513-2952-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1351730513-2952-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-HI, all.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-On Fri, Nov 16, 2012 at 7:34 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> ARM: mach-shmobile: sh7372 INTC DT update
->
-> [PATCH 01/04] ARM: mach-shmobile: sh7372 INTC DT INTCA/INTCS typo fix
-> [PATCH 02/04] ARM: mach-shmobile: sh7372 INTC DT section mismatch fix
-> [PATCH 03/04] ARM: mach-shmobile: sh7372 INTC DT init cleanup
-> [PATCH 04/04] ARM: mach-shmobile: sh7372 INTC DT consolidation
->
-> This series shaves off 100 lines of code from the INTC DT implementation
-> available in the devel/of branch of
-> git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git
->
-> These patches are the result of me trying to get the new INTC DT code
-> working on the sh7372 Mackerel board. With these fixes and cleanups
-> applied the board boots as expected with DT, but as usual the sh7372
-> SoC setup code is using serial ports and timers as platform devices.
->
-> I tried using the INTC DT interrupt controller code with external
-> interrupt pins on the sh7372 mackerel board with DT, but for some
-> reason the following network device refuses to probe due to some
-> interrupt issue.
->
->        lan9220@14000000 {
->                compatible = "smsc,lan9220", "smsc,lan9115";
->                reg = <0x14000000 0x2000000>;
->                phy-mode = "mii";
->                interrupt-parent = <&intca_irq_pins_lo>;
->                interrupts = <0x2c0>;
->                reg-io-width = <4>;
->                smsc,irq-push-pull;
->        };
+This patch enable R-Car I2C driver
 
-This is a problem of a dtsi file.
-I will fix.
-
->
-> The above snippet is nicked and adjusted from my earlier prototype patches:
-> [PATCH] sh: INTC IRQ domain and DT support prototype
-> [PATCH] ARM: mach-shmobile: sh7372 DT IRQ prototype
->
-> I wonder, is there any outstanding INTC work related to IRQ domains?
->
-> Perhaps the best way forward is that Iwamatsu-san rolls these
-> changes into his current patches and releases a new version after
-> updating the other SoCs.
->
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
->
->  arch/arm/boot/dts/sh7372.dtsi        |    8 -
->  arch/arm/mach-shmobile/intc-sh7372.c |  250 +++++++++-------------------------
->  drivers/sh/intc/of_intc.c            |    8 -
->  3 files changed, 80 insertions(+), 186 deletions(-)
->
-
-looks good to me.
-I will update other CPU.
-
-Best regards,
-  Nobuhiro
-
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
-Nobuhiro Iwamatsu
+ arch/arm/configs/marzen_defconfig      |    2 +
+ arch/arm/mach-shmobile/setup-r8a7779.c |   77 ++++++++++++++++++++++++++++++++
+ 2 files changed, 79 insertions(+)
+
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index 53382b6..f79b55c 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -69,6 +69,8 @@ CONFIG_SERIAL_SH_SCI=y
+ CONFIG_SERIAL_SH_SCI_NR_UARTS=6
+ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ # CONFIG_HW_RANDOM is not set
++CONFIG_I2C=y
++CONFIG_I2C_RCAR=y
+ CONFIG_GPIO_SYSFS=y
+ # CONFIG_HWMON is not set
+ CONFIG_THERMAL=y
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 2917668..63de5cb 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -229,6 +229,79 @@ static struct platform_device tmu01_device = {
+ 	.num_resources	= ARRAY_SIZE(tmu01_resources),
+ };
+ 
++/* I2C */
++static struct resource rcar_i2c0_res[] = {
++	{
++		.start  = 0xffc70000,
++		.end    = 0xffc70fff,
++		.flags  = IORESOURCE_MEM,
++	}, {
++		.start  = gic_spi(79),
++		.flags  = IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device i2c0_device = {
++	.name		= "i2c-rcar",
++	.id		= 0,
++	.resource	= rcar_i2c0_res,
++	.num_resources	= ARRAY_SIZE(rcar_i2c0_res),
++};
++
++static struct resource rcar_i2c1_res[] = {
++	{
++		.start  = 0xffc71000,
++		.end    = 0xffc71fff,
++		.flags  = IORESOURCE_MEM,
++	}, {
++		.start  = gic_spi(82),
++		.flags  = IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device i2c1_device = {
++	.name		= "i2c-rcar",
++	.id		= 1,
++	.resource	= rcar_i2c1_res,
++	.num_resources	= ARRAY_SIZE(rcar_i2c1_res),
++};
++
++static struct resource rcar_i2c2_res[] = {
++	{
++		.start  = 0xffc72000,
++		.end    = 0xffc72fff,
++		.flags  = IORESOURCE_MEM,
++	}, {
++		.start  = gic_spi(80),
++		.flags  = IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device i2c2_device = {
++	.name		= "i2c-rcar",
++	.id		= 2,
++	.resource	= rcar_i2c2_res,
++	.num_resources	= ARRAY_SIZE(rcar_i2c2_res),
++};
++
++static struct resource rcar_i2c3_res[] = {
++	{
++		.start  = 0xffc73000,
++		.end    = 0xffc73fff,
++		.flags  = IORESOURCE_MEM,
++	}, {
++		.start  = gic_spi(81),
++		.flags  = IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device i2c3_device = {
++	.name		= "i2c-rcar",
++	.id		= 3,
++	.resource	= rcar_i2c3_res,
++	.num_resources	= ARRAY_SIZE(rcar_i2c3_res),
++};
++
+ static struct platform_device *r8a7779_early_devices[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+@@ -238,6 +311,10 @@ static struct platform_device *r8a7779_early_devices[] __initdata = {
+ 	&scif5_device,
+ 	&tmu00_device,
+ 	&tmu01_device,
++	&i2c0_device,
++	&i2c1_device,
++	&i2c2_device,
++	&i2c3_device,
+ };
+ 
+ static struct platform_device *r8a7779_late_devices[] __initdata = {
+-- 
+1.7.10.4
+
