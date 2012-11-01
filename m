@@ -1,10 +1,10 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Fri, 09 Nov 2012 07:31:40 +0000
-Subject: [PATCH 1/7] ARM: shmobile: marzen: add USB phy support
-Message-Id: <1352446306-19945-2-git-send-email-horms@verge.net.au>
+Date: Thu, 01 Nov 2012 00:41:50 +0000
+Subject: [PATCH 08/11] ARM: shmobile: r8a7779: add I2C clock support
+Message-Id: <1351730513-2952-9-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352446306-19945-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352446306-19945-1-git-send-email-horms@verge.net.au>
+References: <1351730513-2952-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1351730513-2952-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,64 +12,50 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
+This patch is required from R-Car I2C driver
+
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/arm/configs/marzen_defconfig     |    3 ++-
- arch/arm/mach-shmobile/board-marzen.c |   21 +++++++++++++++++++++
- 2 files changed, 23 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/clock-r8a7779.c |   11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index 5b8215f..8a861b7 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -78,7 +78,8 @@ CONFIG_GPIO_SYSFS=y
- CONFIG_THERMAL=y
- CONFIG_RCAR_THERMAL=y
- CONFIG_SSB=y
--# CONFIG_USB_SUPPORT is not set
-+CONFIG_USB=y
-+CONFIG_USB_RCAR_PHY=y
- CONFIG_MMC=y
- CONFIG_MMC_SDHI=y
- CONFIG_UIO=y
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index 69f7f46..74c7f0b 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -144,11 +144,32 @@ static struct platform_device hspi_device = {
- 	.num_resources	= ARRAY_SIZE(hspi_resources),
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index 90d717b..24f5a84 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -87,7 +87,8 @@ static struct clk div4_clks[DIV4_NR] = {
  };
  
-+/* USB PHY */
-+static struct resource usb_phy_resources[] = {
-+	[0] = {
-+		.start		= 0xffe70000,
-+		.end		= 0xffe70900 - 1,
-+		.flags		= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start		= 0xfff70000,
-+		.end		= 0xfff70900 - 1,
-+		.flags		= IORESOURCE_MEM,
-+	},
-+};
-+
-+static struct platform_device usb_phy_device = {
-+	.name		= "rcar_usb_phy",
-+	.resource	= usb_phy_resources,
-+	.num_resources	= ARRAY_SIZE(usb_phy_resources),
-+};
-+
- static struct platform_device *marzen_devices[] __initdata = {
- 	&eth_device,
- 	&sdhi0_device,
- 	&thermal_device,
- 	&hspi_device,
-+	&usb_phy_device,
- };
- 
- static void __init marzen_init(void)
+ enum { MSTP323, MSTP322, MSTP321, MSTP320,
+-	MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
++	MSTP030,
++	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+ 	MSTP016, MSTP015, MSTP014,
+ 	MSTP007,
+ 	MSTP_NR };
+@@ -97,6 +98,10 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP322] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 22, 0), /* SDHI1 */
+ 	[MSTP321] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 21, 0), /* SDHI2 */
+ 	[MSTP320] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 20, 0), /* SDHI3 */
++	[MSTP030] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 30, 0), /* I2C0 */
++	[MSTP029] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 29, 0), /* I2C1 */
++	[MSTP028] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 28, 0), /* I2C2 */
++	[MSTP027] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 27, 0), /* I2C3 */
+ 	[MSTP026] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 26, 0), /* SCIF0 */
+ 	[MSTP025] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 25, 0), /* SCIF1 */
+ 	[MSTP024] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 24, 0), /* SCIF2 */
+@@ -150,6 +155,10 @@ static struct clk_lookup lookups[] = {
+ 	/* MSTP32 clocks */
+ 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
+ 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP016]), /* TMU01 */
++	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
++	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP029]), /* I2C1 */
++	CLKDEV_DEV_ID("i2c-rcar.2", &mstp_clks[MSTP028]), /* I2C2 */
++	CLKDEV_DEV_ID("i2c-rcar.3", &mstp_clks[MSTP027]), /* I2C3 */
+ 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
+ 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
+ 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP024]), /* SCIF2 */
 -- 
 1.7.10.4
 
