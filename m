@@ -1,32 +1,60 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 22 Nov 2012 11:12:18 +0000
-Subject: Re: [PATCH 23/42] sh-pfc: Add sh7377 pinmux support
-Message-Id: <1585278.4IlJHOvdSy@avalon>
+From: Wen Congyang <wency@cn.fujitsu.com>
+Date: Thu, 01 Nov 2012 09:44:37 +0000
+Subject: [PATCH v3 06/12] memory-hotplug: unregister memory section on SPARSEMEM_VMEMMAP
+Message-Id: <1351763083-7905-7-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1353464863-10281-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1353464863-10281-24-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <CABMQnVJU5nfgLzYX9HavNuCxxD5Ei10hbed2Uz1wth-nDse-+Q@mail.gmail.com>
-In-Reply-To: <CABMQnVJU5nfgLzYX9HavNuCxxD5Ei10hbed2Uz1wth-nDse-+Q@mail.gmail.com>
+References: <1351763083-7905-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1351763083-7905-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, linux-kernel@vger.kernel.org
-Cc: Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Linus Walleij <linus.walleij@linaro.org>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, Phil Edworthy <phil.edworthy@renesas.com>, linux-sh@vger.kernel.org
+To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+Cc: David Rientjes <rientjes@google.com>, Jiang Liu <liuj97@gmail.com>, Len Brown <len.brown@intel.com>, benh@kernel.crashing.org, paulus@samba.org, Christoph Lameter <cl@linux.com>, Minchan Kim <minchan.kim@gmail.com>, Andrew Morton <akpm@linux-foundation.org>, KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>, Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>, Jianguo Wu <wujianguo@huawei.com>, Wen Congyang <wency@cn.fujitsu.com>
 
-Hi Nobuhiro-san,
+From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-On Thursday 22 November 2012 13:55:19 Nobuhiro Iwamatsu wrote:
-> Hi, Laurent.
-> 
-> This patch is unnecessary.
-> Because support of this CPU is deleted from kernel.
-> 
-> Best regards,
->   Nobuhiro
+Currently __remove_section for SPARSEMEM_VMEMMAP does nothing. But even if
+we use SPARSEMEM_VMEMMAP, we can unregister the memory_section.
 
-Good point, thank you. I'll drop this patch (as well as 21/42) from the 
-series.
+So the patch add unregister_memory_section() into __remove_section().
 
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+---
+ mm/memory_hotplug.c | 13 ++++++++-----
+ 1 file changed, 8 insertions(+), 5 deletions(-)
+
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index ca07433..66a79a7 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -286,11 +286,14 @@ static int __meminit __add_section(int nid, struct zone *zone,
+ #ifdef CONFIG_SPARSEMEM_VMEMMAP
+ static int __remove_section(struct zone *zone, struct mem_section *ms)
+ {
+-	/*
+-	 * XXX: Freeing memmap with vmemmap is not implement yet.
+-	 *      This should be removed later.
+-	 */
+-	return -EBUSY;
++	int ret = -EINVAL;
++
++	if (!valid_section(ms))
++		return ret;
++
++	ret = unregister_memory_section(ms);
++
++	return ret;
+ }
+ #else
+ static int __remove_section(struct zone *zone, struct mem_section *ms)
 -- 
-Regards,
-
-Laurent Pinchart
+1.8.0
 
