@@ -1,64 +1,74 @@
-From: Artem Bityutskiy <dedekind1@gmail.com>
-Date: Mon, 12 Nov 2012 15:17:35 +0000
-Subject: Re: [PATCH v3 1/3] mtd: sh_flctl: Minor cleanups
-Message-Id: <1352733455.2262.0.camel@sauron.fi.intel.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="=-rvHTxkHiqfN7N8WCUWsA"
+From: Wen Congyang <wency@cn.fujitsu.com>
+Date: Thu, 01 Nov 2012 09:44:43 +0000
+Subject: [PATCH v3 12/12] memory-hotplug: free node_data when a node is offlined
+Message-Id: <1351763083-7905-13-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1350641736-18192-1-git-send-email-hechtb@gmail.com>
- <1350641736-18192-2-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1350641736-18192-2-git-send-email-hechtb@gmail.com>
-To: linux-arm-kernel@lists.infradead.org
-
-
---=-rvHTxkHiqfN7N8WCUWsA
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-
-On Fri, 2012-10-19 at 12:15 +0200, Bastian Hecht wrote:
-> Some small fixes to avoid sparse and smatch complain. Other cosmetic fixe=
-s
-> as well.
->=20
-> - Change of the type of the member index in struct sh_flctl from signed
-> to unsigned. We use index by addressing array members, so unsigned is mor=
-e
-> concise here. Adapt functions relying on sh_flctl::index.
-> - Remove a blurring cast in write_fiforeg().
-> - Apply consistent naming scheme when refering to the data buffer.
-> - Shorten some unnecessarily verbose functions.
-> - Remove spaces at start of lines.
->=20
-> Signed-off-by: Bastian Hecht <hechtb@gmail.com>
-
-Pushed to l2-mtd.git, thanks!
-
---=20
-Best Regards,
-Artem Bityutskiy
-
---=-rvHTxkHiqfN7N8WCUWsA
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
+References: <1351763083-7905-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1351763083-7905-1-git-send-email-wency@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
+To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+Cc: David Rientjes <rientjes@google.com>, Jiang Liu <liuj97@gmail.com>, Len Brown <len.brown@intel.com>, benh@kernel.crashing.org, paulus@samba.org, Christoph Lameter <cl@linux.com>, Minchan Kim <minchan.kim@gmail.com>, Andrew Morton <akpm@linux-foundation.org>, KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>, Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>, Jianguo Wu <wujianguo@huawei.com>, Wen Congyang <wency@cn.fujitsu.com>
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+We call hotadd_new_pgdat() to allocate memory to store node_data. So we
+should free it when removing a node.
 
-iQIcBAABAgAGBQJQoRMPAAoJECmIfjd9wqK0mEEQALwBlkt0dtFHg3ukenZ7Fc1e
-Fd0/tHX8eqg2A/E71Ev7BZC7RzbU9361QAOfozW1DyYWIq5MLoQBzkxCvVu4NcJy
-SN1IpChmspEFiUnGnC5m4dUsXmB7+aAfrUod6v36OVmu6A78+LmPq8fD1LtpGqUD
-TxPkBR+k6jWaGRVR3jv3Q6dVZOP4o3/2bW3raj66B6XUKoLDH0uKjxh5NHiUGLku
-x29kcWfxlD43gjiYLSwgI3CKBMmbiBMKaHEwi45oP45L3IjFNokGCHB/qagA7Q9x
-yl8oSfYSk7FsBKUS1qzKtTvxflWNAxBGnlJ4GxIRT0dyPygCcnXPGsOJcbVeGvyK
-nej3vE4foy3yZnWhqoSMBq9RfgiHwJyQxgiTs+6RaaaruIaU+hQgVOsOJo1XpX5D
-bEVBlEGDQCVGbuV5R582M+HFDyh3/wwfd+edX1hCHGGIG2JGI9uzMgMpQ5NSmfzH
-vheu/eqJEQAPxFUu0/mMZOa3eHCNFnD2A8Ze1GJnMT0wy1osP86wxZBrToTh2aH6
-YuHtQIkAcmh3gYvMnBT9k5kQNqYcMfdz5PRjX+xp7JJY9ZwZymqXqT86fAekkpmo
-Hzzk3r480vvnTcQF8gRUWSYlKqfff/bgALnkOJXFR/Z8ypJXnIjfehTlc7EACIRy
-9OutnhzHu9wmB+MW4pr9
-=en0j
------END PGP SIGNATURE-----
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+CC: Paul Mackerras <paulus@samba.org>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+---
+ mm/memory_hotplug.c | 20 +++++++++++++++++++-
+ 1 file changed, 19 insertions(+), 1 deletion(-)
 
---=-rvHTxkHiqfN7N8WCUWsA--
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index d965da3..e281c31 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -1320,9 +1320,12 @@ static int check_cpu_on_node(void *data)
+ /* offline the node if all memory sections of this node are removed */
+ static void try_offline_node(int nid)
+ {
++	pg_data_t *pgdat = NODE_DATA(nid);
+ 	unsigned long start_pfn = NODE_DATA(nid)->node_start_pfn;
+-	unsigned long end_pfn = start_pfn + NODE_DATA(nid)->node_spanned_pages;
++	unsigned long end_pfn = start_pfn + pgdat->node_spanned_pages;
+ 	unsigned long pfn;
++	struct page *pgdat_page = virt_to_page(pgdat);
++	int i;
+ 
+ 	for (pfn = start_pfn; pfn < end_pfn; pfn += PAGES_PER_SECTION) {
+ 		unsigned long section_nr = pfn_to_section_nr(pfn);
+@@ -1349,6 +1352,21 @@ static void try_offline_node(int nid)
+ 	 */
+ 	node_set_offline(nid);
+ 	unregister_one_node(nid);
++
++	if (!PageSlab(pgdat_page) && !PageCompound(pgdat_page))
++		/* node data is allocated from boot memory */
++		return;
++
++	/* free waittable in each zone */
++	for (i = 0; i < MAX_NR_ZONES; i++) {
++		struct zone *zone = pgdat->node_zones + i;
++
++		if (zone->wait_table)
++			vfree(zone->wait_table);
++	}
++
++	arch_refresh_nodedata(nid, NULL);
++	arch_free_nodedata(pgdat);
+ }
+ 
+ int __ref remove_memory(int nid, u64 start, u64 size)
+-- 
+1.8.0
 
