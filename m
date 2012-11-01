@@ -1,128 +1,166 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 27 Nov 2012 00:33:48 +0000
-Subject: Re: [PATCH 7/7] ARM: mach-shmobile: kzm9g: Reference DT implementation
-Message-Id: <20121127003348.GD9724@verge.net.au>
+From: Wen Congyang <wency@cn.fujitsu.com>
+Date: Thu, 01 Nov 2012 09:44:42 +0000
+Subject: [PATCH v3 11/12] memory-hotplug: remove sysfs file of node
+Message-Id: <1351763083-7905-12-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1353889014-17142-1-git-send-email-horms@verge.net.au>
- <1353889014-17142-8-git-send-email-horms@verge.net.au>
- <50B329B3.8000209@kmckk.co.jp>
-In-Reply-To: <50B329B3.8000209@kmckk.co.jp>
+References: <1351763083-7905-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1351763083-7905-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+Cc: David Rientjes <rientjes@google.com>, Jiang Liu <liuj97@gmail.com>, Len Brown <len.brown@intel.com>, benh@kernel.crashing.org, paulus@samba.org, Christoph Lameter <cl@linux.com>, Minchan Kim <minchan.kim@gmail.com>, Andrew Morton <akpm@linux-foundation.org>, KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>, Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>, Jianguo Wu <wujianguo@huawei.com>, Wen Congyang <wency@cn.fujitsu.com>
 
-On Mon, Nov 26, 2012 at 05:34:59PM +0900, Tetsuyuki Kobayashi wrote:
-> Hello Simon-san,
-> 
-> (2012/11/26 9:16), Simon Horman wrote:
-> > Provide alternate board code for the kzm9g to demonstrate
-> > how DT may be used given the current state of driver
-> > device tree support. This is intended to act as a reference
-> > for mach-shmobile developers.
-> > 
-> > Some notes:
-> > 
-> > * Brings up the GIC interrupt handler using device tree
-> > * Brings up the following devices using device tree
-> >    - ST1232 (Touchscreen)
-> >    - MMCIF (MMC)
-> >    - SDHI (MMC)
-> > * Does not bring up the INTC interrupt controller at all,
-> >    thus external devices may not be used
-> > * Uses existing C code and not device tree to initialise the following,
-> >    which are needed for a working board:
-> >    - SCIF (Serial)
-> >    - CMT (Clock)
-> >    - PFC (GPIO)
-> > 
-> > To use this alternate board code instead of the normal board code,
-> > CONFIG_MACH_KZM9G_REFERENCE should be selected in the kernel config.
-> > And the sh73a0-kzm9g-reference.dtb flattened device tree blob should be used.
-> > 
-> > Signed-off-by: Simon Horman <horms@verge.net.au>
-> > ---
-> >   arch/arm/boot/dts/Makefile                     |    3 +-
-> >   arch/arm/boot/dts/sh73a0-kzm9g-reference.dts   |  153 ++++++++++++++++++++++++
-> >   arch/arm/mach-shmobile/Kconfig                 |   10 ++
-> >   arch/arm/mach-shmobile/Makefile                |    8 +-
-> >   arch/arm/mach-shmobile/board-kzm9g-reference.c |  142 ++++++++++++++++++++++
-> >   5 files changed, 314 insertions(+), 2 deletions(-)
-> >   create mode 100644 arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-> >   create mode 100644 arch/arm/mach-shmobile/board-kzm9g-reference.c
-> > 
-> > diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-> > index c1ce813..b6c4fa2 100644
-> > --- a/arch/arm/boot/dts/Makefile
-> > +++ b/arch/arm/boot/dts/Makefile
-> > @@ -75,7 +75,8 @@ dtb-$(CONFIG_ARCH_PRIMA2) += prima2-evb.dtb
-> >   dtb-$(CONFIG_ARCH_U8500) += snowball.dtb
-> >   dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm9d.dtb \
-> >   	r8a7740-armadillo800eva.dtb \
-> > -	sh73a0-kzm9g.dtb
-> > +	sh73a0-kzm9g.dtb \
-> > +	sh73a0-kzm9g-reference.dtb
-> >   dtb-$(CONFIG_ARCH_SPEAR13XX) += spear1310-evb.dtb \
-> >   	spear1340-evb.dtb
-> >   dtb-$(CONFIG_ARCH_SPEAR3XX)+= spear300-evb.dtb \
-> > diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-> > new file mode 100644
-> > index 0000000..978892a
-> > --- /dev/null
-> > +++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-> > @@ -0,0 +1,153 @@
-> > +/*
-> > + * Device Tree Source for the KZM-A9-GT board
-> > + *
-> > + * Copyright (C) 2012 Horms Solutions Ltd.
-> > + *
-> > + * Based on sh73a0-kzm9g.dts
-> > + * Copyright (C) 2012 Renesas Solutions Corp.
-> > + *
-> > + * This file is licensed under the terms of the GNU General Public License
-> > + * version 2.  This program is licensed "as is" without any warranty of any
-> > + * kind, whether express or implied.
-> > + */
-> > +
-> > +/dts-v1/;
-> > +/include/ "skeleton.dtsi"
-> > +
-> > +/ {
-> > +	model = "KZM-A9-GT";
-> > +	compatible = "renesas,kzm9g-reference", "renesas,sh73a0";
-> > +
-> > +	memory {
-> > +		device_type = "memory";
-> > +		reg = <0x41000000 0x1e800000>;
-> > +	};
-> > +
-> > +	gic: interrupt-controller@f0001000 {
-> > +		compatible = "arm,cortex-a9-gic";
-> > +		#interrupt-cells = <3>;
-> > +		#address-cells = <1>;
-> > +		interrupt-controller;
-> > +		reg = <0xf0001000 0x1000>,
-> > +		      <0xf0000100 0x100>;
-> > +	};
-> > +
-> > +	i2c0: i2c@0xe6820000 {
-> > +		#address-cells = <1>;
-> > +		#size-cells = <0>;
-> > +		compatible = "renesas,rmobile-iic";
-> > +		reg = <0xe6820000 0x425>;
-> > +		interrupt-parent = <&gic>;
-> > +		interrupts = <0 167 0x4
-> > +			      0 170 0x4>;
-> > +	};
-> 
-> I reported /dev/i2c-0 seems not working. I found the reason.
-> About i2c0 interrupt, it should be:
-> 
->  		interrupts = <0 167 0x4
-> 			      0 168 0x4
-> 			      0 169 0x4
->  			      0 170 0x4>;
-> 
-> The same as i2c1 - ic24. There are 4 interrupts each.
+This patch introduces a new function try_offline_node() to
+remove sysfs file of node when all memory sections of this
+node are removed. If some memory sections of this node are
+not removed, this function does nothing.
 
-Thanks, sorry for missing that the first time around.
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+---
+ drivers/acpi/acpi_memhotplug.c |  8 +++++-
+ include/linux/memory_hotplug.h |  2 +-
+ mm/memory_hotplug.c            | 58 ++++++++++++++++++++++++++++++++++++++++--
+ 3 files changed, 64 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/acpi/acpi_memhotplug.c b/drivers/acpi/acpi_memhotplug.c
+index 24c807f..0780f99 100644
+--- a/drivers/acpi/acpi_memhotplug.c
++++ b/drivers/acpi/acpi_memhotplug.c
+@@ -310,7 +310,9 @@ static int acpi_memory_disable_device(struct acpi_memory_device *mem_device)
+ {
+ 	int result;
+ 	struct acpi_memory_info *info, *n;
++	int node;
+ 
++	node = acpi_get_node(mem_device->device->handle);
+ 
+ 	/*
+ 	 * Ask the VM to offline this memory range.
+@@ -318,7 +320,11 @@ static int acpi_memory_disable_device(struct acpi_memory_device *mem_device)
+ 	 */
+ 	list_for_each_entry_safe(info, n, &mem_device->res_list, list) {
+ 		if (info->enabled) {
+-			result = remove_memory(info->start_addr, info->length);
++			if (node < 0)
++				node = memory_add_physaddr_to_nid(
++					info->start_addr);
++			result = remove_memory(node, info->start_addr,
++				info->length);
+ 			if (result)
+ 				return result;
+ 		}
+diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
+index d4c4402..7b4cfe6 100644
+--- a/include/linux/memory_hotplug.h
++++ b/include/linux/memory_hotplug.h
+@@ -231,7 +231,7 @@ extern int arch_add_memory(int nid, u64 start, u64 size);
+ extern int offline_pages(unsigned long start_pfn, unsigned long nr_pages);
+ extern int offline_memory_block(struct memory_block *mem);
+ extern bool is_memblock_offlined(struct memory_block *mem);
+-extern int remove_memory(u64 start, u64 size);
++extern int remove_memory(int node, u64 start, u64 size);
+ extern int sparse_add_one_section(struct zone *zone, unsigned long start_pfn,
+ 								int nr_pages);
+ extern void sparse_remove_one_section(struct zone *zone, struct mem_section *ms);
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index 7bcced0..d965da3 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -29,6 +29,7 @@
+ #include <linux/suspend.h>
+ #include <linux/mm_inline.h>
+ #include <linux/firmware-map.h>
++#include <linux/stop_machine.h>
+ 
+ #include <asm/tlbflush.h>
+ 
+@@ -1299,7 +1300,58 @@ static int is_memblock_offlined_cb(struct memory_block *mem, void *arg)
+ 	return ret;
+ }
+ 
+-int __ref remove_memory(u64 start, u64 size)
++static int check_cpu_on_node(void *data)
++{
++	struct pglist_data *pgdat = data;
++	int cpu;
++
++	for_each_present_cpu(cpu) {
++		if (cpu_to_node(cpu) = pgdat->node_id)
++			/*
++			 * the cpu on this node isn't removed, and we can't
++			 * offline this node.
++			 */
++			return -EBUSY;
++	}
++
++	return 0;
++}
++
++/* offline the node if all memory sections of this node are removed */
++static void try_offline_node(int nid)
++{
++	unsigned long start_pfn = NODE_DATA(nid)->node_start_pfn;
++	unsigned long end_pfn = start_pfn + NODE_DATA(nid)->node_spanned_pages;
++	unsigned long pfn;
++
++	for (pfn = start_pfn; pfn < end_pfn; pfn += PAGES_PER_SECTION) {
++		unsigned long section_nr = pfn_to_section_nr(pfn);
++
++		if (!present_section_nr(section_nr))
++			continue;
++
++		if (pfn_to_nid(pfn) != nid)
++			continue;
++
++		/*
++		 * some memory sections of this node are not removed, and we
++		 * can't offline node now.
++		 */
++		return;
++	}
++
++	if (stop_machine(check_cpu_on_node, NODE_DATA(nid), NULL))
++		return;
++
++	/*
++	 * all memory/cpu of this node are removed, we can offline this
++	 * node now.
++	 */
++	node_set_offline(nid);
++	unregister_one_node(nid);
++}
++
++int __ref remove_memory(int nid, u64 start, u64 size)
+ {
+ 	unsigned long start_pfn, end_pfn;
+ 	int ret = 0;
+@@ -1346,6 +1398,8 @@ repeat:
+ 
+ 	arch_remove_memory(start, size);
+ 
++	try_offline_node(nid);
++
+ 	unlock_memory_hotplug();
+ 
+ 	return 0;
+@@ -1355,7 +1409,7 @@ int offline_pages(unsigned long start_pfn, unsigned long nr_pages)
+ {
+ 	return -EINVAL;
+ }
+-int remove_memory(u64 start, u64 size)
++int remove_memory(int nid, u64 start, u64 size)
+ {
+ 	return -EINVAL;
+ }
+-- 
+1.8.0
+
