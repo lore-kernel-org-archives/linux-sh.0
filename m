@@ -1,40 +1,35 @@
-From: Andrew Morton <akpm@linux-foundation.org>
-Date: Tue, 06 Nov 2012 22:38:19 +0000
-Subject: Re: [PATCH 07/16] mm: fix cache coloring on x86_64 architecture
-Message-Id: <20121106143819.4309031c.akpm@linux-foundation.org>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Thu, 01 Nov 2012 00:22:33 +0000
+Subject: Re: [PATCH] sh: clkfwk: bugfix: sh_clk_div_enable() care sh_clk_div_set_rate() if div6
+Message-Id: <20121101002233.GC24257@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352155633-8648-1-git-send-email-walken@google.com>
- <1352155633-8648-8-git-send-email-walken@google.com>
-In-Reply-To: <1352155633-8648-8-git-send-email-walken@google.com>
+References: <87pq45mxd9.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87pq45mxd9.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Mon,  5 Nov 2012 14:47:04 -0800
-Michel Lespinasse <walken@google.com> wrote:
-
-> Fix the x86-64 cache alignment code to take pgoff into account.
-> Use the x86 and MIPS cache alignment code as the basis for a generic
-> cache alignment function.
+On Wed, Oct 31, 2012 at 12:01:03AM -0700, Kuninori Morimoto wrote:
 > 
-> The old x86 code will always align the mmap to aliasing boundaries,
-> even if the program mmaps the file with a non-zero pgoff.
+> Hi Paul
 > 
-> If program A mmaps the file with pgoff 0, and program B mmaps the
-> file with pgoff 1. The old code would align the mmaps, resulting in
-> misaligned pages:
+> > > 764f4e4e33d18cde4dcaf8a0d860b749c6d6d08b
+> > > (sh: clkfwk: Use shared sh_clk_div_enable/disable())
+> > > shared enable/disable funcions for div4/div6.
+> > > But new sh_clk_div_enable() didn't care sh_clk_div_set_rate()
+> > > which is required on div6 clock.
+> > > This patch fixes it, and is tested by HDMI sound output on armadillo800eva
+> > > 
+> > > Reported-by: Cao Minh Hiep <hiepcm@gmail.com>
+> > > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> > 
+> > Looks good, I'll queue it up, thanks.
 > 
-> A:  0123
-> B:  123
+> Thanks.
+> But which branch can I find it ?
 > 
-> After this patch, they are aligned so the pages line up:
-> 
-> A: 0123
-> B:  123
-
-We have a bit of a history of fiddling with coloring and finding that
-the changes made at best no improvement.  Or at least, that's my
-perhaps faulty memory of it.
-
-This one needs pretty careful testing, please.
+I have it on my laptop and haven't had a chance to push it yet. Now that
+I think about it though, I'm not sure that CLK_MASK_DIV_ON_DISABLE should
+be depended on. If you require this to only apply for div6 you are better
+off checking the div mask directly (ie, testing SH_CLK_DIV6_MSK).
