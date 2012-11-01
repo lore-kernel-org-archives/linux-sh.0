@@ -1,127 +1,78 @@
-From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Date: Fri, 16 Nov 2012 01:51:24 +0000
-Subject: [PATCH v2 03/10] Partially revert "serial: sh-sci: console Runtime PM support"
-Message-Id: <50A59C1C.9020904@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 01 Nov 2012 01:02:11 +0000
+Subject: [PATCH 3/3] ARM: shmobile: leave CONFIG_INOTIFY_USER enabled by default
+Message-Id: <1351731731-8435-4-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <509A0658.1010503@renesas.com> <509A0B4E.1030801@renesas.com>
- <20121116010107.GA6068@kroah.com> <50A59B9B.2010501@renesas.com>
-In-Reply-To: <50A59B9B.2010501@renesas.com>
+References: <1351731731-8435-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1351731731-8435-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This partially reverts commit 1ba7622094 (serial: sh-sci: console
-Runtime PM support, from Magnus Damm <damm@opensource.se>, 2011-08-03).
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-The generic 'serial_core' can take care of console PM maintenance,
-so all (or at least the first thing) we have to do to get console PM
-work properly, is to implement uart_ops ->pm() operation in the sh-sci
-serial client driver.
+CONFIG_INOTIFY_USER is enabled by default in its Kconfig. Disabling it
+breaks udevd. Fix shmobile defconfig files to not specify this option
+explicitly.
 
-This patch partially reverts the commit above, but leaving sci_reset()
-change in place, because sci_reset() is already part of another commit
-(73c3d53f38 serial: sh-sci: Avoid FIFO clear for MCE toggle.).
-
-A revised version of console PM support follows next.
-
-Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- drivers/tty/serial/sh-sci.c | 53 +--------------------------------------------
- 1 file changed, 1 insertion(+), 52 deletions(-)
+ arch/arm/configs/ap4evb_defconfig   |    1 -
+ arch/arm/configs/kota2_defconfig    |    1 -
+ arch/arm/configs/kzm9g_defconfig    |    1 -
+ arch/arm/configs/mackerel_defconfig |    1 -
+ 4 files changed, 4 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 9abe977..e9e8883 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -99,12 +99,6 @@ struct sci_port {
- #endif
- 
- 	struct notifier_block		freq_transition;
--
--#ifdef CONFIG_SERIAL_SH_SCI_CONSOLE
--	unsigned short saved_smr;
--	unsigned short saved_fcr;
--	unsigned char saved_brr;
--#endif
- };
- 
- /* Function prototypes */
-@@ -2247,8 +2241,7 @@ static int __devinit serial_console_setup(struct console *co, char *options)
- 	if (options)
- 		uart_parse_options(options, &baud, &parity, &bits, &flow);
- 
--	sci_port_disable(sci_port);
--
-+	/* TODO: disable clock */
- 	return uart_set_options(port, co, baud, parity, bits, flow);
- }
- 
-@@ -2291,46 +2284,6 @@ static int __devinit sci_probe_earlyprintk(struct platform_device *pdev)
- 	return 0;
- }
- 
--#define uart_console(port)	((port)->cons->index = (port)->line)
--
--static int sci_runtime_suspend(struct device *dev)
--{
--	struct sci_port *sci_port = dev_get_drvdata(dev);
--	struct uart_port *port = &sci_port->port;
--
--	if (uart_console(port)) {
--		struct plat_sci_reg *reg;
--
--		sci_port->saved_smr = serial_port_in(port, SCSMR);
--		sci_port->saved_brr = serial_port_in(port, SCBRR);
--
--		reg = sci_getreg(port, SCFCR);
--		if (reg->size)
--			sci_port->saved_fcr = serial_port_in(port, SCFCR);
--		else
--			sci_port->saved_fcr = 0;
--	}
--	return 0;
--}
--
--static int sci_runtime_resume(struct device *dev)
--{
--	struct sci_port *sci_port = dev_get_drvdata(dev);
--	struct uart_port *port = &sci_port->port;
--
--	if (uart_console(port)) {
--		sci_reset(port);
--		serial_port_out(port, SCSMR, sci_port->saved_smr);
--		serial_port_out(port, SCBRR, sci_port->saved_brr);
--
--		if (sci_port->saved_fcr)
--			serial_port_out(port, SCFCR, sci_port->saved_fcr);
--
--		serial_port_out(port, SCSCR, sci_port->cfg->scscr);
--	}
--	return 0;
--}
--
- #define SCI_CONSOLE	(&serial_console)
- 
- #else
-@@ -2340,8 +2293,6 @@ static inline int __devinit sci_probe_earlyprintk(struct platform_device *pdev)
- }
- 
- #define SCI_CONSOLE	NULL
--#define sci_runtime_suspend	NULL
--#define sci_runtime_resume	NULL
- 
- #endif /* CONFIG_SERIAL_SH_SCI_CONSOLE */
- 
-@@ -2459,8 +2410,6 @@ static int sci_resume(struct device *dev)
- }
- 
- static const struct dev_pm_ops sci_dev_pm_ops = {
--	.runtime_suspend = sci_runtime_suspend,
--	.runtime_resume = sci_runtime_resume,
- 	.suspend	= sci_suspend,
- 	.resume		= sci_resume,
- };
+diff --git a/arch/arm/configs/ap4evb_defconfig b/arch/arm/configs/ap4evb_defconfig
+index 2eef85e..66894f7 100644
+--- a/arch/arm/configs/ap4evb_defconfig
++++ b/arch/arm/configs/ap4evb_defconfig
+@@ -46,7 +46,6 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
+ # CONFIG_HID_SUPPORT is not set
+ # CONFIG_USB_SUPPORT is not set
+ # CONFIG_DNOTIFY is not set
+-# CONFIG_INOTIFY_USER is not set
+ CONFIG_TMPFS=y
+ # CONFIG_MISC_FILESYSTEMS is not set
+ CONFIG_MAGIC_SYSRQ=y
+diff --git a/arch/arm/configs/kota2_defconfig b/arch/arm/configs/kota2_defconfig
+index b7735d6..fa83db1 100644
+--- a/arch/arm/configs/kota2_defconfig
++++ b/arch/arm/configs/kota2_defconfig
+@@ -112,7 +112,6 @@ CONFIG_LEDS_GPIO=y
+ CONFIG_LEDS_RENESAS_TPU=y
+ CONFIG_LEDS_TRIGGERS=y
+ # CONFIG_DNOTIFY is not set
+-# CONFIG_INOTIFY_USER is not set
+ CONFIG_TMPFS=y
+ # CONFIG_MISC_FILESYSTEMS is not set
+ CONFIG_MAGIC_SYSRQ=y
+diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
+index c88b578..b377a6f 100644
+--- a/arch/arm/configs/kzm9g_defconfig
++++ b/arch/arm/configs/kzm9g_defconfig
+@@ -120,7 +120,6 @@ CONFIG_SH_DMAE=y
+ CONFIG_ASYNC_TX_DMA=y
+ CONFIG_STAGING=y
+ # CONFIG_DNOTIFY is not set
+-CONFIG_INOTIFY_USER=y
+ CONFIG_VFAT_FS=y
+ CONFIG_TMPFS=y
+ # CONFIG_MISC_FILESYSTEMS is not set
+diff --git a/arch/arm/configs/mackerel_defconfig b/arch/arm/configs/mackerel_defconfig
+index 7b79a0b..2098ce1 100644
+--- a/arch/arm/configs/mackerel_defconfig
++++ b/arch/arm/configs/mackerel_defconfig
+@@ -105,7 +105,6 @@ CONFIG_EXT3_FS=y
+ CONFIG_EXT3_FS_POSIX_ACL=y
+ CONFIG_EXT3_FS_SECURITY=y
+ # CONFIG_DNOTIFY is not set
+-# CONFIG_INOTIFY_USER is not set
+ CONFIG_MSDOS_FS=y
+ CONFIG_VFAT_FS=y
+ CONFIG_TMPFS=y
 -- 
-1.7.12.4
+1.7.10.4
 
