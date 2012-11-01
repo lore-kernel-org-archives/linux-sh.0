@@ -1,40 +1,73 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Sat, 17 Nov 2012 23:27:11 +0000
-Subject: Re: [PATCH 0/5] i2c-sh_mobile non-urgent changes
-Message-Id: <Pine.LNX.4.64.1211180022331.30062@axis700.grange>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 01 Nov 2012 00:40:03 +0000
+Subject: [GIT PULL v3] Renesas ARM-based SoC boards for v3.8
+Message-Id: <1351730411-1874-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <5087C93F.6080601@renesas.com>
- <20121116080704.GC8464@pengutronix.de>
- <50A5FF0D.4020502@renesas.com>
-In-Reply-To: <50A5FF0D.4020502@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, 16 Nov 2012, Shinya Kuribayashi wrote:
+Hi Olof, Hi Arnd,
 
-> On 11/16/2012 5:07 PM, Wolfram Sang wrote:
-> > Looks good to me, like the extensive patch descriptions. I am going to
-> > apply it to for-next with patches 2+3 squashed, because after patch 2 we
-> > would have a buggy state otherwise. Let me know if you are not okay with
-> > that.
-> 
-> It's not that buggy as you/we think, in most cases it work without
-> problem.  What's more important for me is to record the issue and
-> how to solve it.  So I'd like to have patch 2 and 3 separately.
+please consider the following board enhancements for 3.8.
 
-I agree with Wolfram. For developers it can be important to know their own 
-development process, that's true. But for upstream it is an absolute 
-preference to avoid breakages. So, we should never commit patches, that 
-are known to contain problems. In this case it means, that patches 2 and 3 
-should be merged. It is good, that the problem has been detected and fixed 
-during development or testing, this gives us a chance to avoid breaking 
-the mainline, which we should certainly use.
+This differs from v2 of this pull request in that:
+* Several patches have been moved to the soc branch which
+  I will send a pull request for shortly.
+  - ARM: shmobile: r8a7779: add HSPI clock support
+  - ARM: shmobile: r8a7779: add I2C clock support
+  - ARM: shmobile: r8a7779: add I2C driver support
+  - ARM: shmobile: r8a7740: Enable PMU
+* Several new patches have been added.
+  - ARM: shmobile: Remove G4EVM machine support
+  - ARM: shmobile: Remove G3EVM machine support
 
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+---------------------------------------------------------------
+The following changes since commit ddffeb8c4d0331609ef2581d84de4d763607bd37:
+
+  Linux 3.7-rc1 (2012-10-14 14:41:04 -0700)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git boards
+
+for you to fetch changes up to 631a7b5d958d2ef2c2333b105794c693642f0641:
+
+  ARM: shmobile: Remove G4EVM machine support (2012-10-30 15:25:59 +0800)
+
+----------------------------------------------------------------
+Kuninori Morimoto (2):
+      ARM: shmobile: armadillo800eva: enable restart
+      ARM: shmobile: marzen: add HSPI support
+
+Nobuhiro Iwamatsu (3):
+      ARM: mach-shmobile: Use DT_MACHINE for mackerel
+      ARM: shmobile: Remove G3EVM machine support
+      ARM: shmobile: Remove G4EVM machine support
+
+Tetsuyuki Kobayashi (3):
+      ARM: shmobile: kzm9g: enable magnetometer ak8975.
+      ARM: shmobile: kzm9g: enable three-axis digital accelerometer ADXL345
+      ARM: shmobile: kzm9g: enable DMAEngine on SHDI0 and SDHI2
+
+ arch/arm/boot/dts/Makefile                     |    3 +-
+ arch/arm/boot/dts/sh7372-mackerel.dts          |   22 ++
+ arch/arm/configs/g3evm_defconfig               |   57 ----
+ arch/arm/configs/g4evm_defconfig               |   57 ----
+ arch/arm/configs/kzm9g_defconfig               |    4 +
+ arch/arm/configs/marzen_defconfig              |    4 +
+ arch/arm/mach-shmobile/Kconfig                 |   17 +-
+ arch/arm/mach-shmobile/Makefile                |    2 -
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    8 +
+ arch/arm/mach-shmobile/board-g3evm.c           |  343 ---------------------
+ arch/arm/mach-shmobile/board-g4evm.c           |  384 ------------------------
+ arch/arm/mach-shmobile/board-kzm9g.c           |   14 +-
+ arch/arm/mach-shmobile/board-mackerel.c        |    8 +-
+ arch/arm/mach-shmobile/board-marzen.c          |   25 ++
+ 14 files changed, 87 insertions(+), 861 deletions(-)
+ create mode 100644 arch/arm/boot/dts/sh7372-mackerel.dts
+ delete mode 100644 arch/arm/configs/g3evm_defconfig
+ delete mode 100644 arch/arm/configs/g4evm_defconfig
+ delete mode 100644 arch/arm/mach-shmobile/board-g3evm.c
+ delete mode 100644 arch/arm/mach-shmobile/board-g4evm.c
