@@ -1,148 +1,98 @@
-From: Florian Fainelli <florian@openwrt.org>
-Date: Fri, 05 Oct 2012 16:20:54 +0000
-Subject: [PATCH 22/32 v3] sh: convert boards to use the OHCI platform driver
-Message-Id: <1349454064-11606-23-git-send-email-florian@openwrt.org>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 01 Nov 2012 00:41:47 +0000
+Subject: [PATCH 05/11] ARM: shmobile: r8a7779: Replace modify_scu_cpu_psr with scu_power_mode
+Message-Id: <1351730513-2952-6-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1349454064-11606-1-git-send-email-florian@openwrt.org>
-In-Reply-To: <1349454064-11606-1-git-send-email-florian@openwrt.org>
+References: <1351730513-2952-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1351730513-2952-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: stern@rowland.harvard.edu
-Cc: linux-usb@vger.kernel.org, Florian Fainelli <florian@openwrt.org>, Paul Mundt <lethal@linux-sh.org>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This patch makes all SuperH boards using the ohci-sh platform driver to use
-the ohci-platform driver instead, which is suitable for use by these boards.
+From: Bastian Hecht <hechtb@googlemail.com>
 
-Signed-off-by: Florian Fainelli <florian@openwrt.org>
+We can remove the extra code of modify_scu_cpu_psr() and use the cleaner
+generic ARM helper scu_power_mode(). As every CPU only deals with its
+own power register and scu_power_mode() operates with 8-bit accesses,
+we save the locking overhead too.
+
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
-Changes in v3:
-- improved commit message
+ arch/arm/mach-shmobile/smp-r8a7779.c |   25 +++----------------------
+ 1 file changed, 3 insertions(+), 22 deletions(-)
 
-No changes between v1 and v2
-
- arch/sh/kernel/cpu/sh3/setup-sh7720.c  |    6 +++++-
- arch/sh/kernel/cpu/sh4a/setup-sh7757.c |    6 +++++-
- arch/sh/kernel/cpu/sh4a/setup-sh7763.c |    6 +++++-
- arch/sh/kernel/cpu/sh4a/setup-sh7786.c |    6 +++++-
- 4 files changed, 20 insertions(+), 4 deletions(-)
-
-diff --git a/arch/sh/kernel/cpu/sh3/setup-sh7720.c b/arch/sh/kernel/cpu/sh3/setup-sh7720.c
-index 0c2f1b2..42d991f 100644
---- a/arch/sh/kernel/cpu/sh3/setup-sh7720.c
-+++ b/arch/sh/kernel/cpu/sh3/setup-sh7720.c
-@@ -20,6 +20,7 @@
- #include <linux/serial_sci.h>
- #include <linux/sh_timer.h>
- #include <linux/sh_intc.h>
-+#include <linux/usb/ohci_pdriver.h>
- #include <asm/rtc.h>
- #include <cpu/serial.h>
+diff --git a/arch/arm/mach-shmobile/smp-r8a7779.c b/arch/arm/mach-shmobile/smp-r8a7779.c
+index 2ce6af9..9def0f2 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7779.c
++++ b/arch/arm/mach-shmobile/smp-r8a7779.c
+@@ -61,9 +61,6 @@ static void __iomem *scu_base_addr(void)
+ 	return (void __iomem *)0xf0000000;
+ }
  
-@@ -103,12 +104,15 @@ static struct resource usb_ohci_resources[] = {
+-static DEFINE_SPINLOCK(scu_lock);
+-static unsigned long tmp;
+-
+ #ifdef CONFIG_HAVE_ARM_TWD
+ static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, 0xf0000600, 29);
  
- static u64 usb_ohci_dma_mask = 0xffffffffUL;
+@@ -73,20 +70,6 @@ void __init r8a7779_register_twd(void)
+ }
+ #endif
  
-+static struct usb_ohci_pdata usb_ohci_pdata;
-+
- static struct platform_device usb_ohci_device = {
--	.name		= "sh_ohci",
-+	.name		= "ohci-platform",
- 	.id		= -1,
- 	.dev = {
- 		.dma_mask		= &usb_ohci_dma_mask,
- 		.coherent_dma_mask	= 0xffffffff,
-+		.platform_data		= &usb_ohci_pdata,
- 	},
- 	.num_resources	= ARRAY_SIZE(usb_ohci_resources),
- 	.resource	= usb_ohci_resources,
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
-index 4a2f357..9079a0f 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7757.c
-@@ -19,6 +19,7 @@
- #include <linux/sh_timer.h>
- #include <linux/sh_dma.h>
- #include <linux/sh_intc.h>
-+#include <linux/usb/ohci_pdriver.h>
- #include <cpu/dma-register.h>
- #include <cpu/sh7757.h>
+-static void modify_scu_cpu_psr(unsigned long set, unsigned long clr)
+-{
+-	void __iomem *scu_base = scu_base_addr();
+-
+-	spin_lock(&scu_lock);
+-	tmp = __raw_readl(scu_base + 8);
+-	tmp &= ~clr;
+-	tmp |= set;
+-	spin_unlock(&scu_lock);
+-
+-	/* disable cache coherency after releasing the lock */
+-	__raw_writel(tmp, scu_base + 8);
+-}
+-
+ static unsigned int __init r8a7779_get_core_count(void)
+ {
+ 	void __iomem *scu_base = scu_base_addr();
+@@ -102,7 +85,7 @@ static int r8a7779_platform_cpu_kill(unsigned int cpu)
+ 	cpu = cpu_logical_map(cpu);
  
-@@ -750,12 +751,15 @@ static struct resource usb_ohci_resources[] = {
- 	},
- };
+ 	/* disable cache coherency */
+-	modify_scu_cpu_psr(3 << (cpu * 8), 0);
++	scu_power_mode(scu_base_addr(), 3);
  
-+static struct usb_ohci_pdata usb_ohci_pdata;
-+
- static struct platform_device usb_ohci_device = {
--	.name		= "sh_ohci",
-+	.name		= "ohci-platform",
- 	.id		= -1,
- 	.dev = {
- 		.dma_mask = &usb_ohci_device.dev.coherent_dma_mask,
- 		.coherent_dma_mask = DMA_BIT_MASK(32),
-+		.platform_data	= &usb_ohci_pdata,
- 	},
- 	.num_resources	= ARRAY_SIZE(usb_ohci_resources),
- 	.resource	= usb_ohci_resources,
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7763.c b/arch/sh/kernel/cpu/sh4a/setup-sh7763.c
-index bd0a8fb..1686aca 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7763.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7763.c
-@@ -16,6 +16,7 @@
- #include <linux/sh_intc.h>
- #include <linux/io.h>
- #include <linux/serial_sci.h>
-+#include <linux/usb/ohci_pdriver.h>
+ 	if (cpu < ARRAY_SIZE(r8a7779_ch_cpu))
+ 		ch = r8a7779_ch_cpu[cpu];
+@@ -145,7 +128,7 @@ static int __cpuinit r8a7779_boot_secondary(unsigned int cpu, struct task_struct
+ 	cpu = cpu_logical_map(cpu);
  
- static struct plat_sci_port scif0_platform_data = {
- 	.mapbase	= 0xffe00000,
-@@ -106,12 +107,15 @@ static struct resource usb_ohci_resources[] = {
+ 	/* enable cache coherency */
+-	modify_scu_cpu_psr(0, 3 << (cpu * 8));
++	scu_power_mode(scu_base_addr(), 0);
  
- static u64 usb_ohci_dma_mask = 0xffffffffUL;
+ 	if (cpu < ARRAY_SIZE(r8a7779_ch_cpu))
+ 		ch = r8a7779_ch_cpu[cpu];
+@@ -158,15 +141,13 @@ static int __cpuinit r8a7779_boot_secondary(unsigned int cpu, struct task_struct
  
-+static struct usb_ohci_pdata usb_ohci_pdata;
-+
- static struct platform_device usb_ohci_device = {
--	.name		= "sh_ohci",
-+	.name		= "ohci-platform",
- 	.id		= -1,
- 	.dev = {
- 		.dma_mask		= &usb_ohci_dma_mask,
- 		.coherent_dma_mask	= 0xffffffff,
-+		.platform_data		= &usb_ohci_pdata,
- 	},
- 	.num_resources	= ARRAY_SIZE(usb_ohci_resources),
- 	.resource	= usb_ohci_resources,
-diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7786.c b/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
-index 2e6952f..ab52d4d 100644
---- a/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
-+++ b/arch/sh/kernel/cpu/sh4a/setup-sh7786.c
-@@ -23,6 +23,7 @@
- #include <linux/sh_timer.h>
- #include <linux/sh_dma.h>
- #include <linux/sh_intc.h>
-+#include <linux/usb/ohci_pdriver.h>
- #include <cpu/dma-register.h>
- #include <asm/mmzone.h>
+ static void __init r8a7779_smp_prepare_cpus(unsigned int max_cpus)
+ {
+-	int cpu = cpu_logical_map(0);
+-
+ 	scu_enable(scu_base_addr());
  
-@@ -583,12 +584,15 @@ static struct resource usb_ohci_resources[] = {
- 	},
- };
+ 	/* Map the reset vector (in headsmp.S) */
+ 	__raw_writel(__pa(shmobile_secondary_vector), AVECR);
  
-+static struct usb_ohci_pdata usb_ohci_pdata;
-+
- static struct platform_device usb_ohci_device = {
--	.name		= "sh_ohci",
-+	.name		= "ohci-platform",
- 	.id		= -1,
- 	.dev = {
- 		.dma_mask		= &usb_ohci_device.dev.coherent_dma_mask,
- 		.coherent_dma_mask	= DMA_BIT_MASK(32),
-+		.platform_data		= &usb_ohci_pdata,
- 	},
- 	.num_resources	= ARRAY_SIZE(usb_ohci_resources),
- 	.resource	= usb_ohci_resources,
+ 	/* enable cache coherency on CPU0 */
+-	modify_scu_cpu_psr(0, 3 << (cpu * 8));
++	scu_power_mode(scu_base_addr(), 0);
+ 
+ 	r8a7779_pm_init();
+ 
 -- 
-1.7.9.5
+1.7.10.4
 
