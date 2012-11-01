@@ -1,50 +1,22 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 27 Nov 2012 00:02:05 +0000
-Subject: [PATCH v2 06/77] sh-pfc: Let the compiler decide whether to inline functions
-Message-Id: <1353974596-30033-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 01 Nov 2012 01:04:12 +0000
+Subject: Re: [PATCH] ARM: shmobile: leave CONFIG_INOTIFY_USER enabled by default
+Message-Id: <20121101010411.GB3598@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1210302358590.29432@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1210302358590.29432@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The compiler should be smart enough to automatically inline static
-functions that are called from a single location.
+On Wed, Oct 31, 2012 at 12:03:45AM +0100, Guennadi Liakhovetski wrote:
+> CONFIG_INOTIFY_USER is enabled by default in its Kconfig. Disabling it 
+> breaks udevd. Fix shmobile defconfig files to not specify this option 
+> explicitly.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Paul Mundt <lethal@linux-sh.org>
----
- drivers/sh/pfc/pinctrl.c |   10 +++++-----
- 1 files changed, 5 insertions(+), 5 deletions(-)
+Thanks, applied to the defcofigs branch.
+I have sent a pull request for the defcofigs branch to the arm-soc people.
+I have also rebased the next branch to incorporate this change.
 
-diff --git a/drivers/sh/pfc/pinctrl.c b/drivers/sh/pfc/pinctrl.c
-index 1c93e3c..21b8678 100644
---- a/drivers/sh/pfc/pinctrl.c
-+++ b/drivers/sh/pfc/pinctrl.c
-@@ -115,7 +115,7 @@ static void sh_pfc_noop_disable(struct pinctrl_dev *pctldev, unsigned func,
- {
- }
- 
--static inline int sh_pfc_config_function(struct sh_pfc *pfc, unsigned offset)
-+static int sh_pfc_config_function(struct sh_pfc *pfc, unsigned offset)
- {
- 	if (sh_pfc_config_gpio(pfc, offset,
- 			       PINMUX_TYPE_FUNCTION,
-@@ -327,10 +327,10 @@ static struct pinctrl_desc sh_pfc_pinctrl_desc = {
- 	.confops	= &sh_pfc_pinconf_ops,
- };
- 
--static inline void __devinit sh_pfc_map_one_gpio(struct sh_pfc *pfc,
--						 struct sh_pfc_pinctrl *pmx,
--						 struct pinmux_gpio *gpio,
--						 unsigned offset)
-+static void __devinit sh_pfc_map_one_gpio(struct sh_pfc *pfc,
-+					  struct sh_pfc_pinctrl *pmx,
-+					  struct pinmux_gpio *gpio,
-+					  unsigned offset)
- {
- 	struct pinmux_data_reg *dummy;
- 	unsigned long flags;
--- 
-1.7.8.6
-
+git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git
