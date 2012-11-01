@@ -1,65 +1,44 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Tue, 27 Nov 2012 03:36:37 +0000
-Subject: Re: [PATCH 4/7] ARM: shmobile: pfc-sh73a0: Register device tree
-Message-Id: <20121127033635.GJ13206@verge.net.au>
+Date: Thu, 01 Nov 2012 00:46:48 +0000
+Subject: Re: [GIT PULL] Renesas ARM-based SoC defconfig for v3.8
+Message-Id: <20121101004647.GA3598@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1353889014-17142-1-git-send-email-horms@verge.net.au>
- <1353889014-17142-5-git-send-email-horms@verge.net.au>
- <7701261.79JI41uS12@avalon>
-In-Reply-To: <7701261.79JI41uS12@avalon>
+References: <1350448698-26985-1-git-send-email-horms@verge.net.au>
+ <alpine.LFD.2.02.1210221041450.16518@xanadu.home>
+ <20121030074508.GG12329@verge.net.au>
+ <201210302141.27919.arnd@arndb.de>
+In-Reply-To: <201210302141.27919.arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Nov 26, 2012 at 03:06:37PM +0100, Laurent Pinchart wrote:
-> Hi Simon,
+On Tue, Oct 30, 2012 at 09:41:27PM +0000, Arnd Bergmann wrote:
+> On Tuesday 30 October 2012, Simon Horman wrote:
+> > While I am more than happy to help address the issues raised in this
+> > thread, and others that arise. There do seem to be a number of issues
+> > between where we are now and a more generic shmobile_defconfig. I would
+> > like consideration given to allowing the exixting, working, well-maintained,
+> > per-board defconfigs to be updated until these issues have been resolved.
 > 
-> On Monday 26 November 2012 09:16:51 Simon Horman wrote:
-> > Register the pfc with sh73a0_init_gpio_dt() to allow
-> > gpios provided by pfc to be accessed by devices which
-> > are registered using device tree.
-> > 
-> > The motivation of this is to allow the gpio used for carrier detect
-> > but the Micro SD SDHI port of the KZM-9A-GT board to be accessed
-> > using device tree. Thus, allowing the SDHI device of the KZM-9A-GT
-> > board to be registered using device tree.
-> > 
-> > Signed-off-by: Simon Horman <horms@verge.net.au>
-> > ---
-> >  arch/arm/mach-shmobile/pfc-sh73a0.c |   45 ++++++++++++++++++++++++++++++++
-> >  1 file changed, 45 insertions(+)
-> > 
-> > diff --git a/arch/arm/mach-shmobile/pfc-sh73a0.c
-> > b/arch/arm/mach-shmobile/pfc-sh73a0.c index b442f9d..d1a04c0b 100644
-> > --- a/arch/arm/mach-shmobile/pfc-sh73a0.c
-> > +++ b/arch/arm/mach-shmobile/pfc-sh73a0.c
-> > @@ -2797,7 +2797,52 @@ static struct pinmux_info sh73a0_pinmux_info = {
-> >  	.gpio_irq_size = ARRAY_SIZE(pinmux_irqs),
-> >  };
-> > 
-> > +#ifdef CONFIG_OF_GPIO
-> > +static int sh73a0_gpio_xlate(struct gpio_chip *gc,
-> > +			     const struct of_phandle_args *gpiospec,
-> > +			     u32 *flags)
-> > +{
-> > +	if (WARN_ON(gc->of_gpio_n_cells < 2))
-> > +		return -EINVAL;
-> > +
-> > +	if (WARN_ON(gpiospec->args_count < gc->of_gpio_n_cells))
-> > +		return -EINVAL;
-> > +
-> > +	if (gpiospec->args[0] > gc->ngpio)
-> > +		return -EINVAL;
-> > +
-> > +	if (flags)
-> > +		*flags = gpiospec->args[1];
-> > +
-> > +	return gpiospec->args[0];
-> > +}
+> Yes, no problem. This seemed like a low-hanging fruit initially but has
+> turned into something much bigger now.
 > 
-> Is there any reason not to use of_gpio_simple_xlate here ? If there isn't, 
-> of_xlate and of_gpio_n_cells default to of_gpio_simple_xlate and 2 
-> respectively when of_xlate isn't specified, so you could omit both.
+> Instead of attacking all these at ones, we can leave them as something
+> worthwhile doing later. I noticed that out of the 11 shmobile defconfigs,
+> only three (marzen, kzm9d and kzm9g) actually have a nonzero MEMORY_START.
+> 
+> Maybe it's possible to consolidate all or some of the others first, since
+> they should still work with the same uImage at the expense of just making
+> the early debugging a little harder, as we discussed earlier.
+> 
+> For all I know, these three boards are also the ones seeing the most
+> ongoing development, so you could start by using a shared defconfig
+> for the oldest (ARM11 based) boards at first that are also less likely
+> to impact new development starting from the defconfig.
 
-No reason other than that I wasn't aware of of_gpio_simple_xlate.
+Thanks, good observations. I will look into that.
+
+My expectation is that marzen and kzm9g will continue to see
+heavy development in the near future.
+
