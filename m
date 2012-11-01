@@ -1,274 +1,378 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 21 Nov 2012 02:53:20 +0000
-Subject: [PATCH 04/42] sh-pfc: Merge PFC core and gpio
-Message-Id: <1353466438-10929-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Wen Congyang <wency@cn.fujitsu.com>
+Date: Thu, 01 Nov 2012 09:44:40 +0000
+Subject: [PATCH v3 09/12] memory-hotplug: remove page table of x86_64 architecture
+Message-Id: <1351763083-7905-10-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1351763083-7905-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1351763083-7905-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+Cc: David Rientjes <rientjes@google.com>, Jiang Liu <liuj97@gmail.com>, Len Brown <len.brown@intel.com>, benh@kernel.crashing.org, paulus@samba.org, Christoph Lameter <cl@linux.com>, Minchan Kim <minchan.kim@gmail.com>, Andrew Morton <akpm@linux-foundation.org>, KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>, Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>, Jianguo Wu <wujianguo@huawei.com>, Wen Congyang <wency@cn.fujitsu.com>, Jiang Liu <jiang.liu@huawei.com>
 
-The PFC core calls the gpio module gpiochip registration in its
-register_sh_pfc() function, itself called at arch initialization time.
-If the gpio module isn't present then the gpiochip will never be
-registered.
+For hot removing memory, we sholud remove page table about the memory.
+So the patch searches a page table about the removed memory, and clear
+page table.
 
-As the gpio module can only be present at arch initialization time if
-it's builtin, there's no point in allowing to build it as a module. Make
-it a boolean option, and initialize it synchronously with the core if
-selected.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Jianguo Wu <wujianguo@huawei.com>
+Signed-off-by: Jiang Liu <jiang.liu@huawei.com>
 ---
- drivers/sh/pfc/Kconfig  |    2 +-
- drivers/sh/pfc/Makefile |    4 ++-
- drivers/sh/pfc/core.c   |   23 +++++--------
- drivers/sh/pfc/core.h   |    4 ++
- drivers/sh/pfc/gpio.c   |   79 +++++------------------------------------------
- 5 files changed, 25 insertions(+), 87 deletions(-)
+ arch/x86/include/asm/pgtable_types.h |   1 +
+ arch/x86/mm/init_64.c                | 231 +++++++++++++++++++++++++++++++++++
+ arch/x86/mm/pageattr.c               |  47 +++----
+ 3 files changed, 257 insertions(+), 22 deletions(-)
 
-diff --git a/drivers/sh/pfc/Kconfig b/drivers/sh/pfc/Kconfig
-index f33d82a..eaeabc5 100644
---- a/drivers/sh/pfc/Kconfig
-+++ b/drivers/sh/pfc/Kconfig
-@@ -11,7 +11,7 @@ config SH_PFC
- 	def_bool y
+diff --git a/arch/x86/include/asm/pgtable_types.h b/arch/x86/include/asm/pgtable_types.h
+index ec8a1fc..fb0c24d 100644
+--- a/arch/x86/include/asm/pgtable_types.h
++++ b/arch/x86/include/asm/pgtable_types.h
+@@ -332,6 +332,7 @@ static inline void update_page_count(int level, unsigned long pages) { }
+  * as a pte too.
+  */
+ extern pte_t *lookup_address(unsigned long address, unsigned int *level);
++extern int __split_large_page(pte_t *kpte, unsigned long address, pte_t *pbase);
  
- config GPIO_SH_PFC
--	tristate "SuperH PFC GPIO support"
-+	bool "SuperH PFC GPIO support"
- 	depends on SH_PFC && GPIOLIB
- 	help
- 	  This enables support for GPIOs within the SoC's pin function
-diff --git a/drivers/sh/pfc/Makefile b/drivers/sh/pfc/Makefile
-index ce6fae3..6315cf3 100644
---- a/drivers/sh/pfc/Makefile
-+++ b/drivers/sh/pfc/Makefile
-@@ -1,3 +1,5 @@
- sh-pfc-objs			= core.o pinctrl.o
-+ifeq ($(CONFIG_GPIO_SH_PFC),y)
-+sh-pfc-objs			+= gpio.o
-+endif
- obj-y				+= sh-pfc.o
--obj-$(CONFIG_GPIO_SH_PFC)	+= gpio.o
-diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
-index 30e33db..f8f458b 100644
---- a/drivers/sh/pfc/core.c
-+++ b/drivers/sh/pfc/core.c
-@@ -149,7 +149,6 @@ int sh_pfc_read_bit(struct pinmux_data_reg *dr, unsigned long in_pos)
+ #endif	/* !__ASSEMBLY__ */
  
- 	return (gpio_read_raw_reg(dr->mapped_reg, dr->reg_width) >> pos) & 1;
+diff --git a/arch/x86/mm/init_64.c b/arch/x86/mm/init_64.c
+index e85626d..23d932a 100644
+--- a/arch/x86/mm/init_64.c
++++ b/arch/x86/mm/init_64.c
+@@ -680,6 +680,235 @@ int arch_add_memory(int nid, u64 start, u64 size)
  }
--EXPORT_SYMBOL_GPL(sh_pfc_read_bit);
+ EXPORT_SYMBOL_GPL(arch_add_memory);
  
- void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
- 		      unsigned long value)
-@@ -169,7 +168,6 @@ void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
- 
- 	gpio_write_raw_reg(dr->mapped_reg, dr->reg_width, dr->reg_shadow);
- }
--EXPORT_SYMBOL_GPL(sh_pfc_write_bit);
- 
- static void config_reg_helper(struct sh_pfc *pfc,
- 			      struct pinmux_cfg_reg *crp,
-@@ -307,7 +305,6 @@ int sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
- 	*bitp = n;
- 	return 0;
- }
--EXPORT_SYMBOL_GPL(sh_pfc_get_data_reg);
- 
- static int get_config_reg(struct sh_pfc *pfc, pinmux_enum_t enum_id,
- 			  struct pinmux_cfg_reg **crp,
-@@ -384,7 +381,6 @@ int sh_pfc_gpio_to_enum(struct sh_pfc *pfc, unsigned gpio, int pos,
- 	pr_err("cannot locate data/mark enum_id for gpio %d\n", gpio);
- 	return -1;
- }
--EXPORT_SYMBOL_GPL(sh_pfc_gpio_to_enum);
- 
- int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
- 		       int cfg_mode)
-@@ -500,7 +496,6 @@ int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
- 
- int register_sh_pfc(struct sh_pfc_platform_data *pdata)
- {
--	int (*initroutine)(struct sh_pfc *) = NULL;
- 	int ret;
- 
- 	/*
-@@ -531,24 +526,20 @@ int register_sh_pfc(struct sh_pfc_platform_data *pdata)
- 	if (unlikely(ret != 0))
- 		goto err;
- 
-+#ifdef CONFIG_GPIO_SH_PFC
- 	/*
- 	 * Then the GPIO chip
- 	 */
--	initroutine = symbol_request(sh_pfc_register_gpiochip);
--	if (initroutine) {
--		ret = (*initroutine)(&sh_pfc);
--		symbol_put_addr(initroutine);
--
-+	ret = sh_pfc_register_gpiochip(&sh_pfc);
-+	if (unlikely(ret != 0)) {
- 		/*
- 		 * If the GPIO chip fails to come up we still leave the
- 		 * PFC state as it is, given that there are already
- 		 * extant users of it that have succeeded by this point.
- 		 */
--		if (unlikely(ret != 0)) {
--			pr_notice("failed to init GPIO chip, ignoring...\n");
--			ret = 0;
--		}
-+		pr_notice("failed to init GPIO chip, ignoring...\n");
- 	}
-+#endif
- 
- 	pr_info("%s support registered\n", sh_pfc.pdata->name);
- 
-@@ -560,3 +551,7 @@ err:
- 
- 	return ret;
- }
++static inline void free_pagetable(struct page *page)
++{
++	struct zone *zone;
++	bool bootmem = false;
 +
-+MODULE_AUTHOR("Magnus Damm, Paul Mundt");
-+MODULE_DESCRIPTION("Pin Control and GPIO driver for SuperH pin function controller");
-+MODULE_LICENSE("GPL v2");
-diff --git a/drivers/sh/pfc/core.h b/drivers/sh/pfc/core.h
-index b07ae25..f3032b2 100644
---- a/drivers/sh/pfc/core.h
-+++ b/drivers/sh/pfc/core.h
-@@ -20,14 +20,18 @@ struct pfc_window {
- 	unsigned long size;
- };
- 
-+struct sh_pfc_chip;
-+
- struct sh_pfc {
- 	struct sh_pfc_platform_data *pdata;
- 	spinlock_t lock;
- 
- 	struct pfc_window *window;
-+	struct sh_pfc_chip *gpio;
- };
- 
- int sh_pfc_register_gpiochip(struct sh_pfc *pfc);
-+int sh_pfc_unregister_gpiochip(struct sh_pfc *pfc);
- 
- int sh_pfc_register_pinctrl(struct sh_pfc *pfc);
- 
-diff --git a/drivers/sh/pfc/gpio.c b/drivers/sh/pfc/gpio.c
-index 94c5489..91ea4c9 100644
---- a/drivers/sh/pfc/gpio.c
-+++ b/drivers/sh/pfc/gpio.c
-@@ -15,7 +15,6 @@
- #include <linux/slab.h>
- #include <linux/spinlock.h>
- #include <linux/module.h>
--#include <linux/platform_device.h>
- #include <linux/pinctrl/consumer.h>
- #include <linux/sh_pfc.h>
- 
-@@ -152,44 +151,23 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
- 	sh_pfc_gpio_setup(chip);
- 
- 	ret = gpiochip_add(&chip->gpio_chip);
--	if (unlikely(ret < 0))
-+	if (unlikely(ret < 0)) {
- 		kfree(chip);
-+		return ret;
++	/* bootmem page has reserved flag */
++	if (PageReserved(page)) {
++		__ClearPageReserved(page);
++		bootmem = true;
 +	}
 +
-+	pfc->gpio = chip;
- 
- 	pr_info("%s handling gpio %d -> %d\n",
- 		pfc->pdata->name, pfc->pdata->first_gpio,
- 		pfc->pdata->last_gpio);
- 
--	return ret;
--}
--EXPORT_SYMBOL_GPL(sh_pfc_register_gpiochip);
--
--static int sh_pfc_gpio_match(struct gpio_chip *gc, void *data)
--{
--	return !!strstr(gc->label, data);
--}
--
--static int __devinit sh_pfc_gpio_probe(struct platform_device *pdev)
--{
--	struct sh_pfc_chip *chip;
--	struct gpio_chip *gc;
--
--	gc = gpiochip_find("_pfc", sh_pfc_gpio_match);
--	if (unlikely(!gc)) {
--		pr_err("Cant find gpio chip\n");
--		return -ENODEV;
--	}
--
--	chip = gpio_to_pfc_chip(gc);
--	platform_set_drvdata(pdev, chip);
--
--	pr_info("attaching to GPIO chip %s\n", chip->pfc->pdata->name);
--
- 	return 0;
- }
- 
--static int __devexit sh_pfc_gpio_remove(struct platform_device *pdev)
-+int __exit sh_pfc_unregister_gpiochip(struct sh_pfc *pfc)
++	__free_page(page);
++
++	if (bootmem) {
++		zone = page_zone(page);
++		zone_span_writelock(zone);
++		zone->present_pages++;
++		zone_span_writeunlock(zone);
++		totalram_pages++;
++	}
++}
++
++static void free_pte_table(pte_t *pte_start, pmd_t *pmd)
++{
++	pte_t *pte;
++	int i;
++
++	for (i = 0; i < PTRS_PER_PTE; i++) {
++		pte = pte_start + i;
++		if (pte_val(*pte))
++			return;
++	}
++
++	/* free a pte talbe */
++	free_pagetable(pmd_page(*pmd));
++	pmd_clear(pmd);
++}
++
++static void free_pmd_table(pmd_t *pmd_start, pud_t *pud)
++{
++	pmd_t *pmd;
++	int i;
++
++	for (i = 0; i < PTRS_PER_PMD; i++) {
++		pmd = pmd_start + i;
++		if (pmd_val(*pmd))
++			return;
++	}
++
++	/* free a pmd talbe */
++	free_pagetable(pud_page(*pud));
++	pud_clear(pud);
++}
++
++/* return true if pgd is changed, otherwise return false */
++static bool free_pud_table(pud_t *pud_start, pgd_t *pgd)
++{
++	pud_t *pud;
++	int i;
++
++	for (i = 0; i < PTRS_PER_PUD; i++) {
++		pud = pud_start + i;
++		if (pud_val(*pud))
++			return false;
++	}
++
++	/* free a pud table */
++	free_pagetable(pgd_page(*pgd));
++	pgd_clear(pgd);
++
++	return true;
++}
++
++static void __meminit
++phys_pte_remove(pte_t *pte_page, unsigned long addr, unsigned long end)
++{
++	unsigned pages = 0;
++	int i = pte_index(addr);
++
++	pte_t *pte = pte_page + pte_index(addr);
++
++	for (; i < PTRS_PER_PTE; i++, addr += PAGE_SIZE, pte++) {
++
++		if (addr >= end)
++			break;
++
++		if (!pte_present(*pte))
++			continue;
++
++		pages++;
++		set_pte(pte, __pte(0));
++	}
++
++	update_page_count(PG_LEVEL_4K, -pages);
++}
++
++static void __meminit
++phys_pmd_remove(pmd_t *pmd_page, unsigned long addr, unsigned long end)
++{
++	unsigned long pages = 0, next;
++	int i = pmd_index(addr);
++
++	for (; i < PTRS_PER_PMD && addr < end; i++, addr = next) {
++		unsigned long pte_phys;
++		pmd_t *pmd = pmd_page + pmd_index(addr);
++		pte_t *pte;
++
++		next = pmd_addr_end(addr, end);
++
++		if (!pmd_present(*pmd))
++			continue;
++
++		if (pmd_large(*pmd)) {
++			if (IS_ALIGNED(addr, PMD_SIZE) &&
++			    IS_ALIGNED(next, PMD_SIZE)) {
++				set_pmd(pmd, __pmd(0));
++				pages++;
++				continue;
++			}
++
++			/*
++			 * We use 2M page, but we need to remove part of them,
++			 * so split 2M page to 4K page.
++			 */
++			pte = alloc_low_page(&pte_phys);
++			BUG_ON(!pte);
++			__split_large_page((pte_t *)pmd,
++					   (unsigned long)__va(addr), pte);
++
++			spin_lock(&init_mm.page_table_lock);
++			pmd_populate_kernel(&init_mm, pmd, __va(pte_phys));
++			spin_unlock(&init_mm.page_table_lock);
++
++			/* Do a global flush tlb after splitting a large page */
++			flush_tlb_all();
++		}
++
++		spin_lock(&init_mm.page_table_lock);
++		pte = map_low_page((pte_t *)pmd_page_vaddr(*pmd));
++		phys_pte_remove(pte, addr, next);
++		free_pte_table(pte, pmd);
++		unmap_low_page(pte);
++		spin_unlock(&init_mm.page_table_lock);
++	}
++	update_page_count(PG_LEVEL_2M, -pages);
++}
++
++static void __meminit
++phys_pud_remove(pud_t *pud_page, unsigned long addr, unsigned long end)
++{
++	unsigned long pages = 0, next;
++	int i = pud_index(addr);
++
++	for (; i < PTRS_PER_PUD && addr < end; i++, addr = next) {
++		unsigned long pmd_phys;
++		pud_t *pud = pud_page + pud_index(addr);
++		pmd_t *pmd;
++
++		next = pud_addr_end(addr, end);
++
++		if (!pud_present(*pud))
++			continue;
++
++		if (pud_large(*pud)) {
++			if (IS_ALIGNED(addr, PUD_SIZE) &&
++			    IS_ALIGNED(next, PUD_SIZE)) {
++				set_pud(pud, __pud(0));
++				pages++;
++				continue;
++			}
++
++			/*
++			 * We use 1G page, but we need to remove part of them,
++			 * so split 1G page to 2M page.
++			 */
++			pmd = alloc_low_page(&pmd_phys);
++			BUG_ON(!pmd);
++			__split_large_page((pte_t *)pud,
++					   (unsigned long)__va(addr),
++					   (pte_t *)pmd);
++
++			spin_lock(&init_mm.page_table_lock);
++			pud_populate(&init_mm, pud, __va(pmd_phys));
++			spin_unlock(&init_mm.page_table_lock);
++
++			/* Do a global flush tlb after splitting a large page */
++			flush_tlb_all();
++		}
++
++		pmd = map_low_page((pmd_t *)pud_page_vaddr(*pud));
++		phys_pmd_remove(pmd, addr, next);
++		free_pmd_table(pmd, pud);
++		unmap_low_page(pmd);
++	}
++
++	update_page_count(PG_LEVEL_1G, -pages);
++}
++
++void __meminit
++kernel_physical_mapping_remove(unsigned long start, unsigned long end)
++{
++	unsigned long next;
++	bool pgd_changed = false;
++
++	start = (unsigned long)__va(start);
++	end = (unsigned long)__va(end);
++
++	for (; start < end; start = next) {
++		pgd_t *pgd = pgd_offset_k(start);
++		pud_t *pud;
++
++		next = pgd_addr_end(start, end);
++
++		if (!pgd_present(*pgd))
++			continue;
++
++		pud = map_low_page((pud_t *)pgd_page_vaddr(*pgd));
++		phys_pud_remove(pud, __pa(start), __pa(next));
++		if (free_pud_table(pud, pgd))
++			pgd_changed = true;
++		unmap_low_page(pud);
++	}
++
++	if (pgd_changed)
++		sync_global_pgds(start, end - 1);
++
++	flush_tlb_all();
++}
++
+ #ifdef CONFIG_MEMORY_HOTREMOVE
+ int __ref arch_remove_memory(u64 start, u64 size)
  {
--	struct sh_pfc_chip *chip = platform_get_drvdata(pdev);
-+	struct sh_pfc_chip *chip = pfc->gpio;
- 	int ret;
+@@ -692,6 +921,8 @@ int __ref arch_remove_memory(u64 start, u64 size)
+ 	ret = __remove_pages(zone, start_pfn, nr_pages);
+ 	WARN_ON_ONCE(ret);
  
- 	ret = gpiochip_remove(&chip->gpio_chip);
-@@ -197,47 +175,6 @@ static int __devexit sh_pfc_gpio_remove(struct platform_device *pdev)
- 		return ret;
++	kernel_physical_mapping_remove(start, start + size);
++
+ 	return ret;
+ }
+ #endif
+diff --git a/arch/x86/mm/pageattr.c b/arch/x86/mm/pageattr.c
+index a718e0d..7dcb6f9 100644
+--- a/arch/x86/mm/pageattr.c
++++ b/arch/x86/mm/pageattr.c
+@@ -501,21 +501,13 @@ out_unlock:
+ 	return do_split;
+ }
  
- 	kfree(chip);
-+	pfc->gpio = NULL;
+-static int split_large_page(pte_t *kpte, unsigned long address)
++int __split_large_page(pte_t *kpte, unsigned long address, pte_t *pbase)
+ {
+ 	unsigned long pfn, pfninc = 1;
+ 	unsigned int i, level;
+-	pte_t *pbase, *tmp;
++	pte_t *tmp;
+ 	pgprot_t ref_prot;
+-	struct page *base;
+-
+-	if (!debug_pagealloc)
+-		spin_unlock(&cpa_lock);
+-	base = alloc_pages(GFP_KERNEL | __GFP_NOTRACK, 0);
+-	if (!debug_pagealloc)
+-		spin_lock(&cpa_lock);
+-	if (!base)
+-		return -ENOMEM;
++	struct page *base = virt_to_page(pbase);
+ 
+ 	spin_lock(&pgd_lock);
+ 	/*
+@@ -523,10 +515,11 @@ static int split_large_page(pte_t *kpte, unsigned long address)
+ 	 * up for us already:
+ 	 */
+ 	tmp = lookup_address(address, &level);
+-	if (tmp != kpte)
+-		goto out_unlock;
++	if (tmp != kpte) {
++		spin_unlock(&pgd_lock);
++		return 1;
++	}
+ 
+-	pbase = (pte_t *)page_address(base);
+ 	paravirt_alloc_pte(&init_mm, page_to_pfn(base));
+ 	ref_prot = pte_pgprot(pte_clrhuge(*kpte));
+ 	/*
+@@ -579,17 +572,27 @@ static int split_large_page(pte_t *kpte, unsigned long address)
+ 	 * going on.
+ 	 */
+ 	__flush_tlb_all();
++	spin_unlock(&pgd_lock);
+ 
+-	base = NULL;
++	return 0;
++}
+ 
+-out_unlock:
+-	/*
+-	 * If we dropped out via the lookup_address check under
+-	 * pgd_lock then stick the page back into the pool:
+-	 */
+-	if (base)
++static int split_large_page(pte_t *kpte, unsigned long address)
++{
++	pte_t *pbase;
++	struct page *base;
++
++	if (!debug_pagealloc)
++		spin_unlock(&cpa_lock);
++	base = alloc_pages(GFP_KERNEL | __GFP_NOTRACK, 0);
++	if (!debug_pagealloc)
++		spin_lock(&cpa_lock);
++	if (!base)
++		return -ENOMEM;
++
++	pbase = (pte_t *)page_address(base);
++	if (__split_large_page(kpte, address, pbase))
+ 		__free_page(base);
+-	spin_unlock(&pgd_lock);
+ 
  	return 0;
  }
--
--static struct platform_driver sh_pfc_gpio_driver = {
--	.probe		= sh_pfc_gpio_probe,
--	.remove		= __devexit_p(sh_pfc_gpio_remove),
--	.driver		= {
--		.name	= KBUILD_MODNAME,
--		.owner	= THIS_MODULE,
--	},
--};
--
--static struct platform_device sh_pfc_gpio_device = {
--	.name		= KBUILD_MODNAME,
--	.id		= -1,
--};
--
--static int __init sh_pfc_gpio_init(void)
--{
--	int rc;
--
--	rc = platform_driver_register(&sh_pfc_gpio_driver);
--	if (likely(!rc)) {
--		rc = platform_device_register(&sh_pfc_gpio_device);
--		if (unlikely(rc))
--			platform_driver_unregister(&sh_pfc_gpio_driver);
--	}
--
--	return rc;
--}
--
--static void __exit sh_pfc_gpio_exit(void)
--{
--	platform_device_unregister(&sh_pfc_gpio_device);
--	platform_driver_unregister(&sh_pfc_gpio_driver);
--}
--
--module_init(sh_pfc_gpio_init);
--module_exit(sh_pfc_gpio_exit);
--
--MODULE_AUTHOR("Magnus Damm, Paul Mundt");
--MODULE_DESCRIPTION("GPIO driver for SuperH pin function controller");
--MODULE_LICENSE("GPL v2");
--MODULE_ALIAS("platform:pfc-gpio");
 -- 
-1.7.8.6
+1.8.0
 
