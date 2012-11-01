@@ -1,203 +1,47 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Fri, 09 Nov 2012 07:31:41 +0000
-Subject: [PATCH 2/7] ARM: shmobile: marzen: add USB EHCI driver support
-Message-Id: <1352446306-19945-3-git-send-email-horms@verge.net.au>
+Date: Thu, 01 Nov 2012 01:02:08 +0000
+Subject: [GIT PULL v2] Renesas ARM-based SoC defconfig for v3.8
+Message-Id: <1351731731-8435-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352446306-19945-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352446306-19945-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hi Olof, Hi Arnd,
 
-This patch supports CN21/CN22 USB 2.0 (port 0/1/2),
-and enable USB momery on defconfig
+please consider the following defconfig enhancements for 3.8.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
----
- arch/arm/configs/marzen_defconfig     |    6 ++
- arch/arm/mach-shmobile/Kconfig        |    1 +
- arch/arm/mach-shmobile/board-marzen.c |  108 ++++++++++++++++++++++++++++++++-
- 3 files changed, 114 insertions(+), 1 deletion(-)
+I will work on the suggestions by Arnd to reduce the number
+of defconfigs for shmobile - in essence moving towards one or
+two generic configs rather than per-board configs. However,
+this seems to be somewhat non-trivial and in the mean time
+I would like to keep updating the existing defcoings.
 
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index 8a861b7..6540dfb 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -47,6 +47,8 @@ CONFIG_DEVTMPFS_MOUNT=y
- # CONFIG_STANDALONE is not set
- # CONFIG_PREVENT_FIRMWARE_BUILD is not set
- # CONFIG_FW_LOADER is not set
-+CONFIG_SCSI=y
-+CONFIG_BLK_DEV_SD=y
- CONFIG_NETDEVICES=y
- # CONFIG_NET_VENDOR_BROADCOM is not set
- # CONFIG_NET_VENDOR_FARADAY is not set
-@@ -82,6 +84,10 @@ CONFIG_USB=y
- CONFIG_USB_RCAR_PHY=y
- CONFIG_MMC=y
- CONFIG_MMC_SDHI=y
-+CONFIG_USB=y
-+CONFIG_USB_EHCI_HCD=y
-+CONFIG_USB_EHCI_HCD_PLATFORM=y
-+CONFIG_USB_STORAGE=y
- CONFIG_UIO=y
- CONFIG_UIO_PDRV_GENIRQ=y
- # CONFIG_IOMMU_SUPPORT is not set
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 4eddca1..4eae11c 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -29,6 +29,7 @@ config ARCH_R8A7779
- 	select ARM_GIC
- 	select CPU_V7
- 	select SH_CLK_CPG
-+	select USB_ARCH_HAS_EHCI
- 
- config ARCH_EMEV2
- 	bool "Emma Mobile EV2"
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index 74c7f0b..707b3bd 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -34,6 +34,9 @@
- #include <linux/spi/sh_hspi.h>
- #include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/mfd/tmio.h>
-+#include <linux/usb/otg.h>
-+#include <linux/usb/ehci_pdriver.h>
-+#include <linux/pm_runtime.h>
- #include <mach/hardware.h>
- #include <mach/r8a7779.h>
- #include <mach/common.h>
-@@ -172,6 +175,101 @@ static struct platform_device *marzen_devices[] __initdata = {
- 	&usb_phy_device,
- };
- 
-+/* USB */
-+static struct usb_phy *phy;
-+static int usb_power_on(struct platform_device *pdev)
-+{
-+	if (!phy)
-+		return -EIO;
-+
-+	pm_runtime_enable(&pdev->dev);
-+	pm_runtime_get_sync(&pdev->dev);
-+
-+	usb_phy_init(phy);
-+
-+	return 0;
-+}
-+
-+static void usb_power_off(struct platform_device *pdev)
-+{
-+	if (!phy)
-+		return;
-+
-+	usb_phy_shutdown(phy);
-+
-+	pm_runtime_put_sync(&pdev->dev);
-+	pm_runtime_disable(&pdev->dev);
-+}
-+
-+static struct usb_ehci_pdata ehcix_pdata = {
-+	.power_on	= usb_power_on,
-+	.power_off	= usb_power_off,
-+	.power_suspend	= usb_power_off,
-+};
-+
-+static struct resource ehci0_resources[] = {
-+	[0] = {
-+		.start	= 0xffe70000,
-+		.end	= 0xffe70400 - 1,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= gic_spi(44),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device ehci0_device = {
-+	.name	= "ehci-platform",
-+	.id	= 0,
-+	.dev	= {
-+		.dma_mask		= &ehci0_device.dev.coherent_dma_mask,
-+		.coherent_dma_mask	= 0xffffffff,
-+		.platform_data		= &ehcix_pdata,
-+	},
-+	.num_resources	= ARRAY_SIZE(ehci0_resources),
-+	.resource	= ehci0_resources,
-+};
-+
-+static struct resource ehci1_resources[] = {
-+	[0] = {
-+		.start	= 0xfff70000,
-+		.end	= 0xfff70400 - 1,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= gic_spi(45),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device ehci1_device = {
-+	.name	= "ehci-platform",
-+	.id	= 1,
-+	.dev	= {
-+		.dma_mask		= &ehci1_device.dev.coherent_dma_mask,
-+		.coherent_dma_mask	= 0xffffffff,
-+		.platform_data		= &ehcix_pdata,
-+	},
-+	.num_resources	= ARRAY_SIZE(ehci1_resources),
-+	.resource	= ehci1_resources,
-+};
-+
-+static struct platform_device *marzen_late_devices[] __initdata = {
-+	&ehci0_device,
-+	&ehci1_device,
-+};
-+
-+void __init marzen_init_late(void)
-+{
-+	/* get usb phy */
-+	phy = usb_get_phy(USB_PHY_TYPE_USB2);
-+
-+	shmobile_init_late();
-+	platform_add_devices(marzen_late_devices,
-+			     ARRAY_SIZE(marzen_late_devices));
-+}
-+
- static void __init marzen_init(void)
- {
- 	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
-@@ -209,6 +307,14 @@ static void __init marzen_init(void)
- 	gpio_request(GPIO_FN_HSPI_TX0,	NULL);
- 	gpio_request(GPIO_FN_HSPI_RX0,	NULL);
- 
-+	/* USB (CN21) */
-+	gpio_request(GPIO_FN_USB_OVC0, NULL);
-+	gpio_request(GPIO_FN_USB_OVC1, NULL);
-+	gpio_request(GPIO_FN_USB_OVC2, NULL);
-+
-+	/* USB (CN22) */
-+	gpio_request(GPIO_FN_USB_PENC2, NULL);
-+
- 	r8a7779_add_standard_devices();
- 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
- }
-@@ -221,6 +327,6 @@ MACHINE_START(MARZEN, "marzen")
- 	.init_irq	= r8a7779_init_irq,
- 	.handle_irq	= gic_handle_irq,
- 	.init_machine	= marzen_init,
--	.init_late	= shmobile_init_late,
-+	.init_late	= marzen_init_late,
- 	.timer		= &shmobile_timer,
- MACHINE_END
--- 
-1.7.10.4
+----------------------------------------------------------------
+The following changes since commit ddffeb8c4d0331609ef2581d84de4d763607bd37:
 
+  Linux 3.7-rc1 (2012-10-14 14:41:04 -0700)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git defconfig
+
+for you to fetch changes up to 67e13cbb807c6b95706e4ec0ca2c068f14f25588:
+
+  ARM: shmobile: leave CONFIG_INOTIFY_USER enabled by default (2012-11-01 08:51:34 +0800)
+
+----------------------------------------------------------------
+Guennadi Liakhovetski (1):
+      ARM: shmobile: leave CONFIG_INOTIFY_USER enabled by default
+
+Kuninori Morimoto (2):
+      ARM: shmobile: mackerel: defconfig update
+      ARM: shmobile: armadillo800eva: enable L2X0 cache on defconfig
+
+ arch/arm/configs/ap4evb_defconfig          |    1 -
+ arch/arm/configs/armadillo800eva_defconfig |    2 +-
+ arch/arm/configs/kota2_defconfig           |    1 -
+ arch/arm/configs/kzm9g_defconfig           |    1 -
+ arch/arm/configs/mackerel_defconfig        |   19 ++++++++++++++++---
+ 5 files changed, 17 insertions(+), 7 deletions(-)
