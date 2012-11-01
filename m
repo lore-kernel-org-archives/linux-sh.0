@@ -1,147 +1,193 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 01 Nov 2012 15:01:59 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Thu, 01 Nov 2012 15:13:20 +0000
 Subject: Re: [PATCH 2/2] media: V4L2: support asynchronous subdevice registration
-Message-Id: <Pine.LNX.4.64.1211011553560.19489@axis700.grange>
+Message-Id: <1710313.9IGrY1RFHv@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1210192358520.28993@axis700.grange>
- <Pine.LNX.4.64.1210221553390.26216@axis700.grange> <201210221722.16382.hverkuil@xs4all.nl>
- <2556759.AhNR6Lm65l@avalon>
-In-Reply-To: <2556759.AhNR6Lm65l@avalon>
+References: <Pine.LNX.4.64.1210192358520.28993@axis700.grange> <Pine.LNX.4.64.1210221421020.26216@axis700.grange> <201210221536.03112.hverkuil@xs4all.nl>
+In-Reply-To: <201210221536.03112.hverkuil@xs4all.nl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Hans Verkuil <hverkuil@xs4all.nl>, Linux Media Mailing List <linux-media@vger.kernel.org>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: Hans Verkuil <hverkuil@xs4all.nl>
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Linux Media Mailing List <linux-media@vger.kernel.org>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-On Thu, 1 Nov 2012, Laurent Pinchart wrote:
+Hi,
 
-> Hello,
-> 
-> On Monday 22 October 2012 17:22:16 Hans Verkuil wrote:
-> > On Mon October 22 2012 16:48:05 Guennadi Liakhovetski wrote:
-> > > On Mon, 22 Oct 2012, Hans Verkuil wrote:
-> > > > On Mon October 22 2012 14:50:14 Guennadi Liakhovetski wrote:
-> > > > > On Mon, 22 Oct 2012, Hans Verkuil wrote:
-> > > > > > On Mon October 22 2012 13:08:12 Guennadi Liakhovetski wrote:
-> > > > > > > On Mon, 22 Oct 2012, Hans Verkuil wrote:
-> > > > > > > > On Sat October 20 2012 00:20:24 Guennadi Liakhovetski wrote:
-> > > > > > > > > Currently bridge device drivers register devices for all
-> > > > > > > > > subdevices synchronously, tupically, during their probing.
-> > > > > > > > > E.g. if an I2C CMOS sensor is attached to a video bridge
-> > > > > > > > > device, the bridge driver will create an I2C device and wait
-> > > > > > > > > for the respective I2C driver to probe. This makes linking of
-> > > > > > > > > devices straight forward, but this approach cannot be used
-> > > > > > > > > with intrinsically asynchronous and unordered device
-> > > > > > > > > registration systems like the Flattened Device Tree. To
-> > > > > > > > > support such systems this patch adds an asynchronous subdevice
-> > > > > > > > > registration framework to V4L2. To use it respective (e.g.
-> > > > > > > > > I2C) subdevice drivers must request deferred probing as long
-> > > > > > > > > as their bridge driver hasn't probed. The bridge driver during
-> > > > > > > > > its probing submits a an arbitrary number of subdevice
-> > > > > > > > > descriptor groups to the framework to manage. After that it
-> > > > > > > > > can add callbacks to each of those groups to be called at
-> > > > > > > > > various stages during subdevice probing, e.g. after
-> > > > > > > > > completion. Then the bridge driver can request single groups
-> > > > > > > > > to be probed, finish its own probing and continue its video
-> > > > > > > > > subsystem configuration from its callbacks.
-> > > > > > > > 
-> > > > > > > > What is the purpose of allowing multiple groups?
-> > > > > > > 
-> > > > > > > To support, e.g. multiple sensors connected to a single bridge.
+On Monday 22 October 2012 15:36:03 Hans Verkuil wrote:
+> On Mon October 22 2012 14:50:14 Guennadi Liakhovetski wrote:
+> > On Mon, 22 Oct 2012, Hans Verkuil wrote:
+> > > On Mon October 22 2012 13:08:12 Guennadi Liakhovetski wrote:
+> > > > On Mon, 22 Oct 2012, Hans Verkuil wrote:
+> > > > > On Sat October 20 2012 00:20:24 Guennadi Liakhovetski wrote:
+> > > > > > Currently bridge device drivers register devices for all
+> > > > > > subdevices synchronously, tupically, during their probing. E.g. if
+> > > > > > an I2C CMOS sensor is attached to a video bridge device, the
+> > > > > > bridge driver will create an I2C device and wait for the
+> > > > > > respective I2C driver to probe. This makes linking of devices
+> > > > > > straight forward, but this approach cannot be used with
+> > > > > > intrinsically asynchronous and unordered device registration
+> > > > > > systems like the Flattened Device Tree. To support such systems
+> > > > > > this patch adds an asynchronous subdevice registration framework
+> > > > > > to V4L2. To use it respective (e.g. I2C) subdevice drivers must
+> > > > > > request deferred probing as long as their bridge driver hasn't
+> > > > > > probed. The bridge driver during its probing submits a an
+> > > > > > arbitrary number of subdevice descriptor groups to the framework
+> > > > > > to manage. After that it can add callbacks to each of those groups
+> > > > > > to be called at various stages during subdevice probing, e.g.
+> > > > > > after completion. Then the bridge driver can request single groups
+> > > > > > to be probed, finish its own probing and continue its video
+> > > > > > subsystem configuration from its callbacks.
+
+[snip]
+
+> > > > > > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> > > > > > ---
 > > > > > > 
-> > > > > > So, isn't that one group with two sensor subdevs?
+> > > > > > One more thing to note about this patch. Subdevice drivers,
+> > > > > > supporting asynchronous probing, and using this framework, need a
+> > > > > > unified way to detect, whether their probing should succeed or
+> > > > > > they should request deferred probing. I implement this using
+> > > > > > device platform data. This means, that all subdevice drivers,
+> > > > > > wishing to use this API will have to use the same platform data
+> > > > > > struct. I don't think this is a major inconvenience, but if we
+> > > > > > decide against this, we'll have to add a V4L2 function to verify
+> > > > > > "are you ready for me or not." The latter would be inconvenient,
+> > > > > > because then we would have to look through all registered
+> > > > > > subdevice descriptor groups for this specific subdevice.
 > > > > > 
-> > > > > No, one group consists of all subdevices, necessary to operate a
-> > > > > single video pipeline. A simple group only contains a sensor. More
-> > > > > complex groups can contain a CSI-2 interface, a line shifter, or
-> > > > > anything else.
+> > > > > I have to admit that I don't quite follow this. I guess I would need
+> > > > > to see this being used in an actual driver.
 > > > > 
-> > > > Why? Why would you want to wait for completion of multiple groups? You
-> > > > need all subdevs to be registered. If you split them up in multiple
-> > > > groups, then you have to wait until all those groups have completed,
-> > > > which only makes the bridge driver more complex. It adds nothing to the
-> > > > problem that we're trying to solve.
-> > > 
-> > > I see it differently. Firstly, there's no waiting.
+> > > > The issue is simple: subdevice drivers have to recognise, when it's
+> > > > still too early to probe and return -EPROBE_DEFER. If you have a
+> > > > sensor, whose master clock is supplied from an external oscillator.
+> > > > You load its driver, it will happily get a clock reference and find no
+> > > > reason to fail probe(). It will initialise its subdevice and return
+> > > > from probing. Then, when your bridge driver probes, it will have no
+> > > > way to find that subdevice.
+
+This is where I fundamentally disagree. You're right that the subdev driver 
+would have no reason to fail probe(). So why would it ? If the subdev driver 
+can succeed probe(), it should. -EPROBE_DEFER should only be returned if one 
+of the resources required by the subdev isn't available, such as a GPIO, clock 
+or regulator for instance. When all resources required to make the subdev 
+usable are present, probe() should simply succeed.
+
+This implies that you can pass the subdev platform data directly to the 
+subdev, either through the platform data pointer or through DT. Passing subdev 
+platform data through the host/bridge is a hack. Removing it should, in my 
+opinion, be one of the goals of this patch.
+
+This will leave us with the problem of locating the subdev from the host in 
+the notification callback. I had envision a different approach than yours to 
+fix the problem: similarly to your v4l2-clk service, I propose to make subdev 
+drivers registering themselves to the V4L2 core. Instead of using I2C and 
+platform bus notifiers you would then have a single internal notifier 
+(possibly based on a subdev bus notifier if that makes sense) that would 
+support both hot-plug notification (notify drivers when a new subdev is 
+registered with the core) and cold-plug notification (go through the 
+registered subdevs list when a new async group (or whatever replaces the async 
+groups if we get rid of multiple groups) is registered.
+
+> > > This problem is specific to platform subdev drivers, right? Since for
+> > > i2c subdevs you can use i2c_get_clientdata().
 > > 
-> > If they are independent, then that's true. But in almost all cases you need
-> > them all. Even in cases where theoretically you can 'activate' groups
-> > independently, it doesn't add anything. It's overengineering, trying to
-> > solve a problem that doesn't exist.
+> > But how do you get the client? With DT you can follow our "remote"
+> > phandle, and without DT?
+> 
+> You would need a i2c_find_client() function for that. I would like to see
+> some more opinions about this.
+> 
+> > > I wonder whether it isn't a better idea to have platform_data embed a
+> > > standard struct containing a v4l2_subdev pointer. Subdevs can use
+> > > container_of to get from the address of that struct to the full
+> > > platform_data, and you don't have that extra dereference (i.e. a
+> > > pointer to the new struct which has a pointer to the actual
+> > > platform_data). The impact of that change is much smaller for existing
+> > > subdevs.
 > > 
-> > Just keep it simple, that's hard enough.
+> > This standard platform data object is allocated by the bridge driver, so,
+> > it will not know where it is embedded in the subdevice specific platform
+> > data.
 > 
-> I quite agree here. Sure, in theory groups could be interesting, allowing you 
-> to start using part of the pipeline before everything is properly initialized, 
-> or if a sensor can't be probed for some reason. In practice, however, I don't 
-> think we'll get any substantial gain in real use cases. I propose dropping the 
-> groups for now, and adding them later if we need to.
+> It should. The platform_data is specific to the subdev, so whoever is
+> allocating the platform_data has to know the size and contents of the
+> struct. Normally this structure is part of the board code for embedded
+> systems.
+> 
+> That soc-camera doesn't do this is a major soc-camera design flaw.
+> Soc-camera should not force the platform_data contents for subdev drivers.
 
-Good, I need them now:-) These groups is what I map to /dev/video* nodes 
-in soc-camera and what corresponds to struct soc_camera_device objects.
+That's something I tried to fix some time ago. Part of my cleanup patches went 
+to mainline but I haven't had time to finish the implementation. Guennadi and 
+I were planning to work on this topic together at ELC-E, if time permits.
 
-We need a way to identify how many actual "cameras" (be it decoders, 
-encoders, or whatever else end-devices) we have. And this information is 
-directly related to instantiating subdevices. You need information about 
-subdevices and their possible links - even if you use MC. You need to 
-know, that sensor1 is connected to bridge interface1 and sensor2 can be 
-connected to interfaces 2 and 3. Why do we want to handle this information 
-separately, if it is logically connected to what we're dealing with here 
-and handling it here is simple and natural?
+This being said, part of the information supplied through platform data, such 
+as lists of regulators, could be extracted to a standard V4L2 platform data 
+structure embedded in the driver-specific platform data. That could be useful 
+to provide helper functions, such as handling power on/off sequences.
 
-Thanks
-Guennadi
-
-> > > Secondly, you don't need all of them. With groups as soon as one group is
-> > > complete you can start using it. If you require all your subdevices to
-> > > complete their probing before you can use anything. In fact, some
-> > > subdevices might never probe, but groups, that don't need them can be used
-> > > regardless.
-> > > 
-> > > > > > A bridge driver has a list of subdevs. There is no concept of
-> > > > > > 'groups'. Perhaps I misunderstand?
-> > > > > 
-> > > > > Well, we have a group ID, which can be used for what I'm proposing
-> > > > > groups for. At least on soc-camera we use the group ID exactly for
-> > > > > this purpose. We attach all subdevices to a V4L2 device, but assign
-> > > > > group IDs according to pipelines. Then subdevice operations only act
-> > > > > on members of one pipeline. I know that we currently don't specify
-> > > > > precisely what that group ID should be used for in general. So, this
-> > > > > my group concept is an extension of what we currently have in V4L2.
-> > > > 
-> > > > How the grp_id field is used is entirely up to the bridge driver. It may
-> > > > not be used at all, it may uniquely identify each subdev, it may put
-> > > > each subdev in a particular group and perhaps a single subdev might
-> > > > belong to multiple groups. There is no standard concept of a group.
-> > > > It's just a simple method (actually, more of a hack) of allowing bridge
-> > > > drivers to call ops for some subset of the sub-devices.
-> > > 
-> > > Yes, I know, at least it's something that loosely indicates a group
-> > > concept in the current code:-)
-> > > 
-> > > > Frankly, I wonder if most of the drivers that use grp_id actually need
-> > > > it at all.
-> > > > 
-> > > > Just drop the group concept, things can be simplified quite a bit
-> > > > without it.
-> > > 
-> > > So far I think we should keep it. Also think about our DT layout. A bridge
-> > > can have several ports each with multiple links (maybe it has already been
-> > > decided to change names, don't remember by heart, sorry). Each of them
-> > > would then start a group.
+> > > And if it isn't necessary for i2c subdev drivers, then I think we should
+> > > do this only for platform drivers.
 > > 
-> > So? What does that gain you?
+> > See above, and I don't think we should implement 2 different methods.
+> > Besides, the change is very small. You anyway have to adapt sensor drivers
+> > to return -EPROBE_DEFER. This takes 2 lines of code:
 > > 
-> > I don't have time today to go over the remainder of your reply, I'll try to
-> > answer that later in the week.
+> > +	if (!client->dev.platform_data)
+> > +		return -EPROBE_DEFER;
+> > 
+> > If the driver isn't using platform data, that's it. If it is, you add two
+> > more lines:
+> > 
+> > -	struct my_platform_data *pdata = client->dev.platform_data;
+> > +	struct v4l2_subdev_platform_data *sdpd = client->dev.platform_data;
+> > +	struct my_platform_data *pdata = sdpd->platform_data;
+> > 
+> > That's it. Of course, you have to do this everywhere, where the driver
+> > dereferences client->dev.platform_data, but even that shouldn't be too
+> > difficult.
 > 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
+> I'd like to see other people's opinions on this as well. I do think I prefer
+> embedding it (in most if not all cases such a standard struct would be at
+> the beginning of the platform_data).
 
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+As explained above, embedding a standard V4L2 platform data structure (if we 
+decide to create one) in the driver-specific platform data has my preference 
+as well.
+
+> > > That said, how does this new framework take care of timeouts if one of
+> > > the subdevs is never bound?
+> > 
+> > It doesn't.
+> > 
+> > > You don't want to have this wait indefinitely, I think.
+> > 
+> > There's no waiting:-) The bridge and other subdev drivers just remain
+> > loaded and inactive.
+> 
+> Is that what we want? I definitely would like to get other people's opinions
+> on this.
+> 
+> For the record: while it is waiting, can you safely rmmod the module?
+> Looking at the code I think you can, but I'm not 100% certain.
+
+I'd like to propose a two layers approach. The lower layer would provide 
+direct notifications of subdev availability to host/bridge drivers. It could 
+be used directly, or an upper helper layer could handle the notifications and 
+provide a single complete callback when all requested subdevs are available.
+
+Implementing a timeout-based instead of completetion callback-based upper 
+layer shouldn't be difficult, but I'm not sure whether it's a good approach. I 
+think the host/bridge driver should complete its probe(), registering all the 
+resources it provides (such as clocks that can be used by sensors), even if 
+not all connected subdevs are available. The device nodes would only be 
+created later when all required subdevs are available (depending on the driver 
+some device nodes could be created right-away, to allow mem-to-mem operation 
+for instance).
+
+-- 
+Regards,
+
+Laurent Pinchart
+
