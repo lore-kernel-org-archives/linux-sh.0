@@ -1,121 +1,137 @@
-From: Tang Chen <tangchen@cn.fujitsu.com>
-Date: Wed, 07 Nov 2012 07:40:44 +0000
-Subject: [PATCH] Update start_pfn in zone and pg_data when spanned_pages == 0.
-Message-Id: <509A107C.9050702@cn.fujitsu.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 01 Nov 2012 01:26:34 +0000
+Subject: [PATCH 1/3 v2] sh: clkfwk: add sh_clk_fsidiv_register()
+Message-Id: <87ip9qi056.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1350988250-31294-1-git-send-email-wency@cn.fujitsu.com> <1350988250-31294-11-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1350988250-31294-11-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: wency@cn.fujitsu.com
-Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, akpm@linux-foundation.org, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com
+To: linux-sh@vger.kernel.org
 
-On 10/23/2012 06:30 PM, wency@cn.fujitsu.com wrote:
-> From: Yasuaki Ishimatsu<isimatu.yasuaki@jp.fujitsu.com>
-......
-> +	/* The zone has no valid section */
-> +	zone->zone_start_pfn = 0;
-> +	zone->spanned_pages = 0;
-> +	zone_span_writeunlock(zone);
-> +}
-> +
-> +static void shrink_pgdat_span(struct pglist_data *pgdat,
-> +			      unsigned long start_pfn, unsigned long end_pfn)
-> +{
-......
-> +	/* The pgdat has no valid section */
-> +	pgdat->node_start_pfn = 0;
-> +	pgdat->node_spanned_pages = 0;
-> +}
+This patch adds sh_clk_fsidiv_register() to share FSI-DIV clock code
 
-Hi,
-
-If we hot-remove memory only and leave the cpus alive, the corresponding
-node will not be removed. But the node_start_pfn and node_spanned_pages
-in pg_data will be reset to 0. In this case, when we hot-add the memory
-back next time, the node_start_pfn will always be 0 because no pfn is less
-than 0. After that, if we hot-remove the memory again, it will cause kernel
-panic in function find_biggest_section_pfn() when it tries to scan all 
-the pfns.
-
-The zone will also have the same problem.
-
-This patch sets start_pfn to the start_pfn of the section being added when
-spanned_pages of the zone or pg_data is 0.
-
----How to reproduce---
-
-1. hot-add a container with some memory and cpus;
-2. hot-remove the container's memory, and leave cpus there;
-3. hot-add these memory again;
-4. hot-remove them again;
-
-then, the kernel will panic.
-
----Call trace---
-
-[10530.646285] BUG: unable to handle kernel paging request at 
-00000fff82a8cc38
-[10530.729670] IP: [<ffffffff811c0d55>] find_biggest_section_pfn+0xe5/0x180
-......
-[10533.064975] Call Trace:
-[10533.094162]  [<ffffffff811c0fcf>] ? __remove_zone+0x2f/0x1b0
-[10533.161757]  [<ffffffff811c1124>] __remove_zone+0x184/0x1b0
-[10533.228318]  [<ffffffff811c11dc>] __remove_section+0x8c/0xb0
-[10533.295916]  [<ffffffff811c12e7>] __remove_pages+0xe7/0x120
-[10533.362476]  [<ffffffff81654f7c>] arch_remove_memory+0x2c/0x80
-[10533.432151]  [<ffffffff81655bb6>] remove_memory+0x56/0x90
-[10533.496633]  [<ffffffff813da0c8>] 
-acpi_memory_device_remove_memory+0x48/0x73
-[10533.580846]  [<ffffffff813da55a>] acpi_memory_device_notify+0x153/0x274
-[10533.659865]  [<ffffffff813a63cf>] ? acpi_bus_get_device+0x2f/0x77
-[10533.732653]  [<ffffffff813a6589>] ? acpi_bus_notify+0xb5/0xec
-[10533.801291]  [<ffffffff813b6786>] acpi_ev_notify_dispatch+0x41/0x5f
-[10533.876156]  [<ffffffff813a3867>] acpi_os_execute_deferred+0x27/0x34
-[10533.952062]  [<ffffffff81090589>] process_one_work+0x219/0x680
-[10534.021736]  [<ffffffff81090528>] ? process_one_work+0x1b8/0x680
-[10534.093488]  [<ffffffff813a3840>] ? 
-acpi_os_wait_events_complete+0x23/0x23
-[10534.175622]  [<ffffffff810923be>] worker_thread+0x12e/0x320
-[10534.242181]  [<ffffffff81092290>] ? manage_workers+0x110/0x110
-[10534.311855]  [<ffffffff81098396>] kthread+0xc6/0xd0
-[10534.370111]  [<ffffffff8167c7c4>] kernel_thread_helper+0x4/0x10
-[10534.440824]  [<ffffffff81672230>] ? retint_restore_args+0x13/0x13
-[10534.513612]  [<ffffffff810982d0>] ? __init_kthread_worker+0x70/0x70
-[10534.588480]  [<ffffffff8167c7c0>] ? gs_change+0x13/0x13
-......
-[10535.045543] ---[ end trace 96d845dbf33fee11 ]---
-
-
-Signed-off-by: Tang Chen <tangchen@cn.fujitsu.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
-  mm/memory_hotplug.c |    4 ++--
-  1 file changed, 2 insertions(+), 2 deletions(-)
+v1 -> v2
 
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index 56b758a..4aa313c 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -212,7 +212,7 @@ static void grow_zone_span(struct zone *zone, 
-unsigned long start_pfn,
-         zone_span_writelock(zone);
+ - used ioread32/iowrite32() instead of __raw_readl/writel()
 
-         old_zone_end_pfn = zone->zone_start_pfn + zone->spanned_pages;
--       if (start_pfn < zone->zone_start_pfn)
-+       if (!zone->spanned_pages || start_pfn < zone->zone_start_pfn)
-                 zone->zone_start_pfn = start_pfn;
+ drivers/sh/clk/cpg.c   |   86 ++++++++++++++++++++++++++++++++++++++++++++++++
+ include/linux/sh_clk.h |    9 +++++
+ 2 files changed, 95 insertions(+)
 
-         zone->spanned_pages = max(old_zone_end_pfn, end_pfn) -
-@@ -227,7 +227,7 @@ static void grow_pgdat_span(struct pglist_data 
-*pgdat, unsigned long start_pfn,
-         unsigned long old_pgdat_end_pfn                  pgdat->node_start_pfn + pgdat->node_spanned_pages;
-
--       if (start_pfn < pgdat->node_start_pfn)
-+       if (!pgdat->node_spanned_pages || start_pfn < pgdat->node_start_pfn)
-                 pgdat->node_start_pfn = start_pfn;
-
-         pgdat->node_spanned_pages = max(old_pgdat_end_pfn, end_pfn) -
+diff --git a/drivers/sh/clk/cpg.c b/drivers/sh/clk/cpg.c
+index fe6dbef..f590791 100644
+--- a/drivers/sh/clk/cpg.c
++++ b/drivers/sh/clk/cpg.c
+@@ -368,3 +368,89 @@ int __init sh_clk_div4_reparent_register(struct clk *clks, int nr,
+ 	return sh_clk_div_register_ops(clks, nr, table,
+ 				       &sh_clk_div4_reparent_clk_ops);
+ }
++
++/* FSI-DIV */
++static unsigned long fsidiv_recalc(struct clk *clk)
++{
++	u32 value;
++
++	value = ioread32(clk->mapping->base);
++
++	value >>= 16;
++	if (value < 2)
++		return clk->parent->rate;
++
++	return clk->parent->rate / value;
++}
++
++static long fsidiv_round_rate(struct clk *clk, unsigned long rate)
++{
++	return clk_rate_div_range_round(clk, 1, 0xffff, rate);
++}
++
++static void fsidiv_disable(struct clk *clk)
++{
++	iowrite32(0, clk->mapping->base);
++}
++
++static int fsidiv_enable(struct clk *clk)
++{
++	u32 value;
++
++	value  = ioread32(clk->mapping->base) >> 16;
++	if (value < 2)
++		return 0;
++
++	iowrite32((value << 16) | 0x3, clk->mapping->base);
++
++	return 0;
++}
++
++static int fsidiv_set_rate(struct clk *clk, unsigned long rate)
++{
++	u32 val;
++	int idx;
++
++	idx = (clk->parent->rate / rate) & 0xffff;
++	if (idx < 2)
++		iowrite32(0, clk->mapping->base);
++	else
++		iowrite32(idx << 16, clk->mapping->base);
++
++	return 0;
++}
++
++static struct sh_clk_ops fsidiv_clk_ops = {
++	.recalc		= fsidiv_recalc,
++	.round_rate	= fsidiv_round_rate,
++	.set_rate	= fsidiv_set_rate,
++	.enable		= fsidiv_enable,
++	.disable	= fsidiv_disable,
++};
++
++int __init sh_clk_fsidiv_register(struct clk *clks, int nr)
++{
++	struct clk_mapping *map;
++	int i;
++
++	for (i = 0; i < nr; i++) {
++
++		map = kzalloc(sizeof(struct clk_mapping), GFP_KERNEL);
++		if (!map) {
++			pr_err("%s: unable to alloc memory\n", __func__);
++			return -ENOMEM;
++		}
++
++		/* clks[i].enable_reg came from SH_CLK_FSIDIV() */
++		map->phys		= (phys_addr_t)clks[i].enable_reg;
++		map->len		= 8;
++
++		clks[i].enable_reg	= 0; /* remove .enable_reg */
++		clks[i].ops		= &fsidiv_clk_ops;
++		clks[i].mapping		= map;
++
++		clk_register(&clks[i]);
++	}
++
++	return 0;
++}
+diff --git a/include/linux/sh_clk.h b/include/linux/sh_clk.h
+index 5091091..60c7239 100644
+--- a/include/linux/sh_clk.h
++++ b/include/linux/sh_clk.h
+@@ -199,4 +199,13 @@ int sh_clk_div6_reparent_register(struct clk *clks, int nr);
+ #define CLKDEV_DEV_ID(_id, _clk) { .dev_id = _id, .clk = _clk }
+ #define CLKDEV_ICK_ID(_cid, _did, _clk) { .con_id = _cid, .dev_id = _did, .clk = _clk }
+ 
++/* .enable_reg will be updated to .mapping on sh_clk_fsidiv_register() */
++#define SH_CLK_FSIDIV(_reg, _parent)		\
++{						\
++	.enable_reg = (void __iomem *)_reg,	\
++	.parent		= _parent,		\
++}
++
++int sh_clk_fsidiv_register(struct clk *clks, int nr);
++
+ #endif /* __SH_CLOCK_H */
 -- 
-1.7.10.1
+1.7.9.5
 
