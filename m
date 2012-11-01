@@ -1,90 +1,38 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 06 Nov 2012 04:57:26 +0000
-Subject: [PATCH 04/11] ARM: shmobile: sh73a0: Replace modify_scu_cpu_psr with scu_power_mode
-Message-Id: <1352177853-6008-5-git-send-email-horms@verge.net.au>
+From: Alan Stern <stern@rowland.harvard.edu>
+Date: Thu, 01 Nov 2012 14:34:12 +0000
+Subject: Re: [PATCH 1/6] arch: Change defconfigs to point to g_mass_storage.
+Message-Id: <Pine.LNX.4.44L0.1211011033170.1762-100000@iolanthe.rowland.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352177853-6008-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352177853-6008-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <46dde680f525562e9fd19567deb5247f0bf26842.1351715302.git.mina86@mina86.com>
+References: <46dde680f525562e9fd19567deb5247f0bf26842.1351715302.git.mina86@mina86.com>
+In-Reply-To: <46dde680f525562e9fd19567deb5247f0bf26842.1351715302.git.mina86@mina86.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Bastian Hecht <hechtb@googlemail.com>
+On Wed, 31 Oct 2012, Michal Nazarewicz wrote:
 
-We can remove the extra code of modify_scu_cpu_psr() and use the cleaner
-generic ARM helper scu_power_mode(). As every CPU only deals with its
-own power register and scu_power_mode() operates with 8-bit accesses,
-we save the locking overhead too.
+> From: Michal Nazarewicz <mina86@mina86.com>
+> 
+> The File-backed Storage Gadget (g_file_storage) is being removed, since
+> it has been replaced by Mass Storage Gadget (g_mass_storage).  This commit
+> changes defconfigs point to the new gadget.
 
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
----
- arch/arm/mach-shmobile/smp-sh73a0.c |   23 ++---------------------
- 1 file changed, 2 insertions(+), 21 deletions(-)
+...
 
-diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
-index 624f00f..96ddb97 100644
---- a/arch/arm/mach-shmobile/smp-sh73a0.c
-+++ b/arch/arm/mach-shmobile/smp-sh73a0.c
-@@ -41,9 +41,6 @@ static void __iomem *scu_base_addr(void)
- 	return (void __iomem *)0xf0000000;
- }
- 
--static DEFINE_SPINLOCK(scu_lock);
--static unsigned long tmp;
--
- #ifdef CONFIG_HAVE_ARM_TWD
- static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, 0xf0000600, 29);
- void __init sh73a0_register_twd(void)
-@@ -52,20 +49,6 @@ void __init sh73a0_register_twd(void)
- }
- #endif
- 
--static void modify_scu_cpu_psr(unsigned long set, unsigned long clr)
--{
--	void __iomem *scu_base = scu_base_addr();
--
--	spin_lock(&scu_lock);
--	tmp = __raw_readl(scu_base + 8);
--	tmp &= ~clr;
--	tmp |= set;
--	spin_unlock(&scu_lock);
--
--	/* disable cache coherency after releasing the lock */
--	__raw_writel(tmp, scu_base + 8);
--}
--
- static unsigned int __init sh73a0_get_core_count(void)
- {
- 	void __iomem *scu_base = scu_base_addr();
-@@ -83,7 +66,7 @@ static int __cpuinit sh73a0_boot_secondary(unsigned int cpu, struct task_struct
- 	cpu = cpu_logical_map(cpu);
- 
- 	/* enable cache coherency */
--	modify_scu_cpu_psr(0, 3 << (cpu * 8));
-+	scu_power_mode(scu_base_addr(), 0);
- 
- 	if (((__raw_readl(PSTR) >> (4 * cpu)) & 3) = 3)
- 		__raw_writel(1 << cpu, WUPCR);	/* wake up */
-@@ -95,8 +78,6 @@ static int __cpuinit sh73a0_boot_secondary(unsigned int cpu, struct task_struct
- 
- static void __init sh73a0_smp_prepare_cpus(unsigned int max_cpus)
- {
--	int cpu = cpu_logical_map(0);
--
- 	scu_enable(scu_base_addr());
- 
- 	/* Map the reset vector (in headsmp.S) */
-@@ -104,7 +85,7 @@ static void __init sh73a0_smp_prepare_cpus(unsigned int max_cpus)
- 	__raw_writel(__pa(shmobile_secondary_vector), SBAR);
- 
- 	/* enable cache coherency on CPU0 */
--	modify_scu_cpu_psr(0, 3 << (cpu * 8));
-+	scu_power_mode(scu_base_addr(), 0);
- }
- 
- static void __init sh73a0_smp_init_cpus(void)
--- 
-1.7.10.4
+> --- a/arch/arm/configs/qil-a9260_defconfig
+> +++ b/arch/arm/configs/qil-a9260_defconfig
+> @@ -108,7 +108,6 @@ CONFIG_ROOT_NFS=y
+>  CONFIG_NLS_CODEPAGE_437=y
+>  CONFIG_NLS_CODEPAGE_850=y
+>  CONFIG_NLS_ISO8859_1=y
+> -CONFIG_DEBUG_KERNEL=y
+>  CONFIG_DEBUG_USER=y
+>  CONFIG_DEBUG_LL=y
+>  # CONFIG_CRYPTO_HW is not set
+
+This seems to have crept in by mistake.
+
+Alan Stern
 
