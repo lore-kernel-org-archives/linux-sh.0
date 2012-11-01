@@ -1,53 +1,43 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 06 Nov 2012 04:57:29 +0000
-Subject: [PATCH 07/11] ARM: shmobile: r8a7779: add HSPI clock support
-Message-Id: <1352177853-6008-8-git-send-email-horms@verge.net.au>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Thu, 01 Nov 2012 00:11:21 +0000
+Subject: Re: [PATCH 0/3] sh/ARM: shmobile: add sh_clk_fsidiv_register()
+Message-Id: <20121101001119.GB24257@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352177853-6008-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352177853-6008-1-git-send-email-horms@verge.net.au>
+References: <87ip9rmjcb.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87ip9rmjcb.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Wed, Oct 31, 2012 at 03:08:26PM +0800, Simon Horman wrote:
+> On Tue, Oct 30, 2012 at 08:05:59PM -0700, Kuninori Morimoto wrote:
+> > 
+> > Hi Paul, Simon
+> > 
+> > These patches add sh_clk_fsidiv_register() for FSI-DIV clock control.
+> > This is 1st step of FSI-DT support.
+> > My plan is...
+> > 
+> >  1st : sh/ARM: add FSI-DIV clock control functions
+> >  2nd : FSI driver supports audio clock calculation method
+> >  3rd : sh/ARM: remove old style .set_rate callback from platform
+> >  4th : FSI support DT
+> >  5th : platform use DT for FSI
+> > 
+> > Kuninori Morimoto (3):
+> >       sh: clkfwk: add sh_clk_fsidiv_register()
+> >       ARM: shmobile: sh7372: sh7372_fsidivX_clk become non-global
+> >       ARM: shmobile: sh7372: use sh_clk_fsidiv_register() for FSI-DIV clocks
+> 
+> I am slightly confused about why 4 patches, but its not a big deal.
+> 
+> Paul, how do you want to handle merging this?  The 1st patch looks like its
+> appropriate for your tree while the rest seem to belong in my tree. But I'm
+> happy for all the changes to go through one tree if that makes sense.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
----
- arch/arm/mach-shmobile/clock-r8a7779.c |    5 +++++
- 1 file changed, 5 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index 3cafb6a..90d717b 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -89,6 +89,7 @@ static struct clk div4_clks[DIV4_NR] = {
- enum { MSTP323, MSTP322, MSTP321, MSTP320,
- 	MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
- 	MSTP016, MSTP015, MSTP014,
-+	MSTP007,
- 	MSTP_NR };
- 
- static struct clk mstp_clks[MSTP_NR] = {
-@@ -105,6 +106,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP016] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 16, 0), /* TMU0 */
- 	[MSTP015] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 15, 0), /* TMU1 */
- 	[MSTP014] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 14, 0), /* TMU2 */
-+	[MSTP007] = SH_CLK_MSTP32(&div4_clks[DIV4_S], MSTPCR0,  7, 0), /* HSPI */
- };
- 
- static unsigned long mul4_recalc(struct clk *clk)
-@@ -154,6 +156,9 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP023]), /* SCIF3 */
- 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP022]), /* SCIF4 */
- 	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP021]), /* SCIF6 */
-+	CLKDEV_DEV_ID("sh-hspi.0", &mstp_clks[MSTP007]), /* HSPI0 */
-+	CLKDEV_DEV_ID("sh-hspi.1", &mstp_clks[MSTP007]), /* HSPI1 */
-+	CLKDEV_DEV_ID("sh-hspi.2", &mstp_clks[MSTP007]), /* HSPI2 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP323]), /* SDHI0 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
--- 
-1.7.10.4
-
+It's not such a big deal either way. Once the first patch has been
+corrected with the appropriate I/O accessors you're welcome to take it
+with the rest with my Acked-by. I don't believe we have anything on the
+SH side that depends on it, so there's not a lot of point in decoupling
+it from the rest of the patch set.
