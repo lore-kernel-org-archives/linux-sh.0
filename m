@@ -1,43 +1,57 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 27 Nov 2012 00:03:15 +0000
-Subject: [PATCH v2 76/77] ARM: shmobile: kzm9g: Populate platform devices from device tree
-Message-Id: <1353974596-30033-77-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 01 Nov 2012 00:40:04 +0000
+Subject: [PATCH 1/8] ARM: shmobile: kzm9g: enable magnetometer ak8975.
+Message-Id: <1351730411-1874-2-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1351730411-1874-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1351730411-1874-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Call of_platform_populate() at machine initialization time to populate
-platform devices. Remove the explicit pinmux initialization as the PFC
-device will be instantiated from the device tree.
+From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This patch enables magnetometer ak8975.
+I checked ak8975_probe() returns successfully.
+
+Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-kzm9g.c |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
+ arch/arm/configs/kzm9g_defconfig     |    2 ++
+ arch/arm/mach-shmobile/board-kzm9g.c |    6 +++++-
+ 2 files changed, 7 insertions(+), 1 deletion(-)
 
+diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
+index c88b578..1404b04 100644
+--- a/arch/arm/configs/kzm9g_defconfig
++++ b/arch/arm/configs/kzm9g_defconfig
+@@ -119,6 +119,8 @@ CONFIG_DMADEVICES=y
+ CONFIG_SH_DMAE=y
+ CONFIG_ASYNC_TX_DMA=y
+ CONFIG_STAGING=y
++CONFIG_SENSORS_AK8975=y
++CONFIG_IIO=y
+ # CONFIG_DNOTIFY is not set
+ CONFIG_INOTIFY_USER=y
+ CONFIG_VFAT_FS=y
 diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index 0a43f31..d23b234 100644
+index 0a43f31..a37da78 100644
 --- a/arch/arm/mach-shmobile/board-kzm9g.c
 +++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -29,6 +29,7 @@
- #include <linux/mmc/sh_mmcif.h>
- #include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/mfd/tmio.h>
-+#include <linux/of_platform.h>
- #include <linux/platform_device.h>
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/machine.h>
-@@ -648,7 +649,7 @@ static void __init kzm_init(void)
- 				     ARRAY_SIZE(fixed2v8_power_consumers), 2800000);
- 	regulator_register_fixed(2, dummy_supplies, ARRAY_SIZE(dummy_supplies));
+@@ -557,7 +557,11 @@ static struct i2c_board_info i2c0_devices[] = {
+ 	},
+ 	{
+ 		I2C_BOARD_INFO("r2025sd", 0x32),
+-	}
++	},
++	{
++		I2C_BOARD_INFO("ak8975", 0x0c),
++		.irq = intcs_evt2irq(0x3380), /* IRQ28 */
++	},
+ };
  
--	sh73a0_pinmux_init();
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- 
- 	/* enable SCIFA4 */
- 	gpio_request(GPIO_FN_SCIFA4_TXD, NULL);
+ static struct i2c_board_info i2c1_devices[] = {
 -- 
-1.7.8.6
+1.7.10.4
 
