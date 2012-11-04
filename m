@@ -1,50 +1,51 @@
-From: Tony Lindgren <tony@atomide.com>
-Date: Tue, 06 Nov 2012 20:40:12 +0000
-Subject: Re: [PATCHv2 1/6] arch: Change defconfigs to point to g_mass_storage.
-Message-Id: <20121106204012.GP6801@atomide.com>
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Sun, 04 Nov 2012 13:20:00 +0000
+Subject: Re: [v2 PATCH 1/2] Add new uio device for dynamic memory allocation
+Message-Id: <CAMuHMdWKByLXR-2wkiej=F1WPf7xePf3nMkUqwSf_hEJNNZbvg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <cover.1351715302.v2.git.mina86@mina86.com>
- <46dde680f525562e9fd19567deb5247f0bf26842.1351715302.v2.git.mina86@mina86.com>
- <20121106113157.GE11931@arwen.pp.htv.fi>
- <20121106184117.GJ6801@atomide.com>
- <20121106184227.GK6801@atomide.com>
- <20121106203226.GB6291@arwen.pp.htv.fi>
-In-Reply-To: <20121106203226.GB6291@arwen.pp.htv.fi>
+References: <1348553352-14334-1-git-send-email-dhobsong@igel.co.jp>
+	<1348553352-14334-2-git-send-email-dhobsong@igel.co.jp>
+In-Reply-To: <1348553352-14334-2-git-send-email-dhobsong@igel.co.jp>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+Cc: hjk@hansjkoch.de, gregkh@linuxfoundation.org, magnus.damm@gmail.com, horms@verge.net.au, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, hdk@igel.co.jp, Linux-Next <linux-next@vger.kernel.org>, Linux-Arch <linux-arch@vger.kernel.org>
 
-* Felipe Balbi <balbi@ti.com> [121106 12:40]:
-> Hi,
-> 
-> On Tue, Nov 06, 2012 at 10:42:27AM -0800, Tony Lindgren wrote:
-> > * Tony Lindgren <tony@atomide.com> [121106 10:41]:
-> > > * Felipe Balbi <balbi@ti.com> [121106 03:40]:
-> > > > Hi,
-> > > > 
-> > > > On Fri, Nov 02, 2012 at 02:31:50PM +0100, Michal Nazarewicz wrote:
-> > > > > From: Michal Nazarewicz <mina86@mina86.com>
-> > > > > 
-> > > > > The File-backed Storage Gadget (g_file_storage) is being removed, since
-> > > > > it has been replaced by Mass Storage Gadget (g_mass_storage).  This commit
-> > > > > changes defconfigs point to the new gadget.
-> > > > > 
-> > > > > Signed-off-by: Michal Nazarewicz <mina86@mina86.com>
-> > > > 
-> > > > I need more Acks here. Only got one from Nicolas. Anyone else ?
-> > > 
-> > > For omaps:
-> > > 
-> > > Acked-by: Tony Lindgren <tony@atomide.com>
-> > 
-> > Heh I guess no omap changes there, so probably not
-> > worth adding then.
-> 
-> omap1 is old, but it's still omap :-)
-> 
->  arch/arm/configs/omap1_defconfig                   |    3 +--
+On Tue, Sep 25, 2012 at 8:09 AM, Damian Hobson-Garcia
+<dhobsong@igel.co.jp> wrote:
+> are holding the device file open, the address returned to userspace is
+> DMA_ERROR_CODE.
 
-Oh OK so it was not a spurious ack after all :)
+Only a small subset of the architectures
+(arm/ia64/microblaze/openrisc/powerpc/sparc/x86)
+seem to define DMA_ERROR_CODE, causing everywhere else:
 
-Tony
+drivers/uio/uio_dmem_genirq.c: In function ‘uio_dmem_genirq_release’:
+drivers/uio/uio_dmem_genirq.c:95: error: ‘DMA_ERROR_CODE’ undeclared
+(first use in this function)
+drivers/uio/uio_dmem_genirq.c:95: error: (Each undeclared identifier
+is reported only once
+drivers/uio/uio_dmem_genirq.c:95: error: for each function it appears in.)
+drivers/uio/uio_dmem_genirq.c: In function ‘uio_dmem_genirq_probe’:
+drivers/uio/uio_dmem_genirq.c:238: error: ‘DMA_ERROR_CODE’ undeclared
+(first use in this function)
+make[1]: *** [drivers/uio/uio_dmem_genirq.o] Error 1
+make: *** [drivers/uio/] Error 2
+
+(e.g. http://kisskb.ellerman.id.au/kisskb/buildresult/7462173/)
+
+Furthermore, none of them define it in <uapi/...>, so DMA_ERROR_CODE is not
+part of the userspace API (yet), while it is architecture-specific (some use 0,
+others ~0).
+
+Gr{oetje,eeting}s,
+
+                        Geert
+
+--
+Geert Uytterhoeven -- There's lots of Linux beyond ia32 -- geert@linux-m68k.org
+
+In personal conversations with technical people, I call myself a hacker. But
+when I'm talking to journalists I just say "programmer" or something like that.
+                                -- Linus Torvalds
