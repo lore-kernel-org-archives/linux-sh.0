@@ -1,265 +1,432 @@
-From: Wen Congyang <wency@cn.fujitsu.com>
-Date: Tue, 27 Nov 2012 10:00:20 +0000
-Subject: [Patch v4 10/12] memory-hotplug: memory_hotplug: clear zone when removing the memory
-Message-Id: <1354010422-19648-11-git-send-email-wency@cn.fujitsu.com>
+From: Michel Lespinasse <walken@google.com>
+Date: Mon, 05 Nov 2012 22:47:02 +0000
+Subject: [PATCH 05/16] mm: vm_unmapped_area() lookup function
+Message-Id: <1352155633-8648-6-git-send-email-walken@google.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1354010422-19648-1-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1354010422-19648-1-git-send-email-wency@cn.fujitsu.com>
+References: <1352155633-8648-1-git-send-email-walken@google.com>
+In-Reply-To: <1352155633-8648-1-git-send-email-walken@google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
-Cc: David Rientjes <rientjes@google.com>, Jiang Liu <liuj97@gmail.com>, Len Brown <len.brown@intel.com>, benh@kernel.crashing.org, paulus@samba.org, Christoph Lameter <cl@linux.com>, Minchan Kim <minchan.kim@gmail.com>, Andrew Morton <akpm@linux-foundation.org>, KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>, Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>, Jianguo Wu <wujianguo@huawei.com>, Wen Congyang <wency@cn.fujitsu.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Implement vm_unmapped_area() using the rb_subtree_gap and highest_vm_end
+information to look up for suitable virtual address space gaps.
 
-When a memory is added, we update zone's and pgdat's start_pfn and
-spanned_pages in the function __add_zone(). So we should revert them
-when the memory is removed.
+struct vm_unmapped_area_info is used to define the desired allocation
+request:
+- lowest or highest possible address matching the remaining constraints
+- desired gap length
+- low/high address limits that the gap must fit into
+- alignment mask and offset
 
-The patch adds a new function __remove_zone() to do this.
+Also update the generic arch_get_unmapped_area[_topdown] functions to
+make use of vm_unmapped_area() instead of implementing a brute force search.
 
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Michel Lespinasse <walken@google.com>
+Reviewed-by: Rik van Riel <riel@redhat.com>
+
 ---
- mm/memory_hotplug.c | 207 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 207 insertions(+)
+ include/linux/mm.h |   31 +++++
+ mm/mmap.c          |  312 +++++++++++++++++++++++++++++++++++++---------------
+ 2 files changed, 253 insertions(+), 90 deletions(-)
 
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index 7797e91..aa97d56 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -301,10 +301,213 @@ static int __meminit __add_section(int nid, struct zone *zone,
- 	return register_new_memory(nid, __pfn_to_section(phys_start_pfn));
+diff --git a/include/linux/mm.h b/include/linux/mm.h
+index fa0680402738..441dfe8ea24d 100644
+--- a/include/linux/mm.h
++++ b/include/linux/mm.h
+@@ -1456,6 +1456,37 @@ extern unsigned long vm_mmap(struct file *, unsigned long,
+         unsigned long, unsigned long,
+         unsigned long, unsigned long);
+ 
++struct vm_unmapped_area_info {
++#define VM_UNMAPPED_AREA_TOPDOWN 1
++	unsigned long flags;
++	unsigned long length;
++	unsigned long low_limit;
++	unsigned long high_limit;
++	unsigned long align_mask;
++	unsigned long align_offset;
++};
++
++extern unsigned long unmapped_area(struct vm_unmapped_area_info *info);
++extern unsigned long unmapped_area_topdown(struct vm_unmapped_area_info *info);
++
++/*
++ * Search for an unmapped address range.
++ *
++ * We are looking for a range that:
++ * - does not intersect with any VMA;
++ * - is contained within the [low_limit, high_limit) interval;
++ * - is at least the desired size.
++ * - satisfies (begin_addr & align_mask) = (align_offset & align_mask)
++ */
++static inline unsigned long
++vm_unmapped_area(struct vm_unmapped_area_info *info)
++{
++	if (!(info->flags & VM_UNMAPPED_AREA_TOPDOWN))
++		return unmapped_area(info);
++	else
++		return unmapped_area_topdown(info);
++}
++
+ /* truncate.c */
+ extern void truncate_inode_pages(struct address_space *, loff_t);
+ extern void truncate_inode_pages_range(struct address_space *,
+diff --git a/mm/mmap.c b/mm/mmap.c
+index 769a09cc71af..aa748988cd54 100644
+--- a/mm/mmap.c
++++ b/mm/mmap.c
+@@ -1496,6 +1496,206 @@ unacct_error:
+ 	return error;
  }
  
-+/* find the smallest valid pfn in the range [start_pfn, end_pfn) */
-+static int find_smallest_section_pfn(int nid, struct zone *zone,
-+				     unsigned long start_pfn,
-+				     unsigned long end_pfn)
++unsigned long unmapped_area(struct vm_unmapped_area_info *info)
 +{
-+	struct mem_section *ms;
++	/*
++	 * We implement the search by looking for an rbtree node that
++	 * immediately follows a suitable gap. That is,
++	 * - gap_start = vma->vm_prev->vm_end <= info->high_limit - length;
++	 * - gap_end   = vma->vm_start        >= info->low_limit  + length;
++	 * - gap_end - gap_start >= length
++	 */
 +
-+	for (; start_pfn < end_pfn; start_pfn += PAGES_PER_SECTION) {
-+		ms = __pfn_to_section(start_pfn);
++	struct mm_struct *mm = current->mm;
++	struct vm_area_struct *vma;
++	unsigned long length, low_limit, high_limit, gap_start, gap_end;
 +
-+		if (unlikely(!valid_section(ms)))
-+			continue;
++	/* Adjust search length to account for worst case alignment overhead */
++	length = info->length + info->align_mask;
++	if (length < info->length)
++		return -ENOMEM;
 +
-+		if (unlikely(pfn_to_nid(start_pfn) != nid))
-+			continue;
++	/* Adjust search limits by the desired length */
++	if (info->high_limit < length)
++		return -ENOMEM;
++	high_limit = info->high_limit - length;
 +
-+		if (zone && zone != page_zone(pfn_to_page(start_pfn)))
-+			continue;
++	if (info->low_limit > high_limit)
++		return -ENOMEM;
++	low_limit = info->low_limit + length;
 +
-+		return start_pfn;
-+	}
++	/* Check if rbtree root looks promising */
++	if (RB_EMPTY_ROOT(&mm->mm_rb))
++		goto check_highest;
++	vma = rb_entry(mm->mm_rb.rb_node, struct vm_area_struct, vm_rb);
++	if (vma->rb_subtree_gap < length)
++		goto check_highest;
 +
-+	return 0;
-+}
-+
-+/* find the biggest valid pfn in the range [start_pfn, end_pfn). */
-+static int find_biggest_section_pfn(int nid, struct zone *zone,
-+				    unsigned long start_pfn,
-+				    unsigned long end_pfn)
-+{
-+	struct mem_section *ms;
-+	unsigned long pfn;
-+
-+	/* pfn is the end pfn of a memory section. */
-+	pfn = end_pfn - 1;
-+	for (; pfn >= start_pfn; pfn -= PAGES_PER_SECTION) {
-+		ms = __pfn_to_section(pfn);
-+
-+		if (unlikely(!valid_section(ms)))
-+			continue;
-+
-+		if (unlikely(pfn_to_nid(pfn) != nid))
-+			continue;
-+
-+		if (zone && zone != page_zone(pfn_to_page(pfn)))
-+			continue;
-+
-+		return pfn;
-+	}
-+
-+	return 0;
-+}
-+
-+static void shrink_zone_span(struct zone *zone, unsigned long start_pfn,
-+			     unsigned long end_pfn)
-+{
-+	unsigned long zone_start_pfn =  zone->zone_start_pfn;
-+	unsigned long zone_end_pfn = zone->zone_start_pfn + zone->spanned_pages;
-+	unsigned long pfn;
-+	struct mem_section *ms;
-+	int nid = zone_to_nid(zone);
-+
-+	zone_span_writelock(zone);
-+	if (zone_start_pfn = start_pfn) {
-+		/*
-+		 * If the section is smallest section in the zone, it need
-+		 * shrink zone->zone_start_pfn and zone->zone_spanned_pages.
-+		 * In this case, we find second smallest valid mem_section
-+		 * for shrinking zone.
-+		 */
-+		pfn = find_smallest_section_pfn(nid, zone, end_pfn,
-+						zone_end_pfn);
-+		if (pfn) {
-+			zone->zone_start_pfn = pfn;
-+			zone->spanned_pages = zone_end_pfn - pfn;
++	while (true) {
++		/* Visit left subtree if it looks promising */
++		gap_end = vma->vm_start;
++		if (gap_end >= low_limit && vma->vm_rb.rb_left) {
++			struct vm_area_struct *left +				rb_entry(vma->vm_rb.rb_left,
++					 struct vm_area_struct, vm_rb);
++			if (left->rb_subtree_gap >= length) {
++				vma = left;
++				continue;
++			}
 +		}
-+	} else if (zone_end_pfn = end_pfn) {
-+		/*
-+		 * If the section is biggest section in the zone, it need
-+		 * shrink zone->spanned_pages.
-+		 * In this case, we find second biggest valid mem_section for
-+		 * shrinking zone.
-+		 */
-+		pfn = find_biggest_section_pfn(nid, zone, zone_start_pfn,
-+					       start_pfn);
-+		if (pfn)
-+			zone->spanned_pages = pfn - zone_start_pfn + 1;
++
++		gap_start = vma->vm_prev ? vma->vm_prev->vm_end : 0;
++	check_current:
++		/* Check if current node has a suitable gap */
++		if (gap_start > high_limit)
++			return -ENOMEM;
++		if (gap_end >= low_limit && gap_end - gap_start >= length)
++			goto found;
++
++		/* Visit right subtree if it looks promising */
++		if (vma->vm_rb.rb_right) {
++			struct vm_area_struct *right +				rb_entry(vma->vm_rb.rb_right,
++					 struct vm_area_struct, vm_rb);
++			if (right->rb_subtree_gap >= length) {
++				vma = right;
++				continue;
++			}
++		}
++
++		/* Go back up the rbtree to find next candidate node */
++		while (true) {
++			struct rb_node *prev = &vma->vm_rb;
++			if (!rb_parent(prev))
++				goto check_highest;
++			vma = rb_entry(rb_parent(prev),
++				       struct vm_area_struct, vm_rb);
++			if (prev = vma->vm_rb.rb_left) {
++				gap_start = vma->vm_prev->vm_end;
++				gap_end = vma->vm_start;
++				goto check_current;
++			}
++		}
 +	}
++
++check_highest:
++	/* Check highest gap, which does not precede any rbtree node */
++	gap_start = mm->highest_vm_end;
++	gap_end = ULONG_MAX;  /* Only for VM_BUG_ON below */
++	if (gap_start > high_limit)
++		return -ENOMEM;
++
++found:
++	/* We found a suitable gap. Clip it with the original low_limit. */
++	if (gap_start < info->low_limit)
++		gap_start = info->low_limit;
++
++	/* Adjust gap address to the desired alignment */
++	gap_start += (info->align_offset - gap_start) & info->align_mask;
++
++	VM_BUG_ON(gap_start + info->length > info->high_limit);
++	VM_BUG_ON(gap_start + info->length > gap_end);
++	return gap_start;
++}
++
++unsigned long unmapped_area_topdown(struct vm_unmapped_area_info *info)
++{
++	struct mm_struct *mm = current->mm;
++	struct vm_area_struct *vma;
++	unsigned long length, low_limit, high_limit, gap_start, gap_end;
++
++	/* Adjust search length to account for worst case alignment overhead */
++	length = info->length + info->align_mask;
++	if (length < info->length)
++		return -ENOMEM;
 +
 +	/*
-+	 * The section is not biggest or smallest mem_section in the zone, it
-+	 * only creates a hole in the zone. So in this case, we need not
-+	 * change the zone. But perhaps, the zone has only hole data. Thus
-+	 * it check the zone has only hole or not.
++	 * Adjust search limits by the desired length.
++	 * See implementation comment at top of unmapped_area().
 +	 */
-+	pfn = zone_start_pfn;
-+	for (; pfn < zone_end_pfn; pfn += PAGES_PER_SECTION) {
-+		ms = __pfn_to_section(pfn);
++	gap_end = info->high_limit;
++	if (gap_end < length)
++		return -ENOMEM;
++	high_limit = gap_end - length;
 +
-+		if (unlikely(!valid_section(ms)))
-+			continue;
++	if (info->low_limit > high_limit)
++		return -ENOMEM;
++	low_limit = info->low_limit + length;
 +
-+		if (page_zone(pfn_to_page(pfn)) != zone)
-+			continue;
++	/* Check highest gap, which does not precede any rbtree node */
++	gap_start = mm->highest_vm_end;
++	if (gap_start <= high_limit)
++		goto found_highest;
 +
-+		 /* If the section is current section, it continues the loop */
-+		if (start_pfn = pfn)
-+			continue;
++	/* Check if rbtree root looks promising */
++	if (RB_EMPTY_ROOT(&mm->mm_rb))
++		return -ENOMEM;
++	vma = rb_entry(mm->mm_rb.rb_node, struct vm_area_struct, vm_rb);
++	if (vma->rb_subtree_gap < length)
++		return -ENOMEM;
 +
-+		/* If we find valid section, we have nothing to do */
-+		zone_span_writeunlock(zone);
-+		return;
-+	}
-+
-+	/* The zone has no valid section */
-+	zone->zone_start_pfn = 0;
-+	zone->spanned_pages = 0;
-+	zone_span_writeunlock(zone);
-+}
-+
-+static void shrink_pgdat_span(struct pglist_data *pgdat,
-+			      unsigned long start_pfn, unsigned long end_pfn)
-+{
-+	unsigned long pgdat_start_pfn =  pgdat->node_start_pfn;
-+	unsigned long pgdat_end_pfn +		pgdat->node_start_pfn + pgdat->node_spanned_pages;
-+	unsigned long pfn;
-+	struct mem_section *ms;
-+	int nid = pgdat->node_id;
-+
-+	if (pgdat_start_pfn = start_pfn) {
-+		/*
-+		 * If the section is smallest section in the pgdat, it need
-+		 * shrink pgdat->node_start_pfn and pgdat->node_spanned_pages.
-+		 * In this case, we find second smallest valid mem_section
-+		 * for shrinking zone.
-+		 */
-+		pfn = find_smallest_section_pfn(nid, NULL, end_pfn,
-+						pgdat_end_pfn);
-+		if (pfn) {
-+			pgdat->node_start_pfn = pfn;
-+			pgdat->node_spanned_pages = pgdat_end_pfn - pfn;
++	while (true) {
++		/* Visit right subtree if it looks promising */
++		gap_start = vma->vm_prev ? vma->vm_prev->vm_end : 0;
++		if (gap_start <= high_limit && vma->vm_rb.rb_right) {
++			struct vm_area_struct *right +				rb_entry(vma->vm_rb.rb_right,
++					 struct vm_area_struct, vm_rb);
++			if (right->rb_subtree_gap >= length) {
++				vma = right;
++				continue;
++			}
 +		}
-+	} else if (pgdat_end_pfn = end_pfn) {
-+		/*
-+		 * If the section is biggest section in the pgdat, it need
-+		 * shrink pgdat->node_spanned_pages.
-+		 * In this case, we find second biggest valid mem_section for
-+		 * shrinking zone.
-+		 */
-+		pfn = find_biggest_section_pfn(nid, NULL, pgdat_start_pfn,
-+					       start_pfn);
-+		if (pfn)
-+			pgdat->node_spanned_pages = pfn - pgdat_start_pfn + 1;
++
++	check_current:
++		/* Check if current node has a suitable gap */
++		gap_end = vma->vm_start;
++		if (gap_end < low_limit)
++			return -ENOMEM;
++		if (gap_start <= high_limit && gap_end - gap_start >= length)
++			goto found;
++
++		/* Visit left subtree if it looks promising */
++		if (vma->vm_rb.rb_left) {
++			struct vm_area_struct *left +				rb_entry(vma->vm_rb.rb_left,
++					 struct vm_area_struct, vm_rb);
++			if (left->rb_subtree_gap >= length) {
++				vma = left;
++				continue;
++			}
++		}
++
++		/* Go back up the rbtree to find next candidate node */
++		while (true) {
++			struct rb_node *prev = &vma->vm_rb;
++			if (!rb_parent(prev))
++				return -ENOMEM;
++			vma = rb_entry(rb_parent(prev),
++				       struct vm_area_struct, vm_rb);
++			if (prev = vma->vm_rb.rb_right) {
++				gap_start = vma->vm_prev ?
++					vma->vm_prev->vm_end : 0;
++				goto check_current;
++			}
++		}
 +	}
 +
-+	/*
-+	 * If the section is not biggest or smallest mem_section in the pgdat,
-+	 * it only creates a hole in the pgdat. So in this case, we need not
-+	 * change the pgdat.
-+	 * But perhaps, the pgdat has only hole data. Thus it check the pgdat
-+	 * has only hole or not.
-+	 */
-+	pfn = pgdat_start_pfn;
-+	for (; pfn < pgdat_end_pfn; pfn += PAGES_PER_SECTION) {
-+		ms = __pfn_to_section(pfn);
++found:
++	/* We found a suitable gap. Clip it with the original high_limit. */
++	if (gap_end > info->high_limit)
++		gap_end = info->high_limit;
 +
-+		if (unlikely(!valid_section(ms)))
-+			continue;
++found_highest:
++	/* Compute highest gap address at the desired alignment */
++	gap_end -= info->length;
++	gap_end -= (gap_end - info->align_offset) & info->align_mask;
 +
-+		if (pfn_to_nid(pfn) != nid)
-+			continue;
-+
-+		 /* If the section is current section, it continues the loop */
-+		if (start_pfn = pfn)
-+			continue;
-+
-+		/* If we find valid section, we have nothing to do */
-+		return;
-+	}
-+
-+	/* The pgdat has no valid section */
-+	pgdat->node_start_pfn = 0;
-+	pgdat->node_spanned_pages = 0;
++	VM_BUG_ON(gap_end < info->low_limit);
++	VM_BUG_ON(gap_end < gap_start);
++	return gap_end;
 +}
 +
-+static void __remove_zone(struct zone *zone, unsigned long start_pfn)
-+{
-+	struct pglist_data *pgdat = zone->zone_pgdat;
-+	int nr_pages = PAGES_PER_SECTION;
-+	int zone_type;
-+	unsigned long flags;
-+
-+	zone_type = zone - pgdat->node_zones;
-+
-+	pgdat_resize_lock(zone->zone_pgdat, &flags);
-+	shrink_zone_span(zone, start_pfn, start_pfn + nr_pages);
-+	shrink_pgdat_span(pgdat, start_pfn, start_pfn + nr_pages);
-+	pgdat_resize_unlock(zone->zone_pgdat, &flags);
-+}
-+
- static int __remove_section(struct zone *zone, struct mem_section *ms)
+ /* Get an address range which is currently unmapped.
+  * For shmat() with addr=0.
+  *
+@@ -1514,7 +1714,7 @@ arch_get_unmapped_area(struct file *filp, unsigned long addr,
  {
- 	unsigned long flags;
- 	struct pglist_data *pgdat = zone->zone_pgdat;
-+	unsigned long start_pfn;
-+	int scn_nr;
- 	int ret = -EINVAL;
+ 	struct mm_struct *mm = current->mm;
+ 	struct vm_area_struct *vma;
+-	unsigned long start_addr;
++	struct vm_unmapped_area_info info;
  
- 	if (!valid_section(ms))
-@@ -314,6 +517,10 @@ static int __remove_section(struct zone *zone, struct mem_section *ms)
- 	if (ret)
- 		return ret;
+ 	if (len > TASK_SIZE)
+ 		return -ENOMEM;
+@@ -1529,40 +1729,13 @@ arch_get_unmapped_area(struct file *filp, unsigned long addr,
+ 		    (!vma || addr + len <= vma->vm_start))
+ 			return addr;
+ 	}
+-	if (len > mm->cached_hole_size) {
+-	        start_addr = addr = mm->free_area_cache;
+-	} else {
+-	        start_addr = addr = TASK_UNMAPPED_BASE;
+-	        mm->cached_hole_size = 0;
+-	}
  
-+	scn_nr = __section_nr(ms);
-+	start_pfn = section_nr_to_pfn(scn_nr);
-+	__remove_zone(zone, start_pfn);
-+
- 	pgdat_resize_lock(pgdat, &flags);
- 	sparse_remove_one_section(zone, ms);
- 	pgdat_resize_unlock(pgdat, &flags);
+-full_search:
+-	for (vma = find_vma(mm, addr); ; vma = vma->vm_next) {
+-		/* At this point:  (!vma || addr < vma->vm_end). */
+-		if (TASK_SIZE - len < addr) {
+-			/*
+-			 * Start a new search - just in case we missed
+-			 * some holes.
+-			 */
+-			if (start_addr != TASK_UNMAPPED_BASE) {
+-				addr = TASK_UNMAPPED_BASE;
+-			        start_addr = addr;
+-				mm->cached_hole_size = 0;
+-				goto full_search;
+-			}
+-			return -ENOMEM;
+-		}
+-		if (!vma || addr + len <= vma->vm_start) {
+-			/*
+-			 * Remember the place where we stopped the search:
+-			 */
+-			mm->free_area_cache = addr + len;
+-			return addr;
+-		}
+-		if (addr + mm->cached_hole_size < vma->vm_start)
+-		        mm->cached_hole_size = vma->vm_start - addr;
+-		addr = vma->vm_end;
+-	}
++	info.flags = 0;
++	info.length = len;
++	info.low_limit = TASK_UNMAPPED_BASE;
++	info.high_limit = TASK_SIZE;
++	info.align_mask = 0;
++	return vm_unmapped_area(&info);
+ }
+ #endif	
+ 
+@@ -1587,7 +1760,8 @@ arch_get_unmapped_area_topdown(struct file *filp, const unsigned long addr0,
+ {
+ 	struct vm_area_struct *vma;
+ 	struct mm_struct *mm = current->mm;
+-	unsigned long addr = addr0, start_addr;
++	unsigned long addr = addr0;
++	struct vm_unmapped_area_info info;
+ 
+ 	/* requested length too big for entire address space */
+ 	if (len > TASK_SIZE)
+@@ -1605,53 +1779,12 @@ arch_get_unmapped_area_topdown(struct file *filp, const unsigned long addr0,
+ 			return addr;
+ 	}
+ 
+-	/* check if free_area_cache is useful for us */
+-	if (len <= mm->cached_hole_size) {
+- 	        mm->cached_hole_size = 0;
+- 		mm->free_area_cache = mm->mmap_base;
+- 	}
+-
+-try_again:
+-	/* either no address requested or can't fit in requested address hole */
+-	start_addr = addr = mm->free_area_cache;
+-
+-	if (addr < len)
+-		goto fail;
+-
+-	addr -= len;
+-	do {
+-		/*
+-		 * Lookup failure means no vma is above this address,
+-		 * else if new region fits below vma->vm_start,
+-		 * return with success:
+-		 */
+-		vma = find_vma(mm, addr);
+-		if (!vma || addr+len <= vma->vm_start)
+-			/* remember the address as a hint for next time */
+-			return (mm->free_area_cache = addr);
+-
+- 		/* remember the largest hole we saw so far */
+- 		if (addr + mm->cached_hole_size < vma->vm_start)
+- 		        mm->cached_hole_size = vma->vm_start - addr;
+-
+-		/* try just below the current vma->vm_start */
+-		addr = vma->vm_start-len;
+-	} while (len < vma->vm_start);
+-
+-fail:
+-	/*
+-	 * if hint left us with no space for the requested
+-	 * mapping then try again:
+-	 *
+-	 * Note: this is different with the case of bottomup
+-	 * which does the fully line-search, but we use find_vma
+-	 * here that causes some holes skipped.
+-	 */
+-	if (start_addr != mm->mmap_base) {
+-		mm->free_area_cache = mm->mmap_base;
+-		mm->cached_hole_size = 0;
+-		goto try_again;
+-	}
++	info.flags = VM_UNMAPPED_AREA_TOPDOWN;
++	info.length = len;
++	info.low_limit = PAGE_SIZE;
++	info.high_limit = mm->mmap_base;
++	info.align_mask = 0;
++	addr = vm_unmapped_area(&info);
+ 
+ 	/*
+ 	 * A failed mmap() very likely causes application failure,
+@@ -1659,14 +1792,13 @@ fail:
+ 	 * can happen with large stack limits and large mmap()
+ 	 * allocations.
+ 	 */
+-	mm->cached_hole_size = ~0UL;
+-  	mm->free_area_cache = TASK_UNMAPPED_BASE;
+-	addr = arch_get_unmapped_area(filp, addr0, len, pgoff, flags);
+-	/*
+-	 * Restore the topdown base:
+-	 */
+-	mm->free_area_cache = mm->mmap_base;
+-	mm->cached_hole_size = ~0UL;
++	if (addr & ~PAGE_MASK) {
++		VM_BUG_ON(addr != -ENOMEM);
++		info.flags = 0;
++		info.low_limit = TASK_UNMAPPED_BASE;
++		info.high_limit = TASK_SIZE;
++		addr = vm_unmapped_area(&info);
++	}
+ 
+ 	return addr;
+ }
 -- 
-1.8.0
-
+1.7.7.3
