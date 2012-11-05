@@ -1,76 +1,68 @@
-From: Bill Pemberton <wfp5p@virginia.edu>
-Date: Mon, 19 Nov 2012 18:22:20 +0000
-Subject: [PATCH 191/493] sh: remove use of __devinit
-Message-Id: <1353349642-3677-191-git-send-email-wfp5p@virginia.edu>
+From: Michel Lespinasse <walken@google.com>
+Date: Mon, 05 Nov 2012 22:47:01 +0000
+Subject: [PATCH 04/16] mm: rearrange vm_area_struct for fewer cache misses
+Message-Id: <1352155633-8648-5-git-send-email-walken@google.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1352155633-8648-1-git-send-email-walken@google.com>
+In-Reply-To: <1352155633-8648-1-git-send-email-walken@google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-CONFIG_HOTPLUG is going away as an option so __devinit is no longer
-needed.
+From: Rik van Riel <riel@surriel.com>
 
-Signed-off-by: Bill Pemberton <wfp5p@virginia.edu>
-Cc: linux-sh@vger.kernel.org 
+The kernel walks the VMA rbtree in various places, including
+the page fault path.  However, the vm_rb node spanned two
+cache lines, on 64 bit systems with 64 byte cache lines (most
+x86 systems).
+
+Rearrange vm_area_struct a little, so all the information we
+need to do a VMA tree walk is in the first cache line.
+
+Signed-off-by: Michel Lespinasse <walken@google.com>
+Signed-off-by: Rik van Riel <riel@redhat.com>
+
 ---
- drivers/sh/pfc/gpio.c    | 2 +-
- drivers/sh/pfc/pinctrl.c | 8 ++++----
- 2 files changed, 5 insertions(+), 5 deletions(-)
+ include/linux/mm_types.h |   12 ++++++++----
+ 1 files changed, 8 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/sh/pfc/gpio.c b/drivers/sh/pfc/gpio.c
-index d08c978..8f4f431 100644
---- a/drivers/sh/pfc/gpio.c
-+++ b/drivers/sh/pfc/gpio.c
-@@ -165,7 +165,7 @@ static int sh_pfc_gpio_match(struct gpio_chip *gc, void *data)
- 	return !!strstr(gc->label, data);
- }
+diff --git a/include/linux/mm_types.h b/include/linux/mm_types.h
+index 94fa52b28ee8..528da4abf8ee 100644
+--- a/include/linux/mm_types.h
++++ b/include/linux/mm_types.h
+@@ -224,7 +224,8 @@ struct vm_region {
+  * library, the executable area etc).
+  */
+ struct vm_area_struct {
+-	struct mm_struct * vm_mm;	/* The address space we belong to. */
++	/* The first cache line has the info for VMA tree walking. */
++
+ 	unsigned long vm_start;		/* Our start address within vm_mm. */
+ 	unsigned long vm_end;		/* The first byte after our end address
+ 					   within vm_mm. */
+@@ -232,9 +233,6 @@ struct vm_area_struct {
+ 	/* linked list of VM areas per task, sorted by address */
+ 	struct vm_area_struct *vm_next, *vm_prev;
  
--static int __devinit sh_pfc_gpio_probe(struct platform_device *pdev)
-+static int sh_pfc_gpio_probe(struct platform_device *pdev)
- {
- 	struct sh_pfc_chip *chip;
- 	struct gpio_chip *gc;
-diff --git a/drivers/sh/pfc/pinctrl.c b/drivers/sh/pfc/pinctrl.c
-index 99b3b4f..5dd1806 100644
---- a/drivers/sh/pfc/pinctrl.c
-+++ b/drivers/sh/pfc/pinctrl.c
-@@ -328,7 +328,7 @@ static struct pinctrl_desc sh_pfc_pinctrl_desc = {
- 	.confops	= &sh_pfc_pinconf_ops,
- };
+-	pgprot_t vm_page_prot;		/* Access permissions of this VMA. */
+-	unsigned long vm_flags;		/* Flags, see mm.h. */
+-
+ 	struct rb_node vm_rb;
  
--static inline void __devinit sh_pfc_map_one_gpio(struct sh_pfc *pfc,
-+static inline void sh_pfc_map_one_gpio(struct sh_pfc *pfc,
- 						 struct sh_pfc_pinctrl *pmx,
- 						 struct pinmux_gpio *gpio,
- 						 unsigned offset)
-@@ -351,7 +351,7 @@ static inline void __devinit sh_pfc_map_one_gpio(struct sh_pfc *pfc,
- }
+ 	/*
+@@ -245,6 +243,12 @@ struct vm_area_struct {
+ 	 */
+ 	unsigned long rb_subtree_gap;
  
- /* pinmux ranges -> pinctrl pin descs */
--static int __devinit sh_pfc_map_gpios(struct sh_pfc *pfc,
-+static int sh_pfc_map_gpios(struct sh_pfc *pfc,
- 				      struct sh_pfc_pinctrl *pmx)
- {
- 	unsigned long flags;
-@@ -396,7 +396,7 @@ static int __devinit sh_pfc_map_gpios(struct sh_pfc *pfc,
- 	return 0;
- }
- 
--static int __devinit sh_pfc_map_functions(struct sh_pfc *pfc,
-+static int sh_pfc_map_functions(struct sh_pfc *pfc,
- 					  struct sh_pfc_pinctrl *pmx)
- {
- 	unsigned long flags;
-@@ -421,7 +421,7 @@ static int __devinit sh_pfc_map_functions(struct sh_pfc *pfc,
- 	return 0;
- }
- 
--static int __devinit sh_pfc_pinctrl_probe(struct platform_device *pdev)
-+static int sh_pfc_pinctrl_probe(struct platform_device *pdev)
- {
- 	struct sh_pfc *pfc;
- 	int ret;
++	/* Second cache line starts here. */
++
++	struct mm_struct * vm_mm;	/* The address space we belong to. */
++	pgprot_t vm_page_prot;		/* Access permissions of this VMA. */
++	unsigned long vm_flags;		/* Flags, see mm.h. */
++
+ 	/*
+ 	 * For areas with an address space and backing store,
+ 	 * linkage into the address_space->i_mmap interval tree, or
 -- 
-1.8.0
-
+1.7.7.3
