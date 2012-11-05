@@ -1,35 +1,65 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Wed, 21 Nov 2012 07:21:08 +0000
-Subject: Re: [GIT PULL v2] Renesas ARM-based SoC boards for v3.8 #3
-Message-Id: <20121121072108.GH7615@quad.lixom.net>
+From: Michel Lespinasse <walken@google.com>
+Date: Mon, 05 Nov 2012 22:47:12 +0000
+Subject: [PATCH 15/16] mm: use vm_unmapped_area() on sparc32 architecture
+Message-Id: <1352155633-8648-16-git-send-email-walken@google.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1353372187-2903-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1353372187-2903-1-git-send-email-horms@verge.net.au>
+References: <1352155633-8648-1-git-send-email-walken@google.com>
+In-Reply-To: <1352155633-8648-1-git-send-email-walken@google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Nov 20, 2012 at 09:43:06AM +0900, Simon Horman wrote:
-> Hi Olof, Hi Arnd,
-> 
-> Please consider the following board fix for 3.8.
-> 
-> The commit message for the patch has been revised since yesterday's
-> pull-request.
-> 
-> Also, please let me know if you would prefer me to supply
-> this as a fixes branch as we are now in the 3.7-rc6 timeframe
-> where I understand that non-fix commits are no longer allowed for 3.8.
->
-> This commit is based on the renesas/boards2 branch of the arm-soc tree.
+Update the sparc32 arch_get_unmapped_area function to make use of
+vm_unmapped_area() instead of implementing a brute force search.
 
-It's not super-strictly "fixes only" at this point in the tree, but we really
-want to make sure that we don't get any large pull requests from here on out.
+Signed-off-by: Michel Lespinasse <walken@google.com>
 
-For an update like this (adding one more patch on top of a previous branch),
-this format is perfect since it allows us to just pull the same branch again,
-really. So I've pulled this on top of the previous contents into next/boards2.
+---
+ arch/sparc/kernel/sys_sparc_32.c |   24 +++++++++---------------
+ 1 files changed, 9 insertions(+), 15 deletions(-)
 
-
--Olof
+diff --git a/arch/sparc/kernel/sys_sparc_32.c b/arch/sparc/kernel/sys_sparc_32.c
+index 0c9b31b22e07..653899849b27 100644
+--- a/arch/sparc/kernel/sys_sparc_32.c
++++ b/arch/sparc/kernel/sys_sparc_32.c
+@@ -39,6 +39,7 @@ asmlinkage unsigned long sys_getpagesize(void)
+ unsigned long arch_get_unmapped_area(struct file *filp, unsigned long addr, unsigned long len, unsigned long pgoff, unsigned long flags)
+ {
+ 	struct vm_area_struct * vmm;
++	struct vm_unmapped_area_info info;
+ 
+ 	if (flags & MAP_FIXED) {
+ 		/* We do not accept a shared mapping if it would violate
+@@ -56,21 +57,14 @@ unsigned long arch_get_unmapped_area(struct file *filp, unsigned long addr, unsi
+ 	if (!addr)
+ 		addr = TASK_UNMAPPED_BASE;
+ 
+-	if (flags & MAP_SHARED)
+-		addr = COLOUR_ALIGN(addr);
+-	else
+-		addr = PAGE_ALIGN(addr);
+-
+-	for (vmm = find_vma(current->mm, addr); ; vmm = vmm->vm_next) {
+-		/* At this point:  (!vmm || addr < vmm->vm_end). */
+-		if (TASK_SIZE - PAGE_SIZE - len < addr)
+-			return -ENOMEM;
+-		if (!vmm || addr + len <= vmm->vm_start)
+-			return addr;
+-		addr = vmm->vm_end;
+-		if (flags & MAP_SHARED)
+-			addr = COLOUR_ALIGN(addr);
+-	}
++	info.flags = 0;
++	info.length = len;
++	info.low_limit = addr;
++	info.high_limit = TASK_SIZE;
++	info.align_mask = (flags & MAP_SHARED) ?
++		(PAGE_MASK & (SHMLBA - 1)) : 0;
++	info.align_offset = pgoff << PAGE_SHIFT;
++	return vm_unmapped_area(&info);
+ }
+ 
+ /*
+-- 
+1.7.7.3
