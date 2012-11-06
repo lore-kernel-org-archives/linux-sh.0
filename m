@@ -1,10 +1,10 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Thu, 01 Nov 2012 00:41:52 +0000
+Date: Tue, 06 Nov 2012 04:57:32 +0000
 Subject: [PATCH 10/11] ARM: mach-shmobile: add FLCTL DMA slave definitions for sh7372
-Message-Id: <1351730513-2952-11-git-send-email-horms@verge.net.au>
+Message-Id: <1352177853-6008-11-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1351730513-2952-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1351730513-2952-1-git-send-email-horms@verge.net.au>
+References: <1352177853-6008-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1352177853-6008-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
