@@ -1,59 +1,84 @@
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Thu, 08 Nov 2012 00:55:23 +0000
-Subject: Re: [PATCH 06/15] ARM: shmobile: Add DT table of INTC for sh73a0
-Message-Id: <509B02FB.9020004@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 06 Nov 2012 04:57:22 +0000
+Subject: [GIT PULL v4] Renesas ARM-based SoC for v3.8
+Message-Id: <1352177853-6008-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352278244-26702-1-git-send-email-horms@verge.net.au>
- <1352278244-26702-7-git-send-email-horms@verge.net.au>
- <509A3E02.3050507@kmckk.co.jp>
-In-Reply-To: <509A3E02.3050507@kmckk.co.jp>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-2022-jp"
+Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+Hi Olof, Hi Arnd,
 
-Tetsuyuki Kobayashi さんは書きました:
-> Hello, Iwamatsu-san, Simon-san
-> 
-> (2012/11/07 17:50), Simon Horman wrote:
->> From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
->>
->> Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
->> Signed-off-by: Simon Horman <horms@verge.net.au>
->> ---
->>   arch/arm/boot/dts/sh73a0.dtsi |  810 +++++++++++++++++++++++++++++++++++++++++
->>   1 file changed, 810 insertions(+)
->>   create mode 100644 arch/arm/boot/dts/sh73a0.dtsi
->>
->> diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
->> new file mode 100644
->> index 0000000..b0c55e1
->> --- /dev/null
->> +++ b/arch/arm/boot/dts/sh73a0.dtsi
->> @@ -0,0 +1,810 @@
->> +/*
->> + * Device Tree Source for the SH73A0
->> + *
->> + * Copyright (C) 2012 Renesas Solutions Corp.
->> + *
->> + * This file is licensed under the terms of the GNU General Public License
->> + * version 2.  This program is licensed "as is" without any warranty of any
->> + * kind, whether express or implied.
->> + */
->> +
->> +/include/ "skeleton.dtsi"
->> +
->> +/ {
->> +	compatible = "renesas,sh73a0";
->> +
->> +	cpus {
->> +		cpu@0 {
->> +			compatible = "arm,cortex-a8";
->> +		};
->> +	};
-> 
-> SH73A0 is dual core cortex-a9.
-> 
-Thanks, I will fix.
+please consider the following SoC enhancements for 3.8.
+
+Change since v3:
+* Remove noise from "ARM: shmobile: Remove SH7367 support"
+
+----------------------------------------------------------------
+The following changes since commit ddffeb8c4d0331609ef2581d84de4d763607bd37:
+
+  Linux 3.7-rc1 (2012-10-14 14:41:04 -0700)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git soc
+
+for you to fetch changes up to 86bc52ef4373be64867b56f3a9e30cbabf64e0dd:
+
+  ARM: shmobile: r8a7740: Enable PMU (2012-11-06 13:47:24 +0900)
+
+----------------------------------------------------------------
+Bastian Hecht (4):
+      ARM: shmobile: emev2: Replace modify_scu_cpu_psr with scu_power_mode
+      ARM: shmobile: sh73a0: Replace modify_scu_cpu_psr with scu_power_mode
+      ARM: shmobile: r8a7779: Replace modify_scu_cpu_psr with scu_power_mode
+      ARM: mach-shmobile: add FLCTL DMA slave definitions for sh7372
+
+Kuninori Morimoto (4):
+      ARM: shmobile: r8a7740: fixup DT machine desc name typo
+      ARM: shmobile: r8a7779: add HSPI clock support
+      ARM: shmobile: r8a7779: add I2C clock support
+      ARM: shmobile: r8a7779: add I2C driver support
+
+Nobuhiro Iwamatsu (3):
+      ARM: shmobile: Remove SH7367 support
+      ARM: shmobile: Remove SH7377 support
+      ARM: shmobile: r8a7740: Enable PMU
+
+ arch/arm/boot/dts/sh7377.dtsi                |   21 -
+ arch/arm/configs/armadillo800eva_defconfig   |    1 +
+ arch/arm/configs/marzen_defconfig            |    2 +
+ arch/arm/mach-shmobile/Kconfig               |   12 -
+ arch/arm/mach-shmobile/Makefile              |    6 -
+ arch/arm/mach-shmobile/clock-r8a7779.c       |   16 +-
+ arch/arm/mach-shmobile/clock-sh7367.c        |  355 ------
+ arch/arm/mach-shmobile/clock-sh7377.c        |  366 ------
+ arch/arm/mach-shmobile/include/mach/common.h |   18 -
+ arch/arm/mach-shmobile/include/mach/sh7367.h |  332 -----
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    4 +
+ arch/arm/mach-shmobile/include/mach/sh7377.h |  360 ------
+ arch/arm/mach-shmobile/intc-sh7367.c         |  413 ------
+ arch/arm/mach-shmobile/intc-sh7377.c         |  592 ---------
+ arch/arm/mach-shmobile/pfc-sh7367.c          | 1727 --------------------------
+ arch/arm/mach-shmobile/pfc-sh7377.c          | 1688 -------------------------
+ arch/arm/mach-shmobile/setup-r8a7740.c       |   18 +-
+ arch/arm/mach-shmobile/setup-r8a7779.c       |   77 ++
+ arch/arm/mach-shmobile/setup-sh7367.c        |  481 -------
+ arch/arm/mach-shmobile/setup-sh7372.c        |   20 +
+ arch/arm/mach-shmobile/setup-sh7377.c        |  549 --------
+ arch/arm/mach-shmobile/smp-emev2.c           |   22 +-
+ arch/arm/mach-shmobile/smp-r8a7779.c         |   25 +-
+ arch/arm/mach-shmobile/smp-sh73a0.c          |   23 +-
+ 24 files changed, 143 insertions(+), 6985 deletions(-)
+ delete mode 100644 arch/arm/boot/dts/sh7377.dtsi
+ delete mode 100644 arch/arm/mach-shmobile/clock-sh7367.c
+ delete mode 100644 arch/arm/mach-shmobile/clock-sh7377.c
+ delete mode 100644 arch/arm/mach-shmobile/include/mach/sh7367.h
+ delete mode 100644 arch/arm/mach-shmobile/include/mach/sh7377.h
+ delete mode 100644 arch/arm/mach-shmobile/intc-sh7367.c
+ delete mode 100644 arch/arm/mach-shmobile/intc-sh7377.c
+ delete mode 100644 arch/arm/mach-shmobile/pfc-sh7367.c
+ delete mode 100644 arch/arm/mach-shmobile/pfc-sh7377.c
+ delete mode 100644 arch/arm/mach-shmobile/setup-sh7367.c
+ delete mode 100644 arch/arm/mach-shmobile/setup-sh7377.c
