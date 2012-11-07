@@ -1,21 +1,39 @@
-From: Rik van Riel <riel@redhat.com>
-Date: Mon, 05 Nov 2012 23:37:37 +0000
-Subject: Re: [PATCH 16/16] mm: use vm_unmapped_area() in hugetlbfs on tile architecture
-Message-Id: <50984DC1.2030608@redhat.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 07 Nov 2012 08:34:58 +0000
+Subject: [PATCH 4/4] ARM: shmobile: r8a7779: add USB OHCI clock support
+Message-Id: <1352277298-23312-5-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352155633-8648-1-git-send-email-walken@google.com>
- <1352155633-8648-17-git-send-email-walken@google.com>
-In-Reply-To: <1352155633-8648-17-git-send-email-walken@google.com>
+References: <1352277298-23312-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1352277298-23312-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 11/05/2012 05:47 PM, Michel Lespinasse wrote:
-> Update the tile hugetlb_get_unmapped_area function to make use of
-> vm_unmapped_area() instead of implementing a brute force search.
->
-> Signed-off-by: Michel Lespinasse <walken@google.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Reviewed-by: Rik van Riel <riel@redhat.com>
+ohci-platform driver require these clocks
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-r8a7779.c |    2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index 4ba4e3c..be885cf 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -157,7 +157,9 @@ static struct clk_lookup lookups[] = {
+ 
+ 	/* MSTP32 clocks */
+ 	CLKDEV_DEV_ID("ehci-platform.1", &mstp_clks[MSTP101]), /* USB EHCI port2 */
++	CLKDEV_DEV_ID("ohci-platform.1", &mstp_clks[MSTP101]), /* USB OHCI port2 */
+ 	CLKDEV_DEV_ID("ehci-platform.0", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
++	CLKDEV_DEV_ID("ohci-platform.0", &mstp_clks[MSTP100]), /* USB OHCI port0/1 */
+ 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
+ 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP016]), /* TMU01 */
+ 	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
+-- 
+1.7.10.4
 
