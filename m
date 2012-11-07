@@ -1,168 +1,50 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 21 Nov 2012 02:53:18 +0000
-Subject: [PATCH 02/42] sh-pfc: Move private definitions and declarations to private header
-Message-Id: <1353466438-10929-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Date: Wed, 07 Nov 2012 07:00:06 +0000
+Subject: [PATCH 07/10] serial: sh-sci: mask SCTFDR/RFDR according to fifosize
+Message-Id: <509A06F6.30401@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <509A0658.1010503@renesas.com>
+In-Reply-To: <509A0658.1010503@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Move all private structure definitions and function declarations from
-include/linux/sh_pfc.h to drivers/sh/pfc/core.h.
+Current mask 0xff to SCTFDR/RFDR damages SCIFB, because the
+registers on SCIFB have 9-bit data (0 to 256).
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This patch changes the mask according to port->fifosize.
+Though I'm not sure if the mask is really needed (I don't know if
+there are variants which have non-zero upper bits), it is safer.
+
+Signed-off-by: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 ---
- drivers/sh/pfc/core.c    |    2 ++
- drivers/sh/pfc/core.h    |   44 ++++++++++++++++++++++++++++++++++++++++++++
- drivers/sh/pfc/gpio.c    |    2 ++
- drivers/sh/pfc/pinctrl.c |    2 ++
- include/linux/sh_pfc.h   |   29 -----------------------------
- 5 files changed, 50 insertions(+), 29 deletions(-)
- create mode 100644 drivers/sh/pfc/core.h
+ drivers/tty/serial/sh-sci.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
-index ecbe51d..72421a4 100644
---- a/drivers/sh/pfc/core.c
-+++ b/drivers/sh/pfc/core.c
-@@ -21,6 +21,8 @@
- #include <linux/ioport.h>
- #include <linux/pinctrl/machine.h>
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 3021912..63a3bd0 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -485,7 +485,7 @@ static int sci_txfill(struct uart_port *port)
  
-+#include "core.h"
-+
- static struct sh_pfc sh_pfc __read_mostly;
+ 	reg = sci_getreg(port, SCTFDR);
+ 	if (reg->size)
+-		return serial_port_in(port, SCTFDR) & 0xff;
++		return serial_port_in(port, SCTFDR) & ((port->fifosize << 1) - 1);
  
- static void pfc_iounmap(struct sh_pfc *pfc)
-diff --git a/drivers/sh/pfc/core.h b/drivers/sh/pfc/core.h
-new file mode 100644
-index 0000000..b07ae25
---- /dev/null
-+++ b/drivers/sh/pfc/core.h
-@@ -0,0 +1,44 @@
-+/*
-+ * SuperH Pin Function Controller support.
-+ *
-+ * Copyright (C) 2012  Renesas Solutions Corp.
-+ *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
-+ */
-+#ifndef __SH_PFC_CORE_H__
-+#define __SH_PFC_CORE_H__
-+
-+#include <linux/compiler.h>
-+#include <linux/sh_pfc.h>
-+#include <linux/types.h>
-+
-+struct pfc_window {
-+	phys_addr_t phys;
-+	void __iomem *virt;
-+	unsigned long size;
-+};
-+
-+struct sh_pfc {
-+	struct sh_pfc_platform_data *pdata;
-+	spinlock_t lock;
-+
-+	struct pfc_window *window;
-+};
-+
-+int sh_pfc_register_gpiochip(struct sh_pfc *pfc);
-+
-+int sh_pfc_register_pinctrl(struct sh_pfc *pfc);
-+
-+int sh_pfc_read_bit(struct pinmux_data_reg *dr, unsigned long in_pos);
-+void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
-+		      unsigned long value);
-+int sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
-+			struct pinmux_data_reg **drp, int *bitp);
-+int sh_pfc_gpio_to_enum(struct sh_pfc *pfc, unsigned gpio, int pos,
-+			pinmux_enum_t *enum_idp);
-+int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
-+		       int cfg_mode);
-+
-+#endif /* __SH_PFC_CORE_H__ */
-diff --git a/drivers/sh/pfc/gpio.c b/drivers/sh/pfc/gpio.c
-index 9b7e45c..94c5489 100644
---- a/drivers/sh/pfc/gpio.c
-+++ b/drivers/sh/pfc/gpio.c
-@@ -19,6 +19,8 @@
- #include <linux/pinctrl/consumer.h>
- #include <linux/sh_pfc.h>
+ 	reg = sci_getreg(port, SCFDR);
+ 	if (reg->size)
+@@ -505,7 +505,7 @@ static int sci_rxfill(struct uart_port *port)
  
-+#include "core.h"
-+
- struct sh_pfc_chip {
- 	struct sh_pfc		*pfc;
- 	struct gpio_chip	gpio_chip;
-diff --git a/drivers/sh/pfc/pinctrl.c b/drivers/sh/pfc/pinctrl.c
-index 447fb60..5efa36a 100644
---- a/drivers/sh/pfc/pinctrl.c
-+++ b/drivers/sh/pfc/pinctrl.c
-@@ -24,6 +24,8 @@
- #include <linux/pinctrl/pinmux.h>
- #include <linux/pinctrl/pinconf-generic.h>
+ 	reg = sci_getreg(port, SCRFDR);
+ 	if (reg->size)
+-		return serial_port_in(port, SCRFDR) & 0xff;
++		return serial_port_in(port, SCRFDR) & ((port->fifosize << 1) - 1);
  
-+#include "core.h"
-+
- struct sh_pfc_pinctrl {
- 	struct pinctrl_dev *pctl;
- 	struct sh_pfc *pfc;
-diff --git a/include/linux/sh_pfc.h b/include/linux/sh_pfc.h
-index 58587f9..f7f01b2 100644
---- a/include/linux/sh_pfc.h
-+++ b/include/linux/sh_pfc.h
-@@ -88,12 +88,6 @@ struct pinmux_range {
- 	pinmux_enum_t force;
- };
- 
--struct pfc_window {
--	phys_addr_t phys;
--	void __iomem *virt;
--	unsigned long size;
--};
--
- struct sh_pfc_platform_data {
- 	char *name;
- 	pinmux_enum_t reserved_id;
-@@ -123,35 +117,12 @@ struct sh_pfc_platform_data {
- 	unsigned long unlock_reg;
- };
- 
--struct sh_pfc {
--	struct sh_pfc_platform_data *pdata;
--	spinlock_t lock;
--
--	struct pfc_window *window;
--};
--
- /* XXX compat for now */
- #define pinmux_info sh_pfc_platform_data
- 
--/* drivers/sh/pfc/gpio.c */
--int sh_pfc_register_gpiochip(struct sh_pfc *pfc);
--
--/* drivers/sh/pfc/pinctrl.c */
--int sh_pfc_register_pinctrl(struct sh_pfc *pfc);
--
- /* drivers/sh/pfc/core.c */
- int register_sh_pfc(struct sh_pfc_platform_data *pfc);
- 
--int sh_pfc_read_bit(struct pinmux_data_reg *dr, unsigned long in_pos);
--void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
--		      unsigned long value);
--int sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
--			struct pinmux_data_reg **drp, int *bitp);
--int sh_pfc_gpio_to_enum(struct sh_pfc *pfc, unsigned gpio, int pos,
--			pinmux_enum_t *enum_idp);
--int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
--		       int cfg_mode);
--
- /* xxx */
- static inline int register_pinmux(struct pinmux_info *pip)
- {
+ 	reg = sci_getreg(port, SCFDR);
+ 	if (reg->size)
 -- 
-1.7.8.6
+1.7.12.4
 
