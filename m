@@ -1,55 +1,53 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 27 Nov 2012 00:02:19 +0000
-Subject: [PATCH v2 20/77] sh: sh7203: Register PFC platform device
-Message-Id: <1353974596-30033-21-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Date: Wed, 07 Nov 2012 07:00:28 +0000
+Subject: [PATCH 08/10] serial: sh-sci: fix common SCIFB regmap definition
+Message-Id: <509A070C.5040801@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <509A0658.1010503@renesas.com>
+In-Reply-To: <509A0658.1010503@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add arch code to register the PFC platform device instead of calling the
-driver directly. Platform device registration in the sh-pfc driver will
-be removed.
+About FIFO count, there are two variants of SCIFs which show
+a) TX count in upper, RX count in lower byte of FDR register
+b) TX count in TFDR register, RX count in RFDR register
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Common SCIFB regmap in current source code is defined as "a".
+At least 7372 and 73a0 HW manual say their SICFB are "b".
+
+This patch alters the definition to "b", considering the current
+one has come from a mistake. The reason is as follows.
+
+The flag SCIFB sh-sci driver means it has 256 byte FIFO.
+The count is from 0(empty) to 256(full), that makes 9-bit.
+Because FDR is 16-bit register, it can not hold two 9-bits.
+That's why, SCIFB can not be "a".
+
+Signed-off-by: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 ---
- arch/sh/Kconfig                         |    1 +
- arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c |    3 ++-
- 2 files changed, 3 insertions(+), 1 deletions(-)
+ drivers/tty/serial/sh-sci.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index babc2b8..023b2ad 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -276,6 +276,7 @@ config CPU_SUBTYPE_SH7203
- 	select SYS_SUPPORTS_CMT
- 	select SYS_SUPPORTS_MTU2
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
-+	select PINCTRL
- 
- config CPU_SUBTYPE_SH7206
- 	bool "Support SH7206 processor"
-diff --git a/arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c b/arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c
-index c465af7..814926e 100644
---- a/arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c
-+++ b/arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c
-@@ -11,6 +11,7 @@
- #include <linux/init.h>
- #include <linux/kernel.h>
- #include <linux/gpio.h>
-+#include <cpu/pfc.h>
- #include <cpu/sh7203.h>
- 
- enum {
-@@ -1592,6 +1593,6 @@ static struct pinmux_info sh7203_pinmux_info = {
- 
- static int __init plat_pinmux_setup(void)
- {
--	return register_pinmux(&sh7203_pinmux_info);
-+	return sh_pfc_register_info(NULL, NULL, 0, &sh7203_pinmux_info);
- }
- arch_initcall(plat_pinmux_setup);
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 63a3bd0..502fa47 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -196,9 +196,9 @@ static struct plat_sci_reg sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = {
+ 		[SCxSR]		= { 0x14, 16 },
+ 		[SCxRDR]	= { 0x60,  8 },
+ 		[SCFCR]		= { 0x18, 16 },
+-		[SCFDR]		= { 0x1c, 16 },
+-		[SCTFDR]	= sci_reg_invalid,
+-		[SCRFDR]	= sci_reg_invalid,
++		[SCFDR]		= sci_reg_invalid,
++		[SCTFDR]	= { 0x38, 16 },
++		[SCRFDR]	= { 0x3c, 16 },
+ 		[SCSPTR]	= sci_reg_invalid,
+ 		[SCLSR]		= sci_reg_invalid,
+ 	},
 -- 
-1.7.8.6
+1.7.12.4
 
