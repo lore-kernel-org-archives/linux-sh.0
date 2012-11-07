@@ -1,73 +1,73 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 27 Nov 2012 00:03:14 +0000
-Subject: [PATCH v2 75/77] ARM: shmobile: kzm9g: Add pin control device in device tree
-Message-Id: <1353974596-30033-76-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Date: Wed, 07 Nov 2012 06:59:45 +0000
+Subject: [PATCH 06/10] serial: sh-sci: support lower baud rate
+Message-Id: <509A06E1.6090908@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <509A0658.1010503@renesas.com>
+In-Reply-To: <509A0658.1010503@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add a pfc node in the sh73a0 device tree and include it in kzm9g.
+Support prescaler 1/16 and 1/64, in addition to current 1 and 1/4.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Supporting below 2400bps was dropped long time ago in mainline.
+Since then, setting lower rate has been resulting in erroneous
+register value, without indicating any errors through API.
+
+This patch adds more prescaler to support lower rates again.
+This still doesn't check range, but we won't hit the case because
+even 50bps at 48MHz clock is now supported.
+
+Signed-off-by: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g.dts |    2 +-
- arch/arm/boot/dts/sh73a0.dtsi      |   32 ++++++++++++++++++++++++++++++++
- 2 files changed, 33 insertions(+), 1 deletions(-)
- create mode 100644 arch/arm/boot/dts/sh73a0.dtsi
+ drivers/tty/serial/sh-sci.c | 19 ++++++++-----------
+ 1 file changed, 8 insertions(+), 11 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-index bcb9119..7b37901 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-@@ -9,7 +9,7 @@
-  */
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index ffeca65..3021912 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1814,7 +1814,7 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+ {
+ 	struct sci_port *s = to_sci_port(port);
+ 	struct plat_sci_reg *reg;
+-	unsigned int baud, smr_val, max_baud;
++	unsigned int baud, smr_val, max_baud, cks;
+ 	int t = -1;
  
- /dts-v1/;
--/include/ "skeleton.dtsi"
-+/include/ "sh73a0.dtsi"
+ 	/*
+@@ -1848,21 +1848,18 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
  
- / {
- 	model = "KZM-A9-GT";
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-new file mode 100644
-index 0000000..6b374ff
---- /dev/null
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -0,0 +1,32 @@
-+/*
-+ * Device Tree Source for the SH73A0 SoC
-+ *
-+ * Copyright (C) 2012 Renesas Solutions Corp.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/include/ "skeleton.dtsi"
-+
-+/ {
-+	compatible = "renesas,sh73a0";
-+
-+	cpus {
-+		cpu@0 {
-+			compatible = "arm,cortex-a9";
-+		};
-+		cpu@1 {
-+			compatible = "arm,cortex-a9";
-+		};
-+	};
-+
-+	gpio: pfc@e6050000 {
-+		compatible = "renesas,pfc-sh73a0";
-+		reg = <0xe6050000 0x8000>,
-+		      <0xe605801c 0x1c>;
-+		gpio-controller;
-+		#gpio-cells = <2>;
-+	};
-+};
+ 	uart_update_timeout(port, termios->c_cflag, baud);
+ 
+-	serial_port_out(port, SCSMR, smr_val);
++	for (cks = 0; t >= 256 && cks <= 3; cks++)
++		t >>= 2;
+ 
+-	dev_dbg(port->dev, "%s: SMR %x, t %x, SCSCR %x\n", __func__, smr_val, t,
+-		s->cfg->scscr);
++	dev_dbg(port->dev, "%s: SMR %x, cks %x, t %x, SCSCR %x\n",
++		__func__, smr_val, cks, t, s->cfg->scscr);
+ 
+ 	if (t >= 0) {
+-		if (t >= 256) {
+-			serial_port_out(port, SCSMR, (serial_port_in(port, SCSMR) & ~3) | 1);
+-			t >>= 2;
+-		} else
+-			serial_port_out(port, SCSMR, serial_port_in(port, SCSMR) & ~3);
+-
++		serial_port_out(port, SCSMR, (smr_val & ~3) | cks);
+ 		serial_port_out(port, SCBRR, t);
+ 		udelay((1000000+(baud-1)) / baud); /* Wait one bit interval */
+-	}
++	} else
++		serial_port_out(port, SCSMR, smr_val);
+ 
+ 	sci_init_pins(port, termios->c_cflag);
+ 
 -- 
-1.7.8.6
+1.7.12.4
 
