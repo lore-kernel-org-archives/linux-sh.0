@@ -1,55 +1,126 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 07 Nov 2012 08:34:57 +0000
-Subject: [PATCH 3/4] ARM: shmobile: r8a7779: add USB EHCI clock support
-Message-Id: <1352277298-23312-4-git-send-email-horms@verge.net.au>
+From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Date: Wed, 07 Nov 2012 06:58:46 +0000
+Subject: [PATCH 03/10] Partially revert "serial: sh-sci: console Runtime PM support"
+Message-Id: <509A06A6.9060400@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352277298-23312-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352277298-23312-1-git-send-email-horms@verge.net.au>
+References: <509A0658.1010503@renesas.com>
+In-Reply-To: <509A0658.1010503@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This partially reverts commit 1ba7622094 (serial: sh-sci: console
+Runtime PM support, from Magnus Damm <damm@opensource.se>, 2011-08-03).
 
-ehci-platform driver require these clocks
+The generic 'serial_core' can take care of console PM maintenance,
+so all (or at least the first thing) we have to do to get console PM
+work properly, is to implement uart_ops ->pm() operation in the sh-sci
+serial client driver.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+This patch partially reverts the commit above, but leaving sci_reset()
+change in place, because sci_reset() is already part of another commit
+(73c3d53f38 serial: sh-sci: Avoid FIFO clear for MCE toggle.).
+
+A revised version of console PM support follows next.
+
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7779.c |    5 +++++
- 1 file changed, 5 insertions(+)
+ drivers/tty/serial/sh-sci.c | 53 +--------------------------------------------
+ 1 file changed, 1 insertion(+), 52 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index 24f5a84..4ba4e3c 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -87,6 +87,7 @@ static struct clk div4_clks[DIV4_NR] = {
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 9abe977..e9e8883 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -99,12 +99,6 @@ struct sci_port {
+ #endif
+ 
+ 	struct notifier_block		freq_transition;
+-
+-#ifdef CONFIG_SERIAL_SH_SCI_CONSOLE
+-	unsigned short saved_smr;
+-	unsigned short saved_fcr;
+-	unsigned char saved_brr;
+-#endif
  };
  
- enum { MSTP323, MSTP322, MSTP321, MSTP320,
-+	MSTP101, MSTP100,
- 	MSTP030,
- 	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
- 	MSTP016, MSTP015, MSTP014,
-@@ -98,6 +99,8 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP322] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 22, 0), /* SDHI1 */
- 	[MSTP321] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 21, 0), /* SDHI2 */
- 	[MSTP320] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 20, 0), /* SDHI3 */
-+	[MSTP101] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  1, 0), /* USB2 */
-+	[MSTP100] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  0, 0), /* USB0/1 */
- 	[MSTP030] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 30, 0), /* I2C0 */
- 	[MSTP029] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 29, 0), /* I2C1 */
- 	[MSTP028] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 28, 0), /* I2C2 */
-@@ -153,6 +156,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("peripheral_clk",	&div4_clks[DIV4_P]),
+ /* Function prototypes */
+@@ -2247,8 +2241,7 @@ static int __devinit serial_console_setup(struct console *co, char *options)
+ 	if (options)
+ 		uart_parse_options(options, &baud, &parity, &bits, &flow);
  
- 	/* MSTP32 clocks */
-+	CLKDEV_DEV_ID("ehci-platform.1", &mstp_clks[MSTP101]), /* USB EHCI port2 */
-+	CLKDEV_DEV_ID("ehci-platform.0", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
- 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
- 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP016]), /* TMU01 */
- 	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
+-	sci_port_disable(sci_port);
+-
++	/* TODO: disable clock */
+ 	return uart_set_options(port, co, baud, parity, bits, flow);
+ }
+ 
+@@ -2291,46 +2284,6 @@ static int __devinit sci_probe_earlyprintk(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
+-#define uart_console(port)	((port)->cons->index = (port)->line)
+-
+-static int sci_runtime_suspend(struct device *dev)
+-{
+-	struct sci_port *sci_port = dev_get_drvdata(dev);
+-	struct uart_port *port = &sci_port->port;
+-
+-	if (uart_console(port)) {
+-		struct plat_sci_reg *reg;
+-
+-		sci_port->saved_smr = serial_port_in(port, SCSMR);
+-		sci_port->saved_brr = serial_port_in(port, SCBRR);
+-
+-		reg = sci_getreg(port, SCFCR);
+-		if (reg->size)
+-			sci_port->saved_fcr = serial_port_in(port, SCFCR);
+-		else
+-			sci_port->saved_fcr = 0;
+-	}
+-	return 0;
+-}
+-
+-static int sci_runtime_resume(struct device *dev)
+-{
+-	struct sci_port *sci_port = dev_get_drvdata(dev);
+-	struct uart_port *port = &sci_port->port;
+-
+-	if (uart_console(port)) {
+-		sci_reset(port);
+-		serial_port_out(port, SCSMR, sci_port->saved_smr);
+-		serial_port_out(port, SCBRR, sci_port->saved_brr);
+-
+-		if (sci_port->saved_fcr)
+-			serial_port_out(port, SCFCR, sci_port->saved_fcr);
+-
+-		serial_port_out(port, SCSCR, sci_port->cfg->scscr);
+-	}
+-	return 0;
+-}
+-
+ #define SCI_CONSOLE	(&serial_console)
+ 
+ #else
+@@ -2340,8 +2293,6 @@ static inline int __devinit sci_probe_earlyprintk(struct platform_device *pdev)
+ }
+ 
+ #define SCI_CONSOLE	NULL
+-#define sci_runtime_suspend	NULL
+-#define sci_runtime_resume	NULL
+ 
+ #endif /* CONFIG_SERIAL_SH_SCI_CONSOLE */
+ 
+@@ -2459,8 +2410,6 @@ static int sci_resume(struct device *dev)
+ }
+ 
+ static const struct dev_pm_ops sci_dev_pm_ops = {
+-	.runtime_suspend = sci_runtime_suspend,
+-	.runtime_resume = sci_runtime_resume,
+ 	.suspend	= sci_suspend,
+ 	.resume		= sci_resume,
+ };
 -- 
-1.7.10.4
+1.7.12.4
 
