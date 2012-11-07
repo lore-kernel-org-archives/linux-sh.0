@@ -1,39 +1,56 @@
-From: Bill Pemberton <wfp5p@virginia.edu>
-Date: Wed, 21 Nov 2012 20:34:55 +0000
-Subject: [PATCH 4/9] sh/PCI: Remove CONFIG_HOTPLUG ifdefs
-Message-Id: <1353530100-728-5-git-send-email-wfp5p@virginia.edu>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 07 Nov 2012 08:50:44 +0000
+Subject: [PATCH 15/15] ARM: shmobile: sh73a0: Use DT for GIC
+Message-Id: <1352278244-26702-16-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1353530100-728-1-git-send-email-wfp5p@virginia.edu>
-In-Reply-To: <1353530100-728-1-git-send-email-wfp5p@virginia.edu>
+References: <1352278244-26702-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1352278244-26702-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: gregkh@linuxfoundation.org
-Cc: linux-pci@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, Bjorn Helgaas <bhelgaas@google.com>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Remove conditional code based on CONFIG_HOTPLUG being false.  It's
-always on now in preparation of it going away as an option.
-
-Signed-off-by: Bill Pemberton <wfp5p@virginia.edu>
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: Bjorn Helgaas <bhelgaas@google.com>
-Cc: linux-sh@vger.kernel.org
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/sh/drivers/pci/pci.c | 2 --
- 1 file changed, 2 deletions(-)
+ arch/arm/mach-shmobile/intc-sh73a0.c |   11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
 
-diff --git a/arch/sh/drivers/pci/pci.c b/arch/sh/drivers/pci/pci.c
-index a7e078f..81e5daf 100644
---- a/arch/sh/drivers/pci/pci.c
-+++ b/arch/sh/drivers/pci/pci.c
-@@ -319,7 +319,5 @@ EXPORT_SYMBOL(pci_iounmap);
+diff --git a/arch/arm/mach-shmobile/intc-sh73a0.c b/arch/arm/mach-shmobile/intc-sh73a0.c
+index ee62349..e9b5419 100644
+--- a/arch/arm/mach-shmobile/intc-sh73a0.c
++++ b/arch/arm/mach-shmobile/intc-sh73a0.c
+@@ -151,6 +151,7 @@ error:
+ }
  
- #endif /* CONFIG_GENERIC_IOMAP */
+ static const struct of_device_id irq_of_match[] __initconst = {
++	{ .compatible = "arm,cortex-a9-gic", .data = gic_of_init, },
+ 	{ .compatible = "renesas,sh_intcs", .data = sh73a0_intcs_of_init },
+ 	{ .compatible = "renesas,sh_intca_irq_pins",
+ 		.data = sh73a0_intca_pins_of_init },
+@@ -559,18 +560,18 @@ static irqreturn_t sh73a0_pint1_demux(int irq, void *dev_id)
  
--#ifdef CONFIG_HOTPLUG
- EXPORT_SYMBOL(PCIBIOS_MIN_IO);
- EXPORT_SYMBOL(PCIBIOS_MIN_MEM);
--#endif
+ static void __init sh73a0_init_irq__(bool of)
+ {
+-	void __iomem *gic_dist_base = IOMEM(0xf0001000);
+-	void __iomem *gic_cpu_base = IOMEM(0xf0000100);
+ 	void __iomem *intevtsa;
+ 	int k, n;
+ 
+-	gic_init(0, 29, gic_dist_base, gic_cpu_base);
+-	gic_arch_extn.irq_set_wake = sh73a0_set_wake;
+-
+ #ifdef CONFIG_OF
+ 	if (of)
+ 		of_irq_init(irq_of_match);
++	else
+ #endif
++	{
++		gic_init(0, 29, IOMEM(0xf0001000), IOMEM(0xf0000100));
++		gic_arch_extn.irq_set_wake = sh73a0_set_wake;
++	}
+ 
+ 	register_intc_controller(&intcs_desc);
+ 	register_intc_controller(&intca_irq_pins_desc);
 -- 
-1.8.0
+1.7.10.4
 
