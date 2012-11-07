@@ -1,126 +1,203 @@
-From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Date: Wed, 07 Nov 2012 06:58:46 +0000
-Subject: [PATCH 03/10] Partially revert "serial: sh-sci: console Runtime PM support"
-Message-Id: <509A06A6.9060400@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 07 Nov 2012 08:40:06 +0000
+Subject: [PATCH 2/3] ARM: shmobile: marzen: add USB EHCI driver support
+Message-Id: <1352277607-24040-3-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <509A0658.1010503@renesas.com>
-In-Reply-To: <509A0658.1010503@renesas.com>
+References: <1352277607-24040-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1352277607-24040-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This partially reverts commit 1ba7622094 (serial: sh-sci: console
-Runtime PM support, from Magnus Damm <damm@opensource.se>, 2011-08-03).
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-The generic 'serial_core' can take care of console PM maintenance,
-so all (or at least the first thing) we have to do to get console PM
-work properly, is to implement uart_ops ->pm() operation in the sh-sci
-serial client driver.
+This patch supports CN21/CN22 USB 2.0 (port 0/1/2),
+and enable USB momery on defconfig
 
-This patch partially reverts the commit above, but leaving sci_reset()
-change in place, because sci_reset() is already part of another commit
-(73c3d53f38 serial: sh-sci: Avoid FIFO clear for MCE toggle.).
-
-A revised version of console PM support follows next.
-
-Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- drivers/tty/serial/sh-sci.c | 53 +--------------------------------------------
- 1 file changed, 1 insertion(+), 52 deletions(-)
+ arch/arm/configs/marzen_defconfig     |    6 ++
+ arch/arm/mach-shmobile/Kconfig        |    1 +
+ arch/arm/mach-shmobile/board-marzen.c |  108 ++++++++++++++++++++++++++++++++-
+ 3 files changed, 114 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 9abe977..e9e8883 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -99,12 +99,6 @@ struct sci_port {
- #endif
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index 8a861b7..6540dfb 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -47,6 +47,8 @@ CONFIG_DEVTMPFS_MOUNT=y
+ # CONFIG_STANDALONE is not set
+ # CONFIG_PREVENT_FIRMWARE_BUILD is not set
+ # CONFIG_FW_LOADER is not set
++CONFIG_SCSI=y
++CONFIG_BLK_DEV_SD=y
+ CONFIG_NETDEVICES=y
+ # CONFIG_NET_VENDOR_BROADCOM is not set
+ # CONFIG_NET_VENDOR_FARADAY is not set
+@@ -82,6 +84,10 @@ CONFIG_USB=y
+ CONFIG_USB_RCAR_PHY=y
+ CONFIG_MMC=y
+ CONFIG_MMC_SDHI=y
++CONFIG_USB=y
++CONFIG_USB_EHCI_HCD=y
++CONFIG_USB_EHCI_HCD_PLATFORM=y
++CONFIG_USB_STORAGE=y
+ CONFIG_UIO=y
+ CONFIG_UIO_PDRV_GENIRQ=y
+ # CONFIG_IOMMU_SUPPORT is not set
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index f58c3ea..c03aeec 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -41,6 +41,7 @@ config ARCH_R8A7779
+ 	select ARM_GIC
+ 	select CPU_V7
+ 	select SH_CLK_CPG
++	select USB_ARCH_HAS_EHCI
  
- 	struct notifier_block		freq_transition;
--
--#ifdef CONFIG_SERIAL_SH_SCI_CONSOLE
--	unsigned short saved_smr;
--	unsigned short saved_fcr;
--	unsigned char saved_brr;
--#endif
+ config ARCH_EMEV2
+ 	bool "Emma Mobile EV2"
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index 74c7f0b..707b3bd 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -34,6 +34,9 @@
+ #include <linux/spi/sh_hspi.h>
+ #include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/mfd/tmio.h>
++#include <linux/usb/otg.h>
++#include <linux/usb/ehci_pdriver.h>
++#include <linux/pm_runtime.h>
+ #include <mach/hardware.h>
+ #include <mach/r8a7779.h>
+ #include <mach/common.h>
+@@ -172,6 +175,101 @@ static struct platform_device *marzen_devices[] __initdata = {
+ 	&usb_phy_device,
  };
  
- /* Function prototypes */
-@@ -2247,8 +2241,7 @@ static int __devinit serial_console_setup(struct console *co, char *options)
- 	if (options)
- 		uart_parse_options(options, &baud, &parity, &bits, &flow);
++/* USB */
++static struct usb_phy *phy;
++static int usb_power_on(struct platform_device *pdev)
++{
++	if (!phy)
++		return -EIO;
++
++	pm_runtime_enable(&pdev->dev);
++	pm_runtime_get_sync(&pdev->dev);
++
++	usb_phy_init(phy);
++
++	return 0;
++}
++
++static void usb_power_off(struct platform_device *pdev)
++{
++	if (!phy)
++		return;
++
++	usb_phy_shutdown(phy);
++
++	pm_runtime_put_sync(&pdev->dev);
++	pm_runtime_disable(&pdev->dev);
++}
++
++static struct usb_ehci_pdata ehcix_pdata = {
++	.power_on	= usb_power_on,
++	.power_off	= usb_power_off,
++	.power_suspend	= usb_power_off,
++};
++
++static struct resource ehci0_resources[] = {
++	[0] = {
++		.start	= 0xffe70000,
++		.end	= 0xffe70400 - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= gic_spi(44),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device ehci0_device = {
++	.name	= "ehci-platform",
++	.id	= 0,
++	.dev	= {
++		.dma_mask		= &ehci0_device.dev.coherent_dma_mask,
++		.coherent_dma_mask	= 0xffffffff,
++		.platform_data		= &ehcix_pdata,
++	},
++	.num_resources	= ARRAY_SIZE(ehci0_resources),
++	.resource	= ehci0_resources,
++};
++
++static struct resource ehci1_resources[] = {
++	[0] = {
++		.start	= 0xfff70000,
++		.end	= 0xfff70400 - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= gic_spi(45),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device ehci1_device = {
++	.name	= "ehci-platform",
++	.id	= 1,
++	.dev	= {
++		.dma_mask		= &ehci1_device.dev.coherent_dma_mask,
++		.coherent_dma_mask	= 0xffffffff,
++		.platform_data		= &ehcix_pdata,
++	},
++	.num_resources	= ARRAY_SIZE(ehci1_resources),
++	.resource	= ehci1_resources,
++};
++
++static struct platform_device *marzen_late_devices[] __initdata = {
++	&ehci0_device,
++	&ehci1_device,
++};
++
++void __init marzen_init_late(void)
++{
++	/* get usb phy */
++	phy = usb_get_phy(USB_PHY_TYPE_USB2);
++
++	shmobile_init_late();
++	platform_add_devices(marzen_late_devices,
++			     ARRAY_SIZE(marzen_late_devices));
++}
++
+ static void __init marzen_init(void)
+ {
+ 	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
+@@ -209,6 +307,14 @@ static void __init marzen_init(void)
+ 	gpio_request(GPIO_FN_HSPI_TX0,	NULL);
+ 	gpio_request(GPIO_FN_HSPI_RX0,	NULL);
  
--	sci_port_disable(sci_port);
--
-+	/* TODO: disable clock */
- 	return uart_set_options(port, co, baud, parity, bits, flow);
++	/* USB (CN21) */
++	gpio_request(GPIO_FN_USB_OVC0, NULL);
++	gpio_request(GPIO_FN_USB_OVC1, NULL);
++	gpio_request(GPIO_FN_USB_OVC2, NULL);
++
++	/* USB (CN22) */
++	gpio_request(GPIO_FN_USB_PENC2, NULL);
++
+ 	r8a7779_add_standard_devices();
+ 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
  }
- 
-@@ -2291,46 +2284,6 @@ static int __devinit sci_probe_earlyprintk(struct platform_device *pdev)
- 	return 0;
- }
- 
--#define uart_console(port)	((port)->cons->index = (port)->line)
--
--static int sci_runtime_suspend(struct device *dev)
--{
--	struct sci_port *sci_port = dev_get_drvdata(dev);
--	struct uart_port *port = &sci_port->port;
--
--	if (uart_console(port)) {
--		struct plat_sci_reg *reg;
--
--		sci_port->saved_smr = serial_port_in(port, SCSMR);
--		sci_port->saved_brr = serial_port_in(port, SCBRR);
--
--		reg = sci_getreg(port, SCFCR);
--		if (reg->size)
--			sci_port->saved_fcr = serial_port_in(port, SCFCR);
--		else
--			sci_port->saved_fcr = 0;
--	}
--	return 0;
--}
--
--static int sci_runtime_resume(struct device *dev)
--{
--	struct sci_port *sci_port = dev_get_drvdata(dev);
--	struct uart_port *port = &sci_port->port;
--
--	if (uart_console(port)) {
--		sci_reset(port);
--		serial_port_out(port, SCSMR, sci_port->saved_smr);
--		serial_port_out(port, SCBRR, sci_port->saved_brr);
--
--		if (sci_port->saved_fcr)
--			serial_port_out(port, SCFCR, sci_port->saved_fcr);
--
--		serial_port_out(port, SCSCR, sci_port->cfg->scscr);
--	}
--	return 0;
--}
--
- #define SCI_CONSOLE	(&serial_console)
- 
- #else
-@@ -2340,8 +2293,6 @@ static inline int __devinit sci_probe_earlyprintk(struct platform_device *pdev)
- }
- 
- #define SCI_CONSOLE	NULL
--#define sci_runtime_suspend	NULL
--#define sci_runtime_resume	NULL
- 
- #endif /* CONFIG_SERIAL_SH_SCI_CONSOLE */
- 
-@@ -2459,8 +2410,6 @@ static int sci_resume(struct device *dev)
- }
- 
- static const struct dev_pm_ops sci_dev_pm_ops = {
--	.runtime_suspend = sci_runtime_suspend,
--	.runtime_resume = sci_runtime_resume,
- 	.suspend	= sci_suspend,
- 	.resume		= sci_resume,
- };
+@@ -221,6 +327,6 @@ MACHINE_START(MARZEN, "marzen")
+ 	.init_irq	= r8a7779_init_irq,
+ 	.handle_irq	= gic_handle_irq,
+ 	.init_machine	= marzen_init,
+-	.init_late	= shmobile_init_late,
++	.init_late	= marzen_init_late,
+ 	.timer		= &shmobile_timer,
+ MACHINE_END
 -- 
-1.7.12.4
+1.7.10.4
 
