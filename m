@@ -1,112 +1,36 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Fri, 09 Nov 2012 07:29:21 +0000
-Subject: [PATCH 06/10] ARM: shmobile: sh7372: sh7372_fsidivX_clk become non-global
-Message-Id: <1352446165-19298-7-git-send-email-horms@verge.net.au>
+Date: Wed, 07 Nov 2012 08:50:38 +0000
+Subject: [PATCH 09/15] ARM: shmobile: Include DTSI of r8a7740 to armadillo800eva
+Message-Id: <1352278244-26702-10-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352446165-19298-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352446165-19298-1-git-send-email-horms@verge.net.au>
+References: <1352278244-26702-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1352278244-26702-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
-Not only sh7372 but also many Renesas chip has FSI-DIV clock,
-and we can share its sh_clk_ops.
-To support common FSI-DIV clock, sh7372_fsidivX_clk
-becomes non-global by this patch.
-This is preparation for FSI DT support.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c        |    2 +-
- arch/arm/mach-shmobile/board-mackerel.c      |    2 +-
- arch/arm/mach-shmobile/clock-sh7372.c        |   10 ++++++----
- arch/arm/mach-shmobile/include/mach/sh7372.h |    2 --
- 4 files changed, 8 insertions(+), 8 deletions(-)
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 790dc68..cefdd03 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -728,7 +728,7 @@ fsia_ick_out:
- static int fsi_hdmi_set_rate(struct device *dev, int rate, int enable)
- {
- 	struct clk *fsib_clk;
--	struct clk *fdiv_clk = &sh7372_fsidivb_clk;
-+	struct clk *fdiv_clk = clk_get(NULL, "fsidivb");
- 	long fsib_rate = 0;
- 	long fdiv_rate = 0;
- 	int ackmd_bpfmd;
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 0c27c81..c826d77 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -882,7 +882,7 @@ static int __fsi_set_round_rate(struct clk *clk, long rate, int enable)
- static int fsi_b_set_rate(struct device *dev, int rate, int enable)
- {
- 	struct clk *fsib_clk;
--	struct clk *fdiv_clk = &sh7372_fsidivb_clk;
-+	struct clk *fdiv_clk = clk_get(NULL, "fsidivb");
- 	long fsib_rate = 0;
- 	long fdiv_rate = 0;
- 	int ackmd_bpfmd;
-diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-index 430a90f..18dcff7 100644
---- a/arch/arm/mach-shmobile/clock-sh7372.c
-+++ b/arch/arm/mach-shmobile/clock-sh7372.c
-@@ -481,7 +481,7 @@ static struct clk_mapping fsidiva_clk_mapping = {
- 	.len	= 8,
- };
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+index a7505a9..a8e7bd9 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+@@ -9,7 +9,7 @@
+  */
  
--struct clk sh7372_fsidiva_clk = {
-+static struct clk fsidiva_clk = {
- 	.ops		= &fsidiv_clk_ops,
- 	.parent		= &div6_reparent_clks[DIV6_FSIA], /* late install */
- 	.mapping	= &fsidiva_clk_mapping,
-@@ -492,15 +492,15 @@ static struct clk_mapping fsidivb_clk_mapping = {
- 	.len	= 8,
- };
+ /dts-v1/;
+-/include/ "skeleton.dtsi"
++/include/ "r8a7740.dtsi"
  
--struct clk sh7372_fsidivb_clk = {
-+static struct clk fsidivb_clk = {
- 	.ops		= &fsidiv_clk_ops,
- 	.parent		= &div6_reparent_clks[DIV6_FSIB],  /* late install */
- 	.mapping	= &fsidivb_clk_mapping,
- };
- 
- static struct clk *late_main_clks[] = {
--	&sh7372_fsidiva_clk,
--	&sh7372_fsidivb_clk,
-+	&fsidiva_clk,
-+	&fsidivb_clk,
- };
- 
- enum { MSTP001, MSTP000,
-@@ -583,6 +583,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("pllc1_clk", &pllc1_clk),
- 	CLKDEV_CON_ID("pllc1_div2_clk", &pllc1_div2_clk),
- 	CLKDEV_CON_ID("pllc2_clk", &sh7372_pllc2_clk),
-+	CLKDEV_CON_ID("fsidiva", &fsidiva_clk),
-+	CLKDEV_CON_ID("fsidivb", &fsidivb_clk),
- 
- 	/* DIV4 clocks */
- 	CLKDEV_CON_ID("i_clk", &div4_clks[DIV4_I]),
-diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
-index d65fbbe..26cd101 100644
---- a/arch/arm/mach-shmobile/include/mach/sh7372.h
-+++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
-@@ -479,8 +479,6 @@ extern struct clk sh7372_dv_clki_div2_clk;
- extern struct clk sh7372_pllc2_clk;
- extern struct clk sh7372_fsiack_clk;
- extern struct clk sh7372_fsibck_clk;
--extern struct clk sh7372_fsidiva_clk;
--extern struct clk sh7372_fsidivb_clk;
- 
- extern void sh7372_intcs_suspend(void);
- extern void sh7372_intcs_resume(void);
+ / {
+ 	model = "armadillo 800 eva";
 -- 
 1.7.10.4
 
