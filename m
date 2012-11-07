@@ -1,126 +1,41 @@
-From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Date: Wed, 07 Nov 2012 06:59:06 +0000
-Subject: [PATCH 04/10] serial: sh-sci: console runtime PM support (revisit)
-Message-Id: <509A06BA.30101@renesas.com>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Wed, 07 Nov 2012 11:40:03 +0000
+Subject: [PATCH RESEND 0/4] spi: sh-msiof: Add DT support
+Message-Id: <1352288407-20594-1-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <509A0658.1010503@renesas.com>
-In-Reply-To: <509A0658.1010503@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The commit 1ba7622094 (serial: sh-sci: console Runtime PM support,
-from Magnus Damm <damm@opensource.se>, 2011-08-03), tried to support
-console runtime PM, but unfortunately it didn't work for us for some
-reason.  We did not investigated further at that time, instead would
-like to propose a different approach.
+Patch resend from 21st september, this time cover letter included. Added ARM-ML
+and SH-ML as recipients too.
 
-In Linux tty/serial world, to get console PM work properly, a serial
-client driver does not have to maintain .runtime_suspend()/..resume()
-calls itself, but can leave console power power management handling to
-the serial core driver.
+The first patch contains a minor cleanup that becomes possible due to older
+changes in the SuperH code.
 
-This patch moves the sh-sci driver in that direction.
+In the 2nd patch we add the SH-Mobile chips as possible architecture requirement
+for the MSIOF driver.
 
-Notes:
+Then we come to the core of the patchset: DeviceTree support for sh-msiof in
+patch 3 and patch 4.
 
-* There is room to optimize console runtime PM more aggressively by
-  maintaining additional local runtime PM calls, but as a first step
-  having .pm() operation would suffice.
+There are minimal changes to the first publication to the patchset like changing
+a comment string, so I just resend it as v1 again as there are no comments to the
+original patchset.
 
-* We still have a couple of direct calls to sci_port_enable/..disable
-  left in the driver.  We have to live with them, because they're out
-  of serial core's help.
+Bastian Hecht (4):
+  spi: sh-msiof: Remove unneeded clock name
+  spi: Add SH Mobile series as dependency to MSIOF controller
+  spi: sh-msiof: Add device tree parsing to driver
+  devicetree: Add Renesas SH Mobile MSIOF spi controller binding doc
 
-Signed-off-by: Teppei Kamijou <teppei.kamijou.yb@renesas.com>
-Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
----
- drivers/tty/serial/sh-sci.c | 27 ++++++++++++++++-----------
- 1 file changed, 16 insertions(+), 11 deletions(-)
+ Documentation/devicetree/bindings/spi/sh-msiof.txt |   12 ++++
+ drivers/spi/Kconfig                                |    4 +-
+ drivers/spi/spi-sh-msiof.c                         |   60 ++++++++++++++++++--
+ 3 files changed, 69 insertions(+), 7 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/spi/sh-msiof.txt
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index e9e8883..e65e546 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1746,8 +1746,6 @@ static int sci_startup(struct uart_port *port)
- 
- 	dev_dbg(port->dev, "%s(%d)\n", __func__, port->line);
- 
--	sci_port_enable(s);
--
- 	ret = sci_request_irq(s);
- 	if (unlikely(ret < 0))
- 		return ret;
-@@ -1771,8 +1769,6 @@ static void sci_shutdown(struct uart_port *port)
- 
- 	sci_free_dma(port);
- 	sci_free_irq(s);
--
--	sci_port_disable(s);
- }
- 
- static unsigned int sci_scbrr_calc(unsigned int algo_id, unsigned int bps,
-@@ -1921,6 +1917,21 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
- 	sci_port_disable(s);
- }
- 
-+static void sci_pm(struct uart_port *port, unsigned int state,
-+		   unsigned int oldstate)
-+{
-+	struct sci_port *sci_port = to_sci_port(port);
-+
-+	switch (state) {
-+	case 3:
-+		sci_port_disable(sci_port);
-+		break;
-+	default:
-+		sci_port_enable(sci_port);
-+		break;
-+	}
-+}
-+
- static const char *sci_type(struct uart_port *port)
- {
- 	switch (port->type) {
-@@ -2042,6 +2053,7 @@ static struct uart_ops sci_uart_ops = {
- 	.startup	= sci_startup,
- 	.shutdown	= sci_shutdown,
- 	.set_termios	= sci_set_termios,
-+	.pm		= sci_pm,
- 	.type		= sci_type,
- 	.release_port	= sci_release_port,
- 	.request_port	= sci_request_port,
-@@ -2195,16 +2207,12 @@ static void serial_console_write(struct console *co, const char *s,
- 	struct uart_port *port = &sci_port->port;
- 	unsigned short bits;
- 
--	sci_port_enable(sci_port);
--
- 	uart_console_write(port, s, count, serial_console_putchar);
- 
- 	/* wait until fifo is empty and last bit has been transmitted */
- 	bits = SCxSR_TDxE(port) | SCxSR_TEND(port);
- 	while ((serial_port_in(port, SCxSR) & bits) != bits)
- 		cpu_relax();
--
--	sci_port_disable(sci_port);
- }
- 
- static int __devinit serial_console_setup(struct console *co, char *options)
-@@ -2236,12 +2244,9 @@ static int __devinit serial_console_setup(struct console *co, char *options)
- 	if (unlikely(ret != 0))
- 		return ret;
- 
--	sci_port_enable(sci_port);
--
- 	if (options)
- 		uart_parse_options(options, &baud, &parity, &bits, &flow);
- 
--	/* TODO: disable clock */
- 	return uart_set_options(port, co, baud, parity, bits, flow);
- }
- 
 -- 
-1.7.12.4
+1.7.5.4
 
