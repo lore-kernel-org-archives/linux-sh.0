@@ -1,174 +1,50 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Tue, 27 Nov 2012 00:32:16 +0000
-Subject: Re: [PATCH 6/7] ARM: mach-shmobile: sh73a0: Minimal setup using DT
-Message-Id: <20121127003216.GB9724@verge.net.au>
+Date: Wed, 07 Nov 2012 08:40:04 +0000
+Subject: [GIT PULL] Renesas ARM-based SoC boards for v3.8 #2
+Message-Id: <1352277607-24040-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1353889014-17142-1-git-send-email-horms@verge.net.au>
- <CANqRtoQmNh5Sz-YLPMvEbp0FhYW=s2tBez+Duex1vyr=yVnPuA@mail.gmail.com>
- <20121126045805.GC12790@verge.net.au> <67705146.EhpdzQI6yT@avalon>
-In-Reply-To: <67705146.EhpdzQI6yT@avalon>
+References: <1350448761-27346-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1350448761-27346-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Nov 26, 2012 at 01:53:06PM +0100, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> On Monday 26 November 2012 13:58:06 Simon Horman wrote:
-> > On Mon, Nov 26, 2012 at 01:23:12PM +0900, Magnus Damm wrote:
-> > > On Mon, Nov 26, 2012 at 9:16 AM, Simon Horman <horms@verge.net.au> wrote:
-> > > > Allow a minimal setup of the sh73a0 SoC using a flattened device tree.
-> > > > 
-> > > > * Allow configuration of the i2c controllers using a flattened device
-> > > >   tree.
-> > > > 
-> > > > * SCI serial controller and CMT clock source, whose drivers do not yet
-> > > >   support configuration using a flattened device tree, are still
-> > > >   configured
-> > > >   using C code in order to allow booting of a board with this SoC.
-> > > > 
-> > > > An example dts snuppet follows:
-> > > >         i2c0: i2c@0xe6820000 {
-> > > >         
-> > > >                 #address-cells = <1>;
-> > > >                 #size-cells = <0>;
-> > > >                 compatible = "renesas,rmobile-iic";
-> > > >                 reg = <0xe6820000 0x425>;
-> > > >                 interrupt-parent = <&gic>;
-> > > >                 interrupts = <0 167 0x4
-> > > >                 
-> > > >                               0 170 0x4>;
-> > > >         
-> > > >         };
-> > > >         
-> > > >         i2c1: i2c@0xe6822000 {
-> > > >         
-> > > >                 #address-cells = <1>;
-> > > >                 #size-cells = <0>;
-> > > >                 compatible = "renesas,rmobile-iic";
-> > > >                 reg = <0xe6822000 0x425>;
-> > > >                 interrupt-parent = <&gic>;
-> > > >                 interrupts = <0 51 0x4
-> > > >                 
-> > > >                               0 44 0x4>;
-> > > >                 
-> > > >                 touchscreen@55 {
-> > > >                 
-> > > >                         compatible = "sitronix,st1232";
-> > > >                         reg = <0x55>;
-> > > >                         interrupt-parent = <&gic>;
-> > > >                         interrupts = <0 9 0x4>;
-> > > >                 
-> > > >                 };
-> > > >         
-> > > >         };
-> > > >         
-> > > >         i2c2: i2c@0xe6824000 {
-> > > >         
-> > > >                 #address-cells = <1>;
-> > > >                 #size-cells = <0>;
-> > > >                 compatible = "renesas,rmobile-iic";
-> > > >                 reg = <0xe6824000 0x425>;
-> > > >                 interrupt-parent = <&gic>;
-> > > >                 interrupts = <0 171 0x4
-> > > >                 
-> > > >                               0 174 0x4>;
-> > > >         
-> > > >         };
-> > > >         
-> > > >         i2c3: i2c@0xe6826000 {
-> > > >         
-> > > >                 #address-cells = <1>;
-> > > >                 #size-cells = <0>;
-> > > >                 compatible = "renesas,rmobile-iic";
-> > > >                 reg = <0xe6826000 0x425>;
-> > > >                 interrupt-parent = <&gic>;
-> > > >                 interrupts = <0 183 0x4
-> > > >                 
-> > > >                               0 186 0x4>;
-> > > >         
-> > > >         };
-> > > >         
-> > > >         i2c4: i2c@0xe6828000 {
-> > > >         
-> > > >                 #address-cells = <1>;
-> > > >                 #size-cells = <0>;
-> > > >                 compatible = "renesas,rmobile-iic";
-> > > >                 reg = <0xe6828000 0x425>;
-> > > >                 interrupt-parent = <&gic>;
-> > > >                 interrupts = <0 187 0x4
-> > > >                 
-> > > >                               0 190 0x4>;
-> > > >         
-> > > >         };
-> > > 
-> > > Uhm, doesn't the above want to go into sh73a0.dtsi?
-> > 
-> > There are two things that I am unsure of:
-> > 
-> > * What should go into sh73a0.dtsi and what should go into
-> >   sh73a0-kzm9g-refere3nce.dts.
-> > 
-> >   The i2c seems like it should go into sh73a0.dtsi as it is part of the
-> >   soc. Likewise the interrupt controllers.
-> > 
-> >   But when it comes to mmcif and sdhi I am less sure. Both of these make use
-> >   of regulators. Are the regulators part of the board or the SoC?
-> 
-> It depends on the regulators. In theory you could have on-SoC regulators that 
-> would thus be part of the SoC. In practice I'm not sure how often that 
-> happens.
-> 
-> Most of the regulators are provided by the PMIC, so we can create PMIC-
-> specific .dtsi files that would be included by boards. See twl4030.dtsi for an 
-> example. Other board-specific regulators, including fixed regulators, should 
-> be provided by the board.
-> 
-> >   If the are part of the board then it makes it more difficult to put mmcif
-> >   and sdhi into sh73a0.dtsi as they need to reference the regulators
-> >   somehow.
-> 
-> I think you can split a node across several files. You could have
-> 
->         mmcif: mmcif@0x10010000 {
->                 compatible = "renesas,sh-mmcif";
->                 reg = <0xe6bd0000 0x100>;
->                 interrupt-parent = <&gic>;
->                 interrupts = <0 140 0x4
->                               0 141 0x4>;
->                 reg-io-width = <4>;
->         };
-> 
-> in the SoC .dtsi, and
-> 
->         &mmcif {
->                 vmmc-supply = <&fixedregulator1v8>;
->                 vqmmc-supply = <&fixedregulator1v8>;
->         };
-> 
-> in the board .dts.
+Hi Olof, Hi Arnd,
 
-Thanks, I discovered that after writing my previous email.
-I think it is an approach well suited to the needs of kzm9g
-and I intend to use it.
+please consider the following board enhancements for 3.8.
 
-> > * What to do the of_dev_auxdata.
-> > 
-> >   Currently I add this in patch 4 to the board-kzm9g.c. It is used to force
-> >   the name of the i2c, mmcif and sdhi devices in order to allow their clock
-> >   lookup to work (though come to think of it it may not be necessary for
-> >   mmcif and sdhi).
-> 
-> Shouldn't clocks be specified as an attribute in DT nodes that reference the 
-> clock node ?
+* This pull-request is based on an earlier request which I
+  posted on the 1st and was merged yesterday: [GIT PULL v3] Renesas
+  ARM-based SoC boards for v3.8
 
-Oh, I will look into that.
+* Patch #2 of this series has a build-time dependency on
+  the soc pull request that I sent a few minutes ago:
+  [GIT PULL] Renesas ARM-based SoC for v3.8 #2
 
-Magnus's suggestion was to register the names that DT will use
-in the clock .c file.
+  In particular, "ARM: shmobile: marzen: add USB EHCI driver support"
+  depends on "[PATCH 1/7] ARM: shmobile: r8a7779: PFC rename PENCx -> USB_PENCx"
 
-In either case I think we can get rid of auxdata.
+----------------------------------------------------------------
+The following changes since commit 631a7b5d958d2ef2c2333b105794c693642f0641:
 
-> >   In any case, the location of the of_dev_auxdata might be come a bit
-> >   tricky if it covers devices in both the board and SoC dts files.
+  ARM: shmobile: Remove G4EVM machine support (2012-10-30 15:25:59 +0800)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git boards
+
+for you to fetch changes up to 17eada911c88304005bc0acfdd5ae673fb1f2952:
+
+  ARM: shmobile: marzen: add USB OHCI driver support (2012-11-07 17:15:29 +0900)
+
+----------------------------------------------------------------
+Kuninori Morimoto (3):
+      ARM: shmobile: marzen: add USB phy support
+      ARM: shmobile: marzen: add USB EHCI driver support
+      ARM: shmobile: marzen: add USB OHCI driver support
+
+ arch/arm/configs/marzen_defconfig     |   14 ++-
+ arch/arm/mach-shmobile/Kconfig        |    2 +
+ arch/arm/mach-shmobile/board-marzen.c |  186 ++++++++++++++++++++++++++++++++-
+ 3 files changed, 198 insertions(+), 4 deletions(-)
