@@ -1,238 +1,142 @@
-From: Wen Congyang <wency@cn.fujitsu.com>
-Date: Thu, 01 Nov 2012 09:44:36 +0000
-Subject: [PATCH v3 05/12] memory-hotplug: introduce new function arch_remove_memory() for removing page table
-Message-Id: <1351763083-7905-6-git-send-email-wency@cn.fujitsu.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 07 Nov 2012 08:40:07 +0000
+Subject: [PATCH 3/3] ARM: shmobile: marzen: add USB OHCI driver support
+Message-Id: <1352277607-24040-4-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1351763083-7905-1-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1351763083-7905-1-git-send-email-wency@cn.fujitsu.com>
+References: <1352277607-24040-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1352277607-24040-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
-Cc: David Rientjes <rientjes@google.com>, Jiang Liu <liuj97@gmail.com>, Len Brown <len.brown@intel.com>, benh@kernel.crashing.org, paulus@samba.org, Christoph Lameter <cl@linux.com>, Minchan Kim <minchan.kim@gmail.com>, Andrew Morton <akpm@linux-foundation.org>, KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>, Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>, Jianguo Wu <wujianguo@huawei.com>, Wen Congyang <wency@cn.fujitsu.com>
+To: linux-arm-kernel@lists.infradead.org
 
-For removing memory, we need to remove page table. But it depends
-on architecture. So the patch introduce arch_remove_memory() for
-removing page table. Now it only calls __remove_pages().
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Note: __remove_pages() for some archtecuture is not implemented
-      (I don't know how to implement it for s390).
+This patch supports CN21/CN22 USB 1.x (port 0/1/2),
+and enable input event on defconfig
 
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-CC: Paul Mackerras <paulus@samba.org>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-CC: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/ia64/mm/init.c            | 18 ++++++++++++++++++
- arch/powerpc/mm/mem.c          | 12 ++++++++++++
- arch/s390/mm/init.c            | 12 ++++++++++++
- arch/sh/mm/init.c              | 17 +++++++++++++++++
- arch/tile/mm/init.c            |  8 ++++++++
- arch/x86/mm/init_32.c          | 12 ++++++++++++
- arch/x86/mm/init_64.c          | 15 +++++++++++++++
- include/linux/memory_hotplug.h |  1 +
- mm/memory_hotplug.c            |  2 ++
- 9 files changed, 97 insertions(+)
+ arch/arm/configs/marzen_defconfig     |    5 +--
+ arch/arm/mach-shmobile/Kconfig        |    1 +
+ arch/arm/mach-shmobile/board-marzen.c |   57 +++++++++++++++++++++++++++++++++
+ 3 files changed, 61 insertions(+), 2 deletions(-)
 
-diff --git a/arch/ia64/mm/init.c b/arch/ia64/mm/init.c
-index acd5b68..1d36ba2 100644
---- a/arch/ia64/mm/init.c
-+++ b/arch/ia64/mm/init.c
-@@ -690,6 +690,24 @@ int arch_add_memory(int nid, u64 start, u64 size)
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index 6540dfb..728a43c 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -61,9 +61,8 @@ CONFIG_SMSC911X=y
+ # CONFIG_NET_VENDOR_STMICRO is not set
+ # CONFIG_WLAN is not set
+ # CONFIG_INPUT_MOUSEDEV is not set
+-# CONFIG_INPUT_KEYBOARD is not set
++CONFIG_INPUT_EVDEV=y
+ # CONFIG_INPUT_MOUSE is not set
+-# CONFIG_SERIO is not set
+ # CONFIG_VT is not set
+ # CONFIG_LEGACY_PTYS is not set
+ # CONFIG_DEVKMEM is not set
+@@ -86,6 +85,8 @@ CONFIG_MMC=y
+ CONFIG_MMC_SDHI=y
+ CONFIG_USB=y
+ CONFIG_USB_EHCI_HCD=y
++CONFIG_USB_OHCI_HCD=y
++CONFIG_USB_OHCI_HCD_PLATFORM=y
+ CONFIG_USB_EHCI_HCD_PLATFORM=y
+ CONFIG_USB_STORAGE=y
+ CONFIG_UIO=y
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index c03aeec..64db252 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -42,6 +42,7 @@ config ARCH_R8A7779
+ 	select CPU_V7
+ 	select SH_CLK_CPG
+ 	select USB_ARCH_HAS_EHCI
++	select USB_ARCH_HAS_OHCI
  
- 	return ret;
- }
-+
-+#ifdef CONFIG_MEMORY_HOTREMOVE
-+int arch_remove_memory(u64 start, u64 size)
-+{
-+	unsigned long start_pfn = start >> PAGE_SHIFT;
-+	unsigned long nr_pages = size >> PAGE_SHIFT;
-+	struct zone *zone;
-+	int ret;
-+
-+	zone = page_zone(pfn_to_page(start_pfn));
-+	ret = __remove_pages(zone, start_pfn, nr_pages);
-+	if (ret)
-+		pr_warn("%s: Problem encountered in __remove_pages() as"
-+			" ret=%d\n", __func__,  ret);
-+
-+	return ret;
-+}
-+#endif
- #endif
+ config ARCH_EMEV2
+ 	bool "Emma Mobile EV2"
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index 707b3bd..449f928 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -36,6 +36,7 @@
+ #include <linux/mfd/tmio.h>
+ #include <linux/usb/otg.h>
+ #include <linux/usb/ehci_pdriver.h>
++#include <linux/usb/ohci_pdriver.h>
+ #include <linux/pm_runtime.h>
+ #include <mach/hardware.h>
+ #include <mach/r8a7779.h>
+@@ -255,9 +256,65 @@ static struct platform_device ehci1_device = {
+ 	.resource	= ehci1_resources,
+ };
  
- /*
-diff --git a/arch/powerpc/mm/mem.c b/arch/powerpc/mm/mem.c
-index 0dba506..09c6451 100644
---- a/arch/powerpc/mm/mem.c
-+++ b/arch/powerpc/mm/mem.c
-@@ -133,6 +133,18 @@ int arch_add_memory(int nid, u64 start, u64 size)
- 
- 	return __add_pages(nid, zone, start_pfn, nr_pages);
- }
++static struct usb_ohci_pdata ohcix_pdata = {
++	.power_on	= usb_power_on,
++	.power_off	= usb_power_off,
++	.power_suspend	= usb_power_off,
++};
 +
-+#ifdef CONFIG_MEMORY_HOTREMOVE
-+int arch_remove_memory(u64 start, u64 size)
-+{
-+	unsigned long start_pfn = start >> PAGE_SHIFT;
-+	unsigned long nr_pages = size >> PAGE_SHIFT;
-+	struct zone *zone;
++static struct resource ohci0_resources[] = {
++	[0] = {
++		.start	= 0xffe70400,
++		.end	= 0xffe70800 - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= gic_spi(44),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
 +
-+	zone = page_zone(pfn_to_page(start_pfn));
-+	return __remove_pages(zone, start_pfn, nr_pages);
-+}
-+#endif
- #endif /* CONFIG_MEMORY_HOTPLUG */
- 
- /*
-diff --git a/arch/s390/mm/init.c b/arch/s390/mm/init.c
-index 81e596c..b565190 100644
---- a/arch/s390/mm/init.c
-+++ b/arch/s390/mm/init.c
-@@ -257,4 +257,16 @@ int arch_add_memory(int nid, u64 start, u64 size)
- 		vmem_remove_mapping(start, size);
- 	return rc;
- }
++static struct platform_device ohci0_device = {
++	.name	= "ohci-platform",
++	.id	= 0,
++	.dev	= {
++		.dma_mask		= &ohci0_device.dev.coherent_dma_mask,
++		.coherent_dma_mask	= 0xffffffff,
++		.platform_data		= &ohcix_pdata,
++	},
++	.num_resources	= ARRAY_SIZE(ohci0_resources),
++	.resource	= ohci0_resources,
++};
 +
-+#ifdef CONFIG_MEMORY_HOTREMOVE
-+int arch_remove_memory(u64 start, u64 size)
-+{
-+	/*
-+	 * There is no hardware or firmware interface which could trigger a
-+	 * hot memory remove on s390. So there is nothing that needs to be
-+	 * implemented.
-+	 */
-+	return -EBUSY;
-+}
-+#endif
- #endif /* CONFIG_MEMORY_HOTPLUG */
-diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
-index 82cc576..1057940 100644
---- a/arch/sh/mm/init.c
-+++ b/arch/sh/mm/init.c
-@@ -558,4 +558,21 @@ int memory_add_physaddr_to_nid(u64 addr)
- EXPORT_SYMBOL_GPL(memory_add_physaddr_to_nid);
- #endif
- 
-+#ifdef CONFIG_MEMORY_HOTREMOVE
-+int arch_remove_memory(u64 start, u64 size)
-+{
-+	unsigned long start_pfn = start >> PAGE_SHIFT;
-+	unsigned long nr_pages = size >> PAGE_SHIFT;
-+	struct zone *zone;
-+	int ret;
++static struct resource ohci1_resources[] = {
++	[0] = {
++		.start	= 0xfff70400,
++		.end	= 0xfff70800 - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= gic_spi(45),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
 +
-+	zone = page_zone(pfn_to_page(start_pfn));
-+	ret = __remove_pages(zone, start_pfn, nr_pages);
-+	if (unlikely(ret))
-+		pr_warn("%s: Failed, __remove_pages() = %d\n", __func__,
-+			ret);
++static struct platform_device ohci1_device = {
++	.name	= "ohci-platform",
++	.id	= 1,
++	.dev	= {
++		.dma_mask		= &ohci1_device.dev.coherent_dma_mask,
++		.coherent_dma_mask	= 0xffffffff,
++		.platform_data		= &ohcix_pdata,
++	},
++	.num_resources	= ARRAY_SIZE(ohci1_resources),
++	.resource	= ohci1_resources,
++};
 +
-+	return ret;
-+}
-+#endif
- #endif /* CONFIG_MEMORY_HOTPLUG */
-diff --git a/arch/tile/mm/init.c b/arch/tile/mm/init.c
-index ef29d6c..2749515 100644
---- a/arch/tile/mm/init.c
-+++ b/arch/tile/mm/init.c
-@@ -935,6 +935,14 @@ int remove_memory(u64 start, u64 size)
- {
- 	return -EINVAL;
- }
-+
-+#ifdef CONFIG_MEMORY_HOTREMOVE
-+int arch_remove_memory(u64 start, u64 size)
-+{
-+	/* TODO */
-+	return -EBUSY;
-+}
-+#endif
- #endif
+ static struct platform_device *marzen_late_devices[] __initdata = {
+ 	&ehci0_device,
+ 	&ehci1_device,
++	&ohci0_device,
++	&ohci1_device,
+ };
  
- struct kmem_cache *pgd_cache;
-diff --git a/arch/x86/mm/init_32.c b/arch/x86/mm/init_32.c
-index 11a5800..b19eba4 100644
---- a/arch/x86/mm/init_32.c
-+++ b/arch/x86/mm/init_32.c
-@@ -839,6 +839,18 @@ int arch_add_memory(int nid, u64 start, u64 size)
- 
- 	return __add_pages(nid, zone, start_pfn, nr_pages);
- }
-+
-+#ifdef CONFIG_MEMORY_HOTREMOVE
-+int arch_remove_memory(u64 start, u64 size)
-+{
-+	unsigned long start_pfn = start >> PAGE_SHIFT;
-+	unsigned long nr_pages = size >> PAGE_SHIFT;
-+	struct zone *zone;
-+
-+	zone = page_zone(pfn_to_page(start_pfn));
-+	return __remove_pages(zone, start_pfn, nr_pages);
-+}
-+#endif
- #endif
- 
- /*
-diff --git a/arch/x86/mm/init_64.c b/arch/x86/mm/init_64.c
-index 3baff25..5675335 100644
---- a/arch/x86/mm/init_64.c
-+++ b/arch/x86/mm/init_64.c
-@@ -680,6 +680,21 @@ int arch_add_memory(int nid, u64 start, u64 size)
- }
- EXPORT_SYMBOL_GPL(arch_add_memory);
- 
-+#ifdef CONFIG_MEMORY_HOTREMOVE
-+int __ref arch_remove_memory(u64 start, u64 size)
-+{
-+	unsigned long start_pfn = start >> PAGE_SHIFT;
-+	unsigned long nr_pages = size >> PAGE_SHIFT;
-+	struct zone *zone;
-+	int ret;
-+
-+	zone = page_zone(pfn_to_page(start_pfn));
-+	ret = __remove_pages(zone, start_pfn, nr_pages);
-+	WARN_ON_ONCE(ret);
-+
-+	return ret;
-+}
-+#endif
- #endif /* CONFIG_MEMORY_HOTPLUG */
- 
- static struct kcore_list kcore_vsyscall;
-diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
-index 38675e9..191b2d9 100644
---- a/include/linux/memory_hotplug.h
-+++ b/include/linux/memory_hotplug.h
-@@ -85,6 +85,7 @@ extern void __online_page_free(struct page *page);
- 
- #ifdef CONFIG_MEMORY_HOTREMOVE
- extern bool is_pageblock_removable_nolock(struct page *page);
-+extern int arch_remove_memory(u64 start, u64 size);
- #endif /* CONFIG_MEMORY_HOTREMOVE */
- 
- /* reasonably generic interface to expand the physical pages in a zone  */
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index 050ddb0..ca07433 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -1118,6 +1118,8 @@ repeat:
- 	/* remove memmap entry */
- 	firmware_map_remove(start, start + size, "System RAM");
- 
-+	arch_remove_memory(start, size);
-+
- 	unlock_memory_hotplug();
- 
- 	return 0;
+ void __init marzen_init_late(void)
 -- 
-1.8.0
+1.7.10.4
 
