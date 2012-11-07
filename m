@@ -1,109 +1,126 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 09 Nov 2012 07:31:44 +0000
-Subject: [PATCH 5/7] ARM: shmobile: use FSI driver's audio clock on armadillo800eva
-Message-Id: <1352446306-19945-6-git-send-email-horms@verge.net.au>
+From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Date: Wed, 07 Nov 2012 06:59:06 +0000
+Subject: [PATCH 04/10] serial: sh-sci: console runtime PM support (revisit)
+Message-Id: <509A06BA.30101@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352446306-19945-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352446306-19945-1-git-send-email-horms@verge.net.au>
+References: <509A0658.1010503@renesas.com>
+In-Reply-To: <509A0658.1010503@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The commit 1ba7622094 (serial: sh-sci: console Runtime PM support,
+from Magnus Damm <damm@opensource.se>, 2011-08-03), tried to support
+console runtime PM, but unfortunately it didn't work for us for some
+reason.  We did not investigated further at that time, instead would
+like to propose a different approach.
 
-Current FSI driver can control audio clock without platform
-call-back functions
-This patch removed board-specific call-back/settings
+In Linux tty/serial world, to get console PM work properly, a serial
+client driver does not have to maintain .runtime_suspend()/..resume()
+calls itself, but can leave console power power management handling to
+the serial core driver.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+This patch moves the sh-sci driver in that direction.
+
+Notes:
+
+* There is room to optimize console runtime PM more aggressively by
+  maintaining additional local runtime PM calls, but as a first step
+  having .pm() operation would suffice.
+
+* We still have a couple of direct calls to sci_port_enable/..disable
+  left in the driver.  We have to live with them, because they're out
+  of serial core's help.
+
+Signed-off-by: Teppei Kamijou <teppei.kamijou.yb@renesas.com>
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c |   38 ++----------------------
- 1 file changed, 3 insertions(+), 35 deletions(-)
+ drivers/tty/serial/sh-sci.c | 27 ++++++++++++++++-----------
+ 1 file changed, 16 insertions(+), 11 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index fe27d7e..3d4c0e4 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -768,32 +768,6 @@ static struct platform_device ceu0_device = {
- };
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index e9e8883..e65e546 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1746,8 +1746,6 @@ static int sci_startup(struct uart_port *port)
  
- /* FSI */
--static int fsi_hdmi_set_rate(struct device *dev, int rate, int enable)
--{
--	struct clk *fsib;
--	int ret;
--
--	/* it support 48KHz only */
--	if (48000 != rate)
--		return -EINVAL;
--
--	fsib = clk_get(dev, "ickb");
--	if (IS_ERR(fsib))
--		return -EINVAL;
--
--	if (enable) {
--		ret = SH_FSI_ACKMD_256 | SH_FSI_BPFMD_64;
--		clk_enable(fsib);
--	} else {
--		ret = 0;
--		clk_disable(fsib);
--	}
--
--	clk_put(fsib);
--
--	return ret;
--}
--
- static struct sh_fsi_platform_info fsi_info = {
- 	/* FSI-WM8978 */
- 	.port_a = {
-@@ -802,8 +776,8 @@ static struct sh_fsi_platform_info fsi_info = {
- 	/* FSI-HDMI */
- 	.port_b = {
- 		.flags		= SH_FSI_FMT_SPDIF |
--				  SH_FSI_ENABLE_STREAM_MODE,
--		.set_rate	= fsi_hdmi_set_rate,
-+				  SH_FSI_ENABLE_STREAM_MODE |
-+				  SH_FSI_CLK_CPG,
- 		.tx_id		= SHDMA_SLAVE_FSIB_TX,
- 	}
- };
-@@ -938,13 +912,11 @@ static void __init eva_clock_init(void)
- 	struct clk *xtal1	= clk_get(NULL, "extal1");
- 	struct clk *usb24s	= clk_get(NULL, "usb24s");
- 	struct clk *fsibck	= clk_get(NULL, "fsibck");
--	struct clk *fsib	= clk_get(&fsi_device.dev, "ickb");
+ 	dev_dbg(port->dev, "%s(%d)\n", __func__, port->line);
  
- 	if (IS_ERR(system)	||
- 	    IS_ERR(xtal1)	||
- 	    IS_ERR(usb24s)	||
--	    IS_ERR(fsibck)	||
--	    IS_ERR(fsib)) {
-+	    IS_ERR(fsibck)) {
- 		pr_err("armadillo800eva board clock init failed\n");
- 		goto clock_error;
- 	}
-@@ -956,9 +928,7 @@ static void __init eva_clock_init(void)
- 	clk_set_parent(usb24s, system);
+-	sci_port_enable(s);
+-
+ 	ret = sci_request_irq(s);
+ 	if (unlikely(ret < 0))
+ 		return ret;
+@@ -1771,8 +1769,6 @@ static void sci_shutdown(struct uart_port *port)
  
- 	/* FSIBCK is 12.288MHz, and it is parent of FSI-B */
--	clk_set_parent(fsib, fsibck);
- 	clk_set_rate(fsibck, 12288000);
--	clk_set_rate(fsib,   12288000);
- 
- clock_error:
- 	if (!IS_ERR(system))
-@@ -969,8 +939,6 @@ clock_error:
- 		clk_put(usb24s);
- 	if (!IS_ERR(fsibck))
- 		clk_put(fsibck);
--	if (!IS_ERR(fsib))
--		clk_put(fsib);
+ 	sci_free_dma(port);
+ 	sci_free_irq(s);
+-
+-	sci_port_disable(s);
  }
  
- /*
+ static unsigned int sci_scbrr_calc(unsigned int algo_id, unsigned int bps,
+@@ -1921,6 +1917,21 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+ 	sci_port_disable(s);
+ }
+ 
++static void sci_pm(struct uart_port *port, unsigned int state,
++		   unsigned int oldstate)
++{
++	struct sci_port *sci_port = to_sci_port(port);
++
++	switch (state) {
++	case 3:
++		sci_port_disable(sci_port);
++		break;
++	default:
++		sci_port_enable(sci_port);
++		break;
++	}
++}
++
+ static const char *sci_type(struct uart_port *port)
+ {
+ 	switch (port->type) {
+@@ -2042,6 +2053,7 @@ static struct uart_ops sci_uart_ops = {
+ 	.startup	= sci_startup,
+ 	.shutdown	= sci_shutdown,
+ 	.set_termios	= sci_set_termios,
++	.pm		= sci_pm,
+ 	.type		= sci_type,
+ 	.release_port	= sci_release_port,
+ 	.request_port	= sci_request_port,
+@@ -2195,16 +2207,12 @@ static void serial_console_write(struct console *co, const char *s,
+ 	struct uart_port *port = &sci_port->port;
+ 	unsigned short bits;
+ 
+-	sci_port_enable(sci_port);
+-
+ 	uart_console_write(port, s, count, serial_console_putchar);
+ 
+ 	/* wait until fifo is empty and last bit has been transmitted */
+ 	bits = SCxSR_TDxE(port) | SCxSR_TEND(port);
+ 	while ((serial_port_in(port, SCxSR) & bits) != bits)
+ 		cpu_relax();
+-
+-	sci_port_disable(sci_port);
+ }
+ 
+ static int __devinit serial_console_setup(struct console *co, char *options)
+@@ -2236,12 +2244,9 @@ static int __devinit serial_console_setup(struct console *co, char *options)
+ 	if (unlikely(ret != 0))
+ 		return ret;
+ 
+-	sci_port_enable(sci_port);
+-
+ 	if (options)
+ 		uart_parse_options(options, &baud, &parity, &bits, &flow);
+ 
+-	/* TODO: disable clock */
+ 	return uart_set_options(port, co, baud, parity, bits, flow);
+ }
+ 
 -- 
-1.7.10.4
+1.7.12.4
 
