@@ -1,80 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 06 Nov 2012 04:57:25 +0000
-Subject: [PATCH 03/11] ARM: shmobile: emev2: Replace modify_scu_cpu_psr with scu_power_mode
-Message-Id: <1352177853-6008-4-git-send-email-horms@verge.net.au>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Wed, 07 Nov 2012 11:40:07 +0000
+Subject: [PATCH 4/4] devicetree: Add Renesas SH Mobile MSIOF spi controller binding doc
+Message-Id: <1352288407-20594-5-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352177853-6008-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352177853-6008-1-git-send-email-horms@verge.net.au>
+References: <1352288407-20594-1-git-send-email-hechtb@gmail.com>
+In-Reply-To: <1352288407-20594-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Bastian Hecht <hechtb@googlemail.com>
-
-We can remove the extra code of modify_scu_cpu_psr() and use the cleaner
-generic ARM helper scu_power_mode(). As every CPU only deals with its
-own power register and scu_power_mode() operates with 8-bit accesses,
-we save the locking overhead too.
+Add binding documentation for Renesas' MSIOF SPI controller.
 
 Signed-off-by: Bastian Hecht <hechtb@gmail.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/arm/mach-shmobile/smp-emev2.c |   22 ++--------------------
- 1 file changed, 2 insertions(+), 20 deletions(-)
+ Documentation/devicetree/bindings/spi/sh-msiof.txt |   12 ++++++++++++
+ 1 files changed, 12 insertions(+), 0 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/spi/sh-msiof.txt
 
-diff --git a/arch/arm/mach-shmobile/smp-emev2.c b/arch/arm/mach-shmobile/smp-emev2.c
-index f674562..535426c 100644
---- a/arch/arm/mach-shmobile/smp-emev2.c
-+++ b/arch/arm/mach-shmobile/smp-emev2.c
-@@ -32,24 +32,8 @@
- 
- #define EMEV2_SCU_BASE 0x1e000000
- 
--static DEFINE_SPINLOCK(scu_lock);
- static void __iomem *scu_base;
- 
--static void modify_scu_cpu_psr(unsigned long set, unsigned long clr)
--{
--	unsigned long tmp;
--
--	/* we assume this code is running on a different cpu
--	 * than the one that is changing coherency setting */
--	spin_lock(&scu_lock);
--	tmp = readl(scu_base + 8);
--	tmp &= ~clr;
--	tmp |= set;
--	writel(tmp, scu_base + 8);
--	spin_unlock(&scu_lock);
--
--}
--
- static unsigned int __init emev2_get_core_count(void)
- {
- 	if (!scu_base) {
-@@ -95,7 +79,7 @@ static int __cpuinit emev2_boot_secondary(unsigned int cpu, struct task_struct *
- 	cpu = cpu_logical_map(cpu);
- 
- 	/* enable cache coherency */
--	modify_scu_cpu_psr(0, 3 << (cpu * 8));
-+	scu_power_mode(scu_base, 0);
- 
- 	/* Tell ROM loader about our vector (in headsmp.S) */
- 	emev2_set_boot_vector(__pa(shmobile_secondary_vector));
-@@ -106,12 +90,10 @@ static int __cpuinit emev2_boot_secondary(unsigned int cpu, struct task_struct *
- 
- static void __init emev2_smp_prepare_cpus(unsigned int max_cpus)
- {
--	int cpu = cpu_logical_map(0);
--
- 	scu_enable(scu_base);
- 
- 	/* enable cache coherency on CPU0 */
--	modify_scu_cpu_psr(0, 3 << (cpu * 8));
-+	scu_power_mode(scu_base, 0);
- }
- 
- static void __init emev2_smp_init_cpus(void)
+diff --git a/Documentation/devicetree/bindings/spi/sh-msiof.txt b/Documentation/devicetree/bindings/spi/sh-msiof.txt
+new file mode 100644
+index 0000000..b62312e
+--- /dev/null
++++ b/Documentation/devicetree/bindings/spi/sh-msiof.txt
+@@ -0,0 +1,12 @@
++Renesas MSIOF spi controller
++
++Required properties:
++- compatible : 	"renesas,sh-msiof" for SuperH or
++		"renesas,sh-mobile-msiof" for SH Mobile series
++- reg : Offset and length of the register set for the device
++- interrupts : interrupt line used by MSIOF
++
++Optional properties:
++- chip_select  : Chip select, defaults to 0
++- tx_fifo_size : Overrides the default tx fifo size given in words
++- rx_fifo_size : Overrides the default rx fifo size given in words
 -- 
-1.7.10.4
+1.7.5.4
 
