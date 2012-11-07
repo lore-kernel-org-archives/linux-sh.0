@@ -1,121 +1,40 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 27 Nov 2012 00:02:18 +0000
-Subject: [PATCH v2 19/77] sh: Add PFC platform device registration helper function
-Message-Id: <1353974596-30033-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 07 Nov 2012 08:50:43 +0000
+Subject: [PATCH 14/15] ARM: shmobile: Add DT table of GIC for sh73a0
+Message-Id: <1352278244-26702-15-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1352278244-26702-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1352278244-26702-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The sh_pfc_register() function can be called by boards or SoC setup code
-to register the PFC platform device.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/sh/include/cpu-common/cpu/pfc.h |   30 +++++++++++++++++++++++
- arch/sh/kernel/cpu/Makefile          |    2 +-
- arch/sh/kernel/cpu/pfc.c             |   44 ++++++++++++++++++++++++++++++++++
- 3 files changed, 75 insertions(+), 1 deletions(-)
- create mode 100644 arch/sh/include/cpu-common/cpu/pfc.h
- create mode 100644 arch/sh/kernel/cpu/pfc.c
+ arch/arm/boot/dts/sh73a0.dtsi |    9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-diff --git a/arch/sh/include/cpu-common/cpu/pfc.h b/arch/sh/include/cpu-common/cpu/pfc.h
-new file mode 100644
-index 0000000..40e8643
---- /dev/null
-+++ b/arch/sh/include/cpu-common/cpu/pfc.h
-@@ -0,0 +1,30 @@
-+/*
-+ * SH Pin Function Control Initialization
-+ *
-+ * Copyright (C) 2012  Renesas Solutions Corp.
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ */
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index b0c55e1..b250e27 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -806,5 +806,14 @@
+ 				};
+ 			};
+ 		};
 +
-+#ifndef __ARCH_SH_CPU_PFC_H__
-+#define __ARCH_SH_CPU_PFC_H__
-+
-+#include <linux/types.h>
-+
-+struct pinmux_info;
-+struct resource;
-+
-+int sh_pfc_register(const char *name,
-+		    struct resource *resource, u32 num_resources);
-+int sh_pfc_register_info(const char *name,
-+			 struct resource *resource, u32 num_resources,
-+			 struct pinmux_info *pdata);
-+
-+#endif /* __ARCH_SH_CPU_PFC_H__ */
-diff --git a/arch/sh/kernel/cpu/Makefile b/arch/sh/kernel/cpu/Makefile
-index fa58bfd..accc7ca 100644
---- a/arch/sh/kernel/cpu/Makefile
-+++ b/arch/sh/kernel/cpu/Makefile
-@@ -18,4 +18,4 @@ obj-$(CONFIG_ARCH_SHMOBILE)	+= shmobile/
- obj-$(CONFIG_SH_ADC)		+= adc.o
- obj-$(CONFIG_SH_CLK_CPG_LEGACY)	+= clock-cpg.o
- 
--obj-y	+= irq/ init.o clock.o fpu.o proc.o
-+obj-y	+= irq/ init.o clock.o fpu.o pfc.o proc.o
-diff --git a/arch/sh/kernel/cpu/pfc.c b/arch/sh/kernel/cpu/pfc.c
-new file mode 100644
-index 0000000..d045d75
---- /dev/null
-+++ b/arch/sh/kernel/cpu/pfc.c
-@@ -0,0 +1,44 @@
-+/*
-+ * SH Pin Function Control Initialization
-+ *
-+ * Copyright (C) 2012  Renesas Solutions Corp.
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ */
-+
-+#include <linux/init.h>
-+#include <linux/platform_device.h>
-+
-+#include <cpu/pfc.h>
-+
-+static struct platform_device sh_pfc_device = {
-+	.name		= "sh-pfc",
-+	.id		= -1,
-+};
-+
-+int __init sh_pfc_register(const char *name,
-+			   struct resource *resource, u32 num_resources)
-+{
-+	if (name)
-+		sh_pfc_device.name = name;
-+	sh_pfc_device.num_resources = num_resources;
-+	sh_pfc_device.resource = resource;
-+
-+	return platform_device_register(&sh_pfc_device);
-+}
-+
-+int __init sh_pfc_register_info(const char *name,
-+				struct resource *resource, u32 num_resources,
-+				struct pinmux_info *pdata)
-+{
-+	sh_pfc_device.dev.platform_data = pdata;
-+
-+	return sh_pfc_register(name, resource, num_resources);
-+}
++		intc: interrupt-controller@f0001000 {
++			compatible = "arm,cortex-a9-gic";
++			#interrupt-cells = <3>;
++			#address-cells = <1>;
++			interrupt-controller;
++			reg = <0xf0001000 0x1000>,
++			      <0xf0000100 0x100>;
++		};
+ 	};
+ };
 -- 
-1.7.8.6
+1.7.10.4
 
