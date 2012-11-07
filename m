@@ -1,36 +1,49 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Tue, 06 Nov 2012 14:19:25 +0000
-Subject: Re: [GIT PULL v2] Renesas ARM-based SoC defconfig for v3.8
-Message-Id: <20121106141925.GE27284@quad.lixom.net>
+From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Date: Wed, 07 Nov 2012 06:57:28 +0000
+Subject: [PATCH 00/10] serial: sh-sci fixes - console PM, SCIFB, SMP lockup, etc.
+Message-Id: <509A0658.1010503@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1351731731-8435-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1351731731-8435-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Nov 01, 2012 at 09:02:08AM +0800, Simon Horman wrote:
-> Hi Olof, Hi Arnd,
-> 
-> please consider the following defconfig enhancements for 3.8.
-> 
-> I will work on the suggestions by Arnd to reduce the number
-> of defconfigs for shmobile - in essence moving towards one or
-> two generic configs rather than per-board configs. However,
-> this seems to be somewhat non-trivial and in the mean time
-> I would like to keep updating the existing defcoings.
-> 
-> ----------------------------------------------------------------
-> The following changes since commit ddffeb8c4d0331609ef2581d84de4d763607bd37:
-> 
->   Linux 3.7-rc1 (2012-10-14 14:41:04 -0700)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git defconfig
+Hi Paul and serial forks,
 
-Thanks, pulled into next/boards with the other branch.
+Here are sh-sci serial driver fixes that have been cooking for months
+privately on my end:
+* console PM rework with the help of serial-core's uart_change_pm()
+* provide missing piece in SCIFB support (from Yoshii-san)
+* address console write function vs. SMP lockup issue
 
+and so on.  Comments and suggestions are welcome.
 
--Olof
+Build tested with vanilla v3.6, but not boot- nor PM-tested with
+newer kernels after v3.4.  Anyone with can-sleep shmobile systems,
+please give it try.
+
+Thanks in advance,
+
+----------------------------------------------------------------
+Shinya Kuribayashi (5):
+      Revert "sh-sci / PM: Avoid deadlocking runtime PM"
+      Revert "sh-sci / PM: Use power.irq_safe"
+      Partially revert "serial: sh-sci: console Runtime PM support"
+      serial: sh-sci: add locking to console write function to avoid SMP lockup
+      serial: sh-sci: fix possible race cases on SCSCR register accesses
+
+Takashi YOSHII (4):
+      serial: sh-sci: fix condition test to set SCBRR
+      serial: sh-sci: support lower baud rate
+      serial: sh-sci: mask SCTFDR/RFDR according to fifosize
+      serial: sh-sci: fix common SCIFB regmap definition
+
+Teppei Kamijou (1):
+      serial: sh-sci: console runtime PM support (revisit)
+
+ drivers/tty/serial/sh-sci.c | 140 ++++++++++++++++++--------------------------
+ 1 file changed, 56 insertions(+), 84 deletions(-)
+
+-- 
+Shinya Kuribayashi
+Renesas Electronics
