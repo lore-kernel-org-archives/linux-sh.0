@@ -1,220 +1,55 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Wed, 07 Nov 2012 08:50:32 +0000
-Subject: [PATCH 03/15] ARM: shmobile: Add support OF of INTC for r8a7740
-Message-Id: <1352278244-26702-4-git-send-email-horms@verge.net.au>
+Date: Wed, 07 Nov 2012 08:34:57 +0000
+Subject: [PATCH 3/4] ARM: shmobile: r8a7779: add USB EHCI clock support
+Message-Id: <1352277298-23312-4-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352278244-26702-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352278244-26702-1-git-send-email-horms@verge.net.au>
+References: <1352277298-23312-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1352277298-23312-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This CPU has three interrupt controllers (INTCA, INTCS and INTCA IRQ pins).
-This supports these.
+ehci-platform driver require these clocks
 
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms@verge.net.au>
-
 ---
+ arch/arm/mach-shmobile/clock-r8a7779.c |    5 +++++
+ 1 file changed, 5 insertions(+)
 
-v2 [Simon Horman]
-* Use #ifdef instead of #if defined
-* Use CONFIG_OF in place of CONFIG_OF_SH_INTC
-* Allow OF and non OF code to be compiled in the same binary and
-  provide r8a7740_init_irq_of() as a way to initialise INTC
-  using DT while r8a7740_init_irq() still initialises INTC
-  using the previous code paths. This is because we would
-  like to be able to use a single configuration to compile a kernel
-  for multiple boards and not all r8a7740 boards have DT support yet.
-
-v1 [Nobuhiro Iwamatsu]
----
- arch/arm/mach-shmobile/include/mach/common.h |    1 +
- arch/arm/mach-shmobile/intc-r8a7740.c        |  136 +++++++++++++++++++++++++-
- 2 files changed, 132 insertions(+), 5 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index d47e215..8402b5d 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -59,6 +59,7 @@ extern struct clk sh73a0_extal2_clk;
- extern struct clk sh73a0_extcki_clk;
- extern struct clk sh73a0_extalr_clk;
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index 24f5a84..4ba4e3c 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -87,6 +87,7 @@ static struct clk div4_clks[DIV4_NR] = {
+ };
  
-+extern void r8a7740_init_irq_of(void);
- extern void r8a7740_init_irq(void);
- extern void r8a7740_map_io(void);
- extern void r8a7740_add_early_devices(void);
-diff --git a/arch/arm/mach-shmobile/intc-r8a7740.c b/arch/arm/mach-shmobile/intc-r8a7740.c
-index 9a69a31..878fdc6 100644
---- a/arch/arm/mach-shmobile/intc-r8a7740.c
-+++ b/arch/arm/mach-shmobile/intc-r8a7740.c
-@@ -1,8 +1,9 @@
- /*
-  * R8A7740 processor support
-  *
-- * Copyright (C) 2011  Renesas Solutions Corp.
-+ * Copyright (C) 2011, 2012  Renesas Solutions Corp.
-  * Copyright (C) 2011  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-+ * Copyright (C) 2012  Nobuhiro Iwamatsu <nobuhiro.iwamatsu@renesas.com>
-  *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-@@ -29,6 +30,105 @@
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
+ enum { MSTP323, MSTP322, MSTP321, MSTP320,
++	MSTP101, MSTP100,
+ 	MSTP030,
+ 	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+ 	MSTP016, MSTP015, MSTP014,
+@@ -98,6 +99,8 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP322] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 22, 0), /* SDHI1 */
+ 	[MSTP321] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 21, 0), /* SDHI2 */
+ 	[MSTP320] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 20, 0), /* SDHI3 */
++	[MSTP101] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  1, 0), /* USB2 */
++	[MSTP100] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  0, 0), /* USB0/1 */
+ 	[MSTP030] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 30, 0), /* I2C0 */
+ 	[MSTP029] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 29, 0), /* I2C1 */
+ 	[MSTP028] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 28, 0), /* I2C2 */
+@@ -153,6 +156,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("peripheral_clk",	&div4_clks[DIV4_P]),
  
-+#ifdef CONFIG_OF
-+
-+static struct intc_desc intca_desc __initdata;
-+static struct resource intca_resources[2] __initdata;
-+static struct intc_desc intcs_desc __initdata;
-+static struct resource intcs_resources[2] __initdata;
-+static struct intc_desc intca_irq_pins_desc __initdata;
-+static struct resource intca_pins_resources[1] __initdata;
-+static unsigned short intevtsa_vect;
-+
-+static int r8a7740_intca_of_init(struct device_node *np,
-+			struct device_node *parent)
-+{
-+	int ret;
-+
-+	if (WARN_ON(!np))
-+		return -ENODEV;
-+
-+	ret = of_sh_intc_get_meminfo(np,
-+				intca_resources, ARRAY_SIZE(intcs_resources));
-+	if (ret)
-+		goto error;
-+
-+	intca_desc.resource = intca_resources;
-+	intca_desc.num_resources = ARRAY_SIZE(intca_resources);
-+
-+	ret = of_sh_intc_get_intc(np, &intca_desc);
-+	if (ret)
-+		goto error;
-+
-+	intca_desc.name = "r8a7740-intca";
-+error:
-+	return ret;
-+}
-+
-+static int r8a7740_intcs_of_init(struct device_node *np,
-+			struct device_node *parent)
-+{
-+	int ret;
-+
-+	if (WARN_ON(!np))
-+		return -ENODEV;
-+
-+	ret = of_sh_intc_get_meminfo(np,
-+				intcs_resources, ARRAY_SIZE(intcs_resources));
-+	if (ret)
-+		goto error;
-+
-+	intcs_desc.resource = intcs_resources;
-+	intcs_desc.num_resources = ARRAY_SIZE(intcs_resources);
-+
-+	ret = of_sh_intc_get_intc(np, &intcs_desc);
-+	if (ret)
-+		goto error;
-+
-+	of_sh_intc_get_intevtsa_vect(np, &intevtsa_vect);
-+
-+	intcs_desc.name = "r8a7740-intcs";
-+
-+error:
-+	return ret;
-+}
-+
-+static int r8a7740_intca_pins_of_init(struct device_node *np,
-+				    struct device_node *parent)
-+{
-+	int ret;
-+
-+	if (WARN_ON(!np))
-+		return -ENODEV;
-+
-+	ret = of_sh_intc_get_meminfo(np, intca_pins_resources,
-+			ARRAY_SIZE(intca_pins_resources));
-+	if (ret)
-+		goto error;
-+
-+	intca_irq_pins_desc.resource = intca_pins_resources;
-+	intca_irq_pins_desc.num_resources = ARRAY_SIZE(intca_pins_resources);
-+
-+	ret = of_sh_intc_get_intc_pins(np, &intca_irq_pins_desc);
-+	if (ret)
-+		goto error;
-+
-+	intca_irq_pins_desc.name = "r8a7740-intca-irq-pins";
-+
-+error:
-+	return ret;
-+}
-+
-+static const struct of_device_id irq_of_match[] __initconst = {
-+	{ .compatible = "renesas,sh_intcs", .data = r8a7740_intcs_of_init },
-+	{ .compatible = "renesas,sh_intca_irq_pins",
-+		.data = r8a7740_intca_pins_of_init },
-+	{ .compatible = "renesas,sh_intca", .data = r8a7740_intca_of_init },
-+	{ /*sentinel*/ }
-+};
-+
-+#endif /* CONFIG_OF */
-+
- /*
-  *		INTCA
-  */
-@@ -623,15 +723,41 @@ static void intcs_demux(unsigned int irq, struct irq_desc *desc)
- 	generic_handle_irq(intcs_evt2irq(evtcodeas));
- }
- 
--void __init r8a7740_init_irq(void)
-+static void __init r8a7740_init_irq__(bool of)
- {
--	void __iomem *intevtsa = ioremap_nocache(0xffd20100, PAGE_SIZE);
-+	void __iomem *intevtsa;
-+
-+#ifdef CONFIG_OF
-+	if (of)
-+		of_irq_init(irq_of_match);
-+#endif
- 
- 	register_intc_controller(&intca_desc);
- 	register_intc_controller(&intca_irq_pins_desc);
- 	register_intc_controller(&intcs_desc);
- 
- 	/* demux using INTEVTSA */
--	irq_set_handler_data(evt2irq(0xf80), (void *)intevtsa);
--	irq_set_chained_handler(evt2irq(0xf80), intcs_demux);
-+	intevtsa = ioremap_nocache(intcs_resources[0].start + 0x100, PAGE_SIZE);
-+#ifdef CONFIG_OF
-+	if (of) {
-+		irq_set_handler_data(evt2irq(intevtsa_vect), (void *)intevtsa);
-+		irq_set_chained_handler(evt2irq(intevtsa_vect), intcs_demux);
-+	} else
-+#endif
-+	{
-+		irq_set_handler_data(evt2irq(0xf80), (void *)intevtsa);
-+		irq_set_chained_handler(evt2irq(0xf80), intcs_demux);
-+	}
-+}
-+
-+#ifdef CONFIG_OF
-+void __init r8a7740_init_irq_of(void)
-+{
-+	r8a7740_init_irq__(true);
-+}
-+#endif
-+
-+void __init r8a7740_init_irq(void)
-+{
-+	r8a7740_init_irq__(false);
- }
+ 	/* MSTP32 clocks */
++	CLKDEV_DEV_ID("ehci-platform.1", &mstp_clks[MSTP101]), /* USB EHCI port2 */
++	CLKDEV_DEV_ID("ehci-platform.0", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
+ 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
+ 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP016]), /* TMU01 */
+ 	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
 -- 
 1.7.10.4
 
