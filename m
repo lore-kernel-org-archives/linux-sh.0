@@ -1,44 +1,33 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 27 Nov 2012 00:02:06 +0000
-Subject: [PATCH v2 07/77] sh-pfc: Remove check for impossible error condition
-Message-Id: <1353974596-30033-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 07 Nov 2012 08:50:40 +0000
+Subject: [PATCH 11/15] ARM: shmobile: kzm9g: Use DT initialisation of INTC
+Message-Id: <1352278244-26702-12-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1352278244-26702-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1352278244-26702-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The pfc pointer can't be NULL in the get and set value functions, remove
-the error check.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Paul Mundt <lethal@linux-sh.org>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- drivers/sh/pfc/gpio.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/board-kzm9g.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/sh/pfc/gpio.c b/drivers/sh/pfc/gpio.c
-index f22d43a..0a85159 100644
---- a/drivers/sh/pfc/gpio.c
-+++ b/drivers/sh/pfc/gpio.c
-@@ -51,7 +51,7 @@ static void sh_gpio_set_value(struct sh_pfc *pfc, unsigned gpio, int value)
- 	struct pinmux_data_reg *dr = NULL;
- 	int bit = 0;
- 
--	if (!pfc || sh_pfc_get_data_reg(pfc, gpio, &dr, &bit) != 0)
-+	if (sh_pfc_get_data_reg(pfc, gpio, &dr, &bit) != 0)
- 		BUG();
- 	else
- 		sh_pfc_write_bit(dr, bit, value);
-@@ -62,7 +62,7 @@ static int sh_gpio_get_value(struct sh_pfc *pfc, unsigned gpio)
- 	struct pinmux_data_reg *dr = NULL;
- 	int bit = 0;
- 
--	if (!pfc || sh_pfc_get_data_reg(pfc, gpio, &dr, &bit) != 0)
-+	if (sh_pfc_get_data_reg(pfc, gpio, &dr, &bit) != 0)
- 		return -EINVAL;
- 
- 	return sh_pfc_read_bit(dr, bit);
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index 0a43f31..0a0f302 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -779,7 +779,7 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g")
+ 	.map_io		= sh73a0_map_io,
+ 	.init_early	= sh73a0_add_early_devices,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+-	.init_irq	= sh73a0_init_irq,
++	.init_irq	= sh73a0_init_irq_of,
+ 	.handle_irq	= gic_handle_irq,
+ 	.init_machine	= kzm_init,
+ 	.init_late	= shmobile_init_late,
 -- 
-1.7.8.6
+1.7.10.4
 
