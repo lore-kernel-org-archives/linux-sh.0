@@ -1,31 +1,42 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 27 Nov 2012 01:33:38 +0000
-Subject: Re: [PATCH v2] sh: clkfwk: bugfix: sh_clk_div_enable() care sh_clk_div_set_rate() if div6
-Message-Id: <20121127013337.GB30445@linux-sh.org>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 07 Nov 2012 08:34:54 +0000
+Subject: [GIT PULL] Renesas ARM-based SoC for v3.8 #2
+Message-Id: <1352277298-23312-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87a9u4x5q1.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87a9u4x5q1.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Nov 26, 2012 at 04:45:45PM -0800, Kuninori Morimoto wrote:
-> 
-> Hi Paul
-> 
-> > > 764f4e4e33d18cde4dcaf8a0d860b749c6d6d08b
-> > > (sh: clkfwk: Use shared sh_clk_div_enable/disable())
-> > > shared enable/disable funcions for div4/div6.
-> > > But new sh_clk_div_enable() didn't care sh_clk_div_set_rate()
-> > > which is required on div6 clock.
-> > > This patch fixes it.
-> > > 
-> > > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > 
-> > Looks better, I'll queue it up, thanks.
-> 
-> Thanks.
-> Is it possible to go to v3.7-rcX ?
-> 
-Yes, should be fine.
+Hi Olof, Hi Arnd,
+
+please consider the following SoC enhancements for 3.8.
+
+This series is based on the previous SoC series that I sent on Tuesday
+and was merged later that day: [GIT PULL v4] Renesas ARM-based SoC for v3.8
+
+----------------------------------------------------------------
+The following changes since commit 86bc52ef4373be64867b56f3a9e30cbabf64e0dd:
+
+  ARM: shmobile: r8a7740: Enable PMU (2012-11-06 13:47:24 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git soc
+
+for you to fetch changes up to 9d69f5b87e7f6df51ad2a70557474093de934a8c:
+
+  ARM: shmobile: r8a7779: add USB OHCI clock support (2012-11-07 17:11:48 +0900)
+
+----------------------------------------------------------------
+Kuninori Morimoto (4):
+      ARM: shmobile: r8a7779: PFC rename PENCx -> USB_PENCx
+      ARM: shmobile: r8a7740: add USB24 clock explain
+      ARM: shmobile: r8a7779: add USB EHCI clock support
+      ARM: shmobile: r8a7779: add USB OHCI clock support
+
+ arch/arm/mach-shmobile/clock-r8a7740.c        |   16 ++++++++++++++++
+ arch/arm/mach-shmobile/clock-r8a7779.c        |    7 +++++++
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |    2 +-
+ arch/arm/mach-shmobile/pfc-r8a7779.c          |   16 ++++++++--------
+ 4 files changed, 32 insertions(+), 9 deletions(-)
