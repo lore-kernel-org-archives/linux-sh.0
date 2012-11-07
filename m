@@ -1,55 +1,82 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 27 Nov 2012 00:02:25 +0000
-Subject: [PATCH v2 26/77] sh: sh7724: Register PFC platform device
-Message-Id: <1353974596-30033-27-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 07 Nov 2012 08:50:29 +0000
+Subject: [RFC 00/15] SH/ARM shmobile DT initialisation of INTC and GIC
+Message-Id: <1352278244-26702-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add arch code to register the PFC platform device instead of calling the
-driver directly. Platform device registration in the sh-pfc driver will
-be removed.
+Hi,
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/sh/Kconfig                         |    1 +
- arch/sh/kernel/cpu/sh4a/pinmux-sh7724.c |    3 ++-
- 2 files changed, 3 insertions(+), 1 deletions(-)
+this series by Iwamatsu-san and myself is a first pass at:
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 89fb594..1885213 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -445,6 +445,7 @@ config CPU_SUBTYPE_SH7724
- 	select ARCH_SPARSEMEM_ENABLE
- 	select SYS_SUPPORTS_CMT
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
-+	select PINCTRL
- 	help
- 	  Select SH7724 if you have an SH-MobileR2R CPU.
- 
-diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7724.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7724.c
-index 1af0f95..51000f9 100644
---- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7724.c
-+++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7724.c
-@@ -16,6 +16,7 @@
- #include <linux/init.h>
- #include <linux/kernel.h>
- #include <linux/gpio.h>
-+#include <cpu/pfc.h>
- #include <cpu/sh7724.h>
- 
- enum {
-@@ -2225,6 +2226,6 @@ static struct pinmux_info sh7724_pinmux_info = {
- 
- static int __init plat_pinmux_setup(void)
- {
--	return register_pinmux(&sh7724_pinmux_info);
-+	return sh_pfc_register_info(NULL, NULL, 0, &sh7724_pinmux_info);
- }
- arch_initcall(plat_pinmux_setup);
--- 
-1.7.8.6
+* Adding DT support to INTC
+* Allowing relevant ARM shmobile SoCs to use DT to initialise INTC
+* Allowing relevant ARM shmobile boards to use DT to initialise INTC
+* Allowing the sh73a0 SoC use DT to initialise GIC
+* Allowing the sh73a0 SoC use DT to initialise GIC, which in
+  turn allows the kzm9g board to use DT to initialise GIC
 
+Review would be greatly appreciated.
+
+Diffstat and git information is provided to aid review
+
+----------------------------------------------------------------
+The following changes since commit ddffeb8c4d0331609ef2581d84de4d763607bd37:
+
+  Linux 3.7-rc1 (2012-10-14 14:41:04 -0700)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git devel/of
+
+for you to fetch changes up to f94f73ccfa8701f02a0b9528605d89a42710d806:
+
+  ARM: shmobile: sh73a0: Use DT for GIC (2012-11-07 17:41:56 +0900)
+
+----------------------------------------------------------------
+Nobuhiro Iwamatsu (12):
+      ARM: shmobile: Add support OF for INTC of shmobile
+      SH: intc: Add support OF of IRQ
+      ARM: shmobile: Add support OF of INTC for r8a7740
+      ARM: shmobile: Add support OF of INTC for sh73a0
+      ARM: shmobile: Add support OF of INTC for sh7372
+      ARM: shmobile: Add DT table of INTC for sh73a0
+      ARM: shmobile: Add DT table of INTC for sh7372
+      ARM: shmobile: Add DT table of INTC for r8a7740
+      ARM: shmobile: Include DTSI of r8a7740 to armadillo800eva
+      ARM: shmobile: Include DTSI of sh73a0 to kzm9g board
+      ARM: shmobile: r8a7740: Use DT initialisation of INTC
+      ARM: shmobile: sh7372: Use DT initialisation of INTC
+
+Simon Horman (3):
+      ARM: shmobile: kzm9g: Use DT initialisation of INTC
+      ARM: shmobile: Add DT table of GIC for sh73a0
+      ARM: shmobile: sh73a0: Use DT for GIC
+
+ Documentation/devicetree/bindings/sh/intc.txt |  163 ++++
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts |    2 +-
+ arch/arm/boot/dts/r8a7740.dtsi                |  965 ++++++++++++++++++++-
+ arch/arm/boot/dts/sh7372.dtsi                 | 1138 +++++++++++++++++++++++++
+ arch/arm/boot/dts/sh73a0-kzm9g.dts            |    2 +-
+ arch/arm/boot/dts/sh73a0.dtsi                 |  819 ++++++++++++++++++
+ arch/arm/mach-shmobile/board-kzm9g.c          |    2 +-
+ arch/arm/mach-shmobile/include/mach/common.h  |    3 +
+ arch/arm/mach-shmobile/intc-r8a7740.c         |  136 ++-
+ arch/arm/mach-shmobile/intc-sh7372.c          |  210 ++++-
+ arch/arm/mach-shmobile/intc-sh73a0.c          |  248 +++++-
+ arch/arm/mach-shmobile/setup-r8a7740.c        |    2 +-
+ arch/arm/mach-shmobile/setup-sh7372.c         |    2 +-
+ drivers/sh/intc/Kconfig                       |    7 +
+ drivers/sh/intc/Makefile                      |    1 +
+ drivers/sh/intc/core.c                        |    2 +-
+ drivers/sh/intc/internals.h                   |    3 +-
+ drivers/sh/intc/irqdomain.c                   |    6 +-
+ drivers/sh/intc/of_intc.c                     |  646 ++++++++++++++
+ include/linux/sh_intc.h                       |   84 ++
+ 20 files changed, 4361 insertions(+), 80 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/sh/intc.txt
+ create mode 100644 arch/arm/boot/dts/sh73a0.dtsi
+ create mode 100644 drivers/sh/intc/of_intc.c
