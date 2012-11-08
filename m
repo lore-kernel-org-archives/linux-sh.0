@@ -1,36 +1,33 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 27 Nov 2012 00:03:08 +0000
-Subject: [PATCH v2 69/77] sh-pfc: Remove pinmux_info definition
-Message-Id: <1353974596-30033-70-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 08 Nov 2012 03:08:16 +0000
+Subject: [PATCH 1/8] ARM: shmobile: add fsi external clock on r8a7740
+Message-Id: <874nl023mq.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The pinmux_info alias to sh_pfc_soc_info isn't needed anymore, remove
-it.
+xcka/xckb were required from FSI driver
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Paul Mundt <lethal@linux-sh.org>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- include/linux/sh_pfc.h |    3 ---
- 1 files changed, 0 insertions(+), 3 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7740.c |    2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/include/linux/sh_pfc.h b/include/linux/sh_pfc.h
-index 9fd6228..13049c4 100644
---- a/include/linux/sh_pfc.h
-+++ b/include/linux/sh_pfc.h
-@@ -114,9 +114,6 @@ struct sh_pfc_soc_info {
- 	unsigned long unlock_reg;
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index eb5dfee..eac49d5 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -625,6 +625,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("ickb", "sh_fsi2",	&div6_reparent_clks[DIV6_FSIB]),
+ 	CLKDEV_ICK_ID("diva", "sh_fsi2",	&fsidivs[FSIDIV_A]),
+ 	CLKDEV_ICK_ID("divb", "sh_fsi2",	&fsidivs[FSIDIV_B]),
++	CLKDEV_ICK_ID("xcka", "sh_fsi2",	&fsiack_clk),
++	CLKDEV_ICK_ID("xckb", "sh_fsi2",	&fsibck_clk),
  };
  
--/* XXX compat for now */
--#define pinmux_info sh_pfc_soc_info
--
- enum { GPIO_CFG_DRYRUN, GPIO_CFG_REQ, GPIO_CFG_FREE };
- 
- /* helper macro for port */
+ void __init r8a7740_clock_init(u8 md_ck)
 -- 
-1.7.8.6
+1.7.9.5
 
