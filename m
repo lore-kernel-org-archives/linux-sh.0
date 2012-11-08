@@ -1,72 +1,142 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Thu, 08 Nov 2012 05:43:49 +0000
-Subject: Re: [PATCH 0/3] sh/ARM: shmobile: add sh_clk_fsidiv_register()
-Message-Id: <20121108054349.GG20774@verge.net.au>
+Date: Thu, 08 Nov 2012 01:27:32 +0000
+Subject: [PATCH 3/7] ARM: shmobile: marzen: add USB OHCI driver support
+Message-Id: <1352338056-21107-4-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87ip9rmjcb.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87ip9rmjcb.wl%kuninori.morimoto.gx@renesas.com>
+References: <1352338056-21107-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1352338056-21107-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Nov 08, 2012 at 02:28:29PM +0900, Paul Mundt wrote:
-> On Thu, Nov 08, 2012 at 10:06:31AM +0900, Simon Horman wrote:
-> > On Wed, Nov 07, 2012 at 04:09:12PM -0800, Kuninori Morimoto wrote:
-> > > 
-> > > Hi Simon
-> > > 
-> > > > > > These patches add sh_clk_fsidiv_register() for FSI-DIV clock control.
-> > > > > > This is 1st step of FSI-DT support.
-> > > > > > My plan is...
-> > > > > > 
-> > > > > >  1st : sh/ARM: add FSI-DIV clock control functions
-> > > > > >  2nd : FSI driver supports audio clock calculation method
-> > > > > >  3rd : sh/ARM: remove old style .set_rate callback from platform
-> > > > > >  4th : FSI support DT
-> > > > > >  5th : platform use DT for FSI
-> > > > > > 
-> > > > > > Kuninori Morimoto (3):
-> > > > > >       sh: clkfwk: add sh_clk_fsidiv_register()
-> > > > > >       ARM: shmobile: sh7372: sh7372_fsidivX_clk become non-global
-> > > > > >       ARM: shmobile: sh7372: use sh_clk_fsidiv_register() for FSI-DIV clocks
-> > > > > 
-> > > > > I am slightly confused about why 4 patches, but its not a big deal.
-> > > > > 
-> > > > > Paul, how do you want to handle merging this?  The 1st patch looks like its
-> > > > > appropriate for your tree while the rest seem to belong in my tree. But I'm
-> > > > > happy for all the changes to go through one tree if that makes sense.
-> > > > 
-> > > > It's not such a big deal either way. Once the first patch has been
-> > > > corrected with the appropriate I/O accessors you're welcome to take it
-> > > > with the rest with my Acked-by. I don't believe we have anything on the
-> > > > SH side that depends on it, so there's not a lot of point in decoupling
-> > > > it from the rest of the patch set.
-> > > 
-> > > Now ALSA SoC maintainer accepted above 2nd step patch-set of FSI driver,
-> > > So, I would like to send 3rd step patches to SH-ML.
-> > > But it needs above (1st step) patch-set.
-> > > Where can I find ?
-> > 
-> > Hi Morimoto-san,
-> > 
-> > sorry for being a bit slow. There seem to be four patches in this series:
-> > 
-> > [PATCH 1/3] sh: clkfwk: add sh_clk_fsidiv_register()
-> > [PATCH 2/3] ARM: shmobile: sh7372: sh7372_fsidivX_clk become non-global
-> > [PATCH 3/3] ARM: shmobile: sh7372: use sh_clk_fsidiv_register() for FSI-DIV clocks
-> > [PATCH 4/3] ARM: shmobile: r8a7740: add FSI-DVI clocks
-> > 
-> > 
-> > It seems that the first patch for drivers/sh/clk/cpg.c and
-> > include/linux/sh_clk.h and thus would normally go through Paul's tree.
-> > And that it is a dependency of the other three patches.
-> > 
-> > Paul, I wonder if it would be easiest to try and push all of these changes
-> > through my tree.
-> > 
-> Yes, it's fine going through your tree. You can add my acked-by if you
-> wish.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks. I already sent a pull request, but I expect to send a revised one.
-I will add your ack.
+This patch supports CN21/CN22 USB 1.x (port 0/1/2),
+and enable input event on defconfig
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ arch/arm/configs/marzen_defconfig     |    5 +--
+ arch/arm/mach-shmobile/Kconfig        |    1 +
+ arch/arm/mach-shmobile/board-marzen.c |   57 +++++++++++++++++++++++++++++++++
+ 3 files changed, 61 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index 6540dfb..728a43c 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -61,9 +61,8 @@ CONFIG_SMSC911X=y
+ # CONFIG_NET_VENDOR_STMICRO is not set
+ # CONFIG_WLAN is not set
+ # CONFIG_INPUT_MOUSEDEV is not set
+-# CONFIG_INPUT_KEYBOARD is not set
++CONFIG_INPUT_EVDEV=y
+ # CONFIG_INPUT_MOUSE is not set
+-# CONFIG_SERIO is not set
+ # CONFIG_VT is not set
+ # CONFIG_LEGACY_PTYS is not set
+ # CONFIG_DEVKMEM is not set
+@@ -86,6 +85,8 @@ CONFIG_MMC=y
+ CONFIG_MMC_SDHI=y
+ CONFIG_USB=y
+ CONFIG_USB_EHCI_HCD=y
++CONFIG_USB_OHCI_HCD=y
++CONFIG_USB_OHCI_HCD_PLATFORM=y
+ CONFIG_USB_EHCI_HCD_PLATFORM=y
+ CONFIG_USB_STORAGE=y
+ CONFIG_UIO=y
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index c03aeec..64db252 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -42,6 +42,7 @@ config ARCH_R8A7779
+ 	select CPU_V7
+ 	select SH_CLK_CPG
+ 	select USB_ARCH_HAS_EHCI
++	select USB_ARCH_HAS_OHCI
+ 
+ config ARCH_EMEV2
+ 	bool "Emma Mobile EV2"
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index 707b3bd..449f928 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -36,6 +36,7 @@
+ #include <linux/mfd/tmio.h>
+ #include <linux/usb/otg.h>
+ #include <linux/usb/ehci_pdriver.h>
++#include <linux/usb/ohci_pdriver.h>
+ #include <linux/pm_runtime.h>
+ #include <mach/hardware.h>
+ #include <mach/r8a7779.h>
+@@ -255,9 +256,65 @@ static struct platform_device ehci1_device = {
+ 	.resource	= ehci1_resources,
+ };
+ 
++static struct usb_ohci_pdata ohcix_pdata = {
++	.power_on	= usb_power_on,
++	.power_off	= usb_power_off,
++	.power_suspend	= usb_power_off,
++};
++
++static struct resource ohci0_resources[] = {
++	[0] = {
++		.start	= 0xffe70400,
++		.end	= 0xffe70800 - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= gic_spi(44),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device ohci0_device = {
++	.name	= "ohci-platform",
++	.id	= 0,
++	.dev	= {
++		.dma_mask		= &ohci0_device.dev.coherent_dma_mask,
++		.coherent_dma_mask	= 0xffffffff,
++		.platform_data		= &ohcix_pdata,
++	},
++	.num_resources	= ARRAY_SIZE(ohci0_resources),
++	.resource	= ohci0_resources,
++};
++
++static struct resource ohci1_resources[] = {
++	[0] = {
++		.start	= 0xfff70400,
++		.end	= 0xfff70800 - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= gic_spi(45),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device ohci1_device = {
++	.name	= "ohci-platform",
++	.id	= 1,
++	.dev	= {
++		.dma_mask		= &ohci1_device.dev.coherent_dma_mask,
++		.coherent_dma_mask	= 0xffffffff,
++		.platform_data		= &ohcix_pdata,
++	},
++	.num_resources	= ARRAY_SIZE(ohci1_resources),
++	.resource	= ohci1_resources,
++};
++
+ static struct platform_device *marzen_late_devices[] __initdata = {
+ 	&ehci0_device,
+ 	&ehci1_device,
++	&ohci0_device,
++	&ohci1_device,
+ };
+ 
+ void __init marzen_init_late(void)
+-- 
+1.7.10.4
+
