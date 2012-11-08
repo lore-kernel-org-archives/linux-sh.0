@@ -1,39 +1,33 @@
-From: Shuah Khan <shuah.khan@hp.com>
-Date: Fri, 23 Nov 2012 21:32:06 +0000
-Subject: [PATCH 2/9] c6x: dma_debug: add debug_dma_mapping_error support
-Message-Id: <1353706326.5270.97.camel@lorien2>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date: Thu, 08 Nov 2012 07:48:35 +0000
+Subject: [PATCH 1/2] tty: sh-sci: Remove SH7367 support
+Message-Id: <1352360916-9397-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Add dma-debug interface debug_dma_mapping_error() to debug drivers that fail
-to check dma mapping errors on addresses returned by dma_map_single() and
-dma_map_page() interfaces.
+The shmobile SH7367 already was removed from source tree.
+This remove SH7367 support for sh-sci.
 
-Signed-off-by: Shuah Khan <shuah.khan@hp.com>
-Acked-by: Mark Salter <msalter@redhat.com>
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 ---
- arch/c6x/include/asm/dma-mapping.h |    1 +
- 1 file changed, 1 insertion(+)
+ drivers/tty/serial/sh-sci.h |    1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/arch/c6x/include/asm/dma-mapping.h b/arch/c6x/include/asm/dma-mapping.h
-index 03579fd..3c69406 100644
---- a/arch/c6x/include/asm/dma-mapping.h
-+++ b/arch/c6x/include/asm/dma-mapping.h
-@@ -32,6 +32,7 @@ static inline int dma_set_mask(struct device *dev, u64 dma_mask)
-  */
- static inline int dma_mapping_error(struct device *dev, dma_addr_t dma_addr)
- {
-+	debug_dma_mapping_error(dev, dma_addr);
- 	return dma_addr = ~0;
- }
- 
+diff --git a/drivers/tty/serial/sh-sci.h b/drivers/tty/serial/sh-sci.h
+index 4c22a15..fc1e6f4 100644
+--- a/drivers/tty/serial/sh-sci.h
++++ b/drivers/tty/serial/sh-sci.h
+@@ -15,7 +15,6 @@
+     defined(CONFIG_CPU_SUBTYPE_SH7720) || \
+     defined(CONFIG_CPU_SUBTYPE_SH7721) || \
+     defined(CONFIG_ARCH_SH73A0) || \
+-    defined(CONFIG_ARCH_SH7367) || \
+     defined(CONFIG_ARCH_SH7377) || \
+     defined(CONFIG_ARCH_SH7372) || \
+     defined(CONFIG_ARCH_R8A7740)
 -- 
-1.7.9.5
-
-
-
-
+1.7.10.4
 
