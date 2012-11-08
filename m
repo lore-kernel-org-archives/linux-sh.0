@@ -1,7 +1,7 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Thu, 08 Nov 2012 05:58:44 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 08 Nov 2012 06:10:42 +0000
 Subject: Re: [PATCH 0/8] ARM: shmobile: board used FSI driver's clock
-Message-Id: <20121108055844.GJ11568@linux-sh.org>
+Message-Id: <20121108061040.GI20774@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87625g23os.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <87625g23os.wl%kuninori.morimoto.gx@renesas.com>
@@ -42,13 +42,20 @@ On Wed, Nov 07, 2012 at 09:56:33PM -0800, Kuninori Morimoto wrote:
 > 
 > d5a1a6ca8c142a9b0b1120d303ee90e86a7e83c2
 > (ARM: shmobile: sh7372: use sh_clk_fsidiv_register() for FSI-DIV clocks)
-> 
+
+That commit is in the boards branch as far as I can see.
+I will try to apply the board patches, they may be ok.
+It was the first two soc patches that I had trouble with.
+
 > and I find it on simon/boards branch (not soc branch).
 >                  ~~~~~~~~~~~~
-> 
+
+Strange, it seems to be here
+http://git.kernel.org/?p=linux/kernel/git/horms/renesas.git;a=shortlog;h=refs/heads/soc
+
 > What should I do in this case ?
-> 
-I suppose the easiest is to take the fsi-div change on its own topic
-branch and then merge that twice, once for each of boards and soc, and
-then layer these on top of it. git can figure out the rest, provided
-there are no rebases.
+
+Can you try to check your remote and fetch again?
+
+If that fails I can manually apply the changes and send them to you for
+review.
