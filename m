@@ -1,196 +1,138 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 21 Nov 2012 02:53:16 +0000
-Subject: Re: [PATCH 00/42] SH pin control and GPIO rework
-Message-Id: <1353466438-10929-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Thu, 08 Nov 2012 01:27:33 +0000
+Subject: [PATCH 4/7] sh: clkfwk: add sh_clk_fsidiv_register()
+Message-Id: <1352338056-21107-5-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1352338056-21107-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1352338056-21107-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-And I've obviously forgotten to CC linux-sh@vger.kernel.org :-S
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Here's a repost of the patch set that I've just posted to LKML (archived at
-http://www.spinics.net/lists/kernel/msg1440366.html). Given the number of
-patches I haven't CC'ed the original recipients. Sorry for the inconvenience.
+This patch adds sh_clk_fsidiv_register() to share FSI-DIV clock code
 
-On Wednesday 21 November 2012 02:27:01 Laurent Pinchart wrote:
-> Hi everybody,
-> 
-> Here's a pretty large patch series that rework pin control and GPIO support
-> for SH and ARM SH/Renesas Mobile/Car platforms. The patches are based on top
-> of v3.7-rc6. You can get them from my git tree at
-> 
-> 	git://linuxtv.org/pinchartl/fbdev.git pinmux
-> 
-> The idea behind these patches is to move SoC-specific pin control code from
-> arch/ to drivers/pinctrl/ and use the Linux device model to instantiate the
-> pin control device. This is required to add device tree support for the pin
-> control device.
-> 
-> The code has been compile-tested on all modified platforms except SH7264 and
-> SH7269, and runtime tested on SH7372 (Mackerel), SH73A0 (KZM-A9-GT) and
-> R8A7740 (Armadillo) so far. I will runtime test it on R8A7779 (Marzen).
-> 
-> The SH7264 and SH7269 platforms have no gpiolib support so the PFC code can't
-> be compiled for them. As the currently implemented arch-level pinmux support
-> also depends on generic GPIO, we're moving from a situation where the code
-> isn't used to a different situation where the code isn't used. I don't
-> consider that as a regression.
-> 
-> Sorry for the numerous checkpatch warnings, patches that move code around or
-> rename files don't modify the content to make review easier, and thus carry
-> warnings from the existing code.
-> 
-> Currently missing from this series are DT bindings. I will send patches for
-> those a bit later. As they will build on top of this series I would appreciate
-> reviews (and hopefilly ack's).
-> 
-> Laurent Pinchart (42):
->   sh-pfc: Split platform data from the sh_pfc structure
->   sh-pfc: Move private definitions and declarations to private header
->   sh-pfc: Merge PFC core and pinctrl
->   sh-pfc: Merge PFC core and gpio
->   sh-pfc: Move platform device and driver to the core
->   sh-pfc: Let the compiler decide whether to inline functions
->   sh-pfc: Remove check for impossible error condition
->   sh-pfc: Sort headers alphabetically
->   sh-pfc: Split platform device and platform driver registration
->   sh-pfc: Support passing resources through platform device
->   ARM: shmobile: Register PFC platform device
->   SH: Register PFC platform device
->   sh-pfc: Remove platform device registration
->   sh-pfc: Remove unused resource and num_resources platform data fields
->   ARM: shmobile: Select PINCTRL
->   sh: Select PINCTRL for CPU subtypes that require it
->   sh-pfc: Move driver from drivers/sh/ to drivers/pinctrl/
->   sh-pfc: Support pinmux info in driver data instead of platform data
->   sh-pfc: Add r8a7740 pinmux support
->   sh-pfc: Add r8a7779 pinmux support
->   sh-pfc: Add sh7367 pinmux support
->   sh-pfc: Add sh7372 pinmux support
->   sh-pfc: Add sh7377 pinmux support
->   sh-pfc: Add sh73a0 pinmux support
->   ARM: shmobile: pfc: Use driver-provided pinmux info
->   sh-pfc: Add sh7203 pinmux support
->   sh-pfc: Add sh7264 pinmux support
->   sh-pfc: Add sh7269 pinmux support
->   sh-pfc: Add sh7720 pinmux support
->   sh-pfc: Add sh7722 pinmux support
->   sh-pfc: Add sh7723 pinmux support
->   sh-pfc: Add sh7724 pinmux support
->   sh-pfc: Add sh7734 pinmux support
->   sh-pfc: Add sh7757 pinmux support
->   sh-pfc: Add sh7785 pinmux support
->   sh-pfc: Add sh7786 pinmux support
->   sh-pfc: Add shx3 pinmux support
->   sh: pinmux: Use driver-provided pinmux info
->   sh-pfc: Remove pinmux_info definition
->   sh-pfc: Move sh_pfc.h from include/linux/ to driver directory
->   ARM: shmobile: r8a7740: Add pin control resources
->   ARM: shmobile: sh7372: Add pin control resources
-> 
->  arch/arm/Kconfig                        |    1 +
->  arch/arm/mach-shmobile/Makefile         |    2 +-
->  arch/arm/mach-shmobile/devices.c        |   35 +
->  arch/arm/mach-shmobile/devices.h        |   26 +
->  arch/arm/mach-shmobile/pfc-r8a7740.c    | 2604 +---------------------------
->  arch/arm/mach-shmobile/pfc-r8a7779.c    | 2613 +---------------------------
->  arch/arm/mach-shmobile/pfc-sh7367.c     | 1706 +-------------------
->  arch/arm/mach-shmobile/pfc-sh7372.c     | 1648 +------------------
->  arch/arm/mach-shmobile/pfc-sh7377.c     | 1666 +------------------
->  arch/arm/mach-shmobile/pfc-sh73a0.c     | 2780 +---------------------------
->  arch/sh/Kconfig                         |   12 +
->  arch/sh/include/asm/gpio.h              |    2 +-
->  arch/sh/include/cpu-common/cpu/pfc.h    |   26 +
->  arch/sh/kernel/cpu/Makefile             |    2 +-
->  arch/sh/kernel/cpu/pfc.c                |   35 +
->  arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c | 1582 +-----------------
->  arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c | 2121 +-----------------------
->  arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c | 2823 +---------------------------
->  arch/sh/kernel/cpu/sh3/pinmux-sh7720.c  | 1226 +-------------
->  arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c | 1778 +-------------------
->  arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c | 1893 +---------------------
->  arch/sh/kernel/cpu/sh4a/pinmux-sh7724.c | 2210 +------------------------
->  arch/sh/kernel/cpu/sh4a/pinmux-sh7734.c | 2470 +---------------------------
->  arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c | 2267 +------------------------
->  arch/sh/kernel/cpu/sh4a/pinmux-sh7785.c | 1294 +--------------
->  arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c |  822 +---------
->  arch/sh/kernel/cpu/sh4a/pinmux-shx3.c   |  573 +-------
->  drivers/pinctrl/Kconfig                 |    1 +
->  drivers/pinctrl/Makefile                |    1 +
->  drivers/pinctrl/sh-pfc/Kconfig          |  126 ++
->  drivers/pinctrl/sh-pfc/Makefile         |   23 +
->  drivers/pinctrl/sh-pfc/core.c           |  666 ++++++++
->  drivers/pinctrl/sh-pfc/core.h           |   74 +
->  drivers/pinctrl/sh-pfc/gpio.c           |  180 ++
->  drivers/pinctrl/sh-pfc/pfc-r8a7740.c    | 2612 ++++++++++++++++++++++++++++
->  drivers/pinctrl/sh-pfc/pfc-r8a7779.c    | 2624 ++++++++++++++++++++++++++++
->  drivers/pinctrl/sh-pfc/pfc-sh7203.c     | 1592 +++++++++++++++++
->  drivers/pinctrl/sh-pfc/pfc-sh7264.c     | 2131 +++++++++++++++++++++++
->  drivers/pinctrl/sh-pfc/pfc-sh7269.c     | 2834 ++++++++++++++++++++++++++++
->  drivers/pinctrl/sh-pfc/pfc-sh7367.c     | 1722 +++++++++++++++++++
->  drivers/pinctrl/sh-pfc/pfc-sh7372.c     | 1658 ++++++++++++++++++
->  drivers/pinctrl/sh-pfc/pfc-sh7377.c     | 1683 ++++++++++++++++++
->  drivers/pinctrl/sh-pfc/pfc-sh73a0.c     | 2798 ++++++++++++++++++++++++++++
->  drivers/pinctrl/sh-pfc/pfc-sh7720.c     | 1236 ++++++++++++++
->  drivers/pinctrl/sh-pfc/pfc-sh7722.c     | 1779 +++++++++++++++++++
->  drivers/pinctrl/sh-pfc/pfc-sh7723.c     | 1903 +++++++++++++++++++++
->  drivers/pinctrl/sh-pfc/pfc-sh7724.c     | 2225 ++++++++++++++++++++++++
->  drivers/pinctrl/sh-pfc/pfc-sh7734.c     | 2475 +++++++++++++++++++++++++++
->  drivers/pinctrl/sh-pfc/pfc-sh7757.c     | 2282 +++++++++++++++++++++++++
->  drivers/pinctrl/sh-pfc/pfc-sh7785.c     | 1304 ++++++++++++++
->  drivers/pinctrl/sh-pfc/pfc-sh7786.c     |  837 +++++++++
->  drivers/pinctrl/sh-pfc/pfc-shx3.c       |  582 +++++++
->  drivers/pinctrl/sh-pfc/pinctrl.c        |  480 ++++++
->  drivers/pinctrl/sh-pfc/sh_pfc.h         |  195 +++
->  drivers/sh/Kconfig                      |    1 -
->  drivers/sh/Makefile                     |    1 -
->  drivers/sh/pfc/Kconfig                  |   26 -
->  drivers/sh/pfc/Makefile                 |    3 -
->  drivers/sh/pfc/core.c                   |  572 -------
->  drivers/sh/pfc/gpio.c                   |  240 ---
->  drivers/sh/pfc/pinctrl.c                |  529 ------
->  include/linux/sh_pfc.h                  |  236 ---
->  62 files changed, 36231 insertions(+), 35617 deletions(-)
->  create mode 100644 arch/arm/mach-shmobile/devices.c
->  create mode 100644 arch/arm/mach-shmobile/devices.h
->  create mode 100644 arch/sh/include/cpu-common/cpu/pfc.h
->  create mode 100644 arch/sh/kernel/cpu/pfc.c
->  create mode 100644 drivers/pinctrl/sh-pfc/Kconfig
->  create mode 100644 drivers/pinctrl/sh-pfc/Makefile
->  create mode 100644 drivers/pinctrl/sh-pfc/core.c
->  create mode 100644 drivers/pinctrl/sh-pfc/core.h
->  create mode 100644 drivers/pinctrl/sh-pfc/gpio.c
->  create mode 100644 drivers/pinctrl/sh-pfc/pfc-r8a7740.c
->  create mode 100644 drivers/pinctrl/sh-pfc/pfc-r8a7779.c
->  create mode 100644 drivers/pinctrl/sh-pfc/pfc-sh7203.c
->  create mode 100644 drivers/pinctrl/sh-pfc/pfc-sh7264.c
->  create mode 100644 drivers/pinctrl/sh-pfc/pfc-sh7269.c
->  create mode 100644 drivers/pinctrl/sh-pfc/pfc-sh7367.c
->  create mode 100644 drivers/pinctrl/sh-pfc/pfc-sh7372.c
->  create mode 100644 drivers/pinctrl/sh-pfc/pfc-sh7377.c
->  create mode 100644 drivers/pinctrl/sh-pfc/pfc-sh73a0.c
->  create mode 100644 drivers/pinctrl/sh-pfc/pfc-sh7720.c
->  create mode 100644 drivers/pinctrl/sh-pfc/pfc-sh7722.c
->  create mode 100644 drivers/pinctrl/sh-pfc/pfc-sh7723.c
->  create mode 100644 drivers/pinctrl/sh-pfc/pfc-sh7724.c
->  create mode 100644 drivers/pinctrl/sh-pfc/pfc-sh7734.c
->  create mode 100644 drivers/pinctrl/sh-pfc/pfc-sh7757.c
->  create mode 100644 drivers/pinctrl/sh-pfc/pfc-sh7785.c
->  create mode 100644 drivers/pinctrl/sh-pfc/pfc-sh7786.c
->  create mode 100644 drivers/pinctrl/sh-pfc/pfc-shx3.c
->  create mode 100644 drivers/pinctrl/sh-pfc/pinctrl.c
->  create mode 100644 drivers/pinctrl/sh-pfc/sh_pfc.h
->  delete mode 100644 drivers/sh/pfc/Kconfig
->  delete mode 100644 drivers/sh/pfc/Makefile
->  delete mode 100644 drivers/sh/pfc/core.c
->  delete mode 100644 drivers/sh/pfc/gpio.c
->  delete mode 100644 drivers/sh/pfc/pinctrl.c
->  delete mode 100644 include/linux/sh_pfc.h
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ drivers/sh/clk/cpg.c   |   86 ++++++++++++++++++++++++++++++++++++++++++++++++
+ include/linux/sh_clk.h |    9 +++++
+ 2 files changed, 95 insertions(+)
 
+diff --git a/drivers/sh/clk/cpg.c b/drivers/sh/clk/cpg.c
+index 07e9fb4..b3dc441 100644
+--- a/drivers/sh/clk/cpg.c
++++ b/drivers/sh/clk/cpg.c
+@@ -361,3 +361,89 @@ int __init sh_clk_div4_reparent_register(struct clk *clks, int nr,
+ 	return sh_clk_div_register_ops(clks, nr, table,
+ 				       &sh_clk_div4_reparent_clk_ops);
+ }
++
++/* FSI-DIV */
++static unsigned long fsidiv_recalc(struct clk *clk)
++{
++	u32 value;
++
++	value = __raw_readl(clk->mapping->base);
++
++	value >>= 16;
++	if (value < 2)
++		return clk->parent->rate;
++
++	return clk->parent->rate / value;
++}
++
++static long fsidiv_round_rate(struct clk *clk, unsigned long rate)
++{
++	return clk_rate_div_range_round(clk, 1, 0xffff, rate);
++}
++
++static void fsidiv_disable(struct clk *clk)
++{
++	__raw_writel(0, clk->mapping->base);
++}
++
++static int fsidiv_enable(struct clk *clk)
++{
++	u32 value;
++
++	value  = __raw_readl(clk->mapping->base) >> 16;
++	if (value < 2)
++		return 0;
++
++	__raw_writel((value << 16) | 0x3, clk->mapping->base);
++
++	return 0;
++}
++
++static int fsidiv_set_rate(struct clk *clk, unsigned long rate)
++{
++	u32 val;
++	int idx;
++
++	idx = (clk->parent->rate / rate) & 0xffff;
++	if (idx < 2)
++		__raw_writel(0, clk->mapping->base);
++	else
++		__raw_writel(idx << 16, clk->mapping->base);
++
++	return 0;
++}
++
++static struct sh_clk_ops fsidiv_clk_ops = {
++	.recalc		= fsidiv_recalc,
++	.round_rate	= fsidiv_round_rate,
++	.set_rate	= fsidiv_set_rate,
++	.enable		= fsidiv_enable,
++	.disable	= fsidiv_disable,
++};
++
++int __init sh_clk_fsidiv_register(struct clk *clks, int nr)
++{
++	struct clk_mapping *map;
++	int i;
++
++	for (i = 0; i < nr; i++) {
++
++		map = kzalloc(sizeof(struct clk_mapping), GFP_KERNEL);
++		if (!map) {
++			pr_err("%s: unable to alloc memory\n", __func__);
++			return -ENOMEM;
++		}
++
++		/* clks[i].enable_reg came from SH_CLK_FSIDIV() */
++		map->phys		= (phys_addr_t)clks[i].enable_reg;
++		map->len		= 8;
++
++		clks[i].enable_reg	= 0; /* remove .enable_reg */
++		clks[i].ops		= &fsidiv_clk_ops;
++		clks[i].mapping		= map;
++
++		clk_register(&clks[i]);
++	}
++
++	return 0;
++}
+diff --git a/include/linux/sh_clk.h b/include/linux/sh_clk.h
+index 5091091..60c7239 100644
+--- a/include/linux/sh_clk.h
++++ b/include/linux/sh_clk.h
+@@ -199,4 +199,13 @@ int sh_clk_div6_reparent_register(struct clk *clks, int nr);
+ #define CLKDEV_DEV_ID(_id, _clk) { .dev_id = _id, .clk = _clk }
+ #define CLKDEV_ICK_ID(_cid, _did, _clk) { .con_id = _cid, .dev_id = _did, .clk = _clk }
+ 
++/* .enable_reg will be updated to .mapping on sh_clk_fsidiv_register() */
++#define SH_CLK_FSIDIV(_reg, _parent)		\
++{						\
++	.enable_reg = (void __iomem *)_reg,	\
++	.parent		= _parent,		\
++}
++
++int sh_clk_fsidiv_register(struct clk *clks, int nr);
++
+ #endif /* __SH_CLOCK_H */
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.10.4
 
