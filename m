@@ -1,104 +1,33 @@
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 08 Nov 2012 03:09:11 +0000
-Subject: [PATCH 4/8] ARM: shmobile: use FSI driver's audio clock on armadillo800eva
-Message-Id: <87zk2szt7v.wl%kuninori.morimoto.gx@renesas.com>
+Date: Thu, 08 Nov 2012 03:09:38 +0000
+Subject: [PATCH 7/8] ARM: shmobile: sh7372: remove fsidivx clock
+Message-Id: <87vcdgzt74.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Current FSI driver can control audio clock without platform
-call-back functions
-This patch removed board-specific call-back/settings
+fsidivx clock is no longer needed.
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c |   38 ++----------------------
- 1 file changed, 3 insertions(+), 35 deletions(-)
+ arch/arm/mach-shmobile/clock-sh7372.c |    2 --
+ 1 file changed, 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 499e6e3..5353adf 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -768,32 +768,6 @@ static struct platform_device ceu0_device = {
- };
+diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
+index 4d57e34..fbd1863 100644
+--- a/arch/arm/mach-shmobile/clock-sh7372.c
++++ b/arch/arm/mach-shmobile/clock-sh7372.c
+@@ -507,8 +507,6 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("pllc1_clk", &pllc1_clk),
+ 	CLKDEV_CON_ID("pllc1_div2_clk", &pllc1_div2_clk),
+ 	CLKDEV_CON_ID("pllc2_clk", &sh7372_pllc2_clk),
+-	CLKDEV_CON_ID("fsidiva", &fsidivs[FSIDIV_A]),
+-	CLKDEV_CON_ID("fsidivb", &fsidivs[FSIDIV_B]),
  
- /* FSI */
--static int fsi_hdmi_set_rate(struct device *dev, int rate, int enable)
--{
--	struct clk *fsib;
--	int ret;
--
--	/* it support 48KHz only */
--	if (48000 != rate)
--		return -EINVAL;
--
--	fsib = clk_get(dev, "ickb");
--	if (IS_ERR(fsib))
--		return -EINVAL;
--
--	if (enable) {
--		ret = SH_FSI_ACKMD_256 | SH_FSI_BPFMD_64;
--		clk_enable(fsib);
--	} else {
--		ret = 0;
--		clk_disable(fsib);
--	}
--
--	clk_put(fsib);
--
--	return ret;
--}
--
- static struct sh_fsi_platform_info fsi_info = {
- 	/* FSI-WM8978 */
- 	.port_a = {
-@@ -802,8 +776,8 @@ static struct sh_fsi_platform_info fsi_info = {
- 	/* FSI-HDMI */
- 	.port_b = {
- 		.flags		= SH_FSI_FMT_SPDIF |
--				  SH_FSI_ENABLE_STREAM_MODE,
--		.set_rate	= fsi_hdmi_set_rate,
-+				  SH_FSI_ENABLE_STREAM_MODE |
-+				  SH_FSI_CLK_CPG,
- 		.tx_id		= SHDMA_SLAVE_FSIB_TX,
- 	}
- };
-@@ -938,13 +912,11 @@ static void __init eva_clock_init(void)
- 	struct clk *xtal1	= clk_get(NULL, "extal1");
- 	struct clk *usb24s	= clk_get(NULL, "usb24s");
- 	struct clk *fsibck	= clk_get(NULL, "fsibck");
--	struct clk *fsib	= clk_get(&fsi_device.dev, "ickb");
- 
- 	if (IS_ERR(system)	||
- 	    IS_ERR(xtal1)	||
- 	    IS_ERR(usb24s)	||
--	    IS_ERR(fsibck)	||
--	    IS_ERR(fsib)) {
-+	    IS_ERR(fsibck)) {
- 		pr_err("armadillo800eva board clock init failed\n");
- 		goto clock_error;
- 	}
-@@ -956,9 +928,7 @@ static void __init eva_clock_init(void)
- 	clk_set_parent(usb24s, system);
- 
- 	/* FSIBCK is 12.288MHz, and it is parent of FSI-B */
--	clk_set_parent(fsib, fsibck);
- 	clk_set_rate(fsibck, 12288000);
--	clk_set_rate(fsib,   12288000);
- 
- clock_error:
- 	if (!IS_ERR(system))
-@@ -969,8 +939,6 @@ clock_error:
- 		clk_put(usb24s);
- 	if (!IS_ERR(fsibck))
- 		clk_put(fsibck);
--	if (!IS_ERR(fsib))
--		clk_put(fsib);
- }
- 
- /*
+ 	/* DIV4 clocks */
+ 	CLKDEV_CON_ID("i_clk", &div4_clks[DIV4_I]),
 -- 
 1.7.9.5
 
