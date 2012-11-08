@@ -1,73 +1,203 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Tue, 06 Nov 2012 04:57:33 +0000
-Subject: [PATCH 11/11] ARM: shmobile: r8a7740: Enable PMU
-Message-Id: <1352177853-6008-12-git-send-email-horms@verge.net.au>
+Date: Thu, 08 Nov 2012 01:27:31 +0000
+Subject: [PATCH 2/7] ARM: shmobile: marzen: add USB EHCI driver support
+Message-Id: <1352338056-21107-3-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352177853-6008-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352177853-6008-1-git-send-email-horms@verge.net.au>
+References: <1352338056-21107-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1352338056-21107-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This patch enables PMU for r8a7740.
+This patch supports CN21/CN22 USB 2.0 (port 0/1/2),
+and enable USB momery on defconfig
 
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-[horms@verge.net.au: corrected indentation]
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/arm/configs/armadillo800eva_defconfig |    1 +
- arch/arm/mach-shmobile/setup-r8a7740.c     |   16 ++++++++++++++++
- 2 files changed, 17 insertions(+)
+ arch/arm/configs/marzen_defconfig     |    6 ++
+ arch/arm/mach-shmobile/Kconfig        |    1 +
+ arch/arm/mach-shmobile/board-marzen.c |  108 ++++++++++++++++++++++++++++++++-
+ 3 files changed, 114 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
-index f78d259..3d76407 100644
---- a/arch/arm/configs/armadillo800eva_defconfig
-+++ b/arch/arm/configs/armadillo800eva_defconfig
-@@ -7,6 +7,7 @@ CONFIG_LOG_BUF_SHIFT
- # CONFIG_IPC_NS is not set
- # CONFIG_PID_NS is not set
- CONFIG_CC_OPTIMIZE_FOR_SIZE=y
-+CONFIG_PERF_EVENTS=y
- CONFIG_SLAB=y
- CONFIG_MODULES=y
- CONFIG_MODULE_UNLOAD=y
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 9777e2d..6ac242c 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -590,6 +590,21 @@ static struct platform_device i2c1_device = {
- 	.num_resources	= ARRAY_SIZE(i2c1_resources),
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index 8a861b7..6540dfb 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -47,6 +47,8 @@ CONFIG_DEVTMPFS_MOUNT=y
+ # CONFIG_STANDALONE is not set
+ # CONFIG_PREVENT_FIRMWARE_BUILD is not set
+ # CONFIG_FW_LOADER is not set
++CONFIG_SCSI=y
++CONFIG_BLK_DEV_SD=y
+ CONFIG_NETDEVICES=y
+ # CONFIG_NET_VENDOR_BROADCOM is not set
+ # CONFIG_NET_VENDOR_FARADAY is not set
+@@ -82,6 +84,10 @@ CONFIG_USB=y
+ CONFIG_USB_RCAR_PHY=y
+ CONFIG_MMC=y
+ CONFIG_MMC_SDHI=y
++CONFIG_USB=y
++CONFIG_USB_EHCI_HCD=y
++CONFIG_USB_EHCI_HCD_PLATFORM=y
++CONFIG_USB_STORAGE=y
+ CONFIG_UIO=y
+ CONFIG_UIO_PDRV_GENIRQ=y
+ # CONFIG_IOMMU_SUPPORT is not set
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index f58c3ea..c03aeec 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -41,6 +41,7 @@ config ARCH_R8A7779
+ 	select ARM_GIC
+ 	select CPU_V7
+ 	select SH_CLK_CPG
++	select USB_ARCH_HAS_EHCI
+ 
+ config ARCH_EMEV2
+ 	bool "Emma Mobile EV2"
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index 74c7f0b..707b3bd 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -34,6 +34,9 @@
+ #include <linux/spi/sh_hspi.h>
+ #include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/mfd/tmio.h>
++#include <linux/usb/otg.h>
++#include <linux/usb/ehci_pdriver.h>
++#include <linux/pm_runtime.h>
+ #include <mach/hardware.h>
+ #include <mach/r8a7779.h>
+ #include <mach/common.h>
+@@ -172,6 +175,101 @@ static struct platform_device *marzen_devices[] __initdata = {
+ 	&usb_phy_device,
  };
  
-+static struct resource pmu_resources[] = {
++/* USB */
++static struct usb_phy *phy;
++static int usb_power_on(struct platform_device *pdev)
++{
++	if (!phy)
++		return -EIO;
++
++	pm_runtime_enable(&pdev->dev);
++	pm_runtime_get_sync(&pdev->dev);
++
++	usb_phy_init(phy);
++
++	return 0;
++}
++
++static void usb_power_off(struct platform_device *pdev)
++{
++	if (!phy)
++		return;
++
++	usb_phy_shutdown(phy);
++
++	pm_runtime_put_sync(&pdev->dev);
++	pm_runtime_disable(&pdev->dev);
++}
++
++static struct usb_ehci_pdata ehcix_pdata = {
++	.power_on	= usb_power_on,
++	.power_off	= usb_power_off,
++	.power_suspend	= usb_power_off,
++};
++
++static struct resource ehci0_resources[] = {
 +	[0] = {
-+		.start	= evt2irq(0x19a0),
-+		.end	= evt2irq(0x19a0),
-+		.flags  = IORESOURCE_IRQ,
++		.start	= 0xffe70000,
++		.end	= 0xffe70400 - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= gic_spi(44),
++		.flags	= IORESOURCE_IRQ,
 +	},
 +};
 +
-+static struct platform_device pmu_device = {
-+	.name	= "arm-pmu",
-+	.id	= -1,
-+	.num_resources = ARRAY_SIZE(pmu_resources),
-+	.resource = pmu_resources,
++static struct platform_device ehci0_device = {
++	.name	= "ehci-platform",
++	.id	= 0,
++	.dev	= {
++		.dma_mask		= &ehci0_device.dev.coherent_dma_mask,
++		.coherent_dma_mask	= 0xffffffff,
++		.platform_data		= &ehcix_pdata,
++	},
++	.num_resources	= ARRAY_SIZE(ehci0_resources),
++	.resource	= ehci0_resources,
 +};
 +
- static struct platform_device *r8a7740_late_devices[] __initdata = {
- 	&i2c0_device,
- 	&i2c1_device,
-@@ -597,6 +612,7 @@ static struct platform_device *r8a7740_late_devices[] __initdata = {
- 	&dma1_device,
- 	&dma2_device,
- 	&usb_dma_device,
-+	&pmu_device,
- };
++static struct resource ehci1_resources[] = {
++	[0] = {
++		.start	= 0xfff70000,
++		.end	= 0xfff70400 - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= gic_spi(45),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device ehci1_device = {
++	.name	= "ehci-platform",
++	.id	= 1,
++	.dev	= {
++		.dma_mask		= &ehci1_device.dev.coherent_dma_mask,
++		.coherent_dma_mask	= 0xffffffff,
++		.platform_data		= &ehcix_pdata,
++	},
++	.num_resources	= ARRAY_SIZE(ehci1_resources),
++	.resource	= ehci1_resources,
++};
++
++static struct platform_device *marzen_late_devices[] __initdata = {
++	&ehci0_device,
++	&ehci1_device,
++};
++
++void __init marzen_init_late(void)
++{
++	/* get usb phy */
++	phy = usb_get_phy(USB_PHY_TYPE_USB2);
++
++	shmobile_init_late();
++	platform_add_devices(marzen_late_devices,
++			     ARRAY_SIZE(marzen_late_devices));
++}
++
+ static void __init marzen_init(void)
+ {
+ 	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
+@@ -209,6 +307,14 @@ static void __init marzen_init(void)
+ 	gpio_request(GPIO_FN_HSPI_TX0,	NULL);
+ 	gpio_request(GPIO_FN_HSPI_RX0,	NULL);
  
- /*
++	/* USB (CN21) */
++	gpio_request(GPIO_FN_USB_OVC0, NULL);
++	gpio_request(GPIO_FN_USB_OVC1, NULL);
++	gpio_request(GPIO_FN_USB_OVC2, NULL);
++
++	/* USB (CN22) */
++	gpio_request(GPIO_FN_USB_PENC2, NULL);
++
+ 	r8a7779_add_standard_devices();
+ 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
+ }
+@@ -221,6 +327,6 @@ MACHINE_START(MARZEN, "marzen")
+ 	.init_irq	= r8a7779_init_irq,
+ 	.handle_irq	= gic_handle_irq,
+ 	.init_machine	= marzen_init,
+-	.init_late	= shmobile_init_late,
++	.init_late	= marzen_init_late,
+ 	.timer		= &shmobile_timer,
+ MACHINE_END
 -- 
 1.7.10.4
 
