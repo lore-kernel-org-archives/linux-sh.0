@@ -1,269 +1,108 @@
-From: Michel Lespinasse <walken@google.com>
-Date: Mon, 05 Nov 2012 22:46:59 +0000
-Subject: [PATCH 02/16] mm: augment vma rbtree with rb_subtree_gap
-Message-Id: <1352155633-8648-3-git-send-email-walken@google.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 09 Nov 2012 07:29:16 +0000
+Subject: [PATCH 01/10] ARM: shmobile: r8a7779: PFC rename PENCx -> USB_PENCx
+Message-Id: <1352446165-19298-2-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352155633-8648-1-git-send-email-walken@google.com>
-In-Reply-To: <1352155633-8648-1-git-send-email-walken@google.com>
+References: <1352446165-19298-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1352446165-19298-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Define vma->rb_subtree_gap as the largest gap between any vma in the
-subtree rooted at that vma, and their predecessor. Or, for a recursive
-definition, vma->rb_subtree_gap is the max of:
-- vma->vm_start - vma->vm_prev->vm_end
-- rb_subtree_gap fields of the vmas pointed by vma->rb.rb_left and
-  vma->rb.rb_right
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This will allow get_unmapped_area_* to find a free area of the right
-size in O(log(N)) time, instead of potentially having to do a linear
-walk across all the VMAs.
+PENCx is Power Enable Control pin for USB.
 
-Also define mm->highest_vm_end as the vm_end field of the highest vma,
-so that we can easily check if the following gap is suitable.
-
-This does have the potential to make unmapping VMAs more expensive,
-especially for processes with very large numbers of VMAs, where the
-VMA rbtree can grow quite deep.
-
-Signed-off-by: Michel Lespinasse <walken@google.com>
-Reviewed-by: Rik van Riel <riel@redhat.com>
-
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- include/linux/mm_types.h |    9 ++++
- mm/mmap.c                |  114 ++++++++++++++++++++++++++++++++++++++++++----
- 2 files changed, 114 insertions(+), 9 deletions(-)
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |    2 +-
+ arch/arm/mach-shmobile/pfc-r8a7779.c          |   16 ++++++++--------
+ 2 files changed, 9 insertions(+), 9 deletions(-)
 
-diff --git a/include/linux/mm_types.h b/include/linux/mm_types.h
-index 31f8a3af7d94..94fa52b28ee8 100644
---- a/include/linux/mm_types.h
-+++ b/include/linux/mm_types.h
-@@ -238,6 +238,14 @@ struct vm_area_struct {
- 	struct rb_node vm_rb;
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+index 499f52d..8ab0cd6 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -71,7 +71,7 @@ enum {
+ 	GPIO_FN_A19,
  
- 	/*
-+	 * Largest free memory gap in bytes to the left of this VMA.
-+	 * Either between this VMA and vma->vm_prev, or between one of the
-+	 * VMAs below us in the VMA rbtree and its ->vm_prev. This helps
-+	 * get_unmapped_area find a free area of the right size.
-+	 */
-+	unsigned long rb_subtree_gap;
-+
-+	/*
- 	 * For areas with an address space and backing store,
- 	 * linkage into the address_space->i_mmap interval tree, or
- 	 * linkage of vma in the address_space->i_mmap_nonlinear list.
-@@ -322,6 +330,7 @@ struct mm_struct {
- 	unsigned long task_size;		/* size of task vm space */
- 	unsigned long cached_hole_size; 	/* if non-zero, the largest hole below free_area_cache */
- 	unsigned long free_area_cache;		/* first hole of size cached_hole_size or larger */
-+	unsigned long highest_vm_end;		/* highest vma end address */
- 	pgd_t * pgd;
- 	atomic_t mm_users;			/* How many users with user space? */
- 	atomic_t mm_count;			/* How many references to "struct mm_struct" (users count as 1) */
-diff --git a/mm/mmap.c b/mm/mmap.c
-index cf18502e75c6..2de8bcfe859d 100644
---- a/mm/mmap.c
-+++ b/mm/mmap.c
-@@ -31,6 +31,7 @@
- #include <linux/audit.h>
- #include <linux/khugepaged.h>
- #include <linux/uprobes.h>
-+#include <linux/rbtree_augmented.h>
+ 	/* IPSR0 */
+-	GPIO_FN_PENC2, GPIO_FN_SCK0, GPIO_FN_PWM1, GPIO_FN_PWMFSW0,
++	GPIO_FN_USB_PENC2, GPIO_FN_SCK0, GPIO_FN_PWM1, GPIO_FN_PWMFSW0,
+ 	GPIO_FN_SCIF_CLK, GPIO_FN_TCLK0_C, GPIO_FN_BS, GPIO_FN_SD1_DAT2,
+ 	GPIO_FN_MMC0_D2, GPIO_FN_FD2, GPIO_FN_ATADIR0, GPIO_FN_SDSELF,
+ 	GPIO_FN_HCTS1, GPIO_FN_TX4_C, GPIO_FN_A0, GPIO_FN_SD1_DAT3,
+diff --git a/arch/arm/mach-shmobile/pfc-r8a7779.c b/arch/arm/mach-shmobile/pfc-r8a7779.c
+index cbc26ba..9513234 100644
+--- a/arch/arm/mach-shmobile/pfc-r8a7779.c
++++ b/arch/arm/mach-shmobile/pfc-r8a7779.c
+@@ -140,7 +140,7 @@ enum {
+ 	FN_IP7_3_2, FN_IP7_6_4, FN_IP7_9_7, FN_IP7_12_10,
+ 	FN_IP7_14_13, FN_IP2_7_4, FN_IP2_11_8, FN_IP2_15_12,
+ 	FN_IP1_28_25, FN_IP2_3_0, FN_IP8_3_0, FN_IP8_7_4,
+-	FN_IP8_11_8, FN_IP8_15_12, FN_PENC0, FN_PENC1,
++	FN_IP8_11_8, FN_IP8_15_12, FN_USB_PENC0, FN_USB_PENC1,
+ 	FN_IP0_2_0, FN_IP8_17_16, FN_IP8_18, FN_IP8_19,
  
- #include <asm/uaccess.h>
- #include <asm/cacheflush.h>
-@@ -297,6 +298,70 @@ out:
- 	return retval;
- }
+ 	/* GPSR5 */
+@@ -176,7 +176,7 @@ enum {
+ 	FN_A0, FN_SD1_DAT3, FN_MMC0_D3, FN_FD3,
+ 	FN_BS, FN_SD1_DAT2, FN_MMC0_D2, FN_FD2,
+ 	FN_ATADIR0, FN_SDSELF, FN_HCTS1, FN_TX4_C,
+-	FN_PENC2, FN_SCK0, FN_PWM1, FN_PWMFSW0,
++	FN_USB_PENC2, FN_SCK0, FN_PWM1, FN_PWMFSW0,
+ 	FN_SCIF_CLK, FN_TCLK0_C,
  
-+static long vma_compute_subtree_gap(struct vm_area_struct *vma)
-+{
-+	unsigned long max, subtree_gap;
-+	max = vma->vm_start;
-+	if (vma->vm_prev)
-+		max -= vma->vm_prev->vm_end;
-+	if (vma->vm_rb.rb_left) {
-+		subtree_gap = rb_entry(vma->vm_rb.rb_left,
-+				struct vm_area_struct, vm_rb)->rb_subtree_gap;
-+		if (subtree_gap > max)
-+			max = subtree_gap;
-+	}
-+	if (vma->vm_rb.rb_right) {
-+		subtree_gap = rb_entry(vma->vm_rb.rb_right,
-+				struct vm_area_struct, vm_rb)->rb_subtree_gap;
-+		if (subtree_gap > max)
-+			max = subtree_gap;
-+	}
-+	return max;
-+}
-+
-+RB_DECLARE_CALLBACKS(static, vma_gap_callbacks, struct vm_area_struct, vm_rb,
-+		     unsigned long, rb_subtree_gap, vma_compute_subtree_gap)
-+
-+/*
-+ * Update augmented rbtree rb_subtree_gap values after vma->vm_start or
-+ * vma->vm_prev->vm_end values changed, without modifying the vma's position
-+ * in the rbtree.
-+ */
-+static void vma_gap_update(struct vm_area_struct *vma)
-+{
-+	/*
-+	 * As it turns out, RB_DECLARE_CALLBACKS() already created a callback
-+	 * function that does exacltly what we want.
-+	 */
-+	vma_gap_callbacks_propagate(&vma->vm_rb, NULL);
-+}
-+
-+static inline void vma_rb_insert(struct vm_area_struct *vma,
-+				 struct rb_root *root)
-+{
-+	/*
-+	 * vma->vm_prev wasn't known when we followed the rbtree to find the
-+	 * correct insertion point for that vma. As a result, we could not
-+	 * update the vma vm_rb parents rb_subtree_gap values on the way down.
-+	 * So, we first insert the vma with a zero rb_subtree_gap value
-+	 * (to be consistent with what we did on the way down), and then
-+	 * immediately update the gap to the correct value.
-+	 */
-+	vma->rb_subtree_gap = 0;
-+	rb_insert_augmented(&vma->vm_rb, root, &vma_gap_callbacks);
-+	vma_gap_update(vma);
-+}
-+
-+static void vma_rb_erase(struct vm_area_struct *vma, struct rb_root *root)
-+{
-+	/*
-+	 * Note rb_erase_augmented is a fairly large inline function,
-+	 * so make sure we instantiate it only once with our desired
-+	 * augmented rbtree callbacks.
-+	 */
-+	rb_erase_augmented(&vma->vm_rb, root, &vma_gap_callbacks);
-+}
-+
- #ifdef CONFIG_DEBUG_VM_RB
- static int browse_rb(struct rb_root *root)
- {
-@@ -422,7 +487,11 @@ void __vma_link_rb(struct mm_struct *mm, struct vm_area_struct *vma,
- 		struct rb_node **rb_link, struct rb_node *rb_parent)
- {
- 	rb_link_node(&vma->vm_rb, rb_parent, rb_link);
--	rb_insert_color(&vma->vm_rb, &mm->mm_rb);
-+	vma_rb_insert(vma, &mm->mm_rb);
-+	if (vma->vm_next)
-+		vma_gap_update(vma->vm_next);
-+	else
-+		mm->highest_vm_end = vma->vm_end;
- }
+ 	/* IPSR1 */
+@@ -447,7 +447,7 @@ enum {
+ 	A0_MARK, SD1_DAT3_MARK, MMC0_D3_MARK, FD3_MARK,
+ 	BS_MARK, SD1_DAT2_MARK, MMC0_D2_MARK, FD2_MARK,
+ 	ATADIR0_MARK, SDSELF_MARK, HCTS1_MARK, TX4_C_MARK,
+-	PENC2_MARK, SCK0_MARK, PWM1_MARK, PWMFSW0_MARK,
++	USB_PENC2_MARK, SCK0_MARK, PWM1_MARK, PWMFSW0_MARK,
+ 	SCIF_CLK_MARK, TCLK0_C_MARK,
  
- static void __vma_link_file(struct vm_area_struct *vma)
-@@ -503,7 +572,7 @@ __vma_unlink(struct mm_struct *mm, struct vm_area_struct *vma,
- 	prev->vm_next = next;
- 	if (next)
- 		next->vm_prev = prev;
--	rb_erase(&vma->vm_rb, &mm->mm_rb);
-+	vma_rb_erase(vma, &mm->mm_rb);
- 	if (mm->mmap_cache = vma)
- 		mm->mmap_cache = prev;
- }
-@@ -525,6 +594,7 @@ int vma_adjust(struct vm_area_struct *vma, unsigned long start,
- 	struct rb_root *root = NULL;
- 	struct anon_vma *anon_vma = NULL;
- 	struct file *file = vma->vm_file;
-+	bool start_changed = false, end_changed = false;
- 	long adjust_next = 0;
- 	int remove_next = 0;
+ 	EX_CS0_MARK, RX3_C_IRDA_RX_C_MARK, MMC0_D6_MARK,
+@@ -658,7 +658,7 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(A18_MARK, FN_A18),
+ 	PINMUX_DATA(A19_MARK, FN_A19),
  
-@@ -615,8 +685,14 @@ again:			remove_next = 1 + (end > next->vm_end);
- 			vma_interval_tree_remove(next, root);
- 	}
+-	PINMUX_IPSR_DATA(IP0_2_0, PENC2),
++	PINMUX_IPSR_DATA(IP0_2_0, USB_PENC2),
+ 	PINMUX_IPSR_MODSEL_DATA(IP0_2_0, SCK0, SEL_SCIF0_0),
+ 	PINMUX_IPSR_DATA(IP0_2_0, PWM1),
+ 	PINMUX_IPSR_MODSEL_DATA(IP0_2_0, PWMFSW0, SEL_PWMFSW_0),
+@@ -1456,7 +1456,7 @@ static struct pinmux_gpio pinmux_gpios[] = {
+ 	GPIO_FN(A19),
  
--	vma->vm_start = start;
--	vma->vm_end = end;
-+	if (start != vma->vm_start) {
-+		vma->vm_start = start;
-+		start_changed = true;
-+	}
-+	if (end != vma->vm_end) {
-+		vma->vm_end = end;
-+		end_changed = true;
-+	}
- 	vma->vm_pgoff = pgoff;
- 	if (adjust_next) {
- 		next->vm_start += adjust_next << PAGE_SHIFT;
-@@ -645,6 +721,15 @@ again:			remove_next = 1 + (end > next->vm_end);
- 		 * (it may either follow vma or precede it).
- 		 */
- 		__insert_vm_struct(mm, insert);
-+	} else {
-+		if (start_changed)
-+			vma_gap_update(vma);
-+		if (end_changed) {
-+			if (!next)
-+				mm->highest_vm_end = end;
-+			else if (!adjust_next)
-+				vma_gap_update(next);
-+		}
- 	}
- 
- 	if (anon_vma) {
-@@ -678,10 +763,13 @@ again:			remove_next = 1 + (end > next->vm_end);
- 		 * we must remove another next too. It would clutter
- 		 * up the code too much to do both in one go.
- 		 */
--		if (remove_next = 2) {
--			next = vma->vm_next;
-+		next = vma->vm_next;
-+		if (remove_next = 2)
- 			goto again;
--		}
-+		else if (next)
-+			vma_gap_update(next);
-+		else
-+			mm->highest_vm_end = end;
- 	}
- 	if (insert && file)
- 		uprobe_mmap(insert);
-@@ -1783,6 +1871,10 @@ int expand_upwards(struct vm_area_struct *vma, unsigned long address)
- 				anon_vma_interval_tree_pre_update_vma(vma);
- 				vma->vm_end = address;
- 				anon_vma_interval_tree_post_update_vma(vma);
-+				if (vma->vm_next)
-+					vma_gap_update(vma->vm_next);
-+				else
-+					mm->highest_vm_end = address;
- 				perf_event_mmap(vma);
- 			}
- 		}
-@@ -1837,6 +1929,7 @@ int expand_downwards(struct vm_area_struct *vma,
- 				vma->vm_start = address;
- 				vma->vm_pgoff -= grow;
- 				anon_vma_interval_tree_post_update_vma(vma);
-+				vma_gap_update(vma);
- 				perf_event_mmap(vma);
- 			}
- 		}
-@@ -1959,14 +2052,17 @@ detach_vmas_to_be_unmapped(struct mm_struct *mm, struct vm_area_struct *vma,
- 	insertion_point = (prev ? &prev->vm_next : &mm->mmap);
- 	vma->vm_prev = NULL;
- 	do {
--		rb_erase(&vma->vm_rb, &mm->mm_rb);
-+		vma_rb_erase(vma, &mm->mm_rb);
- 		mm->map_count--;
- 		tail_vma = vma;
- 		vma = vma->vm_next;
- 	} while (vma && vma->vm_start < end);
- 	*insertion_point = vma;
--	if (vma)
-+	if (vma) {
- 		vma->vm_prev = prev;
-+		vma_gap_update(vma);
-+	} else
-+		mm->highest_vm_end = prev ? prev->vm_end : 0;
- 	tail_vma->vm_next = NULL;
- 	if (mm->unmap_area = arch_unmap_area)
- 		addr = prev ? prev->vm_end : mm->mmap_base;
+ 	/* IPSR0 */
+-	GPIO_FN(PENC2), GPIO_FN(SCK0), GPIO_FN(PWM1), GPIO_FN(PWMFSW0),
++	GPIO_FN(USB_PENC2), GPIO_FN(SCK0), GPIO_FN(PWM1), GPIO_FN(PWMFSW0),
+ 	GPIO_FN(SCIF_CLK), GPIO_FN(TCLK0_C), GPIO_FN(BS), GPIO_FN(SD1_DAT2),
+ 	GPIO_FN(MMC0_D2), GPIO_FN(FD2), GPIO_FN(ATADIR0), GPIO_FN(SDSELF),
+ 	GPIO_FN(HCTS1), GPIO_FN(TX4_C), GPIO_FN(A0), GPIO_FN(SD1_DAT3),
+@@ -1865,8 +1865,8 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		GP_4_30_FN, FN_IP8_18,
+ 		GP_4_29_FN, FN_IP8_17_16,
+ 		GP_4_28_FN, FN_IP0_2_0,
+-		GP_4_27_FN, FN_PENC1,
+-		GP_4_26_FN, FN_PENC0,
++		GP_4_27_FN, FN_USB_PENC1,
++		GP_4_26_FN, FN_USB_PENC0,
+ 		GP_4_25_FN, FN_IP8_15_12,
+ 		GP_4_24_FN, FN_IP8_11_8,
+ 		GP_4_23_FN, FN_IP8_7_4,
+@@ -1981,7 +1981,7 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 		FN_BS, FN_SD1_DAT2, FN_MMC0_D2, FN_FD2,
+ 		FN_ATADIR0, FN_SDSELF, FN_HCTS1, FN_TX4_C,
+ 		/* IP0_2_0 [3] */
+-		FN_PENC2, FN_SCK0, FN_PWM1, FN_PWMFSW0,
++		FN_USB_PENC2, FN_SCK0, FN_PWM1, FN_PWMFSW0,
+ 		FN_SCIF_CLK, FN_TCLK0_C, 0, 0 }
+ 	},
+ 	{ PINMUX_CFG_REG_VAR("IPSR1", 0xfffc0024, 32,
 -- 
-1.7.7.3
+1.7.10.4
+
