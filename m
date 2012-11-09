@@ -1,50 +1,38 @@
-From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Date: Wed, 07 Nov 2012 07:00:06 +0000
-Subject: [PATCH 07/10] serial: sh-sci: mask SCTFDR/RFDR according to fifosize
-Message-Id: <509A06F6.30401@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 09 Nov 2012 07:32:12 +0000
+Subject: [PATCH 1/2] ARM: shmobile: sh7372: remove fsidivx clock
+Message-Id: <1352446333-20082-2-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <509A0658.1010503@renesas.com>
-In-Reply-To: <509A0658.1010503@renesas.com>
+References: <1352446333-20082-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1352446333-20082-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Current mask 0xff to SCTFDR/RFDR damages SCIFB, because the
-registers on SCIFB have 9-bit data (0 to 256).
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-This patch changes the mask according to port->fifosize.
-Though I'm not sure if the mask is really needed (I don't know if
-there are variants which have non-zero upper bits), it is safer.
+fsidivx clock is no longer needed.
 
-Signed-off-by: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
-Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- drivers/tty/serial/sh-sci.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/clock-sh7372.c |    2 --
+ 1 file changed, 2 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 3021912..63a3bd0 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -485,7 +485,7 @@ static int sci_txfill(struct uart_port *port)
+diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
+index 4d57e34..fbd1863 100644
+--- a/arch/arm/mach-shmobile/clock-sh7372.c
++++ b/arch/arm/mach-shmobile/clock-sh7372.c
+@@ -507,8 +507,6 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("pllc1_clk", &pllc1_clk),
+ 	CLKDEV_CON_ID("pllc1_div2_clk", &pllc1_div2_clk),
+ 	CLKDEV_CON_ID("pllc2_clk", &sh7372_pllc2_clk),
+-	CLKDEV_CON_ID("fsidiva", &fsidivs[FSIDIV_A]),
+-	CLKDEV_CON_ID("fsidivb", &fsidivs[FSIDIV_B]),
  
- 	reg = sci_getreg(port, SCTFDR);
- 	if (reg->size)
--		return serial_port_in(port, SCTFDR) & 0xff;
-+		return serial_port_in(port, SCTFDR) & ((port->fifosize << 1) - 1);
- 
- 	reg = sci_getreg(port, SCFDR);
- 	if (reg->size)
-@@ -505,7 +505,7 @@ static int sci_rxfill(struct uart_port *port)
- 
- 	reg = sci_getreg(port, SCRFDR);
- 	if (reg->size)
--		return serial_port_in(port, SCRFDR) & 0xff;
-+		return serial_port_in(port, SCRFDR) & ((port->fifosize << 1) - 1);
- 
- 	reg = sci_getreg(port, SCFDR);
- 	if (reg->size)
+ 	/* DIV4 clocks */
+ 	CLKDEV_CON_ID("i_clk", &div4_clks[DIV4_I]),
 -- 
-1.7.12.4
+1.7.10.4
 
