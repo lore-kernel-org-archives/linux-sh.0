@@ -1,10 +1,10 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Fri, 09 Nov 2012 07:31:46 +0000
-Subject: [PATCH 7/7] ARM: shmobile: use FSI driver's audio clock on ap4evb
-Message-Id: <1352446306-19945-8-git-send-email-horms@verge.net.au>
+Date: Fri, 09 Nov 2012 07:32:13 +0000
+Subject: [PATCH 2/2] ARM: shmobile: sh7372: sh7372_fsiXck_clk become non-global
+Message-Id: <1352446333-20082-3-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352446306-19945-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352446306-19945-1-git-send-email-horms@verge.net.au>
+References: <1352446333-20082-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1352446333-20082-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,189 +12,97 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Current FSI driver can control audio clock without platform
-call-back functions
-This patch removed board-specific call-back/settings
+FSI's external clock is controled by FSI driver.
+Global sh7372_fsiXck_clk is no-longer needed now.
+
+But it needs to set external clock rate by platform,
+so, this patch supports clk_get() interface.
 
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c |  139 +--------------------------------
- 1 file changed, 1 insertion(+), 138 deletions(-)
+ arch/arm/mach-shmobile/clock-sh7372.c        |   18 ++++++++++--------
+ arch/arm/mach-shmobile/include/mach/sh7372.h |    2 --
+ 2 files changed, 10 insertions(+), 10 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index cefdd03..4065785 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -658,133 +658,16 @@ static struct platform_device lcdc_device = {
- 
- /* FSI */
- #define IRQ_FSI		evt2irq(0x1840)
--static int __fsi_set_rate(struct clk *clk, long rate, int enable)
--{
--	int ret = 0;
--
--	if (rate <= 0)
--		return ret;
--
--	if (enable) {
--		ret = clk_set_rate(clk, rate);
--		if (0 = ret)
--			ret = clk_enable(clk);
--	} else {
--		clk_disable(clk);
--	}
--
--	return ret;
--}
--
--static int __fsi_set_round_rate(struct clk *clk, long rate, int enable)
--{
--	return __fsi_set_rate(clk, clk_round_rate(clk, rate), enable);
--}
--
--static int fsi_ak4642_set_rate(struct device *dev, int rate, int enable)
--{
--	struct clk *fsia_ick;
--	struct clk *fsiack;
--	int ret = -EIO;
--
--	fsia_ick = clk_get(dev, "icka");
--	if (IS_ERR(fsia_ick))
--		return PTR_ERR(fsia_ick);
--
--	/*
--	 * FSIACK is connected to AK4642,
--	 * and use external clock pin from it.
--	 * it is parent of fsia_ick now.
--	 */
--	fsiack = clk_get_parent(fsia_ick);
--	if (!fsiack)
--		goto fsia_ick_out;
--
--	/*
--	 * we get 1/1 divided clock by setting same rate to fsiack and fsia_ick
--	 *
--	 ** FIXME **
--	 * Because the freq_table of external clk (fsiack) are all 0,
--	 * the return value of clk_round_rate became 0.
--	 * So, it use __fsi_set_rate here.
--	 */
--	ret = __fsi_set_rate(fsiack, rate, enable);
--	if (ret < 0)
--		goto fsiack_out;
--
--	ret = __fsi_set_round_rate(fsia_ick, rate, enable);
--	if ((ret < 0) && enable)
--		__fsi_set_round_rate(fsiack, rate, 0); /* disable FSI ACK */
--
--fsiack_out:
--	clk_put(fsiack);
--
--fsia_ick_out:
--	clk_put(fsia_ick);
--
--	return 0;
--}
--
--static int fsi_hdmi_set_rate(struct device *dev, int rate, int enable)
--{
--	struct clk *fsib_clk;
--	struct clk *fdiv_clk = clk_get(NULL, "fsidivb");
--	long fsib_rate = 0;
--	long fdiv_rate = 0;
--	int ackmd_bpfmd;
--	int ret;
--
--	switch (rate) {
--	case 44100:
--		fsib_rate	= rate * 256;
--		ackmd_bpfmd	= SH_FSI_ACKMD_256 | SH_FSI_BPFMD_64;
--		break;
--	case 48000:
--		fsib_rate	= 85428000; /* around 48kHz x 256 x 7 */
--		fdiv_rate	= rate * 256;
--		ackmd_bpfmd	= SH_FSI_ACKMD_256 | SH_FSI_BPFMD_64;
--		break;
--	default:
--		pr_err("unsupported rate in FSI2 port B\n");
--		return -EINVAL;
--	}
--
--	/* FSI B setting */
--	fsib_clk = clk_get(dev, "ickb");
--	if (IS_ERR(fsib_clk))
--		return -EIO;
--
--	ret = __fsi_set_round_rate(fsib_clk, fsib_rate, enable);
--	if (ret < 0)
--		goto fsi_set_rate_end;
--
--	/* FSI DIV setting */
--	ret = __fsi_set_round_rate(fdiv_clk, fdiv_rate, enable);
--	if (ret < 0) {
--		/* disable FSI B */
--		if (enable)
--			__fsi_set_round_rate(fsib_clk, fsib_rate, 0);
--		goto fsi_set_rate_end;
--	}
--
--	ret = ackmd_bpfmd;
--
--fsi_set_rate_end:
--	clk_put(fsib_clk);
--	return ret;
--}
--
- static struct sh_fsi_platform_info fsi_info = {
- 	.port_a = {
- 		.flags		= SH_FSI_BRS_INV,
--		.set_rate	= fsi_ak4642_set_rate,
- 	},
- 	.port_b = {
- 		.flags		= SH_FSI_BRS_INV |
- 				  SH_FSI_BRM_INV |
- 				  SH_FSI_LRS_INV |
-+				  SH_FSI_CLK_CPG |
- 				  SH_FSI_FMT_SPDIF,
--		.set_rate	= fsi_hdmi_set_rate,
- 	},
+diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
+index fbd1863..3ca6757 100644
+--- a/arch/arm/mach-shmobile/clock-sh7372.c
++++ b/arch/arm/mach-shmobile/clock-sh7372.c
+@@ -295,10 +295,10 @@ struct clk sh7372_pllc2_clk = {
  };
  
-@@ -1144,25 +1027,6 @@ out:
- 		clk_put(hdmi_ick);
- }
+ /* External input clock (pin name: FSIACK/FSIBCK ) */
+-struct clk sh7372_fsiack_clk = {
++static struct clk fsiack_clk = {
+ };
  
--static void __init fsi_init_pm_clock(void)
--{
--	struct clk *fsia_ick;
--	int ret;
--
--	fsia_ick = clk_get(&fsi_device.dev, "icka");
--	if (IS_ERR(fsia_ick)) {
--		ret = PTR_ERR(fsia_ick);
--		pr_err("Cannot get FSI ICK: %d\n", ret);
--		return;
--	}
--
--	ret = clk_set_parent(fsia_ick, &sh7372_fsiack_clk);
--	if (ret < 0)
--		pr_err("Cannot set FSI-A parent: %d\n", ret);
--
--	clk_put(fsia_ick);
--}
--
- /* TouchScreen */
- #ifdef CONFIG_AP4EVB_QHD
- # define GPIO_TSC_IRQ	GPIO_FN_IRQ28_123
-@@ -1476,7 +1340,6 @@ static void __init ap4evb_init(void)
- 				       ARRAY_SIZE(domain_devices));
+-struct clk sh7372_fsibck_clk = {
++static struct clk fsibck_clk = {
+ };
  
- 	hdmi_init_pm_clock();
--	fsi_init_pm_clock();
- 	sh7372_pm_init();
- 	pm_clk_add(&fsi_device.dev, "spu2");
- 	pm_clk_add(&lcdc1_device.dev, "hdmi");
+ static struct clk *main_clks[] = {
+@@ -314,8 +314,8 @@ static struct clk *main_clks[] = {
+ 	&pllc1_clk,
+ 	&pllc1_div2_clk,
+ 	&sh7372_pllc2_clk,
+-	&sh7372_fsiack_clk,
+-	&sh7372_fsibck_clk,
++	&fsiack_clk,
++	&fsibck_clk,
+ };
+ 
+ static void div4_kick(struct clk *clk)
+@@ -399,14 +399,14 @@ static struct clk *hdmi_parent[] = {
+ static struct clk *fsiackcr_parent[] = {
+ 	[0] = &pllc1_div2_clk,
+ 	[1] = &sh7372_pllc2_clk,
+-	[2] = &sh7372_fsiack_clk, /* external input for FSI A */
++	[2] = &fsiack_clk, /* external input for FSI A */
+ 	[3] = NULL,	/* setting prohibited */
+ };
+ 
+ static struct clk *fsibckcr_parent[] = {
+ 	[0] = &pllc1_div2_clk,
+ 	[1] = &sh7372_pllc2_clk,
+-	[2] = &sh7372_fsibck_clk, /* external input for FSI B */
++	[2] = &fsibck_clk, /* external input for FSI B */
+ 	[3] = NULL,	/* setting prohibited */
+ };
+ 
+@@ -507,6 +507,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("pllc1_clk", &pllc1_clk),
+ 	CLKDEV_CON_ID("pllc1_div2_clk", &pllc1_div2_clk),
+ 	CLKDEV_CON_ID("pllc2_clk", &sh7372_pllc2_clk),
++	CLKDEV_CON_ID("fsiack", &fsiack_clk),
++	CLKDEV_CON_ID("fsibck", &fsibck_clk),
+ 
+ 	/* DIV4 clocks */
+ 	CLKDEV_CON_ID("i_clk", &div4_clks[DIV4_I]),
+@@ -604,8 +606,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("spu2", "sh_fsi2", &mstp_clks[MSTP223]),
+ 	CLKDEV_ICK_ID("diva", "sh_fsi2", &fsidivs[FSIDIV_A]),
+ 	CLKDEV_ICK_ID("divb", "sh_fsi2", &fsidivs[FSIDIV_B]),
+-	CLKDEV_ICK_ID("xcka", "sh_fsi2", &sh7372_fsiack_clk),
+-	CLKDEV_ICK_ID("xckb", "sh_fsi2", &sh7372_fsibck_clk),
++	CLKDEV_ICK_ID("xcka", "sh_fsi2", &fsiack_clk),
++	CLKDEV_ICK_ID("xckb", "sh_fsi2", &fsibck_clk),
+ };
+ 
+ void __init sh7372_clock_init(void)
+diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
+index 26cd101..b582fac 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh7372.h
++++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
+@@ -477,8 +477,6 @@ extern struct clk sh7372_extal2_clk;
+ extern struct clk sh7372_dv_clki_clk;
+ extern struct clk sh7372_dv_clki_div2_clk;
+ extern struct clk sh7372_pllc2_clk;
+-extern struct clk sh7372_fsiack_clk;
+-extern struct clk sh7372_fsibck_clk;
+ 
+ extern void sh7372_intcs_suspend(void);
+ extern void sh7372_intcs_resume(void);
 -- 
 1.7.10.4
 
