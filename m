@@ -1,45 +1,36 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 27 Nov 2012 00:03:16 +0000
-Subject: [PATCH v2 77/77] ARM: shmobile: kzm9g: Add LED1-LED4 to the device tree
-Message-Id: <1353974596-30033-78-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 09 Nov 2012 07:31:43 +0000
+Subject: [PATCH 4/7] ARM: shmobile: mackerel: enable DMAEngine on USB Host
+Message-Id: <1352446306-19945-5-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1352446306-19945-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1352446306-19945-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-LED1 to LED4 are GPIO LEDs. Add corresponding DT nodes.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g.dts |   16 ++++++++++++++++
- 1 files changed, 16 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/board-mackerel.c |    2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-index 7b37901..203efb8 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-@@ -19,4 +19,20 @@
- 		device_type = "memory";
- 		reg = <0x41000000 0x1e800000>;
- 	};
-+
-+	leds {
-+		compatible = "gpio-leds";
-+		led1 {
-+			gpios = <&gpio 20 1>; /* Active low */
-+		};
-+		led2 {
-+			gpios = <&gpio 21 1>; /* Active low */
-+		};
-+		led3 {
-+			gpios = <&gpio 22 1>; /* Active low */
-+		};
-+		led4 {
-+			gpios = <&gpio 23 1>; /* Active low */
-+		};
-+	};
- };
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index f274252..d5fe365 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -816,6 +816,8 @@ static struct platform_device usbhs1_device = {
+ 	.id	= 1,
+ 	.dev = {
+ 		.platform_data		= &usbhs1_private.info,
++		.dma_mask		= &usbhs1_device.dev.coherent_dma_mask,
++		.coherent_dma_mask	= DMA_BIT_MASK(32),
+ 	},
+ 	.num_resources	= ARRAY_SIZE(usbhs1_resources),
+ 	.resource	= usbhs1_resources,
 -- 
-1.7.8.6
+1.7.10.4
 
