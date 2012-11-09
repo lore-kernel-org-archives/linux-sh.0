@@ -1,10 +1,10 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Thu, 08 Nov 2012 01:27:30 +0000
+Date: Fri, 09 Nov 2012 07:31:40 +0000
 Subject: [PATCH 1/7] ARM: shmobile: marzen: add USB phy support
-Message-Id: <1352338056-21107-2-git-send-email-horms@verge.net.au>
+Message-Id: <1352446306-19945-2-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352338056-21107-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352338056-21107-1-git-send-email-horms@verge.net.au>
+References: <1352446306-19945-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1352446306-19945-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
