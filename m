@@ -1,37 +1,152 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Mon, 19 Nov 2012 05:13:25 +0000
-Subject: [RFC 13/15] ARM: shmobile: sh7372: Use DT initialisation of INTC
-Message-Id: <1353302007-31045-14-git-send-email-horms@verge.net.au>
+Date: Fri, 09 Nov 2012 07:29:22 +0000
+Subject: [PATCH 07/10] ARM: shmobile: sh7372: use sh_clk_fsidiv_register() for FSI-DIV clocks
+Message-Id: <1352446165-19298-8-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1353302007-31045-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1353302007-31045-1-git-send-email-horms@verge.net.au>
+References: <1352446165-19298-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1352446165-19298-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Cc: Magnus Damm <damm@opensource.se>
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Now, sh7372 can use sh_clk_fsidiv_register() for FSI-DIV clocks.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-sh7372.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/clock-sh7372.c |   94 ++++-----------------------------
+ 1 file changed, 10 insertions(+), 84 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index a07954f..bbe6e2a 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -1096,7 +1096,7 @@ DT_MACHINE_START(SH7372_DT, "Generic SH7372 (Flattened Device Tree)")
- 	.map_io		= sh7372_map_io,
- 	.init_early	= sh7372_add_early_devices_dt,
- 	.nr_irqs	= NR_IRQS_LEGACY,
--	.init_irq	= sh7372_init_irq,
-+	.init_irq	= sh7372_init_irq_of,
- 	.handle_irq	= shmobile_handle_irq_intc,
- 	.init_machine	= sh7372_add_standard_devices_dt,
- 	.timer		= &shmobile_timer,
+diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
+index 18dcff7..bee2d05 100644
+--- a/arch/arm/mach-shmobile/clock-sh7372.c
++++ b/arch/arm/mach-shmobile/clock-sh7372.c
+@@ -420,87 +420,11 @@ static struct clk div6_reparent_clks[DIV6_REPARENT_NR] = {
+ };
+ 
+ /* FSI DIV */
+-static unsigned long fsidiv_recalc(struct clk *clk)
+-{
+-	unsigned long value;
+-
+-	value = __raw_readl(clk->mapping->base);
+-
+-	value >>= 16;
+-	if (value < 2)
+-		return 0;
+-
+-	return clk->parent->rate / value;
+-}
+-
+-static long fsidiv_round_rate(struct clk *clk, unsigned long rate)
+-{
+-	return clk_rate_div_range_round(clk, 2, 0xffff, rate);
+-}
+-
+-static void fsidiv_disable(struct clk *clk)
+-{
+-	__raw_writel(0, clk->mapping->base);
+-}
+-
+-static int fsidiv_enable(struct clk *clk)
+-{
+-	unsigned long value;
+-
+-	value  = __raw_readl(clk->mapping->base) >> 16;
+-	if (value < 2)
+-		return -EIO;
+-
+-	__raw_writel((value << 16) | 0x3, clk->mapping->base);
+-
+-	return 0;
+-}
++enum { FSIDIV_A, FSIDIV_B, FSIDIV_REPARENT_NR };
+ 
+-static int fsidiv_set_rate(struct clk *clk, unsigned long rate)
+-{
+-	int idx;
+-
+-	idx = (clk->parent->rate / rate) & 0xffff;
+-	if (idx < 2)
+-		return -EINVAL;
+-
+-	__raw_writel(idx << 16, clk->mapping->base);
+-	return 0;
+-}
+-
+-static struct sh_clk_ops fsidiv_clk_ops = {
+-	.recalc		= fsidiv_recalc,
+-	.round_rate	= fsidiv_round_rate,
+-	.set_rate	= fsidiv_set_rate,
+-	.enable		= fsidiv_enable,
+-	.disable	= fsidiv_disable,
+-};
+-
+-static struct clk_mapping fsidiva_clk_mapping = {
+-	.phys	= FSIDIVA,
+-	.len	= 8,
+-};
+-
+-static struct clk fsidiva_clk = {
+-	.ops		= &fsidiv_clk_ops,
+-	.parent		= &div6_reparent_clks[DIV6_FSIA], /* late install */
+-	.mapping	= &fsidiva_clk_mapping,
+-};
+-
+-static struct clk_mapping fsidivb_clk_mapping = {
+-	.phys	= FSIDIVB,
+-	.len	= 8,
+-};
+-
+-static struct clk fsidivb_clk = {
+-	.ops		= &fsidiv_clk_ops,
+-	.parent		= &div6_reparent_clks[DIV6_FSIB],  /* late install */
+-	.mapping	= &fsidivb_clk_mapping,
+-};
+-
+-static struct clk *late_main_clks[] = {
+-	&fsidiva_clk,
+-	&fsidivb_clk,
++static struct clk fsidivs[] = {
++	[FSIDIV_A] = SH_CLK_FSIDIV(FSIDIVA, &div6_reparent_clks[DIV6_FSIA]),
++	[FSIDIV_B] = SH_CLK_FSIDIV(FSIDIVB, &div6_reparent_clks[DIV6_FSIB]),
+ };
+ 
+ enum { MSTP001, MSTP000,
+@@ -583,8 +507,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("pllc1_clk", &pllc1_clk),
+ 	CLKDEV_CON_ID("pllc1_div2_clk", &pllc1_div2_clk),
+ 	CLKDEV_CON_ID("pllc2_clk", &sh7372_pllc2_clk),
+-	CLKDEV_CON_ID("fsidiva", &fsidiva_clk),
+-	CLKDEV_CON_ID("fsidivb", &fsidivb_clk),
++	CLKDEV_CON_ID("fsidiva", &fsidivs[FSIDIV_A]),
++	CLKDEV_CON_ID("fsidivb", &fsidivs[FSIDIV_B]),
+ 
+ 	/* DIV4 clocks */
+ 	CLKDEV_CON_ID("i_clk", &div4_clks[DIV4_I]),
+@@ -680,6 +604,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("icka", "sh_fsi2", &div6_reparent_clks[DIV6_FSIA]),
+ 	CLKDEV_ICK_ID("ickb", "sh_fsi2", &div6_reparent_clks[DIV6_FSIB]),
+ 	CLKDEV_ICK_ID("spu2", "sh_fsi2", &mstp_clks[MSTP223]),
++	CLKDEV_ICK_ID("diva", "sh_fsi2", &fsidivs[FSIDIV_A]),
++	CLKDEV_ICK_ID("divb", "sh_fsi2", &fsidivs[FSIDIV_B]),
+ };
+ 
+ void __init sh7372_clock_init(void)
+@@ -708,8 +634,8 @@ void __init sh7372_clock_init(void)
+ 	if (!ret)
+ 		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
+ 
+-	for (k = 0; !ret && (k < ARRAY_SIZE(late_main_clks)); k++)
+-		ret = clk_register(late_main_clks[k]);
++	if (!ret)
++		ret = sh_clk_fsidiv_register(fsidivs, FSIDIV_REPARENT_NR);
+ 
+ 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+ 
 -- 
 1.7.10.4
 
