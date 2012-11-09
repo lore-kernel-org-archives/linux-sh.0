@@ -1,81 +1,38 @@
-From: Bill Pemberton <wfp5p@virginia.edu>
-Date: Mon, 19 Nov 2012 18:23:57 +0000
-Subject: [PATCH 288/493] sh: remove use of __devinit
-Message-Id: <1353349642-3677-288-git-send-email-wfp5p@virginia.edu>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 09 Nov 2012 07:29:24 +0000
+Subject: [PATCH 09/10] ARM: shmobile: add fsi external clock on r8a7740
+Message-Id: <1352446165-19298-10-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1352446165-19298-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1352446165-19298-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-CONFIG_HOTPLUG is going away as an option so __devinit is no longer
-needed.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Bill Pemberton <wfp5p@virginia.edu>
-Cc: linux-sh@vger.kernel.org 
+xcka/xckb were required from FSI driver
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/sh/drivers/pci/fixups-dreamcast.c | 2 +-
- arch/sh/drivers/pci/pci.c              | 6 +++---
- arch/sh/drivers/pci/pcie-sh7786.c      | 2 +-
- 3 files changed, 5 insertions(+), 5 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7740.c |    2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/arch/sh/drivers/pci/fixups-dreamcast.c b/arch/sh/drivers/pci/fixups-dreamcast.c
-index a5fe1b5..d6cde70 100644
---- a/arch/sh/drivers/pci/fixups-dreamcast.c
-+++ b/arch/sh/drivers/pci/fixups-dreamcast.c
-@@ -28,7 +28,7 @@
- #include <asm/irq.h>
- #include <mach/pci.h>
- 
--static void __devinit gapspci_fixup_resources(struct pci_dev *dev)
-+static void gapspci_fixup_resources(struct pci_dev *dev)
- {
- 	struct pci_channel *p = dev->sysdata;
- 
-diff --git a/arch/sh/drivers/pci/pci.c b/arch/sh/drivers/pci/pci.c
-index 81e5daf..102f5d5 100644
---- a/arch/sh/drivers/pci/pci.c
-+++ b/arch/sh/drivers/pci/pci.c
-@@ -32,7 +32,7 @@ static struct pci_channel *hose_head, **hose_tail = &hose_head;
- 
- static int pci_initialized;
- 
--static void __devinit pcibios_scanbus(struct pci_channel *hose)
-+static void pcibios_scanbus(struct pci_channel *hose)
- {
- 	static int next_busno;
- 	static int need_domain_info;
-@@ -82,7 +82,7 @@ static void __devinit pcibios_scanbus(struct pci_channel *hose)
- DEFINE_RAW_SPINLOCK(pci_config_lock);
- static DEFINE_MUTEX(pci_scan_mutex);
- 
--int __devinit register_pci_controller(struct pci_channel *hose)
-+int register_pci_controller(struct pci_channel *hose)
- {
- 	int i;
- 
-@@ -156,7 +156,7 @@ subsys_initcall(pcibios_init);
-  *  Called after each bus is probed, but before its children
-  *  are examined.
-  */
--void __devinit pcibios_fixup_bus(struct pci_bus *bus)
-+void pcibios_fixup_bus(struct pci_bus *bus)
- {
- }
- 
-diff --git a/arch/sh/drivers/pci/pcie-sh7786.c b/arch/sh/drivers/pci/pcie-sh7786.c
-index 9e702f2..c2c85f6 100644
---- a/arch/sh/drivers/pci/pcie-sh7786.c
-+++ b/arch/sh/drivers/pci/pcie-sh7786.c
-@@ -132,7 +132,7 @@ static struct clk fixed_pciexclkp = {
- 	.rate = 100000000,	/* 100 MHz reference clock */
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index eb5dfee..eac49d5 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -625,6 +625,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("ickb", "sh_fsi2",	&div6_reparent_clks[DIV6_FSIB]),
+ 	CLKDEV_ICK_ID("diva", "sh_fsi2",	&fsidivs[FSIDIV_A]),
+ 	CLKDEV_ICK_ID("divb", "sh_fsi2",	&fsidivs[FSIDIV_B]),
++	CLKDEV_ICK_ID("xcka", "sh_fsi2",	&fsiack_clk),
++	CLKDEV_ICK_ID("xckb", "sh_fsi2",	&fsibck_clk),
  };
  
--static void __devinit sh7786_pci_fixup(struct pci_dev *dev)
-+static void sh7786_pci_fixup(struct pci_dev *dev)
- {
- 	/*
- 	 * Prevent enumeration of root complex resources.
+ void __init r8a7740_clock_init(u8 md_ck)
 -- 
-1.8.0
+1.7.10.4
 
