@@ -1,10 +1,10 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Thu, 08 Nov 2012 01:27:31 +0000
+Date: Fri, 09 Nov 2012 07:31:41 +0000
 Subject: [PATCH 2/7] ARM: shmobile: marzen: add USB EHCI driver support
-Message-Id: <1352338056-21107-3-git-send-email-horms@verge.net.au>
+Message-Id: <1352446306-19945-3-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352338056-21107-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352338056-21107-1-git-send-email-horms@verge.net.au>
+References: <1352446306-19945-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1352446306-19945-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -48,10 +48,10 @@ index 8a861b7..6540dfb 100644
  CONFIG_UIO_PDRV_GENIRQ=y
  # CONFIG_IOMMU_SUPPORT is not set
 diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index f58c3ea..c03aeec 100644
+index 4eddca1..4eae11c 100644
 --- a/arch/arm/mach-shmobile/Kconfig
 +++ b/arch/arm/mach-shmobile/Kconfig
-@@ -41,6 +41,7 @@ config ARCH_R8A7779
+@@ -29,6 +29,7 @@ config ARCH_R8A7779
  	select ARM_GIC
  	select CPU_V7
  	select SH_CLK_CPG
