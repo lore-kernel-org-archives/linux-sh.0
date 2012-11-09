@@ -1,56 +1,57 @@
-From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Date: Fri, 16 Nov 2012 01:53:31 +0000
-Subject: [PATCH v2 08/10] serial: sh-sci: fix common SCIFB regmap definition
-Message-Id: <50A59C9B.8080204@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 09 Nov 2012 07:29:17 +0000
+Subject: [PATCH 02/10] ARM: shmobile: r8a7740: add USB24 clock explain
+Message-Id: <1352446165-19298-3-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <509A0658.1010503@renesas.com> <509A0B4E.1030801@renesas.com>
- <20121116010107.GA6068@kroah.com> <50A59B9B.2010501@renesas.com>
-In-Reply-To: <50A59B9B.2010501@renesas.com>
+References: <1352446165-19298-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1352446165-19298-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-About FIFO count, there are two variants of SCIFs which show
-a) TX count in upper, RX count in lower byte of FDR register
-b) TX count in TFDR register, RX count in RFDR register
+USBCKCR is controlling USB parent clock and divide rate.
+This parent clock is used as a "usb24s" from other devices,
+but the "divide rate" is not used.
+Further, this clock itself is known as "usb24".
+So, to set this clock is a little confusable.
+This patch adds quick explain and sample settings for this clock.
 
-Common SCIFB regmap in current source code is defined as "a".
-At least 7372 and 73a0 HW manual say their SICFB are "b".
-
-This patch alters the definition to "b", considering the current
-one has come from a mistake. The reason is as follows.
-
-The flag SCIFB sh-sci driver means it has 256 byte FIFO.
-The count is from 0(empty) to 256(full), that makes 9-bit.
-Because FDR is 16-bit register, it can not hold two 9-bits.
-That's why, SCIFB can not be "a".
-
-Signed-off-by: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
-Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- drivers/tty/serial/sh-sci.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7740.c |   16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 63a3bd0..502fa47 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -196,9 +196,9 @@ static struct plat_sci_reg sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = {
- 		[SCxSR]		= { 0x14, 16 },
- 		[SCxRDR]	= { 0x60,  8 },
- 		[SCFCR]		= { 0x18, 16 },
--		[SCFDR]		= { 0x1c, 16 },
--		[SCTFDR]	= sci_reg_invalid,
--		[SCRFDR]	= sci_reg_invalid,
-+		[SCFDR]		= sci_reg_invalid,
-+		[SCTFDR]	= { 0x38, 16 },
-+		[SCRFDR]	= { 0x3c, 16 },
- 		[SCSPTR]	= sci_reg_invalid,
- 		[SCLSR]		= sci_reg_invalid,
- 	},
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index 6729e00..c012bbf 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -188,6 +188,22 @@ static struct clk pllc1_div2_clk = {
+ };
+ 
+ /* USB clock */
++/*
++ * USBCKCR is controlling usb24 clock
++ * bit[7] : parent clock
++ * bit[6] : clock divide rate
++ * And this bit[7] is used as a "usb24s" from other devices.
++ * (Video clock / Sub clock / SPU clock)
++ * You can controll this clock as a below.
++ *
++ * struct clk *usb24	= clk_get(dev,  "usb24");
++ * struct clk *usb24s	= clk_get(NULL, "usb24s");
++ * struct clk *system	= clk_get(NULL, "system_clk");
++ * int rate = clk_get_rate(system);
++ *
++ * clk_set_parent(usb24s, system);  // for bit[7]
++ * clk_set_rate(usb24, rate / 2);   // for bit[6]
++ */
+ static struct clk *usb24s_parents[] = {
+ 	[0] = &system_clk,
+ 	[1] = &extal2_clk
 -- 
-1.7.12.4
+1.7.10.4
 
