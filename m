@@ -1,10 +1,10 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Thu, 08 Nov 2012 01:27:32 +0000
+Date: Fri, 09 Nov 2012 07:31:42 +0000
 Subject: [PATCH 3/7] ARM: shmobile: marzen: add USB OHCI driver support
-Message-Id: <1352338056-21107-4-git-send-email-horms@verge.net.au>
+Message-Id: <1352446306-19945-4-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352338056-21107-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352338056-21107-1-git-send-email-horms@verge.net.au>
+References: <1352446306-19945-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1352446306-19945-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -48,10 +48,10 @@ index 6540dfb..728a43c 100644
  CONFIG_USB_STORAGE=y
  CONFIG_UIO=y
 diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index c03aeec..64db252 100644
+index 4eae11c..9255546 100644
 --- a/arch/arm/mach-shmobile/Kconfig
 +++ b/arch/arm/mach-shmobile/Kconfig
-@@ -42,6 +42,7 @@ config ARCH_R8A7779
+@@ -30,6 +30,7 @@ config ARCH_R8A7779
  	select CPU_V7
  	select SH_CLK_CPG
  	select USB_ARCH_HAS_EHCI
