@@ -1,76 +1,109 @@
-From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Date: Fri, 16 Nov 2012 01:52:49 +0000
-Subject: [PATCH v2 06/10] serial: sh-sci: support lower baud rate
-Message-Id: <50A59C71.3010900@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 09 Nov 2012 07:31:44 +0000
+Subject: [PATCH 5/7] ARM: shmobile: use FSI driver's audio clock on armadillo800eva
+Message-Id: <1352446306-19945-6-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <509A0658.1010503@renesas.com> <509A0B4E.1030801@renesas.com>
- <20121116010107.GA6068@kroah.com> <50A59B9B.2010501@renesas.com>
-In-Reply-To: <50A59B9B.2010501@renesas.com>
+References: <1352446306-19945-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1352446306-19945-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Support prescaler 1/16 and 1/64, in addition to current 1 and 1/4.
+Current FSI driver can control audio clock without platform
+call-back functions
+This patch removed board-specific call-back/settings
 
-Supporting below 2400bps was dropped long time ago in mainline.
-Since then, setting lower rate has been resulting in erroneous
-register value, without indicating any errors through API.
-
-This patch adds more prescaler to support lower rates again.
-This still doesn't check range, but we won't hit the case because
-even 50bps at 48MHz clock is now supported.
-
-Signed-off-by: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
-Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- drivers/tty/serial/sh-sci.c | 19 ++++++++-----------
- 1 file changed, 8 insertions(+), 11 deletions(-)
+ arch/arm/mach-shmobile/board-armadillo800eva.c |   38 ++----------------------
+ 1 file changed, 3 insertions(+), 35 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index ffeca65..3021912 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1814,7 +1814,7 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
- {
- 	struct sci_port *s = to_sci_port(port);
- 	struct plat_sci_reg *reg;
--	unsigned int baud, smr_val, max_baud;
-+	unsigned int baud, smr_val, max_baud, cks;
- 	int t = -1;
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index fe27d7e..3d4c0e4 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -768,32 +768,6 @@ static struct platform_device ceu0_device = {
+ };
  
- 	/*
-@@ -1848,21 +1848,18 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
- 
- 	uart_update_timeout(port, termios->c_cflag, baud);
- 
--	serial_port_out(port, SCSMR, smr_val);
-+	for (cks = 0; t >= 256 && cks <= 3; cks++)
-+		t >>= 2;
- 
--	dev_dbg(port->dev, "%s: SMR %x, t %x, SCSCR %x\n", __func__, smr_val, t,
--		s->cfg->scscr);
-+	dev_dbg(port->dev, "%s: SMR %x, cks %x, t %x, SCSCR %x\n",
-+		__func__, smr_val, cks, t, s->cfg->scscr);
- 
- 	if (t >= 0) {
--		if (t >= 256) {
--			serial_port_out(port, SCSMR, (serial_port_in(port, SCSMR) & ~3) | 1);
--			t >>= 2;
--		} else
--			serial_port_out(port, SCSMR, serial_port_in(port, SCSMR) & ~3);
+ /* FSI */
+-static int fsi_hdmi_set_rate(struct device *dev, int rate, int enable)
+-{
+-	struct clk *fsib;
+-	int ret;
 -
-+		serial_port_out(port, SCSMR, (smr_val & ~3) | cks);
- 		serial_port_out(port, SCBRR, t);
- 		udelay((1000000+(baud-1)) / baud); /* Wait one bit interval */
+-	/* it support 48KHz only */
+-	if (48000 != rate)
+-		return -EINVAL;
+-
+-	fsib = clk_get(dev, "ickb");
+-	if (IS_ERR(fsib))
+-		return -EINVAL;
+-
+-	if (enable) {
+-		ret = SH_FSI_ACKMD_256 | SH_FSI_BPFMD_64;
+-		clk_enable(fsib);
+-	} else {
+-		ret = 0;
+-		clk_disable(fsib);
 -	}
-+	} else
-+		serial_port_out(port, SCSMR, smr_val);
+-
+-	clk_put(fsib);
+-
+-	return ret;
+-}
+-
+ static struct sh_fsi_platform_info fsi_info = {
+ 	/* FSI-WM8978 */
+ 	.port_a = {
+@@ -802,8 +776,8 @@ static struct sh_fsi_platform_info fsi_info = {
+ 	/* FSI-HDMI */
+ 	.port_b = {
+ 		.flags		= SH_FSI_FMT_SPDIF |
+-				  SH_FSI_ENABLE_STREAM_MODE,
+-		.set_rate	= fsi_hdmi_set_rate,
++				  SH_FSI_ENABLE_STREAM_MODE |
++				  SH_FSI_CLK_CPG,
+ 		.tx_id		= SHDMA_SLAVE_FSIB_TX,
+ 	}
+ };
+@@ -938,13 +912,11 @@ static void __init eva_clock_init(void)
+ 	struct clk *xtal1	= clk_get(NULL, "extal1");
+ 	struct clk *usb24s	= clk_get(NULL, "usb24s");
+ 	struct clk *fsibck	= clk_get(NULL, "fsibck");
+-	struct clk *fsib	= clk_get(&fsi_device.dev, "ickb");
  
- 	sci_init_pins(port, termios->c_cflag);
+ 	if (IS_ERR(system)	||
+ 	    IS_ERR(xtal1)	||
+ 	    IS_ERR(usb24s)	||
+-	    IS_ERR(fsibck)	||
+-	    IS_ERR(fsib)) {
++	    IS_ERR(fsibck)) {
+ 		pr_err("armadillo800eva board clock init failed\n");
+ 		goto clock_error;
+ 	}
+@@ -956,9 +928,7 @@ static void __init eva_clock_init(void)
+ 	clk_set_parent(usb24s, system);
  
+ 	/* FSIBCK is 12.288MHz, and it is parent of FSI-B */
+-	clk_set_parent(fsib, fsibck);
+ 	clk_set_rate(fsibck, 12288000);
+-	clk_set_rate(fsib,   12288000);
+ 
+ clock_error:
+ 	if (!IS_ERR(system))
+@@ -969,8 +939,6 @@ clock_error:
+ 		clk_put(usb24s);
+ 	if (!IS_ERR(fsibck))
+ 		clk_put(fsibck);
+-	if (!IS_ERR(fsib))
+-		clk_put(fsib);
+ }
+ 
+ /*
 -- 
-1.7.12.4
+1.7.10.4
 
