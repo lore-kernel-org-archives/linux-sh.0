@@ -1,21 +1,95 @@
-From: Rik van Riel <riel@redhat.com>
-Date: Mon, 05 Nov 2012 23:36:14 +0000
-Subject: Re: [PATCH 13/16] mm: use vm_unmapped_area() on sparc64 architecture
-Message-Id: <50984D6E.60205@redhat.com>
+From: Sakari Ailus <sakari.ailus@iki.fi>
+Date: Sun, 11 Nov 2012 22:33:17 +0000
+Subject: Re: [PATCH v2] media: V4L2: add temporary clock helpers
+Message-Id: <20121111223317.GM25623@valkosipuli.retiisi.org.uk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352155633-8648-1-git-send-email-walken@google.com>
- <1352155633-8648-14-git-send-email-walken@google.com>
-In-Reply-To: <1352155633-8648-14-git-send-email-walken@google.com>
+References: <Pine.LNX.4.64.1210301458250.29432@axis700.grange>
+ <1771793.hErFTLlAOS@avalon>
+ <Pine.LNX.4.64.1210311307550.9048@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1210311307550.9048@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Linux Media Mailing List <linux-media@vger.kernel.org>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-On 11/05/2012 05:47 PM, Michel Lespinasse wrote:
-> Update the sparc64 arch_get_unmapped_area[_topdown] functions to make
-> use of vm_unmapped_area() instead of implementing a brute force search.
->
-> Signed-off-by: Michel Lespinasse <walken@google.com>
+Hi Guennadi,
 
-Reviewed-by: Rik van Riel <riel@redhat.com>
+Thanks for the patch!
 
+On Wed, Oct 31, 2012 at 02:02:54PM +0100, Guennadi Liakhovetski wrote:
+> On Wed, 31 Oct 2012, Laurent Pinchart wrote:
+...
+> > > +#include <linux/atomic.h>
+> > > +#include <linux/errno.h>
+> > > +#include <linux/list.h>
+> > > +#include <linux/module.h>
+> > > +#include <linux/mutex.h>
+> > > +#include <linux/string.h>
+> > > +
+> > > +#include <media/v4l2-clk.h>
+> > > +#include <media/v4l2-subdev.h>
+> > > +
+> > > +static DEFINE_MUTEX(clk_lock);
+> > > +static LIST_HEAD(v4l2_clk);
+> > 
+> > As Sylwester mentioned, what about s/v4l2_clk/v4l2_clks/ ?
+> 
+> Don't you think naming of a static variable isn't important enough? ;-) I 
+> think code authors should have enough freedom to at least pick up single 
+> vs. plural form:-) "clks" is too many consonants for my taste, if it were 
+> anything important I'd rather agree to "clk_head" or "clk_list" or 
+> something similar.
+
+clk_list makes sense IMO since the clk_ prefis is the same.
+
+...
+
+> > > +void v4l2_clk_put(struct v4l2_clk *clk)
+> > > +{
+> > > +	if (!IS_ERR(clk))
+> > > +		module_put(clk->ops->owner);
+> > > +}
+> > > +EXPORT_SYMBOL(v4l2_clk_put);
+> > > +
+> > > +int v4l2_clk_enable(struct v4l2_clk *clk)
+> > > +{
+> > > +	if (atomic_inc_return(&clk->enable) = 1 && clk->ops->enable) {
+> > > +		int ret = clk->ops->enable(clk);
+> > > +		if (ret < 0)
+> > > +			atomic_dec(&clk->enable);
+> > > +		return ret;
+> > > +	}
+> > 
+> > I think you need a spinlock here instead of atomic operations. You could get 
+> > preempted after atomic_inc_return() and before clk->ops->enable() by another 
+> > process that would call v4l2_clk_enable(). The function would return with 
+> > enabling the clock.
+> 
+> Sorry, what's the problem then? "Our" instance will succeed and call 
+> ->enable() and the preempting instance will see the enable count > 1 and 
+> just return.
+
+The clock is guaranteed to be enabled only after the call has returned. The
+second caller of v4lw_clk_enable() thus may proceed without the clock being
+enabled.
+
+In principle enable() might also want to sleep, so how about using a mutex
+for the purpose instead of a spinlock?
+
+...
+
+> > > +struct v4l2_clk_ops {
+> > > +	struct module	*owner;
+> > > +	int		(*enable)(struct v4l2_clk *clk);
+> > > +	void		(*disable)(struct v4l2_clk *clk);
+> > > +	unsigned long	(*get_rate)(struct v4l2_clk *clk);
+> > > +	int		(*set_rate)(struct v4l2_clk *clk, unsigned long);
+
+How about unsigned long hz?
+
+-- 
+Kind regards,
+
+Sakari Ailus
+e-mail: sakari.ailus@iki.fi	XMPP: sailus@retiisi.org.uk
