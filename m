@@ -1,69 +1,70 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 09 Nov 2012 07:31:39 +0000
-Subject: [GIT PULL v3] Renesas ARM-based SoC boards for v3.8 #2
-Message-Id: <1352446306-19945-1-git-send-email-horms@verge.net.au>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Mon, 12 Nov 2012 21:11:03 +0000
+Subject: Re: [GIT PULL v3] Renesas ARM-based SoC boards for v3.8 #2
+Message-Id: <201211122111.03440.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1351730411-1874-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1351730411-1874-1-git-send-email-horms@verge.net.au>
+References: <1352446306-19945-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1352446306-19945-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Arnd,
+On Friday 09 November 2012, Simon Horman wrote:
+> Hi Olof, Hi Arnd,
+> 
+> please consider the following board enhancements for 3.8.
+> 
+> * This pull request is based on a merge of
+>   a) The renesas/boards branch of the arm-soc tree
+>   b) The soc branch of the renesas tree,
+>      which I have sent a separate pull requst for
+> 
+> * "sh: clkfwk: add sh_clk_fsidiv_register()" is a driver patch
+>   which is a dependency of
+>   - ARM: shmobile: sh7372: use sh_clk_fsidiv_register() for FSI-DIV clocks
+>   - ARM: shmobile: r8a7740: add FSI-DVI clocks
+>   I have spoken to the driver maintainer, Paul Mundt, and he has indicated
+>   that he thinks it is best to merge all in one go and acked the patch for
+>   inclusion in this pull-request.
+> 
+> * The following patches
+>   - ARM: shmobile: use FSI driver's audio clock on ap4evb
+>   - ARM: shmobile: use FSI driver's audio clock on mackerel
+>   - ARM: shmobile: use FSI driver's audio clock on armadillo800eva
+>   Have a compile-time dependency on the following patch which is present in
+>   the for-next branch of Mark Brown's sound tree on kernel.org
+>   - ASoC: fsi: add master clock control functions
+>     (ab6f6d85210c4d0265cf48e9958c04e08595055a)
 
-please consider the following board enhancements for 3.8.
+Hi Simon,
 
-* This pull request is based on a merge of
-  a) The renesas/boards branch of the arm-soc tree
-  b) The soc branch of the renesas tree,
-     which I have sent a separate pull requst for
+I've pulled this into a new next/boards2 branch because of the new dependency,
+but I'm not entirely happy with the way that the dependency came in through
+your tree.
 
-* "sh: clkfwk: add sh_clk_fsidiv_register()" is a driver patch
-  which is a dependency of
-  - ARM: shmobile: sh7372: use sh_clk_fsidiv_register() for FSI-DIV clocks
-  - ARM: shmobile: r8a7740: add FSI-DVI clocks
-  I have spoken to the driver maintainer, Paul Mundt, and he has indicated
-  that he thinks it is best to merge all in one go and acked the patch for
-  inclusion in this pull-request.
+It's generally ok to have external dependencies where they can't be avoided,
+but please remember these rules:
 
-* The following patches
-  - ARM: shmobile: use FSI driver's audio clock on ap4evb
-  - ARM: shmobile: use FSI driver's audio clock on mackerel
-  - ARM: shmobile: use FSI driver's audio clock on armadillo800eva
-  Have a compile-time dependency on the following patch which is present in
-  the for-next branch of Mark Brown's sound tree on kernel.org
-  - ASoC: fsi: add master clock control functions
-    (ab6f6d85210c4d0265cf48e9958c04e08595055a)
+* When you send a branch that has an external dependency, actually base your
+  branch on top of the other one, so that it can be independently verified.
+  If you have a dependency and send your patches without that one included,
+  it's clear that your code can't be tested in the version you are sending,
+  and it breaks any attempt to test just the arm-soc tree or your branch
+  rather than the entire for-next tree.
 
-----------------------------------------------------------------
-The following changes since commit ab3ff12a78a64b851ab22726ab99dca6ad37bf94:
+* Make sure that the branch you depend on will not get rebased before it
+  gets submitted to the mainline kernel.
 
-  Merge branch 'soc' into boards (2012-11-08 17:49:35 +0900)
+* Always let the person that owns the dependency know that the changes in
+  their tree are also included elsewhere and that things go bad if those
+  changes get rebased after all, or won't make it into the merge window
+  for some reason.
 
-are available in the git repository at:
+I have taken Mark on Cc to let him know about the dependency now, and I've
+merged ab6f6d85210c4d0265cf48e9958c04e08595055a (which has only shmobile
+specific ASoC patches) into the next/boards2 branch before merging your
+branch. This is still not perfect because it breaks bisection, but it's
+the best I could do aside from forcing you do do another round-trip.
 
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git boards
-
-for you to fetch changes up to 12818d82ccad9868a820dbb193b4f9b797cd02d4:
-
-  ARM: shmobile: use FSI driver's audio clock on ap4evb (2012-11-08 17:52:05 +0900)
-
-----------------------------------------------------------------
-Kuninori Morimoto (7):
-      ARM: shmobile: marzen: add USB phy support
-      ARM: shmobile: marzen: add USB EHCI driver support
-      ARM: shmobile: marzen: add USB OHCI driver support
-      ARM: shmobile: mackerel: enable DMAEngine on USB Host
-      ARM: shmobile: use FSI driver's audio clock on armadillo800eva
-      ARM: shmobile: use FSI driver's audio clock on mackerel
-      ARM: shmobile: use FSI driver's audio clock on ap4evb
-
- arch/arm/configs/marzen_defconfig              |   14 +-
- arch/arm/mach-shmobile/Kconfig                 |    2 +
- arch/arm/mach-shmobile/board-ap4evb.c          |  139 +-----------------
- arch/arm/mach-shmobile/board-armadillo800eva.c |   38 +----
- arch/arm/mach-shmobile/board-mackerel.c        |   74 +---------
- arch/arm/mach-shmobile/board-marzen.c          |  186 +++++++++++++++++++++++-
- 6 files changed, 205 insertions(+), 248 deletions(-)
+	Arnd
