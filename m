@@ -1,175 +1,142 @@
-From: Wen Congyang <wency@cn.fujitsu.com>
-Date: Wed, 21 Nov 2012 05:28:43 +0000
-Subject: Re: [PATCH v3 06/12] memory-hotplug: unregister memory section on SPARSEMEM_VMEMMAP
-Message-Id: <50AC668B.3050201@cn.fujitsu.com>
+From: Stephen Rothwell <sfr@canb.auug.org.au>
+Date: Mon, 12 Nov 2012 21:26:15 +0000
+Subject: [PATCH] Centralise CONFIG_ARCH_NO_VIRT_TO_BUS
+Message-Id: <20121113082615.2f482eb8835daf46e1f27947@canb.auug.org.au>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="Signature=_Tue__13_Nov_2012_08_26_15_+1100_Itf/8c4.wc_KVJZU"
 List-Id: <linux-sh.vger.kernel.org>
-References: <1351763083-7905-1-git-send-email-wency@cn.fujitsu.com> <1351763083-7905-7-git-send-email-wency@cn.fujitsu.com> <50AB669D.3060007@gmail.com> <50AC4505.1000007@cn.fujitsu.com> <50AC571C.4030504@gmail.com> <50AC5BC1.9050200@cn.fujitsu.com> <50AC608F.2020307@gmail.com>
-In-Reply-To: <50AC608F.2020307@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: Jaegeuk Hanse <jaegeuk.hanse@gmail.com>
-Cc: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>, x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org, David Rientjes <rientjes@google.com>, Jiang Liu <liuj97@gmail.com>, Len Brown <len.brown@intel.com>, benh@kernel.crashing.org, paulus@samba.org, Christoph Lameter <cl@linux.com>, Minchan Kim <minchan.kim@gmail.com>, Andrew Morton <akpm@linux-foundation.org>, KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>, Jianguo Wu <wujianguo@huawei.com>
+References: <ADE657CA350FB648AAC2C43247A983F00206B25884B1@AUSP01VMBX24.collaborationhost.net>
+	<CAErSpo6WG2R_8sa=rOmAOci-3iFpDs2NFzNkZYxDnD2oTiMQJg@mail.gmail.com>
+In-Reply-To: <CAErSpo6WG2R_8sa=rOmAOci-3iFpDs2NFzNkZYxDnD2oTiMQJg@mail.gmail.com>
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Bjorn Helgaas <bhelgaas@google.com>, H Hartley Sweeten <hartleys@visionengravers.com>, linux-kernel@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org
 
-At 11/21/2012 01:03 PM, Jaegeuk Hanse Wrote:
-> On 11/21/2012 12:42 PM, Wen Congyang wrote:
->> At 11/21/2012 12:22 PM, Jaegeuk Hanse Wrote:
->>> On 11/21/2012 11:05 AM, Wen Congyang wrote:
->>>> At 11/20/2012 07:16 PM, Jaegeuk Hanse Wrote:
->>>>> On 11/01/2012 05:44 PM, Wen Congyang wrote:
->>>>>> From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
->>>>>>
->>>>>> Currently __remove_section for SPARSEMEM_VMEMMAP does nothing. But
->>>>>> even if
->>>>>> we use SPARSEMEM_VMEMMAP, we can unregister the memory_section.
->>>>>>
->>>>>> So the patch add unregister_memory_section() into __remove_section().
->>>>> Hi Yasuaki,
->>>>>
->>>>> I have a question about these sparse vmemmap memory related
->>>>> patches. Hot
->>>>> add memory need allocated vmemmap pages, but this time is allocated by
->>>>> buddy system. How can gurantee virtual address is continuous to the
->>>>> address allocated before? If not continuous, page_to_pfn and
->>>>> pfn_to_page
->>>>> can't work correctly.
->>>> vmemmap has its virtual address range:
->>>> ffffea0000000000 - ffffeaffffffffff (@ bits) virtual memory map (1TB)
->>>>
->>>> We allocate memory from buddy system to store struct page, and its
->>>> virtual
->>>> address isn't in this range. So we should update the page table:
->>>>
->>>> kmalloc_section_memmap()
->>>>       sparse_mem_map_populate()
->>>>           pfn_to_page() // get the virtual address in the vmemmap range
->>>>           vmemmap_populate() // we update page table here
->>>>
->>>> When we use vmemmap, page_to_pfn() always returns address in the
->>>> vmemmap
->>>> range, not the address that kmalloc() returns. So the virtual address
->>>> is continuous.
->>> Hi Congyang,
->>>
->>> Another question about memory hotplug. During hot remove memory, it will
->>> also call memblock_remove to remove related memblock.
->> IIRC, we don't touch memblock when hot-add/hot-remove memory. memblock is
->> only used for bootmem allocator. I think it isn't used after booting.
-> 
-> In IBM pseries servers.
-> 
-> pseries_remove_memory()
->     pseries_remove_memblock()
->         memblock_remove()
+--Signature=_Tue__13_Nov_2012_08_26_15_+1100_Itf/8c4.wc_KVJZU
+Content-Type: text/plain; charset=US-ASCII
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-It seems that pseries servers don't use ACPI(ACPI is only supported for
-ia64 and x86 now. arm will be supported in the furture).
+Make if easier for more architectures to select it and thus disable
+drivers that use virt_to_bus().
 
-I am not ppc expert, and I don't know why we touch memblock when hotadding
-memory in ppc case. But IIRC, we don't need memblock after the machine has
-booted up in x86 case. So there is no need to touch it when hotadd/hotremove
-the memory in x86 case.
+Signed-off-by: Stephen Rothwell <sfr@canb.auug.org.au>
+---
+ arch/Kconfig         |    7 +++++++
+ arch/powerpc/Kconfig |    4 +---
+ arch/sh/Kconfig      |    4 +---
+ arch/sparc/Kconfig   |    4 +---
+ 4 files changed, 10 insertions(+), 9 deletions(-)
 
-Thanks
-Wen Congyang
+diff --git a/arch/Kconfig b/arch/Kconfig
+index 366ec06..9bc00e7 100644
+--- a/arch/Kconfig
++++ b/arch/Kconfig
+@@ -271,6 +271,13 @@ config ARCH_WANT_OLD_COMPAT_IPC
+ 	select ARCH_WANT_COMPAT_IPC_PARSE_VERSION
+ 	bool
+=20
++config ARCH_NO_VIRT_TO_BUS
++	bool
++	help
++	  An architecture should select this if it cannot (or will not)
++	  implement virt_to_bus().  All new architectures should probably
++	  select this.
++
+ config GENERIC_KERNEL_THREAD
+ 	bool
+=20
+diff --git a/arch/powerpc/Kconfig b/arch/powerpc/Kconfig
+index a902a5c..8c8fcba 100644
+--- a/arch/powerpc/Kconfig
++++ b/arch/powerpc/Kconfig
+@@ -87,9 +87,6 @@ config GENERIC_GPIO
+ 	help
+ 	  Generic GPIO API support
+=20
+-config ARCH_NO_VIRT_TO_BUS
+-	def_bool PPC64
+-
+ config PPC
+ 	bool
+ 	default y
+@@ -101,6 +98,7 @@ config PPC
+ 	select HAVE_FUNCTION_GRAPH_TRACER
+ 	select SYSCTL_EXCEPTION_TRACE
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
++	select ARCH_NO_VIRT_TO_BUS if PPC64
+ 	select HAVE_IDE
+ 	select HAVE_IOREMAP_PROT
+ 	select HAVE_EFFICIENT_UNALIGNED_ACCESS
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index babc2b8..9b28793 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -16,6 +16,7 @@ config SUPERH
+ 	select HAVE_DEBUG_BUGVERBOSE
+ 	select ARCH_HAVE_CUSTOM_GPIO_H
+ 	select ARCH_HAVE_NMI_SAFE_CMPXCHG if (GUSA_RB || CPU_SH4A)
++	select ARCH_NO_VIRT_TO_BUS
+ 	select PERF_USE_VMALLOC
+ 	select HAVE_DEBUG_KMEMLEAK
+ 	select HAVE_KERNEL_GZIP
+@@ -150,9 +151,6 @@ config ARCH_HAS_ILOG2_U32
+ config ARCH_HAS_ILOG2_U64
+ 	def_bool n
+=20
+-config ARCH_NO_VIRT_TO_BUS
+-	def_bool y
+-
+ config ARCH_HAS_DEFAULT_IDLE
+ 	def_bool y
+=20
+diff --git a/arch/sparc/Kconfig b/arch/sparc/Kconfig
+index 9f2edb5..594d9bc 100644
+--- a/arch/sparc/Kconfig
++++ b/arch/sparc/Kconfig
+@@ -21,6 +21,7 @@ config SPARC
+ 	select SYSCTL_EXCEPTION_TRACE
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARCH_HAS_ATOMIC64_DEC_IF_POSITIVE
++	select ARCH_NO_VIRT_TO_BUS
+ 	select RTC_CLASS
+ 	select RTC_DRV_M48T59
+ 	select HAVE_IRQ_WORK
+@@ -143,9 +144,6 @@ config GENERIC_GPIO
+ 	help
+ 	  Generic GPIO API support
+=20
+-config ARCH_NO_VIRT_TO_BUS
+-	def_bool y
+-
+ config ARCH_SUPPORTS_DEBUG_PAGEALLOC
+ 	def_bool y if SPARC64
+=20
+--=20
+1.7.10.280.gaa39
 
-> 
-> Furthermore, memblock is set to record available memory ranges get from
-> e820 map(you can check it in memblock_x86_fill()) in x86 case, after
-> hot-remove memory, this range of memory can't be available, why not
-> remove them as pseries servers' codes do.
-> 
->>> memblock_remove()
->>>             __memblock_remove()memory-hotplug: unregister memory
->>> section on SPARSEMEM_VMEMMAP
->>>
->>>                     memblock_isolate_range()
->>>                     memblock_remove_region()
->>>
->>> But memblock_isolate_range() only record fully contained regions,
->>> regions which are partial overlapped just be splitted instead of record.
->>> So these partial overlapped regions can't be removed. Where I miss?
->> No, memblock_isolate_range() can deal with partial overlapped region.
->> ==========>>         if (rbase < base) {
->>             /*
->>              * @rgn intersects from below.  Split and continue
->>              * to process the next region - the new top half.
->>              */
->>             rgn->base = base;
->>             rgn->size -= base - rbase;
->>             type->total_size -= base - rbase;
->>             memblock_insert_region(type, i, rbase, base - rbase,
->>                            memblock_get_region_node(rgn));
->>         } else if (rend > end) {
->>             /*
->>              * @rgn intersects from above.  Split and redo the
->>              * current region - the new bottom half.
->>              */
->>             rgn->base = end;
->>             rgn->size -= end - rbase;
->>             type->total_size -= end - rbase;
->>             memblock_insert_region(type, i--, rbase, end - rbase,
->>                            memblock_get_region_node(rgn));
->> ==========>>
->> If the region is partial overlapped region, we will split the old
->> region into
->> two regions. After doing this, it is full contained region now.
-> 
-> You are right, I misunderstand the codes.
-> 
->>
->> Thanks
->> Wen Congyang
->>
->>> Regards,
->>> Jaegeuk
->>>
->>>> Thanks
->>>> Wen Congyang
->>>>> Regards,
->>>>> Jaegeuk
->>>>>
->>>>>> CC: David Rientjes <rientjes@google.com>
->>>>>> CC: Jiang Liu <liuj97@gmail.com>
->>>>>> CC: Len Brown <len.brown@intel.com>
->>>>>> CC: Christoph Lameter <cl@linux.com>
->>>>>> Cc: Minchan Kim <minchan.kim@gmail.com>
->>>>>> CC: Andrew Morton <akpm@linux-foundation.org>
->>>>>> CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
->>>>>> CC: Wen Congyang <wency@cn.fujitsu.com>
->>>>>> Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
->>>>>> ---
->>>>>>     mm/memory_hotplug.c | 13 ++++++++-----
->>>>>>     1 file changed, 8 insertions(+), 5 deletions(-)
->>>>>>
->>>>>> diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
->>>>>> index ca07433..66a79a7 100644
->>>>>> --- a/mm/memory_hotplug.c
->>>>>> +++ b/mm/memory_hotplug.c
->>>>>> @@ -286,11 +286,14 @@ static int __meminit __add_section(int nid,
->>>>>> struct zone *zone,
->>>>>>     #ifdef CONFIG_SPARSEMEM_VMEMMAP
->>>>>>     static int __remove_section(struct zone *zone, struct mem_section
->>>>>> *ms)
->>>>>>     {
->>>>>> -    /*
->>>>>> -     * XXX: Freeing memmap with vmemmap is not implement yet.
->>>>>> -     *      This should be removed later.
->>>>>> -     */
->>>>>> -    return -EBUSY;
->>>>>> +    int ret = -EINVAL;
->>>>>> +
->>>>>> +    if (!valid_section(ms))
->>>>>> +        return ret;
->>>>>> +
->>>>>> +    ret = unregister_memory_section(ms);
->>>>>> +
->>>>>> +    return ret;
->>>>>>     }
->>>>>>     #else
->>>>>>     static int __remove_section(struct zone *zone, struct mem_section
->>>>>> *ms)
->>>
-> 
-> 
+--=20
+Cheers,
+Stephen Rothwell                    sfr@canb.auug.org.au
 
+--Signature=_Tue__13_Nov_2012_08_26_15_+1100_Itf/8c4.wc_KVJZU
+Content-Type: application/pgp-signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBCAAGBQJQoWl3AAoJEECxmPOUX5FETDAQAItH1ujjUafDGf+fTyszR6tX
+1AA9ZZFUv2OYSEWl3bmNNf0CpK+s3lSljc4A9e99+lB0fo2pG1zgBERHdqJ2a83V
+YcNCDx6mw2poqYzPJGL3l8eCIQ9JGvhhVBHO6WwiKhE7+QHdypaRePMxl7yn8N/y
+fTw1BlKBovCysjO+QZPfQhyAjC8nwMc+LIrSucdDnSuFYpTzxL2EX4pZUiHLl/M7
+mGp3+Kz+af7AMMmGyiFbmRpEul9CzU6dMoRV2uxX7SGXvzirntZWf4TMJ6L3U1qQ
+/vSb+MkE1cDSsDZJTnADzZla9OcRCGELc4hwmfzCkOlekbF4drb6xcnvjZQo5hFs
+PczMY0xXurZIoc7OgIB2sVuGFbgnZ2C0287iqBLj2bVtkrA8n/PKYhNvVrwo7BIA
+XM15gK7gQEczRFxPZc5EBf+YjuzZYr99uPzmSXp3Lu4d9A3L3AlfS7haqwA7LSih
+qHo7DtZz2s5/VJTBR/FXbRfScdiRDSwdMQZiwWKmSui1fkZg6u1Gy+CH+V8CCS0l
+tKNHZhkYNXc2o2uQ3YgN6ns5+b+NhOPAmR9xH6mQb73w1dVmq5BYZpmqrUiNYr7g
+0piaeNtxSei7KDbeiC3SYH/61Rlldnm9pf96upnxV6jS0P9wEqVBBu5r2UajuRXr
+FNWASGrrzjYOarqXxvY1
+=2ENX
+-----END PGP SIGNATURE-----
+
+--Signature=_Tue__13_Nov_2012_08_26_15_+1100_Itf/8c4.wc_KVJZU--
