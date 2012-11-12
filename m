@@ -1,33 +1,59 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Tue, 06 Nov 2012 14:32:02 +0000
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Mon, 12 Nov 2012 14:04:21 +0000
 Subject: Re: [GIT PULL v4] Renesas ARM-based SoC for v3.8
-Message-Id: <20121106143202.GF27284@quad.lixom.net>
+Message-Id: <CABYn4sy_EaF5Ywhwj_-Ahc_8R5gtnu0RZPwQFFc7vBvRdBnOXw@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1352177853-6008-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352177853-6008-1-git-send-email-horms@verge.net.au>
+ <20121106143202.GF27284@quad.lixom.net>
+In-Reply-To: <20121106143202.GF27284@quad.lixom.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Nov 06, 2012 at 01:57:22PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Arnd,
-> 
-> please consider the following SoC enhancements for 3.8.
-> 
-> Change since v3:
-> * Remove noise from "ARM: shmobile: Remove SH7367 support"
-> 
-> ----------------------------------------------------------------
-> The following changes since commit ddffeb8c4d0331609ef2581d84de4d763607bd37:
-> 
->   Linux 3.7-rc1 (2012-10-14 14:41:04 -0700)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git soc
+Hello Olof,
 
-Pulled, thanks!
+unfortunately 3 patches contributed by me are "evil" and need to removed.
+
+Bastian Hecht (4):
+      ARM: shmobile: emev2: Replace modify_scu_cpu_psr with scu_power_mode
+      ARM: shmobile: sh73a0: Replace modify_scu_cpu_psr with scu_power_mode
+      ARM: shmobile: r8a7779: Replace modify_scu_cpu_psr with scu_power_mode
+...
+
+The code changes the flags of the wrong cpus - which breaks the whole
+bootup of secondary CPUs. So please drop these patches!
+Sorry for being too careless in this sensitive area - I'll do better.
+
+Thanks,
+
+ Bastian
 
 
--Olof
+
+2012/11/6 Olof Johansson <olof@lixom.net>:
+> On Tue, Nov 06, 2012 at 01:57:22PM +0900, Simon Horman wrote:
+>> Hi Olof, Hi Arnd,
+>>
+>> please consider the following SoC enhancements for 3.8.
+>>
+>> Change since v3:
+>> * Remove noise from "ARM: shmobile: Remove SH7367 support"
+>>
+>> ----------------------------------------------------------------
+>> The following changes since commit ddffeb8c4d0331609ef2581d84de4d763607bd37:
+>>
+>>   Linux 3.7-rc1 (2012-10-14 14:41:04 -0700)
+>>
+>> are available in the git repository at:
+>>
+>>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git soc
+>
+> Pulled, thanks!
+>
+>
+> -Olof
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
