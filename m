@@ -1,152 +1,96 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 12 Nov 2012 11:04:16 +0000
+Date: Mon, 12 Nov 2012 11:06:50 +0000
 Subject: Re: [PATCH v2] media: V4L2: add temporary clock helpers
-Message-Id: <2036621.k9xkWqC1fF@avalon>
+Message-Id: <12527629.75AJWSknHq@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1210301458250.29432@axis700.grange> <1771793.hErFTLlAOS@avalon> <Pine.LNX.4.64.1210311307550.9048@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1210311307550.9048@axis700.grange>
+References: <Pine.LNX.4.64.1210301458250.29432@axis700.grange> <Pine.LNX.4.64.1210311307550.9048@axis700.grange> <20121111223317.GM25623@valkosipuli.retiisi.org.uk>
+In-Reply-To: <20121111223317.GM25623@valkosipuli.retiisi.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Linux Media Mailing List <linux-media@vger.kernel.org>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: Sakari Ailus <sakari.ailus@iki.fi>
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Linux Media Mailing List <linux-media@vger.kernel.org>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Hi Guennadi,
+Hi Sakari,
 
-On Wednesday 31 October 2012 14:02:54 Guennadi Liakhovetski wrote:
-> On Wed, 31 Oct 2012, Laurent Pinchart wrote:
-> > On Tuesday 30 October 2012 15:18:38 Guennadi Liakhovetski wrote:
-> > > Typical video devices like camera sensors require an external clock
-> > > source. Many such devices cannot even access their hardware registers
-> > > without a running clock. These clock sources should be controlled by
-> > > their consumers. This should be performed, using the generic clock
-> > > framework. Unfortunately so far only very few systems have been ported
-> > > to that framework. This patch adds a set of temporary helpers, mimicking
-> > > the generic clock API, to V4L2. Platforms, adopting the clock API,
-> > > should switch to using it. Eventually this temporary API should be
-> > > removed.
-> > > 
-> > > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > > ---
-> > > 
-> > > v2: integrated most fixes from Sylwester & Laurent,
-> > > 
-> > > (1) do not register identical clocks
-> > > (2) add clock refcounting
-> > > (3) more robust locking
-> > > (4) duplicate strings to prevent dereferencing invalid memory
-> > > (5) add a private data pointer
-> > > (6) return an error in get_rate() / set_rate() if clock isn't enabled
-> > > (7) support .id=NULL per subdevice
-> > > 
-> > > Thanks to all reviewers!
-> > > 
-> > >  drivers/media/v4l2-core/Makefile   |    2 +-
-> > >  drivers/media/v4l2-core/v4l2-clk.c |  169 +++++++++++++++++++++++++++++
-> > >  include/media/v4l2-clk.h           |   51 +++++++++++
-> > >  3 files changed, 221 insertions(+), 1 deletions(-)
-> > >  create mode 100644 drivers/media/v4l2-core/v4l2-clk.c
-> > >  create mode 100644 include/media/v4l2-clk.h
-
-[snip]
-
-> > > +int v4l2_clk_enable(struct v4l2_clk *clk)
-> > > +{
-> > > +	if (atomic_inc_return(&clk->enable) = 1 && clk->ops->enable) {
-> > > +		int ret = clk->ops->enable(clk);
-> > > +		if (ret < 0)
-> > > +			atomic_dec(&clk->enable);
-> > > +		return ret;
-> > > +	}
-> > 
-> > I think you need a spinlock here instead of atomic operations. You could
-> > get preempted after atomic_inc_return() and before clk->ops->enable() by
-> > another process that would call v4l2_clk_enable(). The function would
-> > return with enabling the clock.
+On Monday 12 November 2012 00:33:17 Sakari Ailus wrote:
+> On Wed, Oct 31, 2012 at 02:02:54PM +0100, Guennadi Liakhovetski wrote:
+> > On Wed, 31 Oct 2012, Laurent Pinchart wrote:
+> ...
 > 
-> Sorry, what's the problem then? "Our" instance will succeed and call
-> ->enable() and the preempting instance will see the enable count > 1 and
-> just return.
-
-CPU 0                              CPU 1
------------------------------------------------------------------------------
-
-v4l2_clk_enable()
-atomic_inc_return() returns 1
-
-                                   v4l2_clk_enable()
-                                   atomic_inc_return() returns 2
-                                   returns 0 to caller, clock is not enabled
-                                   caller uses the clock and fails
-
-clk->ops->enable()
-
-This could also happen on a non-SMP system if the first task is interrupted 
-between the atomic_inc_return() and clk->ops->enable() calls.
-
-> > One solution would be to add a spinlock to struct v4l2_clk and modify the
-> > enable field from atomic_t to plain unsigned int.
+> > > > +#include <linux/atomic.h>
+> > > > +#include <linux/errno.h>
+> > > > +#include <linux/list.h>
+> > > > +#include <linux/module.h>
+> > > > +#include <linux/mutex.h>
+> > > > +#include <linux/string.h>
+> > > > +
+> > > > +#include <media/v4l2-clk.h>
+> > > > +#include <media/v4l2-subdev.h>
+> > > > +
+> > > > +static DEFINE_MUTEX(clk_lock);
+> > > > +static LIST_HEAD(v4l2_clk);
+> > > 
+> > > As Sylwester mentioned, what about s/v4l2_clk/v4l2_clks/ ?
 > > 
-> > > +	return 0;
-> > > +}
-> > > +EXPORT_SYMBOL(v4l2_clk_enable);
-> > > +
-> > > +void v4l2_clk_disable(struct v4l2_clk *clk)
-> > > +{
-> > > +	int enable = atomic_dec_return(&clk->enable);
-> > > +
-> > > +	if (WARN(enable < 0, "Unbalanced %s()!\n", __func__)) {
+> > Don't you think naming of a static variable isn't important enough? ;-) I
+> > think code authors should have enough freedom to at least pick up single
+> > vs. plural form:-) "clks" is too many consonants for my taste, if it were
+> > anything important I'd rather agree to "clk_head" or "clk_list" or
+> > something similar.
+> 
+> clk_list makes sense IMO since the clk_ prefis is the same.
+> 
+> ...
+> 
+> > > > +void v4l2_clk_put(struct v4l2_clk *clk)
+> > > > +{
+> > > > +	if (!IS_ERR(clk))
+> > > > +		module_put(clk->ops->owner);
+> > > > +}
+> > > > +EXPORT_SYMBOL(v4l2_clk_put);
+> > > > +
+> > > > +int v4l2_clk_enable(struct v4l2_clk *clk)
+> > > > +{
+> > > > +	if (atomic_inc_return(&clk->enable) = 1 && clk->ops->enable) {
+> > > > +		int ret = clk->ops->enable(clk);
+> > > > +		if (ret < 0)
+> > > > +			atomic_dec(&clk->enable);
+> > > > +		return ret;
+> > > > +	}
+> > > 
+> > > I think you need a spinlock here instead of atomic operations. You could
+> > > get preempted after atomic_inc_return() and before clk->ops->enable()
+> > > by another process that would call v4l2_clk_enable(). The function
+> > > would return with enabling the clock.
 > > 
-> > Could you add the clock name to the debug message ?
+> > Sorry, what's the problem then? "Our" instance will succeed and call
+> > ->enable() and the preempting instance will see the enable count > 1 and
+> > just return.
 > 
-> You mean device / connection IDs? Could do, yes.
-
-Yes.
-
-> > > +		atomic_inc(&clk->enable);
-> > > +		return;
-> > > +	}
-> > > +
-> > > +	if (!enable && clk->ops->disable)
-> > > +		clk->ops->disable(clk);
-> > > +}
-> > > +EXPORT_SYMBOL(v4l2_clk_disable);
-
-[snip]
-
-> > > +void v4l2_clk_unregister(struct v4l2_clk *clk)
-> > > +{
-> > > +	WARN(atomic_read(&clk->enable),
-> > > +	     "Unregistering still enabled %s:%s clock!\n", clk->dev_id,
-> > > clk->id);
-> > 
-> > Shouldn't this warning be based on a get/put refcount instead of an enable
-> > refcount ?
+> The clock is guaranteed to be enabled only after the call has returned. The
+> second caller of v4lw_clk_enable() thus may proceed without the clock being
+> enabled.
 > 
-> In principle - yes, so, you vote for one more counter?...
+> In principle enable() might also want to sleep, so how about using a mutex
+> for the purpose instead of a spinlock?
 
-Either one more counter, or dropping the warning.
+If enable() needs to sleep we should split the enable call into prepare and 
+enable, like the common clock framework did.
 
-> > I would also turn it into a BUG_ON. The kernel will crash later anyway
-> > when the clock user will try to disable the clock, as you free the clock
-> > object here.
+I'm fine with both implementing this now or later when we will have an enable 
+call that requires sleeping.
+
+> ...
 > 
-> s/when/if/ ;-) With BUG_ON() you, probably, only get one stack dump here,
-> with WARN() you get both - one with the _unregister() stack and one with
-> the _disable() and / or _put() stack... Don't you think the latter option
-> is more informative?
-
-What bothers me is that the later disable/put might not crash immediately but 
-could lead to memory corruption with potential severe consequences if the 
-memory has been reallocated.
-
-> > > +	mutex_lock(&clk_lock);
-> > > +	list_del(&clk->list);
-> > > +	mutex_unlock(&clk_lock);
-> > > +
-> > > +	kfree(clk->id);
-> > > +	kfree(clk->dev_id);
-> > > +	kfree(clk);
+> > > > +struct v4l2_clk_ops {
+> > > > +	struct module	*owner;
+> > > > +	int		(*enable)(struct v4l2_clk *clk);
+> > > > +	void		(*disable)(struct v4l2_clk *clk);
+> > > > +	unsigned long	(*get_rate)(struct v4l2_clk *clk);
+> > > > +	int		(*set_rate)(struct v4l2_clk *clk, unsigned long);
+> 
+> How about unsigned long hz?
 
 -- 
 Regards,
