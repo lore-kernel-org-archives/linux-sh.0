@@ -1,92 +1,96 @@
-From: Wen Congyang <wency@cn.fujitsu.com>
-Date: Tue, 27 Nov 2012 09:58:19 +0000
-Subject: [Patch v4 01/12] memory-hotplug: try to offline the memory twice to avoid dependence
-Message-Id: <1354010422-19648-2-git-send-email-wency@cn.fujitsu.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 13 Nov 2012 03:10:11 +0000
+Subject: [PATCH 3/4] Revert "ARM: shmobile: r8a7779: Replace modify_scu_cpu_psr with scu_power_mode"
+Message-Id: <1352776212-3211-4-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1354010422-19648-1-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1354010422-19648-1-git-send-email-wency@cn.fujitsu.com>
+References: <1352776212-3211-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1352776212-3211-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
-Cc: David Rientjes <rientjes@google.com>, Jiang Liu <liuj97@gmail.com>, Len Brown <len.brown@intel.com>, benh@kernel.crashing.org, paulus@samba.org, Christoph Lameter <cl@linux.com>, Minchan Kim <minchan.kim@gmail.com>, Andrew Morton <akpm@linux-foundation.org>, KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>, Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>, Jianguo Wu <wujianguo@huawei.com>, Wen Congyang <wency@cn.fujitsu.com>
+To: linux-arm-kernel@lists.infradead.org
 
-memory can't be offlined when CONFIG_MEMCG is selected.
-For example: there is a memory device on node 1. The address range
-is [1G, 1.5G). You will find 4 new directories memory8, memory9, memory10,
-and memory11 under the directory /sys/devices/system/memory/.
+This reverts commit cdc7594e5c5f7509a86b205edeedc58d72dd3999.
 
-If CONFIG_MEMCG is selected, we will allocate memory to store page cgroup
-when we online pages. When we online memory8, the memory stored page cgroup
-is not provided by this memory device. But when we online memory9, the memory
-stored page cgroup may be provided by memory8. So we can't offline memory8
-now. We should offline the memory in the reversed order.
+The code changes the flags of the wrong cpus - which breaks the whole
+bootup of secondary CPUs.
 
-When the memory device is hotremoved, we will auto offline memory provided
-by this memory device. But we don't know which memory is onlined first, so
-offlining memory may fail. In such case, iterate twice to offline the memory.
-1st iterate: offline every non primary memory block.
-2nd iterate: offline primary (i.e. first added) memory block.
-
-This idea is suggested by KOSAKI Motohiro.
-
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-CC: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Cc: Bastian Hecht <hechtb@gmail.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- mm/memory_hotplug.c | 16 ++++++++++++++--
- 1 file changed, 14 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/smp-r8a7779.c |   25 ++++++++++++++++++++++---
+ 1 file changed, 22 insertions(+), 3 deletions(-)
 
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index e4eeaca..b825dbc 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -1012,10 +1012,13 @@ int remove_memory(u64 start, u64 size)
- 	unsigned long start_pfn, end_pfn;
- 	unsigned long pfn, section_nr;
- 	int ret;
-+	int return_on_error = 0;
-+	int retry = 0;
- 
- 	start_pfn = PFN_DOWN(start);
- 	end_pfn = start_pfn + PFN_DOWN(size);
- 
-+repeat:
- 	for (pfn = start_pfn; pfn < end_pfn; pfn += PAGES_PER_SECTION) {
- 		section_nr = pfn_to_section_nr(pfn);
- 		if (!present_section_nr(section_nr))
-@@ -1034,14 +1037,23 @@ int remove_memory(u64 start, u64 size)
- 
- 		ret = offline_memory_block(mem);
- 		if (ret) {
--			kobject_put(&mem->dev.kobj);
--			return ret;
-+			if (return_on_error) {
-+				kobject_put(&mem->dev.kobj);
-+				return ret;
-+			} else {
-+				retry = 1;
-+			}
- 		}
- 	}
- 
- 	if (mem)
- 		kobject_put(&mem->dev.kobj);
- 
-+	if (retry) {
-+		return_on_error = 1;
-+		goto repeat;
-+	}
-+
- 	return 0;
+diff --git a/arch/arm/mach-shmobile/smp-r8a7779.c b/arch/arm/mach-shmobile/smp-r8a7779.c
+index 9def0f2..2ce6af9 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7779.c
++++ b/arch/arm/mach-shmobile/smp-r8a7779.c
+@@ -61,6 +61,9 @@ static void __iomem *scu_base_addr(void)
+ 	return (void __iomem *)0xf0000000;
  }
- #else
+ 
++static DEFINE_SPINLOCK(scu_lock);
++static unsigned long tmp;
++
+ #ifdef CONFIG_HAVE_ARM_TWD
+ static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, 0xf0000600, 29);
+ 
+@@ -70,6 +73,20 @@ void __init r8a7779_register_twd(void)
+ }
+ #endif
+ 
++static void modify_scu_cpu_psr(unsigned long set, unsigned long clr)
++{
++	void __iomem *scu_base = scu_base_addr();
++
++	spin_lock(&scu_lock);
++	tmp = __raw_readl(scu_base + 8);
++	tmp &= ~clr;
++	tmp |= set;
++	spin_unlock(&scu_lock);
++
++	/* disable cache coherency after releasing the lock */
++	__raw_writel(tmp, scu_base + 8);
++}
++
+ static unsigned int __init r8a7779_get_core_count(void)
+ {
+ 	void __iomem *scu_base = scu_base_addr();
+@@ -85,7 +102,7 @@ static int r8a7779_platform_cpu_kill(unsigned int cpu)
+ 	cpu = cpu_logical_map(cpu);
+ 
+ 	/* disable cache coherency */
+-	scu_power_mode(scu_base_addr(), 3);
++	modify_scu_cpu_psr(3 << (cpu * 8), 0);
+ 
+ 	if (cpu < ARRAY_SIZE(r8a7779_ch_cpu))
+ 		ch = r8a7779_ch_cpu[cpu];
+@@ -128,7 +145,7 @@ static int __cpuinit r8a7779_boot_secondary(unsigned int cpu, struct task_struct
+ 	cpu = cpu_logical_map(cpu);
+ 
+ 	/* enable cache coherency */
+-	scu_power_mode(scu_base_addr(), 0);
++	modify_scu_cpu_psr(0, 3 << (cpu * 8));
+ 
+ 	if (cpu < ARRAY_SIZE(r8a7779_ch_cpu))
+ 		ch = r8a7779_ch_cpu[cpu];
+@@ -141,13 +158,15 @@ static int __cpuinit r8a7779_boot_secondary(unsigned int cpu, struct task_struct
+ 
+ static void __init r8a7779_smp_prepare_cpus(unsigned int max_cpus)
+ {
++	int cpu = cpu_logical_map(0);
++
+ 	scu_enable(scu_base_addr());
+ 
+ 	/* Map the reset vector (in headsmp.S) */
+ 	__raw_writel(__pa(shmobile_secondary_vector), AVECR);
+ 
+ 	/* enable cache coherency on CPU0 */
+-	scu_power_mode(scu_base_addr(), 0);
++	modify_scu_cpu_psr(0, 3 << (cpu * 8));
+ 
+ 	r8a7779_pm_init();
+ 
 -- 
-1.8.0
+1.7.10.4
 
