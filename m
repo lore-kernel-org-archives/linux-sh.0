@@ -1,41 +1,43 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 09 Nov 2012 07:32:11 +0000
-Subject: [PATCH 0/2] [GIT PULL] Renesas ARM-based 'SoC2' for v3.8 #3
-Message-Id: <1352446333-20082-1-git-send-email-horms@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 13 Nov 2012 00:33:17 +0000
+Subject: [PATCH] sh: clkfwk: fixup unsed variable warning
+Message-Id: <87625apcja.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1352446165-19298-1-git-send-email-horms@verge.net.au>
+ <1352446165-19298-6-git-send-email-horms@verge.net.au>
+ <201211122243.08450.arnd@arndb.de>
+In-Reply-To: <201211122243.08450.arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Arnd,
+This patch solves above warning
 
-please consider the following SoC enhancements for 3.8.
+${LINUX}/drivers/sh/clk/cpg.c:404:6: warning: \
+unused variable 'val' [-Wunused-variable]
 
-* This pull-request is based on the boards branch of the rensas tree
-  which I have sent a pull-request for. The boards branch is in
-  turn based on the soc branch. The reason for the soc2 -> boards -> soc
-  branch progression is to satisfy dependencies of patches in
-  the boards and soc branches.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+>> Arnd, Simon
 
-----------------------------------------------------------------
-The following changes since commit 12818d82ccad9868a820dbb193b4f9b797cd02d4:
+Sorry, it is my fault
 
-  ARM: shmobile: use FSI driver's audio clock on ap4evb (2012-11-08 17:52:05 +0900)
+ drivers/sh/clk/cpg.c |    1 -
+ 1 file changed, 1 deletion(-)
 
-are available in the git repository at:
+diff --git a/drivers/sh/clk/cpg.c b/drivers/sh/clk/cpg.c
+index b3dc441..5aedcdf 100644
+--- a/drivers/sh/clk/cpg.c
++++ b/drivers/sh/clk/cpg.c
+@@ -401,7 +401,6 @@ static int fsidiv_enable(struct clk *clk)
+ 
+ static int fsidiv_set_rate(struct clk *clk, unsigned long rate)
+ {
+-	u32 val;
+ 	int idx;
+ 
+ 	idx = (clk->parent->rate / rate) & 0xffff;
+-- 
+1.7.9.5
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git soc2
-
-for you to fetch changes up to d5b689089d7db3851c4d5d6b3727d22ef44d2023:
-
-  ARM: shmobile: sh7372: sh7372_fsiXck_clk become non-global (2012-11-08 17:52:35 +0900)
-
-----------------------------------------------------------------
-Kuninori Morimoto (2):
-      ARM: shmobile: sh7372: remove fsidivx clock
-      ARM: shmobile: sh7372: sh7372_fsiXck_clk become non-global
-
- arch/arm/mach-shmobile/clock-sh7372.c        |   20 ++++++++++----------
- arch/arm/mach-shmobile/include/mach/sh7372.h |    2 --
- 2 files changed, 10 insertions(+), 12 deletions(-)
