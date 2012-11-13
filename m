@@ -1,7 +1,7 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Thu, 08 Nov 2012 06:30:11 +0000
-Subject: Re: [GIT PULL] Renesas ARM-based SoC for v3.8 #2
-Message-Id: <20121108063011.GC13151@verge.net.au>
+Date: Tue, 13 Nov 2012 03:10:08 +0000
+Subject: [GIT PULL] Renesas ARM-based SoC for v3.8 #4
+Message-Id: <1352776212-3211-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1352277298-23312-1-git-send-email-horms@verge.net.au>
 In-Reply-To: <1352277298-23312-1-git-send-email-horms@verge.net.au>
@@ -10,45 +10,44 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Nov 07, 2012 at 05:34:54PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Arnd,
-> 
-> please consider the following SoC enhancements for 3.8.
-> 
-> This series is based on the previous SoC series that I sent on Tuesday
-> and was merged later that day: [GIT PULL v4] Renesas ARM-based SoC for v3.8
+Hi Olof, Hi Arnd,
 
+please consider the following SoC fixes for 3.8.
+Its a little embarrassing, but they all fix problems introduced
+in previous pull-requests for 3.8 that have been merged.
 
-I have found some problems with this pull-request,
-I will send an revised one.
+* The three Revert patches back-out secondary CPU initialisation
+  changes from Bastian Hecht which he as advised me are incorrect
+  and break secondary CPU initialisation.
 
-> ----------------------------------------------------------------
-> The following changes since commit 86bc52ef4373be64867b56f3a9e30cbabf64e0dd:
-> 
->   ARM: shmobile: r8a7740: Enable PMU (2012-11-06 13:47:24 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git soc
-> 
-> for you to fetch changes up to 9d69f5b87e7f6df51ad2a70557474093de934a8c:
-> 
->   ARM: shmobile: r8a7779: add USB OHCI clock support (2012-11-07 17:11:48 +0900)
-> 
-> ----------------------------------------------------------------
-> Kuninori Morimoto (4):
->       ARM: shmobile: r8a7779: PFC rename PENCx -> USB_PENCx
->       ARM: shmobile: r8a7740: add USB24 clock explain
->       ARM: shmobile: r8a7779: add USB EHCI clock support
->       ARM: shmobile: r8a7779: add USB OHCI clock support
-> 
->  arch/arm/mach-shmobile/clock-r8a7740.c        |   16 ++++++++++++++++
->  arch/arm/mach-shmobile/clock-r8a7779.c        |    7 +++++++
->  arch/arm/mach-shmobile/include/mach/r8a7779.h |    2 +-
->  arch/arm/mach-shmobile/pfc-r8a7779.c          |   16 ++++++++--------
->  4 files changed, 32 insertions(+), 9 deletions(-)
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+* The clkfwk patch from Morimoto-san resolves a build warning.
+
+This pull-request is based on the renesas/soc3 branch in the arm-soc tree.
+
+----------------------------------------------------------------
+The following changes since commit d5b689089d7db3851c4d5d6b3727d22ef44d2023:
+
+  ARM: shmobile: sh7372: sh7372_fsiXck_clk become non-global (2012-11-08 17:52:35 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git soc4
+
+for you to fetch changes up to 94091c6b9498116abe3035137d8c3e707528efd0:
+
+  sh: clkfwk: fixup unsed variable warning (2012-11-13 11:45:40 +0900)
+
+----------------------------------------------------------------
+Kuninori Morimoto (1):
+      sh: clkfwk: fixup unsed variable warning
+
+Simon Horman (3):
+      Revert "ARM: shmobile: emev2: Replace modify_scu_cpu_psr with scu_power_mode"
+      Revert "ARM: shmobile: sh73a0: Replace modify_scu_cpu_psr with scu_power_mode"
+      Revert "ARM: shmobile: r8a7779: Replace modify_scu_cpu_psr with scu_power_mode"
+
+ arch/arm/mach-shmobile/smp-emev2.c   |   22 ++++++++++++++++++++--
+ arch/arm/mach-shmobile/smp-r8a7779.c |   25 ++++++++++++++++++++++---
+ arch/arm/mach-shmobile/smp-sh73a0.c  |   23 +++++++++++++++++++++--
+ drivers/sh/clk/cpg.c                 |    1 -
+ 4 files changed, 63 insertions(+), 8 deletions(-)
