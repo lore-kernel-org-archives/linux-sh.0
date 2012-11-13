@@ -1,76 +1,88 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 27 Nov 2012 00:02:32 +0000
-Subject: [PATCH v2 33/77] sh-pfc: Remove unused resource and num_resources platform data fields
-Message-Id: <1353974596-30033-34-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 13 Nov 2012 03:10:10 +0000
+Subject: [PATCH 2/4] Revert "ARM: shmobile: sh73a0: Replace modify_scu_cpu_psr with scu_power_mode"
+Message-Id: <1352776212-3211-3-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1352776212-3211-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1352776212-3211-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The fields are now unused, remove them.
+This reverts commit e721295185535ed6ef4711eba156fbf5c24f9c5e.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Paul Mundt <lethal@linux-sh.org>
+The code changes the flags of the wrong cpus - which breaks the whole
+bootup of secondary CPUs.
+
+Cc: Bastian Hecht <hechtb@gmail.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- drivers/sh/pfc/core.c  |   17 ++++-------------
- include/linux/sh_pfc.h |    3 ---
- 2 files changed, 4 insertions(+), 16 deletions(-)
+ arch/arm/mach-shmobile/smp-sh73a0.c |   23 +++++++++++++++++++++--
+ 1 file changed, 21 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
-index eeec76f..68b40d8 100644
---- a/drivers/sh/pfc/core.c
-+++ b/drivers/sh/pfc/core.c
-@@ -41,31 +41,22 @@ static void pfc_iounmap(struct sh_pfc *pfc)
+diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
+index 96ddb97..624f00f 100644
+--- a/arch/arm/mach-shmobile/smp-sh73a0.c
++++ b/arch/arm/mach-shmobile/smp-sh73a0.c
+@@ -41,6 +41,9 @@ static void __iomem *scu_base_addr(void)
+ 	return (void __iomem *)0xf0000000;
+ }
  
- static int pfc_ioremap(struct sh_pfc *pfc, struct platform_device *pdev)
++static DEFINE_SPINLOCK(scu_lock);
++static unsigned long tmp;
++
+ #ifdef CONFIG_HAVE_ARM_TWD
+ static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, 0xf0000600, 29);
+ void __init sh73a0_register_twd(void)
+@@ -49,6 +52,20 @@ void __init sh73a0_register_twd(void)
+ }
+ #endif
+ 
++static void modify_scu_cpu_psr(unsigned long set, unsigned long clr)
++{
++	void __iomem *scu_base = scu_base_addr();
++
++	spin_lock(&scu_lock);
++	tmp = __raw_readl(scu_base + 8);
++	tmp &= ~clr;
++	tmp |= set;
++	spin_unlock(&scu_lock);
++
++	/* disable cache coherency after releasing the lock */
++	__raw_writel(tmp, scu_base + 8);
++}
++
+ static unsigned int __init sh73a0_get_core_count(void)
  {
--	unsigned int num_resources;
- 	struct resource *res;
- 	int k;
+ 	void __iomem *scu_base = scu_base_addr();
+@@ -66,7 +83,7 @@ static int __cpuinit sh73a0_boot_secondary(unsigned int cpu, struct task_struct
+ 	cpu = cpu_logical_map(cpu);
  
--	if (pdev->num_resources) {
--		num_resources = pdev->num_resources;
--		res = pdev->resource;
--	} else {
--		num_resources = pfc->pdata->num_resources;
--		res = pfc->pdata->resource;
--	}
--
--	if (num_resources = 0) {
-+	if (pdev->num_resources = 0) {
- 		pfc->num_windows = 0;
- 		return 0;
- 	}
+ 	/* enable cache coherency */
+-	scu_power_mode(scu_base_addr(), 0);
++	modify_scu_cpu_psr(0, 3 << (cpu * 8));
  
--	pfc->window = kzalloc(num_resources * sizeof(*pfc->window),
-+	pfc->window = kzalloc(pdev->num_resources * sizeof(*pfc->window),
- 			      GFP_NOWAIT);
- 	if (!pfc->window)
- 		goto err1;
+ 	if (((__raw_readl(PSTR) >> (4 * cpu)) & 3) = 3)
+ 		__raw_writel(1 << cpu, WUPCR);	/* wake up */
+@@ -78,6 +95,8 @@ static int __cpuinit sh73a0_boot_secondary(unsigned int cpu, struct task_struct
  
--	pfc->num_windows = num_resources;
-+	pfc->num_windows = pdev->num_resources;
+ static void __init sh73a0_smp_prepare_cpus(unsigned int max_cpus)
+ {
++	int cpu = cpu_logical_map(0);
++
+ 	scu_enable(scu_base_addr());
  
--	for (k = 0; k < num_resources; k++, res++) {
-+	for (k = 0, res = pdev->resource; k < pdev->num_resources; k++, res++) {
- 		WARN_ON(resource_type(res) != IORESOURCE_MEM);
- 		pfc->window[k].phys = res->start;
- 		pfc->window[k].size = resource_size(res);
-diff --git a/include/linux/sh_pfc.h b/include/linux/sh_pfc.h
-index fa1fec0..4f94233 100644
---- a/include/linux/sh_pfc.h
-+++ b/include/linux/sh_pfc.h
-@@ -111,9 +111,6 @@ struct sh_pfc_platform_data {
- 	struct pinmux_irq *gpio_irq;
- 	unsigned int gpio_irq_size;
+ 	/* Map the reset vector (in headsmp.S) */
+@@ -85,7 +104,7 @@ static void __init sh73a0_smp_prepare_cpus(unsigned int max_cpus)
+ 	__raw_writel(__pa(shmobile_secondary_vector), SBAR);
  
--	struct resource *resource;
--	unsigned int num_resources;
--
- 	unsigned long unlock_reg;
- };
+ 	/* enable cache coherency on CPU0 */
+-	scu_power_mode(scu_base_addr(), 0);
++	modify_scu_cpu_psr(0, 3 << (cpu * 8));
+ }
  
+ static void __init sh73a0_smp_init_cpus(void)
 -- 
-1.7.8.6
+1.7.10.4
 
