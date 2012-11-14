@@ -1,46 +1,67 @@
-From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
-Date: Thu, 15 Nov 2012 23:53:58 +0000
-Subject: Re: I2C: kzm9g: how to suppress a stop condition?
-Message-Id: <50A58096.3050600@kmckk.co.jp>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date: Wed, 14 Nov 2012 06:01:40 +0000
+Subject: [PATCH] sh: Wire up finit_module syscall
+Message-Id: <1352872900-25112-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1211151609330.684@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1211151609330.684@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello Guennadi,
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+---
+ arch/sh/include/uapi/asm/unistd_32.h |    3 ++-
+ arch/sh/include/uapi/asm/unistd_64.h |    3 ++-
+ arch/sh/kernel/syscalls_32.S         |    1 +
+ arch/sh/kernel/syscalls_64.S         |    1 +
+ 4 files changed, 6 insertions(+), 2 deletions(-)
 
-Right now I am not in my office, so this is a quick answer.
-My patch for drivers/i2c/sh_i2c.c of U-Boot is a just result after
-'try and error'. Sorry, I don't have an idea for Linux driver.
-
-(2012/11/16 0:28), Guennadi Liakhovetski wrote:
-> Hello Kobayashi-san
->
-> Recently you submitted a patch [1] to U-Boot to suppress a stop condition
-> on I2C during ready after the transmission of the register address on
-> sh73a0. The same problem is present under Linux, which prevents the AS3711
-> PMIC from working correctly. Actually I'm not sure whether this problem is
-> pecific to sh73a0, or it's the PMIC, that's so picky about the stop
-> condition at that stage. I've been trying to fix this problem under Linux
-> since several hours and so far I haven't been successful. The Linux driver
-> is interrupt driven, so, it is not quite easy to compare register accesses
-> 1-to-1, but in principle they seem very similar. However, if I just remove
-> setting the stop condition after the address, the driver times out and on
-> the bus I see, that the sh73a0 sends the first byte correctly - the client
-> address, but then it stops clocking the I2C bus, respectively, no ack from
-> the client is coming and the whole thing breaks down. Do you have an idea
-> how to fix that too?
->
-> Thanks
-> Guennadi
->
-> [1] http://article.gmane.org/gmane.comp.boot-loaders.u-boot/140553
-> ---
-> Guennadi Liakhovetski, Ph.D.
-> Freelance Open-Source Software Developer
-> http://www.open-technology.de/
->
+diff --git a/arch/sh/include/uapi/asm/unistd_32.h b/arch/sh/include/uapi/asm/unistd_32.h
+index 9e465f2..d13a1d6 100644
+--- a/arch/sh/include/uapi/asm/unistd_32.h
++++ b/arch/sh/include/uapi/asm/unistd_32.h
+@@ -379,7 +379,8 @@
+ #define __NR_process_vm_readv	365
+ #define __NR_process_vm_writev	366
+ #define __NR_kcmp		367
++#define __NR_finit_module	368
+ 
+-#define NR_syscalls 368
++#define NR_syscalls 369
+ 
+ #endif /* __ASM_SH_UNISTD_32_H */
+diff --git a/arch/sh/include/uapi/asm/unistd_64.h b/arch/sh/include/uapi/asm/unistd_64.h
+index 8e3a2ed..9f1a456 100644
+--- a/arch/sh/include/uapi/asm/unistd_64.h
++++ b/arch/sh/include/uapi/asm/unistd_64.h
+@@ -399,7 +399,8 @@
+ #define __NR_process_vm_readv	376
+ #define __NR_process_vm_writev	377
+ #define __NR_kcmp		378
++#define __NR_finit_module	368
+ 
+-#define NR_syscalls 379
++#define NR_syscalls 380
+ 
+ #endif /* __ASM_SH_UNISTD_64_H */
+diff --git a/arch/sh/kernel/syscalls_32.S b/arch/sh/kernel/syscalls_32.S
+index fe97ae5..734234b 100644
+--- a/arch/sh/kernel/syscalls_32.S
++++ b/arch/sh/kernel/syscalls_32.S
+@@ -385,3 +385,4 @@ ENTRY(sys_call_table)
+ 	.long sys_process_vm_readv	/* 365 */
+ 	.long sys_process_vm_writev
+ 	.long sys_kcmp
++	.long sys_finit_module
+diff --git a/arch/sh/kernel/syscalls_64.S b/arch/sh/kernel/syscalls_64.S
+index 5c7b1c6..579fcb9 100644
+--- a/arch/sh/kernel/syscalls_64.S
++++ b/arch/sh/kernel/syscalls_64.S
+@@ -405,3 +405,4 @@ sys_call_table:
+ 	.long sys_process_vm_readv
+ 	.long sys_process_vm_writev
+ 	.long sys_kcmp
++	.long sys_finit_module
+-- 
+1.7.10.4
 
