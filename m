@@ -1,230 +1,152 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 27 Nov 2012 00:01:59 +0000
-Subject: [PATCH v2 00/77] SH pin control and GPIO rework with OF support
-Message-Id: <1353974596-30033-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: David Rientjes <rientjes@google.com>
+Date: Wed, 14 Nov 2012 09:15:28 +0000
+Subject: [patch 4/4] mm, oom: remove statically defined arch functions of same name
+Message-Id: <alpine.DEB.2.00.1211140113480.32125@chino.kir.corp.google.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <alpine.DEB.2.00.1211140111190.32125@chino.kir.corp.google.com>
+In-Reply-To: <alpine.DEB.2.00.1211140111190.32125@chino.kir.corp.google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Cc: Greg Kroah-Hartman <gregkh@linuxfoundation.org>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>, Michal Hocko <mhocko@suse.cz>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>, Thomas Gleixner <tglx@linutronix.de>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Paul Mundt <lethal@linux-sh.org>, x86@kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, linux-mm@kvack.org
 
-Hi everybody,
+out_of_memory() is a globally defined function to call the oom killer.
+x86, sh, and powerpc all use a function of the same name within file
+scope in their respective fault.c unnecessarily.  Inline the functions
+into the pagefault handlers to clean the code up.
 
-Here's the second version of the SH pin control and GPIO rework patches. I've
-added OF support for PFC instantiation and GPIO mappings that was missing from
-v1. PINCTRL bindings are still missing and will come soon.
+Cc: Ingo Molnar <mingo@redhat.com>
+Cc: "H. Peter Anvin" <hpa@zytor.com>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+Cc: Paul Mackerras <paulus@samba.org>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Signed-off-by: David Rientjes <rientjes@google.com>
+---
+ arch/powerpc/mm/fault.c |   27 ++++++++++++---------------
+ arch/sh/mm/fault.c      |   19 +++++++------------
+ arch/x86/mm/fault.c     |   23 ++++++++---------------
+ 3 files changed, 27 insertions(+), 42 deletions(-)
 
-The first version of this patch set is available at
-https://lkml.org/lkml/2012/11/20/823. I haven't applied the ack's I've received
-on patches that have been extensively reworked in v2. Sorry for the
-inconvenience. All comments received on v1 should have been addressed.
-
-The GPIO DT bindings have been tested on an SH73A0 platform (KZM-A9-GT) with
-the on-board GPIO LEDs. Please see patch 71/77 for a question regarding those
-bindings.
-
-The patches are still based on top of v3.7-rc6. You can get them from my git
-tree at
+diff --git a/arch/powerpc/mm/fault.c b/arch/powerpc/mm/fault.c
+--- a/arch/powerpc/mm/fault.c
++++ b/arch/powerpc/mm/fault.c
+@@ -113,19 +113,6 @@ static int store_updates_sp(struct pt_regs *regs)
+ #define MM_FAULT_CONTINUE	-1
+ #define MM_FAULT_ERR(sig)	(sig)
  
-	git://linuxtv.org/pinchartl/fbdev.git pinmux
-
-The code has been compile-tested on all modified platforms except SH7264 and
-SH7269, and runtime tested on SH7372 (Mackerel), SH73A0 (KZM-A9-GT) and
-R8A7740 (Armadillo) so far. I will runtime test it on R8A7779 (Marzen).
-
-The SH7264 and SH7269 platforms have no gpiolib support so the PFC code can't
-be compiled for them. As the currently implemented arch-level pinmux support
-also depends on generic GPIO, we're moving from a situation where the code
-isn't used to a different situation where the code isn't used. I don't
-consider that as a regression.
-
-Sorry for the numerous checkpatch warnings, patches that move code around or
-rename files don't modify the content to make review easier, and thus carry
-warnings from the existing code.
-
-Changes since v1:
-
-- Split SoC changes in one patch per SoC to make backporting easier
-- Dropped SH7267 and SH7277 changes as support for those SoCs will be removed
-  from the kernel
-- Removed the sh_pfc_register() function on ARM
-- Added OF support for PFC instantiation and GPIO bindings
-- Added PFC DT nodes for the Mackerel and KZM9G boards
-- Added GPIO LEDs DT nodes for the KZM9G board
-
-Laurent Pinchart (76):
-  sh-pfc: Split platform data from the sh_pfc structure
-  sh-pfc: Move private definitions and declarations to private header
-  sh-pfc: Merge PFC core and pinctrl
-  sh-pfc: Merge PFC core and gpio
-  sh-pfc: Move platform device and driver to the core
-  sh-pfc: Let the compiler decide whether to inline functions
-  sh-pfc: Remove check for impossible error condition
-  sh-pfc: Sort headers alphabetically
-  sh-pfc: Split platform device and platform driver registration
-  sh-pfc: Support passing resources through platform device
-  ARM: shmobile: Select PINCTRL
-  ARM: shmobile: r8a7740: Register PFC platform device
-  ARM: shmobile: r8a7779: Register PFC platform device
-  ARM: shmobile: sh7372: Register PFC platform device
-  ARM: shmobile: sh73a0: Register PFC platform device
-  ARM: shmobile: r8a7740: Add pin control resources
-  ARM: shmobile: sh7372: Add pin control resources
-  ARM: shmobile: sh73a0: Add pin control resources
-  sh: Add PFC platform device registration helper function
-  sh: sh7203: Register PFC platform device
-  sh: sh7264: Register PFC platform device
-  sh: sh7269: Register PFC platform device
-  sh: sh7720: Register PFC platform device
-  sh: sh7722: Register PFC platform device
-  sh: sh7723: Register PFC platform device
-  sh: sh7724: Register PFC platform device
-  sh: sh7734: Register PFC platform device
-  sh: sh7757: Register PFC platform device
-  sh: sh7785: Register PFC platform device
-  sh: sh7786: Register PFC platform device
-  sh: shx3: Register PFC platform device
-  sh-pfc: Remove platform device registration
-  sh-pfc: Remove unused resource and num_resources platform data fields
-  sh-pfc: Move driver from drivers/sh/ to drivers/pinctrl/
-  sh-pfc: Support pinmux info in driver data instead of platform data
-  sh-pfc: Add r8a7740 pinmux support
-  sh-pfc: Add r8a7779 pinmux support
-  sh-pfc: Add sh7372 pinmux support
-  sh-pfc: Add sh73a0 pinmux support
-  ARM: shmobile: r8a7740: Use driver-provided pinmux info
-  ARM: shmobile: r8a7779: Use driver-provided pinmux info
-  ARM: shmobile: sh7372: Use driver-provided pinmux info
-  ARM: shmobile: sh73a0: Use driver-provided pinmux info
-  sh-pfc: Add sh7203 pinmux support
-  sh-pfc: Add sh7264 pinmux support
-  sh-pfc: Add sh7269 pinmux support
-  sh-pfc: Add sh7720 pinmux support
-  sh-pfc: Add sh7722 pinmux support
-  sh-pfc: Add sh7723 pinmux support
-  sh-pfc: Add sh7724 pinmux support
-  sh-pfc: Add sh7734 pinmux support
-  sh-pfc: Add sh7757 pinmux support
-  sh-pfc: Add sh7785 pinmux support
-  sh-pfc: Add sh7786 pinmux support
-  sh-pfc: Add shx3 pinmux support
-  sh: sh7203: pinmux: Use driver-provided pinmux info
-  sh: sh7264: pinmux: Use driver-provided pinmux info
-  sh: sh7269: pinmux: Use driver-provided pinmux info
-  sh: sh7720: pinmux: Use driver-provided pinmux info
-  sh: sh7722: pinmux: Use driver-provided pinmux info
-  sh: sh7723: pinmux: Use driver-provided pinmux info
-  sh: sh7724: pinmux: Use driver-provided pinmux info
-  sh: sh7734: pinmux: Use driver-provided pinmux info
-  sh: sh7757: pinmux: Use driver-provided pinmux info
-  sh: sh7785: pinmux: Use driver-provided pinmux info
-  sh: sh7786: pinmux: Use driver-provided pinmux info
-  sh: shx3: pinmux: Use driver-provided pinmux info
-  sh: Remove unused sh_pfc_register_info() function
-  sh-pfc: Remove pinmux_info definition
-  sh-pfc: Move sh_pfc.h from include/linux/ to driver directory
-  sh-pfc: Add OF support
-  ARM: shmobile: r8a7740: Add pin control device in device tree
-  ARM: shmobile: armadillo: Populate platform devices from device tree
-  ARM: shmobile: kzm9g: Add pin control device in device tree
-  ARM: shmobile: kzm9g: Populate platform devices from device tree
-  ARM: shmobile: kzm9g: Add LED1-LED4 to the device tree
-
-Nobuhiro Iwamatsu (1):
-  ARM: shmobile: Include DTSI of r8a7740 to armadillo800eva
-
- .../bindings/pinctrl/renesas,pfc-pinctrl.txt       |   43 +
- arch/arm/Kconfig                                   |    1 +
- arch/arm/boot/dts/r8a7740-armadillo800eva.dts      |    2 +-
- arch/arm/boot/dts/r8a7740.dtsi                     |    6 +
- arch/arm/boot/dts/sh73a0-kzm9g.dts                 |   18 +-
- arch/arm/boot/dts/sh73a0.dtsi                      |   32 +
- arch/arm/mach-shmobile/Makefile                    |    5 -
- arch/arm/mach-shmobile/board-armadillo800eva.c     |    4 +-
- arch/arm/mach-shmobile/board-kzm9g.c               |    3 +-
- arch/arm/mach-shmobile/setup-r8a7740.c             |   26 +
- arch/arm/mach-shmobile/setup-r8a7779.c             |   25 +
- arch/arm/mach-shmobile/setup-sh7372.c              |   26 +
- arch/arm/mach-shmobile/setup-sh73a0.c              |   25 +
- arch/sh/Kconfig                                    |   12 +
- arch/sh/include/asm/gpio.h                         |    2 +-
- arch/sh/include/cpu-common/cpu/pfc.h               |   26 +
- arch/sh/kernel/cpu/Makefile                        |    2 +-
- arch/sh/kernel/cpu/pfc.c                           |   33 +
- arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c            | 1582 +-----------
- arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c            | 2121 +---------------
- arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c            | 2823 +-------------------
- arch/sh/kernel/cpu/sh3/pinmux-sh7720.c             | 1226 +---------
- arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c            | 1778 +------------
- arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c            | 1893 +-------------
- arch/sh/kernel/cpu/sh4a/pinmux-sh7724.c            | 2210 +---------------
- arch/sh/kernel/cpu/sh4a/pinmux-sh7734.c            | 2470 +-----------------
- arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c            | 2267 +----------------
- arch/sh/kernel/cpu/sh4a/pinmux-sh7785.c            | 1294 +---------
- arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c            |  822 +------
- arch/sh/kernel/cpu/sh4a/pinmux-shx3.c              |  573 +----
- drivers/pinctrl/Kconfig                            |    1 +
- drivers/pinctrl/Makefile                           |    1 +
- drivers/pinctrl/sh-pfc/Kconfig                     |  116 +
- drivers/pinctrl/sh-pfc/Makefile                    |   21 +
- drivers/{sh/pfc => pinctrl/sh-pfc}/core.c          |  294 ++-
- drivers/pinctrl/sh-pfc/core.h                      |   72 +
- drivers/{sh/pfc => pinctrl/sh-pfc}/gpio.c          |  111 +-
- .../pinctrl/sh-pfc}/pfc-r8a7740.c                  |   11 +-
- .../pinctrl/sh-pfc}/pfc-r8a7779.c                  |   29 +-
- drivers/pinctrl/sh-pfc/pfc-sh7203.c                | 1592 +++++++++++
- drivers/pinctrl/sh-pfc/pfc-sh7264.c                | 2131 +++++++++++++++
- drivers/pinctrl/sh-pfc/pfc-sh7269.c                | 2834 ++++++++++++++++++++
- .../pinctrl/sh-pfc}/pfc-sh7372.c                   |   11 +-
- .../pinctrl/sh-pfc}/pfc-sh73a0.c                   |   11 +-
- drivers/pinctrl/sh-pfc/pfc-sh7720.c                | 1236 +++++++++
- drivers/pinctrl/sh-pfc/pfc-sh7722.c                | 1779 ++++++++++++
- drivers/pinctrl/sh-pfc/pfc-sh7723.c                | 1903 +++++++++++++
- drivers/pinctrl/sh-pfc/pfc-sh7724.c                | 2225 +++++++++++++++
- drivers/pinctrl/sh-pfc/pfc-sh7734.c                | 2475 +++++++++++++++++
- drivers/pinctrl/sh-pfc/pfc-sh7757.c                | 2282 ++++++++++++++++
- drivers/pinctrl/sh-pfc/pfc-sh7785.c                | 1304 +++++++++
- drivers/pinctrl/sh-pfc/pfc-sh7786.c                |  837 ++++++
- drivers/pinctrl/sh-pfc/pfc-shx3.c                  |  582 ++++
- drivers/{sh/pfc => pinctrl/sh-pfc}/pinctrl.c       |  149 +-
- {include/linux => drivers/pinctrl/sh-pfc}/sh_pfc.h |   43 +-
- drivers/sh/Kconfig                                 |    1 -
- drivers/sh/Makefile                                |    1 -
- drivers/sh/pfc/Kconfig                             |   26 -
- drivers/sh/pfc/Makefile                            |    3 -
- 59 files changed, 22007 insertions(+), 21424 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
- create mode 100644 arch/arm/boot/dts/sh73a0.dtsi
- create mode 100644 arch/sh/include/cpu-common/cpu/pfc.h
- create mode 100644 arch/sh/kernel/cpu/pfc.c
- create mode 100644 drivers/pinctrl/sh-pfc/Kconfig
- create mode 100644 drivers/pinctrl/sh-pfc/Makefile
- rename drivers/{sh/pfc => pinctrl/sh-pfc}/core.c (62%)
- create mode 100644 drivers/pinctrl/sh-pfc/core.h
- rename drivers/{sh/pfc => pinctrl/sh-pfc}/gpio.c (59%)
- rename {arch/arm/mach-shmobile => drivers/pinctrl/sh-pfc}/pfc-r8a7740.c (99%)
- rename {arch/arm/mach-shmobile => drivers/pinctrl/sh-pfc}/pfc-r8a7779.c (99%)
- create mode 100644 drivers/pinctrl/sh-pfc/pfc-sh7203.c
- create mode 100644 drivers/pinctrl/sh-pfc/pfc-sh7264.c
- create mode 100644 drivers/pinctrl/sh-pfc/pfc-sh7269.c
- rename {arch/arm/mach-shmobile => drivers/pinctrl/sh-pfc}/pfc-sh7372.c (99%)
- rename {arch/arm/mach-shmobile => drivers/pinctrl/sh-pfc}/pfc-sh73a0.c (99%)
- create mode 100644 drivers/pinctrl/sh-pfc/pfc-sh7720.c
- create mode 100644 drivers/pinctrl/sh-pfc/pfc-sh7722.c
- create mode 100644 drivers/pinctrl/sh-pfc/pfc-sh7723.c
- create mode 100644 drivers/pinctrl/sh-pfc/pfc-sh7724.c
- create mode 100644 drivers/pinctrl/sh-pfc/pfc-sh7734.c
- create mode 100644 drivers/pinctrl/sh-pfc/pfc-sh7757.c
- create mode 100644 drivers/pinctrl/sh-pfc/pfc-sh7785.c
- create mode 100644 drivers/pinctrl/sh-pfc/pfc-sh7786.c
- create mode 100644 drivers/pinctrl/sh-pfc/pfc-shx3.c
- rename drivers/{sh/pfc => pinctrl/sh-pfc}/pinctrl.c (76%)
- rename {include/linux => drivers/pinctrl/sh-pfc}/sh_pfc.h (83%)
- delete mode 100644 drivers/sh/pfc/Kconfig
- delete mode 100644 drivers/sh/pfc/Makefile
-
--- 
-Regards,
-
-Laurent Pinchart
-
+-static int out_of_memory(struct pt_regs *regs)
+-{
+-	/*
+-	 * We ran out of memory, or some other thing happened to us that made
+-	 * us unable to handle the page fault gracefully.
+-	 */
+-	up_read(&current->mm->mmap_sem);
+-	if (!user_mode(regs))
+-		return MM_FAULT_ERR(SIGKILL);
+-	pagefault_out_of_memory();
+-	return MM_FAULT_RETURN;
+-}
+-
+ static int do_sigbus(struct pt_regs *regs, unsigned long address)
+ {
+ 	siginfo_t info;
+@@ -169,8 +156,18 @@ static int mm_fault_error(struct pt_regs *regs, unsigned long addr, int fault)
+ 		return MM_FAULT_CONTINUE;
+ 
+ 	/* Out of memory */
+-	if (fault & VM_FAULT_OOM)
+-		return out_of_memory(regs);
++	if (fault & VM_FAULT_OOM) {
++		up_read(&current->mm->mmap_sem);
++
++		/*
++		 * We ran out of memory, or some other thing happened to us that
++		 * made us unable to handle the page fault gracefully.
++		 */
++		if (!user_mode(regs))
++			return MM_FAULT_ERR(SIGKILL);
++		pagefault_out_of_memory();
++		return MM_FAULT_RETURN;
++	}
+ 
+ 	/* Bus error. x86 handles HWPOISON here, we'll add this if/when
+ 	 * we support the feature in HW
+diff --git a/arch/sh/mm/fault.c b/arch/sh/mm/fault.c
+--- a/arch/sh/mm/fault.c
++++ b/arch/sh/mm/fault.c
+@@ -301,17 +301,6 @@ bad_area_access_error(struct pt_regs *regs, unsigned long error_code,
+ 	__bad_area(regs, error_code, address, SEGV_ACCERR);
+ }
+ 
+-static void out_of_memory(void)
+-{
+-	/*
+-	 * We ran out of memory, call the OOM killer, and return the userspace
+-	 * (which will retry the fault, or kill us if we got oom-killed):
+-	 */
+-	up_read(&current->mm->mmap_sem);
+-
+-	pagefault_out_of_memory();
+-}
+-
+ static void
+ do_sigbus(struct pt_regs *regs, unsigned long error_code, unsigned long address)
+ {
+@@ -353,8 +342,14 @@ mm_fault_error(struct pt_regs *regs, unsigned long error_code,
+ 			no_context(regs, error_code, address);
+ 			return 1;
+ 		}
++		up_read(&current->mm->mmap_sem);
+ 
+-		out_of_memory();
++		/*
++		 * We ran out of memory, call the OOM killer, and return the
++		 * userspace (which will retry the fault, or kill us if we got
++		 * oom-killed):
++		 */
++		pagefault_out_of_memory();
+ 	} else {
+ 		if (fault & VM_FAULT_SIGBUS)
+ 			do_sigbus(regs, error_code, address);
+diff --git a/arch/x86/mm/fault.c b/arch/x86/mm/fault.c
+--- a/arch/x86/mm/fault.c
++++ b/arch/x86/mm/fault.c
+@@ -803,20 +803,6 @@ bad_area_access_error(struct pt_regs *regs, unsigned long error_code,
+ 	__bad_area(regs, error_code, address, SEGV_ACCERR);
+ }
+ 
+-/* TODO: fixup for "mm-invoke-oom-killer-from-page-fault.patch" */
+-static void
+-out_of_memory(struct pt_regs *regs, unsigned long error_code,
+-	      unsigned long address)
+-{
+-	/*
+-	 * We ran out of memory, call the OOM killer, and return the userspace
+-	 * (which will retry the fault, or kill us if we got oom-killed):
+-	 */
+-	up_read(&current->mm->mmap_sem);
+-
+-	pagefault_out_of_memory();
+-}
+-
+ static void
+ do_sigbus(struct pt_regs *regs, unsigned long error_code, unsigned long address,
+ 	  unsigned int fault)
+@@ -879,7 +865,14 @@ mm_fault_error(struct pt_regs *regs, unsigned long error_code,
+ 			return 1;
+ 		}
+ 
+-		out_of_memory(regs, error_code, address);
++		up_read(&current->mm->mmap_sem);
++
++		/*
++		 * We ran out of memory, call the OOM killer, and return the
++		 * userspace (which will retry the fault, or kill us if we got
++		 * oom-killed):
++		 */
++		pagefault_out_of_memory();
+ 	} else {
+ 		if (fault & (VM_FAULT_SIGBUS|VM_FAULT_HWPOISON|
+ 			     VM_FAULT_HWPOISON_LARGE))
