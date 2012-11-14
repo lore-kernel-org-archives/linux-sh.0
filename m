@@ -1,75 +1,40 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 21 Nov 2012 02:53:30 +0000
-Subject: [PATCH 14/42] sh-pfc: Remove unused resource and num_resources platform data fields
-Message-Id: <1353466438-10929-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date: Wed, 14 Nov 2012 05:24:16 +0000
+Subject: [PATCH] sh: Remove start_addr of unused variable
+Message-Id: <1352870656-11376-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The fields are now unused, remove them.
+This revises compile error following.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+----
+cc1: warnings being treated as errors
+arch/sh/mm/mmap.c: In function 'arch_get_unmapped_area':
+arch/sh/mm/mmap.c:38: error: unused variable 'start_addr'
+make[1]: *** [arch/sh/mm/mmap.o] Error 1
+make: *** [arch/sh/mm] Error 2
+----
+
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 ---
- drivers/sh/pfc/core.c  |   17 ++++-------------
- include/linux/sh_pfc.h |    3 ---
- 2 files changed, 4 insertions(+), 16 deletions(-)
+ arch/sh/mm/mmap.c |    1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
-index eeec76f..68b40d8 100644
---- a/drivers/sh/pfc/core.c
-+++ b/drivers/sh/pfc/core.c
-@@ -41,31 +41,22 @@ static void pfc_iounmap(struct sh_pfc *pfc)
- 
- static int pfc_ioremap(struct sh_pfc *pfc, struct platform_device *pdev)
+diff --git a/arch/sh/mm/mmap.c b/arch/sh/mm/mmap.c
+index cb2d66f..6777177 100644
+--- a/arch/sh/mm/mmap.c
++++ b/arch/sh/mm/mmap.c
+@@ -35,7 +35,6 @@ unsigned long arch_get_unmapped_area(struct file *filp, unsigned long addr,
  {
--	unsigned int num_resources;
- 	struct resource *res;
- 	int k;
- 
--	if (pdev->num_resources) {
--		num_resources = pdev->num_resources;
--		res = pdev->resource;
--	} else {
--		num_resources = pfc->pdata->num_resources;
--		res = pfc->pdata->resource;
--	}
--
--	if (num_resources = 0) {
-+	if (pdev->num_resources = 0) {
- 		pfc->num_windows = 0;
- 		return 0;
- 	}
- 
--	pfc->window = kzalloc(num_resources * sizeof(*pfc->window),
-+	pfc->window = kzalloc(pdev->num_resources * sizeof(*pfc->window),
- 			      GFP_NOWAIT);
- 	if (!pfc->window)
- 		goto err1;
- 
--	pfc->num_windows = num_resources;
-+	pfc->num_windows = pdev->num_resources;
- 
--	for (k = 0; k < num_resources; k++, res++) {
-+	for (k = 0, res = pdev->resource; k < pdev->num_resources; k++, res++) {
- 		WARN_ON(resource_type(res) != IORESOURCE_MEM);
- 		pfc->window[k].phys = res->start;
- 		pfc->window[k].size = resource_size(res);
-diff --git a/include/linux/sh_pfc.h b/include/linux/sh_pfc.h
-index fa1fec0..4f94233 100644
---- a/include/linux/sh_pfc.h
-+++ b/include/linux/sh_pfc.h
-@@ -111,9 +111,6 @@ struct sh_pfc_platform_data {
- 	struct pinmux_irq *gpio_irq;
- 	unsigned int gpio_irq_size;
- 
--	struct resource *resource;
--	unsigned int num_resources;
--
- 	unsigned long unlock_reg;
- };
+ 	struct mm_struct *mm = current->mm;
+ 	struct vm_area_struct *vma;
+-	unsigned long start_addr;
+ 	int do_colour_align;
+ 	struct vm_unmapped_area_info info;
  
 -- 
-1.7.8.6
+1.7.10.4
 
