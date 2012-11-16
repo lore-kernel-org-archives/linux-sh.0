@@ -1,75 +1,54 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 07 Nov 2012 08:40:05 +0000
-Subject: [PATCH 1/3] ARM: shmobile: marzen: add USB phy support
-Message-Id: <1352277607-24040-2-git-send-email-horms@verge.net.au>
+From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+Date: Fri, 16 Nov 2012 05:46:12 +0000
+Subject: [PATCH 4/4] drivers: uio: Only allocate new private data when probing device tree node
+Message-Id: <1353044772-18803-5-git-send-email-dhobsong@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352277607-24040-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352277607-24040-1-git-send-email-horms@verge.net.au>
+References: <1353044772-18803-1-git-send-email-dhobsong@igel.co.jp>
+In-Reply-To: <1353044772-18803-1-git-send-email-dhobsong@igel.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: hjk@hansjkoch.de, gregkh@linuxfoundation.org, magnus.damm@gmail.com, horms@verge.net.au
+Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Damian Hobson-Garcia <dhobsong@igel.co.jp>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The same condition should be used both when allocating and freeing the
+driver private data.  When dev.of_node is non NULL, allocate a new
+private data structure, otherwise use the values from the platform data.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Reported-by: Fengguang Wu <fengguang.wu@intel.com>
+
+Signed-off-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
 ---
- arch/arm/configs/marzen_defconfig     |    3 ++-
- arch/arm/mach-shmobile/board-marzen.c |   21 +++++++++++++++++++++
- 2 files changed, 23 insertions(+), 1 deletion(-)
+ drivers/uio/uio_dmem_genirq.c |    2 +-
+ drivers/uio/uio_pdrv_genirq.c |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index 5b8215f..8a861b7 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -78,7 +78,8 @@ CONFIG_GPIO_SYSFS=y
- CONFIG_THERMAL=y
- CONFIG_RCAR_THERMAL=y
- CONFIG_SSB=y
--# CONFIG_USB_SUPPORT is not set
-+CONFIG_USB=y
-+CONFIG_USB_RCAR_PHY=y
- CONFIG_MMC=y
- CONFIG_MMC_SDHI=y
- CONFIG_UIO=y
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index 69f7f46..74c7f0b 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -144,11 +144,32 @@ static struct platform_device hspi_device = {
- 	.num_resources	= ARRAY_SIZE(hspi_resources),
- };
+diff --git a/drivers/uio/uio_dmem_genirq.c b/drivers/uio/uio_dmem_genirq.c
+index bbdf925..252434c 100644
+--- a/drivers/uio/uio_dmem_genirq.c
++++ b/drivers/uio/uio_dmem_genirq.c
+@@ -153,7 +153,7 @@ static int uio_dmem_genirq_probe(struct platform_device *pdev)
+ 	int ret = -EINVAL;
+ 	int i;
  
-+/* USB PHY */
-+static struct resource usb_phy_resources[] = {
-+	[0] = {
-+		.start		= 0xffe70000,
-+		.end		= 0xffe70900 - 1,
-+		.flags		= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start		= 0xfff70000,
-+		.end		= 0xfff70900 - 1,
-+		.flags		= IORESOURCE_MEM,
-+	},
-+};
-+
-+static struct platform_device usb_phy_device = {
-+	.name		= "rcar_usb_phy",
-+	.resource	= usb_phy_resources,
-+	.num_resources	= ARRAY_SIZE(usb_phy_resources),
-+};
-+
- static struct platform_device *marzen_devices[] __initdata = {
- 	&eth_device,
- 	&sdhi0_device,
- 	&thermal_device,
- 	&hspi_device,
-+	&usb_phy_device,
- };
+-	if (!uioinfo) {
++	if (pdev->dev.of_node) {
+ 		int irq;
  
- static void __init marzen_init(void)
+ 		/* alloc uioinfo for one device */
+diff --git a/drivers/uio/uio_pdrv_genirq.c b/drivers/uio/uio_pdrv_genirq.c
+index 42202cd..45fcceb 100644
+--- a/drivers/uio/uio_pdrv_genirq.c
++++ b/drivers/uio/uio_pdrv_genirq.c
+@@ -102,7 +102,7 @@ static int uio_pdrv_genirq_probe(struct platform_device *pdev)
+ 	int ret = -EINVAL;
+ 	int i;
+ 
+-	if (!uioinfo) {
++	if (pdev->dev.of_node) {
+ 		int irq;
+ 
+ 		/* alloc uioinfo for one device */
 -- 
-1.7.10.4
+1.7.5.4
 
