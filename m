@@ -1,98 +1,59 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 27 Nov 2012 11:54:21 +0000
-Subject: Re: [PATCH 1/5] backlight: Add GPIO-based backlight driver
-Message-Id: <2946045.hrxh3VjFfi@avalon>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 16 Nov 2012 10:34:33 +0000
+Subject: [PATCH 00/04] ARM: mach-shmobile: sh7372 INTC DT update
+Message-Id: <20121116103433.4231.27004.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <33110366.44811353978636788.JavaMail.weblogic@epv6ml07>
-In-Reply-To: <33110366.44811353978636788.JavaMail.weblogic@epv6ml07>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: jg1.han@samsung.com
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, akpm@linux-foundation.org, linux-kernel@vger.kernel.org, "linux-sh@vger.kernel.org" <linux-sh@vger.kernel.org>, "linux-fbdev@vger.kernel.org" <linux-fbdev@vger.kernel.org>, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, Richard Purdie <rpurdie@rpsys.net>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+To: linux-sh@vger.kernel.org
 
-Hi Jingoo,
+ARM: mach-shmobile: sh7372 INTC DT update
 
-On Tuesday 27 November 2012 01:10:36 Jingoo Han wrote:
-> On Saturday, November 24, 2012 1:35 AM, Laurent Pinchart wrote
-> 
-> > 
-> > Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> > ---
-> > 
-> >  drivers/video/backlight/Kconfig          |    7 ++
-> >  drivers/video/backlight/Makefile         |    1 +
-> >  drivers/video/backlight/gpio_backlight.c |  158 +++++++++++++++++++++++++
-> >  include/video/gpio_backlight.h           |   21 ++++
-> >  4 files changed, 187 insertions(+), 0 deletions(-)
-> >  create mode 100644 drivers/video/backlight/gpio_backlight.c
-> >  create mode 100644 include/video/gpio_backlight.h
-> 
-> 
-> [...]
-> 
-> 
-> > +static int __devinit gpio_backlight_probe(struct platform_device *pdev)
-> > +{
-> > +	struct gpio_backlight_platform_data *pdata = pdev->dev.platform_data;
-> > +	struct backlight_properties props;
-> > +	struct backlight_device *bl;
-> > +	struct gpio_backlight *gbl;
-> > +	int ret;
-> > +
-> > +	gbl = devm_kzalloc(&pdev->dev, sizeof(*gbl), GFP_KERNEL);
-> > +	if (gbl = NULL)
-> > +		return -ENOMEM;
-> > +
-> > +	gbl->dev = &pdev->dev;
-> > +
-> > +	if (!pdata) {
-> > +		dev_err(&pdev->dev, "failed to find platform data\n");
-> > +		return -ENODEV;
-> > +	}
-> > +
-> > +	gbl->fbdev = pdata->fbdev;
-> > +	gbl->gpio = pdata->gpio;
-> > +	gbl->active = pdata->active_low ? 0 : 1;
-> > +
-> > +	ret = devm_gpio_request_one(gbl->dev, gbl->gpio, GPIOF_DIR_OUT,
-> > +				    pdata->name);
-> 
-> 
-> Please use GPIOF_INIT flags if you want to turn off GPIO backlight.
-> If gbl->active is inverted, GPIOF_INIT_HIGH can be used as below:
-> 
-> 	ret = devm_gpio_request_one(gbl->dev, gbl->gpio,
-> 				    GPIOF_DIR_OUT | (gbl->active ?
-> 				    GPIOF_INIT_LOW : GPIOF_INIT_HIGH),
-> 				    pdata->name);
+[PATCH 01/04] ARM: mach-shmobile: sh7372 INTC DT INTCA/INTCS typo fix
+[PATCH 02/04] ARM: mach-shmobile: sh7372 INTC DT section mismatch fix
+[PATCH 03/04] ARM: mach-shmobile: sh7372 INTC DT init cleanup
+[PATCH 04/04] ARM: mach-shmobile: sh7372 INTC DT consolidation
 
-Good point, thank you. I'll fix that.
+This series shaves off 100 lines of code from the INTC DT implementation
+available in the devel/of branch of
+git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git
 
-> > +	if (ret < 0) {
-> > +		dev_err(&pdev->dev, "unable to request GPIO\n");
-> > +		return ret;
-> > +	}
-> > +
-> > +	memset(&props, 0, sizeof(props));
-> > +	props.type = BACKLIGHT_RAW;
-> > +	props.max_brightness = 1;
-> > +	bl = backlight_device_register(dev_name(&pdev->dev), &pdev->dev, gbl,
-> > +				       &gpio_backlight_ops, &props);
-> > +	if (IS_ERR(bl)) {
-> > +		dev_err(&pdev->dev, "failed to register backlight\n");
-> > +		return PTR_ERR(bl);
-> > +	}
-> > +
-> > +	bl->props.brightness = pdata->def_value;
-> > +	backlight_update_status(bl);
-> > +
-> > +	platform_set_drvdata(pdev, bl);
-> > +	return 0;
-> > +}
+These patches are the result of me trying to get the new INTC DT code
+working on the sh7372 Mackerel board. With these fixes and cleanups
+applied the board boots as expected with DT, but as usual the sh7372
+SoC setup code is using serial ports and timers as platform devices.
 
--- 
-Regards,
+I tried using the INTC DT interrupt controller code with external
+interrupt pins on the sh7372 mackerel board with DT, but for some
+reason the following network device refuses to probe due to some
+interrupt issue.
 
-Laurent Pinchart
+       lan9220@14000000 {
+               compatible = "smsc,lan9220", "smsc,lan9115";
+               reg = <0x14000000 0x2000000>;
+               phy-mode = "mii";
+               interrupt-parent = <&intca_irq_pins_lo>;
+               interrupts = <0x2c0>;
+               reg-io-width = <4>;
+               smsc,irq-push-pull;
+       };
+
+The above snippet is nicked and adjusted from my earlier prototype patches:
+[PATCH] sh: INTC IRQ domain and DT support prototype
+[PATCH] ARM: mach-shmobile: sh7372 DT IRQ prototype
+
+I wonder, is there any outstanding INTC work related to IRQ domains?
+
+Perhaps the best way forward is that Iwamatsu-san rolls these
+changes into his current patches and releases a new version after
+updating the other SoCs.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/boot/dts/sh7372.dtsi        |    8 -
+ arch/arm/mach-shmobile/intc-sh7372.c |  250 +++++++++-------------------------
+ drivers/sh/intc/of_intc.c            |    8 -
+ 3 files changed, 80 insertions(+), 186 deletions(-)
 
