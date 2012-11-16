@@ -1,60 +1,38 @@
-From: Wen Congyang <wency@cn.fujitsu.com>
-Date: Tue, 27 Nov 2012 10:00:16 +0000
-Subject: [Patch v4 06/12] memory-hotplug: unregister memory section on SPARSEMEM_VMEMMAP
-Message-Id: <1354010422-19648-7-git-send-email-wency@cn.fujitsu.com>
+From: willims gebrel <willims.gebrel@9y.com>
+Date: Fri, 16 Nov 2012 12:58:27 +0000
+Subject: Williams
+Message-Id: <1353070707.32476.YahooMailClassic@web171701.mail.ir2.yahoo.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1354010422-19648-1-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1354010422-19648-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
-Cc: David Rientjes <rientjes@google.com>, Jiang Liu <liuj97@gmail.com>, Len Brown <len.brown@intel.com>, benh@kernel.crashing.org, paulus@samba.org, Christoph Lameter <cl@linux.com>, Minchan Kim <minchan.kim@gmail.com>, Andrew Morton <akpm@linux-foundation.org>, KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>, Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>, Jianguo Wu <wujianguo@huawei.com>, Wen Congyang <wency@cn.fujitsu.com>
+To: linux-sh@vger.kernel.org
 
-From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-Currently __remove_section for SPARSEMEM_VMEMMAP does nothing. But even if
-we use SPARSEMEM_VMEMMAP, we can unregister the memory_section.
+My Dear,
 
-So the patch add unregister_memory_section() into __remove_section().
+ 
 
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
----
- mm/memory_hotplug.c | 13 ++++++++-----
- 1 file changed, 8 insertions(+), 5 deletions(-)
+I'm happy to inform you about my success in getting those funds transferred under the cooperation of my new partner from Canada based business man; presently I'm in Bahamas for investment projects with my own share of the total sum. Meanwhile, I didn't forget your past efforts and attempts to assist me in transferring those funds despite that it failed us somehow.
 
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index e741732..171610d 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -279,11 +279,14 @@ static int __meminit __add_section(int nid, struct zone *zone,
- #ifdef CONFIG_SPARSEMEM_VMEMMAP
- static int __remove_section(struct zone *zone, struct mem_section *ms)
- {
--	/*
--	 * XXX: Freeing memmap with vmemmap is not implement yet.
--	 *      This should be removed later.
--	 */
--	return -EBUSY;
-+	int ret = -EINVAL;
-+
-+	if (!valid_section(ms))
-+		return ret;
-+
-+	ret = unregister_memory_section(ms);
-+
-+	return ret;
- }
- #else
- static int __remove_section(struct zone *zone, struct mem_section *ms)
--- 
-1.8.0
+ 
 
+Now contact my patina personal adviser in Togo, his name is HON REV.PETER SMITH of church embassy ministry Togo, E-mail: fortbendlawlegal@gmail.com
+
+ 
+
+Ask him to send you the official Draft check of $500.000.00 or by cash which I gave him as order to kept for your compensation for all the past efforts and attempts to assist me in this matter before. I appreciated your collective efforts at that time, so feel free and get in touch with my patina adviser HON.REV. PETER SMITH and instruct him where to send the amount to you. Please do let me know immediately you receive it so that we can share the joy after all the sufferings at that time.
+
+ 
+
+in the moment, I am very busy here In Bahamas because of the investment projects which myself and the new partner are having at hand without confrontations, finally, remember that I had forwarded instruction to the REV.PETER SMITH on your behalf to send you the check or by cash as my patina deposited to him on your name before he left to Canada where he based.
+
+ 
+
+So feel free to get in touch with HON REV.PETER SMITH he will send the amount to you without any delay.
+
+ 
+
+With best regards,
+
+Williams
