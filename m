@@ -1,254 +1,53 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 21 Nov 2012 02:53:27 +0000
-Subject: [PATCH 11/42] ARM: shmobile: Register PFC platform device
-Message-Id: <1353466438-10929-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Date: Fri, 16 Nov 2012 01:53:11 +0000
+Subject: [PATCH v2 07/10] serial: sh-sci: mask SCTFDR/RFDR according to fifosize
+Message-Id: <50A59C87.5010905@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <509A0658.1010503@renesas.com> <509A0B4E.1030801@renesas.com>
+ <20121116010107.GA6068@kroah.com> <50A59B9B.2010501@renesas.com>
+In-Reply-To: <50A59B9B.2010501@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add arch code to register the PFC platform device instead of calling the
-driver directly. Platform device registration in the sh-pfc driver will
-be removed.
+From: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Current mask 0xff to SCTFDR/RFDR damages SCIFB, because the
+registers on SCIFB have 9-bit data (0 to 256).
+
+This patch changes the mask according to port->fifosize.
+Though I'm not sure if the mask is really needed (I don't know if
+there are variants which have non-zero upper bits), it is safer.
+
+Signed-off-by: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 ---
- arch/arm/mach-shmobile/Makefile      |    2 +-
- arch/arm/mach-shmobile/devices.c     |   37 ++++++++++++++++++++++++++++++++++
- arch/arm/mach-shmobile/devices.h     |   28 +++++++++++++++++++++++++
- arch/arm/mach-shmobile/pfc-r8a7740.c |    4 ++-
- arch/arm/mach-shmobile/pfc-r8a7779.c |    9 ++++---
- arch/arm/mach-shmobile/pfc-sh7367.c  |    4 ++-
- arch/arm/mach-shmobile/pfc-sh7372.c  |    4 ++-
- arch/arm/mach-shmobile/pfc-sh7377.c  |    4 ++-
- arch/arm/mach-shmobile/pfc-sh73a0.c  |    4 ++-
- 9 files changed, 86 insertions(+), 10 deletions(-)
- create mode 100644 arch/arm/mach-shmobile/devices.c
- create mode 100644 arch/arm/mach-shmobile/devices.h
+ drivers/tty/serial/sh-sci.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index fe2c97c..f5a0c59 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -3,7 +3,7 @@
- #
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 3021912..63a3bd0 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -485,7 +485,7 @@ static int sci_txfill(struct uart_port *port)
  
- # Common objects
--obj-y				:= timer.o console.o clock.o
-+obj-y				:= timer.o console.o clock.o devices.o
+ 	reg = sci_getreg(port, SCTFDR);
+ 	if (reg->size)
+-		return serial_port_in(port, SCTFDR) & 0xff;
++		return serial_port_in(port, SCTFDR) & ((port->fifosize << 1) - 1);
  
- # CPU objects
- obj-$(CONFIG_ARCH_SH7367)	+= setup-sh7367.o clock-sh7367.o intc-sh7367.o
-diff --git a/arch/arm/mach-shmobile/devices.c b/arch/arm/mach-shmobile/devices.c
-new file mode 100644
-index 0000000..da4210e
---- /dev/null
-+++ b/arch/arm/mach-shmobile/devices.c
-@@ -0,0 +1,37 @@
-+/*
-+ * SH Mobile Devices Setup and Initialization
-+ *
-+ * Copyright (C) 2012  Renesas Solutions Corp.
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ */
-+
-+#include <linux/init.h>
-+#include <linux/platform_device.h>
-+
-+#include "devices.h"
-+
-+static struct platform_device sh_pfc_device = {
-+	.name		= "sh-pfc",
-+	.id		= -1,
-+};
-+
-+int __init sh_pfc_register(const char *name,
-+			   struct resource *resource, u32 num_resources,
-+			   struct pinmux_info *pdata)
-+{
-+	if (name)
-+		sh_pfc_device.name = name;
-+	sh_pfc_device.dev.platform_data = pdata;
-+	sh_pfc_device.num_resources = num_resources;
-+	sh_pfc_device.resource = resource;
-+
-+	return platform_device_register(&sh_pfc_device);
-+}
-diff --git a/arch/arm/mach-shmobile/devices.h b/arch/arm/mach-shmobile/devices.h
-new file mode 100644
-index 0000000..4816c5b
---- /dev/null
-+++ b/arch/arm/mach-shmobile/devices.h
-@@ -0,0 +1,28 @@
-+/*
-+ * SH Mobile Devices Setup and Initialization
-+ *
-+ * Copyright (C) 2012  Renesas Solutions Corp.
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ */
-+
-+#ifndef __ARCH_ARM_MACH_SHMOBILE_DEVICES_H__
-+#define __ARCH_ARM_MACH_SHMOBILE_DEVICES_H__
-+
-+#include <linux/types.h>
-+
-+struct pinmux_info;
-+struct resource;
-+
-+int sh_pfc_register(const char *name,
-+		    struct resource *resource, u32 num_resources,
-+		    struct pinmux_info *pdata);
-+
-+#endif /* __ARCH_ARM_MACH_SHMOBILE_DEVICES_H__ */
-diff --git a/arch/arm/mach-shmobile/pfc-r8a7740.c b/arch/arm/mach-shmobile/pfc-r8a7740.c
-index 134d1b9..0590b6d 100644
---- a/arch/arm/mach-shmobile/pfc-r8a7740.c
-+++ b/arch/arm/mach-shmobile/pfc-r8a7740.c
-@@ -24,6 +24,8 @@
- #include <mach/r8a7740.h>
- #include <mach/irqs.h>
+ 	reg = sci_getreg(port, SCFDR);
+ 	if (reg->size)
+@@ -505,7 +505,7 @@ static int sci_rxfill(struct uart_port *port)
  
-+#include "devices.h"
-+
- #define CPU_ALL_PORT(fn, pfx, sfx)					\
- 	PORT_10(fn, pfx, sfx),		PORT_90(fn, pfx, sfx),		\
- 	PORT_10(fn, pfx##10, sfx),	PORT_90(fn, pfx##1, sfx),	\
-@@ -2613,5 +2615,5 @@ static struct pinmux_info r8a7740_pinmux_info = {
+ 	reg = sci_getreg(port, SCRFDR);
+ 	if (reg->size)
+-		return serial_port_in(port, SCRFDR) & 0xff;
++		return serial_port_in(port, SCRFDR) & ((port->fifosize << 1) - 1);
  
- void r8a7740_pinmux_init(void)
- {
--	register_pinmux(&r8a7740_pinmux_info);
-+	sh_pfc_register(NULL, NULL, 0, &r8a7740_pinmux_info);
- }
-diff --git a/arch/arm/mach-shmobile/pfc-r8a7779.c b/arch/arm/mach-shmobile/pfc-r8a7779.c
-index cbc26ba..f738042 100644
---- a/arch/arm/mach-shmobile/pfc-r8a7779.c
-+++ b/arch/arm/mach-shmobile/pfc-r8a7779.c
-@@ -23,6 +23,8 @@
- #include <linux/ioport.h>
- #include <mach/r8a7779.h>
- 
-+#include "devices.h"
-+
- #define CPU_32_PORT(fn, pfx, sfx)				\
- 	PORT_10(fn, pfx, sfx), PORT_10(fn, pfx##1, sfx),	\
- 	PORT_10(fn, pfx##2, sfx), PORT_1(fn, pfx##30, sfx),	\
-@@ -2616,9 +2618,6 @@ static struct resource r8a7779_pfc_resources[] = {
- static struct pinmux_info r8a7779_pinmux_info = {
- 	.name = "r8a7779_pfc",
- 
--	.resource = r8a7779_pfc_resources,
--	.num_resources = ARRAY_SIZE(r8a7779_pfc_resources),
--
- 	.unlock_reg = 0xfffc0000, /* PMMR */
- 
- 	.reserved_id = PINMUX_RESERVED,
-@@ -2641,5 +2640,7 @@ static struct pinmux_info r8a7779_pinmux_info = {
- 
- void r8a7779_pinmux_init(void)
- {
--	register_pinmux(&r8a7779_pinmux_info);
-+	sh_pfc_register(NULL, r8a7779_pfc_resources,
-+			ARRAY_SIZE(r8a7779_pfc_resources),
-+			&r8a7779_pinmux_info);
- }
-diff --git a/arch/arm/mach-shmobile/pfc-sh7367.c b/arch/arm/mach-shmobile/pfc-sh7367.c
-index c0c137f..5a4fdf3 100644
---- a/arch/arm/mach-shmobile/pfc-sh7367.c
-+++ b/arch/arm/mach-shmobile/pfc-sh7367.c
-@@ -21,6 +21,8 @@
- #include <linux/sh_pfc.h>
- #include <mach/sh7367.h>
- 
-+#include "devices.h"
-+
- #define CPU_ALL_PORT(fn, pfx, sfx)				\
- 	PORT_10(fn, pfx, sfx), PORT_90(fn, pfx, sfx),		\
- 	PORT_10(fn, pfx##10, sfx), PORT_90(fn, pfx##1, sfx),	\
-@@ -1723,5 +1725,5 @@ static struct pinmux_info sh7367_pinmux_info = {
- 
- void sh7367_pinmux_init(void)
- {
--	register_pinmux(&sh7367_pinmux_info);
-+	sh_pfc_register(NULL, NULL, 0, &sh7367_pinmux_info);
- }
-diff --git a/arch/arm/mach-shmobile/pfc-sh7372.c b/arch/arm/mach-shmobile/pfc-sh7372.c
-index 7a1525f..31b539c 100644
---- a/arch/arm/mach-shmobile/pfc-sh7372.c
-+++ b/arch/arm/mach-shmobile/pfc-sh7372.c
-@@ -26,6 +26,8 @@
- #include <mach/irqs.h>
- #include <mach/sh7372.h>
- 
-+#include "devices.h"
-+
- #define CPU_ALL_PORT(fn, pfx, sfx) \
- 	PORT_10(fn, pfx, sfx),		PORT_90(fn, pfx, sfx), \
- 	PORT_10(fn, pfx##10, sfx),	PORT_10(fn, pfx##11, sfx), \
-@@ -1659,5 +1661,5 @@ static struct pinmux_info sh7372_pinmux_info = {
- 
- void sh7372_pinmux_init(void)
- {
--	register_pinmux(&sh7372_pinmux_info);
-+	sh_pfc_register(NULL, NULL, 0, &sh7372_pinmux_info);
- }
-diff --git a/arch/arm/mach-shmobile/pfc-sh7377.c b/arch/arm/mach-shmobile/pfc-sh7377.c
-index f3117f6..4a94d20 100644
---- a/arch/arm/mach-shmobile/pfc-sh7377.c
-+++ b/arch/arm/mach-shmobile/pfc-sh7377.c
-@@ -22,6 +22,8 @@
- #include <linux/sh_pfc.h>
- #include <mach/sh7377.h>
- 
-+#include "devices.h"
-+
- #define CPU_ALL_PORT(fn, pfx, sfx)				\
- 	PORT_10(fn, pfx, sfx), PORT_90(fn, pfx, sfx),		\
- 	PORT_10(fn, pfx##10, sfx),				\
-@@ -1684,5 +1686,5 @@ static struct pinmux_info sh7377_pinmux_info = {
- 
- void sh7377_pinmux_init(void)
- {
--	register_pinmux(&sh7377_pinmux_info);
-+	sh_pfc_register(NULL, NULL, 0, &sh7377_pinmux_info);
- }
-diff --git a/arch/arm/mach-shmobile/pfc-sh73a0.c b/arch/arm/mach-shmobile/pfc-sh73a0.c
-index b442f9d..3de6c70 100644
---- a/arch/arm/mach-shmobile/pfc-sh73a0.c
-+++ b/arch/arm/mach-shmobile/pfc-sh73a0.c
-@@ -24,6 +24,8 @@
- #include <mach/sh73a0.h>
- #include <mach/irqs.h>
- 
-+#include "devices.h"
-+
- #define CPU_ALL_PORT(fn, pfx, sfx)				\
- 	PORT_10(fn, pfx,    sfx), PORT_10(fn, pfx##1, sfx),	\
- 	PORT_10(fn, pfx##2, sfx), PORT_10(fn, pfx##3, sfx),	\
-@@ -2799,5 +2801,5 @@ static struct pinmux_info sh73a0_pinmux_info = {
- 
- void sh73a0_pinmux_init(void)
- {
--	register_pinmux(&sh73a0_pinmux_info);
-+	sh_pfc_register(NULL, NULL, 0, &sh73a0_pinmux_info);
- }
+ 	reg = sci_getreg(port, SCFDR);
+ 	if (reg->size)
 -- 
-1.7.8.6
+1.7.12.4
 
