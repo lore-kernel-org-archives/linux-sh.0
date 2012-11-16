@@ -1,67 +1,56 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 27 Nov 2012 00:02:26 +0000
-Subject: [PATCH v2 27/77] sh: sh7734: Register PFC platform device
-Message-Id: <1353974596-30033-28-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Date: Fri, 16 Nov 2012 01:53:31 +0000
+Subject: [PATCH v2 08/10] serial: sh-sci: fix common SCIFB regmap definition
+Message-Id: <50A59C9B.8080204@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <509A0658.1010503@renesas.com> <509A0B4E.1030801@renesas.com>
+ <20121116010107.GA6068@kroah.com> <50A59B9B.2010501@renesas.com>
+In-Reply-To: <50A59B9B.2010501@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add arch code to register the PFC platform device instead of calling the
-driver directly. Platform device registration in the sh-pfc driver will
-be removed.
+From: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+About FIFO count, there are two variants of SCIFs which show
+a) TX count in upper, RX count in lower byte of FDR register
+b) TX count in TFDR register, RX count in RFDR register
+
+Common SCIFB regmap in current source code is defined as "a".
+At least 7372 and 73a0 HW manual say their SICFB are "b".
+
+This patch alters the definition to "b", considering the current
+one has come from a mistake. The reason is as follows.
+
+The flag SCIFB sh-sci driver means it has 256 byte FIFO.
+The count is from 0(empty) to 256(full), that makes 9-bit.
+Because FDR is 16-bit register, it can not hold two 9-bits.
+That's why, SCIFB can not be "a".
+
+Signed-off-by: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 ---
- arch/sh/Kconfig                         |    1 +
- arch/sh/kernel/cpu/sh4a/pinmux-sh7734.c |    8 ++++----
- 2 files changed, 5 insertions(+), 4 deletions(-)
+ drivers/tty/serial/sh-sci.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 1885213..7a7d2ec 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -456,6 +456,7 @@ config CPU_SUBTYPE_SH7734
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select USB_ARCH_HAS_OHCI
- 	select USB_ARCH_HAS_EHCI
-+	select PINCTRL
- 	help
- 	  Select SH7734 if you have a SH4A SH7734 CPU.
- 
-diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7734.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7734.c
-index eed3b9d..fa33583 100644
---- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7734.c
-+++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7734.c
-@@ -12,6 +12,7 @@
- #include <linux/kernel.h>
- #include <linux/gpio.h>
- #include <linux/ioport.h>
-+#include <cpu/pfc.h>
- #include <cpu/sh7734.h>
- 
- #define CPU_32_PORT(fn, pfx, sfx)				\
-@@ -2467,9 +2468,6 @@ static struct resource sh7734_pfc_resources[] = {
- static struct pinmux_info sh7734_pinmux_info = {
- 	.name = "sh7734_pfc",
- 
--	.resource = sh7734_pfc_resources,
--	.num_resources = ARRAY_SIZE(sh7734_pfc_resources),
--
- 	.unlock_reg = 0xFFFC0000,
- 
- 	.reserved_id = PINMUX_RESERVED,
-@@ -2492,6 +2490,8 @@ static struct pinmux_info sh7734_pinmux_info = {
- 
- static int __init plat_pinmux_setup(void)
- {
--	return register_pinmux(&sh7734_pinmux_info);
-+	return sh_pfc_register_info(NULL, sh7734_pfc_resources,
-+				    ARRAY_SIZE(sh7734_pfc_resources),
-+				    &sh7734_pinmux_info);
- }
- arch_initcall(plat_pinmux_setup);
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 63a3bd0..502fa47 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -196,9 +196,9 @@ static struct plat_sci_reg sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = {
+ 		[SCxSR]		= { 0x14, 16 },
+ 		[SCxRDR]	= { 0x60,  8 },
+ 		[SCFCR]		= { 0x18, 16 },
+-		[SCFDR]		= { 0x1c, 16 },
+-		[SCTFDR]	= sci_reg_invalid,
+-		[SCRFDR]	= sci_reg_invalid,
++		[SCFDR]		= sci_reg_invalid,
++		[SCTFDR]	= { 0x38, 16 },
++		[SCRFDR]	= { 0x3c, 16 },
+ 		[SCSPTR]	= sci_reg_invalid,
+ 		[SCLSR]		= sci_reg_invalid,
+ 	},
 -- 
-1.7.8.6
+1.7.12.4
 
