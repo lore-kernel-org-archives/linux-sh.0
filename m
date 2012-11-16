@@ -1,82 +1,81 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 07 Nov 2012 08:50:29 +0000
-Subject: [RFC 00/15] SH/ARM shmobile DT initialisation of INTC and GIC
-Message-Id: <1352278244-26702-1-git-send-email-horms@verge.net.au>
+From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Date: Fri, 16 Nov 2012 01:54:49 +0000
+Subject: [PATCH v2 10/10] serial: sh-sci: fix possible race cases on SCSCR register accesses
+Message-Id: <50A59CE9.5020104@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <509A0658.1010503@renesas.com> <509A0B4E.1030801@renesas.com>
+ <20121116010107.GA6068@kroah.com> <50A59B9B.2010501@renesas.com>
+In-Reply-To: <50A59B9B.2010501@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+In the previous commit, console write function (serial_console_write)
+is changed to disable SCI interrupts while printing console strings.
+This introduces possible race cases in the serial startup / shutdown
+functions on SMP systems.
 
-this series by Iwamatsu-san and myself is a first pass at:
+This patch fixes the sh-sci in the same way as commit 9ec1882df2
+(tty: serial: imx: console write routing is unsafe on SMP, from
+Xinyu Chen <xinyu.chen@freescale.com>, 2012-08-27) did.
 
-* Adding DT support to INTC
-* Allowing relevant ARM shmobile SoCs to use DT to initialise INTC
-* Allowing relevant ARM shmobile boards to use DT to initialise INTC
-* Allowing the sh73a0 SoC use DT to initialise GIC
-* Allowing the sh73a0 SoC use DT to initialise GIC, which in
-  turn allows the kzm9g board to use DT to initialise GIC
+There could be several consumers of the console,
+* the kernel printk
+* the init process using /dev/kmsg to call printk to show log
+* shell, which opens /dev/console and writes with sys_write()
 
-Review would be greatly appreciated.
+The shell goes into the normal UART open() and write() system calls,
+while the other two go into the console operations.  The open() call
+invokes serial startup function (sci_startup), which will write to
+the SCSCR register (to enable or disable SCI interrupts) without any
+locking.  This will conflict with the console serial function.
 
-Diffstat and git information is provided to aid review
+Add spinlock protections in sci_startup() and sci_shutdown() properly.
 
-----------------------------------------------------------------
-The following changes since commit ddffeb8c4d0331609ef2581d84de4d763607bd37:
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+---
+ drivers/tty/serial/sh-sci.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-  Linux 3.7-rc1 (2012-10-14 14:41:04 -0700)
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 0b8d029..8e3c7f7 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -1742,6 +1742,7 @@ static inline void sci_free_dma(struct uart_port *port)
+ static int sci_startup(struct uart_port *port)
+ {
+ 	struct sci_port *s = to_sci_port(port);
++	unsigned long flags;
+ 	int ret;
+ 
+ 	dev_dbg(port->dev, "%s(%d)\n", __func__, port->line);
+@@ -1752,8 +1753,10 @@ static int sci_startup(struct uart_port *port)
+ 
+ 	sci_request_dma(port);
+ 
++	spin_lock_irqsave(&port->lock, flags);
+ 	sci_start_tx(port);
+ 	sci_start_rx(port);
++	spin_unlock_irqrestore(&port->lock, flags);
+ 
+ 	return 0;
+ }
+@@ -1761,11 +1764,14 @@ static int sci_startup(struct uart_port *port)
+ static void sci_shutdown(struct uart_port *port)
+ {
+ 	struct sci_port *s = to_sci_port(port);
++	unsigned long flags;
+ 
+ 	dev_dbg(port->dev, "%s(%d)\n", __func__, port->line);
+ 
++	spin_lock_irqsave(&port->lock, flags);
+ 	sci_stop_rx(port);
+ 	sci_stop_tx(port);
++	spin_unlock_irqrestore(&port->lock, flags);
+ 
+ 	sci_free_dma(port);
+ 	sci_free_irq(s);
+-- 
+1.7.12.4
 
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git devel/of
-
-for you to fetch changes up to f94f73ccfa8701f02a0b9528605d89a42710d806:
-
-  ARM: shmobile: sh73a0: Use DT for GIC (2012-11-07 17:41:56 +0900)
-
-----------------------------------------------------------------
-Nobuhiro Iwamatsu (12):
-      ARM: shmobile: Add support OF for INTC of shmobile
-      SH: intc: Add support OF of IRQ
-      ARM: shmobile: Add support OF of INTC for r8a7740
-      ARM: shmobile: Add support OF of INTC for sh73a0
-      ARM: shmobile: Add support OF of INTC for sh7372
-      ARM: shmobile: Add DT table of INTC for sh73a0
-      ARM: shmobile: Add DT table of INTC for sh7372
-      ARM: shmobile: Add DT table of INTC for r8a7740
-      ARM: shmobile: Include DTSI of r8a7740 to armadillo800eva
-      ARM: shmobile: Include DTSI of sh73a0 to kzm9g board
-      ARM: shmobile: r8a7740: Use DT initialisation of INTC
-      ARM: shmobile: sh7372: Use DT initialisation of INTC
-
-Simon Horman (3):
-      ARM: shmobile: kzm9g: Use DT initialisation of INTC
-      ARM: shmobile: Add DT table of GIC for sh73a0
-      ARM: shmobile: sh73a0: Use DT for GIC
-
- Documentation/devicetree/bindings/sh/intc.txt |  163 ++++
- arch/arm/boot/dts/r8a7740-armadillo800eva.dts |    2 +-
- arch/arm/boot/dts/r8a7740.dtsi                |  965 ++++++++++++++++++++-
- arch/arm/boot/dts/sh7372.dtsi                 | 1138 +++++++++++++++++++++++++
- arch/arm/boot/dts/sh73a0-kzm9g.dts            |    2 +-
- arch/arm/boot/dts/sh73a0.dtsi                 |  819 ++++++++++++++++++
- arch/arm/mach-shmobile/board-kzm9g.c          |    2 +-
- arch/arm/mach-shmobile/include/mach/common.h  |    3 +
- arch/arm/mach-shmobile/intc-r8a7740.c         |  136 ++-
- arch/arm/mach-shmobile/intc-sh7372.c          |  210 ++++-
- arch/arm/mach-shmobile/intc-sh73a0.c          |  248 +++++-
- arch/arm/mach-shmobile/setup-r8a7740.c        |    2 +-
- arch/arm/mach-shmobile/setup-sh7372.c         |    2 +-
- drivers/sh/intc/Kconfig                       |    7 +
- drivers/sh/intc/Makefile                      |    1 +
- drivers/sh/intc/core.c                        |    2 +-
- drivers/sh/intc/internals.h                   |    3 +-
- drivers/sh/intc/irqdomain.c                   |    6 +-
- drivers/sh/intc/of_intc.c                     |  646 ++++++++++++++
- include/linux/sh_intc.h                       |   84 ++
- 20 files changed, 4361 insertions(+), 80 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/sh/intc.txt
- create mode 100644 arch/arm/boot/dts/sh73a0.dtsi
- create mode 100644 drivers/sh/intc/of_intc.c
