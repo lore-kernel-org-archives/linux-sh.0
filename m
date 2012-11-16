@@ -1,21 +1,42 @@
-From: Rik van Riel <riel@redhat.com>
-Date: Mon, 05 Nov 2012 23:36:44 +0000
-Subject: Re: [PATCH 14/16] mm: use vm_unmapped_area() in hugetlbfs on sparc64 architecture
-Message-Id: <50984D8C.6080504@redhat.com>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Fri, 16 Nov 2012 10:36:11 +0000
+Subject: [PATCH v2] ARM: shmobile: mackerel: Add FLCTL IRQ resource
+Message-Id: <1353062171-20589-1-git-send-email-hechtb@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352155633-8648-1-git-send-email-walken@google.com>
- <1352155633-8648-15-git-send-email-walken@google.com>
-In-Reply-To: <1352155633-8648-15-git-send-email-walken@google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On 11/05/2012 05:47 PM, Michel Lespinasse wrote:
-> Update the sparc64 hugetlb_get_unmapped_area function to make use of
-> vm_unmapped_area() instead of implementing a brute force search.
->
-> Signed-off-by: Michel Lespinasse <walken@google.com>
+Since commit 3c7ea4eccfd2e the sh_flctl driver requires the error IRQ line to
+signal failed transactions between the flash controller and the NAND chip.
+This information is mandatory - else the driver refuses to start up. We
+provide it here for the board mackerel.
 
-Reviewed-by: Rik van Riel <riel@redhat.com>
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+---
+v2: extended commit message
+
+ arch/arm/mach-shmobile/board-mackerel.c |    6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 0c27c81..66ec616 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1018,7 +1018,11 @@ static struct resource nand_flash_resources[] = {
+ 		.start	= 0xe6a30000,
+ 		.end	= 0xe6a3009b,
+ 		.flags	= IORESOURCE_MEM,
+-	}
++	},
++	[1] = {
++		.start	= evt2irq(0x0d80), /* flstei: status error irq */
++		.flags	= IORESOURCE_IRQ,
++	},
+ };
+ 
+ static struct sh_flctl_platform_data nand_flash_data = {
+-- 
+1.7.9.5
 
