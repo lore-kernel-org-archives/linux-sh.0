@@ -1,36 +1,60 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 09 Nov 2012 07:31:43 +0000
-Subject: [PATCH 4/7] ARM: shmobile: mackerel: enable DMAEngine on USB Host
-Message-Id: <1352446306-19945-5-git-send-email-horms@verge.net.au>
+From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+Date: Fri, 16 Nov 2012 05:46:11 +0000
+Subject: [PATCH 3/4] drivers: uio_dmem_genirq: Allow partial success when opening device
+Message-Id: <1353044772-18803-4-git-send-email-dhobsong@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352446306-19945-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352446306-19945-1-git-send-email-horms@verge.net.au>
+References: <1353044772-18803-1-git-send-email-dhobsong@igel.co.jp>
+In-Reply-To: <1353044772-18803-1-git-send-email-dhobsong@igel.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: hjk@hansjkoch.de, gregkh@linuxfoundation.org, magnus.damm@gmail.com, horms@verge.net.au
+Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Damian Hobson-Garcia <dhobsong@igel.co.jp>
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The uio device should not fail on open just because one memory allocation
+fails. The device might export several regions, the failure of some of
+which may or may not be a problem for the user space driver.  Failing
+regions will remain unmapped, and successful regions will be mapped and
+exported to user space.  Also deals with the case where failing to map
+a region after successfully allocating others would not unmap the
+successfully allocated regions before dying.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
 ---
- arch/arm/mach-shmobile/board-mackerel.c |    2 ++
- 1 file changed, 2 insertions(+)
+ drivers/uio/uio_dmem_genirq.c |   12 ++++++------
+ 1 files changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index f274252..d5fe365 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -816,6 +816,8 @@ static struct platform_device usbhs1_device = {
- 	.id	= 1,
- 	.dev = {
- 		.platform_data		= &usbhs1_private.info,
-+		.dma_mask		= &usbhs1_device.dev.coherent_dma_mask,
-+		.coherent_dma_mask	= DMA_BIT_MASK(32),
- 	},
- 	.num_resources	= ARRAY_SIZE(usbhs1_resources),
- 	.resource	= usbhs1_resources,
+diff --git a/drivers/uio/uio_dmem_genirq.c b/drivers/uio/uio_dmem_genirq.c
+index 7be8d04..bbdf925 100644
+--- a/drivers/uio/uio_dmem_genirq.c
++++ b/drivers/uio/uio_dmem_genirq.c
+@@ -62,8 +62,6 @@ static int uio_dmem_genirq_open(struct uio_info *info, struct inode *inode)
+ 				(dma_addr_t *)&uiomem->addr, GFP_KERNEL);
+ 		if (!addr) {
+ 			uiomem->addr = DMEM_MAP_ERROR;
+-			ret = -ENOMEM;
+-			break;
+ 		}
+ 		priv->dmem_region_vaddr[dmem_region++] = addr;
+ 		++uiomem;
+@@ -93,11 +91,13 @@ static int uio_dmem_genirq_release(struct uio_info *info, struct inode *inode)
+ 	while (!priv->refcnt && uiomem < &priv->uioinfo->mem[MAX_UIO_MAPS]) {
+ 		if (!uiomem->size)
+ 			break;
+-
+-		dma_free_coherent(&priv->pdev->dev, uiomem->size,
+-				priv->dmem_region_vaddr[dmem_region++],
+-				uiomem->addr);
++		if (priv->dmem_region_vaddr[dmem_region]) {
++			dma_free_coherent(&priv->pdev->dev, uiomem->size,
++					priv->dmem_region_vaddr[dmem_region],
++					uiomem->addr);
++		}
+ 		uiomem->addr = DMEM_MAP_ERROR;
++		++dmem_region;
+ 		++uiomem;
+ 	}
+ 
 -- 
-1.7.10.4
+1.7.5.4
 
