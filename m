@@ -1,44 +1,127 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 27 Nov 2012 00:03:13 +0000
-Subject: [PATCH v2 74/77] ARM: shmobile: armadillo: Populate platform devices from device tree
-Message-Id: <1353974596-30033-75-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Date: Fri, 16 Nov 2012 01:51:24 +0000
+Subject: [PATCH v2 03/10] Partially revert "serial: sh-sci: console Runtime PM support"
+Message-Id: <50A59C1C.9020904@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <509A0658.1010503@renesas.com> <509A0B4E.1030801@renesas.com>
+ <20121116010107.GA6068@kroah.com> <50A59B9B.2010501@renesas.com>
+In-Reply-To: <50A59B9B.2010501@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Call of_platform_populate() at machine initialization time to populate
-platform devices. Remove the explicit pinmux initialization as the PFC
-device will be instantiated from the device tree.
+This partially reverts commit 1ba7622094 (serial: sh-sci: console
+Runtime PM support, from Magnus Damm <damm@opensource.se>, 2011-08-03).
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The generic 'serial_core' can take care of console PM maintenance,
+so all (or at least the first thing) we have to do to get console PM
+work properly, is to implement uart_ops ->pm() operation in the sh-sci
+serial client driver.
+
+This patch partially reverts the commit above, but leaving sci_reset()
+change in place, because sci_reset() is already part of another commit
+(73c3d53f38 serial: sh-sci: Avoid FIFO clear for MCE toggle.).
+
+A revised version of console PM support follows next.
+
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c |    4 +++-
- 1 files changed, 3 insertions(+), 1 deletions(-)
+ drivers/tty/serial/sh-sci.c | 53 +--------------------------------------------
+ 1 file changed, 1 insertion(+), 52 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 3cc8b1c..ba81519 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -25,6 +25,7 @@
- #include <linux/kernel.h>
- #include <linux/input.h>
- #include <linux/irq.h>
-+#include <linux/of_platform.h>
- #include <linux/platform_device.h>
- #include <linux/gpio.h>
- #include <linux/gpio_keys.h>
-@@ -985,7 +986,8 @@ static void __init eva_init(void)
- 	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
- 				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 9abe977..e9e8883 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -99,12 +99,6 @@ struct sci_port {
+ #endif
  
--	r8a7740_pinmux_init();
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
-+
- 	r8a7740_meram_workaround();
+ 	struct notifier_block		freq_transition;
+-
+-#ifdef CONFIG_SERIAL_SH_SCI_CONSOLE
+-	unsigned short saved_smr;
+-	unsigned short saved_fcr;
+-	unsigned char saved_brr;
+-#endif
+ };
  
- 	/* SCIFA1 */
+ /* Function prototypes */
+@@ -2247,8 +2241,7 @@ static int __devinit serial_console_setup(struct console *co, char *options)
+ 	if (options)
+ 		uart_parse_options(options, &baud, &parity, &bits, &flow);
+ 
+-	sci_port_disable(sci_port);
+-
++	/* TODO: disable clock */
+ 	return uart_set_options(port, co, baud, parity, bits, flow);
+ }
+ 
+@@ -2291,46 +2284,6 @@ static int __devinit sci_probe_earlyprintk(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
+-#define uart_console(port)	((port)->cons->index = (port)->line)
+-
+-static int sci_runtime_suspend(struct device *dev)
+-{
+-	struct sci_port *sci_port = dev_get_drvdata(dev);
+-	struct uart_port *port = &sci_port->port;
+-
+-	if (uart_console(port)) {
+-		struct plat_sci_reg *reg;
+-
+-		sci_port->saved_smr = serial_port_in(port, SCSMR);
+-		sci_port->saved_brr = serial_port_in(port, SCBRR);
+-
+-		reg = sci_getreg(port, SCFCR);
+-		if (reg->size)
+-			sci_port->saved_fcr = serial_port_in(port, SCFCR);
+-		else
+-			sci_port->saved_fcr = 0;
+-	}
+-	return 0;
+-}
+-
+-static int sci_runtime_resume(struct device *dev)
+-{
+-	struct sci_port *sci_port = dev_get_drvdata(dev);
+-	struct uart_port *port = &sci_port->port;
+-
+-	if (uart_console(port)) {
+-		sci_reset(port);
+-		serial_port_out(port, SCSMR, sci_port->saved_smr);
+-		serial_port_out(port, SCBRR, sci_port->saved_brr);
+-
+-		if (sci_port->saved_fcr)
+-			serial_port_out(port, SCFCR, sci_port->saved_fcr);
+-
+-		serial_port_out(port, SCSCR, sci_port->cfg->scscr);
+-	}
+-	return 0;
+-}
+-
+ #define SCI_CONSOLE	(&serial_console)
+ 
+ #else
+@@ -2340,8 +2293,6 @@ static inline int __devinit sci_probe_earlyprintk(struct platform_device *pdev)
+ }
+ 
+ #define SCI_CONSOLE	NULL
+-#define sci_runtime_suspend	NULL
+-#define sci_runtime_resume	NULL
+ 
+ #endif /* CONFIG_SERIAL_SH_SCI_CONSOLE */
+ 
+@@ -2459,8 +2410,6 @@ static int sci_resume(struct device *dev)
+ }
+ 
+ static const struct dev_pm_ops sci_dev_pm_ops = {
+-	.runtime_suspend = sci_runtime_suspend,
+-	.runtime_resume = sci_runtime_resume,
+ 	.suspend	= sci_suspend,
+ 	.resume		= sci_resume,
+ };
 -- 
-1.7.8.6
+1.7.12.4
 
