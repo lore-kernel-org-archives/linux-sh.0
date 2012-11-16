@@ -1,52 +1,61 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 27 Nov 2012 00:02:08 +0000
-Subject: [PATCH v2 09/77] sh-pfc: Split platform device and platform driver registration
-Message-Id: <1353974596-30033-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 16 Nov 2012 10:34:49 +0000
+Subject: [PATCH 02/04] ARM: mach-shmobile: sh7372 INTC DT section mismatch fix
+Message-Id: <20121116103449.4231.27320.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Move platform driver registration to a static postcore initcall. This
-prepares the move of platform device registration to arch code.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Paul Mundt <lethal@linux-sh.org>
+Fix section mismatches in the sh7372 INTC DT code.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/sh/pfc/core.c |   15 ++++++---------
- 1 files changed, 6 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
-index f1a0c85..9736e3d 100644
---- a/drivers/sh/pfc/core.c
-+++ b/drivers/sh/pfc/core.c
-@@ -597,19 +597,16 @@ static struct platform_device sh_pfc_device = {
+ Applies to the devel/of branch of
+ git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git
+
+ arch/arm/mach-shmobile/intc-sh7372.c |    8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- 0003/arch/arm/mach-shmobile/intc-sh7372.c
++++ work/arch/arm/mach-shmobile/intc-sh7372.c	2012-11-16 15:31:45.000000000 +0900
+@@ -40,7 +40,7 @@ static struct intc_desc intca_irq_pins_h
+ static struct resource intca_pins_hi_resources[1] __initdata;
+ static unsigned short intevtsa_vect;
  
- int __init register_sh_pfc(struct sh_pfc_platform_data *pdata)
+-static int sh7372_intca_of_init(struct device_node *np,
++static int __init sh7372_intca_of_init(struct device_node *np,
+ 			struct device_node *parent)
  {
--	int rc;
--
- 	sh_pfc_device.dev.platform_data = pdata;
- 
--	rc = platform_driver_register(&sh_pfc_driver);
--	if (likely(!rc)) {
--		rc = platform_device_register(&sh_pfc_device);
--		if (unlikely(rc))
--			platform_driver_unregister(&sh_pfc_driver);
--	}
-+	return platform_device_register(&sh_pfc_device);
-+}
- 
--	return rc;
-+static int __init sh_pfc_init(void)
-+{
-+	return platform_driver_register(&sh_pfc_driver);
+ 	int ret;
+@@ -65,7 +65,7 @@ error:
+ 	return ret;
  }
-+postcore_initcall(sh_pfc_init);
  
- static void __exit sh_pfc_exit(void)
+-static int sh7372_intcs_of_init(struct device_node *np,
++static int __init sh7372_intcs_of_init(struct device_node *np,
+ 			struct device_node *parent)
  {
--- 
-1.7.8.6
-
+ 	int ret;
+@@ -93,7 +93,7 @@ error:
+ 	return ret;
+ }
+ 
+-static int sh7372_intca_pins_lo_of_init(struct device_node *np,
++static int __init sh7372_intca_pins_lo_of_init(struct device_node *np,
+ 				    struct device_node *parent)
+ {
+ 	int ret;
+@@ -120,7 +120,7 @@ error:
+ 	return ret;
+ }
+ 
+-static int sh7372_intca_pins_hi_of_init(struct device_node *np,
++static int __init sh7372_intca_pins_hi_of_init(struct device_node *np,
+ 				    struct device_node *parent)
+ {
+ 	int ret;
