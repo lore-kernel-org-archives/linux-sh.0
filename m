@@ -1,150 +1,115 @@
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Thu, 22 Nov 2012 08:00:00 +0000
-Subject: [PATCH v5 03/15] ARM: mach-shmobile: Add support OF of INTC for r8a7740
-Message-Id: <1353571213-26006-4-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 19 Nov 2012 05:13:12 +0000
+Subject: [RFC 00/15 v4] shmobile DT initialisation of INTC and GIC
+Message-Id: <1353302007-31045-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1353571213-26006-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
-In-Reply-To: <1353571213-26006-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This CPU has three interrupt controllers (INTCA, INTCS and INTCA IRQ pins).
-This supports these.
+Hi,
 
-Cc: Magnus Damm <damm@opensource.se>
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+this is an updated series that is still very much work-in-progress.
+So far contributions bave been made by Magnus Damm, Iwamatsu-san and myself.
 
----
-v3 [Nobuhiro Iwamatsu]
-* Rework the r8a7740 DT INTC init code to reduce the number of #ifdefs.
+The aims of this series are:
 
-v2 [Simon Horman]
-* Use #ifdef instead of #if defined
-* Use CONFIG_OF in place of CONFIG_OF_SH_INTC
-* Allow OF and non OF code to be compiled in the same binary and
-  provide r8a7740_init_irq_of() as a way to initialise INTC
-  using DT while r8a7740_init_irq() still initialises INTC
-  using the previous code paths. This is because we would
-  like to be able to use a single configuration to compile a kernel
-  for multiple boards and not all r8a7740 boards have DT support yet.
+* Adding DT support to INTC
+* Allowing relevant ARM shmobile SoCs to use DT to initialise INTC
+* Allowing relevant ARM shmobile boards to use DT to initialise INTC
+* Allowing the sh73a0 SoC use DT to initialise GIC
+* Allowing the sh73a0 SoC use DT to initialise GIC, which in
+  turn allows the kzm9g board to use DT to initialise GIC
 
-v1 [Nobuhiro Iwamatsu]
+Oustanding work includes:
 
-Update r8a7740
+* Work has been done on the sh7372 to consolidate the C code,
+  minimise #ifdefs and make use of a common compatibility string.
+  This work should be reflected in the r8a7740 and sh73a0 SoCs which
+  this series already modifies.
 
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
----
- arch/arm/mach-shmobile/include/mach/common.h |    1 +
- arch/arm/mach-shmobile/intc-r8a7740.c        |   69 +++++++++++++++++++++++---
- 2 files changed, 64 insertions(+), 6 deletions(-)
+* Evaluate why the following, as described by Magnus Damm, doesn't work.
 
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index d47e215..8402b5d 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -59,6 +59,7 @@ extern struct clk sh73a0_extal2_clk;
- extern struct clk sh73a0_extcki_clk;
- extern struct clk sh73a0_extalr_clk;
- 
-+extern void r8a7740_init_irq_of(void);
- extern void r8a7740_init_irq(void);
- extern void r8a7740_map_io(void);
- extern void r8a7740_add_early_devices(void);
-diff --git a/arch/arm/mach-shmobile/intc-r8a7740.c b/arch/arm/mach-shmobile/intc-r8a7740.c
-index 9a69a31..a28e0ea 100644
---- a/arch/arm/mach-shmobile/intc-r8a7740.c
-+++ b/arch/arm/mach-shmobile/intc-r8a7740.c
-@@ -1,8 +1,9 @@
- /*
-  * R8A7740 processor support
-  *
-- * Copyright (C) 2011  Renesas Solutions Corp.
-+ * Copyright (C) 2011, 2012  Renesas Solutions Corp.
-  * Copyright (C) 2011  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-+ * Copyright (C) 2012  Nobuhiro Iwamatsu <nobuhiro.iwamatsu@renesas.com>
-  *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-@@ -623,15 +624,71 @@ static void intcs_demux(unsigned int irq, struct irq_desc *desc)
- 	generic_handle_irq(intcs_evt2irq(evtcodeas));
- }
- 
--void __init r8a7740_init_irq(void)
-+static void __init r8a7740_init_intc(resource_size_t intcs0_start,
-+					unsigned short vect)
- {
--	void __iomem *intevtsa = ioremap_nocache(0xffd20100, PAGE_SIZE);
-+	void __iomem *intevtsa;
-+
-+	/* demux using INTEVTSA */
-+	intevtsa = ioremap_nocache(intcs0_start + 0x100, PAGE_SIZE);
-+	irq_set_handler_data(evt2irq(vect), (void *)intevtsa);
-+	irq_set_chained_handler(evt2irq(vect), intcs_demux);
-+}
-+
-+#ifdef CONFIG_OF
-+static unsigned short intevtsa_vect;
-+
-+#define INTC_RES_MAX 2
-+static struct {
-+	struct intc_desc intc_desc;
-+	struct resource intc_res[INTC_RES_MAX];
-+} intc_data __initdata;
-+
-+static int __init intc_of_init(struct device_node *np,
-+	struct device_node *parent)
-+{
-+	int ret, i;
-+
-+	memset(&intc_data, 0, sizeof(intc_data));
-+
-+	for (i = 0; i < INTC_RES_MAX; i++) {
-+		ret = of_address_to_resource(np, i, &intc_data.intc_res[i]);
-+		if (ret < 0)
-+			break;
-+	}
-+
-+	intc_data.intc_desc.name = (char *)of_node_full_name(np);
-+	intc_data.intc_desc.resource = intc_data.intc_res;
-+	intc_data.intc_desc.num_resources = i;
-+
-+	ret = of_sh_intc_get_intc(np, &intc_data.intc_desc);
-+	if (ret)
-+		return ret;
- 
-+	of_sh_intc_get_intevtsa_vect(np, &intevtsa_vect);
-+
-+	register_intc_controller(&intc_data.intc_desc);
-+	return 0;
-+}
-+
-+static const struct of_device_id irq_of_match[] __initconst = {
-+	{ .compatible = "renesas,sh_intc", .data = intc_of_init },
-+	{ /*sentinel*/ }
-+};
-+
-+void __init r8a7740_init_irq_of(void)
-+{
-+	of_irq_init(irq_of_match);
-+
-+	r8a7740_init_intc(0xffd20000, intevtsa_vect);
-+}
-+#endif /* CONFIG_OF */
-+
-+void __init r8a7740_init_irq(void)
-+{
- 	register_intc_controller(&intca_desc);
- 	register_intc_controller(&intca_irq_pins_desc);
- 	register_intc_controller(&intcs_desc);
- 
--	/* demux using INTEVTSA */
--	irq_set_handler_data(evt2irq(0xf80), (void *)intevtsa);
--	irq_set_chained_handler(evt2irq(0xf80), intcs_demux);
-+	r8a7740_init_intc(intcs_resources[0].start, 0xf80);
- }
--- 
-1.7.10.4
+  "I tried using the INTC DT interrupt controller code with external
+   interrupt pins on the sh7372 mackerel board with DT, but for some
+   reason the following network device refuses to probe due to some
+   interrupt issue.
+                
+       lan9220@14000000 {
+               compatible = "smsc,lan9220", "smsc,lan9115";
+               reg = <0x14000000 0x2000000>;
+               phy-mode = "mii";
+               interrupt-parent = <&intca_irq_pins_lo>;
+               interrupts = <0x2c0>;
+               reg-io-width = <4>;
+               smsc,irq-push-pull;
+       };
 
+   The above snippet is nicked and adjusted from my earlier prototype patches:
+   [PATCH] sh: INTC IRQ domain and DT support prototype
+   [PATCH] ARM: mach-shmobile: sh7372 DT IRQ prototype
+
+   I wonder, is there any outstanding INTC work related to IRQ domains?"
+
+
+Diffstat and git information is provided to aid review.
+Please consider making any changes on top of the branch mentioned below
+or as modified versions of patches in this series.
+
+----------------------------------------------------------------
+The following changes since commit ddffeb8c4d0331609ef2581d84de4d763607bd37:
+
+  Linux 3.7-rc1 (2012-10-14 14:41:04 -0700)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git devel/of
+
+for you to fetch changes up to 2a19ffff9917a62df50ceee565e55237bb175bc3:
+
+  ARM: shmobile: sh73a0: Use DT for GIC (2012-11-19 13:56:34 +0900)
+
+----------------------------------------------------------------
+Nobuhiro Iwamatsu (12):
+      ARM: mach-shmobile: Add support OF for INTC of shmobile
+      SH: intc: Add support OF of IRQ
+      ARM: mach-shmobile: Add support OF of INTC for r8a7740
+      ARM: mach-shmobile: Add support OF of INTC for sh73a0
+      ARM: mach-shmobile: Add support OF of INTC for sh7372
+      ARM: mach-shmobile: Add DT table of INTC for sh73a0
+      ARM: mach-shmobile: Add DT table of INTC for sh7372
+      ARM: mach-shmobile: Add DT table of INTC for r8a7740
+      ARM: shmobile: Include DTSI of r8a7740 to armadillo800eva
+      ARM: shmobile: Include DTSI of sh73a0 to kzm9g board
+      ARM: shmobile: r8a7740: Use DT initialisation of INTC
+      ARM: shmobile: sh7372: Use DT initialisation of INTC
+
+Simon Horman (3):
+      ARM: shmobile: kzm9g: Use DT initialisation of INTC
+      ARM: shmobile: Add DT table of GIC for sh73a0
+      ARM: shmobile: sh73a0: Use DT for GIC
+
+ Documentation/devicetree/bindings/sh/intc.txt |  163 ++++
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts |    2 +-
+ arch/arm/boot/dts/r8a7740.dtsi                |  965 ++++++++++++++++++++-
+ arch/arm/boot/dts/sh7372.dtsi                 | 1138 +++++++++++++++++++++++++
+ arch/arm/boot/dts/sh73a0-kzm9g.dts            |    2 +-
+ arch/arm/boot/dts/sh73a0.dtsi                 |  819 ++++++++++++++++++
+ arch/arm/mach-shmobile/board-kzm9g.c          |    2 +-
+ arch/arm/mach-shmobile/include/mach/common.h  |    3 +
+ arch/arm/mach-shmobile/intc-r8a7740.c         |  136 ++-
+ arch/arm/mach-shmobile/intc-sh7372.c          |  112 ++-
+ arch/arm/mach-shmobile/intc-sh73a0.c          |  248 +++++-
+ arch/arm/mach-shmobile/setup-r8a7740.c        |    2 +-
+ arch/arm/mach-shmobile/setup-sh7372.c         |    2 +-
+ drivers/sh/intc/Makefile                      |    1 +
+ drivers/sh/intc/core.c                        |    2 +-
+ drivers/sh/intc/internals.h                   |    3 +-
+ drivers/sh/intc/irqdomain.c                   |    6 +-
+ drivers/sh/intc/of_intc.c                     |  646 ++++++++++++++
+ include/linux/sh_intc.h                       |   84 ++
+ 19 files changed, 4252 insertions(+), 84 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/sh/intc.txt
+ create mode 100644 arch/arm/boot/dts/sh73a0.dtsi
+ create mode 100644 drivers/sh/intc/of_intc.c
