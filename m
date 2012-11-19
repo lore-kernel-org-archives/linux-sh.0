@@ -1,810 +1,1010 @@
-From: "Shimoda, Yoshihiro" <yoshihiro.shimoda.uh@renesas.com>
-Date: Thu, 08 Nov 2012 01:33:55 +0000
-Subject: [PATCH 2/2] sh: add sh7752evb board support
-Message-Id: <509B0C03.2000500@renesas.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 19 Nov 2012 05:13:20 +0000
+Subject: [RFC 08/15] ARM: mach-shmobile: Add DT table of INTC for r8a7740
+Message-Id: <1353302007-31045-9-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1353302007-31045-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1353302007-31045-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This adds support for the Renesas R0P7752C00000RZ board.
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
-This patch supports two Gigabit-Ethernets, eMMC, SDHI, UART,
-USB Host, and USB peripheral.
+Cc: Magnus Damm <damm@opensource.se>
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 
-Signed-off-by: Yoshihiro Shimoda <yoshihiro.shimoda.uh@renesas.com>
 ---
- arch/sh/Makefile                    |    1 +
- arch/sh/boards/Kconfig              |    5 +
- arch/sh/boards/Makefile             |    1 +
- arch/sh/boards/board-sh7752evb.c    |  590 +++++++++++++++++++++++++++++++++++
- arch/sh/configs/sh7752evb_defconfig |  130 ++++++++
- arch/sh/tools/mach-types            |    1 +
- 6 files changed, 728 insertions(+), 0 deletions(-)
- create mode 100644 arch/sh/boards/board-sh7752evb.c
- create mode 100644 arch/sh/configs/sh7752evb_defconfig
 
-diff --git a/arch/sh/Makefile b/arch/sh/Makefile
-index aed701c..38bdaa3 100644
---- a/arch/sh/Makefile
-+++ b/arch/sh/Makefile
-@@ -86,6 +86,7 @@ defaultimage-$(CONFIG_SH_RSK)			:= uImage
- defaultimage-$(CONFIG_SH_URQUELL)		:= uImage
- defaultimage-$(CONFIG_SH_MIGOR)			:= uImage
- defaultimage-$(CONFIG_SH_AP325RXA)		:= uImage
-+defaultimage-$(CONFIG_SH_SH7752EVB)		:= uImage
- defaultimage-$(CONFIG_SH_SH7757LCR)		:= uImage
- defaultimage-$(CONFIG_SH_7724_SOLUTION_ENGINE)	:= uImage
- defaultimage-$(CONFIG_SH_7206_SOLUTION_ENGINE)	:= vmlinux
-diff --git a/arch/sh/boards/Kconfig b/arch/sh/boards/Kconfig
-index fb58057..dc8cded 100644
---- a/arch/sh/boards/Kconfig
-+++ b/arch/sh/boards/Kconfig
-@@ -172,6 +172,11 @@ config SH_HIGHLANDER
- 	select SYS_SUPPORTS_PCI
- 	select IO_TRAPPED if MMU
+v2 [Simon Horman]
+* Removed trailing whitespace
 
-+config SH_SH7752EVB
-+	bool "SH7752EVB"
-+	depends on CPU_SUBTYPE_SH7752
-+	select ARCH_REQUIRE_GPIOLIB
+v1 [Nobuhiro Iwamatsu]
+---
+ arch/arm/boot/dts/r8a7740.dtsi |  965 +++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 964 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
+index 798fa35..deb66f7 100644
+--- a/arch/arm/boot/dts/r8a7740.dtsi
++++ b/arch/arm/boot/dts/r8a7740.dtsi
+@@ -1,5 +1,5 @@
+ /*
+- * Device Tree Source for the r8a7740 SoC
++ * Device Tree Source for Renesas r8a7740
+  *
+  * Copyright (C) 2012 Renesas Solutions Corp.
+  *
+@@ -18,4 +18,967 @@
+ 			compatible = "arm,cortex-a9";
+ 		};
+ 	};
 +
- config SH_SH7757LCR
- 	bool "SH7757LCR"
- 	depends on CPU_SUBTYPE_SH7757
-diff --git a/arch/sh/boards/Makefile b/arch/sh/boards/Makefile
-index 975a0f6..a38da39 100644
---- a/arch/sh/boards/Makefile
-+++ b/arch/sh/boards/Makefile
-@@ -12,6 +12,7 @@ obj-$(CONFIG_SH_EDOSK7760)	+= board-edosk7760.o
- obj-$(CONFIG_SH_ESPT)		+= board-espt.o
- obj-$(CONFIG_SH_POLARIS)	+= board-polaris.o
- obj-$(CONFIG_SH_TITAN)		+= board-titan.o
-+obj-$(CONFIG_SH_SH7752EVB)	+= board-sh7752evb.o
- obj-$(CONFIG_SH_SH7757LCR)	+= board-sh7757lcr.o
- obj-$(CONFIG_SH_APSH4A3A)	+= board-apsh4a3a.o
- obj-$(CONFIG_SH_APSH4AD0A)	+= board-apsh4ad0a.o
-diff --git a/arch/sh/boards/board-sh7752evb.c b/arch/sh/boards/board-sh7752evb.c
-new file mode 100644
-index 0000000..4a4d2ec
---- /dev/null
-+++ b/arch/sh/boards/board-sh7752evb.c
-@@ -0,0 +1,590 @@
-+/*
-+ * Renesas R0P7752C00000RZ Support.
-+ *
-+ * Copyright (C) 2012  Renesas Solutions Corp.
-+ *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
-+ */
++	soc {
++		compatible = "simple-bus";
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges;
 +
-+#include <linux/init.h>
-+#include <linux/platform_device.h>
-+#include <linux/gpio.h>
-+#include <linux/irq.h>
-+#include <linux/spi/spi.h>
-+#include <linux/spi/flash.h>
-+#include <linux/io.h>
-+#include <linux/regulator/fixed.h>
-+#include <linux/regulator/machine.h>
-+#include <linux/mmc/host.h>
-+#include <linux/mmc/sh_mmcif.h>
-+#include <linux/mmc/sh_mobile_sdhi.h>
-+#include <linux/serial_8250.h>
-+#include <linux/usb/renesas_usbhs.h>
-+#include <linux/sh_eth.h>
-+#include <cpu/sh7752.h>
-+#include <asm/heartbeat.h>
++		intca: interrupt-controller@0 {
++			compatible = "renesas,sh_intca";
++			interrupt-controller;
++			#address-cells = <1>;
++			#size-cells = <1>;
++			#interrupt-cells = <1>;
++			ranges;
 +
-+static struct resource heartbeat_resource = {
-+	.start	= 0xffec005c,	/* PUDR */
-+	.end	= 0xffec005c,
-+	.flags	= IORESOURCE_MEM | IORESOURCE_MEM_8BIT,
-+};
++			reg = <0xe6940000 0x200>, <0xe6950000 0x200>;
++			group_size = <19>;
 +
-+static unsigned char heartbeat_bit_pos[] = { 0, 1, 2, 3 };
++			DIRC: intsrc1 { vector = <0x0560>; };
++			ATAPI: intsrc2 { vector = <0x05E0>; };
++			IIC1_ALI: intsrc3 { vector = <0x0780>; };
++			IIC1_TACKI: intsrc4 { vector = <0x07A0>; };
++			IIC1_WAITI: intsrc5 { vector = <0x07C0>; };
++			IIC1_DTEI: intsrc6 { vector = <0x07E0>; };
++			AP_ARM_COMMTX: intsrc7 { vector = <0x0840>; };
++			AP_ARM_COMMRX: intsrc8 { vector = <0x0860>; };
++			MFI: intsrc9 { vector = <0x0900>; };
++			MFIS: intsrc10 { vector = <0x0920>; };
++			BBIF1: intsrc11 { vector = <0x0940>; };
++			BBIF2: intsrc12 { vector = <0x0960>; };
++			USBHSDMAC: intsrc13 { vector = <0x0A00>; };
++			USBF_OUL_SOF: intsrc14 { vector = <0x0A20>; };
++			USBF_IXL_INT: intsrc15 { vector = <0x0A40>; };
++			SGX540: intsrc16 { vector = <0x0A60>; };
++			CMT1_0: intsrc17 { vector = <0x0B00>; };
++			CMT1_1: intsrc18 { vector = <0x0B20>; };
++			CMT1_2: intsrc19 { vector = <0x0B40>; };
++			CMT1_3: intsrc20 { vector = <0x0B60>; };
++			CMT2: intsrc21 { vector = <0x0B80>; };
++			CMT3: intsrc22 { vector = <0x0BA0>; };
++			KEYSC: intsrc23 { vector = <0x0BE0>; };
++			SCIFA0: intsrc24 { vector = <0x0C00>; };
++			SCIFA1: intsrc25 { vector = <0x0C20>; };
++			SCIFA2: intsrc26 { vector = <0x0C40>; };
++			SCIFA3: intsrc27 { vector = <0x0C60>; };
++			MSIOF2: intsrc28 { vector = <0x0C80>; };
++			MSIOF1: intsrc29 { vector = <0x0D00>; };
++			SCIFA4: intsrc30 { vector = <0x0D20>; };
++			SCIFA5: intsrc31 { vector = <0x0D40>; };
++			SCIFB: intsrc32 { vector = <0x0D60>; };
++			FLCTL_FLSTEI: intsrc33 { vector = <0x0D80>; };
++			FLCTL_FLTENDI: intsrc34 { vector = <0x0DA0>; };
++			FLCTL_FLTREQ0I: intsrc35 { vector = <0x0DC0>; };
++			FLCTL_FLTREQ1I: intsrc36 { vector = <0x0DE0>; };
++			SDHI0_0: intsrc37 { vector = <0x0E00>; };
++			SDHI0_1: intsrc38 { vector = <0x0E20>; };
++			SDHI0_2: intsrc39 { vector = <0x0E40>; };
++			SDHI0_3: intsrc40 { vector = <0x0E60>; };
++			SDHI1_0: intsrc41 { vector = <0x0E80>; };
++			SDHI1_1: intsrc42 { vector = <0x0EA0>; };
++			SDHI1_2: intsrc43 { vector = <0x0EC0>; };
++			SDHI1_3: intsrc44 { vector = <0x0EE0>; };
++			AP_ARM_L2CINT: intsrc45 { vector = <0x0FA0>; };
++			IRDA: intsrc46 { vector = <0x0480>; };
++			TPU0: intsrc47 { vector = <0x04A0>; };
++			SCIFA6: intsrc48 { vector = <0x04C0>; };
++			SCIFA7: intsrc49 { vector = <0x04E0>; };
++			GETHER: intsrc50 { vector = <0x0500>; };
++			ICBS0: intsrc51 { vector = <0x0540>; };
++			DDM: intsrc52 { vector = <0x1140>; };
++			SDHI2_0: intsrc53 { vector = <0x1200>; };
++			SDHI2_1: intsrc54 { vector = <0x1220>; };
++			SDHI2_2: intsrc55 { vector = <0x1240>; };
++			SDHI2_3: intsrc56 { vector = <0x1260>; };
++			RWDT0: intsrc57 { vector = <0x1280>; };
++			DMAC1_1_DEI0: intsrc58 { vector = <0x2000>; };
++			DMAC1_1_DEI1: intsrc59 { vector = <0x2020>; };
++			DMAC1_1_DEI2: intsrc60 { vector = <0x2040>; };
++			DMAC1_1_DEI3: intsrc61 { vector = <0x2060>; };
++			DMAC1_2_DEI4: intsrc62 { vector = <0x2080>; };
++			DMAC1_2_DEI5: intsrc63 { vector = <0x20A0>; };
++			DMAC1_2_DADERR: intsrc64 { vector = <0x20C0>; };
++			DMAC2_1_DEI0: intsrc65 { vector = <0x2100>; };
++			DMAC2_1_DEI1: intsrc66 { vector = <0x2120>; };
++			DMAC2_1_DEI2: intsrc67 { vector = <0x2140>; };
++			DMAC2_1_DEI3: intsrc68 { vector = <0x2160>; };
++			DMAC2_2_DEI4: intsrc69 { vector = <0x2180>; };
++			DMAC2_2_DEI5: intsrc70 { vector = <0x21A0>; };
++			DMAC2_2_DADERR: intsrc71 { vector = <0x21C0>; };
++			DMAC3_1_DEI0: intsrc72 { vector = <0x2200>; };
++			DMAC3_1_DEI1: intsrc73 { vector = <0x2220>; };
++			DMAC3_1_DEI2: intsrc74 { vector = <0x2240>; };
++			DMAC3_1_DEI3: intsrc75 { vector = <0x2260>; };
++			DMAC3_2_DEI4: intsrc76 { vector = <0x2280>; };
++			DMAC3_2_DEI5: intsrc77 { vector = <0x22A0>; };
++			DMAC3_2_DADERR: intsrc78 { vector = <0x22C0>; };
++			SHWYSTAT_RT: intsrc79 { vector = <0x1300>; };
++			SHWYSTAT_HS: intsrc80 { vector = <0x1320>; };
++			SHWYSTAT_COM: intsrc81 { vector = <0x1340>; };
++			HDMI: intsrc82 { vector = <0x1700>; };
++			USBH_INT: intsrc83 { vector = <0x1540>; };
++			USBH_OHCI: intsrc84 { vector = <0x1560>; };
++			USBH_EHCI: intsrc85 { vector = <0x1580>; };
++			USBH_PME: intsrc86 { vector = <0x15A0>; };
++			USBH_BIND: intsrc87 { vector = <0x15C0>; };
++			RSPI_OVRF: intsrc88 { vector = <0x1780>; };
++			RSPI_SPTEF: intsrc89 { vector = <0x17A0>; };
++			RSPI_SPRF: intsrc90 { vector = <0x17C0>; };
++			SPU2_0: intsrc91 { vector = <0x1800>; };
++			SPU2_1: intsrc92 { vector = <0x1820>; };
++			FSI: intsrc93 { vector = <0x1840>; };
++			FMSI: intsrc94 { vector = <0x1860>; };
++			HDMI_SSS: intsrc95 { vector = <0x18A0>; };
++			HDMI_KEY: intsrc96 { vector = <0x18C0>; };
++			IPMMU: intsrc97 { vector = <0x1920>; };
++			AP_ARM_CTIIRQ: intsrc98 { vector = <0x1980>; };
++			AP_ARM_PMURQ: intsrc99 { vector = <0x19A0>; };
++			MFIS2: intsrc100 { vector = <0x1A00>; };
++			CPORTR2S: intsrc101 { vector = <0x1A20>; };
++			CMT14: intsrc102 { vector = <0x1A40>; };
++			CMT15: intsrc103 { vector = <0x1A60>; };
++			MMCIF_0: intsrc104 { vector = <0x1AA0>; };
++			MMCIF_1: intsrc105 { vector = <0x1AC0>; };
++			MMCIF_2: intsrc106 { vector = <0x1AE0>; };
++			SIM_ERI: intsrc107 { vector = <0x1C00>; };
++			SIM_RXI: intsrc108 { vector = <0x1C20>; };
++			SIM_TXI: intsrc109 { vector = <0x1C40>; };
++			SIM_TEI: intsrc110 { vector = <0x1C60>; };
++			STPRO_0: intsrc111 { vector = <0x1C80>; };
++			STPRO_1: intsrc112 { vector = <0x1CA0>; };
++			STPRO_2: intsrc113 { vector = <0x1CC0>; };
++			STPRO_3: intsrc114 { vector = <0x1CE0>; };
++			STPRO_4: intsrc115 { vector = <0x1D00>; };
 +
-+static struct heartbeat_data heartbeat_data = {
-+	.bit_pos	= heartbeat_bit_pos,
-+	.nr_bits	= ARRAY_SIZE(heartbeat_bit_pos),
-+};
++			DMAC1_1: intc_group0 {
++				group = <&DMAC1_1_DEI0 &DMAC1_1_DEI1
++						&DMAC1_1_DEI2 &DMAC1_1_DEI3>;
++			};
 +
-+static struct platform_device heartbeat_device = {
-+	.name		= "heartbeat",
-+	.id		= -1,
-+	.dev	= {
-+		.platform_data	= &heartbeat_data,
-+	},
-+	.num_resources	= 1,
-+	.resource	= &heartbeat_resource,
-+};
++			DMAC1_2: intc_group1 {
++				group = <&DMAC1_2_DEI4 &DMAC1_2_DEI5
++						&DMAC1_2_DADERR>;
++			};
 +
-+/* GETHER */
-+static void sh7752_eth_set_mdio_gate(void *addr)
-+{
-+	if (((u32)addr & 0x00000fff) < 0x0800)
-+		gpio_set_value(GPIO_PTG1, 1);
-+	else
-+		gpio_set_value(GPIO_PTG1, 0);
-+}
++			DMAC2_1: intc_group2 {
++				group = <&DMAC2_1_DEI0 &DMAC2_1_DEI1
++						&DMAC2_1_DEI2 &DMAC2_1_DEI3>;
++			};
 +
-+static struct resource sh_eth0_resources[] = {
-+	{
-+		.start  = 0xfee00000,
-+		.end    = 0xfee007ff,
-+		.flags  = IORESOURCE_MEM,
-+	}, {
-+		/* TSU */
-+		.start  = 0xfee01800,
-+		.end    = 0xfee01fff,
-+		.flags  = IORESOURCE_MEM,
-+	}, {
-+		.start  = evt2irq(0x2960),
-+		.end    = evt2irq(0x2960),
-+		.flags  = IORESOURCE_IRQ,
-+	},
-+};
++			DMAC2_2: intc_group3 {
++				group = <&DMAC2_2_DEI4 &DMAC2_2_DEI5
++						&DMAC2_2_DADERR>;
++			};
 +
-+static struct sh_eth_plat_data sh7752_eth0_pdata = {
-+	.phy = 18,
-+	.edmac_endian = EDMAC_LITTLE_ENDIAN,
-+	.register_type = SH_ETH_REG_GIGABIT,
-+	.set_mdio_gate = sh7752_eth_set_mdio_gate,
-+	.phy_interface = PHY_INTERFACE_MODE_RGMII_ID,
-+};
++			DMAC3_1: intc_group4 {
++				group = <&DMAC3_1_DEI0 &DMAC3_1_DEI1
++						&DMAC3_1_DEI2 &DMAC3_1_DEI3>;
++			};
 +
-+static struct platform_device sh7752_eth0_device = {
-+	.name		= "sh-eth",
-+	.resource	= sh_eth0_resources,
-+	.id		= 0,
-+	.num_resources	= ARRAY_SIZE(sh_eth0_resources),
-+	.dev		= {
-+		.platform_data = &sh7752_eth0_pdata,
-+	},
-+};
++			DMAC3_2: intc_group5 {
++				group = <&DMAC3_2_DEI4 &DMAC3_2_DEI5
++						&DMAC3_2_DADERR>;
++			};
 +
-+static struct resource sh_eth1_resources[] = {
-+	{
-+		.start  = 0xfee00800,
-+		.end    = 0xfee00fff,
-+		.flags  = IORESOURCE_MEM,
-+	}, {
-+		/* TSU */
-+		.start  = 0xfee01800,
-+		.end    = 0xfee01fff,
-+		.flags  = IORESOURCE_MEM,
-+	}, {
-+		.start  = evt2irq(0x2980),
-+		.end    = evt2irq(0x2980),
-+		.flags  = IORESOURCE_IRQ,
-+	},
-+};
++			AP_ARM1: intc_group6 {
++				group = <&AP_ARM_COMMTX &AP_ARM_COMMRX>;
++			};
 +
-+static struct sh_eth_plat_data sh7752_eth1_pdata = {
-+	.phy = 19,
-+	.edmac_endian = EDMAC_LITTLE_ENDIAN,
-+	.register_type = SH_ETH_REG_GIGABIT,
-+	.set_mdio_gate = sh7752_eth_set_mdio_gate,
-+	.phy_interface = PHY_INTERFACE_MODE_RGMII_ID,
-+};
++			AP_ARM2: intc_group7 {
++				group = <&AP_ARM_CTIIRQ &AP_ARM_PMURQ>;
++			};
 +
-+static struct platform_device sh7752_eth1_device = {
-+	.name		= "sh-eth",
-+	.resource	= sh_eth1_resources,
-+	.id		= 1,
-+	.num_resources	= ARRAY_SIZE(sh_eth1_resources),
-+	.dev		= {
-+		.platform_data = &sh7752_eth1_pdata,
-+	},
-+};
++			USBF: intc_group8 {
++				group = <&USBF_OUL_SOF &USBF_IXL_INT>;
++			};
 +
-+/* Fixed 3.3V regulator to be used by SDHI0, MMCIF */
-+static struct regulator_consumer_supply fixed3v3_power_consumers[] = {
-+	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
-+	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
-+	REGULATOR_SUPPLY("vmmc", "sh_mmcif.0"),
-+	REGULATOR_SUPPLY("vqmmc", "sh_mmcif.0"),
-+};
++			SDHI0: intc_group9 {
++				group = <&SDHI0_0 &SDHI0_1 &SDHI0_2 &SDHI0_3>;
++			};
 +
-+/* SH_MMCIF */
-+static struct resource sh_mmcif_resources[] = {
-+	[0] = {
-+		.start	= 0xffcb0000,
-+		.end	= 0xffcb00ff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= evt2irq(0x1c60),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+	[2] = {
-+		.start	= evt2irq(0x1c80),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
++			SDHI1: intc_group10 {
++				group = <&SDHI1_0 &SDHI1_1 &SDHI1_2 &SDHI1_3>;
++			};
 +
-+static struct sh_mmcif_plat_data sh_mmcif_plat = {
-+	.sup_pclk	= 0x0f,
-+	.caps		= MMC_CAP_4_BIT_DATA | MMC_CAP_8_BIT_DATA |
-+			  MMC_CAP_NONREMOVABLE,
-+	.ocr		= MMC_VDD_32_33 | MMC_VDD_33_34,
-+	.slave_id_tx	= SHDMA_SLAVE_MMCIF_TX,
-+	.slave_id_rx	= SHDMA_SLAVE_MMCIF_RX,
-+};
++			SDHI2: intc_group11 {
++				group = <&SDHI2_0 &SDHI2_1 &SDHI2_2 &SDHI2_3>;
++			};
 +
-+static struct platform_device sh_mmcif_device = {
-+	.name		= "sh_mmcif",
-+	.id		= 0,
-+	.dev		= {
-+		.platform_data		= &sh_mmcif_plat,
-+	},
-+	.num_resources	= ARRAY_SIZE(sh_mmcif_resources),
-+	.resource	= sh_mmcif_resources,
-+};
++			SHWYSTAT: intc_group12 {
++				group = <&SHWYSTAT_RT &SHWYSTAT_HS &SHWYSTAT_COM>;
++			};
 +
-+/* SDHI0 */
-+static struct sh_mobile_sdhi_info sdhi_info = {
-+	.dma_slave_tx	= SHDMA_SLAVE_SDHI_TX,
-+	.dma_slave_rx	= SHDMA_SLAVE_SDHI_RX,
-+	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
-+};
++			USBH1: intc_group13 {
++				group = <&USBH_INT &USBH_OHCI>;
++			};
 +
-+static struct resource sdhi_resources[] = {
-+	[0] = {
-+		.start  = 0xffe50000,
-+		.end    = 0xffe501ff,
-+		.flags  = IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start  = evt2irq(0x480),
-+		.flags  = IORESOURCE_IRQ,
-+	},
-+};
++			USBH2: intc_group14 {
++				group = <&USBH_EHCI &USBH_PME &USBH_BIND>;
++			};
 +
-+static struct platform_device sdhi_device = {
-+	.name           = "sh_mobile_sdhi",
-+	.num_resources  = ARRAY_SIZE(sdhi_resources),
-+	.resource       = sdhi_resources,
-+	.id             = 0,
-+	.dev	= {
-+		.platform_data	= &sdhi_info,
-+	},
-+};
++			RSPI: intc_group15 {
++				group = <&RSPI_OVRF &RSPI_SPTEF &RSPI_SPRF>;
++			};
 +
-+/*
-+ * The hardware manual says SCIF0, SCIF1. But, the register configuration is
-+ * similar to 8250 UART.
-+ */
-+static struct plat_serial8250_port scif01_platform_data[] = {
-+	{
-+		.membase	= (void __iomem *)0xfe410000,
-+		.mapbase	= 0xfe410000,
-+		.flags		= UPF_BOOT_AUTOCONF | UPF_SKIP_TEST,
-+		.iotype		= UPIO_MEM,
-+		.uartclk	= 48000000 / 26,
-+		.irq		= evt2irq(0xb40),
-+	}, {
-+		.membase	= (void __iomem *)0xfe420000,
-+		.mapbase	= 0xfe420000,
-+		.flags		= UPF_BOOT_AUTOCONF | UPF_SKIP_TEST,
-+		.iotype		= UPIO_MEM,
-+		.uartclk	= 48000000 / 26,
-+		.irq		= evt2irq(0xb60),
-+	}, {
-+	},
-+};
++			SPU2: intc_group16 {
++				group = <&SPU2_0 &SPU2_1>;
++			};
 +
-+static struct platform_device scif01_device = {
-+	.name		= "serial8250",
-+	.id		= PLAT8250_DEV_PLATFORM,
-+	.dev = {
-+		.platform_data = scif01_platform_data,
-+	},
-+};
++			FLCTL: intc_group17 {
++				group = <&FLCTL_FLSTEI &FLCTL_FLTENDI &FLCTL_FLTREQ0I
++						&FLCTL_FLTREQ1I>;
++			};
 +
-+static int usbhs0_get_id(struct platform_device *pdev)
-+{
-+	return USBHS_GADGET;
-+}
++			IIC1: intc_group18 {
++				group = <&IIC1_ALI &IIC1_TACKI &IIC1_WAITI &IIC1_DTEI>;
++			};
 +
-+static struct renesas_usbhs_platform_info usb0_data = {
-+	.platform_callback = {
-+		.get_id = usbhs0_get_id,
-+	},
-+	.driver_param = {
-+		.buswait_bwait = 2,
-+	}
-+};
++			intc_vectors {
++				vector_table = <&DIRC &ATAPI &IIC1_ALI &IIC1_TACKI &IIC1_WAITI
++					&IIC1_DTEI &AP_ARM_COMMTX &AP_ARM_COMMRX &MFI &MFIS &BBIF1
++					&BBIF2 &USBHSDMAC &USBF_OUL_SOF &USBF_IXL_INT &SGX540 &CMT1_0
++					&CMT1_1 &CMT1_2 &CMT1_3 &CMT2 &CMT3 &KEYSC &SCIFA0 &SCIFA1
++					&SCIFA2 &SCIFA3 &MSIOF2 &MSIOF1 &SCIFA4 &SCIFA5 &SCIFB
++					&FLCTL_FLSTEI &FLCTL_FLTENDI &FLCTL_FLTREQ0I &FLCTL_FLTREQ1I
++					&SDHI0_0 &SDHI0_1 &SDHI0_2 &SDHI0_3
++					&SDHI1_0 &SDHI1_1 &SDHI1_2 &SDHI1_3
++					&AP_ARM_L2CINT &IRDA &TPU0 &SCIFA6 &SCIFA7
++					&GETHER &ICBS0 &DDM &SDHI2_0 &SDHI2_1 &SDHI2_2 &SDHI2_3
++					&RWDT0
++					&DMAC1_1_DEI0 &DMAC1_1_DEI1 &DMAC1_1_DEI2 &DMAC1_1_DEI3
++					&DMAC1_2_DEI4 &DMAC1_2_DEI5 &DMAC1_2_DADERR
++					&DMAC2_1_DEI0 &DMAC2_1_DEI1 &DMAC2_1_DEI2 &DMAC2_1_DEI3
++					&DMAC2_2_DEI4 &DMAC2_2_DEI5 &DMAC2_2_DADERR
++					&DMAC3_1_DEI0 &DMAC3_1_DEI1 &DMAC3_1_DEI2 &DMAC3_1_DEI3
++					&DMAC3_2_DEI4 &DMAC3_2_DEI5 &DMAC3_2_DADERR
++					&SHWYSTAT_RT &SHWYSTAT_HS &SHWYSTAT_COM
++					&USBH_INT &USBH_OHCI &USBH_EHCI &USBH_PME &USBH_BIND
++					&HDMI
++					&RSPI_OVRF &RSPI_SPTEF &RSPI_SPRF
++					&SPU2_0 &SPU2_1 &FSI &FMSI &HDMI_SSS &HDMI_KEY
++					&IPMMU &AP_ARM_CTIIRQ &AP_ARM_PMURQ &MFIS2
++					&CPORTR2S
++					&CMT14 &CMT15 &MMCIF_0 &MMCIF_1 &MMCIF_2
++					&SIM_ERI &SIM_RXI &SIM_TXI &SIM_TEI
++					&STPRO_0 &STPRO_1 &STPRO_2 &STPRO_3 &STPRO_4>;
++			};
 +
-+static struct resource usb0_resources[] = {
-+	[0] = {
-+		.start	= 0xfe450000,
-+		.end	= 0xfe4501ff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= evt2irq(0x840),
-+		.end	= evt2irq(0x840),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
++			intc_mask_registers {
++				#address-cells = <1>;
++				#size-cells = <1>;
++				ranges;
 +
-+static struct platform_device usb0_device = {
-+	.name		= "renesas_usbhs",
-+	.id		= 0,
-+	.dev = {
-+		.platform_data		= &usb0_data,
-+	},
-+	.num_resources	= ARRAY_SIZE(usb0_resources),
-+	.resource	= usb0_resources,
-+};
++				intc_mask0 {
++					reg = <0xe6940080 1>, <0xe69400c0 1>;
++					reginfo = <&DMAC2_1_DEI3 &DMAC2_1_DEI2 &DMAC2_1_DEI1
++						&DMAC2_1_DEI0 0 0 &AP_ARM_COMMTX &AP_ARM_COMMRX>;
++				};
 +
-+static struct resource usb_ehci_resources[] = {
-+	[0] = {
-+		.start	= 0xfe4f1000,
-+		.end	= 0xfe4f10ff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= evt2irq(0x920),
-+		.end	= evt2irq(0x920),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
++				intc_mask1 {
++					reg = <0xe6940084 1>, <0xe69400c4 1>;
++					reginfo = <&ATAPI 0 &DIRC 0 &DMAC1_1_DEI3 &DMAC1_1_DEI2
++						&DMAC1_1_DEI1 &DMAC1_1_DEI0>;
++				};
 +
-+static struct platform_device usb_ehci_device = {
-+	.name		= "sh_ehci",
-+	.id		= -1,
-+	.dev = {
-+		.dma_mask = &usb_ehci_device.dev.coherent_dma_mask,
-+		.coherent_dma_mask = DMA_BIT_MASK(32),
-+	},
-+	.num_resources	= ARRAY_SIZE(usb_ehci_resources),
-+	.resource	= usb_ehci_resources,
-+};
++				intc_mask2 {
++					reg = <0xe6940088 1>, <0xe69400c8 1>;
++					reginfo = <0 0 0 0 &BBIF1 &BBIF2 &MFIS &MFI>;
++				};
 +
-+static struct resource usb_ohci_resources[] = {
-+	[0] = {
-+		.start	= 0xfe4f1800,
-+		.end	= 0xfe4f18ff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= evt2irq(0x920),
-+		.end	= evt2irq(0x920),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
++				intc_mask3 {
++					reg = <0xe694008c 1>, <0xe69400cc 1>;
++					reginfo = <&DMAC3_1_DEI3 &DMAC3_1_DEI2 &DMAC3_1_DEI1
++						&DMAC3_1_DEI0 &DMAC3_2_DADERR &DMAC3_2_DEI5
++						&DMAC3_2_DEI4 &IRDA>;
++				};
 +
-+static struct platform_device usb_ohci_device = {
-+	.name		= "sh_ohci",
-+	.id		= -1,
-+	.dev = {
-+		.dma_mask = &usb_ohci_device.dev.coherent_dma_mask,
-+		.coherent_dma_mask = DMA_BIT_MASK(32),
-+	},
-+	.num_resources	= ARRAY_SIZE(usb_ohci_resources),
-+	.resource	= usb_ohci_resources,
-+};
++				intc_mask4 {
++					reg = <0xe6940090 1>, <0xe69400d0 1>;
++					reginfo = <&DDM 0 0 0 0 0 0 0>;
++				};
 +
-+static struct platform_device *sh7752evb_devices[] __initdata = {
-+	&heartbeat_device,
-+	&sh7752_eth0_device,
-+	&sh7752_eth1_device,
-+	&sh_mmcif_device,
-+	&sdhi_device,
-+	&scif01_device,
-+	&usb0_device,
-+	&usb_ehci_device,
-+	&usb_ohci_device,
-+};
++				intc_mask5 {
++					reg = <0xe6940094 1>, <0xe69400d4 1>;
++					reginfo = <&KEYSC &DMAC1_2_DADERR &DMAC1_2_DEI5 &DMAC1_2_DEI4
++							&SCIFA3 &SCIFA2 &SCIFA1 &SCIFA0>;
++				};
 +
-+static struct flash_platform_data spi_flash_data = {
-+	.name = "m25p80",
-+	.type = "mx25l6405d",
-+};
++				intc_mask6 {
++					reg = <0xe6940098 1>, <0xe69400d8 1>;
++					reginfo = <&SCIFB &SCIFA5 &SCIFA4 &MSIOF1 0 0 &MSIOF2 0>;
++				};
 +
-+static struct spi_board_info spi_board_info[] = {
-+	{
-+		.modalias = "m25p80",
-+		.max_speed_hz = 25000000,
-+		.bus_num = 0,
-+		.chip_select = 0,
-+		.platform_data = &spi_flash_data,
-+	},
-+	{
-+		.modalias = "m25p80",
-+		.max_speed_hz = 25000000,
-+		.bus_num = 1,
-+		.chip_select = 0,
-+		.platform_data = &spi_flash_data,
-+	},
-+};
++				intc_mask7 {
++					reg = <0xe694009c 1>, <0xe69400dc 1>;
++					reginfo = <&SDHI0_3 &SDHI0_2 &SDHI0_1 &SDHI0_0 &FLCTL_FLTREQ1I
++						&FLCTL_FLTREQ0I &FLCTL_FLTENDI &FLCTL_FLSTEI>;
++				};
 +
-+static int __init sh7752evb_devices_setup(void)
-+{
-+	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
-+				     ARRAY_SIZE(fixed3v3_power_consumers),
-+				     3300000);
-+	/* RGMII (PTA) */
-+	gpio_request(GPIO_FN_ET0_MDC, NULL);
-+	gpio_request(GPIO_FN_ET0_MDIO, NULL);
-+	gpio_request(GPIO_FN_ET1_MDC, NULL);
-+	gpio_request(GPIO_FN_ET1_MDIO, NULL);
++				intc_mask8 {
++					reg = <0xe69400a0 1>, <0xe69400e0 1>;
++					reginfo = <&SDHI1_3 &SDHI1_2 &SDHI1_1 &SDHI1_0 0
++						&USBHSDMAC 0 &AP_ARM_L2CINT>;
++				};
 +
-+	/* PWMU0 (PTC) */
-+	gpio_request(GPIO_FN_PWMU0, NULL);
-+	gpio_request(GPIO_FN_PWMU1, NULL);
++				intc_mask9 {
++					reg = <0xe69400a4 1>, <0xe69400e4 1>;
++					reginfo = <&CMT1_3 &CMT1_2 &CMT1_1
++						&CMT1_0 &CMT2 &USBF_IXL_INT &USBF_OUL_SOF &SGX540>;
++				};
 +
-+	/* IRQ8 and IRQ5 to 0 (PTB, PTC) */
-+	gpio_request(GPIO_FN_IRQ8, NULL);
-+	gpio_request(GPIO_FN_IRQ5, NULL);
-+	gpio_request(GPIO_FN_IRQ4, NULL);
-+	gpio_request(GPIO_FN_IRQ3, NULL);
-+	gpio_request(GPIO_FN_IRQ2, NULL);
-+	gpio_request(GPIO_FN_IRQ1, NULL);
-+	gpio_request(GPIO_FN_IRQ0, NULL);
++				intc_mask10 {
++					reg = <0xe69400a8 1>, <0xe69400e8 1>;
++					reginfo = <0 &DMAC2_2_DADERR &DMAC2_2_DEI5 &DMAC2_2_DEI4
++						0 0 0 0>;
++				};
 +
-+	/* SPI0 (PTD) */
-+	gpio_request(GPIO_FN_SP0_MISO, NULL);
-+	gpio_request(GPIO_FN_SP0_SCK_FB, NULL);
-+	gpio_request(GPIO_FN_SP0_SS1, NULL);
-+	gpio_request(GPIO_FN_SP0_SS2, NULL);
-+	gpio_request(GPIO_FN_SP0_SS3, NULL);
++				intc_mask11 {
++					reg = <0xe69400ac 1>, <0xe69400ec 1>;
++					reginfo = <&IIC1_DTEI &IIC1_WAITI
++						&IIC1_TACKI &IIC1_ALI &ICBS0 0 0 0>;
++				};
 +
-+	/* RMII 0/1 (PTE, PTF) */
-+	gpio_request(GPIO_FN_RMII0_CRS_DV, NULL);
-+	gpio_request(GPIO_FN_RMII0_TXD1, NULL);
-+	gpio_request(GPIO_FN_RMII0_TXD0, NULL);
-+	gpio_request(GPIO_FN_RMII0_TXEN, NULL);
-+	gpio_request(GPIO_FN_RMII0_REFCLK, NULL);
-+	gpio_request(GPIO_FN_RMII0_RXD1, NULL);
-+	gpio_request(GPIO_FN_RMII0_RXD0, NULL);
-+	gpio_request(GPIO_FN_RMII0_RX_ER, NULL);
-+	gpio_request(GPIO_FN_RMII1_CRS_DV, NULL);
-+	gpio_request(GPIO_FN_RMII1_TXD1, NULL);
-+	gpio_request(GPIO_FN_RMII1_TXD0, NULL);
-+	gpio_request(GPIO_FN_RMII1_TXEN, NULL);
-+	gpio_request(GPIO_FN_RMII1_REFCLK, NULL);
-+	gpio_request(GPIO_FN_RMII1_RXD1, NULL);
-+	gpio_request(GPIO_FN_RMII1_RXD0, NULL);
-+	gpio_request(GPIO_FN_RMII1_RX_ER, NULL);
++				intc_mask12 {
++					reg = <0xe69400b0 1>, <0xe69400f0 1>;
++					reginfo = <0 0 &TPU0 &SCIFA6 &SCIFA7 &GETHER 0 0>;
++				};
 +
-+	/* eMMC (PTG) */
-+	gpio_request(GPIO_FN_MMCCLK, NULL);
-+	gpio_request(GPIO_FN_MMCCMD, NULL);
-+	gpio_request(GPIO_FN_MMCDAT7, NULL);
-+	gpio_request(GPIO_FN_MMCDAT6, NULL);
-+	gpio_request(GPIO_FN_MMCDAT5, NULL);
-+	gpio_request(GPIO_FN_MMCDAT4, NULL);
-+	gpio_request(GPIO_FN_MMCDAT3, NULL);
-+	gpio_request(GPIO_FN_MMCDAT2, NULL);
-+	gpio_request(GPIO_FN_MMCDAT1, NULL);
-+	gpio_request(GPIO_FN_MMCDAT0, NULL);
++				intc_mask13 {
++					reg = <0xe69400b4 1>, <0xe69400f4 1>;
++					reginfo = <&SDHI2_3 &SDHI2_2 &SDHI2_1
++						&SDHI2_0 0 &CMT3 0 &RWDT0>;
++				};
 +
-+	/* SPI1 (PTH) */
-+	gpio_request(GPIO_FN_SP1_MISO, NULL);
-+	gpio_request(GPIO_FN_SP1_SCK_FB, NULL);
-+	gpio_request(GPIO_FN_SP1_SS1, NULL);
++				intc_mask14 {
++					reg = <0xe6950080 1>, <0xe69500c0 1>;
++					reginfo = <&SHWYSTAT_RT &SHWYSTAT_HS
++						&SHWYSTAT_COM 0 0 0 0 0>;
++				};
 +
-+	/* SDHI (PTI) */
-+	gpio_request(GPIO_FN_SD_WP, NULL);
-+	gpio_request(GPIO_FN_SD_CD, NULL);
-+	gpio_request(GPIO_FN_SD_CLK, NULL);
-+	gpio_request(GPIO_FN_SD_CMD, NULL);
-+	gpio_request(GPIO_FN_SD_D3, NULL);
-+	gpio_request(GPIO_FN_SD_D2, NULL);
-+	gpio_request(GPIO_FN_SD_D1, NULL);
-+	gpio_request(GPIO_FN_SD_D0, NULL);
++				intc_mask15 {
++					reg = <0xe6950088 1>, <0xe69500c8 1>;
++					reginfo = <0 0 &USBH_INT &USBH_OHCI
++						&USBH_EHCI &USBH_PME &USBH_BIND 0>;
++				};
 +
-+	/* SCIF3/4 (PTJ, PTW) */
-+	gpio_request(GPIO_FN_RTS3, NULL);
-+	gpio_request(GPIO_FN_CTS3, NULL);
-+	gpio_request(GPIO_FN_TXD3, NULL);
-+	gpio_request(GPIO_FN_RXD3, NULL);
-+	gpio_request(GPIO_FN_RTS4, NULL);
-+	gpio_request(GPIO_FN_RXD4, NULL);
-+	gpio_request(GPIO_FN_TXD4, NULL);
-+	gpio_request(GPIO_FN_CTS4, NULL);
++				intc_mask16 {
++					reg = <0xe6950090 1>, <0xe69500d0 1>;
++					reginfo = <&HDMI 0 0 0 &RSPI_OVRF
++						&RSPI_SPTEF &RSPI_SPRF 0>;
++				};
 +
-+	/* SERMUX (PTK, PTL, PTO, PTV) */
-+	gpio_request(GPIO_FN_COM2_TXD, NULL);
-+	gpio_request(GPIO_FN_COM2_RXD, NULL);
-+	gpio_request(GPIO_FN_COM2_RTS, NULL);
-+	gpio_request(GPIO_FN_COM2_CTS, NULL);
-+	gpio_request(GPIO_FN_COM2_DTR, NULL);
-+	gpio_request(GPIO_FN_COM2_DSR, NULL);
-+	gpio_request(GPIO_FN_COM2_DCD, NULL);
-+	gpio_request(GPIO_FN_COM2_RI, NULL);
-+	gpio_request(GPIO_FN_RAC_RXD, NULL);
-+	gpio_request(GPIO_FN_RAC_RTS, NULL);
-+	gpio_request(GPIO_FN_RAC_CTS, NULL);
-+	gpio_request(GPIO_FN_RAC_DTR, NULL);
-+	gpio_request(GPIO_FN_RAC_DSR, NULL);
-+	gpio_request(GPIO_FN_RAC_DCD, NULL);
-+	gpio_request(GPIO_FN_RAC_TXD, NULL);
-+	gpio_request(GPIO_FN_COM1_TXD, NULL);
-+	gpio_request(GPIO_FN_COM1_RXD, NULL);
-+	gpio_request(GPIO_FN_COM1_RTS, NULL);
-+	gpio_request(GPIO_FN_COM1_CTS, NULL);
++				intc_mask17 {
++					reg = <0xe6950094 1>, <0xe69500d4 1>;
++					reginfo = <&SPU2_0 &SPU2_1 &FSI &FMSI 0
++						&HDMI_SSS &HDMI_KEY 0>;
++				};
 +
-+	/* SCIF01 */
-+	__raw_writeb(0x06, 0xffd8ee0f);	/* from the manual 27.4.3 [1] */
-+	__raw_writeb(0x03, 0xfe410008);	/* SCIFCR0 */
-+	__raw_writeb(0x03, 0xfe420008);	/* SCIFCR1 */
-+	__raw_writeb(0x00, 0xfe410008);	/* SCIFCR0 */
-+	__raw_writeb(0x00, 0xfe420008);	/* SCIFCR1 */
++				intc_mask18 {
++					reg = <0xe6950098 1>, <0xe69500d8 1>;
++					reginfo = <0 &IPMMU 0 0 &AP_ARM_CTIIRQ
++						&AP_ARM_PMURQ 0 0>;
++				};
 +
-+	/* IIC (PTM, PTR, PTS) */
-+	gpio_request(GPIO_FN_SDA7, NULL);
-+	gpio_request(GPIO_FN_SCL7, NULL);
-+	gpio_request(GPIO_FN_SDA6, NULL);
-+	gpio_request(GPIO_FN_SCL6, NULL);
-+	gpio_request(GPIO_FN_SDA5, NULL);
-+	gpio_request(GPIO_FN_SCL5, NULL);
-+	gpio_request(GPIO_FN_SDA4, NULL);
-+	gpio_request(GPIO_FN_SCL4, NULL);
-+	gpio_request(GPIO_FN_SDA3, NULL);
-+	gpio_request(GPIO_FN_SCL3, NULL);
-+	gpio_request(GPIO_FN_SDA2, NULL);
-+	gpio_request(GPIO_FN_SCL2, NULL);
-+	gpio_request(GPIO_FN_SDA1, NULL);
-+	gpio_request(GPIO_FN_SCL1, NULL);
-+	gpio_request(GPIO_FN_SDA0, NULL);
-+	gpio_request(GPIO_FN_SCL0, NULL);
++				intc_mask19 {
++					reg = <0xe695009c 1>, <0xe69500dc 1>;
++					reginfo = <&MFIS2 &CPORTR2S &CMT14 &CMT15
++						0 &MMCIF_0 &MMCIF_1 &MMCIF_2>;
++				};
 +
-+	/* USB (PTN) */
-+	gpio_request(GPIO_FN_VBUS_EN, NULL);
-+	gpio_request(GPIO_FN_VBUS_OC, NULL);
++				intc_mask20 {
++					reg = <0xe69500a4 1>, <0xe69500e4 1>;
++					reginfo = <&SIM_ERI &SIM_RXI &SIM_TXI
++						&SIM_TEI &STPRO_0 &STPRO_1 &STPRO_2 &STPRO_3>;
++				};
 +
-+	/* SGPIO1/0 (PTN, PTO) */
-+	gpio_request(GPIO_FN_SGPIO1_CLK, NULL);
-+	gpio_request(GPIO_FN_SGPIO1_LOAD, NULL);
-+	gpio_request(GPIO_FN_SGPIO1_DI, NULL);
-+	gpio_request(GPIO_FN_SGPIO1_DO, NULL);
-+	gpio_request(GPIO_FN_SGPIO0_CLK, NULL);
-+	gpio_request(GPIO_FN_SGPIO0_LOAD, NULL);
-+	gpio_request(GPIO_FN_SGPIO0_DI, NULL);
-+	gpio_request(GPIO_FN_SGPIO0_DO, NULL);
++				intc_mask21 {
++					reg = <0xe69500a8 1>, <0xe69500e8 1>;
++					reginfo = <&STPRO_4 0 0 0 0 0 0 0>;
++				};
++			};
 +
-+	/* WDT (PTN) */
-+	gpio_request(GPIO_FN_SUB_CLKIN, NULL);
++			intc_prio_registers {
++				#address-cells = <1>;
++				#size-cells = <1>;
++				ranges;
 +
-+	/* System (PTT) */
-+	gpio_request(GPIO_FN_STATUS1, NULL);
-+	gpio_request(GPIO_FN_STATUS0, NULL);
++				intc_prio0 {
++					reg = <0xe6940000 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&DMAC3_1 &DMAC3_2 &CMT2 &ICBS0>;
++				};
 +
-+	/* PWMX (PTT) */
-+	gpio_request(GPIO_FN_PWMX1, NULL);
-+	gpio_request(GPIO_FN_PWMX0, NULL);
++				intc_prio1 {
++					reg = <0xe6940004 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo =<&IRDA 0 &BBIF1 &BBIF2>;
++				};
 +
-+	/* R-SPI (PTV) */
-+	gpio_request(GPIO_FN_R_SPI_MOSI, NULL);
-+	gpio_request(GPIO_FN_R_SPI_MISO, NULL);
-+	gpio_request(GPIO_FN_R_SPI_RSPCK, NULL);
-+	gpio_request(GPIO_FN_R_SPI_SSL0, NULL);
-+	gpio_request(GPIO_FN_R_SPI_SSL1, NULL);
++				intc_prio2 {
++					reg = <0xe6940008 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&ATAPI 0 &CMT1_1 &AP_ARM1>;
++				};
 +
-+	/* EVC (PTV, PTW) */
-+	gpio_request(GPIO_FN_EVENT7, NULL);
-+	gpio_request(GPIO_FN_EVENT6, NULL);
-+	gpio_request(GPIO_FN_EVENT5, NULL);
-+	gpio_request(GPIO_FN_EVENT4, NULL);
-+	gpio_request(GPIO_FN_EVENT3, NULL);
-+	gpio_request(GPIO_FN_EVENT2, NULL);
-+	gpio_request(GPIO_FN_EVENT1, NULL);
-+	gpio_request(GPIO_FN_EVENT0, NULL);
++				intc_prio3 {
++					reg = <0xe694000c 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <0 0 &CMT1_2 0>;
++				};
 +
-+	/* LED for heartbeat */
-+	gpio_request(GPIO_PTU7, NULL);
-+	gpio_direction_output(GPIO_PTU7, 0);
-+	gpio_request(GPIO_PTU6, NULL);
-+	gpio_direction_output(GPIO_PTU6, 0);
-+	gpio_request(GPIO_PTU5, NULL);
-+	gpio_direction_output(GPIO_PTU5, 0);
-+	gpio_request(GPIO_PTU4, NULL);
-+	gpio_direction_output(GPIO_PTU4, 0);
-+	gpio_request(GPIO_PTU3, NULL);
-+	gpio_direction_output(GPIO_PTU3, 0);
-+	gpio_request(GPIO_PTU2, NULL);
-+	gpio_direction_output(GPIO_PTU2, 0);
-+	gpio_request(GPIO_PTU1, NULL);
-+	gpio_direction_output(GPIO_PTU1, 0);
-+	gpio_request(GPIO_PTU0, NULL);
-+	gpio_direction_output(GPIO_PTU0, 0);
++				intc_prio4 {
++					reg = <0xe6940010 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&DMAC1_1 &MFIS &MFI &USBF>;
++				};
 +
-+	/* control for MDIO of Gigabit Ethernet */
-+	gpio_request(GPIO_PTG1, NULL);
-+	gpio_direction_output(GPIO_PTG1, 1);
++				intc_prio5 {
++					reg = <0xe6940014 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&KEYSC &DMAC1_2 &SGX540 &CMT1_0>;
++				};
 +
-+	/* register SPI device information */
-+	spi_register_board_info(spi_board_info,
-+				ARRAY_SIZE(spi_board_info));
++				intc_prio6 {
++					reg = <0xe6940018 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&SCIFA0 &SCIFA1 &SCIFA2 &SCIFA3>;
++				};
 +
-+	/* General platform */
-+	return platform_add_devices(sh7752evb_devices,
-+				    ARRAY_SIZE(sh7752evb_devices));
-+}
-+arch_initcall(sh7752evb_devices_setup);
++				intc_prio7 {
++					reg = <0xe694001c 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&MSIOF2 &USBHSDMAC &FLCTL &SDHI0>;
++				};
 +
-+/* Initialize IRQ setting */
-+void __init init_sh7752evb_IRQ(void)
-+{
-+	plat_irq_setup_pins(IRQ_MODE_IRQ7654);
-+	plat_irq_setup_pins(IRQ_MODE_IRQ3210);
-+}
++				intc_prio8 {
++					reg = <0xe6940020 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&MSIOF1 &SCIFA4 0 &IIC1>;
++				};
 +
-+/* Initialize the board */
-+static void __init sh7752evb_setup(char **cmdline_p)
-+{
-+	pr_info("Renesas R0P7752C00000RZ support.\n");
-+}
++				intc_prio9 {
++					reg = <0xe6940024 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&DMAC2_1 &DMAC2_2 &AP_ARM_L2CINT 0>;
++				};
 +
-+static int sh7752evb_mode_pins(void)
-+{
-+	int value = 0;
++				intc_prio10 {
++					reg = <0xe6940028 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <0 &CMT1_3 0 &SDHI1>;
++				};
 +
-+	/* This is the factory default setting of S3-8 (OFF). */
-+	value |= MODE_PIN0;	/* Clock Mode: 1 */
++				intc_prio11 {
++					reg = <0xe694002c 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&TPU0 &SCIFA6 &SCIFA7 &GETHER>;
++				};
 +
-+	return value;
-+}
++				intc_prio12 {
++					reg = <0xe6940030 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <0 &CMT3 0 &RWDT0>;
++				};
 +
-+/* The Machine Vector */
-+static struct sh_machine_vector mv_sh7752evb __initmv = {
-+	.mv_name		= "SH7752EVB",
-+	.mv_setup		= sh7752evb_setup,
-+	.mv_init_irq		= init_sh7752evb_IRQ,
-+	.mv_mode_pins		= sh7752evb_mode_pins,
-+};
++				intc_prio13 {
++					reg = <0xe6940034 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&SCIFB &SCIFA5 0 &DDM>;
++				};
 +
-diff --git a/arch/sh/configs/sh7752evb_defconfig b/arch/sh/configs/sh7752evb_defconfig
-new file mode 100644
-index 0000000..1e332e4
---- /dev/null
-+++ b/arch/sh/configs/sh7752evb_defconfig
-@@ -0,0 +1,130 @@
-+CONFIG_EXPERIMENTAL=y
-+# CONFIG_SWAP is not set
-+CONFIG_SYSVIPC=y
-+CONFIG_POSIX_MQUEUE=y
-+CONFIG_HIGH_RES_TIMERS=y
-+CONFIG_BSD_PROCESS_ACCT=y
-+CONFIG_TASKSTATS=y
-+CONFIG_TASK_DELAY_ACCT=y
-+CONFIG_TASK_XACCT=y
-+CONFIG_TASK_IO_ACCOUNTING=y
-+CONFIG_LOG_BUF_SHIFT
-+CONFIG_BLK_DEV_INITRD=y
-+CONFIG_CC_OPTIMIZE_FOR_SIZE=y
-+CONFIG_KALLSYMS_ALL=y
-+CONFIG_SLAB=y
-+CONFIG_MODULES=y
-+CONFIG_MODULE_UNLOAD=y
-+# CONFIG_BLK_DEV_BSG is not set
-+# CONFIG_IOSCHED_DEADLINE is not set
-+CONFIG_CPU_SUBTYPE_SH7752=y
-+CONFIG_FORCE_MAX_ZONEORDER
-+CONFIG_MEMORY_START=0x40000000
-+CONFIG_MEMORY_SIZE=0x20000000
-+CONFIG_PMB=y
-+CONFIG_FLATMEM_MANUAL=y
-+# CONFIG_COMPACTION is not set
-+CONFIG_SH_SH7752EVB=y
-+CONFIG_SH_DMA=y
-+CONFIG_HEARTBEAT=y
-+CONFIG_KEXEC=y
-+CONFIG_SECCOMP=y
-+CONFIG_NET=y
-+CONFIG_PACKET=y
-+CONFIG_UNIX=y
-+CONFIG_INET=y
-+CONFIG_IP_MULTICAST=y
-+CONFIG_IP_PNP=y
-+CONFIG_IP_PNP_DHCP=y
-+# CONFIG_INET_XFRM_MODE_TRANSPORT is not set
-+# CONFIG_INET_XFRM_MODE_TUNNEL is not set
-+# CONFIG_INET_XFRM_MODE_BEET is not set
-+# CONFIG_INET_LRO is not set
-+# CONFIG_INET_DIAG is not set
-+CONFIG_IPV6=y
-+# CONFIG_INET6_XFRM_MODE_TRANSPORT is not set
-+# CONFIG_INET6_XFRM_MODE_TUNNEL is not set
-+# CONFIG_INET6_XFRM_MODE_BEET is not set
-+CONFIG_VLAN_8021Q=y
-+# CONFIG_WIRELESS is not set
-+CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
-+# CONFIG_FW_LOADER is not set
-+CONFIG_MTD=y
-+CONFIG_MTD_CHAR=y
-+CONFIG_MTD_BLOCK=y
-+CONFIG_MTD_M25P80=y
-+CONFIG_BLK_DEV_LOOP=y
-+CONFIG_BLK_DEV_RAM=y
-+CONFIG_SCSI=y
-+CONFIG_BLK_DEV_SD=y
-+CONFIG_BLK_DEV_SR=y
-+CONFIG_CHR_DEV_SG=y
-+# CONFIG_SCSI_LOWLEVEL is not set
-+CONFIG_NETDEVICES=y
-+# CONFIG_NET_VENDOR_BROADCOM is not set
-+# CONFIG_NET_VENDOR_CHELSIO is not set
-+# CONFIG_NET_VENDOR_INTEL is not set
-+# CONFIG_NET_VENDOR_MARVELL is not set
-+# CONFIG_NET_VENDOR_MICREL is not set
-+# CONFIG_NET_VENDOR_MICROCHIP is not set
-+# CONFIG_NET_VENDOR_NATSEMI is not set
-+CONFIG_SH_ETH=y
-+# CONFIG_NET_VENDOR_SEEQ is not set
-+# CONFIG_NET_VENDOR_SMSC is not set
-+# CONFIG_NET_VENDOR_STMICRO is not set
-+# CONFIG_NET_VENDOR_WIZNET is not set
-+CONFIG_VITESSE_PHY=y
-+# CONFIG_WLAN is not set
-+CONFIG_INPUT_EVDEV=y
-+# CONFIG_KEYBOARD_ATKBD is not set
-+# CONFIG_MOUSE_PS2 is not set
-+# CONFIG_SERIO is not set
-+# CONFIG_LEGACY_PTYS is not set
-+CONFIG_SERIAL_8250=y
-+CONFIG_SERIAL_8250_CONSOLE=y
-+CONFIG_SERIAL_8250_NR_UARTS=2
-+CONFIG_SERIAL_8250_RUNTIME_UARTS=2
-+CONFIG_SERIAL_SH_SCI=y
-+CONFIG_SERIAL_SH_SCI_NR_UARTS=3
-+CONFIG_SERIAL_SH_SCI_CONSOLE=y
-+# CONFIG_HW_RANDOM is not set
-+CONFIG_SPI=y
-+CONFIG_SPI_RSPI=y
-+CONFIG_SPI_SH=y
-+# CONFIG_HWMON is not set
-+CONFIG_USB=y
-+CONFIG_USB_EHCI_HCD=y
-+CONFIG_USB_EHCI_SH=y
-+CONFIG_USB_OHCI_HCD=y
-+CONFIG_USB_OHCI_SH=y
-+CONFIG_USB_RENESAS_USBHS=y
-+CONFIG_USB_STORAGE=y
-+CONFIG_USB_GADGET=y
-+CONFIG_USB_RENESAS_USBHS_UDC=y
-+CONFIG_USB_ETH=m
-+CONFIG_USB_MASS_STORAGE=m
-+CONFIG_MMC=y
-+CONFIG_MMC_SDHI=y
-+CONFIG_MMC_SH_MMCIF=y
-+CONFIG_DMADEVICES=y
-+CONFIG_SH_DMAE=y
-+# CONFIG_IOMMU_SUPPORT is not set
-+CONFIG_EXT2_FS=y
-+CONFIG_EXT3_FS=y
-+CONFIG_ISO9660_FS=y
-+CONFIG_VFAT_FS=y
-+CONFIG_PROC_KCORE=y
-+CONFIG_TMPFS=y
-+CONFIG_MINIX_FS=y
-+CONFIG_NFS_FS=y
-+# CONFIG_NFS_V3 is not set
-+CONFIG_ROOT_NFS=y
-+CONFIG_NLS_CODEPAGE_437=y
-+CONFIG_NLS_CODEPAGE_932=y
-+CONFIG_NLS_ISO8859_1=y
-+# CONFIG_SCHED_DEBUG is not set
-+# CONFIG_DEBUG_BUGVERBOSE is not set
-+CONFIG_DEBUG_INFO=y
-+# CONFIG_FTRACE is not set
-+# CONFIG_CRYPTO_ANSI_CPRNG is not set
-+# CONFIG_CRYPTO_HW is not set
-diff --git a/arch/sh/tools/mach-types b/arch/sh/tools/mach-types
-index 569977e..2762258 100644
---- a/arch/sh/tools/mach-types
-+++ b/arch/sh/tools/mach-types
-@@ -66,3 +66,4 @@ KFR2R09			SH_KFR2R09
- ECOVEC			SH_ECOVEC
- APSH4A3A		SH_APSH4A3A
- APSH4AD0A		SH_APSH4AD0A
-+SH7752EVB		SH_SH7752EVB
++				intc_prio14 {
++					reg = <0xe6940038 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <0 0 &DIRC &SDHI2>;
++				};
++
++				intc_prio15 {
++					reg = <0xe6950000 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&SHWYSTAT 0 0 0>;
++				};
++
++				intc_prio16 {
++					reg = <0xe6950010 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&USBH1 0 0 0>;
++				};
++
++				intc_prio17 {
++					reg = <0xe6950014 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&USBH2 0 0 0>;
++				};
++
++				intc_prio18 {
++					reg = <0xe6950020 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&HDMI 0 0 0>;
++				};
++
++				intc_prio19 {
++					reg = <0xe6950024 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&RSPI 0 0 0>;
++				};
++
++				intc_prio20 {
++					reg = <0xe6950028 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&SPU2 0 &FSI &FMSI>;
++				};
++
++				intc_prio21 {
++					reg = <0xe695002c 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <0 &HDMI_SSS &HDMI_KEY 0>;
++				};
++
++				intc_prio22 {
++					reg = <0xe6950030 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&IPMMU 0 0 0>;
++				};
++
++				intc_prio23 {
++					reg = <0xe6950034 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&AP_ARM2 0 0 0>;
++				};
++
++				intc_prio24 {
++					reg = <0xe6950038 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&MFIS2 &CPORTR2S &CMT14 &CMT15>;
++				};
++
++				intc_prio25 {
++					reg = <0xe695003c 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <0 &MMCIF_0 &MMCIF_1 &MMCIF_2>;
++				};
++
++				intc_prio26 {
++					reg = <0xe6950048 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&SIM_ERI &SIM_RXI &SIM_TXI &SIM_TEI>;
++				};
++
++				intc_prio27 {
++					reg = <0xe695004c 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&STPRO_0 &STPRO_1 &STPRO_2 &STPRO_3>;
++				};
++
++				intc_prio28 {
++					reg = <0xe6950050 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&STPRO_4 0 0 0>;
++				};
++			};
++		};
++
++		intca_irq_pins: interrupt-controller@1{
++			compatible = "renesas,sh_intca_irq_pins";
++			interrupt-controller;
++			#address-cells = <1>;
++			#size-cells = <1>;
++			ranges;
++
++			reg = <0xe6900000 0x6c>;
++
++			IRQ0:	intsrc1 { vector = <0x200>; };
++			IRQ1:	intsrc2 { vector = <0x220>; };
++			IRQ2:	intsrc3 { vector = <0x240>; };
++			IRQ3:	intsrc4 { vector = <0x260>; };
++			IRQ4:	intsrc5 { vector = <0x280>; };
++			IRQ5:	intsrc6 { vector = <0x2a0>; };
++			IRQ6:	intsrc7 { vector = <0x2c0>; };
++			IRQ7:	intsrc8 { vector = <0x2e0>; };
++			IRQ8:	intsrc9 { vector = <0x300>; };
++			IRQ9:	intsrc10 { vector = <0x320>; };
++			IRQ10:	intsrc11 { vector = <0x340>; };
++			IRQ11:	intsrc12 { vector = <0x360>; };
++			IRQ12:	intsrc13 { vector = <0x380>; };
++			IRQ13:	intsrc14 { vector = <0x3a0>; };
++			IRQ14:	intsrc15 { vector = <0x3c0>; };
++			IRQ15:	intsrc16 { vector = <0x3e0>; };
++			IRQ16:	intsrc17 { vector = <0x3200>; };
++			IRQ17:	intsrc18 { vector = <0x3220>; };
++			IRQ18:	intsrc19 { vector = <0x3240>; };
++			IRQ19:	intsrc20 { vector = <0x3260>; };
++			IRQ20:	intsrc21 { vector = <0x3280>; };
++			IRQ21:	intsrc22 { vector = <0x32a0>; };
++			IRQ22:	intsrc23 { vector = <0x32c0>; };
++			IRQ23:	intsrc24 { vector = <0x32e0>; };
++			IRQ24:	intsrc25 { vector = <0x3300>; };
++			IRQ25:	intsrc26 { vector = <0x3320>; };
++			IRQ26:	intsrc27 { vector = <0x3340>; };
++			IRQ27:	intsrc28 { vector = <0x3360>; };
++			IRQ28:	intsrc29 { vector = <0x3380>; };
++			IRQ29:	intsrc30 { vector = <0x33a0>; };
++			IRQ30:	intsrc31 { vector = <0x33c0>; };
++			IRQ31:	intsrc32 { vector = <0x33e0>; };
++
++			intc_vectors {
++				vector_table = <&IRQ0 &IRQ1 &IRQ2 &IRQ3 &IRQ4 &IRQ5
++								&IRQ6 &IRQ7 &IRQ8 &IRQ9 &IRQ10
++								&IRQ11 &IRQ12 &IRQ13 &IRQ14 &IRQ15
++								&IRQ16 &IRQ17 &IRQ18 &IRQ19 &IRQ20
++								&IRQ21 &IRQ22 &IRQ23 &IRQ24 &IRQ25
++								&IRQ26 &IRQ27 &IRQ28 &IRQ29 &IRQ30
++								&IRQ31>;
++			};
++
++			intc_mask_registers {
++				#address-cells = <1>;
++				#size-cells = <1>;
++				ranges;
++
++				intc_mask0 {
++					reg = <0xe6900040 1>, <0xe6900060 1>;
++					reginfo = <&IRQ0 &IRQ1 &IRQ2 &IRQ3 &IRQ4
++							&IRQ5 &IRQ6 &IRQ7>;
++				};
++
++				intc_mask1 {
++					reg = <0xe6900044 1>, <0xe6900064 1>;
++					reginfo = <&IRQ8 &IRQ9 &IRQ10 &IRQ11
++							&IRQ12 &IRQ13 &IRQ14 &IRQ15>;
++				};
++
++				intc_mask2 {
++					reg = <0xe6900048 1>, <0xe6900068 1>;
++					reginfo = <&IRQ16 &IRQ17 &IRQ18 &IRQ19
++							&IRQ20 &IRQ21 &IRQ22 &IRQ23>;
++				};
++
++				intc_mask3 {
++					reg = <0xe690004C 1>, <0xe690006C 1>;
++					reginfo = <&IRQ24 &IRQ25 &IRQ26 &IRQ27
++							&IRQ28 &IRQ29 &IRQ30 &IRQ31>;
++				};
++			};
++
++			intc_prio_registers {
++				#address-cells = <1>;
++				#size-cells = <1>;
++				ranges;
++
++				intc_prio0 {
++					reg = <0xe6900010 4>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&IRQ0 &IRQ1 &IRQ2 &IRQ3 &IRQ4 &IRQ5 &IRQ6 &IRQ7>;
++				};
++
++				intc_prio1 {
++					reg = <0xe6900014 4>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&IRQ8 &IRQ9 &IRQ10 &IRQ11
++							&IRQ12 &IRQ13 &IRQ14 &IRQ15>;
++				};
++
++				intc_prio2 {
++					reg = <0xe6900018 4>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&IRQ16 &IRQ17 &IRQ18 &IRQ19
++							&IRQ20 &IRQ21 &IRQ22 &IRQ23>;
++				};
++
++				intc_prio3 {
++					reg = <0xe690001C 4>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&IRQ24 &IRQ25 &IRQ26 &IRQ27
++							&IRQ28 &IRQ29 &IRQ30 &IRQ31>;
++				};
++			};
++
++			intc_sense_registers {
++				#address-cells = <1>;
++				#size-cells = <1>;
++				ranges;
++
++				intc_sense0 {
++					reg = <0xe6900000 4>;
++					field-width = <4>;
++					reginfo = <&IRQ0 &IRQ1 &IRQ2 &IRQ3 &IRQ4 &IRQ5 &IRQ6 &IRQ7>;
++				};
++
++				intc_sense1 {
++					reg = <0xe6900004 4>;
++					field-width = <4>;
++					reginfo = <&IRQ8 &IRQ9 &IRQ10 &IRQ11
++							&IRQ12 &IRQ13 &IRQ14 &IRQ15>;
++				};
++
++				intc_sense2 {
++					reg = <0xe6900008 4>;
++					field-width = <4>;
++					reginfo = <&IRQ16 &IRQ17 &IRQ18 &IRQ19
++							&IRQ20 &IRQ21 &IRQ22 &IRQ23>;
++				};
++
++				intc_sense3 {
++					reg = <0xe690000C 4>;
++					field-width = <4>;
++					reginfo = <&IRQ24 &IRQ25 &IRQ26 &IRQ27
++							&IRQ28 &IRQ29 &IRQ30 &IRQ31>;
++				};
++			};
++
++			intc_ack_registers {
++				#address-cells = <1>;
++				#size-cells = <1>;
++				ranges;
++
++				intc_ack0 {
++					reg = <0xe6900020 1>, <0x0 0>;
++					reginfo = <&IRQ0 &IRQ1 &IRQ2 &IRQ3 &IRQ4 &IRQ5 &IRQ6 &IRQ7>;
++				};
++
++				intc_ack1 {
++					reg = <0xe6900024 1>, <0x0 0>;
++					reginfo = <&IRQ8 &IRQ9 &IRQ10 &IRQ11
++							&IRQ12 &IRQ13 &IRQ14 &IRQ15>;
++				};
++
++				intc_ack2 {
++					reg = <0xe6900028 1>, <0x0 0>;
++					reginfo = <&IRQ16 &IRQ17 &IRQ18 &IRQ19
++							&IRQ20 &IRQ21 &IRQ22 &IRQ23>;
++				};
++
++				intc_ack3 {
++					reg = <0xe690002C 1>, <0x0 0>;
++					reginfo = <&IRQ24 &IRQ25 &IRQ26 &IRQ27
++							&IRQ28 &IRQ29 &IRQ30 &IRQ31>;
++				};
++			};
++		};
++
++		intcs: interrupt-controller@2{
++			compatible = "renesas,sh_intcs";
++			interrupt-controller;
++			#address-cells = <1>;
++			#size-cells = <1>;
++			ranges;
++
++			reg = <0xffd20000 0x200>, <0xffd50000 0x200>;
++			group_size = <3>;
++
++			INTCS:      intsrc1 { vector = <0x0F80>; };
++			VPU5HA2:	intsrc2 { vector = <0x3c80>; };
++			_2DG_TRAP:	intsrc3 { vector = <0x3ca0>; };
++			_2DG_GPM_INT:intsrc4 { vector = <0x3cc0>; };
++			_2DG_CER_INT:intsrc5 { vector = <0x3ce0>; };
++			VPU5F:		intsrc6 { vector = <0x3d80>; };
++			_2DG_BRK_INT:intsrc7 { vector = <0x3da0>; };
++			IIC0_ALI:	intsrc8 { vector = <0x4200>; };
++			IIC0_TACKI:	intsrc9 { vector = <0x4220>; };
++			IIC0_WAITI:	intsrc10 { vector = <0x4240>; };
++			IIC0_DTEI:	intsrc11 { vector = <0x4260>; };
++			TMU0_0:		intsrc12 { vector = <0x4280>; };
++			TMU0_1:		intsrc13 { vector = <0x42a0>; };
++			TMU0_2:		intsrc14 { vector = <0x42c0>; };
++			CMT0:		intsrc15 { vector = <0x4300>; };
++			LMB:		intsrc16 { vector = <0x4360>; };
++			CTI:		intsrc17 { vector = <0x3800>; };
++			VOU:		intsrc18 { vector = <0x3820>; };
++			ICB:		intsrc19 { vector = <0x3880>; };
++			VIO6C:		intsrc20 { vector = <0x38e0>; };
++			CEU20:		intsrc21 { vector = <0x3900>; };
++			CEU21:		intsrc22 { vector = <0x3920>; };
++			JPU:		intsrc23 { vector = <0x3960>; };
++			LCDC0:		intsrc24 { vector = <0x3980>; };
++			LCRC:		intsrc25 { vector = <0x39a0>; };
++			LCDC1:		intsrc26 { vector = <0x4b80>; };
++			TMU1_0:		intsrc27 { vector = <0x4d00>; };
++			TMU1_1:		intsrc28 { vector = <0x4d20>; };
++			TMU1_2:		intsrc29 { vector = <0x4d40>; };
++			CMT4:		intsrc30 { vector = <0x4d80>; };
++			DISP:		intsrc31 { vector = <0x4da0>; };
++			DSRV:		intsrc32 { vector = <0x4dc0>; };
++			CPORTS2R:	intsrc33 { vector = <0x4e20>; };
++
++			/* Group */
++			_2DG1:	intc_group0 { group = <&_2DG_CER_INT &_2DG_GPM_INT &_2DG_TRAP>; };
++			IIC0:	intc_group1 { group = <&IIC0_DTEI &IIC0_WAITI &IIC0_TACKI &IIC0_ALI>; };
++			TMU1:	intc_group2 { group = <&TMU1_0 &TMU1_1 &TMU1_2>; };
++
++			intc_vectors {
++
++				vector_table = <&VPU5HA2 &_2DG_TRAP &_2DG_GPM_INT
++					&_2DG_CER_INT &VPU5F &_2DG_BRK_INT &IIC0_ALI &IIC0_TACKI
++					&IIC0_WAITI &IIC0_DTEI &TMU0_0 &TMU0_1 &TMU0_2 &CMT0
++					&LMB &CTI &VOU &ICB &VIO6C &CEU20 &CEU21 &JPU &LCDC0
++					&LCRC &LCDC1 &TMU1_0 &TMU1_1 &TMU1_2 &CMT4 &DISP &DSRV
++					&CPORTS2R &INTCS>;
++			};
++
++
++			intc_mask_registers {
++				#address-cells = <1>;
++				#size-cells = <1>;
++				ranges;
++
++				intc_mask0 {
++					reg = <0xffd20184 1>, <0xffd201c4 1>;
++					reginfo = <&_2DG_CER_INT &_2DG_GPM_INT &_2DG_TRAP &VPU5HA2
++							0 0 0 0>;
++				};
++
++				intc_mask1 {
++					reg = <0xffd20188 1>, <0xffd201c8 1>;
++					reginfo = <0 0 &CEU21 &VPU5F 0 0 0 0>;
++				};
++
++				intc_mask2 {
++					reg = <0xffd2018c 1>, <0xffd201cc 1>;
++					reginfo = <0 0 0 0 &VIO6C 0 0 &ICB>;
++				};
++
++				intc_mask3 {
++					reg = <0xffd20190 1>, <0xffd201d0 1>;
++					reginfo = <0 0 &VOU &CTI &JPU 0 &LCRC &LCDC0>;
++				};
++
++				intc_mask4 {
++					reg = <0xffd2019c 1>, <0xffd201dc 1>;
++					reginfo = <0 &TMU0_2 &TMU0_1 &TMU0_0 0 0 0 0>;
++				};
++
++				intc_mask5 {
++					reg = <0xffd201a0 1>, <0xffd201e0 1>;
++					reginfo = <0 0 0 0 &CEU20 0 0 0>;
++				};
++
++				intc_mask6 {
++					reg = <0xffd201a4 1>, <0xffd201e4 1>;
++					reginfo = <0 0 0 &CMT0 0 0 0 0>;
++				};
++
++				intc_mask7 {
++					reg = <0xffd201ac 1>, <0xffd201ec 1>;
++					reginfo = <&IIC0_DTEI &IIC0_WAITI &IIC0_TACKI &IIC0_ALI
++							0 &_2DG_BRK_INT &LMB 0>;
++				};
++
++				intc_mask8 {
++					reg = <0xffd50190 1>, <0xffd501d0 1>;
++					reginfo = <0 0 0 0 &LCDC1 0 0 0>;
++				};
++
++				intc_mask9 {
++					reg = <0xffd50198 1>, <0xffd501d8 1>;
++					reginfo = <&TMU1_0 &TMU1_1 &TMU1_2 0 &CMT4 &DISP &DSRV 0>;
++				};
++
++				intc_mask10 {
++					reg = <0xffd5019c 1>, <0xffd501dc 1>;
++					reginfo = <0 &CPORTS2R 0 0 0 0 0 0>;
++				};
++
++				intc_mask11 {
++					reg = <0xffd20104 2>, <0x00000000 0>;
++					reginfo = <0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 &INTCS>;
++				};
++			};
++
++			intc_prio_registers {
++				#address-cells = <1>;
++				#size-cells = <1>;
++				ranges;
++
++				intc_prio0 {
++					reg = <0xffd20000 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&CTI &VOU 0 &ICB>;
++				};
++
++				intc_prio1 {
++					reg = <0xffd20004 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&JPU &LCDC0 0 &LCRC>;
++				};
++
++				intc_prio2 {
++					reg = <0xffd20010 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <0 &VPU5HA2 0 &VPU5F>;
++				};
++
++				intc_prio3 {
++					reg = <0xffd20014 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <0 0 0 &CMT0>;
++				};
++
++				intc_prio4 {
++					reg = <0xffd20018 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&TMU0_0 &TMU0_1 &TMU0_2 &_2DG1>;
++				};
++
++				intc_prio5 {
++					reg = <0xffd2001c 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <0 0 0 &_2DG_BRK_INT>;
++				};
++
++				intc_prio6 {
++					reg = <0xffd20020 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <0 0 0 &IIC0>;
++				};
++
++				intc_prio7 {
++					reg = <0xffd20024 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&CEU20 0 0 0>;
++				};
++
++				intc_prio8 {
++					reg = <0xffd20028 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&VIO6C 0 &LMB 0>;
++				};
++
++				intc_prio9 {
++					reg = <0xffd2002c 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <0 0 &CEU21 0>;
++				};
++
++				intc_prio10 {
++					reg = <0xffd50024 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&LCDC1 0 0 0>;
++				};
++
++				intc_prio11 {
++					reg = <0xffd50030 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&TMU1 0 0 0>;
++				};
++
++				intc_prio12 {
++					reg = <0xffd50034 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <&CMT4 &DISP &DSRV 0>;
++				};
++
++				intc_prio13 {
++					reg = <0xffd50038 2>, <0x0 0>;
++					field-width = <4>;
++					reginfo = <0 &CPORTS2R 0 0>;
++				};
++			};
++
++			intc_intevtsa {
++				vector = <&INTCS>;
++			};
++		};
++	};
+ };
 -- 
-1.7.1
+1.7.10.4
+
