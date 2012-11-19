@@ -1,61 +1,49 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 16 Nov 2012 10:34:49 +0000
-Subject: [PATCH 02/04] ARM: mach-shmobile: sh7372 INTC DT section mismatch fix
-Message-Id: <20121116103449.4231.27320.sendpatchset@w520>
+From: Bill Pemberton <wfp5p@virginia.edu>
+Date: Mon, 19 Nov 2012 18:26:15 +0000
+Subject: [PATCH 426/493] sh: remove use of __devexit
+Message-Id: <1353349642-3677-426-git-send-email-wfp5p@virginia.edu>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+CONFIG_HOTPLUG is going away as an option so __devexit is no
+longer needed.
 
-Fix section mismatches in the sh7372 INTC DT code.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Bill Pemberton <wfp5p@virginia.edu>
+Cc: linux-sh@vger.kernel.org 
 ---
+ drivers/sh/pfc/gpio.c    | 2 +-
+ drivers/sh/pfc/pinctrl.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
- Applies to the devel/of branch of
- git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git
-
- arch/arm/mach-shmobile/intc-sh7372.c |    8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
-
---- 0003/arch/arm/mach-shmobile/intc-sh7372.c
-+++ work/arch/arm/mach-shmobile/intc-sh7372.c	2012-11-16 15:31:45.000000000 +0900
-@@ -40,7 +40,7 @@ static struct intc_desc intca_irq_pins_h
- static struct resource intca_pins_hi_resources[1] __initdata;
- static unsigned short intevtsa_vect;
+diff --git a/drivers/sh/pfc/gpio.c b/drivers/sh/pfc/gpio.c
+index 8f4f431..6a24f07 100644
+--- a/drivers/sh/pfc/gpio.c
++++ b/drivers/sh/pfc/gpio.c
+@@ -184,7 +184,7 @@ static int sh_pfc_gpio_probe(struct platform_device *pdev)
+ 	return 0;
+ }
  
--static int sh7372_intca_of_init(struct device_node *np,
-+static int __init sh7372_intca_of_init(struct device_node *np,
- 			struct device_node *parent)
+-static int __devexit sh_pfc_gpio_remove(struct platform_device *pdev)
++static int sh_pfc_gpio_remove(struct platform_device *pdev)
  {
+ 	struct sh_pfc_chip *chip = platform_get_drvdata(pdev);
  	int ret;
-@@ -65,7 +65,7 @@ error:
+diff --git a/drivers/sh/pfc/pinctrl.c b/drivers/sh/pfc/pinctrl.c
+index 5dd1806..50e3556 100644
+--- a/drivers/sh/pfc/pinctrl.c
++++ b/drivers/sh/pfc/pinctrl.c
+@@ -465,7 +465,7 @@ free_pads:
  	return ret;
  }
  
--static int sh7372_intcs_of_init(struct device_node *np,
-+static int __init sh7372_intcs_of_init(struct device_node *np,
- 			struct device_node *parent)
+-static int __devexit sh_pfc_pinctrl_remove(struct platform_device *pdev)
++static int sh_pfc_pinctrl_remove(struct platform_device *pdev)
  {
- 	int ret;
-@@ -93,7 +93,7 @@ error:
- 	return ret;
- }
+ 	struct sh_pfc_pinctrl *pmx = platform_get_drvdata(pdev);
  
--static int sh7372_intca_pins_lo_of_init(struct device_node *np,
-+static int __init sh7372_intca_pins_lo_of_init(struct device_node *np,
- 				    struct device_node *parent)
- {
- 	int ret;
-@@ -120,7 +120,7 @@ error:
- 	return ret;
- }
- 
--static int sh7372_intca_pins_hi_of_init(struct device_node *np,
-+static int __init sh7372_intca_pins_hi_of_init(struct device_node *np,
- 				    struct device_node *parent)
- {
- 	int ret;
+-- 
+1.8.0
+
