@@ -1,93 +1,76 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 01 Nov 2012 00:40:08 +0000
-Subject: [PATCH 5/8] ARM: shmobile: marzen: add HSPI support
-Message-Id: <1351730411-1874-6-git-send-email-horms@verge.net.au>
+From: Bill Pemberton <wfp5p@virginia.edu>
+Date: Mon, 19 Nov 2012 18:22:20 +0000
+Subject: [PATCH 191/493] sh: remove use of __devinit
+Message-Id: <1353349642-3677-191-git-send-email-wfp5p@virginia.edu>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1351730411-1874-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1351730411-1874-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+CONFIG_HOTPLUG is going away as an option so __devinit is no longer
+needed.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Bill Pemberton <wfp5p@virginia.edu>
+Cc: linux-sh@vger.kernel.org 
 ---
- arch/arm/configs/marzen_defconfig     |    4 ++++
- arch/arm/mach-shmobile/board-marzen.c |   25 +++++++++++++++++++++++++
- 2 files changed, 29 insertions(+)
+ drivers/sh/pfc/gpio.c    | 2 +-
+ drivers/sh/pfc/pinctrl.c | 8 ++++----
+ 2 files changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index 53382b6..5b8215f 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -69,6 +69,10 @@ CONFIG_SERIAL_SH_SCI=y
- CONFIG_SERIAL_SH_SCI_NR_UARTS=6
- CONFIG_SERIAL_SH_SCI_CONSOLE=y
- # CONFIG_HW_RANDOM is not set
-+CONFIG_I2C=y
-+CONFIG_I2C_RCAR=y
-+CONFIG_SPI=y
-+CONFIG_SPI_SH_HSPI=y
- CONFIG_GPIO_SYSFS=y
- # CONFIG_HWMON is not set
- CONFIG_THERMAL=y
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index b8a7525..69f7f46 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -30,6 +30,8 @@
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/machine.h>
- #include <linux/smsc911x.h>
-+#include <linux/spi/spi.h>
-+#include <linux/spi/sh_hspi.h>
- #include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/mfd/tmio.h>
- #include <mach/hardware.h>
-@@ -126,10 +128,27 @@ static struct platform_device thermal_device = {
- 	.num_resources	= ARRAY_SIZE(thermal_resources),
- };
- 
-+/* HSPI */
-+static struct resource hspi_resources[] = {
-+	[0] = {
-+		.start		= 0xFFFC7000,
-+		.end		= 0xFFFC7018 - 1,
-+		.flags		= IORESOURCE_MEM,
-+	},
-+};
-+
-+static struct platform_device hspi_device = {
-+	.name	= "sh-hspi",
-+	.id	= 0,
-+	.resource	= hspi_resources,
-+	.num_resources	= ARRAY_SIZE(hspi_resources),
-+};
-+
- static struct platform_device *marzen_devices[] __initdata = {
- 	&eth_device,
- 	&sdhi0_device,
- 	&thermal_device,
-+	&hspi_device,
- };
- 
- static void __init marzen_init(void)
-@@ -163,6 +182,12 @@ static void __init marzen_init(void)
- 	gpio_request(GPIO_FN_SD0_CD, NULL);
- 	gpio_request(GPIO_FN_SD0_WP, NULL);
- 
-+	/* HSPI 0 */
-+	gpio_request(GPIO_FN_HSPI_CLK0,	NULL);
-+	gpio_request(GPIO_FN_HSPI_CS0,	NULL);
-+	gpio_request(GPIO_FN_HSPI_TX0,	NULL);
-+	gpio_request(GPIO_FN_HSPI_RX0,	NULL);
-+
- 	r8a7779_add_standard_devices();
- 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
+diff --git a/drivers/sh/pfc/gpio.c b/drivers/sh/pfc/gpio.c
+index d08c978..8f4f431 100644
+--- a/drivers/sh/pfc/gpio.c
++++ b/drivers/sh/pfc/gpio.c
+@@ -165,7 +165,7 @@ static int sh_pfc_gpio_match(struct gpio_chip *gc, void *data)
+ 	return !!strstr(gc->label, data);
  }
+ 
+-static int __devinit sh_pfc_gpio_probe(struct platform_device *pdev)
++static int sh_pfc_gpio_probe(struct platform_device *pdev)
+ {
+ 	struct sh_pfc_chip *chip;
+ 	struct gpio_chip *gc;
+diff --git a/drivers/sh/pfc/pinctrl.c b/drivers/sh/pfc/pinctrl.c
+index 99b3b4f..5dd1806 100644
+--- a/drivers/sh/pfc/pinctrl.c
++++ b/drivers/sh/pfc/pinctrl.c
+@@ -328,7 +328,7 @@ static struct pinctrl_desc sh_pfc_pinctrl_desc = {
+ 	.confops	= &sh_pfc_pinconf_ops,
+ };
+ 
+-static inline void __devinit sh_pfc_map_one_gpio(struct sh_pfc *pfc,
++static inline void sh_pfc_map_one_gpio(struct sh_pfc *pfc,
+ 						 struct sh_pfc_pinctrl *pmx,
+ 						 struct pinmux_gpio *gpio,
+ 						 unsigned offset)
+@@ -351,7 +351,7 @@ static inline void __devinit sh_pfc_map_one_gpio(struct sh_pfc *pfc,
+ }
+ 
+ /* pinmux ranges -> pinctrl pin descs */
+-static int __devinit sh_pfc_map_gpios(struct sh_pfc *pfc,
++static int sh_pfc_map_gpios(struct sh_pfc *pfc,
+ 				      struct sh_pfc_pinctrl *pmx)
+ {
+ 	unsigned long flags;
+@@ -396,7 +396,7 @@ static int __devinit sh_pfc_map_gpios(struct sh_pfc *pfc,
+ 	return 0;
+ }
+ 
+-static int __devinit sh_pfc_map_functions(struct sh_pfc *pfc,
++static int sh_pfc_map_functions(struct sh_pfc *pfc,
+ 					  struct sh_pfc_pinctrl *pmx)
+ {
+ 	unsigned long flags;
+@@ -421,7 +421,7 @@ static int __devinit sh_pfc_map_functions(struct sh_pfc *pfc,
+ 	return 0;
+ }
+ 
+-static int __devinit sh_pfc_pinctrl_probe(struct platform_device *pdev)
++static int sh_pfc_pinctrl_probe(struct platform_device *pdev)
+ {
+ 	struct sh_pfc *pfc;
+ 	int ret;
 -- 
-1.7.10.4
+1.8.0
 
