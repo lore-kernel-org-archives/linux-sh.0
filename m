@@ -1,275 +1,280 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 27 Nov 2012 00:02:03 +0000
-Subject: [PATCH v2 04/77] sh-pfc: Merge PFC core and gpio
-Message-Id: <1353974596-30033-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Bill Pemberton <wfp5p@virginia.edu>
+Date: Mon, 19 Nov 2012 18:19:23 +0000
+Subject: [PATCH 014/493] PCI: remove CONFIG_HOTPLUG ifdefs
+Message-Id: <1353349642-3677-14-git-send-email-wfp5p@virginia.edu>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1353349642-3677-1-git-send-email-wfp5p@virginia.edu>
+In-Reply-To: <1353349642-3677-1-git-send-email-wfp5p@virginia.edu>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: gregkh@linuxfoundation.org
+Cc: Guan Xuetao <gxt@mprc.pku.edu.cn>, microblaze-uclinux@itee.uq.edu.au, linux-mips@linux-mips.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-pci@vger.kernel.org
 
-The PFC core calls the gpio module gpiochip registration in its
-register_sh_pfc() function, itself called at arch initialization time.
-If the gpio module isn't present then the gpiochip will never be
-registered.
+Remove conditional code based on CONFIG_HOTPLUG being false.  It's
+always on now in preparation of it going away as an option.
 
-As the gpio module can only be present at arch initialization time if
-it's builtin, there's no point in allowing to build it as a module. Make
-it a boolean option, and initialize it synchronously with the core if
-selected.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Paul Mundt <lethal@linux-sh.org>
+Signed-off-by: Bill Pemberton <wfp5p@virginia.edu>
+Cc: Guan Xuetao <gxt@mprc.pku.edu.cn> 
+Cc: microblaze-uclinux@itee.uq.edu.au 
+Cc: linux-mips@linux-mips.org 
+Cc: linuxppc-dev@lists.ozlabs.org 
+Cc: linux-sh@vger.kernel.org 
+Cc: linux-pci@vger.kernel.org 
 ---
- drivers/sh/pfc/Kconfig  |    2 +-
- drivers/sh/pfc/Makefile |    4 ++-
- drivers/sh/pfc/core.c   |   23 +++++--------
- drivers/sh/pfc/core.h   |    4 ++
- drivers/sh/pfc/gpio.c   |   79 +++++------------------------------------------
- 5 files changed, 25 insertions(+), 87 deletions(-)
+ arch/microblaze/pci/pci-common.c |  4 ----
+ arch/mips/pci/pci.c              |  2 --
+ arch/powerpc/kernel/pci-common.c |  4 ----
+ arch/powerpc/kernel/pci_64.c     |  4 ----
+ arch/sh/drivers/pci/pci.c        |  2 --
+ arch/unicore32/kernel/pci.c      |  2 --
+ drivers/pci/pci-driver.c         | 15 ---------------
+ drivers/pci/pci-sysfs.c          |  7 -------
+ drivers/pci/pci.h                |  4 ----
+ drivers/pci/probe.c              |  2 --
+ include/linux/pci.h              |  2 --
+ 11 files changed, 48 deletions(-)
 
-diff --git a/drivers/sh/pfc/Kconfig b/drivers/sh/pfc/Kconfig
-index f33d82a..eaeabc5 100644
---- a/drivers/sh/pfc/Kconfig
-+++ b/drivers/sh/pfc/Kconfig
-@@ -11,7 +11,7 @@ config SH_PFC
- 	def_bool y
- 
- config GPIO_SH_PFC
--	tristate "SuperH PFC GPIO support"
-+	bool "SuperH PFC GPIO support"
- 	depends on SH_PFC && GPIOLIB
- 	help
- 	  This enables support for GPIOs within the SoC's pin function
-diff --git a/drivers/sh/pfc/Makefile b/drivers/sh/pfc/Makefile
-index ce6fae3..6315cf3 100644
---- a/drivers/sh/pfc/Makefile
-+++ b/drivers/sh/pfc/Makefile
-@@ -1,3 +1,5 @@
- sh-pfc-objs			= core.o pinctrl.o
-+ifeq ($(CONFIG_GPIO_SH_PFC),y)
-+sh-pfc-objs			+= gpio.o
-+endif
- obj-y				+= sh-pfc.o
--obj-$(CONFIG_GPIO_SH_PFC)	+= gpio.o
-diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
-index 30e33db..f8f458b 100644
---- a/drivers/sh/pfc/core.c
-+++ b/drivers/sh/pfc/core.c
-@@ -149,7 +149,6 @@ int sh_pfc_read_bit(struct pinmux_data_reg *dr, unsigned long in_pos)
- 
- 	return (gpio_read_raw_reg(dr->mapped_reg, dr->reg_width) >> pos) & 1;
+diff --git a/arch/microblaze/pci/pci-common.c b/arch/microblaze/pci/pci-common.c
+index 4dbb505..a1c5b99 100644
+--- a/arch/microblaze/pci/pci-common.c
++++ b/arch/microblaze/pci/pci-common.c
+@@ -1346,8 +1346,6 @@ void __init pcibios_resource_survey(void)
+ 	pci_assign_unassigned_resources();
  }
--EXPORT_SYMBOL_GPL(sh_pfc_read_bit);
  
- void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
- 		      unsigned long value)
-@@ -169,7 +168,6 @@ void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
- 
- 	gpio_write_raw_reg(dr->mapped_reg, dr->reg_width, dr->reg_shadow);
- }
--EXPORT_SYMBOL_GPL(sh_pfc_write_bit);
- 
- static void config_reg_helper(struct sh_pfc *pfc,
- 			      struct pinmux_cfg_reg *crp,
-@@ -307,7 +305,6 @@ int sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
- 	*bitp = n;
- 	return 0;
- }
--EXPORT_SYMBOL_GPL(sh_pfc_get_data_reg);
- 
- static int get_config_reg(struct sh_pfc *pfc, pinmux_enum_t enum_id,
- 			  struct pinmux_cfg_reg **crp,
-@@ -384,7 +381,6 @@ int sh_pfc_gpio_to_enum(struct sh_pfc *pfc, unsigned gpio, int pos,
- 	pr_err("cannot locate data/mark enum_id for gpio %d\n", gpio);
- 	return -1;
- }
--EXPORT_SYMBOL_GPL(sh_pfc_gpio_to_enum);
- 
- int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
- 		       int cfg_mode)
-@@ -500,7 +496,6 @@ int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
- 
- int register_sh_pfc(struct sh_pfc_platform_data *pdata)
- {
--	int (*initroutine)(struct sh_pfc *) = NULL;
- 	int ret;
- 
- 	/*
-@@ -531,24 +526,20 @@ int register_sh_pfc(struct sh_pfc_platform_data *pdata)
- 	if (unlikely(ret != 0))
- 		goto err;
- 
-+#ifdef CONFIG_GPIO_SH_PFC
- 	/*
- 	 * Then the GPIO chip
- 	 */
--	initroutine = symbol_request(sh_pfc_register_gpiochip);
--	if (initroutine) {
--		ret = (*initroutine)(&sh_pfc);
--		symbol_put_addr(initroutine);
+-#ifdef CONFIG_HOTPLUG
 -
-+	ret = sh_pfc_register_gpiochip(&sh_pfc);
-+	if (unlikely(ret != 0)) {
- 		/*
- 		 * If the GPIO chip fails to come up we still leave the
- 		 * PFC state as it is, given that there are already
- 		 * extant users of it that have succeeded by this point.
- 		 */
--		if (unlikely(ret != 0)) {
--			pr_notice("failed to init GPIO chip, ignoring...\n");
--			ret = 0;
--		}
-+		pr_notice("failed to init GPIO chip, ignoring...\n");
+ /* This is used by the PCI hotplug driver to allocate resource
+  * of newly plugged busses. We can try to consolidate with the
+  * rest of the code later, for now, keep it as-is as our main
+@@ -1407,8 +1405,6 @@ void pcibios_finish_adding_to_bus(struct pci_bus *bus)
+ }
+ EXPORT_SYMBOL_GPL(pcibios_finish_adding_to_bus);
+ 
+-#endif /* CONFIG_HOTPLUG */
+-
+ int pcibios_enable_device(struct pci_dev *dev, int mask)
+ {
+ 	return pci_enable_resources(dev, mask);
+diff --git a/arch/mips/pci/pci.c b/arch/mips/pci/pci.c
+index 04e35bc..4040416 100644
+--- a/arch/mips/pci/pci.c
++++ b/arch/mips/pci/pci.c
+@@ -313,10 +313,8 @@ void __devinit pcibios_fixup_bus(struct pci_bus *bus)
  	}
-+#endif
- 
- 	pr_info("%s support registered\n", sh_pfc.pdata->name);
- 
-@@ -560,3 +551,7 @@ err:
- 
- 	return ret;
- }
-+
-+MODULE_AUTHOR("Magnus Damm, Paul Mundt");
-+MODULE_DESCRIPTION("Pin Control and GPIO driver for SuperH pin function controller");
-+MODULE_LICENSE("GPL v2");
-diff --git a/drivers/sh/pfc/core.h b/drivers/sh/pfc/core.h
-index b07ae25..f3032b2 100644
---- a/drivers/sh/pfc/core.h
-+++ b/drivers/sh/pfc/core.h
-@@ -20,14 +20,18 @@ struct pfc_window {
- 	unsigned long size;
- };
- 
-+struct sh_pfc_chip;
-+
- struct sh_pfc {
- 	struct sh_pfc_platform_data *pdata;
- 	spinlock_t lock;
- 
- 	struct pfc_window *window;
-+	struct sh_pfc_chip *gpio;
- };
- 
- int sh_pfc_register_gpiochip(struct sh_pfc *pfc);
-+int sh_pfc_unregister_gpiochip(struct sh_pfc *pfc);
- 
- int sh_pfc_register_pinctrl(struct sh_pfc *pfc);
- 
-diff --git a/drivers/sh/pfc/gpio.c b/drivers/sh/pfc/gpio.c
-index 94c5489..91ea4c9 100644
---- a/drivers/sh/pfc/gpio.c
-+++ b/drivers/sh/pfc/gpio.c
-@@ -15,7 +15,6 @@
- #include <linux/slab.h>
- #include <linux/spinlock.h>
- #include <linux/module.h>
--#include <linux/platform_device.h>
- #include <linux/pinctrl/consumer.h>
- #include <linux/sh_pfc.h>
- 
-@@ -152,44 +151,23 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
- 	sh_pfc_gpio_setup(chip);
- 
- 	ret = gpiochip_add(&chip->gpio_chip);
--	if (unlikely(ret < 0))
-+	if (unlikely(ret < 0)) {
- 		kfree(chip);
-+		return ret;
-+	}
-+
-+	pfc->gpio = chip;
- 
- 	pr_info("%s handling gpio %d -> %d\n",
- 		pfc->pdata->name, pfc->pdata->first_gpio,
- 		pfc->pdata->last_gpio);
- 
--	return ret;
--}
--EXPORT_SYMBOL_GPL(sh_pfc_register_gpiochip);
--
--static int sh_pfc_gpio_match(struct gpio_chip *gc, void *data)
--{
--	return !!strstr(gc->label, data);
--}
--
--static int __devinit sh_pfc_gpio_probe(struct platform_device *pdev)
--{
--	struct sh_pfc_chip *chip;
--	struct gpio_chip *gc;
--
--	gc = gpiochip_find("_pfc", sh_pfc_gpio_match);
--	if (unlikely(!gc)) {
--		pr_err("Cant find gpio chip\n");
--		return -ENODEV;
--	}
--
--	chip = gpio_to_pfc_chip(gc);
--	platform_set_drvdata(pdev, chip);
--
--	pr_info("attaching to GPIO chip %s\n", chip->pfc->pdata->name);
--
- 	return 0;
  }
  
--static int __devexit sh_pfc_gpio_remove(struct platform_device *pdev)
-+int __exit sh_pfc_unregister_gpiochip(struct sh_pfc *pfc)
+-#ifdef CONFIG_HOTPLUG
+ EXPORT_SYMBOL(PCIBIOS_MIN_IO);
+ EXPORT_SYMBOL(PCIBIOS_MIN_MEM);
+-#endif
+ 
+ int pci_mmap_page_range(struct pci_dev *dev, struct vm_area_struct *vma,
+ 			enum pci_mmap_state mmap_state, int write_combine)
+diff --git a/arch/powerpc/kernel/pci-common.c b/arch/powerpc/kernel/pci-common.c
+index 7f94f76..abc0d08 100644
+--- a/arch/powerpc/kernel/pci-common.c
++++ b/arch/powerpc/kernel/pci-common.c
+@@ -1428,8 +1428,6 @@ void __init pcibios_resource_survey(void)
+ 		ppc_md.pcibios_fixup();
+ }
+ 
+-#ifdef CONFIG_HOTPLUG
+-
+ /* This is used by the PCI hotplug driver to allocate resource
+  * of newly plugged busses. We can try to consolidate with the
+  * rest of the code later, for now, keep it as-is as our main
+@@ -1488,8 +1486,6 @@ void pcibios_finish_adding_to_bus(struct pci_bus *bus)
+ }
+ EXPORT_SYMBOL_GPL(pcibios_finish_adding_to_bus);
+ 
+-#endif /* CONFIG_HOTPLUG */
+-
+ int pcibios_enable_device(struct pci_dev *dev, int mask)
  {
--	struct sh_pfc_chip *chip = platform_get_drvdata(pdev);
-+	struct sh_pfc_chip *chip = pfc->gpio;
- 	int ret;
+ 	if (ppc_md.pcibios_enable_device_hook)
+diff --git a/arch/powerpc/kernel/pci_64.c b/arch/powerpc/kernel/pci_64.c
+index 4ff190f..2cbe676 100644
+--- a/arch/powerpc/kernel/pci_64.c
++++ b/arch/powerpc/kernel/pci_64.c
+@@ -74,8 +74,6 @@ static int __init pcibios_init(void)
  
- 	ret = gpiochip_remove(&chip->gpio_chip);
-@@ -197,47 +175,6 @@ static int __devexit sh_pfc_gpio_remove(struct platform_device *pdev)
- 		return ret;
+ subsys_initcall(pcibios_init);
  
- 	kfree(chip);
-+	pfc->gpio = NULL;
- 	return 0;
+-#ifdef CONFIG_HOTPLUG
+-
+ int pcibios_unmap_io_space(struct pci_bus *bus)
+ {
+ 	struct pci_controller *hose;
+@@ -124,8 +122,6 @@ int pcibios_unmap_io_space(struct pci_bus *bus)
  }
+ EXPORT_SYMBOL_GPL(pcibios_unmap_io_space);
+ 
+-#endif /* CONFIG_HOTPLUG */
 -
--static struct platform_driver sh_pfc_gpio_driver = {
--	.probe		= sh_pfc_gpio_probe,
--	.remove		= __devexit_p(sh_pfc_gpio_remove),
--	.driver		= {
--		.name	= KBUILD_MODNAME,
--		.owner	= THIS_MODULE,
--	},
--};
+ static int __devinit pcibios_map_phb_io_space(struct pci_controller *hose)
+ {
+ 	struct vm_struct *area;
+diff --git a/arch/sh/drivers/pci/pci.c b/arch/sh/drivers/pci/pci.c
+index a7e078f..81e5daf 100644
+--- a/arch/sh/drivers/pci/pci.c
++++ b/arch/sh/drivers/pci/pci.c
+@@ -319,7 +319,5 @@ EXPORT_SYMBOL(pci_iounmap);
+ 
+ #endif /* CONFIG_GENERIC_IOMAP */
+ 
+-#ifdef CONFIG_HOTPLUG
+ EXPORT_SYMBOL(PCIBIOS_MIN_IO);
+ EXPORT_SYMBOL(PCIBIOS_MIN_MEM);
+-#endif
+diff --git a/arch/unicore32/kernel/pci.c b/arch/unicore32/kernel/pci.c
+index b0056f6..7c43592 100644
+--- a/arch/unicore32/kernel/pci.c
++++ b/arch/unicore32/kernel/pci.c
+@@ -250,9 +250,7 @@ void __devinit pcibios_fixup_bus(struct pci_bus *bus)
+ 	printk(KERN_INFO "PCI: bus%d: Fast back to back transfers %sabled\n",
+ 		bus->number, (features & PCI_COMMAND_FAST_BACK) ? "en" : "dis");
+ }
+-#ifdef CONFIG_HOTPLUG
+ EXPORT_SYMBOL(pcibios_fixup_bus);
+-#endif
+ 
+ static int __init pci_common_init(void)
+ {
+diff --git a/drivers/pci/pci-driver.c b/drivers/pci/pci-driver.c
+index 24aa44c..498e66a 100644
+--- a/drivers/pci/pci-driver.c
++++ b/drivers/pci/pci-driver.c
+@@ -89,10 +89,6 @@ static void pci_free_dynids(struct pci_driver *drv)
+ 	spin_unlock(&drv->dynids.lock);
+ }
+ 
+-/*
+- * Dynamic device ID manipulation via sysfs is disabled for !CONFIG_HOTPLUG
+- */
+-#ifdef CONFIG_HOTPLUG
+ /**
+  * store_new_id - sysfs frontend to pci_add_dynid()
+  * @driver: target device driver
+@@ -191,10 +187,6 @@ static struct driver_attribute pci_drv_attrs[] = {
+ 	__ATTR_NULL,
+ };
+ 
+-#else
+-#define pci_drv_attrs	NULL
+-#endif /* CONFIG_HOTPLUG */
 -
--static struct platform_device sh_pfc_gpio_device = {
--	.name		= KBUILD_MODNAME,
--	.id		= -1,
--};
--
--static int __init sh_pfc_gpio_init(void)
+ /**
+  * pci_match_id - See if a pci device matches a given pci_id table
+  * @ids: array of PCI device id structures to search in
+@@ -1223,13 +1215,6 @@ void pci_dev_put(struct pci_dev *dev)
+ 		put_device(&dev->dev);
+ }
+ 
+-#ifndef CONFIG_HOTPLUG
+-int pci_uevent(struct device *dev, struct kobj_uevent_env *env)
 -{
--	int rc;
--
--	rc = platform_driver_register(&sh_pfc_gpio_driver);
--	if (likely(!rc)) {
--		rc = platform_device_register(&sh_pfc_gpio_device);
--		if (unlikely(rc))
--			platform_driver_unregister(&sh_pfc_gpio_driver);
--	}
--
--	return rc;
+-	return -ENODEV;
 -}
+-#endif
 -
--static void __exit sh_pfc_gpio_exit(void)
--{
--	platform_device_unregister(&sh_pfc_gpio_device);
--	platform_driver_unregister(&sh_pfc_gpio_driver);
--}
+ struct bus_type pci_bus_type = {
+ 	.name		= "pci",
+ 	.match		= pci_bus_match,
+diff --git a/drivers/pci/pci-sysfs.c b/drivers/pci/pci-sysfs.c
+index 5d883a1..05b78b1 100644
+--- a/drivers/pci/pci-sysfs.c
++++ b/drivers/pci/pci-sysfs.c
+@@ -284,7 +284,6 @@ msi_bus_store(struct device *dev, struct device_attribute *attr,
+ 	return count;
+ }
+ 
+-#ifdef CONFIG_HOTPLUG
+ static DEFINE_MUTEX(pci_remove_rescan_mutex);
+ static ssize_t bus_rescan_store(struct bus_type *bus, const char *buf,
+ 				size_t count)
+@@ -377,8 +376,6 @@ dev_bus_rescan_store(struct device *dev, struct device_attribute *attr,
+ 	return count;
+ }
+ 
+-#endif
 -
--module_init(sh_pfc_gpio_init);
--module_exit(sh_pfc_gpio_exit);
--
--MODULE_AUTHOR("Magnus Damm, Paul Mundt");
--MODULE_DESCRIPTION("GPIO driver for SuperH pin function controller");
--MODULE_LICENSE("GPL v2");
--MODULE_ALIAS("platform:pfc-gpio");
+ #if defined(CONFIG_PM_RUNTIME) && defined(CONFIG_ACPI)
+ static ssize_t d3cold_allowed_store(struct device *dev,
+ 				    struct device_attribute *attr,
+@@ -524,10 +521,8 @@ struct device_attribute pci_dev_attrs[] = {
+ 	__ATTR(broken_parity_status,(S_IRUGO|S_IWUSR),
+ 		broken_parity_status_show,broken_parity_status_store),
+ 	__ATTR(msi_bus, 0644, msi_bus_show, msi_bus_store),
+-#ifdef CONFIG_HOTPLUG
+ 	__ATTR(remove, (S_IWUSR|S_IWGRP), NULL, remove_store),
+ 	__ATTR(rescan, (S_IWUSR|S_IWGRP), NULL, dev_rescan_store),
+-#endif
+ #if defined(CONFIG_PM_RUNTIME) && defined(CONFIG_ACPI)
+ 	__ATTR(d3cold_allowed, 0644, d3cold_allowed_show, d3cold_allowed_store),
+ #endif
+@@ -535,9 +530,7 @@ struct device_attribute pci_dev_attrs[] = {
+ };
+ 
+ struct device_attribute pcibus_dev_attrs[] = {
+-#ifdef CONFIG_HOTPLUG
+ 	__ATTR(rescan, (S_IWUSR|S_IWGRP), NULL, dev_bus_rescan_store),
+-#endif
+ 	__ATTR(cpuaffinity, S_IRUGO, pci_bus_show_cpumaskaffinity, NULL),
+ 	__ATTR(cpulistaffinity, S_IRUGO, pci_bus_show_cpulistaffinity, NULL),
+ 	__ATTR_NULL,
+diff --git a/drivers/pci/pci.h b/drivers/pci/pci.h
+index 11a713b..ae06da4 100644
+--- a/drivers/pci/pci.h
++++ b/drivers/pci/pci.h
+@@ -160,11 +160,7 @@ static inline int pci_no_d1d2(struct pci_dev *dev)
+ extern struct device_attribute pci_dev_attrs[];
+ extern struct device_attribute pcibus_dev_attrs[];
+ extern struct device_type pci_dev_type;
+-#ifdef CONFIG_HOTPLUG
+ extern struct bus_attribute pci_bus_attrs[];
+-#else
+-#define pci_bus_attrs	NULL
+-#endif
+ 
+ 
+ /**
+diff --git a/drivers/pci/probe.c b/drivers/pci/probe.c
+index 293af5a..3d17641 100644
+--- a/drivers/pci/probe.c
++++ b/drivers/pci/probe.c
+@@ -1865,7 +1865,6 @@ struct pci_bus * __devinit pci_scan_bus(int bus, struct pci_ops *ops,
+ }
+ EXPORT_SYMBOL(pci_scan_bus);
+ 
+-#ifdef CONFIG_HOTPLUG
+ /**
+  * pci_rescan_bus_bridge_resize - scan a PCI bus for devices.
+  * @bridge: PCI bridge for the bus to scan
+@@ -1917,7 +1916,6 @@ EXPORT_SYMBOL(pci_add_new_bus);
+ EXPORT_SYMBOL(pci_scan_slot);
+ EXPORT_SYMBOL(pci_scan_bridge);
+ EXPORT_SYMBOL_GPL(pci_scan_child_bus);
+-#endif
+ 
+ static int __init pci_sort_bf_cmp(const struct device *d_a, const struct device *d_b)
+ {
+diff --git a/include/linux/pci.h b/include/linux/pci.h
+index 5b37d64..9f99c59 100644
+--- a/include/linux/pci.h
++++ b/include/linux/pci.h
+@@ -944,10 +944,8 @@ void set_pcie_hotplug_bridge(struct pci_dev *pdev);
+ 
+ /* Functions for PCI Hotplug drivers to use */
+ int pci_bus_find_capability(struct pci_bus *bus, unsigned int devfn, int cap);
+-#ifdef CONFIG_HOTPLUG
+ unsigned int pci_rescan_bus_bridge_resize(struct pci_dev *bridge);
+ unsigned int pci_rescan_bus(struct pci_bus *bus);
+-#endif
+ 
+ /* Vital product data routines */
+ ssize_t pci_read_vpd(struct pci_dev *dev, loff_t pos, size_t count, void *buf);
 -- 
-1.7.8.6
+1.8.0
 
