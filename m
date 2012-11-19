@@ -1,270 +1,977 @@
-From: Michel Lespinasse <walken@google.com>
-Date: Mon, 05 Nov 2012 22:47:03 +0000
-Subject: [PATCH 06/16] mm: use vm_unmapped_area() on x86_64 architecture
-Message-Id: <1352155633-8648-7-git-send-email-walken@google.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 19 Nov 2012 05:13:13 +0000
+Subject: [RFC 01/15] ARM: mach-shmobile: Add support OF for INTC of shmobile
+Message-Id: <1353302007-31045-2-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352155633-8648-1-git-send-email-walken@google.com>
-In-Reply-To: <1352155633-8648-1-git-send-email-walken@google.com>
+References: <1353302007-31045-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1353302007-31045-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Update the x86_64 arch_get_unmapped_area[_topdown] functions to make
-use of vm_unmapped_area() instead of implementing a brute force search.
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
-Signed-off-by: Michel Lespinasse <walken@google.com>
-Reviewed-by: Rik van Riel <riel@redhat.com>
+This provides OF support of SH/INTC.
+
+The SH/INTC driver is used by SuperH and ARM/SH-MOBILE.
+At the moment, SuperH does not have the plan corresponding to DT.
+DT of SH/INTC has taken the form where the table data of the C
+is managed by DT, in order to maintain compatibility.
+
+Cc: Magnus Damm <damm@opensource.se>
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 
 ---
- arch/x86/include/asm/elf.h   |    6 +-
- arch/x86/kernel/sys_x86_64.c |  151 ++++++++---------------------------------
- arch/x86/vdso/vma.c          |    2 +-
- 3 files changed, 33 insertions(+), 126 deletions(-)
 
-diff --git a/arch/x86/include/asm/elf.h b/arch/x86/include/asm/elf.h
-index 5939f44fe0c0..9c999c1674fa 100644
---- a/arch/x86/include/asm/elf.h
-+++ b/arch/x86/include/asm/elf.h
-@@ -354,12 +354,10 @@ static inline int mmap_is_ia32(void)
- 	return 0;
- }
- 
--/* The first two values are special, do not change. See align_addr() */
-+/* Do not change the values. See get_align_mask() */
- enum align_flags {
- 	ALIGN_VA_32	= BIT(0),
- 	ALIGN_VA_64	= BIT(1),
--	ALIGN_VDSO	= BIT(2),
--	ALIGN_TOPDOWN	= BIT(3),
- };
- 
- struct va_alignment {
-@@ -368,5 +366,5 @@ struct va_alignment {
- } ____cacheline_aligned;
- 
- extern struct va_alignment va_align;
--extern unsigned long align_addr(unsigned long, struct file *, enum align_flags);
-+extern unsigned long align_vdso_addr(unsigned long);
- #endif /* _ASM_X86_ELF_H */
-diff --git a/arch/x86/kernel/sys_x86_64.c b/arch/x86/kernel/sys_x86_64.c
-index b4d3c3927dd8..f00d006d60fd 100644
---- a/arch/x86/kernel/sys_x86_64.c
-+++ b/arch/x86/kernel/sys_x86_64.c
-@@ -21,37 +21,23 @@
- 
- /*
-  * Align a virtual address to avoid aliasing in the I$ on AMD F15h.
-- *
-- * @flags denotes the allocation direction - bottomup or topdown -
-- * or vDSO; see call sites below.
-  */
--unsigned long align_addr(unsigned long addr, struct file *filp,
--			 enum align_flags flags)
-+static unsigned long get_align_mask(void)
- {
--	unsigned long tmp_addr;
--
- 	/* handle 32- and 64-bit case with a single conditional */
- 	if (va_align.flags < 0 || !(va_align.flags & (2 - mmap_is_ia32())))
--		return addr;
-+		return 0;
- 
- 	if (!(current->flags & PF_RANDOMIZE))
--		return addr;
--
--	if (!((flags & ALIGN_VDSO) || filp))
--		return addr;
--
--	tmp_addr = addr;
--
--	/*
--	 * We need an address which is <= than the original
--	 * one only when in topdown direction.
--	 */
--	if (!(flags & ALIGN_TOPDOWN))
--		tmp_addr += va_align.mask;
-+		return 0;
- 
--	tmp_addr &= ~va_align.mask;
-+	return va_align.mask;
-+}
- 
--	return tmp_addr;
-+unsigned long align_vdso_addr(unsigned long addr)
+v4 [Magnus Damm]
+* Make of_sh_intc_get_intevtsa_vect() less verbose
+* Fix whitespace and spelling
+* Allow of_sh_intc_get_intc() to handle cases where groups are not needed
+
+v3 [Simon Horman]
+* Do not add OF_SH_INTC
+
+v2
+* No change
+
+v1 [Nobuhiro Iwamatsu]
+---
+ Documentation/devicetree/bindings/sh/intc.txt |  163 +++++++
+ drivers/sh/intc/Makefile                      |    1 +
+ drivers/sh/intc/of_intc.c                     |  646 +++++++++++++++++++++++++
+ include/linux/sh_intc.h                       |   83 ++++
+ 4 files changed, 893 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/sh/intc.txt
+ create mode 100644 drivers/sh/intc/of_intc.c
+
+diff --git a/Documentation/devicetree/bindings/sh/intc.txt b/Documentation/devicetree/bindings/sh/intc.txt
+new file mode 100644
+index 0000000..ebb2398
+--- /dev/null
++++ b/Documentation/devicetree/bindings/sh/intc.txt
+@@ -0,0 +1,163 @@
++* Renesas SuperH / SH-MOBILE Interrupt Controller
++
++The SH/INTC driver is used by SuperH and ARM/SH-MOBILE.
++At the moment, SuperH does not have the plan corresponding to DT.
++DT of SH/INTC has taken the form where the table data of the C
++is managed by DT, in order to maintain compatibility.
++
++Main node required properties:
++
++- compatible : should be one of:
++	"renesas,sh_intca"
++	"renesas,sh_intcs"
++	"renesas,sh_intca_irq_pins"
++
++- interrupt-controller : Identifies the node as an interrupt controller
++- #interrupt-cells	: Set already 1.
++- #address-cells	: Set already 1.
++- #size-cells	: Set already 1.
++- ranges        : Non value.
++- reg 			: Specifies base physical address(s) and size of the INTC
++				  registers.
++- intsrc*		: This sets up the vector for every device.
++
++- *_registers	: There are vector table, mask, priority, ack, and sense
++				  register in INTC.  In order to hold these data, it is
++				  necessary to set up the following contents.
++
++ -- intc_vectors: This needs to have vector_table.
++				  This specifies phandle which intsrc* defined.
++
++ -- intc_mask_registers	: This specifies the contents of the mask register.
++    This node required properties:
++	* address-cells	: Set already 1.
++	* size-cells 	: Set already 1.
++	* ranges		: Non value.
++	* intc_mask*	: This has regs and reginfo.
++	 ** reg	: This specifies the address of mask register. First specifies
++			  mask register, and 2nd specifies mask clear register.
++			  First cell is address, and 2nd sell is address size. 1 is 8bit.
++			  2 is 16bit, 4 is 32bit.
++	 ** reginfo: This specifies phandle of devices.
++
++ -- intc_prio_registers	: This sets up the contents of the priority register.
++    This node required properties:
++	* address-cells	: Set already 1.
++	* size-cells 	: Set already 1.
++	* ranges		: Non value.
++	* intc_prio*: This has regs and reginfo.
++	 ** reg	: This specifies the address of priority register. First specifies
++			  priority set register, and 2nd specifies priority clear register.
++			  If there is not priority clear register, specifies 0x00.
++			  First cell is address, and 2nd sell is address size. 1 is 8bit.
++			  2 is 16bit, 4 is 32bit.
++	 ** field-width : Bit size is specified for every device.
++	 ** reginfo: This specifies phandle of devices.
++
++ -- intc_sense_registers	: This sets up the contents of the sense register.
++    This node required properties:
++	* address-cells	: Set already 1.
++	* size-cells 	: Set already 1.
++	* ranges		: Non value.
++	* intc_sense*: This has regs and reginfo.
++	 ** reg	: This specifies the address of sense register.
++			  First cell is address, and 2nd sell is address size. 1 is 8bit.
++			  2 is 16bit, 4 is 32bit.
++	 ** field-width : Bit size is specified for every device.
++	 ** reginfo: This specifies phandle of devices.
++
++-- intc_ack_registers	: This sets up the contents of the ACK register.
++   This node required properties:
++	* address-cells	: Set already 1.
++	* size-cells 	: Set already 1.
++	* ranges		: Non value.
++	* intc_ack*: This has regs and reginfo.
++	 ** reg	: This specifies the address of ack register.
++			  First cell is address, and 2nd sell is address size. 1 is 8bit.
++			  2 is 16bit, 4 is 32bit.
++	 ** reginfo: This specifies phandle of devices.
++
++Optional:
++
++- group_size	: If this INTC register has Group, set up this value.
++- intc_group*	: This needs to have group, If INTC device have group.
++   This node required properties:
++    * group : This specifies the address phandle of group.
++	  For example, when TMU1 of priority regisdter is sharing with TMU1_0,
++	  TMU1_1 and TMU1_2, it describes like below.
++
++	     TMU1:   intc_group2 { group = <&TMU1_0 &TMU1_1 &TMU1_2>; };
++
++	  And the phandle is specified as priority regisdter.
++
++         intc_prio11 {
++             reg = <0xffd50030 2>, <0x0 0>;
++             field-width = <4>;
++			 reginfo = <&TMU1 0 0 0>;
++		 };
++
++- intc_intevtsa	: This set up the contents of INTEVTSA.
++	This node required properties:
++	  * vector : This specifies the address phandle of INTCS.
++
++Note:
++- "renesas,sh_intca" needs group_size, intc_group*, intc_vectors,
++  intc_mask_registers and intc_prio_registers.
++- "renesas,sh_intcs" needs group_size, intc_group*, intc_vectors,
++  intc_mask_registers, intc_prio_registers and  intc_intevtsa.
++- "renesas,sh_intca_irq_pins" needs intc_vectors, intc_mask_registers,
++  intc_prio_registers, intc_sense_registers and intc_ack_registers.
++
++Example:
++
++	intca: interrupt-controller@0 {
++		compatible = "renesas,sh_intca";
++		interrupt-controller;
++		#address-cells = <1>;
++		#size-cells = <1>;
++		#interrupt-cells = <1>;
++		ranges;
++
++		reg = <0xe6940000 0x200>, <0xe6950000 0x200>;
++		group_size = <19>;
++
++		DIRC: intsrc1 { vector = <0x0560>; };
++		ATAPI: intsrc2 { vector = <0x05E0>; };
++		....
++
++		DMAC1_1: intc_group0 { group = <&DMAC1_1_DEI0 &DMAC1_1_DEI1
++				&DMAC1_1_DEI2 &DMAC1_1_DEI3>; };
++		DMAC1_2: intc_group1 { group = <&DMAC1_2_DEI4 &DMAC1_2_DEI5
++						 &DMAC1_2_DADERR>; };
++		....
++		intc_vectors {
++			vector_table = <&DIRC &ATAPI &IIC1_ALI &IIC1_TACKI &IIC1_WAITI,
++		....
++		};
++
++		intc_mask_registers {
++			#address-cells = <1>;
++			#size-cells = <1>;
++			ranges;
++
++			intc_mask0 {
++				reg = <0xe6940080 1>, <0xe69400c0 1>;
++				reginfo = <&DMAC2_1_DEI3 &DMAC2_1_DEI2 &DMAC2_1_DEI1
++					&DMAC2_1_DEI0 0 0 &AP_ARM_COMMTX &AP_ARM_COMMRX>;
++			};
++			....
++		};
++
++		intc_prio_registers {
++			#address-cells = <1>;
++			#size-cells = <1>;
++			ranges;
++
++			intc_prio0 {
++				reg = <0xe6940000 2>, <0x0 0>;
++				field-width = <4>;
++				reginfo = <&DMAC3_1 &DMAC3_2 &CMT2 &ICBS0>;
++			};
++			....
++		};
++	};
+diff --git a/drivers/sh/intc/Makefile b/drivers/sh/intc/Makefile
+index 54ec2a0..b53ab7e 100644
+--- a/drivers/sh/intc/Makefile
++++ b/drivers/sh/intc/Makefile
+@@ -3,3 +3,4 @@ obj-y 	:= access.o chip.o core.o handle.o irqdomain.o virq.o
+ obj-$(CONFIG_INTC_BALANCING)		+= balancing.o
+ obj-$(CONFIG_INTC_USERIMASK)		+= userimask.o
+ obj-$(CONFIG_INTC_MAPPING_DEBUG)	+= virq-debugfs.o
++obj-$(CONFIG_OF)			+= of_intc.o
+diff --git a/drivers/sh/intc/of_intc.c b/drivers/sh/intc/of_intc.c
+new file mode 100644
+index 0000000..30b1090
+--- /dev/null
++++ b/drivers/sh/intc/of_intc.c
+@@ -0,0 +1,646 @@
++/*
++ * OF helpers for SH intc
++ *
++ * Copyright (C) 2012  Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
++ * Copyright (C) 2012  Renesas Solutions Corp.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ */
++
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/interrupt.h>
++#include <linux/string.h>
++#include <linux/irq.h>
++#include <linux/io.h>
++#include <linux/slab.h>
++#include <linux/sh_intc.h>
++#include <linux/of.h>
++#include <linux/of_irq.h>
++#include <linux/of_platform.h>
++#include <linux/of_address.h>
++
++static void __init of_sh_intc_get_reg_addrs(struct device_node *np,
++				unsigned long *set_reg, unsigned long *clr_reg,
++				unsigned long *reg_width,
++				unsigned long *field_width)
 +{
-+	unsigned long align_mask = get_align_mask();
-+	return (addr + align_mask) & ~align_mask;
++	struct resource res;
++
++	if (set_reg) {
++		of_address_to_resource(np, 0, &res);
++		*set_reg = res.start;
++	}
++
++	if (resource_size(&res) && reg_width)
++		*reg_width = resource_size(&res) * 8; /* byte */
++
++	if (clr_reg) {
++		of_address_to_resource(np, 1, &res);
++		*clr_reg = res.start;
++	}
++
++	if (field_width) {
++		u32 width;
++		of_property_read_u32(np, "field-width", &width);
++		*field_width = width;
++	}
++}
++
++static int of_sh_intc_parse_vector(struct device_node *np, uint32_t *vect)
++{
++	return of_property_read_u32(np, "vector", vect);
++}
++
++static int of_sh_intc_parse_group(struct device_node *np,
++				struct intc_group *grp)
++{
++	const __be32 *list, *list_end;
++	int size, ret = 0, count = 0;
++	phandle phandle;
++
++	/* Retrieve the phandle list property */
++	list = of_get_property(np, "group", &size);
++	if (!list)
++		return -ENOENT;
++
++	list_end = list + size / sizeof(*list);
++
++	grp->enum_id = np->phandle;
++	/* Loop over the phandles until all the requested entry is found */
++	while (list < list_end) {
++		/* If phandle is 0, then it is an empty entry with
++		   no arguments. */
++		phandle = be32_to_cpup(list);
++		if (phandle)
++			grp->enum_ids[count] = phandle;
++		list++;
++		count++;
++	}
++
++	pr_debug("%d:[", grp->enum_id);
++	for (size = 0 ; size < count ; size++)
++		pr_debug(" %d ", grp->enum_ids[size]);
++
++	pr_debug("]\n");
++
++	return ret;
++}
++
++static int of_sh_intc_parse_vectortbl(struct device_node *np,
++				struct intc_vect **vect, int *tbl_size)
++{
++	const __be32 *list, *list_end;
++	int size, ret = 0, count = 0;
++	struct device_node *node = NULL;
++	phandle phandle;
++
++	/* Retrieve the phandle list property */
++	list = of_get_property(np, "vector_table", &size);
++	if (!list)
++		return -ENOENT;
++
++	*tbl_size = size / sizeof(*list);
++
++	pr_debug("vector table size: %d\n", *tbl_size);
++
++	*vect = kzalloc(sizeof(struct intc_vect) * *tbl_size,
++					GFP_KERNEL);
++	if (!*vect)
++		return -ENOMEM;
++
++	list_end = list + *tbl_size;
++
++	/* Loop over the phandles until all the requested entry is found */
++	while (list < list_end) {
++		/* If phandle is 0, then it is an empty entry with
++		   no arguments. */
++		phandle = be32_to_cpup(list);
++		if (phandle) {
++			uint32_t vector_id;
++
++			(*vect)[count].enum_id = phandle;
++			node = of_find_node_by_phandle(phandle);
++
++			ret = of_sh_intc_parse_vector(node, &vector_id);
++			if (ret)
++				return ret;
++
++			(*vect)[count].vect = vector_id;
++			pr_debug("id %d : vector 0x%x\n",
++				(*vect)[count].enum_id, (*vect)[count].vect);
++		} else {
++			ret = -EINVAL;
++			goto error;
++		}
++		list++;
++		count++;
++	}
++	return ret;
++
++error:
++	kfree(*vect);
++
++	return ret;
++}
++
++static int of_sh_intc_parse_reginfo(struct device_node *np,
++				struct intc_mask_reg *mask,
++				struct intc_prio_reg *prio,
++				struct intc_sense_reg *sense)
++{
++	const __be32 *list, *list_end;
++	int size, id, ret = 0, count = 0;
++	phandle phandle;
++
++	/* Retrieve the phandle list property */
++	list = of_get_property(np, "reginfo", &size);
++	if (!list)
++		return -ENOENT;
++
++	list_end = list + size / sizeof(*list);
++
++	/* Loop over the phandles until all the requested entry is found */
++	while (list < list_end) {
++		/* If phandle is 0, then it is an empty entry with
++		   no arguments. */
++		phandle = be32_to_cpup(list);
++		if (phandle)
++			id = phandle;
++		else
++			id = 0;
++
++		if (mask)
++			mask->enum_ids[count] = id;
++		if (prio)
++			prio->enum_ids[count] = id;
++		if (sense)
++			sense->enum_ids[count] = id;
++
++		pr_debug("reg: [%d] %d\n", count, id);
++		list++;
++		count++;
++	}
++
++	return ret;
++}
++
++static struct device_node *
++__init of_sh_intc_check_base_node(struct device_node *np,
++		const char *node_name, int *tbl_size)
++{
++	struct device_node *node;
++
++	node = of_find_node_by_name(np, node_name);
++	if (!node) {
++		pr_err("%s table not found\n", node_name);
++		return NULL;
++	}
++
++	pr_debug("%s\n", node->full_name);
++
++	*tbl_size = of_get_child_count(node);
++
++	pr_debug("Size of %s: %d\n", node_name, *tbl_size);
++
++	return node;
++}
++
++static int __init of_sh_intc_get_mask_ack(struct device_node *np,
++				struct intc_mask_reg **masks, int *tbl_size,
++				const char *base_name, const char *reg_name)
++{
++	struct device_node *intc_node, *reg_node;
++	int i, ret;
++	char node_name[13]; /* intc_mask + 999 */
++
++	intc_node = of_sh_intc_check_base_node(np, base_name, tbl_size);
++	if (!intc_node)
++		return -ENOENT;
++
++	*masks = kzalloc(sizeof(struct intc_mask_reg) * *tbl_size, GFP_KERNEL);
++	if (!*masks)
++		return -ENOMEM;
++
++	for (i = 0 ; i < *tbl_size; i++) {
++		memset(node_name, 0, sizeof(node_name));
++		snprintf(node_name, sizeof(node_name), "%s%d", reg_name, i);
++
++		pr_debug("intc node[%d]: name: %s\n", i, node_name);
++
++		reg_node = of_find_node_by_name(intc_node, node_name);
++		if (!reg_node) {
++			pr_warn("%s not found\n", node_name);
++			ret = -EINVAL;
++			goto error;
++		}
++
++		of_sh_intc_get_reg_addrs(reg_node, &(*masks)[i].set_reg,
++					&(*masks)[i].clr_reg,
++					&(*masks)[i].reg_width, NULL);
++
++#ifdef CONFIG_INTC_BALANCING
++		of_property_read_u32(reg_node, "dist_reg", &(*masks)[i].dist_reg);
++#endif
++#ifdef CONFIG_SMP
++		of_property_read_u32(reg_node, "smp", (u32*)&(*masks)[i].smp);
++#endif
++
++		pr_debug("set reg: 0x%lx clr reg: 0x%lx reg_width: %ld\n",
++				(*masks)[i].set_reg, (*masks)[i].clr_reg,
++				(*masks)[i].reg_width);
++
++		ret = of_sh_intc_parse_reginfo(reg_node, &(*masks)[i], NULL,
++						NULL);
++		if (ret)
++			goto error;
++	}
++
++	return ret;
++
++error:
++	kfree(*masks);
++	return ret;
++}
++
++static int __init of_sh_intc_get_vector(struct device_node *np,
++				struct intc_vect **vectors, int *tbl_size)
++{
++	struct device_node *intc_node;
++
++	/* Get INTCA vector register info */
++	intc_node = of_find_node_by_name(np, "intc_vectors");
++	if (!intc_node) {
++		pr_err("Get INTC vector table not found\n");
++		return -ENOENT;
++	}
++
++	return of_sh_intc_parse_vectortbl(intc_node, vectors, tbl_size);
++}
++
++static int __init of_sh_intc_get_prio(struct device_node *np,
++				struct intc_prio_reg **prios, int *tbl_size)
++{
++	struct device_node *intc_node, *reg_node;
++	int i, ret;
++	char node_name[13]; /* intc_prio + 999 */
++
++	intc_node = of_sh_intc_check_base_node(np, "intc_prio_registers",
++					tbl_size);
++	if (!intc_node)
++		return -ENOENT;
++
++	*prios = kzalloc(sizeof(struct intc_prio_reg) * *tbl_size, GFP_KERNEL);
++	if (!*prios)
++		return -ENOMEM;
++
++	/* Get INTC priority register info */
++	for (i = 0 ; i < *tbl_size; i++) {
++		memset(node_name, 0, sizeof(node_name));
++		snprintf(node_name, sizeof(node_name), "intc_prio%d", i);
++
++		pr_debug("INTC node name: %s\n", node_name);
++
++		reg_node = of_find_node_by_name(intc_node, node_name);
++
++		if (!intc_node) {
++			pr_err("INTC prio register not found\n");
++			ret = -EINVAL;
++			goto error;
++		}
++
++		of_sh_intc_get_reg_addrs(reg_node, &(*prios)[i].set_reg,
++				&(*prios)[i].clr_reg, &(*prios)[i].reg_width,
++				&(*prios)[i].field_width);
++
++		pr_debug("\tset reg: 0x%lx clr reg: 0x%lx\n"
++					, (*prios)[i].set_reg, (*prios)[i].clr_reg);
++		pr_debug("\treg_width: %ld field_width: %ld\n",
++				(*prios)[i].reg_width, (*prios)[i].field_width);
++
++		ret = of_sh_intc_parse_reginfo(reg_node, NULL, &(*prios)[i],
++						NULL);
++		if (ret)
++			goto error;
++	}
++
++	return ret;
++
++error:
++	kfree(*prios);
++	return ret;
++}
++
++static int __init of_sh_intc_get_sense(struct device_node *np,
++				struct intc_sense_reg **senses, int *tbl_size)
++{
++	struct device_node *intc_node, *reg_node;
++	int i, ret;
++	char node_name[14]; /* intc_sense + 999 */
++
++	intc_node = of_sh_intc_check_base_node(np, "intc_sense_registers",
++					tbl_size);
++	if (!intc_node)
++		return -ENOENT;
++
++	*senses = kzalloc(sizeof(struct intc_sense_reg) * *tbl_size,
++					GFP_KERNEL);
++	if (!*senses)
++		return -ENOMEM;
++
++	/* Get INTC priority register info */
++	for (i = 0 ; i < *tbl_size; i++) {
++		memset(node_name, 0, sizeof(node_name));
++		snprintf(node_name, sizeof(node_name), "intc_sense%d", i);
++
++		pr_debug("INTC node name: %s\n", node_name);
++
++		reg_node = of_find_node_by_name(intc_node, node_name);
++
++		if (!intc_node) {
++			pr_err("INTC senses register not found\n");
++			ret = -EINVAL;
++			goto error;
++		}
++
++		of_sh_intc_get_reg_addrs(reg_node, &(*senses)[i].reg, NULL,
++					&(*senses)[i].reg_width,
++					&(*senses)[i].field_width);
++
++		pr_debug("\tset reg: 0x%lx\n", (*senses)[i].reg);
++		pr_debug("\treg_width: %ld field_width: %ld\n",
++					(*senses)[i].reg_width,
++					(*senses)[i].field_width);
++
++		ret = of_sh_intc_parse_reginfo(reg_node, NULL, NULL,
++						&(*senses)[i]);
++		if (ret)
++			goto error;
++	}
++
++	return ret;
++
++error:
++	kfree(*senses);
++	return ret;
++}
++
++static int __init of_sh_intc_get_ack(struct device_node *np,
++				struct intc_mask_reg **masks, int *tbl_size)
++{
++	return of_sh_intc_get_mask_ack(np, masks, tbl_size,
++					"intc_ack_registers", "intc_ack");
++}
++
++static int __init of_sh_intc_get_mask(struct device_node *np,
++				struct intc_mask_reg **masks, int *tbl_size)
++{
++	return of_sh_intc_get_mask_ack(np, masks, tbl_size,
++					"intc_mask_registers", "intc_mask");
++}
++
++static int __init of_sh_intc_get_group(struct device_node *np,
++				struct intc_group **groups, int *tbl_size)
++{
++	int i, ret, size;
++	const __be32 *list;
++	struct device_node *grp_node;
++	char node_name[15]; /* intc_group@999 */
++
++	/* Get size of group */
++	if (of_property_read_u32(np, "group_size", tbl_size)) {
++		pr_debug("%s size infomation not found\n", node_name);
++		return -ENOENT;
++	}
++
++	pr_debug("Group size %d\n", *tbl_size);
++	pr_debug("%s\n", np->full_name);
++
++	*groups = kzalloc(sizeof(struct intc_group) * *tbl_size, GFP_KERNEL);
++	if (!*groups)
++		return -ENOMEM;
++
++	/* Get INTCA node info */
++	for (i = 0 ; i < *tbl_size; i++) {
++		memset(node_name, 0, sizeof(node_name));
++		snprintf(node_name, sizeof(node_name), "intc_group%d", i);
++
++		pr_debug("intc group[%d]: name: %s\n", i, node_name);
++
++		grp_node = of_find_node_by_name(np, node_name);
++		if (!grp_node) {
++			pr_warn("%s not found\n", node_name);
++			ret = -EINVAL;
++			goto error;
++		}
++
++		list = of_get_property(np, node_name, &size);
++		ret = of_sh_intc_parse_group(grp_node, &(*groups)[i]);
++		if (ret) {
++			pr_err("intc group not found\n");
++			goto error;
++		}
++	}
++
++	return ret;
++
++error:
++	kfree(*groups);
++	return ret;
++}
++
++int __init of_sh_intc_get_intevtsa_vect(struct device_node *np,
++				unsigned short *vect)
++{
++	int size;
++	const __be32 *list;
++	struct device_node *node;
++	phandle phandle;
++
++	node = of_find_node_by_name(np, "intc_intevtsa");
++	if (!node) {
++		return -ENOENT;
++	}
++
++	/* Retrieve the phandle list property */
++	list = of_get_property(node, "vector", &size);
++	if (!list)
++		return -ENOENT;
++
++	phandle = be32_to_cpup(list);
++	if (phandle) {
++		uint32_t tmp;
++		struct device_node *vect_node +				of_find_node_by_phandle(phandle);
++
++		if (!of_sh_intc_parse_vector(vect_node, &tmp))
++			*vect = tmp;
++		else
++			return -ENOENT;
++	} else {
++		pr_debug("intc_intevtsa data not found\n");
++		return -ENOENT;
++	}
++	return 0;
++}
++
++static int of_sh_intc_get_force_flags(struct device_node *np,
++				const char *node_name)
++{
++	int size;
++	const __be32 *list = of_get_property(np, node_name, &size);
++	if (list)
++		return be32_to_cpup(list);
++
++	return 0;
++}
++
++void __init of_sh_intc_get_force_enable(struct device_node *np,
++				struct intc_desc *d)
++{
++	d->force_enable +		of_sh_intc_get_force_flags(np, "force_enable");
++}
++
++void __init of_sh_intc_get_force_disable(struct device_node *np,
++				struct intc_desc *d)
++{
++	d->force_disable +		of_sh_intc_get_force_flags(np, "force_disable");
++}
++
++void __init of_sh_intc_get_skip_syscore_suspend(struct device_node *np,
++				struct intc_desc *d)
++{
++	if (of_find_property(np, "skip_syscore_suspend", NULL))
++		d->skip_syscore_suspend = true;
++	else
++		d->skip_syscore_suspend = false;
++}
++
++int __init of_sh_intc_get_meminfo(struct device_node *np,
++				struct resource *res, int res_no)
++{
++	int ret = 0, i;
++
++	for (i = 0 ; i < res_no ; i++) {
++		ret = of_address_to_resource(np, i, &res[i]);
++		if (ret) {
++			pr_err("could not determine device base address\n");
++			return ret;
++		}
++
++		pr_debug("%s: Address 0x%x, size %d\n",
++					__func__, res[i].start, resource_size(&res[i]));
++	}
++
++	return ret;
++}
++
++int __init of_sh_intc_get_pint(struct device_node *np, struct intc_desc *d)
++{
++	/* pint uses vector, mask and sence. */
++	int ret = of_sh_intc_get_vector(np, &d->hw.vectors,
++				&d->hw.nr_vectors);
++	if (ret)
++		return ret;
++
++	ret = of_sh_intc_get_mask(np, &d->hw.mask_regs,
++				&d->hw.nr_mask_regs);
++	if (ret)
++		return ret;
++
++	ret = of_sh_intc_get_sense(np, &d->hw.sense_regs,
++				&d->hw.nr_sense_regs);
++	/* INTC may not need Sence register. */
++	if (ret && ret != -ENOENT)
++		return ret;
++
++	d->of_node = np;
++
++	return 0;
++}
++
++int __init of_sh_intc_get_intc(struct device_node *np, struct intc_desc *d)
++{
++	int ret = of_sh_intc_get_vector(np, &d->hw.vectors,
++				&d->hw.nr_vectors);
++	if (ret)
++		return ret;
++
++	ret = of_sh_intc_get_group(np, &d->hw.groups,
++				&d->hw.nr_groups);
++	/* INTC may not need groups. */
++	if (ret && ret != -ENOENT)
++		return ret;
++
++	ret = of_sh_intc_get_mask(np, &d->hw.mask_regs,
++				&d->hw.nr_mask_regs);
++	if (ret)
++		return ret;
++
++	ret = of_sh_intc_get_prio(np, &d->hw.prio_regs,
++				&d->hw.nr_prio_regs);
++	if (ret)
++		return ret;
++
++	ret = of_sh_intc_get_sense(np, &d->hw.sense_regs,
++				&d->hw.nr_sense_regs);
++	/* INTC may not need Sense register. */
++	if (ret && ret != -ENOENT)
++		return ret;
++
++	ret = of_sh_intc_get_ack(np, &d->hw.ack_regs,
++				&d->hw.nr_ack_regs);
++	/* INTC may not need Ack register. */
++	if (ret && ret != -ENOENT)
++		return ret;
++
++	d->of_node = np;
++
++	return 0;
++}
++
++int __init of_sh_intc_get_intc_pins(struct device_node *np,
++				struct intc_desc *d)
++{
++	int ret = of_sh_intc_get_vector(np, &d->hw.vectors,
++				&d->hw.nr_vectors);
++	if (ret)
++		return ret;
++
++	ret = of_sh_intc_get_mask(np, &d->hw.mask_regs,
++				&d->hw.nr_mask_regs);
++	if (ret)
++		return ret;
++
++	ret = of_sh_intc_get_prio(np, &d->hw.prio_regs,
++				&d->hw.nr_prio_regs);
++	if (ret)
++		return ret;
++
++	ret = of_sh_intc_get_sense(np, &d->hw.sense_regs,
++				&d->hw.nr_sense_regs);
++	if (ret)
++		return ret;
++
++	ret = of_sh_intc_get_ack(np, &d->hw.ack_regs,
++				&d->hw.nr_ack_regs);
++	if (ret)
++		return ret;
++
++	d->of_node = np;
++
++	return 0;
++}
+diff --git a/include/linux/sh_intc.h b/include/linux/sh_intc.h
+index 3238328..b0e7925 100644
+--- a/include/linux/sh_intc.h
++++ b/include/linux/sh_intc.h
+@@ -2,6 +2,10 @@
+ #define __SH_INTC_H
+ 
+ #include <linux/ioport.h>
++#include <linux/of.h>
++#include <linux/of_irq.h>
++#include <linux/of_platform.h>
++#include <linux/of_address.h>
+ 
+ #ifdef CONFIG_SUPERH
+ #define INTC_NR_IRQS	512
+@@ -146,4 +150,83 @@ static inline int register_intc_userimask(unsigned long addr)
  }
+ #endif
  
- static int __init control_va_addr_alignment(char *str)
-@@ -126,7 +112,7 @@ arch_get_unmapped_area(struct file *filp, unsigned long addr,
- {
- 	struct mm_struct *mm = current->mm;
- 	struct vm_area_struct *vma;
--	unsigned long start_addr;
-+	struct vm_unmapped_area_info info;
- 	unsigned long begin, end;
- 
- 	if (flags & MAP_FIXED)
-@@ -144,50 +130,16 @@ arch_get_unmapped_area(struct file *filp, unsigned long addr,
- 		    (!vma || addr + len <= vma->vm_start))
- 			return addr;
- 	}
--	if (((flags & MAP_32BIT) || test_thread_flag(TIF_ADDR32))
--	    && len <= mm->cached_hole_size) {
--		mm->cached_hole_size = 0;
--		mm->free_area_cache = begin;
--	}
--	addr = mm->free_area_cache;
--	if (addr < begin)
--		addr = begin;
--	start_addr = addr;
--
--full_search:
--
--	addr = align_addr(addr, filp, 0);
--
--	for (vma = find_vma(mm, addr); ; vma = vma->vm_next) {
--		/* At this point:  (!vma || addr < vma->vm_end). */
--		if (end - len < addr) {
--			/*
--			 * Start a new search - just in case we missed
--			 * some holes.
--			 */
--			if (start_addr != begin) {
--				start_addr = addr = begin;
--				mm->cached_hole_size = 0;
--				goto full_search;
--			}
--			return -ENOMEM;
--		}
--		if (!vma || addr + len <= vma->vm_start) {
--			/*
--			 * Remember the place where we stopped the search:
--			 */
--			mm->free_area_cache = addr + len;
--			return addr;
--		}
--		if (addr + mm->cached_hole_size < vma->vm_start)
--			mm->cached_hole_size = vma->vm_start - addr;
- 
--		addr = vma->vm_end;
--		addr = align_addr(addr, filp, 0);
--	}
-+	info.flags = 0;
-+	info.length = len;
-+	info.low_limit = begin;
-+	info.high_limit = end;
-+	info.align_mask = filp ? get_align_mask() : 0;
-+	info.align_offset = 0;
-+	return vm_unmapped_area(&info);
- }
- 
--
- unsigned long
- arch_get_unmapped_area_topdown(struct file *filp, const unsigned long addr0,
- 			  const unsigned long len, const unsigned long pgoff,
-@@ -195,7 +147,8 @@ arch_get_unmapped_area_topdown(struct file *filp, const unsigned long addr0,
- {
- 	struct vm_area_struct *vma;
- 	struct mm_struct *mm = current->mm;
--	unsigned long addr = addr0, start_addr;
-+	unsigned long addr = addr0;
-+	struct vm_unmapped_area_info info;
- 
- 	/* requested length too big for entire address space */
- 	if (len > TASK_SIZE)
-@@ -217,51 +170,16 @@ arch_get_unmapped_area_topdown(struct file *filp, const unsigned long addr0,
- 			return addr;
- 	}
- 
--	/* check if free_area_cache is useful for us */
--	if (len <= mm->cached_hole_size) {
--		mm->cached_hole_size = 0;
--		mm->free_area_cache = mm->mmap_base;
--	}
--
--try_again:
--	/* either no address requested or can't fit in requested address hole */
--	start_addr = addr = mm->free_area_cache;
--
--	if (addr < len)
--		goto fail;
--
--	addr -= len;
--	do {
--		addr = align_addr(addr, filp, ALIGN_TOPDOWN);
--
--		/*
--		 * Lookup failure means no vma is above this address,
--		 * else if new region fits below vma->vm_start,
--		 * return with success:
--		 */
--		vma = find_vma(mm, addr);
--		if (!vma || addr+len <= vma->vm_start)
--			/* remember the address as a hint for next time */
--			return mm->free_area_cache = addr;
--
--		/* remember the largest hole we saw so far */
--		if (addr + mm->cached_hole_size < vma->vm_start)
--			mm->cached_hole_size = vma->vm_start - addr;
--
--		/* try just below the current vma->vm_start */
--		addr = vma->vm_start-len;
--	} while (len < vma->vm_start);
--
--fail:
--	/*
--	 * if hint left us with no space for the requested
--	 * mapping then try again:
--	 */
--	if (start_addr != mm->mmap_base) {
--		mm->free_area_cache = mm->mmap_base;
--		mm->cached_hole_size = 0;
--		goto try_again;
--	}
-+	info.flags = VM_UNMAPPED_AREA_TOPDOWN;
-+	info.length = len;
-+	info.low_limit = PAGE_SIZE;
-+	info.high_limit = mm->mmap_base;
-+	info.align_mask = filp ? get_align_mask() : 0;
-+	info.align_offset = 0;
-+	addr = vm_unmapped_area(&info);
-+	if (!(addr & ~PAGE_MASK))
-+		return addr;
-+	VM_BUG_ON(addr != -ENOMEM);
- 
- bottomup:
- 	/*
-@@ -270,14 +188,5 @@ bottomup:
- 	 * can happen with large stack limits and large mmap()
- 	 * allocations.
- 	 */
--	mm->cached_hole_size = ~0UL;
--	mm->free_area_cache = TASK_UNMAPPED_BASE;
--	addr = arch_get_unmapped_area(filp, addr0, len, pgoff, flags);
--	/*
--	 * Restore the topdown base:
--	 */
--	mm->free_area_cache = mm->mmap_base;
--	mm->cached_hole_size = ~0UL;
--
--	return addr;
-+	return arch_get_unmapped_area(filp, addr0, len, pgoff, flags);
- }
-diff --git a/arch/x86/vdso/vma.c b/arch/x86/vdso/vma.c
-index 00aaf047b39f..431e87544411 100644
---- a/arch/x86/vdso/vma.c
-+++ b/arch/x86/vdso/vma.c
-@@ -141,7 +141,7 @@ static unsigned long vdso_addr(unsigned long start, unsigned len)
- 	 * unaligned here as a result of stack start randomization.
- 	 */
- 	addr = PAGE_ALIGN(addr);
--	addr = align_addr(addr, NULL, ALIGN_VDSO);
-+	addr = align_vdso_addr(addr);
- 
- 	return addr;
- }
++/*
++ * of_sh_initc_get_intc() - Get INTC table.
++ * @np:     device node to get INTC from
++ * @d:      a pointer of intc table
++ *
++ * Return: one of the errno value on the error condition
++ */
++int of_sh_intc_get_intc(struct device_node *np, struct intc_desc *d);
++
++/*
++ * of_sh_initc_get_intc_pins() - Get INTC Pins table.
++ * @np:     device node to get INTC from
++ * @d:      a pointer of intc pins table
++ *
++ * Return: one of the errno value on the error condition
++ */
++int of_sh_intc_get_intc_pins(struct device_node *np, struct intc_desc *d);
++
++/*
++ * of_sh_intc_get_meminfo() - Get and set INTC register of memory.
++ * @np:     device node to get INTC from
++ * @res_mem:   a pointer of resource
++ * @res_no:  resource number
++ *
++ * Return: one of the errno value on the error condition
++ */
++int of_sh_intc_get_meminfo(struct device_node *np,
++				struct resource *res_mem, int resno);
++
++/*
++ * of_sh_intc_get_force_enable - Get and set force_enable vector in
++ *                               struct intc_desc.
++ * @np:  device node to get INTC from
++ * @d:   a pointer of struct intc_desc
++ *
++ * Return: none
++ */
++void of_sh_intc_get_force_enable(struct device_node *np,
++				struct intc_desc *d);
++
++/*
++ * of_sh_intc_get_force_disable - Get and set force_disable vector in
++ *                                struct intc_desc.
++ * @np:  device node to get INTC from
++ * @d:   a pointer of struct intc_desc
++ *
++ * Return: none
++ */
++void of_sh_intc_get_force_disable(struct device_node *np,
++				struct intc_desc *d);
++
++/*
++ * of_sh_intc_get_skip_syscore_suspend - Get and set skip_syscore_suspend
++ *                                       flag in struct intc_desc.
++ * @np:  device node to get INTC from
++ * @d:   a pointer of struct intc_desc
++ *
++ * Return: none
++ */
++void of_sh_intc_get_skip_syscore_suspend(struct device_node *np,
++				struct intc_desc *d);
++
++/*
++ * of_sh_intc_get_intevtsa_vect  - Get using vector by intevtsa
++ * @np:  device node to get INTC from
++ * @vect:a pointer of value for vector
++ *
++ * Return: one of the errno value on the error condition
++ */
++int of_sh_intc_get_intevtsa_vect(struct device_node *np, unsigned short *vect);
++/*
++ * of_sh_initc_get_intc_pint() - Get INTC Pint table.
++ * @np:     device node to get INTC from
++ * @d:      a pointer of intc pint table
++ *
++ * Return: one of the errno value on the error condition
++ */
++int of_sh_intc_get_pint(struct device_node *np, struct intc_desc *d);
++
+ #endif /* __SH_INTC_H */
 -- 
-1.7.7.3
+1.7.10.4
+
