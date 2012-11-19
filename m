@@ -1,33 +1,45 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Fri, 16 Nov 2012 00:02:21 +0000
-Subject: Re: [PATCH] ARM: shmobile: mackerel: Add FLCTL IRQ resource
-Message-Id: <20121116000220.GB20637@verge.net.au>
+Date: Mon, 19 Nov 2012 01:24:14 +0000
+Subject: [PATCH] ARM: shmobile: mackerel: Add FLCTL IRQ resource
+Message-Id: <1353288254-6211-2-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352803609-16669-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1352803609-16669-1-git-send-email-hechtb@gmail.com>
+References: <1353288254-6211-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1353288254-6211-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Nov 15, 2012 at 10:13:51AM +0100, Bastian Hecht wrote:
-> Hello Simon,
-> 
-> > could you provide a little more information on:
-> > * Why this is so. Is it related to a change in another commit?
-> 
-> Oh sure. So, the error IRQ was introduced in commit 3c7ea4eccfd2e mtd:
-> sh_flctl: Add support for error IRQ.
-> It notifies us when the actual communication from our flash controller
-> to the NAND chip fails.
-> 
-> > * What the implications are of this change not being applied:
-> >   the driver doesn't work?
-> 
-> Yes the driver refuses to start up if the error IRQ is missing.
-> 
-> Do you think I should include such information into the commit
-> message, or is it just helpful for the upstream process?
+From: Bastian Hecht <hechtb@gmail.com>
 
-Yes. Please re-post the patch with a revised commit message
-that includes the information above.
+Since commit 3c7ea4eccfd2e the sh_flctl driver requires the error IRQ line to
+signal failed transactions between the flash controller and the NAND chip.
+This information is mandatory - else the driver refuses to start up. We
+provide it here for the board mackerel.
+
+Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-mackerel.c |    6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index bf2bcb9..3f56e70 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -950,7 +950,11 @@ static struct resource nand_flash_resources[] = {
+ 		.start	= 0xe6a30000,
+ 		.end	= 0xe6a3009b,
+ 		.flags	= IORESOURCE_MEM,
+-	}
++	},
++	[1] = {
++		.start	= evt2irq(0x0d80), /* flstei: status error irq */
++		.flags	= IORESOURCE_IRQ,
++	},
+ };
+ 
+ static struct sh_flctl_platform_data nand_flash_data = {
+-- 
+1.7.10.4
+
