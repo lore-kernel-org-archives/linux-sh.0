@@ -1,55 +1,35 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 21 Nov 2012 02:53:57 +0000
-Subject: [PATCH 41/42] ARM: shmobile: r8a7740: Add pin control resources
-Message-Id: <1353466438-10929-42-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 19 Nov 2012 05:13:23 +0000
+Subject: [RFC 11/15] ARM: shmobile: kzm9g: Use DT initialisation of INTC
+Message-Id: <1353302007-31045-12-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1353302007-31045-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1353302007-31045-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add memory resources for the pin control platform device to let the
-sh-pfc driver ioremap() registers properly instead of evily casting
-register physical addresses to virtual addresses.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: Magnus Damm <damm@opensource.se>
+Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/arm/mach-shmobile/pfc-r8a7740.c |   20 +++++++++++++++++++-
- 1 files changed, 19 insertions(+), 1 deletions(-)
+ arch/arm/mach-shmobile/board-kzm9g.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/pfc-r8a7740.c b/arch/arm/mach-shmobile/pfc-r8a7740.c
-index c711365..0ef8287 100644
---- a/arch/arm/mach-shmobile/pfc-r8a7740.c
-+++ b/arch/arm/mach-shmobile/pfc-r8a7740.c
-@@ -19,9 +19,27 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
- 
-+#include <linux/bug.h>
-+#include <linux/ioport.h>
-+#include <linux/kernel.h>
-+
- #include "devices.h"
- 
-+static struct resource r8a7740_pfc_resources[] = {
-+	[0] = {
-+		.start	= 0xe6050000,
-+		.end	= 0xe6057fff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= 0xe605800c,
-+		.end	= 0xe605802b,
-+		.flags	= IORESOURCE_MEM,
-+	}
-+};
-+
- void r8a7740_pinmux_init(void)
- {
--	sh_pfc_register("pfc-r8a7740", NULL, 0);
-+	sh_pfc_register("pfc-r8a7740", r8a7740_pfc_resources,
-+			ARRAY_SIZE(r8a7740_pfc_resources));
- }
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index 0a43f31..0a0f302 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -779,7 +779,7 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g")
+ 	.map_io		= sh73a0_map_io,
+ 	.init_early	= sh73a0_add_early_devices,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+-	.init_irq	= sh73a0_init_irq,
++	.init_irq	= sh73a0_init_irq_of,
+ 	.handle_irq	= gic_handle_irq,
+ 	.init_machine	= kzm_init,
+ 	.init_late	= shmobile_init_late,
 -- 
-1.7.8.6
+1.7.10.4
 
