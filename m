@@ -1,74 +1,81 @@
-From: Wen Congyang <wency@cn.fujitsu.com>
-Date: Thu, 01 Nov 2012 09:44:43 +0000
-Subject: [PATCH v3 12/12] memory-hotplug: free node_data when a node is offlined
-Message-Id: <1351763083-7905-13-git-send-email-wency@cn.fujitsu.com>
+From: Bill Pemberton <wfp5p@virginia.edu>
+Date: Mon, 19 Nov 2012 18:23:57 +0000
+Subject: [PATCH 288/493] sh: remove use of __devinit
+Message-Id: <1353349642-3677-288-git-send-email-wfp5p@virginia.edu>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1351763083-7905-1-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1351763083-7905-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
-Cc: David Rientjes <rientjes@google.com>, Jiang Liu <liuj97@gmail.com>, Len Brown <len.brown@intel.com>, benh@kernel.crashing.org, paulus@samba.org, Christoph Lameter <cl@linux.com>, Minchan Kim <minchan.kim@gmail.com>, Andrew Morton <akpm@linux-foundation.org>, KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>, Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>, Jianguo Wu <wujianguo@huawei.com>, Wen Congyang <wency@cn.fujitsu.com>
+To: linux-sh@vger.kernel.org
 
-We call hotadd_new_pgdat() to allocate memory to store node_data. So we
-should free it when removing a node.
+CONFIG_HOTPLUG is going away as an option so __devinit is no longer
+needed.
 
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-CC: Paul Mackerras <paulus@samba.org>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-CC: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Bill Pemberton <wfp5p@virginia.edu>
+Cc: linux-sh@vger.kernel.org 
 ---
- mm/memory_hotplug.c | 20 +++++++++++++++++++-
- 1 file changed, 19 insertions(+), 1 deletion(-)
+ arch/sh/drivers/pci/fixups-dreamcast.c | 2 +-
+ arch/sh/drivers/pci/pci.c              | 6 +++---
+ arch/sh/drivers/pci/pcie-sh7786.c      | 2 +-
+ 3 files changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index d965da3..e281c31 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -1320,9 +1320,12 @@ static int check_cpu_on_node(void *data)
- /* offline the node if all memory sections of this node are removed */
- static void try_offline_node(int nid)
- {
-+	pg_data_t *pgdat = NODE_DATA(nid);
- 	unsigned long start_pfn = NODE_DATA(nid)->node_start_pfn;
--	unsigned long end_pfn = start_pfn + NODE_DATA(nid)->node_spanned_pages;
-+	unsigned long end_pfn = start_pfn + pgdat->node_spanned_pages;
- 	unsigned long pfn;
-+	struct page *pgdat_page = virt_to_page(pgdat);
-+	int i;
+diff --git a/arch/sh/drivers/pci/fixups-dreamcast.c b/arch/sh/drivers/pci/fixups-dreamcast.c
+index a5fe1b5..d6cde70 100644
+--- a/arch/sh/drivers/pci/fixups-dreamcast.c
++++ b/arch/sh/drivers/pci/fixups-dreamcast.c
+@@ -28,7 +28,7 @@
+ #include <asm/irq.h>
+ #include <mach/pci.h>
  
- 	for (pfn = start_pfn; pfn < end_pfn; pfn += PAGES_PER_SECTION) {
- 		unsigned long section_nr = pfn_to_section_nr(pfn);
-@@ -1349,6 +1352,21 @@ static void try_offline_node(int nid)
- 	 */
- 	node_set_offline(nid);
- 	unregister_one_node(nid);
-+
-+	if (!PageSlab(pgdat_page) && !PageCompound(pgdat_page))
-+		/* node data is allocated from boot memory */
-+		return;
-+
-+	/* free waittable in each zone */
-+	for (i = 0; i < MAX_NR_ZONES; i++) {
-+		struct zone *zone = pgdat->node_zones + i;
-+
-+		if (zone->wait_table)
-+			vfree(zone->wait_table);
-+	}
-+
-+	arch_refresh_nodedata(nid, NULL);
-+	arch_free_nodedata(pgdat);
+-static void __devinit gapspci_fixup_resources(struct pci_dev *dev)
++static void gapspci_fixup_resources(struct pci_dev *dev)
+ {
+ 	struct pci_channel *p = dev->sysdata;
+ 
+diff --git a/arch/sh/drivers/pci/pci.c b/arch/sh/drivers/pci/pci.c
+index 81e5daf..102f5d5 100644
+--- a/arch/sh/drivers/pci/pci.c
++++ b/arch/sh/drivers/pci/pci.c
+@@ -32,7 +32,7 @@ static struct pci_channel *hose_head, **hose_tail = &hose_head;
+ 
+ static int pci_initialized;
+ 
+-static void __devinit pcibios_scanbus(struct pci_channel *hose)
++static void pcibios_scanbus(struct pci_channel *hose)
+ {
+ 	static int next_busno;
+ 	static int need_domain_info;
+@@ -82,7 +82,7 @@ static void __devinit pcibios_scanbus(struct pci_channel *hose)
+ DEFINE_RAW_SPINLOCK(pci_config_lock);
+ static DEFINE_MUTEX(pci_scan_mutex);
+ 
+-int __devinit register_pci_controller(struct pci_channel *hose)
++int register_pci_controller(struct pci_channel *hose)
+ {
+ 	int i;
+ 
+@@ -156,7 +156,7 @@ subsys_initcall(pcibios_init);
+  *  Called after each bus is probed, but before its children
+  *  are examined.
+  */
+-void __devinit pcibios_fixup_bus(struct pci_bus *bus)
++void pcibios_fixup_bus(struct pci_bus *bus)
+ {
  }
  
- int __ref remove_memory(int nid, u64 start, u64 size)
+diff --git a/arch/sh/drivers/pci/pcie-sh7786.c b/arch/sh/drivers/pci/pcie-sh7786.c
+index 9e702f2..c2c85f6 100644
+--- a/arch/sh/drivers/pci/pcie-sh7786.c
++++ b/arch/sh/drivers/pci/pcie-sh7786.c
+@@ -132,7 +132,7 @@ static struct clk fixed_pciexclkp = {
+ 	.rate = 100000000,	/* 100 MHz reference clock */
+ };
+ 
+-static void __devinit sh7786_pci_fixup(struct pci_dev *dev)
++static void sh7786_pci_fixup(struct pci_dev *dev)
+ {
+ 	/*
+ 	 * Prevent enumeration of root complex resources.
 -- 
 1.8.0
 
