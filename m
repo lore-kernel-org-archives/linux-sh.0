@@ -1,68 +1,37 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Thu, 01 Nov 2012 01:02:09 +0000
-Subject: [PATCH 1/3] ARM: shmobile: mackerel: defconfig update
-Message-Id: <1351731731-8435-2-git-send-email-horms@verge.net.au>
+Date: Mon, 19 Nov 2012 05:13:25 +0000
+Subject: [RFC 13/15] ARM: shmobile: sh7372: Use DT initialisation of INTC
+Message-Id: <1353302007-31045-14-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1351731731-8435-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1351731731-8435-1-git-send-email-horms@verge.net.au>
+References: <1353302007-31045-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1353302007-31045-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
-This patch enables following devices by default
- - I2C
- - HDMI
- - USB (host/gadget)
- - ALSA (FSI)
- - DMAEngine
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Magnus Damm <damm@opensource.se>
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/arm/configs/mackerel_defconfig |   18 ++++++++++++++++--
- 1 file changed, 16 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/setup-sh7372.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/configs/mackerel_defconfig b/arch/arm/configs/mackerel_defconfig
-index 306a2e2..7b79a0b 100644
---- a/arch/arm/configs/mackerel_defconfig
-+++ b/arch/arm/configs/mackerel_defconfig
-@@ -70,17 +70,31 @@ CONFIG_SERIAL_SH_SCI_NR_UARTS=8
- CONFIG_SERIAL_SH_SCI_CONSOLE=y
- # CONFIG_LEGACY_PTYS is not set
- # CONFIG_HW_RANDOM is not set
-+CONFIG_I2C=y
-+CONFIG_I2C_SH_MOBILE=y
- # CONFIG_HWMON is not set
- # CONFIG_MFD_SUPPORT is not set
- CONFIG_FB=y
- CONFIG_FB_MODE_HELPERS=y
- CONFIG_FB_SH_MOBILE_LCDC=y
-+CONFIG_FB_SH_MOBILE_HDMI=y
- CONFIG_FRAMEBUFFER_CONSOLE=y
- CONFIG_LOGO=y
- # CONFIG_LOGO_LINUX_MONO is not set
- # CONFIG_LOGO_LINUX_CLUT224 is not set
--# CONFIG_HID_SUPPORT is not set
--# CONFIG_USB_SUPPORT is not set
-+# CONFIG_SND_SUPPORT_OLD_API is not set
-+# CONFIG_SND_VERBOSE_PROCFS is not set
-+# CONFIG_SND_DRIVERS is not set
-+# CONFIG_SND_ARM is not set
-+CONFIG_SND_SOC_SH4_FSI=y
-+CONFIG_USB=y
-+CONFIG_USB_RENESAS_USBHS_HCD=y
-+CONFIG_USB_RENESAS_USBHS=y
-+CONFIG_USB_STORAGE=y
-+CONFIG_USB_GADGET=y
-+CONFIG_USB_RENESAS_USBHS_UDC=y
-+CONFIG_DMADEVICES=y
-+CONFIG_SH_DMAE=y
- CONFIG_EXT2_FS=y
- CONFIG_EXT2_FS_XATTR=y
- CONFIG_EXT2_FS_POSIX_ACL=y
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index a07954f..bbe6e2a 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -1096,7 +1096,7 @@ DT_MACHINE_START(SH7372_DT, "Generic SH7372 (Flattened Device Tree)")
+ 	.map_io		= sh7372_map_io,
+ 	.init_early	= sh7372_add_early_devices_dt,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+-	.init_irq	= sh7372_init_irq,
++	.init_irq	= sh7372_init_irq_of,
+ 	.handle_irq	= shmobile_handle_irq_intc,
+ 	.init_machine	= sh7372_add_standard_devices_dt,
+ 	.timer		= &shmobile_timer,
 -- 
 1.7.10.4
 
