@@ -1,7 +1,7 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Wed, 07 Nov 2012 08:40:04 +0000
-Subject: [GIT PULL] Renesas ARM-based SoC boards for v3.8 #2
-Message-Id: <1352277607-24040-1-git-send-email-horms@verge.net.au>
+Date: Mon, 19 Nov 2012 01:24:13 +0000
+Subject: [GIT PULL] Renesas ARM-based SoC boards for v3.8 #3
+Message-Id: <1353288254-6211-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1350448761-27346-1-git-send-email-horms@verge.net.au>
 In-Reply-To: <1350448761-27346-1-git-send-email-horms@verge.net.au>
@@ -12,39 +12,30 @@ To: linux-arm-kernel@lists.infradead.org
 
 Hi Olof, Hi Arnd,
 
-please consider the following board enhancements for 3.8.
+Please consider the following board fix for 3.8.
 
-* This pull-request is based on an earlier request which I
-  posted on the 1st and was merged yesterday: [GIT PULL v3] Renesas
-  ARM-based SoC boards for v3.8
+Also, please let me know if you would prefer me to supply
+this as a fixes branch as we are now in the 3.7-rc6 timeframe
+where I understand that non-fix commits are no longer allowed for 3.8.
 
-* Patch #2 of this series has a build-time dependency on
-  the soc pull request that I sent a few minutes ago:
-  [GIT PULL] Renesas ARM-based SoC for v3.8 #2
-
-  In particular, "ARM: shmobile: marzen: add USB EHCI driver support"
-  depends on "[PATCH 1/7] ARM: shmobile: r8a7779: PFC rename PENCx -> USB_PENCx"
+This commit is based on the renesas/boards2 branch of the arm-soc tree.
 
 ----------------------------------------------------------------
-The following changes since commit 631a7b5d958d2ef2c2333b105794c693642f0641:
+The following changes since commit 12818d82ccad9868a820dbb193b4f9b797cd02d4:
 
-  ARM: shmobile: Remove G4EVM machine support (2012-10-30 15:25:59 +0800)
+  ARM: shmobile: use FSI driver's audio clock on ap4evb (2012-11-08 17:52:05 +0900)
 
 are available in the git repository at:
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git boards
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git boards3
 
-for you to fetch changes up to 17eada911c88304005bc0acfdd5ae673fb1f2952:
+for you to fetch changes up to d01f4b82fbee516b4d3f03b086333fc4a127983c:
 
-  ARM: shmobile: marzen: add USB OHCI driver support (2012-11-07 17:15:29 +0900)
+  ARM: shmobile: mackerel: Add FLCTL IRQ resource (2012-11-19 10:08:20 +0900)
 
 ----------------------------------------------------------------
-Kuninori Morimoto (3):
-      ARM: shmobile: marzen: add USB phy support
-      ARM: shmobile: marzen: add USB EHCI driver support
-      ARM: shmobile: marzen: add USB OHCI driver support
+Bastian Hecht (1):
+      ARM: shmobile: mackerel: Add FLCTL IRQ resource
 
- arch/arm/configs/marzen_defconfig     |   14 ++-
- arch/arm/mach-shmobile/Kconfig        |    2 +
- arch/arm/mach-shmobile/board-marzen.c |  186 ++++++++++++++++++++++++++++++++-
- 3 files changed, 198 insertions(+), 4 deletions(-)
+ arch/arm/mach-shmobile/board-mackerel.c |    6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
