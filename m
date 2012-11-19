@@ -1,40 +1,49 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Wed, 07 Nov 2012 11:40:05 +0000
-Subject: [PATCH 2/4] spi: Add SH Mobile series as dependency to MSIOF controller
-Message-Id: <1352288407-20594-3-git-send-email-hechtb@gmail.com>
+From: Bill Pemberton <wfp5p@virginia.edu>
+Date: Mon, 19 Nov 2012 18:20:47 +0000
+Subject: [PATCH 098/493] sh: remove use of __devexit_p
+Message-Id: <1353349642-3677-98-git-send-email-wfp5p@virginia.edu>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352288407-20594-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1352288407-20594-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The MSIOF hardware block is used in the SH Mobile series as well, so we
-add it here.
+CONFIG_HOTPLUG is going away as an option so __devexit_p is no longer
+needed.
 
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+Signed-off-by: Bill Pemberton <wfp5p@virginia.edu>
+Cc: linux-sh@vger.kernel.org 
 ---
- drivers/spi/Kconfig |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+ drivers/sh/pfc/gpio.c    | 2 +-
+ drivers/sh/pfc/pinctrl.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
-index 1acae35..d0c0ae6 100644
---- a/drivers/spi/Kconfig
-+++ b/drivers/spi/Kconfig
-@@ -341,10 +341,10 @@ config SPI_SC18IS602
+diff --git a/drivers/sh/pfc/gpio.c b/drivers/sh/pfc/gpio.c
+index 038fa07..d08c978 100644
+--- a/drivers/sh/pfc/gpio.c
++++ b/drivers/sh/pfc/gpio.c
+@@ -199,7 +199,7 @@ static int __devexit sh_pfc_gpio_remove(struct platform_device *pdev)
  
- config SPI_SH_MSIOF
- 	tristate "SuperH MSIOF SPI controller"
--	depends on SUPERH && HAVE_CLK
-+	depends on (SUPERH || ARCH_SHMOBILE) && HAVE_CLK
- 	select SPI_BITBANG
- 	help
--	  SPI driver for SuperH MSIOF blocks.
-+	  SPI driver for SuperH and SH Mobile MSIOF blocks.
+ static struct platform_driver sh_pfc_gpio_driver = {
+ 	.probe		= sh_pfc_gpio_probe,
+-	.remove		= __devexit_p(sh_pfc_gpio_remove),
++	.remove		= sh_pfc_gpio_remove,
+ 	.driver		= {
+ 		.name	= KBUILD_MODNAME,
+ 		.owner	= THIS_MODULE,
+diff --git a/drivers/sh/pfc/pinctrl.c b/drivers/sh/pfc/pinctrl.c
+index 0646bf6..99b3b4f 100644
+--- a/drivers/sh/pfc/pinctrl.c
++++ b/drivers/sh/pfc/pinctrl.c
+@@ -482,7 +482,7 @@ static int __devexit sh_pfc_pinctrl_remove(struct platform_device *pdev)
  
- config SPI_SH
- 	tristate "SuperH SPI controller"
+ static struct platform_driver sh_pfc_pinctrl_driver = {
+ 	.probe		= sh_pfc_pinctrl_probe,
+-	.remove		= __devexit_p(sh_pfc_pinctrl_remove),
++	.remove		= sh_pfc_pinctrl_remove,
+ 	.driver		= {
+ 		.name	= DRV_NAME,
+ 		.owner	= THIS_MODULE,
 -- 
-1.7.5.4
+1.8.0
 
