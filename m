@@ -1,21 +1,37 @@
-From: Rik van Riel <riel@redhat.com>
-Date: Mon, 05 Nov 2012 23:33:42 +0000
-Subject: Re: [PATCH 08/16] mm: use vm_unmapped_area() in hugetlbfs
-Message-Id: <50984CD6.9090204@redhat.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 19 Nov 2012 05:13:21 +0000
+Subject: [RFC 09/15] ARM: shmobile: Include DTSI of r8a7740 to armadillo800eva
+Message-Id: <1353302007-31045-10-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352155633-8648-1-git-send-email-walken@google.com>
- <1352155633-8648-9-git-send-email-walken@google.com>
-In-Reply-To: <1352155633-8648-9-git-send-email-walken@google.com>
+References: <1353302007-31045-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1353302007-31045-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 11/05/2012 05:47 PM, Michel Lespinasse wrote:
-> Update the hugetlb_get_unmapped_area function to make use of
-> vm_unmapped_area() instead of implementing a brute force search.
->
-> Signed-off-by: Michel Lespinasse <walken@google.com>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
-Reviewed-by: Rik van Riel <riel@redhat.com>
+Cc: Magnus Damm <damm@opensource.se>
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+index a7505a9..a8e7bd9 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+@@ -9,7 +9,7 @@
+  */
+ 
+ /dts-v1/;
+-/include/ "skeleton.dtsi"
++/include/ "r8a7740.dtsi"
+ 
+ / {
+ 	model = "armadillo 800 eva";
+-- 
+1.7.10.4
 
