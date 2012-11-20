@@ -1,45 +1,44 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Thu, 08 Nov 2012 06:29:57 +0000
-Subject: Re: [GIT PULL v2] Renesas ARM-based SoC boards for v3.8 #2
-Message-Id: <20121108062957.GB13151@verge.net.au>
+Date: Tue, 20 Nov 2012 00:43:06 +0000
+Subject: [GIT PULL v2] Renesas ARM-based SoC boards for v3.8 #3
+Message-Id: <1353372187-2903-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352338056-21107-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352338056-21107-1-git-send-email-horms@verge.net.au>
+References: <1351391173-32379-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1351391173-32379-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Nov 08, 2012 at 10:27:29AM +0900, Simon Horman wrote:
-> Hi Olof, Hi Arnd,
-> 
-> please consider the following board enhancements for 3.8.
-> 
-> * This pull-request is based on an earlier request which I
->   posted on the 1st and was merged yesterday: [GIT PULL v3] Renesas
->   ARM-based SoC boards for v3.8
-> 
-> * This pull request replaces the one that I sent yesterday:
->   [GIT PULL] Renesas ARM-based SoC boards for v3.8 #2
-> 
-> * Patch #2 of this series has a build-time dependency on
->   the soc pull request that I sent a few minutes ago:
->   [GIT PULL] Renesas ARM-based SoC for v3.8 #2
-> 
->   In particular, "ARM: shmobile: marzen: add USB EHCI driver support"
->   depends on "[PATCH 1/7] ARM: shmobile: r8a7779: PFC rename PENCx -> USB_PENCx"
-> 
-> * Patch 4 of this pull-request is a driver patch which is a dependency
->   of patches 6 and 7 of this pull-request. I have spoken to the driver
->   maintainer, Paul Mundt, and he has indicated that he thinks it
->   is best to merge all in one go.
-> 
->   In more detail:
-> 
->   "sh: clkfwk: add sh_clk_fsidiv_register()" is a dependency of
->   - "ARM: shmobile: sh7372: use sh_clk_fsidiv_register() for FSI-DIV clocks"
->   - "ARM: shmobile: r8a7740: add FSI-DVI clocks"
+Hi Olof, Hi Arnd,
 
-I have found some problems with this pull-request,
-I will send an revised one.
+Please consider the following board fix for 3.8.
 
+The commit message for the patch has been revised since yesterday's
+pull-request.
+
+Also, please let me know if you would prefer me to supply
+this as a fixes branch as we are now in the 3.7-rc6 timeframe
+where I understand that non-fix commits are no longer allowed for 3.8.
+
+This commit is based on the renesas/boards2 branch of the arm-soc tree.
+
+----------------------------------------------------------------
+The following changes since commit 12818d82ccad9868a820dbb193b4f9b797cd02d4:
+
+  ARM: shmobile: use FSI driver's audio clock on ap4evb (2012-11-08 17:52:05 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git boards3
+
+for you to fetch changes up to 3042ac5731e6db441dfce85612da4aa3913dab3b:
+
+  ARM: shmobile: mackerel: Add FLCTL IRQ resource (2012-11-20 09:14:43 +0900)
+
+----------------------------------------------------------------
+Bastian Hecht (1):
+      ARM: shmobile: mackerel: Add FLCTL IRQ resource
+
+ arch/arm/mach-shmobile/board-mackerel.c |    6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
