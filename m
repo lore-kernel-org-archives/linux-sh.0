@@ -1,39 +1,168 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 09 Nov 2012 07:29:19 +0000
-Subject: [PATCH 04/10] ARM: shmobile: r8a7779: add USB OHCI clock support
-Message-Id: <1352446165-19298-5-git-send-email-horms@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 21 Nov 2012 02:53:18 +0000
+Subject: [PATCH 02/42] sh-pfc: Move private definitions and declarations to private header
+Message-Id: <1353466438-10929-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352446165-19298-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352446165-19298-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Move all private structure definitions and function declarations from
+include/linux/sh_pfc.h to drivers/sh/pfc/core.h.
 
-ohci-platform driver require these clocks
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7779.c |    2 ++
- 1 file changed, 2 insertions(+)
+ drivers/sh/pfc/core.c    |    2 ++
+ drivers/sh/pfc/core.h    |   44 ++++++++++++++++++++++++++++++++++++++++++++
+ drivers/sh/pfc/gpio.c    |    2 ++
+ drivers/sh/pfc/pinctrl.c |    2 ++
+ include/linux/sh_pfc.h   |   29 -----------------------------
+ 5 files changed, 50 insertions(+), 29 deletions(-)
+ create mode 100644 drivers/sh/pfc/core.h
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index 4ba4e3c..be885cf 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -157,7 +157,9 @@ static struct clk_lookup lookups[] = {
+diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
+index ecbe51d..72421a4 100644
+--- a/drivers/sh/pfc/core.c
++++ b/drivers/sh/pfc/core.c
+@@ -21,6 +21,8 @@
+ #include <linux/ioport.h>
+ #include <linux/pinctrl/machine.h>
  
- 	/* MSTP32 clocks */
- 	CLKDEV_DEV_ID("ehci-platform.1", &mstp_clks[MSTP101]), /* USB EHCI port2 */
-+	CLKDEV_DEV_ID("ohci-platform.1", &mstp_clks[MSTP101]), /* USB OHCI port2 */
- 	CLKDEV_DEV_ID("ehci-platform.0", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
-+	CLKDEV_DEV_ID("ohci-platform.0", &mstp_clks[MSTP100]), /* USB OHCI port0/1 */
- 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
- 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP016]), /* TMU01 */
- 	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
++#include "core.h"
++
+ static struct sh_pfc sh_pfc __read_mostly;
+ 
+ static void pfc_iounmap(struct sh_pfc *pfc)
+diff --git a/drivers/sh/pfc/core.h b/drivers/sh/pfc/core.h
+new file mode 100644
+index 0000000..b07ae25
+--- /dev/null
++++ b/drivers/sh/pfc/core.h
+@@ -0,0 +1,44 @@
++/*
++ * SuperH Pin Function Controller support.
++ *
++ * Copyright (C) 2012  Renesas Solutions Corp.
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++#ifndef __SH_PFC_CORE_H__
++#define __SH_PFC_CORE_H__
++
++#include <linux/compiler.h>
++#include <linux/sh_pfc.h>
++#include <linux/types.h>
++
++struct pfc_window {
++	phys_addr_t phys;
++	void __iomem *virt;
++	unsigned long size;
++};
++
++struct sh_pfc {
++	struct sh_pfc_platform_data *pdata;
++	spinlock_t lock;
++
++	struct pfc_window *window;
++};
++
++int sh_pfc_register_gpiochip(struct sh_pfc *pfc);
++
++int sh_pfc_register_pinctrl(struct sh_pfc *pfc);
++
++int sh_pfc_read_bit(struct pinmux_data_reg *dr, unsigned long in_pos);
++void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
++		      unsigned long value);
++int sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
++			struct pinmux_data_reg **drp, int *bitp);
++int sh_pfc_gpio_to_enum(struct sh_pfc *pfc, unsigned gpio, int pos,
++			pinmux_enum_t *enum_idp);
++int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
++		       int cfg_mode);
++
++#endif /* __SH_PFC_CORE_H__ */
+diff --git a/drivers/sh/pfc/gpio.c b/drivers/sh/pfc/gpio.c
+index 9b7e45c..94c5489 100644
+--- a/drivers/sh/pfc/gpio.c
++++ b/drivers/sh/pfc/gpio.c
+@@ -19,6 +19,8 @@
+ #include <linux/pinctrl/consumer.h>
+ #include <linux/sh_pfc.h>
+ 
++#include "core.h"
++
+ struct sh_pfc_chip {
+ 	struct sh_pfc		*pfc;
+ 	struct gpio_chip	gpio_chip;
+diff --git a/drivers/sh/pfc/pinctrl.c b/drivers/sh/pfc/pinctrl.c
+index 447fb60..5efa36a 100644
+--- a/drivers/sh/pfc/pinctrl.c
++++ b/drivers/sh/pfc/pinctrl.c
+@@ -24,6 +24,8 @@
+ #include <linux/pinctrl/pinmux.h>
+ #include <linux/pinctrl/pinconf-generic.h>
+ 
++#include "core.h"
++
+ struct sh_pfc_pinctrl {
+ 	struct pinctrl_dev *pctl;
+ 	struct sh_pfc *pfc;
+diff --git a/include/linux/sh_pfc.h b/include/linux/sh_pfc.h
+index 58587f9..f7f01b2 100644
+--- a/include/linux/sh_pfc.h
++++ b/include/linux/sh_pfc.h
+@@ -88,12 +88,6 @@ struct pinmux_range {
+ 	pinmux_enum_t force;
+ };
+ 
+-struct pfc_window {
+-	phys_addr_t phys;
+-	void __iomem *virt;
+-	unsigned long size;
+-};
+-
+ struct sh_pfc_platform_data {
+ 	char *name;
+ 	pinmux_enum_t reserved_id;
+@@ -123,35 +117,12 @@ struct sh_pfc_platform_data {
+ 	unsigned long unlock_reg;
+ };
+ 
+-struct sh_pfc {
+-	struct sh_pfc_platform_data *pdata;
+-	spinlock_t lock;
+-
+-	struct pfc_window *window;
+-};
+-
+ /* XXX compat for now */
+ #define pinmux_info sh_pfc_platform_data
+ 
+-/* drivers/sh/pfc/gpio.c */
+-int sh_pfc_register_gpiochip(struct sh_pfc *pfc);
+-
+-/* drivers/sh/pfc/pinctrl.c */
+-int sh_pfc_register_pinctrl(struct sh_pfc *pfc);
+-
+ /* drivers/sh/pfc/core.c */
+ int register_sh_pfc(struct sh_pfc_platform_data *pfc);
+ 
+-int sh_pfc_read_bit(struct pinmux_data_reg *dr, unsigned long in_pos);
+-void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
+-		      unsigned long value);
+-int sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
+-			struct pinmux_data_reg **drp, int *bitp);
+-int sh_pfc_gpio_to_enum(struct sh_pfc *pfc, unsigned gpio, int pos,
+-			pinmux_enum_t *enum_idp);
+-int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
+-		       int cfg_mode);
+-
+ /* xxx */
+ static inline int register_pinmux(struct pinmux_info *pip)
+ {
 -- 
-1.7.10.4
+1.7.8.6
 
