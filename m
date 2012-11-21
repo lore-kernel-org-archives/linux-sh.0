@@ -1,36 +1,36 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 07 Nov 2012 08:50:41 +0000
-Subject: [PATCH 12/15] ARM: shmobile: r8a7740: Use DT initialisation of INTC
-Message-Id: <1352278244-26702-13-git-send-email-horms@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 21 Nov 2012 02:53:31 +0000
+Subject: [PATCH 15/42] ARM: shmobile: Select PINCTRL
+Message-Id: <1353466438-10929-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352278244-26702-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352278244-26702-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+The pin control framework is required by mach-shmobile. Select it in
+Kconfig.
 
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+This will be required when the sh-pfc driver will move to
+drivers/pinctrl/.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-r8a7740.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/Kconfig |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 11bb1d9..a8e57ab 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -750,7 +750,7 @@ static const char *r8a7740_boards_compat_dt[] __initdata = {
- DT_MACHINE_START(SH7372_DT, "Generic R8A7740 (Flattened Device Tree)")
- 	.map_io		= r8a7740_map_io,
- 	.init_early	= r8a7740_add_early_devices_dt,
--	.init_irq	= r8a7740_init_irq,
-+	.init_irq	= r8a7740_init_irq_of,
- 	.handle_irq	= shmobile_handle_irq_intc,
- 	.init_machine	= r8a7740_add_standard_devices_dt,
- 	.timer		= &shmobile_timer,
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index ade7e92..3eaa434 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -693,6 +693,7 @@ config ARCH_SHMOBILE
+ 	select MULTI_IRQ_HANDLER
+ 	select NEED_MACH_MEMORY_H
+ 	select NO_IOPORT
++	select PINCTRL
+ 	select PM_GENERIC_DOMAINS if PM
+ 	select SPARSE_IRQ
+ 	help
 -- 
-1.7.10.4
+1.7.8.6
 
