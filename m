@@ -1,142 +1,111 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 07 Nov 2012 08:40:07 +0000
-Subject: [PATCH 3/3] ARM: shmobile: marzen: add USB OHCI driver support
-Message-Id: <1352277607-24040-4-git-send-email-horms@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 21 Nov 2012 02:53:26 +0000
+Subject: [PATCH 10/42] sh-pfc: Support passing resources through platform device
+Message-Id: <1353466438-10929-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352277607-24040-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352277607-24040-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Resources should be passed through the platform device, not through
+platform data. Default to platform device resources and fall back to
+platform data resources if not available.
 
-This patch supports CN21/CN22 USB 1.x (port 0/1/2),
-and enable input event on defconfig
+Support for platform data resources will be removed when arch code will
+be converted.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/configs/marzen_defconfig     |    5 +--
- arch/arm/mach-shmobile/Kconfig        |    1 +
- arch/arm/mach-shmobile/board-marzen.c |   57 +++++++++++++++++++++++++++++++++
- 3 files changed, 61 insertions(+), 2 deletions(-)
+ drivers/sh/pfc/core.c |   29 +++++++++++++++++++++--------
+ drivers/sh/pfc/core.h |    2 ++
+ 2 files changed, 23 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index 6540dfb..728a43c 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -61,9 +61,8 @@ CONFIG_SMSC911X=y
- # CONFIG_NET_VENDOR_STMICRO is not set
- # CONFIG_WLAN is not set
- # CONFIG_INPUT_MOUSEDEV is not set
--# CONFIG_INPUT_KEYBOARD is not set
-+CONFIG_INPUT_EVDEV=y
- # CONFIG_INPUT_MOUSE is not set
--# CONFIG_SERIO is not set
- # CONFIG_VT is not set
- # CONFIG_LEGACY_PTYS is not set
- # CONFIG_DEVKMEM is not set
-@@ -86,6 +85,8 @@ CONFIG_MMC=y
- CONFIG_MMC_SDHI=y
- CONFIG_USB=y
- CONFIG_USB_EHCI_HCD=y
-+CONFIG_USB_OHCI_HCD=y
-+CONFIG_USB_OHCI_HCD_PLATFORM=y
- CONFIG_USB_EHCI_HCD_PLATFORM=y
- CONFIG_USB_STORAGE=y
- CONFIG_UIO=y
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index c03aeec..64db252 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -42,6 +42,7 @@ config ARCH_R8A7779
- 	select CPU_V7
- 	select SH_CLK_CPG
- 	select USB_ARCH_HAS_EHCI
-+	select USB_ARCH_HAS_OHCI
+diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
+index 9736e3d..4e4adc7 100644
+--- a/drivers/sh/pfc/core.c
++++ b/drivers/sh/pfc/core.c
+@@ -30,29 +30,42 @@ static void pfc_iounmap(struct sh_pfc *pfc)
+ {
+ 	int k;
  
- config ARCH_EMEV2
- 	bool "Emma Mobile EV2"
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index 707b3bd..449f928 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -36,6 +36,7 @@
- #include <linux/mfd/tmio.h>
- #include <linux/usb/otg.h>
- #include <linux/usb/ehci_pdriver.h>
-+#include <linux/usb/ohci_pdriver.h>
- #include <linux/pm_runtime.h>
- #include <mach/hardware.h>
- #include <mach/r8a7779.h>
-@@ -255,9 +256,65 @@ static struct platform_device ehci1_device = {
- 	.resource	= ehci1_resources,
+-	for (k = 0; k < pfc->pdata->num_resources; k++)
++	for (k = 0; k < pfc->num_windows; k++)
+ 		if (pfc->window[k].virt)
+ 			iounmap(pfc->window[k].virt);
+ 
+ 	kfree(pfc->window);
++	pfc->num_windows = 0;
+ 	pfc->window = NULL;
+ }
+ 
+-static int pfc_ioremap(struct sh_pfc *pfc)
++static int pfc_ioremap(struct sh_pfc *pfc, struct platform_device *pdev)
+ {
++	unsigned int num_resources;
+ 	struct resource *res;
+ 	int k;
+ 
+-	if (!pfc->pdata->num_resources)
++	if (pdev->num_resources) {
++		num_resources = pdev->num_resources;
++		res = pdev->resource;
++	} else {
++		num_resources = pfc->pdata->num_resources;
++		res = pfc->pdata->resource;
++	}
++
++	if (num_resources = 0) {
++		pfc->num_windows = 0;
+ 		return 0;
++	}
+ 
+-	pfc->window = kzalloc(pfc->pdata->num_resources * sizeof(*pfc->window),
++	pfc->window = kzalloc(num_resources * sizeof(*pfc->window),
+ 			      GFP_NOWAIT);
+ 	if (!pfc->window)
+ 		goto err1;
+ 
+-	for (k = 0; k < pfc->pdata->num_resources; k++) {
+-		res = pfc->pdata->resource + k;
++	pfc->num_windows = num_resources;
++
++	for (k = 0; k < num_resources; k++, res++) {
+ 		WARN_ON(resource_type(res) != IORESOURCE_MEM);
+ 		pfc->window[k].phys = res->start;
+ 		pfc->window[k].size = resource_size(res);
+@@ -77,7 +90,7 @@ static void __iomem *pfc_phys_to_virt(struct sh_pfc *pfc,
+ 	int k;
+ 
+ 	/* scan through physical windows and convert address */
+-	for (k = 0; k < pfc->pdata->num_resources; k++) {
++	for (k = 0; k < pfc->num_windows; k++) {
+ 		window = pfc->window + k;
+ 
+ 		if (address < window->phys)
+@@ -516,7 +529,7 @@ static int sh_pfc_probe(struct platform_device *pdev)
+ 	pfc->pdata = pdata;
+ 	pfc->dev = &pdev->dev;
+ 
+-	ret = pfc_ioremap(pfc);
++	ret = pfc_ioremap(pfc, pdev);
+ 	if (unlikely(ret < 0))
+ 		return ret;
+ 
+diff --git a/drivers/sh/pfc/core.h b/drivers/sh/pfc/core.h
+index 1287b3e..b71f559 100644
+--- a/drivers/sh/pfc/core.h
++++ b/drivers/sh/pfc/core.h
+@@ -28,7 +28,9 @@ struct sh_pfc {
+ 	struct sh_pfc_platform_data *pdata;
+ 	spinlock_t lock;
+ 
++	unsigned int num_windows;
+ 	struct pfc_window *window;
++
+ 	struct sh_pfc_chip *gpio;
+ 	struct sh_pfc_pinctrl *pinctrl;
  };
- 
-+static struct usb_ohci_pdata ohcix_pdata = {
-+	.power_on	= usb_power_on,
-+	.power_off	= usb_power_off,
-+	.power_suspend	= usb_power_off,
-+};
-+
-+static struct resource ohci0_resources[] = {
-+	[0] = {
-+		.start	= 0xffe70400,
-+		.end	= 0xffe70800 - 1,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= gic_spi(44),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device ohci0_device = {
-+	.name	= "ohci-platform",
-+	.id	= 0,
-+	.dev	= {
-+		.dma_mask		= &ohci0_device.dev.coherent_dma_mask,
-+		.coherent_dma_mask	= 0xffffffff,
-+		.platform_data		= &ohcix_pdata,
-+	},
-+	.num_resources	= ARRAY_SIZE(ohci0_resources),
-+	.resource	= ohci0_resources,
-+};
-+
-+static struct resource ohci1_resources[] = {
-+	[0] = {
-+		.start	= 0xfff70400,
-+		.end	= 0xfff70800 - 1,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= gic_spi(45),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device ohci1_device = {
-+	.name	= "ohci-platform",
-+	.id	= 1,
-+	.dev	= {
-+		.dma_mask		= &ohci1_device.dev.coherent_dma_mask,
-+		.coherent_dma_mask	= 0xffffffff,
-+		.platform_data		= &ohcix_pdata,
-+	},
-+	.num_resources	= ARRAY_SIZE(ohci1_resources),
-+	.resource	= ohci1_resources,
-+};
-+
- static struct platform_device *marzen_late_devices[] __initdata = {
- 	&ehci0_device,
- 	&ehci1_device,
-+	&ohci0_device,
-+	&ohci1_device,
- };
- 
- void __init marzen_init_late(void)
 -- 
-1.7.10.4
+1.7.8.6
 
