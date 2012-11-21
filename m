@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 21 Nov 2012 00:47:14 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 21 Nov 2012 01:07:20 +0000
 Subject: Re: Single zImage for Armadillo and KZM9G
-Message-Id: <20121121004713.GB21292@verge.net.au>
+Message-Id: <1851477.BXWH7tH2y7@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <7563707.giGeIu5Uba@avalon>
 In-Reply-To: <7563707.giGeIu5Uba@avalon>
@@ -10,26 +10,38 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Nov 21, 2012 at 01:38:19AM +0100, Laurent Pinchart wrote:
-> Hello,
-> 
-> I've been trying to boot the same zImage on both Armadillo (r8a7740) and KZM9G 
-> (sh73a0) and stumbled on CONFIG_MEMORY_START. Armadillo has the memory start 
-> at 0x40000000 while KZM9G seems to reserver the first 16MB, and thus starts at 
-> 0x41000000.
-> 
-> The memory address and size can be specified per-board in the device tree, but 
-> a mismatch between the DT memory start and CONFIG_MEMORY_START results in a 
-> pretty hard boot failure (tested on Armadillo).
-> 
-> Has anyone run into the same issue ? Pointers would be appreciated.
+Hi Simon,
 
-The most recent discussion of CONFIG_MEMORY_START that I am aware of was
-in a thread that stemmed from "[GIT,PULL] Renesas ARM-based SoC defconfig for
-v3.8"
+On Wednesday 21 November 2012 09:47:14 Simon Horman wrote:
+> On Wed, Nov 21, 2012 at 01:38:19AM +0100, Laurent Pinchart wrote:
+> > Hello,
+> > 
+> > I've been trying to boot the same zImage on both Armadillo (r8a7740) and
+> > KZM9G (sh73a0) and stumbled on CONFIG_MEMORY_START. Armadillo has the
+> > memory start at 0x40000000 while KZM9G seems to reserver the first 16MB,
+> > and thus starts at 0x41000000.
+> > 
+> > The memory address and size can be specified per-board in the device tree,
+> > but a mismatch between the DT memory start and CONFIG_MEMORY_START
+> > results in a pretty hard boot failure (tested on Armadillo).
+> > 
+> > Has anyone run into the same issue ? Pointers would be appreciated.
+> 
+> The most recent discussion of CONFIG_MEMORY_START that I am aware of was
+> in a thread that stemmed from "[GIT,PULL] Renesas ARM-based SoC defconfig
+> for v3.8"
+> 
+> https://patchwork.kernel.org/patch/1627511/
+> 
+> In short, it would be nice to get rid of CONFIG_MEMORY_START to allow,
+> amongst other things, (valid) values to be read from DT. But there
+> is some work to be done.
 
-https://patchwork.kernel.org/patch/1627511/
+Thank you for the information. Is there anyone working (or planning to work in 
+the near future) on this ?
 
-In short, it would be nice to get rid of CONFIG_MEMORY_START to allow,
-amongst other things, (valid) values to be read from DT. But there
-is some work to be done.
+-- 
+Regards,
+
+Laurent Pinchart
+
