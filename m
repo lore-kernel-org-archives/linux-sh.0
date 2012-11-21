@@ -1,432 +1,659 @@
-From: Michel Lespinasse <walken@google.com>
-Date: Mon, 05 Nov 2012 22:47:02 +0000
-Subject: [PATCH 05/16] mm: vm_unmapped_area() lookup function
-Message-Id: <1352155633-8648-6-git-send-email-walken@google.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 21 Nov 2012 02:53:53 +0000
+Subject: [PATCH 37/42] sh-pfc: Add shx3 pinmux support
+Message-Id: <1353466438-10929-38-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352155633-8648-1-git-send-email-walken@google.com>
-In-Reply-To: <1352155633-8648-1-git-send-email-walken@google.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Implement vm_unmapped_area() using the rb_subtree_gap and highest_vm_end
-information to look up for suitable virtual address space gaps.
-
-struct vm_unmapped_area_info is used to define the desired allocation
-request:
-- lowest or highest possible address matching the remaining constraints
-- desired gap length
-- low/high address limits that the gap must fit into
-- alignment mask and offset
-
-Also update the generic arch_get_unmapped_area[_topdown] functions to
-make use of vm_unmapped_area() instead of implementing a brute force search.
-
-Signed-off-by: Michel Lespinasse <walken@google.com>
-Reviewed-by: Rik van Riel <riel@redhat.com>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- include/linux/mm.h |   31 +++++
- mm/mmap.c          |  312 +++++++++++++++++++++++++++++++++++++---------------
- 2 files changed, 253 insertions(+), 90 deletions(-)
+ drivers/pinctrl/sh-pfc/Kconfig    |    6 +
+ drivers/pinctrl/sh-pfc/Makefile   |    1 +
+ drivers/pinctrl/sh-pfc/core.c     |    3 +
+ drivers/pinctrl/sh-pfc/core.h     |    1 +
+ drivers/pinctrl/sh-pfc/pfc-shx3.c |  581 +++++++++++++++++++++++++++++++++++++
+ 5 files changed, 592 insertions(+), 0 deletions(-)
+ create mode 100644 drivers/pinctrl/sh-pfc/pfc-shx3.c
 
-diff --git a/include/linux/mm.h b/include/linux/mm.h
-index fa0680402738..441dfe8ea24d 100644
---- a/include/linux/mm.h
-+++ b/include/linux/mm.h
-@@ -1456,6 +1456,37 @@ extern unsigned long vm_mmap(struct file *, unsigned long,
-         unsigned long, unsigned long,
-         unsigned long, unsigned long);
+diff --git a/drivers/pinctrl/sh-pfc/Kconfig b/drivers/pinctrl/sh-pfc/Kconfig
+index a90fdff..a499903 100644
+--- a/drivers/pinctrl/sh-pfc/Kconfig
++++ b/drivers/pinctrl/sh-pfc/Kconfig
+@@ -117,4 +117,10 @@ config PINCTRL_PFC_SH7786
+ 	depends on GENERIC_GPIO
+ 	select PINCTRL_SH_PFC
  
-+struct vm_unmapped_area_info {
-+#define VM_UNMAPPED_AREA_TOPDOWN 1
-+	unsigned long flags;
-+	unsigned long length;
-+	unsigned long low_limit;
-+	unsigned long high_limit;
-+	unsigned long align_mask;
-+	unsigned long align_offset;
++config PINCTRL_PFC_SHX3
++	def_bool y
++	depends on CPU_SUBTYPE_SHX3
++	depends on GENERIC_GPIO
++	select PINCTRL_SH_PFC
++
+ endif
+diff --git a/drivers/pinctrl/sh-pfc/Makefile b/drivers/pinctrl/sh-pfc/Makefile
+index 9ca8fbe..360f743 100644
+--- a/drivers/pinctrl/sh-pfc/Makefile
++++ b/drivers/pinctrl/sh-pfc/Makefile
+@@ -20,3 +20,4 @@ obj-$(CONFIG_PINCTRL_PFC_SH7734)	+= pfc-sh7734.o
+ obj-$(CONFIG_PINCTRL_PFC_SH7757)	+= pfc-sh7757.o
+ obj-$(CONFIG_PINCTRL_PFC_SH7785)	+= pfc-sh7785.o
+ obj-$(CONFIG_PINCTRL_PFC_SH7786)	+= pfc-sh7786.o
++obj-$(CONFIG_PINCTRL_PFC_SHX3)		+= pfc-shx3.o
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index 54c5f34..748206f 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -632,6 +632,9 @@ static const struct platform_device_id sh_pfc_id_table[] = {
+ #ifdef CONFIG_PINCTRL_PFC_SH7786
+ 	{ "pfc-sh7786", (kernel_ulong_t)&sh7786_pinmux_info },
+ #endif
++#ifdef CONFIG_PINCTRL_PFC_SHX3
++	{ "pfc-shx3", (kernel_ulong_t)&shx3_pinmux_info },
++#endif
+ 	{ "sh-pfc", 0 },
+ 	{ },
+ };
+diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
+index 50ada82..ee123de 100644
+--- a/drivers/pinctrl/sh-pfc/core.h
++++ b/drivers/pinctrl/sh-pfc/core.h
+@@ -68,5 +68,6 @@ extern struct sh_pfc_soc_info sh7734_pinmux_info;
+ extern struct sh_pfc_soc_info sh7757_pinmux_info;
+ extern struct sh_pfc_soc_info sh7785_pinmux_info;
+ extern struct sh_pfc_soc_info sh7786_pinmux_info;
++extern struct sh_pfc_soc_info shx3_pinmux_info;
+ 
+ #endif /* __SH_PFC_CORE_H__ */
+diff --git a/drivers/pinctrl/sh-pfc/pfc-shx3.c b/drivers/pinctrl/sh-pfc/pfc-shx3.c
+new file mode 100644
+index 0000000..e21eb24
+--- /dev/null
++++ b/drivers/pinctrl/sh-pfc/pfc-shx3.c
+@@ -0,0 +1,581 @@
++/*
++ * SH-X3 prototype CPU pinmux
++ *
++ * Copyright (C) 2010  Paul Mundt
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/sh_pfc.h>
++#include <cpu/shx3.h>
++
++enum {
++	PINMUX_RESERVED = 0,
++
++	PINMUX_DATA_BEGIN,
++	PA7_DATA, PA6_DATA, PA5_DATA, PA4_DATA,
++	PA3_DATA, PA2_DATA, PA1_DATA, PA0_DATA,
++	PB7_DATA, PB6_DATA, PB5_DATA, PB4_DATA,
++	PB3_DATA, PB2_DATA, PB1_DATA, PB0_DATA,
++	PC7_DATA, PC6_DATA, PC5_DATA, PC4_DATA,
++	PC3_DATA, PC2_DATA, PC1_DATA, PC0_DATA,
++	PD7_DATA, PD6_DATA, PD5_DATA, PD4_DATA,
++	PD3_DATA, PD2_DATA, PD1_DATA, PD0_DATA,
++	PE7_DATA, PE6_DATA, PE5_DATA, PE4_DATA,
++	PE3_DATA, PE2_DATA, PE1_DATA, PE0_DATA,
++	PF7_DATA, PF6_DATA, PF5_DATA, PF4_DATA,
++	PF3_DATA, PF2_DATA, PF1_DATA, PF0_DATA,
++	PG7_DATA, PG6_DATA, PG5_DATA, PG4_DATA,
++	PG3_DATA, PG2_DATA, PG1_DATA, PG0_DATA,
++
++	PH5_DATA, PH4_DATA,
++	PH3_DATA, PH2_DATA, PH1_DATA, PH0_DATA,
++	PINMUX_DATA_END,
++
++	PINMUX_INPUT_BEGIN,
++	PA7_IN, PA6_IN, PA5_IN, PA4_IN,
++	PA3_IN, PA2_IN, PA1_IN, PA0_IN,
++	PB7_IN, PB6_IN, PB5_IN, PB4_IN,
++	PB3_IN, PB2_IN, PB1_IN, PB0_IN,
++	PC7_IN, PC6_IN, PC5_IN, PC4_IN,
++	PC3_IN, PC2_IN, PC1_IN, PC0_IN,
++	PD7_IN, PD6_IN, PD5_IN, PD4_IN,
++	PD3_IN, PD2_IN, PD1_IN, PD0_IN,
++	PE7_IN, PE6_IN, PE5_IN, PE4_IN,
++	PE3_IN, PE2_IN, PE1_IN, PE0_IN,
++	PF7_IN, PF6_IN, PF5_IN, PF4_IN,
++	PF3_IN, PF2_IN, PF1_IN, PF0_IN,
++	PG7_IN, PG6_IN, PG5_IN, PG4_IN,
++	PG3_IN, PG2_IN, PG1_IN, PG0_IN,
++
++	PH5_IN, PH4_IN,
++	PH3_IN, PH2_IN, PH1_IN, PH0_IN,
++	PINMUX_INPUT_END,
++
++	PINMUX_INPUT_PULLUP_BEGIN,
++	PA7_IN_PU, PA6_IN_PU, PA5_IN_PU, PA4_IN_PU,
++	PA3_IN_PU, PA2_IN_PU, PA1_IN_PU, PA0_IN_PU,
++	PB7_IN_PU, PB6_IN_PU, PB5_IN_PU, PB4_IN_PU,
++	PB3_IN_PU, PB2_IN_PU, PB1_IN_PU, PB0_IN_PU,
++	PC7_IN_PU, PC6_IN_PU, PC5_IN_PU, PC4_IN_PU,
++	PC3_IN_PU, PC2_IN_PU, PC1_IN_PU, PC0_IN_PU,
++	PD7_IN_PU, PD6_IN_PU, PD5_IN_PU, PD4_IN_PU,
++	PD3_IN_PU, PD2_IN_PU, PD1_IN_PU, PD0_IN_PU,
++	PE7_IN_PU, PE6_IN_PU, PE5_IN_PU, PE4_IN_PU,
++	PE3_IN_PU, PE2_IN_PU, PE1_IN_PU, PE0_IN_PU,
++	PF7_IN_PU, PF6_IN_PU, PF5_IN_PU, PF4_IN_PU,
++	PF3_IN_PU, PF2_IN_PU, PF1_IN_PU, PF0_IN_PU,
++	PG7_IN_PU, PG6_IN_PU, PG5_IN_PU, PG4_IN_PU,
++	PG3_IN_PU, PG2_IN_PU, PG1_IN_PU, PG0_IN_PU,
++
++	PH5_IN_PU, PH4_IN_PU,
++	PH3_IN_PU, PH2_IN_PU, PH1_IN_PU, PH0_IN_PU,
++	PINMUX_INPUT_PULLUP_END,
++
++	PINMUX_OUTPUT_BEGIN,
++	PA7_OUT, PA6_OUT, PA5_OUT, PA4_OUT,
++	PA3_OUT, PA2_OUT, PA1_OUT, PA0_OUT,
++	PB7_OUT, PB6_OUT, PB5_OUT, PB4_OUT,
++	PB3_OUT, PB2_OUT, PB1_OUT, PB0_OUT,
++	PC7_OUT, PC6_OUT, PC5_OUT, PC4_OUT,
++	PC3_OUT, PC2_OUT, PC1_OUT, PC0_OUT,
++	PD7_OUT, PD6_OUT, PD5_OUT, PD4_OUT,
++	PD3_OUT, PD2_OUT, PD1_OUT, PD0_OUT,
++	PE7_OUT, PE6_OUT, PE5_OUT, PE4_OUT,
++	PE3_OUT, PE2_OUT, PE1_OUT, PE0_OUT,
++	PF7_OUT, PF6_OUT, PF5_OUT, PF4_OUT,
++	PF3_OUT, PF2_OUT, PF1_OUT, PF0_OUT,
++	PG7_OUT, PG6_OUT, PG5_OUT, PG4_OUT,
++	PG3_OUT, PG2_OUT, PG1_OUT, PG0_OUT,
++
++	PH5_OUT, PH4_OUT,
++	PH3_OUT, PH2_OUT, PH1_OUT, PH0_OUT,
++	PINMUX_OUTPUT_END,
++
++	PINMUX_FUNCTION_BEGIN,
++	PA7_FN, PA6_FN, PA5_FN, PA4_FN,
++	PA3_FN, PA2_FN, PA1_FN, PA0_FN,
++	PB7_FN, PB6_FN, PB5_FN, PB4_FN,
++	PB3_FN, PB2_FN, PB1_FN, PB0_FN,
++	PC7_FN, PC6_FN, PC5_FN, PC4_FN,
++	PC3_FN, PC2_FN, PC1_FN, PC0_FN,
++	PD7_FN, PD6_FN, PD5_FN, PD4_FN,
++	PD3_FN, PD2_FN, PD1_FN, PD0_FN,
++	PE7_FN, PE6_FN, PE5_FN, PE4_FN,
++	PE3_FN, PE2_FN, PE1_FN, PE0_FN,
++	PF7_FN, PF6_FN, PF5_FN, PF4_FN,
++	PF3_FN, PF2_FN, PF1_FN, PF0_FN,
++	PG7_FN, PG6_FN, PG5_FN, PG4_FN,
++	PG3_FN, PG2_FN, PG1_FN, PG0_FN,
++
++	PH5_FN, PH4_FN,
++	PH3_FN, PH2_FN, PH1_FN, PH0_FN,
++	PINMUX_FUNCTION_END,
++
++	PINMUX_MARK_BEGIN,
++
++	D31_MARK, D30_MARK, D29_MARK, D28_MARK, D27_MARK, D26_MARK,
++	D25_MARK, D24_MARK, D23_MARK, D22_MARK, D21_MARK, D20_MARK,
++	D19_MARK, D18_MARK, D17_MARK, D16_MARK,
++
++	BACK_MARK, BREQ_MARK,
++	WE3_MARK, WE2_MARK,
++	CS6_MARK, CS5_MARK, CS4_MARK,
++	CLKOUTENB_MARK,
++
++	DACK3_MARK, DACK2_MARK, DACK1_MARK, DACK0_MARK,
++	DREQ3_MARK, DREQ2_MARK, DREQ1_MARK, DREQ0_MARK,
++
++	IRQ3_MARK, IRQ2_MARK, IRQ1_MARK, IRQ0_MARK,
++
++	DRAK3_MARK, DRAK2_MARK, DRAK1_MARK, DRAK0_MARK,
++
++	SCK3_MARK, SCK2_MARK, SCK1_MARK, SCK0_MARK,
++	IRL3_MARK, IRL2_MARK, IRL1_MARK, IRL0_MARK,
++	TXD3_MARK, TXD2_MARK, TXD1_MARK, TXD0_MARK,
++	RXD3_MARK, RXD2_MARK, RXD1_MARK, RXD0_MARK,
++
++	CE2B_MARK, CE2A_MARK, IOIS16_MARK,
++	STATUS1_MARK, STATUS0_MARK,
++
++	IRQOUT_MARK,
++
++	PINMUX_MARK_END,
 +};
 +
-+extern unsigned long unmapped_area(struct vm_unmapped_area_info *info);
-+extern unsigned long unmapped_area_topdown(struct vm_unmapped_area_info *info);
++static pinmux_enum_t shx3_pinmux_data[] = {
 +
-+/*
-+ * Search for an unmapped address range.
-+ *
-+ * We are looking for a range that:
-+ * - does not intersect with any VMA;
-+ * - is contained within the [low_limit, high_limit) interval;
-+ * - is at least the desired size.
-+ * - satisfies (begin_addr & align_mask) = (align_offset & align_mask)
-+ */
-+static inline unsigned long
-+vm_unmapped_area(struct vm_unmapped_area_info *info)
-+{
-+	if (!(info->flags & VM_UNMAPPED_AREA_TOPDOWN))
-+		return unmapped_area(info);
-+	else
-+		return unmapped_area_topdown(info);
-+}
++	/* PA GPIO */
++	PINMUX_DATA(PA7_DATA, PA7_IN, PA7_OUT, PA7_IN_PU),
++	PINMUX_DATA(PA6_DATA, PA6_IN, PA6_OUT, PA6_IN_PU),
++	PINMUX_DATA(PA5_DATA, PA5_IN, PA5_OUT, PA5_IN_PU),
++	PINMUX_DATA(PA4_DATA, PA4_IN, PA4_OUT, PA4_IN_PU),
++	PINMUX_DATA(PA3_DATA, PA3_IN, PA3_OUT, PA3_IN_PU),
++	PINMUX_DATA(PA2_DATA, PA2_IN, PA2_OUT, PA2_IN_PU),
++	PINMUX_DATA(PA1_DATA, PA1_IN, PA1_OUT, PA1_IN_PU),
++	PINMUX_DATA(PA0_DATA, PA0_IN, PA0_OUT, PA0_IN_PU),
 +
- /* truncate.c */
- extern void truncate_inode_pages(struct address_space *, loff_t);
- extern void truncate_inode_pages_range(struct address_space *,
-diff --git a/mm/mmap.c b/mm/mmap.c
-index 769a09cc71af..aa748988cd54 100644
---- a/mm/mmap.c
-+++ b/mm/mmap.c
-@@ -1496,6 +1496,206 @@ unacct_error:
- 	return error;
- }
- 
-+unsigned long unmapped_area(struct vm_unmapped_area_info *info)
-+{
-+	/*
-+	 * We implement the search by looking for an rbtree node that
-+	 * immediately follows a suitable gap. That is,
-+	 * - gap_start = vma->vm_prev->vm_end <= info->high_limit - length;
-+	 * - gap_end   = vma->vm_start        >= info->low_limit  + length;
-+	 * - gap_end - gap_start >= length
-+	 */
++	/* PB GPIO */
++	PINMUX_DATA(PB7_DATA, PB7_IN, PB7_OUT, PB7_IN_PU),
++	PINMUX_DATA(PB6_DATA, PB6_IN, PB6_OUT, PB6_IN_PU),
++	PINMUX_DATA(PB5_DATA, PB5_IN, PB5_OUT, PB5_IN_PU),
++	PINMUX_DATA(PB4_DATA, PB4_IN, PB4_OUT, PB4_IN_PU),
++	PINMUX_DATA(PB3_DATA, PB3_IN, PB3_OUT, PB3_IN_PU),
++	PINMUX_DATA(PB2_DATA, PB2_IN, PB2_OUT, PB2_IN_PU),
++	PINMUX_DATA(PB1_DATA, PB1_IN, PB1_OUT, PB1_IN_PU),
++	PINMUX_DATA(PB0_DATA, PB0_IN, PB0_OUT, PB0_IN_PU),
 +
-+	struct mm_struct *mm = current->mm;
-+	struct vm_area_struct *vma;
-+	unsigned long length, low_limit, high_limit, gap_start, gap_end;
++	/* PC GPIO */
++	PINMUX_DATA(PC7_DATA, PC7_IN, PC7_OUT, PC7_IN_PU),
++	PINMUX_DATA(PC6_DATA, PC6_IN, PC6_OUT, PC6_IN_PU),
++	PINMUX_DATA(PC5_DATA, PC5_IN, PC5_OUT, PC5_IN_PU),
++	PINMUX_DATA(PC4_DATA, PC4_IN, PC4_OUT, PC4_IN_PU),
++	PINMUX_DATA(PC3_DATA, PC3_IN, PC3_OUT, PC3_IN_PU),
++	PINMUX_DATA(PC2_DATA, PC2_IN, PC2_OUT, PC2_IN_PU),
++	PINMUX_DATA(PC1_DATA, PC1_IN, PC1_OUT, PC1_IN_PU),
++	PINMUX_DATA(PC0_DATA, PC0_IN, PC0_OUT, PC0_IN_PU),
 +
-+	/* Adjust search length to account for worst case alignment overhead */
-+	length = info->length + info->align_mask;
-+	if (length < info->length)
-+		return -ENOMEM;
++	/* PD GPIO */
++	PINMUX_DATA(PD7_DATA, PD7_IN, PD7_OUT, PD7_IN_PU),
++	PINMUX_DATA(PD6_DATA, PD6_IN, PD6_OUT, PD6_IN_PU),
++	PINMUX_DATA(PD5_DATA, PD5_IN, PD5_OUT, PD5_IN_PU),
++	PINMUX_DATA(PD4_DATA, PD4_IN, PD4_OUT, PD4_IN_PU),
++	PINMUX_DATA(PD3_DATA, PD3_IN, PD3_OUT, PD3_IN_PU),
++	PINMUX_DATA(PD2_DATA, PD2_IN, PD2_OUT, PD2_IN_PU),
++	PINMUX_DATA(PD1_DATA, PD1_IN, PD1_OUT, PD1_IN_PU),
++	PINMUX_DATA(PD0_DATA, PD0_IN, PD0_OUT, PD0_IN_PU),
 +
-+	/* Adjust search limits by the desired length */
-+	if (info->high_limit < length)
-+		return -ENOMEM;
-+	high_limit = info->high_limit - length;
++	/* PE GPIO */
++	PINMUX_DATA(PE7_DATA, PE7_IN, PE7_OUT, PE7_IN_PU),
++	PINMUX_DATA(PE6_DATA, PE6_IN, PE6_OUT, PE6_IN_PU),
++	PINMUX_DATA(PE5_DATA, PE5_IN, PE5_OUT, PE5_IN_PU),
++	PINMUX_DATA(PE4_DATA, PE4_IN, PE4_OUT, PE4_IN_PU),
++	PINMUX_DATA(PE3_DATA, PE3_IN, PE3_OUT, PE3_IN_PU),
++	PINMUX_DATA(PE2_DATA, PE2_IN, PE2_OUT, PE2_IN_PU),
++	PINMUX_DATA(PE1_DATA, PE1_IN, PE1_OUT, PE1_IN_PU),
++	PINMUX_DATA(PE0_DATA, PE0_IN, PE0_OUT, PE0_IN_PU),
 +
-+	if (info->low_limit > high_limit)
-+		return -ENOMEM;
-+	low_limit = info->low_limit + length;
++	/* PF GPIO */
++	PINMUX_DATA(PF7_DATA, PF7_IN, PF7_OUT, PF7_IN_PU),
++	PINMUX_DATA(PF6_DATA, PF6_IN, PF6_OUT, PF6_IN_PU),
++	PINMUX_DATA(PF5_DATA, PF5_IN, PF5_OUT, PF5_IN_PU),
++	PINMUX_DATA(PF4_DATA, PF4_IN, PF4_OUT, PF4_IN_PU),
++	PINMUX_DATA(PF3_DATA, PF3_IN, PF3_OUT, PF3_IN_PU),
++	PINMUX_DATA(PF2_DATA, PF2_IN, PF2_OUT, PF2_IN_PU),
++	PINMUX_DATA(PF1_DATA, PF1_IN, PF1_OUT, PF1_IN_PU),
++	PINMUX_DATA(PF0_DATA, PF0_IN, PF0_OUT, PF0_IN_PU),
 +
-+	/* Check if rbtree root looks promising */
-+	if (RB_EMPTY_ROOT(&mm->mm_rb))
-+		goto check_highest;
-+	vma = rb_entry(mm->mm_rb.rb_node, struct vm_area_struct, vm_rb);
-+	if (vma->rb_subtree_gap < length)
-+		goto check_highest;
++	/* PG GPIO */
++	PINMUX_DATA(PG7_DATA, PG7_IN, PG7_OUT, PG7_IN_PU),
++	PINMUX_DATA(PG6_DATA, PG6_IN, PG6_OUT, PG6_IN_PU),
++	PINMUX_DATA(PG5_DATA, PG5_IN, PG5_OUT, PG5_IN_PU),
++	PINMUX_DATA(PG4_DATA, PG4_IN, PG4_OUT, PG4_IN_PU),
++	PINMUX_DATA(PG3_DATA, PG3_IN, PG3_OUT, PG3_IN_PU),
++	PINMUX_DATA(PG2_DATA, PG2_IN, PG2_OUT, PG2_IN_PU),
++	PINMUX_DATA(PG1_DATA, PG1_IN, PG1_OUT, PG1_IN_PU),
++	PINMUX_DATA(PG0_DATA, PG0_IN, PG0_OUT, PG0_IN_PU),
 +
-+	while (true) {
-+		/* Visit left subtree if it looks promising */
-+		gap_end = vma->vm_start;
-+		if (gap_end >= low_limit && vma->vm_rb.rb_left) {
-+			struct vm_area_struct *left +				rb_entry(vma->vm_rb.rb_left,
-+					 struct vm_area_struct, vm_rb);
-+			if (left->rb_subtree_gap >= length) {
-+				vma = left;
-+				continue;
-+			}
-+		}
++	/* PH GPIO */
++	PINMUX_DATA(PH5_DATA, PH5_IN, PH5_OUT, PH5_IN_PU),
++	PINMUX_DATA(PH4_DATA, PH4_IN, PH4_OUT, PH4_IN_PU),
++	PINMUX_DATA(PH3_DATA, PH3_IN, PH3_OUT, PH3_IN_PU),
++	PINMUX_DATA(PH2_DATA, PH2_IN, PH2_OUT, PH2_IN_PU),
++	PINMUX_DATA(PH1_DATA, PH1_IN, PH1_OUT, PH1_IN_PU),
++	PINMUX_DATA(PH0_DATA, PH0_IN, PH0_OUT, PH0_IN_PU),
 +
-+		gap_start = vma->vm_prev ? vma->vm_prev->vm_end : 0;
-+	check_current:
-+		/* Check if current node has a suitable gap */
-+		if (gap_start > high_limit)
-+			return -ENOMEM;
-+		if (gap_end >= low_limit && gap_end - gap_start >= length)
-+			goto found;
++	/* PA FN */
++	PINMUX_DATA(D31_MARK, PA7_FN),
++	PINMUX_DATA(D30_MARK, PA6_FN),
++	PINMUX_DATA(D29_MARK, PA5_FN),
++	PINMUX_DATA(D28_MARK, PA4_FN),
++	PINMUX_DATA(D27_MARK, PA3_FN),
++	PINMUX_DATA(D26_MARK, PA2_FN),
++	PINMUX_DATA(D25_MARK, PA1_FN),
++	PINMUX_DATA(D24_MARK, PA0_FN),
 +
-+		/* Visit right subtree if it looks promising */
-+		if (vma->vm_rb.rb_right) {
-+			struct vm_area_struct *right +				rb_entry(vma->vm_rb.rb_right,
-+					 struct vm_area_struct, vm_rb);
-+			if (right->rb_subtree_gap >= length) {
-+				vma = right;
-+				continue;
-+			}
-+		}
++	/* PB FN */
++	PINMUX_DATA(D23_MARK, PB7_FN),
++	PINMUX_DATA(D22_MARK, PB6_FN),
++	PINMUX_DATA(D21_MARK, PB5_FN),
++	PINMUX_DATA(D20_MARK, PB4_FN),
++	PINMUX_DATA(D19_MARK, PB3_FN),
++	PINMUX_DATA(D18_MARK, PB2_FN),
++	PINMUX_DATA(D17_MARK, PB1_FN),
++	PINMUX_DATA(D16_MARK, PB0_FN),
 +
-+		/* Go back up the rbtree to find next candidate node */
-+		while (true) {
-+			struct rb_node *prev = &vma->vm_rb;
-+			if (!rb_parent(prev))
-+				goto check_highest;
-+			vma = rb_entry(rb_parent(prev),
-+				       struct vm_area_struct, vm_rb);
-+			if (prev = vma->vm_rb.rb_left) {
-+				gap_start = vma->vm_prev->vm_end;
-+				gap_end = vma->vm_start;
-+				goto check_current;
-+			}
-+		}
-+	}
++	/* PC FN */
++	PINMUX_DATA(BACK_MARK,		PC7_FN),
++	PINMUX_DATA(BREQ_MARK,		PC6_FN),
++	PINMUX_DATA(WE3_MARK,		PC5_FN),
++	PINMUX_DATA(WE2_MARK,		PC4_FN),
++	PINMUX_DATA(CS6_MARK,		PC3_FN),
++	PINMUX_DATA(CS5_MARK,		PC2_FN),
++	PINMUX_DATA(CS4_MARK,		PC1_FN),
++	PINMUX_DATA(CLKOUTENB_MARK,	PC0_FN),
 +
-+check_highest:
-+	/* Check highest gap, which does not precede any rbtree node */
-+	gap_start = mm->highest_vm_end;
-+	gap_end = ULONG_MAX;  /* Only for VM_BUG_ON below */
-+	if (gap_start > high_limit)
-+		return -ENOMEM;
++	/* PD FN */
++	PINMUX_DATA(DACK3_MARK,	PD7_FN),
++	PINMUX_DATA(DACK2_MARK, PD6_FN),
++	PINMUX_DATA(DACK1_MARK, PD5_FN),
++	PINMUX_DATA(DACK0_MARK, PD4_FN),
++	PINMUX_DATA(DREQ3_MARK, PD3_FN),
++	PINMUX_DATA(DREQ2_MARK, PD2_FN),
++	PINMUX_DATA(DREQ1_MARK, PD1_FN),
++	PINMUX_DATA(DREQ0_MARK, PD0_FN),
 +
-+found:
-+	/* We found a suitable gap. Clip it with the original low_limit. */
-+	if (gap_start < info->low_limit)
-+		gap_start = info->low_limit;
++	/* PE FN */
++	PINMUX_DATA(IRQ3_MARK,	PE7_FN),
++	PINMUX_DATA(IRQ2_MARK,	PE6_FN),
++	PINMUX_DATA(IRQ1_MARK,	PE5_FN),
++	PINMUX_DATA(IRQ0_MARK,	PE4_FN),
++	PINMUX_DATA(DRAK3_MARK, PE3_FN),
++	PINMUX_DATA(DRAK2_MARK, PE2_FN),
++	PINMUX_DATA(DRAK1_MARK, PE1_FN),
++	PINMUX_DATA(DRAK0_MARK, PE0_FN),
 +
-+	/* Adjust gap address to the desired alignment */
-+	gap_start += (info->align_offset - gap_start) & info->align_mask;
++	/* PF FN */
++	PINMUX_DATA(SCK3_MARK, PF7_FN),
++	PINMUX_DATA(SCK2_MARK, PF6_FN),
++	PINMUX_DATA(SCK1_MARK, PF5_FN),
++	PINMUX_DATA(SCK0_MARK, PF4_FN),
++	PINMUX_DATA(IRL3_MARK, PF3_FN),
++	PINMUX_DATA(IRL2_MARK, PF2_FN),
++	PINMUX_DATA(IRL1_MARK, PF1_FN),
++	PINMUX_DATA(IRL0_MARK, PF0_FN),
 +
-+	VM_BUG_ON(gap_start + info->length > info->high_limit);
-+	VM_BUG_ON(gap_start + info->length > gap_end);
-+	return gap_start;
-+}
++	/* PG FN */
++	PINMUX_DATA(TXD3_MARK, PG7_FN),
++	PINMUX_DATA(TXD2_MARK, PG6_FN),
++	PINMUX_DATA(TXD1_MARK, PG5_FN),
++	PINMUX_DATA(TXD0_MARK, PG4_FN),
++	PINMUX_DATA(RXD3_MARK, PG3_FN),
++	PINMUX_DATA(RXD2_MARK, PG2_FN),
++	PINMUX_DATA(RXD1_MARK, PG1_FN),
++	PINMUX_DATA(RXD0_MARK, PG0_FN),
 +
-+unsigned long unmapped_area_topdown(struct vm_unmapped_area_info *info)
-+{
-+	struct mm_struct *mm = current->mm;
-+	struct vm_area_struct *vma;
-+	unsigned long length, low_limit, high_limit, gap_start, gap_end;
++	/* PH FN */
++	PINMUX_DATA(CE2B_MARK,		PH5_FN),
++	PINMUX_DATA(CE2A_MARK,		PH4_FN),
++	PINMUX_DATA(IOIS16_MARK,	PH3_FN),
++	PINMUX_DATA(STATUS1_MARK,	PH2_FN),
++	PINMUX_DATA(STATUS0_MARK,	PH1_FN),
++	PINMUX_DATA(IRQOUT_MARK,	PH0_FN),
++};
 +
-+	/* Adjust search length to account for worst case alignment overhead */
-+	length = info->length + info->align_mask;
-+	if (length < info->length)
-+		return -ENOMEM;
++static struct pinmux_gpio shx3_pinmux_gpios[] = {
++	/* PA */
++	PINMUX_GPIO(GPIO_PA7, PA7_DATA),
++	PINMUX_GPIO(GPIO_PA6, PA6_DATA),
++	PINMUX_GPIO(GPIO_PA5, PA5_DATA),
++	PINMUX_GPIO(GPIO_PA4, PA4_DATA),
++	PINMUX_GPIO(GPIO_PA3, PA3_DATA),
++	PINMUX_GPIO(GPIO_PA2, PA2_DATA),
++	PINMUX_GPIO(GPIO_PA1, PA1_DATA),
++	PINMUX_GPIO(GPIO_PA0, PA0_DATA),
 +
-+	/*
-+	 * Adjust search limits by the desired length.
-+	 * See implementation comment at top of unmapped_area().
-+	 */
-+	gap_end = info->high_limit;
-+	if (gap_end < length)
-+		return -ENOMEM;
-+	high_limit = gap_end - length;
++	/* PB */
++	PINMUX_GPIO(GPIO_PB7, PB7_DATA),
++	PINMUX_GPIO(GPIO_PB6, PB6_DATA),
++	PINMUX_GPIO(GPIO_PB5, PB5_DATA),
++	PINMUX_GPIO(GPIO_PB4, PB4_DATA),
++	PINMUX_GPIO(GPIO_PB3, PB3_DATA),
++	PINMUX_GPIO(GPIO_PB2, PB2_DATA),
++	PINMUX_GPIO(GPIO_PB1, PB1_DATA),
++	PINMUX_GPIO(GPIO_PB0, PB0_DATA),
 +
-+	if (info->low_limit > high_limit)
-+		return -ENOMEM;
-+	low_limit = info->low_limit + length;
++	/* PC */
++	PINMUX_GPIO(GPIO_PC7, PC7_DATA),
++	PINMUX_GPIO(GPIO_PC6, PC6_DATA),
++	PINMUX_GPIO(GPIO_PC5, PC5_DATA),
++	PINMUX_GPIO(GPIO_PC4, PC4_DATA),
++	PINMUX_GPIO(GPIO_PC3, PC3_DATA),
++	PINMUX_GPIO(GPIO_PC2, PC2_DATA),
++	PINMUX_GPIO(GPIO_PC1, PC1_DATA),
++	PINMUX_GPIO(GPIO_PC0, PC0_DATA),
 +
-+	/* Check highest gap, which does not precede any rbtree node */
-+	gap_start = mm->highest_vm_end;
-+	if (gap_start <= high_limit)
-+		goto found_highest;
++	/* PD */
++	PINMUX_GPIO(GPIO_PD7, PD7_DATA),
++	PINMUX_GPIO(GPIO_PD6, PD6_DATA),
++	PINMUX_GPIO(GPIO_PD5, PD5_DATA),
++	PINMUX_GPIO(GPIO_PD4, PD4_DATA),
++	PINMUX_GPIO(GPIO_PD3, PD3_DATA),
++	PINMUX_GPIO(GPIO_PD2, PD2_DATA),
++	PINMUX_GPIO(GPIO_PD1, PD1_DATA),
++	PINMUX_GPIO(GPIO_PD0, PD0_DATA),
 +
-+	/* Check if rbtree root looks promising */
-+	if (RB_EMPTY_ROOT(&mm->mm_rb))
-+		return -ENOMEM;
-+	vma = rb_entry(mm->mm_rb.rb_node, struct vm_area_struct, vm_rb);
-+	if (vma->rb_subtree_gap < length)
-+		return -ENOMEM;
++	/* PE */
++	PINMUX_GPIO(GPIO_PE7, PE7_DATA),
++	PINMUX_GPIO(GPIO_PE6, PE6_DATA),
++	PINMUX_GPIO(GPIO_PE5, PE5_DATA),
++	PINMUX_GPIO(GPIO_PE4, PE4_DATA),
++	PINMUX_GPIO(GPIO_PE3, PE3_DATA),
++	PINMUX_GPIO(GPIO_PE2, PE2_DATA),
++	PINMUX_GPIO(GPIO_PE1, PE1_DATA),
++	PINMUX_GPIO(GPIO_PE0, PE0_DATA),
 +
-+	while (true) {
-+		/* Visit right subtree if it looks promising */
-+		gap_start = vma->vm_prev ? vma->vm_prev->vm_end : 0;
-+		if (gap_start <= high_limit && vma->vm_rb.rb_right) {
-+			struct vm_area_struct *right +				rb_entry(vma->vm_rb.rb_right,
-+					 struct vm_area_struct, vm_rb);
-+			if (right->rb_subtree_gap >= length) {
-+				vma = right;
-+				continue;
-+			}
-+		}
++	/* PF */
++	PINMUX_GPIO(GPIO_PF7, PF7_DATA),
++	PINMUX_GPIO(GPIO_PF6, PF6_DATA),
++	PINMUX_GPIO(GPIO_PF5, PF5_DATA),
++	PINMUX_GPIO(GPIO_PF4, PF4_DATA),
++	PINMUX_GPIO(GPIO_PF3, PF3_DATA),
++	PINMUX_GPIO(GPIO_PF2, PF2_DATA),
++	PINMUX_GPIO(GPIO_PF1, PF1_DATA),
++	PINMUX_GPIO(GPIO_PF0, PF0_DATA),
 +
-+	check_current:
-+		/* Check if current node has a suitable gap */
-+		gap_end = vma->vm_start;
-+		if (gap_end < low_limit)
-+			return -ENOMEM;
-+		if (gap_start <= high_limit && gap_end - gap_start >= length)
-+			goto found;
++	/* PG */
++	PINMUX_GPIO(GPIO_PG7, PG7_DATA),
++	PINMUX_GPIO(GPIO_PG6, PG6_DATA),
++	PINMUX_GPIO(GPIO_PG5, PG5_DATA),
++	PINMUX_GPIO(GPIO_PG4, PG4_DATA),
++	PINMUX_GPIO(GPIO_PG3, PG3_DATA),
++	PINMUX_GPIO(GPIO_PG2, PG2_DATA),
++	PINMUX_GPIO(GPIO_PG1, PG1_DATA),
++	PINMUX_GPIO(GPIO_PG0, PG0_DATA),
 +
-+		/* Visit left subtree if it looks promising */
-+		if (vma->vm_rb.rb_left) {
-+			struct vm_area_struct *left +				rb_entry(vma->vm_rb.rb_left,
-+					 struct vm_area_struct, vm_rb);
-+			if (left->rb_subtree_gap >= length) {
-+				vma = left;
-+				continue;
-+			}
-+		}
++	/* PH */
++	PINMUX_GPIO(GPIO_PH5, PH5_DATA),
++	PINMUX_GPIO(GPIO_PH4, PH4_DATA),
++	PINMUX_GPIO(GPIO_PH3, PH3_DATA),
++	PINMUX_GPIO(GPIO_PH2, PH2_DATA),
++	PINMUX_GPIO(GPIO_PH1, PH1_DATA),
++	PINMUX_GPIO(GPIO_PH0, PH0_DATA),
 +
-+		/* Go back up the rbtree to find next candidate node */
-+		while (true) {
-+			struct rb_node *prev = &vma->vm_rb;
-+			if (!rb_parent(prev))
-+				return -ENOMEM;
-+			vma = rb_entry(rb_parent(prev),
-+				       struct vm_area_struct, vm_rb);
-+			if (prev = vma->vm_rb.rb_right) {
-+				gap_start = vma->vm_prev ?
-+					vma->vm_prev->vm_end : 0;
-+				goto check_current;
-+			}
-+		}
-+	}
++	/* FN */
++	PINMUX_GPIO(GPIO_FN_D31,	D31_MARK),
++	PINMUX_GPIO(GPIO_FN_D30,	D30_MARK),
++	PINMUX_GPIO(GPIO_FN_D29,	D29_MARK),
++	PINMUX_GPIO(GPIO_FN_D28,	D28_MARK),
++	PINMUX_GPIO(GPIO_FN_D27,	D27_MARK),
++	PINMUX_GPIO(GPIO_FN_D26,	D26_MARK),
++	PINMUX_GPIO(GPIO_FN_D25,	D25_MARK),
++	PINMUX_GPIO(GPIO_FN_D24,	D24_MARK),
++	PINMUX_GPIO(GPIO_FN_D23,	D23_MARK),
++	PINMUX_GPIO(GPIO_FN_D22,	D22_MARK),
++	PINMUX_GPIO(GPIO_FN_D21,	D21_MARK),
++	PINMUX_GPIO(GPIO_FN_D20,	D20_MARK),
++	PINMUX_GPIO(GPIO_FN_D19,	D19_MARK),
++	PINMUX_GPIO(GPIO_FN_D18,	D18_MARK),
++	PINMUX_GPIO(GPIO_FN_D17,	D17_MARK),
++	PINMUX_GPIO(GPIO_FN_D16,	D16_MARK),
++	PINMUX_GPIO(GPIO_FN_BACK,	BACK_MARK),
++	PINMUX_GPIO(GPIO_FN_BREQ,	BREQ_MARK),
++	PINMUX_GPIO(GPIO_FN_WE3,	WE3_MARK),
++	PINMUX_GPIO(GPIO_FN_WE2,	WE2_MARK),
++	PINMUX_GPIO(GPIO_FN_CS6,	CS6_MARK),
++	PINMUX_GPIO(GPIO_FN_CS5,	CS5_MARK),
++	PINMUX_GPIO(GPIO_FN_CS4,	CS4_MARK),
++	PINMUX_GPIO(GPIO_FN_CLKOUTENB,	CLKOUTENB_MARK),
++	PINMUX_GPIO(GPIO_FN_DACK3,	DACK3_MARK),
++	PINMUX_GPIO(GPIO_FN_DACK2,	DACK2_MARK),
++	PINMUX_GPIO(GPIO_FN_DACK1,	DACK1_MARK),
++	PINMUX_GPIO(GPIO_FN_DACK0,	DACK0_MARK),
++	PINMUX_GPIO(GPIO_FN_DREQ3,	DREQ3_MARK),
++	PINMUX_GPIO(GPIO_FN_DREQ2,	DREQ2_MARK),
++	PINMUX_GPIO(GPIO_FN_DREQ1,	DREQ1_MARK),
++	PINMUX_GPIO(GPIO_FN_DREQ0,	DREQ0_MARK),
++	PINMUX_GPIO(GPIO_FN_IRQ3,	IRQ3_MARK),
++	PINMUX_GPIO(GPIO_FN_IRQ2,	IRQ2_MARK),
++	PINMUX_GPIO(GPIO_FN_IRQ1,	IRQ1_MARK),
++	PINMUX_GPIO(GPIO_FN_IRQ0,	IRQ0_MARK),
++	PINMUX_GPIO(GPIO_FN_DRAK3,	DRAK3_MARK),
++	PINMUX_GPIO(GPIO_FN_DRAK2,	DRAK2_MARK),
++	PINMUX_GPIO(GPIO_FN_DRAK1,	DRAK1_MARK),
++	PINMUX_GPIO(GPIO_FN_DRAK0,	DRAK0_MARK),
++	PINMUX_GPIO(GPIO_FN_SCK3,	SCK3_MARK),
++	PINMUX_GPIO(GPIO_FN_SCK2,	SCK2_MARK),
++	PINMUX_GPIO(GPIO_FN_SCK1,	SCK1_MARK),
++	PINMUX_GPIO(GPIO_FN_SCK0,	SCK0_MARK),
++	PINMUX_GPIO(GPIO_FN_IRL3,	IRL3_MARK),
++	PINMUX_GPIO(GPIO_FN_IRL2,	IRL2_MARK),
++	PINMUX_GPIO(GPIO_FN_IRL1,	IRL1_MARK),
++	PINMUX_GPIO(GPIO_FN_IRL0,	IRL0_MARK),
++	PINMUX_GPIO(GPIO_FN_TXD3,	TXD3_MARK),
++	PINMUX_GPIO(GPIO_FN_TXD2,	TXD2_MARK),
++	PINMUX_GPIO(GPIO_FN_TXD1,	TXD1_MARK),
++	PINMUX_GPIO(GPIO_FN_TXD0,	TXD0_MARK),
++	PINMUX_GPIO(GPIO_FN_RXD3,	RXD3_MARK),
++	PINMUX_GPIO(GPIO_FN_RXD2,	RXD2_MARK),
++	PINMUX_GPIO(GPIO_FN_RXD1,	RXD1_MARK),
++	PINMUX_GPIO(GPIO_FN_RXD0,	RXD0_MARK),
++	PINMUX_GPIO(GPIO_FN_CE2B,	CE2B_MARK),
++	PINMUX_GPIO(GPIO_FN_CE2A,	CE2A_MARK),
++	PINMUX_GPIO(GPIO_FN_IOIS16,	IOIS16_MARK),
++	PINMUX_GPIO(GPIO_FN_STATUS1,	STATUS1_MARK),
++	PINMUX_GPIO(GPIO_FN_STATUS0,	STATUS0_MARK),
++	PINMUX_GPIO(GPIO_FN_IRQOUT,	IRQOUT_MARK),
++};
 +
-+found:
-+	/* We found a suitable gap. Clip it with the original high_limit. */
-+	if (gap_end > info->high_limit)
-+		gap_end = info->high_limit;
++static struct pinmux_cfg_reg shx3_pinmux_config_regs[] = {
++	{ PINMUX_CFG_REG("PABCR", 0xffc70000, 32, 2) {
++		PA7_FN, PA7_OUT, PA7_IN, PA7_IN_PU,
++		PA6_FN, PA6_OUT, PA6_IN, PA6_IN_PU,
++		PA5_FN, PA5_OUT, PA5_IN, PA5_IN_PU,
++		PA4_FN, PA4_OUT, PA4_IN, PA4_IN_PU,
++		PA3_FN, PA3_OUT, PA3_IN, PA3_IN_PU,
++		PA2_FN, PA2_OUT, PA2_IN, PA2_IN_PU,
++		PA1_FN, PA1_OUT, PA1_IN, PA1_IN_PU,
++		PA0_FN, PA0_OUT, PA0_IN, PA0_IN_PU,
++		PB7_FN, PB7_OUT, PB7_IN, PB7_IN_PU,
++		PB6_FN, PB6_OUT, PB6_IN, PB6_IN_PU,
++		PB5_FN, PB5_OUT, PB5_IN, PB5_IN_PU,
++		PB4_FN, PB4_OUT, PB4_IN, PB4_IN_PU,
++		PB3_FN, PB3_OUT, PB3_IN, PB3_IN_PU,
++		PB2_FN, PB2_OUT, PB2_IN, PB2_IN_PU,
++		PB1_FN, PB1_OUT, PB1_IN, PB1_IN_PU,
++		PB0_FN, PB0_OUT, PB0_IN, PB0_IN_PU, },
++	},
++	{ PINMUX_CFG_REG("PCDCR", 0xffc70004, 32, 2) {
++		PC7_FN, PC7_OUT, PC7_IN, PC7_IN_PU,
++		PC6_FN, PC6_OUT, PC6_IN, PC6_IN_PU,
++		PC5_FN, PC5_OUT, PC5_IN, PC5_IN_PU,
++		PC4_FN, PC4_OUT, PC4_IN, PC4_IN_PU,
++		PC3_FN, PC3_OUT, PC3_IN, PC3_IN_PU,
++		PC2_FN, PC2_OUT, PC2_IN, PC2_IN_PU,
++		PC1_FN, PC1_OUT, PC1_IN, PC1_IN_PU,
++		PC0_FN, PC0_OUT, PC0_IN, PC0_IN_PU,
++		PD7_FN, PD7_OUT, PD7_IN, PD7_IN_PU,
++		PD6_FN, PD6_OUT, PD6_IN, PD6_IN_PU,
++		PD5_FN, PD5_OUT, PD5_IN, PD5_IN_PU,
++		PD4_FN, PD4_OUT, PD4_IN, PD4_IN_PU,
++		PD3_FN, PD3_OUT, PD3_IN, PD3_IN_PU,
++		PD2_FN, PD2_OUT, PD2_IN, PD2_IN_PU,
++		PD1_FN, PD1_OUT, PD1_IN, PD1_IN_PU,
++		PD0_FN, PD0_OUT, PD0_IN, PD0_IN_PU, },
++	},
++	{ PINMUX_CFG_REG("PEFCR", 0xffc70008, 32, 2) {
++		PE7_FN, PE7_OUT, PE7_IN, PE7_IN_PU,
++		PE6_FN, PE6_OUT, PE6_IN, PE6_IN_PU,
++		PE5_FN, PE5_OUT, PE5_IN, PE5_IN_PU,
++		PE4_FN, PE4_OUT, PE4_IN, PE4_IN_PU,
++		PE3_FN, PE3_OUT, PE3_IN, PE3_IN_PU,
++		PE2_FN, PE2_OUT, PE2_IN, PE2_IN_PU,
++		PE1_FN, PE1_OUT, PE1_IN, PE1_IN_PU,
++		PE0_FN, PE0_OUT, PE0_IN, PE0_IN_PU,
++		PF7_FN, PF7_OUT, PF7_IN, PF7_IN_PU,
++		PF6_FN, PF6_OUT, PF6_IN, PF6_IN_PU,
++		PF5_FN, PF5_OUT, PF5_IN, PF5_IN_PU,
++		PF4_FN, PF4_OUT, PF4_IN, PF4_IN_PU,
++		PF3_FN, PF3_OUT, PF3_IN, PF3_IN_PU,
++		PF2_FN, PF2_OUT, PF2_IN, PF2_IN_PU,
++		PF1_FN, PF1_OUT, PF1_IN, PF1_IN_PU,
++		PF0_FN, PF0_OUT, PF0_IN, PF0_IN_PU, },
++	},
++	{ PINMUX_CFG_REG("PGHCR", 0xffc7000c, 32, 2) {
++		PG7_FN, PG7_OUT, PG7_IN, PG7_IN_PU,
++		PG6_FN, PG6_OUT, PG6_IN, PG6_IN_PU,
++		PG5_FN, PG5_OUT, PG5_IN, PG5_IN_PU,
++		PG4_FN, PG4_OUT, PG4_IN, PG4_IN_PU,
++		PG3_FN, PG3_OUT, PG3_IN, PG3_IN_PU,
++		PG2_FN, PG2_OUT, PG2_IN, PG2_IN_PU,
++		PG1_FN, PG1_OUT, PG1_IN, PG1_IN_PU,
++		PG0_FN, PG0_OUT, PG0_IN, PG0_IN_PU,
++		0, 0, 0, 0,
++		0, 0, 0, 0,
++		PH5_FN, PH5_OUT, PH5_IN, PH5_IN_PU,
++		PH4_FN, PH4_OUT, PH4_IN, PH4_IN_PU,
++		PH3_FN, PH3_OUT, PH3_IN, PH3_IN_PU,
++		PH2_FN, PH2_OUT, PH2_IN, PH2_IN_PU,
++		PH1_FN, PH1_OUT, PH1_IN, PH1_IN_PU,
++		PH0_FN, PH0_OUT, PH0_IN, PH0_IN_PU, },
++	},
++	{ },
++};
 +
-+found_highest:
-+	/* Compute highest gap address at the desired alignment */
-+	gap_end -= info->length;
-+	gap_end -= (gap_end - info->align_offset) & info->align_mask;
++static struct pinmux_data_reg shx3_pinmux_data_regs[] = {
++	{ PINMUX_DATA_REG("PABDR", 0xffc70010, 32) {
++		0, 0, 0, 0, 0, 0, 0, 0,
++		PA7_DATA, PA6_DATA, PA5_DATA, PA4_DATA,
++		PA3_DATA, PA2_DATA, PA1_DATA, PA0_DATA,
++		0, 0, 0, 0, 0, 0, 0, 0,
++		PB7_DATA, PB6_DATA, PB5_DATA, PB4_DATA,
++		PB3_DATA, PB2_DATA, PB1_DATA, PB0_DATA, },
++	},
++	{ PINMUX_DATA_REG("PCDDR", 0xffc70014, 32) {
++		0, 0, 0, 0, 0, 0, 0, 0,
++		PC7_DATA, PC6_DATA, PC5_DATA, PC4_DATA,
++		PC3_DATA, PC2_DATA, PC1_DATA, PC0_DATA,
++		0, 0, 0, 0, 0, 0, 0, 0,
++		PD7_DATA, PD6_DATA, PD5_DATA, PD4_DATA,
++		PD3_DATA, PD2_DATA, PD1_DATA, PD0_DATA, },
++	},
++	{ PINMUX_DATA_REG("PEFDR", 0xffc70018, 32) {
++		0, 0, 0, 0, 0, 0, 0, 0,
++		PE7_DATA, PE6_DATA, PE5_DATA, PE4_DATA,
++		PE3_DATA, PE2_DATA, PE1_DATA, PE0_DATA,
++		0, 0, 0, 0, 0, 0, 0, 0,
++		PF7_DATA, PF6_DATA, PF5_DATA, PF4_DATA,
++		PF3_DATA, PF2_DATA, PF1_DATA, PF0_DATA, },
++	},
++	{ PINMUX_DATA_REG("PGHDR", 0xffc7001c, 32) {
++		0, 0, 0, 0, 0, 0, 0, 0,
++		PG7_DATA, PG6_DATA, PG5_DATA, PG4_DATA,
++		PG3_DATA, PG2_DATA, PG1_DATA, PG0_DATA,
++		0, 0, 0, 0, 0, 0, 0, 0,
++		0, 0, PH5_DATA, PH4_DATA,
++		PH3_DATA, PH2_DATA, PH1_DATA, PH0_DATA, },
++	},
++	{ },
++};
 +
-+	VM_BUG_ON(gap_end < info->low_limit);
-+	VM_BUG_ON(gap_end < gap_start);
-+	return gap_end;
-+}
-+
- /* Get an address range which is currently unmapped.
-  * For shmat() with addr=0.
-  *
-@@ -1514,7 +1714,7 @@ arch_get_unmapped_area(struct file *filp, unsigned long addr,
- {
- 	struct mm_struct *mm = current->mm;
- 	struct vm_area_struct *vma;
--	unsigned long start_addr;
-+	struct vm_unmapped_area_info info;
- 
- 	if (len > TASK_SIZE)
- 		return -ENOMEM;
-@@ -1529,40 +1729,13 @@ arch_get_unmapped_area(struct file *filp, unsigned long addr,
- 		    (!vma || addr + len <= vma->vm_start))
- 			return addr;
- 	}
--	if (len > mm->cached_hole_size) {
--	        start_addr = addr = mm->free_area_cache;
--	} else {
--	        start_addr = addr = TASK_UNMAPPED_BASE;
--	        mm->cached_hole_size = 0;
--	}
- 
--full_search:
--	for (vma = find_vma(mm, addr); ; vma = vma->vm_next) {
--		/* At this point:  (!vma || addr < vma->vm_end). */
--		if (TASK_SIZE - len < addr) {
--			/*
--			 * Start a new search - just in case we missed
--			 * some holes.
--			 */
--			if (start_addr != TASK_UNMAPPED_BASE) {
--				addr = TASK_UNMAPPED_BASE;
--			        start_addr = addr;
--				mm->cached_hole_size = 0;
--				goto full_search;
--			}
--			return -ENOMEM;
--		}
--		if (!vma || addr + len <= vma->vm_start) {
--			/*
--			 * Remember the place where we stopped the search:
--			 */
--			mm->free_area_cache = addr + len;
--			return addr;
--		}
--		if (addr + mm->cached_hole_size < vma->vm_start)
--		        mm->cached_hole_size = vma->vm_start - addr;
--		addr = vma->vm_end;
--	}
-+	info.flags = 0;
-+	info.length = len;
-+	info.low_limit = TASK_UNMAPPED_BASE;
-+	info.high_limit = TASK_SIZE;
-+	info.align_mask = 0;
-+	return vm_unmapped_area(&info);
- }
- #endif	
- 
-@@ -1587,7 +1760,8 @@ arch_get_unmapped_area_topdown(struct file *filp, const unsigned long addr0,
- {
- 	struct vm_area_struct *vma;
- 	struct mm_struct *mm = current->mm;
--	unsigned long addr = addr0, start_addr;
-+	unsigned long addr = addr0;
-+	struct vm_unmapped_area_info info;
- 
- 	/* requested length too big for entire address space */
- 	if (len > TASK_SIZE)
-@@ -1605,53 +1779,12 @@ arch_get_unmapped_area_topdown(struct file *filp, const unsigned long addr0,
- 			return addr;
- 	}
- 
--	/* check if free_area_cache is useful for us */
--	if (len <= mm->cached_hole_size) {
-- 	        mm->cached_hole_size = 0;
-- 		mm->free_area_cache = mm->mmap_base;
-- 	}
--
--try_again:
--	/* either no address requested or can't fit in requested address hole */
--	start_addr = addr = mm->free_area_cache;
--
--	if (addr < len)
--		goto fail;
--
--	addr -= len;
--	do {
--		/*
--		 * Lookup failure means no vma is above this address,
--		 * else if new region fits below vma->vm_start,
--		 * return with success:
--		 */
--		vma = find_vma(mm, addr);
--		if (!vma || addr+len <= vma->vm_start)
--			/* remember the address as a hint for next time */
--			return (mm->free_area_cache = addr);
--
-- 		/* remember the largest hole we saw so far */
-- 		if (addr + mm->cached_hole_size < vma->vm_start)
-- 		        mm->cached_hole_size = vma->vm_start - addr;
--
--		/* try just below the current vma->vm_start */
--		addr = vma->vm_start-len;
--	} while (len < vma->vm_start);
--
--fail:
--	/*
--	 * if hint left us with no space for the requested
--	 * mapping then try again:
--	 *
--	 * Note: this is different with the case of bottomup
--	 * which does the fully line-search, but we use find_vma
--	 * here that causes some holes skipped.
--	 */
--	if (start_addr != mm->mmap_base) {
--		mm->free_area_cache = mm->mmap_base;
--		mm->cached_hole_size = 0;
--		goto try_again;
--	}
-+	info.flags = VM_UNMAPPED_AREA_TOPDOWN;
-+	info.length = len;
-+	info.low_limit = PAGE_SIZE;
-+	info.high_limit = mm->mmap_base;
-+	info.align_mask = 0;
-+	addr = vm_unmapped_area(&info);
- 
- 	/*
- 	 * A failed mmap() very likely causes application failure,
-@@ -1659,14 +1792,13 @@ fail:
- 	 * can happen with large stack limits and large mmap()
- 	 * allocations.
- 	 */
--	mm->cached_hole_size = ~0UL;
--  	mm->free_area_cache = TASK_UNMAPPED_BASE;
--	addr = arch_get_unmapped_area(filp, addr0, len, pgoff, flags);
--	/*
--	 * Restore the topdown base:
--	 */
--	mm->free_area_cache = mm->mmap_base;
--	mm->cached_hole_size = ~0UL;
-+	if (addr & ~PAGE_MASK) {
-+		VM_BUG_ON(addr != -ENOMEM);
-+		info.flags = 0;
-+		info.low_limit = TASK_UNMAPPED_BASE;
-+		info.high_limit = TASK_SIZE;
-+		addr = vm_unmapped_area(&info);
-+	}
- 
- 	return addr;
- }
++struct sh_pfc_soc_info shx3_pinmux_info = {
++	.name		= "shx3_pfc",
++	.reserved_id	= PINMUX_RESERVED,
++	.data		= { PINMUX_DATA_BEGIN,	   PINMUX_DATA_END },
++	.input		= { PINMUX_INPUT_BEGIN,	   PINMUX_INPUT_END },
++	.input_pu	= { PINMUX_INPUT_PULLUP_BEGIN,
++			    PINMUX_INPUT_PULLUP_END },
++	.output		= { PINMUX_OUTPUT_BEGIN,   PINMUX_OUTPUT_END },
++	.mark		= { PINMUX_MARK_BEGIN,     PINMUX_MARK_END },
++	.function	= { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
++	.first_gpio	= GPIO_PA7,
++	.last_gpio	= GPIO_FN_IRQOUT,
++	.gpios		= shx3_pinmux_gpios,
++	.gpio_data	= shx3_pinmux_data,
++	.gpio_data_size	= ARRAY_SIZE(shx3_pinmux_data),
++	.cfg_regs	= shx3_pinmux_config_regs,
++	.data_regs	= shx3_pinmux_data_regs,
++};
 -- 
-1.7.7.3
+1.7.8.6
+
