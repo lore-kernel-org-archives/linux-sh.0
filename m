@@ -1,168 +1,55 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 30 Nov 2012 08:44:45 +0000
-Subject: [PATCH 5/5] ARM: mach-shmobile: kzm9g: Reference DT implementation
-Message-Id: <1354265085-2444-6-git-send-email-horms@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 21 Nov 2012 02:53:27 +0000
+Subject: [PATCH 11/42] ARM: shmobile: Register PFC platform device
+Message-Id: <1353466438-10929-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1354265085-2444-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1354265085-2444-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Simon Horman <horms+renesas@verge.net.au>
+Add arch code to register the PFC platform device instead of calling the
+driver directly. Platform device registration in the sh-pfc driver will
+be removed.
 
-Provide alternate board code for the kzm9g to demonstrate
-how DT may be used given the current state of driver
-device tree support. This is intended to act as a reference
-for mach-shmobile developers.
-
-Some notes:
-
-* Brings up the GIC interrupt handler using device tree
-* Brings up the following device using device tree:
-  - MMCIF (MMC)
-* Does not bring up the INTC interrupt controller at all,
-  thus external devices may not be used
-* Uses existing C code and not device tree to initialise the following,
-  which are needed for a working board:
-  - SCIF (Serial)
-  - CMT (Clock)
-  - PFC (GPIO)
-
-To use this alternate board code instead of the normal board code,
-CONFIG_MACH_KZM9G_REFERENCE should be selected in the kernel config.
-And the sh73a0-kzm9g-reference.dtb flattened device tree blob should be used.
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ arch/arm/mach-shmobile/Makefile      |    2 +-
+ arch/arm/mach-shmobile/devices.c     |   37 ++++++++++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/devices.h     |   28 +++++++++++++++++++++++++
+ arch/arm/mach-shmobile/pfc-r8a7740.c |    4 ++-
+ arch/arm/mach-shmobile/pfc-r8a7779.c |    9 ++++---
+ arch/arm/mach-shmobile/pfc-sh7367.c  |    4 ++-
+ arch/arm/mach-shmobile/pfc-sh7372.c  |    4 ++-
+ arch/arm/mach-shmobile/pfc-sh7377.c  |    4 ++-
+ arch/arm/mach-shmobile/pfc-sh73a0.c  |    4 ++-
+ 9 files changed, 86 insertions(+), 10 deletions(-)
+ create mode 100644 arch/arm/mach-shmobile/devices.c
+ create mode 100644 arch/arm/mach-shmobile/devices.h
 
-v2
-* Do not initialise touchscreen, it requires the INTC interrupt controller
-  but for now this configuration only has the GIC interrupt controller.
-* Define mmcif and sdhi in SoC dtsi and reference in board dts.
-* Do not initialise SDHI, the driver needs to be updated
----
- arch/arm/boot/dts/Makefile                     |    3 +-
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts   |   37 ++++++++++
- arch/arm/mach-shmobile/Kconfig                 |   10 +++
- arch/arm/mach-shmobile/Makefile                |    8 ++-
- arch/arm/mach-shmobile/board-kzm9g-reference.c |   92 ++++++++++++++++++++++++
- 5 files changed, 148 insertions(+), 2 deletions(-)
- create mode 100644 arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
- create mode 100644 arch/arm/mach-shmobile/board-kzm9g-reference.c
-
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index f37cf9f..c606375 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -77,7 +77,8 @@ dtb-$(CONFIG_ARCH_PRIMA2) += prima2-evb.dtb
- dtb-$(CONFIG_ARCH_U8500) += snowball.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm9d.dtb \
- 	r8a7740-armadillo800eva.dtb \
--	sh73a0-kzm9g.dtb
-+	sh73a0-kzm9g.dtb \
-+	sh73a0-kzm9g-reference.dtb
- dtb-$(CONFIG_ARCH_SPEAR13XX) += spear1310-evb.dtb \
- 	spear1340-evb.dtb
- dtb-$(CONFIG_ARCH_SPEAR3XX)+= spear300-evb.dtb \
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-new file mode 100644
-index 0000000..588016e
---- /dev/null
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -0,0 +1,37 @@
-+/*
-+ * Device Tree Source for the KZM-A9-GT board
-+ *
-+ * Copyright (C) 2012 Horms Solutions Ltd.
-+ *
-+ * Based on sh73a0-kzm9g.dts
-+ * Copyright (C) 2012 Renesas Solutions Corp.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/dts-v1/;
-+/include/ "sh73a0-reference.dtsi"
-+
-+/ {
-+	model = "KZM-A9-GT";
-+	compatible = "renesas,kzm9g-reference", "renesas,sh73a0";
-+
-+	memory {
-+		device_type = "memory";
-+		reg = <0x41000000 0x1e800000>;
-+	};
-+
-+	fixedregulator1v8: fixedregulator@0 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "fixed-1.8V";
-+		regulator-min-microvolt = <1800000>;
-+		regulator-max-microvolt = <1800000>;
-+	};
-+};
-+
-+&mmcif {
-+	vmmc-supply = <&fixedregulator1v8>;
-+	vqmmc-supply = <&fixedregulator1v8>;
-+};
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 8ae100c..ca95c2b 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -136,6 +136,16 @@ config MACH_KZM9G
- 	select SND_SOC_AK4642 if SND_SIMPLE_CARD
- 	select USE_OF
- 
-+config MACH_KZM9G_REFERENCE
-+	bool "KZM-A9-GT board - Reference Device Tree Implementation"
-+	depends on MACH_KZM9G
-+	---help---
-+	   Use reference implementation of KZM-A9-GT board support
-+	   which makes as greater use of device tree at the expense
-+	   of not supporting a number of devices.
-+
-+	   This is intended to aid developers
-+
- comment "SH-Mobile System Configuration"
- 
- config CPU_HAS_INTEVT
 diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index e3556c6..7ffa428 100644
+index fe2c97c..f5a0c59 100644
 --- a/arch/arm/mach-shmobile/Makefile
 +++ b/arch/arm/mach-shmobile/Makefile
-@@ -51,7 +51,13 @@ obj-$(CONFIG_MACH_BONITO)	+= board-bonito.o
- obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
- obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d.o
--obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o
-+ifeq ($(CONFIG_MACH_KZM9G),y)
-+ifeq ($(CONFIG_MACH_KZM9G_REFERENCE),y)
-+obj-y	+= board-kzm9g-reference.o
-+else
-+obj-y	+= board-kzm9g.o
-+endif
-+endif
+@@ -3,7 +3,7 @@
+ #
  
- # Framework support
- obj-$(CONFIG_SMP)		+= $(smp-y)
-diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+ # Common objects
+-obj-y				:= timer.o console.o clock.o
++obj-y				:= timer.o console.o clock.o devices.o
+ 
+ # CPU objects
+ obj-$(CONFIG_ARCH_SH7367)	+= setup-sh7367.o clock-sh7367.o intc-sh7367.o
+diff --git a/arch/arm/mach-shmobile/devices.c b/arch/arm/mach-shmobile/devices.c
 new file mode 100644
-index 0000000..29c334d
+index 0000000..da4210e
 --- /dev/null
-+++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-@@ -0,0 +1,92 @@
++++ b/arch/arm/mach-shmobile/devices.c
+@@ -0,0 +1,37 @@
 +/*
-+ * KZM-A9-GT board support - Reference Device Tree Implementation
++ * SH Mobile Devices Setup and Initialization
 + *
-+ * Copyright (C) 2012	Horms Solutions Ltd.
-+ *
-+ * Based on board-kzm9g.c
-+ * Copyright (C) 2012	Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ * Copyright (C) 2012  Renesas Solutions Corp.
 + *
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License as published by
@@ -172,82 +59,196 @@ index 0000000..29c334d
 + * but WITHOUT ANY WARRANTY; without even the implied warranty of
 + * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 + * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 + */
 +
-+#include <linux/delay.h>
-+#include <linux/gpio.h>
-+#include <linux/io.h>
-+#include <linux/irq.h>
-+#include <linux/input.h>
-+#include <linux/of_platform.h>
-+#include <mach/sh73a0.h>
-+#include <mach/common.h>
-+#include <asm/hardware/cache-l2x0.h>
-+#include <asm/hardware/gic.h>
-+#include <asm/mach-types.h>
-+#include <asm/mach/arch.h>
++#include <linux/init.h>
++#include <linux/platform_device.h>
 +
-+static void __init kzm_init(void)
-+{
-+	/* enable SCIFA4 */
-+	gpio_request(GPIO_FN_SCIFA4_TXD, NULL);
-+	gpio_request(GPIO_FN_SCIFA4_RXD, NULL);
-+	gpio_request(GPIO_FN_SCIFA4_RTS_, NULL);
-+	gpio_request(GPIO_FN_SCIFA4_CTS_, NULL);
++#include "devices.h"
 +
-+	/* enable MMCIF */
-+	gpio_request(GPIO_FN_MMCCLK0,		NULL);
-+	gpio_request(GPIO_FN_MMCCMD0_PU,	NULL);
-+	gpio_request(GPIO_FN_MMCD0_0_PU,	NULL);
-+	gpio_request(GPIO_FN_MMCD0_1_PU,	NULL);
-+	gpio_request(GPIO_FN_MMCD0_2_PU,	NULL);
-+	gpio_request(GPIO_FN_MMCD0_3_PU,	NULL);
-+	gpio_request(GPIO_FN_MMCD0_4_PU,	NULL);
-+	gpio_request(GPIO_FN_MMCD0_5_PU,	NULL);
-+	gpio_request(GPIO_FN_MMCD0_6_PU,	NULL);
-+	gpio_request(GPIO_FN_MMCD0_7_PU,	NULL);
-+
-+	/* I2C 3 */
-+	gpio_request(GPIO_FN_PORT27_I2C_SCL3, NULL);
-+	gpio_request(GPIO_FN_PORT28_I2C_SDA3, NULL);
-+
-+#ifdef CONFIG_CACHE_L2X0
-+	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
-+	l2x0_init(IOMEM(0xf0100000), 0x40460000, 0x82000fff);
-+#endif
-+
-+	sh73a0_add_standard_devices_dt();
-+}
-+
-+static void kzm9g_restart(char mode, const char *cmd)
-+{
-+#define RESCNT2 IOMEM(0xe6188020)
-+	/* Do soft power on reset */
-+	writel((1 << 31), RESCNT2);
-+}
-+
-+static const char *kzm9g_boards_compat_dt[] __initdata = {
-+	"renesas,kzm9g-reference",
-+	NULL,
++static struct platform_device sh_pfc_device = {
++	.name		= "sh-pfc",
++	.id		= -1,
 +};
 +
-+DT_MACHINE_START(KZM9G_DT, "kzm9g-reference")
-+	.smp		= smp_ops(sh73a0_smp_ops),
-+	.map_io		= sh73a0_map_io,
-+	.init_early	= sh73a0_add_early_devices_dt,
-+	.nr_irqs	= NR_IRQS_LEGACY,
-+	.init_irq	= sh73a0_init_irq_dt,
-+	.handle_irq	= gic_handle_irq,
-+	.init_machine	= kzm_init,
-+	.init_late	= shmobile_init_late,
-+	.timer		= &shmobile_timer,
-+	.restart	= kzm9g_restart,
-+	.dt_compat	= kzm9g_boards_compat_dt,
-+MACHINE_END
++int __init sh_pfc_register(const char *name,
++			   struct resource *resource, u32 num_resources,
++			   struct pinmux_info *pdata)
++{
++	if (name)
++		sh_pfc_device.name = name;
++	sh_pfc_device.dev.platform_data = pdata;
++	sh_pfc_device.num_resources = num_resources;
++	sh_pfc_device.resource = resource;
++
++	return platform_device_register(&sh_pfc_device);
++}
+diff --git a/arch/arm/mach-shmobile/devices.h b/arch/arm/mach-shmobile/devices.h
+new file mode 100644
+index 0000000..4816c5b
+--- /dev/null
++++ b/arch/arm/mach-shmobile/devices.h
+@@ -0,0 +1,28 @@
++/*
++ * SH Mobile Devices Setup and Initialization
++ *
++ * Copyright (C) 2012  Renesas Solutions Corp.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#ifndef __ARCH_ARM_MACH_SHMOBILE_DEVICES_H__
++#define __ARCH_ARM_MACH_SHMOBILE_DEVICES_H__
++
++#include <linux/types.h>
++
++struct pinmux_info;
++struct resource;
++
++int sh_pfc_register(const char *name,
++		    struct resource *resource, u32 num_resources,
++		    struct pinmux_info *pdata);
++
++#endif /* __ARCH_ARM_MACH_SHMOBILE_DEVICES_H__ */
+diff --git a/arch/arm/mach-shmobile/pfc-r8a7740.c b/arch/arm/mach-shmobile/pfc-r8a7740.c
+index 134d1b9..0590b6d 100644
+--- a/arch/arm/mach-shmobile/pfc-r8a7740.c
++++ b/arch/arm/mach-shmobile/pfc-r8a7740.c
+@@ -24,6 +24,8 @@
+ #include <mach/r8a7740.h>
+ #include <mach/irqs.h>
+ 
++#include "devices.h"
++
+ #define CPU_ALL_PORT(fn, pfx, sfx)					\
+ 	PORT_10(fn, pfx, sfx),		PORT_90(fn, pfx, sfx),		\
+ 	PORT_10(fn, pfx##10, sfx),	PORT_90(fn, pfx##1, sfx),	\
+@@ -2613,5 +2615,5 @@ static struct pinmux_info r8a7740_pinmux_info = {
+ 
+ void r8a7740_pinmux_init(void)
+ {
+-	register_pinmux(&r8a7740_pinmux_info);
++	sh_pfc_register(NULL, NULL, 0, &r8a7740_pinmux_info);
+ }
+diff --git a/arch/arm/mach-shmobile/pfc-r8a7779.c b/arch/arm/mach-shmobile/pfc-r8a7779.c
+index cbc26ba..f738042 100644
+--- a/arch/arm/mach-shmobile/pfc-r8a7779.c
++++ b/arch/arm/mach-shmobile/pfc-r8a7779.c
+@@ -23,6 +23,8 @@
+ #include <linux/ioport.h>
+ #include <mach/r8a7779.h>
+ 
++#include "devices.h"
++
+ #define CPU_32_PORT(fn, pfx, sfx)				\
+ 	PORT_10(fn, pfx, sfx), PORT_10(fn, pfx##1, sfx),	\
+ 	PORT_10(fn, pfx##2, sfx), PORT_1(fn, pfx##30, sfx),	\
+@@ -2616,9 +2618,6 @@ static struct resource r8a7779_pfc_resources[] = {
+ static struct pinmux_info r8a7779_pinmux_info = {
+ 	.name = "r8a7779_pfc",
+ 
+-	.resource = r8a7779_pfc_resources,
+-	.num_resources = ARRAY_SIZE(r8a7779_pfc_resources),
+-
+ 	.unlock_reg = 0xfffc0000, /* PMMR */
+ 
+ 	.reserved_id = PINMUX_RESERVED,
+@@ -2641,5 +2640,7 @@ static struct pinmux_info r8a7779_pinmux_info = {
+ 
+ void r8a7779_pinmux_init(void)
+ {
+-	register_pinmux(&r8a7779_pinmux_info);
++	sh_pfc_register(NULL, r8a7779_pfc_resources,
++			ARRAY_SIZE(r8a7779_pfc_resources),
++			&r8a7779_pinmux_info);
+ }
+diff --git a/arch/arm/mach-shmobile/pfc-sh7367.c b/arch/arm/mach-shmobile/pfc-sh7367.c
+index c0c137f..5a4fdf3 100644
+--- a/arch/arm/mach-shmobile/pfc-sh7367.c
++++ b/arch/arm/mach-shmobile/pfc-sh7367.c
+@@ -21,6 +21,8 @@
+ #include <linux/sh_pfc.h>
+ #include <mach/sh7367.h>
+ 
++#include "devices.h"
++
+ #define CPU_ALL_PORT(fn, pfx, sfx)				\
+ 	PORT_10(fn, pfx, sfx), PORT_90(fn, pfx, sfx),		\
+ 	PORT_10(fn, pfx##10, sfx), PORT_90(fn, pfx##1, sfx),	\
+@@ -1723,5 +1725,5 @@ static struct pinmux_info sh7367_pinmux_info = {
+ 
+ void sh7367_pinmux_init(void)
+ {
+-	register_pinmux(&sh7367_pinmux_info);
++	sh_pfc_register(NULL, NULL, 0, &sh7367_pinmux_info);
+ }
+diff --git a/arch/arm/mach-shmobile/pfc-sh7372.c b/arch/arm/mach-shmobile/pfc-sh7372.c
+index 7a1525f..31b539c 100644
+--- a/arch/arm/mach-shmobile/pfc-sh7372.c
++++ b/arch/arm/mach-shmobile/pfc-sh7372.c
+@@ -26,6 +26,8 @@
+ #include <mach/irqs.h>
+ #include <mach/sh7372.h>
+ 
++#include "devices.h"
++
+ #define CPU_ALL_PORT(fn, pfx, sfx) \
+ 	PORT_10(fn, pfx, sfx),		PORT_90(fn, pfx, sfx), \
+ 	PORT_10(fn, pfx##10, sfx),	PORT_10(fn, pfx##11, sfx), \
+@@ -1659,5 +1661,5 @@ static struct pinmux_info sh7372_pinmux_info = {
+ 
+ void sh7372_pinmux_init(void)
+ {
+-	register_pinmux(&sh7372_pinmux_info);
++	sh_pfc_register(NULL, NULL, 0, &sh7372_pinmux_info);
+ }
+diff --git a/arch/arm/mach-shmobile/pfc-sh7377.c b/arch/arm/mach-shmobile/pfc-sh7377.c
+index f3117f6..4a94d20 100644
+--- a/arch/arm/mach-shmobile/pfc-sh7377.c
++++ b/arch/arm/mach-shmobile/pfc-sh7377.c
+@@ -22,6 +22,8 @@
+ #include <linux/sh_pfc.h>
+ #include <mach/sh7377.h>
+ 
++#include "devices.h"
++
+ #define CPU_ALL_PORT(fn, pfx, sfx)				\
+ 	PORT_10(fn, pfx, sfx), PORT_90(fn, pfx, sfx),		\
+ 	PORT_10(fn, pfx##10, sfx),				\
+@@ -1684,5 +1686,5 @@ static struct pinmux_info sh7377_pinmux_info = {
+ 
+ void sh7377_pinmux_init(void)
+ {
+-	register_pinmux(&sh7377_pinmux_info);
++	sh_pfc_register(NULL, NULL, 0, &sh7377_pinmux_info);
+ }
+diff --git a/arch/arm/mach-shmobile/pfc-sh73a0.c b/arch/arm/mach-shmobile/pfc-sh73a0.c
+index b442f9d..3de6c70 100644
+--- a/arch/arm/mach-shmobile/pfc-sh73a0.c
++++ b/arch/arm/mach-shmobile/pfc-sh73a0.c
+@@ -24,6 +24,8 @@
+ #include <mach/sh73a0.h>
+ #include <mach/irqs.h>
+ 
++#include "devices.h"
++
+ #define CPU_ALL_PORT(fn, pfx, sfx)				\
+ 	PORT_10(fn, pfx,    sfx), PORT_10(fn, pfx##1, sfx),	\
+ 	PORT_10(fn, pfx##2, sfx), PORT_10(fn, pfx##3, sfx),	\
+@@ -2799,5 +2801,5 @@ static struct pinmux_info sh73a0_pinmux_info = {
+ 
+ void sh73a0_pinmux_init(void)
+ {
+-	register_pinmux(&sh73a0_pinmux_info);
++	sh_pfc_register(NULL, NULL, 0, &sh73a0_pinmux_info);
+ }
 -- 
-1.7.10.4
+1.7.8.6
 
