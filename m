@@ -1,48 +1,39 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 01 Nov 2012 00:40:07 +0000
-Subject: [PATCH 4/8] ARM: shmobile: armadillo800eva: enable restart
-Message-Id: <1351730411-1874-5-git-send-email-horms@verge.net.au>
+From: Bill Pemberton <wfp5p@virginia.edu>
+Date: Wed, 21 Nov 2012 20:34:55 +0000
+Subject: [PATCH 4/9] sh/PCI: Remove CONFIG_HOTPLUG ifdefs
+Message-Id: <1353530100-728-5-git-send-email-wfp5p@virginia.edu>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1351730411-1874-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1351730411-1874-1-git-send-email-horms@verge.net.au>
+References: <1353530100-728-1-git-send-email-wfp5p@virginia.edu>
+In-Reply-To: <1353530100-728-1-git-send-email-wfp5p@virginia.edu>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: gregkh@linuxfoundation.org
+Cc: linux-pci@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, Bjorn Helgaas <bhelgaas@google.com>, linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Remove conditional code based on CONFIG_HOTPLUG being false.  It's
+always on now in preparation of it going away as an option.
 
-Cc: Masahiro Nakai <nakai@atmark-techno.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Bill Pemberton <wfp5p@virginia.edu>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: Bjorn Helgaas <bhelgaas@google.com>
+Cc: linux-sh@vger.kernel.org
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c |    8 ++++++++
- 1 file changed, 8 insertions(+)
+ arch/sh/drivers/pci/pci.c | 2 --
+ 1 file changed, 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 2912eab..fe27d7e 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1229,6 +1229,13 @@ static void __init eva_add_early_devices(void)
- 	shmobile_timer.init = eva_earlytimer_init;
- }
+diff --git a/arch/sh/drivers/pci/pci.c b/arch/sh/drivers/pci/pci.c
+index a7e078f..81e5daf 100644
+--- a/arch/sh/drivers/pci/pci.c
++++ b/arch/sh/drivers/pci/pci.c
+@@ -319,7 +319,5 @@ EXPORT_SYMBOL(pci_iounmap);
  
-+#define RESCNT2 IOMEM(0xe6188020)
-+static void eva_restart(char mode, const char *cmd)
-+{
-+	/* Do soft power on reset */
-+	writel((1 << 31), RESCNT2);
-+}
-+
- static const char *eva_boards_compat_dt[] __initdata = {
- 	"renesas,armadillo800eva",
- 	NULL,
-@@ -1243,4 +1250,5 @@ DT_MACHINE_START(ARMADILLO800EVA_DT, "armadillo800eva")
- 	.init_late	= shmobile_init_late,
- 	.timer		= &shmobile_timer,
- 	.dt_compat	= eva_boards_compat_dt,
-+	.restart	= eva_restart,
- MACHINE_END
+ #endif /* CONFIG_GENERIC_IOMAP */
+ 
+-#ifdef CONFIG_HOTPLUG
+ EXPORT_SYMBOL(PCIBIOS_MIN_IO);
+ EXPORT_SYMBOL(PCIBIOS_MIN_MEM);
+-#endif
 -- 
-1.7.10.4
+1.8.0
 
