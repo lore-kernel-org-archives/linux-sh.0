@@ -1,56 +1,51 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 07 Nov 2012 08:50:44 +0000
-Subject: [PATCH 15/15] ARM: shmobile: sh73a0: Use DT for GIC
-Message-Id: <1352278244-26702-16-git-send-email-horms@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 21 Nov 2012 02:53:25 +0000
+Subject: [PATCH 09/42] sh-pfc: Split platform device and platform driver registration
+Message-Id: <1353466438-10929-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352278244-26702-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352278244-26702-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Move platform driver registration to a static postcore initcall. This
+prepares the move of platform device registration to arch code.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/intc-sh73a0.c |   11 ++++++-----
- 1 file changed, 6 insertions(+), 5 deletions(-)
+ drivers/sh/pfc/core.c |   15 ++++++---------
+ 1 files changed, 6 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/intc-sh73a0.c b/arch/arm/mach-shmobile/intc-sh73a0.c
-index ee62349..e9b5419 100644
---- a/arch/arm/mach-shmobile/intc-sh73a0.c
-+++ b/arch/arm/mach-shmobile/intc-sh73a0.c
-@@ -151,6 +151,7 @@ error:
- }
+diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
+index f1a0c85..9736e3d 100644
+--- a/drivers/sh/pfc/core.c
++++ b/drivers/sh/pfc/core.c
+@@ -597,19 +597,16 @@ static struct platform_device sh_pfc_device = {
  
- static const struct of_device_id irq_of_match[] __initconst = {
-+	{ .compatible = "arm,cortex-a9-gic", .data = gic_of_init, },
- 	{ .compatible = "renesas,sh_intcs", .data = sh73a0_intcs_of_init },
- 	{ .compatible = "renesas,sh_intca_irq_pins",
- 		.data = sh73a0_intca_pins_of_init },
-@@ -559,18 +560,18 @@ static irqreturn_t sh73a0_pint1_demux(int irq, void *dev_id)
- 
- static void __init sh73a0_init_irq__(bool of)
+ int __init register_sh_pfc(struct sh_pfc_platform_data *pdata)
  {
--	void __iomem *gic_dist_base = IOMEM(0xf0001000);
--	void __iomem *gic_cpu_base = IOMEM(0xf0000100);
- 	void __iomem *intevtsa;
- 	int k, n;
- 
--	gic_init(0, 29, gic_dist_base, gic_cpu_base);
--	gic_arch_extn.irq_set_wake = sh73a0_set_wake;
+-	int rc;
 -
- #ifdef CONFIG_OF
- 	if (of)
- 		of_irq_init(irq_of_match);
-+	else
- #endif
-+	{
-+		gic_init(0, 29, IOMEM(0xf0001000), IOMEM(0xf0000100));
-+		gic_arch_extn.irq_set_wake = sh73a0_set_wake;
-+	}
+ 	sh_pfc_device.dev.platform_data = pdata;
  
- 	register_intc_controller(&intcs_desc);
- 	register_intc_controller(&intca_irq_pins_desc);
+-	rc = platform_driver_register(&sh_pfc_driver);
+-	if (likely(!rc)) {
+-		rc = platform_device_register(&sh_pfc_device);
+-		if (unlikely(rc))
+-			platform_driver_unregister(&sh_pfc_driver);
+-	}
++	return platform_device_register(&sh_pfc_device);
++}
+ 
+-	return rc;
++static int __init sh_pfc_init(void)
++{
++	return platform_driver_register(&sh_pfc_driver);
+ }
++postcore_initcall(sh_pfc_init);
+ 
+ static void __exit sh_pfc_exit(void)
+ {
 -- 
-1.7.10.4
+1.7.8.6
 
