@@ -1,115 +1,411 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 08 Nov 2012 09:08:58 +0000
-Subject: Re: [PATCH 0/8] ARM: shmobile: board used FSI driver's clock
-Message-Id: <20121108090855.GA11621@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 21 Nov 2012 18:21:11 +0000
+Subject: [PATCH 2/2] regulator: add a regulator driver for the AS3711 PMIC
+Message-Id: <Pine.LNX.4.64.1211211918330.842@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87625g23os.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87625g23os.wl%kuninori.morimoto.gx@renesas.com>
+References: <Pine.LNX.4.64.1211211916160.842@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1211211916160.842@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Samuel Ortiz <sameo@linux.intel.com>, Mark Brown <broonie@opensource.wolfsonmicro.com>, linux-kernel@vger.kernel.org
 
-On Wed, Nov 07, 2012 at 11:58:08PM -0800, Kuninori Morimoto wrote:
-> 
-> Hi Simon
-> 
-> Thank you for your hard work
-> 
-> > a) looks sane
-> > b) anything is missing
-> 
-> > * 7e7477a (origin/boards, boards) ARM: shmobile: use FSI driver's audio clock on ap4evb
-> 
-> This patch chaned to use FSI driver's audio clock,
-> then, it removed old style clock settings.
-> But...
-> 
-> > * 38f8b5f ARM: shmobile: use FSI driver's audio clock on mackerel
-> > * 23d98fe ARM: shmobile: use FSI driver's audio clock on armadillo800eva
-> > * 19bf12f ARM: shmobile: mackerel: enable DMAEngine on USB Host
-> > * 6188248 ARM: shmobile: marzen: add USB OHCI driver support
-> > * 4f75b75 ARM: shmobile: marzen: add USB EHCI driver support
-> > * 44051e2 ARM: shmobile: marzen: add USB phy support
-> > *   092cb53 Merge branch 'soc' into boards
-> > |\  
-> > | * c089609 (origin/soc, soc) ARM: shmobile: sh7372: sh7372_fsiXck_clk become non-global
-> > | * 2a14f32 ARM: shmobile: sh7372: remove fsidivx clock
-> 
-> These 2 patches are depend on above patches,
-> becouse these patches remove sh7372_xxx fsi clocks (= old style clock).
-> This means that there is compile error on ap4evb board from 2a14f32 to 38f8b5f.
-> and it is not good for "git bisect"
-> 
-> Can you change patch order like this ?
+This driver supports the 4 DCDC and 8 LDO regulators on the AS3711 PMIC.
 
-Yes. I talked to Olof Johansson again and he offered a solution
-which is to:
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/regulator/as3711-regulator.c |  381 ++++++++++++++++++++++++++++++++++
+ 1 files changed, 381 insertions(+), 0 deletions(-)
+ create mode 100644 drivers/regulator/as3711-regulator.c
 
-* Have the boards branch based on the soc branch and then;
-* Add an soc2 branch which is based on the boards branch.
-
--> soc2 branch HEAD
->  xxxxxxx ARM: shmobile: sh7372: sh7372_fsiXck_clk become non-global
->  xxxxxxx ARM: shmobile: sh7372: remove fsidivx clock
-> ...
--> boards branch HEAD
->  xxxxxxx ARM: shmobile: use FSI driver's audio clock on ap4evb
->  xxxxxxx ARM: shmobile: use FSI driver's audio clock on mackerel
->  xxxxxxx ARM: shmobile: use FSI driver's audio clock on armadillo800eva
-> ...
--> merge soc branch with already merged boards branch
--> soc branch HEAD
->  xxxxxxx ARM: shmobile: add fsi external clock sh7372
->  xxxxxxx ARM: shmobile: add fsi external clock on r8a7740
->  xxxxxxx ARM: shmobile: r8a7740: add FSI-DVI clocks
->  xxxxxxx ARM: shmobile: sh7372: use sh_clk_fsidiv_register() for FSI-DIV clocks
-> ....
--> already merged soc branch HEAD
-
-The result is as follows. I have also updated the next and
-next+dependencies branches accordingly.
-
-* d5b6890 (origin/soc2, soc2) ARM: shmobile: sh7372: sh7372_fsiXck_clk become non-global
-* d14795f ARM: shmobile: sh7372: remove fsidivx clock
-* 12818d8 (origin/boards, boards) ARM: shmobile: use FSI driver's audio clock on ap4evb
-* 50ce2da ARM: shmobile: use FSI driver's audio clock on mackerel
-* 13e35b4 ARM: shmobile: use FSI driver's audio clock on armadillo800eva
-* c8c3243 ARM: shmobile: mackerel: enable DMAEngine on USB Host
-* ac7c4ea ARM: shmobile: marzen: add USB OHCI driver support
-* 94e1f7f ARM: shmobile: marzen: add USB EHCI driver support
-* b5ce635 ARM: shmobile: marzen: add USB phy support
-*   ab3ff12 Merge branch 'soc' into boards
-|\  
-| * 2944628 (origin/soc, soc) ARM: shmobile: add fsi external clock sh7372
-| * 8b0eadd ARM: shmobile: add fsi external clock on r8a7740
-| * 7c4fd73 ARM: shmobile: r8a7740: add FSI-DVI clocks
-| * dc3cad8 ARM: shmobile: sh7372: use sh_clk_fsidiv_register() for FSI-DIV clocks
-| * 9ee8008 ARM: shmobile: sh7372: sh7372_fsidivX_clk become non-global
-| * 9d626ec sh: clkfwk: add sh_clk_fsidiv_register()
-| * 9d69f5b ARM: shmobile: r8a7779: add USB OHCI clock support
-| * 8841954 ARM: shmobile: r8a7779: add USB EHCI clock support
-| * 0a38429 ARM: shmobile: r8a7740: add USB24 clock explain
-| * 167443b ARM: shmobile: r8a7779: PFC rename PENCx -> USB_PENCx
-| * 86bc52e (arm-soc/renesas/soc) ARM: shmobile: r8a7740: Enable PMU
-| * 40eaed7 ARM: mach-shmobile: add FLCTL DMA slave definitions for sh7372
-| * ccc2a27 ARM: shmobile: r8a7779: add I2C driver support
-| * 16c40ab ARM: shmobile: r8a7779: add I2C clock support
-| * f92246e ARM: shmobile: r8a7779: add HSPI clock support
-| * a41acc4 ARM: shmobile: r8a7740: fixup DT machine desc name typo
-| * cdc7594 ARM: shmobile: r8a7779: Replace modify_scu_cpu_psr with scu_power_mode
-| * e721295 ARM: shmobile: sh73a0: Replace modify_scu_cpu_psr with scu_power_mode
-| * 865d90f ARM: shmobile: emev2: Replace modify_scu_cpu_psr with scu_power_mode
-| * 2864b19 ARM: shmobile: Remove SH7377 support
-| * ed9c075 ARM: shmobile: Remove SH7367 support
-* | 631a7b5 (arm-soc/renesas/boards) ARM: shmobile: Remove G4EVM machine support
-* | 6a800a0 ARM: shmobile: Remove G3EVM machine support
-* | 0ce53cd ARM: mach-shmobile: Use DT_MACHINE for mackerel
-* | b82573e ARM: shmobile: marzen: add HSPI support
-* | 1efdf56 ARM: shmobile: armadillo800eva: enable restart
-* | bd9e2e7 ARM: shmobile: kzm9g: enable DMAEngine on SHDI0 and SDHI2
-* | 608c562 ARM: shmobile: kzm9g: enable three-axis digital accelerometer ADXL345
-* | 8cec012 ARM: shmobile: kzm9g: enable magnetometer ak8975.
-|/  
-* ddffeb8 (tag: v3.7-rc1, origin/pmu, origin/master, origin/dt, origin/cleanup, arm-soc/ux500/soc, pmu, master, gpio, dt, cleanup) Linux 3.7-rc1
+diff --git a/drivers/regulator/as3711-regulator.c b/drivers/regulator/as3711-regulator.c
+new file mode 100644
+index 0000000..d097572
+--- /dev/null
++++ b/drivers/regulator/as3711-regulator.c
+@@ -0,0 +1,381 @@
++/*
++ * AS3711 PMIC regulator driver, using DCDC Step Down and LDO supplies
++ *
++ * Copyright (C) 2012 Renesas Electronics Corporation
++ * Author: Guennadi Liakhovetski, <g.liakhovetski@gmx.de>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the version 2 of the GNU General Public License as
++ * published by the Free Software Foundation
++ */
++
++#include <linux/err.h>
++#include <linux/init.h>
++#include <linux/mfd/as3711.h>
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/regmap.h>
++#include <linux/regulator/driver.h>
++#include <linux/slab.h>
++
++struct as3711_regulator_info {
++	struct regulator_desc	desc;
++	unsigned int		max_uV;
++};
++
++struct as3711_regulator {
++	struct as3711_regulator_info *reg_info;
++	struct regulator_dev *rdev;
++};
++
++static int as3711_list_voltage_sd(struct regulator_dev *rdev,
++				  unsigned int selector)
++{
++	if (selector >= rdev->desc->n_voltages)
++		return -EINVAL;
++
++	if (!selector)
++		return 0;
++	if (selector < 0x41)
++		return 600000 + selector * 12500;
++	if (selector < 0x71)
++		return 1400000 + (selector - 0x40) * 25000;
++	return 2600000 + (selector - 0x70) * 50000;
++}
++
++static int as3711_list_voltage_aldo(struct regulator_dev *rdev,
++				    unsigned int selector)
++{
++	if (selector >= rdev->desc->n_voltages)
++		return -EINVAL;
++
++	if (selector < 0x10)
++		return 1200000 + selector * 50000;
++	return 1800000 + (selector - 0x10) * 100000;
++}
++
++static int as3711_list_voltage_dldo(struct regulator_dev *rdev,
++				    unsigned int selector)
++{
++	if (selector >= rdev->desc->n_voltages ||
++	    (selector > 0x10 && selector < 0x20))
++		return -EINVAL;
++
++	if (selector < 0x11)
++		return 900000 + selector * 50000;
++	return 1750000 + (selector - 0x20) * 50000;
++}
++
++static int as3711_bound_check(struct regulator_dev *rdev,
++			      int *min_uV, int *max_uV)
++{
++	struct as3711_regulator_info *info = container_of(rdev->desc,
++					struct as3711_regulator_info, desc);
++	struct as3711_regulator *reg = rdev->reg_data;
++
++	WARN_ON(reg->reg_info != info);
++
++	dev_dbg(&rdev->dev, "%s(), %d, %d, %d\n", __func__,
++		*min_uV, rdev->desc->min_uV, info->max_uV);
++
++	if (*max_uV < *min_uV ||
++	    *min_uV >= info->max_uV || rdev->desc->min_uV >= *max_uV)
++		return -EINVAL;
++
++	if (rdev->desc->n_voltages = 1)
++		return 0;
++
++	if (*max_uV > info->max_uV)
++		*max_uV = info->max_uV;
++
++	if (*min_uV < rdev->desc->min_uV)
++		*min_uV = rdev->desc->min_uV;
++
++	return *min_uV;
++}
++
++static int as3711_sel_check(int min, int max, int bottom, int step)
++{
++	int ret, voltage;
++
++	/* Round up min, when dividing: keeps us within the range */
++	ret = (min - bottom + step - 1) / step;
++	voltage = ret * step + bottom;
++	pr_debug("%s(): select %d..%d in %d+N*%d: %d\n", __func__,
++	       min, max, bottom, step, ret);
++	if (voltage > max) {
++		/*
++		 * Try 1 down. It will take us below min, but as long we stay
++		 * above bottom, we're fine.
++		 */
++		ret--;
++		voltage = ret * step + bottom;
++		if (voltage < bottom)
++			return -EINVAL;
++	}
++	return ret;
++}
++
++static int as3711_map_voltage_sd(struct regulator_dev *rdev,
++				 int min_uV, int max_uV)
++{
++	int ret;
++
++	ret = as3711_bound_check(rdev, &min_uV, &max_uV);
++	if (ret <= 0)
++		return ret;
++
++	if (min_uV <= 1400000)
++		return as3711_sel_check(min_uV, max_uV, 600000, 12500);
++
++	if (min_uV <= 2600000)
++		return as3711_sel_check(min_uV, max_uV, 1400000, 25000) + 0x40;
++
++	return as3711_sel_check(min_uV, max_uV, 2600000, 50000) + 0x70;
++}
++
++/*
++ * The regulator API supports 4 modes of operataion: FAST, NORMAL, IDLE and
++ * STANDBY. We map them in the following way to AS3711 SD1-4 DCDC modes:
++ * FAST:	sdX_fast=1
++ * NORMAL:	low_noise=1
++ * IDLE:	low_noise=0
++ */
++
++static int as3711_set_mode_sd(struct regulator_dev *rdev, unsigned int mode)
++{
++	unsigned int fast_bit = rdev->desc->enable_mask,
++		low_noise_bit = fast_bit << 4;
++	u8 val;
++
++	switch (mode) {
++	case REGULATOR_MODE_FAST:
++		val = fast_bit | low_noise_bit;
++		break;
++	case REGULATOR_MODE_NORMAL:
++		val = low_noise_bit;
++		break;
++	case REGULATOR_MODE_IDLE:
++		val = 0;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	return regmap_update_bits(rdev->regmap, AS3711_SD_CONTROL_1,
++				  low_noise_bit | fast_bit, val);
++}
++
++static unsigned int as3711_get_mode_sd(struct regulator_dev *rdev)
++{
++	unsigned int fast_bit = rdev->desc->enable_mask,
++		low_noise_bit = fast_bit << 4, mask = fast_bit | low_noise_bit;
++	unsigned int val;
++	int ret = regmap_read(rdev->regmap, AS3711_SD_CONTROL_1, &val);
++
++	if (ret < 0)
++		return ret;
++
++	if ((val & mask) = mask)
++		return REGULATOR_MODE_FAST;
++
++	if ((val & mask) = low_noise_bit)
++		return REGULATOR_MODE_NORMAL;
++
++	if (!(val & mask))
++		return REGULATOR_MODE_IDLE;
++
++	return -EINVAL;
++}
++
++static int as3711_map_voltage_aldo(struct regulator_dev *rdev,
++				  int min_uV, int max_uV)
++{
++	int ret;
++
++	ret = as3711_bound_check(rdev, &min_uV, &max_uV);
++	if (ret <= 0)
++		return ret;
++
++	if (min_uV <= 1800000)
++		return as3711_sel_check(min_uV, max_uV, 1200000, 50000);
++
++	return as3711_sel_check(min_uV, max_uV, 1800000, 100000) + 0x10;
++}
++
++static int as3711_map_voltage_dldo(struct regulator_dev *rdev,
++				  int min_uV, int max_uV)
++{
++	int ret;
++
++	ret = as3711_bound_check(rdev, &min_uV, &max_uV);
++	if (ret <= 0)
++		return ret;
++
++	if (min_uV <= 1700000)
++		return as3711_sel_check(min_uV, max_uV, 900000, 50000);
++
++	return as3711_sel_check(min_uV, max_uV, 1750000, 50000) + 0x20;
++}
++
++static struct regulator_ops as3711_sd_ops = {
++	.is_enabled		= regulator_is_enabled_regmap,
++	.enable			= regulator_enable_regmap,
++	.disable		= regulator_disable_regmap,
++	.get_voltage_sel	= regulator_get_voltage_sel_regmap,
++	.set_voltage_sel	= regulator_set_voltage_sel_regmap,
++	.list_voltage		= as3711_list_voltage_sd,
++	.map_voltage		= as3711_map_voltage_sd,
++	.get_mode		= as3711_get_mode_sd,
++	.set_mode		= as3711_set_mode_sd,
++};
++
++static struct regulator_ops as3711_aldo_ops = {
++	.is_enabled		= regulator_is_enabled_regmap,
++	.enable			= regulator_enable_regmap,
++	.disable		= regulator_disable_regmap,
++	.get_voltage_sel	= regulator_get_voltage_sel_regmap,
++	.set_voltage_sel	= regulator_set_voltage_sel_regmap,
++	.list_voltage		= as3711_list_voltage_aldo,
++	.map_voltage		= as3711_map_voltage_aldo,
++};
++
++static struct regulator_ops as3711_dldo_ops = {
++	.is_enabled		= regulator_is_enabled_regmap,
++	.enable			= regulator_enable_regmap,
++	.disable		= regulator_disable_regmap,
++	.get_voltage_sel	= regulator_get_voltage_sel_regmap,
++	.set_voltage_sel	= regulator_set_voltage_sel_regmap,
++	.list_voltage		= as3711_list_voltage_dldo,
++	.map_voltage		= as3711_map_voltage_dldo,
++};
++
++#define AS3711_REG(_id, _en_reg, _en_bit, _vmask, _vshift, _min_uV, _max_uV, _sfx)	\
++	[AS3711_REGULATOR_ ## _id] = {							\
++	.desc = {									\
++		.name = "as3711-regulator-" # _id,					\
++		.id = AS3711_REGULATOR_ ## _id,						\
++		.n_voltages = (_vmask + 1),						\
++		.ops = &as3711_ ## _sfx ## _ops,					\
++		.type = REGULATOR_VOLTAGE,						\
++		.owner = THIS_MODULE,							\
++		.vsel_reg = AS3711_ ## _id ## _VOLTAGE,					\
++		.vsel_mask = _vmask << _vshift,						\
++		.enable_reg = AS3711_ ## _en_reg,					\
++		.enable_mask = BIT(_en_bit),						\
++		.min_uV	= _min_uV,							\
++	},										\
++	.max_uV = _max_uV,								\
++}
++
++static struct as3711_regulator_info as3711_reg_info[] = {
++	AS3711_REG(SD_1, SD_CONTROL, 0, 0x7f, 0, 612500, 3350000, sd),
++	AS3711_REG(SD_2, SD_CONTROL, 1, 0x7f, 0, 612500, 3350000, sd),
++	AS3711_REG(SD_3, SD_CONTROL, 2, 0x7f, 0, 612500, 3350000, sd),
++	AS3711_REG(SD_4, SD_CONTROL, 3, 0x7f, 0, 612500, 3350000, sd),
++	AS3711_REG(LDO_1, LDO_1_VOLTAGE, 7, 0x1f, 0, 1200000, 3300000, aldo),
++	AS3711_REG(LDO_2, LDO_2_VOLTAGE, 7, 0x1f, 0, 1200000, 3300000, aldo),
++	AS3711_REG(LDO_3, LDO_3_VOLTAGE, 7, 0x3f, 0, 900000, 3300000, dldo),
++	AS3711_REG(LDO_4, LDO_4_VOLTAGE, 7, 0x3f, 0, 900000, 3300000, dldo),
++	AS3711_REG(LDO_5, LDO_5_VOLTAGE, 7, 0x3f, 0, 900000, 3300000, dldo),
++	AS3711_REG(LDO_6, LDO_6_VOLTAGE, 7, 0x3f, 0, 900000, 3300000, dldo),
++	AS3711_REG(LDO_7, LDO_7_VOLTAGE, 7, 0x3f, 0, 900000, 3300000, dldo),
++	AS3711_REG(LDO_8, LDO_8_VOLTAGE, 7, 0x3f, 0, 900000, 3300000, dldo),
++	/* StepUp output voltage depends on supplying regulator */
++};
++
++#define AS3711_REGULATOR_NUM ARRAY_SIZE(as3711_reg_info)
++
++static int as3711_regulator_probe(struct platform_device *pdev)
++{
++	struct as3711_regulator_pdata *pdata = dev_get_platdata(&pdev->dev);
++	struct as3711 *as3711 = dev_get_drvdata(pdev->dev.parent);
++	struct regulator_init_data *reg_data;
++	struct regulator_config config = {.dev = &pdev->dev,};
++	struct as3711_regulator *reg = NULL;
++	struct as3711_regulator *regs;
++	struct regulator_dev *rdev;
++	struct as3711_regulator_info *ri;
++	int ret;
++	int id;
++
++	if (!pdata) {
++		dev_err(&pdev->dev, "No platform data, exiting...\n");
++		return -ENODEV;
++	}
++
++	regs = devm_kzalloc(&pdev->dev, AS3711_REGULATOR_NUM *
++			sizeof(struct as3711_regulator), GFP_KERNEL);
++	if (!regs) {
++		dev_err(&pdev->dev, "Memory allocation failed exiting..\n");
++		return -ENOMEM;
++	}
++
++	for (id = 0, ri = as3711_reg_info; id < AS3711_REGULATOR_NUM; ++id, ri++) {
++		reg_data = pdata->init_data[id];
++
++		/* No need to register if there is no regulator data */
++		if (!ri->desc.name || !reg_data)
++			continue;
++
++		reg = &regs[id];
++		reg->reg_info = ri;
++
++		config.init_data = reg_data;
++		config.driver_data = reg;
++		config.regmap = as3711->regmap;
++
++		rdev = regulator_register(&ri->desc, &config);
++		if (IS_ERR(rdev)) {
++			dev_err(&pdev->dev, "Failed to register regulator %s\n",
++				ri->desc.name);
++			ret = PTR_ERR(rdev);
++			goto eregreg;
++		}
++		reg->rdev = rdev;
++	}
++	platform_set_drvdata(pdev, regs);
++	return 0;
++
++eregreg:
++	while (--id >= 0)
++		regulator_unregister(regs[id].rdev);
++
++	return ret;
++}
++
++static int as3711_regulator_remove(struct platform_device *pdev)
++{
++	struct as3711_regulator *regs = platform_get_drvdata(pdev);
++	int id;
++
++	for (id = 0; id < AS3711_REGULATOR_NUM; ++id)
++		regulator_unregister(regs[id].rdev);
++	return 0;
++}
++
++static struct platform_driver as3711_regulator_driver = {
++	.driver	= {
++		.name	= "as3711-regulator",
++		.owner	= THIS_MODULE,
++	},
++	.probe		= as3711_regulator_probe,
++	.remove		= as3711_regulator_remove,
++};
++
++static int __init as3711_regulator_init(void)
++{
++	return platform_driver_register(&as3711_regulator_driver);
++}
++subsys_initcall(as3711_regulator_init);
++
++static void __exit as3711_regulator_exit(void)
++{
++	platform_driver_unregister(&as3711_regulator_driver);
++}
++module_exit(as3711_regulator_exit);
++
++MODULE_AUTHOR("Guennadi Liakhovetski <g.liakhovetski@gmx.de>");
++MODULE_DESCRIPTION("AS3711 regulator driver");
++MODULE_ALIAS("platform:as3711-regulator");
++MODULE_LICENSE("GPL v2");
+-- 
+1.7.2.5
 
