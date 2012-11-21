@@ -1,57 +1,43 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 09 Nov 2012 07:29:17 +0000
-Subject: [PATCH 02/10] ARM: shmobile: r8a7740: add USB24 clock explain
-Message-Id: <1352446165-19298-3-git-send-email-horms@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 21 Nov 2012 02:53:23 +0000
+Subject: [PATCH 07/42] sh-pfc: Remove check for impossible error condition
+Message-Id: <1353466438-10929-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352446165-19298-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352446165-19298-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The pfc pointer can't be NULL in the get and set value functions, remove
+the error check.
 
-USBCKCR is controlling USB parent clock and divide rate.
-This parent clock is used as a "usb24s" from other devices,
-but the "divide rate" is not used.
-Further, this clock itself is known as "usb24".
-So, to set this clock is a little confusable.
-This patch adds quick explain and sample settings for this clock.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7740.c |   16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
+ drivers/sh/pfc/gpio.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index 6729e00..c012bbf 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -188,6 +188,22 @@ static struct clk pllc1_div2_clk = {
- };
+diff --git a/drivers/sh/pfc/gpio.c b/drivers/sh/pfc/gpio.c
+index f22d43a..0a85159 100644
+--- a/drivers/sh/pfc/gpio.c
++++ b/drivers/sh/pfc/gpio.c
+@@ -51,7 +51,7 @@ static void sh_gpio_set_value(struct sh_pfc *pfc, unsigned gpio, int value)
+ 	struct pinmux_data_reg *dr = NULL;
+ 	int bit = 0;
  
- /* USB clock */
-+/*
-+ * USBCKCR is controlling usb24 clock
-+ * bit[7] : parent clock
-+ * bit[6] : clock divide rate
-+ * And this bit[7] is used as a "usb24s" from other devices.
-+ * (Video clock / Sub clock / SPU clock)
-+ * You can controll this clock as a below.
-+ *
-+ * struct clk *usb24	= clk_get(dev,  "usb24");
-+ * struct clk *usb24s	= clk_get(NULL, "usb24s");
-+ * struct clk *system	= clk_get(NULL, "system_clk");
-+ * int rate = clk_get_rate(system);
-+ *
-+ * clk_set_parent(usb24s, system);  // for bit[7]
-+ * clk_set_rate(usb24, rate / 2);   // for bit[6]
-+ */
- static struct clk *usb24s_parents[] = {
- 	[0] = &system_clk,
- 	[1] = &extal2_clk
+-	if (!pfc || sh_pfc_get_data_reg(pfc, gpio, &dr, &bit) != 0)
++	if (sh_pfc_get_data_reg(pfc, gpio, &dr, &bit) != 0)
+ 		BUG();
+ 	else
+ 		sh_pfc_write_bit(dr, bit, value);
+@@ -62,7 +62,7 @@ static int sh_gpio_get_value(struct sh_pfc *pfc, unsigned gpio)
+ 	struct pinmux_data_reg *dr = NULL;
+ 	int bit = 0;
+ 
+-	if (!pfc || sh_pfc_get_data_reg(pfc, gpio, &dr, &bit) != 0)
++	if (sh_pfc_get_data_reg(pfc, gpio, &dr, &bit) != 0)
+ 		return -EINVAL;
+ 
+ 	return sh_pfc_read_bit(dr, bit);
 -- 
-1.7.10.4
+1.7.8.6
 
