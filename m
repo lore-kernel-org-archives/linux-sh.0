@@ -1,152 +1,403 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 08 Nov 2012 01:27:35 +0000
-Subject: [PATCH 6/7] ARM: shmobile: sh7372: use sh_clk_fsidiv_register() for FSI-DIV clocks
-Message-Id: <1352338056-21107-7-git-send-email-horms@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 21 Nov 2012 02:53:21 +0000
+Subject: [PATCH 05/42] sh-pfc: Move platform device and driver to the core
+Message-Id: <1353466438-10929-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352338056-21107-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352338056-21107-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The pinctrl module registers both a platform device and a platform
+driver. The only purpose of this awkward construction is to have a
+device to pass to the pinctrl registration function.
 
-Now, sh7372 can use sh_clk_fsidiv_register() for FSI-DIV clocks.
+As a first step to get rid of this hack, move the platform device and
+driver from the pinctrl module to the core. The platform device will
+then be moved to arch code.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-sh7372.c |   94 ++++-----------------------------
- 1 file changed, 10 insertions(+), 84 deletions(-)
+ drivers/sh/pfc/core.c    |  101 +++++++++++++++++++++++++++++++++++++--------
+ drivers/sh/pfc/core.h    |    4 ++
+ drivers/sh/pfc/gpio.c    |    3 +-
+ drivers/sh/pfc/pinctrl.c |  100 +++++++++++----------------------------------
+ 4 files changed, 114 insertions(+), 94 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-index 18dcff7..bee2d05 100644
---- a/arch/arm/mach-shmobile/clock-sh7372.c
-+++ b/arch/arm/mach-shmobile/clock-sh7372.c
-@@ -420,87 +420,11 @@ static struct clk div6_reparent_clks[DIV6_REPARENT_NR] = {
+diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
+index f8f458b..3593de5 100644
+--- a/drivers/sh/pfc/core.c
++++ b/drivers/sh/pfc/core.c
+@@ -8,6 +8,8 @@
+  * License.  See the file "COPYING" in the main directory of this archive
+  * for more details.
+  */
++
++#define DRV_NAME "sh-pfc"
+ #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+ 
+ #include <linux/errno.h>
+@@ -20,11 +22,10 @@
+ #include <linux/slab.h>
+ #include <linux/ioport.h>
+ #include <linux/pinctrl/machine.h>
++#include <linux/platform_device.h>
+ 
+ #include "core.h"
+ 
+-static struct sh_pfc sh_pfc __read_mostly;
+-
+ static void pfc_iounmap(struct sh_pfc *pfc)
+ {
+ 	int k;
+@@ -494,8 +495,10 @@ int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
+ 	return -1;
+ }
+ 
+-int register_sh_pfc(struct sh_pfc_platform_data *pdata)
++static int sh_pfc_probe(struct platform_device *pdev)
+ {
++	struct sh_pfc_platform_data *pdata = pdev->dev.platform_data;
++	struct sh_pfc *pfc;
+ 	int ret;
+ 
+ 	/*
+@@ -503,26 +506,29 @@ int register_sh_pfc(struct sh_pfc_platform_data *pdata)
+ 	 */
+ 	BUILD_BUG_ON(PINMUX_FLAG_TYPE > ((1 << PINMUX_FLAG_DBIT_SHIFT) - 1));
+ 
+-	if (sh_pfc.pdata)
+-		return -EBUSY;
++	if (pdata = NULL)
++		return -ENODEV;
+ 
+-	sh_pfc.pdata = pdata;
++	pfc = devm_kzalloc(&pdev->dev, sizeof(pfc), GFP_KERNEL);
++	if (pfc = NULL)
++		return -ENOMEM;
+ 
+-	ret = pfc_ioremap(&sh_pfc);
+-	if (unlikely(ret < 0)) {
+-		sh_pfc.pdata = NULL;
++	pfc->pdata = pdata;
++	pfc->dev = &pdev->dev;
++
++	ret = pfc_ioremap(pfc);
++	if (unlikely(ret < 0))
+ 		return ret;
+-	}
+ 
+-	spin_lock_init(&sh_pfc.lock);
++	spin_lock_init(&pfc->lock);
+ 
+ 	pinctrl_provide_dummies();
+-	setup_data_regs(&sh_pfc);
++	setup_data_regs(pfc);
+ 
+ 	/*
+ 	 * Initialize pinctrl bindings first
+ 	 */
+-	ret = sh_pfc_register_pinctrl(&sh_pfc);
++	ret = sh_pfc_register_pinctrl(pfc);
+ 	if (unlikely(ret != 0))
+ 		goto err;
+ 
+@@ -530,7 +536,7 @@ int register_sh_pfc(struct sh_pfc_platform_data *pdata)
+ 	/*
+ 	 * Then the GPIO chip
+ 	 */
+-	ret = sh_pfc_register_gpiochip(&sh_pfc);
++	ret = sh_pfc_register_gpiochip(pfc);
+ 	if (unlikely(ret != 0)) {
+ 		/*
+ 		 * If the GPIO chip fails to come up we still leave the
+@@ -541,17 +547,76 @@ int register_sh_pfc(struct sh_pfc_platform_data *pdata)
+ 	}
+ #endif
+ 
+-	pr_info("%s support registered\n", sh_pfc.pdata->name);
++	platform_set_drvdata(pdev, pfc);
++
++	pr_info("%s support registered\n", pdata->name);
+ 
+ 	return 0;
+ 
+ err:
+-	pfc_iounmap(&sh_pfc);
+-	sh_pfc.pdata = NULL;
+-
++	pfc_iounmap(pfc);
+ 	return ret;
+ }
+ 
++static int __devexit sh_pfc_remove(struct platform_device *pdev)
++{
++	struct sh_pfc *pfc = platform_get_drvdata(pdev);
++
++#ifdef CONFIG_GPIO_SH_PFC
++	sh_pfc_unregister_gpiochip(pfc);
++#endif
++	sh_pfc_unregister_pinctrl(pfc);
++
++	pfc_iounmap(pfc);
++
++	platform_set_drvdata(pdev, NULL);
++
++	return 0;
++}
++
++static const struct platform_device_id sh_pfc_id_table[] = {
++	{ "sh-pfc", 0 },
++	{ },
++};
++MODULE_DEVICE_TABLE(platform, sh_pfc_id_table);
++
++static struct platform_driver sh_pfc_driver = {
++	.probe		= sh_pfc_probe,
++	.remove		= __devexit_p(sh_pfc_remove),
++	.id_table	= sh_pfc_id_table,
++	.driver		= {
++		.name	= DRV_NAME,
++		.owner	= THIS_MODULE,
++	},
++};
++
++static struct platform_device sh_pfc_device = {
++	.name		= DRV_NAME,
++	.id		= -1,
++};
++
++int __init register_sh_pfc(struct sh_pfc_platform_data *pdata)
++{
++	int rc;
++
++	sh_pfc_device.dev.platform_data = pdata;
++
++	rc = platform_driver_register(&sh_pfc_driver);
++	if (likely(!rc)) {
++		rc = platform_device_register(&sh_pfc_device);
++		if (unlikely(rc))
++			platform_driver_unregister(&sh_pfc_driver);
++	}
++
++	return rc;
++}
++
++static void __exit sh_pfc_exit(void)
++{
++	platform_driver_unregister(&sh_pfc_driver);
++}
++module_exit(sh_pfc_exit);
++
+ MODULE_AUTHOR("Magnus Damm, Paul Mundt");
+ MODULE_DESCRIPTION("Pin Control and GPIO driver for SuperH pin function controller");
+ MODULE_LICENSE("GPL v2");
+diff --git a/drivers/sh/pfc/core.h b/drivers/sh/pfc/core.h
+index f3032b2..1287b3e 100644
+--- a/drivers/sh/pfc/core.h
++++ b/drivers/sh/pfc/core.h
+@@ -21,19 +21,23 @@ struct pfc_window {
  };
  
- /* FSI DIV */
--static unsigned long fsidiv_recalc(struct clk *clk)
--{
--	unsigned long value;
--
--	value = __raw_readl(clk->mapping->base);
--
--	value >>= 16;
--	if (value < 2)
--		return 0;
--
--	return clk->parent->rate / value;
--}
--
--static long fsidiv_round_rate(struct clk *clk, unsigned long rate)
--{
--	return clk_rate_div_range_round(clk, 2, 0xffff, rate);
--}
--
--static void fsidiv_disable(struct clk *clk)
--{
--	__raw_writel(0, clk->mapping->base);
--}
--
--static int fsidiv_enable(struct clk *clk)
--{
--	unsigned long value;
--
--	value  = __raw_readl(clk->mapping->base) >> 16;
--	if (value < 2)
--		return -EIO;
--
--	__raw_writel((value << 16) | 0x3, clk->mapping->base);
--
--	return 0;
--}
-+enum { FSIDIV_A, FSIDIV_B, FSIDIV_REPARENT_NR };
+ struct sh_pfc_chip;
++struct sh_pfc_pinctrl;
  
--static int fsidiv_set_rate(struct clk *clk, unsigned long rate)
--{
--	int idx;
--
--	idx = (clk->parent->rate / rate) & 0xffff;
--	if (idx < 2)
--		return -EINVAL;
--
--	__raw_writel(idx << 16, clk->mapping->base);
--	return 0;
--}
--
--static struct sh_clk_ops fsidiv_clk_ops = {
--	.recalc		= fsidiv_recalc,
--	.round_rate	= fsidiv_round_rate,
--	.set_rate	= fsidiv_set_rate,
--	.enable		= fsidiv_enable,
--	.disable	= fsidiv_disable,
--};
--
--static struct clk_mapping fsidiva_clk_mapping = {
--	.phys	= FSIDIVA,
--	.len	= 8,
--};
--
--static struct clk fsidiva_clk = {
--	.ops		= &fsidiv_clk_ops,
--	.parent		= &div6_reparent_clks[DIV6_FSIA], /* late install */
--	.mapping	= &fsidiva_clk_mapping,
--};
--
--static struct clk_mapping fsidivb_clk_mapping = {
--	.phys	= FSIDIVB,
--	.len	= 8,
--};
--
--static struct clk fsidivb_clk = {
--	.ops		= &fsidiv_clk_ops,
--	.parent		= &div6_reparent_clks[DIV6_FSIB],  /* late install */
--	.mapping	= &fsidivb_clk_mapping,
--};
--
--static struct clk *late_main_clks[] = {
--	&fsidiva_clk,
--	&fsidivb_clk,
-+static struct clk fsidivs[] = {
-+	[FSIDIV_A] = SH_CLK_FSIDIV(FSIDIVA, &div6_reparent_clks[DIV6_FSIA]),
-+	[FSIDIV_B] = SH_CLK_FSIDIV(FSIDIVB, &div6_reparent_clks[DIV6_FSIB]),
+ struct sh_pfc {
++	struct device *dev;
+ 	struct sh_pfc_platform_data *pdata;
+ 	spinlock_t lock;
+ 
+ 	struct pfc_window *window;
+ 	struct sh_pfc_chip *gpio;
++	struct sh_pfc_pinctrl *pinctrl;
  };
  
- enum { MSTP001, MSTP000,
-@@ -583,8 +507,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("pllc1_clk", &pllc1_clk),
- 	CLKDEV_CON_ID("pllc1_div2_clk", &pllc1_div2_clk),
- 	CLKDEV_CON_ID("pllc2_clk", &sh7372_pllc2_clk),
--	CLKDEV_CON_ID("fsidiva", &fsidiva_clk),
--	CLKDEV_CON_ID("fsidivb", &fsidivb_clk),
-+	CLKDEV_CON_ID("fsidiva", &fsidivs[FSIDIV_A]),
-+	CLKDEV_CON_ID("fsidivb", &fsidivs[FSIDIV_B]),
+ int sh_pfc_register_gpiochip(struct sh_pfc *pfc);
+ int sh_pfc_unregister_gpiochip(struct sh_pfc *pfc);
  
- 	/* DIV4 clocks */
- 	CLKDEV_CON_ID("i_clk", &div4_clks[DIV4_I]),
-@@ -680,6 +604,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("icka", "sh_fsi2", &div6_reparent_clks[DIV6_FSIA]),
- 	CLKDEV_ICK_ID("ickb", "sh_fsi2", &div6_reparent_clks[DIV6_FSIB]),
- 	CLKDEV_ICK_ID("spu2", "sh_fsi2", &mstp_clks[MSTP223]),
-+	CLKDEV_ICK_ID("diva", "sh_fsi2", &fsidivs[FSIDIV_A]),
-+	CLKDEV_ICK_ID("divb", "sh_fsi2", &fsidivs[FSIDIV_B]),
+ int sh_pfc_register_pinctrl(struct sh_pfc *pfc);
++int sh_pfc_unregister_pinctrl(struct sh_pfc *pfc);
+ 
+ int sh_pfc_read_bit(struct pinmux_data_reg *dr, unsigned long in_pos);
+ void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
+diff --git a/drivers/sh/pfc/gpio.c b/drivers/sh/pfc/gpio.c
+index 91ea4c9..f22d43a 100644
+--- a/drivers/sh/pfc/gpio.c
++++ b/drivers/sh/pfc/gpio.c
+@@ -8,7 +8,8 @@
+  * License.  See the file "COPYING" in the main directory of this archive
+  * for more details.
+  */
+-#define pr_fmt(fmt) "sh_pfc " KBUILD_MODNAME ": " fmt
++
++#define pr_fmt(fmt) KBUILD_MODNAME " gpio: " fmt
+ 
+ #include <linux/init.h>
+ #include <linux/gpio.h>
+diff --git a/drivers/sh/pfc/pinctrl.c b/drivers/sh/pfc/pinctrl.c
+index 0bde9fa..1c93e3c 100644
+--- a/drivers/sh/pfc/pinctrl.c
++++ b/drivers/sh/pfc/pinctrl.c
+@@ -7,8 +7,8 @@
+  * License.  See the file "COPYING" in the main directory of this archive
+  * for more details.
+  */
+-#define DRV_NAME "pinctrl-sh_pfc"
+ 
++#define DRV_NAME "sh-pfc"
+ #define pr_fmt(fmt) KBUILD_MODNAME " pinctrl: " fmt
+ 
+ #include <linux/init.h>
+@@ -17,7 +17,6 @@
+ #include <linux/err.h>
+ #include <linux/slab.h>
+ #include <linux/spinlock.h>
+-#include <linux/platform_device.h>
+ #include <linux/pinctrl/consumer.h>
+ #include <linux/pinctrl/pinctrl.h>
+ #include <linux/pinctrl/pinconf.h>
+@@ -39,8 +38,6 @@ struct sh_pfc_pinctrl {
+ 	spinlock_t lock;
  };
  
- void __init sh7372_clock_init(void)
-@@ -708,8 +634,8 @@ void __init sh7372_clock_init(void)
- 	if (!ret)
- 		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
+-static struct sh_pfc_pinctrl *sh_pfc_pmx;
+-
+ static int sh_pfc_get_groups_count(struct pinctrl_dev *pctldev)
+ {
+ 	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
+@@ -423,28 +420,31 @@ static int __devinit sh_pfc_map_functions(struct sh_pfc *pfc,
+ 	return 0;
+ }
  
--	for (k = 0; !ret && (k < ARRAY_SIZE(late_main_clks)); k++)
--		ret = clk_register(late_main_clks[k]);
-+	if (!ret)
-+		ret = sh_clk_fsidiv_register(fsidivs, FSIDIV_REPARENT_NR);
+-static int __devinit sh_pfc_pinctrl_probe(struct platform_device *pdev)
++int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ {
+-	struct sh_pfc *pfc;
++	struct sh_pfc_pinctrl *pmx;
+ 	int ret;
  
- 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
+-	if (unlikely(!sh_pfc_pmx))
+-		return -ENODEV;
++	pmx = kzalloc(sizeof(struct sh_pfc_pinctrl), GFP_KERNEL);
++	if (unlikely(!pmx))
++		return -ENOMEM;
++
++	spin_lock_init(&pmx->lock);
  
+-	pfc = sh_pfc_pmx->pfc;
++	pmx->pfc = pfc;
++	pfc->pinctrl = pmx;
+ 
+-	ret = sh_pfc_map_gpios(pfc, sh_pfc_pmx);
++	ret = sh_pfc_map_gpios(pfc, pmx);
+ 	if (unlikely(ret != 0))
+ 		return ret;
+ 
+-	ret = sh_pfc_map_functions(pfc, sh_pfc_pmx);
++	ret = sh_pfc_map_functions(pfc, pmx);
+ 	if (unlikely(ret != 0))
+ 		goto free_pads;
+ 
+-	sh_pfc_pmx->pctl = pinctrl_register(&sh_pfc_pinctrl_desc, &pdev->dev,
+-					    sh_pfc_pmx);
+-	if (IS_ERR(sh_pfc_pmx->pctl)) {
+-		ret = PTR_ERR(sh_pfc_pmx->pctl);
++	pmx->pctl = pinctrl_register(&sh_pfc_pinctrl_desc, pfc->dev, pmx);
++	if (IS_ERR(pmx->pctl)) {
++		ret = PTR_ERR(pmx->pctl);
+ 		goto free_functions;
+ 	}
+ 
+@@ -453,79 +453,29 @@ static int __devinit sh_pfc_pinctrl_probe(struct platform_device *pdev)
+ 	sh_pfc_gpio_range.base = pfc->pdata->first_gpio;
+ 	sh_pfc_gpio_range.pin_base = pfc->pdata->first_gpio;
+ 
+-	pinctrl_add_gpio_range(sh_pfc_pmx->pctl, &sh_pfc_gpio_range);
+-
+-	platform_set_drvdata(pdev, sh_pfc_pmx);
++	pinctrl_add_gpio_range(pmx->pctl, &sh_pfc_gpio_range);
+ 
+ 	return 0;
+ 
+ free_functions:
+-	kfree(sh_pfc_pmx->functions);
++	kfree(pmx->functions);
+ free_pads:
+-	kfree(sh_pfc_pmx->pads);
+-	kfree(sh_pfc_pmx);
++	kfree(pmx->pads);
++	kfree(pmx);
+ 
+ 	return ret;
+ }
+ 
+-static int __devexit sh_pfc_pinctrl_remove(struct platform_device *pdev)
++int __devexit sh_pfc_unregister_pinctrl(struct sh_pfc *pfc)
+ {
+-	struct sh_pfc_pinctrl *pmx = platform_get_drvdata(pdev);
++	struct sh_pfc_pinctrl *pmx = pfc->pinctrl;
+ 
+ 	pinctrl_unregister(pmx->pctl);
+ 
+-	platform_set_drvdata(pdev, NULL);
+-
+-	kfree(sh_pfc_pmx->functions);
+-	kfree(sh_pfc_pmx->pads);
+-	kfree(sh_pfc_pmx);
++	kfree(pmx->functions);
++	kfree(pmx->pads);
++	kfree(pmx);
+ 
++	pfc->pinctrl = NULL;
+ 	return 0;
+ }
+-
+-static struct platform_driver sh_pfc_pinctrl_driver = {
+-	.probe		= sh_pfc_pinctrl_probe,
+-	.remove		= __devexit_p(sh_pfc_pinctrl_remove),
+-	.driver		= {
+-		.name	= DRV_NAME,
+-		.owner	= THIS_MODULE,
+-	},
+-};
+-
+-static struct platform_device sh_pfc_pinctrl_device = {
+-	.name		= DRV_NAME,
+-	.id		= -1,
+-};
+-
+-static int sh_pfc_pinctrl_init(void)
+-{
+-	int rc;
+-
+-	rc = platform_driver_register(&sh_pfc_pinctrl_driver);
+-	if (likely(!rc)) {
+-		rc = platform_device_register(&sh_pfc_pinctrl_device);
+-		if (unlikely(rc))
+-			platform_driver_unregister(&sh_pfc_pinctrl_driver);
+-	}
+-
+-	return rc;
+-}
+-
+-int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+-{
+-	sh_pfc_pmx = kzalloc(sizeof(struct sh_pfc_pinctrl), GFP_KERNEL);
+-	if (unlikely(!sh_pfc_pmx))
+-		return -ENOMEM;
+-
+-	spin_lock_init(&sh_pfc_pmx->lock);
+-
+-	sh_pfc_pmx->pfc = pfc;
+-
+-	return sh_pfc_pinctrl_init();
+-}
+-
+-static void __exit sh_pfc_pinctrl_exit(void)
+-{
+-	platform_driver_unregister(&sh_pfc_pinctrl_driver);
+-}
+-module_exit(sh_pfc_pinctrl_exit);
 -- 
-1.7.10.4
+1.7.8.6
 
