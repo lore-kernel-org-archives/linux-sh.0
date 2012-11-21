@@ -1,57 +1,382 @@
-From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Date: Wed, 07 Nov 2012 06:58:06 +0000
-Subject: [PATCH 01/10] Revert "sh-sci / PM: Avoid deadlocking runtime PM"
-Message-Id: <509A067E.1040202@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 21 Nov 2012 02:53:28 +0000
+Subject: [PATCH 12/42] SH: Register PFC platform device
+Message-Id: <1353466438-10929-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <509A0658.1010503@renesas.com>
-In-Reply-To: <509A0658.1010503@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This reverts commit 048be431e4 (sh-sci / PM: Avoid deadlocking runtime
-PM, from Rafael J. Wysocki <rjw@sisk.pl>, 2012-03-09).
+Add arch code to register the PFC platform device instead of calling the
+driver directly. Platform device registration in the sh-pfc driver will
+be removed.
 
-In order to get console PM work properly, we should implement uart_ops
-->pm() operation, rather than sprinkle band-ading runtime PM calls in
-the driver.
-
-Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/tty/serial/sh-sci.c | 5 -----
- 1 file changed, 5 deletions(-)
+ arch/sh/include/cpu-common/cpu/pfc.h    |   28 +++++++++++++++++++++++
+ arch/sh/kernel/cpu/Makefile             |    2 +-
+ arch/sh/kernel/cpu/pfc.c                |   37 +++++++++++++++++++++++++++++++
+ arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c |    3 +-
+ arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c |    3 +-
+ arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c |    3 +-
+ arch/sh/kernel/cpu/sh3/pinmux-sh7720.c  |    3 +-
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c |    3 +-
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c |    3 +-
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7724.c |    3 +-
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7734.c |    8 +++---
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c |    3 +-
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7785.c |    3 +-
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c |    3 +-
+ arch/sh/kernel/cpu/sh4a/pinmux-shx3.c   |    3 +-
+ 15 files changed, 92 insertions(+), 16 deletions(-)
+ create mode 100644 arch/sh/include/cpu-common/cpu/pfc.h
+ create mode 100644 arch/sh/kernel/cpu/pfc.c
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 9be296c..526ad04 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1752,8 +1752,6 @@ static int sci_startup(struct uart_port *port)
+diff --git a/arch/sh/include/cpu-common/cpu/pfc.h b/arch/sh/include/cpu-common/cpu/pfc.h
+new file mode 100644
+index 0000000..00291eb
+--- /dev/null
++++ b/arch/sh/include/cpu-common/cpu/pfc.h
+@@ -0,0 +1,28 @@
++/*
++ * SH Pin Function Control Initialization
++ *
++ * Copyright (C) 2012  Renesas Solutions Corp.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#ifndef __ARCH_SH_CPU_PFC_H__
++#define __ARCH_SH_CPU_PFC_H__
++
++#include <linux/types.h>
++
++struct pinmux_info;
++struct resource;
++
++int sh_pfc_register(const char *name,
++		    struct resource *resource, u32 num_resources,
++		    struct pinmux_info *pdata);
++
++#endif /* __ARCH_SH_CPU_PFC_H__ */
+diff --git a/arch/sh/kernel/cpu/Makefile b/arch/sh/kernel/cpu/Makefile
+index fa58bfd..accc7ca 100644
+--- a/arch/sh/kernel/cpu/Makefile
++++ b/arch/sh/kernel/cpu/Makefile
+@@ -18,4 +18,4 @@ obj-$(CONFIG_ARCH_SHMOBILE)	+= shmobile/
+ obj-$(CONFIG_SH_ADC)		+= adc.o
+ obj-$(CONFIG_SH_CLK_CPG_LEGACY)	+= clock-cpg.o
  
- 	dev_dbg(port->dev, "%s(%d)\n", __func__, port->line);
+-obj-y	+= irq/ init.o clock.o fpu.o proc.o
++obj-y	+= irq/ init.o clock.o fpu.o pfc.o proc.o
+diff --git a/arch/sh/kernel/cpu/pfc.c b/arch/sh/kernel/cpu/pfc.c
+new file mode 100644
+index 0000000..a19b56d
+--- /dev/null
++++ b/arch/sh/kernel/cpu/pfc.c
+@@ -0,0 +1,37 @@
++/*
++ * SH Pin Function Control Initialization
++ *
++ * Copyright (C) 2012  Renesas Solutions Corp.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include <linux/init.h>
++#include <linux/platform_device.h>
++
++#include <cpu/pfc.h>
++
++static struct platform_device sh_pfc_device = {
++	.name		= "sh-pfc",
++	.id		= -1,
++};
++
++int __init sh_pfc_register(const char *name,
++			   struct resource *resource, u32 num_resources,
++			   struct pinmux_info *pdata)
++{
++	if (name)
++		sh_pfc_device.name = name;
++	sh_pfc_device.dev.platform_data = pdata;
++	sh_pfc_device.num_resources = num_resources;
++	sh_pfc_device.resource = resource;
++
++	return platform_device_register(&sh_pfc_device);
++}
+diff --git a/arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c b/arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c
+index c465af7..ef66de4 100644
+--- a/arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c
++++ b/arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c
+@@ -11,6 +11,7 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
++#include <cpu/pfc.h>
+ #include <cpu/sh7203.h>
  
--	pm_runtime_put_noidle(port->dev);
--
- 	sci_port_enable(s);
+ enum {
+@@ -1592,6 +1593,6 @@ static struct pinmux_info sh7203_pinmux_info = {
  
- 	ret = sci_request_irq(s);
-@@ -1781,8 +1779,6 @@ static void sci_shutdown(struct uart_port *port)
- 	sci_free_irq(s);
+ static int __init plat_pinmux_setup(void)
+ {
+-	return register_pinmux(&sh7203_pinmux_info);
++	return sh_pfc_register(NULL, NULL, 0, &sh7203_pinmux_info);
+ }
+ arch_initcall(plat_pinmux_setup);
+diff --git a/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c b/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c
+index b055b55..0fdd36f 100644
+--- a/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c
++++ b/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c
+@@ -11,6 +11,7 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
++#include <cpu/pfc.h>
+ #include <cpu/sh7264.h>
  
- 	sci_port_disable(s);
--
--	pm_runtime_get_noresume(port->dev);
+ enum {
+@@ -2131,6 +2132,6 @@ static struct pinmux_info sh7264_pinmux_info = {
+ 
+ static int __init plat_pinmux_setup(void)
+ {
+-	return register_pinmux(&sh7264_pinmux_info);
++	return sh_pfc_register(NULL, NULL, 0, &sh7264_pinmux_info);
+ }
+ arch_initcall(plat_pinmux_setup);
+diff --git a/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c b/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c
+index 039e458..78462e9 100644
+--- a/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c
++++ b/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c
+@@ -12,6 +12,7 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
++#include <cpu/pfc.h>
+ #include <cpu/sh7269.h>
+ 
+ enum {
+@@ -2834,6 +2835,6 @@ static struct pinmux_info sh7269_pinmux_info = {
+ 
+ static int __init plat_pinmux_setup(void)
+ {
+-	return register_pinmux(&sh7269_pinmux_info);
++	return sh_pfc_register(NULL, NULL, 0, &sh7269_pinmux_info);
+ }
+ arch_initcall(plat_pinmux_setup);
+diff --git a/arch/sh/kernel/cpu/sh3/pinmux-sh7720.c b/arch/sh/kernel/cpu/sh3/pinmux-sh7720.c
+index 9ca1546..cf139f2 100644
+--- a/arch/sh/kernel/cpu/sh3/pinmux-sh7720.c
++++ b/arch/sh/kernel/cpu/sh3/pinmux-sh7720.c
+@@ -11,6 +11,7 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
++#include <cpu/pfc.h>
+ #include <cpu/sh7720.h>
+ 
+ enum {
+@@ -1236,7 +1237,7 @@ static struct pinmux_info sh7720_pinmux_info = {
+ 
+ static int __init plat_pinmux_setup(void)
+ {
+-	return register_pinmux(&sh7720_pinmux_info);
++	return sh_pfc_register(NULL, NULL, 0, &sh7720_pinmux_info);
  }
  
- static unsigned int sci_scbrr_calc(unsigned int algo_id, unsigned int bps,
-@@ -2121,7 +2117,6 @@ static int __devinit sci_init_single(struct platform_device *dev,
- 		sci_init_gpios(sci_port);
+ arch_initcall(plat_pinmux_setup);
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c
+index 0688a75..a659d25 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c
+@@ -1,6 +1,7 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
++#include <cpu/pfc.h>
+ #include <cpu/sh7722.h>
  
- 		pm_runtime_irq_safe(&dev->dev);
--		pm_runtime_get_noresume(&dev->dev);
- 		pm_runtime_enable(&dev->dev);
- 	}
+ enum {
+@@ -1778,7 +1779,7 @@ static struct pinmux_info sh7722_pinmux_info = {
  
+ static int __init plat_pinmux_setup(void)
+ {
+-	return register_pinmux(&sh7722_pinmux_info);
++	return sh_pfc_register(NULL, NULL, 0, &sh7722_pinmux_info);
+ }
+ 
+ arch_initcall(plat_pinmux_setup);
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c
+index 88bf5ec..8fabf8c 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c
+@@ -11,6 +11,7 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
++#include <cpu/pfc.h>
+ #include <cpu/sh7723.h>
+ 
+ enum {
+@@ -1903,7 +1904,7 @@ static struct pinmux_info sh7723_pinmux_info = {
+ 
+ static int __init plat_pinmux_setup(void)
+ {
+-	return register_pinmux(&sh7723_pinmux_info);
++	return sh_pfc_register(NULL, NULL, 0, &sh7723_pinmux_info);
+ }
+ 
+ arch_initcall(plat_pinmux_setup);
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7724.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7724.c
+index 1af0f95..c1445e0 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7724.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7724.c
+@@ -16,6 +16,7 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
++#include <cpu/pfc.h>
+ #include <cpu/sh7724.h>
+ 
+ enum {
+@@ -2225,6 +2226,6 @@ static struct pinmux_info sh7724_pinmux_info = {
+ 
+ static int __init plat_pinmux_setup(void)
+ {
+-	return register_pinmux(&sh7724_pinmux_info);
++	return sh_pfc_register(NULL, NULL, 0, &sh7724_pinmux_info);
+ }
+ arch_initcall(plat_pinmux_setup);
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7734.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7734.c
+index eed3b9d..373f626 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7734.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7734.c
+@@ -12,6 +12,7 @@
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
+ #include <linux/ioport.h>
++#include <cpu/pfc.h>
+ #include <cpu/sh7734.h>
+ 
+ #define CPU_32_PORT(fn, pfx, sfx)				\
+@@ -2467,9 +2468,6 @@ static struct resource sh7734_pfc_resources[] = {
+ static struct pinmux_info sh7734_pinmux_info = {
+ 	.name = "sh7734_pfc",
+ 
+-	.resource = sh7734_pfc_resources,
+-	.num_resources = ARRAY_SIZE(sh7734_pfc_resources),
+-
+ 	.unlock_reg = 0xFFFC0000,
+ 
+ 	.reserved_id = PINMUX_RESERVED,
+@@ -2492,6 +2490,8 @@ static struct pinmux_info sh7734_pinmux_info = {
+ 
+ static int __init plat_pinmux_setup(void)
+ {
+-	return register_pinmux(&sh7734_pinmux_info);
++	return sh_pfc_register(NULL, sh7734_pfc_resources,
++			       ARRAY_SIZE(sh7734_pfc_resources),
++			       &sh7734_pinmux_info);
+ }
+ arch_initcall(plat_pinmux_setup);
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c
+index 4c74bd0..d20e7d5 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c
+@@ -16,6 +16,7 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
++#include <cpu/pfc.h>
+ #include <cpu/sh7757.h>
+ 
+ enum {
+@@ -2282,6 +2283,6 @@ static struct pinmux_info sh7757_pinmux_info = {
+ 
+ static int __init plat_pinmux_setup(void)
+ {
+-	return register_pinmux(&sh7757_pinmux_info);
++	return sh_pfc_register(NULL, NULL, 0, &sh7757_pinmux_info);
+ }
+ arch_initcall(plat_pinmux_setup);
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7785.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7785.c
+index 5ebc25f..8dd6152 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7785.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7785.c
+@@ -11,6 +11,7 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
++#include <cpu/pfc.h>
+ #include <cpu/sh7785.h>
+ 
+ enum {
+@@ -1304,7 +1305,7 @@ static struct pinmux_info sh7785_pinmux_info = {
+ 
+ static int __init plat_pinmux_setup(void)
+ {
+-	return register_pinmux(&sh7785_pinmux_info);
++	return sh_pfc_register(NULL, NULL, 0, &sh7785_pinmux_info);
+ }
+ 
+ arch_initcall(plat_pinmux_setup);
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
+index 4229e07..6e6ba83 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
+@@ -16,6 +16,7 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
++#include <cpu/pfc.h>
+ #include <cpu/sh7786.h>
+ 
+ enum {
+@@ -837,7 +838,7 @@ static struct pinmux_info sh7786_pinmux_info = {
+ 
+ static int __init plat_pinmux_setup(void)
+ {
+-	return register_pinmux(&sh7786_pinmux_info);
++	return sh_pfc_register(NULL, NULL, 0, &sh7786_pinmux_info);
+ }
+ 
+ arch_initcall(plat_pinmux_setup);
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c b/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
+index aaa5338..98be7ae 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
+@@ -10,6 +10,7 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
++#include <cpu/pfc.h>
+ #include <cpu/shx3.h>
+ 
+ enum {
+@@ -582,6 +583,6 @@ static struct pinmux_info shx3_pinmux_info = {
+ 
+ static int __init shx3_pinmux_setup(void)
+ {
+-	return register_pinmux(&shx3_pinmux_info);
++	return sh_pfc_register(NULL, NULL, 0, &shx3_pinmux_info);
+ }
+ arch_initcall(shx3_pinmux_setup);
 -- 
-1.7.12.4
+1.7.8.6
 
