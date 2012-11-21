@@ -1,660 +1,791 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 27 Nov 2012 00:02:54 +0000
-Subject: [PATCH v2 55/77] sh-pfc: Add shx3 pinmux support
-Message-Id: <1353974596-30033-56-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 21 Nov 2012 02:53:56 +0000
+Subject: [PATCH 40/42] sh-pfc: Move sh_pfc.h from include/linux/ to driver directory
+Message-Id: <1353466438-10929-41-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Paul Mundt <lethal@linux-sh.org>
----
- drivers/pinctrl/sh-pfc/Kconfig    |    6 +
- drivers/pinctrl/sh-pfc/Makefile   |    1 +
- drivers/pinctrl/sh-pfc/core.c     |    3 +
- drivers/pinctrl/sh-pfc/core.h     |    1 +
- drivers/pinctrl/sh-pfc/pfc-shx3.c |  581 +++++++++++++++++++++++++++++++++++++
- 5 files changed, 592 insertions(+), 0 deletions(-)
- create mode 100644 drivers/pinctrl/sh-pfc/pfc-shx3.c
+The header file isn't used by arch code anymore. Make it private to the
+driver.
 
-diff --git a/drivers/pinctrl/sh-pfc/Kconfig b/drivers/pinctrl/sh-pfc/Kconfig
-index f55d6a3..c3340f5 100644
---- a/drivers/pinctrl/sh-pfc/Kconfig
-+++ b/drivers/pinctrl/sh-pfc/Kconfig
-@@ -107,4 +107,10 @@ config PINCTRL_PFC_SH7786
- 	depends on GENERIC_GPIO
- 	select PINCTRL_SH_PFC
- 
-+config PINCTRL_PFC_SHX3
-+	def_bool y
-+	depends on CPU_SUBTYPE_SHX3
-+	depends on GENERIC_GPIO
-+	select PINCTRL_SH_PFC
-+
- endif
-diff --git a/drivers/pinctrl/sh-pfc/Makefile b/drivers/pinctrl/sh-pfc/Makefile
-index d0786b1..e8b9562 100644
---- a/drivers/pinctrl/sh-pfc/Makefile
-+++ b/drivers/pinctrl/sh-pfc/Makefile
-@@ -18,3 +18,4 @@ obj-$(CONFIG_PINCTRL_PFC_SH7734)	+= pfc-sh7734.o
- obj-$(CONFIG_PINCTRL_PFC_SH7757)	+= pfc-sh7757.o
- obj-$(CONFIG_PINCTRL_PFC_SH7785)	+= pfc-sh7785.o
- obj-$(CONFIG_PINCTRL_PFC_SH7786)	+= pfc-sh7786.o
-+obj-$(CONFIG_PINCTRL_PFC_SHX3)		+= pfc-shx3.o
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/pinctrl/sh-pfc/core.c        |    1 -
+ drivers/pinctrl/sh-pfc/core.h        |    3 +-
+ drivers/pinctrl/sh-pfc/gpio.c        |    1 -
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c |    3 +-
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c |    3 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7203.c  |    3 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7264.c  |    3 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7269.c  |    3 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7367.c  |    3 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7372.c  |    3 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7377.c  |    3 +-
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c  |    3 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7720.c  |    3 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7722.c  |    3 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7723.c  |    3 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7724.c  |    3 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7734.c  |    3 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7757.c  |    3 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7785.c  |    3 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7786.c  |    3 +-
+ drivers/pinctrl/sh-pfc/pfc-shx3.c    |    3 +-
+ drivers/pinctrl/sh-pfc/pinctrl.c     |    1 -
+ drivers/pinctrl/sh-pfc/sh_pfc.h      |  195 ++++++++++++++++++++++++++++++++++
+ include/linux/sh_pfc.h               |  195 ----------------------------------
+ 24 files changed, 233 insertions(+), 217 deletions(-)
+ create mode 100644 drivers/pinctrl/sh-pfc/sh_pfc.h
+ delete mode 100644 include/linux/sh_pfc.h
+
 diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
-index 19266c2..300e55d 100644
+index 748206f..05ce6c0 100644
 --- a/drivers/pinctrl/sh-pfc/core.c
 +++ b/drivers/pinctrl/sh-pfc/core.c
-@@ -626,6 +626,9 @@ static const struct platform_device_id sh_pfc_id_table[] = {
- #ifdef CONFIG_PINCTRL_PFC_SH7786
- 	{ "pfc-sh7786", (kernel_ulong_t)&sh7786_pinmux_info },
- #endif
-+#ifdef CONFIG_PINCTRL_PFC_SHX3
-+	{ "pfc-shx3", (kernel_ulong_t)&shx3_pinmux_info },
-+#endif
- 	{ "sh-pfc", 0 },
- 	{ },
- };
+@@ -19,7 +19,6 @@
+ #include <linux/ioport.h>
+ #include <linux/kernel.h>
+ #include <linux/module.h>
+-#include <linux/sh_pfc.h>
+ #include <linux/slab.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_device.h>
 diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
-index 722543a..8b3a0a5 100644
+index ee123de..cd38cfe 100644
 --- a/drivers/pinctrl/sh-pfc/core.h
 +++ b/drivers/pinctrl/sh-pfc/core.h
-@@ -66,5 +66,6 @@ extern struct sh_pfc_soc_info sh7734_pinmux_info;
- extern struct sh_pfc_soc_info sh7757_pinmux_info;
- extern struct sh_pfc_soc_info sh7785_pinmux_info;
- extern struct sh_pfc_soc_info sh7786_pinmux_info;
-+extern struct sh_pfc_soc_info shx3_pinmux_info;
+@@ -11,9 +11,10 @@
+ #define __SH_PFC_CORE_H__
  
- #endif /* __SH_PFC_CORE_H__ */
+ #include <linux/compiler.h>
+-#include <linux/sh_pfc.h>
+ #include <linux/types.h>
+ 
++#include "sh_pfc.h"
++
+ struct pfc_window {
+ 	phys_addr_t phys;
+ 	void __iomem *virt;
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index 2a68c12..22df3fe 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -15,7 +15,6 @@
+ #include <linux/init.h>
+ #include <linux/module.h>
+ #include <linux/pinctrl/consumer.h>
+-#include <linux/sh_pfc.h>
+ #include <linux/slab.h>
+ #include <linux/spinlock.h>
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index 0ab4cb6..214788c 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -19,10 +19,11 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ #include <linux/kernel.h>
+-#include <linux/sh_pfc.h>
+ #include <mach/r8a7740.h>
+ #include <mach/irqs.h>
+ 
++#include "sh_pfc.h"
++
+ #define CPU_ALL_PORT(fn, pfx, sfx)					\
+ 	PORT_10(fn, pfx, sfx),		PORT_90(fn, pfx, sfx),		\
+ 	PORT_10(fn, pfx##10, sfx),	PORT_90(fn, pfx##1, sfx),	\
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+index 16c9e8c..2ab9ec1 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+@@ -19,9 +19,10 @@
+  */
+ 
+ #include <linux/kernel.h>
+-#include <linux/sh_pfc.h>
+ #include <mach/r8a7779.h>
+ 
++#include "sh_pfc.h"
++
+ #define CPU_32_PORT(fn, pfx, sfx)				\
+ 	PORT_10(fn, pfx, sfx), PORT_10(fn, pfx##1, sfx),	\
+ 	PORT_10(fn, pfx##2, sfx), PORT_1(fn, pfx##30, sfx),	\
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7203.c b/drivers/pinctrl/sh-pfc/pfc-sh7203.c
+index 62bd173..01b425d 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7203.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7203.c
+@@ -10,9 +10,10 @@
+ 
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
+-#include <linux/sh_pfc.h>
+ #include <cpu/sh7203.h>
+ 
++#include "sh_pfc.h"
++
+ enum {
+ 	PINMUX_RESERVED = 0,
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7264.c b/drivers/pinctrl/sh-pfc/pfc-sh7264.c
+index 66d7692..8270493 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7264.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7264.c
+@@ -10,9 +10,10 @@
+ 
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
+-#include <linux/sh_pfc.h>
+ #include <cpu/sh7264.h>
+ 
++#include "sh_pfc.h"
++
+ enum {
+ 	PINMUX_RESERVED = 0,
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7269.c b/drivers/pinctrl/sh-pfc/pfc-sh7269.c
+index 80da98d..d25825b 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7269.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7269.c
+@@ -11,9 +11,10 @@
+ 
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
+-#include <linux/sh_pfc.h>
+ #include <cpu/sh7269.h>
+ 
++#include "sh_pfc.h"
++
+ enum {
+ 	PINMUX_RESERVED = 0,
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7367.c b/drivers/pinctrl/sh-pfc/pfc-sh7367.c
+index e946513..b01444a 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7367.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7367.c
+@@ -17,9 +17,10 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ #include <linux/kernel.h>
+-#include <linux/sh_pfc.h>
+ #include <mach/sh7367.h>
+ 
++#include "sh_pfc.h"
++
+ #define CPU_ALL_PORT(fn, pfx, sfx)				\
+ 	PORT_10(fn, pfx, sfx), PORT_90(fn, pfx, sfx),		\
+ 	PORT_10(fn, pfx##10, sfx), PORT_90(fn, pfx##1, sfx),	\
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+index a52fabe..d44e7f0 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+@@ -21,10 +21,11 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ #include <linux/kernel.h>
+-#include <linux/sh_pfc.h>
+ #include <mach/irqs.h>
+ #include <mach/sh7372.h>
+ 
++#include "sh_pfc.h"
++
+ #define CPU_ALL_PORT(fn, pfx, sfx) \
+ 	PORT_10(fn, pfx, sfx),		PORT_90(fn, pfx, sfx), \
+ 	PORT_10(fn, pfx##10, sfx),	PORT_10(fn, pfx##11, sfx), \
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7377.c b/drivers/pinctrl/sh-pfc/pfc-sh7377.c
+index e6414a3..de6d49d 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7377.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7377.c
+@@ -18,9 +18,10 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ #include <linux/kernel.h>
+-#include <linux/sh_pfc.h>
+ #include <mach/sh7377.h>
+ 
++#include "sh_pfc.h"
++
+ #define CPU_ALL_PORT(fn, pfx, sfx)				\
+ 	PORT_10(fn, pfx, sfx), PORT_90(fn, pfx, sfx),		\
+ 	PORT_10(fn, pfx##10, sfx),				\
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index 8a0eee9..709008e 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -19,10 +19,11 @@
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
+ #include <linux/kernel.h>
+-#include <linux/sh_pfc.h>
+ #include <mach/sh73a0.h>
+ #include <mach/irqs.h>
+ 
++#include "sh_pfc.h"
++
+ #define CPU_ALL_PORT(fn, pfx, sfx)				\
+ 	PORT_10(fn, pfx,    sfx), PORT_10(fn, pfx##1, sfx),	\
+ 	PORT_10(fn, pfx##2, sfx), PORT_10(fn, pfx##3, sfx),	\
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7720.c b/drivers/pinctrl/sh-pfc/pfc-sh7720.c
+index 20d0577..10872ed 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7720.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7720.c
+@@ -10,9 +10,10 @@
+ 
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
+-#include <linux/sh_pfc.h>
+ #include <cpu/sh7720.h>
+ 
++#include "sh_pfc.h"
++
+ enum {
+ 	PINMUX_RESERVED = 0,
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7722.c b/drivers/pinctrl/sh-pfc/pfc-sh7722.c
+index f58f009..2de0929 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7722.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7722.c
+@@ -1,9 +1,10 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
+-#include <linux/sh_pfc.h>
+ #include <cpu/sh7722.h>
+ 
++#include "sh_pfc.h"
++
+ enum {
+ 	PINMUX_RESERVED = 0,
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7723.c b/drivers/pinctrl/sh-pfc/pfc-sh7723.c
+index 0564099..7943a7a 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7723.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7723.c
+@@ -10,9 +10,10 @@
+ 
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+-#include <linux/sh_pfc.h>
+ #include <cpu/sh7723.h>
+ 
++#include "sh_pfc.h"
++
+ enum {
+ 	PINMUX_RESERVED = 0,
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7724.c b/drivers/pinctrl/sh-pfc/pfc-sh7724.c
+index 85b6253..1e3a6c2 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7724.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7724.c
+@@ -15,9 +15,10 @@
+ 
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+-#include <linux/sh_pfc.h>
+ #include <cpu/sh7724.h>
+ 
++#include "sh_pfc.h"
++
+ enum {
+ 	PINMUX_RESERVED = 0,
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7734.c b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
+index cbb5f4c..23d76d2 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7734.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
+@@ -10,9 +10,10 @@
+  */
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+-#include <linux/sh_pfc.h>
+ #include <cpu/sh7734.h>
+ 
++#include "sh_pfc.h"
++
+ #define CPU_32_PORT(fn, pfx, sfx)				\
+ 	PORT_10(fn, pfx, sfx), PORT_10(fn, pfx##1, sfx),	\
+ 	PORT_10(fn, pfx##2, sfx), PORT_1(fn, pfx##30, sfx),	\
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7757.c b/drivers/pinctrl/sh-pfc/pfc-sh7757.c
+index 09433b3..07553e3 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7757.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7757.c
+@@ -15,9 +15,10 @@
+ 
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+-#include <linux/sh_pfc.h>
+ #include <cpu/sh7757.h>
+ 
++#include "sh_pfc.h"
++
+ enum {
+ 	PINMUX_RESERVED = 0,
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7785.c b/drivers/pinctrl/sh-pfc/pfc-sh7785.c
+index 23f2c31..3b1825d 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7785.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7785.c
+@@ -10,9 +10,10 @@
+ 
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+-#include <linux/sh_pfc.h>
+ #include <cpu/sh7785.h>
+ 
++#include "sh_pfc.h"
++
+ enum {
+ 	PINMUX_RESERVED = 0,
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7786.c b/drivers/pinctrl/sh-pfc/pfc-sh7786.c
+index 1d80461..15f1d5a 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7786.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7786.c
+@@ -15,9 +15,10 @@
+ 
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+-#include <linux/sh_pfc.h>
+ #include <cpu/sh7786.h>
+ 
++#include "sh_pfc.h"
++
+ enum {
+ 	PINMUX_RESERVED = 0,
+ 
 diff --git a/drivers/pinctrl/sh-pfc/pfc-shx3.c b/drivers/pinctrl/sh-pfc/pfc-shx3.c
-new file mode 100644
-index 0000000..e21eb24
---- /dev/null
+index e21eb24..c5af0cc 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-shx3.c
 +++ b/drivers/pinctrl/sh-pfc/pfc-shx3.c
-@@ -0,0 +1,581 @@
+@@ -9,9 +9,10 @@
+  */
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+-#include <linux/sh_pfc.h>
+ #include <cpu/shx3.h>
+ 
++#include "sh_pfc.h"
++
+ enum {
+ 	PINMUX_RESERVED = 0,
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index 7f3187a..0914f5c 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -14,7 +14,6 @@
+ #include <linux/err.h>
+ #include <linux/init.h>
+ #include <linux/module.h>
+-#include <linux/sh_pfc.h>
+ #include <linux/slab.h>
+ #include <linux/spinlock.h>
+ #include <linux/pinctrl/consumer.h>
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+new file mode 100644
+index 0000000..13049c4
+--- /dev/null
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -0,0 +1,195 @@
 +/*
-+ * SH-X3 prototype CPU pinmux
++ * SuperH Pin Function Controller Support
 + *
-+ * Copyright (C) 2010  Paul Mundt
++ * Copyright (c) 2008 Magnus Damm
 + *
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
 + * for more details.
 + */
-+#include <linux/init.h>
-+#include <linux/kernel.h>
-+#include <linux/sh_pfc.h>
-+#include <cpu/shx3.h>
++
++#ifndef __SH_PFC_H
++#define __SH_PFC_H
++
++#include <linux/stringify.h>
++#include <asm-generic/gpio.h>
++
++typedef unsigned short pinmux_enum_t;
++typedef unsigned short pinmux_flag_t;
 +
 +enum {
-+	PINMUX_RESERVED = 0,
++	PINMUX_TYPE_NONE,
 +
-+	PINMUX_DATA_BEGIN,
-+	PA7_DATA, PA6_DATA, PA5_DATA, PA4_DATA,
-+	PA3_DATA, PA2_DATA, PA1_DATA, PA0_DATA,
-+	PB7_DATA, PB6_DATA, PB5_DATA, PB4_DATA,
-+	PB3_DATA, PB2_DATA, PB1_DATA, PB0_DATA,
-+	PC7_DATA, PC6_DATA, PC5_DATA, PC4_DATA,
-+	PC3_DATA, PC2_DATA, PC1_DATA, PC0_DATA,
-+	PD7_DATA, PD6_DATA, PD5_DATA, PD4_DATA,
-+	PD3_DATA, PD2_DATA, PD1_DATA, PD0_DATA,
-+	PE7_DATA, PE6_DATA, PE5_DATA, PE4_DATA,
-+	PE3_DATA, PE2_DATA, PE1_DATA, PE0_DATA,
-+	PF7_DATA, PF6_DATA, PF5_DATA, PF4_DATA,
-+	PF3_DATA, PF2_DATA, PF1_DATA, PF0_DATA,
-+	PG7_DATA, PG6_DATA, PG5_DATA, PG4_DATA,
-+	PG3_DATA, PG2_DATA, PG1_DATA, PG0_DATA,
++	PINMUX_TYPE_FUNCTION,
++	PINMUX_TYPE_GPIO,
++	PINMUX_TYPE_OUTPUT,
++	PINMUX_TYPE_INPUT,
++	PINMUX_TYPE_INPUT_PULLUP,
++	PINMUX_TYPE_INPUT_PULLDOWN,
 +
-+	PH5_DATA, PH4_DATA,
-+	PH3_DATA, PH2_DATA, PH1_DATA, PH0_DATA,
-+	PINMUX_DATA_END,
-+
-+	PINMUX_INPUT_BEGIN,
-+	PA7_IN, PA6_IN, PA5_IN, PA4_IN,
-+	PA3_IN, PA2_IN, PA1_IN, PA0_IN,
-+	PB7_IN, PB6_IN, PB5_IN, PB4_IN,
-+	PB3_IN, PB2_IN, PB1_IN, PB0_IN,
-+	PC7_IN, PC6_IN, PC5_IN, PC4_IN,
-+	PC3_IN, PC2_IN, PC1_IN, PC0_IN,
-+	PD7_IN, PD6_IN, PD5_IN, PD4_IN,
-+	PD3_IN, PD2_IN, PD1_IN, PD0_IN,
-+	PE7_IN, PE6_IN, PE5_IN, PE4_IN,
-+	PE3_IN, PE2_IN, PE1_IN, PE0_IN,
-+	PF7_IN, PF6_IN, PF5_IN, PF4_IN,
-+	PF3_IN, PF2_IN, PF1_IN, PF0_IN,
-+	PG7_IN, PG6_IN, PG5_IN, PG4_IN,
-+	PG3_IN, PG2_IN, PG1_IN, PG0_IN,
-+
-+	PH5_IN, PH4_IN,
-+	PH3_IN, PH2_IN, PH1_IN, PH0_IN,
-+	PINMUX_INPUT_END,
-+
-+	PINMUX_INPUT_PULLUP_BEGIN,
-+	PA7_IN_PU, PA6_IN_PU, PA5_IN_PU, PA4_IN_PU,
-+	PA3_IN_PU, PA2_IN_PU, PA1_IN_PU, PA0_IN_PU,
-+	PB7_IN_PU, PB6_IN_PU, PB5_IN_PU, PB4_IN_PU,
-+	PB3_IN_PU, PB2_IN_PU, PB1_IN_PU, PB0_IN_PU,
-+	PC7_IN_PU, PC6_IN_PU, PC5_IN_PU, PC4_IN_PU,
-+	PC3_IN_PU, PC2_IN_PU, PC1_IN_PU, PC0_IN_PU,
-+	PD7_IN_PU, PD6_IN_PU, PD5_IN_PU, PD4_IN_PU,
-+	PD3_IN_PU, PD2_IN_PU, PD1_IN_PU, PD0_IN_PU,
-+	PE7_IN_PU, PE6_IN_PU, PE5_IN_PU, PE4_IN_PU,
-+	PE3_IN_PU, PE2_IN_PU, PE1_IN_PU, PE0_IN_PU,
-+	PF7_IN_PU, PF6_IN_PU, PF5_IN_PU, PF4_IN_PU,
-+	PF3_IN_PU, PF2_IN_PU, PF1_IN_PU, PF0_IN_PU,
-+	PG7_IN_PU, PG6_IN_PU, PG5_IN_PU, PG4_IN_PU,
-+	PG3_IN_PU, PG2_IN_PU, PG1_IN_PU, PG0_IN_PU,
-+
-+	PH5_IN_PU, PH4_IN_PU,
-+	PH3_IN_PU, PH2_IN_PU, PH1_IN_PU, PH0_IN_PU,
-+	PINMUX_INPUT_PULLUP_END,
-+
-+	PINMUX_OUTPUT_BEGIN,
-+	PA7_OUT, PA6_OUT, PA5_OUT, PA4_OUT,
-+	PA3_OUT, PA2_OUT, PA1_OUT, PA0_OUT,
-+	PB7_OUT, PB6_OUT, PB5_OUT, PB4_OUT,
-+	PB3_OUT, PB2_OUT, PB1_OUT, PB0_OUT,
-+	PC7_OUT, PC6_OUT, PC5_OUT, PC4_OUT,
-+	PC3_OUT, PC2_OUT, PC1_OUT, PC0_OUT,
-+	PD7_OUT, PD6_OUT, PD5_OUT, PD4_OUT,
-+	PD3_OUT, PD2_OUT, PD1_OUT, PD0_OUT,
-+	PE7_OUT, PE6_OUT, PE5_OUT, PE4_OUT,
-+	PE3_OUT, PE2_OUT, PE1_OUT, PE0_OUT,
-+	PF7_OUT, PF6_OUT, PF5_OUT, PF4_OUT,
-+	PF3_OUT, PF2_OUT, PF1_OUT, PF0_OUT,
-+	PG7_OUT, PG6_OUT, PG5_OUT, PG4_OUT,
-+	PG3_OUT, PG2_OUT, PG1_OUT, PG0_OUT,
-+
-+	PH5_OUT, PH4_OUT,
-+	PH3_OUT, PH2_OUT, PH1_OUT, PH0_OUT,
-+	PINMUX_OUTPUT_END,
-+
-+	PINMUX_FUNCTION_BEGIN,
-+	PA7_FN, PA6_FN, PA5_FN, PA4_FN,
-+	PA3_FN, PA2_FN, PA1_FN, PA0_FN,
-+	PB7_FN, PB6_FN, PB5_FN, PB4_FN,
-+	PB3_FN, PB2_FN, PB1_FN, PB0_FN,
-+	PC7_FN, PC6_FN, PC5_FN, PC4_FN,
-+	PC3_FN, PC2_FN, PC1_FN, PC0_FN,
-+	PD7_FN, PD6_FN, PD5_FN, PD4_FN,
-+	PD3_FN, PD2_FN, PD1_FN, PD0_FN,
-+	PE7_FN, PE6_FN, PE5_FN, PE4_FN,
-+	PE3_FN, PE2_FN, PE1_FN, PE0_FN,
-+	PF7_FN, PF6_FN, PF5_FN, PF4_FN,
-+	PF3_FN, PF2_FN, PF1_FN, PF0_FN,
-+	PG7_FN, PG6_FN, PG5_FN, PG4_FN,
-+	PG3_FN, PG2_FN, PG1_FN, PG0_FN,
-+
-+	PH5_FN, PH4_FN,
-+	PH3_FN, PH2_FN, PH1_FN, PH0_FN,
-+	PINMUX_FUNCTION_END,
-+
-+	PINMUX_MARK_BEGIN,
-+
-+	D31_MARK, D30_MARK, D29_MARK, D28_MARK, D27_MARK, D26_MARK,
-+	D25_MARK, D24_MARK, D23_MARK, D22_MARK, D21_MARK, D20_MARK,
-+	D19_MARK, D18_MARK, D17_MARK, D16_MARK,
-+
-+	BACK_MARK, BREQ_MARK,
-+	WE3_MARK, WE2_MARK,
-+	CS6_MARK, CS5_MARK, CS4_MARK,
-+	CLKOUTENB_MARK,
-+
-+	DACK3_MARK, DACK2_MARK, DACK1_MARK, DACK0_MARK,
-+	DREQ3_MARK, DREQ2_MARK, DREQ1_MARK, DREQ0_MARK,
-+
-+	IRQ3_MARK, IRQ2_MARK, IRQ1_MARK, IRQ0_MARK,
-+
-+	DRAK3_MARK, DRAK2_MARK, DRAK1_MARK, DRAK0_MARK,
-+
-+	SCK3_MARK, SCK2_MARK, SCK1_MARK, SCK0_MARK,
-+	IRL3_MARK, IRL2_MARK, IRL1_MARK, IRL0_MARK,
-+	TXD3_MARK, TXD2_MARK, TXD1_MARK, TXD0_MARK,
-+	RXD3_MARK, RXD2_MARK, RXD1_MARK, RXD0_MARK,
-+
-+	CE2B_MARK, CE2A_MARK, IOIS16_MARK,
-+	STATUS1_MARK, STATUS0_MARK,
-+
-+	IRQOUT_MARK,
-+
-+	PINMUX_MARK_END,
++	PINMUX_FLAG_TYPE,	/* must be last */
 +};
 +
-+static pinmux_enum_t shx3_pinmux_data[] = {
++#define PINMUX_FLAG_DBIT_SHIFT      5
++#define PINMUX_FLAG_DBIT            (0x1f << PINMUX_FLAG_DBIT_SHIFT)
++#define PINMUX_FLAG_DREG_SHIFT      10
++#define PINMUX_FLAG_DREG            (0x3f << PINMUX_FLAG_DREG_SHIFT)
 +
-+	/* PA GPIO */
-+	PINMUX_DATA(PA7_DATA, PA7_IN, PA7_OUT, PA7_IN_PU),
-+	PINMUX_DATA(PA6_DATA, PA6_IN, PA6_OUT, PA6_IN_PU),
-+	PINMUX_DATA(PA5_DATA, PA5_IN, PA5_OUT, PA5_IN_PU),
-+	PINMUX_DATA(PA4_DATA, PA4_IN, PA4_OUT, PA4_IN_PU),
-+	PINMUX_DATA(PA3_DATA, PA3_IN, PA3_OUT, PA3_IN_PU),
-+	PINMUX_DATA(PA2_DATA, PA2_IN, PA2_OUT, PA2_IN_PU),
-+	PINMUX_DATA(PA1_DATA, PA1_IN, PA1_OUT, PA1_IN_PU),
-+	PINMUX_DATA(PA0_DATA, PA0_IN, PA0_OUT, PA0_IN_PU),
-+
-+	/* PB GPIO */
-+	PINMUX_DATA(PB7_DATA, PB7_IN, PB7_OUT, PB7_IN_PU),
-+	PINMUX_DATA(PB6_DATA, PB6_IN, PB6_OUT, PB6_IN_PU),
-+	PINMUX_DATA(PB5_DATA, PB5_IN, PB5_OUT, PB5_IN_PU),
-+	PINMUX_DATA(PB4_DATA, PB4_IN, PB4_OUT, PB4_IN_PU),
-+	PINMUX_DATA(PB3_DATA, PB3_IN, PB3_OUT, PB3_IN_PU),
-+	PINMUX_DATA(PB2_DATA, PB2_IN, PB2_OUT, PB2_IN_PU),
-+	PINMUX_DATA(PB1_DATA, PB1_IN, PB1_OUT, PB1_IN_PU),
-+	PINMUX_DATA(PB0_DATA, PB0_IN, PB0_OUT, PB0_IN_PU),
-+
-+	/* PC GPIO */
-+	PINMUX_DATA(PC7_DATA, PC7_IN, PC7_OUT, PC7_IN_PU),
-+	PINMUX_DATA(PC6_DATA, PC6_IN, PC6_OUT, PC6_IN_PU),
-+	PINMUX_DATA(PC5_DATA, PC5_IN, PC5_OUT, PC5_IN_PU),
-+	PINMUX_DATA(PC4_DATA, PC4_IN, PC4_OUT, PC4_IN_PU),
-+	PINMUX_DATA(PC3_DATA, PC3_IN, PC3_OUT, PC3_IN_PU),
-+	PINMUX_DATA(PC2_DATA, PC2_IN, PC2_OUT, PC2_IN_PU),
-+	PINMUX_DATA(PC1_DATA, PC1_IN, PC1_OUT, PC1_IN_PU),
-+	PINMUX_DATA(PC0_DATA, PC0_IN, PC0_OUT, PC0_IN_PU),
-+
-+	/* PD GPIO */
-+	PINMUX_DATA(PD7_DATA, PD7_IN, PD7_OUT, PD7_IN_PU),
-+	PINMUX_DATA(PD6_DATA, PD6_IN, PD6_OUT, PD6_IN_PU),
-+	PINMUX_DATA(PD5_DATA, PD5_IN, PD5_OUT, PD5_IN_PU),
-+	PINMUX_DATA(PD4_DATA, PD4_IN, PD4_OUT, PD4_IN_PU),
-+	PINMUX_DATA(PD3_DATA, PD3_IN, PD3_OUT, PD3_IN_PU),
-+	PINMUX_DATA(PD2_DATA, PD2_IN, PD2_OUT, PD2_IN_PU),
-+	PINMUX_DATA(PD1_DATA, PD1_IN, PD1_OUT, PD1_IN_PU),
-+	PINMUX_DATA(PD0_DATA, PD0_IN, PD0_OUT, PD0_IN_PU),
-+
-+	/* PE GPIO */
-+	PINMUX_DATA(PE7_DATA, PE7_IN, PE7_OUT, PE7_IN_PU),
-+	PINMUX_DATA(PE6_DATA, PE6_IN, PE6_OUT, PE6_IN_PU),
-+	PINMUX_DATA(PE5_DATA, PE5_IN, PE5_OUT, PE5_IN_PU),
-+	PINMUX_DATA(PE4_DATA, PE4_IN, PE4_OUT, PE4_IN_PU),
-+	PINMUX_DATA(PE3_DATA, PE3_IN, PE3_OUT, PE3_IN_PU),
-+	PINMUX_DATA(PE2_DATA, PE2_IN, PE2_OUT, PE2_IN_PU),
-+	PINMUX_DATA(PE1_DATA, PE1_IN, PE1_OUT, PE1_IN_PU),
-+	PINMUX_DATA(PE0_DATA, PE0_IN, PE0_OUT, PE0_IN_PU),
-+
-+	/* PF GPIO */
-+	PINMUX_DATA(PF7_DATA, PF7_IN, PF7_OUT, PF7_IN_PU),
-+	PINMUX_DATA(PF6_DATA, PF6_IN, PF6_OUT, PF6_IN_PU),
-+	PINMUX_DATA(PF5_DATA, PF5_IN, PF5_OUT, PF5_IN_PU),
-+	PINMUX_DATA(PF4_DATA, PF4_IN, PF4_OUT, PF4_IN_PU),
-+	PINMUX_DATA(PF3_DATA, PF3_IN, PF3_OUT, PF3_IN_PU),
-+	PINMUX_DATA(PF2_DATA, PF2_IN, PF2_OUT, PF2_IN_PU),
-+	PINMUX_DATA(PF1_DATA, PF1_IN, PF1_OUT, PF1_IN_PU),
-+	PINMUX_DATA(PF0_DATA, PF0_IN, PF0_OUT, PF0_IN_PU),
-+
-+	/* PG GPIO */
-+	PINMUX_DATA(PG7_DATA, PG7_IN, PG7_OUT, PG7_IN_PU),
-+	PINMUX_DATA(PG6_DATA, PG6_IN, PG6_OUT, PG6_IN_PU),
-+	PINMUX_DATA(PG5_DATA, PG5_IN, PG5_OUT, PG5_IN_PU),
-+	PINMUX_DATA(PG4_DATA, PG4_IN, PG4_OUT, PG4_IN_PU),
-+	PINMUX_DATA(PG3_DATA, PG3_IN, PG3_OUT, PG3_IN_PU),
-+	PINMUX_DATA(PG2_DATA, PG2_IN, PG2_OUT, PG2_IN_PU),
-+	PINMUX_DATA(PG1_DATA, PG1_IN, PG1_OUT, PG1_IN_PU),
-+	PINMUX_DATA(PG0_DATA, PG0_IN, PG0_OUT, PG0_IN_PU),
-+
-+	/* PH GPIO */
-+	PINMUX_DATA(PH5_DATA, PH5_IN, PH5_OUT, PH5_IN_PU),
-+	PINMUX_DATA(PH4_DATA, PH4_IN, PH4_OUT, PH4_IN_PU),
-+	PINMUX_DATA(PH3_DATA, PH3_IN, PH3_OUT, PH3_IN_PU),
-+	PINMUX_DATA(PH2_DATA, PH2_IN, PH2_OUT, PH2_IN_PU),
-+	PINMUX_DATA(PH1_DATA, PH1_IN, PH1_OUT, PH1_IN_PU),
-+	PINMUX_DATA(PH0_DATA, PH0_IN, PH0_OUT, PH0_IN_PU),
-+
-+	/* PA FN */
-+	PINMUX_DATA(D31_MARK, PA7_FN),
-+	PINMUX_DATA(D30_MARK, PA6_FN),
-+	PINMUX_DATA(D29_MARK, PA5_FN),
-+	PINMUX_DATA(D28_MARK, PA4_FN),
-+	PINMUX_DATA(D27_MARK, PA3_FN),
-+	PINMUX_DATA(D26_MARK, PA2_FN),
-+	PINMUX_DATA(D25_MARK, PA1_FN),
-+	PINMUX_DATA(D24_MARK, PA0_FN),
-+
-+	/* PB FN */
-+	PINMUX_DATA(D23_MARK, PB7_FN),
-+	PINMUX_DATA(D22_MARK, PB6_FN),
-+	PINMUX_DATA(D21_MARK, PB5_FN),
-+	PINMUX_DATA(D20_MARK, PB4_FN),
-+	PINMUX_DATA(D19_MARK, PB3_FN),
-+	PINMUX_DATA(D18_MARK, PB2_FN),
-+	PINMUX_DATA(D17_MARK, PB1_FN),
-+	PINMUX_DATA(D16_MARK, PB0_FN),
-+
-+	/* PC FN */
-+	PINMUX_DATA(BACK_MARK,		PC7_FN),
-+	PINMUX_DATA(BREQ_MARK,		PC6_FN),
-+	PINMUX_DATA(WE3_MARK,		PC5_FN),
-+	PINMUX_DATA(WE2_MARK,		PC4_FN),
-+	PINMUX_DATA(CS6_MARK,		PC3_FN),
-+	PINMUX_DATA(CS5_MARK,		PC2_FN),
-+	PINMUX_DATA(CS4_MARK,		PC1_FN),
-+	PINMUX_DATA(CLKOUTENB_MARK,	PC0_FN),
-+
-+	/* PD FN */
-+	PINMUX_DATA(DACK3_MARK,	PD7_FN),
-+	PINMUX_DATA(DACK2_MARK, PD6_FN),
-+	PINMUX_DATA(DACK1_MARK, PD5_FN),
-+	PINMUX_DATA(DACK0_MARK, PD4_FN),
-+	PINMUX_DATA(DREQ3_MARK, PD3_FN),
-+	PINMUX_DATA(DREQ2_MARK, PD2_FN),
-+	PINMUX_DATA(DREQ1_MARK, PD1_FN),
-+	PINMUX_DATA(DREQ0_MARK, PD0_FN),
-+
-+	/* PE FN */
-+	PINMUX_DATA(IRQ3_MARK,	PE7_FN),
-+	PINMUX_DATA(IRQ2_MARK,	PE6_FN),
-+	PINMUX_DATA(IRQ1_MARK,	PE5_FN),
-+	PINMUX_DATA(IRQ0_MARK,	PE4_FN),
-+	PINMUX_DATA(DRAK3_MARK, PE3_FN),
-+	PINMUX_DATA(DRAK2_MARK, PE2_FN),
-+	PINMUX_DATA(DRAK1_MARK, PE1_FN),
-+	PINMUX_DATA(DRAK0_MARK, PE0_FN),
-+
-+	/* PF FN */
-+	PINMUX_DATA(SCK3_MARK, PF7_FN),
-+	PINMUX_DATA(SCK2_MARK, PF6_FN),
-+	PINMUX_DATA(SCK1_MARK, PF5_FN),
-+	PINMUX_DATA(SCK0_MARK, PF4_FN),
-+	PINMUX_DATA(IRL3_MARK, PF3_FN),
-+	PINMUX_DATA(IRL2_MARK, PF2_FN),
-+	PINMUX_DATA(IRL1_MARK, PF1_FN),
-+	PINMUX_DATA(IRL0_MARK, PF0_FN),
-+
-+	/* PG FN */
-+	PINMUX_DATA(TXD3_MARK, PG7_FN),
-+	PINMUX_DATA(TXD2_MARK, PG6_FN),
-+	PINMUX_DATA(TXD1_MARK, PG5_FN),
-+	PINMUX_DATA(TXD0_MARK, PG4_FN),
-+	PINMUX_DATA(RXD3_MARK, PG3_FN),
-+	PINMUX_DATA(RXD2_MARK, PG2_FN),
-+	PINMUX_DATA(RXD1_MARK, PG1_FN),
-+	PINMUX_DATA(RXD0_MARK, PG0_FN),
-+
-+	/* PH FN */
-+	PINMUX_DATA(CE2B_MARK,		PH5_FN),
-+	PINMUX_DATA(CE2A_MARK,		PH4_FN),
-+	PINMUX_DATA(IOIS16_MARK,	PH3_FN),
-+	PINMUX_DATA(STATUS1_MARK,	PH2_FN),
-+	PINMUX_DATA(STATUS0_MARK,	PH1_FN),
-+	PINMUX_DATA(IRQOUT_MARK,	PH0_FN),
++struct pinmux_gpio {
++	pinmux_enum_t enum_id;
++	pinmux_flag_t flags;
++	const char *name;
 +};
 +
-+static struct pinmux_gpio shx3_pinmux_gpios[] = {
-+	/* PA */
-+	PINMUX_GPIO(GPIO_PA7, PA7_DATA),
-+	PINMUX_GPIO(GPIO_PA6, PA6_DATA),
-+	PINMUX_GPIO(GPIO_PA5, PA5_DATA),
-+	PINMUX_GPIO(GPIO_PA4, PA4_DATA),
-+	PINMUX_GPIO(GPIO_PA3, PA3_DATA),
-+	PINMUX_GPIO(GPIO_PA2, PA2_DATA),
-+	PINMUX_GPIO(GPIO_PA1, PA1_DATA),
-+	PINMUX_GPIO(GPIO_PA0, PA0_DATA),
++#define PINMUX_GPIO(gpio, data_or_mark) \
++	[gpio] = { .name = __stringify(gpio), .enum_id = data_or_mark, .flags = PINMUX_TYPE_NONE }
 +
-+	/* PB */
-+	PINMUX_GPIO(GPIO_PB7, PB7_DATA),
-+	PINMUX_GPIO(GPIO_PB6, PB6_DATA),
-+	PINMUX_GPIO(GPIO_PB5, PB5_DATA),
-+	PINMUX_GPIO(GPIO_PB4, PB4_DATA),
-+	PINMUX_GPIO(GPIO_PB3, PB3_DATA),
-+	PINMUX_GPIO(GPIO_PB2, PB2_DATA),
-+	PINMUX_GPIO(GPIO_PB1, PB1_DATA),
-+	PINMUX_GPIO(GPIO_PB0, PB0_DATA),
++#define PINMUX_DATA(data_or_mark, ids...) data_or_mark, ids, 0
 +
-+	/* PC */
-+	PINMUX_GPIO(GPIO_PC7, PC7_DATA),
-+	PINMUX_GPIO(GPIO_PC6, PC6_DATA),
-+	PINMUX_GPIO(GPIO_PC5, PC5_DATA),
-+	PINMUX_GPIO(GPIO_PC4, PC4_DATA),
-+	PINMUX_GPIO(GPIO_PC3, PC3_DATA),
-+	PINMUX_GPIO(GPIO_PC2, PC2_DATA),
-+	PINMUX_GPIO(GPIO_PC1, PC1_DATA),
-+	PINMUX_GPIO(GPIO_PC0, PC0_DATA),
-+
-+	/* PD */
-+	PINMUX_GPIO(GPIO_PD7, PD7_DATA),
-+	PINMUX_GPIO(GPIO_PD6, PD6_DATA),
-+	PINMUX_GPIO(GPIO_PD5, PD5_DATA),
-+	PINMUX_GPIO(GPIO_PD4, PD4_DATA),
-+	PINMUX_GPIO(GPIO_PD3, PD3_DATA),
-+	PINMUX_GPIO(GPIO_PD2, PD2_DATA),
-+	PINMUX_GPIO(GPIO_PD1, PD1_DATA),
-+	PINMUX_GPIO(GPIO_PD0, PD0_DATA),
-+
-+	/* PE */
-+	PINMUX_GPIO(GPIO_PE7, PE7_DATA),
-+	PINMUX_GPIO(GPIO_PE6, PE6_DATA),
-+	PINMUX_GPIO(GPIO_PE5, PE5_DATA),
-+	PINMUX_GPIO(GPIO_PE4, PE4_DATA),
-+	PINMUX_GPIO(GPIO_PE3, PE3_DATA),
-+	PINMUX_GPIO(GPIO_PE2, PE2_DATA),
-+	PINMUX_GPIO(GPIO_PE1, PE1_DATA),
-+	PINMUX_GPIO(GPIO_PE0, PE0_DATA),
-+
-+	/* PF */
-+	PINMUX_GPIO(GPIO_PF7, PF7_DATA),
-+	PINMUX_GPIO(GPIO_PF6, PF6_DATA),
-+	PINMUX_GPIO(GPIO_PF5, PF5_DATA),
-+	PINMUX_GPIO(GPIO_PF4, PF4_DATA),
-+	PINMUX_GPIO(GPIO_PF3, PF3_DATA),
-+	PINMUX_GPIO(GPIO_PF2, PF2_DATA),
-+	PINMUX_GPIO(GPIO_PF1, PF1_DATA),
-+	PINMUX_GPIO(GPIO_PF0, PF0_DATA),
-+
-+	/* PG */
-+	PINMUX_GPIO(GPIO_PG7, PG7_DATA),
-+	PINMUX_GPIO(GPIO_PG6, PG6_DATA),
-+	PINMUX_GPIO(GPIO_PG5, PG5_DATA),
-+	PINMUX_GPIO(GPIO_PG4, PG4_DATA),
-+	PINMUX_GPIO(GPIO_PG3, PG3_DATA),
-+	PINMUX_GPIO(GPIO_PG2, PG2_DATA),
-+	PINMUX_GPIO(GPIO_PG1, PG1_DATA),
-+	PINMUX_GPIO(GPIO_PG0, PG0_DATA),
-+
-+	/* PH */
-+	PINMUX_GPIO(GPIO_PH5, PH5_DATA),
-+	PINMUX_GPIO(GPIO_PH4, PH4_DATA),
-+	PINMUX_GPIO(GPIO_PH3, PH3_DATA),
-+	PINMUX_GPIO(GPIO_PH2, PH2_DATA),
-+	PINMUX_GPIO(GPIO_PH1, PH1_DATA),
-+	PINMUX_GPIO(GPIO_PH0, PH0_DATA),
-+
-+	/* FN */
-+	PINMUX_GPIO(GPIO_FN_D31,	D31_MARK),
-+	PINMUX_GPIO(GPIO_FN_D30,	D30_MARK),
-+	PINMUX_GPIO(GPIO_FN_D29,	D29_MARK),
-+	PINMUX_GPIO(GPIO_FN_D28,	D28_MARK),
-+	PINMUX_GPIO(GPIO_FN_D27,	D27_MARK),
-+	PINMUX_GPIO(GPIO_FN_D26,	D26_MARK),
-+	PINMUX_GPIO(GPIO_FN_D25,	D25_MARK),
-+	PINMUX_GPIO(GPIO_FN_D24,	D24_MARK),
-+	PINMUX_GPIO(GPIO_FN_D23,	D23_MARK),
-+	PINMUX_GPIO(GPIO_FN_D22,	D22_MARK),
-+	PINMUX_GPIO(GPIO_FN_D21,	D21_MARK),
-+	PINMUX_GPIO(GPIO_FN_D20,	D20_MARK),
-+	PINMUX_GPIO(GPIO_FN_D19,	D19_MARK),
-+	PINMUX_GPIO(GPIO_FN_D18,	D18_MARK),
-+	PINMUX_GPIO(GPIO_FN_D17,	D17_MARK),
-+	PINMUX_GPIO(GPIO_FN_D16,	D16_MARK),
-+	PINMUX_GPIO(GPIO_FN_BACK,	BACK_MARK),
-+	PINMUX_GPIO(GPIO_FN_BREQ,	BREQ_MARK),
-+	PINMUX_GPIO(GPIO_FN_WE3,	WE3_MARK),
-+	PINMUX_GPIO(GPIO_FN_WE2,	WE2_MARK),
-+	PINMUX_GPIO(GPIO_FN_CS6,	CS6_MARK),
-+	PINMUX_GPIO(GPIO_FN_CS5,	CS5_MARK),
-+	PINMUX_GPIO(GPIO_FN_CS4,	CS4_MARK),
-+	PINMUX_GPIO(GPIO_FN_CLKOUTENB,	CLKOUTENB_MARK),
-+	PINMUX_GPIO(GPIO_FN_DACK3,	DACK3_MARK),
-+	PINMUX_GPIO(GPIO_FN_DACK2,	DACK2_MARK),
-+	PINMUX_GPIO(GPIO_FN_DACK1,	DACK1_MARK),
-+	PINMUX_GPIO(GPIO_FN_DACK0,	DACK0_MARK),
-+	PINMUX_GPIO(GPIO_FN_DREQ3,	DREQ3_MARK),
-+	PINMUX_GPIO(GPIO_FN_DREQ2,	DREQ2_MARK),
-+	PINMUX_GPIO(GPIO_FN_DREQ1,	DREQ1_MARK),
-+	PINMUX_GPIO(GPIO_FN_DREQ0,	DREQ0_MARK),
-+	PINMUX_GPIO(GPIO_FN_IRQ3,	IRQ3_MARK),
-+	PINMUX_GPIO(GPIO_FN_IRQ2,	IRQ2_MARK),
-+	PINMUX_GPIO(GPIO_FN_IRQ1,	IRQ1_MARK),
-+	PINMUX_GPIO(GPIO_FN_IRQ0,	IRQ0_MARK),
-+	PINMUX_GPIO(GPIO_FN_DRAK3,	DRAK3_MARK),
-+	PINMUX_GPIO(GPIO_FN_DRAK2,	DRAK2_MARK),
-+	PINMUX_GPIO(GPIO_FN_DRAK1,	DRAK1_MARK),
-+	PINMUX_GPIO(GPIO_FN_DRAK0,	DRAK0_MARK),
-+	PINMUX_GPIO(GPIO_FN_SCK3,	SCK3_MARK),
-+	PINMUX_GPIO(GPIO_FN_SCK2,	SCK2_MARK),
-+	PINMUX_GPIO(GPIO_FN_SCK1,	SCK1_MARK),
-+	PINMUX_GPIO(GPIO_FN_SCK0,	SCK0_MARK),
-+	PINMUX_GPIO(GPIO_FN_IRL3,	IRL3_MARK),
-+	PINMUX_GPIO(GPIO_FN_IRL2,	IRL2_MARK),
-+	PINMUX_GPIO(GPIO_FN_IRL1,	IRL1_MARK),
-+	PINMUX_GPIO(GPIO_FN_IRL0,	IRL0_MARK),
-+	PINMUX_GPIO(GPIO_FN_TXD3,	TXD3_MARK),
-+	PINMUX_GPIO(GPIO_FN_TXD2,	TXD2_MARK),
-+	PINMUX_GPIO(GPIO_FN_TXD1,	TXD1_MARK),
-+	PINMUX_GPIO(GPIO_FN_TXD0,	TXD0_MARK),
-+	PINMUX_GPIO(GPIO_FN_RXD3,	RXD3_MARK),
-+	PINMUX_GPIO(GPIO_FN_RXD2,	RXD2_MARK),
-+	PINMUX_GPIO(GPIO_FN_RXD1,	RXD1_MARK),
-+	PINMUX_GPIO(GPIO_FN_RXD0,	RXD0_MARK),
-+	PINMUX_GPIO(GPIO_FN_CE2B,	CE2B_MARK),
-+	PINMUX_GPIO(GPIO_FN_CE2A,	CE2A_MARK),
-+	PINMUX_GPIO(GPIO_FN_IOIS16,	IOIS16_MARK),
-+	PINMUX_GPIO(GPIO_FN_STATUS1,	STATUS1_MARK),
-+	PINMUX_GPIO(GPIO_FN_STATUS0,	STATUS0_MARK),
-+	PINMUX_GPIO(GPIO_FN_IRQOUT,	IRQOUT_MARK),
++struct pinmux_cfg_reg {
++	unsigned long reg, reg_width, field_width;
++	unsigned long *cnt;
++	pinmux_enum_t *enum_ids;
++	unsigned long *var_field_width;
 +};
 +
-+static struct pinmux_cfg_reg shx3_pinmux_config_regs[] = {
-+	{ PINMUX_CFG_REG("PABCR", 0xffc70000, 32, 2) {
-+		PA7_FN, PA7_OUT, PA7_IN, PA7_IN_PU,
-+		PA6_FN, PA6_OUT, PA6_IN, PA6_IN_PU,
-+		PA5_FN, PA5_OUT, PA5_IN, PA5_IN_PU,
-+		PA4_FN, PA4_OUT, PA4_IN, PA4_IN_PU,
-+		PA3_FN, PA3_OUT, PA3_IN, PA3_IN_PU,
-+		PA2_FN, PA2_OUT, PA2_IN, PA2_IN_PU,
-+		PA1_FN, PA1_OUT, PA1_IN, PA1_IN_PU,
-+		PA0_FN, PA0_OUT, PA0_IN, PA0_IN_PU,
-+		PB7_FN, PB7_OUT, PB7_IN, PB7_IN_PU,
-+		PB6_FN, PB6_OUT, PB6_IN, PB6_IN_PU,
-+		PB5_FN, PB5_OUT, PB5_IN, PB5_IN_PU,
-+		PB4_FN, PB4_OUT, PB4_IN, PB4_IN_PU,
-+		PB3_FN, PB3_OUT, PB3_IN, PB3_IN_PU,
-+		PB2_FN, PB2_OUT, PB2_IN, PB2_IN_PU,
-+		PB1_FN, PB1_OUT, PB1_IN, PB1_IN_PU,
-+		PB0_FN, PB0_OUT, PB0_IN, PB0_IN_PU, },
-+	},
-+	{ PINMUX_CFG_REG("PCDCR", 0xffc70004, 32, 2) {
-+		PC7_FN, PC7_OUT, PC7_IN, PC7_IN_PU,
-+		PC6_FN, PC6_OUT, PC6_IN, PC6_IN_PU,
-+		PC5_FN, PC5_OUT, PC5_IN, PC5_IN_PU,
-+		PC4_FN, PC4_OUT, PC4_IN, PC4_IN_PU,
-+		PC3_FN, PC3_OUT, PC3_IN, PC3_IN_PU,
-+		PC2_FN, PC2_OUT, PC2_IN, PC2_IN_PU,
-+		PC1_FN, PC1_OUT, PC1_IN, PC1_IN_PU,
-+		PC0_FN, PC0_OUT, PC0_IN, PC0_IN_PU,
-+		PD7_FN, PD7_OUT, PD7_IN, PD7_IN_PU,
-+		PD6_FN, PD6_OUT, PD6_IN, PD6_IN_PU,
-+		PD5_FN, PD5_OUT, PD5_IN, PD5_IN_PU,
-+		PD4_FN, PD4_OUT, PD4_IN, PD4_IN_PU,
-+		PD3_FN, PD3_OUT, PD3_IN, PD3_IN_PU,
-+		PD2_FN, PD2_OUT, PD2_IN, PD2_IN_PU,
-+		PD1_FN, PD1_OUT, PD1_IN, PD1_IN_PU,
-+		PD0_FN, PD0_OUT, PD0_IN, PD0_IN_PU, },
-+	},
-+	{ PINMUX_CFG_REG("PEFCR", 0xffc70008, 32, 2) {
-+		PE7_FN, PE7_OUT, PE7_IN, PE7_IN_PU,
-+		PE6_FN, PE6_OUT, PE6_IN, PE6_IN_PU,
-+		PE5_FN, PE5_OUT, PE5_IN, PE5_IN_PU,
-+		PE4_FN, PE4_OUT, PE4_IN, PE4_IN_PU,
-+		PE3_FN, PE3_OUT, PE3_IN, PE3_IN_PU,
-+		PE2_FN, PE2_OUT, PE2_IN, PE2_IN_PU,
-+		PE1_FN, PE1_OUT, PE1_IN, PE1_IN_PU,
-+		PE0_FN, PE0_OUT, PE0_IN, PE0_IN_PU,
-+		PF7_FN, PF7_OUT, PF7_IN, PF7_IN_PU,
-+		PF6_FN, PF6_OUT, PF6_IN, PF6_IN_PU,
-+		PF5_FN, PF5_OUT, PF5_IN, PF5_IN_PU,
-+		PF4_FN, PF4_OUT, PF4_IN, PF4_IN_PU,
-+		PF3_FN, PF3_OUT, PF3_IN, PF3_IN_PU,
-+		PF2_FN, PF2_OUT, PF2_IN, PF2_IN_PU,
-+		PF1_FN, PF1_OUT, PF1_IN, PF1_IN_PU,
-+		PF0_FN, PF0_OUT, PF0_IN, PF0_IN_PU, },
-+	},
-+	{ PINMUX_CFG_REG("PGHCR", 0xffc7000c, 32, 2) {
-+		PG7_FN, PG7_OUT, PG7_IN, PG7_IN_PU,
-+		PG6_FN, PG6_OUT, PG6_IN, PG6_IN_PU,
-+		PG5_FN, PG5_OUT, PG5_IN, PG5_IN_PU,
-+		PG4_FN, PG4_OUT, PG4_IN, PG4_IN_PU,
-+		PG3_FN, PG3_OUT, PG3_IN, PG3_IN_PU,
-+		PG2_FN, PG2_OUT, PG2_IN, PG2_IN_PU,
-+		PG1_FN, PG1_OUT, PG1_IN, PG1_IN_PU,
-+		PG0_FN, PG0_OUT, PG0_IN, PG0_IN_PU,
-+		0, 0, 0, 0,
-+		0, 0, 0, 0,
-+		PH5_FN, PH5_OUT, PH5_IN, PH5_IN_PU,
-+		PH4_FN, PH4_OUT, PH4_IN, PH4_IN_PU,
-+		PH3_FN, PH3_OUT, PH3_IN, PH3_IN_PU,
-+		PH2_FN, PH2_OUT, PH2_IN, PH2_IN_PU,
-+		PH1_FN, PH1_OUT, PH1_IN, PH1_IN_PU,
-+		PH0_FN, PH0_OUT, PH0_IN, PH0_IN_PU, },
-+	},
-+	{ },
++#define PINMUX_CFG_REG(name, r, r_width, f_width) \
++	.reg = r, .reg_width = r_width, .field_width = f_width,		\
++	.cnt = (unsigned long [r_width / f_width]) {}, \
++	.enum_ids = (pinmux_enum_t [(r_width / f_width) * (1 << f_width)])
++
++#define PINMUX_CFG_REG_VAR(name, r, r_width, var_fw0, var_fwn...) \
++	.reg = r, .reg_width = r_width,	\
++	.cnt = (unsigned long [r_width]) {}, \
++	.var_field_width = (unsigned long [r_width]) { var_fw0, var_fwn, 0 }, \
++	.enum_ids = (pinmux_enum_t [])
++
++struct pinmux_data_reg {
++	unsigned long reg, reg_width, reg_shadow;
++	pinmux_enum_t *enum_ids;
++	void __iomem *mapped_reg;
 +};
 +
-+static struct pinmux_data_reg shx3_pinmux_data_regs[] = {
-+	{ PINMUX_DATA_REG("PABDR", 0xffc70010, 32) {
-+		0, 0, 0, 0, 0, 0, 0, 0,
-+		PA7_DATA, PA6_DATA, PA5_DATA, PA4_DATA,
-+		PA3_DATA, PA2_DATA, PA1_DATA, PA0_DATA,
-+		0, 0, 0, 0, 0, 0, 0, 0,
-+		PB7_DATA, PB6_DATA, PB5_DATA, PB4_DATA,
-+		PB3_DATA, PB2_DATA, PB1_DATA, PB0_DATA, },
-+	},
-+	{ PINMUX_DATA_REG("PCDDR", 0xffc70014, 32) {
-+		0, 0, 0, 0, 0, 0, 0, 0,
-+		PC7_DATA, PC6_DATA, PC5_DATA, PC4_DATA,
-+		PC3_DATA, PC2_DATA, PC1_DATA, PC0_DATA,
-+		0, 0, 0, 0, 0, 0, 0, 0,
-+		PD7_DATA, PD6_DATA, PD5_DATA, PD4_DATA,
-+		PD3_DATA, PD2_DATA, PD1_DATA, PD0_DATA, },
-+	},
-+	{ PINMUX_DATA_REG("PEFDR", 0xffc70018, 32) {
-+		0, 0, 0, 0, 0, 0, 0, 0,
-+		PE7_DATA, PE6_DATA, PE5_DATA, PE4_DATA,
-+		PE3_DATA, PE2_DATA, PE1_DATA, PE0_DATA,
-+		0, 0, 0, 0, 0, 0, 0, 0,
-+		PF7_DATA, PF6_DATA, PF5_DATA, PF4_DATA,
-+		PF3_DATA, PF2_DATA, PF1_DATA, PF0_DATA, },
-+	},
-+	{ PINMUX_DATA_REG("PGHDR", 0xffc7001c, 32) {
-+		0, 0, 0, 0, 0, 0, 0, 0,
-+		PG7_DATA, PG6_DATA, PG5_DATA, PG4_DATA,
-+		PG3_DATA, PG2_DATA, PG1_DATA, PG0_DATA,
-+		0, 0, 0, 0, 0, 0, 0, 0,
-+		0, 0, PH5_DATA, PH4_DATA,
-+		PH3_DATA, PH2_DATA, PH1_DATA, PH0_DATA, },
-+	},
-+	{ },
++#define PINMUX_DATA_REG(name, r, r_width) \
++	.reg = r, .reg_width = r_width,	\
++	.enum_ids = (pinmux_enum_t [r_width]) \
++
++struct pinmux_irq {
++	int irq;
++	pinmux_enum_t *enum_ids;
 +};
 +
-+struct sh_pfc_soc_info shx3_pinmux_info = {
-+	.name		= "shx3_pfc",
-+	.reserved_id	= PINMUX_RESERVED,
-+	.data		= { PINMUX_DATA_BEGIN,	   PINMUX_DATA_END },
-+	.input		= { PINMUX_INPUT_BEGIN,	   PINMUX_INPUT_END },
-+	.input_pu	= { PINMUX_INPUT_PULLUP_BEGIN,
-+			    PINMUX_INPUT_PULLUP_END },
-+	.output		= { PINMUX_OUTPUT_BEGIN,   PINMUX_OUTPUT_END },
-+	.mark		= { PINMUX_MARK_BEGIN,     PINMUX_MARK_END },
-+	.function	= { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
-+	.first_gpio	= GPIO_PA7,
-+	.last_gpio	= GPIO_FN_IRQOUT,
-+	.gpios		= shx3_pinmux_gpios,
-+	.gpio_data	= shx3_pinmux_data,
-+	.gpio_data_size	= ARRAY_SIZE(shx3_pinmux_data),
-+	.cfg_regs	= shx3_pinmux_config_regs,
-+	.data_regs	= shx3_pinmux_data_regs,
++#define PINMUX_IRQ(irq_nr, ids...)			   \
++	{ .irq = irq_nr, .enum_ids = (pinmux_enum_t []) { ids, 0 } }	\
++
++struct pinmux_range {
++	pinmux_enum_t begin;
++	pinmux_enum_t end;
++	pinmux_enum_t force;
 +};
++
++struct sh_pfc_soc_info {
++	char *name;
++	pinmux_enum_t reserved_id;
++	struct pinmux_range data;
++	struct pinmux_range input;
++	struct pinmux_range input_pd;
++	struct pinmux_range input_pu;
++	struct pinmux_range output;
++	struct pinmux_range mark;
++	struct pinmux_range function;
++
++	unsigned first_gpio, last_gpio;
++
++	struct pinmux_gpio *gpios;
++	struct pinmux_cfg_reg *cfg_regs;
++	struct pinmux_data_reg *data_regs;
++
++	pinmux_enum_t *gpio_data;
++	unsigned int gpio_data_size;
++
++	struct pinmux_irq *gpio_irq;
++	unsigned int gpio_irq_size;
++
++	unsigned long unlock_reg;
++};
++
++enum { GPIO_CFG_DRYRUN, GPIO_CFG_REQ, GPIO_CFG_FREE };
++
++/* helper macro for port */
++#define PORT_1(fn, pfx, sfx) fn(pfx, sfx)
++
++#define PORT_10(fn, pfx, sfx) \
++	PORT_1(fn, pfx##0, sfx), PORT_1(fn, pfx##1, sfx),	\
++	PORT_1(fn, pfx##2, sfx), PORT_1(fn, pfx##3, sfx),	\
++	PORT_1(fn, pfx##4, sfx), PORT_1(fn, pfx##5, sfx),	\
++	PORT_1(fn, pfx##6, sfx), PORT_1(fn, pfx##7, sfx),	\
++	PORT_1(fn, pfx##8, sfx), PORT_1(fn, pfx##9, sfx)
++
++#define PORT_90(fn, pfx, sfx) \
++	PORT_10(fn, pfx##1, sfx), PORT_10(fn, pfx##2, sfx),	\
++	PORT_10(fn, pfx##3, sfx), PORT_10(fn, pfx##4, sfx),	\
++	PORT_10(fn, pfx##5, sfx), PORT_10(fn, pfx##6, sfx),	\
++	PORT_10(fn, pfx##7, sfx), PORT_10(fn, pfx##8, sfx),	\
++	PORT_10(fn, pfx##9, sfx)
++
++#define _PORT_ALL(pfx, sfx) pfx##_##sfx
++#define _GPIO_PORT(pfx, sfx) PINMUX_GPIO(GPIO_PORT##pfx, PORT##pfx##_DATA)
++#define PORT_ALL(str)	CPU_ALL_PORT(_PORT_ALL, PORT, str)
++#define GPIO_PORT_ALL()	CPU_ALL_PORT(_GPIO_PORT, , unused)
++#define GPIO_FN(str) PINMUX_GPIO(GPIO_FN_##str, str##_MARK)
++
++/* helper macro for pinmux_enum_t */
++#define PORT_DATA_I(nr)	\
++	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0, PORT##nr##_IN)
++
++#define PORT_DATA_I_PD(nr)	\
++	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0,	\
++		    PORT##nr##_IN, PORT##nr##_IN_PD)
++
++#define PORT_DATA_I_PU(nr)	\
++	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0,	\
++		    PORT##nr##_IN, PORT##nr##_IN_PU)
++
++#define PORT_DATA_I_PU_PD(nr)	\
++	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0,			\
++		    PORT##nr##_IN, PORT##nr##_IN_PD, PORT##nr##_IN_PU)
++
++#define PORT_DATA_O(nr)		\
++	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0, PORT##nr##_OUT)
++
++#define PORT_DATA_IO(nr)	\
++	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0, PORT##nr##_OUT,	\
++		    PORT##nr##_IN)
++
++#define PORT_DATA_IO_PD(nr)	\
++	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0, PORT##nr##_OUT,	\
++		    PORT##nr##_IN, PORT##nr##_IN_PD)
++
++#define PORT_DATA_IO_PU(nr)	\
++	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0, PORT##nr##_OUT,	\
++		    PORT##nr##_IN, PORT##nr##_IN_PU)
++
++#define PORT_DATA_IO_PU_PD(nr)	\
++	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0, PORT##nr##_OUT,	\
++		    PORT##nr##_IN, PORT##nr##_IN_PD, PORT##nr##_IN_PU)
++
++/* helper macro for top 4 bits in PORTnCR */
++#define _PCRH(in, in_pd, in_pu, out)	\
++	0, (out), (in), 0,		\
++	0, 0, 0, 0,			\
++	0, 0, (in_pd), 0,		\
++	0, 0, (in_pu), 0
++
++#define PORTCR(nr, reg)							\
++	{								\
++		PINMUX_CFG_REG("PORT" nr "CR", reg, 8, 4) {		\
++			_PCRH(PORT##nr##_IN, PORT##nr##_IN_PD,		\
++			      PORT##nr##_IN_PU, PORT##nr##_OUT),	\
++				PORT##nr##_FN0, PORT##nr##_FN1,		\
++				PORT##nr##_FN2, PORT##nr##_FN3,		\
++				PORT##nr##_FN4, PORT##nr##_FN5,		\
++				PORT##nr##_FN6, PORT##nr##_FN7 }	\
++	}
++
++#endif /* __SH_PFC_H */
+diff --git a/include/linux/sh_pfc.h b/include/linux/sh_pfc.h
+deleted file mode 100644
+index 13049c4..0000000
+--- a/include/linux/sh_pfc.h
++++ /dev/null
+@@ -1,195 +0,0 @@
+-/*
+- * SuperH Pin Function Controller Support
+- *
+- * Copyright (c) 2008 Magnus Damm
+- *
+- * This file is subject to the terms and conditions of the GNU General Public
+- * License.  See the file "COPYING" in the main directory of this archive
+- * for more details.
+- */
+-
+-#ifndef __SH_PFC_H
+-#define __SH_PFC_H
+-
+-#include <linux/stringify.h>
+-#include <asm-generic/gpio.h>
+-
+-typedef unsigned short pinmux_enum_t;
+-typedef unsigned short pinmux_flag_t;
+-
+-enum {
+-	PINMUX_TYPE_NONE,
+-
+-	PINMUX_TYPE_FUNCTION,
+-	PINMUX_TYPE_GPIO,
+-	PINMUX_TYPE_OUTPUT,
+-	PINMUX_TYPE_INPUT,
+-	PINMUX_TYPE_INPUT_PULLUP,
+-	PINMUX_TYPE_INPUT_PULLDOWN,
+-
+-	PINMUX_FLAG_TYPE,	/* must be last */
+-};
+-
+-#define PINMUX_FLAG_DBIT_SHIFT      5
+-#define PINMUX_FLAG_DBIT            (0x1f << PINMUX_FLAG_DBIT_SHIFT)
+-#define PINMUX_FLAG_DREG_SHIFT      10
+-#define PINMUX_FLAG_DREG            (0x3f << PINMUX_FLAG_DREG_SHIFT)
+-
+-struct pinmux_gpio {
+-	pinmux_enum_t enum_id;
+-	pinmux_flag_t flags;
+-	const char *name;
+-};
+-
+-#define PINMUX_GPIO(gpio, data_or_mark) \
+-	[gpio] = { .name = __stringify(gpio), .enum_id = data_or_mark, .flags = PINMUX_TYPE_NONE }
+-
+-#define PINMUX_DATA(data_or_mark, ids...) data_or_mark, ids, 0
+-
+-struct pinmux_cfg_reg {
+-	unsigned long reg, reg_width, field_width;
+-	unsigned long *cnt;
+-	pinmux_enum_t *enum_ids;
+-	unsigned long *var_field_width;
+-};
+-
+-#define PINMUX_CFG_REG(name, r, r_width, f_width) \
+-	.reg = r, .reg_width = r_width, .field_width = f_width,		\
+-	.cnt = (unsigned long [r_width / f_width]) {}, \
+-	.enum_ids = (pinmux_enum_t [(r_width / f_width) * (1 << f_width)])
+-
+-#define PINMUX_CFG_REG_VAR(name, r, r_width, var_fw0, var_fwn...) \
+-	.reg = r, .reg_width = r_width,	\
+-	.cnt = (unsigned long [r_width]) {}, \
+-	.var_field_width = (unsigned long [r_width]) { var_fw0, var_fwn, 0 }, \
+-	.enum_ids = (pinmux_enum_t [])
+-
+-struct pinmux_data_reg {
+-	unsigned long reg, reg_width, reg_shadow;
+-	pinmux_enum_t *enum_ids;
+-	void __iomem *mapped_reg;
+-};
+-
+-#define PINMUX_DATA_REG(name, r, r_width) \
+-	.reg = r, .reg_width = r_width,	\
+-	.enum_ids = (pinmux_enum_t [r_width]) \
+-
+-struct pinmux_irq {
+-	int irq;
+-	pinmux_enum_t *enum_ids;
+-};
+-
+-#define PINMUX_IRQ(irq_nr, ids...)			   \
+-	{ .irq = irq_nr, .enum_ids = (pinmux_enum_t []) { ids, 0 } }	\
+-
+-struct pinmux_range {
+-	pinmux_enum_t begin;
+-	pinmux_enum_t end;
+-	pinmux_enum_t force;
+-};
+-
+-struct sh_pfc_soc_info {
+-	char *name;
+-	pinmux_enum_t reserved_id;
+-	struct pinmux_range data;
+-	struct pinmux_range input;
+-	struct pinmux_range input_pd;
+-	struct pinmux_range input_pu;
+-	struct pinmux_range output;
+-	struct pinmux_range mark;
+-	struct pinmux_range function;
+-
+-	unsigned first_gpio, last_gpio;
+-
+-	struct pinmux_gpio *gpios;
+-	struct pinmux_cfg_reg *cfg_regs;
+-	struct pinmux_data_reg *data_regs;
+-
+-	pinmux_enum_t *gpio_data;
+-	unsigned int gpio_data_size;
+-
+-	struct pinmux_irq *gpio_irq;
+-	unsigned int gpio_irq_size;
+-
+-	unsigned long unlock_reg;
+-};
+-
+-enum { GPIO_CFG_DRYRUN, GPIO_CFG_REQ, GPIO_CFG_FREE };
+-
+-/* helper macro for port */
+-#define PORT_1(fn, pfx, sfx) fn(pfx, sfx)
+-
+-#define PORT_10(fn, pfx, sfx) \
+-	PORT_1(fn, pfx##0, sfx), PORT_1(fn, pfx##1, sfx),	\
+-	PORT_1(fn, pfx##2, sfx), PORT_1(fn, pfx##3, sfx),	\
+-	PORT_1(fn, pfx##4, sfx), PORT_1(fn, pfx##5, sfx),	\
+-	PORT_1(fn, pfx##6, sfx), PORT_1(fn, pfx##7, sfx),	\
+-	PORT_1(fn, pfx##8, sfx), PORT_1(fn, pfx##9, sfx)
+-
+-#define PORT_90(fn, pfx, sfx) \
+-	PORT_10(fn, pfx##1, sfx), PORT_10(fn, pfx##2, sfx),	\
+-	PORT_10(fn, pfx##3, sfx), PORT_10(fn, pfx##4, sfx),	\
+-	PORT_10(fn, pfx##5, sfx), PORT_10(fn, pfx##6, sfx),	\
+-	PORT_10(fn, pfx##7, sfx), PORT_10(fn, pfx##8, sfx),	\
+-	PORT_10(fn, pfx##9, sfx)
+-
+-#define _PORT_ALL(pfx, sfx) pfx##_##sfx
+-#define _GPIO_PORT(pfx, sfx) PINMUX_GPIO(GPIO_PORT##pfx, PORT##pfx##_DATA)
+-#define PORT_ALL(str)	CPU_ALL_PORT(_PORT_ALL, PORT, str)
+-#define GPIO_PORT_ALL()	CPU_ALL_PORT(_GPIO_PORT, , unused)
+-#define GPIO_FN(str) PINMUX_GPIO(GPIO_FN_##str, str##_MARK)
+-
+-/* helper macro for pinmux_enum_t */
+-#define PORT_DATA_I(nr)	\
+-	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0, PORT##nr##_IN)
+-
+-#define PORT_DATA_I_PD(nr)	\
+-	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0,	\
+-		    PORT##nr##_IN, PORT##nr##_IN_PD)
+-
+-#define PORT_DATA_I_PU(nr)	\
+-	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0,	\
+-		    PORT##nr##_IN, PORT##nr##_IN_PU)
+-
+-#define PORT_DATA_I_PU_PD(nr)	\
+-	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0,			\
+-		    PORT##nr##_IN, PORT##nr##_IN_PD, PORT##nr##_IN_PU)
+-
+-#define PORT_DATA_O(nr)		\
+-	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0, PORT##nr##_OUT)
+-
+-#define PORT_DATA_IO(nr)	\
+-	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0, PORT##nr##_OUT,	\
+-		    PORT##nr##_IN)
+-
+-#define PORT_DATA_IO_PD(nr)	\
+-	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0, PORT##nr##_OUT,	\
+-		    PORT##nr##_IN, PORT##nr##_IN_PD)
+-
+-#define PORT_DATA_IO_PU(nr)	\
+-	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0, PORT##nr##_OUT,	\
+-		    PORT##nr##_IN, PORT##nr##_IN_PU)
+-
+-#define PORT_DATA_IO_PU_PD(nr)	\
+-	PINMUX_DATA(PORT##nr##_DATA, PORT##nr##_FN0, PORT##nr##_OUT,	\
+-		    PORT##nr##_IN, PORT##nr##_IN_PD, PORT##nr##_IN_PU)
+-
+-/* helper macro for top 4 bits in PORTnCR */
+-#define _PCRH(in, in_pd, in_pu, out)	\
+-	0, (out), (in), 0,		\
+-	0, 0, 0, 0,			\
+-	0, 0, (in_pd), 0,		\
+-	0, 0, (in_pu), 0
+-
+-#define PORTCR(nr, reg)							\
+-	{								\
+-		PINMUX_CFG_REG("PORT" nr "CR", reg, 8, 4) {		\
+-			_PCRH(PORT##nr##_IN, PORT##nr##_IN_PD,		\
+-			      PORT##nr##_IN_PU, PORT##nr##_OUT),	\
+-				PORT##nr##_FN0, PORT##nr##_FN1,		\
+-				PORT##nr##_FN2, PORT##nr##_FN3,		\
+-				PORT##nr##_FN4, PORT##nr##_FN5,		\
+-				PORT##nr##_FN6, PORT##nr##_FN7 }	\
+-	}
+-
+-#endif /* __SH_PFC_H */
 -- 
 1.7.8.6
 
