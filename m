@@ -1,54 +1,53 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 20 Nov 2012 12:45:20 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 21 Nov 2012 00:14:57 +0000
 Subject: Re: [RFC 09/15] ARM: shmobile: Include DTSI of r8a7740 to armadillo800eva
-Message-Id: <2217502.K9pLuGzWaC@avalon>
+Message-Id: <20121121001457.GG20120@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1353302007-31045-1-git-send-email-horms@verge.net.au>
  <1353302007-31045-10-git-send-email-horms@verge.net.au>
-In-Reply-To: <1353302007-31045-10-git-send-email-horms@verge.net.au>
+ <2217502.K9pLuGzWaC@avalon>
+In-Reply-To: <2217502.K9pLuGzWaC@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
-
-Thank you for the patch.
-
-On Monday 19 November 2012 14:13:21 Simon Horman wrote:
-> From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+On Tue, Nov 20, 2012 at 01:45:20PM +0100, Laurent Pinchart wrote:
+> Hi Simon,
 > 
-> Cc: Magnus Damm <damm@opensource.se>
-> Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-> Signed-off-by: Simon Horman <horms@verge.net.au>
-
-I came up today with pretty much the same patch :-)
-
-> ---
->  arch/arm/boot/dts/r8a7740-armadillo800eva.dts |    2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
+> Thank you for the patch.
 > 
-> diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-> b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts index a7505a9..a8e7bd9
-> 100644
-> --- a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-> +++ b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-> @@ -9,7 +9,7 @@
->   */
+> On Monday 19 November 2012 14:13:21 Simon Horman wrote:
+> > From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+> > 
+> > Cc: Magnus Damm <damm@opensource.se>
+> > Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+> > Signed-off-by: Simon Horman <horms@verge.net.au>
 > 
->  /dts-v1/;
-> -/include/ "skeleton.dtsi"
-> +/include/ "r8a7740.dtsi"
+> I came up today with pretty much the same patch :-)
 > 
->  / {
->  	model = "armadillo 800 eva";
+> > ---
+> >  arch/arm/boot/dts/r8a7740-armadillo800eva.dts |    2 +-
+> >  1 file changed, 1 insertion(+), 1 deletion(-)
+> > 
+> > diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+> > b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts index a7505a9..a8e7bd9
+> > 100644
+> > --- a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+> > +++ b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+> > @@ -9,7 +9,7 @@
+> >   */
+> > 
+> >  /dts-v1/;
+> > -/include/ "skeleton.dtsi"
+> > +/include/ "r8a7740.dtsi"
+> > 
+> >  / {
+> >  	model = "armadillo 800 eva";
+> 
+> Shouldn't the compatible property be modified to the following values ?
+> 
+> 	compatible = "renesas,armadillo800eva", "renesas,r8a7740";
 
-Shouldn't the compatible property be modified to the following values ?
-
-	compatible = "renesas,armadillo800eva", "renesas,r8a7740";
-
--- 
-Regards,
-
-Laurent Pinchart
-
+To be honest, I'm not sure.
+But as this is a dts file for a board "renesas,r8a7740" seems strange to me.
