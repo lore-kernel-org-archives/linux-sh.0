@@ -1,22 +1,35 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 01 Nov 2012 01:04:12 +0000
-Subject: Re: [PATCH] ARM: shmobile: leave CONFIG_INOTIFY_USER enabled by default
-Message-Id: <20121101010411.GB3598@verge.net.au>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date: Thu, 22 Nov 2012 08:00:06 +0000
+Subject: [PATCH v5 09/15] ARM: shmobile: Include DTSI of r8a7740 to armadillo800eva
+Message-Id: <1353571213-26006-10-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1210302358590.29432@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1210302358590.29432@axis700.grange>
+References: <1353571213-26006-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+In-Reply-To: <1353571213-26006-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Oct 31, 2012 at 12:03:45AM +0100, Guennadi Liakhovetski wrote:
-> CONFIG_INOTIFY_USER is enabled by default in its Kconfig. Disabling it 
-> breaks udevd. Fix shmobile defconfig files to not specify this option 
-> explicitly.
+Cc: Magnus Damm <damm@opensource.se>
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Thanks, applied to the defcofigs branch.
-I have sent a pull request for the defcofigs branch to the arm-soc people.
-I have also rebased the next branch to incorporate this change.
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+index a7505a9..a8e7bd9 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+@@ -9,7 +9,7 @@
+  */
+ 
+ /dts-v1/;
+-/include/ "skeleton.dtsi"
++/include/ "r8a7740.dtsi"
+ 
+ / {
+ 	model = "armadillo 800 eva";
+-- 
+1.7.10.4
 
-git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git
