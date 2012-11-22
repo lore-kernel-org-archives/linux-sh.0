@@ -1,7 +1,7 @@
 From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Thu, 22 Nov 2012 08:00:12 +0000
-Subject: [PATCH v5 15/15] ARM: shmobile: sh73a0: Use DT for GIC
-Message-Id: <1353571213-26006-16-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+Date: Thu, 22 Nov 2012 08:00:07 +0000
+Subject: [PATCH v5 10/15] ARM: shmobile: Include DTSI of sh73a0 to kzm9g board
+Message-Id: <1353571213-26006-11-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1353571213-26006-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 In-Reply-To: <1353571213-26006-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
@@ -10,53 +10,26 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Simon Horman <horms@verge.net.au>
-
 Cc: Magnus Damm <damm@opensource.se>
-Cc: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/arm/mach-shmobile/intc-sh73a0.c |   12 ++++--------
- 1 file changed, 4 insertions(+), 8 deletions(-)
+ arch/arm/boot/dts/sh73a0-kzm9g.dts |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/intc-sh73a0.c b/arch/arm/mach-shmobile/intc-sh73a0.c
-index c9f6441..f4076e2 100644
---- a/arch/arm/mach-shmobile/intc-sh73a0.c
-+++ b/arch/arm/mach-shmobile/intc-sh73a0.c
-@@ -429,12 +429,9 @@ static irqreturn_t sh73a0_pint1_demux(int irq, void *dev_id)
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+index bcb9119..7b37901 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+@@ -9,7 +9,7 @@
+  */
  
- static void __init sh73a0_init_intc(resource_size_t intcs0_start)
- {
--	int k, n;
--	void __iomem *intevtsa;
--
--	intevtsa = ioremap_nocache(intcs0_start + 0x100, PAGE_SIZE);
-+	void __iomem *intevtsa +			ioremap_nocache(intcs0_start + 0x100, PAGE_SIZE);
- 	
--	/* demux using INTEVTSA */
- 	sh73a0_intcs_cascade.name = "INTCS cascade";
- 	sh73a0_intcs_cascade.handler = sh73a0_intcs_demux;
- 	sh73a0_intcs_cascade.dev_id = intevtsa;
-@@ -500,6 +497,7 @@ static int __init intc_of_init(struct device_node *np,
- }
+ /dts-v1/;
+-/include/ "skeleton.dtsi"
++/include/ "sh73a0.dtsi"
  
- static const struct of_device_id irq_of_match[] __initconst = {
-+	{ .compatible = "arm,cortex-a9-gic", .data = gic_of_init, }
- 	{ .compatible = "renesas,sh_intc", .data = intc_of_init },
- 	{ /*sentinel*/ }
- };
-@@ -514,10 +512,8 @@ void __init sh73a0_init_irq_of(void)
- 
- void __init sh73a0_init_irq(void)
- {
--	void __iomem *gic_dist_base = IOMEM(0xf0001000);
--	void __iomem *gic_cpu_base = IOMEM(0xf0000100);
- 
--	gic_init(0, 29, gic_dist_base, gic_cpu_base);
-+	gic_init(0, 29, IOMEM(0xf0001000), IOMEM(0xf0000100));
- 	gic_arch_extn.irq_set_wake = sh73a0_set_wake;
- 
- 	register_intc_controller(&intcs_desc);
+ / {
+ 	model = "KZM-A9-GT";
 -- 
 1.7.10.4
 
