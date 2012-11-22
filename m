@@ -1,33 +1,62 @@
 From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Thu, 08 Nov 2012 07:48:35 +0000
-Subject: [PATCH 1/2] tty: sh-sci: Remove SH7367 support
-Message-Id: <1352360916-9397-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+Date: Thu, 22 Nov 2012 08:00:12 +0000
+Subject: [PATCH v5 15/15] ARM: shmobile: sh73a0: Use DT for GIC
+Message-Id: <1353571213-26006-16-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1353571213-26006-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+In-Reply-To: <1353571213-26006-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The shmobile SH7367 already was removed from source tree.
-This remove SH7367 support for sh-sci.
+From: Simon Horman <horms@verge.net.au>
 
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Cc: Magnus Damm <damm@opensource.se>
+Cc: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- drivers/tty/serial/sh-sci.h |    1 -
- 1 file changed, 1 deletion(-)
+ arch/arm/mach-shmobile/intc-sh73a0.c |   12 ++++--------
+ 1 file changed, 4 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.h b/drivers/tty/serial/sh-sci.h
-index 4c22a15..fc1e6f4 100644
---- a/drivers/tty/serial/sh-sci.h
-+++ b/drivers/tty/serial/sh-sci.h
-@@ -15,7 +15,6 @@
-     defined(CONFIG_CPU_SUBTYPE_SH7720) || \
-     defined(CONFIG_CPU_SUBTYPE_SH7721) || \
-     defined(CONFIG_ARCH_SH73A0) || \
--    defined(CONFIG_ARCH_SH7367) || \
-     defined(CONFIG_ARCH_SH7377) || \
-     defined(CONFIG_ARCH_SH7372) || \
-     defined(CONFIG_ARCH_R8A7740)
+diff --git a/arch/arm/mach-shmobile/intc-sh73a0.c b/arch/arm/mach-shmobile/intc-sh73a0.c
+index c9f6441..f4076e2 100644
+--- a/arch/arm/mach-shmobile/intc-sh73a0.c
++++ b/arch/arm/mach-shmobile/intc-sh73a0.c
+@@ -429,12 +429,9 @@ static irqreturn_t sh73a0_pint1_demux(int irq, void *dev_id)
+ 
+ static void __init sh73a0_init_intc(resource_size_t intcs0_start)
+ {
+-	int k, n;
+-	void __iomem *intevtsa;
+-
+-	intevtsa = ioremap_nocache(intcs0_start + 0x100, PAGE_SIZE);
++	void __iomem *intevtsa +			ioremap_nocache(intcs0_start + 0x100, PAGE_SIZE);
+ 	
+-	/* demux using INTEVTSA */
+ 	sh73a0_intcs_cascade.name = "INTCS cascade";
+ 	sh73a0_intcs_cascade.handler = sh73a0_intcs_demux;
+ 	sh73a0_intcs_cascade.dev_id = intevtsa;
+@@ -500,6 +497,7 @@ static int __init intc_of_init(struct device_node *np,
+ }
+ 
+ static const struct of_device_id irq_of_match[] __initconst = {
++	{ .compatible = "arm,cortex-a9-gic", .data = gic_of_init, }
+ 	{ .compatible = "renesas,sh_intc", .data = intc_of_init },
+ 	{ /*sentinel*/ }
+ };
+@@ -514,10 +512,8 @@ void __init sh73a0_init_irq_of(void)
+ 
+ void __init sh73a0_init_irq(void)
+ {
+-	void __iomem *gic_dist_base = IOMEM(0xf0001000);
+-	void __iomem *gic_cpu_base = IOMEM(0xf0000100);
+ 
+-	gic_init(0, 29, gic_dist_base, gic_cpu_base);
++	gic_init(0, 29, IOMEM(0xf0001000), IOMEM(0xf0000100));
+ 	gic_arch_extn.irq_set_wake = sh73a0_set_wake;
+ 
+ 	register_intc_controller(&intcs_desc);
 -- 
 1.7.10.4
 
