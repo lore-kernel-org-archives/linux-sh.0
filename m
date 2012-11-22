@@ -1,80 +1,37 @@
-From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Date: Wed, 07 Nov 2012 07:01:05 +0000
-Subject: [PATCH 10/10] serial: sh-sci: fix possible race cases on SCSCR register accesses
-Message-Id: <509A0731.6020908@renesas.com>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date: Thu, 22 Nov 2012 08:00:08 +0000
+Subject: [PATCH v5 11/15] ARM: shmobile: kzm9g: Use DT initialisation of INTC
+Message-Id: <1353571213-26006-12-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <509A0658.1010503@renesas.com>
-In-Reply-To: <509A0658.1010503@renesas.com>
+References: <1353571213-26006-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+In-Reply-To: <1353571213-26006-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-In the previous commit, console write function (serial_console_write)
-is changed to disable SCI interrupts while printing console strings.
-This introduces possible race cases in the serial startup / shutdown
-functions on SMP systems.
+From: Simon Horman <horms@verge.net.au>
 
-This patch fixes the sh-sci in the same way as commit 9ec1882df2
-(tty: serial: imx: console write routing is unsafe on SMP, from
-Xinyu Chen <xinyu.chen@freescale.com>, 2012-08-27) did.
-
-There could be several consumers of the console,
-* the kernel printk
-* the init process using /dev/kmsg to call printk to show log
-* shell, which opens /dev/console and writes with sys_write()
-
-The shell goes into the normal UART open() and write() system calls,
-while the other two go into the console operations.  The open() call
-invokes serial startup function (sci_startup), which will write to
-the SCSCR register (to enable or disable SCI interrupts) without any
-locking.  This will conflict with the console serial function.
-
-Add spinlock protections in sci_startup() and sci_shutdown() properly.
-
-Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Cc: Magnus Damm <damm@opensource.se>
+Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- drivers/tty/serial/sh-sci.c | 6 ++++++
- 1 file changed, 6 insertions(+)
+ arch/arm/mach-shmobile/board-kzm9g.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 0b8d029..8e3c7f7 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1742,6 +1742,7 @@ static inline void sci_free_dma(struct uart_port *port)
- static int sci_startup(struct uart_port *port)
- {
- 	struct sci_port *s = to_sci_port(port);
-+	unsigned long flags;
- 	int ret;
- 
- 	dev_dbg(port->dev, "%s(%d)\n", __func__, port->line);
-@@ -1752,8 +1753,10 @@ static int sci_startup(struct uart_port *port)
- 
- 	sci_request_dma(port);
- 
-+	spin_lock_irqsave(&port->lock, flags);
- 	sci_start_tx(port);
- 	sci_start_rx(port);
-+	spin_unlock_irqrestore(&port->lock, flags);
- 
- 	return 0;
- }
-@@ -1761,11 +1764,14 @@ static int sci_startup(struct uart_port *port)
- static void sci_shutdown(struct uart_port *port)
- {
- 	struct sci_port *s = to_sci_port(port);
-+	unsigned long flags;
- 
- 	dev_dbg(port->dev, "%s(%d)\n", __func__, port->line);
- 
-+	spin_lock_irqsave(&port->lock, flags);
- 	sci_stop_rx(port);
- 	sci_stop_tx(port);
-+	spin_unlock_irqrestore(&port->lock, flags);
- 
- 	sci_free_dma(port);
- 	sci_free_irq(s);
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index 0a43f31..0a0f302 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -779,7 +779,7 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g")
+ 	.map_io		= sh73a0_map_io,
+ 	.init_early	= sh73a0_add_early_devices,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+-	.init_irq	= sh73a0_init_irq,
++	.init_irq	= sh73a0_init_irq_of,
+ 	.handle_irq	= gic_handle_irq,
+ 	.init_machine	= kzm_init,
+ 	.init_late	= shmobile_init_late,
 -- 
-1.7.12.4
+1.7.10.4
 
