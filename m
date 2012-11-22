@@ -1,375 +1,443 @@
-From: Jianguo Wu <wujianguo@huawei.com>
-Date: Tue, 27 Nov 2012 07:14:11 +0000
-Subject: Re: [PATCH v3 08/12] memory-hotplug: remove memmap of sparse-vmemmap
-Message-Id: <50B46843.6080006@huawei.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 22 Nov 2012 10:12:08 +0000
+Subject: [PATCH v2 2/2] regulator: add a regulator driver for the AS3711 PMIC
+Message-Id: <Pine.LNX.4.64.1211221110330.28453@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1351763083-7905-1-git-send-email-wency@cn.fujitsu.com> <1351763083-7905-9-git-send-email-wency@cn.fujitsu.com> <50B45400.20800@huawei.com> <50B4625F.1050307@cn.fujitsu.com>
-In-Reply-To: <50B4625F.1050307@cn.fujitsu.com>
+References: <Pine.LNX.4.64.1211221107520.28453@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1211221107520.28453@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wen Congyang <wency@cn.fujitsu.com>
-Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org, David Rientjes <rientjes@google.com>, Jiang Liu <liuj97@gmail.com>, Len Brown <len.brown@intel.com>, benh@kernel.crashing.org, paulus@samba.org, Christoph Lameter <cl@linux.com>, Minchan Kim <minchan.kim@gmail.com>, Andrew Morton <akpm@linux-foundation.org>, KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>, Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+To: linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Samuel Ortiz <sameo@linux.intel.com>, linux-kernel@vger.kernel.org, Mark Brown <broonie@opensource.wolfsonmicro.com>
 
-On 2012/11/27 14:49, Wen Congyang wrote:
+This driver supports the 4 DCDC and 8 LDO regulators on the AS3711 PMIC.
 
-> At 11/27/2012 01:47 PM, Jianguo Wu Wrote:
->> On 2012/11/1 17:44, Wen Congyang wrote:
->>
->>> From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
->>>
->>> All pages of virtual mapping in removed memory cannot be freed, since some pages
->>> used as PGD/PUD includes not only removed memory but also other memory. So the
->>> patch checks whether page can be freed or not.
->>>
->>> How to check whether page can be freed or not?
->>>  1. When removing memory, the page structs of the revmoved memory are filled
->>>     with 0FD.
->>>  2. All page structs are filled with 0xFD on PT/PMD, PT/PMD can be cleared.
->>>     In this case, the page used as PT/PMD can be freed.
->>>
->>> Applying patch, __remove_section() of CONFIG_SPARSEMEM_VMEMMAP is integrated
->>> into one. So __remove_section() of CONFIG_SPARSEMEM_VMEMMAP is deleted.
->>>
->>> Note:  vmemmap_kfree() and vmemmap_free_bootmem() are not implemented for ia64,
->>> ppc, s390, and sparc.
->>>
->>> CC: David Rientjes <rientjes@google.com>
->>> CC: Jiang Liu <liuj97@gmail.com>
->>> CC: Len Brown <len.brown@intel.com>
->>> CC: Christoph Lameter <cl@linux.com>
->>> Cc: Minchan Kim <minchan.kim@gmail.com>
->>> CC: Andrew Morton <akpm@linux-foundation.org>
->>> CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
->>> CC: Wen Congyang <wency@cn.fujitsu.com>
->>> Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
->>> ---
->>>  arch/ia64/mm/discontig.c  |   8 ++++
->>>  arch/powerpc/mm/init_64.c |   8 ++++
->>>  arch/s390/mm/vmem.c       |   8 ++++
->>>  arch/sparc/mm/init_64.c   |   8 ++++
->>>  arch/x86/mm/init_64.c     | 119 ++++++++++++++++++++++++++++++++++++++++++++++
->>>  include/linux/mm.h        |   2 +
->>>  mm/memory_hotplug.c       |  17 +------
->>>  mm/sparse.c               |   5 +-
->>>  8 files changed, 158 insertions(+), 17 deletions(-)
->>>
->>> diff --git a/arch/ia64/mm/discontig.c b/arch/ia64/mm/discontig.c
->>> index 33943db..0d23b69 100644
->>> --- a/arch/ia64/mm/discontig.c
->>> +++ b/arch/ia64/mm/discontig.c
->>> @@ -823,6 +823,14 @@ int __meminit vmemmap_populate(struct page *start_page,
->>>  	return vmemmap_populate_basepages(start_page, size, node);
->>>  }
->>>  
->>> +void vmemmap_kfree(struct page *memmap, unsigned long nr_pages)
->>> +{
->>> +}
->>> +
->>> +void vmemmap_free_bootmem(struct page *memmap, unsigned long nr_pages)
->>> +{
->>> +}
->>> +
->>>  void register_page_bootmem_memmap(unsigned long section_nr,
->>>  				  struct page *start_page, unsigned long size)
->>>  {
->>> diff --git a/arch/powerpc/mm/init_64.c b/arch/powerpc/mm/init_64.c
->>> index 6466440..df7d155 100644
->>> --- a/arch/powerpc/mm/init_64.c
->>> +++ b/arch/powerpc/mm/init_64.c
->>> @@ -298,6 +298,14 @@ int __meminit vmemmap_populate(struct page *start_page,
->>>  	return 0;
->>>  }
->>>  
->>> +void vmemmap_kfree(struct page *memmap, unsigned long nr_pages)
->>> +{
->>> +}
->>> +
->>> +void vmemmap_free_bootmem(struct page *memmap, unsigned long nr_pages)
->>> +{
->>> +}
->>> +
->>>  void register_page_bootmem_memmap(unsigned long section_nr,
->>>  				  struct page *start_page, unsigned long size)
->>>  {
->>> diff --git a/arch/s390/mm/vmem.c b/arch/s390/mm/vmem.c
->>> index 4f4803a..ab69c34 100644
->>> --- a/arch/s390/mm/vmem.c
->>> +++ b/arch/s390/mm/vmem.c
->>> @@ -236,6 +236,14 @@ out:
->>>  	return ret;
->>>  }
->>>  
->>> +void vmemmap_kfree(struct page *memmap, unsigned long nr_pages)
->>> +{
->>> +}
->>> +
->>> +void vmemmap_free_bootmem(struct page *memmap, unsigned long nr_pages)
->>> +{
->>> +}
->>> +
->>>  void register_page_bootmem_memmap(unsigned long section_nr,
->>>  				  struct page *start_page, unsigned long size)
->>>  {
->>> diff --git a/arch/sparc/mm/init_64.c b/arch/sparc/mm/init_64.c
->>> index 75a984b..546855d 100644
->>> --- a/arch/sparc/mm/init_64.c
->>> +++ b/arch/sparc/mm/init_64.c
->>> @@ -2232,6 +2232,14 @@ void __meminit vmemmap_populate_print_last(void)
->>>  	}
->>>  }
->>>  
->>> +void vmemmap_kfree(struct page *memmap, unsigned long nr_pages)
->>> +{
->>> +}
->>> +
->>> +void vmemmap_free_bootmem(struct page *memmap, unsigned long nr_pages)
->>> +{
->>> +}
->>> +
->>>  void register_page_bootmem_memmap(unsigned long section_nr,
->>>  				  struct page *start_page, unsigned long size)
->>>  {
->>> diff --git a/arch/x86/mm/init_64.c b/arch/x86/mm/init_64.c
->>> index 795dae3..e85626d 100644
->>> --- a/arch/x86/mm/init_64.c
->>> +++ b/arch/x86/mm/init_64.c
->>> @@ -998,6 +998,125 @@ vmemmap_populate(struct page *start_page, unsigned long size, int node)
->>>  	return 0;
->>>  }
->>>  
->>> +#define PAGE_INUSE 0xFD
->>> +
->>> +unsigned long find_and_clear_pte_page(unsigned long addr, unsigned long end,
->>> +			    struct page **pp, int *page_size)
->>> +{
->>> +	pgd_t *pgd;
->>> +	pud_t *pud;
->>> +	pmd_t *pmd;
->>> +	pte_t *pte = NULL;
->>> +	void *page_addr;
->>> +	unsigned long next;
->>> +
->>> +	*pp = NULL;
->>> +
->>> +	pgd = pgd_offset_k(addr);
->>> +	if (pgd_none(*pgd))
->>> +		return pgd_addr_end(addr, end);
->>> +
->>> +	pud = pud_offset(pgd, addr);
->>> +	if (pud_none(*pud))
->>> +		return pud_addr_end(addr, end);
->>> +
->>> +	if (!cpu_has_pse) {
->>> +		next = (addr + PAGE_SIZE) & PAGE_MASK;
->>> +		pmd = pmd_offset(pud, addr);
->>> +		if (pmd_none(*pmd))
->>> +			return next;
->>> +
->>> +		pte = pte_offset_kernel(pmd, addr);
->>> +		if (pte_none(*pte))
->>> +			return next;
->>> +
->>> +		*page_size = PAGE_SIZE;
->>> +		*pp = pte_page(*pte);
->>> +	} else {
->>> +		next = pmd_addr_end(addr, end);
->>> +
->>> +		pmd = pmd_offset(pud, addr);
->>> +		if (pmd_none(*pmd))
->>> +			return next;
->>> +
->>> +		*page_size = PMD_SIZE;
->>> +		*pp = pmd_page(*pmd);
->>> +	}
->>> +
->>> +	/*
->>> +	 * Removed page structs are filled with 0xFD.
->>> +	 */
->>> +	memset((void *)addr, PAGE_INUSE, next - addr);
->>> +
->>> +	page_addr = page_address(*pp);
->>> +
->>> +	/*
->>> +	 * Check the page is filled with 0xFD or not.
->>> +	 * memchr_inv() returns the address. In this case, we cannot
->>> +	 * clear PTE/PUD entry, since the page is used by other.
->>> +	 * So we cannot also free the page.
->>> +	 *
->>> +	 * memchr_inv() returns NULL. In this case, we can clear
->>> +	 * PTE/PUD entry, since the page is not used by other.
->>> +	 * So we can also free the page.
->>> +	 */
->>> +	if (memchr_inv(page_addr, PAGE_INUSE, *page_size)) {
->>> +		*pp = NULL;
->>> +		return next;
->>> +	}
->>> +
->>> +	if (!cpu_has_pse)
->>> +		pte_clear(&init_mm, addr, pte);
->>> +	else
->>> +		pmd_clear(pmd);
->>> +
->>> +	return next;
->>> +}
->>> +
->>> +void vmemmap_kfree(struct page *memmap, unsigned long nr_pages)
->>> +{
->>> +	unsigned long addr = (unsigned long)memmap;
->>> +	unsigned long end = (unsigned long)(memmap + nr_pages);
->>> +	unsigned long next;
->>> +	struct page *page;
->>> +	int page_size;
->>> +
->>> +	for (; addr < end; addr = next) {
->>> +		page = NULL;
->>> +		page_size = 0;
->>> +		next = find_and_clear_pte_page(addr, end, &page, &page_size);
->>> +		if (!page)
->>> +			continue;
->>> +
->>> +		free_pages((unsigned long)page_address(page),
->>> +			    get_order(page_size));
->>> +		__flush_tlb_one(addr);
->>> +	}
->>> +}
->>> +
->>> +void vmemmap_free_bootmem(struct page *memmap, unsigned long nr_pages)
->>> +{
->>> +	unsigned long addr = (unsigned long)memmap;
->>> +	unsigned long end = (unsigned long)(memmap + nr_pages);
->>> +	unsigned long next;
->>> +	struct page *page;
->>> +	int page_size;
->>> +	unsigned long magic;
->>> +
->>> +	for (; addr < end; addr = next) {
->>> +		page = NULL;
->>> +		page_size = 0;
->>> +		next = find_and_clear_pte_page(addr, end, &page, &page_size);
->>> +		if (!page)
->>> +			continue;
->>> +
->>> +		magic = (unsigned long) page->lru.next;
->>> +		if (magic = SECTION_INFO)
->>> +			put_page_bootmem(page);
->>> +		flush_tlb_kernel_range(addr, end);
->>> +	}
->>> +}
->>> +
->>>  void register_page_bootmem_memmap(unsigned long section_nr,
->>>  				  struct page *start_page, unsigned long size)
->>>  {
->>> diff --git a/include/linux/mm.h b/include/linux/mm.h
->>> index 8e5a56f..42b8723 100644
->>> --- a/include/linux/mm.h
->>> +++ b/include/linux/mm.h
->>> @@ -1642,6 +1642,8 @@ int vmemmap_populate(struct page *start_page, unsigned long pages, int node);
->>>  void vmemmap_populate_print_last(void);
->>>  void register_page_bootmem_memmap(unsigned long section_nr, struct page *map,
->>>  				  unsigned long size);
->>> +void vmemmap_kfree(struct page *memmpa, unsigned long nr_pages);
->>> +void vmemmap_free_bootmem(struct page *memmpa, unsigned long nr_pages);
->>>  
->>>  enum mf_flags {
->>>  	MF_COUNT_INCREASED = 1 << 0,
->>> diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
->>> index db9806c..03153cf 100644
->>> --- a/mm/memory_hotplug.c
->>> +++ b/mm/memory_hotplug.c
->>> @@ -312,19 +312,6 @@ static int __meminit __add_section(int nid, struct zone *zone,
->>>  	return register_new_memory(nid, __pfn_to_section(phys_start_pfn));
->>>  }
->>>  
->>> -#ifdef CONFIG_SPARSEMEM_VMEMMAP
->>> -static int __remove_section(struct zone *zone, struct mem_section *ms)
->>> -{
->>> -	int ret = -EINVAL;
->>> -
->>> -	if (!valid_section(ms))
->>> -		return ret;
->>> -
->>> -	ret = unregister_memory_section(ms);
->>> -
->>> -	return ret;
->>> -}
->>> -#else
->>>  static int __remove_section(struct zone *zone, struct mem_section *ms)
->>>  {
->>>  	unsigned long flags;
->>> @@ -341,9 +328,9 @@ static int __remove_section(struct zone *zone, struct mem_section *ms)
->>>  	pgdat_resize_lock(pgdat, &flags);
->>>  	sparse_remove_one_section(zone, ms);
->>>  	pgdat_resize_unlock(pgdat, &flags);
->>> -	return 0;
->>> +
->>> +	return ret;
->>>  }
->>> -#endif
->>>  
->>>  /*
->>>   * Reasonably generic function for adding memory.  It is
->>> diff --git a/mm/sparse.c b/mm/sparse.c
->>> index fac95f2..ab9d755 100644
->>> --- a/mm/sparse.c
->>> +++ b/mm/sparse.c
->>> @@ -613,12 +613,13 @@ static inline struct page *kmalloc_section_memmap(unsigned long pnum, int nid,
->>>  	/* This will make the necessary allocations eventually. */
->>>  	return sparse_mem_map_populate(pnum, nid);
->>>  }
->>> -static void __kfree_section_memmap(struct page *memmap, unsigned long nr_pages)
->>> +static void __kfree_section_memmap(struct page *page, unsigned long nr_pages)
->>>  {
->>> -	return; /* XXX: Not implemented yet */
->>> +	vmemmap_kfree(page, nr_pages);
->>>  }
->>>  static void free_map_bootmem(struct page *page, unsigned long nr_pages)
->>>  {
->>> +	vmemmap_free_bootmem(page, nr_pages);
->>>  }
->>
->> Hi Congyang,
->> 	For vmemmap, nr_pages should be PAGES_PER_SECTION for free_map_bootmem(),
->> which is passed by free_section_usemap(), right? 
->> But now, nr_pages = PAGE_ALIGN(PAGES_PER_SECTION * sizeof(struct page)) >> PAGE_SHIFT.
->>
->> Signed-off-by: Jianguo Wu <wujianguo@huawei.com>
->> ---
->>  mm/sparse.c |    4 ++++
->>  1 files changed, 4 insertions(+), 0 deletions(-)
->>
->> diff --git a/mm/sparse.c b/mm/sparse.c
->> index fac95f2..31e5282 100644
->> --- a/mm/sparse.c
->> +++ b/mm/sparse.c
->> @@ -713,8 +713,12 @@ static void free_section_usemap(struct page *memmap, unsigned long *usemap)
->>  		struct page *memmap_page;
->>  		memmap_page = virt_to_page(memmap);
->>  
->> +#ifdef CONFIG_SPARSEMEM_VMEMMAP
->> +		nr_pages = PAGES_PER_SECTION;
->> +#else
->>  		nr_pages = PAGE_ALIGN(PAGES_PER_SECTION * sizeof(struct page))
->>  			>> PAGE_SHIFT;
->> +#endif
-> 
-> Hmm, to avoid using ifdef, I think we can pass PAGE_PER_SECTION to free_map_bootmem(),
-> and calculate how many pages is used to store struct page.
-> 
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
 
-yes, it is ugly to use ifdef. Or we can remove parameter--nr_pages of free_map_bootmem(),
-and calculate nr_pages in free_map_bootmem() directly.
+v2: make platform data optional
 
-> Thanks
-> Wen Congyang
-> 
->>  
->>  		free_map_bootmem(memmap_page, nr_pages);
->>  	}
-> 
-> 
-> .
-> 
+ drivers/regulator/Kconfig            |    7 +
+ drivers/regulator/Makefile           |    1 +
+ drivers/regulator/as3711-regulator.c |  379 ++++++++++++++++++++++++++++++++++
+ 3 files changed, 387 insertions(+), 0 deletions(-)
+ create mode 100644 drivers/regulator/as3711-regulator.c
 
-
+diff --git a/drivers/regulator/Kconfig b/drivers/regulator/Kconfig
+index 67d47b59..f73d6f5 100644
+--- a/drivers/regulator/Kconfig
++++ b/drivers/regulator/Kconfig
+@@ -450,5 +450,12 @@ config REGULATOR_WM8994
+ 	  This driver provides support for the voltage regulators on the
+ 	  WM8994 CODEC.
+ 
++config REGULATOR_AS3711
++	tristate "AS3711 PMIC"
++	depends on MFD_AS3711
++	help
++	  This driver provides support for the voltage regulators on the
++	  AS3711 PMIC
++
+ endif
+ 
+diff --git a/drivers/regulator/Makefile b/drivers/regulator/Makefile
+index e431eed..c1557ac 100644
+--- a/drivers/regulator/Makefile
++++ b/drivers/regulator/Makefile
+@@ -16,6 +16,7 @@ obj-$(CONFIG_REGULATOR_AB8500)	+= ab8500.o
+ obj-$(CONFIG_REGULATOR_AD5398) += ad5398.o
+ obj-$(CONFIG_REGULATOR_ANATOP) += anatop-regulator.o
+ obj-$(CONFIG_REGULATOR_ARIZONA) += arizona-micsupp.o arizona-ldo1.o
++obj-$(CONFIG_REGULATOR_AS3711) += as3711-regulator.o
+ obj-$(CONFIG_REGULATOR_DA903X)	+= da903x.o
+ obj-$(CONFIG_REGULATOR_DA9052)	+= da9052-regulator.o
+ obj-$(CONFIG_REGULATOR_DBX500_PRCMU) += dbx500-prcmu.o
+diff --git a/drivers/regulator/as3711-regulator.c b/drivers/regulator/as3711-regulator.c
+new file mode 100644
+index 0000000..81578bf
+--- /dev/null
++++ b/drivers/regulator/as3711-regulator.c
+@@ -0,0 +1,379 @@
++/*
++ * AS3711 PMIC regulator driver, using DCDC Step Down and LDO supplies
++ *
++ * Copyright (C) 2012 Renesas Electronics Corporation
++ * Author: Guennadi Liakhovetski, <g.liakhovetski@gmx.de>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the version 2 of the GNU General Public License as
++ * published by the Free Software Foundation
++ */
++
++#include <linux/err.h>
++#include <linux/init.h>
++#include <linux/mfd/as3711.h>
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/regmap.h>
++#include <linux/regulator/driver.h>
++#include <linux/slab.h>
++
++struct as3711_regulator_info {
++	struct regulator_desc	desc;
++	unsigned int		max_uV;
++};
++
++struct as3711_regulator {
++	struct as3711_regulator_info *reg_info;
++	struct regulator_dev *rdev;
++};
++
++static int as3711_list_voltage_sd(struct regulator_dev *rdev,
++				  unsigned int selector)
++{
++	if (selector >= rdev->desc->n_voltages)
++		return -EINVAL;
++
++	if (!selector)
++		return 0;
++	if (selector < 0x41)
++		return 600000 + selector * 12500;
++	if (selector < 0x71)
++		return 1400000 + (selector - 0x40) * 25000;
++	return 2600000 + (selector - 0x70) * 50000;
++}
++
++static int as3711_list_voltage_aldo(struct regulator_dev *rdev,
++				    unsigned int selector)
++{
++	if (selector >= rdev->desc->n_voltages)
++		return -EINVAL;
++
++	if (selector < 0x10)
++		return 1200000 + selector * 50000;
++	return 1800000 + (selector - 0x10) * 100000;
++}
++
++static int as3711_list_voltage_dldo(struct regulator_dev *rdev,
++				    unsigned int selector)
++{
++	if (selector >= rdev->desc->n_voltages ||
++	    (selector > 0x10 && selector < 0x20))
++		return -EINVAL;
++
++	if (selector < 0x11)
++		return 900000 + selector * 50000;
++	return 1750000 + (selector - 0x20) * 50000;
++}
++
++static int as3711_bound_check(struct regulator_dev *rdev,
++			      int *min_uV, int *max_uV)
++{
++	struct as3711_regulator_info *info = container_of(rdev->desc,
++					struct as3711_regulator_info, desc);
++	struct as3711_regulator *reg = rdev->reg_data;
++
++	WARN_ON(reg->reg_info != info);
++
++	dev_dbg(&rdev->dev, "%s(), %d, %d, %d\n", __func__,
++		*min_uV, rdev->desc->min_uV, info->max_uV);
++
++	if (*max_uV < *min_uV ||
++	    *min_uV >= info->max_uV || rdev->desc->min_uV >= *max_uV)
++		return -EINVAL;
++
++	if (rdev->desc->n_voltages = 1)
++		return 0;
++
++	if (*max_uV > info->max_uV)
++		*max_uV = info->max_uV;
++
++	if (*min_uV < rdev->desc->min_uV)
++		*min_uV = rdev->desc->min_uV;
++
++	return *min_uV;
++}
++
++static int as3711_sel_check(int min, int max, int bottom, int step)
++{
++	int ret, voltage;
++
++	/* Round up min, when dividing: keeps us within the range */
++	ret = (min - bottom + step - 1) / step;
++	voltage = ret * step + bottom;
++	pr_debug("%s(): select %d..%d in %d+N*%d: %d\n", __func__,
++	       min, max, bottom, step, ret);
++	if (voltage > max) {
++		/*
++		 * Try 1 down. It will take us below min, but as long we stay
++		 * above bottom, we're fine.
++		 */
++		ret--;
++		voltage = ret * step + bottom;
++		if (voltage < bottom)
++			return -EINVAL;
++	}
++	return ret;
++}
++
++static int as3711_map_voltage_sd(struct regulator_dev *rdev,
++				 int min_uV, int max_uV)
++{
++	int ret;
++
++	ret = as3711_bound_check(rdev, &min_uV, &max_uV);
++	if (ret <= 0)
++		return ret;
++
++	if (min_uV <= 1400000)
++		return as3711_sel_check(min_uV, max_uV, 600000, 12500);
++
++	if (min_uV <= 2600000)
++		return as3711_sel_check(min_uV, max_uV, 1400000, 25000) + 0x40;
++
++	return as3711_sel_check(min_uV, max_uV, 2600000, 50000) + 0x70;
++}
++
++/*
++ * The regulator API supports 4 modes of operataion: FAST, NORMAL, IDLE and
++ * STANDBY. We map them in the following way to AS3711 SD1-4 DCDC modes:
++ * FAST:	sdX_fast=1
++ * NORMAL:	low_noise=1
++ * IDLE:	low_noise=0
++ */
++
++static int as3711_set_mode_sd(struct regulator_dev *rdev, unsigned int mode)
++{
++	unsigned int fast_bit = rdev->desc->enable_mask,
++		low_noise_bit = fast_bit << 4;
++	u8 val;
++
++	switch (mode) {
++	case REGULATOR_MODE_FAST:
++		val = fast_bit | low_noise_bit;
++		break;
++	case REGULATOR_MODE_NORMAL:
++		val = low_noise_bit;
++		break;
++	case REGULATOR_MODE_IDLE:
++		val = 0;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	return regmap_update_bits(rdev->regmap, AS3711_SD_CONTROL_1,
++				  low_noise_bit | fast_bit, val);
++}
++
++static unsigned int as3711_get_mode_sd(struct regulator_dev *rdev)
++{
++	unsigned int fast_bit = rdev->desc->enable_mask,
++		low_noise_bit = fast_bit << 4, mask = fast_bit | low_noise_bit;
++	unsigned int val;
++	int ret = regmap_read(rdev->regmap, AS3711_SD_CONTROL_1, &val);
++
++	if (ret < 0)
++		return ret;
++
++	if ((val & mask) = mask)
++		return REGULATOR_MODE_FAST;
++
++	if ((val & mask) = low_noise_bit)
++		return REGULATOR_MODE_NORMAL;
++
++	if (!(val & mask))
++		return REGULATOR_MODE_IDLE;
++
++	return -EINVAL;
++}
++
++static int as3711_map_voltage_aldo(struct regulator_dev *rdev,
++				  int min_uV, int max_uV)
++{
++	int ret;
++
++	ret = as3711_bound_check(rdev, &min_uV, &max_uV);
++	if (ret <= 0)
++		return ret;
++
++	if (min_uV <= 1800000)
++		return as3711_sel_check(min_uV, max_uV, 1200000, 50000);
++
++	return as3711_sel_check(min_uV, max_uV, 1800000, 100000) + 0x10;
++}
++
++static int as3711_map_voltage_dldo(struct regulator_dev *rdev,
++				  int min_uV, int max_uV)
++{
++	int ret;
++
++	ret = as3711_bound_check(rdev, &min_uV, &max_uV);
++	if (ret <= 0)
++		return ret;
++
++	if (min_uV <= 1700000)
++		return as3711_sel_check(min_uV, max_uV, 900000, 50000);
++
++	return as3711_sel_check(min_uV, max_uV, 1750000, 50000) + 0x20;
++}
++
++static struct regulator_ops as3711_sd_ops = {
++	.is_enabled		= regulator_is_enabled_regmap,
++	.enable			= regulator_enable_regmap,
++	.disable		= regulator_disable_regmap,
++	.get_voltage_sel	= regulator_get_voltage_sel_regmap,
++	.set_voltage_sel	= regulator_set_voltage_sel_regmap,
++	.list_voltage		= as3711_list_voltage_sd,
++	.map_voltage		= as3711_map_voltage_sd,
++	.get_mode		= as3711_get_mode_sd,
++	.set_mode		= as3711_set_mode_sd,
++};
++
++static struct regulator_ops as3711_aldo_ops = {
++	.is_enabled		= regulator_is_enabled_regmap,
++	.enable			= regulator_enable_regmap,
++	.disable		= regulator_disable_regmap,
++	.get_voltage_sel	= regulator_get_voltage_sel_regmap,
++	.set_voltage_sel	= regulator_set_voltage_sel_regmap,
++	.list_voltage		= as3711_list_voltage_aldo,
++	.map_voltage		= as3711_map_voltage_aldo,
++};
++
++static struct regulator_ops as3711_dldo_ops = {
++	.is_enabled		= regulator_is_enabled_regmap,
++	.enable			= regulator_enable_regmap,
++	.disable		= regulator_disable_regmap,
++	.get_voltage_sel	= regulator_get_voltage_sel_regmap,
++	.set_voltage_sel	= regulator_set_voltage_sel_regmap,
++	.list_voltage		= as3711_list_voltage_dldo,
++	.map_voltage		= as3711_map_voltage_dldo,
++};
++
++#define AS3711_REG(_id, _en_reg, _en_bit, _vmask, _vshift, _min_uV, _max_uV, _sfx)	\
++	[AS3711_REGULATOR_ ## _id] = {							\
++	.desc = {									\
++		.name = "as3711-regulator-" # _id,					\
++		.id = AS3711_REGULATOR_ ## _id,						\
++		.n_voltages = (_vmask + 1),						\
++		.ops = &as3711_ ## _sfx ## _ops,					\
++		.type = REGULATOR_VOLTAGE,						\
++		.owner = THIS_MODULE,							\
++		.vsel_reg = AS3711_ ## _id ## _VOLTAGE,					\
++		.vsel_mask = _vmask << _vshift,						\
++		.enable_reg = AS3711_ ## _en_reg,					\
++		.enable_mask = BIT(_en_bit),						\
++		.min_uV	= _min_uV,							\
++	},										\
++	.max_uV = _max_uV,								\
++}
++
++static struct as3711_regulator_info as3711_reg_info[] = {
++	AS3711_REG(SD_1, SD_CONTROL, 0, 0x7f, 0, 612500, 3350000, sd),
++	AS3711_REG(SD_2, SD_CONTROL, 1, 0x7f, 0, 612500, 3350000, sd),
++	AS3711_REG(SD_3, SD_CONTROL, 2, 0x7f, 0, 612500, 3350000, sd),
++	AS3711_REG(SD_4, SD_CONTROL, 3, 0x7f, 0, 612500, 3350000, sd),
++	AS3711_REG(LDO_1, LDO_1_VOLTAGE, 7, 0x1f, 0, 1200000, 3300000, aldo),
++	AS3711_REG(LDO_2, LDO_2_VOLTAGE, 7, 0x1f, 0, 1200000, 3300000, aldo),
++	AS3711_REG(LDO_3, LDO_3_VOLTAGE, 7, 0x3f, 0, 900000, 3300000, dldo),
++	AS3711_REG(LDO_4, LDO_4_VOLTAGE, 7, 0x3f, 0, 900000, 3300000, dldo),
++	AS3711_REG(LDO_5, LDO_5_VOLTAGE, 7, 0x3f, 0, 900000, 3300000, dldo),
++	AS3711_REG(LDO_6, LDO_6_VOLTAGE, 7, 0x3f, 0, 900000, 3300000, dldo),
++	AS3711_REG(LDO_7, LDO_7_VOLTAGE, 7, 0x3f, 0, 900000, 3300000, dldo),
++	AS3711_REG(LDO_8, LDO_8_VOLTAGE, 7, 0x3f, 0, 900000, 3300000, dldo),
++	/* StepUp output voltage depends on supplying regulator */
++};
++
++#define AS3711_REGULATOR_NUM ARRAY_SIZE(as3711_reg_info)
++
++static int as3711_regulator_probe(struct platform_device *pdev)
++{
++	struct as3711_regulator_pdata *pdata = dev_get_platdata(&pdev->dev);
++	struct as3711 *as3711 = dev_get_drvdata(pdev->dev.parent);
++	struct regulator_init_data *reg_data;
++	struct regulator_config config = {.dev = &pdev->dev,};
++	struct as3711_regulator *reg = NULL;
++	struct as3711_regulator *regs;
++	struct regulator_dev *rdev;
++	struct as3711_regulator_info *ri;
++	int ret;
++	int id;
++
++	if (!pdata)
++		dev_dbg(&pdev->dev, "No platform data...\n");
++
++	regs = devm_kzalloc(&pdev->dev, AS3711_REGULATOR_NUM *
++			sizeof(struct as3711_regulator), GFP_KERNEL);
++	if (!regs) {
++		dev_err(&pdev->dev, "Memory allocation failed exiting..\n");
++		return -ENOMEM;
++	}
++
++	for (id = 0, ri = as3711_reg_info; id < AS3711_REGULATOR_NUM; ++id, ri++) {
++		reg_data = pdata ? pdata->init_data[id] : NULL;
++
++		/* No need to register if there is no regulator data */
++		if (!ri->desc.name)
++			continue;
++
++		reg = &regs[id];
++		reg->reg_info = ri;
++
++		config.init_data = reg_data;
++		config.driver_data = reg;
++		config.regmap = as3711->regmap;
++
++		rdev = regulator_register(&ri->desc, &config);
++		if (IS_ERR(rdev)) {
++			dev_err(&pdev->dev, "Failed to register regulator %s\n",
++				ri->desc.name);
++			ret = PTR_ERR(rdev);
++			goto eregreg;
++		}
++		reg->rdev = rdev;
++	}
++	platform_set_drvdata(pdev, regs);
++	return 0;
++
++eregreg:
++	while (--id >= 0)
++		regulator_unregister(regs[id].rdev);
++
++	return ret;
++}
++
++static int as3711_regulator_remove(struct platform_device *pdev)
++{
++	struct as3711_regulator *regs = platform_get_drvdata(pdev);
++	int id;
++
++	for (id = 0; id < AS3711_REGULATOR_NUM; ++id)
++		regulator_unregister(regs[id].rdev);
++	return 0;
++}
++
++static struct platform_driver as3711_regulator_driver = {
++	.driver	= {
++		.name	= "as3711-regulator",
++		.owner	= THIS_MODULE,
++	},
++	.probe		= as3711_regulator_probe,
++	.remove		= as3711_regulator_remove,
++};
++
++static int __init as3711_regulator_init(void)
++{
++	return platform_driver_register(&as3711_regulator_driver);
++}
++subsys_initcall(as3711_regulator_init);
++
++static void __exit as3711_regulator_exit(void)
++{
++	platform_driver_unregister(&as3711_regulator_driver);
++}
++module_exit(as3711_regulator_exit);
++
++MODULE_AUTHOR("Guennadi Liakhovetski <g.liakhovetski@gmx.de>");
++MODULE_DESCRIPTION("AS3711 regulator driver");
++MODULE_ALIAS("platform:as3711-regulator");
++MODULE_LICENSE("GPL v2");
+-- 
+1.7.2.5
 
