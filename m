@@ -1,41 +1,35 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Wed, 07 Nov 2012 11:40:07 +0000
-Subject: [PATCH 4/4] devicetree: Add Renesas SH Mobile MSIOF spi controller binding doc
-Message-Id: <1352288407-20594-5-git-send-email-hechtb@gmail.com>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Thu, 22 Nov 2012 16:28:57 +0000
+Subject: [PATCH] ARM: shmobile: r8a7779: Fix PFC - MOD_SEL2 missed an entry
+Message-Id: <1353601737-21641-1-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352288407-20594-1-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1352288407-20594-1-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add binding documentation for Renesas' MSIOF SPI controller.
+The list of functions selected by the MOD_SEL2 register was missing
+an entry. This caused all entries after this to modify the MOD_SEL2
+register incorrectly.
 
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 ---
- Documentation/devicetree/bindings/spi/sh-msiof.txt |   12 ++++++++++++
- 1 files changed, 12 insertions(+), 0 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/spi/sh-msiof.txt
+ arch/arm/mach-shmobile/pfc-r8a7779.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/spi/sh-msiof.txt b/Documentation/devicetree/bindings/spi/sh-msiof.txt
-new file mode 100644
-index 0000000..b62312e
---- /dev/null
-+++ b/Documentation/devicetree/bindings/spi/sh-msiof.txt
-@@ -0,0 +1,12 @@
-+Renesas MSIOF spi controller
-+
-+Required properties:
-+- compatible : 	"renesas,sh-msiof" for SuperH or
-+		"renesas,sh-mobile-msiof" for SH Mobile series
-+- reg : Offset and length of the register set for the device
-+- interrupts : interrupt line used by MSIOF
-+
-+Optional properties:
-+- chip_select  : Chip select, defaults to 0
-+- tx_fifo_size : Overrides the default tx fifo size given in words
-+- rx_fifo_size : Overrides the default rx fifo size given in words
+diff --git a/arch/arm/mach-shmobile/pfc-r8a7779.c b/arch/arm/mach-shmobile/pfc-r8a7779.c
+index 9fac32e4..15f6a48 100644
+--- a/arch/arm/mach-shmobile/pfc-r8a7779.c
++++ b/arch/arm/mach-shmobile/pfc-r8a7779.c
+@@ -2525,7 +2525,7 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 	    /* SEL_SCIF [2] */
+ 	    FN_SEL_SCIF_0, FN_SEL_SCIF_1, FN_SEL_SCIF_2, FN_SEL_SCIF_3,
+ 	    /* SEL_CANCLK [2] */
+-	    FN_SEL_CANCLK_0, FN_SEL_CANCLK_1, FN_SEL_CANCLK_2,
++	    FN_SEL_CANCLK_0, FN_SEL_CANCLK_1, FN_SEL_CANCLK_2, 0,
+ 	    /* SEL_CAN0 [1] */
+ 	    FN_SEL_CAN0_0, FN_SEL_CAN0_1,
+ 	    /* SEL_HSCIF1 [1] */
 -- 
 1.7.5.4
 
