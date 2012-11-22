@@ -1,133 +1,59 @@
-From: Wen Congyang <wency@cn.fujitsu.com>
-Date: Tue, 27 Nov 2012 10:00:12 +0000
-Subject: [Patch v4 02/12] memory-hotplug: check whether all memory blocks are offlined or not when removing m
-Message-Id: <1354010422-19648-3-git-send-email-wency@cn.fujitsu.com>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Date: Thu, 22 Nov 2012 08:23:39 +0000
+Subject: [PATCH shmobile/DT 2/2] ARM: shmobile: Update document for sh_intc of DT
+Message-Id: <1353572619-29098-2-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1354010422-19648-1-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1354010422-19648-1-git-send-email-wency@cn.fujitsu.com>
+References: <1353572619-29098-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+In-Reply-To: <1353572619-29098-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
-Cc: David Rientjes <rientjes@google.com>, Jiang Liu <liuj97@gmail.com>, Len Brown <len.brown@intel.com>, benh@kernel.crashing.org, paulus@samba.org, Christoph Lameter <cl@linux.com>, Minchan Kim <minchan.kim@gmail.com>, Andrew Morton <akpm@linux-foundation.org>, KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>, Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>, Jianguo Wu <wujianguo@huawei.com>, Wen Congyang <wency@cn.fujitsu.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Delete "renesas,sh_intcs" and "renesas,sh_intca_irq_pins" as compatible.
+This updates the information about these.
 
-We remove the memory like this:
-1. lock memory hotplug
-2. offline a memory block
-3. unlock memory hotplug
-4. repeat 1-3 to offline all memory blocks
-5. lock memory hotplug
-6. remove memory(TODO)
-7. unlock memory hotplug
-
-All memory blocks must be offlined before removing memory. But we don't hold
-the lock in the whole operation. So we should check whether all memory blocks
-are offlined before step6. Otherwise, kernel maybe panicked.
-
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
-Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 ---
- drivers/base/memory.c          |  6 ++++++
- include/linux/memory_hotplug.h |  1 +
- mm/memory_hotplug.c            | 47 ++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 54 insertions(+)
+ Documentation/devicetree/bindings/sh/intc.txt |   15 ++-------------
+ 1 file changed, 2 insertions(+), 13 deletions(-)
 
-diff --git a/drivers/base/memory.c b/drivers/base/memory.c
-index 86c8821..badb025 100644
---- a/drivers/base/memory.c
-+++ b/drivers/base/memory.c
-@@ -675,6 +675,12 @@ int offline_memory_block(struct memory_block *mem)
- 	return ret;
- }
+diff --git a/Documentation/devicetree/bindings/sh/intc.txt b/Documentation/devicetree/bindings/sh/intc.txt
+index ebb2398..04b7f73 100644
+--- a/Documentation/devicetree/bindings/sh/intc.txt
++++ b/Documentation/devicetree/bindings/sh/intc.txt
+@@ -7,10 +7,7 @@ is managed by DT, in order to maintain compatibility.
  
-+/* return true if the memory block is offlined, otherwise, return false */
-+bool is_memblock_offlined(struct memory_block *mem)
-+{
-+	return mem->state = MEM_OFFLINE;
-+}
-+
- /*
-  * Initialize the sysfs support for memory devices...
-  */
-diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
-index 95573ec..38675e9 100644
---- a/include/linux/memory_hotplug.h
-+++ b/include/linux/memory_hotplug.h
-@@ -236,6 +236,7 @@ extern int add_memory(int nid, u64 start, u64 size);
- extern int arch_add_memory(int nid, u64 start, u64 size);
- extern int offline_pages(unsigned long start_pfn, unsigned long nr_pages);
- extern int offline_memory_block(struct memory_block *mem);
-+extern bool is_memblock_offlined(struct memory_block *mem);
- extern int remove_memory(u64 start, u64 size);
- extern int sparse_add_one_section(struct zone *zone, unsigned long start_pfn,
- 								int nr_pages);
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index b825dbc..b6d1101 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -1054,6 +1054,53 @@ repeat:
- 		goto repeat;
- 	}
+ Main node required properties:
  
-+	lock_memory_hotplug();
-+
-+	/*
-+	 * we have offlined all memory blocks like this:
-+	 *   1. lock memory hotplug
-+	 *   2. offline a memory block
-+	 *   3. unlock memory hotplug
-+	 *
-+	 * repeat step1-3 to offline the memory block. All memory blocks
-+	 * must be offlined before removing memory. But we don't hold the
-+	 * lock in the whole operation. So we should check whether all
-+	 * memory blocks are offlined.
-+	 */
-+
-+	for (pfn = start_pfn; pfn < end_pfn; pfn += PAGES_PER_SECTION) {
-+		section_nr = pfn_to_section_nr(pfn);
-+		if (!present_section_nr(section_nr))
-+			continue;
-+
-+		section = __nr_to_section(section_nr);
-+		/* same memblock? */
-+		if (mem)
-+			if ((section_nr >= mem->start_section_nr) &&
-+			    (section_nr <= mem->end_section_nr))
-+				continue;
-+
-+		mem = find_memory_block_hinted(section, mem);
-+		if (!mem)
-+			continue;
-+
-+		ret = is_memblock_offlined(mem);
-+		if (!ret) {
-+			pr_warn("removing memory fails, because memory "
-+				"[%#010llx-%#010llx] is onlined\n",
-+				PFN_PHYS(section_nr_to_pfn(mem->start_section_nr)),
-+				PFN_PHYS(section_nr_to_pfn(mem->end_section_nr + 1)) - 1);
-+
-+			kobject_put(&mem->dev.kobj);
-+			unlock_memory_hotplug();
-+			return ret;
-+		}
-+	}
-+
-+	if (mem)
-+		kobject_put(&mem->dev.kobj);
-+	unlock_memory_hotplug();
-+
- 	return 0;
- }
- #else
+-- compatible : should be one of:
+-	"renesas,sh_intca"
+-	"renesas,sh_intcs"
+-	"renesas,sh_intca_irq_pins"
++- compatible : "renesas,sh_intc"
+ 
+ - interrupt-controller : Identifies the node as an interrupt controller
+ - #interrupt-cells	: Set already 1.
+@@ -100,18 +97,10 @@ Optional:
+ 	This node required properties:
+ 	  * vector : This specifies the address phandle of INTCS.
+ 
+-Note:
+-- "renesas,sh_intca" needs group_size, intc_group*, intc_vectors,
+-  intc_mask_registers and intc_prio_registers.
+-- "renesas,sh_intcs" needs group_size, intc_group*, intc_vectors,
+-  intc_mask_registers, intc_prio_registers and  intc_intevtsa.
+-- "renesas,sh_intca_irq_pins" needs intc_vectors, intc_mask_registers,
+-  intc_prio_registers, intc_sense_registers and intc_ack_registers.
+-
+ Example:
+ 
+ 	intca: interrupt-controller@0 {
+-		compatible = "renesas,sh_intca";
++		compatible = "renesas,sh_intc";
+ 		interrupt-controller;
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
 -- 
-1.8.0
+1.7.10.4
 
