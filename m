@@ -1,73 +1,46 @@
-From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Date: Wed, 07 Nov 2012 06:59:45 +0000
-Subject: [PATCH 06/10] serial: sh-sci: support lower baud rate
-Message-Id: <509A06E1.6090908@renesas.com>
+From: Shuah Khan <shuah.khan@hp.com>
+Date: Fri, 23 Nov 2012 21:33:42 +0000
+Subject: [PATCH 4/9] microblaze: dma-mapping: support debug_dma_mapping_error
+Message-Id: <1353706422.5270.99.camel@lorien2>
 List-Id: <linux-sh.vger.kernel.org>
-References: <509A0658.1010503@renesas.com>
-In-Reply-To: <509A0658.1010503@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Support prescaler 1/16 and 1/64, in addition to current 1 and 1/4.
+Add support for debug_dma_mapping_error() call to avoid warning from
+debug_dma_unmap() interface when it checks for mapping error checked
+status. Without this patch, device driver failed to check map error
+warning is generated.
 
-Supporting below 2400bps was dropped long time ago in mainline.
-Since then, setting lower rate has been resulting in erroneous
-register value, without indicating any errors through API.
-
-This patch adds more prescaler to support lower rates again.
-This still doesn't check range, but we won't hit the case because
-even 50bps at 48MHz clock is now supported.
-
-Signed-off-by: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
-Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Signed-off-by: Shuah Khan <shuah.khan@hp.com>
+Acked-by: Michal Simek <monstr@monstr.eu>
 ---
- drivers/tty/serial/sh-sci.c | 19 ++++++++-----------
- 1 file changed, 8 insertions(+), 11 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index ffeca65..3021912 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1814,7 +1814,7 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
+This patch is already in linux-next. Including it in this series for
+completeness. linux-next commit f229605441030bcd315c21d97b25889d63ed0130
+
+-- shuah
+---
+ arch/microblaze/include/asm/dma-mapping.h |    2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/microblaze/include/asm/dma-mapping.h b/arch/microblaze/include/asm/dma-mapping.h
+index 01d2282..46460f1 100644
+--- a/arch/microblaze/include/asm/dma-mapping.h
++++ b/arch/microblaze/include/asm/dma-mapping.h
+@@ -114,6 +114,8 @@ static inline void __dma_sync(unsigned long paddr,
+ static inline int dma_mapping_error(struct device *dev, dma_addr_t dma_addr)
  {
- 	struct sci_port *s = to_sci_port(port);
- 	struct plat_sci_reg *reg;
--	unsigned int baud, smr_val, max_baud;
-+	unsigned int baud, smr_val, max_baud, cks;
- 	int t = -1;
- 
- 	/*
-@@ -1848,21 +1848,18 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
- 
- 	uart_update_timeout(port, termios->c_cflag, baud);
- 
--	serial_port_out(port, SCSMR, smr_val);
-+	for (cks = 0; t >= 256 && cks <= 3; cks++)
-+		t >>= 2;
- 
--	dev_dbg(port->dev, "%s: SMR %x, t %x, SCSCR %x\n", __func__, smr_val, t,
--		s->cfg->scscr);
-+	dev_dbg(port->dev, "%s: SMR %x, cks %x, t %x, SCSCR %x\n",
-+		__func__, smr_val, cks, t, s->cfg->scscr);
- 
- 	if (t >= 0) {
--		if (t >= 256) {
--			serial_port_out(port, SCSMR, (serial_port_in(port, SCSMR) & ~3) | 1);
--			t >>= 2;
--		} else
--			serial_port_out(port, SCSMR, serial_port_in(port, SCSMR) & ~3);
--
-+		serial_port_out(port, SCSMR, (smr_val & ~3) | cks);
- 		serial_port_out(port, SCBRR, t);
- 		udelay((1000000+(baud-1)) / baud); /* Wait one bit interval */
--	}
-+	} else
-+		serial_port_out(port, SCSMR, smr_val);
- 
- 	sci_init_pins(port, termios->c_cflag);
+ 	struct dma_map_ops *ops = get_dma_ops(dev);
++
++	debug_dma_mapping_error(dev, dma_addr);
+ 	if (ops->mapping_error)
+ 		return ops->mapping_error(dev, dma_addr);
  
 -- 
-1.7.12.4
+1.7.9.5
+
+
+
 
