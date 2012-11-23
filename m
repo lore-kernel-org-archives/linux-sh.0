@@ -1,41 +1,38 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 19 Nov 2012 05:13:26 +0000
-Subject: [RFC 14/15] ARM: shmobile: Add DT table of GIC for sh73a0
-Message-Id: <1353302007-31045-15-git-send-email-horms@verge.net.au>
+From: Shuah Khan <shuah.khan@hp.com>
+Date: Fri, 23 Nov 2012 21:34:56 +0000
+Subject: [PATCH 5/9] mips: dma_debug: add debug_dma_mapping_error support
+Message-Id: <1353706496.5270.101.camel@lorien2>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1353302007-31045-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1353302007-31045-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Cc: Magnus Damm <damm@opensource.se>
-Cc: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
----
- arch/arm/boot/dts/sh73a0.dtsi |    9 +++++++++
- 1 file changed, 9 insertions(+)
+Add dma-debug interface debug_dma_mapping_error() to debug drivers that fail
+to check dma mapping errors on addresses returned by dma_map_single() and
+dma_map_page() interfaces.
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index 7d56345..d46b853 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -806,5 +806,14 @@
- 				};
- 			};
- 		};
+Signed-off-by: Shuah Khan <shuah.khan@hp.com>
+---
+ arch/mips/include/asm/dma-mapping.h |    2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/mips/include/asm/dma-mapping.h b/arch/mips/include/asm/dma-mapping.h
+index be39a12..006b43e 100644
+--- a/arch/mips/include/asm/dma-mapping.h
++++ b/arch/mips/include/asm/dma-mapping.h
+@@ -40,6 +40,8 @@ static inline int dma_supported(struct device *dev, u64 mask)
+ static inline int dma_mapping_error(struct device *dev, u64 mask)
+ {
+ 	struct dma_map_ops *ops = get_dma_ops(dev);
 +
-+		intc: interrupt-controller@f0001000 {
-+			compatible = "arm,cortex-a9-gic";
-+			#interrupt-cells = <3>;
-+			#address-cells = <1>;
-+			interrupt-controller;
-+			reg = <0xf0001000 0x1000>,
-+			      <0xf0000100 0x100>;
-+		};
- 	};
- };
++	debug_dma_mapping_error(dev, mask);
+ 	return ops->mapping_error(dev, mask);
+ }
+ 
 -- 
-1.7.10.4
+1.7.9.5
+
+
+
 
