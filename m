@@ -1,61 +1,51 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 06 Nov 2012 04:57:30 +0000
-Subject: [PATCH 08/11] ARM: shmobile: r8a7779: add I2C clock support
-Message-Id: <1352177853-6008-9-git-send-email-horms@verge.net.au>
+From: Shuah Khan <shuah.khan@hp.com>
+Date: Fri, 23 Nov 2012 21:29:02 +0000
+Subject: [PATCH 0/9] dma_debug: add debug_dma_mapping_error support to architectures that support DMA_DEBUG_A
+Message-Id: <1353706142.5270.93.camel@lorien2>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352177853-6008-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352177853-6008-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+An earlier patch added dma mapping error debug feature to dma_debug
+infrastructure. References:
 
-This patch is required from R-Car I2C driver
+https://lkml.org/lkml/2012/10/8/296
+https://lkml.org/lkml/2012/11/3/219
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
----
- arch/arm/mach-shmobile/clock-r8a7779.c |   11 ++++++++++-
- 1 file changed, 10 insertions(+), 1 deletion(-)
+The following series of patches adds the call to debug_dma_mapping_error() to
+architecture specific dma_mapping_error() interfaces on the following
+architectures that support CONFIG_DMA_API_DEBUG.
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index 90d717b..24f5a84 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -87,7 +87,8 @@ static struct clk div4_clks[DIV4_NR] = {
- };
- 
- enum { MSTP323, MSTP322, MSTP321, MSTP320,
--	MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
-+	MSTP030,
-+	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
- 	MSTP016, MSTP015, MSTP014,
- 	MSTP007,
- 	MSTP_NR };
-@@ -97,6 +98,10 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP322] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 22, 0), /* SDHI1 */
- 	[MSTP321] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 21, 0), /* SDHI2 */
- 	[MSTP320] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 20, 0), /* SDHI3 */
-+	[MSTP030] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 30, 0), /* I2C0 */
-+	[MSTP029] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 29, 0), /* I2C1 */
-+	[MSTP028] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 28, 0), /* I2C2 */
-+	[MSTP027] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 27, 0), /* I2C3 */
- 	[MSTP026] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 26, 0), /* SCIF0 */
- 	[MSTP025] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 25, 0), /* SCIF1 */
- 	[MSTP024] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 24, 0), /* SCIF2 */
-@@ -150,6 +155,10 @@ static struct clk_lookup lookups[] = {
- 	/* MSTP32 clocks */
- 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
- 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP016]), /* TMU01 */
-+	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
-+	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP029]), /* I2C1 */
-+	CLKDEV_DEV_ID("i2c-rcar.2", &mstp_clks[MSTP028]), /* I2C2 */
-+	CLKDEV_DEV_ID("i2c-rcar.3", &mstp_clks[MSTP027]), /* I2C3 */
- 	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
- 	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
- 	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP024]), /* SCIF2 */
--- 
-1.7.10.4
+arm64
+c6x
+ia64
+microblaze
+mips
+powerpc
+sh
+sparc
+tile
+
+arm - Change is already in Marek's dma-mapping tree[1] 
+https://patchwork.kernel.org/patch/1625601/
+
+microblaze - Change is already in linux-next. Including it for completeness
+linux-next commit f229605441030bcd315c21d97b25889d63ed0130
+
+x86 - done in the first patch that added the feature.
+
+ARM64: dma_debug: add debug_dma_mapping_error support
+c6x: dma_debug: add debug_dma_mapping_error support
+ia64: dma_debug: add debug_dma_mapping_error support
+microblaze: dma-mapping: support debug_dma_mapping_error
+mips: dma_debug: add debug_dma_mapping_error support
+powerpc: dma_debug: add debug_dma_mapping_error support
+sh: dma_debug: add debug_dma_mapping_error support
+sparc: dma_debug: add debug_dma_mapping_error support
+tile: dma_debug: add debug_dma_mapping_error support
+
+Thanks,
+-- Shuah
 
