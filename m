@@ -1,107 +1,127 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 16 Nov 2012 10:34:57 +0000
-Subject: [PATCH 03/04] ARM: mach-shmobile: sh7372 INTC DT init cleanup
-Message-Id: <20121116103457.4231.83000.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 23 Nov 2012 16:35:14 +0000
+Subject: [PATCH 4/5] sh: ecovec24: Use gpio-backlight
+Message-Id: <1353688515-30458-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-fbdev@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Replace the backlight callback with a gpio-backlight platform device.
 
-Rework the sh7372 DT INTC init code to reduce the number of #ifdefs.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ arch/sh/boards/mach-ecovec24/setup.c |   37 ++++++++++++++++++---------------
+ 1 files changed, 20 insertions(+), 17 deletions(-)
 
- Applies to the devel/of branch of
- git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 3fede45..865f765 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -33,6 +33,7 @@
+ #include <linux/sh_eth.h>
+ #include <linux/sh_intc.h>
+ #include <linux/videodev2.h>
++#include <video/gpio_backlight.h>
+ #include <video/sh_mobile_lcdc.h>
+ #include <sound/sh_fsi.h>
+ #include <sound/simple_card.h>
+@@ -291,7 +292,7 @@ static struct platform_device usbhs_device = {
+ 	.resource	= usbhs_resources,
+ };
+ 
+-/* LCDC */
++/* LCDC and backlight */
+ static const struct fb_videomode ecovec_lcd_modes[] = {
+ 	{
+ 		.name		= "Panel",
+@@ -322,13 +323,6 @@ static const struct fb_videomode ecovec_dvi_modes[] = {
+ 	},
+ };
+ 
+-static int ecovec24_set_brightness(int brightness)
+-{
+-	gpio_set_value(GPIO_PTR1, brightness);
+-
+-	return 0;
+-}
+-
+ static struct sh_mobile_lcdc_info lcdc_info = {
+ 	.ch[0] = {
+ 		.interface_type = RGB18,
+@@ -338,11 +332,6 @@ static struct sh_mobile_lcdc_info lcdc_info = {
+ 			.width = 152,
+ 			.height = 91,
+ 		},
+-		.bl_info = {
+-			.name = "sh_mobile_lcdc_bl",
+-			.max_brightness = 1,
+-			.set_brightness = ecovec24_set_brightness,
+-		},
+ 	}
+ };
+ 
+@@ -368,6 +357,20 @@ static struct platform_device lcdc_device = {
+ 	},
+ };
+ 
++static struct gpio_backlight_platform_data gpio_backlight_data = {
++	.fbdev = &lcdc_device.dev,
++	.gpio = GPIO_PTR1,
++	.def_value = 1,
++	.name = "backlight",
++};
++
++static struct platform_device gpio_backlight_device = {
++	.name = "gpio-backlight",
++	.dev = {
++		.platform_data = &gpio_backlight_data,
++	},
++};
++
+ /* CEU0 */
+ static struct sh_mobile_ceu_info sh_mobile_ceu0_info = {
+ 	.flags = SH_CEU_FLAG_USE_8BIT_BUS,
+@@ -1046,6 +1049,7 @@ static struct platform_device *ecovec_devices[] __initdata = {
+ 	&usb1_common_device,
+ 	&usbhs_device,
+ 	&lcdc_device,
++	&gpio_backlight_device,
+ 	&ceu0_device,
+ 	&ceu1_device,
+ 	&keysc_device,
+@@ -1236,11 +1240,9 @@ static int __init arch_setup(void)
+ 
+ 	gpio_request(GPIO_PTE6, NULL);
+ 	gpio_request(GPIO_PTU1, NULL);
+-	gpio_request(GPIO_PTR1, NULL);
+ 	gpio_request(GPIO_PTA2, NULL);
+ 	gpio_direction_input(GPIO_PTE6);
+ 	gpio_direction_output(GPIO_PTU1, 0);
+-	gpio_direction_output(GPIO_PTR1, 0);
+ 	gpio_direction_output(GPIO_PTA2, 0);
+ 
+ 	/* I/O buffer drive ability is high */
+@@ -1253,6 +1255,9 @@ static int __init arch_setup(void)
+ 		lcdc_info.ch[0].lcd_modes		= ecovec_dvi_modes;
+ 		lcdc_info.ch[0].num_modes		= ARRAY_SIZE(ecovec_dvi_modes);
+ 
++		/* No backlight */
++		gpio_backlight_data.fbdev = NULL;
++
+ 		gpio_set_value(GPIO_PTA2, 1);
+ 		gpio_set_value(GPIO_PTU1, 1);
+ 	} else {
+@@ -1262,8 +1267,6 @@ static int __init arch_setup(void)
+ 		lcdc_info.ch[0].lcd_modes		= ecovec_lcd_modes;
+ 		lcdc_info.ch[0].num_modes		= ARRAY_SIZE(ecovec_lcd_modes);
+ 
+-		gpio_set_value(GPIO_PTR1, 1);
+-
+ 		/* FIXME
+ 		 *
+ 		 * LCDDON control is needed for Panel,
+-- 
+1.7.8.6
 
- arch/arm/mach-shmobile/intc-sh7372.c |   54 ++++++++++++----------------------
- 1 file changed, 20 insertions(+), 34 deletions(-)
-
---- 0005/arch/arm/mach-shmobile/intc-sh7372.c
-+++ work/arch/arm/mach-shmobile/intc-sh7372.c	2012-11-15 21:20:43.000000000 +0900
-@@ -608,47 +608,29 @@ static void __iomem *intcs_ffd5;
- static void __iomem *intca_e694;
- static void __iomem *intca_e695;
- 
--static void __init sh7372_init_irq__(bool of)
-+static void __init sh7372_init_intc(resource_size_t intca0_start,
-+				    resource_size_t intca1_start,
-+				    resource_size_t intcs0_start,
-+				    resource_size_t intcs1_start,
-+				    unsigned short vect)
- {
- 	void __iomem *intevtsa;
- 	int n;
- 
--#ifdef CONFIG_OF
--	if (of)
--		of_irq_init(irq_of_match);
--#endif
--
- 	register_intc_controller(&intca_desc);
- 	register_intc_controller(&intca_irq_pins_lo_desc);
- 	register_intc_controller(&intca_irq_pins_hi_desc);
- 	register_intc_controller(&intcs_desc);
- 
--#ifdef CONFIG_OF
--	if (of) {
--		intca_e694 = IOMEM(intca_resources[0].start);
--		intca_e695 = IOMEM(intca_resources[1].start);
--
--		intcs_ffd2 = ioremap_nocache(intcs_resources[0].start,
--					     PAGE_SIZE);
--		intevtsa = intcs_ffd2 + 0x100;
--		intcs_ffd5 = ioremap_nocache(intcs_resources[1].start,
--					     PAGE_SIZE);
--
--		/* setup dummy cascade chip for INTCS */
--		n = evt2irq(intevtsa_vect);
--	} else
--#endif
--	{
--		intca_e694 = IOMEM(0xe6940000);
--		intca_e695 = IOMEM(0xe6950000);
--
--		intcs_ffd2 = ioremap_nocache(0xffd20000, PAGE_SIZE);
--		intevtsa = intcs_ffd2 + 0x100;
--		intcs_ffd5 = ioremap_nocache(0xffd50000, PAGE_SIZE);
--
--		/* setup dummy cascade chip for INTCS */
--		n = evt2irq(0xf80);
--	}
-+	intca_e694 = IOMEM(intca0_start);
-+	intca_e695 = IOMEM(intca1_start);
-+
-+	intcs_ffd2 = ioremap_nocache(intcs0_start, PAGE_SIZE);
-+	intevtsa = intcs_ffd2 + 0x100;
-+	intcs_ffd5 = ioremap_nocache(intcs1_start, PAGE_SIZE);
-+
-+	/* setup dummy cascade chip for INTCS */
-+	n = evt2irq(vect);
- 
- 	irq_alloc_desc_at(n, numa_node_id());
- 	irq_set_chip_and_handler_name(n, &dummy_irq_chip,
-@@ -666,13 +648,17 @@ static void __init sh7372_init_irq__(boo
- #ifdef CONFIG_OF
- void __init sh7372_init_irq_of(void)
- {
--	sh7372_init_irq__(true);
-+	of_irq_init(irq_of_match);
-+
-+	sh7372_init_intc(intca_resources[0].start, intca_resources[1].start,
-+			  intcs_resources[0].start, intcs_resources[1].start,
-+			  intevtsa_vect);
- }
- #endif
- 
- void __init sh7372_init_irq(void)
- {
--	sh7372_init_irq__(false);
-+	sh7372_init_intc(0xe6940000, 0xe6950000, 0xffd20000, 0xffd50000, 0xf80);
- }
- 
- static unsigned short ffd2[0x200];
