@@ -1,35 +1,37 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 30 Nov 2012 08:44:44 +0000
-Subject: [PATCH 4/5] ARM: shmobile: kzm9g: use voltage regulators by default
-Message-Id: <1354265085-2444-5-git-send-email-horms@verge.net.au>
+From: Shuah Khan <shuah.khan@hp.com>
+Date: Fri, 23 Nov 2012 21:37:54 +0000
+Subject: [PATCH 9/9] tile: dma_debug: add debug_dma_mapping_error support
+Message-Id: <1353706674.5270.105.camel@lorien2>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1354265085-2444-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1354265085-2444-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This is needed to initialise the MMCIF device in the
-absence of platform data.
+Add dma-debug interface debug_dma_mapping_error() to debug drivers that fail
+to check dma mapping errors on addresses returned by dma_map_single() and
+dma_map_page() interfaces.
 
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Shuah Khan <shuah.khan@hp.com>
 ---
- arch/arm/configs/kzm9g_defconfig |    1 +
+ arch/tile/include/asm/dma-mapping.h |    1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
-index c88b578..6d7fd53 100644
---- a/arch/arm/configs/kzm9g_defconfig
-+++ b/arch/arm/configs/kzm9g_defconfig
-@@ -83,6 +83,7 @@ CONFIG_I2C_CHARDEV=y
- CONFIG_I2C_SH_MOBILE=y
- CONFIG_GPIO_PCF857X=y
- # CONFIG_HWMON is not set
-+CONFIG_REGULATOR=y
- CONFIG_FB=y
- CONFIG_FB_SH_MOBILE_LCDC=y
- CONFIG_FRAMEBUFFER_CONSOLE=y
+diff --git a/arch/tile/include/asm/dma-mapping.h b/arch/tile/include/asm/dma-mapping.h
+index 4b6247d..f2ff191 100644
+--- a/arch/tile/include/asm/dma-mapping.h
++++ b/arch/tile/include/asm/dma-mapping.h
+@@ -72,6 +72,7 @@ static inline bool dma_capable(struct device *dev, dma_addr_t addr, size_t size)
+ static inline int
+ dma_mapping_error(struct device *dev, dma_addr_t dma_addr)
+ {
++	debug_dma_mapping_error(dev, dma_addr);
+ 	return get_dma_ops(dev)->mapping_error(dev, dma_addr);
+ }
+ 
 -- 
-1.7.10.4
+1.7.9.5
+
+
+
 
