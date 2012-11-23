@@ -1,37 +1,37 @@
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Thu, 22 Nov 2012 08:00:08 +0000
-Subject: [PATCH v5 11/15] ARM: shmobile: kzm9g: Use DT initialisation of INTC
-Message-Id: <1353571213-26006-12-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+From: Shuah Khan <shuah.khan@hp.com>
+Date: Fri, 23 Nov 2012 21:36:33 +0000
+Subject: [PATCH 7/9] sh: dma_debug: add debug_dma_mapping_error support
+Message-Id: <1353706593.5270.103.camel@lorien2>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1353571213-26006-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
-In-Reply-To: <1353571213-26006-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Simon Horman <horms@verge.net.au>
+Add dma-debug interface debug_dma_mapping_error() to debug drivers that fail
+to check dma mapping errors on addresses returned by dma_map_single() and
+dma_map_page() interfaces.
 
-Cc: Magnus Damm <damm@opensource.se>
-Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Shuah Khan <shuah.khan@hp.com>
 ---
- arch/arm/mach-shmobile/board-kzm9g.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/sh/include/asm/dma-mapping.h |    1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index 0a43f31..0a0f302 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -779,7 +779,7 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g")
- 	.map_io		= sh73a0_map_io,
- 	.init_early	= sh73a0_add_early_devices,
- 	.nr_irqs	= NR_IRQS_LEGACY,
--	.init_irq	= sh73a0_init_irq,
-+	.init_irq	= sh73a0_init_irq_of,
- 	.handle_irq	= gic_handle_irq,
- 	.init_machine	= kzm_init,
- 	.init_late	= shmobile_init_late,
+diff --git a/arch/sh/include/asm/dma-mapping.h b/arch/sh/include/asm/dma-mapping.h
+index 8bd965e..b437f2c 100644
+--- a/arch/sh/include/asm/dma-mapping.h
++++ b/arch/sh/include/asm/dma-mapping.h
+@@ -46,6 +46,7 @@ static inline int dma_mapping_error(struct device *dev, dma_addr_t dma_addr)
+ {
+ 	struct dma_map_ops *ops = get_dma_ops(dev);
+ 
++	debug_dma_mapping_error(dev, dma_addr);
+ 	if (ops->mapping_error)
+ 		return ops->mapping_error(dev, dma_addr);
+ 
 -- 
-1.7.10.4
+1.7.9.5
+
+
+
 
