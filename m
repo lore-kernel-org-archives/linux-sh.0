@@ -1,36 +1,109 @@
-From: Michel Lespinasse <walken@google.com>
-Date: Mon, 12 Nov 2012 11:55:16 +0000
-Subject: Re: [PATCH 03/16] mm: check rb_subtree_gap correctness
-Message-Id: <CANN689E4jXT-VA3j54h_MBgCCc9YK0o_E7PY326NnvdiHmAgFQ@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 23 Nov 2012 16:35:13 +0000
+Subject: [PATCH 3/5] ARM: mach-shmobile: mackerel: Use gpio-backlight
+Message-Id: <1353688515-30458-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352155633-8648-1-git-send-email-walken@google.com>
- <1352155633-8648-4-git-send-email-walken@google.com>
- <509D0F86.30607@gmail.com>
-In-Reply-To: <509D0F86.30607@gmail.com>
+References: <w3peia450p5.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <w3peia450p5.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-fbdev@vger.kernel.org
 
-On Fri, Nov 9, 2012 at 6:13 AM, Sasha Levin <levinsasha928@gmail.com> wrote:
-> While fuzzing with trinity inside a KVM tools (lkvm) guest, using today's -next
-> kernel, I'm getting these:
->
-> [  117.007714] free gap 7fba0dd1c000, correct 7fba0dcfb000
-> [  117.019773] map_count 750 rb -1
-> [  117.028362] ------------[ cut here ]------------
-> [  117.029813] kernel BUG at mm/mmap.c:439!
->
-> Note that they are very easy to reproduce.
+Replace the backlight callback with a gpio-backlight platform device.
 
-Thanks for the report. I had trouble reproducing this on Friday, but
-after Hugh came up with an easy test case I think I have it figured
-out. I sent out a proposed fix as "[PATCH 0/3] fix missing
-rb_subtree_gap updates on vma insert/erase". Let's follow up the
-discussion there if necessary.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/board-mackerel.c |   34 +++++++++++++++---------------
+ 1 files changed, 17 insertions(+), 17 deletions(-)
 
-Cheers,
-
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index bfd2dc8..ea35727 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -48,7 +48,7 @@
+ #include <linux/tca6416_keypad.h>
+ #include <linux/usb/renesas_usbhs.h>
+ #include <linux/dma-mapping.h>
+-
++#include <video/gpio_backlight.h>
+ #include <video/sh_mobile_hdmi.h>
+ #include <video/sh_mobile_lcdc.h>
+ #include <media/sh_mobile_ceu.h>
+@@ -347,7 +347,7 @@ static struct platform_device meram_device = {
+ 	},
+ };
+ 
+-/* LCDC */
++/* LCDC and backlight */
+ static struct fb_videomode mackerel_lcdc_modes[] = {
+ 	{
+ 		.name		= "WVGA Panel",
+@@ -363,13 +363,6 @@ static struct fb_videomode mackerel_lcdc_modes[] = {
+ 	},
+ };
+ 
+-static int mackerel_set_brightness(int brightness)
+-{
+-	gpio_set_value(GPIO_PORT31, brightness);
+-
+-	return 0;
+-}
+-
+ static const struct sh_mobile_meram_cfg lcd_meram_cfg = {
+ 	.icb[0] = {
+ 		.meram_size     = 0x40,
+@@ -394,11 +387,6 @@ static struct sh_mobile_lcdc_info lcdc_info = {
+ 			.width		= 152,
+ 			.height		= 91,
+ 		},
+-		.bl_info = {
+-			.name = "sh_mobile_lcdc_bl",
+-			.max_brightness = 1,
+-			.set_brightness = mackerel_set_brightness,
+-		},
+ 		.meram_cfg = &lcd_meram_cfg,
+ 	}
+ };
+@@ -426,6 +414,20 @@ static struct platform_device lcdc_device = {
+ 	},
+ };
+ 
++static struct gpio_backlight_platform_data gpio_backlight_data = {
++	.fbdev = &lcdc_device.dev,
++	.gpio = GPIO_PORT31,
++	.def_value = 1,
++	.name = "backlight",
++};
++
++static struct platform_device gpio_backlight_device = {
++	.name = "gpio-backlight",
++	.dev = {
++		.platform_data = &gpio_backlight_data,
++	},
++};
++
+ /* HDMI */
+ static struct sh_mobile_hdmi_info hdmi_info = {
+ 	.flags		= HDMI_SND_SRC_SPDIF,
+@@ -1322,6 +1324,7 @@ static struct platform_device *mackerel_devices[] __initdata = {
+ 	&nor_flash_device,
+ 	&smc911x_device,
+ 	&lcdc_device,
++	&gpio_backlight_device,
+ 	&usbhs0_device,
+ 	&usbhs1_device,
+ 	&leds_device,
+@@ -1472,9 +1475,6 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_LCDDISP,  NULL);
+ 	gpio_request(GPIO_FN_LCDDCK,   NULL);
+ 
+-	gpio_request(GPIO_PORT31, NULL); /* backlight */
+-	gpio_direction_output(GPIO_PORT31, 0); /* off by default */
+-
+ 	gpio_request(GPIO_PORT151, NULL); /* LCDDON */
+ 	gpio_direction_output(GPIO_PORT151, 1);
+ 
 -- 
-Michel "Walken" Lespinasse
-A program is never fully debugged until the last user dies.
+1.7.8.6
+
