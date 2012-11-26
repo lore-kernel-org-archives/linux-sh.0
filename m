@@ -1,30 +1,82 @@
-From: Rik van Riel <riel@redhat.com>
-Date: Tue, 06 Nov 2012 22:48:05 +0000
-Subject: Re: [PATCH 09/16] mm: use vm_unmapped_area() in hugetlbfs on i386 architecture
-Message-Id: <509993A5.2000605@redhat.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 26 Nov 2012 00:16:50 +0000
+Subject: [PATCH 3/7] sh: pfc: Allow device tree registration
+Message-Id: <1353889014-17142-4-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352155633-8648-1-git-send-email-walken@google.com>
- <1352155633-8648-10-git-send-email-walken@google.com>
- <20121106143826.dc3b960c.akpm@linux-foundation.org>
-In-Reply-To: <20121106143826.dc3b960c.akpm@linux-foundation.org>
+References: <1353889014-17142-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1353889014-17142-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 11/06/2012 05:38 PM, Andrew Morton wrote:
-> On Mon,  5 Nov 2012 14:47:06 -0800
-> Michel Lespinasse <walken@google.com> wrote:
->
->> Update the i386 hugetlb_get_unmapped_area function to make use of
->> vm_unmapped_area() instead of implementing a brute force search.
->
-> The x86_64 coloring "fix" wasn't copied into i386?
+This is a crude mechanism to allow the pfc driver to
+be registered through device tree. The mofication of this
+is to provide a way for pfc gpios to be looked up by
+device tree for devices which use pfc gpios.
 
-Only certain 64 bit AMD CPUs have that issue at all.
+More specifically, the motivation is to allow the registration
+of the card-detect gpio for the Micro-SD SDHI slot of the KZM9G board.
 
-On x86, page coloring is really not much of an issue.
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ drivers/sh/pfc/gpio.c  |   15 +++++++++++++++
+ include/linux/sh_pfc.h |    7 +++++++
+ 2 files changed, 22 insertions(+)
 
-All the x86-64 patch does is make the x86-64 page
-coloring code behave the same way page coloring
-does on MIPS, SPARC, ARM, PA-RISC and others...
+diff --git a/drivers/sh/pfc/gpio.c b/drivers/sh/pfc/gpio.c
+index 038fa07..322b927 100644
+--- a/drivers/sh/pfc/gpio.c
++++ b/drivers/sh/pfc/gpio.c
+@@ -136,6 +136,19 @@ static void sh_pfc_gpio_setup(struct sh_pfc_chip *chip)
+ 	gc->ngpio = (pfc->last_gpio - pfc->first_gpio) + 1;
+ }
+ 
++#ifdef CONFIG_OF_GPIO
++static void
++sh_pfc_register_gpiochip_dt(struct sh_pfc *pfc, struct gpio_chip *chip)
++{
++	chip->of_node = pfc->of_node;
++	chip->of_gpio_n_cells = pfc->of_gpio_n_cells;
++	chip->of_xlate = pfc->of_xlate;
++}
++#else
++static void sh_pfc_register_gpiochip_dt(struct sh_pfc *pfc,
++					struct gpio_chip *chip) {}
++#endif
++
+ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+ {
+ 	struct sh_pfc_chip *chip;
+@@ -153,6 +166,8 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+ 	if (unlikely(ret < 0))
+ 		kfree(chip);
+ 
++	sh_pfc_register_gpiochip_dt(pfc, &chip->gpio_chip);
++
+ 	pr_info("%s handling gpio %d -> %d\n",
+ 		pfc->name, pfc->first_gpio, pfc->last_gpio);
+ 
+diff --git a/include/linux/sh_pfc.h b/include/linux/sh_pfc.h
+index c19a092..9963370 100644
+--- a/include/linux/sh_pfc.h
++++ b/include/linux/sh_pfc.h
+@@ -124,6 +124,13 @@ struct sh_pfc {
+ 	struct pfc_window *window;
+ 
+ 	unsigned long unlock_reg;
++
++#ifdef CONFIG_OF_GPIO
++	struct device_node *of_node;
++	int of_gpio_n_cells;
++	int (*of_xlate)(struct gpio_chip *gc,
++		        const struct of_phandle_args *gpiospec, u32 *flags);
++#endif
+ };
+ 
+ /* XXX compat for now */
+-- 
+1.7.10.4
+
