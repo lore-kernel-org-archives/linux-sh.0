@@ -1,55 +1,50 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 26 Nov 2012 00:16:47 +0000
-Subject: [PATCH 0/7] ARM: mach-shmobile: kzm9g: Reference DT implementation
-Message-Id: <1353889014-17142-1-git-send-email-horms@verge.net.au>
+From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+Date: Mon, 26 Nov 2012 06:10:24 +0000
+Subject: Re: [PATCH 0/7] ARM: mach-shmobile: kzm9g: Reference DT implementation
+Message-Id: <50B307D0.3030800@kmckk.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1353889014-17142-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1353889014-17142-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Magnus, Hi all,
+Hello Simon-san,
 
-this series is a first pass at providing a refernce DT implementation
-for the kzm9g baord which is intended to act as a guide for mach-shmobile
-developers.
+(2012/11/26 9:16), Simon Horman wrote:
 
-The first two patches of the series make minor modifications to the mmcif
-and sdhi drivers to allow registration of those devices using device
-tree on the KZM9G board.
+> this series is a first pass at providing a refernce DT implementation
+> for the kzm9g baord which is intended to act as a guide for mach-shmobile
+> developers.
+> 
 
-The following three patches enhance sh77a0 SoC support to allow minimal
-registratioj using device tree.
+I tried this patch series on v3.7-rc7 with CONFIG_MACH_KZM9G_REFERENCE=y.
+It boot up correctly with rootfs on SD card. It works good for following devices
+ - serial port on /dev/ttySC4
+ - SD card on /dev/mmcblk0
+ - micro SD card on /dev/mmcblk1
+ - eMMC on /dev/mmcblk2
 
-The final patch adds a fresh board and dts file which initialises the
-kfm9g board using device tree as much as possible.
+I found /dev/i2c-0 seems not to work correctly. "i2cdump" command fails like this.
 
-Simon Horman (7):
-  mmc: sh-mmcif: provide default allowed voltage
-  mmc: sdhi: enchance OF support for flags and cd-gpios
-  sh: pfc: Allow device tree registration
-  ARM: shmobile: pfc-sh73a0: Register device tree
-  ARM: mach-shmobile: sh73a0: Allow initialisation of GIC by DT
-  ARM: mach-shmobile: sh73a0: Minimal setup using DT
-  ARM: mach-shmobile: kzm9g: Reference DT implementation
+# i2cdump 0 0x40
+No size specified (using byte-data access)
+WARNING! This program can confuse your I2C bus, cause data loss and worse!
+I will probe file /dev/i2c-0, address 0x40, mode byte
+Continue? [Y/n]
+     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f    0123456789abcdef
+00: [  180.171875] i2c-sh_mobile i2c-sh_mobile.0: Transfer request timed out
+[  180.187500] i2c-sh_mobile i2c-sh_mobile.0: Polling timed out
+XX [  185.187500] i2c-sh_mobile i2c-sh_mobile.0: Transfer request timed out
+[  185.203125] i2c-sh_mobile i2c-sh_mobile.0: Polling timed out
+XX ^C[  190.203125] i2c-sh_mobile i2c-sh_mobile.0: Transfer request timed out
+[  190.218750] i2c-sh_mobile i2c-sh_mobile.0: Polling timed out
 
- arch/arm/boot/dts/Makefile                     |    3 +-
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts   |  153 ++++++++++++++++++++++++
- arch/arm/mach-shmobile/Kconfig                 |   10 ++
- arch/arm/mach-shmobile/Makefile                |    8 +-
- arch/arm/mach-shmobile/board-kzm9g-reference.c |  142 ++++++++++++++++++++++
- arch/arm/mach-shmobile/include/mach/common.h   |    3 +
- arch/arm/mach-shmobile/intc-sh73a0.c           |   14 +++
- arch/arm/mach-shmobile/pfc-sh73a0.c            |   45 +++++++
- arch/arm/mach-shmobile/setup-sh73a0.c          |   41 ++++++-
- drivers/mmc/host/sh_mmcif.c                    |    7 +-
- drivers/mmc/host/sh_mobile_sdhi.c              |   76 ++++++++++--
- drivers/sh/pfc/gpio.c                          |   15 +++
- include/linux/sh_pfc.h                         |    7 ++
- 13 files changed, 501 insertions(+), 23 deletions(-)
- create mode 100644 arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
- create mode 100644 arch/arm/mach-shmobile/board-kzm9g-reference.c
+I quited the command by ^C.
+When I try the same on v3.7-rc7 without CONFIG_MACH_KZM9G_REFERENCE=y
+"i2cdump" command does not time out and shows some data.
 
--- 
-1.7.10.4
+
+
 
