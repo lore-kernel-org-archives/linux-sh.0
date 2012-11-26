@@ -1,249 +1,168 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 26 Nov 2012 04:58:06 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Mon, 26 Nov 2012 12:53:06 +0000
 Subject: Re: [PATCH 6/7] ARM: mach-shmobile: sh73a0: Minimal setup using DT
-Message-Id: <20121126045805.GC12790@verge.net.au>
+Message-Id: <67705146.EhpdzQI6yT@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1353889014-17142-1-git-send-email-horms@verge.net.au>
- <1353889014-17142-7-git-send-email-horms@verge.net.au>
  <CANqRtoQmNh5Sz-YLPMvEbp0FhYW=s2tBez+Duex1vyr=yVnPuA@mail.gmail.com>
-In-Reply-To: <CANqRtoQmNh5Sz-YLPMvEbp0FhYW=s2tBez+Duex1vyr=yVnPuA@mail.gmail.com>
+ <20121126045805.GC12790@verge.net.au>
+In-Reply-To: <20121126045805.GC12790@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Nov 26, 2012 at 01:23:12PM +0900, Magnus Damm wrote:
-> Hi Simon,
+Hi Simon,
+
+On Monday 26 November 2012 13:58:06 Simon Horman wrote:
+> On Mon, Nov 26, 2012 at 01:23:12PM +0900, Magnus Damm wrote:
+> > On Mon, Nov 26, 2012 at 9:16 AM, Simon Horman <horms@verge.net.au> wrote:
+> > > Allow a minimal setup of the sh73a0 SoC using a flattened device tree.
+> > > 
+> > > * Allow configuration of the i2c controllers using a flattened device
+> > >   tree.
+> > > 
+> > > * SCI serial controller and CMT clock source, whose drivers do not yet
+> > >   support configuration using a flattened device tree, are still
+> > >   configured
+> > >   using C code in order to allow booting of a board with this SoC.
+> > > 
+> > > An example dts snuppet follows:
+> > >         i2c0: i2c@0xe6820000 {
+> > >         
+> > >                 #address-cells = <1>;
+> > >                 #size-cells = <0>;
+> > >                 compatible = "renesas,rmobile-iic";
+> > >                 reg = <0xe6820000 0x425>;
+> > >                 interrupt-parent = <&gic>;
+> > >                 interrupts = <0 167 0x4
+> > >                 
+> > >                               0 170 0x4>;
+> > >         
+> > >         };
+> > >         
+> > >         i2c1: i2c@0xe6822000 {
+> > >         
+> > >                 #address-cells = <1>;
+> > >                 #size-cells = <0>;
+> > >                 compatible = "renesas,rmobile-iic";
+> > >                 reg = <0xe6822000 0x425>;
+> > >                 interrupt-parent = <&gic>;
+> > >                 interrupts = <0 51 0x4
+> > >                 
+> > >                               0 44 0x4>;
+> > >                 
+> > >                 touchscreen@55 {
+> > >                 
+> > >                         compatible = "sitronix,st1232";
+> > >                         reg = <0x55>;
+> > >                         interrupt-parent = <&gic>;
+> > >                         interrupts = <0 9 0x4>;
+> > >                 
+> > >                 };
+> > >         
+> > >         };
+> > >         
+> > >         i2c2: i2c@0xe6824000 {
+> > >         
+> > >                 #address-cells = <1>;
+> > >                 #size-cells = <0>;
+> > >                 compatible = "renesas,rmobile-iic";
+> > >                 reg = <0xe6824000 0x425>;
+> > >                 interrupt-parent = <&gic>;
+> > >                 interrupts = <0 171 0x4
+> > >                 
+> > >                               0 174 0x4>;
+> > >         
+> > >         };
+> > >         
+> > >         i2c3: i2c@0xe6826000 {
+> > >         
+> > >                 #address-cells = <1>;
+> > >                 #size-cells = <0>;
+> > >                 compatible = "renesas,rmobile-iic";
+> > >                 reg = <0xe6826000 0x425>;
+> > >                 interrupt-parent = <&gic>;
+> > >                 interrupts = <0 183 0x4
+> > >                 
+> > >                               0 186 0x4>;
+> > >         
+> > >         };
+> > >         
+> > >         i2c4: i2c@0xe6828000 {
+> > >         
+> > >                 #address-cells = <1>;
+> > >                 #size-cells = <0>;
+> > >                 compatible = "renesas,rmobile-iic";
+> > >                 reg = <0xe6828000 0x425>;
+> > >                 interrupt-parent = <&gic>;
+> > >                 interrupts = <0 187 0x4
+> > >                 
+> > >                               0 190 0x4>;
+> > >         
+> > >         };
+> > 
+> > Uhm, doesn't the above want to go into sh73a0.dtsi?
 > 
-> Thanks for your efforts.
+> There are two things that I am unsure of:
 > 
-> On Mon, Nov 26, 2012 at 9:16 AM, Simon Horman <horms@verge.net.au> wrote:
-> > Allow a minimal setup of the sh73a0 SoC using a flattened device tree.
-> >
-> > * Allow configuration of the i2c controllers using a flattened device tree.
-> >
-> > * SCI serial controller and CMT clock source, whose drivers do not yet
-> >   support configuration using a flattened device tree, are still configured
-> >   using C code in order to allow booting of a board with this SoC.
-> >
-> > An example dts snuppet follows:
-> >
-> >         i2c0: i2c@0xe6820000 {
-> >                 #address-cells = <1>;
-> >                 #size-cells = <0>;
-> >                 compatible = "renesas,rmobile-iic";
-> >                 reg = <0xe6820000 0x425>;
-> >                 interrupt-parent = <&gic>;
-> >                 interrupts = <0 167 0x4
-> >                               0 170 0x4>;
-> >         };
-> >
-> >         i2c1: i2c@0xe6822000 {
-> >                 #address-cells = <1>;
-> >                 #size-cells = <0>;
-> >                 compatible = "renesas,rmobile-iic";
-> >                 reg = <0xe6822000 0x425>;
-> >                 interrupt-parent = <&gic>;
-> >                 interrupts = <0 51 0x4
-> >                               0 44 0x4>;
-> >
-> >                 touchscreen@55 {
-> >                         compatible = "sitronix,st1232";
-> >                         reg = <0x55>;
-> >                         interrupt-parent = <&gic>;
-> >                         interrupts = <0 9 0x4>;
-> >                 };
-> >         };
-> >
-> >         i2c2: i2c@0xe6824000 {
-> >                 #address-cells = <1>;
-> >                 #size-cells = <0>;
-> >                 compatible = "renesas,rmobile-iic";
-> >                 reg = <0xe6824000 0x425>;
-> >                 interrupt-parent = <&gic>;
-> >                 interrupts = <0 171 0x4
-> >                               0 174 0x4>;
-> >         };
-> >
-> >         i2c3: i2c@0xe6826000 {
-> >                 #address-cells = <1>;
-> >                 #size-cells = <0>;
-> >                 compatible = "renesas,rmobile-iic";
-> >                 reg = <0xe6826000 0x425>;
-> >                 interrupt-parent = <&gic>;
-> >                 interrupts = <0 183 0x4
-> >                               0 186 0x4>;
-> >         };
-> >
-> >         i2c4: i2c@0xe6828000 {
-> >                 #address-cells = <1>;
-> >                 #size-cells = <0>;
-> >                 compatible = "renesas,rmobile-iic";
-> >                 reg = <0xe6828000 0x425>;
-> >                 interrupt-parent = <&gic>;
-> >                 interrupts = <0 187 0x4
-> >                               0 190 0x4>;
-> >         };
+> * What should go into sh73a0.dtsi and what should go into
+>   sh73a0-kzm9g-refere3nce.dts.
 > 
-> Uhm, doesn't the above want to go into sh73a0.dtsi?
-
-There are two things that I am unsure of:
-
-* What should go into sh73a0.dtsi and what should go into
-  sh73a0-kzm9g-refere3nce.dts.
-
-  The i2c seems like it should go into sh73a0.dtsi as it is part of the
-  soc. Likewise the interrupt controllers.
-
-  But when it comes to mmcif and sdhi I am less sure.
-  Both of these make use of regulators. Are the regulators
-  part of the board or the SoC? If the are part of the board
-  then it makes it more difficult to put mmcif and sdhi into
-  sh73a0.dtsi as they need to reference the regulators somehow.
-
-* What to do the of_dev_auxdata.
-
-  Currently I add this in patch 4 to the board-kzm9g.c. It is used to force
-  the name of the i2c, mmcif and sdhi devices in order to allow their clock
-  lookup to work (though come to think of it it may not be necessary for
-  mmcif and sdhi).
-
-  In any case, the location of the of_dev_auxdata might be come a bit
-  tricky if it covers devices in both the board and SoC dts files.
-
-> > Signed-off-by: Simon Horman <horms@verge.net.au>
-> > ---
-> >  arch/arm/mach-shmobile/include/mach/common.h |    2 ++
-> >  arch/arm/mach-shmobile/setup-sh73a0.c        |   41 ++++++++++++++++++++++----
-> >  2 files changed, 38 insertions(+), 5 deletions(-)
-> >
-> > diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-> > index b50447e..06b905e 100644
-> > --- a/arch/arm/mach-shmobile/include/mach/common.h
-> > +++ b/arch/arm/mach-shmobile/include/mach/common.h
-> > @@ -52,7 +52,9 @@ extern void sh73a0_init_irq(void);
-> >  extern void sh73a0_init_irq_dt(void);
-> >  extern void sh73a0_map_io(void);
-> >  extern void sh73a0_add_early_devices(void);
-> > +extern void sh73a0_add_early_devices_dt(void);
-> >  extern void sh73a0_add_standard_devices(void);
-> > +extern void sh73a0_add_standard_devices_dt(void);
-> >  extern void sh73a0_clock_init(void);
-> >  extern void sh73a0_pinmux_init(void);
-> >  extern struct clk sh73a0_extal1_clk;
-> > diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-> > index db99a4a..9096caa 100644
-> > --- a/arch/arm/mach-shmobile/setup-sh73a0.c
-> > +++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-> > @@ -23,6 +23,7 @@
-> >  #include <linux/interrupt.h>
-> >  #include <linux/irq.h>
-> >  #include <linux/platform_device.h>
-> > +#include <linux/of_platform.h>
-> >  #include <linux/delay.h>
-> >  #include <linux/input.h>
-> >  #include <linux/io.h>
-> > @@ -754,7 +755,7 @@ static struct platform_device pmu_device = {
-> >         .resource       = pmu_resources,
-> >  };
-> >
-> > -static struct platform_device *sh73a0_early_devices[] __initdata = {
-> > +static struct platform_device *sh73a0_early_devices_dt[] __initdata = {
-> >         &scif0_device,
-> >         &scif1_device,
-> >         &scif2_device,
-> > @@ -765,6 +766,9 @@ static struct platform_device *sh73a0_early_devices[] __initdata = {
-> >         &scif7_device,
-> >         &scif8_device,
-> >         &cmt10_device,
-> > +};
-> > +
-> > +static struct platform_device *sh73a0_early_devices[] __initdata = {
-> >         &tmu00_device,
-> >         &tmu01_device,
-> >  };
-> > @@ -782,11 +786,18 @@ static struct platform_device *sh73a0_late_devices[] __initdata = {
-> >
-> >  #define SRCR2          IOMEM(0xe61580b0)
-> >
-> > -void __init sh73a0_add_standard_devices(void)
-> > +void __init sh73a0_add_standard_devices_dt(void)
-> >  {
-> >         /* Clear software reset bit on SY-DMAC module */
-> >         __raw_writel(__raw_readl(SRCR2) & ~(1 << 18), SRCR2);
-> >
-> > +       platform_add_devices(sh73a0_early_devices_dt,
-> > +                            ARRAY_SIZE(sh73a0_early_devices_dt));
-> > +}
-> > +
-> > +void __init sh73a0_add_standard_devices(void)
-> > +{
-> > +       sh73a0_add_standard_devices_dt();
-> >         platform_add_devices(sh73a0_early_devices,
-> >                             ARRAY_SIZE(sh73a0_early_devices));
-> >         platform_add_devices(sh73a0_late_devices,
-> > @@ -803,14 +814,34 @@ static void __init sh73a0_earlytimer_init(void)
-> >         sh73a0_register_twd();
-> >  }
-> >
-> > -void __init sh73a0_add_early_devices(void)
-> > +static void __init
-> > +sh73a0_add_early_devices_start(void)
-> >  {
-> > -       early_platform_add_devices(sh73a0_early_devices,
-> > -                                  ARRAY_SIZE(sh73a0_early_devices));
-> > +       early_platform_add_devices(sh73a0_early_devices_dt,
-> > +                                  ARRAY_SIZE(sh73a0_early_devices_dt));
-> > +}
-> >
-> > +static void __init
-> > +sh73a0_add_early_devices_finish(void)
-> > +{
-> >         /* setup early console here as well */
-> >         shmobile_setup_console();
-> >
-> >         /* override timer setup with soc-specific code */
-> >         shmobile_timer.init = sh73a0_earlytimer_init;
-> >  }
-> > +
-> > +void __init sh73a0_add_early_devices_dt(void)
-> > +{
-> > +       sh73a0_add_early_devices_start();
-> > +       sh73a0_add_early_devices_finish();
-> > +}
+>   The i2c seems like it should go into sh73a0.dtsi as it is part of the
+>   soc. Likewise the interrupt controllers.
 > 
-> What's the reason behind using sh73a0_earlytimer_init() for the sh73a0
-> DT case instead of using shmobile_setup_delay() as the DT code for
-> sh7372 does?
+>   But when it comes to mmcif and sdhi I am less sure. Both of these make use
+>   of regulators. Are the regulators part of the board or the SoC?
 
-The reason is that I wasn't aware of shmobile_setup_delay()
+It depends on the regulators. In theory you could have on-SoC regulators that 
+would thus be part of the SoC. In practice I'm not sure how often that 
+happens.
 
-> For the DT case on sh7372 we don't really use early platform driver
-> timers at all, instead we use timers as regular platform devices. For
-> this to work as expected we need to setup a worst case udelay
-> calculation via shmobile_setup_delay(). I suggest using the same style
-> for sh73a0.
+Most of the regulators are provided by the PMIC, so we can create PMIC-
+specific .dtsi files that would be included by boards. See twl4030.dtsi for an 
+example. Other board-specific regulators, including fixed regulators, should 
+be provided by the board.
 
-Thanks, I will look into this.
+>   If the are part of the board then it makes it more difficult to put mmcif
+>   and sdhi into sh73a0.dtsi as they need to reference the regulators
+>   somehow.
 
-> > +void __init sh73a0_add_early_devices(void)
-> > +{
-> > +       sh73a0_add_early_devices_start();
-> > +       early_platform_add_devices(sh73a0_early_devices,
-> > +                                  ARRAY_SIZE(sh73a0_early_devices));
-> > +       sh73a0_add_early_devices_finish();
-> > +}
-> > +
+I think you can split a node across several files. You could have
+
+        mmcif: mmcif@0x10010000 {
+                compatible = "renesas,sh-mmcif";
+                reg = <0xe6bd0000 0x100>;
+                interrupt-parent = <&gic>;
+                interrupts = <0 140 0x4
+                              0 141 0x4>;
+                reg-io-width = <4>;
+        };
+
+in the SoC .dtsi, and
+
+        &mmcif {
+                vmmc-supply = <&fixedregulator1v8>;
+                vqmmc-supply = <&fixedregulator1v8>;
+        };
+
+in the board .dts.
+
+> * What to do the of_dev_auxdata.
 > 
-> Hm, without sh73a0_earlytimer_init() the functions
-> sh73a0_add_early_devices_start() and sh73a0_add_early_devices_finish()
-> look overly complicated compared to the sh7372 DT implementation.
+>   Currently I add this in patch 4 to the board-kzm9g.c. It is used to force
+>   the name of the i2c, mmcif and sdhi devices in order to allow their clock
+>   lookup to work (though come to think of it it may not be necessary for
+>   mmcif and sdhi).
 
-I'm not sure that I understand but I will look at refactoring the
-code to make use of.
+Shouldn't clocks be specified as an attribute in DT nodes that reference the 
+clock node ?
 
-> However, I have not checked your code in detail but if your DT code
-> for sh73a0 happens to be shorter than the DT code for sh7372 then
-> please adjust the sh7372 code to be as short and simple as possible.
+>   In any case, the location of the of_dev_auxdata might be come a bit
+>   tricky if it covers devices in both the board and SoC dts files.
 
-Ok, I'll see what I can do.
+-- 
+Regards,
+
+Laurent Pinchart
+
