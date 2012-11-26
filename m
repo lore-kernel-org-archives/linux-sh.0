@@ -1,59 +1,49 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Mon, 12 Nov 2012 14:04:21 +0000
-Subject: Re: [GIT PULL v4] Renesas ARM-based SoC for v3.8
-Message-Id: <CABYn4sy_EaF5Ywhwj_-Ahc_8R5gtnu0RZPwQFFc7vBvRdBnOXw@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 26 Nov 2012 00:16:48 +0000
+Subject: [PATCH 1/7] mmc: sh-mmcif: provide default allowed voltage
+Message-Id: <1353889014-17142-2-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352177853-6008-1-git-send-email-horms@verge.net.au>
- <20121106143202.GF27284@quad.lixom.net>
-In-Reply-To: <20121106143202.GF27284@quad.lixom.net>
+References: <1353889014-17142-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1353889014-17142-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello Olof,
+Use MMC_VDD_165_195 as the allowed voltages in the absence of
+platform data. This should allow device tree to initialise MMCIF
+for a number of boards.
 
-unfortunately 3 patches contributed by me are "evil" and need to removed.
+A more complete solution would be to provide either MMCIF or MMC device
+try bindings to set the allowed voltages.
 
-Bastian Hecht (4):
-      ARM: shmobile: emev2: Replace modify_scu_cpu_psr with scu_power_mode
-      ARM: shmobile: sh73a0: Replace modify_scu_cpu_psr with scu_power_mode
-      ARM: shmobile: r8a7779: Replace modify_scu_cpu_psr with scu_power_mode
-...
+Tested on the KZM-A9-GT board
 
-The code changes the flags of the wrong cpus - which breaks the whole
-bootup of secondary CPUs. So please drop these patches!
-Sorry for being too careless in this sensitive area - I'll do better.
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ drivers/mmc/host/sh_mmcif.c |    7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
 
-Thanks,
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 11d2bc3..88d6866 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -1293,12 +1293,9 @@ static void sh_mmcif_init_ocr(struct sh_mmcif_host *host)
+ 
+ 	mmc_regulator_get_supply(mmc);
+ 
+-	if (!pd)
+-		return;
+-
+ 	if (!mmc->ocr_avail)
+-		mmc->ocr_avail = pd->ocr;
+-	else if (pd->ocr)
++		mmc->ocr_avail = pd ? pd->ocr : MMC_VDD_165_195;
++	else if (pd && pd->ocr)
+ 		dev_warn(mmc_dev(mmc), "Platform OCR mask is ignored\n");
+ }
+ 
+-- 
+1.7.10.4
 
- Bastian
-
-
-
-2012/11/6 Olof Johansson <olof@lixom.net>:
-> On Tue, Nov 06, 2012 at 01:57:22PM +0900, Simon Horman wrote:
->> Hi Olof, Hi Arnd,
->>
->> please consider the following SoC enhancements for 3.8.
->>
->> Change since v3:
->> * Remove noise from "ARM: shmobile: Remove SH7367 support"
->>
->> ----------------------------------------------------------------
->> The following changes since commit ddffeb8c4d0331609ef2581d84de4d763607bd37:
->>
->>   Linux 3.7-rc1 (2012-10-14 14:41:04 -0700)
->>
->> are available in the git repository at:
->>
->>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git soc
->
-> Pulled, thanks!
->
->
-> -Olof
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
