@@ -1,98 +1,55 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Tue, 06 Nov 2012 04:57:27 +0000
-Subject: [PATCH 05/11] ARM: shmobile: r8a7779: Replace modify_scu_cpu_psr with scu_power_mode
-Message-Id: <1352177853-6008-6-git-send-email-horms@verge.net.au>
+Date: Mon, 26 Nov 2012 00:16:47 +0000
+Subject: [PATCH 0/7] ARM: mach-shmobile: kzm9g: Reference DT implementation
+Message-Id: <1353889014-17142-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352177853-6008-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352177853-6008-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Bastian Hecht <hechtb@googlemail.com>
+Hi Magnus, Hi all,
 
-We can remove the extra code of modify_scu_cpu_psr() and use the cleaner
-generic ARM helper scu_power_mode(). As every CPU only deals with its
-own power register and scu_power_mode() operates with 8-bit accesses,
-we save the locking overhead too.
+this series is a first pass at providing a refernce DT implementation
+for the kzm9g baord which is intended to act as a guide for mach-shmobile
+developers.
 
-Signed-off-by: Bastian Hecht <hechtb@gmail.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
----
- arch/arm/mach-shmobile/smp-r8a7779.c |   25 +++----------------------
- 1 file changed, 3 insertions(+), 22 deletions(-)
+The first two patches of the series make minor modifications to the mmcif
+and sdhi drivers to allow registration of those devices using device
+tree on the KZM9G board.
 
-diff --git a/arch/arm/mach-shmobile/smp-r8a7779.c b/arch/arm/mach-shmobile/smp-r8a7779.c
-index 2ce6af9..9def0f2 100644
---- a/arch/arm/mach-shmobile/smp-r8a7779.c
-+++ b/arch/arm/mach-shmobile/smp-r8a7779.c
-@@ -61,9 +61,6 @@ static void __iomem *scu_base_addr(void)
- 	return (void __iomem *)0xf0000000;
- }
- 
--static DEFINE_SPINLOCK(scu_lock);
--static unsigned long tmp;
--
- #ifdef CONFIG_HAVE_ARM_TWD
- static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, 0xf0000600, 29);
- 
-@@ -73,20 +70,6 @@ void __init r8a7779_register_twd(void)
- }
- #endif
- 
--static void modify_scu_cpu_psr(unsigned long set, unsigned long clr)
--{
--	void __iomem *scu_base = scu_base_addr();
--
--	spin_lock(&scu_lock);
--	tmp = __raw_readl(scu_base + 8);
--	tmp &= ~clr;
--	tmp |= set;
--	spin_unlock(&scu_lock);
--
--	/* disable cache coherency after releasing the lock */
--	__raw_writel(tmp, scu_base + 8);
--}
--
- static unsigned int __init r8a7779_get_core_count(void)
- {
- 	void __iomem *scu_base = scu_base_addr();
-@@ -102,7 +85,7 @@ static int r8a7779_platform_cpu_kill(unsigned int cpu)
- 	cpu = cpu_logical_map(cpu);
- 
- 	/* disable cache coherency */
--	modify_scu_cpu_psr(3 << (cpu * 8), 0);
-+	scu_power_mode(scu_base_addr(), 3);
- 
- 	if (cpu < ARRAY_SIZE(r8a7779_ch_cpu))
- 		ch = r8a7779_ch_cpu[cpu];
-@@ -145,7 +128,7 @@ static int __cpuinit r8a7779_boot_secondary(unsigned int cpu, struct task_struct
- 	cpu = cpu_logical_map(cpu);
- 
- 	/* enable cache coherency */
--	modify_scu_cpu_psr(0, 3 << (cpu * 8));
-+	scu_power_mode(scu_base_addr(), 0);
- 
- 	if (cpu < ARRAY_SIZE(r8a7779_ch_cpu))
- 		ch = r8a7779_ch_cpu[cpu];
-@@ -158,15 +141,13 @@ static int __cpuinit r8a7779_boot_secondary(unsigned int cpu, struct task_struct
- 
- static void __init r8a7779_smp_prepare_cpus(unsigned int max_cpus)
- {
--	int cpu = cpu_logical_map(0);
--
- 	scu_enable(scu_base_addr());
- 
- 	/* Map the reset vector (in headsmp.S) */
- 	__raw_writel(__pa(shmobile_secondary_vector), AVECR);
- 
- 	/* enable cache coherency on CPU0 */
--	modify_scu_cpu_psr(0, 3 << (cpu * 8));
-+	scu_power_mode(scu_base_addr(), 0);
- 
- 	r8a7779_pm_init();
- 
+The following three patches enhance sh77a0 SoC support to allow minimal
+registratioj using device tree.
+
+The final patch adds a fresh board and dts file which initialises the
+kfm9g board using device tree as much as possible.
+
+Simon Horman (7):
+  mmc: sh-mmcif: provide default allowed voltage
+  mmc: sdhi: enchance OF support for flags and cd-gpios
+  sh: pfc: Allow device tree registration
+  ARM: shmobile: pfc-sh73a0: Register device tree
+  ARM: mach-shmobile: sh73a0: Allow initialisation of GIC by DT
+  ARM: mach-shmobile: sh73a0: Minimal setup using DT
+  ARM: mach-shmobile: kzm9g: Reference DT implementation
+
+ arch/arm/boot/dts/Makefile                     |    3 +-
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts   |  153 ++++++++++++++++++++++++
+ arch/arm/mach-shmobile/Kconfig                 |   10 ++
+ arch/arm/mach-shmobile/Makefile                |    8 +-
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |  142 ++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/common.h   |    3 +
+ arch/arm/mach-shmobile/intc-sh73a0.c           |   14 +++
+ arch/arm/mach-shmobile/pfc-sh73a0.c            |   45 +++++++
+ arch/arm/mach-shmobile/setup-sh73a0.c          |   41 ++++++-
+ drivers/mmc/host/sh_mmcif.c                    |    7 +-
+ drivers/mmc/host/sh_mobile_sdhi.c              |   76 ++++++++++--
+ drivers/sh/pfc/gpio.c                          |   15 +++
+ include/linux/sh_pfc.h                         |    7 ++
+ 13 files changed, 501 insertions(+), 23 deletions(-)
+ create mode 100644 arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+ create mode 100644 arch/arm/mach-shmobile/board-kzm9g-reference.c
+
 -- 
 1.7.10.4
 
