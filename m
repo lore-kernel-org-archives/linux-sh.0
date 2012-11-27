@@ -1,530 +1,404 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 01 Nov 2012 00:40:11 +0000
-Subject: [PATCH 8/8] ARM: shmobile: Remove G4EVM machine support
-Message-Id: <1351730411-1874-9-git-send-email-horms@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 27 Nov 2012 00:02:04 +0000
+Subject: [PATCH v2 05/77] sh-pfc: Move platform device and driver to the core
+Message-Id: <1353974596-30033-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1351730411-1874-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1351730411-1874-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+The pinctrl module registers both a platform device and a platform
+driver. The only purpose of this awkward construction is to have a
+device to pass to the pinctrl registration function.
 
-This machine is using old CPU of shmobile (sh7377) and cannot obtain
-machine, either.
-Therefore, remove G4EVM support.
+As a first step to get rid of this hack, move the platform device and
+driver from the pinctrl module to the core. The platform device will
+then be moved to arch code.
 
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
 ---
- arch/arm/configs/g4evm_defconfig     |   57 -----
- arch/arm/mach-shmobile/Kconfig       |    9 +-
- arch/arm/mach-shmobile/Makefile      |    1 -
- arch/arm/mach-shmobile/board-g4evm.c |  384 ----------------------------------
- 4 files changed, 1 insertion(+), 450 deletions(-)
- delete mode 100644 arch/arm/configs/g4evm_defconfig
- delete mode 100644 arch/arm/mach-shmobile/board-g4evm.c
+ drivers/sh/pfc/core.c    |  101 +++++++++++++++++++++++++++++++++++++--------
+ drivers/sh/pfc/core.h    |    4 ++
+ drivers/sh/pfc/gpio.c    |    3 +-
+ drivers/sh/pfc/pinctrl.c |  100 +++++++++++----------------------------------
+ 4 files changed, 114 insertions(+), 94 deletions(-)
 
-diff --git a/arch/arm/configs/g4evm_defconfig b/arch/arm/configs/g4evm_defconfig
-deleted file mode 100644
-index 21c6d03..0000000
---- a/arch/arm/configs/g4evm_defconfig
-+++ /dev/null
-@@ -1,57 +0,0 @@
--CONFIG_EXPERIMENTAL=y
--CONFIG_SYSVIPC=y
--CONFIG_IKCONFIG=y
--CONFIG_IKCONFIG_PROC=y
--CONFIG_LOG_BUF_SHIFT
--CONFIG_BLK_DEV_INITRD=y
--CONFIG_SLAB=y
--# CONFIG_BLK_DEV_BSG is not set
--# CONFIG_IOSCHED_DEADLINE is not set
--# CONFIG_IOSCHED_CFQ is not set
--CONFIG_ARCH_SHMOBILE=y
--CONFIG_ARCH_SH7377=y
--CONFIG_MACH_G4EVM=y
--CONFIG_AEABI=y
--# CONFIG_OABI_COMPAT is not set
--CONFIG_ZBOOT_ROM_TEXT=0x0
--CONFIG_ZBOOT_ROM_BSS=0x0
--CONFIG_CMDLINE="console=ttySC4,115200 earlyprintk=sh-sci.4,115200"
--CONFIG_KEXEC=y
--CONFIG_PM=y
--# CONFIG_SUSPEND is not set
--CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
--# CONFIG_FIRMWARE_IN_KERNEL is not set
--CONFIG_MTD=y
--CONFIG_MTD_CONCAT=y
--CONFIG_MTD_PARTITIONS=y
--CONFIG_MTD_CHAR=y
--CONFIG_MTD_BLOCK=y
--CONFIG_MTD_CFI=y
--CONFIG_MTD_CFI_INTELEXT=y
--CONFIG_MTD_PHYSMAP=y
--CONFIG_MTD_NAND=y
--# CONFIG_BLK_DEV is not set
--# CONFIG_MISC_DEVICES is not set
--# CONFIG_INPUT_MOUSEDEV_PSAUX is not set
--# CONFIG_INPUT_KEYBOARD is not set
--# CONFIG_INPUT_MOUSE is not set
--# CONFIG_SERIO is not set
--CONFIG_SERIAL_SH_SCI=y
--CONFIG_SERIAL_SH_SCI_NR_UARTS=8
--CONFIG_SERIAL_SH_SCI_CONSOLE=y
--# CONFIG_LEGACY_PTYS is not set
--# CONFIG_HW_RANDOM is not set
--# CONFIG_HWMON is not set
--# CONFIG_VGA_CONSOLE is not set
--# CONFIG_HID_SUPPORT is not set
--# CONFIG_USB_SUPPORT is not set
--# CONFIG_DNOTIFY is not set
--# CONFIG_INOTIFY_USER is not set
--CONFIG_TMPFS=y
--# CONFIG_MISC_FILESYSTEMS is not set
--CONFIG_MAGIC_SYSRQ=y
--CONFIG_DEBUG_KERNEL=y
--# CONFIG_DETECT_SOFTLOCKUP is not set
--# CONFIG_RCU_CPU_STALL_DETECTOR is not set
--# CONFIG_FTRACE is not set
--# CONFIG_CRC32 is not set
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 73c2021..f58c3ea 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -50,12 +50,6 @@ config ARCH_EMEV2
+diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
+index f8f458b..3593de5 100644
+--- a/drivers/sh/pfc/core.c
++++ b/drivers/sh/pfc/core.c
+@@ -8,6 +8,8 @@
+  * License.  See the file "COPYING" in the main directory of this archive
+  * for more details.
+  */
++
++#define DRV_NAME "sh-pfc"
+ #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
  
- comment "SH-Mobile Board Type"
+ #include <linux/errno.h>
+@@ -20,11 +22,10 @@
+ #include <linux/slab.h>
+ #include <linux/ioport.h>
+ #include <linux/pinctrl/machine.h>
++#include <linux/platform_device.h>
  
--config MACH_G4EVM
--	bool "G4EVM board"
--	depends on ARCH_SH7377
--	select ARCH_REQUIRE_GPIOLIB
--	select REGULATOR_FIXED_VOLTAGE if REGULATOR
--
- config MACH_AP4EVB
- 	bool "AP4EVB board"
- 	depends on ARCH_SH7372
-@@ -142,7 +136,7 @@ menu "Memory configuration"
+ #include "core.h"
  
- config MEMORY_START
- 	hex "Physical memory start address"
--	default "0x40000000" if MACH_G4EVM || MACH_AP4EVB || MACH_AG5EVM || \
-+	default "0x40000000" if MACH_AP4EVB || MACH_AG5EVM || \
- 				MACH_MACKEREL || MACH_BONITO || \
- 				MACH_ARMADILLO800EVA
- 	default "0x41000000" if MACH_KOTA2
-@@ -154,7 +148,6 @@ config MEMORY_START
+-static struct sh_pfc sh_pfc __read_mostly;
+-
+ static void pfc_iounmap(struct sh_pfc *pfc)
+ {
+ 	int k;
+@@ -494,8 +495,10 @@ int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
+ 	return -1;
+ }
  
- config MEMORY_SIZE
- 	hex "Physical memory size"
--	default "0x08000000" if MACH_G4EVM
- 	default "0x20000000" if MACH_AG5EVM || MACH_BONITO || \
- 				MACH_ARMADILLO800EVA
- 	default "0x1e000000" if MACH_KOTA2
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 30a6c83..bd2633b 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -45,7 +45,6 @@ obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o
- obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o
+-int register_sh_pfc(struct sh_pfc_platform_data *pdata)
++static int sh_pfc_probe(struct platform_device *pdev)
+ {
++	struct sh_pfc_platform_data *pdata = pdev->dev.platform_data;
++	struct sh_pfc *pfc;
+ 	int ret;
  
- # Board objects
--obj-$(CONFIG_MACH_G4EVM)	+= board-g4evm.o
- obj-$(CONFIG_MACH_AP4EVB)	+= board-ap4evb.o
- obj-$(CONFIG_MACH_AG5EVM)	+= board-ag5evm.o
- obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
-diff --git a/arch/arm/mach-shmobile/board-g4evm.c b/arch/arm/mach-shmobile/board-g4evm.c
-deleted file mode 100644
-index 35c126c..0000000
---- a/arch/arm/mach-shmobile/board-g4evm.c
-+++ /dev/null
-@@ -1,384 +0,0 @@
--/*
-- * G4EVM board support
-- *
-- * Copyright (C) 2010  Magnus Damm
-- * Copyright (C) 2008  Yoshihiro Shimoda
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License as published by
-- * the Free Software Foundation; version 2 of the License.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- * GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with this program; if not, write to the Free Software
-- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-- */
--#include <linux/kernel.h>
--#include <linux/init.h>
--#include <linux/interrupt.h>
--#include <linux/irq.h>
--#include <linux/platform_device.h>
--#include <linux/delay.h>
--#include <linux/mtd/mtd.h>
--#include <linux/mtd/partitions.h>
--#include <linux/mtd/physmap.h>
--#include <linux/regulator/fixed.h>
--#include <linux/regulator/machine.h>
--#include <linux/usb/r8a66597.h>
--#include <linux/io.h>
--#include <linux/input.h>
--#include <linux/input/sh_keysc.h>
--#include <linux/mmc/host.h>
--#include <linux/mmc/sh_mobile_sdhi.h>
--#include <linux/gpio.h>
--#include <linux/dma-mapping.h>
--#include <mach/irqs.h>
--#include <mach/sh7377.h>
--#include <mach/common.h>
--#include <asm/mach-types.h>
--#include <asm/mach/arch.h>
--
--#include "sh-gpio.h"
--
--/*
-- * SDHI
-- *
-- * SDHI0 : card detection is possible
-- * SDHI1 : card detection is impossible
-- *
-- * [G4-MAIN-BOARD]
-- * JP74 : short		# DBG_2V8A    for SDHI0
-- * JP75 : NC		# DBG_3V3A    for SDHI0
-- * JP76 : NC		# DBG_3V3A_SD for SDHI0
-- * JP77 : NC		# 3V3A_SDIO   for SDHI1
-- * JP78 : short		# DBG_2V8A    for SDHI1
-- * JP79 : NC		# DBG_3V3A    for SDHI1
-- * JP80 : NC		# DBG_3V3A_SD for SDHI1
-- *
-- * [G4-CORE-BOARD]
-- * S32 : all off	# to dissever from G3-CORE_DBG board
-- * S33 : all off	# to dissever from G3-CORE_DBG board
-- *
-- * [G3-CORE_DBG-BOARD]
-- * S1  : all off	# to dissever from G3-CORE_DBG board
-- * S3  : all off	# to dissever from G3-CORE_DBG board
-- * S4  : all off	# to dissever from G3-CORE_DBG board
-- */
--
--static struct mtd_partition nor_flash_partitions[] = {
--	{
--		.name		= "loader",
--		.offset		= 0x00000000,
--		.size		= 512 * 1024,
--	},
--	{
--		.name		= "bootenv",
--		.offset		= MTDPART_OFS_APPEND,
--		.size		= 512 * 1024,
--	},
--	{
--		.name		= "kernel_ro",
--		.offset		= MTDPART_OFS_APPEND,
--		.size		= 8 * 1024 * 1024,
--		.mask_flags	= MTD_WRITEABLE,
--	},
--	{
--		.name		= "kernel",
--		.offset		= MTDPART_OFS_APPEND,
--		.size		= 8 * 1024 * 1024,
--	},
--	{
--		.name		= "data",
--		.offset		= MTDPART_OFS_APPEND,
--		.size		= MTDPART_SIZ_FULL,
--	},
--};
--
--static struct physmap_flash_data nor_flash_data = {
--	.width		= 2,
--	.parts		= nor_flash_partitions,
--	.nr_parts	= ARRAY_SIZE(nor_flash_partitions),
--};
--
--static struct resource nor_flash_resources[] = {
--	[0]	= {
--		.start	= 0x00000000,
--		.end	= 0x08000000 - 1,
--		.flags	= IORESOURCE_MEM,
+ 	/*
+@@ -503,26 +506,29 @@ int register_sh_pfc(struct sh_pfc_platform_data *pdata)
+ 	 */
+ 	BUILD_BUG_ON(PINMUX_FLAG_TYPE > ((1 << PINMUX_FLAG_DBIT_SHIFT) - 1));
+ 
+-	if (sh_pfc.pdata)
+-		return -EBUSY;
++	if (pdata = NULL)
++		return -ENODEV;
+ 
+-	sh_pfc.pdata = pdata;
++	pfc = devm_kzalloc(&pdev->dev, sizeof(pfc), GFP_KERNEL);
++	if (pfc = NULL)
++		return -ENOMEM;
+ 
+-	ret = pfc_ioremap(&sh_pfc);
+-	if (unlikely(ret < 0)) {
+-		sh_pfc.pdata = NULL;
++	pfc->pdata = pdata;
++	pfc->dev = &pdev->dev;
++
++	ret = pfc_ioremap(pfc);
++	if (unlikely(ret < 0))
+ 		return ret;
 -	}
--};
+ 
+-	spin_lock_init(&sh_pfc.lock);
++	spin_lock_init(&pfc->lock);
+ 
+ 	pinctrl_provide_dummies();
+-	setup_data_regs(&sh_pfc);
++	setup_data_regs(pfc);
+ 
+ 	/*
+ 	 * Initialize pinctrl bindings first
+ 	 */
+-	ret = sh_pfc_register_pinctrl(&sh_pfc);
++	ret = sh_pfc_register_pinctrl(pfc);
+ 	if (unlikely(ret != 0))
+ 		goto err;
+ 
+@@ -530,7 +536,7 @@ int register_sh_pfc(struct sh_pfc_platform_data *pdata)
+ 	/*
+ 	 * Then the GPIO chip
+ 	 */
+-	ret = sh_pfc_register_gpiochip(&sh_pfc);
++	ret = sh_pfc_register_gpiochip(pfc);
+ 	if (unlikely(ret != 0)) {
+ 		/*
+ 		 * If the GPIO chip fails to come up we still leave the
+@@ -541,17 +547,76 @@ int register_sh_pfc(struct sh_pfc_platform_data *pdata)
+ 	}
+ #endif
+ 
+-	pr_info("%s support registered\n", sh_pfc.pdata->name);
++	platform_set_drvdata(pdev, pfc);
++
++	pr_info("%s support registered\n", pdata->name);
+ 
+ 	return 0;
+ 
+ err:
+-	pfc_iounmap(&sh_pfc);
+-	sh_pfc.pdata = NULL;
 -
--static struct platform_device nor_flash_device = {
--	.name		= "physmap-flash",
--	.dev		= {
--		.platform_data	= &nor_flash_data,
++	pfc_iounmap(pfc);
+ 	return ret;
+ }
+ 
++static int __devexit sh_pfc_remove(struct platform_device *pdev)
++{
++	struct sh_pfc *pfc = platform_get_drvdata(pdev);
++
++#ifdef CONFIG_GPIO_SH_PFC
++	sh_pfc_unregister_gpiochip(pfc);
++#endif
++	sh_pfc_unregister_pinctrl(pfc);
++
++	pfc_iounmap(pfc);
++
++	platform_set_drvdata(pdev, NULL);
++
++	return 0;
++}
++
++static const struct platform_device_id sh_pfc_id_table[] = {
++	{ "sh-pfc", 0 },
++	{ },
++};
++MODULE_DEVICE_TABLE(platform, sh_pfc_id_table);
++
++static struct platform_driver sh_pfc_driver = {
++	.probe		= sh_pfc_probe,
++	.remove		= __devexit_p(sh_pfc_remove),
++	.id_table	= sh_pfc_id_table,
++	.driver		= {
++		.name	= DRV_NAME,
++		.owner	= THIS_MODULE,
++	},
++};
++
++static struct platform_device sh_pfc_device = {
++	.name		= DRV_NAME,
++	.id		= -1,
++};
++
++int __init register_sh_pfc(struct sh_pfc_platform_data *pdata)
++{
++	int rc;
++
++	sh_pfc_device.dev.platform_data = pdata;
++
++	rc = platform_driver_register(&sh_pfc_driver);
++	if (likely(!rc)) {
++		rc = platform_device_register(&sh_pfc_device);
++		if (unlikely(rc))
++			platform_driver_unregister(&sh_pfc_driver);
++	}
++
++	return rc;
++}
++
++static void __exit sh_pfc_exit(void)
++{
++	platform_driver_unregister(&sh_pfc_driver);
++}
++module_exit(sh_pfc_exit);
++
+ MODULE_AUTHOR("Magnus Damm, Paul Mundt");
+ MODULE_DESCRIPTION("Pin Control and GPIO driver for SuperH pin function controller");
+ MODULE_LICENSE("GPL v2");
+diff --git a/drivers/sh/pfc/core.h b/drivers/sh/pfc/core.h
+index f3032b2..1287b3e 100644
+--- a/drivers/sh/pfc/core.h
++++ b/drivers/sh/pfc/core.h
+@@ -21,19 +21,23 @@ struct pfc_window {
+ };
+ 
+ struct sh_pfc_chip;
++struct sh_pfc_pinctrl;
+ 
+ struct sh_pfc {
++	struct device *dev;
+ 	struct sh_pfc_platform_data *pdata;
+ 	spinlock_t lock;
+ 
+ 	struct pfc_window *window;
+ 	struct sh_pfc_chip *gpio;
++	struct sh_pfc_pinctrl *pinctrl;
+ };
+ 
+ int sh_pfc_register_gpiochip(struct sh_pfc *pfc);
+ int sh_pfc_unregister_gpiochip(struct sh_pfc *pfc);
+ 
+ int sh_pfc_register_pinctrl(struct sh_pfc *pfc);
++int sh_pfc_unregister_pinctrl(struct sh_pfc *pfc);
+ 
+ int sh_pfc_read_bit(struct pinmux_data_reg *dr, unsigned long in_pos);
+ void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
+diff --git a/drivers/sh/pfc/gpio.c b/drivers/sh/pfc/gpio.c
+index 91ea4c9..f22d43a 100644
+--- a/drivers/sh/pfc/gpio.c
++++ b/drivers/sh/pfc/gpio.c
+@@ -8,7 +8,8 @@
+  * License.  See the file "COPYING" in the main directory of this archive
+  * for more details.
+  */
+-#define pr_fmt(fmt) "sh_pfc " KBUILD_MODNAME ": " fmt
++
++#define pr_fmt(fmt) KBUILD_MODNAME " gpio: " fmt
+ 
+ #include <linux/init.h>
+ #include <linux/gpio.h>
+diff --git a/drivers/sh/pfc/pinctrl.c b/drivers/sh/pfc/pinctrl.c
+index 0bde9fa..1c93e3c 100644
+--- a/drivers/sh/pfc/pinctrl.c
++++ b/drivers/sh/pfc/pinctrl.c
+@@ -7,8 +7,8 @@
+  * License.  See the file "COPYING" in the main directory of this archive
+  * for more details.
+  */
+-#define DRV_NAME "pinctrl-sh_pfc"
+ 
++#define DRV_NAME "sh-pfc"
+ #define pr_fmt(fmt) KBUILD_MODNAME " pinctrl: " fmt
+ 
+ #include <linux/init.h>
+@@ -17,7 +17,6 @@
+ #include <linux/err.h>
+ #include <linux/slab.h>
+ #include <linux/spinlock.h>
+-#include <linux/platform_device.h>
+ #include <linux/pinctrl/consumer.h>
+ #include <linux/pinctrl/pinctrl.h>
+ #include <linux/pinctrl/pinconf.h>
+@@ -39,8 +38,6 @@ struct sh_pfc_pinctrl {
+ 	spinlock_t lock;
+ };
+ 
+-static struct sh_pfc_pinctrl *sh_pfc_pmx;
+-
+ static int sh_pfc_get_groups_count(struct pinctrl_dev *pctldev)
+ {
+ 	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
+@@ -423,28 +420,31 @@ static int __devinit sh_pfc_map_functions(struct sh_pfc *pfc,
+ 	return 0;
+ }
+ 
+-static int __devinit sh_pfc_pinctrl_probe(struct platform_device *pdev)
++int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ {
+-	struct sh_pfc *pfc;
++	struct sh_pfc_pinctrl *pmx;
+ 	int ret;
+ 
+-	if (unlikely(!sh_pfc_pmx))
+-		return -ENODEV;
++	pmx = kzalloc(sizeof(struct sh_pfc_pinctrl), GFP_KERNEL);
++	if (unlikely(!pmx))
++		return -ENOMEM;
++
++	spin_lock_init(&pmx->lock);
+ 
+-	pfc = sh_pfc_pmx->pfc;
++	pmx->pfc = pfc;
++	pfc->pinctrl = pmx;
+ 
+-	ret = sh_pfc_map_gpios(pfc, sh_pfc_pmx);
++	ret = sh_pfc_map_gpios(pfc, pmx);
+ 	if (unlikely(ret != 0))
+ 		return ret;
+ 
+-	ret = sh_pfc_map_functions(pfc, sh_pfc_pmx);
++	ret = sh_pfc_map_functions(pfc, pmx);
+ 	if (unlikely(ret != 0))
+ 		goto free_pads;
+ 
+-	sh_pfc_pmx->pctl = pinctrl_register(&sh_pfc_pinctrl_desc, &pdev->dev,
+-					    sh_pfc_pmx);
+-	if (IS_ERR(sh_pfc_pmx->pctl)) {
+-		ret = PTR_ERR(sh_pfc_pmx->pctl);
++	pmx->pctl = pinctrl_register(&sh_pfc_pinctrl_desc, pfc->dev, pmx);
++	if (IS_ERR(pmx->pctl)) {
++		ret = PTR_ERR(pmx->pctl);
+ 		goto free_functions;
+ 	}
+ 
+@@ -453,79 +453,29 @@ static int __devinit sh_pfc_pinctrl_probe(struct platform_device *pdev)
+ 	sh_pfc_gpio_range.base = pfc->pdata->first_gpio;
+ 	sh_pfc_gpio_range.pin_base = pfc->pdata->first_gpio;
+ 
+-	pinctrl_add_gpio_range(sh_pfc_pmx->pctl, &sh_pfc_gpio_range);
+-
+-	platform_set_drvdata(pdev, sh_pfc_pmx);
++	pinctrl_add_gpio_range(pmx->pctl, &sh_pfc_gpio_range);
+ 
+ 	return 0;
+ 
+ free_functions:
+-	kfree(sh_pfc_pmx->functions);
++	kfree(pmx->functions);
+ free_pads:
+-	kfree(sh_pfc_pmx->pads);
+-	kfree(sh_pfc_pmx);
++	kfree(pmx->pads);
++	kfree(pmx);
+ 
+ 	return ret;
+ }
+ 
+-static int __devexit sh_pfc_pinctrl_remove(struct platform_device *pdev)
++int __devexit sh_pfc_unregister_pinctrl(struct sh_pfc *pfc)
+ {
+-	struct sh_pfc_pinctrl *pmx = platform_get_drvdata(pdev);
++	struct sh_pfc_pinctrl *pmx = pfc->pinctrl;
+ 
+ 	pinctrl_unregister(pmx->pctl);
+ 
+-	platform_set_drvdata(pdev, NULL);
+-
+-	kfree(sh_pfc_pmx->functions);
+-	kfree(sh_pfc_pmx->pads);
+-	kfree(sh_pfc_pmx);
++	kfree(pmx->functions);
++	kfree(pmx->pads);
++	kfree(pmx);
+ 
++	pfc->pinctrl = NULL;
+ 	return 0;
+ }
+-
+-static struct platform_driver sh_pfc_pinctrl_driver = {
+-	.probe		= sh_pfc_pinctrl_probe,
+-	.remove		= __devexit_p(sh_pfc_pinctrl_remove),
+-	.driver		= {
+-		.name	= DRV_NAME,
+-		.owner	= THIS_MODULE,
 -	},
--	.num_resources	= ARRAY_SIZE(nor_flash_resources),
--	.resource	= nor_flash_resources,
 -};
 -
--/* USBHS */
--static void usb_host_port_power(int port, int power)
--{
--	if (!power) /* only power-on supported for now */
--		return;
+-static struct platform_device sh_pfc_pinctrl_device = {
+-	.name		= DRV_NAME,
+-	.id		= -1,
+-};
 -
--	/* set VBOUT/PWEN and EXTLP0 in DVSTCTR */
--	__raw_writew(__raw_readw(IOMEM(0xe6890008)) | 0x600, IOMEM(0xe6890008));
+-static int sh_pfc_pinctrl_init(void)
+-{
+-	int rc;
+-
+-	rc = platform_driver_register(&sh_pfc_pinctrl_driver);
+-	if (likely(!rc)) {
+-		rc = platform_device_register(&sh_pfc_pinctrl_device);
+-		if (unlikely(rc))
+-			platform_driver_unregister(&sh_pfc_pinctrl_driver);
+-	}
+-
+-	return rc;
 -}
 -
--static struct r8a66597_platdata usb_host_data = {
--	.on_chip = 1,
--	.port_power = usb_host_port_power,
--};
--
--static struct resource usb_host_resources[] = {
--	[0] = {
--		.name	= "USBHS",
--		.start	= 0xe6890000,
--		.end	= 0xe68900e5,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1] = {
--		.start	= evt2irq(0x0a20), /* USBHS_USHI0 */
--		.flags	= IORESOURCE_IRQ,
--	},
--};
--
--static struct platform_device usb_host_device = {
--	.name		= "r8a66597_hcd",
--	.id		= 0,
--	.dev = {
--		.platform_data		= &usb_host_data,
--		.dma_mask		= NULL,
--		.coherent_dma_mask	= 0xffffffff,
--	},
--	.num_resources	= ARRAY_SIZE(usb_host_resources),
--	.resource	= usb_host_resources,
--};
--
--/* KEYSC */
--static struct sh_keysc_info keysc_info = {
--	.mode		= SH_KEYSC_MODE_5,
--	.scan_timing	= 3,
--	.delay		= 100,
--	.keycodes = {
--		KEY_A, KEY_B, KEY_C, KEY_D, KEY_E, KEY_F,
--		KEY_G, KEY_H, KEY_I, KEY_J, KEY_K, KEY_L,
--		KEY_M, KEY_N, KEY_U, KEY_P, KEY_Q, KEY_R,
--		KEY_S, KEY_T, KEY_U, KEY_V, KEY_W, KEY_X,
--		KEY_Y, KEY_Z, KEY_HOME, KEY_SLEEP, KEY_WAKEUP, KEY_COFFEE,
--		KEY_0, KEY_1, KEY_2, KEY_3, KEY_4, KEY_5,
--		KEY_6, KEY_7, KEY_8, KEY_9, KEY_STOP, KEY_COMPUTER,
--	},
--};
--
--static struct resource keysc_resources[] = {
--	[0] = {
--		.name	= "KEYSC",
--		.start  = 0xe61b0000,
--		.end    = 0xe61b000f,
--		.flags  = IORESOURCE_MEM,
--	},
--	[1] = {
--		.start  = evt2irq(0x0be0), /* KEYSC_KEY */
--		.flags  = IORESOURCE_IRQ,
--	},
--};
--
--static struct platform_device keysc_device = {
--	.name           = "sh_keysc",
--	.id             = 0, /* keysc0 clock */
--	.num_resources  = ARRAY_SIZE(keysc_resources),
--	.resource       = keysc_resources,
--	.dev	= {
--		.platform_data	= &keysc_info,
--	},
--};
--
--/* Fixed 3.3V regulator to be used by SDHI0 and SDHI1 */
--static struct regulator_consumer_supply fixed3v3_power_consumers[] -{
--	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
--	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
--	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
--	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.1"),
--};
--
--/* SDHI */
--static struct sh_mobile_sdhi_info sdhi0_info = {
--	.tmio_caps	= MMC_CAP_SDIO_IRQ,
--};
--
--static struct resource sdhi0_resources[] = {
--	[0] = {
--		.name	= "SDHI0",
--		.start  = 0xe6d50000,
--		.end    = 0xe6d500ff,
--		.flags  = IORESOURCE_MEM,
--	},
--	[1] = {
--		.start  = evt2irq(0x0e00), /* SDHI0 */
--		.flags  = IORESOURCE_IRQ,
--	},
--};
--
--static struct platform_device sdhi0_device = {
--	.name           = "sh_mobile_sdhi",
--	.num_resources  = ARRAY_SIZE(sdhi0_resources),
--	.resource       = sdhi0_resources,
--	.id             = 0,
--	.dev	= {
--		.platform_data	= &sdhi0_info,
--	},
--};
--
--static struct sh_mobile_sdhi_info sdhi1_info = {
--	.tmio_caps	= MMC_CAP_NONREMOVABLE | MMC_CAP_SDIO_IRQ,
--};
--
--static struct resource sdhi1_resources[] = {
--	[0] = {
--		.name	= "SDHI1",
--		.start  = 0xe6d60000,
--		.end    = 0xe6d600ff,
--		.flags  = IORESOURCE_MEM,
--	},
--	[1] = {
--		.start  = evt2irq(0x0e80), /* SDHI1 */
--		.flags  = IORESOURCE_IRQ,
--	},
--};
--
--static struct platform_device sdhi1_device = {
--	.name           = "sh_mobile_sdhi",
--	.num_resources  = ARRAY_SIZE(sdhi1_resources),
--	.resource       = sdhi1_resources,
--	.id             = 1,
--	.dev	= {
--		.platform_data	= &sdhi1_info,
--	},
--};
--
--static struct platform_device *g4evm_devices[] __initdata = {
--	&nor_flash_device,
--	&usb_host_device,
--	&keysc_device,
--	&sdhi0_device,
--	&sdhi1_device,
--};
--
--#define GPIO_SDHID0_D0	IOMEM(0xe60520fc)
--#define GPIO_SDHID0_D1	IOMEM(0xe60520fd)
--#define GPIO_SDHID0_D2	IOMEM(0xe60520fe)
--#define GPIO_SDHID0_D3	IOMEM(0xe60520ff)
--#define GPIO_SDHICMD0	IOMEM(0xe6052100)
--
--#define GPIO_SDHID1_D0	IOMEM(0xe6052103)
--#define GPIO_SDHID1_D1	IOMEM(0xe6052104)
--#define GPIO_SDHID1_D2	IOMEM(0xe6052105)
--#define GPIO_SDHID1_D3	IOMEM(0xe6052106)
--#define GPIO_SDHICMD1	IOMEM(0xe6052107)
--
--static void __init g4evm_init(void)
+-int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
 -{
--	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
--				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
+-	sh_pfc_pmx = kzalloc(sizeof(struct sh_pfc_pinctrl), GFP_KERNEL);
+-	if (unlikely(!sh_pfc_pmx))
+-		return -ENOMEM;
 -
--	sh7377_pinmux_init();
+-	spin_lock_init(&sh_pfc_pmx->lock);
 -
--	/* Lit DS14 LED */
--	gpio_request(GPIO_PORT109, NULL);
--	gpio_direction_output(GPIO_PORT109, 1);
--	gpio_export(GPIO_PORT109, 1);
+-	sh_pfc_pmx->pfc = pfc;
 -
--	/* Lit DS15 LED */
--	gpio_request(GPIO_PORT110, NULL);
--	gpio_direction_output(GPIO_PORT110, 1);
--	gpio_export(GPIO_PORT110, 1);
--
--	/* Lit DS16 LED */
--	gpio_request(GPIO_PORT112, NULL);
--	gpio_direction_output(GPIO_PORT112, 1);
--	gpio_export(GPIO_PORT112, 1);
--
--	/* Lit DS17 LED */
--	gpio_request(GPIO_PORT113, NULL);
--	gpio_direction_output(GPIO_PORT113, 1);
--	gpio_export(GPIO_PORT113, 1);
--
--	/* USBHS */
--	gpio_request(GPIO_FN_VBUS_0, NULL);
--	gpio_request(GPIO_FN_PWEN, NULL);
--	gpio_request(GPIO_FN_OVCN, NULL);
--	gpio_request(GPIO_FN_OVCN2, NULL);
--	gpio_request(GPIO_FN_EXTLP, NULL);
--	gpio_request(GPIO_FN_IDIN, NULL);
--
--	/* setup USB phy */
--	__raw_writew(0x0200, IOMEM(0xe605810a));       /* USBCR1 */
--	__raw_writew(0x00e0, IOMEM(0xe60581c0));       /* CPFCH */
--	__raw_writew(0x6010, IOMEM(0xe60581c6));       /* CGPOSR */
--	__raw_writew(0x8a0a, IOMEM(0xe605810c));       /* USBCR2 */
--
--	/* KEYSC @ CN31 */
--	gpio_request(GPIO_FN_PORT60_KEYOUT5, NULL);
--	gpio_request(GPIO_FN_PORT61_KEYOUT4, NULL);
--	gpio_request(GPIO_FN_PORT62_KEYOUT3, NULL);
--	gpio_request(GPIO_FN_PORT63_KEYOUT2, NULL);
--	gpio_request(GPIO_FN_PORT64_KEYOUT1, NULL);
--	gpio_request(GPIO_FN_PORT65_KEYOUT0, NULL);
--	gpio_request(GPIO_FN_PORT66_KEYIN0_PU, NULL);
--	gpio_request(GPIO_FN_PORT67_KEYIN1_PU, NULL);
--	gpio_request(GPIO_FN_PORT68_KEYIN2_PU, NULL);
--	gpio_request(GPIO_FN_PORT69_KEYIN3_PU, NULL);
--	gpio_request(GPIO_FN_PORT70_KEYIN4_PU, NULL);
--	gpio_request(GPIO_FN_PORT71_KEYIN5_PU, NULL);
--	gpio_request(GPIO_FN_PORT72_KEYIN6_PU, NULL);
--
--	/* SDHI0 */
--	gpio_request(GPIO_FN_SDHICLK0, NULL);
--	gpio_request(GPIO_FN_SDHICD0, NULL);
--	gpio_request(GPIO_FN_SDHID0_0, NULL);
--	gpio_request(GPIO_FN_SDHID0_1, NULL);
--	gpio_request(GPIO_FN_SDHID0_2, NULL);
--	gpio_request(GPIO_FN_SDHID0_3, NULL);
--	gpio_request(GPIO_FN_SDHICMD0, NULL);
--	gpio_request(GPIO_FN_SDHIWP0, NULL);
--	gpio_request_pullup(GPIO_SDHID0_D0);
--	gpio_request_pullup(GPIO_SDHID0_D1);
--	gpio_request_pullup(GPIO_SDHID0_D2);
--	gpio_request_pullup(GPIO_SDHID0_D3);
--	gpio_request_pullup(GPIO_SDHICMD0);
--
--	/* SDHI1 */
--	gpio_request(GPIO_FN_SDHICLK1, NULL);
--	gpio_request(GPIO_FN_SDHID1_0, NULL);
--	gpio_request(GPIO_FN_SDHID1_1, NULL);
--	gpio_request(GPIO_FN_SDHID1_2, NULL);
--	gpio_request(GPIO_FN_SDHID1_3, NULL);
--	gpio_request(GPIO_FN_SDHICMD1, NULL);
--	gpio_request_pullup(GPIO_SDHID1_D0);
--	gpio_request_pullup(GPIO_SDHID1_D1);
--	gpio_request_pullup(GPIO_SDHID1_D2);
--	gpio_request_pullup(GPIO_SDHID1_D3);
--	gpio_request_pullup(GPIO_SDHICMD1);
--
--	sh7377_add_standard_devices();
--
--	platform_add_devices(g4evm_devices, ARRAY_SIZE(g4evm_devices));
+-	return sh_pfc_pinctrl_init();
 -}
 -
--MACHINE_START(G4EVM, "g4evm")
--	.map_io		= sh7377_map_io,
--	.init_early	= sh7377_add_early_devices,
--	.init_irq	= sh7377_init_irq,
--	.handle_irq	= shmobile_handle_irq_intc,
--	.init_machine	= g4evm_init,
--	.init_late	= shmobile_init_late,
--	.timer		= &shmobile_timer,
--MACHINE_END
+-static void __exit sh_pfc_pinctrl_exit(void)
+-{
+-	platform_driver_unregister(&sh_pfc_pinctrl_driver);
+-}
+-module_exit(sh_pfc_pinctrl_exit);
 -- 
-1.7.10.4
+1.7.8.6
 
