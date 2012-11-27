@@ -1,53 +1,92 @@
-From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Date: Wed, 07 Nov 2012 07:00:28 +0000
-Subject: [PATCH 08/10] serial: sh-sci: fix common SCIFB regmap definition
-Message-Id: <509A070C.5040801@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 27 Nov 2012 00:02:07 +0000
+Subject: [PATCH v2 08/77] sh-pfc: Sort headers alphabetically
+Message-Id: <1353974596-30033-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <509A0658.1010503@renesas.com>
-In-Reply-To: <509A0658.1010503@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-About FIFO count, there are two variants of SCIFs which show
-a) TX count in upper, RX count in lower byte of FDR register
-b) TX count in TFDR register, RX count in RFDR register
-
-Common SCIFB regmap in current source code is defined as "a".
-At least 7372 and 73a0 HW manual say their SICFB are "b".
-
-This patch alters the definition to "b", considering the current
-one has come from a mistake. The reason is as follows.
-
-The flag SCIFB sh-sci driver means it has 256 byte FIFO.
-The count is from 0(empty) to 256(full), that makes 9-bit.
-Because FDR is 16-bit register, it can not hold two 9-bits.
-That's why, SCIFB can not be "a".
-
-Signed-off-by: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
-Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
 ---
- drivers/tty/serial/sh-sci.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ drivers/sh/pfc/core.c    |   10 +++++-----
+ drivers/sh/pfc/gpio.c    |    6 +++---
+ drivers/sh/pfc/pinctrl.c |    6 +++---
+ 3 files changed, 11 insertions(+), 11 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 63a3bd0..502fa47 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -196,9 +196,9 @@ static struct plat_sci_reg sci_regmap[SCIx_NR_REGTYPES][SCIx_NR_REGS] = {
- 		[SCxSR]		= { 0x14, 16 },
- 		[SCxRDR]	= { 0x60,  8 },
- 		[SCFCR]		= { 0x18, 16 },
--		[SCFDR]		= { 0x1c, 16 },
--		[SCTFDR]	= sci_reg_invalid,
--		[SCRFDR]	= sci_reg_invalid,
-+		[SCFDR]		= sci_reg_invalid,
-+		[SCTFDR]	= { 0x38, 16 },
-+		[SCRFDR]	= { 0x3c, 16 },
- 		[SCSPTR]	= sci_reg_invalid,
- 		[SCLSR]		= sci_reg_invalid,
- 	},
+diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
+index 3593de5..f1a0c85 100644
+--- a/drivers/sh/pfc/core.c
++++ b/drivers/sh/pfc/core.c
+@@ -12,15 +12,15 @@
+ #define DRV_NAME "sh-pfc"
+ #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+ 
++#include <linux/bitops.h>
++#include <linux/err.h>
+ #include <linux/errno.h>
++#include <linux/io.h>
++#include <linux/ioport.h>
+ #include <linux/kernel.h>
+-#include <linux/sh_pfc.h>
+ #include <linux/module.h>
+-#include <linux/err.h>
+-#include <linux/io.h>
+-#include <linux/bitops.h>
++#include <linux/sh_pfc.h>
+ #include <linux/slab.h>
+-#include <linux/ioport.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_device.h>
+ 
+diff --git a/drivers/sh/pfc/gpio.c b/drivers/sh/pfc/gpio.c
+index 0a85159..9f4f0fd 100644
+--- a/drivers/sh/pfc/gpio.c
++++ b/drivers/sh/pfc/gpio.c
+@@ -11,13 +11,13 @@
+ 
+ #define pr_fmt(fmt) KBUILD_MODNAME " gpio: " fmt
+ 
+-#include <linux/init.h>
+ #include <linux/gpio.h>
+-#include <linux/slab.h>
+-#include <linux/spinlock.h>
++#include <linux/init.h>
+ #include <linux/module.h>
+ #include <linux/pinctrl/consumer.h>
+ #include <linux/sh_pfc.h>
++#include <linux/slab.h>
++#include <linux/spinlock.h>
+ 
+ #include "core.h"
+ 
+diff --git a/drivers/sh/pfc/pinctrl.c b/drivers/sh/pfc/pinctrl.c
+index 21b8678..c0c8271 100644
+--- a/drivers/sh/pfc/pinctrl.c
++++ b/drivers/sh/pfc/pinctrl.c
+@@ -11,17 +11,17 @@
+ #define DRV_NAME "sh-pfc"
+ #define pr_fmt(fmt) KBUILD_MODNAME " pinctrl: " fmt
+ 
++#include <linux/err.h>
+ #include <linux/init.h>
+ #include <linux/module.h>
+ #include <linux/sh_pfc.h>
+-#include <linux/err.h>
+ #include <linux/slab.h>
+ #include <linux/spinlock.h>
+ #include <linux/pinctrl/consumer.h>
+-#include <linux/pinctrl/pinctrl.h>
+ #include <linux/pinctrl/pinconf.h>
+-#include <linux/pinctrl/pinmux.h>
+ #include <linux/pinctrl/pinconf-generic.h>
++#include <linux/pinctrl/pinctrl.h>
++#include <linux/pinctrl/pinmux.h>
+ 
+ #include "core.h"
+ 
 -- 
-1.7.12.4
+1.7.8.6
 
