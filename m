@@ -1,89 +1,112 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 27 Nov 2012 00:03:07 +0000
-Subject: [PATCH v2 68/77] sh: Remove unused sh_pfc_register_info() function
-Message-Id: <1353974596-30033-69-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 27 Nov 2012 00:02:09 +0000
+Subject: [PATCH v2 10/77] sh-pfc: Support passing resources through platform device
+Message-Id: <1353974596-30033-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-All boards use sh_pfc_register() directly, remove the unused
-sh_pfc_register_info() function.
+Resources should be passed through the platform device, not through
+platform data. Default to platform device resources and fall back to
+platform data resources if not available.
 
-Make the name argument to sh_pfc_register() mandatory as it's now
-supplied by all callers.
+Support for platform data resources will be removed when arch code will
+be converted.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
 ---
- arch/sh/include/asm/gpio.h           |    2 +-
- arch/sh/include/cpu-common/cpu/pfc.h |    4 ----
- arch/sh/kernel/cpu/pfc.c             |   13 +------------
- 3 files changed, 2 insertions(+), 17 deletions(-)
+ drivers/sh/pfc/core.c |   29 +++++++++++++++++++++--------
+ drivers/sh/pfc/core.h |    2 ++
+ 2 files changed, 23 insertions(+), 8 deletions(-)
 
-diff --git a/arch/sh/include/asm/gpio.h b/arch/sh/include/asm/gpio.h
-index 04f53d3..7dfe15e 100644
---- a/arch/sh/include/asm/gpio.h
-+++ b/arch/sh/include/asm/gpio.h
-@@ -20,7 +20,7 @@
- #endif
- 
- #define ARCH_NR_GPIOS 512
--#include <linux/sh_pfc.h>
-+#include <asm-generic/gpio.h>
- 
- #ifdef CONFIG_GPIOLIB
- 
-diff --git a/arch/sh/include/cpu-common/cpu/pfc.h b/arch/sh/include/cpu-common/cpu/pfc.h
-index 40e8643..e538813 100644
---- a/arch/sh/include/cpu-common/cpu/pfc.h
-+++ b/arch/sh/include/cpu-common/cpu/pfc.h
-@@ -18,13 +18,9 @@
- 
- #include <linux/types.h>
- 
--struct pinmux_info;
- struct resource;
- 
- int sh_pfc_register(const char *name,
- 		    struct resource *resource, u32 num_resources);
--int sh_pfc_register_info(const char *name,
--			 struct resource *resource, u32 num_resources,
--			 struct pinmux_info *pdata);
- 
- #endif /* __ARCH_SH_CPU_PFC_H__ */
-diff --git a/arch/sh/kernel/cpu/pfc.c b/arch/sh/kernel/cpu/pfc.c
-index d045d75..d766564 100644
---- a/arch/sh/kernel/cpu/pfc.c
-+++ b/arch/sh/kernel/cpu/pfc.c
-@@ -19,26 +19,15 @@
- #include <cpu/pfc.h>
- 
- static struct platform_device sh_pfc_device = {
--	.name		= "sh-pfc",
- 	.id		= -1,
- };
- 
- int __init sh_pfc_register(const char *name,
- 			   struct resource *resource, u32 num_resources)
+diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
+index 9736e3d..4e4adc7 100644
+--- a/drivers/sh/pfc/core.c
++++ b/drivers/sh/pfc/core.c
+@@ -30,29 +30,42 @@ static void pfc_iounmap(struct sh_pfc *pfc)
  {
--	if (name)
--		sh_pfc_device.name = name;
-+	sh_pfc_device.name = name;
- 	sh_pfc_device.num_resources = num_resources;
- 	sh_pfc_device.resource = resource;
+ 	int k;
  
- 	return platform_device_register(&sh_pfc_device);
+-	for (k = 0; k < pfc->pdata->num_resources; k++)
++	for (k = 0; k < pfc->num_windows; k++)
+ 		if (pfc->window[k].virt)
+ 			iounmap(pfc->window[k].virt);
+ 
+ 	kfree(pfc->window);
++	pfc->num_windows = 0;
+ 	pfc->window = NULL;
  }
--
--int __init sh_pfc_register_info(const char *name,
--				struct resource *resource, u32 num_resources,
--				struct pinmux_info *pdata)
--{
--	sh_pfc_device.dev.platform_data = pdata;
--
--	return sh_pfc_register(name, resource, num_resources);
--}
+ 
+-static int pfc_ioremap(struct sh_pfc *pfc)
++static int pfc_ioremap(struct sh_pfc *pfc, struct platform_device *pdev)
+ {
++	unsigned int num_resources;
+ 	struct resource *res;
+ 	int k;
+ 
+-	if (!pfc->pdata->num_resources)
++	if (pdev->num_resources) {
++		num_resources = pdev->num_resources;
++		res = pdev->resource;
++	} else {
++		num_resources = pfc->pdata->num_resources;
++		res = pfc->pdata->resource;
++	}
++
++	if (num_resources = 0) {
++		pfc->num_windows = 0;
+ 		return 0;
++	}
+ 
+-	pfc->window = kzalloc(pfc->pdata->num_resources * sizeof(*pfc->window),
++	pfc->window = kzalloc(num_resources * sizeof(*pfc->window),
+ 			      GFP_NOWAIT);
+ 	if (!pfc->window)
+ 		goto err1;
+ 
+-	for (k = 0; k < pfc->pdata->num_resources; k++) {
+-		res = pfc->pdata->resource + k;
++	pfc->num_windows = num_resources;
++
++	for (k = 0; k < num_resources; k++, res++) {
+ 		WARN_ON(resource_type(res) != IORESOURCE_MEM);
+ 		pfc->window[k].phys = res->start;
+ 		pfc->window[k].size = resource_size(res);
+@@ -77,7 +90,7 @@ static void __iomem *pfc_phys_to_virt(struct sh_pfc *pfc,
+ 	int k;
+ 
+ 	/* scan through physical windows and convert address */
+-	for (k = 0; k < pfc->pdata->num_resources; k++) {
++	for (k = 0; k < pfc->num_windows; k++) {
+ 		window = pfc->window + k;
+ 
+ 		if (address < window->phys)
+@@ -516,7 +529,7 @@ static int sh_pfc_probe(struct platform_device *pdev)
+ 	pfc->pdata = pdata;
+ 	pfc->dev = &pdev->dev;
+ 
+-	ret = pfc_ioremap(pfc);
++	ret = pfc_ioremap(pfc, pdev);
+ 	if (unlikely(ret < 0))
+ 		return ret;
+ 
+diff --git a/drivers/sh/pfc/core.h b/drivers/sh/pfc/core.h
+index 1287b3e..b71f559 100644
+--- a/drivers/sh/pfc/core.h
++++ b/drivers/sh/pfc/core.h
+@@ -28,7 +28,9 @@ struct sh_pfc {
+ 	struct sh_pfc_platform_data *pdata;
+ 	spinlock_t lock;
+ 
++	unsigned int num_windows;
+ 	struct pfc_window *window;
++
+ 	struct sh_pfc_chip *gpio;
+ 	struct sh_pfc_pinctrl *pinctrl;
+ };
 -- 
 1.7.8.6
 
