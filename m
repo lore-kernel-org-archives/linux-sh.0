@@ -1,43 +1,22 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 27 Nov 2012 02:45:46 +0000
-Subject: [PATCH] Update ARM/SHMOBILE section of MAINTAINERS
-Message-Id: <1353984346-25463-1-git-send-email-horms@verge.net.au>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Tue, 27 Nov 2012 04:23:24 +0000
+Subject: Re: [PATCH] Update ARM/SHMOBILE section of MAINTAINERS
+Message-Id: <20121127042324.GC30445@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1353984346-25463-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1353984346-25463-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Simon Horman <horms+renesas@verge.net.au>
+On Tue, Nov 27, 2012 at 11:45:46AM +0900, Simon Horman wrote:
+> From: Simon Horman <horms+renesas@verge.net.au>
+> 
+> I have been handling maintenance of shmobile
+> for a little over a release-cycle now and it seems
+> to appropriate to update the MAINTAINERS file accordingly.
+> 
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-I have been handling maintenance of shmobile
-for a little over a release-cycle now and it seems
-to appropriate to update the MAINTAINERS file accordingly.
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- MAINTAINERS |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/MAINTAINERS b/MAINTAINERS
-index e73060f..056200c 100644
---- a/MAINTAINERS
-+++ b/MAINTAINERS
-@@ -1114,12 +1114,12 @@ S:	Maintained
- F:	drivers/media/platform/s5p-tv/
- 
- ARM/SHMOBILE ARM ARCHITECTURE
--M:	Paul Mundt <lethal@linux-sh.org>
-+M:	Simon Horman <horms@verge.net.au>
- M:	Magnus Damm <magnus.damm@gmail.com>
- L:	linux-sh@vger.kernel.org
- W:	http://oss.renesas.com
- Q:	http://patchwork.kernel.org/project/linux-sh/list/
--T:	git git://git.kernel.org/pub/scm/linux/kernel/git/lethal/sh-2.6.git rmobile-latest
-+T:	git git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git next
- S:	Supported
- F:	arch/arm/mach-shmobile/
- F:	drivers/sh/
--- 
-1.7.10.4
-
+Acked-by: Paul Mundt <lethal@linux-sh.org>
