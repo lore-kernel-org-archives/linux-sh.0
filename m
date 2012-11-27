@@ -1,36 +1,56 @@
-From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Date: Wed, 07 Nov 2012 06:59:24 +0000
-Subject: [PATCH 05/10] serial: sh-sci: fix condition test to set SCBRR
-Message-Id: <509A06CC.5080302@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 27 Nov 2012 00:02:22 +0000
+Subject: [PATCH v2 23/77] sh: sh7720: Register PFC platform device
+Message-Id: <1353974596-30033-24-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <509A0658.1010503@renesas.com>
-In-Reply-To: <509A0658.1010503@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-SCBRR = 0 is valid value (divide by 1).
+Add arch code to register the PFC platform device instead of calling the
+driver directly. Platform device registration in the sh-pfc driver will
+be removed.
 
-Signed-off-by: Takashi YOSHII <takashi.yoshii.zj@renesas.com>
-Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/tty/serial/sh-sci.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/sh/Kconfig                        |    1 +
+ arch/sh/kernel/cpu/sh3/pinmux-sh7720.c |    3 ++-
+ 2 files changed, 3 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index e65e546..ffeca65 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1853,7 +1853,7 @@ static void sci_set_termios(struct uart_port *port, struct ktermios *termios,
- 	dev_dbg(port->dev, "%s: SMR %x, t %x, SCSCR %x\n", __func__, smr_val, t,
- 		s->cfg->scscr);
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index b934d7d..bfb8b3e 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -367,6 +367,7 @@ config CPU_SUBTYPE_SH7720
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select USB_ARCH_HAS_OHCI
+ 	select USB_OHCI_SH if USB_OHCI_HCD
++	select PINCTRL
+ 	help
+ 	  Select SH7720 if you have a SH3-DSP SH7720 CPU.
  
--	if (t > 0) {
-+	if (t >= 0) {
- 		if (t >= 256) {
- 			serial_port_out(port, SCSMR, (serial_port_in(port, SCSMR) & ~3) | 1);
- 			t >>= 2;
+diff --git a/arch/sh/kernel/cpu/sh3/pinmux-sh7720.c b/arch/sh/kernel/cpu/sh3/pinmux-sh7720.c
+index 9ca1546..df0648f 100644
+--- a/arch/sh/kernel/cpu/sh3/pinmux-sh7720.c
++++ b/arch/sh/kernel/cpu/sh3/pinmux-sh7720.c
+@@ -11,6 +11,7 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
++#include <cpu/pfc.h>
+ #include <cpu/sh7720.h>
+ 
+ enum {
+@@ -1236,7 +1237,7 @@ static struct pinmux_info sh7720_pinmux_info = {
+ 
+ static int __init plat_pinmux_setup(void)
+ {
+-	return register_pinmux(&sh7720_pinmux_info);
++	return sh_pfc_register_info(NULL, NULL, 0, &sh7720_pinmux_info);
+ }
+ 
+ arch_initcall(plat_pinmux_setup);
 -- 
-1.7.12.4
+1.7.8.6
 
