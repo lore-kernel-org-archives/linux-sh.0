@@ -1,85 +1,55 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 26 Nov 2012 00:16:52 +0000
-Subject: [PATCH 5/7] ARM: mach-shmobile: sh73a0: Allow initialisation of GIC by DT
-Message-Id: <1353889014-17142-6-git-send-email-horms@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 27 Nov 2012 00:02:19 +0000
+Subject: [PATCH v2 20/77] sh: sh7203: Register PFC platform device
+Message-Id: <1353974596-30033-21-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1353889014-17142-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1353889014-17142-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This allows the GIC interrupt controller of the sh73a0 SoC to be
-initialised using a flattened device tree blob.
+Add arch code to register the PFC platform device instead of calling the
+driver directly. Platform device registration in the sh-pfc driver will
+be removed.
 
-It does not allow the INTC interrupt controller which is also present on
-the sh73a0 SoC to be enabled via device tree.  Nor does it handle sharing
-of interrupts between the GIC and INTC interrupt controllers.
-
-This limits the usefulness of this code to applications which only wish to
-access devices which use interrupts that can be handled by the GIC
-interrupt controller. Other applications should, for now, continue using
-non-device tree initialisation of the sh72a0 interrupt controllers.
-
-An example dts snippet follows:
-
-	gic: interrupt-controller@f0001000 {
-		compatible = "arm,cortex-a9-gic";
-		#interrupt-cells = <3>;
-		#address-cells = <1>;
-		interrupt-controller;
-		reg = <0xf0001000 0x1000>,
-		      <0xf0000100 0x100>;
-	};
-
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/include/mach/common.h |    1 +
- arch/arm/mach-shmobile/intc-sh73a0.c         |   14 ++++++++++++++
- 2 files changed, 15 insertions(+)
+ arch/sh/Kconfig                         |    1 +
+ arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c |    3 ++-
+ 2 files changed, 3 insertions(+), 1 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index d47e215..b50447e 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -49,6 +49,7 @@ extern struct clk sh7372_extal1_clk;
- extern struct clk sh7372_extal2_clk;
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index babc2b8..023b2ad 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -276,6 +276,7 @@ config CPU_SUBTYPE_SH7203
+ 	select SYS_SUPPORTS_CMT
+ 	select SYS_SUPPORTS_MTU2
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
++	select PINCTRL
  
- extern void sh73a0_init_irq(void);
-+extern void sh73a0_init_irq_dt(void);
- extern void sh73a0_map_io(void);
- extern void sh73a0_add_early_devices(void);
- extern void sh73a0_add_standard_devices(void);
-diff --git a/arch/arm/mach-shmobile/intc-sh73a0.c b/arch/arm/mach-shmobile/intc-sh73a0.c
-index f0c5e51..e492350 100644
---- a/arch/arm/mach-shmobile/intc-sh73a0.c
-+++ b/arch/arm/mach-shmobile/intc-sh73a0.c
-@@ -21,6 +21,7 @@
- #include <linux/interrupt.h>
- #include <linux/module.h>
- #include <linux/irq.h>
-+#include <linux/of_irq.h>
- #include <linux/io.h>
- #include <linux/sh_intc.h>
- #include <mach/intc.h>
-@@ -464,3 +465,16 @@ void __init sh73a0_init_irq(void)
- 	sh73a0_pint1_cascade.handler = sh73a0_pint1_demux;
- 	setup_irq(gic_spi(34), &sh73a0_pint1_cascade);
+ config CPU_SUBTYPE_SH7206
+ 	bool "Support SH7206 processor"
+diff --git a/arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c b/arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c
+index c465af7..814926e 100644
+--- a/arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c
++++ b/arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c
+@@ -11,6 +11,7 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
++#include <cpu/pfc.h>
+ #include <cpu/sh7203.h>
+ 
+ enum {
+@@ -1592,6 +1593,6 @@ static struct pinmux_info sh7203_pinmux_info = {
+ 
+ static int __init plat_pinmux_setup(void)
+ {
+-	return register_pinmux(&sh7203_pinmux_info);
++	return sh_pfc_register_info(NULL, NULL, 0, &sh7203_pinmux_info);
  }
-+
-+#ifdef CONFIG_OF
-+static const struct of_device_id irq_of_match[] __initconst = {
-+	{ .compatible = "arm,cortex-a9-gic", .data = gic_of_init, },
-+	{ },
-+};
-+
-+void __init sh73a0_init_irq_dt(void)
-+{
-+	of_irq_init(irq_of_match);
-+	gic_arch_extn.irq_set_wake = sh73a0_set_wake;
-+}
-+#endif
+ arch_initcall(plat_pinmux_setup);
 -- 
-1.7.10.4
+1.7.8.6
 
