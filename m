@@ -1,152 +1,121 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 09 Nov 2012 07:29:22 +0000
-Subject: [PATCH 07/10] ARM: shmobile: sh7372: use sh_clk_fsidiv_register() for FSI-DIV clocks
-Message-Id: <1352446165-19298-8-git-send-email-horms@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 27 Nov 2012 00:02:18 +0000
+Subject: [PATCH v2 19/77] sh: Add PFC platform device registration helper function
+Message-Id: <1353974596-30033-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352446165-19298-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352446165-19298-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The sh_pfc_register() function can be called by boards or SoC setup code
+to register the PFC platform device.
 
-Now, sh7372 can use sh_clk_fsidiv_register() for FSI-DIV clocks.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-sh7372.c |   94 ++++-----------------------------
- 1 file changed, 10 insertions(+), 84 deletions(-)
+ arch/sh/include/cpu-common/cpu/pfc.h |   30 +++++++++++++++++++++++
+ arch/sh/kernel/cpu/Makefile          |    2 +-
+ arch/sh/kernel/cpu/pfc.c             |   44 ++++++++++++++++++++++++++++++++++
+ 3 files changed, 75 insertions(+), 1 deletions(-)
+ create mode 100644 arch/sh/include/cpu-common/cpu/pfc.h
+ create mode 100644 arch/sh/kernel/cpu/pfc.c
 
-diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-index 18dcff7..bee2d05 100644
---- a/arch/arm/mach-shmobile/clock-sh7372.c
-+++ b/arch/arm/mach-shmobile/clock-sh7372.c
-@@ -420,87 +420,11 @@ static struct clk div6_reparent_clks[DIV6_REPARENT_NR] = {
- };
+diff --git a/arch/sh/include/cpu-common/cpu/pfc.h b/arch/sh/include/cpu-common/cpu/pfc.h
+new file mode 100644
+index 0000000..40e8643
+--- /dev/null
++++ b/arch/sh/include/cpu-common/cpu/pfc.h
+@@ -0,0 +1,30 @@
++/*
++ * SH Pin Function Control Initialization
++ *
++ * Copyright (C) 2012  Renesas Solutions Corp.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#ifndef __ARCH_SH_CPU_PFC_H__
++#define __ARCH_SH_CPU_PFC_H__
++
++#include <linux/types.h>
++
++struct pinmux_info;
++struct resource;
++
++int sh_pfc_register(const char *name,
++		    struct resource *resource, u32 num_resources);
++int sh_pfc_register_info(const char *name,
++			 struct resource *resource, u32 num_resources,
++			 struct pinmux_info *pdata);
++
++#endif /* __ARCH_SH_CPU_PFC_H__ */
+diff --git a/arch/sh/kernel/cpu/Makefile b/arch/sh/kernel/cpu/Makefile
+index fa58bfd..accc7ca 100644
+--- a/arch/sh/kernel/cpu/Makefile
++++ b/arch/sh/kernel/cpu/Makefile
+@@ -18,4 +18,4 @@ obj-$(CONFIG_ARCH_SHMOBILE)	+= shmobile/
+ obj-$(CONFIG_SH_ADC)		+= adc.o
+ obj-$(CONFIG_SH_CLK_CPG_LEGACY)	+= clock-cpg.o
  
- /* FSI DIV */
--static unsigned long fsidiv_recalc(struct clk *clk)
--{
--	unsigned long value;
--
--	value = __raw_readl(clk->mapping->base);
--
--	value >>= 16;
--	if (value < 2)
--		return 0;
--
--	return clk->parent->rate / value;
--}
--
--static long fsidiv_round_rate(struct clk *clk, unsigned long rate)
--{
--	return clk_rate_div_range_round(clk, 2, 0xffff, rate);
--}
--
--static void fsidiv_disable(struct clk *clk)
--{
--	__raw_writel(0, clk->mapping->base);
--}
--
--static int fsidiv_enable(struct clk *clk)
--{
--	unsigned long value;
--
--	value  = __raw_readl(clk->mapping->base) >> 16;
--	if (value < 2)
--		return -EIO;
--
--	__raw_writel((value << 16) | 0x3, clk->mapping->base);
--
--	return 0;
--}
-+enum { FSIDIV_A, FSIDIV_B, FSIDIV_REPARENT_NR };
- 
--static int fsidiv_set_rate(struct clk *clk, unsigned long rate)
--{
--	int idx;
--
--	idx = (clk->parent->rate / rate) & 0xffff;
--	if (idx < 2)
--		return -EINVAL;
--
--	__raw_writel(idx << 16, clk->mapping->base);
--	return 0;
--}
--
--static struct sh_clk_ops fsidiv_clk_ops = {
--	.recalc		= fsidiv_recalc,
--	.round_rate	= fsidiv_round_rate,
--	.set_rate	= fsidiv_set_rate,
--	.enable		= fsidiv_enable,
--	.disable	= fsidiv_disable,
--};
--
--static struct clk_mapping fsidiva_clk_mapping = {
--	.phys	= FSIDIVA,
--	.len	= 8,
--};
--
--static struct clk fsidiva_clk = {
--	.ops		= &fsidiv_clk_ops,
--	.parent		= &div6_reparent_clks[DIV6_FSIA], /* late install */
--	.mapping	= &fsidiva_clk_mapping,
--};
--
--static struct clk_mapping fsidivb_clk_mapping = {
--	.phys	= FSIDIVB,
--	.len	= 8,
--};
--
--static struct clk fsidivb_clk = {
--	.ops		= &fsidiv_clk_ops,
--	.parent		= &div6_reparent_clks[DIV6_FSIB],  /* late install */
--	.mapping	= &fsidivb_clk_mapping,
--};
--
--static struct clk *late_main_clks[] = {
--	&fsidiva_clk,
--	&fsidivb_clk,
-+static struct clk fsidivs[] = {
-+	[FSIDIV_A] = SH_CLK_FSIDIV(FSIDIVA, &div6_reparent_clks[DIV6_FSIA]),
-+	[FSIDIV_B] = SH_CLK_FSIDIV(FSIDIVB, &div6_reparent_clks[DIV6_FSIB]),
- };
- 
- enum { MSTP001, MSTP000,
-@@ -583,8 +507,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("pllc1_clk", &pllc1_clk),
- 	CLKDEV_CON_ID("pllc1_div2_clk", &pllc1_div2_clk),
- 	CLKDEV_CON_ID("pllc2_clk", &sh7372_pllc2_clk),
--	CLKDEV_CON_ID("fsidiva", &fsidiva_clk),
--	CLKDEV_CON_ID("fsidivb", &fsidivb_clk),
-+	CLKDEV_CON_ID("fsidiva", &fsidivs[FSIDIV_A]),
-+	CLKDEV_CON_ID("fsidivb", &fsidivs[FSIDIV_B]),
- 
- 	/* DIV4 clocks */
- 	CLKDEV_CON_ID("i_clk", &div4_clks[DIV4_I]),
-@@ -680,6 +604,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("icka", "sh_fsi2", &div6_reparent_clks[DIV6_FSIA]),
- 	CLKDEV_ICK_ID("ickb", "sh_fsi2", &div6_reparent_clks[DIV6_FSIB]),
- 	CLKDEV_ICK_ID("spu2", "sh_fsi2", &mstp_clks[MSTP223]),
-+	CLKDEV_ICK_ID("diva", "sh_fsi2", &fsidivs[FSIDIV_A]),
-+	CLKDEV_ICK_ID("divb", "sh_fsi2", &fsidivs[FSIDIV_B]),
- };
- 
- void __init sh7372_clock_init(void)
-@@ -708,8 +634,8 @@ void __init sh7372_clock_init(void)
- 	if (!ret)
- 		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
- 
--	for (k = 0; !ret && (k < ARRAY_SIZE(late_main_clks)); k++)
--		ret = clk_register(late_main_clks[k]);
-+	if (!ret)
-+		ret = sh_clk_fsidiv_register(fsidivs, FSIDIV_REPARENT_NR);
- 
- 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
- 
+-obj-y	+= irq/ init.o clock.o fpu.o proc.o
++obj-y	+= irq/ init.o clock.o fpu.o pfc.o proc.o
+diff --git a/arch/sh/kernel/cpu/pfc.c b/arch/sh/kernel/cpu/pfc.c
+new file mode 100644
+index 0000000..d045d75
+--- /dev/null
++++ b/arch/sh/kernel/cpu/pfc.c
+@@ -0,0 +1,44 @@
++/*
++ * SH Pin Function Control Initialization
++ *
++ * Copyright (C) 2012  Renesas Solutions Corp.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include <linux/init.h>
++#include <linux/platform_device.h>
++
++#include <cpu/pfc.h>
++
++static struct platform_device sh_pfc_device = {
++	.name		= "sh-pfc",
++	.id		= -1,
++};
++
++int __init sh_pfc_register(const char *name,
++			   struct resource *resource, u32 num_resources)
++{
++	if (name)
++		sh_pfc_device.name = name;
++	sh_pfc_device.num_resources = num_resources;
++	sh_pfc_device.resource = resource;
++
++	return platform_device_register(&sh_pfc_device);
++}
++
++int __init sh_pfc_register_info(const char *name,
++				struct resource *resource, u32 num_resources,
++				struct pinmux_info *pdata)
++{
++	sh_pfc_device.dev.platform_data = pdata;
++
++	return sh_pfc_register(name, resource, num_resources);
++}
 -- 
-1.7.10.4
+1.7.8.6
 
