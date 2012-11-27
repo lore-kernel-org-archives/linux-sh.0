@@ -1,54 +1,51 @@
-From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
-Date: Fri, 16 Nov 2012 05:46:12 +0000
-Subject: [PATCH 4/4] drivers: uio: Only allocate new private data when probing device tree node
-Message-Id: <1353044772-18803-5-git-send-email-dhobsong@igel.co.jp>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 27 Nov 2012 00:02:13 +0000
+Subject: [PATCH v2 14/77] ARM: shmobile: sh7372: Register PFC platform device
+Message-Id: <1353974596-30033-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1353044772-18803-1-git-send-email-dhobsong@igel.co.jp>
-In-Reply-To: <1353044772-18803-1-git-send-email-dhobsong@igel.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: hjk@hansjkoch.de, gregkh@linuxfoundation.org, magnus.damm@gmail.com, horms@verge.net.au
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Damian Hobson-Garcia <dhobsong@igel.co.jp>
+To: linux-sh@vger.kernel.org
 
-The same condition should be used both when allocating and freeing the
-driver private data.  When dev.of_node is non NULL, allocate a new
-private data structure, otherwise use the values from the platform data.
+Add arch code to register the PFC platform device instead of calling the
+driver directly. Platform device registration in the sh-pfc driver will
+be removed.
 
-Reported-by: Fengguang Wu <fengguang.wu@intel.com>
-
-Signed-off-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/uio/uio_dmem_genirq.c |    2 +-
- drivers/uio/uio_pdrv_genirq.c |    2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/pfc-sh7372.c |   11 ++++++++++-
+ 1 files changed, 10 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/uio/uio_dmem_genirq.c b/drivers/uio/uio_dmem_genirq.c
-index bbdf925..252434c 100644
---- a/drivers/uio/uio_dmem_genirq.c
-+++ b/drivers/uio/uio_dmem_genirq.c
-@@ -153,7 +153,7 @@ static int uio_dmem_genirq_probe(struct platform_device *pdev)
- 	int ret = -EINVAL;
- 	int i;
+diff --git a/arch/arm/mach-shmobile/pfc-sh7372.c b/arch/arm/mach-shmobile/pfc-sh7372.c
+index 7a1525f..dd5e145 100644
+--- a/arch/arm/mach-shmobile/pfc-sh7372.c
++++ b/arch/arm/mach-shmobile/pfc-sh7372.c
+@@ -22,6 +22,7 @@
+  */
+ #include <linux/init.h>
+ #include <linux/kernel.h>
++#include <linux/platform_device.h>
+ #include <linux/sh_pfc.h>
+ #include <mach/irqs.h>
+ #include <mach/sh7372.h>
+@@ -1657,7 +1658,15 @@ static struct pinmux_info sh7372_pinmux_info = {
+ 	.gpio_irq_size = ARRAY_SIZE(pinmux_irqs),
+ };
  
--	if (!uioinfo) {
-+	if (pdev->dev.of_node) {
- 		int irq;
- 
- 		/* alloc uioinfo for one device */
-diff --git a/drivers/uio/uio_pdrv_genirq.c b/drivers/uio/uio_pdrv_genirq.c
-index 42202cd..45fcceb 100644
---- a/drivers/uio/uio_pdrv_genirq.c
-+++ b/drivers/uio/uio_pdrv_genirq.c
-@@ -102,7 +102,7 @@ static int uio_pdrv_genirq_probe(struct platform_device *pdev)
- 	int ret = -EINVAL;
- 	int i;
- 
--	if (!uioinfo) {
-+	if (pdev->dev.of_node) {
- 		int irq;
- 
- 		/* alloc uioinfo for one device */
++static struct platform_device sh7372_pfc_device = {
++	.name		= "sh-pfc",
++	.id		= -1,
++	.dev = {
++		.platform_data = &sh7372_pinmux_info,
++	},
++};
++
+ void sh7372_pinmux_init(void)
+ {
+-	register_pinmux(&sh7372_pinmux_info);
++	platform_device_register(&sh7372_pfc_device);
+ }
 -- 
-1.7.5.4
+1.7.8.6
 
