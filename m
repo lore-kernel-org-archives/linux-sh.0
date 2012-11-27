@@ -1,238 +1,275 @@
-From: Wen Congyang <wency@cn.fujitsu.com>
-Date: Tue, 27 Nov 2012 10:00:15 +0000
-Subject: [Patch v4 05/12] memory-hotplug: introduce new function arch_remove_memory() for removing page table
-Message-Id: <1354010422-19648-6-git-send-email-wency@cn.fujitsu.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 27 Nov 2012 00:02:03 +0000
+Subject: [PATCH v2 04/77] sh-pfc: Merge PFC core and gpio
+Message-Id: <1353974596-30033-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1354010422-19648-1-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1354010422-19648-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
-Cc: David Rientjes <rientjes@google.com>, Jiang Liu <liuj97@gmail.com>, Len Brown <len.brown@intel.com>, benh@kernel.crashing.org, paulus@samba.org, Christoph Lameter <cl@linux.com>, Minchan Kim <minchan.kim@gmail.com>, Andrew Morton <akpm@linux-foundation.org>, KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>, Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>, Jianguo Wu <wujianguo@huawei.com>, Wen Congyang <wency@cn.fujitsu.com>
+To: linux-sh@vger.kernel.org
 
-For removing memory, we need to remove page table. But it depends
-on architecture. So the patch introduce arch_remove_memory() for
-removing page table. Now it only calls __remove_pages().
+The PFC core calls the gpio module gpiochip registration in its
+register_sh_pfc() function, itself called at arch initialization time.
+If the gpio module isn't present then the gpiochip will never be
+registered.
 
-Note: __remove_pages() for some archtecuture is not implemented
-      (I don't know how to implement it for s390).
+As the gpio module can only be present at arch initialization time if
+it's builtin, there's no point in allowing to build it as a module. Make
+it a boolean option, and initialize it synchronously with the core if
+selected.
 
-CC: David Rientjes <rientjes@google.com>
-CC: Jiang Liu <liuj97@gmail.com>
-CC: Len Brown <len.brown@intel.com>
-CC: Benjamin Herrenschmidt <benh@kernel.crashing.org>
-CC: Paul Mackerras <paulus@samba.org>
-CC: Christoph Lameter <cl@linux.com>
-Cc: Minchan Kim <minchan.kim@gmail.com>
-CC: Andrew Morton <akpm@linux-foundation.org>
-CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
-CC: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
 ---
- arch/ia64/mm/init.c            | 18 ++++++++++++++++++
- arch/powerpc/mm/mem.c          | 12 ++++++++++++
- arch/s390/mm/init.c            | 12 ++++++++++++
- arch/sh/mm/init.c              | 17 +++++++++++++++++
- arch/tile/mm/init.c            |  8 ++++++++
- arch/x86/mm/init_32.c          | 12 ++++++++++++
- arch/x86/mm/init_64.c          | 15 +++++++++++++++
- include/linux/memory_hotplug.h |  1 +
- mm/memory_hotplug.c            |  2 ++
- 9 files changed, 97 insertions(+)
+ drivers/sh/pfc/Kconfig  |    2 +-
+ drivers/sh/pfc/Makefile |    4 ++-
+ drivers/sh/pfc/core.c   |   23 +++++--------
+ drivers/sh/pfc/core.h   |    4 ++
+ drivers/sh/pfc/gpio.c   |   79 +++++------------------------------------------
+ 5 files changed, 25 insertions(+), 87 deletions(-)
 
-diff --git a/arch/ia64/mm/init.c b/arch/ia64/mm/init.c
-index 082e383..e333822 100644
---- a/arch/ia64/mm/init.c
-+++ b/arch/ia64/mm/init.c
-@@ -689,6 +689,24 @@ int arch_add_memory(int nid, u64 start, u64 size)
+diff --git a/drivers/sh/pfc/Kconfig b/drivers/sh/pfc/Kconfig
+index f33d82a..eaeabc5 100644
+--- a/drivers/sh/pfc/Kconfig
++++ b/drivers/sh/pfc/Kconfig
+@@ -11,7 +11,7 @@ config SH_PFC
+ 	def_bool y
+ 
+ config GPIO_SH_PFC
+-	tristate "SuperH PFC GPIO support"
++	bool "SuperH PFC GPIO support"
+ 	depends on SH_PFC && GPIOLIB
+ 	help
+ 	  This enables support for GPIOs within the SoC's pin function
+diff --git a/drivers/sh/pfc/Makefile b/drivers/sh/pfc/Makefile
+index ce6fae3..6315cf3 100644
+--- a/drivers/sh/pfc/Makefile
++++ b/drivers/sh/pfc/Makefile
+@@ -1,3 +1,5 @@
+ sh-pfc-objs			= core.o pinctrl.o
++ifeq ($(CONFIG_GPIO_SH_PFC),y)
++sh-pfc-objs			+= gpio.o
++endif
+ obj-y				+= sh-pfc.o
+-obj-$(CONFIG_GPIO_SH_PFC)	+= gpio.o
+diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
+index 30e33db..f8f458b 100644
+--- a/drivers/sh/pfc/core.c
++++ b/drivers/sh/pfc/core.c
+@@ -149,7 +149,6 @@ int sh_pfc_read_bit(struct pinmux_data_reg *dr, unsigned long in_pos)
+ 
+ 	return (gpio_read_raw_reg(dr->mapped_reg, dr->reg_width) >> pos) & 1;
+ }
+-EXPORT_SYMBOL_GPL(sh_pfc_read_bit);
+ 
+ void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
+ 		      unsigned long value)
+@@ -169,7 +168,6 @@ void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
+ 
+ 	gpio_write_raw_reg(dr->mapped_reg, dr->reg_width, dr->reg_shadow);
+ }
+-EXPORT_SYMBOL_GPL(sh_pfc_write_bit);
+ 
+ static void config_reg_helper(struct sh_pfc *pfc,
+ 			      struct pinmux_cfg_reg *crp,
+@@ -307,7 +305,6 @@ int sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
+ 	*bitp = n;
+ 	return 0;
+ }
+-EXPORT_SYMBOL_GPL(sh_pfc_get_data_reg);
+ 
+ static int get_config_reg(struct sh_pfc *pfc, pinmux_enum_t enum_id,
+ 			  struct pinmux_cfg_reg **crp,
+@@ -384,7 +381,6 @@ int sh_pfc_gpio_to_enum(struct sh_pfc *pfc, unsigned gpio, int pos,
+ 	pr_err("cannot locate data/mark enum_id for gpio %d\n", gpio);
+ 	return -1;
+ }
+-EXPORT_SYMBOL_GPL(sh_pfc_gpio_to_enum);
+ 
+ int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
+ 		       int cfg_mode)
+@@ -500,7 +496,6 @@ int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
+ 
+ int register_sh_pfc(struct sh_pfc_platform_data *pdata)
+ {
+-	int (*initroutine)(struct sh_pfc *) = NULL;
+ 	int ret;
+ 
+ 	/*
+@@ -531,24 +526,20 @@ int register_sh_pfc(struct sh_pfc_platform_data *pdata)
+ 	if (unlikely(ret != 0))
+ 		goto err;
+ 
++#ifdef CONFIG_GPIO_SH_PFC
+ 	/*
+ 	 * Then the GPIO chip
+ 	 */
+-	initroutine = symbol_request(sh_pfc_register_gpiochip);
+-	if (initroutine) {
+-		ret = (*initroutine)(&sh_pfc);
+-		symbol_put_addr(initroutine);
+-
++	ret = sh_pfc_register_gpiochip(&sh_pfc);
++	if (unlikely(ret != 0)) {
+ 		/*
+ 		 * If the GPIO chip fails to come up we still leave the
+ 		 * PFC state as it is, given that there are already
+ 		 * extant users of it that have succeeded by this point.
+ 		 */
+-		if (unlikely(ret != 0)) {
+-			pr_notice("failed to init GPIO chip, ignoring...\n");
+-			ret = 0;
+-		}
++		pr_notice("failed to init GPIO chip, ignoring...\n");
+ 	}
++#endif
+ 
+ 	pr_info("%s support registered\n", sh_pfc.pdata->name);
+ 
+@@ -560,3 +551,7 @@ err:
  
  	return ret;
  }
 +
-+#ifdef CONFIG_MEMORY_HOTREMOVE
-+int arch_remove_memory(u64 start, u64 size)
-+{
-+	unsigned long start_pfn = start >> PAGE_SHIFT;
-+	unsigned long nr_pages = size >> PAGE_SHIFT;
-+	struct zone *zone;
-+	int ret;
-+
-+	zone = page_zone(pfn_to_page(start_pfn));
-+	ret = __remove_pages(zone, start_pfn, nr_pages);
-+	if (ret)
-+		pr_warn("%s: Problem encountered in __remove_pages() as"
-+			" ret=%d\n", __func__,  ret);
-+
-+	return ret;
-+}
-+#endif
- #endif
++MODULE_AUTHOR("Magnus Damm, Paul Mundt");
++MODULE_DESCRIPTION("Pin Control and GPIO driver for SuperH pin function controller");
++MODULE_LICENSE("GPL v2");
+diff --git a/drivers/sh/pfc/core.h b/drivers/sh/pfc/core.h
+index b07ae25..f3032b2 100644
+--- a/drivers/sh/pfc/core.h
++++ b/drivers/sh/pfc/core.h
+@@ -20,14 +20,18 @@ struct pfc_window {
+ 	unsigned long size;
+ };
  
- /*
-diff --git a/arch/powerpc/mm/mem.c b/arch/powerpc/mm/mem.c
-index 0dba506..09c6451 100644
---- a/arch/powerpc/mm/mem.c
-+++ b/arch/powerpc/mm/mem.c
-@@ -133,6 +133,18 @@ int arch_add_memory(int nid, u64 start, u64 size)
- 
- 	return __add_pages(nid, zone, start_pfn, nr_pages);
- }
++struct sh_pfc_chip;
 +
-+#ifdef CONFIG_MEMORY_HOTREMOVE
-+int arch_remove_memory(u64 start, u64 size)
-+{
-+	unsigned long start_pfn = start >> PAGE_SHIFT;
-+	unsigned long nr_pages = size >> PAGE_SHIFT;
-+	struct zone *zone;
+ struct sh_pfc {
+ 	struct sh_pfc_platform_data *pdata;
+ 	spinlock_t lock;
+ 
+ 	struct pfc_window *window;
++	struct sh_pfc_chip *gpio;
+ };
+ 
+ int sh_pfc_register_gpiochip(struct sh_pfc *pfc);
++int sh_pfc_unregister_gpiochip(struct sh_pfc *pfc);
+ 
+ int sh_pfc_register_pinctrl(struct sh_pfc *pfc);
+ 
+diff --git a/drivers/sh/pfc/gpio.c b/drivers/sh/pfc/gpio.c
+index 94c5489..91ea4c9 100644
+--- a/drivers/sh/pfc/gpio.c
++++ b/drivers/sh/pfc/gpio.c
+@@ -15,7 +15,6 @@
+ #include <linux/slab.h>
+ #include <linux/spinlock.h>
+ #include <linux/module.h>
+-#include <linux/platform_device.h>
+ #include <linux/pinctrl/consumer.h>
+ #include <linux/sh_pfc.h>
+ 
+@@ -152,44 +151,23 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+ 	sh_pfc_gpio_setup(chip);
+ 
+ 	ret = gpiochip_add(&chip->gpio_chip);
+-	if (unlikely(ret < 0))
++	if (unlikely(ret < 0)) {
+ 		kfree(chip);
++		return ret;
++	}
 +
-+	zone = page_zone(pfn_to_page(start_pfn));
-+	return __remove_pages(zone, start_pfn, nr_pages);
-+}
-+#endif
- #endif /* CONFIG_MEMORY_HOTPLUG */
++	pfc->gpio = chip;
  
- /*
-diff --git a/arch/s390/mm/init.c b/arch/s390/mm/init.c
-index 81e596c..b565190 100644
---- a/arch/s390/mm/init.c
-+++ b/arch/s390/mm/init.c
-@@ -257,4 +257,16 @@ int arch_add_memory(int nid, u64 start, u64 size)
- 		vmem_remove_mapping(start, size);
- 	return rc;
- }
-+
-+#ifdef CONFIG_MEMORY_HOTREMOVE
-+int arch_remove_memory(u64 start, u64 size)
-+{
-+	/*
-+	 * There is no hardware or firmware interface which could trigger a
-+	 * hot memory remove on s390. So there is nothing that needs to be
-+	 * implemented.
-+	 */
-+	return -EBUSY;
-+}
-+#endif
- #endif /* CONFIG_MEMORY_HOTPLUG */
-diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
-index 82cc576..1057940 100644
---- a/arch/sh/mm/init.c
-+++ b/arch/sh/mm/init.c
-@@ -558,4 +558,21 @@ int memory_add_physaddr_to_nid(u64 addr)
- EXPORT_SYMBOL_GPL(memory_add_physaddr_to_nid);
- #endif
+ 	pr_info("%s handling gpio %d -> %d\n",
+ 		pfc->pdata->name, pfc->pdata->first_gpio,
+ 		pfc->pdata->last_gpio);
  
-+#ifdef CONFIG_MEMORY_HOTREMOVE
-+int arch_remove_memory(u64 start, u64 size)
-+{
-+	unsigned long start_pfn = start >> PAGE_SHIFT;
-+	unsigned long nr_pages = size >> PAGE_SHIFT;
-+	struct zone *zone;
-+	int ret;
-+
-+	zone = page_zone(pfn_to_page(start_pfn));
-+	ret = __remove_pages(zone, start_pfn, nr_pages);
-+	if (unlikely(ret))
-+		pr_warn("%s: Failed, __remove_pages() = %d\n", __func__,
-+			ret);
-+
-+	return ret;
-+}
-+#endif
- #endif /* CONFIG_MEMORY_HOTPLUG */
-diff --git a/arch/tile/mm/init.c b/arch/tile/mm/init.c
-index ef29d6c..2749515 100644
---- a/arch/tile/mm/init.c
-+++ b/arch/tile/mm/init.c
-@@ -935,6 +935,14 @@ int remove_memory(u64 start, u64 size)
- {
- 	return -EINVAL;
- }
-+
-+#ifdef CONFIG_MEMORY_HOTREMOVE
-+int arch_remove_memory(u64 start, u64 size)
-+{
-+	/* TODO */
-+	return -EBUSY;
-+}
-+#endif
- #endif
- 
- struct kmem_cache *pgd_cache;
-diff --git a/arch/x86/mm/init_32.c b/arch/x86/mm/init_32.c
-index 11a5800..b19eba4 100644
---- a/arch/x86/mm/init_32.c
-+++ b/arch/x86/mm/init_32.c
-@@ -839,6 +839,18 @@ int arch_add_memory(int nid, u64 start, u64 size)
- 
- 	return __add_pages(nid, zone, start_pfn, nr_pages);
- }
-+
-+#ifdef CONFIG_MEMORY_HOTREMOVE
-+int arch_remove_memory(u64 start, u64 size)
-+{
-+	unsigned long start_pfn = start >> PAGE_SHIFT;
-+	unsigned long nr_pages = size >> PAGE_SHIFT;
-+	struct zone *zone;
-+
-+	zone = page_zone(pfn_to_page(start_pfn));
-+	return __remove_pages(zone, start_pfn, nr_pages);
-+}
-+#endif
- #endif
- 
- /*
-diff --git a/arch/x86/mm/init_64.c b/arch/x86/mm/init_64.c
-index 3baff25..5675335 100644
---- a/arch/x86/mm/init_64.c
-+++ b/arch/x86/mm/init_64.c
-@@ -680,6 +680,21 @@ int arch_add_memory(int nid, u64 start, u64 size)
- }
- EXPORT_SYMBOL_GPL(arch_add_memory);
- 
-+#ifdef CONFIG_MEMORY_HOTREMOVE
-+int __ref arch_remove_memory(u64 start, u64 size)
-+{
-+	unsigned long start_pfn = start >> PAGE_SHIFT;
-+	unsigned long nr_pages = size >> PAGE_SHIFT;
-+	struct zone *zone;
-+	int ret;
-+
-+	zone = page_zone(pfn_to_page(start_pfn));
-+	ret = __remove_pages(zone, start_pfn, nr_pages);
-+	WARN_ON_ONCE(ret);
-+
-+	return ret;
-+}
-+#endif
- #endif /* CONFIG_MEMORY_HOTPLUG */
- 
- static struct kcore_list kcore_vsyscall;
-diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
-index 38675e9..191b2d9 100644
---- a/include/linux/memory_hotplug.h
-+++ b/include/linux/memory_hotplug.h
-@@ -85,6 +85,7 @@ extern void __online_page_free(struct page *page);
- 
- #ifdef CONFIG_MEMORY_HOTREMOVE
- extern bool is_pageblock_removable_nolock(struct page *page);
-+extern int arch_remove_memory(u64 start, u64 size);
- #endif /* CONFIG_MEMORY_HOTREMOVE */
- 
- /* reasonably generic interface to expand the physical pages in a zone  */
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index 63d5388..e741732 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -1111,6 +1111,8 @@ repeat:
- 	/* remove memmap entry */
- 	firmware_map_remove(start, start + size, "System RAM");
- 
-+	arch_remove_memory(start, size);
-+
- 	unlock_memory_hotplug();
- 
+-	return ret;
+-}
+-EXPORT_SYMBOL_GPL(sh_pfc_register_gpiochip);
+-
+-static int sh_pfc_gpio_match(struct gpio_chip *gc, void *data)
+-{
+-	return !!strstr(gc->label, data);
+-}
+-
+-static int __devinit sh_pfc_gpio_probe(struct platform_device *pdev)
+-{
+-	struct sh_pfc_chip *chip;
+-	struct gpio_chip *gc;
+-
+-	gc = gpiochip_find("_pfc", sh_pfc_gpio_match);
+-	if (unlikely(!gc)) {
+-		pr_err("Cant find gpio chip\n");
+-		return -ENODEV;
+-	}
+-
+-	chip = gpio_to_pfc_chip(gc);
+-	platform_set_drvdata(pdev, chip);
+-
+-	pr_info("attaching to GPIO chip %s\n", chip->pfc->pdata->name);
+-
  	return 0;
+ }
+ 
+-static int __devexit sh_pfc_gpio_remove(struct platform_device *pdev)
++int __exit sh_pfc_unregister_gpiochip(struct sh_pfc *pfc)
+ {
+-	struct sh_pfc_chip *chip = platform_get_drvdata(pdev);
++	struct sh_pfc_chip *chip = pfc->gpio;
+ 	int ret;
+ 
+ 	ret = gpiochip_remove(&chip->gpio_chip);
+@@ -197,47 +175,6 @@ static int __devexit sh_pfc_gpio_remove(struct platform_device *pdev)
+ 		return ret;
+ 
+ 	kfree(chip);
++	pfc->gpio = NULL;
+ 	return 0;
+ }
+-
+-static struct platform_driver sh_pfc_gpio_driver = {
+-	.probe		= sh_pfc_gpio_probe,
+-	.remove		= __devexit_p(sh_pfc_gpio_remove),
+-	.driver		= {
+-		.name	= KBUILD_MODNAME,
+-		.owner	= THIS_MODULE,
+-	},
+-};
+-
+-static struct platform_device sh_pfc_gpio_device = {
+-	.name		= KBUILD_MODNAME,
+-	.id		= -1,
+-};
+-
+-static int __init sh_pfc_gpio_init(void)
+-{
+-	int rc;
+-
+-	rc = platform_driver_register(&sh_pfc_gpio_driver);
+-	if (likely(!rc)) {
+-		rc = platform_device_register(&sh_pfc_gpio_device);
+-		if (unlikely(rc))
+-			platform_driver_unregister(&sh_pfc_gpio_driver);
+-	}
+-
+-	return rc;
+-}
+-
+-static void __exit sh_pfc_gpio_exit(void)
+-{
+-	platform_device_unregister(&sh_pfc_gpio_device);
+-	platform_driver_unregister(&sh_pfc_gpio_driver);
+-}
+-
+-module_init(sh_pfc_gpio_init);
+-module_exit(sh_pfc_gpio_exit);
+-
+-MODULE_AUTHOR("Magnus Damm, Paul Mundt");
+-MODULE_DESCRIPTION("GPIO driver for SuperH pin function controller");
+-MODULE_LICENSE("GPL v2");
+-MODULE_ALIAS("platform:pfc-gpio");
 -- 
-1.8.0
+1.7.8.6
 
