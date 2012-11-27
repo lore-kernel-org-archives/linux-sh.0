@@ -1,56 +1,92 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 27 Nov 2012 00:02:23 +0000
-Subject: [PATCH v2 24/77] sh: sh7722: Register PFC platform device
-Message-Id: <1353974596-30033-25-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Wen Congyang <wency@cn.fujitsu.com>
+Date: Tue, 27 Nov 2012 09:58:19 +0000
+Subject: [Patch v4 01/12] memory-hotplug: try to offline the memory twice to avoid dependence
+Message-Id: <1354010422-19648-2-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1354010422-19648-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1354010422-19648-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+Cc: David Rientjes <rientjes@google.com>, Jiang Liu <liuj97@gmail.com>, Len Brown <len.brown@intel.com>, benh@kernel.crashing.org, paulus@samba.org, Christoph Lameter <cl@linux.com>, Minchan Kim <minchan.kim@gmail.com>, Andrew Morton <akpm@linux-foundation.org>, KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>, Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>, Jianguo Wu <wujianguo@huawei.com>, Wen Congyang <wency@cn.fujitsu.com>
 
-Add arch code to register the PFC platform device instead of calling the
-driver directly. Platform device registration in the sh-pfc driver will
-be removed.
+memory can't be offlined when CONFIG_MEMCG is selected.
+For example: there is a memory device on node 1. The address range
+is [1G, 1.5G). You will find 4 new directories memory8, memory9, memory10,
+and memory11 under the directory /sys/devices/system/memory/.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+If CONFIG_MEMCG is selected, we will allocate memory to store page cgroup
+when we online pages. When we online memory8, the memory stored page cgroup
+is not provided by this memory device. But when we online memory9, the memory
+stored page cgroup may be provided by memory8. So we can't offline memory8
+now. We should offline the memory in the reversed order.
+
+When the memory device is hotremoved, we will auto offline memory provided
+by this memory device. But we don't know which memory is onlined first, so
+offlining memory may fail. In such case, iterate twice to offline the memory.
+1st iterate: offline every non primary memory block.
+2nd iterate: offline primary (i.e. first added) memory block.
+
+This idea is suggested by KOSAKI Motohiro.
+
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+CC: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
 ---
- arch/sh/Kconfig                         |    1 +
- arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c |    3 ++-
- 2 files changed, 3 insertions(+), 1 deletions(-)
+ mm/memory_hotplug.c | 16 ++++++++++++++--
+ 1 file changed, 14 insertions(+), 2 deletions(-)
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index bfb8b3e..2f0d9bf 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -527,6 +527,7 @@ config CPU_SUBTYPE_SH7722
- 	select SYS_SUPPORTS_NUMA
- 	select SYS_SUPPORTS_CMT
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
-+	select PINCTRL
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index e4eeaca..b825dbc 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -1012,10 +1012,13 @@ int remove_memory(u64 start, u64 size)
+ 	unsigned long start_pfn, end_pfn;
+ 	unsigned long pfn, section_nr;
+ 	int ret;
++	int return_on_error = 0;
++	int retry = 0;
  
- config CPU_SUBTYPE_SH7366
- 	bool "Support SH7366 processor"
-diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c
-index 0688a75..11dbce3 100644
---- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c
-+++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c
-@@ -1,6 +1,7 @@
- #include <linux/init.h>
- #include <linux/kernel.h>
- #include <linux/gpio.h>
-+#include <cpu/pfc.h>
- #include <cpu/sh7722.h>
+ 	start_pfn = PFN_DOWN(start);
+ 	end_pfn = start_pfn + PFN_DOWN(size);
  
- enum {
-@@ -1778,7 +1779,7 @@ static struct pinmux_info sh7722_pinmux_info = {
++repeat:
+ 	for (pfn = start_pfn; pfn < end_pfn; pfn += PAGES_PER_SECTION) {
+ 		section_nr = pfn_to_section_nr(pfn);
+ 		if (!present_section_nr(section_nr))
+@@ -1034,14 +1037,23 @@ int remove_memory(u64 start, u64 size)
  
- static int __init plat_pinmux_setup(void)
- {
--	return register_pinmux(&sh7722_pinmux_info);
-+	return sh_pfc_register_info(NULL, NULL, 0, &sh7722_pinmux_info);
+ 		ret = offline_memory_block(mem);
+ 		if (ret) {
+-			kobject_put(&mem->dev.kobj);
+-			return ret;
++			if (return_on_error) {
++				kobject_put(&mem->dev.kobj);
++				return ret;
++			} else {
++				retry = 1;
++			}
+ 		}
+ 	}
+ 
+ 	if (mem)
+ 		kobject_put(&mem->dev.kobj);
+ 
++	if (retry) {
++		return_on_error = 1;
++		goto repeat;
++	}
++
+ 	return 0;
  }
- 
- arch_initcall(plat_pinmux_setup);
+ #else
 -- 
-1.7.8.6
+1.8.0
 
