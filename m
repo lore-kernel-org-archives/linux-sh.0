@@ -1,145 +1,51 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 27 Nov 2012 00:02:33 +0000
-Subject: [PATCH v2 34/77] sh-pfc: Move driver from drivers/sh/ to drivers/pinctrl/
-Message-Id: <1353974596-30033-35-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 27 Nov 2012 00:02:14 +0000
+Subject: [PATCH v2 15/77] ARM: shmobile: sh73a0: Register PFC platform device
+Message-Id: <1353974596-30033-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Paul Mundt <lethal@linux-sh.org>
----
- drivers/pinctrl/Kconfig                      |    1 +
- drivers/pinctrl/Makefile                     |    1 +
- drivers/{sh/pfc => pinctrl/sh-pfc}/Kconfig   |   16 +++++++++++-----
- drivers/{sh/pfc => pinctrl/sh-pfc}/Makefile  |    2 +-
- drivers/{sh/pfc => pinctrl/sh-pfc}/core.c    |    0
- drivers/{sh/pfc => pinctrl/sh-pfc}/core.h    |    0
- drivers/{sh/pfc => pinctrl/sh-pfc}/gpio.c    |    0
- drivers/{sh/pfc => pinctrl/sh-pfc}/pinctrl.c |    0
- drivers/sh/Kconfig                           |    1 -
- drivers/sh/Makefile                          |    1 -
- 10 files changed, 14 insertions(+), 8 deletions(-)
- rename drivers/{sh/pfc => pinctrl/sh-pfc}/Kconfig (57%)
- rename drivers/{sh/pfc => pinctrl/sh-pfc}/Makefile (69%)
- rename drivers/{sh/pfc => pinctrl/sh-pfc}/core.c (100%)
- rename drivers/{sh/pfc => pinctrl/sh-pfc}/core.h (100%)
- rename drivers/{sh/pfc => pinctrl/sh-pfc}/gpio.c (100%)
- rename drivers/{sh/pfc => pinctrl/sh-pfc}/pinctrl.c (100%)
+Add arch code to register the PFC platform device instead of calling the
+driver directly. Platform device registration in the sh-pfc driver will
+be removed.
 
-diff --git a/drivers/pinctrl/Kconfig b/drivers/pinctrl/Kconfig
-index d96caef..448e62b 100644
---- a/drivers/pinctrl/Kconfig
-+++ b/drivers/pinctrl/Kconfig
-@@ -210,6 +210,7 @@ config PINCTRL_ARMADA_XP
- 	bool
- 	select PINCTRL_MVEBU
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/pfc-sh73a0.c |   11 ++++++++++-
+ 1 files changed, 10 insertions(+), 1 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/pfc-sh73a0.c b/arch/arm/mach-shmobile/pfc-sh73a0.c
+index b442f9d..c83c582 100644
+--- a/arch/arm/mach-shmobile/pfc-sh73a0.c
++++ b/arch/arm/mach-shmobile/pfc-sh73a0.c
+@@ -20,6 +20,7 @@
+  */
+ #include <linux/init.h>
+ #include <linux/kernel.h>
++#include <linux/platform_device.h>
+ #include <linux/sh_pfc.h>
+ #include <mach/sh73a0.h>
+ #include <mach/irqs.h>
+@@ -2797,7 +2798,15 @@ static struct pinmux_info sh73a0_pinmux_info = {
+ 	.gpio_irq_size = ARRAY_SIZE(pinmux_irqs),
+ };
  
-+source "drivers/pinctrl/sh-pfc/Kconfig"
- source "drivers/pinctrl/spear/Kconfig"
- 
- config PINCTRL_XWAY
-diff --git a/drivers/pinctrl/Makefile b/drivers/pinctrl/Makefile
-index f395ba5..c44f17d 100644
---- a/drivers/pinctrl/Makefile
-+++ b/drivers/pinctrl/Makefile
-@@ -44,4 +44,5 @@ obj-$(CONFIG_PINCTRL_ARMADA_XP)  += pinctrl-armada-xp.o
- obj-$(CONFIG_PINCTRL_XWAY)	+= pinctrl-xway.o
- obj-$(CONFIG_PINCTRL_LANTIQ)	+= pinctrl-lantiq.o
- 
-+obj-$(CONFIG_PINCTRL_SH_PFC)	+= sh-pfc/
- obj-$(CONFIG_PLAT_SPEAR)	+= spear/
-diff --git a/drivers/sh/pfc/Kconfig b/drivers/pinctrl/sh-pfc/Kconfig
-similarity index 57%
-rename from drivers/sh/pfc/Kconfig
-rename to drivers/pinctrl/sh-pfc/Kconfig
-index eaeabc5..ae69dbe 100644
---- a/drivers/sh/pfc/Kconfig
-+++ b/drivers/pinctrl/sh-pfc/Kconfig
-@@ -1,18 +1,24 @@
--comment "Pin function controller options"
-+#
-+# Renesas SH and SH Mobile PINCTRL drivers
-+#
- 
--config SH_PFC
-+if ARCH_SHMOBILE || SUPERH
++static struct platform_device sh73a0_pfc_device = {
++	.name		= "sh-pfc",
++	.id		= -1,
++	.dev = {
++		.platform_data = &sh73a0_pinmux_info,
++	},
++};
 +
-+config PINCTRL_SH_PFC
- 	# XXX move off the gpio dependency
- 	depends on GENERIC_GPIO
- 	select GPIO_SH_PFC if ARCH_REQUIRE_GPIOLIB
--	select PINCTRL_SH_PFC
--	select PINCTRL
- 	select PINMUX
- 	select PINCONF
- 	def_bool y
-+	help
-+	  This enables pin control drivers for SH and SH Mobile platforms
- 
- config GPIO_SH_PFC
- 	bool "SuperH PFC GPIO support"
--	depends on SH_PFC && GPIOLIB
-+	depends on PINCTRL_SH_PFC && GPIOLIB
- 	help
- 	  This enables support for GPIOs within the SoC's pin function
- 	  controller.
-+
-+endif
-diff --git a/drivers/sh/pfc/Makefile b/drivers/pinctrl/sh-pfc/Makefile
-similarity index 69%
-rename from drivers/sh/pfc/Makefile
-rename to drivers/pinctrl/sh-pfc/Makefile
-index 6315cf3..6ba6fb2 100644
---- a/drivers/sh/pfc/Makefile
-+++ b/drivers/pinctrl/sh-pfc/Makefile
-@@ -2,4 +2,4 @@ sh-pfc-objs			= core.o pinctrl.o
- ifeq ($(CONFIG_GPIO_SH_PFC),y)
- sh-pfc-objs			+= gpio.o
- endif
--obj-y				+= sh-pfc.o
-+obj-$(CONFIG_PINCTRL_SH_PFC)	+= sh-pfc.o
-diff --git a/drivers/sh/pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
-similarity index 100%
-rename from drivers/sh/pfc/core.c
-rename to drivers/pinctrl/sh-pfc/core.c
-diff --git a/drivers/sh/pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
-similarity index 100%
-rename from drivers/sh/pfc/core.h
-rename to drivers/pinctrl/sh-pfc/core.h
-diff --git a/drivers/sh/pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
-similarity index 100%
-rename from drivers/sh/pfc/gpio.c
-rename to drivers/pinctrl/sh-pfc/gpio.c
-diff --git a/drivers/sh/pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
-similarity index 100%
-rename from drivers/sh/pfc/pinctrl.c
-rename to drivers/pinctrl/sh-pfc/pinctrl.c
-diff --git a/drivers/sh/Kconfig b/drivers/sh/Kconfig
-index d860ef7..f168a61 100644
---- a/drivers/sh/Kconfig
-+++ b/drivers/sh/Kconfig
-@@ -1,6 +1,5 @@
- menu "SuperH / SH-Mobile Driver Options"
- 
- source "drivers/sh/intc/Kconfig"
--source "drivers/sh/pfc/Kconfig"
- 
- endmenu
-diff --git a/drivers/sh/Makefile b/drivers/sh/Makefile
-index e57895b..fc67f56 100644
---- a/drivers/sh/Makefile
-+++ b/drivers/sh/Makefile
-@@ -5,7 +5,6 @@ obj-y	:= intc/
- 
- obj-$(CONFIG_HAVE_CLK)		+= clk/
- obj-$(CONFIG_MAPLE)		+= maple/
--obj-$(CONFIG_SH_PFC)		+= pfc/
- obj-$(CONFIG_SUPERHYWAY)	+= superhyway/
- 
- obj-y				+= pm_runtime.o
+ void sh73a0_pinmux_init(void)
+ {
+-	register_pinmux(&sh73a0_pinmux_info);
++	platform_device_register(&sh73a0_pfc_device);
+ }
 -- 
 1.7.8.6
 
