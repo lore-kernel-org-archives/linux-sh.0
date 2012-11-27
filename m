@@ -1,71 +1,62 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 08 Nov 2012 01:27:36 +0000
-Subject: [PATCH 7/7] ARM: shmobile: r8a7740: add FSI-DVI clocks
-Message-Id: <1352338056-21107-8-git-send-email-horms@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 27 Nov 2012 00:02:17 +0000
+Subject: [PATCH v2 18/77] ARM: shmobile: sh73a0: Add pin control resources
+Message-Id: <1353974596-30033-19-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352338056-21107-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352338056-21107-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Add memory resources for the pin control platform device to let the
+sh-pfc driver ioremap() registers properly instead of evily casting
+register physical addresses to virtual addresses.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
 ---
- arch/arm/mach-shmobile/clock-r8a7740.c |   16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
+ arch/arm/mach-shmobile/pfc-sh73a0.c |   17 +++++++++++++++++
+ 1 files changed, 17 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index 6729e00..71ee224 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -65,6 +65,9 @@
- #define SMSTPCR3	IOMEM(0xe615013c)
- #define SMSTPCR4	IOMEM(0xe6150140)
- 
-+#define FSIDIVA		IOMEM(0xFE1F8000)
-+#define FSIDIVB		IOMEM(0xFE1F8008)
-+
- /* Fixed 32 KHz root clock from EXTALR pin */
- static struct clk extalr_clk = {
- 	.rate	= 32768,
-@@ -427,6 +430,14 @@ static struct clk *late_main_clks[] = {
- 	&hdmi2_clk,
+diff --git a/arch/arm/mach-shmobile/pfc-sh73a0.c b/arch/arm/mach-shmobile/pfc-sh73a0.c
+index c83c582..342683e 100644
+--- a/arch/arm/mach-shmobile/pfc-sh73a0.c
++++ b/arch/arm/mach-shmobile/pfc-sh73a0.c
+@@ -18,7 +18,9 @@
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
++#include <linux/bug.h>
+ #include <linux/init.h>
++#include <linux/ioport.h>
+ #include <linux/kernel.h>
+ #include <linux/platform_device.h>
+ #include <linux/sh_pfc.h>
+@@ -2798,9 +2800,24 @@ static struct pinmux_info sh73a0_pinmux_info = {
+ 	.gpio_irq_size = ARRAY_SIZE(pinmux_irqs),
  };
  
-+/* FSI DIV */
-+enum { FSIDIV_A, FSIDIV_B, FSIDIV_REPARENT_NR };
-+
-+static struct clk fsidivs[] = {
-+	[FSIDIV_A] = SH_CLK_FSIDIV(FSIDIVA, &div6_reparent_clks[DIV6_FSIA]),
-+	[FSIDIV_B] = SH_CLK_FSIDIV(FSIDIVB, &div6_reparent_clks[DIV6_FSIB]),
++static struct resource sh73a0_pfc_resources[] = {
++	[0] = {
++		.start	= 0xe6050000,
++		.end	= 0xe6057fff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= 0xe605801c,
++		.end	= 0xe6058027,
++		.flags	= IORESOURCE_MEM,
++	}
 +};
 +
- /* MSTP */
- enum {
- 	DIV4_I, DIV4_ZG, DIV4_B, DIV4_M1, DIV4_HP,
-@@ -596,6 +607,8 @@ static struct clk_lookup lookups[] = {
- 
- 	CLKDEV_ICK_ID("icka", "sh_fsi2",	&div6_reparent_clks[DIV6_FSIA]),
- 	CLKDEV_ICK_ID("ickb", "sh_fsi2",	&div6_reparent_clks[DIV6_FSIB]),
-+	CLKDEV_ICK_ID("diva", "sh_fsi2",	&fsidivs[FSIDIV_A]),
-+	CLKDEV_ICK_ID("divb", "sh_fsi2",	&fsidivs[FSIDIV_B]),
- };
- 
- void __init r8a7740_clock_init(u8 md_ck)
-@@ -641,6 +654,9 @@ void __init r8a7740_clock_init(u8 md_ck)
- 	for (k = 0; !ret && (k < ARRAY_SIZE(late_main_clks)); k++)
- 		ret = clk_register(late_main_clks[k]);
- 
-+	if (!ret)
-+		ret = sh_clk_fsidiv_register(fsidivs, FSIDIV_REPARENT_NR);
-+
- 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
- 
- 	if (!ret)
+ static struct platform_device sh73a0_pfc_device = {
+ 	.name		= "sh-pfc",
+ 	.id		= -1,
++	.resource	= sh73a0_pfc_resources,
++	.num_resources	= ARRAY_SIZE(sh73a0_pfc_resources),
+ 	.dev = {
+ 		.platform_data = &sh73a0_pinmux_info,
+ 	},
 -- 
-1.7.10.4
+1.7.8.6
 
