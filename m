@@ -1,53 +1,73 @@
-From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Date: Fri, 16 Nov 2012 01:53:11 +0000
-Subject: [PATCH v2 07/10] serial: sh-sci: mask SCTFDR/RFDR according to fifosize
-Message-Id: <50A59C87.5010905@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 27 Nov 2012 00:03:14 +0000
+Subject: [PATCH v2 75/77] ARM: shmobile: kzm9g: Add pin control device in device tree
+Message-Id: <1353974596-30033-76-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <509A0658.1010503@renesas.com> <509A0B4E.1030801@renesas.com>
- <20121116010107.GA6068@kroah.com> <50A59B9B.2010501@renesas.com>
-In-Reply-To: <50A59B9B.2010501@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
+Add a pfc node in the sh73a0 device tree and include it in kzm9g.
 
-Current mask 0xff to SCTFDR/RFDR damages SCIFB, because the
-registers on SCIFB have 9-bit data (0 to 256).
-
-This patch changes the mask according to port->fifosize.
-Though I'm not sure if the mask is really needed (I don't know if
-there are variants which have non-zero upper bits), it is safer.
-
-Signed-off-by: Takashi Yoshii <takashi.yoshii.zj@renesas.com>
-Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/tty/serial/sh-sci.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/boot/dts/sh73a0-kzm9g.dts |    2 +-
+ arch/arm/boot/dts/sh73a0.dtsi      |   32 ++++++++++++++++++++++++++++++++
+ 2 files changed, 33 insertions(+), 1 deletions(-)
+ create mode 100644 arch/arm/boot/dts/sh73a0.dtsi
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 3021912..63a3bd0 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -485,7 +485,7 @@ static int sci_txfill(struct uart_port *port)
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+index bcb9119..7b37901 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+@@ -9,7 +9,7 @@
+  */
  
- 	reg = sci_getreg(port, SCTFDR);
- 	if (reg->size)
--		return serial_port_in(port, SCTFDR) & 0xff;
-+		return serial_port_in(port, SCTFDR) & ((port->fifosize << 1) - 1);
+ /dts-v1/;
+-/include/ "skeleton.dtsi"
++/include/ "sh73a0.dtsi"
  
- 	reg = sci_getreg(port, SCFDR);
- 	if (reg->size)
-@@ -505,7 +505,7 @@ static int sci_rxfill(struct uart_port *port)
- 
- 	reg = sci_getreg(port, SCRFDR);
- 	if (reg->size)
--		return serial_port_in(port, SCRFDR) & 0xff;
-+		return serial_port_in(port, SCRFDR) & ((port->fifosize << 1) - 1);
- 
- 	reg = sci_getreg(port, SCFDR);
- 	if (reg->size)
+ / {
+ 	model = "KZM-A9-GT";
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+new file mode 100644
+index 0000000..6b374ff
+--- /dev/null
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -0,0 +1,32 @@
++/*
++ * Device Tree Source for the SH73A0 SoC
++ *
++ * Copyright (C) 2012 Renesas Solutions Corp.
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++
++/include/ "skeleton.dtsi"
++
++/ {
++	compatible = "renesas,sh73a0";
++
++	cpus {
++		cpu@0 {
++			compatible = "arm,cortex-a9";
++		};
++		cpu@1 {
++			compatible = "arm,cortex-a9";
++		};
++	};
++
++	gpio: pfc@e6050000 {
++		compatible = "renesas,pfc-sh73a0";
++		reg = <0xe6050000 0x8000>,
++		      <0xe605801c 0x1c>;
++		gpio-controller;
++		#gpio-cells = <2>;
++	};
++};
 -- 
-1.7.12.4
+1.7.8.6
 
