@@ -1,35 +1,55 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 16 Nov 2012 10:34:41 +0000
-Subject: [PATCH 01/04] ARM: mach-shmobile: sh7372 INTC DT INTCA/INTCS typo fix
-Message-Id: <20121116103441.4231.45469.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 27 Nov 2012 00:02:27 +0000
+Subject: [PATCH v2 28/77] sh: sh7757: Register PFC platform device
+Message-Id: <1353974596-30033-29-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Add arch code to register the PFC platform device instead of calling the
+driver directly. Platform device registration in the sh-pfc driver will
+be removed.
 
-Fix the sh7372 INTC DT code for INTCA to use ARRAY_SIZE()
-on intca_resources instead of intcs_resources.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ arch/sh/Kconfig                         |    1 +
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c |    3 ++-
+ 2 files changed, 3 insertions(+), 1 deletions(-)
 
- Applies to the devel/of branch of
- git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git
-
- arch/arm/mach-shmobile/intc-sh7372.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
---- 0001/arch/arm/mach-shmobile/intc-sh7372.c
-+++ work/arch/arm/mach-shmobile/intc-sh7372.c	2012-11-15 19:13:20.000000000 +0900
-@@ -49,7 +49,7 @@ static int sh7372_intca_of_init(struct d
- 		return -ENODEV;
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 7a7d2ec..c99193f 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -467,6 +467,7 @@ config CPU_SUBTYPE_SH7757
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select USB_ARCH_HAS_OHCI
+ 	select USB_ARCH_HAS_EHCI
++	select PINCTRL
+ 	help
+ 	  Select SH7757 if you have a SH4A SH7757 CPU.
  
- 	ret = of_sh_intc_get_meminfo(np,
--				intca_resources, ARRAY_SIZE(intcs_resources));
-+				intca_resources, ARRAY_SIZE(intca_resources));
- 	if (ret)
- 		goto error;
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c
+index 4c74bd0..368b82e 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c
+@@ -16,6 +16,7 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
++#include <cpu/pfc.h>
+ #include <cpu/sh7757.h>
  
+ enum {
+@@ -2282,6 +2283,6 @@ static struct pinmux_info sh7757_pinmux_info = {
+ 
+ static int __init plat_pinmux_setup(void)
+ {
+-	return register_pinmux(&sh7757_pinmux_info);
++	return sh_pfc_register_info(NULL, NULL, 0, &sh7757_pinmux_info);
+ }
+ arch_initcall(plat_pinmux_setup);
+-- 
+1.7.8.6
+
