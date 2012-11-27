@@ -1,33 +1,60 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 08 Nov 2012 03:08:50 +0000
-Subject: [PATCH 2/8] ARM: shmobile: add fsi external clock sh7372
-Message-Id: <87390k23ls.wl%kuninori.morimoto.gx@renesas.com>
+From: Wen Congyang <wency@cn.fujitsu.com>
+Date: Tue, 27 Nov 2012 10:00:16 +0000
+Subject: [Patch v4 06/12] memory-hotplug: unregister memory section on SPARSEMEM_VMEMMAP
+Message-Id: <1354010422-19648-7-git-send-email-wency@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1354010422-19648-1-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1354010422-19648-1-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+Cc: David Rientjes <rientjes@google.com>, Jiang Liu <liuj97@gmail.com>, Len Brown <len.brown@intel.com>, benh@kernel.crashing.org, paulus@samba.org, Christoph Lameter <cl@linux.com>, Minchan Kim <minchan.kim@gmail.com>, Andrew Morton <akpm@linux-foundation.org>, KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>, Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>, Jianguo Wu <wujianguo@huawei.com>, Wen Congyang <wency@cn.fujitsu.com>
 
-xcka/xckb were required from FSI driver
+From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Currently __remove_section for SPARSEMEM_VMEMMAP does nothing. But even if
+we use SPARSEMEM_VMEMMAP, we can unregister the memory_section.
+
+So the patch add unregister_memory_section() into __remove_section().
+
+CC: David Rientjes <rientjes@google.com>
+CC: Jiang Liu <liuj97@gmail.com>
+CC: Len Brown <len.brown@intel.com>
+CC: Christoph Lameter <cl@linux.com>
+Cc: Minchan Kim <minchan.kim@gmail.com>
+CC: Andrew Morton <akpm@linux-foundation.org>
+CC: KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
 ---
- arch/arm/mach-shmobile/clock-sh7372.c |    2 ++
- 1 file changed, 2 insertions(+)
+ mm/memory_hotplug.c | 13 ++++++++-----
+ 1 file changed, 8 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-index bee2d05..4d57e34 100644
---- a/arch/arm/mach-shmobile/clock-sh7372.c
-+++ b/arch/arm/mach-shmobile/clock-sh7372.c
-@@ -606,6 +606,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("spu2", "sh_fsi2", &mstp_clks[MSTP223]),
- 	CLKDEV_ICK_ID("diva", "sh_fsi2", &fsidivs[FSIDIV_A]),
- 	CLKDEV_ICK_ID("divb", "sh_fsi2", &fsidivs[FSIDIV_B]),
-+	CLKDEV_ICK_ID("xcka", "sh_fsi2", &sh7372_fsiack_clk),
-+	CLKDEV_ICK_ID("xckb", "sh_fsi2", &sh7372_fsibck_clk),
- };
- 
- void __init sh7372_clock_init(void)
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index e741732..171610d 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -279,11 +279,14 @@ static int __meminit __add_section(int nid, struct zone *zone,
+ #ifdef CONFIG_SPARSEMEM_VMEMMAP
+ static int __remove_section(struct zone *zone, struct mem_section *ms)
+ {
+-	/*
+-	 * XXX: Freeing memmap with vmemmap is not implement yet.
+-	 *      This should be removed later.
+-	 */
+-	return -EBUSY;
++	int ret = -EINVAL;
++
++	if (!valid_section(ms))
++		return ret;
++
++	ret = unregister_memory_section(ms);
++
++	return ret;
+ }
+ #else
+ static int __remove_section(struct zone *zone, struct mem_section *ms)
 -- 
-1.7.9.5
+1.8.0
 
