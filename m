@@ -1,112 +1,89 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 08 Nov 2012 01:27:34 +0000
-Subject: [PATCH 5/7] ARM: shmobile: sh7372: sh7372_fsidivX_clk become non-global
-Message-Id: <1352338056-21107-6-git-send-email-horms@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 27 Nov 2012 00:03:07 +0000
+Subject: [PATCH v2 68/77] sh: Remove unused sh_pfc_register_info() function
+Message-Id: <1353974596-30033-69-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352338056-21107-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352338056-21107-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+All boards use sh_pfc_register() directly, remove the unused
+sh_pfc_register_info() function.
 
-Not only sh7372 but also many Renesas chip has FSI-DIV clock,
-and we can share its sh_clk_ops.
-To support common FSI-DIV clock, sh7372_fsidivX_clk
-becomes non-global by this patch.
-This is preparation for FSI DT support.
+Make the name argument to sh_pfc_register() mandatory as it's now
+supplied by all callers.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c        |    2 +-
- arch/arm/mach-shmobile/board-mackerel.c      |    2 +-
- arch/arm/mach-shmobile/clock-sh7372.c        |   10 ++++++----
- arch/arm/mach-shmobile/include/mach/sh7372.h |    2 --
- 4 files changed, 8 insertions(+), 8 deletions(-)
+ arch/sh/include/asm/gpio.h           |    2 +-
+ arch/sh/include/cpu-common/cpu/pfc.h |    4 ----
+ arch/sh/kernel/cpu/pfc.c             |   13 +------------
+ 3 files changed, 2 insertions(+), 17 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 790dc68..cefdd03 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -728,7 +728,7 @@ fsia_ick_out:
- static int fsi_hdmi_set_rate(struct device *dev, int rate, int enable)
+diff --git a/arch/sh/include/asm/gpio.h b/arch/sh/include/asm/gpio.h
+index 04f53d3..7dfe15e 100644
+--- a/arch/sh/include/asm/gpio.h
++++ b/arch/sh/include/asm/gpio.h
+@@ -20,7 +20,7 @@
+ #endif
+ 
+ #define ARCH_NR_GPIOS 512
+-#include <linux/sh_pfc.h>
++#include <asm-generic/gpio.h>
+ 
+ #ifdef CONFIG_GPIOLIB
+ 
+diff --git a/arch/sh/include/cpu-common/cpu/pfc.h b/arch/sh/include/cpu-common/cpu/pfc.h
+index 40e8643..e538813 100644
+--- a/arch/sh/include/cpu-common/cpu/pfc.h
++++ b/arch/sh/include/cpu-common/cpu/pfc.h
+@@ -18,13 +18,9 @@
+ 
+ #include <linux/types.h>
+ 
+-struct pinmux_info;
+ struct resource;
+ 
+ int sh_pfc_register(const char *name,
+ 		    struct resource *resource, u32 num_resources);
+-int sh_pfc_register_info(const char *name,
+-			 struct resource *resource, u32 num_resources,
+-			 struct pinmux_info *pdata);
+ 
+ #endif /* __ARCH_SH_CPU_PFC_H__ */
+diff --git a/arch/sh/kernel/cpu/pfc.c b/arch/sh/kernel/cpu/pfc.c
+index d045d75..d766564 100644
+--- a/arch/sh/kernel/cpu/pfc.c
++++ b/arch/sh/kernel/cpu/pfc.c
+@@ -19,26 +19,15 @@
+ #include <cpu/pfc.h>
+ 
+ static struct platform_device sh_pfc_device = {
+-	.name		= "sh-pfc",
+ 	.id		= -1,
+ };
+ 
+ int __init sh_pfc_register(const char *name,
+ 			   struct resource *resource, u32 num_resources)
  {
- 	struct clk *fsib_clk;
--	struct clk *fdiv_clk = &sh7372_fsidivb_clk;
-+	struct clk *fdiv_clk = clk_get(NULL, "fsidivb");
- 	long fsib_rate = 0;
- 	long fdiv_rate = 0;
- 	int ackmd_bpfmd;
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 39b8f2e..f274252 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -882,7 +882,7 @@ static int __fsi_set_round_rate(struct clk *clk, long rate, int enable)
- static int fsi_b_set_rate(struct device *dev, int rate, int enable)
- {
- 	struct clk *fsib_clk;
--	struct clk *fdiv_clk = &sh7372_fsidivb_clk;
-+	struct clk *fdiv_clk = clk_get(NULL, "fsidivb");
- 	long fsib_rate = 0;
- 	long fdiv_rate = 0;
- 	int ackmd_bpfmd;
-diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-index 430a90f..18dcff7 100644
---- a/arch/arm/mach-shmobile/clock-sh7372.c
-+++ b/arch/arm/mach-shmobile/clock-sh7372.c
-@@ -481,7 +481,7 @@ static struct clk_mapping fsidiva_clk_mapping = {
- 	.len	= 8,
- };
+-	if (name)
+-		sh_pfc_device.name = name;
++	sh_pfc_device.name = name;
+ 	sh_pfc_device.num_resources = num_resources;
+ 	sh_pfc_device.resource = resource;
  
--struct clk sh7372_fsidiva_clk = {
-+static struct clk fsidiva_clk = {
- 	.ops		= &fsidiv_clk_ops,
- 	.parent		= &div6_reparent_clks[DIV6_FSIA], /* late install */
- 	.mapping	= &fsidiva_clk_mapping,
-@@ -492,15 +492,15 @@ static struct clk_mapping fsidivb_clk_mapping = {
- 	.len	= 8,
- };
- 
--struct clk sh7372_fsidivb_clk = {
-+static struct clk fsidivb_clk = {
- 	.ops		= &fsidiv_clk_ops,
- 	.parent		= &div6_reparent_clks[DIV6_FSIB],  /* late install */
- 	.mapping	= &fsidivb_clk_mapping,
- };
- 
- static struct clk *late_main_clks[] = {
--	&sh7372_fsidiva_clk,
--	&sh7372_fsidivb_clk,
-+	&fsidiva_clk,
-+	&fsidivb_clk,
- };
- 
- enum { MSTP001, MSTP000,
-@@ -583,6 +583,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("pllc1_clk", &pllc1_clk),
- 	CLKDEV_CON_ID("pllc1_div2_clk", &pllc1_div2_clk),
- 	CLKDEV_CON_ID("pllc2_clk", &sh7372_pllc2_clk),
-+	CLKDEV_CON_ID("fsidiva", &fsidiva_clk),
-+	CLKDEV_CON_ID("fsidivb", &fsidivb_clk),
- 
- 	/* DIV4 clocks */
- 	CLKDEV_CON_ID("i_clk", &div4_clks[DIV4_I]),
-diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
-index eb98b45..bf93a86 100644
---- a/arch/arm/mach-shmobile/include/mach/sh7372.h
-+++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
-@@ -475,8 +475,6 @@ extern struct clk sh7372_dv_clki_div2_clk;
- extern struct clk sh7372_pllc2_clk;
- extern struct clk sh7372_fsiack_clk;
- extern struct clk sh7372_fsibck_clk;
--extern struct clk sh7372_fsidiva_clk;
--extern struct clk sh7372_fsidivb_clk;
- 
- extern void sh7372_intcs_suspend(void);
- extern void sh7372_intcs_resume(void);
+ 	return platform_device_register(&sh_pfc_device);
+ }
+-
+-int __init sh_pfc_register_info(const char *name,
+-				struct resource *resource, u32 num_resources,
+-				struct pinmux_info *pdata)
+-{
+-	sh_pfc_device.dev.platform_data = pdata;
+-
+-	return sh_pfc_register(name, resource, num_resources);
+-}
 -- 
-1.7.10.4
+1.7.8.6
 
