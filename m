@@ -1,78 +1,123 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 01 Nov 2012 01:02:11 +0000
-Subject: [PATCH 3/3] ARM: shmobile: leave CONFIG_INOTIFY_USER enabled by default
-Message-Id: <1351731731-8435-4-git-send-email-horms@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 27 Nov 2012 00:02:02 +0000
+Subject: [PATCH v2 03/77] sh-pfc: Merge PFC core and pinctrl
+Message-Id: <1353974596-30033-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1351731731-8435-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1351731731-8435-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+The PFC core is only used by the pinctrl and gpio modules. As the gpio
+module depends on the pinctrl module, the pinctrl module will always be
+present if the core gets used. There is thus no point in keeping core
+and pinctrl in two seperate modules. Merge them.
 
-CONFIG_INOTIFY_USER is enabled by default in its Kconfig. Disabling it
-breaks udevd. Fix shmobile defconfig files to not specify this option
-explicitly.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
 ---
- arch/arm/configs/ap4evb_defconfig   |    1 -
- arch/arm/configs/kota2_defconfig    |    1 -
- arch/arm/configs/kzm9g_defconfig    |    1 -
- arch/arm/configs/mackerel_defconfig |    1 -
- 4 files changed, 4 deletions(-)
+ drivers/sh/pfc/Kconfig   |   10 +---------
+ drivers/sh/pfc/Makefile  |    4 ++--
+ drivers/sh/pfc/core.c    |   15 +++------------
+ drivers/sh/pfc/pinctrl.c |    3 +--
+ 4 files changed, 7 insertions(+), 25 deletions(-)
 
-diff --git a/arch/arm/configs/ap4evb_defconfig b/arch/arm/configs/ap4evb_defconfig
-index 2eef85e..66894f7 100644
---- a/arch/arm/configs/ap4evb_defconfig
-+++ b/arch/arm/configs/ap4evb_defconfig
-@@ -46,7 +46,6 @@ CONFIG_SERIAL_SH_SCI_CONSOLE=y
- # CONFIG_HID_SUPPORT is not set
- # CONFIG_USB_SUPPORT is not set
- # CONFIG_DNOTIFY is not set
--# CONFIG_INOTIFY_USER is not set
- CONFIG_TMPFS=y
- # CONFIG_MISC_FILESYSTEMS is not set
- CONFIG_MAGIC_SYSRQ=y
-diff --git a/arch/arm/configs/kota2_defconfig b/arch/arm/configs/kota2_defconfig
-index b7735d6..fa83db1 100644
---- a/arch/arm/configs/kota2_defconfig
-+++ b/arch/arm/configs/kota2_defconfig
-@@ -112,7 +112,6 @@ CONFIG_LEDS_GPIO=y
- CONFIG_LEDS_RENESAS_TPU=y
- CONFIG_LEDS_TRIGGERS=y
- # CONFIG_DNOTIFY is not set
--# CONFIG_INOTIFY_USER is not set
- CONFIG_TMPFS=y
- # CONFIG_MISC_FILESYSTEMS is not set
- CONFIG_MAGIC_SYSRQ=y
-diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
-index c88b578..b377a6f 100644
---- a/arch/arm/configs/kzm9g_defconfig
-+++ b/arch/arm/configs/kzm9g_defconfig
-@@ -120,7 +120,6 @@ CONFIG_SH_DMAE=y
- CONFIG_ASYNC_TX_DMA=y
- CONFIG_STAGING=y
- # CONFIG_DNOTIFY is not set
--CONFIG_INOTIFY_USER=y
- CONFIG_VFAT_FS=y
- CONFIG_TMPFS=y
- # CONFIG_MISC_FILESYSTEMS is not set
-diff --git a/arch/arm/configs/mackerel_defconfig b/arch/arm/configs/mackerel_defconfig
-index 7b79a0b..2098ce1 100644
---- a/arch/arm/configs/mackerel_defconfig
-+++ b/arch/arm/configs/mackerel_defconfig
-@@ -105,7 +105,6 @@ CONFIG_EXT3_FS=y
- CONFIG_EXT3_FS_POSIX_ACL=y
- CONFIG_EXT3_FS_SECURITY=y
- # CONFIG_DNOTIFY is not set
--# CONFIG_INOTIFY_USER is not set
- CONFIG_MSDOS_FS=y
- CONFIG_VFAT_FS=y
- CONFIG_TMPFS=y
+diff --git a/drivers/sh/pfc/Kconfig b/drivers/sh/pfc/Kconfig
+index 804f9ad..f33d82a 100644
+--- a/drivers/sh/pfc/Kconfig
++++ b/drivers/sh/pfc/Kconfig
+@@ -5,18 +5,10 @@ config SH_PFC
+ 	depends on GENERIC_GPIO
+ 	select GPIO_SH_PFC if ARCH_REQUIRE_GPIOLIB
+ 	select PINCTRL_SH_PFC
+-	def_bool y
+-
+-#
+-# Placeholder for now, rehome to drivers/pinctrl once the PFC APIs
+-# have settled.
+-#
+-config PINCTRL_SH_PFC
+-	tristate "SuperH PFC pin controller driver"
+-	depends on SH_PFC
+ 	select PINCTRL
+ 	select PINMUX
+ 	select PINCONF
++	def_bool y
+ 
+ config GPIO_SH_PFC
+ 	tristate "SuperH PFC GPIO support"
+diff --git a/drivers/sh/pfc/Makefile b/drivers/sh/pfc/Makefile
+index 7916027..ce6fae3 100644
+--- a/drivers/sh/pfc/Makefile
++++ b/drivers/sh/pfc/Makefile
+@@ -1,3 +1,3 @@
+-obj-y				+= core.o
+-obj-$(CONFIG_PINCTRL_SH_PFC)	+= pinctrl.o
++sh-pfc-objs			= core.o pinctrl.o
++obj-y				+= sh-pfc.o
+ obj-$(CONFIG_GPIO_SH_PFC)	+= gpio.o
+diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
+index 72421a4..30e33db 100644
+--- a/drivers/sh/pfc/core.c
++++ b/drivers/sh/pfc/core.c
+@@ -8,7 +8,7 @@
+  * License.  See the file "COPYING" in the main directory of this archive
+  * for more details.
+  */
+-#define pr_fmt(fmt) "sh_pfc " KBUILD_MODNAME ": " fmt
++#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+ 
+ #include <linux/errno.h>
+ #include <linux/kernel.h>
+@@ -497,7 +497,6 @@ int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
+  out_err:
+ 	return -1;
+ }
+-EXPORT_SYMBOL_GPL(sh_pfc_config_gpio);
+ 
+ int register_sh_pfc(struct sh_pfc_platform_data *pdata)
+ {
+@@ -528,17 +527,9 @@ int register_sh_pfc(struct sh_pfc_platform_data *pdata)
+ 	/*
+ 	 * Initialize pinctrl bindings first
+ 	 */
+-	initroutine = symbol_request(sh_pfc_register_pinctrl);
+-	if (initroutine) {
+-		ret = (*initroutine)(&sh_pfc);
+-		symbol_put_addr(initroutine);
+-
+-		if (unlikely(ret != 0))
+-			goto err;
+-	} else {
+-		pr_err("failed to initialize pinctrl bindings\n");
++	ret = sh_pfc_register_pinctrl(&sh_pfc);
++	if (unlikely(ret != 0))
+ 		goto err;
+-	}
+ 
+ 	/*
+ 	 * Then the GPIO chip
+diff --git a/drivers/sh/pfc/pinctrl.c b/drivers/sh/pfc/pinctrl.c
+index 5efa36a..0bde9fa 100644
+--- a/drivers/sh/pfc/pinctrl.c
++++ b/drivers/sh/pfc/pinctrl.c
+@@ -9,7 +9,7 @@
+  */
+ #define DRV_NAME "pinctrl-sh_pfc"
+ 
+-#define pr_fmt(fmt) DRV_NAME " " KBUILD_MODNAME ": " fmt
++#define pr_fmt(fmt) KBUILD_MODNAME " pinctrl: " fmt
+ 
+ #include <linux/init.h>
+ #include <linux/module.h>
+@@ -523,7 +523,6 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ 
+ 	return sh_pfc_pinctrl_init();
+ }
+-EXPORT_SYMBOL_GPL(sh_pfc_register_pinctrl);
+ 
+ static void __exit sh_pfc_pinctrl_exit(void)
+ {
 -- 
-1.7.10.4
+1.7.8.6
 
