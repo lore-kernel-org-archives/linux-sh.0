@@ -1,108 +1,67 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 07 Nov 2012 08:34:55 +0000
-Subject: [PATCH 1/4] ARM: shmobile: r8a7779: PFC rename PENCx -> USB_PENCx
-Message-Id: <1352277298-23312-2-git-send-email-horms@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 27 Nov 2012 00:02:31 +0000
+Subject: [PATCH v2 32/77] sh-pfc: Remove platform device registration
+Message-Id: <1353974596-30033-33-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352277298-23312-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352277298-23312-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The PFC platform device is now registered by arch code, remove the
+legacy registration mechanism.
 
-PENCx is Power Enable Control pin for USB.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7779.h |    2 +-
- arch/arm/mach-shmobile/pfc-r8a7779.c          |   16 ++++++++--------
- 2 files changed, 9 insertions(+), 9 deletions(-)
+ drivers/sh/pfc/core.c  |   12 ------------
+ include/linux/sh_pfc.h |   10 ----------
+ 2 files changed, 0 insertions(+), 22 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-index 499f52d..8ab0cd6 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -71,7 +71,7 @@ enum {
- 	GPIO_FN_A19,
- 
- 	/* IPSR0 */
--	GPIO_FN_PENC2, GPIO_FN_SCK0, GPIO_FN_PWM1, GPIO_FN_PWMFSW0,
-+	GPIO_FN_USB_PENC2, GPIO_FN_SCK0, GPIO_FN_PWM1, GPIO_FN_PWMFSW0,
- 	GPIO_FN_SCIF_CLK, GPIO_FN_TCLK0_C, GPIO_FN_BS, GPIO_FN_SD1_DAT2,
- 	GPIO_FN_MMC0_D2, GPIO_FN_FD2, GPIO_FN_ATADIR0, GPIO_FN_SDSELF,
- 	GPIO_FN_HCTS1, GPIO_FN_TX4_C, GPIO_FN_A0, GPIO_FN_SD1_DAT3,
-diff --git a/arch/arm/mach-shmobile/pfc-r8a7779.c b/arch/arm/mach-shmobile/pfc-r8a7779.c
-index cbc26ba..9513234 100644
---- a/arch/arm/mach-shmobile/pfc-r8a7779.c
-+++ b/arch/arm/mach-shmobile/pfc-r8a7779.c
-@@ -140,7 +140,7 @@ enum {
- 	FN_IP7_3_2, FN_IP7_6_4, FN_IP7_9_7, FN_IP7_12_10,
- 	FN_IP7_14_13, FN_IP2_7_4, FN_IP2_11_8, FN_IP2_15_12,
- 	FN_IP1_28_25, FN_IP2_3_0, FN_IP8_3_0, FN_IP8_7_4,
--	FN_IP8_11_8, FN_IP8_15_12, FN_PENC0, FN_PENC1,
-+	FN_IP8_11_8, FN_IP8_15_12, FN_USB_PENC0, FN_USB_PENC1,
- 	FN_IP0_2_0, FN_IP8_17_16, FN_IP8_18, FN_IP8_19,
- 
- 	/* GPSR5 */
-@@ -176,7 +176,7 @@ enum {
- 	FN_A0, FN_SD1_DAT3, FN_MMC0_D3, FN_FD3,
- 	FN_BS, FN_SD1_DAT2, FN_MMC0_D2, FN_FD2,
- 	FN_ATADIR0, FN_SDSELF, FN_HCTS1, FN_TX4_C,
--	FN_PENC2, FN_SCK0, FN_PWM1, FN_PWMFSW0,
-+	FN_USB_PENC2, FN_SCK0, FN_PWM1, FN_PWMFSW0,
- 	FN_SCIF_CLK, FN_TCLK0_C,
- 
- 	/* IPSR1 */
-@@ -447,7 +447,7 @@ enum {
- 	A0_MARK, SD1_DAT3_MARK, MMC0_D3_MARK, FD3_MARK,
- 	BS_MARK, SD1_DAT2_MARK, MMC0_D2_MARK, FD2_MARK,
- 	ATADIR0_MARK, SDSELF_MARK, HCTS1_MARK, TX4_C_MARK,
--	PENC2_MARK, SCK0_MARK, PWM1_MARK, PWMFSW0_MARK,
-+	USB_PENC2_MARK, SCK0_MARK, PWM1_MARK, PWMFSW0_MARK,
- 	SCIF_CLK_MARK, TCLK0_C_MARK,
- 
- 	EX_CS0_MARK, RX3_C_IRDA_RX_C_MARK, MMC0_D6_MARK,
-@@ -658,7 +658,7 @@ static pinmux_enum_t pinmux_data[] = {
- 	PINMUX_DATA(A18_MARK, FN_A18),
- 	PINMUX_DATA(A19_MARK, FN_A19),
- 
--	PINMUX_IPSR_DATA(IP0_2_0, PENC2),
-+	PINMUX_IPSR_DATA(IP0_2_0, USB_PENC2),
- 	PINMUX_IPSR_MODSEL_DATA(IP0_2_0, SCK0, SEL_SCIF0_0),
- 	PINMUX_IPSR_DATA(IP0_2_0, PWM1),
- 	PINMUX_IPSR_MODSEL_DATA(IP0_2_0, PWMFSW0, SEL_PWMFSW_0),
-@@ -1456,7 +1456,7 @@ static struct pinmux_gpio pinmux_gpios[] = {
- 	GPIO_FN(A19),
- 
- 	/* IPSR0 */
--	GPIO_FN(PENC2), GPIO_FN(SCK0), GPIO_FN(PWM1), GPIO_FN(PWMFSW0),
-+	GPIO_FN(USB_PENC2), GPIO_FN(SCK0), GPIO_FN(PWM1), GPIO_FN(PWMFSW0),
- 	GPIO_FN(SCIF_CLK), GPIO_FN(TCLK0_C), GPIO_FN(BS), GPIO_FN(SD1_DAT2),
- 	GPIO_FN(MMC0_D2), GPIO_FN(FD2), GPIO_FN(ATADIR0), GPIO_FN(SDSELF),
- 	GPIO_FN(HCTS1), GPIO_FN(TX4_C), GPIO_FN(A0), GPIO_FN(SD1_DAT3),
-@@ -1865,8 +1865,8 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
- 		GP_4_30_FN, FN_IP8_18,
- 		GP_4_29_FN, FN_IP8_17_16,
- 		GP_4_28_FN, FN_IP0_2_0,
--		GP_4_27_FN, FN_PENC1,
--		GP_4_26_FN, FN_PENC0,
-+		GP_4_27_FN, FN_USB_PENC1,
-+		GP_4_26_FN, FN_USB_PENC0,
- 		GP_4_25_FN, FN_IP8_15_12,
- 		GP_4_24_FN, FN_IP8_11_8,
- 		GP_4_23_FN, FN_IP8_7_4,
-@@ -1981,7 +1981,7 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
- 		FN_BS, FN_SD1_DAT2, FN_MMC0_D2, FN_FD2,
- 		FN_ATADIR0, FN_SDSELF, FN_HCTS1, FN_TX4_C,
- 		/* IP0_2_0 [3] */
--		FN_PENC2, FN_SCK0, FN_PWM1, FN_PWMFSW0,
-+		FN_USB_PENC2, FN_SCK0, FN_PWM1, FN_PWMFSW0,
- 		FN_SCIF_CLK, FN_TCLK0_C, 0, 0 }
+diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
+index 4e4adc7..eeec76f 100644
+--- a/drivers/sh/pfc/core.c
++++ b/drivers/sh/pfc/core.c
+@@ -603,18 +603,6 @@ static struct platform_driver sh_pfc_driver = {
  	},
- 	{ PINMUX_CFG_REG_VAR("IPSR1", 0xfffc0024, 32,
+ };
+ 
+-static struct platform_device sh_pfc_device = {
+-	.name		= DRV_NAME,
+-	.id		= -1,
+-};
+-
+-int __init register_sh_pfc(struct sh_pfc_platform_data *pdata)
+-{
+-	sh_pfc_device.dev.platform_data = pdata;
+-
+-	return platform_device_register(&sh_pfc_device);
+-}
+-
+ static int __init sh_pfc_init(void)
+ {
+ 	return platform_driver_register(&sh_pfc_driver);
+diff --git a/include/linux/sh_pfc.h b/include/linux/sh_pfc.h
+index f7f01b2..fa1fec0 100644
+--- a/include/linux/sh_pfc.h
++++ b/include/linux/sh_pfc.h
+@@ -120,16 +120,6 @@ struct sh_pfc_platform_data {
+ /* XXX compat for now */
+ #define pinmux_info sh_pfc_platform_data
+ 
+-/* drivers/sh/pfc/core.c */
+-int register_sh_pfc(struct sh_pfc_platform_data *pfc);
+-
+-/* xxx */
+-static inline int register_pinmux(struct pinmux_info *pip)
+-{
+-	struct sh_pfc_platform_data *pdata = pip;
+-	return register_sh_pfc(pdata);
+-}
+-
+ enum { GPIO_CFG_DRYRUN, GPIO_CFG_REQ, GPIO_CFG_FREE };
+ 
+ /* helper macro for port */
 -- 
-1.7.10.4
+1.7.8.6
 
