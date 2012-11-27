@@ -1,137 +1,62 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 01 Nov 2012 01:26:34 +0000
-Subject: [PATCH 1/3 v2] sh: clkfwk: add sh_clk_fsidiv_register()
-Message-Id: <87ip9qi056.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 27 Nov 2012 00:02:15 +0000
+Subject: [PATCH v2 16/77] ARM: shmobile: r8a7740: Add pin control resources
+Message-Id: <1353974596-30033-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-This patch adds sh_clk_fsidiv_register() to share FSI-DIV clock code
+Add memory resources for the pin control platform device to let the
+sh-pfc driver ioremap() registers properly instead of evily casting
+register physical addresses to virtual addresses.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
 ---
-v1 -> v2
+ arch/arm/mach-shmobile/pfc-r8a7740.c |   17 +++++++++++++++++
+ 1 files changed, 17 insertions(+), 0 deletions(-)
 
- - used ioread32/iowrite32() instead of __raw_readl/writel()
-
- drivers/sh/clk/cpg.c   |   86 ++++++++++++++++++++++++++++++++++++++++++++++++
- include/linux/sh_clk.h |    9 +++++
- 2 files changed, 95 insertions(+)
-
-diff --git a/drivers/sh/clk/cpg.c b/drivers/sh/clk/cpg.c
-index fe6dbef..f590791 100644
---- a/drivers/sh/clk/cpg.c
-+++ b/drivers/sh/clk/cpg.c
-@@ -368,3 +368,89 @@ int __init sh_clk_div4_reparent_register(struct clk *clks, int nr,
- 	return sh_clk_div_register_ops(clks, nr, table,
- 				       &sh_clk_div4_reparent_clk_ops);
- }
-+
-+/* FSI-DIV */
-+static unsigned long fsidiv_recalc(struct clk *clk)
-+{
-+	u32 value;
-+
-+	value = ioread32(clk->mapping->base);
-+
-+	value >>= 16;
-+	if (value < 2)
-+		return clk->parent->rate;
-+
-+	return clk->parent->rate / value;
-+}
-+
-+static long fsidiv_round_rate(struct clk *clk, unsigned long rate)
-+{
-+	return clk_rate_div_range_round(clk, 1, 0xffff, rate);
-+}
-+
-+static void fsidiv_disable(struct clk *clk)
-+{
-+	iowrite32(0, clk->mapping->base);
-+}
-+
-+static int fsidiv_enable(struct clk *clk)
-+{
-+	u32 value;
-+
-+	value  = ioread32(clk->mapping->base) >> 16;
-+	if (value < 2)
-+		return 0;
-+
-+	iowrite32((value << 16) | 0x3, clk->mapping->base);
-+
-+	return 0;
-+}
-+
-+static int fsidiv_set_rate(struct clk *clk, unsigned long rate)
-+{
-+	u32 val;
-+	int idx;
-+
-+	idx = (clk->parent->rate / rate) & 0xffff;
-+	if (idx < 2)
-+		iowrite32(0, clk->mapping->base);
-+	else
-+		iowrite32(idx << 16, clk->mapping->base);
-+
-+	return 0;
-+}
-+
-+static struct sh_clk_ops fsidiv_clk_ops = {
-+	.recalc		= fsidiv_recalc,
-+	.round_rate	= fsidiv_round_rate,
-+	.set_rate	= fsidiv_set_rate,
-+	.enable		= fsidiv_enable,
-+	.disable	= fsidiv_disable,
+diff --git a/arch/arm/mach-shmobile/pfc-r8a7740.c b/arch/arm/mach-shmobile/pfc-r8a7740.c
+index 8a412b1..84ef85d 100644
+--- a/arch/arm/mach-shmobile/pfc-r8a7740.c
++++ b/arch/arm/mach-shmobile/pfc-r8a7740.c
+@@ -18,7 +18,9 @@
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
++#include <linux/bug.h>
+ #include <linux/init.h>
++#include <linux/ioport.h>
+ #include <linux/kernel.h>
+ #include <linux/platform_device.h>
+ #include <linux/sh_pfc.h>
+@@ -2612,9 +2614,24 @@ static struct pinmux_info r8a7740_pinmux_info = {
+ 	.gpio_irq_size	= ARRAY_SIZE(pinmux_irqs),
+ };
+ 
++static struct resource r8a7740_pfc_resources[] = {
++	[0] = {
++		.start	= 0xe6050000,
++		.end	= 0xe6057fff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= 0xe605800c,
++		.end	= 0xe605802b,
++		.flags	= IORESOURCE_MEM,
++	}
 +};
 +
-+int __init sh_clk_fsidiv_register(struct clk *clks, int nr)
-+{
-+	struct clk_mapping *map;
-+	int i;
-+
-+	for (i = 0; i < nr; i++) {
-+
-+		map = kzalloc(sizeof(struct clk_mapping), GFP_KERNEL);
-+		if (!map) {
-+			pr_err("%s: unable to alloc memory\n", __func__);
-+			return -ENOMEM;
-+		}
-+
-+		/* clks[i].enable_reg came from SH_CLK_FSIDIV() */
-+		map->phys		= (phys_addr_t)clks[i].enable_reg;
-+		map->len		= 8;
-+
-+		clks[i].enable_reg	= 0; /* remove .enable_reg */
-+		clks[i].ops		= &fsidiv_clk_ops;
-+		clks[i].mapping		= map;
-+
-+		clk_register(&clks[i]);
-+	}
-+
-+	return 0;
-+}
-diff --git a/include/linux/sh_clk.h b/include/linux/sh_clk.h
-index 5091091..60c7239 100644
---- a/include/linux/sh_clk.h
-+++ b/include/linux/sh_clk.h
-@@ -199,4 +199,13 @@ int sh_clk_div6_reparent_register(struct clk *clks, int nr);
- #define CLKDEV_DEV_ID(_id, _clk) { .dev_id = _id, .clk = _clk }
- #define CLKDEV_ICK_ID(_cid, _did, _clk) { .con_id = _cid, .dev_id = _did, .clk = _clk }
- 
-+/* .enable_reg will be updated to .mapping on sh_clk_fsidiv_register() */
-+#define SH_CLK_FSIDIV(_reg, _parent)		\
-+{						\
-+	.enable_reg = (void __iomem *)_reg,	\
-+	.parent		= _parent,		\
-+}
-+
-+int sh_clk_fsidiv_register(struct clk *clks, int nr);
-+
- #endif /* __SH_CLOCK_H */
+ static struct platform_device r8a7740_pfc_device = {
+ 	.name		= "sh-pfc",
+ 	.id		= -1,
++	.resource	= r8a7740_pfc_resources,
++	.num_resources	= ARRAY_SIZE(r8a7740_pfc_resources),
+ 	.dev = {
+ 		.platform_data = &r8a7740_pinmux_info,
+ 	},
 -- 
-1.7.9.5
+1.7.8.6
 
