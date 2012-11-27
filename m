@@ -1,92 +1,31 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 27 Nov 2012 00:07:28 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 27 Nov 2012 00:42:26 +0000
 Subject: Re: [PATCH 3/7] sh: pfc: Allow device tree registration
-Message-Id: <1528017.UPeIBOTTC7@avalon>
+Message-Id: <20121127004225.GE9724@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1353889014-17142-1-git-send-email-horms@verge.net.au>
  <1353889014-17142-4-git-send-email-horms@verge.net.au>
-In-Reply-To: <1353889014-17142-4-git-send-email-horms@verge.net.au>
+ <1528017.UPeIBOTTC7@avalon>
+In-Reply-To: <1528017.UPeIBOTTC7@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
+On Tue, Nov 27, 2012 at 01:07:28AM +0100, Laurent Pinchart wrote:
+> Hi Simon,
+> 
+> On Monday 26 November 2012 09:16:50 Simon Horman wrote:
+> > This is a crude mechanism to allow the pfc driver to
+> > be registered through device tree. The mofication of this
+> > is to provide a way for pfc gpios to be looked up by
+> > device tree for devices which use pfc gpios.
+> > 
+> > More specifically, the motivation is to allow the registration
+> > of the card-detect gpio for the Micro-SD SDHI slot of the KZM9G board.
+> 
+> I've just posted v2 of my PCF patches ("SH pin control and GPIO rework with OF 
+> support") that include OF support for GPIOs. This patch as well as patch 4/7 
+> and the gpio node in patch 7/7 and shouldn't be required anymore.
 
-On Monday 26 November 2012 09:16:50 Simon Horman wrote:
-> This is a crude mechanism to allow the pfc driver to
-> be registered through device tree. The mofication of this
-> is to provide a way for pfc gpios to be looked up by
-> device tree for devices which use pfc gpios.
-> 
-> More specifically, the motivation is to allow the registration
-> of the card-detect gpio for the Micro-SD SDHI slot of the KZM9G board.
-
-I've just posted v2 of my PCF patches ("SH pin control and GPIO rework with OF 
-support") that include OF support for GPIOs. This patch as well as patch 4/7 
-and the gpio node in patch 7/7 and shouldn't be required anymore.
-
-> Cc: Paul Mundt <lethal@linux-sh.org>
-> Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-> Signed-off-by: Simon Horman <horms@verge.net.au>
-> ---
->  drivers/sh/pfc/gpio.c  |   15 +++++++++++++++
->  include/linux/sh_pfc.h |    7 +++++++
->  2 files changed, 22 insertions(+)
-> 
-> diff --git a/drivers/sh/pfc/gpio.c b/drivers/sh/pfc/gpio.c
-> index 038fa07..322b927 100644
-> --- a/drivers/sh/pfc/gpio.c
-> +++ b/drivers/sh/pfc/gpio.c
-> @@ -136,6 +136,19 @@ static void sh_pfc_gpio_setup(struct sh_pfc_chip *chip)
-> gc->ngpio = (pfc->last_gpio - pfc->first_gpio) + 1;
->  }
-> 
-> +#ifdef CONFIG_OF_GPIO
-> +static void
-> +sh_pfc_register_gpiochip_dt(struct sh_pfc *pfc, struct gpio_chip *chip)
-> +{
-> +	chip->of_node = pfc->of_node;
-> +	chip->of_gpio_n_cells = pfc->of_gpio_n_cells;
-> +	chip->of_xlate = pfc->of_xlate;
-> +}
-> +#else
-> +static void sh_pfc_register_gpiochip_dt(struct sh_pfc *pfc,
-> +					struct gpio_chip *chip) {}
-> +#endif
-> +
->  int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
->  {
->  	struct sh_pfc_chip *chip;
-> @@ -153,6 +166,8 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
->  	if (unlikely(ret < 0))
->  		kfree(chip);
-> 
-> +	sh_pfc_register_gpiochip_dt(pfc, &chip->gpio_chip);
-> +
->  	pr_info("%s handling gpio %d -> %d\n",
->  		pfc->name, pfc->first_gpio, pfc->last_gpio);
-> 
-> diff --git a/include/linux/sh_pfc.h b/include/linux/sh_pfc.h
-> index c19a092..9963370 100644
-> --- a/include/linux/sh_pfc.h
-> +++ b/include/linux/sh_pfc.h
-> @@ -124,6 +124,13 @@ struct sh_pfc {
->  	struct pfc_window *window;
-> 
->  	unsigned long unlock_reg;
-> +
-> +#ifdef CONFIG_OF_GPIO
-> +	struct device_node *of_node;
-> +	int of_gpio_n_cells;
-> +	int (*of_xlate)(struct gpio_chip *gc,
-> +		        const struct of_phandle_args *gpiospec, u32 *flags);
-> +#endif
->  };
-> 
->  /* XXX compat for now */
--- 
-Regards,
-
-Laurent Pinchart
-
+Thanks.
