@@ -1,38 +1,55 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 09 Nov 2012 07:29:24 +0000
-Subject: [PATCH 09/10] ARM: shmobile: add fsi external clock on r8a7740
-Message-Id: <1352446165-19298-10-git-send-email-horms@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 27 Nov 2012 00:02:30 +0000
+Subject: [PATCH v2 31/77] sh: shx3: Register PFC platform device
+Message-Id: <1353974596-30033-32-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352446165-19298-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1352446165-19298-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Add arch code to register the PFC platform device instead of calling the
+driver directly. Platform device registration in the sh-pfc driver will
+be removed.
 
-xcka/xckb were required from FSI driver
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7740.c |    2 ++
- 1 file changed, 2 insertions(+)
+ arch/sh/Kconfig                       |    1 +
+ arch/sh/kernel/cpu/sh4a/pinmux-shx3.c |    3 ++-
+ 2 files changed, 3 insertions(+), 1 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index eb5dfee..eac49d5 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -625,6 +625,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_ICK_ID("ickb", "sh_fsi2",	&div6_reparent_clks[DIV6_FSIB]),
- 	CLKDEV_ICK_ID("diva", "sh_fsi2",	&fsidivs[FSIDIV_A]),
- 	CLKDEV_ICK_ID("divb", "sh_fsi2",	&fsidivs[FSIDIV_B]),
-+	CLKDEV_ICK_ID("xcka", "sh_fsi2",	&fsiack_clk),
-+	CLKDEV_ICK_ID("xckb", "sh_fsi2",	&fsibck_clk),
- };
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 27f0b73..c72b616 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -515,6 +515,7 @@ config CPU_SUBTYPE_SHX3
+ 	select CPU_SHX3
+ 	select GENERIC_CLOCKEVENTS_BROADCAST if SMP
+ 	select ARCH_REQUIRE_GPIOLIB
++	select PINCTRL
  
- void __init r8a7740_clock_init(u8 md_ck)
+ # SH4AL-DSP Processor Support
+ 
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c b/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
+index aaa5338..169ff32 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
+@@ -10,6 +10,7 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
++#include <cpu/pfc.h>
+ #include <cpu/shx3.h>
+ 
+ enum {
+@@ -582,6 +583,6 @@ static struct pinmux_info shx3_pinmux_info = {
+ 
+ static int __init shx3_pinmux_setup(void)
+ {
+-	return register_pinmux(&shx3_pinmux_info);
++	return sh_pfc_register_info(NULL, NULL, 0, &shx3_pinmux_info);
+ }
+ arch_initcall(shx3_pinmux_setup);
 -- 
-1.7.10.4
+1.7.8.6
 
