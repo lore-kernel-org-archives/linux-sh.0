@@ -1,7 +1,7 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 26 Nov 2012 12:54:47 +0000
+Date: Tue, 27 Nov 2012 00:07:28 +0000
 Subject: Re: [PATCH 3/7] sh: pfc: Allow device tree registration
-Message-Id: <3335047.C4mAxUcIyV@avalon>
+Message-Id: <1528017.UPeIBOTTC7@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1353889014-17142-1-git-send-email-horms@verge.net.au>
  <1353889014-17142-4-git-send-email-horms@verge.net.au>
@@ -14,17 +14,18 @@ To: linux-arm-kernel@lists.infradead.org
 Hi Simon,
 
 On Monday 26 November 2012 09:16:50 Simon Horman wrote:
-> This is a crude mechanism to allow the pfc driver to be registered through
-> device tree. The mofication of this is to provide a way for pfc gpios to be
-> looked up by device tree for devices which use pfc gpios.
-
-Indeed it's a bit of a hack :-) I'll see how I can rebase that on top of my 
-PFC patch series. I'd rather avoid this intermediate step as it would make PFC 
-rework more complex.
-
+> This is a crude mechanism to allow the pfc driver to
+> be registered through device tree. The mofication of this
+> is to provide a way for pfc gpios to be looked up by
+> device tree for devices which use pfc gpios.
+> 
 > More specifically, the motivation is to allow the registration
 > of the card-detect gpio for the Micro-SD SDHI slot of the KZM9G board.
->
+
+I've just posted v2 of my PCF patches ("SH pin control and GPIO rework with OF 
+support") that include OF support for GPIOs. This patch as well as patch 4/7 
+and the gpio node in patch 7/7 and shouldn't be required anymore.
+
 > Cc: Paul Mundt <lethal@linux-sh.org>
 > Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 > Signed-off-by: Simon Horman <horms@verge.net.au>
