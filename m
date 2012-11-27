@@ -1,110 +1,50 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 01 Nov 2012 00:40:09 +0000
-Subject: [PATCH 6/8] ARM: mach-shmobile: Use DT_MACHINE for mackerel
-Message-Id: <1351730411-1874-7-git-send-email-horms@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 27 Nov 2012 00:02:05 +0000
+Subject: [PATCH v2 06/77] sh-pfc: Let the compiler decide whether to inline functions
+Message-Id: <1353974596-30033-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1351730411-1874-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1351730411-1874-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+The compiler should be smart enough to automatically inline static
+functions that are called from a single location.
 
-Use DT_MACHINE_START() on the sh7372 based mackerel board.
-
-Also include a tiny DTS file to describe the board and update the
-Kconfig dependencies to select CONFIG_USE_OF.
-
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
 ---
- arch/arm/boot/dts/Makefile              |    3 ++-
- arch/arm/boot/dts/sh7372-mackerel.dts   |   22 ++++++++++++++++++++++
- arch/arm/mach-shmobile/Kconfig          |    1 +
- arch/arm/mach-shmobile/board-mackerel.c |    8 +++++++-
- 4 files changed, 32 insertions(+), 2 deletions(-)
- create mode 100644 arch/arm/boot/dts/sh7372-mackerel.dts
+ drivers/sh/pfc/pinctrl.c |   10 +++++-----
+ 1 files changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index c1ce813..0632239 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -75,7 +75,8 @@ dtb-$(CONFIG_ARCH_PRIMA2) += prima2-evb.dtb
- dtb-$(CONFIG_ARCH_U8500) += snowball.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm9d.dtb \
- 	r8a7740-armadillo800eva.dtb \
--	sh73a0-kzm9g.dtb
-+	sh73a0-kzm9g.dtb \
-+	sh7372-mackerel.dtb
- dtb-$(CONFIG_ARCH_SPEAR13XX) += spear1310-evb.dtb \
- 	spear1340-evb.dtb
- dtb-$(CONFIG_ARCH_SPEAR3XX)+= spear300-evb.dtb \
-diff --git a/arch/arm/boot/dts/sh7372-mackerel.dts b/arch/arm/boot/dts/sh7372-mackerel.dts
-new file mode 100644
-index 0000000..286f0ca
---- /dev/null
-+++ b/arch/arm/boot/dts/sh7372-mackerel.dts
-@@ -0,0 +1,22 @@
-+/*
-+ * Device Tree Source for the mackerel board
-+ *
-+ * Copyright (C) 2012 Renesas Solutions Corp.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/dts-v1/;
-+/include/ "skeleton.dtsi"
-+
-+/ {
-+	model = "Mackerel (AP4 EVM 2nd)";
-+	compatible = "renesas,mackerel";
-+
-+	memory {
-+		device_type = "memory";
-+		reg = <0x40000000 0x10000000>;
-+	};
-+};
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 8ae100c..0750d9c 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -95,6 +95,7 @@ config MACH_MACKEREL
- 	select ARCH_REQUIRE_GPIOLIB
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
- 	select SND_SOC_AK4642 if SND_SIMPLE_CARD
-+	select USE_OF
- 
- config MACH_KOTA2
- 	bool "KOTA2 board"
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 0c27c81..39b8f2e 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1651,7 +1651,12 @@ static void __init mackerel_init(void)
- 	pm_clk_add(&hdmi_lcdc_device.dev, "hdmi");
+diff --git a/drivers/sh/pfc/pinctrl.c b/drivers/sh/pfc/pinctrl.c
+index 1c93e3c..21b8678 100644
+--- a/drivers/sh/pfc/pinctrl.c
++++ b/drivers/sh/pfc/pinctrl.c
+@@ -115,7 +115,7 @@ static void sh_pfc_noop_disable(struct pinctrl_dev *pctldev, unsigned func,
+ {
  }
  
--MACHINE_START(MACKEREL, "mackerel")
-+static const char *mackerel_boards_compat_dt[] __initdata = {
-+	"renesas,mackerel",
-+	NULL,
-+};
-+
-+DT_MACHINE_START(MACKEREL_DT, "mackerel")
- 	.map_io		= sh7372_map_io,
- 	.init_early	= sh7372_add_early_devices,
- 	.init_irq	= sh7372_init_irq,
-@@ -1659,4 +1664,5 @@ MACHINE_START(MACKEREL, "mackerel")
- 	.init_machine	= mackerel_init,
- 	.init_late	= sh7372_pm_init_late,
- 	.timer		= &shmobile_timer,
-+	.dt_compat  = mackerel_boards_compat_dt,
- MACHINE_END
+-static inline int sh_pfc_config_function(struct sh_pfc *pfc, unsigned offset)
++static int sh_pfc_config_function(struct sh_pfc *pfc, unsigned offset)
+ {
+ 	if (sh_pfc_config_gpio(pfc, offset,
+ 			       PINMUX_TYPE_FUNCTION,
+@@ -327,10 +327,10 @@ static struct pinctrl_desc sh_pfc_pinctrl_desc = {
+ 	.confops	= &sh_pfc_pinconf_ops,
+ };
+ 
+-static inline void __devinit sh_pfc_map_one_gpio(struct sh_pfc *pfc,
+-						 struct sh_pfc_pinctrl *pmx,
+-						 struct pinmux_gpio *gpio,
+-						 unsigned offset)
++static void __devinit sh_pfc_map_one_gpio(struct sh_pfc *pfc,
++					  struct sh_pfc_pinctrl *pmx,
++					  struct pinmux_gpio *gpio,
++					  unsigned offset)
+ {
+ 	struct pinmux_data_reg *dummy;
+ 	unsigned long flags;
 -- 
-1.7.10.4
+1.7.8.6
 
