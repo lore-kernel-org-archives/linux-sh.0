@@ -1,37 +1,45 @@
-From: Shuah Khan <shuah.khan@hp.com>
-Date: Fri, 23 Nov 2012 21:36:33 +0000
-Subject: [PATCH 7/9] sh: dma_debug: add debug_dma_mapping_error support
-Message-Id: <1353706593.5270.103.camel@lorien2>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 27 Nov 2012 00:03:16 +0000
+Subject: [PATCH v2 77/77] ARM: shmobile: kzm9g: Add LED1-LED4 to the device tree
+Message-Id: <1353974596-30033-78-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Add dma-debug interface debug_dma_mapping_error() to debug drivers that fail
-to check dma mapping errors on addresses returned by dma_map_single() and
-dma_map_page() interfaces.
+LED1 to LED4 are GPIO LEDs. Add corresponding DT nodes.
 
-Signed-off-by: Shuah Khan <shuah.khan@hp.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/sh/include/asm/dma-mapping.h |    1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/boot/dts/sh73a0-kzm9g.dts |   16 ++++++++++++++++
+ 1 files changed, 16 insertions(+), 0 deletions(-)
 
-diff --git a/arch/sh/include/asm/dma-mapping.h b/arch/sh/include/asm/dma-mapping.h
-index 8bd965e..b437f2c 100644
---- a/arch/sh/include/asm/dma-mapping.h
-+++ b/arch/sh/include/asm/dma-mapping.h
-@@ -46,6 +46,7 @@ static inline int dma_mapping_error(struct device *dev, dma_addr_t dma_addr)
- {
- 	struct dma_map_ops *ops = get_dma_ops(dev);
- 
-+	debug_dma_mapping_error(dev, dma_addr);
- 	if (ops->mapping_error)
- 		return ops->mapping_error(dev, dma_addr);
- 
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+index 7b37901..203efb8 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+@@ -19,4 +19,20 @@
+ 		device_type = "memory";
+ 		reg = <0x41000000 0x1e800000>;
+ 	};
++
++	leds {
++		compatible = "gpio-leds";
++		led1 {
++			gpios = <&gpio 20 1>; /* Active low */
++		};
++		led2 {
++			gpios = <&gpio 21 1>; /* Active low */
++		};
++		led3 {
++			gpios = <&gpio 22 1>; /* Active low */
++		};
++		led4 {
++			gpios = <&gpio 23 1>; /* Active low */
++		};
++	};
+ };
 -- 
-1.7.9.5
-
-
-
+1.7.8.6
 
