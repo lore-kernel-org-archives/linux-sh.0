@@ -1,81 +1,56 @@
-From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Date: Fri, 16 Nov 2012 01:54:49 +0000
-Subject: [PATCH v2 10/10] serial: sh-sci: fix possible race cases on SCSCR register accesses
-Message-Id: <50A59CE9.5020104@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 27 Nov 2012 00:02:23 +0000
+Subject: [PATCH v2 24/77] sh: sh7722: Register PFC platform device
+Message-Id: <1353974596-30033-25-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <509A0658.1010503@renesas.com> <509A0B4E.1030801@renesas.com>
- <20121116010107.GA6068@kroah.com> <50A59B9B.2010501@renesas.com>
-In-Reply-To: <50A59B9B.2010501@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-In the previous commit, console write function (serial_console_write)
-is changed to disable SCI interrupts while printing console strings.
-This introduces possible race cases in the serial startup / shutdown
-functions on SMP systems.
+Add arch code to register the PFC platform device instead of calling the
+driver directly. Platform device registration in the sh-pfc driver will
+be removed.
 
-This patch fixes the sh-sci in the same way as commit 9ec1882df2
-(tty: serial: imx: console write routing is unsafe on SMP, from
-Xinyu Chen <xinyu.chen@freescale.com>, 2012-08-27) did.
-
-There could be several consumers of the console,
-* the kernel printk
-* the init process using /dev/kmsg to call printk to show log
-* shell, which opens /dev/console and writes with sys_write()
-
-The shell goes into the normal UART open() and write() system calls,
-while the other two go into the console operations.  The open() call
-invokes serial startup function (sci_startup), which will write to
-the SCSCR register (to enable or disable SCI interrupts) without any
-locking.  This will conflict with the console serial function.
-
-Add spinlock protections in sci_startup() and sci_shutdown() properly.
-
-Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/tty/serial/sh-sci.c | 6 ++++++
- 1 file changed, 6 insertions(+)
+ arch/sh/Kconfig                         |    1 +
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c |    3 ++-
+ 2 files changed, 3 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index 0b8d029..8e3c7f7 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -1742,6 +1742,7 @@ static inline void sci_free_dma(struct uart_port *port)
- static int sci_startup(struct uart_port *port)
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index bfb8b3e..2f0d9bf 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -527,6 +527,7 @@ config CPU_SUBTYPE_SH7722
+ 	select SYS_SUPPORTS_NUMA
+ 	select SYS_SUPPORTS_CMT
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
++	select PINCTRL
+ 
+ config CPU_SUBTYPE_SH7366
+ 	bool "Support SH7366 processor"
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c
+index 0688a75..11dbce3 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c
+@@ -1,6 +1,7 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
++#include <cpu/pfc.h>
+ #include <cpu/sh7722.h>
+ 
+ enum {
+@@ -1778,7 +1779,7 @@ static struct pinmux_info sh7722_pinmux_info = {
+ 
+ static int __init plat_pinmux_setup(void)
  {
- 	struct sci_port *s = to_sci_port(port);
-+	unsigned long flags;
- 	int ret;
- 
- 	dev_dbg(port->dev, "%s(%d)\n", __func__, port->line);
-@@ -1752,8 +1753,10 @@ static int sci_startup(struct uart_port *port)
- 
- 	sci_request_dma(port);
- 
-+	spin_lock_irqsave(&port->lock, flags);
- 	sci_start_tx(port);
- 	sci_start_rx(port);
-+	spin_unlock_irqrestore(&port->lock, flags);
- 
- 	return 0;
+-	return register_pinmux(&sh7722_pinmux_info);
++	return sh_pfc_register_info(NULL, NULL, 0, &sh7722_pinmux_info);
  }
-@@ -1761,11 +1764,14 @@ static int sci_startup(struct uart_port *port)
- static void sci_shutdown(struct uart_port *port)
- {
- 	struct sci_port *s = to_sci_port(port);
-+	unsigned long flags;
  
- 	dev_dbg(port->dev, "%s(%d)\n", __func__, port->line);
- 
-+	spin_lock_irqsave(&port->lock, flags);
- 	sci_stop_rx(port);
- 	sci_stop_tx(port);
-+	spin_unlock_irqrestore(&port->lock, flags);
- 
- 	sci_free_dma(port);
- 	sci_free_irq(s);
+ arch_initcall(plat_pinmux_setup);
 -- 
-1.7.12.4
+1.7.8.6
 
