@@ -1,122 +1,36 @@
-From: Rob Herring <robherring2@gmail.com>
-Date: Thu, 01 Nov 2012 01:32:43 +0000
-Subject: Re: [PATCH] ARM: Fix the "WFI" instruction opcode definition.
-Message-Id: <5091D13B.6060106@gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 28 Nov 2012 09:24:13 +0000
+Subject: [PATCH] mmc: sh_mobile_sdhi: fix clock frequency printing
+Message-Id: <Pine.LNX.4.64.1211281023310.1710@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <DA41BE1DDCA941489001C7FBD7A8820E3CB5512E@szxeml549-mbx.china.huawei.com>
-In-Reply-To: <DA41BE1DDCA941489001C7FBD7A8820E3CB5512E@szxeml549-mbx.china.huawei.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Chris Ball <cjb@laptop.org>
 
-On 10/31/2012 08:24 PM, Yangfei (Felix) wrote:
-> The current "WFI" opcode definiton causes CPU hot-plug feature fails to work
-> if the kernel is built with CONFIG_THUMB2_KERNEL/CONFIG_CPU_ENDIAN_BE8 being
-> defined. An invalid instruction exception will be generated.
-> 
-> Signed-off-by: yangfei.kernel@gmail.com
-> ---
->  arch/arm/mach-exynos/hotplug.c   |    8 +++++++-
->  arch/arm/mach-realview/hotplug.c |    8 +++++++-
->  arch/arm/mach-shmobile/hotplug.c |    8 +++++++-
->  3 files changed, 21 insertions(+), 3 deletions(-)
-> 
-> diff --git a/arch/arm/mach-exynos/hotplug.c b/arch/arm/mach-exynos/hotplug.c
-> index f4d7dd2..823a0e4 100644
-> --- a/arch/arm/mach-exynos/hotplug.c
-> +++ b/arch/arm/mach-exynos/hotplug.c
-> @@ -18,11 +18,17 @@
->  #include <asm/cacheflush.h>
->  #include <asm/cp15.h>
->  #include <asm/smp_plat.h>
-> +#include <asm/opcodes.h>
->  
->  #include <mach/regs-pmu.h>
->  
->  #include "common.h"
->  
-> +/*
-> + * Define opcode of the WFI instruction.
-> + */
-> +#define __WFI __inst_arm_thumb16(0xe320f003, 0xbf30)
-> +
->  static inline void cpu_enter_lowpower(void)
->  {
->  	unsigned int v;
-> @@ -72,7 +78,7 @@ static inline void platform_do_lowpower(unsigned int cpu, int *spurious)
->  		/*
->  		 * here's the WFI
->  		 */
-> -		asm(".word	0xe320f003\n"
-> +		asm(__WFI
+During its probing the SDHI driver prints out the clock frequency, but
+does it wrongly, always reporting 0Hz. Use the MMC host frequency value
+to fix this issue.
 
-Wouldn't using the actual wfi instruction fix this. There is a wfi() macro.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/mmc/host/sh_mobile_sdhi.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-Or just call cpu_do_idle() which will do any other things needed before
-wfi like a dsb instruction.
-
-Rob
->  		    :
->  		    :
->  		    : "memory", "cc");
-> diff --git a/arch/arm/mach-realview/hotplug.c b/arch/arm/mach-realview/hotplug.c
-> index 53818e5..5271a1a 100644
-> --- a/arch/arm/mach-realview/hotplug.c
-> +++ b/arch/arm/mach-realview/hotplug.c
-> @@ -15,6 +15,12 @@
->  #include <asm/cacheflush.h>
->  #include <asm/cp15.h>
->  #include <asm/smp_plat.h>
-> +#include <asm/opcodes.h>
-> +
-> +/*
-> + * Define opcode of the WFI instruction.
-> + */
-> +#define __WFI __inst_arm_thumb16(0xe320f003, 0xbf30)
->  
->  static inline void cpu_enter_lowpower(void)
->  {
-> @@ -64,7 +70,7 @@ static inline void platform_do_lowpower(unsigned int cpu, int *spurious)
->  		/*
->  		 * here's the WFI
->  		 */
-> -		asm(".word	0xe320f003\n"
-> +		asm(__WFI
->  		    :
->  		    :
->  		    : "memory", "cc");
-> diff --git a/arch/arm/mach-shmobile/hotplug.c b/arch/arm/mach-shmobile/hotplug.c
-> index b09a0bd..0d7b7d1 100644
-> --- a/arch/arm/mach-shmobile/hotplug.c
-> +++ b/arch/arm/mach-shmobile/hotplug.c
-> @@ -20,6 +20,12 @@
->  #include <mach/emev2.h>
->  #include <asm/cacheflush.h>
->  #include <asm/mach-types.h>
-> +#include <asm/opcodes.h>
-> +
-> +/*
-> + * Define opcode of the WFI instruction.
-> + */
-> ++#define __WFI __inst_arm_thumb16(0xe320f003, 0xbf30)
->  
->  static cpumask_t dead_cpus;
->  
-> @@ -39,7 +45,7 @@ void shmobile_cpu_die(unsigned int cpu)
->  		/*
->  		 * here's the WFI
->  		 */
-> -		asm(".word	0xe320f003\n"
-> +		asm(__WFI
->  		    :
->  		    :
->  		    : "memory", "cc");
-> --
-> 
-> _______________________________________________
-> linux-arm-kernel mailing list
-> linux-arm-kernel@lists.infradead.org
-> http://lists.infradead.org/mailman/listinfo/linux-arm-kernel
-> 
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 22ac8e7..d6ff853 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -248,7 +248,7 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	dev_info(&pdev->dev, "%s base at 0x%08lx clock rate %u MHz\n",
+ 		 mmc_hostname(host->mmc), (unsigned long)
+ 		 (platform_get_resource(pdev, IORESOURCE_MEM, 0)->start),
+-		 mmc_data->hclk / 1000000);
++		 host->mmc->f_max / 1000000);
+ 
+ 	return ret;
+ 
+-- 
+1.7.2.5
 
