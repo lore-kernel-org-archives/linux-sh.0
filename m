@@ -1,44 +1,49 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 01 Nov 2012 00:46:48 +0000
-Subject: Re: [GIT PULL] Renesas ARM-based SoC defconfig for v3.8
-Message-Id: <20121101004647.GA3598@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 28 Nov 2012 09:24:21 +0000
+Subject: [PATCH] mmc: sh_mobile_sdhi: remove unneeded clock connection ID
+Message-Id: <Pine.LNX.4.64.1211281016550.1710@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1350448698-26985-1-git-send-email-horms@verge.net.au>
- <alpine.LFD.2.02.1210221041450.16518@xanadu.home>
- <20121030074508.GG12329@verge.net.au>
- <201210302141.27919.arnd@arndb.de>
-In-Reply-To: <201210302141.27919.arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Chris Ball <cjb@laptop.org>
 
-On Tue, Oct 30, 2012 at 09:41:27PM +0000, Arnd Bergmann wrote:
-> On Tuesday 30 October 2012, Simon Horman wrote:
-> > While I am more than happy to help address the issues raised in this
-> > thread, and others that arise. There do seem to be a number of issues
-> > between where we are now and a more generic shmobile_defconfig. I would
-> > like consideration given to allowing the exixting, working, well-maintained,
-> > per-board defconfigs to be updated until these issues have been resolved.
-> 
-> Yes, no problem. This seemed like a low-hanging fruit initially but has
-> turned into something much bigger now.
-> 
-> Instead of attacking all these at ones, we can leave them as something
-> worthwhile doing later. I noticed that out of the 11 shmobile defconfigs,
-> only three (marzen, kzm9d and kzm9g) actually have a nonzero MEMORY_START.
-> 
-> Maybe it's possible to consolidate all or some of the others first, since
-> they should still work with the same uImage at the expense of just making
-> the early debugging a little harder, as we discussed earlier.
-> 
-> For all I know, these three boards are also the ones seeing the most
-> ongoing development, so you could start by using a shared defconfig
-> for the oldest (ARM11 based) boards at first that are also less likely
-> to impact new development starting from the defconfig.
+SDHI only uses one clock, all ARM and SuperH platform register SDHI clock
+lookup entries with no connection ID, hence it can be dropped in the
+driver too.
 
-Thanks, good observations. I will look into that.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/mmc/host/sh_mobile_sdhi.c |    6 ++----
+ 1 files changed, 2 insertions(+), 4 deletions(-)
 
-My expectation is that marzen and kzm9g will continue to see
-heavy development in the near future.
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 0bdc146..22ac8e7 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -123,7 +123,6 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	struct tmio_mmc_data *mmc_data;
+ 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
+ 	struct tmio_mmc_host *host;
+-	char clk_name[8];
+ 	int irq, ret, i = 0;
+ 	bool multiplexed_isr = true;
+ 
+@@ -144,11 +143,10 @@ static int __devinit sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 		}
+ 	}
+ 
+-	snprintf(clk_name, sizeof(clk_name), "sdhi%d", pdev->id);
+-	priv->clk = clk_get(&pdev->dev, clk_name);
++	priv->clk = clk_get(&pdev->dev, NULL);
+ 	if (IS_ERR(priv->clk)) {
+-		dev_err(&pdev->dev, "cannot get clock \"%s\"\n", clk_name);
+ 		ret = PTR_ERR(priv->clk);
++		dev_err(&pdev->dev, "cannot get clock: %d\n", ret);
+ 		goto eclkget;
+ 	}
+ 
+-- 
+1.7.2.5
 
