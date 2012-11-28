@@ -1,52 +1,49 @@
-From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
-Date: Mon, 05 Nov 2012 02:34:50 +0000
-Subject: Re: [v2 PATCH 1/2] Add new uio device for dynamic memory allocation
-Message-Id: <509725CA.4030809@igel.co.jp>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 28 Nov 2012 09:24:27 +0000
+Subject: [PATCH] mmc: sh_mmcif: remove unneeded clock connection ID
+Message-Id: <Pine.LNX.4.64.1211281006340.1710@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1348553352-14334-1-git-send-email-dhobsong@igel.co.jp> <1348553352-14334-2-git-send-email-dhobsong@igel.co.jp> <CAMuHMdWKByLXR-2wkiej=F1WPf7xePf3nMkUqwSf_hEJNNZbvg@mail.gmail.com>
-In-Reply-To: <CAMuHMdWKByLXR-2wkiej=F1WPf7xePf3nMkUqwSf_hEJNNZbvg@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: Geert Uytterhoeven <geert@linux-m68k.org>
-Cc: hjk@hansjkoch.de, gregkh@linuxfoundation.org, magnus.damm@gmail.com, horms@verge.net.au, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, hdk@igel.co.jp, Linux-Next <linux-next@vger.kernel.org>, Linux-Arch <linux-arch@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Chris Ball <cjb@laptop.org>
 
-Hi Geert,
+MMCIF only uses one clock, all ARM and SuperH platforms register MMCIF
+clock lookup entries with no connection ID, hence it can be dropped in
+the driver too.
 
-On 2012/11/04 22:20, Geert Uytterhoeven wrote:
-> On Tue, Sep 25, 2012 at 8:09 AM, Damian Hobson-Garcia
-> <dhobsong@igel.co.jp> wrote:
->> are holding the device file open, the address returned to userspace is
->> DMA_ERROR_CODE.
-> 
-> Only a small subset of the architectures
-> (arm/ia64/microblaze/openrisc/powerpc/sparc/x86)
-> seem to define DMA_ERROR_CODE, causing everywhere else:
-> 
-> drivers/uio/uio_dmem_genirq.c: In function ‘uio_dmem_genirq_release’:
-> drivers/uio/uio_dmem_genirq.c:95: error: ‘DMA_ERROR_CODE’ undeclared
-> (first use in this function)
-> drivers/uio/uio_dmem_genirq.c:95: error: (Each undeclared identifier
-> is reported only once
-> drivers/uio/uio_dmem_genirq.c:95: error: for each function it appears in.)
-> drivers/uio/uio_dmem_genirq.c: In function ‘uio_dmem_genirq_probe’:
-> drivers/uio/uio_dmem_genirq.c:238: error: ‘DMA_ERROR_CODE’ undeclared
-> (first use in this function)
-> make[1]: *** [drivers/uio/uio_dmem_genirq.o] Error 1
-> make: *** [drivers/uio/] Error 2
-> 
-> (e.g. http://kisskb.ellerman.id.au/kisskb/buildresult/7462173/)
-> 
-> Furthermore, none of them define it in <uapi/...>, so DMA_ERROR_CODE is not
-> part of the userspace API (yet), while it is architecture-specific (some use 0,
-> others ~0).
-> 
-Good points, thank you.  In that case, does fixing the value to
-something like ~0 sound like a better (more portable) solution?
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/mmc/host/sh_mmcif.c |    6 ++----
+ 1 files changed, 2 insertions(+), 4 deletions(-)
 
-Damian
-
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index d25bc97..358295e 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -1310,7 +1310,6 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
+ 	struct sh_mmcif_plat_data *pd = pdev->dev.platform_data;
+ 	struct resource *res;
+ 	void __iomem *reg;
+-	char clk_name[8];
+ 
+ 	irq[0] = platform_get_irq(pdev, 0);
+ 	irq[1] = platform_get_irq(pdev, 1);
+@@ -1360,11 +1359,10 @@ static int __devinit sh_mmcif_probe(struct platform_device *pdev)
+ 	pm_runtime_enable(&pdev->dev);
+ 	host->power = false;
+ 
+-	snprintf(clk_name, sizeof(clk_name), "mmc%d", pdev->id);
+-	host->hclk = clk_get(&pdev->dev, clk_name);
++	host->hclk = clk_get(&pdev->dev, NULL);
+ 	if (IS_ERR(host->hclk)) {
+ 		ret = PTR_ERR(host->hclk);
+-		dev_err(&pdev->dev, "cannot get clock \"%s\": %d\n", clk_name, ret);
++		dev_err(&pdev->dev, "cannot get clock: %d\n", ret);
+ 		goto eclkget;
+ 	}
+ 	ret = sh_mmcif_clk_update(host);
 -- 
-Damian Hobson-Garcia
-IGEL Co.,Ltd
-http://www.igel.co.jp
+1.7.2.5
+
