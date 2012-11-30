@@ -1,45 +1,35 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Thu, 01 Nov 2012 00:40:06 +0000
-Subject: [PATCH 3/8] ARM: shmobile: kzm9g: enable DMAEngine on SHDI0 and SDHI2
-Message-Id: <1351730411-1874-4-git-send-email-horms@verge.net.au>
+Date: Fri, 30 Nov 2012 08:44:44 +0000
+Subject: [PATCH 4/5] ARM: shmobile: kzm9g: use voltage regulators by default
+Message-Id: <1354265085-2444-5-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1351730411-1874-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1351730411-1874-1-git-send-email-horms@verge.net.au>
+References: <1354265085-2444-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1354265085-2444-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+This is needed to initialise the MMCIF device in the
+absence of platform data.
 
-This patch enables DMAEngine on SHDI0 and SDHI2 for kzm9g.
-
-Signed-off-by: Tetsuyuki Kobayashi <koba@kmckk.co.jp>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-kzm9g.c |    4 ++++
- 1 file changed, 4 insertions(+)
+ arch/arm/configs/kzm9g_defconfig |    1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index 1a46422..f63f2ee 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -384,6 +384,8 @@ static struct regulator_consumer_supply fixed2v8_power_consumers[]  
- /* SDHI */
- static struct sh_mobile_sdhi_info sdhi0_info = {
-+	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
-+	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
- 	.tmio_ocr_mask	= MMC_VDD_27_28 | MMC_VDD_28_29,
-@@ -424,6 +426,8 @@ static struct platform_device sdhi0_device = {
- 
- /* Micro SD */
- static struct sh_mobile_sdhi_info sdhi2_info = {
-+	.dma_slave_tx	= SHDMA_SLAVE_SDHI2_TX,
-+	.dma_slave_rx	= SHDMA_SLAVE_SDHI2_RX,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
- 			  TMIO_MMC_USE_GPIO_CD |
- 			  TMIO_MMC_WRPROTECT_DISABLE,
+diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
+index c88b578..6d7fd53 100644
+--- a/arch/arm/configs/kzm9g_defconfig
++++ b/arch/arm/configs/kzm9g_defconfig
+@@ -83,6 +83,7 @@ CONFIG_I2C_CHARDEV=y
+ CONFIG_I2C_SH_MOBILE=y
+ CONFIG_GPIO_PCF857X=y
+ # CONFIG_HWMON is not set
++CONFIG_REGULATOR=y
+ CONFIG_FB=y
+ CONFIG_FB_SH_MOBILE_LCDC=y
+ CONFIG_FRAMEBUFFER_CONSOLE=y
 -- 
 1.7.10.4
 
