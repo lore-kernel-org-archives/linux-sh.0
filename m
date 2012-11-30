@@ -1,60 +1,95 @@
-From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
-Date: Fri, 16 Nov 2012 05:46:11 +0000
-Subject: [PATCH 3/4] drivers: uio_dmem_genirq: Allow partial success when opening device
-Message-Id: <1353044772-18803-4-git-send-email-dhobsong@igel.co.jp>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 30 Nov 2012 08:44:41 +0000
+Subject: [PATCH 1/5] ARM: mach-shmobile: sh73a0: Allow initialisation of GIC by DT
+Message-Id: <1354265085-2444-2-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1353044772-18803-1-git-send-email-dhobsong@igel.co.jp>
-In-Reply-To: <1353044772-18803-1-git-send-email-dhobsong@igel.co.jp>
+References: <1354265085-2444-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1354265085-2444-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: hjk@hansjkoch.de, gregkh@linuxfoundation.org, magnus.damm@gmail.com, horms@verge.net.au
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Damian Hobson-Garcia <dhobsong@igel.co.jp>
+To: linux-arm-kernel@lists.infradead.org
 
-The uio device should not fail on open just because one memory allocation
-fails. The device might export several regions, the failure of some of
-which may or may not be a problem for the user space driver.  Failing
-regions will remain unmapped, and successful regions will be mapped and
-exported to user space.  Also deals with the case where failing to map
-a region after successfully allocating others would not unmap the
-successfully allocated regions before dying.
+From: Simon Horman <horms+renesas@verge.net.au>
 
-Signed-off-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+This allows the GIC interrupt controller of the sh73a0 SoC to be
+initialised using a flattened device tree blob.
+
+It does not allow the INTC interrupt controller which is also present on
+the sh73a0 SoC to be enabled via device tree.  Nor does it handle sharing
+of interrupts between the GIC and INTC interrupt controllers.
+
+This limits the usefulness of this code to applications which only wish to
+access devices which use interrupts that can be handled by the GIC
+interrupt controller. Other applications should, for now, continue using
+non-device tree initialisation of the sh72a0 interrupt controllers.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/uio/uio_dmem_genirq.c |   12 ++++++------
- 1 files changed, 6 insertions(+), 6 deletions(-)
+ arch/arm/boot/dts/sh73a0.dtsi                |    9 +++++++++
+ arch/arm/mach-shmobile/include/mach/common.h |    1 +
+ arch/arm/mach-shmobile/intc-sh73a0.c         |   14 ++++++++++++++
+ 3 files changed, 24 insertions(+)
 
-diff --git a/drivers/uio/uio_dmem_genirq.c b/drivers/uio/uio_dmem_genirq.c
-index 7be8d04..bbdf925 100644
---- a/drivers/uio/uio_dmem_genirq.c
-+++ b/drivers/uio/uio_dmem_genirq.c
-@@ -62,8 +62,6 @@ static int uio_dmem_genirq_open(struct uio_info *info, struct inode *inode)
- 				(dma_addr_t *)&uiomem->addr, GFP_KERNEL);
- 		if (!addr) {
- 			uiomem->addr = DMEM_MAP_ERROR;
--			ret = -ENOMEM;
--			break;
- 		}
- 		priv->dmem_region_vaddr[dmem_region++] = addr;
- 		++uiomem;
-@@ -93,11 +91,13 @@ static int uio_dmem_genirq_release(struct uio_info *info, struct inode *inode)
- 	while (!priv->refcnt && uiomem < &priv->uioinfo->mem[MAX_UIO_MAPS]) {
- 		if (!uiomem->size)
- 			break;
--
--		dma_free_coherent(&priv->pdev->dev, uiomem->size,
--				priv->dmem_region_vaddr[dmem_region++],
--				uiomem->addr);
-+		if (priv->dmem_region_vaddr[dmem_region]) {
-+			dma_free_coherent(&priv->pdev->dev, uiomem->size,
-+					priv->dmem_region_vaddr[dmem_region],
-+					uiomem->addr);
-+		}
- 		uiomem->addr = DMEM_MAP_ERROR;
-+		++dmem_region;
- 		++uiomem;
- 	}
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index 6b374ff..77c8e43 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -29,4 +29,13 @@
+ 		gpio-controller;
+ 		#gpio-cells = <2>;
+ 	};
++
++	gic: interrupt-controller@f0001000 {
++		compatible = "arm,cortex-a9-gic";
++		#interrupt-cells = <3>;
++		#address-cells = <1>;
++		interrupt-controller;
++		reg = <0xf0001000 0x1000>,
++		      <0xf0000100 0x100>;
++	};
+ };
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index d47e215..b50447e 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -49,6 +49,7 @@ extern struct clk sh7372_extal1_clk;
+ extern struct clk sh7372_extal2_clk;
  
+ extern void sh73a0_init_irq(void);
++extern void sh73a0_init_irq_dt(void);
+ extern void sh73a0_map_io(void);
+ extern void sh73a0_add_early_devices(void);
+ extern void sh73a0_add_standard_devices(void);
+diff --git a/arch/arm/mach-shmobile/intc-sh73a0.c b/arch/arm/mach-shmobile/intc-sh73a0.c
+index f0c5e51..e492350 100644
+--- a/arch/arm/mach-shmobile/intc-sh73a0.c
++++ b/arch/arm/mach-shmobile/intc-sh73a0.c
+@@ -21,6 +21,7 @@
+ #include <linux/interrupt.h>
+ #include <linux/module.h>
+ #include <linux/irq.h>
++#include <linux/of_irq.h>
+ #include <linux/io.h>
+ #include <linux/sh_intc.h>
+ #include <mach/intc.h>
+@@ -464,3 +465,16 @@ void __init sh73a0_init_irq(void)
+ 	sh73a0_pint1_cascade.handler = sh73a0_pint1_demux;
+ 	setup_irq(gic_spi(34), &sh73a0_pint1_cascade);
+ }
++
++#ifdef CONFIG_OF
++static const struct of_device_id irq_of_match[] __initconst = {
++	{ .compatible = "arm,cortex-a9-gic", .data = gic_of_init, },
++	{ },
++};
++
++void __init sh73a0_init_irq_dt(void)
++{
++	of_irq_init(irq_of_match);
++	gic_arch_extn.irq_set_wake = sh73a0_set_wake;
++}
++#endif
 -- 
-1.7.5.4
+1.7.10.4
 
