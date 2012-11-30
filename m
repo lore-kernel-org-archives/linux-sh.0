@@ -1,33 +1,31 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 29 Nov 2012 00:00:19 +0000
-Subject: [GIT PULL v2] Renesas ARM-based SoC maintainers for v3.8 #1
-Message-Id: <1354147220-10552-1-git-send-email-horms@verge.net.au>
+From: Olof Johansson <olof@lixom.net>
+Date: Fri, 30 Nov 2012 16:52:50 +0000
+Subject: Re: [GIT PULL v2] Renesas ARM-based SoC maintainers for v3.8 #1
+Message-Id: <20121130165250.GB697@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1354147220-10552-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1354147220-10552-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Arnd,
+On Thu, Nov 29, 2012 at 09:00:19AM +0900, Simon Horman wrote:
+> Hi Olof, Hi Arnd,
+> 
+> Please consider the following maintainers change for 3.8.
+> 
+> ----------------------------------------------------------------
+> The following changes since commit ddffeb8c4d0331609ef2581d84de4d763607bd37:
+> 
+>   Linux 3.7-rc1 (2012-10-14 14:41:04 -0700)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git maintainers
 
-Please consider the following maintainers change for 3.8.
+THanks, pulled into next/fixes-non-critical, since we've likely sent our last
+fixes batch to Linus.
 
-----------------------------------------------------------------
-The following changes since commit ddffeb8c4d0331609ef2581d84de4d763607bd37:
 
-  Linux 3.7-rc1 (2012-10-14 14:41:04 -0700)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git maintainers
-
-for you to fetch changes up to 5e2125985045270564f84ce8891a0453320f27cb:
-
-  Update ARM/SHMOBILE section of MAINTAINERS (2012-11-28 10:29:47 +0900)
-
-----------------------------------------------------------------
-Simon Horman (1):
-      Update ARM/SHMOBILE section of MAINTAINERS
-
- MAINTAINERS |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+-Olof
