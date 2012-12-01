@@ -1,26 +1,47 @@
-From: Grant Likely <grant.likely@secretlab.ca>
-Date: Wed, 19 Dec 2012 16:39:08 +0000
-Subject: Re: [PATCH 2/4 v2] spi: Add SH Mobile series as dependency to MSIOF controller
-Message-Id: <20121219163908.A58F23E0C0F@localhost>
+From: Simon Horman <horms@verge.net.au>
+Date: Sat, 01 Dec 2012 00:26:35 +0000
+Subject: Re: [PATCH 01/17] ARM: shmobile: fix memory size for kota2_defconfig
+Message-Id: <20121201002632.GA4416@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1355313289-29769-1-git-send-email-hechtb+renesas@gmail.com>
- <1355313289-29769-2-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1355313289-29769-2-git-send-email-hechtb+renesas@gmail.com>
+References: <1349195816-2225-1-git-send-email-arnd@arndb.de>
+ <1349195816-2225-2-git-send-email-arnd@arndb.de>
+ <20121003003759.GD31207@verge.net.au>
+ <201210040834.55096.arnd@arndb.de>
+ <20121004085857.GA7240@verge.net.au>
+ <CAOesGMg6afPjBc82FEOwzwn-nBAFPY7K_udJRJO1bBrtCk3Yvg@mail.gmail.com>
+In-Reply-To: <CAOesGMg6afPjBc82FEOwzwn-nBAFPY7K_udJRJO1bBrtCk3Yvg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Olof Johansson <olof@lixom.net>
+Cc: Arnd Bergmann <arnd@arndb.de>, linux-arm-kernel@infradead.org, arm@kernel.org, linux-kernel@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-On Wed, 12 Dec 2012 12:54:47 +0100, Bastian Hecht <hechtb@gmail.com> wrote:
-> From: Bastian Hecht <hechtb@gmail.com>
+On Fri, Nov 30, 2012 at 02:10:47PM -0800, Olof Johansson wrote:
+> Hi,
 > 
-> The MSIOF hardware block is used in the SH Mobile series as well, so we
-> add it here.
+> On Thu, Oct 4, 2012 at 1:58 AM, Simon Horman <horms@verge.net.au> wrote:
+> > On Thu, Oct 04, 2012 at 08:34:54AM +0000, Arnd Bergmann wrote:
+> >> On Wednesday 03 October 2012, Simon Horman wrote:
+> >> > I looked through my fines and found a config that I believe
+> >> > worked with a derivative of 2.6.35.7.
+> >> >
+> >> > It has CONFIG_MEMORY_SIZE=0x1e800000.
+> >> >
+> >> > So what I suspect has happened is that an extra zero has crept into
+> >> > arch/arm/configs/kota2_defconfig and the intended value is:
+> >> >
+> >> > CONFIG_MEMORY_SIZE=0x1e000000
+> >> >
+> >> > Unfortunately I do not have access to a board to test this,
+> >> > nor am I aware of anyone who does.
+> >>
+> >> Ok, I'll drop this patch for now then, so we keep the warning around
+> >> to remind us of the problem.
+> >
+> > Thanks. I have subsequently located a Kota2 board,
+> > however it may be a little while before I get my hands on it.
 > 
-> Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
-> ---
+> Gentle ping. I just came across this warning again so I figured I'd check.
 
-Also already applied.
-
-g.
-
+Sorry, I still don't have a kota2 board.
+However, I expect to obtain one within the next week.
