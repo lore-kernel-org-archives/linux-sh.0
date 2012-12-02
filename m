@@ -1,60 +1,28 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 19 Dec 2012 10:50:59 +0000
-Subject: Re: [PATCH 1/2] ARM: r8a7740: Add interim sh-eth device name to clocks list
-Message-Id: <CANqRtoQZa35XGL2qQ1SONJ+3JBXMesjHL_tJV_9b96V2K3+xZA@mail.gmail.com>
+From: Joerg Roedel <joro@8bytes.org>
+Date: Sun, 02 Dec 2012 14:06:45 +0000
+Subject: Re: [PATCH 0/9] dma_debug: add debug_dma_mapping_error support to architectures that support DMA_DEB
+Message-Id: <20121202140644.GP30633@8bytes.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1355851359-8871-1-git-send-email-hechtb+renesas@gmail.com>
- <1355851359-8871-2-git-send-email-hechtb+renesas@gmail.com>
- <Pine.LNX.4.64.1212191005280.12389@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1212191005280.12389@axis700.grange>
+References: <1353706142.5270.93.camel@lorien2> <50B34B0F.3080204@samsung.com>
+In-Reply-To: <50B34B0F.3080204@samsung.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Dec 19, 2012 at 6:10 PM, Guennadi Liakhovetski
-<g.liakhovetski@gmx.de> wrote:
-> Hi Bastian
->
-> Thanks for the patch.
->
-> On Tue, 18 Dec 2012, Bastian Hecht wrote:
->
->> When we use the ethernet device via DT setup, we need to add it
->> to a lookup list until this is properly handled later in a DT-only
->> fashion.
->>
->> Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
->> ---
->>  arch/arm/mach-shmobile/clock-r8a7740.c |    1 +
->>  1 file changed, 1 insertion(+)
->>
->> diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
->> index 19ce885..8765a76 100644
->> --- a/arch/arm/mach-shmobile/clock-r8a7740.c
->> +++ b/arch/arm/mach-shmobile/clock-r8a7740.c
->> @@ -614,6 +614,7 @@ static struct clk_lookup lookups[] = {
->>       CLKDEV_DEV_ID("sh_mobile_sdhi.1",       &mstp_clks[MSTP313]),
->>       CLKDEV_DEV_ID("sh_mmcif",               &mstp_clks[MSTP312]),
->>       CLKDEV_DEV_ID("sh-eth",                 &mstp_clks[MSTP309]),
->> +     CLKDEV_DEV_ID("e9a00000.sh-eth",        &mstp_clks[MSTP309]),
->
-> In a recent thread
->
-> http://thread.gmane.org/gmane.linux.ports.sh.devel/18062/focus057
->
-> I've been suggested to use OF_DEV_AUXDATA(), isn't this also a case for
-> it?
+Hi Marek,
+ 
+On Mon, Nov 26, 2012 at 11:57:19AM +0100, Marek Szyprowski wrote:
 
-AUXDATA seems to be a great way to add a platform data pointer as a
-workaround while implementing DT support, but when it comes to
-translate the name based on base address the code becomes very
-verbose.
+> I've took all the patches to the next-dma-debug branch in my tree, I sorry
+> that You have to wait so long for it. My branch is based on Joerg's
+> dma-debug branch and I've included it for testing in linux-next branch.
 
-I am all for going with the simplest half-way solution that uses the
-least amount of lines of code, but I doubt it can get any simpler than
-a single line of CLKDEV_DEV_ID().
+The patches are now two times in next. One version from my tree and one
+from yours. Please remove the version from your tree, the patches should
+go upstream via my dma-debug branch.
 
-Thanks,
 
-/ magnus
+	Joerg
+
+
