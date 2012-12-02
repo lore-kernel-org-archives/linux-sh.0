@@ -1,53 +1,32 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Tue, 18 Dec 2012 00:31:50 +0000
-Subject: Re: [PATCH 02/10] SH: intc: Add support OF of IRQ
-Message-Id: <20121218003150.GH7146@verge.net.au>
+Date: Sun, 02 Dec 2012 23:57:30 +0000
+Subject: Re: [GIT PULL v2] Renesas ARM-based SoC maintainers for v3.8 #1
+Message-Id: <20121202235730.GD12310@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1355562224-29448-1-git-send-email-horms+renesas@verge.net.au>
- <1355562224-29448-3-git-send-email-horms+renesas@verge.net.au>
- <2838757.yMqfipzqR7@avalon>
-In-Reply-To: <2838757.yMqfipzqR7@avalon>
+References: <1354147220-10552-1-git-send-email-horms@verge.net.au>
+ <20121130165250.GB697@quad.lixom.net>
+In-Reply-To: <20121130165250.GB697@quad.lixom.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Dec 17, 2012 at 09:29:44AM +0100, Laurent Pinchart wrote:
-> Hi Iwamatsu-san,
+On Fri, Nov 30, 2012 at 08:52:50AM -0800, Olof Johansson wrote:
+> On Thu, Nov 29, 2012 at 09:00:19AM +0900, Simon Horman wrote:
+> > Hi Olof, Hi Arnd,
+> > 
+> > Please consider the following maintainers change for 3.8.
+> > 
+> > ----------------------------------------------------------------
+> > The following changes since commit ddffeb8c4d0331609ef2581d84de4d763607bd37:
+> > 
+> >   Linux 3.7-rc1 (2012-10-14 14:41:04 -0700)
+> > 
+> > are available in the git repository at:
+> > 
+> >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git maintainers
 > 
-> Thank your for the patch.
-> 
-> On Saturday 15 December 2012 18:03:36 Simon Horman wrote:
-> > From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-> > 
-> > Add information of device node to struct intc_desc.
-> > 
-> > Cc: Magnus Damm <damm@opensource.se>
-> > Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > 
-> > ---
-> > 
-> > v7
-> > * Delete "renesas,sh_intcs" and "renesas,sh_intca_irq_pins" as compatible.
-> >   Update their documentation.
-> > * Remove of_sh_intc_get_meminfo() and of_sh_intc_get_pint and
-> >   of_sh_intc_get_intc(). They are not used.
-> > 
-> > v2 - v6
-> > * No change
-> > ---
-> >  Documentation/devicetree/bindings/sh/intc.txt |   15 +----
-> >  drivers/sh/intc/core.c                        |    2 +-
-> >  drivers/sh/intc/internals.h                   |    3 +-
-> >  drivers/sh/intc/irqdomain.c                   |    6 +-
-> >  drivers/sh/intc/of_intc.c                     |   76 ----------------------
-> >  include/linux/sh_intc.h                       |   29 +---------
-> >  6 files changed, 9 insertions(+), 122 deletions(-)
-> 
-> Shouldn't this be squashed into patch 01/10 ? 01/10 adds DT bindings support, 
-> and you already modify them in this patch.
+> THanks, pulled into next/fixes-non-critical, since we've likely sent our last
+> fixes batch to Linus.
 
-Good point. Yes, I think so.
-I'll probably be the one doing the squashing and if so I'll do so for the
-next spin.
+Thanks, its clearly not a critical fix.
