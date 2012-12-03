@@ -1,27 +1,33 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 18 Dec 2012 02:18:03 +0000
-Subject: Re: [PATCH v3 51/81] ARM: shmobile: r8a7740: Use driver-provided pinmux info
-Message-Id: <20121218021803.GM28065@verge.net.au>
+From: Chris Ball <cjb@laptop.org>
+Date: Mon, 03 Dec 2012 19:24:57 +0000
+Subject: Re: [PATCH] mmc: sh_mmcif: remove unneeded clock connection ID
+Message-Id: <87d2yrhrau.fsf@octavius.laptop.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1355611915-25060-52-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1355611915-25060-52-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <Pine.LNX.4.64.1211281006340.1710@axis700.grange>
+	<20121130090224.GG4501@verge.net.au>
+In-Reply-To: <20121130090224.GG4501@verge.net.au> (Simon Horman's message of
+	"Fri, 30 Nov 2012 18:02:24 +0900")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
 
-On Sat, Dec 15, 2012 at 11:51:25PM +0100, Laurent Pinchart wrote:
-> Pinmux info for the r8a7740 is now provided by pinmux drivers. Remove
-> the duplicate copy in arch code.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
->  arch/arm/mach-shmobile/Makefile        |    1 -
->  arch/arm/mach-shmobile/pfc-r8a7740.c   | 2643 --------------------------------
->  arch/arm/mach-shmobile/setup-r8a7740.c |   26 +
->  3 files changed, 26 insertions(+), 2644 deletions(-)
->  delete mode 100644 arch/arm/mach-shmobile/pfc-r8a7740.c
+Hi,
 
-Code reduction, excellent!
+On Fri, Nov 30 2012, Simon Horman wrote:
+> On Wed, Nov 28, 2012 at 10:24:27AM +0100, Guennadi Liakhovetski wrote:
+>> MMCIF only uses one clock, all ARM and SuperH platforms register MMCIF
+>> clock lookup entries with no connection ID, hence it can be dropped in
+>> the driver too.
+>> 
+>> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+>
+> Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Thanks, pushed to mmc-next for 3.8.
+
+- Chris.
+-- 
+Chris Ball   <cjb@laptop.org>   <http://printf.net/>
+One Laptop Per Child
