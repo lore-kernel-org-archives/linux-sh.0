@@ -1,51 +1,27 @@
-From: Will Deacon <will.deacon@arm.com>
-Date: Thu, 13 Dec 2012 14:52:53 +0000
-Subject: Re: [RFC PATCH v2 3/5] ARM: kernel: update cpu_suspend code to use cache LoUIS operations
-Message-Id: <20121213145252.GK26540@mudshark.cambridge.arm.com>
+From: Sachin Kamat <sachin.kamat@linaro.org>
+Date: Mon, 03 Dec 2012 04:25:14 +0000
+Subject: Re: [PATCH 1/1] ARM: shmobile: Remove duplicate inclusion of dma-mapping.h in setup-r8a7740.c
+Message-Id: <CAK9yfHwFEPN3ttsM35LMY=wZ=W4s39QCgDq1Bop+pqW9rGMKAA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20120920110439.GB2117@linaro.org>
- <Pine.LNX.4.64.1212111655050.29758@axis700.grange>
- <20121211163313.GG16759@mudshark.cambridge.arm.com>
- <20121211163843.GH16759@mudshark.cambridge.arm.com>
- <50C7C16B.7050106@codeaurora.org>
- <20121212103338.GB23022@e102568-lin.cambridge.arm.com>
- <20121212133650.GJ6195@mudshark.cambridge.arm.com>
- <Pine.LNX.4.64.1212130909190.18586@axis700.grange>
- <20121213105109.GB26540@mudshark.cambridge.arm.com>
- <Pine.LNX.4.64.1212131522430.18586@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1212131522430.18586@axis700.grange>
+References: <1353393549-1532-1-git-send-email-sachin.kamat@linaro.org>
+In-Reply-To: <1353393549-1532-1-git-send-email-sachin.kamat@linaro.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Thu, Dec 13, 2012 at 02:32:46PM +0000, Guennadi Liakhovetski wrote:
-> On Thu, 13 Dec 2012, Will Deacon wrote:
-> 
-> > On Thu, Dec 13, 2012 at 08:09:33AM +0000, Guennadi Liakhovetski wrote:
-> > > On Wed, 12 Dec 2012, Will Deacon wrote:
-> > > > Back to the case in hand.... Lorenzo just pointed out to me that the
-> > > > finished in question (sh7372_do_idle_sysc) calls v7_flush_dcache_all, so
-> > > > the louis stuff should be irrelevant. The problem may actually be that the
-> > > > finisher disables the L2 cache prior to cleaning/invalidating it, which is
-> > > > the opposite order to that described by the A8 TRM.
-> > > > 
-> > > > Guennadi -- can you try moving the kernel_flush call before the L2 disable
-> > > > in sh7372_do_idle_sysc please?
-> > > 
-> > > Yes, this works too.
-> > 
-> > That's good to know. Please can you send a patch for that? The sequence
-> > currently being used by the finisher *is* buggy, and should be fixed
-> > independently of the louis stuff.
-> 
-> Well, the fix is yours, so, it should be "From: you." I can certainly send 
-> it just copying your description above, but I'd also need your Sob. 
-> Something like the below (feel free to improve the subject line and the 
-> description):
+On 30 November 2012 14:26, Simon Horman <horms@verge.net.au> wrote:
+> On Tue, Nov 27, 2012 at 09:05:25AM +0530, Sachin Kamat wrote:
+>> ping
+>
+> Sorry for missing this. I have applied it now and
 
-No, I didn't send any code for this so you should be the author. I can
-review/possibly ack it if you like (please send a v2 addressing Santosh's
-comments).
+Thanks Simon.
 
-Will
+> I expect it will be included in 3.9.
+
+Oh. I thought it might get included in 3.8 itself.
+
+-- 
+With warm regards,
+Sachin
