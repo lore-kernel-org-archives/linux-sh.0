@@ -1,37 +1,66 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 15 Dec 2012 22:50:40 +0000
-Subject: [PATCH v3 06/81] sh: sh7786: Fix last GPIO index
-Message-Id: <1355611915-25060-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Tang Chen <tangchen@cn.fujitsu.com>
+Date: Tue, 04 Dec 2012 09:34:04 +0000
+Subject: Re: [Patch v4 06/12] memory-hotplug: unregister memory section on SPARSEMEM_VMEMMAP
+Message-Id: <50BDC38C.1060209@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1354010422-19648-1-git-send-email-wency@cn.fujitsu.com> <1354010422-19648-7-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1354010422-19648-7-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Wen Congyang <wency@cn.fujitsu.com>
+Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org, David Rientjes <rientjes@google.com>, Jiang Liu <liuj97@gmail.com>, Len Brown <len.brown@intel.com>, benh@kernel.crashing.org, paulus@samba.org, Christoph Lameter <cl@linux.com>, Minchan Kim <minchan.kim@gmail.com>, Andrew Morton <akpm@linux-foundation.org>, KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>, Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>, Jianguo Wu <wujianguo@huawei.com>
 
-A careless look at the code shows that the last entry in the
-pinmux_gpios seems to be GPIO_FN_FSE. However, entries are ordered by
-the GPIO number, as the PINMUX_GPIO macro is expended to an indexed
-array initializer. The last entry in the array is thus GPIO_FN_IRL4. Set
-the pinmux_info last_gpio field accordingly.
+On 11/27/2012 06:00 PM, Wen Congyang wrote:
+> From: Yasuaki Ishimatsu<isimatu.yasuaki@jp.fujitsu.com>
+>
+> Currently __remove_section for SPARSEMEM_VMEMMAP does nothing. But even if
+> we use SPARSEMEM_VMEMMAP, we can unregister the memory_section.
+>
+> So the patch add unregister_memory_section() into __remove_section().
+>
+> CC: David Rientjes<rientjes@google.com>
+> CC: Jiang Liu<liuj97@gmail.com>
+> CC: Len Brown<len.brown@intel.com>
+> CC: Christoph Lameter<cl@linux.com>
+> Cc: Minchan Kim<minchan.kim@gmail.com>
+> CC: Andrew Morton<akpm@linux-foundation.org>
+> CC: KOSAKI Motohiro<kosaki.motohiro@jp.fujitsu.com>
+> Signed-off-by: Yasuaki Ishimatsu<isimatu.yasuaki@jp.fujitsu.com>
+> Signed-off-by: Wen Congyang<wency@cn.fujitsu.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+__remove_section() of CONFIG_SPARSEMEM_VMEMMAP will be integrated
+into one in [PATCH 08/12], so I think we can merge this patch into
+[PATCH 08/12].
 
-diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
-index c24a777..60df99c 100644
---- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
-+++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
-@@ -825,7 +825,7 @@ static struct pinmux_info sh7786_pinmux_info = {
- 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
- 
- 	.first_gpio = GPIO_PA7,
--	.last_gpio = GPIO_FN_FSE,
-+	.last_gpio = GPIO_FN_IRL4,
- 
- 	.gpios = pinmux_gpios,
- 	.cfg_regs = pinmux_config_regs,
--- 
-1.7.8.6
+Reviewed-by: Tang Chen <tangchen@cn.fujitsu.com>
+
+> ---
+>   mm/memory_hotplug.c | 13 ++++++++-----
+>   1 file changed, 8 insertions(+), 5 deletions(-)
+>
+> diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+> index e741732..171610d 100644
+> --- a/mm/memory_hotplug.c
+> +++ b/mm/memory_hotplug.c
+> @@ -279,11 +279,14 @@ static int __meminit __add_section(int nid, struct zone *zone,
+>   #ifdef CONFIG_SPARSEMEM_VMEMMAP
+>   static int __remove_section(struct zone *zone, struct mem_section *ms)
+>   {
+> -	/*
+> -	 * XXX: Freeing memmap with vmemmap is not implement yet.
+> -	 *      This should be removed later.
+> -	 */
+> -	return -EBUSY;
+> +	int ret = -EINVAL;
+> +
+> +	if (!valid_section(ms))
+> +		return ret;
+> +
+> +	ret = unregister_memory_section(ms);
+> +
+> +	return ret;
+>   }
+>   #else
+>   static int __remove_section(struct zone *zone, struct mem_section *ms)
 
