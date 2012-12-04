@@ -1,54 +1,166 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Sat, 15 Dec 2012 09:08:47 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: mackerel: update defconfig
-Message-Id: <20121215090847.GK9073@verge.net.au>
+Date: Tue, 04 Dec 2012 05:50:29 +0000
+Subject: Re: [PATCH shmobile/DT 1/2] ARM: shmobile: Remove some of_sh_intc_* functions
+Message-Id: <20121204055029.GC15969@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1355559114-15523-1-git-send-email-horms@verge.net.au>
-In-Reply-To: <1355559114-15523-1-git-send-email-horms@verge.net.au>
+References: <1353572619-29098-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
+In-Reply-To: <1353572619-29098-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sat, Dec 15, 2012 at 05:11:54PM +0900, Simon Horman wrote:
-> From: Simon Horman <horms+renesas@verge.net.au>
-> 
-> * Enable ARM_APPENDED_DTB
-> 
->   Typically the bootloader of a mackerel board does not support DT
->   so this option is useful
-> 
-> * Add "rw" to command line
-> 
->   This appears to be necessary for a successful NFS-root boot
-> 
-> * Do not disable INOTIFY_USER
-> 
->   INOTIFY_USER is required by dbus which is common to many
->   userspaces
+On Thu, Nov 22, 2012 at 05:23:38PM +0900, Nobuhiro Iwamatsu wrote:
+> This removes of_sh_intc_get_meminfo, of_sh_intc_get_pint and of_sh_intc_get_intc functions.
+> These are not already used.
 
-I seemed to miss the INOTIFY_USER portion of the change somehow,
-I will repost.
+Hi Iwamatsu-san,
 
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+these patches are for Paul, right?
+
+> 
+> Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 > ---
->  arch/arm/configs/mackerel_defconfig |    3 ++-
->  1 file changed, 2 insertions(+), 1 deletion(-)
+>  drivers/sh/intc/of_intc.c |   76 ---------------------------------------------
+>  include/linux/sh_intc.h   |   28 -----------------
+>  2 files changed, 104 deletions(-)
 > 
-> diff --git a/arch/arm/configs/mackerel_defconfig b/arch/arm/configs/mackerel_defconfig
-> index 2098ce1..8519721 100644
-> --- a/arch/arm/configs/mackerel_defconfig
-> +++ b/arch/arm/configs/mackerel_defconfig
-> @@ -23,7 +23,8 @@ CONFIG_AEABI=y
->  CONFIG_FORCE_MAX_ZONEORDER
->  CONFIG_ZBOOT_ROM_TEXT=0x0
->  CONFIG_ZBOOT_ROM_BSS=0x0
-> -CONFIG_CMDLINE="console=tty0, console=ttySC0,115200 earlyprintk=sh-sci.0,115200 root=/dev/nfs nfsroot=,tcp,v3 ip=dhcp memchunk.vpudm memchunk.veu0=8m memchunk.spu0=2m mem$0m"
-> +CONFIG_ARM_APPENDED_DTB=y
-> +CONFIG_CMDLINE="console=tty0, console=ttySC0,115200 earlyprintk=sh-sci.0,115200 root=/dev/nfs nfsroot=,tcp,v3 ip=dhcp memchunk.vpudm memchunk.veu0=8m memchunk.spu0=2m mem$0m rw"
->  CONFIG_KEXEC=y
->  # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
->  CONFIG_PM=y
+> diff --git a/drivers/sh/intc/of_intc.c b/drivers/sh/intc/of_intc.c
+> index 30b1090..e833e48 100644
+> --- a/drivers/sh/intc/of_intc.c
+> +++ b/drivers/sh/intc/of_intc.c
+> @@ -529,49 +529,6 @@ void __init of_sh_intc_get_skip_syscore_suspend(struct device_node *np,
+>  		d->skip_syscore_suspend = false;
+>  }
+>  
+> -int __init of_sh_intc_get_meminfo(struct device_node *np,
+> -				struct resource *res, int res_no)
+> -{
+> -	int ret = 0, i;
+> -
+> -	for (i = 0 ; i < res_no ; i++) {
+> -		ret = of_address_to_resource(np, i, &res[i]);
+> -		if (ret) {
+> -			pr_err("could not determine device base address\n");
+> -			return ret;
+> -		}
+> -
+> -		pr_debug("%s: Address 0x%x, size %d\n",
+> -					__func__, res[i].start, resource_size(&res[i]));
+> -	}
+> -
+> -	return ret;
+> -}
+> -
+> -int __init of_sh_intc_get_pint(struct device_node *np, struct intc_desc *d)
+> -{
+> -	/* pint uses vector, mask and sence. */
+> -	int ret = of_sh_intc_get_vector(np, &d->hw.vectors,
+> -				&d->hw.nr_vectors);
+> -	if (ret)
+> -		return ret;
+> -
+> -	ret = of_sh_intc_get_mask(np, &d->hw.mask_regs,
+> -				&d->hw.nr_mask_regs);
+> -	if (ret)
+> -		return ret;
+> -
+> -	ret = of_sh_intc_get_sense(np, &d->hw.sense_regs,
+> -				&d->hw.nr_sense_regs);
+> -	/* INTC may not need Sence register. */
+> -	if (ret && ret != -ENOENT)
+> -		return ret;
+> -
+> -	d->of_node = np;
+> -
+> -	return 0;
+> -}
+> -
+>  int __init of_sh_intc_get_intc(struct device_node *np, struct intc_desc *d)
+>  {
+>  	int ret = of_sh_intc_get_vector(np, &d->hw.vectors,
+> @@ -611,36 +568,3 @@ int __init of_sh_intc_get_intc(struct device_node *np, struct intc_desc *d)
+>  
+>  	return 0;
+>  }
+> -
+> -int __init of_sh_intc_get_intc_pins(struct device_node *np,
+> -				struct intc_desc *d)
+> -{
+> -	int ret = of_sh_intc_get_vector(np, &d->hw.vectors,
+> -				&d->hw.nr_vectors);
+> -	if (ret)
+> -		return ret;
+> -
+> -	ret = of_sh_intc_get_mask(np, &d->hw.mask_regs,
+> -				&d->hw.nr_mask_regs);
+> -	if (ret)
+> -		return ret;
+> -
+> -	ret = of_sh_intc_get_prio(np, &d->hw.prio_regs,
+> -				&d->hw.nr_prio_regs);
+> -	if (ret)
+> -		return ret;
+> -
+> -	ret = of_sh_intc_get_sense(np, &d->hw.sense_regs,
+> -				&d->hw.nr_sense_regs);
+> -	if (ret)
+> -		return ret;
+> -
+> -	ret = of_sh_intc_get_ack(np, &d->hw.ack_regs,
+> -				&d->hw.nr_ack_regs);
+> -	if (ret)
+> -		return ret;
+> -
+> -	d->of_node = np;
+> -
+> -	return 0;
+> -}
+> diff --git a/include/linux/sh_intc.h b/include/linux/sh_intc.h
+> index 6603da6..c7954ee 100644
+> --- a/include/linux/sh_intc.h
+> +++ b/include/linux/sh_intc.h
+> @@ -161,26 +161,6 @@ static inline int register_intc_userimask(unsigned long addr)
+>  int of_sh_intc_get_intc(struct device_node *np, struct intc_desc *d);
+>  
+>  /*
+> - * of_sh_initc_get_intc_pins() - Get INTC Pins table.
+> - * @np:     device node to get INTC from
+> - * @d:      a pointer of intc pins table
+> - *
+> - * Return: one of the errno value on the error condition
+> - */
+> -int of_sh_intc_get_intc_pins(struct device_node *np, struct intc_desc *d);
+> -
+> -/*
+> - * of_sh_intc_get_meminfo() - Get and set INTC register of memory.
+> - * @np:     device node to get INTC from
+> - * @res_mem:   a pointer of resource
+> - * @res_no:  resource number
+> - *
+> - * Return: one of the errno value on the error condition
+> - */
+> -int of_sh_intc_get_meminfo(struct device_node *np,
+> -				struct resource *res_mem, int resno);
+> -
+> -/*
+>   * of_sh_intc_get_force_enable - Get and set force_enable vector in
+>   *                               struct intc_desc.
+>   * @np:  device node to get INTC from
+> @@ -221,13 +201,5 @@ void of_sh_intc_get_skip_syscore_suspend(struct device_node *np,
+>   * Return: one of the errno value on the error condition
+>   */
+>  int of_sh_intc_get_intevtsa_vect(struct device_node *np, unsigned short *vect);
+> -/*
+> - * of_sh_initc_get_intc_pint() - Get INTC Pint table.
+> - * @np:     device node to get INTC from
+> - * @d:      a pointer of intc pint table
+> - *
+> - * Return: one of the errno value on the error condition
+> - */
+> -int of_sh_intc_get_pint(struct device_node *np, struct intc_desc *d);
+>  
+>  #endif /* __SH_INTC_H */
 > -- 
 > 1.7.10.4
 > 
