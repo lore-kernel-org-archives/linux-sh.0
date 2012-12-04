@@ -1,85 +1,168 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 16 Dec 2012 17:25:59 +0000
-Subject: [PATCH/WIP/RFC 13/14] shmobile-ipmmu: Remove unneeded lock_add spinlock
-Message-Id: <1355678760-27357-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Tang Chen <tangchen@cn.fujitsu.com>
+Date: Tue, 04 Dec 2012 10:10:02 +0000
+Subject: Re: [Patch v4 11/12] memory-hotplug: remove sysfs file of node
+Message-Id: <50BDCBFA.6000900@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1350290093-998-1-git-send-email-hdk@igel.co.jp>
- <1355678760-27357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1355678760-27357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1354010422-19648-1-git-send-email-wency@cn.fujitsu.com> <1354010422-19648-12-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1354010422-19648-12-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Wen Congyang <wency@cn.fujitsu.com>
+Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org, David Rientjes <rientjes@google.com>, Jiang Liu <liuj97@gmail.com>, Len Brown <len.brown@intel.com>, benh@kernel.crashing.org, paulus@samba.org, Christoph Lameter <cl@linux.com>, Minchan Kim <minchan.kim@gmail.com>, Andrew Morton <akpm@linux-foundation.org>, KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>, Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>, Jianguo Wu <wujianguo@huawei.com>
 
-ipmmu_add_device() can never race with
-shmobile_iommu_attach_all_devices(), called by ipmmu_iommu_init() as the
-former is called from an arch initcall and the later from a subsys
-initcall.
+On 11/27/2012 06:00 PM, Wen Congyang wrote:
+> This patch introduces a new function try_offline_node() to
+> remove sysfs file of node when all memory sections of this
+> node are removed. If some memory sections of this node are
+> not removed, this function does nothing.
+>
+> CC: David Rientjes<rientjes@google.com>
+> CC: Jiang Liu<liuj97@gmail.com>
+> CC: Len Brown<len.brown@intel.com>
+> CC: Christoph Lameter<cl@linux.com>
+> Cc: Minchan Kim<minchan.kim@gmail.com>
+> CC: Andrew Morton<akpm@linux-foundation.org>
+> CC: KOSAKI Motohiro<kosaki.motohiro@jp.fujitsu.com>
+> CC: Yasuaki Ishimatsu<isimatu.yasuaki@jp.fujitsu.com>
+> Signed-off-by: Wen Congyang<wency@cn.fujitsu.com>
 
-Remove the unneeded spinlock as well as the arm_iommu_attach_device() in
-ipmmu_add_device(), as the condition that guards the call is always
-false.
+Reviewed-by: Tang Chen <tangchen@cn.fujitsu.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/iommu/shmobile-iommu.c |   18 +++---------------
- 1 files changed, 3 insertions(+), 15 deletions(-)
-
-diff --git a/drivers/iommu/shmobile-iommu.c b/drivers/iommu/shmobile-iommu.c
-index bf1d0a4..2592d25 100644
---- a/drivers/iommu/shmobile-iommu.c
-+++ b/drivers/iommu/shmobile-iommu.c
-@@ -51,7 +51,6 @@ static struct dma_iommu_mapping *iommu_mapping;
- static struct device *ipmmu_devices;
- static struct dma_pool *l1pool, *l2pool;
- static spinlock_t lock;
--static DEFINE_SPINLOCK(lock_add);
- static struct shmobile_iommu_domain *attached;
- static int num_attached_devices;
- 
-@@ -313,15 +312,12 @@ static struct iommu_ops shmobile_iommu_ops = {
- static int shmobile_iommu_attach_all_devices(struct shmobile_ipmmu *ipmmu)
- {
- 	struct device *dev;
--	int ret = 0;
- 
--	spin_lock(&lock_add);
- 	iommu_mapping = arm_iommu_create_mapping(&platform_bus_type, 0x0,
- 						 L1_LEN << 20, 0);
--	if (IS_ERR_OR_NULL(iommu_mapping)) {
--		ret = PTR_ERR(iommu_mapping);
--		goto err;
--	}
-+	if (IS_ERR_OR_NULL(iommu_mapping))
-+		return PTR_ERR(iommu_mapping);
-+
- 	for (dev = ipmmu_devices; dev; ) {
- 		struct shmobile_iommu_arch_data *data = dev->archdata.iommu;
- 
-@@ -332,8 +328,6 @@ static int shmobile_iommu_attach_all_devices(struct shmobile_ipmmu *ipmmu)
- 
- 		dev = data->next;
- 	}
--err:
--	spin_unlock(&lock_add);
- 	return 0;
- }
- 
-@@ -347,14 +341,8 @@ int ipmmu_add_device(struct device *dev)
- 
- 	dev->archdata.iommu = data;
- 
--	spin_lock(&lock_add);
- 	data->next = ipmmu_devices;
- 	ipmmu_devices = dev;
--	if (!IS_ERR_OR_NULL(iommu_mapping)) {
--		if (arm_iommu_attach_device(dev, iommu_mapping))
--			pr_err("arm_iommu_attach_device failed\n");
--	}
--	spin_unlock(&lock_add);
- 
- 	return 0;
- }
--- 
-1.7.8.6
+> ---
+>   drivers/acpi/acpi_memhotplug.c |  8 +++++-
+>   include/linux/memory_hotplug.h |  2 +-
+>   mm/memory_hotplug.c            | 58 ++++++++++++++++++++++++++++++++++++++++--
+>   3 files changed, 64 insertions(+), 4 deletions(-)
+>
+> diff --git a/drivers/acpi/acpi_memhotplug.c b/drivers/acpi/acpi_memhotplug.c
+> index 24c807f..0780f99 100644
+> --- a/drivers/acpi/acpi_memhotplug.c
+> +++ b/drivers/acpi/acpi_memhotplug.c
+> @@ -310,7 +310,9 @@ static int acpi_memory_disable_device(struct acpi_memory_device *mem_device)
+>   {
+>   	int result;
+>   	struct acpi_memory_info *info, *n;
+> +	int node;
+>
+> +	node = acpi_get_node(mem_device->device->handle);
+>
+>   	/*
+>   	 * Ask the VM to offline this memory range.
+> @@ -318,7 +320,11 @@ static int acpi_memory_disable_device(struct acpi_memory_device *mem_device)
+>   	 */
+>   	list_for_each_entry_safe(info, n,&mem_device->res_list, list) {
+>   		if (info->enabled) {
+> -			result = remove_memory(info->start_addr, info->length);
+> +			if (node<  0)
+> +				node = memory_add_physaddr_to_nid(
+> +					info->start_addr);
+> +			result = remove_memory(node, info->start_addr,
+> +				info->length);
+>   			if (result)
+>   				return result;
+>   		}
+> diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
+> index d4c4402..7b4cfe6 100644
+> --- a/include/linux/memory_hotplug.h
+> +++ b/include/linux/memory_hotplug.h
+> @@ -231,7 +231,7 @@ extern int arch_add_memory(int nid, u64 start, u64 size);
+>   extern int offline_pages(unsigned long start_pfn, unsigned long nr_pages);
+>   extern int offline_memory_block(struct memory_block *mem);
+>   extern bool is_memblock_offlined(struct memory_block *mem);
+> -extern int remove_memory(u64 start, u64 size);
+> +extern int remove_memory(int node, u64 start, u64 size);
+>   extern int sparse_add_one_section(struct zone *zone, unsigned long start_pfn,
+>   								int nr_pages);
+>   extern void sparse_remove_one_section(struct zone *zone, struct mem_section *ms);
+> diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+> index aa97d56..449663e 100644
+> --- a/mm/memory_hotplug.c
+> +++ b/mm/memory_hotplug.c
+> @@ -29,6 +29,7 @@
+>   #include<linux/suspend.h>
+>   #include<linux/mm_inline.h>
+>   #include<linux/firmware-map.h>
+> +#include<linux/stop_machine.h>
+>
+>   #include<asm/tlbflush.h>
+>
+> @@ -1288,7 +1289,58 @@ static int is_memblock_offlined_cb(struct memory_block *mem, void *arg)
+>   	return ret;
+>   }
+>
+> -int __ref remove_memory(u64 start, u64 size)
+> +static int check_cpu_on_node(void *data)
+> +{
+> +	struct pglist_data *pgdat = data;
+> +	int cpu;
+> +
+> +	for_each_present_cpu(cpu) {
+> +		if (cpu_to_node(cpu) = pgdat->node_id)
+> +			/*
+> +			 * the cpu on this node isn't removed, and we can't
+> +			 * offline this node.
+> +			 */
+> +			return -EBUSY;
+> +	}
+> +
+> +	return 0;
+> +}
+> +
+> +/* offline the node if all memory sections of this node are removed */
+> +static void try_offline_node(int nid)
+> +{
+> +	unsigned long start_pfn = NODE_DATA(nid)->node_start_pfn;
+> +	unsigned long end_pfn = start_pfn + NODE_DATA(nid)->node_spanned_pages;
+> +	unsigned long pfn;
+> +
+> +	for (pfn = start_pfn; pfn<  end_pfn; pfn += PAGES_PER_SECTION) {
+> +		unsigned long section_nr = pfn_to_section_nr(pfn);
+> +
+> +		if (!present_section_nr(section_nr))
+> +			continue;
+> +
+> +		if (pfn_to_nid(pfn) != nid)
+> +			continue;
+> +
+> +		/*
+> +		 * some memory sections of this node are not removed, and we
+> +		 * can't offline node now.
+> +		 */
+> +		return;
+> +	}
+> +
+> +	if (stop_machine(check_cpu_on_node, NODE_DATA(nid), NULL))
+> +		return;
+> +
+> +	/*
+> +	 * all memory/cpu of this node are removed, we can offline this
+> +	 * node now.
+> +	 */
+> +	node_set_offline(nid);
+> +	unregister_one_node(nid);
+> +}
+> +
+> +int __ref remove_memory(int nid, u64 start, u64 size)
+>   {
+>   	unsigned long start_pfn, end_pfn;
+>   	int ret = 0;
+> @@ -1335,6 +1387,8 @@ repeat:
+>
+>   	arch_remove_memory(start, size);
+>
+> +	try_offline_node(nid);
+> +
+>   	unlock_memory_hotplug();
+>
+>   	return 0;
+> @@ -1344,7 +1398,7 @@ int offline_pages(unsigned long start_pfn, unsigned long nr_pages)
+>   {
+>   	return -EINVAL;
+>   }
+> -int remove_memory(u64 start, u64 size)
+> +int remove_memory(int nid, u64 start, u64 size)
+>   {
+>   	return -EINVAL;
+>   }
 
