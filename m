@@ -1,57 +1,76 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Dec 2012 22:54:17 +0000
-Subject: [PATCH v4 35/81] sh: sh7722: Register PFC platform device
-Message-Id: <1356735303-29474-36-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Tang Chen <tangchen@cn.fujitsu.com>
+Date: Tue, 04 Dec 2012 10:10:13 +0000
+Subject: Re: [Patch v4 12/12] memory-hotplug: free node_data when a node is offlined
+Message-Id: <50BDCC05.7090800@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1354010422-19648-1-git-send-email-wency@cn.fujitsu.com> <1354010422-19648-13-git-send-email-wency@cn.fujitsu.com>
+In-Reply-To: <1354010422-19648-13-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Wen Congyang <wency@cn.fujitsu.com>
+Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org, David Rientjes <rientjes@google.com>, Jiang Liu <liuj97@gmail.com>, Len Brown <len.brown@intel.com>, benh@kernel.crashing.org, paulus@samba.org, Christoph Lameter <cl@linux.com>, Minchan Kim <minchan.kim@gmail.com>, Andrew Morton <akpm@linux-foundation.org>, KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>, Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>, Jianguo Wu <wujianguo@huawei.com>
 
-Add arch code to register the PFC platform device instead of calling the
-driver directly. Platform device registration in the sh-pfc driver will
-be removed.
+On 11/27/2012 06:00 PM, Wen Congyang wrote:
+> We call hotadd_new_pgdat() to allocate memory to store node_data. So we
+> should free it when removing a node.
+>
+> CC: David Rientjes<rientjes@google.com>
+> CC: Jiang Liu<liuj97@gmail.com>
+> CC: Len Brown<len.brown@intel.com>
+> CC: Benjamin Herrenschmidt<benh@kernel.crashing.org>
+> CC: Paul Mackerras<paulus@samba.org>
+> CC: Christoph Lameter<cl@linux.com>
+> Cc: Minchan Kim<minchan.kim@gmail.com>
+> CC: Andrew Morton<akpm@linux-foundation.org>
+> CC: KOSAKI Motohiro<kosaki.motohiro@jp.fujitsu.com>
+> CC: Yasuaki Ishimatsu<isimatu.yasuaki@jp.fujitsu.com>
+> Signed-off-by: Wen Congyang<wency@cn.fujitsu.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
----
- arch/sh/Kconfig                         |    1 +
- arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c |    3 ++-
- 2 files changed, 3 insertions(+), 1 deletions(-)
+Reviewed-by: Tang Chen <tangchen@cn.fujitsu.com>
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index bfb8b3e..2f0d9bf 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -527,6 +527,7 @@ config CPU_SUBTYPE_SH7722
- 	select SYS_SUPPORTS_NUMA
- 	select SYS_SUPPORTS_CMT
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
-+	select PINCTRL
- 
- config CPU_SUBTYPE_SH7366
- 	bool "Support SH7366 processor"
-diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c
-index 0688a75..11dbce3 100644
---- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c
-+++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c
-@@ -1,6 +1,7 @@
- #include <linux/init.h>
- #include <linux/kernel.h>
- #include <linux/gpio.h>
-+#include <cpu/pfc.h>
- #include <cpu/sh7722.h>
- 
- enum {
-@@ -1778,7 +1779,7 @@ static struct pinmux_info sh7722_pinmux_info = {
- 
- static int __init plat_pinmux_setup(void)
- {
--	return register_pinmux(&sh7722_pinmux_info);
-+	return sh_pfc_register_info(NULL, NULL, 0, &sh7722_pinmux_info);
- }
- 
- arch_initcall(plat_pinmux_setup);
--- 
-1.7.8.6
+> ---
+>   mm/memory_hotplug.c | 20 +++++++++++++++++++-
+>   1 file changed, 19 insertions(+), 1 deletion(-)
+>
+> diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+> index 449663e..d1451ab 100644
+> --- a/mm/memory_hotplug.c
+> +++ b/mm/memory_hotplug.c
+> @@ -1309,9 +1309,12 @@ static int check_cpu_on_node(void *data)
+>   /* offline the node if all memory sections of this node are removed */
+>   static void try_offline_node(int nid)
+>   {
+> +	pg_data_t *pgdat = NODE_DATA(nid);
+>   	unsigned long start_pfn = NODE_DATA(nid)->node_start_pfn;
+> -	unsigned long end_pfn = start_pfn + NODE_DATA(nid)->node_spanned_pages;
+> +	unsigned long end_pfn = start_pfn + pgdat->node_spanned_pages;
+>   	unsigned long pfn;
+> +	struct page *pgdat_page = virt_to_page(pgdat);
+> +	int i;
+>
+>   	for (pfn = start_pfn; pfn<  end_pfn; pfn += PAGES_PER_SECTION) {
+>   		unsigned long section_nr = pfn_to_section_nr(pfn);
+> @@ -1338,6 +1341,21 @@ static void try_offline_node(int nid)
+>   	 */
+>   	node_set_offline(nid);
+>   	unregister_one_node(nid);
+> +
+> +	if (!PageSlab(pgdat_page)&&  !PageCompound(pgdat_page))
+> +		/* node data is allocated from boot memory */
+> +		return;
+> +
+> +	/* free waittable in each zone */
+> +	for (i = 0; i<  MAX_NR_ZONES; i++) {
+> +		struct zone *zone = pgdat->node_zones + i;
+> +
+> +		if (zone->wait_table)
+> +			vfree(zone->wait_table);
+> +	}
+> +
+> +	arch_refresh_nodedata(nid, NULL);
+> +	arch_free_nodedata(pgdat);
+>   }
+>
+>   int __ref remove_memory(int nid, u64 start, u64 size)
 
