@@ -1,32 +1,104 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sun, 02 Dec 2012 23:57:30 +0000
-Subject: Re: [GIT PULL v2] Renesas ARM-based SoC maintainers for v3.8 #1
-Message-Id: <20121202235730.GD12310@verge.net.au>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Wed, 05 Dec 2012 12:13:06 +0000
+Subject: [PATCH 1/2] ARM: shmobile: sh73a0: Add CPU sleep suspend
+Message-Id: <1354709587-25288-1-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1354147220-10552-1-git-send-email-horms@verge.net.au>
- <20121130165250.GB697@quad.lixom.net>
-In-Reply-To: <20121130165250.GB697@quad.lixom.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Nov 30, 2012 at 08:52:50AM -0800, Olof Johansson wrote:
-> On Thu, Nov 29, 2012 at 09:00:19AM +0900, Simon Horman wrote:
-> > Hi Olof, Hi Arnd,
-> > 
-> > Please consider the following maintainers change for 3.8.
-> > 
-> > ----------------------------------------------------------------
-> > The following changes since commit ddffeb8c4d0331609ef2581d84de4d763607bd37:
-> > 
-> >   Linux 3.7-rc1 (2012-10-14 14:41:04 -0700)
-> > 
-> > are available in the git repository at:
-> > 
-> >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git maintainers
-> 
-> THanks, pulled into next/fixes-non-critical, since we've likely sent our last
-> fixes batch to Linus.
+From: Bastian Hecht <hechtb@gmail.com>
 
-Thanks, its clearly not a critical fix.
+Add the lighest possible sleep mode on Cortex-A9 cores: CPU sleep. It is
+entered by a simple dsb and wfi instruction via cpu_do_idle(). As just
+clocks are stopped there is no need to save or restore any state of the
+system.
+
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+---
+ arch/arm/mach-shmobile/Makefile              |    1 +
+ arch/arm/mach-shmobile/board-kzm9g.c         |    2 ++
+ arch/arm/mach-shmobile/include/mach/common.h |    1 +
+ arch/arm/mach-shmobile/pm-sh73a0.c           |   32 ++++++++++++++++++++++++++
+ 4 files changed, 36 insertions(+)
+ create mode 100644 arch/arm/mach-shmobile/pm-sh73a0.c
+
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index fe2c97c..d0d06f2 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -43,6 +43,7 @@ obj-$(CONFIG_ARCH_SHMOBILE)	+= pm-rmobile.o
+ obj-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o sleep-sh7372.o
+ obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o
++obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
+ 
+ # Board objects
+ obj-$(CONFIG_MACH_G3EVM)	+= board-g3evm.o
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index 0a43f31..dc8c0f8 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -760,6 +760,8 @@ static void __init kzm_init(void)
+ 
+ 	sh73a0_add_standard_devices();
+ 	platform_add_devices(kzm_devices, ARRAY_SIZE(kzm_devices));
++
++	sh73a0_pm_init();
+ }
+ 
+ static void kzm9g_restart(char mode, const char *cmd)
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index d47e215..318551b3 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -54,6 +54,7 @@ extern void sh73a0_add_early_devices(void);
+ extern void sh73a0_add_standard_devices(void);
+ extern void sh73a0_clock_init(void);
+ extern void sh73a0_pinmux_init(void);
++extern void sh73a0_pm_init(void);
+ extern struct clk sh73a0_extal1_clk;
+ extern struct clk sh73a0_extal2_clk;
+ extern struct clk sh73a0_extcki_clk;
+diff --git a/arch/arm/mach-shmobile/pm-sh73a0.c b/arch/arm/mach-shmobile/pm-sh73a0.c
+new file mode 100644
+index 0000000..9cf67bb
+--- /dev/null
++++ b/arch/arm/mach-shmobile/pm-sh73a0.c
+@@ -0,0 +1,32 @@
++/*
++ * sh73a0 Power management support
++ *
++ *  Copyright (C) 2012 Bastian Hecht <hechtb+renesas@gmail.com>
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++
++#include <linux/suspend.h>
++#include <mach/common.h>
++
++#ifdef CONFIG_SUSPEND
++static int sh73a0_enter_suspend(suspend_state_t suspend_state)
++{
++	cpu_do_idle();
++	return 0;
++}
++
++static void sh73a0_suspend_init(void)
++{
++	shmobile_suspend_ops.enter = sh73a0_enter_suspend;
++}
++#else
++static void sh73a0_suspend_init(void) {}
++#endif
++
++void __init sh73a0_pm_init(void)
++{
++	sh73a0_suspend_init();
++}
+-- 
+1.7.9.5
+
