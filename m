@@ -1,43 +1,82 @@
-From: Grant Likely <grant.likely@secretlab.ca>
-Date: Wed, 19 Dec 2012 16:41:15 +0000
-Subject: Re: [PATCH 3/4 v2] spi: sh-msiof: Add device tree parsing to driver
-Message-Id: <20121219164115.62A403E0C18@localhost>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Wed, 05 Dec 2012 12:13:07 +0000
+Subject: [PATCH 2/2] ARM: shmobile: r8a7740: Add CPU sleep suspend
+Message-Id: <1354709587-25288-2-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1355313289-29769-1-git-send-email-hechtb+renesas@gmail.com>
- <1355313289-29769-3-git-send-email-hechtb+renesas@gmail.com>
- <CABMQnV+CSEKwq=4kQYUDXOuARLA_WgvnkJEME_VeYmAv3PLXBg@mail.gmail.com>
- <CABYn4sybRf4vxxGccCDSCEMcza4DZdaZgTD6kZ7+v9CDspzCBg@mail.gmail.com>
-In-Reply-To: <CABYn4sybRf4vxxGccCDSCEMcza4DZdaZgTD6kZ7+v9CDspzCBg@mail.gmail.com>
+References: <1354709587-25288-1-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1354709587-25288-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, 17 Dec 2012 12:25:26 +0100, Bastian Hecht <hechtb@gmail.com> wrote:
-> Hi Nobuhiro,
-> 
-> 2012/12/17 Nobuhiro Iwamatsu <iwamatsu@nigauri.org>:
-> > Hi, Bastian.
-> >
-> > On Wed, Dec 12, 2012 at 8:54 PM, Bastian Hecht <hechtb@gmail.com> wrote:
-> >> From: Bastian Hecht <hechtb@gmail.com>
-> >>
-> >> This adds the capability to retrieve setup data from the device tree
-> >> node. The usage of platform data is still available.
-> >>
-> >> Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
-> >> ---
+From: Bastian Hecht <hechtb@gmail.com>
 
-Applied, thanks.
+Add the lighest possible sleep mode on Cortex-A9 cores: CPU sleep.
+It is entered by a simple dsb and wfi instruction via cpu_do_idle(). As
+just clocks are stopped there is no need to save or restore any state of
+the system.
 
-> >> +               .of_match_table = sh_msiof_match,
-> >
-> > You can use of_match_ptr(sh_msiof_match).
-> >
-> 
-> Ok very nice, will do so.
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+---
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    2 ++
+ arch/arm/mach-shmobile/include/mach/common.h   |    1 +
+ arch/arm/mach-shmobile/pm-r8a7740.c            |   20 ++++++++++++++++++++
+ 3 files changed, 23 insertions(+)
 
-Please send a fixup patch for this change.
-
-g.
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 3cc8b1c..48847f6 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -1213,6 +1213,8 @@ static void __init eva_init(void)
+ 	rmobile_add_device_to_domain("A4LC", &hdmi_lcdc_device);
+ 	if (usb)
+ 		rmobile_add_device_to_domain("A3SP", usb);
++
++	r8a7740_pm_init();
+ }
+ 
+ static void __init eva_earlytimer_init(void)
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index 318551b3..ebcd28d 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -66,6 +66,7 @@ extern void r8a7740_add_early_devices(void);
+ extern void r8a7740_add_standard_devices(void);
+ extern void r8a7740_clock_init(u8 md_ck);
+ extern void r8a7740_pinmux_init(void);
++extern void r8a7740_pm_init(void);
+ 
+ extern void r8a7779_init_irq(void);
+ extern void r8a7779_map_io(void);
+diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
+index 21e5316d..8cfb5bc 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7740.c
++++ b/arch/arm/mach-shmobile/pm-r8a7740.c
+@@ -58,3 +58,23 @@ void __init r8a7740_init_pm_domains(void)
+ }
+ 
+ #endif /* CONFIG_PM */
++
++#ifdef CONFIG_SUSPEND
++static int r8a7740_enter_suspend(suspend_state_t suspend_state)
++{
++	cpu_do_idle();
++	return 0;
++}
++
++static void r8a7740_suspend_init(void)
++{
++	shmobile_suspend_ops.enter = r8a7740_enter_suspend;
++}
++#else
++static void r8a7740_suspend_init(void) {}
++#endif
++
++void __init r8a7740_pm_init(void)
++{
++	r8a7740_suspend_init();
++}
+-- 
+1.7.9.5
 
