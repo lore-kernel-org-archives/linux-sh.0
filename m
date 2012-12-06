@@ -1,24 +1,51 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 14 Dec 2012 03:22:28 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: r8a7740: Add CPU sleep suspend
-Message-Id: <CANqRtoQutE-2HD1=1dQ3bJb6Vz=p46g0jXD6MTLZ1Doj3DnTQA@mail.gmail.com>
+From: Grant Likely <grant.likely@secretlab.ca>
+Date: Thu, 06 Dec 2012 14:08:49 +0000
+Subject: Re: [PATCH 4/4] devicetree: Add Renesas SH Mobile MSIOF spi controller binding doc
+Message-Id: <20121206140849.280243E089D@localhost>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1354709587-25288-1-git-send-email-hechtb+renesas@gmail.com>
- <1354709587-25288-2-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1354709587-25288-2-git-send-email-hechtb+renesas@gmail.com>
+References: <1352288407-20594-1-git-send-email-hechtb@gmail.com>
+ <1352288407-20594-5-git-send-email-hechtb@gmail.com>
+In-Reply-To: <1352288407-20594-5-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Dec 5, 2012 at 9:13 PM, Bastian Hecht <hechtb@gmail.com> wrote:
-> From: Bastian Hecht <hechtb@gmail.com>
->
-> Add the lighest possible sleep mode on Cortex-A9 cores: CPU sleep.
-> It is entered by a simple dsb and wfi instruction via cpu_do_idle(). As
-> just clocks are stopped there is no need to save or restore any state of
-> the system.
->
-> Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+On Wed,  7 Nov 2012 12:40:07 +0100, Bastian Hecht <hechtb@gmail.com> wrote:
+> Add binding documentation for Renesas' MSIOF SPI controller.
+> 
+> Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+> ---
+>  Documentation/devicetree/bindings/spi/sh-msiof.txt |   12 ++++++++++++
+>  1 files changed, 12 insertions(+), 0 deletions(-)
+>  create mode 100644 Documentation/devicetree/bindings/spi/sh-msiof.txt
+> 
+> diff --git a/Documentation/devicetree/bindings/spi/sh-msiof.txt b/Documentation/devicetree/bindings/spi/sh-msiof.txt
+> new file mode 100644
+> index 0000000..b62312e
+> --- /dev/null
+> +++ b/Documentation/devicetree/bindings/spi/sh-msiof.txt
+> @@ -0,0 +1,12 @@
+> +Renesas MSIOF spi controller
+> +
+> +Required properties:
+> +- compatible : 	"renesas,sh-msiof" for SuperH or
+> +		"renesas,sh-mobile-msiof" for SH Mobile series
+> +- reg : Offset and length of the register set for the device
+> +- interrupts : interrupt line used by MSIOF
+> +
+> +Optional properties:
+> +- chip_select  : Chip select, defaults to 0
 
-Acked-by: Magnus Damm <damm@opensource.se>
+This doesn't make a lot of sense to me. What is this property for? Is
+there more than one CS? And if there is, shouldn't the SPI driver be
+able to manipulate more than one?
+
+> +- tx_fifo_size : Overrides the default tx fifo size given in words
+> +- rx_fifo_size : Overrides the default rx fifo size given in words
+
+Nit: property names should use '-' instead of '_' (by convention) and
+custom properties should be prefixed with the manufacturer prefix to
+avoid namespace collisions. ie. "renesas,tx-fifo-size.
+
+g.
