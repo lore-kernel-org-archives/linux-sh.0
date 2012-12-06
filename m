@@ -1,53 +1,70 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Dec 2012 22:54:07 +0000
-Subject: [PATCH v4 25/81] ARM: shmobile: sh7372: Register PFC platform device
-Message-Id: <1356735303-29474-26-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Grant Likely <grant.likely@secretlab.ca>
+Date: Thu, 06 Dec 2012 14:05:15 +0000
+Subject: Re: [PATCH 1/4] spi: sh-msiof: Remove unneeded clock name
+Message-Id: <20121206140515.75E6B3E089D@localhost>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1352288407-20594-1-git-send-email-hechtb@gmail.com>
+ <1352288407-20594-2-git-send-email-hechtb@gmail.com>
+In-Reply-To: <1352288407-20594-2-git-send-email-hechtb@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add arch code to register the PFC platform device instead of calling the
-driver directly. Platform device registration in the sh-pfc driver will
-be removed.
+On Wed,  7 Nov 2012 12:40:04 +0100, Bastian Hecht <hechtb@gmail.com> wrote:
+> clk_get() no longer needs a character string for associating the right
+> clock as this is done via the device struct now.
+> 
+> Signed-off-by: Bastian Hecht <hechtb@gmail.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/pfc-sh7372.c |   11 ++++++++++-
- 1 files changed, 10 insertions(+), 1 deletions(-)
+Applied, thanks.
 
-diff --git a/arch/arm/mach-shmobile/pfc-sh7372.c b/arch/arm/mach-shmobile/pfc-sh7372.c
-index 7a1525f..dd5e145 100644
---- a/arch/arm/mach-shmobile/pfc-sh7372.c
-+++ b/arch/arm/mach-shmobile/pfc-sh7372.c
-@@ -22,6 +22,7 @@
-  */
- #include <linux/init.h>
- #include <linux/kernel.h>
-+#include <linux/platform_device.h>
- #include <linux/sh_pfc.h>
- #include <mach/irqs.h>
- #include <mach/sh7372.h>
-@@ -1657,7 +1658,15 @@ static struct pinmux_info sh7372_pinmux_info = {
- 	.gpio_irq_size = ARRAY_SIZE(pinmux_irqs),
- };
- 
-+static struct platform_device sh7372_pfc_device = {
-+	.name		= "sh-pfc",
-+	.id		= -1,
-+	.dev = {
-+		.platform_data = &sh7372_pinmux_info,
-+	},
-+};
-+
- void sh7372_pinmux_init(void)
- {
--	register_pinmux(&sh7372_pinmux_info);
-+	platform_device_register(&sh7372_pfc_device);
- }
+g.
+
+> ---
+>  drivers/spi/spi-sh-msiof.c |    6 ++----
+>  1 files changed, 2 insertions(+), 4 deletions(-)
+> 
+> diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
+> index 1f466bc..96358d0 100644
+> --- a/drivers/spi/spi-sh-msiof.c
+> +++ b/drivers/spi/spi-sh-msiof.c
+> @@ -597,7 +597,6 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
+>  	struct resource	*r;
+>  	struct spi_master *master;
+>  	struct sh_msiof_spi_priv *p;
+> -	char clk_name[16];
+>  	int i;
+>  	int ret;
+>  
+> @@ -614,10 +613,9 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
+>  	p->info = pdev->dev.platform_data;
+>  	init_completion(&p->done);
+>  
+> -	snprintf(clk_name, sizeof(clk_name), "msiof%d", pdev->id);
+> -	p->clk = clk_get(&pdev->dev, clk_name);
+> +	p->clk = clk_get(&pdev->dev, NULL);
+>  	if (IS_ERR(p->clk)) {
+> -		dev_err(&pdev->dev, "cannot get clock \"%s\"\n", clk_name);
+> +		dev_err(&pdev->dev, "cannot get clock\n");
+>  		ret = PTR_ERR(p->clk);
+>  		goto err1;
+>  	}
+> -- 
+> 1.7.5.4
+> 
+> 
+> ------------------------------------------------------------------------------
+> LogMeIn Central: Instant, anywhere, Remote PC access and management.
+> Stay in control, update software, and manage PCs from one command center
+> Diagnose problems and improve visibility into emerging IT issues
+> Automate, monitor and manage. Do more in less time with Central
+> http://p.sf.net/sfu/logmein12331_d2d
+> _______________________________________________
+> spi-devel-general mailing list
+> spi-devel-general@lists.sourceforge.net
+> https://lists.sourceforge.net/lists/listinfo/spi-devel-general
+
 -- 
-1.7.8.6
-
+Grant Likely, B.Sc, P.Eng.
+Secret Lab Technologies, Ltd.
