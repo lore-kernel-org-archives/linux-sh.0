@@ -1,62 +1,53 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Wed, 12 Dec 2012 11:26:37 +0000
-Subject: Re: [PATCH 4/4] devicetree: Add Renesas SH Mobile MSIOF spi controller binding doc
-Message-Id: <CABYn4swzDE30K6URR+cuWJsd5f0t5wrAsqc34LcnszX=jTo0Aw@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 11 Dec 2012 03:07:29 +0000
+Subject: [PATCH 1/6] ARM: clocksource: Initialise early
+Message-Id: <1355195254-4563-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352288407-20594-1-git-send-email-hechtb@gmail.com>
- <1352288407-20594-5-git-send-email-hechtb@gmail.com>
- <20121206140849.280243E089D@localhost>
- <CACxGe6s+1Debq2HoVKWPmZ-75JMGmeJ+qxdxqzVWpsKxoyUowQ@mail.gmail.com>
-In-Reply-To: <CACxGe6s+1Debq2HoVKWPmZ-75JMGmeJ+qxdxqzVWpsKxoyUowQ@mail.gmail.com>
+References: <1355195254-4563-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1355195254-4563-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello Grant,
+Initialise clock sources early, since some subsystems rely on them to initialize
 
->>> +Renesas MSIOF spi controller
->>> +
->>> +Required properties:
->>> +- compatible :       "renesas,sh-msiof" for SuperH or
->>> +             "renesas,sh-mobile-msiof" for SH Mobile series
->>> +- reg : Offset and length of the register set for the device
->>> +- interrupts : interrupt line used by MSIOF
->>> +
->>> +Optional properties:
->>> +- chip_select  : Chip select, defaults to 0
->>
->> This doesn't make a lot of sense to me. What is this property for? Is
->> there more than one CS? And if there is, shouldn't the SPI driver be
->> able to manipulate more than one?
->
-> Oh, wait, from reading the code, is this the number of chip select
-> lines? If so, then there is a common property for this. This property
-> should be named "num-cs".
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
-Yes, this value is nowhere used in the driver but just forwarded to
-the SPI subsystem as the number of chip selects.
+---
 
->>
->>> +- tx_fifo_size : Overrides the default tx fifo size given in words
->>> +- rx_fifo_size : Overrides the default rx fifo size given in words
->>
->> Nit: property names should use '-' instead of '_' (by convention) and
->> custom properties should be prefixed with the manufacturer prefix to
->> avoid namespace collisions. ie. "renesas,tx-fifo-size.
+v3
+* Initial post
+---
+ drivers/Makefile |    8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
 
-Ok sure! Thanks for pointing it out.
+diff --git a/drivers/Makefile b/drivers/Makefile
+index a16a8d0..eba9b58 100644
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -37,6 +37,11 @@ obj-$(CONFIG_XEN)		+= xen/
+ # regulators early, since some subsystems rely on them to initialize
+ obj-$(CONFIG_REGULATOR)		+= regulator/
+ 
++# clocksource early, since some subsystems rely on them to initialize
++ifndef CONFIG_ARCH_USES_GETTIMEOFFSET
++obj-y				+= clocksource/
++endif
++
+ # tty/ comes before char/ so that the VT console is the boot-time
+ # default.
+ obj-y				+= tty/
+@@ -114,9 +119,6 @@ obj-y				+= firmware/
+ obj-$(CONFIG_CRYPTO)		+= crypto/
+ obj-$(CONFIG_SUPERH)		+= sh/
+ obj-$(CONFIG_ARCH_SHMOBILE)	+= sh/
+-ifndef CONFIG_ARCH_USES_GETTIMEOFFSET
+-obj-y				+= clocksource/
+-endif
+ obj-$(CONFIG_DCA)		+= dca/
+ obj-$(CONFIG_HID)		+= hid/
+ obj-$(CONFIG_PPC_PS3)		+= ps3/
+-- 
+1.7.10.4
 
-I'll post v2 in a second.
-
-Thanks,
-
- Bastian
-
->> g.
->
->
->
-> --
-> Grant Likely, B.Sc., P.Eng.
-> Secret Lab Technologies Ltd.
