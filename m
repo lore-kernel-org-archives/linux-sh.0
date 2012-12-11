@@ -1,276 +1,263 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Dec 2012 22:53:54 +0000
-Subject: [PATCH v4 12/81] sh-pfc: Merge PFC core and gpio
-Message-Id: <1356735303-29474-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 11 Dec 2012 03:07:34 +0000
+Subject: [PATCH 6/6] ARM: mach-shmobile: kzm9g: Reference DT implementation
+Message-Id: <1355195254-4563-7-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1355195254-4563-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1355195254-4563-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The PFC core calls the gpio module gpiochip registration in its
-register_sh_pfc() function, itself called at arch initialization time.
-If the gpio module isn't present then the gpiochip will never be
-registered.
+Provide alternate board code for the kzm9g to demonstrate
+how DT may be used given the current state of driver
+device tree support. This is intended to act as a reference
+for mach-shmobile developers.
 
-As the gpio module can only be present at arch initialization time if
-it's builtin, there's no point in allowing to build it as a module. Make
-it a boolean option, and initialize it synchronously with the core if
-selected.
+Some notes:
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Paul Mundt <lethal@linux-sh.org>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+* Brings up the GIC interrupt handler using device tree
+* Brings up the following device using device tree:
+  - MMCIF (MMC)
+* Does not bring up the INTC interrupt controller at all,
+  thus external devices may not be used. In particular,
+  the SMSC ethernet device may not be used and thus
+  NFS root may not be used.
+* Uses existing C code and not device tree to initialise the following,
+  which are needed for a working board:
+  - SCIF (Serial)
+  - CMT (Clock)
+  - PFC (GPIO)
+
+To use this alternate board code instead of the normal board code,
+CONFIG_MACH_KZM9G_REFERENCE should be selected in the kernel config.
+And the sh73a0-kzm9g-reference.dtb flattened device tree blob should be used.
+
+*** Please note that the clock initialisation shcheme used in
+    this patch does not currently work with SMP as there
+    is a yet to be resolved lock-up in workqueue initialisation.
+
+    CONFIG_SMP must be disabled when using this code. ***
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
- drivers/sh/pfc/Kconfig  |    2 +-
- drivers/sh/pfc/Makefile |    4 ++-
- drivers/sh/pfc/core.c   |   23 +++++--------
- drivers/sh/pfc/core.h   |    4 ++
- drivers/sh/pfc/gpio.c   |   79 +++++------------------------------------------
- 5 files changed, 25 insertions(+), 87 deletions(-)
 
-diff --git a/drivers/sh/pfc/Kconfig b/drivers/sh/pfc/Kconfig
-index f33d82a..eaeabc5 100644
---- a/drivers/sh/pfc/Kconfig
-+++ b/drivers/sh/pfc/Kconfig
-@@ -11,7 +11,7 @@ config SH_PFC
- 	def_bool y
+v3
+* Compile board-kzm9g.c even if CONFIG_MACH_KZM9G_REFERENCE is selected,
+  it can co-exist with board-kzm9g-reference.c
+
+v2
+* Do not initialise touchscreen, it requires the INTC interrupt controller
+  but for now this configuration only has the GIC interrupt controller.
+* Define mmcif and sdhi in SoC dtsi and reference in board dts.
+* Do not initialise SDHI, the driver needs to be updated
+---
+ arch/arm/boot/dts/Makefile                     |    3 +-
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts   |   37 +++++++++
+ arch/arm/mach-shmobile/Kconfig                 |   10 +++
+ arch/arm/mach-shmobile/Makefile                |    1 +
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |   99 ++++++++++++++++++++++++
+ 5 files changed, 149 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+ create mode 100644 arch/arm/mach-shmobile/board-kzm9g-reference.c
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index f37cf9f..c606375 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -77,7 +77,8 @@ dtb-$(CONFIG_ARCH_PRIMA2) += prima2-evb.dtb
+ dtb-$(CONFIG_ARCH_U8500) += snowball.dtb
+ dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm9d.dtb \
+ 	r8a7740-armadillo800eva.dtb \
+-	sh73a0-kzm9g.dtb
++	sh73a0-kzm9g.dtb \
++	sh73a0-kzm9g-reference.dtb
+ dtb-$(CONFIG_ARCH_SPEAR13XX) += spear1310-evb.dtb \
+ 	spear1340-evb.dtb
+ dtb-$(CONFIG_ARCH_SPEAR3XX)+= spear300-evb.dtb \
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+new file mode 100644
+index 0000000..588016e
+--- /dev/null
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -0,0 +1,37 @@
++/*
++ * Device Tree Source for the KZM-A9-GT board
++ *
++ * Copyright (C) 2012 Horms Solutions Ltd.
++ *
++ * Based on sh73a0-kzm9g.dts
++ * Copyright (C) 2012 Renesas Solutions Corp.
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++
++/dts-v1/;
++/include/ "sh73a0-reference.dtsi"
++
++/ {
++	model = "KZM-A9-GT";
++	compatible = "renesas,kzm9g-reference", "renesas,sh73a0";
++
++	memory {
++		device_type = "memory";
++		reg = <0x41000000 0x1e800000>;
++	};
++
++	fixedregulator1v8: fixedregulator@0 {
++		compatible = "regulator-fixed";
++		regulator-name = "fixed-1.8V";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <1800000>;
++	};
++};
++
++&mmcif {
++	vmmc-supply = <&fixedregulator1v8>;
++	vqmmc-supply = <&fixedregulator1v8>;
++};
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 8ae100c..ca95c2b 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -136,6 +136,16 @@ config MACH_KZM9G
+ 	select SND_SOC_AK4642 if SND_SIMPLE_CARD
+ 	select USE_OF
  
- config GPIO_SH_PFC
--	tristate "SuperH PFC GPIO support"
-+	bool "SuperH PFC GPIO support"
- 	depends on SH_PFC && GPIOLIB
- 	help
- 	  This enables support for GPIOs within the SoC's pin function
-diff --git a/drivers/sh/pfc/Makefile b/drivers/sh/pfc/Makefile
-index ce6fae3..6315cf3 100644
---- a/drivers/sh/pfc/Makefile
-+++ b/drivers/sh/pfc/Makefile
-@@ -1,3 +1,5 @@
- sh-pfc-objs			= core.o pinctrl.o
-+ifeq ($(CONFIG_GPIO_SH_PFC),y)
-+sh-pfc-objs			+= gpio.o
-+endif
- obj-y				+= sh-pfc.o
--obj-$(CONFIG_GPIO_SH_PFC)	+= gpio.o
-diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
-index 30e33db..5410996 100644
---- a/drivers/sh/pfc/core.c
-+++ b/drivers/sh/pfc/core.c
-@@ -149,7 +149,6 @@ int sh_pfc_read_bit(struct pinmux_data_reg *dr, unsigned long in_pos)
++config MACH_KZM9G_REFERENCE
++	bool "KZM-A9-GT board - Reference Device Tree Implementation"
++	depends on MACH_KZM9G
++	---help---
++	   Use reference implementation of KZM-A9-GT board support
++	   which makes as greater use of device tree at the expense
++	   of not supporting a number of devices.
++
++	   This is intended to aid developers
++
+ comment "SH-Mobile System Configuration"
  
- 	return (gpio_read_raw_reg(dr->mapped_reg, dr->reg_width) >> pos) & 1;
- }
--EXPORT_SYMBOL_GPL(sh_pfc_read_bit);
+ config CPU_HAS_INTEVT
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index e3556c6..b4d3920 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -52,6 +52,7 @@ obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
+ obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
+ obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d.o
+ obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o
++obj-$(CONFIG_MACH_KZM9G_REFERENCE)	+= board-kzm9g-reference.o
  
- void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
- 		      unsigned long value)
-@@ -169,7 +168,6 @@ void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
- 
- 	gpio_write_raw_reg(dr->mapped_reg, dr->reg_width, dr->reg_shadow);
- }
--EXPORT_SYMBOL_GPL(sh_pfc_write_bit);
- 
- static void config_reg_helper(struct sh_pfc *pfc,
- 			      struct pinmux_cfg_reg *crp,
-@@ -307,7 +305,6 @@ int sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
- 	*bitp = n;
- 	return 0;
- }
--EXPORT_SYMBOL_GPL(sh_pfc_get_data_reg);
- 
- static int get_config_reg(struct sh_pfc *pfc, pinmux_enum_t enum_id,
- 			  struct pinmux_cfg_reg **crp,
-@@ -384,7 +381,6 @@ int sh_pfc_gpio_to_enum(struct sh_pfc *pfc, unsigned gpio, int pos,
- 	pr_err("cannot locate data/mark enum_id for gpio %d\n", gpio);
- 	return -1;
- }
--EXPORT_SYMBOL_GPL(sh_pfc_gpio_to_enum);
- 
- int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
- 		       int cfg_mode)
-@@ -500,7 +496,6 @@ int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
- 
- int register_sh_pfc(struct sh_pfc_platform_data *pdata)
- {
--	int (*initroutine)(struct sh_pfc *) = NULL;
- 	int ret;
- 
- 	/*
-@@ -531,24 +526,20 @@ int register_sh_pfc(struct sh_pfc_platform_data *pdata)
- 	if (unlikely(ret != 0))
- 		goto err;
- 
-+#ifdef CONFIG_GPIO_SH_PFC
- 	/*
- 	 * Then the GPIO chip
- 	 */
--	initroutine = symbol_request(sh_pfc_register_gpiochip);
--	if (initroutine) {
--		ret = (*initroutine)(&sh_pfc);
--		symbol_put_addr(initroutine);
--
-+	ret = sh_pfc_register_gpiochip(&sh_pfc);
-+	if (unlikely(ret != 0)) {
- 		/*
- 		 * If the GPIO chip fails to come up we still leave the
- 		 * PFC state as it is, given that there are already
- 		 * extant users of it that have succeeded by this point.
- 		 */
--		if (unlikely(ret != 0)) {
--			pr_notice("failed to init GPIO chip, ignoring...\n");
--			ret = 0;
--		}
-+		pr_notice("failed to init GPIO chip, ignoring...\n");
- 	}
+ # Framework support
+ obj-$(CONFIG_SMP)		+= $(smp-y)
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+new file mode 100644
+index 0000000..140781c
+--- /dev/null
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -0,0 +1,99 @@
++/*
++ * KZM-A9-GT board support - Reference Device Tree Implementation
++ *
++ * Copyright (C) 2012	Horms Solutions Ltd.
++ *
++ * Based on board-kzm9g.c
++ * Copyright (C) 2012	Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ */
++
++#include <linux/delay.h>
++#include <linux/gpio.h>
++#include <linux/io.h>
++#include <linux/irq.h>
++#include <linux/input.h>
++#include <linux/of_platform.h>
++#include <mach/sh73a0.h>
++#include <mach/common.h>
++#include <asm/hardware/cache-l2x0.h>
++#include <asm/hardware/gic.h>
++#include <asm/mach-types.h>
++#include <asm/mach/arch.h>
++
++static void __init kzm_init(void)
++{
++	/* enable SCIFA4 */
++	gpio_request(GPIO_FN_SCIFA4_TXD, NULL);
++	gpio_request(GPIO_FN_SCIFA4_RXD, NULL);
++	gpio_request(GPIO_FN_SCIFA4_RTS_, NULL);
++	gpio_request(GPIO_FN_SCIFA4_CTS_, NULL);
++
++	/* enable MMCIF */
++	gpio_request(GPIO_FN_MMCCLK0,		NULL);
++	gpio_request(GPIO_FN_MMCCMD0_PU,	NULL);
++	gpio_request(GPIO_FN_MMCD0_0_PU,	NULL);
++	gpio_request(GPIO_FN_MMCD0_1_PU,	NULL);
++	gpio_request(GPIO_FN_MMCD0_2_PU,	NULL);
++	gpio_request(GPIO_FN_MMCD0_3_PU,	NULL);
++	gpio_request(GPIO_FN_MMCD0_4_PU,	NULL);
++	gpio_request(GPIO_FN_MMCD0_5_PU,	NULL);
++	gpio_request(GPIO_FN_MMCD0_6_PU,	NULL);
++	gpio_request(GPIO_FN_MMCD0_7_PU,	NULL);
++
++	/* I2C 3 */
++	gpio_request(GPIO_FN_PORT27_I2C_SCL3, NULL);
++	gpio_request(GPIO_FN_PORT28_I2C_SDA3, NULL);
++
++#ifdef CONFIG_CACHE_L2X0
++	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
++	l2x0_init(IOMEM(0xf0100000), 0x40460000, 0x82000fff);
 +#endif
- 
- 	pr_info("%s support registered\n", sh_pfc.pdata->name);
- 
-@@ -560,3 +551,7 @@ err:
- 
- 	return ret;
- }
 +
-+MODULE_AUTHOR("Magnus Damm, Paul Mundt, Laurent Pinchart");
-+MODULE_DESCRIPTION("Pin Control and GPIO driver for SuperH pin function controller");
-+MODULE_LICENSE("GPL v2");
-diff --git a/drivers/sh/pfc/core.h b/drivers/sh/pfc/core.h
-index b07ae25..f3032b2 100644
---- a/drivers/sh/pfc/core.h
-+++ b/drivers/sh/pfc/core.h
-@@ -20,14 +20,18 @@ struct pfc_window {
- 	unsigned long size;
- };
- 
-+struct sh_pfc_chip;
++	sh73a0_add_standard_devices_dt();
++}
 +
- struct sh_pfc {
- 	struct sh_pfc_platform_data *pdata;
- 	spinlock_t lock;
- 
- 	struct pfc_window *window;
-+	struct sh_pfc_chip *gpio;
- };
- 
- int sh_pfc_register_gpiochip(struct sh_pfc *pfc);
-+int sh_pfc_unregister_gpiochip(struct sh_pfc *pfc);
- 
- int sh_pfc_register_pinctrl(struct sh_pfc *pfc);
- 
-diff --git a/drivers/sh/pfc/gpio.c b/drivers/sh/pfc/gpio.c
-index 565b366..d8b0c74 100644
---- a/drivers/sh/pfc/gpio.c
-+++ b/drivers/sh/pfc/gpio.c
-@@ -15,7 +15,6 @@
- #include <linux/slab.h>
- #include <linux/spinlock.h>
- #include <linux/module.h>
--#include <linux/platform_device.h>
- #include <linux/pinctrl/consumer.h>
- #include <linux/sh_pfc.h>
- 
-@@ -152,44 +151,23 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
- 	sh_pfc_gpio_setup(chip);
- 
- 	ret = gpiochip_add(&chip->gpio_chip);
--	if (unlikely(ret < 0))
-+	if (unlikely(ret < 0)) {
- 		kfree(chip);
-+		return ret;
-+	}
++static void kzm9g_restart(char mode, const char *cmd)
++{
++#define RESCNT2 IOMEM(0xe6188020)
++	/* Do soft power on reset */
++	writel((1 << 31), RESCNT2);
++}
 +
-+	pfc->gpio = chip;
- 
- 	pr_info("%s handling gpio %d -> %d\n",
- 		pfc->pdata->name, pfc->pdata->first_gpio,
- 		pfc->pdata->last_gpio);
- 
--	return ret;
--}
--EXPORT_SYMBOL_GPL(sh_pfc_register_gpiochip);
--
--static int sh_pfc_gpio_match(struct gpio_chip *gc, void *data)
--{
--	return !!strstr(gc->label, data);
--}
--
--static int sh_pfc_gpio_probe(struct platform_device *pdev)
--{
--	struct sh_pfc_chip *chip;
--	struct gpio_chip *gc;
--
--	gc = gpiochip_find("_pfc", sh_pfc_gpio_match);
--	if (unlikely(!gc)) {
--		pr_err("Cant find gpio chip\n");
--		return -ENODEV;
--	}
--
--	chip = gpio_to_pfc_chip(gc);
--	platform_set_drvdata(pdev, chip);
--
--	pr_info("attaching to GPIO chip %s\n", chip->pfc->pdata->name);
--
- 	return 0;
- }
- 
--static int sh_pfc_gpio_remove(struct platform_device *pdev)
-+int sh_pfc_unregister_gpiochip(struct sh_pfc *pfc)
- {
--	struct sh_pfc_chip *chip = platform_get_drvdata(pdev);
-+	struct sh_pfc_chip *chip = pfc->gpio;
- 	int ret;
- 
- 	ret = gpiochip_remove(&chip->gpio_chip);
-@@ -197,47 +175,6 @@ static int sh_pfc_gpio_remove(struct platform_device *pdev)
- 		return ret;
- 
- 	kfree(chip);
-+	pfc->gpio = NULL;
- 	return 0;
- }
--
--static struct platform_driver sh_pfc_gpio_driver = {
--	.probe		= sh_pfc_gpio_probe,
--	.remove		= sh_pfc_gpio_remove,
--	.driver		= {
--		.name	= KBUILD_MODNAME,
--		.owner	= THIS_MODULE,
--	},
--};
--
--static struct platform_device sh_pfc_gpio_device = {
--	.name		= KBUILD_MODNAME,
--	.id		= -1,
--};
--
--static int __init sh_pfc_gpio_init(void)
--{
--	int rc;
--
--	rc = platform_driver_register(&sh_pfc_gpio_driver);
--	if (likely(!rc)) {
--		rc = platform_device_register(&sh_pfc_gpio_device);
--		if (unlikely(rc))
--			platform_driver_unregister(&sh_pfc_gpio_driver);
--	}
--
--	return rc;
--}
--
--static void __exit sh_pfc_gpio_exit(void)
--{
--	platform_device_unregister(&sh_pfc_gpio_device);
--	platform_driver_unregister(&sh_pfc_gpio_driver);
--}
--
--module_init(sh_pfc_gpio_init);
--module_exit(sh_pfc_gpio_exit);
--
--MODULE_AUTHOR("Magnus Damm, Paul Mundt");
--MODULE_DESCRIPTION("GPIO driver for SuperH pin function controller");
--MODULE_LICENSE("GPL v2");
--MODULE_ALIAS("platform:pfc-gpio");
++static const char *kzm9g_boards_compat_dt[] __initdata = {
++	"renesas,kzm9g-reference",
++	NULL,
++};
++
++/* Please note that the clock initialisation shcheme used in
++ * sh73a0_add_early_devices_dt() and sh73a0_add_standard_devices_dt()
++ * does not work with SMP as there is a yet to be resolved lock-up in
++ * workqueue initialisation.
++ *
++ * CONFIG_SMP should be disabled when using this code.
++ */
++DT_MACHINE_START(KZM9G_DT, "kzm9g-reference")
++	.smp		= smp_ops(sh73a0_smp_ops),
++	.map_io		= sh73a0_map_io,
++	.init_early	= sh73a0_add_early_devices_dt,
++	.nr_irqs	= NR_IRQS_LEGACY,
++	.init_irq	= sh73a0_init_irq_dt,
++	.handle_irq	= gic_handle_irq,
++	.init_machine	= kzm_init,
++	.init_late	= shmobile_init_late,
++	.timer		= &shmobile_timer,
++	.restart	= kzm9g_restart,
++	.dt_compat	= kzm9g_boards_compat_dt,
++MACHINE_END
 -- 
-1.7.8.6
+1.7.10.4
 
