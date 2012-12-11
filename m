@@ -1,81 +1,101 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 14 Dec 2012 05:54:28 +0000
-Subject: [PATCH 07/08] clocksource: sh_cmt: Add control register callbacks
-Message-Id: <20121214055428.10081.36410.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 11 Dec 2012 03:07:30 +0000
+Subject: [PATCH 2/6] ARM: mach-shmobile: sh73a0: Allow initialisation of GIC by DT
+Message-Id: <1355195254-4563-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20121214055323.10081.12056.sendpatchset@w520>
-In-Reply-To: <20121214055323.10081.12056.sendpatchset@w520>
+References: <1355195254-4563-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1355195254-4563-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, johnstul@us.ibm.com, horms@verge.net.au, shinya.kuribayashi.px@renesas.com, tglx@linutronix.de, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+This allows the GIC interrupt controller of the sh73a0 SoC to be
+initialised using a flattened device tree blob.
 
-This patch adds control register callbacks for the CMT
-driver. At this point only 16-bit access is supported
-but in the future this will be updated to allow 32-bit
-access as well.
+It does not allow the INTC interrupt controller which is also present on
+the sh73a0 SoC to be enabled via device tree.  Nor does it handle sharing
+of interrupts between the GIC and INTC interrupt controllers.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+This limits the usefulness of this code to applications which only wish to
+access devices which use interrupts that can be handled by the GIC
+interrupt controller. Other applications should, for now, continue using
+non-device tree initialisation of the sh72a0 interrupt controllers.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
 ---
 
- drivers/clocksource/sh_cmt.c |   16 ++++++++++++----
- 1 file changed, 12 insertions(+), 4 deletions(-)
+v3
+* No change
 
---- 0004/drivers/clocksource/sh_cmt.c
-+++ work/drivers/clocksource/sh_cmt.c	2012-12-14 11:28:57.000000000 +0900
-@@ -55,6 +55,11 @@ struct sh_cmt_priv {
- 	unsigned long total_cycles;
- 	bool cs_enabled;
- 
-+	/* callbacks for CMSTR and CMCSR access */
-+	unsigned long (*read_control)(void __iomem *base, unsigned long offs);
-+	void (*write_control)(void __iomem *base, unsigned long offs,
-+			      unsigned long value);
+v2
+* No change
+---
+ arch/arm/boot/dts/sh73a0.dtsi                |    9 +++++++++
+ arch/arm/mach-shmobile/include/mach/common.h |    1 +
+ arch/arm/mach-shmobile/intc-sh73a0.c         |   14 ++++++++++++++
+ 3 files changed, 24 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index 6b374ff..77c8e43 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -29,4 +29,13 @@
+ 		gpio-controller;
+ 		#gpio-cells = <2>;
+ 	};
 +
- 	/* callbacks for CMCNT and CMCOR access */
- 	unsigned long (*read_count)(void __iomem *base, unsigned long offs);
- 	void (*write_count)(void __iomem *base, unsigned long offs,
-@@ -94,12 +99,12 @@ static inline unsigned long sh_cmt_read_
- {
- 	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
++	gic: interrupt-controller@f0001000 {
++		compatible = "arm,cortex-a9-gic";
++		#interrupt-cells = <3>;
++		#address-cells = <1>;
++		interrupt-controller;
++		reg = <0xf0001000 0x1000>,
++		      <0xf0000100 0x100>;
++	};
+ };
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index d47e215..b50447e 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -49,6 +49,7 @@ extern struct clk sh7372_extal1_clk;
+ extern struct clk sh7372_extal2_clk;
  
--	return sh_cmt_read16(p->mapbase - cfg->channel_offset, 0);
-+	return p->read_control(p->mapbase - cfg->channel_offset, 0);
+ extern void sh73a0_init_irq(void);
++extern void sh73a0_init_irq_dt(void);
+ extern void sh73a0_map_io(void);
+ extern void sh73a0_add_early_devices(void);
+ extern void sh73a0_add_standard_devices(void);
+diff --git a/arch/arm/mach-shmobile/intc-sh73a0.c b/arch/arm/mach-shmobile/intc-sh73a0.c
+index f0c5e51..e492350 100644
+--- a/arch/arm/mach-shmobile/intc-sh73a0.c
++++ b/arch/arm/mach-shmobile/intc-sh73a0.c
+@@ -21,6 +21,7 @@
+ #include <linux/interrupt.h>
+ #include <linux/module.h>
+ #include <linux/irq.h>
++#include <linux/of_irq.h>
+ #include <linux/io.h>
+ #include <linux/sh_intc.h>
+ #include <mach/intc.h>
+@@ -464,3 +465,16 @@ void __init sh73a0_init_irq(void)
+ 	sh73a0_pint1_cascade.handler = sh73a0_pint1_demux;
+ 	setup_irq(gic_spi(34), &sh73a0_pint1_cascade);
  }
- 
- static inline unsigned long sh_cmt_read_cmcsr(struct sh_cmt_priv *p)
- {
--	return sh_cmt_read16(p->mapbase, CMCSR);
-+	return p->read_control(p->mapbase, CMCSR);
- }
- 
- static inline unsigned long sh_cmt_read_cmcnt(struct sh_cmt_priv *p)
-@@ -112,13 +117,13 @@ static inline void sh_cmt_write_cmstr(st
- {
- 	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
- 
--	sh_cmt_write16(p->mapbase - cfg->channel_offset, 0, value);
-+	p->write_control(p->mapbase - cfg->channel_offset, 0, value);
- }
- 
- static inline void sh_cmt_write_cmcsr(struct sh_cmt_priv *p,
- 				      unsigned long value)
- {
--	sh_cmt_write16(p->mapbase, CMCSR, value);
-+	p->write_control(p->mapbase, CMCSR, value);
- }
- 
- static inline void sh_cmt_write_cmcnt(struct sh_cmt_priv *p,
-@@ -714,6 +719,9 @@ static int sh_cmt_setup(struct sh_cmt_pr
- 		goto err1;
- 	}
- 
-+	p->read_control = sh_cmt_read16;
-+	p->write_control = sh_cmt_write16;
 +
- 	if (resource_size(res) = 6) {
- 		p->width = 16;
- 		p->read_count = sh_cmt_read16;
++#ifdef CONFIG_OF
++static const struct of_device_id irq_of_match[] __initconst = {
++	{ .compatible = "arm,cortex-a9-gic", .data = gic_of_init, },
++	{ },
++};
++
++void __init sh73a0_init_irq_dt(void)
++{
++	of_irq_init(irq_of_match);
++	gic_arch_extn.irq_set_wake = sh73a0_set_wake;
++}
++#endif
+-- 
+1.7.10.4
+
