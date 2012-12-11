@@ -1,7 +1,7 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 11 Dec 2012 17:55:04 +0000
+From: Stephen Boyd <sboyd@codeaurora.org>
+Date: Tue, 11 Dec 2012 23:27:39 +0000
 Subject: Re: [RFC PATCH v2 3/5] ARM: kernel: update cpu_suspend code to use cache LoUIS operations
-Message-Id: <Pine.LNX.4.64.1212111854200.2140@axis700.grange>
+Message-Id: <50C7C16B.7050106@codeaurora.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1347986135-17979-1-git-send-email-lorenzo.pieralisi@arm.com>
  <1347986135-17979-4-git-send-email-lorenzo.pieralisi@arm.com>
@@ -17,33 +17,7 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, 11 Dec 2012, Will Deacon wrote:
-
-> On Tue, Dec 11, 2012 at 04:33:13PM +0000, Will Deacon wrote:
-> > On Tue, Dec 11, 2012 at 04:07:56PM +0000, Guennadi Liakhovetski wrote:
-> > > Git bisect identified this patch, in the mainline as
-> > > 
-> > > commit dbee0c6fb4c1269b2dfc8b0b7a29907ea7fed560
-> > > Author: Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>
-> > > Date:   Fri Sep 7 11:06:57 2012 +0530
-> > > 
-> > >     ARM: kernel: update cpu_suspend code to use cache LoUIS operations
-> > > 
-> > > as the culprit of the broken wake up from STR on mackerel, based on an 
-> > > sh7372 A8 SoC. .config attached.
-> > 
-> > My guess is that because Cortex-A8 does not implement the MP extensions,
-> > the LoUIS field of the CLIDR reads as zero, and the cache isn't flushed at
-> > all (I can see an early exit in v7_flush_dcache_louis).
-> > 
-> > Lorenzo -- how is this supposed to work for uniprocessor CPUs?
-> 
-> Bah, forgot to ask you if the following patch helps...
-> 
-> Will
-> 
-> --->8
-> 
+On 12/11/12 08:38, Will Deacon wrote:
 > diff --git a/arch/arm/mm/cache-v7.S b/arch/arm/mm/cache-v7.S
 > index cd95664..f58248f 100644
 > --- a/arch/arm/mm/cache-v7.S
@@ -56,22 +30,10 @@ On Tue, 11 Dec 2012, Will Deacon wrote:
 > +       ALT_SMP(ands    r3, r0, #(7 << 21))     @ extract LoUIS from clidr
 > +       ALT_UP(ands     r3, r0, #(7 << 27))     @ extract LoUU from clidr
 >         mov     r3, r3, lsr #20                 @ r3 = LoUIS * 2
->         moveq   pc, lr                          @ return if level = 0
->         mov     r10, #0                         @ r10 (starting level) = 0
 
-[... later]
+You need to fix this mov as well, right?
 
-> > Yes, it does.
->
-> Cracking, can I add you tested-by please?
- 
-Sure:
- 
-Tested-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-  
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+-- 
+Qualcomm Innovation Center, Inc. is a member of Code Aurora Forum,
+hosted by The Linux Foundation
+
