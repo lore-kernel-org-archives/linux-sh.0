@@ -1,45 +1,53 @@
-From: John Stultz <john.stultz@linaro.org>
-Date: Wed, 19 Dec 2012 17:57:00 +0000
-Subject: Re: [PATCH 00/08] clocksource: sh_cmt: CMT driver update
-Message-Id: <50D1FFEC.10906@linaro.org>
+From: Will Deacon <will.deacon@arm.com>
+Date: Tue, 11 Dec 2012 16:33:14 +0000
+Subject: Re: [RFC PATCH v2 3/5] ARM: kernel: update cpu_suspend code to use cache LoUIS operations
+Message-Id: <20121211163313.GG16759@mudshark.cambridge.arm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20121214055323.10081.12056.sendpatchset@w520>
-In-Reply-To: <20121214055323.10081.12056.sendpatchset@w520>
+References: <1347986135-17979-1-git-send-email-lorenzo.pieralisi@arm.com>
+ <1347986135-17979-4-git-send-email-lorenzo.pieralisi@arm.com>
+ <20120919134658.GA2111@linaro.org>
+ <20120920102514.GD4588@e102568-lin.cambridge.arm.com>
+ <20120920110439.GB2117@linaro.org>
+ <Pine.LNX.4.64.1212111655050.29758@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1212111655050.29758@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, horms@verge.net.au, shinya.kuribayashi.px@renesas.com, tglx@linutronix.de
+To: linux-arm-kernel@lists.infradead.org
 
-On 12/13/2012 09:53 PM, Magnus Damm wrote:
-> clocksource: sh_cmt: CMT driver update
->
-> [PATCH 01/08] clocksource: sh_cmt: Take care of clk_put() when setup_irq() fails
-> [PATCH 02/08] clocksource: sh_cmt: Initialize 'max_match_value' and 'lock' in sh_cmt_setup()
-> [PATCH 03/08] clocksource: sh_cmt: Consolidate platform_set_drvdata() call
-> [PATCH 04/08] clocksource: sh_cmt: Introduce per-register functions
-> [PATCH 05/08] clocksource: sh_cmt: CMSTR and CMCSR register access update
-> [PATCH 06/08] clocksource: sh_cmt: CMCNT and CMCOR register access update
-> [PATCH 07/08] clocksource: sh_cmt: Add control register callbacks
-> [PATCH 08/08] clocksource: sh_cmt: Add CMT register layout comment
->
-> This patch series contains a couple of driver updates from Kuribayashi-san
-> together with some register access changes from me. The register access
-> changes work towards adding support for 32-bit only CMT hardware, but
-> the final bits are not yet included in this series due to lack of hardware.
->
-> Patches 1-3:
-> Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-> Signed-off-by: Magnus Damm <damm@opensource.se>
->
-> Patches 4-8:
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-Due to unfamiliarity with the hardware, I can't really review these 
-changes, so I'd prefer they be merged through the arch tree, where it 
-can get proper review/testing.
+On Tue, Dec 11, 2012 at 04:07:56PM +0000, Guennadi Liakhovetski wrote:
+> Hi all
+> 
+> On Thu, 20 Sep 2012, Dave Martin wrote:
+> 
+> > On Thu, Sep 20, 2012 at 11:25:14AM +0100, Lorenzo Pieralisi wrote:
+> > > On Wed, Sep 19, 2012 at 02:46:58PM +0100, Dave Martin wrote:
+> > > > On Tue, Sep 18, 2012 at 05:35:33PM +0100, Lorenzo Pieralisi wrote:
+> > > > > In processors like A15/A7 L2 cache is unified and integrated within the
+> > > > > processor cache hierarchy, so that it is not considered an outer cache
+> > > > > anymore. For processors like A15/A7 flush_cache_all() ends up cleaning
+> > > > > all cache levels up to Level of Coherency (LoC) that includes
+> > > > > the L2 unified cache.
+> > > > > 
+> > > > > When a single CPU is suspended (CPU idle) a complete L2 clean is not
+> > > > > required, so generic cpu_suspend code must clean the data cache using the
+> > > > > newly introduced cache LoUIS function.
+> 
+> Git bisect identified this patch, in the mainline as
+> 
+> commit dbee0c6fb4c1269b2dfc8b0b7a29907ea7fed560
+> Author: Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>
+> Date:   Fri Sep 7 11:06:57 2012 +0530
+> 
+>     ARM: kernel: update cpu_suspend code to use cache LoUIS operations
+> 
+> as the culprit of the broken wake up from STR on mackerel, based on an 
+> sh7372 A8 SoC. .config attached.
 
-Acked-by: John Stultz <john.stultz@linaro.org>
+My guess is that because Cortex-A8 does not implement the MP extensions,
+the LoUIS field of the CLIDR reads as zero, and the cache isn't flushed at
+all (I can see an early exit in v7_flush_dcache_louis).
 
-thanks
--john
+Lorenzo -- how is this supposed to work for uniprocessor CPUs?
 
+Will
