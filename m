@@ -1,781 +1,302 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 15 Dec 2012 09:03:40 +0000
-Subject: [PATCH 06/10] ARM: shmobile: Add DT table of INTC for r8a7740
-Message-Id: <1355562224-29448-7-git-send-email-horms+renesas@verge.net.au>
+Date: Tue, 11 Dec 2012 03:07:31 +0000
+Subject: [PATCH 3/6] ARM: mach-shmobile: sh73a0: Minimal setup using DT
+Message-Id: <1355195254-4563-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1355562224-29448-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1355562224-29448-1-git-send-email-horms+renesas@verge.net.au>
+References: <1355195254-4563-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1355195254-4563-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Allow a minimal setup of the sh73a0 SoC using a flattened device tree.
+In particular, Configure the i2c controllers using a flattened device tree.
 
-Cc: Magnus Damm <damm@opensource.se>
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+SCI serial controller and CMT clock source, whose drivers do not yet
+support configuration using a flattened device tree, are still configured
+using C code in order to allow booting of a board with this SoC.
+
+*** Please note that the clock initialisation shcheme used in
+    this patch does not currently work with SMP as there
+    is a yet to be resolved lock-up in workqueue initialisation.
+
+    CONFIG_SMP must be disabled when using this code. ***
+
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7740.dtsi |  743 +++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 742 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 798fa35..6340ab8 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -1,5 +1,5 @@
- /*
-- * Device Tree Source for the r8a7740 SoC
-+ * Device Tree Source for Renesas r8a7740
-  *
-  * Copyright (C) 2012 Renesas Solutions Corp.
-  *
-@@ -18,4 +18,745 @@
- 			compatible = "arm,cortex-a9";
- 		};
+---
+
+v3
+* Late initialisation of clocks
+* Add DT_MACHINE_START()
+* Add comment about duplicate entries in clock-sh73a0.c:lookups[]
+
+v2
+* Add extra entries to clock-sh73a0.c:lookups[] and
+  remove auxdata. Ultimtely the clocks will be described
+  in DT, but the code isn't there yet.
+* Use shmobile_setup_delay() and perform late initialisation of clocks
+---
+ arch/arm/boot/dts/sh73a0.dtsi                |   60 +++++++++++++++++++++++
+ arch/arm/mach-shmobile/clock-sh73a0.c        |   12 +++++
+ arch/arm/mach-shmobile/include/mach/common.h |    2 +
+ arch/arm/mach-shmobile/setup-sh73a0.c        |   68 +++++++++++++++++++++++++-
+ 4 files changed, 141 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index 77c8e43..fc7f0fd 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -38,4 +38,64 @@
+ 		reg = <0xf0001000 0x1000>,
+ 		      <0xf0000100 0x100>;
  	};
 +
-+	soc {
-+		compatible = "simple-bus";
++	i2c0: i2c@0xe6820000 {
 +		#address-cells = <1>;
-+		#size-cells = <1>;
-+		ranges;
-+
-+		intca: interrupt-controller@0 {
-+			compatible = "renesas,sh_intc";
-+			interrupt-controller;
-+			#address-cells = <1>;
-+			#size-cells = <1>;
-+			#interrupt-cells = <1>;
-+			ranges;
-+
-+			reg = <0xe6940000 0x200>, <0xe6950000 0x200>;
-+			group_size = <19>;
-+
-+			DIRC: intsrc1 { vector = <0x0560>; };
-+			ATAPI: intsrc2 { vector = <0x05E0>; };
-+			IIC1_ALI: intsrc3 { vector = <0x0780>; };
-+			IIC1_TACKI: intsrc4 { vector = <0x07A0>; };
-+			IIC1_WAITI: intsrc5 { vector = <0x07C0>; };
-+			IIC1_DTEI: intsrc6 { vector = <0x07E0>; };
-+			AP_ARM_COMMTX: intsrc7 { vector = <0x0840>; };
-+			AP_ARM_COMMRX: intsrc8 { vector = <0x0860>; };
-+			MFI: intsrc9 { vector = <0x0900>; };
-+			MFIS: intsrc10 { vector = <0x0920>; };
-+			BBIF1: intsrc11 { vector = <0x0940>; };
-+			BBIF2: intsrc12 { vector = <0x0960>; };
-+			USBHSDMAC: intsrc13 { vector = <0x0A00>; };
-+			USBF_OUL_SOF: intsrc14 { vector = <0x0A20>; };
-+			USBF_IXL_INT: intsrc15 { vector = <0x0A40>; };
-+			SGX540: intsrc16 { vector = <0x0A60>; };
-+			CMT1_0: intsrc17 { vector = <0x0B00>; };
-+			CMT1_1: intsrc18 { vector = <0x0B20>; };
-+			CMT1_2: intsrc19 { vector = <0x0B40>; };
-+			CMT1_3: intsrc20 { vector = <0x0B60>; };
-+			CMT2: intsrc21 { vector = <0x0B80>; };
-+			CMT3: intsrc22 { vector = <0x0BA0>; };
-+			KEYSC: intsrc23 { vector = <0x0BE0>; };
-+			SCIFA0: intsrc24 { vector = <0x0C00>; };
-+			SCIFA1: intsrc25 { vector = <0x0C20>; };
-+			SCIFA2: intsrc26 { vector = <0x0C40>; };
-+			SCIFA3: intsrc27 { vector = <0x0C60>; };
-+			MSIOF2: intsrc28 { vector = <0x0C80>; };
-+			MSIOF1: intsrc29 { vector = <0x0D00>; };
-+			SCIFA4: intsrc30 { vector = <0x0D20>; };
-+			SCIFA5: intsrc31 { vector = <0x0D40>; };
-+			SCIFB: intsrc32 { vector = <0x0D60>; };
-+			FLCTL_FLSTEI: intsrc33 { vector = <0x0D80>; };
-+			FLCTL_FLTENDI: intsrc34 { vector = <0x0DA0>; };
-+			FLCTL_FLTREQ0I: intsrc35 { vector = <0x0DC0>; };
-+			FLCTL_FLTREQ1I: intsrc36 { vector = <0x0DE0>; };
-+			SDHI0_0: intsrc37 { vector = <0x0E00>; };
-+			SDHI0_1: intsrc38 { vector = <0x0E20>; };
-+			SDHI0_2: intsrc39 { vector = <0x0E40>; };
-+			SDHI0_3: intsrc40 { vector = <0x0E60>; };
-+			SDHI1_0: intsrc41 { vector = <0x0E80>; };
-+			SDHI1_1: intsrc42 { vector = <0x0EA0>; };
-+			SDHI1_2: intsrc43 { vector = <0x0EC0>; };
-+			SDHI1_3: intsrc44 { vector = <0x0EE0>; };
-+			AP_ARM_L2CINT: intsrc45 { vector = <0x0FA0>; };
-+			IRDA: intsrc46 { vector = <0x0480>; };
-+			TPU0: intsrc47 { vector = <0x04A0>; };
-+			SCIFA6: intsrc48 { vector = <0x04C0>; };
-+			SCIFA7: intsrc49 { vector = <0x04E0>; };
-+			GETHER: intsrc50 { vector = <0x0500>; };
-+			ICBS0: intsrc51 { vector = <0x0540>; };
-+			DDM: intsrc52 { vector = <0x1140>; };
-+			SDHI2_0: intsrc53 { vector = <0x1200>; };
-+			SDHI2_1: intsrc54 { vector = <0x1220>; };
-+			SDHI2_2: intsrc55 { vector = <0x1240>; };
-+			SDHI2_3: intsrc56 { vector = <0x1260>; };
-+			RWDT0: intsrc57 { vector = <0x1280>; };
-+			DMAC1_1_DEI0: intsrc58 { vector = <0x2000>; };
-+			DMAC1_1_DEI1: intsrc59 { vector = <0x2020>; };
-+			DMAC1_1_DEI2: intsrc60 { vector = <0x2040>; };
-+			DMAC1_1_DEI3: intsrc61 { vector = <0x2060>; };
-+			DMAC1_2_DEI4: intsrc62 { vector = <0x2080>; };
-+			DMAC1_2_DEI5: intsrc63 { vector = <0x20A0>; };
-+			DMAC1_2_DADERR: intsrc64 { vector = <0x20C0>; };
-+			DMAC2_1_DEI0: intsrc65 { vector = <0x2100>; };
-+			DMAC2_1_DEI1: intsrc66 { vector = <0x2120>; };
-+			DMAC2_1_DEI2: intsrc67 { vector = <0x2140>; };
-+			DMAC2_1_DEI3: intsrc68 { vector = <0x2160>; };
-+			DMAC2_2_DEI4: intsrc69 { vector = <0x2180>; };
-+			DMAC2_2_DEI5: intsrc70 { vector = <0x21A0>; };
-+			DMAC2_2_DADERR: intsrc71 { vector = <0x21C0>; };
-+			DMAC3_1_DEI0: intsrc72 { vector = <0x2200>; };
-+			DMAC3_1_DEI1: intsrc73 { vector = <0x2220>; };
-+			DMAC3_1_DEI2: intsrc74 { vector = <0x2240>; };
-+			DMAC3_1_DEI3: intsrc75 { vector = <0x2260>; };
-+			DMAC3_2_DEI4: intsrc76 { vector = <0x2280>; };
-+			DMAC3_2_DEI5: intsrc77 { vector = <0x22A0>; };
-+			DMAC3_2_DADERR: intsrc78 { vector = <0x22C0>; };
-+			SHWYSTAT_RT: intsrc79 { vector = <0x1300>; };
-+			SHWYSTAT_HS: intsrc80 { vector = <0x1320>; };
-+			SHWYSTAT_COM: intsrc81 { vector = <0x1340>; };
-+			HDMI: intsrc82 { vector = <0x1700>; };
-+			USBH_INT: intsrc83 { vector = <0x1540>; };
-+			USBH_OHCI: intsrc84 { vector = <0x1560>; };
-+			USBH_EHCI: intsrc85 { vector = <0x1580>; };
-+			USBH_PME: intsrc86 { vector = <0x15A0>; };
-+			USBH_BIND: intsrc87 { vector = <0x15C0>; };
-+			RSPI_OVRF: intsrc88 { vector = <0x1780>; };
-+			RSPI_SPTEF: intsrc89 { vector = <0x17A0>; };
-+			RSPI_SPRF: intsrc90 { vector = <0x17C0>; };
-+			SPU2_0: intsrc91 { vector = <0x1800>; };
-+			SPU2_1: intsrc92 { vector = <0x1820>; };
-+			FSI: intsrc93 { vector = <0x1840>; };
-+			FMSI: intsrc94 { vector = <0x1860>; };
-+			HDMI_SSS: intsrc95 { vector = <0x18A0>; };
-+			HDMI_KEY: intsrc96 { vector = <0x18C0>; };
-+			IPMMU: intsrc97 { vector = <0x1920>; };
-+			AP_ARM_CTIIRQ: intsrc98 { vector = <0x1980>; };
-+			AP_ARM_PMURQ: intsrc99 { vector = <0x19A0>; };
-+			MFIS2: intsrc100 { vector = <0x1A00>; };
-+			CPORTR2S: intsrc101 { vector = <0x1A20>; };
-+			CMT14: intsrc102 { vector = <0x1A40>; };
-+			CMT15: intsrc103 { vector = <0x1A60>; };
-+			MMCIF_0: intsrc104 { vector = <0x1AA0>; };
-+			MMCIF_1: intsrc105 { vector = <0x1AC0>; };
-+			MMCIF_2: intsrc106 { vector = <0x1AE0>; };
-+			SIM_ERI: intsrc107 { vector = <0x1C00>; };
-+			SIM_RXI: intsrc108 { vector = <0x1C20>; };
-+			SIM_TXI: intsrc109 { vector = <0x1C40>; };
-+			SIM_TEI: intsrc110 { vector = <0x1C60>; };
-+			STPRO_0: intsrc111 { vector = <0x1C80>; };
-+			STPRO_1: intsrc112 { vector = <0x1CA0>; };
-+			STPRO_2: intsrc113 { vector = <0x1CC0>; };
-+			STPRO_3: intsrc114 { vector = <0x1CE0>; };
-+			STPRO_4: intsrc115 { vector = <0x1D00>; };
-+
-+			DMAC1_1: intc_group0 {
-+				group = <&DMAC1_1_DEI0 &DMAC1_1_DEI1
-+						&DMAC1_1_DEI2 &DMAC1_1_DEI3>;
-+			};
-+
-+			DMAC1_2: intc_group1 {
-+				group = <&DMAC1_2_DEI4 &DMAC1_2_DEI5
-+						&DMAC1_2_DADERR>;
-+			};
-+
-+			DMAC2_1: intc_group2 {
-+				group = <&DMAC2_1_DEI0 &DMAC2_1_DEI1
-+						&DMAC2_1_DEI2 &DMAC2_1_DEI3>;
-+			};
-+
-+			DMAC2_2: intc_group3 {
-+				group = <&DMAC2_2_DEI4 &DMAC2_2_DEI5
-+						&DMAC2_2_DADERR>;
-+			};
-+
-+			DMAC3_1: intc_group4 {
-+				group = <&DMAC3_1_DEI0 &DMAC3_1_DEI1
-+						&DMAC3_1_DEI2 &DMAC3_1_DEI3>;
-+			};
-+
-+			DMAC3_2: intc_group5 {
-+				group = <&DMAC3_2_DEI4 &DMAC3_2_DEI5
-+						&DMAC3_2_DADERR>;
-+			};
-+
-+			AP_ARM1: intc_group6 {
-+				group = <&AP_ARM_COMMTX &AP_ARM_COMMRX>;
-+			};
-+
-+			AP_ARM2: intc_group7 {
-+				group = <&AP_ARM_CTIIRQ &AP_ARM_PMURQ>;
-+			};
-+
-+			USBF: intc_group8 {
-+				group = <&USBF_OUL_SOF &USBF_IXL_INT>;
-+			};
-+
-+			SDHI0: intc_group9 {
-+				group = <&SDHI0_0 &SDHI0_1 &SDHI0_2 &SDHI0_3>;
-+			};
-+
-+			SDHI1: intc_group10 {
-+				group = <&SDHI1_0 &SDHI1_1 &SDHI1_2 &SDHI1_3>;
-+			};
-+
-+			SDHI2: intc_group11 {
-+				group = <&SDHI2_0 &SDHI2_1 &SDHI2_2 &SDHI2_3>;
-+			};
-+
-+			SHWYSTAT: intc_group12 {
-+				group = <&SHWYSTAT_RT &SHWYSTAT_HS &SHWYSTAT_COM>;
-+			};
-+
-+			USBH1: intc_group13 {
-+				group = <&USBH_INT &USBH_OHCI>;
-+			};
-+
-+			USBH2: intc_group14 {
-+				group = <&USBH_EHCI &USBH_PME &USBH_BIND>;
-+			};
-+
-+			RSPI: intc_group15 {
-+				group = <&RSPI_OVRF &RSPI_SPTEF &RSPI_SPRF>;
-+			};
-+
-+			SPU2: intc_group16 {
-+				group = <&SPU2_0 &SPU2_1>;
-+			};
-+
-+			FLCTL: intc_group17 {
-+				group = <&FLCTL_FLSTEI &FLCTL_FLTENDI &FLCTL_FLTREQ0I
-+						&FLCTL_FLTREQ1I>;
-+			};
-+
-+			IIC1: intc_group18 {
-+				group = <&IIC1_ALI &IIC1_TACKI &IIC1_WAITI &IIC1_DTEI>;
-+			};
-+
-+			intc_vectors {
-+				vector_table = <&DIRC &ATAPI &IIC1_ALI &IIC1_TACKI &IIC1_WAITI
-+					&IIC1_DTEI &AP_ARM_COMMTX &AP_ARM_COMMRX &MFI &MFIS &BBIF1
-+					&BBIF2 &USBHSDMAC &USBF_OUL_SOF &USBF_IXL_INT &SGX540 &CMT1_0
-+					&CMT1_1 &CMT1_2 &CMT1_3 &CMT2 &CMT3 &KEYSC &SCIFA0 &SCIFA1
-+					&SCIFA2 &SCIFA3 &MSIOF2 &MSIOF1 &SCIFA4 &SCIFA5 &SCIFB
-+					&FLCTL_FLSTEI &FLCTL_FLTENDI &FLCTL_FLTREQ0I &FLCTL_FLTREQ1I
-+					&SDHI0_0 &SDHI0_1 &SDHI0_2 &SDHI0_3
-+					&SDHI1_0 &SDHI1_1 &SDHI1_2 &SDHI1_3
-+					&AP_ARM_L2CINT &IRDA &TPU0 &SCIFA6 &SCIFA7
-+					&GETHER &ICBS0 &DDM &SDHI2_0 &SDHI2_1 &SDHI2_2 &SDHI2_3
-+					&RWDT0
-+					&DMAC1_1_DEI0 &DMAC1_1_DEI1 &DMAC1_1_DEI2 &DMAC1_1_DEI3
-+					&DMAC1_2_DEI4 &DMAC1_2_DEI5 &DMAC1_2_DADERR
-+					&DMAC2_1_DEI0 &DMAC2_1_DEI1 &DMAC2_1_DEI2 &DMAC2_1_DEI3
-+					&DMAC2_2_DEI4 &DMAC2_2_DEI5 &DMAC2_2_DADERR
-+					&DMAC3_1_DEI0 &DMAC3_1_DEI1 &DMAC3_1_DEI2 &DMAC3_1_DEI3
-+					&DMAC3_2_DEI4 &DMAC3_2_DEI5 &DMAC3_2_DADERR
-+					&SHWYSTAT_RT &SHWYSTAT_HS &SHWYSTAT_COM
-+					&USBH_INT &USBH_OHCI &USBH_EHCI &USBH_PME &USBH_BIND
-+					&HDMI
-+					&RSPI_OVRF &RSPI_SPTEF &RSPI_SPRF
-+					&SPU2_0 &SPU2_1 &FSI &FMSI &HDMI_SSS &HDMI_KEY
-+					&IPMMU &AP_ARM_CTIIRQ &AP_ARM_PMURQ &MFIS2
-+					&CPORTR2S
-+					&CMT14 &CMT15 &MMCIF_0 &MMCIF_1 &MMCIF_2
-+					&SIM_ERI &SIM_RXI &SIM_TXI &SIM_TEI
-+					&STPRO_0 &STPRO_1 &STPRO_2 &STPRO_3 &STPRO_4>;
-+			};
-+
-+			intc_mask_registers {
-+				#address-cells = <1>;
-+				#size-cells = <1>;
-+				ranges;
-+
-+				intc_mask0 {
-+					reg = <0xe6940080 1>, <0xe69400c0 1>;
-+					reginfo = <&DMAC2_1_DEI3 &DMAC2_1_DEI2 &DMAC2_1_DEI1
-+						&DMAC2_1_DEI0 0 0 &AP_ARM_COMMTX &AP_ARM_COMMRX>;
-+				};
-+
-+				intc_mask1 {
-+					reg = <0xe6940084 1>, <0xe69400c4 1>;
-+					reginfo = <&ATAPI 0 &DIRC 0 &DMAC1_1_DEI3 &DMAC1_1_DEI2
-+						&DMAC1_1_DEI1 &DMAC1_1_DEI0>;
-+				};
-+
-+				intc_mask2 {
-+					reg = <0xe6940088 1>, <0xe69400c8 1>;
-+					reginfo = <0 0 0 0 &BBIF1 &BBIF2 &MFIS &MFI>;
-+				};
-+
-+				intc_mask3 {
-+					reg = <0xe694008c 1>, <0xe69400cc 1>;
-+					reginfo = <&DMAC3_1_DEI3 &DMAC3_1_DEI2 &DMAC3_1_DEI1
-+						&DMAC3_1_DEI0 &DMAC3_2_DADERR &DMAC3_2_DEI5
-+						&DMAC3_2_DEI4 &IRDA>;
-+				};
-+
-+				intc_mask4 {
-+					reg = <0xe6940090 1>, <0xe69400d0 1>;
-+					reginfo = <&DDM 0 0 0 0 0 0 0>;
-+				};
-+
-+				intc_mask5 {
-+					reg = <0xe6940094 1>, <0xe69400d4 1>;
-+					reginfo = <&KEYSC &DMAC1_2_DADERR &DMAC1_2_DEI5 &DMAC1_2_DEI4
-+							&SCIFA3 &SCIFA2 &SCIFA1 &SCIFA0>;
-+				};
-+
-+				intc_mask6 {
-+					reg = <0xe6940098 1>, <0xe69400d8 1>;
-+					reginfo = <&SCIFB &SCIFA5 &SCIFA4 &MSIOF1 0 0 &MSIOF2 0>;
-+				};
-+
-+				intc_mask7 {
-+					reg = <0xe694009c 1>, <0xe69400dc 1>;
-+					reginfo = <&SDHI0_3 &SDHI0_2 &SDHI0_1 &SDHI0_0 &FLCTL_FLTREQ1I
-+						&FLCTL_FLTREQ0I &FLCTL_FLTENDI &FLCTL_FLSTEI>;
-+				};
-+
-+				intc_mask8 {
-+					reg = <0xe69400a0 1>, <0xe69400e0 1>;
-+					reginfo = <&SDHI1_3 &SDHI1_2 &SDHI1_1 &SDHI1_0 0
-+						&USBHSDMAC 0 &AP_ARM_L2CINT>;
-+				};
-+
-+				intc_mask9 {
-+					reg = <0xe69400a4 1>, <0xe69400e4 1>;
-+					reginfo = <&CMT1_3 &CMT1_2 &CMT1_1
-+						&CMT1_0 &CMT2 &USBF_IXL_INT &USBF_OUL_SOF &SGX540>;
-+				};
-+
-+				intc_mask10 {
-+					reg = <0xe69400a8 1>, <0xe69400e8 1>;
-+					reginfo = <0 &DMAC2_2_DADERR &DMAC2_2_DEI5 &DMAC2_2_DEI4
-+						0 0 0 0>;
-+				};
-+
-+				intc_mask11 {
-+					reg = <0xe69400ac 1>, <0xe69400ec 1>;
-+					reginfo = <&IIC1_DTEI &IIC1_WAITI
-+						&IIC1_TACKI &IIC1_ALI &ICBS0 0 0 0>;
-+				};
-+
-+				intc_mask12 {
-+					reg = <0xe69400b0 1>, <0xe69400f0 1>;
-+					reginfo = <0 0 &TPU0 &SCIFA6 &SCIFA7 &GETHER 0 0>;
-+				};
-+
-+				intc_mask13 {
-+					reg = <0xe69400b4 1>, <0xe69400f4 1>;
-+					reginfo = <&SDHI2_3 &SDHI2_2 &SDHI2_1
-+						&SDHI2_0 0 &CMT3 0 &RWDT0>;
-+				};
-+
-+				intc_mask14 {
-+					reg = <0xe6950080 1>, <0xe69500c0 1>;
-+					reginfo = <&SHWYSTAT_RT &SHWYSTAT_HS
-+						&SHWYSTAT_COM 0 0 0 0 0>;
-+				};
-+
-+				intc_mask15 {
-+					reg = <0xe6950088 1>, <0xe69500c8 1>;
-+					reginfo = <0 0 &USBH_INT &USBH_OHCI
-+						&USBH_EHCI &USBH_PME &USBH_BIND 0>;
-+				};
-+
-+				intc_mask16 {
-+					reg = <0xe6950090 1>, <0xe69500d0 1>;
-+					reginfo = <&HDMI 0 0 0 &RSPI_OVRF
-+						&RSPI_SPTEF &RSPI_SPRF 0>;
-+				};
-+
-+				intc_mask17 {
-+					reg = <0xe6950094 1>, <0xe69500d4 1>;
-+					reginfo = <&SPU2_0 &SPU2_1 &FSI &FMSI 0
-+						&HDMI_SSS &HDMI_KEY 0>;
-+				};
-+
-+				intc_mask18 {
-+					reg = <0xe6950098 1>, <0xe69500d8 1>;
-+					reginfo = <0 &IPMMU 0 0 &AP_ARM_CTIIRQ
-+						&AP_ARM_PMURQ 0 0>;
-+				};
-+
-+				intc_mask19 {
-+					reg = <0xe695009c 1>, <0xe69500dc 1>;
-+					reginfo = <&MFIS2 &CPORTR2S &CMT14 &CMT15
-+						0 &MMCIF_0 &MMCIF_1 &MMCIF_2>;
-+				};
-+
-+				intc_mask20 {
-+					reg = <0xe69500a4 1>, <0xe69500e4 1>;
-+					reginfo = <&SIM_ERI &SIM_RXI &SIM_TXI
-+						&SIM_TEI &STPRO_0 &STPRO_1 &STPRO_2 &STPRO_3>;
-+				};
-+
-+				intc_mask21 {
-+					reg = <0xe69500a8 1>, <0xe69500e8 1>;
-+					reginfo = <&STPRO_4 0 0 0 0 0 0 0>;
-+				};
-+			};
-+
-+			intc_prio_registers {
-+				#address-cells = <1>;
-+				#size-cells = <1>;
-+				ranges;
-+
-+				intc_prio0 {
-+					reg = <0xe6940000 2>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <&DMAC3_1 &DMAC3_2 &CMT2 &ICBS0>;
-+				};
-+
-+				intc_prio1 {
-+					reg = <0xe6940004 2>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo =<&IRDA 0 &BBIF1 &BBIF2>;
-+				};
-+
-+				intc_prio2 {
-+					reg = <0xe6940008 2>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <&ATAPI 0 &CMT1_1 &AP_ARM1>;
-+				};
-+
-+				intc_prio3 {
-+					reg = <0xe694000c 2>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <0 0 &CMT1_2 0>;
-+				};
-+
-+				intc_prio4 {
-+					reg = <0xe6940010 2>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <&DMAC1_1 &MFIS &MFI &USBF>;
-+				};
-+
-+				intc_prio5 {
-+					reg = <0xe6940014 2>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <&KEYSC &DMAC1_2 &SGX540 &CMT1_0>;
-+				};
-+
-+				intc_prio6 {
-+					reg = <0xe6940018 2>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <&SCIFA0 &SCIFA1 &SCIFA2 &SCIFA3>;
-+				};
-+
-+				intc_prio7 {
-+					reg = <0xe694001c 2>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <&MSIOF2 &USBHSDMAC &FLCTL &SDHI0>;
-+				};
-+
-+				intc_prio8 {
-+					reg = <0xe6940020 2>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <&MSIOF1 &SCIFA4 0 &IIC1>;
-+				};
-+
-+				intc_prio9 {
-+					reg = <0xe6940024 2>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <&DMAC2_1 &DMAC2_2 &AP_ARM_L2CINT 0>;
-+				};
-+
-+				intc_prio10 {
-+					reg = <0xe6940028 2>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <0 &CMT1_3 0 &SDHI1>;
-+				};
-+
-+				intc_prio11 {
-+					reg = <0xe694002c 2>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <&TPU0 &SCIFA6 &SCIFA7 &GETHER>;
-+				};
-+
-+				intc_prio12 {
-+					reg = <0xe6940030 2>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <0 &CMT3 0 &RWDT0>;
-+				};
-+
-+				intc_prio13 {
-+					reg = <0xe6940034 2>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <&SCIFB &SCIFA5 0 &DDM>;
-+				};
-+
-+				intc_prio14 {
-+					reg = <0xe6940038 2>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <0 0 &DIRC &SDHI2>;
-+				};
-+
-+				intc_prio15 {
-+					reg = <0xe6950000 2>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <&SHWYSTAT 0 0 0>;
-+				};
-+
-+				intc_prio16 {
-+					reg = <0xe6950010 2>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <&USBH1 0 0 0>;
-+				};
-+
-+				intc_prio17 {
-+					reg = <0xe6950014 2>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <&USBH2 0 0 0>;
-+				};
-+
-+				intc_prio18 {
-+					reg = <0xe6950020 2>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <&HDMI 0 0 0>;
-+				};
-+
-+				intc_prio19 {
-+					reg = <0xe6950024 2>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <&RSPI 0 0 0>;
-+				};
-+
-+				intc_prio20 {
-+					reg = <0xe6950028 2>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <&SPU2 0 &FSI &FMSI>;
-+				};
-+
-+				intc_prio21 {
-+					reg = <0xe695002c 2>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <0 &HDMI_SSS &HDMI_KEY 0>;
-+				};
-+
-+				intc_prio22 {
-+					reg = <0xe6950030 2>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <&IPMMU 0 0 0>;
-+				};
-+
-+				intc_prio23 {
-+					reg = <0xe6950034 2>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <&AP_ARM2 0 0 0>;
-+				};
-+
-+				intc_prio24 {
-+					reg = <0xe6950038 2>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <&MFIS2 &CPORTR2S &CMT14 &CMT15>;
-+				};
-+
-+				intc_prio25 {
-+					reg = <0xe695003c 2>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <0 &MMCIF_0 &MMCIF_1 &MMCIF_2>;
-+				};
-+
-+				intc_prio26 {
-+					reg = <0xe6950048 2>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <&SIM_ERI &SIM_RXI &SIM_TXI &SIM_TEI>;
-+				};
-+
-+				intc_prio27 {
-+					reg = <0xe695004c 2>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <&STPRO_0 &STPRO_1 &STPRO_2 &STPRO_3>;
-+				};
-+
-+				intc_prio28 {
-+					reg = <0xe6950050 2>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <&STPRO_4 0 0 0>;
-+				};
-+			};
-+		};
-+
-+		intca_irq_pins: interrupt-controller@1{
-+			compatible = "renesas,sh_intc";
-+			interrupt-controller;
-+			#address-cells = <1>;
-+			#size-cells = <1>;
-+			#interrupt-cells = <1>;
-+			ranges;
-+
-+			reg = <0xe6900000 0x6c>;
-+
-+			IRQ0:	intsrc1 { vector = <0x200>; };
-+			IRQ1:	intsrc2 { vector = <0x220>; };
-+			IRQ2:	intsrc3 { vector = <0x240>; };
-+			IRQ3:	intsrc4 { vector = <0x260>; };
-+			IRQ4:	intsrc5 { vector = <0x280>; };
-+			IRQ5:	intsrc6 { vector = <0x2a0>; };
-+			IRQ6:	intsrc7 { vector = <0x2c0>; };
-+			IRQ7:	intsrc8 { vector = <0x2e0>; };
-+			IRQ8:	intsrc9 { vector = <0x300>; };
-+			IRQ9:	intsrc10 { vector = <0x320>; };
-+			IRQ10:	intsrc11 { vector = <0x340>; };
-+			IRQ11:	intsrc12 { vector = <0x360>; };
-+			IRQ12:	intsrc13 { vector = <0x380>; };
-+			IRQ13:	intsrc14 { vector = <0x3a0>; };
-+			IRQ14:	intsrc15 { vector = <0x3c0>; };
-+			IRQ15:	intsrc16 { vector = <0x3e0>; };
-+			IRQ16:	intsrc17 { vector = <0x3200>; };
-+			IRQ17:	intsrc18 { vector = <0x3220>; };
-+			IRQ18:	intsrc19 { vector = <0x3240>; };
-+			IRQ19:	intsrc20 { vector = <0x3260>; };
-+			IRQ20:	intsrc21 { vector = <0x3280>; };
-+			IRQ21:	intsrc22 { vector = <0x32a0>; };
-+			IRQ22:	intsrc23 { vector = <0x32c0>; };
-+			IRQ23:	intsrc24 { vector = <0x32e0>; };
-+			IRQ24:	intsrc25 { vector = <0x3300>; };
-+			IRQ25:	intsrc26 { vector = <0x3320>; };
-+			IRQ26:	intsrc27 { vector = <0x3340>; };
-+			IRQ27:	intsrc28 { vector = <0x3360>; };
-+			IRQ28:	intsrc29 { vector = <0x3380>; };
-+			IRQ29:	intsrc30 { vector = <0x33a0>; };
-+			IRQ30:	intsrc31 { vector = <0x33c0>; };
-+			IRQ31:	intsrc32 { vector = <0x33e0>; };
-+
-+			intc_vectors {
-+				vector_table = <&IRQ0 &IRQ1 &IRQ2 &IRQ3 &IRQ4 &IRQ5
-+								&IRQ6 &IRQ7 &IRQ8 &IRQ9 &IRQ10
-+								&IRQ11 &IRQ12 &IRQ13 &IRQ14 &IRQ15
-+								&IRQ16 &IRQ17 &IRQ18 &IRQ19 &IRQ20
-+								&IRQ21 &IRQ22 &IRQ23 &IRQ24 &IRQ25
-+								&IRQ26 &IRQ27 &IRQ28 &IRQ29 &IRQ30
-+								&IRQ31>;
-+			};
-+
-+			intc_mask_registers {
-+				#address-cells = <1>;
-+				#size-cells = <1>;
-+				ranges;
-+
-+				intc_mask0 {
-+					reg = <0xe6900040 1>, <0xe6900060 1>;
-+					reginfo = <&IRQ0 &IRQ1 &IRQ2 &IRQ3 &IRQ4
-+							&IRQ5 &IRQ6 &IRQ7>;
-+				};
-+
-+				intc_mask1 {
-+					reg = <0xe6900044 1>, <0xe6900064 1>;
-+					reginfo = <&IRQ8 &IRQ9 &IRQ10 &IRQ11
-+							&IRQ12 &IRQ13 &IRQ14 &IRQ15>;
-+				};
-+
-+				intc_mask2 {
-+					reg = <0xe6900048 1>, <0xe6900068 1>;
-+					reginfo = <&IRQ16 &IRQ17 &IRQ18 &IRQ19
-+							&IRQ20 &IRQ21 &IRQ22 &IRQ23>;
-+				};
-+
-+				intc_mask3 {
-+					reg = <0xe690004C 1>, <0xe690006C 1>;
-+					reginfo = <&IRQ24 &IRQ25 &IRQ26 &IRQ27
-+							&IRQ28 &IRQ29 &IRQ30 &IRQ31>;
-+				};
-+			};
-+
-+			intc_prio_registers {
-+				#address-cells = <1>;
-+				#size-cells = <1>;
-+				ranges;
-+
-+				intc_prio0 {
-+					reg = <0xe6900010 4>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <&IRQ0 &IRQ1 &IRQ2 &IRQ3 &IRQ4 &IRQ5 &IRQ6 &IRQ7>;
-+				};
-+
-+				intc_prio1 {
-+					reg = <0xe6900014 4>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <&IRQ8 &IRQ9 &IRQ10 &IRQ11
-+							&IRQ12 &IRQ13 &IRQ14 &IRQ15>;
-+				};
-+
-+				intc_prio2 {
-+					reg = <0xe6900018 4>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <&IRQ16 &IRQ17 &IRQ18 &IRQ19
-+							&IRQ20 &IRQ21 &IRQ22 &IRQ23>;
-+				};
-+
-+				intc_prio3 {
-+					reg = <0xe690001C 4>, <0x0 0>;
-+					field-width = <4>;
-+					reginfo = <&IRQ24 &IRQ25 &IRQ26 &IRQ27
-+							&IRQ28 &IRQ29 &IRQ30 &IRQ31>;
-+				};
-+			};
-+
-+			intc_sense_registers {
-+				#address-cells = <1>;
-+				#size-cells = <1>;
-+				ranges;
-+
-+				intc_sense0 {
-+					reg = <0xe6900000 4>;
-+					field-width = <4>;
-+					reginfo = <&IRQ0 &IRQ1 &IRQ2 &IRQ3 &IRQ4 &IRQ5 &IRQ6 &IRQ7>;
-+				};
-+
-+				intc_sense1 {
-+					reg = <0xe6900004 4>;
-+					field-width = <4>;
-+					reginfo = <&IRQ8 &IRQ9 &IRQ10 &IRQ11
-+							&IRQ12 &IRQ13 &IRQ14 &IRQ15>;
-+				};
-+
-+				intc_sense2 {
-+					reg = <0xe6900008 4>;
-+					field-width = <4>;
-+					reginfo = <&IRQ16 &IRQ17 &IRQ18 &IRQ19
-+							&IRQ20 &IRQ21 &IRQ22 &IRQ23>;
-+				};
-+
-+				intc_sense3 {
-+					reg = <0xe690000C 4>;
-+					field-width = <4>;
-+					reginfo = <&IRQ24 &IRQ25 &IRQ26 &IRQ27
-+							&IRQ28 &IRQ29 &IRQ30 &IRQ31>;
-+				};
-+			};
-+
-+			intc_ack_registers {
-+				#address-cells = <1>;
-+				#size-cells = <1>;
-+				ranges;
-+
-+				intc_ack0 {
-+					reg = <0xe6900020 1>, <0x0 0>;
-+					reginfo = <&IRQ0 &IRQ1 &IRQ2 &IRQ3 &IRQ4 &IRQ5 &IRQ6 &IRQ7>;
-+				};
-+
-+				intc_ack1 {
-+					reg = <0xe6900024 1>, <0x0 0>;
-+					reginfo = <&IRQ8 &IRQ9 &IRQ10 &IRQ11
-+							&IRQ12 &IRQ13 &IRQ14 &IRQ15>;
-+				};
-+
-+				intc_ack2 {
-+					reg = <0xe6900028 1>, <0x0 0>;
-+					reginfo = <&IRQ16 &IRQ17 &IRQ18 &IRQ19
-+							&IRQ20 &IRQ21 &IRQ22 &IRQ23>;
-+				};
-+
-+				intc_ack3 {
-+					reg = <0xe690002C 1>, <0x0 0>;
-+					reginfo = <&IRQ24 &IRQ25 &IRQ26 &IRQ27
-+							&IRQ28 &IRQ29 &IRQ30 &IRQ31>;
-+				};
-+			};
-+		};
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0xe6820000 0x425>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 167 0x4
++			      0 168 0x4
++			      0 169 0x4
++			      0 170 0x4>;
++	};
++
++	i2c1: i2c@0xe6822000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0xe6822000 0x425>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 51 0x4
++			      0 52 0x4
++			      0 53 0x4
++			      0 54 0x4>;
++	};
++
++	i2c2: i2c@0xe6824000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0xe6824000 0x425>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 171 0x4
++			      0 172 0x4
++			      0 173 0x4
++			      0 174 0x4>;
++	};
++
++	i2c3: i2c@0xe6826000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0xe6826000 0x425>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 183 0x4
++			      0 184 0x4
++			      0 185 0x4
++			      0 186 0x4>;
++	};
++
++	i2c4: i2c@0xe6828000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0xe6828000 0x425>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 187 0x4
++			      0 188 0x4
++			      0 189 0x4
++			      0 190 0x4>;
 +	};
  };
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index 516ff7f..22af74f2 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -525,6 +525,13 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP403] = MSTP(&r_clk, SMSTPCR4, 3, 0), /* KEYSC */
+ };
+ 
++/* The lookups structure below includes duplicate entries for some clocks
++ * with alternate names.
++ * - The traditional name used when a device is initialised with platform data
++ * - The name used when a device is initialised using device tree
++ * The longer-term aim is to remove these duplicates, and indeed the
++ * lookups table entirely, by describing clocks using device tree.
++ */
+ static struct clk_lookup lookups[] = {
+ 	/* main clocks */
+ 	CLKDEV_CON_ID("r_clk", &r_clk),
+@@ -545,6 +552,7 @@ static struct clk_lookup lookups[] = {
+ 
+ 	/* MSTP32 clocks */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.2", &mstp_clks[MSTP001]), /* I2C2 */
++	CLKDEV_DEV_ID("e6824000.i2c", &mstp_clks[MSTP001]), /* I2C2 */
+ 	CLKDEV_DEV_ID("sh_mobile_ceu.1", &mstp_clks[MSTP129]), /* CEU1 */
+ 	CLKDEV_DEV_ID("sh-mobile-csi2.1", &mstp_clks[MSTP128]), /* CSI2-RX1 */
+ 	CLKDEV_DEV_ID("sh_mobile_ceu.0", &mstp_clks[MSTP127]), /* CEU0 */
+@@ -553,6 +561,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP125]), /* TMU01 */
+ 	CLKDEV_DEV_ID("sh-mipi-dsi.0", &mstp_clks[MSTP118]), /* DSITX */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.0", &mstp_clks[MSTP116]), /* I2C0 */
++	CLKDEV_DEV_ID("e6820000.i2c", &mstp_clks[MSTP116]), /* I2C0 */
+ 	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.0", &mstp_clks[MSTP100]), /* LCDC0 */
+ 	CLKDEV_DEV_ID("sh-sci.7", &mstp_clks[MSTP219]), /* SCIFA7 */
+ 	CLKDEV_DEV_ID("sh-dma-engine.0", &mstp_clks[MSTP218]), /* SY-DMAC */
+@@ -569,6 +578,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_fsi2", &mstp_clks[MSTP328]), /* FSI */
+ 	CLKDEV_DEV_ID("sh_irda.0", &mstp_clks[MSTP325]), /* IrDA */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.1", &mstp_clks[MSTP323]), /* I2C1 */
++	CLKDEV_DEV_ID("e6822000.i2c", &mstp_clks[MSTP323]), /* I2C1 */
+ 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP322]), /* USB */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]), /* SDHI0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]), /* SDHI1 */
+@@ -579,7 +589,9 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("leds-renesas-tpu.30", &mstp_clks[MSTP301]), /* TPU3 */
+ 	CLKDEV_DEV_ID("leds-renesas-tpu.41", &mstp_clks[MSTP300]), /* TPU4 */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.3", &mstp_clks[MSTP411]), /* I2C3 */
++	CLKDEV_DEV_ID("e6826000.i2c", &mstp_clks[MSTP411]), /* I2C3 */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.4", &mstp_clks[MSTP410]), /* I2C4 */
++	CLKDEV_DEV_ID("e6828000.i2c", &mstp_clks[MSTP410]), /* I2C4 */
+ 	CLKDEV_DEV_ID("sh_keysc.0", &mstp_clks[MSTP403]), /* KEYSC */
+ };
+ 
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index b50447e..06b905e 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -52,7 +52,9 @@ extern void sh73a0_init_irq(void);
+ extern void sh73a0_init_irq_dt(void);
+ extern void sh73a0_map_io(void);
+ extern void sh73a0_add_early_devices(void);
++extern void sh73a0_add_early_devices_dt(void);
+ extern void sh73a0_add_standard_devices(void);
++extern void sh73a0_add_standard_devices_dt(void);
+ extern void sh73a0_clock_init(void);
+ extern void sh73a0_pinmux_init(void);
+ extern struct clk sh73a0_extal1_clk;
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index eab1bae..dcf467b 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -23,6 +23,7 @@
+ #include <linux/interrupt.h>
+ #include <linux/irq.h>
+ #include <linux/platform_device.h>
++#include <linux/of_platform.h>
+ #include <linux/delay.h>
+ #include <linux/input.h>
+ #include <linux/io.h>
+@@ -35,6 +36,7 @@
+ #include <mach/irqs.h>
+ #include <mach/sh73a0.h>
+ #include <mach/common.h>
++#include <asm/hardware/gic.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/map.h>
+ #include <asm/mach/arch.h>
+@@ -779,7 +781,7 @@ static struct platform_device pmu_device = {
+ 	.resource	= pmu_resources,
+ };
+ 
+-static struct platform_device *sh73a0_early_devices[] __initdata = {
++static struct platform_device *sh73a0_early_devices_dt[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+ 	&scif2_device,
+@@ -790,6 +792,9 @@ static struct platform_device *sh73a0_early_devices[] __initdata = {
+ 	&scif7_device,
+ 	&scif8_device,
+ 	&cmt10_device,
++};
++
++static struct platform_device *sh73a0_early_devices[] __initdata = {
+ 	&tmu00_device,
+ 	&tmu01_device,
+ };
+@@ -812,6 +817,8 @@ void __init sh73a0_add_standard_devices(void)
+ 	/* Clear software reset bit on SY-DMAC module */
+ 	__raw_writel(__raw_readl(SRCR2) & ~(1 << 18), SRCR2);
+ 
++	platform_add_devices(sh73a0_early_devices_dt,
++			    ARRAY_SIZE(sh73a0_early_devices_dt));
+ 	platform_add_devices(sh73a0_early_devices,
+ 			    ARRAY_SIZE(sh73a0_early_devices));
+ 	platform_add_devices(sh73a0_late_devices,
+@@ -830,6 +837,8 @@ static void __init sh73a0_earlytimer_init(void)
+ 
+ void __init sh73a0_add_early_devices(void)
+ {
++	early_platform_add_devices(sh73a0_early_devices_dt,
++				   ARRAY_SIZE(sh73a0_early_devices_dt));
+ 	early_platform_add_devices(sh73a0_early_devices,
+ 				   ARRAY_SIZE(sh73a0_early_devices));
+ 
+@@ -839,3 +848,60 @@ void __init sh73a0_add_early_devices(void)
+ 	/* override timer setup with soc-specific code */
+ 	shmobile_timer.init = sh73a0_earlytimer_init;
+ }
++
++#ifdef CONFIG_USE_OF
++
++/* Please note that the clock initialisation shcheme used in
++ * sh73a0_add_early_devices_dt() and sh73a0_add_standard_devices_dt()
++ * does not work with SMP as there is a yet to be resolved lock-up in
++ * workqueue initialisation.
++ *
++ * CONFIG_SMP should be disabled when using this code.
++ */
++
++static const struct of_dev_auxdata sh73a0_auxdata_lookup[] __initconst = {
++	{},
++};
++
++void __init sh73a0_add_early_devices_dt(void)
++{
++	shmobile_setup_delay(1196, 44, 46); /* Cortex-A9 @ 1196MHz */
++
++	early_platform_add_devices(sh73a0_early_devices_dt,
++				   ARRAY_SIZE(sh73a0_early_devices_dt));
++
++	/* setup early console here as well */
++	shmobile_setup_console();
++}
++
++static const struct of_dev_auxdata sh73a0_auxdata_lookup[] __initconst = {
++	{},
++};
++
++void __init sh73a0_add_standard_devices_dt(void)
++{
++	/* clocks are setup late during boot in the case of DT */
++	sh73a0_clock_init();
++
++	platform_add_devices(sh73a0_early_devices_dt,
++			     ARRAY_SIZE(sh73a0_early_devices_dt));
++	of_platform_populate(NULL, of_default_bus_match_table,
++			     sh73a0_auxdata_lookup, NULL);
++}
++
++static const char *sh73a0_boards_compat_dt[] __initdata = {
++	"renesas,sh73a0",
++	NULL,
++};
++
++DT_MACHINE_START(SH73A0_DT, "Generic SH73A0 (Flattened Device Tree)")
++	.map_io		= sh73a0_map_io,
++	.init_early	= sh73a0_add_early_devices_dt,
++	.nr_irqs	= NR_IRQS_LEGACY,
++	.init_irq	= sh73a0_init_irq_dt,
++	.handle_irq	= gic_handle_irq,
++	.init_machine	= sh73a0_add_standard_devices_dt,
++	.timer		= &shmobile_timer,
++	.dt_compat	= sh73a0_boards_compat_dt,
++MACHINE_END
++#endif /* CONFIG_USE_OF */
 -- 
 1.7.10.4
 
