@@ -1,70 +1,101 @@
-From: Grant Likely <grant.likely@secretlab.ca>
-Date: Thu, 06 Dec 2012 14:05:15 +0000
-Subject: Re: [PATCH 1/4] spi: sh-msiof: Remove unneeded clock name
-Message-Id: <20121206140515.75E6B3E089D@localhost>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 11 Dec 2012 03:07:32 +0000
+Subject: [PATCH 4/6] ARM: mach-shmobile: sh73a0: Initialise MMCIF using DT
+Message-Id: <1355195254-4563-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352288407-20594-1-git-send-email-hechtb@gmail.com>
- <1352288407-20594-2-git-send-email-hechtb@gmail.com>
-In-Reply-To: <1352288407-20594-2-git-send-email-hechtb@gmail.com>
+References: <1355195254-4563-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1355195254-4563-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed,  7 Nov 2012 12:40:04 +0100, Bastian Hecht <hechtb@gmail.com> wrote:
-> clk_get() no longer needs a character string for associating the right
-> clock as this is done via the device struct now.
-> 
-> Signed-off-by: Bastian Hecht <hechtb@gmail.com>
+This device also requires a voltage regulator which
+should be defined in a board-specific maner. An example
+dts snipped follows.
 
-Applied, thanks.
+/ {
+	fixedregulator1v8: fixedregulator@0 {
+		compatible = "regulator-fixed";
+		regulator-name = "fixed-1.8V";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+	};
+};
 
-g.
+&mmcif {
+	vmmc-supply = <&fixedregulator1v8>;
+	vqmmc-supply = <&fixedregulator1v8>;
+};
 
-> ---
->  drivers/spi/spi-sh-msiof.c |    6 ++----
->  1 files changed, 2 insertions(+), 4 deletions(-)
-> 
-> diff --git a/drivers/spi/spi-sh-msiof.c b/drivers/spi/spi-sh-msiof.c
-> index 1f466bc..96358d0 100644
-> --- a/drivers/spi/spi-sh-msiof.c
-> +++ b/drivers/spi/spi-sh-msiof.c
-> @@ -597,7 +597,6 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
->  	struct resource	*r;
->  	struct spi_master *master;
->  	struct sh_msiof_spi_priv *p;
-> -	char clk_name[16];
->  	int i;
->  	int ret;
->  
-> @@ -614,10 +613,9 @@ static int sh_msiof_spi_probe(struct platform_device *pdev)
->  	p->info = pdev->dev.platform_data;
->  	init_completion(&p->done);
->  
-> -	snprintf(clk_name, sizeof(clk_name), "msiof%d", pdev->id);
-> -	p->clk = clk_get(&pdev->dev, clk_name);
-> +	p->clk = clk_get(&pdev->dev, NULL);
->  	if (IS_ERR(p->clk)) {
-> -		dev_err(&pdev->dev, "cannot get clock \"%s\"\n", clk_name);
-> +		dev_err(&pdev->dev, "cannot get clock\n");
->  		ret = PTR_ERR(p->clk);
->  		goto err1;
->  	}
-> -- 
-> 1.7.5.4
-> 
-> 
-> ------------------------------------------------------------------------------
-> LogMeIn Central: Instant, anywhere, Remote PC access and management.
-> Stay in control, update software, and manage PCs from one command center
-> Diagnose problems and improve visibility into emerging IT issues
-> Automate, monitor and manage. Do more in less time with Central
-> http://p.sf.net/sfu/logmein12331_d2d
-> _______________________________________________
-> spi-devel-general mailing list
-> spi-devel-general@lists.sourceforge.net
-> https://lists.sourceforge.net/lists/listinfo/spi-devel-general
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 
+---
+
+v3
+* No change
+
+v2
+* Removed SDHI initialisation as the driver needs updating first
+* Moved MMC DT from sh73a0.dtsi to sh73a0-reference.dtsi
+  as it is not appropriate for use by sh73a0-kzm9g.dts yet.
+  This is because sh73a0-kzm9g.dts and board-kzm9g.c use
+  both the GIC and INTC interrupt controllers to provide
+  access to a rich set of devices. This is achieved by initialising
+  the interrupt controllers using C code. Work on allowing the INC
+  controller to be initialised using DT is in progress, however,
+  until that is complete only GIC may be initialised using DT.
+* Add extra entries to clock-sh73a0.c:lookups[] and
+  remove auxdata. Ultimately the clocks will be described
+  in DT, but the code isn't there yet.
+---
+ arch/arm/boot/dts/sh73a0-reference.dtsi |   24 ++++++++++++++++++++++++
+ arch/arm/mach-shmobile/clock-sh73a0.c   |    1 +
+ 2 files changed, 25 insertions(+)
+ create mode 100644 arch/arm/boot/dts/sh73a0-reference.dtsi
+
+diff --git a/arch/arm/boot/dts/sh73a0-reference.dtsi b/arch/arm/boot/dts/sh73a0-reference.dtsi
+new file mode 100644
+index 0000000..d4bb012
+--- /dev/null
++++ b/arch/arm/boot/dts/sh73a0-reference.dtsi
+@@ -0,0 +1,24 @@
++/*
++ * Device Tree Source for the SH73A0 SoC
++ *
++ * Copyright (C) 2012 Renesas Solutions Corp.
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++
++/include/ "sh73a0.dtsi"
++
++/ {
++	compatible = "renesas,sh73a0";
++
++	mmcif: mmcif@0x10010000 {
++		compatible = "renesas,sh-mmcif";
++		reg = <0xe6bd0000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 140 0x4
++			      0 141 0x4>;
++		reg-io-width = <4>;
++	};
++};
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index 22af74f2..2216b6b 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -583,6 +583,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]), /* SDHI0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP312]), /* MMCIF0 */
++	CLKDEV_DEV_ID("e6bd0000.mmcif", &mstp_clks[MSTP312]), /* MMCIF0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]), /* SDHI2 */
+ 	CLKDEV_DEV_ID("leds-renesas-tpu.12", &mstp_clks[MSTP303]), /* TPU1 */
+ 	CLKDEV_DEV_ID("leds-renesas-tpu.21", &mstp_clks[MSTP302]), /* TPU2 */
 -- 
-Grant Likely, B.Sc, P.Eng.
-Secret Lab Technologies, Ltd.
+1.7.10.4
+
