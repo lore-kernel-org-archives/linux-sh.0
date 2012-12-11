@@ -1,121 +1,85 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 12 Dec 2012 15:40:50 +0000
-Subject: [FWIW:-)] comparing bonnie++ output
-Message-Id: <Pine.LNX.4.64.1212121629050.10522@axis700.grange>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="8323329-1265117025-1355326850=:10522"
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 11 Dec 2012 03:07:28 +0000
+Subject: [PATCH 0/6 v3] ARM: mach-shmobile: kzm9g: Reference DT implementation
+Message-Id: <1355195254-4563-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-To: linux-sh@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-  This message is in MIME format.  The first part should be readable text,
-  while the remaining parts are likely unreadable without MIME-aware tools.
+this is a third pass at at providing a refernce DT implementation
+for the kzm9g baord which is intended to act as a guide for mach-shmobile
+developers.
 
---8323329-1265117025-1355326850=:10522
-Content-Type: TEXT/PLAIN; charset=US-ASCII
+It provides a minimal setup of the board using as little C code as
+possible.
 
-Hi all
+It may be used by selecting CONFIG_MACH_KZM9G_REFERENCE
+and using sh73a0-kzm9g-reference.dtb
 
-I've been asked to prepare and publish some simple scripts / programs to 
-measure block device performance with a possibility to compare results. 
-There are a lot of programs available to benchmark block IO, but comparing 
-results of multiple runs is not always easy.
+*** Please note that the clock initialisation shcheme used in
+    this series does not currently work with SMP as there
+    is a yet to be resolved lock-up in workqueue initialisation.
 
-The expected use is, that you run the attached bash script bonnie_do.sh 
-several times in each configuration, that you want to benchmark. For 
-example, if a performance regression is suspected between kernel versions 
-X and Y, you collect output of this script in two log files X.log and 
-Y.log.
+    Resolving this problem is currently regarded as future-work.
 
-Then you use the attached bonnie_diff.c to compare the two log files. The 
-program calculates averages of each of several parameters, that I chose to 
-compare in each file. Then it compares calculated averages and prints out 
-absolute and percentual diffs.
+    CONFIG_SMP must be disabled when using this code. ***
 
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
---8323329-1265117025-1355326850=:10522
-Content-Type: TEXT/x-csrc; charset=US-ASCII; name=bonnie_diff.c
-Content-Transfer-Encoding: BASE64
-Content-ID: <Pine.LNX.4.64.1212121640500.10522@axis700.grange>
-Content-Description: 
-Content-Disposition: attachment; filename=bonnie_diff.c
+Major difference between v2 and v3:
+* Allow UP boot to complete by initialiing CMT earlier.
+  This is achieved by changing the position of clocsources/
+  in drivers/Makefile
 
-LyoNCiAqIChDKSAyMDEyIEd1ZW5uYWRpIExpYWtob3ZldHNraSA8Zy5saWFr
-aG92ZXRza2lAZ214LmRlPg0KICogTGljZW5zZTogUHVibGljIGRvbWFpbg0K
-ICoNCiAqIFRoaXMgcHJvZ3JhbSBjYW4gYmUgdXNlZCB0byBjb21wYXJlIGxv
-Z2ZpbGVzLCBwcm9kdWNlZCBieSBib25uaWVfZG8uc2gNCiAqDQogKiBSdW5u
-aW5nOg0KICogLi9ib25uaWVfZGlmZiA8bG9nZmlsZTE+IDxsb2dmaWxlMj4N
-CiAqLw0KDQojaW5jbHVkZSA8c3lzL3R5cGVzLmg+DQojaW5jbHVkZSA8c3lz
-L3N0YXQuaD4NCiNpbmNsdWRlIDx1bmlzdGQuaD4NCiNpbmNsdWRlIDxzdGRp
-by5oPg0KI2luY2x1ZGUgPGVycm5vLmg+DQoNCnN0YXRpYyBjb25zdCBpbnQg
-aW5kZXhbXSA9IHszLCA1LCA3LCA5LCAxMSwgMTN9Ow0KI2RlZmluZSBOIChz
-aXplb2YoaW5kZXgpIC8gc2l6ZW9mKGluZGV4WzBdKSkNCg0Kc3RhdGljIGNv
-bnN0IGNoYXIgKm5hbWVbXSA9IHsNCgkiQ2hhcmFjdGVyIE91dHB1dCIsDQoJ
-IkJsb2NrIE91dHB1dCIsDQoJIlJld3JpdGUiLA0KCSJDaGFyYWN0ZXIgSW5w
-dXQiLA0KCSJCbG9jayBJbnB1dCIsDQoJIlJhbmRvbSBTZWVrIiwNCn07DQoN
-CnN0YXRpYyB2b2lkIGF2ZyhGSUxFICpmZCwgZmxvYXQgKnZhbCkNCnsNCglp
-bnQgaSwgajsNCg0KCWZvciAoaSA9IDA7IGkgPCBOOyBpKyspDQoJCXZhbFtp
-XSA9IDAuOw0KDQoJZm9yIChqID0gMDsgOyBqKyspIHsNCgkJZmxvYXQgdltO
-XTsNCgkJaW50IHJldCA9IGZzY2FuZihmZCwgIiUqcyAlKnMgJWYgJSpmICVm
-ICUqZiAlZiAlKmYgJWYgJSpmICVmICUqZiAlZiAlKmYiLA0KCQkJCSB2LCB2
-ICsgMSwgdiArIDIsIHYgKyAzLCB2ICsgNCwgdiArIDUpOw0KCQlpZiAocmV0
-IDwgNiB8fCByZXQgPT0gRU9GKQ0KCQkJYnJlYWs7DQoJCWZvciAoaSA9IDA7
-IGkgPCBOOyBpKyspDQoJCQl2YWxbaV0gKz0gdltpXTsNCgl9DQoNCglpZiAo
-IWopDQoJCXJldHVybjsNCg0KCWZvciAoaSA9IDA7IGkgPCBOOyBpKyspDQoJ
-CXZhbFtpXSAvPSBqOw0KfQ0KDQppbnQgbWFpbihpbnQgYXJnYywgY2hhciAq
-YXJndltdKQ0Kew0KCUZJTEUgKmZkMSwgKmZkMjsNCglpbnQgaTsNCglmbG9h
-dCB2YWwxW05dLCB2YWwyW05dOw0KDQoJaWYgKGFyZ2MgIT0gMykgew0KCQll
-cnJubyA9IC1FSU5WQUw7DQoJCXJldHVybiAxOw0KCX0NCg0KCWZkMSA9IGZv
-cGVuKGFyZ3ZbMV0sICJyIik7DQoJaWYgKCFmZDEpDQoJCXJldHVybiAxOw0K
-DQoJZmQyID0gZm9wZW4oYXJndlsyXSwgInIiKTsNCglpZiAoIWZkMikNCgkJ
-cmV0dXJuIDE7DQoNCglhdmcoZmQxLCB2YWwxKTsNCglhdmcoZmQyLCB2YWwy
-KTsNCg0KCWZvciAoaSA9IDA7IGkgPCBOOyBpKyspIHsNCgkJZmxvYXQgZGVs
-dGEsIHBkZWx0YTsNCgkJY2hhciAqcyA9ICIrIjsNCgkJZGVsdGEgPSB2YWwy
-W2ldIC0gdmFsMVtpXTsNCgkJaWYgKGRlbHRhIDwgMCkNCgkJCXMgPSAiIjsN
-CgkJcGRlbHRhID0gZGVsdGEgKiAxMDAgLyB2YWwxW2ldOw0KCQlwcmludGYo
-IiVzOiAlcyVmICglcyVmJSUpXG4iLCBuYW1lW2ldLCBzLCBkZWx0YSwgcywg
-cGRlbHRhKTsNCgl9DQoNCglyZXR1cm4gMDsNCn0NCg==
+Major difference between v1 and v2:
+* Drop touchscreen initialisation, it requires INTC
+* Drop SDHI initialisation, the driver seems to need some work
+* Add extra entries to clock-sh73a0.c:lookups[] and
+  remove auxdata. Ultimtely the clocks will be described
+  in DT, but the code isn't there yet.
+* Drop MMCIF patch, it is not needed if regulators are enabled
+* Drop PCF hacks, instead, the series is based on Laruent Pinchart's *
+* series: [PATCH v2 00/77] SH pin control and GPIO rework with OF support
+* Use shmobile_setup_delay()
 
---8323329-1265117025-1355326850=:10522
-Content-Type: APPLICATION/x-sh; name=bonnie_do.sh
-Content-Transfer-Encoding: BASE64
-Content-ID: <Pine.LNX.4.64.1212121640501.10522@axis700.grange>
-Content-Description: 
-Content-Disposition: attachment; filename=bonnie_do.sh
+Git and diffstat information provided to aid review.
 
-IyEvYmluL2Jhc2gKIwojIChDKSAyMDEyIEd1ZW5uYWRpIExpYWtob3ZldHNr
-aSA8Zy5saWFraG92ZXRza2lAZ214LmRlPgojIExpY2Vuc2U6IFB1YmxpYyBk
-b21haW4KIwojIFJ1bm5pbmc6CiMgLi9ib25uaWVfZG8uc2ggbW91bnQ9PG1v
-dW50LXBvaW50PiBbbG9nZGlyPTxsb2ctZGlyPl0gW3ByZWxvYWQ9PHByZWxv
-YWRlZC1kcml2ZXI+XSBcCiMgW2RyaXZlcj08ZHJpdmVyLW5hbWU+XSBbdXVp
-ZD08ZGV2aWNlLXV1aWQ+XSBbdXNlcj08dWlkOmdpZD5dIFtsb2dmaWxlPTxs
-b2dmaWxlPl0gXAojIFtib25uaWVfYXJncz08Ym9ubmllLWFyZ3VtZW50cz5d
-Cgpmb3IgaSBpbiAiJEAiOyBkbwoJaWYgWyAkaSAhPSAke2kvPX0gXTsgdGhl
-bgoJCWV2YWwgIiRpIgoJZmkKZG9uZQoKdGVzdCAteiAiJG1vdW50IiAmJiBl
-eGl0IDEKdGVzdCAteiAiJGxvZ2RpciIgJiYgbG9nZGlyPS90bXAKCnRpbWU9
-JChkYXRlICslWSVtJWQtJUglTSVTKQoKdGVzdCAtbiAiJHByZWxvYWQiICYm
-IG1vZHByb2JlICRwcmVsb2FkCgppZiBbIC1uICIkZHJpdmVyIiBdOyB0aGVu
-Cgltb2Rwcm9iZSAkZHJpdmVyCgllY2hvIHdhaXRpbmcgMTBzIGZvciAkZHJp
-dmVyIHRvIHByb2JlCglzbGVlcCAxMApmaQoKZGVjbGFyZSAtYSBibG9jawoK
-aWYgWyAtbiAiJHV1aWQiIF07IHRoZW4KCW1vdW50IC9kZXYvZGlzay9ieS11
-dWlkLyR1dWlkICRtb3VudCB8fCBleGl0IDEKZWxzZQoJY2QgL3N5cy9jbGFz
-cy9ibG9jawoJaj0wCgllY2hvIFNlbGVjdCBhIGJsb2NrIGRldmljZSB0byBt
-b3VudCBhbmQgdGVzdDoKCWZvciBpIGluICo7IGRvCgkJYmxvY2tbJGpdPSRp
-CgkJZGV2PSQocmVhZGxpbmsgJGkgfCBzZWQgLWUgInM6XltcLi9dKmRldmlj
-ZXNcKC4qXCkvYmxvY2svLio6Li4uXDEvLi4uOiIpCgkJZWNobyAiICRqLiAk
-aSAoJGRldikiCgkJKChqKyspKQoJZG9uZQoJcmVhZCBuCgl0ZXN0ICRuIC1n
-ZSAkaiAmJiBleGl0IDEKCW1vdW50IC9kZXYvJHtibG9ja1ske259XX0gJG1v
-dW50IHx8IGV4aXQgMQpmaQoKZGlyPSQobWt0ZW1wIC1kIC0tdG1wZGlyPSRt
-b3VudCkKCmlmIFsgLW4gIiR1c2VyIiBdOyB0aGVuCgljaG93biAkdXNlciAk
-ZGlyCgl1YXJnPSItdSAkdXNlciIKZmkKCmJvbm5pZSsrIC1kICRkaXIgJHVh
-cmcgJGJvbm5pZV9hcmdzIHwgdGVlICRsb2dkaXIvJHRpbWUuYmxvZwoKcm1k
-aXIgJGRpcgoKdW1vdW50ICRtb3VudAoKdGVzdCAtbiAiJGRyaXZlciIgJiYg
-cm1tb2QgJGRyaXZlcgp0ZXN0IC1uICIkcHJlbG9hZCIgJiYgcm1tb2QgJHBy
-ZWxvYWQKCnRlc3QgLW4gIiRsb2dmaWxlIiAmJiBjYXQgJGxvZ2Rpci8kdGlt
-ZS5ibG9nIHwgaGVhZCAtNCB8IHRhaWwgLTEgPj4gJGxvZ2ZpbGUK
+----------------------------------------------------------------
+The following changes since commit 940956fe1d8de5cbcc963214fe592f76d8354bef:
 
---8323329-1265117025-1355326850=:10522--
+  ARM: shmobile: kzm9g: Add LED1-LED4 to the device tree (2012-11-27 00:59:10 +0100)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git devel/of-kzm9g
+
+for you to fetch changes up to e64ad872028f921a7a30be325fbdecc725958b40:
+
+  ARM: mach-shmobile: kzm9g: Reference DT implementation (2012-12-11 11:51:56 +0900)
+
+----------------------------------------------------------------
+Simon Horman (6):
+      ARM: clocksource: Initialise early
+      ARM: mach-shmobile: sh73a0: Allow initialisation of GIC by DT
+      ARM: mach-shmobile: sh73a0: Minimal setup using DT
+      ARM: mach-shmobile: sh73a0: Initialise MMCIF using DT
+      ARM: mach-shmobile: kzm9g: use voltage regulators by default
+      ARM: mach-shmobile: kzm9g: Reference DT implementation
+
+ arch/arm/boot/dts/Makefile                     |    3 +-
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts   |   37 +++++++++
+ arch/arm/boot/dts/sh73a0-reference.dtsi        |   24 ++++++
+ arch/arm/boot/dts/sh73a0.dtsi                  |   69 +++++++++++++++++
+ arch/arm/configs/kzm9g_defconfig               |    2 +
+ arch/arm/mach-shmobile/Kconfig                 |   10 +++
+ arch/arm/mach-shmobile/Makefile                |    1 +
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |   99 ++++++++++++++++++++++++
+ arch/arm/mach-shmobile/clock-sh73a0.c          |   13 ++++
+ arch/arm/mach-shmobile/include/mach/common.h   |    3 +
+ arch/arm/mach-shmobile/intc-sh73a0.c           |   14 ++++
+ arch/arm/mach-shmobile/setup-sh73a0.c          |   68 +++++++++++++++-
+ drivers/Makefile                               |    8 +-
+ 13 files changed, 346 insertions(+), 5 deletions(-)
+ create mode 100644 arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+ create mode 100644 arch/arm/boot/dts/sh73a0-reference.dtsi
+ create mode 100644 arch/arm/mach-shmobile/board-kzm9g-reference.c
