@@ -1,267 +1,99 @@
-From: Tang Chen <tangchen@cn.fujitsu.com>
-Date: Tue, 04 Dec 2012 10:09:37 +0000
-Subject: Re: [Patch v4 10/12] memory-hotplug: memory_hotplug: clear zone when removing the memory
-Message-Id: <50BDCBE1.7030001@cn.fujitsu.com>
+From: Joe Perches <joe@perches.com>
+Date: Wed, 12 Dec 2012 18:18:49 +0000
+Subject: [TRIVIAL PATCH 00/26] treewide: Add and use vsprintf extension %pSR
+Message-Id: <cover.1355335227.git.joe@perches.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1354010422-19648-1-git-send-email-wency@cn.fujitsu.com> <1354010422-19648-11-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1354010422-19648-11-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wen Congyang <wency@cn.fujitsu.com>
-Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org, David Rientjes <rientjes@google.com>, Jiang Liu <liuj97@gmail.com>, Len Brown <len.brown@intel.com>, benh@kernel.crashing.org, paulus@samba.org, Christoph Lameter <cl@linux.com>, Minchan Kim <minchan.kim@gmail.com>, Andrew Morton <akpm@linux-foundation.org>, KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>, Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>, Jianguo Wu <wujianguo@huawei.com>
+To: linux-arm-kernel@lists.infradead.org
 
-On 11/27/2012 06:00 PM, Wen Congyang wrote:
-> From: Yasuaki Ishimatsu<isimatu.yasuaki@jp.fujitsu.com>
->
-> When a memory is added, we update zone's and pgdat's start_pfn and
-> spanned_pages in the function __add_zone(). So we should revert them
-> when the memory is removed.
->
-> The patch adds a new function __remove_zone() to do this.
->
-> CC: David Rientjes<rientjes@google.com>
-> CC: Jiang Liu<liuj97@gmail.com>
-> CC: Len Brown<len.brown@intel.com>
-> CC: Christoph Lameter<cl@linux.com>
-> Cc: Minchan Kim<minchan.kim@gmail.com>
-> CC: Andrew Morton<akpm@linux-foundation.org>
-> CC: KOSAKI Motohiro<kosaki.motohiro@jp.fujitsu.com>
-> Signed-off-by: Yasuaki Ishimatsu<isimatu.yasuaki@jp.fujitsu.com>
-> Signed-off-by: Wen Congyang<wency@cn.fujitsu.com>
+Remove the somewhat awkward uses of print_symbol and convert all the
+existing uses to a new vsprintf pointer type of %pSR.
 
-Reviewed-by: Tang Chen <tangchen@cn.fujitsu.com>
+print_symbol can be interleaved when it is used in a sequence like:
 
-> ---
->   mm/memory_hotplug.c | 207 ++++++++++++++++++++++++++++++++++++++++++++++++++++
->   1 file changed, 207 insertions(+)
->
-> diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-> index 7797e91..aa97d56 100644
-> --- a/mm/memory_hotplug.c
-> +++ b/mm/memory_hotplug.c
-> @@ -301,10 +301,213 @@ static int __meminit __add_section(int nid, struct zone *zone,
->   	return register_new_memory(nid, __pfn_to_section(phys_start_pfn));
->   }
->
-> +/* find the smallest valid pfn in the range [start_pfn, end_pfn) */
-> +static int find_smallest_section_pfn(int nid, struct zone *zone,
-> +				     unsigned long start_pfn,
-> +				     unsigned long end_pfn)
-> +{
-> +	struct mem_section *ms;
-> +
-> +	for (; start_pfn<  end_pfn; start_pfn += PAGES_PER_SECTION) {
-> +		ms = __pfn_to_section(start_pfn);
-> +
-> +		if (unlikely(!valid_section(ms)))
-> +			continue;
-> +
-> +		if (unlikely(pfn_to_nid(start_pfn) != nid))
-> +			continue;
-> +
-> +		if (zone&&  zone != page_zone(pfn_to_page(start_pfn)))
-> +			continue;
-> +
-> +		return start_pfn;
-> +	}
-> +
-> +	return 0;
-> +}
-> +
-> +/* find the biggest valid pfn in the range [start_pfn, end_pfn). */
-> +static int find_biggest_section_pfn(int nid, struct zone *zone,
-> +				    unsigned long start_pfn,
-> +				    unsigned long end_pfn)
-> +{
-> +	struct mem_section *ms;
-> +	unsigned long pfn;
-> +
-> +	/* pfn is the end pfn of a memory section. */
-> +	pfn = end_pfn - 1;
-> +	for (; pfn>= start_pfn; pfn -= PAGES_PER_SECTION) {
-> +		ms = __pfn_to_section(pfn);
-> +
-> +		if (unlikely(!valid_section(ms)))
-> +			continue;
-> +
-> +		if (unlikely(pfn_to_nid(pfn) != nid))
-> +			continue;
-> +
-> +		if (zone&&  zone != page_zone(pfn_to_page(pfn)))
-> +			continue;
-> +
-> +		return pfn;
-> +	}
-> +
-> +	return 0;
-> +}
-> +
-> +static void shrink_zone_span(struct zone *zone, unsigned long start_pfn,
-> +			     unsigned long end_pfn)
-> +{
-> +	unsigned long zone_start_pfn =  zone->zone_start_pfn;
-> +	unsigned long zone_end_pfn = zone->zone_start_pfn + zone->spanned_pages;
-> +	unsigned long pfn;
-> +	struct mem_section *ms;
-> +	int nid = zone_to_nid(zone);
-> +
-> +	zone_span_writelock(zone);
-> +	if (zone_start_pfn = start_pfn) {
-> +		/*
-> +		 * If the section is smallest section in the zone, it need
-> +		 * shrink zone->zone_start_pfn and zone->zone_spanned_pages.
-> +		 * In this case, we find second smallest valid mem_section
-> +		 * for shrinking zone.
-> +		 */
-> +		pfn = find_smallest_section_pfn(nid, zone, end_pfn,
-> +						zone_end_pfn);
-> +		if (pfn) {
-> +			zone->zone_start_pfn = pfn;
-> +			zone->spanned_pages = zone_end_pfn - pfn;
-> +		}
-> +	} else if (zone_end_pfn = end_pfn) {
-> +		/*
-> +		 * If the section is biggest section in the zone, it need
-> +		 * shrink zone->spanned_pages.
-> +		 * In this case, we find second biggest valid mem_section for
-> +		 * shrinking zone.
-> +		 */
-> +		pfn = find_biggest_section_pfn(nid, zone, zone_start_pfn,
-> +					       start_pfn);
-> +		if (pfn)
-> +			zone->spanned_pages = pfn - zone_start_pfn + 1;
-> +	}
-> +
-> +	/*
-> +	 * The section is not biggest or smallest mem_section in the zone, it
-> +	 * only creates a hole in the zone. So in this case, we need not
-> +	 * change the zone. But perhaps, the zone has only hole data. Thus
-> +	 * it check the zone has only hole or not.
-> +	 */
-> +	pfn = zone_start_pfn;
-> +	for (; pfn<  zone_end_pfn; pfn += PAGES_PER_SECTION) {
-> +		ms = __pfn_to_section(pfn);
-> +
-> +		if (unlikely(!valid_section(ms)))
-> +			continue;
-> +
-> +		if (page_zone(pfn_to_page(pfn)) != zone)
-> +			continue;
-> +
-> +		 /* If the section is current section, it continues the loop */
-> +		if (start_pfn = pfn)
-> +			continue;
-> +
-> +		/* If we find valid section, we have nothing to do */
-> +		zone_span_writeunlock(zone);
-> +		return;
-> +	}
-> +
-> +	/* The zone has no valid section */
-> +	zone->zone_start_pfn = 0;
-> +	zone->spanned_pages = 0;
-> +	zone_span_writeunlock(zone);
-> +}
-> +
-> +static void shrink_pgdat_span(struct pglist_data *pgdat,
-> +			      unsigned long start_pfn, unsigned long end_pfn)
-> +{
-> +	unsigned long pgdat_start_pfn =  pgdat->node_start_pfn;
-> +	unsigned long pgdat_end_pfn > +		pgdat->node_start_pfn + pgdat->node_spanned_pages;
-> +	unsigned long pfn;
-> +	struct mem_section *ms;
-> +	int nid = pgdat->node_id;
-> +
-> +	if (pgdat_start_pfn = start_pfn) {
-> +		/*
-> +		 * If the section is smallest section in the pgdat, it need
-> +		 * shrink pgdat->node_start_pfn and pgdat->node_spanned_pages.
-> +		 * In this case, we find second smallest valid mem_section
-> +		 * for shrinking zone.
-> +		 */
-> +		pfn = find_smallest_section_pfn(nid, NULL, end_pfn,
-> +						pgdat_end_pfn);
-> +		if (pfn) {
-> +			pgdat->node_start_pfn = pfn;
-> +			pgdat->node_spanned_pages = pgdat_end_pfn - pfn;
-> +		}
-> +	} else if (pgdat_end_pfn = end_pfn) {
-> +		/*
-> +		 * If the section is biggest section in the pgdat, it need
-> +		 * shrink pgdat->node_spanned_pages.
-> +		 * In this case, we find second biggest valid mem_section for
-> +		 * shrinking zone.
-> +		 */
-> +		pfn = find_biggest_section_pfn(nid, NULL, pgdat_start_pfn,
-> +					       start_pfn);
-> +		if (pfn)
-> +			pgdat->node_spanned_pages = pfn - pgdat_start_pfn + 1;
-> +	}
-> +
-> +	/*
-> +	 * If the section is not biggest or smallest mem_section in the pgdat,
-> +	 * it only creates a hole in the pgdat. So in this case, we need not
-> +	 * change the pgdat.
-> +	 * But perhaps, the pgdat has only hole data. Thus it check the pgdat
-> +	 * has only hole or not.
-> +	 */
-> +	pfn = pgdat_start_pfn;
-> +	for (; pfn<  pgdat_end_pfn; pfn += PAGES_PER_SECTION) {
-> +		ms = __pfn_to_section(pfn);
-> +
-> +		if (unlikely(!valid_section(ms)))
-> +			continue;
-> +
-> +		if (pfn_to_nid(pfn) != nid)
-> +			continue;
-> +
-> +		 /* If the section is current section, it continues the loop */
-> +		if (start_pfn = pfn)
-> +			continue;
-> +
-> +		/* If we find valid section, we have nothing to do */
-> +		return;
-> +	}
-> +
-> +	/* The pgdat has no valid section */
-> +	pgdat->node_start_pfn = 0;
-> +	pgdat->node_spanned_pages = 0;
-> +}
-> +
-> +static void __remove_zone(struct zone *zone, unsigned long start_pfn)
-> +{
-> +	struct pglist_data *pgdat = zone->zone_pgdat;
-> +	int nr_pages = PAGES_PER_SECTION;
-> +	int zone_type;
-> +	unsigned long flags;
-> +
-> +	zone_type = zone - pgdat->node_zones;
-> +
-> +	pgdat_resize_lock(zone->zone_pgdat,&flags);
-> +	shrink_zone_span(zone, start_pfn, start_pfn + nr_pages);
-> +	shrink_pgdat_span(pgdat, start_pfn, start_pfn + nr_pages);
-> +	pgdat_resize_unlock(zone->zone_pgdat,&flags);
-> +}
-> +
->   static int __remove_section(struct zone *zone, struct mem_section *ms)
->   {
->   	unsigned long flags;
->   	struct pglist_data *pgdat = zone->zone_pgdat;
-> +	unsigned long start_pfn;
-> +	int scn_nr;
->   	int ret = -EINVAL;
->
->   	if (!valid_section(ms))
-> @@ -314,6 +517,10 @@ static int __remove_section(struct zone *zone, struct mem_section *ms)
->   	if (ret)
->   		return ret;
->
-> +	scn_nr = __section_nr(ms);
-> +	start_pfn = section_nr_to_pfn(scn_nr);
-> +	__remove_zone(zone, start_pfn);
-> +
->   	pgdat_resize_lock(pgdat,&flags);
->   	sparse_remove_one_section(zone, ms);
->   	pgdat_resize_unlock(pgdat,&flags);
+	printk("something: ...");
+	print_symbol("%s", addr);
+	printk("\n");
+
+Instead use:
+
+	printk("something: %pSR\n", (void *)addr);
+
+Add a new %p[SsFf]R vsprintf extension that can perform the same
+symbol function/address/offset formatting as print_symbol to
+reduce the number and styles of message logging functions.
+
+print_symbol used __builtin_extract_return_addr for those architectures
+like S/390 and SPARC that have offset or masked addressing.
+%p[FfSs]R uses the same gcc __builtin
+
+Joe Perches (26):
+  vsprintf: Add extension %pSR - print_symbol replacement
+  alpha: Convert print_symbol to %pSR
+  arm: Convert print_symbol to %pSR
+  arm64: Convert print_symbol to %pSR
+  avr32: Convert print_symbol to %pSR
+  c6x: Convert print_symbol to %pSR
+  ia64: Convert print_symbol to %pSR
+  m32r: Convert print_symbol to %pSR
+  mn10300: Convert print_symbol to %pSR
+  openrisc: Convert print_symbol to %pSR
+  powerpc: Convert print_symbol to %pSR
+  s390: Convert print_symbol to %pSR
+  sh: Convert print_symbol to %pSR
+  um: Convert print_symbol to %pSR
+  unicore32: Convert print_symbol to %pSR
+  x86: Convert print_symbol to %pSR
+  xtensa: Convert print_symbol to %pSR
+  drivers: base: Convert print_symbol to %pSR
+  gfs2: Convert print_symbol to %pSR
+  sysfs: Convert print_symbol to %pSR
+  irq: Convert print_symbol to %pSR
+  smp_processor_id: Convert print_symbol to %pSR
+  mm: Convert print_symbol to %pSR
+  xtensa: Convert print_symbol to %pSR
+  x86: head_64.S: Use vsprintf extension %pSR not print_symbol
+  kallsyms: Remove print_symbol
+
+ Documentation/filesystems/sysfs.txt         |    4 +-
+ Documentation/printk-formats.txt            |    2 +
+ Documentation/zh_CN/filesystems/sysfs.txt   |    4 +-
+ arch/alpha/kernel/traps.c                   |    8 ++----
+ arch/arm/kernel/process.c                   |    4 +-
+ arch/arm64/kernel/process.c                 |    4 +-
+ arch/avr32/kernel/process.c                 |   25 ++++++-----------------
+ arch/c6x/kernel/traps.c                     |    3 +-
+ arch/ia64/kernel/process.c                  |   13 ++++-------
+ arch/m32r/kernel/traps.c                    |    6 +---
+ arch/mn10300/kernel/traps.c                 |    8 +++---
+ arch/openrisc/kernel/traps.c                |    7 +----
+ arch/powerpc/platforms/cell/spu_callbacks.c |   12 ++++------
+ arch/s390/kernel/traps.c                    |   28 +++++++++++++++-----------
+ arch/sh/kernel/process_32.c                 |    4 +-
+ arch/um/kernel/sysrq.c                      |    6 +---
+ arch/unicore32/kernel/process.c             |    5 ++-
+ arch/x86/kernel/cpu/mcheck/mce.c            |   13 ++++++-----
+ arch/x86/kernel/dumpstack.c                 |    5 +--
+ arch/x86/kernel/head_64.S                   |    4 +-
+ arch/x86/kernel/process_32.c                |    2 +-
+ arch/x86/mm/mmio-mod.c                      |    4 +-
+ arch/x86/um/sysrq_32.c                      |    9 ++-----
+ arch/xtensa/kernel/traps.c                  |    6 +---
+ drivers/base/core.c                         |    4 +-
+ fs/gfs2/glock.c                             |    4 +-
+ fs/gfs2/trans.c                             |    3 +-
+ fs/sysfs/file.c                             |    4 +-
+ include/linux/kallsyms.h                    |   18 -----------------
+ kernel/irq/debug.h                          |   15 ++++++-------
+ kernel/kallsyms.c                           |   11 ----------
+ lib/smp_processor_id.c                      |    2 +-
+ lib/vsprintf.c                              |   18 ++++++++++++----
+ mm/memory.c                                 |    8 +++---
+ mm/slab.c                                   |    8 ++----
+ 35 files changed, 117 insertions(+), 164 deletions(-)
+
+-- 
+1.7.8.112.g3fd21
 
