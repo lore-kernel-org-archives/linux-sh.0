@@ -1,56 +1,90 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Dec 2012 22:54:21 +0000
-Subject: [PATCH v4 39/81] sh: sh7757: Register PFC platform device
-Message-Id: <1356735303-29474-40-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 12 Dec 2012 14:38:12 +0000
+Subject: [PATCH 08/14] mmc: sh-mmcif: Terminate DMA transactions when detecting timeout or error
+Message-Id: <1355323098-18061-9-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1355323098-18061-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1355323098-18061-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>, Teppei Kamijou <teppei.kamijou.yb@renesas.com>, Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 
-Add arch code to register the PFC platform device instead of calling the
-driver directly. Platform device registration in the sh-pfc driver will
-be removed.
+From: Teppei Kamijou <teppei.kamijou.yb@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+If a DMA transaction fails, terminate all outstanding DMA transfers and
+unmap buffers.
+
+Signed-off-by: Teppei Kamijou <teppei.kamijou.yb@renesas.com>
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+[g.liakhovetski@gmx.de: forward-port, add dma_unmap_sg() in error cases]
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/sh/Kconfig                         |    1 +
- arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c |    3 ++-
- 2 files changed, 3 insertions(+), 1 deletions(-)
+ drivers/mmc/host/sh_mmcif.c |   31 +++++++++++++++++--------------
+ 1 files changed, 17 insertions(+), 14 deletions(-)
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 7a7d2ec..c99193f 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -467,6 +467,7 @@ config CPU_SUBTYPE_SH7757
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select USB_ARCH_HAS_OHCI
- 	select USB_ARCH_HAS_EHCI
-+	select PINCTRL
- 	help
- 	  Select SH7757 if you have a SH4A SH7757 CPU.
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index ac4c3c3..d8d65c0 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -263,15 +263,6 @@ static void mmcif_dma_complete(void *arg)
+ 		 dev_name(&host->pd->dev)))
+ 		return;
  
-diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c
-index 4a2736d..784b428 100644
---- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c
-+++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c
-@@ -16,6 +16,7 @@
- #include <linux/init.h>
- #include <linux/kernel.h>
- #include <linux/gpio.h>
-+#include <cpu/pfc.h>
- #include <cpu/sh7757.h>
- 
- enum {
-@@ -2282,6 +2283,6 @@ static struct pinmux_info sh7757_pinmux_info = {
- 
- static int __init plat_pinmux_setup(void)
- {
--	return register_pinmux(&sh7757_pinmux_info);
-+	return sh_pfc_register_info(NULL, NULL, 0, &sh7757_pinmux_info);
+-	if (data->flags & MMC_DATA_READ)
+-		dma_unmap_sg(host->chan_rx->device->dev,
+-			     data->sg, data->sg_len,
+-			     DMA_FROM_DEVICE);
+-	else
+-		dma_unmap_sg(host->chan_tx->device->dev,
+-			     data->sg, data->sg_len,
+-			     DMA_TO_DEVICE);
+-
+ 	complete(&host->dma_complete);
  }
- arch_initcall(plat_pinmux_setup);
+ 
+@@ -1088,14 +1079,20 @@ static bool sh_mmcif_end_cmd(struct sh_mmcif_host *host)
+ 	/* Running in the IRQ thread, can sleep */
+ 	time = wait_for_completion_interruptible_timeout(&host->dma_complete,
+ 							 host->timeout);
++
++	if (data->flags & MMC_DATA_READ)
++		dma_unmap_sg(host->chan_rx->device->dev,
++			     data->sg, data->sg_len,
++			     DMA_FROM_DEVICE);
++	else
++		dma_unmap_sg(host->chan_tx->device->dev,
++			     data->sg, data->sg_len,
++			     DMA_TO_DEVICE);
++
+ 	if (host->sd_error) {
+ 		dev_err(host->mmc->parent,
+ 			"Error IRQ while waiting for DMA completion!\n");
+ 		/* Woken up by an error IRQ: abort DMA */
+-		if (data->flags & MMC_DATA_READ)
+-			dmaengine_terminate_all(host->chan_rx);
+-		else
+-			dmaengine_terminate_all(host->chan_tx);
+ 		data->error = sh_mmcif_error_manage(host);
+ 	} else if (!time) {
+ 		data->error = -ETIMEDOUT;
+@@ -1106,8 +1103,14 @@ static bool sh_mmcif_end_cmd(struct sh_mmcif_host *host)
+ 			BUF_ACC_DMAREN | BUF_ACC_DMAWEN);
+ 	host->dma_active = false;
+ 
+-	if (data->error)
++	if (data->error) {
+ 		data->bytes_xfered = 0;
++		/* Abort DMA */
++		if (data->flags & MMC_DATA_READ)
++			dmaengine_terminate_all(host->chan_rx);
++		else
++			dmaengine_terminate_all(host->chan_tx);
++	}
+ 
+ 	return false;
+ }
 -- 
-1.7.8.6
+1.7.2.5
 
