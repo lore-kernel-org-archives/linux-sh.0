@@ -1,7 +1,7 @@
-From: Will Deacon <will.deacon@arm.com>
-Date: Wed, 12 Dec 2012 13:36:50 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 12 Dec 2012 16:43:21 +0000
 Subject: Re: [RFC PATCH v2 3/5] ARM: kernel: update cpu_suspend code to use cache LoUIS operations
-Message-Id: <20121212133650.GJ6195@mudshark.cambridge.arm.com>
+Message-Id: <Pine.LNX.4.64.1212121743000.10522@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1347986135-17979-1-git-send-email-lorenzo.pieralisi@arm.com>
  <1347986135-17979-4-git-send-email-lorenzo.pieralisi@arm.com>
@@ -19,7 +19,10 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Dec 12, 2012 at 10:33:38AM +0000, Lorenzo Pieralisi wrote:
+Hi Lorenzo
+
+On Wed, 12 Dec 2012, Lorenzo Pieralisi wrote:
+
 > On Tue, Dec 11, 2012 at 11:27:39PM +0000, Stephen Boyd wrote:
 > > On 12/11/12 08:38, Will Deacon wrote:
 > > > diff --git a/arch/arm/mm/cache-v7.S b/arch/arm/mm/cache-v7.S
@@ -40,24 +43,38 @@ On Wed, Dec 12, 2012 at 10:33:38AM +0000, Lorenzo Pieralisi wrote:
 > And after doing that I think the suspend finisher will still have
 > to call flush_cache_all() since LoUU = 1 on A8, L2 is not cleaned
 > and that's probably what we want if it can be retained.
+> 
+> What about this (compile tested) ?
 
-At some point we probably want to describe the level of flushing required in
-the device tree as a property of the CPU node (or something similar). That
-would allow us to have *one* function for flushing,
-e.g. cpu_suspend_flush_cache which flushes to the appropriate level. Then
-we could remove the louis flush from the CPU suspend code and instead make
-it the finisher's responsibility to call our flushing function when it's
-done, which helps to avoid over/under-flushing the cache.
+Works too.
 
-In the meantime, fixing louis as we've suggested should work.
+Thanks
+Guennadi
 
-Back to the case in hand.... Lorenzo just pointed out to me that the
-finished in question (sh7372_do_idle_sysc) calls v7_flush_dcache_all, so
-the louis stuff should be irrelevant. The problem may actually be that the
-finisher disables the L2 cache prior to cleaning/invalidating it, which is
-the opposite order to that described by the A8 TRM.
+> 
+> Lorenzo
+> 
+> --->8
+> 
+> diff --git a/arch/arm/mm/cache-v7.S b/arch/arm/mm/cache-v7.S
+> index cd95664..036f80f 100644
+> --- a/arch/arm/mm/cache-v7.S
+> +++ b/arch/arm/mm/cache-v7.S
+> @@ -44,8 +44,9 @@ ENDPROC(v7_flush_icache_all)
+>  ENTRY(v7_flush_dcache_louis)
+>  	dmb					@ ensure ordering with previous memory accesses
+>  	mrc	p15, 1, r0, c0, c0, 1		@ read clidr, r0 = clidr
+> -	ands	r3, r0, #0xe00000		@ extract LoUIS from clidr
+> -	mov	r3, r3, lsr #20			@ r3 = LoUIS * 2
+> +	ALT_SMP(lsr	r3, r0, #20)		@ r3 = clidr[31:20]
+> +	ALT_UP(lsr	r3, r0, #26)		@ r3 = clidr[31:26]
+> +	ands	r3, r3, #0xe			@ r3 = LoUIS/LoUU * 2
+>  	moveq	pc, lr				@ return if level = 0
+>  	mov	r10, #0				@ r10 (starting level) = 0
+>  	b	flush_levels			@ start flushing cache levels
+> 
 
-Guennadi -- can you try moving the kernel_flush call before the L2 disable
-in sh7372_do_idle_sysc please?
-
-Will
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
