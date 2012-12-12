@@ -1,92 +1,154 @@
-From: Tang Chen <tangchen@cn.fujitsu.com>
-Date: Wed, 26 Dec 2012 06:20:41 +0000
-Subject: Re: [PATCH v5 07/14] memory-hotplug: move pgdat_resize_lock into sparse_remove_one_section()
-Message-Id: <50DA9739.3070907@cn.fujitsu.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 12 Dec 2012 10:08:09 +0000
+Subject: [PATCH] ARM: shmobile: r8a7740: add TMU timer support
+Message-Id: <871uevinw9.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1356350964-13437-1-git-send-email-tangchen@cn.fujitsu.com> <1356350964-13437-8-git-send-email-tangchen@cn.fujitsu.com> <50DA7357.109@jp.fujitsu.com>
-In-Reply-To: <50DA7357.109@jp.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kamezawa Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Cc: akpm@linux-foundation.org, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, wency@cn.fujitsu.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org, x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On 12/26/2012 11:47 AM, Kamezawa Hiroyuki wrote:
-> (2012/12/24 21:09), Tang Chen wrote:
->> In __remove_section(), we locked pgdat_resize_lock when calling
->> sparse_remove_one_section(). This lock will disable irq. But we don't need
->> to lock the whole function. If we do some work to free pagetables in
->> free_section_usemap(), we need to call flush_tlb_all(), which need
->> irq enabled. Otherwise the WARN_ON_ONCE() in smp_call_function_many()
->> will be triggered.
->>
->> Signed-off-by: Tang Chen<tangchen@cn.fujitsu.com>
->> Signed-off-by: Lai Jiangshan<laijs@cn.fujitsu.com>
->> Signed-off-by: Wen Congyang<wency@cn.fujitsu.com>
-> 
-> If this is a bug fix, call-trace in your log and BUGFIX or -fix- in patch title
-> will be appreciated, I think.
-> 
-> Acked-by: KAMEZAWA Hiroyuki<kamezawa.hiroyu@jp.fujitsu.com>
-> 
-Hi Kamezawa-san,
+This patch enabled TMU0 timer on r8a7740.
+But TMU1 timer is not supported yet
 
-Thanks for the reviewing.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/clock-r8a7740.c |    6 +-
+ arch/arm/mach-shmobile/setup-r8a7740.c |   94 ++++++++++++++++++++++++++++++++
+ 2 files changed, 99 insertions(+), 1 deletion(-)
 
-I don't think this would be a bug. It is OK to lock the whole
-sparse_remove_one_section() if no tlb flushing in free_section_usemap().
-
-But we need to flush tlb in free_section_usemap(), so we need to take
-free_section_usemap() out of the lock. :)
-
-I add the call trace to the patch so that people could review it more
-easily.
-
-And here is the call trace for this version:
-
-[  454.796248] ------------[ cut here ]------------
-[  454.851408] WARNING: at kernel/smp.c:461
-smp_call_function_many+0xbd/0x260()
-[  454.935620] Hardware name: PRIMEQUEST 1800E
-......
-[  455.652201] Call Trace:
-[  455.681391]  [<ffffffff8106e73f>] warn_slowpath_common+0x7f/0xc0
-[  455.753151]  [<ffffffff810560a0>] ? leave_mm+0x50/0x50
-[  455.814527]  [<ffffffff8106e79a>] warn_slowpath_null+0x1a/0x20
-[  455.884208]  [<ffffffff810e7a9d>] smp_call_function_many+0xbd/0x260
-[  455.959082]  [<ffffffff810e7ecb>] smp_call_function+0x3b/0x50
-[  456.027722]  [<ffffffff810560a0>] ? leave_mm+0x50/0x50
-[  456.089098]  [<ffffffff810e7f4b>] on_each_cpu+0x3b/0xc0
-[  456.151512]  [<ffffffff81055f0c>] flush_tlb_all+0x1c/0x20
-[  456.216004]  [<ffffffff8104f8de>] remove_pagetable+0x14e/0x1d0
-[  456.285683]  [<ffffffff8104f978>] vmemmap_free+0x18/0x20
-[  456.349139]  [<ffffffff811b8797>] sparse_remove_one_section+0xf7/0x100
-[  456.427126]  [<ffffffff811c5fc2>] __remove_section+0xa2/0xb0
-[  456.494726]  [<ffffffff811c6070>] __remove_pages+0xa0/0xd0
-[  456.560258]  [<ffffffff81669c7b>] arch_remove_memory+0x6b/0xc0
-[  456.629937]  [<ffffffff8166ad28>] remove_memory+0xb8/0xf0
-[  456.694431]  [<ffffffff813e686f>] acpi_memory_device_remove+0x53/0x96
-[  456.771379]  [<ffffffff813b33c4>] acpi_device_remove+0x90/0xb2
-[  456.841059]  [<ffffffff8144b02c>] __device_release_driver+0x7c/0xf0
-[  456.915928]  [<ffffffff8144b1af>] device_release_driver+0x2f/0x50
-[  456.988719]  [<ffffffff813b4476>] acpi_bus_remove+0x32/0x6d
-[  457.055285]  [<ffffffff813b4542>] acpi_bus_trim+0x91/0x102
-[  457.120814]  [<ffffffff813b463b>] acpi_bus_hot_remove_device+0x88/0x16b
-[  457.199840]  [<ffffffff813afda7>] acpi_os_execute_deferred+0x27/0x34
-[  457.275756]  [<ffffffff81091ece>] process_one_work+0x20e/0x5c0
-[  457.345434]  [<ffffffff81091e5f>] ? process_one_work+0x19f/0x5c0
-[  457.417190]  [<ffffffff813afd80>] ?
-acpi_os_wait_events_complete+0x23/0x23
-[  457.499332]  [<ffffffff81093f6e>] worker_thread+0x12e/0x370
-[  457.565896]  [<ffffffff81093e40>] ? manage_workers+0x180/0x180
-[  457.635574]  [<ffffffff8109a09e>] kthread+0xee/0x100
-[  457.694871]  [<ffffffff810dfaf9>] ? __lock_release+0x129/0x190
-[  457.764552]  [<ffffffff81099fb0>] ? __init_kthread_worker+0x70/0x70
-[  457.839427]  [<ffffffff81690aac>] ret_from_fork+0x7c/0xb0
-[  457.903914]  [<ffffffff81099fb0>] ? __init_kthread_worker+0x70/0x70
-[  457.978784] ---[ end trace 25e85300f542aa01 ]---
-
-Thanks. :)
-
-
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index 6729e00..f35a51b 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -554,10 +554,14 @@ static struct clk_lookup lookups[] = {
+ 
+ 	/* MSTP32 clocks */
+ 	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.0",	&mstp_clks[MSTP100]),
+-	CLKDEV_DEV_ID("sh_tmu.1",		&mstp_clks[MSTP111]),
++	CLKDEV_DEV_ID("sh_tmu.3",		&mstp_clks[MSTP111]),
++	CLKDEV_DEV_ID("sh_tmu.4",		&mstp_clks[MSTP111]),
++	CLKDEV_DEV_ID("sh_tmu.5",		&mstp_clks[MSTP111]),
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.0",	&mstp_clks[MSTP116]),
+ 	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.1",	&mstp_clks[MSTP117]),
+ 	CLKDEV_DEV_ID("sh_tmu.0",		&mstp_clks[MSTP125]),
++	CLKDEV_DEV_ID("sh_tmu.1",		&mstp_clks[MSTP125]),
++	CLKDEV_DEV_ID("sh_tmu.2",		&mstp_clks[MSTP125]),
+ 	CLKDEV_DEV_ID("sh_mobile_ceu.0",	&mstp_clks[MSTP127]),
+ 	CLKDEV_DEV_ID("sh_mobile_ceu.1",	&mstp_clks[MSTP128]),
+ 
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 11bb1d9..9cb0eb5 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -268,6 +268,97 @@ static struct platform_device cmt10_device = {
+ 	.num_resources	= ARRAY_SIZE(cmt10_resources),
+ };
+ 
++/* TMU */
++static struct sh_timer_config tmu00_platform_data = {
++	.name = "TMU00",
++	.channel_offset = 0x4,
++	.timer_bit = 0,
++	.clockevent_rating = 200,
++};
++
++static struct resource tmu00_resources[] = {
++	[0] = {
++		.name	= "TMU00",
++		.start	= 0xfff80008,
++		.end	= 0xfff80014 - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= intcs_evt2irq(0xe80),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device tmu00_device = {
++	.name		= "sh_tmu",
++	.id		= 0,
++	.dev = {
++		.platform_data	= &tmu00_platform_data,
++	},
++	.resource	= tmu00_resources,
++	.num_resources	= ARRAY_SIZE(tmu00_resources),
++};
++
++static struct sh_timer_config tmu01_platform_data = {
++	.name = "TMU01",
++	.channel_offset = 0x10,
++	.timer_bit = 1,
++	.clocksource_rating = 200,
++};
++
++static struct resource tmu01_resources[] = {
++	[0] = {
++		.name	= "TMU01",
++		.start	= 0xfff80014,
++		.end	= 0xfff80020 - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= intcs_evt2irq(0xea0),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device tmu01_device = {
++	.name		= "sh_tmu",
++	.id		= 1,
++	.dev = {
++		.platform_data	= &tmu01_platform_data,
++	},
++	.resource	= tmu01_resources,
++	.num_resources	= ARRAY_SIZE(tmu01_resources),
++};
++
++static struct sh_timer_config tmu02_platform_data = {
++	.name = "TMU02",
++	.channel_offset = 0x1C,
++	.timer_bit = 2,
++	.clocksource_rating = 200,
++};
++
++static struct resource tmu02_resources[] = {
++	[0] = {
++		.name	= "TMU02",
++		.start	= 0xfff80020,
++		.end	= 0xfff8002C - 1,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= intcs_evt2irq(0xec0),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device tmu02_device = {
++	.name		= "sh_tmu",
++	.id		= 2,
++	.dev = {
++		.platform_data	= &tmu02_platform_data,
++	},
++	.resource	= tmu02_resources,
++	.num_resources	= ARRAY_SIZE(tmu02_resources),
++};
++
+ static struct platform_device *r8a7740_early_devices[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+@@ -279,6 +370,9 @@ static struct platform_device *r8a7740_early_devices[] __initdata = {
+ 	&scif7_device,
+ 	&scifb_device,
+ 	&cmt10_device,
++	&tmu00_device,
++	&tmu01_device,
++	&tmu02_device,
+ };
+ 
+ /* DMA */
+-- 
+1.7.9.5
 
