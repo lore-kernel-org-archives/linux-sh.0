@@ -1,60 +1,42 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 11 Dec 2012 11:40:54 +0000
+From: phil.edworthy@renesas.com
+Date: Wed, 12 Dec 2012 10:12:27 +0000
 Subject: Re: [PATCH v2] ARM: shmobile: r8a7779: Fix GPIO input reg addresses
-Message-Id: <2861660.bMP77HcQxX@avalon>
+Message-Id: <OF613746CC.4E3EB4D0-ON80257AD2.0038052F-80257AD2.00381232@eu.necel.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <16942826.W5hEBZUpzF@avalon>
  <1355225657-18731-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1355225657-18731-1-git-send-email-phil.edworthy@renesas.com>
+ <2861660.bMP77HcQxX@avalon>
+In-Reply-To: <2861660.bMP77HcQxX@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tuesday 11 December 2012 11:34:17 Phil Edworthy wrote:
-> The INDTx register addresses were wrong.
+Hi Simon, Laurent,
+
+(resend as plain text)
+
+> From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+> To: Phil Edworthy <phil.edworthy@renesas.com>, 
+> Cc: Simon <horms@verge.net.au>, linux-sh@vger.kernel.org, linux-arm-
+> kernel@lists.infradead.org, Magnus <magnus.damm@gmail.com>, Laurent 
+> Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+> Date: 11/12/2012 11:39
+> Subject: Re: [PATCH v2] ARM: shmobile: r8a7779: Fix GPIO input reg 
+addresses
 > 
-> Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-
-You can add
-
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-
-:-)
-
-> ---
-> v2:
->  Included SoB line this time - doh!
+> On Tuesday 11 December 2012 11:34:17 Phil Edworthy wrote:
+> > The INDTx register addresses were wrong.
+> > 
+> > Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 > 
->  arch/arm/mach-shmobile/pfc-r8a7779.c |   14 +++++++-------
->  1 files changed, 7 insertions(+), 7 deletions(-)
+> You can add
 > 
-> diff --git a/arch/arm/mach-shmobile/pfc-r8a7779.c
-> b/arch/arm/mach-shmobile/pfc-r8a7779.c index 15f6a48..717e058 100644
-> --- a/arch/arm/mach-shmobile/pfc-r8a7779.c
-> +++ b/arch/arm/mach-shmobile/pfc-r8a7779.c
-> @@ -2585,13 +2585,13 @@ static struct pinmux_cfg_reg pinmux_config_regs[] > { };
-> 
->  static struct pinmux_data_reg pinmux_data_regs[] = {
-> -	{ PINMUX_DATA_REG("INDT0", 0xffc40008, 32) { GP_INDT(0) } },
-> -	{ PINMUX_DATA_REG("INDT1", 0xffc41008, 32) { GP_INDT(1) } },
-> -	{ PINMUX_DATA_REG("INDT2", 0xffc42008, 32) { GP_INDT(2) } },
-> -	{ PINMUX_DATA_REG("INDT3", 0xffc43008, 32) { GP_INDT(3) } },
-> -	{ PINMUX_DATA_REG("INDT4", 0xffc44008, 32) { GP_INDT(4) } },
-> -	{ PINMUX_DATA_REG("INDT5", 0xffc45008, 32) { GP_INDT(5) } },
-> -	{ PINMUX_DATA_REG("INDT6", 0xffc46008, 32) {
-> +	{ PINMUX_DATA_REG("INDT0", 0xffc4000c, 32) { GP_INDT(0) } },
-> +	{ PINMUX_DATA_REG("INDT1", 0xffc4100c, 32) { GP_INDT(1) } },
-> +	{ PINMUX_DATA_REG("INDT2", 0xffc4200c, 32) { GP_INDT(2) } },
-> +	{ PINMUX_DATA_REG("INDT3", 0xffc4300c, 32) { GP_INDT(3) } },
-> +	{ PINMUX_DATA_REG("INDT4", 0xffc4400c, 32) { GP_INDT(4) } },
-> +	{ PINMUX_DATA_REG("INDT5", 0xffc4500c, 32) { GP_INDT(5) } },
-> +	{ PINMUX_DATA_REG("INDT6", 0xffc4600c, 32) {
->  		0, 0, 0, 0, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0, 0, 0,
->  		0, 0, 0, 0, 0, 0, 0, GP_6_8_DATA,
->  		GP_6_7_DATA, GP_6_6_DATA, GP_6_5_DATA, GP_6_4_DATA,
--- 
-Regards,
+> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 
-Laurent Pinchart
+Please scrap this patch. I just found out that it screws up the GPIO 
+outputs. The current code assumes the same register is used for both input 
+and output, which is not the case. It needs a bit of work to fix this.
 
+Thanks
+Phil
