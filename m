@@ -1,49 +1,44 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sat, 15 Dec 2012 09:16:25 +0000
-Subject: [PATCH v2] ARM: mach-shmobile: mackerel: update defconfig
-Message-Id: <1355562985-1991-1-git-send-email-horms@verge.net.au>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Wed, 12 Dec 2012 11:54:47 +0000
+Subject: [PATCH 2/4 v2] spi: Add SH Mobile series as dependency to MSIOF controller
+Message-Id: <1355313289-29769-2-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <4D087CC8.6020803@renesas.com>
-In-Reply-To: <4D087CC8.6020803@renesas.com>
+References: <1355313289-29769-1-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1355313289-29769-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Simon Horman <horms+renesas@verge.net.au>
+From: Bastian Hecht <hechtb@gmail.com>
 
-* Enable ARM_APPENDED_DTB
+The MSIOF hardware block is used in the SH Mobile series as well, so we
+add it here.
 
-  Typically the bootloader of a mackerel board does not support DT
-  so this option is useful
-
-* Add "rw" to command line
-
-  This appears to be necessary for a successful NFS-root boot
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
 ---
- arch/arm/configs/mackerel_defconfig |    3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+v2: no changes
 
-v2
-* Fix up comment to remove mention of adding INOTIFY_USER,
-  it is already present.
+ drivers/spi/Kconfig |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/configs/mackerel_defconfig b/arch/arm/configs/mackerel_defconfig
-index 2098ce1..8519721 100644
---- a/arch/arm/configs/mackerel_defconfig
-+++ b/arch/arm/configs/mackerel_defconfig
-@@ -23,7 +23,8 @@ CONFIG_AEABI=y
- CONFIG_FORCE_MAX_ZONEORDER
- CONFIG_ZBOOT_ROM_TEXT=0x0
- CONFIG_ZBOOT_ROM_BSS=0x0
--CONFIG_CMDLINE="console=tty0, console=ttySC0,115200 earlyprintk=sh-sci.0,115200 root=/dev/nfs nfsroot=,tcp,v3 ip=dhcp memchunk.vpudm memchunk.veu0=8m memchunk.spu0=2m mem$0m"
-+CONFIG_ARM_APPENDED_DTB=y
-+CONFIG_CMDLINE="console=tty0, console=ttySC0,115200 earlyprintk=sh-sci.0,115200 root=/dev/nfs nfsroot=,tcp,v3 ip=dhcp memchunk.vpudm memchunk.veu0=8m memchunk.spu0=2m mem$0m rw"
- CONFIG_KEXEC=y
- # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
- CONFIG_PM=y
+diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
+index 1acae35..d0c0ae6 100644
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -341,10 +341,10 @@ config SPI_SC18IS602
+ 
+ config SPI_SH_MSIOF
+ 	tristate "SuperH MSIOF SPI controller"
+-	depends on SUPERH && HAVE_CLK
++	depends on (SUPERH || ARCH_SHMOBILE) && HAVE_CLK
+ 	select SPI_BITBANG
+ 	help
+-	  SPI driver for SuperH MSIOF blocks.
++	  SPI driver for SuperH and SH Mobile MSIOF blocks.
+ 
+ config SPI_SH
+ 	tristate "SuperH SPI controller"
 -- 
-1.7.10.4
+1.7.9.5
 
