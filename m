@@ -1,7 +1,7 @@
-From: Will Deacon <will.deacon@arm.com>
-Date: Wed, 12 Dec 2012 10:31:20 +0000
+From: Lorenzo Pieralisi <lorenzo.pieralisi@arm.com>
+Date: Wed, 12 Dec 2012 10:33:38 +0000
 Subject: Re: [RFC PATCH v2 3/5] ARM: kernel: update cpu_suspend code to use cache LoUIS operations
-Message-Id: <20121212103119.GA6195@mudshark.cambridge.arm.com>
+Message-Id: <20121212103338.GB23022@e102568-lin.cambridge.arm.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1347986135-17979-1-git-send-email-lorenzo.pieralisi@arm.com>
  <1347986135-17979-4-git-send-email-lorenzo.pieralisi@arm.com>
@@ -35,29 +35,30 @@ On Tue, Dec 11, 2012 at 11:27:39PM +0000, Stephen Boyd wrote:
 > 
 > You need to fix this mov as well, right?
 
-Ha, nice catch. So the original patch ended up with a ridiculously high
-level number and would've flushed L2, hence we will need to retest with the
-fix below...
+And after doing that I think the suspend finisher will still have
+to call flush_cache_all() since LoUU = 1 on A8, L2 is not cleaned
+and that's probably what we want if it can be retained.
 
-Will
+What about this (compile tested) ?
+
+Lorenzo
 
 --->8
 
 diff --git a/arch/arm/mm/cache-v7.S b/arch/arm/mm/cache-v7.S
-index cd95664..7539ec2 100644
+index cd95664..036f80f 100644
 --- a/arch/arm/mm/cache-v7.S
 +++ b/arch/arm/mm/cache-v7.S
-@@ -44,8 +44,10 @@ ENDPROC(v7_flush_icache_all)
+@@ -44,8 +44,9 @@ ENDPROC(v7_flush_icache_all)
  ENTRY(v7_flush_dcache_louis)
-        dmb                                     @ ensure ordering with previous memory accesses
-        mrc     p15, 1, r0, c0, c0, 1           @ read clidr, r0 = clidr
--       ands    r3, r0, #0xe00000               @ extract LoUIS from clidr
--       mov     r3, r3, lsr #20                 @ r3 = LoUIS * 2
-+       ALT_SMP(ands    r3, r0, #(7 << 21))     @ extract LoUIS from clidr
-+       ALT_UP(ands     r3, r0, #(7 << 27))     @ extract LoUU from clidr
-+       ALT_SMP(mov     r3, r3, lsr #20)        @ r3 = LoUIS * 2
-+       ALT_UP(mov      r3, r3, lsr #26)        @ r3 = LoUU * 2
-        moveq   pc, lr                          @ return if level = 0
-        mov     r10, #0                         @ r10 (starting level) = 0
-        b       flush_levels                    @ start flushing cache levels
+ 	dmb					@ ensure ordering with previous memory accesses
+ 	mrc	p15, 1, r0, c0, c0, 1		@ read clidr, r0 = clidr
+-	ands	r3, r0, #0xe00000		@ extract LoUIS from clidr
+-	mov	r3, r3, lsr #20			@ r3 = LoUIS * 2
++	ALT_SMP(lsr	r3, r0, #20)		@ r3 = clidr[31:20]
++	ALT_UP(lsr	r3, r0, #26)		@ r3 = clidr[31:26]
++	ands	r3, r3, #0xe			@ r3 = LoUIS/LoUU * 2
+ 	moveq	pc, lr				@ return if level = 0
+ 	mov	r10, #0				@ r10 (starting level) = 0
+ 	b	flush_levels			@ start flushing cache levels
 
