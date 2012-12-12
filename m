@@ -1,87 +1,58 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Dec 2012 22:53:57 +0000
-Subject: [PATCH v4 15/81] sh-pfc: Use devm_ioremap_nocache()
-Message-Id: <1356735303-29474-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 12 Dec 2012 14:38:10 +0000
+Subject: [PATCH 06/14] mmc: sh_mmcif: Avoid unnecessary mmc_delay() at mmc_card_sleepawake()
+Message-Id: <1355323098-18061-7-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1355323098-18061-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1355323098-18061-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>, Teppei Kamijou <teppei.kamijou.yb@renesas.com>, Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 
-Replace probe-time ioremap_nocache() call with devm_ioremap_nocache()
-and get rid of the corresponding iounmap() call.
+From: Teppei Kamijou <teppei.kamijou.yb@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+SH/R-Mobile MMCIF host controller can wait while the card signals busy.
+Set MMC_CAP_WAIT_WHILE_BUSY to inform an upper layer (core/mmc_ops.c)
+not to insert unnecessary mmc_delay().
+
+Signed-off-by: Teppei Kamijou <teppei.kamijou.yb@renesas.com>
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/sh/pfc/core.c |   25 ++++---------------------
- 1 files changed, 4 insertions(+), 21 deletions(-)
+ drivers/mmc/host/sh_mmcif.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
-index 5491902..8ec57bd 100644
---- a/drivers/sh/pfc/core.c
-+++ b/drivers/sh/pfc/core.c
-@@ -26,15 +26,6 @@
- 
- #include "core.h"
- 
--static void pfc_iounmap(struct sh_pfc *pfc)
--{
--	int k;
--
--	for (k = 0; k < pfc->pdata->num_resources; k++)
--		if (pfc->window[k].virt)
--			iounmap(pfc->window[k].virt);
--}
--
- static int pfc_ioremap(struct sh_pfc *pfc)
- {
- 	struct resource *res;
-@@ -53,12 +44,10 @@ static int pfc_ioremap(struct sh_pfc *pfc)
- 		WARN_ON(resource_type(res) != IORESOURCE_MEM);
- 		pfc->window[k].phys = res->start;
- 		pfc->window[k].size = resource_size(res);
--		pfc->window[k].virt = ioremap_nocache(res->start,
--							 resource_size(res));
--		if (!pfc->window[k].virt) {
--			pfc_iounmap(pfc);
-+		pfc->window[k].virt = devm_ioremap_nocache(pfc->dev, res->start,
-+							   resource_size(res));
-+		if (!pfc->window[k].virt)
- 			return -ENOMEM;
--		}
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 1665ae4..092c415 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -758,6 +758,7 @@ static u32 sh_mmcif_set_cmd(struct sh_mmcif_host *host,
  	}
+ 	switch (opc) {
+ 	/* RBSY */
++	case MMC_SLEEP_AWAKE:
+ 	case MMC_SWITCH:
+ 	case MMC_STOP_TRANSMISSION:
+ 	case MMC_SET_WRITE_PROT:
+@@ -851,6 +852,7 @@ static void sh_mmcif_start_cmd(struct sh_mmcif_host *host,
  
- 	return 0;
-@@ -524,7 +513,7 @@ static int sh_pfc_probe(struct platform_device *pdev)
- 	 */
- 	ret = sh_pfc_register_pinctrl(pfc);
- 	if (unlikely(ret != 0))
--		goto err;
-+		return ret;
+ 	switch (opc) {
+ 	/* response busy check */
++	case MMC_SLEEP_AWAKE:
+ 	case MMC_SWITCH:
+ 	case MMC_STOP_TRANSMISSION:
+ 	case MMC_SET_WRITE_PROT:
+@@ -1357,7 +1359,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 	mmc->ops = &sh_mmcif_ops;
+ 	sh_mmcif_init_ocr(host);
  
- #ifdef CONFIG_GPIO_SH_PFC
- 	/*
-@@ -546,10 +535,6 @@ static int sh_pfc_probe(struct platform_device *pdev)
- 	pr_info("%s support registered\n", pdata->name);
- 
- 	return 0;
--
--err:
--	pfc_iounmap(pfc);
--	return ret;
- }
- 
- static int sh_pfc_remove(struct platform_device *pdev)
-@@ -561,8 +546,6 @@ static int sh_pfc_remove(struct platform_device *pdev)
- #endif
- 	sh_pfc_unregister_pinctrl(pfc);
- 
--	pfc_iounmap(pfc);
--
- 	platform_set_drvdata(pdev, NULL);
- 
- 	return 0;
+-	mmc->caps = MMC_CAP_MMC_HIGHSPEED;
++	mmc->caps = MMC_CAP_MMC_HIGHSPEED | MMC_CAP_WAIT_WHILE_BUSY;
+ 	if (pd && pd->caps)
+ 		mmc->caps |= pd->caps;
+ 	mmc->max_segs = 32;
 -- 
-1.7.8.6
+1.7.2.5
 
