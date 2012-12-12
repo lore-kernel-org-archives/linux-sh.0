@@ -1,56 +1,89 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 15 Dec 2012 22:51:09 +0000
-Subject: [PATCH v3 35/81] sh: sh7722: Register PFC platform device
-Message-Id: <1355611915-25060-36-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 12 Dec 2012 14:38:07 +0000
+Subject: [PATCH 03/14] mmc: sh_mmcif: add support for bundled MMCIF IRQs
+Message-Id: <1355323098-18061-4-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1355323098-18061-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1355323098-18061-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>, Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 
-Add arch code to register the PFC platform device instead of calling the
-driver directly. Platform device registration in the sh-pfc driver will
-be removed.
+From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+On newer SoCs like R-Mobile U2, MMCIF interrupts are bundled.
+
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/sh/Kconfig                         |    1 +
- arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c |    3 ++-
- 2 files changed, 3 insertions(+), 1 deletions(-)
+ drivers/mmc/host/sh_mmcif.c |   25 ++++++++++++++++---------
+ 1 files changed, 16 insertions(+), 9 deletions(-)
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 3e60a5c..8547356 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -529,6 +529,7 @@ config CPU_SUBTYPE_SH7722
- 	select SYS_SUPPORTS_NUMA
- 	select SYS_SUPPORTS_CMT
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
-+	select PINCTRL
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 8a188fe..d80c294 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -1307,10 +1307,11 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 	struct sh_mmcif_plat_data *pd = pdev->dev.platform_data;
+ 	struct resource *res;
+ 	void __iomem *reg;
++	const char *name;
  
- config CPU_SUBTYPE_SH7366
- 	bool "Support SH7366 processor"
-diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c
-index 0688a75..11dbce3 100644
---- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c
-+++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c
-@@ -1,6 +1,7 @@
- #include <linux/init.h>
- #include <linux/kernel.h>
- #include <linux/gpio.h>
-+#include <cpu/pfc.h>
- #include <cpu/sh7722.h>
+ 	irq[0] = platform_get_irq(pdev, 0);
+ 	irq[1] = platform_get_irq(pdev, 1);
+-	if (irq[0] < 0 || irq[1] < 0) {
++	if (irq[0] < 0) {
+ 		dev_err(&pdev->dev, "Get irq error\n");
+ 		return -ENXIO;
+ 	}
+@@ -1375,15 +1376,19 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 	sh_mmcif_sync_reset(host);
+ 	sh_mmcif_writel(host->addr, MMCIF_CE_INT_MASK, MASK_ALL);
  
- enum {
-@@ -1778,7 +1779,7 @@ static struct pinmux_info sh7722_pinmux_info = {
+-	ret = request_threaded_irq(irq[0], sh_mmcif_intr, sh_mmcif_irqt, 0, "sh_mmc:error", host);
++	name = irq[1] < 0 ? dev_name(&pdev->dev) : "sh_mmc:error";
++	ret = request_threaded_irq(irq[0], sh_mmcif_intr, sh_mmcif_irqt, 0, name, host);
+ 	if (ret) {
+-		dev_err(&pdev->dev, "request_irq error (sh_mmc:error)\n");
++		dev_err(&pdev->dev, "request_irq error (%s)\n", name);
+ 		goto ereqirq0;
+ 	}
+-	ret = request_threaded_irq(irq[1], sh_mmcif_intr, sh_mmcif_irqt, 0, "sh_mmc:int", host);
+-	if (ret) {
+-		dev_err(&pdev->dev, "request_irq error (sh_mmc:int)\n");
+-		goto ereqirq1;
++	if (irq[1] >= 0) {
++		ret = request_threaded_irq(irq[1], sh_mmcif_intr, sh_mmcif_irqt,
++					   0, "sh_mmc:int", host);
++		if (ret) {
++			dev_err(&pdev->dev, "request_irq error (sh_mmc:int)\n");
++			goto ereqirq1;
++		}
+ 	}
  
- static int __init plat_pinmux_setup(void)
- {
--	return register_pinmux(&sh7722_pinmux_info);
-+	return sh_pfc_register_info(NULL, NULL, 0, &sh7722_pinmux_info);
- }
+ 	if (pd && pd->use_cd_gpio) {
+@@ -1408,7 +1413,8 @@ emmcaddh:
+ 	if (pd && pd->use_cd_gpio)
+ 		mmc_gpio_free_cd(mmc);
+ erqcd:
+-	free_irq(irq[1], host);
++	if (irq[1] >= 0)
++		free_irq(irq[1], host);
+ ereqirq1:
+ 	free_irq(irq[0], host);
+ ereqirq0:
+@@ -1457,7 +1463,8 @@ static int sh_mmcif_remove(struct platform_device *pdev)
+ 	irq[1] = platform_get_irq(pdev, 1);
  
- arch_initcall(plat_pinmux_setup);
+ 	free_irq(irq[0], host);
+-	free_irq(irq[1], host);
++	if (irq[1] >= 0)
++		free_irq(irq[1], host);
+ 
+ 	platform_set_drvdata(pdev, NULL);
+ 
 -- 
-1.7.8.6
+1.7.2.5
 
