@@ -1,25 +1,48 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 14 Dec 2012 00:57:08 +0000
-Subject: Re: [PATCH] ARM: shmobile: sh73a0: fixup div4_clks bitmap
-Message-Id: <20121214005706.GF29354@verge.net.au>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Wed, 12 Dec 2012 11:54:49 +0000
+Subject: [PATCH 4/4 v2] devicetree: Add Renesas SH Mobile MSIOF spi controller binding doc
+Message-Id: <1355313289-29769-4-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87ehj5nuip.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87ehj5nuip.wl%kuninori.morimoto.gx@renesas.com>
+References: <1355313289-29769-1-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1355313289-29769-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Dec 04, 2012 at 05:43:29PM -0800, Kuninori Morimoto wrote:
-> div4_clks's bitmap of sh73a0 was wrong.
-> This patch is based on v2.0 datasheet.
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Bastian Hecht <hechtb@gmail.com>
 
-Thanks applied.
+Add binding documentation for Renesas' MSIOF SPI controller.
 
-I have applied this to a temporary 'soc5' branch which is based on 3.7-rc1.
-I will rebase this on 3.8-rc1 once it is released and rename the branch
-to the more sane 'soc'.
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+---
+v2:
+        - renamed property "chip_select" to "num-cs"
+        - renamed property "tx_fifo_size" to "renesas,tx-fifo-size"
+        - renamed property "rx_fifo_size" to "renesas,rx-fifo-size"
 
-I have also merged this change into the next branch.
+ Documentation/devicetree/bindings/spi/sh-msiof.txt |   12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/spi/sh-msiof.txt
+
+diff --git a/Documentation/devicetree/bindings/spi/sh-msiof.txt b/Documentation/devicetree/bindings/spi/sh-msiof.txt
+new file mode 100644
+index 0000000..e622210
+--- /dev/null
++++ b/Documentation/devicetree/bindings/spi/sh-msiof.txt
+@@ -0,0 +1,12 @@
++Renesas MSIOF spi controller
++
++Required properties:
++- compatible : 	"renesas,sh-msiof" for SuperH or
++		"renesas,sh-mobile-msiof" for SH Mobile series
++- reg : Offset and length of the register set for the device
++- interrupts : interrupt line used by MSIOF
++
++Optional properties:
++- num-cs		: total number of chip-selects
++- renesas,tx-fifo-size	: Overrides the default tx fifo size given in words
++- renesas,rx-fifo-size	: Overrides the default rx fifo size given in words
+-- 
+1.7.9.5
+
