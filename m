@@ -1,82 +1,44 @@
-From: Hideki EIRAKU <hdk@igel.co.jp>
-Date: Tue, 25 Dec 2012 11:19:14 +0000
-Subject: [PATCH v5 3/4] ARM: mach-shmobile: sh73a0: Add IPMMU device
-Message-Id: <1356434355-3279-4-git-send-email-hdk@igel.co.jp>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 12 Dec 2012 14:38:17 +0000
+Subject: [PATCH 13/14] mmc: sh-mmcif: fix I/O errors
+Message-Id: <1355323098-18061-14-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1356434355-3279-1-git-send-email-hdk@igel.co.jp>
-In-Reply-To: <1356434355-3279-1-git-send-email-hdk@igel.co.jp>
+References: <1355323098-18061-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1355323098-18061-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>
 
-This patch adds an IPMMU device and notifies the IPMMU driver which
-devices are connected via the IPMMU module.  All devices connected to the main
-memory bus via the IPMMU module MUST be registered when SHMOBILE_IPMMU and
-SHMOBILE_IOMMU are enabled because physical address cannot be used
-while the IPMMU module's MMU function is enabled.
+The INT_BUFWEN IRQ often arrives with other bits set too. If they are not
+cleared, an additional IRQ can be triggered, sometimes also after the MMC
+request has already been completed. This leads to block I/O errors. Earlier
+Teppei Kamijou also observed these additional interrupts and proposed to
+explicitly wait for them. This patch chooses an alternative approach of
+clearing all active bits immediately, when processing the main interrupt.
 
-Signed-off-by: Hideki EIRAKU <hdk@igel.co.jp>
+Reported-by: Teppei Kamijou <teppei.kamijou.yb@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/setup-sh73a0.c | 31 +++++++++++++++++++++++++++++++
- 1 file changed, 31 insertions(+)
+ drivers/mmc/host/sh_mmcif.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index db99a4a..36c2b2e 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -30,6 +30,7 @@
- #include <linux/sh_dma.h>
- #include <linux/sh_intc.h>
- #include <linux/sh_timer.h>
-+#include <linux/platform_data/sh_ipmmu.h>
- #include <mach/dma-register.h>
- #include <mach/hardware.h>
- #include <mach/irqs.h>
-@@ -754,6 +755,35 @@ static struct platform_device pmu_device = {
- 	.resource	= pmu_resources,
- };
- 
-+/* an IPMMU module for ICB */
-+static struct resource ipmmu_resources[] = {
-+	[0] = {
-+		.name	= "IPMMU",
-+		.start	= 0xfe951000,
-+		.end	= 0xfe9510ff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+};
-+
-+static const char * const ipmmu_dev_names[] = {
-+	"sh_mobile_lcdc_fb.0",
-+};
-+
-+static struct shmobile_ipmmu_platform_data ipmmu_platform_data = {
-+	.dev_names = ipmmu_dev_names,
-+	.num_dev_names = ARRAY_SIZE(ipmmu_dev_names),
-+};
-+
-+static struct platform_device ipmmu_device = {
-+	.name           = "ipmmu",
-+	.id             = -1,
-+	.dev = {
-+		.platform_data = &ipmmu_platform_data,
-+	},
-+	.resource       = ipmmu_resources,
-+	.num_resources  = ARRAY_SIZE(ipmmu_resources),
-+};
-+
- static struct platform_device *sh73a0_early_devices[] __initdata = {
- 	&scif0_device,
- 	&scif1_device,
-@@ -767,6 +797,7 @@ static struct platform_device *sh73a0_early_devices[] __initdata = {
- 	&cmt10_device,
- 	&tmu00_device,
- 	&tmu01_device,
-+	&ipmmu_device,
- };
- 
- static struct platform_device *sh73a0_late_devices[] __initdata = {
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 1dd7fc0..36eee8d 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -1238,7 +1238,9 @@ static irqreturn_t sh_mmcif_intr(int irq, void *dev_id)
+ 		sh_mmcif_writel(host->addr, MMCIF_CE_INT, ~INT_BUFREN);
+ 		sh_mmcif_bitclr(host, MMCIF_CE_INT_MASK, MASK_MBUFREN);
+ 	} else if (state & INT_BUFWEN) {
+-		sh_mmcif_writel(host->addr, MMCIF_CE_INT, ~INT_BUFWEN);
++		sh_mmcif_writel(host->addr, MMCIF_CE_INT,
++				~(INT_BUFWEN | INT_DTRANE | INT_CMD12DRE |
++				  INT_CMD12RBE | INT_CMD12CRE));
+ 		sh_mmcif_bitclr(host, MMCIF_CE_INT_MASK, MASK_MBUFWEN);
+ 	} else if (state & INT_CMD12DRE) {
+ 		sh_mmcif_writel(host->addr, MMCIF_CE_INT,
 -- 
-1.8.0
+1.7.2.5
 
