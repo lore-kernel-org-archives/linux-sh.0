@@ -1,405 +1,76 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Dec 2012 22:53:55 +0000
-Subject: [PATCH v4 13/81] sh-pfc: Move platform device and driver to the core
-Message-Id: <1356735303-29474-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 12 Dec 2012 14:52:20 +0000
+Subject: [PATCH] sh: enable DMA for MMCIF on ecovec
+Message-Id: <Pine.LNX.4.64.1212121548270.10522@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The pinctrl module registers both a platform device and a platform
-driver. The only purpose of this awkward construction is to have a
-device to pass to the pinctrl registration function.
+MMCIF on SH7724 can use DMA for I/O. Enable it on ecovec.
 
-As a first step to get rid of this hack, move the platform device and
-driver from the pinctrl module to the core. The platform device will
-then be moved to arch code.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Paul Mundt <lethal@linux-sh.org>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/sh/pfc/core.c    |  101 +++++++++++++++++++++++++++++++++++++--------
- drivers/sh/pfc/core.h    |    4 ++
- drivers/sh/pfc/gpio.c    |    3 +-
- drivers/sh/pfc/pinctrl.c |  100 +++++++++++----------------------------------
- 4 files changed, 114 insertions(+), 94 deletions(-)
+ arch/sh/boards/mach-ecovec24/setup.c   |    3 +++
+ arch/sh/include/cpu-sh4/cpu/sh7724.h   |    2 ++
+ arch/sh/kernel/cpu/sh4a/setup-sh7724.c |   10 ++++++++++
+ 3 files changed, 15 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
-index 5410996..6d162e6 100644
---- a/drivers/sh/pfc/core.c
-+++ b/drivers/sh/pfc/core.c
-@@ -8,6 +8,8 @@
-  * License.  See the file "COPYING" in the main directory of this archive
-  * for more details.
-  */
-+
-+#define DRV_NAME "sh-pfc"
- #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
- 
- #include <linux/errno.h>
-@@ -20,11 +22,10 @@
- #include <linux/slab.h>
- #include <linux/ioport.h>
- #include <linux/pinctrl/machine.h>
-+#include <linux/platform_device.h>
- 
- #include "core.h"
- 
--static struct sh_pfc sh_pfc __read_mostly;
--
- static void pfc_iounmap(struct sh_pfc *pfc)
- {
- 	int k;
-@@ -494,8 +495,10 @@ int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
- 	return -1;
- }
- 
--int register_sh_pfc(struct sh_pfc_platform_data *pdata)
-+static int sh_pfc_probe(struct platform_device *pdev)
- {
-+	struct sh_pfc_platform_data *pdata = pdev->dev.platform_data;
-+	struct sh_pfc *pfc;
- 	int ret;
- 
- 	/*
-@@ -503,26 +506,29 @@ int register_sh_pfc(struct sh_pfc_platform_data *pdata)
- 	 */
- 	BUILD_BUG_ON(PINMUX_FLAG_TYPE > ((1 << PINMUX_FLAG_DBIT_SHIFT) - 1));
- 
--	if (sh_pfc.pdata)
--		return -EBUSY;
-+	if (pdata = NULL)
-+		return -ENODEV;
- 
--	sh_pfc.pdata = pdata;
-+	pfc = devm_kzalloc(&pdev->dev, sizeof(pfc), GFP_KERNEL);
-+	if (pfc = NULL)
-+		return -ENOMEM;
- 
--	ret = pfc_ioremap(&sh_pfc);
--	if (unlikely(ret < 0)) {
--		sh_pfc.pdata = NULL;
-+	pfc->pdata = pdata;
-+	pfc->dev = &pdev->dev;
-+
-+	ret = pfc_ioremap(pfc);
-+	if (unlikely(ret < 0))
- 		return ret;
--	}
- 
--	spin_lock_init(&sh_pfc.lock);
-+	spin_lock_init(&pfc->lock);
- 
- 	pinctrl_provide_dummies();
--	setup_data_regs(&sh_pfc);
-+	setup_data_regs(pfc);
- 
- 	/*
- 	 * Initialize pinctrl bindings first
- 	 */
--	ret = sh_pfc_register_pinctrl(&sh_pfc);
-+	ret = sh_pfc_register_pinctrl(pfc);
- 	if (unlikely(ret != 0))
- 		goto err;
- 
-@@ -530,7 +536,7 @@ int register_sh_pfc(struct sh_pfc_platform_data *pdata)
- 	/*
- 	 * Then the GPIO chip
- 	 */
--	ret = sh_pfc_register_gpiochip(&sh_pfc);
-+	ret = sh_pfc_register_gpiochip(pfc);
- 	if (unlikely(ret != 0)) {
- 		/*
- 		 * If the GPIO chip fails to come up we still leave the
-@@ -541,17 +547,76 @@ int register_sh_pfc(struct sh_pfc_platform_data *pdata)
- 	}
- #endif
- 
--	pr_info("%s support registered\n", sh_pfc.pdata->name);
-+	platform_set_drvdata(pdev, pfc);
-+
-+	pr_info("%s support registered\n", pdata->name);
- 
- 	return 0;
- 
- err:
--	pfc_iounmap(&sh_pfc);
--	sh_pfc.pdata = NULL;
--
-+	pfc_iounmap(pfc);
- 	return ret;
- }
- 
-+static int sh_pfc_remove(struct platform_device *pdev)
-+{
-+	struct sh_pfc *pfc = platform_get_drvdata(pdev);
-+
-+#ifdef CONFIG_GPIO_SH_PFC
-+	sh_pfc_unregister_gpiochip(pfc);
-+#endif
-+	sh_pfc_unregister_pinctrl(pfc);
-+
-+	pfc_iounmap(pfc);
-+
-+	platform_set_drvdata(pdev, NULL);
-+
-+	return 0;
-+}
-+
-+static const struct platform_device_id sh_pfc_id_table[] = {
-+	{ "sh-pfc", 0 },
-+	{ },
-+};
-+MODULE_DEVICE_TABLE(platform, sh_pfc_id_table);
-+
-+static struct platform_driver sh_pfc_driver = {
-+	.probe		= sh_pfc_probe,
-+	.remove		= sh_pfc_remove,
-+	.id_table	= sh_pfc_id_table,
-+	.driver		= {
-+		.name	= DRV_NAME,
-+		.owner	= THIS_MODULE,
-+	},
-+};
-+
-+static struct platform_device sh_pfc_device = {
-+	.name		= DRV_NAME,
-+	.id		= -1,
-+};
-+
-+int __init register_sh_pfc(struct sh_pfc_platform_data *pdata)
-+{
-+	int rc;
-+
-+	sh_pfc_device.dev.platform_data = pdata;
-+
-+	rc = platform_driver_register(&sh_pfc_driver);
-+	if (likely(!rc)) {
-+		rc = platform_device_register(&sh_pfc_device);
-+		if (unlikely(rc))
-+			platform_driver_unregister(&sh_pfc_driver);
-+	}
-+
-+	return rc;
-+}
-+
-+static void __exit sh_pfc_exit(void)
-+{
-+	platform_driver_unregister(&sh_pfc_driver);
-+}
-+module_exit(sh_pfc_exit);
-+
- MODULE_AUTHOR("Magnus Damm, Paul Mundt, Laurent Pinchart");
- MODULE_DESCRIPTION("Pin Control and GPIO driver for SuperH pin function controller");
- MODULE_LICENSE("GPL v2");
-diff --git a/drivers/sh/pfc/core.h b/drivers/sh/pfc/core.h
-index f3032b2..1287b3e 100644
---- a/drivers/sh/pfc/core.h
-+++ b/drivers/sh/pfc/core.h
-@@ -21,19 +21,23 @@ struct pfc_window {
+diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+index 64559e8a..57c30e8 100644
+--- a/arch/sh/boards/mach-ecovec24/setup.c
++++ b/arch/sh/boards/mach-ecovec24/setup.c
+@@ -1031,12 +1031,15 @@ static struct sh_mmcif_plat_data sh_mmcif_plat = {
+ 			  MMC_CAP_8_BIT_DATA |
+ 			  MMC_CAP_NEEDS_POLL,
+ 	.ocr		= MMC_VDD_32_33 | MMC_VDD_33_34,
++	.slave_id_tx	= SHDMA_SLAVE_MMCIF_TX,
++	.slave_id_rx	= SHDMA_SLAVE_MMCIF_RX,
  };
  
- struct sh_pfc_chip;
-+struct sh_pfc_pinctrl;
- 
- struct sh_pfc {
-+	struct device *dev;
- 	struct sh_pfc_platform_data *pdata;
- 	spinlock_t lock;
- 
- 	struct pfc_window *window;
- 	struct sh_pfc_chip *gpio;
-+	struct sh_pfc_pinctrl *pinctrl;
+ static struct platform_device sh_mmcif_device = {
+ 	.name		= "sh_mmcif",
+ 	.id		= 0,
+ 	.dev		= {
++		.coherent_dma_mask	= 0xffffffff,
+ 		.platform_data		= &sh_mmcif_plat,
+ 	},
+ 	.num_resources	= ARRAY_SIZE(sh_mmcif_resources),
+diff --git a/arch/sh/include/cpu-sh4/cpu/sh7724.h b/arch/sh/include/cpu-sh4/cpu/sh7724.h
+index 38859f9..2e38361 100644
+--- a/arch/sh/include/cpu-sh4/cpu/sh7724.h
++++ b/arch/sh/include/cpu-sh4/cpu/sh7724.h
+@@ -309,6 +309,8 @@ enum {
+ 	SHDMA_SLAVE_SDHI0_RX,
+ 	SHDMA_SLAVE_SDHI1_TX,
+ 	SHDMA_SLAVE_SDHI1_RX,
++	SHDMA_SLAVE_MMCIF_TX,
++	SHDMA_SLAVE_MMCIF_RX,
  };
  
- int sh_pfc_register_gpiochip(struct sh_pfc *pfc);
- int sh_pfc_unregister_gpiochip(struct sh_pfc *pfc);
- 
- int sh_pfc_register_pinctrl(struct sh_pfc *pfc);
-+int sh_pfc_unregister_pinctrl(struct sh_pfc *pfc);
- 
- int sh_pfc_read_bit(struct pinmux_data_reg *dr, unsigned long in_pos);
- void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
-diff --git a/drivers/sh/pfc/gpio.c b/drivers/sh/pfc/gpio.c
-index d8b0c74..a32ea80 100644
---- a/drivers/sh/pfc/gpio.c
-+++ b/drivers/sh/pfc/gpio.c
-@@ -8,7 +8,8 @@
-  * License.  See the file "COPYING" in the main directory of this archive
-  * for more details.
-  */
--#define pr_fmt(fmt) "sh_pfc " KBUILD_MODNAME ": " fmt
-+
-+#define pr_fmt(fmt) KBUILD_MODNAME " gpio: " fmt
- 
- #include <linux/init.h>
- #include <linux/gpio.h>
-diff --git a/drivers/sh/pfc/pinctrl.c b/drivers/sh/pfc/pinctrl.c
-index 6f0f58b..2fc8731 100644
---- a/drivers/sh/pfc/pinctrl.c
-+++ b/drivers/sh/pfc/pinctrl.c
-@@ -7,8 +7,8 @@
-  * License.  See the file "COPYING" in the main directory of this archive
-  * for more details.
-  */
--#define DRV_NAME "pinctrl-sh_pfc"
- 
-+#define DRV_NAME "sh-pfc"
- #define pr_fmt(fmt) KBUILD_MODNAME " pinctrl: " fmt
- 
- #include <linux/init.h>
-@@ -17,7 +17,6 @@
- #include <linux/err.h>
- #include <linux/slab.h>
- #include <linux/spinlock.h>
--#include <linux/platform_device.h>
- #include <linux/pinctrl/consumer.h>
- #include <linux/pinctrl/pinctrl.h>
- #include <linux/pinctrl/pinconf.h>
-@@ -39,8 +38,6 @@ struct sh_pfc_pinctrl {
- 	spinlock_t lock;
+ extern struct clk sh7724_fsimcka_clk;
+diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+index 26b74c2..011c3c5 100644
+--- a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
++++ b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+@@ -153,6 +153,16 @@ static const struct sh_dmae_slave_config sh7724_dmae_slaves[] = {
+ 		.addr		= 0x04cf0030,
+ 		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
+ 		.mid_rid	= 0xca,
++	}, {
++		.slave_id	= SHDMA_SLAVE_MMCIF_TX,
++		.addr		= 0xa4ca0034,
++		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
++		.mid_rid	= 0xcd,
++	}, {
++		.slave_id	= SHDMA_SLAVE_MMCIF_RX,
++		.addr		= 0xa4ca0034,
++		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
++		.mid_rid	= 0xce,
+ 	},
  };
  
--static struct sh_pfc_pinctrl *sh_pfc_pmx;
--
- static int sh_pfc_get_groups_count(struct pinctrl_dev *pctldev)
- {
- 	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
-@@ -421,28 +418,31 @@ static int sh_pfc_map_functions(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
- 	return 0;
- }
- 
--static int sh_pfc_pinctrl_probe(struct platform_device *pdev)
-+int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
- {
--	struct sh_pfc *pfc;
-+	struct sh_pfc_pinctrl *pmx;
- 	int ret;
- 
--	if (unlikely(!sh_pfc_pmx))
--		return -ENODEV;
-+	pmx = kzalloc(sizeof(struct sh_pfc_pinctrl), GFP_KERNEL);
-+	if (unlikely(!pmx))
-+		return -ENOMEM;
-+
-+	spin_lock_init(&pmx->lock);
- 
--	pfc = sh_pfc_pmx->pfc;
-+	pmx->pfc = pfc;
-+	pfc->pinctrl = pmx;
- 
--	ret = sh_pfc_map_gpios(pfc, sh_pfc_pmx);
-+	ret = sh_pfc_map_gpios(pfc, pmx);
- 	if (unlikely(ret != 0))
- 		return ret;
- 
--	ret = sh_pfc_map_functions(pfc, sh_pfc_pmx);
-+	ret = sh_pfc_map_functions(pfc, pmx);
- 	if (unlikely(ret != 0))
- 		goto free_pads;
- 
--	sh_pfc_pmx->pctl = pinctrl_register(&sh_pfc_pinctrl_desc, &pdev->dev,
--					    sh_pfc_pmx);
--	if (IS_ERR(sh_pfc_pmx->pctl)) {
--		ret = PTR_ERR(sh_pfc_pmx->pctl);
-+	pmx->pctl = pinctrl_register(&sh_pfc_pinctrl_desc, pfc->dev, pmx);
-+	if (IS_ERR(pmx->pctl)) {
-+		ret = PTR_ERR(pmx->pctl);
- 		goto free_functions;
- 	}
- 
-@@ -451,79 +451,29 @@ static int sh_pfc_pinctrl_probe(struct platform_device *pdev)
- 	sh_pfc_gpio_range.base = pfc->pdata->first_gpio;
- 	sh_pfc_gpio_range.pin_base = pfc->pdata->first_gpio;
- 
--	pinctrl_add_gpio_range(sh_pfc_pmx->pctl, &sh_pfc_gpio_range);
--
--	platform_set_drvdata(pdev, sh_pfc_pmx);
-+	pinctrl_add_gpio_range(pmx->pctl, &sh_pfc_gpio_range);
- 
- 	return 0;
- 
- free_functions:
--	kfree(sh_pfc_pmx->functions);
-+	kfree(pmx->functions);
- free_pads:
--	kfree(sh_pfc_pmx->pads);
--	kfree(sh_pfc_pmx);
-+	kfree(pmx->pads);
-+	kfree(pmx);
- 
- 	return ret;
- }
- 
--static int sh_pfc_pinctrl_remove(struct platform_device *pdev)
-+int sh_pfc_unregister_pinctrl(struct sh_pfc *pfc)
- {
--	struct sh_pfc_pinctrl *pmx = platform_get_drvdata(pdev);
-+	struct sh_pfc_pinctrl *pmx = pfc->pinctrl;
- 
- 	pinctrl_unregister(pmx->pctl);
- 
--	platform_set_drvdata(pdev, NULL);
--
--	kfree(sh_pfc_pmx->functions);
--	kfree(sh_pfc_pmx->pads);
--	kfree(sh_pfc_pmx);
-+	kfree(pmx->functions);
-+	kfree(pmx->pads);
-+	kfree(pmx);
- 
-+	pfc->pinctrl = NULL;
- 	return 0;
- }
--
--static struct platform_driver sh_pfc_pinctrl_driver = {
--	.probe		= sh_pfc_pinctrl_probe,
--	.remove		= sh_pfc_pinctrl_remove,
--	.driver		= {
--		.name	= DRV_NAME,
--		.owner	= THIS_MODULE,
--	},
--};
--
--static struct platform_device sh_pfc_pinctrl_device = {
--	.name		= DRV_NAME,
--	.id		= -1,
--};
--
--static int sh_pfc_pinctrl_init(void)
--{
--	int rc;
--
--	rc = platform_driver_register(&sh_pfc_pinctrl_driver);
--	if (likely(!rc)) {
--		rc = platform_device_register(&sh_pfc_pinctrl_device);
--		if (unlikely(rc))
--			platform_driver_unregister(&sh_pfc_pinctrl_driver);
--	}
--
--	return rc;
--}
--
--int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
--{
--	sh_pfc_pmx = kzalloc(sizeof(struct sh_pfc_pinctrl), GFP_KERNEL);
--	if (unlikely(!sh_pfc_pmx))
--		return -ENOMEM;
--
--	spin_lock_init(&sh_pfc_pmx->lock);
--
--	sh_pfc_pmx->pfc = pfc;
--
--	return sh_pfc_pinctrl_init();
--}
--
--static void __exit sh_pfc_pinctrl_exit(void)
--{
--	platform_driver_unregister(&sh_pfc_pinctrl_driver);
--}
--module_exit(sh_pfc_pinctrl_exit);
 -- 
-1.7.8.6
+1.7.2.5
 
