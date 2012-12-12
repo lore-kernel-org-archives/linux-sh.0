@@ -1,36 +1,129 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 16 Dec 2012 17:25:49 +0000
-Subject: [PATCH/WIP/RFC 03/14] shmobile-iommu: Remove __devinit
-Message-Id: <1355678760-27357-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 12 Dec 2012 14:45:14 +0000
+Subject: [PATCH/RFC] mmc: sh-mmcif: simplify IRQ processing
+Message-Id: <Pine.LNX.4.64.1212121540250.10522@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1350290093-998-1-git-send-email-hdk@igel.co.jp>
- <1355678760-27357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1355678760-27357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>
 
-CONFIG_HOTPLUG is going away as an option, remove __devinit.
+The classical way to process IRQs is read out the status, ack all triggered
+IRQs, possibly mask them, then process them. Follow this simple procesure
+instead of the current complex custom algorithm.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/iommu/shmobile-ipmmu.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/iommu/shmobile-ipmmu.c b/drivers/iommu/shmobile-ipmmu.c
-index 72cacb9..2339f91 100644
---- a/drivers/iommu/shmobile-ipmmu.c
-+++ b/drivers/iommu/shmobile-ipmmu.c
-@@ -106,7 +106,7 @@ void ipmmu_tlb_set(struct device *dev, unsigned long phys, int size, int asid)
- 	mutex_unlock(&priv->flush_lock);
- }
+Hi Chris
+
+Attention: this patch is __NOT__ for 3.8, please, let it simmer in -next 
+until 3.9. It modifies the driver's interrupt handling significantly, so, 
+we want to have it tested over a longer period.
+
+Thanks
+Guennadi
+
+ drivers/mmc/host/sh_mmcif.c |   65 ++++++++++++------------------------------
+ 1 files changed, 19 insertions(+), 46 deletions(-)
+
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 90a9255..bbccc12 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -128,6 +128,10 @@
+ 				 INT_CCSTO | INT_CRCSTO | INT_WDATTO |	  \
+ 				 INT_RDATTO | INT_RBSYTO | INT_RSPTO)
  
--static int __devinit ipmmu_probe(struct platform_device *pdev)
-+static int ipmmu_probe(struct platform_device *pdev)
++#define INT_ALL			(INT_RBSYE | INT_CRSPE | INT_BUFREN |	 \
++				 INT_BUFWEN | INT_CMD12DRE | INT_BUFRE | \
++				 INT_DTRANE | INT_CMD12RBE | INT_CMD12CRE)
++
+ /* CE_INT_MASK */
+ #define MASK_ALL		0x00000000
+ #define MASK_MCCSDE		(1 << 29)
+@@ -159,6 +163,11 @@
+ 				 MASK_MCCSTO | MASK_MCRCSTO | MASK_MWDATTO | \
+ 				 MASK_MRDATTO | MASK_MRBSYTO | MASK_MRSPTO)
+ 
++#define MASK_CLEAN		(INT_ERR_STS | MASK_MRBSYE | MASK_MCRSPE |	\
++				 MASK_MBUFREN | MASK_MBUFWEN |			\
++				 MASK_MCMD12DRE | MASK_MBUFRE | MASK_MDTRANE |	\
++				 MASK_MCMD12RBE | MASK_MCMD12CRE)
++
+ /* CE_HOST_STS1 */
+ #define STS1_CMDSEQ		(1 << 31)
+ 
+@@ -1201,58 +1210,22 @@ static irqreturn_t sh_mmcif_intr(int irq, void *dev_id)
  {
- 	struct resource *res;
- 	struct ipmmu_priv *priv;
+ 	struct sh_mmcif_host *host = dev_id;
+ 	u32 state;
+-	int err = 0;
+ 
+ 	state = sh_mmcif_readl(host->addr, MMCIF_CE_INT);
++	sh_mmcif_writel(host->addr, MMCIF_CE_INT, ~state);
++	sh_mmcif_bitclr(host, MMCIF_CE_INT_MASK, state & MASK_CLEAN);
+ 
+-	if (state & INT_ERR_STS) {
+-		/* error interrupts - process first */
+-		sh_mmcif_writel(host->addr, MMCIF_CE_INT, ~state);
+-		sh_mmcif_bitclr(host, MMCIF_CE_INT_MASK, state);
+-		err = 1;
+-	} else if (state & INT_RBSYE) {
+-		sh_mmcif_writel(host->addr, MMCIF_CE_INT,
+-				~(INT_RBSYE | INT_CRSPE));
+-		sh_mmcif_bitclr(host, MMCIF_CE_INT_MASK, MASK_MRBSYE);
+-	} else if (state & INT_CRSPE) {
+-		sh_mmcif_writel(host->addr, MMCIF_CE_INT, ~INT_CRSPE);
+-		sh_mmcif_bitclr(host, MMCIF_CE_INT_MASK, MASK_MCRSPE);
+-	} else if (state & INT_BUFREN) {
+-		sh_mmcif_writel(host->addr, MMCIF_CE_INT, ~INT_BUFREN);
+-		sh_mmcif_bitclr(host, MMCIF_CE_INT_MASK, MASK_MBUFREN);
+-	} else if (state & INT_BUFWEN) {
+-		sh_mmcif_writel(host->addr, MMCIF_CE_INT,
+-				~(INT_BUFWEN | INT_DTRANE | INT_CMD12DRE |
+-				  INT_CMD12RBE | INT_CMD12CRE));
+-		sh_mmcif_bitclr(host, MMCIF_CE_INT_MASK, MASK_MBUFWEN);
+-	} else if (state & INT_CMD12DRE) {
+-		sh_mmcif_writel(host->addr, MMCIF_CE_INT,
+-			~(INT_CMD12DRE | INT_CMD12RBE |
+-			  INT_CMD12CRE | INT_BUFRE));
+-		sh_mmcif_bitclr(host, MMCIF_CE_INT_MASK, MASK_MCMD12DRE);
+-	} else if (state & INT_BUFRE) {
+-		sh_mmcif_writel(host->addr, MMCIF_CE_INT, ~INT_BUFRE);
+-		sh_mmcif_bitclr(host, MMCIF_CE_INT_MASK, MASK_MBUFRE);
+-	} else if (state & INT_DTRANE) {
+-		sh_mmcif_writel(host->addr, MMCIF_CE_INT,
+-			~(INT_CMD12DRE | INT_CMD12RBE |
+-			  INT_CMD12CRE | INT_DTRANE));
+-		sh_mmcif_bitclr(host, MMCIF_CE_INT_MASK, MASK_MDTRANE);
+-	} else if (state & INT_CMD12RBE) {
+-		sh_mmcif_writel(host->addr, MMCIF_CE_INT,
+-				~(INT_CMD12RBE | INT_CMD12CRE));
+-		sh_mmcif_bitclr(host, MMCIF_CE_INT_MASK, MASK_MCMD12RBE);
+-	} else {
+-		dev_dbg(&host->pd->dev, "Unsupported interrupt: 0x%x\n", state);
+-		sh_mmcif_writel(host->addr, MMCIF_CE_INT, ~state);
+-		sh_mmcif_bitclr(host, MMCIF_CE_INT_MASK, state);
+-		err = 1;
+-	}
+-	if (err) {
++	if (state & ~MASK_CLEAN)
++		dev_dbg(&host->pd->dev, "IRQ state = 0x%08x incompletely cleared\n",
++			state);
++
++	if (state & INT_ERR_STS || state & ~INT_ALL) {
+ 		host->sd_error = true;
+-		dev_dbg(&host->pd->dev, "int err state = %08x\n", state);
++		dev_dbg(&host->pd->dev, "int err state = 0x%08x\n", state);
+ 	}
+ 	if (state & ~(INT_CMD12RBE | INT_CMD12CRE)) {
++		if (!host->mrq)
++			dev_dbg(&host->pd->dev, "NULL IRQ state = 0x%08x\n", state);
+ 		if (!host->dma_active)
+ 			return IRQ_WAKE_THREAD;
+ 		else if (host->sd_error)
 -- 
-1.7.8.6
+1.7.2.5
 
