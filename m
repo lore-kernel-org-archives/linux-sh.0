@@ -1,180 +1,121 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 14 Dec 2012 05:54:00 +0000
-Subject: [PATCH 04/08] clocksource: sh_cmt: Introduce per-register functions
-Message-Id: <20121214055400.10081.66986.sendpatchset@w520>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 12 Dec 2012 15:40:50 +0000
+Subject: [FWIW:-)] comparing bonnie++ output
+Message-Id: <Pine.LNX.4.64.1212121629050.10522@axis700.grange>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="8323329-1265117025-1355326850=:10522"
 List-Id: <linux-sh.vger.kernel.org>
-References: <20121214055323.10081.12056.sendpatchset@w520>
-In-Reply-To: <20121214055323.10081.12056.sendpatchset@w520>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, johnstul@us.ibm.com, horms@verge.net.au, shinya.kuribayashi.px@renesas.com, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+  This message is in MIME format.  The first part should be readable text,
+  while the remaining parts are likely unreadable without MIME-aware tools.
 
-Introduce sh_cmt_read_cmstr/cmcsr/cmcnt() and
-sh_cmt_write_cmstr/cmcsr/cmcnt/cmcor() to in the
-future allow us to split counter registers from
-control registers and reduce code complexity by
-removing sh_cmt_read() and sh_cmt_write(). 
+--8323329-1265117025-1355326850=:10522
+Content-Type: TEXT/PLAIN; charset=US-ASCII
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Hi all
+
+I've been asked to prepare and publish some simple scripts / programs to 
+measure block device performance with a possibility to compare results. 
+There are a lot of programs available to benchmark block IO, but comparing 
+results of multiple runs is not always easy.
+
+The expected use is, that you run the attached bash script bonnie_do.sh 
+several times in each configuration, that you want to benchmark. For 
+example, if a performance regression is suspected between kernel versions 
+X and Y, you collect output of this script in two log files X.log and 
+Y.log.
+
+Then you use the attached bonnie_diff.c to compare the two log files. The 
+program calculates averages of each of several parameters, that I chose to 
+compare in each file. Then it compares calculated averages and prints out 
+absolute and percentual diffs.
+
+Thanks
+Guennadi
 ---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
+--8323329-1265117025-1355326850=:10522
+Content-Type: TEXT/x-csrc; charset=US-ASCII; name=bonnie_diff.c
+Content-Transfer-Encoding: BASE64
+Content-ID: <Pine.LNX.4.64.1212121640500.10522@axis700.grange>
+Content-Description: 
+Content-Disposition: attachment; filename=bonnie_diff.c
 
- drivers/clocksource/sh_cmt.c |   71 ++++++++++++++++++++++++++++++++----------
- 1 file changed, 55 insertions(+), 16 deletions(-)
+LyoNCiAqIChDKSAyMDEyIEd1ZW5uYWRpIExpYWtob3ZldHNraSA8Zy5saWFr
+aG92ZXRza2lAZ214LmRlPg0KICogTGljZW5zZTogUHVibGljIGRvbWFpbg0K
+ICoNCiAqIFRoaXMgcHJvZ3JhbSBjYW4gYmUgdXNlZCB0byBjb21wYXJlIGxv
+Z2ZpbGVzLCBwcm9kdWNlZCBieSBib25uaWVfZG8uc2gNCiAqDQogKiBSdW5u
+aW5nOg0KICogLi9ib25uaWVfZGlmZiA8bG9nZmlsZTE+IDxsb2dmaWxlMj4N
+CiAqLw0KDQojaW5jbHVkZSA8c3lzL3R5cGVzLmg+DQojaW5jbHVkZSA8c3lz
+L3N0YXQuaD4NCiNpbmNsdWRlIDx1bmlzdGQuaD4NCiNpbmNsdWRlIDxzdGRp
+by5oPg0KI2luY2x1ZGUgPGVycm5vLmg+DQoNCnN0YXRpYyBjb25zdCBpbnQg
+aW5kZXhbXSA9IHszLCA1LCA3LCA5LCAxMSwgMTN9Ow0KI2RlZmluZSBOIChz
+aXplb2YoaW5kZXgpIC8gc2l6ZW9mKGluZGV4WzBdKSkNCg0Kc3RhdGljIGNv
+bnN0IGNoYXIgKm5hbWVbXSA9IHsNCgkiQ2hhcmFjdGVyIE91dHB1dCIsDQoJ
+IkJsb2NrIE91dHB1dCIsDQoJIlJld3JpdGUiLA0KCSJDaGFyYWN0ZXIgSW5w
+dXQiLA0KCSJCbG9jayBJbnB1dCIsDQoJIlJhbmRvbSBTZWVrIiwNCn07DQoN
+CnN0YXRpYyB2b2lkIGF2ZyhGSUxFICpmZCwgZmxvYXQgKnZhbCkNCnsNCglp
+bnQgaSwgajsNCg0KCWZvciAoaSA9IDA7IGkgPCBOOyBpKyspDQoJCXZhbFtp
+XSA9IDAuOw0KDQoJZm9yIChqID0gMDsgOyBqKyspIHsNCgkJZmxvYXQgdltO
+XTsNCgkJaW50IHJldCA9IGZzY2FuZihmZCwgIiUqcyAlKnMgJWYgJSpmICVm
+ICUqZiAlZiAlKmYgJWYgJSpmICVmICUqZiAlZiAlKmYiLA0KCQkJCSB2LCB2
+ICsgMSwgdiArIDIsIHYgKyAzLCB2ICsgNCwgdiArIDUpOw0KCQlpZiAocmV0
+IDwgNiB8fCByZXQgPT0gRU9GKQ0KCQkJYnJlYWs7DQoJCWZvciAoaSA9IDA7
+IGkgPCBOOyBpKyspDQoJCQl2YWxbaV0gKz0gdltpXTsNCgl9DQoNCglpZiAo
+IWopDQoJCXJldHVybjsNCg0KCWZvciAoaSA9IDA7IGkgPCBOOyBpKyspDQoJ
+CXZhbFtpXSAvPSBqOw0KfQ0KDQppbnQgbWFpbihpbnQgYXJnYywgY2hhciAq
+YXJndltdKQ0Kew0KCUZJTEUgKmZkMSwgKmZkMjsNCglpbnQgaTsNCglmbG9h
+dCB2YWwxW05dLCB2YWwyW05dOw0KDQoJaWYgKGFyZ2MgIT0gMykgew0KCQll
+cnJubyA9IC1FSU5WQUw7DQoJCXJldHVybiAxOw0KCX0NCg0KCWZkMSA9IGZv
+cGVuKGFyZ3ZbMV0sICJyIik7DQoJaWYgKCFmZDEpDQoJCXJldHVybiAxOw0K
+DQoJZmQyID0gZm9wZW4oYXJndlsyXSwgInIiKTsNCglpZiAoIWZkMikNCgkJ
+cmV0dXJuIDE7DQoNCglhdmcoZmQxLCB2YWwxKTsNCglhdmcoZmQyLCB2YWwy
+KTsNCg0KCWZvciAoaSA9IDA7IGkgPCBOOyBpKyspIHsNCgkJZmxvYXQgZGVs
+dGEsIHBkZWx0YTsNCgkJY2hhciAqcyA9ICIrIjsNCgkJZGVsdGEgPSB2YWwy
+W2ldIC0gdmFsMVtpXTsNCgkJaWYgKGRlbHRhIDwgMCkNCgkJCXMgPSAiIjsN
+CgkJcGRlbHRhID0gZGVsdGEgKiAxMDAgLyB2YWwxW2ldOw0KCQlwcmludGYo
+IiVzOiAlcyVmICglcyVmJSUpXG4iLCBuYW1lW2ldLCBzLCBkZWx0YSwgcywg
+cGRlbHRhKTsNCgl9DQoNCglyZXR1cm4gMDsNCn0NCg==
 
---- 0001/drivers/clocksource/sh_cmt.c
-+++ work/drivers/clocksource/sh_cmt.c	2012-12-14 10:50:15.000000000 +0900
-@@ -86,6 +86,21 @@ static inline unsigned long sh_cmt_read(
- 	return ioread16(base + offs);
- }
- 
-+static inline unsigned long sh_cmt_read_cmstr(struct sh_cmt_priv *p)
-+{
-+	return sh_cmt_read(p, CMSTR);
-+}
-+
-+static inline unsigned long sh_cmt_read_cmcsr(struct sh_cmt_priv *p)
-+{
-+	return sh_cmt_read(p, CMCSR);
-+}
-+
-+static inline unsigned long sh_cmt_read_cmcnt(struct sh_cmt_priv *p)
-+{
-+	return sh_cmt_read(p, CMCNT);
-+}
-+
- static inline void sh_cmt_write(struct sh_cmt_priv *p, int reg_nr,
- 				unsigned long value)
- {
-@@ -112,21 +127,45 @@ static inline void sh_cmt_write(struct s
- 	iowrite16(value, base + offs);
- }
- 
-+static inline void sh_cmt_write_cmstr(struct sh_cmt_priv *p,
-+				      unsigned long value)
-+{
-+	sh_cmt_write(p, CMSTR, value);
-+}
-+
-+static inline void sh_cmt_write_cmcsr(struct sh_cmt_priv *p,
-+				      unsigned long value)
-+{
-+	sh_cmt_write(p, CMCSR, value);
-+}
-+
-+static inline void sh_cmt_write_cmcnt(struct sh_cmt_priv *p,
-+				      unsigned long value)
-+{
-+	sh_cmt_write(p, CMCNT, value);
-+}
-+
-+static inline void sh_cmt_write_cmcor(struct sh_cmt_priv *p,
-+				      unsigned long value)
-+{
-+	sh_cmt_write(p, CMCOR, value);
-+}
-+
- static unsigned long sh_cmt_get_counter(struct sh_cmt_priv *p,
- 					int *has_wrapped)
- {
- 	unsigned long v1, v2, v3;
- 	int o1, o2;
- 
--	o1 = sh_cmt_read(p, CMCSR) & p->overflow_bit;
-+	o1 = sh_cmt_read_cmcsr(p) & p->overflow_bit;
- 
- 	/* Make sure the timer value is stable. Stolen from acpi_pm.c */
- 	do {
- 		o2 = o1;
--		v1 = sh_cmt_read(p, CMCNT);
--		v2 = sh_cmt_read(p, CMCNT);
--		v3 = sh_cmt_read(p, CMCNT);
--		o1 = sh_cmt_read(p, CMCSR) & p->overflow_bit;
-+		v1 = sh_cmt_read_cmcnt(p);
-+		v2 = sh_cmt_read_cmcnt(p);
-+		v3 = sh_cmt_read_cmcnt(p);
-+		o1 = sh_cmt_read_cmcsr(p) & p->overflow_bit;
- 	} while (unlikely((o1 != o2) || (v1 > v2 && v1 < v3)
- 			  || (v2 > v3 && v2 < v1) || (v3 > v1 && v3 < v2)));
- 
-@@ -142,14 +181,14 @@ static void sh_cmt_start_stop_ch(struct
- 
- 	/* start stop register shared by multiple timer channels */
- 	raw_spin_lock_irqsave(&sh_cmt_lock, flags);
--	value = sh_cmt_read(p, CMSTR);
-+	value = sh_cmt_read_cmstr(p);
- 
- 	if (start)
- 		value |= 1 << cfg->timer_bit;
- 	else
- 		value &= ~(1 << cfg->timer_bit);
- 
--	sh_cmt_write(p, CMSTR, value);
-+	sh_cmt_write_cmstr(p, value);
- 	raw_spin_unlock_irqrestore(&sh_cmt_lock, flags);
- }
- 
-@@ -173,14 +212,14 @@ static int sh_cmt_enable(struct sh_cmt_p
- 	/* configure channel, periodic mode and maximum timeout */
- 	if (p->width = 16) {
- 		*rate = clk_get_rate(p->clk) / 512;
--		sh_cmt_write(p, CMCSR, 0x43);
-+		sh_cmt_write_cmcsr(p, 0x43);
- 	} else {
- 		*rate = clk_get_rate(p->clk) / 8;
--		sh_cmt_write(p, CMCSR, 0x01a4);
-+		sh_cmt_write_cmcsr(p, 0x01a4);
- 	}
- 
--	sh_cmt_write(p, CMCOR, 0xffffffff);
--	sh_cmt_write(p, CMCNT, 0);
-+	sh_cmt_write_cmcor(p, 0xffffffff);
-+	sh_cmt_write_cmcnt(p, 0);
- 
- 	/*
- 	 * According to the sh73a0 user's manual, as CMCNT can be operated
-@@ -194,12 +233,12 @@ static int sh_cmt_enable(struct sh_cmt_p
- 	 * take RCLKx2 at maximum.
- 	 */
- 	for (k = 0; k < 100; k++) {
--		if (!sh_cmt_read(p, CMCNT))
-+		if (!sh_cmt_read_cmcnt(p))
- 			break;
- 		udelay(1);
- 	}
- 
--	if (sh_cmt_read(p, CMCNT)) {
-+	if (sh_cmt_read_cmcnt(p)) {
- 		dev_err(&p->pdev->dev, "cannot clear CMCNT\n");
- 		ret = -ETIMEDOUT;
- 		goto err1;
-@@ -222,7 +261,7 @@ static void sh_cmt_disable(struct sh_cmt
- 	sh_cmt_start_stop_ch(p, 0);
- 
- 	/* disable interrupts in CMT block */
--	sh_cmt_write(p, CMCSR, 0);
-+	sh_cmt_write_cmcsr(p, 0);
- 
- 	/* stop clock */
- 	clk_disable(p->clk);
-@@ -270,7 +309,7 @@ static void sh_cmt_clock_event_program_v
- 		if (new_match > p->max_match_value)
- 			new_match = p->max_match_value;
- 
--		sh_cmt_write(p, CMCOR, new_match);
-+		sh_cmt_write_cmcor(p, new_match);
- 
- 		now = sh_cmt_get_counter(p, &has_wrapped);
- 		if (has_wrapped && (new_match > p->match_value)) {
-@@ -346,7 +385,7 @@ static irqreturn_t sh_cmt_interrupt(int
- 	struct sh_cmt_priv *p = dev_id;
- 
- 	/* clear flags */
--	sh_cmt_write(p, CMCSR, sh_cmt_read(p, CMCSR) & p->clear_bits);
-+	sh_cmt_write_cmcsr(p, sh_cmt_read_cmcsr(p) & p->clear_bits);
- 
- 	/* update clock source counter to begin with if enabled
- 	 * the wrap flag should be cleared by the timer specific
+--8323329-1265117025-1355326850=:10522
+Content-Type: APPLICATION/x-sh; name=bonnie_do.sh
+Content-Transfer-Encoding: BASE64
+Content-ID: <Pine.LNX.4.64.1212121640501.10522@axis700.grange>
+Content-Description: 
+Content-Disposition: attachment; filename=bonnie_do.sh
+
+IyEvYmluL2Jhc2gKIwojIChDKSAyMDEyIEd1ZW5uYWRpIExpYWtob3ZldHNr
+aSA8Zy5saWFraG92ZXRza2lAZ214LmRlPgojIExpY2Vuc2U6IFB1YmxpYyBk
+b21haW4KIwojIFJ1bm5pbmc6CiMgLi9ib25uaWVfZG8uc2ggbW91bnQ9PG1v
+dW50LXBvaW50PiBbbG9nZGlyPTxsb2ctZGlyPl0gW3ByZWxvYWQ9PHByZWxv
+YWRlZC1kcml2ZXI+XSBcCiMgW2RyaXZlcj08ZHJpdmVyLW5hbWU+XSBbdXVp
+ZD08ZGV2aWNlLXV1aWQ+XSBbdXNlcj08dWlkOmdpZD5dIFtsb2dmaWxlPTxs
+b2dmaWxlPl0gXAojIFtib25uaWVfYXJncz08Ym9ubmllLWFyZ3VtZW50cz5d
+Cgpmb3IgaSBpbiAiJEAiOyBkbwoJaWYgWyAkaSAhPSAke2kvPX0gXTsgdGhl
+bgoJCWV2YWwgIiRpIgoJZmkKZG9uZQoKdGVzdCAteiAiJG1vdW50IiAmJiBl
+eGl0IDEKdGVzdCAteiAiJGxvZ2RpciIgJiYgbG9nZGlyPS90bXAKCnRpbWU9
+JChkYXRlICslWSVtJWQtJUglTSVTKQoKdGVzdCAtbiAiJHByZWxvYWQiICYm
+IG1vZHByb2JlICRwcmVsb2FkCgppZiBbIC1uICIkZHJpdmVyIiBdOyB0aGVu
+Cgltb2Rwcm9iZSAkZHJpdmVyCgllY2hvIHdhaXRpbmcgMTBzIGZvciAkZHJp
+dmVyIHRvIHByb2JlCglzbGVlcCAxMApmaQoKZGVjbGFyZSAtYSBibG9jawoK
+aWYgWyAtbiAiJHV1aWQiIF07IHRoZW4KCW1vdW50IC9kZXYvZGlzay9ieS11
+dWlkLyR1dWlkICRtb3VudCB8fCBleGl0IDEKZWxzZQoJY2QgL3N5cy9jbGFz
+cy9ibG9jawoJaj0wCgllY2hvIFNlbGVjdCBhIGJsb2NrIGRldmljZSB0byBt
+b3VudCBhbmQgdGVzdDoKCWZvciBpIGluICo7IGRvCgkJYmxvY2tbJGpdPSRp
+CgkJZGV2PSQocmVhZGxpbmsgJGkgfCBzZWQgLWUgInM6XltcLi9dKmRldmlj
+ZXNcKC4qXCkvYmxvY2svLio6Li4uXDEvLi4uOiIpCgkJZWNobyAiICRqLiAk
+aSAoJGRldikiCgkJKChqKyspKQoJZG9uZQoJcmVhZCBuCgl0ZXN0ICRuIC1n
+ZSAkaiAmJiBleGl0IDEKCW1vdW50IC9kZXYvJHtibG9ja1ske259XX0gJG1v
+dW50IHx8IGV4aXQgMQpmaQoKZGlyPSQobWt0ZW1wIC1kIC0tdG1wZGlyPSRt
+b3VudCkKCmlmIFsgLW4gIiR1c2VyIiBdOyB0aGVuCgljaG93biAkdXNlciAk
+ZGlyCgl1YXJnPSItdSAkdXNlciIKZmkKCmJvbm5pZSsrIC1kICRkaXIgJHVh
+cmcgJGJvbm5pZV9hcmdzIHwgdGVlICRsb2dkaXIvJHRpbWUuYmxvZwoKcm1k
+aXIgJGRpcgoKdW1vdW50ICRtb3VudAoKdGVzdCAtbiAiJGRyaXZlciIgJiYg
+cm1tb2QgJGRyaXZlcgp0ZXN0IC1uICIkcHJlbG9hZCIgJiYgcm1tb2QgJHBy
+ZWxvYWQKCnRlc3QgLW4gIiRsb2dmaWxlIiAmJiBjYXQgJGxvZ2Rpci8kdGlt
+ZS5ibG9nIHwgaGVhZCAtNCB8IHRhaWwgLTEgPj4gJGxvZ2ZpbGUK
+
+--8323329-1265117025-1355326850=:10522--
