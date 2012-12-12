@@ -1,56 +1,51 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Dec 2012 22:54:15 +0000
-Subject: [PATCH v4 33/81] sh: sh7269: Register PFC platform device
-Message-Id: <1356735303-29474-34-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 12 Dec 2012 14:38:06 +0000
+Subject: [PATCH 02/14] mmc: sh_mmcif: ensure run-time suspend call is processed before suspend
+Message-Id: <1355323098-18061-3-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1355323098-18061-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1355323098-18061-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>, Teppei Kamijou <teppei.kamijou.yb@renesas.com>
 
-Add arch code to register the PFC platform device instead of calling the
-driver directly. Platform device registration in the sh-pfc driver will
-be removed.
+From: Teppei Kamijou <teppei.kamijou.yb@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+With this post-v2.6.35 change applied:
+
+commit a0a1a5fd4fb15ec61117c759fe9f5c16c53d9e9c
+Author: Tejun Heo <tj@kernel.org>
+Date:   Tue Jun 29 10:07:12 2010 +0200
+    workqueue: reimplement workqueue freeze using max_active
+
+freeze_workqueues_begin() was introduced and workqueue now gets frozen
+before device drivers suspend operations.
+
+We have to ensure that run-time PM suspend operation completes before
+system-wide suspend is started.
+
+igned-off-by: Teppei Kamijou <teppei.kamijou.yb@renesas.com>
+igned-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/sh/Kconfig                         |    1 +
- arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c |    3 ++-
- 2 files changed, 3 insertions(+), 1 deletions(-)
+ drivers/mmc/host/sh_mmcif.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 0626044..b934d7d 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -305,6 +305,7 @@ config CPU_SUBTYPE_SH7269
- 	select CPU_HAS_FPU
- 	select SYS_SUPPORTS_CMT
- 	select SYS_SUPPORTS_MTU2
-+	select PINCTRL
- 
- config CPU_SUBTYPE_MXG
- 	bool "Support MX-G processor"
-diff --git a/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c b/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c
-index 1289fd9..525da4c 100644
---- a/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c
-+++ b/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c
-@@ -12,6 +12,7 @@
- #include <linux/init.h>
- #include <linux/kernel.h>
- #include <linux/gpio.h>
-+#include <cpu/pfc.h>
- #include <cpu/sh7269.h>
- 
- enum {
-@@ -2834,6 +2835,6 @@ static struct pinmux_info sh7269_pinmux_info = {
- 
- static int __init plat_pinmux_setup(void)
- {
--	return register_pinmux(&sh7269_pinmux_info);
-+	return sh_pfc_register_info(NULL, NULL, 0, &sh7269_pinmux_info);
- }
- arch_initcall(plat_pinmux_setup);
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 543f6ce..8a188fe 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -982,7 +982,7 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 			}
+ 		}
+ 		if (host->power) {
+-			pm_runtime_put(&host->pd->dev);
++			pm_runtime_put_sync(&host->pd->dev);
+ 			clk_disable(host->hclk);
+ 			host->power = false;
+ 			if (ios->power_mode = MMC_POWER_OFF)
 -- 
-1.7.8.6
+1.7.2.5
 
