@@ -1,49 +1,42 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Dec 2012 22:53:58 +0000
-Subject: [PATCH v4 16/81] sh-pfc: Let the compiler decide whether to inline functions
-Message-Id: <1356735303-29474-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 12 Dec 2012 14:38:05 +0000
+Subject: [PATCH 01/14] mmc: sh_mmcif: force to fail CMD52 immediately
+Message-Id: <1355323098-18061-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1355323098-18061-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1355323098-18061-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>, Teppei Kamijou <teppei.kamijou.yb@renesas.com>, Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 
-The compiler should be smart enough to automatically inline static
-functions that are called from a single location.
+From: Teppei Kamijou <teppei.kamijou.yb@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Paul Mundt <lethal@linux-sh.org>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+mmc_rescan() sends CMD52 (SD_IO_RW_DIRECT) to reset SDIO card during
+card detection. CMD52 should be ignored by SD/eMMC cards, but we can
+also abort it in the driver immediately, since MMCIF doesn't support
+SDIO cards anyway.
+
+Signed-off-by: Teppei Kamijou <teppei.kamijou.yb@renesas.com>
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/sh/pfc/pinctrl.c |    8 +++-----
- 1 files changed, 3 insertions(+), 5 deletions(-)
+ drivers/mmc/host/sh_mmcif.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/sh/pfc/pinctrl.c b/drivers/sh/pfc/pinctrl.c
-index b3dbefd..47dbd02 100644
---- a/drivers/sh/pfc/pinctrl.c
-+++ b/drivers/sh/pfc/pinctrl.c
-@@ -116,7 +116,7 @@ static void sh_pfc_noop_disable(struct pinctrl_dev *pctldev, unsigned func,
- {
- }
- 
--static inline int sh_pfc_config_function(struct sh_pfc *pfc, unsigned offset)
-+static int sh_pfc_config_function(struct sh_pfc *pfc, unsigned offset)
- {
- 	if (sh_pfc_config_gpio(pfc, offset,
- 			       PINMUX_TYPE_FUNCTION,
-@@ -328,10 +328,8 @@ static struct pinctrl_desc sh_pfc_pinctrl_desc = {
- 	.confops	= &sh_pfc_pinconf_ops,
- };
- 
--static inline void sh_pfc_map_one_gpio(struct sh_pfc *pfc,
--				       struct sh_pfc_pinctrl *pmx,
--				       struct pinmux_gpio *gpio,
--				       unsigned offset)
-+static void sh_pfc_map_one_gpio(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx,
-+				struct pinmux_gpio *gpio, unsigned offset)
- {
- 	struct pinmux_data_reg *dummy;
- 	unsigned long flags;
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 9a4c151..543f6ce 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -911,6 +911,7 @@ static void sh_mmcif_request(struct mmc_host *mmc, struct mmc_request *mrq)
+ 		if ((mrq->cmd->flags & MMC_CMD_MASK) != MMC_CMD_BCR)
+ 			break;
+ 	case MMC_APP_CMD:
++	case SD_IO_RW_DIRECT:
+ 		host->state = STATE_IDLE;
+ 		mrq->cmd->error = -ETIMEDOUT;
+ 		mmc_request_done(mmc, mrq);
 -- 
-1.7.8.6
+1.7.2.5
 
