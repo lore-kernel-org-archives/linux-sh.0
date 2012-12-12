@@ -1,53 +1,53 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Dec 2012 22:54:05 +0000
-Subject: [PATCH v4 23/81] ARM: shmobile: r8a7740: Register PFC platform device
-Message-Id: <1356735303-29474-24-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 12 Dec 2012 14:38:04 +0000
+Subject: [PATCH 00/14] mmc: sh-mmcif: 3.8 fixes and improvements
+Message-Id: <1355323098-18061-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>
 
-Add arch code to register the PFC platform device instead of calling the
-driver directly. Platform device registration in the sh-pfc driver will
-be removed.
+This patch series fixes several bugs in the sh_mmcif.c driver, that showed 
+up on SMP with DMA (patches 10, 13), adds new features (3, 4) and adds 
+multiple further improvements and minor fixes. Even though these bugs 
+currently exist in the mainline, this patch series is not considered to 
+be suitable for @stable. Patches are rather experimental and it is better 
+to test them over a complete development cycle. They also are easier 
+implemented on top of preparatory cosmetic patches.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/pfc-r8a7740.c |   11 ++++++++++-
- 1 files changed, 10 insertions(+), 1 deletions(-)
+Guennadi Liakhovetski (6):
+  mmc: sh-mmcif: fix missing and consolidate IO completion timeouts
+  mmc: sh-mmcif: (cosmetic) simplify boolean return blocks
+  mmc: sh-mmcif: fix a race, causing an Oops on SMP
+  mmc: sh-mmcif: reset error code for any opcode
+  mmc: sh-mmcif: reset DMA completion immediately before starting DMA
+  mmc: sh-mmcif: fix I/O errors
 
-diff --git a/arch/arm/mach-shmobile/pfc-r8a7740.c b/arch/arm/mach-shmobile/pfc-r8a7740.c
-index 134d1b9..8a412b1 100644
---- a/arch/arm/mach-shmobile/pfc-r8a7740.c
-+++ b/arch/arm/mach-shmobile/pfc-r8a7740.c
-@@ -20,6 +20,7 @@
-  */
- #include <linux/init.h>
- #include <linux/kernel.h>
-+#include <linux/platform_device.h>
- #include <linux/sh_pfc.h>
- #include <mach/r8a7740.h>
- #include <mach/irqs.h>
-@@ -2611,7 +2612,15 @@ static struct pinmux_info r8a7740_pinmux_info = {
- 	.gpio_irq_size	= ARRAY_SIZE(pinmux_irqs),
- };
- 
-+static struct platform_device r8a7740_pfc_device = {
-+	.name		= "sh-pfc",
-+	.id		= -1,
-+	.dev = {
-+		.platform_data = &r8a7740_pinmux_info,
-+	},
-+};
-+
- void r8a7740_pinmux_init(void)
- {
--	register_pinmux(&r8a7740_pinmux_info);
-+	platform_device_register(&r8a7740_pfc_device);
- }
+Shinya Kuribayashi (1):
+  mmc: sh_mmcif: add support for bundled MMCIF IRQs
+
+Teppei Kamijou (7):
+  mmc: sh_mmcif: force to fail CMD52 immediately
+  mmc: sh_mmcif: ensure run-time suspend call is processed before
+    suspend
+  mmc: sh_mmcif: Add support for eMMC Dual Data Rate
+  mmc: sh_mmcif: Use msecs_to_jiffies() for host->timeout
+  mmc: sh_mmcif: Avoid unnecessary mmc_delay() at mmc_card_sleepawake()
+  mmc: sh-mmcif: Terminate DMA transactions when detecting timeout or
+    error
+  mmc: sh-mmcif: report all errors
+
+ drivers/mmc/host/sh_mmcif.c |  215 +++++++++++++++++++++++++++++--------------
+ 1 files changed, 145 insertions(+), 70 deletions(-)
+
 -- 
-1.7.8.6
+1.7.2.5
 
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
