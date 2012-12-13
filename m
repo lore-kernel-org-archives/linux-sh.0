@@ -1,38 +1,53 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 16 Dec 2012 17:25:47 +0000
-Subject: [PATCH/WIP/RFC 01/14] ARM: sh-mobile: Protect ipmmu.h header with ifndef/define
-Message-Id: <1355678760-27357-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 13 Dec 2012 00:46:28 +0000
+Subject: [PATCH] ARM: clocksource: Initialise early (repost)
+Message-Id: <20121213004628.GA26680@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1350290093-998-1-git-send-email-hdk@igel.co.jp>
- <1355678760-27357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1355678760-27357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/mach-shmobile/include/mach/ipmmu.h |    5 +++++
- 1 files changed, 5 insertions(+), 0 deletions(-)
+Initialise clock sources early, since some subsystems rely on them to initialize
 
-diff --git a/arch/arm/mach-shmobile/include/mach/ipmmu.h b/arch/arm/mach-shmobile/include/mach/ipmmu.h
-index ede2f0b..4b805b1f 100644
---- a/arch/arm/mach-shmobile/include/mach/ipmmu.h
-+++ b/arch/arm/mach-shmobile/include/mach/ipmmu.h
-@@ -1,3 +1,6 @@
-+#ifndef __SHMOBILE_IPMMU_H__
-+#define __SHMOBILE_IPMMU_H__
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
+---
+
+Repost to add LKML to CC list.
+
+v3
+* Initial post
+---
+ drivers/Makefile |    8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/Makefile b/drivers/Makefile
+index a16a8d0..eba9b58 100644
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -37,6 +37,11 @@ obj-$(CONFIG_XEN)		+= xen/
+ # regulators early, since some subsystems rely on them to initialize
+ obj-$(CONFIG_REGULATOR)		+= regulator/
+ 
++# clocksource early, since some subsystems rely on them to initialize
++ifndef CONFIG_ARCH_USES_GETTIMEOFFSET
++obj-y				+= clocksource/
++endif
 +
- #ifdef CONFIG_SHMOBILE_IPMMU_TLB
- void ipmmu_tlb_flush(struct device *ipmmu_dev);
- void ipmmu_tlb_set(struct device *ipmmu_dev, unsigned long phys, int size,
-@@ -14,3 +17,5 @@ static int ipmmu_iommu_init(struct device *dev)
- 	return -EINVAL;
- }
- #endif
-+
-+#endif /* __SHMOBILE_IPMMU_H__ */
+ # tty/ comes before char/ so that the VT console is the boot-time
+ # default.
+ obj-y				+= tty/
+@@ -114,9 +119,6 @@ obj-y				+= firmware/
+ obj-$(CONFIG_CRYPTO)		+= crypto/
+ obj-$(CONFIG_SUPERH)		+= sh/
+ obj-$(CONFIG_ARCH_SHMOBILE)	+= sh/
+-ifndef CONFIG_ARCH_USES_GETTIMEOFFSET
+-obj-y				+= clocksource/
+-endif
+ obj-$(CONFIG_DCA)		+= dca/
+ obj-$(CONFIG_HID)		+= hid/
+ obj-$(CONFIG_PPC_PS3)		+= ps3/
 -- 
-1.7.8.6
+1.7.10.4
 
