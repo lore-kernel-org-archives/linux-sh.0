@@ -1,26 +1,53 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 18 Dec 2012 02:18:31 +0000
-Subject: Re: [PATCH v3 54/81] ARM: shmobile: sh73a0: Use driver-provided pinmux info
-Message-Id: <20121218021831.GO28065@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 14 Dec 2012 05:55:53 +0000
+Subject: [PATCH] clocksource: sh_cmt: 32-bit control register access prototype
+Message-Id: <20121214060026.10668.35031.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1355611915-25060-55-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1355611915-25060-55-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Sat, Dec 15, 2012 at 11:51:28PM +0100, Laurent Pinchart wrote:
-> Pinmux info for the sh73a0 is now provided by pinmux drivers. Remove the
-> duplicate copy in arch code.
-> 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> ---
->  arch/arm/mach-shmobile/Makefile       |    5 -
->  arch/arm/mach-shmobile/pfc-sh73a0.c   | 2829 ---------------------------------
->  arch/arm/mach-shmobile/setup-sh73a0.c |   25 +
->  3 files changed, 25 insertions(+), 2834 deletions(-)
->  delete mode 100644 arch/arm/mach-shmobile/pfc-sh73a0.c
+From: Magnus Damm <damm@opensource.se>
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+This is a 32-bit control register access prototype
+for the CMT driver. It is not ready for merge but
+it intends to show the reasoning behind the
+register access patches included in this series:
+"[PATCH 00/08] clocksource: sh_cmt: CMT driver update"
 
+Not-Yet-Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ drivers/clocksource/sh_cmt.c |   11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+--- 0006/drivers/clocksource/sh_cmt.c
++++ work/drivers/clocksource/sh_cmt.c	2012-12-14 11:53:23.000000000 +0900
+@@ -79,6 +79,12 @@ struct sh_cmt_priv {
+  * CMCSR 0xffca0060 16-bit
+  * CMCNT 0xffca0064 32-bit
+  * CMCOR 0xffca0068 32-bit
++ *
++ * "32-bit counter and 32-bit control"
++ * CMSTR 0xe6130000 32-bit
++ * CMCSR 0xe6130010 32-bit
++ * CMCNT 0xe6130014 32-bit
++ * CMCOR 0xe6130018 32-bit
+  */
+ 
+ static unsigned long sh_cmt_read16(void __iomem *base, unsigned long offs)
+@@ -734,8 +740,13 @@ static int sh_cmt_setup(struct sh_cmt_pr
+ 		goto err1;
+ 	}
+ 
++#if 1 /* XXX: filthy prototype hack! */
++	p->read_control = sh_cmt_read32;
++	p->write_control = sh_cmt_write32;
++#else
+ 	p->read_control = sh_cmt_read16;
+ 	p->write_control = sh_cmt_write16;
++#endif
+ 
+ 	if (resource_size(res) = 6) {
+ 		p->width = 16;
