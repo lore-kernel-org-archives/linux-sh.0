@@ -1,159 +1,155 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 12 Dec 2012 14:38:11 +0000
-Subject: [PATCH 07/14] mmc: sh-mmcif: fix missing and consolidate IO completion timeouts
-Message-Id: <1355323098-18061-8-git-send-email-g.liakhovetski@gmx.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 14 Dec 2012 05:54:10 +0000
+Subject: [PATCH 05/08] clocksource: sh_cmt: CMSTR and CMCSR register access update
+Message-Id: <20121214055410.10081.32594.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1355323098-18061-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1355323098-18061-1-git-send-email-g.liakhovetski@gmx.de>
+References: <20121214055323.10081.12056.sendpatchset@w520>
+In-Reply-To: <20121214055323.10081.12056.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, johnstul@us.ibm.com, horms@verge.net.au, shinya.kuribayashi.px@renesas.com, tglx@linutronix.de, Magnus Damm <magnus.damm@gmail.com>
 
-Read block and write block operations are currently missing completion
-timeouts. Add missing timeouts and consolidate them at one location.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Update hardware register access code for CMSTR and CMCSR
+from using sh_cmt_read() and sh_cmt_write() to make use
+of 16-bit register access functions such as sh_cmt_read16()
+and sh_cmt_write16(). Also update sh_cmt_read() and
+sh_cmt_write() now when the special cases are gone.
+
+This patch moves us one step closer to the goal of separating
+counter register access functions from control control register
+functions.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/mmc/host/sh_mmcif.c |   45 +++++++++++++++++++++----------------------
- 1 files changed, 22 insertions(+), 23 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index 092c415..ac4c3c3 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -564,7 +564,6 @@ static void sh_mmcif_single_read(struct sh_mmcif_host *host,
- 			   BLOCK_SIZE_MASK) + 3;
+ drivers/clocksource/sh_cmt.c |   66 +++++++++++++++++++-----------------------
+ 1 file changed, 30 insertions(+), 36 deletions(-)
+
+--- 0005/drivers/clocksource/sh_cmt.c
++++ work/drivers/clocksource/sh_cmt.c	2012-12-14 12:58:01.000000000 +0900
+@@ -56,44 +56,46 @@ struct sh_cmt_priv {
+ 	bool cs_enabled;
+ };
  
- 	host->wait_for = MMCIF_WAIT_FOR_READ;
--	schedule_delayed_work(&host->timeout_work, host->timeout);
- 
- 	/* buf read enable */
- 	sh_mmcif_bitset(host, MMCIF_CE_INT_MASK, MASK_MBUFREN);
-@@ -606,7 +605,7 @@ static void sh_mmcif_multi_read(struct sh_mmcif_host *host,
- 	host->sg_idx = 0;
- 	host->sg_blkidx = 0;
- 	host->pio_ptr = sg_virt(data->sg);
--	schedule_delayed_work(&host->timeout_work, host->timeout);
+-static DEFINE_RAW_SPINLOCK(sh_cmt_lock);
++static inline unsigned long sh_cmt_read16(void __iomem *base,
++					  unsigned long offs)
++{
++	return ioread16(base + (offs << 1));
++}
 +
- 	sh_mmcif_bitset(host, MMCIF_CE_INT_MASK, MASK_MBUFREN);
- }
++static inline void sh_cmt_write16(void __iomem *base, unsigned long offs,
++				  unsigned long value)
++{
++	iowrite16(value, base + (offs << 1));
++}
  
-@@ -629,7 +628,6 @@ static bool sh_mmcif_mread_block(struct sh_mmcif_host *host)
- 	if (!sh_mmcif_next_block(host, p))
- 		return false;
+-#define CMSTR -1 /* shared register */
+ #define CMCSR 0 /* channel register */
+ #define CMCNT 1 /* channel register */
+ #define CMCOR 2 /* channel register */
  
--	schedule_delayed_work(&host->timeout_work, host->timeout);
- 	sh_mmcif_bitset(host, MMCIF_CE_INT_MASK, MASK_MBUFREN);
- 
- 	return true;
-@@ -642,7 +640,6 @@ static void sh_mmcif_single_write(struct sh_mmcif_host *host,
- 			   BLOCK_SIZE_MASK) + 3;
- 
- 	host->wait_for = MMCIF_WAIT_FOR_WRITE;
--	schedule_delayed_work(&host->timeout_work, host->timeout);
- 
- 	/* buf write enable */
- 	sh_mmcif_bitset(host, MMCIF_CE_INT_MASK, MASK_MBUFWEN);
-@@ -684,7 +681,7 @@ static void sh_mmcif_multi_write(struct sh_mmcif_host *host,
- 	host->sg_idx = 0;
- 	host->sg_blkidx = 0;
- 	host->pio_ptr = sg_virt(data->sg);
--	schedule_delayed_work(&host->timeout_work, host->timeout);
-+
- 	sh_mmcif_bitset(host, MMCIF_CE_INT_MASK, MASK_MBUFWEN);
- }
- 
-@@ -707,7 +704,6 @@ static bool sh_mmcif_mwrite_block(struct sh_mmcif_host *host)
- 	if (!sh_mmcif_next_block(host, p))
- 		return false;
- 
--	schedule_delayed_work(&host->timeout_work, host->timeout);
- 	sh_mmcif_bitset(host, MMCIF_CE_INT_MASK, MASK_MBUFWEN);
- 
- 	return true;
-@@ -900,7 +896,6 @@ static void sh_mmcif_stop_cmd(struct sh_mmcif_host *host,
- 	}
- 
- 	host->wait_for = MMCIF_WAIT_FOR_STOP;
--	schedule_delayed_work(&host->timeout_work, host->timeout);
- }
- 
- static void sh_mmcif_request(struct mmc_host *mmc, struct mmc_request *mrq)
-@@ -1121,6 +1116,7 @@ static irqreturn_t sh_mmcif_irqt(int irq, void *dev_id)
+ static inline unsigned long sh_cmt_read(struct sh_cmt_priv *p, int reg_nr)
  {
- 	struct sh_mmcif_host *host = dev_id;
- 	struct mmc_request *mrq = host->mrq;
-+	bool wait = false;
+-	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
+ 	void __iomem *base = p->mapbase;
+-	unsigned long offs;
++	unsigned long offs = reg_nr;
  
- 	cancel_delayed_work_sync(&host->timeout_work);
- 
-@@ -1133,29 +1129,24 @@ static irqreturn_t sh_mmcif_irqt(int irq, void *dev_id)
- 		/* We're too late, the timeout has already kicked in */
- 		return IRQ_HANDLED;
- 	case MMCIF_WAIT_FOR_CMD:
--		if (sh_mmcif_end_cmd(host))
--			/* Wait for data */
--			return IRQ_HANDLED;
-+		/* Wait for data? */
-+		wait = sh_mmcif_end_cmd(host);
- 		break;
- 	case MMCIF_WAIT_FOR_MREAD:
--		if (sh_mmcif_mread_block(host))
--			/* Wait for more data */
--			return IRQ_HANDLED;
-+		/* Wait for more data? */
-+		wait = sh_mmcif_mread_block(host);
- 		break;
- 	case MMCIF_WAIT_FOR_READ:
--		if (sh_mmcif_read_block(host))
--			/* Wait for data end */
--			return IRQ_HANDLED;
-+		/* Wait for data end? */
-+		wait = sh_mmcif_read_block(host);
- 		break;
- 	case MMCIF_WAIT_FOR_MWRITE:
--		if (sh_mmcif_mwrite_block(host))
--			/* Wait data to write */
--			return IRQ_HANDLED;
-+		/* Wait data to write? */
-+		wait = sh_mmcif_mwrite_block(host);
- 		break;
- 	case MMCIF_WAIT_FOR_WRITE:
--		if (sh_mmcif_write_block(host))
--			/* Wait for data end */
--			return IRQ_HANDLED;
-+		/* Wait for data end? */
-+		wait = sh_mmcif_write_block(host);
- 		break;
- 	case MMCIF_WAIT_FOR_STOP:
- 		if (host->sd_error) {
-@@ -1174,6 +1165,12 @@ static irqreturn_t sh_mmcif_irqt(int irq, void *dev_id)
- 		BUG();
+-	if (reg_nr = CMSTR) {
+-		offs = 0;
+-		base -= cfg->channel_offset;
+-	} else
+-		offs = reg_nr;
+-
+-	if (p->width = 16)
++	if (p->width = 16) {
+ 		offs <<= 1;
+-	else {
++		return ioread16(base + offs);
++	} else {
+ 		offs <<= 2;
+-		if ((reg_nr = CMCNT) || (reg_nr = CMCOR))
+-			return ioread32(base + offs);
++		return ioread32(base + offs);
  	}
+-
+-	return ioread16(base + offs);
+ }
  
-+	if (wait) {
-+		schedule_delayed_work(&host->timeout_work, host->timeout);
-+		/* Wait for more data */
-+		return IRQ_HANDLED;
-+	}
+ static inline unsigned long sh_cmt_read_cmstr(struct sh_cmt_priv *p)
+ {
+-	return sh_cmt_read(p, CMSTR);
++	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
 +
- 	if (host->wait_for != MMCIF_WAIT_FOR_STOP) {
- 		struct mmc_data *data = mrq->data;
- 		if (!mrq->cmd->error && data && !data->error)
-@@ -1182,8 +1179,10 @@ static irqreturn_t sh_mmcif_irqt(int irq, void *dev_id)
++	return sh_cmt_read16(p->mapbase - cfg->channel_offset, 0);
+ }
  
- 		if (mrq->stop && !mrq->cmd->error && (!data || !data->error)) {
- 			sh_mmcif_stop_cmd(host, mrq);
--			if (!mrq->stop->error)
-+			if (!mrq->stop->error) {
-+				schedule_delayed_work(&host->timeout_work, host->timeout);
- 				return IRQ_HANDLED;
-+			}
- 		}
+ static inline unsigned long sh_cmt_read_cmcsr(struct sh_cmt_priv *p)
+ {
+-	return sh_cmt_read(p, CMCSR);
++	return sh_cmt_read16(p->mapbase, CMCSR);
+ }
+ 
+ static inline unsigned long sh_cmt_read_cmcnt(struct sh_cmt_priv *p)
+@@ -104,39 +106,30 @@ static inline unsigned long sh_cmt_read_
+ static inline void sh_cmt_write(struct sh_cmt_priv *p, int reg_nr,
+ 				unsigned long value)
+ {
+-	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
+ 	void __iomem *base = p->mapbase;
+-	unsigned long offs;
+-
+-	if (reg_nr = CMSTR) {
+-		offs = 0;
+-		base -= cfg->channel_offset;
+-	} else
+-		offs = reg_nr;
++	unsigned long offs = reg_nr;
+ 
+-	if (p->width = 16)
++	if (p->width = 16) {
+ 		offs <<= 1;
+-	else {
++		iowrite16(value, base + offs);
++	} else {
+ 		offs <<= 2;
+-		if ((reg_nr = CMCNT) || (reg_nr = CMCOR)) {
+-			iowrite32(value, base + offs);
+-			return;
+-		}
++		iowrite32(value, base + offs);
  	}
+-
+-	iowrite16(value, base + offs);
+ }
  
--- 
-1.7.2.5
-
+ static inline void sh_cmt_write_cmstr(struct sh_cmt_priv *p,
+ 				      unsigned long value)
+ {
+-	sh_cmt_write(p, CMSTR, value);
++	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
++
++	sh_cmt_write16(p->mapbase - cfg->channel_offset, 0, value);
+ }
+ 
+ static inline void sh_cmt_write_cmcsr(struct sh_cmt_priv *p,
+ 				      unsigned long value)
+ {
+-	sh_cmt_write(p, CMCSR, value);
++	sh_cmt_write16(p->mapbase, CMCSR, value);
+ }
+ 
+ static inline void sh_cmt_write_cmcnt(struct sh_cmt_priv *p,
+@@ -173,6 +166,7 @@ static unsigned long sh_cmt_get_counter(
+ 	return v2;
+ }
+ 
++static DEFINE_RAW_SPINLOCK(sh_cmt_lock);
+ 
+ static void sh_cmt_start_stop_ch(struct sh_cmt_priv *p, int start)
+ {
