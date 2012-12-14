@@ -1,62 +1,43 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Fri, 14 Dec 2012 15:07:13 +0000
-Subject: Re: [PATCH 1/2] ARM: SH-Mobile: sh73a0: Secondary CPUs handle own SCU flags
-Message-Id: <CABYn4sz6feSqpK_xQUT+Ch4gYmxNdJWyX8XegmpYnLANqEyfdQ@mail.gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 14 Dec 2012 16:45:25 +0000
+Subject: [PATCH 1/7] ARM: sh7372: add missing "#interrupt-cells" properties
+Message-Id: <1355503531-7276-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1354795719-5578-1-git-send-email-hechtb+renesas@gmail.com>
- <50CB324F.4090405@gmail.com>
-In-Reply-To: <50CB324F.4090405@gmail.com>
+References: <1355503531-7276-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1355503531-7276-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Rob,
+Two of four interrupt controllers in sh7372.dtsi are missing the compulsory
+"#interrupt-cells" properties. Fix this.
 
-thanks for commenting on this.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ arch/arm/boot/dts/sh7372.dtsi |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
->>
->> -static void modify_scu_cpu_psr(unsigned long set, unsigned long clr)
->> -{
->> -     void __iomem *scu_base = scu_base_addr();
->> -
->> -     spin_lock(&scu_lock);
->> -     tmp = __raw_readl(scu_base + 8);
->> -     tmp &= ~clr;
->> -     tmp |= set;
->> -     spin_unlock(&scu_lock);
->> -
->> -     /* disable cache coherency after releasing the lock */
->> -     __raw_writel(tmp, scu_base + 8);
->
-> None of this locking was needed as the power status register is byte
-> accessible.
+diff --git a/arch/arm/boot/dts/sh7372.dtsi b/arch/arm/boot/dts/sh7372.dtsi
+index da03ee6..00f1645 100644
+--- a/arch/arm/boot/dts/sh7372.dtsi
++++ b/arch/arm/boot/dts/sh7372.dtsi
+@@ -943,6 +943,7 @@
+ 			interrupt-controller;
+ 			#address-cells = <1>;
+ 			#size-cells = <1>;
++			#interrupt-cells = <1>;
+ 			ranges;
+ 
+ 			reg = <0xe6900000 0x70>;
+@@ -1052,6 +1053,7 @@
+ 			interrupt-controller;
+ 			#address-cells = <1>;
+ 			#size-cells = <1>;
++			#interrupt-cells = <1>;
+ 			ranges;
+ 
+ 			reg = <0xe6900008 0x70>;
+-- 
+1.7.2.5
 
-Even if we switch to byte access here we would need protection, as the
-SCU power register gets touched from different CPUs.
-
->> -}
->> -
->>  static unsigned int __init sh73a0_get_core_count(void)
->>  {
->>       void __iomem *scu_base = scu_base_addr();
->> @@ -82,9 +65,6 @@ static int __cpuinit sh73a0_boot_secondary(unsigned int cpu, struct task_struct
->>  {
->>       cpu = cpu_logical_map(cpu);
->>
->> -     /* enable cache coherency */
->> -     modify_scu_cpu_psr(0, 3 << (cpu * 8));
->> -
->
-> So simply changing this to scu_power_mode call would accomplish the same
-> thing and avoid all the assembly.
-
-Yes that was exactly my fail try before. See
-http://www.spinics.net/lists/linux-sh/msg13685.html
-It broke the bringing up of secondary CPUs completely as
-sh73a0_boot_secondary() is running on CPU0 when booting CPU1. So
-scu_power_mode() changed the registers of the wrong CPU.
-
-cheers,
-
- Bastian
