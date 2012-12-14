@@ -1,65 +1,142 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Dec 2012 22:54:06 +0000
-Subject: [PATCH v4 24/81] ARM: shmobile: r8a7779: Register PFC platform device
-Message-Id: <1356735303-29474-25-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 14 Dec 2012 05:54:19 +0000
+Subject: [PATCH 06/08] clocksource: sh_cmt: CMCNT and CMCOR register access update
+Message-Id: <20121214055419.10081.15178.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20121214055323.10081.12056.sendpatchset@w520>
+In-Reply-To: <20121214055323.10081.12056.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, johnstul@us.ibm.com, horms@verge.net.au, shinya.kuribayashi.px@renesas.com, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
-Add arch code to register the PFC platform device instead of calling the
-driver directly. Platform device registration in the sh-pfc driver will
-be removed.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Break out the CMCNT and CMCOR register access code
+into separate 16-bit and 32-bit functions that are
+hooked into callbacks at init time. This reduces
+the amount of software calculations happening at
+runtime.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/pfc-r8a7779.c |   16 ++++++++++++----
- 1 files changed, 12 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/pfc-r8a7779.c b/arch/arm/mach-shmobile/pfc-r8a7779.c
-index 9513234..3d333b1 100644
---- a/arch/arm/mach-shmobile/pfc-r8a7779.c
-+++ b/arch/arm/mach-shmobile/pfc-r8a7779.c
-@@ -19,6 +19,7 @@
-  */
- #include <linux/init.h>
- #include <linux/kernel.h>
-+#include <linux/platform_device.h>
- #include <linux/sh_pfc.h>
- #include <linux/ioport.h>
- #include <mach/r8a7779.h>
-@@ -2616,9 +2617,6 @@ static struct resource r8a7779_pfc_resources[] = {
- static struct pinmux_info r8a7779_pinmux_info = {
- 	.name = "r8a7779_pfc",
- 
--	.resource = r8a7779_pfc_resources,
--	.num_resources = ARRAY_SIZE(r8a7779_pfc_resources),
--
- 	.unlock_reg = 0xfffc0000, /* PMMR */
- 
- 	.reserved_id = PINMUX_RESERVED,
-@@ -2639,7 +2637,17 @@ static struct pinmux_info r8a7779_pinmux_info = {
- 	.gpio_data_size = ARRAY_SIZE(pinmux_data),
+ drivers/clocksource/sh_cmt.c |   62 +++++++++++++++++-------------------------
+ 1 file changed, 26 insertions(+), 36 deletions(-)
+
+--- 0006/drivers/clocksource/sh_cmt.c
++++ work/drivers/clocksource/sh_cmt.c	2012-12-14 13:00:20.000000000 +0900
+@@ -54,38 +54,39 @@ struct sh_cmt_priv {
+ 	struct clocksource cs;
+ 	unsigned long total_cycles;
+ 	bool cs_enabled;
++
++	/* callbacks for CMCNT and CMCOR access */
++	unsigned long (*read_count)(void __iomem *base, unsigned long offs);
++	void (*write_count)(void __iomem *base, unsigned long offs,
++			    unsigned long value);
  };
  
-+static struct platform_device r8a7779_pfc_device = {
-+	.name		= "sh-pfc",
-+	.id		= -1,
-+	.resource	= r8a7779_pfc_resources,
-+	.num_resources	= ARRAY_SIZE(r8a7779_pfc_resources),
-+	.dev = {
-+		.platform_data = &r8a7779_pinmux_info,
-+	},
-+};
-+
- void r8a7779_pinmux_init(void)
+-static inline unsigned long sh_cmt_read16(void __iomem *base,
+-					  unsigned long offs)
++static unsigned long sh_cmt_read16(void __iomem *base, unsigned long offs)
  {
--	register_pinmux(&r8a7779_pinmux_info);
-+	platform_device_register(&r8a7779_pfc_device);
+ 	return ioread16(base + (offs << 1));
  }
--- 
-1.7.8.6
-
+ 
+-static inline void sh_cmt_write16(void __iomem *base, unsigned long offs,
+-				  unsigned long value)
++static unsigned long sh_cmt_read32(void __iomem *base, unsigned long offs)
++{
++	return ioread32(base + (offs << 2));
++}
++
++static void sh_cmt_write16(void __iomem *base, unsigned long offs,
++			   unsigned long value)
+ {
+ 	iowrite16(value, base + (offs << 1));
+ }
+ 
++static void sh_cmt_write32(void __iomem *base, unsigned long offs,
++			   unsigned long value)
++{
++	iowrite32(value, base + (offs << 2));
++}
++
+ #define CMCSR 0 /* channel register */
+ #define CMCNT 1 /* channel register */
+ #define CMCOR 2 /* channel register */
+ 
+-static inline unsigned long sh_cmt_read(struct sh_cmt_priv *p, int reg_nr)
+-{
+-	void __iomem *base = p->mapbase;
+-	unsigned long offs = reg_nr;
+-
+-	if (p->width = 16) {
+-		offs <<= 1;
+-		return ioread16(base + offs);
+-	} else {
+-		offs <<= 2;
+-		return ioread32(base + offs);
+-	}
+-}
+-
+ static inline unsigned long sh_cmt_read_cmstr(struct sh_cmt_priv *p)
+ {
+ 	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
+@@ -100,22 +101,7 @@ static inline unsigned long sh_cmt_read_
+ 
+ static inline unsigned long sh_cmt_read_cmcnt(struct sh_cmt_priv *p)
+ {
+-	return sh_cmt_read(p, CMCNT);
+-}
+-
+-static inline void sh_cmt_write(struct sh_cmt_priv *p, int reg_nr,
+-				unsigned long value)
+-{
+-	void __iomem *base = p->mapbase;
+-	unsigned long offs = reg_nr;
+-
+-	if (p->width = 16) {
+-		offs <<= 1;
+-		iowrite16(value, base + offs);
+-	} else {
+-		offs <<= 2;
+-		iowrite32(value, base + offs);
+-	}
++	return p->read_count(p->mapbase, CMCNT);
+ }
+ 
+ static inline void sh_cmt_write_cmstr(struct sh_cmt_priv *p,
+@@ -135,13 +121,13 @@ static inline void sh_cmt_write_cmcsr(st
+ static inline void sh_cmt_write_cmcnt(struct sh_cmt_priv *p,
+ 				      unsigned long value)
+ {
+-	sh_cmt_write(p, CMCNT, value);
++	p->write_count(p->mapbase, CMCNT, value);
+ }
+ 
+ static inline void sh_cmt_write_cmcor(struct sh_cmt_priv *p,
+ 				      unsigned long value)
+ {
+-	sh_cmt_write(p, CMCOR, value);
++	p->write_count(p->mapbase, CMCOR, value);
+ }
+ 
+ static unsigned long sh_cmt_get_counter(struct sh_cmt_priv *p,
+@@ -718,10 +704,14 @@ static int sh_cmt_setup(struct sh_cmt_pr
+ 
+ 	if (resource_size(res) = 6) {
+ 		p->width = 16;
++		p->read_count = sh_cmt_read16;
++		p->write_count = sh_cmt_write16;
+ 		p->overflow_bit = 0x80;
+ 		p->clear_bits = ~0x80;
+ 	} else {
+ 		p->width = 32;
++		p->read_count = sh_cmt_read32;
++		p->write_count = sh_cmt_write32;
+ 		p->overflow_bit = 0x8000;
+ 		p->clear_bits = ~0xc000;
+ 	}
