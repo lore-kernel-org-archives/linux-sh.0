@@ -1,82 +1,24 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Wed, 05 Dec 2012 12:13:07 +0000
-Subject: [PATCH 2/2] ARM: shmobile: r8a7740: Add CPU sleep suspend
-Message-Id: <1354709587-25288-2-git-send-email-hechtb+renesas@gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 14 Dec 2012 03:22:28 +0000
+Subject: Re: [PATCH 2/2] ARM: shmobile: r8a7740: Add CPU sleep suspend
+Message-Id: <CANqRtoQutE-2HD1=1dQ3bJb6Vz=p46g0jXD6MTLZ1Doj3DnTQA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1354709587-25288-1-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1354709587-25288-1-git-send-email-hechtb+renesas@gmail.com>
+ <1354709587-25288-2-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1354709587-25288-2-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Bastian Hecht <hechtb@gmail.com>
+On Wed, Dec 5, 2012 at 9:13 PM, Bastian Hecht <hechtb@gmail.com> wrote:
+> From: Bastian Hecht <hechtb@gmail.com>
+>
+> Add the lighest possible sleep mode on Cortex-A9 cores: CPU sleep.
+> It is entered by a simple dsb and wfi instruction via cpu_do_idle(). As
+> just clocks are stopped there is no need to save or restore any state of
+> the system.
+>
+> Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
 
-Add the lighest possible sleep mode on Cortex-A9 cores: CPU sleep.
-It is entered by a simple dsb and wfi instruction via cpu_do_idle(). As
-just clocks are stopped there is no need to save or restore any state of
-the system.
-
-Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
----
- arch/arm/mach-shmobile/board-armadillo800eva.c |    2 ++
- arch/arm/mach-shmobile/include/mach/common.h   |    1 +
- arch/arm/mach-shmobile/pm-r8a7740.c            |   20 ++++++++++++++++++++
- 3 files changed, 23 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 3cc8b1c..48847f6 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1213,6 +1213,8 @@ static void __init eva_init(void)
- 	rmobile_add_device_to_domain("A4LC", &hdmi_lcdc_device);
- 	if (usb)
- 		rmobile_add_device_to_domain("A3SP", usb);
-+
-+	r8a7740_pm_init();
- }
- 
- static void __init eva_earlytimer_init(void)
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index 318551b3..ebcd28d 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -66,6 +66,7 @@ extern void r8a7740_add_early_devices(void);
- extern void r8a7740_add_standard_devices(void);
- extern void r8a7740_clock_init(u8 md_ck);
- extern void r8a7740_pinmux_init(void);
-+extern void r8a7740_pm_init(void);
- 
- extern void r8a7779_init_irq(void);
- extern void r8a7779_map_io(void);
-diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
-index 21e5316d..8cfb5bc 100644
---- a/arch/arm/mach-shmobile/pm-r8a7740.c
-+++ b/arch/arm/mach-shmobile/pm-r8a7740.c
-@@ -58,3 +58,23 @@ void __init r8a7740_init_pm_domains(void)
- }
- 
- #endif /* CONFIG_PM */
-+
-+#ifdef CONFIG_SUSPEND
-+static int r8a7740_enter_suspend(suspend_state_t suspend_state)
-+{
-+	cpu_do_idle();
-+	return 0;
-+}
-+
-+static void r8a7740_suspend_init(void)
-+{
-+	shmobile_suspend_ops.enter = r8a7740_enter_suspend;
-+}
-+#else
-+static void r8a7740_suspend_init(void) {}
-+#endif
-+
-+void __init r8a7740_pm_init(void)
-+{
-+	r8a7740_suspend_init();
-+}
--- 
-1.7.9.5
-
+Acked-by: Magnus Damm <damm@opensource.se>
