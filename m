@@ -1,55 +1,54 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 11 Dec 2012 10:56:50 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7779: Fix GPIO input reg addresses
-Message-Id: <16942826.W5hEBZUpzF@avalon>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Fri, 14 Dec 2012 03:43:12 +0000
+Subject: [PATCH] ARM: mach-shmobile: sh73a0 external IRQ wake update
+Message-Id: <20121214034312.20055.61728.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1355219295-4279-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1355219295-4279-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Phil,
+From: Magnus Damm <damm@opensource.se>
 
-Thank you for the patch.
+Use sh73a0_set_wake() for external IRQ signals on sh73a0.
 
-Your SoB line is missing, have you forgotten to commit with -s ?
+The sh73a0 IRQ hardware for external IRQ pins consists of
+the INTCA interrupt controller and the GIC together doing
+their best to limp along. These external IRQ pins are
+treated as a special case where interrupts need to be
+managed in both interrupt controllers in parallel.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+The ->irq_set_wake() callback for the external IRQ pins
+can be dealt with in the same way as INTCA-only without
+involving the GIC. So this patch updates the external
+IRQ pin code for sh73a0 to no longer involve the GIC.
 
-On Tuesday 11 December 2012 09:48:15 Phil Edworthy wrote:
-> The INDTx register addresses were wrong.
-> ---
->  arch/arm/mach-shmobile/pfc-r8a7779.c |   14 +++++++-------
->  1 files changed, 7 insertions(+), 7 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/pfc-r8a7779.c
-> b/arch/arm/mach-shmobile/pfc-r8a7779.c index 15f6a48..717e058 100644
-> --- a/arch/arm/mach-shmobile/pfc-r8a7779.c
-> +++ b/arch/arm/mach-shmobile/pfc-r8a7779.c
-> @@ -2585,13 +2585,13 @@ static struct pinmux_cfg_reg pinmux_config_regs[] > { };
-> 
->  static struct pinmux_data_reg pinmux_data_regs[] = {
-> -	{ PINMUX_DATA_REG("INDT0", 0xffc40008, 32) { GP_INDT(0) } },
-> -	{ PINMUX_DATA_REG("INDT1", 0xffc41008, 32) { GP_INDT(1) } },
-> -	{ PINMUX_DATA_REG("INDT2", 0xffc42008, 32) { GP_INDT(2) } },
-> -	{ PINMUX_DATA_REG("INDT3", 0xffc43008, 32) { GP_INDT(3) } },
-> -	{ PINMUX_DATA_REG("INDT4", 0xffc44008, 32) { GP_INDT(4) } },
-> -	{ PINMUX_DATA_REG("INDT5", 0xffc45008, 32) { GP_INDT(5) } },
-> -	{ PINMUX_DATA_REG("INDT6", 0xffc46008, 32) {
-> +	{ PINMUX_DATA_REG("INDT0", 0xffc4000c, 32) { GP_INDT(0) } },
-> +	{ PINMUX_DATA_REG("INDT1", 0xffc4100c, 32) { GP_INDT(1) } },
-> +	{ PINMUX_DATA_REG("INDT2", 0xffc4200c, 32) { GP_INDT(2) } },
-> +	{ PINMUX_DATA_REG("INDT3", 0xffc4300c, 32) { GP_INDT(3) } },
-> +	{ PINMUX_DATA_REG("INDT4", 0xffc4400c, 32) { GP_INDT(4) } },
-> +	{ PINMUX_DATA_REG("INDT5", 0xffc4500c, 32) { GP_INDT(5) } },
-> +	{ PINMUX_DATA_REG("INDT6", 0xffc4600c, 32) {
->  		0, 0, 0, 0, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0, 0, 0,
->  		0, 0, 0, 0, 0, 0, 0, GP_6_8_DATA,
->  		GP_6_7_DATA, GP_6_6_DATA, GP_6_5_DATA, GP_6_4_DATA,
--- 
-Regards,
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Laurent Pinchart
+ arch/arm/mach-shmobile/intc-sh73a0.c |    7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
 
+--- 0001/arch/arm/mach-shmobile/intc-sh73a0.c
++++ work/arch/arm/mach-shmobile/intc-sh73a0.c	2012-12-14 12:29:17.000000000 +0900
+@@ -315,11 +315,6 @@ static int intca_gic_set_type(struct irq
+ 	return irq_cbp(irq_set_type, to_intca_reloc_irq(data), type);
+ }
+ 
+-static int intca_gic_set_wake(struct irq_data *data, unsigned int on)
+-{
+-	return irq_cbp(irq_set_wake, to_intca_reloc_irq(data), on);
+-}
+-
+ #ifdef CONFIG_SMP
+ static int intca_gic_set_affinity(struct irq_data *data,
+ 				  const struct cpumask *cpumask,
+@@ -339,7 +334,7 @@ struct irq_chip intca_gic_irq_chip = {
+ 	.irq_disable		= intca_gic_disable,
+ 	.irq_shutdown		= intca_gic_disable,
+ 	.irq_set_type		= intca_gic_set_type,
+-	.irq_set_wake		= intca_gic_set_wake,
++	.irq_set_wake		= sh73a0_set_wake,
+ #ifdef CONFIG_SMP
+ 	.irq_set_affinity	= intca_gic_set_affinity,
+ #endif
