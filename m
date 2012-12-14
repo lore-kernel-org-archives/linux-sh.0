@@ -1,89 +1,128 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 12 Dec 2012 14:38:07 +0000
-Subject: [PATCH 03/14] mmc: sh_mmcif: add support for bundled MMCIF IRQs
-Message-Id: <1355323098-18061-4-git-send-email-g.liakhovetski@gmx.de>
+Date: Fri, 14 Dec 2012 16:45:31 +0000
+Subject: [PATCH 7/7] ARM: mackerel: add more devices to DT
+Message-Id: <1355503531-7276-8-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1355323098-18061-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1355323098-18061-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1355503531-7276-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1355503531-7276-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>, Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+This patch adds devices, whose initialisation from DT is already supported,
+into the board .dts file.
 
-On newer SoCs like R-Mobile U2, MMCIF interrupts are bundled.
-
-Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/mmc/host/sh_mmcif.c |   25 ++++++++++++++++---------
- 1 files changed, 16 insertions(+), 9 deletions(-)
+ arch/arm/boot/dts/sh7372-mackerel.dts |   96 +++++++++++++++++++++++++++++++++
+ 1 files changed, 96 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index 8a188fe..d80c294 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -1307,10 +1307,11 @@ static int sh_mmcif_probe(struct platform_device *pdev)
- 	struct sh_mmcif_plat_data *pd = pdev->dev.platform_data;
- 	struct resource *res;
- 	void __iomem *reg;
-+	const char *name;
- 
- 	irq[0] = platform_get_irq(pdev, 0);
- 	irq[1] = platform_get_irq(pdev, 1);
--	if (irq[0] < 0 || irq[1] < 0) {
-+	if (irq[0] < 0) {
- 		dev_err(&pdev->dev, "Get irq error\n");
- 		return -ENXIO;
- 	}
-@@ -1375,15 +1376,19 @@ static int sh_mmcif_probe(struct platform_device *pdev)
- 	sh_mmcif_sync_reset(host);
- 	sh_mmcif_writel(host->addr, MMCIF_CE_INT_MASK, MASK_ALL);
- 
--	ret = request_threaded_irq(irq[0], sh_mmcif_intr, sh_mmcif_irqt, 0, "sh_mmc:error", host);
-+	name = irq[1] < 0 ? dev_name(&pdev->dev) : "sh_mmc:error";
-+	ret = request_threaded_irq(irq[0], sh_mmcif_intr, sh_mmcif_irqt, 0, name, host);
- 	if (ret) {
--		dev_err(&pdev->dev, "request_irq error (sh_mmc:error)\n");
-+		dev_err(&pdev->dev, "request_irq error (%s)\n", name);
- 		goto ereqirq0;
- 	}
--	ret = request_threaded_irq(irq[1], sh_mmcif_intr, sh_mmcif_irqt, 0, "sh_mmc:int", host);
--	if (ret) {
--		dev_err(&pdev->dev, "request_irq error (sh_mmc:int)\n");
--		goto ereqirq1;
-+	if (irq[1] >= 0) {
-+		ret = request_threaded_irq(irq[1], sh_mmcif_intr, sh_mmcif_irqt,
-+					   0, "sh_mmc:int", host);
-+		if (ret) {
-+			dev_err(&pdev->dev, "request_irq error (sh_mmc:int)\n");
-+			goto ereqirq1;
-+		}
- 	}
- 
- 	if (pd && pd->use_cd_gpio) {
-@@ -1408,7 +1413,8 @@ emmcaddh:
- 	if (pd && pd->use_cd_gpio)
- 		mmc_gpio_free_cd(mmc);
- erqcd:
--	free_irq(irq[1], host);
-+	if (irq[1] >= 0)
-+		free_irq(irq[1], host);
- ereqirq1:
- 	free_irq(irq[0], host);
- ereqirq0:
-@@ -1457,7 +1463,8 @@ static int sh_mmcif_remove(struct platform_device *pdev)
- 	irq[1] = platform_get_irq(pdev, 1);
- 
- 	free_irq(irq[0], host);
--	free_irq(irq[1], host);
-+	if (irq[1] >= 0)
-+		free_irq(irq[1], host);
- 
- 	platform_set_drvdata(pdev, NULL);
- 
+diff --git a/arch/arm/boot/dts/sh7372-mackerel.dts b/arch/arm/boot/dts/sh7372-mackerel.dts
+index 2ede70d..8bc95c0 100644
+--- a/arch/arm/boot/dts/sh7372-mackerel.dts
++++ b/arch/arm/boot/dts/sh7372-mackerel.dts
+@@ -19,4 +19,100 @@
+ 		device_type = "memory";
+ 		reg = <0x40000000 0x10000000>;
+ 	};
++
++	reg_1p8v: regulator@0 {
++		compatible = "regulator-fixed";
++		regulator-name = "1P8V";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <1800000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++
++	reg_3p3v: regulator@1 {
++		compatible = "regulator-fixed";
++		regulator-name = "3P3V";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-boot-on;
++		regulator-always-on;
++	};
++
++	lan9220@14000000 {
++		compatible = "smsc,lan9220", "smsc,lan9115";
++		reg = <0x14000000 0x2000000>;
++		phy-mode = "mii";
++		interrupt-parent = <&intca_irq_pins_lo>;
++		interrupts = <0x2c0>;
++		reg-io-width = <4>;
++		smsc,irq-push-pull;
++		smsc,save-mac-address;
++		vddvario-supply = <&reg_1p8v>;
++		vdd33a-supply = <&reg_3p3v>;
++	};
++
++	i2c0: i2c@fff20000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0xfff20000 0x1000>;
++		interrupt-parent = <&intcs>;
++		interrupts = <0x4200 0x4220 0x4240 0x4260>;
++
++		clock-frequency = <100000>;
++
++		touchscreen@55 {
++			compatible = "sitronix,st1232-ts";
++			reg = <0x55>;
++			interrupt-parent = <&intca_irq_pins_lo>;
++			interrupts = <0x02e0>;
++		};
++
++		codec@13 {
++			compatible = "asahi-kasei,ak4642-codec";
++			reg = <0x13>;
++		};
++	};
++
++	i2c1: i2c@e6c20000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0xe6c20000 0x1000>;
++		interrupt-parent = <&intca>;
++		interrupts = <0x780 0x7a0 0x7c0 0x7e0>;
++
++		clock-frequency = <100000>;
++
++		accelerometer@53 {
++			compatible = "analog-devices,adxl34x";
++			reg = <0x53>;
++			interrupt-parent = <&intca_irq_pins_hi>;
++			interrupts = <0x32a0>;
++		};
++	};
++
++	mmcif0: mmcif@0xe6bd0000 {
++		compatible = "renesas,sh-mmcif", "renesas,sh7372-mmcif";
++		reg = <0xe6bd0000 0x100>;
++		interrupt-parent = <&intca>;
++		interrupts = <0x1ac0 0x1ae0>;
++		vmmc-supply = <&reg_1p8v>;
++	};
++
++	sdhi0: sdhi@0xe6850000 {
++		compatible = "renesas,shmobile-sdhi";
++		reg = <0xe6850000 0x100>;
++		interrupt-parent = <&intca>;
++		interrupts = <0x0e00 0x0e20 0x0e40>;
++		vmmc-supply = <&reg_3p3v>;
++	};
++
++	sdhi2: sdhi@0xe6870000 {
++		compatible = "renesas,shmobile-sdhi";
++		reg = <0xe6870000 0x100>;
++		interrupt-parent = <&intca>;
++		interrupts = <0x1200 0x1220 0x1240>;
++		vmmc-supply = <&reg_3p3v>;
++	};
+ };
 -- 
 1.7.2.5
 
