@@ -1,25 +1,48 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sat, 15 Dec 2012 08:36:14 +0000
-Subject: Re: [PATCH 4/7] ARM: sh7372: add clock lookup entries for DT-based devices
-Message-Id: <20121215083613.GG9073@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 14 Dec 2012 16:45:27 +0000
+Subject: [PATCH 3/7] ARM: sh7372: support mixed DT and board code interrupt controller init
+Message-Id: <1355503531-7276-4-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1355503531-7276-1-git-send-email-g.liakhovetski@gmx.de>
- <1355503531-7276-5-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1355503531-7276-5-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1355503531-7276-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Dec 14, 2012 at 05:45:28PM +0100, Guennadi Liakhovetski wrote:
-> When booting with DT, devices are named differently. To get their clocks
-> additional entries have to be added to the lookup table.
+Extend DT interrupt controller initialisation to automatically fall back to
+platform data based configuration, if booting without DT. This simplifies
+implementing boards, capable of booting in either mode with a single kernel.
 
-Thanks applied.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ arch/arm/mach-shmobile/intc-sh7372.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
 
-I have applied this to a temporary 'soc5' branch which is based on 3.7-rc1.
-I will rebase this on 3.8-rc1 once it is released and rename the branch
-to the more sane 'soc'.
-
-I have also merged this change into the next branch.
+diff --git a/arch/arm/mach-shmobile/intc-sh7372.c b/arch/arm/mach-shmobile/intc-sh7372.c
+index c923518..9c13ecc 100644
+--- a/arch/arm/mach-shmobile/intc-sh7372.c
++++ b/arch/arm/mach-shmobile/intc-sh7372.c
+@@ -23,6 +23,7 @@
+ #include <linux/irq.h>
+ #include <linux/io.h>
+ #include <linux/sh_intc.h>
++#include <mach/common.h>
+ #include <mach/intc.h>
+ #include <mach/irqs.h>
+ #include <asm/mach-types.h>
+@@ -629,6 +630,11 @@ static const struct of_device_id irq_of_match[] __initconst = {
+ 
+ void __init sh7372_init_irq_of(void)
+ {
++	if (!of_have_populated_dt()) {
++		sh7372_init_irq();
++		return;
++	}
++
+ 	of_irq_init(irq_of_match);
+ 
+ 	sh7372_init_intc(0xe6940000, 0xe6950000, 0xffd20000, 0xffd50000,
+-- 
+1.7.2.5
 
