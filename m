@@ -1,37 +1,55 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 15 Dec 2012 09:03:42 +0000
-Subject: [PATCH 08/10] ARM: shmobile: r8a7740: Use DT initialisation of INTC
-Message-Id: <1355562224-29448-9-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 15 Dec 2012 22:51:06 +0000
+Subject: [PATCH v3 32/81] sh: sh7264: Register PFC platform device
+Message-Id: <1355611915-25060-33-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1355562224-29448-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1355562224-29448-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Add arch code to register the PFC platform device instead of calling the
+driver directly. Platform device registration in the sh-pfc driver will
+be removed.
 
-Cc: Magnus Damm <damm@opensource.se>
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-r8a7740.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/sh/Kconfig                         |    1 +
+ arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c |    3 ++-
+ 2 files changed, 3 insertions(+), 1 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 11bb1d9..a8e57ab 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -750,7 +750,7 @@ static const char *r8a7740_boards_compat_dt[] __initdata = {
- DT_MACHINE_START(SH7372_DT, "Generic R8A7740 (Flattened Device Tree)")
- 	.map_io		= r8a7740_map_io,
- 	.init_early	= r8a7740_add_early_devices_dt,
--	.init_irq	= r8a7740_init_irq,
-+	.init_irq	= r8a7740_init_irq_of,
- 	.handle_irq	= shmobile_handle_irq_intc,
- 	.init_machine	= r8a7740_add_standard_devices_dt,
- 	.timer		= &shmobile_timer,
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index fe970c0..8313068 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -299,6 +299,7 @@ config CPU_SUBTYPE_SH7264
+ 	select CPU_HAS_FPU
+ 	select SYS_SUPPORTS_CMT
+ 	select SYS_SUPPORTS_MTU2
++	select PINCTRL
+ 
+ config CPU_SUBTYPE_SH7269
+ 	bool "Support SH7269 processor"
+diff --git a/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c b/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c
+index 79a0d60..ed9fc39 100644
+--- a/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c
++++ b/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c
+@@ -11,6 +11,7 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
++#include <cpu/pfc.h>
+ #include <cpu/sh7264.h>
+ 
+ enum {
+@@ -2131,6 +2132,6 @@ static struct pinmux_info sh7264_pinmux_info = {
+ 
+ static int __init plat_pinmux_setup(void)
+ {
+-	return register_pinmux(&sh7264_pinmux_info);
++	return sh_pfc_register_info(NULL, NULL, 0, &sh7264_pinmux_info);
+ }
+ arch_initcall(plat_pinmux_setup);
 -- 
-1.7.10.4
+1.7.8.6
 
