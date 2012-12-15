@@ -1,51 +1,141 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 12 Dec 2012 14:38:06 +0000
-Subject: [PATCH 02/14] mmc: sh_mmcif: ensure run-time suspend call is processed before suspend
-Message-Id: <1355323098-18061-3-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Sat, 15 Dec 2012 09:03:37 +0000
+Subject: [PATCH 03/10] ARM: shmobile: Add support OF of INTC for r8a7740
+Message-Id: <1355562224-29448-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1355323098-18061-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1355323098-18061-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1355562224-29448-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1355562224-29448-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>, Teppei Kamijou <teppei.kamijou.yb@renesas.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Teppei Kamijou <teppei.kamijou.yb@renesas.com>
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
-With this post-v2.6.35 change applied:
+This CPU has three interrupt controllers (INTCA and INTCA IRQ pins).
+This supports these.
+NOTE: This supports DT of INTCA only.
 
-commit a0a1a5fd4fb15ec61117c759fe9f5c16c53d9e9c
-Author: Tejun Heo <tj@kernel.org>
-Date:   Tue Jun 29 10:07:12 2010 +0200
-    workqueue: reimplement workqueue freeze using max_active
-
-freeze_workqueues_begin() was introduced and workqueue now gets frozen
-before device drivers suspend operations.
-
-We have to ensure that run-time PM suspend operation completes before
-system-wide suspend is started.
-
-igned-off-by: Teppei Kamijou <teppei.kamijou.yb@renesas.com>
-igned-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Magnus Damm <damm@opensource.se>
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/mmc/host/sh_mmcif.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ arch/arm/mach-shmobile/include/mach/common.h |    1 +
+ arch/arm/mach-shmobile/intc-r8a7740.c        |   70 +++++++++++++++++++++++---
+ 2 files changed, 65 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index 543f6ce..8a188fe 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -982,7 +982,7 @@ static void sh_mmcif_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 			}
- 		}
- 		if (host->power) {
--			pm_runtime_put(&host->pd->dev);
-+			pm_runtime_put_sync(&host->pd->dev);
- 			clk_disable(host->hclk);
- 			host->power = false;
- 			if (ios->power_mode = MMC_POWER_OFF)
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index d47e215..8402b5d 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -59,6 +59,7 @@ extern struct clk sh73a0_extal2_clk;
+ extern struct clk sh73a0_extcki_clk;
+ extern struct clk sh73a0_extalr_clk;
+ 
++extern void r8a7740_init_irq_of(void);
+ extern void r8a7740_init_irq(void);
+ extern void r8a7740_map_io(void);
+ extern void r8a7740_add_early_devices(void);
+diff --git a/arch/arm/mach-shmobile/intc-r8a7740.c b/arch/arm/mach-shmobile/intc-r8a7740.c
+index 9a69a31..cde5cc3 100644
+--- a/arch/arm/mach-shmobile/intc-r8a7740.c
++++ b/arch/arm/mach-shmobile/intc-r8a7740.c
+@@ -1,8 +1,9 @@
+ /*
+  * R8A7740 processor support
+  *
+- * Copyright (C) 2011  Renesas Solutions Corp.
++ * Copyright (C) 2011, 2012  Renesas Solutions Corp.
+  * Copyright (C) 2011  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ * Copyright (C) 2012  Nobuhiro Iwamatsu <nobuhiro.iwamatsu@renesas.com>
+  *
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+@@ -17,6 +18,7 @@
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
++#define pr_fmt(fmt) "intc: " fmt
+ 
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+@@ -623,15 +625,71 @@ static void intcs_demux(unsigned int irq, struct irq_desc *desc)
+ 	generic_handle_irq(intcs_evt2irq(evtcodeas));
+ }
+ 
+-void __init r8a7740_init_irq(void)
++static void __init r8a7740_init_intc(resource_size_t intcs0_start,
++					unsigned short vect)
++{
++	void __iomem *intevtsa;
++
++	/* demux using INTEVTSA */
++	intevtsa = ioremap_nocache(intcs0_start + 0x100, PAGE_SIZE);
++	irq_set_handler_data(evt2irq(vect), (void *)intevtsa);
++	irq_set_chained_handler(evt2irq(vect), intcs_demux);
++}
++
++#ifdef CONFIG_OF
++static unsigned short intevtsa_vect;
++
++#define INTC_RES_MAX 2
++static struct {
++	struct intc_desc intc_desc;
++	struct resource intc_res[INTC_RES_MAX];
++} intc_data __initdata;
++
++static int __init intc_of_init(struct device_node *np,
++	struct device_node *parent)
++{
++	int ret, i;
++
++	memset(&intc_data, 0, sizeof(intc_data));
++
++	for (i = 0; i < INTC_RES_MAX; i++) {
++		ret = of_address_to_resource(np, i, &intc_data.intc_res[i]);
++		if (ret < 0)
++			break;
++	}
++
++	intc_data.intc_desc.name = (char *)of_node_full_name(np);
++	intc_data.intc_desc.resource = intc_data.intc_res;
++	intc_data.intc_desc.num_resources = i;
++
++	ret = of_sh_intc_get_intc(np, &intc_data.intc_desc);
++	if (ret)
++		return ret;
++
++	of_sh_intc_get_intevtsa_vect(np, &intevtsa_vect);
++
++	register_intc_controller(&intc_data.intc_desc);
++	return 0;
++}
++
++static const struct of_device_id irq_of_match[] __initconst = {
++	{ .compatible = "renesas,sh_intc", .data = intc_of_init },
++	{ /*sentinel*/ }
++};
++
++void __init r8a7740_init_irq_of(void)
+ {
+-	void __iomem *intevtsa = ioremap_nocache(0xffd20100, PAGE_SIZE);
++	of_irq_init(irq_of_match);
+ 
++	register_intc_controller(&intcs_desc);
++}
++#endif /* CONFIG_OF */
++
++void __init r8a7740_init_irq(void)
++{
+ 	register_intc_controller(&intca_desc);
+ 	register_intc_controller(&intca_irq_pins_desc);
+ 	register_intc_controller(&intcs_desc);
+ 
+-	/* demux using INTEVTSA */
+-	irq_set_handler_data(evt2irq(0xf80), (void *)intevtsa);
+-	irq_set_chained_handler(evt2irq(0xf80), intcs_demux);
++	r8a7740_init_intc(0xffd20000, 0xf80);
+ }
 -- 
-1.7.2.5
+1.7.10.4
 
