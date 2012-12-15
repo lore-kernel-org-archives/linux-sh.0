@@ -1,43 +1,25 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 14 Dec 2012 16:45:25 +0000
-Subject: [PATCH 1/7] ARM: sh7372: add missing "#interrupt-cells" properties
-Message-Id: <1355503531-7276-2-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms@verge.net.au>
+Date: Sat, 15 Dec 2012 09:05:28 +0000
+Subject: Re: [PATCH 1/7] ARM: sh7372: add missing "#interrupt-cells" properties
+Message-Id: <20121215090527.GI9073@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1355503531-7276-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1355503531-7276-1-git-send-email-g.liakhovetski@gmx.de>
+ <1355503531-7276-2-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1355503531-7276-2-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Two of four interrupt controllers in sh7372.dtsi are missing the compulsory
-"#interrupt-cells" properties. Fix this.
+On Fri, Dec 14, 2012 at 05:45:25PM +0100, Guennadi Liakhovetski wrote:
+> Two of four interrupt controllers in sh7372.dtsi are missing the compulsory
+> "#interrupt-cells" properties. Fix this.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
- arch/arm/boot/dts/sh7372.dtsi |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
+Thanks.
 
-diff --git a/arch/arm/boot/dts/sh7372.dtsi b/arch/arm/boot/dts/sh7372.dtsi
-index da03ee6..00f1645 100644
---- a/arch/arm/boot/dts/sh7372.dtsi
-+++ b/arch/arm/boot/dts/sh7372.dtsi
-@@ -943,6 +943,7 @@
- 			interrupt-controller;
- 			#address-cells = <1>;
- 			#size-cells = <1>;
-+			#interrupt-cells = <1>;
- 			ranges;
- 
- 			reg = <0xe6900000 0x70>;
-@@ -1052,6 +1053,7 @@
- 			interrupt-controller;
- 			#address-cells = <1>;
- 			#size-cells = <1>;
-+			#interrupt-cells = <1>;
- 			ranges;
- 
- 			reg = <0xe6900008 0x70>;
--- 
-1.7.2.5
+I think that is fixed in the latest INTC DT series that I posted just
+a few moments ago "[RFC v7 00/10] ARM: shmobile: DT initialisation of INTC
+and GIC".
 
+Sorry for sitting on that code for so long. Could you check if the
+problem you saw is resolved?
