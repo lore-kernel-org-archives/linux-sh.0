@@ -1,33 +1,62 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Mon, 03 Dec 2012 19:23:10 +0000
-Subject: Re: [PATCH] mmc: sh_mobile_sdhi: remove unneeded clock connection ID
-Message-Id: <87hao3hrdt.fsf@octavius.laptop.org>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 15 Dec 2012 22:51:01 +0000
+Subject: [PATCH v3 27/81] ARM: shmobile: r8a7740: Add pin control resources
+Message-Id: <1355611915-25060-28-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1211281016550.1710@axis700.grange>
-	<20121130085903.GF4501@verge.net.au>
-In-Reply-To: <20121130085903.GF4501@verge.net.au> (Simon Horman's message of
-	"Fri, 30 Nov 2012 17:59:04 +0900")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi,
+Add memory resources for the pin control platform device to let the
+sh-pfc driver ioremap() registers properly instead of evily casting
+register physical addresses to virtual addresses.
 
-On Fri, Nov 30 2012, Simon Horman wrote:
-> On Wed, Nov 28, 2012 at 10:24:21AM +0100, Guennadi Liakhovetski wrote:
->> SDHI only uses one clock, all ARM and SuperH platform register SDHI clock
->> lookup entries with no connection ID, hence it can be dropped in the
->> driver too.
->> 
->> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
->
-> Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
+---
+ arch/arm/mach-shmobile/pfc-r8a7740.c |   17 +++++++++++++++++
+ 1 files changed, 17 insertions(+), 0 deletions(-)
 
-Thanks, pushed to mmc-next for 3.8.
-
-- Chris.
+diff --git a/arch/arm/mach-shmobile/pfc-r8a7740.c b/arch/arm/mach-shmobile/pfc-r8a7740.c
+index 8a412b1..84ef85d 100644
+--- a/arch/arm/mach-shmobile/pfc-r8a7740.c
++++ b/arch/arm/mach-shmobile/pfc-r8a7740.c
+@@ -18,7 +18,9 @@
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
++#include <linux/bug.h>
+ #include <linux/init.h>
++#include <linux/ioport.h>
+ #include <linux/kernel.h>
+ #include <linux/platform_device.h>
+ #include <linux/sh_pfc.h>
+@@ -2612,9 +2614,24 @@ static struct pinmux_info r8a7740_pinmux_info = {
+ 	.gpio_irq_size	= ARRAY_SIZE(pinmux_irqs),
+ };
+ 
++static struct resource r8a7740_pfc_resources[] = {
++	[0] = {
++		.start	= 0xe6050000,
++		.end	= 0xe6057fff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= 0xe605800c,
++		.end	= 0xe605802b,
++		.flags	= IORESOURCE_MEM,
++	}
++};
++
+ static struct platform_device r8a7740_pfc_device = {
+ 	.name		= "sh-pfc",
+ 	.id		= -1,
++	.resource	= r8a7740_pfc_resources,
++	.num_resources	= ARRAY_SIZE(r8a7740_pfc_resources),
+ 	.dev = {
+ 		.platform_data = &r8a7740_pinmux_info,
+ 	},
 -- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
+1.7.8.6
+
