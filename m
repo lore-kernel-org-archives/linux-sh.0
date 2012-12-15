@@ -1,89 +1,199 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 18 Dec 2012 00:46:04 +0000
-Subject: [RFC v8 00/9] ARM: shmobile: DT initialisation of INTC and GIC
-Message-Id: <1355791573-20281-1-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 15 Dec 2012 22:50:48 +0000
+Subject: [PATCH v3 14/81] sh-pfc: Use devm_kzalloc()
+Message-Id: <1355611915-25060-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The aims of this series are:
+Replace probe-time kmalloc()/kzalloc() calls with devm_kzalloc() and get
+rid of the corresponding kfree() calls.
 
-* Add DT bindings to to INTC
-* Allowing sh7372 and r8a7740 ARM shmobile SoCs to use DT
-  to initialise INTCA
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/sh/pfc/core.c    |   20 +++++++-------------
+ drivers/sh/pfc/gpio.c    |    8 +++-----
+ drivers/sh/pfc/pinctrl.c |   31 +++++++++----------------------
+ 3 files changed, 19 insertions(+), 40 deletions(-)
 
-Change since v7
-* Squash the first and second patch of the series and rename there result
-  "SH: intc: Add support OF for INTC"
+diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
+index 6d162e6..5491902 100644
+--- a/drivers/sh/pfc/core.c
++++ b/drivers/sh/pfc/core.c
+@@ -33,9 +33,6 @@ static void pfc_iounmap(struct sh_pfc *pfc)
+ 	for (k = 0; k < pfc->pdata->num_resources; k++)
+ 		if (pfc->window[k].virt)
+ 			iounmap(pfc->window[k].virt);
+-
+-	kfree(pfc->window);
+-	pfc->window = NULL;
+ }
+ 
+ static int pfc_ioremap(struct sh_pfc *pfc)
+@@ -46,10 +43,10 @@ static int pfc_ioremap(struct sh_pfc *pfc)
+ 	if (!pfc->pdata->num_resources)
+ 		return 0;
+ 
+-	pfc->window = kzalloc(pfc->pdata->num_resources * sizeof(*pfc->window),
+-			      GFP_NOWAIT);
++	pfc->window = devm_kzalloc(pfc->dev, pfc->pdata->num_resources *
++				   sizeof(*pfc->window), GFP_NOWAIT);
+ 	if (!pfc->window)
+-		goto err1;
++		return -ENOMEM;
+ 
+ 	for (k = 0; k < pfc->pdata->num_resources; k++) {
+ 		res = pfc->pdata->resource + k;
+@@ -58,16 +55,13 @@ static int pfc_ioremap(struct sh_pfc *pfc)
+ 		pfc->window[k].size = resource_size(res);
+ 		pfc->window[k].virt = ioremap_nocache(res->start,
+ 							 resource_size(res));
+-		if (!pfc->window[k].virt)
+-			goto err2;
++		if (!pfc->window[k].virt) {
++			pfc_iounmap(pfc);
++			return -ENOMEM;
++		}
+ 	}
+ 
+ 	return 0;
+-
+-err2:
+-	pfc_iounmap(pfc);
+-err1:
+-	return -1;
+ }
+ 
+ static void __iomem *pfc_phys_to_virt(struct sh_pfc *pfc,
+diff --git a/drivers/sh/pfc/gpio.c b/drivers/sh/pfc/gpio.c
+index a32ea80..37493e5 100644
+--- a/drivers/sh/pfc/gpio.c
++++ b/drivers/sh/pfc/gpio.c
+@@ -11,6 +11,7 @@
+ 
+ #define pr_fmt(fmt) KBUILD_MODNAME " gpio: " fmt
+ 
++#include <linux/device.h>
+ #include <linux/init.h>
+ #include <linux/gpio.h>
+ #include <linux/slab.h>
+@@ -143,7 +144,7 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+ 	struct sh_pfc_chip *chip;
+ 	int ret;
+ 
+-	chip = kzalloc(sizeof(struct sh_pfc_chip), GFP_KERNEL);
++	chip = devm_kzalloc(pfc->dev, sizeof(*chip), GFP_KERNEL);
+ 	if (unlikely(!chip))
+ 		return -ENOMEM;
+ 
+@@ -152,10 +153,8 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+ 	sh_pfc_gpio_setup(chip);
+ 
+ 	ret = gpiochip_add(&chip->gpio_chip);
+-	if (unlikely(ret < 0)) {
+-		kfree(chip);
++	if (unlikely(ret < 0))
+ 		return ret;
+-	}
+ 
+ 	pfc->gpio = chip;
+ 
+@@ -175,7 +174,6 @@ int sh_pfc_unregister_gpiochip(struct sh_pfc *pfc)
+ 	if (unlikely(ret < 0))
+ 		return ret;
+ 
+-	kfree(chip);
+ 	pfc->gpio = NULL;
+ 	return 0;
+ }
+diff --git a/drivers/sh/pfc/pinctrl.c b/drivers/sh/pfc/pinctrl.c
+index 2fc8731..b3dbefd 100644
+--- a/drivers/sh/pfc/pinctrl.c
++++ b/drivers/sh/pfc/pinctrl.c
+@@ -11,6 +11,7 @@
+ #define DRV_NAME "sh-pfc"
+ #define pr_fmt(fmt) KBUILD_MODNAME " pinctrl: " fmt
+ 
++#include <linux/device.h>
+ #include <linux/init.h>
+ #include <linux/module.h>
+ #include <linux/sh_pfc.h>
+@@ -357,8 +358,8 @@ static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ 
+ 	pmx->nr_pads = pfc->pdata->last_gpio - pfc->pdata->first_gpio + 1;
+ 
+-	pmx->pads = kmalloc(sizeof(struct pinctrl_pin_desc) * pmx->nr_pads,
+-			    GFP_KERNEL);
++	pmx->pads = devm_kzalloc(pfc->dev, sizeof(*pmx->pads) * pmx->nr_pads,
++				 GFP_KERNEL);
+ 	if (unlikely(!pmx->pads)) {
+ 		pmx->nr_pads = 0;
+ 		return -ENOMEM;
+@@ -399,8 +400,8 @@ static int sh_pfc_map_functions(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ 	unsigned long flags;
+ 	int i, fn;
+ 
+-	pmx->functions = kzalloc(pmx->nr_functions * sizeof(void *),
+-				 GFP_KERNEL);
++	pmx->functions = devm_kzalloc(pfc->dev, pmx->nr_functions *
++				      sizeof(*pmx->functions), GFP_KERNEL);
+ 	if (unlikely(!pmx->functions))
+ 		return -ENOMEM;
+ 
+@@ -423,7 +424,7 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ 	struct sh_pfc_pinctrl *pmx;
+ 	int ret;
+ 
+-	pmx = kzalloc(sizeof(struct sh_pfc_pinctrl), GFP_KERNEL);
++	pmx = devm_kzalloc(pfc->dev, sizeof(*pmx), GFP_KERNEL);
+ 	if (unlikely(!pmx))
+ 		return -ENOMEM;
+ 
+@@ -438,13 +439,11 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ 
+ 	ret = sh_pfc_map_functions(pfc, pmx);
+ 	if (unlikely(ret != 0))
+-		goto free_pads;
++		return ret;
+ 
+ 	pmx->pctl = pinctrl_register(&sh_pfc_pinctrl_desc, pfc->dev, pmx);
+-	if (IS_ERR(pmx->pctl)) {
+-		ret = PTR_ERR(pmx->pctl);
+-		goto free_functions;
+-	}
++	if (IS_ERR(pmx->pctl))
++		return PTR_ERR(pmx->pctl);
+ 
+ 	sh_pfc_gpio_range.npins = pfc->pdata->last_gpio
+ 				- pfc->pdata->first_gpio + 1;
+@@ -454,14 +453,6 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ 	pinctrl_add_gpio_range(pmx->pctl, &sh_pfc_gpio_range);
+ 
+ 	return 0;
+-
+-free_functions:
+-	kfree(pmx->functions);
+-free_pads:
+-	kfree(pmx->pads);
+-	kfree(pmx);
+-
+-	return ret;
+ }
+ 
+ int sh_pfc_unregister_pinctrl(struct sh_pfc *pfc)
+@@ -470,10 +461,6 @@ int sh_pfc_unregister_pinctrl(struct sh_pfc *pfc)
+ 
+ 	pinctrl_unregister(pmx->pctl);
+ 
+-	kfree(pmx->functions);
+-	kfree(pmx->pads);
+-	kfree(pmx);
+-
+ 	pfc->pinctrl = NULL;
+ 	return 0;
+ }
+-- 
+1.7.8.6
 
-Changes v5 and v7 (v6 was not publicly released)
-* Drop support for sh73a0 SoC.
-  To be useful this requires a fuller initialisation than jsut INCA.
-  In particular, cascade IRQs that are shared between INTC and GIC
-  need to be handled.
-* Drop board support
-  This will be revisited on a per-board basis, ideally with
-  filler INTC initialisation via DT in place
-* Drop GIC initialisation
-  This will also be revisited on a per-board basis.
-* Remove unused INTC DT helper functions
-
-
-Status:
-
-I am reasonably happy with this series and plan to merge the shmobile portions.
-
-Paul, I forget if I asked you this before or not, but could you let me know
-if you would like to handle the intc patch, the first patch of the
-series, or if you are comfortable with it going through my tree.
-
-Git and diffstat information provided for review.
-
-----------------------------------------------------------------------
-
-The following changes since commit ddffeb8c4d0331609ef2581d84de4d763607bd37:
-
-  Linux 3.7-rc1 (2012-10-14 14:41:04 -0700)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git devel/intc-of
-
-for you to fetch changes up to 9a68d0806201ff048e2919b35108645c15076300:
-
-  ARM: shmobile: sh7372: Use DT initialisation of INTC (2012-12-18 09:35:43 +0900)
-
-----------------------------------------------------------------
-Nobuhiro Iwamatsu (8):
-      SH: intc: Add support OF for INTC
-      ARM: shmobile: Add support OF of INTC for r8a7740
-      ARM: shmobile: Add support OF of INTC for sh7372
-      ARM: shmobile: Add DT table of INTC for sh7372
-      ARM: shmobile: Add DT table of INTC for r8a7740
-      ARM: shmobile: Include DTSI of r8a7740 to armadillo800eva
-      ARM: shmobile: r8a7740: Use DT initialisation of INTC
-      ARM: shmobile: sh7372: Use DT initialisation of INTC
-
-Simon Horman (1):
-      ARM: shmobile: sh7372: Do not initialise TMU when using DT
-
- Documentation/devicetree/bindings/sh/intc.txt |  152 +++++
- arch/arm/boot/dts/r8a7740-armadillo800eva.dts |    2 +-
- arch/arm/boot/dts/r8a7740.dtsi                |  743 ++++++++++++++++++++++-
- arch/arm/boot/dts/sh7372.dtsi                 |  784 +++++++++++++++++++++++++
- arch/arm/mach-shmobile/include/mach/common.h  |    2 +
- arch/arm/mach-shmobile/intc-r8a7740.c         |   70 ++-
- arch/arm/mach-shmobile/intc-sh7372.c          |  113 +++-
- arch/arm/mach-shmobile/setup-r8a7740.c        |    2 +-
- arch/arm/mach-shmobile/setup-sh7372.c         |   19 +-
- drivers/sh/intc/Makefile                      |    1 +
- drivers/sh/intc/core.c                        |    2 +-
- drivers/sh/intc/internals.h                   |    3 +-
- drivers/sh/intc/irqdomain.c                   |    6 +-
- drivers/sh/intc/of_intc.c                     |  571 ++++++++++++++++++
- include/linux/sh_intc.h                       |   56 ++
- 15 files changed, 2481 insertions(+), 45 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/sh/intc.txt
- create mode 100644 drivers/sh/intc/of_intc.c
