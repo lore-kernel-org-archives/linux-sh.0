@@ -1,101 +1,37 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 11 Dec 2012 03:07:30 +0000
-Subject: [PATCH 2/6] ARM: mach-shmobile: sh73a0: Allow initialisation of GIC by DT
-Message-Id: <1355195254-4563-3-git-send-email-horms+renesas@verge.net.au>
+Date: Sat, 15 Dec 2012 09:03:44 +0000
+Subject: [PATCH 10/10] ARM: shmobile: sh7372: Use DT initialisation of INTC
+Message-Id: <1355562224-29448-11-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1355195254-4563-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1355195254-4563-1-git-send-email-horms+renesas@verge.net.au>
+References: <1355562224-29448-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1355562224-29448-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This allows the GIC interrupt controller of the sh73a0 SoC to be
-initialised using a flattened device tree blob.
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
-It does not allow the INTC interrupt controller which is also present on
-the sh73a0 SoC to be enabled via device tree.  Nor does it handle sharing
-of interrupts between the GIC and INTC interrupt controllers.
-
-This limits the usefulness of this code to applications which only wish to
-access devices which use interrupts that can be handled by the GIC
-interrupt controller. Other applications should, for now, continue using
-non-device tree initialisation of the sh72a0 interrupt controllers.
-
+Cc: Magnus Damm <damm@opensource.se>
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
 ---
+ arch/arm/mach-shmobile/setup-sh7372.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-v3
-* No change
-
-v2
-* No change
----
- arch/arm/boot/dts/sh73a0.dtsi                |    9 +++++++++
- arch/arm/mach-shmobile/include/mach/common.h |    1 +
- arch/arm/mach-shmobile/intc-sh73a0.c         |   14 ++++++++++++++
- 3 files changed, 24 insertions(+)
-
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index 6b374ff..77c8e43 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -29,4 +29,13 @@
- 		gpio-controller;
- 		#gpio-cells = <2>;
- 	};
-+
-+	gic: interrupt-controller@f0001000 {
-+		compatible = "arm,cortex-a9-gic";
-+		#interrupt-cells = <3>;
-+		#address-cells = <1>;
-+		interrupt-controller;
-+		reg = <0xf0001000 0x1000>,
-+		      <0xf0000100 0x100>;
-+	};
- };
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index d47e215..b50447e 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -49,6 +49,7 @@ extern struct clk sh7372_extal1_clk;
- extern struct clk sh7372_extal2_clk;
- 
- extern void sh73a0_init_irq(void);
-+extern void sh73a0_init_irq_dt(void);
- extern void sh73a0_map_io(void);
- extern void sh73a0_add_early_devices(void);
- extern void sh73a0_add_standard_devices(void);
-diff --git a/arch/arm/mach-shmobile/intc-sh73a0.c b/arch/arm/mach-shmobile/intc-sh73a0.c
-index f0c5e51..e492350 100644
---- a/arch/arm/mach-shmobile/intc-sh73a0.c
-+++ b/arch/arm/mach-shmobile/intc-sh73a0.c
-@@ -21,6 +21,7 @@
- #include <linux/interrupt.h>
- #include <linux/module.h>
- #include <linux/irq.h>
-+#include <linux/of_irq.h>
- #include <linux/io.h>
- #include <linux/sh_intc.h>
- #include <mach/intc.h>
-@@ -464,3 +465,16 @@ void __init sh73a0_init_irq(void)
- 	sh73a0_pint1_cascade.handler = sh73a0_pint1_demux;
- 	setup_irq(gic_spi(34), &sh73a0_pint1_cascade);
- }
-+
-+#ifdef CONFIG_OF
-+static const struct of_device_id irq_of_match[] __initconst = {
-+	{ .compatible = "arm,cortex-a9-gic", .data = gic_of_init, },
-+	{ },
-+};
-+
-+void __init sh73a0_init_irq_dt(void)
-+{
-+	of_irq_init(irq_of_match);
-+	gic_arch_extn.irq_set_wake = sh73a0_set_wake;
-+}
-+#endif
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index 90af2e9..0f36e45 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -1103,7 +1103,7 @@ DT_MACHINE_START(SH7372_DT, "Generic SH7372 (Flattened Device Tree)")
+ 	.map_io		= sh7372_map_io,
+ 	.init_early	= sh7372_add_early_devices_dt,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+-	.init_irq	= sh7372_init_irq,
++	.init_irq	= sh7372_init_irq_of,
+ 	.handle_irq	= shmobile_handle_irq_intc,
+ 	.init_machine	= sh7372_add_standard_devices_dt,
+ 	.timer		= &shmobile_timer,
 -- 
 1.7.10.4
 
