@@ -1,45 +1,55 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 11 Dec 2012 03:07:33 +0000
-Subject: [PATCH 5/6] ARM: mach-shmobile: kzm9g: use voltage regulators by default
-Message-Id: <1355195254-4563-6-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 15 Dec 2012 22:51:07 +0000
+Subject: [PATCH v3 33/81] sh: sh7269: Register PFC platform device
+Message-Id: <1355611915-25060-34-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1355195254-4563-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1355195254-4563-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This is needed to initialise the MMCIF device in the
-absence of platform data.
+Add arch code to register the PFC platform device instead of calling the
+driver directly. Platform device registration in the sh-pfc driver will
+be removed.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ arch/sh/Kconfig                         |    1 +
+ arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c |    3 ++-
+ 2 files changed, 3 insertions(+), 1 deletions(-)
 
-v3
-* Also enable CONFIG_REGULATOR_DUMMY.
-  This is needed for SMSC.
-
-v2
-* First post
----
- arch/arm/configs/kzm9g_defconfig |    2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
-index c88b578..8c31b44 100644
---- a/arch/arm/configs/kzm9g_defconfig
-+++ b/arch/arm/configs/kzm9g_defconfig
-@@ -83,6 +83,8 @@ CONFIG_I2C_CHARDEV=y
- CONFIG_I2C_SH_MOBILE=y
- CONFIG_GPIO_PCF857X=y
- # CONFIG_HWMON is not set
-+CONFIG_REGULATOR=y
-+CONFIG_REGULATOR_DUMMY=y
- CONFIG_FB=y
- CONFIG_FB_SH_MOBILE_LCDC=y
- CONFIG_FRAMEBUFFER_CONSOLE=y
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 8313068..d29368c 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -307,6 +307,7 @@ config CPU_SUBTYPE_SH7269
+ 	select CPU_HAS_FPU
+ 	select SYS_SUPPORTS_CMT
+ 	select SYS_SUPPORTS_MTU2
++	select PINCTRL
+ 
+ config CPU_SUBTYPE_MXG
+ 	bool "Support MX-G processor"
+diff --git a/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c b/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c
+index 1289fd9..525da4c 100644
+--- a/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c
++++ b/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c
+@@ -12,6 +12,7 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
++#include <cpu/pfc.h>
+ #include <cpu/sh7269.h>
+ 
+ enum {
+@@ -2834,6 +2835,6 @@ static struct pinmux_info sh7269_pinmux_info = {
+ 
+ static int __init plat_pinmux_setup(void)
+ {
+-	return register_pinmux(&sh7269_pinmux_info);
++	return sh_pfc_register_info(NULL, NULL, 0, &sh7269_pinmux_info);
+ }
+ arch_initcall(plat_pinmux_setup);
 -- 
-1.7.10.4
+1.7.8.6
 
