@@ -1,104 +1,51 @@
-From: Grant Likely <grant.likely@secretlab.ca>
-Date: Mon, 17 Dec 2012 16:54:00 +0000
-Subject: Re: [PATCH 6/7] ARM: mackerel: support booting with or without DT
-Message-Id: <20121217165400.6D05B3E0BDD@localhost>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 15 Dec 2012 22:50:59 +0000
+Subject: [PATCH v3 25/81] ARM: shmobile: sh7372: Register PFC platform device
+Message-Id: <1355611915-25060-26-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1355503531-7276-1-git-send-email-g.liakhovetski@gmx.de>
- <1355503531-7276-7-git-send-email-g.liakhovetski@gmx.de>
- <20121216204636.ACD283E0AE3@localhost>
- <Pine.LNX.4.64.1212162224380.20059@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1212162224380.20059@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Sun, 16 Dec 2012 22:36:56 +0100 (CET), Guennadi Liakhovetski <g.liakhovetski@gmx.de> wrote:
-> Hi Grant
-> 
-> On Sun, 16 Dec 2012, Grant Likely wrote:
-> 
-> > On Fri, 14 Dec 2012 17:45:30 +0100, Guennadi Liakhovetski <g.liakhovetski@gmx.de> wrote:
-> > > This patch adds dynamic switching to booting either with or without DT.
-> > > So far only a part of the board initialisation can be done via DT. Devices,
-> > > that still need platform data are kept that way. Devices, that can be
-> > > initialised from DT will not be supplied from the platform data, if a DT
-> > > image is detected.
-> > > 
-> > > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > > ---
-> > >  
-> > > +static int mackerel_i2c_bus_notify(struct notifier_block *nb,
-> > > +				   unsigned long action, void *data)
-> > > +{
-> > > +	struct device *dev = data;
-> > > +
-> > > +	if (action != BUS_NOTIFY_ADD_DEVICE ||
-> > > +	    strcmp(dev_name(dev->parent), "fff20000.i2c"))
-> > > +		return NOTIFY_DONE;
-> > > +
-> > > +	i2c_new_device(to_i2c_adapter(dev), &i2c0_devices[1]);
-> > > +
-> > > +	return NOTIFY_OK;
-> > > +}
-> > > +
-> > > +static struct notifier_block mackerel_i2c_notifier = {
-> > > +	.notifier_call = mackerel_i2c_bus_notify,
-> > > +};
-> > 
-> > This looks dodgy. It appears that the purpose of this hook is to create
-> > the tca6408-keys device because it has some platform data. However,
-> > this hook will try to create the device every time BUS_NOTIFY_ADD_DEVICE
-> > happens on the fff20000.i2c bus *including* when the tca6408-keys device
-> > gets added.
-> 
-> I think, this is only called once, when the i2c adapter device is added in 
-> i2c_register_adapter(). I2C client devices have these adapter devices as 
-> their parents, and those devices have "i2c-%d" as their names. Since all 
-> client devices get destroyed when the adapter is unbound, the above should 
-> be safe.
+Add arch code to register the PFC platform device instead of calling the
+driver directly. Platform device registration in the sh-pfc driver will
+be removed.
 
-Take another look. The way the bus notifiers work is they get called
-once for every device registered that has the given bus type. In this
-case, that means i2c_bus_type, which also means every i2c_client object
-registration. Also, the point of i2c_new_device() is that it creates a
-new i2c_client object and registers it.... trigger a new call to this
-notifier... which calls i2c_new_device again!
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/pfc-sh7372.c |   11 ++++++++++-
+ 1 files changed, 10 insertions(+), 1 deletions(-)
 
-> 
-> > The correct approach when you need to add specific platform data is to
-> > still put the device into the device tree and make the notifier look for
-> > that specific device. Then the platform data pointer can be attached at
-> > BUS_NOTIFY_ADD_DEVICE time.
-> > 
-> > However, it doesn't look like you need a notifier at all. From what I
-> > can see the tca6408-keys device does have platform data, but it is all
-> > simple (no callback pointers). You should instead encode the platform
-> > data into device tree properties and extract them from the driver.
-> 
-> Yes, this is the ultimate goal. But the purpose of this patch series is to 
-> move whatever devices are possible right _now_ to DT. Ultimately all of 
-> them should be migrated. So, yes, we could try to begin with tca6408, 
-> because the above hack is certainly the ugliest one in this series, but in 
-> principle this is just one of several devices, that we have to keep in 
-> platform data for now and aim at removing these temporary hacks as soon as 
-> respective drivers implement sufficient DT support.
+diff --git a/arch/arm/mach-shmobile/pfc-sh7372.c b/arch/arm/mach-shmobile/pfc-sh7372.c
+index 7a1525f..dd5e145 100644
+--- a/arch/arm/mach-shmobile/pfc-sh7372.c
++++ b/arch/arm/mach-shmobile/pfc-sh7372.c
+@@ -22,6 +22,7 @@
+  */
+ #include <linux/init.h>
+ #include <linux/kernel.h>
++#include <linux/platform_device.h>
+ #include <linux/sh_pfc.h>
+ #include <mach/irqs.h>
+ #include <mach/sh7372.h>
+@@ -1657,7 +1658,15 @@ static struct pinmux_info sh7372_pinmux_info = {
+ 	.gpio_irq_size = ARRAY_SIZE(pinmux_irqs),
+ };
+ 
++static struct platform_device sh7372_pfc_device = {
++	.name		= "sh-pfc",
++	.id		= -1,
++	.dev = {
++		.platform_data = &sh7372_pinmux_info,
++	},
++};
++
+ void sh7372_pinmux_init(void)
+ {
+-	register_pinmux(&sh7372_pinmux_info);
++	platform_device_register(&sh7372_pfc_device);
+ }
+-- 
+1.7.8.6
 
-Understood. However I think you're going about it the long way around.
-Instead of cherry picking some devices to put into the device tree, you
-should put all of them into the DT, even if the driver doesn't have
-bindings for them yet. If you really prefer the temporary hack approach
-then you should do two things:
-
-1) for platform devices, use AUXDATA to hook up platform_data pointers
-when the devices are instantiated from the device tree.
-2) for everything else, use 1 notifier per bus_type to hook up
-platform_data on the BUS_NOTIFY_ADD_DEVICE event, but instead of the
-dodgy code used above, use the dev->of_node->full_name property to
-figure out which device has gotten registered.
-
-It would be convenient to have AUXDATA for non-platform device
-registrations, but nobody has hooked that up just yet, and it is really
-a temporary measure until clock bindings are fully in place.
-
-g.
