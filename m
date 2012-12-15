@@ -1,37 +1,102 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 15 Dec 2012 09:03:41 +0000
-Subject: [PATCH 07/10] ARM: shmobile: Include DTSI of r8a7740 to armadillo800eva
-Message-Id: <1355562224-29448-8-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 15 Dec 2012 22:50:55 +0000
+Subject: [PATCH v3 21/81] sh-pfc: Support passing resources through platform device
+Message-Id: <1355611915-25060-22-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1355562224-29448-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1355562224-29448-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Resources should be passed through the platform device, not through
+platform data. Default to platform device resources and fall back to
+platform data resources if not available.
 
-Cc: Magnus Damm <damm@opensource.se>
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Support for platform data resources will be removed when arch code will
+be converted.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
 ---
- arch/arm/boot/dts/r8a7740-armadillo800eva.dts |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/sh/pfc/core.c |   26 +++++++++++++++++++-------
+ drivers/sh/pfc/core.h |    2 ++
+ 2 files changed, 21 insertions(+), 7 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-index a7505a9..a8e7bd9 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-@@ -9,7 +9,7 @@
-  */
+diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
+index cd8f09d..b2e121d 100644
+--- a/drivers/sh/pfc/core.c
++++ b/drivers/sh/pfc/core.c
+@@ -26,21 +26,33 @@
  
- /dts-v1/;
--/include/ "skeleton.dtsi"
-+/include/ "r8a7740.dtsi"
+ #include "core.h"
  
- / {
- 	model = "armadillo 800 eva";
+-static int sh_pfc_ioremap(struct sh_pfc *pfc)
++static int sh_pfc_ioremap(struct sh_pfc *pfc, struct platform_device *pdev)
+ {
++	unsigned int num_resources;
+ 	struct resource *res;
+ 	int k;
+ 
+-	if (!pfc->pdata->num_resources)
++	if (pdev->num_resources) {
++		num_resources = pdev->num_resources;
++		res = pdev->resource;
++	} else {
++		num_resources = pfc->pdata->num_resources;
++		res = pfc->pdata->resource;
++	}
++
++	if (num_resources = 0) {
++		pfc->num_windows = 0;
+ 		return 0;
++	}
+ 
+-	pfc->window = devm_kzalloc(pfc->dev, pfc->pdata->num_resources *
++	pfc->window = devm_kzalloc(pfc->dev, num_resources *
+ 				   sizeof(*pfc->window), GFP_NOWAIT);
+ 	if (!pfc->window)
+ 		return -ENOMEM;
+ 
+-	for (k = 0; k < pfc->pdata->num_resources; k++) {
+-		res = pfc->pdata->resource + k;
++	pfc->num_windows = num_resources;
++
++	for (k = 0; k < num_resources; k++, res++) {
+ 		WARN_ON(resource_type(res) != IORESOURCE_MEM);
+ 		pfc->window[k].phys = res->start;
+ 		pfc->window[k].size = resource_size(res);
+@@ -60,7 +72,7 @@ static void __iomem *sh_pfc_phys_to_virt(struct sh_pfc *pfc,
+ 	int k;
+ 
+ 	/* scan through physical windows and convert address */
+-	for (k = 0; k < pfc->pdata->num_resources; k++) {
++	for (k = 0; k < pfc->num_windows; k++) {
+ 		window = pfc->window + k;
+ 
+ 		if (address < window->phys)
+@@ -498,7 +510,7 @@ static int sh_pfc_probe(struct platform_device *pdev)
+ 	pfc->pdata = pdata;
+ 	pfc->dev = &pdev->dev;
+ 
+-	ret = sh_pfc_ioremap(pfc);
++	ret = sh_pfc_ioremap(pfc, pdev);
+ 	if (unlikely(ret < 0))
+ 		return ret;
+ 
+diff --git a/drivers/sh/pfc/core.h b/drivers/sh/pfc/core.h
+index d6a40bc..87ae5fd 100644
+--- a/drivers/sh/pfc/core.h
++++ b/drivers/sh/pfc/core.h
+@@ -28,7 +28,9 @@ struct sh_pfc {
+ 	struct sh_pfc_platform_data *pdata;
+ 	spinlock_t lock;
+ 
++	unsigned int num_windows;
+ 	struct sh_pfc_window *window;
++
+ 	struct sh_pfc_chip *gpio;
+ 	struct sh_pfc_pinctrl *pinctrl;
+ };
 -- 
-1.7.10.4
+1.7.8.6
 
