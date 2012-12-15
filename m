@@ -1,56 +1,76 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Dec 2012 22:54:24 +0000
-Subject: [PATCH v4 42/81] sh: shx3: Register PFC platform device
-Message-Id: <1356735303-29474-43-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 15 Dec 2012 22:51:18 +0000
+Subject: [PATCH v3 44/81] sh-pfc: Remove unused resource and num_resources platform data fields
+Message-Id: <1355611915-25060-45-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Add arch code to register the PFC platform device instead of calling the
-driver directly. Platform device registration in the sh-pfc driver will
-be removed.
+The fields are now unused, remove them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
 ---
- arch/sh/Kconfig                       |    1 +
- arch/sh/kernel/cpu/sh4a/pinmux-shx3.c |    3 ++-
- 2 files changed, 3 insertions(+), 1 deletions(-)
+ drivers/sh/pfc/core.c  |   17 ++++-------------
+ include/linux/sh_pfc.h |    3 ---
+ 2 files changed, 4 insertions(+), 16 deletions(-)
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 27f0b73..c72b616 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -515,6 +515,7 @@ config CPU_SUBTYPE_SHX3
- 	select CPU_SHX3
- 	select GENERIC_CLOCKEVENTS_BROADCAST if SMP
- 	select ARCH_REQUIRE_GPIOLIB
-+	select PINCTRL
+diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
+index 9456c70..8e7818b 100644
+--- a/drivers/sh/pfc/core.c
++++ b/drivers/sh/pfc/core.c
+@@ -28,31 +28,22 @@
  
- # SH4AL-DSP Processor Support
- 
-diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c b/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
-index 2ebb983..eef1b8f 100644
---- a/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
-+++ b/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
-@@ -10,6 +10,7 @@
- #include <linux/init.h>
- #include <linux/kernel.h>
- #include <linux/gpio.h>
-+#include <cpu/pfc.h>
- #include <cpu/shx3.h>
- 
- enum {
-@@ -582,6 +583,6 @@ static struct pinmux_info shx3_pinmux_info = {
- 
- static int __init shx3_pinmux_setup(void)
+ static int sh_pfc_ioremap(struct sh_pfc *pfc, struct platform_device *pdev)
  {
--	return register_pinmux(&shx3_pinmux_info);
-+	return sh_pfc_register_info(NULL, NULL, 0, &shx3_pinmux_info);
- }
- arch_initcall(shx3_pinmux_setup);
+-	unsigned int num_resources;
+ 	struct resource *res;
+ 	int k;
+ 
+-	if (pdev->num_resources) {
+-		num_resources = pdev->num_resources;
+-		res = pdev->resource;
+-	} else {
+-		num_resources = pfc->pdata->num_resources;
+-		res = pfc->pdata->resource;
+-	}
+-
+-	if (num_resources = 0) {
++	if (pdev->num_resources = 0) {
+ 		pfc->num_windows = 0;
+ 		return 0;
+ 	}
+ 
+-	pfc->window = devm_kzalloc(pfc->dev, num_resources *
++	pfc->window = devm_kzalloc(pfc->dev, pdev->num_resources *
+ 				   sizeof(*pfc->window), GFP_NOWAIT);
+ 	if (!pfc->window)
+ 		return -ENOMEM;
+ 
+-	pfc->num_windows = num_resources;
++	pfc->num_windows = pdev->num_resources;
+ 
+-	for (k = 0; k < num_resources; k++, res++) {
++	for (k = 0, res = pdev->resource; k < pdev->num_resources; k++, res++) {
+ 		WARN_ON(resource_type(res) != IORESOURCE_MEM);
+ 		pfc->window[k].phys = res->start;
+ 		pfc->window[k].size = resource_size(res);
+diff --git a/include/linux/sh_pfc.h b/include/linux/sh_pfc.h
+index fa1fec0..4f94233 100644
+--- a/include/linux/sh_pfc.h
++++ b/include/linux/sh_pfc.h
+@@ -111,9 +111,6 @@ struct sh_pfc_platform_data {
+ 	struct pinmux_irq *gpio_irq;
+ 	unsigned int gpio_irq_size;
+ 
+-	struct resource *resource;
+-	unsigned int num_resources;
+-
+ 	unsigned long unlock_reg;
+ };
+ 
 -- 
 1.7.8.6
 
