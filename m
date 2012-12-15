@@ -1,40 +1,37 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 12 Dec 2012 14:38:09 +0000
-Subject: [PATCH 05/14] mmc: sh_mmcif: Use msecs_to_jiffies() for host->timeout
-Message-Id: <1355323098-18061-6-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 15 Dec 2012 22:50:41 +0000
+Subject: [PATCH v3 07/81] sh: shx3: Fix last GPIO index
+Message-Id: <1355611915-25060-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1355323098-18061-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1355323098-18061-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>, Teppei Kamijou <teppei.kamijou.yb@renesas.com>, Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+To: linux-sh@vger.kernel.org
 
-From: Teppei Kamijou <teppei.kamijou.yb@renesas.com>
+A careless look at the code shows that the last entry in the
+pinmux_gpios seems to be GPIO_FN_IRQOUT. However, entries are ordered by
+the GPIO number, as the PINMUX_GPIO macro is expended to an indexed
+array initializer. The last entry in the array is thus GPIO_FN_STATUS0.
+Set the pinmux_info last_gpio field accordingly.
 
-Timeout period should be properly normalized using msecs_to_jiffies().
-
-Signed-off-by: Teppei Kamijou <teppei.kamijou.yb@renesas.com>
-Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/mmc/host/sh_mmcif.c |    2 +-
+ arch/sh/kernel/cpu/sh4a/pinmux-shx3.c |    2 +-
  1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index 1ec3339..1665ae4 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -1348,7 +1348,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
- 	host		= mmc_priv(mmc);
- 	host->mmc	= mmc;
- 	host->addr	= reg;
--	host->timeout	= 1000;
-+	host->timeout	= msecs_to_jiffies(1000);
- 
- 	host->pd = pdev;
- 
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c b/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
+index aaa5338..2ebb983 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
+@@ -572,7 +572,7 @@ static struct pinmux_info shx3_pinmux_info = {
+ 	.mark		= { PINMUX_MARK_BEGIN,     PINMUX_MARK_END },
+ 	.function	= { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 	.first_gpio	= GPIO_PA7,
+-	.last_gpio	= GPIO_FN_IRQOUT,
++	.last_gpio	= GPIO_FN_STATUS0,
+ 	.gpios		= shx3_pinmux_gpios,
+ 	.gpio_data	= shx3_pinmux_data,
+ 	.gpio_data_size	= ARRAY_SIZE(shx3_pinmux_data),
 -- 
-1.7.2.5
+1.7.8.6
 
