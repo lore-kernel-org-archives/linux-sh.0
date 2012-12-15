@@ -1,37 +1,62 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Fri, 07 Dec 2012 08:16:54 +0000
-Subject: Re: [PATCH] gpio: pcf857x: use client->irq for gpio_to_irq()
-Message-Id: <CACRpkdbtAN5A5M7UyuvcmGNVSttzx00B0dW7ejsMvpCdTTww0w@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 15 Dec 2012 22:51:03 +0000
+Subject: [PATCH v3 29/81] ARM: shmobile: sh73a0: Add pin control resources
+Message-Id: <1355611915-25060-30-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20121203222248.298b3671@frequentis.com>
-	<87y5hd80ep.wl%kuninori.morimoto.gx@renesas.com>
-	<EA116A090B102B4EBF532A9EECFA1EC5795252C6@vie196nt>
-	<87obi86kpp.wl%kuninori.morimoto.gx@renesas.com>
-	<EA116A090B102B4EBF532A9EECFA1EC579525758@vie196nt>
-	<87lidb7dhb.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87lidb7dhb.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Simon <horms@verge.net.au>, Linux-SH <linux-sh@vger.kernel.org>, ENGELMAYER Christian <Christian.Engelmayer@frequentis.com>, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-On Thu, Dec 6, 2012 at 10:10 AM, Kuninori Morimoto
-<kuninori.morimoto.gx@renesas.com> wrote:
+Add memory resources for the pin control platform device to let the
+sh-pfc driver ioremap() registers properly instead of evily casting
+register physical addresses to virtual addresses.
 
-> 6e20a0a429bd4dc07d6de16d9c247270e04e4aa0
-> (gpio: pcf857x: enable gpio_to_irq() support)
-> added gpio_to_irq() support on pcf857x driver,
-> but it used pdata->irq.
-> This patch modifies driver to use client->irq instead of it.
-> It modifies kzm9g board platform settings,
-> and device probe information too.
-> This patch is tested on kzm9g board
->
-> Reported-by: ENGELMAYER Christian Christian.Engelmayer@frequentis.com
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
+---
+ arch/arm/mach-shmobile/pfc-sh73a0.c |   17 +++++++++++++++++
+ 1 files changed, 17 insertions(+), 0 deletions(-)
 
-Patch applied with Simon's ACK, thanks!
+diff --git a/arch/arm/mach-shmobile/pfc-sh73a0.c b/arch/arm/mach-shmobile/pfc-sh73a0.c
+index c83c582..342683e 100644
+--- a/arch/arm/mach-shmobile/pfc-sh73a0.c
++++ b/arch/arm/mach-shmobile/pfc-sh73a0.c
+@@ -18,7 +18,9 @@
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
++#include <linux/bug.h>
+ #include <linux/init.h>
++#include <linux/ioport.h>
+ #include <linux/kernel.h>
+ #include <linux/platform_device.h>
+ #include <linux/sh_pfc.h>
+@@ -2798,9 +2800,24 @@ static struct pinmux_info sh73a0_pinmux_info = {
+ 	.gpio_irq_size = ARRAY_SIZE(pinmux_irqs),
+ };
+ 
++static struct resource sh73a0_pfc_resources[] = {
++	[0] = {
++		.start	= 0xe6050000,
++		.end	= 0xe6057fff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= 0xe605801c,
++		.end	= 0xe6058027,
++		.flags	= IORESOURCE_MEM,
++	}
++};
++
+ static struct platform_device sh73a0_pfc_device = {
+ 	.name		= "sh-pfc",
+ 	.id		= -1,
++	.resource	= sh73a0_pfc_resources,
++	.num_resources	= ARRAY_SIZE(sh73a0_pfc_resources),
+ 	.dev = {
+ 		.platform_data = &sh73a0_pinmux_info,
+ 	},
+-- 
+1.7.8.6
 
-Yours,
-Linus Walleij
