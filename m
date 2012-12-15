@@ -1,67 +1,55 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 26 Dec 2012 17:49:05 +0000
-Subject: [PATCH v3 0/6] V4L2 asynchronous probing + soc-camera example
-Message-Id: <1356544151-6313-1-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 15 Dec 2012 22:51:13 +0000
+Subject: [PATCH v3 39/81] sh: sh7757: Register PFC platform device
+Message-Id: <1355611915-25060-40-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>
+To: linux-sh@vger.kernel.org
 
-This is v3 (roughly) of the V4L2 asynchronous probing patch plus an 
-example soc-camera framework and 1 host, 1 sensor and 1 board conversion 
-patch set. Logically, this is based on top of my recent patch series
+Add arch code to register the PFC platform device instead of calling the
+driver directly. Platform device registration in the sh-pfc driver will
+be removed.
 
-http://thread.gmane.org/gmane.linux.drivers.video-input-infrastructure/58524
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/sh/Kconfig                         |    1 +
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c |    3 ++-
+ 2 files changed, 3 insertions(+), 1 deletions(-)
 
-and the last version of the v4l2-clock patch. If desired, a git branch can 
-be provided.
-
-Thanks
-Guennadi
-
-Guennadi Liakhovetski (6):
-  media: V4L2: support asynchronous subdevice registration
-  media: soc-camera: switch I2C subdevice drivers to use v4l2-clk
-  soc-camera: add V4L2-async support
-  sh_mobile_ceu_camera: add asynchronous subdevice probing support
-  imx074: support asynchronous probing
-  ARM: shmobile: convert ap4evb to asynchronously register camera
-    subdevices
-
- arch/arm/mach-shmobile/board-ap4evb.c              |  103 ++--
- arch/arm/mach-shmobile/clock-sh7372.c              |    1 +
- drivers/media/i2c/soc_camera/imx074.c              |   35 +-
- drivers/media/i2c/soc_camera/mt9m001.c             |   17 +-
- drivers/media/i2c/soc_camera/mt9m111.c             |   20 +-
- drivers/media/i2c/soc_camera/mt9t031.c             |   19 +-
- drivers/media/i2c/soc_camera/mt9t112.c             |   19 +-
- drivers/media/i2c/soc_camera/mt9v022.c             |   17 +-
- drivers/media/i2c/soc_camera/ov2640.c              |   19 +-
- drivers/media/i2c/soc_camera/ov5642.c              |   20 +-
- drivers/media/i2c/soc_camera/ov6650.c              |   17 +-
- drivers/media/i2c/soc_camera/ov772x.c              |   15 +-
- drivers/media/i2c/soc_camera/ov9640.c              |   17 +-
- drivers/media/i2c/soc_camera/ov9640.h              |    1 +
- drivers/media/i2c/soc_camera/ov9740.c              |   18 +-
- drivers/media/i2c/soc_camera/rj54n1cb0c.c          |   17 +-
- drivers/media/i2c/soc_camera/tw9910.c              |   18 +-
- .../platform/soc_camera/sh_mobile_ceu_camera.c     |  135 +++-
- drivers/media/platform/soc_camera/sh_mobile_csi2.c |  164 +++--
- drivers/media/platform/soc_camera/soc_camera.c     |  681 ++++++++++++++++----
- .../platform/soc_camera/soc_camera_platform.c      |    2 +-
- drivers/media/v4l2-core/Makefile                   |    3 +-
- drivers/media/v4l2-core/v4l2-async.c               |  284 ++++++++
- drivers/media/v4l2-core/v4l2-device.c              |    2 +
- include/media/sh_mobile_ceu.h                      |    2 +
- include/media/sh_mobile_csi2.h                     |    2 +-
- include/media/soc_camera.h                         |   35 +-
- include/media/v4l2-async.h                         |  113 ++++
- 28 files changed, 1489 insertions(+), 307 deletions(-)
- create mode 100644 drivers/media/v4l2-core/v4l2-async.c
- create mode 100644 include/media/v4l2-async.h
-
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 8b5b399..f15d5f8 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -469,6 +469,7 @@ config CPU_SUBTYPE_SH7757
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select USB_ARCH_HAS_OHCI
+ 	select USB_ARCH_HAS_EHCI
++	select PINCTRL
+ 	help
+ 	  Select SH7757 if you have a SH4A SH7757 CPU.
+ 
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c
+index 4a2736d..784b428 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c
+@@ -16,6 +16,7 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
++#include <cpu/pfc.h>
+ #include <cpu/sh7757.h>
+ 
+ enum {
+@@ -2282,6 +2283,6 @@ static struct pinmux_info sh7757_pinmux_info = {
+ 
+ static int __init plat_pinmux_setup(void)
+ {
+-	return register_pinmux(&sh7757_pinmux_info);
++	return sh_pfc_register_info(NULL, NULL, 0, &sh7757_pinmux_info);
+ }
+ arch_initcall(plat_pinmux_setup);
 -- 
-1.7.2.5
+1.7.8.6
 
