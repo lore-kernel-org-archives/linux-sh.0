@@ -1,35 +1,48 @@
-From: Tang Chen <tangchen@cn.fujitsu.com>
-Date: Thu, 27 Dec 2012 03:09:35 +0000
-Subject: Re: [PATCH v5 04/14] memory-hotplug: remove /sys/firmware/memmap/X sysfs
-Message-Id: <50DBBBEF.70701@cn.fujitsu.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Sat, 15 Dec 2012 08:11:54 +0000
+Subject: [PATCH] ARM: mach-shmobile: mackerel: update defconfig
+Message-Id: <1355559114-15523-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1356350964-13437-1-git-send-email-tangchen@cn.fujitsu.com> <1356350964-13437-5-git-send-email-tangchen@cn.fujitsu.com> <50DA6F5A.2070601@jp.fujitsu.com>
-In-Reply-To: <50DA6F5A.2070601@jp.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kamezawa Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Cc: akpm@linux-foundation.org, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, wency@cn.fujitsu.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org, x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 12/26/2012 11:30 AM, Kamezawa Hiroyuki wrote:
->> @@ -41,6 +42,7 @@ struct firmware_map_entry {
->>    	const char		*type;	/* type of the memory range */
->>    	struct list_head	list;	/* entry for the linked list */
->>    	struct kobject		kobj;   /* kobject for each entry */
->> +	unsigned int		bootmem:1; /* allocated from bootmem */
->>    };
-> 
-> Can't we detect from which the object is allocated from, slab or bootmem ?
-> 
-> Hm, for example,
-> 
->      PageReserved(virt_to_page(address_of_obj)) ?
->      PageSlab(virt_to_page(address_of_obj)) ?
-> 
+From: Simon Horman <horms+renesas@verge.net.au>
 
-Hi Kamezawa-san,
+* Enable ARM_APPENDED_DTB
 
-I think we can detect it without a new member. I think bootmem:1 member
-is just for convenience. I think I can remove it. :)
+  Typically the bootloader of a mackerel board does not support DT
+  so this option is useful
 
-Thanks. :)
+* Add "rw" to command line
+
+  This appears to be necessary for a successful NFS-root boot
+
+* Do not disable INOTIFY_USER
+
+  INOTIFY_USER is required by dbus which is common to many
+  userspaces
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/configs/mackerel_defconfig |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/configs/mackerel_defconfig b/arch/arm/configs/mackerel_defconfig
+index 2098ce1..8519721 100644
+--- a/arch/arm/configs/mackerel_defconfig
++++ b/arch/arm/configs/mackerel_defconfig
+@@ -23,7 +23,8 @@ CONFIG_AEABI=y
+ CONFIG_FORCE_MAX_ZONEORDER
+ CONFIG_ZBOOT_ROM_TEXT=0x0
+ CONFIG_ZBOOT_ROM_BSS=0x0
+-CONFIG_CMDLINE="console=tty0, console=ttySC0,115200 earlyprintk=sh-sci.0,115200 root=/dev/nfs nfsroot=,tcp,v3 ip=dhcp memchunk.vpudm memchunk.veu0=8m memchunk.spu0=2m mem$0m"
++CONFIG_ARM_APPENDED_DTB=y
++CONFIG_CMDLINE="console=tty0, console=ttySC0,115200 earlyprintk=sh-sci.0,115200 root=/dev/nfs nfsroot=,tcp,v3 ip=dhcp memchunk.vpudm memchunk.veu0=8m memchunk.spu0=2m mem$0m rw"
+ CONFIG_KEXEC=y
+ # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
+ CONFIG_PM=y
+-- 
+1.7.10.4
+
