@@ -1,40 +1,37 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Tue, 18 Dec 2012 17:22:37 +0000
-Subject: [PATCH 0/2] Armadillo DT Reference Implementation
-Message-Id: <1355851359-8871-1-git-send-email-hechtb+renesas@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Sat, 15 Dec 2012 09:03:42 +0000
+Subject: [PATCH 08/10] ARM: shmobile: r8a7740: Use DT initialisation of INTC
+Message-Id: <1355562224-29448-9-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1355562224-29448-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1355562224-29448-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This is the design approch of Simon Horman's kzm9g implementation transferred
-to the Armadillo board.
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
-It is based on the branch next of 
-git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git
-and was tested on the branch devel/of of
-git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git
+Cc: Magnus Damm <damm@opensource.se>
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/setup-r8a7740.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-For the ethernet controller to work the series assumes the patch
-net: sh_eth: Add support of device tree probe
-http://patchwork.ozlabs.org/patch/191713/ to be applied.
-
-Bastian Hecht (2):
-  ARM: r8a7740: Add interim sh-eth device name to clocks list
-  ARM: shmobile: armadillo800eva: Reference DT implementation
-
- arch/arm/boot/dts/Makefile                         |    1 +
- .../boot/dts/r8a7740-armadillo800eva-reference.dts |   33 ++++
- arch/arm/mach-shmobile/Kconfig                     |   10 ++
- arch/arm/mach-shmobile/Makefile                    |    1 +
- .../board-armadillo800eva-reference.c              |  172 ++++++++++++++++++++
- arch/arm/mach-shmobile/clock-r8a7740.c             |    1 +
- arch/arm/mach-shmobile/include/mach/common.h       |    2 +
- 7 files changed, 220 insertions(+)
- create mode 100644 arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
- create mode 100644 arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 11bb1d9..a8e57ab 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -750,7 +750,7 @@ static const char *r8a7740_boards_compat_dt[] __initdata = {
+ DT_MACHINE_START(SH7372_DT, "Generic R8A7740 (Flattened Device Tree)")
+ 	.map_io		= r8a7740_map_io,
+ 	.init_early	= r8a7740_add_early_devices_dt,
+-	.init_irq	= r8a7740_init_irq,
++	.init_irq	= r8a7740_init_irq_of,
+ 	.handle_irq	= shmobile_handle_irq_intc,
+ 	.init_machine	= r8a7740_add_standard_devices_dt,
+ 	.timer		= &shmobile_timer,
 -- 
-1.7.9.5
+1.7.10.4
 
