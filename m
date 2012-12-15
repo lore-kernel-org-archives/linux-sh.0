@@ -1,64 +1,56 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Dec 2012 22:54:11 +0000
-Subject: [PATCH v4 29/81] ARM: shmobile: sh73a0: Add pin control resources
-Message-Id: <1356735303-29474-30-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 15 Dec 2012 22:51:14 +0000
+Subject: [PATCH v3 40/81] sh: sh7785: Register PFC platform device
+Message-Id: <1355611915-25060-41-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Add memory resources for the pin control platform device to let the
-sh-pfc driver ioremap() registers properly instead of evily casting
-register physical addresses to virtual addresses.
+Add arch code to register the PFC platform device instead of calling the
+driver directly. Platform device registration in the sh-pfc driver will
+be removed.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Paul Mundt <lethal@linux-sh.org>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/pfc-sh73a0.c |   17 +++++++++++++++++
- 1 files changed, 17 insertions(+), 0 deletions(-)
+ arch/sh/Kconfig                         |    1 +
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7785.c |    3 ++-
+ 2 files changed, 3 insertions(+), 1 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/pfc-sh73a0.c b/arch/arm/mach-shmobile/pfc-sh73a0.c
-index c83c582..342683e 100644
---- a/arch/arm/mach-shmobile/pfc-sh73a0.c
-+++ b/arch/arm/mach-shmobile/pfc-sh73a0.c
-@@ -18,7 +18,9 @@
-  * along with this program; if not, write to the Free Software
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
-+#include <linux/bug.h>
- #include <linux/init.h>
-+#include <linux/ioport.h>
- #include <linux/kernel.h>
- #include <linux/platform_device.h>
- #include <linux/sh_pfc.h>
-@@ -2798,9 +2800,24 @@ static struct pinmux_info sh73a0_pinmux_info = {
- 	.gpio_irq_size = ARRAY_SIZE(pinmux_irqs),
- };
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index f15d5f8..1886843 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -496,6 +496,7 @@ config CPU_SUBTYPE_SH7785
+ 	select ARCH_SPARSEMEM_ENABLE
+ 	select SYS_SUPPORTS_NUMA
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
++	select PINCTRL
  
-+static struct resource sh73a0_pfc_resources[] = {
-+	[0] = {
-+		.start	= 0xe6050000,
-+		.end	= 0xe6057fff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= 0xe605801c,
-+		.end	= 0xe6058027,
-+		.flags	= IORESOURCE_MEM,
-+	}
-+};
-+
- static struct platform_device sh73a0_pfc_device = {
- 	.name		= "sh-pfc",
- 	.id		= -1,
-+	.resource	= sh73a0_pfc_resources,
-+	.num_resources	= ARRAY_SIZE(sh73a0_pfc_resources),
- 	.dev = {
- 		.platform_data = &sh73a0_pinmux_info,
- 	},
+ config CPU_SUBTYPE_SH7786
+ 	bool "Support SH7786 processor"
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7785.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7785.c
+index 5ebc25f..da0bd79 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7785.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7785.c
+@@ -11,6 +11,7 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
++#include <cpu/pfc.h>
+ #include <cpu/sh7785.h>
+ 
+ enum {
+@@ -1304,7 +1305,7 @@ static struct pinmux_info sh7785_pinmux_info = {
+ 
+ static int __init plat_pinmux_setup(void)
+ {
+-	return register_pinmux(&sh7785_pinmux_info);
++	return sh_pfc_register_info(NULL, NULL, 0, &sh7785_pinmux_info);
+ }
+ 
+ arch_initcall(plat_pinmux_setup);
 -- 
 1.7.8.6
 
