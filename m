@@ -1,36 +1,87 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 31 Dec 2012 11:23:50 +0000
-Subject: [PATCH 1/2] ARM: shmobile: add function declarations for sh7372 DT helper functions
-Message-Id: <Pine.LNX.4.64.1212311213510.24596@axis700.grange>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Sat, 15 Dec 2012 09:03:34 +0000
+Subject: [RFC v7 00/10] ARM: shmobile: DT initialisation of INTC and GIC
+Message-Id: <1355562224-29448-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-sh7372_add_early_devices_dt() and sh7372_add_standard_devices_dt() are
-defined as global functions in arch/arm/mach-shmobile/setup-sh7372.c,
-but their declarations are missing. Add them to common.h, where similar
-functions for this and other SoC types are already declared.
+The aims of this series are:
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
- arch/arm/mach-shmobile/include/mach/common.h |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
+* Add DT bindings to to INTC
+* Allowing sh7372 and r8a7740 ARM shmobile SoCs to use DT
+  to initialise INTCA
 
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index 7e08fa5..abce184 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -23,6 +23,8 @@ extern void sh7372_init_irq(void);
- extern void sh7372_map_io(void);
- extern void sh7372_add_early_devices(void);
- extern void sh7372_add_standard_devices(void);
-+extern void sh7372_add_early_devices_dt(void);
-+extern void sh7372_add_standard_devices_dt(void);
- extern void sh7372_clock_init(void);
- extern void sh7372_pinmux_init(void);
- extern void sh7372_pm_init(void);
--- 
-1.7.2.5
+Key Changes since v5 (previous public revision of this series)
+* Drop support for sh73a0 SoC.
+  To be useful this requires a fuller initialisation than jsut INCA.
+  In particular, cascade IRQs that are shared between INTC and GIC
+  need to be handled.
+* Drop board support
+  This will be revisited on a per-board basis, ideally with
+  filler INTC initialisation via DT in place
+* Drop GIC initialisation
+  This will also be revisited on a per-board basis.
+* Remove unused INTC DT helper functions
 
+
+Status:
+
+I am reasonably happy with this series and plan to merge the shmobile portions.
+
+Paul, I forget if I asked you this before or not, but could you let me know
+if you would like to handle the intc patches, the first two patches in the
+series, or if you are comfortable with them going through my tree.
+
+Git and diffstat information provided for review.
+
+----------------------------------------------------------------------
+
+
+The following changes since commit ddffeb8c4d0331609ef2581d84de4d763607bd37:
+
+  Linux 3.7-rc1 (2012-10-14 14:41:04 -0700)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git devel/intc-of
+
+for you to fetch changes up to 91cb8c20ebbaaf35482cc256b9ab97279bbe753c:
+
+  ARM: shmobile: sh7372: Use DT initialisation of INTC (2012-12-15 17:50:28 +0900)
+
+----------------------------------------------------------------
+Nobuhiro Iwamatsu (9):
+      ARM: shmobile: Add support OF for INTC of shmobile
+      SH: intc: Add support OF of IRQ
+      ARM: shmobile: Add support OF of INTC for r8a7740
+      ARM: shmobile: Add support OF of INTC for sh7372
+      ARM: shmobile: Add DT table of INTC for sh7372
+      ARM: shmobile: Add DT table of INTC for r8a7740
+      ARM: shmobile: Include DTSI of r8a7740 to armadillo800eva
+      ARM: shmobile: r8a7740: Use DT initialisation of INTC
+      ARM: shmobile: sh7372: Use DT initialisation of INTC
+
+Simon Horman (1):
+      ARM: shmobile: sh7372: Do not initialise TMU when using DT
+
+ Documentation/devicetree/bindings/sh/intc.txt |  152 +++++
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts |    2 +-
+ arch/arm/boot/dts/r8a7740.dtsi                |  743 ++++++++++++++++++++++-
+ arch/arm/boot/dts/sh7372.dtsi                 |  784 +++++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/common.h  |    2 +
+ arch/arm/mach-shmobile/intc-r8a7740.c         |   70 ++-
+ arch/arm/mach-shmobile/intc-sh7372.c          |  113 +++-
+ arch/arm/mach-shmobile/setup-r8a7740.c        |    2 +-
+ arch/arm/mach-shmobile/setup-sh7372.c         |   19 +-
+ drivers/sh/intc/Makefile                      |    1 +
+ drivers/sh/intc/core.c                        |    2 +-
+ drivers/sh/intc/internals.h                   |    3 +-
+ drivers/sh/intc/irqdomain.c                   |    6 +-
+ drivers/sh/intc/of_intc.c                     |  571 ++++++++++++++++++
+ include/linux/sh_intc.h                       |   56 ++
+ 15 files changed, 2481 insertions(+), 45 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/sh/intc.txt
+ create mode 100644 drivers/sh/intc/of_intc.c
