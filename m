@@ -1,74 +1,49 @@
-From: Wen Congyang <wency@cn.fujitsu.com>
-Date: Sun, 30 Dec 2012 05:58:15 +0000
-Subject: Re: [PATCH v5 01/14] memory-hotplug: try to offline the memory twice to avoid dependence
-Message-Id: <50DFD7F7.5090408@cn.fujitsu.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Sat, 15 Dec 2012 09:16:25 +0000
+Subject: [PATCH v2] ARM: mach-shmobile: mackerel: update defconfig
+Message-Id: <1355562985-1991-1-git-send-email-horms@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1356350964-13437-1-git-send-email-tangchen@cn.fujitsu.com> <1356350964-13437-2-git-send-email-tangchen@cn.fujitsu.com> <50D96543.6010903@parallels.com>
-In-Reply-To: <50D96543.6010903@parallels.com>
+References: <4D087CC8.6020803@renesas.com>
+In-Reply-To: <4D087CC8.6020803@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Glauber Costa <glommer@parallels.com>
-Cc: Tang Chen <tangchen@cn.fujitsu.com>, akpm@linux-foundation.org, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org, x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-At 12/25/2012 04:35 PM, Glauber Costa Wrote:
-> On 12/24/2012 04:09 PM, Tang Chen wrote:
->> From: Wen Congyang <wency@cn.fujitsu.com>
->>
->> memory can't be offlined when CONFIG_MEMCG is selected.
->> For example: there is a memory device on node 1. The address range
->> is [1G, 1.5G). You will find 4 new directories memory8, memory9, memory10,
->> and memory11 under the directory /sys/devices/system/memory/.
->>
->> If CONFIG_MEMCG is selected, we will allocate memory to store page cgroup
->> when we online pages. When we online memory8, the memory stored page cgroup
->> is not provided by this memory device. But when we online memory9, the memory
->> stored page cgroup may be provided by memory8. So we can't offline memory8
->> now. We should offline the memory in the reversed order.
->>
->> When the memory device is hotremoved, we will auto offline memory provided
->> by this memory device. But we don't know which memory is onlined first, so
->> offlining memory may fail. In such case, iterate twice to offline the memory.
->> 1st iterate: offline every non primary memory block.
->> 2nd iterate: offline primary (i.e. first added) memory block.
->>
->> This idea is suggested by KOSAKI Motohiro.
->>
->> Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
-> 
-> Maybe there is something here that I am missing - I admit that I came
-> late to this one, but this really sounds like a very ugly hack, that
-> really has no place in here.
-> 
-> Retrying, of course, may make sense, if we have reasonable belief that
-> we may now succeed. If this is the case, you need to document - in the
-> code - while is that.
-> 
-> The memcg argument, however, doesn't really cut it. Why can't we make
-> all page_cgroup allocations local to the node they are describing? If
-> memcg is the culprit here, we should fix it, and not retry. If there is
-> still any benefit in retrying, then we retry being very specific about why.
+From: Simon Horman <horms+renesas@verge.net.au>
 
-We try to make all page_cgroup allocations local to the node they are describing
-now. If the memory is the first memory onlined in this node, we will allocate
-it from the other node.
+* Enable ARM_APPENDED_DTB
 
-For example, node1 has 4 memory blocks: 8-11, and we online it from 8 to 11
-1. memory block 8, page_cgroup allocations are in the other nodes
-2. memory block 9, page_cgroup allocations are in memory block 8
+  Typically the bootloader of a mackerel board does not support DT
+  so this option is useful
 
-So we should offline memory block 9 first. But we don't know in which order
-the user online the memory block.
+* Add "rw" to command line
 
-I think we can modify memcg like this:
-allocate the memory from the memory block they are describing
+  This appears to be necessary for a successful NFS-root boot
 
-I am not sure it is OK to do so.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/configs/mackerel_defconfig |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-Thanks
-Wen Congyang
+v2
+* Fix up comment to remove mention of adding INOTIFY_USER,
+  it is already present.
 
-> 
-> 
-> 
+diff --git a/arch/arm/configs/mackerel_defconfig b/arch/arm/configs/mackerel_defconfig
+index 2098ce1..8519721 100644
+--- a/arch/arm/configs/mackerel_defconfig
++++ b/arch/arm/configs/mackerel_defconfig
+@@ -23,7 +23,8 @@ CONFIG_AEABI=y
+ CONFIG_FORCE_MAX_ZONEORDER
+ CONFIG_ZBOOT_ROM_TEXT=0x0
+ CONFIG_ZBOOT_ROM_BSS=0x0
+-CONFIG_CMDLINE="console=tty0, console=ttySC0,115200 earlyprintk=sh-sci.0,115200 root=/dev/nfs nfsroot=,tcp,v3 ip=dhcp memchunk.vpudm memchunk.veu0=8m memchunk.spu0=2m mem$0m"
++CONFIG_ARM_APPENDED_DTB=y
++CONFIG_CMDLINE="console=tty0, console=ttySC0,115200 earlyprintk=sh-sci.0,115200 root=/dev/nfs nfsroot=,tcp,v3 ip=dhcp memchunk.vpudm memchunk.veu0=8m memchunk.spu0=2m mem$0m rw"
+ CONFIG_KEXEC=y
+ # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
+ CONFIG_PM=y
+-- 
+1.7.10.4
 
