@@ -1,275 +1,69 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 15 Dec 2012 22:50:46 +0000
-Subject: [PATCH v3 12/81] sh-pfc: Merge PFC core and gpio
-Message-Id: <1355611915-25060-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 15 Dec 2012 22:50:39 +0000
+Subject: [PATCH v3 05/81] sh: sh7786: Fix port E, G and J GPIOs
+Message-Id: <1355611915-25060-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The PFC core calls the gpio module gpiochip registration in its
-register_sh_pfc() function, itself called at arch initialization time.
-If the gpio module isn't present then the gpiochip will never be
-registered.
-
-As the gpio module can only be present at arch initialization time if
-it's builtin, there's no point in allowing to build it as a module. Make
-it a boolean option, and initialize it synchronously with the core if
-selected.
+The port E, G and J GPIOs don't match the SoC datasheet (they seem to
+have been copied from the SH7785). Fix them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Paul Mundt <lethal@linux-sh.org>
 ---
- drivers/sh/pfc/Kconfig  |    2 +-
- drivers/sh/pfc/Makefile |    4 ++-
- drivers/sh/pfc/core.c   |   23 +++++--------
- drivers/sh/pfc/core.h   |    4 ++
- drivers/sh/pfc/gpio.c   |   79 +++++------------------------------------------
- 5 files changed, 25 insertions(+), 87 deletions(-)
+ arch/sh/include/cpu-sh4/cpu/sh7786.h    |    8 +++-----
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c |    4 ++--
+ 2 files changed, 5 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/sh/pfc/Kconfig b/drivers/sh/pfc/Kconfig
-index f33d82a..eaeabc5 100644
---- a/drivers/sh/pfc/Kconfig
-+++ b/drivers/sh/pfc/Kconfig
-@@ -11,7 +11,7 @@ config SH_PFC
- 	def_bool y
+diff --git a/arch/sh/include/cpu-sh4/cpu/sh7786.h b/arch/sh/include/cpu-sh4/cpu/sh7786.h
+index 977862f..0df09e6 100644
+--- a/arch/sh/include/cpu-sh4/cpu/sh7786.h
++++ b/arch/sh/include/cpu-sh4/cpu/sh7786.h
+@@ -32,16 +32,14 @@ enum {
+ 	GPIO_PD3, GPIO_PD2, GPIO_PD1, GPIO_PD0,
  
- config GPIO_SH_PFC
--	tristate "SuperH PFC GPIO support"
-+	bool "SuperH PFC GPIO support"
- 	depends on SH_PFC && GPIOLIB
- 	help
- 	  This enables support for GPIOs within the SoC's pin function
-diff --git a/drivers/sh/pfc/Makefile b/drivers/sh/pfc/Makefile
-index ce6fae3..6315cf3 100644
---- a/drivers/sh/pfc/Makefile
-+++ b/drivers/sh/pfc/Makefile
-@@ -1,3 +1,5 @@
- sh-pfc-objs			= core.o pinctrl.o
-+ifeq ($(CONFIG_GPIO_SH_PFC),y)
-+sh-pfc-objs			+= gpio.o
-+endif
- obj-y				+= sh-pfc.o
--obj-$(CONFIG_GPIO_SH_PFC)	+= gpio.o
-diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
-index 30e33db..5410996 100644
---- a/drivers/sh/pfc/core.c
-+++ b/drivers/sh/pfc/core.c
-@@ -149,7 +149,6 @@ int sh_pfc_read_bit(struct pinmux_data_reg *dr, unsigned long in_pos)
+ 	/* PE */
+-	GPIO_PE5, GPIO_PE4, GPIO_PE3, GPIO_PE2,
+-	GPIO_PE1, GPIO_PE0,
++	GPIO_PE7, GPIO_PE6,
  
- 	return (gpio_read_raw_reg(dr->mapped_reg, dr->reg_width) >> pos) & 1;
- }
--EXPORT_SYMBOL_GPL(sh_pfc_read_bit);
+ 	/* PF */
+ 	GPIO_PF7, GPIO_PF6, GPIO_PF5, GPIO_PF4,
+ 	GPIO_PF3, GPIO_PF2, GPIO_PF1, GPIO_PF0,
  
- void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
- 		      unsigned long value)
-@@ -169,7 +168,6 @@ void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
+ 	/* PG */
+-	GPIO_PG7, GPIO_PG6, GPIO_PG5, GPIO_PG4,
+-	GPIO_PG3, GPIO_PG2, GPIO_PG1, GPIO_PG0,
++	GPIO_PG7, GPIO_PG6, GPIO_PG5,
  
- 	gpio_write_raw_reg(dr->mapped_reg, dr->reg_width, dr->reg_shadow);
- }
--EXPORT_SYMBOL_GPL(sh_pfc_write_bit);
+ 	/* PH */
+ 	GPIO_PH7, GPIO_PH6, GPIO_PH5, GPIO_PH4,
+@@ -49,7 +47,7 @@ enum {
  
- static void config_reg_helper(struct sh_pfc *pfc,
- 			      struct pinmux_cfg_reg *crp,
-@@ -307,7 +305,6 @@ int sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
- 	*bitp = n;
- 	return 0;
- }
--EXPORT_SYMBOL_GPL(sh_pfc_get_data_reg);
+ 	/* PJ */
+ 	GPIO_PJ7, GPIO_PJ6, GPIO_PJ5, GPIO_PJ4,
+-	GPIO_PJ3, GPIO_PJ2, GPIO_PJ1, GPIO_PJ0,
++	GPIO_PJ3, GPIO_PJ2, GPIO_PJ1,
  
- static int get_config_reg(struct sh_pfc *pfc, pinmux_enum_t enum_id,
- 			  struct pinmux_cfg_reg **crp,
-@@ -384,7 +381,6 @@ int sh_pfc_gpio_to_enum(struct sh_pfc *pfc, unsigned gpio, int pos,
- 	pr_err("cannot locate data/mark enum_id for gpio %d\n", gpio);
- 	return -1;
- }
--EXPORT_SYMBOL_GPL(sh_pfc_gpio_to_enum);
+ 	/* DU */
+ 	GPIO_FN_DCLKIN, GPIO_FN_DCLKOUT, GPIO_FN_ODDF,
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
+index 4229e07..c24a777 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
+@@ -468,8 +468,8 @@ static struct pinmux_gpio pinmux_gpios[] = {
+ 	PINMUX_GPIO(GPIO_PD0, PD0_DATA),
  
- int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
- 		       int cfg_mode)
-@@ -500,7 +496,6 @@ int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
+ 	/* PE */
+-	PINMUX_GPIO(GPIO_PE5, PE7_DATA),
+-	PINMUX_GPIO(GPIO_PE4, PE6_DATA),
++	PINMUX_GPIO(GPIO_PE7, PE7_DATA),
++	PINMUX_GPIO(GPIO_PE6, PE6_DATA),
  
- int register_sh_pfc(struct sh_pfc_platform_data *pdata)
- {
--	int (*initroutine)(struct sh_pfc *) = NULL;
- 	int ret;
- 
- 	/*
-@@ -531,24 +526,20 @@ int register_sh_pfc(struct sh_pfc_platform_data *pdata)
- 	if (unlikely(ret != 0))
- 		goto err;
- 
-+#ifdef CONFIG_GPIO_SH_PFC
- 	/*
- 	 * Then the GPIO chip
- 	 */
--	initroutine = symbol_request(sh_pfc_register_gpiochip);
--	if (initroutine) {
--		ret = (*initroutine)(&sh_pfc);
--		symbol_put_addr(initroutine);
--
-+	ret = sh_pfc_register_gpiochip(&sh_pfc);
-+	if (unlikely(ret != 0)) {
- 		/*
- 		 * If the GPIO chip fails to come up we still leave the
- 		 * PFC state as it is, given that there are already
- 		 * extant users of it that have succeeded by this point.
- 		 */
--		if (unlikely(ret != 0)) {
--			pr_notice("failed to init GPIO chip, ignoring...\n");
--			ret = 0;
--		}
-+		pr_notice("failed to init GPIO chip, ignoring...\n");
- 	}
-+#endif
- 
- 	pr_info("%s support registered\n", sh_pfc.pdata->name);
- 
-@@ -560,3 +551,7 @@ err:
- 
- 	return ret;
- }
-+
-+MODULE_AUTHOR("Magnus Damm, Paul Mundt, Laurent Pinchart");
-+MODULE_DESCRIPTION("Pin Control and GPIO driver for SuperH pin function controller");
-+MODULE_LICENSE("GPL v2");
-diff --git a/drivers/sh/pfc/core.h b/drivers/sh/pfc/core.h
-index b07ae25..f3032b2 100644
---- a/drivers/sh/pfc/core.h
-+++ b/drivers/sh/pfc/core.h
-@@ -20,14 +20,18 @@ struct pfc_window {
- 	unsigned long size;
- };
- 
-+struct sh_pfc_chip;
-+
- struct sh_pfc {
- 	struct sh_pfc_platform_data *pdata;
- 	spinlock_t lock;
- 
- 	struct pfc_window *window;
-+	struct sh_pfc_chip *gpio;
- };
- 
- int sh_pfc_register_gpiochip(struct sh_pfc *pfc);
-+int sh_pfc_unregister_gpiochip(struct sh_pfc *pfc);
- 
- int sh_pfc_register_pinctrl(struct sh_pfc *pfc);
- 
-diff --git a/drivers/sh/pfc/gpio.c b/drivers/sh/pfc/gpio.c
-index 565b366..d8b0c74 100644
---- a/drivers/sh/pfc/gpio.c
-+++ b/drivers/sh/pfc/gpio.c
-@@ -15,7 +15,6 @@
- #include <linux/slab.h>
- #include <linux/spinlock.h>
- #include <linux/module.h>
--#include <linux/platform_device.h>
- #include <linux/pinctrl/consumer.h>
- #include <linux/sh_pfc.h>
- 
-@@ -152,44 +151,23 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
- 	sh_pfc_gpio_setup(chip);
- 
- 	ret = gpiochip_add(&chip->gpio_chip);
--	if (unlikely(ret < 0))
-+	if (unlikely(ret < 0)) {
- 		kfree(chip);
-+		return ret;
-+	}
-+
-+	pfc->gpio = chip;
- 
- 	pr_info("%s handling gpio %d -> %d\n",
- 		pfc->pdata->name, pfc->pdata->first_gpio,
- 		pfc->pdata->last_gpio);
- 
--	return ret;
--}
--EXPORT_SYMBOL_GPL(sh_pfc_register_gpiochip);
--
--static int sh_pfc_gpio_match(struct gpio_chip *gc, void *data)
--{
--	return !!strstr(gc->label, data);
--}
--
--static int sh_pfc_gpio_probe(struct platform_device *pdev)
--{
--	struct sh_pfc_chip *chip;
--	struct gpio_chip *gc;
--
--	gc = gpiochip_find("_pfc", sh_pfc_gpio_match);
--	if (unlikely(!gc)) {
--		pr_err("Cant find gpio chip\n");
--		return -ENODEV;
--	}
--
--	chip = gpio_to_pfc_chip(gc);
--	platform_set_drvdata(pdev, chip);
--
--	pr_info("attaching to GPIO chip %s\n", chip->pfc->pdata->name);
--
- 	return 0;
- }
- 
--static int sh_pfc_gpio_remove(struct platform_device *pdev)
-+int sh_pfc_unregister_gpiochip(struct sh_pfc *pfc)
- {
--	struct sh_pfc_chip *chip = platform_get_drvdata(pdev);
-+	struct sh_pfc_chip *chip = pfc->gpio;
- 	int ret;
- 
- 	ret = gpiochip_remove(&chip->gpio_chip);
-@@ -197,47 +175,6 @@ static int sh_pfc_gpio_remove(struct platform_device *pdev)
- 		return ret;
- 
- 	kfree(chip);
-+	pfc->gpio = NULL;
- 	return 0;
- }
--
--static struct platform_driver sh_pfc_gpio_driver = {
--	.probe		= sh_pfc_gpio_probe,
--	.remove		= sh_pfc_gpio_remove,
--	.driver		= {
--		.name	= KBUILD_MODNAME,
--		.owner	= THIS_MODULE,
--	},
--};
--
--static struct platform_device sh_pfc_gpio_device = {
--	.name		= KBUILD_MODNAME,
--	.id		= -1,
--};
--
--static int __init sh_pfc_gpio_init(void)
--{
--	int rc;
--
--	rc = platform_driver_register(&sh_pfc_gpio_driver);
--	if (likely(!rc)) {
--		rc = platform_device_register(&sh_pfc_gpio_device);
--		if (unlikely(rc))
--			platform_driver_unregister(&sh_pfc_gpio_driver);
--	}
--
--	return rc;
--}
--
--static void __exit sh_pfc_gpio_exit(void)
--{
--	platform_device_unregister(&sh_pfc_gpio_device);
--	platform_driver_unregister(&sh_pfc_gpio_driver);
--}
--
--module_init(sh_pfc_gpio_init);
--module_exit(sh_pfc_gpio_exit);
--
--MODULE_AUTHOR("Magnus Damm, Paul Mundt");
--MODULE_DESCRIPTION("GPIO driver for SuperH pin function controller");
--MODULE_LICENSE("GPL v2");
--MODULE_ALIAS("platform:pfc-gpio");
+ 	/* PF */
+ 	PINMUX_GPIO(GPIO_PF7, PF7_DATA),
 -- 
 1.7.8.6
 
