@@ -1,57 +1,67 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Dec 2012 22:54:18 +0000
-Subject: [PATCH v4 36/81] sh: sh7723: Register PFC platform device
-Message-Id: <1356735303-29474-37-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 15 Dec 2012 22:51:17 +0000
+Subject: [PATCH v3 43/81] sh-pfc: Remove platform device registration
+Message-Id: <1355611915-25060-44-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Add arch code to register the PFC platform device instead of calling the
-driver directly. Platform device registration in the sh-pfc driver will
-be removed.
+The PFC platform device is now registered by arch code, remove the
+legacy registration mechanism.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
 ---
- arch/sh/Kconfig                         |    1 +
- arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c |    3 ++-
- 2 files changed, 3 insertions(+), 1 deletions(-)
+ drivers/sh/pfc/core.c  |   12 ------------
+ include/linux/sh_pfc.h |   10 ----------
+ 2 files changed, 0 insertions(+), 22 deletions(-)
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 2f0d9bf..89fb594 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -433,6 +433,7 @@ config CPU_SUBTYPE_SH7723
- 	select ARCH_SPARSEMEM_ENABLE
- 	select SYS_SUPPORTS_CMT
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
-+	select PINCTRL
- 	help
- 	  Select SH7723 if you have an SH-MobileR2 CPU.
+diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
+index b2e121d..9456c70 100644
+--- a/drivers/sh/pfc/core.c
++++ b/drivers/sh/pfc/core.c
+@@ -578,18 +578,6 @@ static struct platform_driver sh_pfc_driver = {
+ 	},
+ };
  
-diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c
-index 2037915..ba22b2b 100644
---- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c
-+++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c
-@@ -11,6 +11,7 @@
- #include <linux/init.h>
- #include <linux/kernel.h>
- #include <linux/gpio.h>
-+#include <cpu/pfc.h>
- #include <cpu/sh7723.h>
- 
- enum {
-@@ -1903,7 +1904,7 @@ static struct pinmux_info sh7723_pinmux_info = {
- 
- static int __init plat_pinmux_setup(void)
+-static struct platform_device sh_pfc_device = {
+-	.name		= DRV_NAME,
+-	.id		= -1,
+-};
+-
+-int __init register_sh_pfc(struct sh_pfc_platform_data *pdata)
+-{
+-	sh_pfc_device.dev.platform_data = pdata;
+-
+-	return platform_device_register(&sh_pfc_device);
+-}
+-
+ static int __init sh_pfc_init(void)
  {
--	return register_pinmux(&sh7723_pinmux_info);
-+	return sh_pfc_register_info(NULL, NULL, 0, &sh7723_pinmux_info);
- }
+ 	return platform_driver_register(&sh_pfc_driver);
+diff --git a/include/linux/sh_pfc.h b/include/linux/sh_pfc.h
+index f7f01b2..fa1fec0 100644
+--- a/include/linux/sh_pfc.h
++++ b/include/linux/sh_pfc.h
+@@ -120,16 +120,6 @@ struct sh_pfc_platform_data {
+ /* XXX compat for now */
+ #define pinmux_info sh_pfc_platform_data
  
- arch_initcall(plat_pinmux_setup);
+-/* drivers/sh/pfc/core.c */
+-int register_sh_pfc(struct sh_pfc_platform_data *pfc);
+-
+-/* xxx */
+-static inline int register_pinmux(struct pinmux_info *pip)
+-{
+-	struct sh_pfc_platform_data *pdata = pip;
+-	return register_sh_pfc(pdata);
+-}
+-
+ enum { GPIO_CFG_DRYRUN, GPIO_CFG_REQ, GPIO_CFG_FREE };
+ 
+ /* helper macro for port */
 -- 
 1.7.8.6
 
