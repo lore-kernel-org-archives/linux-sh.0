@@ -1,48 +1,52 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 14 Dec 2012 05:54:37 +0000
-Subject: [PATCH 08/08] clocksource: sh_cmt: Add CMT register layout comment
-Message-Id: <20121214055437.10081.97676.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 15 Dec 2012 22:50:54 +0000
+Subject: [PATCH v3 20/81] sh-pfc: Split platform device and platform driver registration
+Message-Id: <1355611915-25060-21-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20121214055323.10081.12056.sendpatchset@w520>
-In-Reply-To: <20121214055323.10081.12056.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, johnstul@us.ibm.com, horms@verge.net.au, shinya.kuribayashi.px@renesas.com, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Move platform driver registration to a static postcore initcall. This
+prepares the move of platform device registration to arch code.
 
-Add a comment about different register layouts
-supported by the CMT driver.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
 ---
+ drivers/sh/pfc/core.c |   15 ++++++---------
+ 1 files changed, 6 insertions(+), 9 deletions(-)
 
- drivers/clocksource/sh_cmt.c |   15 +++++++++++++++
- 1 file changed, 15 insertions(+)
-
---- 0005/drivers/clocksource/sh_cmt.c
-+++ work/drivers/clocksource/sh_cmt.c	2012-12-14 11:43:10.000000000 +0900
-@@ -66,6 +66,21 @@ struct sh_cmt_priv {
- 			    unsigned long value);
- };
+diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
+index 1bb38e8..cd8f09d 100644
+--- a/drivers/sh/pfc/core.c
++++ b/drivers/sh/pfc/core.c
+@@ -573,19 +573,16 @@ static struct platform_device sh_pfc_device = {
  
-+/* Examples of supported CMT timer register layouts and I/O access widths:
-+ *
-+ * "16-bit counter and 16-bit control" as found on sh7263:
-+ * CMSTR 0xfffec000 16-bit
-+ * CMCSR 0xfffec002 16-bit
-+ * CMCNT 0xfffec004 16-bit
-+ * CMCOR 0xfffec006 16-bit
-+ *
-+ * "32-bit counter and 16-bit control" as found on sh7372, sh73a0, r8a7740:
-+ * CMSTR 0xffca0000 16-bit
-+ * CMCSR 0xffca0060 16-bit
-+ * CMCNT 0xffca0064 32-bit
-+ * CMCOR 0xffca0068 32-bit
-+ */
-+
- static unsigned long sh_cmt_read16(void __iomem *base, unsigned long offs)
+ int __init register_sh_pfc(struct sh_pfc_platform_data *pdata)
  {
- 	return ioread16(base + (offs << 1));
+-	int rc;
+-
+ 	sh_pfc_device.dev.platform_data = pdata;
+ 
+-	rc = platform_driver_register(&sh_pfc_driver);
+-	if (likely(!rc)) {
+-		rc = platform_device_register(&sh_pfc_device);
+-		if (unlikely(rc))
+-			platform_driver_unregister(&sh_pfc_driver);
+-	}
++	return platform_device_register(&sh_pfc_device);
++}
+ 
+-	return rc;
++static int __init sh_pfc_init(void)
++{
++	return platform_driver_register(&sh_pfc_driver);
+ }
++postcore_initcall(sh_pfc_init);
+ 
+ static void __exit sh_pfc_exit(void)
+ {
+-- 
+1.7.8.6
+
