@@ -1,89 +1,123 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 15 Dec 2012 22:51:53 +0000
-Subject: [PATCH v3 79/81] sh: Remove unused sh_pfc_register_info() function
-Message-Id: <1355611915-25060-80-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Sat, 15 Dec 2012 22:50:45 +0000
+Subject: [PATCH v3 11/81] sh-pfc: Merge PFC core and pinctrl
+Message-Id: <1355611915-25060-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-All boards use sh_pfc_register() directly, remove the unused
-sh_pfc_register_info() function.
-
-Make the name argument to sh_pfc_register() mandatory as it's now
-supplied by all callers.
+The PFC core is only used by the pinctrl and gpio modules. As the gpio
+module depends on the pinctrl module, the pinctrl module will always be
+present if the core gets used. There is thus no point in keeping core
+and pinctrl in two seperate modules. Merge them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
 ---
- arch/sh/include/asm/gpio.h           |    2 +-
- arch/sh/include/cpu-common/cpu/pfc.h |    4 ----
- arch/sh/kernel/cpu/pfc.c             |   13 +------------
- 3 files changed, 2 insertions(+), 17 deletions(-)
+ drivers/sh/pfc/Kconfig   |   10 +---------
+ drivers/sh/pfc/Makefile  |    4 ++--
+ drivers/sh/pfc/core.c    |   15 +++------------
+ drivers/sh/pfc/pinctrl.c |    3 +--
+ 4 files changed, 7 insertions(+), 25 deletions(-)
 
-diff --git a/arch/sh/include/asm/gpio.h b/arch/sh/include/asm/gpio.h
-index 04f53d3..7dfe15e 100644
---- a/arch/sh/include/asm/gpio.h
-+++ b/arch/sh/include/asm/gpio.h
-@@ -20,7 +20,7 @@
- #endif
+diff --git a/drivers/sh/pfc/Kconfig b/drivers/sh/pfc/Kconfig
+index 804f9ad..f33d82a 100644
+--- a/drivers/sh/pfc/Kconfig
++++ b/drivers/sh/pfc/Kconfig
+@@ -5,18 +5,10 @@ config SH_PFC
+ 	depends on GENERIC_GPIO
+ 	select GPIO_SH_PFC if ARCH_REQUIRE_GPIOLIB
+ 	select PINCTRL_SH_PFC
+-	def_bool y
+-
+-#
+-# Placeholder for now, rehome to drivers/pinctrl once the PFC APIs
+-# have settled.
+-#
+-config PINCTRL_SH_PFC
+-	tristate "SuperH PFC pin controller driver"
+-	depends on SH_PFC
+ 	select PINCTRL
+ 	select PINMUX
+ 	select PINCONF
++	def_bool y
  
- #define ARCH_NR_GPIOS 512
--#include <linux/sh_pfc.h>
-+#include <asm-generic/gpio.h>
+ config GPIO_SH_PFC
+ 	tristate "SuperH PFC GPIO support"
+diff --git a/drivers/sh/pfc/Makefile b/drivers/sh/pfc/Makefile
+index 7916027..ce6fae3 100644
+--- a/drivers/sh/pfc/Makefile
++++ b/drivers/sh/pfc/Makefile
+@@ -1,3 +1,3 @@
+-obj-y				+= core.o
+-obj-$(CONFIG_PINCTRL_SH_PFC)	+= pinctrl.o
++sh-pfc-objs			= core.o pinctrl.o
++obj-y				+= sh-pfc.o
+ obj-$(CONFIG_GPIO_SH_PFC)	+= gpio.o
+diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
+index 72421a4..30e33db 100644
+--- a/drivers/sh/pfc/core.c
++++ b/drivers/sh/pfc/core.c
+@@ -8,7 +8,7 @@
+  * License.  See the file "COPYING" in the main directory of this archive
+  * for more details.
+  */
+-#define pr_fmt(fmt) "sh_pfc " KBUILD_MODNAME ": " fmt
++#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
  
- #ifdef CONFIG_GPIOLIB
- 
-diff --git a/arch/sh/include/cpu-common/cpu/pfc.h b/arch/sh/include/cpu-common/cpu/pfc.h
-index 40e8643..e538813 100644
---- a/arch/sh/include/cpu-common/cpu/pfc.h
-+++ b/arch/sh/include/cpu-common/cpu/pfc.h
-@@ -18,13 +18,9 @@
- 
- #include <linux/types.h>
- 
--struct pinmux_info;
- struct resource;
- 
- int sh_pfc_register(const char *name,
- 		    struct resource *resource, u32 num_resources);
--int sh_pfc_register_info(const char *name,
--			 struct resource *resource, u32 num_resources,
--			 struct pinmux_info *pdata);
- 
- #endif /* __ARCH_SH_CPU_PFC_H__ */
-diff --git a/arch/sh/kernel/cpu/pfc.c b/arch/sh/kernel/cpu/pfc.c
-index d045d75..d766564 100644
---- a/arch/sh/kernel/cpu/pfc.c
-+++ b/arch/sh/kernel/cpu/pfc.c
-@@ -19,26 +19,15 @@
- #include <cpu/pfc.h>
- 
- static struct platform_device sh_pfc_device = {
--	.name		= "sh-pfc",
- 	.id		= -1,
- };
- 
- int __init sh_pfc_register(const char *name,
- 			   struct resource *resource, u32 num_resources)
- {
--	if (name)
--		sh_pfc_device.name = name;
-+	sh_pfc_device.name = name;
- 	sh_pfc_device.num_resources = num_resources;
- 	sh_pfc_device.resource = resource;
- 
- 	return platform_device_register(&sh_pfc_device);
+ #include <linux/errno.h>
+ #include <linux/kernel.h>
+@@ -497,7 +497,6 @@ int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
+  out_err:
+ 	return -1;
  }
+-EXPORT_SYMBOL_GPL(sh_pfc_config_gpio);
+ 
+ int register_sh_pfc(struct sh_pfc_platform_data *pdata)
+ {
+@@ -528,17 +527,9 @@ int register_sh_pfc(struct sh_pfc_platform_data *pdata)
+ 	/*
+ 	 * Initialize pinctrl bindings first
+ 	 */
+-	initroutine = symbol_request(sh_pfc_register_pinctrl);
+-	if (initroutine) {
+-		ret = (*initroutine)(&sh_pfc);
+-		symbol_put_addr(initroutine);
 -
--int __init sh_pfc_register_info(const char *name,
--				struct resource *resource, u32 num_resources,
--				struct pinmux_info *pdata)
--{
--	sh_pfc_device.dev.platform_data = pdata;
--
--	return sh_pfc_register(name, resource, num_resources);
--}
+-		if (unlikely(ret != 0))
+-			goto err;
+-	} else {
+-		pr_err("failed to initialize pinctrl bindings\n");
++	ret = sh_pfc_register_pinctrl(&sh_pfc);
++	if (unlikely(ret != 0))
+ 		goto err;
+-	}
+ 
+ 	/*
+ 	 * Then the GPIO chip
+diff --git a/drivers/sh/pfc/pinctrl.c b/drivers/sh/pfc/pinctrl.c
+index 5801a56..6f0f58b 100644
+--- a/drivers/sh/pfc/pinctrl.c
++++ b/drivers/sh/pfc/pinctrl.c
+@@ -9,7 +9,7 @@
+  */
+ #define DRV_NAME "pinctrl-sh_pfc"
+ 
+-#define pr_fmt(fmt) DRV_NAME " " KBUILD_MODNAME ": " fmt
++#define pr_fmt(fmt) KBUILD_MODNAME " pinctrl: " fmt
+ 
+ #include <linux/init.h>
+ #include <linux/module.h>
+@@ -521,7 +521,6 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ 
+ 	return sh_pfc_pinctrl_init();
+ }
+-EXPORT_SYMBOL_GPL(sh_pfc_register_pinctrl);
+ 
+ static void __exit sh_pfc_pinctrl_exit(void)
+ {
 -- 
 1.7.8.6
 
