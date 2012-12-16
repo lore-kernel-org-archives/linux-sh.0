@@ -1,49 +1,36 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Dec 2012 22:53:45 +0000
-Subject: [PATCH v4 03/81] sh: sh7723: Rename GPIO_FN_SIUOSPD to GPIO_FN_SIUAOSPD
-Message-Id: <1356735303-29474-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 16 Dec 2012 17:25:49 +0000
+Subject: [PATCH/WIP/RFC 03/14] shmobile-iommu: Remove __devinit
+Message-Id: <1355678760-27357-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1350290093-998-1-git-send-email-hdk@igel.co.jp>
+ <1355678760-27357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1355678760-27357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The GPIO was incorrectly named. As it has no user in the whole kernel
-tree, just rename it.
+CONFIG_HOTPLUG is going away as an option, remove __devinit.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/sh/include/cpu-sh4/cpu/sh7723.h    |    2 +-
- arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c |    2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+ drivers/iommu/shmobile-ipmmu.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/arch/sh/include/cpu-sh4/cpu/sh7723.h b/arch/sh/include/cpu-sh4/cpu/sh7723.h
-index 6fae50c..668da89 100644
---- a/arch/sh/include/cpu-sh4/cpu/sh7723.h
-+++ b/arch/sh/include/cpu-sh4/cpu/sh7723.h
-@@ -184,7 +184,7 @@ enum {
- 	/* SIUA */
- 	GPIO_FN_SIUAFCK, GPIO_FN_SIUAILR, GPIO_FN_SIUAIBT, GPIO_FN_SIUAISLD,
- 	GPIO_FN_SIUAOLR, GPIO_FN_SIUAOBT, GPIO_FN_SIUAOSLD, GPIO_FN_SIUAMCK,
--	GPIO_FN_SIUAISPD, GPIO_FN_SIUOSPD,
-+	GPIO_FN_SIUAISPD, GPIO_FN_SIUAOSPD,
+diff --git a/drivers/iommu/shmobile-ipmmu.c b/drivers/iommu/shmobile-ipmmu.c
+index 72cacb9..2339f91 100644
+--- a/drivers/iommu/shmobile-ipmmu.c
++++ b/drivers/iommu/shmobile-ipmmu.c
+@@ -106,7 +106,7 @@ void ipmmu_tlb_set(struct device *dev, unsigned long phys, int size, int asid)
+ 	mutex_unlock(&priv->flush_lock);
+ }
  
- 	/* SIUB */
- 	GPIO_FN_SIUBFCK, GPIO_FN_SIUBILR, GPIO_FN_SIUBIBT, GPIO_FN_SIUBISLD,
-diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c
-index 88bf5ec..2037915 100644
---- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c
-+++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c
-@@ -1317,7 +1317,7 @@ static struct pinmux_gpio pinmux_gpios[] = {
- 	PINMUX_GPIO(GPIO_FN_SIUAOSLD, SIUAOSLD_MARK),
- 	PINMUX_GPIO(GPIO_FN_SIUAMCK, SIUAMCK_MARK),
- 	PINMUX_GPIO(GPIO_FN_SIUAISPD, SIUAISPD_MARK),
--	PINMUX_GPIO(GPIO_FN_SIUOSPD, SIUAOSPD_MARK),
-+	PINMUX_GPIO(GPIO_FN_SIUAOSPD, SIUAOSPD_MARK),
- 
- 	/* SIUB */
- 	PINMUX_GPIO(GPIO_FN_SIUBFCK, SIUBFCK_MARK),
+-static int __devinit ipmmu_probe(struct platform_device *pdev)
++static int ipmmu_probe(struct platform_device *pdev)
+ {
+ 	struct resource *res;
+ 	struct ipmmu_priv *priv;
 -- 
 1.7.8.6
 
