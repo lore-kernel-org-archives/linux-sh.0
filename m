@@ -1,49 +1,40 @@
-From: Tang Chen <tangchen@cn.fujitsu.com>
-Date: Wed, 26 Dec 2012 03:21:02 +0000
-Subject: Re: [PATCH v5 06/14] memory-hotplug: implement register_page_bootmem_info_section of sparse-vmemmap
-Message-Id: <50DA6D1E.1010209@cn.fujitsu.com>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Sun, 16 Dec 2012 13:54:24 +0000
+Subject: [PATCH 0/2] Preliminary Armadillo DT support
+Message-Id: <1355666066-25649-1-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1356350964-13437-1-git-send-email-tangchen@cn.fujitsu.com> <1356350964-13437-7-git-send-email-tangchen@cn.fujitsu.com> <50D95F51.9090007@huawei.com>
-In-Reply-To: <50D95F51.9090007@huawei.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="windows-1252"
-Content-Transfer-Encoding: quoted-printable
-To: Jianguo Wu <wujianguo@huawei.com>
-Cc: akpm@linux-foundation.org, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wency@cn.fujitsu.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org, x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-On 12/25/2012 04:09 PM, Jianguo Wu wrote:
->> +
->> +		if (!cpu_has_pse) {
->> +			next =3D (addr + PAGE_SIZE)&  PAGE_MASK;
->> +			pmd =3D pmd_offset(pud, addr);
->> +			if (pmd_none(*pmd))
->> +				continue;
->> +			get_page_bootmem(section_nr, pmd_page(*pmd),
->> +					 MIX_SECTION_INFO);
->> +
->> +			pte =3D pte_offset_kernel(pmd, addr);
->> +			if (pte_none(*pte))
->> +				continue;
->> +			get_page_bootmem(section_nr, pte_page(*pte),
->> +					 SECTION_INFO);
->> +		} else {
->> +			next =3D pmd_addr_end(addr, end);
->> +
->> +			pmd =3D pmd_offset(pud, addr);
->> +			if (pmd_none(*pmd))
->> +				continue;
->> +			get_page_bootmem(section_nr, pmd_page(*pmd),
->> +					 SECTION_INFO);
->
-> Hi Tang=EF=BC=8C
-> 	In this case, pmd maps 512 pages, but you only get_page_bootmem() on the=
- first page.
-> I think the whole 512 pages should be get_page_bootmem(), what do you thi=
-nk?
->
-Hi Wu,
+This is a minimal setup for DT booting Armadillo boards. It's based on Simon
+Horman's reference implementation for the kz9mg board.
 
-Yes, thanks. I will fix it. :)
+The only device added so far is the ethernet controller sh_eth. For this the
+driver is enhanced to support DT-based probing in the 2nd patch.
 
-Thanks. :)
+Care should be taken as the lines
+-       /* armadillo 800 eva extal1 is 24MHz */
+-       clk_set_rate(xtal1, 24000000);
+are removed and the r8a7740 code uses 25MHz by default. I'm unsure if just some clock
+calculations get incorrect or if we overclock our board somewhere.
+
+The patches are based on git://git.kernel.org/pub/scm/linux/kernel/git/horms/devel/of
+revision 9fcbfcfd31c782840ebb57f283c174c749467434.
+
+Bastian Hecht (2):
+  ARM: shmobile: Armadillo800eva: DT boot testcase with ethernet
+    support
+  net: sh_eth: Add Device Tree support
+
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts  |    7 +
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 1167 +-----------------------
+ arch/arm/mach-shmobile/clock-r8a7740.c         |    1 +
+ arch/arm/mach-shmobile/include/mach/common.h   |    2 +
+ drivers/net/ethernet/renesas/sh_eth.c          |   72 +-
+ 5 files changed, 86 insertions(+), 1163 deletions(-)
+
+-- 
+1.7.9.5
 
