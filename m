@@ -1,38 +1,38 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Dec 2012 22:53:48 +0000
-Subject: [PATCH v4 06/81] sh: sh7786: Fix last GPIO index
-Message-Id: <1356735303-29474-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 16 Dec 2012 17:25:47 +0000
+Subject: [PATCH/WIP/RFC 01/14] ARM: sh-mobile: Protect ipmmu.h header with ifndef/define
+Message-Id: <1355678760-27357-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1350290093-998-1-git-send-email-hdk@igel.co.jp>
+ <1355678760-27357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1355678760-27357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-
-A careless look at the code shows that the last entry in the
-pinmux_gpios seems to be GPIO_FN_FSE. However, entries are ordered by
-the GPIO number, as the PINMUX_GPIO macro is expended to an indexed
-array initializer. The last entry in the array is thus GPIO_FN_IRL4. Set
-the pinmux_info last_gpio field accordingly.
+To: linux-arm-kernel@lists.infradead.org
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ arch/arm/mach-shmobile/include/mach/ipmmu.h |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
 
-diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
-index c24a777..60df99c 100644
---- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
-+++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
-@@ -825,7 +825,7 @@ static struct pinmux_info sh7786_pinmux_info = {
- 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
- 
- 	.first_gpio = GPIO_PA7,
--	.last_gpio = GPIO_FN_FSE,
-+	.last_gpio = GPIO_FN_IRL4,
- 
- 	.gpios = pinmux_gpios,
- 	.cfg_regs = pinmux_config_regs,
+diff --git a/arch/arm/mach-shmobile/include/mach/ipmmu.h b/arch/arm/mach-shmobile/include/mach/ipmmu.h
+index ede2f0b..4b805b1f 100644
+--- a/arch/arm/mach-shmobile/include/mach/ipmmu.h
++++ b/arch/arm/mach-shmobile/include/mach/ipmmu.h
+@@ -1,3 +1,6 @@
++#ifndef __SHMOBILE_IPMMU_H__
++#define __SHMOBILE_IPMMU_H__
++
+ #ifdef CONFIG_SHMOBILE_IPMMU_TLB
+ void ipmmu_tlb_flush(struct device *ipmmu_dev);
+ void ipmmu_tlb_set(struct device *ipmmu_dev, unsigned long phys, int size,
+@@ -14,3 +17,5 @@ static int ipmmu_iommu_init(struct device *dev)
+ 	return -EINVAL;
+ }
+ #endif
++
++#endif /* __SHMOBILE_IPMMU_H__ */
 -- 
 1.7.8.6
 
