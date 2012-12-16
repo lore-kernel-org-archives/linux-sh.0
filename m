@@ -1,31 +1,130 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 18 Dec 2012 00:39:24 +0000
-Subject: Re: [PATCH 09/10] ARM: shmobile: sh7372: Do not initialise TMU when using DT
-Message-Id: <20121218003924.GJ7146@verge.net.au>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Sun, 16 Dec 2012 13:54:26 +0000
+Subject: [PATCH 2/2] net: sh_eth: Add Device Tree support
+Message-Id: <1355666066-25649-3-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1355562224-29448-1-git-send-email-horms+renesas@verge.net.au>
- <1355562224-29448-10-git-send-email-horms+renesas@verge.net.au>
- <Pine.LNX.4.64.1212171056150.24007@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1212171056150.24007@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Dec 17, 2012 at 10:58:39AM +0100, Guennadi Liakhovetski wrote:
-> Hi Simon
-> 
-> On Sat, 15 Dec 2012, Simon Horman wrote:
-> 
-> > This is in preparation for initialising INTC using DT.
-> > The proposed INTC configuration is not complete and does
-> > not allow the TMU to be initialised, to exclude it when using DT.
-> 
-> Not sure why you decide to not include incs, as I said, it is quite 
-> important on sh7372. If we do find a way to include it back, then this 
-> patch becomes unnecessary too.
+We add support for Device Tree probing in order to support the Armadillo
+DT testcase.
 
-Yes, I agree this should not be necessary once INTC has more complete
-DT support. But in the meantime it seems to be needed.
+Until we figure out what portions of the platform config are board
+dependent and should be used as OF properties and what portions are only
+SoC related and can be stored in the driver itself, I have attached all
+platform configurations to the OF match in the driver.
 
-Its the baby-steps approach to changing everything.
+Not-yet-signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+---
+ drivers/net/ethernet/renesas/sh_eth.c |   72 ++++++++++++++++++++++++++++++++-
+ 1 file changed, 71 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index c8bfea0..1fbbf69 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -31,6 +31,8 @@
+ #include <linux/platform_device.h>
+ #include <linux/mdio-bitbang.h>
+ #include <linux/netdevice.h>
++#include <linux/of.h>
++#include <linux/of_device.h>
+ #include <linux/phy.h>
+ #include <linux/cache.h>
+ #include <linux/io.h>
+@@ -2347,6 +2349,63 @@ static const struct net_device_ops sh_eth_netdev_ops = {
+ 	.ndo_change_mtu		= eth_change_mtu,
+ };
+ 
++#ifdef CONFIG_OF
++struct sh_eth_soc_config {
++	int		phy;
++	phy_interface_t phy_interface;
++	unsigned	edmac_endian:1;
++	unsigned	register_type:2;
++};
++
++static struct sh_eth_soc_config sh_eth_r8a7740_config = {
++	.phy		= 0x00,
++	.phy_interface	= PHY_INTERFACE_MODE_MII,
++	.edmac_endian	= EDMAC_LITTLE_ENDIAN,
++	.register_type	= SH_ETH_REG_GIGABIT,
++};
++
++static const struct of_device_id sh_eth_match[] = {
++	{ .compatible = "renesas,sh-eth-r8a7740",
++			.data = &sh_eth_r8a7740_config },
++	{},
++};
++MODULE_DEVICE_TABLE(of, sh_eth_match);
++
++static struct sh_eth_plat_data *sh_eth_parse_dt(struct device *dev)
++{
++	const struct of_device_id *match;
++	struct sh_eth_plat_data *pd;
++	struct sh_eth_soc_config *config;
++
++	match = of_match_device(sh_eth_match, dev);
++	if (match)
++		config = (struct sh_eth_soc_config *)match->data;
++	else {
++		dev_err(dev, "%s: no OF configuration attached\n", __func__);
++		return NULL;
++	}
++
++	pd = devm_kzalloc(dev, sizeof(struct sh_eth_plat_data), GFP_KERNEL);
++	if (!pd) {
++		dev_err(dev, "failed to allocate setup data\n");
++		return NULL;
++	}
++
++	pd->phy			= config->phy;
++	pd->phy_interface	= config->phy_interface;
++	pd->edmac_endian	= config->edmac_endian;
++	pd->register_type	= config->register_type;
++
++	return pd;
++}
++#else
++static struct sh_eth_plat_data *sh_eth_parse_dt(struct device *dev)
++{
++	return NULL;
++}
++#define sh_eth_match NULL
++#endif
++
+ static int sh_eth_drv_probe(struct platform_device *pdev)
+ {
+ 	int ret, devno = 0;
+@@ -2403,7 +2462,17 @@ static int sh_eth_drv_probe(struct platform_device *pdev)
+ 	pm_runtime_enable(&pdev->dev);
+ 	pm_runtime_resume(&pdev->dev);
+ 
+-	pd = (struct sh_eth_plat_data *)(pdev->dev.platform_data);
++	if (pdev->dev.of_node)
++		pd = sh_eth_parse_dt(&pdev->dev);
++	else
++		pd = pdev->dev.platform_data;
++
++	if (!pd) {
++		dev_err(&pdev->dev, "failed to obtain device info\n");
++		ret = -ENXIO;
++		goto out_release;
++	}
++
+ 	/* get PHY ID */
+ 	mdp->phy_id = pd->phy;
+ 	mdp->phy_interface = pd->phy_interface;
+@@ -2533,6 +2602,7 @@ static struct platform_driver sh_eth_driver = {
+ 	.driver = {
+ 		   .name = CARDNAME,
+ 		   .pm = &sh_eth_dev_pm_ops,
++		   .of_match_table = sh_eth_match,
+ 	},
+ };
+ 
+-- 
+1.7.9.5
+
