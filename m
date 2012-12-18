@@ -1,169 +1,225 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 15 Dec 2012 22:50:44 +0000
-Subject: [PATCH v3 10/81] sh-pfc: Move private definitions and declarations to private header
-Message-Id: <1355611915-25060-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 18 Dec 2012 00:46:07 +0000
+Subject: [PATCH 3/9] ARM: shmobile: Add support OF of INTC for sh7372
+Message-Id: <1355791573-20281-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1355791573-20281-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1355791573-20281-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Move all private structure definitions and function declarations from
-include/linux/sh_pfc.h to drivers/sh/pfc/core.h.
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Paul Mundt <lethal@linux-sh.org>
+This CPU has four interrupt controllers (INTCA, pins-High and pins-Low).
+This supports these.
+Note: This supports DT of INTCA only.
+
+Cc: Magnus Damm <damm@opensource.se>
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/sh/pfc/core.c    |    2 ++
- drivers/sh/pfc/core.h    |   44 ++++++++++++++++++++++++++++++++++++++++++++
- drivers/sh/pfc/gpio.c    |    2 ++
- drivers/sh/pfc/pinctrl.c |    2 ++
- include/linux/sh_pfc.h   |   29 -----------------------------
- 5 files changed, 50 insertions(+), 29 deletions(-)
- create mode 100644 drivers/sh/pfc/core.h
+ arch/arm/mach-shmobile/include/mach/common.h |    1 +
+ arch/arm/mach-shmobile/intc-sh7372.c         |  113 ++++++++++++++++++++------
+ 2 files changed, 89 insertions(+), 25 deletions(-)
 
-diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
-index ecbe51d..72421a4 100644
---- a/drivers/sh/pfc/core.c
-+++ b/drivers/sh/pfc/core.c
-@@ -21,6 +21,8 @@
- #include <linux/ioport.h>
- #include <linux/pinctrl/machine.h>
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index 8402b5d..444dfed 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -36,6 +36,7 @@ extern void sh7377_pinmux_init(void);
+ extern struct clk sh7377_extalc1_clk;
+ extern struct clk sh7377_extal2_clk;
  
-+#include "core.h"
++extern void sh7372_init_irq_of(void);
+ extern void sh7372_init_irq(void);
+ extern void sh7372_map_io(void);
+ extern void sh7372_add_early_devices(void);
+diff --git a/arch/arm/mach-shmobile/intc-sh7372.c b/arch/arm/mach-shmobile/intc-sh7372.c
+index a91caad..85486f0 100644
+--- a/arch/arm/mach-shmobile/intc-sh7372.c
++++ b/arch/arm/mach-shmobile/intc-sh7372.c
+@@ -16,6 +16,8 @@
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
++#define pr_fmt(fmt) "intc: " fmt
 +
- static struct sh_pfc sh_pfc __read_mostly;
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+@@ -551,23 +553,28 @@ static void intcs_demux(unsigned int irq, struct irq_desc *desc)
  
- static void pfc_iounmap(struct sh_pfc *pfc)
-diff --git a/drivers/sh/pfc/core.h b/drivers/sh/pfc/core.h
-new file mode 100644
-index 0000000..b07ae25
---- /dev/null
-+++ b/drivers/sh/pfc/core.h
-@@ -0,0 +1,44 @@
-+/*
-+ * SuperH Pin Function Controller support.
-+ *
-+ * Copyright (C) 2012  Renesas Solutions Corp.
-+ *
-+ * This file is subject to the terms and conditions of the GNU General Public
-+ * License.  See the file "COPYING" in the main directory of this archive
-+ * for more details.
-+ */
-+#ifndef __SH_PFC_CORE_H__
-+#define __SH_PFC_CORE_H__
-+
-+#include <linux/compiler.h>
-+#include <linux/sh_pfc.h>
-+#include <linux/types.h>
-+
-+struct pfc_window {
-+	phys_addr_t phys;
-+	void __iomem *virt;
-+	unsigned long size;
-+};
-+
-+struct sh_pfc {
-+	struct sh_pfc_platform_data *pdata;
-+	spinlock_t lock;
-+
-+	struct pfc_window *window;
-+};
-+
-+int sh_pfc_register_gpiochip(struct sh_pfc *pfc);
-+
-+int sh_pfc_register_pinctrl(struct sh_pfc *pfc);
-+
-+int sh_pfc_read_bit(struct pinmux_data_reg *dr, unsigned long in_pos);
-+void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
-+		      unsigned long value);
-+int sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
-+			struct pinmux_data_reg **drp, int *bitp);
-+int sh_pfc_gpio_to_enum(struct sh_pfc *pfc, unsigned gpio, int pos,
-+			pinmux_enum_t *enum_idp);
-+int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
-+		       int cfg_mode);
-+
-+#endif /* __SH_PFC_CORE_H__ */
-diff --git a/drivers/sh/pfc/gpio.c b/drivers/sh/pfc/gpio.c
-index 7597a02..565b366 100644
---- a/drivers/sh/pfc/gpio.c
-+++ b/drivers/sh/pfc/gpio.c
-@@ -19,6 +19,8 @@
- #include <linux/pinctrl/consumer.h>
- #include <linux/sh_pfc.h>
- 
-+#include "core.h"
-+
- struct sh_pfc_chip {
- 	struct sh_pfc		*pfc;
- 	struct gpio_chip	gpio_chip;
-diff --git a/drivers/sh/pfc/pinctrl.c b/drivers/sh/pfc/pinctrl.c
-index 3a2c77d..5801a56 100644
---- a/drivers/sh/pfc/pinctrl.c
-+++ b/drivers/sh/pfc/pinctrl.c
-@@ -24,6 +24,8 @@
- #include <linux/pinctrl/pinmux.h>
- #include <linux/pinctrl/pinconf-generic.h>
- 
-+#include "core.h"
-+
- struct sh_pfc_pinctrl {
- 	struct pinctrl_dev *pctl;
- 	struct sh_pfc *pfc;
-diff --git a/include/linux/sh_pfc.h b/include/linux/sh_pfc.h
-index 58587f9..f7f01b2 100644
---- a/include/linux/sh_pfc.h
-+++ b/include/linux/sh_pfc.h
-@@ -88,12 +88,6 @@ struct pinmux_range {
- 	pinmux_enum_t force;
- };
- 
--struct pfc_window {
--	phys_addr_t phys;
--	void __iomem *virt;
--	unsigned long size;
--};
+ static void __iomem *intcs_ffd2;
+ static void __iomem *intcs_ffd5;
 -
- struct sh_pfc_platform_data {
- 	char *name;
- 	pinmux_enum_t reserved_id;
-@@ -123,35 +117,12 @@ struct sh_pfc_platform_data {
- 	unsigned long unlock_reg;
- };
- 
--struct sh_pfc {
--	struct sh_pfc_platform_data *pdata;
--	spinlock_t lock;
--
--	struct pfc_window *window;
--};
--
- /* XXX compat for now */
- #define pinmux_info sh_pfc_platform_data
- 
--/* drivers/sh/pfc/gpio.c */
--int sh_pfc_register_gpiochip(struct sh_pfc *pfc);
--
--/* drivers/sh/pfc/pinctrl.c */
--int sh_pfc_register_pinctrl(struct sh_pfc *pfc);
--
- /* drivers/sh/pfc/core.c */
- int register_sh_pfc(struct sh_pfc_platform_data *pfc);
- 
--int sh_pfc_read_bit(struct pinmux_data_reg *dr, unsigned long in_pos);
--void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
--		      unsigned long value);
--int sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
--			struct pinmux_data_reg **drp, int *bitp);
--int sh_pfc_gpio_to_enum(struct sh_pfc *pfc, unsigned gpio, int pos,
--			pinmux_enum_t *enum_idp);
--int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
--		       int cfg_mode);
--
- /* xxx */
- static inline int register_pinmux(struct pinmux_info *pip)
+-void __init sh7372_init_irq(void)
++static void __iomem *intca_e694;
++static void __iomem *intca_e695;
++
++static void __init sh7372_init_intc(resource_size_t intca0_start,
++				    resource_size_t intca1_start,
++				    resource_size_t intcs0_start,
++				    resource_size_t intcs1_start,
++				    unsigned short vect)
  {
+ 	void __iomem *intevtsa;
+ 	int n;
+ 
+-	intcs_ffd2 = ioremap_nocache(0xffd20000, PAGE_SIZE);
+-	intevtsa = intcs_ffd2 + 0x100;
+-	intcs_ffd5 = ioremap_nocache(0xffd50000, PAGE_SIZE);
++	intca_e694 = IOMEM(intca0_start);
++	intca_e695 = IOMEM(intca1_start);
+ 
+-	register_intc_controller(&intca_desc);
+-	register_intc_controller(&intca_irq_pins_lo_desc);
+-	register_intc_controller(&intca_irq_pins_hi_desc);
+-	register_intc_controller(&intcs_desc);
++	intcs_ffd2 = ioremap_nocache(intcs0_start, PAGE_SIZE);
++	intevtsa = intcs_ffd2 + 0x100;
++	intcs_ffd5 = ioremap_nocache(intcs1_start, PAGE_SIZE);
+ 
+ 	/* setup dummy cascade chip for INTCS */
+-	n = evt2irq(0xf80);
++	n = evt2irq(vect);
++
+ 	irq_alloc_desc_at(n, numa_node_id());
+ 	irq_set_chip_and_handler_name(n, &dummy_irq_chip,
+ 				      handle_level_irq, "level");
+@@ -581,6 +588,65 @@ void __init sh7372_init_irq(void)
+ 	iowrite16(0, intcs_ffd2 + 0x104);
+ }
+ 
++#ifdef CONFIG_OF
++static unsigned short intevtsa_vect;
++
++#define INTC_RES_MAX 2
++static struct {
++	struct intc_desc intc_desc;
++	struct resource intc_res[INTC_RES_MAX];
++} intc_data __initdata;
++
++static int __init intc_of_init(struct device_node *np,
++			       struct device_node *parent)
++{
++	int ret, i;
++
++	memset(&intc_data, 0, sizeof(intc_data));
++
++	for (i = 0; i < INTC_RES_MAX; i++) {
++		ret = of_address_to_resource(np, i, &intc_data.intc_res[i]);
++		if (ret < 0)
++			break;
++	}
++
++	intc_data.intc_desc.name = (char *)of_node_full_name(np);
++	intc_data.intc_desc.resource = intc_data.intc_res;
++	intc_data.intc_desc.num_resources = i;
++
++	ret = of_sh_intc_get_intc(np, &intc_data.intc_desc);
++	if (ret)
++		return ret;
++
++	of_sh_intc_get_intevtsa_vect(np, &intevtsa_vect);
++
++	register_intc_controller(&intc_data.intc_desc);
++	return 0;
++}
++
++static const struct of_device_id irq_of_match[] __initconst = {
++	{ .compatible = "renesas,sh_intc", .data = intc_of_init },
++	{ /*sentinel*/ }
++};
++
++void __init sh7372_init_irq_of(void)
++{
++	of_irq_init(irq_of_match);
++
++	register_intc_controller(&intcs_desc);
++}
++#endif /* CONFIG_OF */
++
++void __init sh7372_init_irq(void)
++{
++	register_intc_controller(&intca_desc);
++	register_intc_controller(&intca_irq_pins_lo_desc);
++	register_intc_controller(&intca_irq_pins_hi_desc);
++	register_intc_controller(&intcs_desc);
++
++	sh7372_init_intc(0xe6940000, 0xe6950000, 0xffd20000, 0xffd50000, 0xf80);
++}
++
+ static unsigned short ffd2[0x200];
+ static unsigned short ffd5[0x100];
+ 
+@@ -624,9 +690,6 @@ void sh7372_intcs_resume(void)
+ 		__raw_writeb(ffd5[k], intcs_ffd5 + k);
+ }
+ 
+-#define E694_BASE IOMEM(0xe6940000)
+-#define E695_BASE IOMEM(0xe6950000)
+-
+ static unsigned short e694[0x200];
+ static unsigned short e695[0x200];
+ 
+@@ -635,22 +698,22 @@ void sh7372_intca_suspend(void)
+ 	int k;
+ 
+ 	for (k = 0x00; k <= 0x38; k += 4)
+-		e694[k] = __raw_readw(E694_BASE + k);
++		e694[k] = __raw_readw(intca_e694 + k);
+ 
+ 	for (k = 0x80; k <= 0xb4; k += 4)
+-		e694[k] = __raw_readb(E694_BASE + k);
++		e694[k] = __raw_readb(intca_e694 + k);
+ 
+ 	for (k = 0x180; k <= 0x1b4; k += 4)
+-		e694[k] = __raw_readb(E694_BASE + k);
++		e694[k] = __raw_readb(intca_e694 + k);
+ 
+ 	for (k = 0x00; k <= 0x50; k += 4)
+-		e695[k] = __raw_readw(E695_BASE + k);
++		e695[k] = __raw_readw(intca_e695 + k);
+ 
+ 	for (k = 0x80; k <= 0xa8; k += 4)
+-		e695[k] = __raw_readb(E695_BASE + k);
++		e695[k] = __raw_readb(intca_e695 + k);
+ 
+ 	for (k = 0x180; k <= 0x1a8; k += 4)
+-		e695[k] = __raw_readb(E695_BASE + k);
++		e695[k] = __raw_readb(intca_e695 + k);
+ }
+ 
+ void sh7372_intca_resume(void)
+@@ -658,20 +721,20 @@ void sh7372_intca_resume(void)
+ 	int k;
+ 
+ 	for (k = 0x00; k <= 0x38; k += 4)
+-		__raw_writew(e694[k], E694_BASE + k);
++		__raw_writew(e694[k], intca_e694 + k);
+ 
+ 	for (k = 0x80; k <= 0xb4; k += 4)
+-		__raw_writeb(e694[k], E694_BASE + k);
++		__raw_writeb(e694[k], intca_e694 + k);
+ 
+ 	for (k = 0x180; k <= 0x1b4; k += 4)
+-		__raw_writeb(e694[k], E694_BASE + k);
++		__raw_writeb(e694[k], intca_e694 + k);
+ 
+ 	for (k = 0x00; k <= 0x50; k += 4)
+-		__raw_writew(e695[k], E695_BASE + k);
++		__raw_writew(e695[k], intca_e695 + k);
+ 
+ 	for (k = 0x80; k <= 0xa8; k += 4)
+-		__raw_writeb(e695[k], E695_BASE + k);
++		__raw_writeb(e695[k], intca_e695 + k);
+ 
+ 	for (k = 0x180; k <= 0x1a8; k += 4)
+-		__raw_writeb(e695[k], E695_BASE + k);
++		__raw_writeb(e695[k], intca_e695 + k);
+ }
 -- 
-1.7.8.6
+1.7.10.4
 
