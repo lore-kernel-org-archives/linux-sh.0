@@ -1,63 +1,18 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 15 Dec 2012 22:50:58 +0000
-Subject: [PATCH v3 24/81] ARM: shmobile: r8a7779: Register PFC platform device
-Message-Id: <1355611915-25060-25-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 18 Dec 2012 02:14:52 +0000
+Subject: Re: [PATCH v3 24/81] ARM: shmobile: r8a7779: Register PFC platform device
+Message-Id: <20121218021452.GF28065@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1355611915-25060-25-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1355611915-25060-25-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Add arch code to register the PFC platform device instead of calling the
-driver directly. Platform device registration in the sh-pfc driver will
-be removed.
+On Sat, Dec 15, 2012 at 11:50:58PM +0100, Laurent Pinchart wrote:
+> Add arch code to register the PFC platform device instead of calling the
+> driver directly. Platform device registration in the sh-pfc driver will
+> be removed.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/mach-shmobile/pfc-r8a7779.c |   16 ++++++++++++----
- 1 files changed, 12 insertions(+), 4 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/pfc-r8a7779.c b/arch/arm/mach-shmobile/pfc-r8a7779.c
-index 9513234..3d333b1 100644
---- a/arch/arm/mach-shmobile/pfc-r8a7779.c
-+++ b/arch/arm/mach-shmobile/pfc-r8a7779.c
-@@ -19,6 +19,7 @@
-  */
- #include <linux/init.h>
- #include <linux/kernel.h>
-+#include <linux/platform_device.h>
- #include <linux/sh_pfc.h>
- #include <linux/ioport.h>
- #include <mach/r8a7779.h>
-@@ -2616,9 +2617,6 @@ static struct resource r8a7779_pfc_resources[] = {
- static struct pinmux_info r8a7779_pinmux_info = {
- 	.name = "r8a7779_pfc",
- 
--	.resource = r8a7779_pfc_resources,
--	.num_resources = ARRAY_SIZE(r8a7779_pfc_resources),
--
- 	.unlock_reg = 0xfffc0000, /* PMMR */
- 
- 	.reserved_id = PINMUX_RESERVED,
-@@ -2639,7 +2637,17 @@ static struct pinmux_info r8a7779_pinmux_info = {
- 	.gpio_data_size = ARRAY_SIZE(pinmux_data),
- };
- 
-+static struct platform_device r8a7779_pfc_device = {
-+	.name		= "sh-pfc",
-+	.id		= -1,
-+	.resource	= r8a7779_pfc_resources,
-+	.num_resources	= ARRAY_SIZE(r8a7779_pfc_resources),
-+	.dev = {
-+		.platform_data = &r8a7779_pinmux_info,
-+	},
-+};
-+
- void r8a7779_pinmux_init(void)
- {
--	register_pinmux(&r8a7779_pinmux_info);
-+	platform_device_register(&r8a7779_pfc_device);
- }
--- 
-1.7.8.6
-
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
