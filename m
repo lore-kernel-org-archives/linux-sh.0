@@ -1,48 +1,89 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 15 Dec 2012 22:50:37 +0000
-Subject: [PATCH v3 03/81] sh: sh7723: Rename GPIO_FN_SIUOSPD to GPIO_FN_SIUAOSPD
-Message-Id: <1355611915-25060-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 18 Dec 2012 00:46:04 +0000
+Subject: [RFC v8 00/9] ARM: shmobile: DT initialisation of INTC and GIC
+Message-Id: <1355791573-20281-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The GPIO was incorrectly named. As it has no user in the whole kernel
-tree, just rename it.
+The aims of this series are:
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/sh/include/cpu-sh4/cpu/sh7723.h    |    2 +-
- arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c |    2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+* Add DT bindings to to INTC
+* Allowing sh7372 and r8a7740 ARM shmobile SoCs to use DT
+  to initialise INTCA
 
-diff --git a/arch/sh/include/cpu-sh4/cpu/sh7723.h b/arch/sh/include/cpu-sh4/cpu/sh7723.h
-index 6fae50c..668da89 100644
---- a/arch/sh/include/cpu-sh4/cpu/sh7723.h
-+++ b/arch/sh/include/cpu-sh4/cpu/sh7723.h
-@@ -184,7 +184,7 @@ enum {
- 	/* SIUA */
- 	GPIO_FN_SIUAFCK, GPIO_FN_SIUAILR, GPIO_FN_SIUAIBT, GPIO_FN_SIUAISLD,
- 	GPIO_FN_SIUAOLR, GPIO_FN_SIUAOBT, GPIO_FN_SIUAOSLD, GPIO_FN_SIUAMCK,
--	GPIO_FN_SIUAISPD, GPIO_FN_SIUOSPD,
-+	GPIO_FN_SIUAISPD, GPIO_FN_SIUAOSPD,
- 
- 	/* SIUB */
- 	GPIO_FN_SIUBFCK, GPIO_FN_SIUBILR, GPIO_FN_SIUBIBT, GPIO_FN_SIUBISLD,
-diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c
-index 88bf5ec..2037915 100644
---- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c
-+++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c
-@@ -1317,7 +1317,7 @@ static struct pinmux_gpio pinmux_gpios[] = {
- 	PINMUX_GPIO(GPIO_FN_SIUAOSLD, SIUAOSLD_MARK),
- 	PINMUX_GPIO(GPIO_FN_SIUAMCK, SIUAMCK_MARK),
- 	PINMUX_GPIO(GPIO_FN_SIUAISPD, SIUAISPD_MARK),
--	PINMUX_GPIO(GPIO_FN_SIUOSPD, SIUAOSPD_MARK),
-+	PINMUX_GPIO(GPIO_FN_SIUAOSPD, SIUAOSPD_MARK),
- 
- 	/* SIUB */
- 	PINMUX_GPIO(GPIO_FN_SIUBFCK, SIUBFCK_MARK),
--- 
-1.7.8.6
+Change since v7
+* Squash the first and second patch of the series and rename there result
+  "SH: intc: Add support OF for INTC"
 
+Changes v5 and v7 (v6 was not publicly released)
+* Drop support for sh73a0 SoC.
+  To be useful this requires a fuller initialisation than jsut INCA.
+  In particular, cascade IRQs that are shared between INTC and GIC
+  need to be handled.
+* Drop board support
+  This will be revisited on a per-board basis, ideally with
+  filler INTC initialisation via DT in place
+* Drop GIC initialisation
+  This will also be revisited on a per-board basis.
+* Remove unused INTC DT helper functions
+
+
+Status:
+
+I am reasonably happy with this series and plan to merge the shmobile portions.
+
+Paul, I forget if I asked you this before or not, but could you let me know
+if you would like to handle the intc patch, the first patch of the
+series, or if you are comfortable with it going through my tree.
+
+Git and diffstat information provided for review.
+
+----------------------------------------------------------------------
+
+The following changes since commit ddffeb8c4d0331609ef2581d84de4d763607bd37:
+
+  Linux 3.7-rc1 (2012-10-14 14:41:04 -0700)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git devel/intc-of
+
+for you to fetch changes up to 9a68d0806201ff048e2919b35108645c15076300:
+
+  ARM: shmobile: sh7372: Use DT initialisation of INTC (2012-12-18 09:35:43 +0900)
+
+----------------------------------------------------------------
+Nobuhiro Iwamatsu (8):
+      SH: intc: Add support OF for INTC
+      ARM: shmobile: Add support OF of INTC for r8a7740
+      ARM: shmobile: Add support OF of INTC for sh7372
+      ARM: shmobile: Add DT table of INTC for sh7372
+      ARM: shmobile: Add DT table of INTC for r8a7740
+      ARM: shmobile: Include DTSI of r8a7740 to armadillo800eva
+      ARM: shmobile: r8a7740: Use DT initialisation of INTC
+      ARM: shmobile: sh7372: Use DT initialisation of INTC
+
+Simon Horman (1):
+      ARM: shmobile: sh7372: Do not initialise TMU when using DT
+
+ Documentation/devicetree/bindings/sh/intc.txt |  152 +++++
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts |    2 +-
+ arch/arm/boot/dts/r8a7740.dtsi                |  743 ++++++++++++++++++++++-
+ arch/arm/boot/dts/sh7372.dtsi                 |  784 +++++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/common.h  |    2 +
+ arch/arm/mach-shmobile/intc-r8a7740.c         |   70 ++-
+ arch/arm/mach-shmobile/intc-sh7372.c          |  113 +++-
+ arch/arm/mach-shmobile/setup-r8a7740.c        |    2 +-
+ arch/arm/mach-shmobile/setup-sh7372.c         |   19 +-
+ drivers/sh/intc/Makefile                      |    1 +
+ drivers/sh/intc/core.c                        |    2 +-
+ drivers/sh/intc/internals.h                   |    3 +-
+ drivers/sh/intc/irqdomain.c                   |    6 +-
+ drivers/sh/intc/of_intc.c                     |  571 ++++++++++++++++++
+ include/linux/sh_intc.h                       |   56 ++
+ 15 files changed, 2481 insertions(+), 45 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/sh/intc.txt
+ create mode 100644 drivers/sh/intc/of_intc.c
