@@ -1,110 +1,48 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 17 Dec 2012 08:07:35 +0000
-Subject: Re: [PATCH 5/7] ARM: sh7372: allow boards supporting booting with or without DT
-Message-Id: <Pine.LNX.4.64.1212170902540.24007@axis700.grange>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 18 Dec 2012 02:36:10 +0000
+Subject: Re: [PATCH] ARM: shmobile: r8a7779: Fix PFC - MOD_SEL2 missed an entry
+Message-Id: <20121218023610.GV28065@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1355503531-7276-1-git-send-email-g.liakhovetski@gmx.de>
- <1355503531-7276-6-git-send-email-g.liakhovetski@gmx.de>
- <20121215080542.GF9073@verge.net.au>
-In-Reply-To: <20121215080542.GF9073@verge.net.au>
+References: <1353601737-21641-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1353601737-21641-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon
+On Thu, Nov 22, 2012 at 04:28:57PM +0000, Phil Edworthy wrote:
+> The list of functions selected by the MOD_SEL2 register was missing
+> an entry. This caused all entries after this to modify the MOD_SEL2
+> register incorrectly.
 
-On Sat, 15 Dec 2012, Simon Horman wrote:
+Laurent, can you handle this in your series?
+I believe it removes this file.
 
-> On Fri, Dec 14, 2012 at 05:45:29PM +0100, Guennadi Liakhovetski wrote:
-> > For boards booting without DT no changes should be caused by this patch.
-> > When booting with DT, devices, whose drivers support DT probing, will not
-> > be registered.
 > 
-> This relates in part to my comment on "ARM: sh7372: support mixed DT and
-> board code interrupt controller init".
+> Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+> ---
+>  arch/arm/mach-shmobile/pfc-r8a7779.c |    2 +-
+>  1 files changed, 1 insertions(+), 1 deletions(-)
 > 
-> It is my understanding that sh7372_add_standard_devices_dt() already
-> exists in setup-sh7372.c and that it is appropriate to use for bring
-> up boards with DT.
-
-I think, we partially clarified this already in the discussion of patch 
-6/7. This patch makes it possible to use standard functions, e.g. 
-sh7372_add_standard_devices() from both DT and non-DT boots. Whereas when 
-booting with DT, devices, for which sufficient DT support already exists, 
-have to be initialised from DT.
-
-Thanks
-Guennadi
-
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > ---
-> >  arch/arm/mach-shmobile/setup-sh7372.c |   17 ++++++++++++++---
-> >  1 files changed, 14 insertions(+), 3 deletions(-)
-> > 
-> > diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-> > index bbe6e2a..3e6bf3d 100644
-> > --- a/arch/arm/mach-shmobile/setup-sh7372.c
-> > +++ b/arch/arm/mach-shmobile/setup-sh7372.c
-> > @@ -981,9 +981,12 @@ static struct platform_device *sh7372_early_devices[] __initdata = {
-> >  	&tmu01_device,
-> >  };
-> >  
-> > -static struct platform_device *sh7372_late_devices[] __initdata = {
-> > +static struct platform_device *sh7372_late_devices_dt[] __initdata = {
-> >  	&iic0_device,
-> >  	&iic1_device,
-> > +};
-> > +
-> > +static struct platform_device *sh7372_late_devices[] __initdata = {
-> >  	&dma0_device,
-> >  	&dma1_device,
-> >  	&dma2_device,
-> > @@ -1012,13 +1015,11 @@ void __init sh7372_add_standard_devices(void)
-> >  		{ "A3SP", &scif4_device, },
-> >  		{ "A3SP", &scif5_device, },
-> >  		{ "A3SP", &scif6_device, },
-> > -		{ "A3SP", &iic1_device, },
-> >  		{ "A3SP", &dma0_device, },
-> >  		{ "A3SP", &dma1_device, },
-> >  		{ "A3SP", &dma2_device, },
-> >  		{ "A3SP", &usb_dma0_device, },
-> >  		{ "A3SP", &usb_dma1_device, },
-> > -		{ "A4R", &iic0_device, },
-> >  		{ "A4R", &veu0_device, },
-> >  		{ "A4R", &veu1_device, },
-> >  		{ "A4R", &veu2_device, },
-> > @@ -1027,6 +1028,10 @@ void __init sh7372_add_standard_devices(void)
-> >  		{ "A4R", &tmu00_device, },
-> >  		{ "A4R", &tmu01_device, },
-> >  	};
-> > +	struct pm_domain_device domain_devices_dt[] = {
-> > +		{ "A3SP", &iic1_device, },
-> > +		{ "A4R", &iic0_device, },
-> > +	};
-> >  
-> >  	sh7372_init_pm_domains();
-> >  
-> > @@ -1035,9 +1040,15 @@ void __init sh7372_add_standard_devices(void)
-> >  
-> >  	platform_add_devices(sh7372_late_devices,
-> >  			    ARRAY_SIZE(sh7372_late_devices));
-> > +	if (!of_have_populated_dt())
-> > +		platform_add_devices(sh7372_late_devices_dt,
-> > +				     ARRAY_SIZE(sh7372_late_devices_dt));
-> >  
-> >  	rmobile_add_devices_to_domains(domain_devices,
-> >  				       ARRAY_SIZE(domain_devices));
-> > +	if (!of_have_populated_dt())
-> > +		rmobile_add_devices_to_domains(domain_devices_dt,
-> > +					       ARRAY_SIZE(domain_devices_dt));
-> >  }
-> >  
-> >  static void __init sh7372_earlytimer_init(void)
-> > -- 
-> > 1.7.2.5
-
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+> diff --git a/arch/arm/mach-shmobile/pfc-r8a7779.c b/arch/arm/mach-shmobile/pfc-r8a7779.c
+> index 9fac32e4..15f6a48 100644
+> --- a/arch/arm/mach-shmobile/pfc-r8a7779.c
+> +++ b/arch/arm/mach-shmobile/pfc-r8a7779.c
+> @@ -2525,7 +2525,7 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+>  	    /* SEL_SCIF [2] */
+>  	    FN_SEL_SCIF_0, FN_SEL_SCIF_1, FN_SEL_SCIF_2, FN_SEL_SCIF_3,
+>  	    /* SEL_CANCLK [2] */
+> -	    FN_SEL_CANCLK_0, FN_SEL_CANCLK_1, FN_SEL_CANCLK_2,
+> +	    FN_SEL_CANCLK_0, FN_SEL_CANCLK_1, FN_SEL_CANCLK_2, 0,
+>  	    /* SEL_CAN0 [1] */
+>  	    FN_SEL_CAN0_0, FN_SEL_CAN0_1,
+>  	    /* SEL_HSCIF1 [1] */
+> -- 
+> 1.7.5.4
+> 
+> 
+> _______________________________________________
+> linux-arm-kernel mailing list
+> linux-arm-kernel@lists.infradead.org
+> http://lists.infradead.org/mailman/listinfo/linux-arm-kernel
+> 
