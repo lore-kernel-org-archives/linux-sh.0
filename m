@@ -1,64 +1,60 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 19 Dec 2012 09:10:24 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 19 Dec 2012 10:50:59 +0000
 Subject: Re: [PATCH 1/2] ARM: r8a7740: Add interim sh-eth device name to clocks list
-Message-Id: <Pine.LNX.4.64.1212191005280.12389@axis700.grange>
+Message-Id: <CANqRtoQZa35XGL2qQ1SONJ+3JBXMesjHL_tJV_9b96V2K3+xZA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1355851359-8871-1-git-send-email-hechtb+renesas@gmail.com>
  <1355851359-8871-2-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1355851359-8871-2-git-send-email-hechtb+renesas@gmail.com>
+ <Pine.LNX.4.64.1212191005280.12389@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1212191005280.12389@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Bastian
+On Wed, Dec 19, 2012 at 6:10 PM, Guennadi Liakhovetski
+<g.liakhovetski@gmx.de> wrote:
+> Hi Bastian
+>
+> Thanks for the patch.
+>
+> On Tue, 18 Dec 2012, Bastian Hecht wrote:
+>
+>> When we use the ethernet device via DT setup, we need to add it
+>> to a lookup list until this is properly handled later in a DT-only
+>> fashion.
+>>
+>> Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+>> ---
+>>  arch/arm/mach-shmobile/clock-r8a7740.c |    1 +
+>>  1 file changed, 1 insertion(+)
+>>
+>> diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+>> index 19ce885..8765a76 100644
+>> --- a/arch/arm/mach-shmobile/clock-r8a7740.c
+>> +++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+>> @@ -614,6 +614,7 @@ static struct clk_lookup lookups[] = {
+>>       CLKDEV_DEV_ID("sh_mobile_sdhi.1",       &mstp_clks[MSTP313]),
+>>       CLKDEV_DEV_ID("sh_mmcif",               &mstp_clks[MSTP312]),
+>>       CLKDEV_DEV_ID("sh-eth",                 &mstp_clks[MSTP309]),
+>> +     CLKDEV_DEV_ID("e9a00000.sh-eth",        &mstp_clks[MSTP309]),
+>
+> In a recent thread
+>
+> http://thread.gmane.org/gmane.linux.ports.sh.devel/18062/focus057
+>
+> I've been suggested to use OF_DEV_AUXDATA(), isn't this also a case for
+> it?
 
-Thanks for the patch.
+AUXDATA seems to be a great way to add a platform data pointer as a
+workaround while implementing DT support, but when it comes to
+translate the name based on base address the code becomes very
+verbose.
 
-On Tue, 18 Dec 2012, Bastian Hecht wrote:
+I am all for going with the simplest half-way solution that uses the
+least amount of lines of code, but I doubt it can get any simpler than
+a single line of CLKDEV_DEV_ID().
 
-> When we use the ethernet device via DT setup, we need to add it
-> to a lookup list until this is properly handled later in a DT-only
-> fashion.
-> 
-> Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
-> ---
->  arch/arm/mach-shmobile/clock-r8a7740.c |    1 +
->  1 file changed, 1 insertion(+)
-> 
-> diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-> index 19ce885..8765a76 100644
-> --- a/arch/arm/mach-shmobile/clock-r8a7740.c
-> +++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-> @@ -614,6 +614,7 @@ static struct clk_lookup lookups[] = {
->  	CLKDEV_DEV_ID("sh_mobile_sdhi.1",	&mstp_clks[MSTP313]),
->  	CLKDEV_DEV_ID("sh_mmcif",		&mstp_clks[MSTP312]),
->  	CLKDEV_DEV_ID("sh-eth",			&mstp_clks[MSTP309]),
-> +	CLKDEV_DEV_ID("e9a00000.sh-eth",	&mstp_clks[MSTP309]),
+Thanks,
 
-In a recent thread
-
-http://thread.gmane.org/gmane.linux.ports.sh.devel/18062/focus057
-
-I've been suggested to use OF_DEV_AUXDATA(), isn't this also a case for 
-it?
-
-Thanks
-Guennadi
-
->  
->  	CLKDEV_DEV_ID("sh_mobile_sdhi.2",	&mstp_clks[MSTP415]),
->  
-> -- 
-> 1.7.9.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+/ magnus
