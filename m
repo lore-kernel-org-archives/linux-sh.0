@@ -1,161 +1,158 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 16 Dec 2012 17:25:53 +0000
-Subject: [PATCH/WIP/RFC 07/14] shmobile-iommu: Move header file from arch/ to drivers/iommu/
-Message-Id: <1355678760-27357-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Tang Chen <tangchen@cn.fujitsu.com>
+Date: Mon, 24 Dec 2012 12:09:20 +0000
+Subject: [PATCH v5 10/14] memory-hotplug: remove memmap of sparse-vmemmap
+Message-Id: <1356350964-13437-11-git-send-email-tangchen@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1350290093-998-1-git-send-email-hdk@igel.co.jp>
- <1355678760-27357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1355678760-27357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1356350964-13437-1-git-send-email-tangchen@cn.fujitsu.com>
+In-Reply-To: <1356350964-13437-1-git-send-email-tangchen@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: akpm@linux-foundation.org, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, wency@cn.fujitsu.com, tangchen@cn.fujitsu.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org
+Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
 
-And split the function used by board code to its own
-include/linux/sh_iommu.h header.
+This patch introduces a new API vmemmap_free() to free and remove
+vmemmap pagetables. Since pagetable implements are different, each
+architecture has to provide its own version of vmemmap_free(), just
+like vmemmap_populate().
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Note:  vmemmap_free() are not implemented for ia64, ppc, s390, and sparc.
+
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Signed-off-by: Jianguo Wu <wujianguo@huawei.com>
+Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Tang Chen <tangchen@cn.fujitsu.com>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c              |    2 +-
- arch/arm/mach-shmobile/board-mackerel.c            |    2 +-
- arch/arm/mach-shmobile/setup-sh7372.c              |    2 +-
- drivers/iommu/shmobile-iommu.c                     |    4 +++-
- drivers/iommu/shmobile-ipmmu.c                     |    3 ++-
- .../mach/ipmmu.h => drivers/iommu/shmobile-ipmmu.h |    5 -----
- include/linux/sh_iommu.h                           |   12 ++++++++++++
- 7 files changed, 20 insertions(+), 10 deletions(-)
- rename arch/arm/mach-shmobile/include/mach/ipmmu.h => drivers/iommu/shmobile-ipmmu.h (78%)
- create mode 100644 include/linux/sh_iommu.h
+ arch/arm64/mm/mmu.c       |    3 +++
+ arch/ia64/mm/discontig.c  |    4 ++++
+ arch/powerpc/mm/init_64.c |    4 ++++
+ arch/s390/mm/vmem.c       |    4 ++++
+ arch/sparc/mm/init_64.c   |    4 ++++
+ arch/x86/mm/init_64.c     |    8 ++++++++
+ include/linux/mm.h        |    1 +
+ mm/sparse.c               |    3 ++-
+ 8 files changed, 30 insertions(+), 1 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 7006abb..0c40d72 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -38,6 +38,7 @@
- #include <linux/regulator/machine.h>
- #include <linux/smsc911x.h>
- #include <linux/sh_intc.h>
-+#include <linux/sh_iommu.h>
- #include <linux/sh_clk.h>
- #include <linux/gpio.h>
- #include <linux/input.h>
-@@ -61,7 +62,6 @@
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/sh7372.h>
--#include <mach/ipmmu.h>
- 
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 1c34520..a9cdfc2 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -45,6 +45,7 @@
- #include <linux/regulator/machine.h>
- #include <linux/smsc911x.h>
- #include <linux/sh_intc.h>
-+#include <linux/sh_iommu.h>
- #include <linux/tca6416_keypad.h>
- #include <linux/usb/renesas_usbhs.h>
- #include <linux/dma-mapping.h>
-@@ -60,7 +61,6 @@
- #include <mach/common.h>
- #include <mach/irqs.h>
- #include <mach/sh7372.h>
--#include <mach/ipmmu.h>
- 
- #include <asm/mach/arch.h>
- #include <asm/mach-types.h>
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index aadb769..5dd3576 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -30,6 +30,7 @@
- #include <linux/serial_sci.h>
- #include <linux/sh_dma.h>
- #include <linux/sh_intc.h>
-+#include <linux/sh_iommu.h>
- #include <linux/sh_timer.h>
- #include <linux/pm_domain.h>
- #include <linux/dma-mapping.h>
-@@ -38,7 +39,6 @@
- #include <mach/irqs.h>
- #include <mach/sh7372.h>
- #include <mach/common.h>
--#include <mach/ipmmu.h>
- #include <asm/mach/map.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
-diff --git a/drivers/iommu/shmobile-iommu.c b/drivers/iommu/shmobile-iommu.c
-index 9f2243e3..463da32 100644
---- a/drivers/iommu/shmobile-iommu.c
-+++ b/drivers/iommu/shmobile-iommu.c
-@@ -23,8 +23,10 @@
- #include <linux/io.h>
- #include <linux/iommu.h>
- #include <linux/platform_device.h>
-+#include <linux/sh_iommu.h>
- #include <linux/slab.h>
--#include <mach/ipmmu.h>
-+
-+#include "shmobile-ipmmu.h"
- 
- #define L1_SIZE CONFIG_SHMOBILE_IOMMU_L1SIZE
- #define L1_LEN (L1_SIZE / 4)
-diff --git a/drivers/iommu/shmobile-ipmmu.c b/drivers/iommu/shmobile-ipmmu.c
-index edec3b8..34e3c66 100644
---- a/drivers/iommu/shmobile-ipmmu.c
-+++ b/drivers/iommu/shmobile-ipmmu.c
-@@ -22,7 +22,8 @@
- #include <linux/io.h>
- #include <linux/platform_device.h>
- #include <linux/slab.h>
--#include <mach/ipmmu.h>
-+
-+#include "shmobile-ipmmu.h"
- 
- #define IMCTR1 0x000
- #define IMCTR2 0x004
-diff --git a/arch/arm/mach-shmobile/include/mach/ipmmu.h b/drivers/iommu/shmobile-ipmmu.h
-similarity index 78%
-rename from arch/arm/mach-shmobile/include/mach/ipmmu.h
-rename to drivers/iommu/shmobile-ipmmu.h
-index 4b805b1f..0e0a6a4 100644
---- a/arch/arm/mach-shmobile/include/mach/ipmmu.h
-+++ b/drivers/iommu/shmobile-ipmmu.h
-@@ -5,13 +5,8 @@
- void ipmmu_tlb_flush(struct device *ipmmu_dev);
- void ipmmu_tlb_set(struct device *ipmmu_dev, unsigned long phys, int size,
- 		   int asid);
--void ipmmu_add_device(struct device *dev);
- int ipmmu_iommu_init(struct device *dev);
- #else
--static inline void ipmmu_add_device(struct device *dev)
--{
--}
--
- static int ipmmu_iommu_init(struct device *dev)
- {
- 	return -EINVAL;
-diff --git a/include/linux/sh_iommu.h b/include/linux/sh_iommu.h
-new file mode 100644
-index 0000000..cc669a0
---- /dev/null
-+++ b/include/linux/sh_iommu.h
-@@ -0,0 +1,12 @@
-+#ifndef __SH_IOMMU_H__
-+#define __SH_IOMMU_H__
-+
-+#ifdef CONFIG_SHMOBILE_IPMMU_TLB
-+void ipmmu_add_device(struct device *dev);
-+#else
-+static inline void ipmmu_add_device(struct device *dev)
+diff --git a/arch/arm64/mm/mmu.c b/arch/arm64/mm/mmu.c
+index a6885d8..9834886 100644
+--- a/arch/arm64/mm/mmu.c
++++ b/arch/arm64/mm/mmu.c
+@@ -392,4 +392,7 @@ int __meminit vmemmap_populate(struct page *start_page,
+ 	return 0;
+ }
+ #endif	/* CONFIG_ARM64_64K_PAGES */
++void vmemmap_free(struct page *memmap, unsigned long nr_pages)
 +{
 +}
-+#endif
+ #endif	/* CONFIG_SPARSEMEM_VMEMMAP */
+diff --git a/arch/ia64/mm/discontig.c b/arch/ia64/mm/discontig.c
+index 33943db..882a0fd 100644
+--- a/arch/ia64/mm/discontig.c
++++ b/arch/ia64/mm/discontig.c
+@@ -823,6 +823,10 @@ int __meminit vmemmap_populate(struct page *start_page,
+ 	return vmemmap_populate_basepages(start_page, size, node);
+ }
+ 
++void vmemmap_free(struct page *memmap, unsigned long nr_pages)
++{
++}
 +
-+#endif /* __SH_IOMMU_H__ */
+ void register_page_bootmem_memmap(unsigned long section_nr,
+ 				  struct page *start_page, unsigned long size)
+ {
+diff --git a/arch/powerpc/mm/init_64.c b/arch/powerpc/mm/init_64.c
+index 6466440..2969591 100644
+--- a/arch/powerpc/mm/init_64.c
++++ b/arch/powerpc/mm/init_64.c
+@@ -298,6 +298,10 @@ int __meminit vmemmap_populate(struct page *start_page,
+ 	return 0;
+ }
+ 
++void vmemmap_free(struct page *memmap, unsigned long nr_pages)
++{
++}
++
+ void register_page_bootmem_memmap(unsigned long section_nr,
+ 				  struct page *start_page, unsigned long size)
+ {
+diff --git a/arch/s390/mm/vmem.c b/arch/s390/mm/vmem.c
+index 2c14bc2..81e6ba3 100644
+--- a/arch/s390/mm/vmem.c
++++ b/arch/s390/mm/vmem.c
+@@ -272,6 +272,10 @@ out:
+ 	return ret;
+ }
+ 
++void vmemmap_free(struct page *memmap, unsigned long nr_pages)
++{
++}
++
+ void register_page_bootmem_memmap(unsigned long section_nr,
+ 				  struct page *start_page, unsigned long size)
+ {
+diff --git a/arch/sparc/mm/init_64.c b/arch/sparc/mm/init_64.c
+index 7e28c9e..9cd1ec0 100644
+--- a/arch/sparc/mm/init_64.c
++++ b/arch/sparc/mm/init_64.c
+@@ -2232,6 +2232,10 @@ void __meminit vmemmap_populate_print_last(void)
+ 	}
+ }
+ 
++void vmemmap_free(struct page *memmap, unsigned long nr_pages)
++{
++}
++
+ void register_page_bootmem_memmap(unsigned long section_nr,
+ 				  struct page *start_page, unsigned long size)
+ {
+diff --git a/arch/x86/mm/init_64.c b/arch/x86/mm/init_64.c
+index 4b160d8..029c0b9 100644
+--- a/arch/x86/mm/init_64.c
++++ b/arch/x86/mm/init_64.c
+@@ -1307,6 +1307,14 @@ vmemmap_populate(struct page *start_page, unsigned long size, int node)
+ 	return 0;
+ }
+ 
++void __ref vmemmap_free(struct page *memmap, unsigned long nr_pages)
++{
++	unsigned long start = (unsigned long)memmap;
++	unsigned long end = (unsigned long)(memmap + nr_pages);
++
++	remove_pagetable(start, end, false);
++}
++
+ void register_page_bootmem_memmap(unsigned long section_nr,
+ 				  struct page *start_page, unsigned long size)
+ {
+diff --git a/include/linux/mm.h b/include/linux/mm.h
+index 1eca498..31d5e5d 100644
+--- a/include/linux/mm.h
++++ b/include/linux/mm.h
+@@ -1709,6 +1709,7 @@ int vmemmap_populate_basepages(struct page *start_page,
+ 						unsigned long pages, int node);
+ int vmemmap_populate(struct page *start_page, unsigned long pages, int node);
+ void vmemmap_populate_print_last(void);
++void vmemmap_free(struct page *memmap, unsigned long nr_pages);
+ void register_page_bootmem_memmap(unsigned long section_nr, struct page *map,
+ 				  unsigned long size);
+ 
+diff --git a/mm/sparse.c b/mm/sparse.c
+index 05ca73a..cff9796 100644
+--- a/mm/sparse.c
++++ b/mm/sparse.c
+@@ -615,10 +615,11 @@ static inline struct page *kmalloc_section_memmap(unsigned long pnum, int nid,
+ }
+ static void __kfree_section_memmap(struct page *memmap, unsigned long nr_pages)
+ {
+-	return; /* XXX: Not implemented yet */
++	vmemmap_free(memmap, nr_pages);
+ }
+ static void free_map_bootmem(struct page *memmap, unsigned long nr_pages)
+ {
++	vmemmap_free(memmap, nr_pages);
+ }
+ #else
+ static struct page *__kmalloc_section_memmap(unsigned long nr_pages)
 -- 
-1.7.8.6
+1.7.1
 
