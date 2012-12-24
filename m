@@ -1,185 +1,55 @@
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Date: Tue, 04 Dec 2012 07:44:26 +0000
-Subject: Re: [PATCH shmobile/DT 1/2] ARM: shmobile: Remove some of_sh_intc_* functions
-Message-Id: <CABMQnVJY_UPoC=oX2DQWQp7+UVO-Xxnn+YAWkJ_sNMtC0S8fKw@mail.gmail.com>
+From: Tang Chen <tangchen@cn.fujitsu.com>
+Date: Mon, 24 Dec 2012 12:09:19 +0000
+Subject: [PATCH v5 09/14] memory-hotplug: remove page table of x86_64 architecture
+Message-Id: <1356350964-13437-10-git-send-email-tangchen@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1353572619-29098-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
- <20121204055029.GC15969@verge.net.au>
-In-Reply-To: <20121204055029.GC15969@verge.net.au>
+References: <1356350964-13437-1-git-send-email-tangchen@cn.fujitsu.com>
+In-Reply-To: <1356350964-13437-1-git-send-email-tangchen@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: akpm@linux-foundation.org, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, wency@cn.fujitsu.com, tangchen@cn.fujitsu.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org
+Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
 
-Hi,
+This patch searches a page table about the removed memory, and clear
+page table for x86_64 architecture.
 
-No, These patches are to devel/dt of your repository.
+Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Jianguo Wu <wujianguo@huawei.com>
+Signed-off-by: Jiang Liu <jiang.liu@huawei.com>
+Signed-off-by: Tang Chen <tangchen@cn.fujitsu.com>
+---
+ arch/x86/mm/init_64.c |   10 ++++++++++
+ 1 files changed, 10 insertions(+), 0 deletions(-)
 
-Best regards,
-  Nobuhiro
-
-
-On Tue, Dec 4, 2012 at 2:50 PM, Simon Horman <horms@verge.net.au> wrote:
-> On Thu, Nov 22, 2012 at 05:23:38PM +0900, Nobuhiro Iwamatsu wrote:
->> This removes of_sh_intc_get_meminfo, of_sh_intc_get_pint and of_sh_intc_get_intc functions.
->> These are not already used.
->
-> Hi Iwamatsu-san,
->
-> these patches are for Paul, right?
->
->>
->> Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
->> ---
->>  drivers/sh/intc/of_intc.c |   76 ---------------------------------------------
->>  include/linux/sh_intc.h   |   28 -----------------
->>  2 files changed, 104 deletions(-)
->>
->> diff --git a/drivers/sh/intc/of_intc.c b/drivers/sh/intc/of_intc.c
->> index 30b1090..e833e48 100644
->> --- a/drivers/sh/intc/of_intc.c
->> +++ b/drivers/sh/intc/of_intc.c
->> @@ -529,49 +529,6 @@ void __init of_sh_intc_get_skip_syscore_suspend(struct device_node *np,
->>               d->skip_syscore_suspend = false;
->>  }
->>
->> -int __init of_sh_intc_get_meminfo(struct device_node *np,
->> -                             struct resource *res, int res_no)
->> -{
->> -     int ret = 0, i;
->> -
->> -     for (i = 0 ; i < res_no ; i++) {
->> -             ret = of_address_to_resource(np, i, &res[i]);
->> -             if (ret) {
->> -                     pr_err("could not determine device base address\n");
->> -                     return ret;
->> -             }
->> -
->> -             pr_debug("%s: Address 0x%x, size %d\n",
->> -                                     __func__, res[i].start, resource_size(&res[i]));
->> -     }
->> -
->> -     return ret;
->> -}
->> -
->> -int __init of_sh_intc_get_pint(struct device_node *np, struct intc_desc *d)
->> -{
->> -     /* pint uses vector, mask and sence. */
->> -     int ret = of_sh_intc_get_vector(np, &d->hw.vectors,
->> -                             &d->hw.nr_vectors);
->> -     if (ret)
->> -             return ret;
->> -
->> -     ret = of_sh_intc_get_mask(np, &d->hw.mask_regs,
->> -                             &d->hw.nr_mask_regs);
->> -     if (ret)
->> -             return ret;
->> -
->> -     ret = of_sh_intc_get_sense(np, &d->hw.sense_regs,
->> -                             &d->hw.nr_sense_regs);
->> -     /* INTC may not need Sence register. */
->> -     if (ret && ret != -ENOENT)
->> -             return ret;
->> -
->> -     d->of_node = np;
->> -
->> -     return 0;
->> -}
->> -
->>  int __init of_sh_intc_get_intc(struct device_node *np, struct intc_desc *d)
->>  {
->>       int ret = of_sh_intc_get_vector(np, &d->hw.vectors,
->> @@ -611,36 +568,3 @@ int __init of_sh_intc_get_intc(struct device_node *np, struct intc_desc *d)
->>
->>       return 0;
->>  }
->> -
->> -int __init of_sh_intc_get_intc_pins(struct device_node *np,
->> -                             struct intc_desc *d)
->> -{
->> -     int ret = of_sh_intc_get_vector(np, &d->hw.vectors,
->> -                             &d->hw.nr_vectors);
->> -     if (ret)
->> -             return ret;
->> -
->> -     ret = of_sh_intc_get_mask(np, &d->hw.mask_regs,
->> -                             &d->hw.nr_mask_regs);
->> -     if (ret)
->> -             return ret;
->> -
->> -     ret = of_sh_intc_get_prio(np, &d->hw.prio_regs,
->> -                             &d->hw.nr_prio_regs);
->> -     if (ret)
->> -             return ret;
->> -
->> -     ret = of_sh_intc_get_sense(np, &d->hw.sense_regs,
->> -                             &d->hw.nr_sense_regs);
->> -     if (ret)
->> -             return ret;
->> -
->> -     ret = of_sh_intc_get_ack(np, &d->hw.ack_regs,
->> -                             &d->hw.nr_ack_regs);
->> -     if (ret)
->> -             return ret;
->> -
->> -     d->of_node = np;
->> -
->> -     return 0;
->> -}
->> diff --git a/include/linux/sh_intc.h b/include/linux/sh_intc.h
->> index 6603da6..c7954ee 100644
->> --- a/include/linux/sh_intc.h
->> +++ b/include/linux/sh_intc.h
->> @@ -161,26 +161,6 @@ static inline int register_intc_userimask(unsigned long addr)
->>  int of_sh_intc_get_intc(struct device_node *np, struct intc_desc *d);
->>
->>  /*
->> - * of_sh_initc_get_intc_pins() - Get INTC Pins table.
->> - * @np:     device node to get INTC from
->> - * @d:      a pointer of intc pins table
->> - *
->> - * Return: one of the errno value on the error condition
->> - */
->> -int of_sh_intc_get_intc_pins(struct device_node *np, struct intc_desc *d);
->> -
->> -/*
->> - * of_sh_intc_get_meminfo() - Get and set INTC register of memory.
->> - * @np:     device node to get INTC from
->> - * @res_mem:   a pointer of resource
->> - * @res_no:  resource number
->> - *
->> - * Return: one of the errno value on the error condition
->> - */
->> -int of_sh_intc_get_meminfo(struct device_node *np,
->> -                             struct resource *res_mem, int resno);
->> -
->> -/*
->>   * of_sh_intc_get_force_enable - Get and set force_enable vector in
->>   *                               struct intc_desc.
->>   * @np:  device node to get INTC from
->> @@ -221,13 +201,5 @@ void of_sh_intc_get_skip_syscore_suspend(struct device_node *np,
->>   * Return: one of the errno value on the error condition
->>   */
->>  int of_sh_intc_get_intevtsa_vect(struct device_node *np, unsigned short *vect);
->> -/*
->> - * of_sh_initc_get_intc_pint() - Get INTC Pint table.
->> - * @np:     device node to get INTC from
->> - * @d:      a pointer of intc pint table
->> - *
->> - * Return: one of the errno value on the error condition
->> - */
->> -int of_sh_intc_get_pint(struct device_node *np, struct intc_desc *d);
->>
->>  #endif /* __SH_INTC_H */
->> --
->> 1.7.10.4
->>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
-
+diff --git a/arch/x86/mm/init_64.c b/arch/x86/mm/init_64.c
+index b30df3c..4b160d8 100644
+--- a/arch/x86/mm/init_64.c
++++ b/arch/x86/mm/init_64.c
+@@ -979,6 +979,15 @@ remove_pagetable(unsigned long start, unsigned long end, bool direct)
+ 	flush_tlb_all();
+ }
+ 
++void __meminit
++kernel_physical_mapping_remove(unsigned long start, unsigned long end)
++{
++	start = (unsigned long)__va(start);
++	end = (unsigned long)__va(end);
++
++	remove_pagetable(start, end, true);
++}
++
+ #ifdef CONFIG_MEMORY_HOTREMOVE
+ int __ref arch_remove_memory(u64 start, u64 size)
+ {
+@@ -988,6 +997,7 @@ int __ref arch_remove_memory(u64 start, u64 size)
+ 	int ret;
+ 
+ 	zone = page_zone(pfn_to_page(start_pfn));
++	kernel_physical_mapping_remove(start, start + size);
+ 	ret = __remove_pages(zone, start_pfn, nr_pages);
+ 	WARN_ON_ONCE(ret);
+ 
 -- 
-Nobuhiro Iwamatsu
+1.7.1
+
