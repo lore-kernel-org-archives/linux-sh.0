@@ -1,125 +1,248 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Mon, 17 Dec 2012 11:01:07 +0000
-Subject: Re: [PATCH 2/2] ARM: SH-Mobile: sh73a0: Add CPU Hotplug
-Message-Id: <CABYn4syRwk3Jt4yhkCSyg58Viez+W0XxZZGewu3gDFaarCNkSg@mail.gmail.com>
+From: Tang Chen <tangchen@cn.fujitsu.com>
+Date: Mon, 24 Dec 2012 12:09:14 +0000
+Subject: [PATCH v5 04/14] memory-hotplug: remove /sys/firmware/memmap/X sysfs
+Message-Id: <1356350964-13437-5-git-send-email-tangchen@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1354795719-5578-1-git-send-email-hechtb+renesas@gmail.com>
- <1354795719-5578-2-git-send-email-hechtb+renesas@gmail.com>
- <50CB34F4.8060204@gmail.com>
- <CABYn4syb8yBRwUqbS=2dp1i3FYFt1edYPRh9xa=aHTY9RsWw8A@mail.gmail.com>
- <50CB6B14.1070500@gmail.com>
-In-Reply-To: <50CB6B14.1070500@gmail.com>
+References: <1356350964-13437-1-git-send-email-tangchen@cn.fujitsu.com>
+In-Reply-To: <1356350964-13437-1-git-send-email-tangchen@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: akpm@linux-foundation.org, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, wency@cn.fujitsu.com, tangchen@cn.fujitsu.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org
+Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
 
-Hi Rob,
+From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-2012/12/14 Rob Herring <robherring2@gmail.com>:
-> On 12/14/2012 09:33 AM, Bastian Hecht wrote:
->> Hi,
->>
->> 2012/12/14 Rob Herring <robherring2@gmail.com>:
->>> On 12/06/2012 06:08 AM, Bastian Hecht wrote:
->>>> From: Bastian Hecht <hechtb@gmail.com>
->>>>
->>>> Add the capability to add and remove CPUs on the fly.
->>>> The Cortex-A9 offers the possibility to take single cores out of the
->>>> MP Core. We add this capabilty taking care that caches are kept
->>>> coherent. For the actual shutdown via a WFI instruction, a code snippet
->>>> from the omap2 code tree is copied. Thanks for that! For verifying the
->>>> shutdown we rely on the internal SH73A0 Power Status Register
->>>> PSTR.
->>>>
->>>> Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
->>>> ---
->>>>  arch/arm/mach-shmobile/headsmp-sh73a0.S      |   46 ++++++++++++++++++++++++++
->>>>  arch/arm/mach-shmobile/include/mach/common.h |    1 +
->>>>  arch/arm/mach-shmobile/smp-sh73a0.c          |   41 +++++++++++++++++++----
->>>>  3 files changed, 82 insertions(+), 6 deletions(-)
->>>>
->>>> diff --git a/arch/arm/mach-shmobile/headsmp-sh73a0.S b/arch/arm/mach-shmobile/headsmp-sh73a0.S
->>>> index bec4c0d..be463a3 100644
->>>> --- a/arch/arm/mach-shmobile/headsmp-sh73a0.S
->>>> +++ b/arch/arm/mach-shmobile/headsmp-sh73a0.S
->>>> @@ -23,6 +23,52 @@
->>>>  #include <linux/init.h>
->>>>  #include <asm/memory.h>
->>>>
->>>> +/* Taken from arch/arm/mach-omap2/sleep44xx.S. Thanks! */
->>>> +ENTRY(sh73a0_do_wfi)
->>>> +        stmfd   sp!, {lr}
->>>
->>> Why does the lr need to be pushed to the stack?
->>
->> Yes I must admit this is paradox - we never return but prepare to do
->> so... In the OMAP code they've got a lead out code in case the WFI
->> doesn't succeed. I see no reason how this could ever happen here but
->> to take a safe route I've decided to keep the mechanism to be able to
->> return and spit out an error message back in the C code.
->
-> It's not clear to me that OMAP needed this either. The lr value would
-> have to get lost during wfi.
->
->>>> +
->>>> +        /*
->>>> +         * Execute an ISB instruction to ensure that all of the
->>>> +         * CP15 register changes have been committed.
->>>> +         */
->>>> +        isb
->>>
->>> Generally writes to cp15 registers that need an isb already do so.
->>
->> Ok nice, I'll check that and throw it out.
->>
->>>> +
->>>> +        /*
->>>> +         * Execute a barrier instruction to ensure that all cache,
->>>> +         * TLB and branch predictor maintenance operations issued
->>>> +         * by any CPU in the cluster have completed.
->>>> +         */
->>>> +        dsb
->>>> +        dmb
->>>
->>> A dsb is a superset of a dmb, so you should not need both.
->>
->> Same here.
->>
->>>> +
->>>> +        /*
->>>> +         * Execute a WFI instruction and wait until the
->>>> +         * STANDBYWFI output is asserted to indicate that the
->>>> +         * CPU is in idle and low power state. CPU can specualatively
->>>> +         * prefetch the instructions so add NOPs after WFI. Sixteen
->>>> +         * NOPs as per Cortex-A9 pipeline.
->>>
->>> Why do you care what is prefetched? You're never coming back here, right?
->>
->> We can jump back to the paradox top. The idea seems to be to have a
->> clean pipeline in case the WFI doesn't succeed.
->> The thing about this whole code snippet is: I saw no reason to
->> reinvent the wheel and tinker on my own solution when there is code
->> that does the job in a clean way. I thought this could maybe be moved
->> to a general ARM code base when more people rely on it.
->>
->
-> Blindly copying code is reinventing the wheel. You are making it appear
-> that this is needed, but don't seem to have any reason why other than
-> OMAP did it. If it is in fact needed, then it should be common.
->
-> Use cpu_do_idle or figure out and explain why you can't. It's important
-> to know that if we do go and consolidate this code later.
+When (hot)adding memory into system, /sys/firmware/memmap/X/{end, start, type}
+sysfs files are created. But there is no code to remove these files. The patch
+implements the function to remove them.
 
-Yes after thinking about it a bit, I must completely agree to you.
-Copying OMAP's code was done because of hesitation and uncertainty
-that I could miss something and brings the drawbacks that you
-mentioned. It's much straighter to go with cpu_do_idle.
+Note: The code does not free firmware_map_entry which is allocated by bootmem.
+      So the patch makes memory leak. But I think the memory leak size is
+      very samll. And it does not affect the system.
 
-Thanks!
+Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+---
+ drivers/firmware/memmap.c    |   98 +++++++++++++++++++++++++++++++++++++++++-
+ include/linux/firmware-map.h |    6 +++
+ mm/memory_hotplug.c          |    5 ++-
+ 3 files changed, 106 insertions(+), 3 deletions(-)
 
- Bastian
+diff --git a/drivers/firmware/memmap.c b/drivers/firmware/memmap.c
+index 90723e6..49be12a 100644
+--- a/drivers/firmware/memmap.c
++++ b/drivers/firmware/memmap.c
+@@ -21,6 +21,7 @@
+ #include <linux/types.h>
+ #include <linux/bootmem.h>
+ #include <linux/slab.h>
++#include <linux/mm.h>
+ 
+ /*
+  * Data types ------------------------------------------------------------------
+@@ -41,6 +42,7 @@ struct firmware_map_entry {
+ 	const char		*type;	/* type of the memory range */
+ 	struct list_head	list;	/* entry for the linked list */
+ 	struct kobject		kobj;   /* kobject for each entry */
++	unsigned int		bootmem:1; /* allocated from bootmem */
+ };
+ 
+ /*
+@@ -79,7 +81,26 @@ static const struct sysfs_ops memmap_attr_ops = {
+ 	.show = memmap_attr_show,
+ };
+ 
++
++static inline struct firmware_map_entry *
++to_memmap_entry(struct kobject *kobj)
++{
++	return container_of(kobj, struct firmware_map_entry, kobj);
++}
++
++static void release_firmware_map_entry(struct kobject *kobj)
++{
++	struct firmware_map_entry *entry = to_memmap_entry(kobj);
++
++	if (entry->bootmem)
++		/* There is no way to free memory allocated from bootmem */
++		return;
++
++	kfree(entry);
++}
++
+ static struct kobj_type memmap_ktype = {
++	.release	= release_firmware_map_entry,
+ 	.sysfs_ops	= &memmap_attr_ops,
+ 	.default_attrs	= def_attrs,
+ };
+@@ -94,6 +115,7 @@ static struct kobj_type memmap_ktype = {
+  * in firmware initialisation code in one single thread of execution.
+  */
+ static LIST_HEAD(map_entries);
++static DEFINE_SPINLOCK(map_entries_lock);
+ 
+ /**
+  * firmware_map_add_entry() - Does the real work to add a firmware memmap entry.
+@@ -118,11 +140,25 @@ static int firmware_map_add_entry(u64 start, u64 end,
+ 	INIT_LIST_HEAD(&entry->list);
+ 	kobject_init(&entry->kobj, &memmap_ktype);
+ 
++	spin_lock(&map_entries_lock);
+ 	list_add_tail(&entry->list, &map_entries);
++	spin_unlock(&map_entries_lock);
+ 
+ 	return 0;
+ }
+ 
++/**
++ * firmware_map_remove_entry() - Does the real work to remove a firmware
++ * memmap entry.
++ * @entry: removed entry.
++ **/
++static inline void firmware_map_remove_entry(struct firmware_map_entry *entry)
++{
++	spin_lock(&map_entries_lock);
++	list_del(&entry->list);
++	spin_unlock(&map_entries_lock);
++}
++
+ /*
+  * Add memmap entry on sysfs
+  */
+@@ -144,6 +180,35 @@ static int add_sysfs_fw_map_entry(struct firmware_map_entry *entry)
+ 	return 0;
+ }
+ 
++/*
++ * Remove memmap entry on sysfs
++ */
++static inline void remove_sysfs_fw_map_entry(struct firmware_map_entry *entry)
++{
++	kobject_put(&entry->kobj);
++}
++
++/*
++ * Search memmap entry
++ */
++
++static struct firmware_map_entry * __meminit
++firmware_map_find_entry(u64 start, u64 end, const char *type)
++{
++	struct firmware_map_entry *entry;
++
++	spin_lock(&map_entries_lock);
++	list_for_each_entry(entry, &map_entries, list)
++		if ((entry->start = start) && (entry->end = end) &&
++		    (!strcmp(entry->type, type))) {
++			spin_unlock(&map_entries_lock);
++			return entry;
++		}
++
++	spin_unlock(&map_entries_lock);
++	return NULL;
++}
++
+ /**
+  * firmware_map_add_hotplug() - Adds a firmware mapping entry when we do
+  * memory hotplug.
+@@ -193,9 +258,36 @@ int __init firmware_map_add_early(u64 start, u64 end, const char *type)
+ 	if (WARN_ON(!entry))
+ 		return -ENOMEM;
+ 
++	entry->bootmem = 1;
+ 	return firmware_map_add_entry(start, end, type, entry);
+ }
+ 
++/**
++ * firmware_map_remove() - remove a firmware mapping entry
++ * @start: Start of the memory range.
++ * @end:   End of the memory range.
++ * @type:  Type of the memory range.
++ *
++ * removes a firmware mapping entry.
++ *
++ * Returns 0 on success, or -EINVAL if no entry.
++ **/
++int __meminit firmware_map_remove(u64 start, u64 end, const char *type)
++{
++	struct firmware_map_entry *entry;
++
++	entry = firmware_map_find_entry(start, end - 1, type);
++	if (!entry)
++		return -EINVAL;
++
++	firmware_map_remove_entry(entry);
++
++	/* remove the memmap entry */
++	remove_sysfs_fw_map_entry(entry);
++
++	return 0;
++}
++
+ /*
+  * Sysfs functions -------------------------------------------------------------
+  */
+@@ -217,8 +309,10 @@ static ssize_t type_show(struct firmware_map_entry *entry, char *buf)
+ 	return snprintf(buf, PAGE_SIZE, "%s\n", entry->type);
+ }
+ 
+-#define to_memmap_attr(_attr) container_of(_attr, struct memmap_attribute, attr)
+-#define to_memmap_entry(obj) container_of(obj, struct firmware_map_entry, kobj)
++static inline struct memmap_attribute *to_memmap_attr(struct attribute *attr)
++{
++	return container_of(attr, struct memmap_attribute, attr);
++}
+ 
+ static ssize_t memmap_attr_show(struct kobject *kobj,
+ 				struct attribute *attr, char *buf)
+diff --git a/include/linux/firmware-map.h b/include/linux/firmware-map.h
+index 43fe52f..71d4fa7 100644
+--- a/include/linux/firmware-map.h
++++ b/include/linux/firmware-map.h
+@@ -25,6 +25,7 @@
+ 
+ int firmware_map_add_early(u64 start, u64 end, const char *type);
+ int firmware_map_add_hotplug(u64 start, u64 end, const char *type);
++int firmware_map_remove(u64 start, u64 end, const char *type);
+ 
+ #else /* CONFIG_FIRMWARE_MEMMAP */
+ 
+@@ -38,6 +39,11 @@ static inline int firmware_map_add_hotplug(u64 start, u64 end, const char *type)
+ 	return 0;
+ }
+ 
++static inline int firmware_map_remove(u64 start, u64 end, const char *type)
++{
++	return 0;
++}
++
+ #endif /* CONFIG_FIRMWARE_MEMMAP */
+ 
+ #endif /* _LINUX_FIRMWARE_MAP_H */
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index dbb04d8..1f5b5bb 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -1442,7 +1442,7 @@ static int is_memblock_offlined_cb(struct memory_block *mem, void *arg)
+ 	return ret;
+ }
+ 
+-int remove_memory(u64 start, u64 size)
++int __ref remove_memory(u64 start, u64 size)
+ {
+ 	unsigned long start_pfn, end_pfn;
+ 	int ret = 0;
+@@ -1484,6 +1484,9 @@ repeat:
+ 		return ret;
+ 	}
+ 
++	/* remove memmap entry */
++	firmware_map_remove(start, start + size, "System RAM");
++
+ 	unlock_memory_hotplug();
+ 
+ 	return 0;
+-- 
+1.7.1
 
-
-> Rob
->
