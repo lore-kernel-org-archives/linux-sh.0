@@ -1,29 +1,86 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 28 Dec 2012 21:50:36 +0000
-Subject: Re: [PATCH v2] ARM: sh7372: fix cache clean / invalidate order
-Message-Id: <20121228215035.GH8834@verge.net.au>
+From: Tang Chen <tangchen@cn.fujitsu.com>
+Date: Mon, 24 Dec 2012 12:09:11 +0000
+Subject: [PATCH v5 01/14] memory-hotplug: try to offline the memory twice to avoid dependence
+Message-Id: <1356350964-13437-2-git-send-email-tangchen@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20121211163313.GG16759@mudshark.cambridge.arm.com>
- <20121211163843.GH16759@mudshark.cambridge.arm.com>
- <50C7C16B.7050106@codeaurora.org>
- <20121212103338.GB23022@e102568-lin.cambridge.arm.com>
- <20121212133650.GJ6195@mudshark.cambridge.arm.com>
- <Pine.LNX.4.64.1212130909190.18586@axis700.grange>
- <20121213105109.GB26540@mudshark.cambridge.arm.com>
- <Pine.LNX.4.64.1212131522430.18586@axis700.grange>
- <50C9E8BD.1020501@ti.com>
- <Pine.LNX.4.64.1212281227070.29263@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1212281227070.29263@axis700.grange>
+References: <1356350964-13437-1-git-send-email-tangchen@cn.fujitsu.com>
+In-Reply-To: <1356350964-13437-1-git-send-email-tangchen@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: akpm@linux-foundation.org, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, wency@cn.fujitsu.com, tangchen@cn.fujitsu.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org
+Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
 
-On Fri, Dec 28, 2012 at 12:32:54PM +0100, Guennadi Liakhovetski wrote:
-> According to the Cortex A8 TRM the L2 cache should be first cleaned and 
-> then disabled. Fix the swapped order on sh7372.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> Reviewed-by: Santosh Shilimkar <santosh.shilimkar@ti.com>
+From: Wen Congyang <wency@cn.fujitsu.com>
 
-Thanks, applied to the soc branch of the renesas tree.
+memory can't be offlined when CONFIG_MEMCG is selected.
+For example: there is a memory device on node 1. The address range
+is [1G, 1.5G). You will find 4 new directories memory8, memory9, memory10,
+and memory11 under the directory /sys/devices/system/memory/.
+
+If CONFIG_MEMCG is selected, we will allocate memory to store page cgroup
+when we online pages. When we online memory8, the memory stored page cgroup
+is not provided by this memory device. But when we online memory9, the memory
+stored page cgroup may be provided by memory8. So we can't offline memory8
+now. We should offline the memory in the reversed order.
+
+When the memory device is hotremoved, we will auto offline memory provided
+by this memory device. But we don't know which memory is onlined first, so
+offlining memory may fail. In such case, iterate twice to offline the memory.
+1st iterate: offline every non primary memory block.
+2nd iterate: offline primary (i.e. first added) memory block.
+
+This idea is suggested by KOSAKI Motohiro.
+
+Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+---
+ mm/memory_hotplug.c |   16 ++++++++++++++--
+ 1 files changed, 14 insertions(+), 2 deletions(-)
+
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index d04ed87..62e04c9 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -1388,10 +1388,13 @@ int remove_memory(u64 start, u64 size)
+ 	unsigned long start_pfn, end_pfn;
+ 	unsigned long pfn, section_nr;
+ 	int ret;
++	int return_on_error = 0;
++	int retry = 0;
+ 
+ 	start_pfn = PFN_DOWN(start);
+ 	end_pfn = start_pfn + PFN_DOWN(size);
+ 
++repeat:
+ 	for (pfn = start_pfn; pfn < end_pfn; pfn += PAGES_PER_SECTION) {
+ 		section_nr = pfn_to_section_nr(pfn);
+ 		if (!present_section_nr(section_nr))
+@@ -1410,14 +1413,23 @@ int remove_memory(u64 start, u64 size)
+ 
+ 		ret = offline_memory_block(mem);
+ 		if (ret) {
+-			kobject_put(&mem->dev.kobj);
+-			return ret;
++			if (return_on_error) {
++				kobject_put(&mem->dev.kobj);
++				return ret;
++			} else {
++				retry = 1;
++			}
+ 		}
+ 	}
+ 
+ 	if (mem)
+ 		kobject_put(&mem->dev.kobj);
+ 
++	if (retry) {
++		return_on_error = 1;
++		goto repeat;
++	}
++
+ 	return 0;
+ }
+ #else
+-- 
+1.7.1
+
