@@ -1,37 +1,78 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 14 Dec 2012 13:32:03 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: sh73a0 external IRQ wake update
-Message-Id: <20121214133203.GI16382@verge.net.au>
+From: Tang Chen <tangchen@cn.fujitsu.com>
+Date: Mon, 24 Dec 2012 12:09:17 +0000
+Subject: [PATCH v5 07/14] memory-hotplug: move pgdat_resize_lock into sparse_remove_one_section()
+Message-Id: <1356350964-13437-8-git-send-email-tangchen@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20121214034312.20055.61728.sendpatchset@w520>
-In-Reply-To: <20121214034312.20055.61728.sendpatchset@w520>
+References: <1356350964-13437-1-git-send-email-tangchen@cn.fujitsu.com>
+In-Reply-To: <1356350964-13437-1-git-send-email-tangchen@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: akpm@linux-foundation.org, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, wency@cn.fujitsu.com, tangchen@cn.fujitsu.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org
+Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
 
-On Fri, Dec 14, 2012 at 12:43:12PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Use sh73a0_set_wake() for external IRQ signals on sh73a0.
-> 
-> The sh73a0 IRQ hardware for external IRQ pins consists of
-> the INTCA interrupt controller and the GIC together doing
-> their best to limp along. These external IRQ pins are
-> treated as a special case where interrupts need to be
-> managed in both interrupt controllers in parallel.
-> 
-> The ->irq_set_wake() callback for the external IRQ pins
-> can be dealt with in the same way as INTCA-only without
-> involving the GIC. So this patch updates the external
-> IRQ pin code for sh73a0 to no longer involve the GIC.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+In __remove_section(), we locked pgdat_resize_lock when calling
+sparse_remove_one_section(). This lock will disable irq. But we don't need
+to lock the whole function. If we do some work to free pagetables in
+free_section_usemap(), we need to call flush_tlb_all(), which need
+irq enabled. Otherwise the WARN_ON_ONCE() in smp_call_function_many()
+will be triggered.
 
-Thanks applied.
+Signed-off-by: Tang Chen <tangchen@cn.fujitsu.com>
+Signed-off-by: Lai Jiangshan <laijs@cn.fujitsu.com>
+Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+---
+ mm/memory_hotplug.c |    4 ----
+ mm/sparse.c         |    5 ++++-
+ 2 files changed, 4 insertions(+), 5 deletions(-)
 
-I have applied this to a temporary 'soc5' branch which is based on 3.7-rc1.
-I will rebase this on 3.8-rc1 once it is released and rename the branch
-to the more sane 'soc'.
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index 34c656b..c12bd55 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -442,8 +442,6 @@ static int __remove_section(struct zone *zone, struct mem_section *ms)
+ #else
+ static int __remove_section(struct zone *zone, struct mem_section *ms)
+ {
+-	unsigned long flags;
+-	struct pglist_data *pgdat = zone->zone_pgdat;
+ 	int ret = -EINVAL;
+ 
+ 	if (!valid_section(ms))
+@@ -453,9 +451,7 @@ static int __remove_section(struct zone *zone, struct mem_section *ms)
+ 	if (ret)
+ 		return ret;
+ 
+-	pgdat_resize_lock(pgdat, &flags);
+ 	sparse_remove_one_section(zone, ms);
+-	pgdat_resize_unlock(pgdat, &flags);
+ 	return 0;
+ }
+ #endif
+diff --git a/mm/sparse.c b/mm/sparse.c
+index aadbb2a..05ca73a 100644
+--- a/mm/sparse.c
++++ b/mm/sparse.c
+@@ -796,8 +796,10 @@ static inline void clear_hwpoisoned_pages(struct page *memmap, int nr_pages)
+ void sparse_remove_one_section(struct zone *zone, struct mem_section *ms)
+ {
+ 	struct page *memmap = NULL;
+-	unsigned long *usemap = NULL;
++	unsigned long *usemap = NULL, flags;
++	struct pglist_data *pgdat = zone->zone_pgdat;
+ 
++	pgdat_resize_lock(pgdat, &flags);
+ 	if (ms->section_mem_map) {
+ 		usemap = ms->pageblock_flags;
+ 		memmap = sparse_decode_mem_map(ms->section_mem_map,
+@@ -805,6 +807,7 @@ void sparse_remove_one_section(struct zone *zone, struct mem_section *ms)
+ 		ms->section_mem_map = 0;
+ 		ms->pageblock_flags = NULL;
+ 	}
++	pgdat_resize_unlock(pgdat, &flags);
+ 
+ 	clear_hwpoisoned_pages(memmap, PAGES_PER_SECTION);
+ 	free_section_usemap(memmap, usemap);
+-- 
+1.7.1
 
-I have also merged this change into the next branch.
