@@ -1,96 +1,230 @@
-From: Jianguo Wu <wujianguo@huawei.com>
-Date: Fri, 07 Dec 2012 07:06:16 +0000
-Subject: Re: [Patch v4 09/12] memory-hotplug: remove page table of x86_64 architecture
-Message-Id: <50C19568.7080500@huawei.com>
+From: Tang Chen <tangchen@cn.fujitsu.com>
+Date: Mon, 24 Dec 2012 12:09:15 +0000
+Subject: [PATCH v5 05/14] memory-hotplug: introduce new function arch_remove_memory() for removing page table
+Message-Id: <1356350964-13437-6-git-send-email-tangchen@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1354010422-19648-1-git-send-email-wency@cn.fujitsu.com> <1354010422-19648-10-git-send-email-wency@cn.fujitsu.com> <50C19022.9000501@cn.fujitsu.com>
-In-Reply-To: <50C19022.9000501@cn.fujitsu.com>
+References: <1356350964-13437-1-git-send-email-tangchen@cn.fujitsu.com>
+In-Reply-To: <1356350964-13437-1-git-send-email-tangchen@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Tang Chen <tangchen@cn.fujitsu.com>
-Cc: Wen Congyang <wency@cn.fujitsu.com>, x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org, David Rientjes <rientjes@google.com>, Jiang Liu <liuj97@gmail.com>, Len Brown <len.brown@intel.com>, benh@kernel.crashing.org, paulus@samba.org, Christoph Lameter <cl@linux.com>, Minchan Kim <minchan.kim@gmail.com>, Andrew Morton <akpm@linux-foundation.org>, KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>, Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>, Jiang Liu <jiang.liu@huawei.com>
+To: akpm@linux-foundation.org, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, wency@cn.fujitsu.com, tangchen@cn.fujitsu.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org
+Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
 
-On 2012/12/7 14:43, Tang Chen wrote:
+From: Wen Congyang <wency@cn.fujitsu.com>
 
-> On 11/27/2012 06:00 PM, Wen Congyang wrote:
->> For hot removing memory, we sholud remove page table about the memory.
->> So the patch searches a page table about the removed memory, and clear
->> page table.
-> 
-> (snip)
-> 
->> +void __meminit
->> +kernel_physical_mapping_remove(unsigned long start, unsigned long end)
->> +{
->> +    unsigned long next;
->> +    bool pgd_changed = false;
->> +
->> +    start = (unsigned long)__va(start);
->> +    end = (unsigned long)__va(end);
-> 
-> Hi Wu,
-> 
-> Here, you expect start and end are physical addresses. But in
-> phys_xxx_remove() function, I think using virtual addresses is just
-> fine. Functions like pmd_addr_end() and pud_index() only calculate
-> an offset.
->
+For removing memory, we need to remove page table. But it depends
+on architecture. So the patch introduce arch_remove_memory() for
+removing page table. Now it only calls __remove_pages().
 
-Hi Tang,
+Note: __remove_pages() for some archtecuture is not implemented
+      (I don't know how to implement it for s390).
 
+Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+---
+ arch/ia64/mm/init.c            |   18 ++++++++++++++++++
+ arch/powerpc/mm/mem.c          |   12 ++++++++++++
+ arch/s390/mm/init.c            |   12 ++++++++++++
+ arch/sh/mm/init.c              |   17 +++++++++++++++++
+ arch/tile/mm/init.c            |    8 ++++++++
+ arch/x86/mm/init_32.c          |   12 ++++++++++++
+ arch/x86/mm/init_64.c          |   15 +++++++++++++++
+ include/linux/memory_hotplug.h |    1 +
+ mm/memory_hotplug.c            |    2 ++
+ 9 files changed, 97 insertions(+), 0 deletions(-)
+
+diff --git a/arch/ia64/mm/init.c b/arch/ia64/mm/init.c
+index 082e383..e333822 100644
+--- a/arch/ia64/mm/init.c
++++ b/arch/ia64/mm/init.c
+@@ -689,6 +689,24 @@ int arch_add_memory(int nid, u64 start, u64 size)
  
-
-Virtual addresses will work fine, I used physical addresses in order to
-keep consistent with phys_pud[pmd/pte]_init(), So I think we should keep this.
-
-Thanks,
-Jianguo Wu
-
-> So, would you please tell me if we have to use physical addresses here ?
-> 
-> Thanks. :)
-> 
->> +
->> +    for (; start<  end; start = next) {
->> +        pgd_t *pgd = pgd_offset_k(start);
->> +        pud_t *pud;
->> +
->> +        next = pgd_addr_end(start, end);
->> +
->> +        if (!pgd_present(*pgd))
->> +            continue;
->> +
->> +        pud = map_low_page((pud_t *)pgd_page_vaddr(*pgd));
->> +        phys_pud_remove(pud, __pa(start), __pa(next));
->> +        if (free_pud_table(pud, pgd))
->> +            pgd_changed = true;
->> +        unmap_low_page(pud);
->> +    }
->> +
->> +    if (pgd_changed)
->> +        sync_global_pgds(start, end - 1);
->> +
->> +    flush_tlb_all();
->> +}
->> +
->>   #ifdef CONFIG_MEMORY_HOTREMOVE
->>   int __ref arch_remove_memory(u64 start, u64 size)
->>   {
->> @@ -692,6 +921,8 @@ int __ref arch_remove_memory(u64 start, u64 size)
->>       ret = __remove_pages(zone, start_pfn, nr_pages);
->>       WARN_ON_ONCE(ret);
->>
->> +    kernel_physical_mapping_remove(start, start + size);
->> +
->>       return ret;
->>   }
->>   #endif
-> 
-> 
-> 
-> .
-> 
-
-
+ 	return ret;
+ }
++
++#ifdef CONFIG_MEMORY_HOTREMOVE
++int arch_remove_memory(u64 start, u64 size)
++{
++	unsigned long start_pfn = start >> PAGE_SHIFT;
++	unsigned long nr_pages = size >> PAGE_SHIFT;
++	struct zone *zone;
++	int ret;
++
++	zone = page_zone(pfn_to_page(start_pfn));
++	ret = __remove_pages(zone, start_pfn, nr_pages);
++	if (ret)
++		pr_warn("%s: Problem encountered in __remove_pages() as"
++			" ret=%d\n", __func__,  ret);
++
++	return ret;
++}
++#endif
+ #endif
+ 
+ /*
+diff --git a/arch/powerpc/mm/mem.c b/arch/powerpc/mm/mem.c
+index 0dba506..09c6451 100644
+--- a/arch/powerpc/mm/mem.c
++++ b/arch/powerpc/mm/mem.c
+@@ -133,6 +133,18 @@ int arch_add_memory(int nid, u64 start, u64 size)
+ 
+ 	return __add_pages(nid, zone, start_pfn, nr_pages);
+ }
++
++#ifdef CONFIG_MEMORY_HOTREMOVE
++int arch_remove_memory(u64 start, u64 size)
++{
++	unsigned long start_pfn = start >> PAGE_SHIFT;
++	unsigned long nr_pages = size >> PAGE_SHIFT;
++	struct zone *zone;
++
++	zone = page_zone(pfn_to_page(start_pfn));
++	return __remove_pages(zone, start_pfn, nr_pages);
++}
++#endif
+ #endif /* CONFIG_MEMORY_HOTPLUG */
+ 
+ /*
+diff --git a/arch/s390/mm/init.c b/arch/s390/mm/init.c
+index ae672f4..49ce6bb 100644
+--- a/arch/s390/mm/init.c
++++ b/arch/s390/mm/init.c
+@@ -228,4 +228,16 @@ int arch_add_memory(int nid, u64 start, u64 size)
+ 		vmem_remove_mapping(start, size);
+ 	return rc;
+ }
++
++#ifdef CONFIG_MEMORY_HOTREMOVE
++int arch_remove_memory(u64 start, u64 size)
++{
++	/*
++	 * There is no hardware or firmware interface which could trigger a
++	 * hot memory remove on s390. So there is nothing that needs to be
++	 * implemented.
++	 */
++	return -EBUSY;
++}
++#endif
+ #endif /* CONFIG_MEMORY_HOTPLUG */
+diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
+index 82cc576..1057940 100644
+--- a/arch/sh/mm/init.c
++++ b/arch/sh/mm/init.c
+@@ -558,4 +558,21 @@ int memory_add_physaddr_to_nid(u64 addr)
+ EXPORT_SYMBOL_GPL(memory_add_physaddr_to_nid);
+ #endif
+ 
++#ifdef CONFIG_MEMORY_HOTREMOVE
++int arch_remove_memory(u64 start, u64 size)
++{
++	unsigned long start_pfn = start >> PAGE_SHIFT;
++	unsigned long nr_pages = size >> PAGE_SHIFT;
++	struct zone *zone;
++	int ret;
++
++	zone = page_zone(pfn_to_page(start_pfn));
++	ret = __remove_pages(zone, start_pfn, nr_pages);
++	if (unlikely(ret))
++		pr_warn("%s: Failed, __remove_pages() = %d\n", __func__,
++			ret);
++
++	return ret;
++}
++#endif
+ #endif /* CONFIG_MEMORY_HOTPLUG */
+diff --git a/arch/tile/mm/init.c b/arch/tile/mm/init.c
+index ef29d6c..2749515 100644
+--- a/arch/tile/mm/init.c
++++ b/arch/tile/mm/init.c
+@@ -935,6 +935,14 @@ int remove_memory(u64 start, u64 size)
+ {
+ 	return -EINVAL;
+ }
++
++#ifdef CONFIG_MEMORY_HOTREMOVE
++int arch_remove_memory(u64 start, u64 size)
++{
++	/* TODO */
++	return -EBUSY;
++}
++#endif
+ #endif
+ 
+ struct kmem_cache *pgd_cache;
+diff --git a/arch/x86/mm/init_32.c b/arch/x86/mm/init_32.c
+index 745d66b..3166e78 100644
+--- a/arch/x86/mm/init_32.c
++++ b/arch/x86/mm/init_32.c
+@@ -836,6 +836,18 @@ int arch_add_memory(int nid, u64 start, u64 size)
+ 
+ 	return __add_pages(nid, zone, start_pfn, nr_pages);
+ }
++
++#ifdef CONFIG_MEMORY_HOTREMOVE
++int arch_remove_memory(u64 start, u64 size)
++{
++	unsigned long start_pfn = start >> PAGE_SHIFT;
++	unsigned long nr_pages = size >> PAGE_SHIFT;
++	struct zone *zone;
++
++	zone = page_zone(pfn_to_page(start_pfn));
++	return __remove_pages(zone, start_pfn, nr_pages);
++}
++#endif
+ #endif
+ 
+ /*
+diff --git a/arch/x86/mm/init_64.c b/arch/x86/mm/init_64.c
+index e779e0b..f78509c 100644
+--- a/arch/x86/mm/init_64.c
++++ b/arch/x86/mm/init_64.c
+@@ -682,6 +682,21 @@ int arch_add_memory(int nid, u64 start, u64 size)
+ }
+ EXPORT_SYMBOL_GPL(arch_add_memory);
+ 
++#ifdef CONFIG_MEMORY_HOTREMOVE
++int __ref arch_remove_memory(u64 start, u64 size)
++{
++	unsigned long start_pfn = start >> PAGE_SHIFT;
++	unsigned long nr_pages = size >> PAGE_SHIFT;
++	struct zone *zone;
++	int ret;
++
++	zone = page_zone(pfn_to_page(start_pfn));
++	ret = __remove_pages(zone, start_pfn, nr_pages);
++	WARN_ON_ONCE(ret);
++
++	return ret;
++}
++#endif
+ #endif /* CONFIG_MEMORY_HOTPLUG */
+ 
+ static struct kcore_list kcore_vsyscall;
+diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
+index 8dd0950..31a563b 100644
+--- a/include/linux/memory_hotplug.h
++++ b/include/linux/memory_hotplug.h
+@@ -96,6 +96,7 @@ extern void __online_page_free(struct page *page);
+ 
+ #ifdef CONFIG_MEMORY_HOTREMOVE
+ extern bool is_pageblock_removable_nolock(struct page *page);
++extern int arch_remove_memory(u64 start, u64 size);
+ #endif /* CONFIG_MEMORY_HOTREMOVE */
+ 
+ /* reasonably generic interface to expand the physical pages in a zone  */
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index 1f5b5bb..2c5d734 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -1487,6 +1487,8 @@ repeat:
+ 	/* remove memmap entry */
+ 	firmware_map_remove(start, start + size, "System RAM");
+ 
++	arch_remove_memory(start, size);
++
+ 	unlock_memory_hotplug();
+ 
+ 	return 0;
+-- 
+1.7.1
 
