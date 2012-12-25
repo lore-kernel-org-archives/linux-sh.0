@@ -1,63 +1,90 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 16 Dec 2012 17:25:52 +0000
-Subject: [PATCH/WIP/RFC 06/14] shmobile-iommu: Sort header files alphabetically
-Message-Id: <1355678760-27357-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Hideki EIRAKU <hdk@igel.co.jp>
+Date: Tue, 25 Dec 2012 11:19:13 +0000
+Subject: [PATCH v5 2/4] ARM: mach-shmobile: sh7372: Add IPMMU device
+Message-Id: <1356434355-3279-3-git-send-email-hdk@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1350290093-998-1-git-send-email-hdk@igel.co.jp>
- <1355678760-27357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1355678760-27357-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1356434355-3279-1-git-send-email-hdk@igel.co.jp>
+In-Reply-To: <1356434355-3279-1-git-send-email-hdk@igel.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/iommu/shmobile-iommu.c |   10 +++++-----
- drivers/iommu/shmobile-ipmmu.c |    4 ++--
- 2 files changed, 7 insertions(+), 7 deletions(-)
+This patch adds an IPMMU device and notifies the IPMMU driver which
+devices are connected via the IPMMU module.  All devices connected to the main
+memory bus via the IPMMU module MUST be registered when SHMOBILE_IPMMU and
+SHMOBILE_IOMMU are enabled because physical address cannot be used
+while the IPMMU module's MMU function is enabled.
 
-diff --git a/drivers/iommu/shmobile-iommu.c b/drivers/iommu/shmobile-iommu.c
-index bbbf1bc..9f2243e3 100644
---- a/drivers/iommu/shmobile-iommu.c
-+++ b/drivers/iommu/shmobile-iommu.c
-@@ -17,14 +17,14 @@
-  *
-  */
+Signed-off-by: Hideki EIRAKU <hdk@igel.co.jp>
+---
+ arch/arm/mach-shmobile/setup-sh7372.c | 39 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 39 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
+index c917882..04ad98e 100644
+--- a/arch/arm/mach-shmobile/setup-sh7372.c
++++ b/arch/arm/mach-shmobile/setup-sh7372.c
+@@ -33,6 +33,7 @@
+ #include <linux/sh_timer.h>
+ #include <linux/pm_domain.h>
+ #include <linux/dma-mapping.h>
++#include <linux/platform_data/sh_ipmmu.h>
+ #include <mach/dma-register.h>
+ #include <mach/hardware.h>
+ #include <mach/irqs.h>
+@@ -982,6 +983,43 @@ static struct platform_device spu1_device = {
+ 	.num_resources	= ARRAY_SIZE(spu1_resources),
+ };
  
--#include <linux/io.h>
-+#include <asm/dma-iommu.h>
-+#include <linux/dma-mapping.h>
- #include <linux/dmapool.h>
--#include <linux/slab.h>
--#include <linux/platform_device.h>
-+#include <linux/io.h>
- #include <linux/iommu.h>
--#include <linux/dma-mapping.h>
-+#include <linux/platform_device.h>
-+#include <linux/slab.h>
- #include <mach/ipmmu.h>
--#include <asm/dma-iommu.h>
++/* IPMMUI (an IPMMU module for ICB/LMB) */
++static struct resource ipmmu_resources[] = {
++	[0] = {
++		.name	= "IPMMUI",
++		.start	= 0xfe951000,
++		.end	= 0xfe9510ff,
++		.flags	= IORESOURCE_MEM,
++	},
++};
++
++static const char * const ipmmu_dev_names[] = {
++	"sh_mobile_lcdc_fb.0",
++	"sh_mobile_lcdc_fb.1",
++	"sh_mobile_ceu.0",
++	"uio_pdrv_genirq.0",
++	"uio_pdrv_genirq.1",
++	"uio_pdrv_genirq.2",
++	"uio_pdrv_genirq.3",
++	"uio_pdrv_genirq.4",
++	"uio_pdrv_genirq.5",
++};
++
++static struct shmobile_ipmmu_platform_data ipmmu_platform_data = {
++	.dev_names = ipmmu_dev_names,
++	.num_dev_names = ARRAY_SIZE(ipmmu_dev_names),
++};
++
++static struct platform_device ipmmu_device = {
++	.name           = "ipmmu",
++	.id             = -1,
++	.dev = {
++		.platform_data = &ipmmu_platform_data,
++	},
++	.resource       = ipmmu_resources,
++	.num_resources  = ARRAY_SIZE(ipmmu_resources),
++};
++
+ static struct platform_device *sh7372_early_devices[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+@@ -993,6 +1031,7 @@ static struct platform_device *sh7372_early_devices[] __initdata = {
+ 	&cmt2_device,
+ 	&tmu00_device,
+ 	&tmu01_device,
++	&ipmmu_device,
+ };
  
- #define L1_SIZE CONFIG_SHMOBILE_IOMMU_L1SIZE
- #define L1_LEN (L1_SIZE / 4)
-diff --git a/drivers/iommu/shmobile-ipmmu.c b/drivers/iommu/shmobile-ipmmu.c
-index d6df0b4..edec3b8 100644
---- a/drivers/iommu/shmobile-ipmmu.c
-+++ b/drivers/iommu/shmobile-ipmmu.c
-@@ -17,10 +17,10 @@
-  *
-  */
- 
--#include <linux/platform_device.h>
--#include <linux/io.h>
- #include <linux/err.h>
- #include <linux/export.h>
-+#include <linux/io.h>
-+#include <linux/platform_device.h>
- #include <linux/slab.h>
- #include <mach/ipmmu.h>
- 
+ static struct platform_device *sh7372_late_devices[] __initdata = {
 -- 
-1.7.8.6
+1.8.0
 
