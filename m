@@ -1,37 +1,82 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 18 Dec 2012 00:46:11 +0000
-Subject: [PATCH 7/9] ARM: shmobile: r8a7740: Use DT initialisation of INTC
-Message-Id: <1355791573-20281-8-git-send-email-horms+renesas@verge.net.au>
+From: Hideki EIRAKU <hdk@igel.co.jp>
+Date: Tue, 25 Dec 2012 11:19:14 +0000
+Subject: [PATCH v5 3/4] ARM: mach-shmobile: sh73a0: Add IPMMU device
+Message-Id: <1356434355-3279-4-git-send-email-hdk@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1355791573-20281-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1355791573-20281-1-git-send-email-horms+renesas@verge.net.au>
+References: <1356434355-3279-1-git-send-email-hdk@igel.co.jp>
+In-Reply-To: <1356434355-3279-1-git-send-email-hdk@igel.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+This patch adds an IPMMU device and notifies the IPMMU driver which
+devices are connected via the IPMMU module.  All devices connected to the main
+memory bus via the IPMMU module MUST be registered when SHMOBILE_IPMMU and
+SHMOBILE_IOMMU are enabled because physical address cannot be used
+while the IPMMU module's MMU function is enabled.
 
-Cc: Magnus Damm <damm@opensource.se>
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Hideki EIRAKU <hdk@igel.co.jp>
 ---
- arch/arm/mach-shmobile/setup-r8a7740.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/setup-sh73a0.c | 31 +++++++++++++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 11bb1d9..a8e57ab 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -750,7 +750,7 @@ static const char *r8a7740_boards_compat_dt[] __initdata = {
- DT_MACHINE_START(SH7372_DT, "Generic R8A7740 (Flattened Device Tree)")
- 	.map_io		= r8a7740_map_io,
- 	.init_early	= r8a7740_add_early_devices_dt,
--	.init_irq	= r8a7740_init_irq,
-+	.init_irq	= r8a7740_init_irq_of,
- 	.handle_irq	= shmobile_handle_irq_intc,
- 	.init_machine	= r8a7740_add_standard_devices_dt,
- 	.timer		= &shmobile_timer,
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index db99a4a..36c2b2e 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -30,6 +30,7 @@
+ #include <linux/sh_dma.h>
+ #include <linux/sh_intc.h>
+ #include <linux/sh_timer.h>
++#include <linux/platform_data/sh_ipmmu.h>
+ #include <mach/dma-register.h>
+ #include <mach/hardware.h>
+ #include <mach/irqs.h>
+@@ -754,6 +755,35 @@ static struct platform_device pmu_device = {
+ 	.resource	= pmu_resources,
+ };
+ 
++/* an IPMMU module for ICB */
++static struct resource ipmmu_resources[] = {
++	[0] = {
++		.name	= "IPMMU",
++		.start	= 0xfe951000,
++		.end	= 0xfe9510ff,
++		.flags	= IORESOURCE_MEM,
++	},
++};
++
++static const char * const ipmmu_dev_names[] = {
++	"sh_mobile_lcdc_fb.0",
++};
++
++static struct shmobile_ipmmu_platform_data ipmmu_platform_data = {
++	.dev_names = ipmmu_dev_names,
++	.num_dev_names = ARRAY_SIZE(ipmmu_dev_names),
++};
++
++static struct platform_device ipmmu_device = {
++	.name           = "ipmmu",
++	.id             = -1,
++	.dev = {
++		.platform_data = &ipmmu_platform_data,
++	},
++	.resource       = ipmmu_resources,
++	.num_resources  = ARRAY_SIZE(ipmmu_resources),
++};
++
+ static struct platform_device *sh73a0_early_devices[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+@@ -767,6 +797,7 @@ static struct platform_device *sh73a0_early_devices[] __initdata = {
+ 	&cmt10_device,
+ 	&tmu00_device,
+ 	&tmu01_device,
++	&ipmmu_device,
+ };
+ 
+ static struct platform_device *sh73a0_late_devices[] __initdata = {
 -- 
-1.7.10.4
+1.8.0
 
