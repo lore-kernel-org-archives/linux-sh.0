@@ -1,7 +1,7 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 26 Dec 2012 17:49:09 +0000
-Subject: [PATCH 4/6] sh_mobile_ceu_camera: add asynchronous subdevice probing support
-Message-Id: <1356544151-6313-5-git-send-email-g.liakhovetski@gmx.de>
+Date: Wed, 26 Dec 2012 17:49:06 +0000
+Subject: [PATCH 1/6] media: V4L2: support asynchronous subdevice registration
+Message-Id: <1356544151-6313-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1356544151-6313-1-git-send-email-g.liakhovetski@gmx.de>
 In-Reply-To: <1356544151-6313-1-git-send-email-g.liakhovetski@gmx.de>
@@ -11,571 +11,469 @@ Content-Transfer-Encoding: 7bit
 To: linux-media@vger.kernel.org
 Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>
 
-Use the v4l2-async API to support asynchronous subdevice probing,
-including the CSI2 subdevice. Synchronous probing is still supported too.
+Currently bridge device drivers register devices for all subdevices 
+synchronously, tupically, during their probing. E.g. if an I2C CMOS sensor 
+is attached to a video bridge device, the bridge driver will create an I2C 
+device and wait for the respective I2C driver to probe. This makes linking 
+of devices straight forward, but this approach cannot be used with 
+intrinsically asynchronous and unordered device registration systems like 
+the Flattened Device Tree. To support such systems this patch adds an 
+asynchronous subdevice registration framework to V4L2. To use it bridge 
+drivers register lists of subdevice descriptors and notifier callbacks, 
+subdevice drivers register subdevices, that they are about to probe or 
+have successfully probed. The subsystem matches subdevices against 
+hardware descriptors and calls bridge driver callbacks when matches are 
+found. Another callback is called, when the subdevice is unregistered.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- .../platform/soc_camera/sh_mobile_ceu_camera.c     |  135 ++++++++++++----
- drivers/media/platform/soc_camera/sh_mobile_csi2.c |  164 +++++++++++--------
- include/media/sh_mobile_ceu.h                      |    2 +
- include/media/sh_mobile_csi2.h                     |    2 +-
- 4 files changed, 198 insertions(+), 105 deletions(-)
 
-diff --git a/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c b/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
-index ba36257..a89f05e 100644
---- a/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
-+++ b/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
-@@ -35,6 +35,7 @@
- #include <linux/pm_runtime.h>
- #include <linux/sched.h>
+v3: identical to v2, only a kfree() is added, fixing a memory leak.
+
+ drivers/media/v4l2-core/Makefile      |    3 +-
+ drivers/media/v4l2-core/v4l2-async.c  |  284 +++++++++++++++++++++++++++++++++
+ drivers/media/v4l2-core/v4l2-device.c |    2 +
+ include/media/v4l2-async.h            |  113 +++++++++++++
+ 4 files changed, 401 insertions(+), 1 deletions(-)
+ create mode 100644 drivers/media/v4l2-core/v4l2-async.c
+ create mode 100644 include/media/v4l2-async.h
+
+diff --git a/drivers/media/v4l2-core/Makefile b/drivers/media/v4l2-core/Makefile
+index d065c01..b667ced 100644
+--- a/drivers/media/v4l2-core/Makefile
++++ b/drivers/media/v4l2-core/Makefile
+@@ -5,7 +5,8 @@
+ tuner-objs	:=	tuner-core.o
  
-+#include <media/v4l2-async.h>
- #include <media/v4l2-common.h>
- #include <media/v4l2-dev.h>
- #include <media/soc_camera.h>
-@@ -96,6 +97,10 @@ struct sh_mobile_ceu_buffer {
- struct sh_mobile_ceu_dev {
- 	struct soc_camera_host ici;
- 	struct soc_camera_device *icd;
-+	/* Asynchronous CSI2 linking */
-+	struct v4l2_async_subdev *csi2_asd;
-+	struct v4l2_subdev *csi2_sd;
-+	/* Synchronous probing compatibility */
- 	struct platform_device *csi2_pdev;
- 
- 	unsigned int irq;
-@@ -535,16 +540,29 @@ static struct v4l2_subdev *find_csi2(struct sh_mobile_ceu_dev *pcdev)
- {
- 	struct v4l2_subdev *sd;
- 
--	if (!pcdev->csi2_pdev)
--		return NULL;
-+	if (pcdev->csi2_sd)
-+		return pcdev->csi2_sd;
- 
--	v4l2_device_for_each_subdev(sd, &pcdev->ici.v4l2_dev)
--		if (&pcdev->csi2_pdev->dev = v4l2_get_subdevdata(sd))
--			return sd;
-+	if (pcdev->csi2_asd) {
-+		char name[] = "sh-mobile-csi2";
-+		v4l2_device_for_each_subdev(sd, &pcdev->ici.v4l2_dev)
-+			if (!strncmp(name, sd->name, sizeof(name) - 1)) {
-+				pcdev->csi2_sd = sd;
-+				return sd;
-+			}
-+	}
- 
- 	return NULL;
- }
- 
-+static struct v4l2_subdev *csi2_subdev(struct sh_mobile_ceu_dev *pcdev,
-+				       struct soc_camera_device *icd)
-+{
-+	struct v4l2_subdev *sd = pcdev->csi2_sd;
+ videodev-objs	:=	v4l2-dev.o v4l2-ioctl.o v4l2-device.o v4l2-fh.o \
+-			v4l2-event.o v4l2-ctrls.o v4l2-subdev.o v4l2-clk.o
++			v4l2-event.o v4l2-ctrls.o v4l2-subdev.o v4l2-clk.o \
++			v4l2-async.o
+ ifeq ($(CONFIG_COMPAT),y)
+   videodev-objs += v4l2-compat-ioctl32.o
+ endif
+diff --git a/drivers/media/v4l2-core/v4l2-async.c b/drivers/media/v4l2-core/v4l2-async.c
+new file mode 100644
+index 0000000..5e6c2f5
+--- /dev/null
++++ b/drivers/media/v4l2-core/v4l2-async.c
+@@ -0,0 +1,284 @@
++/*
++ * V4L2 asynchronous subdevice registration API
++ *
++ * Copyright (C) 2012, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
 +
-+	return sd && sd->grp_id = soc_camera_grp_id(icd) ? sd : NULL;
++#include <linux/device.h>
++#include <linux/err.h>
++#include <linux/i2c.h>
++#include <linux/list.h>
++#include <linux/module.h>
++#include <linux/mutex.h>
++#include <linux/notifier.h>
++#include <linux/platform_device.h>
++#include <linux/slab.h>
++#include <linux/types.h>
++
++#include <media/v4l2-async.h>
++#include <media/v4l2-device.h>
++#include <media/v4l2-subdev.h>
++
++static bool match_i2c(struct device *dev, struct v4l2_async_hw_device *hw_dev)
++{
++	struct i2c_client *client = to_i2c_client(dev);
++	return hw_dev->bus_type = V4L2_ASYNC_BUS_I2C &&
++		hw_dev->match.i2c.adapter_id = client->adapter->nr &&
++		hw_dev->match.i2c.address = client->addr;
 +}
 +
- /* Called with .host_lock held */
- static int sh_mobile_ceu_add_device(struct soc_camera_device *icd)
- {
-@@ -582,8 +600,13 @@ static int sh_mobile_ceu_add_device(struct soc_camera_device *icd)
- 	 * -ENODEV is special: either csi2_sd = NULL or the CSI-2 driver
- 	 * has not found this soc-camera device among its clients
- 	 */
--	if (ret = -ENODEV && csi2_sd)
--		csi2_sd->grp_id = 0;
-+	if (csi2_sd) {
-+		if (ret = -ENODEV)
-+			csi2_sd->grp_id = 0;
-+		else
-+			dev_info(icd->parent, "Using CSI-2 interface\n");
-+	}
++static bool match_platform(struct device *dev, struct v4l2_async_hw_device *hw_dev)
++{
++	return hw_dev->bus_type = V4L2_ASYNC_BUS_PLATFORM &&
++		!strcmp(hw_dev->match.platform.name, dev_name(dev));
++}
 +
- 	pcdev->icd = icd;
- 
- 	return 0;
-@@ -599,8 +622,7 @@ static void sh_mobile_ceu_remove_device(struct soc_camera_device *icd)
- 	BUG_ON(icd != pcdev->icd);
- 
- 	v4l2_subdev_call(csi2_sd, core, s_power, 0);
--	if (csi2_sd)
--		csi2_sd->grp_id = 0;
++static LIST_HEAD(subdev_list);
++static LIST_HEAD(notifier_list);
++static DEFINE_MUTEX(list_lock);
 +
- 	/* disable capture, disable interrupts */
- 	ceu_write(pcdev, CEIER, 0);
- 	sh_mobile_ceu_soft_reset(pcdev);
-@@ -706,7 +728,7 @@ static void sh_mobile_ceu_set_rect(struct soc_camera_device *icd)
- 	}
- 
- 	/* CSI2 special configuration */
--	if (pcdev->csi2_pdev) {
-+	if (csi2_subdev(pcdev, icd)) {
- 		in_width = ((in_width - 2) * 2);
- 		left_offset *= 2;
- 	}
-@@ -763,13 +785,7 @@ static void capture_restore(struct sh_mobile_ceu_dev *pcdev, u32 capsr)
- static struct v4l2_subdev *find_bus_subdev(struct sh_mobile_ceu_dev *pcdev,
- 					   struct soc_camera_device *icd)
- {
--	if (pcdev->csi2_pdev) {
--		struct v4l2_subdev *csi2_sd = find_csi2(pcdev);
--		if (csi2_sd && csi2_sd->grp_id = soc_camera_grp_id(icd))
--			return csi2_sd;
--	}
--
--	return soc_camera_to_subdev(icd);
-+	return csi2_subdev(pcdev, icd) ? : soc_camera_to_subdev(icd);
- }
- 
- #define CEU_BUS_FLAGS (V4L2_MBUS_MASTER |	\
-@@ -873,7 +889,7 @@ static int sh_mobile_ceu_set_bus_param(struct soc_camera_device *icd)
- 	value |= common_flags & V4L2_MBUS_VSYNC_ACTIVE_LOW ? 1 << 1 : 0;
- 	value |= common_flags & V4L2_MBUS_HSYNC_ACTIVE_LOW ? 1 << 0 : 0;
- 
--	if (pcdev->csi2_pdev) /* CSI2 mode */
-+	if (csi2_subdev(pcdev, icd)) /* CSI2 mode */
- 		value |= 3 << 12;
- 	else if (pcdev->is_16bit)
- 		value |= 1 << 12;
-@@ -1052,7 +1068,7 @@ static int sh_mobile_ceu_get_formats(struct soc_camera_device *icd, unsigned int
- 		return 0;
- 	}
- 
--	if (!pcdev->pdata || !pcdev->pdata->csi2) {
-+	if (!csi2_subdev(pcdev, icd)) {
- 		/* Are there any restrictions in the CSI-2 case? */
- 		ret = sh_mobile_ceu_try_bus_param(icd, fmt->bits_per_sample);
- 		if (ret < 0)
-@@ -2079,7 +2095,7 @@ static int __devinit sh_mobile_ceu_probe(struct platform_device *pdev)
- 	struct resource *res;
- 	void __iomem *base;
- 	unsigned int irq;
--	int err = 0;
-+	int err, i;
- 	struct bus_wait wait = {
- 		.completion = COMPLETION_INITIALIZER_ONSTACK(wait.completion),
- 		.notifier.notifier_call = bus_notify,
-@@ -2185,31 +2201,60 @@ static int __devinit sh_mobile_ceu_probe(struct platform_device *pdev)
- 		goto exit_free_clk;
- 	}
- 
--	err = soc_camera_host_register(&pcdev->ici);
--	if (err)
--		goto exit_free_ctx;
-+	if (pcdev->pdata && pcdev->pdata->asd_sizes) {
-+		struct v4l2_async_subdev **asd;
-+		char name[] = "sh-mobile-csi2";
-+		int j;
++static struct v4l2_async_subdev *v4l2_async_belongs(struct v4l2_async_notifier *notifier,
++						    struct v4l2_async_subdev_list *asdl)
++{
++	struct v4l2_async_subdev *asd = NULL;
++	bool (*match)(struct device *,
++		      struct v4l2_async_hw_device *);
 +
-+		/*
-+		 * CSI2 interfacing: several groups can use CSI2, pick up the
-+		 * first one
-+		 */
-+		asd = pcdev->pdata->asd;
-+		for (j = 0; pcdev->pdata->asd_sizes[j]; j++) {
-+			for (i = 0; i < pcdev->pdata->asd_sizes[j]; i++, asd++) {
-+				dev_info(&pdev->dev, "%s(): subdev #%d, type %u\n",
-+					 __func__, i, (*asd)->hw.bus_type);
-+				if ((*asd)->hw.bus_type = V4L2_ASYNC_BUS_PLATFORM &&
-+				    !strncmp(name, (*asd)->hw.match.platform.name,
-+					     sizeof(name) - 1)) {
-+					pcdev->csi2_asd = *asd;
-+					break;
-+				}
-+			}
-+			if (pcdev->csi2_asd)
-+				break;
-+		}
- 
--	/* CSI2 interfacing */
-+		pcdev->ici.asd = pcdev->pdata->asd;
-+		pcdev->ici.asd_sizes = pcdev->pdata->asd_sizes;
-+	}
-+
-+	/* Legacy CSI2 interfacing */
- 	csi2 = pcdev->pdata ? pcdev->pdata->csi2 : NULL;
- 	if (csi2) {
-+		/*
-+		 * TODO: remove this once all users are converted to
-+		 * asynchronous CSI2 probing. If it has to be kept, csi2
-+		 * platform device resources have to be added, using
-+		 * platform_device_add_resources()
-+		 */
- 		struct platform_device *csi2_pdev  			platform_device_alloc("sh-mobile-csi2", csi2->id);
- 		struct sh_csi2_pdata *csi2_pdata = csi2->platform_data;
- 
- 		if (!csi2_pdev) {
- 			err = -ENOMEM;
--			goto exit_host_unregister;
-+			goto exit_free_ctx;
- 		}
- 
- 		pcdev->csi2_pdev		= csi2_pdev;
- 
--		err = platform_device_add_data(csi2_pdev, csi2_pdata, sizeof(*csi2_pdata));
-+		err = platform_device_add_data(csi2_pdev, csi2_pdata,
-+					       sizeof(*csi2_pdata));
- 		if (err < 0)
- 			goto exit_pdev_put;
- 
--		csi2_pdata			= csi2_pdev->dev.platform_data;
--		csi2_pdata->v4l2_dev		= &pcdev->ici.v4l2_dev;
--
- 		csi2_pdev->resource		= csi2->resource;
- 		csi2_pdev->num_resources	= csi2->num_resources;
- 
-@@ -2251,17 +2296,36 @@ static int __devinit sh_mobile_ceu_probe(struct platform_device *pdev)
- 			err = -ENODEV;
- 			goto exit_pdev_unregister;
- 		}
-+
-+		pcdev->csi2_sd = platform_get_drvdata(csi2_pdev);
-+	}
-+
-+	err = soc_camera_host_register(&pcdev->ici);
-+	if (err)
-+		goto exit_csi2_unregister;
-+
-+	if (csi2) {
-+		err = v4l2_device_register_subdev(&pcdev->ici.v4l2_dev,
-+						  pcdev->csi2_sd);
-+		dev_dbg(&pdev->dev, "%s(): ret(register_subdev) = %d\n",
-+			__func__, err);
-+		if (err < 0)
-+			goto exit_host_unregister;
- 	}
- 
- 	return 0;
- 
--exit_pdev_unregister:
--	platform_device_del(pcdev->csi2_pdev);
--exit_pdev_put:
--	pcdev->csi2_pdev->resource = NULL;
--	platform_device_put(pcdev->csi2_pdev);
- exit_host_unregister:
- 	soc_camera_host_unregister(&pcdev->ici);
-+exit_csi2_unregister:
-+	if (csi2) {
-+		module_put(pcdev->csi2_pdev->dev.driver->owner);
-+exit_pdev_unregister:
-+		platform_device_del(pcdev->csi2_pdev);
-+exit_pdev_put:
-+		pcdev->csi2_pdev->resource = NULL;
-+		platform_device_put(pcdev->csi2_pdev);
-+	}
- exit_free_ctx:
- 	vb2_dma_contig_cleanup_ctx(pcdev->alloc_ctx);
- exit_free_clk:
-@@ -2321,6 +2385,7 @@ MODULE_DEVICE_TABLE(of, sh_mobile_ceu_of_match);
- static struct platform_driver sh_mobile_ceu_driver = {
- 	.driver 	= {
- 		.name	= "sh_mobile_ceu",
-+		.owner	= THIS_MODULE,
- 		.pm	= &sh_mobile_ceu_dev_pm_ops,
- 		.of_match_table = sh_mobile_ceu_of_match,
- 	},
-@@ -2346,5 +2411,5 @@ module_exit(sh_mobile_ceu_exit);
- MODULE_DESCRIPTION("SuperH Mobile CEU driver");
- MODULE_AUTHOR("Magnus Damm");
- MODULE_LICENSE("GPL");
--MODULE_VERSION("0.0.6");
-+MODULE_VERSION("0.1.0");
- MODULE_ALIAS("platform:sh_mobile_ceu");
-diff --git a/drivers/media/platform/soc_camera/sh_mobile_csi2.c b/drivers/media/platform/soc_camera/sh_mobile_csi2.c
-index c573be7..8472343 100644
---- a/drivers/media/platform/soc_camera/sh_mobile_csi2.c
-+++ b/drivers/media/platform/soc_camera/sh_mobile_csi2.c
-@@ -35,14 +35,16 @@
- 
- struct sh_csi2 {
- 	struct v4l2_subdev		subdev;
--	struct list_head		list;
- 	unsigned int			irq;
- 	unsigned long			mipi_flags;
- 	void __iomem			*base;
- 	struct platform_device		*pdev;
- 	struct sh_csi2_client_config	*client;
-+	struct v4l2_async_subdev_list	asdl;
- };
- 
-+static void sh_csi2_hwinit(struct sh_csi2 *priv);
-+
- static int sh_csi2_try_fmt(struct v4l2_subdev *sd,
- 			   struct v4l2_mbus_framefmt *mf)
- {
-@@ -131,10 +133,58 @@ static int sh_csi2_s_fmt(struct v4l2_subdev *sd,
- static int sh_csi2_g_mbus_config(struct v4l2_subdev *sd,
- 				 struct v4l2_mbus_config *cfg)
- {
--	cfg->flags = V4L2_MBUS_PCLK_SAMPLE_RISING |
--		V4L2_MBUS_HSYNC_ACTIVE_HIGH | V4L2_MBUS_VSYNC_ACTIVE_HIGH |
--		V4L2_MBUS_MASTER | V4L2_MBUS_DATA_ACTIVE_HIGH;
--	cfg->type = V4L2_MBUS_PARALLEL;
-+	struct sh_csi2 *priv = container_of(sd, struct sh_csi2, subdev);
-+
-+	if (!priv->mipi_flags) {
-+		struct soc_camera_device *icd = v4l2_get_subdev_hostdata(sd);
-+		struct v4l2_subdev *client_sd = soc_camera_to_subdev(icd);
-+		struct sh_csi2_pdata *pdata = priv->pdev->dev.platform_data;
-+		unsigned long common_flags, csi2_flags;
-+		struct v4l2_mbus_config client_cfg = {.type = V4L2_MBUS_CSI2,};
-+		int ret;
-+
-+		/* Check if we can support this camera */
-+		csi2_flags = V4L2_MBUS_CSI2_CONTINUOUS_CLOCK |
-+			V4L2_MBUS_CSI2_1_LANE;
-+
-+		switch (pdata->type) {
-+		case SH_CSI2C:
-+			if (priv->client->lanes != 1)
-+				csi2_flags |= V4L2_MBUS_CSI2_2_LANE;
++	list_for_each_entry (asd, &notifier->waiting, list) {
++		struct v4l2_async_hw_device *hw = &asd->hw;
++		switch (hw->bus_type) {
++		case V4L2_ASYNC_BUS_SPECIAL:
++			match = hw->match.special.match;
++			if (!match)
++				/* Match always */
++				return asd;
 +			break;
-+		case SH_CSI2I:
-+			switch (priv->client->lanes) {
-+			default:
-+				csi2_flags |= V4L2_MBUS_CSI2_4_LANE;
-+			case 3:
-+				csi2_flags |= V4L2_MBUS_CSI2_3_LANE;
-+			case 2:
-+				csi2_flags |= V4L2_MBUS_CSI2_2_LANE;
-+			}
++		case V4L2_ASYNC_BUS_PLATFORM:
++			match = match_platform;
++			break;
++		case V4L2_ASYNC_BUS_I2C:
++			match = match_i2c;
++			break;
++		default:
++			/* Oops */
++			match = NULL;
++			dev_err(notifier->v4l2_dev ? notifier->v4l2_dev->dev : NULL,
++				"Invalid bus-type %u on %p\n", hw->bus_type, asd);
 +		}
 +
-+		ret = v4l2_subdev_call(client_sd, video, g_mbus_config, &client_cfg);
-+		if (ret = -ENOIOCTLCMD)
-+			common_flags = csi2_flags;
-+		else if (!ret)
-+			common_flags = soc_mbus_config_compatible(&client_cfg,
-+								  csi2_flags);
-+		else
-+			common_flags = 0;
-+
-+		if (!common_flags)
-+			return -EINVAL;
-+
-+		/* All good: camera MIPI configuration supported */
-+		priv->mipi_flags = common_flags;
++		if (match && match(asdl->dev, hw))
++			break;
 +	}
 +
-+	if (cfg) {
-+		cfg->flags = V4L2_MBUS_PCLK_SAMPLE_RISING |
-+			V4L2_MBUS_HSYNC_ACTIVE_HIGH | V4L2_MBUS_VSYNC_ACTIVE_HIGH |
-+			V4L2_MBUS_MASTER | V4L2_MBUS_DATA_ACTIVE_HIGH;
-+		cfg->type = V4L2_MBUS_PARALLEL;
++	return asd;
++}
++
++static int v4l2_async_test_notify(struct v4l2_async_notifier *notifier,
++				   struct v4l2_async_subdev_list *asdl)
++{
++	struct v4l2_async_subdev *asd = v4l2_async_belongs(notifier, asdl);
++	if (asd) {
++		int ret;
++		/* Remove from the waiting list */
++		list_del(&asd->list);
++		asdl->asd = asd;
++		asdl->notifier = notifier;
++
++		if (notifier->bound) {
++			ret = notifier->bound(notifier, asdl);
++			if (ret < 0)
++				return ret;
++		}
++		/* Move from the global subdevice list to notifier's done */
++		list_move(&asdl->list, &notifier->done);
++
++		ret = v4l2_device_register_subdev(notifier->v4l2_dev,
++						  asdl->subdev);
++		if (ret < 0) {
++			if (notifier->unbind)
++				notifier->unbind(notifier, asdl);
++			return ret;
++		}
++
++		if (list_empty(&notifier->waiting) && notifier->complete)
++			return notifier->complete(notifier);
++
++		return 0;
 +	}
- 
- 	return 0;
- }
-@@ -145,8 +195,17 @@ static int sh_csi2_s_mbus_config(struct v4l2_subdev *sd,
- 	struct sh_csi2 *priv = container_of(sd, struct sh_csi2, subdev);
- 	struct soc_camera_device *icd = v4l2_get_subdev_hostdata(sd);
- 	struct v4l2_subdev *client_sd = soc_camera_to_subdev(icd);
--	struct v4l2_mbus_config client_cfg = {.type = V4L2_MBUS_CSI2,
--					      .flags = priv->mipi_flags};
-+	struct v4l2_mbus_config client_cfg = {.type = V4L2_MBUS_CSI2,};
-+	int ret = sh_csi2_g_mbus_config(sd, NULL);
 +
-+	if (ret < 0)
-+		return ret;
++	return -EPROBE_DEFER;
++}
 +
-+	pm_runtime_get_sync(&priv->pdev->dev);
++static struct device *v4l2_async_unbind(struct v4l2_async_subdev_list *asdl)
++{
++	struct device *dev = asdl->dev;
++	v4l2_device_unregister_subdev(asdl->subdev);
++	/* Subdevice driver will reprobe and put asdl back onto the list */
++	list_del(&asdl->list);
++	asdl->asd = NULL;
++	/* If we handled USB devices, we'd have to lock the parent too */
++	device_release_driver(dev);
++	return dev;
++}
 +
-+	sh_csi2_hwinit(priv);
-+
-+	client_cfg.flags = priv->mipi_flags;
- 
- 	return v4l2_subdev_call(client_sd, video, s_mbus_config, &client_cfg);
- }
-@@ -201,19 +260,19 @@ static void sh_csi2_hwinit(struct sh_csi2 *priv)
- 
- static int sh_csi2_client_connect(struct sh_csi2 *priv)
- {
--	struct sh_csi2_pdata *pdata = priv->pdev->dev.platform_data;
--	struct soc_camera_device *icd = v4l2_get_subdev_hostdata(&priv->subdev);
--	struct v4l2_subdev *client_sd = soc_camera_to_subdev(icd);
- 	struct device *dev = v4l2_get_subdevdata(&priv->subdev);
--	struct v4l2_mbus_config cfg;
--	unsigned long common_flags, csi2_flags;
--	int i, ret;
-+	struct sh_csi2_pdata *pdata = dev->platform_data;
-+	struct soc_camera_device *icd = v4l2_get_subdev_hostdata(&priv->subdev);
++int v4l2_async_notifier_register(struct v4l2_device *v4l2_dev,
++				 struct v4l2_async_notifier *notifier)
++{
++	struct v4l2_async_subdev_list *asdl;
 +	int i;
- 
- 	if (priv->client)
- 		return -EBUSY;
- 
- 	for (i = 0; i < pdata->num_clients; i++)
--		if (&pdata->clients[i].pdev->dev = icd->pdev)
-+		if ((pdata->clients[i].pdev &&
-+		     &pdata->clients[i].pdev->dev = icd->pdev) ||
-+		    (icd->control &&
-+		     strcmp(pdata->clients[i].name, dev_name(icd->control))))
- 			break;
- 
- 	dev_dbg(dev, "%s(%p): found #%d\n", __func__, dev, i);
-@@ -221,46 +280,8 @@ static int sh_csi2_client_connect(struct sh_csi2 *priv)
- 	if (i = pdata->num_clients)
- 		return -ENODEV;
- 
--	/* Check if we can support this camera */
--	csi2_flags = V4L2_MBUS_CSI2_CONTINUOUS_CLOCK | V4L2_MBUS_CSI2_1_LANE;
--
--	switch (pdata->type) {
--	case SH_CSI2C:
--		if (pdata->clients[i].lanes != 1)
--			csi2_flags |= V4L2_MBUS_CSI2_2_LANE;
--		break;
--	case SH_CSI2I:
--		switch (pdata->clients[i].lanes) {
--		default:
--			csi2_flags |= V4L2_MBUS_CSI2_4_LANE;
--		case 3:
--			csi2_flags |= V4L2_MBUS_CSI2_3_LANE;
--		case 2:
--			csi2_flags |= V4L2_MBUS_CSI2_2_LANE;
--		}
--	}
--
--	cfg.type = V4L2_MBUS_CSI2;
--	ret = v4l2_subdev_call(client_sd, video, g_mbus_config, &cfg);
--	if (ret = -ENOIOCTLCMD)
--		common_flags = csi2_flags;
--	else if (!ret)
--		common_flags = soc_mbus_config_compatible(&cfg,
--							  csi2_flags);
--	else
--		common_flags = 0;
--
--	if (!common_flags)
--		return -EINVAL;
--
--	/* All good: camera MIPI configuration supported */
--	priv->mipi_flags = common_flags;
- 	priv->client = pdata->clients + i;
- 
--	pm_runtime_get_sync(dev);
--
--	sh_csi2_hwinit(priv);
--
- 	return 0;
- }
- 
-@@ -303,11 +324,25 @@ static __devinit int sh_csi2_probe(struct platform_device *pdev)
- 	/* Platform data specify the PHY, lanes, ECC, CRC */
- 	struct sh_csi2_pdata *pdata = pdev->dev.platform_data;
- 
-+	if (!pdata)
-+		return -EINVAL;
 +
-+	priv = devm_kzalloc(&pdev->dev, sizeof(struct sh_csi2), GFP_KERNEL);
-+	if (!priv)
-+		return -ENOMEM;
++	notifier->v4l2_dev = v4l2_dev;
++	INIT_LIST_HEAD(&notifier->waiting);
++	INIT_LIST_HEAD(&notifier->done);
 +
-+	priv->asdl.subdev = &priv->subdev;
-+	priv->asdl.dev = &pdev->dev;
++	for (i = 0; i < notifier->subdev_num; i++)
++		list_add_tail(&notifier->subdev[i]->list, &notifier->waiting);
 +
-+	ret = v4l2_async_subdev_bind(&priv->asdl);
-+	if (ret < 0)
-+		return ret;
++	mutex_lock(&list_lock);
 +
- 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
- 	/* Interrupt unused so far */
- 	irq = platform_get_irq(pdev, 0);
- 
--	if (!res || (int)irq <= 0 || !pdata) {
-+	if (!res || (int)irq <= 0) {
- 		dev_err(&pdev->dev, "Not enough CSI2 platform resources.\n");
- 		return -ENODEV;
- 	}
-@@ -318,10 +353,6 @@ static __devinit int sh_csi2_probe(struct platform_device *pdev)
- 		return -EINVAL;
- 	}
- 
--	priv = devm_kzalloc(&pdev->dev, sizeof(struct sh_csi2), GFP_KERNEL);
--	if (!priv)
--		return -ENOMEM;
--
- 	priv->irq = irq;
- 
- 	priv->base = devm_request_and_ioremap(&pdev->dev, res);
-@@ -331,35 +362,30 @@ static __devinit int sh_csi2_probe(struct platform_device *pdev)
- 	}
- 
- 	priv->pdev = pdev;
--	platform_set_drvdata(pdev, priv);
-+	platform_set_drvdata(pdev, &priv->subdev);
- 
- 	v4l2_subdev_init(&priv->subdev, &sh_csi2_subdev_ops);
- 	v4l2_set_subdevdata(&priv->subdev, &pdev->dev);
- 
- 	snprintf(priv->subdev.name, V4L2_SUBDEV_NAME_SIZE, "%s.mipi-csi",
--		 dev_name(pdata->v4l2_dev->dev));
--	ret = v4l2_device_register_subdev(pdata->v4l2_dev, &priv->subdev);
--	dev_dbg(&pdev->dev, "%s(%p): ret(register_subdev) = %d\n", __func__, priv, ret);
-+		 dev_name(&pdev->dev));
++	/* Keep also completed notifiers on the list */
++	list_add(&notifier->list, &notifier_list);
 +
-+	ret = v4l2_async_subdev_bound(&priv->asdl);
- 	if (ret < 0)
--		goto esdreg;
-+		return ret;
- 
- 	pm_runtime_enable(&pdev->dev);
- 
- 	dev_dbg(&pdev->dev, "CSI2 probed.\n");
- 
- 	return 0;
--
--esdreg:
--	platform_set_drvdata(pdev, NULL);
--
--	return ret;
- }
- 
- static __devexit int sh_csi2_remove(struct platform_device *pdev)
- {
--	struct sh_csi2 *priv = platform_get_drvdata(pdev);
-+	struct v4l2_subdev *subdev = platform_get_drvdata(pdev);
- 
--	v4l2_device_unregister_subdev(&priv->subdev);
-+	v4l2_device_unregister_subdev(subdev);
- 	pm_runtime_disable(&pdev->dev);
- 	platform_set_drvdata(pdev, NULL);
- 
-diff --git a/include/media/sh_mobile_ceu.h b/include/media/sh_mobile_ceu.h
-index 6fdb6ad..8937241 100644
---- a/include/media/sh_mobile_ceu.h
-+++ b/include/media/sh_mobile_ceu.h
-@@ -22,6 +22,8 @@ struct sh_mobile_ceu_info {
- 	int max_width;
- 	int max_height;
- 	struct sh_mobile_ceu_companion *csi2;
-+	struct v4l2_async_subdev **asd;	/* Flat array, arranged in groups */
-+	int *asd_sizes;			/* 0-terminated array pf asd group sizes */
- };
- 
- #endif /* __ASM_SH_MOBILE_CEU_H__ */
-diff --git a/include/media/sh_mobile_csi2.h b/include/media/sh_mobile_csi2.h
-index c586c4f..14030db 100644
---- a/include/media/sh_mobile_csi2.h
-+++ b/include/media/sh_mobile_csi2.h
-@@ -33,6 +33,7 @@ struct sh_csi2_client_config {
- 	unsigned char lanes;		/* bitmask[3:0] */
- 	unsigned char channel;		/* 0..3 */
- 	struct platform_device *pdev;	/* client platform device */
-+	const char *name;		/* async matching: client name */
- };
- 
- struct v4l2_device;
-@@ -42,7 +43,6 @@ struct sh_csi2_pdata {
- 	unsigned int flags;
- 	struct sh_csi2_client_config *clients;
- 	int num_clients;
--	struct v4l2_device *v4l2_dev;
- };
- 
- #endif
++	list_for_each_entry(asdl, &subdev_list, list) {
++		int ret = v4l2_async_test_notify(notifier, asdl);
++		if (ret != -EPROBE_DEFER) {
++			mutex_unlock(&list_lock);
++			return ret;
++		}
++	}
++
++	mutex_unlock(&list_lock);
++
++	return 0;
++}
++EXPORT_SYMBOL(v4l2_async_notifier_register);
++
++void v4l2_async_notifier_unregister(struct v4l2_async_notifier *notifier)
++{
++	struct v4l2_async_subdev_list *asdl, *tmp;
++	int i = 0;
++	struct device **dev = kcalloc(notifier->subdev_num,
++				      sizeof(*dev), GFP_KERNEL);
++	if (!dev)
++		dev_err(notifier->v4l2_dev->dev,
++			"Failed to allocate device cache!\n");
++
++	mutex_lock(&list_lock);
++
++	list_del(&notifier->list);
++
++	list_for_each_entry_safe(asdl, tmp, &notifier->done, list) {
++		if (dev)
++			dev[i++] = get_device(asdl->dev);
++		v4l2_async_unbind(asdl);
++
++		if (notifier->unbind)
++			notifier->unbind(notifier, asdl);
++	}
++
++	mutex_unlock(&list_lock);
++
++	if (dev) {
++		while (i--) {
++			if (dev[i] && device_attach(dev[i]) < 0)
++				dev_err(dev[i], "Failed to re-probe to %s\n",
++					dev[i]->driver ? dev[i]->driver->name : "(none)");
++			put_device(dev[i]);
++		}
++		kfree(dev);
++	}
++	/*
++	 * Don't care about the waiting list, it is initialised and populated
++	 * upon notifier registration.
++	 */
++}
++EXPORT_SYMBOL(v4l2_async_notifier_unregister);
++
++int v4l2_async_subdev_bind(struct v4l2_async_subdev_list *asdl)
++{
++	struct v4l2_async_notifier *notifier;
++	int ret = 0;
++
++	mutex_lock(&list_lock);
++
++	list_for_each_entry(notifier, &notifier_list, list) {
++		struct v4l2_async_subdev *asd = v4l2_async_belongs(notifier,
++								   asdl);
++		/*
++		 * Whether or not probing succeeds - this is the right hardware
++		 * subdevice descriptor and we can provide it to the notifier
++		 */
++		if (asd) {
++			asdl->asd = asd;
++			if (notifier->bind)
++				ret = notifier->bind(notifier, asdl);
++			break;
++		}
++	}
++
++	mutex_unlock(&list_lock);
++
++	return ret;
++}
++EXPORT_SYMBOL(v4l2_async_subdev_bind);
++
++int v4l2_async_subdev_bound(struct v4l2_async_subdev_list *asdl)
++{
++	struct v4l2_async_notifier *notifier;
++
++	mutex_lock(&list_lock);
++
++	INIT_LIST_HEAD(&asdl->list);
++
++	list_for_each_entry(notifier, &notifier_list, list) {
++		int ret = v4l2_async_test_notify(notifier, asdl);
++		if (ret != -EPROBE_DEFER) {
++			mutex_unlock(&list_lock);
++			return ret;
++		}
++	}
++
++	/* None matched, wait for hot-plugging */
++	list_add(&asdl->list, &subdev_list);
++
++	mutex_unlock(&list_lock);
++
++	return 0;
++}
++EXPORT_SYMBOL(v4l2_async_subdev_bound);
++
++void v4l2_async_subdev_unbind(struct v4l2_async_subdev_list *asdl)
++{
++	struct v4l2_async_notifier *notifier = asdl->notifier;
++	struct device *dev;
++
++	if (!asdl->asd)
++		return;
++
++	mutex_lock(&list_lock);
++
++	dev = asdl->dev;
++
++	list_add(&asdl->asd->list, &notifier->waiting);
++
++	dev = get_device(asdl->dev);
++
++	v4l2_async_unbind(asdl);
++
++	if (notifier->unbind)
++		notifier->unbind(notifier, asdl);
++
++	mutex_unlock(&list_lock);
++
++	/* Re-probe with lock released - avoid a deadlock */
++	if (dev && device_attach(dev) < 0)
++		dev_err(dev, "Failed to re-probe to %s\n",
++			dev->driver ? dev->driver->name : "(none)");
++
++	put_device(dev);
++}
++EXPORT_SYMBOL(v4l2_async_subdev_unbind);
+diff --git a/drivers/media/v4l2-core/v4l2-device.c b/drivers/media/v4l2-core/v4l2-device.c
+index 513969f..52faf2f 100644
+--- a/drivers/media/v4l2-core/v4l2-device.c
++++ b/drivers/media/v4l2-core/v4l2-device.c
+@@ -40,6 +40,8 @@ int v4l2_device_register(struct device *dev, struct v4l2_device *v4l2_dev)
+ 	mutex_init(&v4l2_dev->ioctl_lock);
+ 	v4l2_prio_init(&v4l2_dev->prio);
+ 	kref_init(&v4l2_dev->ref);
++	INIT_LIST_HEAD(&v4l2_dev->group_head);
++	mutex_init(&v4l2_dev->group_lock);
+ 	get_device(dev);
+ 	v4l2_dev->dev = dev;
+ 	if (dev = NULL) {
+diff --git a/include/media/v4l2-async.h b/include/media/v4l2-async.h
+new file mode 100644
+index 0000000..91d436d
+--- /dev/null
++++ b/include/media/v4l2-async.h
+@@ -0,0 +1,113 @@
++/*
++ * V4L2 asynchronous subdevice registration API
++ *
++ * Copyright (C) 2012, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#ifndef V4L2_ASYNC_H
++#define V4L2_ASYNC_H
++
++#include <linux/list.h>
++#include <linux/mutex.h>
++#include <linux/notifier.h>
++
++#include <media/v4l2-subdev.h>
++
++struct device;
++struct v4l2_device;
++struct v4l2_async_notifier;
++
++enum v4l2_async_bus_type {
++	V4L2_ASYNC_BUS_SPECIAL,
++	V4L2_ASYNC_BUS_PLATFORM,
++	V4L2_ASYNC_BUS_I2C,
++};
++
++struct v4l2_async_hw_device {
++	enum v4l2_async_bus_type bus_type;
++	union {
++		struct {
++			const char *name;
++		} platform;
++		struct {
++			int adapter_id;
++			unsigned short address;
++		} i2c;
++		struct {
++			bool (*match)(struct device *,
++				      struct v4l2_async_hw_device *);
++			void *priv;
++		} special;
++	} match;
++};
++
++/**
++ * struct v4l2_async_subdev - sub-device descriptor, as known to a bridge
++ * @hw:		this device descriptor
++ * @list:	member in a list of subdevices
++ */
++struct v4l2_async_subdev {
++	struct v4l2_async_hw_device hw;
++	struct list_head list;
++};
++
++/**
++ * v4l2_async_subdev_list - provided by subdevices
++ * @list:	member in a list of subdevices
++ * @dev:	hardware device
++ * @subdev:	V4L2 subdevice
++ * @asd:	pointer to respective struct v4l2_async_subdev
++ * @notifier:	pointer to managing notifier
++ */
++struct v4l2_async_subdev_list {
++	struct list_head list;
++	struct device *dev;
++	struct v4l2_subdev *subdev;
++	struct v4l2_async_subdev *asd;
++	struct v4l2_async_notifier *notifier;
++};
++
++/**
++ * v4l2_async_notifier - provided by bridges
++ * @subdev_num:	number of subdevices
++ * @subdev:	array of pointers to subdevices
++ * @v4l2_dev:	pointer to sruct v4l2_device
++ * @waiting:	list of subdevices, waiting for their drivers
++ * @done:	list of subdevices, already probed
++ * @list:	member in a global list of notifiers
++ * @bind:	a subdevice driver is about to probe one of your subdevices
++ * @bound:	a subdevice driver has successfully probed one of your subdevices
++ * @complete:	all your subdevices have been probed successfully
++ * @unbind:	a subdevice is leaving
++ */
++struct v4l2_async_notifier {
++	int subdev_num;
++	struct v4l2_async_subdev **subdev;
++	struct v4l2_device *v4l2_dev;
++	struct list_head waiting;
++	struct list_head done;
++	struct list_head list;
++	int (*bind)(struct v4l2_async_notifier *notifier,
++		    struct v4l2_async_subdev_list *asdl);
++	int (*bound)(struct v4l2_async_notifier *notifier,
++		     struct v4l2_async_subdev_list *asdl);
++	int (*complete)(struct v4l2_async_notifier *notifier);
++	void (*unbind)(struct v4l2_async_notifier *notifier,
++		       struct v4l2_async_subdev_list *asdl);
++};
++
++int v4l2_async_notifier_register(struct v4l2_device *v4l2_dev,
++				 struct v4l2_async_notifier *notifier);
++void v4l2_async_notifier_unregister(struct v4l2_async_notifier *notifier);
++/*
++ * If subdevice probing fails any time after v4l2_async_subdev_bind(), no clean
++ * up must be called. This function is only a message of intention.
++ */
++int v4l2_async_subdev_bind(struct v4l2_async_subdev_list *asdl);
++int v4l2_async_subdev_bound(struct v4l2_async_subdev_list *asdl);
++void v4l2_async_subdev_unbind(struct v4l2_async_subdev_list *asdl);
++#endif
 -- 
 1.7.2.5
 
