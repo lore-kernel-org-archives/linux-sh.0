@@ -1,928 +1,1325 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 18 Dec 2012 00:46:05 +0000
-Subject: [PATCH 1/9] SH: intc: Add support OF for INTC
-Message-Id: <1355791573-20281-2-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 26 Dec 2012 17:49:07 +0000
+Subject: [PATCH 2/6] media: soc-camera: switch I2C subdevice drivers to use v4l2-clk
+Message-Id: <1356544151-6313-3-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1355791573-20281-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1355791573-20281-1-git-send-email-horms+renesas@verge.net.au>
+References: <1356544151-6313-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1356544151-6313-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>
 
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Instead of centrally enabling and disabling subdevice master clocks in
+soc-camera core, let subdevice drivers do that themselves, using the
+V4L2 clock API and soc-camera convenience wrappers.
 
-This provides OF support of SH/INTC.
-
-The SH/INTC driver is used by SuperH and ARM/SH-MOBILE.
-At the moment, SuperH does not have the plan corresponding to DT.
-DT of SH/INTC has taken the form where the table data of the C
-is managed by DT, in order to maintain compatibility.
-
-Cc: Magnus Damm <damm@opensource.se>
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ drivers/media/i2c/soc_camera/imx074.c              |   18 ++-
+ drivers/media/i2c/soc_camera/mt9m001.c             |   17 ++-
+ drivers/media/i2c/soc_camera/mt9m111.c             |   20 ++-
+ drivers/media/i2c/soc_camera/mt9t031.c             |   19 ++-
+ drivers/media/i2c/soc_camera/mt9t112.c             |   19 ++-
+ drivers/media/i2c/soc_camera/mt9v022.c             |   17 ++-
+ drivers/media/i2c/soc_camera/ov2640.c              |   19 ++-
+ drivers/media/i2c/soc_camera/ov5642.c              |   20 ++-
+ drivers/media/i2c/soc_camera/ov6650.c              |   17 ++-
+ drivers/media/i2c/soc_camera/ov772x.c              |   15 ++-
+ drivers/media/i2c/soc_camera/ov9640.c              |   17 ++-
+ drivers/media/i2c/soc_camera/ov9640.h              |    1 +
+ drivers/media/i2c/soc_camera/ov9740.c              |   18 ++-
+ drivers/media/i2c/soc_camera/rj54n1cb0c.c          |   17 ++-
+ drivers/media/i2c/soc_camera/tw9910.c              |   18 ++-
+ drivers/media/platform/soc_camera/soc_camera.c     |  173 +++++++++++++++-----
+ .../platform/soc_camera/soc_camera_platform.c      |    2 +-
+ include/media/soc_camera.h                         |   13 +-
+ 18 files changed, 356 insertions(+), 84 deletions(-)
 
-v8
-* Squash "SH: intc: Add support OF of IRQ" into this patch
-* Change patch title from "ARM: shmobile: Add support OF for INTC of shmobile"
-  to "SH: intc: Add support OF for INTC"
-
-v7
-* Delete "renesas,sh_intcs" and "renesas,sh_intca_irq_pins" as compatible.
-  Update their documentation.
-* Remove of_sh_intc_get_meminfo() and of_sh_intc_get_pint and
-  of_sh_intc_get_intc(). They are not used.
-
-v2 - v6
-* No change
----
- Documentation/devicetree/bindings/sh/intc.txt |  152 +++++++
- drivers/sh/intc/Makefile                      |    1 +
- drivers/sh/intc/core.c                        |    2 +-
- drivers/sh/intc/internals.h                   |    3 +-
- drivers/sh/intc/irqdomain.c                   |    6 +-
- drivers/sh/intc/of_intc.c                     |  571 +++++++++++++++++++++++++
- include/linux/sh_intc.h                       |   56 +++
- 7 files changed, 786 insertions(+), 5 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/sh/intc.txt
- create mode 100644 drivers/sh/intc/of_intc.c
-
-diff --git a/Documentation/devicetree/bindings/sh/intc.txt b/Documentation/devicetree/bindings/sh/intc.txt
-new file mode 100644
-index 0000000..04b7f73
---- /dev/null
-+++ b/Documentation/devicetree/bindings/sh/intc.txt
-@@ -0,0 +1,152 @@
-+* Renesas SuperH / SH-MOBILE Interrupt Controller
-+
-+The SH/INTC driver is used by SuperH and ARM/SH-MOBILE.
-+At the moment, SuperH does not have the plan corresponding to DT.
-+DT of SH/INTC has taken the form where the table data of the C
-+is managed by DT, in order to maintain compatibility.
-+
-+Main node required properties:
-+
-+- compatible : "renesas,sh_intc"
-+
-+- interrupt-controller : Identifies the node as an interrupt controller
-+- #interrupt-cells	: Set already 1.
-+- #address-cells	: Set already 1.
-+- #size-cells	: Set already 1.
-+- ranges        : Non value.
-+- reg 			: Specifies base physical address(s) and size of the INTC
-+				  registers.
-+- intsrc*		: This sets up the vector for every device.
-+
-+- *_registers	: There are vector table, mask, priority, ack, and sense
-+				  register in INTC.  In order to hold these data, it is
-+				  necessary to set up the following contents.
-+
-+ -- intc_vectors: This needs to have vector_table.
-+				  This specifies phandle which intsrc* defined.
-+
-+ -- intc_mask_registers	: This specifies the contents of the mask register.
-+    This node required properties:
-+	* address-cells	: Set already 1.
-+	* size-cells 	: Set already 1.
-+	* ranges		: Non value.
-+	* intc_mask*	: This has regs and reginfo.
-+	 ** reg	: This specifies the address of mask register. First specifies
-+			  mask register, and 2nd specifies mask clear register.
-+			  First cell is address, and 2nd sell is address size. 1 is 8bit.
-+			  2 is 16bit, 4 is 32bit.
-+	 ** reginfo: This specifies phandle of devices.
-+
-+ -- intc_prio_registers	: This sets up the contents of the priority register.
-+    This node required properties:
-+	* address-cells	: Set already 1.
-+	* size-cells 	: Set already 1.
-+	* ranges		: Non value.
-+	* intc_prio*: This has regs and reginfo.
-+	 ** reg	: This specifies the address of priority register. First specifies
-+			  priority set register, and 2nd specifies priority clear register.
-+			  If there is not priority clear register, specifies 0x00.
-+			  First cell is address, and 2nd sell is address size. 1 is 8bit.
-+			  2 is 16bit, 4 is 32bit.
-+	 ** field-width : Bit size is specified for every device.
-+	 ** reginfo: This specifies phandle of devices.
-+
-+ -- intc_sense_registers	: This sets up the contents of the sense register.
-+    This node required properties:
-+	* address-cells	: Set already 1.
-+	* size-cells 	: Set already 1.
-+	* ranges		: Non value.
-+	* intc_sense*: This has regs and reginfo.
-+	 ** reg	: This specifies the address of sense register.
-+			  First cell is address, and 2nd sell is address size. 1 is 8bit.
-+			  2 is 16bit, 4 is 32bit.
-+	 ** field-width : Bit size is specified for every device.
-+	 ** reginfo: This specifies phandle of devices.
-+
-+-- intc_ack_registers	: This sets up the contents of the ACK register.
-+   This node required properties:
-+	* address-cells	: Set already 1.
-+	* size-cells 	: Set already 1.
-+	* ranges		: Non value.
-+	* intc_ack*: This has regs and reginfo.
-+	 ** reg	: This specifies the address of ack register.
-+			  First cell is address, and 2nd sell is address size. 1 is 8bit.
-+			  2 is 16bit, 4 is 32bit.
-+	 ** reginfo: This specifies phandle of devices.
-+
-+Optional:
-+
-+- group_size	: If this INTC register has Group, set up this value.
-+- intc_group*	: This needs to have group, If INTC device have group.
-+   This node required properties:
-+    * group : This specifies the address phandle of group.
-+	  For example, when TMU1 of priority regisdter is sharing with TMU1_0,
-+	  TMU1_1 and TMU1_2, it describes like below.
-+
-+	     TMU1:   intc_group2 { group = <&TMU1_0 &TMU1_1 &TMU1_2>; };
-+
-+	  And the phandle is specified as priority regisdter.
-+
-+         intc_prio11 {
-+             reg = <0xffd50030 2>, <0x0 0>;
-+             field-width = <4>;
-+			 reginfo = <&TMU1 0 0 0>;
-+		 };
-+
-+- intc_intevtsa	: This set up the contents of INTEVTSA.
-+	This node required properties:
-+	  * vector : This specifies the address phandle of INTCS.
-+
-+Example:
-+
-+	intca: interrupt-controller@0 {
-+		compatible = "renesas,sh_intc";
-+		interrupt-controller;
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+		#interrupt-cells = <1>;
-+		ranges;
-+
-+		reg = <0xe6940000 0x200>, <0xe6950000 0x200>;
-+		group_size = <19>;
-+
-+		DIRC: intsrc1 { vector = <0x0560>; };
-+		ATAPI: intsrc2 { vector = <0x05E0>; };
-+		....
-+
-+		DMAC1_1: intc_group0 { group = <&DMAC1_1_DEI0 &DMAC1_1_DEI1
-+				&DMAC1_1_DEI2 &DMAC1_1_DEI3>; };
-+		DMAC1_2: intc_group1 { group = <&DMAC1_2_DEI4 &DMAC1_2_DEI5
-+						 &DMAC1_2_DADERR>; };
-+		....
-+		intc_vectors {
-+			vector_table = <&DIRC &ATAPI &IIC1_ALI &IIC1_TACKI &IIC1_WAITI,
-+		....
-+		};
-+
-+		intc_mask_registers {
-+			#address-cells = <1>;
-+			#size-cells = <1>;
-+			ranges;
-+
-+			intc_mask0 {
-+				reg = <0xe6940080 1>, <0xe69400c0 1>;
-+				reginfo = <&DMAC2_1_DEI3 &DMAC2_1_DEI2 &DMAC2_1_DEI1
-+					&DMAC2_1_DEI0 0 0 &AP_ARM_COMMTX &AP_ARM_COMMRX>;
-+			};
-+			....
-+		};
-+
-+		intc_prio_registers {
-+			#address-cells = <1>;
-+			#size-cells = <1>;
-+			ranges;
-+
-+			intc_prio0 {
-+				reg = <0xe6940000 2>, <0x0 0>;
-+				field-width = <4>;
-+				reginfo = <&DMAC3_1 &DMAC3_2 &CMT2 &ICBS0>;
-+			};
-+			....
-+		};
-+	};
-diff --git a/drivers/sh/intc/Makefile b/drivers/sh/intc/Makefile
-index 54ec2a0..b53ab7e 100644
---- a/drivers/sh/intc/Makefile
-+++ b/drivers/sh/intc/Makefile
-@@ -3,3 +3,4 @@ obj-y 	:= access.o chip.o core.o handle.o irqdomain.o virq.o
- obj-$(CONFIG_INTC_BALANCING)		+= balancing.o
- obj-$(CONFIG_INTC_USERIMASK)		+= userimask.o
- obj-$(CONFIG_INTC_MAPPING_DEBUG)	+= virq-debugfs.o
-+obj-$(CONFIG_OF)			+= of_intc.o
-diff --git a/drivers/sh/intc/core.c b/drivers/sh/intc/core.c
-index 8f32a13..3963af3 100644
---- a/drivers/sh/intc/core.c
-+++ b/drivers/sh/intc/core.c
-@@ -311,7 +311,7 @@ int __init register_intc_controller(struct intc_desc *desc)
+diff --git a/drivers/media/i2c/soc_camera/imx074.c b/drivers/media/i2c/soc_camera/imx074.c
+index a2a5cbb..cee5345 100644
+--- a/drivers/media/i2c/soc_camera/imx074.c
++++ b/drivers/media/i2c/soc_camera/imx074.c
+@@ -18,6 +18,7 @@
+ #include <linux/module.h>
  
- 	BUG_ON(k > 256); /* _INTC_ADDR_E() and _INTC_ADDR_D() are 8 bits */
+ #include <media/soc_camera.h>
++#include <media/v4l2-clk.h>
+ #include <media/v4l2-subdev.h>
+ #include <media/v4l2-chip-ident.h>
  
--	intc_irq_domain_init(d, hw);
-+	intc_irq_domain_init(d, hw, desc->of_node);
- 
- 	/* register the vectors one by one */
- 	for (i = 0; i < hw->nr_vectors; i++) {
-diff --git a/drivers/sh/intc/internals.h b/drivers/sh/intc/internals.h
-index 7dff08e..e6f64bf 100644
---- a/drivers/sh/intc/internals.h
-+++ b/drivers/sh/intc/internals.h
-@@ -190,7 +190,8 @@ void intc_enable_disable_enum(struct intc_desc *desc, struct intc_desc_int *d,
- 			      intc_enum enum_id, int enable);
- 
- /* irqdomain.c */
--void intc_irq_domain_init(struct intc_desc_int *d, struct intc_hw_desc *hw);
-+void intc_irq_domain_init(struct intc_desc_int *d, struct intc_hw_desc *hw,
-+				struct device_node *of_node);
- 
- /* virq.c */
- void intc_subgroup_init(struct intc_desc *desc, struct intc_desc_int *d);
-diff --git a/drivers/sh/intc/irqdomain.c b/drivers/sh/intc/irqdomain.c
-index 3968f1c..c56c736 100644
---- a/drivers/sh/intc/irqdomain.c
-+++ b/drivers/sh/intc/irqdomain.c
-@@ -42,7 +42,7 @@ static const struct irq_domain_ops intc_evt_ops = {
+@@ -77,6 +78,7 @@ struct imx074_datafmt {
+ struct imx074 {
+ 	struct v4l2_subdev		subdev;
+ 	const struct imx074_datafmt	*fmt;
++	struct v4l2_clk			*clk;
  };
  
- void __init intc_irq_domain_init(struct intc_desc_int *d,
--				 struct intc_hw_desc *hw)
-+			 struct intc_hw_desc *hw, struct device_node *np)
+ static const struct imx074_datafmt imx074_colour_fmts[] = {
+@@ -272,8 +274,9 @@ static int imx074_s_power(struct v4l2_subdev *sd, int on)
  {
- 	unsigned int irq_base, irq_end;
+ 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+ 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
++	struct imx074 *priv = to_imx074(client);
  
-@@ -59,10 +59,10 @@ void __init intc_irq_domain_init(struct intc_desc_int *d,
- 	 * tree penalty for linear cases with non-zero hwirq bases.
- 	 */
- 	if (irq_base = 0 && irq_end = (irq_base + hw->nr_vectors - 1))
--		d->domain = irq_domain_add_linear(NULL, hw->nr_vectors,
-+		d->domain = irq_domain_add_linear(np, hw->nr_vectors,
- 						  &intc_evt_ops, NULL);
- 	else
--		d->domain = irq_domain_add_tree(NULL, &intc_evt_ops, NULL);
-+		d->domain = irq_domain_add_tree(np, &intc_evt_ops, NULL);
- 
- 	BUG_ON(!d->domain);
+-	return soc_camera_set_power(&client->dev, ssdd, on);
++	return soc_camera_set_power(&client->dev, ssdd, priv->clk, on);
  }
-diff --git a/drivers/sh/intc/of_intc.c b/drivers/sh/intc/of_intc.c
-new file mode 100644
-index 0000000..8a466f7
---- /dev/null
-+++ b/drivers/sh/intc/of_intc.c
-@@ -0,0 +1,571 @@
-+/*
-+ * OF helpers for SH intc
-+ *
-+ * Copyright (C) 2012  Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-+ * Copyright (C) 2012  Renesas Solutions Corp.
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+ */
+ 
+ static int imx074_g_mbus_config(struct v4l2_subdev *sd,
+@@ -431,6 +434,7 @@ static int imx074_probe(struct i2c_client *client,
+ 	struct imx074 *priv;
+ 	struct i2c_adapter *adapter = to_i2c_adapter(client->dev.parent);
+ 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
++	int ret;
+ 
+ 	if (!ssdd) {
+ 		dev_err(&client->dev, "IMX074: missing platform data!\n");
+@@ -451,13 +455,23 @@ static int imx074_probe(struct i2c_client *client,
+ 
+ 	priv->fmt	= &imx074_colour_fmts[0];
+ 
+-	return imx074_video_probe(client);
++	priv->clk = v4l2_clk_get(&priv->subdev, "mclk");
++	if (IS_ERR(priv->clk))
++		return PTR_ERR(priv->clk);
 +
-+#include <linux/kernel.h>
-+#include <linux/init.h>
-+#include <linux/interrupt.h>
-+#include <linux/string.h>
-+#include <linux/irq.h>
-+#include <linux/io.h>
-+#include <linux/slab.h>
-+#include <linux/sh_intc.h>
-+#include <linux/of.h>
-+#include <linux/of_irq.h>
-+#include <linux/of_platform.h>
-+#include <linux/of_address.h>
-+
-+static void __init of_sh_intc_get_reg_addrs(struct device_node *np,
-+				unsigned long *set_reg, unsigned long *clr_reg,
-+				unsigned long *reg_width,
-+				unsigned long *field_width)
-+{
-+	struct resource res;
-+
-+	if (set_reg) {
-+		of_address_to_resource(np, 0, &res);
-+		*set_reg = res.start;
-+	}
-+
-+	if (resource_size(&res) && reg_width)
-+		*reg_width = resource_size(&res) * 8; /* byte */
-+
-+	if (clr_reg) {
-+		of_address_to_resource(np, 1, &res);
-+		*clr_reg = res.start;
-+	}
-+
-+	if (field_width) {
-+		u32 width;
-+		of_property_read_u32(np, "field-width", &width);
-+		*field_width = width;
-+	}
-+}
-+
-+static int of_sh_intc_parse_vector(struct device_node *np, uint32_t *vect)
-+{
-+	return of_property_read_u32(np, "vector", vect);
-+}
-+
-+static int of_sh_intc_parse_group(struct device_node *np,
-+				struct intc_group *grp)
-+{
-+	const __be32 *list, *list_end;
-+	int size, ret = 0, count = 0;
-+	phandle phandle;
-+
-+	/* Retrieve the phandle list property */
-+	list = of_get_property(np, "group", &size);
-+	if (!list)
-+		return -ENOENT;
-+
-+	list_end = list + size / sizeof(*list);
-+
-+	grp->enum_id = np->phandle;
-+	/* Loop over the phandles until all the requested entry is found */
-+	while (list < list_end) {
-+		/* If phandle is 0, then it is an empty entry with
-+		   no arguments. */
-+		phandle = be32_to_cpup(list);
-+		if (phandle)
-+			grp->enum_ids[count] = phandle;
-+		list++;
-+		count++;
-+	}
-+
-+	pr_debug("%d:[", grp->enum_id);
-+	for (size = 0 ; size < count ; size++)
-+		pr_debug(" %d ", grp->enum_ids[size]);
-+
-+	pr_debug("]\n");
++	ret = imx074_video_probe(client);
++	if (ret < 0)
++		v4l2_clk_put(priv->clk);
 +
 +	return ret;
-+}
-+
-+static int of_sh_intc_parse_vectortbl(struct device_node *np,
-+				struct intc_vect **vect, int *tbl_size)
-+{
-+	const __be32 *list, *list_end;
-+	int size, ret = 0, count = 0;
-+	struct device_node *node = NULL;
-+	phandle phandle;
-+
-+	/* Retrieve the phandle list property */
-+	list = of_get_property(np, "vector_table", &size);
-+	if (!list)
-+		return -ENOENT;
-+
-+	*tbl_size = size / sizeof(*list);
-+
-+	pr_debug("vector table size: %d\n", *tbl_size);
-+
-+	*vect = kzalloc(sizeof(struct intc_vect) * *tbl_size,
-+					GFP_KERNEL);
-+	if (!*vect)
-+		return -ENOMEM;
-+
-+	list_end = list + *tbl_size;
-+
-+	/* Loop over the phandles until all the requested entry is found */
-+	while (list < list_end) {
-+		/* If phandle is 0, then it is an empty entry with
-+		   no arguments. */
-+		phandle = be32_to_cpup(list);
-+		if (phandle) {
-+			uint32_t vector_id;
-+
-+			(*vect)[count].enum_id = phandle;
-+			node = of_find_node_by_phandle(phandle);
-+
-+			ret = of_sh_intc_parse_vector(node, &vector_id);
-+			if (ret)
-+				return ret;
-+
-+			(*vect)[count].vect = vector_id;
-+			pr_debug("id %d : vector 0x%x\n",
-+				(*vect)[count].enum_id, (*vect)[count].vect);
-+		} else {
-+			ret = -EINVAL;
-+			goto error;
-+		}
-+		list++;
-+		count++;
-+	}
-+	return ret;
-+
-+error:
-+	kfree(*vect);
-+
-+	return ret;
-+}
-+
-+static int of_sh_intc_parse_reginfo(struct device_node *np,
-+				struct intc_mask_reg *mask,
-+				struct intc_prio_reg *prio,
-+				struct intc_sense_reg *sense)
-+{
-+	const __be32 *list, *list_end;
-+	int size, id, ret = 0, count = 0;
-+	phandle phandle;
-+
-+	/* Retrieve the phandle list property */
-+	list = of_get_property(np, "reginfo", &size);
-+	if (!list)
-+		return -ENOENT;
-+
-+	list_end = list + size / sizeof(*list);
-+
-+	/* Loop over the phandles until all the requested entry is found */
-+	while (list < list_end) {
-+		/* If phandle is 0, then it is an empty entry with
-+		   no arguments. */
-+		phandle = be32_to_cpup(list);
-+		if (phandle)
-+			id = phandle;
-+		else
-+			id = 0;
-+
-+		if (mask)
-+			mask->enum_ids[count] = id;
-+		if (prio)
-+			prio->enum_ids[count] = id;
-+		if (sense)
-+			sense->enum_ids[count] = id;
-+
-+		pr_debug("reg: [%d] %d\n", count, id);
-+		list++;
-+		count++;
+ }
+ 
+ static int imx074_remove(struct i2c_client *client)
+ {
+ 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
++	struct imx074 *priv = to_imx074(client);
+ 
++	v4l2_clk_put(priv->clk);
+ 	if (ssdd->free_bus)
+ 		ssdd->free_bus(ssdd);
+ 
+diff --git a/drivers/media/i2c/soc_camera/mt9m001.c b/drivers/media/i2c/soc_camera/mt9m001.c
+index bcdc861..21e6833 100644
+--- a/drivers/media/i2c/soc_camera/mt9m001.c
++++ b/drivers/media/i2c/soc_camera/mt9m001.c
+@@ -16,6 +16,7 @@
+ 
+ #include <media/soc_camera.h>
+ #include <media/soc_mediabus.h>
++#include <media/v4l2-clk.h>
+ #include <media/v4l2-subdev.h>
+ #include <media/v4l2-chip-ident.h>
+ #include <media/v4l2-ctrls.h>
+@@ -94,6 +95,7 @@ struct mt9m001 {
+ 		struct v4l2_ctrl *exposure;
+ 	};
+ 	struct v4l2_rect rect;	/* Sensor window */
++	struct v4l2_clk *clk;
+ 	const struct mt9m001_datafmt *fmt;
+ 	const struct mt9m001_datafmt *fmts;
+ 	int num_fmts;
+@@ -381,8 +383,9 @@ static int mt9m001_s_power(struct v4l2_subdev *sd, int on)
+ {
+ 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+ 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
++	struct mt9m001 *mt9m001 = to_mt9m001(client);
+ 
+-	return soc_camera_set_power(&client->dev, ssdd, on);
++	return soc_camera_set_power(&client->dev, ssdd, mt9m001->clk, on);
+ }
+ 
+ static int mt9m001_g_volatile_ctrl(struct v4l2_ctrl *ctrl)
+@@ -710,9 +713,18 @@ static int mt9m001_probe(struct i2c_client *client,
+ 	mt9m001->rect.width	= MT9M001_MAX_WIDTH;
+ 	mt9m001->rect.height	= MT9M001_MAX_HEIGHT;
+ 
++	mt9m001->clk = v4l2_clk_get(&mt9m001->subdev, "mclk");
++	if (IS_ERR(mt9m001->clk)) {
++		ret = PTR_ERR(mt9m001->clk);
++		goto eclkget;
 +	}
 +
-+	return ret;
-+}
-+
-+static struct device_node *
-+__init of_sh_intc_check_base_node(struct device_node *np,
-+		const char *node_name, int *tbl_size)
-+{
-+	struct device_node *node;
-+
-+	node = of_find_node_by_name(np, node_name);
-+	if (!node) {
-+		pr_err("%s table not found\n", node_name);
-+		return NULL;
+ 	ret = mt9m001_video_probe(ssdd, client);
+-	if (ret)
++	if (ret) {
++		v4l2_clk_put(mt9m001->clk);
++eclkget:
+ 		v4l2_ctrl_handler_free(&mt9m001->hdl);
++	}
+ 
+ 	return ret;
+ }
+@@ -722,6 +734,7 @@ static int mt9m001_remove(struct i2c_client *client)
+ 	struct mt9m001 *mt9m001 = to_mt9m001(client);
+ 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
+ 
++	v4l2_clk_put(mt9m001->clk);
+ 	v4l2_device_unregister_subdev(&mt9m001->subdev);
+ 	v4l2_ctrl_handler_free(&mt9m001->hdl);
+ 	mt9m001_video_remove(ssdd);
+diff --git a/drivers/media/i2c/soc_camera/mt9m111.c b/drivers/media/i2c/soc_camera/mt9m111.c
+index bbc4ff9..1844b4c 100644
+--- a/drivers/media/i2c/soc_camera/mt9m111.c
++++ b/drivers/media/i2c/soc_camera/mt9m111.c
+@@ -17,6 +17,7 @@
+ #include <linux/module.h>
+ 
+ #include <media/soc_camera.h>
++#include <media/v4l2-clk.h>
+ #include <media/v4l2-common.h>
+ #include <media/v4l2-ctrls.h>
+ #include <media/v4l2-chip-ident.h>
+@@ -209,6 +210,7 @@ struct mt9m111 {
+ 			 * from v4l2-chip-ident.h */
+ 	struct mt9m111_context *ctx;
+ 	struct v4l2_rect rect;	/* cropping rectangle */
++	struct v4l2_clk *clk;
+ 	int width;		/* output */
+ 	int height;		/* sizes */
+ 	struct mutex power_lock; /* lock to protect power_count */
+@@ -803,14 +805,14 @@ static int mt9m111_power_on(struct mt9m111 *mt9m111)
+ 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
+ 	int ret;
+ 
+-	ret = soc_camera_power_on(&client->dev, ssdd);
++	ret = soc_camera_power_on(&client->dev, ssdd, mt9m111->clk);
+ 	if (ret < 0)
+ 		return ret;
+ 
+ 	ret = mt9m111_resume(mt9m111);
+ 	if (ret < 0) {
+ 		dev_err(&client->dev, "Failed to resume the sensor: %d\n", ret);
+-		soc_camera_power_off(&client->dev, ssdd);
++		soc_camera_power_off(&client->dev, ssdd, mt9m111->clk);
+ 	}
+ 
+ 	return ret;
+@@ -822,7 +824,7 @@ static void mt9m111_power_off(struct mt9m111 *mt9m111)
+ 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
+ 
+ 	mt9m111_suspend(mt9m111);
+-	soc_camera_power_off(&client->dev, ssdd);
++	soc_camera_power_off(&client->dev, ssdd, mt9m111->clk);
+ }
+ 
+ static int mt9m111_s_power(struct v4l2_subdev *sd, int on)
+@@ -1001,9 +1003,18 @@ static int mt9m111_probe(struct i2c_client *client,
+ 	mt9m111->lastpage	= -1;
+ 	mutex_init(&mt9m111->power_lock);
+ 
++	mt9m111->clk = v4l2_clk_get(&mt9m111->subdev, "mclk");
++	if (IS_ERR(mt9m111->clk)) {
++		ret = PTR_ERR(mt9m111->clk);
++		goto eclkget;
 +	}
 +
-+	pr_debug("%s\n", node->full_name);
-+
-+	*tbl_size = of_get_child_count(node);
-+
-+	pr_debug("Size of %s: %d\n", node_name, *tbl_size);
-+
-+	return node;
-+}
-+
-+static int __init of_sh_intc_get_mask_ack(struct device_node *np,
-+				struct intc_mask_reg **masks, int *tbl_size,
-+				const char *base_name, const char *reg_name)
-+{
-+	struct device_node *intc_node, *reg_node;
-+	int i, ret;
-+	char node_name[13]; /* intc_mask + 999 */
-+
-+	intc_node = of_sh_intc_check_base_node(np, base_name, tbl_size);
-+	if (!intc_node)
-+		return -ENOENT;
-+
-+	*masks = kzalloc(sizeof(struct intc_mask_reg) * *tbl_size, GFP_KERNEL);
-+	if (!*masks)
-+		return -ENOMEM;
-+
-+	for (i = 0 ; i < *tbl_size; i++) {
-+		memset(node_name, 0, sizeof(node_name));
-+		snprintf(node_name, sizeof(node_name), "%s%d", reg_name, i);
-+
-+		pr_debug("intc node[%d]: name: %s\n", i, node_name);
-+
-+		reg_node = of_find_node_by_name(intc_node, node_name);
-+		if (!reg_node) {
-+			pr_warn("%s not found\n", node_name);
-+			ret = -EINVAL;
-+			goto error;
-+		}
-+
-+		of_sh_intc_get_reg_addrs(reg_node, &(*masks)[i].set_reg,
-+					&(*masks)[i].clr_reg,
-+					&(*masks)[i].reg_width, NULL);
-+
-+#ifdef CONFIG_INTC_BALANCING
-+		of_property_read_u32(reg_node, "dist_reg",
-+						&(*masks)[i].dist_reg);
-+#endif
-+#ifdef CONFIG_SMP
-+		of_property_read_u32(reg_node, "smp",
-+						(u32 *)&(*masks)[i].smp);
-+#endif
-+
-+		pr_debug("set reg: 0x%lx clr reg: 0x%lx reg_width: %ld\n",
-+				(*masks)[i].set_reg, (*masks)[i].clr_reg,
-+				(*masks)[i].reg_width);
-+
-+		ret = of_sh_intc_parse_reginfo(reg_node, &(*masks)[i], NULL,
-+						NULL);
-+		if (ret)
-+			goto error;
+ 	ret = mt9m111_video_probe(client);
+-	if (ret)
++	if (ret) {
++		v4l2_clk_put(mt9m111->clk);
++eclkget:
+ 		v4l2_ctrl_handler_free(&mt9m111->hdl);
++	}
+ 
+ 	return ret;
+ }
+@@ -1012,6 +1023,7 @@ static int mt9m111_remove(struct i2c_client *client)
+ {
+ 	struct mt9m111 *mt9m111 = to_mt9m111(client);
+ 
++	v4l2_clk_put(mt9m111->clk);
+ 	v4l2_device_unregister_subdev(&mt9m111->subdev);
+ 	v4l2_ctrl_handler_free(&mt9m111->hdl);
+ 
+diff --git a/drivers/media/i2c/soc_camera/mt9t031.c b/drivers/media/i2c/soc_camera/mt9t031.c
+index d80d044..4ab8edb 100644
+--- a/drivers/media/i2c/soc_camera/mt9t031.c
++++ b/drivers/media/i2c/soc_camera/mt9t031.c
+@@ -19,6 +19,7 @@
+ 
+ #include <media/soc_camera.h>
+ #include <media/v4l2-chip-ident.h>
++#include <media/v4l2-clk.h>
+ #include <media/v4l2-subdev.h>
+ #include <media/v4l2-ctrls.h>
+ 
+@@ -76,6 +77,7 @@ struct mt9t031 {
+ 		struct v4l2_ctrl *exposure;
+ 	};
+ 	struct v4l2_rect rect;	/* Sensor window */
++	struct v4l2_clk *clk;
+ 	int model;	/* V4L2_IDENT_MT9T031* codes from v4l2-chip-ident.h */
+ 	u16 xskip;
+ 	u16 yskip;
+@@ -610,16 +612,17 @@ static int mt9t031_s_power(struct v4l2_subdev *sd, int on)
+ 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+ 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
+ 	struct video_device *vdev = soc_camera_i2c_to_vdev(client);
++	struct mt9t031 *mt9t031 = to_mt9t031(client);
+ 	int ret;
+ 
+ 	if (on) {
+-		ret = soc_camera_power_on(&client->dev, ssdd);
++		ret = soc_camera_power_on(&client->dev, ssdd, mt9t031->clk);
+ 		if (ret < 0)
+ 			return ret;
+ 		vdev->dev.type = &mt9t031_dev_type;
+ 	} else {
+ 		vdev->dev.type = NULL;
+-		soc_camera_power_off(&client->dev, ssdd);
++		soc_camera_power_off(&client->dev, ssdd, mt9t031->clk);
+ 	}
+ 
+ 	return 0;
+@@ -812,9 +815,18 @@ static int mt9t031_probe(struct i2c_client *client,
+ 	mt9t031->xskip = 1;
+ 	mt9t031->yskip = 1;
+ 
++	mt9t031->clk = v4l2_clk_get(&mt9t031->subdev, "mclk");
++	if (IS_ERR(mt9t031->clk)) {
++		ret = PTR_ERR(mt9t031->clk);
++		goto eclkget;
 +	}
 +
-+	return ret;
-+
-+error:
-+	kfree(*masks);
-+	return ret;
-+}
-+
-+static int __init of_sh_intc_get_vector(struct device_node *np,
-+				struct intc_vect **vectors, int *tbl_size)
-+{
-+	struct device_node *intc_node;
-+
-+	/* Get INTCA vector register info */
-+	intc_node = of_find_node_by_name(np, "intc_vectors");
-+	if (!intc_node) {
-+		pr_err("Get INTC vector table not found\n");
-+		return -ENOENT;
+ 	ret = mt9t031_video_probe(client);
+-	if (ret)
++	if (ret) {
++		v4l2_clk_put(mt9t031->clk);
++eclkget:
+ 		v4l2_ctrl_handler_free(&mt9t031->hdl);
 +	}
+ 
+ 	return ret;
+ }
+@@ -823,6 +835,7 @@ static int mt9t031_remove(struct i2c_client *client)
+ {
+ 	struct mt9t031 *mt9t031 = to_mt9t031(client);
+ 
++	v4l2_clk_put(mt9t031->clk);
+ 	v4l2_device_unregister_subdev(&mt9t031->subdev);
+ 	v4l2_ctrl_handler_free(&mt9t031->hdl);
+ 
+diff --git a/drivers/media/i2c/soc_camera/mt9t112.c b/drivers/media/i2c/soc_camera/mt9t112.c
+index c75d831..1d9e228 100644
+--- a/drivers/media/i2c/soc_camera/mt9t112.c
++++ b/drivers/media/i2c/soc_camera/mt9t112.c
+@@ -28,6 +28,7 @@
+ #include <media/mt9t112.h>
+ #include <media/soc_camera.h>
+ #include <media/v4l2-chip-ident.h>
++#include <media/v4l2-clk.h>
+ #include <media/v4l2-common.h>
+ 
+ /* you can check PLL/clock info */
+@@ -90,6 +91,7 @@ struct mt9t112_priv {
+ 	struct mt9t112_camera_info	*info;
+ 	struct i2c_client		*client;
+ 	struct v4l2_rect		 frame;
++	struct v4l2_clk			*clk;
+ 	const struct mt9t112_format	*format;
+ 	int				 model;
+ 	u32				 flags;
+@@ -780,8 +782,9 @@ static int mt9t112_s_power(struct v4l2_subdev *sd, int on)
+ {
+ 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+ 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
++	struct mt9t112_priv *priv = to_mt9t112(client);
+ 
+-	return soc_camera_set_power(&client->dev, ssdd, on);
++	return soc_camera_set_power(&client->dev, ssdd, priv->clk, on);
+ }
+ 
+ static struct v4l2_subdev_core_ops mt9t112_subdev_core_ops = {
+@@ -1100,18 +1103,26 @@ static int mt9t112_probe(struct i2c_client *client,
+ 
+ 	v4l2_i2c_subdev_init(&priv->subdev, client, &mt9t112_subdev_ops);
+ 
++	priv->clk = v4l2_clk_get(&priv->subdev, "mclk");
++	if (IS_ERR(priv->clk))
++		return PTR_ERR(priv->clk);
 +
-+	return of_sh_intc_parse_vectortbl(intc_node, vectors, tbl_size);
-+}
-+
-+static int __init of_sh_intc_get_prio(struct device_node *np,
-+				struct intc_prio_reg **prios, int *tbl_size)
-+{
-+	struct device_node *intc_node, *reg_node;
-+	int i, ret;
-+	char node_name[13]; /* intc_prio + 999 */
-+
-+	intc_node = of_sh_intc_check_base_node(np, "intc_prio_registers",
-+					tbl_size);
-+	if (!intc_node)
-+		return -ENOENT;
-+
-+	*prios = kzalloc(sizeof(struct intc_prio_reg) * *tbl_size, GFP_KERNEL);
-+	if (!*prios)
-+		return -ENOMEM;
-+
-+	/* Get INTC priority register info */
-+	for (i = 0 ; i < *tbl_size; i++) {
-+		memset(node_name, 0, sizeof(node_name));
-+		snprintf(node_name, sizeof(node_name), "intc_prio%d", i);
-+
-+		pr_debug("INTC node name: %s\n", node_name);
-+
-+		reg_node = of_find_node_by_name(intc_node, node_name);
-+
-+		if (!intc_node) {
-+			pr_err("INTC prio register not found\n");
-+			ret = -EINVAL;
-+			goto error;
-+		}
-+
-+		of_sh_intc_get_reg_addrs(reg_node, &(*prios)[i].set_reg,
-+				&(*prios)[i].clr_reg, &(*prios)[i].reg_width,
-+				&(*prios)[i].field_width);
-+
-+		pr_debug("\tset reg: 0x%lx clr reg: 0x%lx\n",
-+				(*prios)[i].set_reg, (*prios)[i].clr_reg);
-+		pr_debug("\treg_width: %ld field_width: %ld\n",
-+				(*prios)[i].reg_width, (*prios)[i].field_width);
-+
-+		ret = of_sh_intc_parse_reginfo(reg_node, NULL, &(*prios)[i],
-+						NULL);
-+		if (ret)
-+			goto error;
-+	}
-+
-+	return ret;
-+
-+error:
-+	kfree(*prios);
-+	return ret;
-+}
-+
-+static int __init of_sh_intc_get_sense(struct device_node *np,
-+				struct intc_sense_reg **senses, int *tbl_size)
-+{
-+	struct device_node *intc_node, *reg_node;
-+	int i, ret;
-+	char node_name[14]; /* intc_sense + 999 */
-+
-+	intc_node = of_sh_intc_check_base_node(np, "intc_sense_registers",
-+					tbl_size);
-+	if (!intc_node)
-+		return -ENOENT;
-+
-+	*senses = kzalloc(sizeof(struct intc_sense_reg) * *tbl_size,
-+					GFP_KERNEL);
-+	if (!*senses)
-+		return -ENOMEM;
-+
-+	/* Get INTC priority register info */
-+	for (i = 0 ; i < *tbl_size; i++) {
-+		memset(node_name, 0, sizeof(node_name));
-+		snprintf(node_name, sizeof(node_name), "intc_sense%d", i);
-+
-+		pr_debug("INTC node name: %s\n", node_name);
-+
-+		reg_node = of_find_node_by_name(intc_node, node_name);
-+
-+		if (!intc_node) {
-+			pr_err("INTC senses register not found\n");
-+			ret = -EINVAL;
-+			goto error;
-+		}
-+
-+		of_sh_intc_get_reg_addrs(reg_node, &(*senses)[i].reg, NULL,
-+					&(*senses)[i].reg_width,
-+					&(*senses)[i].field_width);
-+
-+		pr_debug("\tset reg: 0x%lx\n", (*senses)[i].reg);
-+		pr_debug("\treg_width: %ld field_width: %ld\n",
-+					(*senses)[i].reg_width,
-+					(*senses)[i].field_width);
-+
-+		ret = of_sh_intc_parse_reginfo(reg_node, NULL, NULL,
-+						&(*senses)[i]);
-+		if (ret)
-+			goto error;
-+	}
-+
-+	return ret;
-+
-+error:
-+	kfree(*senses);
-+	return ret;
-+}
-+
-+static int __init of_sh_intc_get_ack(struct device_node *np,
-+				struct intc_mask_reg **masks, int *tbl_size)
-+{
-+	return of_sh_intc_get_mask_ack(np, masks, tbl_size,
-+					"intc_ack_registers", "intc_ack");
-+}
-+
-+static int __init of_sh_intc_get_mask(struct device_node *np,
-+				struct intc_mask_reg **masks, int *tbl_size)
-+{
-+	return of_sh_intc_get_mask_ack(np, masks, tbl_size,
-+					"intc_mask_registers", "intc_mask");
-+}
-+
-+static int __init of_sh_intc_get_group(struct device_node *np,
-+				struct intc_group **groups, int *tbl_size)
-+{
-+	int i, ret, size;
-+	const __be32 *list;
-+	struct device_node *grp_node;
-+	char node_name[15]; /* intc_group@999 */
-+
-+	/* Get size of group */
-+	if (of_property_read_u32(np, "group_size", tbl_size)) {
-+		pr_debug("%s size infomation not found\n", node_name);
-+		return -ENOENT;
-+	}
-+
-+	pr_debug("Group size %d\n", *tbl_size);
-+	pr_debug("%s\n", np->full_name);
-+
-+	*groups = kzalloc(sizeof(struct intc_group) * *tbl_size, GFP_KERNEL);
-+	if (!*groups)
-+		return -ENOMEM;
-+
-+	/* Get INTCA node info */
-+	for (i = 0 ; i < *tbl_size; i++) {
-+		memset(node_name, 0, sizeof(node_name));
-+		snprintf(node_name, sizeof(node_name), "intc_group%d", i);
-+
-+		pr_debug("intc group[%d]: name: %s\n", i, node_name);
-+
-+		grp_node = of_find_node_by_name(np, node_name);
-+		if (!grp_node) {
-+			pr_warn("%s not found\n", node_name);
-+			ret = -EINVAL;
-+			goto error;
-+		}
-+
-+		list = of_get_property(np, node_name, &size);
-+		ret = of_sh_intc_parse_group(grp_node, &(*groups)[i]);
-+		if (ret) {
-+			pr_err("intc group not found\n");
-+			goto error;
-+		}
-+	}
-+
-+	return ret;
-+
-+error:
-+	kfree(*groups);
-+	return ret;
-+}
-+
-+int __init of_sh_intc_get_intevtsa_vect(struct device_node *np,
-+				unsigned short *vect)
-+{
-+	int size;
-+	const __be32 *list;
-+	struct device_node *node;
-+	phandle phandle;
-+
-+	node = of_find_node_by_name(np, "intc_intevtsa");
-+	if (!node)
-+		return -ENOENT;
-+
-+	/* Retrieve the phandle list property */
-+	list = of_get_property(node, "vector", &size);
-+	if (!list)
-+		return -ENOENT;
-+
-+	phandle = be32_to_cpup(list);
-+	if (phandle) {
-+		uint32_t tmp;
-+		struct device_node *vect_node +				of_find_node_by_phandle(phandle);
-+
-+		if (!of_sh_intc_parse_vector(vect_node, &tmp))
-+			*vect = tmp;
-+		else
-+			return -ENOENT;
-+	} else {
-+		pr_debug("intc_intevtsa data not found\n");
-+		return -ENOENT;
-+	}
-+	return 0;
-+}
-+
-+static int of_sh_intc_get_force_flags(struct device_node *np,
-+				const char *node_name)
-+{
-+	int size;
-+	const __be32 *list = of_get_property(np, node_name, &size);
-+	if (list)
-+		return be32_to_cpup(list);
-+
-+	return 0;
-+}
-+
-+void __init of_sh_intc_get_force_enable(struct device_node *np,
-+				struct intc_desc *d)
-+{
-+	d->force_enable +		of_sh_intc_get_force_flags(np, "force_enable");
-+}
-+
-+void __init of_sh_intc_get_force_disable(struct device_node *np,
-+				struct intc_desc *d)
-+{
-+	d->force_disable +		of_sh_intc_get_force_flags(np, "force_disable");
-+}
-+
-+void __init of_sh_intc_get_skip_syscore_suspend(struct device_node *np,
-+				struct intc_desc *d)
-+{
-+	if (of_find_property(np, "skip_syscore_suspend", NULL))
-+		d->skip_syscore_suspend = true;
+ 	ret = mt9t112_camera_probe(client);
+-	if (ret)
+-		return ret;
+ 
+ 	/* Cannot fail: using the default supported pixel code */
+-	mt9t112_set_params(priv, &rect, V4L2_MBUS_FMT_UYVY8_2X8);
++	if (!ret)
++		mt9t112_set_params(priv, &rect, V4L2_MBUS_FMT_UYVY8_2X8);
 +	else
-+		d->skip_syscore_suspend = false;
-+}
-+
-+int __init of_sh_intc_get_intc(struct device_node *np, struct intc_desc *d)
-+{
-+	int ret = of_sh_intc_get_vector(np, &d->hw.vectors,
-+				&d->hw.nr_vectors);
-+	if (ret)
-+		return ret;
-+
-+	ret = of_sh_intc_get_group(np, &d->hw.groups,
-+				&d->hw.nr_groups);
-+	/* INTC may not need groups. */
-+	if (ret && ret != -ENOENT)
-+		return ret;
-+
-+	ret = of_sh_intc_get_mask(np, &d->hw.mask_regs,
-+				&d->hw.nr_mask_regs);
-+	if (ret)
-+		return ret;
-+
-+	ret = of_sh_intc_get_prio(np, &d->hw.prio_regs,
-+				&d->hw.nr_prio_regs);
-+	if (ret)
-+		return ret;
-+
-+	ret = of_sh_intc_get_sense(np, &d->hw.sense_regs,
-+				&d->hw.nr_sense_regs);
-+	/* INTC may not need Sense register. */
-+	if (ret && ret != -ENOENT)
-+		return ret;
-+
-+	ret = of_sh_intc_get_ack(np, &d->hw.ack_regs,
-+				&d->hw.nr_ack_regs);
-+	/* INTC may not need Ack register. */
-+	if (ret && ret != -ENOENT)
-+		return ret;
-+
-+	d->of_node = np;
-+
-+	return 0;
-+}
-diff --git a/include/linux/sh_intc.h b/include/linux/sh_intc.h
-index 3238328..c7954ee 100644
---- a/include/linux/sh_intc.h
-+++ b/include/linux/sh_intc.h
-@@ -2,6 +2,10 @@
- #define __SH_INTC_H
++		v4l2_clk_put(priv->clk);
  
- #include <linux/ioport.h>
-+#include <linux/of.h>
-+#include <linux/of_irq.h>
-+#include <linux/of_platform.h>
-+#include <linux/of_address.h>
- 
- #ifdef CONFIG_SUPERH
- #define INTC_NR_IRQS	512
-@@ -114,6 +118,7 @@ struct intc_desc {
- 	intc_enum force_disable;
- 	bool skip_syscore_suspend;
- 	struct intc_hw_desc hw;
-+	struct device_node *of_node;
- };
- 
- #define DECLARE_INTC_DESC(symbol, chipname, vectors, groups,		\
-@@ -146,4 +151,55 @@ static inline int register_intc_userimask(unsigned long addr)
+ 	return ret;
  }
- #endif
+ 
+ static int mt9t112_remove(struct i2c_client *client)
+ {
++	struct mt9t112_priv *priv = to_mt9t112(client);
++
++	v4l2_clk_put(priv->clk);
+ 	return 0;
+ }
+ 
+diff --git a/drivers/media/i2c/soc_camera/mt9v022.c b/drivers/media/i2c/soc_camera/mt9v022.c
+index a5e65d6..3a3c371 100644
+--- a/drivers/media/i2c/soc_camera/mt9v022.c
++++ b/drivers/media/i2c/soc_camera/mt9v022.c
+@@ -20,6 +20,7 @@
+ #include <media/soc_mediabus.h>
+ #include <media/v4l2-subdev.h>
+ #include <media/v4l2-chip-ident.h>
++#include <media/v4l2-clk.h>
+ #include <media/v4l2-ctrls.h>
+ 
+ /*
+@@ -149,6 +150,7 @@ struct mt9v022 {
+ 	struct v4l2_ctrl *hblank;
+ 	struct v4l2_ctrl *vblank;
+ 	struct v4l2_rect rect;	/* Sensor window */
++	struct v4l2_clk *clk;
+ 	const struct mt9v022_datafmt *fmt;
+ 	const struct mt9v022_datafmt *fmts;
+ 	const struct mt9v02x_register *reg;
+@@ -509,8 +511,9 @@ static int mt9v022_s_power(struct v4l2_subdev *sd, int on)
+ {
+ 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+ 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
++	struct mt9v022 *mt9v022 = to_mt9v022(client);
+ 
+-	return soc_camera_set_power(&client->dev, ssdd, on);
++	return soc_camera_set_power(&client->dev, ssdd, mt9v022->clk, on);
+ }
+ 
+ static int mt9v022_g_volatile_ctrl(struct v4l2_ctrl *ctrl)
+@@ -948,9 +951,18 @@ static int mt9v022_probe(struct i2c_client *client,
+ 	mt9v022->rect.width	= MT9V022_MAX_WIDTH;
+ 	mt9v022->rect.height	= MT9V022_MAX_HEIGHT;
+ 
++	mt9v022->clk = v4l2_clk_get(&mt9v022->subdev, "mclk");
++	if (IS_ERR(mt9v022->clk)) {
++		ret = PTR_ERR(mt9v022->clk);
++		goto eclkget;
++	}
++
+ 	ret = mt9v022_video_probe(client);
+-	if (ret)
++	if (ret) {
++		v4l2_clk_put(mt9v022->clk);
++eclkget:
+ 		v4l2_ctrl_handler_free(&mt9v022->hdl);
++	}
+ 
+ 	return ret;
+ }
+@@ -960,6 +972,7 @@ static int mt9v022_remove(struct i2c_client *client)
+ 	struct mt9v022 *mt9v022 = to_mt9v022(client);
+ 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
+ 
++	v4l2_clk_put(mt9v022->clk);
+ 	v4l2_device_unregister_subdev(&mt9v022->subdev);
+ 	if (ssdd->free_bus)
+ 		ssdd->free_bus(ssdd);
+diff --git a/drivers/media/i2c/soc_camera/ov2640.c b/drivers/media/i2c/soc_camera/ov2640.c
+index 0f520f6..ad3616e 100644
+--- a/drivers/media/i2c/soc_camera/ov2640.c
++++ b/drivers/media/i2c/soc_camera/ov2640.c
+@@ -23,6 +23,7 @@
+ 
+ #include <media/soc_camera.h>
+ #include <media/v4l2-chip-ident.h>
++#include <media/v4l2-clk.h>
+ #include <media/v4l2-subdev.h>
+ #include <media/v4l2-ctrls.h>
+ 
+@@ -303,6 +304,7 @@ struct ov2640_priv {
+ 	struct v4l2_subdev		subdev;
+ 	struct v4l2_ctrl_handler	hdl;
+ 	enum v4l2_mbus_pixelcode	cfmt_code;
++	struct v4l2_clk			*clk;
+ 	const struct ov2640_win_size	*win;
+ 	int				model;
+ };
+@@ -772,8 +774,9 @@ static int ov2640_s_power(struct v4l2_subdev *sd, int on)
+ {
+ 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+ 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
++	struct ov2640_priv *priv = to_ov2640(client);
+ 
+-	return soc_camera_set_power(&client->dev, ssdd, on);
++	return soc_camera_set_power(&client->dev, ssdd, priv->clk, on);
+ }
+ 
+ /* Select the nearest higher resolution for capture */
+@@ -1113,11 +1116,20 @@ static int ov2640_probe(struct i2c_client *client,
+ 	if (priv->hdl.error)
+ 		return priv->hdl.error;
+ 
++	priv->clk = v4l2_clk_get(&priv->subdev, "mclk");
++	if (IS_ERR(priv->clk)) {
++		ret = PTR_ERR(priv->clk);
++		goto eclkget;
++	}
++
+ 	ret = ov2640_video_probe(client);
+-	if (ret)
++	if (ret) {
++		v4l2_clk_put(priv->clk);
++eclkget:
+ 		v4l2_ctrl_handler_free(&priv->hdl);
+-	else
++	} else {
+ 		dev_info(&adapter->dev, "OV2640 Probed\n");
++	}
+ 
+ 	return ret;
+ }
+@@ -1126,6 +1138,7 @@ static int ov2640_remove(struct i2c_client *client)
+ {
+ 	struct ov2640_priv       *priv = to_ov2640(client);
+ 
++	v4l2_clk_put(priv->clk);
+ 	v4l2_device_unregister_subdev(&priv->subdev);
+ 	v4l2_ctrl_handler_free(&priv->hdl);
+ 	return 0;
+diff --git a/drivers/media/i2c/soc_camera/ov5642.c b/drivers/media/i2c/soc_camera/ov5642.c
+index 9d53309..ee7faa3 100644
+--- a/drivers/media/i2c/soc_camera/ov5642.c
++++ b/drivers/media/i2c/soc_camera/ov5642.c
+@@ -25,6 +25,7 @@
+ 
+ #include <media/soc_camera.h>
+ #include <media/v4l2-chip-ident.h>
++#include <media/v4l2-clk.h>
+ #include <media/v4l2-subdev.h>
+ 
+ /* OV5642 registers */
+@@ -610,6 +611,7 @@ struct ov5642 {
+ 	struct v4l2_subdev		subdev;
+ 	const struct ov5642_datafmt	*fmt;
+ 	struct v4l2_rect                crop_rect;
++	struct v4l2_clk			*clk;
+ 
+ 	/* blanking information */
+ 	int total_width;
+@@ -935,12 +937,13 @@ static int ov5642_s_power(struct v4l2_subdev *sd, int on)
+ {
+ 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+ 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
++	struct ov5642 *priv = to_ov5642(client);
+ 	int ret;
+ 
+ 	if (!on)
+-		return soc_camera_power_off(&client->dev, ssdd);
++		return soc_camera_power_off(&client->dev, ssdd, priv->clk);
+ 
+-	ret = soc_camera_power_on(&client->dev, ssdd);
++	ret = soc_camera_power_on(&client->dev, ssdd, priv->clk);
+ 	if (ret < 0)
+ 		return ret;
+ 
+@@ -1021,6 +1024,7 @@ static int ov5642_probe(struct i2c_client *client,
+ {
+ 	struct ov5642 *priv;
+ 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
++	int ret;
+ 
+ 	if (!ssdd) {
+ 		dev_err(&client->dev, "OV5642: missing platform data!\n");
+@@ -1042,13 +1046,23 @@ static int ov5642_probe(struct i2c_client *client,
+ 	priv->total_width = OV5642_DEFAULT_WIDTH + BLANKING_EXTRA_WIDTH;
+ 	priv->total_height = BLANKING_MIN_HEIGHT;
+ 
+-	return ov5642_video_probe(client);
++	priv->clk = v4l2_clk_get(&priv->subdev, "mclk");
++	if (IS_ERR(priv->clk))
++		return PTR_ERR(priv->clk);
++
++	ret = ov5642_video_probe(client);
++	if (ret < 0)
++		v4l2_clk_put(priv->clk);
++
++	return ret;
+ }
+ 
+ static int ov5642_remove(struct i2c_client *client)
+ {
+ 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
++	struct ov5642 *priv = to_ov5642(client);
+ 
++	v4l2_clk_put(priv->clk);
+ 	if (ssdd->free_bus)
+ 		ssdd->free_bus(ssdd);
+ 
+diff --git a/drivers/media/i2c/soc_camera/ov6650.c b/drivers/media/i2c/soc_camera/ov6650.c
+index dbe4f56..a33421e 100644
+--- a/drivers/media/i2c/soc_camera/ov6650.c
++++ b/drivers/media/i2c/soc_camera/ov6650.c
+@@ -33,6 +33,7 @@
+ 
+ #include <media/soc_camera.h>
+ #include <media/v4l2-chip-ident.h>
++#include <media/v4l2-clk.h>
+ #include <media/v4l2-ctrls.h>
+ 
+ /* Register definitions */
+@@ -196,6 +197,7 @@ struct ov6650 {
+ 		struct v4l2_ctrl *blue;
+ 		struct v4l2_ctrl *red;
+ 	};
++	struct v4l2_clk		*clk;
+ 	bool			half_scale;	/* scale down output by 2 */
+ 	struct v4l2_rect	rect;		/* sensor cropping window */
+ 	unsigned long		pclk_limit;	/* from host */
+@@ -436,8 +438,9 @@ static int ov6650_s_power(struct v4l2_subdev *sd, int on)
+ {
+ 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+ 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
++	struct ov6650 *priv = to_ov6650(client);
+ 
+-	return soc_camera_set_power(&client->dev, ssdd, on);
++	return soc_camera_set_power(&client->dev, ssdd, priv->clk, on);
+ }
+ 
+ static int ov6650_g_crop(struct v4l2_subdev *sd, struct v4l2_crop *a)
+@@ -1025,9 +1028,18 @@ static int ov6650_probe(struct i2c_client *client,
+ 	priv->code	  = V4L2_MBUS_FMT_YUYV8_2X8;
+ 	priv->colorspace  = V4L2_COLORSPACE_JPEG;
+ 
++	priv->clk = v4l2_clk_get(&priv->subdev, "mclk");
++	if (IS_ERR(priv->clk)) {
++		ret = PTR_ERR(priv->clk);
++		goto eclkget;
++	}
++
+ 	ret = ov6650_video_probe(client);
+-	if (ret)
++	if (ret) {
++		v4l2_clk_put(priv->clk);
++eclkget:
+ 		v4l2_ctrl_handler_free(&priv->hdl);
++	}
+ 
+ 	return ret;
+ }
+@@ -1036,6 +1048,7 @@ static int ov6650_remove(struct i2c_client *client)
+ {
+ 	struct ov6650 *priv = to_ov6650(client);
+ 
++	v4l2_clk_put(priv->clk);
+ 	v4l2_device_unregister_subdev(&priv->subdev);
+ 	v4l2_ctrl_handler_free(&priv->hdl);
+ 	return 0;
+diff --git a/drivers/media/i2c/soc_camera/ov772x.c b/drivers/media/i2c/soc_camera/ov772x.c
+index fbeb5b2..fa1bb2a 100644
+--- a/drivers/media/i2c/soc_camera/ov772x.c
++++ b/drivers/media/i2c/soc_camera/ov772x.c
+@@ -26,6 +26,7 @@
+ 
+ #include <media/ov772x.h>
+ #include <media/soc_camera.h>
++#include <media/v4l2-clk.h>
+ #include <media/v4l2-ctrls.h>
+ #include <media/v4l2-chip-ident.h>
+ #include <media/v4l2-subdev.h>
+@@ -396,6 +397,7 @@ struct ov772x_win_size {
+ struct ov772x_priv {
+ 	struct v4l2_subdev                subdev;
+ 	struct v4l2_ctrl_handler	  hdl;
++	struct v4l2_clk			 *clk;
+ 	struct ov772x_camera_info        *info;
+ 	const struct ov772x_color_format *cfmt;
+ 	const struct ov772x_win_size     *win;
+@@ -668,8 +670,9 @@ static int ov772x_s_power(struct v4l2_subdev *sd, int on)
+ {
+ 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+ 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
++	struct ov772x_priv *priv = to_ov772x(sd);
+ 
+-	return soc_camera_set_power(&client->dev, ssdd, on);
++	return soc_camera_set_power(&client->dev, ssdd, priv->clk, on);
+ }
+ 
+ static const struct ov772x_win_size *ov772x_select_win(u32 width, u32 height)
+@@ -1088,13 +1091,22 @@ static int ov772x_probe(struct i2c_client *client,
+ 	if (priv->hdl.error)
+ 		return priv->hdl.error;
+ 
++	priv->clk = v4l2_clk_get(&priv->subdev, "mclk");
++	if (IS_ERR(priv->clk)) {
++		ret = PTR_ERR(priv->clk);
++		goto eclkget;
++	}
++
+ 	ret = ov772x_video_probe(priv);
+ 	if (ret < 0) {
++		v4l2_clk_put(priv->clk);
++eclkget:
+ 		v4l2_ctrl_handler_free(&priv->hdl);
+ 	} else {
+ 		priv->cfmt = &ov772x_cfmts[0];
+ 		priv->win = &ov772x_win_sizes[0];
+ 	}
++
+ 	return ret;
+ }
+ 
+@@ -1102,6 +1114,7 @@ static int ov772x_remove(struct i2c_client *client)
+ {
+ 	struct ov772x_priv *priv = to_ov772x(i2c_get_clientdata(client));
+ 
++	v4l2_clk_put(priv->clk);
+ 	v4l2_device_unregister_subdev(&priv->subdev);
+ 	v4l2_ctrl_handler_free(&priv->hdl);
+ 	return 0;
+diff --git a/drivers/media/i2c/soc_camera/ov9640.c b/drivers/media/i2c/soc_camera/ov9640.c
+index 0599304..7c7b844 100644
+--- a/drivers/media/i2c/soc_camera/ov9640.c
++++ b/drivers/media/i2c/soc_camera/ov9640.c
+@@ -29,6 +29,7 @@
+ 
+ #include <media/soc_camera.h>
+ #include <media/v4l2-chip-ident.h>
++#include <media/v4l2-clk.h>
+ #include <media/v4l2-common.h>
+ #include <media/v4l2-ctrls.h>
+ 
+@@ -337,8 +338,9 @@ static int ov9640_s_power(struct v4l2_subdev *sd, int on)
+ {
+ 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+ 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
++	struct ov9640_priv *priv = to_ov9640_sensor(sd);
+ 
+-	return soc_camera_set_power(&client->dev, ssdd, on);
++	return soc_camera_set_power(&client->dev, ssdd, priv->clk, on);
+ }
+ 
+ /* select nearest higher resolution for capture */
+@@ -716,10 +718,18 @@ static int ov9640_probe(struct i2c_client *client,
+ 	if (priv->hdl.error)
+ 		return priv->hdl.error;
+ 
+-	ret = ov9640_video_probe(client);
++	priv->clk = v4l2_clk_get(&priv->subdev, "mclk");
++	if (IS_ERR(priv->clk)) {
++		ret = PTR_ERR(priv->clk);
++		goto eclkget;
++	}
+ 
+-	if (ret)
++	ret = ov9640_video_probe(client);
++	if (ret) {
++		v4l2_clk_put(priv->clk);
++eclkget:
+ 		v4l2_ctrl_handler_free(&priv->hdl);
++	}
+ 
+ 	return ret;
+ }
+@@ -729,6 +739,7 @@ static int ov9640_remove(struct i2c_client *client)
+ 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
+ 	struct ov9640_priv *priv = to_ov9640_sensor(sd);
+ 
++	v4l2_clk_put(priv->clk);
+ 	v4l2_device_unregister_subdev(&priv->subdev);
+ 	v4l2_ctrl_handler_free(&priv->hdl);
+ 	return 0;
+diff --git a/drivers/media/i2c/soc_camera/ov9640.h b/drivers/media/i2c/soc_camera/ov9640.h
+index 6b33a97..65d13ff 100644
+--- a/drivers/media/i2c/soc_camera/ov9640.h
++++ b/drivers/media/i2c/soc_camera/ov9640.h
+@@ -199,6 +199,7 @@ struct ov9640_reg {
+ struct ov9640_priv {
+ 	struct v4l2_subdev		subdev;
+ 	struct v4l2_ctrl_handler	hdl;
++	struct v4l2_clk			*clk;
+ 
+ 	int				model;
+ 	int				revision;
+diff --git a/drivers/media/i2c/soc_camera/ov9740.c b/drivers/media/i2c/soc_camera/ov9740.c
+index 2f236da..953b9e2 100644
+--- a/drivers/media/i2c/soc_camera/ov9740.c
++++ b/drivers/media/i2c/soc_camera/ov9740.c
+@@ -18,6 +18,7 @@
+ 
+ #include <media/soc_camera.h>
+ #include <media/v4l2-chip-ident.h>
++#include <media/v4l2-clk.h>
+ #include <media/v4l2-ctrls.h>
+ 
+ #define to_ov9740(sd)		container_of(sd, struct ov9740_priv, subdev)
+@@ -196,6 +197,7 @@ struct ov9740_reg {
+ struct ov9740_priv {
+ 	struct v4l2_subdev		subdev;
+ 	struct v4l2_ctrl_handler	hdl;
++	struct v4l2_clk			*clk;
+ 
+ 	int				ident;
+ 	u16				model;
+@@ -792,7 +794,7 @@ static int ov9740_s_power(struct v4l2_subdev *sd, int on)
+ 	int ret;
+ 
+ 	if (on) {
+-		ret = soc_camera_power_on(&client->dev, ssdd);
++		ret = soc_camera_power_on(&client->dev, ssdd, priv->clk);
+ 		if (ret < 0)
+ 			return ret;
+ 
+@@ -806,7 +808,7 @@ static int ov9740_s_power(struct v4l2_subdev *sd, int on)
+ 			priv->current_enable = true;
+ 		}
+ 
+-		soc_camera_power_off(&client->dev, ssdd);
++		soc_camera_power_off(&client->dev, ssdd, priv->clk);
+ 	}
+ 
+ 	return 0;
+@@ -975,9 +977,18 @@ static int ov9740_probe(struct i2c_client *client,
+ 	if (priv->hdl.error)
+ 		return priv->hdl.error;
+ 
++	priv->clk = v4l2_clk_get(&priv->subdev, "mclk");
++	if (IS_ERR(priv->clk)) {
++		ret = PTR_ERR(priv->clk);
++		goto eclkget;
++	}
++
+ 	ret = ov9740_video_probe(client);
+-	if (ret < 0)
++	if (ret < 0) {
++		v4l2_clk_put(priv->clk);
++eclkget:
+ 		v4l2_ctrl_handler_free(&priv->hdl);
++	}
+ 
+ 	return ret;
+ }
+@@ -986,6 +997,7 @@ static int ov9740_remove(struct i2c_client *client)
+ {
+ 	struct ov9740_priv *priv = i2c_get_clientdata(client);
+ 
++	v4l2_clk_put(priv->clk);
+ 	v4l2_device_unregister_subdev(&priv->subdev);
+ 	v4l2_ctrl_handler_free(&priv->hdl);
+ 	return 0;
+diff --git a/drivers/media/i2c/soc_camera/rj54n1cb0c.c b/drivers/media/i2c/soc_camera/rj54n1cb0c.c
+index 5c92679..7b687ed 100644
+--- a/drivers/media/i2c/soc_camera/rj54n1cb0c.c
++++ b/drivers/media/i2c/soc_camera/rj54n1cb0c.c
+@@ -17,6 +17,7 @@
+ 
+ #include <media/rj54n1cb0c.h>
+ #include <media/soc_camera.h>
++#include <media/v4l2-clk.h>
+ #include <media/v4l2-subdev.h>
+ #include <media/v4l2-chip-ident.h>
+ #include <media/v4l2-ctrls.h>
+@@ -151,6 +152,7 @@ struct rj54n1_clock_div {
+ struct rj54n1 {
+ 	struct v4l2_subdev subdev;
+ 	struct v4l2_ctrl_handler hdl;
++	struct v4l2_clk *clk;
+ 	struct rj54n1_clock_div clk_div;
+ 	const struct rj54n1_datafmt *fmt;
+ 	struct v4l2_rect rect;	/* Sensor window */
+@@ -1184,8 +1186,9 @@ static int rj54n1_s_power(struct v4l2_subdev *sd, int on)
+ {
+ 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+ 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
++	struct rj54n1 *rj54n1 = to_rj54n1(client);
+ 
+-	return soc_camera_set_power(&client->dev, ssdd, on);
++	return soc_camera_set_power(&client->dev, ssdd, rj54n1->clk, on);
+ }
+ 
+ static int rj54n1_s_ctrl(struct v4l2_ctrl *ctrl)
+@@ -1382,9 +1385,18 @@ static int rj54n1_probe(struct i2c_client *client,
+ 	rj54n1->tgclk_mhz	= (rj54n1_priv->mclk_freq / PLL_L * PLL_N) /
+ 		(clk_div.ratio_tg + 1) / (clk_div.ratio_t + 1);
+ 
++	rj54n1->clk = v4l2_clk_get(&rj54n1->subdev, "mclk");
++	if (IS_ERR(rj54n1->clk)) {
++		ret = PTR_ERR(rj54n1->clk);
++		goto eclkget;
++	}
++
+ 	ret = rj54n1_video_probe(client, rj54n1_priv);
+-	if (ret < 0)
++	if (ret < 0) {
++		v4l2_clk_put(rj54n1->clk);
++eclkget:
+ 		v4l2_ctrl_handler_free(&rj54n1->hdl);
++	}
+ 
+ 	return ret;
+ }
+@@ -1394,6 +1406,7 @@ static int rj54n1_remove(struct i2c_client *client)
+ 	struct rj54n1 *rj54n1 = to_rj54n1(client);
+ 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
+ 
++	v4l2_clk_put(rj54n1->clk);
+ 	v4l2_device_unregister_subdev(&rj54n1->subdev);
+ 	if (ssdd->free_bus)
+ 		ssdd->free_bus(ssdd);
+diff --git a/drivers/media/i2c/soc_camera/tw9910.c b/drivers/media/i2c/soc_camera/tw9910.c
+index 7d20746..3ca1d9e 100644
+--- a/drivers/media/i2c/soc_camera/tw9910.c
++++ b/drivers/media/i2c/soc_camera/tw9910.c
+@@ -28,6 +28,7 @@
+ #include <media/soc_camera.h>
+ #include <media/tw9910.h>
+ #include <media/v4l2-chip-ident.h>
++#include <media/v4l2-clk.h>
+ #include <media/v4l2-subdev.h>
+ 
+ #define GET_ID(val)  ((val & 0xF8) >> 3)
+@@ -228,6 +229,7 @@ struct tw9910_scale_ctrl {
+ 
+ struct tw9910_priv {
+ 	struct v4l2_subdev		subdev;
++	struct v4l2_clk			*clk;
+ 	struct tw9910_video_info	*info;
+ 	const struct tw9910_scale_ctrl	*scale;
+ 	v4l2_std_id			norm;
+@@ -570,8 +572,9 @@ static int tw9910_s_power(struct v4l2_subdev *sd, int on)
+ {
+ 	struct i2c_client *client = v4l2_get_subdevdata(sd);
+ 	struct soc_camera_subdev_desc *ssdd = soc_camera_i2c_to_desc(client);
++	struct tw9910_priv *priv = to_tw9910(client);
+ 
+-	return soc_camera_set_power(&client->dev, ssdd, on);
++	return soc_camera_set_power(&client->dev, ssdd, priv->clk, on);
+ }
+ 
+ static int tw9910_set_frame(struct v4l2_subdev *sd, u32 *width, u32 *height)
+@@ -912,6 +915,7 @@ static int tw9910_probe(struct i2c_client *client,
+ 	struct i2c_adapter		*adapter  		to_i2c_adapter(client->dev.parent);
+ 	struct soc_camera_subdev_desc	*ssdd = soc_camera_i2c_to_desc(client);
++	int ret;
+ 
+ 	if (!ssdd || !ssdd->drv_priv) {
+ 		dev_err(&client->dev, "TW9910: missing platform data!\n");
+@@ -935,11 +939,21 @@ static int tw9910_probe(struct i2c_client *client,
+ 
+ 	v4l2_i2c_subdev_init(&priv->subdev, client, &tw9910_subdev_ops);
+ 
+-	return tw9910_video_probe(client);
++	priv->clk = v4l2_clk_get(&priv->subdev, "mclk");
++	if (IS_ERR(priv->clk))
++		return PTR_ERR(priv->clk);
++
++	ret = tw9910_video_probe(client);
++	if (ret < 0)
++		v4l2_clk_put(priv->clk);
++
++	return ret;
+ }
+ 
+ static int tw9910_remove(struct i2c_client *client)
+ {
++	struct tw9910_priv *priv = to_tw9910(client);
++	v4l2_clk_put(priv->clk);
+ 	return 0;
+ }
+ 
+diff --git a/drivers/media/platform/soc_camera/soc_camera.c b/drivers/media/platform/soc_camera/soc_camera.c
+index 0b6ddff..a9e6f01 100644
+--- a/drivers/media/platform/soc_camera/soc_camera.c
++++ b/drivers/media/platform/soc_camera/soc_camera.c
+@@ -30,6 +30,7 @@
+ #include <linux/vmalloc.h>
+ 
+ #include <media/soc_camera.h>
++#include <media/v4l2-clk.h>
+ #include <media/v4l2-common.h>
+ #include <media/v4l2-ioctl.h>
+ #include <media/v4l2-dev.h>
+@@ -50,13 +51,19 @@ static LIST_HEAD(hosts);
+ static LIST_HEAD(devices);
+ static DEFINE_MUTEX(list_lock);		/* Protects the list of hosts */
+ 
+-int soc_camera_power_on(struct device *dev, struct soc_camera_subdev_desc *ssdd)
++int soc_camera_power_on(struct device *dev, struct soc_camera_subdev_desc *ssdd,
++			struct v4l2_clk *clk)
+ {
+-	int ret = regulator_bulk_enable(ssdd->num_regulators,
++	int ret = clk ? v4l2_clk_enable(clk) : 0;
++	if (ret < 0) {
++		dev_err(dev, "Cannot enable clock\n");
++		return ret;
++	}
++	ret = regulator_bulk_enable(ssdd->num_regulators,
+ 					ssdd->regulators);
+ 	if (ret < 0) {
+ 		dev_err(dev, "Cannot enable regulators\n");
+-		return ret;
++		goto eregenable;;
+ 	}
+ 
+ 	if (ssdd->power) {
+@@ -64,16 +71,25 @@ int soc_camera_power_on(struct device *dev, struct soc_camera_subdev_desc *ssdd)
+ 		if (ret < 0) {
+ 			dev_err(dev,
+ 				"Platform failed to power-on the camera.\n");
+-			regulator_bulk_disable(ssdd->num_regulators,
+-					       ssdd->regulators);
++			goto epwron;
+ 		}
+ 	}
+ 
++	return 0;
++
++epwron:
++	regulator_bulk_disable(ssdd->num_regulators,
++			       ssdd->regulators);
++eregenable:
++	if (clk)
++		v4l2_clk_disable(clk);
++
+ 	return ret;
+ }
+ EXPORT_SYMBOL(soc_camera_power_on);
+ 
+-int soc_camera_power_off(struct device *dev, struct soc_camera_subdev_desc *ssdd)
++int soc_camera_power_off(struct device *dev, struct soc_camera_subdev_desc *ssdd,
++			 struct v4l2_clk *clk)
+ {
+ 	int ret = 0;
+ 	int err;
+@@ -94,28 +110,44 @@ int soc_camera_power_off(struct device *dev, struct soc_camera_subdev_desc *ssdd
+ 		ret = ret ? : err;
+ 	}
+ 
++	if (clk)
++		v4l2_clk_disable(clk);
++
+ 	return ret;
+ }
+ EXPORT_SYMBOL(soc_camera_power_off);
+ 
+ static int __soc_camera_power_on(struct soc_camera_device *icd)
+ {
++	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
+ 	struct v4l2_subdev *sd = soc_camera_to_subdev(icd);
+ 	int ret;
+ 
++	if (!icd->clk) {
++		ret = ici->ops->add(icd);
++		if (ret < 0)
++			return ret;
++	}
++
+ 	ret = v4l2_subdev_call(sd, core, s_power, 1);
+-	if (ret < 0 && ret != -ENOIOCTLCMD && ret != -ENODEV)
++	if (ret < 0 && ret != -ENOIOCTLCMD && ret != -ENODEV) {
++		if (!icd->clk)
++			ici->ops->remove(icd);
+ 		return ret;
++	}
+ 
+ 	return 0;
+ }
+ 
+ static int __soc_camera_power_off(struct soc_camera_device *icd)
+ {
++	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
+ 	struct v4l2_subdev *sd = soc_camera_to_subdev(icd);
+ 	int ret;
+ 
+ 	ret = v4l2_subdev_call(sd, core, s_power, 0);
++	if (!icd->clk)
++		ici->ops->remove(icd);
+ 	if (ret < 0 && ret != -ENOIOCTLCMD && ret != -ENODEV)
+ 		return ret;
+ 
+@@ -555,12 +587,6 @@ static int soc_camera_open(struct file *file)
+ 		if (sdesc->subdev_desc.reset)
+ 			sdesc->subdev_desc.reset(icd->pdev);
+ 
+-		ret = ici->ops->add(icd);
+-		if (ret < 0) {
+-			dev_err(icd->pdev, "Couldn't activate the camera: %d\n", ret);
+-			goto eiciadd;
+-		}
+-
+ 		ret = __soc_camera_power_on(icd);
+ 		if (ret < 0)
+ 			goto epower;
+@@ -606,8 +632,6 @@ esfmt:
+ eresume:
+ 	__soc_camera_power_off(icd);
+ epower:
+-	ici->ops->remove(icd);
+-eiciadd:
+ 	icd->use_count--;
+ 	module_put(ici->ops->owner);
+ emodule:
+@@ -629,7 +653,6 @@ static int soc_camera_close(struct file *file)
+ 
+ 		if (ici->ops->init_videobuf2)
+ 			vb2_queue_release(&icd->vb2_vidq);
+-		ici->ops->remove(icd);
+ 
+ 		__soc_camera_power_off(icd);
+ 	}
+@@ -1068,6 +1091,57 @@ static void scan_add_host(struct soc_camera_host *ici)
+ 	mutex_unlock(&list_lock);
+ }
  
 +/*
-+ * of_sh_initc_get_intc() - Get INTC table.
-+ * @np:     device node to get INTC from
-+ * @d:      a pointer of intc table
-+ *
-+ * Return: one of the errno value on the error condition
++ * It is invalid to call v4l2_clk_enable() after a successful probing
++ * asynchronously outside of V4L2 operations, i.e. with .host_lock not held.
 + */
-+int of_sh_intc_get_intc(struct device_node *np, struct intc_desc *d);
++static int soc_camera_clk_enable(struct v4l2_clk *clk)
++{
++	struct soc_camera_device *icd = clk->priv;
++	struct soc_camera_host *ici;
++
++	if (!icd || !icd->parent)
++		return -ENODEV;
++
++	ici = to_soc_camera_host(icd->parent);
++
++	if (!try_module_get(ici->ops->owner))
++		return -ENODEV;
++
++	/*
++	 * If a different client is currently being probed, the host will tell
++	 * you to go
++	 */
++	return ici->ops->add(icd);
++}
++
++static void soc_camera_clk_disable(struct v4l2_clk *clk)
++{
++	struct soc_camera_device *icd = clk->priv;
++	struct soc_camera_host *ici;
++
++	if (!icd || !icd->parent)
++		return;
++
++	ici = to_soc_camera_host(icd->parent);
++
++	ici->ops->remove(icd);
++
++	module_put(ici->ops->owner);
++}
 +
 +/*
-+ * of_sh_intc_get_force_enable - Get and set force_enable vector in
-+ *                               struct intc_desc.
-+ * @np:  device node to get INTC from
-+ * @d:   a pointer of struct intc_desc
-+ *
-+ * Return: none
++ * Eventually, it would be more logical to make the respective host the clock
++ * owner, but then we would have to copy this struct for each ici. Besides, it
++ * would introduce the circular dependency problem, unless we port all client
++ * drivers to release the clock, when not in use.
 + */
-+void of_sh_intc_get_force_enable(struct device_node *np,
-+				struct intc_desc *d);
++static const struct v4l2_clk_ops soc_camera_clk_ops = {
++	.owner = THIS_MODULE,
++	.enable = soc_camera_clk_enable,
++	.disable = soc_camera_clk_disable,
++};
 +
-+/*
-+ * of_sh_intc_get_force_disable - Get and set force_disable vector in
-+ *                                struct intc_desc.
-+ * @np:  device node to get INTC from
-+ * @d:   a pointer of struct intc_desc
-+ *
-+ * Return: none
-+ */
-+void of_sh_intc_get_force_disable(struct device_node *np,
-+				struct intc_desc *d);
+ #ifdef CONFIG_I2C_BOARDINFO
+ static int soc_camera_init_i2c(struct soc_camera_device *icd,
+ 			       struct soc_camera_desc *sdesc)
+@@ -1077,19 +1151,33 @@ static int soc_camera_init_i2c(struct soc_camera_device *icd,
+ 	struct soc_camera_host_desc *shd = &sdesc->host_desc;
+ 	struct i2c_adapter *adap = i2c_get_adapter(shd->i2c_adapter_id);
+ 	struct v4l2_subdev *subdev;
++	char clk_name[V4L2_SUBDEV_NAME_SIZE];
++	int ret;
+ 
+ 	if (!adap) {
+ 		dev_err(icd->pdev, "Cannot get I2C adapter #%d. No driver?\n",
+ 			shd->i2c_adapter_id);
+-		goto ei2cga;
++		return -ENODEV;
+ 	}
+ 
+ 	shd->board_info->platform_data = &sdesc->subdev_desc;
+ 
++	snprintf(clk_name, sizeof(clk_name), "%s %d-%04x",
++		 shd->board_info->type,
++		 shd->i2c_adapter_id, shd->board_info->addr);
 +
-+/*
-+ * of_sh_intc_get_skip_syscore_suspend - Get and set skip_syscore_suspend
-+ *                                       flag in struct intc_desc.
-+ * @np:  device node to get INTC from
-+ * @d:   a pointer of struct intc_desc
-+ *
-+ * Return: none
-+ */
-+void of_sh_intc_get_skip_syscore_suspend(struct device_node *np,
-+				struct intc_desc *d);
++	icd->clk = v4l2_clk_register(&soc_camera_clk_ops, clk_name, "mclk", icd);
++	if (IS_ERR(icd->clk)) {
++		ret = PTR_ERR(icd->clk);
++		goto eclkreg;
++	}
 +
-+/*
-+ * of_sh_intc_get_intevtsa_vect  - Get using vector by intevtsa
-+ * @np:  device node to get INTC from
-+ * @vect:a pointer of value for vector
-+ *
-+ * Return: one of the errno value on the error condition
-+ */
-+int of_sh_intc_get_intevtsa_vect(struct device_node *np, unsigned short *vect);
+ 	subdev = v4l2_i2c_new_subdev_board(&ici->v4l2_dev, adap,
+ 				shd->board_info, NULL);
+-	if (!subdev)
++	if (!subdev) {
++		ret = -ENODEV;
+ 		goto ei2cnd;
++	}
+ 
+ 	client = v4l2_get_subdevdata(subdev);
+ 
+@@ -1098,9 +1186,11 @@ static int soc_camera_init_i2c(struct soc_camera_device *icd,
+ 
+ 	return 0;
+ ei2cnd:
++	v4l2_clk_unregister(icd->clk);
++	icd->clk = NULL;
++eclkreg:
+ 	i2c_put_adapter(adap);
+-ei2cga:
+-	return -ENODEV;
++	return ret;
+ }
+ 
+ static void soc_camera_free_i2c(struct soc_camera_device *icd)
+@@ -1113,6 +1203,8 @@ static void soc_camera_free_i2c(struct soc_camera_device *icd)
+ 	v4l2_device_unregister_subdev(i2c_get_clientdata(client));
+ 	i2c_unregister_device(client);
+ 	i2c_put_adapter(adap);
++	v4l2_clk_unregister(icd->clk);
++	icd->clk = NULL;
+ }
+ #else
+ #define soc_camera_init_i2c(icd, sdesc)	(-ENODEV)
+@@ -1150,26 +1242,31 @@ static int soc_camera_probe(struct soc_camera_device *icd)
+ 	if (ssdd->reset)
+ 		ssdd->reset(icd->pdev);
+ 
+-	mutex_lock(&ici->host_lock);
+-	ret = ici->ops->add(icd);
+-	mutex_unlock(&ici->host_lock);
+-	if (ret < 0)
+-		goto eadd;
+-
+ 	/* Must have icd->vdev before registering the device */
+ 	ret = video_dev_create(icd);
+ 	if (ret < 0)
+ 		goto evdc;
+ 
++	/*
++	 * ..._video_start() will create a device node, video_register_device()
++	 * itself is protected against concurrent open() calls, but we also have
++	 * to protect our data also during client probing.
++	 */
++	mutex_lock(&ici->host_lock);
 +
- #endif /* __SH_INTC_H */
+ 	/* Non-i2c cameras, e.g., soc_camera_platform, have no board_info */
+ 	if (shd->board_info) {
+ 		ret = soc_camera_init_i2c(icd, sdesc);
+ 		if (ret < 0)
+-			goto eadddev;
++			goto eadd;
+ 	} else if (!ssdd->add_device || !ssdd->del_device) {
+ 		ret = -EINVAL;
+-		goto eadddev;
++		goto eadd;
+ 	} else {
++		ret = ici->ops->add(icd);
++		if (ret < 0)
++			goto eadd;
++
+ 		if (shd->module_name)
+ 			ret = request_module(shd->module_name);
+ 
+@@ -1205,13 +1302,6 @@ static int soc_camera_probe(struct soc_camera_device *icd)
+ 
+ 	icd->field = V4L2_FIELD_ANY;
+ 
+-	/*
+-	 * ..._video_start() will create a device node, video_register_device()
+-	 * itself is protected against concurrent open() calls, but we also have
+-	 * to protect our data.
+-	 */
+-	mutex_lock(&ici->host_lock);
+-
+ 	ret = soc_camera_video_start(icd);
+ 	if (ret < 0)
+ 		goto evidstart;
+@@ -1224,14 +1314,14 @@ static int soc_camera_probe(struct soc_camera_device *icd)
+ 		icd->field		= mf.field;
+ 	}
+ 
+-	ici->ops->remove(icd);
++	if (!shd->board_info)
++		ici->ops->remove(icd);
+ 
+ 	mutex_unlock(&ici->host_lock);
+ 
+ 	return 0;
+ 
+ evidstart:
+-	mutex_unlock(&ici->host_lock);
+ 	soc_camera_free_user_formats(icd);
+ eiufmt:
+ ectrl:
+@@ -1240,16 +1330,15 @@ ectrl:
+ 	} else {
+ 		ssdd->del_device(icd);
+ 		module_put(control->driver->owner);
+-	}
+ enodrv:
+ eadddev:
++		ici->ops->remove(icd);
++	}
++eadd:
+ 	video_device_release(icd->vdev);
+ 	icd->vdev = NULL;
+-evdc:
+-	mutex_lock(&ici->host_lock);
+-	ici->ops->remove(icd);
+ 	mutex_unlock(&ici->host_lock);
+-eadd:
++evdc:
+ 	v4l2_ctrl_handler_free(&icd->ctrl_handler);
+ 	return ret;
+ }
+diff --git a/drivers/media/platform/soc_camera/soc_camera_platform.c b/drivers/media/platform/soc_camera/soc_camera_platform.c
+index ce3b1d6..8830dfa 100644
+--- a/drivers/media/platform/soc_camera/soc_camera_platform.c
++++ b/drivers/media/platform/soc_camera/soc_camera_platform.c
+@@ -54,7 +54,7 @@ static int soc_camera_platform_s_power(struct v4l2_subdev *sd, int on)
+ {
+ 	struct soc_camera_platform_info *p = v4l2_get_subdevdata(sd);
+ 
+-	return soc_camera_set_power(p->icd->control, &p->icd->sdesc->subdev_desc, on);
++	return soc_camera_set_power(p->icd->control, &p->icd->sdesc->subdev_desc, NULL, on);
+ }
+ 
+ static struct v4l2_subdev_core_ops platform_subdev_core_ops = {
+diff --git a/include/media/soc_camera.h b/include/media/soc_camera.h
+index 2dc3ddd..a9888e9 100644
+--- a/include/media/soc_camera.h
++++ b/include/media/soc_camera.h
+@@ -49,6 +49,7 @@ struct soc_camera_device {
+ 	/* soc_camera.c private count. Only accessed with .host_lock held */
+ 	int use_count;
+ 	struct file *streamer;		/* stream owner */
++	struct v4l2_clk *clk;
+ 	union {
+ 		struct videobuf_queue vb_vidq;
+ 		struct vb2_queue vb2_vidq;
+@@ -316,14 +317,16 @@ static inline void soc_camera_limit_side(int *start, int *length,
+ unsigned long soc_camera_apply_board_flags(struct soc_camera_subdev_desc *ssdd,
+ 					   const struct v4l2_mbus_config *cfg);
+ 
+-int soc_camera_power_on(struct device *dev, struct soc_camera_subdev_desc *ssdd);
+-int soc_camera_power_off(struct device *dev, struct soc_camera_subdev_desc *ssdd);
++int soc_camera_power_on(struct device *dev, struct soc_camera_subdev_desc *ssdd,
++			struct v4l2_clk *clk);
++int soc_camera_power_off(struct device *dev, struct soc_camera_subdev_desc *ssdd,
++			 struct v4l2_clk *clk);
+ 
+ static inline int soc_camera_set_power(struct device *dev,
+-				struct soc_camera_subdev_desc *ssdd, bool on)
++		struct soc_camera_subdev_desc *ssdd, struct v4l2_clk *clk, bool on)
+ {
+-	return on ? soc_camera_power_on(dev, ssdd)
+-		  : soc_camera_power_off(dev, ssdd);
++	return on ? soc_camera_power_on(dev, ssdd, clk)
++		  : soc_camera_power_off(dev, ssdd, clk);
+ }
+ 
+ /* This is only temporary here - until v4l2-subdev begins to link to video_device */
 -- 
-1.7.10.4
+1.7.2.5
 
