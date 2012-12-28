@@ -1,168 +1,70 @@
-From: Tang Chen <tangchen@cn.fujitsu.com>
-Date: Tue, 04 Dec 2012 10:10:02 +0000
-Subject: Re: [Patch v4 11/12] memory-hotplug: remove sysfs file of node
-Message-Id: <50BDCBFA.6000900@cn.fujitsu.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Dec 2012 22:53:47 +0000
+Subject: [PATCH v4 05/81] sh: sh7786: Fix port E, G and J GPIOs
+Message-Id: <1356735303-29474-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1354010422-19648-1-git-send-email-wency@cn.fujitsu.com> <1354010422-19648-12-git-send-email-wency@cn.fujitsu.com>
-In-Reply-To: <1354010422-19648-12-git-send-email-wency@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wen Congyang <wency@cn.fujitsu.com>
-Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org, David Rientjes <rientjes@google.com>, Jiang Liu <liuj97@gmail.com>, Len Brown <len.brown@intel.com>, benh@kernel.crashing.org, paulus@samba.org, Christoph Lameter <cl@linux.com>, Minchan Kim <minchan.kim@gmail.com>, Andrew Morton <akpm@linux-foundation.org>, KOSAKI Motohiro <kosaki.motohiro@jp.fujitsu.com>, Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>, Jianguo Wu <wujianguo@huawei.com>
+To: linux-sh@vger.kernel.org
 
-On 11/27/2012 06:00 PM, Wen Congyang wrote:
-> This patch introduces a new function try_offline_node() to
-> remove sysfs file of node when all memory sections of this
-> node are removed. If some memory sections of this node are
-> not removed, this function does nothing.
->
-> CC: David Rientjes<rientjes@google.com>
-> CC: Jiang Liu<liuj97@gmail.com>
-> CC: Len Brown<len.brown@intel.com>
-> CC: Christoph Lameter<cl@linux.com>
-> Cc: Minchan Kim<minchan.kim@gmail.com>
-> CC: Andrew Morton<akpm@linux-foundation.org>
-> CC: KOSAKI Motohiro<kosaki.motohiro@jp.fujitsu.com>
-> CC: Yasuaki Ishimatsu<isimatu.yasuaki@jp.fujitsu.com>
-> Signed-off-by: Wen Congyang<wency@cn.fujitsu.com>
+The port E, G and J GPIOs don't match the SoC datasheet (they seem to
+have been copied from the SH7785). Fix them.
 
-Reviewed-by: Tang Chen <tangchen@cn.fujitsu.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ arch/sh/include/cpu-sh4/cpu/sh7786.h    |    8 +++-----
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c |    4 ++--
+ 2 files changed, 5 insertions(+), 7 deletions(-)
 
-> ---
->   drivers/acpi/acpi_memhotplug.c |  8 +++++-
->   include/linux/memory_hotplug.h |  2 +-
->   mm/memory_hotplug.c            | 58 ++++++++++++++++++++++++++++++++++++++++--
->   3 files changed, 64 insertions(+), 4 deletions(-)
->
-> diff --git a/drivers/acpi/acpi_memhotplug.c b/drivers/acpi/acpi_memhotplug.c
-> index 24c807f..0780f99 100644
-> --- a/drivers/acpi/acpi_memhotplug.c
-> +++ b/drivers/acpi/acpi_memhotplug.c
-> @@ -310,7 +310,9 @@ static int acpi_memory_disable_device(struct acpi_memory_device *mem_device)
->   {
->   	int result;
->   	struct acpi_memory_info *info, *n;
-> +	int node;
->
-> +	node = acpi_get_node(mem_device->device->handle);
->
->   	/*
->   	 * Ask the VM to offline this memory range.
-> @@ -318,7 +320,11 @@ static int acpi_memory_disable_device(struct acpi_memory_device *mem_device)
->   	 */
->   	list_for_each_entry_safe(info, n,&mem_device->res_list, list) {
->   		if (info->enabled) {
-> -			result = remove_memory(info->start_addr, info->length);
-> +			if (node<  0)
-> +				node = memory_add_physaddr_to_nid(
-> +					info->start_addr);
-> +			result = remove_memory(node, info->start_addr,
-> +				info->length);
->   			if (result)
->   				return result;
->   		}
-> diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
-> index d4c4402..7b4cfe6 100644
-> --- a/include/linux/memory_hotplug.h
-> +++ b/include/linux/memory_hotplug.h
-> @@ -231,7 +231,7 @@ extern int arch_add_memory(int nid, u64 start, u64 size);
->   extern int offline_pages(unsigned long start_pfn, unsigned long nr_pages);
->   extern int offline_memory_block(struct memory_block *mem);
->   extern bool is_memblock_offlined(struct memory_block *mem);
-> -extern int remove_memory(u64 start, u64 size);
-> +extern int remove_memory(int node, u64 start, u64 size);
->   extern int sparse_add_one_section(struct zone *zone, unsigned long start_pfn,
->   								int nr_pages);
->   extern void sparse_remove_one_section(struct zone *zone, struct mem_section *ms);
-> diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-> index aa97d56..449663e 100644
-> --- a/mm/memory_hotplug.c
-> +++ b/mm/memory_hotplug.c
-> @@ -29,6 +29,7 @@
->   #include<linux/suspend.h>
->   #include<linux/mm_inline.h>
->   #include<linux/firmware-map.h>
-> +#include<linux/stop_machine.h>
->
->   #include<asm/tlbflush.h>
->
-> @@ -1288,7 +1289,58 @@ static int is_memblock_offlined_cb(struct memory_block *mem, void *arg)
->   	return ret;
->   }
->
-> -int __ref remove_memory(u64 start, u64 size)
-> +static int check_cpu_on_node(void *data)
-> +{
-> +	struct pglist_data *pgdat = data;
-> +	int cpu;
-> +
-> +	for_each_present_cpu(cpu) {
-> +		if (cpu_to_node(cpu) = pgdat->node_id)
-> +			/*
-> +			 * the cpu on this node isn't removed, and we can't
-> +			 * offline this node.
-> +			 */
-> +			return -EBUSY;
-> +	}
-> +
-> +	return 0;
-> +}
-> +
-> +/* offline the node if all memory sections of this node are removed */
-> +static void try_offline_node(int nid)
-> +{
-> +	unsigned long start_pfn = NODE_DATA(nid)->node_start_pfn;
-> +	unsigned long end_pfn = start_pfn + NODE_DATA(nid)->node_spanned_pages;
-> +	unsigned long pfn;
-> +
-> +	for (pfn = start_pfn; pfn<  end_pfn; pfn += PAGES_PER_SECTION) {
-> +		unsigned long section_nr = pfn_to_section_nr(pfn);
-> +
-> +		if (!present_section_nr(section_nr))
-> +			continue;
-> +
-> +		if (pfn_to_nid(pfn) != nid)
-> +			continue;
-> +
-> +		/*
-> +		 * some memory sections of this node are not removed, and we
-> +		 * can't offline node now.
-> +		 */
-> +		return;
-> +	}
-> +
-> +	if (stop_machine(check_cpu_on_node, NODE_DATA(nid), NULL))
-> +		return;
-> +
-> +	/*
-> +	 * all memory/cpu of this node are removed, we can offline this
-> +	 * node now.
-> +	 */
-> +	node_set_offline(nid);
-> +	unregister_one_node(nid);
-> +}
-> +
-> +int __ref remove_memory(int nid, u64 start, u64 size)
->   {
->   	unsigned long start_pfn, end_pfn;
->   	int ret = 0;
-> @@ -1335,6 +1387,8 @@ repeat:
->
->   	arch_remove_memory(start, size);
->
-> +	try_offline_node(nid);
-> +
->   	unlock_memory_hotplug();
->
->   	return 0;
-> @@ -1344,7 +1398,7 @@ int offline_pages(unsigned long start_pfn, unsigned long nr_pages)
->   {
->   	return -EINVAL;
->   }
-> -int remove_memory(u64 start, u64 size)
-> +int remove_memory(int nid, u64 start, u64 size)
->   {
->   	return -EINVAL;
->   }
+diff --git a/arch/sh/include/cpu-sh4/cpu/sh7786.h b/arch/sh/include/cpu-sh4/cpu/sh7786.h
+index 977862f..0df09e6 100644
+--- a/arch/sh/include/cpu-sh4/cpu/sh7786.h
++++ b/arch/sh/include/cpu-sh4/cpu/sh7786.h
+@@ -32,16 +32,14 @@ enum {
+ 	GPIO_PD3, GPIO_PD2, GPIO_PD1, GPIO_PD0,
+ 
+ 	/* PE */
+-	GPIO_PE5, GPIO_PE4, GPIO_PE3, GPIO_PE2,
+-	GPIO_PE1, GPIO_PE0,
++	GPIO_PE7, GPIO_PE6,
+ 
+ 	/* PF */
+ 	GPIO_PF7, GPIO_PF6, GPIO_PF5, GPIO_PF4,
+ 	GPIO_PF3, GPIO_PF2, GPIO_PF1, GPIO_PF0,
+ 
+ 	/* PG */
+-	GPIO_PG7, GPIO_PG6, GPIO_PG5, GPIO_PG4,
+-	GPIO_PG3, GPIO_PG2, GPIO_PG1, GPIO_PG0,
++	GPIO_PG7, GPIO_PG6, GPIO_PG5,
+ 
+ 	/* PH */
+ 	GPIO_PH7, GPIO_PH6, GPIO_PH5, GPIO_PH4,
+@@ -49,7 +47,7 @@ enum {
+ 
+ 	/* PJ */
+ 	GPIO_PJ7, GPIO_PJ6, GPIO_PJ5, GPIO_PJ4,
+-	GPIO_PJ3, GPIO_PJ2, GPIO_PJ1, GPIO_PJ0,
++	GPIO_PJ3, GPIO_PJ2, GPIO_PJ1,
+ 
+ 	/* DU */
+ 	GPIO_FN_DCLKIN, GPIO_FN_DCLKOUT, GPIO_FN_ODDF,
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
+index 4229e07..c24a777 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
+@@ -468,8 +468,8 @@ static struct pinmux_gpio pinmux_gpios[] = {
+ 	PINMUX_GPIO(GPIO_PD0, PD0_DATA),
+ 
+ 	/* PE */
+-	PINMUX_GPIO(GPIO_PE5, PE7_DATA),
+-	PINMUX_GPIO(GPIO_PE4, PE6_DATA),
++	PINMUX_GPIO(GPIO_PE7, PE7_DATA),
++	PINMUX_GPIO(GPIO_PE6, PE6_DATA),
+ 
+ 	/* PF */
+ 	PINMUX_GPIO(GPIO_PF7, PF7_DATA),
+-- 
+1.7.8.6
 
