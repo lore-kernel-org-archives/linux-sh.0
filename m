@@ -1,38 +1,65 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 28 Dec 2012 22:53:49 +0000
-Subject: [PATCH v4 07/81] sh: shx3: Fix last GPIO index
-Message-Id: <1356735303-29474-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Dec 2012 22:54:06 +0000
+Subject: [PATCH v4 24/81] ARM: shmobile: r8a7779: Register PFC platform device
+Message-Id: <1356735303-29474-25-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-A careless look at the code shows that the last entry in the
-pinmux_gpios seems to be GPIO_FN_IRQOUT. However, entries are ordered by
-the GPIO number, as the PINMUX_GPIO macro is expended to an indexed
-array initializer. The last entry in the array is thus GPIO_FN_STATUS0.
-Set the pinmux_info last_gpio field accordingly.
+Add arch code to register the PFC platform device instead of calling the
+driver directly. Platform device registration in the sh-pfc driver will
+be removed.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/sh/kernel/cpu/sh4a/pinmux-shx3.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ arch/arm/mach-shmobile/pfc-r8a7779.c |   16 ++++++++++++----
+ 1 files changed, 12 insertions(+), 4 deletions(-)
 
-diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c b/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
-index aaa5338..2ebb983 100644
---- a/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
-+++ b/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
-@@ -572,7 +572,7 @@ static struct pinmux_info shx3_pinmux_info = {
- 	.mark		= { PINMUX_MARK_BEGIN,     PINMUX_MARK_END },
- 	.function	= { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
- 	.first_gpio	= GPIO_PA7,
--	.last_gpio	= GPIO_FN_IRQOUT,
-+	.last_gpio	= GPIO_FN_STATUS0,
- 	.gpios		= shx3_pinmux_gpios,
- 	.gpio_data	= shx3_pinmux_data,
- 	.gpio_data_size	= ARRAY_SIZE(shx3_pinmux_data),
+diff --git a/arch/arm/mach-shmobile/pfc-r8a7779.c b/arch/arm/mach-shmobile/pfc-r8a7779.c
+index 9513234..3d333b1 100644
+--- a/arch/arm/mach-shmobile/pfc-r8a7779.c
++++ b/arch/arm/mach-shmobile/pfc-r8a7779.c
+@@ -19,6 +19,7 @@
+  */
+ #include <linux/init.h>
+ #include <linux/kernel.h>
++#include <linux/platform_device.h>
+ #include <linux/sh_pfc.h>
+ #include <linux/ioport.h>
+ #include <mach/r8a7779.h>
+@@ -2616,9 +2617,6 @@ static struct resource r8a7779_pfc_resources[] = {
+ static struct pinmux_info r8a7779_pinmux_info = {
+ 	.name = "r8a7779_pfc",
+ 
+-	.resource = r8a7779_pfc_resources,
+-	.num_resources = ARRAY_SIZE(r8a7779_pfc_resources),
+-
+ 	.unlock_reg = 0xfffc0000, /* PMMR */
+ 
+ 	.reserved_id = PINMUX_RESERVED,
+@@ -2639,7 +2637,17 @@ static struct pinmux_info r8a7779_pinmux_info = {
+ 	.gpio_data_size = ARRAY_SIZE(pinmux_data),
+ };
+ 
++static struct platform_device r8a7779_pfc_device = {
++	.name		= "sh-pfc",
++	.id		= -1,
++	.resource	= r8a7779_pfc_resources,
++	.num_resources	= ARRAY_SIZE(r8a7779_pfc_resources),
++	.dev = {
++		.platform_data = &r8a7779_pinmux_info,
++	},
++};
++
+ void r8a7779_pinmux_init(void)
+ {
+-	register_pinmux(&r8a7779_pinmux_info);
++	platform_device_register(&r8a7779_pfc_device);
+ }
 -- 
 1.7.8.6
 
