@@ -1,44 +1,39 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 12 Dec 2012 14:38:17 +0000
-Subject: [PATCH 13/14] mmc: sh-mmcif: fix I/O errors
-Message-Id: <1355323098-18061-14-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Dec 2012 22:54:04 +0000
+Subject: [PATCH v4 22/81] ARM: shmobile: Select PINCTRL
+Message-Id: <1356735303-29474-23-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1355323098-18061-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1355323098-18061-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>
+To: linux-sh@vger.kernel.org
 
-The INT_BUFWEN IRQ often arrives with other bits set too. If they are not
-cleared, an additional IRQ can be triggered, sometimes also after the MMC
-request has already been completed. This leads to block I/O errors. Earlier
-Teppei Kamijou also observed these additional interrupts and proposed to
-explicitly wait for them. This patch chooses an alternative approach of
-clearing all active bits immediately, when processing the main interrupt.
+The pin control framework is required by mach-shmobile. Select it in
+Kconfig.
 
-Reported-by: Teppei Kamijou <teppei.kamijou.yb@renesas.com>
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+This will be required when the sh-pfc driver will move to
+drivers/pinctrl/.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/mmc/host/sh_mmcif.c |    4 +++-
- 1 files changed, 3 insertions(+), 1 deletions(-)
+ arch/arm/Kconfig |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index 1dd7fc0..36eee8d 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -1238,7 +1238,9 @@ static irqreturn_t sh_mmcif_intr(int irq, void *dev_id)
- 		sh_mmcif_writel(host->addr, MMCIF_CE_INT, ~INT_BUFREN);
- 		sh_mmcif_bitclr(host, MMCIF_CE_INT_MASK, MASK_MBUFREN);
- 	} else if (state & INT_BUFWEN) {
--		sh_mmcif_writel(host->addr, MMCIF_CE_INT, ~INT_BUFWEN);
-+		sh_mmcif_writel(host->addr, MMCIF_CE_INT,
-+				~(INT_BUFWEN | INT_DTRANE | INT_CMD12DRE |
-+				  INT_CMD12RBE | INT_CMD12CRE));
- 		sh_mmcif_bitclr(host, MMCIF_CE_INT_MASK, MASK_MBUFWEN);
- 	} else if (state & INT_CMD12DRE) {
- 		sh_mmcif_writel(host->addr, MMCIF_CE_INT,
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index f95ba14..e294f46 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -699,6 +699,7 @@ config ARCH_SHMOBILE
+ 	select MULTI_IRQ_HANDLER
+ 	select NEED_MACH_MEMORY_H
+ 	select NO_IOPORT
++	select PINCTRL
+ 	select PM_GENERIC_DOMAINS if PM
+ 	select SPARSE_IRQ
+ 	help
 -- 
-1.7.2.5
+1.7.8.6
 
