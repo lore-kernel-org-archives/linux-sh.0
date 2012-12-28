@@ -1,225 +1,148 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 18 Dec 2012 00:46:07 +0000
-Subject: [PATCH 3/9] ARM: shmobile: Add support OF of INTC for sh7372
-Message-Id: <1355791573-20281-4-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Dec 2012 22:54:27 +0000
+Subject: [PATCH v4 45/81] sh-pfc: Move driver from drivers/sh/ to drivers/pinctrl/
+Message-Id: <1356735303-29474-46-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1355791573-20281-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1355791573-20281-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-
-This CPU has four interrupt controllers (INTCA, pins-High and pins-Low).
-This supports these.
-Note: This supports DT of INTCA only.
-
-Cc: Magnus Damm <damm@opensource.se>
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/arm/mach-shmobile/include/mach/common.h |    1 +
- arch/arm/mach-shmobile/intc-sh7372.c         |  113 ++++++++++++++++++++------
- 2 files changed, 89 insertions(+), 25 deletions(-)
+ drivers/pinctrl/Kconfig                      |    2 +-
+ drivers/pinctrl/Makefile                     |    2 ++
+ drivers/{sh/pfc => pinctrl/sh-pfc}/Kconfig   |   16 +++++++++++-----
+ drivers/{sh/pfc => pinctrl/sh-pfc}/Makefile  |    2 +-
+ drivers/{sh/pfc => pinctrl/sh-pfc}/core.c    |    0
+ drivers/{sh/pfc => pinctrl/sh-pfc}/core.h    |    0
+ drivers/{sh/pfc => pinctrl/sh-pfc}/gpio.c    |    0
+ drivers/{sh/pfc => pinctrl/sh-pfc}/pinctrl.c |    0
+ drivers/sh/Kconfig                           |    1 -
+ drivers/sh/Makefile                          |    1 -
+ 10 files changed, 15 insertions(+), 9 deletions(-)
+ rename drivers/{sh/pfc => pinctrl/sh-pfc}/Kconfig (57%)
+ rename drivers/{sh/pfc => pinctrl/sh-pfc}/Makefile (69%)
+ rename drivers/{sh/pfc => pinctrl/sh-pfc}/core.c (100%)
+ rename drivers/{sh/pfc => pinctrl/sh-pfc}/core.h (100%)
+ rename drivers/{sh/pfc => pinctrl/sh-pfc}/gpio.c (100%)
+ rename drivers/{sh/pfc => pinctrl/sh-pfc}/pinctrl.c (100%)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index 8402b5d..444dfed 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -36,6 +36,7 @@ extern void sh7377_pinmux_init(void);
- extern struct clk sh7377_extalc1_clk;
- extern struct clk sh7377_extal2_clk;
+diff --git a/drivers/pinctrl/Kconfig b/drivers/pinctrl/Kconfig
+index c31aeb0..a9d3904 100644
+--- a/drivers/pinctrl/Kconfig
++++ b/drivers/pinctrl/Kconfig
+@@ -196,7 +196,7 @@ config PINCTRL_EXYNOS5440
+ 	select PINCONF
  
-+extern void sh7372_init_irq_of(void);
- extern void sh7372_init_irq(void);
- extern void sh7372_map_io(void);
- extern void sh7372_add_early_devices(void);
-diff --git a/arch/arm/mach-shmobile/intc-sh7372.c b/arch/arm/mach-shmobile/intc-sh7372.c
-index a91caad..85486f0 100644
---- a/arch/arm/mach-shmobile/intc-sh7372.c
-+++ b/arch/arm/mach-shmobile/intc-sh7372.c
-@@ -16,6 +16,8 @@
-  * along with this program; if not, write to the Free Software
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
-+#define pr_fmt(fmt) "intc: " fmt
-+
- #include <linux/kernel.h>
- #include <linux/init.h>
- #include <linux/interrupt.h>
-@@ -551,23 +553,28 @@ static void intcs_demux(unsigned int irq, struct irq_desc *desc)
- 
- static void __iomem *intcs_ffd2;
- static void __iomem *intcs_ffd5;
+ source "drivers/pinctrl/mvebu/Kconfig"
 -
--void __init sh7372_init_irq(void)
-+static void __iomem *intca_e694;
-+static void __iomem *intca_e695;
++source "drivers/pinctrl/sh-pfc/Kconfig"
+ source "drivers/pinctrl/spear/Kconfig"
+ 
+ config PINCTRL_XWAY
+diff --git a/drivers/pinctrl/Makefile b/drivers/pinctrl/Makefile
+index fc4606f..04e2c6d 100644
+--- a/drivers/pinctrl/Makefile
++++ b/drivers/pinctrl/Makefile
+@@ -42,4 +42,6 @@ obj-$(CONFIG_PINCTRL_XWAY)	+= pinctrl-xway.o
+ obj-$(CONFIG_PINCTRL_LANTIQ)	+= pinctrl-lantiq.o
+ 
+ obj-$(CONFIG_PLAT_ORION)        += mvebu/
++obj-$(CONFIG_ARCH_SHMOBILE)	+= sh-pfc/
++obj-$(CONFIG_SUPERH)		+= sh-pfc/
+ obj-$(CONFIG_PLAT_SPEAR)	+= spear/
+diff --git a/drivers/sh/pfc/Kconfig b/drivers/pinctrl/sh-pfc/Kconfig
+similarity index 57%
+rename from drivers/sh/pfc/Kconfig
+rename to drivers/pinctrl/sh-pfc/Kconfig
+index eaeabc5..ae69dbe 100644
+--- a/drivers/sh/pfc/Kconfig
++++ b/drivers/pinctrl/sh-pfc/Kconfig
+@@ -1,18 +1,24 @@
+-comment "Pin function controller options"
++#
++# Renesas SH and SH Mobile PINCTRL drivers
++#
+ 
+-config SH_PFC
++if ARCH_SHMOBILE || SUPERH
 +
-+static void __init sh7372_init_intc(resource_size_t intca0_start,
-+				    resource_size_t intca1_start,
-+				    resource_size_t intcs0_start,
-+				    resource_size_t intcs1_start,
-+				    unsigned short vect)
- {
- 	void __iomem *intevtsa;
- 	int n;
++config PINCTRL_SH_PFC
+ 	# XXX move off the gpio dependency
+ 	depends on GENERIC_GPIO
+ 	select GPIO_SH_PFC if ARCH_REQUIRE_GPIOLIB
+-	select PINCTRL_SH_PFC
+-	select PINCTRL
+ 	select PINMUX
+ 	select PINCONF
+ 	def_bool y
++	help
++	  This enables pin control drivers for SH and SH Mobile platforms
  
--	intcs_ffd2 = ioremap_nocache(0xffd20000, PAGE_SIZE);
--	intevtsa = intcs_ffd2 + 0x100;
--	intcs_ffd5 = ioremap_nocache(0xffd50000, PAGE_SIZE);
-+	intca_e694 = IOMEM(intca0_start);
-+	intca_e695 = IOMEM(intca1_start);
- 
--	register_intc_controller(&intca_desc);
--	register_intc_controller(&intca_irq_pins_lo_desc);
--	register_intc_controller(&intca_irq_pins_hi_desc);
--	register_intc_controller(&intcs_desc);
-+	intcs_ffd2 = ioremap_nocache(intcs0_start, PAGE_SIZE);
-+	intevtsa = intcs_ffd2 + 0x100;
-+	intcs_ffd5 = ioremap_nocache(intcs1_start, PAGE_SIZE);
- 
- 	/* setup dummy cascade chip for INTCS */
--	n = evt2irq(0xf80);
-+	n = evt2irq(vect);
+ config GPIO_SH_PFC
+ 	bool "SuperH PFC GPIO support"
+-	depends on SH_PFC && GPIOLIB
++	depends on PINCTRL_SH_PFC && GPIOLIB
+ 	help
+ 	  This enables support for GPIOs within the SoC's pin function
+ 	  controller.
 +
- 	irq_alloc_desc_at(n, numa_node_id());
- 	irq_set_chip_and_handler_name(n, &dummy_irq_chip,
- 				      handle_level_irq, "level");
-@@ -581,6 +588,65 @@ void __init sh7372_init_irq(void)
- 	iowrite16(0, intcs_ffd2 + 0x104);
- }
++endif
+diff --git a/drivers/sh/pfc/Makefile b/drivers/pinctrl/sh-pfc/Makefile
+similarity index 69%
+rename from drivers/sh/pfc/Makefile
+rename to drivers/pinctrl/sh-pfc/Makefile
+index 6315cf3..6ba6fb2 100644
+--- a/drivers/sh/pfc/Makefile
++++ b/drivers/pinctrl/sh-pfc/Makefile
+@@ -2,4 +2,4 @@ sh-pfc-objs			= core.o pinctrl.o
+ ifeq ($(CONFIG_GPIO_SH_PFC),y)
+ sh-pfc-objs			+= gpio.o
+ endif
+-obj-y				+= sh-pfc.o
++obj-$(CONFIG_PINCTRL_SH_PFC)	+= sh-pfc.o
+diff --git a/drivers/sh/pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+similarity index 100%
+rename from drivers/sh/pfc/core.c
+rename to drivers/pinctrl/sh-pfc/core.c
+diff --git a/drivers/sh/pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
+similarity index 100%
+rename from drivers/sh/pfc/core.h
+rename to drivers/pinctrl/sh-pfc/core.h
+diff --git a/drivers/sh/pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+similarity index 100%
+rename from drivers/sh/pfc/gpio.c
+rename to drivers/pinctrl/sh-pfc/gpio.c
+diff --git a/drivers/sh/pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+similarity index 100%
+rename from drivers/sh/pfc/pinctrl.c
+rename to drivers/pinctrl/sh-pfc/pinctrl.c
+diff --git a/drivers/sh/Kconfig b/drivers/sh/Kconfig
+index d860ef7..f168a61 100644
+--- a/drivers/sh/Kconfig
++++ b/drivers/sh/Kconfig
+@@ -1,6 +1,5 @@
+ menu "SuperH / SH-Mobile Driver Options"
  
-+#ifdef CONFIG_OF
-+static unsigned short intevtsa_vect;
-+
-+#define INTC_RES_MAX 2
-+static struct {
-+	struct intc_desc intc_desc;
-+	struct resource intc_res[INTC_RES_MAX];
-+} intc_data __initdata;
-+
-+static int __init intc_of_init(struct device_node *np,
-+			       struct device_node *parent)
-+{
-+	int ret, i;
-+
-+	memset(&intc_data, 0, sizeof(intc_data));
-+
-+	for (i = 0; i < INTC_RES_MAX; i++) {
-+		ret = of_address_to_resource(np, i, &intc_data.intc_res[i]);
-+		if (ret < 0)
-+			break;
-+	}
-+
-+	intc_data.intc_desc.name = (char *)of_node_full_name(np);
-+	intc_data.intc_desc.resource = intc_data.intc_res;
-+	intc_data.intc_desc.num_resources = i;
-+
-+	ret = of_sh_intc_get_intc(np, &intc_data.intc_desc);
-+	if (ret)
-+		return ret;
-+
-+	of_sh_intc_get_intevtsa_vect(np, &intevtsa_vect);
-+
-+	register_intc_controller(&intc_data.intc_desc);
-+	return 0;
-+}
-+
-+static const struct of_device_id irq_of_match[] __initconst = {
-+	{ .compatible = "renesas,sh_intc", .data = intc_of_init },
-+	{ /*sentinel*/ }
-+};
-+
-+void __init sh7372_init_irq_of(void)
-+{
-+	of_irq_init(irq_of_match);
-+
-+	register_intc_controller(&intcs_desc);
-+}
-+#endif /* CONFIG_OF */
-+
-+void __init sh7372_init_irq(void)
-+{
-+	register_intc_controller(&intca_desc);
-+	register_intc_controller(&intca_irq_pins_lo_desc);
-+	register_intc_controller(&intca_irq_pins_hi_desc);
-+	register_intc_controller(&intcs_desc);
-+
-+	sh7372_init_intc(0xe6940000, 0xe6950000, 0xffd20000, 0xffd50000, 0xf80);
-+}
-+
- static unsigned short ffd2[0x200];
- static unsigned short ffd5[0x100];
+ source "drivers/sh/intc/Kconfig"
+-source "drivers/sh/pfc/Kconfig"
  
-@@ -624,9 +690,6 @@ void sh7372_intcs_resume(void)
- 		__raw_writeb(ffd5[k], intcs_ffd5 + k);
- }
+ endmenu
+diff --git a/drivers/sh/Makefile b/drivers/sh/Makefile
+index e57895b..fc67f56 100644
+--- a/drivers/sh/Makefile
++++ b/drivers/sh/Makefile
+@@ -5,7 +5,6 @@ obj-y	:= intc/
  
--#define E694_BASE IOMEM(0xe6940000)
--#define E695_BASE IOMEM(0xe6950000)
--
- static unsigned short e694[0x200];
- static unsigned short e695[0x200];
+ obj-$(CONFIG_HAVE_CLK)		+= clk/
+ obj-$(CONFIG_MAPLE)		+= maple/
+-obj-$(CONFIG_SH_PFC)		+= pfc/
+ obj-$(CONFIG_SUPERHYWAY)	+= superhyway/
  
-@@ -635,22 +698,22 @@ void sh7372_intca_suspend(void)
- 	int k;
- 
- 	for (k = 0x00; k <= 0x38; k += 4)
--		e694[k] = __raw_readw(E694_BASE + k);
-+		e694[k] = __raw_readw(intca_e694 + k);
- 
- 	for (k = 0x80; k <= 0xb4; k += 4)
--		e694[k] = __raw_readb(E694_BASE + k);
-+		e694[k] = __raw_readb(intca_e694 + k);
- 
- 	for (k = 0x180; k <= 0x1b4; k += 4)
--		e694[k] = __raw_readb(E694_BASE + k);
-+		e694[k] = __raw_readb(intca_e694 + k);
- 
- 	for (k = 0x00; k <= 0x50; k += 4)
--		e695[k] = __raw_readw(E695_BASE + k);
-+		e695[k] = __raw_readw(intca_e695 + k);
- 
- 	for (k = 0x80; k <= 0xa8; k += 4)
--		e695[k] = __raw_readb(E695_BASE + k);
-+		e695[k] = __raw_readb(intca_e695 + k);
- 
- 	for (k = 0x180; k <= 0x1a8; k += 4)
--		e695[k] = __raw_readb(E695_BASE + k);
-+		e695[k] = __raw_readb(intca_e695 + k);
- }
- 
- void sh7372_intca_resume(void)
-@@ -658,20 +721,20 @@ void sh7372_intca_resume(void)
- 	int k;
- 
- 	for (k = 0x00; k <= 0x38; k += 4)
--		__raw_writew(e694[k], E694_BASE + k);
-+		__raw_writew(e694[k], intca_e694 + k);
- 
- 	for (k = 0x80; k <= 0xb4; k += 4)
--		__raw_writeb(e694[k], E694_BASE + k);
-+		__raw_writeb(e694[k], intca_e694 + k);
- 
- 	for (k = 0x180; k <= 0x1b4; k += 4)
--		__raw_writeb(e694[k], E694_BASE + k);
-+		__raw_writeb(e694[k], intca_e694 + k);
- 
- 	for (k = 0x00; k <= 0x50; k += 4)
--		__raw_writew(e695[k], E695_BASE + k);
-+		__raw_writew(e695[k], intca_e695 + k);
- 
- 	for (k = 0x80; k <= 0xa8; k += 4)
--		__raw_writeb(e695[k], E695_BASE + k);
-+		__raw_writeb(e695[k], intca_e695 + k);
- 
- 	for (k = 0x180; k <= 0x1a8; k += 4)
--		__raw_writeb(e695[k], E695_BASE + k);
-+		__raw_writeb(e695[k], intca_e695 + k);
- }
+ obj-y				+= pm_runtime.o
 -- 
-1.7.10.4
+1.7.8.6
 
