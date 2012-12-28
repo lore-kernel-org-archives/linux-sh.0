@@ -1,53 +1,49 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 12 Dec 2012 14:38:04 +0000
-Subject: [PATCH 00/14] mmc: sh-mmcif: 3.8 fixes and improvements
-Message-Id: <1355323098-18061-1-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Dec 2012 22:53:45 +0000
+Subject: [PATCH v4 03/81] sh: sh7723: Rename GPIO_FN_SIUOSPD to GPIO_FN_SIUAOSPD
+Message-Id: <1356735303-29474-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>
+To: linux-sh@vger.kernel.org
 
-This patch series fixes several bugs in the sh_mmcif.c driver, that showed 
-up on SMP with DMA (patches 10, 13), adds new features (3, 4) and adds 
-multiple further improvements and minor fixes. Even though these bugs 
-currently exist in the mainline, this patch series is not considered to 
-be suitable for @stable. Patches are rather experimental and it is better 
-to test them over a complete development cycle. They also are easier 
-implemented on top of preparatory cosmetic patches.
+The GPIO was incorrectly named. As it has no user in the whole kernel
+tree, just rename it.
 
-Guennadi Liakhovetski (6):
-  mmc: sh-mmcif: fix missing and consolidate IO completion timeouts
-  mmc: sh-mmcif: (cosmetic) simplify boolean return blocks
-  mmc: sh-mmcif: fix a race, causing an Oops on SMP
-  mmc: sh-mmcif: reset error code for any opcode
-  mmc: sh-mmcif: reset DMA completion immediately before starting DMA
-  mmc: sh-mmcif: fix I/O errors
-
-Shinya Kuribayashi (1):
-  mmc: sh_mmcif: add support for bundled MMCIF IRQs
-
-Teppei Kamijou (7):
-  mmc: sh_mmcif: force to fail CMD52 immediately
-  mmc: sh_mmcif: ensure run-time suspend call is processed before
-    suspend
-  mmc: sh_mmcif: Add support for eMMC Dual Data Rate
-  mmc: sh_mmcif: Use msecs_to_jiffies() for host->timeout
-  mmc: sh_mmcif: Avoid unnecessary mmc_delay() at mmc_card_sleepawake()
-  mmc: sh-mmcif: Terminate DMA transactions when detecting timeout or
-    error
-  mmc: sh-mmcif: report all errors
-
- drivers/mmc/host/sh_mmcif.c |  215 +++++++++++++++++++++++++++++--------------
- 1 files changed, 145 insertions(+), 70 deletions(-)
-
--- 
-1.7.2.5
-
-Thanks
-Guennadi
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ arch/sh/include/cpu-sh4/cpu/sh7723.h    |    2 +-
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/sh/include/cpu-sh4/cpu/sh7723.h b/arch/sh/include/cpu-sh4/cpu/sh7723.h
+index 6fae50c..668da89 100644
+--- a/arch/sh/include/cpu-sh4/cpu/sh7723.h
++++ b/arch/sh/include/cpu-sh4/cpu/sh7723.h
+@@ -184,7 +184,7 @@ enum {
+ 	/* SIUA */
+ 	GPIO_FN_SIUAFCK, GPIO_FN_SIUAILR, GPIO_FN_SIUAIBT, GPIO_FN_SIUAISLD,
+ 	GPIO_FN_SIUAOLR, GPIO_FN_SIUAOBT, GPIO_FN_SIUAOSLD, GPIO_FN_SIUAMCK,
+-	GPIO_FN_SIUAISPD, GPIO_FN_SIUOSPD,
++	GPIO_FN_SIUAISPD, GPIO_FN_SIUAOSPD,
+ 
+ 	/* SIUB */
+ 	GPIO_FN_SIUBFCK, GPIO_FN_SIUBILR, GPIO_FN_SIUBIBT, GPIO_FN_SIUBISLD,
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c
+index 88bf5ec..2037915 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c
+@@ -1317,7 +1317,7 @@ static struct pinmux_gpio pinmux_gpios[] = {
+ 	PINMUX_GPIO(GPIO_FN_SIUAOSLD, SIUAOSLD_MARK),
+ 	PINMUX_GPIO(GPIO_FN_SIUAMCK, SIUAMCK_MARK),
+ 	PINMUX_GPIO(GPIO_FN_SIUAISPD, SIUAISPD_MARK),
+-	PINMUX_GPIO(GPIO_FN_SIUOSPD, SIUAOSPD_MARK),
++	PINMUX_GPIO(GPIO_FN_SIUAOSPD, SIUAOSPD_MARK),
+ 
+ 	/* SIUB */
+ 	PINMUX_GPIO(GPIO_FN_SIUBFCK, SIUBFCK_MARK),
+-- 
+1.7.8.6
+
