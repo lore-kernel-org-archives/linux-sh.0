@@ -1,69 +1,68 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 15 Dec 2012 22:50:39 +0000
-Subject: [PATCH v3 05/81] sh: sh7786: Fix port E, G and J GPIOs
-Message-Id: <1355611915-25060-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Dec 2012 22:54:20 +0000
+Subject: [PATCH v4 38/81] sh: sh7734: Register PFC platform device
+Message-Id: <1356735303-29474-39-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The port E, G and J GPIOs don't match the SoC datasheet (they seem to
-have been copied from the SH7785). Fix them.
+Add arch code to register the PFC platform device instead of calling the
+driver directly. Platform device registration in the sh-pfc driver will
+be removed.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/sh/include/cpu-sh4/cpu/sh7786.h    |    8 +++-----
- arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c |    4 ++--
- 2 files changed, 5 insertions(+), 7 deletions(-)
+ arch/sh/Kconfig                         |    1 +
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7734.c |    8 ++++----
+ 2 files changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/arch/sh/include/cpu-sh4/cpu/sh7786.h b/arch/sh/include/cpu-sh4/cpu/sh7786.h
-index 977862f..0df09e6 100644
---- a/arch/sh/include/cpu-sh4/cpu/sh7786.h
-+++ b/arch/sh/include/cpu-sh4/cpu/sh7786.h
-@@ -32,16 +32,14 @@ enum {
- 	GPIO_PD3, GPIO_PD2, GPIO_PD1, GPIO_PD0,
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 1885213..7a7d2ec 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -456,6 +456,7 @@ config CPU_SUBTYPE_SH7734
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select USB_ARCH_HAS_OHCI
+ 	select USB_ARCH_HAS_EHCI
++	select PINCTRL
+ 	help
+ 	  Select SH7734 if you have a SH4A SH7734 CPU.
  
- 	/* PE */
--	GPIO_PE5, GPIO_PE4, GPIO_PE3, GPIO_PE2,
--	GPIO_PE1, GPIO_PE0,
-+	GPIO_PE7, GPIO_PE6,
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7734.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7734.c
+index eed3b9d..fa33583 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7734.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7734.c
+@@ -12,6 +12,7 @@
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
+ #include <linux/ioport.h>
++#include <cpu/pfc.h>
+ #include <cpu/sh7734.h>
  
- 	/* PF */
- 	GPIO_PF7, GPIO_PF6, GPIO_PF5, GPIO_PF4,
- 	GPIO_PF3, GPIO_PF2, GPIO_PF1, GPIO_PF0,
+ #define CPU_32_PORT(fn, pfx, sfx)				\
+@@ -2467,9 +2468,6 @@ static struct resource sh7734_pfc_resources[] = {
+ static struct pinmux_info sh7734_pinmux_info = {
+ 	.name = "sh7734_pfc",
  
- 	/* PG */
--	GPIO_PG7, GPIO_PG6, GPIO_PG5, GPIO_PG4,
--	GPIO_PG3, GPIO_PG2, GPIO_PG1, GPIO_PG0,
-+	GPIO_PG7, GPIO_PG6, GPIO_PG5,
+-	.resource = sh7734_pfc_resources,
+-	.num_resources = ARRAY_SIZE(sh7734_pfc_resources),
+-
+ 	.unlock_reg = 0xFFFC0000,
  
- 	/* PH */
- 	GPIO_PH7, GPIO_PH6, GPIO_PH5, GPIO_PH4,
-@@ -49,7 +47,7 @@ enum {
+ 	.reserved_id = PINMUX_RESERVED,
+@@ -2492,6 +2490,8 @@ static struct pinmux_info sh7734_pinmux_info = {
  
- 	/* PJ */
- 	GPIO_PJ7, GPIO_PJ6, GPIO_PJ5, GPIO_PJ4,
--	GPIO_PJ3, GPIO_PJ2, GPIO_PJ1, GPIO_PJ0,
-+	GPIO_PJ3, GPIO_PJ2, GPIO_PJ1,
- 
- 	/* DU */
- 	GPIO_FN_DCLKIN, GPIO_FN_DCLKOUT, GPIO_FN_ODDF,
-diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
-index 4229e07..c24a777 100644
---- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
-+++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
-@@ -468,8 +468,8 @@ static struct pinmux_gpio pinmux_gpios[] = {
- 	PINMUX_GPIO(GPIO_PD0, PD0_DATA),
- 
- 	/* PE */
--	PINMUX_GPIO(GPIO_PE5, PE7_DATA),
--	PINMUX_GPIO(GPIO_PE4, PE6_DATA),
-+	PINMUX_GPIO(GPIO_PE7, PE7_DATA),
-+	PINMUX_GPIO(GPIO_PE6, PE6_DATA),
- 
- 	/* PF */
- 	PINMUX_GPIO(GPIO_PF7, PF7_DATA),
+ static int __init plat_pinmux_setup(void)
+ {
+-	return register_pinmux(&sh7734_pinmux_info);
++	return sh_pfc_register_info(NULL, sh7734_pfc_resources,
++				    ARRAY_SIZE(sh7734_pfc_resources),
++				    &sh7734_pinmux_info);
+ }
+ arch_initcall(plat_pinmux_setup);
 -- 
 1.7.8.6
 
