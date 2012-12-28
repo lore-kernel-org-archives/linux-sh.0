@@ -1,52 +1,56 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 15 Dec 2012 22:50:54 +0000
-Subject: [PATCH v3 20/81] sh-pfc: Split platform device and platform driver registration
-Message-Id: <1355611915-25060-21-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Dec 2012 22:54:21 +0000
+Subject: [PATCH v4 39/81] sh: sh7757: Register PFC platform device
+Message-Id: <1356735303-29474-40-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Move platform driver registration to a static postcore initcall. This
-prepares the move of platform device registration to arch code.
+Add arch code to register the PFC platform device instead of calling the
+driver directly. Platform device registration in the sh-pfc driver will
+be removed.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Paul Mundt <lethal@linux-sh.org>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/sh/pfc/core.c |   15 ++++++---------
- 1 files changed, 6 insertions(+), 9 deletions(-)
+ arch/sh/Kconfig                         |    1 +
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c |    3 ++-
+ 2 files changed, 3 insertions(+), 1 deletions(-)
 
-diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
-index 1bb38e8..cd8f09d 100644
---- a/drivers/sh/pfc/core.c
-+++ b/drivers/sh/pfc/core.c
-@@ -573,19 +573,16 @@ static struct platform_device sh_pfc_device = {
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 7a7d2ec..c99193f 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -467,6 +467,7 @@ config CPU_SUBTYPE_SH7757
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select USB_ARCH_HAS_OHCI
+ 	select USB_ARCH_HAS_EHCI
++	select PINCTRL
+ 	help
+ 	  Select SH7757 if you have a SH4A SH7757 CPU.
  
- int __init register_sh_pfc(struct sh_pfc_platform_data *pdata)
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c
+index 4a2736d..784b428 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c
+@@ -16,6 +16,7 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
++#include <cpu/pfc.h>
+ #include <cpu/sh7757.h>
+ 
+ enum {
+@@ -2282,6 +2283,6 @@ static struct pinmux_info sh7757_pinmux_info = {
+ 
+ static int __init plat_pinmux_setup(void)
  {
--	int rc;
--
- 	sh_pfc_device.dev.platform_data = pdata;
- 
--	rc = platform_driver_register(&sh_pfc_driver);
--	if (likely(!rc)) {
--		rc = platform_device_register(&sh_pfc_device);
--		if (unlikely(rc))
--			platform_driver_unregister(&sh_pfc_driver);
--	}
-+	return platform_device_register(&sh_pfc_device);
-+}
- 
--	return rc;
-+static int __init sh_pfc_init(void)
-+{
-+	return platform_driver_register(&sh_pfc_driver);
+-	return register_pinmux(&sh7757_pinmux_info);
++	return sh_pfc_register_info(NULL, NULL, 0, &sh7757_pinmux_info);
  }
-+postcore_initcall(sh_pfc_init);
- 
- static void __exit sh_pfc_exit(void)
- {
+ arch_initcall(plat_pinmux_setup);
 -- 
 1.7.8.6
 
