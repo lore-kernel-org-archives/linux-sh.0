@@ -1,37 +1,53 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Sat, 15 Dec 2012 09:03:44 +0000
-Subject: [PATCH 10/10] ARM: shmobile: sh7372: Use DT initialisation of INTC
-Message-Id: <1355562224-29448-11-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Dec 2012 22:54:05 +0000
+Subject: [PATCH v4 23/81] ARM: shmobile: r8a7740: Register PFC platform device
+Message-Id: <1356735303-29474-24-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1355562224-29448-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1355562224-29448-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Add arch code to register the PFC platform device instead of calling the
+driver directly. Platform device registration in the sh-pfc driver will
+be removed.
 
-Cc: Magnus Damm <damm@opensource.se>
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-sh7372.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/pfc-r8a7740.c |   11 ++++++++++-
+ 1 files changed, 10 insertions(+), 1 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index 90af2e9..0f36e45 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -1103,7 +1103,7 @@ DT_MACHINE_START(SH7372_DT, "Generic SH7372 (Flattened Device Tree)")
- 	.map_io		= sh7372_map_io,
- 	.init_early	= sh7372_add_early_devices_dt,
- 	.nr_irqs	= NR_IRQS_LEGACY,
--	.init_irq	= sh7372_init_irq,
-+	.init_irq	= sh7372_init_irq_of,
- 	.handle_irq	= shmobile_handle_irq_intc,
- 	.init_machine	= sh7372_add_standard_devices_dt,
- 	.timer		= &shmobile_timer,
+diff --git a/arch/arm/mach-shmobile/pfc-r8a7740.c b/arch/arm/mach-shmobile/pfc-r8a7740.c
+index 134d1b9..8a412b1 100644
+--- a/arch/arm/mach-shmobile/pfc-r8a7740.c
++++ b/arch/arm/mach-shmobile/pfc-r8a7740.c
+@@ -20,6 +20,7 @@
+  */
+ #include <linux/init.h>
+ #include <linux/kernel.h>
++#include <linux/platform_device.h>
+ #include <linux/sh_pfc.h>
+ #include <mach/r8a7740.h>
+ #include <mach/irqs.h>
+@@ -2611,7 +2612,15 @@ static struct pinmux_info r8a7740_pinmux_info = {
+ 	.gpio_irq_size	= ARRAY_SIZE(pinmux_irqs),
+ };
+ 
++static struct platform_device r8a7740_pfc_device = {
++	.name		= "sh-pfc",
++	.id		= -1,
++	.dev = {
++		.platform_data = &r8a7740_pinmux_info,
++	},
++};
++
+ void r8a7740_pinmux_init(void)
+ {
+-	register_pinmux(&r8a7740_pinmux_info);
++	platform_device_register(&r8a7740_pfc_device);
+ }
 -- 
-1.7.10.4
+1.7.8.6
 
