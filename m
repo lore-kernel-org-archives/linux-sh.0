@@ -1,7 +1,7 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 15 Dec 2012 22:51:44 +0000
-Subject: [PATCH v3 70/81] sh: sh7720: pinmux: Use driver-provided pinmux info
-Message-Id: <1355611915-25060-71-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Dec 2012 22:54:52 +0000
+Subject: [PATCH v4 70/81] sh: sh7720: pinmux: Use driver-provided pinmux info
+Message-Id: <1356735303-29474-71-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -12,6 +12,7 @@ Pinmux info for the sh machines is now provided by pinmux drivers.
 Remove the duplicate copy in arch code.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
  arch/sh/kernel/cpu/sh3/pinmux-sh7720.c | 1225 +-------------------------------
  1 files changed, 1 insertions(+), 1224 deletions(-)
