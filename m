@@ -1,479 +1,170 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 26 Dec 2012 17:49:06 +0000
-Subject: [PATCH 1/6] media: V4L2: support asynchronous subdevice registration
-Message-Id: <1356544151-6313-2-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Dec 2012 22:53:52 +0000
+Subject: [PATCH v4 10/81] sh-pfc: Move private definitions and declarations to private header
+Message-Id: <1356735303-29474-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1356544151-6313-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1356544151-6313-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>
+To: linux-sh@vger.kernel.org
 
-Currently bridge device drivers register devices for all subdevices 
-synchronously, tupically, during their probing. E.g. if an I2C CMOS sensor 
-is attached to a video bridge device, the bridge driver will create an I2C 
-device and wait for the respective I2C driver to probe. This makes linking 
-of devices straight forward, but this approach cannot be used with 
-intrinsically asynchronous and unordered device registration systems like 
-the Flattened Device Tree. To support such systems this patch adds an 
-asynchronous subdevice registration framework to V4L2. To use it bridge 
-drivers register lists of subdevice descriptors and notifier callbacks, 
-subdevice drivers register subdevices, that they are about to probe or 
-have successfully probed. The subsystem matches subdevices against 
-hardware descriptors and calls bridge driver callbacks when matches are 
-found. Another callback is called, when the subdevice is unregistered.
+Move all private structure definitions and function declarations from
+include/linux/sh_pfc.h to drivers/sh/pfc/core.h.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
+ drivers/sh/pfc/core.c    |    2 ++
+ drivers/sh/pfc/core.h    |   44 ++++++++++++++++++++++++++++++++++++++++++++
+ drivers/sh/pfc/gpio.c    |    2 ++
+ drivers/sh/pfc/pinctrl.c |    2 ++
+ include/linux/sh_pfc.h   |   29 -----------------------------
+ 5 files changed, 50 insertions(+), 29 deletions(-)
+ create mode 100644 drivers/sh/pfc/core.h
 
-v3: identical to v2, only a kfree() is added, fixing a memory leak.
-
- drivers/media/v4l2-core/Makefile      |    3 +-
- drivers/media/v4l2-core/v4l2-async.c  |  284 +++++++++++++++++++++++++++++++++
- drivers/media/v4l2-core/v4l2-device.c |    2 +
- include/media/v4l2-async.h            |  113 +++++++++++++
- 4 files changed, 401 insertions(+), 1 deletions(-)
- create mode 100644 drivers/media/v4l2-core/v4l2-async.c
- create mode 100644 include/media/v4l2-async.h
-
-diff --git a/drivers/media/v4l2-core/Makefile b/drivers/media/v4l2-core/Makefile
-index d065c01..b667ced 100644
---- a/drivers/media/v4l2-core/Makefile
-+++ b/drivers/media/v4l2-core/Makefile
-@@ -5,7 +5,8 @@
- tuner-objs	:=	tuner-core.o
+diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
+index ecbe51d..72421a4 100644
+--- a/drivers/sh/pfc/core.c
++++ b/drivers/sh/pfc/core.c
+@@ -21,6 +21,8 @@
+ #include <linux/ioport.h>
+ #include <linux/pinctrl/machine.h>
  
- videodev-objs	:=	v4l2-dev.o v4l2-ioctl.o v4l2-device.o v4l2-fh.o \
--			v4l2-event.o v4l2-ctrls.o v4l2-subdev.o v4l2-clk.o
-+			v4l2-event.o v4l2-ctrls.o v4l2-subdev.o v4l2-clk.o \
-+			v4l2-async.o
- ifeq ($(CONFIG_COMPAT),y)
-   videodev-objs += v4l2-compat-ioctl32.o
- endif
-diff --git a/drivers/media/v4l2-core/v4l2-async.c b/drivers/media/v4l2-core/v4l2-async.c
-new file mode 100644
-index 0000000..5e6c2f5
---- /dev/null
-+++ b/drivers/media/v4l2-core/v4l2-async.c
-@@ -0,0 +1,284 @@
-+/*
-+ * V4L2 asynchronous subdevice registration API
-+ *
-+ * Copyright (C) 2012, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
-+ */
++#include "core.h"
 +
-+#include <linux/device.h>
-+#include <linux/err.h>
-+#include <linux/i2c.h>
-+#include <linux/list.h>
-+#include <linux/module.h>
-+#include <linux/mutex.h>
-+#include <linux/notifier.h>
-+#include <linux/platform_device.h>
-+#include <linux/slab.h>
+ static struct sh_pfc sh_pfc __read_mostly;
+ 
+ static void pfc_iounmap(struct sh_pfc *pfc)
+diff --git a/drivers/sh/pfc/core.h b/drivers/sh/pfc/core.h
+new file mode 100644
+index 0000000..b07ae25
+--- /dev/null
++++ b/drivers/sh/pfc/core.h
+@@ -0,0 +1,44 @@
++/*
++ * SuperH Pin Function Controller support.
++ *
++ * Copyright (C) 2012  Renesas Solutions Corp.
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++#ifndef __SH_PFC_CORE_H__
++#define __SH_PFC_CORE_H__
++
++#include <linux/compiler.h>
++#include <linux/sh_pfc.h>
 +#include <linux/types.h>
 +
-+#include <media/v4l2-async.h>
-+#include <media/v4l2-device.h>
-+#include <media/v4l2-subdev.h>
-+
-+static bool match_i2c(struct device *dev, struct v4l2_async_hw_device *hw_dev)
-+{
-+	struct i2c_client *client = to_i2c_client(dev);
-+	return hw_dev->bus_type = V4L2_ASYNC_BUS_I2C &&
-+		hw_dev->match.i2c.adapter_id = client->adapter->nr &&
-+		hw_dev->match.i2c.address = client->addr;
-+}
-+
-+static bool match_platform(struct device *dev, struct v4l2_async_hw_device *hw_dev)
-+{
-+	return hw_dev->bus_type = V4L2_ASYNC_BUS_PLATFORM &&
-+		!strcmp(hw_dev->match.platform.name, dev_name(dev));
-+}
-+
-+static LIST_HEAD(subdev_list);
-+static LIST_HEAD(notifier_list);
-+static DEFINE_MUTEX(list_lock);
-+
-+static struct v4l2_async_subdev *v4l2_async_belongs(struct v4l2_async_notifier *notifier,
-+						    struct v4l2_async_subdev_list *asdl)
-+{
-+	struct v4l2_async_subdev *asd = NULL;
-+	bool (*match)(struct device *,
-+		      struct v4l2_async_hw_device *);
-+
-+	list_for_each_entry (asd, &notifier->waiting, list) {
-+		struct v4l2_async_hw_device *hw = &asd->hw;
-+		switch (hw->bus_type) {
-+		case V4L2_ASYNC_BUS_SPECIAL:
-+			match = hw->match.special.match;
-+			if (!match)
-+				/* Match always */
-+				return asd;
-+			break;
-+		case V4L2_ASYNC_BUS_PLATFORM:
-+			match = match_platform;
-+			break;
-+		case V4L2_ASYNC_BUS_I2C:
-+			match = match_i2c;
-+			break;
-+		default:
-+			/* Oops */
-+			match = NULL;
-+			dev_err(notifier->v4l2_dev ? notifier->v4l2_dev->dev : NULL,
-+				"Invalid bus-type %u on %p\n", hw->bus_type, asd);
-+		}
-+
-+		if (match && match(asdl->dev, hw))
-+			break;
-+	}
-+
-+	return asd;
-+}
-+
-+static int v4l2_async_test_notify(struct v4l2_async_notifier *notifier,
-+				   struct v4l2_async_subdev_list *asdl)
-+{
-+	struct v4l2_async_subdev *asd = v4l2_async_belongs(notifier, asdl);
-+	if (asd) {
-+		int ret;
-+		/* Remove from the waiting list */
-+		list_del(&asd->list);
-+		asdl->asd = asd;
-+		asdl->notifier = notifier;
-+
-+		if (notifier->bound) {
-+			ret = notifier->bound(notifier, asdl);
-+			if (ret < 0)
-+				return ret;
-+		}
-+		/* Move from the global subdevice list to notifier's done */
-+		list_move(&asdl->list, &notifier->done);
-+
-+		ret = v4l2_device_register_subdev(notifier->v4l2_dev,
-+						  asdl->subdev);
-+		if (ret < 0) {
-+			if (notifier->unbind)
-+				notifier->unbind(notifier, asdl);
-+			return ret;
-+		}
-+
-+		if (list_empty(&notifier->waiting) && notifier->complete)
-+			return notifier->complete(notifier);
-+
-+		return 0;
-+	}
-+
-+	return -EPROBE_DEFER;
-+}
-+
-+static struct device *v4l2_async_unbind(struct v4l2_async_subdev_list *asdl)
-+{
-+	struct device *dev = asdl->dev;
-+	v4l2_device_unregister_subdev(asdl->subdev);
-+	/* Subdevice driver will reprobe and put asdl back onto the list */
-+	list_del(&asdl->list);
-+	asdl->asd = NULL;
-+	/* If we handled USB devices, we'd have to lock the parent too */
-+	device_release_driver(dev);
-+	return dev;
-+}
-+
-+int v4l2_async_notifier_register(struct v4l2_device *v4l2_dev,
-+				 struct v4l2_async_notifier *notifier)
-+{
-+	struct v4l2_async_subdev_list *asdl;
-+	int i;
-+
-+	notifier->v4l2_dev = v4l2_dev;
-+	INIT_LIST_HEAD(&notifier->waiting);
-+	INIT_LIST_HEAD(&notifier->done);
-+
-+	for (i = 0; i < notifier->subdev_num; i++)
-+		list_add_tail(&notifier->subdev[i]->list, &notifier->waiting);
-+
-+	mutex_lock(&list_lock);
-+
-+	/* Keep also completed notifiers on the list */
-+	list_add(&notifier->list, &notifier_list);
-+
-+	list_for_each_entry(asdl, &subdev_list, list) {
-+		int ret = v4l2_async_test_notify(notifier, asdl);
-+		if (ret != -EPROBE_DEFER) {
-+			mutex_unlock(&list_lock);
-+			return ret;
-+		}
-+	}
-+
-+	mutex_unlock(&list_lock);
-+
-+	return 0;
-+}
-+EXPORT_SYMBOL(v4l2_async_notifier_register);
-+
-+void v4l2_async_notifier_unregister(struct v4l2_async_notifier *notifier)
-+{
-+	struct v4l2_async_subdev_list *asdl, *tmp;
-+	int i = 0;
-+	struct device **dev = kcalloc(notifier->subdev_num,
-+				      sizeof(*dev), GFP_KERNEL);
-+	if (!dev)
-+		dev_err(notifier->v4l2_dev->dev,
-+			"Failed to allocate device cache!\n");
-+
-+	mutex_lock(&list_lock);
-+
-+	list_del(&notifier->list);
-+
-+	list_for_each_entry_safe(asdl, tmp, &notifier->done, list) {
-+		if (dev)
-+			dev[i++] = get_device(asdl->dev);
-+		v4l2_async_unbind(asdl);
-+
-+		if (notifier->unbind)
-+			notifier->unbind(notifier, asdl);
-+	}
-+
-+	mutex_unlock(&list_lock);
-+
-+	if (dev) {
-+		while (i--) {
-+			if (dev[i] && device_attach(dev[i]) < 0)
-+				dev_err(dev[i], "Failed to re-probe to %s\n",
-+					dev[i]->driver ? dev[i]->driver->name : "(none)");
-+			put_device(dev[i]);
-+		}
-+		kfree(dev);
-+	}
-+	/*
-+	 * Don't care about the waiting list, it is initialised and populated
-+	 * upon notifier registration.
-+	 */
-+}
-+EXPORT_SYMBOL(v4l2_async_notifier_unregister);
-+
-+int v4l2_async_subdev_bind(struct v4l2_async_subdev_list *asdl)
-+{
-+	struct v4l2_async_notifier *notifier;
-+	int ret = 0;
-+
-+	mutex_lock(&list_lock);
-+
-+	list_for_each_entry(notifier, &notifier_list, list) {
-+		struct v4l2_async_subdev *asd = v4l2_async_belongs(notifier,
-+								   asdl);
-+		/*
-+		 * Whether or not probing succeeds - this is the right hardware
-+		 * subdevice descriptor and we can provide it to the notifier
-+		 */
-+		if (asd) {
-+			asdl->asd = asd;
-+			if (notifier->bind)
-+				ret = notifier->bind(notifier, asdl);
-+			break;
-+		}
-+	}
-+
-+	mutex_unlock(&list_lock);
-+
-+	return ret;
-+}
-+EXPORT_SYMBOL(v4l2_async_subdev_bind);
-+
-+int v4l2_async_subdev_bound(struct v4l2_async_subdev_list *asdl)
-+{
-+	struct v4l2_async_notifier *notifier;
-+
-+	mutex_lock(&list_lock);
-+
-+	INIT_LIST_HEAD(&asdl->list);
-+
-+	list_for_each_entry(notifier, &notifier_list, list) {
-+		int ret = v4l2_async_test_notify(notifier, asdl);
-+		if (ret != -EPROBE_DEFER) {
-+			mutex_unlock(&list_lock);
-+			return ret;
-+		}
-+	}
-+
-+	/* None matched, wait for hot-plugging */
-+	list_add(&asdl->list, &subdev_list);
-+
-+	mutex_unlock(&list_lock);
-+
-+	return 0;
-+}
-+EXPORT_SYMBOL(v4l2_async_subdev_bound);
-+
-+void v4l2_async_subdev_unbind(struct v4l2_async_subdev_list *asdl)
-+{
-+	struct v4l2_async_notifier *notifier = asdl->notifier;
-+	struct device *dev;
-+
-+	if (!asdl->asd)
-+		return;
-+
-+	mutex_lock(&list_lock);
-+
-+	dev = asdl->dev;
-+
-+	list_add(&asdl->asd->list, &notifier->waiting);
-+
-+	dev = get_device(asdl->dev);
-+
-+	v4l2_async_unbind(asdl);
-+
-+	if (notifier->unbind)
-+		notifier->unbind(notifier, asdl);
-+
-+	mutex_unlock(&list_lock);
-+
-+	/* Re-probe with lock released - avoid a deadlock */
-+	if (dev && device_attach(dev) < 0)
-+		dev_err(dev, "Failed to re-probe to %s\n",
-+			dev->driver ? dev->driver->name : "(none)");
-+
-+	put_device(dev);
-+}
-+EXPORT_SYMBOL(v4l2_async_subdev_unbind);
-diff --git a/drivers/media/v4l2-core/v4l2-device.c b/drivers/media/v4l2-core/v4l2-device.c
-index 513969f..52faf2f 100644
---- a/drivers/media/v4l2-core/v4l2-device.c
-+++ b/drivers/media/v4l2-core/v4l2-device.c
-@@ -40,6 +40,8 @@ int v4l2_device_register(struct device *dev, struct v4l2_device *v4l2_dev)
- 	mutex_init(&v4l2_dev->ioctl_lock);
- 	v4l2_prio_init(&v4l2_dev->prio);
- 	kref_init(&v4l2_dev->ref);
-+	INIT_LIST_HEAD(&v4l2_dev->group_head);
-+	mutex_init(&v4l2_dev->group_lock);
- 	get_device(dev);
- 	v4l2_dev->dev = dev;
- 	if (dev = NULL) {
-diff --git a/include/media/v4l2-async.h b/include/media/v4l2-async.h
-new file mode 100644
-index 0000000..91d436d
---- /dev/null
-+++ b/include/media/v4l2-async.h
-@@ -0,0 +1,113 @@
-+/*
-+ * V4L2 asynchronous subdevice registration API
-+ *
-+ * Copyright (C) 2012, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
-+ */
-+
-+#ifndef V4L2_ASYNC_H
-+#define V4L2_ASYNC_H
-+
-+#include <linux/list.h>
-+#include <linux/mutex.h>
-+#include <linux/notifier.h>
-+
-+#include <media/v4l2-subdev.h>
-+
-+struct device;
-+struct v4l2_device;
-+struct v4l2_async_notifier;
-+
-+enum v4l2_async_bus_type {
-+	V4L2_ASYNC_BUS_SPECIAL,
-+	V4L2_ASYNC_BUS_PLATFORM,
-+	V4L2_ASYNC_BUS_I2C,
++struct pfc_window {
++	phys_addr_t phys;
++	void __iomem *virt;
++	unsigned long size;
 +};
 +
-+struct v4l2_async_hw_device {
-+	enum v4l2_async_bus_type bus_type;
-+	union {
-+		struct {
-+			const char *name;
-+		} platform;
-+		struct {
-+			int adapter_id;
-+			unsigned short address;
-+		} i2c;
-+		struct {
-+			bool (*match)(struct device *,
-+				      struct v4l2_async_hw_device *);
-+			void *priv;
-+		} special;
-+	} match;
++struct sh_pfc {
++	struct sh_pfc_platform_data *pdata;
++	spinlock_t lock;
++
++	struct pfc_window *window;
 +};
 +
-+/**
-+ * struct v4l2_async_subdev - sub-device descriptor, as known to a bridge
-+ * @hw:		this device descriptor
-+ * @list:	member in a list of subdevices
-+ */
-+struct v4l2_async_subdev {
-+	struct v4l2_async_hw_device hw;
-+	struct list_head list;
-+};
++int sh_pfc_register_gpiochip(struct sh_pfc *pfc);
 +
-+/**
-+ * v4l2_async_subdev_list - provided by subdevices
-+ * @list:	member in a list of subdevices
-+ * @dev:	hardware device
-+ * @subdev:	V4L2 subdevice
-+ * @asd:	pointer to respective struct v4l2_async_subdev
-+ * @notifier:	pointer to managing notifier
-+ */
-+struct v4l2_async_subdev_list {
-+	struct list_head list;
-+	struct device *dev;
-+	struct v4l2_subdev *subdev;
-+	struct v4l2_async_subdev *asd;
-+	struct v4l2_async_notifier *notifier;
-+};
++int sh_pfc_register_pinctrl(struct sh_pfc *pfc);
 +
-+/**
-+ * v4l2_async_notifier - provided by bridges
-+ * @subdev_num:	number of subdevices
-+ * @subdev:	array of pointers to subdevices
-+ * @v4l2_dev:	pointer to sruct v4l2_device
-+ * @waiting:	list of subdevices, waiting for their drivers
-+ * @done:	list of subdevices, already probed
-+ * @list:	member in a global list of notifiers
-+ * @bind:	a subdevice driver is about to probe one of your subdevices
-+ * @bound:	a subdevice driver has successfully probed one of your subdevices
-+ * @complete:	all your subdevices have been probed successfully
-+ * @unbind:	a subdevice is leaving
-+ */
-+struct v4l2_async_notifier {
-+	int subdev_num;
-+	struct v4l2_async_subdev **subdev;
-+	struct v4l2_device *v4l2_dev;
-+	struct list_head waiting;
-+	struct list_head done;
-+	struct list_head list;
-+	int (*bind)(struct v4l2_async_notifier *notifier,
-+		    struct v4l2_async_subdev_list *asdl);
-+	int (*bound)(struct v4l2_async_notifier *notifier,
-+		     struct v4l2_async_subdev_list *asdl);
-+	int (*complete)(struct v4l2_async_notifier *notifier);
-+	void (*unbind)(struct v4l2_async_notifier *notifier,
-+		       struct v4l2_async_subdev_list *asdl);
-+};
++int sh_pfc_read_bit(struct pinmux_data_reg *dr, unsigned long in_pos);
++void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
++		      unsigned long value);
++int sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
++			struct pinmux_data_reg **drp, int *bitp);
++int sh_pfc_gpio_to_enum(struct sh_pfc *pfc, unsigned gpio, int pos,
++			pinmux_enum_t *enum_idp);
++int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
++		       int cfg_mode);
 +
-+int v4l2_async_notifier_register(struct v4l2_device *v4l2_dev,
-+				 struct v4l2_async_notifier *notifier);
-+void v4l2_async_notifier_unregister(struct v4l2_async_notifier *notifier);
-+/*
-+ * If subdevice probing fails any time after v4l2_async_subdev_bind(), no clean
-+ * up must be called. This function is only a message of intention.
-+ */
-+int v4l2_async_subdev_bind(struct v4l2_async_subdev_list *asdl);
-+int v4l2_async_subdev_bound(struct v4l2_async_subdev_list *asdl);
-+void v4l2_async_subdev_unbind(struct v4l2_async_subdev_list *asdl);
-+#endif
++#endif /* __SH_PFC_CORE_H__ */
+diff --git a/drivers/sh/pfc/gpio.c b/drivers/sh/pfc/gpio.c
+index 7597a02..565b366 100644
+--- a/drivers/sh/pfc/gpio.c
++++ b/drivers/sh/pfc/gpio.c
+@@ -19,6 +19,8 @@
+ #include <linux/pinctrl/consumer.h>
+ #include <linux/sh_pfc.h>
+ 
++#include "core.h"
++
+ struct sh_pfc_chip {
+ 	struct sh_pfc		*pfc;
+ 	struct gpio_chip	gpio_chip;
+diff --git a/drivers/sh/pfc/pinctrl.c b/drivers/sh/pfc/pinctrl.c
+index 3a2c77d..5801a56 100644
+--- a/drivers/sh/pfc/pinctrl.c
++++ b/drivers/sh/pfc/pinctrl.c
+@@ -24,6 +24,8 @@
+ #include <linux/pinctrl/pinmux.h>
+ #include <linux/pinctrl/pinconf-generic.h>
+ 
++#include "core.h"
++
+ struct sh_pfc_pinctrl {
+ 	struct pinctrl_dev *pctl;
+ 	struct sh_pfc *pfc;
+diff --git a/include/linux/sh_pfc.h b/include/linux/sh_pfc.h
+index 58587f9..f7f01b2 100644
+--- a/include/linux/sh_pfc.h
++++ b/include/linux/sh_pfc.h
+@@ -88,12 +88,6 @@ struct pinmux_range {
+ 	pinmux_enum_t force;
+ };
+ 
+-struct pfc_window {
+-	phys_addr_t phys;
+-	void __iomem *virt;
+-	unsigned long size;
+-};
+-
+ struct sh_pfc_platform_data {
+ 	char *name;
+ 	pinmux_enum_t reserved_id;
+@@ -123,35 +117,12 @@ struct sh_pfc_platform_data {
+ 	unsigned long unlock_reg;
+ };
+ 
+-struct sh_pfc {
+-	struct sh_pfc_platform_data *pdata;
+-	spinlock_t lock;
+-
+-	struct pfc_window *window;
+-};
+-
+ /* XXX compat for now */
+ #define pinmux_info sh_pfc_platform_data
+ 
+-/* drivers/sh/pfc/gpio.c */
+-int sh_pfc_register_gpiochip(struct sh_pfc *pfc);
+-
+-/* drivers/sh/pfc/pinctrl.c */
+-int sh_pfc_register_pinctrl(struct sh_pfc *pfc);
+-
+ /* drivers/sh/pfc/core.c */
+ int register_sh_pfc(struct sh_pfc_platform_data *pfc);
+ 
+-int sh_pfc_read_bit(struct pinmux_data_reg *dr, unsigned long in_pos);
+-void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
+-		      unsigned long value);
+-int sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
+-			struct pinmux_data_reg **drp, int *bitp);
+-int sh_pfc_gpio_to_enum(struct sh_pfc *pfc, unsigned gpio, int pos,
+-			pinmux_enum_t *enum_idp);
+-int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
+-		       int cfg_mode);
+-
+ /* xxx */
+ static inline int register_pinmux(struct pinmux_info *pip)
+ {
 -- 
-1.7.2.5
+1.7.8.6
 
