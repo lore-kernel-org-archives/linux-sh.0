@@ -1,37 +1,124 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sat, 15 Dec 2012 22:50:41 +0000
-Subject: [PATCH v3 07/81] sh: shx3: Fix last GPIO index
-Message-Id: <1355611915-25060-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Dec 2012 22:53:53 +0000
+Subject: [PATCH v4 11/81] sh-pfc: Merge PFC core and pinctrl
+Message-Id: <1356735303-29474-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-A careless look at the code shows that the last entry in the
-pinmux_gpios seems to be GPIO_FN_IRQOUT. However, entries are ordered by
-the GPIO number, as the PINMUX_GPIO macro is expended to an indexed
-array initializer. The last entry in the array is thus GPIO_FN_STATUS0.
-Set the pinmux_info last_gpio field accordingly.
+The PFC core is only used by the pinctrl and gpio modules. As the gpio
+module depends on the pinctrl module, the pinctrl module will always be
+present if the core gets used. There is thus no point in keeping core
+and pinctrl in two seperate modules. Merge them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/sh/kernel/cpu/sh4a/pinmux-shx3.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ drivers/sh/pfc/Kconfig   |   10 +---------
+ drivers/sh/pfc/Makefile  |    4 ++--
+ drivers/sh/pfc/core.c    |   15 +++------------
+ drivers/sh/pfc/pinctrl.c |    3 +--
+ 4 files changed, 7 insertions(+), 25 deletions(-)
 
-diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c b/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
-index aaa5338..2ebb983 100644
---- a/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
-+++ b/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
-@@ -572,7 +572,7 @@ static struct pinmux_info shx3_pinmux_info = {
- 	.mark		= { PINMUX_MARK_BEGIN,     PINMUX_MARK_END },
- 	.function	= { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
- 	.first_gpio	= GPIO_PA7,
--	.last_gpio	= GPIO_FN_IRQOUT,
-+	.last_gpio	= GPIO_FN_STATUS0,
- 	.gpios		= shx3_pinmux_gpios,
- 	.gpio_data	= shx3_pinmux_data,
- 	.gpio_data_size	= ARRAY_SIZE(shx3_pinmux_data),
+diff --git a/drivers/sh/pfc/Kconfig b/drivers/sh/pfc/Kconfig
+index 804f9ad..f33d82a 100644
+--- a/drivers/sh/pfc/Kconfig
++++ b/drivers/sh/pfc/Kconfig
+@@ -5,18 +5,10 @@ config SH_PFC
+ 	depends on GENERIC_GPIO
+ 	select GPIO_SH_PFC if ARCH_REQUIRE_GPIOLIB
+ 	select PINCTRL_SH_PFC
+-	def_bool y
+-
+-#
+-# Placeholder for now, rehome to drivers/pinctrl once the PFC APIs
+-# have settled.
+-#
+-config PINCTRL_SH_PFC
+-	tristate "SuperH PFC pin controller driver"
+-	depends on SH_PFC
+ 	select PINCTRL
+ 	select PINMUX
+ 	select PINCONF
++	def_bool y
+ 
+ config GPIO_SH_PFC
+ 	tristate "SuperH PFC GPIO support"
+diff --git a/drivers/sh/pfc/Makefile b/drivers/sh/pfc/Makefile
+index 7916027..ce6fae3 100644
+--- a/drivers/sh/pfc/Makefile
++++ b/drivers/sh/pfc/Makefile
+@@ -1,3 +1,3 @@
+-obj-y				+= core.o
+-obj-$(CONFIG_PINCTRL_SH_PFC)	+= pinctrl.o
++sh-pfc-objs			= core.o pinctrl.o
++obj-y				+= sh-pfc.o
+ obj-$(CONFIG_GPIO_SH_PFC)	+= gpio.o
+diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
+index 72421a4..30e33db 100644
+--- a/drivers/sh/pfc/core.c
++++ b/drivers/sh/pfc/core.c
+@@ -8,7 +8,7 @@
+  * License.  See the file "COPYING" in the main directory of this archive
+  * for more details.
+  */
+-#define pr_fmt(fmt) "sh_pfc " KBUILD_MODNAME ": " fmt
++#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+ 
+ #include <linux/errno.h>
+ #include <linux/kernel.h>
+@@ -497,7 +497,6 @@ int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
+  out_err:
+ 	return -1;
+ }
+-EXPORT_SYMBOL_GPL(sh_pfc_config_gpio);
+ 
+ int register_sh_pfc(struct sh_pfc_platform_data *pdata)
+ {
+@@ -528,17 +527,9 @@ int register_sh_pfc(struct sh_pfc_platform_data *pdata)
+ 	/*
+ 	 * Initialize pinctrl bindings first
+ 	 */
+-	initroutine = symbol_request(sh_pfc_register_pinctrl);
+-	if (initroutine) {
+-		ret = (*initroutine)(&sh_pfc);
+-		symbol_put_addr(initroutine);
+-
+-		if (unlikely(ret != 0))
+-			goto err;
+-	} else {
+-		pr_err("failed to initialize pinctrl bindings\n");
++	ret = sh_pfc_register_pinctrl(&sh_pfc);
++	if (unlikely(ret != 0))
+ 		goto err;
+-	}
+ 
+ 	/*
+ 	 * Then the GPIO chip
+diff --git a/drivers/sh/pfc/pinctrl.c b/drivers/sh/pfc/pinctrl.c
+index 5801a56..6f0f58b 100644
+--- a/drivers/sh/pfc/pinctrl.c
++++ b/drivers/sh/pfc/pinctrl.c
+@@ -9,7 +9,7 @@
+  */
+ #define DRV_NAME "pinctrl-sh_pfc"
+ 
+-#define pr_fmt(fmt) DRV_NAME " " KBUILD_MODNAME ": " fmt
++#define pr_fmt(fmt) KBUILD_MODNAME " pinctrl: " fmt
+ 
+ #include <linux/init.h>
+ #include <linux/module.h>
+@@ -521,7 +521,6 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ 
+ 	return sh_pfc_pinctrl_init();
+ }
+-EXPORT_SYMBOL_GPL(sh_pfc_register_pinctrl);
+ 
+ static void __exit sh_pfc_pinctrl_exit(void)
+ {
 -- 
 1.7.8.6
 
