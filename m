@@ -1,127 +1,385 @@
-From: Tang Chen <tangchen@cn.fujitsu.com>
-Date: Mon, 24 Dec 2012 12:09:10 +0000
-Subject: [PATCH v5 00/14] memory-hotplug: hot-remove physical memory
-Message-Id: <1356350964-13437-1-git-send-email-tangchen@cn.fujitsu.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Dec 2012 22:54:28 +0000
+Subject: [PATCH v4 46/81] sh-pfc: Support pinmux info in driver data instead of platform data
+Message-Id: <1356735303-29474-47-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: akpm@linux-foundation.org, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, wency@cn.fujitsu.com, tangchen@cn.fujitsu.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org
-Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Hi Andrew,
+Pinmux information should be provided by the pinmux driver, not arch
+code. Make it possible to do so by supporting pinmux information passed
+through the driver_data field in the platform ID table. Platform data
+will remain supported until all arch code has been converted.
 
-Here is the physical memory hot-remove patch-set based on 3.8rc-1.
+Rename the sh_pfc_platform_data structure to sh_pfc_soc_info to reflect
+this.
 
-This patch-set aims to implement physical memory hot-removing.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/pinctrl/sh-pfc/core.c    |   52 +++++++++++++++++++------------------
+ drivers/pinctrl/sh-pfc/core.h    |    2 +-
+ drivers/pinctrl/sh-pfc/gpio.c    |   18 ++++++------
+ drivers/pinctrl/sh-pfc/pinctrl.c |   28 ++++++++++----------
+ include/linux/sh_pfc.h           |    4 +-
+ 5 files changed, 53 insertions(+), 51 deletions(-)
 
-The patches can free/remove the following things:
-
-  - /sys/firmware/memmap/X/{end, start, type} : [PATCH 4/14]
-  - memmap of sparse-vmemmap                  : [PATCH 6,7,8,10/14]
-  - page table of removed memory              : [RFC PATCH 7,8,10/14]
-  - node and related sysfs files              : [RFC PATCH 13-14/14]
-
-
-How to test this patchset?
-1. apply this patchset and build the kernel. MEMORY_HOTPLUG, MEMORY_HOTREMOVE,
-   ACPI_HOTPLUG_MEMORY must be selected.
-2. load the module acpi_memhotplug
-3. hotplug the memory device(it depends on your hardware)
-   You will see the memory device under the directory /sys/bus/acpi/devices/.
-   Its name is PNP0C80:XX.
-4. online/offline pages provided by this memory device
-   You can write online/offline to /sys/devices/system/memory/memoryX/state to
-   online/offline pages provided by this memory device
-5. hotremove the memory device
-   You can hotremove the memory device by the hardware, or writing 1 to
-   /sys/bus/acpi/devices/PNP0C80:XX/eject.
-
-Note: if the memory provided by the memory device is used by the kernel, it
-can't be offlined. It is not a bug.
-
-
-Changelogs from v4 to v5:
- Patch7: new patch, move pgdat_resize_lock into sparse_remove_one_section() to
-         avoid disabling irq because we need flush tlb when free pagetables.
- Patch8: new patch, pick up some common APIs that are used to free direct mapping
-         and vmemmap pagetables.
- Patch9: free direct mapping pagetables on x86_64 arch.
- Patch10: free vmemmap pagetables.
- Patch11: since freeing memmap with vmemmap has been implemented, the config
-          macro CONFIG_SPARSEMEM_VMEMMAP when defining __remove_section() is
-          no longer needed.
- Patch13: no need to modify acpi_memory_disable_device() since it was removed,
-          and add nid parameter when calling remove_memory().
-
-Changelogs from v3 to v4:
- Patch7: remove unused codes.
- Patch8: fix nr_pages that is passed to free_map_bootmem()
-
-Changelogs from v2 to v3:
- Patch9: call sync_global_pgds() if pgd is changed
- Patch10: fix a problem int the patch
-
-Changelogs from v1 to v2:
- Patch1: new patch, offline memory twice. 1st iterate: offline every non primary
-         memory block. 2nd iterate: offline primary (i.e. first added) memory
-         block.
-
- Patch3: new patch, no logical change, just remove reduntant codes.
-
- Patch9: merge the patch from wujianguo into this patch. flush tlb on all cpu
-         after the pagetable is changed.
-
- Patch12: new patch, free node_data when a node is offlined.
-
-
-Tang Chen (5):
-  memory-hotplug: move pgdat_resize_lock into
-    sparse_remove_one_section()
-  memory-hotplug: remove page table of x86_64 architecture
-  memory-hotplug: remove memmap of sparse-vmemmap
-  memory-hotplug: Integrated __remove_section() of
-    CONFIG_SPARSEMEM_VMEMMAP.
-  memory-hotplug: remove sysfs file of node
-
-Wen Congyang (5):
-  memory-hotplug: try to offline the memory twice to avoid dependence
-  memory-hotplug: remove redundant codes
-  memory-hotplug: introduce new function arch_remove_memory() for
-    removing page table depends on architecture
-  memory-hotplug: Common APIs to support page tables hot-remove
-  memory-hotplug: free node_data when a node is offlined
-
-Yasuaki Ishimatsu (4):
-  memory-hotplug: check whether all memory blocks are offlined or not
-    when removing memory
-  memory-hotplug: remove /sys/firmware/memmap/X sysfs
-  memory-hotplug: implement register_page_bootmem_info_section of
-    sparse-vmemmap
-  memory-hotplug: memory_hotplug: clear zone when removing the memory
-
- arch/arm64/mm/mmu.c                  |    3 +
- arch/ia64/mm/discontig.c             |   10 +
- arch/ia64/mm/init.c                  |   18 ++
- arch/powerpc/mm/init_64.c            |   10 +
- arch/powerpc/mm/mem.c                |   12 +
- arch/s390/mm/init.c                  |   12 +
- arch/s390/mm/vmem.c                  |   10 +
- arch/sh/mm/init.c                    |   17 ++
- arch/sparc/mm/init_64.c              |   10 +
- arch/tile/mm/init.c                  |    8 +
- arch/x86/include/asm/pgtable_types.h |    1 +
- arch/x86/mm/init_32.c                |   12 +
- arch/x86/mm/init_64.c                |  382 ++++++++++++++++++++++++++++++++
- arch/x86/mm/pageattr.c               |   47 ++--
- drivers/acpi/acpi_memhotplug.c       |    8 +-
- drivers/base/memory.c                |    6 +
- drivers/firmware/memmap.c            |   98 ++++++++-
- include/linux/bootmem.h              |    1 +
- include/linux/firmware-map.h         |    6 +
- include/linux/memory_hotplug.h       |   15 +-
- include/linux/mm.h                   |    4 +-
- mm/memory_hotplug.c                  |  406 ++++++++++++++++++++++++++++++++--
- mm/sparse.c                          |    8 +-
- 23 files changed, 1043 insertions(+), 61 deletions(-)
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index 8e7818b..95cd10f 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -213,9 +213,9 @@ static void sh_pfc_write_config_reg(struct sh_pfc *pfc,
+ 	data &= mask;
+ 	data |= value;
+ 
+-	if (pfc->pdata->unlock_reg)
++	if (pfc->info->unlock_reg)
+ 		sh_pfc_write_raw_reg(
+-			sh_pfc_phys_to_virt(pfc, pfc->pdata->unlock_reg), 32,
++			sh_pfc_phys_to_virt(pfc, pfc->info->unlock_reg), 32,
+ 			~data);
+ 
+ 	sh_pfc_write_raw_reg(mapped_reg, crp->reg_width, data);
+@@ -223,16 +223,16 @@ static void sh_pfc_write_config_reg(struct sh_pfc *pfc,
+ 
+ static int sh_pfc_setup_data_reg(struct sh_pfc *pfc, unsigned gpio)
+ {
+-	struct pinmux_gpio *gpiop = &pfc->pdata->gpios[gpio];
++	struct pinmux_gpio *gpiop = &pfc->info->gpios[gpio];
+ 	struct pinmux_data_reg *data_reg;
+ 	int k, n;
+ 
+-	if (!sh_pfc_enum_in_range(gpiop->enum_id, &pfc->pdata->data))
++	if (!sh_pfc_enum_in_range(gpiop->enum_id, &pfc->info->data))
+ 		return -1;
+ 
+ 	k = 0;
+ 	while (1) {
+-		data_reg = pfc->pdata->data_regs + k;
++		data_reg = pfc->info->data_regs + k;
+ 
+ 		if (!data_reg->reg_width)
+ 			break;
+@@ -261,12 +261,12 @@ static void sh_pfc_setup_data_regs(struct sh_pfc *pfc)
+ 	struct pinmux_data_reg *drp;
+ 	int k;
+ 
+-	for (k = pfc->pdata->first_gpio; k <= pfc->pdata->last_gpio; k++)
++	for (k = pfc->info->first_gpio; k <= pfc->info->last_gpio; k++)
+ 		sh_pfc_setup_data_reg(pfc, k);
+ 
+ 	k = 0;
+ 	while (1) {
+-		drp = pfc->pdata->data_regs + k;
++		drp = pfc->info->data_regs + k;
+ 
+ 		if (!drp->reg_width)
+ 			break;
+@@ -280,15 +280,15 @@ static void sh_pfc_setup_data_regs(struct sh_pfc *pfc)
+ int sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
+ 			struct pinmux_data_reg **drp, int *bitp)
+ {
+-	struct pinmux_gpio *gpiop = &pfc->pdata->gpios[gpio];
++	struct pinmux_gpio *gpiop = &pfc->info->gpios[gpio];
+ 	int k, n;
+ 
+-	if (!sh_pfc_enum_in_range(gpiop->enum_id, &pfc->pdata->data))
++	if (!sh_pfc_enum_in_range(gpiop->enum_id, &pfc->info->data))
+ 		return -1;
+ 
+ 	k = (gpiop->flags & PINMUX_FLAG_DREG) >> PINMUX_FLAG_DREG_SHIFT;
+ 	n = (gpiop->flags & PINMUX_FLAG_DBIT) >> PINMUX_FLAG_DBIT_SHIFT;
+-	*drp = pfc->pdata->data_regs + k;
++	*drp = pfc->info->data_regs + k;
+ 	*bitp = n;
+ 	return 0;
+ }
+@@ -303,7 +303,7 @@ static int sh_pfc_get_config_reg(struct sh_pfc *pfc, pinmux_enum_t enum_id,
+ 
+ 	k = 0;
+ 	while (1) {
+-		config_reg = pfc->pdata->cfg_regs + k;
++		config_reg = pfc->info->cfg_regs + k;
+ 
+ 		r_width = config_reg->reg_width;
+ 		f_width = config_reg->field_width;
+@@ -341,12 +341,12 @@ static int sh_pfc_get_config_reg(struct sh_pfc *pfc, pinmux_enum_t enum_id,
+ int sh_pfc_gpio_to_enum(struct sh_pfc *pfc, unsigned gpio, int pos,
+ 			pinmux_enum_t *enum_idp)
+ {
+-	pinmux_enum_t enum_id = pfc->pdata->gpios[gpio].enum_id;
+-	pinmux_enum_t *data = pfc->pdata->gpio_data;
++	pinmux_enum_t enum_id = pfc->info->gpios[gpio].enum_id;
++	pinmux_enum_t *data = pfc->info->gpio_data;
+ 	int k;
+ 
+-	if (!sh_pfc_enum_in_range(enum_id, &pfc->pdata->data)) {
+-		if (!sh_pfc_enum_in_range(enum_id, &pfc->pdata->mark)) {
++	if (!sh_pfc_enum_in_range(enum_id, &pfc->info->data)) {
++		if (!sh_pfc_enum_in_range(enum_id, &pfc->info->mark)) {
+ 			pr_err("non data/mark enum_id for gpio %d\n", gpio);
+ 			return -1;
+ 		}
+@@ -357,7 +357,7 @@ int sh_pfc_gpio_to_enum(struct sh_pfc *pfc, unsigned gpio, int pos,
+ 		return pos + 1;
+ 	}
+ 
+-	for (k = 0; k < pfc->pdata->gpio_data_size; k++) {
++	for (k = 0; k < pfc->info->gpio_data_size; k++) {
+ 		if (data[k] = enum_id) {
+ 			*enum_idp = data[k + 1];
+ 			return k + 1;
+@@ -384,19 +384,19 @@ int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
+ 		break;
+ 
+ 	case PINMUX_TYPE_OUTPUT:
+-		range = &pfc->pdata->output;
++		range = &pfc->info->output;
+ 		break;
+ 
+ 	case PINMUX_TYPE_INPUT:
+-		range = &pfc->pdata->input;
++		range = &pfc->info->input;
+ 		break;
+ 
+ 	case PINMUX_TYPE_INPUT_PULLUP:
+-		range = &pfc->pdata->input_pu;
++		range = &pfc->info->input_pu;
+ 		break;
+ 
+ 	case PINMUX_TYPE_INPUT_PULLDOWN:
+-		range = &pfc->pdata->input_pd;
++		range = &pfc->info->input_pd;
+ 		break;
+ 
+ 	default:
+@@ -416,7 +416,7 @@ int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
+ 			break;
+ 
+ 		/* first check if this is a function enum */
+-		in_range = sh_pfc_enum_in_range(enum_id, &pfc->pdata->function);
++		in_range = sh_pfc_enum_in_range(enum_id, &pfc->info->function);
+ 		if (!in_range) {
+ 			/* not a function enum */
+ 			if (range) {
+@@ -482,7 +482,7 @@ int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
+ 
+ static int sh_pfc_probe(struct platform_device *pdev)
+ {
+-	struct sh_pfc_platform_data *pdata = pdev->dev.platform_data;
++	struct sh_pfc_soc_info *info;
+ 	struct sh_pfc *pfc;
+ 	int ret;
+ 
+@@ -491,14 +491,16 @@ static int sh_pfc_probe(struct platform_device *pdev)
+ 	 */
+ 	BUILD_BUG_ON(PINMUX_FLAG_TYPE > ((1 << PINMUX_FLAG_DBIT_SHIFT) - 1));
+ 
+-	if (pdata = NULL)
++	info = pdev->id_entry->driver_data
++	      ? (void *)pdev->id_entry->driver_data : pdev->dev.platform_data;
++	if (info = NULL)
+ 		return -ENODEV;
+ 
+ 	pfc = devm_kzalloc(&pdev->dev, sizeof(pfc), GFP_KERNEL);
+ 	if (pfc = NULL)
+ 		return -ENOMEM;
+ 
+-	pfc->pdata = pdata;
++	pfc->info = info;
+ 	pfc->dev = &pdev->dev;
+ 
+ 	ret = sh_pfc_ioremap(pfc, pdev);
+@@ -534,7 +536,7 @@ static int sh_pfc_probe(struct platform_device *pdev)
+ 
+ 	platform_set_drvdata(pdev, pfc);
+ 
+-	pr_info("%s support registered\n", pdata->name);
++	pr_info("%s support registered\n", info->name);
+ 
+ 	return 0;
+ }
+diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
+index 87ae5fd..2c82e9d 100644
+--- a/drivers/pinctrl/sh-pfc/core.h
++++ b/drivers/pinctrl/sh-pfc/core.h
+@@ -25,7 +25,7 @@ struct sh_pfc_pinctrl;
+ 
+ struct sh_pfc {
+ 	struct device *dev;
+-	struct sh_pfc_platform_data *pdata;
++	struct sh_pfc_soc_info *info;
+ 	spinlock_t lock;
+ 
+ 	unsigned int num_windows;
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index a0454f3..3cbdfea 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -106,11 +106,11 @@ static int sh_gpio_to_irq(struct gpio_chip *gc, unsigned offset)
+ 		if (pos <= 0 || !enum_id)
+ 			break;
+ 
+-		for (i = 0; i < pfc->pdata->gpio_irq_size; i++) {
+-			enum_ids = pfc->pdata->gpio_irq[i].enum_ids;
++		for (i = 0; i < pfc->info->gpio_irq_size; i++) {
++			enum_ids = pfc->info->gpio_irq[i].enum_ids;
+ 			for (k = 0; enum_ids[k]; k++) {
+ 				if (enum_ids[k] = enum_id)
+-					return pfc->pdata->gpio_irq[i].irq;
++					return pfc->info->gpio_irq[i].irq;
+ 			}
+ 		}
+ 	}
+@@ -131,12 +131,12 @@ static void sh_pfc_gpio_setup(struct sh_pfc_chip *chip)
+ 	gc->set = sh_gpio_set;
+ 	gc->to_irq = sh_gpio_to_irq;
+ 
+-	WARN_ON(pfc->pdata->first_gpio != 0); /* needs testing */
++	WARN_ON(pfc->info->first_gpio != 0); /* needs testing */
+ 
+-	gc->label = pfc->pdata->name;
++	gc->label = pfc->info->name;
+ 	gc->owner = THIS_MODULE;
+-	gc->base = pfc->pdata->first_gpio;
+-	gc->ngpio = (pfc->pdata->last_gpio - pfc->pdata->first_gpio) + 1;
++	gc->base = pfc->info->first_gpio;
++	gc->ngpio = (pfc->info->last_gpio - pfc->info->first_gpio) + 1;
+ }
+ 
+ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+@@ -159,8 +159,8 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+ 	pfc->gpio = chip;
+ 
+ 	pr_info("%s handling gpio %d -> %d\n",
+-		pfc->pdata->name, pfc->pdata->first_gpio,
+-		pfc->pdata->last_gpio);
++		pfc->info->name, pfc->info->first_gpio,
++		pfc->info->last_gpio);
+ 
+ 	return 0;
+ }
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index 221bde0..fdfe7be 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -140,7 +140,7 @@ static int sh_pfc_reconfig_pin(struct sh_pfc *pfc, unsigned offset,
+ 
+ 	spin_lock_irqsave(&pfc->lock, flags);
+ 
+-	pinmux_type = pfc->pdata->gpios[offset].flags & PINMUX_FLAG_TYPE;
++	pinmux_type = pfc->info->gpios[offset].flags & PINMUX_FLAG_TYPE;
+ 
+ 	/*
+ 	 * See if the present config needs to first be de-configured.
+@@ -172,8 +172,8 @@ static int sh_pfc_reconfig_pin(struct sh_pfc *pfc, unsigned offset,
+ 			       GPIO_CFG_REQ) != 0)
+ 		goto err;
+ 
+-	pfc->pdata->gpios[offset].flags &= ~PINMUX_FLAG_TYPE;
+-	pfc->pdata->gpios[offset].flags |= new_type;
++	pfc->info->gpios[offset].flags &= ~PINMUX_FLAG_TYPE;
++	pfc->info->gpios[offset].flags |= new_type;
+ 
+ 	ret = 0;
+ 
+@@ -195,7 +195,7 @@ static int sh_pfc_gpio_request_enable(struct pinctrl_dev *pctldev,
+ 
+ 	spin_lock_irqsave(&pfc->lock, flags);
+ 
+-	pinmux_type = pfc->pdata->gpios[offset].flags & PINMUX_FLAG_TYPE;
++	pinmux_type = pfc->info->gpios[offset].flags & PINMUX_FLAG_TYPE;
+ 
+ 	switch (pinmux_type) {
+ 	case PINMUX_TYPE_FUNCTION:
+@@ -236,7 +236,7 @@ static void sh_pfc_gpio_disable_free(struct pinctrl_dev *pctldev,
+ 
+ 	spin_lock_irqsave(&pfc->lock, flags);
+ 
+-	pinmux_type = pfc->pdata->gpios[offset].flags & PINMUX_FLAG_TYPE;
++	pinmux_type = pfc->info->gpios[offset].flags & PINMUX_FLAG_TYPE;
+ 
+ 	sh_pfc_config_gpio(pfc, offset, pinmux_type, GPIO_CFG_FREE);
+ 
+@@ -270,7 +270,7 @@ static int sh_pfc_pinconf_get(struct pinctrl_dev *pctldev, unsigned pin,
+ 	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
+ 	struct sh_pfc *pfc = pmx->pfc;
+ 
+-	*config = pfc->pdata->gpios[pin].flags & PINMUX_FLAG_TYPE;
++	*config = pfc->info->gpios[pin].flags & PINMUX_FLAG_TYPE;
+ 
+ 	return 0;
+ }
+@@ -354,7 +354,7 @@ static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ 	unsigned long flags;
+ 	int i;
+ 
+-	pmx->nr_pads = pfc->pdata->last_gpio - pfc->pdata->first_gpio + 1;
++	pmx->nr_pads = pfc->info->last_gpio - pfc->info->first_gpio + 1;
+ 
+ 	pmx->pads = devm_kzalloc(pfc->dev, sizeof(*pmx->pads) * pmx->nr_pads,
+ 				 GFP_KERNEL);
+@@ -373,9 +373,9 @@ static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ 	 */
+ 	for (i = 0; i < pmx->nr_pads; i++) {
+ 		struct pinctrl_pin_desc *pin = pmx->pads + i;
+-		struct pinmux_gpio *gpio = pfc->pdata->gpios + i;
++		struct pinmux_gpio *gpio = pfc->info->gpios + i;
+ 
+-		pin->number = pfc->pdata->first_gpio + i;
++		pin->number = pfc->info->first_gpio + i;
+ 		pin->name = gpio->name;
+ 
+ 		/* XXX */
+@@ -406,7 +406,7 @@ static int sh_pfc_map_functions(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ 	spin_lock_irqsave(&pmx->lock, flags);
+ 
+ 	for (i = fn = 0; i < pmx->nr_pads; i++) {
+-		struct pinmux_gpio *gpio = pfc->pdata->gpios + i;
++		struct pinmux_gpio *gpio = pfc->info->gpios + i;
+ 
+ 		if ((gpio->flags & PINMUX_FLAG_TYPE) = PINMUX_TYPE_FUNCTION)
+ 			pmx->functions[fn++] = gpio;
+@@ -443,10 +443,10 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ 	if (IS_ERR(pmx->pctl))
+ 		return PTR_ERR(pmx->pctl);
+ 
+-	sh_pfc_gpio_range.npins = pfc->pdata->last_gpio
+-				- pfc->pdata->first_gpio + 1;
+-	sh_pfc_gpio_range.base = pfc->pdata->first_gpio;
+-	sh_pfc_gpio_range.pin_base = pfc->pdata->first_gpio;
++	sh_pfc_gpio_range.npins = pfc->info->last_gpio
++				- pfc->info->first_gpio + 1;
++	sh_pfc_gpio_range.base = pfc->info->first_gpio;
++	sh_pfc_gpio_range.pin_base = pfc->info->first_gpio;
+ 
+ 	pinctrl_add_gpio_range(pmx->pctl, &sh_pfc_gpio_range);
+ 
+diff --git a/include/linux/sh_pfc.h b/include/linux/sh_pfc.h
+index 4f94233..9fd6228 100644
+--- a/include/linux/sh_pfc.h
++++ b/include/linux/sh_pfc.h
+@@ -88,7 +88,7 @@ struct pinmux_range {
+ 	pinmux_enum_t force;
+ };
+ 
+-struct sh_pfc_platform_data {
++struct sh_pfc_soc_info {
+ 	char *name;
+ 	pinmux_enum_t reserved_id;
+ 	struct pinmux_range data;
+@@ -115,7 +115,7 @@ struct sh_pfc_platform_data {
+ };
+ 
+ /* XXX compat for now */
+-#define pinmux_info sh_pfc_platform_data
++#define pinmux_info sh_pfc_soc_info
+ 
+ enum { GPIO_CFG_DRYRUN, GPIO_CFG_REQ, GPIO_CFG_FREE };
+ 
+-- 
+1.7.8.6
 
