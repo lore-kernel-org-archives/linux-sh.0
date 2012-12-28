@@ -1,469 +1,608 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 20 Dec 2012 21:26:03 +0000
-Subject: [PATCH v2] media: V4L2: support asynchronous subdevice registration
-Message-Id: <Pine.LNX.4.64.1212202144440.27848@axis700.grange>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Dec 2012 22:55:00 +0000
+Subject: [PATCH v4 78/81] sh: shx3: pinmux: Use driver-provided pinmux info
+Message-Id: <1356735303-29474-79-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linux Media Mailing List <linux-media@vger.kernel.org>
-Cc: Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Currently bridge device drivers register devices for all subdevices
-synchronously, tupically, during their probing. E.g. if an I2C CMOS sensor
-is attached to a video bridge device, the bridge driver will create an I2C
-device and wait for the respective I2C driver to probe. This makes linking
-of devices straight forward, but this approach cannot be used with
-intrinsically asynchronous and unordered device registration systems like
-the Flattened Device Tree. To support such systems this patch adds an
-asynchronous subdevice registration framework to V4L2. To use it bridge 
-drivers register lists of subdevice descriptors and notifier callbacks, 
-subdevice drivers register subdevices, that they are about to probe or 
-have successfully probed. The subsystem matches subdevices against 
-hardware descriptors and calls bridge driver callbacks when matches are 
-found. Another callback is called, when the subdevice is unregistered.
+Pinmux info for the sh machines is now provided by pinmux drivers.
+Remove the duplicate copy in arch code.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
+ arch/sh/kernel/cpu/sh4a/pinmux-shx3.c |  572 +--------------------------------
+ 1 files changed, 1 insertions(+), 571 deletions(-)
 
-v2:
-
-1. Removed the notion of groups
-2. Removed probing based on platform data, now subdevice drivers decide 
-them selves, whether or not they can successfully probe
-3. To accomplish the above subdevice drivers have to actively register 
-their subdevices with the framework
-4. As last time, this has been tested with soc-camera drivers 
-(sh_mobile_ceu_camera), as long as there are no categorical NAKs to this, 
-I'll try to clean up those soc-camera patches and post them as a usage 
-example.
-
- drivers/media/v4l2-core/Makefile     |    3 
- drivers/media/v4l2-core/v4l2-async.c |  282 +++++++++++++++++++++++++++++++++++
- include/media/v4l2-async.h           |  113 ++++++++++++++
- 3 files changed, 397 insertions(+), 1 deletion(-)
-
-diff --git a/drivers/media/v4l2-core/Makefile b/drivers/media/v4l2-core/Makefile
-index d065c01..b667ced 100644
---- a/drivers/media/v4l2-core/Makefile
-+++ b/drivers/media/v4l2-core/Makefile
-@@ -5,7 +5,8 @@
- tuner-objs	:=	tuner-core.o
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c b/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
+index eef1b8f..ace84ac 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
+@@ -9,580 +9,10 @@
+  */
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+-#include <linux/gpio.h>
+ #include <cpu/pfc.h>
+-#include <cpu/shx3.h>
+-
+-enum {
+-	PINMUX_RESERVED = 0,
+-
+-	PINMUX_DATA_BEGIN,
+-	PA7_DATA, PA6_DATA, PA5_DATA, PA4_DATA,
+-	PA3_DATA, PA2_DATA, PA1_DATA, PA0_DATA,
+-	PB7_DATA, PB6_DATA, PB5_DATA, PB4_DATA,
+-	PB3_DATA, PB2_DATA, PB1_DATA, PB0_DATA,
+-	PC7_DATA, PC6_DATA, PC5_DATA, PC4_DATA,
+-	PC3_DATA, PC2_DATA, PC1_DATA, PC0_DATA,
+-	PD7_DATA, PD6_DATA, PD5_DATA, PD4_DATA,
+-	PD3_DATA, PD2_DATA, PD1_DATA, PD0_DATA,
+-	PE7_DATA, PE6_DATA, PE5_DATA, PE4_DATA,
+-	PE3_DATA, PE2_DATA, PE1_DATA, PE0_DATA,
+-	PF7_DATA, PF6_DATA, PF5_DATA, PF4_DATA,
+-	PF3_DATA, PF2_DATA, PF1_DATA, PF0_DATA,
+-	PG7_DATA, PG6_DATA, PG5_DATA, PG4_DATA,
+-	PG3_DATA, PG2_DATA, PG1_DATA, PG0_DATA,
+-
+-	PH5_DATA, PH4_DATA,
+-	PH3_DATA, PH2_DATA, PH1_DATA, PH0_DATA,
+-	PINMUX_DATA_END,
+-
+-	PINMUX_INPUT_BEGIN,
+-	PA7_IN, PA6_IN, PA5_IN, PA4_IN,
+-	PA3_IN, PA2_IN, PA1_IN, PA0_IN,
+-	PB7_IN, PB6_IN, PB5_IN, PB4_IN,
+-	PB3_IN, PB2_IN, PB1_IN, PB0_IN,
+-	PC7_IN, PC6_IN, PC5_IN, PC4_IN,
+-	PC3_IN, PC2_IN, PC1_IN, PC0_IN,
+-	PD7_IN, PD6_IN, PD5_IN, PD4_IN,
+-	PD3_IN, PD2_IN, PD1_IN, PD0_IN,
+-	PE7_IN, PE6_IN, PE5_IN, PE4_IN,
+-	PE3_IN, PE2_IN, PE1_IN, PE0_IN,
+-	PF7_IN, PF6_IN, PF5_IN, PF4_IN,
+-	PF3_IN, PF2_IN, PF1_IN, PF0_IN,
+-	PG7_IN, PG6_IN, PG5_IN, PG4_IN,
+-	PG3_IN, PG2_IN, PG1_IN, PG0_IN,
+-
+-	PH5_IN, PH4_IN,
+-	PH3_IN, PH2_IN, PH1_IN, PH0_IN,
+-	PINMUX_INPUT_END,
+-
+-	PINMUX_INPUT_PULLUP_BEGIN,
+-	PA7_IN_PU, PA6_IN_PU, PA5_IN_PU, PA4_IN_PU,
+-	PA3_IN_PU, PA2_IN_PU, PA1_IN_PU, PA0_IN_PU,
+-	PB7_IN_PU, PB6_IN_PU, PB5_IN_PU, PB4_IN_PU,
+-	PB3_IN_PU, PB2_IN_PU, PB1_IN_PU, PB0_IN_PU,
+-	PC7_IN_PU, PC6_IN_PU, PC5_IN_PU, PC4_IN_PU,
+-	PC3_IN_PU, PC2_IN_PU, PC1_IN_PU, PC0_IN_PU,
+-	PD7_IN_PU, PD6_IN_PU, PD5_IN_PU, PD4_IN_PU,
+-	PD3_IN_PU, PD2_IN_PU, PD1_IN_PU, PD0_IN_PU,
+-	PE7_IN_PU, PE6_IN_PU, PE5_IN_PU, PE4_IN_PU,
+-	PE3_IN_PU, PE2_IN_PU, PE1_IN_PU, PE0_IN_PU,
+-	PF7_IN_PU, PF6_IN_PU, PF5_IN_PU, PF4_IN_PU,
+-	PF3_IN_PU, PF2_IN_PU, PF1_IN_PU, PF0_IN_PU,
+-	PG7_IN_PU, PG6_IN_PU, PG5_IN_PU, PG4_IN_PU,
+-	PG3_IN_PU, PG2_IN_PU, PG1_IN_PU, PG0_IN_PU,
+-
+-	PH5_IN_PU, PH4_IN_PU,
+-	PH3_IN_PU, PH2_IN_PU, PH1_IN_PU, PH0_IN_PU,
+-	PINMUX_INPUT_PULLUP_END,
+-
+-	PINMUX_OUTPUT_BEGIN,
+-	PA7_OUT, PA6_OUT, PA5_OUT, PA4_OUT,
+-	PA3_OUT, PA2_OUT, PA1_OUT, PA0_OUT,
+-	PB7_OUT, PB6_OUT, PB5_OUT, PB4_OUT,
+-	PB3_OUT, PB2_OUT, PB1_OUT, PB0_OUT,
+-	PC7_OUT, PC6_OUT, PC5_OUT, PC4_OUT,
+-	PC3_OUT, PC2_OUT, PC1_OUT, PC0_OUT,
+-	PD7_OUT, PD6_OUT, PD5_OUT, PD4_OUT,
+-	PD3_OUT, PD2_OUT, PD1_OUT, PD0_OUT,
+-	PE7_OUT, PE6_OUT, PE5_OUT, PE4_OUT,
+-	PE3_OUT, PE2_OUT, PE1_OUT, PE0_OUT,
+-	PF7_OUT, PF6_OUT, PF5_OUT, PF4_OUT,
+-	PF3_OUT, PF2_OUT, PF1_OUT, PF0_OUT,
+-	PG7_OUT, PG6_OUT, PG5_OUT, PG4_OUT,
+-	PG3_OUT, PG2_OUT, PG1_OUT, PG0_OUT,
+-
+-	PH5_OUT, PH4_OUT,
+-	PH3_OUT, PH2_OUT, PH1_OUT, PH0_OUT,
+-	PINMUX_OUTPUT_END,
+-
+-	PINMUX_FUNCTION_BEGIN,
+-	PA7_FN, PA6_FN, PA5_FN, PA4_FN,
+-	PA3_FN, PA2_FN, PA1_FN, PA0_FN,
+-	PB7_FN, PB6_FN, PB5_FN, PB4_FN,
+-	PB3_FN, PB2_FN, PB1_FN, PB0_FN,
+-	PC7_FN, PC6_FN, PC5_FN, PC4_FN,
+-	PC3_FN, PC2_FN, PC1_FN, PC0_FN,
+-	PD7_FN, PD6_FN, PD5_FN, PD4_FN,
+-	PD3_FN, PD2_FN, PD1_FN, PD0_FN,
+-	PE7_FN, PE6_FN, PE5_FN, PE4_FN,
+-	PE3_FN, PE2_FN, PE1_FN, PE0_FN,
+-	PF7_FN, PF6_FN, PF5_FN, PF4_FN,
+-	PF3_FN, PF2_FN, PF1_FN, PF0_FN,
+-	PG7_FN, PG6_FN, PG5_FN, PG4_FN,
+-	PG3_FN, PG2_FN, PG1_FN, PG0_FN,
+-
+-	PH5_FN, PH4_FN,
+-	PH3_FN, PH2_FN, PH1_FN, PH0_FN,
+-	PINMUX_FUNCTION_END,
+-
+-	PINMUX_MARK_BEGIN,
+-
+-	D31_MARK, D30_MARK, D29_MARK, D28_MARK, D27_MARK, D26_MARK,
+-	D25_MARK, D24_MARK, D23_MARK, D22_MARK, D21_MARK, D20_MARK,
+-	D19_MARK, D18_MARK, D17_MARK, D16_MARK,
+-
+-	BACK_MARK, BREQ_MARK,
+-	WE3_MARK, WE2_MARK,
+-	CS6_MARK, CS5_MARK, CS4_MARK,
+-	CLKOUTENB_MARK,
+-
+-	DACK3_MARK, DACK2_MARK, DACK1_MARK, DACK0_MARK,
+-	DREQ3_MARK, DREQ2_MARK, DREQ1_MARK, DREQ0_MARK,
+-
+-	IRQ3_MARK, IRQ2_MARK, IRQ1_MARK, IRQ0_MARK,
+-
+-	DRAK3_MARK, DRAK2_MARK, DRAK1_MARK, DRAK0_MARK,
+-
+-	SCK3_MARK, SCK2_MARK, SCK1_MARK, SCK0_MARK,
+-	IRL3_MARK, IRL2_MARK, IRL1_MARK, IRL0_MARK,
+-	TXD3_MARK, TXD2_MARK, TXD1_MARK, TXD0_MARK,
+-	RXD3_MARK, RXD2_MARK, RXD1_MARK, RXD0_MARK,
+-
+-	CE2B_MARK, CE2A_MARK, IOIS16_MARK,
+-	STATUS1_MARK, STATUS0_MARK,
+-
+-	IRQOUT_MARK,
+-
+-	PINMUX_MARK_END,
+-};
+-
+-static pinmux_enum_t shx3_pinmux_data[] = {
+-
+-	/* PA GPIO */
+-	PINMUX_DATA(PA7_DATA, PA7_IN, PA7_OUT, PA7_IN_PU),
+-	PINMUX_DATA(PA6_DATA, PA6_IN, PA6_OUT, PA6_IN_PU),
+-	PINMUX_DATA(PA5_DATA, PA5_IN, PA5_OUT, PA5_IN_PU),
+-	PINMUX_DATA(PA4_DATA, PA4_IN, PA4_OUT, PA4_IN_PU),
+-	PINMUX_DATA(PA3_DATA, PA3_IN, PA3_OUT, PA3_IN_PU),
+-	PINMUX_DATA(PA2_DATA, PA2_IN, PA2_OUT, PA2_IN_PU),
+-	PINMUX_DATA(PA1_DATA, PA1_IN, PA1_OUT, PA1_IN_PU),
+-	PINMUX_DATA(PA0_DATA, PA0_IN, PA0_OUT, PA0_IN_PU),
+-
+-	/* PB GPIO */
+-	PINMUX_DATA(PB7_DATA, PB7_IN, PB7_OUT, PB7_IN_PU),
+-	PINMUX_DATA(PB6_DATA, PB6_IN, PB6_OUT, PB6_IN_PU),
+-	PINMUX_DATA(PB5_DATA, PB5_IN, PB5_OUT, PB5_IN_PU),
+-	PINMUX_DATA(PB4_DATA, PB4_IN, PB4_OUT, PB4_IN_PU),
+-	PINMUX_DATA(PB3_DATA, PB3_IN, PB3_OUT, PB3_IN_PU),
+-	PINMUX_DATA(PB2_DATA, PB2_IN, PB2_OUT, PB2_IN_PU),
+-	PINMUX_DATA(PB1_DATA, PB1_IN, PB1_OUT, PB1_IN_PU),
+-	PINMUX_DATA(PB0_DATA, PB0_IN, PB0_OUT, PB0_IN_PU),
+-
+-	/* PC GPIO */
+-	PINMUX_DATA(PC7_DATA, PC7_IN, PC7_OUT, PC7_IN_PU),
+-	PINMUX_DATA(PC6_DATA, PC6_IN, PC6_OUT, PC6_IN_PU),
+-	PINMUX_DATA(PC5_DATA, PC5_IN, PC5_OUT, PC5_IN_PU),
+-	PINMUX_DATA(PC4_DATA, PC4_IN, PC4_OUT, PC4_IN_PU),
+-	PINMUX_DATA(PC3_DATA, PC3_IN, PC3_OUT, PC3_IN_PU),
+-	PINMUX_DATA(PC2_DATA, PC2_IN, PC2_OUT, PC2_IN_PU),
+-	PINMUX_DATA(PC1_DATA, PC1_IN, PC1_OUT, PC1_IN_PU),
+-	PINMUX_DATA(PC0_DATA, PC0_IN, PC0_OUT, PC0_IN_PU),
+-
+-	/* PD GPIO */
+-	PINMUX_DATA(PD7_DATA, PD7_IN, PD7_OUT, PD7_IN_PU),
+-	PINMUX_DATA(PD6_DATA, PD6_IN, PD6_OUT, PD6_IN_PU),
+-	PINMUX_DATA(PD5_DATA, PD5_IN, PD5_OUT, PD5_IN_PU),
+-	PINMUX_DATA(PD4_DATA, PD4_IN, PD4_OUT, PD4_IN_PU),
+-	PINMUX_DATA(PD3_DATA, PD3_IN, PD3_OUT, PD3_IN_PU),
+-	PINMUX_DATA(PD2_DATA, PD2_IN, PD2_OUT, PD2_IN_PU),
+-	PINMUX_DATA(PD1_DATA, PD1_IN, PD1_OUT, PD1_IN_PU),
+-	PINMUX_DATA(PD0_DATA, PD0_IN, PD0_OUT, PD0_IN_PU),
+-
+-	/* PE GPIO */
+-	PINMUX_DATA(PE7_DATA, PE7_IN, PE7_OUT, PE7_IN_PU),
+-	PINMUX_DATA(PE6_DATA, PE6_IN, PE6_OUT, PE6_IN_PU),
+-	PINMUX_DATA(PE5_DATA, PE5_IN, PE5_OUT, PE5_IN_PU),
+-	PINMUX_DATA(PE4_DATA, PE4_IN, PE4_OUT, PE4_IN_PU),
+-	PINMUX_DATA(PE3_DATA, PE3_IN, PE3_OUT, PE3_IN_PU),
+-	PINMUX_DATA(PE2_DATA, PE2_IN, PE2_OUT, PE2_IN_PU),
+-	PINMUX_DATA(PE1_DATA, PE1_IN, PE1_OUT, PE1_IN_PU),
+-	PINMUX_DATA(PE0_DATA, PE0_IN, PE0_OUT, PE0_IN_PU),
+-
+-	/* PF GPIO */
+-	PINMUX_DATA(PF7_DATA, PF7_IN, PF7_OUT, PF7_IN_PU),
+-	PINMUX_DATA(PF6_DATA, PF6_IN, PF6_OUT, PF6_IN_PU),
+-	PINMUX_DATA(PF5_DATA, PF5_IN, PF5_OUT, PF5_IN_PU),
+-	PINMUX_DATA(PF4_DATA, PF4_IN, PF4_OUT, PF4_IN_PU),
+-	PINMUX_DATA(PF3_DATA, PF3_IN, PF3_OUT, PF3_IN_PU),
+-	PINMUX_DATA(PF2_DATA, PF2_IN, PF2_OUT, PF2_IN_PU),
+-	PINMUX_DATA(PF1_DATA, PF1_IN, PF1_OUT, PF1_IN_PU),
+-	PINMUX_DATA(PF0_DATA, PF0_IN, PF0_OUT, PF0_IN_PU),
+-
+-	/* PG GPIO */
+-	PINMUX_DATA(PG7_DATA, PG7_IN, PG7_OUT, PG7_IN_PU),
+-	PINMUX_DATA(PG6_DATA, PG6_IN, PG6_OUT, PG6_IN_PU),
+-	PINMUX_DATA(PG5_DATA, PG5_IN, PG5_OUT, PG5_IN_PU),
+-	PINMUX_DATA(PG4_DATA, PG4_IN, PG4_OUT, PG4_IN_PU),
+-	PINMUX_DATA(PG3_DATA, PG3_IN, PG3_OUT, PG3_IN_PU),
+-	PINMUX_DATA(PG2_DATA, PG2_IN, PG2_OUT, PG2_IN_PU),
+-	PINMUX_DATA(PG1_DATA, PG1_IN, PG1_OUT, PG1_IN_PU),
+-	PINMUX_DATA(PG0_DATA, PG0_IN, PG0_OUT, PG0_IN_PU),
+-
+-	/* PH GPIO */
+-	PINMUX_DATA(PH5_DATA, PH5_IN, PH5_OUT, PH5_IN_PU),
+-	PINMUX_DATA(PH4_DATA, PH4_IN, PH4_OUT, PH4_IN_PU),
+-	PINMUX_DATA(PH3_DATA, PH3_IN, PH3_OUT, PH3_IN_PU),
+-	PINMUX_DATA(PH2_DATA, PH2_IN, PH2_OUT, PH2_IN_PU),
+-	PINMUX_DATA(PH1_DATA, PH1_IN, PH1_OUT, PH1_IN_PU),
+-	PINMUX_DATA(PH0_DATA, PH0_IN, PH0_OUT, PH0_IN_PU),
+-
+-	/* PA FN */
+-	PINMUX_DATA(D31_MARK, PA7_FN),
+-	PINMUX_DATA(D30_MARK, PA6_FN),
+-	PINMUX_DATA(D29_MARK, PA5_FN),
+-	PINMUX_DATA(D28_MARK, PA4_FN),
+-	PINMUX_DATA(D27_MARK, PA3_FN),
+-	PINMUX_DATA(D26_MARK, PA2_FN),
+-	PINMUX_DATA(D25_MARK, PA1_FN),
+-	PINMUX_DATA(D24_MARK, PA0_FN),
+-
+-	/* PB FN */
+-	PINMUX_DATA(D23_MARK, PB7_FN),
+-	PINMUX_DATA(D22_MARK, PB6_FN),
+-	PINMUX_DATA(D21_MARK, PB5_FN),
+-	PINMUX_DATA(D20_MARK, PB4_FN),
+-	PINMUX_DATA(D19_MARK, PB3_FN),
+-	PINMUX_DATA(D18_MARK, PB2_FN),
+-	PINMUX_DATA(D17_MARK, PB1_FN),
+-	PINMUX_DATA(D16_MARK, PB0_FN),
+-
+-	/* PC FN */
+-	PINMUX_DATA(BACK_MARK,		PC7_FN),
+-	PINMUX_DATA(BREQ_MARK,		PC6_FN),
+-	PINMUX_DATA(WE3_MARK,		PC5_FN),
+-	PINMUX_DATA(WE2_MARK,		PC4_FN),
+-	PINMUX_DATA(CS6_MARK,		PC3_FN),
+-	PINMUX_DATA(CS5_MARK,		PC2_FN),
+-	PINMUX_DATA(CS4_MARK,		PC1_FN),
+-	PINMUX_DATA(CLKOUTENB_MARK,	PC0_FN),
+-
+-	/* PD FN */
+-	PINMUX_DATA(DACK3_MARK,	PD7_FN),
+-	PINMUX_DATA(DACK2_MARK, PD6_FN),
+-	PINMUX_DATA(DACK1_MARK, PD5_FN),
+-	PINMUX_DATA(DACK0_MARK, PD4_FN),
+-	PINMUX_DATA(DREQ3_MARK, PD3_FN),
+-	PINMUX_DATA(DREQ2_MARK, PD2_FN),
+-	PINMUX_DATA(DREQ1_MARK, PD1_FN),
+-	PINMUX_DATA(DREQ0_MARK, PD0_FN),
+-
+-	/* PE FN */
+-	PINMUX_DATA(IRQ3_MARK,	PE7_FN),
+-	PINMUX_DATA(IRQ2_MARK,	PE6_FN),
+-	PINMUX_DATA(IRQ1_MARK,	PE5_FN),
+-	PINMUX_DATA(IRQ0_MARK,	PE4_FN),
+-	PINMUX_DATA(DRAK3_MARK, PE3_FN),
+-	PINMUX_DATA(DRAK2_MARK, PE2_FN),
+-	PINMUX_DATA(DRAK1_MARK, PE1_FN),
+-	PINMUX_DATA(DRAK0_MARK, PE0_FN),
+-
+-	/* PF FN */
+-	PINMUX_DATA(SCK3_MARK, PF7_FN),
+-	PINMUX_DATA(SCK2_MARK, PF6_FN),
+-	PINMUX_DATA(SCK1_MARK, PF5_FN),
+-	PINMUX_DATA(SCK0_MARK, PF4_FN),
+-	PINMUX_DATA(IRL3_MARK, PF3_FN),
+-	PINMUX_DATA(IRL2_MARK, PF2_FN),
+-	PINMUX_DATA(IRL1_MARK, PF1_FN),
+-	PINMUX_DATA(IRL0_MARK, PF0_FN),
+-
+-	/* PG FN */
+-	PINMUX_DATA(TXD3_MARK, PG7_FN),
+-	PINMUX_DATA(TXD2_MARK, PG6_FN),
+-	PINMUX_DATA(TXD1_MARK, PG5_FN),
+-	PINMUX_DATA(TXD0_MARK, PG4_FN),
+-	PINMUX_DATA(RXD3_MARK, PG3_FN),
+-	PINMUX_DATA(RXD2_MARK, PG2_FN),
+-	PINMUX_DATA(RXD1_MARK, PG1_FN),
+-	PINMUX_DATA(RXD0_MARK, PG0_FN),
+-
+-	/* PH FN */
+-	PINMUX_DATA(CE2B_MARK,		PH5_FN),
+-	PINMUX_DATA(CE2A_MARK,		PH4_FN),
+-	PINMUX_DATA(IOIS16_MARK,	PH3_FN),
+-	PINMUX_DATA(STATUS1_MARK,	PH2_FN),
+-	PINMUX_DATA(STATUS0_MARK,	PH1_FN),
+-	PINMUX_DATA(IRQOUT_MARK,	PH0_FN),
+-};
+-
+-static struct pinmux_gpio shx3_pinmux_gpios[] = {
+-	/* PA */
+-	PINMUX_GPIO(GPIO_PA7, PA7_DATA),
+-	PINMUX_GPIO(GPIO_PA6, PA6_DATA),
+-	PINMUX_GPIO(GPIO_PA5, PA5_DATA),
+-	PINMUX_GPIO(GPIO_PA4, PA4_DATA),
+-	PINMUX_GPIO(GPIO_PA3, PA3_DATA),
+-	PINMUX_GPIO(GPIO_PA2, PA2_DATA),
+-	PINMUX_GPIO(GPIO_PA1, PA1_DATA),
+-	PINMUX_GPIO(GPIO_PA0, PA0_DATA),
+-
+-	/* PB */
+-	PINMUX_GPIO(GPIO_PB7, PB7_DATA),
+-	PINMUX_GPIO(GPIO_PB6, PB6_DATA),
+-	PINMUX_GPIO(GPIO_PB5, PB5_DATA),
+-	PINMUX_GPIO(GPIO_PB4, PB4_DATA),
+-	PINMUX_GPIO(GPIO_PB3, PB3_DATA),
+-	PINMUX_GPIO(GPIO_PB2, PB2_DATA),
+-	PINMUX_GPIO(GPIO_PB1, PB1_DATA),
+-	PINMUX_GPIO(GPIO_PB0, PB0_DATA),
+-
+-	/* PC */
+-	PINMUX_GPIO(GPIO_PC7, PC7_DATA),
+-	PINMUX_GPIO(GPIO_PC6, PC6_DATA),
+-	PINMUX_GPIO(GPIO_PC5, PC5_DATA),
+-	PINMUX_GPIO(GPIO_PC4, PC4_DATA),
+-	PINMUX_GPIO(GPIO_PC3, PC3_DATA),
+-	PINMUX_GPIO(GPIO_PC2, PC2_DATA),
+-	PINMUX_GPIO(GPIO_PC1, PC1_DATA),
+-	PINMUX_GPIO(GPIO_PC0, PC0_DATA),
+-
+-	/* PD */
+-	PINMUX_GPIO(GPIO_PD7, PD7_DATA),
+-	PINMUX_GPIO(GPIO_PD6, PD6_DATA),
+-	PINMUX_GPIO(GPIO_PD5, PD5_DATA),
+-	PINMUX_GPIO(GPIO_PD4, PD4_DATA),
+-	PINMUX_GPIO(GPIO_PD3, PD3_DATA),
+-	PINMUX_GPIO(GPIO_PD2, PD2_DATA),
+-	PINMUX_GPIO(GPIO_PD1, PD1_DATA),
+-	PINMUX_GPIO(GPIO_PD0, PD0_DATA),
+-
+-	/* PE */
+-	PINMUX_GPIO(GPIO_PE7, PE7_DATA),
+-	PINMUX_GPIO(GPIO_PE6, PE6_DATA),
+-	PINMUX_GPIO(GPIO_PE5, PE5_DATA),
+-	PINMUX_GPIO(GPIO_PE4, PE4_DATA),
+-	PINMUX_GPIO(GPIO_PE3, PE3_DATA),
+-	PINMUX_GPIO(GPIO_PE2, PE2_DATA),
+-	PINMUX_GPIO(GPIO_PE1, PE1_DATA),
+-	PINMUX_GPIO(GPIO_PE0, PE0_DATA),
+-
+-	/* PF */
+-	PINMUX_GPIO(GPIO_PF7, PF7_DATA),
+-	PINMUX_GPIO(GPIO_PF6, PF6_DATA),
+-	PINMUX_GPIO(GPIO_PF5, PF5_DATA),
+-	PINMUX_GPIO(GPIO_PF4, PF4_DATA),
+-	PINMUX_GPIO(GPIO_PF3, PF3_DATA),
+-	PINMUX_GPIO(GPIO_PF2, PF2_DATA),
+-	PINMUX_GPIO(GPIO_PF1, PF1_DATA),
+-	PINMUX_GPIO(GPIO_PF0, PF0_DATA),
+-
+-	/* PG */
+-	PINMUX_GPIO(GPIO_PG7, PG7_DATA),
+-	PINMUX_GPIO(GPIO_PG6, PG6_DATA),
+-	PINMUX_GPIO(GPIO_PG5, PG5_DATA),
+-	PINMUX_GPIO(GPIO_PG4, PG4_DATA),
+-	PINMUX_GPIO(GPIO_PG3, PG3_DATA),
+-	PINMUX_GPIO(GPIO_PG2, PG2_DATA),
+-	PINMUX_GPIO(GPIO_PG1, PG1_DATA),
+-	PINMUX_GPIO(GPIO_PG0, PG0_DATA),
+-
+-	/* PH */
+-	PINMUX_GPIO(GPIO_PH5, PH5_DATA),
+-	PINMUX_GPIO(GPIO_PH4, PH4_DATA),
+-	PINMUX_GPIO(GPIO_PH3, PH3_DATA),
+-	PINMUX_GPIO(GPIO_PH2, PH2_DATA),
+-	PINMUX_GPIO(GPIO_PH1, PH1_DATA),
+-	PINMUX_GPIO(GPIO_PH0, PH0_DATA),
+-
+-	/* FN */
+-	PINMUX_GPIO(GPIO_FN_D31,	D31_MARK),
+-	PINMUX_GPIO(GPIO_FN_D30,	D30_MARK),
+-	PINMUX_GPIO(GPIO_FN_D29,	D29_MARK),
+-	PINMUX_GPIO(GPIO_FN_D28,	D28_MARK),
+-	PINMUX_GPIO(GPIO_FN_D27,	D27_MARK),
+-	PINMUX_GPIO(GPIO_FN_D26,	D26_MARK),
+-	PINMUX_GPIO(GPIO_FN_D25,	D25_MARK),
+-	PINMUX_GPIO(GPIO_FN_D24,	D24_MARK),
+-	PINMUX_GPIO(GPIO_FN_D23,	D23_MARK),
+-	PINMUX_GPIO(GPIO_FN_D22,	D22_MARK),
+-	PINMUX_GPIO(GPIO_FN_D21,	D21_MARK),
+-	PINMUX_GPIO(GPIO_FN_D20,	D20_MARK),
+-	PINMUX_GPIO(GPIO_FN_D19,	D19_MARK),
+-	PINMUX_GPIO(GPIO_FN_D18,	D18_MARK),
+-	PINMUX_GPIO(GPIO_FN_D17,	D17_MARK),
+-	PINMUX_GPIO(GPIO_FN_D16,	D16_MARK),
+-	PINMUX_GPIO(GPIO_FN_BACK,	BACK_MARK),
+-	PINMUX_GPIO(GPIO_FN_BREQ,	BREQ_MARK),
+-	PINMUX_GPIO(GPIO_FN_WE3,	WE3_MARK),
+-	PINMUX_GPIO(GPIO_FN_WE2,	WE2_MARK),
+-	PINMUX_GPIO(GPIO_FN_CS6,	CS6_MARK),
+-	PINMUX_GPIO(GPIO_FN_CS5,	CS5_MARK),
+-	PINMUX_GPIO(GPIO_FN_CS4,	CS4_MARK),
+-	PINMUX_GPIO(GPIO_FN_CLKOUTENB,	CLKOUTENB_MARK),
+-	PINMUX_GPIO(GPIO_FN_DACK3,	DACK3_MARK),
+-	PINMUX_GPIO(GPIO_FN_DACK2,	DACK2_MARK),
+-	PINMUX_GPIO(GPIO_FN_DACK1,	DACK1_MARK),
+-	PINMUX_GPIO(GPIO_FN_DACK0,	DACK0_MARK),
+-	PINMUX_GPIO(GPIO_FN_DREQ3,	DREQ3_MARK),
+-	PINMUX_GPIO(GPIO_FN_DREQ2,	DREQ2_MARK),
+-	PINMUX_GPIO(GPIO_FN_DREQ1,	DREQ1_MARK),
+-	PINMUX_GPIO(GPIO_FN_DREQ0,	DREQ0_MARK),
+-	PINMUX_GPIO(GPIO_FN_IRQ3,	IRQ3_MARK),
+-	PINMUX_GPIO(GPIO_FN_IRQ2,	IRQ2_MARK),
+-	PINMUX_GPIO(GPIO_FN_IRQ1,	IRQ1_MARK),
+-	PINMUX_GPIO(GPIO_FN_IRQ0,	IRQ0_MARK),
+-	PINMUX_GPIO(GPIO_FN_DRAK3,	DRAK3_MARK),
+-	PINMUX_GPIO(GPIO_FN_DRAK2,	DRAK2_MARK),
+-	PINMUX_GPIO(GPIO_FN_DRAK1,	DRAK1_MARK),
+-	PINMUX_GPIO(GPIO_FN_DRAK0,	DRAK0_MARK),
+-	PINMUX_GPIO(GPIO_FN_SCK3,	SCK3_MARK),
+-	PINMUX_GPIO(GPIO_FN_SCK2,	SCK2_MARK),
+-	PINMUX_GPIO(GPIO_FN_SCK1,	SCK1_MARK),
+-	PINMUX_GPIO(GPIO_FN_SCK0,	SCK0_MARK),
+-	PINMUX_GPIO(GPIO_FN_IRL3,	IRL3_MARK),
+-	PINMUX_GPIO(GPIO_FN_IRL2,	IRL2_MARK),
+-	PINMUX_GPIO(GPIO_FN_IRL1,	IRL1_MARK),
+-	PINMUX_GPIO(GPIO_FN_IRL0,	IRL0_MARK),
+-	PINMUX_GPIO(GPIO_FN_TXD3,	TXD3_MARK),
+-	PINMUX_GPIO(GPIO_FN_TXD2,	TXD2_MARK),
+-	PINMUX_GPIO(GPIO_FN_TXD1,	TXD1_MARK),
+-	PINMUX_GPIO(GPIO_FN_TXD0,	TXD0_MARK),
+-	PINMUX_GPIO(GPIO_FN_RXD3,	RXD3_MARK),
+-	PINMUX_GPIO(GPIO_FN_RXD2,	RXD2_MARK),
+-	PINMUX_GPIO(GPIO_FN_RXD1,	RXD1_MARK),
+-	PINMUX_GPIO(GPIO_FN_RXD0,	RXD0_MARK),
+-	PINMUX_GPIO(GPIO_FN_CE2B,	CE2B_MARK),
+-	PINMUX_GPIO(GPIO_FN_CE2A,	CE2A_MARK),
+-	PINMUX_GPIO(GPIO_FN_IOIS16,	IOIS16_MARK),
+-	PINMUX_GPIO(GPIO_FN_STATUS1,	STATUS1_MARK),
+-	PINMUX_GPIO(GPIO_FN_STATUS0,	STATUS0_MARK),
+-	PINMUX_GPIO(GPIO_FN_IRQOUT,	IRQOUT_MARK),
+-};
+-
+-static struct pinmux_cfg_reg shx3_pinmux_config_regs[] = {
+-	{ PINMUX_CFG_REG("PABCR", 0xffc70000, 32, 2) {
+-		PA7_FN, PA7_OUT, PA7_IN, PA7_IN_PU,
+-		PA6_FN, PA6_OUT, PA6_IN, PA6_IN_PU,
+-		PA5_FN, PA5_OUT, PA5_IN, PA5_IN_PU,
+-		PA4_FN, PA4_OUT, PA4_IN, PA4_IN_PU,
+-		PA3_FN, PA3_OUT, PA3_IN, PA3_IN_PU,
+-		PA2_FN, PA2_OUT, PA2_IN, PA2_IN_PU,
+-		PA1_FN, PA1_OUT, PA1_IN, PA1_IN_PU,
+-		PA0_FN, PA0_OUT, PA0_IN, PA0_IN_PU,
+-		PB7_FN, PB7_OUT, PB7_IN, PB7_IN_PU,
+-		PB6_FN, PB6_OUT, PB6_IN, PB6_IN_PU,
+-		PB5_FN, PB5_OUT, PB5_IN, PB5_IN_PU,
+-		PB4_FN, PB4_OUT, PB4_IN, PB4_IN_PU,
+-		PB3_FN, PB3_OUT, PB3_IN, PB3_IN_PU,
+-		PB2_FN, PB2_OUT, PB2_IN, PB2_IN_PU,
+-		PB1_FN, PB1_OUT, PB1_IN, PB1_IN_PU,
+-		PB0_FN, PB0_OUT, PB0_IN, PB0_IN_PU, },
+-	},
+-	{ PINMUX_CFG_REG("PCDCR", 0xffc70004, 32, 2) {
+-		PC7_FN, PC7_OUT, PC7_IN, PC7_IN_PU,
+-		PC6_FN, PC6_OUT, PC6_IN, PC6_IN_PU,
+-		PC5_FN, PC5_OUT, PC5_IN, PC5_IN_PU,
+-		PC4_FN, PC4_OUT, PC4_IN, PC4_IN_PU,
+-		PC3_FN, PC3_OUT, PC3_IN, PC3_IN_PU,
+-		PC2_FN, PC2_OUT, PC2_IN, PC2_IN_PU,
+-		PC1_FN, PC1_OUT, PC1_IN, PC1_IN_PU,
+-		PC0_FN, PC0_OUT, PC0_IN, PC0_IN_PU,
+-		PD7_FN, PD7_OUT, PD7_IN, PD7_IN_PU,
+-		PD6_FN, PD6_OUT, PD6_IN, PD6_IN_PU,
+-		PD5_FN, PD5_OUT, PD5_IN, PD5_IN_PU,
+-		PD4_FN, PD4_OUT, PD4_IN, PD4_IN_PU,
+-		PD3_FN, PD3_OUT, PD3_IN, PD3_IN_PU,
+-		PD2_FN, PD2_OUT, PD2_IN, PD2_IN_PU,
+-		PD1_FN, PD1_OUT, PD1_IN, PD1_IN_PU,
+-		PD0_FN, PD0_OUT, PD0_IN, PD0_IN_PU, },
+-	},
+-	{ PINMUX_CFG_REG("PEFCR", 0xffc70008, 32, 2) {
+-		PE7_FN, PE7_OUT, PE7_IN, PE7_IN_PU,
+-		PE6_FN, PE6_OUT, PE6_IN, PE6_IN_PU,
+-		PE5_FN, PE5_OUT, PE5_IN, PE5_IN_PU,
+-		PE4_FN, PE4_OUT, PE4_IN, PE4_IN_PU,
+-		PE3_FN, PE3_OUT, PE3_IN, PE3_IN_PU,
+-		PE2_FN, PE2_OUT, PE2_IN, PE2_IN_PU,
+-		PE1_FN, PE1_OUT, PE1_IN, PE1_IN_PU,
+-		PE0_FN, PE0_OUT, PE0_IN, PE0_IN_PU,
+-		PF7_FN, PF7_OUT, PF7_IN, PF7_IN_PU,
+-		PF6_FN, PF6_OUT, PF6_IN, PF6_IN_PU,
+-		PF5_FN, PF5_OUT, PF5_IN, PF5_IN_PU,
+-		PF4_FN, PF4_OUT, PF4_IN, PF4_IN_PU,
+-		PF3_FN, PF3_OUT, PF3_IN, PF3_IN_PU,
+-		PF2_FN, PF2_OUT, PF2_IN, PF2_IN_PU,
+-		PF1_FN, PF1_OUT, PF1_IN, PF1_IN_PU,
+-		PF0_FN, PF0_OUT, PF0_IN, PF0_IN_PU, },
+-	},
+-	{ PINMUX_CFG_REG("PGHCR", 0xffc7000c, 32, 2) {
+-		PG7_FN, PG7_OUT, PG7_IN, PG7_IN_PU,
+-		PG6_FN, PG6_OUT, PG6_IN, PG6_IN_PU,
+-		PG5_FN, PG5_OUT, PG5_IN, PG5_IN_PU,
+-		PG4_FN, PG4_OUT, PG4_IN, PG4_IN_PU,
+-		PG3_FN, PG3_OUT, PG3_IN, PG3_IN_PU,
+-		PG2_FN, PG2_OUT, PG2_IN, PG2_IN_PU,
+-		PG1_FN, PG1_OUT, PG1_IN, PG1_IN_PU,
+-		PG0_FN, PG0_OUT, PG0_IN, PG0_IN_PU,
+-		0, 0, 0, 0,
+-		0, 0, 0, 0,
+-		PH5_FN, PH5_OUT, PH5_IN, PH5_IN_PU,
+-		PH4_FN, PH4_OUT, PH4_IN, PH4_IN_PU,
+-		PH3_FN, PH3_OUT, PH3_IN, PH3_IN_PU,
+-		PH2_FN, PH2_OUT, PH2_IN, PH2_IN_PU,
+-		PH1_FN, PH1_OUT, PH1_IN, PH1_IN_PU,
+-		PH0_FN, PH0_OUT, PH0_IN, PH0_IN_PU, },
+-	},
+-	{ },
+-};
+-
+-static struct pinmux_data_reg shx3_pinmux_data_regs[] = {
+-	{ PINMUX_DATA_REG("PABDR", 0xffc70010, 32) {
+-		0, 0, 0, 0, 0, 0, 0, 0,
+-		PA7_DATA, PA6_DATA, PA5_DATA, PA4_DATA,
+-		PA3_DATA, PA2_DATA, PA1_DATA, PA0_DATA,
+-		0, 0, 0, 0, 0, 0, 0, 0,
+-		PB7_DATA, PB6_DATA, PB5_DATA, PB4_DATA,
+-		PB3_DATA, PB2_DATA, PB1_DATA, PB0_DATA, },
+-	},
+-	{ PINMUX_DATA_REG("PCDDR", 0xffc70014, 32) {
+-		0, 0, 0, 0, 0, 0, 0, 0,
+-		PC7_DATA, PC6_DATA, PC5_DATA, PC4_DATA,
+-		PC3_DATA, PC2_DATA, PC1_DATA, PC0_DATA,
+-		0, 0, 0, 0, 0, 0, 0, 0,
+-		PD7_DATA, PD6_DATA, PD5_DATA, PD4_DATA,
+-		PD3_DATA, PD2_DATA, PD1_DATA, PD0_DATA, },
+-	},
+-	{ PINMUX_DATA_REG("PEFDR", 0xffc70018, 32) {
+-		0, 0, 0, 0, 0, 0, 0, 0,
+-		PE7_DATA, PE6_DATA, PE5_DATA, PE4_DATA,
+-		PE3_DATA, PE2_DATA, PE1_DATA, PE0_DATA,
+-		0, 0, 0, 0, 0, 0, 0, 0,
+-		PF7_DATA, PF6_DATA, PF5_DATA, PF4_DATA,
+-		PF3_DATA, PF2_DATA, PF1_DATA, PF0_DATA, },
+-	},
+-	{ PINMUX_DATA_REG("PGHDR", 0xffc7001c, 32) {
+-		0, 0, 0, 0, 0, 0, 0, 0,
+-		PG7_DATA, PG6_DATA, PG5_DATA, PG4_DATA,
+-		PG3_DATA, PG2_DATA, PG1_DATA, PG0_DATA,
+-		0, 0, 0, 0, 0, 0, 0, 0,
+-		0, 0, PH5_DATA, PH4_DATA,
+-		PH3_DATA, PH2_DATA, PH1_DATA, PH0_DATA, },
+-	},
+-	{ },
+-};
+-
+-static struct pinmux_info shx3_pinmux_info = {
+-	.name		= "shx3_pfc",
+-	.reserved_id	= PINMUX_RESERVED,
+-	.data		= { PINMUX_DATA_BEGIN,	   PINMUX_DATA_END },
+-	.input		= { PINMUX_INPUT_BEGIN,	   PINMUX_INPUT_END },
+-	.input_pu	= { PINMUX_INPUT_PULLUP_BEGIN,
+-			    PINMUX_INPUT_PULLUP_END },
+-	.output		= { PINMUX_OUTPUT_BEGIN,   PINMUX_OUTPUT_END },
+-	.mark		= { PINMUX_MARK_BEGIN,     PINMUX_MARK_END },
+-	.function	= { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+-	.first_gpio	= GPIO_PA7,
+-	.last_gpio	= GPIO_FN_STATUS0,
+-	.gpios		= shx3_pinmux_gpios,
+-	.gpio_data	= shx3_pinmux_data,
+-	.gpio_data_size	= ARRAY_SIZE(shx3_pinmux_data),
+-	.cfg_regs	= shx3_pinmux_config_regs,
+-	.data_regs	= shx3_pinmux_data_regs,
+-};
  
- videodev-objs	:=	v4l2-dev.o v4l2-ioctl.o v4l2-device.o v4l2-fh.o \
--			v4l2-event.o v4l2-ctrls.o v4l2-subdev.o v4l2-clk.o
-+			v4l2-event.o v4l2-ctrls.o v4l2-subdev.o v4l2-clk.o \
-+			v4l2-async.o
- ifeq ($(CONFIG_COMPAT),y)
-   videodev-objs += v4l2-compat-ioctl32.o
- endif
-diff --git a/drivers/media/v4l2-core/v4l2-async.c b/drivers/media/v4l2-core/v4l2-async.c
-new file mode 100644
-index 0000000..f3939af
---- /dev/null
-+++ b/drivers/media/v4l2-core/v4l2-async.c
-@@ -0,0 +1,282 @@
-+/*
-+ * V4L2 asynchronous subdevice registration API
-+ *
-+ * Copyright (C) 2012, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
-+ */
-+
-+#include <linux/device.h>
-+#include <linux/err.h>
-+#include <linux/i2c.h>
-+#include <linux/list.h>
-+#include <linux/module.h>
-+#include <linux/mutex.h>
-+#include <linux/notifier.h>
-+#include <linux/platform_device.h>
-+#include <linux/slab.h>
-+#include <linux/types.h>
-+
-+#include <media/v4l2-async.h>
-+#include <media/v4l2-device.h>
-+#include <media/v4l2-subdev.h>
-+
-+static bool match_i2c(struct device *dev, struct v4l2_async_hw_device *hw_dev)
-+{
-+	struct i2c_client *client = to_i2c_client(dev);
-+	return hw_dev->bus_type = V4L2_ASYNC_BUS_I2C &&
-+		hw_dev->match.i2c.adapter_id = client->adapter->nr &&
-+		hw_dev->match.i2c.address = client->addr;
-+}
-+
-+static bool match_platform(struct device *dev, struct v4l2_async_hw_device *hw_dev)
-+{
-+	return hw_dev->bus_type = V4L2_ASYNC_BUS_PLATFORM &&
-+		!strcmp(hw_dev->match.platform.name, dev_name(dev));
-+}
-+
-+static LIST_HEAD(subdev_list);
-+static LIST_HEAD(notifier_list);
-+static DEFINE_MUTEX(list_lock);
-+
-+static struct v4l2_async_subdev *v4l2_async_belongs(struct v4l2_async_notifier *notifier,
-+						    struct v4l2_async_subdev_list *asdl)
-+{
-+	struct v4l2_async_subdev *asd = NULL;
-+	bool (*match)(struct device *,
-+		      struct v4l2_async_hw_device *);
-+
-+	list_for_each_entry (asd, &notifier->waiting, list) {
-+		struct v4l2_async_hw_device *hw = &asd->hw;
-+		switch (hw->bus_type) {
-+		case V4L2_ASYNC_BUS_SPECIAL:
-+			match = hw->match.special.match;
-+			if (!match)
-+				/* Match always */
-+				return asd;
-+			break;
-+		case V4L2_ASYNC_BUS_PLATFORM:
-+			match = match_platform;
-+			break;
-+		case V4L2_ASYNC_BUS_I2C:
-+			match = match_i2c;
-+			break;
-+		default:
-+			/* Oops */
-+			match = NULL;
-+			dev_err(notifier->v4l2_dev ? notifier->v4l2_dev->dev : NULL,
-+				"Invalid bus-type %u on %p\n", hw->bus_type, asd);
-+		}
-+
-+		if (match && match(asdl->dev, hw))
-+			break;
-+	}
-+
-+	return asd;
-+}
-+
-+static int v4l2_async_test_notify(struct v4l2_async_notifier *notifier,
-+				   struct v4l2_async_subdev_list *asdl)
-+{
-+	struct v4l2_async_subdev *asd = v4l2_async_belongs(notifier, asdl);
-+	if (asd) {
-+		int ret;
-+		/* Remove from the waiting list */
-+		list_del(&asd->list);
-+		asdl->asd = asd;
-+		asdl->notifier = notifier;
-+
-+		if (notifier->bound) {
-+			ret = notifier->bound(notifier, asdl);
-+			if (ret < 0)
-+				return ret;
-+		}
-+		/* Move from the global subdevice list to notifier's done */
-+		list_move(&asdl->list, &notifier->done);
-+
-+		ret = v4l2_device_register_subdev(notifier->v4l2_dev,
-+						  asdl->subdev);
-+		if (ret < 0) {
-+			if (notifier->unbind)
-+				notifier->unbind(notifier, asdl);
-+			return ret;
-+		}
-+
-+		if (list_empty(&notifier->waiting) && notifier->complete)
-+			return notifier->complete(notifier);
-+
-+		return 0;
-+	}
-+
-+	return -EPROBE_DEFER;
-+}
-+
-+static struct device *v4l2_async_unbind(struct v4l2_async_subdev_list *asdl)
-+{
-+	struct device *dev = asdl->dev;
-+	v4l2_device_unregister_subdev(asdl->subdev);
-+	/* Subdevice driver will reprobe and put asdl back onto the list */
-+	list_del(&asdl->list);
-+	asdl->asd = NULL;
-+	/* If we handled USB devices, we'd have to lock the parent too */
-+	device_release_driver(dev);
-+	return dev;
-+}
-+
-+int v4l2_async_notifier_register(struct v4l2_device *v4l2_dev,
-+				 struct v4l2_async_notifier *notifier)
-+{
-+	struct v4l2_async_subdev_list *asdl;
-+	int i;
-+
-+	notifier->v4l2_dev = v4l2_dev;
-+	INIT_LIST_HEAD(&notifier->waiting);
-+	INIT_LIST_HEAD(&notifier->done);
-+
-+	for (i = 0; i < notifier->subdev_num; i++)
-+		list_add_tail(&notifier->subdev[i]->list, &notifier->waiting);
-+
-+	mutex_lock(&list_lock);
-+
-+	/* Keep also completed notifiers on the list */
-+	list_add(&notifier->list, &notifier_list);
-+
-+	list_for_each_entry(asdl, &subdev_list, list) {
-+		int ret = v4l2_async_test_notify(notifier, asdl);
-+		if (ret != -EPROBE_DEFER) {
-+			mutex_unlock(&list_lock);
-+			return ret;
-+		}
-+	}
-+
-+	mutex_unlock(&list_lock);
-+
-+	return 0;
-+}
-+EXPORT_SYMBOL(v4l2_async_notifier_register);
-+
-+void v4l2_async_notifier_unregister(struct v4l2_async_notifier *notifier)
-+{
-+	struct v4l2_async_subdev_list *asdl, *tmp;
-+	int i = 0;
-+	struct device **dev = kcalloc(notifier->subdev_num,
-+				      sizeof(*dev), GFP_KERNEL);
-+	if (!dev)
-+		dev_err(notifier->v4l2_dev->dev,
-+			"Failed to allocate device cache!\n");
-+
-+	mutex_lock(&list_lock);
-+
-+	list_del(&notifier->list);
-+
-+	list_for_each_entry_safe(asdl, tmp, &notifier->done, list) {
-+		if (dev)
-+			dev[i++] = get_device(asdl->dev);
-+		v4l2_async_unbind(asdl);
-+
-+		if (notifier->unbind)
-+			notifier->unbind(notifier, asdl);
-+	}
-+
-+	mutex_unlock(&list_lock);
-+
-+	if (dev)
-+		while (i--) {
-+			if (dev[i] && device_attach(dev[i]) < 0)
-+				dev_err(dev[i], "Failed to re-probe to %s\n",
-+					dev[i]->driver ? dev[i]->driver->name : "(none)");
-+			put_device(dev[i]);
-+		}
-+	/*
-+	 * Don't care about the waiting list, it is initialised and populated
-+	 * upon notifier registration.
-+	 */
-+}
-+EXPORT_SYMBOL(v4l2_async_notifier_unregister);
-+
-+int v4l2_async_subdev_bind(struct v4l2_async_subdev_list *asdl)
-+{
-+	struct v4l2_async_notifier *notifier;
-+	int ret = 0;
-+
-+	mutex_lock(&list_lock);
-+
-+	list_for_each_entry(notifier, &notifier_list, list) {
-+		struct v4l2_async_subdev *asd = v4l2_async_belongs(notifier,
-+								   asdl);
-+		/*
-+		 * Whether or not probing succeeds - this is the right hardware
-+		 * subdevice descriptor and we can provide it to the notifier
-+		 */
-+		if (asd) {
-+			asdl->asd = asd;
-+			if (notifier->bind)
-+				ret = notifier->bind(notifier, asdl);
-+			break;
-+		}
-+	}
-+
-+	mutex_unlock(&list_lock);
-+
-+	return ret;
-+}
-+EXPORT_SYMBOL(v4l2_async_subdev_bind);
-+
-+int v4l2_async_subdev_bound(struct v4l2_async_subdev_list *asdl)
-+{
-+	struct v4l2_async_notifier *notifier;
-+
-+	mutex_lock(&list_lock);
-+
-+	INIT_LIST_HEAD(&asdl->list);
-+
-+	list_for_each_entry(notifier, &notifier_list, list) {
-+		int ret = v4l2_async_test_notify(notifier, asdl);
-+		if (ret != -EPROBE_DEFER) {
-+			mutex_unlock(&list_lock);
-+			return ret;
-+		}
-+	}
-+
-+	/* None matched, wait for hot-plugging */
-+	list_add(&asdl->list, &subdev_list);
-+
-+	mutex_unlock(&list_lock);
-+
-+	return 0;
-+}
-+EXPORT_SYMBOL(v4l2_async_subdev_bound);
-+
-+void v4l2_async_subdev_unbind(struct v4l2_async_subdev_list *asdl)
-+{
-+	struct v4l2_async_notifier *notifier = asdl->notifier;
-+	struct device *dev;
-+
-+	if (!asdl->asd)
-+		return;
-+
-+	mutex_lock(&list_lock);
-+
-+	dev = asdl->dev;
-+
-+	list_add(&asdl->asd->list, &notifier->waiting);
-+
-+	dev = get_device(asdl->dev);
-+
-+	v4l2_async_unbind(asdl);
-+
-+	if (notifier->unbind)
-+		notifier->unbind(notifier, asdl);
-+
-+	mutex_unlock(&list_lock);
-+
-+	/* Re-probe with lock released - avoid a deadlock */
-+	if (dev && device_attach(dev) < 0)
-+		dev_err(dev, "Failed to re-probe to %s\n",
-+			dev->driver ? dev->driver->name : "(none)");
-+
-+	put_device(dev);
-+}
-+EXPORT_SYMBOL(v4l2_async_subdev_unbind);
-diff --git a/include/media/v4l2-async.h b/include/media/v4l2-async.h
-new file mode 100644
-index 0000000..91d436d
---- /dev/null
-+++ b/include/media/v4l2-async.h
-@@ -0,0 +1,113 @@
-+/*
-+ * V4L2 asynchronous subdevice registration API
-+ *
-+ * Copyright (C) 2012, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
-+ */
-+
-+#ifndef V4L2_ASYNC_H
-+#define V4L2_ASYNC_H
-+
-+#include <linux/list.h>
-+#include <linux/mutex.h>
-+#include <linux/notifier.h>
-+
-+#include <media/v4l2-subdev.h>
-+
-+struct device;
-+struct v4l2_device;
-+struct v4l2_async_notifier;
-+
-+enum v4l2_async_bus_type {
-+	V4L2_ASYNC_BUS_SPECIAL,
-+	V4L2_ASYNC_BUS_PLATFORM,
-+	V4L2_ASYNC_BUS_I2C,
-+};
-+
-+struct v4l2_async_hw_device {
-+	enum v4l2_async_bus_type bus_type;
-+	union {
-+		struct {
-+			const char *name;
-+		} platform;
-+		struct {
-+			int adapter_id;
-+			unsigned short address;
-+		} i2c;
-+		struct {
-+			bool (*match)(struct device *,
-+				      struct v4l2_async_hw_device *);
-+			void *priv;
-+		} special;
-+	} match;
-+};
-+
-+/**
-+ * struct v4l2_async_subdev - sub-device descriptor, as known to a bridge
-+ * @hw:		this device descriptor
-+ * @list:	member in a list of subdevices
-+ */
-+struct v4l2_async_subdev {
-+	struct v4l2_async_hw_device hw;
-+	struct list_head list;
-+};
-+
-+/**
-+ * v4l2_async_subdev_list - provided by subdevices
-+ * @list:	member in a list of subdevices
-+ * @dev:	hardware device
-+ * @subdev:	V4L2 subdevice
-+ * @asd:	pointer to respective struct v4l2_async_subdev
-+ * @notifier:	pointer to managing notifier
-+ */
-+struct v4l2_async_subdev_list {
-+	struct list_head list;
-+	struct device *dev;
-+	struct v4l2_subdev *subdev;
-+	struct v4l2_async_subdev *asd;
-+	struct v4l2_async_notifier *notifier;
-+};
-+
-+/**
-+ * v4l2_async_notifier - provided by bridges
-+ * @subdev_num:	number of subdevices
-+ * @subdev:	array of pointers to subdevices
-+ * @v4l2_dev:	pointer to sruct v4l2_device
-+ * @waiting:	list of subdevices, waiting for their drivers
-+ * @done:	list of subdevices, already probed
-+ * @list:	member in a global list of notifiers
-+ * @bind:	a subdevice driver is about to probe one of your subdevices
-+ * @bound:	a subdevice driver has successfully probed one of your subdevices
-+ * @complete:	all your subdevices have been probed successfully
-+ * @unbind:	a subdevice is leaving
-+ */
-+struct v4l2_async_notifier {
-+	int subdev_num;
-+	struct v4l2_async_subdev **subdev;
-+	struct v4l2_device *v4l2_dev;
-+	struct list_head waiting;
-+	struct list_head done;
-+	struct list_head list;
-+	int (*bind)(struct v4l2_async_notifier *notifier,
-+		    struct v4l2_async_subdev_list *asdl);
-+	int (*bound)(struct v4l2_async_notifier *notifier,
-+		     struct v4l2_async_subdev_list *asdl);
-+	int (*complete)(struct v4l2_async_notifier *notifier);
-+	void (*unbind)(struct v4l2_async_notifier *notifier,
-+		       struct v4l2_async_subdev_list *asdl);
-+};
-+
-+int v4l2_async_notifier_register(struct v4l2_device *v4l2_dev,
-+				 struct v4l2_async_notifier *notifier);
-+void v4l2_async_notifier_unregister(struct v4l2_async_notifier *notifier);
-+/*
-+ * If subdevice probing fails any time after v4l2_async_subdev_bind(), no clean
-+ * up must be called. This function is only a message of intention.
-+ */
-+int v4l2_async_subdev_bind(struct v4l2_async_subdev_list *asdl);
-+int v4l2_async_subdev_bound(struct v4l2_async_subdev_list *asdl);
-+void v4l2_async_subdev_unbind(struct v4l2_async_subdev_list *asdl);
-+#endif
+ static int __init shx3_pinmux_setup(void)
+ {
+-	return sh_pfc_register_info(NULL, NULL, 0, &shx3_pinmux_info);
++	return sh_pfc_register("pfc-shx3", NULL, 0);
+ }
+ arch_initcall(shx3_pinmux_setup);
 -- 
-1.7.2.5
+1.7.8.6
 
