@@ -1,89 +1,53 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 18 Dec 2012 00:46:12 +0000
-Subject: [PATCH 8/9] ARM: shmobile: sh7372: Do not initialise TMU when using DT
-Message-Id: <1355791573-20281-9-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 28 Dec 2012 22:53:43 +0000
+Subject: [PATCH v4 01/81] sh: sh7264: Rename CRX0CRX1 mark to match GPIO names
+Message-Id: <1356735303-29474-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1355791573-20281-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1355791573-20281-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This is in preparation for initialising INTC using DT.
-The proposed INTC configuration is not complete and does
-not allow the TMU to be initialised, to exclude it when using DT.
+Rename CRX0CRX1_MARK to CRX0_CRX1_MARK to match the GPIO_FN_CRX0_CRX1
+name.
 
-Cc: Magnus Damm <damm@opensource.se>
-Cc: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/arm/mach-shmobile/setup-sh7372.c |   17 ++++++++++++-----
- 1 file changed, 12 insertions(+), 5 deletions(-)
+ arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index a07954f..90af2e9 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -968,7 +968,7 @@ static struct platform_device spu1_device = {
- 	.num_resources	= ARRAY_SIZE(spu1_resources),
- };
+diff --git a/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c b/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c
+index b055b55..79a0d60 100644
+--- a/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c
++++ b/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c
+@@ -505,7 +505,7 @@ enum {
+ 	PWM2A_MARK, PWM2B_MARK, PWM2C_MARK, PWM2D_MARK,
+ 	PWM2E_MARK, PWM2F_MARK, PWM2G_MARK, PWM2H_MARK,
+ 	IERXD_MARK, IETXD_MARK,
+-	CRX0CRX1_MARK,
++	CRX0_CRX1_MARK,
+ 	WDTOVF_MARK,
  
--static struct platform_device *sh7372_early_devices[] __initdata = {
-+static struct platform_device *sh7372_early_devices_dt[] __initdata = {
- 	&scif0_device,
- 	&scif1_device,
- 	&scif2_device,
-@@ -977,6 +977,9 @@ static struct platform_device *sh7372_early_devices[] __initdata = {
- 	&scif5_device,
- 	&scif6_device,
- 	&cmt2_device,
-+};
-+
-+static struct platform_device *sh7372_early_devices[] __initdata = {
- 	&tmu00_device,
- 	&tmu01_device,
- };
-@@ -1030,6 +1033,8 @@ void __init sh7372_add_standard_devices(void)
+ 	CRX0X1_MARK,
+@@ -1003,7 +1003,7 @@ static pinmux_enum_t pinmux_data[] = {
  
- 	sh7372_init_pm_domains();
+ 	PINMUX_DATA(PJ2_DATA, PJ2MD_000),
+ 	PINMUX_DATA(CTX1_MARK, PJ2MD_001),
+-	PINMUX_DATA(CRX0CRX1_MARK, PJ2MD_010),
++	PINMUX_DATA(CRX0_CRX1_MARK, PJ2MD_010),
+ 	PINMUX_DATA(CS2_MARK, PJ2MD_011),
+ 	PINMUX_DATA(SCK0_MARK, PJ2MD_100),
+ 	PINMUX_DATA(LCD_M_DISP_MARK, PJ2MD_101),
+@@ -1246,7 +1246,7 @@ static struct pinmux_gpio pinmux_gpios[] = {
+ 	PINMUX_GPIO(GPIO_FN_CRX1, CRX1_MARK),
+ 	PINMUX_GPIO(GPIO_FN_CTX0, CTX0_MARK),
+ 	PINMUX_GPIO(GPIO_FN_CRX0, CRX0_MARK),
+-	PINMUX_GPIO(GPIO_FN_CRX0_CRX1, CRX0CRX1_MARK),
++	PINMUX_GPIO(GPIO_FN_CRX0_CRX1, CRX0_CRX1_MARK),
  
-+	platform_add_devices(sh7372_early_devices_dt,
-+			    ARRAY_SIZE(sh7372_early_devices_dt));
- 	platform_add_devices(sh7372_early_devices,
- 			    ARRAY_SIZE(sh7372_early_devices));
- 
-@@ -1048,6 +1053,8 @@ static void __init sh7372_earlytimer_init(void)
- 
- void __init sh7372_add_early_devices(void)
- {
-+	early_platform_add_devices(sh7372_early_devices_dt,
-+				   ARRAY_SIZE(sh7372_early_devices_dt));
- 	early_platform_add_devices(sh7372_early_devices,
- 				   ARRAY_SIZE(sh7372_early_devices));
- 
-@@ -1064,8 +1071,8 @@ void __init sh7372_add_early_devices_dt(void)
- {
- 	shmobile_setup_delay(800, 1, 3); /* Cortex-A8 @ 800MHz */
- 
--	early_platform_add_devices(sh7372_early_devices,
--				   ARRAY_SIZE(sh7372_early_devices));
-+	early_platform_add_devices(sh7372_early_devices_dt,
-+				   ARRAY_SIZE(sh7372_early_devices_dt));
- 
- 	/* setup early console here as well */
- 	shmobile_setup_console();
-@@ -1080,8 +1087,8 @@ void __init sh7372_add_standard_devices_dt(void)
- 	/* clocks are setup late during boot in the case of DT */
- 	sh7372_clock_init();
- 
--	platform_add_devices(sh7372_early_devices,
--			    ARRAY_SIZE(sh7372_early_devices));
-+	platform_add_devices(sh7372_early_devices_dt,
-+			    ARRAY_SIZE(sh7372_early_devices_dt));
- 
- 	of_platform_populate(NULL, of_default_bus_match_table,
- 			     sh7372_auxdata_lookup, NULL);
+ 	/* DMAC */
+ 	PINMUX_GPIO(GPIO_FN_TEND0, TEND0_MARK),
 -- 
-1.7.10.4
+1.7.8.6
 
