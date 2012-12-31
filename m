@@ -1,55 +1,36 @@
-From: Tang Chen <tangchen@cn.fujitsu.com>
-Date: Mon, 24 Dec 2012 12:09:21 +0000
-Subject: [PATCH v5 11/14] memory-hotplug: Integrated __remove_section() of CONFIG_SPARSEMEM_VMEMMAP.
-Message-Id: <1356350964-13437-12-git-send-email-tangchen@cn.fujitsu.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 31 Dec 2012 11:23:50 +0000
+Subject: [PATCH 1/2] ARM: shmobile: add function declarations for sh7372 DT helper functions
+Message-Id: <Pine.LNX.4.64.1212311213510.24596@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1356350964-13437-1-git-send-email-tangchen@cn.fujitsu.com>
-In-Reply-To: <1356350964-13437-1-git-send-email-tangchen@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: akpm@linux-foundation.org, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, wency@cn.fujitsu.com, tangchen@cn.fujitsu.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org
-Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Currently __remove_section for SPARSEMEM_VMEMMAP does nothing. But even if
-we use SPARSEMEM_VMEMMAP, we can unregister the memory_section.
+sh7372_add_early_devices_dt() and sh7372_add_standard_devices_dt() are
+defined as global functions in arch/arm/mach-shmobile/setup-sh7372.c,
+but their declarations are missing. Add them to common.h, where similar
+functions for this and other SoC types are already declared.
 
-Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
-Signed-off-by: Tang Chen <tangchen@cn.fujitsu.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- mm/memory_hotplug.c |   11 -----------
- 1 files changed, 0 insertions(+), 11 deletions(-)
+ arch/arm/mach-shmobile/include/mach/common.h |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index c12bd55..71cb656 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -430,16 +430,6 @@ static int __meminit __add_section(int nid, struct zone *zone,
- 	return register_new_memory(nid, __pfn_to_section(phys_start_pfn));
- }
- 
--#ifdef CONFIG_SPARSEMEM_VMEMMAP
--static int __remove_section(struct zone *zone, struct mem_section *ms)
--{
--	/*
--	 * XXX: Freeing memmap with vmemmap is not implement yet.
--	 *      This should be removed later.
--	 */
--	return -EBUSY;
--}
--#else
- static int __remove_section(struct zone *zone, struct mem_section *ms)
- {
- 	int ret = -EINVAL;
-@@ -454,7 +444,6 @@ static int __remove_section(struct zone *zone, struct mem_section *ms)
- 	sparse_remove_one_section(zone, ms);
- 	return 0;
- }
--#endif
- 
- /*
-  * Reasonably generic function for adding memory.  It is
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index 7e08fa5..abce184 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -23,6 +23,8 @@ extern void sh7372_init_irq(void);
+ extern void sh7372_map_io(void);
+ extern void sh7372_add_early_devices(void);
+ extern void sh7372_add_standard_devices(void);
++extern void sh7372_add_early_devices_dt(void);
++extern void sh7372_add_standard_devices_dt(void);
+ extern void sh7372_clock_init(void);
+ extern void sh7372_pinmux_init(void);
+ extern void sh7372_pm_init(void);
 -- 
-1.7.1
+1.7.2.5
 
