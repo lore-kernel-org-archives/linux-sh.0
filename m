@@ -1,61 +1,90 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 04 Jan 2013 00:40:51 +0000
-Subject: [PATCH 0/9] SH pinctrl DT support
-Message-Id: <1357260060-32164-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 03 Jan 2013 18:17:51 +0000
+Subject: [PATCH 20/22] ARM: shmobile: armadillo800eva: Register pinctrl mappings for LCDC0
+Message-Id: <1357237073-15600-21-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello,
+Replace the GPIO-based LCDC0 pinmux configuration by pinctrl mappings.
 
-Here's a patch set that implements DT bindings for the SuperH and SH Mobile pin
-controllers (PFC). The patches are based on my previous PFC pinctrl and pinmux
-patch series ("[PATCH 00/22] SH pinctrl and pinmux implementation") and are
-available from my git tree at
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/board-armadillo800eva.c |   38 +++++------------------
+ 1 files changed, 9 insertions(+), 29 deletions(-)
 
-        git://linuxtv.org/pinchartl/fbdev.git pinmux-dt
-
-The series is pretty self-explanatory. DT bindings are added in patch 1/9, and
-the following patches move board code over to the device tree. All patches
-except 5/9 and 8/9 have already been posted in an older version as part of the
-"[PATCH v2 00/77] SH pin control and GPIO rework with OF support" patch set.
-
-To be perfectly honest I'm a bit unsure about the DT bindings. The platforms
-that implement pinctrl DT bindings use a wide variety of architectures. I
-haven't found clear guidelines regarding how those bindings should be
-implemented (Documentation/devicetree/pinctrl just states that bindings are
-driver-specific). Comments will be appreciated.
-
-Laurent Pinchart (8):
-  sh-pfc: Add OF support
-  ARM: shmobile: r8a7740: Add pin control device in device tree
-  ARM: shmobile: armadillo: Populate platform devices from device tree
-  ARM: shmobile: armadillo: Move pinctrl mappings to device tree
-  ARM: shmobile: kzm9g: Add pin control device in device tree
-  ARM: shmobile: kzm9g: Populate platform devices from device tree
-  ARM: shmobile: kzm9g: Move pinctrl mappings to device tree
-  ARM: shmobile: kzm9g: Add LED1-LED4 to the device tree
-
-Nobuhiro Iwamatsu (1):
-  ARM: shmobile: Include DTSI of r8a7740 to armadillo800eva
-
- .../bindings/pinctrl/renesas,pfc-pinctrl.txt       |   76 ++++++++++++++++++++
- arch/arm/boot/dts/r8a7740-armadillo800eva.dts      |   12 +++-
- arch/arm/boot/dts/r8a7740.dtsi                     |    6 ++
- arch/arm/boot/dts/sh73a0-kzm9g.dts                 |   28 +++++++-
- arch/arm/boot/dts/sh73a0.dtsi                      |   32 ++++++++
- arch/arm/mach-shmobile/board-armadillo800eva.c     |   11 +---
- arch/arm/mach-shmobile/board-kzm9g.c               |   11 +---
- drivers/pinctrl/sh-pfc/core.c                      |   62 +++++++++++++++-
- drivers/pinctrl/sh-pfc/pinctrl.c                   |   54 ++++++++++++++
- 9 files changed, 270 insertions(+), 22 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
- create mode 100644 arch/arm/boot/dts/sh73a0.dtsi
-
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 5353adf..3434a8e 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -28,6 +28,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/gpio.h>
+ #include <linux/gpio_keys.h>
++#include <linux/pinctrl/machine.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/sh_eth.h>
+@@ -906,6 +907,12 @@ static struct platform_device *eva_devices[] __initdata = {
+ 	&i2c_gpio_device,
+ };
+ 
++static const struct pinctrl_map eva_pinctrl_map[] = {
++	PIN_MAP_MUX_GROUP_HOG_DEFAULT("pfc-r8a7740", "lcd0_data24_0", "lcd0"),
++	PIN_MAP_MUX_GROUP_HOG_DEFAULT("pfc-r8a7740", "lcd0_lclk_0", "lcd0"),
++	PIN_MAP_MUX_GROUP_HOG_DEFAULT("pfc-r8a7740", "lcd0_sync", "lcd0"),
++};
++
+ static void __init eva_clock_init(void)
+ {
+ 	struct clk *system	= clk_get(NULL, "system_clk");
+@@ -953,6 +960,8 @@ static void __init eva_init(void)
+ 	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
+ 				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
+ 
++	pinctrl_register_mappings(eva_pinctrl_map, ARRAY_SIZE(eva_pinctrl_map));
++
+ 	r8a7740_pinmux_init();
+ 	r8a7740_meram_workaround();
+ 
+@@ -962,35 +971,6 @@ static void __init eva_init(void)
+ 
+ 	/* LCDC0 */
+ 	gpio_request(GPIO_FN_LCDC0_SELECT,	NULL);
+-	gpio_request(GPIO_FN_LCD0_D0,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D1,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D2,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D3,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D4,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D5,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D6,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D7,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D8,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D9,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D10,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D11,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D12,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D13,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D14,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D15,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D16,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D17,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D18_PORT40,	NULL);
+-	gpio_request(GPIO_FN_LCD0_D19_PORT4,	NULL);
+-	gpio_request(GPIO_FN_LCD0_D20_PORT3,	NULL);
+-	gpio_request(GPIO_FN_LCD0_D21_PORT2,	NULL);
+-	gpio_request(GPIO_FN_LCD0_D22_PORT0,	NULL);
+-	gpio_request(GPIO_FN_LCD0_D23_PORT1,	NULL);
+-	gpio_request(GPIO_FN_LCD0_DCK,		NULL);
+-	gpio_request(GPIO_FN_LCD0_VSYN,		NULL);
+-	gpio_request(GPIO_FN_LCD0_HSYN,		NULL);
+-	gpio_request(GPIO_FN_LCD0_DISP,		NULL);
+-	gpio_request(GPIO_FN_LCD0_LCLK_PORT165,	NULL);
+ 
+ 	gpio_request(GPIO_PORT61, NULL); /* LCDDON */
+ 	gpio_direction_output(GPIO_PORT61, 1);
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.8.6
 
