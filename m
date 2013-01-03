@@ -1,277 +1,243 @@
-From: Tang Chen <tangchen@cn.fujitsu.com>
-Date: Wed, 09 Jan 2013 09:32:30 +0000
-Subject: [PATCH v6 06/15] memory-hotplug: implement register_page_bootmem_info_section of sparse-vmemmap
-Message-Id: <1357723959-5416-7-git-send-email-tangchen@cn.fujitsu.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 03 Jan 2013 18:17:52 +0000
+Subject: [PATCH 21/22] sh-pfc: sh73a0: Remove LCD and LCD2 function GPIOS
+Message-Id: <1357237073-15600-22-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1357723959-5416-1-git-send-email-tangchen@cn.fujitsu.com>
-In-Reply-To: <1357723959-5416-1-git-send-email-tangchen@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: akpm@linux-foundation.org, rientjes@google.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, wency@cn.fujitsu.com, tangchen@cn.fujitsu.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org, glommer@parallels.com
-Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+All sh73a0 platforms now use the pinctrl API to control the LCD and
+LCD2 pins, the corresponding function GPIOS are unusued. Remove them.
 
-For removing memmap region of sparse-vmemmap which is allocated bootmem,
-memmap region of sparse-vmemmap needs to be registered by get_page_bootmem().
-So the patch searches pages of virtual mapping and registers the pages by
-get_page_bootmem().
-
-Note: register_page_bootmem_memmap() is not implemented for ia64, ppc, s390,
-and sparc.
-
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
-Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Reviewed-by: Wu Jianguo <wujianguo@huawei.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/ia64/mm/discontig.c       |    6 ++++
- arch/powerpc/mm/init_64.c      |    6 ++++
- arch/s390/mm/vmem.c            |    6 ++++
- arch/sparc/mm/init_64.c        |    6 ++++
- arch/x86/mm/init_64.c          |   58 ++++++++++++++++++++++++++++++++++++++++
- include/linux/memory_hotplug.h |   11 +------
- include/linux/mm.h             |    3 +-
- mm/memory_hotplug.c            |   33 ++++++++++++++++++++---
- 8 files changed, 115 insertions(+), 14 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c |   76 -----------------------------------
+ 1 files changed, 0 insertions(+), 76 deletions(-)
 
-diff --git a/arch/ia64/mm/discontig.c b/arch/ia64/mm/discontig.c
-index c641333..33943db 100644
---- a/arch/ia64/mm/discontig.c
-+++ b/arch/ia64/mm/discontig.c
-@@ -822,4 +822,10 @@ int __meminit vmemmap_populate(struct page *start_page,
- {
- 	return vmemmap_populate_basepages(start_page, size, node);
- }
-+
-+void register_page_bootmem_memmap(unsigned long section_nr,
-+				  struct page *start_page, unsigned long size)
-+{
-+	/* TODO */
-+}
- #endif
-diff --git a/arch/powerpc/mm/init_64.c b/arch/powerpc/mm/init_64.c
-index 95a4529..6466440 100644
---- a/arch/powerpc/mm/init_64.c
-+++ b/arch/powerpc/mm/init_64.c
-@@ -297,5 +297,11 @@ int __meminit vmemmap_populate(struct page *start_page,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index 98aab87..47c869e 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -2018,87 +2018,59 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(BBIF1_FLOW),
+ 	GPIO_FN(HSI_TX_FLAG),
+ 	GPIO_FN(VIO_VD), \
+-	GPIO_FN(PORT128_LCD2VSYN), \
+ 	GPIO_FN(VIO2_VD), \
+-	GPIO_FN(LCD2D0),
  
- 	return 0;
- }
-+
-+void register_page_bootmem_memmap(unsigned long section_nr,
-+				  struct page *start_page, unsigned long size)
-+{
-+	/* TODO */
-+}
- #endif /* CONFIG_SPARSEMEM_VMEMMAP */
+ 	GPIO_FN(VIO_HD), \
+-	GPIO_FN(PORT129_LCD2HSYN), \
+-	GPIO_FN(PORT129_LCD2CS_), \
+ 	GPIO_FN(VIO2_HD), \
+-	GPIO_FN(LCD2D1),
+ 	GPIO_FN(VIO_D0), \
+ 	GPIO_FN(PORT130_MSIOF2_RXD), \
+-	GPIO_FN(LCD2D10),
+ 	GPIO_FN(VIO_D1), \
+ 	GPIO_FN(PORT131_KEYOUT6), \
+ 	GPIO_FN(PORT131_MSIOF2_SS1), \
+ 	GPIO_FN(PORT131_KEYOUT11), \
+-	GPIO_FN(LCD2D11),
+ 	GPIO_FN(VIO_D2), \
+ 	GPIO_FN(PORT132_KEYOUT7), \
+ 	GPIO_FN(PORT132_MSIOF2_SS2), \
+ 	GPIO_FN(PORT132_KEYOUT10), \
+-	GPIO_FN(LCD2D12),
+ 	GPIO_FN(VIO_D3), \
+ 	GPIO_FN(MSIOF2_TSYNC), \
+-	GPIO_FN(LCD2D13),
+ 	GPIO_FN(VIO_D4), \
+ 	GPIO_FN(MSIOF2_TXD), \
+-	GPIO_FN(LCD2D14),
+ 	GPIO_FN(VIO_D5), \
+ 	GPIO_FN(MSIOF2_TSCK), \
+-	GPIO_FN(LCD2D15),
+ 	GPIO_FN(VIO_D6), \
+ 	GPIO_FN(PORT136_KEYOUT8), \
+-	GPIO_FN(LCD2D16),
+ 	GPIO_FN(VIO_D7), \
+ 	GPIO_FN(PORT137_KEYOUT9), \
+-	GPIO_FN(LCD2D17),
+ 	GPIO_FN(VIO_D8), \
+ 	GPIO_FN(PORT138_KEYOUT8), \
+ 	GPIO_FN(VIO2_D0), \
+-	GPIO_FN(LCD2D6),
+ 	GPIO_FN(VIO_D9), \
+ 	GPIO_FN(PORT139_KEYOUT9), \
+ 	GPIO_FN(VIO2_D1), \
+-	GPIO_FN(LCD2D7),
+ 	GPIO_FN(VIO_D10), \
+ 	GPIO_FN(TPU0TO2), \
+ 	GPIO_FN(VIO2_D2), \
+-	GPIO_FN(LCD2D8),
+ 	GPIO_FN(VIO_D11), \
+ 	GPIO_FN(TPU0TO3), \
+ 	GPIO_FN(VIO2_D3), \
+-	GPIO_FN(LCD2D9),
+ 	GPIO_FN(VIO_D12), \
+ 	GPIO_FN(PORT142_KEYOUT10), \
+ 	GPIO_FN(VIO2_D4), \
+-	GPIO_FN(LCD2D2),
+ 	GPIO_FN(VIO_D13), \
+ 	GPIO_FN(PORT143_KEYOUT11), \
+ 	GPIO_FN(PORT143_KEYOUT6), \
+ 	GPIO_FN(VIO2_D5), \
+-	GPIO_FN(LCD2D3),
+ 	GPIO_FN(VIO_D14), \
+ 	GPIO_FN(PORT144_KEYOUT7), \
+ 	GPIO_FN(VIO2_D6), \
+-	GPIO_FN(LCD2D4),
+ 	GPIO_FN(VIO_D15), \
+ 	GPIO_FN(TPU1TO3), \
+-	GPIO_FN(PORT145_LCD2DISP), \
+-	GPIO_FN(PORT145_LCD2RS), \
+ 	GPIO_FN(VIO2_D7), \
+-	GPIO_FN(LCD2D5),
+ 	GPIO_FN(VIO_CLK), \
+-	GPIO_FN(LCD2DCK), \
+-	GPIO_FN(PORT146_LCD2WR_), \
+ 	GPIO_FN(VIO2_CLK), \
+-	GPIO_FN(LCD2D18),
+ 	GPIO_FN(VIO_FIELD), \
+-	GPIO_FN(LCD2RD_), \
+ 	GPIO_FN(VIO2_FIELD), \
+-	GPIO_FN(LCD2D19),
+ 	GPIO_FN(VIO_CKO),
+ 	GPIO_FN(A27), \
+ 	GPIO_FN(PORT149_RDWR), \
+@@ -2135,107 +2107,63 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(PORT163_SCIFB_RTS_), \
+ 	GPIO_FN(PORT163_SCIFA5_RTS_), \
+ 	GPIO_FN(TPU3TO0),
+-	GPIO_FN(LCDD0),
+-	GPIO_FN(LCDD1), \
+ 	GPIO_FN(PORT193_SCIFA5_CTS_), \
+ 	GPIO_FN(BBIF2_TSYNC1),
+-	GPIO_FN(LCDD2), \
+ 	GPIO_FN(PORT194_SCIFA5_RTS_), \
+ 	GPIO_FN(BBIF2_TSCK1),
+-	GPIO_FN(LCDD3), \
+ 	GPIO_FN(PORT195_SCIFA5_RXD), \
+ 	GPIO_FN(BBIF2_TXD1),
+-	GPIO_FN(LCDD4), \
+ 	GPIO_FN(PORT196_SCIFA5_TXD),
+-	GPIO_FN(LCDD5), \
+ 	GPIO_FN(PORT197_SCIFA5_SCK), \
+ 	GPIO_FN(MFG2_OUT2), \
+ 	GPIO_FN(TPU2TO1),
+-	GPIO_FN(LCDD6),
+-	GPIO_FN(LCDD7), \
+ 	GPIO_FN(TPU4TO1), \
+ 	GPIO_FN(MFG4_OUT2),
+-	GPIO_FN(LCDD8), \
+ 	GPIO_FN(D16),
+-	GPIO_FN(LCDD9), \
+ 	GPIO_FN(D17),
+-	GPIO_FN(LCDD10), \
+ 	GPIO_FN(D18),
+-	GPIO_FN(LCDD11), \
+ 	GPIO_FN(D19),
+-	GPIO_FN(LCDD12), \
+ 	GPIO_FN(D20),
+-	GPIO_FN(LCDD13), \
+ 	GPIO_FN(D21),
+-	GPIO_FN(LCDD14), \
+ 	GPIO_FN(D22),
+-	GPIO_FN(LCDD15), \
+ 	GPIO_FN(PORT207_MSIOF0L_SS1), \
+ 	GPIO_FN(D23),
+-	GPIO_FN(LCDD16), \
+ 	GPIO_FN(PORT208_MSIOF0L_SS2), \
+ 	GPIO_FN(D24),
+-	GPIO_FN(LCDD17), \
+ 	GPIO_FN(D25),
+-	GPIO_FN(LCDD18), \
+ 	GPIO_FN(DREQ2), \
+ 	GPIO_FN(PORT210_MSIOF0L_SS1), \
+ 	GPIO_FN(D26),
+-	GPIO_FN(LCDD19), \
+ 	GPIO_FN(PORT211_MSIOF0L_SS2), \
+ 	GPIO_FN(D27),
+-	GPIO_FN(LCDD20), \
+ 	GPIO_FN(TS_SPSYNC1), \
+ 	GPIO_FN(MSIOF0L_MCK0), \
+ 	GPIO_FN(D28),
+-	GPIO_FN(LCDD21), \
+ 	GPIO_FN(TS_SDAT1), \
+ 	GPIO_FN(MSIOF0L_MCK1), \
+ 	GPIO_FN(D29),
+-	GPIO_FN(LCDD22), \
+ 	GPIO_FN(TS_SDEN1), \
+ 	GPIO_FN(MSIOF0L_RSCK), \
+ 	GPIO_FN(D30),
+-	GPIO_FN(LCDD23), \
+ 	GPIO_FN(TS_SCK1), \
+ 	GPIO_FN(MSIOF0L_RSYNC), \
+ 	GPIO_FN(D31),
+-	GPIO_FN(LCDDCK), \
+-	GPIO_FN(LCDWR_),
+-	GPIO_FN(LCDRD_), \
+ 	GPIO_FN(DACK2), \
+-	GPIO_FN(PORT217_LCD2RS), \
+ 	GPIO_FN(MSIOF0L_TSYNC), \
+ 	GPIO_FN(VIO2_FIELD3), \
+-	GPIO_FN(PORT217_LCD2DISP),
+-	GPIO_FN(LCDHSYN), \
+-	GPIO_FN(LCDCS_), \
+-	GPIO_FN(LCDCS2_), \
+ 	GPIO_FN(DACK3), \
+ 	GPIO_FN(PORT218_VIO_CKOR),
+-	GPIO_FN(LCDDISP), \
+-	GPIO_FN(LCDRS), \
+-	GPIO_FN(PORT219_LCD2WR_), \
+ 	GPIO_FN(DREQ3), \
+ 	GPIO_FN(MSIOF0L_TSCK), \
+ 	GPIO_FN(VIO2_CLK3), \
+-	GPIO_FN(LCD2DCK_2),
+-	GPIO_FN(LCDVSYN), \
+-	GPIO_FN(LCDVSYN2),
+-	GPIO_FN(LCDLCLK), \
+ 	GPIO_FN(DREQ1), \
+-	GPIO_FN(PORT221_LCD2CS_), \
+ 	GPIO_FN(PWEN), \
+ 	GPIO_FN(MSIOF0L_RXD), \
+ 	GPIO_FN(VIO2_HD3), \
+-	GPIO_FN(PORT221_LCD2HSYN),
+-	GPIO_FN(LCDDON), \
+-	GPIO_FN(LCDDON2), \
+ 	GPIO_FN(DACK1), \
+ 	GPIO_FN(OVCN), \
+ 	GPIO_FN(MSIOF0L_TXD), \
+ 	GPIO_FN(VIO2_VD3), \
+-	GPIO_FN(PORT222_LCD2VSYN),
  
-diff --git a/arch/s390/mm/vmem.c b/arch/s390/mm/vmem.c
-index 6ed1426..2c14bc2 100644
---- a/arch/s390/mm/vmem.c
-+++ b/arch/s390/mm/vmem.c
-@@ -272,6 +272,12 @@ out:
- 	return ret;
- }
- 
-+void register_page_bootmem_memmap(unsigned long section_nr,
-+				  struct page *start_page, unsigned long size)
-+{
-+	/* TODO */
-+}
-+
- /*
-  * Add memory segment to the segment list if it doesn't overlap with
-  * an already present segment.
-diff --git a/arch/sparc/mm/init_64.c b/arch/sparc/mm/init_64.c
-index c3b7242..1f30db3 100644
---- a/arch/sparc/mm/init_64.c
-+++ b/arch/sparc/mm/init_64.c
-@@ -2231,6 +2231,12 @@ void __meminit vmemmap_populate_print_last(void)
- 		node_start = 0;
- 	}
- }
-+
-+void register_page_bootmem_memmap(unsigned long section_nr,
-+				  struct page *start_page, unsigned long size)
-+{
-+	/* TODO */
-+}
- #endif /* CONFIG_SPARSEMEM_VMEMMAP */
- 
- static void prot_init_common(unsigned long page_none,
-diff --git a/arch/x86/mm/init_64.c b/arch/x86/mm/init_64.c
-index f78509c..9ac1723 100644
---- a/arch/x86/mm/init_64.c
-+++ b/arch/x86/mm/init_64.c
-@@ -1000,6 +1000,64 @@ vmemmap_populate(struct page *start_page, unsigned long size, int node)
- 	return 0;
- }
- 
-+void register_page_bootmem_memmap(unsigned long section_nr,
-+				  struct page *start_page, unsigned long size)
-+{
-+	unsigned long addr = (unsigned long)start_page;
-+	unsigned long end = (unsigned long)(start_page + size);
-+	unsigned long next;
-+	pgd_t *pgd;
-+	pud_t *pud;
-+	pmd_t *pmd;
-+	unsigned int nr_pages;
-+	struct page *page;
-+
-+	for (; addr < end; addr = next) {
-+		pte_t *pte = NULL;
-+
-+		pgd = pgd_offset_k(addr);
-+		if (pgd_none(*pgd)) {
-+			next = (addr + PAGE_SIZE) & PAGE_MASK;
-+			continue;
-+		}
-+		get_page_bootmem(section_nr, pgd_page(*pgd), MIX_SECTION_INFO);
-+
-+		pud = pud_offset(pgd, addr);
-+		if (pud_none(*pud)) {
-+			next = (addr + PAGE_SIZE) & PAGE_MASK;
-+			continue;
-+		}
-+		get_page_bootmem(section_nr, pud_page(*pud), MIX_SECTION_INFO);
-+
-+		if (!cpu_has_pse) {
-+			next = (addr + PAGE_SIZE) & PAGE_MASK;
-+			pmd = pmd_offset(pud, addr);
-+			if (pmd_none(*pmd))
-+				continue;
-+			get_page_bootmem(section_nr, pmd_page(*pmd),
-+					 MIX_SECTION_INFO);
-+
-+			pte = pte_offset_kernel(pmd, addr);
-+			if (pte_none(*pte))
-+				continue;
-+			get_page_bootmem(section_nr, pte_page(*pte),
-+					 SECTION_INFO);
-+		} else {
-+			next = pmd_addr_end(addr, end);
-+
-+			pmd = pmd_offset(pud, addr);
-+			if (pmd_none(*pmd))
-+				continue;
-+
-+			nr_pages = 1 << (get_order(PMD_SIZE));
-+			page = pmd_page(*pmd);
-+			while (nr_pages--)
-+				get_page_bootmem(section_nr, page++,
-+						 SECTION_INFO);
-+		}
-+	}
-+}
-+
- void __meminit vmemmap_populate_print_last(void)
- {
- 	if (p_start) {
-diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
-index 31a563b..2441f36 100644
---- a/include/linux/memory_hotplug.h
-+++ b/include/linux/memory_hotplug.h
-@@ -174,17 +174,10 @@ static inline void arch_refresh_nodedata(int nid, pg_data_t *pgdat)
- #endif /* CONFIG_NUMA */
- #endif /* CONFIG_HAVE_ARCH_NODEDATA_EXTENSION */
- 
--#ifdef CONFIG_SPARSEMEM_VMEMMAP
--static inline void register_page_bootmem_info_node(struct pglist_data *pgdat)
--{
--}
--static inline void put_page_bootmem(struct page *page)
--{
--}
--#else
- extern void register_page_bootmem_info_node(struct pglist_data *pgdat);
- extern void put_page_bootmem(struct page *page);
--#endif
-+extern void get_page_bootmem(unsigned long ingo, struct page *page,
-+			     unsigned long type);
- 
- /*
-  * Lock for memory hotplug guarantees 1) all callbacks for memory hotplug
-diff --git a/include/linux/mm.h b/include/linux/mm.h
-index 6320407..1eca498 100644
---- a/include/linux/mm.h
-+++ b/include/linux/mm.h
-@@ -1709,7 +1709,8 @@ int vmemmap_populate_basepages(struct page *start_page,
- 						unsigned long pages, int node);
- int vmemmap_populate(struct page *start_page, unsigned long pages, int node);
- void vmemmap_populate_print_last(void);
--
-+void register_page_bootmem_memmap(unsigned long section_nr, struct page *map,
-+				  unsigned long size);
- 
- enum mf_flags {
- 	MF_COUNT_INCREASED = 1 << 0,
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index f6724c2..0682d2a 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -91,9 +91,8 @@ static void release_memory_resource(struct resource *res)
- }
- 
- #ifdef CONFIG_MEMORY_HOTPLUG_SPARSE
--#ifndef CONFIG_SPARSEMEM_VMEMMAP
--static void get_page_bootmem(unsigned long info,  struct page *page,
--			     unsigned long type)
-+void get_page_bootmem(unsigned long info,  struct page *page,
-+		      unsigned long type)
- {
- 	page->lru.next = (struct list_head *) type;
- 	SetPagePrivate(page);
-@@ -128,6 +127,7 @@ void __ref put_page_bootmem(struct page *page)
- 
- }
- 
-+#ifndef CONFIG_SPARSEMEM_VMEMMAP
- static void register_page_bootmem_info_section(unsigned long start_pfn)
- {
- 	unsigned long *usemap, mapsize, section_nr, i;
-@@ -161,6 +161,32 @@ static void register_page_bootmem_info_section(unsigned long start_pfn)
- 		get_page_bootmem(section_nr, page, MIX_SECTION_INFO);
- 
- }
-+#else
-+static void register_page_bootmem_info_section(unsigned long start_pfn)
-+{
-+	unsigned long *usemap, mapsize, section_nr, i;
-+	struct mem_section *ms;
-+	struct page *page, *memmap;
-+
-+	if (!pfn_valid(start_pfn))
-+		return;
-+
-+	section_nr = pfn_to_section_nr(start_pfn);
-+	ms = __nr_to_section(section_nr);
-+
-+	memmap = sparse_decode_mem_map(ms->section_mem_map, section_nr);
-+
-+	register_page_bootmem_memmap(section_nr, memmap, PAGES_PER_SECTION);
-+
-+	usemap = __nr_to_section(section_nr)->pageblock_flags;
-+	page = virt_to_page(usemap);
-+
-+	mapsize = PAGE_ALIGN(usemap_size()) >> PAGE_SHIFT;
-+
-+	for (i = 0; i < mapsize; i++, page++)
-+		get_page_bootmem(section_nr, page, MIX_SECTION_INFO);
-+}
-+#endif
- 
- void register_page_bootmem_info_node(struct pglist_data *pgdat)
- {
-@@ -203,7 +229,6 @@ void register_page_bootmem_info_node(struct pglist_data *pgdat)
- 			register_page_bootmem_info_section(pfn);
- 	}
- }
--#endif /* !CONFIG_SPARSEMEM_VMEMMAP */
- 
- static void grow_zone_span(struct zone *zone, unsigned long start_pfn,
- 			   unsigned long end_pfn)
+ 	GPIO_FN(SCIFA1_TXD), \
+ 	GPIO_FN(OVCN2),
+@@ -2258,21 +2186,17 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(MSIOF1_RSCK), \
+ 	GPIO_FN(SCIFA2_RTS2_), \
+ 	GPIO_FN(VIO2_CLK2), \
+-	GPIO_FN(LCD2D20),
+ 	GPIO_FN(MSIOF1_RSYNC), \
+ 	GPIO_FN(MFG1_IN2), \
+ 	GPIO_FN(VIO2_VD2), \
+-	GPIO_FN(LCD2D21),
+ 	GPIO_FN(MSIOF1_MCK0), \
+ 	GPIO_FN(PORT236_I2C_SDA2),
+ 	GPIO_FN(MSIOF1_MCK1), \
+ 	GPIO_FN(PORT237_I2C_SCL2),
+ 	GPIO_FN(MSIOF1_SS1), \
+ 	GPIO_FN(VIO2_FIELD2), \
+-	GPIO_FN(LCD2D22),
+ 	GPIO_FN(MSIOF1_SS2), \
+ 	GPIO_FN(VIO2_HD2), \
+-	GPIO_FN(LCD2D23),
+ 	GPIO_FN(SCIFA6_TXD),
+ 	GPIO_FN(PORT241_IRDA_OUT), \
+ 	GPIO_FN(PORT241_IROUT), \
 -- 
-1.7.1
+1.7.8.6
 
