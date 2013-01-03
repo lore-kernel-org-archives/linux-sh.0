@@ -1,40 +1,457 @@
-From: Thierry Reding <thierry.reding@avionic-design.de>
-Date: Fri, 18 Jan 2013 07:16:13 +0000
-Subject: [PATCH v2 2/2] ARM: shmobile: kzm9g: Don't use gic_handle_irq()
-Message-Id: <1358493373-28722-2-git-send-email-thierry.reding@avionic-design.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 03 Jan 2013 18:17:37 +0000
+Subject: [PATCH 06/22] sh-pfc: Replace SoC info data and mark ranges with a number of pins
+Message-Id: <1357237073-15600-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358493373-28722-1-git-send-email-thierry.reding@avionic-design.de>
-In-Reply-To: <1358493373-28722-1-git-send-email-thierry.reding@avionic-design.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This function is no longer publicly available. However, the sh73a0 setup
-code now uses the generic irqchip infrastructure which will implicitly
-set the IRQ handler, so it's fine to drop its initialization from the
-machine definition.
+The data and mark ranges are only used to check whether a GPIO
+corresponds to a real pin or a function. As pins come first in the list
+of GPIOs and in the platform-specific GPIO enumerations, we can replace
+the data and mark ranges by a number of pins.
 
-Signed-off-by: Thierry Reding <thierry.reding@avionic-design.de>
+Add an nr_pins field to struct sh_pfc_soc_info to store the number of
+pins implemented by the SoC, remove the data and mark range fields and
+introduce sh_pfc_gpio_is_pin() and sh_pfc_gpio_is_function() functions
+to replace range-based checks.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Changes in v2:
-- new patch with kzm9g board changes
+ drivers/pinctrl/sh-pfc/core.c        |   27 +++++++++++++++++++--------
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c |    5 +----
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c |    3 +--
+ drivers/pinctrl/sh-pfc/pfc-sh7203.c  |    3 +--
+ drivers/pinctrl/sh-pfc/pfc-sh7264.c  |    3 +--
+ drivers/pinctrl/sh-pfc/pfc-sh7269.c  |    3 +--
+ drivers/pinctrl/sh-pfc/pfc-sh7372.c  |    3 +--
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c  |    3 +--
+ drivers/pinctrl/sh-pfc/pfc-sh7720.c  |    3 +--
+ drivers/pinctrl/sh-pfc/pfc-sh7722.c  |    3 +--
+ drivers/pinctrl/sh-pfc/pfc-sh7723.c  |    3 +--
+ drivers/pinctrl/sh-pfc/pfc-sh7724.c  |    3 +--
+ drivers/pinctrl/sh-pfc/pfc-sh7734.c  |    3 +--
+ drivers/pinctrl/sh-pfc/pfc-sh7757.c  |    3 +--
+ drivers/pinctrl/sh-pfc/pfc-sh7785.c  |    3 +--
+ drivers/pinctrl/sh-pfc/pfc-sh7786.c  |    3 +--
+ drivers/pinctrl/sh-pfc/pfc-shx3.c    |    3 +--
+ drivers/pinctrl/sh-pfc/sh_pfc.h      |    3 +--
+ 18 files changed, 36 insertions(+), 44 deletions(-)
 
- arch/arm/mach-shmobile/board-kzm9g-reference.c | 1 -
- 1 file changed, 1 deletion(-)
-
-diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-index 04e9ae5..08c95dd 100644
---- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-@@ -90,7 +90,6 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g-reference")
- 	.init_early	= sh73a0_add_early_devices_dt,
- 	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_irq	= sh73a0_init_irq_dt,
--	.handle_irq	= gic_handle_irq,
- 	.init_machine	= kzm_init,
- 	.init_late	= shmobile_init_late,
- 	.init_time	= shmobile_timer_init,
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index fbf51c8..3e4e80d 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -89,6 +89,18 @@ static int sh_pfc_enum_in_range(pinmux_enum_t enum_id, struct pinmux_range *r)
+ 	return 1;
+ }
+ 
++static bool sh_pfc_gpio_is_pin(struct sh_pfc *pfc, unsigned int gpio)
++{
++	return (gpio < pfc->info->nr_pins) &&
++	       (pfc->info->gpios[gpio].enum_id != 0);
++}
++
++static bool sh_pfc_gpio_is_function(struct sh_pfc *pfc, unsigned int gpio)
++{
++	return (gpio >= pfc->info->nr_pins) && (gpio < pfc->info->nr_gpios) &&
++	       (pfc->info->gpios[gpio].enum_id != 0);
++}
++
+ static unsigned long sh_pfc_read_raw_reg(void __iomem *mapped_reg,
+ 					 unsigned long reg_width)
+ {
+@@ -226,7 +238,7 @@ static int sh_pfc_setup_data_reg(struct sh_pfc *pfc, unsigned gpio)
+ 	struct pinmux_data_reg *data_reg;
+ 	int k, n;
+ 
+-	if (!sh_pfc_enum_in_range(gpiop->enum_id, &pfc->info->data))
++	if (!sh_pfc_gpio_is_pin(pfc, gpio))
+ 		return -1;
+ 
+ 	k = 0;
+@@ -260,7 +272,7 @@ static void sh_pfc_setup_data_regs(struct sh_pfc *pfc)
+ 	struct pinmux_data_reg *drp;
+ 	int k;
+ 
+-	for (k = 0; k < pfc->info->nr_gpios; k++)
++	for (k = 0; k < pfc->info->nr_pins; k++)
+ 		sh_pfc_setup_data_reg(pfc, k);
+ 
+ 	k = 0;
+@@ -282,7 +294,7 @@ int sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
+ 	struct pinmux_gpio *gpiop = &pfc->info->gpios[gpio];
+ 	int k, n;
+ 
+-	if (!sh_pfc_enum_in_range(gpiop->enum_id, &pfc->info->data))
++	if (!sh_pfc_gpio_is_pin(pfc, gpio))
+ 		return -1;
+ 
+ 	k = (gpiop->flags & PINMUX_FLAG_DREG) >> PINMUX_FLAG_DREG_SHIFT;
+@@ -344,11 +356,10 @@ int sh_pfc_gpio_to_enum(struct sh_pfc *pfc, unsigned gpio, int pos,
+ 	pinmux_enum_t *data = pfc->info->gpio_data;
+ 	int k;
+ 
+-	if (!sh_pfc_enum_in_range(enum_id, &pfc->info->data)) {
+-		if (!sh_pfc_enum_in_range(enum_id, &pfc->info->mark)) {
+-			pr_err("non data/mark enum_id for gpio %d\n", gpio);
+-			return -1;
+-		}
++	if (!sh_pfc_gpio_is_pin(pfc, gpio) &&
++	    !sh_pfc_gpio_is_function(pfc, gpio)) {
++		pr_err("non data/mark enum_id for gpio %d\n", gpio);
++		return -1;
+ 	}
+ 
+ 	if (pos) {
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index c189a86..f1ef9f7 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -2582,8 +2582,6 @@ static struct pinmux_irq pinmux_irqs[] = {
+ struct sh_pfc_soc_info r8a7740_pinmux_info = {
+ 	.name		= "r8a7740_pfc",
+ 	.reserved_id	= PINMUX_RESERVED,
+-	.data		= { PINMUX_DATA_BEGIN,
+-			    PINMUX_DATA_END },
+ 	.input		= { PINMUX_INPUT_BEGIN,
+ 			    PINMUX_INPUT_END },
+ 	.input_pu	= { PINMUX_INPUT_PULLUP_BEGIN,
+@@ -2592,12 +2590,11 @@ struct sh_pfc_soc_info r8a7740_pinmux_info = {
+ 			    PINMUX_INPUT_PULLDOWN_END },
+ 	.output		= { PINMUX_OUTPUT_BEGIN,
+ 			    PINMUX_OUTPUT_END },
+-	.mark		= { PINMUX_MARK_BEGIN,
+-			    PINMUX_MARK_END },
+ 	.function	= { PINMUX_FUNCTION_BEGIN,
+ 			    PINMUX_FUNCTION_END },
+ 
+ 	.gpios		= pinmux_gpios,
++	.nr_pins	= GPIO_PORT211 + 1,
+ 	.nr_gpios	= ARRAY_SIZE(pinmux_gpios),
+ 
+ 	.cfg_regs	= pinmux_config_regs,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+index 16ec97a..c8018ce 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+@@ -2606,13 +2606,12 @@ struct sh_pfc_soc_info r8a7779_pinmux_info = {
+ 	.unlock_reg = 0xfffc0000, /* PMMR */
+ 
+ 	.reserved_id = PINMUX_RESERVED,
+-	.data = { PINMUX_DATA_BEGIN, PINMUX_DATA_END },
+ 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
+ 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
+-	.mark = { PINMUX_MARK_BEGIN, PINMUX_MARK_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+ 	.gpios = pinmux_gpios,
++	.nr_pins = GPIO_GP_6_8 + 1,
+ 	.nr_gpios = ARRAY_SIZE(pinmux_gpios),
+ 
+ 	.cfg_regs = pinmux_config_regs,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7203.c b/drivers/pinctrl/sh-pfc/pfc-sh7203.c
+index 8a9678e..b9f5616 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7203.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7203.c
+@@ -1574,13 +1574,12 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
+ struct sh_pfc_soc_info sh7203_pinmux_info = {
+ 	.name = "sh7203_pfc",
+ 	.reserved_id = PINMUX_RESERVED,
+-	.data = { PINMUX_DATA_BEGIN, PINMUX_DATA_END },
+ 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END, FORCE_IN },
+ 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END, FORCE_OUT },
+-	.mark = { PINMUX_MARK_BEGIN, PINMUX_MARK_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+ 	.gpios = pinmux_gpios,
++	.nr_pins = GPIO_PF0 + 1,
+ 	.nr_gpios = ARRAY_SIZE(pinmux_gpios),
+ 
+ 	.cfg_regs = pinmux_config_regs,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7264.c b/drivers/pinctrl/sh-pfc/pfc-sh7264.c
+index e0bdd29..063ccf9 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7264.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7264.c
+@@ -2113,13 +2113,12 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
+ struct sh_pfc_soc_info sh7264_pinmux_info = {
+ 	.name = "sh7264_pfc",
+ 	.reserved_id = PINMUX_RESERVED,
+-	.data = { PINMUX_DATA_BEGIN, PINMUX_DATA_END },
+ 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END, FORCE_IN },
+ 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END, FORCE_OUT },
+-	.mark = { PINMUX_MARK_BEGIN, PINMUX_MARK_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+ 	.gpios = pinmux_gpios,
++	.nr_pins = GPIO_PK0 + 1,
+ 	.nr_gpios = ARRAY_SIZE(pinmux_gpios),
+ 
+ 	.cfg_regs = pinmux_config_regs,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7269.c b/drivers/pinctrl/sh-pfc/pfc-sh7269.c
+index 3466c21..e05181e 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7269.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7269.c
+@@ -2816,13 +2816,12 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
+ struct sh_pfc_soc_info sh7269_pinmux_info = {
+ 	.name = "sh7269_pfc",
+ 	.reserved_id = PINMUX_RESERVED,
+-	.data = { PINMUX_DATA_BEGIN, PINMUX_DATA_END },
+ 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END, FORCE_IN },
+ 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END, FORCE_OUT },
+-	.mark = { PINMUX_MARK_BEGIN, PINMUX_MARK_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+ 	.gpios = pinmux_gpios,
++	.nr_pins = GPIO_PJ0 + 1,
+ 	.nr_gpios = ARRAY_SIZE(pinmux_gpios),
+ 
+ 	.cfg_regs = pinmux_config_regs,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+index 332cf34..0c56f57 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+@@ -1635,15 +1635,14 @@ static struct pinmux_irq pinmux_irqs[] = {
+ struct sh_pfc_soc_info sh7372_pinmux_info = {
+ 	.name = "sh7372_pfc",
+ 	.reserved_id = PINMUX_RESERVED,
+-	.data = { PINMUX_DATA_BEGIN, PINMUX_DATA_END },
+ 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
+ 	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
+ 	.input_pd = { PINMUX_INPUT_PULLDOWN_BEGIN, PINMUX_INPUT_PULLDOWN_END },
+ 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
+-	.mark = { PINMUX_MARK_BEGIN, PINMUX_MARK_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+ 	.gpios = pinmux_gpios,
++	.nr_pins = GPIO_PORT190 + 1,
+ 	.nr_gpios = ARRAY_SIZE(pinmux_gpios),
+ 
+ 	.cfg_regs = pinmux_config_regs,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index 004e6b5..aa18223 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -2775,15 +2775,14 @@ static struct pinmux_irq pinmux_irqs[] = {
+ struct sh_pfc_soc_info sh73a0_pinmux_info = {
+ 	.name = "sh73a0_pfc",
+ 	.reserved_id = PINMUX_RESERVED,
+-	.data = { PINMUX_DATA_BEGIN, PINMUX_DATA_END },
+ 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
+ 	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
+ 	.input_pd = { PINMUX_INPUT_PULLDOWN_BEGIN, PINMUX_INPUT_PULLDOWN_END },
+ 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
+-	.mark = { PINMUX_MARK_BEGIN, PINMUX_MARK_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+ 	.gpios = pinmux_gpios,
++	.nr_pins = GPIO_PORT309 + 1,
+ 	.nr_gpios = ARRAY_SIZE(pinmux_gpios),
+ 
+ 	.cfg_regs = pinmux_config_regs,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7720.c b/drivers/pinctrl/sh-pfc/pfc-sh7720.c
+index 3e7eed0..3fdd140 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7720.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7720.c
+@@ -1216,14 +1216,13 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
+ struct sh_pfc_soc_info sh7720_pinmux_info = {
+ 	.name = "sh7720_pfc",
+ 	.reserved_id = PINMUX_RESERVED,
+-	.data = { PINMUX_DATA_BEGIN, PINMUX_DATA_END },
+ 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
+ 	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
+ 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
+-	.mark = { PINMUX_MARK_BEGIN, PINMUX_MARK_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+ 	.gpios = pinmux_gpios,
++	.nr_pins = GPIO_PTV0 + 1,
+ 	.nr_gpios = ARRAY_SIZE(pinmux_gpios),
+ 
+ 	.cfg_regs = pinmux_config_regs,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7722.c b/drivers/pinctrl/sh-pfc/pfc-sh7722.c
+index 6df9809..9a23094 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7722.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7722.c
+@@ -1759,15 +1759,14 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
+ struct sh_pfc_soc_info sh7722_pinmux_info = {
+ 	.name = "sh7722_pfc",
+ 	.reserved_id = PINMUX_RESERVED,
+-	.data = { PINMUX_DATA_BEGIN, PINMUX_DATA_END },
+ 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
+ 	.input_pd = { PINMUX_INPUT_PULLDOWN_BEGIN, PINMUX_INPUT_PULLDOWN_END },
+ 	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
+ 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
+-	.mark = { PINMUX_MARK_BEGIN, PINMUX_MARK_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+ 	.gpios = pinmux_gpios,
++	.nr_pins = GPIO_PTZ1 + 1,
+ 	.nr_gpios = ARRAY_SIZE(pinmux_gpios),
+ 
+ 	.cfg_regs = pinmux_config_regs,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7723.c b/drivers/pinctrl/sh-pfc/pfc-sh7723.c
+index 2d068bb..7fc9407 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7723.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7723.c
+@@ -1884,14 +1884,13 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
+ struct sh_pfc_soc_info sh7723_pinmux_info = {
+ 	.name = "sh7723_pfc",
+ 	.reserved_id = PINMUX_RESERVED,
+-	.data = { PINMUX_DATA_BEGIN, PINMUX_DATA_END },
+ 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
+ 	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
+ 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
+-	.mark = { PINMUX_MARK_BEGIN, PINMUX_MARK_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+ 	.gpios = pinmux_gpios,
++	.nr_pins = GPIO_PTZ0 + 1,
+ 	.nr_gpios = ARRAY_SIZE(pinmux_gpios),
+ 
+ 	.cfg_regs = pinmux_config_regs,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7724.c b/drivers/pinctrl/sh-pfc/pfc-sh7724.c
+index 24fd6a9..0e26a3a 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7724.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7724.c
+@@ -2206,14 +2206,13 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
+ struct sh_pfc_soc_info sh7724_pinmux_info = {
+ 	.name = "sh7724_pfc",
+ 	.reserved_id = PINMUX_RESERVED,
+-	.data = { PINMUX_DATA_BEGIN, PINMUX_DATA_END },
+ 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
+ 	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
+ 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
+-	.mark = { PINMUX_MARK_BEGIN, PINMUX_MARK_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+ 	.gpios = pinmux_gpios,
++	.nr_pins = GPIO_PTZ0 + 1,
+ 	.nr_gpios = ARRAY_SIZE(pinmux_gpios),
+ 
+ 	.cfg_regs = pinmux_config_regs,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7734.c b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
+index d67a572..be5cca6 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7734.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
+@@ -2457,13 +2457,12 @@ struct sh_pfc_soc_info sh7734_pinmux_info = {
+ 	.unlock_reg = 0xFFFC0000,
+ 
+ 	.reserved_id = PINMUX_RESERVED,
+-	.data = { PINMUX_DATA_BEGIN, PINMUX_DATA_END },
+ 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
+ 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
+-	.mark = { PINMUX_MARK_BEGIN, PINMUX_MARK_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+ 	.gpios = pinmux_gpios,
++	.nr_pins = GPIO_GP_5_11 + 1,
+ 	.nr_gpios = ARRAY_SIZE(pinmux_gpios),
+ 
+ 	.cfg_regs = pinmux_config_regs,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7757.c b/drivers/pinctrl/sh-pfc/pfc-sh7757.c
+index 391edf1..851c0b4 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7757.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7757.c
+@@ -2263,14 +2263,13 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
+ struct sh_pfc_soc_info sh7757_pinmux_info = {
+ 	.name = "sh7757_pfc",
+ 	.reserved_id = PINMUX_RESERVED,
+-	.data = { PINMUX_DATA_BEGIN, PINMUX_DATA_END },
+ 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
+ 	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
+ 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
+-	.mark = { PINMUX_MARK_BEGIN, PINMUX_MARK_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+ 	.gpios = pinmux_gpios,
++	.nr_pins = GPIO_PTZ7 + 1,
+ 	.nr_gpios = ARRAY_SIZE(pinmux_gpios),
+ 
+ 	.cfg_regs = pinmux_config_regs,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7785.c b/drivers/pinctrl/sh-pfc/pfc-sh7785.c
+index 89da4ee..45b4909 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7785.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7785.c
+@@ -1285,14 +1285,13 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
+ struct sh_pfc_soc_info sh7785_pinmux_info = {
+ 	.name = "sh7785_pfc",
+ 	.reserved_id = PINMUX_RESERVED,
+-	.data = { PINMUX_DATA_BEGIN, PINMUX_DATA_END },
+ 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
+ 	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
+ 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
+-	.mark = { PINMUX_MARK_BEGIN, PINMUX_MARK_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+ 	.gpios = pinmux_gpios,
++	.nr_pins = GPIO_PR0 + 1,
+ 	.nr_gpios = ARRAY_SIZE(pinmux_gpios),
+ 
+ 	.cfg_regs = pinmux_config_regs,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7786.c b/drivers/pinctrl/sh-pfc/pfc-sh7786.c
+index 82dbc8c..0eca522 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7786.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7786.c
+@@ -818,14 +818,13 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
+ struct sh_pfc_soc_info sh7786_pinmux_info = {
+ 	.name = "sh7786_pfc",
+ 	.reserved_id = PINMUX_RESERVED,
+-	.data = { PINMUX_DATA_BEGIN, PINMUX_DATA_END },
+ 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
+ 	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
+ 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
+-	.mark = { PINMUX_MARK_BEGIN, PINMUX_MARK_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+ 	.gpios = pinmux_gpios,
++	.nr_pins = GPIO_PJ0 + 1,
+ 	.nr_gpios = ARRAY_SIZE(pinmux_gpios),
+ 
+ 	.cfg_regs = pinmux_config_regs,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-shx3.c b/drivers/pinctrl/sh-pfc/pfc-shx3.c
+index 8c97a72f..6816219 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-shx3.c
++++ b/drivers/pinctrl/sh-pfc/pfc-shx3.c
+@@ -565,14 +565,13 @@ static struct pinmux_data_reg shx3_pinmux_data_regs[] = {
+ struct sh_pfc_soc_info shx3_pinmux_info = {
+ 	.name		= "shx3_pfc",
+ 	.reserved_id	= PINMUX_RESERVED,
+-	.data		= { PINMUX_DATA_BEGIN,	   PINMUX_DATA_END },
+ 	.input		= { PINMUX_INPUT_BEGIN,	   PINMUX_INPUT_END },
+ 	.input_pu	= { PINMUX_INPUT_PULLUP_BEGIN,
+ 			    PINMUX_INPUT_PULLUP_END },
+ 	.output		= { PINMUX_OUTPUT_BEGIN,   PINMUX_OUTPUT_END },
+-	.mark		= { PINMUX_MARK_BEGIN,     PINMUX_MARK_END },
+ 	.function	= { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 	.gpios		= shx3_pinmux_gpios,
++	.nr_pins	= GPIO_PH0 + 1,
+ 	.nr_gpios	= ARRAY_SIZE(shx3_pinmux_gpios),
+ 	.gpio_data	= shx3_pinmux_data,
+ 	.gpio_data_size	= ARRAY_SIZE(shx3_pinmux_data),
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index 67fe91b..c50fb51 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -91,15 +91,14 @@ struct pinmux_range {
+ struct sh_pfc_soc_info {
+ 	char *name;
+ 	pinmux_enum_t reserved_id;
+-	struct pinmux_range data;
+ 	struct pinmux_range input;
+ 	struct pinmux_range input_pd;
+ 	struct pinmux_range input_pu;
+ 	struct pinmux_range output;
+-	struct pinmux_range mark;
+ 	struct pinmux_range function;
+ 
+ 	struct pinmux_gpio *gpios;
++	unsigned int nr_pins;
+ 	unsigned int nr_gpios;
+ 
+ 	struct pinmux_cfg_reg *cfg_regs;
 -- 
-1.8.1.1
+1.7.8.6
 
