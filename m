@@ -1,158 +1,311 @@
-From: Tang Chen <tangchen@cn.fujitsu.com>
-Date: Wed, 09 Jan 2013 09:32:34 +0000
-Subject: [PATCH v6 10/15] memory-hotplug: remove memmap of sparse-vmemmap
-Message-Id: <1357723959-5416-11-git-send-email-tangchen@cn.fujitsu.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 03 Jan 2013 18:17:49 +0000
+Subject: [PATCH 18/22] sh-pfc: r8a7740: Add LCDC0 and LCDC1 pin groups and functions
+Message-Id: <1357237073-15600-19-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1357723959-5416-1-git-send-email-tangchen@cn.fujitsu.com>
-In-Reply-To: <1357723959-5416-1-git-send-email-tangchen@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: akpm@linux-foundation.org, rientjes@google.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, wency@cn.fujitsu.com, tangchen@cn.fujitsu.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org, glommer@parallels.com
-Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-This patch introduces a new API vmemmap_free() to free and remove
-vmemmap pagetables. Since pagetable implements are different, each
-architecture has to provide its own version of vmemmap_free(), just
-like vmemmap_populate().
-
-Note:  vmemmap_free() are not implemented for ia64, ppc, s390, and sparc.
-
-Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Signed-off-by: Jianguo Wu <wujianguo@huawei.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
-Signed-off-by: Tang Chen <tangchen@cn.fujitsu.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm64/mm/mmu.c       |    3 +++
- arch/ia64/mm/discontig.c  |    4 ++++
- arch/powerpc/mm/init_64.c |    4 ++++
- arch/s390/mm/vmem.c       |    4 ++++
- arch/sparc/mm/init_64.c   |    4 ++++
- arch/x86/mm/init_64.c     |    8 ++++++++
- include/linux/mm.h        |    1 +
- mm/sparse.c               |    3 ++-
- 8 files changed, 30 insertions(+), 1 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c |  275 ++++++++++++++++++++++++++++++++++
+ 1 files changed, 275 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm64/mm/mmu.c b/arch/arm64/mm/mmu.c
-index a6885d8..9834886 100644
---- a/arch/arm64/mm/mmu.c
-+++ b/arch/arm64/mm/mmu.c
-@@ -392,4 +392,7 @@ int __meminit vmemmap_populate(struct page *start_page,
- 	return 0;
- }
- #endif	/* CONFIG_ARM64_64K_PAGES */
-+void vmemmap_free(struct page *memmap, unsigned long nr_pages)
-+{
-+}
- #endif	/* CONFIG_SPARSEMEM_VMEMMAP */
-diff --git a/arch/ia64/mm/discontig.c b/arch/ia64/mm/discontig.c
-index 33943db..882a0fd 100644
---- a/arch/ia64/mm/discontig.c
-+++ b/arch/ia64/mm/discontig.c
-@@ -823,6 +823,10 @@ int __meminit vmemmap_populate(struct page *start_page,
- 	return vmemmap_populate_basepages(start_page, size, node);
- }
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index fd91381..6464fa3 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -1658,6 +1658,276 @@ static struct sh_pfc_pin pinmux_pins[] = {
+ 	GPIO_PORT_ALL(),
+ };
  
-+void vmemmap_free(struct page *memmap, unsigned long nr_pages)
-+{
-+}
++static const unsigned int lcd0_data8_pins[] = {
++	/* D[0:7] */
++	58, 57, 56, 55, 54, 53, 52, 51,
++};
++static const unsigned int lcd0_data8_mux[] = {
++	LCD0_D0_MARK, LCD0_D1_MARK, LCD0_D2_MARK, LCD0_D3_MARK,
++	LCD0_D4_MARK, LCD0_D5_MARK, LCD0_D6_MARK, LCD0_D7_MARK,
++};
++static const unsigned int lcd0_data9_pins[] = {
++	/* D[0:8] */
++	58, 57, 56, 55, 54, 53, 52, 51,
++	50,
++};
++static const unsigned int lcd0_data9_mux[] = {
++	LCD0_D0_MARK, LCD0_D1_MARK, LCD0_D2_MARK, LCD0_D3_MARK,
++	LCD0_D4_MARK, LCD0_D5_MARK, LCD0_D6_MARK, LCD0_D7_MARK,
++	LCD0_D8_MARK,
++};
++static const unsigned int lcd0_data12_pins[] = {
++	/* D[0:11] */
++	58, 57, 56, 55, 54, 53, 52, 51,
++	50, 49, 48, 47,
++};
++static const unsigned int lcd0_data12_mux[] = {
++	LCD0_D0_MARK, LCD0_D1_MARK, LCD0_D2_MARK, LCD0_D3_MARK,
++	LCD0_D4_MARK, LCD0_D5_MARK, LCD0_D6_MARK, LCD0_D7_MARK,
++	LCD0_D8_MARK, LCD0_D9_MARK, LCD0_D10_MARK, LCD0_D11_MARK,
++};
++static const unsigned int lcd0_data16_pins[] = {
++	/* D[0:15] */
++	58, 57, 56, 55, 54, 53, 52, 51,
++	50, 49, 48, 47, 46, 45, 44, 43,
++};
++static const unsigned int lcd0_data16_mux[] = {
++	LCD0_D0_MARK, LCD0_D1_MARK, LCD0_D2_MARK, LCD0_D3_MARK,
++	LCD0_D4_MARK, LCD0_D5_MARK, LCD0_D6_MARK, LCD0_D7_MARK,
++	LCD0_D8_MARK, LCD0_D9_MARK, LCD0_D10_MARK, LCD0_D11_MARK,
++	LCD0_D12_MARK, LCD0_D13_MARK, LCD0_D14_MARK, LCD0_D15_MARK,
++};
++static const unsigned int lcd0_data18_pins[] = {
++	/* D[0:17] */
++	58, 57, 56, 55, 54, 53, 52, 51,
++	50, 49, 48, 47, 46, 45, 44, 43,
++	42, 41,
++};
++static const unsigned int lcd0_data18_mux[] = {
++	LCD0_D0_MARK, LCD0_D1_MARK, LCD0_D2_MARK, LCD0_D3_MARK,
++	LCD0_D4_MARK, LCD0_D5_MARK, LCD0_D6_MARK, LCD0_D7_MARK,
++	LCD0_D8_MARK, LCD0_D9_MARK, LCD0_D10_MARK, LCD0_D11_MARK,
++	LCD0_D12_MARK, LCD0_D13_MARK, LCD0_D14_MARK, LCD0_D15_MARK,
++	LCD0_D16_MARK, LCD0_D17_MARK,
++};
++static const unsigned int lcd0_data24_0_pins[] = {
++	/* D[0:23] */
++	58, 57, 56, 55, 54, 53, 52, 51,
++	50, 49, 48, 47, 46, 45, 44, 43,
++	42, 41, 40, 4, 3, 2, 0, 1,
++};
++static const unsigned int lcd0_data24_0_mux[] = {
++	LCD0_D0_MARK, LCD0_D1_MARK, LCD0_D2_MARK, LCD0_D3_MARK,
++	LCD0_D4_MARK, LCD0_D5_MARK, LCD0_D6_MARK, LCD0_D7_MARK,
++	LCD0_D8_MARK, LCD0_D9_MARK, LCD0_D10_MARK, LCD0_D11_MARK,
++	LCD0_D12_MARK, LCD0_D13_MARK, LCD0_D14_MARK, LCD0_D15_MARK,
++	LCD0_D16_MARK, LCD0_D17_MARK, LCD0_D18_PORT40_MARK, LCD0_D19_PORT4_MARK,
++	LCD0_D20_PORT3_MARK, LCD0_D21_PORT2_MARK, LCD0_D22_PORT0_MARK,
++	LCD0_D23_PORT1_MARK,
++};
++static const unsigned int lcd0_data24_1_pins[] = {
++	/* D[0:23] */
++	58, 57, 56, 55, 54, 53, 52, 51,
++	50, 49, 48, 47, 46, 45, 44, 43,
++	42, 41, 163, 162, 161, 158, 160, 159,
++};
++static const unsigned int lcd0_data24_1_mux[] = {
++	LCD0_D0_MARK, LCD0_D1_MARK, LCD0_D2_MARK, LCD0_D3_MARK,
++	LCD0_D4_MARK, LCD0_D5_MARK, LCD0_D6_MARK, LCD0_D7_MARK,
++	LCD0_D8_MARK, LCD0_D9_MARK, LCD0_D10_MARK, LCD0_D11_MARK,
++	LCD0_D16_MARK, LCD0_D17_MARK, LCD0_D18_PORT163_MARK,
++	LCD0_D19_PORT162_MARK, LCD0_D20_PORT161_MARK, LCD0_D21_PORT158_MARK,
++	LCD0_D22_PORT160_MARK, LCD0_D23_PORT159_MARK,
++};
++static const unsigned int lcd0_display_pins[] = {
++	/* DON, VCPWC, VEPWC */
++	61, 59, 60,
++};
++static const unsigned int lcd0_display_mux[] = {
++	LCD0_DON_MARK, LCD0_VCPWC_MARK, LCD0_VEPWC_MARK,
++};
++static const unsigned int lcd0_lclk_0_pins[] = {
++	/* LCLK */
++	165,
++};
++static const unsigned int lcd0_lclk_0_mux[] = {
++	LCD0_LCLK_PORT165_MARK,
++};
++static const unsigned int lcd0_lclk_1_pins[] = {
++	/* LCLK */
++	102,
++};
++static const unsigned int lcd0_lclk_1_mux[] = {
++	LCD0_LCLK_PORT102_MARK,
++};
++static const unsigned int lcd0_sync_pins[] = {
++	/* VSYN, HSYN, DCK, DISP */
++	63, 64, 62, 65,
++};
++static const unsigned int lcd0_sync_mux[] = {
++	LCD0_VSYN_MARK, LCD0_HSYN_MARK, LCD0_DCK_MARK, LCD0_DISP_MARK,
++};
++static const unsigned int lcd0_sys_pins[] = {
++	/* CS, WR, RD, RS */
++	64, 62, 164, 65,
++};
++static const unsigned int lcd0_sys_mux[] = {
++	LCD0_CS_MARK, LCD0_WR_MARK, LCD0_RD_MARK, LCD0_RS_MARK,
++};
 +
- void register_page_bootmem_memmap(unsigned long section_nr,
- 				  struct page *start_page, unsigned long size)
- {
-diff --git a/arch/powerpc/mm/init_64.c b/arch/powerpc/mm/init_64.c
-index 6466440..2969591 100644
---- a/arch/powerpc/mm/init_64.c
-+++ b/arch/powerpc/mm/init_64.c
-@@ -298,6 +298,10 @@ int __meminit vmemmap_populate(struct page *start_page,
- 	return 0;
- }
++static const unsigned int lcd1_data8_pins[] = {
++	/* D[0:7] */
++	4, 3, 2, 1, 0, 91, 92, 23,
++};
++static const unsigned int lcd1_data8_mux[] = {
++	LCD1_D0_MARK, LCD1_D1_MARK, LCD1_D2_MARK, LCD1_D3_MARK,
++	LCD1_D4_MARK, LCD1_D5_MARK, LCD1_D6_MARK, LCD1_D7_MARK,
++};
++static const unsigned int lcd1_data9_pins[] = {
++	/* D[0:8] */
++	4, 3, 2, 1, 0, 91, 92, 23,
++	93,
++};
++static const unsigned int lcd1_data9_mux[] = {
++	LCD1_D0_MARK, LCD1_D1_MARK, LCD1_D2_MARK, LCD1_D3_MARK,
++	LCD1_D4_MARK, LCD1_D5_MARK, LCD1_D6_MARK, LCD1_D7_MARK,
++	LCD1_D8_MARK,
++};
++static const unsigned int lcd1_data12_pins[] = {
++	/* D[0:12] */
++	4, 3, 2, 1, 0, 91, 92, 23,
++	93, 94, 21, 201,
++};
++static const unsigned int lcd1_data12_mux[] = {
++	LCD1_D0_MARK, LCD1_D1_MARK, LCD1_D2_MARK, LCD1_D3_MARK,
++	LCD1_D4_MARK, LCD1_D5_MARK, LCD1_D6_MARK, LCD1_D7_MARK,
++	LCD1_D8_MARK, LCD1_D9_MARK, LCD1_D10_MARK, LCD1_D11_MARK,
++};
++static const unsigned int lcd1_data16_pins[] = {
++	/* D[0:15] */
++	4, 3, 2, 1, 0, 91, 92, 23,
++	93, 94, 21, 201, 200, 199, 196, 195,
++};
++static const unsigned int lcd1_data16_mux[] = {
++	LCD1_D0_MARK, LCD1_D1_MARK, LCD1_D2_MARK, LCD1_D3_MARK,
++	LCD1_D4_MARK, LCD1_D5_MARK, LCD1_D6_MARK, LCD1_D7_MARK,
++	LCD1_D8_MARK, LCD1_D9_MARK, LCD1_D10_MARK, LCD1_D11_MARK,
++	LCD1_D12_MARK, LCD1_D13_MARK, LCD1_D14_MARK, LCD1_D15_MARK,
++};
++static const unsigned int lcd1_data18_pins[] = {
++	/* D[0:17] */
++	4, 3, 2, 1, 0, 91, 92, 23,
++	93, 94, 21, 201, 200, 199, 196, 195,
++	194, 193,
++};
++static const unsigned int lcd1_data18_mux[] = {
++	LCD1_D0_MARK, LCD1_D1_MARK, LCD1_D2_MARK, LCD1_D3_MARK,
++	LCD1_D4_MARK, LCD1_D5_MARK, LCD1_D6_MARK, LCD1_D7_MARK,
++	LCD1_D8_MARK, LCD1_D9_MARK, LCD1_D10_MARK, LCD1_D11_MARK,
++	LCD1_D12_MARK, LCD1_D13_MARK, LCD1_D14_MARK, LCD1_D15_MARK,
++	LCD1_D16_MARK, LCD1_D17_MARK,
++};
++static const unsigned int lcd1_data24_pins[] = {
++	/* D[0:23] */
++	4, 3, 2, 1, 0, 91, 92, 23,
++	93, 94, 21, 201, 200, 199, 196, 195,
++	194, 193, 198, 197, 75, 74, 15, 14,
++};
++static const unsigned int lcd1_data24_mux[] = {
++	LCD1_D0_MARK, LCD1_D1_MARK, LCD1_D2_MARK, LCD1_D3_MARK,
++	LCD1_D4_MARK, LCD1_D5_MARK, LCD1_D6_MARK, LCD1_D7_MARK,
++	LCD1_D8_MARK, LCD1_D9_MARK, LCD1_D10_MARK, LCD1_D11_MARK,
++	LCD1_D12_MARK, LCD1_D13_MARK, LCD1_D14_MARK, LCD1_D15_MARK,
++	LCD1_D16_MARK, LCD1_D17_MARK, LCD1_D18_MARK, LCD1_D19_MARK,
++	LCD1_D20_MARK, LCD1_D21_MARK, LCD1_D22_MARK, LCD1_D23_MARK,
++};
++static const unsigned int lcd1_display_pins[] = {
++	/* DON, VCPWC, VEPWC */
++	100, 5, 6,
++};
++static const unsigned int lcd1_display_mux[] = {
++	LCD1_DON_MARK, LCD1_VCPWC_MARK, LCD1_VEPWC_MARK,
++};
++static const unsigned int lcd1_lclk_pins[] = {
++	/* LCLK */
++	40,
++};
++static const unsigned int lcd1_lclk_mux[] = {
++	LCD1_LCLK_MARK,
++};
++static const unsigned int lcd1_sync_pins[] = {
++	/* VSYN, HSYN, DCK, DISP */
++	98, 97, 99, 12,
++};
++static const unsigned int lcd1_sync_mux[] = {
++	LCD1_VSYN_MARK, LCD1_HSYN_MARK, LCD1_DCK_MARK, LCD1_DISP_MARK,
++};
++static const unsigned int lcd1_sys_pins[] = {
++	/* CS, WR, RD, RS */
++	97, 99, 13, 12,
++};
++static const unsigned int lcd1_sys_mux[] = {
++	LCD1_CS_MARK, LCD1_WR_MARK, LCD1_RD_MARK, LCD1_RS_MARK,
++};
++
++static const struct sh_pfc_pin_group pinmux_groups[] = {
++	SH_PFC_PIN_GROUP(lcd0_data8),
++	SH_PFC_PIN_GROUP(lcd0_data9),
++	SH_PFC_PIN_GROUP(lcd0_data12),
++	SH_PFC_PIN_GROUP(lcd0_data16),
++	SH_PFC_PIN_GROUP(lcd0_data18),
++	SH_PFC_PIN_GROUP(lcd0_data24_0),
++	SH_PFC_PIN_GROUP(lcd0_data24_1),
++	SH_PFC_PIN_GROUP(lcd0_display),
++	SH_PFC_PIN_GROUP(lcd0_lclk_0),
++	SH_PFC_PIN_GROUP(lcd0_lclk_1),
++	SH_PFC_PIN_GROUP(lcd0_sync),
++	SH_PFC_PIN_GROUP(lcd0_sys),
++	SH_PFC_PIN_GROUP(lcd1_data8),
++	SH_PFC_PIN_GROUP(lcd1_data9),
++	SH_PFC_PIN_GROUP(lcd1_data12),
++	SH_PFC_PIN_GROUP(lcd1_data16),
++	SH_PFC_PIN_GROUP(lcd1_data18),
++	SH_PFC_PIN_GROUP(lcd1_data24),
++	SH_PFC_PIN_GROUP(lcd1_display),
++	SH_PFC_PIN_GROUP(lcd1_lclk),
++	SH_PFC_PIN_GROUP(lcd1_sync),
++	SH_PFC_PIN_GROUP(lcd1_sys),
++};
++
++static const char * const lcd0_groups[] = {
++	"lcd0_data8",
++	"lcd0_data9",
++	"lcd0_data12",
++	"lcd0_data16",
++	"lcd0_data18",
++	"lcd0_data24_0",
++	"lcd0_data24_1",
++	"lcd0_display",
++	"lcd0_lclk_0",
++	"lcd0_lclk_1",
++	"lcd0_sync",
++	"lcd0_sys",
++};
++
++static const char * const lcd1_groups[] = {
++	"lcd1_data8",
++	"lcd1_data9",
++	"lcd1_data12",
++	"lcd1_data16",
++	"lcd1_data18",
++	"lcd1_data24",
++	"lcd1_display",
++	"lcd1_lclk",
++	"lcd1_sync",
++	"lcd1_sys",
++};
++
++static const struct sh_pfc_function pinmux_functions[] = {
++	SH_PFC_FUNCTION(lcd0),
++	SH_PFC_FUNCTION(lcd1),
++};
++
+ #define PINMUX_FN_BASE	ARRAY_SIZE(pinmux_pins)
  
-+void vmemmap_free(struct page *memmap, unsigned long nr_pages)
-+{
-+}
-+
- void register_page_bootmem_memmap(unsigned long section_nr,
- 				  struct page *start_page, unsigned long size)
- {
-diff --git a/arch/s390/mm/vmem.c b/arch/s390/mm/vmem.c
-index 2c14bc2..81e6ba3 100644
---- a/arch/s390/mm/vmem.c
-+++ b/arch/s390/mm/vmem.c
-@@ -272,6 +272,10 @@ out:
- 	return ret;
- }
+ static struct pinmux_func pinmux_func_gpios[] = {
+@@ -2596,6 +2866,11 @@ struct sh_pfc_soc_info r8a7740_pinmux_info = {
  
-+void vmemmap_free(struct page *memmap, unsigned long nr_pages)
-+{
-+}
+ 	.pins		= pinmux_pins,
+ 	.nr_pins	= ARRAY_SIZE(pinmux_pins),
++	.groups		= pinmux_groups,
++	.nr_groups	= ARRAY_SIZE(pinmux_groups),
++	.functions	= pinmux_functions,
++	.nr_functions	= ARRAY_SIZE(pinmux_functions),
 +
- void register_page_bootmem_memmap(unsigned long section_nr,
- 				  struct page *start_page, unsigned long size)
- {
-diff --git a/arch/sparc/mm/init_64.c b/arch/sparc/mm/init_64.c
-index 1f30db3..5afe21a 100644
---- a/arch/sparc/mm/init_64.c
-+++ b/arch/sparc/mm/init_64.c
-@@ -2232,6 +2232,10 @@ void __meminit vmemmap_populate_print_last(void)
- 	}
- }
+ 	.func_gpios	= pinmux_func_gpios,
+ 	.nr_func_gpios	= ARRAY_SIZE(pinmux_func_gpios),
  
-+void vmemmap_free(struct page *memmap, unsigned long nr_pages)
-+{
-+}
-+
- void register_page_bootmem_memmap(unsigned long section_nr,
- 				  struct page *start_page, unsigned long size)
- {
-diff --git a/arch/x86/mm/init_64.c b/arch/x86/mm/init_64.c
-index d950f9b..e829113 100644
---- a/arch/x86/mm/init_64.c
-+++ b/arch/x86/mm/init_64.c
-@@ -1309,6 +1309,14 @@ vmemmap_populate(struct page *start_page, unsigned long size, int node)
- 	return 0;
- }
- 
-+void __ref vmemmap_free(struct page *memmap, unsigned long nr_pages)
-+{
-+	unsigned long start = (unsigned long)memmap;
-+	unsigned long end = (unsigned long)(memmap + nr_pages);
-+
-+	remove_pagetable(start, end, false);
-+}
-+
- void register_page_bootmem_memmap(unsigned long section_nr,
- 				  struct page *start_page, unsigned long size)
- {
-diff --git a/include/linux/mm.h b/include/linux/mm.h
-index 1eca498..31d5e5d 100644
---- a/include/linux/mm.h
-+++ b/include/linux/mm.h
-@@ -1709,6 +1709,7 @@ int vmemmap_populate_basepages(struct page *start_page,
- 						unsigned long pages, int node);
- int vmemmap_populate(struct page *start_page, unsigned long pages, int node);
- void vmemmap_populate_print_last(void);
-+void vmemmap_free(struct page *memmap, unsigned long nr_pages);
- void register_page_bootmem_memmap(unsigned long section_nr, struct page *map,
- 				  unsigned long size);
- 
-diff --git a/mm/sparse.c b/mm/sparse.c
-index 05ca73a..cff9796 100644
---- a/mm/sparse.c
-+++ b/mm/sparse.c
-@@ -615,10 +615,11 @@ static inline struct page *kmalloc_section_memmap(unsigned long pnum, int nid,
- }
- static void __kfree_section_memmap(struct page *memmap, unsigned long nr_pages)
- {
--	return; /* XXX: Not implemented yet */
-+	vmemmap_free(memmap, nr_pages);
- }
- static void free_map_bootmem(struct page *memmap, unsigned long nr_pages)
- {
-+	vmemmap_free(memmap, nr_pages);
- }
- #else
- static struct page *__kmalloc_section_memmap(unsigned long nr_pages)
 -- 
-1.7.1
+1.7.8.6
 
