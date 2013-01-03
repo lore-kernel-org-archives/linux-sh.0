@@ -1,47 +1,100 @@
-From: Kamezawa Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-Date: Mon, 07 Jan 2013 05:30:37 +0000
-Subject: Re: [PATCH v5 14/14] memory-hotplug: free node_data when a node is offlined
-Message-Id: <50EA5D7D.7000703@jp.fujitsu.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 03 Jan 2013 18:17:31 +0000
+Subject: [PATCH 00/22] SH pinctrl and pinmux implementation
+Message-Id: <1357237073-15600-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1356350964-13437-1-git-send-email-tangchen@cn.fujitsu.com> <1356350964-13437-15-git-send-email-tangchen@cn.fujitsu.com> <50DA7533.6060407@jp.fujitsu.com> <50DC3C26.6060308@cn.fujitsu.com> <50DCE7C0.8070407@jp.fujitsu.com> <50DFD8F4.7040301@cn.fujitsu.com>
-In-Reply-To: <50DFD8F4.7040301@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Wen Congyang <wency@cn.fujitsu.com>
-Cc: Tang Chen <tangchen@cn.fujitsu.com>, akpm@linux-foundation.org, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org, x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-(2012/12/30 15:02), Wen Congyang wrote:
-> At 12/28/2012 08:28 AM, Kamezawa Hiroyuki Wrote:
->> (2012/12/27 21:16), Wen Congyang wrote:
->>> At 12/26/2012 11:55 AM, Kamezawa Hiroyuki Wrote:
->>>> (2012/12/24 21:09), Tang Chen wrote:
->>>>> From: Wen Congyang <wency@cn.fujitsu.com>
->>>>>
->>>>> We call hotadd_new_pgdat() to allocate memory to store node_data. So we
->>>>> should free it when removing a node.
->>>>>
->>>>> Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
->>>>
->>>> I'm sorry but is it safe to remove pgdat ? All zone cache and zonelists are
->>>> properly cleared/rebuilded in synchronous way ? and No threads are visinting
->>>> zone in vmscan.c ?
->>>
->>> We have rebuilt zonelists when a zone has no memory after offlining some pages.
->>>
->>
->> How do you guarantee that the address of pgdat/zone is not on stack of any kernel
->> threads or other kernel objects without reference counting or other syncing method ?
-> 
-> No way to guarentee this. But, the kernel should not use the address of pgdat/zone when
-> it is offlined.
-> 
-> Hmm, what about this: reuse the memory when the node is onlined again?
-> 
+Hello,
 
-That's the only way which we can go now. Please don't free it.
+Here's a patch set that implements pinctrl and pinmux support for the SuperH
+and SH Mobile pin controllers (PFC). The patches are based on my previous PFC
+patch series ("[PATCH v4 00/81] SH pin control and GPIO rework") and are
+available from my git tree at
 
-Thanks,
--Kame
+	git://linuxtv.org/pinchartl/fbdev.git pinmux-pinctrl
 
+The series start with miscellaneous cleanup and rework patches that slowly get
+the code in shape. Patches 12/22 and 13/22 then rework the GPIO code to split
+real GPIOs and function GPIOS in two gpio_chip instances. Patches 14/22 and
+15/22 are two more miscellaneous cleanups to prepare for patch 16/22 that
+implements real pinctrl and pinmux support.
 
+This pinctrl and pinmux implementation simply replaces the existing once. This
+should be safe as I've verified that the pinctrl and pinmux APIs are not used
+by any SuperH or SH Mobile board code or driver.
+
+The remaining patches then define LCD controller pin groups and functions for
+the sh73a0 and r8a7740 SoCs and port the kzm9g and armadillo800eva boards to
+the pinmux API to set the initial pinmux configuration.
+
+I ran into an issue when trying to port the bonito board (the only other
+r8a7740 board in mainline) to the pinmux API. My board patches use system pin
+control hogging to apply the initial pinmux configuration. This mechanism
+requires registering the pinctrl mappings before registering the pinctrl
+device, as the default states are selected when the pinctrl device is
+registered. However, the mappings vary depending on board configuration read
+through GPIOs, and the GPIOs are implemented by the pinctrl driver. One
+possible solution would be to apply updates to the selected state as mappings
+are registered, but that looks pretty complex at first sight. Other ideas (or,
+better, patches :-)) are welcome.
+
+Last but not least, a DT patch series will follow soon.
+
+Laurent Pinchart (22):
+  sh-pfc: Drop the sh_pfc_pinctrl spinlock
+  sh-pfc: Don't take the sh_pfc spinlock in sh_pfc_map_gpios()
+  sh-pfc: Use GPIO_FN instead of PINMUX_GPIO where possible
+  sh-pfc: Use _GPIO_PORT instead of PINMUX_GPIO where possible
+  sh-pfc: Replace first_gpio and last_gpio with nr_gpios
+  sh-pfc: Replace SoC info data and mark ranges with a number of pins
+  sh-pfc: Remove unused sh_pfc_soc_info reserved_id field
+  sh-pfc: Initialize pinmux_gpio flags statically
+  sh-pfc: Make struct pinmux_gpio enum_id field const
+  sh-pfc: Shrink the pinctrl GPIO range to include real GPIOs only
+  sh-pfc: Don't needlessly check GPIO type in sh_gpio_free()
+  sh-pfc: Split pins and functions definition tables
+  sh-pfc: Split pins and functions into separate gpio_chip instances
+  sh-pfc: Rename struct pinmux_pin to struct sh_pfc_pin
+  sh-pfc: Look up IRQ table entries by GPIO number
+  sh-pfc: Expose real groups and functions in pinctrl/pinmux operations
+  sh-pfc: sh73a0: Add LCD and LCD2 pin groups and functions
+  sh-pfc: r8a7740: Add LCDC0 and LCDC1 pin groups and functions
+  ARM: shmobile: kzm9g: Register pinctrl mappings for LCD
+  ARM: shmobile: armadillo800eva: Register pinctrl mappings for LCDC0
+  sh-pfc: sh73a0: Remove LCD and LCD2 function GPIOS
+  ARM: shmobile: sh73a0: Remove LCDC and LCDC2 function GPIOs
+
+ arch/arm/mach-shmobile/board-armadillo800eva.c |   38 +-
+ arch/arm/mach-shmobile/board-kzm9g.c           |   35 +-
+ arch/arm/mach-shmobile/include/mach/sh73a0.h   |  112 ++--
+ drivers/pinctrl/sh-pfc/core.c                  |   71 ++-
+ drivers/pinctrl/sh-pfc/core.h                  |    6 +-
+ drivers/pinctrl/sh-pfc/gpio.c                  |  198 ++++--
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c           |  359 ++++++++-
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c           |   17 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7203.c            |  678 ++++++++--------
+ drivers/pinctrl/sh-pfc/pfc-sh7264.c            |  694 ++++++++--------
+ drivers/pinctrl/sh-pfc/pfc-sh7269.c            |  898 +++++++++++-----------
+ drivers/pinctrl/sh-pfc/pfc-sh7372.c            |   82 +-
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c            |  409 +++++++---
+ drivers/pinctrl/sh-pfc/pfc-sh7720.c            |  559 +++++++-------
+ drivers/pinctrl/sh-pfc/pfc-sh7722.c            |  770 +++++++++---------
+ drivers/pinctrl/sh-pfc/pfc-sh7723.c            |  974 +++++++++++-----------
+ drivers/pinctrl/sh-pfc/pfc-sh7724.c            |  990 ++++++++++++------------
+ drivers/pinctrl/sh-pfc/pfc-sh7734.c            |   16 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7757.c            | 1020 ++++++++++++------------
+ drivers/pinctrl/sh-pfc/pfc-sh7785.c            |  568 +++++++-------
+ drivers/pinctrl/sh-pfc/pfc-sh7786.c            |  408 +++++-----
+ drivers/pinctrl/sh-pfc/pfc-shx3.c              |  264 +++---
+ drivers/pinctrl/sh-pfc/pinctrl.c               |  184 ++---
+ drivers/pinctrl/sh-pfc/sh_pfc.h                |   75 ++-
+ 24 files changed, 4970 insertions(+), 4455 deletions(-)
+
+-- 
+Regards,
+
+Laurent Pinchart
