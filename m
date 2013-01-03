@@ -1,168 +1,191 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 16 Jan 2013 16:54:44 +0000
-Subject: [PATCH 09/11] mmc: sh_mobile_sdhi: use managed resource allocations
-Message-Id: <1358355286-26029-10-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 03 Jan 2013 18:17:41 +0000
+Subject: [PATCH 10/22] sh-pfc: Shrink the pinctrl GPIO range to include real GPIOs only
+Message-Id: <1357237073-15600-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358355286-26029-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1358355286-26029-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-Use managed allocations to get memory, clock and interrupts . This
-significantly simplifies clean up paths.
+As a step towards GPIO function removal, shorten the GPIO range
+registered with the pinctrl core. Function GPIOs are now handled in the
+GPIO handlers directly instead of going through the pinctrl API.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |   57 +++++++++----------------------------
- 1 files changed, 14 insertions(+), 43 deletions(-)
+ drivers/pinctrl/sh-pfc/core.c    |    2 +-
+ drivers/pinctrl/sh-pfc/core.h    |    1 +
+ drivers/pinctrl/sh-pfc/gpio.c    |   57 ++++++++++++++++++++++++++++++++++++-
+ drivers/pinctrl/sh-pfc/pinctrl.c |   27 +----------------
+ 4 files changed, 59 insertions(+), 28 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index f8f6fc7..eeb66f2 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -126,7 +126,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	int irq, ret, i = 0;
- 	bool multiplexed_isr = true;
- 
--	priv = kzalloc(sizeof(struct sh_mobile_sdhi), GFP_KERNEL);
-+	priv = devm_kzalloc(&pdev->dev, sizeof(struct sh_mobile_sdhi), GFP_KERNEL);
- 	if (priv = NULL) {
- 		dev_err(&pdev->dev, "kzalloc failed\n");
- 		return -ENOMEM;
-@@ -138,11 +138,11 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 		if (p->init) {
- 			ret = p->init(pdev, &sdhi_ops);
- 			if (ret)
--				goto einit;
-+				return ret;
- 		}
- 	}
- 
--	priv->clk = clk_get(&pdev->dev, NULL);
-+	priv->clk = devm_clk_get(&pdev->dev, NULL);
- 	if (IS_ERR(priv->clk)) {
- 		ret = PTR_ERR(priv->clk);
- 		dev_err(&pdev->dev, "cannot get clock: %d\n", ret);
-@@ -197,33 +197,33 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	irq = platform_get_irq_byname(pdev, SH_MOBILE_SDHI_IRQ_CARD_DETECT);
- 	if (irq >= 0) {
- 		multiplexed_isr = false;
--		ret = request_irq(irq, tmio_mmc_card_detect_irq, 0,
-+		ret = devm_request_irq(&pdev->dev, irq, tmio_mmc_card_detect_irq, 0,
- 				  dev_name(&pdev->dev), host);
- 		if (ret)
--			goto eirq_card_detect;
-+			goto eirq;
- 	}
- 
- 	irq = platform_get_irq_byname(pdev, SH_MOBILE_SDHI_IRQ_SDIO);
- 	if (irq >= 0) {
- 		multiplexed_isr = false;
--		ret = request_irq(irq, tmio_mmc_sdio_irq, 0,
-+		ret = devm_request_irq(&pdev->dev, irq, tmio_mmc_sdio_irq, 0,
- 				  dev_name(&pdev->dev), host);
- 		if (ret)
--			goto eirq_sdio;
-+			goto eirq;
- 	}
- 
- 	irq = platform_get_irq_byname(pdev, SH_MOBILE_SDHI_IRQ_SDCARD);
- 	if (irq >= 0) {
- 		multiplexed_isr = false;
--		ret = request_irq(irq, tmio_mmc_sdcard_irq, 0,
-+		ret = devm_request_irq(&pdev->dev, irq, tmio_mmc_sdcard_irq, 0,
- 				  dev_name(&pdev->dev), host);
- 		if (ret)
--			goto eirq_sdcard;
-+			goto eirq;
- 	} else if (!multiplexed_isr) {
- 		dev_err(&pdev->dev,
- 			"Principal SD-card IRQ is missing among named interrupts\n");
- 		ret = irq;
--		goto eirq_sdcard;
-+		goto eirq;
- 	}
- 
- 	if (multiplexed_isr) {
-@@ -232,15 +232,15 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 			if (irq < 0)
- 				break;
- 			i++;
--			ret = request_irq(irq, tmio_mmc_irq, 0,
-+			ret = devm_request_irq(&pdev->dev, irq, tmio_mmc_irq, 0,
- 					  dev_name(&pdev->dev), host);
- 			if (ret)
--				goto eirq_multiplexed;
-+				goto eirq;
- 		}
- 
- 		/* There must be at least one IRQ source */
- 		if (!i)
--			goto eirq_multiplexed;
-+			goto eirq;
- 	}
- 
- 	dev_info(&pdev->dev, "%s base at 0x%08lx clock rate %u MHz\n",
-@@ -250,28 +250,12 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 
- 	return ret;
- 
--eirq_multiplexed:
--	while (i--) {
--		irq = platform_get_irq(pdev, i);
--		free_irq(irq, host);
--	}
--eirq_sdcard:
--	irq = platform_get_irq_byname(pdev, SH_MOBILE_SDHI_IRQ_SDIO);
--	if (irq >= 0)
--		free_irq(irq, host);
--eirq_sdio:
--	irq = platform_get_irq_byname(pdev, SH_MOBILE_SDHI_IRQ_CARD_DETECT);
--	if (irq >= 0)
--		free_irq(irq, host);
--eirq_card_detect:
-+eirq:
- 	tmio_mmc_host_remove(host);
- eprobe:
--	clk_put(priv->clk);
- eclkget:
- 	if (p && p->cleanup)
- 		p->cleanup(pdev);
--einit:
--	kfree(priv);
- 	return ret;
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index 3e4e80d..70fc753 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -95,7 +95,7 @@ static bool sh_pfc_gpio_is_pin(struct sh_pfc *pfc, unsigned int gpio)
+ 	       (pfc->info->gpios[gpio].enum_id != 0);
  }
  
-@@ -279,26 +263,13 @@ static int sh_mobile_sdhi_remove(struct platform_device *pdev)
+-static bool sh_pfc_gpio_is_function(struct sh_pfc *pfc, unsigned int gpio)
++bool sh_pfc_gpio_is_function(struct sh_pfc *pfc, unsigned int gpio)
  {
- 	struct mmc_host *mmc = platform_get_drvdata(pdev);
- 	struct tmio_mmc_host *host = mmc_priv(mmc);
--	struct sh_mobile_sdhi *priv = container_of(host->pdata, struct sh_mobile_sdhi, mmc_data);
- 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
--	int i = 0, irq;
+ 	return (gpio >= pfc->info->nr_pins) && (gpio < pfc->info->nr_gpios) &&
+ 	       (pfc->info->gpios[gpio].enum_id != 0);
+diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
+index ba7c33c..dceaec0 100644
+--- a/drivers/pinctrl/sh-pfc/core.h
++++ b/drivers/pinctrl/sh-pfc/core.h
+@@ -47,6 +47,7 @@ void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
+ 		      unsigned long value);
+ int sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
+ 			struct pinmux_data_reg **drp, int *bitp);
++bool sh_pfc_gpio_is_function(struct sh_pfc *pfc, unsigned int gpio);
+ int sh_pfc_gpio_to_enum(struct sh_pfc *pfc, unsigned gpio, int pos,
+ 			pinmux_enum_t *enum_idp);
+ int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index f46f069..80a50d8 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -38,12 +38,51 @@ static struct sh_pfc *gpio_to_pfc(struct gpio_chip *gc)
  
- 	tmio_mmc_host_remove(host);
- 
--	while (1) {
--		irq = platform_get_irq(pdev, i++);
--		if (irq < 0)
--			break;
--		free_irq(irq, host);
--	}
--
--	clk_put(priv->clk);
--
- 	if (p && p->cleanup)
- 		p->cleanup(pdev);
- 
--	kfree(priv);
--
- 	return 0;
+ static int sh_gpio_request(struct gpio_chip *gc, unsigned offset)
+ {
+-	return pinctrl_request_gpio(offset);
++	struct sh_pfc *pfc = gpio_to_pfc(gc);
++	unsigned long flags;
++	int ret = -EINVAL;
++
++	if (offset < pfc->info->nr_pins)
++		return pinctrl_request_gpio(offset);
++
++	pr_notice_once("Use of GPIO API for function requests is deprecated, convert to pinctrl\n");
++
++	spin_lock_irqsave(&pfc->lock, flags);
++
++	if (!sh_pfc_gpio_is_function(pfc, offset))
++		goto done;
++
++	if (sh_pfc_config_gpio(pfc, offset, PINMUX_TYPE_FUNCTION,
++			       GPIO_CFG_DRYRUN))
++		goto done;
++
++	if (sh_pfc_config_gpio(pfc, offset, PINMUX_TYPE_FUNCTION,
++			       GPIO_CFG_REQ))
++		goto done;
++
++	ret = 0;
++
++done:
++	spin_unlock_irqrestore(&pfc->lock, flags);
++	return ret;
  }
+ 
+ static void sh_gpio_free(struct gpio_chip *gc, unsigned offset)
+ {
+-	pinctrl_free_gpio(offset);
++	struct sh_pfc *pfc = gpio_to_pfc(gc);
++	unsigned long flags;
++	int pinmux_type;
++
++	if (offset < pfc->info->nr_pins)
++		return pinctrl_free_gpio(offset);
++
++	spin_lock_irqsave(&pfc->lock, flags);
++
++	pinmux_type = pfc->info->gpios[offset].flags & PINMUX_FLAG_TYPE;
++
++	sh_pfc_config_gpio(pfc, offset, pinmux_type, GPIO_CFG_FREE);
++
++	spin_unlock_irqrestore(&pfc->lock, flags);
+ }
+ 
+ static void sh_gpio_set_value(struct sh_pfc *pfc, unsigned gpio, int value)
+@@ -70,12 +109,26 @@ static int sh_gpio_get_value(struct sh_pfc *pfc, unsigned gpio)
+ 
+ static int sh_gpio_direction_input(struct gpio_chip *gc, unsigned offset)
+ {
++	struct sh_pfc *pfc = gpio_to_pfc(gc);
++
++	if (offset >= pfc->info->nr_pins) {
++		/* Function GPIOs can only be requested, never configured. */
++		return -EINVAL;
++	}
++
+ 	return pinctrl_gpio_direction_input(offset);
+ }
+ 
+ static int sh_gpio_direction_output(struct gpio_chip *gc, unsigned offset,
+ 				    int value)
+ {
++	struct sh_pfc *pfc = gpio_to_pfc(gc);
++
++	if (offset >= pfc->info->nr_pins) {
++		/* Function GPIOs can only be requested, never configured. */
++		return -EINVAL;
++	}
++
+ 	sh_gpio_set_value(gpio_to_pfc(gc), offset, value);
+ 
+ 	return pinctrl_gpio_direction_output(offset);
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index 8a13dff..baad8b4 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -113,21 +113,6 @@ static void sh_pfc_noop_disable(struct pinctrl_dev *pctldev, unsigned func,
+ {
+ }
+ 
+-static int sh_pfc_config_function(struct sh_pfc *pfc, unsigned offset)
+-{
+-	if (sh_pfc_config_gpio(pfc, offset,
+-			       PINMUX_TYPE_FUNCTION,
+-			       GPIO_CFG_DRYRUN) != 0)
+-		return -EINVAL;
+-
+-	if (sh_pfc_config_gpio(pfc, offset,
+-			       PINMUX_TYPE_FUNCTION,
+-			       GPIO_CFG_REQ) != 0)
+-		return -EINVAL;
+-
+-	return 0;
+-}
+-
+ static int sh_pfc_reconfig_pin(struct sh_pfc *pfc, unsigned offset,
+ 			       int new_type)
+ {
+@@ -195,19 +180,11 @@ static int sh_pfc_gpio_request_enable(struct pinctrl_dev *pctldev,
+ 	pinmux_type = pfc->info->gpios[offset].flags & PINMUX_FLAG_TYPE;
+ 
+ 	switch (pinmux_type) {
+-	case PINMUX_TYPE_FUNCTION:
+-		pr_notice_once("Use of GPIO API for function requests is "
+-			       "deprecated, convert to pinctrl\n");
+-		/* handle for now */
+-		ret = sh_pfc_config_function(pfc, offset);
+-		if (unlikely(ret < 0))
+-			goto err;
+-
+-		break;
+ 	case PINMUX_TYPE_GPIO:
+ 	case PINMUX_TYPE_INPUT:
+ 	case PINMUX_TYPE_OUTPUT:
+ 		break;
++	case PINMUX_TYPE_FUNCTION:
+ 	default:
+ 		pr_err("Unsupported mux type (%d), bailing...\n", pinmux_type);
+ 		ret = -ENOTSUPP;
+@@ -403,7 +380,7 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ 	if (IS_ERR(pmx->pctl))
+ 		return PTR_ERR(pmx->pctl);
+ 
+-	sh_pfc_gpio_range.npins = pfc->info->nr_gpios;
++	sh_pfc_gpio_range.npins = pfc->info->nr_pins;
+ 	sh_pfc_gpio_range.base = 0;
+ 	sh_pfc_gpio_range.pin_base = 0;
  
 -- 
-1.7.2.5
+1.7.8.6
 
