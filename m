@@ -1,54 +1,52 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 25 Jan 2013 02:23:39 +0000
-Subject: [PATCH 03/80] sh: sh7723: Rename GPIO_FN_SIUOSPD to GPIO_FN_SIUAOSPD
-Message-Id: <1359080696-31489-4-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 03 Jan 2013 18:17:33 +0000
+Subject: [PATCH 02/22] sh-pfc: Don't take the sh_pfc spinlock in sh_pfc_map_gpios()
+Message-Id: <1357237073-15600-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-The GPIO was incorrectly named. As it has no user in the whole kernel
-tree, just rename it.
+The sh_pfc_map_gpios() function is only called at initialization time
+when no other task can access the sh_pfc fields. Don't protect the
+operation with a spinlock.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/sh/include/cpu-sh4/cpu/sh7723.h    |    2 +-
- arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c |    2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+ drivers/pinctrl/sh-pfc/pinctrl.c |    5 -----
+ 1 files changed, 0 insertions(+), 5 deletions(-)
 
-diff --git a/arch/sh/include/cpu-sh4/cpu/sh7723.h b/arch/sh/include/cpu-sh4/cpu/sh7723.h
-index 6fae50c..668da89 100644
---- a/arch/sh/include/cpu-sh4/cpu/sh7723.h
-+++ b/arch/sh/include/cpu-sh4/cpu/sh7723.h
-@@ -184,7 +184,7 @@ enum {
- 	/* SIUA */
- 	GPIO_FN_SIUAFCK, GPIO_FN_SIUAILR, GPIO_FN_SIUAIBT, GPIO_FN_SIUAISLD,
- 	GPIO_FN_SIUAOLR, GPIO_FN_SIUAOBT, GPIO_FN_SIUAOSLD, GPIO_FN_SIUAMCK,
--	GPIO_FN_SIUAISPD, GPIO_FN_SIUOSPD,
-+	GPIO_FN_SIUAISPD, GPIO_FN_SIUAOSPD,
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index 472fcf5..67d576c 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -344,7 +344,6 @@ static void sh_pfc_map_one_gpio(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx,
+ /* pinmux ranges -> pinctrl pin descs */
+ static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ {
+-	unsigned long flags;
+ 	int i;
  
- 	/* SIUB */
- 	GPIO_FN_SIUBFCK, GPIO_FN_SIUBILR, GPIO_FN_SIUBIBT, GPIO_FN_SIUBISLD,
-diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c
-index 88bf5ec..2037915 100644
---- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c
-+++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c
-@@ -1317,7 +1317,7 @@ static struct pinmux_gpio pinmux_gpios[] = {
- 	PINMUX_GPIO(GPIO_FN_SIUAOSLD, SIUAOSLD_MARK),
- 	PINMUX_GPIO(GPIO_FN_SIUAMCK, SIUAMCK_MARK),
- 	PINMUX_GPIO(GPIO_FN_SIUAISPD, SIUAISPD_MARK),
--	PINMUX_GPIO(GPIO_FN_SIUOSPD, SIUAOSPD_MARK),
-+	PINMUX_GPIO(GPIO_FN_SIUAOSPD, SIUAOSPD_MARK),
+ 	pmx->nr_pads = pfc->info->last_gpio - pfc->info->first_gpio + 1;
+@@ -356,8 +355,6 @@ static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ 		return -ENOMEM;
+ 	}
  
- 	/* SIUB */
- 	PINMUX_GPIO(GPIO_FN_SIUBFCK, SIUBFCK_MARK),
+-	spin_lock_irqsave(&pfc->lock, flags);
+-
+ 	/*
+ 	 * We don't necessarily have a 1:1 mapping between pin and linux
+ 	 * GPIO number, as the latter maps to the associated enum_id.
+@@ -378,8 +375,6 @@ static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ 		sh_pfc_map_one_gpio(pfc, pmx, gpio, i);
+ 	}
+ 
+-	spin_unlock_irqrestore(&pfc->lock, flags);
+-
+ 	sh_pfc_pinctrl_desc.pins = pmx->pads;
+ 	sh_pfc_pinctrl_desc.npins = pmx->nr_pads;
+ 
 -- 
-1.7.10.4
+1.7.8.6
 
