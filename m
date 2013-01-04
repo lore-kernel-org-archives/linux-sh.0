@@ -1,144 +1,260 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Thu, 31 Jan 2013 16:31:17 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: sh73a0: Add CPU sleep suspend
-Message-Id: <CABYn4syaAmi6mJApwa_kTRBDwv+HPbPnAJAwwRWrN2-0zY=SmQ@mail.gmail.com>
+From: Srivatsa Vaddagiri <vatsa@codeaurora.org>
+Date: Fri, 04 Jan 2013 02:58:38 +0000
+Subject: [PATCH 1/2] cpuhotplug/nohz: Remove offline cpus from nohz-idle state
+Message-Id: <1357268318-7993-1-git-send-email-vatsa@codeaurora.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1354709587-25288-1-git-send-email-hechtb+renesas@gmail.com>
- <CANqRtoQMweOU-Azfwu3-HXKx0Hr0seQYy1hi+arLHN-q=BSh+w@mail.gmail.com>
- <20121214134727.GL16382@verge.net.au>
- <Pine.LNX.4.64.1301111031220.2604@axis700.grange>
- <CABYn4swp_DGZTSWm+Otc_xwx4pDS7quUop5RNMH+32mjuGZj5g@mail.gmail.com>
- <20130130042218.GK28230@verge.net.au>
-In-Reply-To: <20130130042218.GK28230@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Looks perfect, thanks!
+Modify idle loop of arm, mips, s390, sh and x86 architectures to exit from nohz
+state before dying upon hot-remove. This change is needed to avoid userspace
+tools like top command from seeing a rollback in total idle time over some
+sampling periods.
 
-2013/1/30 Simon Horman <horms@verge.net.au>:
-> On Sat, Jan 12, 2013 at 04:43:29PM +0100, Bastian Hecht wrote:
->> Hi Guennadi, hi Simon,
->>
->> yes somehow a chunk is missing from my original patch in the patch of
->> the next branch that got merged from soc2. I've prepared a revert of
->> the bad patch and a corrected version, but now I'm unsure if that
->> helps at all. Finally you don't want to get that fixups pulled into
->> the mainline.
->>
->> It seems to me to be a real mess to correct some patch somewhere in
->> the middle of merged patch stacks. If I can help Simon, please let me
->> know.
->
-> Could you see if the following is correct?
-> If not could you please prepare whichever of the following makes sense.
->
-> * An incremental patch to add the missing hunk
->
-> * A revert patch and a new patch
->
-> * A revert patch
->
-> http://git.kernel.org/?p=linux/kernel/git/horms/renesas.git;a=commitdiff;hbaf88bd69ed3cf7e2374eec4a7128f62ae9c1f
->
->
-> From 13baf88bd69ed3cf7e2374eec4a7128f62ae9c1f Mon Sep 17 00:00:00 2001
-> From: Bastian Hecht <hechtb@gmail.com>
-> Date: Wed, 5 Dec 2012 12:13:06 +0000
-> Subject: [PATCH] ARM: shmobile: sh73a0: Add CPU sleep suspend
->
-> Add the lighest possible sleep mode on Cortex-A9 cores: CPU sleep. It is
-> entered by a simple dsb and wfi instruction via cpu_do_idle(). As just
-> clocks are stopped there is no need to save or restore any state of the
-> system.
->
-> Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
-> Acked-by: Magnus Damm <damm@opensource.se>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> ---
->  arch/arm/mach-shmobile/Makefile              |    1 +
->  arch/arm/mach-shmobile/board-kzm9g.c         |    2 ++
->  arch/arm/mach-shmobile/include/mach/common.h |    1 +
->  arch/arm/mach-shmobile/pm-sh73a0.c           |   32 ++++++++++++++++++++++++++
->  4 files changed, 36 insertions(+)
->  create mode 100644 arch/arm/mach-shmobile/pm-sh73a0.c
->
-> diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-> index 0b71479..f6aba6d 100644
-> --- a/arch/arm/mach-shmobile/Makefile
-> +++ b/arch/arm/mach-shmobile/Makefile
-> @@ -37,6 +37,7 @@ obj-$(CONFIG_ARCH_SHMOBILE)   += pm-rmobile.o
->  obj-$(CONFIG_ARCH_SH7372)      += pm-sh7372.o sleep-sh7372.o
->  obj-$(CONFIG_ARCH_R8A7740)     += pm-r8a7740.o
->  obj-$(CONFIG_ARCH_R8A7779)     += pm-r8a7779.o
-> +obj-$(CONFIG_ARCH_SH73A0)      += pm-sh73a0.o
->
->  # Board objects
->  obj-$(CONFIG_MACH_AP4EVB)      += board-ap4evb.o
-> diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-> index ac94285..363c6ed 100644
-> --- a/arch/arm/mach-shmobile/board-kzm9g.c
-> +++ b/arch/arm/mach-shmobile/board-kzm9g.c
-> @@ -772,6 +772,8 @@ static void __init kzm_init(void)
->
->         sh73a0_add_standard_devices();
->         platform_add_devices(kzm_devices, ARRAY_SIZE(kzm_devices));
-> +
-> +       sh73a0_pm_init();
->  }
->
->  static void kzm9g_restart(char mode, const char *cmd)
-> diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-> index 2d1686b..f221c11 100644
-> --- a/arch/arm/mach-shmobile/include/mach/common.h
-> +++ b/arch/arm/mach-shmobile/include/mach/common.h
-> @@ -40,6 +40,7 @@ extern void sh73a0_add_early_devices(void);
->  extern void sh73a0_add_standard_devices(void);
->  extern void sh73a0_clock_init(void);
->  extern void sh73a0_pinmux_init(void);
-> +extern void sh73a0_pm_init(void);
->  extern struct clk sh73a0_extal1_clk;
->  extern struct clk sh73a0_extal2_clk;
->  extern struct clk sh73a0_extcki_clk;
-> diff --git a/arch/arm/mach-shmobile/pm-sh73a0.c b/arch/arm/mach-shmobile/pm-sh73a0.c
-> new file mode 100644
-> index 0000000..99086e9
-> --- /dev/null
-> +++ b/arch/arm/mach-shmobile/pm-sh73a0.c
-> @@ -0,0 +1,32 @@
-> +/*
-> + * sh73a0 Power management support
-> + *
-> + *  Copyright (C) 2012 Bastian Hecht <hechtb+renesas@gmail.com>
-> + *
-> + * This file is subject to the terms and conditions of the GNU General Public
-> + * License.  See the file "COPYING" in the main directory of this archive
-> + * for more details.
-> + */
-> +
-> +#include <linux/suspend.h>
-> +#include <mach/common.h>
-> +
-> +#ifdef CONFIG_SUSPEND
-> +static int sh73a0_enter_suspend(suspend_state_t suspend_state)
-> +{
-> +       cpu_do_idle();
-> +       return 0;
-> +}
-> +
-> +static void sh73a0_suspend_init(void)
-> +{
-> +       shmobile_suspend_ops.enter = sh73a0_enter_suspend;
-> +}
-> +#else
-> +static void sh73a0_suspend_init(void) {}
-> +#endif
-> +
-> +void __init sh73a0_pm_init(void)
-> +{
-> +       sh73a0_suspend_init();
-> +}
-> --
-> 1.7.10.4
->
+Additionaly, modify idle loop on all architectures supporting cpu hotplug to
+have idle thread of a dying cpu die immediately after scheduler returns control
+to it. There is no point in wasting time via calls to *_enter()/*_exit() before
+noticing the need to die and dying.
+
+Additional ARM specific change:
+	Revert commit ff081e05 ("ARM: 7457/1: smp: Fix suspicious
+RCU originating from cpu_die()"), which added a RCU_NONIDLE() wrapper
+around call to complete(). That wrapper is no longer needed as cpu_die() is
+now called outside of a rcu_idle_enter()/exit() section. I also think that the
+wait_for_completion() based wait in ARM's __cpu_die() can be replaced with a
+busy-loop based one, as the wait there in general should be terminated within
+few cycles.
+
+Cc: Russell King <linux@arm.linux.org.uk>
+Cc: Paul E. McKenney <paulmck@linux.vnet.ibm.com>
+Cc: Stephen Boyd <sboyd@codeaurora.org>
+Cc: linux-arm-kernel@lists.infradead.org
+Cc: Mike Frysinger <vapier@gentoo.org>
+Cc: uclinux-dist-devel@blackfin.uclinux.org
+Cc: Ralf Baechle <ralf@linux-mips.org>
+Cc: linux-mips@linux-mips.org
+Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+Cc: linuxppc-dev@lists.ozlabs.org
+Cc: Martin Schwidefsky <schwidefsky@de.ibm.com>
+Cc: linux-s390@vger.kernel.org
+Cc: Paul Mundt <lethal@linux-sh.org>
+Cc: linux-sh@vger.kernel.org
+Cc: "David S. Miller" <davem@davemloft.net>
+Cc: sparclinux@vger.kernel.org
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: Ingo Molnar <mingo@redhat.com>
+Cc: "H. Peter Anvin" <hpa@zytor.com>
+Cc: x86@kernel.org
+Cc: mhocko@suse.cz
+Cc: srivatsa.bhat@linux.vnet.ibm.com
+Signed-off-by: Srivatsa Vaddagiri <vatsa@codeaurora.org>
+---
+ arch/arm/kernel/process.c      |    9 ++++-----
+ arch/arm/kernel/smp.c          |    2 +-
+ arch/blackfin/kernel/process.c |    8 ++++----
+ arch/mips/kernel/process.c     |    6 +++---
+ arch/powerpc/kernel/idle.c     |    2 +-
+ arch/s390/kernel/process.c     |    4 ++--
+ arch/sh/kernel/idle.c          |    5 ++---
+ arch/sparc/kernel/process_64.c |    3 ++-
+ arch/x86/kernel/process.c      |    5 ++---
+ 9 files changed, 21 insertions(+), 23 deletions(-)
+
+diff --git a/arch/arm/kernel/process.c b/arch/arm/kernel/process.c
+index c6dec5f..254099b 100644
+--- a/arch/arm/kernel/process.c
++++ b/arch/arm/kernel/process.c
+@@ -191,11 +191,6 @@ void cpu_idle(void)
+ 		rcu_idle_enter();
+ 		ledtrig_cpu(CPU_LED_IDLE_START);
+ 		while (!need_resched()) {
+-#ifdef CONFIG_HOTPLUG_CPU
+-			if (cpu_is_offline(smp_processor_id()))
+-				cpu_die();
+-#endif
+-
+ 			/*
+ 			 * We need to disable interrupts here
+ 			 * to ensure we don't miss a wakeup call.
+@@ -224,6 +219,10 @@ void cpu_idle(void)
+ 		rcu_idle_exit();
+ 		tick_nohz_idle_exit();
+ 		schedule_preempt_disabled();
++#ifdef CONFIG_HOTPLUG_CPU
++		if (cpu_is_offline(smp_processor_id()))
++			cpu_die();
++#endif
+ 	}
+ }
+ 
+diff --git a/arch/arm/kernel/smp.c b/arch/arm/kernel/smp.c
+index 84f4cbf..a8e3b8a 100644
+--- a/arch/arm/kernel/smp.c
++++ b/arch/arm/kernel/smp.c
+@@ -251,7 +251,7 @@ void __ref cpu_die(void)
+ 	mb();
+ 
+ 	/* Tell __cpu_die() that this CPU is now safe to dispose of */
+-	RCU_NONIDLE(complete(&cpu_died));
++	complete(&cpu_died);
+ 
+ 	/*
+ 	 * actual CPU shutdown procedure is at least platform (if not
+diff --git a/arch/blackfin/kernel/process.c b/arch/blackfin/kernel/process.c
+index 3e16ad9..2bee1af 100644
+--- a/arch/blackfin/kernel/process.c
++++ b/arch/blackfin/kernel/process.c
+@@ -83,10 +83,6 @@ void cpu_idle(void)
+ 	while (1) {
+ 		void (*idle)(void) = pm_idle;
+ 
+-#ifdef CONFIG_HOTPLUG_CPU
+-		if (cpu_is_offline(smp_processor_id()))
+-			cpu_die();
+-#endif
+ 		if (!idle)
+ 			idle = default_idle;
+ 		tick_nohz_idle_enter();
+@@ -98,6 +94,10 @@ void cpu_idle(void)
+ 		preempt_enable_no_resched();
+ 		schedule();
+ 		preempt_disable();
++#ifdef CONFIG_HOTPLUG_CPU
++		if (cpu_is_offline(smp_processor_id()))
++			cpu_die();
++#endif
+ 	}
+ }
+ 
+diff --git a/arch/mips/kernel/process.c b/arch/mips/kernel/process.c
+index a11c6f9..41102a0 100644
+--- a/arch/mips/kernel/process.c
++++ b/arch/mips/kernel/process.c
+@@ -71,13 +71,13 @@ void __noreturn cpu_idle(void)
+ 				start_critical_timings();
+ 			}
+ 		}
++		rcu_idle_exit();
++		tick_nohz_idle_exit();
++		schedule_preempt_disabled();
+ #ifdef CONFIG_HOTPLUG_CPU
+ 		if (!cpu_online(cpu) && !cpu_isset(cpu, cpu_callin_map))
+ 			play_dead();
+ #endif
+-		rcu_idle_exit();
+-		tick_nohz_idle_exit();
+-		schedule_preempt_disabled();
+ 	}
+ }
+ 
+diff --git a/arch/powerpc/kernel/idle.c b/arch/powerpc/kernel/idle.c
+index ea78761..39ad029 100644
+--- a/arch/powerpc/kernel/idle.c
++++ b/arch/powerpc/kernel/idle.c
+@@ -102,11 +102,11 @@ void cpu_idle(void)
+ 		ppc64_runlatch_on();
+ 		rcu_idle_exit();
+ 		tick_nohz_idle_exit();
++		schedule_preempt_disabled();
+ 		if (cpu_should_die()) {
+ 			sched_preempt_enable_no_resched();
+ 			cpu_die();
+ 		}
+-		schedule_preempt_disabled();
+ 	}
+ }
+ 
+diff --git a/arch/s390/kernel/process.c b/arch/s390/kernel/process.c
+index 536d645..5290556 100644
+--- a/arch/s390/kernel/process.c
++++ b/arch/s390/kernel/process.c
+@@ -66,8 +66,6 @@ unsigned long thread_saved_pc(struct task_struct *tsk)
+  */
+ static void default_idle(void)
+ {
+-	if (cpu_is_offline(smp_processor_id()))
+-		cpu_die();
+ 	local_irq_disable();
+ 	if (need_resched()) {
+ 		local_irq_enable();
+@@ -95,6 +93,8 @@ void cpu_idle(void)
+ 		if (test_thread_flag(TIF_MCCK_PENDING))
+ 			s390_handle_mcck();
+ 		schedule_preempt_disabled();
++		if (cpu_is_offline(smp_processor_id()))
++			cpu_die();
+ 	}
+ }
+ 
+diff --git a/arch/sh/kernel/idle.c b/arch/sh/kernel/idle.c
+index 0c91016..f8bc2f0 100644
+--- a/arch/sh/kernel/idle.c
++++ b/arch/sh/kernel/idle.c
+@@ -96,9 +96,6 @@ void cpu_idle(void)
+ 			check_pgt_cache();
+ 			rmb();
+ 
+-			if (cpu_is_offline(cpu))
+-				play_dead();
+-
+ 			local_irq_disable();
+ 			/* Don't trace irqs off for idle */
+ 			stop_critical_timings();
+@@ -115,6 +112,8 @@ void cpu_idle(void)
+ 		rcu_idle_exit();
+ 		tick_nohz_idle_exit();
+ 		schedule_preempt_disabled();
++		if (cpu_is_offline(cpu))
++			play_dead();
+ 	}
+ }
+ 
+diff --git a/arch/sparc/kernel/process_64.c b/arch/sparc/kernel/process_64.c
+index cdb80b2..01589e7 100644
+--- a/arch/sparc/kernel/process_64.c
++++ b/arch/sparc/kernel/process_64.c
+@@ -105,13 +105,14 @@ void cpu_idle(void)
+ 		rcu_idle_exit();
+ 		tick_nohz_idle_exit();
+ 
++		schedule_preempt_disabled();
++
+ #ifdef CONFIG_HOTPLUG_CPU
+ 		if (cpu_is_offline(cpu)) {
+ 			sched_preempt_enable_no_resched();
+ 			cpu_play_dead();
+ 		}
+ #endif
+-		schedule_preempt_disabled();
+ 	}
+ }
+ 
+diff --git a/arch/x86/kernel/process.c b/arch/x86/kernel/process.c
+index 2ed787f..3d5f142 100644
+--- a/arch/x86/kernel/process.c
++++ b/arch/x86/kernel/process.c
+@@ -331,9 +331,6 @@ void cpu_idle(void)
+ 		while (!need_resched()) {
+ 			rmb();
+ 
+-			if (cpu_is_offline(smp_processor_id()))
+-				play_dead();
+-
+ 			/*
+ 			 * Idle routines should keep interrupts disabled
+ 			 * from here on, until they go to idle.
+@@ -366,6 +363,8 @@ void cpu_idle(void)
+ 		preempt_enable_no_resched();
+ 		schedule();
+ 		preempt_disable();
++		if (cpu_is_offline(smp_processor_id()))
++			play_dead();
+ 	}
+ }
+ 
+-- 
+The Qualcomm Innovation Center, Inc. is a member of the Code Aurora Forum,
+hosted by The Linux Foundation
+
