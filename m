@@ -1,46 +1,41 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 25 Jan 2013 03:55:32 +0000
-Subject: [PATCH 14/15] ARM: mach-shmobile: sh73a0: Initialise MMCIF using DT
-Message-Id: <1359086133-23357-15-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 04 Jan 2013 00:40:57 +0000
+Subject: [PATCH 6/9] ARM: shmobile: kzm9g: Add pin control device in device tree
+Message-Id: <1357260060-32164-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359086133-23357-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359086133-23357-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This device also requires a voltage regulator which
-should be defined in a board-specific maner. An example
-dts snipped follows.
+Add a pfc node in the sh73a0 device tree and include it in kzm9g.
 
-/ {
-	fixedregulator1v8: fixedregulator@0 {
-		compatible = "regulator-fixed";
-		regulator-name = "fixed-1.8V";
-		regulator-min-microvolt = <1800000>;
-		regulator-max-microvolt = <1800000>;
-	};
-};
-
-&mmcif {
-	vmmc-supply = <&fixedregulator1v8>;
-	vqmmc-supply = <&fixedregulator1v8>;
-};
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/sh73a0-reference.dtsi |   24 ++++++++++++++++++++++++
- arch/arm/mach-shmobile/clock-sh73a0.c   |    1 +
- 2 files changed, 25 insertions(+)
- create mode 100644 arch/arm/boot/dts/sh73a0-reference.dtsi
+ arch/arm/boot/dts/sh73a0-kzm9g.dts |    2 +-
+ arch/arm/boot/dts/sh73a0.dtsi      |   32 ++++++++++++++++++++++++++++++++
+ 2 files changed, 33 insertions(+), 1 deletions(-)
+ create mode 100644 arch/arm/boot/dts/sh73a0.dtsi
 
-diff --git a/arch/arm/boot/dts/sh73a0-reference.dtsi b/arch/arm/boot/dts/sh73a0-reference.dtsi
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+index bcb9119..7b37901 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+@@ -9,7 +9,7 @@
+  */
+ 
+ /dts-v1/;
+-/include/ "skeleton.dtsi"
++/include/ "sh73a0.dtsi"
+ 
+ / {
+ 	model = "KZM-A9-GT";
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
 new file mode 100644
-index 0000000..d4bb012
+index 0000000..6b374ff
 --- /dev/null
-+++ b/arch/arm/boot/dts/sh73a0-reference.dtsi
-@@ -0,0 +1,24 @@
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -0,0 +1,32 @@
 +/*
 + * Device Tree Source for the SH73A0 SoC
 + *
@@ -51,32 +46,28 @@ index 0000000..d4bb012
 + * kind, whether express or implied.
 + */
 +
-+/include/ "sh73a0.dtsi"
++/include/ "skeleton.dtsi"
 +
 +/ {
 +	compatible = "renesas,sh73a0";
 +
-+	mmcif: mmcif@0x10010000 {
-+		compatible = "renesas,sh-mmcif";
-+		reg = <0xe6bd0000 0x100>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 140 0x4
-+			      0 141 0x4>;
-+		reg-io-width = <4>;
++	cpus {
++		cpu@0 {
++			compatible = "arm,cortex-a9";
++		};
++		cpu@1 {
++			compatible = "arm,cortex-a9";
++		};
++	};
++
++	gpio: pfc@e6050000 {
++		compatible = "renesas,pfc-sh73a0";
++		reg = <0xe6050000 0x8000>,
++		      <0xe605801c 0x1c>;
++		gpio-controller;
++		#gpio-cells = <2>;
 +	};
 +};
-diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-index eab2667..afa5423 100644
---- a/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-@@ -583,6 +583,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]), /* SDHI0 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]), /* SDHI1 */
- 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP312]), /* MMCIF0 */
-+	CLKDEV_DEV_ID("e6bd0000.mmcif", &mstp_clks[MSTP312]), /* MMCIF0 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]), /* SDHI2 */
- 	CLKDEV_DEV_ID("leds-renesas-tpu.12", &mstp_clks[MSTP303]), /* TPU1 */
- 	CLKDEV_DEV_ID("leds-renesas-tpu.21", &mstp_clks[MSTP302]), /* TPU2 */
 -- 
-1.7.10.4
+1.7.8.6
 
