@@ -1,82 +1,74 @@
-From: Hideki EIRAKU <hdk@igel.co.jp>
-Date: Mon, 21 Jan 2013 10:54:28 +0000
-Subject: [PATCH v6 3/4] ARM: mach-shmobile: sh73a0: Add IPMMU device
-Message-Id: <1358765669-14567-4-git-send-email-hdk@igel.co.jp>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 04 Jan 2013 00:40:59 +0000
+Subject: [PATCH 8/9] ARM: shmobile: kzm9g: Move pinctrl mappings to device tree
+Message-Id: <1357260060-32164-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358765669-14567-1-git-send-email-hdk@igel.co.jp>
-In-Reply-To: <1358765669-14567-1-git-send-email-hdk@igel.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This patch adds an IPMMU device and notifies the IPMMU driver which
-devices are connected via the IPMMU module.  All devices connected to the main
-memory bus via the IPMMU module MUST be registered when SHMOBILE_IPMMU and
-SHMOBILE_IOMMU are enabled because physical address cannot be used
-while the IPMMU module's MMU function is enabled.
+Replace the pinctrl mappings in board code by device tree mappings.
+Reference the mapping as the default pin controller state to apply it at
+boot time.
 
-Signed-off-by: Hideki EIRAKU <hdk@igel.co.jp>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-sh73a0.c | 31 +++++++++++++++++++++++++++++++
- 1 file changed, 31 insertions(+)
+ arch/arm/boot/dts/sh73a0-kzm9g.dts   |   10 ++++++++++
+ arch/arm/mach-shmobile/board-kzm9g.c |    8 --------
+ 2 files changed, 10 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index db99a4a..36c2b2e 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -30,6 +30,7 @@
- #include <linux/sh_dma.h>
- #include <linux/sh_intc.h>
- #include <linux/sh_timer.h>
-+#include <linux/platform_data/sh_ipmmu.h>
- #include <mach/dma-register.h>
- #include <mach/hardware.h>
- #include <mach/irqs.h>
-@@ -754,6 +755,35 @@ static struct platform_device pmu_device = {
- 	.resource	= pmu_resources,
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+index 7b37901..e24996c 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+@@ -20,3 +20,13 @@
+ 		reg = <0x41000000 0x1e800000>;
+ 	};
+ };
++
++&gpio {
++	pinctrl-0 = <&lcd_pins>;
++	pinctrl-names = "default";
++
++	lcd_pins: pfc_lcd_pins {
++		renesas,pins = "lcd_data24", "lcd_sync";
++		renesas,function = "lcd";
++	};
++};
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index 7a81505..ec6c08e 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -30,7 +30,6 @@
+ #include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/mfd/tmio.h>
+ #include <linux/of_platform.h>
+-#include <linux/pinctrl/machine.h>
+ #include <linux/platform_device.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
+@@ -601,11 +600,6 @@ static struct platform_device *kzm_devices[] __initdata = {
+ 	&fsi_ak4648_device,
  };
  
-+/* an IPMMU module for ICB */
-+static struct resource ipmmu_resources[] = {
-+	[0] = {
-+		.name	= "IPMMU",
-+		.start	= 0xfe951000,
-+		.end	= 0xfe9510ff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+};
-+
-+static const char * const ipmmu_dev_names[] = {
-+	"sh_mobile_lcdc_fb.0",
-+};
-+
-+static struct shmobile_ipmmu_platform_data ipmmu_platform_data = {
-+	.dev_names = ipmmu_dev_names,
-+	.num_dev_names = ARRAY_SIZE(ipmmu_dev_names),
-+};
-+
-+static struct platform_device ipmmu_device = {
-+	.name           = "ipmmu",
-+	.id             = -1,
-+	.dev = {
-+		.platform_data = &ipmmu_platform_data,
-+	},
-+	.resource       = ipmmu_resources,
-+	.num_resources  = ARRAY_SIZE(ipmmu_resources),
-+};
-+
- static struct platform_device *sh73a0_early_devices[] __initdata = {
- 	&scif0_device,
- 	&scif1_device,
-@@ -767,6 +797,7 @@ static struct platform_device *sh73a0_early_devices[] __initdata = {
- 	&cmt10_device,
- 	&tmu00_device,
- 	&tmu01_device,
-+	&ipmmu_device,
- };
+-static const struct pinctrl_map kzm_pinctrl_map[] = {
+-	PIN_MAP_MUX_GROUP_HOG_DEFAULT("pfc-sh73a0", "lcd_data24", "lcd"),
+-	PIN_MAP_MUX_GROUP_HOG_DEFAULT("pfc-sh73a0", "lcd_sync", "lcd"),
+-};
+-
+ /*
+  * FIXME
+  *
+@@ -667,8 +661,6 @@ static void __init kzm_init(void)
+ 				     ARRAY_SIZE(fixed2v8_power_consumers), 2800000);
+ 	regulator_register_fixed(2, dummy_supplies, ARRAY_SIZE(dummy_supplies));
  
- static struct platform_device *sh73a0_late_devices[] __initdata = {
+-	pinctrl_register_mappings(kzm_pinctrl_map, ARRAY_SIZE(kzm_pinctrl_map));
+-
+ 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 
+ 	/* enable SCIFA4 */
 -- 
-1.8.0
+1.7.8.6
 
