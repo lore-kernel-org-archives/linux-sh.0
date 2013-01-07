@@ -1,44 +1,50 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 16 Jan 2013 06:02:23 +0000
-Subject: [PATCH 2/5] ARM: mach-shmobile: fix memory size for kota2_defconfig
-Message-Id: <1358316146-12579-3-git-send-email-horms+renesas@verge.net.au>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 07 Jan 2013 01:59:32 +0000
+Subject: Re: [PATCH 01/17] ARM: shmobile: fix memory size for kota2_defconfig
+Message-Id: <20130107015929.GA27346@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358316146-12579-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1358316146-12579-1-git-send-email-horms+renesas@verge.net.au>
+References: <1349195816-2225-1-git-send-email-arnd@arndb.de>
+ <1349195816-2225-2-git-send-email-arnd@arndb.de>
+ <20121003003759.GD31207@verge.net.au>
+ <201210040834.55096.arnd@arndb.de>
+ <20121004085857.GA7240@verge.net.au>
+ <CAOesGMg6afPjBc82FEOwzwn-nBAFPY7K_udJRJO1bBrtCk3Yvg@mail.gmail.com>
+In-Reply-To: <CAOesGMg6afPjBc82FEOwzwn-nBAFPY7K_udJRJO1bBrtCk3Yvg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Olof Johansson <olof@lixom.net>
+Cc: Arnd Bergmann <arnd@arndb.de>, linux-arm-kernel@infradead.org, arm@kernel.org, linux-kernel@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-The CONFIG_MEMORY_SIZE value is interpreted as a 32 bit integer, which
-makes sense on a system without PAE. It appears that a trailing 0 was
-appended to the value and after some testing it appears that 0x1e000000 is
-the correct value.
+On Fri, Nov 30, 2012 at 02:10:47PM -0800, Olof Johansson wrote:
+> Hi,
+> 
+> On Thu, Oct 4, 2012 at 1:58 AM, Simon Horman <horms@verge.net.au> wrote:
+> > On Thu, Oct 04, 2012 at 08:34:54AM +0000, Arnd Bergmann wrote:
+> >> On Wednesday 03 October 2012, Simon Horman wrote:
+> >> > I looked through my fines and found a config that I believe
+> >> > worked with a derivative of 2.6.35.7.
+> >> >
+> >> > It has CONFIG_MEMORY_SIZE=0x1e800000.
+> >> >
+> >> > So what I suspect has happened is that an extra zero has crept into
+> >> > arch/arm/configs/kota2_defconfig and the intended value is:
+> >> >
+> >> > CONFIG_MEMORY_SIZE=0x1e000000
+> >> >
+> >> > Unfortunately I do not have access to a board to test this,
+> >> > nor am I aware of anyone who does.
+> >>
+> >> Ok, I'll drop this patch for now then, so we keep the warning around
+> >> to remind us of the problem.
+> >
+> > Thanks. I have subsequently located a Kota2 board,
+> > however it may be a little while before I get my hands on it.
+> 
+> Gentle ping. I just came across this warning again so I figured I'd check.
 
-Without this patch, building kota2_defconfig results in:
+Hi,
 
-/home/arnd/linux-arm/arch/arm/kernel/setup.c:790:2: warning: large integer implicitly truncated to unsigned type [-Woverflow]
-
-Reported-by: Arnd Bergmann <arnd@arndb.de>
-Acked-by: Olof Johansson <olof@lixom.net>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/configs/kota2_defconfig |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/arch/arm/configs/kota2_defconfig b/arch/arm/configs/kota2_defconfig
-index fa83db1..57ad3d4 100644
---- a/arch/arm/configs/kota2_defconfig
-+++ b/arch/arm/configs/kota2_defconfig
-@@ -21,7 +21,7 @@ CONFIG_ARCH_SHMOBILE=y
- CONFIG_KEYBOARD_GPIO_POLLED=y
- CONFIG_ARCH_SH73A0=y
- CONFIG_MACH_KOTA2=y
--CONFIG_MEMORY_SIZE=0x1e0000000
-+CONFIG_MEMORY_SIZE=0x1e000000
- # CONFIG_SH_TIMER_TMU is not set
- # CONFIG_SWP_EMULATE is not set
- CONFIG_CPU_BPREDICT_DISABLE=y
--- 
-1.7.10.4
-
+I have my kota2 board up and running now and I believe that
+the correct value is 0x1e000000. I will apply a patch to my
+defconfigs branch accordingly.
