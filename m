@@ -1,122 +1,47 @@
-From: Roger Quadros <rogerq@ti.com>
-Date: Mon, 21 Jan 2013 14:23:29 +0000
-Subject: Re: [RFC PATCH 5/6] usb: otg: add device tree support to otg library
-Message-Id: <50FD4F61.6060702@ti.com>
+From: Kamezawa Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+Date: Mon, 07 Jan 2013 05:30:37 +0000
+Subject: Re: [PATCH v5 14/14] memory-hotplug: free node_data when a node is offlined
+Message-Id: <50EA5D7D.7000703@jp.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358348462-27693-1-git-send-email-kishon@ti.com>
- <1358348462-27693-6-git-send-email-kishon@ti.com> <50FD40D1.8020405@ti.com>
- <50FD43F5.1020208@ti.com>
-In-Reply-To: <50FD43F5.1020208@ti.com>
+References: <1356350964-13437-1-git-send-email-tangchen@cn.fujitsu.com> <1356350964-13437-15-git-send-email-tangchen@cn.fujitsu.com> <50DA7533.6060407@jp.fujitsu.com> <50DC3C26.6060308@cn.fujitsu.com> <50DCE7C0.8070407@jp.fujitsu.com> <50DFD8F4.7040301@cn.fujitsu.com>
+In-Reply-To: <50DFD8F4.7040301@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Wen Congyang <wency@cn.fujitsu.com>
+Cc: Tang Chen <tangchen@cn.fujitsu.com>, akpm@linux-foundation.org, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org, x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
 
-On 01/21/2013 03:34 PM, kishon wrote:
-> On Monday 21 January 2013 06:51 PM, Roger Quadros wrote:
->> On 01/16/2013 05:01 PM, Kishon Vijay Abraham I wrote:
->>> Added an API devm_usb_get_phy_by_phandle(), to get usb phy by passing a
->>> device node phandle value. This function will return a pointer to
->>> the phy on success, -EPROBE_DEFER if there is a device_node for the
->>> phandle,
->>> but the phy has not been added, or a ERR_PTR() otherwise.
+(2012/12/30 15:02), Wen Congyang wrote:
+> At 12/28/2012 08:28 AM, Kamezawa Hiroyuki Wrote:
+>> (2012/12/27 21:16), Wen Congyang wrote:
+>>> At 12/26/2012 11:55 AM, Kamezawa Hiroyuki Wrote:
+>>>> (2012/12/24 21:09), Tang Chen wrote:
+>>>>> From: Wen Congyang <wency@cn.fujitsu.com>
+>>>>>
+>>>>> We call hotadd_new_pgdat() to allocate memory to store node_data. So we
+>>>>> should free it when removing a node.
+>>>>>
+>>>>> Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+>>>>
+>>>> I'm sorry but is it safe to remove pgdat ? All zone cache and zonelists are
+>>>> properly cleared/rebuilded in synchronous way ? and No threads are visinting
+>>>> zone in vmscan.c ?
 >>>
->>> Cc: Marc Kleine-Budde <mkl@pengutronix.de>
->>> Signed-off-by: Kishon Vijay Abraham I <kishon@ti.com>
->>> ---
->>>   drivers/usb/otg/otg.c   |   77
->>> +++++++++++++++++++++++++++++++++++++++++++++++
->>>   include/linux/usb/phy.h |    8 +++++
->>>   2 files changed, 85 insertions(+)
+>>> We have rebuilt zonelists when a zone has no memory after offlining some pages.
 >>>
->>> diff --git a/drivers/usb/otg/otg.c b/drivers/usb/otg/otg.c
->>> index dbf2043..e9799bb 100644
->>> --- a/drivers/usb/otg/otg.c
->>> +++ b/drivers/usb/otg/otg.c
->>> @@ -13,7 +13,9 @@
->>>   #include <linux/export.h>
->>>   #include <linux/err.h>
->>>   #include <linux/device.h>
->>> +#include <linux/module.h>
->>>   #include <linux/slab.h>
->>> +#include <linux/of.h>
->>>
->>>   #include <linux/usb/otg.h>
->>>
->>> @@ -34,6 +36,20 @@ static struct usb_phy *__usb_find_phy(struct
->>> device *dev, u8 index)
->>>       return ERR_PTR(-ENODEV);
->>>   }
->>>
->>> +static struct usb_phy *__of_usb_find_phy(struct device_node *node)
->>> +{
->>> +    struct usb_phy  *phy;
->>> +
->>> +    list_for_each_entry(phy, &phy_list, head) {
->>> +        if (node != phy->dev->of_node)
->>> +            continue;
->>> +
->>> +        return phy;
->>> +    }
->>> +
->>> +    return ERR_PTR(-ENODEV);
->>> +}
->>> +
->>>   static void devm_usb_phy_release(struct device *dev, void *res)
->>>   {
->>>       struct usb_phy *phy = *(struct usb_phy **)res;
->>> @@ -109,6 +125,67 @@ err0:
->>>   }
->>>   EXPORT_SYMBOL(usb_get_phy);
->>>
->>> + /**
->>> + * devm_usb_get_phy_by_phandle - find the USB PHY by phandle
->>> + * @dev - device that requests this phy
->>> + * @phandle - name of the property holding the phy phandle value
->>> + * @index - the index of the phy
->>> + *
->>> + * Returns the phy driver associated with the given phandle value,
->>> + * after getting a refcount to it, -ENODEV if there is no such phy or
->>> + * -EPROBE_DEFER if there is a phandle to the phy, but the device is
->>> + * not yet loaded. While at that, it also associates the device with
->>> + * the phy using devres. On driver detach, release function is invoked
->>> + * on the devres data, then, devres data is freed.
->>> + *
->>> + * For use by USB host and peripheral drivers.
->>> + */
->>> +struct usb_phy *devm_usb_get_phy_by_phandle(struct device *dev,
->>> +    const char *phandle, u8 index)
->>> +{
->>> +    struct usb_phy    *phy = NULL, **ptr;
->>> +    unsigned long    flags;
->>> +    struct device_node *node;
->>> +
->>> +    if (!dev->of_node) {
->>> +        dev_dbg(dev, "device does not have a device node entry\n");
->>> +        return ERR_PTR(-EINVAL);
->>> +    }
->>> +
->>> +    node = of_parse_phandle(dev->of_node, phandle, index);
->>> +    if (!node) {
->>> +        dev_dbg(dev, "failed to get %s phandle in %s node\n", phandle,
->>> +            dev->of_node->full_name);
->>> +        return ERR_PTR(-ENODEV);
->>> +    }
->>> +
->>> +    ptr = devres_alloc(devm_usb_phy_release, sizeof(*ptr), GFP_KERNEL);
->>> +    if (!ptr) {
->>> +        dev_dbg(dev, "failed to allocate memory for devres\n");
->>> +        return ERR_PTR(-ENOMEM);
->>> +    }
 >>
->> I fail to understand why you need ptr at all and why do devres_alloc()
->> for it.
+>> How do you guarantee that the address of pgdat/zone is not on stack of any kernel
+>> threads or other kernel objects without reference counting or other syncing method ?
 > 
-> Thats how we create a "managed device resource". You can have a look at
-> Documentation/driver-model/devres.txt and drivers/base/devres.c.
+> No way to guarentee this. But, the kernel should not use the address of pgdat/zone when
+> it is offlined.
+> 
+> Hmm, what about this: reuse the memory when the node is onlined again?
+> 
 
-OK, I get it now. You might want to update the text file too since you
-are adding a automagically managed interface.
+That's the only way which we can go now. Please don't free it.
 
-regards,
--roger
+Thanks,
+-Kame
+
+
