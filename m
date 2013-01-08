@@ -1,10 +1,10 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 08 Jan 2013 21:20:59 +0000
+Date: Tue, 08 Jan 2013 21:23:59 +0000
 Subject: Re: [PATCH 1/6 v4] media: V4L2: support asynchronous subdevice registration
-Message-Id: <1416814.gcsa1Dy9v8@avalon>
+Message-Id: <2104236.7Jc8OO4KhX@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1356544151-6313-1-git-send-email-g.liakhovetski@gmx.de> <1446871.ydXdxJD4sK@avalon> <50EC2CBD.3080102@gmail.com>
-In-Reply-To: <50EC2CBD.3080102@gmail.com>
+References: <1356544151-6313-1-git-send-email-g.liakhovetski@gmx.de> <2418280.Sa45Lqe0AC@avalon> <50EC32A5.6010306@gmail.com>
+In-Reply-To: <50EC32A5.6010306@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -13,62 +13,38 @@ Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-media@vger.kernel.org, 
 
 Hi Sylwester,
 
-On Tuesday 08 January 2013 15:27:09 Sylwester Nawrocki wrote:
-> On 01/08/2013 01:41 PM, Laurent Pinchart wrote:
-> >> Subdev names are exposed to user space by the media controller API.
-> >> So they are really part of an ABI, aren't they ?
+On Tuesday 08 January 2013 15:52:21 Sylwester Nawrocki wrote:
+> On 01/08/2013 09:10 AM, Laurent Pinchart wrote:
+> >> +/*
+> >> + * If subdevice probing fails any time after v4l2_async_subdev_bind(),
+> >> + * no clean up must be called. This function is only a message of
+> >> + * intention.
+> >> + */
+> >> +int v4l2_async_subdev_bind(struct v4l2_async_subdev_list *asdl);
+> >> +int v4l2_async_subdev_bound(struct v4l2_async_subdev_list *asdl);
 > > 
-> > They're used to construct the name exposed to userspace, but the media
-> > controller core could probably handle that internally by concatenating the
-> > driver name and the subdev name.
-> > 
-> >> Also having I2C bus number or I2C slave address as part of the subdev
-> >> name makes it more difficult to write portable applications. Hence
-> >> in sensor drivers I used to overwrite subdev name to remove I2C bus
-> >> and slave address, as the format used v4l2_i2c_subdev_init() seemed
-> >> highly unsuitable..
-> > 
-> > This clearly shows that we need to discuss the matter and agree on a
-> > common mode of operation.
-> > 
-> > Aren't applications that use the subdev name directly inherently
-> > non-portable anyway ? If you want your application to support different
-> > boards/sensors/SoCs you should discover the pipeline and find the sensor
-> > by iterating over entities, instead of using the sensor entity name.
+> > Could you please explain why you need both a bind notifier and a bound
+> > notifier ? I was expecting a single v4l2_async_subdev_register() call in
+> > subdev drivers (and, thinking about it, I would probably name it
+> > v4l2_subdev_register()).
 > 
-> It depends on how we define the entity names :) It the names change from
-> board to board and are completely unreliable then user space applications
-> using them have no any chance to be generic. Nevertheless, struct
-> media_entity_desc::name [1] has currently no specific semantics defined,
-> e.g. for V4L2.
-> 
-> It's likely way better for the kernel space to be no constrained by the
-> subdev user space name requirement. But having no clear definition of the
-> entity names brings more trouble to user space. E.g. when a sensor exposes
-> multiple subdevs. User space library/application could then reference them
-> by entity name. It seems difficult to me to handle such multiple subdev
-> devices without somehow reliable subdev names.
+> I expected it to be done this way too, and I also used
+> v4l2_subdev_register() name in my early version of the subdev registration
+> code where subdevs were registering themselves to the v4l2 core.
 
-I agree, I think naming rules are required.
+I think we can switch back to v4l2_subdev_register() if we can solve the clock 
+name issue. This doesn't seem impossible at first sight.
 
-> I imagine a system with multiple sensors of same type sitting on different
-> I2C busses, then appending I2C bus number/slave address to the name would be
-> useful.
+> BTW, this might not be most important thing here, but do we need separate
+> file, i.e. v4l2-async.c, instead of for example putting it in v4l2-device.c
+> ?
 
-And an application can always strip off the I2C bus number and address and use 
-the sensor name only if needed (or use the sensor name in addition to the I2C 
-information).
+I'm fine with both, but I tend to try and keep source files not too large for 
+ease of reading. Depending on the amount of code we end up adding, moving the 
+functions to v4l2-device.c might be a good idea.
 
-> And is it always possible to discover the pipeline, as opposite to e.g.
-> using configuration file to activate all required links ? Configurations
-> could be of course per board file, but then at least we should keep subdev
-> names constant through the kernel releases.
-
-I'm fine with applications more or less hardcoding the pipeline, and I agree 
-that subdev names need to be kept constant across kernel releases (and, very 
-importantly, well-defined). Now we "just" need to agree on naming rules :-)
-
-> [1] http://linuxtv.org/downloads/v4l-dvb-apis/media-ioc-enum-entities.html
+> >> +void v4l2_async_subdev_unbind(struct v4l2_async_subdev_list *asdl);
+> >> +#endif
 
 -- 
 Regards,
