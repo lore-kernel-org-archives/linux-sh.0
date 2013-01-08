@@ -1,159 +1,445 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 25 Jan 2013 03:55:20 +0000
-Subject: [PATCH 02/15] ARM: shmobile: r8a7740: add TMU timer support
-Message-Id: <1359086133-23357-3-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 08 Jan 2013 17:54:35 +0000
+Subject: [PATCH] backlight: add an AS3711 PMIC backlight driver
+Message-Id: <Pine.LNX.4.64.1301081846020.1794@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359086133-23357-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359086133-23357-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-fbdev@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This is an initial commit of a backlight driver, using step-up DCDC power
+supplies on AS3711 PMIC. Only one mode has actually been tested, several
+further modes have been implemented "dry," but disabled to avoid accidental
+hardware damage. Anyone wishing to use any of those modes will have to
+modify the driver.
 
-This patch enabled TMU0 timer on r8a7740.
-But TMU1 timer is not supported yet
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/clock-r8a7740.c |    6 +-
- arch/arm/mach-shmobile/setup-r8a7740.c |   94 ++++++++++++++++++++++++++++++++
- 2 files changed, 99 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index eac49d5..19ce885 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -581,10 +581,14 @@ static struct clk_lookup lookups[] = {
+Tested on sh73a0-based kzm9g board. As the commit message says, only one 
+mode has been tested and is enabled. That mode copies the sample code from 
+the manufacturer. Deviations from that code proved to be fatal for the 
+hardware...
+
+ drivers/video/backlight/Kconfig     |    7 +
+ drivers/video/backlight/Makefile    |    1 +
+ drivers/video/backlight/as3711_bl.c |  379 +++++++++++++++++++++++++++++++++++
+ 3 files changed, 387 insertions(+), 0 deletions(-)
+ create mode 100644 drivers/video/backlight/as3711_bl.c
+
+diff --git a/drivers/video/backlight/Kconfig b/drivers/video/backlight/Kconfig
+index 765a945..6ef0ede 100644
+--- a/drivers/video/backlight/Kconfig
++++ b/drivers/video/backlight/Kconfig
+@@ -390,6 +390,13 @@ config BACKLIGHT_TPS65217
+ 	  If you have a Texas Instruments TPS65217 say Y to enable the
+ 	  backlight driver.
  
- 	/* MSTP32 clocks */
- 	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.0",	&mstp_clks[MSTP100]),
--	CLKDEV_DEV_ID("sh_tmu.1",		&mstp_clks[MSTP111]),
-+	CLKDEV_DEV_ID("sh_tmu.3",		&mstp_clks[MSTP111]),
-+	CLKDEV_DEV_ID("sh_tmu.4",		&mstp_clks[MSTP111]),
-+	CLKDEV_DEV_ID("sh_tmu.5",		&mstp_clks[MSTP111]),
- 	CLKDEV_DEV_ID("i2c-sh_mobile.0",	&mstp_clks[MSTP116]),
- 	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.1",	&mstp_clks[MSTP117]),
- 	CLKDEV_DEV_ID("sh_tmu.0",		&mstp_clks[MSTP125]),
-+	CLKDEV_DEV_ID("sh_tmu.1",		&mstp_clks[MSTP125]),
-+	CLKDEV_DEV_ID("sh_tmu.2",		&mstp_clks[MSTP125]),
- 	CLKDEV_DEV_ID("sh_mobile_ceu.0",	&mstp_clks[MSTP127]),
- 	CLKDEV_DEV_ID("sh_mobile_ceu.1",	&mstp_clks[MSTP128]),
++config BACKLIGHT_AS3711
++	tristate "AS3711 Backlight"
++	depends on BACKLIGHT_CLASS_DEVICE && MFD_AS3711
++	help
++	  If you have an Austrian Microsystems AS3711 say Y to enable the
++	  backlight driver.
++
+ endif # BACKLIGHT_CLASS_DEVICE
  
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 9ef397d..847567d 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -261,6 +261,97 @@ static struct platform_device cmt10_device = {
- 	.num_resources	= ARRAY_SIZE(cmt10_resources),
- };
- 
-+/* TMU */
-+static struct sh_timer_config tmu00_platform_data = {
-+	.name = "TMU00",
-+	.channel_offset = 0x4,
-+	.timer_bit = 0,
-+	.clockevent_rating = 200,
+ endif # BACKLIGHT_LCD_SUPPORT
+diff --git a/drivers/video/backlight/Makefile b/drivers/video/backlight/Makefile
+index e7ce729..d3e188f 100644
+--- a/drivers/video/backlight/Makefile
++++ b/drivers/video/backlight/Makefile
+@@ -45,3 +45,4 @@ obj-$(CONFIG_BACKLIGHT_PCF50633)	+= pcf50633-backlight.o
+ obj-$(CONFIG_BACKLIGHT_AAT2870) += aat2870_bl.o
+ obj-$(CONFIG_BACKLIGHT_OT200) += ot200_bl.o
+ obj-$(CONFIG_BACKLIGHT_TPS65217) += tps65217_bl.o
++obj-$(CONFIG_BACKLIGHT_AS3711) += as3711_bl.o
+diff --git a/drivers/video/backlight/as3711_bl.c b/drivers/video/backlight/as3711_bl.c
+new file mode 100644
+index 0000000..c6bc65d
+--- /dev/null
++++ b/drivers/video/backlight/as3711_bl.c
+@@ -0,0 +1,379 @@
++/*
++ * AS3711 PMIC backlight driver, using DCDC Step Up Converters
++ *
++ * Copyright (C) 2012 Renesas Electronics Corporation
++ * Author: Guennadi Liakhovetski, <g.liakhovetski@gmx.de>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the version 2 of the GNU General Public License as
++ * published by the Free Software Foundation
++ */
++
++#include <linux/backlight.h>
++#include <linux/delay.h>
++#include <linux/device.h>
++#include <linux/err.h>
++#include <linux/fb.h>
++#include <linux/kernel.h>
++#include <linux/mfd/as3711.h>
++#include <linux/module.h>
++#include <linux/regmap.h>
++#include <linux/slab.h>
++
++enum as3711_bl_type {
++	AS3711_BL_SU1,
++	AS3711_BL_SU2,
 +};
 +
-+static struct resource tmu00_resources[] = {
-+	[0] = {
-+		.name	= "TMU00",
-+		.start	= 0xfff80008,
-+		.end	= 0xfff80014 - 1,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= intcs_evt2irq(0xe80),
-+		.flags	= IORESOURCE_IRQ,
-+	},
++struct as3711_bl_data {
++	bool powered;
++	const char *fb_name;
++	struct device *fb_dev;
++	enum as3711_bl_type type;
++	int brightness;
++	struct backlight_device *bl;
 +};
 +
-+static struct platform_device tmu00_device = {
-+	.name		= "sh_tmu",
-+	.id		= 0,
-+	.dev = {
-+		.platform_data	= &tmu00_platform_data,
-+	},
-+	.resource	= tmu00_resources,
-+	.num_resources	= ARRAY_SIZE(tmu00_resources),
++struct as3711_bl_supply {
++	struct as3711_bl_data su1;
++	struct as3711_bl_data su2;
++	const struct as3711_bl_pdata *pdata;
++	struct as3711 *as3711;
 +};
 +
-+static struct sh_timer_config tmu01_platform_data = {
-+	.name = "TMU01",
-+	.channel_offset = 0x10,
-+	.timer_bit = 1,
-+	.clocksource_rating = 200,
++static struct as3711_bl_supply *to_supply(struct as3711_bl_data *su)
++{
++	switch (su->type) {
++	case AS3711_BL_SU1:
++		return container_of(su, struct as3711_bl_supply, su1);
++	case AS3711_BL_SU2:
++		return container_of(su, struct as3711_bl_supply, su2);
++	}
++	return NULL;
++}
++
++static int as3711_set_brightness_auto_i(struct as3711_bl_data *data,
++					unsigned int brightness)
++{
++	struct as3711_bl_supply *supply = to_supply(data);
++	struct as3711 *as3711 = supply->as3711;
++	const struct as3711_bl_pdata *pdata = supply->pdata;
++	int ret = 0;
++
++	/* Only all equal current values are supported */
++	if (pdata->su2_auto_curr1)
++		ret = regmap_write(as3711->regmap, AS3711_CURR1_VALUE,
++				   brightness);
++	if (!ret && pdata->su2_auto_curr2)
++		ret = regmap_write(as3711->regmap, AS3711_CURR2_VALUE,
++				   brightness);
++	if (!ret && pdata->su2_auto_curr3)
++		ret = regmap_write(as3711->regmap, AS3711_CURR3_VALUE,
++				   brightness);
++
++	return ret;
++}
++
++static int as3711_set_brightness_v(struct as3711 *as3711,
++				   unsigned int brightness,
++				   unsigned int reg)
++{
++	if (brightness > 31)
++		return -EINVAL;
++
++	return regmap_update_bits(as3711->regmap, reg, 0xf0,
++				  brightness << 4);
++}
++
++static int as3711_bl_su2_reset(struct as3711_bl_supply *supply)
++{
++	struct as3711 *as3711 = supply->as3711;
++	int ret = regmap_update_bits(as3711->regmap, AS3711_STEPUP_CONTROL_5,
++				     3, supply->pdata->su2_fbprot);
++	if (!ret)
++		ret = regmap_update_bits(as3711->regmap,
++					 AS3711_STEPUP_CONTROL_2, 1, 0);
++	if (!ret)
++		ret = regmap_update_bits(as3711->regmap,
++					 AS3711_STEPUP_CONTROL_2, 1, 1);
++	return ret;
++}
++
++/*
++ * Someone with less fragile or less expensive hardware could try to simplify
++ * the brightness adjustment procedure.
++ */
++static int as3711_bl_update_status(struct backlight_device *bl)
++{
++	struct as3711_bl_data *data = bl_get_data(bl);
++	struct as3711_bl_supply *supply = to_supply(data);
++	struct as3711 *as3711 = supply->as3711;
++	int brightness = bl->props.brightness;
++	int ret = 0;
++
++	dev_dbg(&bl->dev, "%s(): brightness %u, pwr %x, blank %x, state %x\n",
++		__func__, bl->props.brightness, bl->props.power,
++		bl->props.fb_blank, bl->props.state);
++
++	if (bl->props.power != FB_BLANK_UNBLANK ||
++	    bl->props.fb_blank != FB_BLANK_UNBLANK ||
++	    bl->props.state & (BL_CORE_SUSPENDED | BL_CORE_FBBLANK))
++		brightness = 0;
++
++	if (data->type = AS3711_BL_SU1) {
++		ret = as3711_set_brightness_v(as3711, brightness,
++					      AS3711_STEPUP_CONTROL_1);
++	} else {
++		const struct as3711_bl_pdata *pdata = supply->pdata;
++
++		switch (pdata->su2_feedback) {
++		case AS3711_SU2_VOLTAGE:
++			ret = as3711_set_brightness_v(as3711, brightness,
++						      AS3711_STEPUP_CONTROL_2);
++			break;
++		case AS3711_SU2_CURR_AUTO:
++			ret = as3711_set_brightness_auto_i(data, brightness / 4);
++			if (ret < 0)
++				return ret;
++			if (brightness) {
++				ret = as3711_bl_su2_reset(supply);
++				if (ret < 0)
++					return ret;
++				udelay(500);
++				ret = as3711_set_brightness_auto_i(data, brightness);
++			} else {
++				ret = regmap_update_bits(as3711->regmap,
++						AS3711_STEPUP_CONTROL_2, 1, 0);
++			}
++			break;
++		/* Manual one current feedback pin below */
++		case AS3711_SU2_CURR1:
++			ret = regmap_write(as3711->regmap, AS3711_CURR1_VALUE,
++					   brightness);
++			break;
++		case AS3711_SU2_CURR2:
++			ret = regmap_write(as3711->regmap, AS3711_CURR2_VALUE,
++					   brightness);
++			break;
++		case AS3711_SU2_CURR3:
++			ret = regmap_write(as3711->regmap, AS3711_CURR3_VALUE,
++					   brightness);
++			break;
++		default:
++			ret = -EINVAL;
++		}
++	}
++	if (!ret)
++		data->brightness = brightness;
++
++	return ret;
++}
++
++static int as3711_bl_get_brightness(struct backlight_device *bl)
++{
++	struct as3711_bl_data *data = bl_get_data(bl);
++
++	return data->brightness;
++}
++
++static const struct backlight_ops as3711_bl_ops = {
++	.update_status	= as3711_bl_update_status,
++	.get_brightness	= as3711_bl_get_brightness,
 +};
 +
-+static struct resource tmu01_resources[] = {
-+	[0] = {
-+		.name	= "TMU01",
-+		.start	= 0xfff80014,
-+		.end	= 0xfff80020 - 1,
-+		.flags	= IORESOURCE_MEM,
++static int as3711_bl_init_su2(struct as3711_bl_supply *supply)
++{
++	struct as3711 *as3711 = supply->as3711;
++	const struct as3711_bl_pdata *pdata = supply->pdata;
++	u8 ctl = 0;
++	int ret;
++
++	dev_dbg(as3711->dev, "%s(): use %u\n", __func__, pdata->su2_feedback);
++
++	/* Turn SU2 off */
++	ret = regmap_write(as3711->regmap, AS3711_STEPUP_CONTROL_2, 0);
++	if (ret < 0)
++		return ret;
++
++	switch (pdata->su2_feedback) {
++	case AS3711_SU2_VOLTAGE:
++		ret = regmap_update_bits(as3711->regmap, AS3711_STEPUP_CONTROL_4, 3, 0);
++		break;
++	case AS3711_SU2_CURR1:
++		ctl = 1;
++		ret = regmap_update_bits(as3711->regmap, AS3711_STEPUP_CONTROL_4, 3, 1);
++		break;
++	case AS3711_SU2_CURR2:
++		ctl = 4;
++		ret = regmap_update_bits(as3711->regmap, AS3711_STEPUP_CONTROL_4, 3, 2);
++		break;
++	case AS3711_SU2_CURR3:
++		ctl = 0x10;
++		ret = regmap_update_bits(as3711->regmap, AS3711_STEPUP_CONTROL_4, 3, 3);
++		break;
++	case AS3711_SU2_CURR_AUTO:
++		if (pdata->su2_auto_curr1)
++			ctl = 2;
++		if (pdata->su2_auto_curr2)
++			ctl |= 8;
++		if (pdata->su2_auto_curr3)
++			ctl |= 0x20;
++		ret = 0;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	if (!ret)
++		ret = regmap_write(as3711->regmap, AS3711_CURR_CONTROL, ctl);
++
++	return ret;
++}
++
++static int as3711_bl_register(struct platform_device *pdev,
++			      unsigned int max_brightness, struct as3711_bl_data *su)
++{
++	struct backlight_properties props = {.type = BACKLIGHT_RAW,};
++	struct backlight_device *bl;
++
++	/* max tuning I = 31uA for voltage- and 38250uA for current-feedback */
++	props.max_brightness = max_brightness;
++
++	bl = backlight_device_register(su->type = AS3711_BL_SU1 ?
++				       "as3711-su1" : "as3711-su2",
++				       &pdev->dev, su,
++				       &as3711_bl_ops, &props);
++	if (IS_ERR(bl)) {
++		dev_err(&pdev->dev, "failed to register backlight\n");
++		return PTR_ERR(bl);
++	}
++
++	bl->props.brightness = props.max_brightness;
++
++	backlight_update_status(bl);
++
++	su->bl = bl;
++
++	return 0;
++}
++
++static int as3711_backlight_probe(struct platform_device *pdev)
++{
++	struct as3711_bl_pdata *pdata = dev_get_platdata(&pdev->dev);
++	struct as3711 *as3711 = dev_get_drvdata(pdev->dev.parent);
++	struct as3711_bl_supply *supply;
++	struct as3711_bl_data *su;
++	unsigned int max_brightness;
++	int ret;
++
++	if (!pdata || (!pdata->su1_fb && !pdata->su2_fb)) {
++		dev_err(&pdev->dev, "No platform data, exiting...\n");
++		return -ENODEV;
++	}
++
++	/*
++	 * Due to possible hardware damage I chose to block all modes,
++	 * unsupported on my hardware. Anyone, wishing to use any of those modes
++	 * will have to first review the code, then activate and test it.
++	 */
++	if (pdata->su1_fb ||
++	    pdata->su2_fbprot != AS3711_SU2_GPIO4 ||
++	    pdata->su2_feedback != AS3711_SU2_CURR_AUTO) {
++		dev_warn(&pdev->dev,
++			 "Attention! An untested mode has been chosen!\n"
++			 "Please, review the code, enable, test, and report success:-)\n");
++		return -EINVAL;
++	}
++
++	supply = devm_kzalloc(&pdev->dev, sizeof(*supply), GFP_KERNEL);
++	if (!supply)
++		return -ENOMEM;
++
++	supply->as3711 = as3711;
++	supply->pdata = pdata;
++
++	if (pdata->su1_fb) {
++		su = &supply->su1;
++		su->fb_name = pdata->su1_fb;
++		su->type = AS3711_BL_SU1;
++
++		max_brightness = min(pdata->su1_max_uA, 31);
++		ret = as3711_bl_register(pdev, max_brightness, su);
++		if (ret < 0)
++			return ret;
++	}
++
++	if (pdata->su2_fb) {
++		su = &supply->su2;
++		su->fb_name = pdata->su2_fb;
++		su->type = AS3711_BL_SU2;
++
++		switch (pdata->su2_fbprot) {
++		case AS3711_SU2_GPIO2:
++		case AS3711_SU2_GPIO3:
++		case AS3711_SU2_GPIO4:
++		case AS3711_SU2_LX_SD4:
++			break;
++		default:
++			ret = -EINVAL;
++			goto esu2;
++		}
++
++		switch (pdata->su2_feedback) {
++		case AS3711_SU2_VOLTAGE:
++			max_brightness = min(pdata->su2_max_uA, 31);
++			break;
++		case AS3711_SU2_CURR1:
++		case AS3711_SU2_CURR2:
++		case AS3711_SU2_CURR3:
++		case AS3711_SU2_CURR_AUTO:
++			max_brightness = min(pdata->su2_max_uA / 150, 255);
++			break;
++		default:
++			ret = -EINVAL;
++			goto esu2;
++		}
++
++		ret = as3711_bl_init_su2(supply);
++		if (ret < 0)
++			return ret;
++
++		ret = as3711_bl_register(pdev, max_brightness, su);
++		if (ret < 0)
++			goto esu2;
++	}
++
++	platform_set_drvdata(pdev, supply);
++
++	return 0;
++
++esu2:
++	backlight_device_unregister(supply->su1.bl);
++	return ret;
++}
++
++static int as3711_backlight_remove(struct platform_device *pdev)
++{
++	struct as3711_bl_supply *supply = platform_get_drvdata(pdev);
++
++	backlight_device_unregister(supply->su1.bl);
++	backlight_device_unregister(supply->su2.bl);
++
++	return 0;
++}
++
++static struct platform_driver as3711_backlight_driver = {
++	.driver		= {
++		.name	= "as3711-backlight",
++		.owner	= THIS_MODULE,
 +	},
-+	[1] = {
-+		.start	= intcs_evt2irq(0xea0),
-+		.flags	= IORESOURCE_IRQ,
-+	},
++	.probe		= as3711_backlight_probe,
++	.remove		= as3711_backlight_remove,
 +};
 +
-+static struct platform_device tmu01_device = {
-+	.name		= "sh_tmu",
-+	.id		= 1,
-+	.dev = {
-+		.platform_data	= &tmu01_platform_data,
-+	},
-+	.resource	= tmu01_resources,
-+	.num_resources	= ARRAY_SIZE(tmu01_resources),
-+};
++module_platform_driver(as3711_backlight_driver);
 +
-+static struct sh_timer_config tmu02_platform_data = {
-+	.name = "TMU02",
-+	.channel_offset = 0x1C,
-+	.timer_bit = 2,
-+	.clocksource_rating = 200,
-+};
-+
-+static struct resource tmu02_resources[] = {
-+	[0] = {
-+		.name	= "TMU02",
-+		.start	= 0xfff80020,
-+		.end	= 0xfff8002C - 1,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= intcs_evt2irq(0xec0),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device tmu02_device = {
-+	.name		= "sh_tmu",
-+	.id		= 2,
-+	.dev = {
-+		.platform_data	= &tmu02_platform_data,
-+	},
-+	.resource	= tmu02_resources,
-+	.num_resources	= ARRAY_SIZE(tmu02_resources),
-+};
-+
- static struct platform_device *r8a7740_early_devices[] __initdata = {
- 	&scif0_device,
- 	&scif1_device,
-@@ -272,6 +363,9 @@ static struct platform_device *r8a7740_early_devices[] __initdata = {
- 	&scif7_device,
- 	&scifb_device,
- 	&cmt10_device,
-+	&tmu00_device,
-+	&tmu01_device,
-+	&tmu02_device,
- };
- 
- /* DMA */
++MODULE_DESCRIPTION("Backlight Driver for AS3711 PMICs");
++MODULE_AUTHOR("Guennadi Liakhovetski <g.liakhovetski@gmx.de");
++MODULE_LICENSE("GPL");
++MODULE_ALIAS("platform:as3711-backlight");
 -- 
-1.7.10.4
+1.7.2.5
 
