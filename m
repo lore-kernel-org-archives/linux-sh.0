@@ -1,55 +1,69 @@
-From: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
-Date: Tue, 08 Jan 2013 11:37:36 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 08 Jan 2013 12:41:59 +0000
 Subject: Re: [PATCH 1/6 v4] media: V4L2: support asynchronous subdevice registration
-Message-Id: <50EC0500.4030708@gmail.com>
+Message-Id: <1446871.ydXdxJD4sK@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1356544151-6313-1-git-send-email-g.liakhovetski@gmx.de> <13183539.ohZBrHhPax@avalon> <Pine.LNX.4.64.1301081123590.1794@axis700.grange> <18858693.KSUhrxG65A@avalon>
-In-Reply-To: <18858693.KSUhrxG65A@avalon>
+References: <1356544151-6313-1-git-send-email-g.liakhovetski@gmx.de> <18858693.KSUhrxG65A@avalon> <50EC0500.4030708@gmail.com>
+In-Reply-To: <50EC0500.4030708@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+To: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
 Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-media@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>
 
-Hi,
+Hi Sylwester,
 
-On 01/08/2013 11:35 AM, Laurent Pinchart wrote:
->>>>> If we need a workaround, I'd rather pass the device name in addition
->>>>> to the I2C adapter number and address, instead of embedding the
->>>>> workaround in this new API.
->>>>
->>>> ...or we can change the I2C subdevice name format. The actual need to do
->>>>
->>>> 	snprintf(clk_name, sizeof(clk_name), "%s %d-%04x",
->>>> 	
->>>> 		 asdl->dev->driver->name,
->>>> 		 i2c_adapter_id(client->adapter), client->addr);
->>>>
->>>> in soc-camera now to exactly match the subdevice name, as created by
->>>> v4l2_i2c_subdev_init(), doesn't make me specifically happy either. What
->>>> if the latter changes at some point? Or what if one driver wishes to
->>>> create several subdevices for one I2C device?
->>>
->>> The common clock framework uses %d-%04x, maybe we could use that as well
->>> for clock names ?
->>
->> And preserve the subdevice names? Then matching would be more difficult
->> and less precise. Or change subdevice names too? I think, we can do the
->> latter, since anyway at any time only one driver can be attached to an I2C
->> device.
->
-> That's right. Where else is the subdev name used ?
+On Tuesday 08 January 2013 12:37:36 Sylwester Nawrocki wrote:
+> On 01/08/2013 11:35 AM, Laurent Pinchart wrote:
+> >>>>> If we need a workaround, I'd rather pass the device name in addition
+> >>>>> to the I2C adapter number and address, instead of embedding the
+> >>>>> workaround in this new API.
+> >>>> 
+> >>>> ...or we can change the I2C subdevice name format. The actual need to
+> >>>> do
+> >>>> 
+> >>>> 	snprintf(clk_name, sizeof(clk_name), "%s %d-%04x",
+> >>>> 		 asdl->dev->driver->name,
+> >>>> 		 i2c_adapter_id(client->adapter), client->addr);
+> >>>> 
+> >>>> in soc-camera now to exactly match the subdevice name, as created by
+> >>>> v4l2_i2c_subdev_init(), doesn't make me specifically happy either. What
+> >>>> if the latter changes at some point? Or what if one driver wishes to
+> >>>> create several subdevices for one I2C device?
+> >>> 
+> >>> The common clock framework uses %d-%04x, maybe we could use that as well
+> >>> for clock names ?
+> >> 
+> >> And preserve the subdevice names? Then matching would be more difficult
+> >> and less precise. Or change subdevice names too? I think, we can do the
+> >> latter, since anyway at any time only one driver can be attached to an
+> >> I2C device.
+> > 
+> > That's right. Where else is the subdev name used ?
+> 
+> Subdev names are exposed to user space by the media controller API.
+> So they are really part of an ABI, aren't they ?
 
-Subdev names are exposed to user space by the media controller API.
-So they are really part of an ABI, aren't they ?
+They're used to construct the name exposed to userspace, but the media 
+controller core could probably handle that internally by concatenating the 
+driver name and the subdev name.
 
-Also having I2C bus number or I2C slave address as part of the subdev
-name makes it more difficult to write portable applications. Hence
-in sensor drivers I used to overwrite subdev name to remove I2C bus
-and slave address, as the format used v4l2_i2c_subdev_init() seemed
-highly unsuitable..
+> Also having I2C bus number or I2C slave address as part of the subdev
+> name makes it more difficult to write portable applications. Hence
+> in sensor drivers I used to overwrite subdev name to remove I2C bus
+> and slave address, as the format used v4l2_i2c_subdev_init() seemed
+> highly unsuitable..
 
---
+This clearly shows that we need to discuss the matter and agree on a common 
+mode of operation.
 
+Aren't applications that use the subdev name directly inherently non-portable 
+anyway ? If you want your application to support different boards/sensors/SoCs 
+you should discover the pipeline and find the sensor by iterating over 
+entities, instead of using the sensor entity name.
+
+-- 
 Regards,
-Sylwester
+
+Laurent Pinchart
+
