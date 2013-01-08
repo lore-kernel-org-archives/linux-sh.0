@@ -1,85 +1,74 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 08 Jan 2013 21:17:04 +0000
+Date: Tue, 08 Jan 2013 21:20:59 +0000
 Subject: Re: [PATCH 1/6 v4] media: V4L2: support asynchronous subdevice registration
-Message-Id: <2355561.FXtSNCeHWa@avalon>
+Message-Id: <1416814.gcsa1Dy9v8@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1356544151-6313-1-git-send-email-g.liakhovetski@gmx.de> <1446871.ydXdxJD4sK@avalon> <20130108131544.GI13641@valkosipuli.retiisi.org.uk>
-In-Reply-To: <20130108131544.GI13641@valkosipuli.retiisi.org.uk>
+References: <1356544151-6313-1-git-send-email-g.liakhovetski@gmx.de> <1446871.ydXdxJD4sK@avalon> <50EC2CBD.3080102@gmail.com>
+In-Reply-To: <50EC2CBD.3080102@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sakari Ailus <sakari.ailus@iki.fi>
-Cc: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-media@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Prabhakar Lad <prabhakar.lad@ti.com>
+To: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-media@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>
 
-Hi Sakari,
+Hi Sylwester,
 
-On Tuesday 08 January 2013 15:15:44 Sakari Ailus wrote:
-> On Tue, Jan 08, 2013 at 01:41:59PM +0100, Laurent Pinchart wrote:
-> > On Tuesday 08 January 2013 12:37:36 Sylwester Nawrocki wrote:
-> > > On 01/08/2013 11:35 AM, Laurent Pinchart wrote:
-> > > >>>>> If we need a workaround, I'd rather pass the device name in
-> > > >>>>> addition to the I2C adapter number and address, instead of
-> > > >>>>> embedding the workaround in this new API.
-> > > >>>> 
-> > > >>>> ...or we can change the I2C subdevice name format. The actual need
-> > > >>>> to do
-> > > >>>> 
-> > > >>>> 	snprintf(clk_name, sizeof(clk_name), "%s %d-%04x",
-> > > >>>> 		 asdl->dev->driver->name,
-> > > >>>> 		 i2c_adapter_id(client->adapter), client->addr);
-> > > >>>> 
-> > > >>>> in soc-camera now to exactly match the subdevice name, as created
-> > > >>>> by v4l2_i2c_subdev_init(), doesn't make me specifically happy
-> > > >>>> either. What if the latter changes at some point? Or what if one
-> > > >>>> driver wishes to create several subdevices for one I2C device?
-> > > >>> 
-> > > >>> The common clock framework uses %d-%04x, maybe we could use that as
-> > > >>> well for clock names ?
-> > > >> 
-> > > >> And preserve the subdevice names? Then matching would be more
-> > > >> difficult and less precise. Or change subdevice names too? I think,
-> > > >> we can do the latter, since anyway at any time only one driver can be
-> > > >> attached to an I2C device.
-> > > > 
-> > > > That's right. Where else is the subdev name used ?
-> > > 
-> > > Subdev names are exposed to user space by the media controller API.
-> > > So they are really part of an ABI, aren't they ?
+On Tuesday 08 January 2013 15:27:09 Sylwester Nawrocki wrote:
+> On 01/08/2013 01:41 PM, Laurent Pinchart wrote:
+> >> Subdev names are exposed to user space by the media controller API.
+> >> So they are really part of an ABI, aren't they ?
 > > 
 > > They're used to construct the name exposed to userspace, but the media
 > > controller core could probably handle that internally by concatenating the
 > > driver name and the subdev name.
 > > 
-> > > Also having I2C bus number or I2C slave address as part of the subdev
-> > > name makes it more difficult to write portable applications. Hence
-> > > in sensor drivers I used to overwrite subdev name to remove I2C bus
-> > > and slave address, as the format used v4l2_i2c_subdev_init() seemed
-> > > highly unsuitable..
+> >> Also having I2C bus number or I2C slave address as part of the subdev
+> >> name makes it more difficult to write portable applications. Hence
+> >> in sensor drivers I used to overwrite subdev name to remove I2C bus
+> >> and slave address, as the format used v4l2_i2c_subdev_init() seemed
+> >> highly unsuitable..
 > > 
 > > This clearly shows that we need to discuss the matter and agree on a
 > > common mode of operation.
 > > 
 > > Aren't applications that use the subdev name directly inherently
 > > non-portable anyway ? If you want your application to support different
-> > boards/sensors/SoCs
->
-> Well, the name could come from a configuration file to distinguish e.g.
-> between primary and secondary sensors.
+> > boards/sensors/SoCs you should discover the pipeline and find the sensor
+> > by iterating over entities, instead of using the sensor entity name.
+> 
+> It depends on how we define the entity names :) It the names change from
+> board to board and are completely unreliable then user space applications
+> using them have no any chance to be generic. Nevertheless, struct
+> media_entity_desc::name [1] has currently no specific semantics defined,
+> e.g. for V4L2.
+> 
+> It's likely way better for the kernel space to be no constrained by the
+> subdev user space name requirement. But having no clear definition of the
+> entity names brings more trouble to user space. E.g. when a sensor exposes
+> multiple subdevs. User space library/application could then reference them
+> by entity name. It seems difficult to me to handle such multiple subdev
+> devices without somehow reliable subdev names.
 
-In that case having the I2C bus number and address in the name doesn't create 
-an extra portability issue, does it ?
- 
-> For what it's worth, the SMIA++ driver uses the actual name of the sensor
-> since there are about 10 sensors supported at the moment, and calling them
-> all smiapp-xxxx looks a bit insipid. So one has to talk to the sensor to
-> know what it's called.
-> 
-> This isn't strictly mandatory but a nice feature.
-> 
-> > you should discover the pipeline and find the sensor by iterating over
-> > entities, instead of using the sensor entity name.
-> 
-> To be fully generic, yes.
+I agree, I think naming rules are required.
+
+> I imagine a system with multiple sensors of same type sitting on different
+> I2C busses, then appending I2C bus number/slave address to the name would be
+> useful.
+
+And an application can always strip off the I2C bus number and address and use 
+the sensor name only if needed (or use the sensor name in addition to the I2C 
+information).
+
+> And is it always possible to discover the pipeline, as opposite to e.g.
+> using configuration file to activate all required links ? Configurations
+> could be of course per board file, but then at least we should keep subdev
+> names constant through the kernel releases.
+
+I'm fine with applications more or less hardcoding the pipeline, and I agree 
+that subdev names need to be kept constant across kernel releases (and, very 
+importantly, well-defined). Now we "just" need to agree on naming rules :-)
+
+> [1] http://linuxtv.org/downloads/v4l-dvb-apis/media-ioc-enum-entities.html
 
 -- 
 Regards,
