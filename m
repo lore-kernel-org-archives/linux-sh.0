@@ -1,118 +1,88 @@
-From: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
-Date: Tue, 08 Jan 2013 19:26:06 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Tue, 08 Jan 2013 21:17:04 +0000
 Subject: Re: [PATCH 1/6 v4] media: V4L2: support asynchronous subdevice registration
-Message-Id: <50EC72CE.80507@gmail.com>
+Message-Id: <2355561.FXtSNCeHWa@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1356544151-6313-1-git-send-email-g.liakhovetski@gmx.de> <1917427.TMDygJ49eg@avalon> <Pine.LNX.4.64.1301081052100.1794@axis700.grange> <13183539.ohZBrHhPax@avalon> <Pine.LNX.4.64.1301081123590.1794@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1301081123590.1794@axis700.grange>
+References: <1356544151-6313-1-git-send-email-g.liakhovetski@gmx.de> <1446871.ydXdxJD4sK@avalon> <20130108131544.GI13641@valkosipuli.retiisi.org.uk>
+In-Reply-To: <20130108131544.GI13641@valkosipuli.retiisi.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-media@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, LKML <linux-kernel@vger.kernel.org>
+To: Sakari Ailus <sakari.ailus@iki.fi>
+Cc: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-media@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Prabhakar Lad <prabhakar.lad@ti.com>
 
-Hi Guennadi,
+Hi Sakari,
 
-Cc: LKML
-
-On 01/08/2013 11:26 AM, Guennadi Liakhovetski wrote:
-> On Tue, 8 Jan 2013, Laurent Pinchart wrote:
->> On Tuesday 08 January 2013 10:56:43 Guennadi Liakhovetski wrote:
->>> On Tue, 8 Jan 2013, Laurent Pinchart wrote:
->>>> On Tuesday 08 January 2013 10:25:15 Guennadi Liakhovetski wrote:
->>>>> On Tue, 8 Jan 2013, Laurent Pinchart wrote:
->>>>>> On Monday 07 January 2013 11:23:55 Guennadi Liakhovetski wrote:
->>>>>>> > From 0e1eae338ba898dc25ec60e3dba99e5581edc199 Mon Sep 17 00:00:00
->>>>>>>> 2001
->>>
->>> [snip]
->>>
->>>>>>> +int v4l2_async_notifier_register(struct v4l2_device *v4l2_dev,
->>>>>>> +				 struct v4l2_async_notifier *notifier);
->>>>>>> +void v4l2_async_notifier_unregister(struct v4l2_async_notifier
->>>>>>> *notifier);
->>>>>>> +/*
->>>>>>> + * If subdevice probing fails any time after
->>>>>>> v4l2_async_subdev_bind(),
->>>>>>> no
->>>>>>> + * clean up must be called. This function is only a message of
->>>>>>> intention.
->>>>>>> + */
->>>>>>> +int v4l2_async_subdev_bind(struct v4l2_async_subdev_list *asdl);
->>>>>>> +int v4l2_async_subdev_bound(struct v4l2_async_subdev_list *asdl);
->>>>>>
->>>>>> Could you please explain why you need both a bind notifier and a bound
->>>>>> notifier ? I was expecting a single v4l2_async_subdev_register() call
->>>>>> in subdev drivers (and, thinking about it, I would probably name it
->>>>>> v4l2_subdev_register()).
->>>>>
->>>>> I think I can, yes. Because between .bind() and .bound() the subdevice
->>>>> driver does the actual hardware probing. So, .bind() is used to make
->>>>> sure the hardware can be accessed, most importantly to provide a clock
->>>>> to the subdevice. You can look at soc_camera_async_bind(). There I'm
->>>>> registering the clock for the subdevice, about to bind. Why I cannot do
->>>>> it before, is because I need subdevice name for clock matching. With I2C
->>>>> subdevices the subdevice name contains the name of the driver, adapter
->>>>> number and i2c address. The latter 2 I've got from host subdevice list.
->>>>> But not the driver name. I thought about also passing the driver name
->>>>> there, but that seemed too limiting to me. I also request regulators
->>>>> there, because before ->bound() the sensor driver, but that could be
->>>>> done on the first call to soc_camera_power_on(), although doing this
->>>>> "first call" thingie is kind of hackish too. I could add one more soc-
->>>>> camera-power helper like soc_camera_prepare() or similar too.
->>>>
->>>> I think a soc_camera_power_init() function (or similar) would be a good
->>>> idea, yes.
->>>>
->>>>> So, the main problem is the clock
->>>>>
->>>>> subdevice name. Also see the comment in soc_camera.c:
->>>>> 	/*
->>>>> 	 * It is ok to keep the clock for the whole soc_camera_device
->>>>> 	 life-time,
->>>>> 	 * in principle it would be more logical to register the clock on icd
->>>>> 	 * creation, the only problem is, that at that time we don't know the
->>>>> 	 * driver name yet.
->>>>> 	 */
->>>>
->>>> I think we should fix that problem instead of shaping the async API around
->>>> a workaround :-)
->>>>
->>>>  From the subdevice point of view, the probe function should request
->>>> resources, perform whatever initialization is needed (including verifying
->>>> that the hardware is functional when possible), and the register the
->>>> subdev with the code if everything succeeded. Splitting registration into
->>>> bind() and bound() appears a bit as a workaround to me.
->>>>
->>>> If we need a workaround, I'd rather pass the device name in addition to
->>>> the I2C adapter number and address, instead of embedding the workaround in
->>>> this new API.
->>>
->>> ...or we can change the I2C subdevice name format. The actual need to do
->>>
->>> 	snprintf(clk_name, sizeof(clk_name), "%s %d-%04x",
->>> 		 asdl->dev->driver->name,
->>> 		 i2c_adapter_id(client->adapter), client->addr);
->>>
->>> in soc-camera now to exactly match the subdevice name, as created by
->>> v4l2_i2c_subdev_init(), doesn't make me specifically happy either. What if
->>> the latter changes at some point? Or what if one driver wishes to create
->>> several subdevices for one I2C device?
->>
->> The common clock framework uses %d-%04x, maybe we could use that as well for
->> clock names ?
+On Tuesday 08 January 2013 15:15:44 Sakari Ailus wrote:
+> On Tue, Jan 08, 2013 at 01:41:59PM +0100, Laurent Pinchart wrote:
+> > On Tuesday 08 January 2013 12:37:36 Sylwester Nawrocki wrote:
+> > > On 01/08/2013 11:35 AM, Laurent Pinchart wrote:
+> > > >>>>> If we need a workaround, I'd rather pass the device name in
+> > > >>>>> addition to the I2C adapter number and address, instead of
+> > > >>>>> embedding the workaround in this new API.
+> > > >>>> 
+> > > >>>> ...or we can change the I2C subdevice name format. The actual need
+> > > >>>> to do
+> > > >>>> 
+> > > >>>> 	snprintf(clk_name, sizeof(clk_name), "%s %d-%04x",
+> > > >>>> 		 asdl->dev->driver->name,
+> > > >>>> 		 i2c_adapter_id(client->adapter), client->addr);
+> > > >>>> 
+> > > >>>> in soc-camera now to exactly match the subdevice name, as created
+> > > >>>> by v4l2_i2c_subdev_init(), doesn't make me specifically happy
+> > > >>>> either. What if the latter changes at some point? Or what if one
+> > > >>>> driver wishes to create several subdevices for one I2C device?
+> > > >>> 
+> > > >>> The common clock framework uses %d-%04x, maybe we could use that as
+> > > >>> well for clock names ?
+> > > >> 
+> > > >> And preserve the subdevice names? Then matching would be more
+> > > >> difficult and less precise. Or change subdevice names too? I think,
+> > > >> we can do the latter, since anyway at any time only one driver can be
+> > > >> attached to an I2C device.
+> > > > 
+> > > > That's right. Where else is the subdev name used ?
+> > > 
+> > > Subdev names are exposed to user space by the media controller API.
+> > > So they are really part of an ABI, aren't they ?
+> > 
+> > They're used to construct the name exposed to userspace, but the media
+> > controller core could probably handle that internally by concatenating the
+> > driver name and the subdev name.
+> > 
+> > > Also having I2C bus number or I2C slave address as part of the subdev
+> > > name makes it more difficult to write portable applications. Hence
+> > > in sensor drivers I used to overwrite subdev name to remove I2C bus
+> > > and slave address, as the format used v4l2_i2c_subdev_init() seemed
+> > > highly unsuitable..
+> > 
+> > This clearly shows that we need to discuss the matter and agree on a
+> > common mode of operation.
+> > 
+> > Aren't applications that use the subdev name directly inherently
+> > non-portable anyway ? If you want your application to support different
+> > boards/sensors/SoCs
 >
-> And preserve the subdevice names? Then matching would be more difficult
-> and less precise. Or change subdevice names too? I think, we can do the
-> latter, since anyway at any time only one driver can be attached to an I2C
-> device.
+> Well, the name could come from a configuration file to distinguish e.g.
+> between primary and secondary sensors.
 
-I'm just wondering why we can't associate the clock with relevant device,
-rather than its driver ? This could eliminate the problem of unknown
-sub-device name at the host driver, before sub-device driver is actually
-probed, couldn't it ?
+In that case having the I2C bus number and address in the name doesn't create 
+an extra portability issue, does it ?
+ 
+> For what it's worth, the SMIA++ driver uses the actual name of the sensor
+> since there are about 10 sensors supported at the moment, and calling them
+> all smiapp-xxxx looks a bit insipid. So one has to talk to the sensor to
+> know what it's called.
+> 
+> This isn't strictly mandatory but a nice feature.
+> 
+> > you should discover the pipeline and find the sensor by iterating over
+> > entities, instead of using the sensor entity name.
+> 
+> To be fully generic, yes.
 
---
+-- 
+Regards,
 
-Thanks,
-Sylwester
+Laurent Pinchart
+
