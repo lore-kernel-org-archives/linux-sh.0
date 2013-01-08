@@ -1,73 +1,26 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 04 Jan 2013 00:40:57 +0000
-Subject: [PATCH 6/9] ARM: shmobile: kzm9g: Add pin control device in device tree
-Message-Id: <1357260060-32164-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 08 Jan 2013 03:53:00 +0000
+Subject: Re: [PATCH 6/9] ARM: shmobile: kzm9g: Add pin control device in device tree
+Message-Id: <20130108035300.GA18154@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1357260060-32164-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1357260060-32164-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Add a pfc node in the sh73a0 device tree and include it in kzm9g.
+On Fri, Jan 04, 2013 at 01:40:57AM +0100, Laurent Pinchart wrote:
+> Add a pfc node in the sh73a0 device tree and include it in kzm9g.
+> 
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/boot/dts/sh73a0-kzm9g.dts |    2 +-
- arch/arm/boot/dts/sh73a0.dtsi      |   32 ++++++++++++++++++++++++++++++++
- 2 files changed, 33 insertions(+), 1 deletions(-)
- create mode 100644 arch/arm/boot/dts/sh73a0.dtsi
+Hi Laurent,
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-index bcb9119..7b37901 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-@@ -9,7 +9,7 @@
-  */
- 
- /dts-v1/;
--/include/ "skeleton.dtsi"
-+/include/ "sh73a0.dtsi"
- 
- / {
- 	model = "KZM-A9-GT";
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-new file mode 100644
-index 0000000..6b374ff
---- /dev/null
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -0,0 +1,32 @@
-+/*
-+ * Device Tree Source for the SH73A0 SoC
-+ *
-+ * Copyright (C) 2012 Renesas Solutions Corp.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/include/ "skeleton.dtsi"
-+
-+/ {
-+	compatible = "renesas,sh73a0";
-+
-+	cpus {
-+		cpu@0 {
-+			compatible = "arm,cortex-a9";
-+		};
-+		cpu@1 {
-+			compatible = "arm,cortex-a9";
-+		};
-+	};
-+
-+	gpio: pfc@e6050000 {
-+		compatible = "renesas,pfc-sh73a0";
-+		reg = <0xe6050000 0x8000>,
-+		      <0xe605801c 0x1c>;
-+		gpio-controller;
-+		#gpio-cells = <2>;
-+	};
-+};
--- 
-1.7.8.6
+could you please split this patch in two?
 
+A patch to sh73a0-kzm9g which I can add to a boards branch.
+And a patch to arch/arm/boot/dts/sh73a0.dts which I can add to an
+soc branch.
+
+Thanks
