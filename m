@@ -1,23 +1,26 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Thu, 10 Jan 2013 00:46:19 +0000
-Subject: Re: [PATCH v2 2/2] ARM: SH-Mobile: sh73a0: Add CPU Hotplug
-Message-Id: <20130110004618.GB29988@verge.net.au>
+Date: Tue, 08 Jan 2013 04:27:20 +0000
+Subject: Re: [PATCH 6/6] ARM: shmobile: convert ap4evb to asynchronously register camera subdevices
+Message-Id: <20130108042720.GA25895@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1357760512-2634-1-git-send-email-hechtb+renesas@gmail.com>
- <1357760512-2634-2-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1357760512-2634-2-git-send-email-hechtb+renesas@gmail.com>
+References: <1356544151-6313-1-git-send-email-g.liakhovetski@gmx.de>
+ <1356544151-6313-7-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1356544151-6313-7-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-media@vger.kernel.org, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>
 
-On Wed, Jan 09, 2013 at 08:41:52PM +0100, Bastian Hecht wrote:
-> Add the capability to add and remove CPUs on the fly.
-> The Cortex-A9 offers the possibility to take single cores out of the
-> MP Core. We add this capabilty taking care that caches are kept
-> coherent. For verifying the shutdown we rely on the internal SH73A0
-> Power Status Register PSTR.
+On Wed, Dec 26, 2012 at 06:49:11PM +0100, Guennadi Liakhovetski wrote:
+> Register the imx074 camera I2C and the CSI-2 platform devices directly
+> in board platform data instead of letting the sh_mobile_ceu_camera driver
+> and the soc-camera framework register them at their run-time. This uses
+> the V4L2 asynchronous subdevice probing capability.
 > 
-> Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Thanks, applied to the soc2 branch.
+Hi Guennadi,
+
+could you let me know what if any dependencies this patch has.
+And the status of any dependencies.
