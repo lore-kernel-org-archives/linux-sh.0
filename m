@@ -1,58 +1,45 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 28 Jan 2013 01:26:40 +0000
-Subject: Re: [PATCH 2/2] net: sh-eth: Use pr_err instead of printk
-Message-Id: <20130128012640.GB27896@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 09 Jan 2013 06:24:00 +0000
+Subject: [PATCH] ARM: mach-shmobile: armadillo: update defconfig
+Message-Id: <1357712640-3065-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1350350279-8693-1-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
- <1350350279-8693-2-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
-In-Reply-To: <1350350279-8693-2-git-send-email-nobuhiro.iwamatsu.yj@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Cc: netdev@vger.kernel.org, David Miller <davem@davemloft.net>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-[Cc David Miller, linux-sh]
+* Enable ARM_APPENDED_DTB
 
-On Tue, Oct 16, 2012 at 10:17:59AM +0900, Nobuhiro Iwamatsu wrote:
-> Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+  Typically the bootloader of an armadillo board does not support DT
+  so this option is useful.
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+* Do not disable CONFIG_SUSPEND
 
-Dave, I know this is an oldie, but it appears to still be a goodie.
-Could you consider it for 3.8?
+  Suspend seems to work fine on the armadillo
 
-> ---
->  drivers/net/ethernet/renesas/sh_eth.c |    4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
-> index 756d87e..ba97a45 100644
-> --- a/drivers/net/ethernet/renesas/sh_eth.c
-> +++ b/drivers/net/ethernet/renesas/sh_eth.c
-> @@ -598,7 +598,7 @@ static int sh_eth_check_reset(struct net_device *ndev)
->  		cnt--;
->  	}
->  	if (cnt < 0) {
-> -		printk(KERN_ERR "Device reset fail\n");
-> +		pr_err("Device reset fail\n");
->  		ret = -ETIMEDOUT;
->  	}
->  	return ret;
-> @@ -2329,7 +2329,7 @@ static const u16 *sh_eth_get_register_offset(int register_type)
->  		reg_offset = sh_eth_offset_fast_sh3_sh2;
->  		break;
->  	default:
-> -		printk(KERN_ERR "Unknown register type (%d)\n", register_type);
-> +		pr_err("Unknown register type (%d)\n", register_type);
->  		break;
->  	}
->  
-> -- 
-> 1.7.10.4
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe netdev" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/configs/armadillo800eva_defconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
+index 2e1a825..c29cf04 100644
+--- a/arch/arm/configs/armadillo800eva_defconfig
++++ b/arch/arm/configs/armadillo800eva_defconfig
+@@ -34,12 +34,12 @@ CONFIG_AEABI=y
+ CONFIG_FORCE_MAX_ZONEORDER
+ CONFIG_ZBOOT_ROM_TEXT=0x0
+ CONFIG_ZBOOT_ROM_BSS=0x0
++CONFIG_ARM_APPENDED_DTB=y
+ CONFIG_CMDLINE="console=tty0 console=ttySC1,115200 earlyprintk=sh-sci.1,115200 ignore_loglevel root=/dev/nfs ip=dhcp nfsroot=,rsize@96,wsize@96 rw"
+ CONFIG_CMDLINE_FORCE=y
+ CONFIG_KEXEC=y
+ CONFIG_VFP=y
+ # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
+-# CONFIG_SUSPEND is not set
+ CONFIG_NET=y
+ CONFIG_PACKET=y
+ CONFIG_UNIX=y
+-- 
+1.7.10.4
+
