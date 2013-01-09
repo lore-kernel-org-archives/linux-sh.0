@@ -1,48 +1,33 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 24 Jan 2013 12:16:33 +0000
-Subject: [PATCH v2 6/8] ARM: shmobile: kota2: Use gpio_request_one()
-Message-Id: <1359029795-7871-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 09 Jan 2013 06:23:49 +0000
+Subject: [PATCH] ARM: mach-shmobile: kzm9g: Enable ARM_APPENDED_DTB in defconfig
+Message-Id: <1357712629-2992-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Replace occurences of gpio_request() and gpio_direction_*() by calls to
-gpio_request_one().
+Typically the bootloader of a kzm9g board does not support DT
+so this option is useful.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-kota2.c | 9 +++------
- 1 file changed, 3 insertions(+), 6 deletions(-)
+ arch/arm/configs/kzm9g_defconfig |    1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/board-kota2.c b/arch/arm/mach-shmobile/board-kota2.c
-index bf88f9a..7ec3112 100644
---- a/arch/arm/mach-shmobile/board-kota2.c
-+++ b/arch/arm/mach-shmobile/board-kota2.c
-@@ -474,10 +474,8 @@ static void __init kota2_init(void)
- 	gpio_request(GPIO_FN_D15_NAF15, NULL);
- 	gpio_request(GPIO_FN_CS5A_, NULL);
- 	gpio_request(GPIO_FN_WE0__FWE, NULL);
--	gpio_request(GPIO_PORT144, NULL); /* PINTA2 */
--	gpio_direction_input(GPIO_PORT144);
--	gpio_request(GPIO_PORT145, NULL); /* RESET */
--	gpio_direction_output(GPIO_PORT145, 1);
-+	gpio_request_one(GPIO_PORT144, GPIOF_IN, NULL); /* PINTA2 */
-+	gpio_request_one(GPIO_PORT145, GPIOF_OUT_INIT_HIGH, NULL); /* RESET */
- 
- 	/* KEYSC */
- 	gpio_request(GPIO_FN_KEYIN0_PU, NULL);
-@@ -509,8 +507,7 @@ static void __init kota2_init(void)
- 	gpio_request(GPIO_FN_MMCD0_6, NULL);
- 	gpio_request(GPIO_FN_MMCD0_7, NULL);
- 	gpio_request(GPIO_FN_MMCCMD0, NULL);
--	gpio_request(GPIO_PORT208, NULL); /* Reset */
--	gpio_direction_output(GPIO_PORT208, 1);
-+	gpio_request_one(GPIO_PORT208, GPIOF_OUT_INIT_HIGH, NULL); /* Reset */
- 
- 	/* SDHI0 (microSD) */
- 	gpio_request(GPIO_FN_SDHICD0_PU, NULL);
+diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
+index 7f6ec2c..c6005a0 100644
+--- a/arch/arm/configs/kzm9g_defconfig
++++ b/arch/arm/configs/kzm9g_defconfig
+@@ -39,6 +39,7 @@ CONFIG_AEABI=y
+ CONFIG_HIGHMEM=y
+ CONFIG_ZBOOT_ROM_TEXT=0x0
+ CONFIG_ZBOOT_ROM_BSS=0x0
++CONFIG_ARM_APPENDED_DTB=y
+ CONFIG_CMDLINE="console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200"
+ CONFIG_KEXEC=y
+ CONFIG_VFP=y
 -- 
-1.7.12.4
+1.7.10.4
 
