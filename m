@@ -1,55 +1,129 @@
 From: Tang Chen <tangchen@cn.fujitsu.com>
-Date: Thu, 10 Jan 2013 06:15:04 +0000
-Subject: Re: [PATCH v6 04/15] memory-hotplug: remove /sys/firmware/memmap/X sysfs
-Message-Id: <50EE5C68.4030402@cn.fujitsu.com>
+Date: Wed, 09 Jan 2013 09:32:26 +0000
+Subject: [PATCH v6 02/15] memory-hotplug: check whether all memory blocks are offlined or not when removing m
+Message-Id: <1357723959-5416-3-git-send-email-tangchen@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1357723959-5416-1-git-send-email-tangchen@cn.fujitsu.com> <1357723959-5416-5-git-send-email-tangchen@cn.fujitsu.com> <20130109151920.fb9b4029.akpm@linux-foundation.org>
-In-Reply-To: <20130109151920.fb9b4029.akpm@linux-foundation.org>
+References: <1357723959-5416-1-git-send-email-tangchen@cn.fujitsu.com>
+In-Reply-To: <1357723959-5416-1-git-send-email-tangchen@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: rientjes@google.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, wency@cn.fujitsu.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org, glommer@parallels.com, x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+To: akpm@linux-foundation.org, rientjes@google.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, wency@cn.fujitsu.com, tangchen@cn.fujitsu.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org, glommer@parallels.com
+Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
 
-Hi Andrew,
+From: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
 
-On 01/10/2013 07:19 AM, Andrew Morton wrote:
->> ...
->>
->> +	entry = firmware_map_find_entry(start, end - 1, type);
->> +	if (!entry)
->> +		return -EINVAL;
->> +
->> +	firmware_map_remove_entry(entry);
->>
->> ...
->>
->
-> The above code looks racy.  After firmware_map_find_entry() does the
-> spin_unlock() there is nothing to prevent a concurrent
-> firmware_map_remove_entry() from removing the entry, so the kernel ends
-> up calling firmware_map_remove_entry() twice against the same entry.
->
-> An easy fix for this is to hold the spinlock across the entire
-> lookup/remove operation.
->
->
-> This problem is inherent to firmware_map_find_entry() as you have
-> implemented it, so this function simply should not exist in the current
-> form - no caller can use it without being buggy!  A simple fix for this
-> is to remove the spin_lock()/spin_unlock() from
-> firmware_map_find_entry() and add locking documentation to
-> firmware_map_find_entry(), explaining that the caller must hold
-> map_entries_lock and must not release that lock until processing of
-> firmware_map_find_entry()'s return value has completed.
+We remove the memory like this:
+1. lock memory hotplug
+2. offline a memory block
+3. unlock memory hotplug
+4. repeat 1-3 to offline all memory blocks
+5. lock memory hotplug
+6. remove memory(TODO)
+7. unlock memory hotplug
 
-Thank you for your advice, I'll fix it soon.
+All memory blocks must be offlined before removing memory. But we don't hold
+the lock in the whole operation. So we should check whether all memory blocks
+are offlined before step6. Otherwise, kernel maybe panicked.
 
-Since you have merged the patch-set, do I need to resend all these
-patches again, or just send a patch to fix it based on the current
-one ?
+Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Signed-off-by: Tang Chen <tangchen@cn.fujitsu.com>
+Acked-by: KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+---
+ drivers/base/memory.c          |    6 +++++
+ include/linux/memory_hotplug.h |    1 +
+ mm/memory_hotplug.c            |   48 ++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 55 insertions(+), 0 deletions(-)
 
-Thanks. :)
-
->
+diff --git a/drivers/base/memory.c b/drivers/base/memory.c
+index 987604d..8300a18 100644
+--- a/drivers/base/memory.c
++++ b/drivers/base/memory.c
+@@ -693,6 +693,12 @@ int offline_memory_block(struct memory_block *mem)
+ 	return ret;
+ }
+ 
++/* return true if the memory block is offlined, otherwise, return false */
++bool is_memblock_offlined(struct memory_block *mem)
++{
++	return mem->state = MEM_OFFLINE;
++}
++
+ /*
+  * Initialize the sysfs support for memory devices...
+  */
+diff --git a/include/linux/memory_hotplug.h b/include/linux/memory_hotplug.h
+index 4a45c4e..8dd0950 100644
+--- a/include/linux/memory_hotplug.h
++++ b/include/linux/memory_hotplug.h
+@@ -247,6 +247,7 @@ extern int add_memory(int nid, u64 start, u64 size);
+ extern int arch_add_memory(int nid, u64 start, u64 size);
+ extern int offline_pages(unsigned long start_pfn, unsigned long nr_pages);
+ extern int offline_memory_block(struct memory_block *mem);
++extern bool is_memblock_offlined(struct memory_block *mem);
+ extern int remove_memory(u64 start, u64 size);
+ extern int sparse_add_one_section(struct zone *zone, unsigned long start_pfn,
+ 								int nr_pages);
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index 62e04c9..5808045 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -1430,6 +1430,54 @@ repeat:
+ 		goto repeat;
+ 	}
+ 
++	lock_memory_hotplug();
++
++	/*
++	 * we have offlined all memory blocks like this:
++	 *   1. lock memory hotplug
++	 *   2. offline a memory block
++	 *   3. unlock memory hotplug
++	 *
++	 * repeat step1-3 to offline the memory block. All memory blocks
++	 * must be offlined before removing memory. But we don't hold the
++	 * lock in the whole operation. So we should check whether all
++	 * memory blocks are offlined.
++	 */
++
++	mem = NULL;
++	for (pfn = start_pfn; pfn < end_pfn; pfn += PAGES_PER_SECTION) {
++		section_nr = pfn_to_section_nr(pfn);
++		if (!present_section_nr(section_nr))
++			continue;
++
++		section = __nr_to_section(section_nr);
++		/* same memblock? */
++		if (mem)
++			if ((section_nr >= mem->start_section_nr) &&
++			    (section_nr <= mem->end_section_nr))
++				continue;
++
++		mem = find_memory_block_hinted(section, mem);
++		if (!mem)
++			continue;
++
++		ret = is_memblock_offlined(mem);
++		if (!ret) {
++			pr_warn("removing memory fails, because memory "
++				"[%#010llx-%#010llx] is onlined\n",
++				PFN_PHYS(section_nr_to_pfn(mem->start_section_nr)),
++				PFN_PHYS(section_nr_to_pfn(mem->end_section_nr + 1)) - 1);
++
++			kobject_put(&mem->dev.kobj);
++			unlock_memory_hotplug();
++			return ret;
++		}
++	}
++
++	if (mem)
++		kobject_put(&mem->dev.kobj);
++	unlock_memory_hotplug();
++
+ 	return 0;
+ }
+ #else
+-- 
+1.7.1
 
