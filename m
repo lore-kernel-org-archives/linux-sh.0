@@ -1,57 +1,74 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 25 Jan 2013 02:24:00 +0000
-Subject: [PATCH 24/80] ARM: shmobile: sh7372: Register PFC platform device
-Message-Id: <1359080696-31489-25-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 09 Jan 2013 00:52:49 +0000
+Subject: [PATCH v2 29/29] ARM: shmobile: r8a7740: Remove LCD0 and LCD1 function GPIOs
+Message-Id: <1357692769-1432-30-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-Add arch code to register the PFC platform device instead of calling the
-driver directly. Platform device registration in the sh-pfc driver will
-be removed.
+Those GPIOs have been deprecated by the pinctrl API. They are unused and
+unneeded, remove them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/pfc-sh7372.c |   11 ++++++++++-
- 1 file changed, 10 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/include/mach/r8a7740.h |   39 -------------------------
+ 1 files changed, 0 insertions(+), 39 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/pfc-sh7372.c b/arch/arm/mach-shmobile/pfc-sh7372.c
-index 7a1525f..dd5e145 100644
---- a/arch/arm/mach-shmobile/pfc-sh7372.c
-+++ b/arch/arm/mach-shmobile/pfc-sh7372.c
-@@ -22,6 +22,7 @@
-  */
- #include <linux/init.h>
- #include <linux/kernel.h>
-+#include <linux/platform_device.h>
- #include <linux/sh_pfc.h>
- #include <mach/irqs.h>
- #include <mach/sh7372.h>
-@@ -1657,7 +1658,15 @@ static struct pinmux_info sh7372_pinmux_info = {
- 	.gpio_irq_size = ARRAY_SIZE(pinmux_irqs),
- };
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+index 59d252f..0c417da 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+@@ -241,48 +241,9 @@ enum {
  
-+static struct platform_device sh7372_pfc_device = {
-+	.name		= "sh-pfc",
-+	.id		= -1,
-+	.dev = {
-+		.platform_data = &sh7372_pinmux_info,
-+	},
-+};
-+
- void sh7372_pinmux_init(void)
- {
--	register_pinmux(&sh7372_pinmux_info);
-+	platform_device_register(&sh7372_pfc_device);
- }
+ 	/* LCD0 */
+ 	GPIO_FN_LCDC0_SELECT,
+-	GPIO_FN_LCD0_D0,	GPIO_FN_LCD0_D1,	GPIO_FN_LCD0_D2,
+-	GPIO_FN_LCD0_D3,	GPIO_FN_LCD0_D4,	GPIO_FN_LCD0_D5,
+-	GPIO_FN_LCD0_D6,	GPIO_FN_LCD0_D7,	GPIO_FN_LCD0_D8,
+-	GPIO_FN_LCD0_D9,	GPIO_FN_LCD0_D10,	GPIO_FN_LCD0_D11,
+-	GPIO_FN_LCD0_D12,	GPIO_FN_LCD0_D13,	GPIO_FN_LCD0_D14,
+-	GPIO_FN_LCD0_D15,	GPIO_FN_LCD0_D16,	GPIO_FN_LCD0_D17,
+-	GPIO_FN_LCD0_DON,	GPIO_FN_LCD0_VCPWC,	GPIO_FN_LCD0_VEPWC,
+-
+-	GPIO_FN_LCD0_DCK,	GPIO_FN_LCD0_VSYN, /* for RGB */
+-	GPIO_FN_LCD0_HSYN,	GPIO_FN_LCD0_DISP, /* for RGB */
+-
+-	GPIO_FN_LCD0_WR,	GPIO_FN_LCD0_RD, /* for SYS */
+-	GPIO_FN_LCD0_CS,	GPIO_FN_LCD0_RS, /* for SYS */
+-
+-	GPIO_FN_LCD0_D18_PORT163,	GPIO_FN_LCD0_D19_PORT162,
+-	GPIO_FN_LCD0_D20_PORT161,	GPIO_FN_LCD0_D21_PORT158,
+-	GPIO_FN_LCD0_D22_PORT160,	GPIO_FN_LCD0_D23_PORT159,
+-	GPIO_FN_LCD0_LCLK_PORT165,	 /* MSEL5CR_6_1 */
+-
+-	GPIO_FN_LCD0_D18_PORT40,	GPIO_FN_LCD0_D19_PORT4,
+-	GPIO_FN_LCD0_D20_PORT3,		GPIO_FN_LCD0_D21_PORT2,
+-	GPIO_FN_LCD0_D22_PORT0,		GPIO_FN_LCD0_D23_PORT1,
+-	GPIO_FN_LCD0_LCLK_PORT102,	/* MSEL5CR_6_0 */
+ 
+ 	/* LCD1 */
+ 	GPIO_FN_LCDC1_SELECT,
+-	GPIO_FN_LCD1_D0,	GPIO_FN_LCD1_D1,	GPIO_FN_LCD1_D2,
+-	GPIO_FN_LCD1_D3,	GPIO_FN_LCD1_D4,	GPIO_FN_LCD1_D5,
+-	GPIO_FN_LCD1_D6,	GPIO_FN_LCD1_D7,	GPIO_FN_LCD1_D8,
+-	GPIO_FN_LCD1_D9,	GPIO_FN_LCD1_D10,	GPIO_FN_LCD1_D11,
+-	GPIO_FN_LCD1_D12,	GPIO_FN_LCD1_D13,	GPIO_FN_LCD1_D14,
+-	GPIO_FN_LCD1_D15,	GPIO_FN_LCD1_D16,	GPIO_FN_LCD1_D17,
+-	GPIO_FN_LCD1_D18,	GPIO_FN_LCD1_D19,	GPIO_FN_LCD1_D20,
+-	GPIO_FN_LCD1_D21,	GPIO_FN_LCD1_D22,	GPIO_FN_LCD1_D23,
+-	GPIO_FN_LCD1_DON,	GPIO_FN_LCD1_VCPWC,
+-	GPIO_FN_LCD1_LCLK,	GPIO_FN_LCD1_VEPWC,
+-
+-	GPIO_FN_LCD1_DCK,	GPIO_FN_LCD1_VSYN, /* for RGB */
+-	GPIO_FN_LCD1_HSYN,	GPIO_FN_LCD1_DISP, /* for RGB */
+-
+-	GPIO_FN_LCD1_WR,	GPIO_FN_LCD1_RD, /* for SYS */
+-	GPIO_FN_LCD1_CS,	GPIO_FN_LCD1_RS, /* for SYS */
+ 
+ 	/* RSPI */
+ 	GPIO_FN_RSPI_SSL0_A,	GPIO_FN_RSPI_SSL1_A,
 -- 
-1.7.10.4
+1.7.8.6
 
