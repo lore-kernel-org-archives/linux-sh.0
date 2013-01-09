@@ -1,44 +1,44 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 10 Jan 2013 01:23:56 +0000
-Subject: [PATCH 2/5] ARM: shmobile: fix memory size for kota2_defconfig
-Message-Id: <1357781039-14003-3-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 09 Jan 2013 00:52:34 +0000
+Subject: [PATCH v2 14/29] sh-pfc: Don't needlessly check GPIO type in sh_gpio_free()
+Message-Id: <1357692769-1432-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1357781039-14003-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1357781039-14003-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The CONFIG_MEMORY_SIZE value is interpreted as a 32 bit integer, which
-makes sense on a system without PAE. It appears that a trailing 0 was
-appended to the value and after some testing it appears that 0x1e000000 is
-the correct value.
+The GPIO type is always PINMUX_TYPE_FUNCTION when freeing a function
+GPIO. Hardcode the type value.
 
-Without this patch, building kota2_defconfig results in:
-
-/home/arnd/linux-arm/arch/arm/kernel/setup.c:790:2: warning: large integer implicitly truncated to unsigned type [-Woverflow]
-
-Reported-by: Arnd Bergmann <arnd@arndb.de>
-Cc: Olof Johansson <olof@lixom.net>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/arm/configs/kota2_defconfig |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/pinctrl/sh-pfc/gpio.c |    5 +----
+ 1 files changed, 1 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/configs/kota2_defconfig b/arch/arm/configs/kota2_defconfig
-index fa83db1..57ad3d4 100644
---- a/arch/arm/configs/kota2_defconfig
-+++ b/arch/arm/configs/kota2_defconfig
-@@ -21,7 +21,7 @@ CONFIG_ARCH_SHMOBILE=y
- CONFIG_KEYBOARD_GPIO_POLLED=y
- CONFIG_ARCH_SH73A0=y
- CONFIG_MACH_KOTA2=y
--CONFIG_MEMORY_SIZE=0x1e0000000
-+CONFIG_MEMORY_SIZE=0x1e000000
- # CONFIG_SH_TIMER_TMU is not set
- # CONFIG_SWP_EMULATE is not set
- CONFIG_CPU_BPREDICT_DISABLE=y
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index 80a50d8..8f01113 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -71,16 +71,13 @@ static void sh_gpio_free(struct gpio_chip *gc, unsigned offset)
+ {
+ 	struct sh_pfc *pfc = gpio_to_pfc(gc);
+ 	unsigned long flags;
+-	int pinmux_type;
+ 
+ 	if (offset < pfc->info->nr_pins)
+ 		return pinctrl_free_gpio(offset);
+ 
+ 	spin_lock_irqsave(&pfc->lock, flags);
+ 
+-	pinmux_type = pfc->info->gpios[offset].flags & PINMUX_FLAG_TYPE;
+-
+-	sh_pfc_config_gpio(pfc, offset, pinmux_type, GPIO_CFG_FREE);
++	sh_pfc_config_gpio(pfc, offset, PINMUX_TYPE_FUNCTION, GPIO_CFG_FREE);
+ 
+ 	spin_unlock_irqrestore(&pfc->lock, flags);
+ }
 -- 
-1.7.10.4
+1.7.8.6
 
