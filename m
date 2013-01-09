@@ -1,45 +1,55 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 16 Jan 2013 16:54:40 +0000
-Subject: [PATCH 05/11] mmc: sh-mmcif: use mmc_of_parse() to parse standard MMC DT bindings
-Message-Id: <1358355286-26029-6-git-send-email-g.liakhovetski@gmx.de>
+From: Tang Chen <tangchen@cn.fujitsu.com>
+Date: Wed, 09 Jan 2013 09:32:33 +0000
+Subject: [PATCH v6 09/15] memory-hotplug: remove page table of x86_64 architecture
+Message-Id: <1357723959-5416-10-git-send-email-tangchen@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358355286-26029-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1358355286-26029-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1357723959-5416-1-git-send-email-tangchen@cn.fujitsu.com>
+In-Reply-To: <1357723959-5416-1-git-send-email-tangchen@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: akpm@linux-foundation.org, rientjes@google.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, wency@cn.fujitsu.com, tangchen@cn.fujitsu.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org, glommer@parallels.com
+Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
 
-Use mmc_of_parse() to get interface capability flags and used GPIOs from
-device-tree bindings.
+This patch searches a page table about the removed memory, and clear
+page table for x86_64 architecture.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Jianguo Wu <wujianguo@huawei.com>
+Signed-off-by: Jiang Liu <jiang.liu@huawei.com>
+Signed-off-by: Tang Chen <tangchen@cn.fujitsu.com>
 ---
- drivers/mmc/host/sh_mmcif.c |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
+ arch/x86/mm/init_64.c |   10 ++++++++++
+ 1 files changed, 10 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index 741aeb9..4de94a1 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -1329,6 +1329,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
- 		ret = -ENOMEM;
- 		goto ealloch;
- 	}
-+	mmc_of_parse(mmc);
- 	host		= mmc_priv(mmc);
- 	host->mmc	= mmc;
- 	host->addr	= reg;
-@@ -1341,7 +1342,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
- 	mmc->ops = &sh_mmcif_ops;
- 	sh_mmcif_init_ocr(host);
+diff --git a/arch/x86/mm/init_64.c b/arch/x86/mm/init_64.c
+index fe01116..d950f9b 100644
+--- a/arch/x86/mm/init_64.c
++++ b/arch/x86/mm/init_64.c
+@@ -981,6 +981,15 @@ remove_pagetable(unsigned long start, unsigned long end, bool direct)
+ 	flush_tlb_all();
+ }
  
--	mmc->caps = MMC_CAP_MMC_HIGHSPEED;
-+	mmc->caps |= MMC_CAP_MMC_HIGHSPEED;
- 	if (pd && pd->caps)
- 		mmc->caps |= pd->caps;
- 	mmc->max_segs = 32;
++void __meminit
++kernel_physical_mapping_remove(unsigned long start, unsigned long end)
++{
++	start = (unsigned long)__va(start);
++	end = (unsigned long)__va(end);
++
++	remove_pagetable(start, end, true);
++}
++
+ #ifdef CONFIG_MEMORY_HOTREMOVE
+ int __ref arch_remove_memory(u64 start, u64 size)
+ {
+@@ -990,6 +999,7 @@ int __ref arch_remove_memory(u64 start, u64 size)
+ 	int ret;
+ 
+ 	zone = page_zone(pfn_to_page(start_pfn));
++	kernel_physical_mapping_remove(start, start + size);
+ 	ret = __remove_pages(zone, start_pfn, nr_pages);
+ 	WARN_ON_ONCE(ret);
+ 
 -- 
-1.7.2.5
+1.7.1
 
