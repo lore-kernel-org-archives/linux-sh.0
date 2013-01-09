@@ -1,54 +1,90 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 23 Jan 2013 16:37:46 +0000
-Subject: [PATCH v3 3/8] ARM: shmobile: simplify armadillo800eva and kzm9g Kconfig dependencies
-Message-Id: <1358959071-2873-4-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 09 Jan 2013 00:52:43 +0000
+Subject: [PATCH v2 23/29] ARM: shmobile: kzm9g: Register pinctrl mappings for LCD
+Message-Id: <1357692769-1432-24-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358959071-2873-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1358959071-2873-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Reference kernel configurations for armadillo800eva and kzm9g boards do not
-have to depend on their respective "legacy" configurations, doing device
-instantiation in .c, they can be configured and built independently.
+Replace the GPIO-based LCD pinmux configuration by pinctrl mappings.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/arm/mach-shmobile/Kconfig |   12 ++++++++++--
- 1 files changed, 10 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/board-kzm9g.c |   37 +++++++++------------------------
+ 1 files changed, 10 insertions(+), 27 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 5f61e8f..927eecc 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -106,7 +106,11 @@ config MACH_ARMADILLO800EVA
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index eadf309..b34a59b 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -29,6 +29,7 @@
+ #include <linux/mmc/sh_mmcif.h>
+ #include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/mfd/tmio.h>
++#include <linux/pinctrl/machine.h>
+ #include <linux/platform_device.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
+@@ -599,6 +600,13 @@ static struct platform_device *kzm_devices[] __initdata = {
+ 	&fsi_ak4648_device,
+ };
  
- config MACH_ARMADILLO800EVA_REFERENCE
- 	bool "Armadillo-800 EVA board - Reference Device Tree Implementation"
--	depends on MACH_ARMADILLO800EVA
-+	depends on ARCH_R8A7740
-+	select ARCH_REQUIRE_GPIOLIB
-+	select REGULATOR_FIXED_VOLTAGE if REGULATOR
-+	select SND_SOC_WM8978 if SND_SIMPLE_CARD
-+	select USE_OF
- 	---help---
- 	  Use reference implementation of Aramdillo800 EVA board support
- 	  which makes a greater use of device tree at the expense
-@@ -136,7 +140,11 @@ config MACH_KZM9G
++static const struct pinctrl_map kzm_pinctrl_map[] = {
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-sh73a0",
++				  "lcd_data24", "lcd"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-sh73a0",
++				  "lcd_sync", "lcd"),
++};
++
+ /*
+  * FIXME
+  *
+@@ -660,6 +668,8 @@ static void __init kzm_init(void)
+ 				     ARRAY_SIZE(fixed2v8_power_consumers), 2800000);
+ 	regulator_register_fixed(2, dummy_supplies, ARRAY_SIZE(dummy_supplies));
  
- config MACH_KZM9G_REFERENCE
- 	bool "KZM-A9-GT board - Reference Device Tree Implementation"
--	depends on MACH_KZM9G
-+	depends on ARCH_SH73A0
-+	select ARCH_REQUIRE_GPIOLIB
-+	select REGULATOR_FIXED_VOLTAGE if REGULATOR
-+	select SND_SOC_AK4642 if SND_SIMPLE_CARD
-+	select USE_OF
- 	---help---
- 	   Use reference implementation of KZM-A9-GT board support
- 	   which makes as greater use of device tree at the expense
++	pinctrl_register_mappings(kzm_pinctrl_map, ARRAY_SIZE(kzm_pinctrl_map));
++
+ 	sh73a0_pinmux_init();
+ 
+ 	/* enable SCIFA4 */
+@@ -676,33 +686,6 @@ static void __init kzm_init(void)
+ 	gpio_direction_input(GPIO_PORT224);
+ 
+ 	/* LCDC */
+-	gpio_request(GPIO_FN_LCDD23,	NULL);
+-	gpio_request(GPIO_FN_LCDD22,	NULL);
+-	gpio_request(GPIO_FN_LCDD21,	NULL);
+-	gpio_request(GPIO_FN_LCDD20,	NULL);
+-	gpio_request(GPIO_FN_LCDD19,	NULL);
+-	gpio_request(GPIO_FN_LCDD18,	NULL);
+-	gpio_request(GPIO_FN_LCDD17,	NULL);
+-	gpio_request(GPIO_FN_LCDD16,	NULL);
+-	gpio_request(GPIO_FN_LCDD15,	NULL);
+-	gpio_request(GPIO_FN_LCDD14,	NULL);
+-	gpio_request(GPIO_FN_LCDD13,	NULL);
+-	gpio_request(GPIO_FN_LCDD12,	NULL);
+-	gpio_request(GPIO_FN_LCDD11,	NULL);
+-	gpio_request(GPIO_FN_LCDD10,	NULL);
+-	gpio_request(GPIO_FN_LCDD9,	NULL);
+-	gpio_request(GPIO_FN_LCDD8,	NULL);
+-	gpio_request(GPIO_FN_LCDD7,	NULL);
+-	gpio_request(GPIO_FN_LCDD6,	NULL);
+-	gpio_request(GPIO_FN_LCDD5,	NULL);
+-	gpio_request(GPIO_FN_LCDD4,	NULL);
+-	gpio_request(GPIO_FN_LCDD3,	NULL);
+-	gpio_request(GPIO_FN_LCDD2,	NULL);
+-	gpio_request(GPIO_FN_LCDD1,	NULL);
+-	gpio_request(GPIO_FN_LCDD0,	NULL);
+-	gpio_request(GPIO_FN_LCDDISP,	NULL);
+-	gpio_request(GPIO_FN_LCDDCK,	NULL);
+-
+ 	gpio_request(GPIO_PORT222,	NULL); /* LCDCDON */
+ 	gpio_request(GPIO_PORT226,	NULL); /* SC */
+ 	gpio_direction_output(GPIO_PORT222, 1);
 -- 
-1.7.2.5
+1.7.8.6
 
