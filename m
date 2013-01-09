@@ -1,60 +1,34 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 16 Jan 2013 16:54:45 +0000
-Subject: [PATCH 10/11] mmc: tmio: remove unused and deprecated symbols
-Message-Id: <1358355286-26029-11-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 09 Jan 2013 01:03:09 +0000
+Subject: [PATCH v2 2/8] ARM: shmobile: Include DTSI of r8a7740 to armadillo800eva
+Message-Id: <1357693395-1653-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358355286-26029-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1358355286-26029-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-The tmio_mmc_cd_wakeup() inline function has been deprecated since 3.4 and
-is unused since 3.4 too. Remove them.
+From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Signed-off-by: Simon Horman <horms@verge.net.au>
 ---
- include/linux/mfd/tmio.h |   18 ------------------
- 1 files changed, 0 insertions(+), 18 deletions(-)
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index d83af39..99bf3e66 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -65,12 +65,6 @@
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+index a7505a9..a8e7bd9 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
+@@ -9,7 +9,7 @@
   */
- #define TMIO_MMC_SDIO_IRQ		(1 << 2)
- /*
-- * Some platforms can detect card insertion events with controller powered
-- * down, using a GPIO IRQ, in which case they have to fill in cd_irq, cd_gpio,
-- * and cd_flags fields of struct tmio_mmc_data.
-- */
--#define TMIO_MMC_HAS_COLD_CD		(1 << 3)
--/*
-  * Some controllers require waiting for the SD bus to become
-  * idle before writing to some registers.
-  */
-@@ -117,18 +111,6 @@ struct tmio_mmc_data {
- };
  
- /*
-- * This function is deprecated and will be removed soon. Please, convert your
-- * platform to use drivers/mmc/core/cd-gpio.c
-- */
--#include <linux/mmc/host.h>
--static inline void tmio_mmc_cd_wakeup(struct tmio_mmc_data *pdata)
--{
--	if (pdata)
--		mmc_detect_change(dev_get_drvdata(pdata->dev),
--				  msecs_to_jiffies(100));
--}
--
--/*
-  * data for the NAND controller
-  */
- struct tmio_nand_data {
+ /dts-v1/;
+-/include/ "skeleton.dtsi"
++/include/ "r8a7740.dtsi"
+ 
+ / {
+ 	model = "armadillo 800 eva";
 -- 
-1.7.2.5
+1.7.8.6
 
