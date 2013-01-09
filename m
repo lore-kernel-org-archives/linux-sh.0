@@ -1,70 +1,37 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 24 Jan 2013 12:16:35 +0000
-Subject: [PATCH v2 8/8] ARM: shmobile: mackerel: Use gpio_request_one()
-Message-Id: <1359029795-7871-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 09 Jan 2013 00:52:42 +0000
+Subject: [PATCH v2 22/29] ARM: shmobile: kzm9g: Use of_machine_is_compatible()
+Message-Id: <1357692769-1432-23-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Replace occurences of gpio_request() and gpio_direction_*() by calls to
-gpio_request_one().
+The machine number is hardcoded to ~0 on DT-enabled machines, making
+machine_is_*() always fail when support for more than one machine is
+compiled into the kernel. Replace the machine_is_kzm9g() call with
+of_machine_is_compatible("renesas,kzm9g").
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/arm/mach-shmobile/board-mackerel.c | 16 ++++++----------
- 1 file changed, 6 insertions(+), 10 deletions(-)
+ arch/arm/mach-shmobile/board-kzm9g.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 2fed62f..e79fc05 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1408,11 +1408,10 @@ static void __init mackerel_init(void)
- 	gpio_request(GPIO_FN_LCDDISP,  NULL);
- 	gpio_request(GPIO_FN_LCDDCK,   NULL);
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index c02448d..eadf309 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -623,7 +623,7 @@ static int __init as3711_enable_lcdc_backlight(void)
+ 		0x45, 0xf0,
+ 	};
  
--	gpio_request(GPIO_PORT31, NULL); /* backlight */
--	gpio_direction_output(GPIO_PORT31, 0); /* off by default */
-+	/* backlight, off by default */
-+	gpio_request_one(GPIO_PORT31, GPIOF_OUT_INIT_LOW, NULL);
+-	if (!machine_is_kzm9g())
++	if (!of_machine_is_compatible("renesas,kzm9g"))
+ 		return 0;
  
--	gpio_request(GPIO_PORT151, NULL); /* LCDDON */
--	gpio_direction_output(GPIO_PORT151, 1);
-+	gpio_request_one(GPIO_PORT151, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
- 
- 	/* USBHS0 */
- 	gpio_request(GPIO_FN_VBUS0_0, NULL);
-@@ -1428,8 +1427,7 @@ static void __init mackerel_init(void)
- 	gpio_request(GPIO_FN_FSIAILR,	NULL);
- 	gpio_request(GPIO_FN_FSIAISLD,	NULL);
- 	gpio_request(GPIO_FN_FSIAOSLD,	NULL);
--	gpio_request(GPIO_PORT161,	NULL);
--	gpio_direction_output(GPIO_PORT161, 0); /* slave */
-+	gpio_request_one(GPIO_PORT161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
- 
- 	gpio_request(GPIO_PORT9,  NULL);
- 	gpio_request(GPIO_PORT10, NULL);
-@@ -1483,8 +1481,7 @@ static void __init mackerel_init(void)
- 	gpio_request(GPIO_FN_SDHID1_0, NULL);
- #endif
- 	/* card detect pin for MMC slot (CN7) */
--	gpio_request(GPIO_PORT41, NULL);
--	gpio_direction_input(GPIO_PORT41);
-+	gpio_request_one(GPIO_PORT41, GPIOF_IN, NULL);
- 
- 	/* enable SDHI2 */
- 	gpio_request(GPIO_FN_SDHICMD2, NULL);
-@@ -1495,8 +1492,7 @@ static void __init mackerel_init(void)
- 	gpio_request(GPIO_FN_SDHID2_0, NULL);
- 
- 	/* card detect pin for microSD slot (CN23) */
--	gpio_request(GPIO_PORT162, NULL);
--	gpio_direction_input(GPIO_PORT162);
-+	gpio_request_one(GPIO_PORT162, GPIOF_IN, NULL);
- 
- 	/* MMCIF */
- 	gpio_request(GPIO_FN_MMCD0_0, NULL);
+ 	if (!a)
 -- 
-1.7.12.4
+1.7.8.6
 
