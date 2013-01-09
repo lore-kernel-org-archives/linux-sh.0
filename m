@@ -1,61 +1,59 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 25 Jan 2013 02:24:17 +0000
-Subject: [PATCH 41/80] sh: shx3: Register PFC platform device
-Message-Id: <1359080696-31489-42-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 09 Jan 2013 01:03:11 +0000
+Subject: [PATCH v2 4/8] ARM: shmobile: armadillo: Populate platform devices from device tree
+Message-Id: <1357693395-1653-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-Add arch code to register the PFC platform device instead of calling the
-driver directly. Platform device registration in the sh-pfc driver will
-be removed.
+Call of_platform_populate() at machine initialization time to populate
+platform devices. Remove the explicit pinmux initialization as the PFC
+device will be instantiated from the device tree.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/sh/Kconfig                       |    1 +
- arch/sh/kernel/cpu/sh4a/pinmux-shx3.c |    3 ++-
- 2 files changed, 3 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/board-armadillo800eva.c |   10 ++++++----
+ 1 files changed, 6 insertions(+), 4 deletions(-)
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 27f0b73..c72b616 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -515,6 +515,7 @@ config CPU_SUBTYPE_SHX3
- 	select CPU_SHX3
- 	select GENERIC_CLOCKEVENTS_BROADCAST if SMP
- 	select ARCH_REQUIRE_GPIOLIB
-+	select PINCTRL
- 
- # SH4AL-DSP Processor Support
- 
-diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c b/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
-index 2ebb983..eef1b8f 100644
---- a/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
-+++ b/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
-@@ -10,6 +10,7 @@
- #include <linux/init.h>
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index b6e50cd..1deb417 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -25,6 +25,7 @@
  #include <linux/kernel.h>
+ #include <linux/input.h>
+ #include <linux/irq.h>
++#include <linux/of_platform.h>
+ #include <linux/platform_device.h>
  #include <linux/gpio.h>
-+#include <cpu/pfc.h>
- #include <cpu/shx3.h>
+ #include <linux/gpio_keys.h>
+@@ -908,11 +909,11 @@ static struct platform_device *eva_devices[] __initdata = {
+ };
  
- enum {
-@@ -582,6 +583,6 @@ static struct pinmux_info shx3_pinmux_info = {
+ static const struct pinctrl_map eva_pinctrl_map[] = {
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "e6050000.pfc",
+ 				  "lcd0_data24_0", "lcd0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "e6050000.pfc",
+ 				  "lcd0_lclk_1", "lcd0"),
+-	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "e6050000.pfc",
+ 				  "lcd0_sync", "lcd0"),
+ };
  
- static int __init shx3_pinmux_setup(void)
- {
--	return register_pinmux(&shx3_pinmux_info);
-+	return sh_pfc_register_info(NULL, NULL, 0, &shx3_pinmux_info);
- }
- arch_initcall(shx3_pinmux_setup);
+@@ -965,7 +966,8 @@ static void __init eva_init(void)
+ 
+ 	pinctrl_register_mappings(eva_pinctrl_map, ARRAY_SIZE(eva_pinctrl_map));
+ 
+-	r8a7740_pinmux_init();
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
++
+ 	r8a7740_meram_workaround();
+ 
+ 	/* SCIFA1 */
 -- 
-1.7.10.4
+1.7.8.6
 
