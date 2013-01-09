@@ -1,81 +1,108 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 23 Jan 2013 16:19:34 +0000
-Subject: Re: [PATCH 5/8] ARM: shmobile: add a GPIO controller DT node for sh7372
-Message-Id: <Pine.LNX.4.64.1301231714450.26301@axis700.grange>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Wed, 09 Jan 2013 19:41:52 +0000
+Subject: [PATCH v2 2/2] ARM: SH-Mobile: sh73a0: Add CPU Hotplug
+Message-Id: <1357760512-2634-2-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358356097-26180-1-git-send-email-g.liakhovetski@gmx.de>
- <1358356097-26180-6-git-send-email-g.liakhovetski@gmx.de>
- <4209290.uCBdrcvT3q@avalon>
-In-Reply-To: <4209290.uCBdrcvT3q@avalon>
+References: <1357760512-2634-1-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1357760512-2634-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Laurent
+Add the capability to add and remove CPUs on the fly.
+The Cortex-A9 offers the possibility to take single cores out of the
+MP Core. We add this capabilty taking care that caches are kept
+coherent. For verifying the shutdown we rely on the internal SH73A0
+Power Status Register PSTR.
 
-Thanks for your comments. All will be addressed except for this one:
-
-On Mon, 21 Jan 2013, Laurent Pinchart wrote:
-
-> Hi Guennadi,
-> 
-> Thanks for the patch.
-> 
-> On Wednesday 16 January 2013 18:08:14 Guennadi Liakhovetski wrote:
-> > Add a missing GPIO controller node to sh7372.
-> > 
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > ---
-> >  arch/arm/boot/dts/sh7372.dtsi |    8 ++++++++
-> >  1 files changed, 8 insertions(+), 0 deletions(-)
-> > 
-> > diff --git a/arch/arm/boot/dts/sh7372.dtsi b/arch/arm/boot/dts/sh7372.dtsi
-> > index 582fdec..7ca9322 100644
-> > --- a/arch/arm/boot/dts/sh7372.dtsi
-> > +++ b/arch/arm/boot/dts/sh7372.dtsi
-> > @@ -19,6 +19,14 @@
-> >  		};
-> >  	};
-> > 
-> > +	gpio: pfc@e6050000 {
-> > +		compatible = "renesas,pfc-sh7372";
-> > +		reg = <0xe6050000 0x8000>,
-> > +		      <0xe605800c 0x20>;
-> 
-> Shouldn't the second one be
-> 
-> 		      <0xe605800c 0x1c>;
-> 
-> > +		gpio-controller;
-> > +		#gpio-cells = <2>;
-> > +	};
-> > +
-> 
-> I haven't checked the board files, have you made sure that the PFC device 
-> won't be instantiated twice, once from DT and once from board code ?
-
-Don't think so. board-mackerel.c uses DT in a really dull way - it doesn't 
-call of_platform_populate(). It also initialises interrupts by calling 
-sh7372_init_irq(), which would conflict with intc instances in sh7372.dtsi 
-too, if the latter were used. And board-mackerel-reference.c doesn't 
-register PFC internally.
-
-Thanks
-Guennadi
-
-> 
-> >  	soc {
-> >  		compatible = "simple-bus";
-> >  		#address-cells = <1>;
-> 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
-
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+v2: don't use custom function sh73a0_do_wfi() but trust in cpu_do_idle()
+
+ arch/arm/mach-shmobile/smp-sh73a0.c |   36 +++++++++++++++++++++++++++++------
+ 1 file changed, 30 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
+index 5e36f5d..88aee9d 100644
+--- a/arch/arm/mach-shmobile/smp-sh73a0.c
++++ b/arch/arm/mach-shmobile/smp-sh73a0.c
+@@ -24,6 +24,7 @@
+ #include <linux/io.h>
+ #include <linux/delay.h>
+ #include <mach/common.h>
++#include <asm/cacheflush.h>
+ #include <asm/smp_plat.h>
+ #include <mach/sh73a0.h>
+ #include <asm/smp_scu.h>
+@@ -36,6 +37,8 @@
+ #define SBAR		IOMEM(0xe6180020)
+ #define APARMBAREA	IOMEM(0xe6f10020)
+ 
++#define PSTR_SHUTDOWN_MODE	3
++
+ static void __iomem *scu_base_addr(void)
+ {
+ 	return (void __iomem *)0xf0000000;
+@@ -92,16 +95,20 @@ static void __init sh73a0_smp_init_cpus(void)
+ 	shmobile_smp_init_cpus(ncores);
+ }
+ 
+-static int __maybe_unused sh73a0_cpu_kill(unsigned int cpu)
++#ifdef CONFIG_HOTPLUG_CPU
++static int sh73a0_cpu_kill(unsigned int cpu)
+ {
++
+ 	int k;
++	u32 pstr;
+ 
+-	/* this function is running on another CPU than the offline target,
+-	 * here we need wait for shutdown code in platform_cpu_die() to
+-	 * finish before asking SoC-specific code to power off the CPU core.
++	/*
++	 * wait until the power status register confirms the shutdown of the
++	 * offline target
+ 	 */
+ 	for (k = 0; k < 1000; k++) {
+-		if (shmobile_cpu_is_dead(cpu))
++		pstr = (__raw_readl(PSTR) >> (4 * cpu)) & 3;
++		if (pstr = PSTR_SHUTDOWN_MODE)
+ 			return 1;
+ 
+ 		mdelay(1);
+@@ -110,6 +117,23 @@ static int __maybe_unused sh73a0_cpu_kill(unsigned int cpu)
+ 	return 0;
+ }
+ 
++static void sh73a0_cpu_die(unsigned int cpu)
++{
++	/*
++	 * The ARM MPcore does not issue a cache coherency request for the L1
++	 * cache when powering off single CPUs. We must take care of this and
++	 * further caches.
++	 */
++	dsb();
++	flush_cache_all();
++
++	/* Set power off mode. This takes the CPU out of the MP cluster */
++	scu_power_mode(scu_base_addr(), SCU_PM_POWEROFF);
++
++	/* Enter shutdown mode */
++	cpu_do_idle();
++}
++#endif /* CONFIG_HOTPLUG_CPU */
+ 
+ struct smp_operations sh73a0_smp_ops __initdata = {
+ 	.smp_init_cpus		= sh73a0_smp_init_cpus,
+@@ -118,7 +142,7 @@ struct smp_operations sh73a0_smp_ops __initdata = {
+ 	.smp_boot_secondary	= sh73a0_boot_secondary,
+ #ifdef CONFIG_HOTPLUG_CPU
+ 	.cpu_kill		= sh73a0_cpu_kill,
+-	.cpu_die		= shmobile_cpu_die,
++	.cpu_die		= sh73a0_cpu_die,
+ 	.cpu_disable		= shmobile_cpu_disable,
+ #endif
+ };
+-- 
+1.7.9.5
+
