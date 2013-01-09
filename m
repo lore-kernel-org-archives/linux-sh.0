@@ -1,53 +1,20 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 10 Jan 2013 20:51:39 +0000
-Subject: [PATCH 06/16] ARM: shmobile: ag5evm: Register pinctrl mappings for FSI
-Message-Id: <1357851109-22103-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 09 Jan 2013 02:06:47 +0000
+Subject: Re: [PATCH 1/2] ARM: r8a7740: Add interim sh-eth device name to clocks list
+Message-Id: <20130109020647.GB6496@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1355851359-8871-1-git-send-email-hechtb+renesas@gmail.com>
+ <1355851359-8871-2-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1355851359-8871-2-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Replace the GPIO-based FSI pinmux configuration by pinctrl mappings.
+On Tue, Dec 18, 2012 at 06:22:38PM +0100, Bastian Hecht wrote:
+> When we use the ethernet device via DT setup, we need to add it
+> to a lookup list until this is properly handled later in a DT-only
+> fashion.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/mach-shmobile/board-ag5evm.c |   15 ++++++++-------
- 1 files changed, 8 insertions(+), 7 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
-index ad14e24..86be2b9 100644
---- a/arch/arm/mach-shmobile/board-ag5evm.c
-+++ b/arch/arm/mach-shmobile/board-ag5evm.c
-@@ -553,6 +553,14 @@ static struct platform_device *ag5evm_devices[] __initdata = {
- };
- 
- static const struct pinctrl_map ag5evm_pinctrl_map[] = {
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_fsi2.0", "pfc-sh73a0",
-+				  "fsia_mclk_in", "fsia"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_fsi2.0", "pfc-sh73a0",
-+				  "fsia_sclk_in", "fsia"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_fsi2.0", "pfc-sh73a0",
-+				  "fsia_data_in", "fsia"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_fsi2.0", "pfc-sh73a0",
-+				  "fsia_data_out", "fsia"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.2", "pfc-sh73a0",
- 				  "i2c2_0", "i2c2"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.3", "pfc-sh73a0",
-@@ -615,13 +623,6 @@ static void __init ag5evm_init(void)
- 	gpio_request(GPIO_PORT145, NULL); /* RESET */
- 	gpio_direction_output(GPIO_PORT145, 1);
- 
--	/* FSI A */
--	gpio_request(GPIO_FN_FSIACK, NULL);
--	gpio_request(GPIO_FN_FSIAILR, NULL);
--	gpio_request(GPIO_FN_FSIAIBT, NULL);
--	gpio_request(GPIO_FN_FSIAISLD, NULL);
--	gpio_request(GPIO_FN_FSIAOSLD, NULL);
--
- 	/* IrDA */
- 	gpio_request(GPIO_FN_PORT241_IRDA_OUT, NULL);
- 	gpio_request(GPIO_FN_PORT242_IRDA_IN,  NULL);
--- 
-1.7.8.6
-
+Thanks, looks good.
+I will apply this.
