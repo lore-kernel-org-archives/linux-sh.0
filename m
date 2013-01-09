@@ -1,51 +1,89 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 31 Jan 2013 06:24:02 +0000
-Subject: [PATCH 9/9] ARM: shmobile: armadillo800eva: set clock rates before timer init
-Message-Id: <1359613442-26038-10-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 09 Jan 2013 00:52:24 +0000
+Subject: [PATCH v2 04/29] sh-pfc: Drop the sh_pfc_pinctrl spinlock
+Message-Id: <1357692769-1432-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359613442-26038-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359613442-26038-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Hideki EIRAKU <hdk@igel.co.jp>
+The spinlock is used to protect data that is only accessed sequentially
+during initialization. Remove it.
 
-Previously clock rates were set after initialization of timer.
-Therefore the timer used the default extal1 clock rate (25MHz)
-instead of the correct rate for this board (24MHz).
-
-Signed-off-by: Hideki EIRAKU <hdk@igel.co.jp>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c |    5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+ drivers/pinctrl/sh-pfc/pinctrl.c |   13 -------------
+ 1 files changed, 0 insertions(+), 13 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index f107e82..9008ad1 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1169,8 +1169,6 @@ static void __init eva_init(void)
- 	platform_add_devices(eva_devices,
- 			     ARRAY_SIZE(eva_devices));
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index 11e0e13..472fcf5 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -34,8 +34,6 @@ struct sh_pfc_pinctrl {
  
--	eva_clock_init();
+ 	struct pinctrl_pin_desc *pads;
+ 	unsigned int nr_pads;
 -
- 	rmobile_add_device_to_domain("A4LC", &lcdc0_device);
- 	rmobile_add_device_to_domain("A4LC", &hdmi_lcdc_device);
- 	if (usb)
-@@ -1181,6 +1179,9 @@ static void __init eva_earlytimer_init(void)
+-	spinlock_t lock;
+ };
+ 
+ static int sh_pfc_get_groups_count(struct pinctrl_dev *pctldev)
+@@ -331,7 +329,6 @@ static void sh_pfc_map_one_gpio(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx,
+ 				struct pinmux_gpio *gpio, unsigned offset)
  {
- 	r8a7740_clock_init(MD_CK0 | MD_CK2);
- 	shmobile_earlytimer_init();
-+
-+	/* the rate of extal1 clock must be set before late_time_init */
-+	eva_clock_init();
+ 	struct pinmux_data_reg *dummy;
+-	unsigned long flags;
+ 	int bit;
+ 
+ 	gpio->flags &= ~PINMUX_FLAG_TYPE;
+@@ -340,10 +337,7 @@ static void sh_pfc_map_one_gpio(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx,
+ 		gpio->flags |= PINMUX_TYPE_GPIO;
+ 	else {
+ 		gpio->flags |= PINMUX_TYPE_FUNCTION;
+-
+-		spin_lock_irqsave(&pmx->lock, flags);
+ 		pmx->nr_functions++;
+-		spin_unlock_irqrestore(&pmx->lock, flags);
+ 	}
  }
  
- static void __init eva_add_early_devices(void)
+@@ -394,7 +388,6 @@ static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ 
+ static int sh_pfc_map_functions(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ {
+-	unsigned long flags;
+ 	int i, fn;
+ 
+ 	pmx->functions = devm_kzalloc(pfc->dev, pmx->nr_functions *
+@@ -402,8 +395,6 @@ static int sh_pfc_map_functions(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ 	if (unlikely(!pmx->functions))
+ 		return -ENOMEM;
+ 
+-	spin_lock_irqsave(&pmx->lock, flags);
+-
+ 	for (i = fn = 0; i < pmx->nr_pads; i++) {
+ 		struct pinmux_gpio *gpio = pfc->info->gpios + i;
+ 
+@@ -411,8 +402,6 @@ static int sh_pfc_map_functions(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ 			pmx->functions[fn++] = gpio;
+ 	}
+ 
+-	spin_unlock_irqrestore(&pmx->lock, flags);
+-
+ 	return 0;
+ }
+ 
+@@ -425,8 +414,6 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ 	if (unlikely(!pmx))
+ 		return -ENOMEM;
+ 
+-	spin_lock_init(&pmx->lock);
+-
+ 	pmx->pfc = pfc;
+ 	pfc->pinctrl = pmx;
+ 
 -- 
-1.7.10.4
+1.7.8.6
 
