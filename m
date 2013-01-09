@@ -1,61 +1,91 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 25 Jan 2013 02:24:07 +0000
-Subject: [PATCH 31/80] sh: sh7264: Register PFC platform device
-Message-Id: <1359080696-31489-32-git-send-email-horms+renesas@verge.net.au>
+From: Tang Chen <tangchen@cn.fujitsu.com>
+Date: Wed, 09 Jan 2013 09:32:39 +0000
+Subject: [PATCH v6 15/15] memory-hotplug: Do not allocate pdgat if it was not freed when offline.
+Message-Id: <1357723959-5416-16-git-send-email-tangchen@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
+References: <1357723959-5416-1-git-send-email-tangchen@cn.fujitsu.com>
+In-Reply-To: <1357723959-5416-1-git-send-email-tangchen@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: akpm@linux-foundation.org, rientjes@google.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, wency@cn.fujitsu.com, tangchen@cn.fujitsu.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org, glommer@parallels.com
+Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Since there is no way to guarentee the address of pgdat/zone is not
+on stack of any kernel threads or used by other kernel objects
+without reference counting or other symchronizing method, we cannot
+reset node_data and free pgdat when offlining a node. Just reset pgdat
+to 0 and reuse the memory when the node is online again.
 
-Add arch code to register the PFC platform device instead of calling the
-driver directly. Platform device registration in the sh-pfc driver will
-be removed.
+The problem is suggested by Kamezawa Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+The idea is from Wen Congyang <wency@cn.fujitsu.com>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+NOTE: If we don't reset pgdat to 0, the WARN_ON in free_area_init_node()
+      will be triggered.
+
+Signed-off-by: Tang Chen <tangchen@cn.fujitsu.com>
+Reviewed-by: Wen Congyang <wency@cn.fujitsu.com>
 ---
- arch/sh/Kconfig                         |    1 +
- arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c |    3 ++-
- 2 files changed, 3 insertions(+), 1 deletion(-)
+ mm/memory_hotplug.c |   20 ++++++++++++--------
+ 1 files changed, 12 insertions(+), 8 deletions(-)
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 023b2ad..0626044 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -297,6 +297,7 @@ config CPU_SUBTYPE_SH7264
- 	select CPU_HAS_FPU
- 	select SYS_SUPPORTS_CMT
- 	select SYS_SUPPORTS_MTU2
-+	select PINCTRL
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index 8b67752..8aa2b56 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -1015,11 +1015,14 @@ static pg_data_t __ref *hotadd_new_pgdat(int nid, u64 start)
+ 	unsigned long zholes_size[MAX_NR_ZONES] = {0};
+ 	unsigned long start_pfn = start >> PAGE_SHIFT;
  
- config CPU_SUBTYPE_SH7269
- 	bool "Support SH7269 processor"
-diff --git a/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c b/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c
-index 79a0d60..ed9fc39 100644
---- a/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c
-+++ b/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c
-@@ -11,6 +11,7 @@
- #include <linux/init.h>
- #include <linux/kernel.h>
- #include <linux/gpio.h>
-+#include <cpu/pfc.h>
- #include <cpu/sh7264.h>
+-	pgdat = arch_alloc_nodedata(nid);
+-	if (!pgdat)
+-		return NULL;
++	pgdat = NODE_DATA(nid);
++	if (!pgdat) {
++		pgdat = arch_alloc_nodedata(nid);
++		if (!pgdat)
++			return NULL;
  
- enum {
-@@ -2131,6 +2132,6 @@ static struct pinmux_info sh7264_pinmux_info = {
+-	arch_refresh_nodedata(nid, pgdat);
++		arch_refresh_nodedata(nid, pgdat);
++	}
  
- static int __init plat_pinmux_setup(void)
+ 	/* we can use NODE_DATA(nid) from here */
+ 
+@@ -1072,7 +1075,7 @@ out:
+ int __ref add_memory(int nid, u64 start, u64 size)
  {
--	return register_pinmux(&sh7264_pinmux_info);
-+	return sh_pfc_register_info(NULL, NULL, 0, &sh7264_pinmux_info);
- }
- arch_initcall(plat_pinmux_setup);
+ 	pg_data_t *pgdat = NULL;
+-	int new_pgdat = 0;
++	int new_pgdat = 0, new_node = 0;
+ 	struct resource *res;
+ 	int ret;
+ 
+@@ -1083,12 +1086,13 @@ int __ref add_memory(int nid, u64 start, u64 size)
+ 	if (!res)
+ 		goto out;
+ 
+-	if (!node_online(nid)) {
++	new_pgdat = NODE_DATA(nid) ? 0 : 1;
++	new_node = node_online(nid) ? 0 : 1;
++	if (new_node) {
+ 		pgdat = hotadd_new_pgdat(nid, start);
+ 		ret = -ENOMEM;
+ 		if (!pgdat)
+ 			goto error;
+-		new_pgdat = 1;
+ 	}
+ 
+ 	/* call arch's memory hotadd */
+@@ -1100,7 +1104,7 @@ int __ref add_memory(int nid, u64 start, u64 size)
+ 	/* we online node here. we can't roll back from here. */
+ 	node_set_online(nid);
+ 
+-	if (new_pgdat) {
++	if (new_node) {
+ 		ret = register_one_node(nid);
+ 		/*
+ 		 * If sysfs file of new node can't create, cpu on the node
 -- 
-1.7.10.4
+1.7.1
 
