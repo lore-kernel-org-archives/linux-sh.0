@@ -1,90 +1,55 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 03 Jan 2013 18:17:51 +0000
-Subject: [PATCH 20/22] ARM: shmobile: armadillo800eva: Register pinctrl mappings for LCDC0
-Message-Id: <1357237073-15600-21-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Tang Chen <tangchen@cn.fujitsu.com>
+Date: Wed, 09 Jan 2013 09:32:35 +0000
+Subject: [PATCH v6 11/15] memory-hotplug: Integrated __remove_section() of CONFIG_SPARSEMEM_VMEMMAP.
+Message-Id: <1357723959-5416-12-git-send-email-tangchen@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1357723959-5416-1-git-send-email-tangchen@cn.fujitsu.com>
+In-Reply-To: <1357723959-5416-1-git-send-email-tangchen@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: akpm@linux-foundation.org, rientjes@google.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, wency@cn.fujitsu.com, tangchen@cn.fujitsu.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org, glommer@parallels.com
+Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
 
-Replace the GPIO-based LCDC0 pinmux configuration by pinctrl mappings.
+Currently __remove_section for SPARSEMEM_VMEMMAP does nothing. But even if
+we use SPARSEMEM_VMEMMAP, we can unregister the memory_section.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
+Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Tang Chen <tangchen@cn.fujitsu.com>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c |   38 +++++------------------
- 1 files changed, 9 insertions(+), 29 deletions(-)
+ mm/memory_hotplug.c |   11 -----------
+ 1 files changed, 0 insertions(+), 11 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 5353adf..3434a8e 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -28,6 +28,7 @@
- #include <linux/platform_device.h>
- #include <linux/gpio.h>
- #include <linux/gpio_keys.h>
-+#include <linux/pinctrl/machine.h>
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/machine.h>
- #include <linux/sh_eth.h>
-@@ -906,6 +907,12 @@ static struct platform_device *eva_devices[] __initdata = {
- 	&i2c_gpio_device,
- };
+diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
+index 674e791..b20c4c7 100644
+--- a/mm/memory_hotplug.c
++++ b/mm/memory_hotplug.c
+@@ -430,16 +430,6 @@ static int __meminit __add_section(int nid, struct zone *zone,
+ 	return register_new_memory(nid, __pfn_to_section(phys_start_pfn));
+ }
  
-+static const struct pinctrl_map eva_pinctrl_map[] = {
-+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("pfc-r8a7740", "lcd0_data24_0", "lcd0"),
-+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("pfc-r8a7740", "lcd0_lclk_0", "lcd0"),
-+	PIN_MAP_MUX_GROUP_HOG_DEFAULT("pfc-r8a7740", "lcd0_sync", "lcd0"),
-+};
-+
- static void __init eva_clock_init(void)
+-#ifdef CONFIG_SPARSEMEM_VMEMMAP
+-static int __remove_section(struct zone *zone, struct mem_section *ms)
+-{
+-	/*
+-	 * XXX: Freeing memmap with vmemmap is not implement yet.
+-	 *      This should be removed later.
+-	 */
+-	return -EBUSY;
+-}
+-#else
+ static int __remove_section(struct zone *zone, struct mem_section *ms)
  {
- 	struct clk *system	= clk_get(NULL, "system_clk");
-@@ -953,6 +960,8 @@ static void __init eva_init(void)
- 	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
- 				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
+ 	int ret = -EINVAL;
+@@ -454,7 +444,6 @@ static int __remove_section(struct zone *zone, struct mem_section *ms)
+ 	sparse_remove_one_section(zone, ms);
+ 	return 0;
+ }
+-#endif
  
-+	pinctrl_register_mappings(eva_pinctrl_map, ARRAY_SIZE(eva_pinctrl_map));
-+
- 	r8a7740_pinmux_init();
- 	r8a7740_meram_workaround();
- 
-@@ -962,35 +971,6 @@ static void __init eva_init(void)
- 
- 	/* LCDC0 */
- 	gpio_request(GPIO_FN_LCDC0_SELECT,	NULL);
--	gpio_request(GPIO_FN_LCD0_D0,		NULL);
--	gpio_request(GPIO_FN_LCD0_D1,		NULL);
--	gpio_request(GPIO_FN_LCD0_D2,		NULL);
--	gpio_request(GPIO_FN_LCD0_D3,		NULL);
--	gpio_request(GPIO_FN_LCD0_D4,		NULL);
--	gpio_request(GPIO_FN_LCD0_D5,		NULL);
--	gpio_request(GPIO_FN_LCD0_D6,		NULL);
--	gpio_request(GPIO_FN_LCD0_D7,		NULL);
--	gpio_request(GPIO_FN_LCD0_D8,		NULL);
--	gpio_request(GPIO_FN_LCD0_D9,		NULL);
--	gpio_request(GPIO_FN_LCD0_D10,		NULL);
--	gpio_request(GPIO_FN_LCD0_D11,		NULL);
--	gpio_request(GPIO_FN_LCD0_D12,		NULL);
--	gpio_request(GPIO_FN_LCD0_D13,		NULL);
--	gpio_request(GPIO_FN_LCD0_D14,		NULL);
--	gpio_request(GPIO_FN_LCD0_D15,		NULL);
--	gpio_request(GPIO_FN_LCD0_D16,		NULL);
--	gpio_request(GPIO_FN_LCD0_D17,		NULL);
--	gpio_request(GPIO_FN_LCD0_D18_PORT40,	NULL);
--	gpio_request(GPIO_FN_LCD0_D19_PORT4,	NULL);
--	gpio_request(GPIO_FN_LCD0_D20_PORT3,	NULL);
--	gpio_request(GPIO_FN_LCD0_D21_PORT2,	NULL);
--	gpio_request(GPIO_FN_LCD0_D22_PORT0,	NULL);
--	gpio_request(GPIO_FN_LCD0_D23_PORT1,	NULL);
--	gpio_request(GPIO_FN_LCD0_DCK,		NULL);
--	gpio_request(GPIO_FN_LCD0_VSYN,		NULL);
--	gpio_request(GPIO_FN_LCD0_HSYN,		NULL);
--	gpio_request(GPIO_FN_LCD0_DISP,		NULL);
--	gpio_request(GPIO_FN_LCD0_LCLK_PORT165,	NULL);
- 
- 	gpio_request(GPIO_PORT61, NULL); /* LCDDON */
- 	gpio_direction_output(GPIO_PORT61, 1);
+ /*
+  * Reasonably generic function for adding memory.  It is
 -- 
-1.7.8.6
+1.7.1
 
