@@ -1,54 +1,96 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Wed, 30 Jan 2013 14:09:44 +0000
-Subject: Re: [PATCH/RFC v2 06/11] mmc: tmio-mmc: define device-tree bindings
-Message-Id: <87r4l269uf.fsf@octavius.laptop.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 09 Jan 2013 14:08:53 +0000
+Subject: [PATCH v2 1/2] spi: bitbang: simplify pointer arithmetics
+Message-Id: <Pine.LNX.4.64.1301091502020.13376@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358955158-1510-1-git-send-email-g.liakhovetski@gmx.de>
-	<1358955158-1510-7-git-send-email-g.liakhovetski@gmx.de>
-	<Pine.LNX.4.64.1301241630160.7826@axis700.grange>
-	<87pq0uh9ob.fsf@laptop.org>
-	<Pine.LNX.4.64.1301241649560.7826@axis700.grange>
-	<87k3r2h8lg.fsf@laptop.org>
-	<Pine.LNX.4.64.1301301453110.3113@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1301301453110.3113@axis700.grange> (Guennadi
-	Liakhovetski's message of "Wed, 30 Jan 2013 15:07:03 +0100 (CET)")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: Grant Likely <grant.likely@secretlab.ca>
+Cc: Linus Walleij <linus.walleij@linaro.org>, spi-devel-general@lists.sourceforge.net, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-Hi,
+Add a pointer variable to make spi_bitbang_start() look simpler.
 
-On Wed, Jan 30 2013, Guennadi Liakhovetski wrote:
->> On Thu, Jan 24 2013, Guennadi Liakhovetski wrote:
->> > I tried to keep this binding similar to others, that I proposed in "mmc: 
->> > add DT bindings for more MMC capability flags." Actually, the above is 
->> > indeed wrong, I would call it "cap-sdio-irq." And in that patch I tried to 
->> > keep binding names resembling as closely as possible respective MMC_CAP_* 
->> > flags. I think, it would have been better if "enable-sdio-wakeup" and 
->> > "keep-power-in-suspend" were also named, following the same rule, but it's 
->> > too late now. Anyway, I'm not too concerned about the names. We can use 
->> > "enable-sdio-irq" too if you like.
->> 
->> I see.  Okay, let's go with your proposed cap-* for each MMC_CAP_*, and
->> the pm_caps can stay as they are.
->
-> Thanks, let's do that. But in fact, in a recent discussion it has been 
-> pointed out to me, that this property
->
-> +- toshiba,mmc-cap-sdio-irq	: SDIO IRQ signalling should be used, if
-> +	supported by the hardware, i.e. set MMC_CAP_SDIO_IRQ if
-> +	TMIO_MMC_SDIO_IRQ is also set
->
-> should be common for all MMC drivers: it should be possible to decide per 
-> SD interface, whether SDIO IRQ signalling should be enabled. What do you 
-> think? Shall we add a global "cap-sdio-irq" DT property instead of a 
-> toshiba-specific one?
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
 
-Yes, please.
+Hi Grant
 
-- Chris.
+As requested by you in
+http://thread.gmane.org/gmane.linux.kernel.spi.devel/10065/focus114
+I've split off this minor change - adding a "master" pointer and dropped 
+other unrelated changes like renaming m -> msg etc. The resultime core 
+patch "with space changes filtered out" looks much smaller now.
+
+ drivers/spi/spi-bitbang.c |   27 ++++++++++++++-------------
+ 1 files changed, 14 insertions(+), 13 deletions(-)
+
+diff --git a/drivers/spi/spi-bitbang.c b/drivers/spi/spi-bitbang.c
+index 8b3d8ef..328c4dc 100644
+--- a/drivers/spi/spi-bitbang.c
++++ b/drivers/spi/spi-bitbang.c
+@@ -427,40 +427,41 @@ EXPORT_SYMBOL_GPL(spi_bitbang_transfer);
+  */
+ int spi_bitbang_start(struct spi_bitbang *bitbang)
+ {
+-	int	status;
++	struct spi_master *master = bitbang->master;
++	int status;
+ 
+-	if (!bitbang->master || !bitbang->chipselect)
++	if (!master || !bitbang->chipselect)
+ 		return -EINVAL;
+ 
+ 	INIT_WORK(&bitbang->work, bitbang_work);
+ 	spin_lock_init(&bitbang->lock);
+ 	INIT_LIST_HEAD(&bitbang->queue);
+ 
+-	if (!bitbang->master->mode_bits)
+-		bitbang->master->mode_bits = SPI_CPOL | SPI_CPHA | bitbang->flags;
++	if (!master->mode_bits)
++		master->mode_bits = SPI_CPOL | SPI_CPHA | bitbang->flags;
+ 
+-	if (!bitbang->master->transfer)
+-		bitbang->master->transfer = spi_bitbang_transfer;
++	if (!master->transfer)
++		master->transfer = spi_bitbang_transfer;
+ 	if (!bitbang->txrx_bufs) {
+ 		bitbang->use_dma = 0;
+ 		bitbang->txrx_bufs = spi_bitbang_bufs;
+-		if (!bitbang->master->setup) {
++		if (!master->setup) {
+ 			if (!bitbang->setup_transfer)
+ 				bitbang->setup_transfer  					 spi_bitbang_setup_transfer;
+-			bitbang->master->setup = spi_bitbang_setup;
+-			bitbang->master->cleanup = spi_bitbang_cleanup;
++			master->setup = spi_bitbang_setup;
++			master->cleanup = spi_bitbang_cleanup;
+ 		}
+-	} else if (!bitbang->master->setup)
++	} else if (!master->setup)
+ 		return -EINVAL;
+-	if (bitbang->master->transfer = spi_bitbang_transfer &&
++	if (master->transfer = spi_bitbang_transfer &&
+ 			!bitbang->setup_transfer)
+ 		return -EINVAL;
+ 
+ 	/* this task is the only thing to touch the SPI bits */
+ 	bitbang->busy = 0;
+ 	bitbang->workqueue = create_singlethread_workqueue(
+-			dev_name(bitbang->master->dev.parent));
++			dev_name(master->dev.parent));
+ 	if (bitbang->workqueue = NULL) {
+ 		status = -EBUSY;
+ 		goto err1;
+@@ -469,7 +470,7 @@ int spi_bitbang_start(struct spi_bitbang *bitbang)
+ 	/* driver may get busy before register() returns, especially
+ 	 * if someone registered boardinfo for devices
+ 	 */
+-	status = spi_register_master(bitbang->master);
++	status = spi_register_master(master);
+ 	if (status < 0)
+ 		goto err2;
+ 
 -- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
+1.7.2.5
+
