@@ -1,35 +1,36 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 09 Jan 2013 00:52:32 +0000
-Subject: [PATCH v2 12/29] sh-pfc: Make struct pinmux_gpio enum_id field const
-Message-Id: <1357692769-1432-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 10 Jan 2013 01:23:57 +0000
+Subject: [PATCH 3/5] ARM: mach-shmobile: kzm9g: use voltage regulators by default
+Message-Id: <1357781039-14003-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1357781039-14003-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1357781039-14003-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This ensures that the field is not modified, which is a prerequisite for
-the rest of the PFC refactoring work.
+This is needed to initialise the MMCIF device in the
+absence of platform data.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/sh_pfc.h |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ arch/arm/configs/kzm9g_defconfig |    2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index e150395..6ed7ab9 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -36,7 +36,7 @@ enum {
- #define PINMUX_FLAG_DREG            (0x3f << PINMUX_FLAG_DREG_SHIFT)
- 
- struct pinmux_gpio {
--	pinmux_enum_t enum_id;
-+	const pinmux_enum_t enum_id;
- 	pinmux_flag_t flags;
- 	const char *name;
- };
+diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
+index afbae28..7f6ec2c 100644
+--- a/arch/arm/configs/kzm9g_defconfig
++++ b/arch/arm/configs/kzm9g_defconfig
+@@ -85,6 +85,8 @@ CONFIG_I2C_CHARDEV=y
+ CONFIG_I2C_SH_MOBILE=y
+ CONFIG_GPIO_PCF857X=y
+ # CONFIG_HWMON is not set
++CONFIG_REGULATOR=y
++CONFIG_REGULATOR_DUMMY=y
+ CONFIG_FB=y
+ CONFIG_FB_SH_MOBILE_LCDC=y
+ CONFIG_FRAMEBUFFER_CONSOLE=y
 -- 
-1.7.8.6
+1.7.10.4
 
