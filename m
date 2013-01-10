@@ -1,410 +1,182 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 25 Jan 2013 02:23:48 +0000
-Subject: [PATCH 12/80] sh-pfc: Move platform device and driver to the core
-Message-Id: <1359080696-31489-13-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 10 Jan 2013 20:51:44 +0000
+Subject: [PATCH 11/16] sh-pfc: sh73a0: Remove SCIFA and SCIFB function GPIOS
+Message-Id: <1357851109-22103-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-The pinctrl module registers both a platform device and a platform
-driver. The only purpose of this awkward construction is to have a
-device to pass to the pinctrl registration function.
-
-As a first step to get rid of this hack, move the platform device and
-driver from the pinctrl module to the core. The platform device will
-then be moved to arch code.
+All sh73a0 platforms now use the pinctrl API to control the SCIFA and
+SCIFB pins, the corresponding function GPIOS are unused. Remove them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Paul Mundt <lethal@linux-sh.org>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/sh/pfc/core.c    |  101 +++++++++++++++++++++++++++++++++++++---------
- drivers/sh/pfc/core.h    |    4 ++
- drivers/sh/pfc/gpio.c    |    3 +-
- drivers/sh/pfc/pinctrl.c |  100 ++++++++++++---------------------------------
- 4 files changed, 114 insertions(+), 94 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c |   58 -----------------------------------
+ 1 files changed, 0 insertions(+), 58 deletions(-)
 
-diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
-index 5410996..6d162e6 100644
---- a/drivers/sh/pfc/core.c
-+++ b/drivers/sh/pfc/core.c
-@@ -8,6 +8,8 @@
-  * License.  See the file "COPYING" in the main directory of this archive
-  * for more details.
-  */
-+
-+#define DRV_NAME "sh-pfc"
- #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index 93432f9..fe548de 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -2468,19 +2468,13 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(GPI5),
+ 	GPIO_FN(GPI6),
+ 	GPIO_FN(GPI7),
+-	GPIO_FN(SCIFA7_RXD),
+-	GPIO_FN(SCIFA7_CTS_),
+ 	GPIO_FN(GPO7), \
+ 	GPIO_FN(MFG0_OUT2),
+ 	GPIO_FN(GPO6), \
+ 	GPIO_FN(MFG1_OUT2),
+ 	GPIO_FN(GPO5), \
+-	GPIO_FN(SCIFA0_SCK), \
+ 	GPIO_FN(FSICOSLDT3), \
+ 	GPIO_FN(PORT16_VIO_CKOR),
+-	GPIO_FN(SCIFA0_TXD),
+-	GPIO_FN(SCIFA7_TXD),
+-	GPIO_FN(SCIFA7_RTS_), \
+ 	GPIO_FN(PORT19_VIO_CKO2),
+ 	GPIO_FN(GPO0),
+ 	GPIO_FN(GPO1),
+@@ -2507,11 +2501,7 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(PORT30_VIO_CKOR),
+ 	GPIO_FN(SIM_D), \
+ 	GPIO_FN(PORT31_IROUT),
+-	GPIO_FN(SCIFA4_TXD),
+-	GPIO_FN(SCIFA4_RXD), \
+ 	GPIO_FN(XWUP),
+-	GPIO_FN(SCIFA4_RTS_),
+-	GPIO_FN(SCIFA4_CTS_),
+ 	GPIO_FN(FSIBOBT), \
+ 	GPIO_FN(FSIBIBT),
+ 	GPIO_FN(FSIBOLR), \
+@@ -2520,10 +2510,7 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(FSIBISLD),
+ 	GPIO_FN(VACK),
+ 	GPIO_FN(XTAL1L),
+-	GPIO_FN(SCIFA0_RTS_), \
+ 	GPIO_FN(FSICOSLDT2),
+-	GPIO_FN(SCIFA0_RXD),
+-	GPIO_FN(SCIFA0_CTS_), \
+ 	GPIO_FN(FSICOSLDT1),
+ 	GPIO_FN(FSICOBT), \
+ 	GPIO_FN(FSICIBT), \
+@@ -2649,14 +2636,10 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(BBIF2_RXD),
+ 	GPIO_FN(BBIF2_SYNC),
+ 	GPIO_FN(BBIF2_SCK),
+-	GPIO_FN(SCIFA3_CTS_), \
+ 	GPIO_FN(MFG3_IN2),
+-	GPIO_FN(SCIFA3_RXD), \
+ 	GPIO_FN(MFG3_IN1),
+ 	GPIO_FN(BBIF1_SS2), \
+-	GPIO_FN(SCIFA3_RTS_), \
+ 	GPIO_FN(MFG3_OUT1),
+-	GPIO_FN(SCIFA3_TXD),
+ 	GPIO_FN(HSI_RX_DATA), \
+ 	GPIO_FN(BBIF1_RXD),
+ 	GPIO_FN(HSI_TX_WAKE), \
+@@ -2744,37 +2727,17 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(TPU1TO2), \
+ 	GPIO_FN(TS_SDEN3), \
+ 	GPIO_FN(PORT153_MSIOF2_SS1),
+-	GPIO_FN(SCIFA2_TXD1), \
+ 	GPIO_FN(MSIOF2_MCK0),
+-	GPIO_FN(SCIFA2_RXD1), \
+ 	GPIO_FN(MSIOF2_MCK1),
+-	GPIO_FN(SCIFA2_RTS1_), \
+ 	GPIO_FN(PORT156_MSIOF2_SS2),
+-	GPIO_FN(SCIFA2_CTS1_), \
+ 	GPIO_FN(PORT157_MSIOF2_RXD),
+ 	GPIO_FN(DINT_), \
+-	GPIO_FN(SCIFA2_SCK1), \
+ 	GPIO_FN(TS_SCK3),
+-	GPIO_FN(PORT159_SCIFB_SCK), \
+-	GPIO_FN(PORT159_SCIFA5_SCK), \
+ 	GPIO_FN(NMI),
+-	GPIO_FN(PORT160_SCIFB_TXD), \
+-	GPIO_FN(PORT160_SCIFA5_TXD),
+-	GPIO_FN(PORT161_SCIFB_CTS_), \
+-	GPIO_FN(PORT161_SCIFA5_CTS_),
+-	GPIO_FN(PORT162_SCIFB_RXD), \
+-	GPIO_FN(PORT162_SCIFA5_RXD),
+-	GPIO_FN(PORT163_SCIFB_RTS_), \
+-	GPIO_FN(PORT163_SCIFA5_RTS_), \
+ 	GPIO_FN(TPU3TO0),
+-	GPIO_FN(PORT193_SCIFA5_CTS_), \
+ 	GPIO_FN(BBIF2_TSYNC1),
+-	GPIO_FN(PORT194_SCIFA5_RTS_), \
+ 	GPIO_FN(BBIF2_TSCK1),
+-	GPIO_FN(PORT195_SCIFA5_RXD), \
+ 	GPIO_FN(BBIF2_TXD1),
+-	GPIO_FN(PORT196_SCIFA5_TXD),
+-	GPIO_FN(PORT197_SCIFA5_SCK), \
+ 	GPIO_FN(MFG2_OUT2), \
+ 	GPIO_FN(TPU2TO1),
+ 	GPIO_FN(TPU4TO1), \
+@@ -2825,26 +2788,16 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(MSIOF0L_TXD), \
+ 	GPIO_FN(VIO2_VD3), \
  
- #include <linux/errno.h>
-@@ -20,11 +22,10 @@
- #include <linux/slab.h>
- #include <linux/ioport.h>
- #include <linux/pinctrl/machine.h>
-+#include <linux/platform_device.h>
- 
- #include "core.h"
- 
--static struct sh_pfc sh_pfc __read_mostly;
--
- static void pfc_iounmap(struct sh_pfc *pfc)
- {
- 	int k;
-@@ -494,8 +495,10 @@ int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
- 	return -1;
- }
- 
--int register_sh_pfc(struct sh_pfc_platform_data *pdata)
-+static int sh_pfc_probe(struct platform_device *pdev)
- {
-+	struct sh_pfc_platform_data *pdata = pdev->dev.platform_data;
-+	struct sh_pfc *pfc;
- 	int ret;
- 
- 	/*
-@@ -503,26 +506,29 @@ int register_sh_pfc(struct sh_pfc_platform_data *pdata)
- 	 */
- 	BUILD_BUG_ON(PINMUX_FLAG_TYPE > ((1 << PINMUX_FLAG_DBIT_SHIFT) - 1));
- 
--	if (sh_pfc.pdata)
--		return -EBUSY;
-+	if (pdata = NULL)
-+		return -ENODEV;
- 
--	sh_pfc.pdata = pdata;
-+	pfc = devm_kzalloc(&pdev->dev, sizeof(pfc), GFP_KERNEL);
-+	if (pfc = NULL)
-+		return -ENOMEM;
- 
--	ret = pfc_ioremap(&sh_pfc);
--	if (unlikely(ret < 0)) {
--		sh_pfc.pdata = NULL;
-+	pfc->pdata = pdata;
-+	pfc->dev = &pdev->dev;
-+
-+	ret = pfc_ioremap(pfc);
-+	if (unlikely(ret < 0))
- 		return ret;
--	}
- 
--	spin_lock_init(&sh_pfc.lock);
-+	spin_lock_init(&pfc->lock);
- 
- 	pinctrl_provide_dummies();
--	setup_data_regs(&sh_pfc);
-+	setup_data_regs(pfc);
- 
- 	/*
- 	 * Initialize pinctrl bindings first
- 	 */
--	ret = sh_pfc_register_pinctrl(&sh_pfc);
-+	ret = sh_pfc_register_pinctrl(pfc);
- 	if (unlikely(ret != 0))
- 		goto err;
- 
-@@ -530,7 +536,7 @@ int register_sh_pfc(struct sh_pfc_platform_data *pdata)
- 	/*
- 	 * Then the GPIO chip
- 	 */
--	ret = sh_pfc_register_gpiochip(&sh_pfc);
-+	ret = sh_pfc_register_gpiochip(pfc);
- 	if (unlikely(ret != 0)) {
- 		/*
- 		 * If the GPIO chip fails to come up we still leave the
-@@ -541,17 +547,76 @@ int register_sh_pfc(struct sh_pfc_platform_data *pdata)
- 	}
- #endif
- 
--	pr_info("%s support registered\n", sh_pfc.pdata->name);
-+	platform_set_drvdata(pdev, pfc);
-+
-+	pr_info("%s support registered\n", pdata->name);
- 
- 	return 0;
- 
- err:
--	pfc_iounmap(&sh_pfc);
--	sh_pfc.pdata = NULL;
--
-+	pfc_iounmap(pfc);
- 	return ret;
- }
- 
-+static int sh_pfc_remove(struct platform_device *pdev)
-+{
-+	struct sh_pfc *pfc = platform_get_drvdata(pdev);
-+
-+#ifdef CONFIG_GPIO_SH_PFC
-+	sh_pfc_unregister_gpiochip(pfc);
-+#endif
-+	sh_pfc_unregister_pinctrl(pfc);
-+
-+	pfc_iounmap(pfc);
-+
-+	platform_set_drvdata(pdev, NULL);
-+
-+	return 0;
-+}
-+
-+static const struct platform_device_id sh_pfc_id_table[] = {
-+	{ "sh-pfc", 0 },
-+	{ },
-+};
-+MODULE_DEVICE_TABLE(platform, sh_pfc_id_table);
-+
-+static struct platform_driver sh_pfc_driver = {
-+	.probe		= sh_pfc_probe,
-+	.remove		= sh_pfc_remove,
-+	.id_table	= sh_pfc_id_table,
-+	.driver		= {
-+		.name	= DRV_NAME,
-+		.owner	= THIS_MODULE,
-+	},
-+};
-+
-+static struct platform_device sh_pfc_device = {
-+	.name		= DRV_NAME,
-+	.id		= -1,
-+};
-+
-+int __init register_sh_pfc(struct sh_pfc_platform_data *pdata)
-+{
-+	int rc;
-+
-+	sh_pfc_device.dev.platform_data = pdata;
-+
-+	rc = platform_driver_register(&sh_pfc_driver);
-+	if (likely(!rc)) {
-+		rc = platform_device_register(&sh_pfc_device);
-+		if (unlikely(rc))
-+			platform_driver_unregister(&sh_pfc_driver);
-+	}
-+
-+	return rc;
-+}
-+
-+static void __exit sh_pfc_exit(void)
-+{
-+	platform_driver_unregister(&sh_pfc_driver);
-+}
-+module_exit(sh_pfc_exit);
-+
- MODULE_AUTHOR("Magnus Damm, Paul Mundt, Laurent Pinchart");
- MODULE_DESCRIPTION("Pin Control and GPIO driver for SuperH pin function controller");
- MODULE_LICENSE("GPL v2");
-diff --git a/drivers/sh/pfc/core.h b/drivers/sh/pfc/core.h
-index f3032b2..1287b3e 100644
---- a/drivers/sh/pfc/core.h
-+++ b/drivers/sh/pfc/core.h
-@@ -21,19 +21,23 @@ struct pfc_window {
- };
- 
- struct sh_pfc_chip;
-+struct sh_pfc_pinctrl;
- 
- struct sh_pfc {
-+	struct device *dev;
- 	struct sh_pfc_platform_data *pdata;
- 	spinlock_t lock;
- 
- 	struct pfc_window *window;
- 	struct sh_pfc_chip *gpio;
-+	struct sh_pfc_pinctrl *pinctrl;
- };
- 
- int sh_pfc_register_gpiochip(struct sh_pfc *pfc);
- int sh_pfc_unregister_gpiochip(struct sh_pfc *pfc);
- 
- int sh_pfc_register_pinctrl(struct sh_pfc *pfc);
-+int sh_pfc_unregister_pinctrl(struct sh_pfc *pfc);
- 
- int sh_pfc_read_bit(struct pinmux_data_reg *dr, unsigned long in_pos);
- void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
-diff --git a/drivers/sh/pfc/gpio.c b/drivers/sh/pfc/gpio.c
-index d8b0c74..a32ea80 100644
---- a/drivers/sh/pfc/gpio.c
-+++ b/drivers/sh/pfc/gpio.c
-@@ -8,7 +8,8 @@
-  * License.  See the file "COPYING" in the main directory of this archive
-  * for more details.
-  */
--#define pr_fmt(fmt) "sh_pfc " KBUILD_MODNAME ": " fmt
-+
-+#define pr_fmt(fmt) KBUILD_MODNAME " gpio: " fmt
- 
- #include <linux/init.h>
- #include <linux/gpio.h>
-diff --git a/drivers/sh/pfc/pinctrl.c b/drivers/sh/pfc/pinctrl.c
-index 6f0f58b..2fc8731 100644
---- a/drivers/sh/pfc/pinctrl.c
-+++ b/drivers/sh/pfc/pinctrl.c
-@@ -7,8 +7,8 @@
-  * License.  See the file "COPYING" in the main directory of this archive
-  * for more details.
-  */
--#define DRV_NAME "pinctrl-sh_pfc"
- 
-+#define DRV_NAME "sh-pfc"
- #define pr_fmt(fmt) KBUILD_MODNAME " pinctrl: " fmt
- 
- #include <linux/init.h>
-@@ -17,7 +17,6 @@
- #include <linux/err.h>
- #include <linux/slab.h>
- #include <linux/spinlock.h>
--#include <linux/platform_device.h>
- #include <linux/pinctrl/consumer.h>
- #include <linux/pinctrl/pinctrl.h>
- #include <linux/pinctrl/pinconf.h>
-@@ -39,8 +38,6 @@ struct sh_pfc_pinctrl {
- 	spinlock_t lock;
- };
- 
--static struct sh_pfc_pinctrl *sh_pfc_pmx;
--
- static int sh_pfc_get_groups_count(struct pinctrl_dev *pctldev)
- {
- 	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
-@@ -421,28 +418,31 @@ static int sh_pfc_map_functions(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
- 	return 0;
- }
- 
--static int sh_pfc_pinctrl_probe(struct platform_device *pdev)
-+int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
- {
--	struct sh_pfc *pfc;
-+	struct sh_pfc_pinctrl *pmx;
- 	int ret;
- 
--	if (unlikely(!sh_pfc_pmx))
--		return -ENODEV;
-+	pmx = kzalloc(sizeof(struct sh_pfc_pinctrl), GFP_KERNEL);
-+	if (unlikely(!pmx))
-+		return -ENOMEM;
-+
-+	spin_lock_init(&pmx->lock);
- 
--	pfc = sh_pfc_pmx->pfc;
-+	pmx->pfc = pfc;
-+	pfc->pinctrl = pmx;
- 
--	ret = sh_pfc_map_gpios(pfc, sh_pfc_pmx);
-+	ret = sh_pfc_map_gpios(pfc, pmx);
- 	if (unlikely(ret != 0))
- 		return ret;
- 
--	ret = sh_pfc_map_functions(pfc, sh_pfc_pmx);
-+	ret = sh_pfc_map_functions(pfc, pmx);
- 	if (unlikely(ret != 0))
- 		goto free_pads;
- 
--	sh_pfc_pmx->pctl = pinctrl_register(&sh_pfc_pinctrl_desc, &pdev->dev,
--					    sh_pfc_pmx);
--	if (IS_ERR(sh_pfc_pmx->pctl)) {
--		ret = PTR_ERR(sh_pfc_pmx->pctl);
-+	pmx->pctl = pinctrl_register(&sh_pfc_pinctrl_desc, pfc->dev, pmx);
-+	if (IS_ERR(pmx->pctl)) {
-+		ret = PTR_ERR(pmx->pctl);
- 		goto free_functions;
- 	}
- 
-@@ -451,79 +451,29 @@ static int sh_pfc_pinctrl_probe(struct platform_device *pdev)
- 	sh_pfc_gpio_range.base = pfc->pdata->first_gpio;
- 	sh_pfc_gpio_range.pin_base = pfc->pdata->first_gpio;
- 
--	pinctrl_add_gpio_range(sh_pfc_pmx->pctl, &sh_pfc_gpio_range);
--
--	platform_set_drvdata(pdev, sh_pfc_pmx);
-+	pinctrl_add_gpio_range(pmx->pctl, &sh_pfc_gpio_range);
- 
- 	return 0;
- 
- free_functions:
--	kfree(sh_pfc_pmx->functions);
-+	kfree(pmx->functions);
- free_pads:
--	kfree(sh_pfc_pmx->pads);
--	kfree(sh_pfc_pmx);
-+	kfree(pmx->pads);
-+	kfree(pmx);
- 
- 	return ret;
- }
- 
--static int sh_pfc_pinctrl_remove(struct platform_device *pdev)
-+int sh_pfc_unregister_pinctrl(struct sh_pfc *pfc)
- {
--	struct sh_pfc_pinctrl *pmx = platform_get_drvdata(pdev);
-+	struct sh_pfc_pinctrl *pmx = pfc->pinctrl;
- 
- 	pinctrl_unregister(pmx->pctl);
- 
--	platform_set_drvdata(pdev, NULL);
--
--	kfree(sh_pfc_pmx->functions);
--	kfree(sh_pfc_pmx->pads);
--	kfree(sh_pfc_pmx);
-+	kfree(pmx->functions);
-+	kfree(pmx->pads);
-+	kfree(pmx);
- 
-+	pfc->pinctrl = NULL;
- 	return 0;
- }
--
--static struct platform_driver sh_pfc_pinctrl_driver = {
--	.probe		= sh_pfc_pinctrl_probe,
--	.remove		= sh_pfc_pinctrl_remove,
--	.driver		= {
--		.name	= DRV_NAME,
--		.owner	= THIS_MODULE,
--	},
--};
--
--static struct platform_device sh_pfc_pinctrl_device = {
--	.name		= DRV_NAME,
--	.id		= -1,
--};
--
--static int sh_pfc_pinctrl_init(void)
--{
--	int rc;
--
--	rc = platform_driver_register(&sh_pfc_pinctrl_driver);
--	if (likely(!rc)) {
--		rc = platform_device_register(&sh_pfc_pinctrl_device);
--		if (unlikely(rc))
--			platform_driver_unregister(&sh_pfc_pinctrl_driver);
--	}
--
--	return rc;
--}
--
--int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
--{
--	sh_pfc_pmx = kzalloc(sizeof(struct sh_pfc_pinctrl), GFP_KERNEL);
--	if (unlikely(!sh_pfc_pmx))
--		return -ENOMEM;
--
--	spin_lock_init(&sh_pfc_pmx->lock);
--
--	sh_pfc_pmx->pfc = pfc;
--
--	return sh_pfc_pinctrl_init();
--}
--
--static void __exit sh_pfc_pinctrl_exit(void)
--{
--	platform_driver_unregister(&sh_pfc_pinctrl_driver);
--}
--module_exit(sh_pfc_pinctrl_exit);
+-	GPIO_FN(SCIFA1_TXD), \
+ 	GPIO_FN(OVCN2),
+ 	GPIO_FN(EXTLP), \
+-	GPIO_FN(SCIFA1_SCK), \
+ 	GPIO_FN(PORT226_VIO_CKO2),
+-	GPIO_FN(SCIFA1_RTS_), \
+ 	GPIO_FN(IDIN),
+-	GPIO_FN(SCIFA1_RXD),
+-	GPIO_FN(SCIFA1_CTS_), \
+ 	GPIO_FN(MFG1_IN1),
+ 	GPIO_FN(MSIOF1_TXD), \
+-	GPIO_FN(SCIFA2_TXD2),
+ 	GPIO_FN(MSIOF1_TSYNC), \
+-	GPIO_FN(SCIFA2_CTS2_),
+ 	GPIO_FN(MSIOF1_TSCK), \
+-	GPIO_FN(SCIFA2_SCK2),
+ 	GPIO_FN(MSIOF1_RXD), \
+-	GPIO_FN(SCIFA2_RXD2),
+ 	GPIO_FN(MSIOF1_RSCK), \
+-	GPIO_FN(SCIFA2_RTS2_), \
+ 	GPIO_FN(VIO2_CLK2), \
+ 	GPIO_FN(MSIOF1_RSYNC), \
+ 	GPIO_FN(MFG1_IN2), \
+@@ -2857,7 +2810,6 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(VIO2_FIELD2), \
+ 	GPIO_FN(MSIOF1_SS2), \
+ 	GPIO_FN(VIO2_HD2), \
+-	GPIO_FN(SCIFA6_TXD),
+ 	GPIO_FN(PORT241_IRDA_OUT), \
+ 	GPIO_FN(PORT241_IROUT), \
+ 	GPIO_FN(MFG4_OUT1), \
+@@ -2866,25 +2818,15 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(MFG4_IN2),
+ 	GPIO_FN(PORT243_IRDA_FIRSEL), \
+ 	GPIO_FN(PORT243_VIO_CKO2),
+-	GPIO_FN(PORT244_SCIFA5_CTS_), \
+ 	GPIO_FN(MFG2_IN1), \
+-	GPIO_FN(PORT244_SCIFB_CTS_), \
+ 	GPIO_FN(MSIOF2R_RXD),
+-	GPIO_FN(PORT245_SCIFA5_RTS_), \
+ 	GPIO_FN(MFG2_IN2), \
+-	GPIO_FN(PORT245_SCIFB_RTS_), \
+ 	GPIO_FN(MSIOF2R_TXD),
+-	GPIO_FN(PORT246_SCIFA5_RXD), \
+ 	GPIO_FN(MFG1_OUT1), \
+-	GPIO_FN(PORT246_SCIFB_RXD), \
+ 	GPIO_FN(TPU1TO0),
+-	GPIO_FN(PORT247_SCIFA5_TXD), \
+ 	GPIO_FN(MFG3_OUT2), \
+-	GPIO_FN(PORT247_SCIFB_TXD), \
+ 	GPIO_FN(TPU3TO1),
+-	GPIO_FN(PORT248_SCIFA5_SCK), \
+ 	GPIO_FN(MFG2_OUT1), \
+-	GPIO_FN(PORT248_SCIFB_SCK), \
+ 	GPIO_FN(TPU2TO0), \
+ 	GPIO_FN(PORT248_I2C_SCL3), \
+ 	GPIO_FN(MSIOF2R_TSCK),
 -- 
-1.7.10.4
+1.7.8.6
 
