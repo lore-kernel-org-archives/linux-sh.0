@@ -1,80 +1,73 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 16 Jan 2013 16:54:42 +0000
-Subject: [PATCH 07/11] mmc: tmio-mmc: parse device-tree bindings
-Message-Id: <1358355286-26029-8-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 10 Jan 2013 20:51:48 +0000
+Subject: [PATCH 15/16] ARM: shmobile: sh73a0: Remove I2C function GPIOs
+Message-Id: <1357851109-22103-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358355286-26029-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1358355286-26029-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: linux-sh@vger.kernel.org
 
-Add parsing of common and driver-specific DT bindings to the tmio-mmc
-MMC host driver.
+Those GPIOs have been deprecated by the pinctrl API. They are unused and
+unneeded, remove them.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/mmc/host/tmio_mmc_pio.c |   24 +++++++++++++++++++++++-
- 1 files changed, 23 insertions(+), 1 deletions(-)
+ arch/arm/mach-shmobile/include/mach/sh73a0.h |   18 ++++++++----------
+ 1 files changed, 8 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index b25adb4..84582b3 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -918,6 +918,24 @@ static void tmio_mmc_init_ocr(struct tmio_mmc_host *host)
- 		dev_warn(mmc_dev(mmc), "Platform OCR mask is ignored\n");
- }
- 
-+static void tmio_mmc_of_parse(struct platform_device *pdev,
-+			      struct tmio_mmc_data *pdata)
-+{
-+	const struct device_node *np = pdev->dev.of_node;
-+	if (!np)
-+		return;
-+
-+	if (of_get_property(np, "toshiba,mmc-wrprotect-disable", NULL))
-+		pdata->flags |= TMIO_MMC_WRPROTECT_DISABLE;
-+	if (of_get_property(np, "toshiba,mmc-blksz-2bytes", NULL))
-+		pdata->flags |= TMIO_MMC_BLKSZ_2BYTES;
-+	if (of_get_property(np, "toshiba,mmc-cap-sdio-irq", NULL) &&
-+	    pdata->flags & TMIO_MMC_SDIO_IRQ)
-+		pdata->capabilities |= MMC_CAP_SDIO_IRQ;
-+	if (of_get_property(np, "toshiba,mmc-has-idle-wait", NULL))
-+		pdata->flags |= TMIO_MMC_HAS_IDLE_WAIT;
-+}
-+
- int tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 				  struct platform_device *pdev,
- 				  struct tmio_mmc_data *pdata)
-@@ -928,6 +946,8 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 	int ret;
- 	u32 irq_mask = TMIO_MASK_CMD;
- 
-+	tmio_mmc_of_parse(pdev, pdata);
-+
- 	if (!(pdata->flags & TMIO_MMC_HAS_IDLE_WAIT))
- 		pdata->write16_hook = NULL;
- 
-@@ -939,6 +959,8 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 	if (!mmc)
- 		return -ENOMEM;
- 
-+	mmc_of_parse(mmc);
-+
- 	pdata->dev = &pdev->dev;
- 	_host = mmc_priv(mmc);
- 	_host->pdata = pdata;
-@@ -959,7 +981,7 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 	}
- 
- 	mmc->ops = &tmio_mmc_ops;
--	mmc->caps = MMC_CAP_4_BIT_DATA | pdata->capabilities;
-+	mmc->caps |= MMC_CAP_4_BIT_DATA | pdata->capabilities;
- 	mmc->caps2 = pdata->capabilities2;
- 	mmc->max_segs = 32;
- 	mmc->max_blk_size = 512;
+diff --git a/arch/arm/mach-shmobile/include/mach/sh73a0.h b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+index 54a60d7..8e4e469 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh73a0.h
++++ b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+@@ -115,9 +115,9 @@ enum {
+ 	GPIO_FN_GPO4, GPIO_FN_STATUS2,
+ 	GPIO_FN_VINT,
+ 	GPIO_FN_TCKON,
+-	GPIO_FN_XDVFS1, GPIO_FN_PORT27_I2C_SCL2, GPIO_FN_PORT27_I2C_SCL3, \
++	GPIO_FN_XDVFS1,
+ 	GPIO_FN_MFG0_OUT1, GPIO_FN_PORT27_IROUT,
+-	GPIO_FN_XDVFS2, GPIO_FN_PORT28_I2C_SDA2, GPIO_FN_PORT28_I2C_SDA3, \
++	GPIO_FN_XDVFS2,
+ 	GPIO_FN_PORT28_TPU1TO1,
+ 	GPIO_FN_SIM_RST, GPIO_FN_PORT29_TPU1TO1,
+ 	GPIO_FN_SIM_CLK, GPIO_FN_PORT30_VIO_CKOR,
+@@ -203,10 +203,8 @@ enum {
+ 	GPIO_FN_HSI_TX_WAKE, GPIO_FN_BBIF1_TSCK,
+ 	GPIO_FN_HSI_TX_DATA, GPIO_FN_BBIF1_TSYNC,
+ 	GPIO_FN_HSI_TX_READY, GPIO_FN_BBIF1_TXD,
+-	GPIO_FN_HSI_RX_READY, GPIO_FN_BBIF1_RSCK, GPIO_FN_PORT115_I2C_SCL2, \
+-	GPIO_FN_PORT115_I2C_SCL3,
+-	GPIO_FN_HSI_RX_WAKE, GPIO_FN_BBIF1_RSYNC, GPIO_FN_PORT116_I2C_SDA2, \
+-	GPIO_FN_PORT116_I2C_SDA3,
++	GPIO_FN_HSI_RX_READY, GPIO_FN_BBIF1_RSCK,
++	GPIO_FN_HSI_RX_WAKE, GPIO_FN_BBIF1_RSYNC,
+ 	GPIO_FN_HSI_RX_FLAG, GPIO_FN_BBIF1_SS1, GPIO_FN_BBIF1_FLOW,
+ 	GPIO_FN_HSI_TX_FLAG,
+ 	GPIO_FN_VIO_VD, GPIO_FN_VIO2_VD,
+@@ -292,8 +290,8 @@ enum {
+ 	GPIO_FN_MSIOF1_RXD,
+ 	GPIO_FN_MSIOF1_RSCK, GPIO_FN_VIO2_CLK2,
+ 	GPIO_FN_MSIOF1_RSYNC, GPIO_FN_MFG1_IN2, GPIO_FN_VIO2_VD2, \
+-	GPIO_FN_MSIOF1_MCK0, GPIO_FN_PORT236_I2C_SDA2,
+-	GPIO_FN_MSIOF1_MCK1, GPIO_FN_PORT237_I2C_SCL2,
++	GPIO_FN_MSIOF1_MCK0,
++	GPIO_FN_MSIOF1_MCK1,
+ 	GPIO_FN_MSIOF1_SS1, GPIO_FN_VIO2_FIELD2,
+ 	GPIO_FN_MSIOF1_SS2, GPIO_FN_VIO2_HD2,
+ 	GPIO_FN_PORT241_IRDA_OUT, GPIO_FN_PORT241_IROUT, GPIO_FN_MFG4_OUT1, \
+@@ -310,9 +308,9 @@ enum {
+ 	GPIO_FN_TPU3TO1,
+ 	GPIO_FN_MFG2_OUT1,
+ 	GPIO_FN_TPU2TO0,
+-	GPIO_FN_PORT248_I2C_SCL3, GPIO_FN_MSIOF2R_TSCK,
++	GPIO_FN_MSIOF2R_TSCK,
+ 	GPIO_FN_PORT249_IROUT, GPIO_FN_MFG4_IN1, \
+-	GPIO_FN_PORT249_I2C_SDA3, GPIO_FN_MSIOF2R_TSYNC,
++	GPIO_FN_MSIOF2R_TSYNC,
+ 	GPIO_FN_SDHICLK0,
+ 	GPIO_FN_SDHICD0,
+ 	GPIO_FN_SDHID0_0,
 -- 
-1.7.2.5
+1.7.8.6
 
