@@ -1,68 +1,63 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 23 Jan 2013 15:32:35 +0000
-Subject: [PATCH v2 08/11] mmc: sh_mobile_sdhi: remove unused .pdata field
-Message-Id: <1358955158-1510-9-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 10 Jan 2013 20:51:37 +0000
+Subject: [PATCH 04/16] ARM: shmobile: ag5evm: Register pinctrl mappings for SCIF
+Message-Id: <1357851109-22103-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358955158-1510-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1358955158-1510-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-sh@vger.kernel.org
 
-The struct sh_mobile_sdhi_info::pdata field was only used for platform-
-based card detection and isn't used anymore since the migration to GPIO-
-based MMC slot functions. Remove it.
+Replace the GPIO-based SCIF pinmux configuration by pinctrl mappings.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c  |    4 ----
- include/linux/mmc/sh_mobile_sdhi.h |    2 --
- 2 files changed, 0 insertions(+), 6 deletions(-)
+ arch/arm/mach-shmobile/board-ag5evm.c |   16 ++++++++++------
+ 1 files changed, 10 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index e0ca0ab..17d5778 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -135,7 +135,6 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	mmc_data = &priv->mmc_data;
+diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
+index 032d108..4a2b418 100644
+--- a/arch/arm/mach-shmobile/board-ag5evm.c
++++ b/arch/arm/mach-shmobile/board-ag5evm.c
+@@ -23,6 +23,7 @@
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+ #include <linux/irq.h>
++#include <linux/pinctrl/machine.h>
+ #include <linux/platform_device.h>
+ #include <linux/delay.h>
+ #include <linux/io.h>
+@@ -551,6 +552,13 @@ static struct platform_device *ag5evm_devices[] __initdata = {
+ 	&sdhi1_device,
+ };
  
- 	if (p) {
--		p->pdata = mmc_data;
- 		if (p->init) {
- 			ret = p->init(pdev, &sdhi_ops);
- 			if (ret)
-@@ -284,9 +283,6 @@ static int sh_mobile_sdhi_remove(struct platform_device *pdev)
- 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
- 	int i = 0, irq;
++static const struct pinctrl_map ag5evm_pinctrl_map[] = {
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-sh73a0",
++				  "scifa2_data_0", "scifa2"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-sh73a0",
++				  "scifa2_ctrl_0", "scifa2"),
++};
++
+ static void __init ag5evm_init(void)
+ {
+ 	regulator_register_always_on(0, "fixed-1.8V", fixed1v8_power_consumers,
+@@ -559,14 +567,10 @@ static void __init ag5evm_init(void)
+ 				     ARRAY_SIZE(fixed2v8_power_consumers), 3300000);
+ 	regulator_register_fixed(3, dummy_supplies, ARRAY_SIZE(dummy_supplies));
  
--	if (p)
--		p->pdata = NULL;
++	pinctrl_register_mappings(ag5evm_pinctrl_map,
++				  ARRAY_SIZE(ag5evm_pinctrl_map));
+ 	sh73a0_pinmux_init();
+ 
+-	/* enable SCIFA2 */
+-	gpio_request(GPIO_FN_SCIFA2_TXD1, NULL);
+-	gpio_request(GPIO_FN_SCIFA2_RXD1, NULL);
+-	gpio_request(GPIO_FN_SCIFA2_RTS1_, NULL);
+-	gpio_request(GPIO_FN_SCIFA2_CTS1_, NULL);
 -
- 	tmio_mmc_host_remove(host);
- 
- 	while (1) {
-diff --git a/include/linux/mmc/sh_mobile_sdhi.h b/include/linux/mmc/sh_mobile_sdhi.h
-index b65679f..b76bcf0 100644
---- a/include/linux/mmc/sh_mobile_sdhi.h
-+++ b/include/linux/mmc/sh_mobile_sdhi.h
-@@ -4,7 +4,6 @@
- #include <linux/types.h>
- 
- struct platform_device;
--struct tmio_mmc_data;
- 
- #define SH_MOBILE_SDHI_IRQ_CARD_DETECT	"card_detect"
- #define SH_MOBILE_SDHI_IRQ_SDCARD	"sdcard"
-@@ -26,7 +25,6 @@ struct sh_mobile_sdhi_info {
- 	unsigned long tmio_caps2;
- 	u32 tmio_ocr_mask;	/* available MMC voltages */
- 	unsigned int cd_gpio;
--	struct tmio_mmc_data *pdata;
- 	void (*set_pwr)(struct platform_device *pdev, int state);
- 	int (*get_cd)(struct platform_device *pdev);
- 
+ 	/* enable KEYSC */
+ 	gpio_request(GPIO_FN_KEYIN0_PU, NULL);
+ 	gpio_request(GPIO_FN_KEYIN1_PU, NULL);
 -- 
-1.7.2.5
+1.7.8.6
 
