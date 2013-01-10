@@ -1,43 +1,76 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 04 Jan 2013 00:40:58 +0000
-Subject: [PATCH 7/9] ARM: shmobile: kzm9g: Populate platform devices from device tree
-Message-Id: <1357260060-32164-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 10 Jan 2013 19:47:52 +0000
+Subject: [PATCH 1/8] ARM: shmobile: ag5evm: Use gpio_request_one()
+Message-Id: <1357847279-7765-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Call of_platform_populate() at machine initialization time to populate
-platform devices. Remove the explicit pinmux initialization as the PFC
-device will be instantiated from the device tree.
+Replace occurences of gpio_request() and gpio_direction_*() by calls to
+gpio_request_one().
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-kzm9g.c |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
+ arch/arm/mach-shmobile/board-ag5evm.c |   22 ++++++++--------------
+ 1 files changed, 8 insertions(+), 14 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index 92faae5..7a81505 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -29,6 +29,7 @@
- #include <linux/mmc/sh_mmcif.h>
- #include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/mfd/tmio.h>
-+#include <linux/of_platform.h>
- #include <linux/pinctrl/machine.h>
- #include <linux/platform_device.h>
- #include <linux/regulator/fixed.h>
-@@ -668,7 +669,7 @@ static void __init kzm_init(void)
+diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
+index 032d108..5e7fe15 100644
+--- a/arch/arm/mach-shmobile/board-ag5evm.c
++++ b/arch/arm/mach-shmobile/board-ag5evm.c
+@@ -479,11 +479,10 @@ static void ag5evm_sdhi1_set_pwr(struct platform_device *pdev, int state)
+ 	static int power_gpio = -EINVAL;
  
- 	pinctrl_register_mappings(kzm_pinctrl_map, ARRAY_SIZE(kzm_pinctrl_map));
+ 	if (power_gpio < 0) {
+-		int ret = gpio_request(GPIO_PORT114, "sdhi1_power");
+-		if (!ret) {
++		int ret = gpio_request_one(GPIO_PORT114, GPIOF_OUT_INIT_LOW,
++					   "sdhi1_power");
++		if (!ret)
+ 			power_gpio = GPIO_PORT114;
+-			gpio_direction_output(power_gpio, 0);
+-		}
+ 	}
  
--	sh73a0_pinmux_init();
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
+ 	/*
+@@ -604,14 +603,11 @@ static void __init ag5evm_init(void)
+ 	gpio_request(GPIO_FN_MMCD0_5_PU, NULL);
+ 	gpio_request(GPIO_FN_MMCD0_6_PU, NULL);
+ 	gpio_request(GPIO_FN_MMCD0_7_PU, NULL);
+-	gpio_request(GPIO_PORT208, NULL); /* Reset */
+-	gpio_direction_output(GPIO_PORT208, 1);
++	gpio_request_one(GPIO_PORT208, GPIOF_OUT_INIT_HIGH, NULL); /* Reset */
  
- 	/* enable SCIFA4 */
- 	gpio_request(GPIO_FN_SCIFA4_TXD, NULL);
+ 	/* enable SMSC911X */
+-	gpio_request(GPIO_PORT144, NULL); /* PINTA2 */
+-	gpio_direction_input(GPIO_PORT144);
+-	gpio_request(GPIO_PORT145, NULL); /* RESET */
+-	gpio_direction_output(GPIO_PORT145, 1);
++	gpio_request_one(GPIO_PORT144, GPIOF_IN, NULL); /* PINTA2 */
++	gpio_request_one(GPIO_PORT145, GPIOF_OUT_INIT_HIGH, NULL); /* RESET */
+ 
+ 	/* FSI A */
+ 	gpio_request(GPIO_FN_FSIACK, NULL);
+@@ -626,15 +622,13 @@ static void __init ag5evm_init(void)
+ 	gpio_request(GPIO_FN_PORT243_IRDA_FIRSEL, NULL);
+ 
+ 	/* LCD panel */
+-	gpio_request(GPIO_PORT217, NULL); /* RESET */
+-	gpio_direction_output(GPIO_PORT217, 0);
++	gpio_request_one(GPIO_PORT217, GPIOF_OUT_INIT_LOW, NULL); /* RESET */
+ 	mdelay(1);
+ 	gpio_set_value(GPIO_PORT217, 1);
+ 	mdelay(100);
+ 
+ 	/* LCD backlight controller */
+-	gpio_request(GPIO_PORT235, NULL); /* RESET */
+-	gpio_direction_output(GPIO_PORT235, 0);
++	gpio_request_one(GPIO_PORT235, GPIOF_OUT_INIT_LOW, NULL); /* RESET */
+ 	lcd_backlight_set_brightness(0);
+ 
+ 	/* enable SDHI0 on CN15 [SD I/F] */
 -- 
 1.7.8.6
 
