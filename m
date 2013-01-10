@@ -1,96 +1,27 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 09 Jan 2013 14:08:53 +0000
-Subject: [PATCH v2 1/2] spi: bitbang: simplify pointer arithmetics
-Message-Id: <Pine.LNX.4.64.1301091502020.13376@axis700.grange>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Thu, 10 Jan 2013 11:55:15 +0000
+Subject: Re: [PATCH v2 1/2] spi: bitbang: simplify pointer arithmetics
+Message-Id: <CACRpkdYdRnjTA3xcSm+nQpWrYEYvBNmSTUcY7aVnA3evP9aOog@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1301091502020.13376@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1301091502020.13376-0199iw4Nj15frtckUFj5Ag@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Grant Likely <grant.likely@secretlab.ca>
-Cc: Linus Walleij <linus.walleij@linaro.org>, spi-devel-general@lists.sourceforge.net, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: Guennadi Liakhovetski <g.liakhovetski-Mmb7MZpHnFY@public.gmane.org>
+Cc: spi-devel-general-5NWGOfrQmneRv+LV9MX5uipxlwaOVQ5f@public.gmane.org, Mark Brown <broonie-yzvPICuk2AATkU/dhu1WVueM+bqZidxxQQ4Iyu8u01E@public.gmane.org>, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
 
-Add a pointer variable to make spi_bitbang_start() look simpler.
+On Wed, Jan 9, 2013 at 3:08 PM, Guennadi Liakhovetski
+<g.liakhovetski@gmx.de> wrote:
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
+> Add a pointer variable to make spi_bitbang_start() look simpler.
+>
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Hi Grant
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 
-As requested by you in
-http://thread.gmane.org/gmane.linux.kernel.spi.devel/10065/focus114
-I've split off this minor change - adding a "master" pointer and dropped 
-other unrelated changes like renaming m -> msg etc. The resultime core 
-patch "with space changes filtered out" looks much smaller now.
+I think Mark Brown is still backing up Grant sometimes, so include
+him on CC.
 
- drivers/spi/spi-bitbang.c |   27 ++++++++++++++-------------
- 1 files changed, 14 insertions(+), 13 deletions(-)
-
-diff --git a/drivers/spi/spi-bitbang.c b/drivers/spi/spi-bitbang.c
-index 8b3d8ef..328c4dc 100644
---- a/drivers/spi/spi-bitbang.c
-+++ b/drivers/spi/spi-bitbang.c
-@@ -427,40 +427,41 @@ EXPORT_SYMBOL_GPL(spi_bitbang_transfer);
-  */
- int spi_bitbang_start(struct spi_bitbang *bitbang)
- {
--	int	status;
-+	struct spi_master *master = bitbang->master;
-+	int status;
- 
--	if (!bitbang->master || !bitbang->chipselect)
-+	if (!master || !bitbang->chipselect)
- 		return -EINVAL;
- 
- 	INIT_WORK(&bitbang->work, bitbang_work);
- 	spin_lock_init(&bitbang->lock);
- 	INIT_LIST_HEAD(&bitbang->queue);
- 
--	if (!bitbang->master->mode_bits)
--		bitbang->master->mode_bits = SPI_CPOL | SPI_CPHA | bitbang->flags;
-+	if (!master->mode_bits)
-+		master->mode_bits = SPI_CPOL | SPI_CPHA | bitbang->flags;
- 
--	if (!bitbang->master->transfer)
--		bitbang->master->transfer = spi_bitbang_transfer;
-+	if (!master->transfer)
-+		master->transfer = spi_bitbang_transfer;
- 	if (!bitbang->txrx_bufs) {
- 		bitbang->use_dma = 0;
- 		bitbang->txrx_bufs = spi_bitbang_bufs;
--		if (!bitbang->master->setup) {
-+		if (!master->setup) {
- 			if (!bitbang->setup_transfer)
- 				bitbang->setup_transfer  					 spi_bitbang_setup_transfer;
--			bitbang->master->setup = spi_bitbang_setup;
--			bitbang->master->cleanup = spi_bitbang_cleanup;
-+			master->setup = spi_bitbang_setup;
-+			master->cleanup = spi_bitbang_cleanup;
- 		}
--	} else if (!bitbang->master->setup)
-+	} else if (!master->setup)
- 		return -EINVAL;
--	if (bitbang->master->transfer = spi_bitbang_transfer &&
-+	if (master->transfer = spi_bitbang_transfer &&
- 			!bitbang->setup_transfer)
- 		return -EINVAL;
- 
- 	/* this task is the only thing to touch the SPI bits */
- 	bitbang->busy = 0;
- 	bitbang->workqueue = create_singlethread_workqueue(
--			dev_name(bitbang->master->dev.parent));
-+			dev_name(master->dev.parent));
- 	if (bitbang->workqueue = NULL) {
- 		status = -EBUSY;
- 		goto err1;
-@@ -469,7 +470,7 @@ int spi_bitbang_start(struct spi_bitbang *bitbang)
- 	/* driver may get busy before register() returns, especially
- 	 * if someone registered boardinfo for devices
- 	 */
--	status = spi_register_master(bitbang->master);
-+	status = spi_register_master(master);
- 	if (status < 0)
- 		goto err2;
- 
--- 
-1.7.2.5
-
+Yours,
+Linus Walleij
