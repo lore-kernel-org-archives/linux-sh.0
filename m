@@ -1,32 +1,70 @@
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
-Date: Thu, 10 Jan 2013 10:16:44 +0000
-Subject: [PATCH 2/2] ARM: mach-shmobile: sh73a0: allow unplugging of CPU0
-Message-Id: <1357813004-9549-3-git-send-email-ulrich.hecht@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 10 Jan 2013 19:47:59 +0000
+Subject: [PATCH 8/8] ARM: shmobile: mackerel: Use gpio_request_one()
+Message-Id: <1357847279-7765-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-sh73a0 deals fine with disabling any core, so we should permit it.
+Replace occurences of gpio_request() and gpio_direction_*() by calls to
+gpio_request_one().
 
-Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/smp-sh73a0.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/board-mackerel.c |   16 ++++++----------
+ 1 files changed, 6 insertions(+), 10 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
-index 624f00f..2d4fe08 100644
---- a/arch/arm/mach-shmobile/smp-sh73a0.c
-+++ b/arch/arm/mach-shmobile/smp-sh73a0.c
-@@ -141,6 +141,6 @@ struct smp_operations sh73a0_smp_ops __initdata = {
- #ifdef CONFIG_HOTPLUG_CPU
- 	.cpu_kill		= sh73a0_cpu_kill,
- 	.cpu_die		= shmobile_cpu_die,
--	.cpu_disable		= shmobile_cpu_disable,
-+	.cpu_disable		= shmobile_cpu_disable_any,
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 2fed62f..e79fc05 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1408,11 +1408,10 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_LCDDISP,  NULL);
+ 	gpio_request(GPIO_FN_LCDDCK,   NULL);
+ 
+-	gpio_request(GPIO_PORT31, NULL); /* backlight */
+-	gpio_direction_output(GPIO_PORT31, 0); /* off by default */
++	/* backlight, off by default */
++	gpio_request_one(GPIO_PORT31, GPIOF_OUT_INIT_LOW, NULL);
+ 
+-	gpio_request(GPIO_PORT151, NULL); /* LCDDON */
+-	gpio_direction_output(GPIO_PORT151, 1);
++	gpio_request_one(GPIO_PORT151, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
+ 
+ 	/* USBHS0 */
+ 	gpio_request(GPIO_FN_VBUS0_0, NULL);
+@@ -1428,8 +1427,7 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_FSIAILR,	NULL);
+ 	gpio_request(GPIO_FN_FSIAISLD,	NULL);
+ 	gpio_request(GPIO_FN_FSIAOSLD,	NULL);
+-	gpio_request(GPIO_PORT161,	NULL);
+-	gpio_direction_output(GPIO_PORT161, 0); /* slave */
++	gpio_request_one(GPIO_PORT161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
+ 
+ 	gpio_request(GPIO_PORT9,  NULL);
+ 	gpio_request(GPIO_PORT10, NULL);
+@@ -1483,8 +1481,7 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_SDHID1_0, NULL);
  #endif
- };
+ 	/* card detect pin for MMC slot (CN7) */
+-	gpio_request(GPIO_PORT41, NULL);
+-	gpio_direction_input(GPIO_PORT41);
++	gpio_request_one(GPIO_PORT41, GPIOF_IN, NULL);
+ 
+ 	/* enable SDHI2 */
+ 	gpio_request(GPIO_FN_SDHICMD2, NULL);
+@@ -1495,8 +1492,7 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_SDHID2_0, NULL);
+ 
+ 	/* card detect pin for microSD slot (CN23) */
+-	gpio_request(GPIO_PORT162, NULL);
+-	gpio_direction_input(GPIO_PORT162);
++	gpio_request_one(GPIO_PORT162, GPIOF_IN, NULL);
+ 
+ 	/* MMCIF */
+ 	gpio_request(GPIO_FN_MMCD0_0, NULL);
 -- 
-1.7.10.4
+1.7.8.6
 
