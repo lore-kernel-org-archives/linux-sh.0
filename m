@@ -1,222 +1,47 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 31 Jan 2013 01:50:50 +0000
-Subject: [PATCH 3/4] ARM: mach-shmobile: r8a7779: Minimal setup using DT
-Message-Id: <1359597051-32700-4-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 10 Jan 2013 01:23:58 +0000
+Subject: [PATCH 4/5] ARM: mach-shmobile: armadillo: update defconfig
+Message-Id: <1357781039-14003-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359597051-32700-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359597051-32700-1-git-send-email-horms+renesas@verge.net.au>
+References: <1357781039-14003-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1357781039-14003-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Allow a minimal setup of the r8a7779 SoC using a flattened device tree.
-In particular, configure the i2c and ethernet controllers using a
-flattened device tree.
+* Enable ARM_APPENDED_DTB
 
-SCI serial controller and TMU clock source, whose drivers do not yet
-support configuration using a flattened device tree, are still configured
-using C code in order to allow booting of a board with this SoC.
+  Typically the bootloader of an armadillo board does not support DT
+  so this option is useful.
 
-The ethernet controller also requires a regulator which is a board property.
-A sample snippet DT for the marzen board is as follows:
+* Do not disable CONFIG_SUSPEND
 
-/dts-v1/;
-/include/ "r8a7779.dtsi"
-
-/ {
-	fixedregulator3v3: fixedregulator@0 {
-		compatible = "regulator-fixed";
-		regulator-name = "fixed-3.3V";
-		regulator-min-microvolt = <3300000>;
-		regulator-max-microvolt = <3300000>;
-		regulator-boot-on;
-		regulator-always-on;
-	};
-};
-
-&lan0 {
-	vddvario-supply = <&fixedregulator3v3>;
-	vdd33a-supply = <&fixedregulator3v3>;
-};
+  Suspend seems to work fine on the armadillo
 
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7779.dtsi               |   45 ++++++++++++++++++++
- arch/arm/mach-shmobile/include/mach/common.h |    2 +
- arch/arm/mach-shmobile/setup-r8a7779.c       |   58 +++++++++++++++++++++++---
- 3 files changed, 99 insertions(+), 6 deletions(-)
+ arch/arm/configs/armadillo800eva_defconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index eadc12e..9564040 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -37,4 +37,49 @@
-                 reg = <0xf0001000 0x1000>,
-                       <0xf0000100 0x100>;
-         };
-+
-+	i2c0: i2c@0xffc70000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,rmobile-iic";
-+		reg = <0xffc70000 0x1000>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 79 0x4>;
-+	};
-+
-+	i2c1: i2c@0xffc71000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,rmobile-iic";
-+		reg = <0xffc71000 0x1000>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 82 0x4>;
-+	};
-+
-+	i2c2: i2c@0xffc72000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,rmobile-iic";
-+		reg = <0xffc72000 0x1000>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 80 0x4>;
-+	};
-+
-+	i2c3: i2c@0xffc73000 {
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+		compatible = "renesas,rmobile-iic";
-+		reg = <0xffc73000 0x1000>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 81 0x4>;
-+	};
-+
-+	lan0: lan0@18000000 {
-+		compatible = "smsc,lan9220", "smsc,lan9115";
-+		reg = <0x18000000 0x100>;
-+		phy-mode = "mii";
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 28 0x4>;
-+		reg-io-width = <4>;
-+	};
- };
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index 8ef7ebb..4b85b18 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -67,7 +67,9 @@ extern void r8a7779_init_irq_dt(void);
- extern void r8a7779_map_io(void);
- extern void r8a7779_earlytimer_init(void);
- extern void r8a7779_add_early_devices(void);
-+extern void r8a7779_add_early_devices_dt(void);
- extern void r8a7779_add_standard_devices(void);
-+extern void r8a7779_add_standard_devices_dt(void);
- extern void r8a7779_clock_init(void);
- extern void r8a7779_pinmux_init(void);
- extern void r8a7779_pm_init(void);
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index c54ff9b..d4818c2 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -321,7 +321,7 @@ static struct platform_device i2c3_device = {
- 	.num_resources	= ARRAY_SIZE(rcar_i2c3_res),
- };
- 
--static struct platform_device *r8a7779_early_devices[] __initdata = {
-+static struct platform_device *r8a7779_early_devices_dt[] __initdata = {
- 	&scif0_device,
- 	&scif1_device,
- 	&scif2_device,
-@@ -330,15 +330,15 @@ static struct platform_device *r8a7779_early_devices[] __initdata = {
- 	&scif5_device,
- 	&tmu00_device,
- 	&tmu01_device,
-+};
-+
-+static struct platform_device *r8a7779_early_devices[] __initdata = {
- 	&i2c0_device,
- 	&i2c1_device,
- 	&i2c2_device,
- 	&i2c3_device,
- };
- 
--static struct platform_device *r8a7779_late_devices[] __initdata = {
--};
--
- void __init r8a7779_add_standard_devices(void)
- {
- #ifdef CONFIG_CACHE_L2X0
-@@ -349,10 +349,10 @@ void __init r8a7779_add_standard_devices(void)
- 
- 	r8a7779_init_pm_domains();
- 
-+	platform_add_devices(r8a7779_early_devices_dt,
-+			    ARRAY_SIZE(r8a7779_early_devices_dt));
- 	platform_add_devices(r8a7779_early_devices,
- 			    ARRAY_SIZE(r8a7779_early_devices));
--	platform_add_devices(r8a7779_late_devices,
--			    ARRAY_SIZE(r8a7779_late_devices));
- }
- 
- /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
-@@ -367,6 +367,8 @@ void __init r8a7779_earlytimer_init(void)
- 
- void __init r8a7779_add_early_devices(void)
- {
-+	early_platform_add_devices(r8a7779_early_devices_dt,
-+				   ARRAY_SIZE(r8a7779_early_devices_dt));
- 	early_platform_add_devices(r8a7779_early_devices,
- 				   ARRAY_SIZE(r8a7779_early_devices));
- 
-@@ -386,3 +388,47 @@ void __init r8a7779_add_early_devices(void)
- 	 * command line in case of the marzen board.
- 	 */
- }
-+
-+#ifdef CONFIG_USE_OF
-+void __init r8a7779_add_early_devices_dt(void)
-+{
-+	shmobile_setup_delay(1000, 2, 4); /* Cortex-A9 @ 1000MHz */
-+
-+	early_platform_add_devices(r8a7779_early_devices_dt,
-+				   ARRAY_SIZE(r8a7779_early_devices_dt));
-+
-+	/* Early serial console setup is not included here.
-+	 * See comment in r8a7779_add_early_devices().
-+	 */
-+}
-+
-+static const struct of_dev_auxdata r8a7779_auxdata_lookup[] __initconst = {
-+	{},
-+};
-+
-+void __init r8a7779_add_standard_devices_dt(void)
-+{
-+	/* clocks are setup late during boot in the case of DT */
-+	r8a7779_clock_init();
-+
-+	platform_add_devices(r8a7779_early_devices_dt,
-+			    ARRAY_SIZE(r8a7779_early_devices_dt));
-+	of_platform_populate(NULL, of_default_bus_match_table,
-+			     r8a7779_auxdata_lookup, NULL);
-+}
-+
-+static const char *r8a7779_compat_dt[] __initdata = {
-+	"renesas,r8a7779",
-+	NULL,
-+};
-+
-+DT_MACHINE_START(SH73A0_DT, "Generic R8A7779 (Flattened Device Tree)")
-+	.map_io		= r8a7779_map_io,
-+	.init_early	= r8a7779_add_early_devices_dt,
-+	.nr_irqs	= NR_IRQS_LEGACY,
-+	.init_irq	= r8a7779_init_irq_dt,
-+	.init_machine	= r8a7779_add_standard_devices_dt,
-+	.init_time	= shmobile_timer_init,
-+	.dt_compat	= r8a7779_compat_dt,
-+MACHINE_END
-+#endif /* CONFIG_USE_OF */
+diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
+index 2e1a825..c29cf04 100644
+--- a/arch/arm/configs/armadillo800eva_defconfig
++++ b/arch/arm/configs/armadillo800eva_defconfig
+@@ -34,12 +34,12 @@ CONFIG_AEABI=y
+ CONFIG_FORCE_MAX_ZONEORDER
+ CONFIG_ZBOOT_ROM_TEXT=0x0
+ CONFIG_ZBOOT_ROM_BSS=0x0
++CONFIG_ARM_APPENDED_DTB=y
+ CONFIG_CMDLINE="console=tty0 console=ttySC1,115200 earlyprintk=sh-sci.1,115200 ignore_loglevel root=/dev/nfs ip=dhcp nfsroot=,rsize@96,wsize@96 rw"
+ CONFIG_CMDLINE_FORCE=y
+ CONFIG_KEXEC=y
+ CONFIG_VFP=y
+ # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
+-# CONFIG_SUSPEND is not set
+ CONFIG_NET=y
+ CONFIG_PACKET=y
+ CONFIG_UNIX=y
 -- 
 1.7.10.4
 
