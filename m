@@ -1,241 +1,398 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 09 Jan 2013 00:52:30 +0000
-Subject: [PATCH v2 10/29] sh-pfc: Remove unused sh_pfc_soc_info reserved_id field
-Message-Id: <1357692769-1432-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 10 Jan 2013 20:51:34 +0000
+Subject: [PATCH 01/16] sh-pfc: sh73a0: Add SCIFA and SCIFB pin groups and functions
+Message-Id: <1357851109-22103-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The field is unused, remove it.
-
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7740.c |    1 -
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c |    1 -
- drivers/pinctrl/sh-pfc/pfc-sh7203.c  |    1 -
- drivers/pinctrl/sh-pfc/pfc-sh7264.c  |    1 -
- drivers/pinctrl/sh-pfc/pfc-sh7269.c  |    1 -
- drivers/pinctrl/sh-pfc/pfc-sh7372.c  |    1 -
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c  |    1 -
- drivers/pinctrl/sh-pfc/pfc-sh7720.c  |    1 -
- drivers/pinctrl/sh-pfc/pfc-sh7722.c  |    1 -
- drivers/pinctrl/sh-pfc/pfc-sh7723.c  |    1 -
- drivers/pinctrl/sh-pfc/pfc-sh7724.c  |    1 -
- drivers/pinctrl/sh-pfc/pfc-sh7734.c  |    1 -
- drivers/pinctrl/sh-pfc/pfc-sh7757.c  |    1 -
- drivers/pinctrl/sh-pfc/pfc-sh7785.c  |    1 -
- drivers/pinctrl/sh-pfc/pfc-sh7786.c  |    1 -
- drivers/pinctrl/sh-pfc/pfc-shx3.c    |    1 -
- drivers/pinctrl/sh-pfc/sh_pfc.h      |    1 -
- 17 files changed, 0 insertions(+), 17 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c |  352 +++++++++++++++++++++++++++++++++++
+ 1 files changed, 352 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-index f1ef9f7..957502e 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-@@ -2581,7 +2581,6 @@ static struct pinmux_irq pinmux_irqs[] = {
- 
- struct sh_pfc_soc_info r8a7740_pinmux_info = {
- 	.name		= "r8a7740_pfc",
--	.reserved_id	= PINMUX_RESERVED,
- 	.input		= { PINMUX_INPUT_BEGIN,
- 			    PINMUX_INPUT_END },
- 	.input_pu	= { PINMUX_INPUT_PULLUP_BEGIN,
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-index c8018ce..bd5a70d 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-@@ -2605,7 +2605,6 @@ struct sh_pfc_soc_info r8a7779_pinmux_info = {
- 
- 	.unlock_reg = 0xfffc0000, /* PMMR */
- 
--	.reserved_id = PINMUX_RESERVED,
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
- 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
- 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7203.c b/drivers/pinctrl/sh-pfc/pfc-sh7203.c
-index b9f5616..11852f9 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7203.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7203.c
-@@ -1573,7 +1573,6 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
- 
- struct sh_pfc_soc_info sh7203_pinmux_info = {
- 	.name = "sh7203_pfc",
--	.reserved_id = PINMUX_RESERVED,
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END, FORCE_IN },
- 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END, FORCE_OUT },
- 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7264.c b/drivers/pinctrl/sh-pfc/pfc-sh7264.c
-index 063ccf9..eac6ec1 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7264.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7264.c
-@@ -2112,7 +2112,6 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
- 
- struct sh_pfc_soc_info sh7264_pinmux_info = {
- 	.name = "sh7264_pfc",
--	.reserved_id = PINMUX_RESERVED,
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END, FORCE_IN },
- 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END, FORCE_OUT },
- 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7269.c b/drivers/pinctrl/sh-pfc/pfc-sh7269.c
-index e05181e..8702016 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7269.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7269.c
-@@ -2815,7 +2815,6 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
- 
- struct sh_pfc_soc_info sh7269_pinmux_info = {
- 	.name = "sh7269_pfc",
--	.reserved_id = PINMUX_RESERVED,
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END, FORCE_IN },
- 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END, FORCE_OUT },
- 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-index 0c56f57..c112074 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-@@ -1634,7 +1634,6 @@ static struct pinmux_irq pinmux_irqs[] = {
- 
- struct sh_pfc_soc_info sh7372_pinmux_info = {
- 	.name = "sh7372_pfc",
--	.reserved_id = PINMUX_RESERVED,
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
- 	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
- 	.input_pd = { PINMUX_INPUT_PULLDOWN_BEGIN, PINMUX_INPUT_PULLDOWN_END },
 diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index aa18223..356f00a 100644
+index 47c869e..87c2565 100644
 --- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
 +++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -2774,7 +2774,6 @@ static struct pinmux_irq pinmux_irqs[] = {
+@@ -1741,6 +1741,254 @@ static const unsigned int lcd2_sys_1_mux[] = {
+ 	LCD2RD__MARK, PORT217_LCD2RS_MARK,
+ };
  
- struct sh_pfc_soc_info sh73a0_pinmux_info = {
- 	.name = "sh73a0_pfc",
--	.reserved_id = PINMUX_RESERVED,
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
- 	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
- 	.input_pd = { PINMUX_INPUT_PULLDOWN_BEGIN, PINMUX_INPUT_PULLDOWN_END },
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7720.c b/drivers/pinctrl/sh-pfc/pfc-sh7720.c
-index 3fdd140..5140ad2 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7720.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7720.c
-@@ -1215,7 +1215,6 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
++static const unsigned int scifa0_data_pins[] = {
++	/* RXD, TXD */
++	43, 17,
++};
++static const unsigned int scifa0_data_mux[] = {
++	SCIFA0_RXD_MARK, SCIFA0_TXD_MARK,
++};
++static const unsigned int scifa0_clk_pins[] = {
++	/* SCK */
++	16,
++};
++static const unsigned int scifa0_clk_mux[] = {
++	SCIFA0_SCK_MARK,
++};
++static const unsigned int scifa0_ctrl_pins[] = {
++	/* RTS, CTS */
++	42, 44,
++};
++static const unsigned int scifa0_ctrl_mux[] = {
++	SCIFA0_RTS__MARK, SCIFA0_CTS__MARK,
++};
++
++static const unsigned int scifa1_data_pins[] = {
++	/* RXD, TXD */
++	228, 225,
++};
++static const unsigned int scifa1_data_mux[] = {
++	SCIFA1_RXD_MARK, SCIFA1_TXD_MARK,
++};
++static const unsigned int scifa1_clk_pins[] = {
++	/* SCK */
++	226,
++};
++static const unsigned int scifa1_clk_mux[] = {
++	SCIFA1_SCK_MARK,
++};
++static const unsigned int scifa1_ctrl_pins[] = {
++	/* RTS, CTS */
++	227, 229,
++};
++static const unsigned int scifa1_ctrl_mux[] = {
++	SCIFA1_RTS__MARK, SCIFA1_CTS__MARK,
++};
++
++static const unsigned int scifa2_data_0_pins[] = {
++	/* RXD, TXD */
++	155, 154,
++};
++static const unsigned int scifa2_data_0_mux[] = {
++	SCIFA2_RXD1_MARK, SCIFA2_TXD1_MARK,
++};
++static const unsigned int scifa2_clk_0_pins[] = {
++	/* SCK */
++	158,
++};
++static const unsigned int scifa2_clk_0_mux[] = {
++	SCIFA2_SCK1_MARK,
++};
++static const unsigned int scifa2_ctrl_0_pins[] = {
++	/* RTS, CTS */
++	156, 157,
++};
++static const unsigned int scifa2_ctrl_0_mux[] = {
++	SCIFA2_RTS1__MARK, SCIFA2_CTS1__MARK,
++};
++static const unsigned int scifa2_data_1_pins[] = {
++	/* RXD, TXD */
++	233, 230,
++};
++static const unsigned int scifa2_data_1_mux[] = {
++	SCIFA2_RXD2_MARK, SCIFA2_TXD2_MARK,
++};
++static const unsigned int scifa2_clk_1_pins[] = {
++	/* SCK */
++	232,
++};
++static const unsigned int scifa2_clk_1_mux[] = {
++	SCIFA2_SCK2_MARK,
++};
++static const unsigned int scifa2_ctrl_1_pins[] = {
++	/* RTS, CTS */
++	234, 231,
++};
++static const unsigned int scifa2_ctrl_1_mux[] = {
++	SCIFA2_RTS2__MARK, SCIFA2_CTS2__MARK,
++};
++
++static const unsigned int scifa3_data_pins[] = {
++	/* RXD, TXD */
++	108, 110,
++};
++static const unsigned int scifa3_data_mux[] = {
++	SCIFA3_RXD_MARK, SCIFA3_TXD_MARK,
++};
++static const unsigned int scifa3_ctrl_pins[] = {
++	/* RTS, CTS */
++	109, 107,
++};
++static const unsigned int scifa3_ctrl_mux[] = {
++	SCIFA3_RTS__MARK, SCIFA3_CTS__MARK,
++};
++
++static const unsigned int scifa4_data_pins[] = {
++	/* RXD, TXD */
++	33, 32,
++};
++static const unsigned int scifa4_data_mux[] = {
++	SCIFA4_RXD_MARK, SCIFA4_TXD_MARK,
++};
++static const unsigned int scifa4_ctrl_pins[] = {
++	/* RTS, CTS */
++	34, 35,
++};
++static const unsigned int scifa4_ctrl_mux[] = {
++	SCIFA4_RTS__MARK, SCIFA4_CTS__MARK,
++};
++
++static const unsigned int scifa5_data_0_pins[] = {
++	/* RXD, TXD */
++	246, 247,
++};
++static const unsigned int scifa5_data_0_mux[] = {
++	PORT246_SCIFA5_RXD_MARK, PORT247_SCIFA5_TXD_MARK,
++};
++static const unsigned int scifa5_clk_0_pins[] = {
++	/* SCK */
++	248,
++};
++static const unsigned int scifa5_clk_0_mux[] = {
++	PORT248_SCIFA5_SCK_MARK,
++};
++static const unsigned int scifa5_ctrl_0_pins[] = {
++	/* RTS, CTS */
++	245, 244,
++};
++static const unsigned int scifa5_ctrl_0_mux[] = {
++	PORT245_SCIFA5_RTS__MARK, PORT244_SCIFA5_CTS__MARK,
++};
++static const unsigned int scifa5_data_1_pins[] = {
++	/* RXD, TXD */
++	195, 196,
++};
++static const unsigned int scifa5_data_1_mux[] = {
++	PORT195_SCIFA5_RXD_MARK, PORT196_SCIFA5_TXD_MARK,
++};
++static const unsigned int scifa5_clk_1_pins[] = {
++	/* SCK */
++	197,
++};
++static const unsigned int scifa5_clk_1_mux[] = {
++	PORT197_SCIFA5_SCK_MARK,
++};
++static const unsigned int scifa5_ctrl_1_pins[] = {
++	/* RTS, CTS */
++	194, 193,
++};
++static const unsigned int scifa5_ctrl_1_mux[] = {
++	PORT194_SCIFA5_RTS__MARK, PORT193_SCIFA5_CTS__MARK,
++};
++static const unsigned int scifa5_data_2_pins[] = {
++	/* RXD, TXD */
++	162, 160,
++};
++static const unsigned int scifa5_data_2_mux[] = {
++	PORT162_SCIFA5_RXD_MARK, PORT160_SCIFA5_TXD_MARK,
++};
++static const unsigned int scifa5_clk_2_pins[] = {
++	/* SCK */
++	159,
++};
++static const unsigned int scifa5_clk_2_mux[] = {
++	PORT159_SCIFA5_SCK_MARK,
++};
++static const unsigned int scifa5_ctrl_2_pins[] = {
++	/* RTS, CTS */
++	163, 161,
++};
++static const unsigned int scifa5_ctrl_2_mux[] = {
++	PORT163_SCIFA5_RTS__MARK, PORT161_SCIFA5_CTS__MARK,
++};
++
++static const unsigned int scifa6_pins[] = {
++	/* TXD */
++	240,
++};
++static const unsigned int scifa6_mux[] = {
++	SCIFA6_TXD_MARK,
++};
++
++static const unsigned int scifa7_data_pins[] = {
++	/* RXD, TXD */
++	12, 18,
++};
++static const unsigned int scifa7_data_mux[] = {
++	SCIFA7_RXD_MARK, SCIFA7_TXD_MARK,
++};
++static const unsigned int scifa7_ctrl_pins[] = {
++	/* RTS, CTS */
++	19, 13,
++};
++static const unsigned int scifa7_ctrl_mux[] = {
++	SCIFA7_RTS__MARK, SCIFA7_CTS__MARK,
++};
++
++static const unsigned int scifb_data_0_pins[] = {
++	/* RXD, TXD */
++	162, 160,
++};
++static const unsigned int scifb_data_0_mux[] = {
++	PORT162_SCIFB_RXD_MARK, PORT160_SCIFB_TXD_MARK,
++};
++static const unsigned int scifb_clk_0_pins[] = {
++	/* SCK */
++	159,
++};
++static const unsigned int scifb_clk_0_mux[] = {
++	PORT159_SCIFB_SCK_MARK,
++};
++static const unsigned int scifb_ctrl_0_pins[] = {
++	/* RTS, CTS */
++	163, 161,
++};
++static const unsigned int scifb_ctrl_0_mux[] = {
++	PORT163_SCIFB_RTS__MARK, PORT161_SCIFB_CTS__MARK,
++};
++
++static const unsigned int scifb_data_1_pins[] = {
++	/* RXD, TXD */
++	246, 247,
++};
++static const unsigned int scifb_data_1_mux[] = {
++	PORT246_SCIFB_RXD_MARK, PORT247_SCIFB_TXD_MARK,
++};
++static const unsigned int scifb_clk_1_pins[] = {
++	/* SCK */
++	248,
++};
++static const unsigned int scifb_clk_1_mux[] = {
++	PORT248_SCIFB_SCK_MARK,
++};
++static const unsigned int scifb_ctrl_1_pins[] = {
++	/* RTS, CTS */
++	245, 244,
++};
++static const unsigned int scifb_ctrl_1_mux[] = {
++	PORT245_SCIFB_RTS__MARK, PORT244_SCIFB_CTS__MARK,
++};
++
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(lcd_data8),
+ 	SH_PFC_PIN_GROUP(lcd_data9),
+@@ -1762,6 +2010,40 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(lcd2_sync_1),
+ 	SH_PFC_PIN_GROUP(lcd2_sys_0),
+ 	SH_PFC_PIN_GROUP(lcd2_sys_1),
++	SH_PFC_PIN_GROUP(scifa0_data),
++	SH_PFC_PIN_GROUP(scifa0_clk),
++	SH_PFC_PIN_GROUP(scifa0_ctrl),
++	SH_PFC_PIN_GROUP(scifa1_data),
++	SH_PFC_PIN_GROUP(scifa1_clk),
++	SH_PFC_PIN_GROUP(scifa1_ctrl),
++	SH_PFC_PIN_GROUP(scifa2_data_0),
++	SH_PFC_PIN_GROUP(scifa2_clk_0),
++	SH_PFC_PIN_GROUP(scifa2_ctrl_0),
++	SH_PFC_PIN_GROUP(scifa2_data_1),
++	SH_PFC_PIN_GROUP(scifa2_clk_1),
++	SH_PFC_PIN_GROUP(scifa2_ctrl_1),
++	SH_PFC_PIN_GROUP(scifa3_data),
++	SH_PFC_PIN_GROUP(scifa3_ctrl),
++	SH_PFC_PIN_GROUP(scifa4_data),
++	SH_PFC_PIN_GROUP(scifa4_ctrl),
++	SH_PFC_PIN_GROUP(scifa5_data_0),
++	SH_PFC_PIN_GROUP(scifa5_clk_0),
++	SH_PFC_PIN_GROUP(scifa5_ctrl_0),
++	SH_PFC_PIN_GROUP(scifa5_data_1),
++	SH_PFC_PIN_GROUP(scifa5_clk_1),
++	SH_PFC_PIN_GROUP(scifa5_ctrl_1),
++	SH_PFC_PIN_GROUP(scifa5_data_2),
++	SH_PFC_PIN_GROUP(scifa5_clk_2),
++	SH_PFC_PIN_GROUP(scifa5_ctrl_2),
++	SH_PFC_PIN_GROUP(scifa6),
++	SH_PFC_PIN_GROUP(scifa7_data),
++	SH_PFC_PIN_GROUP(scifa7_ctrl),
++	SH_PFC_PIN_GROUP(scifb_data_0),
++	SH_PFC_PIN_GROUP(scifb_clk_0),
++	SH_PFC_PIN_GROUP(scifb_ctrl_0),
++	SH_PFC_PIN_GROUP(scifb_data_1),
++	SH_PFC_PIN_GROUP(scifb_clk_1),
++	SH_PFC_PIN_GROUP(scifb_ctrl_1),
+ };
  
- struct sh_pfc_soc_info sh7720_pinmux_info = {
- 	.name = "sh7720_pfc",
--	.reserved_id = PINMUX_RESERVED,
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
- 	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
- 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7722.c b/drivers/pinctrl/sh-pfc/pfc-sh7722.c
-index 9a23094..9bf5e54 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7722.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7722.c
-@@ -1758,7 +1758,6 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
+ static const char * const lcd_groups[] = {
+@@ -1790,9 +2072,79 @@ static const char * const lcd2_groups[] = {
+ 	"lcd2_sys_1",
+ };
  
- struct sh_pfc_soc_info sh7722_pinmux_info = {
- 	.name = "sh7722_pfc",
--	.reserved_id = PINMUX_RESERVED,
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
- 	.input_pd = { PINMUX_INPUT_PULLDOWN_BEGIN, PINMUX_INPUT_PULLDOWN_END },
- 	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7723.c b/drivers/pinctrl/sh-pfc/pfc-sh7723.c
-index 7fc9407..3b5085c 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7723.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7723.c
-@@ -1883,7 +1883,6 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
++static const char * const scifa0_groups[] = {
++	"scifa0_data",
++	"scifa0_clk",
++	"scifa0_ctrl",
++};
++
++static const char * const scifa1_groups[] = {
++	"scifa1_data",
++	"scifa1_clk",
++	"scifa1_ctrl",
++};
++
++static const char * const scifa2_groups[] = {
++	"scifa2_data_0",
++	"scifa2_clk_0",
++	"scifa2_ctrl_0",
++	"scifa2_data_1",
++	"scifa2_clk_1",
++	"scifa2_ctrl_1",
++};
++
++static const char * const scifa3_groups[] = {
++	"scifa3_data",
++	"scifa3_ctrl",
++};
++
++static const char * const scifa4_groups[] = {
++	"scifa4_data",
++	"scifa4_ctrl",
++};
++
++static const char * const scifa5_groups[] = {
++	"scifa5_data_0",
++	"scifa5_clk_0",
++	"scifa5_ctrl_0",
++	"scifa5_data_1",
++	"scifa5_clk_1",
++	"scifa5_ctrl_1",
++	"scifa5_data_2",
++	"scifa5_clk_2",
++	"scifa5_ctrl_2",
++};
++
++static const char * const scifa6_groups[] = {
++	"scifa6",
++};
++
++static const char * const scifa7_groups[] = {
++	"scifa7_data",
++	"scifa7_ctrl",
++};
++
++static const char * const scifb_groups[] = {
++	"scifb_data_0",
++	"scifb_clk_0",
++	"scifb_ctrl_0",
++	"scifb_data_1",
++	"scifb_clk_1",
++	"scifb_ctrl_1",
++};
++
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(lcd),
+ 	SH_PFC_FUNCTION(lcd2),
++	SH_PFC_FUNCTION(scifa0),
++	SH_PFC_FUNCTION(scifa1),
++	SH_PFC_FUNCTION(scifa2),
++	SH_PFC_FUNCTION(scifa3),
++	SH_PFC_FUNCTION(scifa4),
++	SH_PFC_FUNCTION(scifa5),
++	SH_PFC_FUNCTION(scifa6),
++	SH_PFC_FUNCTION(scifa7),
++	SH_PFC_FUNCTION(scifb),
+ };
  
- struct sh_pfc_soc_info sh7723_pinmux_info = {
- 	.name = "sh7723_pfc",
--	.reserved_id = PINMUX_RESERVED,
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
- 	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
- 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7724.c b/drivers/pinctrl/sh-pfc/pfc-sh7724.c
-index 0e26a3a..ef9f141 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7724.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7724.c
-@@ -2205,7 +2205,6 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
- 
- struct sh_pfc_soc_info sh7724_pinmux_info = {
- 	.name = "sh7724_pfc",
--	.reserved_id = PINMUX_RESERVED,
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
- 	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
- 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7734.c b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-index be5cca6..df32e71 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-@@ -2456,7 +2456,6 @@ struct sh_pfc_soc_info sh7734_pinmux_info = {
- 
- 	.unlock_reg = 0xFFFC0000,
- 
--	.reserved_id = PINMUX_RESERVED,
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
- 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
- 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7757.c b/drivers/pinctrl/sh-pfc/pfc-sh7757.c
-index 851c0b4..e20036a 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7757.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7757.c
-@@ -2262,7 +2262,6 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
- 
- struct sh_pfc_soc_info sh7757_pinmux_info = {
- 	.name = "sh7757_pfc",
--	.reserved_id = PINMUX_RESERVED,
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
- 	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
- 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7785.c b/drivers/pinctrl/sh-pfc/pfc-sh7785.c
-index 45b4909..1b57f40 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7785.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7785.c
-@@ -1284,7 +1284,6 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
- 
- struct sh_pfc_soc_info sh7785_pinmux_info = {
- 	.name = "sh7785_pfc",
--	.reserved_id = PINMUX_RESERVED,
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
- 	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
- 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7786.c b/drivers/pinctrl/sh-pfc/pfc-sh7786.c
-index 0eca522..f5d5cc9 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7786.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7786.c
-@@ -817,7 +817,6 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
- 
- struct sh_pfc_soc_info sh7786_pinmux_info = {
- 	.name = "sh7786_pfc",
--	.reserved_id = PINMUX_RESERVED,
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
- 	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
- 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
-diff --git a/drivers/pinctrl/sh-pfc/pfc-shx3.c b/drivers/pinctrl/sh-pfc/pfc-shx3.c
-index 6816219..cd741cc 100644
---- a/drivers/pinctrl/sh-pfc/pfc-shx3.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-shx3.c
-@@ -564,7 +564,6 @@ static struct pinmux_data_reg shx3_pinmux_data_regs[] = {
- 
- struct sh_pfc_soc_info shx3_pinmux_info = {
- 	.name		= "shx3_pfc",
--	.reserved_id	= PINMUX_RESERVED,
- 	.input		= { PINMUX_INPUT_BEGIN,	   PINMUX_INPUT_END },
- 	.input_pu	= { PINMUX_INPUT_PULLUP_BEGIN,
- 			    PINMUX_INPUT_PULLUP_END },
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index c50fb51..2627a89 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -90,7 +90,6 @@ struct pinmux_range {
- 
- struct sh_pfc_soc_info {
- 	char *name;
--	pinmux_enum_t reserved_id;
- 	struct pinmux_range input;
- 	struct pinmux_range input_pd;
- 	struct pinmux_range input_pu;
+ #define PINMUX_FN_BASE	ARRAY_SIZE(pinmux_pins)
 -- 
 1.7.8.6
 
