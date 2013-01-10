@@ -1,72 +1,34 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 28 Jan 2013 01:02:27 +0000
-Subject: Re: [PATCH 0/3] ARM: shmobile: sh-eth pins in DT for armadillo800eva
-Message-Id: <20130128010227.GI3423@verge.net.au>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Date: Thu, 10 Jan 2013 10:16:42 +0000
+Subject: [PATCH 0/2] allow unplugging of CPU0
+Message-Id: <1357813004-9549-1-git-send-email-ulrich.hecht@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359043653-11374-1-git-send-email-g.liakhovetski@gmx.de>
- <Pine.LNX.4.64.1301250856040.17518@axis700.grange>
- <20130125090544.GD30990@verge.net.au> <1531226.VAPa4M6s5W@avalon>
-In-Reply-To: <1531226.VAPa4M6s5W@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Jan 25, 2013 at 10:57:08AM +0100, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> On Friday 25 January 2013 18:05:44 Simon Horman wrote:
-> > On Fri, Jan 25, 2013 at 09:09:54AM +0100, Guennadi Liakhovetski wrote:
-> > > On Fri, 25 Jan 2013, Simon Horman wrote:
-> > > > On Thu, Jan 24, 2013 at 05:07:30PM +0100, Guennadi Liakhovetski wrote:
-> > > > > This patch series gets rid of gpio_request()-style ethernet pin
-> > > > > configuration on armadillo800eva in reference implementation.
-> > > > 
-> > > > Hi Guennadi,
-> > > > 
-> > > > these changes seem to be reasonable to me.
-> > > > 
-> > > > Are there any dependencies for the sh_eth patch?
-> > > > I assume this will be handled by David Miller through the net-next tree.
-> > > > Are there any dependencies? The last time I checked the DT bindings
-> > > > for sh_eth had not been merged.
-> > > 
-> > > Obviously, it can only be applied, if the
-> > > Documentation/devicetree/bindings/net/sh_ether.txt file and the
-> > > sh_eth_parse_dt() function exist. Also, if there are no objections against
-> > > the new phy-reset-gpios DT property. Otherwise there are no dependencies -
-> > > as long as the phy-reset-gpios property isn't found in DT, the patch
-> > > doesn't affect the driver.
-> > 
-> > Thanks, I'm slightly concerned that the other patch(es) relating
-> > to Documentation/devicetree/bindings/net/sh_ether.txt have gone missing in
-> > action.
-> > 
-> > Do you have an interest in chasing them down or would you like me to?
-> > 
-> > > > For the remaining two patches, which I assume will go through my renesas
-> > > > tree:
-> > > > * Are there any dependencies that aren't satisfied by the of-intc
-> > > > branch?
-> > > 
-> > > AFAICS, that your branch doesn't contain Laurent's pinctrl patches, which
-> > > are needed for patch 1 to apply and for patch 3 to make sense. My earlier
-> > > MMC DT / pinctrl patches aren't required for these patches to function,
-> > > but these patches won't apply cleanly without them, since they touch the
-> > > same code fragments. So, it would be easier to merge them in the order of
-> > > submission.
-> > > 
-> > > > * Could you get some Acks. At least from Laurent?
-> > > 
-> > > Sure, let's give reviewers some more time :)
-> > 
-> > Indeed.
-> > 
-> > Laurent, if there are patches ready for me to take into the renesas tree
-> > please let me know. I'm reluctant to add any more pinmux changes for 3.9.
-> > But if a topic branch would help let me know.
-> 
-> I'd like the gpio_request_one() patches to go to v3.9 if possible. The other 
-> pinctrl patches will need to wait until v3.10 I'm afraid.
+Hi!
 
-Understood. I have now queued the gpio_request_one() patches up for v3.9.
+sh73a0 appears to deal fine with having its first core disabled, so we
+should allow that.
+
+This may not be the case with all platforms, so as per suggestion of
+Magnus, so I have introduced a new method (shmobile_cpu_disable_any())
+that removes the restriction on CPU0.
+
+CU
+Uli
+
+Ulrich Hecht (2):
+  ARM: mach-shmobile: add shmobile_cpu_disable_any()
+  ARM: mach-shmobile: sh73a0: allow unplugging of CPU0
+
+ arch/arm/mach-shmobile/hotplug.c             |    6 ++++++
+ arch/arm/mach-shmobile/include/mach/common.h |    1 +
+ arch/arm/mach-shmobile/smp-sh73a0.c          |    2 +-
+ 3 files changed, 8 insertions(+), 1 deletion(-)
+
+-- 
+1.7.10.4
+
