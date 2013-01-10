@@ -1,62 +1,89 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 23 Jan 2013 16:37:47 +0000
-Subject: [PATCH v3 4/8] ARM: shmobile: add MMCIF and SDHI DT clock aliases to sh73a0 and r8a7740
-Message-Id: <1358959071-2873-5-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 10 Jan 2013 20:51:46 +0000
+Subject: [PATCH 13/16] sh-pfc: sh73a0: Remove FSI function GPIOS
+Message-Id: <1357851109-22103-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358959071-2873-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1358959071-2873-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Add clock lookup entries for SDHI and MMCIF device names, for the FDT case.
+All sh73a0 platforms now use the pinctrl API to control the FSI pins,
+the corresponding function GPIOS are unused. Remove them.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-r8a7740.c |    4 ++++
- arch/arm/mach-shmobile/clock-sh73a0.c  |    3 +++
- 2 files changed, 7 insertions(+), 0 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c |   36 -----------------------------------
+ 1 files changed, 0 insertions(+), 36 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index 8765a76..83209bf 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -611,12 +611,16 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("i2c-sh_mobile.1",	&mstp_clks[MSTP323]),
- 	CLKDEV_DEV_ID("renesas_usbhs",		&mstp_clks[MSTP320]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.0",	&mstp_clks[MSTP314]),
-+	CLKDEV_DEV_ID("e6850000.sdhi",		&mstp_clks[MSTP314]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1",	&mstp_clks[MSTP313]),
-+	CLKDEV_DEV_ID("e6860000.sdhi",		&mstp_clks[MSTP313]),
- 	CLKDEV_DEV_ID("sh_mmcif",		&mstp_clks[MSTP312]),
-+	CLKDEV_DEV_ID("e6bd0000.mmcif",		&mstp_clks[MSTP312]),
- 	CLKDEV_DEV_ID("sh-eth",			&mstp_clks[MSTP309]),
- 	CLKDEV_DEV_ID("e9a00000.sh-eth",	&mstp_clks[MSTP309]),
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index 56c135d..b048fa4 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -2473,7 +2473,6 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(GPO6), \
+ 	GPIO_FN(MFG1_OUT2),
+ 	GPIO_FN(GPO5), \
+-	GPIO_FN(FSICOSLDT3), \
+ 	GPIO_FN(PORT16_VIO_CKOR),
+ 	GPIO_FN(PORT19_VIO_CKO2),
+ 	GPIO_FN(GPO0),
+@@ -2498,55 +2497,20 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(SIM_D), \
+ 	GPIO_FN(PORT31_IROUT),
+ 	GPIO_FN(XWUP),
+-	GPIO_FN(FSIBOBT), \
+-	GPIO_FN(FSIBIBT),
+-	GPIO_FN(FSIBOLR), \
+-	GPIO_FN(FSIBILR),
+-	GPIO_FN(FSIBOSLD),
+-	GPIO_FN(FSIBISLD),
+ 	GPIO_FN(VACK),
+ 	GPIO_FN(XTAL1L),
+-	GPIO_FN(FSICOSLDT2),
+-	GPIO_FN(FSICOSLDT1),
+-	GPIO_FN(FSICOBT), \
+-	GPIO_FN(FSICIBT), \
+-	GPIO_FN(FSIDOBT), \
+-	GPIO_FN(FSIDIBT),
+-	GPIO_FN(FSICOLR), \
+-	GPIO_FN(FSICILR), \
+-	GPIO_FN(FSIDOLR), \
+-	GPIO_FN(FSIDILR),
+-	GPIO_FN(FSICOSLD), \
+-	GPIO_FN(PORT47_FSICSPDIF),
+-	GPIO_FN(FSICISLD), \
+-	GPIO_FN(FSIDISLD),
+-	GPIO_FN(FSIACK), \
+ 	GPIO_FN(PORT49_IRDA_OUT), \
+ 	GPIO_FN(PORT49_IROUT), \
+-	GPIO_FN(FSIAOMC),
+-	GPIO_FN(FSIAOLR), \
+ 	GPIO_FN(BBIF2_TSYNC2), \
+ 	GPIO_FN(TPU2TO2), \
+-	GPIO_FN(FSIAILR),
  
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2",	&mstp_clks[MSTP415]),
-+	CLKDEV_DEV_ID("e6870000.sdhi",		&mstp_clks[MSTP415]),
- 
- 	/* ICK */
- 	CLKDEV_ICK_ID("host",	"renesas_usbhs",	&mstp_clks[MSTP416]),
-diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-index afa5423..5fa106b 100644
---- a/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-@@ -581,10 +581,13 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("e6822000.i2c", &mstp_clks[MSTP323]), /* I2C1 */
- 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP322]), /* USB */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]), /* SDHI0 */
-+	CLKDEV_DEV_ID("ee100000.sdhi", &mstp_clks[MSTP314]), /* SDHI0 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]), /* SDHI1 */
-+	CLKDEV_DEV_ID("ee120000.sdhi", &mstp_clks[MSTP313]), /* SDHI1 */
- 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP312]), /* MMCIF0 */
- 	CLKDEV_DEV_ID("e6bd0000.mmcif", &mstp_clks[MSTP312]), /* MMCIF0 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]), /* SDHI2 */
-+	CLKDEV_DEV_ID("ee140000.sdhi", &mstp_clks[MSTP311]), /* SDHI2 */
- 	CLKDEV_DEV_ID("leds-renesas-tpu.12", &mstp_clks[MSTP303]), /* TPU1 */
- 	CLKDEV_DEV_ID("leds-renesas-tpu.21", &mstp_clks[MSTP302]), /* TPU2 */
- 	CLKDEV_DEV_ID("leds-renesas-tpu.30", &mstp_clks[MSTP301]), /* TPU3 */
+-	GPIO_FN(FSIAOBT), \
+ 	GPIO_FN(BBIF2_TSCK2), \
+ 	GPIO_FN(TPU2TO3), \
+-	GPIO_FN(FSIAIBT),
+-	GPIO_FN(FSIAOSLD), \
+ 	GPIO_FN(BBIF2_TXD2),
+-	GPIO_FN(FSIASPDIF), \
+ 	GPIO_FN(PORT53_IRDA_IN), \
+ 	GPIO_FN(TPU3TO3), \
+-	GPIO_FN(FSIBSPDIF), \
+-	GPIO_FN(PORT53_FSICSPDIF),
+-	GPIO_FN(FSIBCK), \
+ 	GPIO_FN(PORT54_IRDA_FIRSEL), \
+ 	GPIO_FN(TPU3TO2), \
+-	GPIO_FN(FSIBOMC), \
+-	GPIO_FN(FSICCK), \
+-	GPIO_FN(FSICOMC),
+-	GPIO_FN(FSIAISLD), \
+ 	GPIO_FN(TPU0TO0),
+ 	GPIO_FN(A0), \
+ 	GPIO_FN(BS_),
 -- 
-1.7.2.5
+1.7.8.6
 
