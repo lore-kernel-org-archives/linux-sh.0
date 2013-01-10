@@ -1,166 +1,294 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 16 Jan 2013 17:08:16 +0000
-Subject: [PATCH 7/8] ARM: shmobile: completely switch MMC interfaces on mackerel-reference to DT
-Message-Id: <1358356097-26180-8-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 10 Jan 2013 20:51:36 +0000
+Subject: [PATCH 03/16] sh-pfc: sh73a0: Add FSI pin groups and functions
+Message-Id: <1357851109-22103-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358356097-26180-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1358356097-26180-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Switch MMCIF, SDHI0 and SDHI2 to complete DT initialisation: use DT
-bindings to configure interface pins, card-detect GPIOs, various
-interface configuration parameters. Notice, since MMCIF and SDHI1 share
-the same card slot, both devices cannot be successfully probed
-simultaneously: they both would try to get the card-detection GPIO and only
-one would succeed. Ideally it should be possible to let the user decide
-which device to enable by, possibly, patching the DT at run-time. As long as
-this is unsupported, we choose to enable MMCIF and remove SDHI1 from DT
-completely.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/sh7372-mackerel-reference.dts   |   42 +++++++++++++++----
- arch/arm/mach-shmobile/board-mackerel-reference.c |   46 ---------------------
- 2 files changed, 33 insertions(+), 55 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c |  244 +++++++++++++++++++++++++++++++++++
+ 1 files changed, 244 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh7372-mackerel-reference.dts b/arch/arm/boot/dts/sh7372-mackerel-reference.dts
-index 2fd1eff..aa72309 100644
---- a/arch/arm/boot/dts/sh7372-mackerel-reference.dts
-+++ b/arch/arm/boot/dts/sh7372-mackerel-reference.dts
-@@ -75,6 +75,11 @@
- 		interrupt-parent = <&intca>;
- 		interrupts = <0x1ac0 0x1ae0>;
- 		vmmc-supply = <&reg_1p8v>;
-+		bus-width = <8>;
-+		cd-gpios = <&gpio 41 1>;
-+		broken-cd;
-+		pinctrl-names = "default";
-+		pinctrl-0 = <&mmc0_pins>;
- 	};
- 
- 	sdhi0: sdhi@0xe6850000 {
-@@ -83,22 +88,26 @@
- 		interrupt-parent = <&intca>;
- 		interrupts = <0x0e00 0x0e20 0x0e40>;
- 		vmmc-supply = <&reg_3p3v>;
--	};
--
--	sdhi1: sdhi@0xe6860000 {
--		compatible = "renesas,shmobile-sdhi";
--		reg = <0xe6860000 0x100>;
--		interrupt-parent = <&intca>;
--		interrupts = <0x0e80 0x0ea0 0x0ec0>;
--		vmmc-supply = <&reg_1p8v>;
-+		bus-width = <4>;
-+		cd-gpios = <&gpio 172 1>;
-+		pinctrl-names = "default";
-+		pinctrl-0 = <&sdhi0_pins>;
-+		toshiba,mmc-cap-sdio-irq;
- 	};
- 
- 	sdhi2: sdhi@0xe6870000 {
- 		compatible = "renesas,shmobile-sdhi";
- 		reg = <0xe6870000 0x100>;
- 		interrupt-parent = <&intca>;
--		interrupts = <0x1200 0x1220 0x1240>;
-+		interrupts = <0x1220 0x1240>;
- 		vmmc-supply = <&reg_3p3v>;
-+		bus-width = <4>;
-+		cd-gpios = <&gpio 162 1>;
-+		broken-cd;
-+		pinctrl-names = "default";
-+		pinctrl-0 = <&sdhi2_pins>;
-+		toshiba,mmc-wrprotect-disable;
-+		toshiba,mmc-cap-sdio-irq;
- 	};
- 
- 	flash@2000000 {
-@@ -129,3 +138,18 @@
- 		};
- 	};
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index bd59b26..93432f9 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -1547,6 +1547,185 @@ static struct sh_pfc_pin pinmux_pins[] = {
+ 	GPIO_PORT_ALL(),
  };
-+
-+&gpio {
-+	sdhi0_pins: pfc_sdhi0_pins {
-+		renesas,pins = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_wp";
-+		renesas,function = "sdhi0";
-+	};
-+	sdhi2_pins: pfc_sdhi2_pins {
-+		renesas,pins = "sdhi2_data4", "sdhi2_ctrl";
-+		renesas,function = "sdhi2";
-+	};
-+	mmc0_pins: pfc_mmc0_pins {
-+		renesas,pins = "mmc0_data8_0", "mmc0_ctrl_0";
-+		renesas,function = "mmc0";
-+	};
+ 
++static const unsigned int fsia_mclk_in_pins[] = {
++	/* CK */
++	49,
 +};
-diff --git a/arch/arm/mach-shmobile/board-mackerel-reference.c b/arch/arm/mach-shmobile/board-mackerel-reference.c
-index 1d83653..323a812 100644
---- a/arch/arm/mach-shmobile/board-mackerel-reference.c
-+++ b/arch/arm/mach-shmobile/board-mackerel-reference.c
-@@ -42,8 +42,6 @@ static void __init mackerel_init(void)
- 	/* External clock source */
- 	clk_set_rate(&sh7372_dv_clki_clk, 27000000);
++static const unsigned int fsia_mclk_in_mux[] = {
++	FSIACK_MARK,
++};
++static const unsigned int fsia_mclk_out_pins[] = {
++	/* OMC */
++	49,
++};
++static const unsigned int fsia_mclk_out_mux[] = {
++	FSIAOMC_MARK,
++};
++static const unsigned int fsia_sclk_in_pins[] = {
++	/* ILR, IBT */
++	50, 51,
++};
++static const unsigned int fsia_sclk_in_mux[] = {
++	FSIAILR_MARK, FSIAIBT_MARK,
++};
++static const unsigned int fsia_sclk_out_pins[] = {
++	/* OLR, OBT */
++	50, 51,
++};
++static const unsigned int fsia_sclk_out_mux[] = {
++	FSIAOLR_MARK, FSIAOBT_MARK,
++};
++static const unsigned int fsia_data_in_pins[] = {
++	/* ISLD */
++	55,
++};
++static const unsigned int fsia_data_in_mux[] = {
++	FSIAISLD_MARK,
++};
++static const unsigned int fsia_data_out_pins[] = {
++	/* OSLD */
++	52,
++};
++static const unsigned int fsia_data_out_mux[] = {
++	FSIAOSLD_MARK,
++};
++static const unsigned int fsia_spdif_pins[] = {
++	/* SPDIF */
++	53,
++};
++static const unsigned int fsia_spdif_mux[] = {
++	FSIASPDIF_MARK,
++};
++
++static const unsigned int fsib_mclk_in_pins[] = {
++	/* CK */
++	54,
++};
++static const unsigned int fsib_mclk_in_mux[] = {
++	FSIBCK_MARK,
++};
++static const unsigned int fsib_mclk_out_pins[] = {
++	/* OMC */
++	54,
++};
++static const unsigned int fsib_mclk_out_mux[] = {
++	FSIBOMC_MARK,
++};
++static const unsigned int fsib_sclk_in_pins[] = {
++	/* ILR, IBT */
++	37, 36,
++};
++static const unsigned int fsib_sclk_in_mux[] = {
++	FSIBILR_MARK, FSIBIBT_MARK,
++};
++static const unsigned int fsib_sclk_out_pins[] = {
++	/* OLR, OBT */
++	37, 36,
++};
++static const unsigned int fsib_sclk_out_mux[] = {
++	FSIBOLR_MARK, FSIBOBT_MARK,
++};
++static const unsigned int fsib_data_in_pins[] = {
++	/* ISLD */
++	39,
++};
++static const unsigned int fsib_data_in_mux[] = {
++	FSIBISLD_MARK,
++};
++static const unsigned int fsib_data_out_pins[] = {
++	/* OSLD */
++	38,
++};
++static const unsigned int fsib_data_out_mux[] = {
++	FSIBOSLD_MARK,
++};
++static const unsigned int fsib_spdif_pins[] = {
++	/* SPDIF */
++	53,
++};
++static const unsigned int fsib_spdif_mux[] = {
++	FSIBSPDIF_MARK,
++};
++
++static const unsigned int fsic_mclk_in_pins[] = {
++	/* CK */
++	54,
++};
++static const unsigned int fsic_mclk_in_mux[] = {
++	FSICCK_MARK,
++};
++static const unsigned int fsic_mclk_out_pins[] = {
++	/* OMC */
++	54,
++};
++static const unsigned int fsic_mclk_out_mux[] = {
++	FSICOMC_MARK,
++};
++static const unsigned int fsic_sclk_in_pins[] = {
++	/* ILR, IBT */
++	46, 45,
++};
++static const unsigned int fsic_sclk_in_mux[] = {
++	FSICILR_MARK, FSICIBT_MARK,
++};
++static const unsigned int fsic_sclk_out_pins[] = {
++	/* OLR, OBT */
++	46, 45,
++};
++static const unsigned int fsic_sclk_out_mux[] = {
++	FSICOLR_MARK, FSICOBT_MARK,
++};
++static const unsigned int fsic_data_in_pins[] = {
++	/* ISLD */
++	48,
++};
++static const unsigned int fsic_data_in_mux[] = {
++	FSICISLD_MARK,
++};
++static const unsigned int fsic_data_out_pins[] = {
++	/* OSLD, OSLDT1, OSLDT2, OSLDT3 */
++	47, 44, 42, 16,
++};
++static const unsigned int fsic_data_out_mux[] = {
++	FSICOSLD_MARK, FSICOSLDT1_MARK, FSICOSLDT2_MARK, FSICOSLDT3_MARK,
++};
++static const unsigned int fsic_spdif_0_pins[] = {
++	/* SPDIF */
++	53,
++};
++static const unsigned int fsic_spdif_0_mux[] = {
++	PORT53_FSICSPDIF_MARK,
++};
++static const unsigned int fsic_spdif_1_pins[] = {
++	/* SPDIF */
++	47,
++};
++static const unsigned int fsic_spdif_1_mux[] = {
++	PORT47_FSICSPDIF_MARK,
++};
++
++static const unsigned int fsid_sclk_in_pins[] = {
++	/* ILR, IBT */
++	46, 45,
++};
++static const unsigned int fsid_sclk_in_mux[] = {
++	FSIDILR_MARK, FSIDIBT_MARK,
++};
++static const unsigned int fsid_sclk_out_pins[] = {
++	/* OLR, OBT */
++	46, 45,
++};
++static const unsigned int fsid_sclk_out_mux[] = {
++	FSIDOLR_MARK, FSIDOBT_MARK,
++};
++static const unsigned int fsid_data_in_pins[] = {
++	/* ISLD */
++	48,
++};
++static const unsigned int fsid_data_in_mux[] = {
++	FSIDISLD_MARK,
++};
++
+ static const unsigned int i2c2_0_pins[] = {
+ 	/* SCL, SDA */
+ 	237, 236,
+@@ -2034,6 +2213,31 @@ static const unsigned int scifb_ctrl_1_mux[] = {
+ };
  
--	sh7372_pinmux_init();
--
- 	/* enable SCIFA0 */
- 	gpio_request(GPIO_FN_SCIFA0_TXD, NULL);
- 	gpio_request(GPIO_FN_SCIFA0_RXD, NULL);
-@@ -59,50 +57,6 @@ static void __init mackerel_init(void)
- 	/* enable Accelerometer */
- 	gpio_request(GPIO_FN_IRQ21,	NULL);
- 	irq_set_irq_type(IRQ21, IRQ_TYPE_LEVEL_HIGH);
--
--	/* enable SDHI0 */
--	gpio_request(GPIO_FN_SDHIWP0, NULL);
--	gpio_request(GPIO_FN_SDHICMD0, NULL);
--	gpio_request(GPIO_FN_SDHICLK0, NULL);
--	gpio_request(GPIO_FN_SDHID0_3, NULL);
--	gpio_request(GPIO_FN_SDHID0_2, NULL);
--	gpio_request(GPIO_FN_SDHID0_1, NULL);
--	gpio_request(GPIO_FN_SDHID0_0, NULL);
--
--	/* SDHI0 PORT172 card-detect IRQ26 */
--	gpio_request(GPIO_FN_IRQ26_172, NULL);
--
--	/* enable SDHI1 */
--	gpio_request(GPIO_FN_SDHICMD1, NULL);
--	gpio_request(GPIO_FN_SDHICLK1, NULL);
--	gpio_request(GPIO_FN_SDHID1_3, NULL);
--	gpio_request(GPIO_FN_SDHID1_2, NULL);
--	gpio_request(GPIO_FN_SDHID1_1, NULL);
--	gpio_request(GPIO_FN_SDHID1_0, NULL);
--
--	/* enable SDHI2 */
--	gpio_request(GPIO_FN_SDHICMD2, NULL);
--	gpio_request(GPIO_FN_SDHICLK2, NULL);
--	gpio_request(GPIO_FN_SDHID2_3, NULL);
--	gpio_request(GPIO_FN_SDHID2_2, NULL);
--	gpio_request(GPIO_FN_SDHID2_1, NULL);
--	gpio_request(GPIO_FN_SDHID2_0, NULL);
--
--	/* card detect pin for microSD slot (CN23) */
--	gpio_request(GPIO_PORT162, NULL);
--	gpio_direction_input(GPIO_PORT162);
--
--	/* MMCIF */
--	gpio_request(GPIO_FN_MMCD0_0, NULL);
--	gpio_request(GPIO_FN_MMCD0_1, NULL);
--	gpio_request(GPIO_FN_MMCD0_2, NULL);
--	gpio_request(GPIO_FN_MMCD0_3, NULL);
--	gpio_request(GPIO_FN_MMCD0_4, NULL);
--	gpio_request(GPIO_FN_MMCD0_5, NULL);
--	gpio_request(GPIO_FN_MMCD0_6, NULL);
--	gpio_request(GPIO_FN_MMCD0_7, NULL);
--	gpio_request(GPIO_FN_MMCCMD0, NULL);
--	gpio_request(GPIO_FN_MMCCLK0, NULL);
- }
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
++	SH_PFC_PIN_GROUP(fsia_mclk_in),
++	SH_PFC_PIN_GROUP(fsia_mclk_out),
++	SH_PFC_PIN_GROUP(fsia_sclk_in),
++	SH_PFC_PIN_GROUP(fsia_sclk_out),
++	SH_PFC_PIN_GROUP(fsia_data_in),
++	SH_PFC_PIN_GROUP(fsia_data_out),
++	SH_PFC_PIN_GROUP(fsia_spdif),
++	SH_PFC_PIN_GROUP(fsib_mclk_in),
++	SH_PFC_PIN_GROUP(fsib_mclk_out),
++	SH_PFC_PIN_GROUP(fsib_sclk_in),
++	SH_PFC_PIN_GROUP(fsib_sclk_out),
++	SH_PFC_PIN_GROUP(fsib_data_in),
++	SH_PFC_PIN_GROUP(fsib_data_out),
++	SH_PFC_PIN_GROUP(fsib_spdif),
++	SH_PFC_PIN_GROUP(fsic_mclk_in),
++	SH_PFC_PIN_GROUP(fsic_mclk_out),
++	SH_PFC_PIN_GROUP(fsic_sclk_in),
++	SH_PFC_PIN_GROUP(fsic_sclk_out),
++	SH_PFC_PIN_GROUP(fsic_data_in),
++	SH_PFC_PIN_GROUP(fsic_data_out),
++	SH_PFC_PIN_GROUP(fsic_spdif_0),
++	SH_PFC_PIN_GROUP(fsic_spdif_1),
++	SH_PFC_PIN_GROUP(fsid_sclk_in),
++	SH_PFC_PIN_GROUP(fsid_sclk_out),
++	SH_PFC_PIN_GROUP(fsid_data_in),
+ 	SH_PFC_PIN_GROUP(i2c2_0),
+ 	SH_PFC_PIN_GROUP(i2c2_1),
+ 	SH_PFC_PIN_GROUP(i2c2_2),
+@@ -2096,6 +2300,42 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(scifb_ctrl_1),
+ };
  
- static const char *mackerel_compat_dt[] __initdata = {
++static const char * const fsia_groups[] = {
++	"fsia_mclk_in",
++	"fsia_mclk_out",
++	"fsia_sclk_in",
++	"fsia_sclk_out",
++	"fsia_data_in",
++	"fsia_data_out",
++	"fsia_spdif",
++};
++
++static const char * const fsib_groups[] = {
++	"fsib_mclk_in",
++	"fsib_mclk_out",
++	"fsib_sclk_in",
++	"fsib_sclk_out",
++	"fsib_data_in",
++	"fsib_data_out",
++	"fsib_spdif",
++};
++
++static const char * const fsic_groups[] = {
++	"fsic_mclk_in",
++	"fsic_mclk_out",
++	"fsic_sclk_in",
++	"fsic_sclk_out",
++	"fsic_data_in",
++	"fsic_data_out",
++	"fsic_spdif",
++};
++
++static const char * const fsid_groups[] = {
++	"fsid_sclk_in",
++	"fsid_sclk_out",
++	"fsid_data_in",
++};
++
+ static const char * const i2c2_groups[] = {
+ 	"i2c2_0",
+ 	"i2c2_1",
+@@ -2196,6 +2436,10 @@ static const char * const scifb_groups[] = {
+ };
+ 
+ static const struct sh_pfc_function pinmux_functions[] = {
++	SH_PFC_FUNCTION(fsia),
++	SH_PFC_FUNCTION(fsib),
++	SH_PFC_FUNCTION(fsic),
++	SH_PFC_FUNCTION(fsid),
+ 	SH_PFC_FUNCTION(i2c2),
+ 	SH_PFC_FUNCTION(i2c3),
+ 	SH_PFC_FUNCTION(lcd),
 -- 
-1.7.2.5
+1.7.8.6
 
