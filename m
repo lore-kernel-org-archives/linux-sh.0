@@ -1,54 +1,44 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 31 Jan 2013 06:23:58 +0000
-Subject: [PATCH 5/9] ARM: shmobile: kota2: Use gpio_request_one()
-Message-Id: <1359613442-26038-6-git-send-email-horms+renesas@verge.net.au>
+Date: Thu, 10 Jan 2013 01:23:56 +0000
+Subject: [PATCH 2/5] ARM: shmobile: fix memory size for kota2_defconfig
+Message-Id: <1357781039-14003-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359613442-26038-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359613442-26038-1-git-send-email-horms+renesas@verge.net.au>
+References: <1357781039-14003-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1357781039-14003-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The CONFIG_MEMORY_SIZE value is interpreted as a 32 bit integer, which
+makes sense on a system without PAE. It appears that a trailing 0 was
+appended to the value and after some testing it appears that 0x1e000000 is
+the correct value.
 
-Replace occurences of gpio_request() and gpio_direction_*() by calls to
-gpio_request_one().
+Without this patch, building kota2_defconfig results in:
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+/home/arnd/linux-arm/arch/arm/kernel/setup.c:790:2: warning: large integer implicitly truncated to unsigned type [-Woverflow]
+
+Reported-by: Arnd Bergmann <arnd@arndb.de>
+Cc: Olof Johansson <olof@lixom.net>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-kota2.c |    9 +++------
- 1 file changed, 3 insertions(+), 6 deletions(-)
+ arch/arm/configs/kota2_defconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-kota2.c b/arch/arm/mach-shmobile/board-kota2.c
-index bf88f9a..7ec3112 100644
---- a/arch/arm/mach-shmobile/board-kota2.c
-+++ b/arch/arm/mach-shmobile/board-kota2.c
-@@ -474,10 +474,8 @@ static void __init kota2_init(void)
- 	gpio_request(GPIO_FN_D15_NAF15, NULL);
- 	gpio_request(GPIO_FN_CS5A_, NULL);
- 	gpio_request(GPIO_FN_WE0__FWE, NULL);
--	gpio_request(GPIO_PORT144, NULL); /* PINTA2 */
--	gpio_direction_input(GPIO_PORT144);
--	gpio_request(GPIO_PORT145, NULL); /* RESET */
--	gpio_direction_output(GPIO_PORT145, 1);
-+	gpio_request_one(GPIO_PORT144, GPIOF_IN, NULL); /* PINTA2 */
-+	gpio_request_one(GPIO_PORT145, GPIOF_OUT_INIT_HIGH, NULL); /* RESET */
- 
- 	/* KEYSC */
- 	gpio_request(GPIO_FN_KEYIN0_PU, NULL);
-@@ -509,8 +507,7 @@ static void __init kota2_init(void)
- 	gpio_request(GPIO_FN_MMCD0_6, NULL);
- 	gpio_request(GPIO_FN_MMCD0_7, NULL);
- 	gpio_request(GPIO_FN_MMCCMD0, NULL);
--	gpio_request(GPIO_PORT208, NULL); /* Reset */
--	gpio_direction_output(GPIO_PORT208, 1);
-+	gpio_request_one(GPIO_PORT208, GPIOF_OUT_INIT_HIGH, NULL); /* Reset */
- 
- 	/* SDHI0 (microSD) */
- 	gpio_request(GPIO_FN_SDHICD0_PU, NULL);
+diff --git a/arch/arm/configs/kota2_defconfig b/arch/arm/configs/kota2_defconfig
+index fa83db1..57ad3d4 100644
+--- a/arch/arm/configs/kota2_defconfig
++++ b/arch/arm/configs/kota2_defconfig
+@@ -21,7 +21,7 @@ CONFIG_ARCH_SHMOBILE=y
+ CONFIG_KEYBOARD_GPIO_POLLED=y
+ CONFIG_ARCH_SH73A0=y
+ CONFIG_MACH_KOTA2=y
+-CONFIG_MEMORY_SIZE=0x1e0000000
++CONFIG_MEMORY_SIZE=0x1e000000
+ # CONFIG_SH_TIMER_TMU is not set
+ # CONFIG_SWP_EMULATE is not set
+ CONFIG_CPU_BPREDICT_DISABLE=y
 -- 
 1.7.10.4
 
