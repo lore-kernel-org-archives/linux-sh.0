@@ -1,20 +1,96 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 09 Jan 2013 02:06:47 +0000
-Subject: Re: [PATCH 1/2] ARM: r8a7740: Add interim sh-eth device name to clocks list
-Message-Id: <20130109020647.GB6496@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 10 Jan 2013 20:51:40 +0000
+Subject: [PATCH 07/16] ARM: shmobile: kota2: Register pinctrl mappings for SCIF
+Message-Id: <1357851109-22103-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1355851359-8871-1-git-send-email-hechtb+renesas@gmail.com>
- <1355851359-8871-2-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1355851359-8871-2-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Dec 18, 2012 at 06:22:38PM +0100, Bastian Hecht wrote:
-> When we use the ethernet device via DT setup, we need to add it
-> to a lookup list until this is properly handled later in a DT-only
-> fashion.
+Replace the GPIO-based SCIF pinmux configuration by pinctrl mappings.
 
-Thanks, looks good.
-I will apply this.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/board-kota2.c |   42 ++++++++++++++++++---------------
+ 1 files changed, 23 insertions(+), 19 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-kota2.c b/arch/arm/mach-shmobile/board-kota2.c
+index bf88f9a..fb44f92 100644
+--- a/arch/arm/mach-shmobile/board-kota2.c
++++ b/arch/arm/mach-shmobile/board-kota2.c
+@@ -24,6 +24,7 @@
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+ #include <linux/irq.h>
++#include <linux/pinctrl/machine.h>
+ #include <linux/platform_device.h>
+ #include <linux/delay.h>
+ #include <linux/io.h>
+@@ -433,6 +434,26 @@ static struct platform_device *kota2_devices[] __initdata = {
+ 	&sdhi1_device,
+ };
+ 
++static const struct pinctrl_map kota2_pinctrl_map[] = {
++	/* SCIFA2 (UART2) */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-sh73a0",
++				  "scifa2_data_0", "scifa2"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-sh73a0",
++				  "scifa2_ctrl_0", "scifa2"),
++	/* SCIFA4 (UART1) */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
++				  "scifa4_data", "scifa4"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
++				  "scifa4_ctrl", "scifa4"),
++	/* SCIFB (BT) */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.8", "pfc-sh73a0",
++				  "scifb_data_0", "scifb"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.8", "pfc-sh73a0",
++				  "scifb_clk_0", "scifb"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.8", "pfc-sh73a0",
++				  "scifb_ctrl_0", "scifb"),
++};
++
+ static void __init kota2_init(void)
+ {
+ 	regulator_register_always_on(0, "fixed-1.8V", fixed1v8_power_consumers,
+@@ -441,20 +462,10 @@ static void __init kota2_init(void)
+ 				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
+ 	regulator_register_fixed(2, dummy_supplies, ARRAY_SIZE(dummy_supplies));
+ 
++	pinctrl_register_mappings(kota2_pinctrl_map,
++				  ARRAY_SIZE(kota2_pinctrl_map));
+ 	sh73a0_pinmux_init();
+ 
+-	/* SCIFA2 (UART2) */
+-	gpio_request(GPIO_FN_SCIFA2_TXD1, NULL);
+-	gpio_request(GPIO_FN_SCIFA2_RXD1, NULL);
+-	gpio_request(GPIO_FN_SCIFA2_RTS1_, NULL);
+-	gpio_request(GPIO_FN_SCIFA2_CTS1_, NULL);
+-
+-	/* SCIFA4 (UART1) */
+-	gpio_request(GPIO_FN_SCIFA4_TXD, NULL);
+-	gpio_request(GPIO_FN_SCIFA4_RXD, NULL);
+-	gpio_request(GPIO_FN_SCIFA4_RTS_, NULL);
+-	gpio_request(GPIO_FN_SCIFA4_CTS_, NULL);
+-
+ 	/* SMSC911X */
+ 	gpio_request(GPIO_FN_D0_NAF0, NULL);
+ 	gpio_request(GPIO_FN_D1_NAF1, NULL);
+@@ -521,13 +532,6 @@ static void __init kota2_init(void)
+ 	gpio_request(GPIO_FN_SDHID0_1_PU, NULL);
+ 	gpio_request(GPIO_FN_SDHID0_0_PU, NULL);
+ 
+-	/* SCIFB (BT) */
+-	gpio_request(GPIO_FN_PORT159_SCIFB_SCK, NULL);
+-	gpio_request(GPIO_FN_PORT160_SCIFB_TXD, NULL);
+-	gpio_request(GPIO_FN_PORT161_SCIFB_CTS_, NULL);
+-	gpio_request(GPIO_FN_PORT162_SCIFB_RXD, NULL);
+-	gpio_request(GPIO_FN_PORT163_SCIFB_RTS_, NULL);
+-
+ 	/* SDHI1 (BCM4330) */
+ 	gpio_request(GPIO_FN_SDHICLK1, NULL);
+ 	gpio_request(GPIO_FN_SDHICMD1_PU, NULL);
+-- 
+1.7.8.6
+
