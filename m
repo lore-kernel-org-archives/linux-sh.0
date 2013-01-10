@@ -1,55 +1,169 @@
-From: Tang Chen <tangchen@cn.fujitsu.com>
-Date: Wed, 09 Jan 2013 09:32:35 +0000
-Subject: [PATCH v6 11/15] memory-hotplug: Integrated __remove_section() of CONFIG_SPARSEMEM_VMEMMAP.
-Message-Id: <1357723959-5416-12-git-send-email-tangchen@cn.fujitsu.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 10 Jan 2013 20:51:47 +0000
+Subject: [PATCH 14/16] ARM: shmobile: sh73a0: Remove SCIFA and SCIFB function GPIOs
+Message-Id: <1357851109-22103-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1357723959-5416-1-git-send-email-tangchen@cn.fujitsu.com>
-In-Reply-To: <1357723959-5416-1-git-send-email-tangchen@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: akpm@linux-foundation.org, rientjes@google.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, wency@cn.fujitsu.com, tangchen@cn.fujitsu.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org, glommer@parallels.com
-Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-Currently __remove_section for SPARSEMEM_VMEMMAP does nothing. But even if
-we use SPARSEMEM_VMEMMAP, we can unregister the memory_section.
+Those GPIOs have been deprecated by the pinctrl API. They are unused and
+unneeded, remove them.
 
-Signed-off-by: Yasuaki Ishimatsu <isimatu.yasuaki@jp.fujitsu.com>
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
-Signed-off-by: Tang Chen <tangchen@cn.fujitsu.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- mm/memory_hotplug.c |   11 -----------
- 1 files changed, 0 insertions(+), 11 deletions(-)
+ arch/arm/mach-shmobile/include/mach/sh73a0.h |   90 +++++++++++---------------
+ 1 files changed, 37 insertions(+), 53 deletions(-)
 
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index 674e791..b20c4c7 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -430,16 +430,6 @@ static int __meminit __add_section(int nid, struct zone *zone,
- 	return register_new_memory(nid, __pfn_to_section(phys_start_pfn));
- }
+diff --git a/arch/arm/mach-shmobile/include/mach/sh73a0.h b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+index 5ce2fa9..54a60d7 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh73a0.h
++++ b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+@@ -103,15 +103,11 @@ enum {
+ 	GPIO_FN_GPI5,
+ 	GPIO_FN_GPI6,
+ 	GPIO_FN_GPI7,
+-	GPIO_FN_SCIFA7_RXD,
+-	GPIO_FN_SCIFA7_CTS_,
+ 	GPIO_FN_GPO7, GPIO_FN_MFG0_OUT2,
+ 	GPIO_FN_GPO6, GPIO_FN_MFG1_OUT2,
+-	GPIO_FN_GPO5, GPIO_FN_SCIFA0_SCK, GPIO_FN_FSICOSLDT3, \
++	GPIO_FN_GPO5, GPIO_FN_FSICOSLDT3,
+ 	GPIO_FN_PORT16_VIO_CKOR,
+-	GPIO_FN_SCIFA0_TXD,
+-	GPIO_FN_SCIFA7_TXD,
+-	GPIO_FN_SCIFA7_RTS_, GPIO_FN_PORT19_VIO_CKO2,
++	GPIO_FN_PORT19_VIO_CKO2,
+ 	GPIO_FN_GPO0,
+ 	GPIO_FN_GPO1,
+ 	GPIO_FN_GPO2, GPIO_FN_STATUS0,
+@@ -126,19 +122,15 @@ enum {
+ 	GPIO_FN_SIM_RST, GPIO_FN_PORT29_TPU1TO1,
+ 	GPIO_FN_SIM_CLK, GPIO_FN_PORT30_VIO_CKOR,
+ 	GPIO_FN_SIM_D, GPIO_FN_PORT31_IROUT,
+-	GPIO_FN_SCIFA4_TXD,
+-	GPIO_FN_SCIFA4_RXD, GPIO_FN_XWUP,
+-	GPIO_FN_SCIFA4_RTS_,
+-	GPIO_FN_SCIFA4_CTS_,
++	GPIO_FN_XWUP,
+ 	GPIO_FN_FSIBOBT, GPIO_FN_FSIBIBT,
+ 	GPIO_FN_FSIBOLR, GPIO_FN_FSIBILR,
+ 	GPIO_FN_FSIBOSLD,
+ 	GPIO_FN_FSIBISLD,
+ 	GPIO_FN_VACK,
+ 	GPIO_FN_XTAL1L,
+-	GPIO_FN_SCIFA0_RTS_, GPIO_FN_FSICOSLDT2,
+-	GPIO_FN_SCIFA0_RXD,
+-	GPIO_FN_SCIFA0_CTS_, GPIO_FN_FSICOSLDT1,
++	GPIO_FN_FSICOSLDT2,
++	GPIO_FN_FSICOSLDT1,
+ 	GPIO_FN_FSICOBT, GPIO_FN_FSICIBT, GPIO_FN_FSIDOBT, GPIO_FN_FSIDIBT,
+ 	GPIO_FN_FSICOLR, GPIO_FN_FSICILR, GPIO_FN_FSIDOLR, GPIO_FN_FSIDILR,
+ 	GPIO_FN_FSICOSLD, GPIO_FN_PORT47_FSICSPDIF,
+@@ -204,10 +196,9 @@ enum {
+ 	GPIO_FN_BBIF2_RXD,
+ 	GPIO_FN_BBIF2_SYNC,
+ 	GPIO_FN_BBIF2_SCK,
+-	GPIO_FN_SCIFA3_CTS_, GPIO_FN_MFG3_IN2,
+-	GPIO_FN_SCIFA3_RXD, GPIO_FN_MFG3_IN1,
+-	GPIO_FN_BBIF1_SS2, GPIO_FN_SCIFA3_RTS_, GPIO_FN_MFG3_OUT1,
+-	GPIO_FN_SCIFA3_TXD,
++	GPIO_FN_MFG3_IN2,
++	GPIO_FN_MFG3_IN1,
++	GPIO_FN_BBIF1_SS2, GPIO_FN_MFG3_OUT1,
+ 	GPIO_FN_HSI_RX_DATA, GPIO_FN_BBIF1_RXD,
+ 	GPIO_FN_HSI_TX_WAKE, GPIO_FN_BBIF1_TSCK,
+ 	GPIO_FN_HSI_TX_DATA, GPIO_FN_BBIF1_TSYNC,
+@@ -252,22 +243,17 @@ enum {
+ 	GPIO_FN_TS_SPSYNC3, GPIO_FN_MSIOF2_RSCK,
+ 	GPIO_FN_TS_SDAT3, GPIO_FN_MSIOF2_RSYNC,
+ 	GPIO_FN_TPU1TO2, GPIO_FN_TS_SDEN3, GPIO_FN_PORT153_MSIOF2_SS1,
+-	GPIO_FN_SCIFA2_TXD1, GPIO_FN_MSIOF2_MCK0,
+-	GPIO_FN_SCIFA2_RXD1, GPIO_FN_MSIOF2_MCK1,
+-	GPIO_FN_SCIFA2_RTS1_, GPIO_FN_PORT156_MSIOF2_SS2,
+-	GPIO_FN_SCIFA2_CTS1_, GPIO_FN_PORT157_MSIOF2_RXD,
+-	GPIO_FN_DINT_, GPIO_FN_SCIFA2_SCK1, GPIO_FN_TS_SCK3,
+-	GPIO_FN_PORT159_SCIFB_SCK, GPIO_FN_PORT159_SCIFA5_SCK, GPIO_FN_NMI,
+-	GPIO_FN_PORT160_SCIFB_TXD, GPIO_FN_PORT160_SCIFA5_TXD,
+-	GPIO_FN_PORT161_SCIFB_CTS_, GPIO_FN_PORT161_SCIFA5_CTS_,
+-	GPIO_FN_PORT162_SCIFB_RXD, GPIO_FN_PORT162_SCIFA5_RXD,
+-	GPIO_FN_PORT163_SCIFB_RTS_, GPIO_FN_PORT163_SCIFA5_RTS_, \
++	GPIO_FN_MSIOF2_MCK0,
++	GPIO_FN_MSIOF2_MCK1,
++	GPIO_FN_PORT156_MSIOF2_SS2,
++	GPIO_FN_PORT157_MSIOF2_RXD,
++	GPIO_FN_DINT_, GPIO_FN_TS_SCK3,
++	GPIO_FN_NMI,
+ 	GPIO_FN_TPU3TO0,
+-	GPIO_FN_PORT193_SCIFA5_CTS_, GPIO_FN_BBIF2_TSYNC1,
+-	GPIO_FN_PORT194_SCIFA5_RTS_, GPIO_FN_BBIF2_TSCK1,
+-	GPIO_FN_PORT195_SCIFA5_RXD, GPIO_FN_BBIF2_TXD1,
+-	GPIO_FN_PORT196_SCIFA5_TXD,
+-	GPIO_FN_PORT197_SCIFA5_SCK, GPIO_FN_MFG2_OUT2,
++	GPIO_FN_BBIF2_TSYNC1,
++	GPIO_FN_BBIF2_TSCK1,
++	GPIO_FN_BBIF2_TXD1,
++	GPIO_FN_MFG2_OUT2,
+ 	GPIO_FN_TPU2TO1,
+ 	GPIO_FN_TPU4TO1, GPIO_FN_MFG4_OUT2,
+ 	GPIO_FN_D16,
+@@ -296,36 +282,34 @@ enum {
+ 	GPIO_FN_DACK1, GPIO_FN_OVCN,
+ 	GPIO_FN_MSIOF0L_TXD, GPIO_FN_VIO2_VD3,
  
--#ifdef CONFIG_SPARSEMEM_VMEMMAP
--static int __remove_section(struct zone *zone, struct mem_section *ms)
--{
--	/*
--	 * XXX: Freeing memmap with vmemmap is not implement yet.
--	 *      This should be removed later.
--	 */
--	return -EBUSY;
--}
--#else
- static int __remove_section(struct zone *zone, struct mem_section *ms)
- {
- 	int ret = -EINVAL;
-@@ -454,7 +444,6 @@ static int __remove_section(struct zone *zone, struct mem_section *ms)
- 	sparse_remove_one_section(zone, ms);
- 	return 0;
- }
--#endif
- 
- /*
-  * Reasonably generic function for adding memory.  It is
+-	GPIO_FN_SCIFA1_TXD, GPIO_FN_OVCN2,
+-	GPIO_FN_EXTLP, GPIO_FN_SCIFA1_SCK, GPIO_FN_PORT226_VIO_CKO2,
+-	GPIO_FN_SCIFA1_RTS_, GPIO_FN_IDIN,
+-	GPIO_FN_SCIFA1_RXD,
+-	GPIO_FN_SCIFA1_CTS_, GPIO_FN_MFG1_IN1,
+-	GPIO_FN_MSIOF1_TXD, GPIO_FN_SCIFA2_TXD2,
+-	GPIO_FN_MSIOF1_TSYNC, GPIO_FN_SCIFA2_CTS2_,
+-	GPIO_FN_MSIOF1_TSCK, GPIO_FN_SCIFA2_SCK2,
+-	GPIO_FN_MSIOF1_RXD, GPIO_FN_SCIFA2_RXD2,
+-	GPIO_FN_MSIOF1_RSCK, GPIO_FN_SCIFA2_RTS2_, GPIO_FN_VIO2_CLK2, \
++	GPIO_FN_OVCN2,
++	GPIO_FN_EXTLP, GPIO_FN_PORT226_VIO_CKO2,
++	GPIO_FN_IDIN,
++	GPIO_FN_MFG1_IN1,
++	GPIO_FN_MSIOF1_TXD,
++	GPIO_FN_MSIOF1_TSYNC,
++	GPIO_FN_MSIOF1_TSCK,
++	GPIO_FN_MSIOF1_RXD,
++	GPIO_FN_MSIOF1_RSCK, GPIO_FN_VIO2_CLK2,
+ 	GPIO_FN_MSIOF1_RSYNC, GPIO_FN_MFG1_IN2, GPIO_FN_VIO2_VD2, \
+ 	GPIO_FN_MSIOF1_MCK0, GPIO_FN_PORT236_I2C_SDA2,
+ 	GPIO_FN_MSIOF1_MCK1, GPIO_FN_PORT237_I2C_SCL2,
+ 	GPIO_FN_MSIOF1_SS1, GPIO_FN_VIO2_FIELD2,
+ 	GPIO_FN_MSIOF1_SS2, GPIO_FN_VIO2_HD2,
+-	GPIO_FN_SCIFA6_TXD,
+ 	GPIO_FN_PORT241_IRDA_OUT, GPIO_FN_PORT241_IROUT, GPIO_FN_MFG4_OUT1, \
+ 	GPIO_FN_TPU4TO0,
+ 	GPIO_FN_PORT242_IRDA_IN, GPIO_FN_MFG4_IN2,
+ 	GPIO_FN_PORT243_IRDA_FIRSEL, GPIO_FN_PORT243_VIO_CKO2,
+-	GPIO_FN_PORT244_SCIFA5_CTS_, GPIO_FN_MFG2_IN1, \
+-	GPIO_FN_PORT244_SCIFB_CTS_, GPIO_FN_MSIOF2R_RXD,
+-	GPIO_FN_PORT245_SCIFA5_RTS_, GPIO_FN_MFG2_IN2, \
+-	GPIO_FN_PORT245_SCIFB_RTS_, GPIO_FN_MSIOF2R_TXD,
+-	GPIO_FN_PORT246_SCIFA5_RXD, GPIO_FN_MFG1_OUT1, \
+-	GPIO_FN_PORT246_SCIFB_RXD, GPIO_FN_TPU1TO0,
+-	GPIO_FN_PORT247_SCIFA5_TXD, GPIO_FN_MFG3_OUT2, \
+-	GPIO_FN_PORT247_SCIFB_TXD, GPIO_FN_TPU3TO1,
+-	GPIO_FN_PORT248_SCIFA5_SCK, GPIO_FN_MFG2_OUT1, \
+-	GPIO_FN_PORT248_SCIFB_SCK, GPIO_FN_TPU2TO0, \
++	GPIO_FN_MFG2_IN1,
++	GPIO_FN_MSIOF2R_RXD,
++	GPIO_FN_MFG2_IN2,
++	GPIO_FN_MSIOF2R_TXD,
++	GPIO_FN_MFG1_OUT1,
++	GPIO_FN_TPU1TO0,
++	GPIO_FN_MFG3_OUT2,
++	GPIO_FN_TPU3TO1,
++	GPIO_FN_MFG2_OUT1,
++	GPIO_FN_TPU2TO0,
+ 	GPIO_FN_PORT248_I2C_SCL3, GPIO_FN_MSIOF2R_TSCK,
+ 	GPIO_FN_PORT249_IROUT, GPIO_FN_MFG4_IN1, \
+ 	GPIO_FN_PORT249_I2C_SDA3, GPIO_FN_MSIOF2R_TSYNC,
 -- 
-1.7.1
+1.7.8.6
 
