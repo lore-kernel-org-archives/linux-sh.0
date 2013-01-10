@@ -1,94 +1,48 @@
-From: Kishon Vijay Abraham I <kishon@ti.com>
-Date: Wed, 16 Jan 2013 15:13:00 +0000
-Subject: [RFC PATCH 4/6] ARM: dts: OMAP: Add phandle to bind PHY with USB controller
-Message-Id: <1358348462-27693-5-git-send-email-kishon@ti.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 10 Jan 2013 20:51:41 +0000
+Subject: [PATCH 08/16] ARM: shmobile: kzm9g: Register pinctrl mappings for SCIF
+Message-Id: <1357851109-22103-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358348462-27693-1-git-send-email-kishon@ti.com>
-In-Reply-To: <1358348462-27693-1-git-send-email-kishon@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Added a phandle in the dt node for usb_otg to bind the PHY with the USB
-controller and also updated the documentation with the binding information.
+Replace the GPIO-based SCIF pinmux configuration by pinctrl mappings.
 
-Signed-off-by: Kishon Vijay Abraham I <kishon@ti.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-I'll add this patch in this series "usb: musb: add driver for control module"
-which contains the dt data to get MUSB working in dt boot in OMAP platforms.
- Documentation/devicetree/bindings/usb/omap-usb.txt |    2 ++
- arch/arm/boot/dts/omap3.dtsi                       |    1 +
- arch/arm/boot/dts/omap4.dtsi                       |    3 ++-
- arch/arm/boot/dts/twl4030.dtsi                     |    2 +-
- 4 files changed, 6 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/board-kzm9g.c |   10 ++++------
+ 1 files changed, 4 insertions(+), 6 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/usb/omap-usb.txt b/Documentation/devicetree/bindings/usb/omap-usb.txt
-index 3f0152b..591c4fc 100644
---- a/Documentation/devicetree/bindings/usb/omap-usb.txt
-+++ b/Documentation/devicetree/bindings/usb/omap-usb.txt
-@@ -18,6 +18,7 @@ OMAP MUSB GLUE
-    represents PERIPHERAL.
-  - power : Should be "50". This signifies the controller can supply upto
-    100mA when operating in host mode.
-+ - usb_phy : the phandle for the PHY device
- 
- SOC specific device node entry
- usb_otg_hs: usb_otg_hs@4a0ab000 {
-@@ -27,6 +28,7 @@ usb_otg_hs: usb_otg_hs@4a0ab000 {
- 	multipoint = <1>;
- 	num_eps = <16>;
- 	ram_bits = <12>;
-+	usb_phy = <&phy>;
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index b34a59b..914c7e6 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -601,6 +601,10 @@ static struct platform_device *kzm_devices[] __initdata = {
  };
  
- Board specific device node entry
-diff --git a/arch/arm/boot/dts/omap3.dtsi b/arch/arm/boot/dts/omap3.dtsi
-index 8d03736..ebbf596 100644
---- a/arch/arm/boot/dts/omap3.dtsi
-+++ b/arch/arm/boot/dts/omap3.dtsi
-@@ -404,6 +404,7 @@
- 			interrupts = <0 92 0x4>, <0 93 0x4>;
- 			interrupt-names = "mc", "dma";
- 			ti,hwmods = "usb_otg_hs";
-+			usb_phy = <&phy>;
- 			multipoint = <1>;
- 			num_eps = <16>;
- 			ram_bits = <12>;
-diff --git a/arch/arm/boot/dts/omap4.dtsi b/arch/arm/boot/dts/omap4.dtsi
-index 5d770be..531cb2d 100644
---- a/arch/arm/boot/dts/omap4.dtsi
-+++ b/arch/arm/boot/dts/omap4.dtsi
-@@ -438,7 +438,7 @@
- 			#size-cells = <1>;
- 			ranges;
- 			ti,hwmods = "ocp2scp_usb_phy";
--			usb2phy@4a0ad080 {
-+			phy: usb2phy@4a0ad080 {
- 				compatible = "ti,omap-usb2";
- 				reg = <0x4a0ad080 0x58>;
- 			};
-@@ -540,6 +540,7 @@
- 			interrupts = <0 92 0x4>, <0 93 0x4>;
- 			interrupt-names = "mc", "dma";
- 			ti,hwmods = "usb_otg_hs";
-+			usb_phy = <&phy>;
- 			multipoint = <1>;
- 			num_eps = <16>;
- 			ram_bits = <12>;
-diff --git a/arch/arm/boot/dts/twl4030.dtsi b/arch/arm/boot/dts/twl4030.dtsi
-index ed0bc95..80f7c2b 100644
---- a/arch/arm/boot/dts/twl4030.dtsi
-+++ b/arch/arm/boot/dts/twl4030.dtsi
-@@ -67,7 +67,7 @@
- 		#interrupt-cells = <1>;
- 	};
+ static const struct pinctrl_map kzm_pinctrl_map[] = {
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
++				  "scifa4_data", "scifa4"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
++				  "scifa4_ctrl", "scifa4"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-sh73a0",
+ 				  "lcd_data24", "lcd"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-sh73a0",
+@@ -672,12 +676,6 @@ static void __init kzm_init(void)
  
--	twl4030-usb {
-+	phy: twl4030-usb {
- 		compatible = "ti,twl4030-usb";
- 		interrupts = <10>, <4>;
- 		usb1v5-supply = <&vusb1v5>;
+ 	sh73a0_pinmux_init();
+ 
+-	/* enable SCIFA4 */
+-	gpio_request(GPIO_FN_SCIFA4_TXD, NULL);
+-	gpio_request(GPIO_FN_SCIFA4_RXD, NULL);
+-	gpio_request(GPIO_FN_SCIFA4_RTS_, NULL);
+-	gpio_request(GPIO_FN_SCIFA4_CTS_, NULL);
+-
+ 	/* CS4 for SMSC/USB */
+ 	gpio_request(GPIO_FN_CS4_, NULL); /* CS4 */
+ 
 -- 
-1.7.9.5
+1.7.8.6
 
