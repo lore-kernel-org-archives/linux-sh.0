@@ -1,7 +1,7 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 10 Jan 2013 19:47:53 +0000
-Subject: [PATCH 2/8] ARM: shmobile: ap4evb: Use gpio_request_one()
-Message-Id: <1357847279-7765-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 10 Jan 2013 19:47:56 +0000
+Subject: [PATCH 5/8] ARM: shmobile: bonito: Use gpio_request_one()
+Message-Id: <1357847279-7765-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -13,81 +13,34 @@ gpio_request_one().
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c |   33 +++++++++------------------------
- 1 files changed, 9 insertions(+), 24 deletions(-)
+ arch/arm/mach-shmobile/board-bonito.c |    7 +++----
+ 1 files changed, 3 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 99ef190..d31879d 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -1042,9 +1042,7 @@ static int ts_get_pendown_state(void)
+diff --git a/arch/arm/mach-shmobile/board-bonito.c b/arch/arm/mach-shmobile/board-bonito.c
+index cdd9415..f55b40b 100644
+--- a/arch/arm/mach-shmobile/board-bonito.c
++++ b/arch/arm/mach-shmobile/board-bonito.c
+@@ -402,8 +402,7 @@ static void __init bonito_init(void)
+ 	/*
+ 	 * base board settings
+ 	 */
+-	gpio_request(GPIO_PORT176, NULL);
+-	gpio_direction_input(GPIO_PORT176);
++	gpio_request_one(GPIO_PORT176, GPIOF_IN, NULL);
+ 	if (!gpio_get_value(GPIO_PORT176)) {
+ 		u16 bsw2;
+ 		u16 bsw3;
+@@ -445,8 +444,8 @@ static void __init bonito_init(void)
+ 						  ARRAY_SIZE(lcdc0_pinctrl_map));
+ 			gpio_request(GPIO_FN_LCDC0_SELECT, NULL);
  
- 	gpio_free(GPIO_TSC_IRQ);
+-			gpio_request(GPIO_PORT61, NULL); /* LCDDON */
+-			gpio_direction_output(GPIO_PORT61, 1);
++			gpio_request_one(GPIO_PORT61, GPIOF_OUT_INIT_HIGH,
++					 NULL); /* LCDDON */
  
--	gpio_request(GPIO_TSC_PORT, NULL);
--
--	gpio_direction_input(GPIO_TSC_PORT);
-+	gpio_request_one(GPIO_TSC_PORT, GPIOF_IN, NULL);
- 
- 	val = gpio_get_value(GPIO_TSC_PORT);
- 
-@@ -1125,18 +1123,10 @@ static void __init ap4evb_init(void)
- 	gpio_request(GPIO_FN_IRQ6_39,	NULL);
- 
- 	/* enable Debug switch (S6) */
--	gpio_request(GPIO_PORT32, NULL);
--	gpio_request(GPIO_PORT33, NULL);
--	gpio_request(GPIO_PORT34, NULL);
--	gpio_request(GPIO_PORT35, NULL);
--	gpio_direction_input(GPIO_PORT32);
--	gpio_direction_input(GPIO_PORT33);
--	gpio_direction_input(GPIO_PORT34);
--	gpio_direction_input(GPIO_PORT35);
--	gpio_export(GPIO_PORT32, 0);
--	gpio_export(GPIO_PORT33, 0);
--	gpio_export(GPIO_PORT34, 0);
--	gpio_export(GPIO_PORT35, 0);
-+	gpio_request_one(GPIO_PORT32, GPIOF_IN | GPIOF_EXPORT, NULL);
-+	gpio_request_one(GPIO_PORT33, GPIOF_IN | GPIOF_EXPORT, NULL);
-+	gpio_request_one(GPIO_PORT34, GPIOF_IN | GPIOF_EXPORT, NULL);
-+	gpio_request_one(GPIO_PORT35, GPIOF_IN | GPIOF_EXPORT, NULL);
- 
- 	/* SDHI0 */
- 	gpio_request(GPIO_FN_SDHICD0, NULL);
-@@ -1184,8 +1174,7 @@ static void __init ap4evb_init(void)
- 	gpio_request(GPIO_FN_FSIAILR,	NULL);
- 	gpio_request(GPIO_FN_FSIAISLD,	NULL);
- 	gpio_request(GPIO_FN_FSIAOSLD,	NULL);
--	gpio_request(GPIO_PORT161,	NULL);
--	gpio_direction_output(GPIO_PORT161, 0); /* slave */
-+	gpio_request_one(GPIO_PORT161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
- 
- 	gpio_request(GPIO_PORT9, NULL);
- 	gpio_request(GPIO_PORT10, NULL);
-@@ -1193,8 +1182,7 @@ static void __init ap4evb_init(void)
- 	gpio_direction_none(GPIO_PORT10CR); /* FSIAOLR needs no direction */
- 
- 	/* card detect pin for MMC slot (CN7) */
--	gpio_request(GPIO_PORT41, NULL);
--	gpio_direction_input(GPIO_PORT41);
-+	gpio_request_one(GPIO_PORT41, GPIOF_IN, NULL);
- 
- 	/* setup FSI2 port B (HDMI) */
- 	gpio_request(GPIO_FN_FSIBCK, NULL);
-@@ -1282,11 +1270,8 @@ static void __init ap4evb_init(void)
- 	gpio_request(GPIO_FN_LCDDISP,  NULL);
- 	gpio_request(GPIO_FN_LCDDCK,   NULL);
- 
--	gpio_request(GPIO_PORT189, NULL); /* backlight */
--	gpio_direction_output(GPIO_PORT189, 1);
--
--	gpio_request(GPIO_PORT151, NULL); /* LCDDON */
--	gpio_direction_output(GPIO_PORT151, 1);
-+	gpio_request_one(GPIO_PORT189, GPIOF_OUT_INIT_HIGH, NULL); /* backlight */
-+	gpio_request_one(GPIO_PORT151, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
- 
- 	lcdc_info.clock_source			= LCDC_CLK_BUS;
- 	lcdc_info.ch[0].interface_type		= RGB18;
+ 			/* backlight on */
+ 			bonito_fpga_write(LCDCR, 1);
 -- 
 1.7.8.6
 
