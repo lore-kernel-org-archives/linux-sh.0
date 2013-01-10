@@ -1,68 +1,48 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 25 Jan 2013 02:24:04 +0000
-Subject: [PATCH 28/80] ARM: shmobile: sh73a0: Add pin control resources
-Message-Id: <1359080696-31489-29-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 10 Jan 2013 19:47:57 +0000
+Subject: [PATCH 6/8] ARM: shmobile: kota2: Use gpio_request_one()
+Message-Id: <1357847279-7765-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-Add memory resources for the pin control platform device to let the
-sh-pfc driver ioremap() registers properly instead of evily casting
-register physical addresses to virtual addresses.
+Replace occurences of gpio_request() and gpio_direction_*() by calls to
+gpio_request_one().
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Paul Mundt <lethal@linux-sh.org>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/pfc-sh73a0.c |   17 +++++++++++++++++
- 1 file changed, 17 insertions(+)
+ arch/arm/mach-shmobile/board-kota2.c |    9 +++------
+ 1 files changed, 3 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/pfc-sh73a0.c b/arch/arm/mach-shmobile/pfc-sh73a0.c
-index c83c582..342683e 100644
---- a/arch/arm/mach-shmobile/pfc-sh73a0.c
-+++ b/arch/arm/mach-shmobile/pfc-sh73a0.c
-@@ -18,7 +18,9 @@
-  * along with this program; if not, write to the Free Software
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
-+#include <linux/bug.h>
- #include <linux/init.h>
-+#include <linux/ioport.h>
- #include <linux/kernel.h>
- #include <linux/platform_device.h>
- #include <linux/sh_pfc.h>
-@@ -2798,9 +2800,24 @@ static struct pinmux_info sh73a0_pinmux_info = {
- 	.gpio_irq_size = ARRAY_SIZE(pinmux_irqs),
- };
+diff --git a/arch/arm/mach-shmobile/board-kota2.c b/arch/arm/mach-shmobile/board-kota2.c
+index bf88f9a..7ec3112 100644
+--- a/arch/arm/mach-shmobile/board-kota2.c
++++ b/arch/arm/mach-shmobile/board-kota2.c
+@@ -474,10 +474,8 @@ static void __init kota2_init(void)
+ 	gpio_request(GPIO_FN_D15_NAF15, NULL);
+ 	gpio_request(GPIO_FN_CS5A_, NULL);
+ 	gpio_request(GPIO_FN_WE0__FWE, NULL);
+-	gpio_request(GPIO_PORT144, NULL); /* PINTA2 */
+-	gpio_direction_input(GPIO_PORT144);
+-	gpio_request(GPIO_PORT145, NULL); /* RESET */
+-	gpio_direction_output(GPIO_PORT145, 1);
++	gpio_request_one(GPIO_PORT144, GPIOF_IN, NULL); /* PINTA2 */
++	gpio_request_one(GPIO_PORT145, GPIOF_OUT_INIT_HIGH, NULL); /* RESET */
  
-+static struct resource sh73a0_pfc_resources[] = {
-+	[0] = {
-+		.start	= 0xe6050000,
-+		.end	= 0xe6057fff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= 0xe605801c,
-+		.end	= 0xe6058027,
-+		.flags	= IORESOURCE_MEM,
-+	}
-+};
-+
- static struct platform_device sh73a0_pfc_device = {
- 	.name		= "sh-pfc",
- 	.id		= -1,
-+	.resource	= sh73a0_pfc_resources,
-+	.num_resources	= ARRAY_SIZE(sh73a0_pfc_resources),
- 	.dev = {
- 		.platform_data = &sh73a0_pinmux_info,
- 	},
+ 	/* KEYSC */
+ 	gpio_request(GPIO_FN_KEYIN0_PU, NULL);
+@@ -509,8 +507,7 @@ static void __init kota2_init(void)
+ 	gpio_request(GPIO_FN_MMCD0_6, NULL);
+ 	gpio_request(GPIO_FN_MMCD0_7, NULL);
+ 	gpio_request(GPIO_FN_MMCCMD0, NULL);
+-	gpio_request(GPIO_PORT208, NULL); /* Reset */
+-	gpio_direction_output(GPIO_PORT208, 1);
++	gpio_request_one(GPIO_PORT208, GPIOF_OUT_INIT_HIGH, NULL); /* Reset */
+ 
+ 	/* SDHI0 (microSD) */
+ 	gpio_request(GPIO_FN_SDHICD0_PU, NULL);
 -- 
-1.7.10.4
+1.7.8.6
 
