@@ -1,55 +1,45 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 21 Jan 2013 12:17:36 +0000
-Subject: Re: [PATCH 2/8] pinctrl: add SDHI and MMCIF pin groups to sh7372
-Message-Id: <2003703.ytJOxU5lq9@avalon>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 11 Jan 2013 01:30:25 +0000
+Subject: Re: [PATCH v2] sh: clkfwk: bugfix: sh_clk_div_enable() care sh_clk_div_set_rate() if div6
+Message-Id: <87wqvk4ic1.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358356097-26180-1-git-send-email-g.liakhovetski@gmx.de>
- <1358356097-26180-3-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1358356097-26180-3-git-send-email-g.liakhovetski@gmx.de>
+References: <87a9u4x5q1.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87a9u4x5q1.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Guennadi,
 
-Thanks for the patch.
+Hi Paul
 
-On Wednesday 16 January 2013 18:08:11 Guennadi Liakhovetski wrote:
-> Add pin groups for all three SDHI interfaces and two alternative pin
-> groups for the MMCIF interface on the sh7372 SoC.
+I still couldn't find this patch on linus/master branch.
+What is current status of this ?
+
+At Tue, 27 Nov 2012 10:33:38 +0900,
+Paul Mundt wrote:
 > 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> ---
->  drivers/pinctrl/sh-pfc/pfc-sh7372.c |  205 ++++++++++++++++++++++++++++++++
->  1 files changed, 205 insertions(+), 0 deletions(-)
-> 
-> diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-> b/drivers/pinctrl/sh-pfc/pfc-sh7372.c index 847e0cd..78444a0 100644
-> --- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-> +++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+> On Mon, Nov 26, 2012 at 04:45:45PM -0800, Kuninori Morimoto wrote:
+> > 
+> > Hi Paul
+> > 
+> > > > 764f4e4e33d18cde4dcaf8a0d860b749c6d6d08b
+> > > > (sh: clkfwk: Use shared sh_clk_div_enable/disable())
+> > > > shared enable/disable funcions for div4/div6.
+> > > > But new sh_clk_div_enable() didn't care sh_clk_div_set_rate()
+> > > > which is required on div6 clock.
+> > > > This patch fixes it.
+> > > > 
+> > > > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> > > 
+> > > Looks better, I'll queue it up, thanks.
+> > 
+> > Thanks.
+> > Is it possible to go to v3.7-rcX ?
+> > 
+> Yes, should be fine.
 
-[snip]
 
-> @@ -1644,6 +1844,11 @@ struct sh_pfc_soc_info sh7372_pinmux_info = {
-> 
->  	.pins = pinmux_pins,
->  	.nr_pins = ARRAY_SIZE(pinmux_pins),
-> +	.groups		= pinmux_groups,
-> +	.nr_groups	= ARRAY_SIZE(pinmux_groups),
-> +	.functions	= pinmux_functions,
-> +	.nr_functions	= ARRAY_SIZE(pinmux_functions),
-> +
-
-Just a little bit of nitpicking here. I don't have a strong preference on 
-whether the = signs should be aligned. Both options were used in the PFC code, 
-so I've tried to keep whatever was there. It might be better to do so here as 
-well.
-
->  	.func_gpios = pinmux_func_gpios,
->  	.nr_func_gpios = ARRAY_SIZE(pinmux_func_gpios),
--- 
-Regards,
-
-Laurent Pinchart
-
+Best regards
+---
+Kuninori Morimoto
