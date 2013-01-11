@@ -1,55 +1,44 @@
-From: Tang Chen <tangchen@cn.fujitsu.com>
-Date: Thu, 10 Jan 2013 01:38:10 +0000
-Subject: Re: [PATCH v5 01/14] memory-hotplug: try to offline the memory twice to avoid dependence
-Message-Id: <50EE1B82.4090601@cn.fujitsu.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 11 Jan 2013 07:17:03 +0000
+Subject: [PATCH 2/5] ARM: mach-shmobile: fix memory size for kota2_defconfig
+Message-Id: <1357888626-4946-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1356350964-13437-1-git-send-email-tangchen@cn.fujitsu.com> <1356350964-13437-2-git-send-email-tangchen@cn.fujitsu.com> <50D96543.6010903@parallels.com> <50DFD7F7.5090408@cn.fujitsu.com> <50ED8834.1090804@parallels.com>
-In-Reply-To: <50ED8834.1090804@parallels.com>
+References: <1357888626-4946-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1357888626-4946-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Glauber Costa <glommer@parallels.com>
-Cc: Wen Congyang <wency@cn.fujitsu.com>, akpm@linux-foundation.org, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org, x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Glauber,
+The CONFIG_MEMORY_SIZE value is interpreted as a 32 bit integer, which
+makes sense on a system without PAE. It appears that a trailing 0 was
+appended to the value and after some testing it appears that 0x1e000000 is
+the correct value.
 
-On 01/09/2013 11:09 PM, Glauber Costa wrote:
->>
->> We try to make all page_cgroup allocations local to the node they are describing
->> now. If the memory is the first memory onlined in this node, we will allocate
->> it from the other node.
->>
->> For example, node1 has 4 memory blocks: 8-11, and we online it from 8 to 11
->> 1. memory block 8, page_cgroup allocations are in the other nodes
->> 2. memory block 9, page_cgroup allocations are in memory block 8
->>
->> So we should offline memory block 9 first. But we don't know in which order
->> the user online the memory block.
->>
->> I think we can modify memcg like this:
->> allocate the memory from the memory block they are describing
->>
->> I am not sure it is OK to do so.
->
-> I don't see a reason why not.
+Without this patch, building kota2_defconfig results in:
 
-I'm not sure, but if we do this, we could bring in a fragment for each
-memory block (a memory section, 128MB, right?). Is this a problem when
-we use large page (such as 1GB page) ?
+/home/arnd/linux-arm/arch/arm/kernel/setup.c:790:2: warning: large integer implicitly truncated to unsigned type [-Woverflow]
 
-Even if not, will these fragments make any bad effects ?
+Reported-by: Arnd Bergmann <arnd@arndb.de>
+Cc: Olof Johansson <olof@lixom.net>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/configs/kota2_defconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Thank. :)
-
->
-> You would have to tweak a bit the lookup function for page_cgroup, but
-> assuming you will always have the pfns and limits, it should be easy to do.
->
-> I think the only tricky part is that today we have a single
-> node_page_cgroup, and we would of course have to have one per memory
-> block. My assumption is that the number of memory blocks is limited and
-> likely not very big. So even a static array would do.
->
-> Kamezawa, do you have any input in here?
->
+diff --git a/arch/arm/configs/kota2_defconfig b/arch/arm/configs/kota2_defconfig
+index fa83db1..57ad3d4 100644
+--- a/arch/arm/configs/kota2_defconfig
++++ b/arch/arm/configs/kota2_defconfig
+@@ -21,7 +21,7 @@ CONFIG_ARCH_SHMOBILE=y
+ CONFIG_KEYBOARD_GPIO_POLLED=y
+ CONFIG_ARCH_SH73A0=y
+ CONFIG_MACH_KOTA2=y
+-CONFIG_MEMORY_SIZE=0x1e0000000
++CONFIG_MEMORY_SIZE=0x1e000000
+ # CONFIG_SH_TIMER_TMU is not set
+ # CONFIG_SWP_EMULATE is not set
+ CONFIG_CPU_BPREDICT_DISABLE=y
+-- 
+1.7.10.4
 
