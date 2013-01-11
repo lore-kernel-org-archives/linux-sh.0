@@ -1,43 +1,17 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 03 Jan 2013 18:17:42 +0000
-Subject: [PATCH 11/22] sh-pfc: Don't needlessly check GPIO type in sh_gpio_free()
-Message-Id: <1357237073-15600-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 11 Jan 2013 07:17:01 +0000
+Subject: [PATCH 0/5] ARM: mach-shmobile: defconfig updates
+Message-Id: <1357888626-4946-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The GPIO type is always PINMUX_TYPE_FUNCTION when freeing a function
-GPIO. Hardcode the type value.
+Hi,
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/pinctrl/sh-pfc/gpio.c |    5 +----
- 1 files changed, 1 insertions(+), 4 deletions(-)
-
-diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
-index 80a50d8..8f01113 100644
---- a/drivers/pinctrl/sh-pfc/gpio.c
-+++ b/drivers/pinctrl/sh-pfc/gpio.c
-@@ -71,16 +71,13 @@ static void sh_gpio_free(struct gpio_chip *gc, unsigned offset)
- {
- 	struct sh_pfc *pfc = gpio_to_pfc(gc);
- 	unsigned long flags;
--	int pinmux_type;
- 
- 	if (offset < pfc->info->nr_pins)
- 		return pinctrl_free_gpio(offset);
- 
- 	spin_lock_irqsave(&pfc->lock, flags);
- 
--	pinmux_type = pfc->info->gpios[offset].flags & PINMUX_FLAG_TYPE;
--
--	sh_pfc_config_gpio(pfc, offset, pinmux_type, GPIO_CFG_FREE);
-+	sh_pfc_config_gpio(pfc, offset, PINMUX_TYPE_FUNCTION, GPIO_CFG_FREE);
- 
- 	spin_unlock_irqrestore(&pfc->lock, flags);
- }
--- 
-1.7.8.6
+I would like to propose the following defconfig updates for
+mach-shmobile for 3.9. I will send a pull-request containing
+them after the forthcoming long weekend if there are no objections
+in the meantime.
 
