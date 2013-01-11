@@ -1,53 +1,66 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 11 Jan 2013 00:36:37 +0000
-Subject: Re: [PATCH 1/5] ARM: mach-shmobile: mackerel: update defconfig
-Message-Id: <20130111003636.GE8415@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 11 Jan 2013 07:17:02 +0000
+Subject: [PATCH 1/5] ARM: mach-shmobile: mackerel: update defconfig
+Message-Id: <1357888626-4946-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1357781039-14003-1-git-send-email-horms+renesas@verge.net.au>
- <1357781039-14003-2-git-send-email-horms+renesas@verge.net.au>
- <20130110231111.GA25944@quad.lixom.net>
-In-Reply-To: <20130110231111.GA25944@quad.lixom.net>
+References: <1357888626-4946-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1357888626-4946-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Jan 10, 2013 at 03:11:11PM -0800, Olof Johansson wrote:
-> Hi,
-> 
-> On Thu, Jan 10, 2013 at 10:23:55AM +0900, Simon Horman wrote:
-> > * Enable ARM_APPENDED_DTB
-> > 
-> >   Typically the bootloader of a mackerel board does not support DT
-> >   so this option is useful
-> > 
-> > * Add "rw" to command line
-> > 
-> >   This appears to be necessary for a successful NFS-root boot
-> > 
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > ---
-> >  arch/arm/configs/mackerel_defconfig |    3 ++-
-> >  1 file changed, 2 insertions(+), 1 deletion(-)
-> > 
-> > diff --git a/arch/arm/configs/mackerel_defconfig b/arch/arm/configs/mackerel_defconfig
-> > index 2098ce1..8519721 100644
-> > --- a/arch/arm/configs/mackerel_defconfig
-> > +++ b/arch/arm/configs/mackerel_defconfig
-> > @@ -23,7 +23,8 @@ CONFIG_AEABI=y
-> >  CONFIG_FORCE_MAX_ZONEORDER
-> >  CONFIG_ZBOOT_ROM_TEXT=0x0
-> >  CONFIG_ZBOOT_ROM_BSS=0x0
-> > -CONFIG_CMDLINE="console=tty0, console=ttySC0,115200 earlyprintk=sh-sci.0,115200 root=/dev/nfs nfsroot=,tcp,v3 ip=dhcp memchunk.vpudm memchunk.veu0=8m memchunk.spu0=2m mem$0m"
-> > +CONFIG_ARM_APPENDED_DTB=y
-> > +CONFIG_CMDLINE="console=tty0, console=ttySC0,115200 earlyprintk=sh-sci.0,115200 root=/dev/nfs nfsroot=,tcp,v3 ip=dhcp memchunk.vpudm memchunk.veu0=8m memchunk.spu0=2m mem$0m rw"
-> 
-> I don't think memchunk is used outside of arch/sh, so it can be dropped from
-> this default cmdline?
-> 
-> Also, with DTB, there's little use for an in-kernel default command line since
-> you can give one with the dtb instead. Perhaps just drop it alltogether and
-> move it there?
+* Enable ARM_APPENDED_DTB
 
-Thanks, I'll see about making both of those changes and repost.
+  Typically the bootloader of a mackerel board does not support DT
+  so this option is useful
+
+* Add "rw" to command line
+
+  This appears to be necessary for a successful NFS-root boot
+
+* Remove memchunk from kernel command line,
+  it is not used outside of arch/sh
+
+* Move command line to dts
+
+  This brings us one small step closer to sharing defconfig
+  between mackerel and other boards
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/sh7372-mackerel.dts |    4 ++++
+ arch/arm/configs/mackerel_defconfig   |    2 +-
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/sh7372-mackerel.dts b/arch/arm/boot/dts/sh7372-mackerel.dts
+index 286f0ca..2623de8 100644
+--- a/arch/arm/boot/dts/sh7372-mackerel.dts
++++ b/arch/arm/boot/dts/sh7372-mackerel.dts
+@@ -15,6 +15,10 @@
+ 	model = "Mackerel (AP4 EVM 2nd)";
+ 	compatible = "renesas,mackerel";
+ 
++	chosen {
++		bootargs = "console=tty0, console=ttySC0,115200 earlyprintk=sh-sci.0,115200 root=/dev/nfs nfsroot=,tcp,v3 ip=dhcp mem$0m rw";
++	};
++
+ 	memory {
+ 		device_type = "memory";
+ 		reg = <0x40000000 0x10000000>;
+diff --git a/arch/arm/configs/mackerel_defconfig b/arch/arm/configs/mackerel_defconfig
+index 2098ce1..e6881ac 100644
+--- a/arch/arm/configs/mackerel_defconfig
++++ b/arch/arm/configs/mackerel_defconfig
+@@ -23,7 +23,7 @@ CONFIG_AEABI=y
+ CONFIG_FORCE_MAX_ZONEORDER
+ CONFIG_ZBOOT_ROM_TEXT=0x0
+ CONFIG_ZBOOT_ROM_BSS=0x0
+-CONFIG_CMDLINE="console=tty0, console=ttySC0,115200 earlyprintk=sh-sci.0,115200 root=/dev/nfs nfsroot=,tcp,v3 ip=dhcp memchunk.vpudm memchunk.veu0=8m memchunk.spu0=2m mem$0m"
++CONFIG_ARM_APPENDED_DTB=y
+ CONFIG_KEXEC=y
+ # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
+ CONFIG_PM=y
+-- 
+1.7.10.4
 
