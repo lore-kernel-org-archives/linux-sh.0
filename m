@@ -1,44 +1,31 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 10 Jan 2013 19:47:51 +0000
-Subject: [PATCH 0/8] Use gpio_request_one() in SH Mobile board code
-Message-Id: <1357847279-7765-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 11 Jan 2013 07:08:25 +0000
+Subject: Re: [PATCH 0/8] Use gpio_request_one() in SH Mobile board code
+Message-Id: <20130111070824.GA1906@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1357847279-7765-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1357847279-7765-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello,
+On Thu, Jan 10, 2013 at 08:47:51PM +0100, Laurent Pinchart wrote:
+> Hello,
+> 
+> Here's a small patch set that converts gpio_request() + gpio_direction_*()
+> calls into gpio_request_one() in all SH Mobile board files.
+> 
+> The patches are based on top of "[PATCH v2 00/29] SH pinctrl and pinmux
+> implementation". I will rebase my next version of the pinctrl DT patches on
+> top of them.
 
-Here's a small patch set that converts gpio_request() + gpio_direction_*()
-calls into gpio_request_one() in all SH Mobile board files.
+I may be confused but I believe that I have already merged the pinctl DT
+patches in their form "[PATCH v2 0/8] SH pinctrl DT support".
 
-The patches are based on top of "[PATCH v2 00/29] SH pinctrl and pinmux
-implementation". I will rebase my next version of the pinctrl DT patches on
-top of them.
+Could you either rebase this series on top of the next branch in the reneas
+tree or; Indicate that I should drop "[PATCH v2 0/8] SH pinctrl DT support".
 
-Laurent Pinchart (8):
-  ARM: shmobile: ag5evm: Use gpio_request_one()
-  ARM: shmobile: ap4evb: Use gpio_request_one()
-  ARM: shmobile: armadillo800eva: Use gpio_request_one()
-  ARM: shmobile: armadillo800eva: Use gpio_set_value() to set GPIO
-    value
-  ARM: shmobile: bonito: Use gpio_request_one()
-  ARM: shmobile: kota2: Use gpio_request_one()
-  ARM: shmobile: kzm9g: Use gpio_request_one()
-  ARM: shmobile: mackerel: Use gpio_request_one()
+I have a slight preference for the first option.
 
- arch/arm/mach-shmobile/board-ag5evm.c          |   22 ++++------
- arch/arm/mach-shmobile/board-ap4evb.c          |   33 ++++-----------
- arch/arm/mach-shmobile/board-armadillo800eva.c |   52 +++++++++---------------
- arch/arm/mach-shmobile/board-bonito.c          |    7 +--
- arch/arm/mach-shmobile/board-kota2.c           |    9 +---
- arch/arm/mach-shmobile/board-kzm9g.c           |   18 +++-----
- arch/arm/mach-shmobile/board-mackerel.c        |   16 +++-----
- 7 files changed, 54 insertions(+), 103 deletions(-)
-
--- 
-Regards,
-
-Laurent Pinchart
-
+Thanks
