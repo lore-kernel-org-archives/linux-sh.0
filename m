@@ -1,39 +1,69 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 21 Jan 2013 00:39:02 +0000
-Subject: Re: shmobile and struct sys_timer removal conflicts
-Message-Id: <20130121003902.GE19062@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 11 Jan 2013 07:17:06 +0000
+Subject: [PATCH 5/5] ARM: mach-shmobile: kzm9d: update defconfig
+Message-Id: <1357888626-4946-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <50F445E5.6010203@wwwdotorg.org>
- <20130115004230.GZ7185@verge.net.au>
-In-Reply-To: <20130115004230.GZ7185@verge.net.au>
+References: <1357888626-4946-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1357888626-4946-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Jan 15, 2013 at 09:42:30AM +0900, Simon Horman wrote:
-> On Mon, Jan 14, 2013 at 10:52:37AM -0700, Stephen Warren wrote:
-> > Simon,
-> > 
-> > I notice that the following shmobile-related commits in next-20130114
-> > add new ARM machine descriptors, but set the .timer field rather than
-> > the new .init_time field. I believe the code in these commits won't
-> > build in linux-next or Linux 3.9 once it's released:
-> > 
-> > a625586 ARM: mach-shmobile: kzm9g: Reference DT implementation
-> > ac0876f ARM: shmobile: armadillo800eva: Reference DT implementation
-> > be1fc65 ARM: shmobile: add a reference DT implementation for mackerel
-> > 66f1162 ARM: mach-shmobile: sh73a0: Minimal setup using DT
-> > 
-> > In order to solve this problem, you'll need to adjust those changes
-> > according to:
-> > 
-> > git://git.kernel.org/pub/scm/linux/kernel/git/arm/arm-soc.git timer/cleanup
-> > 
-> > (where "adjust" is probably "rebase on top of")
-> 
-> Hi Stephen,
-> 
-> thanks. I'll get this sorted out.
+* Do not disable SUSPEND
 
-This should be resolved in the next branch of the renesas tree now.
+  Suspend seems to work fine on the kzm9d.
+
+  This is part of an effort reduce differences between mach-shmobile
+  defconfigs with a view to using a common defconfig.
+
+* Enable PM_RUNTIME
+
+  This also seems to work fine on the kzm9d.
+
+  This is part of an effort reduce differences between mach-shmobile
+  defconfigs with a view to using a common defconfig.
+
+* Move kernel command line from defconfig to dts.
+
+  This brings us one small step closer to sharing defconfig
+  between kzm9d and other boards.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/emev2-kzm9d.dts |    2 +-
+ arch/arm/configs/kzm9d_defconfig  |    4 +---
+ 2 files changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/boot/dts/emev2-kzm9d.dts b/arch/arm/boot/dts/emev2-kzm9d.dts
+index 297e3ba..b9b3241 100644
+--- a/arch/arm/boot/dts/emev2-kzm9d.dts
++++ b/arch/arm/boot/dts/emev2-kzm9d.dts
+@@ -21,6 +21,6 @@
+ 	};
+ 
+ 	chosen {
+-		bootargs = "console=ttyS1,115200n81";
++		bootargs = "console=tty0 console=ttyS1,115200n81 earlyprintk=serial8250-em.1,115200n81 mem8M@0x40000000 ignore_loglevel root=/dev/nfs ip=dhcp nfsroot=,rsize@96,wsize@96";
+ 	};
+ };
+diff --git a/arch/arm/configs/kzm9d_defconfig b/arch/arm/configs/kzm9d_defconfig
+index 8c49df6..6c37f4a 100644
+--- a/arch/arm/configs/kzm9d_defconfig
++++ b/arch/arm/configs/kzm9d_defconfig
+@@ -32,11 +32,9 @@ CONFIG_FORCE_MAX_ZONEORDER
+ CONFIG_ZBOOT_ROM_TEXT=0x0
+ CONFIG_ZBOOT_ROM_BSS=0x0
+ CONFIG_ARM_APPENDED_DTB=y
+-CONFIG_CMDLINE="console=tty0 console=ttyS1,115200n81 earlyprintk=serial8250-em.1,115200n81 mem8M@0x40000000 ignore_loglevel root=/dev/nfs ip=dhcp nfsroot=,rsize@96,wsize@96"
+-CONFIG_CMDLINE_FORCE=y
+ CONFIG_VFP=y
+ # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
+-# CONFIG_SUSPEND is not set
++CONFIG_PM_RUNTIME=y
+ CONFIG_NET=y
+ CONFIG_PACKET=y
+ CONFIG_UNIX=y
+-- 
+1.7.10.4
+
