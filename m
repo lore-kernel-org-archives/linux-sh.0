@@ -1,37 +1,51 @@
-From: Tang Chen <tangchen@cn.fujitsu.com>
-Date: Thu, 10 Jan 2013 02:25:56 +0000
-Subject: Re: [PATCH v6 05/15] memory-hotplug: introduce new function arch_remove_memory() for removing page t
-Message-Id: <50EE26B4.40204@cn.fujitsu.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 11 Jan 2013 09:32:02 +0000
+Subject: Re: [PATCH 1/2] ARM: shmobile: sh73a0: Add CPU sleep suspend
+Message-Id: <Pine.LNX.4.64.1301111031220.2604@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1357723959-5416-1-git-send-email-tangchen@cn.fujitsu.com> <1357723959-5416-6-git-send-email-tangchen@cn.fujitsu.com> <20130109145031.210505d0.akpm@linux-foundation.org>
-In-Reply-To: <20130109145031.210505d0.akpm@linux-foundation.org>
+References: <1354709587-25288-1-git-send-email-hechtb+renesas@gmail.com>
+ <CANqRtoQMweOU-Azfwu3-HXKx0Hr0seQYy1hi+arLHN-q=BSh+w@mail.gmail.com>
+ <20121214134727.GL16382@verge.net.au>
+In-Reply-To: <20121214134727.GL16382@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Andrew Morton <akpm@linux-foundation.org>
-Cc: rientjes@google.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, wency@cn.fujitsu.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org, glommer@parallels.com, x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Andrew,
+Hi Simon
 
-On 01/10/2013 06:50 AM, Andrew Morton wrote:
-> On Wed, 9 Jan 2013 17:32:29 +0800
-> Tang Chen<tangchen@cn.fujitsu.com>  wrote:
->
->> For removing memory, we need to remove page table. But it depends
->> on architecture. So the patch introduce arch_remove_memory() for
->> removing page table. Now it only calls __remove_pages().
->>
->> Note: __remove_pages() for some archtecuture is not implemented
->>        (I don't know how to implement it for s390).
->
-> Can this break the build for s390?
+On Fri, 14 Dec 2012, Simon Horman wrote:
 
-No, I don't think so. The arch_remove_memory() in s390 will only
-return -EBUSY.
+> On Fri, Dec 14, 2012 at 12:23:06PM +0900, Magnus Damm wrote:
+> > On Wed, Dec 5, 2012 at 9:13 PM, Bastian Hecht <hechtb@gmail.com> wrote:
+> > > From: Bastian Hecht <hechtb@gmail.com>
+> > >
+> > > Add the lighest possible sleep mode on Cortex-A9 cores: CPU sleep. It is
+> > > entered by a simple dsb and wfi instruction via cpu_do_idle(). As just
+> > > clocks are stopped there is no need to save or restore any state of the
+> > > system.
+> > >
+> > > Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+> > 
+> > Acked-by: Magnus Damm <damm@opensource.se>
+> 
+> Hi Bastian,
+> 
+> could you please re-spin this series on top of the soc5 or next
+> branches of my renesas tree on kernel.org?
+> 
+> Feel free to include Magnus's Ack unless you make any
+> non-trivial changes.
 
-Thanks. :)
+It looks like this commit in your tree
 
->
->
->
+http://git.kernel.org/?p=linux/kernel/git/horms/renesas.git;a=commitdiff;h62b83628a0c6fd6d8a2a0dcf9b67577906e75b
 
+is broken, am I right?
+
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
