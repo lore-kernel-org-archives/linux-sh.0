@@ -1,78 +1,70 @@
-From: kishon <kishon@ti.com>
-Date: Fri, 18 Jan 2013 05:40:03 +0000
-Subject: Re: [RFC PATCH 3/6] usb: otg: utils: change the phy lib to support multiple PHYs of same type
-Message-Id: <50F8DD63.8070404@ti.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 11 Jan 2013 07:17:04 +0000
+Subject: [PATCH 3/5] ARM: mach-shmobile: kzm9g: defconfig update
+Message-Id: <1357888626-4946-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358348462-27693-1-git-send-email-kishon@ti.com>
- <1358348462-27693-4-git-send-email-kishon@ti.com> <50F821DD.1040609@ti.com>
-In-Reply-To: <50F821DD.1040609@ti.com>
+References: <1357888626-4946-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1357888626-4946-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+* Enable ARM_APPENDED_DTB
 
-On Thursday 17 January 2013 09:37 PM, Roger Quadros wrote:
-> On 01/16/2013 05:00 PM, Kishon Vijay Abraham I wrote:
->> In order to add support for multipe PHY's of the same type, the API's
->> for adding PHY and getting PHY has been changed. Now the binding
->> information of the PHY and controller should be done in platform file
->> using usb_bind_phy API. And for getting a PHY, the device pointer of the
->> USB controller and an index should be passed. Based on the binding
->> information that is added in the platform file, get_phy will return the
->> approappropriate PHY.
->>
->> Signed-off-by: Kishon Vijay Abraham I <kishon@ti.com>
->> ---
->>   arch/arm/mach-shmobile/board-marzen.c |    2 +-
->>   drivers/power/ab8500_charger.c        |    2 +-
->>   drivers/power/isp1704_charger.c       |    2 +-
->>   drivers/power/pda_power.c             |    2 +-
->>   drivers/power/twl4030_charger.c       |    2 +-
->>   drivers/usb/chipidea/udc.c            |    2 +-
->>   drivers/usb/dwc3/core.c               |    4 +-
->>   drivers/usb/gadget/fsl_udc_core.c     |    2 +-
->>   drivers/usb/gadget/mv_udc_core.c      |    2 +-
->>   drivers/usb/gadget/omap_udc.c         |    2 +-
->>   drivers/usb/gadget/pxa25x_udc.c       |    2 +-
->>   drivers/usb/gadget/pxa27x_udc.c       |    2 +-
->>   drivers/usb/gadget/s3c-hsudc.c        |    2 +-
->>   drivers/usb/host/ehci-fsl.c           |    2 +-
->>   drivers/usb/host/ehci-msm.c           |    2 +-
->>   drivers/usb/host/ehci-mv.c            |    2 +-
->>   drivers/usb/host/ehci-tegra.c         |    2 +-
->>   drivers/usb/host/ohci-omap.c          |    2 +-
->>   drivers/usb/musb/am35x.c              |    2 +-
->>   drivers/usb/musb/blackfin.c           |    2 +-
->>   drivers/usb/musb/da8xx.c              |    2 +-
->>   drivers/usb/musb/davinci.c            |    2 +-
->>   drivers/usb/musb/musb_dsps.c          |    2 +-
->>   drivers/usb/musb/omap2430.c           |    2 +-
->>   drivers/usb/musb/tusb6010.c           |    2 +-
->>   drivers/usb/musb/ux500.c              |    2 +-
->>   drivers/usb/otg/ab8500-usb.c          |    3 +-
->>   drivers/usb/otg/fsl_otg.c             |    5 ++-
->>   drivers/usb/otg/gpio_vbus.c           |    3 +-
->>   drivers/usb/otg/isp1301_omap.c        |    3 +-
->>   drivers/usb/otg/msm_otg.c             |    3 +-
->>   drivers/usb/otg/mv_otg.c              |    3 +-
->>   drivers/usb/otg/nop-usb-xceiv.c       |    3 +-
->>   drivers/usb/otg/otg.c                 |   67 +++++++++++++++------------------
->>   drivers/usb/otg/twl4030-usb.c         |    3 +-
->>   drivers/usb/phy/mv_u3d_phy.c          |    3 +-
->>   drivers/usb/phy/omap-usb2.c           |   11 ++----
->>   drivers/usb/phy/rcar-phy.c            |    3 +-
->>   include/linux/usb/phy.h               |   12 +++---
->>   39 files changed, 87 insertions(+), 89 deletions(-)
->
-> I think it better to leave the existing add/get APIs as they are add add
-> new APIs that support multiple PHYs. You could probably mark the old
-> ones as deprecated.
->
-> That way you don't need to wait till all users are converted and tested.
+  Typically the bootloader of a kzm9g board does not support DT
+  so this option is useful.
 
-Makes sense. Will do that :-)
+* Use voltage regulators by default
 
-Thanks
-Kishon
+* Move command line to dts
+
+  This brings us one small step closer to sharing defconfig
+  between kzm9g and other boards
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/sh73a0-kzm9g.dts |    4 ++++
+ arch/arm/configs/kzm9g_defconfig   |    4 +++-
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+index bcb9119..9a43879 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+@@ -15,6 +15,10 @@
+ 	model = "KZM-A9-GT";
+ 	compatible = "renesas,kzm9g", "renesas,sh73a0";
+ 
++	chosen {
++		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200";
++	};
++
+ 	memory {
+ 		device_type = "memory";
+ 		reg = <0x41000000 0x1e800000>;
+diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
+index afbae28..670c3b6 100644
+--- a/arch/arm/configs/kzm9g_defconfig
++++ b/arch/arm/configs/kzm9g_defconfig
+@@ -39,7 +39,7 @@ CONFIG_AEABI=y
+ CONFIG_HIGHMEM=y
+ CONFIG_ZBOOT_ROM_TEXT=0x0
+ CONFIG_ZBOOT_ROM_BSS=0x0
+-CONFIG_CMDLINE="console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200"
++CONFIG_ARM_APPENDED_DTB=y
+ CONFIG_KEXEC=y
+ CONFIG_VFP=y
+ CONFIG_NEON=y
+@@ -85,6 +85,8 @@ CONFIG_I2C_CHARDEV=y
+ CONFIG_I2C_SH_MOBILE=y
+ CONFIG_GPIO_PCF857X=y
+ # CONFIG_HWMON is not set
++CONFIG_REGULATOR=y
++CONFIG_REGULATOR_DUMMY=y
+ CONFIG_FB=y
+ CONFIG_FB_SH_MOBILE_LCDC=y
+ CONFIG_FRAMEBUFFER_CONSOLE=y
+-- 
+1.7.10.4
+
