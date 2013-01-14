@@ -1,68 +1,36 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 10 Jan 2013 19:47:58 +0000
-Subject: [PATCH 7/8] ARM: shmobile: kzm9g: Use gpio_request_one()
-Message-Id: <1357847279-7765-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Chris Ball <cjb@laptop.org>
+Date: Mon, 14 Jan 2013 19:17:44 +0000
+Subject: Re: [PATCH/RFC] mmc: sh-mmcif: simplify IRQ processing
+Message-Id: <87hamjtvzb.fsf@laptop.org>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1212121540250.10522@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1212121540250.10522@axis700.grange> (Guennadi
+	Liakhovetski's message of "Wed, 12 Dec 2012 15:45:14 +0100 (CET)")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-Replace occurences of gpio_request() and gpio_direction_*() by calls to
-gpio_request_one().
+Hi Guennadi,
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/mach-shmobile/board-kzm9g.c |   18 ++++++------------
- 1 files changed, 6 insertions(+), 12 deletions(-)
+On Wed, Dec 12 2012, Guennadi Liakhovetski wrote:
+> The classical way to process IRQs is read out the status, ack all triggered
+> IRQs, possibly mask them, then process them. Follow this simple procesure
+> instead of the current complex custom algorithm.
+>
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> ---
+>
+> Hi Chris
+>
+> Attention: this patch is __NOT__ for 3.8, please, let it simmer in -next 
+> until 3.9. It modifies the driver's interrupt handling significantly, so, 
+> we want to have it tested over a longer period.
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index b34a59b..9739bda 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -682,18 +682,14 @@ static void __init kzm_init(void)
- 	gpio_request(GPIO_FN_CS4_, NULL); /* CS4 */
- 
- 	/* SMSC */
--	gpio_request(GPIO_PORT224, NULL); /* IRQ3 */
--	gpio_direction_input(GPIO_PORT224);
-+	gpio_request_one(GPIO_PORT224, GPIOF_IN, NULL); /* IRQ3 */
- 
- 	/* LCDC */
--	gpio_request(GPIO_PORT222,	NULL); /* LCDCDON */
--	gpio_request(GPIO_PORT226,	NULL); /* SC */
--	gpio_direction_output(GPIO_PORT222, 1);
--	gpio_direction_output(GPIO_PORT226, 1);
-+	gpio_request_one(GPIO_PORT222, GPIOF_OUT_INIT_HIGH, NULL); /* LCDCDON */
-+	gpio_request_one(GPIO_PORT226, GPIOF_OUT_INIT_HIGH, NULL); /* SC */
- 
- 	/* Touchscreen */
--	gpio_request(GPIO_PORT223, NULL); /* IRQ8 */
--	gpio_direction_input(GPIO_PORT223);
-+	gpio_request_one(GPIO_PORT223, GPIOF_IN, NULL); /* IRQ8 */
- 
- 	/* enable MMCIF */
- 	gpio_request(GPIO_FN_MMCCLK0,		NULL);
-@@ -717,8 +713,7 @@ static void __init kzm_init(void)
- 	gpio_request(GPIO_FN_SDHID0_1,		NULL);
- 	gpio_request(GPIO_FN_SDHID0_0,		NULL);
- 	gpio_request(GPIO_FN_SDHI0_VCCQ_MC0_ON,	NULL);
--	gpio_request(GPIO_PORT15, NULL);
--	gpio_direction_output(GPIO_PORT15, 1); /* power */
-+	gpio_request_one(GPIO_PORT15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
- 
- 	/* enable Micro SD */
- 	gpio_request(GPIO_FN_SDHID2_0,		NULL);
-@@ -727,8 +722,7 @@ static void __init kzm_init(void)
- 	gpio_request(GPIO_FN_SDHID2_3,		NULL);
- 	gpio_request(GPIO_FN_SDHICMD2,		NULL);
- 	gpio_request(GPIO_FN_SDHICLK2,		NULL);
--	gpio_request(GPIO_PORT14, NULL);
--	gpio_direction_output(GPIO_PORT14, 1); /* power */
-+	gpio_request_one(GPIO_PORT14, GPIOF_OUT_INIT_HIGH, NULL); /* power */
- 
- 	/* I2C 3 */
- 	gpio_request(GPIO_FN_PORT27_I2C_SCL3, NULL);
+Sorry for the delay, this is in mmc-next now.
+
+- Chris.
 -- 
-1.7.8.6
-
+Chris Ball   <cjb@laptop.org>   <http://printf.net/>
+One Laptop Per Child
