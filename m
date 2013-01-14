@@ -1,23 +1,28 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 28 Jan 2013 00:21:58 +0000
-Subject: Re: [PATCH 01/19] ARM: shmobile: fix defconfig warning on CONFIG_USB
-Message-Id: <20130128002156.GB3423@verge.net.au>
+From: Stephen Warren <swarren@wwwdotorg.org>
+Date: Mon, 14 Jan 2013 17:52:37 +0000
+Subject: shmobile and struct sys_timer removal conflicts
+Message-Id: <50F445E5.6010203@wwwdotorg.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359123276-15833-1-git-send-email-arnd@arndb.de>
- <1359153858-31992-1-git-send-email-arnd@arndb.de>
- <1359153858-31992-2-git-send-email-arnd@arndb.de>
-In-Reply-To: <1359153858-31992-2-git-send-email-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jan 25, 2013 at 10:44:00PM +0000, Arnd Bergmann wrote:
-> A recent update to the marzen_defconfig introduced a
-> duplicate CONFIG_USB=y line. This removes one of the
-> two.
-> 
-> arch/arm/configs/marzen_defconfig:86:warning: override: reassigning to symbol USB
+Simon,
 
+I notice that the following shmobile-related commits in next-20130114
+add new ARM machine descriptors, but set the .timer field rather than
+the new .init_time field. I believe the code in these commits won't
+build in linux-next or Linux 3.9 once it's released:
 
-Acked-by: Simon Horman <horms+renesas@verge.net.au>
+a625586 ARM: mach-shmobile: kzm9g: Reference DT implementation
+ac0876f ARM: shmobile: armadillo800eva: Reference DT implementation
+be1fc65 ARM: shmobile: add a reference DT implementation for mackerel
+66f1162 ARM: mach-shmobile: sh73a0: Minimal setup using DT
+
+In order to solve this problem, you'll need to adjust those changes
+according to:
+
+git://git.kernel.org/pub/scm/linux/kernel/git/arm/arm-soc.git timer/cleanup
+
+(where "adjust" is probably "rebase on top of")
