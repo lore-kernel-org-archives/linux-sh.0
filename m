@@ -1,61 +1,56 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 25 Jan 2013 02:24:14 +0000
-Subject: [PATCH 38/80] sh: sh7757: Register PFC platform device
-Message-Id: <1359080696-31489-39-git-send-email-horms+renesas@verge.net.au>
+From: Chris Ball <cjb@laptop.org>
+Date: Mon, 14 Jan 2013 19:14:37 +0000
+Subject: Re: [PATCH 00/14] mmc: sh-mmcif: 3.8 fixes and improvements
+Message-Id: <87libvtw4i.fsf@laptop.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
+References: <1355323098-18061-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1355323098-18061-1-git-send-email-g.liakhovetski@gmx.de>
+	(Guennadi Liakhovetski's message of "Wed, 12 Dec 2012 15:38:04 +0100")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Hi Guennadi,
 
-Add arch code to register the PFC platform device instead of calling the
-driver directly. Platform device registration in the sh-pfc driver will
-be removed.
+On Wed, Dec 12 2012, Guennadi Liakhovetski wrote:
+> This patch series fixes several bugs in the sh_mmcif.c driver, that showed 
+> up on SMP with DMA (patches 10, 13), adds new features (3, 4) and adds 
+> multiple further improvements and minor fixes. Even though these bugs 
+> currently exist in the mainline, this patch series is not considered to 
+> be suitable for @stable. Patches are rather experimental and it is better 
+> to test them over a complete development cycle. They also are easier 
+> implemented on top of preparatory cosmetic patches.
+>
+> Guennadi Liakhovetski (6):
+>   mmc: sh-mmcif: fix missing and consolidate IO completion timeouts
+>   mmc: sh-mmcif: (cosmetic) simplify boolean return blocks
+>   mmc: sh-mmcif: fix a race, causing an Oops on SMP
+>   mmc: sh-mmcif: reset error code for any opcode
+>   mmc: sh-mmcif: reset DMA completion immediately before starting DMA
+>   mmc: sh-mmcif: fix I/O errors
+>
+> Shinya Kuribayashi (1):
+>   mmc: sh_mmcif: add support for bundled MMCIF IRQs
+>
+> Teppei Kamijou (7):
+>   mmc: sh_mmcif: force to fail CMD52 immediately
+>   mmc: sh_mmcif: ensure run-time suspend call is processed before
+>     suspend
+>   mmc: sh_mmcif: Add support for eMMC Dual Data Rate
+>   mmc: sh_mmcif: Use msecs_to_jiffies() for host->timeout
+>   mmc: sh_mmcif: Avoid unnecessary mmc_delay() at mmc_card_sleepawake()
+>   mmc: sh-mmcif: Terminate DMA transactions when detecting timeout or
+>     error
+>   mmc: sh-mmcif: report all errors
+>
+>  drivers/mmc/host/sh_mmcif.c |  215 +++++++++++++++++++++++++++++--------------
+>  1 files changed, 145 insertions(+), 70 deletions(-)
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/sh/Kconfig                         |    1 +
- arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c |    3 ++-
- 2 files changed, 3 insertions(+), 1 deletion(-)
+All 14 merged to mmc-next for 3.9, thanks.
 
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 7a7d2ec..c99193f 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -467,6 +467,7 @@ config CPU_SUBTYPE_SH7757
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select USB_ARCH_HAS_OHCI
- 	select USB_ARCH_HAS_EHCI
-+	select PINCTRL
- 	help
- 	  Select SH7757 if you have a SH4A SH7757 CPU.
- 
-diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c
-index 4a2736d..784b428 100644
---- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c
-+++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c
-@@ -16,6 +16,7 @@
- #include <linux/init.h>
- #include <linux/kernel.h>
- #include <linux/gpio.h>
-+#include <cpu/pfc.h>
- #include <cpu/sh7757.h>
- 
- enum {
-@@ -2282,6 +2283,6 @@ static struct pinmux_info sh7757_pinmux_info = {
- 
- static int __init plat_pinmux_setup(void)
- {
--	return register_pinmux(&sh7757_pinmux_info);
-+	return sh_pfc_register_info(NULL, NULL, 0, &sh7757_pinmux_info);
- }
- arch_initcall(plat_pinmux_setup);
+- Chris.
 -- 
-1.7.10.4
-
+Chris Ball   <cjb@laptop.org>   <http://printf.net/>
+One Laptop Per Child
