@@ -1,30 +1,101 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Tue, 22 Jan 2013 07:56:31 +0000
-Subject: Re: [GIT PULL v3] Renesas ARM-based SoC defconfig for v3.9
-Message-Id: <20130122075631.GA27044@quad.lixom.net>
+From: Tang Chen <tangchen@cn.fujitsu.com>
+Date: Tue, 15 Jan 2013 10:54:22 +0000
+Subject: [BUG Fix Patch 1/6] Bug fix: Hold spinlock across find|remove /sys/firmware/memmap/X operation.
+Message-Id: <1358247267-18089-2-git-send-email-tangchen@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358316146-12579-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1358316146-12579-1-git-send-email-horms+renesas@verge.net.au>
+References: <1358247267-18089-1-git-send-email-tangchen@cn.fujitsu.com>
+In-Reply-To: <1358247267-18089-1-git-send-email-tangchen@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: akpm@linux-foundation.org, rientjes@google.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, wency@cn.fujitsu.com, tangchen@cn.fujitsu.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org, glommer@parallels.com, jiang.liu@huawei.com
+Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
 
-On Wed, Jan 16, 2013 at 03:02:21PM +0900, Simon Horman wrote:
-> Hi Olof, Hi Arnd,
-> 
-> please consider the following defconfig enhancements for 3.9.
-> 
-> ----------------------------------------------------------------
-> The following changes since commit a49f0d1ea3ec94fc7cf33a7c36a16343b74bd565:
-> 
->   Linux 3.8-rc1 (2012-12-21 17:19:00 -0800)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git defconfig
+It is unsafe to return an entry pointer and release the map_entries_lock. So we should
+not hold the map_entries_lock separately in firmware_map_find_entry() and
+firmware_map_remove_entry(). Hold the map_entries_lock across find and remove
+/sys/firmware/memmap/X operation.
 
-Thanks, pulled as renesas/defconfig and included in next/boards.
+And also, users of these two functions need to be careful to hold the lock when using
+these two functions.
 
+The suggestion is from Andrew Morton <akpm@linux-foundation.org>
 
--Olof
+Signed-off-by: Tang Chen <tangchen@cn.fujitsu.com>
+---
+ drivers/firmware/memmap.c |   25 +++++++++++++++++--------
+ 1 files changed, 17 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/firmware/memmap.c b/drivers/firmware/memmap.c
+index 4211da5..940c4e9 100644
+--- a/drivers/firmware/memmap.c
++++ b/drivers/firmware/memmap.c
+@@ -150,12 +150,12 @@ static int firmware_map_add_entry(u64 start, u64 end,
+  * firmware_map_remove_entry() - Does the real work to remove a firmware
+  * memmap entry.
+  * @entry: removed entry.
++ *
++ * The caller must hold map_entries_lock, and release it properly.
+  **/
+ static inline void firmware_map_remove_entry(struct firmware_map_entry *entry)
+ {
+-	spin_lock(&map_entries_lock);
+ 	list_del(&entry->list);
+-	spin_unlock(&map_entries_lock);
+ }
+ 
+ /*
+@@ -188,23 +188,28 @@ static inline void remove_sysfs_fw_map_entry(struct firmware_map_entry *entry)
+ }
+ 
+ /*
+- * Search memmap entry
++ * firmware_map_find_entry: Search memmap entry.
++ * @start: Start of the memory range.
++ * @end:   End of the memory range (exclusive).
++ * @type:  Type of the memory range.
++ *
++ * This function is to find the memmap entey of a given memory range.
++ * The caller must hold map_entries_lock, and must not release the lock
++ * until the processing of the returned entry has completed.
++ *
++ * Return pointer to the entry to be found on success, or NULL on failure.
+  */
+-
+ static struct firmware_map_entry * __meminit
+ firmware_map_find_entry(u64 start, u64 end, const char *type)
+ {
+ 	struct firmware_map_entry *entry;
+ 
+-	spin_lock(&map_entries_lock);
+ 	list_for_each_entry(entry, &map_entries, list)
+ 		if ((entry->start = start) && (entry->end = end) &&
+ 		    (!strcmp(entry->type, type))) {
+-			spin_unlock(&map_entries_lock);
+ 			return entry;
+ 		}
+ 
+-	spin_unlock(&map_entries_lock);
+ 	return NULL;
+ }
+ 
+@@ -274,11 +279,15 @@ int __meminit firmware_map_remove(u64 start, u64 end, const char *type)
+ {
+ 	struct firmware_map_entry *entry;
+ 
++	spin_lock(&map_entries_lock);
+ 	entry = firmware_map_find_entry(start, end - 1, type);
+-	if (!entry)
++	if (!entry) {
++		spin_unlock(&map_entries_lock);
+ 		return -EINVAL;
++	}
+ 
+ 	firmware_map_remove_entry(entry);
++	spin_unlock(&map_entries_lock);
+ 
+ 	/* remove the memmap entry */
+ 	remove_sysfs_fw_map_entry(entry);
+-- 
+1.7.1
+
