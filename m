@@ -1,52 +1,47 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Mon, 07 Jan 2013 18:56:19 +0000
-Subject: Re: [PATCH 1/9] sh-pfc: Add OF support
-Message-Id: <2696178.tZLZqFqVI9@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 15 Jan 2013 00:49:30 +0000
+Subject: [GIT PULL v2] Renesas ARM-based SoC defconfig for v3.9
+Message-Id: <1358210975-26970-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1357260060-32164-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1357260060-32164-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1357261926.25326.2.camel@gitbox>
-In-Reply-To: <1357261926.25326.2.camel@gitbox>
+References: <1351731731-8435-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1351731731-8435-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Tony Prisk <linux@prisktech.co.nz>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-sh@vger.kernel.org, Simon Horman <horms@verge.net.au>, Phil Edworthy <phil.edworthy@renesas.com>, Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>, devicetree-discuss@lists.ozlabs.org, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Tony,
+Hi Olof, Hi Arnd,
 
-On Friday 04 January 2013 14:12:06 Tony Prisk wrote:
-> On Fri, 2013-01-04 at 01:40 +0100, Laurent Pinchart wrote:
-> > +- #gpio-cells: Should be 2. The first cell is the pin number and the
-> > second cell
-> > +  is used to specify optional parameters (currently unused).
-> 
-> ...
-> 
-> > +	gpio: pfc@e6050000 {
-> > +		compatible = "renesas,pfc-sh73a0";
-> > +		reg = <0xe6050000 0x8000>,
-> > +		      <0xe605801c 0x1c>;
-> > +		gpio-controller;
-> > +		#gpio-cells = <2>;
-> > +	};
-> > +
-> > +Example 2: A GPIO LED node that references a GPIO
-> > +
-> > +	leds {
-> > +		compatible = "gpio-leds";
-> > +		led1 {
-> > +			gpios = <&gpio 20 1>; /* Active low */
-> > +		};
-> > +	};
-> > +
-> 
-> The second cell of gpio is '(currently unused)' but the example shows it
-> being used?
+please consider the following defconfig enhancements for 3.9.
 
-My bad. The second cell can be used to specify that the GPIO is active low. 
-I'll fix the documentation accordingly.
+----------------------------------------------------------------
+The following changes since commit a49f0d1ea3ec94fc7cf33a7c36a16343b74bd565:
 
--- 
-Regards,
+  Linux 3.8-rc1 (2012-12-21 17:19:00 -0800)
 
-Laurent Pinchart
+are available in the git repository at:
 
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git 
+
+for you to fetch changes up to 8098df15c26b2bf16924df5a134d1a649692ab62:
+
+  ARM: mach-shmobile: kzm9d: update defconfig (2013-01-15 08:57:09 +0900)
+
+----------------------------------------------------------------
+Simon Horman (5):
+      ARM: mach-shmobile: mackerel: update defconfig
+      ARM: mach-shmobile: fix memory size for kota2_defconfig
+      ARM: mach-shmobile: kzm9g: defconfig update
+      ARM: mach-shmobile: armadillo: update defconfig
+      ARM: mach-shmobile: kzm9d: update defconfig
+
+ arch/arm/boot/dts/emev2-kzm9d.dts             |    2 +-
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts |    4 ++++
+ arch/arm/boot/dts/sh7372-mackerel.dts         |    4 ++++
+ arch/arm/boot/dts/sh73a0-kzm9g.dts            |    4 ++++
+ arch/arm/configs/armadillo800eva_defconfig    |    5 ++---
+ arch/arm/configs/kota2_defconfig              |    2 +-
+ arch/arm/configs/kzm9d_defconfig              |    4 +---
+ arch/arm/configs/kzm9g_defconfig              |    4 +++-
+ arch/arm/configs/mackerel_defconfig           |    2 +-
+ 9 files changed, 21 insertions(+), 10 deletions(-)
