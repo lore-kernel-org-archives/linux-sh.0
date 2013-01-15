@@ -1,89 +1,94 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 09 Jan 2013 00:52:24 +0000
-Subject: [PATCH v2 04/29] sh-pfc: Drop the sh_pfc_pinctrl spinlock
-Message-Id: <1357692769-1432-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Tang Chen <tangchen@cn.fujitsu.com>
+Date: Tue, 15 Jan 2013 10:54:23 +0000
+Subject: [BUG Fix Patch 2/6] Bug fix: Do not calculate direct mapping pages when freeing vmemmap pagetables.
+Message-Id: <1358247267-18089-3-git-send-email-tangchen@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1358247267-18089-1-git-send-email-tangchen@cn.fujitsu.com>
+In-Reply-To: <1358247267-18089-1-git-send-email-tangchen@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: akpm@linux-foundation.org, rientjes@google.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, wency@cn.fujitsu.com, tangchen@cn.fujitsu.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org, glommer@parallels.com, jiang.liu@huawei.com
+Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
 
-The spinlock is used to protect data that is only accessed sequentially
-during initialization. Remove it.
+We only need to update direct_pages_count[level] when we freeing direct mapped
+pagetables.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Tang Chen <tangchen@cn.fujitsu.com>
 ---
- drivers/pinctrl/sh-pfc/pinctrl.c |   13 -------------
- 1 files changed, 0 insertions(+), 13 deletions(-)
+ arch/x86/mm/init_64.c |   17 +++++++----------
+ 1 files changed, 7 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
-index 11e0e13..472fcf5 100644
---- a/drivers/pinctrl/sh-pfc/pinctrl.c
-+++ b/drivers/pinctrl/sh-pfc/pinctrl.c
-@@ -34,8 +34,6 @@ struct sh_pfc_pinctrl {
+diff --git a/arch/x86/mm/init_64.c b/arch/x86/mm/init_64.c
+index e829113..368cc3f 100644
+--- a/arch/x86/mm/init_64.c
++++ b/arch/x86/mm/init_64.c
+@@ -804,14 +804,13 @@ remove_pte_table(pte_t *pte_start, unsigned long addr, unsigned long end,
  
- 	struct pinctrl_pin_desc *pads;
- 	unsigned int nr_pads;
--
--	spinlock_t lock;
- };
+ 		if (IS_ALIGNED(addr, PAGE_SIZE) &&
+ 		    IS_ALIGNED(next, PAGE_SIZE)) {
+-			if (!direct) {
++			if (!direct)
+ 				free_pagetable(pte_page(*pte), 0);
+-				pages++;
+-			}
  
- static int sh_pfc_get_groups_count(struct pinctrl_dev *pctldev)
-@@ -331,7 +329,6 @@ static void sh_pfc_map_one_gpio(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx,
- 				struct pinmux_gpio *gpio, unsigned offset)
- {
- 	struct pinmux_data_reg *dummy;
--	unsigned long flags;
- 	int bit;
+ 			spin_lock(&init_mm.page_table_lock);
+ 			pte_clear(&init_mm, addr, pte);
+ 			spin_unlock(&init_mm.page_table_lock);
++			pages++;
+ 		} else {
+ 			/*
+ 			 * If we are not removing the whole page, it means
+@@ -824,11 +823,11 @@ remove_pte_table(pte_t *pte_start, unsigned long addr, unsigned long end,
  
- 	gpio->flags &= ~PINMUX_FLAG_TYPE;
-@@ -340,10 +337,7 @@ static void sh_pfc_map_one_gpio(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx,
- 		gpio->flags |= PINMUX_TYPE_GPIO;
- 	else {
- 		gpio->flags |= PINMUX_TYPE_FUNCTION;
--
--		spin_lock_irqsave(&pmx->lock, flags);
- 		pmx->nr_functions++;
--		spin_unlock_irqrestore(&pmx->lock, flags);
+ 			if (!memchr_inv(page_addr, PAGE_INUSE, PAGE_SIZE)) {
+ 				free_pagetable(pte_page(*pte), 0);
+-				pages++;
+ 
+ 				spin_lock(&init_mm.page_table_lock);
+ 				pte_clear(&init_mm, addr, pte);
+ 				spin_unlock(&init_mm.page_table_lock);
++				pages++;
+ 			}
+ 		}
  	}
- }
+@@ -857,15 +856,14 @@ remove_pmd_table(pmd_t *pmd_start, unsigned long addr, unsigned long end,
+ 		if (pmd_large(*pmd)) {
+ 			if (IS_ALIGNED(addr, PMD_SIZE) &&
+ 			    IS_ALIGNED(next, PMD_SIZE)) {
+-				if (!direct) {
++				if (!direct)
+ 					free_pagetable(pmd_page(*pmd),
+ 						       get_order(PMD_SIZE));
+-					pages++;
+-				}
  
-@@ -394,7 +388,6 @@ static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ 				spin_lock(&init_mm.page_table_lock);
+ 				pmd_clear(pmd);
+ 				spin_unlock(&init_mm.page_table_lock);
++				pages++;
+ 				continue;
+ 			}
  
- static int sh_pfc_map_functions(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
- {
--	unsigned long flags;
- 	int i, fn;
+@@ -914,15 +912,14 @@ remove_pud_table(pud_t *pud_start, unsigned long addr, unsigned long end,
+ 		if (pud_large(*pud)) {
+ 			if (IS_ALIGNED(addr, PUD_SIZE) &&
+ 			    IS_ALIGNED(next, PUD_SIZE)) {
+-				if (!direct) {
++				if (!direct)
+ 					free_pagetable(pud_page(*pud),
+ 						       get_order(PUD_SIZE));
+-					pages++;
+-				}
  
- 	pmx->functions = devm_kzalloc(pfc->dev, pmx->nr_functions *
-@@ -402,8 +395,6 @@ static int sh_pfc_map_functions(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
- 	if (unlikely(!pmx->functions))
- 		return -ENOMEM;
- 
--	spin_lock_irqsave(&pmx->lock, flags);
--
- 	for (i = fn = 0; i < pmx->nr_pads; i++) {
- 		struct pinmux_gpio *gpio = pfc->info->gpios + i;
- 
-@@ -411,8 +402,6 @@ static int sh_pfc_map_functions(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
- 			pmx->functions[fn++] = gpio;
- 	}
- 
--	spin_unlock_irqrestore(&pmx->lock, flags);
--
- 	return 0;
- }
- 
-@@ -425,8 +414,6 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
- 	if (unlikely(!pmx))
- 		return -ENOMEM;
- 
--	spin_lock_init(&pmx->lock);
--
- 	pmx->pfc = pfc;
- 	pfc->pinctrl = pmx;
+ 				spin_lock(&init_mm.page_table_lock);
+ 				pud_clear(pud);
+ 				spin_unlock(&init_mm.page_table_lock);
++				pages++;
+ 				continue;
+ 			}
  
 -- 
-1.7.8.6
+1.7.1
 
