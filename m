@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 11 Jan 2013 07:17:06 +0000
+Date: Tue, 15 Jan 2013 00:49:35 +0000
 Subject: [PATCH 5/5] ARM: mach-shmobile: kzm9d: update defconfig
-Message-Id: <1357888626-4946-6-git-send-email-horms+renesas@verge.net.au>
+Message-Id: <1358210975-26970-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1357888626-4946-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1357888626-4946-1-git-send-email-horms+renesas@verge.net.au>
+References: <1358210975-26970-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1358210975-26970-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
