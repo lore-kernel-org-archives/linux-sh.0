@@ -1,79 +1,41 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 31 Jan 2013 06:24:00 +0000
-Subject: [PATCH 7/9] ARM: shmobile: kzm9g: Use gpio_request_one()
-Message-Id: <1359613442-26038-8-git-send-email-horms+renesas@verge.net.au>
+From: Tang Chen <tangchen@cn.fujitsu.com>
+Date: Tue, 15 Jan 2013 10:54:26 +0000
+Subject: [BUG Fix Patch 5/6] Bug fix: Fix the wrong comments of map_entries.
+Message-Id: <1358247267-18089-6-git-send-email-tangchen@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359613442-26038-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359613442-26038-1-git-send-email-horms+renesas@verge.net.au>
+References: <1358247267-18089-1-git-send-email-tangchen@cn.fujitsu.com>
+In-Reply-To: <1358247267-18089-1-git-send-email-tangchen@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: akpm@linux-foundation.org, rientjes@google.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, wency@cn.fujitsu.com, tangchen@cn.fujitsu.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org, glommer@parallels.com, jiang.liu@huawei.com
+Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Now we have a map_entries_lock to protect map_entries list.
+So we need to update the comments.
 
-Replace occurences of gpio_request() and gpio_direction_*() by calls to
-gpio_request_one().
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Tang Chen <tangchen@cn.fujitsu.com>
 ---
- arch/arm/mach-shmobile/board-kzm9g.c |   18 ++++++------------
- 1 file changed, 6 insertions(+), 12 deletions(-)
+ drivers/firmware/memmap.c |    6 +-----
+ 1 files changed, 1 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index eadf309..2d08f57 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -672,8 +672,7 @@ static void __init kzm_init(void)
- 	gpio_request(GPIO_FN_CS4_, NULL); /* CS4 */
+diff --git a/drivers/firmware/memmap.c b/drivers/firmware/memmap.c
+index 940c4e9..ae823b4 100644
+--- a/drivers/firmware/memmap.c
++++ b/drivers/firmware/memmap.c
+@@ -108,11 +108,7 @@ static struct kobj_type memmap_ktype = {
+  * Registration functions ------------------------------------------------------
+  */
  
- 	/* SMSC */
--	gpio_request(GPIO_PORT224, NULL); /* IRQ3 */
--	gpio_direction_input(GPIO_PORT224);
-+	gpio_request_one(GPIO_PORT224, GPIOF_IN, NULL); /* IRQ3 */
+-/*
+- * Firmware memory map entries. No locking is needed because the
+- * firmware_map_add() and firmware_map_add_early() functions are called
+- * in firmware initialisation code in one single thread of execution.
+- */
++/* Firmware memory map entries. */
+ static LIST_HEAD(map_entries);
+ static DEFINE_SPINLOCK(map_entries_lock);
  
- 	/* LCDC */
- 	gpio_request(GPIO_FN_LCDD23,	NULL);
-@@ -703,14 +702,11 @@ static void __init kzm_init(void)
- 	gpio_request(GPIO_FN_LCDDISP,	NULL);
- 	gpio_request(GPIO_FN_LCDDCK,	NULL);
- 
--	gpio_request(GPIO_PORT222,	NULL); /* LCDCDON */
--	gpio_request(GPIO_PORT226,	NULL); /* SC */
--	gpio_direction_output(GPIO_PORT222, 1);
--	gpio_direction_output(GPIO_PORT226, 1);
-+	gpio_request_one(GPIO_PORT222, GPIOF_OUT_INIT_HIGH, NULL); /* LCDCDON */
-+	gpio_request_one(GPIO_PORT226, GPIOF_OUT_INIT_HIGH, NULL); /* SC */
- 
- 	/* Touchscreen */
--	gpio_request(GPIO_PORT223, NULL); /* IRQ8 */
--	gpio_direction_input(GPIO_PORT223);
-+	gpio_request_one(GPIO_PORT223, GPIOF_IN, NULL); /* IRQ8 */
- 
- 	/* enable MMCIF */
- 	gpio_request(GPIO_FN_MMCCLK0,		NULL);
-@@ -734,8 +730,7 @@ static void __init kzm_init(void)
- 	gpio_request(GPIO_FN_SDHID0_1,		NULL);
- 	gpio_request(GPIO_FN_SDHID0_0,		NULL);
- 	gpio_request(GPIO_FN_SDHI0_VCCQ_MC0_ON,	NULL);
--	gpio_request(GPIO_PORT15, NULL);
--	gpio_direction_output(GPIO_PORT15, 1); /* power */
-+	gpio_request_one(GPIO_PORT15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
- 
- 	/* enable Micro SD */
- 	gpio_request(GPIO_FN_SDHID2_0,		NULL);
-@@ -744,8 +739,7 @@ static void __init kzm_init(void)
- 	gpio_request(GPIO_FN_SDHID2_3,		NULL);
- 	gpio_request(GPIO_FN_SDHICMD2,		NULL);
- 	gpio_request(GPIO_FN_SDHICLK2,		NULL);
--	gpio_request(GPIO_PORT14, NULL);
--	gpio_direction_output(GPIO_PORT14, 1); /* power */
-+	gpio_request_one(GPIO_PORT14, GPIOF_OUT_INIT_HIGH, NULL); /* power */
- 
- 	/* I2C 3 */
- 	gpio_request(GPIO_FN_PORT27_I2C_SCL3, NULL);
 -- 
-1.7.10.4
+1.7.1
 
