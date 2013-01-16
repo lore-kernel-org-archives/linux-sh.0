@@ -1,57 +1,45 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 25 Jan 2013 02:23:58 +0000
-Subject: [PATCH 22/80] ARM: shmobile: r8a7740: Register PFC platform device
-Message-Id: <1359080696-31489-23-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 16 Jan 2013 16:54:40 +0000
+Subject: [PATCH 05/11] mmc: sh-mmcif: use mmc_of_parse() to parse standard MMC DT bindings
+Message-Id: <1358355286-26029-6-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
+References: <1358355286-26029-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1358355286-26029-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Use mmc_of_parse() to get interface capability flags and used GPIOs from
+device-tree bindings.
 
-Add arch code to register the PFC platform device instead of calling the
-driver directly. Platform device registration in the sh-pfc driver will
-be removed.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/pfc-r8a7740.c |   11 ++++++++++-
- 1 file changed, 10 insertions(+), 1 deletion(-)
+ drivers/mmc/host/sh_mmcif.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/pfc-r8a7740.c b/arch/arm/mach-shmobile/pfc-r8a7740.c
-index 134d1b9..8a412b1 100644
---- a/arch/arm/mach-shmobile/pfc-r8a7740.c
-+++ b/arch/arm/mach-shmobile/pfc-r8a7740.c
-@@ -20,6 +20,7 @@
-  */
- #include <linux/init.h>
- #include <linux/kernel.h>
-+#include <linux/platform_device.h>
- #include <linux/sh_pfc.h>
- #include <mach/r8a7740.h>
- #include <mach/irqs.h>
-@@ -2611,7 +2612,15 @@ static struct pinmux_info r8a7740_pinmux_info = {
- 	.gpio_irq_size	= ARRAY_SIZE(pinmux_irqs),
- };
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 741aeb9..4de94a1 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -1329,6 +1329,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 		ret = -ENOMEM;
+ 		goto ealloch;
+ 	}
++	mmc_of_parse(mmc);
+ 	host		= mmc_priv(mmc);
+ 	host->mmc	= mmc;
+ 	host->addr	= reg;
+@@ -1341,7 +1342,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 	mmc->ops = &sh_mmcif_ops;
+ 	sh_mmcif_init_ocr(host);
  
-+static struct platform_device r8a7740_pfc_device = {
-+	.name		= "sh-pfc",
-+	.id		= -1,
-+	.dev = {
-+		.platform_data = &r8a7740_pinmux_info,
-+	},
-+};
-+
- void r8a7740_pinmux_init(void)
- {
--	register_pinmux(&r8a7740_pinmux_info);
-+	platform_device_register(&r8a7740_pfc_device);
- }
+-	mmc->caps = MMC_CAP_MMC_HIGHSPEED;
++	mmc->caps |= MMC_CAP_MMC_HIGHSPEED;
+ 	if (pd && pd->caps)
+ 		mmc->caps |= pd->caps;
+ 	mmc->max_segs = 32;
 -- 
-1.7.10.4
+1.7.2.5
 
