@@ -1,127 +1,49 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 25 Jan 2013 02:24:05 +0000
-Subject: [PATCH 29/80] sh: Add PFC platform device registration helper function
-Message-Id: <1359080696-31489-30-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 16 Jan 2013 16:54:37 +0000
+Subject: [PATCH 02/11] mmc: deprecate redundant cd-inverted and wp-inverted DT properties
+Message-Id: <1358355286-26029-3-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
+References: <1358355286-26029-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1358355286-26029-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+GPIO DT bindings have a standard way to specify GPIO polarity - the
+OF_GPIO_ACTIVE_LOW flag. Use that instead of custom cd-inverted and
+wp-inverted properties.
 
-The sh_pfc_register() function can be called by boards or SoC setup code
-to register the PFC platform device.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/sh/include/cpu-common/cpu/pfc.h |   30 +++++++++++++++++++++++
- arch/sh/kernel/cpu/Makefile          |    2 +-
- arch/sh/kernel/cpu/pfc.c             |   44 ++++++++++++++++++++++++++++++++++
- 3 files changed, 75 insertions(+), 1 deletion(-)
- create mode 100644 arch/sh/include/cpu-common/cpu/pfc.h
- create mode 100644 arch/sh/kernel/cpu/pfc.c
+ Documentation/devicetree/bindings/mmc/mmc.txt |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
 
-diff --git a/arch/sh/include/cpu-common/cpu/pfc.h b/arch/sh/include/cpu-common/cpu/pfc.h
-new file mode 100644
-index 0000000..40e8643
---- /dev/null
-+++ b/arch/sh/include/cpu-common/cpu/pfc.h
-@@ -0,0 +1,30 @@
-+/*
-+ * SH Pin Function Control Initialization
-+ *
-+ * Copyright (C) 2012  Renesas Solutions Corp.
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ */
-+
-+#ifndef __ARCH_SH_CPU_PFC_H__
-+#define __ARCH_SH_CPU_PFC_H__
-+
-+#include <linux/types.h>
-+
-+struct pinmux_info;
-+struct resource;
-+
-+int sh_pfc_register(const char *name,
-+		    struct resource *resource, u32 num_resources);
-+int sh_pfc_register_info(const char *name,
-+			 struct resource *resource, u32 num_resources,
-+			 struct pinmux_info *pdata);
-+
-+#endif /* __ARCH_SH_CPU_PFC_H__ */
-diff --git a/arch/sh/kernel/cpu/Makefile b/arch/sh/kernel/cpu/Makefile
-index fa58bfd..accc7ca 100644
---- a/arch/sh/kernel/cpu/Makefile
-+++ b/arch/sh/kernel/cpu/Makefile
-@@ -18,4 +18,4 @@ obj-$(CONFIG_ARCH_SHMOBILE)	+= shmobile/
- obj-$(CONFIG_SH_ADC)		+= adc.o
- obj-$(CONFIG_SH_CLK_CPG_LEGACY)	+= clock-cpg.o
+diff --git a/Documentation/devicetree/bindings/mmc/mmc.txt b/Documentation/devicetree/bindings/mmc/mmc.txt
+index 34f28ed..e180892 100644
+--- a/Documentation/devicetree/bindings/mmc/mmc.txt
++++ b/Documentation/devicetree/bindings/mmc/mmc.txt
+@@ -19,11 +19,19 @@ Only one of the properties in this section should be supplied:
+ Optional properties:
+ - wp-gpios: Specify GPIOs for write protection, see gpio binding
+ - cd-inverted: when present, polarity on the cd gpio line is inverted
++  (deprecated)
+ - wp-inverted: when present, polarity on the wp gpio line is inverted
++  (deprecated)
+ - max-frequency: maximum operating clock frequency
+ - no-1-8-v: when present, denotes that 1.8v card voltage is not supported on
+   this system, even if the controller claims it is.
  
--obj-y	+= irq/ init.o clock.o fpu.o proc.o
-+obj-y	+= irq/ init.o clock.o fpu.o pfc.o proc.o
-diff --git a/arch/sh/kernel/cpu/pfc.c b/arch/sh/kernel/cpu/pfc.c
-new file mode 100644
-index 0000000..d045d75
---- /dev/null
-+++ b/arch/sh/kernel/cpu/pfc.c
-@@ -0,0 +1,44 @@
-+/*
-+ * SH Pin Function Control Initialization
-+ *
-+ * Copyright (C) 2012  Renesas Solutions Corp.
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ */
++cd-inverted and wp-inverted properties are deprecated ans shouldn't be used,
++instead pleaseuse the OF_GPIO_ACTIVE_LOW flag in respective GPIO bindings. Note,
++that the default (as defined by the SDHCI standard) CD and WP polarity is
++active-low, so, OF_GPIO_ACTIVE_LOW should normally be set, and only be left
++clear, if the polarity is inverted.
 +
-+#include <linux/init.h>
-+#include <linux/platform_device.h>
-+
-+#include <cpu/pfc.h>
-+
-+static struct platform_device sh_pfc_device = {
-+	.name		= "sh-pfc",
-+	.id		= -1,
-+};
-+
-+int __init sh_pfc_register(const char *name,
-+			   struct resource *resource, u32 num_resources)
-+{
-+	if (name)
-+		sh_pfc_device.name = name;
-+	sh_pfc_device.num_resources = num_resources;
-+	sh_pfc_device.resource = resource;
-+
-+	return platform_device_register(&sh_pfc_device);
-+}
-+
-+int __init sh_pfc_register_info(const char *name,
-+				struct resource *resource, u32 num_resources,
-+				struct pinmux_info *pdata)
-+{
-+	sh_pfc_device.dev.platform_data = pdata;
-+
-+	return sh_pfc_register(name, resource, num_resources);
-+}
+ Optional SDIO properties:
+ - keep-power-in-suspend: Preserves card power during a suspend/resume cycle
+ - enable-sdio-wakeup: Enables wake up of host system on SDIO IRQ assertion
 -- 
-1.7.10.4
+1.7.2.5
 
