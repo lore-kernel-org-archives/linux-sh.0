@@ -1,63 +1,54 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 24 Jan 2013 11:52:29 +0000
-Subject: Re: [PATCH] mmc: tmio: add barriers to IO operations
-Message-Id: <Pine.LNX.4.64.1301241248530.7826@axis700.grange>
+Date: Wed, 16 Jan 2013 17:08:09 +0000
+Subject: [PATCH 0/8] ARM: shmobile: pinctrl and DT extensions
+Message-Id: <1358356097-26180-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1301231745130.26301@axis700.grange>
- <20130124111018.GC5724@linux-sh.org> <Pine.LNX.4.64.1301241219290.5625@axis700.grange>
- <20130124114205.GD5724@linux-sh.org>
-In-Reply-To: <20130124114205.GD5724@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: linux-sh@vger.kernel.org, linux-mmc@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, 24 Jan 2013, Paul Mundt wrote:
+These patches extend sh7372 and r8a7740 pinctrl support and use it to add 
+SDHI and MMCIF to armadillo800eva and mackerel reference DT 
+implementations. GPIO-based pin configuration is removed from board files. 
+Additionally, MMC interfaces on armadillo800eva support run-time 
+power-switching, which is also supported in DT with these patches.
 
-> On Thu, Jan 24, 2013 at 12:20:19PM +0100, Guennadi Liakhovetski wrote:
-> > On Thu, 24 Jan 2013, Paul Mundt wrote:
-> > 
-> > > On Wed, Jan 23, 2013 at 05:46:18PM +0100, Guennadi Liakhovetski wrote:
-> > > > Without barriers SDIO operations fail with runtime PM enabled.
-> > > > 
-> > > > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > > > ---
-> > > >  drivers/mmc/host/tmio_mmc.h |   14 ++++++++------
-> > > >  1 files changed, 8 insertions(+), 6 deletions(-)
-> > > > 
-> > > > diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
-> > > > index d857f5c..ad1a1c6 100644
-> > > > --- a/drivers/mmc/host/tmio_mmc.h
-> > > > +++ b/drivers/mmc/host/tmio_mmc.h
-> > > > @@ -159,19 +159,20 @@ int tmio_mmc_host_runtime_resume(struct device *dev);
-> > > >  
-> > > >  static inline u16 sd_ctrl_read16(struct tmio_mmc_host *host, int addr)
-> > > >  {
-> > > > -	return readw(host->ctl + (addr << host->bus_shift));
-> > > > +	return ioread16(host->ctl + (addr << host->bus_shift));
-> > > >  }
-> > > >  
-> > > >  static inline void sd_ctrl_read16_rep(struct tmio_mmc_host *host, int addr,
-> > > >  		u16 *buf, int count)
-> > > >  {
-> > > > +	wmb();
-> > > >  	readsw(host->ctl + (addr << host->bus_shift), buf, count);
-> > > >  }
-> > > >  
-> > > Some reason to not use ioread16_rep() and friends?
-> > 
-> > Aren't they "raw," i.e. without barriers:
-> > 
-> > #define ioread16_rep(p,d,c)	__raw_readsw(p,d,c)
-> 
-> I wasn't talking about the barrier semantics, I meant for consistency, as
-> you are converting to the ioread/write API for everything else.
+This series is based on recent work by Laurent and Simon. sh7372 and 
+r8a7740 pinctrl support seems to be stable and, probably, won't change, 
+so, also the base for these patches seems solid. Since the current pinctrl 
+implementation for sh73a0 is likely to change, support for kzm9g isn't 
+included in this series.
 
-Ok, I see. But the reason to replace readw() / writew() ops with io* was 
-to add barriers, whereas this change wouldn't actually do any good. So, 
-yeah, we could do that for consistency, but otherwise it wouldn't bring 
-any more benefits and explicit barriers would have to be kept anyway.
+Guennadi Liakhovetski (8):
+  pinctrl: add SDHI and MMCIF pin groups to r8a7740
+  pinctrl: add SDHI and MMCIF pin groups to sh7372
+  ARM: shmobile: simplify armadillo800eva and kzm9g Kconfig
+    dependencies
+  ARM: shmobile: add MMCIF and SDHI DT clock aliases to sh73a0 and
+    r8a7740
+  ARM: shmobile: add a GPIO controller DT node for sh7372
+  ARM: shmobile: use GPIO SD-card detection on armadillo800eva
+  ARM: shmobile: completely switch MMC interfaces on mackerel-reference
+    to DT
+  ARM: shmobile: completely switch MMC interfaces on
+    armadillo800eva-reference to DT
+
+ .../boot/dts/r8a7740-armadillo800eva-reference.dts |  101 ++++++++++
+ arch/arm/boot/dts/sh7372-mackerel-reference.dts    |   42 +++-
+ arch/arm/boot/dts/sh7372.dtsi                      |    8 +
+ arch/arm/mach-shmobile/Kconfig                     |   12 +-
+ .../board-armadillo800eva-reference.c              |    5 +-
+ arch/arm/mach-shmobile/board-armadillo800eva.c     |   10 +-
+ arch/arm/mach-shmobile/board-mackerel-reference.c  |   46 -----
+ arch/arm/mach-shmobile/clock-r8a7740.c             |    4 +
+ arch/arm/mach-shmobile/clock-sh73a0.c              |    3 +
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c               |  180 +++++++++++++++++
+ drivers/pinctrl/sh-pfc/pfc-sh7372.c                |  205 ++++++++++++++++++++
+ 11 files changed, 552 insertions(+), 64 deletions(-)
+
+-- 
+1.7.2.5
 
 Thanks
 Guennadi
