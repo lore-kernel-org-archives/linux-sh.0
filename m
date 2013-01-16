@@ -1,62 +1,45 @@
-From: Thierry Reding <thierry.reding@avionic-design.de>
-Date: Fri, 18 Jan 2013 06:56:45 +0000
-Subject: Re: [PATCH] ARM: shmobile: sh73a0: Use generic irqchip_init()
-Message-Id: <20130118065645.GC17790@avionic-0098.adnet.avionic-design.de>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="FsscpQKzF/jJk6ya"
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 16 Jan 2013 06:02:21 +0000
+Subject: [GIT PULL v3] Renesas ARM-based SoC defconfig for v3.9
+Message-Id: <1358316146-12579-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358424013-31306-1-git-send-email-thierry.reding@avionic-design.de>
- <20130118000517.GI16740@verge.net.au>
-In-Reply-To: <20130118000517.GI16740@verge.net.au>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+Hi Olof, Hi Arnd,
 
---FsscpQKzF/jJk6ya
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+please consider the following defconfig enhancements for 3.9.
 
-On Fri, Jan 18, 2013 at 09:05:17AM +0900, Simon Horman wrote:
-> On Thu, Jan 17, 2013 at 01:00:13PM +0100, Thierry Reding wrote:
-> > The asm/hardware/gic.h header does no longer exist and the corresponding
-> > functionality was moved to linux/irqchip.h and linux/irqchip/arm-gic.h
-> > respectively. gic_handle_irq() and of_irq_init() are no longer available
-> > either and have been replaced by irqchip_init().
-> >=20
-> > Signed-off-by: Thierry Reding <thierry.reding@avionic-design.de>
->=20
-> Thanks.
->=20
-> Due to the hairy upstream requirements of the arm-soc tree
-> I believe this patch needs to be split in two. A 'board' patch
-> for board-kzm9g-reference.c. And an 'soc' patch for the
-> remaining portions.
->=20
-> I'm happy to split the patch myself or for you to do so.
+----------------------------------------------------------------
+The following changes since commit a49f0d1ea3ec94fc7cf33a7c36a16343b74bd565:
 
-I'll resend a split patch shortly.
+  Linux 3.8-rc1 (2012-12-21 17:19:00 -0800)
 
-Thierry
+are available in the git repository at:
 
---FsscpQKzF/jJk6ya
-Content-Type: application/pgp-signature
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git defconfig
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.19 (GNU/Linux)
+for you to fetch changes up to 8098df15c26b2bf16924df5a134d1a649692ab62:
 
-iQIcBAEBAgAGBQJQ+PItAAoJEN0jrNd/PrOhmZYQALEowQjk2phBY3OJbRC9Y0ws
-t/8wG78Eax7eHMCDuj91AbkuAV8timoq7UmI/8uu0q+zbSS3nuZEa3VnEX+BfCk3
-9VAca1Kfl+HWvoaBVOZwhuvKV3UcLM7OyHxY7XND0GRSweMG5g2BnGhgBdcYeWmO
-Y3nDaXSzQAAssbEOgjwTX62buR4rCcbeOP/aw5PSJ6U9lRVJekg5OfYDlTu50JcH
-31PFnDbWA6n0ELKQFqBlSVxkirYGNAdn4fWV52gB70Kf6RrLLNcG6UVqn9vhJ1O4
-WSgCanIKc+g58330xOy0/Mfvs3JqFr2F5JJmLXgJZ4o/8fJpqS/t2LXD3Asvq0KP
-+H8dHQcnj7akg+Belv+LRg/l9mNax1aBmFKnB17M7bgOnYtL8fG+a/YAUyGCtmqL
-pza1FH8P7f6a7ZbjGLR4py/67DkFowWW0ojmxu5c1oYaPvH1S2uPP2f2iGaCD4bu
-c6x3FBwTT1Ixv0Uo6L3PU9+kBoMH7fhc7/D2n5dNqZSxm1cI+dI1XMKPYS/Hh4Dd
-GVRa1zQSmAMXawlY6NU449oEcB+V5Jb7t8H7Y20QWFmY/xfQY6KG2R8wAcQyPLTA
-hJ2x1y84+u+igdmWerlGp3EqM89t2oHpjC3hEHDduL3WoLvwzrEUAu9Xv0rBGeOG
-cjgFsm8ROg7nl4MC6mlb
-=x94P
------END PGP SIGNATURE-----
+  ARM: mach-shmobile: kzm9d: update defconfig (2013-01-15 08:57:09 +0900)
 
---FsscpQKzF/jJk6ya--
+----------------------------------------------------------------
+Simon Horman (5):
+      ARM: mach-shmobile: mackerel: update defconfig
+      ARM: mach-shmobile: fix memory size for kota2_defconfig
+      ARM: mach-shmobile: kzm9g: defconfig update
+      ARM: mach-shmobile: armadillo: update defconfig
+      ARM: mach-shmobile: kzm9d: update defconfig
+
+ arch/arm/boot/dts/emev2-kzm9d.dts             |    2 +-
+ arch/arm/boot/dts/r8a7740-armadillo800eva.dts |    4 ++++
+ arch/arm/boot/dts/sh7372-mackerel.dts         |    4 ++++
+ arch/arm/boot/dts/sh73a0-kzm9g.dts            |    4 ++++
+ arch/arm/configs/armadillo800eva_defconfig    |    5 ++---
+ arch/arm/configs/kota2_defconfig              |    2 +-
+ arch/arm/configs/kzm9d_defconfig              |    4 +---
+ arch/arm/configs/kzm9g_defconfig              |    4 +++-
+ arch/arm/configs/mackerel_defconfig           |    2 +-
+ 9 files changed, 21 insertions(+), 10 deletions(-)
