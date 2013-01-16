@@ -1,36 +1,40 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 25 Jan 2013 02:02:54 +0000
-Subject: [PATCH 2/2] ARM: mach-shmobile: mackerel:  enable VFP in defconfig
-Message-Id: <1359079374-25032-3-git-send-email-horms+renesas@verge.net.au>
+From: Kishon Vijay Abraham I <kishon@ti.com>
+Date: Wed, 16 Jan 2013 15:13:02 +0000
+Subject: [RFC PATCH 6/6] USB: MUSB: OMAP: get PHY by phandle for dt boot
+Message-Id: <1358348462-27693-7-git-send-email-kishon@ti.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359079374-25032-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359079374-25032-1-git-send-email-horms+renesas@verge.net.au>
+References: <1358348462-27693-1-git-send-email-kishon@ti.com>
+In-Reply-To: <1358348462-27693-1-git-send-email-kishon@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-CONFIG_VFP appears to be required to use the
-Debian armhf userspace. Enabling this is consistent
-with many other shmobile boards.
+The OMAP glue has been modified to get PHY by phandle for dt boot.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kishon Vijay Abraham I <kishon@ti.com>
 ---
- arch/arm/configs/mackerel_defconfig |    1 +
- 1 file changed, 1 insertion(+)
+ drivers/usb/musb/omap2430.c |    7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/configs/mackerel_defconfig b/arch/arm/configs/mackerel_defconfig
-index e6881ac..7594b3a 100644
---- a/arch/arm/configs/mackerel_defconfig
-+++ b/arch/arm/configs/mackerel_defconfig
-@@ -25,6 +25,7 @@ CONFIG_ZBOOT_ROM_TEXT=0x0
- CONFIG_ZBOOT_ROM_BSS=0x0
- CONFIG_ARM_APPENDED_DTB=y
- CONFIG_KEXEC=y
-+CONFIG_VFP=y
- # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
- CONFIG_PM=y
- CONFIG_PM_RUNTIME=y
+diff --git a/drivers/usb/musb/omap2430.c b/drivers/usb/musb/omap2430.c
+index 3628a50..08709cf 100644
+--- a/drivers/usb/musb/omap2430.c
++++ b/drivers/usb/musb/omap2430.c
+@@ -346,7 +346,12 @@ static int omap2430_musb_init(struct musb *musb)
+ 	 * up through ULPI.  TWL4030-family PMICs include one,
+ 	 * which needs a driver, drivers aren't always needed.
+ 	 */
+-	musb->xceiv = devm_usb_get_phy(dev, 0);
++	if (dev->parent->of_node)
++		musb->xceiv = devm_usb_get_phy_by_phandle(dev->parent,
++		    "usb_phy", 0);
++	else
++		musb->xceiv = devm_usb_get_phy(dev, 0);
++
+ 	if (IS_ERR_OR_NULL(musb->xceiv)) {
+ 		pr_err("HS USB OTG: no transceiver configured\n");
+ 		return -ENODEV;
 -- 
-1.7.10.4
+1.7.9.5
 
