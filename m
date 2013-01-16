@@ -1,72 +1,130 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 25 Jan 2013 03:55:23 +0000
-Subject: [PATCH 05/15] ARM: sh7372: add clock lookup entries for DT-based devices
-Message-Id: <1359086133-23357-6-git-send-email-horms+renesas@verge.net.au>
+From: Kishon Vijay Abraham I <kishon@ti.com>
+Date: Wed, 16 Jan 2013 15:12:57 +0000
+Subject: [RFC PATCH 1/6] usb: otg: Add an API to bind the USB controller and PHY
+Message-Id: <1358348462-27693-2-git-send-email-kishon@ti.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359086133-23357-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359086133-23357-1-git-send-email-horms+renesas@verge.net.au>
+References: <1358348462-27693-1-git-send-email-kishon@ti.com>
+In-Reply-To: <1358348462-27693-1-git-send-email-kishon@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+New platforms are added which has multiple PHY's (of same type) and
+which has multiple USB controllers. The binding information has to be
+present in the PHY library (otg.c) in order for it to return the
+appropriate PHY whenever the USB controller request for the PHY. So
+added a new API to pass the binding information. This API should be
+called by platform specific initialization code.
 
-When booting with DT, devices are named differently. To get their clocks
-additional entries have to be added to the lookup table.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Kishon Vijay Abraham I <kishon@ti.com>
 ---
- arch/arm/mach-shmobile/clock-sh7372.c |    9 +++++++++
- 1 file changed, 9 insertions(+)
+ drivers/usb/otg/otg.c   |   37 +++++++++++++++++++++++++++++++++++++
+ include/linux/usb/phy.h |   22 ++++++++++++++++++++++
+ 2 files changed, 59 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-index 3ca6757b..45d21fe 100644
---- a/arch/arm/mach-shmobile/clock-sh7372.c
-+++ b/arch/arm/mach-shmobile/clock-sh7372.c
-@@ -544,6 +544,7 @@ static struct clk_lookup lookups[] = {
+diff --git a/drivers/usb/otg/otg.c b/drivers/usb/otg/otg.c
+index a30c041..492ba2f 100644
+--- a/drivers/usb/otg/otg.c
++++ b/drivers/usb/otg/otg.c
+@@ -18,6 +18,7 @@
+ #include <linux/usb/otg.h>
  
- 	/* MSTP32 clocks */
- 	CLKDEV_DEV_ID("i2c-sh_mobile.2", &mstp_clks[MSTP001]), /* IIC2 */
-+	CLKDEV_DEV_ID("fff30000.i2c", &mstp_clks[MSTP001]), /* IIC2 */
- 	CLKDEV_DEV_ID("spi_sh_msiof.0", &mstp_clks[MSTP000]), /* MSIOF0 */
- 	CLKDEV_DEV_ID("uio_pdrv_genirq.4", &mstp_clks[MSTP131]), /* VEU3 */
- 	CLKDEV_DEV_ID("uio_pdrv_genirq.3", &mstp_clks[MSTP130]), /* VEU2 */
-@@ -556,6 +557,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-mipi-dsi.0", &mstp_clks[MSTP118]), /* DSITX0 */
- 	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.1", &mstp_clks[MSTP117]), /* LCDC1 */
- 	CLKDEV_DEV_ID("i2c-sh_mobile.0", &mstp_clks[MSTP116]), /* IIC0 */
-+	CLKDEV_DEV_ID("fff20000.i2c", &mstp_clks[MSTP116]), /* IIC0 */
- 	CLKDEV_DEV_ID("sh_mobile_meram.0", &mstp_clks[MSTP113]), /* MERAM */
- 	CLKDEV_DEV_ID("uio_pdrv_genirq.5", &mstp_clks[MSTP106]), /* JPU */
- 	CLKDEV_DEV_ID("uio_pdrv_genirq.0", &mstp_clks[MSTP101]), /* VPU */
-@@ -577,18 +579,25 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP200]), /* SCIFA4 */
- 	CLKDEV_DEV_ID("sh_fsi2", &mstp_clks[MSTP328]), /* FSI2 */
- 	CLKDEV_DEV_ID("i2c-sh_mobile.1", &mstp_clks[MSTP323]), /* IIC1 */
-+	CLKDEV_DEV_ID("e6c20000.i2c", &mstp_clks[MSTP323]), /* IIC1 */
- 	CLKDEV_DEV_ID("r8a66597_hcd.0", &mstp_clks[MSTP322]), /* USB0 */
- 	CLKDEV_DEV_ID("r8a66597_udc.0", &mstp_clks[MSTP322]), /* USB0 */
- 	CLKDEV_DEV_ID("renesas_usbhs.0", &mstp_clks[MSTP322]), /* USB0 */
- 	CLKDEV_DEV_ID("sh_flctl.0", &mstp_clks[MSTP315]), /* FLCTL */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]), /* SDHI0 */
-+	CLKDEV_DEV_ID("e6850000.sdhi", &mstp_clks[MSTP314]), /* SDHI0 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]), /* SDHI1 */
-+	CLKDEV_DEV_ID("e6860000.sdhi", &mstp_clks[MSTP313]), /* SDHI1 */
- 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP312]), /* MMC */
-+	CLKDEV_DEV_ID("e6bd0000.mmcif", &mstp_clks[MSTP312]), /* MMC */
- 	CLKDEV_DEV_ID("sh-mipi-dsi.1", &mstp_clks[MSTP423]), /* DSITX1 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP415]), /* SDHI2 */
-+	CLKDEV_DEV_ID("e6870000.sdhi", &mstp_clks[MSTP415]), /* SDHI2 */
- 	CLKDEV_DEV_ID("sh-mobile-hdmi", &mstp_clks[MSTP413]), /* HDMI */
- 	CLKDEV_DEV_ID("i2c-sh_mobile.3", &mstp_clks[MSTP411]), /* IIC3 */
-+	CLKDEV_DEV_ID("e6d20000.i2c", &mstp_clks[MSTP411]), /* IIC3 */
- 	CLKDEV_DEV_ID("i2c-sh_mobile.4", &mstp_clks[MSTP410]), /* IIC4 */
-+	CLKDEV_DEV_ID("e6d30000.i2c", &mstp_clks[MSTP410]), /* IIC4 */
- 	CLKDEV_DEV_ID("sh-dma-engine.4", &mstp_clks[MSTP407]), /* USB-DMAC1 */
- 	CLKDEV_DEV_ID("r8a66597_hcd.1", &mstp_clks[MSTP406]), /* USB1 */
- 	CLKDEV_DEV_ID("r8a66597_udc.1", &mstp_clks[MSTP406]), /* USB1 */
+ static LIST_HEAD(phy_list);
++static LIST_HEAD(phy_bind_list);
+ static DEFINE_SPINLOCK(phy_lock);
+ 
+ static struct usb_phy *__usb_find_phy(struct list_head *list,
+@@ -201,6 +202,42 @@ void usb_remove_phy(struct usb_phy *x)
+ }
+ EXPORT_SYMBOL(usb_remove_phy);
+ 
++/**
++ * usb_bind_phy - bind the phy and the controller that uses the phy
++ * @dev_name: the device name of the device that will bind to the phy
++ * @index: index to specify the port number
++ * @phy_dev_name: the device name of the phy
++ *
++ * Fills the phy_bind structure with the dev_name and phy_dev_name. This will
++ * be used when the phy driver registers the phy and when the controller
++ * requests this phy.
++ *
++ * To be used by platform specific initialization code.
++ */
++struct usb_phy_bind __init *usb_bind_phy(const char *dev_name, u8 index,
++				const char *phy_dev_name)
++{
++	struct usb_phy_bind *phy_bind;
++	unsigned long flags;
++
++	phy_bind = kzalloc(sizeof(*phy_bind), GFP_KERNEL);
++	if (!phy_bind) {
++		pr_err("phy_bind(): No memory for phy_bind");
++		return ERR_PTR(-ENOMEM);
++	}
++
++	phy_bind->dev_name = dev_name;
++	phy_bind->phy_dev_name = phy_dev_name;
++	phy_bind->index = index;
++
++	spin_lock_irqsave(&phy_lock, flags);
++	list_add_tail(&phy_bind->list, &phy_bind_list);
++	spin_unlock_irqrestore(&phy_lock, flags);
++
++	return phy_bind;
++}
++EXPORT_SYMBOL_GPL(usb_bind_phy);
++
+ const char *otg_state_string(enum usb_otg_state state)
+ {
+ 	switch (state) {
+diff --git a/include/linux/usb/phy.h b/include/linux/usb/phy.h
+index a29ae1e..fbeab1a 100644
+--- a/include/linux/usb/phy.h
++++ b/include/linux/usb/phy.h
+@@ -106,6 +106,21 @@ struct usb_phy {
+ 			enum usb_device_speed speed);
+ };
+ 
++/**
++ * struct usb_phy_bind - represent the binding for the phy
++ * @dev_name: the device name of the device that will bind to the phy
++ * @phy_dev_name: the device name of the phy
++ * @index: used if a single controller uses multiple phys
++ * @phy: reference to the phy
++ * @list: to maintain a linked list of the binding information
++ */
++struct usb_phy_bind {
++	const char	*dev_name;
++	const char	*phy_dev_name;
++	u8		index;
++	struct usb_phy	*phy;
++	struct list_head list;
++};
+ 
+ /* for board-specific init logic */
+ extern int usb_add_phy(struct usb_phy *, enum usb_phy_type type);
+@@ -151,6 +166,8 @@ extern struct usb_phy *devm_usb_get_phy(struct device *dev,
+ 	enum usb_phy_type type);
+ extern void usb_put_phy(struct usb_phy *);
+ extern void devm_usb_put_phy(struct device *dev, struct usb_phy *x);
++extern struct usb_phy_bind *usb_bind_phy(const char *dev_name, u8 index,
++				const char *phy_dev_name);
+ #else
+ static inline struct usb_phy *usb_get_phy(enum usb_phy_type type)
+ {
+@@ -171,6 +188,11 @@ static inline void devm_usb_put_phy(struct device *dev, struct usb_phy *x)
+ {
+ }
+ 
++static inline struct usb_phy_bind *usb_bind_phy(const char *dev_name, u8 index,
++				const char *phy_dev_name)
++{
++	return NULL;
++}
+ #endif
+ 
+ static inline int
 -- 
-1.7.10.4
+1.7.9.5
 
