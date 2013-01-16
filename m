@@ -1,56 +1,52 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 31 Jan 2013 06:26:08 +0000
-Subject: [PATCH 3/4] ARM: mach-shmobile: add shmobile_cpu_disable_any()
-Message-Id: <1359613569-26981-4-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 16 Jan 2013 17:08:15 +0000
+Subject: [PATCH 6/8] ARM: shmobile: use GPIO SD-card detection on armadillo800eva
+Message-Id: <1358356097-26180-7-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359613569-26981-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359613569-26981-1-git-send-email-horms+renesas@verge.net.au>
+References: <1358356097-26180-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1358356097-26180-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Ulrich Hecht <ulrich.hecht@gmail.com>
+Switch SDHI0 and SDHI1 SD-card interfaces on armadillo800eva to using GPIO
+card detection, which provides maximum power saving and automatically
+selects IRQ or polling mode, depending on the CD GPIO capability.
 
-Method to disable any core to be used on platforms where CPU0 does not
-need special treatment.
-
-Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/hotplug.c             |    6 ++++++
- arch/arm/mach-shmobile/include/mach/common.h |    1 +
- 2 files changed, 7 insertions(+)
+ arch/arm/mach-shmobile/board-armadillo800eva.c |   10 ++++++----
+ 1 files changed, 6 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/hotplug.c b/arch/arm/mach-shmobile/hotplug.c
-index b09a0bd..a1524e3 100644
---- a/arch/arm/mach-shmobile/hotplug.c
-+++ b/arch/arm/mach-shmobile/hotplug.c
-@@ -56,6 +56,12 @@ int shmobile_cpu_disable(unsigned int cpu)
- 	return cpu = 0 ? -EPERM : 0;
- }
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index e657a7a..1cf1157 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -580,10 +580,10 @@ static struct regulator_consumer_supply fixed3v3_power_consumers[]  static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+-	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |\
+-			  MMC_CAP_NEEDS_POLL,
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
+ 	.tmio_ocr_mask	= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
+-	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_USE_GPIO_CD,
++	.cd_gpio	= GPIO_PORT167,
+ };
  
-+int shmobile_cpu_disable_any(unsigned int cpu)
-+{
-+	cpumask_clear_cpu(cpu, &dead_cpus);
-+	return 0;
-+}
-+
- int shmobile_cpu_is_dead(unsigned int cpu)
- {
- 	return cpumask_test_cpu(cpu, &dead_cpus);
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index 64c0622..e48606d 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -84,6 +84,7 @@ static inline int shmobile_cpuidle_init(void) { return 0; }
+ static struct resource sdhi0_resources[] = {
+@@ -624,7 +624,9 @@ static struct sh_mobile_sdhi_info sdhi1_info = {
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
+ 	.tmio_ocr_mask	= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
+-	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
++	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_USE_GPIO_CD,
++	/* Port72 cannot generate IRQs, will be used in polling mode. */
++	.cd_gpio	= GPIO_PORT72,
+ };
  
- extern void shmobile_cpu_die(unsigned int cpu);
- extern int shmobile_cpu_disable(unsigned int cpu);
-+extern int shmobile_cpu_disable_any(unsigned int cpu);
- 
- #ifdef CONFIG_HOTPLUG_CPU
- extern int shmobile_cpu_is_dead(unsigned int cpu);
+ static struct resource sdhi1_resources[] = {
 -- 
-1.7.10.4
+1.7.2.5
 
