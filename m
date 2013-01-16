@@ -1,53 +1,231 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 08 Jan 2013 21:23:59 +0000
-Subject: Re: [PATCH 1/6 v4] media: V4L2: support asynchronous subdevice registration
-Message-Id: <2104236.7Jc8OO4KhX@avalon>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 16 Jan 2013 17:08:10 +0000
+Subject: [PATCH 1/8] pinctrl: add SDHI and MMCIF pin groups to r8a7740
+Message-Id: <1358356097-26180-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1356544151-6313-1-git-send-email-g.liakhovetski@gmx.de> <2418280.Sa45Lqe0AC@avalon> <50EC32A5.6010306@gmail.com>
-In-Reply-To: <50EC32A5.6010306@gmail.com>
+References: <1358356097-26180-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1358356097-26180-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-media@vger.kernel.org, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Sylwester,
+Add pin groups for the first two SDHI interfaces and two alternative pin
+groups for the MMCIF interface on the r8a7740 SoC.
 
-On Tuesday 08 January 2013 15:52:21 Sylwester Nawrocki wrote:
-> On 01/08/2013 09:10 AM, Laurent Pinchart wrote:
-> >> +/*
-> >> + * If subdevice probing fails any time after v4l2_async_subdev_bind(),
-> >> + * no clean up must be called. This function is only a message of
-> >> + * intention.
-> >> + */
-> >> +int v4l2_async_subdev_bind(struct v4l2_async_subdev_list *asdl);
-> >> +int v4l2_async_subdev_bound(struct v4l2_async_subdev_list *asdl);
-> > 
-> > Could you please explain why you need both a bind notifier and a bound
-> > notifier ? I was expecting a single v4l2_async_subdev_register() call in
-> > subdev drivers (and, thinking about it, I would probably name it
-> > v4l2_subdev_register()).
-> 
-> I expected it to be done this way too, and I also used
-> v4l2_subdev_register() name in my early version of the subdev registration
-> code where subdevs were registering themselves to the v4l2 core.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c |  180 ++++++++++++++++++++++++++++++++++
+ 1 files changed, 180 insertions(+), 0 deletions(-)
 
-I think we can switch back to v4l2_subdev_register() if we can solve the clock 
-name issue. This doesn't seem impossible at first sight.
-
-> BTW, this might not be most important thing here, but do we need separate
-> file, i.e. v4l2-async.c, instead of for example putting it in v4l2-device.c
-> ?
-
-I'm fine with both, but I tend to try and keep source files not too large for 
-ease of reading. Depending on the amount of code we end up adding, moving the 
-functions to v4l2-device.c might be a good idea.
-
-> >> +void v4l2_async_subdev_unbind(struct v4l2_async_subdev_list *asdl);
-> >> +#endif
-
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index d0b7165..5e9a671 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -1870,6 +1870,138 @@ static const unsigned int lcd1_sys_mux[] = {
+ 	LCD1_CS_MARK, LCD1_WR_MARK, LCD1_RD_MARK, LCD1_RS_MARK,
+ };
+ 
++static const unsigned int sdhi0_data1_pins[] = {
++	/* D0 */
++	77,
++};
++static const unsigned int sdhi0_data1_mux[] = {
++	SDHI0_D0_MARK,
++};
++static const unsigned int sdhi0_data4_pins[] = {
++	/* D[0:3] */
++	77, 78, 79, 80,
++};
++static const unsigned int sdhi0_data4_mux[] = {
++	SDHI0_D0_MARK, SDHI0_D1_MARK, SDHI0_D2_MARK, SDHI0_D3_MARK,
++};
++static const unsigned int sdhi0_ctrl_pins[] = {
++	/* CMD, CLK */
++	76, 82,
++};
++static const unsigned int sdhi0_ctrl_mux[] = {
++	SDHI0_CMD_MARK, SDHI0_CLK_MARK,
++};
++static const unsigned int sdhi0_cd_pins[] = {
++	/* CD */
++	81,
++};
++static const unsigned int sdhi0_cd_mux[] = {
++	SDHI0_CD_MARK,
++};
++static const unsigned int sdhi0_wp_pins[] = {
++	/* WP */
++	83,
++};
++static const unsigned int sdhi0_wp_mux[] = {
++	SDHI0_WP_MARK,
++};
++
++static const unsigned int sdhi1_data1_pins[] = {
++	/* D0 */
++	68,
++};
++static const unsigned int sdhi1_data1_mux[] = {
++	SDHI1_D0_MARK,
++};
++static const unsigned int sdhi1_data4_pins[] = {
++	/* D[0:3] */
++	68, 69, 70, 71,
++};
++static const unsigned int sdhi1_data4_mux[] = {
++	SDHI1_D0_MARK, SDHI1_D1_MARK, SDHI1_D2_MARK, SDHI1_D3_MARK,
++};
++static const unsigned int sdhi1_ctrl_pins[] = {
++	/* CMD, CLK */
++	67, 66,
++};
++static const unsigned int sdhi1_ctrl_mux[] = {
++	SDHI1_CMD_MARK, SDHI1_CLK_MARK,
++};
++static const unsigned int sdhi1_cd_pins[] = {
++	/* CD */
++	72,
++};
++static const unsigned int sdhi1_cd_mux[] = {
++	SDHI1_CD_MARK,
++};
++static const unsigned int sdhi1_wp_pins[] = {
++	/* WP */
++	73,
++};
++static const unsigned int sdhi1_wp_mux[] = {
++	SDHI1_WP_MARK,
++};
++
++static const unsigned int mmc0_data1_0_pins[] = {
++	/* D[0] */
++	68,
++};
++static const unsigned int mmc0_data1_0_mux[] = {
++	MMC0_D0_PORT68_MARK,
++};
++static const unsigned int mmc0_data4_0_pins[] = {
++	/* D[0:3] */
++	68, 69, 70, 71,
++};
++static const unsigned int mmc0_data4_0_mux[] = {
++	MMC0_D0_PORT68_MARK, MMC0_D1_PORT69_MARK, MMC0_D2_PORT70_MARK, MMC0_D3_PORT71_MARK,
++};
++static const unsigned int mmc0_data8_0_pins[] = {
++	/* D[0:7] */
++	68, 69, 70, 71, 72, 73, 74, 75,
++};
++static const unsigned int mmc0_data8_0_mux[] = {
++	MMC0_D0_PORT68_MARK, MMC0_D1_PORT69_MARK, MMC0_D2_PORT70_MARK, MMC0_D3_PORT71_MARK,
++	MMC0_D4_PORT72_MARK, MMC0_D5_PORT73_MARK, MMC0_D6_PORT74_MARK, MMC0_D7_PORT75_MARK,
++};
++static const unsigned int mmc0_ctrl_0_pins[] = {
++	/* CMD, CLK */
++	66, 67,
++};
++static const unsigned int mmc0_ctrl_0_mux[] = {
++	MMC0_CMD_PORT67_MARK, MMC0_CLK_PORT66_MARK,
++};
++
++static const unsigned int mmc0_data1_1_pins[] = {
++	/* D[0] */
++	149,
++};
++static const unsigned int mmc0_data1_1_mux[] = {
++	MMC1_D0_PORT149_MARK,
++};
++static const unsigned int mmc0_data4_1_pins[] = {
++	/* D[0:3] */
++	149, 148, 147, 146,
++};
++static const unsigned int mmc0_data4_1_mux[] = {
++	MMC1_D0_PORT149_MARK, MMC1_D1_PORT148_MARK, MMC1_D2_PORT147_MARK, MMC1_D3_PORT146_MARK,
++};
++static const unsigned int mmc0_data8_1_pins[] = {
++	/* D[0:7] */
++	149, 148, 147, 146, 145, 144, 143, 142,
++};
++static const unsigned int mmc0_data8_1_mux[] = {
++	MMC1_D0_PORT149_MARK, MMC1_D1_PORT148_MARK, MMC1_D2_PORT147_MARK, MMC1_D3_PORT146_MARK,
++	MMC1_D4_PORT145_MARK, MMC1_D5_PORT144_MARK, MMC1_D6_PORT143_MARK, MMC1_D7_PORT142_MARK,
++};
++static const unsigned int mmc0_ctrl_1_pins[] = {
++	/* CMD, CLK */
++	104, 103,
++};
++static const unsigned int mmc0_ctrl_1_mux[] = {
++	MMC1_CMD_PORT104_MARK, MMC1_CLK_PORT103_MARK,
++};
++
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(lcd0_data8),
+ 	SH_PFC_PIN_GROUP(lcd0_data9),
+@@ -1893,6 +2025,24 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(lcd1_lclk),
+ 	SH_PFC_PIN_GROUP(lcd1_sync),
+ 	SH_PFC_PIN_GROUP(lcd1_sys),
++	SH_PFC_PIN_GROUP(sdhi0_data1),
++	SH_PFC_PIN_GROUP(sdhi0_data4),
++	SH_PFC_PIN_GROUP(sdhi0_ctrl),
++	SH_PFC_PIN_GROUP(sdhi0_cd),
++	SH_PFC_PIN_GROUP(sdhi0_wp),
++	SH_PFC_PIN_GROUP(sdhi1_data1),
++	SH_PFC_PIN_GROUP(sdhi1_data4),
++	SH_PFC_PIN_GROUP(sdhi1_ctrl),
++	SH_PFC_PIN_GROUP(sdhi1_cd),
++	SH_PFC_PIN_GROUP(sdhi1_wp),
++	SH_PFC_PIN_GROUP(mmc0_data1_0),
++	SH_PFC_PIN_GROUP(mmc0_data4_0),
++	SH_PFC_PIN_GROUP(mmc0_data8_0),
++	SH_PFC_PIN_GROUP(mmc0_ctrl_0),
++	SH_PFC_PIN_GROUP(mmc0_data1_1),
++	SH_PFC_PIN_GROUP(mmc0_data4_1),
++	SH_PFC_PIN_GROUP(mmc0_data8_1),
++	SH_PFC_PIN_GROUP(mmc0_ctrl_1),
+ };
+ 
+ static const char * const lcd0_groups[] = {
+@@ -1923,9 +2073,39 @@ static const char * const lcd1_groups[] = {
+ 	"lcd1_sys",
+ };
+ 
++static const char * const sdhi0_groups[] = {
++	"sdhi0_data1",
++	"sdhi0_data4",
++	"sdhi0_ctrl",
++	"sdhi0_cd",
++	"sdhi0_wp",
++};
++
++static const char * const sdhi1_groups[] = {
++	"sdhi1_data1",
++	"sdhi1_data4",
++	"sdhi1_ctrl",
++	"sdhi1_cd",
++	"sdhi1_wp",
++};
++
++static const char * const mmc0_groups[] = {
++	"mmc0_data1_0",
++	"mmc0_data4_0",
++	"mmc0_data8_0",
++	"mmc0_ctrl_0",
++	"mmc0_data1_1",
++	"mmc0_data4_1",
++	"mmc0_data8_1",
++	"mmc0_ctrl_1",
++};
++
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(lcd0),
+ 	SH_PFC_FUNCTION(lcd1),
++	SH_PFC_FUNCTION(sdhi0),
++	SH_PFC_FUNCTION(sdhi1),
++	SH_PFC_FUNCTION(mmc0),
+ };
+ 
+ #define PINMUX_FN_BASE	ARRAY_SIZE(pinmux_pins)
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.2.5
 
