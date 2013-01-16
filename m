@@ -1,43 +1,68 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 25 Jan 2013 02:23:43 +0000
-Subject: [PATCH 07/80] sh: shx3: Fix last GPIO index
-Message-Id: <1359080696-31489-8-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 16 Jan 2013 16:54:43 +0000
+Subject: [PATCH 08/11] mmc: sh_mobile_sdhi: remove unused .pdata field
+Message-Id: <1358355286-26029-9-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
+References: <1358355286-26029-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1358355286-26029-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The struct sh_mobile_sdhi_info::pdata field was only used for platform-
+based card detection and isn't used anymore since the migration to GPIO-
+based MMC slot functions. Remove it.
 
-A careless look at the code shows that the last entry in the
-pinmux_gpios seems to be GPIO_FN_IRQOUT. However, entries are ordered by
-the GPIO number, as the PINMUX_GPIO macro is expended to an indexed
-array initializer. The last entry in the array is thus GPIO_FN_STATUS0.
-Set the pinmux_info last_gpio field accordingly.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/sh/kernel/cpu/sh4a/pinmux-shx3.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/mmc/host/sh_mobile_sdhi.c  |    4 ----
+ include/linux/mmc/sh_mobile_sdhi.h |    2 --
+ 2 files changed, 0 insertions(+), 6 deletions(-)
 
-diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c b/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
-index aaa5338..2ebb983 100644
---- a/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
-+++ b/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
-@@ -572,7 +572,7 @@ static struct pinmux_info shx3_pinmux_info = {
- 	.mark		= { PINMUX_MARK_BEGIN,     PINMUX_MARK_END },
- 	.function	= { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
- 	.first_gpio	= GPIO_PA7,
--	.last_gpio	= GPIO_FN_IRQOUT,
-+	.last_gpio	= GPIO_FN_STATUS0,
- 	.gpios		= shx3_pinmux_gpios,
- 	.gpio_data	= shx3_pinmux_data,
- 	.gpio_data_size	= ARRAY_SIZE(shx3_pinmux_data),
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index fa71b01..f8f6fc7 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -135,7 +135,6 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	mmc_data = &priv->mmc_data;
+ 
+ 	if (p) {
+-		p->pdata = mmc_data;
+ 		if (p->init) {
+ 			ret = p->init(pdev, &sdhi_ops);
+ 			if (ret)
+@@ -284,9 +283,6 @@ static int sh_mobile_sdhi_remove(struct platform_device *pdev)
+ 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
+ 	int i = 0, irq;
+ 
+-	if (p)
+-		p->pdata = NULL;
+-
+ 	tmio_mmc_host_remove(host);
+ 
+ 	while (1) {
+diff --git a/include/linux/mmc/sh_mobile_sdhi.h b/include/linux/mmc/sh_mobile_sdhi.h
+index b65679f..b76bcf0 100644
+--- a/include/linux/mmc/sh_mobile_sdhi.h
++++ b/include/linux/mmc/sh_mobile_sdhi.h
+@@ -4,7 +4,6 @@
+ #include <linux/types.h>
+ 
+ struct platform_device;
+-struct tmio_mmc_data;
+ 
+ #define SH_MOBILE_SDHI_IRQ_CARD_DETECT	"card_detect"
+ #define SH_MOBILE_SDHI_IRQ_SDCARD	"sdcard"
+@@ -26,7 +25,6 @@ struct sh_mobile_sdhi_info {
+ 	unsigned long tmio_caps2;
+ 	u32 tmio_ocr_mask;	/* available MMC voltages */
+ 	unsigned int cd_gpio;
+-	struct tmio_mmc_data *pdata;
+ 	void (*set_pwr)(struct platform_device *pdev, int state);
+ 	int (*get_cd)(struct platform_device *pdev);
+ 
 -- 
-1.7.10.4
+1.7.2.5
 
