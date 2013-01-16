@@ -1,76 +1,94 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 31 Jan 2013 06:24:01 +0000
-Subject: [PATCH 8/9] ARM: shmobile: mackerel: Use gpio_request_one()
-Message-Id: <1359613442-26038-9-git-send-email-horms+renesas@verge.net.au>
+From: Kishon Vijay Abraham I <kishon@ti.com>
+Date: Wed, 16 Jan 2013 15:13:00 +0000
+Subject: [RFC PATCH 4/6] ARM: dts: OMAP: Add phandle to bind PHY with USB controller
+Message-Id: <1358348462-27693-5-git-send-email-kishon@ti.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359613442-26038-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359613442-26038-1-git-send-email-horms+renesas@verge.net.au>
+References: <1358348462-27693-1-git-send-email-kishon@ti.com>
+In-Reply-To: <1358348462-27693-1-git-send-email-kishon@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Added a phandle in the dt node for usb_otg to bind the PHY with the USB
+controller and also updated the documentation with the binding information.
 
-Replace occurences of gpio_request() and gpio_direction_*() by calls to
-gpio_request_one().
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kishon Vijay Abraham I <kishon@ti.com>
 ---
- arch/arm/mach-shmobile/board-mackerel.c |   16 ++++++----------
- 1 file changed, 6 insertions(+), 10 deletions(-)
+I'll add this patch in this series "usb: musb: add driver for control module"
+which contains the dt data to get MUSB working in dt boot in OMAP platforms.
+ Documentation/devicetree/bindings/usb/omap-usb.txt |    2 ++
+ arch/arm/boot/dts/omap3.dtsi                       |    1 +
+ arch/arm/boot/dts/omap4.dtsi                       |    3 ++-
+ arch/arm/boot/dts/twl4030.dtsi                     |    2 +-
+ 4 files changed, 6 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 002eaf6..8de350f 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -1406,11 +1406,10 @@ static void __init mackerel_init(void)
- 	gpio_request(GPIO_FN_LCDDISP,  NULL);
- 	gpio_request(GPIO_FN_LCDDCK,   NULL);
+diff --git a/Documentation/devicetree/bindings/usb/omap-usb.txt b/Documentation/devicetree/bindings/usb/omap-usb.txt
+index 3f0152b..591c4fc 100644
+--- a/Documentation/devicetree/bindings/usb/omap-usb.txt
++++ b/Documentation/devicetree/bindings/usb/omap-usb.txt
+@@ -18,6 +18,7 @@ OMAP MUSB GLUE
+    represents PERIPHERAL.
+  - power : Should be "50". This signifies the controller can supply upto
+    100mA when operating in host mode.
++ - usb_phy : the phandle for the PHY device
  
--	gpio_request(GPIO_PORT31, NULL); /* backlight */
--	gpio_direction_output(GPIO_PORT31, 0); /* off by default */
-+	/* backlight, off by default */
-+	gpio_request_one(GPIO_PORT31, GPIOF_OUT_INIT_LOW, NULL);
+ SOC specific device node entry
+ usb_otg_hs: usb_otg_hs@4a0ab000 {
+@@ -27,6 +28,7 @@ usb_otg_hs: usb_otg_hs@4a0ab000 {
+ 	multipoint = <1>;
+ 	num_eps = <16>;
+ 	ram_bits = <12>;
++	usb_phy = <&phy>;
+ };
  
--	gpio_request(GPIO_PORT151, NULL); /* LCDDON */
--	gpio_direction_output(GPIO_PORT151, 1);
-+	gpio_request_one(GPIO_PORT151, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
+ Board specific device node entry
+diff --git a/arch/arm/boot/dts/omap3.dtsi b/arch/arm/boot/dts/omap3.dtsi
+index 8d03736..ebbf596 100644
+--- a/arch/arm/boot/dts/omap3.dtsi
++++ b/arch/arm/boot/dts/omap3.dtsi
+@@ -404,6 +404,7 @@
+ 			interrupts = <0 92 0x4>, <0 93 0x4>;
+ 			interrupt-names = "mc", "dma";
+ 			ti,hwmods = "usb_otg_hs";
++			usb_phy = <&phy>;
+ 			multipoint = <1>;
+ 			num_eps = <16>;
+ 			ram_bits = <12>;
+diff --git a/arch/arm/boot/dts/omap4.dtsi b/arch/arm/boot/dts/omap4.dtsi
+index 5d770be..531cb2d 100644
+--- a/arch/arm/boot/dts/omap4.dtsi
++++ b/arch/arm/boot/dts/omap4.dtsi
+@@ -438,7 +438,7 @@
+ 			#size-cells = <1>;
+ 			ranges;
+ 			ti,hwmods = "ocp2scp_usb_phy";
+-			usb2phy@4a0ad080 {
++			phy: usb2phy@4a0ad080 {
+ 				compatible = "ti,omap-usb2";
+ 				reg = <0x4a0ad080 0x58>;
+ 			};
+@@ -540,6 +540,7 @@
+ 			interrupts = <0 92 0x4>, <0 93 0x4>;
+ 			interrupt-names = "mc", "dma";
+ 			ti,hwmods = "usb_otg_hs";
++			usb_phy = <&phy>;
+ 			multipoint = <1>;
+ 			num_eps = <16>;
+ 			ram_bits = <12>;
+diff --git a/arch/arm/boot/dts/twl4030.dtsi b/arch/arm/boot/dts/twl4030.dtsi
+index ed0bc95..80f7c2b 100644
+--- a/arch/arm/boot/dts/twl4030.dtsi
++++ b/arch/arm/boot/dts/twl4030.dtsi
+@@ -67,7 +67,7 @@
+ 		#interrupt-cells = <1>;
+ 	};
  
- 	/* USBHS0 */
- 	gpio_request(GPIO_FN_VBUS0_0, NULL);
-@@ -1426,8 +1425,7 @@ static void __init mackerel_init(void)
- 	gpio_request(GPIO_FN_FSIAILR,	NULL);
- 	gpio_request(GPIO_FN_FSIAISLD,	NULL);
- 	gpio_request(GPIO_FN_FSIAOSLD,	NULL);
--	gpio_request(GPIO_PORT161,	NULL);
--	gpio_direction_output(GPIO_PORT161, 0); /* slave */
-+	gpio_request_one(GPIO_PORT161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
- 
- 	gpio_request(GPIO_PORT9,  NULL);
- 	gpio_request(GPIO_PORT10, NULL);
-@@ -1481,8 +1479,7 @@ static void __init mackerel_init(void)
- 	gpio_request(GPIO_FN_SDHID1_0, NULL);
- #endif
- 	/* card detect pin for MMC slot (CN7) */
--	gpio_request(GPIO_PORT41, NULL);
--	gpio_direction_input(GPIO_PORT41);
-+	gpio_request_one(GPIO_PORT41, GPIOF_IN, NULL);
- 
- 	/* enable SDHI2 */
- 	gpio_request(GPIO_FN_SDHICMD2, NULL);
-@@ -1493,8 +1490,7 @@ static void __init mackerel_init(void)
- 	gpio_request(GPIO_FN_SDHID2_0, NULL);
- 
- 	/* card detect pin for microSD slot (CN23) */
--	gpio_request(GPIO_PORT162, NULL);
--	gpio_direction_input(GPIO_PORT162);
-+	gpio_request_one(GPIO_PORT162, GPIOF_IN, NULL);
- 
- 	/* MMCIF */
- 	gpio_request(GPIO_FN_MMCD0_0, NULL);
+-	twl4030-usb {
++	phy: twl4030-usb {
+ 		compatible = "ti,twl4030-usb";
+ 		interrupts = <10>, <4>;
+ 		usb1v5-supply = <&vusb1v5>;
 -- 
-1.7.10.4
+1.7.9.5
 
