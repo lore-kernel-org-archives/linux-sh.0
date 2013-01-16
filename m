@@ -1,43 +1,54 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 25 Jan 2013 02:23:57 +0000
-Subject: [PATCH 21/80] ARM: shmobile: Select PINCTRL
-Message-Id: <1359080696-31489-22-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 16 Jan 2013 16:54:36 +0000
+Subject: [PATCH 01/11] mmc: sdhi, tmio: only check flags in tmio-mmc driver proper
+Message-Id: <1358355286-26029-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
+References: <1358355286-26029-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1358355286-26029-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+tmio-mmc platform flags can be set by various means, including caller
+drivers and device-tree bindings, therefore it is better to only check
+them in the tmio-mmc driver proper, not in caller drivers themselves.
 
-The pin control framework is required by mach-shmobile. Select it in
-Kconfig.
-
-This will be required when the sh-pfc driver will move to
-drivers/pinctrl/.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Paul Mundt <lethal@linux-sh.org>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/Kconfig |    1 +
- 1 file changed, 1 insertion(+)
+ drivers/mmc/host/sh_mobile_sdhi.c |    3 +--
+ drivers/mmc/host/tmio_mmc_pio.c   |    3 +++
+ 2 files changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index 67874b8..19c97e5 100644
---- a/arch/arm/Kconfig
-+++ b/arch/arm/Kconfig
-@@ -698,6 +698,7 @@ config ARCH_SHMOBILE
- 	select MULTI_IRQ_HANDLER
- 	select NEED_MACH_MEMORY_H
- 	select NO_IOPORT
-+	select PINCTRL
- 	select PM_GENERIC_DOMAINS if PM
- 	select SPARSE_IRQ
- 	help
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 524a7f7..fa71b01 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -155,8 +155,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
+ 	if (p) {
+ 		mmc_data->flags = p->tmio_flags;
+-		if (mmc_data->flags & TMIO_MMC_HAS_IDLE_WAIT)
+-			mmc_data->write16_hook = sh_mobile_sdhi_write16_hook;
++		mmc_data->write16_hook = sh_mobile_sdhi_write16_hook;
+ 		mmc_data->ocr_mask = p->tmio_ocr_mask;
+ 		mmc_data->capabilities |= p->tmio_caps;
+ 		mmc_data->capabilities2 |= p->tmio_caps2;
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 0f992e9..b25adb4 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -928,6 +928,9 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	int ret;
+ 	u32 irq_mask = TMIO_MASK_CMD;
+ 
++	if (!(pdata->flags & TMIO_MMC_HAS_IDLE_WAIT))
++		pdata->write16_hook = NULL;
++
+ 	res_ctl = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	if (!res_ctl)
+ 		return -EINVAL;
 -- 
-1.7.10.4
+1.7.2.5
 
