@@ -1,53 +1,54 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 09 Jan 2013 00:52:25 +0000
-Subject: [PATCH v2 05/29] sh-pfc: Don't take the sh_pfc spinlock in sh_pfc_map_gpios()
-Message-Id: <1357692769-1432-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 16 Jan 2013 17:08:12 +0000
+Subject: [PATCH 3/8] ARM: shmobile: simplify armadillo800eva and kzm9g Kconfig dependencies
+Message-Id: <1358356097-26180-4-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1358356097-26180-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1358356097-26180-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The sh_pfc_map_gpios() function is only called at initialization time
-when no other task can access the sh_pfc fields. Don't protect the
-operation with a spinlock.
+Reference kernel configurations for armadillo800eva and kzm9g boards do not
+have to depend on their respective "legacy" configurations, doing device
+instantiation in .c, they can be configured and built independently.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/pinctrl/sh-pfc/pinctrl.c |    5 -----
- 1 files changed, 0 insertions(+), 5 deletions(-)
+ arch/arm/mach-shmobile/Kconfig |   12 ++++++++++--
+ 1 files changed, 10 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
-index 472fcf5..67d576c 100644
---- a/drivers/pinctrl/sh-pfc/pinctrl.c
-+++ b/drivers/pinctrl/sh-pfc/pinctrl.c
-@@ -344,7 +344,6 @@ static void sh_pfc_map_one_gpio(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx,
- /* pinmux ranges -> pinctrl pin descs */
- static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
- {
--	unsigned long flags;
- 	int i;
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 5f61e8f..927eecc 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -106,7 +106,11 @@ config MACH_ARMADILLO800EVA
  
- 	pmx->nr_pads = pfc->info->last_gpio - pfc->info->first_gpio + 1;
-@@ -356,8 +355,6 @@ static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
- 		return -ENOMEM;
- 	}
+ config MACH_ARMADILLO800EVA_REFERENCE
+ 	bool "Armadillo-800 EVA board - Reference Device Tree Implementation"
+-	depends on MACH_ARMADILLO800EVA
++	depends on ARCH_R8A7740
++	select ARCH_REQUIRE_GPIOLIB
++	select REGULATOR_FIXED_VOLTAGE if REGULATOR
++	select SND_SOC_WM8978 if SND_SIMPLE_CARD
++	select USE_OF
+ 	---help---
+ 	  Use reference implementation of Aramdillo800 EVA board support
+ 	  which makes a greater use of device tree at the expense
+@@ -136,7 +140,11 @@ config MACH_KZM9G
  
--	spin_lock_irqsave(&pfc->lock, flags);
--
- 	/*
- 	 * We don't necessarily have a 1:1 mapping between pin and linux
- 	 * GPIO number, as the latter maps to the associated enum_id.
-@@ -378,8 +375,6 @@ static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
- 		sh_pfc_map_one_gpio(pfc, pmx, gpio, i);
- 	}
- 
--	spin_unlock_irqrestore(&pfc->lock, flags);
--
- 	sh_pfc_pinctrl_desc.pins = pmx->pads;
- 	sh_pfc_pinctrl_desc.npins = pmx->nr_pads;
- 
+ config MACH_KZM9G_REFERENCE
+ 	bool "KZM-A9-GT board - Reference Device Tree Implementation"
+-	depends on MACH_KZM9G
++	depends on ARCH_SH73A0
++	select ARCH_REQUIRE_GPIOLIB
++	select REGULATOR_FIXED_VOLTAGE if REGULATOR
++	select SND_SOC_AK4642 if SND_SIMPLE_CARD
++	select USE_OF
+ 	---help---
+ 	   Use reference implementation of KZM-A9-GT board support
+ 	   which makes as greater use of device tree at the expense
 -- 
-1.7.8.6
+1.7.2.5
 
