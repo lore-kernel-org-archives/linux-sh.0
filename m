@@ -1,28 +1,41 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Fri, 25 Jan 2013 10:37:12 +0000
-Subject: Re: [PATCH v3 1/8] pinctrl: add SDHI and MMCIF pin groups to r8a7740
-Message-Id: <CACRpkda89YO1viM2LFwe9xR8c8Fq2_wugBCaCA42TLX9ZaG5+A@mail.gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 16 Jan 2013 17:08:14 +0000
+Subject: [PATCH 5/8] ARM: shmobile: add a GPIO controller DT node for sh7372
+Message-Id: <1358356097-26180-6-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358959071-2873-1-git-send-email-g.liakhovetski@gmx.de>
- <1358959071-2873-2-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1358959071-2873-2-git-send-email-g.liakhovetski@gmx.de>
+References: <1358356097-26180-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1358356097-26180-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jan 23, 2013 at 5:37 PM, Guennadi Liakhovetski
-<g.liakhovetski@gmx.de> wrote:
+Add a missing GPIO controller node to sh7372.
 
-> Add pin groups for the first two SDHI interfaces and two alternative pin
-> groups for the MMCIF interface on the r8a7740 SoC.
->
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ arch/arm/boot/dts/sh7372.dtsi |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
 
-The series:
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+diff --git a/arch/arm/boot/dts/sh7372.dtsi b/arch/arm/boot/dts/sh7372.dtsi
+index 582fdec..7ca9322 100644
+--- a/arch/arm/boot/dts/sh7372.dtsi
++++ b/arch/arm/boot/dts/sh7372.dtsi
+@@ -19,6 +19,14 @@
+ 		};
+ 	};
+ 
++	gpio: pfc@e6050000 {
++		compatible = "renesas,pfc-sh7372";
++		reg = <0xe6050000 0x8000>,
++		      <0xe605800c 0x20>;
++		gpio-controller;
++		#gpio-cells = <2>;
++	};
++
+ 	soc {
+ 		compatible = "simple-bus";
+ 		#address-cells = <1>;
+-- 
+1.7.2.5
 
-(For those not already ACKed.)
-
-Yours,
-Linus Walleij
