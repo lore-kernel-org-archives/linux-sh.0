@@ -1,52 +1,156 @@
-From: "Srivatsa S. Bhat" <srivatsa.bhat@linux.vnet.ibm.com>
-Date: Tue, 08 Jan 2013 06:57:52 +0000
-Subject: Re: [PATCH 1/2] cpuhotplug/nohz: Remove offline cpus from nohz-idle state
-Message-Id: <50EBC2F9.70303@linux.vnet.ibm.com>
+From: Kishon Vijay Abraham I <kishon@ti.com>
+Date: Wed, 16 Jan 2013 15:13:01 +0000
+Subject: [RFC PATCH 5/6] usb: otg: add device tree support to otg library
+Message-Id: <1358348462-27693-6-git-send-email-kishon@ti.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1357268318-7993-1-git-send-email-vatsa@codeaurora.org>
- <20130105103627.GU2631@n2100.arm.linux.org.uk>
-In-Reply-To: <20130105103627.GU2631@n2100.arm.linux.org.uk>
+References: <1358348462-27693-1-git-send-email-kishon@ti.com>
+In-Reply-To: <1358348462-27693-1-git-send-email-kishon@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On 01/05/2013 04:06 PM, Russell King - ARM Linux wrote:
-> On Thu, Jan 03, 2013 at 06:58:38PM -0800, Srivatsa Vaddagiri wrote:
->> I also think that the
->> wait_for_completion() based wait in ARM's __cpu_die() can be replaced with a
->> busy-loop based one, as the wait there in general should be terminated within
->> few cycles.
-> 
-> Why open-code this stuff when we have infrastructure already in the kernel
-> for waiting for stuff to happen?  I chose to use the standard infrastructure
-> because its better tested, and avoids having to think about whether we need
-> CPU barriers and such like to ensure that updates are seen in a timely
-> manner.
-> 
-> My stance on a lot of this idle/cpu dying code is that much of it can
-> probably be cleaned up and merged into a single common implementation -
-> in which case the use of standard infrastructure for things like waiting
-> for other CPUs do stuff is even more justified.
+Added an API devm_usb_get_phy_by_phandle(), to get usb phy by passing a
+device node phandle value. This function will return a pointer to
+the phy on success, -EPROBE_DEFER if there is a device_node for the phandle,
+but the phy has not been added, or a ERR_PTR() otherwise.
 
-On similar lines, Nikunj (in CC) and I had posted a patchset sometime ago to
-consolidate some of the CPU hotplug related code in the various architectures
-into a common standard implementation [1].
+Cc: Marc Kleine-Budde <mkl@pengutronix.de>
+Signed-off-by: Kishon Vijay Abraham I <kishon@ti.com>
+---
+ drivers/usb/otg/otg.c   |   77 +++++++++++++++++++++++++++++++++++++++++++++++
+ include/linux/usb/phy.h |    8 +++++
+ 2 files changed, 85 insertions(+)
 
-However, we ended up hitting a problem with Xen, because its existing code
-was unlike the other arch/ pieces [2]. At that time, we decided that we will
-first make the CPU online and offline paths symmetric in the generic code and
-then provide a common implementation of the duplicated bits in arch/, for the
-new CPU hotplug model [3].
-
-I guess we should probably revisit it sometime, consolidating the code in
-incremental steps if not all at a time...
-
---
-[1]. http://lwn.net/Articles/500185/
-[2]. http://thread.gmane.org/gmane.linux.kernel.cross-arch/14342/focus430
-[3]. http://thread.gmane.org/gmane.linux.kernel.cross-arch/14342/focus567
-
-Regards,
-Srivatsa S. Bhat
+diff --git a/drivers/usb/otg/otg.c b/drivers/usb/otg/otg.c
+index dbf2043..e9799bb 100644
+--- a/drivers/usb/otg/otg.c
++++ b/drivers/usb/otg/otg.c
+@@ -13,7 +13,9 @@
+ #include <linux/export.h>
+ #include <linux/err.h>
+ #include <linux/device.h>
++#include <linux/module.h>
+ #include <linux/slab.h>
++#include <linux/of.h>
+ 
+ #include <linux/usb/otg.h>
+ 
+@@ -34,6 +36,20 @@ static struct usb_phy *__usb_find_phy(struct device *dev, u8 index)
+ 	return ERR_PTR(-ENODEV);
+ }
+ 
++static struct usb_phy *__of_usb_find_phy(struct device_node *node)
++{
++	struct usb_phy  *phy;
++
++	list_for_each_entry(phy, &phy_list, head) {
++		if (node != phy->dev->of_node)
++			continue;
++
++		return phy;
++	}
++
++	return ERR_PTR(-ENODEV);
++}
++
+ static void devm_usb_phy_release(struct device *dev, void *res)
+ {
+ 	struct usb_phy *phy = *(struct usb_phy **)res;
+@@ -109,6 +125,67 @@ err0:
+ }
+ EXPORT_SYMBOL(usb_get_phy);
+ 
++ /**
++ * devm_usb_get_phy_by_phandle - find the USB PHY by phandle
++ * @dev - device that requests this phy
++ * @phandle - name of the property holding the phy phandle value
++ * @index - the index of the phy
++ *
++ * Returns the phy driver associated with the given phandle value,
++ * after getting a refcount to it, -ENODEV if there is no such phy or
++ * -EPROBE_DEFER if there is a phandle to the phy, but the device is
++ * not yet loaded. While at that, it also associates the device with
++ * the phy using devres. On driver detach, release function is invoked
++ * on the devres data, then, devres data is freed.
++ *
++ * For use by USB host and peripheral drivers.
++ */
++struct usb_phy *devm_usb_get_phy_by_phandle(struct device *dev,
++	const char *phandle, u8 index)
++{
++	struct usb_phy	*phy = NULL, **ptr;
++	unsigned long	flags;
++	struct device_node *node;
++
++	if (!dev->of_node) {
++		dev_dbg(dev, "device does not have a device node entry\n");
++		return ERR_PTR(-EINVAL);
++	}
++
++	node = of_parse_phandle(dev->of_node, phandle, index);
++	if (!node) {
++		dev_dbg(dev, "failed to get %s phandle in %s node\n", phandle,
++			dev->of_node->full_name);
++		return ERR_PTR(-ENODEV);
++	}
++
++	ptr = devres_alloc(devm_usb_phy_release, sizeof(*ptr), GFP_KERNEL);
++	if (!ptr) {
++		dev_dbg(dev, "failed to allocate memory for devres\n");
++		return ERR_PTR(-ENOMEM);
++	}
++
++	spin_lock_irqsave(&phy_lock, flags);
++
++	phy = __of_usb_find_phy(node);
++	if (IS_ERR(phy) || !try_module_get(phy->dev->driver->owner)) {
++		phy = ERR_PTR(-EPROBE_DEFER);
++		devres_free(ptr);
++		goto err0;
++	}
++
++	*ptr = phy;
++	devres_add(dev, ptr);
++
++	get_device(phy->dev);
++
++err0:
++	spin_unlock_irqrestore(&phy_lock, flags);
++
++	return phy;
++}
++EXPORT_SYMBOL(devm_usb_get_phy_by_phandle);
++
+ /**
+  * devm_usb_put_phy - release the USB PHY
+  * @dev - device that wants to release this phy
+diff --git a/include/linux/usb/phy.h b/include/linux/usb/phy.h
+index d133c8b..5836b6d 100644
+--- a/include/linux/usb/phy.h
++++ b/include/linux/usb/phy.h
+@@ -163,6 +163,8 @@ usb_phy_shutdown(struct usb_phy *x)
+ #ifdef CONFIG_USB_OTG_UTILS
+ extern struct usb_phy *usb_get_phy(struct device *dev, u8 index);
+ extern struct usb_phy *devm_usb_get_phy(struct device *dev, u8 index);
++extern struct usb_phy *devm_usb_get_phy_by_phandle(struct device *dev,
++	const char *phandle, u8 index);
+ extern void usb_put_phy(struct usb_phy *);
+ extern void devm_usb_put_phy(struct device *dev, struct usb_phy *x);
+ extern struct usb_phy_bind *usb_bind_phy(const char *dev_name, u8 index,
+@@ -178,6 +180,12 @@ static inline struct usb_phy *devm_usb_get_phy(struct device *dev, u8 index)
+ 	return NULL;
+ }
+ 
++static inline struct usb_phy *devm_usb_get_phy_by_phandle(struct device *dev,
++	const char *phandle, u8 index)
++{
++	return NULL;
++}
++
+ static inline void usb_put_phy(struct usb_phy *x)
+ {
+ }
+-- 
+1.7.9.5
 
