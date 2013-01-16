@@ -1,58 +1,90 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 24 Jan 2013 10:23:30 +0000
-Subject: Re: [PATCH v3 0/8] ARM: shmobile: pinctrl and DT extensions
-Message-Id: <3408465.uPKvaWnlNI@avalon>
+From: Kishon Vijay Abraham I <kishon@ti.com>
+Date: Wed, 16 Jan 2013 15:12:56 +0000
+Subject: [RFC PATCH 0/6] USB: Add multiple PHYs of same type
+Message-Id: <1358348462-27693-1-git-send-email-kishon@ti.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358959071-2873-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1358959071-2873-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Guennadi,
+New platforms are being added which has multiple PHY's (of same type) and
+which has multiple USB controllers. The binding information has to be
+present in the PHY library (otg.c) in order for it to return the
+appropriate PHY whenever the USB controller request for the PHY. So
+added a new API to pass the binding information. This API should be
+called by platform specific initialization code.
 
-Thanks for the patches.
+So the binding should be done something like
+usb_bind_phy("musb-hdrc.0.auto", 0, "omap-usb2.1.auto"); specifying the USB
+controller device name, index, and the PHY device name.
+I have done this binding for OMAP platforms, but it should be done for
+all the platforms.
 
-For the whole set,
+After this design, the phy can be got by passing the USB controller device
+pointer and the index.
 
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Developed this patch series on
+git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git xceiv
+after applying "usb: musb: add driver for control module" patch series.
 
-On Wednesday 23 January 2013 17:37:43 Guennadi Liakhovetski wrote:
-> This is v3 of the patch series [1], addressing minor issues in 3 out of 8
-> patches.
-> 
-> [1] http://thread.gmane.org/gmane.linux.ports.sh.devel/18729
-> 
-> Guennadi Liakhovetski (8):
->   pinctrl: add SDHI and MMCIF pin groups to r8a7740
->   pinctrl: add SDHI and MMCIF pin groups to sh7372
->   ARM: shmobile: simplify armadillo800eva and kzm9g Kconfig
->     dependencies
->   ARM: shmobile: add MMCIF and SDHI DT clock aliases to sh73a0 and
->     r8a7740
->   ARM: shmobile: add a GPIO controller DT node for sh7372
->   ARM: shmobile: use GPIO SD-card detection on armadillo800eva
->   ARM: shmobile: completely switch MMC interfaces on mackerel-reference
->     to DT
->   ARM: shmobile: completely switch MMC interfaces on
->     armadillo800eva-reference to DT
-> 
->  .../boot/dts/r8a7740-armadillo800eva-reference.dts |  107 +++++++++
->  arch/arm/boot/dts/sh7372-mackerel-reference.dts    |   42 +++-
->  arch/arm/boot/dts/sh7372.dtsi                      |    8 +
->  arch/arm/mach-shmobile/Kconfig                     |   12 +-
->  .../board-armadillo800eva-reference.c              |    5 +-
->  arch/arm/mach-shmobile/board-armadillo800eva.c     |   10 +-
->  arch/arm/mach-shmobile/board-mackerel-reference.c  |   46 ----
->  arch/arm/mach-shmobile/clock-r8a7740.c             |    4 +
->  arch/arm/mach-shmobile/clock-sh73a0.c              |    3 +
->  drivers/pinctrl/sh-pfc/pfc-r8a7740.c               |  248 +++++++++++++++++
->  drivers/pinctrl/sh-pfc/pfc-sh7372.c                |  205 ++++++++++++++++
->  11 files changed, 626 insertions(+), 64 deletions(-)
+Did basic enumeration testing in omap4 panda, omap4 sdp and omap3 beagle.
+
+Kishon Vijay Abraham I (6):
+  usb: otg: Add an API to bind the USB controller and PHY
+  ARM: OMAP: USB: Add phy binding information
+  usb: otg: utils: change the phy lib to support multiple PHYs of same
+    type
+  ARM: dts: OMAP: Add phandle to bind PHY with USB controller
+  usb: otg: add device tree support to otg library
+  USB: MUSB: OMAP: get PHY by phandle for dt boot
+
+ Documentation/devicetree/bindings/usb/omap-usb.txt |    2 +
+ arch/arm/boot/dts/omap3.dtsi                       |    1 +
+ arch/arm/boot/dts/omap4.dtsi                       |    3 +-
+ arch/arm/boot/dts/twl4030.dtsi                     |    2 +-
+ arch/arm/mach-omap2/usb-musb.c                     |    7 +-
+ arch/arm/mach-shmobile/board-marzen.c              |    2 +-
+ drivers/power/ab8500_charger.c                     |    2 +-
+ drivers/power/isp1704_charger.c                    |    2 +-
+ drivers/power/pda_power.c                          |    2 +-
+ drivers/power/twl4030_charger.c                    |    2 +-
+ drivers/usb/chipidea/udc.c                         |    2 +-
+ drivers/usb/dwc3/core.c                            |    4 +-
+ drivers/usb/gadget/fsl_udc_core.c                  |    2 +-
+ drivers/usb/gadget/mv_udc_core.c                   |    2 +-
+ drivers/usb/gadget/omap_udc.c                      |    2 +-
+ drivers/usb/gadget/pxa25x_udc.c                    |    2 +-
+ drivers/usb/gadget/pxa27x_udc.c                    |    2 +-
+ drivers/usb/gadget/s3c-hsudc.c                     |    2 +-
+ drivers/usb/host/ehci-fsl.c                        |    2 +-
+ drivers/usb/host/ehci-msm.c                        |    2 +-
+ drivers/usb/host/ehci-mv.c                         |    2 +-
+ drivers/usb/host/ehci-tegra.c                      |    2 +-
+ drivers/usb/host/ohci-omap.c                       |    2 +-
+ drivers/usb/musb/am35x.c                           |    2 +-
+ drivers/usb/musb/blackfin.c                        |    2 +-
+ drivers/usb/musb/da8xx.c                           |    2 +-
+ drivers/usb/musb/davinci.c                         |    2 +-
+ drivers/usb/musb/musb_dsps.c                       |    2 +-
+ drivers/usb/musb/omap2430.c                        |    7 +-
+ drivers/usb/musb/tusb6010.c                        |    2 +-
+ drivers/usb/musb/ux500.c                           |    2 +-
+ drivers/usb/otg/ab8500-usb.c                       |    3 +-
+ drivers/usb/otg/fsl_otg.c                          |    5 +-
+ drivers/usb/otg/gpio_vbus.c                        |    3 +-
+ drivers/usb/otg/isp1301_omap.c                     |    3 +-
+ drivers/usb/otg/msm_otg.c                          |    3 +-
+ drivers/usb/otg/mv_otg.c                           |    3 +-
+ drivers/usb/otg/nop-usb-xceiv.c                    |    3 +-
+ drivers/usb/otg/otg.c                              |  175 ++++++++++++++++----
+ drivers/usb/otg/twl4030-usb.c                      |    3 +-
+ drivers/usb/phy/mv_u3d_phy.c                       |    3 +-
+ drivers/usb/phy/omap-usb2.c                        |   11 +-
+ drivers/usb/phy/rcar-phy.c                         |    3 +-
+ include/linux/usb/phy.h                            |   42 ++++-
+ 44 files changed, 245 insertions(+), 89 deletions(-)
 
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
