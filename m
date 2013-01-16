@@ -1,94 +1,50 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 23 Jan 2013 15:32:34 +0000
-Subject: [PATCH v2 07/11] mmc: tmio-mmc: parse device-tree bindings
-Message-Id: <1358955158-1510-8-git-send-email-g.liakhovetski@gmx.de>
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Wed, 16 Jan 2013 09:43:38 +0000
+Subject: [GIT PULL] sh fixes for 3.8-rc4
+Message-Id: <20130116094337.GB30208@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358955158-1510-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1358955158-1510-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: Linus Torvalds <torvalds@linux-foundation.org>
+Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-Add parsing of common and driver-specific DT bindings to the tmio-mmc
-MMC host driver.
+The following changes since commit 254adaa465c40151df11fc1f88f93e6e86eb61d4:
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
+  seq_file: fix new kernel-doc warnings (2013-01-10 14:35:24 -0800)
 
-v2: check, if DT assigned a card-detect IRQ, in which case don't enable TMIO 
-native CD IRQ.
+are available in the git repository at:
 
- drivers/mmc/host/tmio_mmc_pio.c |   27 +++++++++++++++++++++++++--
- 1 files changed, 25 insertions(+), 2 deletions(-)
+  git://github.com/pmundt/linux-sh.git tags/sh-for-linus
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index b25adb4..13729b6 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -918,6 +918,24 @@ static void tmio_mmc_init_ocr(struct tmio_mmc_host *host)
- 		dev_warn(mmc_dev(mmc), "Platform OCR mask is ignored\n");
- }
- 
-+static void tmio_mmc_of_parse(struct platform_device *pdev,
-+			      struct tmio_mmc_data *pdata)
-+{
-+	const struct device_node *np = pdev->dev.of_node;
-+	if (!np)
-+		return;
-+
-+	if (of_get_property(np, "toshiba,mmc-wrprotect-disable", NULL))
-+		pdata->flags |= TMIO_MMC_WRPROTECT_DISABLE;
-+	if (of_get_property(np, "toshiba,mmc-blksz-2bytes", NULL))
-+		pdata->flags |= TMIO_MMC_BLKSZ_2BYTES;
-+	if (of_get_property(np, "toshiba,mmc-cap-sdio-irq", NULL) &&
-+	    pdata->flags & TMIO_MMC_SDIO_IRQ)
-+		pdata->capabilities |= MMC_CAP_SDIO_IRQ;
-+	if (of_get_property(np, "toshiba,mmc-has-idle-wait", NULL))
-+		pdata->flags |= TMIO_MMC_HAS_IDLE_WAIT;
-+}
-+
- int tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 				  struct platform_device *pdev,
- 				  struct tmio_mmc_data *pdata)
-@@ -928,6 +946,8 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 	int ret;
- 	u32 irq_mask = TMIO_MASK_CMD;
- 
-+	tmio_mmc_of_parse(pdev, pdata);
-+
- 	if (!(pdata->flags & TMIO_MMC_HAS_IDLE_WAIT))
- 		pdata->write16_hook = NULL;
- 
-@@ -939,6 +959,8 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 	if (!mmc)
- 		return -ENOMEM;
- 
-+	mmc_of_parse(mmc);
-+
- 	pdata->dev = &pdev->dev;
- 	_host = mmc_priv(mmc);
- 	_host->pdata = pdata;
-@@ -959,7 +981,7 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 	}
- 
- 	mmc->ops = &tmio_mmc_ops;
--	mmc->caps = MMC_CAP_4_BIT_DATA | pdata->capabilities;
-+	mmc->caps |= MMC_CAP_4_BIT_DATA | pdata->capabilities;
- 	mmc->caps2 = pdata->capabilities2;
- 	mmc->max_segs = 32;
- 	mmc->max_blk_size = 512;
-@@ -971,7 +993,8 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 
- 	_host->native_hotplug = !(pdata->flags & TMIO_MMC_USE_GPIO_CD ||
- 				  mmc->caps & MMC_CAP_NEEDS_POLL ||
--				  mmc->caps & MMC_CAP_NONREMOVABLE);
-+				  mmc->caps & MMC_CAP_NONREMOVABLE ||
-+				  mmc->slot.cd_irq >= 0);
- 
- 	_host->power = false;
- 	pm_runtime_enable(&pdev->dev);
--- 
-1.7.2.5
+for you to fetch changes up to 035688d9c64c61957dd272a1e773f27b0143704d:
 
+  sh: ecovec: add sample amixer settings (2013-01-16 18:30:44 +0900)
+
+----------------------------------------------------------------
+SuperH fixes for 3.8-rc4
+
+----------------------------------------------------------------
+Kuninori Morimoto (3):
+      sh: define TASK_UNMAPPED_BASE as a page aligned constant
+      sh: clkfwk: bugfix: sh_clk_div_enable() care sh_clk_div_set_rate() if div6
+      sh: ecovec: add sample amixer settings
+
+Paul Mundt (2):
+      sh: wire up finit_module syscall.
+      sh: Fix up stack debugging build.
+
+Thomas Schwinge (1):
+      sh: Fix FDPIC binary loader
+
+ arch/sh/boards/mach-ecovec24/setup.c |   10 ++++++++++
+ arch/sh/include/asm/elf.h            |    4 ++--
+ arch/sh/include/asm/processor_32.h   |    2 +-
+ arch/sh/include/asm/processor_64.h   |    2 +-
+ arch/sh/include/uapi/asm/unistd_32.h |    3 ++-
+ arch/sh/include/uapi/asm/unistd_64.h |    3 ++-
+ arch/sh/kernel/syscalls_32.S         |    1 +
+ arch/sh/kernel/syscalls_64.S         |    1 +
+ arch/sh/lib/mcount.S                 |    2 ++
+ drivers/sh/clk/cpg.c                 |    6 ++++++
+ 10 files changed, 28 insertions(+), 6 deletions(-)
