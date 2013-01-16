@@ -1,36 +1,54 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 08 Jan 2013 07:21:19 +0000
-Subject: Re: [PATCH 6/9] ARM: shmobile: kzm9g: Add pin control device in device tree
-Message-Id: <3212090.Mgj404qDnQ@avalon>
+From: Kishon Vijay Abraham I <kishon@ti.com>
+Date: Wed, 16 Jan 2013 15:12:58 +0000
+Subject: [RFC PATCH 2/6] ARM: OMAP: USB: Add phy binding information
+Message-Id: <1358348462-27693-3-git-send-email-kishon@ti.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1357260060-32164-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1357260060-32164-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1358348462-27693-1-git-send-email-kishon@ti.com>
+In-Reply-To: <1358348462-27693-1-git-send-email-kishon@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
+This is in preparation for the changes in PHY library to support adding
+and getting multiple PHYs of the same type. In the new design, the
+binding information between the PHY and the USB controller should be
+specified in the platform specific initialization code. So it's been
+done for OMAP platforms here.
 
-On Tuesday 08 January 2013 12:53:00 Simon Horman wrote:
-> On Fri, Jan 04, 2013 at 01:40:57AM +0100, Laurent Pinchart wrote:
-> > Add a pfc node in the sh73a0 device tree and include it in kzm9g.
-> > 
-> > Signed-off-by: Laurent Pinchart 
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> 
-> Hi Laurent,
-> 
-> could you please split this patch in two?
-> 
-> A patch to sh73a0-kzm9g which I can add to a boards branch.
-> And a patch to arch/arm/boot/dts/sh73a0.dts which I can add to an
-> soc branch.
+Signed-off-by: Kishon Vijay Abraham I <kishon@ti.com>
+---
+This kind-of binding should be done in all the platforms (I've done only
+for OMAP platform). 
+ arch/arm/mach-omap2/usb-musb.c |    7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
 
-Sure, I'll do that for the next version.
-
+diff --git a/arch/arm/mach-omap2/usb-musb.c b/arch/arm/mach-omap2/usb-musb.c
+index 9d27e3f..bbe2fa5 100644
+--- a/arch/arm/mach-omap2/usb-musb.c
++++ b/arch/arm/mach-omap2/usb-musb.c
+@@ -24,6 +24,7 @@
+ #include <linux/dma-mapping.h>
+ #include <linux/io.h>
+ #include <linux/usb/musb.h>
++#include <linux/usb/phy.h>
+ 
+ #include "omap_device.h"
+ #include "soc.h"
+@@ -85,8 +86,12 @@ void __init usb_musb_init(struct omap_musb_board_data *musb_board_data)
+ 	musb_plat.mode = board_data->mode;
+ 	musb_plat.extvbus = board_data->extvbus;
+ 
+-	if (cpu_is_omap44xx())
++	if (cpu_is_omap44xx()) {
+ 		musb_plat.has_mailbox = true;
++		usb_bind_phy("musb-hdrc.0.auto", 0, "omap-usb2.1.auto");
++	} else if (cpu_is_omap34xx()) {
++		usb_bind_phy("musb-hdrc.0.auto", 0, "twl4030_usb");
++	}
+ 
+ 	if (soc_is_am35xx()) {
+ 		oh_name = "am35x_otg_hs";
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
