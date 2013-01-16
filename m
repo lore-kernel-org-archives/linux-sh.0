@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 15 Jan 2013 00:49:31 +0000
+Date: Wed, 16 Jan 2013 06:02:22 +0000
 Subject: [PATCH 1/5] ARM: mach-shmobile: mackerel: update defconfig
-Message-Id: <1358210975-26970-2-git-send-email-horms+renesas@verge.net.au>
+Message-Id: <1358316146-12579-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358210975-26970-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1358210975-26970-1-git-send-email-horms+renesas@verge.net.au>
+References: <1358316146-12579-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1358316146-12579-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
