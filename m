@@ -1,132 +1,80 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 10 Jan 2013 19:47:54 +0000
-Subject: [PATCH 3/8] ARM: shmobile: armadillo800eva: Use gpio_request_one()
-Message-Id: <1357847279-7765-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 16 Jan 2013 16:54:42 +0000
+Subject: [PATCH 07/11] mmc: tmio-mmc: parse device-tree bindings
+Message-Id: <1358355286-26029-8-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1358355286-26029-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1358355286-26029-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-Replace occurences of gpio_request() and gpio_direction_*() by calls to
-gpio_request_one().
+Add parsing of common and driver-specific DT bindings to the tmio-mmc
+MMC host driver.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c |   48 ++++++++---------------
- 1 files changed, 17 insertions(+), 31 deletions(-)
+ drivers/mmc/host/tmio_mmc_pio.c |   24 +++++++++++++++++++++++-
+ 1 files changed, 23 insertions(+), 1 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index b6e50cd..01201c9 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -975,16 +975,12 @@ static void __init eva_init(void)
- 	/* LCDC0 */
- 	gpio_request(GPIO_FN_LCDC0_SELECT,	NULL);
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index b25adb4..84582b3 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -918,6 +918,24 @@ static void tmio_mmc_init_ocr(struct tmio_mmc_host *host)
+ 		dev_warn(mmc_dev(mmc), "Platform OCR mask is ignored\n");
+ }
  
--	gpio_request(GPIO_PORT61, NULL); /* LCDDON */
--	gpio_direction_output(GPIO_PORT61, 1);
--
--	gpio_request(GPIO_PORT202, NULL); /* LCD0_LED_CONT */
--	gpio_direction_output(GPIO_PORT202, 0);
-+	gpio_request_one(GPIO_PORT61, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
-+	gpio_request_one(GPIO_PORT202, GPIOF_OUT_INIT_LOW, NULL); /* LCD0_LED_CONT */
++static void tmio_mmc_of_parse(struct platform_device *pdev,
++			      struct tmio_mmc_data *pdata)
++{
++	const struct device_node *np = pdev->dev.of_node;
++	if (!np)
++		return;
++
++	if (of_get_property(np, "toshiba,mmc-wrprotect-disable", NULL))
++		pdata->flags |= TMIO_MMC_WRPROTECT_DISABLE;
++	if (of_get_property(np, "toshiba,mmc-blksz-2bytes", NULL))
++		pdata->flags |= TMIO_MMC_BLKSZ_2BYTES;
++	if (of_get_property(np, "toshiba,mmc-cap-sdio-irq", NULL) &&
++	    pdata->flags & TMIO_MMC_SDIO_IRQ)
++		pdata->capabilities |= MMC_CAP_SDIO_IRQ;
++	if (of_get_property(np, "toshiba,mmc-has-idle-wait", NULL))
++		pdata->flags |= TMIO_MMC_HAS_IDLE_WAIT;
++}
++
+ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 				  struct platform_device *pdev,
+ 				  struct tmio_mmc_data *pdata)
+@@ -928,6 +946,8 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	int ret;
+ 	u32 irq_mask = TMIO_MASK_CMD;
  
- 	/* Touchscreen */
- 	gpio_request(GPIO_FN_IRQ10,	NULL); /* TP_INT */
--	gpio_request(GPIO_PORT166,	NULL); /* TP_RST_B */
--	gpio_direction_output(GPIO_PORT166, 1);
-+	gpio_request_one(GPIO_PORT166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
++	tmio_mmc_of_parse(pdev, pdata);
++
+ 	if (!(pdata->flags & TMIO_MMC_HAS_IDLE_WAIT))
+ 		pdata->write16_hook = NULL;
  
- 	/* GETHER */
- 	gpio_request(GPIO_FN_ET_CRS,		NULL);
-@@ -1007,12 +1003,10 @@ static void __init eva_init(void)
- 	gpio_request(GPIO_FN_ET_RX_DV,		NULL);
- 	gpio_request(GPIO_FN_ET_RX_CLK,		NULL);
+@@ -939,6 +959,8 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	if (!mmc)
+ 		return -ENOMEM;
  
--	gpio_request(GPIO_PORT18, NULL); /* PHY_RST */
--	gpio_direction_output(GPIO_PORT18, 1);
-+	gpio_request_one(GPIO_PORT18, GPIOF_OUT_INIT_HIGH, NULL); /* PHY_RST */
- 
- 	/* USB */
--	gpio_request(GPIO_PORT159, NULL); /* USB_DEVICE_MODE */
--	gpio_direction_input(GPIO_PORT159);
-+	gpio_request_one(GPIO_PORT159, GPIOF_IN, NULL); /* USB_DEVICE_MODE */
- 
- 	if (gpio_get_value(GPIO_PORT159)) {
- 		/* USB Host */
-@@ -1026,8 +1020,7 @@ static void __init eva_init(void)
- 		 * and select GPIO_PORT209 here
- 		 */
- 		gpio_request(GPIO_FN_IRQ7_PORT209, NULL);
--		gpio_request(GPIO_PORT209, NULL);
--		gpio_direction_input(GPIO_PORT209);
-+		gpio_request_one(GPIO_PORT209, GPIOF_IN, NULL);
- 
- 		platform_device_register(&usbhsf_device);
- 		usb = &usbhsf_device;
-@@ -1042,12 +1035,9 @@ static void __init eva_init(void)
- 	gpio_request(GPIO_FN_SDHI0_D3, NULL);
- 	gpio_request(GPIO_FN_SDHI0_WP, NULL);
- 
--	gpio_request(GPIO_PORT17, NULL);	/* SDHI0_18/33_B */
--	gpio_request(GPIO_PORT74, NULL);	/* SDHI0_PON */
--	gpio_request(GPIO_PORT75, NULL);	/* SDSLOT1_PON */
--	gpio_direction_output(GPIO_PORT17, 0);
--	gpio_direction_output(GPIO_PORT74, 1);
--	gpio_direction_output(GPIO_PORT75, 1);
-+	gpio_request_one(GPIO_PORT17, GPIOF_OUT_INIT_LOW, NULL);  /* SDHI0_18/33_B */
-+	gpio_request_one(GPIO_PORT74, GPIOF_OUT_INIT_HIGH, NULL); /* SDHI0_PON */
-+	gpio_request_one(GPIO_PORT75, GPIOF_OUT_INIT_HIGH, NULL); /* SDSLOT1_PON */
- 
- 	/* we can use GPIO_FN_IRQ31_PORT167 here for SDHI0 CD irq */
- 
-@@ -1084,12 +1074,10 @@ static void __init eva_init(void)
- 	gpio_request(GPIO_FN_VIO_CKO,		NULL);
- 
- 	/* CON1/CON15 Camera */
--	gpio_request(GPIO_PORT173, NULL); /* STANDBY */
--	gpio_request(GPIO_PORT172, NULL); /* RST */
--	gpio_request(GPIO_PORT158, NULL); /* CAM_PON */
--	gpio_direction_output(GPIO_PORT173, 0);
--	gpio_direction_output(GPIO_PORT172, 1);
--	gpio_direction_output(GPIO_PORT158, 0); /* see mt9t111_power() */
-+	gpio_request_one(GPIO_PORT173, GPIOF_OUT_INIT_LOW, NULL);  /* STANDBY */
-+	gpio_request_one(GPIO_PORT172, GPIOF_OUT_INIT_HIGH, NULL); /* RST */
-+	/* see mt9t111_power() */
-+	gpio_request_one(GPIO_PORT158, GPIOF_OUT_INIT_LOW, NULL);  /* CAM_PON */
- 
- 	/* FSI-WM8978 */
- 	gpio_request(GPIO_FN_FSIAIBT,		NULL);
-@@ -1116,15 +1104,13 @@ static void __init eva_init(void)
- 	 * DBGMD/LCDC0/FSIA MUX
- 	 * DBGMD_SELECT_B should be set after setting PFC Function.
- 	 */
--	gpio_request(GPIO_PORT176, NULL);
--	gpio_direction_output(GPIO_PORT176, 1);
-+	gpio_request_one(GPIO_PORT176, GPIOF_OUT_INIT_HIGH, NULL);
- 
- 	/*
- 	 * We can switch CON8/CON14 by SW1.5,
- 	 * but it needs after DBGMD_SELECT_B
- 	 */
--	gpio_request(GPIO_PORT6, NULL);
--	gpio_direction_input(GPIO_PORT6);
-+	gpio_request_one(GPIO_PORT6, GPIOF_IN, NULL);
- 	if (gpio_get_value(GPIO_PORT6)) {
- 		/* CON14 enable */
- 	} else {
-@@ -1138,8 +1124,8 @@ static void __init eva_init(void)
- 		gpio_request(GPIO_FN_SDHI1_CD,	NULL);
- 		gpio_request(GPIO_FN_SDHI1_WP,	NULL);
- 
--		gpio_request(GPIO_PORT16, NULL); /* SDSLOT2_PON */
--		gpio_direction_output(GPIO_PORT16, 1);
-+		/* SDSLOT2_PON */
-+		gpio_request_one(GPIO_PORT16, GPIOF_OUT_INIT_HIGH, NULL);
- 
- 		platform_device_register(&sdhi1_device);
++	mmc_of_parse(mmc);
++
+ 	pdata->dev = &pdev->dev;
+ 	_host = mmc_priv(mmc);
+ 	_host->pdata = pdata;
+@@ -959,7 +981,7 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
  	}
+ 
+ 	mmc->ops = &tmio_mmc_ops;
+-	mmc->caps = MMC_CAP_4_BIT_DATA | pdata->capabilities;
++	mmc->caps |= MMC_CAP_4_BIT_DATA | pdata->capabilities;
+ 	mmc->caps2 = pdata->capabilities2;
+ 	mmc->max_segs = 32;
+ 	mmc->max_blk_size = 512;
 -- 
-1.7.8.6
+1.7.2.5
 
