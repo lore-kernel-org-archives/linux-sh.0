@@ -1,82 +1,53 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 25 Jan 2013 02:24:19 +0000
-Subject: [PATCH 43/80] sh-pfc: Remove unused resource and num_resources platform data fields
-Message-Id: <1359080696-31489-44-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 17 Jan 2013 09:45:54 +0000
+Subject: [PATCH 1/4] i2c: i2c-sh_mobile.c: cosmetic: trivially simplify 2 functions
+Message-Id: <1358415957-8371-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
+References: <1358415957-8371-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1358415957-8371-1-git-send-email-g.liakhovetski-Mmb7MZpHnFY@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Reduce 2 boolean functions from "if (condition) return 1; return 0;" to
+"return condition;"
 
-The fields are now unused, remove them.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Paul Mundt <lethal@linux-sh.org>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/sh/pfc/core.c  |   17 ++++-------------
- include/linux/sh_pfc.h |    3 ---
- 2 files changed, 4 insertions(+), 16 deletions(-)
+ drivers/i2c/busses/i2c-sh_mobile.c |   14 ++++----------
+ 1 files changed, 4 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
-index 9456c70..8e7818b 100644
---- a/drivers/sh/pfc/core.c
-+++ b/drivers/sh/pfc/core.c
-@@ -28,31 +28,22 @@
+diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
+index 9411c1b..3b08b4e 100644
+--- a/drivers/i2c/busses/i2c-sh_mobile.c
++++ b/drivers/i2c/busses/i2c-sh_mobile.c
+@@ -349,20 +349,14 @@ static unsigned char i2c_op(struct sh_mobile_i2c_data *pd,
+ 	return ret;
+ }
  
- static int sh_pfc_ioremap(struct sh_pfc *pfc, struct platform_device *pdev)
+-static int sh_mobile_i2c_is_first_byte(struct sh_mobile_i2c_data *pd)
++static bool sh_mobile_i2c_is_first_byte(struct sh_mobile_i2c_data *pd)
  {
--	unsigned int num_resources;
- 	struct resource *res;
- 	int k;
- 
--	if (pdev->num_resources) {
--		num_resources = pdev->num_resources;
--		res = pdev->resource;
--	} else {
--		num_resources = pfc->pdata->num_resources;
--		res = pfc->pdata->resource;
--	}
+-	if (pd->pos = -1)
+-		return 1;
 -
--	if (num_resources = 0) {
-+	if (pdev->num_resources = 0) {
- 		pfc->num_windows = 0;
- 		return 0;
- 	}
+-	return 0;
++	return pd->pos = -1;
+ }
  
--	pfc->window = devm_kzalloc(pfc->dev, num_resources *
-+	pfc->window = devm_kzalloc(pfc->dev, pdev->num_resources *
- 				   sizeof(*pfc->window), GFP_NOWAIT);
- 	if (!pfc->window)
- 		return -ENOMEM;
- 
--	pfc->num_windows = num_resources;
-+	pfc->num_windows = pdev->num_resources;
- 
--	for (k = 0; k < num_resources; k++, res++) {
-+	for (k = 0, res = pdev->resource; k < pdev->num_resources; k++, res++) {
- 		WARN_ON(resource_type(res) != IORESOURCE_MEM);
- 		pfc->window[k].phys = res->start;
- 		pfc->window[k].size = resource_size(res);
-diff --git a/include/linux/sh_pfc.h b/include/linux/sh_pfc.h
-index fa1fec0..4f94233 100644
---- a/include/linux/sh_pfc.h
-+++ b/include/linux/sh_pfc.h
-@@ -111,9 +111,6 @@ struct sh_pfc_platform_data {
- 	struct pinmux_irq *gpio_irq;
- 	unsigned int gpio_irq_size;
- 
--	struct resource *resource;
--	unsigned int num_resources;
+-static int sh_mobile_i2c_is_last_byte(struct sh_mobile_i2c_data *pd)
++static bool sh_mobile_i2c_is_last_byte(struct sh_mobile_i2c_data *pd)
+ {
+-	if (pd->pos = (pd->msg->len - 1))
+-		return 1;
 -
- 	unsigned long unlock_reg;
- };
+-	return 0;
++	return pd->pos = pd->msg->len - 1;
+ }
  
+ static void sh_mobile_i2c_get_data(struct sh_mobile_i2c_data *pd,
 -- 
-1.7.10.4
+1.7.2.5
 
