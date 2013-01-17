@@ -1,43 +1,88 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Wed, 09 Jan 2013 16:13:15 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: armadillo800eva: Reference DT implementation
-Message-Id: <CABYn4sxsSMSosAVT8DZDupNP9m-vQN+88R2nyC58L-tcNW044Q@mail.gmail.com>
+From: Thierry Reding <thierry.reding@avionic-design.de>
+Date: Thu, 17 Jan 2013 12:00:13 +0000
+Subject: [PATCH] ARM: shmobile: sh73a0: Use generic irqchip_init()
+Message-Id: <1358424013-31306-1-git-send-email-thierry.reding@avionic-design.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1355851359-8871-1-git-send-email-hechtb+renesas@gmail.com>
- <1355851359-8871-3-git-send-email-hechtb+renesas@gmail.com>
- <20130109020712.GC6496@verge.net.au>
-In-Reply-To: <20130109020712.GC6496@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
+The asm/hardware/gic.h header does no longer exist and the corresponding
+functionality was moved to linux/irqchip.h and linux/irqchip/arm-gic.h
+respectively. gic_handle_irq() and of_irq_init() are no longer available
+either and have been replaced by irqchip_init().
 
-2013/1/9 Simon Horman <horms@verge.net.au>:
-> On Tue, Dec 18, 2012 at 06:22:39PM +0100, Bastian Hecht wrote:
->> Provide alternate board code for the Armadillo 800 EVA to
->> demonstrate how DT may be used given the current state of
->> driver device tree support. This is intended to act as a
->> reference for mach-shmobile developers.
->>
->> This is based on Simon Horman's reference implementation for
->> the board kzm9g.
->>
->> Currently only the ethernet controller is brought up.
->
-> Thanks, looks good. I will apply this.
+Signed-off-by: Thierry Reding <thierry.reding@avionic-design.de>
+---
+ arch/arm/mach-shmobile/board-kzm9g-reference.c | 1 -
+ arch/arm/mach-shmobile/intc-sh73a0.c           | 9 ++-------
+ arch/arm/mach-shmobile/setup-sh73a0.c          | 2 --
+ 3 files changed, 2 insertions(+), 10 deletions(-)
 
-Thanks!
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index 04e9ae5..08c95dd 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -90,7 +90,6 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g-reference")
+ 	.init_early	= sh73a0_add_early_devices_dt,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_irq	= sh73a0_init_irq_dt,
+-	.handle_irq	= gic_handle_irq,
+ 	.init_machine	= kzm_init,
+ 	.init_late	= shmobile_init_late,
+ 	.init_time	= shmobile_timer_init,
+diff --git a/arch/arm/mach-shmobile/intc-sh73a0.c b/arch/arm/mach-shmobile/intc-sh73a0.c
+index fc7c8da..91faba6 100644
+--- a/arch/arm/mach-shmobile/intc-sh73a0.c
++++ b/arch/arm/mach-shmobile/intc-sh73a0.c
+@@ -21,9 +21,9 @@
+ #include <linux/interrupt.h>
+ #include <linux/module.h>
+ #include <linux/irq.h>
+-#include <linux/of_irq.h>
+ #include <linux/io.h>
+ #include <linux/sh_intc.h>
++#include <linux/irqchip.h>
+ #include <linux/irqchip/arm-gic.h>
+ #include <mach/intc.h>
+ #include <mach/irqs.h>
+@@ -462,14 +462,9 @@ void __init sh73a0_init_irq(void)
+ }
+ 
+ #ifdef CONFIG_OF
+-static const struct of_device_id irq_of_match[] __initconst = {
+-	{ .compatible = "arm,cortex-a9-gic", .data = gic_of_init, },
+-	{ },
+-};
+-
+ void __init sh73a0_init_irq_dt(void)
+ {
+-	of_irq_init(irq_of_match);
++	irqchip_init();
+ 	gic_arch_extn.irq_set_wake = sh73a0_set_wake;
+ }
+ #endif
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index abf1eb0..2ecd668 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -36,7 +36,6 @@
+ #include <mach/irqs.h>
+ #include <mach/sh73a0.h>
+ #include <mach/common.h>
+-#include <asm/hardware/gic.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/map.h>
+ #include <asm/mach/arch.h>
+@@ -892,7 +891,6 @@ DT_MACHINE_START(SH73A0_DT, "Generic SH73A0 (Flattened Device Tree)")
+ 	.init_early	= sh73a0_add_early_devices_dt,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_irq	= sh73a0_init_irq_dt,
+-	.handle_irq	= gic_handle_irq,
+ 	.init_machine	= sh73a0_add_standard_devices_dt,
+ 	.init_time	= shmobile_timer_init,
+ 	.dt_compat	= sh73a0_boards_compat_dt,
+-- 
+1.8.1.1
 
-> Could you let me know what the status of
-> the DT bindings for sh-eth is?
-
-I used the bindings that comply to the patch  "[v2,1/2] net: sh_eth:
-Add support of device tree probe" from 10/16/2012 from Iwamatsu-san. I
-hasn't found its way into v3.8-rc2 yet and I don't know anything more
-accurate about the merge process.
-
-Cheers,
-
- Bastian
