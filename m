@@ -1,146 +1,109 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 09 Jan 2013 06:30:01 +0000
-Subject: [PATCH 2/8] ARM: shmobile: Add support OF of INTC for r8a7740
-Message-Id: <1357713007-4005-3-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 17 Jan 2013 09:45:56 +0000
+Subject: [PATCH 3/4] i2c: sh_mobile: eliminate an open-coded "goto" loop
+Message-Id: <1358415957-8371-4-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1357713007-4005-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1357713007-4005-1-git-send-email-horms+renesas@verge.net.au>
+References: <1358415957-8371-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1358415957-8371-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-i2c@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>
 
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Eliminate an open-coded "goto" loop by introducing a function.
 
-This CPU has three interrupt controllers (INTCA and INTCA IRQ pins).
-This supports these.
-NOTE: This supports DT of INTCA only.
-
-Cc: Magnus Damm <damm@opensource.se>
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ drivers/i2c/busses/i2c-sh_mobile.c |   60 ++++++++++++++++++++---------------
+ 1 files changed, 34 insertions(+), 26 deletions(-)
 
-v9
-* Update compatible string to use '-' instead of '_'
----
- arch/arm/mach-shmobile/include/mach/common.h |    1 +
- arch/arm/mach-shmobile/intc-r8a7740.c        |   70 +++++++++++++++++++++++---
- 2 files changed, 65 insertions(+), 6 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index 5f2870e..d0a5790 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -46,6 +46,7 @@ extern struct clk sh73a0_extal2_clk;
- extern struct clk sh73a0_extcki_clk;
- extern struct clk sh73a0_extalr_clk;
- 
-+extern void r8a7740_init_irq_of(void);
- extern void r8a7740_init_irq(void);
- extern void r8a7740_map_io(void);
- extern void r8a7740_add_early_devices(void);
-diff --git a/arch/arm/mach-shmobile/intc-r8a7740.c b/arch/arm/mach-shmobile/intc-r8a7740.c
-index 9a69a31..46dca1f 100644
---- a/arch/arm/mach-shmobile/intc-r8a7740.c
-+++ b/arch/arm/mach-shmobile/intc-r8a7740.c
-@@ -1,8 +1,9 @@
- /*
-  * R8A7740 processor support
-  *
-- * Copyright (C) 2011  Renesas Solutions Corp.
-+ * Copyright (C) 2011, 2012  Renesas Solutions Corp.
-  * Copyright (C) 2011  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-+ * Copyright (C) 2012  Nobuhiro Iwamatsu <nobuhiro.iwamatsu@renesas.com>
-  *
-  * This program is free software; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-@@ -17,6 +18,7 @@
-  * along with this program; if not, write to the Free Software
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
-+#define pr_fmt(fmt) "intc: " fmt
- 
- #include <linux/kernel.h>
- #include <linux/init.h>
-@@ -623,15 +625,71 @@ static void intcs_demux(unsigned int irq, struct irq_desc *desc)
- 	generic_handle_irq(intcs_evt2irq(evtcodeas));
+diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
+index 69a1fbe..5cf2367 100644
+--- a/drivers/i2c/busses/i2c-sh_mobile.c
++++ b/drivers/i2c/busses/i2c-sh_mobile.c
+@@ -495,6 +495,37 @@ static int start_ch(struct sh_mobile_i2c_data *pd, struct i2c_msg *usr_msg)
+ 	return 0;
  }
  
--void __init r8a7740_init_irq(void)
-+static void __init r8a7740_init_intc(resource_size_t intcs0_start,
-+					unsigned short vect)
++static int poll_busy(struct sh_mobile_i2c_data *pd)
 +{
-+	void __iomem *intevtsa;
++	int i;
 +
-+	/* demux using INTEVTSA */
-+	intevtsa = ioremap_nocache(intcs0_start + 0x100, PAGE_SIZE);
-+	irq_set_handler_data(evt2irq(vect), (void *)intevtsa);
-+	irq_set_chained_handler(evt2irq(vect), intcs_demux);
-+}
++	for (i = 1000; i; i--) {
++		u_int8_t val = iic_rd(pd, ICSR);
 +
-+#ifdef CONFIG_OF
-+static unsigned short intevtsa_vect;
++		dev_dbg(pd->dev, "val 0x%02x pd->sr 0x%02x\n", val, pd->sr);
 +
-+#define INTC_RES_MAX 2
-+static struct {
-+	struct intc_desc intc_desc;
-+	struct resource intc_res[INTC_RES_MAX];
-+} intc_data __initdata;
-+
-+static int __init intc_of_init(struct device_node *np,
-+	struct device_node *parent)
-+{
-+	int ret, i;
-+
-+	memset(&intc_data, 0, sizeof(intc_data));
-+
-+	for (i = 0; i < INTC_RES_MAX; i++) {
-+		ret = of_address_to_resource(np, i, &intc_data.intc_res[i]);
-+		if (ret < 0)
++		/* the interrupt handler may wake us up before the
++		 * transfer is finished, so poll the hardware
++		 * until we're done.
++		 */
++		if (!(val & ICSR_BUSY)) {
++			/* handle missing acknowledge and arbitration lost */
++			if ((val | pd->sr) & (ICSR_TACK | ICSR_AL))
++				return -EIO;
 +			break;
++		}
++
++		udelay(10);
 +	}
 +
-+	intc_data.intc_desc.name = (char *)of_node_full_name(np);
-+	intc_data.intc_desc.resource = intc_data.intc_res;
-+	intc_data.intc_desc.num_resources = i;
++	if (!i) {
++		dev_err(pd->dev, "Polling timed out\n");
++		return -ETIMEDOUT;
++	}
 +
-+	ret = of_sh_intc_get_intc(np, &intc_data.intc_desc);
-+	if (ret)
-+		return ret;
-+
-+	of_sh_intc_get_intevtsa_vect(np, &intevtsa_vect);
-+
-+	register_intc_controller(&intc_data.intc_desc);
 +	return 0;
 +}
 +
-+static const struct of_device_id irq_of_match[] __initconst = {
-+	{ .compatible = "renesas,sh-intc", .data = intc_of_init },
-+	{ /*sentinel*/ }
-+};
-+
-+void __init r8a7740_init_irq_of(void)
- {
--	void __iomem *intevtsa = ioremap_nocache(0xffd20100, PAGE_SIZE);
-+	of_irq_init(irq_of_match);
+ static int sh_mobile_i2c_xfer(struct i2c_adapter *adapter,
+ 			      struct i2c_msg *msgs,
+ 			      int num)
+@@ -502,8 +533,7 @@ static int sh_mobile_i2c_xfer(struct i2c_adapter *adapter,
+ 	struct sh_mobile_i2c_data *pd = i2c_get_adapdata(adapter);
+ 	struct i2c_msg	*msg;
+ 	int err = 0;
+-	u_int8_t val;
+-	int i, k, retry_count;
++	int i, k;
  
-+	register_intc_controller(&intcs_desc);
-+}
-+#endif /* CONFIG_OF */
-+
-+void __init r8a7740_init_irq(void)
-+{
- 	register_intc_controller(&intca_desc);
- 	register_intc_controller(&intca_irq_pins_desc);
- 	register_intc_controller(&intcs_desc);
+ 	activate_ch(pd);
  
--	/* demux using INTEVTSA */
--	irq_set_handler_data(evt2irq(0xf80), (void *)intevtsa);
--	irq_set_chained_handler(evt2irq(0xf80), intcs_demux);
-+	r8a7740_init_intc(0xffd20000, 0xf80);
- }
+@@ -527,31 +557,9 @@ static int sh_mobile_i2c_xfer(struct i2c_adapter *adapter,
+ 			break;
+ 		}
+ 
+-		retry_count = 1000;
+-again:
+-		val = iic_rd(pd, ICSR);
+-
+-		dev_dbg(pd->dev, "val 0x%02x pd->sr 0x%02x\n", val, pd->sr);
+-
+-		/* the interrupt handler may wake us up before the
+-		 * transfer is finished, so poll the hardware
+-		 * until we're done.
+-		 */
+-		if (val & ICSR_BUSY) {
+-			udelay(10);
+-			if (retry_count--)
+-				goto again;
+-
+-			err = -EIO;
+-			dev_err(pd->dev, "Polling timed out\n");
++		err = poll_busy(pd);
++		if (err < 0)
+ 			break;
+-		}
+-
+-		/* handle missing acknowledge and arbitration lost */
+-		if ((val | pd->sr) & (ICSR_TACK | ICSR_AL)) {
+-			err = -EIO;
+-			break;
+-		}
+ 	}
+ 
+ 	deactivate_ch(pd);
 -- 
-1.7.10.4
+1.7.2.5
 
