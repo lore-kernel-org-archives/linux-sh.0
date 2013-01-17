@@ -1,66 +1,81 @@
-From: kishon <kishon@ti.com>
-Date: Thu, 17 Jan 2013 11:15:16 +0000
+From: Vivek Gautam <gautamvivek1987@gmail.com>
+Date: Thu, 17 Jan 2013 12:23:53 +0000
 Subject: Re: [RFC PATCH 2/6] ARM: OMAP: USB: Add phy binding information
-Message-Id: <50F7DA74.2020009@ti.com>
+Message-Id: <CAFp+6iGEC9KgfuQz6nqnAY5JrmtPG=HkGw5yjKw7-1=8AG_=dg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1358348462-27693-1-git-send-email-kishon@ti.com>
- <1358348462-27693-3-git-send-email-kishon@ti.com> <50F7C6C7.3030400@ti.com>
-In-Reply-To: <50F7C6C7.3030400@ti.com>
+ <1358348462-27693-3-git-send-email-kishon@ti.com>
+In-Reply-To: <1358348462-27693-3-git-send-email-kishon@ti.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+Hi Kishon,
 
-On Thursday 17 January 2013 03:09 PM, Roger Quadros wrote:
-> On 01/16/2013 05:00 PM, Kishon Vijay Abraham I wrote:
->> This is in preparation for the changes in PHY library to support adding
->> and getting multiple PHYs of the same type. In the new design, the
->> binding information between the PHY and the USB controller should be
->> specified in the platform specific initialization code. So it's been
->> done for OMAP platforms here.
->>
->> Signed-off-by: Kishon Vijay Abraham I <kishon@ti.com>
->> ---
->> This kind-of binding should be done in all the platforms (I've done only
->> for OMAP platform).
->>   arch/arm/mach-omap2/usb-musb.c |    7 ++++++-
->>   1 file changed, 6 insertions(+), 1 deletion(-)
->>
->> diff --git a/arch/arm/mach-omap2/usb-musb.c b/arch/arm/mach-omap2/usb-musb.c
->> index 9d27e3f..bbe2fa5 100644
->> --- a/arch/arm/mach-omap2/usb-musb.c
->> +++ b/arch/arm/mach-omap2/usb-musb.c
->> @@ -24,6 +24,7 @@
->>   #include <linux/dma-mapping.h>
->>   #include <linux/io.h>
->>   #include <linux/usb/musb.h>
->> +#include <linux/usb/phy.h>
->>
->>   #include "omap_device.h"
->>   #include "soc.h"
->> @@ -85,8 +86,12 @@ void __init usb_musb_init(struct omap_musb_board_data *musb_board_data)
->>   	musb_plat.mode = board_data->mode;
->>   	musb_plat.extvbus = board_data->extvbus;
->>
->> -	if (cpu_is_omap44xx())
->> +	if (cpu_is_omap44xx()) {
->>   		musb_plat.has_mailbox = true;
->> +		usb_bind_phy("musb-hdrc.0.auto", 0, "omap-usb2.1.auto");
->> +	} else if (cpu_is_omap34xx()) {
->> +		usb_bind_phy("musb-hdrc.0.auto", 0, "twl4030_usb");
->> +	}
+
+On Wed, Jan 16, 2013 at 8:30 PM, Kishon Vijay Abraham I <kishon@ti.com> wrote:
+> This is in preparation for the changes in PHY library to support adding
+> and getting multiple PHYs of the same type. In the new design, the
+> binding information between the PHY and the USB controller should be
+> specified in the platform specific initialization code. So it's been
+> done for OMAP platforms here.
 >
-> Are you sure than these OMAP platforms cannot be wired in any other way
-> to the PHY?
+> Signed-off-by: Kishon Vijay Abraham I <kishon@ti.com>
+> ---
+> This kind-of binding should be done in all the platforms (I've done only
+> for OMAP platform).
+>  arch/arm/mach-omap2/usb-musb.c |    7 ++++++-
+>  1 file changed, 6 insertions(+), 1 deletion(-)
 >
-> If they can be then this association must come from the board files or
-> device tree.
+> diff --git a/arch/arm/mach-omap2/usb-musb.c b/arch/arm/mach-omap2/usb-musb.c
+> index 9d27e3f..bbe2fa5 100644
+> --- a/arch/arm/mach-omap2/usb-musb.c
+> +++ b/arch/arm/mach-omap2/usb-musb.c
+> @@ -24,6 +24,7 @@
+>  #include <linux/dma-mapping.h>
+>  #include <linux/io.h>
+>  #include <linux/usb/musb.h>
+> +#include <linux/usb/phy.h>
+>
+>  #include "omap_device.h"
+>  #include "soc.h"
+> @@ -85,8 +86,12 @@ void __init usb_musb_init(struct omap_musb_board_data *musb_board_data)
+>         musb_plat.mode = board_data->mode;
+>         musb_plat.extvbus = board_data->extvbus;
+>
+> -       if (cpu_is_omap44xx())
+> +       if (cpu_is_omap44xx()) {
+>                 musb_plat.has_mailbox = true;
+> +               usb_bind_phy("musb-hdrc.0.auto", 0, "omap-usb2.1.auto");
+> +       } else if (cpu_is_omap34xx()) {
+> +               usb_bind_phy("musb-hdrc.0.auto", 0, "twl4030_usb");
+> +       }
 
-I had given some thought about that and since all the existing OMAP 
-platforms had it this way, I added it here.
-You having pointed that out, I'll move these to board files.
+Just trying to understand things here.
+Is the device name we are using here the platform device name (pdev->name) ?
+If i am not wrong then for devices added through device tree
+the device name would actually include the device address in the string,
+wouldn't that make things somewhat weird, since we will have to add
+such bindings
+using this address string.
 
-Thanks
-Kishon
+one more doubt please :)
+is it possible to bind phy in the controllers' driver somehow ?
+
+>
+>         if (soc_is_am35xx()) {
+>                 oh_name = "am35x_otg_hs";
+> --
+> 1.7.9.5
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-usb" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
+-- 
+Thanks & Regards
+Vivek
