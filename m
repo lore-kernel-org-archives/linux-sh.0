@@ -1,59 +1,78 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 25 Jan 2013 03:55:21 +0000
-Subject: [PATCH 03/15] ARM: shmobile: sh73a0: fixup div4_clks bitmap
-Message-Id: <1359086133-23357-4-git-send-email-horms+renesas@verge.net.au>
+From: Thierry Reding <thierry.reding@avionic-design.de>
+Date: Fri, 18 Jan 2013 07:16:12 +0000
+Subject: [PATCH v2 1/2] ARM: shmobile: sh73a0: Use generic irqchip_init()
+Message-Id: <1358493373-28722-1-git-send-email-thierry.reding@avionic-design.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359086133-23357-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359086133-23357-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+The asm/hardware/gic.h header does no longer exist and the corresponding
+functionality was moved to linux/irqchip.h and linux/irqchip/arm-gic.h
+respectively. gic_handle_irq() and of_irq_init() are no longer available
+either and have been replaced by irqchip_init().
 
-div4_clks's bitmap of sh73a0 was wrong.
-This patch is based on v2.0 datasheet.
-
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Thierry Reding <thierry.reding@avionic-design.de>
 ---
- arch/arm/mach-shmobile/clock-sh73a0.c |   22 +++++++++++-----------
- 1 file changed, 11 insertions(+), 11 deletions(-)
+Changes in v2:
+- split off kzm9g board changes into a separate patch
 
-diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-index 516ff7f..5f57701 100644
---- a/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-@@ -264,17 +264,17 @@ enum { DIV4_I, DIV4_ZG, DIV4_M3, DIV4_B, DIV4_M1, DIV4_M2,
- 	SH_CLK_DIV4(&pll1_clk, _reg, _bit, _mask, _flags)
+ arch/arm/mach-shmobile/intc-sh73a0.c  | 9 ++-------
+ arch/arm/mach-shmobile/setup-sh73a0.c | 2 --
+ 2 files changed, 2 insertions(+), 9 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/intc-sh73a0.c b/arch/arm/mach-shmobile/intc-sh73a0.c
+index fc7c8da..91faba6 100644
+--- a/arch/arm/mach-shmobile/intc-sh73a0.c
++++ b/arch/arm/mach-shmobile/intc-sh73a0.c
+@@ -21,9 +21,9 @@
+ #include <linux/interrupt.h>
+ #include <linux/module.h>
+ #include <linux/irq.h>
+-#include <linux/of_irq.h>
+ #include <linux/io.h>
+ #include <linux/sh_intc.h>
++#include <linux/irqchip.h>
+ #include <linux/irqchip/arm-gic.h>
+ #include <mach/intc.h>
+ #include <mach/irqs.h>
+@@ -462,14 +462,9 @@ void __init sh73a0_init_irq(void)
+ }
  
- static struct clk div4_clks[DIV4_NR] = {
--	[DIV4_I] = DIV4(FRQCRA, 20, 0xfff, CLK_ENABLE_ON_INIT),
--	[DIV4_ZG] = DIV4(FRQCRA, 16, 0xbff, CLK_ENABLE_ON_INIT),
--	[DIV4_M3] = DIV4(FRQCRA, 12, 0xfff, CLK_ENABLE_ON_INIT),
--	[DIV4_B] = DIV4(FRQCRA, 8, 0xfff, CLK_ENABLE_ON_INIT),
--	[DIV4_M1] = DIV4(FRQCRA, 4, 0xfff, 0),
--	[DIV4_M2] = DIV4(FRQCRA, 0, 0xfff, 0),
--	[DIV4_Z] = DIV4(FRQCRB, 24, 0xbff, 0),
--	[DIV4_ZTR] = DIV4(FRQCRB, 20, 0xfff, 0),
--	[DIV4_ZT] = DIV4(FRQCRB, 16, 0xfff, 0),
--	[DIV4_ZX] = DIV4(FRQCRB, 12, 0xfff, 0),
--	[DIV4_HP] = DIV4(FRQCRB, 4, 0xfff, 0),
-+	[DIV4_I] = DIV4(FRQCRA, 20, 0xdff, CLK_ENABLE_ON_INIT),
-+	[DIV4_ZG] = DIV4(FRQCRA, 16, 0xd7f, CLK_ENABLE_ON_INIT),
-+	[DIV4_M3] = DIV4(FRQCRA, 12, 0x1dff, CLK_ENABLE_ON_INIT),
-+	[DIV4_B] = DIV4(FRQCRA, 8, 0xdff, CLK_ENABLE_ON_INIT),
-+	[DIV4_M1] = DIV4(FRQCRA, 4, 0x1dff, 0),
-+	[DIV4_M2] = DIV4(FRQCRA, 0, 0x1dff, 0),
-+	[DIV4_Z] = DIV4(FRQCRB, 24, 0x97f, 0),
-+	[DIV4_ZTR] = DIV4(FRQCRB, 20, 0xdff, 0),
-+	[DIV4_ZT] = DIV4(FRQCRB, 16, 0xdff, 0),
-+	[DIV4_ZX] = DIV4(FRQCRB, 12, 0xdff, 0),
-+	[DIV4_HP] = DIV4(FRQCRB, 4, 0xdff, 0),
- };
- 
- enum { DIV6_VCK1, DIV6_VCK2, DIV6_VCK3, DIV6_ZB1,
+ #ifdef CONFIG_OF
+-static const struct of_device_id irq_of_match[] __initconst = {
+-	{ .compatible = "arm,cortex-a9-gic", .data = gic_of_init, },
+-	{ },
+-};
+-
+ void __init sh73a0_init_irq_dt(void)
+ {
+-	of_irq_init(irq_of_match);
++	irqchip_init();
+ 	gic_arch_extn.irq_set_wake = sh73a0_set_wake;
+ }
+ #endif
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index abf1eb0..2ecd668 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -36,7 +36,6 @@
+ #include <mach/irqs.h>
+ #include <mach/sh73a0.h>
+ #include <mach/common.h>
+-#include <asm/hardware/gic.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/map.h>
+ #include <asm/mach/arch.h>
+@@ -892,7 +891,6 @@ DT_MACHINE_START(SH73A0_DT, "Generic SH73A0 (Flattened Device Tree)")
+ 	.init_early	= sh73a0_add_early_devices_dt,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_irq	= sh73a0_init_irq_dt,
+-	.handle_irq	= gic_handle_irq,
+ 	.init_machine	= sh73a0_add_standard_devices_dt,
+ 	.init_time	= shmobile_timer_init,
+ 	.dt_compat	= sh73a0_boards_compat_dt,
 -- 
-1.7.10.4
+1.8.1.1
 
