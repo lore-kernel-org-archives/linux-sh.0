@@ -1,106 +1,62 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 18 Jan 2013 00:05:17 +0000
+From: Thierry Reding <thierry.reding@avionic-design.de>
+Date: Fri, 18 Jan 2013 06:56:45 +0000
 Subject: Re: [PATCH] ARM: shmobile: sh73a0: Use generic irqchip_init()
-Message-Id: <20130118000517.GI16740@verge.net.au>
+Message-Id: <20130118065645.GC17790@avionic-0098.adnet.avionic-design.de>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="FsscpQKzF/jJk6ya"
 List-Id: <linux-sh.vger.kernel.org>
 References: <1358424013-31306-1-git-send-email-thierry.reding@avionic-design.de>
-In-Reply-To: <1358424013-31306-1-git-send-email-thierry.reding@avionic-design.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+ <20130118000517.GI16740@verge.net.au>
+In-Reply-To: <20130118000517.GI16740@verge.net.au>
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Jan 17, 2013 at 01:00:13PM +0100, Thierry Reding wrote:
-> The asm/hardware/gic.h header does no longer exist and the corresponding
-> functionality was moved to linux/irqchip.h and linux/irqchip/arm-gic.h
-> respectively. gic_handle_irq() and of_irq_init() are no longer available
-> either and have been replaced by irqchip_init().
-> 
-> Signed-off-by: Thierry Reding <thierry.reding@avionic-design.de>
 
-Thanks.
+--FsscpQKzF/jJk6ya
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Due to the hairy upstream requirements of the arm-soc tree
-I believe this patch needs to be split in two. A 'board' patch
-for board-kzm9g-reference.c. And an 'soc' patch for the
-remaining portions.
+On Fri, Jan 18, 2013 at 09:05:17AM +0900, Simon Horman wrote:
+> On Thu, Jan 17, 2013 at 01:00:13PM +0100, Thierry Reding wrote:
+> > The asm/hardware/gic.h header does no longer exist and the corresponding
+> > functionality was moved to linux/irqchip.h and linux/irqchip/arm-gic.h
+> > respectively. gic_handle_irq() and of_irq_init() are no longer available
+> > either and have been replaced by irqchip_init().
+> >=20
+> > Signed-off-by: Thierry Reding <thierry.reding@avionic-design.de>
+>=20
+> Thanks.
+>=20
+> Due to the hairy upstream requirements of the arm-soc tree
+> I believe this patch needs to be split in two. A 'board' patch
+> for board-kzm9g-reference.c. And an 'soc' patch for the
+> remaining portions.
+>=20
+> I'm happy to split the patch myself or for you to do so.
 
-I'm happy to split the patch myself or for you to do so.
+I'll resend a split patch shortly.
 
-> ---
->  arch/arm/mach-shmobile/board-kzm9g-reference.c | 1 -
->  arch/arm/mach-shmobile/intc-sh73a0.c           | 9 ++-------
->  arch/arm/mach-shmobile/setup-sh73a0.c          | 2 --
->  3 files changed, 2 insertions(+), 10 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-> index 04e9ae5..08c95dd 100644
-> --- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
-> +++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-> @@ -90,7 +90,6 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g-reference")
->  	.init_early	= sh73a0_add_early_devices_dt,
->  	.nr_irqs	= NR_IRQS_LEGACY,
->  	.init_irq	= sh73a0_init_irq_dt,
-> -	.handle_irq	= gic_handle_irq,
->  	.init_machine	= kzm_init,
->  	.init_late	= shmobile_init_late,
->  	.init_time	= shmobile_timer_init,
-> diff --git a/arch/arm/mach-shmobile/intc-sh73a0.c b/arch/arm/mach-shmobile/intc-sh73a0.c
-> index fc7c8da..91faba6 100644
-> --- a/arch/arm/mach-shmobile/intc-sh73a0.c
-> +++ b/arch/arm/mach-shmobile/intc-sh73a0.c
-> @@ -21,9 +21,9 @@
->  #include <linux/interrupt.h>
->  #include <linux/module.h>
->  #include <linux/irq.h>
-> -#include <linux/of_irq.h>
->  #include <linux/io.h>
->  #include <linux/sh_intc.h>
-> +#include <linux/irqchip.h>
->  #include <linux/irqchip/arm-gic.h>
->  #include <mach/intc.h>
->  #include <mach/irqs.h>
-> @@ -462,14 +462,9 @@ void __init sh73a0_init_irq(void)
->  }
->  
->  #ifdef CONFIG_OF
-> -static const struct of_device_id irq_of_match[] __initconst = {
-> -	{ .compatible = "arm,cortex-a9-gic", .data = gic_of_init, },
-> -	{ },
-> -};
-> -
->  void __init sh73a0_init_irq_dt(void)
->  {
-> -	of_irq_init(irq_of_match);
-> +	irqchip_init();
->  	gic_arch_extn.irq_set_wake = sh73a0_set_wake;
->  }
->  #endif
-> diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-> index abf1eb0..2ecd668 100644
-> --- a/arch/arm/mach-shmobile/setup-sh73a0.c
-> +++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-> @@ -36,7 +36,6 @@
->  #include <mach/irqs.h>
->  #include <mach/sh73a0.h>
->  #include <mach/common.h>
-> -#include <asm/hardware/gic.h>
->  #include <asm/mach-types.h>
->  #include <asm/mach/map.h>
->  #include <asm/mach/arch.h>
-> @@ -892,7 +891,6 @@ DT_MACHINE_START(SH73A0_DT, "Generic SH73A0 (Flattened Device Tree)")
->  	.init_early	= sh73a0_add_early_devices_dt,
->  	.nr_irqs	= NR_IRQS_LEGACY,
->  	.init_irq	= sh73a0_init_irq_dt,
-> -	.handle_irq	= gic_handle_irq,
->  	.init_machine	= sh73a0_add_standard_devices_dt,
->  	.init_time	= shmobile_timer_init,
->  	.dt_compat	= sh73a0_boards_compat_dt,
-> -- 
-> 1.8.1.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Thierry
+
+--FsscpQKzF/jJk6ya
+Content-Type: application/pgp-signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.19 (GNU/Linux)
+
+iQIcBAEBAgAGBQJQ+PItAAoJEN0jrNd/PrOhmZYQALEowQjk2phBY3OJbRC9Y0ws
+t/8wG78Eax7eHMCDuj91AbkuAV8timoq7UmI/8uu0q+zbSS3nuZEa3VnEX+BfCk3
+9VAca1Kfl+HWvoaBVOZwhuvKV3UcLM7OyHxY7XND0GRSweMG5g2BnGhgBdcYeWmO
+Y3nDaXSzQAAssbEOgjwTX62buR4rCcbeOP/aw5PSJ6U9lRVJekg5OfYDlTu50JcH
+31PFnDbWA6n0ELKQFqBlSVxkirYGNAdn4fWV52gB70Kf6RrLLNcG6UVqn9vhJ1O4
+WSgCanIKc+g58330xOy0/Mfvs3JqFr2F5JJmLXgJZ4o/8fJpqS/t2LXD3Asvq0KP
++H8dHQcnj7akg+Belv+LRg/l9mNax1aBmFKnB17M7bgOnYtL8fG+a/YAUyGCtmqL
+pza1FH8P7f6a7ZbjGLR4py/67DkFowWW0ojmxu5c1oYaPvH1S2uPP2f2iGaCD4bu
+c6x3FBwTT1Ixv0Uo6L3PU9+kBoMH7fhc7/D2n5dNqZSxm1cI+dI1XMKPYS/Hh4Dd
+GVRa1zQSmAMXawlY6NU449oEcB+V5Jb7t8H7Y20QWFmY/xfQY6KG2R8wAcQyPLTA
+hJ2x1y84+u+igdmWerlGp3EqM89t2oHpjC3hEHDduL3WoLvwzrEUAu9Xv0rBGeOG
+cjgFsm8ROg7nl4MC6mlb
+=x94P
+-----END PGP SIGNATURE-----
+
+--FsscpQKzF/jJk6ya--
