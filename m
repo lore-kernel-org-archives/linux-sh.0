@@ -1,56 +1,85 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 08 Jan 2013 17:58:37 +0000
-Subject: Re: [PATCH 00/22] SH pinctrl and pinmux implementation
-Message-Id: <135769355.UnjMLfJSta@avalon>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 18 Jan 2013 09:40:42 +0000
+Subject: [PATCH] ARM: shmobile: r8a7779: scif .irqs used SCIx_IRQ_MUXED()
+Message-Id: <878v7q7rsa.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1357237073-15600-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1357237073-15600-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Linus,
+This patch tidyup scif .irqs settings by using
+SCIx_IRQ_MUXED() macro.
 
-On Tuesday 08 January 2013 10:49:32 Linus Walleij wrote:
-> On Mon, Jan 7, 2013 at 2:27 PM, Laurent Pinchart wrote:
-> > Would you have time to share your thoughts about the following issue
-> > (copied from the cover letter of this patch series) ?
-> > 
-> > I ran into an issue when trying to port the bonito board (the only other
-> > r8a7740 board in mainline) to the pinmux API. My board patches use system
-> > pin control hogging to apply the initial pinmux configuration. This
-> > mechanism requires registering the pinctrl mappings before registering
-> > the pinctrl device, as the default states are selected when the pinctrl
-> > device is registered. However, the mappings vary depending on board
-> > configuration read through GPIOs, and the GPIOs are implemented by the
-> > pinctrl driver. One possible solution would be to apply updates to the
-> > selected state as mappings are registered, but that looks pretty complex
-> > at first sight. Other ideas (or, better, patches :-)) are welcome.
-> 
-> Hm, yes today we require that mappings be in place before the pinctrl driver
-> is registered in order for hogs to work.
-> 
-> With device tree I guess the problem goes away.
-> 
-> But I guess for those not using device tree it'd be nice to modify the map
-> registration function to check if something needs to be hogged by an already
-> existing device at that point. If you write a patch for this we can discuss
-> it...
->
-> There is another issue making it desireable to have mappings registered as
-> early as possible, and that is my patch moving default pinctrl grabbing into
-> the device core, but generally of course all devices need their maps in
-> place before probing anyway.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/setup-r8a7779.c |   18 ++++++------------
+ 1 file changed, 6 insertions(+), 12 deletions(-)
 
-That's exactly what I need :-) With that patch in place I can register the 
-pinctrl device before registering the mappings, as long as the mappings are 
-registered before their associated device.
-
-Is there a chance the patch will make it to v3.9 ?
-
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 7a1ad4f..2071fee 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -66,8 +66,7 @@ static struct plat_sci_port scif0_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= { gic_spi(88), gic_spi(88),
+-			    gic_spi(88), gic_spi(88) },
++	.irqs		= SCIx_IRQ_MUXED(gic_spi(88)),
+ };
+ 
+ static struct platform_device scif0_device = {
+@@ -84,8 +83,7 @@ static struct plat_sci_port scif1_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= { gic_spi(89), gic_spi(89),
+-			    gic_spi(89), gic_spi(89) },
++	.irqs		= SCIx_IRQ_MUXED(gic_spi(89)),
+ };
+ 
+ static struct platform_device scif1_device = {
+@@ -102,8 +100,7 @@ static struct plat_sci_port scif2_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= { gic_spi(90), gic_spi(90),
+-			    gic_spi(90), gic_spi(90) },
++	.irqs		= SCIx_IRQ_MUXED(gic_spi(90)),
+ };
+ 
+ static struct platform_device scif2_device = {
+@@ -120,8 +117,7 @@ static struct plat_sci_port scif3_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= { gic_spi(91), gic_spi(91),
+-			    gic_spi(91), gic_spi(91) },
++	.irqs		= SCIx_IRQ_MUXED(gic_spi(91)),
+ };
+ 
+ static struct platform_device scif3_device = {
+@@ -138,8 +134,7 @@ static struct plat_sci_port scif4_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= { gic_spi(92), gic_spi(92),
+-			    gic_spi(92), gic_spi(92) },
++	.irqs		= SCIx_IRQ_MUXED(gic_spi(92)),
+ };
+ 
+ static struct platform_device scif4_device = {
+@@ -156,8 +151,7 @@ static struct plat_sci_port scif5_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= { gic_spi(93), gic_spi(93),
+-			    gic_spi(93), gic_spi(93) },
++	.irqs		= SCIx_IRQ_MUXED(gic_spi(93)),
+ };
+ 
+ static struct platform_device scif5_device = {
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.9.5
 
