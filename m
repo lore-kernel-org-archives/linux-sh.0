@@ -1,75 +1,40 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 04 Jan 2013 00:40:56 +0000
-Subject: [PATCH 5/9] ARM: shmobile: armadillo: Move pinctrl mappings to device tree
-Message-Id: <1357260060-32164-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Thierry Reding <thierry.reding@avionic-design.de>
+Date: Fri, 18 Jan 2013 07:16:13 +0000
+Subject: [PATCH v2 2/2] ARM: shmobile: kzm9g: Don't use gic_handle_irq()
+Message-Id: <1358493373-28722-2-git-send-email-thierry.reding@avionic-design.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1358493373-28722-1-git-send-email-thierry.reding@avionic-design.de>
+In-Reply-To: <1358493373-28722-1-git-send-email-thierry.reding@avionic-design.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Replace the pinctrl mappings in board code by device tree mappings.
-Reference the mapping as the default pin controller state to apply it at
-boot time.
+This function is no longer publicly available. However, the sh73a0 setup
+code now uses the generic irqchip infrastructure which will implicitly
+set the IRQ handler, so it's fine to drop its initialization from the
+machine definition.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Thierry Reding <thierry.reding@avionic-design.de>
 ---
- arch/arm/boot/dts/r8a7740-armadillo800eva.dts  |   10 ++++++++++
- arch/arm/mach-shmobile/board-armadillo800eva.c |    9 ---------
- 2 files changed, 10 insertions(+), 9 deletions(-)
+Changes in v2:
+- new patch with kzm9g board changes
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-index a8e7bd9..f324405 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-@@ -20,3 +20,13 @@
- 		reg = <0x40000000 0x20000000>;
- 	};
- };
-+
-+&gpio {
-+	pinctrl-0 = <&lcd0_pins>;
-+	pinctrl-names = "default";
-+
-+	lcd0_pins: pfc_lcd0_pins {
-+		renesas,pins = "lcd0_data24_0", "lcd0_lclk_0", "lcd0_sync";
-+		renesas,function = "lcd0";
-+	};
-+};
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index c5c42c9..200559e 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -29,7 +29,6 @@
- #include <linux/platform_device.h>
- #include <linux/gpio.h>
- #include <linux/gpio_keys.h>
--#include <linux/pinctrl/machine.h>
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/machine.h>
- #include <linux/sh_eth.h>
-@@ -908,12 +907,6 @@ static struct platform_device *eva_devices[] __initdata = {
- 	&i2c_gpio_device,
- };
- 
--static const struct pinctrl_map eva_pinctrl_map[] = {
--	PIN_MAP_MUX_GROUP_HOG_DEFAULT("pfc-r8a7740", "lcd0_data24_0", "lcd0"),
--	PIN_MAP_MUX_GROUP_HOG_DEFAULT("pfc-r8a7740", "lcd0_lclk_0", "lcd0"),
--	PIN_MAP_MUX_GROUP_HOG_DEFAULT("pfc-r8a7740", "lcd0_sync", "lcd0"),
--};
--
- static void __init eva_clock_init(void)
- {
- 	struct clk *system	= clk_get(NULL, "system_clk");
-@@ -961,8 +954,6 @@ static void __init eva_init(void)
- 	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
- 				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
- 
--	pinctrl_register_mappings(eva_pinctrl_map, ARRAY_SIZE(eva_pinctrl_map));
--
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- 
- 	r8a7740_meram_workaround();
+ arch/arm/mach-shmobile/board-kzm9g-reference.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index 04e9ae5..08c95dd 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -90,7 +90,6 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g-reference")
+ 	.init_early	= sh73a0_add_early_devices_dt,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_irq	= sh73a0_init_irq_dt,
+-	.handle_irq	= gic_handle_irq,
+ 	.init_machine	= kzm_init,
+ 	.init_late	= shmobile_init_late,
+ 	.init_time	= shmobile_timer_init,
 -- 
-1.7.8.6
+1.8.1.1
 
