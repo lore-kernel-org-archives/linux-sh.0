@@ -1,90 +1,68 @@
-From: Kishon Vijay Abraham I <kishon@ti.com>
-Date: Wed, 16 Jan 2013 15:12:56 +0000
-Subject: [RFC PATCH 0/6] USB: Add multiple PHYs of same type
-Message-Id: <1358348462-27693-1-git-send-email-kishon@ti.com>
+From: Felipe Balbi <balbi@ti.com>
+Date: Fri, 18 Jan 2013 11:48:59 +0000
+Subject: Re: [RFC PATCH 0/6] USB: Add multiple PHYs of same type
+Message-Id: <20130118114859.GC4379@arwen.pp.htv.fi>
+MIME-Version: 1
+Content-Type: multipart/mixed; boundary="gr/z0/N6AeWAPJVB"
 List-Id: <linux-sh.vger.kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+References: <1358348462-27693-1-git-send-email-kishon@ti.com>
+In-Reply-To: <1358348462-27693-1-git-send-email-kishon@ti.com>
 To: linux-arm-kernel@lists.infradead.org
 
-New platforms are being added which has multiple PHY's (of same type) and
-which has multiple USB controllers. The binding information has to be
-present in the PHY library (otg.c) in order for it to return the
-appropriate PHY whenever the USB controller request for the PHY. So
-added a new API to pass the binding information. This API should be
-called by platform specific initialization code.
+--gr/z0/N6AeWAPJVB
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-So the binding should be done something like
-usb_bind_phy("musb-hdrc.0.auto", 0, "omap-usb2.1.auto"); specifying the USB
-controller device name, index, and the PHY device name.
-I have done this binding for OMAP platforms, but it should be done for
-all the platforms.
+On Wed, Jan 16, 2013 at 08:30:56PM +0530, Kishon Vijay Abraham I wrote:
+> New platforms are being added which has multiple PHY's (of same type) and
+> which has multiple USB controllers. The binding information has to be
+> present in the PHY library (otg.c) in order for it to return the
+> appropriate PHY whenever the USB controller request for the PHY. So
+> added a new API to pass the binding information. This API should be
+> called by platform specific initialization code.
+>=20
+> So the binding should be done something like
+> usb_bind_phy("musb-hdrc.0.auto", 0, "omap-usb2.1.auto"); specifying the U=
+SB
+> controller device name, index, and the PHY device name.
+> I have done this binding for OMAP platforms, but it should be done for
+> all the platforms.
+>=20
+> After this design, the phy can be got by passing the USB controller device
+> pointer and the index.
+>=20
+> Developed this patch series on
+> git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git xceiv
+> after applying "usb: musb: add driver for control module" patch series.
+>=20
+> Did basic enumeration testing in omap4 panda, omap4 sdp and omap3 beagle.
 
-After this design, the phy can be got by passing the USB controller device
-pointer and the index.
+please resend without RFC so I can apply.
 
-Developed this patch series on
-git://git.kernel.org/pub/scm/linux/kernel/git/balbi/usb.git xceiv
-after applying "usb: musb: add driver for control module" patch series.
+--=20
+balbi
 
-Did basic enumeration testing in omap4 panda, omap4 sdp and omap3 beagle.
+--gr/z0/N6AeWAPJVB
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-Kishon Vijay Abraham I (6):
-  usb: otg: Add an API to bind the USB controller and PHY
-  ARM: OMAP: USB: Add phy binding information
-  usb: otg: utils: change the phy lib to support multiple PHYs of same
-    type
-  ARM: dts: OMAP: Add phandle to bind PHY with USB controller
-  usb: otg: add device tree support to otg library
-  USB: MUSB: OMAP: get PHY by phandle for dt boot
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
- Documentation/devicetree/bindings/usb/omap-usb.txt |    2 +
- arch/arm/boot/dts/omap3.dtsi                       |    1 +
- arch/arm/boot/dts/omap4.dtsi                       |    3 +-
- arch/arm/boot/dts/twl4030.dtsi                     |    2 +-
- arch/arm/mach-omap2/usb-musb.c                     |    7 +-
- arch/arm/mach-shmobile/board-marzen.c              |    2 +-
- drivers/power/ab8500_charger.c                     |    2 +-
- drivers/power/isp1704_charger.c                    |    2 +-
- drivers/power/pda_power.c                          |    2 +-
- drivers/power/twl4030_charger.c                    |    2 +-
- drivers/usb/chipidea/udc.c                         |    2 +-
- drivers/usb/dwc3/core.c                            |    4 +-
- drivers/usb/gadget/fsl_udc_core.c                  |    2 +-
- drivers/usb/gadget/mv_udc_core.c                   |    2 +-
- drivers/usb/gadget/omap_udc.c                      |    2 +-
- drivers/usb/gadget/pxa25x_udc.c                    |    2 +-
- drivers/usb/gadget/pxa27x_udc.c                    |    2 +-
- drivers/usb/gadget/s3c-hsudc.c                     |    2 +-
- drivers/usb/host/ehci-fsl.c                        |    2 +-
- drivers/usb/host/ehci-msm.c                        |    2 +-
- drivers/usb/host/ehci-mv.c                         |    2 +-
- drivers/usb/host/ehci-tegra.c                      |    2 +-
- drivers/usb/host/ohci-omap.c                       |    2 +-
- drivers/usb/musb/am35x.c                           |    2 +-
- drivers/usb/musb/blackfin.c                        |    2 +-
- drivers/usb/musb/da8xx.c                           |    2 +-
- drivers/usb/musb/davinci.c                         |    2 +-
- drivers/usb/musb/musb_dsps.c                       |    2 +-
- drivers/usb/musb/omap2430.c                        |    7 +-
- drivers/usb/musb/tusb6010.c                        |    2 +-
- drivers/usb/musb/ux500.c                           |    2 +-
- drivers/usb/otg/ab8500-usb.c                       |    3 +-
- drivers/usb/otg/fsl_otg.c                          |    5 +-
- drivers/usb/otg/gpio_vbus.c                        |    3 +-
- drivers/usb/otg/isp1301_omap.c                     |    3 +-
- drivers/usb/otg/msm_otg.c                          |    3 +-
- drivers/usb/otg/mv_otg.c                           |    3 +-
- drivers/usb/otg/nop-usb-xceiv.c                    |    3 +-
- drivers/usb/otg/otg.c                              |  175 ++++++++++++++++----
- drivers/usb/otg/twl4030-usb.c                      |    3 +-
- drivers/usb/phy/mv_u3d_phy.c                       |    3 +-
- drivers/usb/phy/omap-usb2.c                        |   11 +-
- drivers/usb/phy/rcar-phy.c                         |    3 +-
- include/linux/usb/phy.h                            |   42 ++++-
- 44 files changed, 245 insertions(+), 89 deletions(-)
+iQIcBAEBAgAGBQJQ+TarAAoJEIaOsuA1yqREwzUQAKHNzbmIGRA5JB0JwaDvCLZS
+mDMznav6/TG9h4yxznFxg6o8dxtEnQxCCM3jxgR6GCSn4OiIB3hjkMJb3gwbNZzz
+34jJsYKh/zrvsx+ZBbpwe9RpS6nQ3t5bGWQ1asw0BsTsDjHj9ve6HuoPvqmhVROU
+Md1+NS9mMwgQZVCwFk6Ex+/0eggopWpveReIsHZYIIAVCHMg6m6qFQm898yTSFJL
+xgzPrq9LVt1lcqHkrcc6w5A9DXqtWq1tFmucFcNUaIWCO3Y+vgaL4ypjjI0psxuc
+3tT2cYIsCxMiZIhRTNZqUR8TDI6Ps+vz/nqxdaH2dmjdS1YtonzqQbEUVGKP9dpB
+hRxCNRHhxTJBdQsHctgvCbhfwzKZJUk0HRldL+35H86Sj5UefXeb+A29kkA4l4kn
+g0f7qL8KarZlLHtJ/QwbCNm8POrABUzT0Ps2tay2hgyUPJ8A/2xGg+BEeJijogmD
+5X7MH1kz0W55fnKCZ3gn+mK3eqJMNxZ9n4m4tOpAPH50vcYaD3iy7f9EczbztLaG
+VG8EYEYczkh0eLrXAXgN4LfZmImgmYIvYJqvngjgTqdoQ5b8S/78TBerHVIwxfqn
+yE5h514NdlSus5XrfPhqQpw8jARnnFq2XGc2I4x3gMq8JXioBBYQf1PMp7QXl+l8
+okED+iP6snMtIwHr3Gs6
+=pVWA
+-----END PGP SIGNATURE-----
 
--- 
-1.7.9.5
-
+--gr/z0/N6AeWAPJVB--
