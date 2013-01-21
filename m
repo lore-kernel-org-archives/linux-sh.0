@@ -1,101 +1,84 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 16 Jan 2013 16:54:46 +0000
-Subject: [PATCH 11/11] mmc: tmio: add support for the VccQ regulator
-Message-Id: <1358355286-26029-12-git-send-email-g.liakhovetski@gmx.de>
+From: Hideki EIRAKU <hdk@igel.co.jp>
+Date: Mon, 21 Jan 2013 10:54:29 +0000
+Subject: [PATCH v6 4/4] ARM: mach-shmobile: r8a7740: Add IPMMU device
+Message-Id: <1358765669-14567-5-git-send-email-hdk@igel.co.jp>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358355286-26029-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1358355286-26029-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1358765669-14567-1-git-send-email-hdk@igel.co.jp>
+In-Reply-To: <1358765669-14567-1-git-send-email-hdk@igel.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Some SD/MMC interfaces use 2 power regulators: one to power the card itself
-(Vcc) and another one to pull signal lines up (VccQ). In case of eMMC and
-UHS SD cards the regulators also have to be configured to supply different
-voltages. The preferred order of turning supply power on and off is to
-turn Vcc first on and last off.
+This patch adds an IPMMU device and notifies the IPMMU driver which
+devices are connected via the IPMMU module.  All devices connected to the main
+memory bus via the IPMMU module MUST be registered when SHMOBILE_IPMMU and
+SHMOBILE_IOMMU are enabled because physical address cannot be used
+while the IPMMU module's MMU function is enabled.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Hideki EIRAKU <hdk@igel.co.jp>
 ---
- drivers/mmc/host/tmio_mmc_pio.c |   40 +++++++++++++++++++++++++++++++-------
- 1 files changed, 32 insertions(+), 8 deletions(-)
+ arch/arm/mach-shmobile/setup-r8a7740.c | 33 +++++++++++++++++++++++++++++++++
+ 1 file changed, 33 insertions(+)
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 84582b3..932579c 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -43,6 +43,7 @@
- #include <linux/platform_device.h>
- #include <linux/pm_qos.h>
- #include <linux/pm_runtime.h>
-+#include <linux/regulator/consumer.h>
- #include <linux/scatterlist.h>
- #include <linux/spinlock.h>
- #include <linux/workqueue.h>
-@@ -768,16 +769,39 @@ static int tmio_mmc_clk_update(struct mmc_host *mmc)
- 	return ret;
- }
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 0952224..b85bea5 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -28,6 +28,7 @@
+ #include <linux/sh_dma.h>
+ #include <linux/sh_timer.h>
+ #include <linux/dma-mapping.h>
++#include <linux/platform_data/sh_ipmmu.h>
+ #include <mach/dma-register.h>
+ #include <mach/r8a7740.h>
+ #include <mach/pm-rmobile.h>
+@@ -262,6 +263,37 @@ static struct platform_device cmt10_device = {
+ 	.num_resources	= ARRAY_SIZE(cmt10_resources),
+ };
  
--static void tmio_mmc_set_power(struct tmio_mmc_host *host, struct mmc_ios *ios)
-+static void tmio_mmc_power_on(struct tmio_mmc_host *host, unsigned short vdd)
- {
- 	struct mmc_host *mmc = host->mmc;
-+	int ret = 0;
++/* IPMMUI (an IPMMU module for ICB/LMB) */
++static struct resource ipmmu_resources[] = {
++	[0] = {
++		.name	= "IPMMUI",
++		.start	= 0xfe951000,
++		.end	= 0xfe9510ff,
++		.flags	= IORESOURCE_MEM,
++	},
++};
 +
-+	/* .set_ios() is returning void, so, no chance to report an error */
++static const char * const ipmmu_dev_names[] = {
++	"sh_mobile_lcdc_fb.0",
++	"sh_mobile_lcdc_fb.1",
++	"sh_mobile_ceu.0",
++};
++
++static struct shmobile_ipmmu_platform_data ipmmu_platform_data = {
++	.dev_names = ipmmu_dev_names,
++	.num_dev_names = ARRAY_SIZE(ipmmu_dev_names),
++};
++
++static struct platform_device ipmmu_device = {
++	.name           = "ipmmu",
++	.id             = -1,
++	.dev = {
++		.platform_data = &ipmmu_platform_data,
++	},
++	.resource       = ipmmu_resources,
++	.num_resources  = ARRAY_SIZE(ipmmu_resources),
++};
++
+ static struct platform_device *r8a7740_early_devices[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+@@ -273,6 +305,7 @@ static struct platform_device *r8a7740_early_devices[] __initdata = {
+ 	&scif7_device,
+ 	&scifb_device,
+ 	&cmt10_device,
++	&ipmmu_device,
+ };
  
- 	if (host->set_pwr)
--		host->set_pwr(host->pdev, ios->power_mode != MMC_POWER_OFF);
-+		host->set_pwr(host->pdev, 1);
-+
-+	if (!IS_ERR(mmc->supply.vmmc))
-+		ret = mmc_regulator_set_ocr(mmc, mmc->supply.vmmc, vdd);
-+
-+	/*
-+	 * It seems, VccQ should be switch on after Vcc, this is also what the
-+	 * omap_hsmmc.c driver does.
-+	 */
-+	if (!IS_ERR(mmc->supply.vqmmc) && !ret)
-+		regulator_enable(mmc->supply.vqmmc);
-+}
-+
-+static void tmio_mmc_power_off(struct tmio_mmc_host *host)
-+{
-+	struct mmc_host *mmc = host->mmc;
-+
-+	if (!IS_ERR(mmc->supply.vqmmc))
-+		regulator_disable(mmc->supply.vqmmc);
-+
- 	if (!IS_ERR(mmc->supply.vmmc))
--		/* Errors ignored... */
--		mmc_regulator_set_ocr(mmc, mmc->supply.vmmc,
--				      ios->power_mode ? ios->vdd : 0);
-+		mmc_regulator_set_ocr(mmc, mmc->supply.vmmc, 0);
-+
-+	if (host->set_pwr)
-+		host->set_pwr(host->pdev, 0);
- }
- 
- /* Set MMC clock / power.
-@@ -831,13 +855,13 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 			host->power = true;
- 		}
- 		tmio_mmc_set_clock(host, ios->clock);
--		/* power up SD bus */
--		tmio_mmc_set_power(host, ios);
-+		/* power up SD card and the bus */
-+		tmio_mmc_power_on(host, ios->vdd);
- 		/* start bus clock */
- 		tmio_mmc_clk_start(host);
- 	} else if (ios->power_mode != MMC_POWER_UP) {
- 		if (ios->power_mode = MMC_POWER_OFF)
--			tmio_mmc_set_power(host, ios);
-+			tmio_mmc_power_off(host);
- 		if (host->power) {
- 			struct tmio_mmc_data *pdata = host->pdata;
- 			tmio_mmc_clk_stop(host);
+ /* DMA */
 -- 
-1.7.2.5
+1.8.0
 
