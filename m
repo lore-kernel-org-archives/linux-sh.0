@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 22 Jan 2013 00:18:54 +0000
+From: Olof Johansson <olof@lixom.net>
+Date: Tue, 22 Jan 2013 07:29:12 +0000
 Subject: Re: [PATCH v2 1/2] ARM: shmobile: sh73a0: Use generic irqchip_init()
-Message-Id: <20130122001854.GB16757@verge.net.au>
+Message-Id: <20130122072912.GD25783@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1358493373-28722-1-git-send-email-thierry.reding@avionic-design.de>
  <20130121005439.GF19062@verge.net.au>
@@ -34,6 +34,14 @@ On Mon, Jan 21, 2013 at 08:03:01AM +0100, Thierry Reding wrote:
 > Adding Olof on Cc since I'm not quite sure myself about how this is
 > handled.
 
-Thanks, I'm not quite sure either.
+The way to handle this is to base the branch you are adding new shmobile code
+in, on top of the cleanup branches that changes the underlying infrastructure.
+This is why we merge it early during the release, so that new code for various
+platforms can be based on it to avoid a bunch of conflicts in the end.
 
+In this case, you might need to base your branch onto a merge of both
+the irqchip/gic-vic-move and timer/cleanup branches from arm-soc.
+
+
+-Olof
 
