@@ -1,351 +1,94 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 25 Jan 2013 02:23:54 +0000
-Subject: [PATCH 18/80] sh-pfc: Use sh_pfc_ namespace prefix through the whole driver
-Message-Id: <1359080696-31489-19-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 23 Jan 2013 15:32:34 +0000
+Subject: [PATCH v2 07/11] mmc: tmio-mmc: parse device-tree bindings
+Message-Id: <1358955158-1510-8-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
+References: <1358955158-1510-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1358955158-1510-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add parsing of common and driver-specific DT bindings to the tmio-mmc
+MMC host driver.
 
-Most of the function and structure names are prefixed by sh_pfc_. Fix
-the ones that are not to avoid namespace clashes (especially for
-functions that start with gpio_).
-
-Not included in this patch are the platform data structures, those will
-be reworked later.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/sh/pfc/core.c |  107 ++++++++++++++++++++++++-------------------------
- drivers/sh/pfc/core.h |    4 +-
- 2 files changed, 55 insertions(+), 56 deletions(-)
 
-diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
-index ccf4b7a..1bb38e8 100644
---- a/drivers/sh/pfc/core.c
-+++ b/drivers/sh/pfc/core.c
-@@ -26,7 +26,7 @@
- 
- #include "core.h"
- 
--static int pfc_ioremap(struct sh_pfc *pfc)
-+static int sh_pfc_ioremap(struct sh_pfc *pfc)
- {
- 	struct resource *res;
- 	int k;
-@@ -53,10 +53,10 @@ static int pfc_ioremap(struct sh_pfc *pfc)
- 	return 0;
+v2: check, if DT assigned a card-detect IRQ, in which case don't enable TMIO 
+native CD IRQ.
+
+ drivers/mmc/host/tmio_mmc_pio.c |   27 +++++++++++++++++++++++++--
+ 1 files changed, 25 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index b25adb4..13729b6 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -918,6 +918,24 @@ static void tmio_mmc_init_ocr(struct tmio_mmc_host *host)
+ 		dev_warn(mmc_dev(mmc), "Platform OCR mask is ignored\n");
  }
  
--static void __iomem *pfc_phys_to_virt(struct sh_pfc *pfc,
--				      unsigned long address)
-+static void __iomem *sh_pfc_phys_to_virt(struct sh_pfc *pfc,
-+					 unsigned long address)
- {
--	struct pfc_window *window;
-+	struct sh_pfc_window *window;
- 	int k;
++static void tmio_mmc_of_parse(struct platform_device *pdev,
++			      struct tmio_mmc_data *pdata)
++{
++	const struct device_node *np = pdev->dev.of_node;
++	if (!np)
++		return;
++
++	if (of_get_property(np, "toshiba,mmc-wrprotect-disable", NULL))
++		pdata->flags |= TMIO_MMC_WRPROTECT_DISABLE;
++	if (of_get_property(np, "toshiba,mmc-blksz-2bytes", NULL))
++		pdata->flags |= TMIO_MMC_BLKSZ_2BYTES;
++	if (of_get_property(np, "toshiba,mmc-cap-sdio-irq", NULL) &&
++	    pdata->flags & TMIO_MMC_SDIO_IRQ)
++		pdata->capabilities |= MMC_CAP_SDIO_IRQ;
++	if (of_get_property(np, "toshiba,mmc-has-idle-wait", NULL))
++		pdata->flags |= TMIO_MMC_HAS_IDLE_WAIT;
++}
++
+ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 				  struct platform_device *pdev,
+ 				  struct tmio_mmc_data *pdata)
+@@ -928,6 +946,8 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	int ret;
+ 	u32 irq_mask = TMIO_MASK_CMD;
  
- 	/* scan through physical windows and convert address */
-@@ -76,7 +76,7 @@ static void __iomem *pfc_phys_to_virt(struct sh_pfc *pfc,
- 	return (void __iomem *)address;
- }
++	tmio_mmc_of_parse(pdev, pdata);
++
+ 	if (!(pdata->flags & TMIO_MMC_HAS_IDLE_WAIT))
+ 		pdata->write16_hook = NULL;
  
--static int enum_in_range(pinmux_enum_t enum_id, struct pinmux_range *r)
-+static int sh_pfc_enum_in_range(pinmux_enum_t enum_id, struct pinmux_range *r)
- {
- 	if (enum_id < r->begin)
- 		return 0;
-@@ -87,8 +87,8 @@ static int enum_in_range(pinmux_enum_t enum_id, struct pinmux_range *r)
- 	return 1;
- }
+@@ -939,6 +959,8 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	if (!mmc)
+ 		return -ENOMEM;
  
--static unsigned long gpio_read_raw_reg(void __iomem *mapped_reg,
--				       unsigned long reg_width)
-+static unsigned long sh_pfc_read_raw_reg(void __iomem *mapped_reg,
-+					 unsigned long reg_width)
- {
- 	switch (reg_width) {
- 	case 8:
-@@ -103,9 +103,8 @@ static unsigned long gpio_read_raw_reg(void __iomem *mapped_reg,
- 	return 0;
- }
- 
--static void gpio_write_raw_reg(void __iomem *mapped_reg,
--			       unsigned long reg_width,
--			       unsigned long data)
-+static void sh_pfc_write_raw_reg(void __iomem *mapped_reg,
-+				 unsigned long reg_width, unsigned long data)
- {
- 	switch (reg_width) {
- 	case 8:
-@@ -131,7 +130,7 @@ int sh_pfc_read_bit(struct pinmux_data_reg *dr, unsigned long in_pos)
- 	pr_debug("read_bit: addr = %lx, pos = %ld, "
- 		 "r_width = %ld\n", dr->reg, pos, dr->reg_width);
- 
--	return (gpio_read_raw_reg(dr->mapped_reg, dr->reg_width) >> pos) & 1;
-+	return (sh_pfc_read_raw_reg(dr->mapped_reg, dr->reg_width) >> pos) & 1;
- }
- 
- void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
-@@ -150,19 +149,19 @@ void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
- 	else
- 		clear_bit(pos, &dr->reg_shadow);
- 
--	gpio_write_raw_reg(dr->mapped_reg, dr->reg_width, dr->reg_shadow);
-+	sh_pfc_write_raw_reg(dr->mapped_reg, dr->reg_width, dr->reg_shadow);
- }
- 
--static void config_reg_helper(struct sh_pfc *pfc,
--			      struct pinmux_cfg_reg *crp,
--			      unsigned long in_pos,
--			      void __iomem **mapped_regp,
--			      unsigned long *maskp,
--			      unsigned long *posp)
-+static void sh_pfc_config_reg_helper(struct sh_pfc *pfc,
-+				     struct pinmux_cfg_reg *crp,
-+				     unsigned long in_pos,
-+				     void __iomem **mapped_regp,
-+				     unsigned long *maskp,
-+				     unsigned long *posp)
- {
- 	int k;
- 
--	*mapped_regp = pfc_phys_to_virt(pfc, crp->reg);
-+	*mapped_regp = sh_pfc_phys_to_virt(pfc, crp->reg);
- 
- 	if (crp->field_width) {
- 		*maskp = (1 << crp->field_width) - 1;
-@@ -175,30 +174,30 @@ static void config_reg_helper(struct sh_pfc *pfc,
++	mmc_of_parse(mmc);
++
+ 	pdata->dev = &pdev->dev;
+ 	_host = mmc_priv(mmc);
+ 	_host->pdata = pdata;
+@@ -959,7 +981,7 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
  	}
- }
  
--static int read_config_reg(struct sh_pfc *pfc,
--			   struct pinmux_cfg_reg *crp,
--			   unsigned long field)
-+static int sh_pfc_read_config_reg(struct sh_pfc *pfc,
-+				  struct pinmux_cfg_reg *crp,
-+				  unsigned long field)
- {
- 	void __iomem *mapped_reg;
- 	unsigned long mask, pos;
+ 	mmc->ops = &tmio_mmc_ops;
+-	mmc->caps = MMC_CAP_4_BIT_DATA | pdata->capabilities;
++	mmc->caps |= MMC_CAP_4_BIT_DATA | pdata->capabilities;
+ 	mmc->caps2 = pdata->capabilities2;
+ 	mmc->max_segs = 32;
+ 	mmc->max_blk_size = 512;
+@@ -971,7 +993,8 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
  
--	config_reg_helper(pfc, crp, field, &mapped_reg, &mask, &pos);
-+	sh_pfc_config_reg_helper(pfc, crp, field, &mapped_reg, &mask, &pos);
+ 	_host->native_hotplug = !(pdata->flags & TMIO_MMC_USE_GPIO_CD ||
+ 				  mmc->caps & MMC_CAP_NEEDS_POLL ||
+-				  mmc->caps & MMC_CAP_NONREMOVABLE);
++				  mmc->caps & MMC_CAP_NONREMOVABLE ||
++				  mmc->slot.cd_irq >= 0);
  
- 	pr_debug("read_reg: addr = %lx, field = %ld, "
- 		 "r_width = %ld, f_width = %ld\n",
- 		 crp->reg, field, crp->reg_width, crp->field_width);
- 
--	return (gpio_read_raw_reg(mapped_reg, crp->reg_width) >> pos) & mask;
-+	return (sh_pfc_read_raw_reg(mapped_reg, crp->reg_width) >> pos) & mask;
- }
- 
--static void write_config_reg(struct sh_pfc *pfc,
--			     struct pinmux_cfg_reg *crp,
--			     unsigned long field, unsigned long value)
-+static void sh_pfc_write_config_reg(struct sh_pfc *pfc,
-+				    struct pinmux_cfg_reg *crp,
-+				    unsigned long field, unsigned long value)
- {
- 	void __iomem *mapped_reg;
- 	unsigned long mask, pos, data;
- 
--	config_reg_helper(pfc, crp, field, &mapped_reg, &mask, &pos);
-+	sh_pfc_config_reg_helper(pfc, crp, field, &mapped_reg, &mask, &pos);
- 
- 	pr_debug("write_reg addr = %lx, value = %ld, field = %ld, "
- 		 "r_width = %ld, f_width = %ld\n",
-@@ -207,24 +206,25 @@ static void write_config_reg(struct sh_pfc *pfc,
- 	mask = ~(mask << pos);
- 	value = value << pos;
- 
--	data = gpio_read_raw_reg(mapped_reg, crp->reg_width);
-+	data = sh_pfc_read_raw_reg(mapped_reg, crp->reg_width);
- 	data &= mask;
- 	data |= value;
- 
- 	if (pfc->pdata->unlock_reg)
--		gpio_write_raw_reg(pfc_phys_to_virt(pfc, pfc->pdata->unlock_reg),
--				   32, ~data);
-+		sh_pfc_write_raw_reg(
-+			sh_pfc_phys_to_virt(pfc, pfc->pdata->unlock_reg), 32,
-+			~data);
- 
--	gpio_write_raw_reg(mapped_reg, crp->reg_width, data);
-+	sh_pfc_write_raw_reg(mapped_reg, crp->reg_width, data);
- }
- 
--static int setup_data_reg(struct sh_pfc *pfc, unsigned gpio)
-+static int sh_pfc_setup_data_reg(struct sh_pfc *pfc, unsigned gpio)
- {
- 	struct pinmux_gpio *gpiop = &pfc->pdata->gpios[gpio];
- 	struct pinmux_data_reg *data_reg;
- 	int k, n;
- 
--	if (!enum_in_range(gpiop->enum_id, &pfc->pdata->data))
-+	if (!sh_pfc_enum_in_range(gpiop->enum_id, &pfc->pdata->data))
- 		return -1;
- 
- 	k = 0;
-@@ -234,7 +234,7 @@ static int setup_data_reg(struct sh_pfc *pfc, unsigned gpio)
- 		if (!data_reg->reg_width)
- 			break;
- 
--		data_reg->mapped_reg = pfc_phys_to_virt(pfc, data_reg->reg);
-+		data_reg->mapped_reg = sh_pfc_phys_to_virt(pfc, data_reg->reg);
- 
- 		for (n = 0; n < data_reg->reg_width; n++) {
- 			if (data_reg->enum_ids[n] = gpiop->enum_id) {
-@@ -253,13 +253,13 @@ static int setup_data_reg(struct sh_pfc *pfc, unsigned gpio)
- 	return -1;
- }
- 
--static void setup_data_regs(struct sh_pfc *pfc)
-+static void sh_pfc_setup_data_regs(struct sh_pfc *pfc)
- {
- 	struct pinmux_data_reg *drp;
- 	int k;
- 
- 	for (k = pfc->pdata->first_gpio; k <= pfc->pdata->last_gpio; k++)
--		setup_data_reg(pfc, k);
-+		sh_pfc_setup_data_reg(pfc, k);
- 
- 	k = 0;
- 	while (1) {
-@@ -268,8 +268,8 @@ static void setup_data_regs(struct sh_pfc *pfc)
- 		if (!drp->reg_width)
- 			break;
- 
--		drp->reg_shadow = gpio_read_raw_reg(drp->mapped_reg,
--						    drp->reg_width);
-+		drp->reg_shadow = sh_pfc_read_raw_reg(drp->mapped_reg,
-+						      drp->reg_width);
- 		k++;
- 	}
- }
-@@ -280,7 +280,7 @@ int sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
- 	struct pinmux_gpio *gpiop = &pfc->pdata->gpios[gpio];
- 	int k, n;
- 
--	if (!enum_in_range(gpiop->enum_id, &pfc->pdata->data))
-+	if (!sh_pfc_enum_in_range(gpiop->enum_id, &pfc->pdata->data))
- 		return -1;
- 
- 	k = (gpiop->flags & PINMUX_FLAG_DREG) >> PINMUX_FLAG_DREG_SHIFT;
-@@ -290,10 +290,9 @@ int sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
- 	return 0;
- }
- 
--static int get_config_reg(struct sh_pfc *pfc, pinmux_enum_t enum_id,
--			  struct pinmux_cfg_reg **crp,
--			  int *fieldp, int *valuep,
--			  unsigned long **cntp)
-+static int sh_pfc_get_config_reg(struct sh_pfc *pfc, pinmux_enum_t enum_id,
-+				 struct pinmux_cfg_reg **crp, int *fieldp,
-+				 int *valuep, unsigned long **cntp)
- {
- 	struct pinmux_cfg_reg *config_reg;
- 	unsigned long r_width, f_width, curr_width, ncomb;
-@@ -343,8 +342,8 @@ int sh_pfc_gpio_to_enum(struct sh_pfc *pfc, unsigned gpio, int pos,
- 	pinmux_enum_t *data = pfc->pdata->gpio_data;
- 	int k;
- 
--	if (!enum_in_range(enum_id, &pfc->pdata->data)) {
--		if (!enum_in_range(enum_id, &pfc->pdata->mark)) {
-+	if (!sh_pfc_enum_in_range(enum_id, &pfc->pdata->data)) {
-+		if (!sh_pfc_enum_in_range(enum_id, &pfc->pdata->mark)) {
- 			pr_err("non data/mark enum_id for gpio %d\n", gpio);
- 			return -1;
- 		}
-@@ -414,7 +413,7 @@ int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
- 			break;
- 
- 		/* first check if this is a function enum */
--		in_range = enum_in_range(enum_id, &pfc->pdata->function);
-+		in_range = sh_pfc_enum_in_range(enum_id, &pfc->pdata->function);
- 		if (!in_range) {
- 			/* not a function enum */
- 			if (range) {
-@@ -426,7 +425,7 @@ int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
- 				 * for this case we only allow function enums
- 				 * and the enums that match the other range.
- 				 */
--				in_range = enum_in_range(enum_id, range);
-+				in_range = sh_pfc_enum_in_range(enum_id, range);
- 
- 				/*
- 				 * special case pass through for fixed
-@@ -451,19 +450,19 @@ int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
- 		if (!in_range)
- 			continue;
- 
--		if (get_config_reg(pfc, enum_id, &cr,
--				   &field, &value, &cntp) != 0)
-+		if (sh_pfc_get_config_reg(pfc, enum_id, &cr,
-+					  &field, &value, &cntp) != 0)
- 			goto out_err;
- 
- 		switch (cfg_mode) {
- 		case GPIO_CFG_DRYRUN:
- 			if (!*cntp ||
--			    (read_config_reg(pfc, cr, field) != value))
-+			    (sh_pfc_read_config_reg(pfc, cr, field) != value))
- 				continue;
- 			break;
- 
- 		case GPIO_CFG_REQ:
--			write_config_reg(pfc, cr, field, value);
-+			sh_pfc_write_config_reg(pfc, cr, field, value);
- 			*cntp = *cntp + 1;
- 			break;
- 
-@@ -499,14 +498,14 @@ static int sh_pfc_probe(struct platform_device *pdev)
- 	pfc->pdata = pdata;
- 	pfc->dev = &pdev->dev;
- 
--	ret = pfc_ioremap(pfc);
-+	ret = sh_pfc_ioremap(pfc);
- 	if (unlikely(ret < 0))
- 		return ret;
- 
- 	spin_lock_init(&pfc->lock);
- 
- 	pinctrl_provide_dummies();
--	setup_data_regs(pfc);
-+	sh_pfc_setup_data_regs(pfc);
- 
- 	/*
- 	 * Initialize pinctrl bindings first
-diff --git a/drivers/sh/pfc/core.h b/drivers/sh/pfc/core.h
-index 1287b3e..d6a40bc 100644
---- a/drivers/sh/pfc/core.h
-+++ b/drivers/sh/pfc/core.h
-@@ -14,7 +14,7 @@
- #include <linux/sh_pfc.h>
- #include <linux/types.h>
- 
--struct pfc_window {
-+struct sh_pfc_window {
- 	phys_addr_t phys;
- 	void __iomem *virt;
- 	unsigned long size;
-@@ -28,7 +28,7 @@ struct sh_pfc {
- 	struct sh_pfc_platform_data *pdata;
- 	spinlock_t lock;
- 
--	struct pfc_window *window;
-+	struct sh_pfc_window *window;
- 	struct sh_pfc_chip *gpio;
- 	struct sh_pfc_pinctrl *pinctrl;
- };
+ 	_host->power = false;
+ 	pm_runtime_enable(&pdev->dev);
 -- 
-1.7.10.4
+1.7.2.5
 
