@@ -1,221 +1,147 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 17 Jan 2013 09:45:57 +0000
-Subject: [PATCH 4/4] i2c: sh_mobile: don't send a stop condition by default inside transfers
-Message-Id: <1358415957-8371-5-git-send-email-g.liakhovetski@gmx.de>
+Date: Wed, 23 Jan 2013 15:32:30 +0000
+Subject: [PATCH v2 03/11] mmc: provide a standard MMC device-tree binding parser centrally
+Message-Id: <1358955158-1510-4-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358415957-8371-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1358415957-8371-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1358955158-1510-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1358955158-1510-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-i2c@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-By default there should be no stop bit on I2C between single messages
-within transfers. Fix the driver to comply and only send a stop bit at
-the end of transfers or if I2C_M_STOP is set.
+MMC defines a number of standard DT bindings. Having each driver parse
+them individually adds code redundancy and is error prone. Provide a
+standard function to unify the parsing. After all drivers are converted
+to using it instead of their own parsers, this function can be integrated
+into mmc_alloc_host().
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/i2c/busses/i2c-sh_mobile.c |   79 +++++++++++++++++++++++++++---------
- 1 files changed, 59 insertions(+), 20 deletions(-)
+ drivers/mmc/core/host.c  |   82 ++++++++++++++++++++++++++++++++++++++++++++++
+ include/linux/mmc/host.h |    1 +
+ 2 files changed, 83 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
-index 5cf2367..1c7be2f 100644
---- a/drivers/i2c/busses/i2c-sh_mobile.c
-+++ b/drivers/i2c/busses/i2c-sh_mobile.c
-@@ -38,21 +38,21 @@
- /* Transmit operation:                                                      */
- /*                                                                          */
- /* 0 byte transmit                                                          */
--/* BUS:     S     A8     ACK   P                                            */
-+/* BUS:     S     A8     ACK   P(*)                                         */
- /* IRQ:       DTE   WAIT                                                    */
- /* ICIC:                                                                    */
- /* ICCR: 0x94 0x90                                                          */
- /* ICDR:      A8                                                            */
- /*                                                                          */
- /* 1 byte transmit                                                          */
--/* BUS:     S     A8     ACK   D8(1)   ACK   P                              */
-+/* BUS:     S     A8     ACK   D8(1)   ACK   P(*)                           */
- /* IRQ:       DTE   WAIT         WAIT                                       */
- /* ICIC:      -DTE                                                          */
- /* ICCR: 0x94       0x90                                                    */
- /* ICDR:      A8    D8(1)                                                   */
- /*                                                                          */
- /* 2 byte transmit                                                          */
--/* BUS:     S     A8     ACK   D8(1)   ACK   D8(2)   ACK   P                */
-+/* BUS:     S     A8     ACK   D8(1)   ACK   D8(2)   ACK   P(*)             */
- /* IRQ:       DTE   WAIT         WAIT          WAIT                         */
- /* ICIC:      -DTE                                                          */
- /* ICCR: 0x94                    0x90                                       */
-@@ -66,20 +66,20 @@
- /* 0 byte receive - not supported since slave may hold SDA low              */
- /*                                                                          */
- /* 1 byte receive       [TX] | [RX]                                         */
--/* BUS:     S     A8     ACK | D8(1)   ACK   P                              */
-+/* BUS:     S     A8     ACK | D8(1)   ACK   P(*)                           */
- /* IRQ:       DTE   WAIT     |   WAIT     DTE                               */
- /* ICIC:      -DTE           |   +DTE                                       */
- /* ICCR: 0x94       0x81     |   0xc0                                       */
- /* ICDR:      A8             |            D8(1)                             */
- /*                                                                          */
- /* 2 byte receive        [TX]| [RX]                                         */
--/* BUS:     S     A8     ACK | D8(1)   ACK   D8(2)   ACK   P                */
-+/* BUS:     S     A8     ACK | D8(1)   ACK   D8(2)   ACK   P(*)             */
- /* IRQ:       DTE   WAIT     |   WAIT          WAIT     DTE                 */
- /* ICIC:      -DTE           |                 +DTE                         */
- /* ICCR: 0x94       0x81     |                 0xc0                         */
- /* ICDR:      A8             |                 D8(1)    D8(2)               */
- /*                                                                          */
--/* 3 byte receive       [TX] | [RX]                                         */
-+/* 3 byte receive       [TX] | [RX]                                     (*) */
- /* BUS:     S     A8     ACK | D8(1)   ACK   D8(2)   ACK   D8(3)   ACK    P */
- /* IRQ:       DTE   WAIT     |   WAIT          WAIT         WAIT      DTE   */
- /* ICIC:      -DTE           |                              +DTE            */
-@@ -94,7 +94,7 @@
- /* SDA ___\___XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXAAAAAAAAA___/                 */
- /* SCL      \_/1\_/2\_/3\_/4\_/5\_/6\_/7\_/8\___/9\_____/                   */
- /*                                                                          */
--/*        S   D7  D6  D5  D4  D3  D2  D1  D0              P                 */
-+/*        S   D7  D6  D5  D4  D3  D2  D1  D0              P(*)              */
- /*                                           ___                            */
- /* WAIT IRQ ________________________________/   \___________                */
- /* TACK IRQ ____________________________________/   \_______                */
-@@ -103,6 +103,11 @@
- /*         _______________________________________________                  */
- /* BUSY __/                                               \_                */
- /*                                                                          */
-+/* (*) The STOP condition is only sent by the master at the end of the last */
-+/* I2C message or if the I2C_M_STOP flag is set. Similarly, the BUSY bit is */
-+/* only cleared after the STOP condition, so, between messages we have to   */
-+/* poll for the DTE bit.                                                    */
-+/*                                                                          */
+diff --git a/drivers/mmc/core/host.c b/drivers/mmc/core/host.c
+index ee2e16b..e4c1cbd 100644
+--- a/drivers/mmc/core/host.c
++++ b/drivers/mmc/core/host.c
+@@ -15,6 +15,8 @@
+ #include <linux/device.h>
+ #include <linux/err.h>
+ #include <linux/idr.h>
++#include <linux/of.h>
++#include <linux/of_gpio.h>
+ #include <linux/pagemap.h>
+ #include <linux/export.h>
+ #include <linux/leds.h>
+@@ -23,6 +25,7 @@
  
- enum sh_mobile_i2c_op {
- 	OP_START = 0,
-@@ -132,6 +137,7 @@ struct sh_mobile_i2c_data {
- 	struct i2c_msg *msg;
- 	int pos;
- 	int sr;
-+	bool send_stop;
- };
+ #include <linux/mmc/host.h>
+ #include <linux/mmc/card.h>
++#include <linux/mmc/slot-gpio.h>
  
- #define IIC_FLAG_HAS_ICIC67	(1 << 0)
-@@ -322,7 +328,7 @@ static unsigned char i2c_op(struct sh_mobile_i2c_data *pd,
- 		break;
- 	case OP_TX_STOP: /* write data and issue a stop afterwards */
- 		iic_wr(pd, ICDR, data);
--		iic_wr(pd, ICCR, 0x90);
-+		iic_wr(pd, ICCR, pd->send_stop ? 0x90 : 0x94);
- 		break;
- 	case OP_TX_TO_RX: /* select read mode */
- 		iic_wr(pd, ICCR, 0x81);
-@@ -469,22 +475,25 @@ static irqreturn_t sh_mobile_i2c_isr(int irq, void *dev_id)
- 	return IRQ_HANDLED;
- }
+ #include "core.h"
+ #include "host.h"
+@@ -294,6 +297,85 @@ static inline void mmc_host_clk_sysfs_init(struct mmc_host *host)
  
--static int start_ch(struct sh_mobile_i2c_data *pd, struct i2c_msg *usr_msg)
-+static int start_ch(struct sh_mobile_i2c_data *pd, struct i2c_msg *usr_msg,
-+		    bool do_init)
- {
- 	if (usr_msg->len = 0 && (usr_msg->flags & I2C_M_RD)) {
- 		dev_err(pd->dev, "Unsupported zero length i2c read\n");
- 		return -EIO;
- 	}
+ #endif
  
--	/* Initialize channel registers */
--	iic_set_clr(pd, ICCR, 0, ICCR_ICE);
-+	if (do_init) {
-+		/* Initialize channel registers */
-+		iic_set_clr(pd, ICCR, 0, ICCR_ICE);
- 
--	/* Enable channel and configure rx ack */
--	iic_set_clr(pd, ICCR, ICCR_ICE, 0);
-+		/* Enable channel and configure rx ack */
-+		iic_set_clr(pd, ICCR, ICCR_ICE, 0);
- 
--	/* Set the clock */
--	iic_wr(pd, ICCL, pd->iccl & 0xff);
--	iic_wr(pd, ICCH, pd->icch & 0xff);
-+		/* Set the clock */
-+		iic_wr(pd, ICCL, pd->iccl & 0xff);
-+		iic_wr(pd, ICCH, pd->icch & 0xff);
-+	}
- 
- 	pd->msg = usr_msg;
- 	pd->pos = -1;
-@@ -495,6 +504,30 @@ static int start_ch(struct sh_mobile_i2c_data *pd, struct i2c_msg *usr_msg)
- 	return 0;
- }
- 
-+static int poll_dte(struct sh_mobile_i2c_data *pd)
++void mmc_of_parse(struct mmc_host *host)
 +{
-+	int i;
++	struct device_node *np;
++	u32 bus_width;
++	bool legacy_inv_cd, legacy_inv_wp;
++	enum of_gpio_flags flags;
++	int len, ret, gpio;
 +
-+	for (i = 1000; i; i--) {
-+		u_int8_t val = iic_rd(pd, ICSR);
++	if (!host->parent || !host->parent->of_node)
++		return;
 +
-+		if (val & ICSR_DTE)
-+			break;
++	np = host->parent->of_node;
 +
-+		if (val & ICSR_TACK)
-+			return -EIO;
++	/* Both CD and WP pins are by default active low */
 +
-+		udelay(10);
++	legacy_inv_cd = !!of_find_property(np, "cd-inverted", &len);
++	legacy_inv_wp = !!of_find_property(np, "wp-inverted", &len);
++
++	if (legacy_inv_cd || legacy_inv_wp)
++		dev_warn(host->parent,
++			 "\"cd-/wp-inverted\" properties are deprecated, use GPIO flags");
++
++	if (of_property_read_u32_array(np, "bus-width", &bus_width, 1) < 0) {
++		dev_err(host->parent,
++			"Compulsory \"bus-width\" property is missing!\n");
++		return;
 +	}
 +
-+	if (!i) {
-+		dev_warn(pd->dev, "Timeout polling for DTE!\n");
-+		return -ETIMEDOUT;
++	switch (bus_width) {
++	case 8:
++		host->caps |= MMC_CAP_8_BIT_DATA;
++		/* Hosts, capable of 8-bit transfers can also do 4 bits */
++	case 4:
++		host->caps |= MMC_CAP_4_BIT_DATA;
++		break;
++	case 1:
++		break;
++	default:
++		dev_err(host->parent,
++			"Invalid \"bus-width\" value %ud!\n", bus_width);
 +	}
 +
-+	return 0;
++	/* Optional property: ignore errors */
++	of_property_read_u32_array(np, "max-frequency", &host->f_max, 1);
++
++	if (of_find_property(np, "non-removable", &len)) {
++		host->caps |= MMC_CAP_NONREMOVABLE;
++	} else {
++		if (of_find_property(np, "broken-cd", &len))
++			host->caps |= MMC_CAP_NEEDS_POLL;
++
++		gpio = of_get_named_gpio_flags(np, "cd-gpios", 0, &flags);
++		if (gpio_is_valid(gpio)) {
++			if (legacy_inv_cd || !(flags & OF_GPIO_ACTIVE_LOW))
++				host->caps2 |= MMC_CAP2_CD_ACTIVE_HIGH;
++			ret = mmc_gpio_request_cd(host, gpio);
++			if (ret < 0)
++				dev_err(host->parent,
++					"Failed to request CD GPIO #%d: %d!\n",
++					gpio, ret);
++			else
++				dev_info(host->parent, "Got CD GPIO #%d.\n",
++					 gpio);
++		}
++	}
++
++	gpio = of_get_named_gpio_flags(np, "wp-gpios", 0, &flags);
++	if (gpio_is_valid(gpio)) {
++		if (legacy_inv_wp || !(flags & OF_GPIO_ACTIVE_LOW))
++			host->caps2 |= MMC_CAP2_RO_ACTIVE_HIGH;
++		ret = mmc_gpio_request_ro(host, gpio);
++		if (ret < 0)
++			dev_err(host->parent,
++				"Failed to request WP GPIO: %d!\n", ret);
++	}
 +}
 +
- static int poll_busy(struct sh_mobile_i2c_data *pd)
++EXPORT_SYMBOL(mmc_of_parse);
++
+ /**
+  *	mmc_alloc_host - initialise the per-host structure.
+  *	@extra: sizeof private data structure
+diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
+index 61a10c1..13c0c8d 100644
+--- a/include/linux/mmc/host.h
++++ b/include/linux/mmc/host.h
+@@ -345,6 +345,7 @@ extern struct mmc_host *mmc_alloc_host(int extra, struct device *);
+ extern int mmc_add_host(struct mmc_host *);
+ extern void mmc_remove_host(struct mmc_host *);
+ extern void mmc_free_host(struct mmc_host *);
++void mmc_of_parse(struct mmc_host *host);
+ 
+ static inline void *mmc_priv(struct mmc_host *host)
  {
- 	int i;
-@@ -539,13 +572,16 @@ static int sh_mobile_i2c_xfer(struct i2c_adapter *adapter,
- 
- 	/* Process all messages */
- 	for (i = 0; i < num; i++) {
-+		bool do_start = pd->send_stop || !i;
- 		msg = &msgs[i];
-+		pd->send_stop = i = num - 1 || msg->flags & I2C_M_STOP;
- 
--		err = start_ch(pd, msg);
-+		err = start_ch(pd, msg, do_start);
- 		if (err)
- 			break;
- 
--		i2c_op(pd, OP_START, 0);
-+		if (do_start)
-+			i2c_op(pd, OP_START, 0);
- 
- 		/* The interrupt handler takes care of the rest... */
- 		k = wait_event_timeout(pd->wait,
-@@ -557,7 +593,10 @@ static int sh_mobile_i2c_xfer(struct i2c_adapter *adapter,
- 			break;
- 		}
- 
--		err = poll_busy(pd);
-+		if (pd->send_stop)
-+			err = poll_busy(pd);
-+		else
-+			err = poll_dte(pd);
- 		if (err < 0)
- 			break;
- 	}
-@@ -571,7 +610,7 @@ static int sh_mobile_i2c_xfer(struct i2c_adapter *adapter,
- 
- static u32 sh_mobile_i2c_func(struct i2c_adapter *adapter)
- {
--	return I2C_FUNC_I2C | I2C_FUNC_SMBUS_EMUL;
-+	return I2C_FUNC_I2C | I2C_FUNC_SMBUS_EMUL | I2C_FUNC_PROTOCOL_MANGLING;
- }
- 
- static struct i2c_algorithm sh_mobile_i2c_algorithm = {
 -- 
 1.7.2.5
 
