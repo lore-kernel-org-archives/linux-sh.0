@@ -1,74 +1,60 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 10 Jan 2013 20:51:45 +0000
-Subject: [PATCH 12/16] sh-pfc: sh73a0: Remove I2C function GPIOS
-Message-Id: <1357851109-22103-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 23 Jan 2013 15:32:28 +0000
+Subject: [PATCH v2 01/11] mmc: sdhi, tmio: only check flags in tmio-mmc driver proper
+Message-Id: <1358955158-1510-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1358955158-1510-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1358955158-1510-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-All sh73a0 platforms now use the pinctrl API to control the I2C pins,
-the corresponding function GPIOS are unused. Remove them.
+tmio-mmc platform flags can be set by various means, including caller
+drivers and device-tree bindings, therefore it is better to only check
+them in the tmio-mmc driver proper, not in caller drivers themselves.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c |   12 ------------
- 1 files changed, 0 insertions(+), 12 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index fe548de..56c135d 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -2487,13 +2487,9 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(VINT),
- 	GPIO_FN(TCKON),
- 	GPIO_FN(XDVFS1), \
--	GPIO_FN(PORT27_I2C_SCL2), \
--	GPIO_FN(PORT27_I2C_SCL3), \
- 	GPIO_FN(MFG0_OUT1), \
- 	GPIO_FN(PORT27_IROUT),
- 	GPIO_FN(XDVFS2), \
--	GPIO_FN(PORT28_I2C_SDA2), \
--	GPIO_FN(PORT28_I2C_SDA3), \
- 	GPIO_FN(PORT28_TPU1TO1),
- 	GPIO_FN(SIM_RST), \
- 	GPIO_FN(PORT29_TPU1TO1),
-@@ -2650,12 +2646,8 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(BBIF1_TXD),
- 	GPIO_FN(HSI_RX_READY), \
- 	GPIO_FN(BBIF1_RSCK), \
--	GPIO_FN(PORT115_I2C_SCL2), \
--	GPIO_FN(PORT115_I2C_SCL3),
- 	GPIO_FN(HSI_RX_WAKE), \
- 	GPIO_FN(BBIF1_RSYNC), \
--	GPIO_FN(PORT116_I2C_SDA2), \
--	GPIO_FN(PORT116_I2C_SDA3),
- 	GPIO_FN(HSI_RX_FLAG), \
- 	GPIO_FN(BBIF1_SS1), \
- 	GPIO_FN(BBIF1_FLOW),
-@@ -2803,9 +2795,7 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(MFG1_IN2), \
- 	GPIO_FN(VIO2_VD2), \
- 	GPIO_FN(MSIOF1_MCK0), \
--	GPIO_FN(PORT236_I2C_SDA2),
- 	GPIO_FN(MSIOF1_MCK1), \
--	GPIO_FN(PORT237_I2C_SCL2),
- 	GPIO_FN(MSIOF1_SS1), \
- 	GPIO_FN(VIO2_FIELD2), \
- 	GPIO_FN(MSIOF1_SS2), \
-@@ -2828,11 +2818,9 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(TPU3TO1),
- 	GPIO_FN(MFG2_OUT1), \
- 	GPIO_FN(TPU2TO0), \
--	GPIO_FN(PORT248_I2C_SCL3), \
- 	GPIO_FN(MSIOF2R_TSCK),
- 	GPIO_FN(PORT249_IROUT), \
- 	GPIO_FN(MFG4_IN1), \
--	GPIO_FN(PORT249_I2C_SDA3), \
- 	GPIO_FN(MSIOF2R_TSYNC),
- 	GPIO_FN(SDHICLK0),
- 	GPIO_FN(SDHICD0),
+v2: .write16_hook should also be assigned in the absence of platform data, 
+e.g. with DT.
+
+ drivers/mmc/host/sh_mobile_sdhi.c |    3 +--
+ drivers/mmc/host/tmio_mmc_pio.c   |    3 +++
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 524a7f7..e0ca0ab 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -153,10 +153,9 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	mmc_data->clk_enable = sh_mobile_sdhi_clk_enable;
+ 	mmc_data->clk_disable = sh_mobile_sdhi_clk_disable;
+ 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
++	mmc_data->write16_hook = sh_mobile_sdhi_write16_hook;
+ 	if (p) {
+ 		mmc_data->flags = p->tmio_flags;
+-		if (mmc_data->flags & TMIO_MMC_HAS_IDLE_WAIT)
+-			mmc_data->write16_hook = sh_mobile_sdhi_write16_hook;
+ 		mmc_data->ocr_mask = p->tmio_ocr_mask;
+ 		mmc_data->capabilities |= p->tmio_caps;
+ 		mmc_data->capabilities2 |= p->tmio_caps2;
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 0f992e9..b25adb4 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -928,6 +928,9 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	int ret;
+ 	u32 irq_mask = TMIO_MASK_CMD;
+ 
++	if (!(pdata->flags & TMIO_MMC_HAS_IDLE_WAIT))
++		pdata->write16_hook = NULL;
++
+ 	res_ctl = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	if (!res_ctl)
+ 		return -EINVAL;
 -- 
-1.7.8.6
+1.7.2.5
 
