@@ -1,35 +1,44 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 10 Jan 2013 01:23:59 +0000
-Subject: [PATCH 5/5] ARM: mach-shmobile: kzm9g: Enable ARM_APPENDED_DTB in defconfig
-Message-Id: <1357781039-14003-6-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 23 Jan 2013 16:37:48 +0000
+Subject: [PATCH v3 5/8] ARM: shmobile: add a GPIO controller DT node for sh7372
+Message-Id: <1358959071-2873-6-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1357781039-14003-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1357781039-14003-1-git-send-email-horms+renesas@verge.net.au>
+References: <1358959071-2873-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1358959071-2873-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Typically the bootloader of a kzm9g board does not support DT
-so this option is useful.
+Add a missing GPIO controller node to sh7372.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/configs/kzm9g_defconfig |    1 +
- 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
-index 7f6ec2c..c6005a0 100644
---- a/arch/arm/configs/kzm9g_defconfig
-+++ b/arch/arm/configs/kzm9g_defconfig
-@@ -39,6 +39,7 @@ CONFIG_AEABI=y
- CONFIG_HIGHMEM=y
- CONFIG_ZBOOT_ROM_TEXT=0x0
- CONFIG_ZBOOT_ROM_BSS=0x0
-+CONFIG_ARM_APPENDED_DTB=y
- CONFIG_CMDLINE="console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200"
- CONFIG_KEXEC=y
- CONFIG_VFP=y
+v3: fix second memory area size.
+
+ arch/arm/boot/dts/sh7372.dtsi |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/boot/dts/sh7372.dtsi b/arch/arm/boot/dts/sh7372.dtsi
+index 582fdec..3598e57 100644
+--- a/arch/arm/boot/dts/sh7372.dtsi
++++ b/arch/arm/boot/dts/sh7372.dtsi
+@@ -19,6 +19,14 @@
+ 		};
+ 	};
+ 
++	gpio: pfc@e6050000 {
++		compatible = "renesas,pfc-sh7372";
++		reg = <0xe6050000 0x8000>,
++		      <0xe605800c 0x1c>;
++		gpio-controller;
++		#gpio-cells = <2>;
++	};
++
+ 	soc {
+ 		compatible = "simple-bus";
+ 		#address-cells = <1>;
 -- 
-1.7.10.4
+1.7.2.5
 
