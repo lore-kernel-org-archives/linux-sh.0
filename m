@@ -1,95 +1,54 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 25 Jan 2013 03:55:27 +0000
-Subject: [PATCH 09/15] ARM: shmobile: r8a7740: Add CPU sleep suspend
-Message-Id: <1359086133-23357-10-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 23 Jan 2013 15:32:33 +0000
+Subject: [PATCH/RFC v2 06/11] mmc: tmio-mmc: define device-tree bindings
+Message-Id: <1358955158-1510-7-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359086133-23357-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359086133-23357-1-git-send-email-horms+renesas@verge.net.au>
+References: <1358955158-1510-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1358955158-1510-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-From: Bastian Hecht <hechtb@gmail.com>
+Define device-tree bindings for the tmio-mmc driver to be able to specify
+parameters, currently provided in platform data.
 
-Add the lighest possible sleep mode on Cortex-A9 cores: CPU sleep.
-It is entered by a simple dsb and wfi instruction via cpu_do_idle(). As
-just clocks are stopped there is no need to save or restore any state of
-the system.
-
-Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-[ horms@verge.net.au: Added missing includes ]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c |    2 ++
- arch/arm/mach-shmobile/include/mach/common.h   |    1 +
- arch/arm/mach-shmobile/pm-r8a7740.c            |   22 ++++++++++++++++++++++
- 3 files changed, 25 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index e791244..6573137 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -1181,6 +1181,8 @@ static void __init eva_init(void)
- 	rmobile_add_device_to_domain("A4LC", &hdmi_lcdc_device);
- 	if (usb)
- 		rmobile_add_device_to_domain("A3SP", usb);
+Please, comment on this one, since it is defining an ABI
+
+ Documentation/devicetree/bindings/mmc/tmio_mmc.txt |   19 +++++++++++++++++++
+ 1 files changed, 19 insertions(+), 0 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/mmc/tmio_mmc.txt
+
+diff --git a/Documentation/devicetree/bindings/mmc/tmio_mmc.txt b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
+new file mode 100644
+index 0000000..dd8decd
+--- /dev/null
++++ b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
+@@ -0,0 +1,19 @@
++* Toshiba Mobile IO SD/MMC controller
 +
-+	r8a7740_pm_init();
- }
- 
- static void __init eva_earlytimer_init(void)
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index f221c11..c0ab595 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -52,6 +52,7 @@ extern void r8a7740_add_early_devices(void);
- extern void r8a7740_add_standard_devices(void);
- extern void r8a7740_clock_init(u8 md_ck);
- extern void r8a7740_pinmux_init(void);
-+extern void r8a7740_pm_init(void);
- 
- extern void r8a7779_init_irq(void);
- extern void r8a7779_map_io(void);
-diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
-index 21e5316d..40b87aa 100644
---- a/arch/arm/mach-shmobile/pm-r8a7740.c
-+++ b/arch/arm/mach-shmobile/pm-r8a7740.c
-@@ -9,7 +9,9 @@
-  * for more details.
-  */
- #include <linux/console.h>
-+#include <linux/suspend.h>
- #include <mach/pm-rmobile.h>
-+#include <mach/common.h>
- 
- #ifdef CONFIG_PM
- static int r8a7740_pd_a4s_suspend(void)
-@@ -58,3 +60,23 @@ void __init r8a7740_init_pm_domains(void)
- }
- 
- #endif /* CONFIG_PM */
++The tmio-mmc driver doesn't probe its devices actively, instead its binding to
++devices is managed by either MFD drivers or by the sh_mobile_sdhi platform
++driver. Those drivers supply the tmio-mmc driver with platform data, that either
++describe hardware capabilities, known to them, or are obtained by them from
++their own platform data or from their DT information. In the latter case all
++compulsory and any optional properties, common to all SD/MMC drivers, as
++described in mmc.txt, should or can be used. Additionally the following optional
++bindings can be used. They set either respective TMIO_MMC_* flags or MMC_CAP_*
++capabilities.
 +
-+#ifdef CONFIG_SUSPEND
-+static int r8a7740_enter_suspend(suspend_state_t suspend_state)
-+{
-+	cpu_do_idle();
-+	return 0;
-+}
-+
-+static void r8a7740_suspend_init(void)
-+{
-+	shmobile_suspend_ops.enter = r8a7740_enter_suspend;
-+}
-+#else
-+static void r8a7740_suspend_init(void) {}
-+#endif
-+
-+void __init r8a7740_pm_init(void)
-+{
-+	r8a7740_suspend_init();
-+}
++Optional properties:
++- toshiba,mmc-wrprotect-disable	: set TMIO_MMC_WRPROTECT_DISABLE flag
++- toshiba,mmc-blksz-2bytes	: set TMIO_MMC_BLKSZ_2BYTES
++- toshiba,mmc-cap-sdio-irq	: SDIO IRQ signalling should be used, if
++	supported by the hardware, i.e. set MMC_CAP_SDIO_IRQ if
++	TMIO_MMC_SDIO_IRQ is also set
++- toshiba,mmc-has-idle-wait	: set TMIO_MMC_HAS_IDLE_WAIT
 -- 
-1.7.10.4
+1.7.2.5
 
