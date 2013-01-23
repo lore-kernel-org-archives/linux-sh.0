@@ -1,46 +1,34 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 24 Jan 2013 12:16:32 +0000
-Subject: [PATCH v2 5/8] ARM: shmobile: bonito: Use gpio_request_one()
-Message-Id: <1359029795-7871-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 23 Jan 2013 06:00:56 +0000
+Subject: [PATCH] ARM: mach-shmobile: mackerel:  enable VFP in defconfig
+Message-Id: <1358920856-32256-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Replace occurences of gpio_request() and gpio_direction_*() by calls to
-gpio_request_one().
+CONFIG_VFP appears to be required to use the
+Debian armhf userspace. Enabling this is consistent
+with many other shmobile boards.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-bonito.c | 7 +++----
- 1 file changed, 3 insertions(+), 4 deletions(-)
+ arch/arm/configs/mackerel_defconfig |    1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/board-bonito.c b/arch/arm/mach-shmobile/board-bonito.c
-index cb8c994..932a9c0 100644
---- a/arch/arm/mach-shmobile/board-bonito.c
-+++ b/arch/arm/mach-shmobile/board-bonito.c
-@@ -392,8 +392,7 @@ static void __init bonito_init(void)
- 	/*
- 	 * base board settings
- 	 */
--	gpio_request(GPIO_PORT176, NULL);
--	gpio_direction_input(GPIO_PORT176);
-+	gpio_request_one(GPIO_PORT176, GPIOF_IN, NULL);
- 	if (!gpio_get_value(GPIO_PORT176)) {
- 		u16 bsw2;
- 		u16 bsw3;
-@@ -462,8 +461,8 @@ static void __init bonito_init(void)
- 			gpio_request(GPIO_FN_LCD0_DISP,		NULL);
- 			gpio_request(GPIO_FN_LCD0_LCLK_PORT165,	NULL);
- 
--			gpio_request(GPIO_PORT61, NULL); /* LCDDON */
--			gpio_direction_output(GPIO_PORT61, 1);
-+			gpio_request_one(GPIO_PORT61, GPIOF_OUT_INIT_HIGH,
-+					 NULL); /* LCDDON */
- 
- 			/* backlight on */
- 			bonito_fpga_write(LCDCR, 1);
+diff --git a/arch/arm/configs/mackerel_defconfig b/arch/arm/configs/mackerel_defconfig
+index e6881ac..7594b3a 100644
+--- a/arch/arm/configs/mackerel_defconfig
++++ b/arch/arm/configs/mackerel_defconfig
+@@ -25,6 +25,7 @@ CONFIG_ZBOOT_ROM_TEXT=0x0
+ CONFIG_ZBOOT_ROM_BSS=0x0
+ CONFIG_ARM_APPENDED_DTB=y
+ CONFIG_KEXEC=y
++CONFIG_VFP=y
+ # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
+ CONFIG_PM=y
+ CONFIG_PM_RUNTIME=y
 -- 
-1.7.12.4
+1.7.10.4
 
