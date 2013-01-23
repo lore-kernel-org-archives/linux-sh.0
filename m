@@ -1,44 +1,54 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 04 Jan 2013 00:40:55 +0000
-Subject: [PATCH 4/9] ARM: shmobile: armadillo: Populate platform devices from device tree
-Message-Id: <1357260060-32164-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 23 Jan 2013 16:37:46 +0000
+Subject: [PATCH v3 3/8] ARM: shmobile: simplify armadillo800eva and kzm9g Kconfig dependencies
+Message-Id: <1358959071-2873-4-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1358959071-2873-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1358959071-2873-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Call of_platform_populate() at machine initialization time to populate
-platform devices. Remove the explicit pinmux initialization as the PFC
-device will be instantiated from the device tree.
+Reference kernel configurations for armadillo800eva and kzm9g boards do not
+have to depend on their respective "legacy" configurations, doing device
+instantiation in .c, they can be configured and built independently.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c |    4 +++-
- 1 files changed, 3 insertions(+), 1 deletions(-)
+ arch/arm/mach-shmobile/Kconfig |   12 ++++++++++--
+ 1 files changed, 10 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 3434a8e..c5c42c9 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -25,6 +25,7 @@
- #include <linux/kernel.h>
- #include <linux/input.h>
- #include <linux/irq.h>
-+#include <linux/of_platform.h>
- #include <linux/platform_device.h>
- #include <linux/gpio.h>
- #include <linux/gpio_keys.h>
-@@ -962,7 +963,8 @@ static void __init eva_init(void)
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 5f61e8f..927eecc 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -106,7 +106,11 @@ config MACH_ARMADILLO800EVA
  
- 	pinctrl_register_mappings(eva_pinctrl_map, ARRAY_SIZE(eva_pinctrl_map));
+ config MACH_ARMADILLO800EVA_REFERENCE
+ 	bool "Armadillo-800 EVA board - Reference Device Tree Implementation"
+-	depends on MACH_ARMADILLO800EVA
++	depends on ARCH_R8A7740
++	select ARCH_REQUIRE_GPIOLIB
++	select REGULATOR_FIXED_VOLTAGE if REGULATOR
++	select SND_SOC_WM8978 if SND_SIMPLE_CARD
++	select USE_OF
+ 	---help---
+ 	  Use reference implementation of Aramdillo800 EVA board support
+ 	  which makes a greater use of device tree at the expense
+@@ -136,7 +140,11 @@ config MACH_KZM9G
  
--	r8a7740_pinmux_init();
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
-+
- 	r8a7740_meram_workaround();
- 
- 	/* SCIFA1 */
+ config MACH_KZM9G_REFERENCE
+ 	bool "KZM-A9-GT board - Reference Device Tree Implementation"
+-	depends on MACH_KZM9G
++	depends on ARCH_SH73A0
++	select ARCH_REQUIRE_GPIOLIB
++	select REGULATOR_FIXED_VOLTAGE if REGULATOR
++	select SND_SOC_AK4642 if SND_SIMPLE_CARD
++	select USE_OF
+ 	---help---
+ 	   Use reference implementation of KZM-A9-GT board support
+ 	   which makes as greater use of device tree at the expense
 -- 
-1.7.8.6
+1.7.2.5
 
