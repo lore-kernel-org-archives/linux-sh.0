@@ -1,62 +1,51 @@
-From: Rob Herring <robherring2@gmail.com>
-Date: Fri, 25 Jan 2013 14:31:12 +0000
-Subject: Re: [PATCH] DT: add vendor prefixes for Renesas and Toshiba
-Message-Id: <51029730.8050107@gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 23 Jan 2013 16:37:43 +0000
+Subject: [PATCH v3 0/8] ARM: shmobile: pinctrl and DT extensions
+Message-Id: <1358959071-2873-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1301241708360.7826@axis700.grange> <20130125041206.GK13691@verge.net.au>
-In-Reply-To: <20130125041206.GK13691@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On 01/24/2013 10:12 PM, Simon Horman wrote:
-> On Thu, Jan 24, 2013 at 05:09:45PM +0100, Guennadi Liakhovetski wrote:
->> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> 
-> I'm curious to know who would ack and or pick-up this patch.
+This is v3 of the patch series [1], addressing minor issues in 3 out of 8 
+patches.
 
-I have applied it. You would know if get_maintainers.pl had been used.
+[1] http://thread.gmane.org/gmane.linux.ports.sh.devel/18729
 
-Rob
+Guennadi Liakhovetski (8):
+  pinctrl: add SDHI and MMCIF pin groups to r8a7740
+  pinctrl: add SDHI and MMCIF pin groups to sh7372
+  ARM: shmobile: simplify armadillo800eva and kzm9g Kconfig
+    dependencies
+  ARM: shmobile: add MMCIF and SDHI DT clock aliases to sh73a0 and
+    r8a7740
+  ARM: shmobile: add a GPIO controller DT node for sh7372
+  ARM: shmobile: use GPIO SD-card detection on armadillo800eva
+  ARM: shmobile: completely switch MMC interfaces on mackerel-reference
+    to DT
+  ARM: shmobile: completely switch MMC interfaces on
+    armadillo800eva-reference to DT
 
-> 
->> ---
->>  .../devicetree/bindings/vendor-prefixes.txt        |    2 ++
->>  1 files changed, 2 insertions(+), 0 deletions(-)
->>
->> diff --git a/Documentation/devicetree/bindings/vendor-prefixes.txt b/Documentation/devicetree/bindings/vendor-prefixes.txt
->> index 902b1b1..5d811b2 100644
->> --- a/Documentation/devicetree/bindings/vendor-prefixes.txt
->> +++ b/Documentation/devicetree/bindings/vendor-prefixes.txt
->> @@ -42,6 +42,7 @@ powervr	PowerVR (deprecated, use img)
->>  qcom	Qualcomm, Inc.
->>  ramtron	Ramtron International
->>  realtek Realtek Semiconductor Corp.
->> +renesas	Renesas Electronics Corporation
->>  samsung	Samsung Semiconductor
->>  sbs	Smart Battery System
->>  schindler	Schindler
->> @@ -52,6 +53,7 @@ snps 	Synopsys, Inc.
->>  st	STMicroelectronics
->>  stericsson	ST-Ericsson
->>  ti	Texas Instruments
->> +toshiba	Toshiba Corporation
->>  via	VIA Technologies, Inc.
->>  wlf	Wolfson Microelectronics
->>  wm	Wondermedia Technologies, Inc.
->> -- 
->> 1.7.2.5
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
-> _______________________________________________
-> devicetree-discuss mailing list
-> devicetree-discuss@lists.ozlabs.org
-> https://lists.ozlabs.org/listinfo/devicetree-discuss
-> 
+ .../boot/dts/r8a7740-armadillo800eva-reference.dts |  107 +++++++++
+ arch/arm/boot/dts/sh7372-mackerel-reference.dts    |   42 +++-
+ arch/arm/boot/dts/sh7372.dtsi                      |    8 +
+ arch/arm/mach-shmobile/Kconfig                     |   12 +-
+ .../board-armadillo800eva-reference.c              |    5 +-
+ arch/arm/mach-shmobile/board-armadillo800eva.c     |   10 +-
+ arch/arm/mach-shmobile/board-mackerel-reference.c  |   46 ----
+ arch/arm/mach-shmobile/clock-r8a7740.c             |    4 +
+ arch/arm/mach-shmobile/clock-sh73a0.c              |    3 +
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c               |  248 ++++++++++++++++++++
+ drivers/pinctrl/sh-pfc/pfc-sh7372.c                |  205 ++++++++++++++++
+ 11 files changed, 626 insertions(+), 64 deletions(-)
 
+-- 
+1.7.2.5
+
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
