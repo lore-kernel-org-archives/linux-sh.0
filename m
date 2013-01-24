@@ -1,35 +1,91 @@
-From: Joerg Roedel <joro@8bytes.org>
-Date: Thu, 10 Jan 2013 18:32:37 +0000
-Subject: Re: [PATCH v5 1/4] iommu/shmobile: Add iommu driver for Renesas IPMMU modules
-Message-Id: <20130110183236.GG25591@8bytes.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 24 Jan 2013 16:07:32 +0000
+Subject: [PATCH/RFC 2/3] ethernet: add a PHY reset GPIO DT binding to sh_eth
+Message-Id: <1359043653-11374-3-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1356434355-3279-1-git-send-email-hdk@igel.co.jp>
- <1356434355-3279-2-git-send-email-hdk@igel.co.jp>
- <1586668.MmWlG9A4gq@avalon>
-In-Reply-To: <1586668.MmWlG9A4gq@avalon>
+References: <1359043653-11374-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1359043653-11374-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+If an ethernet PHY can be reset by a GPIO, it can be specified in DT. Add
+a binding and code to parse it, request the GPIO and take the PHY out of
+reset.
 
-On Mon, Jan 07, 2013 at 07:11:58PM +0100, Laurent Pinchart wrote:
-> > +		l2index = (iova >> 12) & 0xff;
-> > +		spin_lock(&sh_domain->map_lock);
-> > +		ret = l2alloc(sh_domain, l1index);
-> 
-> l2alloc calls dma_pool_alloc(GFP_KERNEL), that not safe in a non-sleepable 
-> context. Do we need a spinlock here, or could a mutex do ?
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: devicetree-discuss@lists.ozlabs.org
+Cc: netdev@vger.kernel.org
+---
+ Documentation/devicetree/bindings/net/sh_ether.txt |    2 ++
+ drivers/net/ethernet/renesas/sh_eth.c              |    9 ++++++++-
+ 2 files changed, 10 insertions(+), 1 deletions(-)
 
-iommu_map should work in any context, so a mutex will not work. Also the
-memory allocations in that path should be GFP_ATOMIC instead of
-GFP_KERNEL.
-
-Other than that this driver looks good from an IOMMU-API perspective.
-Please Cc me on future versions of this patch-set directly.
-
-Thanks,
-
-	Joerg
+diff --git a/Documentation/devicetree/bindings/net/sh_ether.txt b/Documentation/devicetree/bindings/net/sh_ether.txt
+index c11e45d..edaf683 100644
+--- a/Documentation/devicetree/bindings/net/sh_ether.txt
++++ b/Documentation/devicetree/bindings/net/sh_ether.txt
+@@ -12,6 +12,7 @@ Required properties:
+ - interrupts:                   Interrupt mapping for the sh_eth interrupt
+                                 sources (vector id).
+ - phy-mode:              String, operation mode of the PHY interface.
++- phy-reset-gpios:              PHY reset GPIO tuple
+ - sh-eth,edmac-endian:          String, endian of sh_eth dmac.
+ - sh-eth,register-type:         String, register type of sh_eth.
+                                 Please select "gigabit", "fast-sh4" or
+@@ -37,6 +38,7 @@ Example (armadillo800eva):
+ 		reg = <0xe9a00000 0x800>, <0xe9a01800 0x800>;
+ 		interrupts = <0x500>;
+ 		phy-mode = "mii";
++		phy-reset-gpios = <&gpio 18 0>;
+ 		sh-eth,edmac-endian = "little";
+ 		sh-eth,register-type = "gigabit";
+ 		sh-eth,phy-id = <0>;
+diff --git a/drivers/net/ethernet/renesas/sh_eth.c b/drivers/net/ethernet/renesas/sh_eth.c
+index 1f64848..06035a2 100644
+--- a/drivers/net/ethernet/renesas/sh_eth.c
++++ b/drivers/net/ethernet/renesas/sh_eth.c
+@@ -20,6 +20,7 @@
+  *  the file called "COPYING".
+  */
+ 
++#include <linux/gpio.h>
+ #include <linux/init.h>
+ #include <linux/module.h>
+ #include <linux/kernel.h>
+@@ -33,6 +34,7 @@
+ #include <linux/netdevice.h>
+ #include <linux/of.h>
+ #include <linux/of_device.h>
++#include <linux/of_gpio.h>
+ #include <linux/of_platform.h>
+ #include <linux/of_address.h>
+ #include <linux/of_irq.h>
+@@ -2376,10 +2378,11 @@ sh_eth_of_get_register_type(struct device_node *np)
+ static struct sh_eth_plat_data *
+ sh_eth_parse_dt(struct device *dev, struct net_device *ndev)
+ {
+-	int ret;
++	int ret, gpio;
+ 	const char *of_str;
+ 	struct device_node *np = dev->of_node;
+ 	struct sh_eth_plat_data *pdata;
++	enum of_gpio_flags flags;
+ 
+ 	pdata = devm_kzalloc(dev, sizeof(struct sh_eth_plat_data),
+ 					GFP_KERNEL);
+@@ -2420,6 +2423,10 @@ sh_eth_parse_dt(struct device *dev, struct net_device *ndev)
+ 	else
+ 		pdata->needs_init = 0;
+ 
++	gpio = of_get_named_gpio_flags(np, "phy-reset-gpios", 0, &flags);
++	if (gpio_is_valid(gpio) && !devm_gpio_request(dev, gpio, NULL))
++		gpio_direction_output(gpio, !!(flags & OF_GPIO_ACTIVE_LOW));
++
+ #ifdef CONFIG_OF_NET
+ 	if (!is_valid_ether_addr(ndev->dev_addr)) {
+ 		const char *macaddr = of_get_mac_address(np);
+-- 
+1.7.2.5
 
