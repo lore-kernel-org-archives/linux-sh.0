@@ -1,42 +1,93 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 25 Jan 2013 02:24:55 +0000
-Subject: [PATCH 79/80] sh-pfc: Remove pinmux_info definition
-Message-Id: <1359080696-31489-80-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 24 Jan 2013 12:16:29 +0000
+Subject: [PATCH v2 2/8] ARM: shmobile: ap4evb: Use gpio_request_one()
+Message-Id: <1359029795-7871-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-The pinmux_info alias to sh_pfc_soc_info isn't needed anymore, remove
-it.
+Replace occurences of gpio_request() and gpio_direction_*() by calls to
+gpio_request_one().
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Paul Mundt <lethal@linux-sh.org>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- include/linux/sh_pfc.h |    3 ---
- 1 file changed, 3 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c | 33 +++++++++------------------------
+ 1 file changed, 9 insertions(+), 24 deletions(-)
 
-diff --git a/include/linux/sh_pfc.h b/include/linux/sh_pfc.h
-index 9fd6228..13049c4 100644
---- a/include/linux/sh_pfc.h
-+++ b/include/linux/sh_pfc.h
-@@ -114,9 +114,6 @@ struct sh_pfc_soc_info {
- 	unsigned long unlock_reg;
- };
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 99ef190..d31879d 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -1042,9 +1042,7 @@ static int ts_get_pendown_state(void)
  
--/* XXX compat for now */
--#define pinmux_info sh_pfc_soc_info
+ 	gpio_free(GPIO_TSC_IRQ);
+ 
+-	gpio_request(GPIO_TSC_PORT, NULL);
 -
- enum { GPIO_CFG_DRYRUN, GPIO_CFG_REQ, GPIO_CFG_FREE };
+-	gpio_direction_input(GPIO_TSC_PORT);
++	gpio_request_one(GPIO_TSC_PORT, GPIOF_IN, NULL);
  
- /* helper macro for port */
+ 	val = gpio_get_value(GPIO_TSC_PORT);
+ 
+@@ -1125,18 +1123,10 @@ static void __init ap4evb_init(void)
+ 	gpio_request(GPIO_FN_IRQ6_39,	NULL);
+ 
+ 	/* enable Debug switch (S6) */
+-	gpio_request(GPIO_PORT32, NULL);
+-	gpio_request(GPIO_PORT33, NULL);
+-	gpio_request(GPIO_PORT34, NULL);
+-	gpio_request(GPIO_PORT35, NULL);
+-	gpio_direction_input(GPIO_PORT32);
+-	gpio_direction_input(GPIO_PORT33);
+-	gpio_direction_input(GPIO_PORT34);
+-	gpio_direction_input(GPIO_PORT35);
+-	gpio_export(GPIO_PORT32, 0);
+-	gpio_export(GPIO_PORT33, 0);
+-	gpio_export(GPIO_PORT34, 0);
+-	gpio_export(GPIO_PORT35, 0);
++	gpio_request_one(GPIO_PORT32, GPIOF_IN | GPIOF_EXPORT, NULL);
++	gpio_request_one(GPIO_PORT33, GPIOF_IN | GPIOF_EXPORT, NULL);
++	gpio_request_one(GPIO_PORT34, GPIOF_IN | GPIOF_EXPORT, NULL);
++	gpio_request_one(GPIO_PORT35, GPIOF_IN | GPIOF_EXPORT, NULL);
+ 
+ 	/* SDHI0 */
+ 	gpio_request(GPIO_FN_SDHICD0, NULL);
+@@ -1184,8 +1174,7 @@ static void __init ap4evb_init(void)
+ 	gpio_request(GPIO_FN_FSIAILR,	NULL);
+ 	gpio_request(GPIO_FN_FSIAISLD,	NULL);
+ 	gpio_request(GPIO_FN_FSIAOSLD,	NULL);
+-	gpio_request(GPIO_PORT161,	NULL);
+-	gpio_direction_output(GPIO_PORT161, 0); /* slave */
++	gpio_request_one(GPIO_PORT161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
+ 
+ 	gpio_request(GPIO_PORT9, NULL);
+ 	gpio_request(GPIO_PORT10, NULL);
+@@ -1193,8 +1182,7 @@ static void __init ap4evb_init(void)
+ 	gpio_direction_none(GPIO_PORT10CR); /* FSIAOLR needs no direction */
+ 
+ 	/* card detect pin for MMC slot (CN7) */
+-	gpio_request(GPIO_PORT41, NULL);
+-	gpio_direction_input(GPIO_PORT41);
++	gpio_request_one(GPIO_PORT41, GPIOF_IN, NULL);
+ 
+ 	/* setup FSI2 port B (HDMI) */
+ 	gpio_request(GPIO_FN_FSIBCK, NULL);
+@@ -1282,11 +1270,8 @@ static void __init ap4evb_init(void)
+ 	gpio_request(GPIO_FN_LCDDISP,  NULL);
+ 	gpio_request(GPIO_FN_LCDDCK,   NULL);
+ 
+-	gpio_request(GPIO_PORT189, NULL); /* backlight */
+-	gpio_direction_output(GPIO_PORT189, 1);
+-
+-	gpio_request(GPIO_PORT151, NULL); /* LCDDON */
+-	gpio_direction_output(GPIO_PORT151, 1);
++	gpio_request_one(GPIO_PORT189, GPIOF_OUT_INIT_HIGH, NULL); /* backlight */
++	gpio_request_one(GPIO_PORT151, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
+ 
+ 	lcdc_info.clock_source			= LCDC_CLK_BUS;
+ 	lcdc_info.ch[0].interface_type		= RGB18;
 -- 
-1.7.10.4
+1.7.12.4
 
