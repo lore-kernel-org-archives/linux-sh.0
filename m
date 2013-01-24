@@ -1,84 +1,48 @@
-From: Hideki EIRAKU <hdk@igel.co.jp>
-Date: Mon, 21 Jan 2013 10:54:29 +0000
-Subject: [PATCH v6 4/4] ARM: mach-shmobile: r8a7740: Add IPMMU device
-Message-Id: <1358765669-14567-5-git-send-email-hdk@igel.co.jp>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 24 Jan 2013 12:16:33 +0000
+Subject: [PATCH v2 6/8] ARM: shmobile: kota2: Use gpio_request_one()
+Message-Id: <1359029795-7871-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358765669-14567-1-git-send-email-hdk@igel.co.jp>
-In-Reply-To: <1358765669-14567-1-git-send-email-hdk@igel.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This patch adds an IPMMU device and notifies the IPMMU driver which
-devices are connected via the IPMMU module.  All devices connected to the main
-memory bus via the IPMMU module MUST be registered when SHMOBILE_IPMMU and
-SHMOBILE_IOMMU are enabled because physical address cannot be used
-while the IPMMU module's MMU function is enabled.
+Replace occurences of gpio_request() and gpio_direction_*() by calls to
+gpio_request_one().
 
-Signed-off-by: Hideki EIRAKU <hdk@igel.co.jp>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-r8a7740.c | 33 +++++++++++++++++++++++++++++++++
- 1 file changed, 33 insertions(+)
+ arch/arm/mach-shmobile/board-kota2.c | 9 +++------
+ 1 file changed, 3 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 0952224..b85bea5 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -28,6 +28,7 @@
- #include <linux/sh_dma.h>
- #include <linux/sh_timer.h>
- #include <linux/dma-mapping.h>
-+#include <linux/platform_data/sh_ipmmu.h>
- #include <mach/dma-register.h>
- #include <mach/r8a7740.h>
- #include <mach/pm-rmobile.h>
-@@ -262,6 +263,37 @@ static struct platform_device cmt10_device = {
- 	.num_resources	= ARRAY_SIZE(cmt10_resources),
- };
+diff --git a/arch/arm/mach-shmobile/board-kota2.c b/arch/arm/mach-shmobile/board-kota2.c
+index bf88f9a..7ec3112 100644
+--- a/arch/arm/mach-shmobile/board-kota2.c
++++ b/arch/arm/mach-shmobile/board-kota2.c
+@@ -474,10 +474,8 @@ static void __init kota2_init(void)
+ 	gpio_request(GPIO_FN_D15_NAF15, NULL);
+ 	gpio_request(GPIO_FN_CS5A_, NULL);
+ 	gpio_request(GPIO_FN_WE0__FWE, NULL);
+-	gpio_request(GPIO_PORT144, NULL); /* PINTA2 */
+-	gpio_direction_input(GPIO_PORT144);
+-	gpio_request(GPIO_PORT145, NULL); /* RESET */
+-	gpio_direction_output(GPIO_PORT145, 1);
++	gpio_request_one(GPIO_PORT144, GPIOF_IN, NULL); /* PINTA2 */
++	gpio_request_one(GPIO_PORT145, GPIOF_OUT_INIT_HIGH, NULL); /* RESET */
  
-+/* IPMMUI (an IPMMU module for ICB/LMB) */
-+static struct resource ipmmu_resources[] = {
-+	[0] = {
-+		.name	= "IPMMUI",
-+		.start	= 0xfe951000,
-+		.end	= 0xfe9510ff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+};
-+
-+static const char * const ipmmu_dev_names[] = {
-+	"sh_mobile_lcdc_fb.0",
-+	"sh_mobile_lcdc_fb.1",
-+	"sh_mobile_ceu.0",
-+};
-+
-+static struct shmobile_ipmmu_platform_data ipmmu_platform_data = {
-+	.dev_names = ipmmu_dev_names,
-+	.num_dev_names = ARRAY_SIZE(ipmmu_dev_names),
-+};
-+
-+static struct platform_device ipmmu_device = {
-+	.name           = "ipmmu",
-+	.id             = -1,
-+	.dev = {
-+		.platform_data = &ipmmu_platform_data,
-+	},
-+	.resource       = ipmmu_resources,
-+	.num_resources  = ARRAY_SIZE(ipmmu_resources),
-+};
-+
- static struct platform_device *r8a7740_early_devices[] __initdata = {
- 	&scif0_device,
- 	&scif1_device,
-@@ -273,6 +305,7 @@ static struct platform_device *r8a7740_early_devices[] __initdata = {
- 	&scif7_device,
- 	&scifb_device,
- 	&cmt10_device,
-+	&ipmmu_device,
- };
+ 	/* KEYSC */
+ 	gpio_request(GPIO_FN_KEYIN0_PU, NULL);
+@@ -509,8 +507,7 @@ static void __init kota2_init(void)
+ 	gpio_request(GPIO_FN_MMCD0_6, NULL);
+ 	gpio_request(GPIO_FN_MMCD0_7, NULL);
+ 	gpio_request(GPIO_FN_MMCCMD0, NULL);
+-	gpio_request(GPIO_PORT208, NULL); /* Reset */
+-	gpio_direction_output(GPIO_PORT208, 1);
++	gpio_request_one(GPIO_PORT208, GPIOF_OUT_INIT_HIGH, NULL); /* Reset */
  
- /* DMA */
+ 	/* SDHI0 (microSD) */
+ 	gpio_request(GPIO_FN_SDHICD0_PU, NULL);
 -- 
-1.8.0
+1.7.12.4
 
