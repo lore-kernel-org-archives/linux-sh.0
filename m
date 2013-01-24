@@ -1,25 +1,70 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 09 Jan 2013 01:51:12 +0000
-Subject: Re: [PATCH 2/2] ARM: shmobile: add a reference DT implementation for mackerel
-Message-Id: <20130109015112.GA6496@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 24 Jan 2013 12:16:35 +0000
+Subject: [PATCH v2 8/8] ARM: shmobile: mackerel: Use gpio_request_one()
+Message-Id: <1359029795-7871-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1212311213510.24596@axis700.grange>
- <Pine.LNX.4.64.1212311214370.24596@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1212311214370.24596@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Mon, Dec 31, 2012 at 12:23:54PM +0100, Guennadi Liakhovetski wrote:
-> Add a DT-only mackerel implementation. So far it only contains a limited
-> set of devices, already implementing DT support. As more drivers are
-> extended with DT initialisation option, respective devices shall be added
-> to sh7372-mackerel-reference.dts.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Replace occurences of gpio_request() and gpio_direction_*() by calls to
+gpio_request_one().
 
-Hi Guennadi,
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/board-mackerel.c | 16 ++++++----------
+ 1 file changed, 6 insertions(+), 10 deletions(-)
 
-thanks. This looks good to me.
-I will apply it once I have applied the INTC and pinmux changes.
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 2fed62f..e79fc05 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1408,11 +1408,10 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_LCDDISP,  NULL);
+ 	gpio_request(GPIO_FN_LCDDCK,   NULL);
+ 
+-	gpio_request(GPIO_PORT31, NULL); /* backlight */
+-	gpio_direction_output(GPIO_PORT31, 0); /* off by default */
++	/* backlight, off by default */
++	gpio_request_one(GPIO_PORT31, GPIOF_OUT_INIT_LOW, NULL);
+ 
+-	gpio_request(GPIO_PORT151, NULL); /* LCDDON */
+-	gpio_direction_output(GPIO_PORT151, 1);
++	gpio_request_one(GPIO_PORT151, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
+ 
+ 	/* USBHS0 */
+ 	gpio_request(GPIO_FN_VBUS0_0, NULL);
+@@ -1428,8 +1427,7 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_FSIAILR,	NULL);
+ 	gpio_request(GPIO_FN_FSIAISLD,	NULL);
+ 	gpio_request(GPIO_FN_FSIAOSLD,	NULL);
+-	gpio_request(GPIO_PORT161,	NULL);
+-	gpio_direction_output(GPIO_PORT161, 0); /* slave */
++	gpio_request_one(GPIO_PORT161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
+ 
+ 	gpio_request(GPIO_PORT9,  NULL);
+ 	gpio_request(GPIO_PORT10, NULL);
+@@ -1483,8 +1481,7 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_SDHID1_0, NULL);
+ #endif
+ 	/* card detect pin for MMC slot (CN7) */
+-	gpio_request(GPIO_PORT41, NULL);
+-	gpio_direction_input(GPIO_PORT41);
++	gpio_request_one(GPIO_PORT41, GPIOF_IN, NULL);
+ 
+ 	/* enable SDHI2 */
+ 	gpio_request(GPIO_FN_SDHICMD2, NULL);
+@@ -1495,8 +1492,7 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_SDHID2_0, NULL);
+ 
+ 	/* card detect pin for microSD slot (CN23) */
+-	gpio_request(GPIO_PORT162, NULL);
+-	gpio_direction_input(GPIO_PORT162);
++	gpio_request_one(GPIO_PORT162, GPIOF_IN, NULL);
+ 
+ 	/* MMCIF */
+ 	gpio_request(GPIO_FN_MMCD0_0, NULL);
+-- 
+1.7.12.4
+
