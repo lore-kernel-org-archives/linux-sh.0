@@ -1,89 +1,73 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 09 Jan 2013 06:30:06 +0000
-Subject: [PATCH 7/8] ARM: shmobile: sh7372: Do not initialise TMU when using DT
-Message-Id: <1357713007-4005-8-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 24 Jan 2013 12:16:34 +0000
+Subject: [PATCH v2 7/8] ARM: shmobile: kzm9g: Use gpio_request_one()
+Message-Id: <1359029795-7871-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1357713007-4005-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1357713007-4005-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This is in preparation for initialising INTC using DT.
-The proposed INTC configuration is not complete and does
-not allow the TMU to be initialised, to exclude it when using DT.
+Replace occurences of gpio_request() and gpio_direction_*() by calls to
+gpio_request_one().
 
-Cc: Magnus Damm <damm@opensource.se>
-Cc: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-sh7372.c |   17 ++++++++++++-----
- 1 file changed, 12 insertions(+), 5 deletions(-)
+ arch/arm/mach-shmobile/board-kzm9g.c | 18 ++++++------------
+ 1 file changed, 6 insertions(+), 12 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh7372.c b/arch/arm/mach-shmobile/setup-sh7372.c
-index 42f1945..7dbed95 100644
---- a/arch/arm/mach-shmobile/setup-sh7372.c
-+++ b/arch/arm/mach-shmobile/setup-sh7372.c
-@@ -1008,7 +1008,7 @@ static struct platform_device spu1_device = {
- 	.num_resources	= ARRAY_SIZE(spu1_resources),
- };
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index c02448d..54e82d8 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -672,8 +672,7 @@ static void __init kzm_init(void)
+ 	gpio_request(GPIO_FN_CS4_, NULL); /* CS4 */
  
--static struct platform_device *sh7372_early_devices[] __initdata = {
-+static struct platform_device *sh7372_early_devices_dt[] __initdata = {
- 	&scif0_device,
- 	&scif1_device,
- 	&scif2_device,
-@@ -1017,6 +1017,9 @@ static struct platform_device *sh7372_early_devices[] __initdata = {
- 	&scif5_device,
- 	&scif6_device,
- 	&cmt2_device,
-+};
-+
-+static struct platform_device *sh7372_early_devices[] __initdata = {
- 	&tmu00_device,
- 	&tmu01_device,
- };
-@@ -1070,6 +1073,8 @@ void __init sh7372_add_standard_devices(void)
+ 	/* SMSC */
+-	gpio_request(GPIO_PORT224, NULL); /* IRQ3 */
+-	gpio_direction_input(GPIO_PORT224);
++	gpio_request_one(GPIO_PORT224, GPIOF_IN, NULL); /* IRQ3 */
  
- 	sh7372_init_pm_domains();
+ 	/* LCDC */
+ 	gpio_request(GPIO_FN_LCDD23,	NULL);
+@@ -703,14 +702,11 @@ static void __init kzm_init(void)
+ 	gpio_request(GPIO_FN_LCDDISP,	NULL);
+ 	gpio_request(GPIO_FN_LCDDCK,	NULL);
  
-+	platform_add_devices(sh7372_early_devices_dt,
-+			    ARRAY_SIZE(sh7372_early_devices_dt));
- 	platform_add_devices(sh7372_early_devices,
- 			    ARRAY_SIZE(sh7372_early_devices));
+-	gpio_request(GPIO_PORT222,	NULL); /* LCDCDON */
+-	gpio_request(GPIO_PORT226,	NULL); /* SC */
+-	gpio_direction_output(GPIO_PORT222, 1);
+-	gpio_direction_output(GPIO_PORT226, 1);
++	gpio_request_one(GPIO_PORT222, GPIOF_OUT_INIT_HIGH, NULL); /* LCDCDON */
++	gpio_request_one(GPIO_PORT226, GPIOF_OUT_INIT_HIGH, NULL); /* SC */
  
-@@ -1088,6 +1093,8 @@ static void __init sh7372_earlytimer_init(void)
+ 	/* Touchscreen */
+-	gpio_request(GPIO_PORT223, NULL); /* IRQ8 */
+-	gpio_direction_input(GPIO_PORT223);
++	gpio_request_one(GPIO_PORT223, GPIOF_IN, NULL); /* IRQ8 */
  
- void __init sh7372_add_early_devices(void)
- {
-+	early_platform_add_devices(sh7372_early_devices_dt,
-+				   ARRAY_SIZE(sh7372_early_devices_dt));
- 	early_platform_add_devices(sh7372_early_devices,
- 				   ARRAY_SIZE(sh7372_early_devices));
+ 	/* enable MMCIF */
+ 	gpio_request(GPIO_FN_MMCCLK0,		NULL);
+@@ -734,8 +730,7 @@ static void __init kzm_init(void)
+ 	gpio_request(GPIO_FN_SDHID0_1,		NULL);
+ 	gpio_request(GPIO_FN_SDHID0_0,		NULL);
+ 	gpio_request(GPIO_FN_SDHI0_VCCQ_MC0_ON,	NULL);
+-	gpio_request(GPIO_PORT15, NULL);
+-	gpio_direction_output(GPIO_PORT15, 1); /* power */
++	gpio_request_one(GPIO_PORT15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
  
-@@ -1104,8 +1111,8 @@ void __init sh7372_add_early_devices_dt(void)
- {
- 	shmobile_setup_delay(800, 1, 3); /* Cortex-A8 @ 800MHz */
+ 	/* enable Micro SD */
+ 	gpio_request(GPIO_FN_SDHID2_0,		NULL);
+@@ -744,8 +739,7 @@ static void __init kzm_init(void)
+ 	gpio_request(GPIO_FN_SDHID2_3,		NULL);
+ 	gpio_request(GPIO_FN_SDHICMD2,		NULL);
+ 	gpio_request(GPIO_FN_SDHICLK2,		NULL);
+-	gpio_request(GPIO_PORT14, NULL);
+-	gpio_direction_output(GPIO_PORT14, 1); /* power */
++	gpio_request_one(GPIO_PORT14, GPIOF_OUT_INIT_HIGH, NULL); /* power */
  
--	early_platform_add_devices(sh7372_early_devices,
--				   ARRAY_SIZE(sh7372_early_devices));
-+	early_platform_add_devices(sh7372_early_devices_dt,
-+				   ARRAY_SIZE(sh7372_early_devices_dt));
- 
- 	/* setup early console here as well */
- 	shmobile_setup_console();
-@@ -1120,8 +1127,8 @@ void __init sh7372_add_standard_devices_dt(void)
- 	/* clocks are setup late during boot in the case of DT */
- 	sh7372_clock_init();
- 
--	platform_add_devices(sh7372_early_devices,
--			    ARRAY_SIZE(sh7372_early_devices));
-+	platform_add_devices(sh7372_early_devices_dt,
-+			    ARRAY_SIZE(sh7372_early_devices_dt));
- 
- 	of_platform_populate(NULL, of_default_bus_match_table,
- 			     sh7372_auxdata_lookup, NULL);
+ 	/* I2C 3 */
+ 	gpio_request(GPIO_FN_PORT27_I2C_SCL3, NULL);
 -- 
-1.7.10.4
+1.7.12.4
 
