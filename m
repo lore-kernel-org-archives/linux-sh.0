@@ -1,7 +1,7 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 24 Jan 2013 12:16:29 +0000
-Subject: [PATCH v2 2/8] ARM: shmobile: ap4evb: Use gpio_request_one()
-Message-Id: <1359029795-7871-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 24 Jan 2013 12:16:28 +0000
+Subject: [PATCH v2 1/8] ARM: shmobile: ag5evm: Use gpio_request_one()
+Message-Id: <1359029795-7871-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -13,81 +13,64 @@ gpio_request_one().
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c | 33 +++++++++------------------------
- 1 file changed, 9 insertions(+), 24 deletions(-)
+ arch/arm/mach-shmobile/board-ag5evm.c | 22 ++++++++--------------
+ 1 file changed, 8 insertions(+), 14 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 99ef190..d31879d 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -1042,9 +1042,7 @@ static int ts_get_pendown_state(void)
+diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
+index 032d108..5e7fe15 100644
+--- a/arch/arm/mach-shmobile/board-ag5evm.c
++++ b/arch/arm/mach-shmobile/board-ag5evm.c
+@@ -479,11 +479,10 @@ static void ag5evm_sdhi1_set_pwr(struct platform_device *pdev, int state)
+ 	static int power_gpio = -EINVAL;
  
- 	gpio_free(GPIO_TSC_IRQ);
+ 	if (power_gpio < 0) {
+-		int ret = gpio_request(GPIO_PORT114, "sdhi1_power");
+-		if (!ret) {
++		int ret = gpio_request_one(GPIO_PORT114, GPIOF_OUT_INIT_LOW,
++					   "sdhi1_power");
++		if (!ret)
+ 			power_gpio = GPIO_PORT114;
+-			gpio_direction_output(power_gpio, 0);
+-		}
+ 	}
  
--	gpio_request(GPIO_TSC_PORT, NULL);
--
--	gpio_direction_input(GPIO_TSC_PORT);
-+	gpio_request_one(GPIO_TSC_PORT, GPIOF_IN, NULL);
+ 	/*
+@@ -604,14 +603,11 @@ static void __init ag5evm_init(void)
+ 	gpio_request(GPIO_FN_MMCD0_5_PU, NULL);
+ 	gpio_request(GPIO_FN_MMCD0_6_PU, NULL);
+ 	gpio_request(GPIO_FN_MMCD0_7_PU, NULL);
+-	gpio_request(GPIO_PORT208, NULL); /* Reset */
+-	gpio_direction_output(GPIO_PORT208, 1);
++	gpio_request_one(GPIO_PORT208, GPIOF_OUT_INIT_HIGH, NULL); /* Reset */
  
- 	val = gpio_get_value(GPIO_TSC_PORT);
+ 	/* enable SMSC911X */
+-	gpio_request(GPIO_PORT144, NULL); /* PINTA2 */
+-	gpio_direction_input(GPIO_PORT144);
+-	gpio_request(GPIO_PORT145, NULL); /* RESET */
+-	gpio_direction_output(GPIO_PORT145, 1);
++	gpio_request_one(GPIO_PORT144, GPIOF_IN, NULL); /* PINTA2 */
++	gpio_request_one(GPIO_PORT145, GPIOF_OUT_INIT_HIGH, NULL); /* RESET */
  
-@@ -1125,18 +1123,10 @@ static void __init ap4evb_init(void)
- 	gpio_request(GPIO_FN_IRQ6_39,	NULL);
+ 	/* FSI A */
+ 	gpio_request(GPIO_FN_FSIACK, NULL);
+@@ -626,15 +622,13 @@ static void __init ag5evm_init(void)
+ 	gpio_request(GPIO_FN_PORT243_IRDA_FIRSEL, NULL);
  
- 	/* enable Debug switch (S6) */
--	gpio_request(GPIO_PORT32, NULL);
--	gpio_request(GPIO_PORT33, NULL);
--	gpio_request(GPIO_PORT34, NULL);
--	gpio_request(GPIO_PORT35, NULL);
--	gpio_direction_input(GPIO_PORT32);
--	gpio_direction_input(GPIO_PORT33);
--	gpio_direction_input(GPIO_PORT34);
--	gpio_direction_input(GPIO_PORT35);
--	gpio_export(GPIO_PORT32, 0);
--	gpio_export(GPIO_PORT33, 0);
--	gpio_export(GPIO_PORT34, 0);
--	gpio_export(GPIO_PORT35, 0);
-+	gpio_request_one(GPIO_PORT32, GPIOF_IN | GPIOF_EXPORT, NULL);
-+	gpio_request_one(GPIO_PORT33, GPIOF_IN | GPIOF_EXPORT, NULL);
-+	gpio_request_one(GPIO_PORT34, GPIOF_IN | GPIOF_EXPORT, NULL);
-+	gpio_request_one(GPIO_PORT35, GPIOF_IN | GPIOF_EXPORT, NULL);
+ 	/* LCD panel */
+-	gpio_request(GPIO_PORT217, NULL); /* RESET */
+-	gpio_direction_output(GPIO_PORT217, 0);
++	gpio_request_one(GPIO_PORT217, GPIOF_OUT_INIT_LOW, NULL); /* RESET */
+ 	mdelay(1);
+ 	gpio_set_value(GPIO_PORT217, 1);
+ 	mdelay(100);
  
- 	/* SDHI0 */
- 	gpio_request(GPIO_FN_SDHICD0, NULL);
-@@ -1184,8 +1174,7 @@ static void __init ap4evb_init(void)
- 	gpio_request(GPIO_FN_FSIAILR,	NULL);
- 	gpio_request(GPIO_FN_FSIAISLD,	NULL);
- 	gpio_request(GPIO_FN_FSIAOSLD,	NULL);
--	gpio_request(GPIO_PORT161,	NULL);
--	gpio_direction_output(GPIO_PORT161, 0); /* slave */
-+	gpio_request_one(GPIO_PORT161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
+ 	/* LCD backlight controller */
+-	gpio_request(GPIO_PORT235, NULL); /* RESET */
+-	gpio_direction_output(GPIO_PORT235, 0);
++	gpio_request_one(GPIO_PORT235, GPIOF_OUT_INIT_LOW, NULL); /* RESET */
+ 	lcd_backlight_set_brightness(0);
  
- 	gpio_request(GPIO_PORT9, NULL);
- 	gpio_request(GPIO_PORT10, NULL);
-@@ -1193,8 +1182,7 @@ static void __init ap4evb_init(void)
- 	gpio_direction_none(GPIO_PORT10CR); /* FSIAOLR needs no direction */
- 
- 	/* card detect pin for MMC slot (CN7) */
--	gpio_request(GPIO_PORT41, NULL);
--	gpio_direction_input(GPIO_PORT41);
-+	gpio_request_one(GPIO_PORT41, GPIOF_IN, NULL);
- 
- 	/* setup FSI2 port B (HDMI) */
- 	gpio_request(GPIO_FN_FSIBCK, NULL);
-@@ -1282,11 +1270,8 @@ static void __init ap4evb_init(void)
- 	gpio_request(GPIO_FN_LCDDISP,  NULL);
- 	gpio_request(GPIO_FN_LCDDCK,   NULL);
- 
--	gpio_request(GPIO_PORT189, NULL); /* backlight */
--	gpio_direction_output(GPIO_PORT189, 1);
--
--	gpio_request(GPIO_PORT151, NULL); /* LCDDON */
--	gpio_direction_output(GPIO_PORT151, 1);
-+	gpio_request_one(GPIO_PORT189, GPIOF_OUT_INIT_HIGH, NULL); /* backlight */
-+	gpio_request_one(GPIO_PORT151, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
- 
- 	lcdc_info.clock_source			= LCDC_CLK_BUS;
- 	lcdc_info.ch[0].interface_type		= RGB18;
+ 	/* enable SDHI0 on CN15 [SD I/F] */
 -- 
 1.7.12.4
 
