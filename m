@@ -1,50 +1,50 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Thu, 24 Jan 2013 03:35:23 +0000
-Subject: Re: [GIT PULL] Renesas ARM-based SoC v3.9
-Message-Id: <CAOesGMgegSh4rmdV3d7zMyN=JJXr9i6hQCNCeH49Z=FwWzotNw@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 24 Jan 2013 12:16:27 +0000
+Subject: [PATCH v2 0/8] Use gpio_request_one() in SH Mobile board code
+Message-Id: <1359029795-7871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1357781039-14003-1-git-send-email-horms+renesas@verge.net.au>
- <20130116063750.GA11765@verge.net.au>
- <20130116234310.GA411@quad.lixom.net> <2682612.QaV0caZ3tv@avalon>
- <20130122082123.GA28100@quad.lixom.net>
- <20130122091924.GB11708@linux-sh.org>
-In-Reply-To: <20130122091924.GB11708@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Jan 22, 2013 at 1:19 AM, Paul Mundt <lethal@linux-sh.org> wrote:
-> On Tue, Jan 22, 2013 at 12:21:23AM -0800, Olof Johansson wrote:
->> On Mon, Jan 21, 2013 at 04:31:43PM +0100, Laurent Pinchart wrote:
->> > Sure, we could push 1-6 through the ARM tree, wait until it reaches mainline,
->> > then push 7 through the pinctrl tree, wait until it reaches mainline, push 8
->> > through the SH tree and 9 through the ARM tree, wait until they reach
->> > mainline, and finally push 10 through the pinctrl tree again. We could even
->> > push each branch through the tree it belongs to, but I doubt we'll be able to
->> > push everything during a single merge window.
->>
->> Ah, ok -- you're suggesting bringing it _all_ in through arm-soc. We
->> can do so, I was of the initial impression from Simon's cover letter
->> that the arch/sh branches would also go through the SH tree.
->>
->> This seems to be a particularly hairy conversion, given that it touches two
->> architectures that need to be updated in lockstep. I guess we might be just as
->> well off pulling it in as-is (with below exceptions) to get it in.
->>
->> If you need the same contents in the SH tree due to dependencies and
->> later development, let me know and we can agree on a stable branch that
->> we both pick up in either tree that has all contents.
->>
-> There isn't anything at the moment pending for the SH tree that cares
-> about or conflicts with any of this work, so it's ok with me if this all
-> goes through arm-soc. If there is any fallout we can take care of it
-> later on in the merge window. This would seem to be a saner option than
-> attempting to merge half a dozen branches with dependencies on each other
-> in precise order, which doesn't leave a lot of time for fixing up
-> any residual merge window damage.
+Hello,
 
-Yup, that sounds good. Let's do it that way.
+Here are the second version of the gpio_request_one() patches for all SH Mobile
+board files.
 
+Compared to v1 the patches have been rebased on top of "[PATCH v4 00/81] SH pin
+control and GPIO rework", as the previous base isn't ready for mainline yet.
+The patches are otherwise unchanged.
 
--Olof
+Simon, with the appropriate acks I think this series could go to v3.9. If you
+would like a pull request, on which of your branches should I rebase the
+patches ? I've tried to rebase them on top of your current next branch and they
+apply fine, so picking them up from the mailing list shouldn't be an issue
+either.
+
+Laurent Pinchart (8):
+  ARM: shmobile: ag5evm: Use gpio_request_one()
+  ARM: shmobile: ap4evb: Use gpio_request_one()
+  ARM: shmobile: armadillo800eva: Use gpio_request_one()
+  ARM: shmobile: armadillo800eva: Use gpio_set_value() to set GPIO
+    value
+  ARM: shmobile: bonito: Use gpio_request_one()
+  ARM: shmobile: kota2: Use gpio_request_one()
+  ARM: shmobile: kzm9g: Use gpio_request_one()
+  ARM: shmobile: mackerel: Use gpio_request_one()
+
+ arch/arm/mach-shmobile/board-ag5evm.c          | 22 ++++-------
+ arch/arm/mach-shmobile/board-ap4evb.c          | 33 +++++-----------
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 52 ++++++++++----------------
+ arch/arm/mach-shmobile/board-bonito.c          |  7 ++--
+ arch/arm/mach-shmobile/board-kota2.c           |  9 ++---
+ arch/arm/mach-shmobile/board-kzm9g.c           | 18 +++------
+ arch/arm/mach-shmobile/board-mackerel.c        | 16 +++-----
+ 7 files changed, 54 insertions(+), 103 deletions(-)
+
+-- 
+Regards,
+
+Laurent Pinchart
+
