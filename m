@@ -1,37 +1,85 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 25 Jan 2013 02:17:32 +0000
-Subject: [PATCH 6/7] ARM: shmobile: Include DTSI of r8a7740 to armadillo800eva
-Message-Id: <1359080253-30995-7-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 24 Jan 2013 16:07:33 +0000
+Subject: [PATCH 3/3] ARM: shmobile: move pin configuration on armadillo800eva-reference to DT
+Message-Id: <1359043653-11374-4-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359080253-30995-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359080253-30995-1-git-send-email-horms+renesas@verge.net.au>
+References: <1359043653-11374-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1359043653-11374-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
+Use pinctrl and sh-eth DT bindings to configure sh-eth MAC pins on
+armadillo800eva in reference implementation.
 
-Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-Signed-off-by: Simon Horman <horms@verge.net.au>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/boot/dts/r8a7740-armadillo800eva.dts |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ .../boot/dts/r8a7740-armadillo800eva-reference.dts |    7 +++++
+ .../board-armadillo800eva-reference.c              |   24 --------------------
+ 2 files changed, 7 insertions(+), 24 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-index a7505a9..a8e7bd9 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva.dts
-@@ -9,7 +9,7 @@
-  */
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index 11cb0f9..b815ffd9 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -26,9 +26,12 @@
+ 		reg = <0xe9a00000 0x800>, <0xe9a01800 0x800>;
+ 		interrupts = <0x500>;
+ 		phy-mode = "mii";
++		phy-reset-gpios = <&gpio 18 1>;
+ 		sh-eth,edmac-endian = "little";
+ 		sh-eth,register-type = "gigabit";
+ 		sh-eth,phy-id = <0>;
++		pinctrl-names = "default";
++		pinctrl-0 = <&eth_pins>;
+ 	};
  
- /dts-v1/;
--/include/ "skeleton.dtsi"
-+/include/ "r8a7740.dtsi"
+ 	reg_3p3v: regulator@0 {
+@@ -137,4 +140,8 @@
+ 		renesas,pins = "mmc0_data8_1", "mmc0_ctrl_1";
+ 		renesas,function = "mmc0";
+ 	};
++	eth_pins: pfc_eth_pins {
++		renesas,pins = "eth_base";
++		renesas,function = "eth";
++	};
+ };
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+index 92d7106..54ec573e 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+@@ -152,30 +152,6 @@ static void __init eva_init(void)
+ 	gpio_request(GPIO_FN_SCIFA1_RXD, NULL);
+ 	gpio_request(GPIO_FN_SCIFA1_TXD, NULL);
  
- / {
- 	model = "armadillo 800 eva";
+-	/* GETHER */
+-	gpio_request(GPIO_FN_ET_CRS,		NULL);
+-	gpio_request(GPIO_FN_ET_MDC,		NULL);
+-	gpio_request(GPIO_FN_ET_MDIO,		NULL);
+-	gpio_request(GPIO_FN_ET_TX_ER,		NULL);
+-	gpio_request(GPIO_FN_ET_RX_ER,		NULL);
+-	gpio_request(GPIO_FN_ET_ERXD0,		NULL);
+-	gpio_request(GPIO_FN_ET_ERXD1,		NULL);
+-	gpio_request(GPIO_FN_ET_ERXD2,		NULL);
+-	gpio_request(GPIO_FN_ET_ERXD3,		NULL);
+-	gpio_request(GPIO_FN_ET_TX_CLK,		NULL);
+-	gpio_request(GPIO_FN_ET_TX_EN,		NULL);
+-	gpio_request(GPIO_FN_ET_ETXD0,		NULL);
+-	gpio_request(GPIO_FN_ET_ETXD1,		NULL);
+-	gpio_request(GPIO_FN_ET_ETXD2,		NULL);
+-	gpio_request(GPIO_FN_ET_ETXD3,		NULL);
+-	gpio_request(GPIO_FN_ET_PHY_INT,	NULL);
+-	gpio_request(GPIO_FN_ET_COL,		NULL);
+-	gpio_request(GPIO_FN_ET_RX_DV,		NULL);
+-	gpio_request(GPIO_FN_ET_RX_CLK,		NULL);
+-
+-	gpio_request(GPIO_PORT18, NULL); /* PHY_RST */
+-	gpio_direction_output(GPIO_PORT18, 1);
+-
+ #ifdef CONFIG_CACHE_L2X0
+ 	/* Early BRESP enable, Shared attribute override enable, 32K*8way */
+ 	l2x0_init(IOMEM(0xf0002000), 0x40440000, 0x82000fff);
 -- 
-1.7.10.4
+1.7.2.5
 
