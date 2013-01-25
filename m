@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 25 Jan 2013 02:24:54 +0000
-Subject: [PATCH 78/80] sh: Remove unused sh_pfc_register_info() function
-Message-Id: <1359080696-31489-79-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 25 Jan 2013 02:23:50 +0000
+Subject: [PATCH 14/80] sh-pfc: Use devm_ioremap_nocache()
+Message-Id: <1359080696-31489-15-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
@@ -12,84 +12,81 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-All boards use sh_pfc_register() directly, remove the unused
-sh_pfc_register_info() function.
-
-Make the name argument to sh_pfc_register() mandatory as it's now
-supplied by all callers.
+Replace probe-time ioremap_nocache() call with devm_ioremap_nocache()
+and get rid of the corresponding iounmap() call.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Acked-by: Linus Walleij <linus.walleij@linaro.org>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/sh/include/asm/gpio.h           |    2 +-
- arch/sh/include/cpu-common/cpu/pfc.h |    4 ----
- arch/sh/kernel/cpu/pfc.c             |   13 +------------
- 3 files changed, 2 insertions(+), 17 deletions(-)
+ drivers/sh/pfc/core.c |   25 ++++---------------------
+ 1 file changed, 4 insertions(+), 21 deletions(-)
 
-diff --git a/arch/sh/include/asm/gpio.h b/arch/sh/include/asm/gpio.h
-index 04f53d3..7dfe15e 100644
---- a/arch/sh/include/asm/gpio.h
-+++ b/arch/sh/include/asm/gpio.h
-@@ -20,7 +20,7 @@
- #endif
+diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
+index 5491902..8ec57bd 100644
+--- a/drivers/sh/pfc/core.c
++++ b/drivers/sh/pfc/core.c
+@@ -26,15 +26,6 @@
  
- #define ARCH_NR_GPIOS 512
--#include <linux/sh_pfc.h>
-+#include <asm-generic/gpio.h>
+ #include "core.h"
  
- #ifdef CONFIG_GPIOLIB
- 
-diff --git a/arch/sh/include/cpu-common/cpu/pfc.h b/arch/sh/include/cpu-common/cpu/pfc.h
-index 40e8643..e538813 100644
---- a/arch/sh/include/cpu-common/cpu/pfc.h
-+++ b/arch/sh/include/cpu-common/cpu/pfc.h
-@@ -18,13 +18,9 @@
- 
- #include <linux/types.h>
- 
--struct pinmux_info;
- struct resource;
- 
- int sh_pfc_register(const char *name,
- 		    struct resource *resource, u32 num_resources);
--int sh_pfc_register_info(const char *name,
--			 struct resource *resource, u32 num_resources,
--			 struct pinmux_info *pdata);
- 
- #endif /* __ARCH_SH_CPU_PFC_H__ */
-diff --git a/arch/sh/kernel/cpu/pfc.c b/arch/sh/kernel/cpu/pfc.c
-index d045d75..d766564 100644
---- a/arch/sh/kernel/cpu/pfc.c
-+++ b/arch/sh/kernel/cpu/pfc.c
-@@ -19,26 +19,15 @@
- #include <cpu/pfc.h>
- 
- static struct platform_device sh_pfc_device = {
--	.name		= "sh-pfc",
- 	.id		= -1,
- };
- 
- int __init sh_pfc_register(const char *name,
- 			   struct resource *resource, u32 num_resources)
- {
--	if (name)
--		sh_pfc_device.name = name;
-+	sh_pfc_device.name = name;
- 	sh_pfc_device.num_resources = num_resources;
- 	sh_pfc_device.resource = resource;
- 
- 	return platform_device_register(&sh_pfc_device);
- }
--
--int __init sh_pfc_register_info(const char *name,
--				struct resource *resource, u32 num_resources,
--				struct pinmux_info *pdata)
+-static void pfc_iounmap(struct sh_pfc *pfc)
 -{
--	sh_pfc_device.dev.platform_data = pdata;
+-	int k;
 -
--	return sh_pfc_register(name, resource, num_resources);
+-	for (k = 0; k < pfc->pdata->num_resources; k++)
+-		if (pfc->window[k].virt)
+-			iounmap(pfc->window[k].virt);
 -}
+-
+ static int pfc_ioremap(struct sh_pfc *pfc)
+ {
+ 	struct resource *res;
+@@ -53,12 +44,10 @@ static int pfc_ioremap(struct sh_pfc *pfc)
+ 		WARN_ON(resource_type(res) != IORESOURCE_MEM);
+ 		pfc->window[k].phys = res->start;
+ 		pfc->window[k].size = resource_size(res);
+-		pfc->window[k].virt = ioremap_nocache(res->start,
+-							 resource_size(res));
+-		if (!pfc->window[k].virt) {
+-			pfc_iounmap(pfc);
++		pfc->window[k].virt = devm_ioremap_nocache(pfc->dev, res->start,
++							   resource_size(res));
++		if (!pfc->window[k].virt)
+ 			return -ENOMEM;
+-		}
+ 	}
+ 
+ 	return 0;
+@@ -524,7 +513,7 @@ static int sh_pfc_probe(struct platform_device *pdev)
+ 	 */
+ 	ret = sh_pfc_register_pinctrl(pfc);
+ 	if (unlikely(ret != 0))
+-		goto err;
++		return ret;
+ 
+ #ifdef CONFIG_GPIO_SH_PFC
+ 	/*
+@@ -546,10 +535,6 @@ static int sh_pfc_probe(struct platform_device *pdev)
+ 	pr_info("%s support registered\n", pdata->name);
+ 
+ 	return 0;
+-
+-err:
+-	pfc_iounmap(pfc);
+-	return ret;
+ }
+ 
+ static int sh_pfc_remove(struct platform_device *pdev)
+@@ -561,8 +546,6 @@ static int sh_pfc_remove(struct platform_device *pdev)
+ #endif
+ 	sh_pfc_unregister_pinctrl(pfc);
+ 
+-	pfc_iounmap(pfc);
+-
+ 	platform_set_drvdata(pdev, NULL);
+ 
+ 	return 0;
 -- 
 1.7.10.4
 
