@@ -1,54 +1,62 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 16 Jan 2013 16:54:36 +0000
-Subject: [PATCH 01/11] mmc: sdhi, tmio: only check flags in tmio-mmc driver proper
-Message-Id: <1358355286-26029-2-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 25 Jan 2013 02:24:09 +0000
+Subject: [PATCH 33/80] sh: sh7720: Register PFC platform device
+Message-Id: <1359080696-31489-34-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358355286-26029-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1358355286-26029-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-tmio-mmc platform flags can be set by various means, including caller
-drivers and device-tree bindings, therefore it is better to only check
-them in the tmio-mmc driver proper, not in caller drivers themselves.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Add arch code to register the PFC platform device instead of calling the
+driver directly. Platform device registration in the sh-pfc driver will
+be removed.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |    3 +--
- drivers/mmc/host/tmio_mmc_pio.c   |    3 +++
- 2 files changed, 4 insertions(+), 2 deletions(-)
+ arch/sh/Kconfig                        |    1 +
+ arch/sh/kernel/cpu/sh3/pinmux-sh7720.c |    3 ++-
+ 2 files changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 524a7f7..fa71b01 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -155,8 +155,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
- 	if (p) {
- 		mmc_data->flags = p->tmio_flags;
--		if (mmc_data->flags & TMIO_MMC_HAS_IDLE_WAIT)
--			mmc_data->write16_hook = sh_mobile_sdhi_write16_hook;
-+		mmc_data->write16_hook = sh_mobile_sdhi_write16_hook;
- 		mmc_data->ocr_mask = p->tmio_ocr_mask;
- 		mmc_data->capabilities |= p->tmio_caps;
- 		mmc_data->capabilities2 |= p->tmio_caps2;
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 0f992e9..b25adb4 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -928,6 +928,9 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 	int ret;
- 	u32 irq_mask = TMIO_MASK_CMD;
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index b934d7d..bfb8b3e 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -367,6 +367,7 @@ config CPU_SUBTYPE_SH7720
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select USB_ARCH_HAS_OHCI
+ 	select USB_OHCI_SH if USB_OHCI_HCD
++	select PINCTRL
+ 	help
+ 	  Select SH7720 if you have a SH3-DSP SH7720 CPU.
  
-+	if (!(pdata->flags & TMIO_MMC_HAS_IDLE_WAIT))
-+		pdata->write16_hook = NULL;
-+
- 	res_ctl = platform_get_resource(pdev, IORESOURCE_MEM, 0);
- 	if (!res_ctl)
- 		return -EINVAL;
+diff --git a/arch/sh/kernel/cpu/sh3/pinmux-sh7720.c b/arch/sh/kernel/cpu/sh3/pinmux-sh7720.c
+index 9ca1546..df0648f 100644
+--- a/arch/sh/kernel/cpu/sh3/pinmux-sh7720.c
++++ b/arch/sh/kernel/cpu/sh3/pinmux-sh7720.c
+@@ -11,6 +11,7 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
++#include <cpu/pfc.h>
+ #include <cpu/sh7720.h>
+ 
+ enum {
+@@ -1236,7 +1237,7 @@ static struct pinmux_info sh7720_pinmux_info = {
+ 
+ static int __init plat_pinmux_setup(void)
+ {
+-	return register_pinmux(&sh7720_pinmux_info);
++	return sh_pfc_register_info(NULL, NULL, 0, &sh7720_pinmux_info);
+ }
+ 
+ arch_initcall(plat_pinmux_setup);
 -- 
-1.7.2.5
+1.7.10.4
 
