@@ -1,142 +1,108 @@
-From: Hideki EIRAKU <hdk@igel.co.jp>
-Date: Mon, 21 Jan 2013 10:54:25 +0000
-Subject: [PATCH v6 0/4] Renesas IPMMU driver for sh7372, sh73a0 and r8a7740
-Message-Id: <1358765669-14567-1-git-send-email-hdk@igel.co.jp>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 25 Jan 2013 02:13:26 +0000
+Subject: [PATCH 08/15] ARM: shmobile: sh73a0: Add CPU sleep suspend
+Message-Id: <1359080013-29189-9-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1359080013-29189-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359080013-29189-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This is the Renesas IPMMU driver, IOMMU API implementation and IPMMU
-device support for sh7372 (AP4EVB and Mackerel), sh73a0 and r8a7740.
+From: Bastian Hecht <hechtb@gmail.com>
 
-The IPMMU module supports the MMU function and the PMB function.  The
-MMU function provides address translation by pagetable compatible with
-ARMv6.  The PMB function provides address translation including
-tile-linear translation.  This is implementation of the MMU function.
+Add the lighest possible sleep mode on Cortex-A9 cores: CPU sleep. It is
+entered by a simple dsb and wfi instruction via cpu_do_idle(). As just
+clocks are stopped there is no need to save or restore any state of the
+system.
 
-Note: The IPMMU module translates DMA memory address from all of the
-IP blocks on the ICB.  The IOMMU API has iommu_attach_device() which
-attaches one device to one domain, but the IPMMU module cannot attach
-only one device.  The IPMMU module only can attach all devices to one
-domain.
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/Makefile              |    1 +
+ arch/arm/mach-shmobile/board-kzm9g.c         |    2 ++
+ arch/arm/mach-shmobile/include/mach/common.h |    1 +
+ arch/arm/mach-shmobile/pm-sh73a0.c           |   32 ++++++++++++++++++++++++++
+ 4 files changed, 36 insertions(+)
+ create mode 100644 arch/arm/mach-shmobile/pm-sh73a0.c
 
-Tested on:
-- armadillo800eva
-- kzma9
-- mackerel (I could not make it boot the v3.8-rc4 with Device Tree, so
-  I tested a kernel without Device Tree support, reverting
-  3b7b70552afe351a8bd8fff1eb2d60aab2206576 and
-  0ce53cdc5c7e28f378e480363a0b0c2ed7e7eaf9)
-
-How to test:
-1. Boot a kernel built with CONFIG_SHMOBILE_IOMMU=y.
-2. Check whether a display on the board shows console normally.
-3. Check whether the IMCTR1 register is 1 which means the MMU function enabled.
-   To read the IMCTR1 register:
-   # peekpoke 0xfe951000
-4. Change the IMCTR1 to 0 to disable the MMU function.
-   To change the IMCTR1 register to 0:
-   # peekpoke 0xfe951000 0
-5. Check whether the display shows broken data.
-6. Change the IMCTR1 to 1 to enable the MMU function.
-   To change the IMCTR1 register to 1:
-   # peekpoke 0xfe951000 1
-7. Check whether a display on the board shows console normally.
-8. Capture and check the framebuffer contents via memory mapped by mmap().
-   To capture the framebuffer contents and save the image to a file "filename":
-   # fbcat /dev/fb0 > filename
-   To look at the contents saved by fbcat on a PC:
-   $ display filename
-- fbcat can be downloaded from https://code.google.com/p/fbcat/.
-- display is one of the ImageMagick tools.
-- peekpoke is:
-#include <sys/mman.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <err.h>
-int main(int argc,char**argv){
-  uint32_t*p,addr;
-  int fd=open("/dev/mem",O_RDWR);
-  if(fd<0)err(1,"open");
-  addr=strtoul(argv[1],NULL,0);
-  p=mmap(NULL,0x1000,PROT_READ|PROT_WRITE,MAP_SHARED,fd,addr&~0xfff);
-  if(p=MAP_FAILED)err(1,"mmap");
-  if(argc<=2)printf("0x%08x\n",p[addr/4&0x3ff]);
-  else printf("wrote 0x%08x\n",p[addr/4&0x3ff]=strtoul(argv[2],NULL,0));
-}
-
-TODO:
-- Multiple IPMMU device initialization support.
-  The ipmmu_iommu_init function and the shmobile_iommu_add_device
-  function currently do not support multiple IPMMU instances.
-- Device Tree support.
-
-Changelog:
-v6:
-- Rebased on 3.8-rc4.
-- Use cached memory for IPMMU page tables.
-- Use macros defined in linux/sizes.h.
-- Fix a memory leak of page tables when the domain is not attached.
-- Use GFP_ATOMIC for allocating page tables.
-v5:
-- Rebased on 3.8-rc1.
-- Add sh73a0 and r8a7740 support.
-- CONFIG_SHMOBILE_IOMMU is now selectable only for arm shmobile
-  architecture.
-- Fix "defined but not used" warnings when CONFIG_SHMOBILE_IOMMU is
-  not set.
-- Add help text of CONFIG_SHMOBILE_IOMMU.
-- Apply some of Laurent Pinchart's rework patches: Move the driver to
-  drivers/iommu/.
-- Use platform_data to specify attaching devices instead of
-  ipmmu_add_device() API.
-v4:
-- Rebased on 3.7-rc1.
-- Use address space size instead of page table size in config.
-- Use Kconfig default value instead of #ifdef-#define-#endif.
-v3:
-- Rebased on 3.6-rc5.
-- Simplify configs.  SHMOBILE_IPMMU is now selected by setting
-  SHMOBILE_IOMMU.
-- Remove weak symbols.
-- Use drvdata to store private driver data.
-- Make a function for writing to a register of IPMMU.
-- Add a lock to accessing the tlb_enabled member.
-- Make unmap work correctly with size larger than map size.
-- Free L2 page table when 1MiB page is mapped or unmapped.
-- Add VEU devices as IP blocks on the ICB.
-v2:
-- Rebased on v3.6-rc1.
-- Make variable names clear.
-- Page table size can now be selected by config.
-
-Hideki EIRAKU (4):
-  iommu/shmobile: Add iommu driver for Renesas IPMMU modules
-  ARM: mach-shmobile: sh7372: Add IPMMU device
-  ARM: mach-shmobile: sh73a0: Add IPMMU device
-  ARM: mach-shmobile: r8a7740: Add IPMMU device
-
- arch/arm/mach-shmobile/setup-r8a7740.c |  33 +++
- arch/arm/mach-shmobile/setup-sh7372.c  |  39 ++++
- arch/arm/mach-shmobile/setup-sh73a0.c  |  31 +++
- drivers/iommu/Kconfig                  |  74 ++++++
- drivers/iommu/Makefile                 |   2 +
- drivers/iommu/shmobile-iommu.c         | 395 +++++++++++++++++++++++++++++++++
- drivers/iommu/shmobile-ipmmu.c         | 136 ++++++++++++
- drivers/iommu/shmobile-ipmmu.h         |  34 +++
- include/linux/platform_data/sh_ipmmu.h |  18 ++
- 9 files changed, 762 insertions(+)
- create mode 100644 drivers/iommu/shmobile-iommu.c
- create mode 100644 drivers/iommu/shmobile-ipmmu.c
- create mode 100644 drivers/iommu/shmobile-ipmmu.h
- create mode 100644 include/linux/platform_data/sh_ipmmu.h
-
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 0b71479..f6aba6d 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -37,6 +37,7 @@ obj-$(CONFIG_ARCH_SHMOBILE)	+= pm-rmobile.o
+ obj-$(CONFIG_ARCH_SH7372)	+= pm-sh7372.o sleep-sh7372.o
+ obj-$(CONFIG_ARCH_R8A7740)	+= pm-r8a7740.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= pm-r8a7779.o
++obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
+ 
+ # Board objects
+ obj-$(CONFIG_MACH_AP4EVB)	+= board-ap4evb.o
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index ac94285..363c6ed 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -772,6 +772,8 @@ static void __init kzm_init(void)
+ 
+ 	sh73a0_add_standard_devices();
+ 	platform_add_devices(kzm_devices, ARRAY_SIZE(kzm_devices));
++
++	sh73a0_pm_init();
+ }
+ 
+ static void kzm9g_restart(char mode, const char *cmd)
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index 2d1686b..f221c11 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -40,6 +40,7 @@ extern void sh73a0_add_early_devices(void);
+ extern void sh73a0_add_standard_devices(void);
+ extern void sh73a0_clock_init(void);
+ extern void sh73a0_pinmux_init(void);
++extern void sh73a0_pm_init(void);
+ extern struct clk sh73a0_extal1_clk;
+ extern struct clk sh73a0_extal2_clk;
+ extern struct clk sh73a0_extcki_clk;
+diff --git a/arch/arm/mach-shmobile/pm-sh73a0.c b/arch/arm/mach-shmobile/pm-sh73a0.c
+new file mode 100644
+index 0000000..99086e9
+--- /dev/null
++++ b/arch/arm/mach-shmobile/pm-sh73a0.c
+@@ -0,0 +1,32 @@
++/*
++ * sh73a0 Power management support
++ *
++ *  Copyright (C) 2012 Bastian Hecht <hechtb+renesas@gmail.com>
++ *
++ * This file is subject to the terms and conditions of the GNU General Public
++ * License.  See the file "COPYING" in the main directory of this archive
++ * for more details.
++ */
++
++#include <linux/suspend.h>
++#include <mach/common.h>
++
++#ifdef CONFIG_SUSPEND
++static int sh73a0_enter_suspend(suspend_state_t suspend_state)
++{
++	cpu_do_idle();
++	return 0;
++}
++
++static void sh73a0_suspend_init(void)
++{
++	shmobile_suspend_ops.enter = sh73a0_enter_suspend;
++}
++#else
++static void sh73a0_suspend_init(void) {}
++#endif
++
++void __init sh73a0_pm_init(void)
++{
++	sh73a0_suspend_init();
++}
 -- 
-1.8.0
+1.7.10.4
 
