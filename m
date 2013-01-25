@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 25 Jan 2013 02:13:29 +0000
+Date: Fri, 25 Jan 2013 03:55:29 +0000
 Subject: [PATCH 11/15] ARM: SH-Mobile: sh73a0: Add CPU Hotplug
-Message-Id: <1359080013-29189-12-git-send-email-horms+renesas@verge.net.au>
+Message-Id: <1359086133-23357-12-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359080013-29189-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359080013-29189-1-git-send-email-horms+renesas@verge.net.au>
+References: <1359086133-23357-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359086133-23357-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
