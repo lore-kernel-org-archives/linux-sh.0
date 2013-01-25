@@ -1,108 +1,72 @@
-From: Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
-Date: Tue, 08 Jan 2013 18:59:49 +0000
-Subject: Re: [PATCH v3] media: V4L2: add temporary clock helpers
-Message-Id: <50EC6CA5.4000808@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 25 Jan 2013 02:13:23 +0000
+Subject: [PATCH 05/15] ARM: sh7372: add clock lookup entries for DT-based devices
+Message-Id: <1359080013-29189-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1212041136250.26918@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1212041136250.26918@axis700.grange>
+References: <1359080013-29189-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359080013-29189-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Linux Media Mailing List <linux-media@vger.kernel.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sakari Ailus <sakari.ailus@iki.fi>, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Guennadi,
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Just few minor remarks below...
+When booting with DT, devices are named differently. To get their clocks
+additional entries have to be added to the lookup table.
 
-On 12/04/2012 11:42 AM, Guennadi Liakhovetski wrote:
-> +struct v4l2_clk *v4l2_clk_register(const struct v4l2_clk_ops *ops,
-> +				   const char *dev_id,
-> +				   const char *id, void *priv)
-> +{
-> +	struct v4l2_clk *clk;
-> +	int ret;
-> +
-> +	if (!ops || !dev_id)
-> +		return ERR_PTR(-EINVAL);
-> +
-> +	clk = kzalloc(sizeof(struct v4l2_clk), GFP_KERNEL);
-> +	if (!clk)
-> +		return ERR_PTR(-ENOMEM);
-> +
-> +	clk->id = kstrdup(id, GFP_KERNEL);
-> +	clk->dev_id = kstrdup(dev_id, GFP_KERNEL);
-> +	if ((id&&  !clk->id) || !clk->dev_id) {
-> +		ret = -ENOMEM;
-> +		goto ealloc;
-> +	}
-> +	clk->ops = ops;
-> +	clk->priv = priv;
-> +	atomic_set(&clk->use_count, 0);
-> +	mutex_init(&clk->lock);
-> +
-> +	mutex_lock(&clk_lock);
-> +	if (!IS_ERR(v4l2_clk_find(dev_id, id))) {
-> +		mutex_unlock(&clk_lock);
-> +		ret = -EEXIST;
-> +		goto eexist;
-> +	}
-> +	list_add_tail(&clk->list,&clk_list);
-> +	mutex_unlock(&clk_lock);
-> +
-> +	return clk;
-> +
-> +eexist:
-> +ealloc:
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-sh7372.c |    9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-These multiple labels could be avoided by naming labels after what
-happens on next lines, rather than after the location we start from.
+diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
+index 3ca6757b..45d21fe 100644
+--- a/arch/arm/mach-shmobile/clock-sh7372.c
++++ b/arch/arm/mach-shmobile/clock-sh7372.c
+@@ -544,6 +544,7 @@ static struct clk_lookup lookups[] = {
+ 
+ 	/* MSTP32 clocks */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.2", &mstp_clks[MSTP001]), /* IIC2 */
++	CLKDEV_DEV_ID("fff30000.i2c", &mstp_clks[MSTP001]), /* IIC2 */
+ 	CLKDEV_DEV_ID("spi_sh_msiof.0", &mstp_clks[MSTP000]), /* MSIOF0 */
+ 	CLKDEV_DEV_ID("uio_pdrv_genirq.4", &mstp_clks[MSTP131]), /* VEU3 */
+ 	CLKDEV_DEV_ID("uio_pdrv_genirq.3", &mstp_clks[MSTP130]), /* VEU2 */
+@@ -556,6 +557,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-mipi-dsi.0", &mstp_clks[MSTP118]), /* DSITX0 */
+ 	CLKDEV_DEV_ID("sh_mobile_lcdc_fb.1", &mstp_clks[MSTP117]), /* LCDC1 */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.0", &mstp_clks[MSTP116]), /* IIC0 */
++	CLKDEV_DEV_ID("fff20000.i2c", &mstp_clks[MSTP116]), /* IIC0 */
+ 	CLKDEV_DEV_ID("sh_mobile_meram.0", &mstp_clks[MSTP113]), /* MERAM */
+ 	CLKDEV_DEV_ID("uio_pdrv_genirq.5", &mstp_clks[MSTP106]), /* JPU */
+ 	CLKDEV_DEV_ID("uio_pdrv_genirq.0", &mstp_clks[MSTP101]), /* VPU */
+@@ -577,18 +579,25 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP200]), /* SCIFA4 */
+ 	CLKDEV_DEV_ID("sh_fsi2", &mstp_clks[MSTP328]), /* FSI2 */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.1", &mstp_clks[MSTP323]), /* IIC1 */
++	CLKDEV_DEV_ID("e6c20000.i2c", &mstp_clks[MSTP323]), /* IIC1 */
+ 	CLKDEV_DEV_ID("r8a66597_hcd.0", &mstp_clks[MSTP322]), /* USB0 */
+ 	CLKDEV_DEV_ID("r8a66597_udc.0", &mstp_clks[MSTP322]), /* USB0 */
+ 	CLKDEV_DEV_ID("renesas_usbhs.0", &mstp_clks[MSTP322]), /* USB0 */
+ 	CLKDEV_DEV_ID("sh_flctl.0", &mstp_clks[MSTP315]), /* FLCTL */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]), /* SDHI0 */
++	CLKDEV_DEV_ID("e6850000.sdhi", &mstp_clks[MSTP314]), /* SDHI0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]), /* SDHI1 */
++	CLKDEV_DEV_ID("e6860000.sdhi", &mstp_clks[MSTP313]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP312]), /* MMC */
++	CLKDEV_DEV_ID("e6bd0000.mmcif", &mstp_clks[MSTP312]), /* MMC */
+ 	CLKDEV_DEV_ID("sh-mipi-dsi.1", &mstp_clks[MSTP423]), /* DSITX1 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP415]), /* SDHI2 */
++	CLKDEV_DEV_ID("e6870000.sdhi", &mstp_clks[MSTP415]), /* SDHI2 */
+ 	CLKDEV_DEV_ID("sh-mobile-hdmi", &mstp_clks[MSTP413]), /* HDMI */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.3", &mstp_clks[MSTP411]), /* IIC3 */
++	CLKDEV_DEV_ID("e6d20000.i2c", &mstp_clks[MSTP411]), /* IIC3 */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.4", &mstp_clks[MSTP410]), /* IIC4 */
++	CLKDEV_DEV_ID("e6d30000.i2c", &mstp_clks[MSTP410]), /* IIC4 */
+ 	CLKDEV_DEV_ID("sh-dma-engine.4", &mstp_clks[MSTP407]), /* USB-DMAC1 */
+ 	CLKDEV_DEV_ID("r8a66597_hcd.1", &mstp_clks[MSTP406]), /* USB1 */
+ 	CLKDEV_DEV_ID("r8a66597_udc.1", &mstp_clks[MSTP406]), /* USB1 */
+-- 
+1.7.10.4
 
-> +	kfree(clk->id);
-> +	kfree(clk->dev_id);
-> +	kfree(clk);
-> +	return ERR_PTR(ret);
-> +}
-> +EXPORT_SYMBOL(v4l2_clk_register);
-> +
-> +void v4l2_clk_unregister(struct v4l2_clk *clk)
-> +{
-> +	if (unlikely(atomic_read(&clk->use_count))) {
-
-I don't think unlikely() is significant here, it doesn't seem to be really
-a fast path.
-
-> +		pr_err("%s(): Unregistering ref-counted %s:%s clock!\n",
-> +		       __func__, clk->dev_id, clk->id);
-> +		BUG();
-
-Hmm, I wouldn't certainly like, e.g. my phone to crash completely only
-because camera drivers are buggy. Camera clocks likely aren't essential
-resources for system operation... I would just use WARN() here and return
-without actually freeing the clock. Not sure if changing signature of
-this function and returning an error would be any useful.
-
-Is it indeed such an unrecoverable error we need to resort to BUG() ?
-
-And here is Linus' opinion on how many BUG_ON()s we have in the kernel:
-https://lkml.org/lkml/2012/9/27/461
-http://permalink.gmane.org/gmane.linux.kernel/1347333
-
-:)
-
-> +	}
-> +
-> +	mutex_lock(&clk_lock);
-> +	list_del(&clk->list);
-> +	mutex_unlock(&clk_lock);
-> +
-> +	kfree(clk->id);
-> +	kfree(clk->dev_id);
-> +	kfree(clk);
-> +}
-> +EXPORT_SYMBOL(v4l2_clk_unregister);
-
---
-
-Thanks,
-Sylwester
