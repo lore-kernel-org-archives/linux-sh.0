@@ -1,60 +1,41 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 23 Jan 2013 15:32:28 +0000
-Subject: [PATCH v2 01/11] mmc: sdhi, tmio: only check flags in tmio-mmc driver proper
-Message-Id: <1358955158-1510-2-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 25 Jan 2013 02:17:29 +0000
+Subject: [PATCH 3/7] ARM: shmobile: add sample amixer settings for ap4evb
+Message-Id: <1359080253-30995-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358955158-1510-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1358955158-1510-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1359080253-30995-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359080253-30995-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-arm-kernel@lists.infradead.org
 
-tmio-mmc platform flags can be set by various means, including caller
-drivers and device-tree bindings, therefore it is better to only check
-them in the tmio-mmc driver proper, not in caller drivers themselves.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+FSI2A-AK4643 needs amixer setting to use it.
+This patch adds quick setting guide
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/board-ap4evb.c |    4 ++++
+ 1 file changed, 4 insertions(+)
 
-v2: .write16_hook should also be assigned in the absence of platform data, 
-e.g. with DT.
-
- drivers/mmc/host/sh_mobile_sdhi.c |    3 +--
- drivers/mmc/host/tmio_mmc_pio.c   |    3 +++
- 2 files changed, 4 insertions(+), 2 deletions(-)
-
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 524a7f7..e0ca0ab 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -153,10 +153,9 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	mmc_data->clk_enable = sh_mobile_sdhi_clk_enable;
- 	mmc_data->clk_disable = sh_mobile_sdhi_clk_disable;
- 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
-+	mmc_data->write16_hook = sh_mobile_sdhi_write16_hook;
- 	if (p) {
- 		mmc_data->flags = p->tmio_flags;
--		if (mmc_data->flags & TMIO_MMC_HAS_IDLE_WAIT)
--			mmc_data->write16_hook = sh_mobile_sdhi_write16_hook;
- 		mmc_data->ocr_mask = p->tmio_ocr_mask;
- 		mmc_data->capabilities |= p->tmio_caps;
- 		mmc_data->capabilities2 |= p->tmio_caps2;
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 0f992e9..b25adb4 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -928,6 +928,9 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 	int ret;
- 	u32 irq_mask = TMIO_MASK_CMD;
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 99ef190..70d287c 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -143,6 +143,10 @@
+  *
+  * SW41	:  ON : SH-Mobile AP4 Audio Mode
+  *	: OFF : Bluetooth Audio Mode
++ *
++ * it needs amixer settings for playing
++ *
++ * amixer set "Headphone Enable" on
+  */
  
-+	if (!(pdata->flags & TMIO_MMC_HAS_IDLE_WAIT))
-+		pdata->write16_hook = NULL;
-+
- 	res_ctl = platform_get_resource(pdev, IORESOURCE_MEM, 0);
- 	if (!res_ctl)
- 		return -EINVAL;
+ /*
 -- 
-1.7.2.5
+1.7.10.4
 
