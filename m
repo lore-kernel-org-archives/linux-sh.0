@@ -1,150 +1,43 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 16 Jan 2013 16:54:38 +0000
-Subject: [PATCH 03/11] mmc: provide a standard MMC device-tree binding parser centrally
-Message-Id: <1358355286-26029-4-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 25 Jan 2013 02:23:42 +0000
+Subject: [PATCH 06/80] sh: sh7786: Fix last GPIO index
+Message-Id: <1359080696-31489-7-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358355286-26029-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1358355286-26029-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-MMC defines a number of standard DT bindings. Having each driver parse
-them individually adds code redundancy and is error prone. Provide a
-standard function to unify the parsing. After all drivers are converted
-to using it instead of their own parsers, this function can be integrated
-into mmc_alloc_host().
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+A careless look at the code shows that the last entry in the
+pinmux_gpios seems to be GPIO_FN_FSE. However, entries are ordered by
+the GPIO number, as the PINMUX_GPIO macro is expended to an indexed
+array initializer. The last entry in the array is thus GPIO_FN_IRL4. Set
+the pinmux_info last_gpio field accordingly.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-MMC host drivers are welcome and encouraged to use this helper function:-)
-
- drivers/mmc/core/host.c  |   82 ++++++++++++++++++++++++++++++++++++++++++++++
- include/linux/mmc/host.h |    1 +
- 2 files changed, 83 insertions(+), 0 deletions(-)
-
-diff --git a/drivers/mmc/core/host.c b/drivers/mmc/core/host.c
-index ee2e16b..e4c1cbd 100644
---- a/drivers/mmc/core/host.c
-+++ b/drivers/mmc/core/host.c
-@@ -15,6 +15,8 @@
- #include <linux/device.h>
- #include <linux/err.h>
- #include <linux/idr.h>
-+#include <linux/of.h>
-+#include <linux/of_gpio.h>
- #include <linux/pagemap.h>
- #include <linux/export.h>
- #include <linux/leds.h>
-@@ -23,6 +25,7 @@
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
+index c24a777..60df99c 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
+@@ -825,7 +825,7 @@ static struct pinmux_info sh7786_pinmux_info = {
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
  
- #include <linux/mmc/host.h>
- #include <linux/mmc/card.h>
-+#include <linux/mmc/slot-gpio.h>
+ 	.first_gpio = GPIO_PA7,
+-	.last_gpio = GPIO_FN_FSE,
++	.last_gpio = GPIO_FN_IRL4,
  
- #include "core.h"
- #include "host.h"
-@@ -294,6 +297,85 @@ static inline void mmc_host_clk_sysfs_init(struct mmc_host *host)
- 
- #endif
- 
-+void mmc_of_parse(struct mmc_host *host)
-+{
-+	struct device_node *np;
-+	u32 bus_width;
-+	bool legacy_inv_cd, legacy_inv_wp;
-+	enum of_gpio_flags flags;
-+	int len, ret, gpio;
-+
-+	if (!host->parent || !host->parent->of_node)
-+		return;
-+
-+	np = host->parent->of_node;
-+
-+	/* Both CD and WP pins are by default active low */
-+
-+	legacy_inv_cd = !!of_find_property(np, "cd-inverted", &len);
-+	legacy_inv_wp = !!of_find_property(np, "wp-inverted", &len);
-+
-+	if (legacy_inv_cd || legacy_inv_wp)
-+		dev_warn(host->parent,
-+			 "\"cd-/wp-inverted\" properties are deprecated, use GPIO flags");
-+
-+	if (of_property_read_u32_array(np, "bus-width", &bus_width, 1) < 0) {
-+		dev_err(host->parent,
-+			"Compulsory \"bus-width\" property is missing!\n");
-+		return;
-+	}
-+
-+	switch (bus_width) {
-+	case 8:
-+		host->caps |= MMC_CAP_8_BIT_DATA;
-+		/* Hosts, capable of 8-bit transfers can also do 4 bits */
-+	case 4:
-+		host->caps |= MMC_CAP_4_BIT_DATA;
-+		break;
-+	case 1:
-+		break;
-+	default:
-+		dev_err(host->parent,
-+			"Invalid \"bus-width\" value %ud!\n", bus_width);
-+	}
-+
-+	/* Optional property: ignore errors */
-+	of_property_read_u32_array(np, "max-frequency", &host->f_max, 1);
-+
-+	if (of_find_property(np, "non-removable", &len)) {
-+		host->caps |= MMC_CAP_NONREMOVABLE;
-+	} else {
-+		if (of_find_property(np, "broken-cd", &len))
-+			host->caps |= MMC_CAP_NEEDS_POLL;
-+
-+		gpio = of_get_named_gpio_flags(np, "cd-gpios", 0, &flags);
-+		if (gpio_is_valid(gpio)) {
-+			if (legacy_inv_cd || !(flags & OF_GPIO_ACTIVE_LOW))
-+				host->caps2 |= MMC_CAP2_CD_ACTIVE_HIGH;
-+			ret = mmc_gpio_request_cd(host, gpio);
-+			if (ret < 0)
-+				dev_err(host->parent,
-+					"Failed to request CD GPIO #%d: %d!\n",
-+					gpio, ret);
-+			else
-+				dev_info(host->parent, "Got CD GPIO #%d.\n",
-+					 gpio);
-+		}
-+	}
-+
-+	gpio = of_get_named_gpio_flags(np, "wp-gpios", 0, &flags);
-+	if (gpio_is_valid(gpio)) {
-+		if (legacy_inv_wp || !(flags & OF_GPIO_ACTIVE_LOW))
-+			host->caps2 |= MMC_CAP2_RO_ACTIVE_HIGH;
-+		ret = mmc_gpio_request_ro(host, gpio);
-+		if (ret < 0)
-+			dev_err(host->parent,
-+				"Failed to request WP GPIO: %d!\n", ret);
-+	}
-+}
-+
-+EXPORT_SYMBOL(mmc_of_parse);
-+
- /**
-  *	mmc_alloc_host - initialise the per-host structure.
-  *	@extra: sizeof private data structure
-diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
-index 61a10c1..13c0c8d 100644
---- a/include/linux/mmc/host.h
-+++ b/include/linux/mmc/host.h
-@@ -345,6 +345,7 @@ extern struct mmc_host *mmc_alloc_host(int extra, struct device *);
- extern int mmc_add_host(struct mmc_host *);
- extern void mmc_remove_host(struct mmc_host *);
- extern void mmc_free_host(struct mmc_host *);
-+void mmc_of_parse(struct mmc_host *host);
- 
- static inline void *mmc_priv(struct mmc_host *host)
- {
+ 	.gpios = pinmux_gpios,
+ 	.cfg_regs = pinmux_config_regs,
 -- 
-1.7.2.5
+1.7.10.4
 
