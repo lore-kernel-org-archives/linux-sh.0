@@ -1,35 +1,53 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 24 Jan 2013 16:07:30 +0000
-Subject: [PATCH 0/3] ARM: shmobile: sh-eth pins in DT for armadillo800eva
-Message-Id: <1359043653-11374-1-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 25 Jan 2013 04:37:43 +0000
+Subject: Re: [PATCH 0/3] ARM: shmobile: sh-eth pins in DT for armadillo800eva
+Message-Id: <20130125043743.GP13691@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1359043653-11374-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1359043653-11374-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This patch series gets rid of gpio_request()-style ethernet pin 
-configuration on armadillo800eva in reference implementation.
+On Thu, Jan 24, 2013 at 05:07:30PM +0100, Guennadi Liakhovetski wrote:
+> This patch series gets rid of gpio_request()-style ethernet pin 
+> configuration on armadillo800eva in reference implementation.
 
-Guennadi Liakhovetski (3):
-  pinctrl: add ethernet pin groups to r8a7740
-  ethernet: add a PHY reset GPIO DT binding to sh_eth
-  ARM: shmobile: move pin configuration on armadillo800eva-reference to
-    DT
+Hi Guennadi,
 
- Documentation/devicetree/bindings/net/sh_ether.txt |    2 +
- .../boot/dts/r8a7740-armadillo800eva-reference.dts |    7 ++++
- .../board-armadillo800eva-reference.c              |   24 ---------------
- drivers/net/ethernet/renesas/sh_eth.c              |    9 +++++-
- drivers/pinctrl/sh-pfc/pfc-r8a7740.c               |   31 ++++++++++++++++++++
- 5 files changed, 48 insertions(+), 25 deletions(-)
+these changes seem to be reasonable to me.
 
--- 
-1.7.2.5
+Are there any dependencies for the sh_eth patch?
+I assume this will be handled by David Miller through the net-next tree.
+Are there any dependencies? The last time I checked the DT bindings
+for sh_eth had not been merged.
 
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+For the remaining two patches, which I assume will go through my renesas
+tree:
+* Are there any dependencies that aren't satisfied by the of-intc branch?
+* Could you get some Acks. At least from Laurent?
+
+> Guennadi Liakhovetski (3):
+>   pinctrl: add ethernet pin groups to r8a7740
+>   ethernet: add a PHY reset GPIO DT binding to sh_eth
+>   ARM: shmobile: move pin configuration on armadillo800eva-reference to
+>     DT
+> 
+>  Documentation/devicetree/bindings/net/sh_ether.txt |    2 +
+>  .../boot/dts/r8a7740-armadillo800eva-reference.dts |    7 ++++
+>  .../board-armadillo800eva-reference.c              |   24 ---------------
+>  drivers/net/ethernet/renesas/sh_eth.c              |    9 +++++-
+>  drivers/pinctrl/sh-pfc/pfc-r8a7740.c               |   31 ++++++++++++++++++++
+>  5 files changed, 48 insertions(+), 25 deletions(-)
+> 
+> -- 
+> 1.7.2.5
+> 
+> Thanks
+> Guennadi
+> ---
+> Guennadi Liakhovetski, Ph.D.
+> Freelance Open-Source Software Developer
+> http://www.open-technology.de/
+> 
