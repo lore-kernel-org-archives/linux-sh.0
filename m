@@ -1,30 +1,45 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Tue, 29 Jan 2013 17:03:46 +0000
-Subject: Re: [GIT PULL] Renesas ARM-based SoC boards for v3.9
-Message-Id: <20130129170346.GD16188@quad.lixom.net>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 25 Jan 2013 02:02:53 +0000
+Subject: [PATCH 1/2] ARM: mach-shmobile: armadillo: defconfig: Enable CEU
+Message-Id: <1359079374-25032-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359080253-30995-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359080253-30995-1-git-send-email-horms+renesas@verge.net.au>
+References: <1359079374-25032-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359079374-25032-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jan 25, 2013 at 11:17:26AM +0900, Simon Horman wrote:
-> Hi Olof, Hi Arnd,
-> 
-> please consider the following board enhancements for 3.9.
-> 
-> ----------------------------------------------------------------
-> The following changes since commit 9931faca02c604c22335f5a935a501bb2ace6e20:
-> 
->   Linux 3.8-rc3 (2013-01-09 18:59:55 -0800)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git boards
+Update the defconfig to enable the CEU camera.
 
-Pulled, thanks.
+It appears that it was previously enabled but an
+update is required for Kconfig changes.
 
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/configs/armadillo800eva_defconfig |    5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
 
--Olof
+diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
+index f9e2701..0b98100 100644
+--- a/arch/arm/configs/armadillo800eva_defconfig
++++ b/arch/arm/configs/armadillo800eva_defconfig
+@@ -90,14 +90,11 @@ CONFIG_I2C_SH_MOBILE=y
+ # CONFIG_HWMON is not set
+ CONFIG_MEDIA_SUPPORT=y
+ CONFIG_VIDEO_DEV=y
+-# CONFIG_RC_CORE is not set
+-# CONFIG_VIDEO_HELPER_CHIPS_AUTO is not set
+-# CONFIG_V4L_USB_DRIVERS is not set
++CONFIG_MEDIA_CAMERA_SUPPORT=y
+ CONFIG_V4L_PLATFORM_DRIVERS=y
+ CONFIG_SOC_CAMERA=y
+ CONFIG_SOC_CAMERA_MT9T112=y
+ CONFIG_VIDEO_SH_MOBILE_CEU=y
+-# CONFIG_RADIO_ADAPTERS is not set
+ CONFIG_FB=y
+ CONFIG_FB_SH_MOBILE_LCDC=y
+ CONFIG_FB_SH_MOBILE_HDMI=y
+-- 
+1.7.10.4
+
