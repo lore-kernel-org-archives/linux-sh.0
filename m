@@ -1,58 +1,68 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 16 Jan 2013 16:54:35 +0000
-Subject: [PATCH 00/11] mmc: core and driver DT and related development
-Message-Id: <1358355286-26029-1-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 25 Jan 2013 02:24:03 +0000
+Subject: [PATCH 27/80] ARM: shmobile: sh7372: Add pin control resources
+Message-Id: <1359080696-31489-28-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-This patch series addresses the following topics:
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-1. DT: add a generic DT binding parsing function. It retrieves MMC DT 
-properties, currently documented in 
-Documentation/devicetree/bindings/mmc/mmc.txt, sets respective host flags, 
-initialises GPIO slot functions, verifies presence of the compulsory 
-bus-width property.
+Add memory resources for the pin control platform device to let the
+sh-pfc driver ioremap() registers properly instead of evily casting
+register physical addresses to virtual addresses.
 
-2. DT: deprecate cd-inverted and wp-inverted DT properties, GPIO standard 
-"flags" cell should be used.
-
-3. DT-related sh_mobile_sdhi / tmio_mmc and sh_mmcif driver extensions.
-
-Guennadi Liakhovetski (11):
-  mmc: sdhi, tmio: only check flags in tmio-mmc driver proper
-  mmc: deprecate redundant cd-inverted and wp-inverted DT properties
-  mmc: provide a standard MMC device-tree binding parser centrally
-  mmc: (cosmetic) remove "extern" from function declarations
-  mmc: sh-mmcif: use mmc_of_parse() to parse standard MMC DT bindings
-  mmc: tmio-mmc: define device-tree bindings
-  mmc: tmio-mmc: parse device-tree bindings
-  mmc: sh_mobile_sdhi: remove unused .pdata field
-  mmc: sh_mobile_sdhi: use managed resource allocations
-  mmc: tmio: remove unused and deprecated symbols
-  mmc: tmio: add support for the VccQ regulator
-
- Documentation/devicetree/bindings/mmc/mmc.txt      |    8 ++
- Documentation/devicetree/bindings/mmc/tmio_mmc.txt |   19 +++++
- drivers/mmc/core/host.c                            |   82 ++++++++++++++++++++
- drivers/mmc/host/sh_mmcif.c                        |    3 +-
- drivers/mmc/host/sh_mobile_sdhi.c                  |   64 ++++------------
- drivers/mmc/host/tmio_mmc_pio.c                    |   67 ++++++++++++++--
- include/linux/mfd/tmio.h                           |   18 ----
- include/linux/mmc/host.h                           |   23 +++---
- include/linux/mmc/sh_mobile_sdhi.h                 |    2 -
- 9 files changed, 196 insertions(+), 90 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/mmc/tmio_mmc.txt
-
--- 
-1.7.2.5
-
-Thanks
-Guennadi
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ arch/arm/mach-shmobile/pfc-sh7372.c |   17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/pfc-sh7372.c b/arch/arm/mach-shmobile/pfc-sh7372.c
+index dd5e145..91016b4 100644
+--- a/arch/arm/mach-shmobile/pfc-sh7372.c
++++ b/arch/arm/mach-shmobile/pfc-sh7372.c
+@@ -20,7 +20,9 @@
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
++#include <linux/bug.h>
+ #include <linux/init.h>
++#include <linux/ioport.h>
+ #include <linux/kernel.h>
+ #include <linux/platform_device.h>
+ #include <linux/sh_pfc.h>
+@@ -1658,9 +1660,24 @@ static struct pinmux_info sh7372_pinmux_info = {
+ 	.gpio_irq_size = ARRAY_SIZE(pinmux_irqs),
+ };
+ 
++static struct resource sh7372_pfc_resources[] = {
++	[0] = {
++		.start	= 0xe6050000,
++		.end	= 0xe6057fff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= 0xe605800c,
++		.end	= 0xe6058027,
++		.flags	= IORESOURCE_MEM,
++	}
++};
++
+ static struct platform_device sh7372_pfc_device = {
+ 	.name		= "sh-pfc",
+ 	.id		= -1,
++	.resource	= sh7372_pfc_resources,
++	.num_resources	= ARRAY_SIZE(sh7372_pfc_resources),
+ 	.dev = {
+ 		.platform_data = &sh7372_pinmux_info,
+ 	},
+-- 
+1.7.10.4
+
