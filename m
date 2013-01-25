@@ -1,37 +1,57 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 09 Jan 2013 01:03:10 +0000
-Subject: [PATCH v2 3/8] ARM: shmobile: r8a7740: Add pin control device in device tree
-Message-Id: <1357693395-1653-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 25 Jan 2013 02:23:58 +0000
+Subject: [PATCH 22/80] ARM: shmobile: r8a7740: Register PFC platform device
+Message-Id: <1359080696-31489-23-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add a pfc node in the r8a7740 device tree.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+Add arch code to register the PFC platform device instead of calling the
+driver directly. Platform device registration in the sh-pfc driver will
+be removed.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7740.dtsi |    8 ++++++++
- 1 files changed, 8 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/pfc-r8a7740.c |   11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 798fa35..9d7800a 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -18,4 +18,12 @@
- 			compatible = "arm,cortex-a9";
- 		};
- 	};
-+
-+	gpio: pfc@e6050000 {
-+		compatible = "renesas,pfc-r8a7740";
-+		reg = <0xe6050000 0x8000>,
-+		      <0xe605800c 0x20>;
-+		gpio-controller;
-+		#gpio-cells = <2>;
-+	};
+diff --git a/arch/arm/mach-shmobile/pfc-r8a7740.c b/arch/arm/mach-shmobile/pfc-r8a7740.c
+index 134d1b9..8a412b1 100644
+--- a/arch/arm/mach-shmobile/pfc-r8a7740.c
++++ b/arch/arm/mach-shmobile/pfc-r8a7740.c
+@@ -20,6 +20,7 @@
+  */
+ #include <linux/init.h>
+ #include <linux/kernel.h>
++#include <linux/platform_device.h>
+ #include <linux/sh_pfc.h>
+ #include <mach/r8a7740.h>
+ #include <mach/irqs.h>
+@@ -2611,7 +2612,15 @@ static struct pinmux_info r8a7740_pinmux_info = {
+ 	.gpio_irq_size	= ARRAY_SIZE(pinmux_irqs),
  };
+ 
++static struct platform_device r8a7740_pfc_device = {
++	.name		= "sh-pfc",
++	.id		= -1,
++	.dev = {
++		.platform_data = &r8a7740_pinmux_info,
++	},
++};
++
+ void r8a7740_pinmux_init(void)
+ {
+-	register_pinmux(&r8a7740_pinmux_info);
++	platform_device_register(&r8a7740_pfc_device);
+ }
 -- 
-1.7.8.6
+1.7.10.4
 
