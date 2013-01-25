@@ -1,15 +1,15 @@
 From: Arnd Bergmann <arnd@arndb.de>
-Date: Fri, 25 Jan 2013 14:14:18 +0000
+Date: Fri, 25 Jan 2013 22:44:00 +0000
 Subject: [PATCH 01/19] ARM: shmobile: fix defconfig warning on CONFIG_USB
-Message-Id: <1359123276-15833-2-git-send-email-arnd@arndb.de>
+Message-Id: <1359153858-31992-2-git-send-email-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1359123276-15833-1-git-send-email-arnd@arndb.de>
-In-Reply-To: <1359123276-15833-1-git-send-email-arnd@arndb.de>
+ <1359153858-31992-1-git-send-email-arnd@arndb.de>
+In-Reply-To: <1359153858-31992-1-git-send-email-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@list.infradead.org
-Cc: linux-kernel@vger.kernel.org, Arnd Bergmann <arnd@arndb.de>, Simon Horman <horms@verge.net.au>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
 A recent update to the marzen_defconfig introduced a
 duplicate CONFIG_USB=y line. This removes one of the
