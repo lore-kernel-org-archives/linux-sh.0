@@ -1,69 +1,86 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 16 Jan 2013 06:02:26 +0000
-Subject: [PATCH 5/5] ARM: mach-shmobile: kzm9d: update defconfig
-Message-Id: <1358316146-12579-6-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 25 Jan 2013 02:13:18 +0000
+Subject: [GIT PULL] Renesas ARM-based SoC for v3.9
+Message-Id: <1359080013-29189-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358316146-12579-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1358316146-12579-1-git-send-email-horms+renesas@verge.net.au>
+References: <1352277298-23312-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1352277298-23312-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-* Do not disable SUSPEND
+Hi Olof, Hi Arnd,
 
-  Suspend seems to work fine on the kzm9d.
+please consider the following soc enhancements for 3.9.
 
-  This is part of an effort reduce differences between mach-shmobile
-  defconfigs with a view to using a common defconfig.
+This series is based on a merge of the irqchip/gic-vic-move and
+timer/cleanup branches in the arm-soc tree. There were a number of
+conflicts in this merge, as indicated by the merge commit
+6265b0f325eed54558b35769aecb1d79423295c7. In each case I took care to
+match the merge made in the arm-soc tree which is evident in the for-next
+branch.
 
-* Enable PM_RUNTIME
+----------------------------------------------------------------
+The following changes since commit 6265b0f325eed54558b35769aecb1d79423295c7:
 
-  This also seems to work fine on the kzm9d.
+  Merge remote-tracking branches 'arm-soc/irqchip/gic-vic-move' and 'arm-soc/timer/cleanup' into soc (2013-01-24 17:57:20 +0900)
 
-  This is part of an effort reduce differences between mach-shmobile
-  defconfigs with a view to using a common defconfig.
+are available in the git repository at:
 
-* Move kernel command line from defconfig to dts.
 
-  This brings us one small step closer to sharing defconfig
-  between kzm9d and other boards.
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git soc
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/emev2-kzm9d.dts |    2 +-
- arch/arm/configs/kzm9d_defconfig  |    4 +---
- 2 files changed, 2 insertions(+), 4 deletions(-)
+for you to fetch changes up to 977b5564fc613d662a346abfce05104ea5080a46:
 
-diff --git a/arch/arm/boot/dts/emev2-kzm9d.dts b/arch/arm/boot/dts/emev2-kzm9d.dts
-index 297e3ba..b9b3241 100644
---- a/arch/arm/boot/dts/emev2-kzm9d.dts
-+++ b/arch/arm/boot/dts/emev2-kzm9d.dts
-@@ -21,6 +21,6 @@
- 	};
- 
- 	chosen {
--		bootargs = "console=ttyS1,115200n81";
-+		bootargs = "console=tty0 console=ttyS1,115200n81 earlyprintk=serial8250-em.1,115200n81 mem8M@0x40000000 ignore_loglevel root=/dev/nfs ip=dhcp nfsroot=,rsize@96,wsize@96";
- 	};
- };
-diff --git a/arch/arm/configs/kzm9d_defconfig b/arch/arm/configs/kzm9d_defconfig
-index 8c49df6..6c37f4a 100644
---- a/arch/arm/configs/kzm9d_defconfig
-+++ b/arch/arm/configs/kzm9d_defconfig
-@@ -32,11 +32,9 @@ CONFIG_FORCE_MAX_ZONEORDER
- CONFIG_ZBOOT_ROM_TEXT=0x0
- CONFIG_ZBOOT_ROM_BSS=0x0
- CONFIG_ARM_APPENDED_DTB=y
--CONFIG_CMDLINE="console=tty0 console=ttyS1,115200n81 earlyprintk=serial8250-em.1,115200n81 mem8M@0x40000000 ignore_loglevel root=/dev/nfs ip=dhcp nfsroot=,rsize@96,wsize@96"
--CONFIG_CMDLINE_FORCE=y
- CONFIG_VFP=y
- # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
--# CONFIG_SUSPEND is not set
-+CONFIG_PM_RUNTIME=y
- CONFIG_NET=y
- CONFIG_PACKET=y
- CONFIG_UNIX=y
--- 
-1.7.10.4
+  ARM: shmobile: r8a7779: scif .irqs used SCIx_IRQ_MUXED() (2013-01-25 09:10:45 +0900)
 
+----------------------------------------------------------------
+Bastian Hecht (4):
+      ARM: shmobile: sh73a0: Add CPU sleep suspend
+      ARM: shmobile: r8a7740: Add CPU sleep suspend
+      ARM: SH-Mobile: sh73a0: Secondary CPUs handle own SCU flags
+      ARM: SH-Mobile: sh73a0: Add CPU Hotplug
+
+Guennadi Liakhovetski (3):
+      ARM: sh7372: add clock lookup entries for DT-based devices
+      ARM: sh7372: fix cache clean / invalidate order
+      ARM: shmobile: add function declarations for sh7372 DT helper functions
+
+Kuninori Morimoto (3):
+      ARM: shmobile: r8a7740: add TMU timer support
+      ARM: shmobile: sh73a0: fixup div4_clks bitmap
+      ARM: shmobile: r8a7779: scif .irqs used SCIx_IRQ_MUXED()
+
+Magnus Damm (1):
+      ARM: mach-shmobile: sh73a0 external IRQ wake update
+
+Simon Horman (4):
+      ARM: shmobile: Remove duplicate inclusion of dma-mapping.h in setup-r8a7740.c
+      ARM: mach-shmobile: sh73a0: Allow initialisation of GIC by DT
+      ARM: mach-shmobile: sh73a0: Minimal setup using DT
+      ARM: mach-shmobile: sh73a0: Initialise MMCIF using DT
+
+ arch/arm/boot/dts/sh73a0-reference.dtsi        |   24 ++++++
+ arch/arm/boot/dts/sh73a0.dtsi                  |   93 +++++++++++++++++++++++
+ arch/arm/mach-shmobile/Makefile                |    3 +-
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    2 +
+ arch/arm/mach-shmobile/board-kzm9g.c           |    2 +
+ arch/arm/mach-shmobile/clock-r8a7740.c         |    6 +-
+ arch/arm/mach-shmobile/clock-sh7372.c          |    9 +++
+ arch/arm/mach-shmobile/clock-sh73a0.c          |   35 ++++++---
+ arch/arm/mach-shmobile/headsmp-sh73a0.S        |   50 +++++++++++++
+ arch/arm/mach-shmobile/include/mach/common.h   |    8 ++
+ arch/arm/mach-shmobile/intc-sh73a0.c           |   16 ++--
+ arch/arm/mach-shmobile/pm-r8a7740.c            |   22 ++++++
+ arch/arm/mach-shmobile/pm-sh73a0.c             |   32 ++++++++
+ arch/arm/mach-shmobile/setup-r8a7740.c         |   95 +++++++++++++++++++++++-
+ arch/arm/mach-shmobile/setup-r8a7779.c         |   18 ++---
+ arch/arm/mach-shmobile/setup-sh73a0.c          |   62 +++++++++++++++-
+ arch/arm/mach-shmobile/sleep-sh7372.S          |   12 +--
+ arch/arm/mach-shmobile/smp-sh73a0.c            |   66 ++++++++--------
+ 18 files changed, 485 insertions(+), 70 deletions(-)
+ create mode 100644 arch/arm/boot/dts/sh73a0-reference.dtsi
+ create mode 100644 arch/arm/boot/dts/sh73a0.dtsi
+ create mode 100644 arch/arm/mach-shmobile/headsmp-sh73a0.S
+ create mode 100644 arch/arm/mach-shmobile/pm-sh73a0.c
