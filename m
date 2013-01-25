@@ -1,39 +1,58 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 25 Jan 2013 02:17:27 +0000
-Subject: [PATCH 1/7] ARM: mackerel: include the correct .dtsi file
-Message-Id: <1359080253-30995-2-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 25 Jan 2013 02:23:55 +0000
+Subject: [PATCH 19/80] sh-pfc: Split platform device and platform driver registration
+Message-Id: <1359080696-31489-20-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359080253-30995-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359080253-30995-1-git-send-email-horms+renesas@verge.net.au>
+References: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Mackerel's .dts Device Tree description file should derive from the SoC's
-.dtsi, not from skeleton.dtsi directly.
+Move platform driver registration to a static postcore initcall. This
+prepares the move of platform device registration to arch code.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Signed-off-by: Simon Horman <horms@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/sh7372-mackerel.dts |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/sh/pfc/core.c |   15 ++++++---------
+ 1 file changed, 6 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh7372-mackerel.dts b/arch/arm/boot/dts/sh7372-mackerel.dts
-index 286f0ca..2ede70d 100644
---- a/arch/arm/boot/dts/sh7372-mackerel.dts
-+++ b/arch/arm/boot/dts/sh7372-mackerel.dts
-@@ -9,7 +9,7 @@
-  */
+diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
+index 1bb38e8..cd8f09d 100644
+--- a/drivers/sh/pfc/core.c
++++ b/drivers/sh/pfc/core.c
+@@ -573,19 +573,16 @@ static struct platform_device sh_pfc_device = {
  
- /dts-v1/;
--/include/ "skeleton.dtsi"
-+/include/ "sh7372.dtsi"
+ int __init register_sh_pfc(struct sh_pfc_platform_data *pdata)
+ {
+-	int rc;
+-
+ 	sh_pfc_device.dev.platform_data = pdata;
  
- / {
- 	model = "Mackerel (AP4 EVM 2nd)";
+-	rc = platform_driver_register(&sh_pfc_driver);
+-	if (likely(!rc)) {
+-		rc = platform_device_register(&sh_pfc_device);
+-		if (unlikely(rc))
+-			platform_driver_unregister(&sh_pfc_driver);
+-	}
++	return platform_device_register(&sh_pfc_device);
++}
+ 
+-	return rc;
++static int __init sh_pfc_init(void)
++{
++	return platform_driver_register(&sh_pfc_driver);
+ }
++postcore_initcall(sh_pfc_init);
+ 
+ static void __exit sh_pfc_exit(void)
+ {
 -- 
 1.7.10.4
 
