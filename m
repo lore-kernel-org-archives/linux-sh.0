@@ -1,17 +1,17 @@
 From: Mark Rutland <mark.rutland@arm.com>
-Date: Fri, 25 Jan 2013 10:08:10 +0000
+Date: Fri, 25 Jan 2013 10:22:10 +0000
 Subject: Re: [PATCH 12/15] ARM: mach-shmobile: sh73a0: Allow initialisation of GIC by DT
-Message-Id: <20130125100810.GI3075@e106331-lin.cambridge.arm.com>
+Message-Id: <20130125102210.GJ3075@e106331-lin.cambridge.arm.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359080013-29189-1-git-send-email-horms+renesas@verge.net.au>
- <1359080013-29189-13-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359080013-29189-13-git-send-email-horms+renesas@verge.net.au>
+References: <1359086133-23357-1-git-send-email-horms+renesas@verge.net.au>
+ <1359086133-23357-13-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359086133-23357-13-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jan 25, 2013 at 02:13:30AM +0000, Simon Horman wrote:
+On Fri, Jan 25, 2013 at 03:55:30AM +0000, Simon Horman wrote:
 > This allows the GIC interrupt controller of the sh73a0 SoC to be
 > initialised using a flattened device tree blob.
 > 
@@ -63,10 +63,11 @@ On Fri, Jan 25, 2013 at 02:13:30AM +0000, Simon Horman wrote:
 > +		cpu@1 {
 > +			compatible = "arm,cortex-a9";
 > +		};
-> +	};
 
-It would be good the have reg and device_type properties set for the cpu nodes,
-so they're guaranteed to work with the logical map.
+I replied to v1, not realising you'd posted a v2:
+
+It would be good to have the reg and device_type properties set here for the
+logical map.
 
 [...]
 
