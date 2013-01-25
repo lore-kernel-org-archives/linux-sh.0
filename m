@@ -1,50 +1,44 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 16 Jan 2013 09:43:38 +0000
-Subject: [GIT PULL] sh fixes for 3.8-rc4
-Message-Id: <20130116094337.GB30208@linux-sh.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 25 Jan 2013 02:23:40 +0000
+Subject: [PATCH 04/80] sh: sh7757: Fix GPIO_FN_ET0_MDIO and GPIO_FN_ET1_MDIO GPIO entries
+Message-Id: <1359080696-31489-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The following changes since commit 254adaa465c40151df11fc1f88f93e6e86eb61d4:
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-  seq_file: fix new kernel-doc warnings (2013-01-10 14:35:24 -0800)
+The GPIO_FN_ET0_MDIO and GPIO_FN_ET1_MDIO GPIO entries incorrectly
+reference the ET0_MDC_MARK and ET1_MDC_MARK marks instead of the
+ET0_MDIO_MARK and ET1_MDIO_MARK marks. Fix them.
 
-are available in the git repository at:
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-  git://github.com/pmundt/linux-sh.git tags/sh-for-linus
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c
+index 4c74bd0..4a2736d 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c
+@@ -1376,9 +1376,9 @@ static struct pinmux_gpio pinmux_gpios[] = {
+ 	PINMUX_GPIO(GPIO_FN_WE1, WE1_MARK),
+ 	PINMUX_GPIO(GPIO_FN_RDY, RDY_MARK),
+ 	PINMUX_GPIO(GPIO_FN_ET0_MDC, ET0_MDC_MARK),
+-	PINMUX_GPIO(GPIO_FN_ET0_MDIO, ET0_MDC_MARK),
++	PINMUX_GPIO(GPIO_FN_ET0_MDIO, ET0_MDIO_MARK),
+ 	PINMUX_GPIO(GPIO_FN_ET1_MDC, ET1_MDC_MARK),
+-	PINMUX_GPIO(GPIO_FN_ET1_MDIO, ET1_MDC_MARK),
++	PINMUX_GPIO(GPIO_FN_ET1_MDIO, ET1_MDIO_MARK),
+ 
+ 	/* PTB (mobule: INTC, ONFI, TMU) */
+ 	PINMUX_GPIO(GPIO_FN_IRQ15, IRQ15_MARK),
+-- 
+1.7.10.4
 
-for you to fetch changes up to 035688d9c64c61957dd272a1e773f27b0143704d:
-
-  sh: ecovec: add sample amixer settings (2013-01-16 18:30:44 +0900)
-
-----------------------------------------------------------------
-SuperH fixes for 3.8-rc4
-
-----------------------------------------------------------------
-Kuninori Morimoto (3):
-      sh: define TASK_UNMAPPED_BASE as a page aligned constant
-      sh: clkfwk: bugfix: sh_clk_div_enable() care sh_clk_div_set_rate() if div6
-      sh: ecovec: add sample amixer settings
-
-Paul Mundt (2):
-      sh: wire up finit_module syscall.
-      sh: Fix up stack debugging build.
-
-Thomas Schwinge (1):
-      sh: Fix FDPIC binary loader
-
- arch/sh/boards/mach-ecovec24/setup.c |   10 ++++++++++
- arch/sh/include/asm/elf.h            |    4 ++--
- arch/sh/include/asm/processor_32.h   |    2 +-
- arch/sh/include/asm/processor_64.h   |    2 +-
- arch/sh/include/uapi/asm/unistd_32.h |    3 ++-
- arch/sh/include/uapi/asm/unistd_64.h |    3 ++-
- arch/sh/kernel/syscalls_32.S         |    1 +
- arch/sh/kernel/syscalls_64.S         |    1 +
- arch/sh/lib/mcount.S                 |    2 ++
- drivers/sh/clk/cpg.c                 |    6 ++++++
- 10 files changed, 28 insertions(+), 6 deletions(-)
