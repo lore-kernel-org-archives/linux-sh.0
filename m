@@ -1,61 +1,90 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 25 Jan 2013 03:55:22 +0000
-Subject: [PATCH 04/15] ARM: mach-shmobile: sh73a0 external IRQ wake update
-Message-Id: <1359086133-23357-5-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 25 Jan 2013 02:13:33 +0000
+Subject: [PATCH 15/15] ARM: shmobile: r8a7779: scif .irqs used SCIx_IRQ_MUXED()
+Message-Id: <1359080013-29189-16-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359086133-23357-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359086133-23357-1-git-send-email-horms+renesas@verge.net.au>
+References: <1359080013-29189-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359080013-29189-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Use sh73a0_set_wake() for external IRQ signals on sh73a0.
+This patch tidyup scif .irqs settings by using
+SCIx_IRQ_MUXED() macro.
 
-The sh73a0 IRQ hardware for external IRQ pins consists of
-the INTCA interrupt controller and the GIC together doing
-their best to limp along. These external IRQ pins are
-treated as a special case where interrupts need to be
-managed in both interrupt controllers in parallel.
-
-The ->irq_set_wake() callback for the external IRQ pins
-can be dealt with in the same way as INTCA-only without
-involving the GIC. So this patch updates the external
-IRQ pin code for sh73a0 to no longer involve the GIC.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/intc-sh73a0.c |    7 +------
- 1 file changed, 1 insertion(+), 6 deletions(-)
+ arch/arm/mach-shmobile/setup-r8a7779.c |   18 ++++++------------
+ 1 file changed, 6 insertions(+), 12 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/intc-sh73a0.c b/arch/arm/mach-shmobile/intc-sh73a0.c
-index 9783699..45973b5 100644
---- a/arch/arm/mach-shmobile/intc-sh73a0.c
-+++ b/arch/arm/mach-shmobile/intc-sh73a0.c
-@@ -315,11 +315,6 @@ static int intca_gic_set_type(struct irq_data *data, unsigned int type)
- 	return irq_cbp(irq_set_type, to_intca_reloc_irq(data), type);
- }
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index a181ced..7e87ab3 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -66,8 +66,7 @@ static struct plat_sci_port scif0_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= { gic_spi(88), gic_spi(88),
+-			    gic_spi(88), gic_spi(88) },
++	.irqs		= SCIx_IRQ_MUXED(gic_spi(88)),
+ };
  
--static int intca_gic_set_wake(struct irq_data *data, unsigned int on)
--{
--	return irq_cbp(irq_set_wake, to_intca_reloc_irq(data), on);
--}
--
- #ifdef CONFIG_SMP
- static int intca_gic_set_affinity(struct irq_data *data,
- 				  const struct cpumask *cpumask,
-@@ -339,7 +334,7 @@ struct irq_chip intca_gic_irq_chip = {
- 	.irq_disable		= intca_gic_disable,
- 	.irq_shutdown		= intca_gic_disable,
- 	.irq_set_type		= intca_gic_set_type,
--	.irq_set_wake		= intca_gic_set_wake,
-+	.irq_set_wake		= sh73a0_set_wake,
- #ifdef CONFIG_SMP
- 	.irq_set_affinity	= intca_gic_set_affinity,
- #endif
+ static struct platform_device scif0_device = {
+@@ -84,8 +83,7 @@ static struct plat_sci_port scif1_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= { gic_spi(89), gic_spi(89),
+-			    gic_spi(89), gic_spi(89) },
++	.irqs		= SCIx_IRQ_MUXED(gic_spi(89)),
+ };
+ 
+ static struct platform_device scif1_device = {
+@@ -102,8 +100,7 @@ static struct plat_sci_port scif2_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= { gic_spi(90), gic_spi(90),
+-			    gic_spi(90), gic_spi(90) },
++	.irqs		= SCIx_IRQ_MUXED(gic_spi(90)),
+ };
+ 
+ static struct platform_device scif2_device = {
+@@ -120,8 +117,7 @@ static struct plat_sci_port scif3_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= { gic_spi(91), gic_spi(91),
+-			    gic_spi(91), gic_spi(91) },
++	.irqs		= SCIx_IRQ_MUXED(gic_spi(91)),
+ };
+ 
+ static struct platform_device scif3_device = {
+@@ -138,8 +134,7 @@ static struct plat_sci_port scif4_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= { gic_spi(92), gic_spi(92),
+-			    gic_spi(92), gic_spi(92) },
++	.irqs		= SCIx_IRQ_MUXED(gic_spi(92)),
+ };
+ 
+ static struct platform_device scif4_device = {
+@@ -156,8 +151,7 @@ static struct plat_sci_port scif5_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= { gic_spi(93), gic_spi(93),
+-			    gic_spi(93), gic_spi(93) },
++	.irqs		= SCIx_IRQ_MUXED(gic_spi(93)),
+ };
+ 
+ static struct platform_device scif5_device = {
 -- 
 1.7.10.4
 
