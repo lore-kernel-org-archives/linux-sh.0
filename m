@@ -1,44 +1,68 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 23 Jan 2013 16:37:48 +0000
-Subject: [PATCH v3 5/8] ARM: shmobile: add a GPIO controller DT node for sh7372
-Message-Id: <1358959071-2873-6-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 25 Jan 2013 02:24:04 +0000
+Subject: [PATCH 28/80] ARM: shmobile: sh73a0: Add pin control resources
+Message-Id: <1359080696-31489-29-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358959071-2873-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1358959071-2873-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add a missing GPIO controller node to sh7372.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Add memory resources for the pin control platform device to let the
+sh-pfc driver ioremap() registers properly instead of evily casting
+register physical addresses to virtual addresses.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/pfc-sh73a0.c |   17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
 
-v3: fix second memory area size.
-
- arch/arm/boot/dts/sh7372.dtsi |    8 ++++++++
- 1 files changed, 8 insertions(+), 0 deletions(-)
-
-diff --git a/arch/arm/boot/dts/sh7372.dtsi b/arch/arm/boot/dts/sh7372.dtsi
-index 582fdec..3598e57 100644
---- a/arch/arm/boot/dts/sh7372.dtsi
-+++ b/arch/arm/boot/dts/sh7372.dtsi
-@@ -19,6 +19,14 @@
- 		};
- 	};
+diff --git a/arch/arm/mach-shmobile/pfc-sh73a0.c b/arch/arm/mach-shmobile/pfc-sh73a0.c
+index c83c582..342683e 100644
+--- a/arch/arm/mach-shmobile/pfc-sh73a0.c
++++ b/arch/arm/mach-shmobile/pfc-sh73a0.c
+@@ -18,7 +18,9 @@
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
++#include <linux/bug.h>
+ #include <linux/init.h>
++#include <linux/ioport.h>
+ #include <linux/kernel.h>
+ #include <linux/platform_device.h>
+ #include <linux/sh_pfc.h>
+@@ -2798,9 +2800,24 @@ static struct pinmux_info sh73a0_pinmux_info = {
+ 	.gpio_irq_size = ARRAY_SIZE(pinmux_irqs),
+ };
  
-+	gpio: pfc@e6050000 {
-+		compatible = "renesas,pfc-sh7372";
-+		reg = <0xe6050000 0x8000>,
-+		      <0xe605800c 0x1c>;
-+		gpio-controller;
-+		#gpio-cells = <2>;
-+	};
++static struct resource sh73a0_pfc_resources[] = {
++	[0] = {
++		.start	= 0xe6050000,
++		.end	= 0xe6057fff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= 0xe605801c,
++		.end	= 0xe6058027,
++		.flags	= IORESOURCE_MEM,
++	}
++};
 +
- 	soc {
- 		compatible = "simple-bus";
- 		#address-cells = <1>;
+ static struct platform_device sh73a0_pfc_device = {
+ 	.name		= "sh-pfc",
+ 	.id		= -1,
++	.resource	= sh73a0_pfc_resources,
++	.num_resources	= ARRAY_SIZE(sh73a0_pfc_resources),
+ 	.dev = {
+ 		.platform_data = &sh73a0_pinmux_info,
+ 	},
 -- 
-1.7.2.5
+1.7.10.4
 
