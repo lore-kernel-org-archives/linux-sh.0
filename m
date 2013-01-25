@@ -1,47 +1,36 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 28 Jan 2013 01:01:38 +0000
-Subject: Re: [PATCH v2 0/8] Use gpio_request_one() in SH Mobile board code
-Message-Id: <20130128010137.GH3423@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 25 Jan 2013 02:02:54 +0000
+Subject: [PATCH 2/2] ARM: mach-shmobile: mackerel:  enable VFP in defconfig
+Message-Id: <1359079374-25032-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359029795-7871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1359029795-7871-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1359079374-25032-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359079374-25032-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Jan 28, 2013 at 09:50:58AM +0900, Simon Horman wrote:
-> On Fri, Jan 25, 2013 at 11:13:13AM +0100, Guennadi Liakhovetski wrote:
-> > Hi Laurent
-> > 
-> > On Thu, 24 Jan 2013, Laurent Pinchart wrote:
-> > 
-> > > Hello,
-> > > 
-> > > Here are the second version of the gpio_request_one() patches for all SH Mobile
-> > > board files.
-> > > 
-> > > Compared to v1 the patches have been rebased on top of "[PATCH v4 00/81] SH pin
-> > > control and GPIO rework", as the previous base isn't ready for mainline yet.
-> > > The patches are otherwise unchanged.
-> > > 
-> > > Simon, with the appropriate acks I think this series could go to v3.9. If you
-> > > would like a pull request, on which of your branches should I rebase the
-> > > patches ? I've tried to rebase them on top of your current next branch and they
-> > > apply fine, so picking them up from the mailing list shouldn't be an issue
-> > > either.
-> > > 
-> > > Laurent Pinchart (8):
-> > 
-> > All look good to me:
-> > 
-> > Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> 
-> Thanks, I'll apply this series.
+CONFIG_VFP appears to be required to use the
+Debian armhf userspace. Enabling this is consistent
+with many other shmobile boards.
 
-I have applied them to the boards2 branch, which I plan to send a
-pull-request for once the pull-request boards branch, which boards2 is
-based on, has been accepted (or rejected!).
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/configs/mackerel_defconfig |    1 +
+ 1 file changed, 1 insertion(+)
 
-I have also merged the changes into the next branch so they should
-appear in linux-next in the not too distant future.
+diff --git a/arch/arm/configs/mackerel_defconfig b/arch/arm/configs/mackerel_defconfig
+index e6881ac..7594b3a 100644
+--- a/arch/arm/configs/mackerel_defconfig
++++ b/arch/arm/configs/mackerel_defconfig
+@@ -25,6 +25,7 @@ CONFIG_ZBOOT_ROM_TEXT=0x0
+ CONFIG_ZBOOT_ROM_BSS=0x0
+ CONFIG_ARM_APPENDED_DTB=y
+ CONFIG_KEXEC=y
++CONFIG_VFP=y
+ # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
+ CONFIG_PM=y
+ CONFIG_PM_RUNTIME=y
+-- 
+1.7.10.4
+
