@@ -1,160 +1,95 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 16 Jan 2013 17:08:17 +0000
-Subject: [PATCH 8/8] ARM: shmobile: completely switch MMC interfaces on armadillo800eva-reference to DT
-Message-Id: <1358356097-26180-9-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 25 Jan 2013 02:24:54 +0000
+Subject: [PATCH 78/80] sh: Remove unused sh_pfc_register_info() function
+Message-Id: <1359080696-31489-79-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358356097-26180-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1358356097-26180-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Switch MMCIF, SDHI0 and SDHI1 to complete DT initialisation: use DT
-bindings to configure regulators, interface pins, card-detect GPIOs,
-various interface configuration parameters.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+All boards use sh_pfc_register() directly, remove the unused
+sh_pfc_register_info() function.
+
+Make the name argument to sh_pfc_register() mandatory as it's now
+supplied by all callers.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- .../boot/dts/r8a7740-armadillo800eva-reference.dts |  101 ++++++++++++++++++++
- .../board-armadillo800eva-reference.c              |    5 +-
- 2 files changed, 103 insertions(+), 3 deletions(-)
+ arch/sh/include/asm/gpio.h           |    2 +-
+ arch/sh/include/cpu-common/cpu/pfc.h |    4 ----
+ arch/sh/kernel/cpu/pfc.c             |   13 +------------
+ 3 files changed, 2 insertions(+), 17 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index 319af9b..27774eb 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -30,4 +30,105 @@
- 		sh-eth,register-type = "gigabit";
- 		sh-eth,phy-id = <0>;
- 	};
-+
-+	reg_3p3v: regulator@0 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "fixed-3.3V";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+	};
-+
-+	mmcif0: mmcif@0xe6bd0000 {
-+		compatible = "renesas,sh-mmcif", "renesas,sh7372-mmcif";
-+		reg = <0xe6bd0000 0x100>;
-+		interrupt-parent = <&intca>;
-+		interrupts = <0x1ac0 0x1ae0>;
-+		vmmc-supply = <&reg_3p3v>;
-+		bus-width = <8>;
-+		non-removable;
-+		pinctrl-names = "default";
-+		pinctrl-0 = <&mmc0_pins>;
-+	};
-+
-+	vcc_sdhi0: regulator@1 {
-+		compatible = "regulator-fixed";
-+
-+		regulator-name = "vcc-sdhi0";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+
-+		gpio = <&gpio 75 0>;
-+		enable-active-high;
-+	};
-+
-+	vcc_sdhi1: regulator@2 {
-+		compatible = "regulator-fixed";
-+
-+		regulator-name = "vcc-sdhi1";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+
-+		gpio = <&gpio 16 0>;
-+		enable-active-high;
-+	};
-+
-+	vccq_sdhi0: gpio-regulator@0 {
-+		compatible = "regulator-gpio";
-+
-+		regulator-name = "vccq-sdhi0";
-+		regulator-min-microvolt = <1800000>;
-+		regulator-max-microvolt = <3300000>;
-+		vin-supply = <&vcc_sdhi0>;
-+
-+		enable-gpio = <&gpio 74 0>;
-+		gpios = <&gpio 17 0>;
-+		states = <3300000 0
-+			  1800000 1>;
-+
-+		enable-active-high;
-+	};
-+
-+	sdhi0: sdhi@0xe6850000 {
-+		compatible = "renesas,shmobile-sdhi";
-+		reg = <0xe6850000 0x100>;
-+		interrupt-parent = <&intca>;
-+		interrupts = <0xe20 0xe40>;
-+		vmmc-supply = <&vcc_sdhi0>;
-+		vqmmc-supply = <&vccq_sdhi0>;
-+		bus-width = <4>;
-+		cd-gpios = <&gpio 167 1>;
-+		pinctrl-names = "default";
-+		pinctrl-0 = <&sdhi0_pins>;
-+		toshiba,mmc-has-idle-wait;
-+		toshiba,mmc-cap-sdio-irq;
-+	};
-+
-+	sdhi1: sdhi@0xe6860000 {
-+		compatible = "renesas,shmobile-sdhi";
-+		reg = <0xe6860000 0x100>;
-+		interrupt-parent = <&intca>;
-+		interrupts = <0xea0 0xec0>;
-+		vmmc-supply = <&vcc_sdhi1>;
-+		bus-width = <4>;
-+		cd-gpios = <&gpio 72 1>;
-+		pinctrl-names = "default";
-+		pinctrl-0 = <&sdhi1_pins>;
-+		toshiba,mmc-has-idle-wait;
-+		toshiba,mmc-cap-sdio-irq;
-+	};
-+};
-+
-+&gpio {
-+	sdhi0_pins: pfc_sdhi0_pins {
-+		renesas,pins = "sdhi0_data4", "sdhi0_ctrl", "sdhi0_wp";
-+		renesas,function = "sdhi0";
-+	};
-+	sdhi1_pins: pfc_sdhi1_pins {
-+		renesas,pins = "sdhi1_data4", "sdhi1_ctrl", "sdhi1_wp";
-+		renesas,function = "sdhi1";
-+	};
-+	mmc0_pins: pfc_mmc0_pins {
-+		renesas,pins = "mmc0_data8_1", "mmc0_ctrl_1";
-+		renesas,function = "mmc0";
-+	};
- };
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-index c206612..f929931 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-@@ -107,9 +107,10 @@
-  */
- static void __init eva_init(void)
- {
--	r8a7740_pinmux_init();
- 	r8a7740_meram_workaround();
- 
-+	r8a7740_add_standard_devices_dt();
-+
- 	/* SCIFA1 */
- 	gpio_request(GPIO_FN_SCIFA1_RXD, NULL);
- 	gpio_request(GPIO_FN_SCIFA1_TXD, NULL);
-@@ -142,8 +143,6 @@ static void __init eva_init(void)
- 	/* Early BRESP enable, Shared attribute override enable, 32K*8way */
- 	l2x0_init(IOMEM(0xf0002000), 0x40440000, 0x82000fff);
+diff --git a/arch/sh/include/asm/gpio.h b/arch/sh/include/asm/gpio.h
+index 04f53d3..7dfe15e 100644
+--- a/arch/sh/include/asm/gpio.h
++++ b/arch/sh/include/asm/gpio.h
+@@ -20,7 +20,7 @@
  #endif
--
--	r8a7740_add_standard_devices_dt();
- }
  
- #define RESCNT2 IOMEM(0xe6188020)
+ #define ARCH_NR_GPIOS 512
+-#include <linux/sh_pfc.h>
++#include <asm-generic/gpio.h>
+ 
+ #ifdef CONFIG_GPIOLIB
+ 
+diff --git a/arch/sh/include/cpu-common/cpu/pfc.h b/arch/sh/include/cpu-common/cpu/pfc.h
+index 40e8643..e538813 100644
+--- a/arch/sh/include/cpu-common/cpu/pfc.h
++++ b/arch/sh/include/cpu-common/cpu/pfc.h
+@@ -18,13 +18,9 @@
+ 
+ #include <linux/types.h>
+ 
+-struct pinmux_info;
+ struct resource;
+ 
+ int sh_pfc_register(const char *name,
+ 		    struct resource *resource, u32 num_resources);
+-int sh_pfc_register_info(const char *name,
+-			 struct resource *resource, u32 num_resources,
+-			 struct pinmux_info *pdata);
+ 
+ #endif /* __ARCH_SH_CPU_PFC_H__ */
+diff --git a/arch/sh/kernel/cpu/pfc.c b/arch/sh/kernel/cpu/pfc.c
+index d045d75..d766564 100644
+--- a/arch/sh/kernel/cpu/pfc.c
++++ b/arch/sh/kernel/cpu/pfc.c
+@@ -19,26 +19,15 @@
+ #include <cpu/pfc.h>
+ 
+ static struct platform_device sh_pfc_device = {
+-	.name		= "sh-pfc",
+ 	.id		= -1,
+ };
+ 
+ int __init sh_pfc_register(const char *name,
+ 			   struct resource *resource, u32 num_resources)
+ {
+-	if (name)
+-		sh_pfc_device.name = name;
++	sh_pfc_device.name = name;
+ 	sh_pfc_device.num_resources = num_resources;
+ 	sh_pfc_device.resource = resource;
+ 
+ 	return platform_device_register(&sh_pfc_device);
+ }
+-
+-int __init sh_pfc_register_info(const char *name,
+-				struct resource *resource, u32 num_resources,
+-				struct pinmux_info *pdata)
+-{
+-	sh_pfc_device.dev.platform_data = pdata;
+-
+-	return sh_pfc_register(name, resource, num_resources);
+-}
 -- 
-1.7.2.5
+1.7.10.4
 
