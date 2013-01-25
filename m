@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 25 Jan 2013 02:13:24 +0000
+Date: Fri, 25 Jan 2013 03:55:24 +0000
 Subject: [PATCH 06/15] ARM: sh7372: fix cache clean / invalidate order
-Message-Id: <1359080013-29189-7-git-send-email-horms+renesas@verge.net.au>
+Message-Id: <1359086133-23357-7-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359080013-29189-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359080013-29189-1-git-send-email-horms+renesas@verge.net.au>
+References: <1359086133-23357-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359086133-23357-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
