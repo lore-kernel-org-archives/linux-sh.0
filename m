@@ -1,17 +1,68 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 11 Jan 2013 07:17:01 +0000
-Subject: [PATCH 0/5] ARM: mach-shmobile: defconfig updates
-Message-Id: <1357888626-4946-1-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 25 Jan 2013 02:24:02 +0000
+Subject: [PATCH 26/80] ARM: shmobile: r8a7740: Add pin control resources
+Message-Id: <1359080696-31489-27-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-I would like to propose the following defconfig updates for
-mach-shmobile for 3.9. I will send a pull-request containing
-them after the forthcoming long weekend if there are no objections
-in the meantime.
+Add memory resources for the pin control platform device to let the
+sh-pfc driver ioremap() registers properly instead of evily casting
+register physical addresses to virtual addresses.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/pfc-r8a7740.c |   17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/pfc-r8a7740.c b/arch/arm/mach-shmobile/pfc-r8a7740.c
+index 8a412b1..84ef85d 100644
+--- a/arch/arm/mach-shmobile/pfc-r8a7740.c
++++ b/arch/arm/mach-shmobile/pfc-r8a7740.c
+@@ -18,7 +18,9 @@
+  * along with this program; if not, write to the Free Software
+  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+  */
++#include <linux/bug.h>
+ #include <linux/init.h>
++#include <linux/ioport.h>
+ #include <linux/kernel.h>
+ #include <linux/platform_device.h>
+ #include <linux/sh_pfc.h>
+@@ -2612,9 +2614,24 @@ static struct pinmux_info r8a7740_pinmux_info = {
+ 	.gpio_irq_size	= ARRAY_SIZE(pinmux_irqs),
+ };
+ 
++static struct resource r8a7740_pfc_resources[] = {
++	[0] = {
++		.start	= 0xe6050000,
++		.end	= 0xe6057fff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= 0xe605800c,
++		.end	= 0xe605802b,
++		.flags	= IORESOURCE_MEM,
++	}
++};
++
+ static struct platform_device r8a7740_pfc_device = {
+ 	.name		= "sh-pfc",
+ 	.id		= -1,
++	.resource	= r8a7740_pfc_resources,
++	.num_resources	= ARRAY_SIZE(r8a7740_pfc_resources),
+ 	.dev = {
+ 		.platform_data = &r8a7740_pinmux_info,
+ 	},
+-- 
+1.7.10.4
 
