@@ -1,109 +1,61 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 25 Jan 2013 03:55:29 +0000
-Subject: [PATCH 11/15] ARM: SH-Mobile: sh73a0: Add CPU Hotplug
-Message-Id: <1359086133-23357-12-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 25 Jan 2013 02:13:22 +0000
+Subject: [PATCH 04/15] ARM: mach-shmobile: sh73a0 external IRQ wake update
+Message-Id: <1359080013-29189-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359086133-23357-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359086133-23357-1-git-send-email-horms+renesas@verge.net.au>
+References: <1359080013-29189-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359080013-29189-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Bastian Hecht <hechtb@gmail.com>
+From: Magnus Damm <damm@opensource.se>
 
-Add the capability to add and remove CPUs on the fly.
-The Cortex-A9 offers the possibility to take single cores out of the
-MP Core. We add this capabilty taking care that caches are kept
-coherent. For verifying the shutdown we rely on the internal SH73A0
-Power Status Register PSTR.
+Use sh73a0_set_wake() for external IRQ signals on sh73a0.
 
-Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+The sh73a0 IRQ hardware for external IRQ pins consists of
+the INTCA interrupt controller and the GIC together doing
+their best to limp along. These external IRQ pins are
+treated as a special case where interrupts need to be
+managed in both interrupt controllers in parallel.
+
+The ->irq_set_wake() callback for the external IRQ pins
+can be dealt with in the same way as INTCA-only without
+involving the GIC. So this patch updates the external
+IRQ pin code for sh73a0 to no longer involve the GIC.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/smp-sh73a0.c |   36 +++++++++++++++++++++++++++++------
- 1 file changed, 30 insertions(+), 6 deletions(-)
+ arch/arm/mach-shmobile/intc-sh73a0.c |    7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
-index 430b44e..9812ea3 100644
---- a/arch/arm/mach-shmobile/smp-sh73a0.c
-+++ b/arch/arm/mach-shmobile/smp-sh73a0.c
-@@ -25,6 +25,7 @@
- #include <linux/delay.h>
- #include <linux/irqchip/arm-gic.h>
- #include <mach/common.h>
-+#include <asm/cacheflush.h>
- #include <asm/smp_plat.h>
- #include <mach/sh73a0.h>
- #include <asm/smp_scu.h>
-@@ -36,6 +37,8 @@
- #define SBAR		IOMEM(0xe6180020)
- #define APARMBAREA	IOMEM(0xe6f10020)
- 
-+#define PSTR_SHUTDOWN_MODE	3
-+
- static void __iomem *scu_base_addr(void)
- {
- 	return (void __iomem *)0xf0000000;
-@@ -92,16 +95,20 @@ static void __init sh73a0_smp_init_cpus(void)
- 	shmobile_smp_init_cpus(ncores);
+diff --git a/arch/arm/mach-shmobile/intc-sh73a0.c b/arch/arm/mach-shmobile/intc-sh73a0.c
+index 9783699..45973b5 100644
+--- a/arch/arm/mach-shmobile/intc-sh73a0.c
++++ b/arch/arm/mach-shmobile/intc-sh73a0.c
+@@ -315,11 +315,6 @@ static int intca_gic_set_type(struct irq_data *data, unsigned int type)
+ 	return irq_cbp(irq_set_type, to_intca_reloc_irq(data), type);
  }
  
--static int __maybe_unused sh73a0_cpu_kill(unsigned int cpu)
-+#ifdef CONFIG_HOTPLUG_CPU
-+static int sh73a0_cpu_kill(unsigned int cpu)
- {
-+
- 	int k;
-+	u32 pstr;
- 
--	/* this function is running on another CPU than the offline target,
--	 * here we need wait for shutdown code in platform_cpu_die() to
--	 * finish before asking SoC-specific code to power off the CPU core.
-+	/*
-+	 * wait until the power status register confirms the shutdown of the
-+	 * offline target
- 	 */
- 	for (k = 0; k < 1000; k++) {
--		if (shmobile_cpu_is_dead(cpu))
-+		pstr = (__raw_readl(PSTR) >> (4 * cpu)) & 3;
-+		if (pstr = PSTR_SHUTDOWN_MODE)
- 			return 1;
- 
- 		mdelay(1);
-@@ -110,6 +117,23 @@ static int __maybe_unused sh73a0_cpu_kill(unsigned int cpu)
- 	return 0;
- }
- 
-+static void sh73a0_cpu_die(unsigned int cpu)
-+{
-+	/*
-+	 * The ARM MPcore does not issue a cache coherency request for the L1
-+	 * cache when powering off single CPUs. We must take care of this and
-+	 * further caches.
-+	 */
-+	dsb();
-+	flush_cache_all();
-+
-+	/* Set power off mode. This takes the CPU out of the MP cluster */
-+	scu_power_mode(scu_base_addr(), SCU_PM_POWEROFF);
-+
-+	/* Enter shutdown mode */
-+	cpu_do_idle();
-+}
-+#endif /* CONFIG_HOTPLUG_CPU */
- 
- struct smp_operations sh73a0_smp_ops __initdata = {
- 	.smp_init_cpus		= sh73a0_smp_init_cpus,
-@@ -118,7 +142,7 @@ struct smp_operations sh73a0_smp_ops __initdata = {
- 	.smp_boot_secondary	= sh73a0_boot_secondary,
- #ifdef CONFIG_HOTPLUG_CPU
- 	.cpu_kill		= sh73a0_cpu_kill,
--	.cpu_die		= shmobile_cpu_die,
-+	.cpu_die		= sh73a0_cpu_die,
- 	.cpu_disable		= shmobile_cpu_disable,
+-static int intca_gic_set_wake(struct irq_data *data, unsigned int on)
+-{
+-	return irq_cbp(irq_set_wake, to_intca_reloc_irq(data), on);
+-}
+-
+ #ifdef CONFIG_SMP
+ static int intca_gic_set_affinity(struct irq_data *data,
+ 				  const struct cpumask *cpumask,
+@@ -339,7 +334,7 @@ struct irq_chip intca_gic_irq_chip = {
+ 	.irq_disable		= intca_gic_disable,
+ 	.irq_shutdown		= intca_gic_disable,
+ 	.irq_set_type		= intca_gic_set_type,
+-	.irq_set_wake		= intca_gic_set_wake,
++	.irq_set_wake		= sh73a0_set_wake,
+ #ifdef CONFIG_SMP
+ 	.irq_set_affinity	= intca_gic_set_affinity,
  #endif
- };
 -- 
 1.7.10.4
 
