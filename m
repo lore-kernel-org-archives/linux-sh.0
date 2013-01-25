@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 25 Jan 2013 02:13:21 +0000
+Date: Fri, 25 Jan 2013 03:55:21 +0000
 Subject: [PATCH 03/15] ARM: shmobile: sh73a0: fixup div4_clks bitmap
-Message-Id: <1359080013-29189-4-git-send-email-horms+renesas@verge.net.au>
+Message-Id: <1359086133-23357-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359080013-29189-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359080013-29189-1-git-send-email-horms+renesas@verge.net.au>
+References: <1359086133-23357-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359086133-23357-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
