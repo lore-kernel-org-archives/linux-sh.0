@@ -1,192 +1,43 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 09 Jan 2013 00:52:33 +0000
-Subject: [PATCH v2 13/29] sh-pfc: Shrink the pinctrl GPIO range to include real GPIOs only
-Message-Id: <1357692769-1432-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 25 Jan 2013 02:23:57 +0000
+Subject: [PATCH 21/80] ARM: shmobile: Select PINCTRL
+Message-Id: <1359080696-31489-22-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-As a step towards GPIO function removal, shorten the GPIO range
-registered with the pinctrl core. Function GPIOs are now handled in the
-GPIO handlers directly instead of going through the pinctrl API.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+The pin control framework is required by mach-shmobile. Select it in
+Kconfig.
+
+This will be required when the sh-pfc driver will move to
+drivers/pinctrl/.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
 Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/core.c    |    2 +-
- drivers/pinctrl/sh-pfc/core.h    |    1 +
- drivers/pinctrl/sh-pfc/gpio.c    |   57 ++++++++++++++++++++++++++++++++++++-
- drivers/pinctrl/sh-pfc/pinctrl.c |   27 +----------------
- 4 files changed, 59 insertions(+), 28 deletions(-)
+ arch/arm/Kconfig |    1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
-index 3e4e80d..70fc753 100644
---- a/drivers/pinctrl/sh-pfc/core.c
-+++ b/drivers/pinctrl/sh-pfc/core.c
-@@ -95,7 +95,7 @@ static bool sh_pfc_gpio_is_pin(struct sh_pfc *pfc, unsigned int gpio)
- 	       (pfc->info->gpios[gpio].enum_id != 0);
- }
- 
--static bool sh_pfc_gpio_is_function(struct sh_pfc *pfc, unsigned int gpio)
-+bool sh_pfc_gpio_is_function(struct sh_pfc *pfc, unsigned int gpio)
- {
- 	return (gpio >= pfc->info->nr_pins) && (gpio < pfc->info->nr_gpios) &&
- 	       (pfc->info->gpios[gpio].enum_id != 0);
-diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
-index ba7c33c..dceaec0 100644
---- a/drivers/pinctrl/sh-pfc/core.h
-+++ b/drivers/pinctrl/sh-pfc/core.h
-@@ -47,6 +47,7 @@ void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
- 		      unsigned long value);
- int sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
- 			struct pinmux_data_reg **drp, int *bitp);
-+bool sh_pfc_gpio_is_function(struct sh_pfc *pfc, unsigned int gpio);
- int sh_pfc_gpio_to_enum(struct sh_pfc *pfc, unsigned gpio, int pos,
- 			pinmux_enum_t *enum_idp);
- int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
-diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
-index f46f069..80a50d8 100644
---- a/drivers/pinctrl/sh-pfc/gpio.c
-+++ b/drivers/pinctrl/sh-pfc/gpio.c
-@@ -38,12 +38,51 @@ static struct sh_pfc *gpio_to_pfc(struct gpio_chip *gc)
- 
- static int sh_gpio_request(struct gpio_chip *gc, unsigned offset)
- {
--	return pinctrl_request_gpio(offset);
-+	struct sh_pfc *pfc = gpio_to_pfc(gc);
-+	unsigned long flags;
-+	int ret = -EINVAL;
-+
-+	if (offset < pfc->info->nr_pins)
-+		return pinctrl_request_gpio(offset);
-+
-+	pr_notice_once("Use of GPIO API for function requests is deprecated, convert to pinctrl\n");
-+
-+	spin_lock_irqsave(&pfc->lock, flags);
-+
-+	if (!sh_pfc_gpio_is_function(pfc, offset))
-+		goto done;
-+
-+	if (sh_pfc_config_gpio(pfc, offset, PINMUX_TYPE_FUNCTION,
-+			       GPIO_CFG_DRYRUN))
-+		goto done;
-+
-+	if (sh_pfc_config_gpio(pfc, offset, PINMUX_TYPE_FUNCTION,
-+			       GPIO_CFG_REQ))
-+		goto done;
-+
-+	ret = 0;
-+
-+done:
-+	spin_unlock_irqrestore(&pfc->lock, flags);
-+	return ret;
- }
- 
- static void sh_gpio_free(struct gpio_chip *gc, unsigned offset)
- {
--	pinctrl_free_gpio(offset);
-+	struct sh_pfc *pfc = gpio_to_pfc(gc);
-+	unsigned long flags;
-+	int pinmux_type;
-+
-+	if (offset < pfc->info->nr_pins)
-+		return pinctrl_free_gpio(offset);
-+
-+	spin_lock_irqsave(&pfc->lock, flags);
-+
-+	pinmux_type = pfc->info->gpios[offset].flags & PINMUX_FLAG_TYPE;
-+
-+	sh_pfc_config_gpio(pfc, offset, pinmux_type, GPIO_CFG_FREE);
-+
-+	spin_unlock_irqrestore(&pfc->lock, flags);
- }
- 
- static void sh_gpio_set_value(struct sh_pfc *pfc, unsigned gpio, int value)
-@@ -70,12 +109,26 @@ static int sh_gpio_get_value(struct sh_pfc *pfc, unsigned gpio)
- 
- static int sh_gpio_direction_input(struct gpio_chip *gc, unsigned offset)
- {
-+	struct sh_pfc *pfc = gpio_to_pfc(gc);
-+
-+	if (offset >= pfc->info->nr_pins) {
-+		/* Function GPIOs can only be requested, never configured. */
-+		return -EINVAL;
-+	}
-+
- 	return pinctrl_gpio_direction_input(offset);
- }
- 
- static int sh_gpio_direction_output(struct gpio_chip *gc, unsigned offset,
- 				    int value)
- {
-+	struct sh_pfc *pfc = gpio_to_pfc(gc);
-+
-+	if (offset >= pfc->info->nr_pins) {
-+		/* Function GPIOs can only be requested, never configured. */
-+		return -EINVAL;
-+	}
-+
- 	sh_gpio_set_value(gpio_to_pfc(gc), offset, value);
- 
- 	return pinctrl_gpio_direction_output(offset);
-diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
-index 8a13dff..baad8b4 100644
---- a/drivers/pinctrl/sh-pfc/pinctrl.c
-+++ b/drivers/pinctrl/sh-pfc/pinctrl.c
-@@ -113,21 +113,6 @@ static void sh_pfc_noop_disable(struct pinctrl_dev *pctldev, unsigned func,
- {
- }
- 
--static int sh_pfc_config_function(struct sh_pfc *pfc, unsigned offset)
--{
--	if (sh_pfc_config_gpio(pfc, offset,
--			       PINMUX_TYPE_FUNCTION,
--			       GPIO_CFG_DRYRUN) != 0)
--		return -EINVAL;
--
--	if (sh_pfc_config_gpio(pfc, offset,
--			       PINMUX_TYPE_FUNCTION,
--			       GPIO_CFG_REQ) != 0)
--		return -EINVAL;
--
--	return 0;
--}
--
- static int sh_pfc_reconfig_pin(struct sh_pfc *pfc, unsigned offset,
- 			       int new_type)
- {
-@@ -195,19 +180,11 @@ static int sh_pfc_gpio_request_enable(struct pinctrl_dev *pctldev,
- 	pinmux_type = pfc->info->gpios[offset].flags & PINMUX_FLAG_TYPE;
- 
- 	switch (pinmux_type) {
--	case PINMUX_TYPE_FUNCTION:
--		pr_notice_once("Use of GPIO API for function requests is "
--			       "deprecated, convert to pinctrl\n");
--		/* handle for now */
--		ret = sh_pfc_config_function(pfc, offset);
--		if (unlikely(ret < 0))
--			goto err;
--
--		break;
- 	case PINMUX_TYPE_GPIO:
- 	case PINMUX_TYPE_INPUT:
- 	case PINMUX_TYPE_OUTPUT:
- 		break;
-+	case PINMUX_TYPE_FUNCTION:
- 	default:
- 		pr_err("Unsupported mux type (%d), bailing...\n", pinmux_type);
- 		ret = -ENOTSUPP;
-@@ -403,7 +380,7 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
- 	if (IS_ERR(pmx->pctl))
- 		return PTR_ERR(pmx->pctl);
- 
--	sh_pfc_gpio_range.npins = pfc->info->nr_gpios;
-+	sh_pfc_gpio_range.npins = pfc->info->nr_pins;
- 	sh_pfc_gpio_range.base = 0;
- 	sh_pfc_gpio_range.pin_base = 0;
- 
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 67874b8..19c97e5 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -698,6 +698,7 @@ config ARCH_SHMOBILE
+ 	select MULTI_IRQ_HANDLER
+ 	select NEED_MACH_MEMORY_H
+ 	select NO_IOPORT
++	select PINCTRL
+ 	select PM_GENERIC_DOMAINS if PM
+ 	select SPARSE_IRQ
+ 	help
 -- 
-1.7.8.6
+1.7.10.4
 
