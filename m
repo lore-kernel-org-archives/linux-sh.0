@@ -1,68 +1,88 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Sat, 26 Jan 2013 01:04:13 +0000
-Subject: Re: [PATCH/RFC 2/3] ethernet: add a PHY reset GPIO DT binding to sh_eth
-Message-Id: <3496361.USCGuib0gY@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 25 Jan 2013 03:55:18 +0000
+Subject: [GIT PULL v2] Renesas ARM-based SoC for v3.9
+Message-Id: <1359086133-23357-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359043653-11374-1-git-send-email-g.liakhovetski@gmx.de>
- <7921225.sfO3PIeLVS@avalon>
- <Pine.LNX.4.64.1301251127460.17518@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1301251127460.17518@axis700.grange>
+References: <1352446165-19298-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1352446165-19298-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Guennadi,
+Hi Olof, Hi Arnd,
 
-On Friday 25 January 2013 11:34:55 Guennadi Liakhovetski wrote:
-> On Fri, 25 Jan 2013, Laurent Pinchart wrote:
-> > On Thursday 24 January 2013 17:07:32 Guennadi Liakhovetski wrote:
-> > > If an ethernet PHY can be reset by a GPIO, it can be specified in DT.
-> > > Add a binding and code to parse it, request the GPIO and take the PHY
-> > > out of reset.
-> > > 
-> > > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > > Cc: devicetree-discuss@lists.ozlabs.org
-> > > Cc: netdev@vger.kernel.org
-> > > ---
-> > > 
-> > >  Documentation/devicetree/bindings/net/sh_ether.txt |    2 ++
-> > >  drivers/net/ethernet/renesas/sh_eth.c              |    9 ++++++++-
-> > >  2 files changed, 10 insertions(+), 1 deletions(-)
+please consider the following soc enhancements for 3.9.
 
-[snip]
+This series is based on a merge of the irqchip/gic-vic-move and
+timer/cleanup branches in the arm-soc tree. There were a number of
+conflicts in this merge, as indicated by the merge commit
+6265b0f325eed54558b35769aecb1d79423295c7. In each case I took care to
+match the merge made in the arm-soc tree which is evident in the for-next
+branch.
 
-> > > diff --git a/drivers/net/ethernet/renesas/sh_eth.c
-> > > b/drivers/net/ethernet/renesas/sh_eth.c index 1f64848..06035a2 100644
-> > > --- a/drivers/net/ethernet/renesas/sh_eth.c
-> > > +++ b/drivers/net/ethernet/renesas/sh_eth.c
+----------------------------------------------------------------
+The following changes since commit 6265b0f325eed54558b35769aecb1d79423295c7:
 
-[snip]
+  Merge remote-tracking branches 'arm-soc/irqchip/gic-vic-move' and 'arm-soc/timer/cleanup' into soc (2013-01-24 17:57:20 +0900)
 
-> > > @@ -2420,6 +2423,10 @@ sh_eth_parse_dt(struct device *dev, struct
-> > > net_device *ndev) else
-> > > 
-> > >  		pdata->needs_init = 0;
-> > > 
-> > > +	gpio = of_get_named_gpio_flags(np, "phy-reset-gpios", 0, &flags);
-> > > +	if (gpio_is_valid(gpio) && !devm_gpio_request(dev, gpio, NULL))
-> > > +		gpio_direction_output(gpio, !!(flags & OF_GPIO_ACTIVE_LOW));
-> > 
-> > You could use devm_gpio_request_one() here.
-> 
-> Yes, but then the flag would look uglier, something like
-> 
-> 		devm_gpio_request_one(dev, gpio, flags &
-> 			OF_GPIO_ACTIVE_LOW ? GPIOF_OUT_INIT_HIGH :
-> 			GPIOF_OUT_INIT_LOW);
-> 
-> Does it really look like an improvement? :)
+are available in the git repository at:
 
-It's one less function call, so to me it does :-) Feel free to ignore that 
-though.
 
--- 
-Regards,
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git soc
 
-Laurent Pinchart
+for you to fetch changes up to ff8de98d50e551057978ea90d09255c528fde1ac:
 
+  ARM: shmobile: r8a7779: scif .irqs used SCIx_IRQ_MUXED() (2013-01-25 12:43:50 +0900)
+
+----------------------------------------------------------------
+Bastian Hecht (4):
+      ARM: shmobile: sh73a0: Add CPU sleep suspend
+      ARM: shmobile: r8a7740: Add CPU sleep suspend
+      ARM: SH-Mobile: sh73a0: Secondary CPUs handle own SCU flags
+      ARM: SH-Mobile: sh73a0: Add CPU Hotplug
+
+Guennadi Liakhovetski (3):
+      ARM: sh7372: add clock lookup entries for DT-based devices
+      ARM: sh7372: fix cache clean / invalidate order
+      ARM: shmobile: add function declarations for sh7372 DT helper functions
+
+Kuninori Morimoto (3):
+      ARM: shmobile: r8a7740: add TMU timer support
+      ARM: shmobile: sh73a0: fixup div4_clks bitmap
+      ARM: shmobile: r8a7779: scif .irqs used SCIx_IRQ_MUXED()
+
+Magnus Damm (1):
+      ARM: mach-shmobile: sh73a0 external IRQ wake update
+
+Sachin Kamat (1):
+      ARM: shmobile: Remove duplicate inclusion of dma-mapping.h in setup-r8a7740.c
+
+Simon Horman (3):
+      ARM: mach-shmobile: sh73a0: Allow initialisation of GIC by DT
+      ARM: mach-shmobile: sh73a0: Minimal setup using DT
+      ARM: mach-shmobile: sh73a0: Initialise MMCIF using DT
+
+ arch/arm/boot/dts/sh73a0-reference.dtsi        |   24 ++++++
+ arch/arm/boot/dts/sh73a0.dtsi                  |   93 +++++++++++++++++++++++
+ arch/arm/mach-shmobile/Makefile                |    3 +-
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    2 +
+ arch/arm/mach-shmobile/board-kzm9g.c           |    2 +
+ arch/arm/mach-shmobile/clock-r8a7740.c         |    6 +-
+ arch/arm/mach-shmobile/clock-sh7372.c          |    9 +++
+ arch/arm/mach-shmobile/clock-sh73a0.c          |   35 ++++++---
+ arch/arm/mach-shmobile/headsmp-sh73a0.S        |   50 +++++++++++++
+ arch/arm/mach-shmobile/include/mach/common.h   |    8 ++
+ arch/arm/mach-shmobile/intc-sh73a0.c           |   16 ++--
+ arch/arm/mach-shmobile/pm-r8a7740.c            |   22 ++++++
+ arch/arm/mach-shmobile/pm-sh73a0.c             |   32 ++++++++
+ arch/arm/mach-shmobile/setup-r8a7740.c         |   95 +++++++++++++++++++++++-
+ arch/arm/mach-shmobile/setup-r8a7779.c         |   18 ++---
+ arch/arm/mach-shmobile/setup-sh73a0.c          |   62 +++++++++++++++-
+ arch/arm/mach-shmobile/sleep-sh7372.S          |   12 +--
+ arch/arm/mach-shmobile/smp-sh73a0.c            |   66 ++++++++--------
+ 18 files changed, 485 insertions(+), 70 deletions(-)
+ create mode 100644 arch/arm/boot/dts/sh73a0-reference.dtsi
+ create mode 100644 arch/arm/boot/dts/sh73a0.dtsi
+ create mode 100644 arch/arm/mach-shmobile/headsmp-sh73a0.S
+ create mode 100644 arch/arm/mach-shmobile/pm-sh73a0.c
