@@ -1,32 +1,41 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Tue, 29 Jan 2013 17:01:39 +0000
-Subject: Re: [GIT PULL] Renesas ARM-based SoC defconfig for v3.9 #2
-Message-Id: <20130129170139.GC16188@quad.lixom.net>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 25 Jan 2013 02:13:25 +0000
+Subject: [PATCH 07/15] ARM: shmobile: add function declarations for sh7372 DT helper functions
+Message-Id: <1359080013-29189-8-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359079374-25032-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359079374-25032-1-git-send-email-horms+renesas@verge.net.au>
+References: <1359080013-29189-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359080013-29189-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jan 25, 2013 at 11:02:52AM +0900, Simon Horman wrote:
-> Hi Olof, Hi Arnd,
-> 
-> please consider the following defconfig enhancements for 3.9.
-> 
-> This series is based on the renesas/defconfig branch in the arm-soc tree.
-> 
-> ----------------------------------------------------------------
-> The following changes since commit 8098df15c26b2bf16924df5a134d1a649692ab62:
-> 
->   ARM: mach-shmobile: kzm9d: update defconfig (2013-01-15 08:57:09 +0900)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git defconfig2
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Thanks, pulled on top of previous defconfig branch.
+sh7372_add_early_devices_dt() and sh7372_add_standard_devices_dt() are
+defined as global functions in arch/arm/mach-shmobile/setup-sh7372.c,
+but their declarations are missing. Add them to common.h, where similar
+functions for this and other SoC types are already declared.
 
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Simon Horman <horms@verge.net.au>
+---
+ arch/arm/mach-shmobile/include/mach/common.h |    2 ++
+ 1 file changed, 2 insertions(+)
 
--Olof
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index a57439e..2d1686b 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -23,6 +23,8 @@ extern void sh7372_map_io(void);
+ extern void sh7372_earlytimer_init(void);
+ extern void sh7372_add_early_devices(void);
+ extern void sh7372_add_standard_devices(void);
++extern void sh7372_add_early_devices_dt(void);
++extern void sh7372_add_standard_devices_dt(void);
+ extern void sh7372_clock_init(void);
+ extern void sh7372_pinmux_init(void);
+ extern void sh7372_pm_init(void);
+-- 
+1.7.10.4
+
