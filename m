@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 25 Jan 2013 02:24:02 +0000
-Subject: [PATCH 26/80] ARM: shmobile: r8a7740: Add pin control resources
-Message-Id: <1359080696-31489-27-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 25 Jan 2013 02:24:07 +0000
+Subject: [PATCH 31/80] sh: sh7264: Register PFC platform device
+Message-Id: <1359080696-31489-32-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
@@ -12,57 +12,50 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Add memory resources for the pin control platform device to let the
-sh-pfc driver ioremap() registers properly instead of evily casting
-register physical addresses to virtual addresses.
+Add arch code to register the PFC platform device instead of calling the
+driver directly. Platform device registration in the sh-pfc driver will
+be removed.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Paul Mundt <lethal@linux-sh.org>
 Acked-by: Linus Walleij <linus.walleij@linaro.org>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/pfc-r8a7740.c |   17 +++++++++++++++++
- 1 file changed, 17 insertions(+)
+ arch/sh/Kconfig                         |    1 +
+ arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c |    3 ++-
+ 2 files changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/pfc-r8a7740.c b/arch/arm/mach-shmobile/pfc-r8a7740.c
-index 8a412b1..84ef85d 100644
---- a/arch/arm/mach-shmobile/pfc-r8a7740.c
-+++ b/arch/arm/mach-shmobile/pfc-r8a7740.c
-@@ -18,7 +18,9 @@
-  * along with this program; if not, write to the Free Software
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
-+#include <linux/bug.h>
- #include <linux/init.h>
-+#include <linux/ioport.h>
- #include <linux/kernel.h>
- #include <linux/platform_device.h>
- #include <linux/sh_pfc.h>
-@@ -2612,9 +2614,24 @@ static struct pinmux_info r8a7740_pinmux_info = {
- 	.gpio_irq_size	= ARRAY_SIZE(pinmux_irqs),
- };
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index 023b2ad..0626044 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -297,6 +297,7 @@ config CPU_SUBTYPE_SH7264
+ 	select CPU_HAS_FPU
+ 	select SYS_SUPPORTS_CMT
+ 	select SYS_SUPPORTS_MTU2
++	select PINCTRL
  
-+static struct resource r8a7740_pfc_resources[] = {
-+	[0] = {
-+		.start	= 0xe6050000,
-+		.end	= 0xe6057fff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= 0xe605800c,
-+		.end	= 0xe605802b,
-+		.flags	= IORESOURCE_MEM,
-+	}
-+};
-+
- static struct platform_device r8a7740_pfc_device = {
- 	.name		= "sh-pfc",
- 	.id		= -1,
-+	.resource	= r8a7740_pfc_resources,
-+	.num_resources	= ARRAY_SIZE(r8a7740_pfc_resources),
- 	.dev = {
- 		.platform_data = &r8a7740_pinmux_info,
- 	},
+ config CPU_SUBTYPE_SH7269
+ 	bool "Support SH7269 processor"
+diff --git a/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c b/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c
+index 79a0d60..ed9fc39 100644
+--- a/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c
++++ b/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c
+@@ -11,6 +11,7 @@
+ #include <linux/init.h>
+ #include <linux/kernel.h>
+ #include <linux/gpio.h>
++#include <cpu/pfc.h>
+ #include <cpu/sh7264.h>
+ 
+ enum {
+@@ -2131,6 +2132,6 @@ static struct pinmux_info sh7264_pinmux_info = {
+ 
+ static int __init plat_pinmux_setup(void)
+ {
+-	return register_pinmux(&sh7264_pinmux_info);
++	return sh_pfc_register_info(NULL, NULL, 0, &sh7264_pinmux_info);
+ }
+ arch_initcall(plat_pinmux_setup);
 -- 
 1.7.10.4
 
