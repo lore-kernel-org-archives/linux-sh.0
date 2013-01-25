@@ -1,55 +1,129 @@
-From: Tang Chen <tangchen@cn.fujitsu.com>
-Date: Wed, 09 Jan 2013 09:32:33 +0000
-Subject: [PATCH v6 09/15] memory-hotplug: remove page table of x86_64 architecture
-Message-Id: <1357723959-5416-10-git-send-email-tangchen@cn.fujitsu.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 25 Jan 2013 02:23:46 +0000
+Subject: [PATCH 10/80] sh-pfc: Merge PFC core and pinctrl
+Message-Id: <1359080696-31489-11-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1357723959-5416-1-git-send-email-tangchen@cn.fujitsu.com>
-In-Reply-To: <1357723959-5416-1-git-send-email-tangchen@cn.fujitsu.com>
+References: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: akpm@linux-foundation.org, rientjes@google.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, wency@cn.fujitsu.com, tangchen@cn.fujitsu.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org, glommer@parallels.com
-Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This patch searches a page table about the removed memory, and clear
-page table for x86_64 architecture.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
-Signed-off-by: Jianguo Wu <wujianguo@huawei.com>
-Signed-off-by: Jiang Liu <jiang.liu@huawei.com>
-Signed-off-by: Tang Chen <tangchen@cn.fujitsu.com>
+The PFC core is only used by the pinctrl and gpio modules. As the gpio
+module depends on the pinctrl module, the pinctrl module will always be
+present if the core gets used. There is thus no point in keeping core
+and pinctrl in two seperate modules. Merge them.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/x86/mm/init_64.c |   10 ++++++++++
- 1 files changed, 10 insertions(+), 0 deletions(-)
+ drivers/sh/pfc/Kconfig   |   10 +---------
+ drivers/sh/pfc/Makefile  |    4 ++--
+ drivers/sh/pfc/core.c    |   15 +++------------
+ drivers/sh/pfc/pinctrl.c |    3 +--
+ 4 files changed, 7 insertions(+), 25 deletions(-)
 
-diff --git a/arch/x86/mm/init_64.c b/arch/x86/mm/init_64.c
-index fe01116..d950f9b 100644
---- a/arch/x86/mm/init_64.c
-+++ b/arch/x86/mm/init_64.c
-@@ -981,6 +981,15 @@ remove_pagetable(unsigned long start, unsigned long end, bool direct)
- 	flush_tlb_all();
+diff --git a/drivers/sh/pfc/Kconfig b/drivers/sh/pfc/Kconfig
+index 804f9ad..f33d82a 100644
+--- a/drivers/sh/pfc/Kconfig
++++ b/drivers/sh/pfc/Kconfig
+@@ -5,18 +5,10 @@ config SH_PFC
+ 	depends on GENERIC_GPIO
+ 	select GPIO_SH_PFC if ARCH_REQUIRE_GPIOLIB
+ 	select PINCTRL_SH_PFC
+-	def_bool y
+-
+-#
+-# Placeholder for now, rehome to drivers/pinctrl once the PFC APIs
+-# have settled.
+-#
+-config PINCTRL_SH_PFC
+-	tristate "SuperH PFC pin controller driver"
+-	depends on SH_PFC
+ 	select PINCTRL
+ 	select PINMUX
+ 	select PINCONF
++	def_bool y
+ 
+ config GPIO_SH_PFC
+ 	tristate "SuperH PFC GPIO support"
+diff --git a/drivers/sh/pfc/Makefile b/drivers/sh/pfc/Makefile
+index 7916027..ce6fae3 100644
+--- a/drivers/sh/pfc/Makefile
++++ b/drivers/sh/pfc/Makefile
+@@ -1,3 +1,3 @@
+-obj-y				+= core.o
+-obj-$(CONFIG_PINCTRL_SH_PFC)	+= pinctrl.o
++sh-pfc-objs			= core.o pinctrl.o
++obj-y				+= sh-pfc.o
+ obj-$(CONFIG_GPIO_SH_PFC)	+= gpio.o
+diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
+index 72421a4..30e33db 100644
+--- a/drivers/sh/pfc/core.c
++++ b/drivers/sh/pfc/core.c
+@@ -8,7 +8,7 @@
+  * License.  See the file "COPYING" in the main directory of this archive
+  * for more details.
+  */
+-#define pr_fmt(fmt) "sh_pfc " KBUILD_MODNAME ": " fmt
++#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+ 
+ #include <linux/errno.h>
+ #include <linux/kernel.h>
+@@ -497,7 +497,6 @@ int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
+  out_err:
+ 	return -1;
  }
+-EXPORT_SYMBOL_GPL(sh_pfc_config_gpio);
  
-+void __meminit
-+kernel_physical_mapping_remove(unsigned long start, unsigned long end)
-+{
-+	start = (unsigned long)__va(start);
-+	end = (unsigned long)__va(end);
-+
-+	remove_pagetable(start, end, true);
-+}
-+
- #ifdef CONFIG_MEMORY_HOTREMOVE
- int __ref arch_remove_memory(u64 start, u64 size)
+ int register_sh_pfc(struct sh_pfc_platform_data *pdata)
  {
-@@ -990,6 +999,7 @@ int __ref arch_remove_memory(u64 start, u64 size)
- 	int ret;
+@@ -528,17 +527,9 @@ int register_sh_pfc(struct sh_pfc_platform_data *pdata)
+ 	/*
+ 	 * Initialize pinctrl bindings first
+ 	 */
+-	initroutine = symbol_request(sh_pfc_register_pinctrl);
+-	if (initroutine) {
+-		ret = (*initroutine)(&sh_pfc);
+-		symbol_put_addr(initroutine);
+-
+-		if (unlikely(ret != 0))
+-			goto err;
+-	} else {
+-		pr_err("failed to initialize pinctrl bindings\n");
++	ret = sh_pfc_register_pinctrl(&sh_pfc);
++	if (unlikely(ret != 0))
+ 		goto err;
+-	}
  
- 	zone = page_zone(pfn_to_page(start_pfn));
-+	kernel_physical_mapping_remove(start, start + size);
- 	ret = __remove_pages(zone, start_pfn, nr_pages);
- 	WARN_ON_ONCE(ret);
+ 	/*
+ 	 * Then the GPIO chip
+diff --git a/drivers/sh/pfc/pinctrl.c b/drivers/sh/pfc/pinctrl.c
+index 5801a56..6f0f58b 100644
+--- a/drivers/sh/pfc/pinctrl.c
++++ b/drivers/sh/pfc/pinctrl.c
+@@ -9,7 +9,7 @@
+  */
+ #define DRV_NAME "pinctrl-sh_pfc"
  
+-#define pr_fmt(fmt) DRV_NAME " " KBUILD_MODNAME ": " fmt
++#define pr_fmt(fmt) KBUILD_MODNAME " pinctrl: " fmt
+ 
+ #include <linux/init.h>
+ #include <linux/module.h>
+@@ -521,7 +521,6 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ 
+ 	return sh_pfc_pinctrl_init();
+ }
+-EXPORT_SYMBOL_GPL(sh_pfc_register_pinctrl);
+ 
+ static void __exit sh_pfc_pinctrl_exit(void)
+ {
 -- 
-1.7.1
+1.7.10.4
 
