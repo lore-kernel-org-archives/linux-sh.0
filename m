@@ -1,30 +1,59 @@
-From: Wolfram Sang <w.sang@pengutronix.de>
-Date: Thu, 24 Jan 2013 07:27:48 +0000
-Subject: Re: [PATCH 0/4] i2c: sh_mobile: fix STOP condition generation
-Message-Id: <20130124072748.GK8364@nekote.pengutronix.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 25 Jan 2013 02:13:21 +0000
+Subject: [PATCH 03/15] ARM: shmobile: sh73a0: fixup div4_clks bitmap
+Message-Id: <1359080013-29189-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358415957-8371-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1358415957-8371-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1359080013-29189-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359080013-29189-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-i2c@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Jan 17, 2013 at 10:45:53AM +0100, Guennadi Liakhovetski wrote:
-> Currently the i2c-sh_mobile.c driver generates STOP conditions after each 
-> message. This makes any multi-message transfers, e.g. reading, impossible 
-> with the AS3711 PMIC on kzm9g. This patch series fixes this by only 
-> generating the STOP condition after the last message or if the I2C_M_STOP 
-> flag is set.
-> 
-> Guennadi Liakhovetski (4):
->   i2c: i2c-sh_mobile.c: cosmetic: trivially simplify 2 functions
->   i2c: sh_mobile: fix timeout error handling
->   i2c: sh_mobile: eliminate an open-coded "goto" loop
->   i2c: sh_mobile: don't send a stop condition by default inside
->     transfers
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Looks good to me. I have to mention usleep_range, though. I leave it to
-you if you want to fix it or not. Other than that, I would apply the
-series.
+div4_clks's bitmap of sh73a0 was wrong.
+This patch is based on v2.0 datasheet.
+
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-sh73a0.c |   22 +++++++++++-----------
+ 1 file changed, 11 insertions(+), 11 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index 516ff7f..5f57701 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -264,17 +264,17 @@ enum { DIV4_I, DIV4_ZG, DIV4_M3, DIV4_B, DIV4_M1, DIV4_M2,
+ 	SH_CLK_DIV4(&pll1_clk, _reg, _bit, _mask, _flags)
+ 
+ static struct clk div4_clks[DIV4_NR] = {
+-	[DIV4_I] = DIV4(FRQCRA, 20, 0xfff, CLK_ENABLE_ON_INIT),
+-	[DIV4_ZG] = DIV4(FRQCRA, 16, 0xbff, CLK_ENABLE_ON_INIT),
+-	[DIV4_M3] = DIV4(FRQCRA, 12, 0xfff, CLK_ENABLE_ON_INIT),
+-	[DIV4_B] = DIV4(FRQCRA, 8, 0xfff, CLK_ENABLE_ON_INIT),
+-	[DIV4_M1] = DIV4(FRQCRA, 4, 0xfff, 0),
+-	[DIV4_M2] = DIV4(FRQCRA, 0, 0xfff, 0),
+-	[DIV4_Z] = DIV4(FRQCRB, 24, 0xbff, 0),
+-	[DIV4_ZTR] = DIV4(FRQCRB, 20, 0xfff, 0),
+-	[DIV4_ZT] = DIV4(FRQCRB, 16, 0xfff, 0),
+-	[DIV4_ZX] = DIV4(FRQCRB, 12, 0xfff, 0),
+-	[DIV4_HP] = DIV4(FRQCRB, 4, 0xfff, 0),
++	[DIV4_I] = DIV4(FRQCRA, 20, 0xdff, CLK_ENABLE_ON_INIT),
++	[DIV4_ZG] = DIV4(FRQCRA, 16, 0xd7f, CLK_ENABLE_ON_INIT),
++	[DIV4_M3] = DIV4(FRQCRA, 12, 0x1dff, CLK_ENABLE_ON_INIT),
++	[DIV4_B] = DIV4(FRQCRA, 8, 0xdff, CLK_ENABLE_ON_INIT),
++	[DIV4_M1] = DIV4(FRQCRA, 4, 0x1dff, 0),
++	[DIV4_M2] = DIV4(FRQCRA, 0, 0x1dff, 0),
++	[DIV4_Z] = DIV4(FRQCRB, 24, 0x97f, 0),
++	[DIV4_ZTR] = DIV4(FRQCRB, 20, 0xdff, 0),
++	[DIV4_ZT] = DIV4(FRQCRB, 16, 0xdff, 0),
++	[DIV4_ZX] = DIV4(FRQCRB, 12, 0xdff, 0),
++	[DIV4_HP] = DIV4(FRQCRB, 4, 0xdff, 0),
+ };
+ 
+ enum { DIV6_VCK1, DIV6_VCK2, DIV6_VCK3, DIV6_ZB1,
+-- 
+1.7.10.4
+
