@@ -1,66 +1,82 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 16 Jan 2013 16:54:39 +0000
-Subject: [PATCH 04/11] mmc: (cosmetic) remove "extern" from function declarations
-Message-Id: <1358355286-26029-5-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 25 Jan 2013 02:24:19 +0000
+Subject: [PATCH 43/80] sh-pfc: Remove unused resource and num_resources platform data fields
+Message-Id: <1359080696-31489-44-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358355286-26029-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1358355286-26029-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-The "extern" keyword isn't required in function declarations, remove it.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+The fields are now unused, remove them.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Paul Mundt <lethal@linux-sh.org>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- include/linux/mmc/host.h |   22 +++++++++++-----------
- 1 files changed, 11 insertions(+), 11 deletions(-)
+ drivers/sh/pfc/core.c  |   17 ++++-------------
+ include/linux/sh_pfc.h |    3 ---
+ 2 files changed, 4 insertions(+), 16 deletions(-)
 
-diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
-index 13c0c8d..356ae0a 100644
---- a/include/linux/mmc/host.h
-+++ b/include/linux/mmc/host.h
-@@ -341,10 +341,10 @@ struct mmc_host {
- 	unsigned long		private[0] ____cacheline_aligned;
+diff --git a/drivers/sh/pfc/core.c b/drivers/sh/pfc/core.c
+index 9456c70..8e7818b 100644
+--- a/drivers/sh/pfc/core.c
++++ b/drivers/sh/pfc/core.c
+@@ -28,31 +28,22 @@
+ 
+ static int sh_pfc_ioremap(struct sh_pfc *pfc, struct platform_device *pdev)
+ {
+-	unsigned int num_resources;
+ 	struct resource *res;
+ 	int k;
+ 
+-	if (pdev->num_resources) {
+-		num_resources = pdev->num_resources;
+-		res = pdev->resource;
+-	} else {
+-		num_resources = pfc->pdata->num_resources;
+-		res = pfc->pdata->resource;
+-	}
+-
+-	if (num_resources = 0) {
++	if (pdev->num_resources = 0) {
+ 		pfc->num_windows = 0;
+ 		return 0;
+ 	}
+ 
+-	pfc->window = devm_kzalloc(pfc->dev, num_resources *
++	pfc->window = devm_kzalloc(pfc->dev, pdev->num_resources *
+ 				   sizeof(*pfc->window), GFP_NOWAIT);
+ 	if (!pfc->window)
+ 		return -ENOMEM;
+ 
+-	pfc->num_windows = num_resources;
++	pfc->num_windows = pdev->num_resources;
+ 
+-	for (k = 0; k < num_resources; k++, res++) {
++	for (k = 0, res = pdev->resource; k < pdev->num_resources; k++, res++) {
+ 		WARN_ON(resource_type(res) != IORESOURCE_MEM);
+ 		pfc->window[k].phys = res->start;
+ 		pfc->window[k].size = resource_size(res);
+diff --git a/include/linux/sh_pfc.h b/include/linux/sh_pfc.h
+index fa1fec0..4f94233 100644
+--- a/include/linux/sh_pfc.h
++++ b/include/linux/sh_pfc.h
+@@ -111,9 +111,6 @@ struct sh_pfc_platform_data {
+ 	struct pinmux_irq *gpio_irq;
+ 	unsigned int gpio_irq_size;
+ 
+-	struct resource *resource;
+-	unsigned int num_resources;
+-
+ 	unsigned long unlock_reg;
  };
  
--extern struct mmc_host *mmc_alloc_host(int extra, struct device *);
--extern int mmc_add_host(struct mmc_host *);
--extern void mmc_remove_host(struct mmc_host *);
--extern void mmc_free_host(struct mmc_host *);
-+struct mmc_host *mmc_alloc_host(int extra, struct device *);
-+int mmc_add_host(struct mmc_host *);
-+void mmc_remove_host(struct mmc_host *);
-+void mmc_free_host(struct mmc_host *);
- void mmc_of_parse(struct mmc_host *host);
- 
- static inline void *mmc_priv(struct mmc_host *host)
-@@ -358,16 +358,16 @@ static inline void *mmc_priv(struct mmc_host *host)
- #define mmc_classdev(x)	(&(x)->class_dev)
- #define mmc_hostname(x)	(dev_name(&(x)->class_dev))
- 
--extern int mmc_suspend_host(struct mmc_host *);
--extern int mmc_resume_host(struct mmc_host *);
-+int mmc_suspend_host(struct mmc_host *);
-+int mmc_resume_host(struct mmc_host *);
- 
--extern int mmc_power_save_host(struct mmc_host *host);
--extern int mmc_power_restore_host(struct mmc_host *host);
-+int mmc_power_save_host(struct mmc_host *host);
-+int mmc_power_restore_host(struct mmc_host *host);
- 
--extern void mmc_detect_change(struct mmc_host *, unsigned long delay);
--extern void mmc_request_done(struct mmc_host *, struct mmc_request *);
-+void mmc_detect_change(struct mmc_host *, unsigned long delay);
-+void mmc_request_done(struct mmc_host *, struct mmc_request *);
- 
--extern int mmc_cache_ctrl(struct mmc_host *, u8);
-+int mmc_cache_ctrl(struct mmc_host *, u8);
- 
- static inline void mmc_signal_sdio_irq(struct mmc_host *host)
- {
 -- 
-1.7.2.5
+1.7.10.4
 
