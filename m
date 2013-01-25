@@ -1,70 +1,95 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 16 Jan 2013 06:02:24 +0000
-Subject: [PATCH 3/5] ARM: mach-shmobile: kzm9g: defconfig update
-Message-Id: <1358316146-12579-4-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 25 Jan 2013 02:13:27 +0000
+Subject: [PATCH 09/15] ARM: shmobile: r8a7740: Add CPU sleep suspend
+Message-Id: <1359080013-29189-10-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358316146-12579-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1358316146-12579-1-git-send-email-horms+renesas@verge.net.au>
+References: <1359080013-29189-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359080013-29189-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-* Enable ARM_APPENDED_DTB
+From: Bastian Hecht <hechtb@gmail.com>
 
-  Typically the bootloader of a kzm9g board does not support DT
-  so this option is useful.
+Add the lighest possible sleep mode on Cortex-A9 cores: CPU sleep.
+It is entered by a simple dsb and wfi instruction via cpu_do_idle(). As
+just clocks are stopped there is no need to save or restore any state of
+the system.
 
-* Use voltage regulators by default
-
-* Move command line to dts
-
-  This brings us one small step closer to sharing defconfig
-  between kzm9g and other boards
-
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+Acked-by: Magnus Damm <damm@opensource.se>
+[ horms@verge.net.au: Added missing includes ]
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g.dts |    4 ++++
- arch/arm/configs/kzm9g_defconfig   |    4 +++-
- 2 files changed, 7 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    2 ++
+ arch/arm/mach-shmobile/include/mach/common.h   |    1 +
+ arch/arm/mach-shmobile/pm-r8a7740.c            |   22 ++++++++++++++++++++++
+ 3 files changed, 25 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-index bcb9119..9a43879 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-@@ -15,6 +15,10 @@
- 	model = "KZM-A9-GT";
- 	compatible = "renesas,kzm9g", "renesas,sh73a0";
- 
-+	chosen {
-+		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200";
-+	};
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index e791244..6573137 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -1181,6 +1181,8 @@ static void __init eva_init(void)
+ 	rmobile_add_device_to_domain("A4LC", &hdmi_lcdc_device);
+ 	if (usb)
+ 		rmobile_add_device_to_domain("A3SP", usb);
 +
- 	memory {
- 		device_type = "memory";
- 		reg = <0x41000000 0x1e800000>;
-diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
-index afbae28..670c3b6 100644
---- a/arch/arm/configs/kzm9g_defconfig
-+++ b/arch/arm/configs/kzm9g_defconfig
-@@ -39,7 +39,7 @@ CONFIG_AEABI=y
- CONFIG_HIGHMEM=y
- CONFIG_ZBOOT_ROM_TEXT=0x0
- CONFIG_ZBOOT_ROM_BSS=0x0
--CONFIG_CMDLINE="console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200"
-+CONFIG_ARM_APPENDED_DTB=y
- CONFIG_KEXEC=y
- CONFIG_VFP=y
- CONFIG_NEON=y
-@@ -85,6 +85,8 @@ CONFIG_I2C_CHARDEV=y
- CONFIG_I2C_SH_MOBILE=y
- CONFIG_GPIO_PCF857X=y
- # CONFIG_HWMON is not set
-+CONFIG_REGULATOR=y
-+CONFIG_REGULATOR_DUMMY=y
- CONFIG_FB=y
- CONFIG_FB_SH_MOBILE_LCDC=y
- CONFIG_FRAMEBUFFER_CONSOLE=y
++	r8a7740_pm_init();
+ }
+ 
+ static void __init eva_earlytimer_init(void)
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index f221c11..c0ab595 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -52,6 +52,7 @@ extern void r8a7740_add_early_devices(void);
+ extern void r8a7740_add_standard_devices(void);
+ extern void r8a7740_clock_init(u8 md_ck);
+ extern void r8a7740_pinmux_init(void);
++extern void r8a7740_pm_init(void);
+ 
+ extern void r8a7779_init_irq(void);
+ extern void r8a7779_map_io(void);
+diff --git a/arch/arm/mach-shmobile/pm-r8a7740.c b/arch/arm/mach-shmobile/pm-r8a7740.c
+index 21e5316d..40b87aa 100644
+--- a/arch/arm/mach-shmobile/pm-r8a7740.c
++++ b/arch/arm/mach-shmobile/pm-r8a7740.c
+@@ -9,7 +9,9 @@
+  * for more details.
+  */
+ #include <linux/console.h>
++#include <linux/suspend.h>
+ #include <mach/pm-rmobile.h>
++#include <mach/common.h>
+ 
+ #ifdef CONFIG_PM
+ static int r8a7740_pd_a4s_suspend(void)
+@@ -58,3 +60,23 @@ void __init r8a7740_init_pm_domains(void)
+ }
+ 
+ #endif /* CONFIG_PM */
++
++#ifdef CONFIG_SUSPEND
++static int r8a7740_enter_suspend(suspend_state_t suspend_state)
++{
++	cpu_do_idle();
++	return 0;
++}
++
++static void r8a7740_suspend_init(void)
++{
++	shmobile_suspend_ops.enter = r8a7740_enter_suspend;
++}
++#else
++static void r8a7740_suspend_init(void) {}
++#endif
++
++void __init r8a7740_pm_init(void)
++{
++	r8a7740_suspend_init();
++}
 -- 
 1.7.10.4
 
