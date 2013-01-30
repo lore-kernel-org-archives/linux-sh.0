@@ -1,39 +1,53 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Thu, 24 Jan 2013 16:03:07 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 30 Jan 2013 14:07:03 +0000
 Subject: Re: [PATCH/RFC v2 06/11] mmc: tmio-mmc: define device-tree bindings
-Message-Id: <87k3r2h8lg.fsf@laptop.org>
+Message-Id: <Pine.LNX.4.64.1301301453110.3113@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1358955158-1510-1-git-send-email-g.liakhovetski@gmx.de>
-	<1358955158-1510-7-git-send-email-g.liakhovetski@gmx.de>
-	<Pine.LNX.4.64.1301241630160.7826@axis700.grange>
-	<87pq0uh9ob.fsf@laptop.org>
-	<Pine.LNX.4.64.1301241649560.7826@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1301241649560.7826@axis700.grange> (Guennadi
-	Liakhovetski's message of "Thu, 24 Jan 2013 16:58:34 +0100 (CET)")
+ <1358955158-1510-7-git-send-email-g.liakhovetski@gmx.de>
+ <Pine.LNX.4.64.1301241630160.7826@axis700.grange> <87pq0uh9ob.fsf@laptop.org>
+ <Pine.LNX.4.64.1301241649560.7826@axis700.grange> <87k3r2h8lg.fsf@laptop.org>
+In-Reply-To: <87k3r2h8lg.fsf@laptop.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: Chris Ball <cjb@laptop.org>
 Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-Hi,
+Hi Chris
 
-On Thu, Jan 24 2013, Guennadi Liakhovetski wrote:
-> I tried to keep this binding similar to others, that I proposed in "mmc: 
-> add DT bindings for more MMC capability flags." Actually, the above is 
-> indeed wrong, I would call it "cap-sdio-irq." And in that patch I tried to 
-> keep binding names resembling as closely as possible respective MMC_CAP_* 
-> flags. I think, it would have been better if "enable-sdio-wakeup" and 
-> "keep-power-in-suspend" were also named, following the same rule, but it's 
-> too late now. Anyway, I'm not too concerned about the names. We can use 
-> "enable-sdio-irq" too if you like.
+On Thu, 24 Jan 2013, Chris Ball wrote:
 
-I see.  Okay, let's go with your proposed cap-* for each MMC_CAP_*, and
-the pm_caps can stay as they are.
+> Hi,
+> 
+> On Thu, Jan 24 2013, Guennadi Liakhovetski wrote:
+> > I tried to keep this binding similar to others, that I proposed in "mmc: 
+> > add DT bindings for more MMC capability flags." Actually, the above is 
+> > indeed wrong, I would call it "cap-sdio-irq." And in that patch I tried to 
+> > keep binding names resembling as closely as possible respective MMC_CAP_* 
+> > flags. I think, it would have been better if "enable-sdio-wakeup" and 
+> > "keep-power-in-suspend" were also named, following the same rule, but it's 
+> > too late now. Anyway, I'm not too concerned about the names. We can use 
+> > "enable-sdio-irq" too if you like.
+> 
+> I see.  Okay, let's go with your proposed cap-* for each MMC_CAP_*, and
+> the pm_caps can stay as they are.
 
-Thanks!
+Thanks, let's do that. But in fact, in a recent discussion it has been 
+pointed out to me, that this property
 
-- Chris.
--- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
++- toshiba,mmc-cap-sdio-irq	: SDIO IRQ signalling should be used, if
++	supported by the hardware, i.e. set MMC_CAP_SDIO_IRQ if
++	TMIO_MMC_SDIO_IRQ is also set
+
+should be common for all MMC drivers: it should be possible to decide per 
+SD interface, whether SDIO IRQ signalling should be enabled. What do you 
+think? Shall we add a global "cap-sdio-irq" DT property instead of a 
+toshiba-specific one?
+
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
