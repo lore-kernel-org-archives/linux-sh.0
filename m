@@ -1,68 +1,99 @@
-From: Julia Lawall <Julia.Lawall@lip6.fr>
-Date: Mon, 21 Jan 2013 12:16:42 +0000
-Subject: [PATCH 1/15] drivers/sh/intc/of_intc.c: adjust duplicate test
-Message-Id: <1358773378-4700-2-git-send-email-Julia.Lawall@lip6.fr>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 31 Jan 2013 06:23:55 +0000
+Subject: [PATCH 2/9] ARM: shmobile: ap4evb: Use gpio_request_one()
+Message-Id: <1359613442-26038-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358773378-4700-1-git-send-email-Julia.Lawall@lip6.fr>
-In-Reply-To: <1358773378-4700-1-git-send-email-Julia.Lawall@lip6.fr>
+References: <1359613442-26038-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359613442-26038-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: kernel-janitors@vger.kernel.org, Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Julia Lawall <Julia.Lawall@lip6.fr>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Delete successive tests to the same location.  In this case intc_node has
-already been tested for being NULL, and calling of_find_node_by_name will
-not make it NULL.  On the other hand, of_find_node_by_name can return NULL
-on failure.
+Replace occurences of gpio_request() and gpio_direction_*() by calls to
+gpio_request_one().
 
-A simplified version of the semantic match that finds this problem is as
-follows: (http://coccinelle.lip6.fr/)
-
-// <smpl>
-@s exists@
-local idexpression y;
-expression x,e;
-@@
-
-*if ( \(x = NULL\|IS_ERR(x)\|y != 0\) )
- { ... when forall
-   return ...; }
-... when != \(y = e\|y += e\|y -= e\|y |= e\|y &= e\|y++\|y--\|&y\)
-    when != \(XT_GETPAGE(...,y)\|WMI_CMD_BUF(...)\)
-*if ( \(x = NULL\|IS_ERR(x)\|y != 0\) )
- { ... when forall
-   return ...; }
-// </smpl>
-
-Signed-off-by: Julia Lawall <Julia.Lawall@lip6.fr>
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/sh/intc/of_intc.c |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c |   33 +++++++++------------------------
+ 1 file changed, 9 insertions(+), 24 deletions(-)
 
-diff --git a/drivers/sh/intc/of_intc.c b/drivers/sh/intc/of_intc.c
-index 1d5f47e..8dfded3 100644
---- a/drivers/sh/intc/of_intc.c
-+++ b/drivers/sh/intc/of_intc.c
-@@ -330,7 +330,7 @@ static int __init of_sh_intc_get_prio(struct device_node *np,
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 70d287c..0c59464 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -1046,9 +1046,7 @@ static int ts_get_pendown_state(void)
  
- 		reg_node = of_find_node_by_name(intc_node, node_name);
+ 	gpio_free(GPIO_TSC_IRQ);
  
--		if (!intc_node) {
-+		if (!reg_node) {
- 			pr_err("INTC prio register not found\n");
- 			ret = -EINVAL;
- 			goto error;
-@@ -386,7 +386,7 @@ static int __init of_sh_intc_get_sense(struct device_node *np,
+-	gpio_request(GPIO_TSC_PORT, NULL);
+-
+-	gpio_direction_input(GPIO_TSC_PORT);
++	gpio_request_one(GPIO_TSC_PORT, GPIOF_IN, NULL);
  
- 		reg_node = of_find_node_by_name(intc_node, node_name);
+ 	val = gpio_get_value(GPIO_TSC_PORT);
  
--		if (!intc_node) {
-+		if (!reg_node) {
- 			pr_err("INTC senses register not found\n");
- 			ret = -EINVAL;
- 			goto error;
+@@ -1129,18 +1127,10 @@ static void __init ap4evb_init(void)
+ 	gpio_request(GPIO_FN_IRQ6_39,	NULL);
+ 
+ 	/* enable Debug switch (S6) */
+-	gpio_request(GPIO_PORT32, NULL);
+-	gpio_request(GPIO_PORT33, NULL);
+-	gpio_request(GPIO_PORT34, NULL);
+-	gpio_request(GPIO_PORT35, NULL);
+-	gpio_direction_input(GPIO_PORT32);
+-	gpio_direction_input(GPIO_PORT33);
+-	gpio_direction_input(GPIO_PORT34);
+-	gpio_direction_input(GPIO_PORT35);
+-	gpio_export(GPIO_PORT32, 0);
+-	gpio_export(GPIO_PORT33, 0);
+-	gpio_export(GPIO_PORT34, 0);
+-	gpio_export(GPIO_PORT35, 0);
++	gpio_request_one(GPIO_PORT32, GPIOF_IN | GPIOF_EXPORT, NULL);
++	gpio_request_one(GPIO_PORT33, GPIOF_IN | GPIOF_EXPORT, NULL);
++	gpio_request_one(GPIO_PORT34, GPIOF_IN | GPIOF_EXPORT, NULL);
++	gpio_request_one(GPIO_PORT35, GPIOF_IN | GPIOF_EXPORT, NULL);
+ 
+ 	/* SDHI0 */
+ 	gpio_request(GPIO_FN_SDHICD0, NULL);
+@@ -1188,8 +1178,7 @@ static void __init ap4evb_init(void)
+ 	gpio_request(GPIO_FN_FSIAILR,	NULL);
+ 	gpio_request(GPIO_FN_FSIAISLD,	NULL);
+ 	gpio_request(GPIO_FN_FSIAOSLD,	NULL);
+-	gpio_request(GPIO_PORT161,	NULL);
+-	gpio_direction_output(GPIO_PORT161, 0); /* slave */
++	gpio_request_one(GPIO_PORT161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
+ 
+ 	gpio_request(GPIO_PORT9, NULL);
+ 	gpio_request(GPIO_PORT10, NULL);
+@@ -1197,8 +1186,7 @@ static void __init ap4evb_init(void)
+ 	gpio_direction_none(GPIO_PORT10CR); /* FSIAOLR needs no direction */
+ 
+ 	/* card detect pin for MMC slot (CN7) */
+-	gpio_request(GPIO_PORT41, NULL);
+-	gpio_direction_input(GPIO_PORT41);
++	gpio_request_one(GPIO_PORT41, GPIOF_IN, NULL);
+ 
+ 	/* setup FSI2 port B (HDMI) */
+ 	gpio_request(GPIO_FN_FSIBCK, NULL);
+@@ -1286,11 +1274,8 @@ static void __init ap4evb_init(void)
+ 	gpio_request(GPIO_FN_LCDDISP,  NULL);
+ 	gpio_request(GPIO_FN_LCDDCK,   NULL);
+ 
+-	gpio_request(GPIO_PORT189, NULL); /* backlight */
+-	gpio_direction_output(GPIO_PORT189, 1);
+-
+-	gpio_request(GPIO_PORT151, NULL); /* LCDDON */
+-	gpio_direction_output(GPIO_PORT151, 1);
++	gpio_request_one(GPIO_PORT189, GPIOF_OUT_INIT_HIGH, NULL); /* backlight */
++	gpio_request_one(GPIO_PORT151, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
+ 
+ 	lcdc_info.clock_source			= LCDC_CLK_BUS;
+ 	lcdc_info.ch[0].interface_type		= RGB18;
+-- 
+1.7.10.4
 
