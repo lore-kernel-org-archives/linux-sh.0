@@ -1,91 +1,79 @@
-From: Tang Chen <tangchen@cn.fujitsu.com>
-Date: Wed, 09 Jan 2013 09:32:39 +0000
-Subject: [PATCH v6 15/15] memory-hotplug: Do not allocate pdgat if it was not freed when offline.
-Message-Id: <1357723959-5416-16-git-send-email-tangchen@cn.fujitsu.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 31 Jan 2013 06:24:00 +0000
+Subject: [PATCH 7/9] ARM: shmobile: kzm9g: Use gpio_request_one()
+Message-Id: <1359613442-26038-8-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1357723959-5416-1-git-send-email-tangchen@cn.fujitsu.com>
-In-Reply-To: <1357723959-5416-1-git-send-email-tangchen@cn.fujitsu.com>
+References: <1359613442-26038-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359613442-26038-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: akpm@linux-foundation.org, rientjes@google.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, wency@cn.fujitsu.com, tangchen@cn.fujitsu.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org, glommer@parallels.com
-Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Since there is no way to guarentee the address of pgdat/zone is not
-on stack of any kernel threads or used by other kernel objects
-without reference counting or other symchronizing method, we cannot
-reset node_data and free pgdat when offlining a node. Just reset pgdat
-to 0 and reuse the memory when the node is online again.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-The problem is suggested by Kamezawa Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
-The idea is from Wen Congyang <wency@cn.fujitsu.com>
+Replace occurences of gpio_request() and gpio_direction_*() by calls to
+gpio_request_one().
 
-NOTE: If we don't reset pgdat to 0, the WARN_ON in free_area_init_node()
-      will be triggered.
-
-Signed-off-by: Tang Chen <tangchen@cn.fujitsu.com>
-Reviewed-by: Wen Congyang <wency@cn.fujitsu.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- mm/memory_hotplug.c |   20 ++++++++++++--------
- 1 files changed, 12 insertions(+), 8 deletions(-)
+ arch/arm/mach-shmobile/board-kzm9g.c |   18 ++++++------------
+ 1 file changed, 6 insertions(+), 12 deletions(-)
 
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index 8b67752..8aa2b56 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -1015,11 +1015,14 @@ static pg_data_t __ref *hotadd_new_pgdat(int nid, u64 start)
- 	unsigned long zholes_size[MAX_NR_ZONES] = {0};
- 	unsigned long start_pfn = start >> PAGE_SHIFT;
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index eadf309..2d08f57 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -672,8 +672,7 @@ static void __init kzm_init(void)
+ 	gpio_request(GPIO_FN_CS4_, NULL); /* CS4 */
  
--	pgdat = arch_alloc_nodedata(nid);
--	if (!pgdat)
--		return NULL;
-+	pgdat = NODE_DATA(nid);
-+	if (!pgdat) {
-+		pgdat = arch_alloc_nodedata(nid);
-+		if (!pgdat)
-+			return NULL;
+ 	/* SMSC */
+-	gpio_request(GPIO_PORT224, NULL); /* IRQ3 */
+-	gpio_direction_input(GPIO_PORT224);
++	gpio_request_one(GPIO_PORT224, GPIOF_IN, NULL); /* IRQ3 */
  
--	arch_refresh_nodedata(nid, pgdat);
-+		arch_refresh_nodedata(nid, pgdat);
-+	}
+ 	/* LCDC */
+ 	gpio_request(GPIO_FN_LCDD23,	NULL);
+@@ -703,14 +702,11 @@ static void __init kzm_init(void)
+ 	gpio_request(GPIO_FN_LCDDISP,	NULL);
+ 	gpio_request(GPIO_FN_LCDDCK,	NULL);
  
- 	/* we can use NODE_DATA(nid) from here */
+-	gpio_request(GPIO_PORT222,	NULL); /* LCDCDON */
+-	gpio_request(GPIO_PORT226,	NULL); /* SC */
+-	gpio_direction_output(GPIO_PORT222, 1);
+-	gpio_direction_output(GPIO_PORT226, 1);
++	gpio_request_one(GPIO_PORT222, GPIOF_OUT_INIT_HIGH, NULL); /* LCDCDON */
++	gpio_request_one(GPIO_PORT226, GPIOF_OUT_INIT_HIGH, NULL); /* SC */
  
-@@ -1072,7 +1075,7 @@ out:
- int __ref add_memory(int nid, u64 start, u64 size)
- {
- 	pg_data_t *pgdat = NULL;
--	int new_pgdat = 0;
-+	int new_pgdat = 0, new_node = 0;
- 	struct resource *res;
- 	int ret;
+ 	/* Touchscreen */
+-	gpio_request(GPIO_PORT223, NULL); /* IRQ8 */
+-	gpio_direction_input(GPIO_PORT223);
++	gpio_request_one(GPIO_PORT223, GPIOF_IN, NULL); /* IRQ8 */
  
-@@ -1083,12 +1086,13 @@ int __ref add_memory(int nid, u64 start, u64 size)
- 	if (!res)
- 		goto out;
+ 	/* enable MMCIF */
+ 	gpio_request(GPIO_FN_MMCCLK0,		NULL);
+@@ -734,8 +730,7 @@ static void __init kzm_init(void)
+ 	gpio_request(GPIO_FN_SDHID0_1,		NULL);
+ 	gpio_request(GPIO_FN_SDHID0_0,		NULL);
+ 	gpio_request(GPIO_FN_SDHI0_VCCQ_MC0_ON,	NULL);
+-	gpio_request(GPIO_PORT15, NULL);
+-	gpio_direction_output(GPIO_PORT15, 1); /* power */
++	gpio_request_one(GPIO_PORT15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
  
--	if (!node_online(nid)) {
-+	new_pgdat = NODE_DATA(nid) ? 0 : 1;
-+	new_node = node_online(nid) ? 0 : 1;
-+	if (new_node) {
- 		pgdat = hotadd_new_pgdat(nid, start);
- 		ret = -ENOMEM;
- 		if (!pgdat)
- 			goto error;
--		new_pgdat = 1;
- 	}
+ 	/* enable Micro SD */
+ 	gpio_request(GPIO_FN_SDHID2_0,		NULL);
+@@ -744,8 +739,7 @@ static void __init kzm_init(void)
+ 	gpio_request(GPIO_FN_SDHID2_3,		NULL);
+ 	gpio_request(GPIO_FN_SDHICMD2,		NULL);
+ 	gpio_request(GPIO_FN_SDHICLK2,		NULL);
+-	gpio_request(GPIO_PORT14, NULL);
+-	gpio_direction_output(GPIO_PORT14, 1); /* power */
++	gpio_request_one(GPIO_PORT14, GPIOF_OUT_INIT_HIGH, NULL); /* power */
  
- 	/* call arch's memory hotadd */
-@@ -1100,7 +1104,7 @@ int __ref add_memory(int nid, u64 start, u64 size)
- 	/* we online node here. we can't roll back from here. */
- 	node_set_online(nid);
- 
--	if (new_pgdat) {
-+	if (new_node) {
- 		ret = register_one_node(nid);
- 		/*
- 		 * If sysfs file of new node can't create, cpu on the node
+ 	/* I2C 3 */
+ 	gpio_request(GPIO_FN_PORT27_I2C_SCL3, NULL);
 -- 
-1.7.1
+1.7.10.4
 
