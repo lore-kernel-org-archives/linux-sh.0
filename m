@@ -1,121 +1,89 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 31 Jan 2013 06:47:46 +0000
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Thu, 31 Jan 2013 09:00:56 +0000
 Subject: Re: [PATCH v2 02/11] mmc: deprecate redundant cd-inverted and wp-inverted DT properties
-Message-Id: <Pine.LNX.4.64.1301310727590.14639@axis700.grange>
+Message-Id: <201301310900.56868.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358955158-1510-1-git-send-email-g.liakhovetski@gmx.de>
- <201301301629.45511.arnd@arndb.de> <Pine.LNX.4.64.1301301743470.3113@axis700.grange>
- <201301310009.34426.arnd@arndb.de>
-In-Reply-To: <201301310009.34426.arnd@arndb.de>
+References: <1358955158-1510-1-git-send-email-g.liakhovetski@gmx.de> <201301310009.34426.arnd@arndb.de> <Pine.LNX.4.64.1301310727590.14639@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1301310727590.14639@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Bergmann <arnd@arndb.de>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 Cc: Chris Ball <cjb@laptop.org>, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-On Thu, 31 Jan 2013, Arnd Bergmann wrote:
-
-> On Wednesday 30 January 2013, Guennadi Liakhovetski wrote:
-> > On Wed, 30 Jan 2013, Arnd Bergmann wrote:
+On Thursday 31 January 2013, Guennadi Liakhovetski wrote:
+> On Thu, 31 Jan 2013, Arnd Bergmann wrote:
+> > On Wednesday 30 January 2013, Guennadi Liakhovetski wrote:
+> > > On Wed, 30 Jan 2013, Arnd Bergmann wrote:
 > > 
-> > > On Wednesday 30 January 2013, Guennadi Liakhovetski wrote:
-> > > > > This means, that a multi-platform driver like, e.g. SDHCI cannot use the 
-> > > > > gpio "flags" cell and has to fall-back to always use "*-inverted" 
-> > > > > properties. Same holds for any other multi-arch driver, using GPIOs. So, 
-> > > > > we're stuck with this?
+> > I'm not saying that it should, I just thought that it did that already,
+> > but I may be wrong with that. Where does the polarity of a gpio
+> > line normally get set?
+> 
+> Well, don't think we had a generic way to handle this until now. Each 
+> driver handles GPIOs in its own way. The GPIO API only provides functions 
+> to reserve GPIOs, specify their direction (out / in) and set or get level 
+> respectively. Besides you could set some flags like GPIOF_OPEN_DRAIN etc. 
+> After a driver, say, reads low level of a GPIO it has to decide itself 
+> whether it's the "on" or the "off" level, for which many drivers often use 
+> their own means to specify GPIO's "polarity."
+
+Right, Chris also mentioned the of_get_named_gpio_flags() method that
+drivers would need to use to get the flags, although currently
+most of them don't.
+
+> 
+> > > > and
+> > > > the SDHCI_QUIRK_INVERTED_WRITE_PROTECT flag can be used to invert it
+> > > > independent of it.
 > > > 
-> > > But the SDHCI driver itself would not interpret the flags anyway, would it?
+> > > Right, not sure about that flag. Isn't it used for SDHCI-native WP?
 > > 
-> > Currently each driver, including SDHCI, does it on its own, the goal is to 
-> > do this centrally. And yes, in our specific MMC case, if we want to 
-> > support GPIO controllers with 1 cell, no mmc DT node, using GPIOs for WP 
-> > or CD should be using the inversion flag - even where possible.
-> > 
-> > > From the code, I understand that of_get_named_gpio() would return a gpio
-> > > line with the polarity already inverted if it's specified that way,
-> > 
-> > Sorry, don't understand. of_get_named_gpio() just returns a GPIO number, 
-> > not GPIO level. It doesn't even actually request the GPIO for the specific 
-> > user. Or do you mean, that gpio_chip::of_xlate() should request the chip 
-> > to invert the GPIO from now on?
+> > It's used in the sdhci_check_ro() function, independent of whether
+> > the bit comes from the GPIO or from the SDHCI_PRESENT_STATE
+> > register.
 > 
-> I'm not saying that it should, I just thought that it did that already,
-> but I may be wrong with that. Where does the polarity of a gpio
-> line normally get set?
+> Right, but the MMC core already has a generic MMC_CAP2_RO_ACTIVE_HIGH 
+> flag, so, this flag is redundant. Perhaps, the SDHCI OF glue will have to 
+> set that flag if the MMC core reports MMC_CAP2_RO_ACTIVE_HIGH.
 
-Well, don't think we had a generic way to handle this until now. Each 
-driver handles GPIOs in its own way. The GPIO API only provides functions 
-to reserve GPIOs, specify their direction (out / in) and set or get level 
-respectively. Besides you could set some flags like GPIOF_OPEN_DRAIN etc. 
-After a driver, say, reads low level of a GPIO it has to decide itself 
-whether it's the "on" or the "off" level, for which many drivers often use 
-their own means to specify GPIO's "polarity."
+Makes sense. It seems that the MMC_CAP2_RO_ACTIVE_HIGH flag is only
+evaluated by the generic mmc_gpio_get_ro() helper function you wrote
+and that is currently used in only one host driver, while the
+SDHCI_QUIRK_INVERTED_WRITE_PROTECT obviously is only used in SDHCI.
+It certainly makes sense to unify those flags.
 
-> > > and
-> > > the SDHCI_QUIRK_INVERTED_WRITE_PROTECT flag can be used to invert it
-> > > independent of it.
-> > 
-> > Right, not sure about that flag. Isn't it used for SDHCI-native WP?
+> > It gets set based on the presence of the wp-inverted or the
+> > older sdhci,wp-inverted property, which both get interpreted
+> > in the same way.
 > 
-> It's used in the sdhci_check_ro() function, independent of whether
-> the bit comes from the GPIO or from the SDHCI_PRESENT_STATE
-> register.
+> Right, which is already a mess...
 
-Right, but the MMC core already has a generic MMC_CAP2_RO_ACTIVE_HIGH 
-flag, so, this flag is redundant. Perhaps, the SDHCI OF glue will have to 
-set that flag if the MMC core reports MMC_CAP2_RO_ACTIVE_HIGH.
+Yes. It was worse before I introduced the common mmc binding, when
+each driver had its own method. I left the sdhci specific one there
+because there are (old) preexising users of that on powerpc that
+would suffer from an incompatible change to the binding, but I
+changed some of those that I knew had few existing users.
 
-> It gets set based on the presence of the wp-inverted or the
-> older sdhci,wp-inverted property, which both get interpreted
-> in the same way.
-
-Right, which is already a mess...
-
-> > > So you could actually express the same thing by either
-> > > putting the inversion into the gpio specifier or into the *-inverted
-> > > properties.
-> > > 
-> > > If you actually provide both, that would have the same meaning as not
-> > > inverting.
-> > 
-> > Hm, that'd be a weird way to configure the pin, perhaps.
-> 
-> Yes, it's silly and I don't see a reason why you'd do that, but I think
-> it should still be considered valid.
-
-We can do that, sure, but I'm not sure we really have to apply both to end 
-up with a non-inverted pin, or just interpret it as resundant information 
-and invert once.
-
-> > > > BTW, just verified in the current "next": all platforms, using cd-inverted 
-> > > > or wp-inverted in the mainline
+> > > > So you could actually express the same thing by either
+> > > > putting the inversion into the gpio specifier or into the *-inverted
+> > > > properties.
 > > > > 
-> > > > arch/arm/boot/dts/ccu9540.dts
-> > > > arch/arm/boot/dts/ea3250.dts
-> > > > arch/arm/boot/dts/phy3250.dts
-> > > > arch/arm/boot/dts/snowball.dts
-> > > > arch/arm/boot/dts/u9540.dts
-> > > > 
-> > > > use GPIO controllers with 2 or 3 cells.
+> > > > If you actually provide both, that would have the same meaning as not
+> > > > inverting.
 > > > 
-> > > What about those that don't use a GPIO line at all but instead use a
-> > > built-in write-protect and card-detect registers of the SDHCI controller?
+> > > Hm, that'd be a weird way to configure the pin, perhaps.
 > > 
-> > The mmc.txt document specifies cd-inverted and wp-inverted _explicitly_ 
-> > for use with GPIOs. If we want to use them with built-in CD and WP pins, 
-> > we have to modify those definitions too.
+> > Yes, it's silly and I don't see a reason why you'd do that, but I think
+> > it should still be considered valid.
 > 
-> Yes, that makes sense. The way that the specific esdhc binding is written
-> does not refer to gpio and could be interpreted the way that it is used
-> in the driver (for both gpio and internal wp), but it's certainly a
-> good idea to clarify it in the common binding.
+> We can do that, sure, but I'm not sure we really have to apply both to end 
+> up with a non-inverted pin, or just interpret it as resundant information 
+> and invert once.
 
-Ok, as soon as we agree on handling of the double inversion, I'll prepare 
-and post an updated patch series.
+Fine with me, too. It's not a case I'm worried about for the practical
+applications. My thought was that it would be just as easy and more logical
+to combine the two using XOR as it is using OR logic wherever they get
+interpreted, but if it's easier to use OR, then I don't object.
 
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+	Arnd
