@@ -1,45 +1,134 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Tue, 29 Jan 2013 16:57:49 +0000
-Subject: Re: [GIT PULL] Renesas pinmux for v3.9
-Message-Id: <20130129165749.GB16188@quad.lixom.net>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 31 Jan 2013 01:50:49 +0000
+Subject: [PATCH 2/4] ARM: mach-shmobile: r8a7779: Allow initialisation of GIC by DT
+Message-Id: <1359597051-32700-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
+References: <1359597051-32700-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359597051-32700-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Jan 25, 2013 at 11:23:36AM +0900, Simon Horman wrote:
-> Hi Olof, Hi Arnd,
-> 
-> please consider the following pinmux enhancements for 3.9.
-> 
-> As discussed previously this series includes changes for shmobile (ARM
-> based SoC), the SH architecture and pinmux.  It has been agreed by the
-> maintainers, Paul Mundt, Linus Walleij and myself in conjunction with the
-> patch-series author Laurent Pinchart and arm-soc co-maintainer Olof
-> Johansson to take this seies through my renesas tree and thus the arm-soc
-> tree as a single branch to avoid a complex set of branch dependencies.
-> 
-> These changes have been sitting in next for several weeks now.
-> 
-> I expect there to be a follow-up series of similar complexity
-> in the 3.10 time-frame. A focus of that series being to add DT bindings.
-> 
-> ----------------------------------------------------------------
-> The following changes since commit 9931faca02c604c22335f5a935a501bb2ace6e20:
-> 
->   Linux 3.8-rc3 (2013-01-09 18:59:55 -0800)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git pfc
+This allows the GIC interrupt controller of the  r8a7779 SoC to be
+initialised using a flattened device tree blob.
 
-This will go in through a next/sh-pinmux branch on its own given the
-size of the branch.  It's been pulled and merged in with for-next.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7779.dtsi               |   40 ++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/common.h |    1 +
+ arch/arm/mach-shmobile/intc-r8a7779.c        |   27 +++++++++++++----
+ 3 files changed, 62 insertions(+), 6 deletions(-)
+ create mode 100644 arch/arm/boot/dts/r8a7779.dtsi
 
-Thanks!
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+new file mode 100644
+index 0000000..eadc12e
+--- /dev/null
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -0,0 +1,40 @@
++/*
++ * Device Tree Source for Renesas r8a7740
++ *
++ * Copyright (C) 2013 Renesas Solutions Corp.
++ * Copyright (C) 2013 Simon Horman
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++
++/include/ "skeleton.dtsi"
++
++/ {
++	compatible = "renesas,r8a7779";
++
++	cpus {
++		cpu@0 {
++			compatible = "arm,cortex-a9";
++		};
++		cpu@1 {
++			compatible = "arm,cortex-a9";
++		};
++		cpu@2 {
++			compatible = "arm,cortex-a9";
++		};
++		cpu@3 {
++			compatible = "arm,cortex-a9";
++		};
++	};
++
++        gic: interrupt-controller@f0001000 {
++                compatible = "arm,cortex-a9-gic";
++                #interrupt-cells = <3>;
++                #address-cells = <1>;
++                interrupt-controller;
++                reg = <0xf0001000 0x1000>,
++                      <0xf0000100 0x100>;
++        };
++};
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index 16dab18..8ef7ebb 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -63,6 +63,7 @@ extern void r8a7740_pinmux_init(void);
+ extern void r8a7740_pm_init(void);
+ 
+ extern void r8a7779_init_irq(void);
++extern void r8a7779_init_irq_dt(void);
+ extern void r8a7779_map_io(void);
+ extern void r8a7779_earlytimer_init(void);
+ extern void r8a7779_add_early_devices(void);
+diff --git a/arch/arm/mach-shmobile/intc-r8a7779.c b/arch/arm/mach-shmobile/intc-r8a7779.c
+index 8807c27..f9cc4bc 100644
+--- a/arch/arm/mach-shmobile/intc-r8a7779.c
++++ b/arch/arm/mach-shmobile/intc-r8a7779.c
+@@ -24,6 +24,7 @@
+ #include <linux/io.h>
+ #include <linux/irqchip/arm-gic.h>
+ #include <mach/common.h>
++#include <linux/irqchip.h>
+ #include <mach/intc.h>
+ #include <mach/r8a7779.h>
+ #include <asm/mach-types.h>
+@@ -43,13 +44,8 @@ static int r8a7779_set_wake(struct irq_data *data, unsigned int on)
+ 	return 0; /* always allow wakeup */
+ }
+ 
+-void __init r8a7779_init_irq(void)
++static void __init r8a7779_init_irq_common(void)
+ {
+-	void __iomem *gic_dist_base = IOMEM(0xf0001000);
+-	void __iomem *gic_cpu_base = IOMEM(0xf0000100);
+-
+-	/* use GIC to handle interrupts */
+-	gic_init(0, 29, gic_dist_base, gic_cpu_base);
+ 	gic_arch_extn.irq_set_wake = r8a7779_set_wake;
+ 
+ 	/* route all interrupts to ARM */
+@@ -63,3 +59,22 @@ void __init r8a7779_init_irq(void)
+ 	__raw_writel(0xbffffffc, INT2SMSKCR3);
+ 	__raw_writel(0x003fee3f, INT2SMSKCR4);
+ }
++
++void __init r8a7779_init_irq(void)
++{
++	void __iomem *gic_dist_base = IOMEM(0xf0001000);
++	void __iomem *gic_cpu_base = IOMEM(0xf0000100);
++
++	/* use GIC to handle interrupts */
++	gic_init(0, 29, gic_dist_base, gic_cpu_base);
++
++	r8a7779_init_irq_common();
++}
++
++#ifdef CONFIG_OF
++void __init r8a7779_init_irq_dt(void)
++{
++	irqchip_init();
++	r8a7779_init_irq_common();
++}
++#endif
+-- 
+1.7.10.4
 
-
--Olof
