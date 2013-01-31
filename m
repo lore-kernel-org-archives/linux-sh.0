@@ -1,57 +1,81 @@
-From: Mark Brown <broonie@opensource.wolfsonmicro.com>
-Date: Thu, 10 Jan 2013 12:04:03 +0000
-Subject: Re: [PATCH v2 1/2] spi: bitbang: simplify pointer arithmetics
-Message-Id: <20130110120403.GM20956@opensource.wolfsonmicro.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="AQYPrgrEUc/1pSX1"
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 31 Jan 2013 01:45:00 +0000
+Subject: [PATCH 0/3] R-Car Display Unit DRM driver
+Message-Id: <1359596703-17556-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1301091502020.13376@axis700.grange>
- <CACRpkdYdRnjTA3xcSm+nQpWrYEYvBNmSTUcY7aVnA3evP9aOog@mail.gmail.com>
-In-Reply-To: <CACRpkdYdRnjTA3xcSm+nQpWrYEYvBNmSTUcY7aVnA3evP9aOog@mail.gmail.com>
-To: Linus Walleij <linus.walleij@linaro.org>
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Grant Likely <grant.likely@secretlab.ca>, spi-devel-general@lists.sourceforge.net, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org
+Cc: magnus.damm@gmail.com
 
+Hello,
 
---AQYPrgrEUc/1pSX1
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Here's a new DRM driver for the Renesas R-Car Display Unit (DU).
 
-On Thu, Jan 10, 2013 at 12:55:15PM +0100, Linus Walleij wrote:
-> On Wed, Jan 9, 2013 at 3:08 PM, Guennadi Liakhovetski
-> <g.liakhovetski@gmx.de> wrote:
+The DU features two superposition processors (modeled as CRTCs) and eight
+planes that can be shared between the superposition processors.
 
-> > Add a pointer variable to make spi_bitbang_start() look simpler.
+The driver supports the superposition processors (currently in pure overlay
+mode without alpha blending), all eight planes and all hardware supported
+formats except 8-bit indexed color more and 32-bit RGB666 mode (that would be
+[31:0] x:R:x:G:x:B:x 8:6:2:6:2:6:2 little endian, not supported by DRM at the
+moment).
 
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+On the output side only sync master non-interlaced modes are currently
+supported. Only the VGA output has been tested, as I lack an LVDS panel for
+the development board. The second CRTC hasn't been tested for the same reason.
 
-> Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Platform data are subject to change with the common display framework. This is
+why I haven't implemented DT bindings yet.
 
-> I think Mark Brown is still backing up Grant sometimes, so include
-> him on CC.
+Laurent Pinchart (2):
+  drm: Renesas R-Car Display Unit DRM driver
+  ARM: shmobile: marzen: Add Display Unit support
 
-I am, yes (mainly for driver updates) - can someone send me the patch
-please?
+Phil Edworthy (1):
+  r8a7779: Add Display Unit clock support
 
---AQYPrgrEUc/1pSX1
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+ arch/arm/mach-shmobile/board-marzen.c   |  65 +++++
+ arch/arm/mach-shmobile/clock-r8a7779.c  |   4 +-
+ drivers/gpu/drm/Kconfig                 |   2 +
+ drivers/gpu/drm/Makefile                |   1 +
+ drivers/gpu/drm/rcar-du/Kconfig         |  11 +
+ drivers/gpu/drm/rcar-du/Makefile        |   8 +
+ drivers/gpu/drm/rcar-du/rcar_du_crtc.c  | 471 ++++++++++++++++++++++++++++++++
+ drivers/gpu/drm/rcar-du/rcar_du_crtc.h  |  47 ++++
+ drivers/gpu/drm/rcar-du/rcar_du_drv.c   | 265 ++++++++++++++++++
+ drivers/gpu/drm/rcar-du/rcar_du_drv.h   |  56 ++++
+ drivers/gpu/drm/rcar-du/rcar_du_kms.c   | 163 +++++++++++
+ drivers/gpu/drm/rcar-du/rcar_du_kms.h   |  34 +++
+ drivers/gpu/drm/rcar-du/rcar_du_lvds.c  | 247 +++++++++++++++++
+ drivers/gpu/drm/rcar-du/rcar_du_lvds.h  |  25 ++
+ drivers/gpu/drm/rcar-du/rcar_du_plane.c | 299 ++++++++++++++++++++
+ drivers/gpu/drm/rcar-du/rcar_du_plane.h |  58 ++++
+ drivers/gpu/drm/rcar-du/rcar_du_regs.h  | 439 +++++++++++++++++++++++++++++
+ drivers/gpu/drm/rcar-du/rcar_du_vga.c   | 193 +++++++++++++
+ drivers/gpu/drm/rcar-du/rcar_du_vga.h   |  24 ++
+ include/linux/platform_data/rcar-du.h   |  51 ++++
+ 20 files changed, 2462 insertions(+), 1 deletion(-)
+ create mode 100644 drivers/gpu/drm/rcar-du/Kconfig
+ create mode 100644 drivers/gpu/drm/rcar-du/Makefile
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_crtc.h
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_drv.c
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_drv.h
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_kms.c
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_kms.h
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_lvds.c
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_lvds.h
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_plane.c
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_plane.h
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_regs.h
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_vga.c
+ create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_vga.h
+ create mode 100644 include/linux/platform_data/rcar-du.h
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+-- 
+Regards,
 
-iQIcBAEBAgAGBQJQ7q4DAAoJELSic+t+oim9qRQP/R9Zju2JAgLKUby2zPUk9cjc
-cPgJhFo5Uif6pY9wjVJdMG8OwkGgguFGFsQjgRA91JA10gV12K0iFZQWz4qR9Gwq
-FeXXtSKQTgLxWq+7CMyXQ2gIfXsMT7hkD8WrX6y6/94aebtKzU28nYJu1NDS1FWw
-omcfn+Got+Zr5BJGnGsHmq0BAeYOuXpchKBsu+lV+1Qi7s4zr1b8o3gQk62u9jBz
-cUNKkyEI9Po8xQW5nrNaRuGvx/qkANK0sjOC99NmIGC2/2Ea4hVOQzFlVHL6Ndto
-7NKnf2fROBG5NIgAFbJInvev/fu1Yj9cCa+LoyTggL/bDKSTEsDVXK/GIctMMGbB
-dRDvDGDY2xQMdM0qUjH9bG4wQqmj+lTdfPGxhuf/DrFMkTmvFCpmxiCvkC5HWZ9k
-OnETDymBK2TNdnZQ1+SbG/ND8mQjhIhi43wFY0NwcSsd7j3sLQ+wdlF6orOb7HoR
-+F+5sbfqznttU3JVYFFw96uYLC5YpvG71UrVTf+WupSGZjCgsFEg7E1tmtOYGKf7
-IUTtm/ta+YdkOHzIStCv5ld1+Wn/ewPUyJ8DJOyDSDC5Ujrig3qY7kp1zkv7wmkv
-OmHE+e0uJewkEzhV+7KXSUTRASjpHKscGOeFXDrOdkUV1zLOax3H3gS/ne5L7r2f
-EqMmWrE5HtAofQUFSrRH
-=ZL9v
------END PGP SIGNATURE-----
+Laurent Pinchart
 
---AQYPrgrEUc/1pSX1--
