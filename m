@@ -1,53 +1,82 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 16 Jan 2013 16:54:41 +0000
-Subject: [PATCH/RFC 06/11] mmc: tmio-mmc: define device-tree bindings
-Message-Id: <1358355286-26029-7-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 31 Jan 2013 06:23:54 +0000
+Subject: [PATCH 1/9] ARM: shmobile: ag5evm: Use gpio_request_one()
+Message-Id: <1359613442-26038-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358355286-26029-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1358355286-26029-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1359613442-26038-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359613442-26038-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Define device-tree bindings for the tmio-mmc driver to be able to specify
-parameters, currently provided in platform data.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Replace occurences of gpio_request() and gpio_direction_*() by calls to
+gpio_request_one().
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/board-ag5evm.c |   22 ++++++++--------------
+ 1 file changed, 8 insertions(+), 14 deletions(-)
 
-Please, comment on this one, since it is defining an ABI to be kept forever;-)
-
- Documentation/devicetree/bindings/mmc/tmio_mmc.txt |   19 +++++++++++++++++++
- 1 files changed, 19 insertions(+), 0 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/mmc/tmio_mmc.txt
-
-diff --git a/Documentation/devicetree/bindings/mmc/tmio_mmc.txt b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
-new file mode 100644
-index 0000000..dd8decd
---- /dev/null
-+++ b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
-@@ -0,0 +1,19 @@
-+* Toshiba Mobile IO SD/MMC controller
-+
-+The tmio-mmc driver doesn't probe its devices actively, instead its binding to
-+devices is managed by either MFD drivers or by the sh_mobile_sdhi platform
-+driver. Those drivers supply the tmio-mmc driver with platform data, that either
-+describe hardware capabilities, known to them, or are obtained by them from
-+their own platform data or from their DT information. In the latter case all
-+compulsory and any optional properties, common to all SD/MMC drivers, as
-+described in mmc.txt, should or can be used. Additionally the following optional
-+bindings can be used. They set either respective TMIO_MMC_* flags or MMC_CAP_*
-+capabilities.
-+
-+Optional properties:
-+- toshiba,mmc-wrprotect-disable	: set TMIO_MMC_WRPROTECT_DISABLE flag
-+- toshiba,mmc-blksz-2bytes	: set TMIO_MMC_BLKSZ_2BYTES
-+- toshiba,mmc-cap-sdio-irq	: SDIO IRQ signalling should be used, if
-+	supported by the hardware, i.e. set MMC_CAP_SDIO_IRQ if
-+	TMIO_MMC_SDIO_IRQ is also set
-+- toshiba,mmc-has-idle-wait	: set TMIO_MMC_HAS_IDLE_WAIT
+diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
+index 032d108..5e7fe15 100644
+--- a/arch/arm/mach-shmobile/board-ag5evm.c
++++ b/arch/arm/mach-shmobile/board-ag5evm.c
+@@ -479,11 +479,10 @@ static void ag5evm_sdhi1_set_pwr(struct platform_device *pdev, int state)
+ 	static int power_gpio = -EINVAL;
+ 
+ 	if (power_gpio < 0) {
+-		int ret = gpio_request(GPIO_PORT114, "sdhi1_power");
+-		if (!ret) {
++		int ret = gpio_request_one(GPIO_PORT114, GPIOF_OUT_INIT_LOW,
++					   "sdhi1_power");
++		if (!ret)
+ 			power_gpio = GPIO_PORT114;
+-			gpio_direction_output(power_gpio, 0);
+-		}
+ 	}
+ 
+ 	/*
+@@ -604,14 +603,11 @@ static void __init ag5evm_init(void)
+ 	gpio_request(GPIO_FN_MMCD0_5_PU, NULL);
+ 	gpio_request(GPIO_FN_MMCD0_6_PU, NULL);
+ 	gpio_request(GPIO_FN_MMCD0_7_PU, NULL);
+-	gpio_request(GPIO_PORT208, NULL); /* Reset */
+-	gpio_direction_output(GPIO_PORT208, 1);
++	gpio_request_one(GPIO_PORT208, GPIOF_OUT_INIT_HIGH, NULL); /* Reset */
+ 
+ 	/* enable SMSC911X */
+-	gpio_request(GPIO_PORT144, NULL); /* PINTA2 */
+-	gpio_direction_input(GPIO_PORT144);
+-	gpio_request(GPIO_PORT145, NULL); /* RESET */
+-	gpio_direction_output(GPIO_PORT145, 1);
++	gpio_request_one(GPIO_PORT144, GPIOF_IN, NULL); /* PINTA2 */
++	gpio_request_one(GPIO_PORT145, GPIOF_OUT_INIT_HIGH, NULL); /* RESET */
+ 
+ 	/* FSI A */
+ 	gpio_request(GPIO_FN_FSIACK, NULL);
+@@ -626,15 +622,13 @@ static void __init ag5evm_init(void)
+ 	gpio_request(GPIO_FN_PORT243_IRDA_FIRSEL, NULL);
+ 
+ 	/* LCD panel */
+-	gpio_request(GPIO_PORT217, NULL); /* RESET */
+-	gpio_direction_output(GPIO_PORT217, 0);
++	gpio_request_one(GPIO_PORT217, GPIOF_OUT_INIT_LOW, NULL); /* RESET */
+ 	mdelay(1);
+ 	gpio_set_value(GPIO_PORT217, 1);
+ 	mdelay(100);
+ 
+ 	/* LCD backlight controller */
+-	gpio_request(GPIO_PORT235, NULL); /* RESET */
+-	gpio_direction_output(GPIO_PORT235, 0);
++	gpio_request_one(GPIO_PORT235, GPIOF_OUT_INIT_LOW, NULL); /* RESET */
+ 	lcd_backlight_set_brightness(0);
+ 
+ 	/* enable SDHI0 on CN15 [SD I/F] */
 -- 
-1.7.2.5
+1.7.10.4
 
