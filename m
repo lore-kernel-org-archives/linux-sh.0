@@ -1,47 +1,54 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 22 Jan 2013 08:07:17 +0000
-Subject: Re: [PATCH v2 1/2] ARM: shmobile: sh73a0: Use generic irqchip_init()
-Message-Id: <20130122080713.GA5569@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Thu, 31 Jan 2013 01:45:01 +0000
+Subject: [PATCH 1/3] r8a7779: Add Display Unit clock support
+Message-Id: <1359596703-17556-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358493373-28722-1-git-send-email-thierry.reding@avionic-design.de>
- <20130121005439.GF19062@verge.net.au>
- <20130121070301.GB15508@avionic-0098.adnet.avionic-design.de>
- <20130122072912.GD25783@quad.lixom.net>
-In-Reply-To: <20130122072912.GD25783@quad.lixom.net>
+References: <1359596703-17556-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1359596703-17556-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org
+Cc: magnus.damm@gmail.com, Phil Edworthy <phil.edworthy@renesas.com>
 
-On Mon, Jan 21, 2013 at 11:29:12PM -0800, Olof Johansson wrote:
-> On Mon, Jan 21, 2013 at 08:03:01AM +0100, Thierry Reding wrote:
-> > On Mon, Jan 21, 2013 at 09:54:39AM +0900, Simon Horman wrote:
-> > > On Fri, Jan 18, 2013 at 08:16:12AM +0100, Thierry Reding wrote:
-> > > > The asm/hardware/gic.h header does no longer exist and the corresponding
-> > > > functionality was moved to linux/irqchip.h and linux/irqchip/arm-gic.h
-> > > > respectively. gic_handle_irq() and of_irq_init() are no longer available
-> > > > either and have been replaced by irqchip_init().
-> > > 
-> > > asm/hardware/gic.h Seems to still exist in Linus's tree.
-> > > Could you let me know which tree of which branch I should depend on
-> > > in order to apply this change?
-> > 
-> > I found this when doing an automated build over all ARM defconfigs on
-> > linux-next.
-> > 
-> > Commit 520f7bd73354f003a9a59937b28e4903d985c420 "irqchip: Move ARM gic.h
-> > to include/linux/irqchip/arm-gic.h" moved the file and was merged
-> > through Olof Johansson's next/cleanup and for-next branches.
-> > 
-> > Adding Olof on Cc since I'm not quite sure myself about how this is
-> > handled.
-> 
-> The way to handle this is to base the branch you are adding new shmobile code
-> in, on top of the cleanup branches that changes the underlying infrastructure.
-> This is why we merge it early during the release, so that new code for various
-> platforms can be based on it to avoid a bunch of conflicts in the end.
-> 
-> In this case, you might need to base your branch onto a merge of both
-> the irqchip/gic-vic-move and timer/cleanup branches from arm-soc.
+From: Phil Edworthy <phil.edworthy@renesas.com>
 
-Thanks, I'll take a look at rebasing accordingly.
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+[Rename device from to rcarfb to rcar-du]
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/clock-r8a7779.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index c019609..8cc9bce 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -87,7 +87,7 @@ static struct clk div4_clks[DIV4_NR] = {
+ };
+ 
+ enum { MSTP323, MSTP322, MSTP321, MSTP320,
+-	MSTP101, MSTP100,
++	MSTP103, MSTP101, MSTP100,
+ 	MSTP030,
+ 	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+ 	MSTP016, MSTP015, MSTP014,
+@@ -99,6 +99,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP322] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 22, 0), /* SDHI1 */
+ 	[MSTP321] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 21, 0), /* SDHI2 */
+ 	[MSTP320] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 20, 0), /* SDHI3 */
++	[MSTP103] = SH_CLK_MSTP32(&div4_clks[DIV4_S], MSTPCR1,  3, 0), /* DU */
+ 	[MSTP101] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  1, 0), /* USB2 */
+ 	[MSTP100] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  0, 0), /* USB0/1 */
+ 	[MSTP030] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 30, 0), /* I2C0 */
+@@ -179,6 +180,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP320]), /* SDHI3 */
++	CLKDEV_DEV_ID("rcar-du.0", &mstp_clks[MSTP103]), /* DU */
+ };
+ 
+ void __init r8a7779_clock_init(void)
+-- 
+1.7.12.4
+
