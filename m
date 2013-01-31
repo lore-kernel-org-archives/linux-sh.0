@@ -1,62 +1,51 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 16 Jan 2013 17:08:13 +0000
-Subject: [PATCH 4/8] ARM: shmobile: add MMCIF and SDHI DT clock aliases to sh73a0 and r8a7740
-Message-Id: <1358356097-26180-5-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 31 Jan 2013 06:24:02 +0000
+Subject: [PATCH 9/9] ARM: shmobile: armadillo800eva: set clock rates before timer init
+Message-Id: <1359613442-26038-10-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358356097-26180-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1358356097-26180-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1359613442-26038-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359613442-26038-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Add clock lookup entries for SDHI and MMCIF device names, for the FDT case.
+From: Hideki EIRAKU <hdk@igel.co.jp>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Previously clock rates were set after initialization of timer.
+Therefore the timer used the default extal1 clock rate (25MHz)
+instead of the correct rate for this board (24MHz).
+
+Signed-off-by: Hideki EIRAKU <hdk@igel.co.jp>
+Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7740.c |    4 ++++
- arch/arm/mach-shmobile/clock-sh73a0.c  |    3 +++
- 2 files changed, 7 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/board-armadillo800eva.c |    5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index 8765a76..83209bf 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -611,12 +611,16 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("i2c-sh_mobile.1",	&mstp_clks[MSTP323]),
- 	CLKDEV_DEV_ID("renesas_usbhs",		&mstp_clks[MSTP320]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.0",	&mstp_clks[MSTP314]),
-+	CLKDEV_DEV_ID("e6850000.sdhi",		&mstp_clks[MSTP314]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1",	&mstp_clks[MSTP313]),
-+	CLKDEV_DEV_ID("e6860000.sdhi",		&mstp_clks[MSTP313]),
- 	CLKDEV_DEV_ID("sh_mmcif",		&mstp_clks[MSTP312]),
-+	CLKDEV_DEV_ID("e6bd0000.mmcif",		&mstp_clks[MSTP312]),
- 	CLKDEV_DEV_ID("sh-eth",			&mstp_clks[MSTP309]),
- 	CLKDEV_DEV_ID("e9a00000.sh-eth",	&mstp_clks[MSTP309]),
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index f107e82..9008ad1 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -1169,8 +1169,6 @@ static void __init eva_init(void)
+ 	platform_add_devices(eva_devices,
+ 			     ARRAY_SIZE(eva_devices));
  
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2",	&mstp_clks[MSTP415]),
-+	CLKDEV_DEV_ID("e6870000.sdhi",		&mstp_clks[MSTP415]),
+-	eva_clock_init();
+-
+ 	rmobile_add_device_to_domain("A4LC", &lcdc0_device);
+ 	rmobile_add_device_to_domain("A4LC", &hdmi_lcdc_device);
+ 	if (usb)
+@@ -1181,6 +1179,9 @@ static void __init eva_earlytimer_init(void)
+ {
+ 	r8a7740_clock_init(MD_CK0 | MD_CK2);
+ 	shmobile_earlytimer_init();
++
++	/* the rate of extal1 clock must be set before late_time_init */
++	eva_clock_init();
+ }
  
- 	/* ICK */
- 	CLKDEV_ICK_ID("host",	"renesas_usbhs",	&mstp_clks[MSTP416]),
-diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-index afa5423..5fa106b 100644
---- a/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-@@ -581,10 +581,13 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("e6822000.i2c", &mstp_clks[MSTP323]), /* I2C1 */
- 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP322]), /* USB */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]), /* SDHI0 */
-+	CLKDEV_DEV_ID("ee100000.sdhi", &mstp_clks[MSTP314]), /* SDHI0 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]), /* SDHI1 */
-+	CLKDEV_DEV_ID("ee120000.sdhi", &mstp_clks[MSTP313]), /* SDHI1 */
- 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP312]), /* MMCIF0 */
- 	CLKDEV_DEV_ID("e6bd0000.mmcif", &mstp_clks[MSTP312]), /* MMCIF0 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]), /* SDHI2 */
-+	CLKDEV_DEV_ID("ee140000.sdhi", &mstp_clks[MSTP311]), /* SDHI2 */
- 	CLKDEV_DEV_ID("leds-renesas-tpu.12", &mstp_clks[MSTP303]), /* TPU1 */
- 	CLKDEV_DEV_ID("leds-renesas-tpu.21", &mstp_clks[MSTP302]), /* TPU2 */
- 	CLKDEV_DEV_ID("leds-renesas-tpu.30", &mstp_clks[MSTP301]), /* TPU3 */
+ static void __init eva_add_early_devices(void)
 -- 
-1.7.2.5
+1.7.10.4
 
