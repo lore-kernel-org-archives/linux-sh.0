@@ -1,198 +1,37 @@
-From: Tang Chen <tangchen@cn.fujitsu.com>
-Date: Wed, 09 Jan 2013 09:32:27 +0000
-Subject: [PATCH v6 03/15] memory-hotplug: remove redundant codes
-Message-Id: <1357723959-5416-4-git-send-email-tangchen@cn.fujitsu.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 31 Jan 2013 06:26:09 +0000
+Subject: [PATCH 4/4] ARM: mach-shmobile: sh73a0: allow unplugging of CPU0
+Message-Id: <1359613569-26981-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1357723959-5416-1-git-send-email-tangchen@cn.fujitsu.com>
-In-Reply-To: <1357723959-5416-1-git-send-email-tangchen@cn.fujitsu.com>
+References: <1359613569-26981-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359613569-26981-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: akpm@linux-foundation.org, rientjes@google.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, wency@cn.fujitsu.com, tangchen@cn.fujitsu.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org, glommer@parallels.com
-Cc: x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Wen Congyang <wency@cn.fujitsu.com>
+From: Ulrich Hecht <ulrich.hecht@gmail.com>
 
-offlining memory blocks and checking whether memory blocks are offlined
-are very similar. This patch introduces a new function to remove
-redundant codes.
+sh73a0 deals fine with disabling any core, so we should permit it.
 
-Signed-off-by: Wen Congyang <wency@cn.fujitsu.com>
-Signed-off-by: Tang Chen <tangchen@cn.fujitsu.com>
-Reviewed-by: Kamezawa Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>
+Signed-off-by: Ulrich Hecht <ulrich.hecht@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- mm/memory_hotplug.c |  129 ++++++++++++++++++++++++++++++++------------------
- 1 files changed, 82 insertions(+), 47 deletions(-)
+ arch/arm/mach-shmobile/smp-sh73a0.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/mm/memory_hotplug.c b/mm/memory_hotplug.c
-index 5808045..69d62eb 100644
---- a/mm/memory_hotplug.c
-+++ b/mm/memory_hotplug.c
-@@ -1381,20 +1381,26 @@ int offline_pages(unsigned long start_pfn, unsigned long nr_pages)
- 	return __offline_pages(start_pfn, start_pfn + nr_pages, 120 * HZ);
- }
- 
--int remove_memory(u64 start, u64 size)
-+/**
-+ * walk_memory_range - walks through all mem sections in [start_pfn, end_pfn)
-+ * @start_pfn: start pfn of the memory range
-+ * @end_pfn: end pft of the memory range
-+ * @arg: argument passed to func
-+ * @func: callback for each memory section walked
-+ *
-+ * This function walks through all present mem sections in range
-+ * [start_pfn, end_pfn) and call func on each mem section.
-+ *
-+ * Returns the return value of func.
-+ */
-+static int walk_memory_range(unsigned long start_pfn, unsigned long end_pfn,
-+		void *arg, int (*func)(struct memory_block *, void *))
- {
- 	struct memory_block *mem = NULL;
- 	struct mem_section *section;
--	unsigned long start_pfn, end_pfn;
- 	unsigned long pfn, section_nr;
- 	int ret;
--	int return_on_error = 0;
--	int retry = 0;
--
--	start_pfn = PFN_DOWN(start);
--	end_pfn = start_pfn + PFN_DOWN(size);
- 
--repeat:
- 	for (pfn = start_pfn; pfn < end_pfn; pfn += PAGES_PER_SECTION) {
- 		section_nr = pfn_to_section_nr(pfn);
- 		if (!present_section_nr(section_nr))
-@@ -1411,22 +1417,76 @@ repeat:
- 		if (!mem)
- 			continue;
- 
--		ret = offline_memory_block(mem);
-+		ret = func(mem, arg);
- 		if (ret) {
--			if (return_on_error) {
--				kobject_put(&mem->dev.kobj);
--				return ret;
--			} else {
--				retry = 1;
--			}
-+			kobject_put(&mem->dev.kobj);
-+			return ret;
- 		}
- 	}
- 
- 	if (mem)
- 		kobject_put(&mem->dev.kobj);
- 
--	if (retry) {
--		return_on_error = 1;
-+	return 0;
-+}
-+
-+/**
-+ * offline_memory_block_cb - callback function for offlining memory block
-+ * @mem: the memory block to be offlined
-+ * @arg: buffer to hold error msg
-+ *
-+ * Always return 0, and put the error msg in arg if any.
-+ */
-+static int offline_memory_block_cb(struct memory_block *mem, void *arg)
-+{
-+	int *ret = arg;
-+	int error = offline_memory_block(mem);
-+
-+	if (error != 0 && *ret = 0)
-+		*ret = error;
-+
-+	return 0;
-+}
-+
-+static int is_memblock_offlined_cb(struct memory_block *mem, void *arg)
-+{
-+	int ret = !is_memblock_offlined(mem);
-+
-+	if (unlikely(ret))
-+		pr_warn("removing memory fails, because memory "
-+			"[%#010llx-%#010llx] is onlined\n",
-+			PFN_PHYS(section_nr_to_pfn(mem->start_section_nr)),
-+			PFN_PHYS(section_nr_to_pfn(mem->end_section_nr + 1))-1);
-+
-+	return ret;
-+}
-+
-+int remove_memory(u64 start, u64 size)
-+{
-+	unsigned long start_pfn, end_pfn;
-+	int ret = 0;
-+	int retry = 1;
-+
-+	start_pfn = PFN_DOWN(start);
-+	end_pfn = start_pfn + PFN_DOWN(size);
-+
-+	/*
-+	 * When CONFIG_MEMCG is on, one memory block may be used by other
-+	 * blocks to store page cgroup when onlining pages. But we don't know
-+	 * in what order pages are onlined. So we iterate twice to offline
-+	 * memory:
-+	 * 1st iterate: offline every non primary memory block.
-+	 * 2nd iterate: offline primary (i.e. first added) memory block.
-+	 */
-+repeat:
-+	walk_memory_range(start_pfn, end_pfn, &ret,
-+			  offline_memory_block_cb);
-+	if (ret) {
-+		if (!retry)
-+			return ret;
-+
-+		retry = 0;
-+		ret = 0;
- 		goto repeat;
- 	}
- 
-@@ -1444,38 +1504,13 @@ repeat:
- 	 * memory blocks are offlined.
- 	 */
- 
--	mem = NULL;
--	for (pfn = start_pfn; pfn < end_pfn; pfn += PAGES_PER_SECTION) {
--		section_nr = pfn_to_section_nr(pfn);
--		if (!present_section_nr(section_nr))
--			continue;
--
--		section = __nr_to_section(section_nr);
--		/* same memblock? */
--		if (mem)
--			if ((section_nr >= mem->start_section_nr) &&
--			    (section_nr <= mem->end_section_nr))
--				continue;
--
--		mem = find_memory_block_hinted(section, mem);
--		if (!mem)
--			continue;
--
--		ret = is_memblock_offlined(mem);
--		if (!ret) {
--			pr_warn("removing memory fails, because memory "
--				"[%#010llx-%#010llx] is onlined\n",
--				PFN_PHYS(section_nr_to_pfn(mem->start_section_nr)),
--				PFN_PHYS(section_nr_to_pfn(mem->end_section_nr + 1)) - 1);
--
--			kobject_put(&mem->dev.kobj);
--			unlock_memory_hotplug();
--			return ret;
--		}
-+	ret = walk_memory_range(start_pfn, end_pfn, NULL,
-+				is_memblock_offlined_cb);
-+	if (ret) {
-+		unlock_memory_hotplug();
-+		return ret;
- 	}
- 
--	if (mem)
--		kobject_put(&mem->dev.kobj);
- 	unlock_memory_hotplug();
- 
- 	return 0;
+diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
+index 9812ea3..acb46a9 100644
+--- a/arch/arm/mach-shmobile/smp-sh73a0.c
++++ b/arch/arm/mach-shmobile/smp-sh73a0.c
+@@ -143,6 +143,6 @@ struct smp_operations sh73a0_smp_ops __initdata = {
+ #ifdef CONFIG_HOTPLUG_CPU
+ 	.cpu_kill		= sh73a0_cpu_kill,
+ 	.cpu_die		= sh73a0_cpu_die,
+-	.cpu_disable		= shmobile_cpu_disable,
++	.cpu_disable		= shmobile_cpu_disable_any,
+ #endif
+ };
 -- 
-1.7.1
+1.7.10.4
 
