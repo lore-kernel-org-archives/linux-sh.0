@@ -1,75 +1,54 @@
-From: Damian Hobson-Garcia <dhobsong@igel.co.jp>
-Date: Tue, 08 Jan 2013 10:24:03 +0000
-Subject: [PATCH] drivers: uio_dmem_genirq: Add mmap support for dynamic regions
-Message-Id: <1357640643-17713-1-git-send-email-dhobsong@igel.co.jp>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Thu, 31 Jan 2013 06:23:58 +0000
+Subject: [PATCH 5/9] ARM: shmobile: kota2: Use gpio_request_one()
+Message-Id: <1359613442-26038-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1359613442-26038-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359613442-26038-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: hjk@hansjkoch.de, gregkh@linuxfoundation.org, horms@verge.net.au
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, Damian Hobson-Garcia <dhobsong@igel.co.jp>
+To: linux-arm-kernel@lists.infradead.org
 
-Dynamic regions allocated with dma_alloc_coherent() should use
-dma_mmap_coherent() to perform memory mapping. Other regions
-are simply ioremapped, the same way as in the uio subsystem base
-implementation.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Damian Hobson-Garcia <dhobsong@igel.co.jp>
+Replace occurences of gpio_request() and gpio_direction_*() by calls to
+gpio_request_one().
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/uio/uio_dmem_genirq.c |   33 +++++++++++++++++++++++++++++++++
- 1 files changed, 33 insertions(+), 0 deletions(-)
+ arch/arm/mach-shmobile/board-kota2.c |    9 +++------
+ 1 file changed, 3 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/uio/uio_dmem_genirq.c b/drivers/uio/uio_dmem_genirq.c
-index 252434c..7a047ad 100644
---- a/drivers/uio/uio_dmem_genirq.c
-+++ b/drivers/uio/uio_dmem_genirq.c
-@@ -144,6 +144,38 @@ static int uio_dmem_genirq_irqcontrol(struct uio_info *dev_info, s32 irq_on)
- 	return 0;
- }
+diff --git a/arch/arm/mach-shmobile/board-kota2.c b/arch/arm/mach-shmobile/board-kota2.c
+index bf88f9a..7ec3112 100644
+--- a/arch/arm/mach-shmobile/board-kota2.c
++++ b/arch/arm/mach-shmobile/board-kota2.c
+@@ -474,10 +474,8 @@ static void __init kota2_init(void)
+ 	gpio_request(GPIO_FN_D15_NAF15, NULL);
+ 	gpio_request(GPIO_FN_CS5A_, NULL);
+ 	gpio_request(GPIO_FN_WE0__FWE, NULL);
+-	gpio_request(GPIO_PORT144, NULL); /* PINTA2 */
+-	gpio_direction_input(GPIO_PORT144);
+-	gpio_request(GPIO_PORT145, NULL); /* RESET */
+-	gpio_direction_output(GPIO_PORT145, 1);
++	gpio_request_one(GPIO_PORT144, GPIOF_IN, NULL); /* PINTA2 */
++	gpio_request_one(GPIO_PORT145, GPIOF_OUT_INIT_HIGH, NULL); /* RESET */
  
-+static int uio_dmem_genirq_mmap(struct uio_info *info,
-+				struct vm_area_struct *vma) {
-+	struct uio_dmem_genirq_platdata *priv = info->priv;
-+	struct uio_mem *uiomem;
-+	int dmem_region = priv->dmem_region_start;
-+	int mi = vma->vm_pgoff;
-+
-+	if (priv->uioinfo->mem[mi].memtype != UIO_MEM_PHYS)
-+		return -EINVAL;
-+
-+	if (mi < MAX_UIO_MAPS) {
-+		uiomem = &priv->uioinfo->mem[mi];
-+		if (!uiomem->size)
-+			return -EINVAL;
-+
-+		if (mi < dmem_region) {	/* phyiscal address */
-+			vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
-+			return remap_pfn_range(vma,
-+				       vma->vm_start,
-+				       uiomem->addr >> PAGE_SHIFT,
-+				       vma->vm_end - vma->vm_start,
-+				       vma->vm_page_prot);
-+		} else {		/* DMA address */
-+			vma->vm_pgoff = 0;
-+			return dma_mmap_coherent(&priv->pdev->dev, vma,
-+				priv->dmem_region_vaddr[mi],
-+				uiomem->addr, uiomem->size);
-+		}
-+	}
-+	return -EINVAL;
-+}
-+
- static int uio_dmem_genirq_probe(struct platform_device *pdev)
- {
- 	struct uio_dmem_genirq_pdata *pdata = pdev->dev.platform_data;
-@@ -263,6 +295,7 @@ static int uio_dmem_genirq_probe(struct platform_device *pdev)
- 	uioinfo->irqcontrol = uio_dmem_genirq_irqcontrol;
- 	uioinfo->open = uio_dmem_genirq_open;
- 	uioinfo->release = uio_dmem_genirq_release;
-+	uioinfo->mmap = uio_dmem_genirq_mmap;
- 	uioinfo->priv = priv;
+ 	/* KEYSC */
+ 	gpio_request(GPIO_FN_KEYIN0_PU, NULL);
+@@ -509,8 +507,7 @@ static void __init kota2_init(void)
+ 	gpio_request(GPIO_FN_MMCD0_6, NULL);
+ 	gpio_request(GPIO_FN_MMCD0_7, NULL);
+ 	gpio_request(GPIO_FN_MMCCMD0, NULL);
+-	gpio_request(GPIO_PORT208, NULL); /* Reset */
+-	gpio_direction_output(GPIO_PORT208, 1);
++	gpio_request_one(GPIO_PORT208, GPIOF_OUT_INIT_HIGH, NULL); /* Reset */
  
- 	/* Enable Runtime PM for this device:
+ 	/* SDHI0 (microSD) */
+ 	gpio_request(GPIO_FN_SDHICD0_PU, NULL);
 -- 
-1.7.5.4
+1.7.10.4
 
