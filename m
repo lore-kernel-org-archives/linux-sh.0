@@ -1,77 +1,106 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 13 Feb 2013 03:26:36 +0000
-Subject: [PATCH 18/21] ARM: shmobile: sh73a0: Remove FSI function GPIOs
-Message-Id: <1360725999-14514-19-git-send-email-horms+renesas@verge.net.au>
+From: Jianguo Wu <wujianguo@huawei.com>
+Date: Fri, 01 Feb 2013 01:32:59 +0000
+Subject: Re: [PATCH v6 00/15] memory-hotplug: hot-remove physical memory
+Message-Id: <510B1B4B.5080207@huawei.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360725999-14514-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1360725999-14514-1-git-send-email-horms+renesas@verge.net.au>
+References: <1357723959-5416-1-git-send-email-tangchen@cn.fujitsu.com>     <1359463973.1624.15.camel@kernel> <5108F2B3.3090506@cn.fujitsu.com>    <1359595344.1557.13.camel@kernel> <5109E59F.5080104@cn.fujitsu.com>   <1359613162.1587.0.camel@kernel> <510A18FA.2010107@cn.fujitsu.com>  <1359622123.1391.19.camel@kernel> <510A3CE6.202@cn.fujitsu.com> <1359628705.2048.5.camel@kernel>
+In-Reply-To: <1359628705.2048.5.camel@kernel>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Jeons <simon.jeons@gmail.com>
+Cc: Tang Chen <tangchen@cn.fujitsu.com>, akpm@linux-foundation.org, rientjes@google.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wency@cn.fujitsu.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org, glommer@parallels.com, x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+On 2013/1/31 18:38, Simon Jeons wrote:
 
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
+> Hi Tang,
+> On Thu, 2013-01-31 at 17:44 +0800, Tang Chen wrote:
+>> Hi Simon,
+>>
+>> On 01/31/2013 04:48 PM, Simon Jeons wrote:
+>>> Hi Tang,
+>>> On Thu, 2013-01-31 at 15:10 +0800, Tang Chen wrote:
+>>>
+>>> 1. IIUC, there is a button on machine which supports hot-remove memory,
+>>> then what's the difference between press button and echo to /sys?
+>>
+>> No important difference, I think. Since I don't have the machine you are
+>> saying, I cannot surely answer you. :)
+>> AFAIK, pressing the button means trigger the hotplug from hardware, sysfs
+>> is just another entrance. At last, they will run into the same code.
+>>
+>>> 2. Since kernel memory is linear mapping(I mean direct mapping part),
+>>> why can't put kernel direct mapping memory into one memory device, and
+>>> other memory into the other devices?
+>>
+>> We cannot do that because in that way, we will lose NUMA performance.
+>>
+>> If you know NUMA, you will understand the following example:
+>>
+>> node0:                    node1:
+>>     cpu0~cpu15                cpu16~cpu31
+>>     memory0~memory511         memory512~memory1023
+>>
+>> cpu16~cpu31 access memory16~memory1023 much faster than memory0~memory511.
+>> If we set direct mapping area in node0, and movable area in node1, then
+>> the kernel code running on cpu16~cpu31 will have to access 
+>> memory0~memory511.
+>> This is a terrible performance down.
+> 
+> So if config NUMA, kernel memory will not be linear mapping anymore? For
+> example, 
+> 
+> Node 0  Node 1 
+> 
+> 0 ~ 10G 11G~14G
+> 
+> kernel memory only at Node 0? Can part of kernel memory also at Node 1?
+> 
+> How big is kernel direct mapping memory in x86_64? Is there max limit?
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/include/mach/sh73a0.h |   31 ++++++++------------------
- 1 file changed, 9 insertions(+), 22 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/sh73a0.h b/arch/arm/mach-shmobile/include/mach/sh73a0.h
-index 8e4e469..a256372 100644
---- a/arch/arm/mach-shmobile/include/mach/sh73a0.h
-+++ b/arch/arm/mach-shmobile/include/mach/sh73a0.h
-@@ -105,7 +105,7 @@ enum {
- 	GPIO_FN_GPI7,
- 	GPIO_FN_GPO7, GPIO_FN_MFG0_OUT2,
- 	GPIO_FN_GPO6, GPIO_FN_MFG1_OUT2,
--	GPIO_FN_GPO5, GPIO_FN_FSICOSLDT3,
-+	GPIO_FN_GPO5,
- 	GPIO_FN_PORT16_VIO_CKOR,
- 	GPIO_FN_PORT19_VIO_CKO2,
- 	GPIO_FN_GPO0,
-@@ -123,29 +123,16 @@ enum {
- 	GPIO_FN_SIM_CLK, GPIO_FN_PORT30_VIO_CKOR,
- 	GPIO_FN_SIM_D, GPIO_FN_PORT31_IROUT,
- 	GPIO_FN_XWUP,
--	GPIO_FN_FSIBOBT, GPIO_FN_FSIBIBT,
--	GPIO_FN_FSIBOLR, GPIO_FN_FSIBILR,
--	GPIO_FN_FSIBOSLD,
--	GPIO_FN_FSIBISLD,
- 	GPIO_FN_VACK,
- 	GPIO_FN_XTAL1L,
--	GPIO_FN_FSICOSLDT2,
--	GPIO_FN_FSICOSLDT1,
--	GPIO_FN_FSICOBT, GPIO_FN_FSICIBT, GPIO_FN_FSIDOBT, GPIO_FN_FSIDIBT,
--	GPIO_FN_FSICOLR, GPIO_FN_FSICILR, GPIO_FN_FSIDOLR, GPIO_FN_FSIDILR,
--	GPIO_FN_FSICOSLD, GPIO_FN_PORT47_FSICSPDIF,
--	GPIO_FN_FSICISLD, GPIO_FN_FSIDISLD,
--	GPIO_FN_FSIACK, GPIO_FN_PORT49_IRDA_OUT, GPIO_FN_PORT49_IROUT, \
--	GPIO_FN_FSIAOMC,
--	GPIO_FN_FSIAOLR, GPIO_FN_BBIF2_TSYNC2, GPIO_FN_TPU2TO2, GPIO_FN_FSIAILR,
--
--	GPIO_FN_FSIAOBT, GPIO_FN_BBIF2_TSCK2, GPIO_FN_TPU2TO3, GPIO_FN_FSIAIBT,
--	GPIO_FN_FSIAOSLD, GPIO_FN_BBIF2_TXD2,
--	GPIO_FN_FSIASPDIF, GPIO_FN_PORT53_IRDA_IN, GPIO_FN_TPU3TO3, \
--	GPIO_FN_FSIBSPDIF, GPIO_FN_PORT53_FSICSPDIF,
--	GPIO_FN_FSIBCK, GPIO_FN_PORT54_IRDA_FIRSEL, GPIO_FN_TPU3TO2, \
--	GPIO_FN_FSIBOMC, GPIO_FN_FSICCK, GPIO_FN_FSICOMC,
--	GPIO_FN_FSIAISLD, GPIO_FN_TPU0TO0,
-+	GPIO_FN_PORT49_IRDA_OUT, GPIO_FN_PORT49_IROUT,
-+	GPIO_FN_BBIF2_TSYNC2, GPIO_FN_TPU2TO2,
-+
-+	GPIO_FN_BBIF2_TSCK2, GPIO_FN_TPU2TO3,
-+	GPIO_FN_BBIF2_TXD2,
-+	GPIO_FN_PORT53_IRDA_IN, GPIO_FN_TPU3TO3,
-+	GPIO_FN_PORT54_IRDA_FIRSEL, GPIO_FN_TPU3TO2,
-+	GPIO_FN_TPU0TO0,
- 	GPIO_FN_A0, GPIO_FN_BS_,
- 	GPIO_FN_A12, GPIO_FN_PORT58_KEYOUT7, GPIO_FN_TPU4TO2,
- 	GPIO_FN_A13, GPIO_FN_PORT59_KEYOUT6, GPIO_FN_TPU0TO1,
--- 
-1.7.10.4
+Max kernel direct mapping memory in x86_64 is 64TB.
+
+> It seems that only around 896MB on x86_32. 
+> 
+>>
+>>> As you know x86_64 don't need
+>>> highmem, IIUC, all kernel memory will linear mapping in this case. Is my
+>>> idea available? If is correct, x86_32 can't implement in the same way
+>>> since highmem(kmap/kmap_atomic/vmalloc) can map any address, so it's
+>>> hard to focus kernel memory on single memory device.
+>>
+>> Sorry, I'm not quite familiar with x86_32 box.
+>>
+>>> 3. In current implementation, if memory hotplug just need memory
+>>> subsystem and ACPI codes support? Or also needs firmware take part in?
+>>> Hope you can explain in details, thanks in advance. :)
+>>
+>> We need firmware take part in, such as SRAT in ACPI BIOS, or the firmware
+>> based memory migration mentioned by Liu Jiang.
+> 
+> Is there any material about firmware based memory migration?
+> 
+>>
+>> So far, I only know this. :)
+>>
+>>> 4. What's the status of memory hotplug? Apart from can't remove kernel
+>>> memory, other things are fully implementation?
+>>
+>> I think the main job is done for now. And there are still bugs to fix.
+>> And this functionality is not stable.
+>>
+>> Thanks. :)
+> 
+> 
+> --
+> To unsubscribe, send a message with 'unsubscribe linux-mm' in
+> the body to majordomo@kvack.org.  For more info on Linux MM,
+> see: http://www.linux-mm.org/ .
+> Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+> 
+> .
+> 
+
+
 
