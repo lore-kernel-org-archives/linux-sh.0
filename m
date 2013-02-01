@@ -1,63 +1,96 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 14 Feb 2013 00:56:58 +0000
-Subject: Re: [PATCH 00/16 v1.1] SCIF, I2C and FSI pinctrl functions for sh73a0
-Message-Id: <20130214005658.GF15879@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 01 Feb 2013 03:15:31 +0000
+Subject: Re: [PATCH 0/3] R-Car Display Unit DRM driver
+Message-Id: <226620406.loYPPLmWhQ@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360723497-23266-1-git-send-email-horms+renesas@verge.net.au>
- <1911001.oocnvCx2VX@avalon> <20130213162106.GB10520@verge.net.au>
- <1966083.UGpBDi27xI@avalon>
-In-Reply-To: <1966083.UGpBDi27xI@avalon>
+References: <1359596703-17556-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <20130131063838.GC24518@verge.net.au>
+In-Reply-To: <20130131063838.GC24518@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Simon Horman <horms@verge.net.au>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org, magnus.damm@gmail.com
 
-On Wed, Feb 13, 2013 at 05:32:40PM +0100, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> On Thursday 14 February 2013 01:21:06 Simon Horman wrote:
-> > On Wed, Feb 13, 2013 at 05:06:30PM +0100, Laurent Pinchart wrote:
-> > > On Wednesday 13 February 2013 11:44:36 Simon Horman wrote:
-> > > > Hi,
-> > > > 
-> > > > this series is a follow-up to "[PATCH 00/16] SCIF, I2C and FSI pinctrl
-> > > > functions for sh73a0" by Laurent Pinchart. I am primarily posting it for
-> > > > his review.
-> > > > 
-> > > > This series differs from the series posted by Laurent in the following
-> > > > ways:
-> > > > 
-> > > > * Due to some slightly over-zelous git use on my part the series
-> > > >   is actually based on a checkout of
-> > > >   git://linuxtv.org/pinchartl/fbdev.git pinmux-pfc-funcs
-> > > >   
-> > > >   As such it includes several patches not included in the series posted
-> > > >   in via eimal as the series "[PATCH 00/16] SCIF, I2C and FSI pinctrl
-> > > >   functions for sh73a0". In particular it includes r8a7740 and r8a7779
-> > > >   patches.
-> > > > 
-> > > > * I have added the following two patches to update the KZM9G rerence
-> > > > code.
-> > > > 
-> > > >   ARM: shmobile: kzm9g: reference: Register pinctrl mappings for I2C
-> > > >   ARM: shmobile: kzm9g: reference: Register pinctrl mappings for SCIF
-> > > > 
-> > > > As implied by the second point above, this series is based on
-> > > > a branch that includes the kzm9g reference code. That branch is
-> > > > 
-> > > > 	git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git
-> > > > 
-> > > > topic/pinmux-base
-> > > 
-> > > When do you plan to push that reference code to mainline ?
+Hi Simon,
+
+On Thursday 31 January 2013 15:38:38 Simon Horman wrote:
+> On Thu, Jan 31, 2013 at 02:45:00AM +0100, Laurent Pinchart wrote:
+> > Hello,
 > > 
-> > As soon as I start pushing stuff for v3.10.
-> > So I am thinking in terms of before pinmux.
-> > But the order can be changed if need be.
+> > Here's a new DRM driver for the Renesas R-Car Display Unit (DU).
+> > 
+> > The DU features two superposition processors (modeled as CRTCs) and eight
+> > planes that can be shared between the superposition processors.
+> > 
+> > The driver supports the superposition processors (currently in pure
+> > overlay mode without alpha blending), all eight planes and all hardware
+> > supported formats except 8-bit indexed color more and 32-bit RGB666 mode
+> > (that would be [31:0] x:R:x:G:x:B:x 8:6:2:6:2:6:2 little endian, not
+> > supported by DRM at the moment).
+> > 
+> > On the output side only sync master non-interlaced modes are currently
+> > supported. Only the VGA output has been tested, as I lack an LVDS panel
+> > for the development board. The second CRTC hasn't been tested for the same
+> > reason.
+> > 
+> > Platform data are subject to change with the common display framework.
+> > This is why I haven't implemented DT bindings yet.
+> > 
+> > Laurent Pinchart (2):
+> >   drm: Renesas R-Car Display Unit DRM driver
+> >   ARM: shmobile: marzen: Add Display Unit support
 > 
-> I'm fine with any order, really. Just keep the patches warm in a corner, and 
-> push the kzm9g-reference code whenever you want to. If you're faster than me 
-> please drop me an e-mail to tell me where I can get the latest kzm9g-reference 
-> pinctrl patches and I'll apply them to my tree.
+> I assume that the above patch is dependent on the other two patches in the
+> series. If so please let me know how you would like to handle the merge.
 
-Good plan.
+It would probably easier to push everything through your tree, as the only 
+risk of conflict in the DRM patch is in Kconfig/Makefile. I'll first give time 
+to reviewers anway.
+
+> > Phil Edworthy (1):
+> >   r8a7779: Add Display Unit clock support
+> 
+> As per my email response to the above patch I have queued this up, but it
+> can be de-queued if appropriate.
+> 
+> >  arch/arm/mach-shmobile/board-marzen.c   |  65 +++++
+> >  arch/arm/mach-shmobile/clock-r8a7779.c  |   4 +-
+> >  drivers/gpu/drm/Kconfig                 |   2 +
+> >  drivers/gpu/drm/Makefile                |   1 +
+> >  drivers/gpu/drm/rcar-du/Kconfig         |  11 +
+> >  drivers/gpu/drm/rcar-du/Makefile        |   8 +
+> >  drivers/gpu/drm/rcar-du/rcar_du_crtc.c  | 471 +++++++++++++++++++++++++++
+> >  drivers/gpu/drm/rcar-du/rcar_du_crtc.h  |  47 ++++
+> >  drivers/gpu/drm/rcar-du/rcar_du_drv.c   | 265 ++++++++++++++++++
+> >  drivers/gpu/drm/rcar-du/rcar_du_drv.h   |  56 ++++
+> >  drivers/gpu/drm/rcar-du/rcar_du_kms.c   | 163 +++++++++++
+> >  drivers/gpu/drm/rcar-du/rcar_du_kms.h   |  34 +++
+> >  drivers/gpu/drm/rcar-du/rcar_du_lvds.c  | 247 +++++++++++++++++
+> >  drivers/gpu/drm/rcar-du/rcar_du_lvds.h  |  25 ++
+> >  drivers/gpu/drm/rcar-du/rcar_du_plane.c | 299 ++++++++++++++++++++
+> >  drivers/gpu/drm/rcar-du/rcar_du_plane.h |  58 ++++
+> >  drivers/gpu/drm/rcar-du/rcar_du_regs.h  | 439 +++++++++++++++++++++++++++
+> >  drivers/gpu/drm/rcar-du/rcar_du_vga.c   | 193 +++++++++++++
+> >  drivers/gpu/drm/rcar-du/rcar_du_vga.h   |  24 ++
+> >  include/linux/platform_data/rcar-du.h   |  51 ++++
+> >  20 files changed, 2462 insertions(+), 1 deletion(-)
+> >  create mode 100644 drivers/gpu/drm/rcar-du/Kconfig
+> >  create mode 100644 drivers/gpu/drm/rcar-du/Makefile
+> >  create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_crtc.c
+> >  create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_crtc.h
+> >  create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_drv.c
+> >  create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_drv.h
+> >  create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_kms.c
+> >  create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_kms.h
+> >  create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_lvds.c
+> >  create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_lvds.h
+> >  create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_plane.c
+> >  create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_plane.h
+> >  create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_regs.h
+> >  create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_vga.c
+> >  create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_vga.h
+> >  create mode 100644 include/linux/platform_data/rcar-du.h
+-- 
+Regards,
+
+Laurent Pinchart
