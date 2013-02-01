@@ -1,101 +1,27 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 13 Feb 2013 03:26:20 +0000
-Subject: [PATCH 02/21] ARM: shmobile: kota2: Register pinctrl mappings for SCIF
-Message-Id: <1360725999-14514-3-git-send-email-horms+renesas@verge.net.au>
+From: Olof Johansson <olof@lixom.net>
+Date: Fri, 01 Feb 2013 03:40:22 +0000
+Subject: Re: [GIT PULL] Renesas ARM-based SoC for v3.9 #2
+Message-Id: <20130201034022.GA4838@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360725999-14514-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1360725999-14514-1-git-send-email-horms+renesas@verge.net.au>
+References: <1359613442-26038-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359613442-26038-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+On Thu, Jan 31, 2013 at 03:23:53PM +0900, Simon Horman wrote:
+> Hi Olof, Hi Arnd,
+> 
+> The following changes since commit 42dd581bc4dba82e8756bb881fa974742250b4c6:
+> 
+>   ARM: shmobile: Include sh73a0 DTSI in kzm9g (2013-01-25 09:26:33 +0900)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards2-for-v3.9
 
-Replace the GPIO-based SCIF pinmux configuration by pinctrl mappings.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/board-kota2.c |   42 +++++++++++++++++++---------------
- 1 file changed, 23 insertions(+), 19 deletions(-)
+Pulled. And thanks for using a tag!
 
-diff --git a/arch/arm/mach-shmobile/board-kota2.c b/arch/arm/mach-shmobile/board-kota2.c
-index 2ccc860..69dd9e6 100644
---- a/arch/arm/mach-shmobile/board-kota2.c
-+++ b/arch/arm/mach-shmobile/board-kota2.c
-@@ -24,6 +24,7 @@
- #include <linux/init.h>
- #include <linux/interrupt.h>
- #include <linux/irq.h>
-+#include <linux/pinctrl/machine.h>
- #include <linux/platform_device.h>
- #include <linux/delay.h>
- #include <linux/io.h>
-@@ -433,6 +434,26 @@ static struct platform_device *kota2_devices[] __initdata = {
- 	&sdhi1_device,
- };
- 
-+static const struct pinctrl_map kota2_pinctrl_map[] = {
-+	/* SCIFA2 (UART2) */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-sh73a0",
-+				  "scifa2_data_0", "scifa2"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-sh73a0",
-+				  "scifa2_ctrl_0", "scifa2"),
-+	/* SCIFA4 (UART1) */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
-+				  "scifa4_data", "scifa4"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
-+				  "scifa4_ctrl", "scifa4"),
-+	/* SCIFB (BT) */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.8", "pfc-sh73a0",
-+				  "scifb_data_0", "scifb"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.8", "pfc-sh73a0",
-+				  "scifb_clk_0", "scifb"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.8", "pfc-sh73a0",
-+				  "scifb_ctrl_0", "scifb"),
-+};
-+
- static void __init kota2_init(void)
- {
- 	regulator_register_always_on(0, "fixed-1.8V", fixed1v8_power_consumers,
-@@ -441,20 +462,10 @@ static void __init kota2_init(void)
- 				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
- 	regulator_register_fixed(2, dummy_supplies, ARRAY_SIZE(dummy_supplies));
- 
-+	pinctrl_register_mappings(kota2_pinctrl_map,
-+				  ARRAY_SIZE(kota2_pinctrl_map));
- 	sh73a0_pinmux_init();
- 
--	/* SCIFA2 (UART2) */
--	gpio_request(GPIO_FN_SCIFA2_TXD1, NULL);
--	gpio_request(GPIO_FN_SCIFA2_RXD1, NULL);
--	gpio_request(GPIO_FN_SCIFA2_RTS1_, NULL);
--	gpio_request(GPIO_FN_SCIFA2_CTS1_, NULL);
--
--	/* SCIFA4 (UART1) */
--	gpio_request(GPIO_FN_SCIFA4_TXD, NULL);
--	gpio_request(GPIO_FN_SCIFA4_RXD, NULL);
--	gpio_request(GPIO_FN_SCIFA4_RTS_, NULL);
--	gpio_request(GPIO_FN_SCIFA4_CTS_, NULL);
--
- 	/* SMSC911X */
- 	gpio_request(GPIO_FN_D0_NAF0, NULL);
- 	gpio_request(GPIO_FN_D1_NAF1, NULL);
-@@ -518,13 +529,6 @@ static void __init kota2_init(void)
- 	gpio_request(GPIO_FN_SDHID0_1_PU, NULL);
- 	gpio_request(GPIO_FN_SDHID0_0_PU, NULL);
- 
--	/* SCIFB (BT) */
--	gpio_request(GPIO_FN_PORT159_SCIFB_SCK, NULL);
--	gpio_request(GPIO_FN_PORT160_SCIFB_TXD, NULL);
--	gpio_request(GPIO_FN_PORT161_SCIFB_CTS_, NULL);
--	gpio_request(GPIO_FN_PORT162_SCIFB_RXD, NULL);
--	gpio_request(GPIO_FN_PORT163_SCIFB_RTS_, NULL);
--
- 	/* SDHI1 (BCM4330) */
- 	gpio_request(GPIO_FN_SDHICLK1, NULL);
- 	gpio_request(GPIO_FN_SDHICMD1_PU, NULL);
--- 
-1.7.10.4
-
+-Olof
