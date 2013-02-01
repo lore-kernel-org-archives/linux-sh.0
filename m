@@ -1,33 +1,36 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Wed, 13 Feb 2013 01:10:56 +0000
-Subject: Re: [PATCH 1/3] ARM: shmobile: add AS3711 PMIC platform data on kzm9g
-Message-Id: <20130213011053.GA13657@verge.net.au>
+Date: Fri, 01 Feb 2013 00:06:57 +0000
+Subject: Re: [PATCH 1/3] r8a7779: Add Display Unit clock support
+Message-Id: <20130201000657.GM10312@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360689333-13525-2-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1360689333-13525-2-git-send-email-g.liakhovetski@gmx.de>
+References: <1359596703-17556-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <1359596703-17556-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <20130131063520.GB24518@verge.net.au>
+ <2488055.1BuytUnxUW@avalon>
+In-Reply-To: <2488055.1BuytUnxUW@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org, magnus.damm@gmail.com, Phil Edworthy <phil.edworthy@renesas.com>
 
-On Tue, Feb 12, 2013 at 04:53:28PM -0800, Kuninori Morimoto wrote:
+On Thu, Jan 31, 2013 at 11:14:34AM +0100, Laurent Pinchart wrote:
+> Hi Simon,
 > 
-> Hi Guennadi
-> 
-> > KZM9G uses an AS3711 PMIC to supply power to the CPU and the LCD backlight.
-> > The PMIC on the board is pre-programmed to supply correct voltages to the
-> > CPU, power supply to the backlight has to be turned on at run-time. The
-> > latter is currently performed by a hard-coded I2C command sequence in the
-> > board file. This patch removes the backlight hack and instead adds an I2C
-> > device to instantiate the AS3711 MFD driver, which will add a regulator
-> > device to dynamically adjust CPU voltages and a backlight device.
+> On Thursday 31 January 2013 15:35:20 Simon Horman wrote:
+> > On Thu, Jan 31, 2013 at 02:45:01AM +0100, Laurent Pinchart wrote:
+> > > From: Phil Edworthy <phil.edworthy@renesas.com>
+> > > 
+> > > Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+> > > [Rename device from to rcarfb to rcar-du]
+> > > Signed-off-by: Laurent Pinchart
+> > > <laurent.pinchart+renesas@ideasonboard.com>
 > > 
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > ---
-> >  arch/arm/mach-shmobile/board-kzm9g.c |  193 ++++++++++++++++++++++++---------
-> >  1 files changed, 140 insertions(+), 53 deletions(-)
+> > Thanks, I have applied this to the soc3 branch, merged it into the next
+> > branch. At this point intend to try and have it included in 3.9, though
+> > we are now late in the cycle so that may not happen.
 > 
-> Is it possible to update defconfig ?
-> This patch or additional patch.
+> As the DRM driver will not go to mainline before v3.10, I'd rather delay this 
+> patch as well to give reviewers a chance to comment on the driver.
 
-An additional patch please.
+Sure, I will drop it for now.
