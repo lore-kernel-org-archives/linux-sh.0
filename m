@@ -1,46 +1,26 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Mon, 18 Feb 2013 00:58:42 +0000
-Subject: Re: GIT PULL] Renesas ARM-based SoC pinmux for v3.9 #2
-Message-Id: <20130218005842.GE4615@quad.lixom.net>
+From: Joerg Roedel <joro@8bytes.org>
+Date: Fri, 01 Feb 2013 13:56:33 +0000
+Subject: Re: [PATCH v6 0/4] Renesas IPMMU driver for sh7372, sh73a0 and r8a7740
+Message-Id: <20130201135633.GH25591@8bytes.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360981553-11414-1-git-send-email-horms+renesas@verge.net.au>
- <201302161034.33865.arnd@arndb.de>
-In-Reply-To: <201302161034.33865.arnd@arndb.de>
+References: <1358765669-14567-1-git-send-email-hdk@igel.co.jp>
+In-Reply-To: <1358765669-14567-1-git-send-email-hdk@igel.co.jp>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Sat, Feb 16, 2013 at 10:34:33AM +0000, Arnd Bergmann wrote:
-> On Saturday 16 February 2013, Simon Horman wrote:
-> > Hi Olof, Hi Arnd,
-> > 
-> > The following changes since commit c3323806a67c0c656e27956b7340e37ba6c6968b:
-> > 
-> >   sh-pfc: Move sh_pfc.h from include/linux/ to driver directory (2013-01-25 09:24:31 +0900)
-> > 
-> > are available in the git repository at:
-> > 
-> >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-pinmux2-for-v3.9
-> > 
-> > for you to fetch changes up to 8c43fcc7804fc4609ccd9fa021e21f5423db9d96:
-> > 
-> >   sh-pfc: sh_pfc_probe() sizeof() fix (2013-02-16 10:58:50 +0900)
-> > 
-> > ----------------------------------------------------------------
-> > Bug fix from Magnus that resolves a regression introduced in pfc changes
-> > queued up for 3.9.
-> 
-> 
-> Pulled into next/sh-pinux, thanks!
-> 
-> Olof, we haven't done an official handover, but since I have added a couple of
-> my own bug fixes in the past days, and I say no other updates from you, I decided
-> to take this one in. I'll also have a look if there are more fixes to take care
-> of over the weekend.
+On Mon, Jan 21, 2013 at 07:54:25PM +0900, Hideki EIRAKU wrote:
+> Hideki EIRAKU (4):
+>   iommu/shmobile: Add iommu driver for Renesas IPMMU modules
+>   ARM: mach-shmobile: sh7372: Add IPMMU device
+>   ARM: mach-shmobile: sh73a0: Add IPMMU device
+>   ARM: mach-shmobile: r8a7740: Add IPMMU device
 
-Ah, got to this email just now. Yep, no worries, I did run git remote update
-before I started picking up new material so I noticed the checkins.
+Paul, Magnus, any opinions on patches 2-4? Can you ACK them when they
+are ok for you?
 
 
--Olof
+	Joerg
+
+
