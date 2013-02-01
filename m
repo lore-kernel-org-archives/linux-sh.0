@@ -1,38 +1,58 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 13 Feb 2013 03:26:38 +0000
-Subject: [PATCH 20/21] ARM: shmobile: r8a7779: Remove DU1_DOTCLKOUT1 GPIO
-Message-Id: <1360725999-14514-21-git-send-email-horms+renesas@verge.net.au>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 01 Feb 2013 04:23:51 +0000
+Subject: Re: [PATCH/RFC v2 06/11] mmc: tmio-mmc: define device-tree bindings
+Message-Id: <20130201042350.GA6898@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360725999-14514-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1360725999-14514-1-git-send-email-horms+renesas@verge.net.au>
+References: <1358955158-1510-1-git-send-email-g.liakhovetski@gmx.de>
+ <1358955158-1510-7-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1358955158-1510-7-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+On Wed, Jan 23, 2013 at 04:32:33PM +0100, Guennadi Liakhovetski wrote:
+> Define device-tree bindings for the tmio-mmc driver to be able to specify
+> parameters, currently provided in platform data.
+> 
+> Cc: Magnus Damm <magnus.damm@gmail.com>
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+> ---
+> 
+> Please, comment on this one, since it is defining an ABI
+> 
+>  Documentation/devicetree/bindings/mmc/tmio_mmc.txt |   19 +++++++++++++++++++
+>  1 files changed, 19 insertions(+), 0 deletions(-)
+>  create mode 100644 Documentation/devicetree/bindings/mmc/tmio_mmc.txt
+> 
+> diff --git a/Documentation/devicetree/bindings/mmc/tmio_mmc.txt b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
+> new file mode 100644
+> index 0000000..dd8decd
+> --- /dev/null
+> +++ b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
+> @@ -0,0 +1,19 @@
+> +* Toshiba Mobile IO SD/MMC controller
+> +
+> +The tmio-mmc driver doesn't probe its devices actively, instead its binding to
+> +devices is managed by either MFD drivers or by the sh_mobile_sdhi platform
+> +driver. Those drivers supply the tmio-mmc driver with platform data, that either
+> +describe hardware capabilities, known to them, or are obtained by them from
+> +their own platform data or from their DT information. In the latter case all
+> +compulsory and any optional properties, common to all SD/MMC drivers, as
+> +described in mmc.txt, should or can be used. Additionally the following optional
+> +bindings can be used. They set either respective TMIO_MMC_* flags or MMC_CAP_*
+> +capabilities.
+> +
+> +Optional properties:
+> +- toshiba,mmc-wrprotect-disable	: set TMIO_MMC_WRPROTECT_DISABLE flag
+> +- toshiba,mmc-blksz-2bytes	: set TMIO_MMC_BLKSZ_2BYTES
+> +- toshiba,mmc-cap-sdio-irq	: SDIO IRQ signalling should be used, if
+> +	supported by the hardware, i.e. set MMC_CAP_SDIO_IRQ if
+> +	TMIO_MMC_SDIO_IRQ is also set
+> +- toshiba,mmc-has-idle-wait	: set TMIO_MMC_HAS_IDLE_WAIT
 
-The function is not documented in the r8a7779 datasheet. Remove it.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/include/mach/r8a7779.h |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-index 8ab0cd6..badba57 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -308,7 +308,7 @@ enum {
- 	GPIO_FN_SD2_CD, GPIO_FN_MT0_VCXO, GPIO_FN_SPA_TMS, GPIO_FN_HSPI_TX1_D,
- 	GPIO_FN_VI1_DATA7_VI1_B7, GPIO_FN_SD2_WP, GPIO_FN_MT0_PWM,
- 	GPIO_FN_SPA_TDI, GPIO_FN_HSPI_RX1_D, GPIO_FN_VI1_G0, GPIO_FN_VI3_DATA0,
--	GPIO_FN_DU1_DOTCLKOUT1, GPIO_FN_TS_SCK1, GPIO_FN_DREQ2_B, GPIO_FN_TX2,
-+	GPIO_FN_TS_SCK1, GPIO_FN_DREQ2_B, GPIO_FN_TX2,
- 	GPIO_FN_SPA_TDO, GPIO_FN_HCTS0_B, GPIO_FN_VI1_G1, GPIO_FN_VI3_DATA1,
- 	GPIO_FN_SSI_SCK1, GPIO_FN_TS_SDEN1, GPIO_FN_DACK2_B, GPIO_FN_RX2,
- 	GPIO_FN_HRTS0_B,
--- 
-1.7.10.4
-
+FWIW, TMIO_MMC_HAS_IDLE_WAIT appears to be required for SDHI0 to
+function on the Marzen board. As I have been doing some work on
+bring up the Marzen board using DT I am very happy to see these new
+bindings.
