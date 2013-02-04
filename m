@@ -1,45 +1,19 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 13 Feb 2013 03:29:16 +0000
-Subject: [PATCH 4/9] ARM: shmobile: sh73a0: Add pin control device in device tree
-Message-Id: <1360726161-16072-5-git-send-email-horms+renesas@verge.net.au>
+From: horseriver <horserivers@gmail.com>
+Date: Mon, 04 Feb 2013 23:14:32 +0000
+Subject: makefile command
+Message-Id: <20130204231432.GI2553@debian.localdomain>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360726161-16072-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1360726161-16072-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+hi:)
 
-Add a pfc node in the sh73a0 device tree.
+  what does this command do for makefile?
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-[horms+renesas@verge.net.au: resolved conflict in sh73a0.dtsi]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/sh73a0.dtsi |    8 ++++++++
- 1 file changed, 8 insertions(+)
+  install: $(BOOTIMAGE)
+  sh $(srctree)/$(src)/install.sh $(KERNELRELEASE) $< System.map "$(INSTALL_PATH)"
 
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index 721f486..fc7f0fd 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -22,6 +22,14 @@
- 		};
- 	};
- 
-+	gpio: pfc@e6050000 {
-+		compatible = "renesas,pfc-sh73a0";
-+		reg = <0xe6050000 0x8000>,
-+		      <0xe605801c 0x1c>;
-+		gpio-controller;
-+		#gpio-cells = <2>;
-+	};
-+
- 	gic: interrupt-controller@f0001000 {
- 		compatible = "arm,cortex-a9-gic";
- 		#interrupt-cells = <3>;
--- 
-1.7.10.4
-
+  
+thanks!
