@@ -1,46 +1,135 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Thu, 28 Feb 2013 19:20:59 +0000
-Subject: Re: [PATCH v3 1/3] serial: sh-sci: Add OF support
-Message-Id: <CABYn4sxFODwPD5ayYLgHuFzG6+XQ6ZpVgnx-Nz8MkhBv35LqAQ@mail.gmail.com>
+From: James Hogan <james.hogan@imgtec.com>
+Date: Mon, 04 Feb 2013 10:09:43 +0000
+Subject: [PATCH RESEND 1/1] arch Kconfig: remove references to IRQ_PER_CPU
+Message-Id: <1359972583-17134-1-git-send-email-james.hogan@imgtec.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1361898208-6683-1-git-send-email-hechtb+renesas@gmail.com>
-	<20130227080742.GB21690@linux-sh.org>
-	<CANqRtoSDqm1VMZxxuPgnpNScfSVsozeS=_m0-1t6Z1w0vny7FA@mail.gmail.com>
-	<20130227081954.GA30395@linux-sh.org>
-	<CANqRtoRXjiX227Mop2ysGDij0F0W-c-_xq4UMn7K-Hhmg-e=4Q@mail.gmail.com>
-	<20130227090456.GA7936@verge.net.au>
-	<20130227093439.GE30395@linux-sh.org>
-In-Reply-To: <20130227093439.GE30395@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>
-Cc: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, linux-serial@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Cc: uclinux-dist-devel@blackfin.uclinux.org, linux-hexagon@vger.kernel.org, linux-ia64@vger.kernel.org, linux-mips@linux-mips.org, linux-parisc@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-sh@vger.kernel.org, linux-arch@vger.kernel.org, James Hogan <james.hogan@imgtec.com>, Thomas Gleixner <tglx@linutronix.de>, Mike Frysinger <vapier@gentoo.org>, Fenghua Yu <fenghua.yu@intel.com>, Ralf Baechle <ralf@linux-mips.org>, "James E.J. Bottomley" <jejb@parisc-linux.org>, Helge Deller <deller@gmx.de>, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, Paul Mundt <lethal@linux-sh.org>
 
-2013/2/27 Paul Mundt <lethal@linux-sh.org>:
-> On Wed, Feb 27, 2013 at 06:04:57PM +0900, Simon Horman wrote:
->> On Wed, Feb 27, 2013 at 05:26:57PM +0900, Magnus Damm wrote:
->> > My personal preference would be that you (Paul) merge this patch by yourself:
->> > [PATCH v3 1/3] serial: sh-sci: Add OF support
->> >
->> > I believe we can deal with the SoC bits easily afterwards. Simon may
->> > however prefer to deal with it differently.
->> >
->> > Simon, how do you prefer to handle merge of DT support for the SCIF driver?
->>
->> I am fairly ambivalent.
->>
->> If Paul could merge this patch upstream in the v3.9-rc1~rc3 time frame
->> then I can queue up the SoC portions for v3.10.
->>
->> Or alternatively I can queue up all three patches for v3.10.
->> Either way the outcome should be much the same.
->
-> Waiting an entire kernel version to throw some arbitrary dts file updates
-> in seems a bit absurd, but I'll let you handle it however you like. I
-> haven't sent out my SH updates to Linus yet, but plan to do so by -rc2
-> (there isn't really that much to begin with, most of it has gone through
-> other trees), so in light of this I will throw the sh-sci OF patch in to
-> my queue directly then.
+The IRQ_PER_CPU Kconfig symbol was removed in the following commit:
 
-Thanks to all involved getting this patch into the mainline.
+Commit 6a58fb3bad099076f36f0f30f44507bc3275cdb6 ("genirq: Remove
+CONFIG_IRQ_PER_CPU") merged in v2.6.39-rc1.
+
+But IRQ_PER_CPU wasn't removed from any of the architecture Kconfig
+files where it was defined or selected. It's completely unused so remove
+the remaining references.
+
+Signed-off-by: James Hogan <james.hogan@imgtec.com>
+Cc: Thomas Gleixner <tglx@linutronix.de>
+Cc: Mike Frysinger <vapier@gentoo.org>
+Cc: Fenghua Yu <fenghua.yu@intel.com>
+Cc: Ralf Baechle <ralf@linux-mips.org>
+Cc: "James E.J. Bottomley" <jejb@parisc-linux.org>
+Cc: Helge Deller <deller@gmx.de>
+Cc: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+Cc: Paul Mackerras <paulus@samba.org>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Acked-by: Tony Luck <tony.luck@intel.com>
+Acked-by: Richard Kuo <rkuo@codeaurora.org>
+---
+
+Does anybody want to pick this patch up?
+
+ arch/blackfin/Kconfig |    1 -
+ arch/hexagon/Kconfig  |    1 -
+ arch/ia64/Kconfig     |    1 -
+ arch/mips/Kconfig     |    1 -
+ arch/parisc/Kconfig   |    1 -
+ arch/powerpc/Kconfig  |    1 -
+ arch/sh/Kconfig       |    3 ---
+ 7 files changed, 0 insertions(+), 9 deletions(-)
+
+diff --git a/arch/blackfin/Kconfig b/arch/blackfin/Kconfig
+index b6f3ad5..c709715 100644
+--- a/arch/blackfin/Kconfig
++++ b/arch/blackfin/Kconfig
+@@ -38,7 +38,6 @@ config BLACKFIN
+ 	select HAVE_GENERIC_HARDIRQS
+ 	select GENERIC_ATOMIC64
+ 	select GENERIC_IRQ_PROBE
+-	select IRQ_PER_CPU if SMP
+ 	select USE_GENERIC_SMP_HELPERS if SMP
+ 	select HAVE_NMI_WATCHDOG if NMI_WATCHDOG
+ 	select GENERIC_SMP_IDLE_THREAD
+diff --git a/arch/hexagon/Kconfig b/arch/hexagon/Kconfig
+index 0744f7d..800dd9c 100644
+--- a/arch/hexagon/Kconfig
++++ b/arch/hexagon/Kconfig
+@@ -12,7 +12,6 @@ config HEXAGON
+ 	# select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	# select ARCH_REQUIRE_GPIOLIB
+ 	# select HAVE_CLK
+-	# select IRQ_PER_CPU
+ 	# select GENERIC_PENDING_IRQ if SMP
+ 	select HAVE_IRQ_WORK
+ 	select GENERIC_ATOMIC64
+diff --git a/arch/ia64/Kconfig b/arch/ia64/Kconfig
+index 3279646..00c2e88 100644
+--- a/arch/ia64/Kconfig
++++ b/arch/ia64/Kconfig
+@@ -29,7 +29,6 @@ config IA64
+ 	select ARCH_DISCARD_MEMBLOCK
+ 	select GENERIC_IRQ_PROBE
+ 	select GENERIC_PENDING_IRQ if SMP
+-	select IRQ_PER_CPU
+ 	select GENERIC_IRQ_SHOW
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARCH_HAVE_NMI_SAFE_CMPXCHG
+diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
+index 2ac626a..451c2e7 100644
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -2161,7 +2161,6 @@ source "mm/Kconfig"
+ config SMP
+ 	bool "Multi-Processing support"
+ 	depends on SYS_SUPPORTS_SMP
+-	select IRQ_PER_CPU
+ 	select USE_GENERIC_SMP_HELPERS
+ 	help
+ 	  This enables support for systems with more than one CPU. If you have
+diff --git a/arch/parisc/Kconfig b/arch/parisc/Kconfig
+index b77feff..8525be4 100644
+--- a/arch/parisc/Kconfig
++++ b/arch/parisc/Kconfig
+@@ -16,7 +16,6 @@ config PARISC
+ 	select BROKEN_RODATA
+ 	select GENERIC_IRQ_PROBE
+ 	select GENERIC_PCI_IOMAP
+-	select IRQ_PER_CPU
+ 	select ARCH_HAVE_NMI_SAFE_CMPXCHG
+ 	select GENERIC_SMP_IDLE_THREAD
+ 	select GENERIC_STRNCPY_FROM_USER
+diff --git a/arch/powerpc/Kconfig b/arch/powerpc/Kconfig
+index 17903f1..f3d7090a 100644
+--- a/arch/powerpc/Kconfig
++++ b/arch/powerpc/Kconfig
+@@ -125,7 +125,6 @@ config PPC
+ 	select HAVE_GENERIC_HARDIRQS
+ 	select ARCH_WANT_IPC_PARSE_VERSION
+ 	select SPARSE_IRQ
+-	select IRQ_PER_CPU
+ 	select IRQ_DOMAIN
+ 	select GENERIC_IRQ_SHOW
+ 	select GENERIC_IRQ_SHOW_LEVEL
+diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
+index babc2b8..6f799ec 100644
+--- a/arch/sh/Kconfig
++++ b/arch/sh/Kconfig
+@@ -91,9 +91,6 @@ config GENERIC_CSUM
+ config GENERIC_HWEIGHT
+ 	def_bool y
+ 
+-config IRQ_PER_CPU
+-	def_bool y
+-
+ config GENERIC_GPIO
+ 	def_bool n
+ 
+-- 
+1.7.7.6
+
+
