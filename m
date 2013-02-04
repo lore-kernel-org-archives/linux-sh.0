@@ -1,64 +1,73 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 28 Feb 2013 05:11:23 +0000
-Subject: Re: [PATCH] gpio: em: Add Device Tree support
-Message-Id: <20130228051122.GA12312@verge.net.au>
+From: Andrew Morton <akpm@linux-foundation.org>
+Date: Mon, 04 Feb 2013 23:04:17 +0000
+Subject: Re: [PATCH v6 08/15] memory-hotplug: Common APIs to support page tables hot-remove
+Message-Id: <20130204150417.2b1256b1.akpm@linux-foundation.org>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130226132623.18365.36583.sendpatchset@w520>
- <20130226224106.GC20670@core.coreip.homeip.net>
- <CANqRtoRUqDsspHQQ11d3c2jc+MvoROwfbv3so5=SGhHOs9k7WA@mail.gmail.com>
-In-Reply-To: <CANqRtoRUqDsspHQQ11d3c2jc+MvoROwfbv3so5=SGhHOs9k7WA@mail.gmail.com>
+References: <1357723959-5416-1-git-send-email-tangchen@cn.fujitsu.com>
+	<1357723959-5416-9-git-send-email-tangchen@cn.fujitsu.com>
+In-Reply-To: <1357723959-5416-9-git-send-email-tangchen@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: Dmitry Torokhov <dmitry.torokhov@gmail.com>, linux-kernel@vger.kernel.org, grant.likely@secretlab.ca, linus.walleij@linaro.org, linux-sh@vger.kernel.org
+To: Tang Chen <tangchen@cn.fujitsu.com>
+Cc: rientjes@google.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, wency@cn.fujitsu.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org, glommer@parallels.com, x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org
 
-On Wed, Feb 27, 2013 at 07:13:46PM +0900, Magnus Damm wrote:
-> Hi Dmitry,
-> 
-> Thanks for your feedback!
-> 
-> On Wed, Feb 27, 2013 at 7:41 AM, Dmitry Torokhov
-> <dmitry.torokhov@gmail.com> wrote:
-> > Hi Magnus,
-> >
-> > On Tue, Feb 26, 2013 at 10:26:23PM +0900, Magnus Damm wrote:
-> >> From: Magnus Damm <damm@opensource.se>
-> >>
-> >> Update the Emma Mobile GPIO driver to add DT support.
-> >>
-> >
-> > ...
-> >
-> >> @@ -366,15 +387,33 @@ static int em_gio_remove(struct platform
-> >>       return 0;
-> >>  }
-> >>
-> >
-> > #ifdef CONFIG_OF here? No need to have extra aliases in modules if OF
-> > support is not enabled (or is entire ARM arch now enables device tree?).
-> >
-> >> +static const struct of_device_id em_gio_dt_ids[] = {
-> >> +     { .compatible = "renesas,em-gio", },
-> >> +     {},
-> >> +};
-> >> +MODULE_DEVICE_TABLE(of, em_gio_dt_ids);
-> >> +
-> 
-> I suppose we could sprinkle a couple of #ifdefs across the code, but I
-> have to say that I'm not that fond of #ifdefs in general. So if it was
-> up to me only then I would aim at having exactly zero #ifdefs in my
-> drivers at the expense of slightly larger binaries in some cases.
+On Wed, 9 Jan 2013 17:32:32 +0800
+Tang Chen <tangchen@cn.fujitsu.com> wrote:
 
-My take on this is as follows (if anyone cares):
+> +static void __meminit
+> +remove_pagetable(unsigned long start, unsigned long end, bool direct)
+> +{
+> +	unsigned long next;
+> +	pgd_t *pgd;
+> +	pud_t *pud;
+> +	bool pgd_changed = false;
+> +
+> +	for (; start < end; start = next) {
+> +		pgd = pgd_offset_k(start);
+> +		if (!pgd_present(*pgd))
+> +			continue;
+> +
+> +		next = pgd_addr_end(start, end);
+> +
+> +		pud = (pud_t *)map_low_page((pud_t *)pgd_page_vaddr(*pgd));
+> +		remove_pud_table(pud, start, next, direct);
+> +		if (free_pud_table(pud, pgd))
+> +			pgd_changed = true;
+> +		unmap_low_page(pud);
+> +	}
+> +
+> +	if (pgd_changed)
+> +		sync_global_pgds(start, end - 1);
+> +
+> +	flush_tlb_all();
+> +}
 
-* The driver in question is currently only useful in conjunction with
-  the Emev2 SoC and the kzm9g board which uses that SoC. The current
-  (and to date only) practice when booting that board and thus SoC
-  with merged upstream code is to do so using DT.
+This generates a compiler warning saying that `next' may be used
+uninitialised.
 
-* The inclusion of the code above does not appear to cause build-time
-  breakage even if CONFIG_OF is not set.
+The warning is correct.  If we take that `continue' on the first pass
+through the loop, the "start = next" will copy uninitialised data into
+`start'.
 
-So it seems to me that it is reasonable to leave the code as is
-without being guarded by an #ifdef.
+Is this the correct fix?
+
+--- a/arch/x86/mm/init_64.c~memory-hotplug-common-apis-to-support-page-tables-hot-remove-fix-fix-fix-fix-fix-fix-fix
++++ a/arch/x86/mm/init_64.c
+@@ -993,12 +993,12 @@ remove_pagetable(unsigned long start, un
+ 	bool pgd_changed = false;
+ 
+ 	for (; start < end; start = next) {
++		next = pgd_addr_end(start, end);
++
+ 		pgd = pgd_offset_k(start);
+ 		if (!pgd_present(*pgd))
+ 			continue;
+ 
+-		next = pgd_addr_end(start, end);
+-
+ 		pud = (pud_t *)pgd_page_vaddr(*pgd);
+ 		remove_pud_table(pud, start, next, direct);
+ 		if (free_pud_table(pud, pgd))
+_
+
