@@ -1,35 +1,40 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Wed, 06 Feb 2013 22:30:43 +0000
-Subject: Re: [PATCH v3 02/13] mmc: detailed definition of CD and WP MMC line polarities in DT
-Message-Id: <201302062230.43680.arnd@arndb.de>
+From: Grant Likely <grant.likely@secretlab.ca>
+Date: Tue, 05 Feb 2013 17:22:10 +0000
+Subject: Re: [PATCH v2 2/2] spi: bitbang: convert to using core message queue
+Message-Id: <20130205172210.299433E1587@localhost>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de> <1360180020-18555-3-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1360180020-18555-3-git-send-email-g.liakhovetski@gmx.de>
+References: <Pine.LNX.4.64.1301091502020.13376@axis700.grange> <Pine.LNX.4.64.1301091507120.13376@axis700.grange> <Pine.LNX.4.64.1301091535490.13376@axis700.grange> <CACRpkdbsbXTM47TYTjF9sJQaMRetTbHm0Xri-=2kWsdK14AYPw@mail.gmail.com> <Pine.LNX.4.64.1301101304210.24058@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1301101304210.24058@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-mmc@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Linus Walleij <linus.walleij@linaro.org>
+Cc: spi-devel-general@lists.sourceforge.net, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org
 
-On Wednesday 06 February 2013, Guennadi Liakhovetski wrote:
-> +*NOTE* on CD and WP polarity. As of 3.8, SD/MMC drivers parse their DT nodes
-> +each in its own way, including calculation of CD and WP polarities. Our goal is
-> +to implement a common MMC DT parser and convert all drivers to using it. For
-> +this we also have to fix the meaning of the "normal" and "inverted" line levels.
-> +We choose to follow the SDHCI standard, which specifies both those lines as
-> +"active low." To deliver line polarity to drivers the parser will set
-> +MMC_CAP2_CD_ACTIVE_HIGH and / or MMC_CAP2_RO_ACTIVE_HIGH capabilities.
+On Thu, 10 Jan 2013 13:04:37 +0100 (CET), Guennadi Liakhovetski <g.liakhovetski@gmx.de> wrote:
+> On Thu, 10 Jan 2013, Linus Walleij wrote:
+> 
+> > On Wed, Jan 9, 2013 at 3:44 PM, Guennadi Liakhovetski
+> > <g.liakhovetski@gmx.de> wrote:
+> > 
+> > > [   79.968000] mmc0: new SD card on SPI
+> > > [   79.976000] mmcblk0: mmc0:0000 SU02G 1.84 GiB
+> > > [   80.024000]  mmcblk0: p1
+> > > [   80.132000] mmcblk0: error -38 sending status command, retrying
+> > > [   80.136000] mmcblk0: error -38 sending status command, retrying
+> > > [   80.140000] mmcblk0: error -38 sending status command, aborting
+> > > [   81.028000] mmc0: SPI card removed
+> > > [   81.572000] mmc0: error -110 whilst initialising SD card
+> > 
+> > The queue mechanism has not changed.
+> > 
+> > This *could* be the card itself. So it doesn't appear before the patch?
+> 
+> No.
 
-As mentioned in my other comment, please leave out references to the
-Linux implementation. The long-term goal is to split out the
-bindings from the Linux kernel, because they are used by other
-projects as well. We also cannot easily change bindings that are
-already established, so referring to a specific version here is not
-helpful.
+It could merely be a result of timing changes by using the core message
+queue. I'll leave the patch for now until someone can properly
+investigate.
 
-Your descriptions all make sense and I think we should put them
-somewhere, but for the binding, we need a more neutral text
-that just describes the interface to someone writing a device
-tree file.
-	
-	Arnd
+g.
+
