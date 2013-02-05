@@ -1,38 +1,19 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 05 Feb 2013 07:30:49 +0000
-Subject: [PATCH] ARM: shmobile: Register ARM architected timer
-Message-Id: <20130205073049.7576.51324.sendpatchset@w520>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 05 Feb 2013 08:15:39 +0000
+Subject: Re: [PATCH] ARM: shmobile: Register ARM architected timer
+Message-Id: <20130205081538.GA14681@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20130205073049.7576.51324.sendpatchset@w520>
+In-Reply-To: <20130205073049.7576.51324.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+On Tue, Feb 05, 2013 at 04:30:49PM +0900, Magnus Damm wrote:
+> From: Magnus Damm <damm@opensource.se>
+> 
+> Register ARM architected timer by default for all mach-shmobile
+> systems using late timer.
 
-Register ARM architected timer by default for all mach-shmobile
-systems using late timer.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
----
-
- arch/arm/mach-shmobile/timer.c |    3 +++
- 1 file changed, 3 insertions(+)
-
---- 0001/arch/arm/mach-shmobile/timer.c
-+++ work/arch/arm/mach-shmobile/timer.c	2013-02-05 16:17:04.000000000 +0900
-@@ -20,6 +20,7 @@
-  */
- #include <linux/platform_device.h>
- #include <linux/delay.h>
-+#include <asm/arch_timer.h>
- #include <asm/mach/time.h>
- #include <asm/smp_twd.h>
- 
-@@ -62,4 +63,6 @@ void __init shmobile_earlytimer_init(voi
- 
- void __init shmobile_timer_init(void)
- {
-+	arch_timer_of_register();
-+	arch_timer_sched_clock_init();
- }
+Thanks, applied to a new soc4 branch and merged into next.
