@@ -1,86 +1,35 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 06 Feb 2013 19:46:49 +0000
-Subject: [PATCH v3 02/13] mmc: detailed definition of CD and WP MMC line polarities in DT
-Message-Id: <1360180020-18555-3-git-send-email-g.liakhovetski@gmx.de>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Wed, 06 Feb 2013 22:30:43 +0000
+Subject: Re: [PATCH v3 02/13] mmc: detailed definition of CD and WP MMC line polarities in DT
+Message-Id: <201302062230.43680.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de> <1360180020-18555-3-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1360180020-18555-3-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Arnd Bergmann <arnd@arndb.de>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: linux-mmc@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>
 
-Clarify ways to specify write-protect and card-detect MMC lines in FDT.
+On Wednesday 06 February 2013, Guennadi Liakhovetski wrote:
+> +*NOTE* on CD and WP polarity. As of 3.8, SD/MMC drivers parse their DT nodes
+> +each in its own way, including calculation of CD and WP polarities. Our goal is
+> +to implement a common MMC DT parser and convert all drivers to using it. For
+> +this we also have to fix the meaning of the "normal" and "inverted" line levels.
+> +We choose to follow the SDHCI standard, which specifies both those lines as
+> +"active low." To deliver line polarity to drivers the parser will set
+> +MMC_CAP2_CD_ACTIVE_HIGH and / or MMC_CAP2_RO_ACTIVE_HIGH capabilities.
 
-Cc: Arnd Bergmann <arnd@arndb.de>
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
+As mentioned in my other comment, please leave out references to the
+Linux implementation. The long-term goal is to split out the
+bindings from the Linux kernel, because they are used by other
+projects as well. We also cannot easily change bindings that are
+already established, so referring to a specific version here is not
+helpful.
 
-v3: {wp,cd}-inverted properties can now be used together with GPIO
-    binding flags. A detailed explanation added.
-
- Documentation/devicetree/bindings/mmc/mmc.txt |   43 +++++++++++++++++++++++-
- 1 files changed, 41 insertions(+), 2 deletions(-)
-
-diff --git a/Documentation/devicetree/bindings/mmc/mmc.txt b/Documentation/devicetree/bindings/mmc/mmc.txt
-index 34f28ed..51dd64f 100644
---- a/Documentation/devicetree/bindings/mmc/mmc.txt
-+++ b/Documentation/devicetree/bindings/mmc/mmc.txt
-@@ -18,12 +18,51 @@ Only one of the properties in this section should be supplied:
- 
- Optional properties:
- - wp-gpios: Specify GPIOs for write protection, see gpio binding
--- cd-inverted: when present, polarity on the cd gpio line is inverted
--- wp-inverted: when present, polarity on the wp gpio line is inverted
-+- cd-inverted: when present, polarity on the CD line is inverted. See the note
-+  below for the case, when a GPIO is used for the CD line
-+- wp-inverted: when present, polarity on the WP line is inverted. See the note
-+  below for the case, when a GPIO is used for the WP line
- - max-frequency: maximum operating clock frequency
- - no-1-8-v: when present, denotes that 1.8v card voltage is not supported on
-   this system, even if the controller claims it is.
- 
-+*NOTE* on CD and WP polarity. As of 3.8, SD/MMC drivers parse their DT nodes
-+each in its own way, including calculation of CD and WP polarities. Our goal is
-+to implement a common MMC DT parser and convert all drivers to using it. For
-+this we also have to fix the meaning of the "normal" and "inverted" line levels.
-+We choose to follow the SDHCI standard, which specifies both those lines as
-+"active low." To deliver line polarity to drivers the parser will set
-+MMC_CAP2_CD_ACTIVE_HIGH and / or MMC_CAP2_RO_ACTIVE_HIGH capabilities.
-+
-+CD and WP lines can be implemented on the hardware in one of two ways: as GPIOs,
-+specified in cd-gpios and wp-gpios properties, or as dedicated pins. Polarity of
-+dedicated pins can be specified, using *-inverted properties. GPIO polarity can
-+also be specified using the OF_GPIO_ACTIVE_LOW flag. This creates an ambiguity
-+in the latter case. So far there are no drivers, that evaluate both these
-+possibilities. Also, all .dts files only use one of them. Boards with mmc
-+devices, whose drivers use *-inverted properties, leave the OF_GPIO_ACTIVE_LOW
-+flag clear (which is actually usually wrong, since it means "active high," i.e.
-+inverted.) OTOH, boards with mmc devices, whose drivers use the
-+OF_GPIO_ACTIVE_LOW flag, never specify *-inverted properties. This means, that
-+the safest way to implement a common MMC DT parser is by using the XOR logic, as
-+in
-+
-+	explicit_inv_cd = !!of_find_property(np, "cd-inverted", &len);
-+
-+	cd_gpio = of_get_named_gpio_flags(np, "cd-gpios", 0, &flags);
-+	if (gpio_is_valid(cd_gpio) && !(flags & OF_GPIO_ACTIVE_LOW))
-+		gpio_inv_cd = 1;
-+	else
-+		gpio_inv_cd = 0;
-+
-+	if (gpio_inv_cd ^ explicit_inv_cd)
-+		host->caps2 |= MMC_CAP2_CD_ACTIVE_HIGH;
-+
-+Similarly for WP. This way drivers, currently only interpreting *-inverted
-+properties with .dts files always having cd-gpios' OF_GPIO_ACTIVE_LOW flag
-+clear, will have to invert the MMC_CAP2_CD_ACTIVE_HIGH capability, but at least
-+this capability will not miss any toggles.
-+
- Optional SDIO properties:
- - keep-power-in-suspend: Preserves card power during a suspend/resume cycle
- - enable-sdio-wakeup: Enables wake up of host system on SDIO IRQ assertion
--- 
-1.7.2.5
-
+Your descriptions all make sense and I think we should put them
+somewhere, but for the binding, we need a more neutral text
+that just describes the interface to someone writing a device
+tree file.
+	
+	Arnd
