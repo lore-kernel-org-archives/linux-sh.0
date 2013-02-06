@@ -1,39 +1,50 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 12 Feb 2013 15:44:48 +0000
-Subject: [PATCH 01/06] ARM: shmobile: Remove unused headers from hotplug.c
-Message-Id: <20130212154448.13067.88825.sendpatchset@w520>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 06 Feb 2013 19:46:52 +0000
+Subject: [PATCH v3 05/13] mmc: sh-mmcif: use mmc_of_parse() to parse standard MMC DT bindings
+Message-Id: <1360180020-18555-6-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130212154438.13067.77359.sendpatchset@w520>
-In-Reply-To: <20130212154438.13067.77359.sendpatchset@w520>
+References: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Arnd Bergmann <arnd@arndb.de>
 
-From: Magnus Damm <damm@opensource.se>
+Use mmc_of_parse() to get interface capability flags and used GPIOs from
+device-tree bindings.
 
-This file has no SoC-specific references in it, and
-fortunately it is still independent of OF so there
-is no real reason to drag in these headers.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Cc: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
 
- arch/arm/mach-shmobile/hotplug.c |    4 ----
- 1 file changed, 4 deletions(-)
+v3: updated on top of "mmc: sh_mmcif: Avoid unnecessary mmc_delay() at
+    mmc_card_sleepawake()"
 
---- 0001/arch/arm/mach-shmobile/hotplug.c
-+++ work/arch/arm/mach-shmobile/hotplug.c	2013-02-12 23:44:08.000000000 +0900
-@@ -14,12 +14,8 @@
- #include <linux/smp.h>
- #include <linux/cpumask.h>
- #include <linux/delay.h>
--#include <linux/of.h>
- #include <mach/common.h>
--#include <mach/r8a7779.h>
--#include <mach/emev2.h>
- #include <asm/cacheflush.h>
--#include <asm/mach-types.h>
+ drivers/mmc/host/sh_mmcif.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
+index 7d05852..adb4f68 100644
+--- a/drivers/mmc/host/sh_mmcif.c
++++ b/drivers/mmc/host/sh_mmcif.c
+@@ -1331,6 +1331,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 		ret = -ENOMEM;
+ 		goto ealloch;
+ 	}
++	mmc_of_parse(mmc);
+ 	host		= mmc_priv(mmc);
+ 	host->mmc	= mmc;
+ 	host->addr	= reg;
+@@ -1343,7 +1344,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
+ 	mmc->ops = &sh_mmcif_ops;
+ 	sh_mmcif_init_ocr(host);
  
- static cpumask_t dead_cpus;
- 
+-	mmc->caps = MMC_CAP_MMC_HIGHSPEED | MMC_CAP_WAIT_WHILE_BUSY;
++	mmc->caps |= MMC_CAP_MMC_HIGHSPEED | MMC_CAP_WAIT_WHILE_BUSY;
+ 	if (pd && pd->caps)
+ 		mmc->caps |= pd->caps;
+ 	mmc->max_segs = 32;
+-- 
+1.7.2.5
+
