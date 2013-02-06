@@ -1,74 +1,91 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 13 Feb 2013 03:29:12 +0000
-Subject: [PATCH v2.1 0/9] SH pinctrl DT support
-Message-Id: <1360726161-16072-1-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 06 Feb 2013 19:46:54 +0000
+Subject: [PATCH v3 07/13] mmc: tmio-mmc: parse device-tree bindings
+Message-Id: <1360180020-18555-8-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Arnd Bergmann <arnd@arndb.de>
 
-Hi,
+Add parsing of common and driver-specific DT bindings to the tmio-mmc
+MMC host driver.
 
-this series is a follow-up to "[PATCH v2 0/8] SH pinctrl DT support"
-by Laurent Pinchart. I am primarily posting it for his review.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Arnd Bergmann <arnd@arndb.de>
+---
 
-This series differs from the series posted by Laurent in that:
+v3: remove the "toshiba,mmc-cap-sdio-irq" property
 
-* I have added the following two patch to update the KZM9G reference code.
+ drivers/mmc/host/tmio_mmc_pio.c |   24 ++++++++++++++++++++++--
+ 1 files changed, 22 insertions(+), 2 deletions(-)
 
-  ARM: shmobile: kzm9g: reference: Populate platform devices from device tree
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index b25adb4..e32e9b4 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -918,6 +918,21 @@ static void tmio_mmc_init_ocr(struct tmio_mmc_host *host)
+ 		dev_warn(mmc_dev(mmc), "Platform OCR mask is ignored\n");
+ }
+ 
++static void tmio_mmc_of_parse(struct platform_device *pdev,
++			      struct tmio_mmc_data *pdata)
++{
++	const struct device_node *np = pdev->dev.of_node;
++	if (!np)
++		return;
++
++	if (of_get_property(np, "toshiba,mmc-wrprotect-disable", NULL))
++		pdata->flags |= TMIO_MMC_WRPROTECT_DISABLE;
++	if (of_get_property(np, "toshiba,mmc-blksz-2bytes", NULL))
++		pdata->flags |= TMIO_MMC_BLKSZ_2BYTES;
++	if (of_get_property(np, "toshiba,mmc-has-idle-wait", NULL))
++		pdata->flags |= TMIO_MMC_HAS_IDLE_WAIT;
++}
++
+ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 				  struct platform_device *pdev,
+ 				  struct tmio_mmc_data *pdata)
+@@ -928,6 +943,8 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	int ret;
+ 	u32 irq_mask = TMIO_MASK_CMD;
+ 
++	tmio_mmc_of_parse(pdev, pdata);
++
+ 	if (!(pdata->flags & TMIO_MMC_HAS_IDLE_WAIT))
+ 		pdata->write16_hook = NULL;
+ 
+@@ -939,6 +956,8 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	if (!mmc)
+ 		return -ENOMEM;
+ 
++	mmc_of_parse(mmc);
++
+ 	pdata->dev = &pdev->dev;
+ 	_host = mmc_priv(mmc);
+ 	_host->pdata = pdata;
+@@ -959,7 +978,7 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	}
+ 
+ 	mmc->ops = &tmio_mmc_ops;
+-	mmc->caps = MMC_CAP_4_BIT_DATA | pdata->capabilities;
++	mmc->caps |= MMC_CAP_4_BIT_DATA | pdata->capabilities;
+ 	mmc->caps2 = pdata->capabilities2;
+ 	mmc->max_segs = 32;
+ 	mmc->max_blk_size = 512;
+@@ -971,7 +990,8 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 
+ 	_host->native_hotplug = !(pdata->flags & TMIO_MMC_USE_GPIO_CD ||
+ 				  mmc->caps & MMC_CAP_NEEDS_POLL ||
+-				  mmc->caps & MMC_CAP_NONREMOVABLE);
++				  mmc->caps & MMC_CAP_NONREMOVABLE ||
++				  mmc->slot.cd_irq >= 0);
+ 
+ 	_host->power = false;
+ 	pm_runtime_enable(&pdev->dev);
+-- 
+1.7.2.5
 
-The basis for this series is
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git topic/pinmux-pfc-funcs
-
-  Which was posted as "[PATCH 00/21 v1.2] SCIF, I2C and FSI pinctrl
-  functions for sh73a0" a little earlier today.
-
-Laurent, if you want to change this series in any way just let me know.
-I can drop patches indidually or drop the entire series and add a fresh
-one from you to the topic branch.
-
-Git and diffstat information is provided below to aid review.
-
-----------------------------------------------------------------
-The following changes since commit e92460f4d0ce471110d44a3dc053f0a4508f24dc:
-
-  ARM: shmobile: r8a7779: Remove DU function GPIOs (2013-02-13 12:16:13 +0900)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git topic/pinmux-dt
-
-for you to fetch changes up to 3ec7a99ff9723cafabf0eae2df9cac7df735f388:
-
-  ARM: shmobile: kzm9g: Move pinctrl mappings to device tree (2013-02-13 12:19:04 +0900)
-
-----------------------------------------------------------------
-Laurent Pinchart (8):
-      sh-pfc: Add OF support
-      ARM: shmobile: r8a7740: Add pin control device in device tree
-      ARM: shmobile: armadillo: Populate platform devices from device tree
-      ARM: shmobile: sh73a0: Add pin control device in device tree
-      ARM: shmobile: kzm9g: Populate platform devices from device tree
-      ARM: shmobile: kzm9g: Add LED1-LED4 to the device tree
-      ARM: shmobile: armadillo: Move pinctrl mappings to device tree
-      ARM: shmobile: kzm9g: Move pinctrl mappings to device tree
-
-Simon Horman (1):
-      ARM: shmobile: kzm9g: reference: Populate platform devices from device tree
-
- .../bindings/pinctrl/renesas,pfc-pinctrl.txt       |   77 ++++++++++++++++++++
- arch/arm/boot/dts/r8a7740-armadillo800eva.dts      |   10 +++
- arch/arm/boot/dts/r8a7740.dtsi                     |    8 ++
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts       |   12 +++
- arch/arm/boot/dts/sh73a0-kzm9g.dts                 |   26 +++++++
- arch/arm/boot/dts/sh73a0.dtsi                      |    8 ++
- arch/arm/mach-shmobile/board-armadillo800eva.c     |   14 +---
- arch/arm/mach-shmobile/board-kzm9g-reference.c     |    7 +-
- arch/arm/mach-shmobile/board-kzm9g.c               |   27 +------
- drivers/pinctrl/sh-pfc/core.c                      |   62 +++++++++++++++-
- drivers/pinctrl/sh-pfc/pinctrl.c                   |   54 ++++++++++++++
- 11 files changed, 261 insertions(+), 44 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
