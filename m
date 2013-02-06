@@ -1,79 +1,50 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 13 Feb 2013 03:26:37 +0000
-Subject: [PATCH 19/21] ARM: shmobile: r8a7740: Remove LCD0 and LCD1 function GPIOs
-Message-Id: <1360725999-14514-20-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 06 Feb 2013 19:46:53 +0000
+Subject: [PATCH v3 06/13] mmc: tmio-mmc: define device-tree bindings
+Message-Id: <1360180020-18555-7-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360725999-14514-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1360725999-14514-1-git-send-email-horms+renesas@verge.net.au>
+References: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1360180020-18555-1-git-send-email-g.liakhovetski-Mmb7MZpHnFY@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org
+Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-discuss-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>, Guennadi Liakhovetski <g.liakhovetski-Mmb7MZpHnFY@public.gmane.org>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Define device-tree bindings for the tmio-mmc driver to be able to specify
+parameters, currently provided in platform data.
 
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Cc: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7740.h |   39 -------------------------
- 1 file changed, 39 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index 59d252f..0c417da 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -241,48 +241,9 @@ enum {
- 
- 	/* LCD0 */
- 	GPIO_FN_LCDC0_SELECT,
--	GPIO_FN_LCD0_D0,	GPIO_FN_LCD0_D1,	GPIO_FN_LCD0_D2,
--	GPIO_FN_LCD0_D3,	GPIO_FN_LCD0_D4,	GPIO_FN_LCD0_D5,
--	GPIO_FN_LCD0_D6,	GPIO_FN_LCD0_D7,	GPIO_FN_LCD0_D8,
--	GPIO_FN_LCD0_D9,	GPIO_FN_LCD0_D10,	GPIO_FN_LCD0_D11,
--	GPIO_FN_LCD0_D12,	GPIO_FN_LCD0_D13,	GPIO_FN_LCD0_D14,
--	GPIO_FN_LCD0_D15,	GPIO_FN_LCD0_D16,	GPIO_FN_LCD0_D17,
--	GPIO_FN_LCD0_DON,	GPIO_FN_LCD0_VCPWC,	GPIO_FN_LCD0_VEPWC,
--
--	GPIO_FN_LCD0_DCK,	GPIO_FN_LCD0_VSYN, /* for RGB */
--	GPIO_FN_LCD0_HSYN,	GPIO_FN_LCD0_DISP, /* for RGB */
--
--	GPIO_FN_LCD0_WR,	GPIO_FN_LCD0_RD, /* for SYS */
--	GPIO_FN_LCD0_CS,	GPIO_FN_LCD0_RS, /* for SYS */
--
--	GPIO_FN_LCD0_D18_PORT163,	GPIO_FN_LCD0_D19_PORT162,
--	GPIO_FN_LCD0_D20_PORT161,	GPIO_FN_LCD0_D21_PORT158,
--	GPIO_FN_LCD0_D22_PORT160,	GPIO_FN_LCD0_D23_PORT159,
--	GPIO_FN_LCD0_LCLK_PORT165,	 /* MSEL5CR_6_1 */
--
--	GPIO_FN_LCD0_D18_PORT40,	GPIO_FN_LCD0_D19_PORT4,
--	GPIO_FN_LCD0_D20_PORT3,		GPIO_FN_LCD0_D21_PORT2,
--	GPIO_FN_LCD0_D22_PORT0,		GPIO_FN_LCD0_D23_PORT1,
--	GPIO_FN_LCD0_LCLK_PORT102,	/* MSEL5CR_6_0 */
- 
- 	/* LCD1 */
- 	GPIO_FN_LCDC1_SELECT,
--	GPIO_FN_LCD1_D0,	GPIO_FN_LCD1_D1,	GPIO_FN_LCD1_D2,
--	GPIO_FN_LCD1_D3,	GPIO_FN_LCD1_D4,	GPIO_FN_LCD1_D5,
--	GPIO_FN_LCD1_D6,	GPIO_FN_LCD1_D7,	GPIO_FN_LCD1_D8,
--	GPIO_FN_LCD1_D9,	GPIO_FN_LCD1_D10,	GPIO_FN_LCD1_D11,
--	GPIO_FN_LCD1_D12,	GPIO_FN_LCD1_D13,	GPIO_FN_LCD1_D14,
--	GPIO_FN_LCD1_D15,	GPIO_FN_LCD1_D16,	GPIO_FN_LCD1_D17,
--	GPIO_FN_LCD1_D18,	GPIO_FN_LCD1_D19,	GPIO_FN_LCD1_D20,
--	GPIO_FN_LCD1_D21,	GPIO_FN_LCD1_D22,	GPIO_FN_LCD1_D23,
--	GPIO_FN_LCD1_DON,	GPIO_FN_LCD1_VCPWC,
--	GPIO_FN_LCD1_LCLK,	GPIO_FN_LCD1_VEPWC,
--
--	GPIO_FN_LCD1_DCK,	GPIO_FN_LCD1_VSYN, /* for RGB */
--	GPIO_FN_LCD1_HSYN,	GPIO_FN_LCD1_DISP, /* for RGB */
--
--	GPIO_FN_LCD1_WR,	GPIO_FN_LCD1_RD, /* for SYS */
--	GPIO_FN_LCD1_CS,	GPIO_FN_LCD1_RS, /* for SYS */
- 
- 	/* RSPI */
- 	GPIO_FN_RSPI_SSL0_A,	GPIO_FN_RSPI_SSL1_A,
+v3: make the property to set TMIO_MMC_SDIO_IRQ global
+
+ Documentation/devicetree/bindings/mmc/tmio_mmc.txt |   15 +++++++++++++++
+ 1 files changed, 15 insertions(+), 0 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/mmc/tmio_mmc.txt
+
+diff --git a/Documentation/devicetree/bindings/mmc/tmio_mmc.txt b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
+new file mode 100644
+index 0000000..5762a55
+--- /dev/null
++++ b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
+@@ -0,0 +1,15 @@
++* Toshiba Mobile IO SD/MMC controller
++
++The tmio-mmc driver doesn't probe its devices actively, instead its binding to
++devices is managed by either MFD drivers or by the sh_mobile_sdhi platform
++driver. Those drivers supply the tmio-mmc driver with platform data, that either
++describe hardware capabilities, known to them, or are obtained by them from
++their own platform data or from their DT information. In the latter case all
++compulsory and any optional properties, common to all SD/MMC drivers, as
++described in mmc.txt, should or can be used. Additionally the following optional
++bindings can be used. They set respective TMIO_MMC_* flags.
++
++Optional properties:
++- toshiba,mmc-wrprotect-disable	: set TMIO_MMC_WRPROTECT_DISABLE flag
++- toshiba,mmc-blksz-2bytes	: set TMIO_MMC_BLKSZ_2BYTES
++- toshiba,mmc-has-idle-wait	: set TMIO_MMC_HAS_IDLE_WAIT
 -- 
-1.7.10.4
+1.7.2.5
 
