@@ -1,51 +1,127 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 26 Feb 2013 11:59:04 +0000
-Subject: [PATCH 03/05] irqchip: intc-irqpin: Add force comments
-Message-Id: <20130226115904.5630.11666.sendpatchset@w520>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 06 Feb 2013 19:46:58 +0000
+Subject: [PATCH v3 11/13] mmc: tmio: add support for the VccQ regulator
+Message-Id: <1360180020-18555-12-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130226115834.5630.45471.sendpatchset@w520>
-In-Reply-To: <20130226115834.5630.45471.sendpatchset@w520>
+References: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: kuninori.morimoto.gx@renesas.com, linux-sh@vger.kernel.org, benh@kernel.crashing.org, grant.likely@secretlab.ca, horms@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
+To: linux-mmc@vger.kernel.org
+Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-From: Magnus Damm <damm@opensource.se>
+Some SD/MMC interfaces use 2 power regulators: one to power the card itself
+(Vcc) and another one to pull signal lines up (VccQ). In case of eMMC and
+UHS SD cards the regulators also have to be configured to supply different
+voltages. The preferred order of turning supply power on and off is to
+turn Vcc first on and last off.
 
-Add comments to describe the special case for
-"force" versions of enable and disable functions.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ drivers/mmc/host/tmio_mmc_pio.c |   56 ++++++++++++++++++++++++++++++++-------
+ 1 files changed, 46 insertions(+), 10 deletions(-)
 
- Thanks to Thomas Gleixner for this suggestion.
-
- drivers/irqchip/irq-renesas-intc-irqpin.c |    9 +++++++++
- 1 file changed, 9 insertions(+)
-
---- 0006/drivers/irqchip/irq-renesas-intc-irqpin.c
-+++ work/drivers/irqchip/irq-renesas-intc-irqpin.c	2013-02-26 19:36:33.000000000 +0900
-@@ -199,6 +199,11 @@ static void intc_irqpin_irq_enable_force
- 	int irq = p->irq[irqd_to_hwirq(d)].requested_irq;
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index e32e9b4..3a44086 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -43,6 +43,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/pm_qos.h>
+ #include <linux/pm_runtime.h>
++#include <linux/regulator/consumer.h>
+ #include <linux/scatterlist.h>
+ #include <linux/spinlock.h>
+ #include <linux/workqueue.h>
+@@ -155,6 +156,7 @@ static void tmio_mmc_set_clock(struct tmio_mmc_host *host, int new_clock)
+ 		host->set_clk_div(host->pdev, (clk>>22) & 1);
  
- 	intc_irqpin_irq_enable(d);
+ 	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, clk & 0x1ff);
++	msleep(10);
+ }
+ 
+ static void tmio_mmc_clk_stop(struct tmio_mmc_host *host)
+@@ -768,16 +770,48 @@ static int tmio_mmc_clk_update(struct mmc_host *mmc)
+ 	return ret;
+ }
+ 
+-static void tmio_mmc_set_power(struct tmio_mmc_host *host, struct mmc_ios *ios)
++static void tmio_mmc_power_on(struct tmio_mmc_host *host, unsigned short vdd)
+ {
+ 	struct mmc_host *mmc = host->mmc;
++	int ret = 0;
 +
-+	/* enable interrupt through parent interrupt controller,
-+	 * assumes non-shared interrupt with 1:1 mapping
-+	 * needed for busted IRQs on some SoCs like sh73a0
++	/* .set_ios() is returning void, so, no chance to report an error */
+ 
+ 	if (host->set_pwr)
+-		host->set_pwr(host->pdev, ios->power_mode != MMC_POWER_OFF);
++		host->set_pwr(host->pdev, 1);
++
++	if (!IS_ERR(mmc->supply.vmmc)) {
++		ret = mmc_regulator_set_ocr(mmc, mmc->supply.vmmc, vdd);
++		/*
++		 * Attention: empiric value. With a b43 WiFi SDIO card this
++		 * delay proved necessary for reliable card-insertion probing.
++		 * 100us were not enough. Is this the same 140us delay, as in
++		 * tmio_mmc_set_ios()?
++		 */
++		udelay(200);
++	}
++	/*
++	 * It seems, VccQ should be switched on after Vcc, this is also what the
++	 * omap_hsmmc.c driver does.
 +	 */
- 	irq_get_chip(irq)->irq_unmask(irq_get_irq_data(irq));
++	if (!IS_ERR(mmc->supply.vqmmc) && !ret) {
++		regulator_enable(mmc->supply.vqmmc);
++		udelay(200);
++	}
++}
++
++static void tmio_mmc_power_off(struct tmio_mmc_host *host)
++{
++	struct mmc_host *mmc = host->mmc;
++
++	if (!IS_ERR(mmc->supply.vqmmc))
++		regulator_disable(mmc->supply.vqmmc);
++
+ 	if (!IS_ERR(mmc->supply.vmmc))
+-		/* Errors ignored... */
+-		mmc_regulator_set_ocr(mmc, mmc->supply.vmmc,
+-				      ios->power_mode ? ios->vdd : 0);
++		mmc_regulator_set_ocr(mmc, mmc->supply.vmmc, 0);
++
++	if (host->set_pwr)
++		host->set_pwr(host->pdev, 0);
  }
  
-@@ -207,6 +212,10 @@ static void intc_irqpin_irq_disable_forc
- 	struct intc_irqpin_priv *p = irq_data_get_irq_chip_data(d);
- 	int irq = p->irq[irqd_to_hwirq(d)].requested_irq;
- 
-+	/* disable interrupt through parent interrupt controller,
-+	 * assumes non-shared interrupt with 1:1 mapping
-+	 * needed for busted IRQs on some SoCs like sh73a0
-+	 */
- 	irq_get_chip(irq)->irq_mask(irq_get_irq_data(irq));
- 	intc_irqpin_irq_disable(d);
- }
+ /* Set MMC clock / power.
+@@ -828,18 +862,20 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 		if (!host->power) {
+ 			tmio_mmc_clk_update(mmc);
+ 			pm_runtime_get_sync(dev);
+-			host->power = true;
+ 		}
+ 		tmio_mmc_set_clock(host, ios->clock);
+-		/* power up SD bus */
+-		tmio_mmc_set_power(host, ios);
++		if (!host->power) {
++			/* power up SD card and the bus */
++			tmio_mmc_power_on(host, ios->vdd);
++			host->power = true;
++		}
+ 		/* start bus clock */
+ 		tmio_mmc_clk_start(host);
+ 	} else if (ios->power_mode != MMC_POWER_UP) {
+-		if (ios->power_mode = MMC_POWER_OFF)
+-			tmio_mmc_set_power(host, ios);
+ 		if (host->power) {
+ 			struct tmio_mmc_data *pdata = host->pdata;
++			if (ios->power_mode = MMC_POWER_OFF)
++				tmio_mmc_power_off(host);
+ 			tmio_mmc_clk_stop(host);
+ 			host->power = false;
+ 			pm_runtime_put(dev);
+-- 
+1.7.2.5
+
