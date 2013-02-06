@@ -1,123 +1,60 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 18 Feb 2013 13:48:03 +0000
-Subject: [PATCH 08/08] ARM: shmobile: Remove unused hotplug.c
-Message-Id: <20130218134803.17303.58317.sendpatchset@w520>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 06 Feb 2013 19:46:57 +0000
+Subject: [PATCH v3 10/13] mmc: tmio: remove unused and deprecated symbols
+Message-Id: <1360180020-18555-11-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130218134648.17303.97576.sendpatchset@w520>
-In-Reply-To: <20130218134648.17303.97576.sendpatchset@w520>
+References: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-From: Magnus Damm <damm@opensource.se>
+The tmio_mmc_cd_wakeup() inline function has been deprecated since 3.4 and
+is unused since 3.4 too. Remove them.
 
-Each CPU Hotplug implementation for mach-shmobile
-is now self-contained, so this change removes unused
-helper code in hotplug.c. The two CPU Hotplug capable
-SoCs sh73a0 and r8a7779 remain unchanged.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ include/linux/mfd/tmio.h |   18 ------------------
+ 1 files changed, 0 insertions(+), 18 deletions(-)
 
- arch/arm/mach-shmobile/Makefile              |    1 
- arch/arm/mach-shmobile/hotplug.c             |   64 --------------------------
- arch/arm/mach-shmobile/include/mach/common.h |   10 ----
- 3 files changed, 75 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/Makefile
-+++ work/arch/arm/mach-shmobile/Makefile	2013-02-18 16:39:05.000000000 +0900
-@@ -14,7 +14,6 @@ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.
- 
- # SMP objects
- smp-y				:= platsmp.o headsmp.o
--smp-$(CONFIG_HOTPLUG_CPU)	+= hotplug.o
- smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o headsmp-scu.o
- smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o headsmp-scu.o
- smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o headsmp-scu.o
---- 0001/arch/arm/mach-shmobile/hotplug.c
-+++ /dev/null	2013-01-21 13:48:16.387453344 +0900
-@@ -1,64 +0,0 @@
--/*
-- * SMP support for R-Mobile / SH-Mobile
-- *
-- * Copyright (C) 2010  Magnus Damm
-- *
-- * Based on realview, Copyright (C) 2002 ARM Ltd, All Rights Reserved
-- *
-- * This program is free software; you can redistribute it and/or modify
-- * it under the terms of the GNU General Public License version 2 as
-- * published by the Free Software Foundation.
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index d83af39..99bf3e66 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -65,12 +65,6 @@
+  */
+ #define TMIO_MMC_SDIO_IRQ		(1 << 2)
+ /*
+- * Some platforms can detect card insertion events with controller powered
+- * down, using a GPIO IRQ, in which case they have to fill in cd_irq, cd_gpio,
+- * and cd_flags fields of struct tmio_mmc_data.
 - */
--#include <linux/kernel.h>
--#include <linux/errno.h>
--#include <linux/smp.h>
--#include <linux/cpumask.h>
--#include <linux/delay.h>
--#include <mach/common.h>
--#include <asm/cacheflush.h>
--
--static cpumask_t dead_cpus;
--
--void shmobile_cpu_die(unsigned int cpu)
--{
--	/* hardware shutdown code running on the CPU that is being offlined */
--	flush_cache_all();
--	dsb();
--
--	/* notify platform_cpu_kill() that hardware shutdown is finished */
--	cpumask_set_cpu(cpu, &dead_cpus);
--
--	/* wait for SoC code in platform_cpu_kill() to shut off CPU core
--	 * power. CPU bring up starts from the reset vector.
--	 */
--	while (1) {
--		/*
--		 * here's the WFI
--		 */
--		asm(".word	0xe320f003\n"
--		    :
--		    :
--		    : "memory", "cc");
--	}
--}
--
--int shmobile_cpu_disable(unsigned int cpu)
--{
--	cpumask_clear_cpu(cpu, &dead_cpus);
--	/*
--	 * we don't allow CPU 0 to be shutdown (it is still too special
--	 * e.g. clock tick interrupts)
--	 */
--	return cpu = 0 ? -EPERM : 0;
--}
--
--int shmobile_cpu_disable_any(unsigned int cpu)
--{
--	cpumask_clear_cpu(cpu, &dead_cpus);
--	return 0;
--}
--
--int shmobile_cpu_is_dead(unsigned int cpu)
--{
--	return cpumask_test_cpu(cpu, &dead_cpus);
--}
---- 0001/arch/arm/mach-shmobile/include/mach/common.h
-+++ work/arch/arm/mach-shmobile/include/mach/common.h	2013-02-18 16:38:33.000000000 +0900
-@@ -85,16 +85,6 @@ int shmobile_cpuidle_init(void);
- static inline int shmobile_cpuidle_init(void) { return 0; }
- #endif
+-#define TMIO_MMC_HAS_COLD_CD		(1 << 3)
+-/*
+  * Some controllers require waiting for the SD bus to become
+  * idle before writing to some registers.
+  */
+@@ -117,18 +111,6 @@ struct tmio_mmc_data {
+ };
  
--extern void shmobile_cpu_die(unsigned int cpu);
--extern int shmobile_cpu_disable(unsigned int cpu);
--extern int shmobile_cpu_disable_any(unsigned int cpu);
+ /*
+- * This function is deprecated and will be removed soon. Please, convert your
+- * platform to use drivers/mmc/core/cd-gpio.c
+- */
+-#include <linux/mmc/host.h>
+-static inline void tmio_mmc_cd_wakeup(struct tmio_mmc_data *pdata)
+-{
+-	if (pdata)
+-		mmc_detect_change(dev_get_drvdata(pdata->dev),
+-				  msecs_to_jiffies(100));
+-}
 -
--#ifdef CONFIG_HOTPLUG_CPU
--extern int shmobile_cpu_is_dead(unsigned int cpu);
--#else
--static inline int shmobile_cpu_is_dead(unsigned int cpu) { return 1; }
--#endif
--
- extern void __iomem *shmobile_scu_base;
- extern void shmobile_smp_init_cpus(unsigned int ncores);
- 
+-/*
+  * data for the NAND controller
+  */
+ struct tmio_nand_data {
+-- 
+1.7.2.5
+
