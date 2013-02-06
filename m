@@ -1,80 +1,66 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 13 Feb 2013 03:29:18 +0000
-Subject: [PATCH 6/9] ARM: shmobile: kzm9g: reference: Populate platform devices from device tree
-Message-Id: <1360726161-16072-7-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 06 Feb 2013 19:46:51 +0000
+Subject: [PATCH v3 04/13] mmc: (cosmetic) remove "extern" from function declarations
+Message-Id: <1360180020-18555-5-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360726161-16072-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1360726161-16072-1-git-send-email-horms+renesas@verge.net.au>
+References: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Call of_platform_populate() at machine initialization time to populate
-platform devices. Remove the explicit pinmux initialization as the PFC
-device will be instantiated from the device tree.
+The "extern" keyword isn't required in function declarations, remove it.
 
-This change is for the kzm9g reference DT implementation and is in keeping
-with a similar change for the default kzm9g implementation made by Laurent
-Pinchart.
-
-Reported-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts   |   12 ++++++++++++
- arch/arm/mach-shmobile/board-kzm9g-reference.c |    7 ++-----
- 2 files changed, 14 insertions(+), 5 deletions(-)
+ include/linux/mmc/host.h |   22 +++++++++++-----------
+ 1 files changed, 11 insertions(+), 11 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index 06f52f9..9901caf 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -35,6 +35,18 @@
- 	};
+diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
+index 13c0c8d..356ae0a 100644
+--- a/include/linux/mmc/host.h
++++ b/include/linux/mmc/host.h
+@@ -341,10 +341,10 @@ struct mmc_host {
+ 	unsigned long		private[0] ____cacheline_aligned;
  };
  
-+&i2c3 {
-+	pinctrl-names = "default";
-+	pinctrl-0 = <&i2c3_pins>;
-+};
-+
-+&gpio {
-+	i2c3_pins: pfc_i2c3_pins {
-+		renesas,pins = "i2c3_1";
-+		renesas,function = "i2c3";
-+	};
-+};
-+
- &mmcif {
- 	vmmc-supply = <&fixedregulator1v8>;
- 	vqmmc-supply = <&fixedregulator1v8>;
-diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-index 7282048..625e337 100644
---- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-@@ -34,11 +34,9 @@
- #include <asm/mach/arch.h>
+-extern struct mmc_host *mmc_alloc_host(int extra, struct device *);
+-extern int mmc_add_host(struct mmc_host *);
+-extern void mmc_remove_host(struct mmc_host *);
+-extern void mmc_free_host(struct mmc_host *);
++struct mmc_host *mmc_alloc_host(int extra, struct device *);
++int mmc_add_host(struct mmc_host *);
++void mmc_remove_host(struct mmc_host *);
++void mmc_free_host(struct mmc_host *);
+ void mmc_of_parse(struct mmc_host *host);
  
- static const struct pinctrl_map kzm_pinctrl_map[] = {
--	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.3", "pfc-sh73a0",
--				  "i2c3_1", "i2c3"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "e6050000.pfc",
- 				  "scifa4_data", "scifa4"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "e6050000.pfc",
- 				  "scifa4_ctrl", "scifa4"),
- };
+ static inline void *mmc_priv(struct mmc_host *host)
+@@ -358,16 +358,16 @@ static inline void *mmc_priv(struct mmc_host *host)
+ #define mmc_classdev(x)	(&(x)->class_dev)
+ #define mmc_hostname(x)	(dev_name(&(x)->class_dev))
  
-@@ -46,7 +44,6 @@ static void __init kzm_init(void)
+-extern int mmc_suspend_host(struct mmc_host *);
+-extern int mmc_resume_host(struct mmc_host *);
++int mmc_suspend_host(struct mmc_host *);
++int mmc_resume_host(struct mmc_host *);
+ 
+-extern int mmc_power_save_host(struct mmc_host *host);
+-extern int mmc_power_restore_host(struct mmc_host *host);
++int mmc_power_save_host(struct mmc_host *host);
++int mmc_power_restore_host(struct mmc_host *host);
+ 
+-extern void mmc_detect_change(struct mmc_host *, unsigned long delay);
+-extern void mmc_request_done(struct mmc_host *, struct mmc_request *);
++void mmc_detect_change(struct mmc_host *, unsigned long delay);
++void mmc_request_done(struct mmc_host *, struct mmc_request *);
+ 
+-extern int mmc_cache_ctrl(struct mmc_host *, u8);
++int mmc_cache_ctrl(struct mmc_host *, u8);
+ 
+ static inline void mmc_signal_sdio_irq(struct mmc_host *host)
  {
- 	sh73a0_add_standard_devices_dt();
- 	pinctrl_register_mappings(kzm_pinctrl_map, ARRAY_SIZE(kzm_pinctrl_map));
--	sh73a0_pinmux_init();
- 
- 	/* enable MMCIF */
- 	gpio_request(GPIO_FN_MMCCLK0,		NULL);
 -- 
-1.7.10.4
+1.7.2.5
 
