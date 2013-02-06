@@ -1,50 +1,56 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Thu, 14 Feb 2013 17:29:52 +0000
-Subject: [INFO] No re-enabling of IRQ line when using touchscreen during suspend
-Message-Id: <CABYn4sz2LdgTrY1ZBqWwY1zi4qygSkHWD+OPsoJF=PAq34kyyA@mail.gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 06 Feb 2013 19:46:48 +0000
+Subject: [PATCH v3 01/13] mmc: sdhi, tmio: only check flags in tmio-mmc driver proper
+Message-Id: <1360180020-18555-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-input@vger.kernel.org, Linux-SH <linux-sh@vger.kernel.org>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Tony SIM <chinyeow.sim.xt@renesas.com>
+To: linux-mmc@vger.kernel.org
+Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Hi,
+tmio-mmc platform flags can be set by various means, including caller
+drivers and device-tree bindings, therefore it is better to only check
+them in the tmio-mmc driver proper, not in caller drivers themselves.
 
-I wanted to add this information that is related to my patch
-submissions. Next to the i2c timeout issues dealt in "[PATCH] i2c:
-sh_mobile: Don't start transfers when suspending" I'm experiencing
-another problem when using the touchscreen during the suspend process.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ drivers/mmc/host/sh_mobile_sdhi.c |    3 +--
+ drivers/mmc/host/tmio_mmc_pio.c   |    3 +++
+ 2 files changed, 4 insertions(+), 2 deletions(-)
 
-When handling the touch the generic_irq_handler masks out the line,
-but before the irq_thread can reenable it suspension seems to finish.
-Thus we get stuck in the sleep mode without being able to wake using
-this device. I'm unsure if this a general fault in the suspend code or
-if it is somehow driver related.
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 524a7f7..e0ca0ab 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -153,10 +153,9 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	mmc_data->clk_enable = sh_mobile_sdhi_clk_enable;
+ 	mmc_data->clk_disable = sh_mobile_sdhi_clk_disable;
+ 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
++	mmc_data->write16_hook = sh_mobile_sdhi_write16_hook;
+ 	if (p) {
+ 		mmc_data->flags = p->tmio_flags;
+-		if (mmc_data->flags & TMIO_MMC_HAS_IDLE_WAIT)
+-			mmc_data->write16_hook = sh_mobile_sdhi_write16_hook;
+ 		mmc_data->ocr_mask = p->tmio_ocr_mask;
+ 		mmc_data->capabilities |= p->tmio_caps;
+ 		mmc_data->capabilities2 |= p->tmio_caps2;
+diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
+index 0f992e9..b25adb4 100644
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -928,6 +928,9 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
+ 	int ret;
+ 	u32 irq_mask = TMIO_MASK_CMD;
+ 
++	if (!(pdata->flags & TMIO_MMC_HAS_IDLE_WAIT))
++		pdata->write16_hook = NULL;
++
+ 	res_ctl = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	if (!res_ctl)
+ 		return -EINVAL;
+-- 
+1.7.2.5
 
-My debug output on a kzm9g looks like this:
-
-
-PM: Syncing filesystems ... enabling 568
-done.
-PM: Preparing system for mem sleep
-disabling IRQ: 568 568
-enabling 568
-Freezing user space processes ... disabling IRQ: 568 568
-enabling 568
-disabling IRQ: 568 568
-(elapsed 0.02 seconds) enabling 568
-done.
-Freezing remaining freezable tasks ... disabling IRQ: 568 568
-enabling 568
-disabling IRQ: 568 568
-enabling 568
-(elapsed 0.02 seconds) done.
-PM: Entering mem sleep
-Suspending console(s) (use no_console_suspend to debug)
-disabling IRQ: 568 568
-
-
-Cheers,
-
- Bastian
