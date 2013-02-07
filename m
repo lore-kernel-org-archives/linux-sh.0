@@ -1,99 +1,58 @@
 From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 07 Feb 2013 12:53:13 +0000
+Date: Thu, 07 Feb 2013 16:08:41 +0000
 Subject: Re: [PATCH 2/3] drm: Renesas R-Car Display Unit DRM driver
-Message-Id: <2347648.XJfvtpGXnM@avalon>
+Message-Id: <3620099.Y0WWESBTg5@avalon>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359596703-17556-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <1359596703-17556-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <20130207021551.GA29824@verge.net.au>
-In-Reply-To: <20130207021551.GA29824@verge.net.au>
+References: <1359596703-17556-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <20130207073203.GB3825@verge.net.au> <87k3qkzg5p.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87k3qkzg5p.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org, magnus.damm@gmail.com
+To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org, magnus.damm@gmail.com
 
-Hi Simon,
+On Thursday 07 February 2013 00:23:18 Kuninori Morimoto wrote:
+> > I'm not sure of a good solution, however selecting OF where USE_OF wasn't
+> > previously selected seems to cause problems on at least ARM because
+> > devtree.c is then compiled without OF_FLATTREE selected.
 
-On Thursday 07 February 2013 11:15:52 Simon Horman wrote:
-> On Thu, Jan 31, 2013 at 02:45:02AM +0100, Laurent Pinchart wrote:
-> > The R-Car Display Unit (DU) DRM driver supports both superposition
-> > processors and all eight planes in RGB and YUV formats without alpha
-> > blending.
-> > 
-> > Only VGA and LVDS encoders and connectors are currently supported.
-> > 
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> 
-> [snip]
-> 
-> > diff --git a/drivers/gpu/drm/rcar-du/Kconfig
-> > b/drivers/gpu/drm/rcar-du/Kconfig new file mode 100644
-> > index 0000000..686486d
-> > --- /dev/null
-> > +++ b/drivers/gpu/drm/rcar-du/Kconfig
-> > @@ -0,0 +1,11 @@
-> > +config DRM_RCAR_DU
-> > +	tristate "DRM Support for R-Car Display Unit"
-> > +	depends on DRM && ARCH_SHMOBILE
-> > +	select DRM_KMS_HELPER
-> > +	select DRM_KMS_CMA_HELPER
-> > +	select DRM_GEM_CMA_HELPER
-> > +	select OF
-> > +	help
-> > +	  Choose this option if you have an R-Car chipset.
-> > +	  If M is selected the module will be called rcar-du-drm.
-> > +
-> 
-> Git tells me there is a blank line at EOF here.
+Isn't that an ARM issue ? If OF && !OF_FLATTREE is a valid kernel 
+configuration devtree.c should compile.
 
-And git is right :-) I will fix these blank lines at EOF issues.
+> > That results in the following awesomeness as pointed out to me by
+> > Morimoto-san.
 
-> [snip]
+I've run into that before as well. I'll remove the dependency on OF for now as 
+it's not strictly required.
+
+> > arch/arm/kernel/devtree.c: In function 'arm_dt_memblock_reserve':
+> > arch/arm/kernel/devtree.c:43:7: error: 'initial_boot_params' undeclared
+> > (first use in this function) arch/arm/kernel/devtree.c:43:7: note: each
+> > undeclared identifier is reported only once for each function it appears
+> > in arch/arm/kernel/devtree.c: In function 'setup_machine_fdt':
+> > arch/arm/kernel/devtree.c:193:2: error: 'initial_boot_params' undeclared
+> > (first use in this function) arch/arm/kernel/devtree.c:194:2: error:
+> > implicit declaration of function 'of_get_flat_dt_root'
+> > arch/arm/kernel/devtree.c:196:3: error: implicit declaration of function
+> > 'of_flat_dt_match' arch/arm/kernel/devtree.c:209:3: error: implicit
+> > declaration of function 'of_get_flat_dt_prop'
+> > arch/arm/kernel/devtree.c:209:8: warning: assignment makes pointer from
+> > integer without a cast arch/arm/kernel/devtree.c:220:8: warning:
+> > assignment makes pointer from integer without a cast
+> > arch/arm/kernel/devtree.c:222:9: warning: assignment makes pointer from
+> > integer without a cast arch/arm/kernel/devtree.c:228:2: error: implicit
+> > declaration of function 'of_scan_flat_dt'
+> > arch/arm/kernel/devtree.c:228:18: error: 'early_init_dt_scan_chosen'
+> > undeclared (first use in this function) arch/arm/kernel/devtree.c:230:18:
+> > error: 'early_init_dt_scan_root' undeclared (first use in this function)
+> > arch/arm/kernel/devtree.c:232:18: error: 'early_init_dt_scan_memory'
+> > undeclared (first use in this function) make[1]: ***
+> > [arch/arm/kernel/devtree.o] Error 1
 > 
-> > diff --git a/drivers/gpu/drm/rcar-du/rcar_du_kms.h
-> > b/drivers/gpu/drm/rcar-du/rcar_du_kms.h new file mode 100644
-> > index 0000000..363ed0b
-> > --- /dev/null
-> > +++ b/drivers/gpu/drm/rcar-du/rcar_du_kms.h
-> > @@ -0,0 +1,34 @@
-> > +/*
-> > + * rcar_du_kms.h  --  R-Car Display Unit Mode Setting
-> > + *
-> > + * Copyright (C) 2013 Renesas Corporation
-> > + *
-> > + * Contact: Laurent Pinchart (laurent.pinchart@ideasonboard.com)
-> > + *
-> > + * This program is free software; you can redistribute it and/or modify
-> > + * it under the terms of the GNU General Public License as published by
-> > + * the Free Software Foundation; either version 2 of the License, or
-> > + * (at your option) any later version.
-> > + */
-> > +
-> > +#ifndef __RCAR_DU_KMS_H__
-> > +#define __RCAR_DU_KMS_H__
-> > +
-> > +#include <linux/types.h>
-> > +
-> > +struct rcar_du_device;
-> > +
-> > +struct rcar_du_format_info {
-> > +	u32 fourcc;
-> > +	unsigned int bpp;
-> > +	unsigned int planes;
-> > +	unsigned int dddf;
-> > +	unsigned int edf;
-> > +};
-> > +
-> > +const struct rcar_du_format_info *rcar_du_format_info(u32 fourcc);
-> > +
-> > +int rcar_du_modeset_init(struct rcar_du_device *rcdu);
-> > +
-> > +#endif /* __RCAR_DU_KMS_H__ */
-> > +
+> OF_FLATTREE
+> OF_EARLY_FLATTREE
 > 
-> And here
-> 
-> [snip]
+> both are required ?
 
 -- 
 Regards,
