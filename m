@@ -1,7 +1,7 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Fri, 01 Feb 2013 00:06:57 +0000
+Date: Thu, 07 Feb 2013 02:20:26 +0000
 Subject: Re: [PATCH 1/3] r8a7779: Add Display Unit clock support
-Message-Id: <20130201000657.GM10312@verge.net.au>
+Message-Id: <20130207022025.GB29824@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1359596703-17556-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
  <1359596703-17556-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
@@ -33,4 +33,11 @@ On Thu, Jan 31, 2013 at 11:14:34AM +0100, Laurent Pinchart wrote:
 > As the DRM driver will not go to mainline before v3.10, I'd rather delay this 
 > patch as well to give reviewers a chance to comment on the driver.
 
-Sure, I will drop it for now.
+On Magnus's request I have created a topic branch for this series
+in the renesas git tree on kernel.org, topic/r-car-du-drm..
+
+The branch is currently based on v3.8-rc3. Please let me know if there are
+dependencies which imply there would be a better base.
+
+This does not imply that they will be merged through the renesas tree,
+though I am happy with that approach if other parties are too.
