@@ -1,168 +1,62 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 15 Feb 2013 15:13:58 +0000
-Subject: [PATCH v4 09/13] mmc: sh_mobile_sdhi: use managed resource allocations
-Message-Id: <1360941242-18153-10-git-send-email-g.liakhovetski@gmx.de>
+Date: Thu, 07 Feb 2013 23:31:40 +0000
+Subject: [PATCH 1/3] ARM: shmobile: add MMCIF and SDHI DT clock aliases to sh73a0 and r8a7740
+Message-Id: <Pine.LNX.4.64.1302080026580.30556@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Arnd Bergmann <arnd@arndb.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-sh@vger.kernel.org
 
-Use managed allocations to get memory, clock and interrupts . This
-significantly simplifies clean up paths.
+Add clock lookup entries for SDHI and MMCIF device names, for the FDT case.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |   57 +++++++++----------------------------
- 1 files changed, 14 insertions(+), 43 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7740.c |    4 ++++
+ arch/arm/mach-shmobile/clock-sh73a0.c  |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 175ab97..fe90853 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -147,7 +147,7 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	int irq, ret, i = 0;
- 	bool multiplexed_isr = true;
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index 8765a76..83209bf 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -611,12 +611,16 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.1",	&mstp_clks[MSTP323]),
+ 	CLKDEV_DEV_ID("renesas_usbhs",		&mstp_clks[MSTP320]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0",	&mstp_clks[MSTP314]),
++	CLKDEV_DEV_ID("e6850000.sdhi",		&mstp_clks[MSTP314]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1",	&mstp_clks[MSTP313]),
++	CLKDEV_DEV_ID("e6860000.sdhi",		&mstp_clks[MSTP313]),
+ 	CLKDEV_DEV_ID("sh_mmcif",		&mstp_clks[MSTP312]),
++	CLKDEV_DEV_ID("e6bd0000.mmcif",		&mstp_clks[MSTP312]),
+ 	CLKDEV_DEV_ID("sh-eth",			&mstp_clks[MSTP309]),
+ 	CLKDEV_DEV_ID("e9a00000.sh-eth",	&mstp_clks[MSTP309]),
  
--	priv = kzalloc(sizeof(struct sh_mobile_sdhi), GFP_KERNEL);
-+	priv = devm_kzalloc(&pdev->dev, sizeof(struct sh_mobile_sdhi), GFP_KERNEL);
- 	if (priv = NULL) {
- 		dev_err(&pdev->dev, "kzalloc failed\n");
- 		return -ENOMEM;
-@@ -159,11 +159,11 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 		if (p->init) {
- 			ret = p->init(pdev, &sdhi_ops);
- 			if (ret)
--				goto einit;
-+				return ret;
- 		}
- 	}
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2",	&mstp_clks[MSTP415]),
++	CLKDEV_DEV_ID("e6870000.sdhi",		&mstp_clks[MSTP415]),
  
--	priv->clk = clk_get(&pdev->dev, NULL);
-+	priv->clk = devm_clk_get(&pdev->dev, NULL);
- 	if (IS_ERR(priv->clk)) {
- 		ret = PTR_ERR(priv->clk);
- 		dev_err(&pdev->dev, "cannot get clock: %d\n", ret);
-@@ -223,33 +223,33 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	irq = platform_get_irq_byname(pdev, SH_MOBILE_SDHI_IRQ_CARD_DETECT);
- 	if (irq >= 0) {
- 		multiplexed_isr = false;
--		ret = request_irq(irq, tmio_mmc_card_detect_irq, 0,
-+		ret = devm_request_irq(&pdev->dev, irq, tmio_mmc_card_detect_irq, 0,
- 				  dev_name(&pdev->dev), host);
- 		if (ret)
--			goto eirq_card_detect;
-+			goto eirq;
- 	}
- 
- 	irq = platform_get_irq_byname(pdev, SH_MOBILE_SDHI_IRQ_SDIO);
- 	if (irq >= 0) {
- 		multiplexed_isr = false;
--		ret = request_irq(irq, tmio_mmc_sdio_irq, 0,
-+		ret = devm_request_irq(&pdev->dev, irq, tmio_mmc_sdio_irq, 0,
- 				  dev_name(&pdev->dev), host);
- 		if (ret)
--			goto eirq_sdio;
-+			goto eirq;
- 	}
- 
- 	irq = platform_get_irq_byname(pdev, SH_MOBILE_SDHI_IRQ_SDCARD);
- 	if (irq >= 0) {
- 		multiplexed_isr = false;
--		ret = request_irq(irq, tmio_mmc_sdcard_irq, 0,
-+		ret = devm_request_irq(&pdev->dev, irq, tmio_mmc_sdcard_irq, 0,
- 				  dev_name(&pdev->dev), host);
- 		if (ret)
--			goto eirq_sdcard;
-+			goto eirq;
- 	} else if (!multiplexed_isr) {
- 		dev_err(&pdev->dev,
- 			"Principal SD-card IRQ is missing among named interrupts\n");
- 		ret = irq;
--		goto eirq_sdcard;
-+		goto eirq;
- 	}
- 
- 	if (multiplexed_isr) {
-@@ -258,15 +258,15 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 			if (irq < 0)
- 				break;
- 			i++;
--			ret = request_irq(irq, tmio_mmc_irq, 0,
-+			ret = devm_request_irq(&pdev->dev, irq, tmio_mmc_irq, 0,
- 					  dev_name(&pdev->dev), host);
- 			if (ret)
--				goto eirq_multiplexed;
-+				goto eirq;
- 		}
- 
- 		/* There must be at least one IRQ source */
- 		if (!i)
--			goto eirq_multiplexed;
-+			goto eirq;
- 	}
- 
- 	dev_info(&pdev->dev, "%s base at 0x%08lx clock rate %u MHz\n",
-@@ -276,28 +276,12 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 
- 	return ret;
- 
--eirq_multiplexed:
--	while (i--) {
--		irq = platform_get_irq(pdev, i);
--		free_irq(irq, host);
--	}
--eirq_sdcard:
--	irq = platform_get_irq_byname(pdev, SH_MOBILE_SDHI_IRQ_SDIO);
--	if (irq >= 0)
--		free_irq(irq, host);
--eirq_sdio:
--	irq = platform_get_irq_byname(pdev, SH_MOBILE_SDHI_IRQ_CARD_DETECT);
--	if (irq >= 0)
--		free_irq(irq, host);
--eirq_card_detect:
-+eirq:
- 	tmio_mmc_host_remove(host);
- eprobe:
--	clk_put(priv->clk);
- eclkget:
- 	if (p && p->cleanup)
- 		p->cleanup(pdev);
--einit:
--	kfree(priv);
- 	return ret;
- }
- 
-@@ -305,26 +289,13 @@ static int sh_mobile_sdhi_remove(struct platform_device *pdev)
- {
- 	struct mmc_host *mmc = platform_get_drvdata(pdev);
- 	struct tmio_mmc_host *host = mmc_priv(mmc);
--	struct sh_mobile_sdhi *priv = container_of(host->pdata, struct sh_mobile_sdhi, mmc_data);
- 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
--	int i = 0, irq;
- 
- 	tmio_mmc_host_remove(host);
- 
--	while (1) {
--		irq = platform_get_irq(pdev, i++);
--		if (irq < 0)
--			break;
--		free_irq(irq, host);
--	}
--
--	clk_put(priv->clk);
--
- 	if (p && p->cleanup)
- 		p->cleanup(pdev);
- 
--	kfree(priv);
--
- 	return 0;
- }
- 
+ 	/* ICK */
+ 	CLKDEV_ICK_ID("host",	"renesas_usbhs",	&mstp_clks[MSTP416]),
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index afa5423..5fa106b 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -581,10 +581,13 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6822000.i2c", &mstp_clks[MSTP323]), /* I2C1 */
+ 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP322]), /* USB */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]), /* SDHI0 */
++	CLKDEV_DEV_ID("ee100000.sdhi", &mstp_clks[MSTP314]), /* SDHI0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]), /* SDHI1 */
++	CLKDEV_DEV_ID("ee120000.sdhi", &mstp_clks[MSTP313]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP312]), /* MMCIF0 */
+ 	CLKDEV_DEV_ID("e6bd0000.mmcif", &mstp_clks[MSTP312]), /* MMCIF0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]), /* SDHI2 */
++	CLKDEV_DEV_ID("ee140000.sdhi", &mstp_clks[MSTP311]), /* SDHI2 */
+ 	CLKDEV_DEV_ID("leds-renesas-tpu.12", &mstp_clks[MSTP303]), /* TPU1 */
+ 	CLKDEV_DEV_ID("leds-renesas-tpu.21", &mstp_clks[MSTP302]), /* TPU2 */
+ 	CLKDEV_DEV_ID("leds-renesas-tpu.30", &mstp_clks[MSTP301]), /* TPU3 */
 -- 
 1.7.2.5
 
