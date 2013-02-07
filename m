@@ -1,56 +1,139 @@
-From: James Hogan <james.hogan@imgtec.com>
-Date: Mon, 11 Feb 2013 11:57:28 +0000
-Subject: Re: [PATCH] Centralise CONFIG_ARCH_NO_VIRT_TO_BUS
-Message-Id: <5118DCA8.1030905@imgtec.com>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="------------enig37A461183FDA2E5D4D4AAECC"
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 07 Feb 2013 23:31:45 +0000
+Subject: [PATCH 2/3] ARM: shmobile: add SDHI and MMCIF interfaces to armadillo800eva-reference
+Message-Id: <Pine.LNX.4.64.1302080028180.30556@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <ADE657CA350FB648AAC2C43247A983F00206B25884B1@AUSP01VMBX24.collaborationhost.net> <CAErSpo6WG2R_8sa=rOmAOci-3iFpDs2NFzNkZYxDnD2oTiMQJg@mail.gmail.com> <20121113082615.2f482eb8835daf46e1f27947@canb.auug.org.au>
-In-Reply-To: <20121113082615.2f482eb8835daf46e1f27947@canb.auug.org.au>
-To: Stephen Rothwell <sfr@canb.auug.org.au>
-Cc: Andrew Morton <akpm@linux-foundation.org>, Bjorn Helgaas <bhelgaas@google.com>, H Hartley Sweeten <hartleys@visionengravers.com>, linux-kernel@vger.kernel.org, Benjamin Herrenschmidt <benh@kernel.crashing.org>, Paul Mackerras <paulus@samba.org>, linuxppc-dev@lists.ozlabs.org, "David S. Miller" <davem@davemloft.net>, sparclinux@vger.kernel.org, linux-arch@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, linux-sh@vger.kernel.org, Vineet Gupta <Vineet.Gupta1@synopsys.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
---------------enig37A461183FDA2E5D4D4AAECC
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: quoted-printable
+Add SDHI0, SDHI1 and MMCIF interfaces to armadillo800eva-reference. With
+no pinctrl DT support we cannot use GPIO card-detection and regulator
+switching.
 
-Hi Stephen,
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ .../boot/dts/r8a7740-armadillo800eva-reference.dts |   44 +++++++++++++++++
+ .../board-armadillo800eva-reference.c              |   52 ++++++++++++++++++++
+ 2 files changed, 96 insertions(+), 0 deletions(-)
 
-On 12/11/12 21:26, Stephen Rothwell wrote:
-> Make if easier for more architectures to select it and thus disable
-> drivers that use virt_to_bus().
->=20
-> Signed-off-by: Stephen Rothwell <sfr@canb.auug.org.au>
-
-I was just wondering what the status of this patch is? It was in -next
-for a while but seems to have disappeared.
-
-Cheers
-James
-
-
---------------enig37A461183FDA2E5D4D4AAECC
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.13 (GNU/Linux)
-
-iQIcBAEBAgAGBQJRGNytAAoJEKHZs+irPybf7bsP/RSiVOQdalVSVaHYvN15XDWz
-p+iSIRyYRLbaYTJ3Sln+av82+aVnjMi75l8UBsWLHGKkLSMB4SqnOTVmASJHVnFp
-w8ClS7+/UmlQySB8o5YxQ5IFPO1MaRBYOTPBpc+Y/y6Ub045wzW62wvkjD7j1Rl3
-uVTldd26lD+hysgWEjQOYIl3ZaAeMmSTx+zML/1XxHRFODCVCId5GyGaP8mulRIj
-aeemZHXqZFpzGAJbun52dOy0xI8iY+fj9jzwyoFKq2bMyRHt2CV7b2DsRmrYLT+G
-pTJQpqn609pFYPPFsHD8pCKBZOAzz2KUJjJmf0yAFViAdzaoeSvKQ/405J6ja+0J
-7BJguKzKTJI5MpPe+w7Z6XeNMz4nmhz6JkezwMsEWs8mm2f/ZtvJQQNeJGJ1MD7e
-JUolNN1DjDHNck8i8ZfoA5AiCpdqNqu8BWLc/EW3fE4+dvbkW9N7nG3pu8wQsGBk
-ZS46URl1F8tHHUNVg87pDoYKJU91FTQzq+8TX658R1Voqg2xMRjjBaZkpQSiC16k
-Ewx+uSTWe5Uf7PcjcRdqbLxpvKgoJyD5BSsat2doSk12s/Gv3zeF5Z3Va5Ldn2q2
-r0d4b6qGvL8q6LAhxeVUsVynPBv9UC3UMP2jMNGAecSXrqjwA3qgOOdkwLulIfVM
-r5wi1jOQ1/vVvboMQJ6z
-=wprH
------END PGP SIGNATURE-----
-
---------------enig37A461183FDA2E5D4D4AAECC--
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index f7db06d..bd6d724 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -34,4 +34,48 @@
+ 		sh-eth,register-type = "gigabit";
+ 		sh-eth,phy-id = <0>;
+ 	};
++
++	reg_3p3v: regulator@0 {
++		compatible = "regulator-fixed";
++		regulator-name = "fixed-3.3V";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-always-on;
++		regulator-boot-on;
++	};
++
++	mmcif0: mmcif@0xe6bd0000 {
++		compatible = "renesas,sh-mmcif", "renesas,sh7372-mmcif";
++		reg = <0xe6bd0000 0x100>;
++		interrupt-parent = <&intca>;
++		interrupts = <0x1ac0 0x1ae0>;
++		vmmc-supply = <&reg_3p3v>;
++		bus-width = <8>;
++		non-removable;
++	};
++
++	sdhi0: sdhi@0xe6850000 {
++		compatible = "renesas,shmobile-sdhi";
++		reg = <0xe6850000 0x100>;
++		interrupt-parent = <&intca>;
++		interrupts = <0xe20 0xe40>;
++		vmmc-supply = <&reg_3p3v>;
++		bus-width = <4>;
++		cap-sd-highspeed;
++		cap-sdio-irq;
++		broken-cd;
++		toshiba,mmc-has-idle-wait;
++	};
++
++	sdhi1: sdhi@0xe6860000 {
++		compatible = "renesas,shmobile-sdhi";
++		reg = <0xe6860000 0x100>;
++		interrupt-parent = <&intca>;
++		interrupts = <0xe80 0xea0 0xec0>;
++		vmmc-supply = <&reg_3p3v>;
++		bus-width = <4>;
++		cap-sd-highspeed;
++		cap-sdio-irq;
++		toshiba,mmc-has-idle-wait;
++	};
+ };
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+index e31030e..f280fa7 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+@@ -138,6 +138,58 @@ static void __init eva_init(void)
+ 	gpio_request(GPIO_PORT18, NULL); /* PHY_RST */
+ 	gpio_direction_output(GPIO_PORT18, 1);
+ 
++	/* SDHI0 */
++	gpio_request(GPIO_FN_SDHI0_CMD, NULL);
++	gpio_request(GPIO_FN_SDHI0_CLK, NULL);
++	gpio_request(GPIO_FN_SDHI0_D0, NULL);
++	gpio_request(GPIO_FN_SDHI0_D1, NULL);
++	gpio_request(GPIO_FN_SDHI0_D2, NULL);
++	gpio_request(GPIO_FN_SDHI0_D3, NULL);
++	gpio_request(GPIO_FN_SDHI0_WP, NULL);
++
++	gpio_request_one(GPIO_PORT17, GPIOF_OUT_INIT_LOW, NULL);  /* SDHI0_18/33_B */
++	gpio_request_one(GPIO_PORT74, GPIOF_OUT_INIT_HIGH, NULL); /* SDHI0_PON */
++	gpio_request_one(GPIO_PORT75, GPIOF_OUT_INIT_HIGH, NULL); /* SDSLOT1_PON */
++
++	/*
++	 * MMCIF
++	 * Don't care about the SW1.4 status, since CON2 is not mounted.
++	 */
++	gpio_request(GPIO_FN_MMC1_CLK_PORT103,	NULL);
++	gpio_request(GPIO_FN_MMC1_CMD_PORT104,	NULL);
++	gpio_request(GPIO_FN_MMC1_D0_PORT149,	NULL);
++	gpio_request(GPIO_FN_MMC1_D1_PORT148,	NULL);
++	gpio_request(GPIO_FN_MMC1_D2_PORT147,	NULL);
++	gpio_request(GPIO_FN_MMC1_D3_PORT146,	NULL);
++	gpio_request(GPIO_FN_MMC1_D4_PORT145,	NULL);
++	gpio_request(GPIO_FN_MMC1_D5_PORT144,	NULL);
++	gpio_request(GPIO_FN_MMC1_D6_PORT143,	NULL);
++	gpio_request(GPIO_FN_MMC1_D7_PORT142,	NULL);
++
++	/*
++	 * CAUTION
++	 * DBGMD/LCDC0/FSIA MUX
++	 * DBGMD_SELECT_B should be set after setting PFC Function.
++	 */
++	gpio_request_one(GPIO_PORT176, GPIOF_OUT_INIT_HIGH, NULL);
++
++	/* We can switch CON8/CON14 by SW1.5, but only after DBGMD_SELECT_B */
++	gpio_request_one(GPIO_PORT6, GPIOF_IN, NULL);
++	if (!gpio_get_value(GPIO_PORT6)) {
++		/* CON14 disabled, CON8 (SDHI1) enabled */
++		gpio_request(GPIO_FN_SDHI1_CLK,	NULL);
++		gpio_request(GPIO_FN_SDHI1_CMD,	NULL);
++		gpio_request(GPIO_FN_SDHI1_D0,	NULL);
++		gpio_request(GPIO_FN_SDHI1_D1,	NULL);
++		gpio_request(GPIO_FN_SDHI1_D2,	NULL);
++		gpio_request(GPIO_FN_SDHI1_D3,	NULL);
++		gpio_request(GPIO_FN_SDHI1_CD,	NULL);
++		gpio_request(GPIO_FN_SDHI1_WP,	NULL);
++
++		/* SDSLOT2_PON */
++		gpio_request_one(GPIO_PORT16, GPIOF_OUT_INIT_HIGH, NULL);
++	}
++
+ #ifdef CONFIG_CACHE_L2X0
+ 	/* Early BRESP enable, Shared attribute override enable, 32K*8way */
+ 	l2x0_init(IOMEM(0xf0002000), 0x40440000, 0x82000fff);
+-- 
+1.7.2.5
 
