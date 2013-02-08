@@ -1,52 +1,183 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 13 Feb 2013 12:27:53 +0000
-Subject: Re: [PATCH] ARM: mach-shmobile: mackerel: enable REGULATOR in defconfig
-Message-Id: <Pine.LNX.4.64.1302131327130.18535@axis700.grange>
+Date: Fri, 08 Feb 2013 18:38:28 +0000
+Subject: [PATCH v2 4/8] ARM: shmobile: move GIC and I2C devices from sh73a0 common .dtsi to reference
+Message-Id: <1360348712-29255-5-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360757770-15360-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1360757770-15360-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, 13 Feb 2013, Simon Horman wrote:
+In "legacy" mode, when all devices are initialised by the board .c file,
+there is no need to install the GIC and all I2C devices from the device
+tree too. Move them to the reference implementation, that fully relies upon
+DT.
 
-> As well as being a generally sane thing to do this
-> is required for MMCIF to function in conjunction with
-> " ARM: shmobile: streamline mackerel SD and MMC devices".
-> 
-> Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> ---
->  arch/arm/configs/mackerel_defconfig |    2 ++
->  1 file changed, 2 insertions(+)
-> 
-> diff --git a/arch/arm/configs/mackerel_defconfig b/arch/arm/configs/mackerel_defconfig
-> index ec8e605..fdced32 100644
-> --- a/arch/arm/configs/mackerel_defconfig
-> +++ b/arch/arm/configs/mackerel_defconfig
-> @@ -75,6 +75,8 @@ CONFIG_I2C=y
->  CONFIG_I2C_SH_MOBILE=y
->  # CONFIG_HWMON is not set
->  # CONFIG_MFD_SUPPORT is not set
-> +CONFIG_REGULATOR=y
-> +CONFIG_REGULATOR_DUMMY=y
-
-Same comment, in fact, we probably need the fixed regulator, and, on 
-armadillo800eva the GPIO regulator.
-
-Thanks
-Guennadi
-
->  CONFIG_FB=y
->  CONFIG_FB_MODE_HELPERS=y
->  CONFIG_FB_SH_MOBILE_LCDC=y
-> -- 
-> 1.7.10.4
-> 
-
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+
+I think, this is a fix and should be applied.
+
+ arch/arm/boot/dts/sh73a0-reference.dtsi |   69 +++++++++++++++++++++++++++++++
+ arch/arm/boot/dts/sh73a0.dtsi           |   69 -------------------------------
+ 2 files changed, 69 insertions(+), 69 deletions(-)
+
+diff --git a/arch/arm/boot/dts/sh73a0-reference.dtsi b/arch/arm/boot/dts/sh73a0-reference.dtsi
+index d4bb012..457afc7 100644
+--- a/arch/arm/boot/dts/sh73a0-reference.dtsi
++++ b/arch/arm/boot/dts/sh73a0-reference.dtsi
+@@ -21,4 +21,73 @@
+ 			      0 141 0x4>;
+ 		reg-io-width = <4>;
+ 	};
++
++	gic: interrupt-controller@f0001000 {
++		compatible = "arm,cortex-a9-gic";
++		#interrupt-cells = <3>;
++		#address-cells = <1>;
++		interrupt-controller;
++		reg = <0xf0001000 0x1000>,
++		      <0xf0000100 0x100>;
++	};
++
++	i2c0: i2c@0xe6820000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0xe6820000 0x425>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 167 0x4
++			      0 168 0x4
++			      0 169 0x4
++			      0 170 0x4>;
++	};
++
++	i2c1: i2c@0xe6822000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0xe6822000 0x425>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 51 0x4
++			      0 52 0x4
++			      0 53 0x4
++			      0 54 0x4>;
++	};
++
++	i2c2: i2c@0xe6824000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0xe6824000 0x425>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 171 0x4
++			      0 172 0x4
++			      0 173 0x4
++			      0 174 0x4>;
++	};
++
++	i2c3: i2c@0xe6826000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0xe6826000 0x425>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 183 0x4
++			      0 184 0x4
++			      0 185 0x4
++			      0 186 0x4>;
++	};
++
++	i2c4: i2c@0xe6828000 {
++		#address-cells = <1>;
++		#size-cells = <0>;
++		compatible = "renesas,rmobile-iic";
++		reg = <0xe6828000 0x425>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 187 0x4
++			      0 188 0x4
++			      0 189 0x4
++			      0 190 0x4>;
++	};
+ };
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index 8a59465..6837b3f 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -28,73 +28,4 @@
+ 			reg = <1>;
+ 		};
+ 	};
+-
+-	gic: interrupt-controller@f0001000 {
+-		compatible = "arm,cortex-a9-gic";
+-		#interrupt-cells = <3>;
+-		#address-cells = <1>;
+-		interrupt-controller;
+-		reg = <0xf0001000 0x1000>,
+-		      <0xf0000100 0x100>;
+-	};
+-
+-	i2c0: i2c@0xe6820000 {
+-		#address-cells = <1>;
+-		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
+-		reg = <0xe6820000 0x425>;
+-		interrupt-parent = <&gic>;
+-		interrupts = <0 167 0x4
+-			      0 168 0x4
+-			      0 169 0x4
+-			      0 170 0x4>;
+-	};
+-
+-	i2c1: i2c@0xe6822000 {
+-		#address-cells = <1>;
+-		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
+-		reg = <0xe6822000 0x425>;
+-		interrupt-parent = <&gic>;
+-		interrupts = <0 51 0x4
+-			      0 52 0x4
+-			      0 53 0x4
+-			      0 54 0x4>;
+-	};
+-
+-	i2c2: i2c@0xe6824000 {
+-		#address-cells = <1>;
+-		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
+-		reg = <0xe6824000 0x425>;
+-		interrupt-parent = <&gic>;
+-		interrupts = <0 171 0x4
+-			      0 172 0x4
+-			      0 173 0x4
+-			      0 174 0x4>;
+-	};
+-
+-	i2c3: i2c@0xe6826000 {
+-		#address-cells = <1>;
+-		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
+-		reg = <0xe6826000 0x425>;
+-		interrupt-parent = <&gic>;
+-		interrupts = <0 183 0x4
+-			      0 184 0x4
+-			      0 185 0x4
+-			      0 186 0x4>;
+-	};
+-
+-	i2c4: i2c@0xe6828000 {
+-		#address-cells = <1>;
+-		#size-cells = <0>;
+-		compatible = "renesas,rmobile-iic";
+-		reg = <0xe6828000 0x425>;
+-		interrupt-parent = <&gic>;
+-		interrupts = <0 187 0x4
+-			      0 188 0x4
+-			      0 189 0x4
+-			      0 190 0x4>;
+-	};
+ };
+-- 
+1.7.2.5
+
