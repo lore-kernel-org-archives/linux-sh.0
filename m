@@ -1,63 +1,36 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 22 Feb 2013 22:58:57 +0000
-Subject: Re: [PATCH 1/3] ARM: shmobile: armadillo800eva: enable all errata for cache on defconfig
-Message-Id: <20130222225842.GE4737@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 08 Feb 2013 18:38:29 +0000
+Subject: [PATCH v2 5/8] ARM: shmobile: add sh73a0-specific timer initialisation to kzm9g-reference
+Message-Id: <1360348712-29255-6-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1346808893-14124-2-git-send-email-horms@verge.net.au>
-In-Reply-To: <1346808893-14124-2-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Feb 21, 2013 at 08:45:57PM -0800, Kuninori Morimoto wrote:
-> Some errata for cache had not enabled on current
-> Armadillo800eva defconfig.
-> This patch enables these.
-> Special thanks to Ishiyama-san
+This patch fixes failing boot of the kzm9g-reference kernel.
 
-It seems to me that it would be better to handle these in Kconfig
-to enable them on an SoC or board basis.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
 
-The reason is that I would like to move away from per-board defconfigs
-and towards a more consolidated defconfig. And in that case it will
-be more difficult to know which ERRATA are needed for each board and SoC.
+Also a fix.
 
-Obviously this thinking is open to review and it implies that
-several board defconfigs should be updated.
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-> 
-> Reported-by: Kiyoshi Ishiyama <kiyoshi.ishiyama.wg@renesas.com>
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
->  arch/arm/configs/armadillo800eva_defconfig |    5 +++++
->  1 file changed, 5 insertions(+)
-> 
-> diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
-> index 2e1a825..891318e 100644
-> --- a/arch/arm/configs/armadillo800eva_defconfig
-> +++ b/arch/arm/configs/armadillo800eva_defconfig
-> @@ -25,10 +25,15 @@ CONFIG_CACHE_L2X0=y
->  CONFIG_ARM_ERRATA_430973=y
->  CONFIG_ARM_ERRATA_458693=y
->  CONFIG_ARM_ERRATA_460075=y
-> +CONFIG_PL310_ERRATA_588369=y
->  CONFIG_ARM_ERRATA_720789=y
-> +CONFIG_PL310_ERRATA_727915=y
->  CONFIG_ARM_ERRATA_743622=y
->  CONFIG_ARM_ERRATA_751472=y
-> +CONFIG_PL310_ERRATA_753970=y
->  CONFIG_ARM_ERRATA_754322=y
-> +CONFIG_PL310_ERRATA_769419=y
-> +CONFIG_ARM_ERRATA_775420=y
->  CONFIG_AEABI=y
->  # CONFIG_OABI_COMPAT is not set
->  CONFIG_FORCE_MAX_ZONEORDER
-> -- 
-> 1.7.9.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index 534eee6..9f5cab757 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -112,7 +112,7 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g-reference")
+ 	.init_irq	= sh73a0_init_irq_dt,
+ 	.init_machine	= kzm_init,
+ 	.init_late	= shmobile_init_late,
+-	.init_time	= shmobile_timer_init,
++	.init_time	= sh73a0_earlytimer_init,
+ 	.restart	= kzm9g_restart,
+ 	.dt_compat	= kzm9g_boards_compat_dt,
+ MACHINE_END
+-- 
+1.7.2.5
+
