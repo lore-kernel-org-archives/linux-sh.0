@@ -1,69 +1,51 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 26 Feb 2013 11:58:44 +0000
-Subject: [PATCH 01/05] irqchip: intc-irqpin: Whitespace fixes
-Message-Id: <20130226115844.5630.68157.sendpatchset@w520>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 08 Feb 2013 18:38:24 +0000
+Subject: [PATCH/RFC v2 0/8] ARM: shmobile: SD/MMC for armadillo800eva- and kzm9g-reference
+Message-Id: <1360348712-29255-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130226115834.5630.45471.sendpatchset@w520>
-In-Reply-To: <20130226115834.5630.45471.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: kuninori.morimoto.gx@renesas.com, linux-sh@vger.kernel.org, benh@kernel.crashing.org, grant.likely@secretlab.ca, horms@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+This series extends the 3-patch series, sent by me yesterday. It is still 
+to be decided, whether and which of these patches are suitable for upstream, 
+and which of them just demonstrate, how to get the hardware running.
 
-Remove whitespace damage and add newline
-between variables and code.
+Thanks
+Guennadi
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Guennadi Liakhovetski (8):
+  ARM: shmobile: add MMCIF and SDHI DT clock aliases to sh73a0 and
+    r8a7740
+  ARM: shmobile: add SDHI and MMCIF interfaces to
+    armadillo800eva-reference
+  ARM: shmobile: SDHI and MMCIF interfaces to kzm9g-reference
+  ARM: shmobile: move GIC and I2C devices from sh73a0 common .dtsi to
+    reference
+  ARM: shmobile: add sh73a0-specific timer initialisation to
+    kzm9g-reference
+  ARM: shmobile: add INTC interrupt controllers on sh73a0 in the DT
+    case
+  ARM: shmobile: parse DT and configure pinmux early on kzm9g-reference
+  ARM: shmobile: add ethernet support to kzm9g-reference
+
+ .../boot/dts/r8a7740-armadillo800eva-reference.dts |   44 ++++++++++++
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts       |   42 ++++++++++-
+ arch/arm/boot/dts/sh73a0-reference.dtsi            |   69 ++++++++++++++++++
+ arch/arm/boot/dts/sh73a0.dtsi                      |   69 ------------------
+ .../board-armadillo800eva-reference.c              |   52 ++++++++++++++
+ arch/arm/mach-shmobile/board-kzm9g-reference.c     |   74 ++++++++++++++++++-
+ arch/arm/mach-shmobile/clock-r8a7740.c             |    4 +
+ arch/arm/mach-shmobile/clock-sh73a0.c              |    3 +
+ arch/arm/mach-shmobile/include/mach/common.h       |    1 +
+ arch/arm/mach-shmobile/intc-sh73a0.c               |   24 +++++--
+ 10 files changed, 300 insertions(+), 82 deletions(-)
+
+-- 
+1.7.2.5
+
 ---
-
- Thanks to Simon Horman and Thomas Gleixner for feedback.
-
- drivers/irqchip/irq-renesas-intc-irqpin.c |    8 +++++---
- 1 file changed, 5 insertions(+), 3 deletions(-)
-
---- 0002/drivers/irqchip/irq-renesas-intc-irqpin.c
-+++ work/drivers/irqchip/irq-renesas-intc-irqpin.c	2013-02-26 19:01:12.000000000 +0900
-@@ -57,13 +57,13 @@ struct intc_irqpin_iomem {
- 	unsigned long (*read)(void __iomem *iomem);
- 	void (*write)(void __iomem *iomem, unsigned long data);
- 	int width;
--};  
-+};
- 
- struct intc_irqpin_irq {
- 	int hw_irq;
- 	int irq;
- 	struct intc_irqpin_priv *p;
--};  
-+};
- 
- struct intc_irqpin_priv {
- 	struct intc_irqpin_iomem iomem[INTC_IRQPIN_REG_NR];
-@@ -99,6 +99,7 @@ static inline unsigned long intc_irqpin_
- 					     int reg)
- {
- 	struct intc_irqpin_iomem *i = &p->iomem[reg];
-+
- 	return i->read(i->iomem);
- }
- 
-@@ -106,6 +107,7 @@ static inline void intc_irqpin_write(str
- 				     int reg, unsigned long data)
- {
- 	struct intc_irqpin_iomem *i = &p->iomem[reg];
-+
- 	i->write(i->iomem, data);
- }
- 
-@@ -405,7 +407,7 @@ static int intc_irqpin_probe(struct plat
- 			dev_warn(&pdev->dev, "irq base mismatch (%d/%d)\n",
- 				 p->config.irq_base, k);
- 	}
--	
-+
- 	return 0;
- 
- err3:
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
