@@ -1,64 +1,65 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Sat, 16 Feb 2013 14:02:36 +0000
-Subject: Re: [PATCH v4 03/13] mmc: provide a standard MMC device-tree binding parser centrally
-Message-Id: <Pine.LNX.4.64.1302161457140.20044@axis700.grange>
+Date: Fri, 08 Feb 2013 18:38:25 +0000
+Subject: [PATCH v2 1/8] ARM: shmobile: add MMCIF and SDHI DT clock aliases to sh73a0 and r8a7740
+Message-Id: <1360348712-29255-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
- <1360941242-18153-4-git-send-email-g.liakhovetski@gmx.de>
- <20130216060526.GA20785@verge.net.au> <201302161054.36492.arnd@arndb.de>
-In-Reply-To: <201302161054.36492.arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Bergmann <arnd@arndb.de>
-Cc: Simon Horman <horms@verge.net.au>, linux-mmc@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Markus Pargmann <mpa@pengutronix.de>
+To: linux-sh@vger.kernel.org
 
-On Sat, 16 Feb 2013, Arnd Bergmann wrote:
+Add clock lookup entries for SDHI and MMCIF device names, for the FDT case.
 
-> On Saturday 16 February 2013, Simon Horman wrote:
-> > > +void mmc_of_parse(struct mmc_host *host)
-> > > +{
-> > > +     struct device_node *np;
-> > > +     u32 bus_width;
-> > > +     bool explicit_inv_wp, gpio_inv_wp = false;
-> > > +     enum of_gpio_flags flags;
-> > > +     int len, ret, gpio;
-> > > +
-> > > +     if (!host->parent || !host->parent->of_node)
-> > > +             return;
-> > > +
-> > > +     np = host->parent->of_node;
-> > > +
-> > > +     /* "bus-width" is translated to MMC_CAP_*_BIT_DATA flags */
-> > > +     if (of_property_read_u32_array(np, "bus-width", &bus_width, 1) < 0)
-> > > +             dev_dbg(host->parent,
-> > > +                     "\"bus-width\" property is missing, assuming 1 bit.\n");
-> > > +
-> > > +     switch (bus_width) {
-> > 
-> > kbuild tells me that gcc thinks that bus_width is used without being
-> > initialised here. Assuming that of_property_read_u32_array always
-> > initialises bus_width if it returns zero then perhaps it would be worth
-> > considering using uninitialized_var().
-> 
-> I think this is a false positive that I encountered before and that should be gone
-> with gcc-4.7 or higher when using -O2 instead of -Os. I have a patch to disable
-> -Wmaybe-uninitialized when builing with -Os. If that gets rid of the warning,
-> I'd prefer not annotating it here.
-
-Unfortunately, this does seem to be a real bug, I lost the default 
-initialisation to one somewhere along the way... I'll send a trivial 
-update. Stupidly, my cross-toolchain doesn't report this error.
-
-Thanks
-Guennadi
-
-> There was some discussion about removing uninitialized_var() recently after it
-> was found to hide some real bugs.
-> 
-> 	Arnd
-
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+
+v2: unchanged
+
+ arch/arm/mach-shmobile/clock-r8a7740.c |    4 ++++
+ arch/arm/mach-shmobile/clock-sh73a0.c  |    3 +++
+ 2 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index 8765a76..83209bf 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -611,12 +611,16 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.1",	&mstp_clks[MSTP323]),
+ 	CLKDEV_DEV_ID("renesas_usbhs",		&mstp_clks[MSTP320]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0",	&mstp_clks[MSTP314]),
++	CLKDEV_DEV_ID("e6850000.sdhi",		&mstp_clks[MSTP314]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1",	&mstp_clks[MSTP313]),
++	CLKDEV_DEV_ID("e6860000.sdhi",		&mstp_clks[MSTP313]),
+ 	CLKDEV_DEV_ID("sh_mmcif",		&mstp_clks[MSTP312]),
++	CLKDEV_DEV_ID("e6bd0000.mmcif",		&mstp_clks[MSTP312]),
+ 	CLKDEV_DEV_ID("sh-eth",			&mstp_clks[MSTP309]),
+ 	CLKDEV_DEV_ID("e9a00000.sh-eth",	&mstp_clks[MSTP309]),
+ 
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2",	&mstp_clks[MSTP415]),
++	CLKDEV_DEV_ID("e6870000.sdhi",		&mstp_clks[MSTP415]),
+ 
+ 	/* ICK */
+ 	CLKDEV_ICK_ID("host",	"renesas_usbhs",	&mstp_clks[MSTP416]),
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index afa5423..5fa106b 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -581,10 +581,13 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6822000.i2c", &mstp_clks[MSTP323]), /* I2C1 */
+ 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP322]), /* USB */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]), /* SDHI0 */
++	CLKDEV_DEV_ID("ee100000.sdhi", &mstp_clks[MSTP314]), /* SDHI0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]), /* SDHI1 */
++	CLKDEV_DEV_ID("ee120000.sdhi", &mstp_clks[MSTP313]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP312]), /* MMCIF0 */
+ 	CLKDEV_DEV_ID("e6bd0000.mmcif", &mstp_clks[MSTP312]), /* MMCIF0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]), /* SDHI2 */
++	CLKDEV_DEV_ID("ee140000.sdhi", &mstp_clks[MSTP311]), /* SDHI2 */
+ 	CLKDEV_DEV_ID("leds-renesas-tpu.12", &mstp_clks[MSTP303]), /* TPU1 */
+ 	CLKDEV_DEV_ID("leds-renesas-tpu.21", &mstp_clks[MSTP302]), /* TPU2 */
+ 	CLKDEV_DEV_ID("leds-renesas-tpu.30", &mstp_clks[MSTP301]), /* TPU3 */
+-- 
+1.7.2.5
+
