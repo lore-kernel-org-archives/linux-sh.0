@@ -1,186 +1,91 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 13 Feb 2013 13:47:07 +0000
-Subject: [PATCH 04/06] ARM: shmobile: Move headsmp-sh73a0.S to headsmp-scu.S
-Message-Id: <20130213134707.12153.67490.sendpatchset@w520>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 08 Feb 2013 18:38:32 +0000
+Subject: [PATCH/RFC v2 8/8] ARM: shmobile: add ethernet support to kzm9g-reference
+Message-Id: <1360348712-29255-9-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130213134628.12153.47120.sendpatchset@w520>
-In-Reply-To: <20130213134628.12153.47120.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Enable the smsc9221 ethernet controller on kzm9g-reference in the board .c
+file, because INTCS initialisation from DT isn't supported yet.
 
-Rename headsmp-sh73a0.S into headsmp-scu.S and
-introduce shmobile_secondary_vector_scu().
-
-The goal is to be able to share the function
-above between all mach-shmobile SoCs that use
-SCU for SMP. So far only sh73a0 use this.
-
-At this time the SCU base address is still hard
-coded in headsmp-scu.S to 0xf0000000, but this
-will be changed in the future.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
 
- Hum, perhaps git can generate a better patch with "rename" information?
+The last hack - once INTC and pinctrl are in DT, ethernet will be added 
+there too.
 
- arch/arm/mach-shmobile/Makefile              |    2 -
- arch/arm/mach-shmobile/headsmp-scu.S         |   50 ++++++++++++++++++++++++++
- arch/arm/mach-shmobile/headsmp-sh73a0.S      |   50 --------------------------
- arch/arm/mach-shmobile/include/mach/common.h |    2 -
- arch/arm/mach-shmobile/smp-sh73a0.c          |    4 +-
- 5 files changed, 54 insertions(+), 54 deletions(-)
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |   44 ++++++++++++++++++++++++
+ 1 files changed, 44 insertions(+), 0 deletions(-)
 
---- 0001/arch/arm/mach-shmobile/Makefile
-+++ work/arch/arm/mach-shmobile/Makefile	2013-02-05 18:23:20.000000000 +0900
-@@ -15,7 +15,7 @@ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.
- # SMP objects
- smp-y				:= platsmp.o headsmp.o
- smp-$(CONFIG_HOTPLUG_CPU)	+= hotplug.o
--smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o headsmp-sh73a0.o
-+smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o headsmp-scu.o
- smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o
- smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index 728c810..8679eb2 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -26,17 +26,61 @@
+ #include <linux/irq.h>
+ #include <linux/input.h>
+ #include <linux/of_platform.h>
++#include <linux/platform_device.h>
++#include <linux/regulator/fixed.h>
++#include <linux/regulator/machine.h>
++#include <linux/smsc911x.h>
++
++#include <mach/irqs.h>
+ #include <mach/sh73a0.h>
+ #include <mach/common.h>
+ #include <asm/hardware/cache-l2x0.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
  
---- /dev/null
-+++ work/arch/arm/mach-shmobile/headsmp-scu.S	2013-02-05 18:23:21.000000000 +0900
-@@ -0,0 +1,50 @@
-+/*
-+ * Shared SCU setup for mach-shmobile
-+ *
-+ * Copyright (C) 2012 Bastian Hecht
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License as
-+ * published by the Free Software Foundation; either version 2 of
-+ * the License, or (at your option) any later version.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR /PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-+ * MA 02111-1307 USA
-+ */
++/* Dummy supplies, where voltage doesn't matter */
++static struct regulator_consumer_supply dummy_supplies[] = {
++	REGULATOR_SUPPLY("vddvario", "smsc911x"),
++	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
++};
 +
-+#include <linux/linkage.h>
-+#include <linux/init.h>
-+#include <asm/memory.h>
++/* SMSC 9221 */
++static struct resource smsc9221_resources[] = {
++	[0] = {
++		.start	= 0x10000000, /* CS4 */
++		.end	= 0x100000ff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= intcs_evt2irq(0x260), /* IRQ3 */
++		.flags	= IORESOURCE_IRQ,
++	},
++};
 +
-+	__CPUINIT
-+/*
-+ * Reset vector for secondary CPUs.
-+ *
-+ * First we turn on L1 cache coherency for our CPU. Then we jump to
-+ * shmobile_invalidate_start that invalidates the cache and hands over control
-+ * to the common ARM startup code.
-+ * This function will be mapped to address 0 by the SBAR register.
-+ * A normal branch is out of range here so we need a long jump. We jump to
-+ * the physical address as the MMU is still turned off.
-+ */
-+	.align	12
-+ENTRY(shmobile_secondary_vector_scu)
-+	mrc     p15, 0, r0, c0, c0, 5	@ read MIPDR
-+	and	r0, r0, #3		@ mask out cpu ID
-+	lsl	r0, r0, #3		@ we will shift by cpu_id * 8 bits
-+	mov	r1, #0xf0000000		@ SCU base address
-+	ldr	r2, [r1, #8]		@ SCU Power Status Register
-+	mov	r3, #3
-+	bic	r2, r2, r3, lsl r0	@ Clear bits of our CPU (Run Mode)
-+	str	r2, [r1, #8]		@ write back
++static struct smsc911x_platform_config smsc9221_platdata = {
++	.flags		= SMSC911X_USE_32BIT | SMSC911X_SAVE_MAC_ADDRESS,
++	.phy_interface	= PHY_INTERFACE_MODE_MII,
++	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_LOW,
++	.irq_type	= SMSC911X_IRQ_TYPE_PUSH_PULL,
++};
 +
-+	ldr	pc, 1f
-+1:	.long shmobile_invalidate_start - PAGE_OFFSET + PLAT_PHYS_OFFSET
-+ENDPROC(shmobile_secondary_vector_scu)
---- 0001/arch/arm/mach-shmobile/headsmp-sh73a0.S
-+++ /dev/null	2013-01-21 13:48:16.387453344 +0900
-@@ -1,50 +0,0 @@
--/*
-- * SMP support for SoC sh73a0
-- *
-- * Copyright (C) 2012 Bastian Hecht
-- *
-- * This program is free software; you can redistribute it and/or
-- * modify it under the terms of the GNU General Public License as
-- * published by the Free Software Foundation; either version 2 of
-- * the License, or (at your option) any later version.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR /PURPOSE.  See the
-- * GNU General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public License
-- * along with this program; if not, write to the Free Software
-- * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-- * MA 02111-1307 USA
-- */
--
--#include <linux/linkage.h>
--#include <linux/init.h>
--#include <asm/memory.h>
--
--	__CPUINIT
--/*
-- * Reset vector for secondary CPUs.
-- *
-- * First we turn on L1 cache coherency for our CPU. Then we jump to
-- * shmobile_invalidate_start that invalidates the cache and hands over control
-- * to the common ARM startup code.
-- * This function will be mapped to address 0 by the SBAR register.
-- * A normal branch is out of range here so we need a long jump. We jump to
-- * the physical address as the MMU is still turned off.
-- */
--	.align	12
--ENTRY(sh73a0_secondary_vector)
--	mrc     p15, 0, r0, c0, c0, 5	@ read MIPDR
--	and	r0, r0, #3		@ mask out cpu ID
--	lsl	r0, r0, #3		@ we will shift by cpu_id * 8 bits
--	mov	r1, #0xf0000000		@ SCU base address
--	ldr	r2, [r1, #8]		@ SCU Power Status Register
--	mov	r3, #3
--	bic	r2, r2, r3, lsl r0	@ Clear bits of our CPU (Run Mode)
--	str	r2, [r1, #8]		@ write back
--
--	ldr	pc, 1f
--1:	.long shmobile_invalidate_start - PAGE_OFFSET + PLAT_PHYS_OFFSET
--ENDPROC(sh73a0_secondary_vector)
---- 0001/arch/arm/mach-shmobile/include/mach/common.h
-+++ work/arch/arm/mach-shmobile/include/mach/common.h	2013-02-05 18:29:43.000000000 +0900
-@@ -8,6 +8,7 @@ extern void shmobile_setup_delay(unsigne
- struct twd_local_timer;
- extern void shmobile_setup_console(void);
- extern void shmobile_secondary_vector(void);
-+extern void shmobile_secondary_vector_scu(void);
- struct clk;
- extern int shmobile_clk_init(void);
- extern void shmobile_handle_irq_intc(struct pt_regs *);
-@@ -45,7 +46,6 @@ extern void sh73a0_add_standard_devices_
- extern void sh73a0_clock_init(void);
- extern void sh73a0_pinmux_init(void);
- extern void sh73a0_pm_init(void);
--extern void sh73a0_secondary_vector(void);
- extern struct clk sh73a0_extal1_clk;
- extern struct clk sh73a0_extal2_clk;
- extern struct clk sh73a0_extcki_clk;
---- 0001/arch/arm/mach-shmobile/smp-sh73a0.c
-+++ work/arch/arm/mach-shmobile/smp-sh73a0.c	2013-02-05 18:23:20.000000000 +0900
-@@ -80,9 +80,9 @@ static void __init sh73a0_smp_prepare_cp
++static struct platform_device smsc_device = {
++	.name		= "smsc911x",
++	.dev  = {
++		.platform_data = &smsc9221_platdata,
++	},
++	.resource	= smsc9221_resources,
++	.num_resources	= ARRAY_SIZE(smsc9221_resources),
++};
++
+ static void __init kzm_init(void)
  {
- 	scu_enable(scu_base_addr());
+ 	sh73a0_add_standard_devices_dt();
+ 	sh73a0_pinmux_init();
  
--	/* Map the reset vector (in headsmp-sh73a0.S) */
-+	/* Map the reset vector (in headsmp-scu.S) */
- 	__raw_writel(0, APARMBAREA);      /* 4k */
--	__raw_writel(__pa(sh73a0_secondary_vector), SBAR);
-+	__raw_writel(__pa(shmobile_secondary_vector_scu), SBAR);
- 
- 	/* enable cache coherency on booting CPU */
- 	scu_power_mode(scu_base_addr(), SCU_PM_NORMAL);
++	regulator_register_fixed(2, dummy_supplies, ARRAY_SIZE(dummy_supplies));
++	platform_device_register(&smsc_device);
++
+ 	/* enable SCIFA4 */
+ 	gpio_request(GPIO_FN_SCIFA4_TXD, NULL);
+ 	gpio_request(GPIO_FN_SCIFA4_RXD, NULL);
+-- 
+1.7.2.5
+
