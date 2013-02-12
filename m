@@ -1,32 +1,27 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 26 Feb 2013 02:55:20 +0000
-Subject: [PATCH 01/03] ARM: shmobile: irq_pin() for static IRQ pin assignment
-Message-Id: <20130226030059.9682.28722.sendpatchset@w520>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 12 Feb 2013 14:55:29 +0000
+Subject: [PATCH 0/2] ARM: shmobile: fixes for topic/all+next
+Message-Id: <Pine.LNX.4.64.1302121519300.7059@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Hi Simon
 
-Add the macro irq_pin() to let board-specific code using
-platform devices tie in external IRQn pins in a common way.
+These are 2 fixes for your topic/all+next branch. Since the branch is 
+experimental, you'll probably want to just merge them with respective 
+broken commits, at least the first of them. #2 might be used as is before 
+respective macros are removed, which causes the breakage, addressed there. 
+I'll shortly send you a few more patches, showing a possible way to 
+implement sparse GPIO / pin numbers. Laurent said he'd prefer a different 
+approach, so, they wouldn't be for upstream, I guess, but maybe someone 
+will find them useful for their work.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Thanks
+Guennadi
 ---
-
- arch/arm/mach-shmobile/include/mach/irqs.h |    4 ++++
- 1 file changed, 4 insertions(+)
-
---- 0001/arch/arm/mach-shmobile/include/mach/irqs.h
-+++ work/arch/arm/mach-shmobile/include/mach/irqs.h	2013-02-15 23:19:52.000000000 +0900
-@@ -11,4 +11,8 @@
- #define INTCS_VECT(n, vect)	INTC_VECT((n), INTCS_VECT_BASE + (vect))
- #define intcs_evt2irq(evt)	evt2irq(INTCS_VECT_BASE + (evt))
- 
-+/* External IRQ pins */
-+#define IRQPIN_BASE		2000
-+#define irq_pin(nr)		((nr) + IRQPIN_BASE)
-+
- #endif /* __ASM_MACH_IRQS_H */
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
