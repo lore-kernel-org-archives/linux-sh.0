@@ -1,59 +1,48 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Tue, 26 Feb 2013 16:04:07 +0000
-Subject: [PATCH v3 2/3] ARM: mach-shmobile: r8a7740: Add DT names to clock list
-Message-Id: <1361898208-6683-2-git-send-email-hechtb+renesas@gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 12 Feb 2013 15:45:16 +0000
+Subject: [PATCH 04/06] ARM: shmobile: Remove sh73a0_get_core_count()
+Message-Id: <20130212154516.13067.82532.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1361898208-6683-1-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1361898208-6683-1-git-send-email-hechtb+renesas@gmail.com>
+References: <20130212154438.13067.77359.sendpatchset@w520>
+In-Reply-To: <20130212154438.13067.77359.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
-Cc: Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, linux-serial@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This adds temporarily the alternative device names to the clock list
-that are used when booting via Device Tree setup.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+Reduce the number of lines of code in smp-sh73a0.c
+by getting rid of the sh73a0_get_core_count() function.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
-v3:
-no changes
 
- arch/arm/mach-shmobile/clock-r8a7740.c |    9 +++++++++
- 1 file changed, 9 insertions(+)
+ arch/arm/mach-shmobile/smp-sh73a0.c |    9 +--------
+ 1 file changed, 1 insertion(+), 8 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index 71fc400..0f77823 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -593,18 +593,27 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_mobile_ceu.1",	&mstp_clks[MSTP128]),
+--- 0001/arch/arm/mach-shmobile/smp-sh73a0.c
++++ work/arch/arm/mach-shmobile/smp-sh73a0.c	2013-02-12 23:50:18.000000000 +0900
+@@ -52,13 +52,6 @@ void __init sh73a0_register_twd(void)
+ }
+ #endif
  
- 	CLKDEV_DEV_ID("sh-sci.4",		&mstp_clks[MSTP200]),
-+	CLKDEV_DEV_ID("e6c80000.sci",		&mstp_clks[MSTP200]),
- 	CLKDEV_DEV_ID("sh-sci.3",		&mstp_clks[MSTP201]),
-+	CLKDEV_DEV_ID("e6c70000.sci",		&mstp_clks[MSTP201]),
- 	CLKDEV_DEV_ID("sh-sci.2",		&mstp_clks[MSTP202]),
-+	CLKDEV_DEV_ID("e6c60000.sci",		&mstp_clks[MSTP202]),
- 	CLKDEV_DEV_ID("sh-sci.1",		&mstp_clks[MSTP203]),
-+	CLKDEV_DEV_ID("e6c50000.sci",		&mstp_clks[MSTP203]),
- 	CLKDEV_DEV_ID("sh-sci.0",		&mstp_clks[MSTP204]),
-+	CLKDEV_DEV_ID("e6c40000.sci",		&mstp_clks[MSTP204]),
- 	CLKDEV_DEV_ID("sh-sci.8",		&mstp_clks[MSTP206]),
-+	CLKDEV_DEV_ID("e6c30000.sci",		&mstp_clks[MSTP206]),
- 	CLKDEV_DEV_ID("sh-sci.5",		&mstp_clks[MSTP207]),
-+	CLKDEV_DEV_ID("e6cb0000.sci",		&mstp_clks[MSTP207]),
- 	CLKDEV_DEV_ID("sh-dma-engine.3",	&mstp_clks[MSTP214]),
- 	CLKDEV_DEV_ID("sh-dma-engine.2",	&mstp_clks[MSTP216]),
- 	CLKDEV_DEV_ID("sh-dma-engine.1",	&mstp_clks[MSTP217]),
- 	CLKDEV_DEV_ID("sh-dma-engine.0",	&mstp_clks[MSTP218]),
- 	CLKDEV_DEV_ID("sh-sci.7",		&mstp_clks[MSTP222]),
-+	CLKDEV_DEV_ID("e6cd0000.sci",		&mstp_clks[MSTP222]),
- 	CLKDEV_DEV_ID("sh-sci.6",		&mstp_clks[MSTP230]),
-+	CLKDEV_DEV_ID("e6cc0000.sci",		&mstp_clks[MSTP230]),
+-static unsigned int __init sh73a0_get_core_count(void)
+-{
+-	void __iomem *scu_base = scu_base_addr();
+-
+-	return scu_get_core_count(scu_base);
+-}
+-
+ static void __cpuinit sh73a0_secondary_init(unsigned int cpu)
+ {
+ 	gic_secondary_init(0);
+@@ -90,7 +83,7 @@ static void __init sh73a0_smp_prepare_cp
  
- 	CLKDEV_DEV_ID("sh_cmt.10",		&mstp_clks[MSTP329]),
- 	CLKDEV_DEV_ID("sh_fsi2",		&mstp_clks[MSTP328]),
--- 
-1.7.9.5
-
+ static void __init sh73a0_smp_init_cpus(void)
+ {
+-	unsigned int ncores = sh73a0_get_core_count();
++	unsigned int ncores = scu_get_core_count(scu_base_addr());
+ 
+ 	shmobile_smp_init_cpus(ncores);
+ }
