@@ -1,79 +1,60 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 28 Feb 2013 12:22:00 +0000
-Subject: [PATCH/RFC v3 3/3] ARM: shmobile: kzm9g-reference: add CPUFreq support
-Message-Id: <1362054120-8600-4-git-send-email-g.liakhovetski@gmx.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 12 Feb 2013 15:45:34 +0000
+Subject: [PATCH 06/06] ARM: shmobile: Remove emev2_get_core_count()
+Message-Id: <20130212154534.13067.45412.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1362054120-8600-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1362054120-8600-1-git-send-email-g.liakhovetski@gmx.de>
+References: <20130212154438.13067.77359.sendpatchset@w520>
+In-Reply-To: <20130212154438.13067.77359.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This patch enables the use of the generic cpufreq-cpu0 driver on kzm9g.
-Providing a regulator and a list of OPPs in DT, combined with a clock,
-attached to the cpu0 device is everything, the cpufreq-cpu0 driver needs.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Reduce the number of lines of code in smp-emev2.c
+by getting rid of the emev2_get_core_count() function.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
-v3: no change
+ arch/arm/mach-shmobile/smp-emev2.c |   21 ++++++++-------------
+ 1 file changed, 8 insertions(+), 13 deletions(-)
 
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |   19 ++++++++++++++++---
- arch/arm/mach-shmobile/Kconfig               |    2 ++
- 2 files changed, 18 insertions(+), 3 deletions(-)
-
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index 363f1ab..c964e20 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -18,6 +18,19 @@
- 	model = "KZM-A9-GT";
- 	compatible = "renesas,kzm9g-reference", "renesas,sh73a0";
+--- 0007/arch/arm/mach-shmobile/smp-emev2.c
++++ work/arch/arm/mach-shmobile/smp-emev2.c	2013-02-12 23:51:54.000000000 +0900
+@@ -50,18 +50,6 @@ static void modify_scu_cpu_psr(unsigned
  
-+	cpus {
-+		cpu@0 {
-+			cpu0-supply = <&vdd_dvfs>;
-+			operating-points = <
-+				/* kHz  uV */
-+				1196000 1315000
-+				 598000 1175000
-+				 398667 1065000
-+			>;
-+			voltage-tolerance = <1>; /* 1% */
-+		};
-+	};
+ }
+ 
+-static unsigned int __init emev2_get_core_count(void)
+-{
+-	if (!scu_base) {
+-		scu_base = ioremap(EMEV2_SCU_BASE, PAGE_SIZE);
+-		emev2_clock_init(); /* need ioremapped SMU */
+-	}
+-
+-	WARN_ON_ONCE(!scu_base);
+-
+-	return scu_base ? scu_get_core_count(scu_base) : 1;
+-}
+-
+ static void __cpuinit emev2_secondary_init(unsigned int cpu)
+ {
+ 	gic_secondary_init(0);
+@@ -93,7 +81,14 @@ static void __init emev2_smp_prepare_cpu
+ 
+ static void __init emev2_smp_init_cpus(void)
+ {
+-	unsigned int ncores = emev2_get_core_count();
++	unsigned int ncores;
 +
- 	chosen {
- 		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200";
- 	};
-@@ -113,10 +126,10 @@
- 		reg = <0x40>;
++	if (!scu_base) {
++		scu_base = ioremap(EMEV2_SCU_BASE, PAGE_SIZE);
++		emev2_clock_init(); /* need ioremapped SMU */
++	}
++
++	ncores = scu_base ? scu_get_core_count(scu_base) : 1;
  
- 		regulators {
--			sd1 {
-+			vdd_dvfs: sd1 {
- 				regulator-name = "1.315V CPU";
--				regulator-min-microvolt = <1315000>;
--				regulator-max-microvolt = <1335000>;
-+				regulator-min-microvolt = <1050000>;
-+				regulator-max-microvolt = <1350000>;
- 				regulator-always-on;
- 				regulator-boot-on;
- 			};
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index eb3a7ff..8a0420b 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -134,6 +134,8 @@ config MACH_KZM9G
- config MACH_KZM9G_REFERENCE
- 	bool "KZM-A9-GT board - Reference Device Tree Implementation"
- 	depends on ARCH_SH73A0
-+	select ARCH_HAS_CPUFREQ
-+	select ARCH_HAS_OPP
- 	select ARCH_REQUIRE_GPIOLIB
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
- 	select SND_SOC_AK4642 if SND_SIMPLE_CARD
--- 
-1.7.2.5
-
+ 	shmobile_smp_init_cpus(ncores);
+ }
