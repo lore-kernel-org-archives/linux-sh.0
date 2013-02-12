@@ -1,112 +1,50 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 19 Feb 2013 07:58:53 +0000
-Subject: Re: [RFC][PATCH] ARM: shmobile: R-Car: add gic_iic macro for ICCIAR / interrupt ID
-Message-Id: <87zjz0enut.wl%kuninori.morimoto.gx@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 12 Feb 2013 15:34:31 +0000
+Subject: [PATCH 3/2] pinctrl: sh-pfc: fix a typo and simplify a definition on sh73a0
+Message-Id: <Pine.LNX.4.64.1302121633000.7059@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <871uccg2m2.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <871uccg2m2.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+Fix definition of the SDHIWP0 function and simplify the CPU_ALL_PORT
+definition on sh73a0.
 
-Hi
-
-> R-Car H1 datasheet GIC number is indicating
-> GIC ICCIAR / interrupt ID number, not SPI number,
-> but current marzen board code is using gic_spi() with
-> un-understandable calculation.
-> This patch adds new gic_iic() macro which means
-> ICCIAR / interrupt ID.
-
-Oops, it should be 
- O : gic_iid()
- X : gic_iic()
-
-But I still need your feedback
-
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
->  arch/arm/mach-shmobile/board-marzen.c      |   12 ++++++------
->  arch/arm/mach-shmobile/include/mach/irqs.h |    1 +
->  2 files changed, 7 insertions(+), 6 deletions(-)
-> 
-> diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-> index cdcb799..a06dfba 100644
-> --- a/arch/arm/mach-shmobile/board-marzen.c
-> +++ b/arch/arm/mach-shmobile/board-marzen.c
-> @@ -66,7 +66,7 @@ static struct resource smsc911x_resources[] = {
->  		.flags		= IORESOURCE_MEM,
->  	},
->  	[1] = {
-> -		.start		= gic_spi(28), /* IRQ 1 */
-> +		.start		= gic_iic(0x3c), /* IRQ 1 */
->  		.flags		= IORESOURCE_IRQ,
->  	},
->  };
-> @@ -96,7 +96,7 @@ static struct resource sdhi0_resources[] = {
->  		.flags	= IORESOURCE_MEM,
->  	},
->  	[1] = {
-> -		.start	= gic_spi(104),
-> +		.start	= gic_iic(0x88),
->  		.flags	= IORESOURCE_IRQ,
->  	},
->  };
-> @@ -214,7 +214,7 @@ static struct resource ehci0_resources[] = {
->  		.flags	= IORESOURCE_MEM,
->  	},
->  	[1] = {
-> -		.start	= gic_spi(44),
-> +		.start	= gic_iic(0x4c),
->  		.flags	= IORESOURCE_IRQ,
->  	},
->  };
-> @@ -238,7 +238,7 @@ static struct resource ehci1_resources[] = {
->  		.flags	= IORESOURCE_MEM,
->  	},
->  	[1] = {
-> -		.start	= gic_spi(45),
-> +		.start	= gic_iic(0x4d),
->  		.flags	= IORESOURCE_IRQ,
->  	},
->  };
-> @@ -268,7 +268,7 @@ static struct resource ohci0_resources[] = {
->  		.flags	= IORESOURCE_MEM,
->  	},
->  	[1] = {
-> -		.start	= gic_spi(44),
-> +		.start	= gic_iic(0x4c),
->  		.flags	= IORESOURCE_IRQ,
->  	},
->  };
-> @@ -292,7 +292,7 @@ static struct resource ohci1_resources[] = {
->  		.flags	= IORESOURCE_MEM,
->  	},
->  	[1] = {
-> -		.start	= gic_spi(45),
-> +		.start	= gic_iic(0x4d),
->  		.flags	= IORESOURCE_IRQ,
->  	},
->  };
-> diff --git a/arch/arm/mach-shmobile/include/mach/irqs.h b/arch/arm/mach-shmobile/include/mach/irqs.h
-> index 06a5da3..83f1c84 100644
-> --- a/arch/arm/mach-shmobile/include/mach/irqs.h
-> +++ b/arch/arm/mach-shmobile/include/mach/irqs.h
-> @@ -5,6 +5,7 @@
->  
->  /* GIC */
->  #define gic_spi(nr)		((nr) + 32)
-> +#define gic_iid(nr)		(nr)
->  
->  /* INTCS */
->  #define INTCS_VECT_BASE		0x3400
-> -- 
-> 1.7.9.5
-> 
-
-
-Best regards
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-Kuninori Morimoto
+
+I think it's better to add this one to the fixes too.
+
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c |    8 ++------
+ 1 files changed, 2 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index b048fa4..9bcb81f 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -25,11 +25,7 @@
+ #include "sh_pfc.h"
+ 
+ #define CPU_ALL_PORT(fn, pfx, sfx)				\
+-	PORT_10(fn, pfx,    sfx), PORT_10(fn, pfx##1, sfx),	\
+-	PORT_10(fn, pfx##2, sfx), PORT_10(fn, pfx##3, sfx),	\
+-	PORT_10(fn, pfx##4, sfx), PORT_10(fn, pfx##5, sfx),	\
+-	PORT_10(fn, pfx##6, sfx), PORT_10(fn, pfx##7, sfx),	\
+-	PORT_10(fn, pfx##8, sfx), PORT_10(fn, pfx##9, sfx),	\
++	PORT_10(fn, pfx,    sfx), PORT_90(fn, pfx, sfx),	\
+ 	PORT_10(fn, pfx##10, sfx),				\
+ 	PORT_1(fn, pfx##110, sfx), PORT_1(fn, pfx##111, sfx),	\
+ 	PORT_1(fn, pfx##112, sfx), PORT_1(fn, pfx##113, sfx),	\
+@@ -1502,7 +1498,7 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(SDHID0_2_PU_MARK, PORT254_FN1, PORT254_IN_PU),
+ 	PINMUX_DATA(SDHID0_3_PU_MARK, PORT255_FN1, PORT255_IN_PU),
+ 	PINMUX_DATA(SDHICMD0_PU_MARK, PORT256_FN1, PORT256_IN_PU),
+-	PINMUX_DATA(SDHIWP0_PU_MARK,  PORT257_FN1, PORT256_IN_PU),
++	PINMUX_DATA(SDHIWP0_PU_MARK,  PORT257_FN1, PORT257_IN_PU),
+ 	PINMUX_DATA(SDHID1_0_PU_MARK, PORT259_FN1, PORT259_IN_PU),
+ 	PINMUX_DATA(SDHID1_1_PU_MARK, PORT260_FN1, PORT260_IN_PU),
+ 	PINMUX_DATA(SDHID1_2_PU_MARK, PORT261_FN1, PORT261_IN_PU),
+-- 
+1.7.2.5
+
