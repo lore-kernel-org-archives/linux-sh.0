@@ -1,60 +1,41 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 15 Feb 2013 15:13:59 +0000
-Subject: [PATCH v4 10/13] mmc: tmio: remove unused and deprecated symbols
-Message-Id: <1360941242-18153-11-git-send-email-g.liakhovetski@gmx.de>
+Date: Tue, 12 Feb 2013 15:50:01 +0000
+Subject: [PATCH/RFC 0/3] ARM: shmobile: pinctrl sparse pin numbers
+Message-Id: <1360684204-12888-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Arnd Bergmann <arnd@arndb.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-sh@vger.kernel.org
 
-The tmio_mmc_cd_wakeup() inline function has been deprecated since 3.4 and
-is unused since 3.4 too. Remove them.
+Hi Simon
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
- include/linux/mfd/tmio.h |   18 ------------------
- 1 files changed, 0 insertions(+), 18 deletions(-)
+This implements support for sparse pin / GPIO numbers for r-/sh-mobile. 
+Most probably this won't become the mainline implementation, so, mainly an 
+RFC / demonstration.
 
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index d83af39..99bf3e66 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -65,12 +65,6 @@
-  */
- #define TMIO_MMC_SDIO_IRQ		(1 << 2)
- /*
-- * Some platforms can detect card insertion events with controller powered
-- * down, using a GPIO IRQ, in which case they have to fill in cd_irq, cd_gpio,
-- * and cd_flags fields of struct tmio_mmc_data.
-- */
--#define TMIO_MMC_HAS_COLD_CD		(1 << 3)
--/*
-  * Some controllers require waiting for the SD bus to become
-  * idle before writing to some registers.
-  */
-@@ -117,18 +111,6 @@ struct tmio_mmc_data {
- };
- 
- /*
-- * This function is deprecated and will be removed soon. Please, convert your
-- * platform to use drivers/mmc/core/cd-gpio.c
-- */
--#include <linux/mmc/host.h>
--static inline void tmio_mmc_cd_wakeup(struct tmio_mmc_data *pdata)
--{
--	if (pdata)
--		mmc_detect_change(dev_get_drvdata(pdata->dev),
--				  msecs_to_jiffies(100));
--}
--
--/*
-  * data for the NAND controller
-  */
- struct tmio_nand_data {
+Guennadi Liakhovetski (3):
+  pinctrl: sh-pfc: support sparse GPIO numbers
+  pinctrl: sh-pfc: add pin groups for all SD/MMC interfaces on sh73a0
+  ARM: shmobile: switch SDHI and MMCIF interfaces on kzm9g-reference to
+    pinctrl
+
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts   |   61 ++++++--
+ arch/arm/boot/dts/sh73a0-reference.dtsi        |    9 -
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |   36 +----
+ arch/arm/mach-shmobile/board-kzm9g.c           |   30 ++--
+ arch/arm/mach-shmobile/include/mach/sh73a0.h   |    2 +
+ drivers/pinctrl/sh-pfc/core.h                  |    1 +
+ drivers/pinctrl/sh-pfc/gpio.c                  |    6 +-
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c            |  203 ++++++++++++++++++++++++
+ drivers/pinctrl/sh-pfc/pinctrl.c               |  111 +++++++++++--
+ drivers/pinctrl/sh-pfc/sh_pfc.h                |    2 +
+ 10 files changed, 377 insertions(+), 84 deletions(-)
+
 -- 
 1.7.2.5
 
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
