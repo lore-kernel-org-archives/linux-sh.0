@@ -1,10 +1,10 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 18 Feb 2013 13:47:25 +0000
-Subject: [PATCH 04/08] ARM: shmobile: Update r8a7779 to check SCU for hotplug
-Message-Id: <20130218134725.17303.98038.sendpatchset@w520>
+Date: Tue, 12 Feb 2013 15:44:57 +0000
+Subject: [PATCH 02/06] ARM: shmobile: Remove partial CPU Hotplug from EMEV2
+Message-Id: <20130212154457.13067.95836.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130218134648.17303.97576.sendpatchset@w520>
-In-Reply-To: <20130218134648.17303.97576.sendpatchset@w520>
+References: <20130212154438.13067.77359.sendpatchset@w520>
+In-Reply-To: <20130212154438.13067.77359.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,96 +12,60 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Update the r8a7779 CPU Hotplug code to use SCU PSR
-to wait for the target CPU core. Previously the
-shared code in hotplug.c was used to let cpu_kill()
-wait for cpu_die(). With this change in place the
-r8a7779 SMP code does not depend on hotplug.c anymore.
+Remove partial CPU hotplug support from EMEV2 SMP code.
+
+The upstream EMEV2 SMP support code has no CPU shutdown or
+reset ability so we cannot reboot the secondary CPU cores.
+
+Regular SMP operation is however still working as expected.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/arm/mach-shmobile/smp-r8a7779.c |   38 ++++++++++++++++++++++++++++------
- 1 file changed, 32 insertions(+), 6 deletions(-)
+ Tested on KZM9D hardware.
 
---- 0004/arch/arm/mach-shmobile/smp-r8a7779.c
-+++ work/arch/arm/mach-shmobile/smp-r8a7779.c	2013-02-18 22:04:24.000000000 +0900
-@@ -26,6 +26,7 @@
- #include <linux/irqchip/arm-gic.h>
- #include <mach/common.h>
- #include <mach/r8a7779.h>
-+#include <asm/cacheflush.h>
- #include <asm/smp_plat.h>
- #include <asm/smp_scu.h>
- #include <asm/smp_twd.h>
-@@ -68,6 +69,16 @@ void __init r8a7779_register_twd(void)
+ arch/arm/mach-shmobile/smp-emev2.c |   28 ----------------------------
+ 1 file changed, 28 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/smp-emev2.c
++++ work/arch/arm/mach-shmobile/smp-emev2.c	2013-02-12 22:44:23.000000000 +0900
+@@ -62,29 +62,6 @@ static unsigned int __init emev2_get_cor
+ 	return scu_base ? scu_get_core_count(scu_base) : 1;
  }
- #endif
  
-+static int r8a7779_scu_psr_core_disabled(int cpu)
-+{
-+	unsigned long mask = 3 << (cpu * 8);
-+
-+	if ((__raw_readl(shmobile_scu_base + 8) & mask) = mask)
-+		return 1;
-+
-+	return 0;
-+}
-+
- static void modify_scu_cpu_psr(unsigned long set, unsigned long clr)
- {
- 	void __iomem *scu_base = shmobile_scu_base;
-@@ -89,9 +100,6 @@ static int r8a7779_platform_cpu_kill(uns
- 
- 	cpu = cpu_logical_map(cpu);
- 
--	/* disable cache coherency */
--	modify_scu_cpu_psr(3 << (cpu * 8), 0);
+-static int emev2_platform_cpu_kill(unsigned int cpu)
+-{
+-	return 0; /* not supported yet */
+-}
 -
- 	if (cpu < ARRAY_SIZE(r8a7779_ch_cpu))
- 		ch = r8a7779_ch_cpu[cpu];
- 
-@@ -110,7 +118,7 @@ static int __maybe_unused r8a7779_cpu_ki
- 	 * finish before asking SoC-specific code to power off the CPU core.
- 	 */
- 	for (k = 0; k < 1000; k++) {
+-static int __maybe_unused emev2_cpu_kill(unsigned int cpu)
+-{
+-	int k;
+-
+-	/* this function is running on another CPU than the offline target,
+-	 * here we need wait for shutdown code in platform_cpu_die() to
+-	 * finish before asking SoC-specific code to power off the CPU core.
+-	 */
+-	for (k = 0; k < 1000; k++) {
 -		if (shmobile_cpu_is_dead(cpu))
-+		if (r8a7779_scu_psr_core_disabled(cpu))
- 			return r8a7779_platform_cpu_kill(cpu);
- 
- 		mdelay(1);
-@@ -119,6 +127,24 @@ static int __maybe_unused r8a7779_cpu_ki
- 	return 0;
- }
- 
-+static void __maybe_unused r8a7779_cpu_die(unsigned int cpu)
-+{
-+	dsb();
-+	flush_cache_all();
-+
-+	/* disable cache coherency */
-+	modify_scu_cpu_psr(3 << (cpu * 8), 0);
-+
-+	/* Endless loop until power off from r8a7779_cpu_kill() */
-+	while (1)
-+		cpu_do_idle();
-+}
-+
-+static int __maybe_unused r8a7779_cpu_disable(unsigned int cpu)
-+{
-+	/* only CPU1->3 have power domains, do not allow hotplug of CPU0 */
-+	return cpu = 0 ? -EPERM : 0;
-+}
- 
- static void __cpuinit r8a7779_secondary_init(unsigned int cpu)
+-			return emev2_platform_cpu_kill(cpu);
+-		mdelay(1);
+-	}
+-
+-	return 0;
+-}
+-
+-
+ static void __cpuinit emev2_secondary_init(unsigned int cpu)
  {
-@@ -179,7 +205,7 @@ struct smp_operations r8a7779_smp_ops  _
- 	.smp_boot_secondary	= r8a7779_boot_secondary,
- #ifdef CONFIG_HOTPLUG_CPU
- 	.cpu_kill		= r8a7779_cpu_kill,
+ 	gic_secondary_init(0);
+@@ -126,9 +103,4 @@ struct smp_operations emev2_smp_ops __in
+ 	.smp_prepare_cpus	= emev2_smp_prepare_cpus,
+ 	.smp_secondary_init	= emev2_secondary_init,
+ 	.smp_boot_secondary	= emev2_boot_secondary,
+-#ifdef CONFIG_HOTPLUG_CPU
+-	.cpu_kill		= emev2_cpu_kill,
 -	.cpu_die		= shmobile_cpu_die,
 -	.cpu_disable		= shmobile_cpu_disable,
-+	.cpu_die		= r8a7779_cpu_die,
-+	.cpu_disable		= r8a7779_cpu_disable,
- #endif
+-#endif
  };
