@@ -1,27 +1,48 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 12 Feb 2013 14:55:29 +0000
-Subject: [PATCH 0/2] ARM: shmobile: fixes for topic/all+next
-Message-Id: <Pine.LNX.4.64.1302121519300.7059@axis700.grange>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 12 Feb 2013 15:45:25 +0000
+Subject: [PATCH 05/06] ARM: shmobile: Remove r8a7779_get_core_count()
+Message-Id: <20130212154525.13067.38412.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20130212154438.13067.77359.sendpatchset@w520>
+In-Reply-To: <20130212154438.13067.77359.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon
+From: Magnus Damm <damm@opensource.se>
 
-These are 2 fixes for your topic/all+next branch. Since the branch is 
-experimental, you'll probably want to just merge them with respective 
-broken commits, at least the first of them. #2 might be used as is before 
-respective macros are removed, which causes the breakage, addressed there. 
-I'll shortly send you a few more patches, showing a possible way to 
-implement sparse GPIO / pin numbers. Laurent said he'd prefer a different 
-approach, so, they wouldn't be for upstream, I guess, but maybe someone 
-will find them useful for their work.
+Reduce the number of lines of code in smp-r8a7779.c
+by getting rid of the r8a7779_get_core_count() function.
 
-Thanks
-Guennadi
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+
+ arch/arm/mach-shmobile/smp-r8a7779.c |    9 +--------
+ 1 file changed, 1 insertion(+), 8 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/smp-r8a7779.c
++++ work/arch/arm/mach-shmobile/smp-r8a7779.c	2013-02-12 23:51:15.000000000 +0900
+@@ -87,13 +87,6 @@ static void modify_scu_cpu_psr(unsigned
+ 	__raw_writel(tmp, scu_base + 8);
+ }
+ 
+-static unsigned int __init r8a7779_get_core_count(void)
+-{
+-	void __iomem *scu_base = scu_base_addr();
+-
+-	return scu_get_core_count(scu_base);
+-}
+-
+ static int r8a7779_platform_cpu_kill(unsigned int cpu)
+ {
+ 	struct r8a7779_pm_ch *ch = NULL;
+@@ -178,7 +171,7 @@ static void __init r8a7779_smp_prepare_c
+ 
+ static void __init r8a7779_smp_init_cpus(void)
+ {
+-	unsigned int ncores = r8a7779_get_core_count();
++	unsigned int ncores = scu_get_core_count(scu_base_addr());
+ 
+ 	shmobile_smp_init_cpus(ncores);
+ }
