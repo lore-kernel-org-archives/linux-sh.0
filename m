@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 13 Feb 2013 02:44:57 +0000
+Date: Wed, 13 Feb 2013 03:26:39 +0000
 Subject: [PATCH 21/21] ARM: shmobile: r8a7779: Remove DU function GPIOs
-Message-Id: <1360723497-23266-22-git-send-email-horms+renesas@verge.net.au>
+Message-Id: <1360725999-14514-22-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360723497-23266-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1360723497-23266-1-git-send-email-horms+renesas@verge.net.au>
+References: <1360725999-14514-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1360725999-14514-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
