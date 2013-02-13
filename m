@@ -1,76 +1,45 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 13 Feb 2013 13:46:57 +0000
-Subject: [PATCH 03/06] ARM: shmobile: Rework EMEV2 scu_base variable
-Message-Id: <20130213134657.12153.27160.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 13 Feb 2013 03:29:16 +0000
+Subject: [PATCH 4/9] ARM: shmobile: sh73a0: Add pin control device in device tree
+Message-Id: <1360726161-16072-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130213134628.12153.47120.sendpatchset@w520>
-In-Reply-To: <20130213134628.12153.47120.sendpatchset@w520>
+References: <1360726161-16072-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1360726161-16072-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Rename the static scu_base variable into shmobile_scu_base.
+Add a pfc node in the sh73a0 device tree.
 
-Later in the series the shmobile_scu_base variable will be
-made into a global variable so this is preparation only.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+[horms+renesas@verge.net.au: resolved conflict in sh73a0.dtsi]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/boot/dts/sh73a0.dtsi |    8 ++++++++
+ 1 file changed, 8 insertions(+)
 
- arch/arm/mach-shmobile/smp-emev2.c |   15 ++++++++-------
- 1 file changed, 8 insertions(+), 7 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/smp-emev2.c
-+++ work/arch/arm/mach-shmobile/smp-emev2.c	2013-02-13 21:01:25.000000000 +0900
-@@ -32,8 +32,9 @@
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index 721f486..fc7f0fd 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -22,6 +22,14 @@
+ 		};
+ 	};
  
- #define EMEV2_SCU_BASE 0x1e000000
- 
-+static void __iomem *shmobile_scu_base;
++	gpio: pfc@e6050000 {
++		compatible = "renesas,pfc-sh73a0";
++		reg = <0xe6050000 0x8000>,
++		      <0xe605801c 0x1c>;
++		gpio-controller;
++		#gpio-cells = <2>;
++	};
 +
- static DEFINE_SPINLOCK(scu_lock);
--static void __iomem *scu_base;
- 
- static void modify_scu_cpu_psr(unsigned long set, unsigned long clr)
- {
-@@ -42,10 +43,10 @@ static void modify_scu_cpu_psr(unsigned
- 	/* we assume this code is running on a different cpu
- 	 * than the one that is changing coherency setting */
- 	spin_lock(&scu_lock);
--	tmp = readl(scu_base + 8);
-+	tmp = readl(shmobile_scu_base + 8);
- 	tmp &= ~clr;
- 	tmp |= set;
--	writel(tmp, scu_base + 8);
-+	writel(tmp, shmobile_scu_base + 8);
- 	spin_unlock(&scu_lock);
- 
- }
-@@ -70,7 +71,7 @@ static void __init emev2_smp_prepare_cpu
- {
- 	int cpu = cpu_logical_map(0);
- 
--	scu_enable(scu_base);
-+	scu_enable(shmobile_scu_base);
- 
- 	/* Tell ROM loader about our vector (in headsmp.S) */
- 	emev2_set_boot_vector(__pa(shmobile_secondary_vector));
-@@ -83,12 +84,12 @@ static void __init emev2_smp_init_cpus(v
- {
- 	unsigned int ncores;
- 
--	if (!scu_base) {
--		scu_base = ioremap(EMEV2_SCU_BASE, PAGE_SIZE);
-+	if (!shmobile_scu_base) {
-+		shmobile_scu_base = ioremap(EMEV2_SCU_BASE, PAGE_SIZE);
- 		emev2_clock_init(); /* need ioremapped SMU */
- 	}
- 
--	ncores = scu_base ? scu_get_core_count(scu_base) : 1;
-+	ncores = shmobile_scu_base ? scu_get_core_count(shmobile_scu_base) : 1;
- 
- 	shmobile_smp_init_cpus(ncores);
- }
+ 	gic: interrupt-controller@f0001000 {
+ 		compatible = "arm,cortex-a9-gic";
+ 		#interrupt-cells = <3>;
+-- 
+1.7.10.4
+
