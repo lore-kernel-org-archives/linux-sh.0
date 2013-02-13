@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 13 Feb 2013 02:44:44 +0000
+Date: Wed, 13 Feb 2013 03:26:26 +0000
 Subject: [PATCH 08/21] ARM: shmobile: kzm9g: reference: Register pinctrl mappings for SCIF
-Message-Id: <1360723497-23266-9-git-send-email-horms+renesas@verge.net.au>
+Message-Id: <1360725999-14514-9-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360723497-23266-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1360723497-23266-1-git-send-email-horms+renesas@verge.net.au>
+References: <1360725999-14514-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1360725999-14514-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -24,10 +24,10 @@ Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
  1 file changed, 4 insertions(+), 6 deletions(-)
 
 diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-index 642bb7b..9d6fe22 100644
+index 543019f..7282048 100644
 --- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
 +++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-@@ -36,16 +36,14 @@
+@@ -36,6 +36,10 @@
  static const struct pinctrl_map kzm_pinctrl_map[] = {
  	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.3", "pfc-sh73a0",
  				  "i2c3_1", "i2c3"),
@@ -38,7 +38,10 @@ index 642bb7b..9d6fe22 100644
  };
  
  static void __init kzm_init(void)
- {
+@@ -44,12 +48,6 @@ static void __init kzm_init(void)
+ 	pinctrl_register_mappings(kzm_pinctrl_map, ARRAY_SIZE(kzm_pinctrl_map));
+ 	sh73a0_pinmux_init();
+ 
 -	/* enable SCIFA4 */
 -	gpio_request(GPIO_FN_SCIFA4_TXD, NULL);
 -	gpio_request(GPIO_FN_SCIFA4_RXD, NULL);
