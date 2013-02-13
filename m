@@ -1,73 +1,103 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 13 Feb 2013 11:00:39 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 13 Feb 2013 14:22:16 +0000
 Subject: Re: [PATCH v2 5/8] ARM: shmobile: add sh73a0-specific timer initialisation to kzm9g-reference
-Message-Id: <20130213110039.GC22623@verge.net.au>
+Message-Id: <CANqRtoS01_iroPOog6EQJ_cSvbbBoxaQ_qKYsgnRfLVPDWG+RQ@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1360348712-29255-6-git-send-email-g.liakhovetski@gmx.de>
 In-Reply-To: <1360348712-29255-6-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
 To: linux-sh@vger.kernel.org
 
-On Wed, Feb 13, 2013 at 11:08:57AM +0100, Guennadi Liakhovetski wrote:
-> Hi Simon
-> 
-> On Wed, 13 Feb 2013, Simon Horman wrote:
-> 
-> > On Fri, Feb 08, 2013 at 07:38:29PM +0100, Guennadi Liakhovetski wrote:
-> > > This patch fixes failing boot of the kzm9g-reference kernel.
-> > 
-> > Magnus specifically asked for the DT reference code not to use
-> > early timers.
-> > 
-> > As you have no doubt observed the current code doesn't work with SMP.
-> 
-> Sorry, which current code? Actually my kzm9g is running with CONFUG_SMP=y 
-> and both CPUs show in cpuinfo, in dmesg, and CPU1 even gets some 
-> interrupts in /proc/interrupts (ok, not usual device interrupts, only twd 
-> and some IPI). What am I missing?
+On Wed, Feb 13, 2013 at 2:37 PM, Simon Horman <horms@verge.net.au> wrote:
+> On Wed, Feb 13, 2013 at 02:04:43PM +0900, Magnus Damm wrote:
+>> Hi Simon,
+>>
+>> On Wed, Feb 13, 2013 at 1:41 PM, Simon Horman <horms@verge.net.au> wrote:
+>> > On Wed, Feb 13, 2013 at 01:15:59PM +0900, Magnus Damm wrote:
+>> >> Hi Simon,
+>> >>
+>> >> On Wed, Feb 13, 2013 at 12:46 PM, Simon Horman <horms@verge.net.au> w=
+rote:
+>> >> > On Fri, Feb 08, 2013 at 07:38:29PM +0100, Guennadi Liakhovetski wro=
+te:
+>> >> >> This patch fixes failing boot of the kzm9g-reference kernel.
+>> >> >
+>> >> > Magnus specifically asked for the DT reference code not to use
+>> >> > early timers.
+>> >> >
+>> >> > As you have no doubt observed the current code doesn't work with SM=
+P.
+>> >> > I have not been able to find a solution that does work with CONFIG_=
+SMP
+>> >> > enabled without using early timers. I would welcome some ideas
+>> >> > on how to resolve this problem without using early timers.
+>> >>
+>> >> I have now tracked down and submitted a fix for the KZM9D regression
+>> >> you pointed me to earlier.
+>> >>
+>> >> Next step is to figure out what is wrong with KZM9G in DT-only mode.
+>> >> Can you guide me to reproduce off-list?
+>> >
+>> > I'd prefer to guide you on list so the knowledge is archived.
+>>
+>> Ok, thanks, that's fine too of course.
+>>
+>> > 1. Obtain the reference code.
+>> >
+>> >    I suggest the boards-kzm9g-reference branch of the renesas tree.
+>> >
+>> > 2. Configure
+>> >
+>> >    ARCH=3Darm make kzm9g_defconfig
+>> >
+>> >    Also, enable CONFIG_MACH_KZM9G_REFERENCE and CONFIG_ARM_APPENDED_DTB
+>> >
+>> >    N.B: CONFIG_ARM_APPENDED_DTB will be enabled by default in 3.8
+>> >
+>> > 3. Compile
+>> >
+>> > 4. Append arch/arm/boot/dts/sh73a0-kzm9g-reference.dtb to zImage and
+>> >    refresh uImage
+>> >
+>> > 4. Boot, you should see the boot halt at:
+>> >
+>> >    ...
+>> >    NR_IRQS:16 nr_irqs:16 16
+>> >    sched_clock: 32 bits at 128 Hz, resolution 7812500ns, wraps every 3=
+489660920ms
+>> >    Console: colour dummy device 80x30
+>> >    console [tty0] enabled
+>> >    Calibrating delay loop (skipped) preset value.. 2287.41 BogoMIPS (l=
+pj=8936512)
+>> >    pid_max: default: 32768 minimum: 301
+>> >    Mount-cache hash table entries: 512
+>> >    CPU: Testing write buffer coherency: ok
+>> >    CPU0: thread -1, cpu 0, socket 0, mpidr 80000000
+>> >    Setting up static identity map for 0x4132aaf8 - 0x4132ab50
+>>
+>> I assume someone has already tested the obvious things like booting
+>> with maxcpus=3D1 and checking if disabling TWD helps.
+>
+> Yes.
 
-The code that exists without the patch below.
+Good.
 
-> > I have not been able to find a solution that does work with CONFIG_SMP
-> > enabled without using early timers. I would welcome some ideas
-> > on how to resolve this problem without using early timers.
-> > 
-> > > 
-> > > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > > ---
-> > > 
-> > > Also a fix.
-> > > 
-> > >  arch/arm/mach-shmobile/board-kzm9g-reference.c |    2 +-
-> > >  1 files changed, 1 insertions(+), 1 deletions(-)
-> > > 
-> > > diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-> > > index 534eee6..9f5cab757 100644
-> > > --- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
-> > > +++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-> > > @@ -112,7 +112,7 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g-reference")
-> > >  	.init_irq	= sh73a0_init_irq_dt,
-> > >  	.init_machine	= kzm_init,
-> > >  	.init_late	= shmobile_init_late,
-> > > -	.init_time	= shmobile_timer_init,
-> > > +	.init_time	= sh73a0_earlytimer_init,
-> > >  	.restart	= kzm9g_restart,
-> > >  	.dt_compat	= kzm9g_boards_compat_dt,
-> > >  MACHINE_END
-> > > -- 
-> > > 1.7.2.5
-> > > 
-> > > --
-> > > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> > > the body of a message to majordomo@vger.kernel.org
-> > > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> > > 
-> > 
-> 
-> ---
-> Guennadi Liakhovetski, Ph.D.
-> Freelance Open-Source Software Developer
-> http://www.open-technology.de/
-> 
+So now I have cooked up a DT SMP reference implementation. Please have
+a look at the series "[PATCH 00/02] ARM: shmobile: EMEV2 SMP DT
+reference code (hack alert!)". With those patches in place the KZM9D
+runs SMP via DT from setup-emev2.c only - using shmobile_timer_init.
+Have a look at the rather limited build instructions in [PATCH 00/02]
+- nothing fancy is needed. I believe you can boot with and without the
+STI timer.
+
+So now we know that we have a rather simple KZM9D DT implementation
+using SMP with shmobile_timer_init. It must be possible to do the same
+on sh73a0, simply start building from the ground up with SCIF-only to
+begin with. First get SCIF-only going with UP then move over to
+SCIF-only with SMP.
+
+Thanks,
+
+/ magnus
