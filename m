@@ -1,61 +1,70 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 07 Feb 2013 16:08:41 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 13 Feb 2013 12:28:20 +0000
 Subject: Re: [PATCH 2/3] drm: Renesas R-Car Display Unit DRM driver
-Message-Id: <3620099.Y0WWESBTg5@avalon>
+Message-Id: <20130213122820.GA19512@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359596703-17556-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com> <20130207073203.GB3825@verge.net.au> <87k3qkzg5p.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87k3qkzg5p.wl%kuninori.morimoto.gx@renesas.com>
+References: <1359596703-17556-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+ <1359596703-17556-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1359596703-17556-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Cc: Simon Horman <horms@verge.net.au>, Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org, magnus.damm@gmail.com
+To: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org, magnus.damm@gmail.com
 
-On Thursday 07 February 2013 00:23:18 Kuninori Morimoto wrote:
-> > I'm not sure of a good solution, however selecting OF where USE_OF wasn't
-> > previously selected seems to cause problems on at least ARM because
-> > devtree.c is then compiled without OF_FLATTREE selected.
-
-Isn't that an ARM issue ? If OF && !OF_FLATTREE is a valid kernel 
-configuration devtree.c should compile.
-
-> > That results in the following awesomeness as pointed out to me by
-> > Morimoto-san.
-
-I've run into that before as well. I'll remove the dependency on OF for now as 
-it's not strictly required.
-
-> > arch/arm/kernel/devtree.c: In function 'arm_dt_memblock_reserve':
-> > arch/arm/kernel/devtree.c:43:7: error: 'initial_boot_params' undeclared
-> > (first use in this function) arch/arm/kernel/devtree.c:43:7: note: each
-> > undeclared identifier is reported only once for each function it appears
-> > in arch/arm/kernel/devtree.c: In function 'setup_machine_fdt':
-> > arch/arm/kernel/devtree.c:193:2: error: 'initial_boot_params' undeclared
-> > (first use in this function) arch/arm/kernel/devtree.c:194:2: error:
-> > implicit declaration of function 'of_get_flat_dt_root'
-> > arch/arm/kernel/devtree.c:196:3: error: implicit declaration of function
-> > 'of_flat_dt_match' arch/arm/kernel/devtree.c:209:3: error: implicit
-> > declaration of function 'of_get_flat_dt_prop'
-> > arch/arm/kernel/devtree.c:209:8: warning: assignment makes pointer from
-> > integer without a cast arch/arm/kernel/devtree.c:220:8: warning:
-> > assignment makes pointer from integer without a cast
-> > arch/arm/kernel/devtree.c:222:9: warning: assignment makes pointer from
-> > integer without a cast arch/arm/kernel/devtree.c:228:2: error: implicit
-> > declaration of function 'of_scan_flat_dt'
-> > arch/arm/kernel/devtree.c:228:18: error: 'early_init_dt_scan_chosen'
-> > undeclared (first use in this function) arch/arm/kernel/devtree.c:230:18:
-> > error: 'early_init_dt_scan_root' undeclared (first use in this function)
-> > arch/arm/kernel/devtree.c:232:18: error: 'early_init_dt_scan_memory'
-> > undeclared (first use in this function) make[1]: ***
-> > [arch/arm/kernel/devtree.o] Error 1
+On Thu, Jan 31, 2013 at 02:45:02AM +0100, Laurent Pinchart wrote:
+> The R-Car Display Unit (DU) DRM driver supports both superposition
+> processors and all eight planes in RGB and YUV formats without alpha
+> blending.
 > 
-> OF_FLATTREE
-> OF_EARLY_FLATTREE
-> 
-> both are required ?
+> Only VGA and LVDS encoders and connectors are currently supported.
 
--- 
-Regards,
+As discussed elsewhere I have applied this series to topic/r-car-du-drm
+in the renesas tree.
 
-Laurent Pinchart
+Subsequently, thanks to the wonder that is kbuild,
+I have noticed the following build error when using this series
+in conjunction with "ARM: shmobile: r8a7779: Remove DU function GPIOs".
 
+Clearly this will not be a problem if this series is applied before
+the patch above. But presumably it will be a problem down the road.
+And actually it is currently a (ignorable) problem in topic/all+next.
+
+In any case, I was wondering if Laurent could cook up an add-on patch
+to resolve this problem. At the very least it would provide a
+reference for how to solve the problem later on and as a bonus clean
+up topic/all+next.
+
+error:
+arch/arm/mach-shmobile/board-marzen.c:107:15: error: 'MMC_CAP_SD_HIGHSPEED' undeclared here (not in a function)
+arch/arm/mach-shmobile/board-marzen.c: In function 'marzen_init':
+arch/arm/mach-shmobile/board-marzen.c:401:15: error: 'GPIO_FN_DU0_DR7' undeclared (first use in this function)
+arch/arm/mach-shmobile/board-marzen.c:401:15: note: each undeclared identifier is reported only once for each function it appears in
+arch/arm/mach-shmobile/board-marzen.c:402:15: error: 'GPIO_FN_DU0_DR6' undeclared (first use in this function)
+arch/arm/mach-shmobile/board-marzen.c:403:15: error: 'GPIO_FN_DU0_DR5' undeclared (first use in this function)
+arch/arm/mach-shmobile/board-marzen.c:404:15: error: 'GPIO_FN_DU0_DR4' undeclared (first use in this function)
+arch/arm/mach-shmobile/board-marzen.c:405:15: error: 'GPIO_FN_DU0_DR3' undeclared (first use in this function)
+arch/arm/mach-shmobile/board-marzen.c:406:15: error: 'GPIO_FN_DU0_DR2' undeclared (first use in this function)
+arch/arm/mach-shmobile/board-marzen.c:407:15: error: 'GPIO_FN_DU0_DR1' undeclared (first use in this function)
+arch/arm/mach-shmobile/board-marzen.c:408:15: error: 'GPIO_FN_DU0_DR0' undeclared (first use in this function)
+arch/arm/mach-shmobile/board-marzen.c:409:15: error: 'GPIO_FN_DU0_DG7' undeclared (first use in this function)
+arch/arm/mach-shmobile/board-marzen.c:410:15: error: 'GPIO_FN_DU0_DG6' undeclared (first use in this function)
+arch/arm/mach-shmobile/board-marzen.c:411:15: error: 'GPIO_FN_DU0_DG5' undeclared (first use in this function)
+arch/arm/mach-shmobile/board-marzen.c:412:15: error: 'GPIO_FN_DU0_DG4' undeclared (first use in this function)
+arch/arm/mach-shmobile/board-marzen.c:413:15: error: 'GPIO_FN_DU0_DG3' undeclared (first use in this function)
+arch/arm/mach-shmobile/board-marzen.c:414:15: error: 'GPIO_FN_DU0_DG2' undeclared (first use in this function)
+arch/arm/mach-shmobile/board-marzen.c:415:15: error: 'GPIO_FN_DU0_DG1' undeclared (first use in this function)
+arch/arm/mach-shmobile/board-marzen.c:416:15: error: 'GPIO_FN_DU0_DG0' undeclared (first use in this function)
+arch/arm/mach-shmobile/board-marzen.c:417:15: error: 'GPIO_FN_DU0_DB7' undeclared (first use in this function)
+arch/arm/mach-shmobile/board-marzen.c:418:15: error: 'GPIO_FN_DU0_DB6' undeclared (first use in this function)
+arch/arm/mach-shmobile/board-marzen.c:419:15: error: 'GPIO_FN_DU0_DB5' undeclared (first use in this function)
+arch/arm/mach-shmobile/board-marzen.c:420:15: error: 'GPIO_FN_DU0_DB4' undeclared (first use in this function)
+arch/arm/mach-shmobile/board-marzen.c:421:15: error: 'GPIO_FN_DU0_DB3' undeclared (first use in this function)
+arch/arm/mach-shmobile/board-marzen.c:422:15: error: 'GPIO_FN_DU0_DB2' undeclared (first use in this function)
+arch/arm/mach-shmobile/board-marzen.c:423:15: error: 'GPIO_FN_DU0_DB1' undeclared (first use in this function)
+arch/arm/mach-shmobile/board-marzen.c:424:15: error: 'GPIO_FN_DU0_DB0' undeclared (first use in this function)
+arch/arm/mach-shmobile/board-marzen.c:425:15: error: 'GPIO_FN_DU0_EXVSYNC_DU0_VSYNC' undeclared (first use in this function)
+arch/arm/mach-shmobile/board-marzen.c:426:15: error: 'GPIO_FN_DU0_EXHSYNC_DU0_HSYNC' undeclared (first use in this function)
+arch/arm/mach-shmobile/board-marzen.c:427:15: error: 'GPIO_FN_DU0_DOTCLKOUT0' undeclared (first use in this function)
+arch/arm/mach-shmobile/board-marzen.c:428:15: error: 'GPIO_FN_DU0_DOTCLKOUT1' undeclared (first use in this function)
+arch/arm/mach-shmobile/board-marzen.c:429:15: error: 'GPIO_FN_DU0_DISP' undeclared (first use in this function)
