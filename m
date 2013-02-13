@@ -1,50 +1,53 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 12 Feb 2013 15:34:31 +0000
-Subject: [PATCH 3/2] pinctrl: sh-pfc: fix a typo and simplify a definition on sh73a0
-Message-Id: <Pine.LNX.4.64.1302121633000.7059@axis700.grange>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 13 Feb 2013 01:28:39 +0000
+Subject: Re: [PATCH 3/2] pinctrl: sh-pfc: fix a typo and simplify a definition on sh73a0
+Message-Id: <20130213012839.GB13657@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1302121633000.7059@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1302121633000.7059@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Fix definition of the SDHIWP0 function and simplify the CPU_ALL_PORT
-definition on sh73a0.
+[CC Linus and Laurent]
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
----
+On Tue, Feb 12, 2013 at 04:34:31PM +0100, Guennadi Liakhovetski wrote:
+> Fix definition of the SDHIWP0 function and simplify the CPU_ALL_PORT
+> definition on sh73a0.
+> 
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-I think it's better to add this one to the fixes too.
+This patch appears to be against code that has been merged into arm-soc
+for 3.9.
 
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c |    8 ++------
- 1 files changed, 2 insertions(+), 6 deletions(-)
+In particular the following change in the pfc branch of the renesas tree
+a.k.a the arm-soc/renesas/pinmux branch of the arm-soc tree.
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index b048fa4..9bcb81f 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -25,11 +25,7 @@
- #include "sh_pfc.h"
- 
- #define CPU_ALL_PORT(fn, pfx, sfx)				\
--	PORT_10(fn, pfx,    sfx), PORT_10(fn, pfx##1, sfx),	\
--	PORT_10(fn, pfx##2, sfx), PORT_10(fn, pfx##3, sfx),	\
--	PORT_10(fn, pfx##4, sfx), PORT_10(fn, pfx##5, sfx),	\
--	PORT_10(fn, pfx##6, sfx), PORT_10(fn, pfx##7, sfx),	\
--	PORT_10(fn, pfx##8, sfx), PORT_10(fn, pfx##9, sfx),	\
-+	PORT_10(fn, pfx,    sfx), PORT_90(fn, pfx, sfx),	\
- 	PORT_10(fn, pfx##10, sfx),				\
- 	PORT_1(fn, pfx##110, sfx), PORT_1(fn, pfx##111, sfx),	\
- 	PORT_1(fn, pfx##112, sfx), PORT_1(fn, pfx##113, sfx),	\
-@@ -1502,7 +1498,7 @@ static pinmux_enum_t pinmux_data[] = {
- 	PINMUX_DATA(SDHID0_2_PU_MARK, PORT254_FN1, PORT254_IN_PU),
- 	PINMUX_DATA(SDHID0_3_PU_MARK, PORT255_FN1, PORT255_IN_PU),
- 	PINMUX_DATA(SDHICMD0_PU_MARK, PORT256_FN1, PORT256_IN_PU),
--	PINMUX_DATA(SDHIWP0_PU_MARK,  PORT257_FN1, PORT256_IN_PU),
-+	PINMUX_DATA(SDHIWP0_PU_MARK,  PORT257_FN1, PORT257_IN_PU),
- 	PINMUX_DATA(SDHID1_0_PU_MARK, PORT259_FN1, PORT259_IN_PU),
- 	PINMUX_DATA(SDHID1_1_PU_MARK, PORT260_FN1, PORT260_IN_PU),
- 	PINMUX_DATA(SDHID1_2_PU_MARK, PORT261_FN1, PORT261_IN_PU),
--- 
-1.7.2.5
+commit 5d5166dc39bcbe2c21d4fca034540133c415dce6
+Author: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date:   Sat Dec 15 23:51:24 2012 +0100
+
+    sh-pfc: Add sh73a0 pinmux support
+    
+    Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+    Acked-by: Paul Mundt <lethal@linux-sh.org>
+    Acked-by: Linus Walleij <linus.walleij@linaro.org>
+    Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+
+As such, I would like to handle it separately from the other two patches
+in this series which are against un-merged code.
+
+Before I do so I would like to:
+
+* Know about the severity of this problem.
+  Does it break things?
+
+* Know what the author of the code, Laurent (CCed) thinks about this.
+
+* Know what the pin control maintainer, Linus (CCed) thinks about this.
+
+  Linus, I'm happy to handle this as its code that went through
+  my tree. Or I'm happy for you to take it. In the case of the former
+  an ack or otherwise would be appreciated.
 
