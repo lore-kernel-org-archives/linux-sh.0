@@ -1,39 +1,79 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 15 Feb 2013 13:48:37 +0000
-Subject: [PATCH 2/2] ARM: mach-shmobile: kzm9g: do not enable REGULATOR_DUMMY in defconfig
-Message-Id: <1360936117-21765-3-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 13 Feb 2013 02:44:47 +0000
+Subject: [PATCH 11/21] sh-pfc: sh73a0: Remove I2C function GPIOS
+Message-Id: <1360723497-23266-12-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360936117-21765-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1360936117-21765-1-git-send-email-horms+renesas@verge.net.au>
+References: <1360723497-23266-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1360723497-23266-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Don't enable REGULATOR_DUMMY, it is only intended for development / testing.
-There doesn't seem to be any value in setting it here and doing
-so was an error on my part.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+All sh73a0 platforms now use the pinctrl API to control the I2C pins,
+the corresponding function GPIOS are unused. Remove them.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/kzm9g_defconfig |    1 -
- 1 file changed, 1 deletion(-)
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c |   12 ------------
+ 1 file changed, 12 deletions(-)
 
-This patch depends on "ARM: shmobile: kzm9g: correct smsc regulator registration"
-
-diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
-index 670c3b6..6751c02 100644
---- a/arch/arm/configs/kzm9g_defconfig
-+++ b/arch/arm/configs/kzm9g_defconfig
-@@ -86,7 +86,6 @@ CONFIG_I2C_SH_MOBILE=y
- CONFIG_GPIO_PCF857X=y
- # CONFIG_HWMON is not set
- CONFIG_REGULATOR=y
--CONFIG_REGULATOR_DUMMY=y
- CONFIG_FB=y
- CONFIG_FB_SH_MOBILE_LCDC=y
- CONFIG_FRAMEBUFFER_CONSOLE=y
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index fe548de..56c135d 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -2487,13 +2487,9 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(VINT),
+ 	GPIO_FN(TCKON),
+ 	GPIO_FN(XDVFS1), \
+-	GPIO_FN(PORT27_I2C_SCL2), \
+-	GPIO_FN(PORT27_I2C_SCL3), \
+ 	GPIO_FN(MFG0_OUT1), \
+ 	GPIO_FN(PORT27_IROUT),
+ 	GPIO_FN(XDVFS2), \
+-	GPIO_FN(PORT28_I2C_SDA2), \
+-	GPIO_FN(PORT28_I2C_SDA3), \
+ 	GPIO_FN(PORT28_TPU1TO1),
+ 	GPIO_FN(SIM_RST), \
+ 	GPIO_FN(PORT29_TPU1TO1),
+@@ -2650,12 +2646,8 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(BBIF1_TXD),
+ 	GPIO_FN(HSI_RX_READY), \
+ 	GPIO_FN(BBIF1_RSCK), \
+-	GPIO_FN(PORT115_I2C_SCL2), \
+-	GPIO_FN(PORT115_I2C_SCL3),
+ 	GPIO_FN(HSI_RX_WAKE), \
+ 	GPIO_FN(BBIF1_RSYNC), \
+-	GPIO_FN(PORT116_I2C_SDA2), \
+-	GPIO_FN(PORT116_I2C_SDA3),
+ 	GPIO_FN(HSI_RX_FLAG), \
+ 	GPIO_FN(BBIF1_SS1), \
+ 	GPIO_FN(BBIF1_FLOW),
+@@ -2803,9 +2795,7 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(MFG1_IN2), \
+ 	GPIO_FN(VIO2_VD2), \
+ 	GPIO_FN(MSIOF1_MCK0), \
+-	GPIO_FN(PORT236_I2C_SDA2),
+ 	GPIO_FN(MSIOF1_MCK1), \
+-	GPIO_FN(PORT237_I2C_SCL2),
+ 	GPIO_FN(MSIOF1_SS1), \
+ 	GPIO_FN(VIO2_FIELD2), \
+ 	GPIO_FN(MSIOF1_SS2), \
+@@ -2828,11 +2818,9 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(TPU3TO1),
+ 	GPIO_FN(MFG2_OUT1), \
+ 	GPIO_FN(TPU2TO0), \
+-	GPIO_FN(PORT248_I2C_SCL3), \
+ 	GPIO_FN(MSIOF2R_TSCK),
+ 	GPIO_FN(PORT249_IROUT), \
+ 	GPIO_FN(MFG4_IN1), \
+-	GPIO_FN(PORT249_I2C_SDA3), \
+ 	GPIO_FN(MSIOF2R_TSYNC),
+ 	GPIO_FN(SDHICLK0),
+ 	GPIO_FN(SDHICD0),
 -- 
 1.7.10.4
 
