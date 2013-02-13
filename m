@@ -1,33 +1,73 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Mon, 18 Feb 2013 06:58:31 +0000
-Subject: Re: [PATCH 2/2 v3] [RFC] ARM: shmobile: r8a7779: Add TMU02 platform device
-Message-Id: <20130218065830.GB1377@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 13 Feb 2013 02:44:50 +0000
+Subject: [PATCH 14/21] sh-pfc: r8a7779: Remove DU1_DOTCLKOUT1 GPIO
+Message-Id: <1360723497-23266-15-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1361147376-1228-1-git-send-email-horms+renesas@verge.net.au>
- <1361147376-1228-3-git-send-email-horms+renesas@verge.net.au>
- <CANqRtoQf7O1cGDAUDBAY6xKeor+BA9G22tZcvSEZoVbdurCPxA@mail.gmail.com>
-In-Reply-To: <CANqRtoQf7O1cGDAUDBAY6xKeor+BA9G22tZcvSEZoVbdurCPxA@mail.gmail.com>
+References: <1360723497-23266-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1360723497-23266-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Feb 18, 2013 at 02:38:32PM +0900, Magnus Damm wrote:
-> On Mon, Feb 18, 2013 at 9:29 AM, Simon Horman
-> <horms+renesas@verge.net.au> wrote:
-> > This is intended primarily to exercise the TMUO2 clock definition
-> > in clock-r8a7779.c. I would appreciate review before I queue it up or
-> > drop it.
-> 
-> Why on earth would you want to queue this up? The TMU driver
-> interfaces to the Linux kernel as clock event or clock source. We
-> currently have one channel assigned as clock event, and another as
-> clock source. Adding more channels does not really improve anything
-> from a Linux kernel timer handling point of view.
-> 
-> However, say that you for some reason really enjoyed creating new
-> platform devices then I recommend you to go all the way and hook up
-> all 9 channels that are provided by the 3-channel TMU blocks TMU0,
-> TMU1 and TMU2. Usually we stick to two channels though.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-I will drop the change.
+The function is not documented in the r8a7779 datasheet. Remove it.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c |    9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+index 657b3ab..e9b1910 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+@@ -371,7 +371,7 @@ enum {
+ 	FN_VI1_DATA6_VI1_B6, FN_SD2_CD, FN_MT0_VCXO, FN_SPA_TMS,
+ 	FN_HSPI_TX1_D, FN_VI1_DATA7_VI1_B7, FN_SD2_WP, FN_MT0_PWM,
+ 	FN_SPA_TDI, FN_HSPI_RX1_D, FN_VI1_G0, FN_VI3_DATA0,
+-	FN_DU1_DOTCLKOUT1, FN_TS_SCK1, FN_DREQ2_B, FN_TX2,
++	FN_TS_SCK1, FN_DREQ2_B, FN_TX2,
+ 	FN_SPA_TDO, FN_HCTS0_B, FN_VI1_G1, FN_VI3_DATA1,
+ 	FN_SSI_SCK1, FN_TS_SDEN1, FN_DACK2_B, FN_RX2, FN_HRTS0_B,
+ 
+@@ -632,7 +632,7 @@ enum {
+ 	HSPI_CS1_D_MARK, ADICHS2_B_MARK, VI1_DATA6_VI1_B6_MARK, SD2_CD_MARK,
+ 	MT0_VCXO_MARK, SPA_TMS_MARK, HSPI_TX1_D_MARK, VI1_DATA7_VI1_B7_MARK,
+ 	SD2_WP_MARK, MT0_PWM_MARK, SPA_TDI_MARK, HSPI_RX1_D_MARK,
+-	VI1_G0_MARK, VI3_DATA0_MARK, DU1_DOTCLKOUT1_MARK, TS_SCK1_MARK,
++	VI1_G0_MARK, VI3_DATA0_MARK, TS_SCK1_MARK,
+ 	DREQ2_B_MARK, TX2_MARK,	SPA_TDO_MARK, HCTS0_B_MARK,
+ 	VI1_G1_MARK, VI3_DATA1_MARK, SSI_SCK1_MARK, TS_SDEN1_MARK,
+ 	DACK2_B_MARK, RX2_MARK, HRTS0_B_MARK,
+@@ -1399,7 +1399,6 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_IPSR_MODSEL_DATA(IP11_23_21, HSPI_RX1_D, SEL_HSPI1_3),
+ 	PINMUX_IPSR_DATA(IP11_26_24, VI1_G0),
+ 	PINMUX_IPSR_DATA(IP11_26_24, VI3_DATA0),
+-	PINMUX_IPSR_DATA(IP11_26_24, DU1_DOTCLKOUT1),
+ 	PINMUX_IPSR_DATA(IP11_26_24, TS_SCK1),
+ 	PINMUX_IPSR_MODSEL_DATA(IP11_26_24, DREQ2_B, SEL_EXBUS2_1),
+ 	PINMUX_IPSR_DATA(IP11_26_24, TX2),
+@@ -1892,7 +1891,7 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(SD2_CD), GPIO_FN(MT0_VCXO), GPIO_FN(SPA_TMS),
+ 	GPIO_FN(HSPI_TX1_D), GPIO_FN(VI1_DATA7_VI1_B7), GPIO_FN(SD2_WP),
+ 	GPIO_FN(MT0_PWM), GPIO_FN(SPA_TDI), GPIO_FN(HSPI_RX1_D),
+-	GPIO_FN(VI1_G0), GPIO_FN(VI3_DATA0), GPIO_FN(DU1_DOTCLKOUT1),
++	GPIO_FN(VI1_G0), GPIO_FN(VI3_DATA0),
+ 	GPIO_FN(TS_SCK1), GPIO_FN(DREQ2_B), GPIO_FN(TX2), GPIO_FN(SPA_TDO),
+ 	GPIO_FN(HCTS0_B), GPIO_FN(VI1_G1), GPIO_FN(VI3_DATA1),
+ 	GPIO_FN(SSI_SCK1), GPIO_FN(TS_SDEN1), GPIO_FN(DACK2_B), GPIO_FN(RX2),
+@@ -2600,7 +2599,7 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 	    FN_VI1_G1, FN_VI3_DATA1, FN_SSI_SCK1, FN_TS_SDEN1,
+ 	    FN_DACK2_B, FN_RX2, FN_HRTS0_B, 0,
+ 	    /* IP11_26_24 [3] */
+-	    FN_VI1_G0, FN_VI3_DATA0, FN_DU1_DOTCLKOUT1, FN_TS_SCK1,
++	    FN_VI1_G0, FN_VI3_DATA0, 0, FN_TS_SCK1,
+ 	    FN_DREQ2_B, FN_TX2, FN_SPA_TDO, FN_HCTS0_B,
+ 	    /* IP11_23_21 [3] */
+ 	    FN_VI1_DATA7_VI1_B7, FN_SD2_WP, FN_MT0_PWM, FN_SPA_TDI,
+-- 
+1.7.10.4
+
