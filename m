@@ -1,71 +1,37 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 19 Feb 2013 21:59:50 +0000
-Subject: Re: [PATCH v4 13/13] mmc: tmio: add barriers to IO operations
-Message-Id: <Pine.LNX.4.64.1302192257240.22058@axis700.grange>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 13 Feb 2013 13:11:43 +0000
+Subject: [PATCH 3/3] ARM: mach-shmobile: kzm9g: do not enable REGULATOR_DUMMY in defconfig
+Message-Id: <1360761103-17357-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
- <201302181634.02751.arnd@arndb.de>
- <Pine.LNX.4.64.1302181808510.4526@axis700.grange>
- <201302182211.46697.arnd@arndb.de>
-In-Reply-To: <201302182211.46697.arnd-r2nGTMty4D4@public.gmane.org>
+References: <1360761103-17357-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1360761103-17357-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Arnd Bergmann <arnd-r2nGTMty4D4@public.gmane.org>
-Cc: Russell King - ARM Linux <linux-lFZ/pmaqli7XmaaqVzeoHQ@public.gmane.org>, linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mmc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-discuss-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, 18 Feb 2013, Arnd Bergmann wrote:
+Don't enable REGULATOR_DUMMY, it is only intended for development / testing.
+There doesn't seem to be any value in setting it here and doing
+so was an error on my part.
 
-> On Monday 18 February 2013, Guennadi Liakhovetski wrote:
-> > On Mon, 18 Feb 2013, Arnd Bergmann wrote:
-> > 
-> > Sorry, I'm not sure how best to describe it, and I don't have sufficient 
-> > information myself. In any case on a block-diagram of sh73a0 SDHI devices 
-> > aren't directly connected to a common super-highway bus, instead they are 
-> > on a bus-splitter. One more thing I forgot to mention - this error has 
-> > been observed on SMP.
-> 
-> Ah, I guess that explains it. If you have one CPU filling the buffer
-> and another CPU reading it, you need an smp_wmb/wmp_rmb pair.
-> 
-> That case can easily happen with tmio interrupt handler in PIO
-> mode.
-
-Ok, I also managed to reproduce it on UP, and it definitely is related to 
-MMC_CAP_POWER_OFF_CARD, but I'll have to do some more work on it. I asked 
-Chris to hold back on this patch for now.
-
-Thanks
-Guennadi
-
-> > I checked clock code under drivers/sh/clk, I don't see any relevant 
-> > __raw_* operations there. One I do see, however, GIC code does use 
-> > *_relaxed() accessors, but under raw spinlocks... Do those provide 
-> > sufficient barriers?
-> 
-> A spinlock by definition contains an SMP barrier, which seems to be
-> what is missing here. I don't know if that is enough here, because
-> the spinlock only needs barriers to protect against other users
-> behind the same spinlock.
-> 
-> In architecture independent code, any smp_wmb() on the writer side
-> must be paired with an smp_rmb on the reader. You probably have the
-> sufficient barriers on the side that initiates the I/O because
-> that uses a dmb() in the MMIO instructions, but that is only
-> by accident and not portable.
-> 
-> Also, in the uniprocessor case, you have more barriers than you
-> need, which limits the performance. The best solution for
-> both performance and readability would be to use readw_relaxed()
-> and writew_relaxed() and manually add the barriers you actually
-> need, i.e. two smp_rmb()/smp_wmb() in the PIO case, and a
-> wmb() before you start a real DMA to the device and an rmb()
-> after a DMA from the device is complete.
-> 
-> 	Arnd
-> 
-
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ arch/arm/configs/kzm9g_defconfig |    1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
+index 670c3b6..6751c02 100644
+--- a/arch/arm/configs/kzm9g_defconfig
++++ b/arch/arm/configs/kzm9g_defconfig
+@@ -86,7 +86,6 @@ CONFIG_I2C_SH_MOBILE=y
+ CONFIG_GPIO_PCF857X=y
+ # CONFIG_HWMON is not set
+ CONFIG_REGULATOR=y
+-CONFIG_REGULATOR_DUMMY=y
+ CONFIG_FB=y
+ CONFIG_FB_SH_MOBILE_LCDC=y
+ CONFIG_FRAMEBUFFER_CONSOLE=y
+-- 
+1.7.10.4
+
