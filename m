@@ -1,31 +1,94 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 13 Feb 2013 07:33:17 +0000
-Subject: Re: [PATCH 2/3] ARM: shmobile: switch SDHI0 to GPIO regulator on armadillo800eva
-Message-Id: <20130213073315.GA15587@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 13 Feb 2013 02:44:48 +0000
+Subject: [PATCH 12/21] sh-pfc: sh73a0: Remove FSI function GPIOS
+Message-Id: <1360723497-23266-13-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360689333-13525-3-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1360689333-13525-3-git-send-email-g.liakhovetski@gmx.de>
+References: <1360723497-23266-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1360723497-23266-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Feb 12, 2013 at 04:53:51PM -0800, Kuninori Morimoto wrote:
-> 
-> Hi Guennadi
-> 
-> > When regulators are used with MMC devices, explicitly provided OCR masks
-> > are ignored, they can be removed from platform data. Also switch SDHI0
-> > from fixed regulator with hard-wired GPIO levels to a proper GPIO regulator
-> > instance to enable dynamic voltage switching.
-> > 
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > ---
-> 
-> I got "checkpatch.pl" warning on this patch.
-> I don't care so much about "Avoid CamelCase",
-> but please fix "line over 80 characters" and "{" position.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Thanks Morimoto-san.
+All sh73a0 platforms now use the pinctrl API to control the FSI pins,
+the corresponding function GPIOS are unused. Remove them.
 
-Guennadi I'm holding off on applying this for the above tweaks.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c |   36 -----------------------------------
+ 1 file changed, 36 deletions(-)
+
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index 56c135d..b048fa4 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -2473,7 +2473,6 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(GPO6), \
+ 	GPIO_FN(MFG1_OUT2),
+ 	GPIO_FN(GPO5), \
+-	GPIO_FN(FSICOSLDT3), \
+ 	GPIO_FN(PORT16_VIO_CKOR),
+ 	GPIO_FN(PORT19_VIO_CKO2),
+ 	GPIO_FN(GPO0),
+@@ -2498,55 +2497,20 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(SIM_D), \
+ 	GPIO_FN(PORT31_IROUT),
+ 	GPIO_FN(XWUP),
+-	GPIO_FN(FSIBOBT), \
+-	GPIO_FN(FSIBIBT),
+-	GPIO_FN(FSIBOLR), \
+-	GPIO_FN(FSIBILR),
+-	GPIO_FN(FSIBOSLD),
+-	GPIO_FN(FSIBISLD),
+ 	GPIO_FN(VACK),
+ 	GPIO_FN(XTAL1L),
+-	GPIO_FN(FSICOSLDT2),
+-	GPIO_FN(FSICOSLDT1),
+-	GPIO_FN(FSICOBT), \
+-	GPIO_FN(FSICIBT), \
+-	GPIO_FN(FSIDOBT), \
+-	GPIO_FN(FSIDIBT),
+-	GPIO_FN(FSICOLR), \
+-	GPIO_FN(FSICILR), \
+-	GPIO_FN(FSIDOLR), \
+-	GPIO_FN(FSIDILR),
+-	GPIO_FN(FSICOSLD), \
+-	GPIO_FN(PORT47_FSICSPDIF),
+-	GPIO_FN(FSICISLD), \
+-	GPIO_FN(FSIDISLD),
+-	GPIO_FN(FSIACK), \
+ 	GPIO_FN(PORT49_IRDA_OUT), \
+ 	GPIO_FN(PORT49_IROUT), \
+-	GPIO_FN(FSIAOMC),
+-	GPIO_FN(FSIAOLR), \
+ 	GPIO_FN(BBIF2_TSYNC2), \
+ 	GPIO_FN(TPU2TO2), \
+-	GPIO_FN(FSIAILR),
+ 
+-	GPIO_FN(FSIAOBT), \
+ 	GPIO_FN(BBIF2_TSCK2), \
+ 	GPIO_FN(TPU2TO3), \
+-	GPIO_FN(FSIAIBT),
+-	GPIO_FN(FSIAOSLD), \
+ 	GPIO_FN(BBIF2_TXD2),
+-	GPIO_FN(FSIASPDIF), \
+ 	GPIO_FN(PORT53_IRDA_IN), \
+ 	GPIO_FN(TPU3TO3), \
+-	GPIO_FN(FSIBSPDIF), \
+-	GPIO_FN(PORT53_FSICSPDIF),
+-	GPIO_FN(FSIBCK), \
+ 	GPIO_FN(PORT54_IRDA_FIRSEL), \
+ 	GPIO_FN(TPU3TO2), \
+-	GPIO_FN(FSIBOMC), \
+-	GPIO_FN(FSICCK), \
+-	GPIO_FN(FSICOMC),
+-	GPIO_FN(FSIAISLD), \
+ 	GPIO_FN(TPU0TO0),
+ 	GPIO_FN(A0), \
+ 	GPIO_FN(BS_),
+-- 
+1.7.10.4
+
