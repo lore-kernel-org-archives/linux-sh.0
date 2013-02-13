@@ -1,60 +1,74 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Tue, 19 Feb 2013 14:29:53 +0000
-Subject: Re: [PATCH] ARM: shmobile: r8a7779: fixup of_platform.h compile warning
-Message-Id: <51238C61.80108@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 13 Feb 2013 02:44:49 +0000
+Subject: [PATCH 13/21] sh-pfc: r8a7740: Remove LCD0 and LCD1 function GPIOS
+Message-Id: <1360723497-23266-14-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87y5ekelc9.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87y5ekelc9.wl%kuninori.morimoto.gx@renesas.com>
+References: <1360723497-23266-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1360723497-23266-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-On 19-02-2013 12:53, Kuninori Morimoto wrote:
+All r8a7740 platforms now use the pinctrl API to control the LCD0 and
+LCD1 pins, the corresponding function GPIOS are unused. Remove them.
 
-> This patch fixup below warning
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c |   37 ----------------------------------
+ 1 file changed, 37 deletions(-)
 
-> CC      arch/arm/mach-shmobile/setup-r8a7779.o
-> In file included from ${LINUX}/arch/arm/mach-shmobile/setup-r8a7779.c:25:0:
-> ${LINUX}/include/linux/of_platform.h:107:13:
-> 	warning: 'struct of_device_id' declared inside
-> 	parameter list [enabled by default]
-> ${LINUX}/include/linux/of_platform.h:107:13:
-> 	warning: its scope is only this definition or declaration,
-> 	which is probably not what you want [enabled by default]
-> ${LINUX}/include/linux/of_platform.h:107:13:
-> 	warning: 'struct device_node' declared inside
-> 	parameter list [enabled by default]
-
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
->>> Simon
-
-> This is based on simon/soc5 branch
-
->   arch/arm/mach-shmobile/setup-r8a7779.c |    1 +
->   1 file changed, 1 insertion(+)
-
-> diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-> index 7b4c1eb8..5911c04 100644
-> --- a/arch/arm/mach-shmobile/setup-r8a7779.c
-> +++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-> @@ -21,6 +21,7 @@
->   #include <linux/init.h>
->   #include <linux/interrupt.h>
->   #include <linux/irq.h>
-> +#include <linux/of.h>
->   #include <linux/of_platform.h>
->   #include <linux/platform_device.h>
->   #include <linux/delay.h>
-
-    I think this is only papering over the issue which lies within a header 
-file <linux/oh_platform.h> itself. Exactly this file needs fixing -- which I 
-tried to do in my patch posted somewhat earlier:
-
-http://marc.info/?l=linux-sh&m6122828108385
-
-WBR, Sergei
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index bcd1a91..d0b7165 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -2064,43 +2064,6 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(SCIFB_RTS_PORT172),
+ 	GPIO_FN(SCIFB_CTS_PORT173),
+ 
+-	/* LCD0 */
+-	GPIO_FN(LCD0_D0),	GPIO_FN(LCD0_D1),	GPIO_FN(LCD0_D2),
+-	GPIO_FN(LCD0_D3),	GPIO_FN(LCD0_D4),	GPIO_FN(LCD0_D5),
+-	GPIO_FN(LCD0_D6),	GPIO_FN(LCD0_D7),	GPIO_FN(LCD0_D8),
+-	GPIO_FN(LCD0_D9),	GPIO_FN(LCD0_D10),	GPIO_FN(LCD0_D11),
+-	GPIO_FN(LCD0_D12),	GPIO_FN(LCD0_D13),	GPIO_FN(LCD0_D14),
+-	GPIO_FN(LCD0_D15),	GPIO_FN(LCD0_D16),	GPIO_FN(LCD0_D17),
+-	GPIO_FN(LCD0_DON),	GPIO_FN(LCD0_VCPWC),	GPIO_FN(LCD0_VEPWC),
+-	GPIO_FN(LCD0_DCK),	GPIO_FN(LCD0_VSYN),
+-	GPIO_FN(LCD0_HSYN),	GPIO_FN(LCD0_DISP),
+-	GPIO_FN(LCD0_WR),	GPIO_FN(LCD0_RD),
+-	GPIO_FN(LCD0_CS),	GPIO_FN(LCD0_RS),
+-
+-	GPIO_FN(LCD0_D18_PORT163),	GPIO_FN(LCD0_D19_PORT162),
+-	GPIO_FN(LCD0_D20_PORT161),	GPIO_FN(LCD0_D21_PORT158),
+-	GPIO_FN(LCD0_D22_PORT160),	GPIO_FN(LCD0_D23_PORT159),
+-	GPIO_FN(LCD0_LCLK_PORT165),	/* MSEL5CR_6_1 */
+-
+-	GPIO_FN(LCD0_D18_PORT40),	GPIO_FN(LCD0_D19_PORT4),
+-	GPIO_FN(LCD0_D20_PORT3),	GPIO_FN(LCD0_D21_PORT2),
+-	GPIO_FN(LCD0_D22_PORT0),	GPIO_FN(LCD0_D23_PORT1),
+-	GPIO_FN(LCD0_LCLK_PORT102),	/* MSEL5CR_6_0 */
+-
+-	/* LCD1 */
+-	GPIO_FN(LCD1_D0),	GPIO_FN(LCD1_D1),	GPIO_FN(LCD1_D2),
+-	GPIO_FN(LCD1_D3),	GPIO_FN(LCD1_D4),	GPIO_FN(LCD1_D5),
+-	GPIO_FN(LCD1_D6),	GPIO_FN(LCD1_D7),	GPIO_FN(LCD1_D8),
+-	GPIO_FN(LCD1_D9),	GPIO_FN(LCD1_D10),	GPIO_FN(LCD1_D11),
+-	GPIO_FN(LCD1_D12),	GPIO_FN(LCD1_D13),	GPIO_FN(LCD1_D14),
+-	GPIO_FN(LCD1_D15),	GPIO_FN(LCD1_D16),	GPIO_FN(LCD1_D17),
+-	GPIO_FN(LCD1_D18),	GPIO_FN(LCD1_D19),	GPIO_FN(LCD1_D20),
+-	GPIO_FN(LCD1_D21),	GPIO_FN(LCD1_D22),	GPIO_FN(LCD1_D23),
+-	GPIO_FN(LCD1_RS),	GPIO_FN(LCD1_RD),	GPIO_FN(LCD1_CS),
+-	GPIO_FN(LCD1_WR),	GPIO_FN(LCD1_DCK),	GPIO_FN(LCD1_DON),
+-	GPIO_FN(LCD1_VCPWC),	GPIO_FN(LCD1_LCLK),	GPIO_FN(LCD1_HSYN),
+-	GPIO_FN(LCD1_VSYN),	GPIO_FN(LCD1_VEPWC),	GPIO_FN(LCD1_DISP),
+-
+ 	/* RSPI */
+ 	GPIO_FN(RSPI_SSL0_A),	GPIO_FN(RSPI_SSL1_A),	GPIO_FN(RSPI_SSL2_A),
+ 	GPIO_FN(RSPI_SSL3_A),	GPIO_FN(RSPI_CK_A),	GPIO_FN(RSPI_MOSI_A),
+-- 
+1.7.10.4
 
