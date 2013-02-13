@@ -1,61 +1,76 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 13 Feb 2013 16:21:06 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Wed, 13 Feb 2013 16:32:40 +0000
 Subject: Re: [PATCH 00/16 v1.1] SCIF, I2C and FSI pinctrl functions for sh73a0
-Message-Id: <20130213162106.GB10520@verge.net.au>
+Message-Id: <1966083.UGpBDi27xI@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1360723497-23266-1-git-send-email-horms+renesas@verge.net.au>
- <1911001.oocnvCx2VX@avalon>
-In-Reply-To: <1911001.oocnvCx2VX@avalon>
+ <1911001.oocnvCx2VX@avalon> <20130213162106.GB10520@verge.net.au>
+In-Reply-To: <20130213162106.GB10520@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Feb 13, 2013 at 05:06:30PM +0100, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> On Wednesday 13 February 2013 11:44:36 Simon Horman wrote:
-> > Hi,
-> > 
-> > this series is a follow-up to "[PATCH 00/16] SCIF, I2C and FSI pinctrl
-> > functions for sh73a0" by Laurent Pinchart. I am primarily posting it for
-> > his review.
-> > 
-> > This series differs from the series posted by Laurent in the following ways:
-> > 
-> > * Due to some slightly over-zelous git use on my part the series
-> >   is actually based on a checkout of
-> >   git://linuxtv.org/pinchartl/fbdev.git pinmux-pfc-funcs
-> > 
-> >   As such it includes several patches not included in the series posted in
-> >   via eimal as the series "[PATCH 00/16] SCIF, I2C and FSI pinctrl
-> >   functions for sh73a0". In particular it includes r8a7740 and r8a7779
-> >   patches.
-> > 
-> > * I have added the following two patches to update the KZM9G rerence code.
-> > 
-> >   ARM: shmobile: kzm9g: reference: Register pinctrl mappings for I2C
-> >   ARM: shmobile: kzm9g: reference: Register pinctrl mappings for SCIF
-> > 
-> > As implied by the second point above, this series is based on
-> > a branch that includes the kzm9g reference code. That branch is
-> > 
-> > 	git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git
-> > topic/pinmux-base
-> 
-> When do you plan to push that reference code to mainline ?
+Hi Simon,
 
-As soon as I start pushing stuff for v3.10.
-So I am thinking in terms of before pinmux.
-But the order can be changed if need be.
-
-> > Git and diffstat information is provided below to aid review.
+On Thursday 14 February 2013 01:21:06 Simon Horman wrote:
+> On Wed, Feb 13, 2013 at 05:06:30PM +0100, Laurent Pinchart wrote:
+> > On Wednesday 13 February 2013 11:44:36 Simon Horman wrote:
+> > > Hi,
+> > > 
+> > > this series is a follow-up to "[PATCH 00/16] SCIF, I2C and FSI pinctrl
+> > > functions for sh73a0" by Laurent Pinchart. I am primarily posting it for
+> > > his review.
+> > > 
+> > > This series differs from the series posted by Laurent in the following
+> > > ways:
+> > > 
+> > > * Due to some slightly over-zelous git use on my part the series
+> > >   is actually based on a checkout of
+> > >   git://linuxtv.org/pinchartl/fbdev.git pinmux-pfc-funcs
+> > >   
+> > >   As such it includes several patches not included in the series posted
+> > >   in via eimal as the series "[PATCH 00/16] SCIF, I2C and FSI pinctrl
+> > >   functions for sh73a0". In particular it includes r8a7740 and r8a7779
+> > >   patches.
+> > > 
+> > > * I have added the following two patches to update the KZM9G rerence
+> > > code.
+> > > 
+> > >   ARM: shmobile: kzm9g: reference: Register pinctrl mappings for I2C
+> > >   ARM: shmobile: kzm9g: reference: Register pinctrl mappings for SCIF
+> > > 
+> > > As implied by the second point above, this series is based on
+> > > a branch that includes the kzm9g reference code. That branch is
+> > > 
+> > > 	git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git
+> > > 
+> > > topic/pinmux-base
 > > 
-> > Laurent, if you want to change this series in any way just let me know.
-> > I can drop patches indidually or drop the entire series and add a fresh
-> > one from you to the topic branch.
+> > When do you plan to push that reference code to mainline ?
 > 
-> I will likely provide you with a new branch. Can you handle the two kzm9g-
-> reference patches, or should I include them in my branch ?
+> As soon as I start pushing stuff for v3.10.
+> So I am thinking in terms of before pinmux.
+> But the order can be changed if need be.
 
-I can handle the kzm9g-reference patches if you prefer.
+I'm fine with any order, really. Just keep the patches warm in a corner, and 
+push the kzm9g-reference code whenever you want to. If you're faster than me 
+please drop me an e-mail to tell me where I can get the latest kzm9g-reference 
+pinctrl patches and I'll apply them to my tree.
+
+> > > Git and diffstat information is provided below to aid review.
+> > > 
+> > > Laurent, if you want to change this series in any way just let me know.
+> > > I can drop patches indidually or drop the entire series and add a fresh
+> > > one from you to the topic branch.
+> > 
+> > I will likely provide you with a new branch. Can you handle the two kzm9g-
+> > reference patches, or should I include them in my branch ?
+> 
+> I can handle the kzm9g-reference patches if you prefer.
+
+-- 
+Regards,
+
+Laurent Pinchart
+
