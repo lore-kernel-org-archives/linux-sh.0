@@ -1,56 +1,76 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 15 Feb 2013 15:13:50 +0000
-Subject: [PATCH v4 01/13] mmc: sdhi, tmio: only check flags in tmio-mmc driver proper
-Message-Id: <1360941242-18153-2-git-send-email-g.liakhovetski@gmx.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 13 Feb 2013 13:46:57 +0000
+Subject: [PATCH 03/06] ARM: shmobile: Rework EMEV2 scu_base variable
+Message-Id: <20130213134657.12153.27160.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
+References: <20130213134628.12153.47120.sendpatchset@w520>
+In-Reply-To: <20130213134628.12153.47120.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Arnd Bergmann <arnd@arndb.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-arm-kernel@lists.infradead.org
 
-tmio-mmc platform flags can be set by various means, including caller
-drivers and device-tree bindings, therefore it is better to only check
-them in the tmio-mmc driver proper, not in caller drivers themselves.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Rename the static scu_base variable into shmobile_scu_base.
+
+Later in the series the shmobile_scu_base variable will be
+made into a global variable so this is preparation only.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |    3 +--
- drivers/mmc/host/tmio_mmc_pio.c   |    3 +++
- 2 files changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 524a7f7..e0ca0ab 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -153,10 +153,9 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	mmc_data->clk_enable = sh_mobile_sdhi_clk_enable;
- 	mmc_data->clk_disable = sh_mobile_sdhi_clk_disable;
- 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
-+	mmc_data->write16_hook = sh_mobile_sdhi_write16_hook;
- 	if (p) {
- 		mmc_data->flags = p->tmio_flags;
--		if (mmc_data->flags & TMIO_MMC_HAS_IDLE_WAIT)
--			mmc_data->write16_hook = sh_mobile_sdhi_write16_hook;
- 		mmc_data->ocr_mask = p->tmio_ocr_mask;
- 		mmc_data->capabilities |= p->tmio_caps;
- 		mmc_data->capabilities2 |= p->tmio_caps2;
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 0f992e9..b25adb4 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -928,6 +928,9 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 	int ret;
- 	u32 irq_mask = TMIO_MASK_CMD;
+ arch/arm/mach-shmobile/smp-emev2.c |   15 ++++++++-------
+ 1 file changed, 8 insertions(+), 7 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/smp-emev2.c
++++ work/arch/arm/mach-shmobile/smp-emev2.c	2013-02-13 21:01:25.000000000 +0900
+@@ -32,8 +32,9 @@
  
-+	if (!(pdata->flags & TMIO_MMC_HAS_IDLE_WAIT))
-+		pdata->write16_hook = NULL;
+ #define EMEV2_SCU_BASE 0x1e000000
+ 
++static void __iomem *shmobile_scu_base;
 +
- 	res_ctl = platform_get_resource(pdev, IORESOURCE_MEM, 0);
- 	if (!res_ctl)
- 		return -EINVAL;
--- 
-1.7.2.5
-
+ static DEFINE_SPINLOCK(scu_lock);
+-static void __iomem *scu_base;
+ 
+ static void modify_scu_cpu_psr(unsigned long set, unsigned long clr)
+ {
+@@ -42,10 +43,10 @@ static void modify_scu_cpu_psr(unsigned
+ 	/* we assume this code is running on a different cpu
+ 	 * than the one that is changing coherency setting */
+ 	spin_lock(&scu_lock);
+-	tmp = readl(scu_base + 8);
++	tmp = readl(shmobile_scu_base + 8);
+ 	tmp &= ~clr;
+ 	tmp |= set;
+-	writel(tmp, scu_base + 8);
++	writel(tmp, shmobile_scu_base + 8);
+ 	spin_unlock(&scu_lock);
+ 
+ }
+@@ -70,7 +71,7 @@ static void __init emev2_smp_prepare_cpu
+ {
+ 	int cpu = cpu_logical_map(0);
+ 
+-	scu_enable(scu_base);
++	scu_enable(shmobile_scu_base);
+ 
+ 	/* Tell ROM loader about our vector (in headsmp.S) */
+ 	emev2_set_boot_vector(__pa(shmobile_secondary_vector));
+@@ -83,12 +84,12 @@ static void __init emev2_smp_init_cpus(v
+ {
+ 	unsigned int ncores;
+ 
+-	if (!scu_base) {
+-		scu_base = ioremap(EMEV2_SCU_BASE, PAGE_SIZE);
++	if (!shmobile_scu_base) {
++		shmobile_scu_base = ioremap(EMEV2_SCU_BASE, PAGE_SIZE);
+ 		emev2_clock_init(); /* need ioremapped SMU */
+ 	}
+ 
+-	ncores = scu_base ? scu_get_core_count(scu_base) : 1;
++	ncores = shmobile_scu_base ? scu_get_core_count(shmobile_scu_base) : 1;
+ 
+ 	shmobile_smp_init_cpus(ncores);
+ }
