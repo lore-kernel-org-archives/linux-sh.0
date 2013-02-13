@@ -1,66 +1,46 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 06 Feb 2013 19:46:51 +0000
-Subject: [PATCH v3 04/13] mmc: (cosmetic) remove "extern" from function declarations
-Message-Id: <1360180020-18555-5-git-send-email-g.liakhovetski@gmx.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 13 Feb 2013 14:16:13 +0000
+Subject: [PATCH 00/02] ARM: shmobile: EMEV2 SMP DT reference code (hack alert!)
+Message-Id: <20130213141613.12474.97583.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-sh@vger.kernel.org
 
-The "extern" keyword isn't required in function declarations, remove it.
+ARM: shmobile: EMEV2 SMP DT reference code (hack alert!)
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+[PATCH 01/02] ARM: shmobile: Temporarily use C to setup EMEV2 clocks
+[PATCH 02/02] ARM: shmobile: Temporarily use emev2_map_io() for SMP
+
+This series is a small silly SMP DT reference implementation meant
+to give the sh73a0 DT SMP problem a kick in the butt.
+
+None of the patches in the series should be merged as-is, but they
+can instead be used to boot EMEV2 using DT with SMP support.
+
+I've used the following steps to build an uImage for the KZM9D board:
+
+make -j9 ARCH=arm CROSS_COMPILE=_ uImage
+./scripts/dtc/dtc -I dts -O dtb arch/arm/boot/dts/emev2-kzm9d.dts -o arch/arm/boot/dts/emev2-kzm9d.dtb
+rm arch/arm/boot/zImage arch/arm/boot/uImage
+make -j9 ARCH=arm CROSS_COMPILE=_ zImage
+cat arch/arm/boot/dts/emev2-kzm9d.dtb >> arch/arm/boot/zImage 
+$(cut -f 3- -d ' ' < arch/arm/boot/.uImage.cmd)
+
+The above sequence works well for me and is obviously much better and
+easier than making use of any static mach-type number.
+
+As for build configuration, use the following two on KZM9D DT-only:
+CONFIG_ARCH_EMEV2=y
+CONFIG_MACH_KZM9D=n
+
+The current state of EMEV2 and KZM9D DT is that you can get serial
+ports and the STI timer running with DT-only. The GPIO bits still
+lack DT bindings. This means no ethernet, so initramfs is needed.
+
+Not-even-remotely-signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- include/linux/mmc/host.h |   22 +++++++++++-----------
- 1 files changed, 11 insertions(+), 11 deletions(-)
 
-diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
-index 13c0c8d..356ae0a 100644
---- a/include/linux/mmc/host.h
-+++ b/include/linux/mmc/host.h
-@@ -341,10 +341,10 @@ struct mmc_host {
- 	unsigned long		private[0] ____cacheline_aligned;
- };
- 
--extern struct mmc_host *mmc_alloc_host(int extra, struct device *);
--extern int mmc_add_host(struct mmc_host *);
--extern void mmc_remove_host(struct mmc_host *);
--extern void mmc_free_host(struct mmc_host *);
-+struct mmc_host *mmc_alloc_host(int extra, struct device *);
-+int mmc_add_host(struct mmc_host *);
-+void mmc_remove_host(struct mmc_host *);
-+void mmc_free_host(struct mmc_host *);
- void mmc_of_parse(struct mmc_host *host);
- 
- static inline void *mmc_priv(struct mmc_host *host)
-@@ -358,16 +358,16 @@ static inline void *mmc_priv(struct mmc_host *host)
- #define mmc_classdev(x)	(&(x)->class_dev)
- #define mmc_hostname(x)	(dev_name(&(x)->class_dev))
- 
--extern int mmc_suspend_host(struct mmc_host *);
--extern int mmc_resume_host(struct mmc_host *);
-+int mmc_suspend_host(struct mmc_host *);
-+int mmc_resume_host(struct mmc_host *);
- 
--extern int mmc_power_save_host(struct mmc_host *host);
--extern int mmc_power_restore_host(struct mmc_host *host);
-+int mmc_power_save_host(struct mmc_host *host);
-+int mmc_power_restore_host(struct mmc_host *host);
- 
--extern void mmc_detect_change(struct mmc_host *, unsigned long delay);
--extern void mmc_request_done(struct mmc_host *, struct mmc_request *);
-+void mmc_detect_change(struct mmc_host *, unsigned long delay);
-+void mmc_request_done(struct mmc_host *, struct mmc_request *);
- 
--extern int mmc_cache_ctrl(struct mmc_host *, u8);
-+int mmc_cache_ctrl(struct mmc_host *, u8);
- 
- static inline void mmc_signal_sdio_irq(struct mmc_host *host)
- {
--- 
-1.7.2.5
-
+ arch/arm/mach-shmobile/setup-emev2.c |    3 +++
+ 1 file changed, 3 insertions(+)
