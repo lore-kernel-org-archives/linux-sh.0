@@ -1,50 +1,47 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 25 Jan 2013 02:23:52 +0000
-Subject: [PATCH 16/80] sh-pfc: Remove check for impossible error condition
-Message-Id: <1359080696-31489-17-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 13 Feb 2013 13:46:28 +0000
+Subject: [PATCH 00/06] ARM: shmobile: SMP Cortex-A9 SCU rework
+Message-Id: <20130213134628.12153.47120.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1359080696-31489-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+ARM: shmobile: SMP Cortex-A9 SCU rework
 
-The pfc pointer can't be NULL in the get and set value functions, remove
-the error check.
+[PATCH 01/06] ARM: shmobile: Kill off sh73a0 scu_base_addr() function
+[PATCH 02/06] ARM: shmobile: Kill off r8a7779 scu_base_addr() function
+[PATCH 03/06] ARM: shmobile: Rework EMEV2 scu_base variable
+[PATCH 04/06] ARM: shmobile: Move headsmp-sh73a0.S to headsmp-scu.S
+[PATCH 05/06] ARM: shmobile: Common shmobile_scu_base in headsmp-scu.S
+[PATCH 06/06] ARM: shmobile: Update EMEV2 to use scu_power_mode()
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Paul Mundt <lethal@linux-sh.org>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Rework the EMEV2 SMP code to make use of common scu_power_mode()
+code together with a shared shmobile_scu_base and early SCU
+setup code in headsmp-scu.S.
+
+The patches are known to build for sh73a0, r8a7779 and EMEV2.
+
+Note that the code has only been tested on the KZM9D/EMEV2 board,
+and because of that changes to other boards have been kept at
+a minimum. Next target after this is to update the r8a7779 SMP/SCU
+code to make use of scu_base_addr(), but that requires hardware
+access for testing.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/sh/pfc/gpio.c |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/sh/pfc/gpio.c b/drivers/sh/pfc/gpio.c
-index 37493e5..c11c1bb 100644
---- a/drivers/sh/pfc/gpio.c
-+++ b/drivers/sh/pfc/gpio.c
-@@ -52,7 +52,7 @@ static void sh_gpio_set_value(struct sh_pfc *pfc, unsigned gpio, int value)
- 	struct pinmux_data_reg *dr = NULL;
- 	int bit = 0;
- 
--	if (!pfc || sh_pfc_get_data_reg(pfc, gpio, &dr, &bit) != 0)
-+	if (sh_pfc_get_data_reg(pfc, gpio, &dr, &bit) != 0)
- 		BUG();
- 	else
- 		sh_pfc_write_bit(dr, bit, value);
-@@ -63,7 +63,7 @@ static int sh_gpio_get_value(struct sh_pfc *pfc, unsigned gpio)
- 	struct pinmux_data_reg *dr = NULL;
- 	int bit = 0;
- 
--	if (!pfc || sh_pfc_get_data_reg(pfc, gpio, &dr, &bit) != 0)
-+	if (sh_pfc_get_data_reg(pfc, gpio, &dr, &bit) != 0)
- 		return -EINVAL;
- 
- 	return sh_pfc_read_bit(dr, bit);
--- 
-1.7.10.4
+ No known dependencies apart from previous SMP cleanup series
+ "[PATCH 00/06] ARM: shmobile: Trivial SMP cleanups"
+ Written against -next in renesas.git.
+
+ arch/arm/mach-shmobile/Makefile              |    6 +-
+ arch/arm/mach-shmobile/headsmp-scu.S         |   58 +++++++++++++++++++++++++
+ arch/arm/mach-shmobile/headsmp-sh73a0.S      |   50 ----------------------
+ arch/arm/mach-shmobile/include/mach/common.h |    3 -
+ arch/arm/mach-shmobile/smp-emev2.c           |   59 +++++++-------------------
+ arch/arm/mach-shmobile/smp-r8a7779.c         |   19 +++-----
+ arch/arm/mach-shmobile/smp-sh73a0.c          |   26 +++++------
+ 7 files changed, 98 insertions(+), 123 deletions(-)
 
