@@ -1,150 +1,108 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Tue, 19 Feb 2013 17:30:06 +0000
-Subject: [PATCH 3/3] ARM: mach-shmobile: r8a7740: Setup the serial devices using DT
-Message-Id: <1361298586-30357-4-git-send-email-hechtb+renesas@gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 13 Feb 2013 13:47:27 +0000
+Subject: [PATCH 06/06] ARM: shmobile: Update EMEV2 to use scu_power_mode()
+Message-Id: <20130213134727.12153.64517.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20130213134628.12153.47120.sendpatchset@w520>
+In-Reply-To: <20130213134628.12153.47120.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-We can now use the Device Tree for bringing up our serial devices. We
-need to add an alternative early_devices list in setup-r8a7740 without
-the serial devices and move them into the Armadillo-reference .dts config file.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+Update the SMP code for EMEV2 to make use of the
+shared SCU function scu_power_mode() together with
+the early setup code in shmobile_secondary_vector_scu.
+
+With this patch in place the secondary CPUs modify the
+SCU setting during early boot instead of letting other
+CPUs deal with the coherency setting before boot. In
+other words, we used to setup coherency before boot
+in emev2_boot_secondary() but that bit is now instead
+handled by the code in shmobile_secondary_vector_scu.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- .../boot/dts/r8a7740-armadillo800eva-reference.dts |   76 ++++++++++++++++++++
- arch/arm/mach-shmobile/setup-r8a7740.c             |   15 ++--
- 2 files changed, 87 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index 1e339cd..94fdad3 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -134,6 +134,82 @@
- 		renesas,pins = "eth_base";
- 		renesas,function = "eth";
- 	};
-+
-+	sci@0xe6c40000 {
-+		compatible = "renesas,shmobile-sci-r8a7740";
-+		interrupt-parent = <&intca>;
-+		reg = <0xe6c40000 0x100>;
-+		interrupts = <0x0c00>, <0x0c00>, <0x0c00>, <0x0c00>;
-+		cell-index = <0>;
-+		renesas,serial-type = <3>;
-+	};
-+
-+	sci@0xe6c50000 {
-+		compatible = "renesas,shmobile-sci-r8a7740";
-+		interrupt-parent = <&intca>;
-+		reg = <0xe6c50000 0x100>;
-+		interrupts = <0x0c20>, <0x0c20>, <0x0c20>, <0x0c20>;
-+		cell-index = <1>;
-+		renesas,serial-type = <3>;
-+	};
-+
-+	sci@0xe6c60000 {
-+		compatible = "renesas,shmobile-sci-r8a7740";
-+		interrupt-parent = <&intca>;
-+		reg = <0xe6c60000 0x100>;
-+		interrupts = <0x0c40>, <0x0c40>, <0x0c40>, <0x0c40>;
-+		cell-index = <2>;
-+		renesas,serial-type = <3>;
-+	};
-+
-+	sci@0xe6c70000 {
-+		compatible = "renesas,shmobile-sci-r8a7740";
-+		interrupt-parent = <&intca>;
-+		reg = <0xe6c70000 0x100>;
-+		interrupts = <0x0c60>, <0x0c60>, <0x0c60>, <0x0c60>;
-+		cell-index = <3>;
-+		renesas,serial-type = <3>;
-+	};
-+	sci@0xe6c80000 {
-+		compatible = "renesas,shmobile-sci-r8a7740";
-+		interrupt-parent = <&intca>;
-+		reg = <0xe6c80000 0x100>;
-+		interrupts = <0x0d20>, <0x0d20>, <0x0d20>, <0x0d20>;
-+		cell-index = <4>;
-+		renesas,serial-type = <3>;
-+	};
-+	sci@0xe6cb0000 {
-+		compatible = "renesas,shmobile-sci-r8a7740";
-+		interrupt-parent = <&intca>;
-+		reg = <0xe6cb0000 0x100>;
-+		interrupts = <0x0d40>, <0x0d40>, <0x0d40>, <0x0d40>;
-+		cell-index = <5>;
-+		renesas,serial-type = <3>;
-+	};
-+	sci@0xe6cc0000 {
-+		compatible = "renesas,shmobile-sci-r8a7740";
-+		interrupt-parent = <&intca>;
-+		reg = <0xe6cc0000 0x100>;
-+		interrupts = <0x04c0>, <0x04c0>, <0x04c0>, <0x04c0>;
-+		cell-index = <6>;
-+		renesas,serial-type = <3>;
-+	};
-+	sci@0xe6cd0000 {
-+		compatible = "renesas,shmobile-sci-r8a7740";
-+		interrupt-parent = <&intca>;
-+		reg = <0xe6cd0000 0x100>;
-+		interrupts = <0x04e0>, <0x04e0>, <0x04e0>, <0x04e0>;
-+		cell-index = <7>;
-+		renesas,serial-type = <3>;
-+	};
-+	sci@0xe6c30000 {
-+		compatible = "renesas,shmobile-sci-r8a7740";
-+		interrupt-parent = <&intca>;
-+		reg = <0xe6c30000 0x100>;
-+		interrupts = <0x0d60>, <0x0d60>, <0x0d60>, <0x0d60>;
-+		cell-index = <8>;
-+		renesas,serial-type = <4>;
-+	};
- };
- 
- &gpio {
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 5312aad..5f7597a 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -394,6 +394,13 @@ static struct platform_device *r8a7740_early_devices[] __initdata = {
- 	&tmu02_device,
- };
- 
-+static struct platform_device *r8a7740_early_devices_dt[] __initdata = {
-+	&cmt10_device,
-+	&tmu00_device,
-+	&tmu01_device,
-+	&tmu02_device,
-+};
-+
- /* DMA */
- static const struct sh_dmae_slave_config r8a7740_dmae_slaves[] = {
- 	{
-@@ -839,8 +846,8 @@ void __init r8a7740_add_early_devices_dt(void)
- {
- 	shmobile_setup_delay(800, 1, 3); /* Cortex-A9 @ 800MHz */
- 
--	early_platform_add_devices(r8a7740_early_devices,
--				   ARRAY_SIZE(r8a7740_early_devices));
-+	early_platform_add_devices(r8a7740_early_devices_dt,
-+				   ARRAY_SIZE(r8a7740_early_devices_dt));
- 
- 	/* setup early console here as well */
- 	shmobile_setup_console();
-@@ -852,8 +859,8 @@ static const struct of_dev_auxdata r8a7740_auxdata_lookup[] __initconst = {
- 
- void __init r8a7740_add_standard_devices_dt(void)
- {
--	platform_add_devices(r8a7740_early_devices,
--			    ARRAY_SIZE(r8a7740_early_devices));
-+	platform_add_devices(r8a7740_early_devices_dt,
-+			    ARRAY_SIZE(r8a7740_early_devices_dt));
- 
- 	of_platform_populate(NULL, of_default_bus_match_table,
- 			     r8a7740_auxdata_lookup, NULL);
--- 
-1.7.9.5
+ Tested on the EMEV2/KZM9D board.
 
+ arch/arm/mach-shmobile/smp-emev2.c |   42 ++++++------------------------------
+ 1 file changed, 8 insertions(+), 34 deletions(-)
+
+--- 0010/arch/arm/mach-shmobile/smp-emev2.c
++++ work/arch/arm/mach-shmobile/smp-emev2.c	2013-02-13 21:56:10.000000000 +0900
+@@ -28,27 +28,9 @@
+ #include <mach/emev2.h>
+ #include <asm/smp_plat.h>
+ #include <asm/smp_scu.h>
+-#include <asm/cacheflush.h>
+ 
+ #define EMEV2_SCU_BASE 0x1e000000
+ 
+-static DEFINE_SPINLOCK(scu_lock);
+-
+-static void modify_scu_cpu_psr(unsigned long set, unsigned long clr)
+-{
+-	unsigned long tmp;
+-
+-	/* we assume this code is running on a different cpu
+-	 * than the one that is changing coherency setting */
+-	spin_lock(&scu_lock);
+-	tmp = readl(shmobile_scu_base + 8);
+-	tmp &= ~clr;
+-	tmp |= set;
+-	writel(tmp, shmobile_scu_base + 8);
+-	spin_unlock(&scu_lock);
+-
+-}
+-
+ static void __cpuinit emev2_secondary_init(unsigned int cpu)
+ {
+ 	gic_secondary_init(0);
+@@ -56,36 +38,28 @@ static void __cpuinit emev2_secondary_in
+ 
+ static int __cpuinit emev2_boot_secondary(unsigned int cpu, struct task_struct *idle)
+ {
+-	cpu = cpu_logical_map(cpu);
+-
+-	/* enable cache coherency */
+-	modify_scu_cpu_psr(0, 3 << (cpu * 8));
+-
+-	arch_send_wakeup_ipi_mask(cpumask_of(cpu));
++	arch_send_wakeup_ipi_mask(cpumask_of(cpu_logical_map(cpu)));
+ 	return 0;
+ }
+ 
+ static void __init emev2_smp_prepare_cpus(unsigned int max_cpus)
+ {
+-	int cpu = cpu_logical_map(0);
+-
+ 	scu_enable(shmobile_scu_base);
+ 
+-	/* Tell ROM loader about our vector (in headsmp.S) */
+-	emev2_set_boot_vector(__pa(shmobile_secondary_vector));
++	/* Tell ROM loader about our vector (in headsmp-scu.S) */
++	emev2_set_boot_vector(__pa(shmobile_secondary_vector_scu));
+ 
+-	/* enable cache coherency on CPU0 */
+-	modify_scu_cpu_psr(0, 3 << (cpu * 8));
++	/* enable cache coherency on booting CPU */
++	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
+ }
+ 
+ static void __init emev2_smp_init_cpus(void)
+ {
+ 	unsigned int ncores;
+ 
+-	if (!shmobile_scu_base) {
+-		shmobile_scu_base = ioremap(EMEV2_SCU_BASE, PAGE_SIZE);
+-		emev2_clock_init(); /* need ioremapped SMU */
+-	}
++	/* setup EMEV2 specific SCU base */
++	shmobile_scu_base = ioremap(EMEV2_SCU_BASE, PAGE_SIZE);
++	emev2_clock_init(); /* need ioremapped SMU */
+ 
+ 	ncores = shmobile_scu_base ? scu_get_core_count(shmobile_scu_base) : 1;
+ 
