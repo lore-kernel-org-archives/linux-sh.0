@@ -1,68 +1,50 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 06 Feb 2013 19:46:55 +0000
-Subject: [PATCH v3 08/13] mmc: sh_mobile_sdhi: remove unused .pdata field
-Message-Id: <1360180020-18555-9-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 13 Feb 2013 03:29:19 +0000
+Subject: [PATCH 7/9] ARM: shmobile: kzm9g: Add LED1-LED4 to the device tree
+Message-Id: <1360726161-16072-8-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1360726161-16072-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1360726161-16072-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-arm-kernel@lists.infradead.org
 
-The struct sh_mobile_sdhi_info::pdata field was only used for platform-
-based card detection and isn't used anymore since the migration to GPIO-
-based MMC slot functions. Remove it.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+LED1 to LED4 are GPIO LEDs. Add corresponding DT nodes.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c  |    4 ----
- include/linux/mmc/sh_mobile_sdhi.h |    2 --
- 2 files changed, 0 insertions(+), 6 deletions(-)
+ arch/arm/boot/dts/sh73a0-kzm9g.dts |   16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index e0ca0ab..17d5778 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -135,7 +135,6 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	mmc_data = &priv->mmc_data;
- 
- 	if (p) {
--		p->pdata = mmc_data;
- 		if (p->init) {
- 			ret = p->init(pdev, &sdhi_ops);
- 			if (ret)
-@@ -284,9 +283,6 @@ static int sh_mobile_sdhi_remove(struct platform_device *pdev)
- 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
- 	int i = 0, irq;
- 
--	if (p)
--		p->pdata = NULL;
--
- 	tmio_mmc_host_remove(host);
- 
- 	while (1) {
-diff --git a/include/linux/mmc/sh_mobile_sdhi.h b/include/linux/mmc/sh_mobile_sdhi.h
-index b65679f..b76bcf0 100644
---- a/include/linux/mmc/sh_mobile_sdhi.h
-+++ b/include/linux/mmc/sh_mobile_sdhi.h
-@@ -4,7 +4,6 @@
- #include <linux/types.h>
- 
- struct platform_device;
--struct tmio_mmc_data;
- 
- #define SH_MOBILE_SDHI_IRQ_CARD_DETECT	"card_detect"
- #define SH_MOBILE_SDHI_IRQ_SDCARD	"sdcard"
-@@ -26,7 +25,6 @@ struct sh_mobile_sdhi_info {
- 	unsigned long tmio_caps2;
- 	u32 tmio_ocr_mask;	/* available MMC voltages */
- 	unsigned int cd_gpio;
--	struct tmio_mmc_data *pdata;
- 	void (*set_pwr)(struct platform_device *pdev, int state);
- 	int (*get_cd)(struct platform_device *pdev);
- 
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+index 7b37901..203efb8 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
+@@ -19,4 +19,20 @@
+ 		device_type = "memory";
+ 		reg = <0x41000000 0x1e800000>;
+ 	};
++
++	leds {
++		compatible = "gpio-leds";
++		led1 {
++			gpios = <&gpio 20 1>; /* Active low */
++		};
++		led2 {
++			gpios = <&gpio 21 1>; /* Active low */
++		};
++		led3 {
++			gpios = <&gpio 22 1>; /* Active low */
++		};
++		led4 {
++			gpios = <&gpio 23 1>; /* Active low */
++		};
++	};
+ };
 -- 
-1.7.2.5
+1.7.10.4
 
