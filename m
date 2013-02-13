@@ -1,32 +1,49 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 08 Feb 2013 13:23:38 +0000
-Subject: Re: [PATCH 0/3] MMCIF and SDHI for kzm9g- and armadillo800eva-reference
-Message-Id: <CANqRtoSeB7Z8OGk0TuR-D8MkciXeWyRNGyjYxCpD4gQnBHLSwg@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 13 Feb 2013 02:44:41 +0000
+Subject: [PATCH 05/21] ARM: shmobile: kzm9g: Register pinctrl mappings for I2C
+Message-Id: <1360723497-23266-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1302080017430.30556@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1302080017430.30556@axis700.grange>
+References: <1360723497-23266-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1360723497-23266-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hello Guennadi,
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Thanks a lot for your effort!
+Replace the GPIO-based I2C pinmux configuration by pinctrl mappings.
 
-On Fri, Feb 8, 2013 at 8:31 AM, Guennadi Liakhovetski
-<g.liakhovetski@gmx.de> wrote:
-> These patches add SDHI and MMCIF interfaces to device trees for kzm9g- and
-> armadillo800eva-reference boards. Without pinctrl in DT support interface
-> pins, card-detect and regulator GPIOs cannot be used. These can be added,
-> once pinctrl is available.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-kzm9g.c |    6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
-Looking good! This patch set very nice because it shows what is
-possible with the current kernel. Without that people would have to
-figure out the current state by themselves. From now on, please make
-sure the board code is kept in sync with whatever bindings and
-frameworks like PINCTRL that become available over time.
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index dd5b3b7..dc5a066 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -601,6 +601,8 @@ static struct platform_device *kzm_devices[] __initdata = {
+ };
+ 
+ static const struct pinctrl_map kzm_pinctrl_map[] = {
++	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.3", "pfc-sh73a0",
++				  "i2c3_1", "i2c3"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
+ 				  "scifa4_data", "scifa4"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
+@@ -722,10 +724,6 @@ static void __init kzm_init(void)
+ 	gpio_request(GPIO_FN_SDHICLK2,		NULL);
+ 	gpio_request_one(GPIO_PORT14, GPIOF_OUT_INIT_HIGH, NULL); /* power */
+ 
+-	/* I2C 3 */
+-	gpio_request(GPIO_FN_PORT27_I2C_SCL3, NULL);
+-	gpio_request(GPIO_FN_PORT28_I2C_SDA3, NULL);
+-
+ 	/* enable FSI2 port A (ak4648) */
+ 	gpio_request(GPIO_FN_FSIACK,	NULL);
+ 	gpio_request(GPIO_FN_FSIAILR,	NULL);
+-- 
+1.7.10.4
 
-Cheers,
-
-/ magnus
