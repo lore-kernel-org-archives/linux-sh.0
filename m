@@ -1,124 +1,186 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 14 Feb 2013 15:26:31 +0000
-Subject: Re: [PATCH/RFC 1/3] pinctrl: sh-pfc: support sparse GPIO numbers
-Message-Id: <2064302.vCClWBLpkQ@avalon>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 13 Feb 2013 10:34:03 +0000
+Subject: [PATCH v2 2/3] ARM: shmobile: switch SDHI0 to GPIO regulator on armadillo800eva
+Message-Id: <Pine.LNX.4.64.1302131120360.18535@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360684204-12888-2-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1360684204-12888-2-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thursday 14 February 2013 15:23:04 Laurent Pinchart wrote:
-> On Thursday 14 February 2013 21:38:11 Paul Mundt wrote:
-> > On Thu, Feb 14, 2013 at 01:09:09PM +0100, Laurent Pinchart wrote:
-> > > On Thursday 14 February 2013 20:55:16 Paul Mundt wrote:
-> > > > On Tue, Feb 12, 2013 at 04:50:02PM +0100, Guennadi Liakhovetski wrote:
-> > > > > Not on all sh-/r-mobile platfotms all pins are numbered contiguously
-> > > > > from 0 to N-1. On all ARM-based platforms datasheets use simple
-> > > > > numbers to identify them, unlike some SuperH-based SoC, naming pins,
-> > > > > using strings, e.g. A31:A0, B11:B0, C31:C0, etc. So far the sg-pfc
-> > > > > pinctrl driver supported only contiguous pin numbering. This patch
-> > > > > adds support for sparse pin numbers to support sh73a0 and any other
-> > > > > similar SoCs.
-> > > > > 
-> > > > > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > > > 
-> > > > The sh-pfc pinctrl driver is not the place where this sort of lookup
-> > > > should be happening, especially as the pinctrl subsystem already
-> > > > tracks GPIO ranges for us. Is there some reason you can't just expand
-> > > > the platform definition and tie in to pinctrl_add_gpio_ranges() for
-> > > > supporting multiple ranges instead?
-> > > 
-> > > Using pinctrl_add_gpio_ranges() was also my initial idea. While I think
-> > > it's still useful, there's one issue it doesn't fix: GPIO numbering in
-> > > DT and sysfs. On the sh73a0 platform the GPIO_PORT* enumerated values
-> > > don't match the port number. While that's not a major issue in board
-> > > code that uses the enum names, this would become very confusing in DT
-> > > and sysfs. GPIO 128, for instance, would be referenced by the number 119
-> > > in DT.
-> > 
-> > If that's the case, then why are you using integers in DT instead of
-> > something like a string that you can map back?
-> 
-> Don't ask me :-) The standard DT GPIO binding has been using integers for a
-> long time, the API is pretty much set in stone.
-> 
-> > Granted I haven't seen the bindings documentation or proposal, so I have
-> > no idea what the interface looks like, but I'm not convinced that it's
-> > worthwhile adding an additional translation layer simply because the DT
-> > interface can't do 1:1 mappings for whatever reason (although if necessary
-> > I suppose this translation layer could always be implemented purely in
-> > the OF side of the sh-pfc support, handing off sane ranges to the core at
-> > registration time).
-> 
-> It wouldn't help for the sysfs interface though.
-> 
-> I've been thinking about the problem for some time now and I really don't
-> know what the best solution to this problem is. Using the port number as
-> specified in the datasheet is the less confusing option API-wise, but it
-> brings an additional level of complexity.
-> 
-> gpiolib doesn't handle ranges, so I would need to either register a gpiochip
-> for every range, or return an error in the request function. I don't know
-> what option is prefered.
-> 
-> On the pinctrl side the situation is a bit easier, as pinctrl explicitly
-> supports GPIO ranges.
-> 
-> What are the best practice rules for this kind of situation, when a GPIO
-> controller handles discontiguous ranges of pins and GPIOs ?
+When regulators are used with MMC devices, explicitly provided OCR masks
+are ignored, they can be removed from platform data. Also switch SDHI0
+from fixed regulator with hard-wired GPIO levels to a proper GPIO regulator
+instance to enable dynamic voltage switching.
 
-For the sake of clarity, by discontiguous ranges of pins and GPIOs, I mean a 
-single device (in the hardware IP block, struct device and DT node sense) that 
-implements both pinctrl and GPIO functions. The device handles a large number 
-of pins and GPIOs (called ports in the datasheet) with discontiguous numbers. 
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
 
-In this particular case the device has 269 controllable pins that can all act 
-as GPIOs. There are numbered 0-118, 128-164, 192-282 and 288-309.
+v2: fix wrong curly bracket placement and an overly-long line, thanks to 
+Morimoto-san for reporting
 
-I can't expose one gpiochip instance for each of those ranges as they would 
-all share the same DT node, making of_get_named_gpio_flags() always return the 
-first instance. I thus see 3 possible options:
+ arch/arm/mach-shmobile/board-armadillo800eva.c |  100 ++++++++++++++++++++----
+ 1 files changed, 86 insertions(+), 14 deletions(-)
 
-- Number the GPIOs contiguously from 0 to 268. This will be pretty confusing 
-in DT and in sysfs, as port 128 would be mapped to GPIO number 119 for 
-instance.
-
-- Register a single gpiochip for GPIOs 0-309 and return an error from the 
-request() operation when requesting a non-existing GPIO.
-
-- Add ranges support to the gpiolib API to allow a single gpiochip to allow 
-sparse numbering in the whole range handled by a gpiochip.
-
-> > > I think we should fix that and use the port number in the GPIO API. This
-> > > requires translating from the port number to the GPIO entry index in
-> > > internal pinmux_pins[] array. There are several way to do so, one is to
-> > > index the array by the port number (and thus making it sparse, using
-> > > more
-> > > memory), the other is to add a list of ranges (either explicitly as in
-> > > Guennadi's patch, or implicitly by adding the port number to each entry
-> > > in the pinmux_pins[] array and computing the list of ranges at init
-> > > time). I haven't decided yet which solution I like the best, I'm
-> > > experimenting with both.
-> > 
-> > If this is the way things need to go, then doing it sparsely makes sense,
-> > but not in the proposed form, and there's no real need for it to use
-> > excessive amounts of memory. We already went through all of this once in
-> > the irq_desc[] to sparseirq conversion, and there's no reason why the
-> > same approach wouldn't be able to carry over for this, either.
-> > 
-> > At the very simplest you can simply allocate an array of pointers and
-> > lazily map those back to the pin mappings, so you only waste a pointer
-> > rather than a pinmux_pin struct. Alternately you can insert in to a radix
-> > tree, which would permit you to stash the mapping directly, as well as
-> > any additional translation logic in the node's slot (you could also
-> > handle mixing and matching DT vs non-DT GPIOs by tagging the entry), and
-> > eliminate the sparse array overhead entirely.
-
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 0b931d7..7572aee 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -29,7 +29,9 @@
+ #include <linux/platform_device.h>
+ #include <linux/gpio.h>
+ #include <linux/gpio_keys.h>
++#include <linux/regulator/driver.h>
+ #include <linux/regulator/fixed.h>
++#include <linux/regulator/gpio-regulator.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/sh_eth.h>
+ #include <linux/videodev2.h>
+@@ -555,17 +557,94 @@ static struct platform_device gpio_keys_device = {
+ 	},
+ };
+ 
+-/* Fixed 3.3V regulator to be used by SDHI0, SDHI1, MMCIF */
+-static struct regulator_consumer_supply fixed3v3_power_consumers[] -{
+-	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
+-	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
++/* Fixed 3.3V regulator to be used by SDHI1, MMCIF */
++static struct regulator_consumer_supply fixed3v3_power_consumers[] = {
+ 	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
+ 	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.1"),
+ 	REGULATOR_SUPPLY("vmmc", "sh_mmcif"),
+ 	REGULATOR_SUPPLY("vqmmc", "sh_mmcif"),
+ };
+ 
++/* Fixed 3.3V regulator to be used by SDHI0 */
++static struct regulator_consumer_supply vcc_sdhi0_consumers[] = {
++	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
++};
++
++static struct regulator_init_data vcc_sdhi0_init_data = {
++	.constraints = {
++		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
++	},
++	.num_consumer_supplies  = ARRAY_SIZE(vcc_sdhi0_consumers),
++	.consumer_supplies      = vcc_sdhi0_consumers,
++};
++
++static struct fixed_voltage_config vcc_sdhi0_info = {
++	.supply_name = "SDHI0 Vcc",
++	.microvolts = 3300000,
++	.gpio = GPIO_PORT75,
++	.enable_high = 1,
++	.init_data = &vcc_sdhi0_init_data,
++};
++
++static struct platform_device vcc_sdhi0 = {
++	.name = "reg-fixed-voltage",
++	.id   = 1,
++	.dev  = {
++		.platform_data = &vcc_sdhi0_info,
++	},
++};
++
++/* 1.8 / 3.3V SDHI0 VccQ regulator */
++static struct regulator_consumer_supply vccq_sdhi0_consumers[] = {
++	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
++};
++
++static struct regulator_init_data vccq_sdhi0_init_data = {
++	.constraints = {
++		.input_uV	= 3300000,
++		.min_uV		= 1800000,
++		.max_uV         = 3300000,
++		.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
++				  REGULATOR_CHANGE_STATUS,
++	},
++	.num_consumer_supplies  = ARRAY_SIZE(vccq_sdhi0_consumers),
++	.consumer_supplies      = vccq_sdhi0_consumers,
++};
++
++static struct gpio vccq_sdhi0_gpios[] = {
++	{GPIO_PORT17, GPIOF_OUT_INIT_LOW, "vccq-sdhi0" },
++};
++
++static struct gpio_regulator_state vccq_sdhi0_states[] = {
++	{ .value = 3300000, .gpios = (0 << 0) },
++	{ .value = 1800000, .gpios = (1 << 0) },
++};
++
++static struct gpio_regulator_config vccq_sdhi0_info = {
++	.supply_name = "vqmmc",
++
++	.enable_gpio = GPIO_PORT74,
++	.enable_high = 1,
++	.enabled_at_boot = 0,
++
++	.gpios = vccq_sdhi0_gpios,
++	.nr_gpios = ARRAY_SIZE(vccq_sdhi0_gpios),
++
++	.states = vccq_sdhi0_states,
++	.nr_states = ARRAY_SIZE(vccq_sdhi0_states),
++
++	.type = REGULATOR_VOLTAGE,
++	.init_data = &vccq_sdhi0_init_data,
++};
++
++static struct platform_device vccq_sdhi0 = {
++	.name = "gpio-regulator",
++	.id   = -1,
++	.dev  = {
++		.platform_data = &vccq_sdhi0_info,
++	},
++};
++
+ /* SDHI0 */
+ /*
+  * FIXME
+@@ -580,7 +659,6 @@ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
+-	.tmio_ocr_mask	= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_USE_GPIO_CD,
+ 	.cd_gpio	= GPIO_PORT167,
+ };
+@@ -622,7 +700,6 @@ static struct sh_mobile_sdhi_info sdhi1_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
+-	.tmio_ocr_mask	= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_USE_GPIO_CD,
+ 	/* Port72 cannot generate IRQs, will be used in polling mode. */
+ 	.cd_gpio	= GPIO_PORT72,
+@@ -662,7 +739,6 @@ static struct platform_device sdhi1_device = {
+ /* MMCIF */
+ static struct sh_mmcif_plat_data sh_mmcif_plat = {
+ 	.sup_pclk	= 0,
+-	.ocr		= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
+ 	.caps		= MMC_CAP_4_BIT_DATA |
+ 			  MMC_CAP_8_BIT_DATA |
+ 			  MMC_CAP_NONREMOVABLE,
+@@ -915,6 +991,8 @@ static struct platform_device *eva_devices[] __initdata = {
+ 	&fsi_wm8978_device,
+ 	&fsi_hdmi_device,
+ 	&i2c_gpio_device,
++	&vcc_sdhi0,
++	&vccq_sdhi0,
+ };
+ 
+ static void __init eva_clock_init(void)
+@@ -1035,12 +1113,6 @@ static void __init eva_init(void)
+ 	gpio_request(GPIO_FN_SDHI0_D3, NULL);
+ 	gpio_request(GPIO_FN_SDHI0_WP, NULL);
+ 
+-	gpio_request_one(GPIO_PORT17, GPIOF_OUT_INIT_LOW, NULL);  /* SDHI0_18/33_B */
+-	gpio_request_one(GPIO_PORT74, GPIOF_OUT_INIT_HIGH, NULL); /* SDHI0_PON */
+-	gpio_request_one(GPIO_PORT75, GPIOF_OUT_INIT_HIGH, NULL); /* SDSLOT1_PON */
+-
+-	/* we can use GPIO_FN_IRQ31_PORT167 here for SDHI0 CD irq */
+-
+ 	/*
+ 	 * MMCIF
+ 	 *
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.2.5
 
