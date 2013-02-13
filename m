@@ -1,68 +1,101 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Thu, 14 Feb 2013 15:51:07 +0000
-Subject: Re: [PATCH v3 06/13] mmc: tmio-mmc: define device-tree bindings
-Message-Id: <201302141551.08045.arnd@arndb.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 13 Feb 2013 02:44:38 +0000
+Subject: [PATCH 02/21] ARM: shmobile: kota2: Register pinctrl mappings for SCIF
+Message-Id: <1360723497-23266-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de> <CANqRtoQCRahB1BUKFr+o+5gKysgw3FC_MC2AUvtODSz76XmGkA@mail.gmail.com> <Pine.LNX.4.64.1302141017280.29693@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1302141017280.29693@axis700.grange>
+References: <1360723497-23266-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1360723497-23266-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, linux-mmc@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, SH-Linux <linux-sh@vger.kernel.org>, Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+To: linux-arm-kernel@lists.infradead.org
 
-On Thursday 14 February 2013, Guennadi Liakhovetski wrote:
-> On Thu, 14 Feb 2013, Magnus Damm wrote:
-> > On Thu, Feb 14, 2013 at 5:28 PM, Guennadi Liakhovetski
-> > > My take on this is the following: having N optionally available on
-> > > different IP-versions features, I'd rather have N DT properties, than up
-> > > to 2^N abstract vX versions. Yes, I realise, that in practice we'll never
-> > > have 2^N, rather just a bit more than N, still, my main problem with those
-> > > versions, is that they are purely abstracted. I'd be happy if that was a
-> > > real hardware revision string, that you could look up in a datasheet. But
-> > > if you have to look in some text file... That just seems much less
-> > > user-friendly to me, than selecting single properties. Just imagine, what
-> > > would you prefer, either specifying
-> > >
-> > >         feature-A;
-> > >         feature-B;
-> > >
-> > > in your .dts or going through a list of
-> > >
-> > > v1: has no features
-> > > v2: feature A only
-> > > v3: feature B only
-> > > v4: features A and B
-> > > ...
-> > 
-> > In this particular case based on the information above:
-> > 
-> > toshiba,mmc-blksz-2bytes
-> > toshiba,mmc-has-idle-wait
-> > 
-> > or my guess:
-> > 
-> > renesas,shmobile-sdhi-v1: TMIO_MMC_BLKSZ_2BYTES
-> > renesas,shmobile-sdhi-v2: TMIO_MMC_BLKSZ_2BYTES + TMIO_MMC_HAS_IDLE_WAIT
-> 
-> toshiba,mmc-blksz-2bytes we don't need - it's set for all SDHI devices. 
-> So, _so far_ we only have one feature, that we have to specify in DT 
-> either via a property or a compatible version string.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Right. I would still prefer the different "compatible" property, but it's not
-an extremely important thing here. Regarding the naming of the "compatible"
-string, I would not use v1 and v2 postfixes though, unless that is what they
-are called in the data sheet. Ideally we would know the exact version
-of the IP block that went into the chip and drop the "shmobile-" part.
+Replace the GPIO-based SCIF pinmux configuration by pinctrl mappings.
 
-That would make it something like "toshiba,sdhi-1.23.45". If you cannot
-easily find out those versions, the next best solution would be naming it
-after the chip that first used a particular version of that IP block,
-like "renesas,shmobile1234-sdhi". The device tree include file for
-shmobile5678 should then list the sdhi part as being compatible with
-the "reneasas,shmobile1234-sdhi" if they are the same, or as
-a separate "reneasas,shmobile5678-sdhi" if they behave in a different
-way. In either case, I would also list the "toshiba,sdhi" name as
-the more generic option in the "compatible" list, but that is optional.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-kota2.c |   42 +++++++++++++++++++---------------
+ 1 file changed, 23 insertions(+), 19 deletions(-)
 
-	Arnd
+diff --git a/arch/arm/mach-shmobile/board-kota2.c b/arch/arm/mach-shmobile/board-kota2.c
+index 2ccc860..69dd9e6 100644
+--- a/arch/arm/mach-shmobile/board-kota2.c
++++ b/arch/arm/mach-shmobile/board-kota2.c
+@@ -24,6 +24,7 @@
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+ #include <linux/irq.h>
++#include <linux/pinctrl/machine.h>
+ #include <linux/platform_device.h>
+ #include <linux/delay.h>
+ #include <linux/io.h>
+@@ -433,6 +434,26 @@ static struct platform_device *kota2_devices[] __initdata = {
+ 	&sdhi1_device,
+ };
+ 
++static const struct pinctrl_map kota2_pinctrl_map[] = {
++	/* SCIFA2 (UART2) */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-sh73a0",
++				  "scifa2_data_0", "scifa2"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-sh73a0",
++				  "scifa2_ctrl_0", "scifa2"),
++	/* SCIFA4 (UART1) */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
++				  "scifa4_data", "scifa4"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
++				  "scifa4_ctrl", "scifa4"),
++	/* SCIFB (BT) */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.8", "pfc-sh73a0",
++				  "scifb_data_0", "scifb"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.8", "pfc-sh73a0",
++				  "scifb_clk_0", "scifb"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.8", "pfc-sh73a0",
++				  "scifb_ctrl_0", "scifb"),
++};
++
+ static void __init kota2_init(void)
+ {
+ 	regulator_register_always_on(0, "fixed-1.8V", fixed1v8_power_consumers,
+@@ -441,20 +462,10 @@ static void __init kota2_init(void)
+ 				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
+ 	regulator_register_fixed(2, dummy_supplies, ARRAY_SIZE(dummy_supplies));
+ 
++	pinctrl_register_mappings(kota2_pinctrl_map,
++				  ARRAY_SIZE(kota2_pinctrl_map));
+ 	sh73a0_pinmux_init();
+ 
+-	/* SCIFA2 (UART2) */
+-	gpio_request(GPIO_FN_SCIFA2_TXD1, NULL);
+-	gpio_request(GPIO_FN_SCIFA2_RXD1, NULL);
+-	gpio_request(GPIO_FN_SCIFA2_RTS1_, NULL);
+-	gpio_request(GPIO_FN_SCIFA2_CTS1_, NULL);
+-
+-	/* SCIFA4 (UART1) */
+-	gpio_request(GPIO_FN_SCIFA4_TXD, NULL);
+-	gpio_request(GPIO_FN_SCIFA4_RXD, NULL);
+-	gpio_request(GPIO_FN_SCIFA4_RTS_, NULL);
+-	gpio_request(GPIO_FN_SCIFA4_CTS_, NULL);
+-
+ 	/* SMSC911X */
+ 	gpio_request(GPIO_FN_D0_NAF0, NULL);
+ 	gpio_request(GPIO_FN_D1_NAF1, NULL);
+@@ -518,13 +529,6 @@ static void __init kota2_init(void)
+ 	gpio_request(GPIO_FN_SDHID0_1_PU, NULL);
+ 	gpio_request(GPIO_FN_SDHID0_0_PU, NULL);
+ 
+-	/* SCIFB (BT) */
+-	gpio_request(GPIO_FN_PORT159_SCIFB_SCK, NULL);
+-	gpio_request(GPIO_FN_PORT160_SCIFB_TXD, NULL);
+-	gpio_request(GPIO_FN_PORT161_SCIFB_CTS_, NULL);
+-	gpio_request(GPIO_FN_PORT162_SCIFB_RXD, NULL);
+-	gpio_request(GPIO_FN_PORT163_SCIFB_RTS_, NULL);
+-
+ 	/* SDHI1 (BCM4330) */
+ 	gpio_request(GPIO_FN_SDHICLK1, NULL);
+ 	gpio_request(GPIO_FN_SDHICMD1_PU, NULL);
+-- 
+1.7.10.4
+
