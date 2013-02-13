@@ -1,38 +1,38 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 14 Feb 2013 15:58:46 +0000
-Subject: Re: [PATCH/RFC 2/3] pinctrl: sh-pfc: add pin groups for all SD/MMC interfaces on sh73a0
-Message-Id: <20130214155846.GB26810@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 13 Feb 2013 02:44:56 +0000
+Subject: [PATCH 20/21] ARM: shmobile: r8a7779: Remove DU1_DOTCLKOUT1 GPIO
+Message-Id: <1360723497-23266-21-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360684204-12888-3-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1360684204-12888-3-git-send-email-g.liakhovetski@gmx.de>
+References: <1360723497-23266-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1360723497-23266-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Feb 14, 2013 at 12:11:18PM +0100, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> On Thursday 14 February 2013 09:39:28 Simon Horman wrote:
-> > On Wed, Feb 13, 2013 at 07:07:20PM +0100, Laurent Pinchart wrote:
-> > > Hi Guennadi,
-> > > 
-> > > Thanks for the patch.
-> > > 
-> > > On Tuesday 12 February 2013 16:50:03 Guennadi Liakhovetski wrote:
-> > > > Add pin group definitions for SDHI0, SDHI1, SDHI2 and MMCIF interfaces
-> > > > on sh73a0.
-> > > > 
-> > > > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > > 
-> > > As this patch doesn't strictly depend on 1/3 I've taken it in my tree. I
-> > > will push it along with a sparse GPIO numbering fix (I'm currently
-> > > reviewing 1/3).
-> >
-> > Thanks. To clarify that will go via Linus's tree?
-> 
-> Once again this patch series will touch both arch/arm/mach-shmobile and 
-> drivers/pinctrl/sh-pfc. There will likely be less chances of conflicts if it 
-> goes through your tree.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Understood.
+The function is not documented in the r8a7779 datasheet. Remove it.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+index 8ab0cd6..badba57 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -308,7 +308,7 @@ enum {
+ 	GPIO_FN_SD2_CD, GPIO_FN_MT0_VCXO, GPIO_FN_SPA_TMS, GPIO_FN_HSPI_TX1_D,
+ 	GPIO_FN_VI1_DATA7_VI1_B7, GPIO_FN_SD2_WP, GPIO_FN_MT0_PWM,
+ 	GPIO_FN_SPA_TDI, GPIO_FN_HSPI_RX1_D, GPIO_FN_VI1_G0, GPIO_FN_VI3_DATA0,
+-	GPIO_FN_DU1_DOTCLKOUT1, GPIO_FN_TS_SCK1, GPIO_FN_DREQ2_B, GPIO_FN_TX2,
++	GPIO_FN_TS_SCK1, GPIO_FN_DREQ2_B, GPIO_FN_TX2,
+ 	GPIO_FN_SPA_TDO, GPIO_FN_HCTS0_B, GPIO_FN_VI1_G1, GPIO_FN_VI3_DATA1,
+ 	GPIO_FN_SSI_SCK1, GPIO_FN_TS_SDEN1, GPIO_FN_DACK2_B, GPIO_FN_RX2,
+ 	GPIO_FN_HRTS0_B,
+-- 
+1.7.10.4
+
