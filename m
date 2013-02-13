@@ -1,73 +1,179 @@
-From: phil.edworthy@renesas.com
-Date: Thu, 21 Feb 2013 15:52:28 +0000
-Subject: Re: [PATCH] mc: sh-mmcif: handle MMC_WRITE_MULTIPLE_BLOCK completion IRQ again
-Message-Id: <OF4941B37B.055A51A7-ON80257B19.005706E5-80257B19.00573382@eu.necel.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 13 Feb 2013 02:44:51 +0000
+Subject: [PATCH 15/21] ARM: shmobile: sh73a0: Remove LCDC and LCDC2 function GPIOs
+Message-Id: <1360723497-23266-16-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1361460678-9429-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1361460678-9429-1-git-send-email-phil.edworthy@renesas.com>
+References: <1360723497-23266-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1360723497-23266-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Simon <horms@verge.net.au>, linux-sh@vger.kernel.org, Magnus <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-I've been told that this should be fixed in next, so please ignore this 
-patch.
+Those GPIOs have been deprecated by the pinctrl API. They are unused and
+unneeded, remove them.
 
-Thanks
-Phil
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/include/mach/sh73a0.h |  112 +++++++++++---------------
+ 1 file changed, 49 insertions(+), 63 deletions(-)
 
-> Subject: [PATCH] mc: sh-mmcif: handle MMC_WRITE_MULTIPLE_BLOCK 
-> completion IRQ again
-> 
-> Upon completion of a MMC_WRITE_MULTIPLE_BLOCK command MMCIF issues an 
-IRQ
-> with the BUFREN or BUFWEN bits set and often with one or several of 
-CMD12
-> bits set.
-> 
-> If those interrupts are not acknowledged, an additional interrupt can be
-> produced and will be delivered later, possibly when the transaction has
-> already been completed. To prevent this from happening, CMD12 completion
-> interrupt sources have to be cleared too upon reception of a BUFREN or
-> BUFWEN IRQ.
-> 
-> This is similar to commit 7a7eb328; this change adds the same handling 
-for
-> BUFREN and BUFWEN interrupts.
-> 
-> Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-> ---
-> Tested on Renesas Hurricane board with r8a7779 device, eMMC with DMA.
-> 
->  drivers/mmc/host/sh_mmcif.c |    8 ++++++--
->  1 files changed, 6 insertions(+), 2 deletions(-)
-> 
-> diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-> index 9a4c151..59fa44e 100644
-> --- a/drivers/mmc/host/sh_mmcif.c
-> +++ b/drivers/mmc/host/sh_mmcif.c
-> @@ -1199,10 +1199,14 @@ static irqreturn_t sh_mmcif_intr(int irq, 
-> void *dev_id)
->        sh_mmcif_writel(host->addr, MMCIF_CE_INT, ~INT_CRSPE);
->        sh_mmcif_bitclr(host, MMCIF_CE_INT_MASK, MASK_MCRSPE);
->     } else if (state & INT_BUFREN) {
-> -      sh_mmcif_writel(host->addr, MMCIF_CE_INT, ~INT_BUFREN);
-> +      sh_mmcif_writel(host->addr, MMCIF_CE_INT,
-> +         ~(INT_CMD12DRE | INT_CMD12RBE |
-> +           INT_CMD12CRE | INT_BUFREN));
->        sh_mmcif_bitclr(host, MMCIF_CE_INT_MASK, MASK_MBUFREN);
->     } else if (state & INT_BUFWEN) {
-> -      sh_mmcif_writel(host->addr, MMCIF_CE_INT, ~INT_BUFWEN);
-> +      sh_mmcif_writel(host->addr, MMCIF_CE_INT,
-> +         ~(INT_CMD12DRE | INT_CMD12RBE |
-> +           INT_CMD12CRE | INT_BUFWEN));
->        sh_mmcif_bitclr(host, MMCIF_CE_INT_MASK, MASK_MBUFWEN);
->     } else if (state & INT_CMD12DRE) {
->        sh_mmcif_writel(host->addr, MMCIF_CE_INT,
-> -- 
-> 1.7.5.4
-> 
+diff --git a/arch/arm/mach-shmobile/include/mach/sh73a0.h b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+index 606d31d..5ce2fa9 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh73a0.h
++++ b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+@@ -218,38 +218,33 @@ enum {
+ 	GPIO_FN_PORT116_I2C_SDA3,
+ 	GPIO_FN_HSI_RX_FLAG, GPIO_FN_BBIF1_SS1, GPIO_FN_BBIF1_FLOW,
+ 	GPIO_FN_HSI_TX_FLAG,
+-	GPIO_FN_VIO_VD, GPIO_FN_PORT128_LCD2VSYN, GPIO_FN_VIO2_VD, \
+-	GPIO_FN_LCD2D0,
++	GPIO_FN_VIO_VD, GPIO_FN_VIO2_VD,
+ 
+-	GPIO_FN_VIO_HD, GPIO_FN_PORT129_LCD2HSYN, GPIO_FN_PORT129_LCD2CS_, \
+-	GPIO_FN_VIO2_HD, GPIO_FN_LCD2D1,
+-	GPIO_FN_VIO_D0, GPIO_FN_PORT130_MSIOF2_RXD, GPIO_FN_LCD2D10,
++	GPIO_FN_VIO_HD,
++	GPIO_FN_VIO2_HD,
++	GPIO_FN_VIO_D0, GPIO_FN_PORT130_MSIOF2_RXD,
+ 	GPIO_FN_VIO_D1, GPIO_FN_PORT131_KEYOUT6, GPIO_FN_PORT131_MSIOF2_SS1, \
+-	GPIO_FN_PORT131_KEYOUT11, GPIO_FN_LCD2D11,
++	GPIO_FN_PORT131_KEYOUT11,
+ 	GPIO_FN_VIO_D2, GPIO_FN_PORT132_KEYOUT7, GPIO_FN_PORT132_MSIOF2_SS2, \
+-	GPIO_FN_PORT132_KEYOUT10, GPIO_FN_LCD2D12,
+-	GPIO_FN_VIO_D3, GPIO_FN_MSIOF2_TSYNC, GPIO_FN_LCD2D13,
+-	GPIO_FN_VIO_D4, GPIO_FN_MSIOF2_TXD, GPIO_FN_LCD2D14,
+-	GPIO_FN_VIO_D5, GPIO_FN_MSIOF2_TSCK, GPIO_FN_LCD2D15,
+-	GPIO_FN_VIO_D6, GPIO_FN_PORT136_KEYOUT8, GPIO_FN_LCD2D16,
+-	GPIO_FN_VIO_D7, GPIO_FN_PORT137_KEYOUT9, GPIO_FN_LCD2D17,
++	GPIO_FN_PORT132_KEYOUT10,
++	GPIO_FN_VIO_D3, GPIO_FN_MSIOF2_TSYNC,
++	GPIO_FN_VIO_D4, GPIO_FN_MSIOF2_TXD,
++	GPIO_FN_VIO_D5, GPIO_FN_MSIOF2_TSCK,
++	GPIO_FN_VIO_D6, GPIO_FN_PORT136_KEYOUT8,
++	GPIO_FN_VIO_D7, GPIO_FN_PORT137_KEYOUT9,
+ 	GPIO_FN_VIO_D8, GPIO_FN_PORT138_KEYOUT8, GPIO_FN_VIO2_D0, \
+-	GPIO_FN_LCD2D6,
+ 	GPIO_FN_VIO_D9, GPIO_FN_PORT139_KEYOUT9, GPIO_FN_VIO2_D1, \
+-	GPIO_FN_LCD2D7,
+-	GPIO_FN_VIO_D10, GPIO_FN_TPU0TO2, GPIO_FN_VIO2_D2, GPIO_FN_LCD2D8,
+-	GPIO_FN_VIO_D11, GPIO_FN_TPU0TO3, GPIO_FN_VIO2_D3, GPIO_FN_LCD2D9,
++	GPIO_FN_VIO_D10, GPIO_FN_TPU0TO2, GPIO_FN_VIO2_D2,
++	GPIO_FN_VIO_D11, GPIO_FN_TPU0TO3, GPIO_FN_VIO2_D3,
+ 	GPIO_FN_VIO_D12, GPIO_FN_PORT142_KEYOUT10, GPIO_FN_VIO2_D4, \
+-	GPIO_FN_LCD2D2,
+ 	GPIO_FN_VIO_D13, GPIO_FN_PORT143_KEYOUT11, GPIO_FN_PORT143_KEYOUT6, \
+-	GPIO_FN_VIO2_D5, GPIO_FN_LCD2D3,
++	GPIO_FN_VIO2_D5,
+ 	GPIO_FN_VIO_D14, GPIO_FN_PORT144_KEYOUT7, GPIO_FN_VIO2_D6, \
+-	GPIO_FN_LCD2D4,
+-	GPIO_FN_VIO_D15, GPIO_FN_TPU1TO3, GPIO_FN_PORT145_LCD2DISP, \
+-	GPIO_FN_PORT145_LCD2RS, GPIO_FN_VIO2_D7, GPIO_FN_LCD2D5,
+-	GPIO_FN_VIO_CLK, GPIO_FN_LCD2DCK, GPIO_FN_PORT146_LCD2WR_, \
+-	GPIO_FN_VIO2_CLK, GPIO_FN_LCD2D18,
+-	GPIO_FN_VIO_FIELD, GPIO_FN_LCD2RD_, GPIO_FN_VIO2_FIELD, GPIO_FN_LCD2D19,
++	GPIO_FN_VIO_D15, GPIO_FN_TPU1TO3,
++	GPIO_FN_VIO2_D7,
++	GPIO_FN_VIO_CLK,
++	GPIO_FN_VIO2_CLK,
++	GPIO_FN_VIO_FIELD, GPIO_FN_VIO2_FIELD,
+ 	GPIO_FN_VIO_CKO,
+ 	GPIO_FN_A27, GPIO_FN_PORT149_RDWR, GPIO_FN_MFG0_IN1, \
+ 	GPIO_FN_PORT149_KEYOUT9,
+@@ -268,45 +263,38 @@ enum {
+ 	GPIO_FN_PORT162_SCIFB_RXD, GPIO_FN_PORT162_SCIFA5_RXD,
+ 	GPIO_FN_PORT163_SCIFB_RTS_, GPIO_FN_PORT163_SCIFA5_RTS_, \
+ 	GPIO_FN_TPU3TO0,
+-	GPIO_FN_LCDD0,
+-	GPIO_FN_LCDD1, GPIO_FN_PORT193_SCIFA5_CTS_, GPIO_FN_BBIF2_TSYNC1,
+-	GPIO_FN_LCDD2, GPIO_FN_PORT194_SCIFA5_RTS_, GPIO_FN_BBIF2_TSCK1,
+-	GPIO_FN_LCDD3, GPIO_FN_PORT195_SCIFA5_RXD, GPIO_FN_BBIF2_TXD1,
+-	GPIO_FN_LCDD4, GPIO_FN_PORT196_SCIFA5_TXD,
+-	GPIO_FN_LCDD5, GPIO_FN_PORT197_SCIFA5_SCK, GPIO_FN_MFG2_OUT2, \
++	GPIO_FN_PORT193_SCIFA5_CTS_, GPIO_FN_BBIF2_TSYNC1,
++	GPIO_FN_PORT194_SCIFA5_RTS_, GPIO_FN_BBIF2_TSCK1,
++	GPIO_FN_PORT195_SCIFA5_RXD, GPIO_FN_BBIF2_TXD1,
++	GPIO_FN_PORT196_SCIFA5_TXD,
++	GPIO_FN_PORT197_SCIFA5_SCK, GPIO_FN_MFG2_OUT2,
+ 	GPIO_FN_TPU2TO1,
+-	GPIO_FN_LCDD6,
+-	GPIO_FN_LCDD7, GPIO_FN_TPU4TO1, GPIO_FN_MFG4_OUT2,
+-	GPIO_FN_LCDD8, GPIO_FN_D16,
+-	GPIO_FN_LCDD9, GPIO_FN_D17,
+-	GPIO_FN_LCDD10, GPIO_FN_D18,
+-	GPIO_FN_LCDD11, GPIO_FN_D19,
+-	GPIO_FN_LCDD12, GPIO_FN_D20,
+-	GPIO_FN_LCDD13, GPIO_FN_D21,
+-	GPIO_FN_LCDD14, GPIO_FN_D22,
+-	GPIO_FN_LCDD15, GPIO_FN_PORT207_MSIOF0L_SS1, GPIO_FN_D23,
+-	GPIO_FN_LCDD16, GPIO_FN_PORT208_MSIOF0L_SS2, GPIO_FN_D24,
+-	GPIO_FN_LCDD17, GPIO_FN_D25,
+-	GPIO_FN_LCDD18, GPIO_FN_DREQ2, GPIO_FN_PORT210_MSIOF0L_SS1, GPIO_FN_D26,
+-	GPIO_FN_LCDD19, GPIO_FN_PORT211_MSIOF0L_SS2, GPIO_FN_D27,
+-	GPIO_FN_LCDD20, GPIO_FN_TS_SPSYNC1, GPIO_FN_MSIOF0L_MCK0, GPIO_FN_D28,
+-	GPIO_FN_LCDD21, GPIO_FN_TS_SDAT1, GPIO_FN_MSIOF0L_MCK1, GPIO_FN_D29,
+-	GPIO_FN_LCDD22, GPIO_FN_TS_SDEN1, GPIO_FN_MSIOF0L_RSCK, GPIO_FN_D30,
+-	GPIO_FN_LCDD23, GPIO_FN_TS_SCK1, GPIO_FN_MSIOF0L_RSYNC, GPIO_FN_D31,
+-	GPIO_FN_LCDDCK, GPIO_FN_LCDWR_,
+-	GPIO_FN_LCDRD_, GPIO_FN_DACK2, GPIO_FN_PORT217_LCD2RS, \
+-	GPIO_FN_MSIOF0L_TSYNC, GPIO_FN_VIO2_FIELD3, GPIO_FN_PORT217_LCD2DISP,
+-	GPIO_FN_LCDHSYN, GPIO_FN_LCDCS_, GPIO_FN_LCDCS2_, GPIO_FN_DACK3, \
++	GPIO_FN_TPU4TO1, GPIO_FN_MFG4_OUT2,
++	GPIO_FN_D16,
++	GPIO_FN_D17,
++	GPIO_FN_D18,
++	GPIO_FN_D19,
++	GPIO_FN_D20,
++	GPIO_FN_D21,
++	GPIO_FN_D22,
++	GPIO_FN_PORT207_MSIOF0L_SS1, GPIO_FN_D23,
++	GPIO_FN_PORT208_MSIOF0L_SS2, GPIO_FN_D24,
++	GPIO_FN_D25,
++	GPIO_FN_DREQ2, GPIO_FN_PORT210_MSIOF0L_SS1, GPIO_FN_D26,
++	GPIO_FN_PORT211_MSIOF0L_SS2, GPIO_FN_D27,
++	GPIO_FN_TS_SPSYNC1, GPIO_FN_MSIOF0L_MCK0, GPIO_FN_D28,
++	GPIO_FN_TS_SDAT1, GPIO_FN_MSIOF0L_MCK1, GPIO_FN_D29,
++	GPIO_FN_TS_SDEN1, GPIO_FN_MSIOF0L_RSCK, GPIO_FN_D30,
++	GPIO_FN_TS_SCK1, GPIO_FN_MSIOF0L_RSYNC, GPIO_FN_D31,
++	GPIO_FN_DACK2,
++	GPIO_FN_MSIOF0L_TSYNC, GPIO_FN_VIO2_FIELD3,
++	GPIO_FN_DACK3,
+ 	GPIO_FN_PORT218_VIO_CKOR,
+-	GPIO_FN_LCDDISP, GPIO_FN_LCDRS, GPIO_FN_PORT219_LCD2WR_, \
+ 	GPIO_FN_DREQ3, GPIO_FN_MSIOF0L_TSCK, GPIO_FN_VIO2_CLK3, \
+-	GPIO_FN_LCD2DCK_2,
+-	GPIO_FN_LCDVSYN, GPIO_FN_LCDVSYN2,
+-	GPIO_FN_LCDLCLK, GPIO_FN_DREQ1, GPIO_FN_PORT221_LCD2CS_, \
++	GPIO_FN_DREQ1,
+ 	GPIO_FN_PWEN, GPIO_FN_MSIOF0L_RXD, GPIO_FN_VIO2_HD3, \
+-	GPIO_FN_PORT221_LCD2HSYN,
+-	GPIO_FN_LCDDON, GPIO_FN_LCDDON2, GPIO_FN_DACK1, GPIO_FN_OVCN, \
+-	GPIO_FN_MSIOF0L_TXD, GPIO_FN_VIO2_VD3, GPIO_FN_PORT222_LCD2VSYN,
++	GPIO_FN_DACK1, GPIO_FN_OVCN,
++	GPIO_FN_MSIOF0L_TXD, GPIO_FN_VIO2_VD3,
+ 
+ 	GPIO_FN_SCIFA1_TXD, GPIO_FN_OVCN2,
+ 	GPIO_FN_EXTLP, GPIO_FN_SCIFA1_SCK, GPIO_FN_PORT226_VIO_CKO2,
+@@ -318,13 +306,11 @@ enum {
+ 	GPIO_FN_MSIOF1_TSCK, GPIO_FN_SCIFA2_SCK2,
+ 	GPIO_FN_MSIOF1_RXD, GPIO_FN_SCIFA2_RXD2,
+ 	GPIO_FN_MSIOF1_RSCK, GPIO_FN_SCIFA2_RTS2_, GPIO_FN_VIO2_CLK2, \
+-	GPIO_FN_LCD2D20,
+ 	GPIO_FN_MSIOF1_RSYNC, GPIO_FN_MFG1_IN2, GPIO_FN_VIO2_VD2, \
+-	GPIO_FN_LCD2D21,
+ 	GPIO_FN_MSIOF1_MCK0, GPIO_FN_PORT236_I2C_SDA2,
+ 	GPIO_FN_MSIOF1_MCK1, GPIO_FN_PORT237_I2C_SCL2,
+-	GPIO_FN_MSIOF1_SS1, GPIO_FN_VIO2_FIELD2, GPIO_FN_LCD2D22,
+-	GPIO_FN_MSIOF1_SS2, GPIO_FN_VIO2_HD2, GPIO_FN_LCD2D23,
++	GPIO_FN_MSIOF1_SS1, GPIO_FN_VIO2_FIELD2,
++	GPIO_FN_MSIOF1_SS2, GPIO_FN_VIO2_HD2,
+ 	GPIO_FN_SCIFA6_TXD,
+ 	GPIO_FN_PORT241_IRDA_OUT, GPIO_FN_PORT241_IROUT, GPIO_FN_MFG4_OUT1, \
+ 	GPIO_FN_TPU4TO0,
+-- 
+1.7.10.4
 
