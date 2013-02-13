@@ -1,72 +1,79 @@
-From: phil.edworthy@renesas.com
-Date: Mon, 18 Feb 2013 08:14:38 +0000
-Subject: Re: [PATCH v2] fbdev: Add Renesas vdc4 framebuffer driver
-Message-Id: <OF9E7DE87B.2215F567-ON80257B16.002CE7D6-80257B16.002D4977@eu.necel.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 13 Feb 2013 02:44:55 +0000
+Subject: [PATCH 19/21] ARM: shmobile: r8a7740: Remove LCD0 and LCD1 function GPIOs
+Message-Id: <1360723497-23266-20-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1347267372-22949-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1347267372-22949-1-git-send-email-phil.edworthy@renesas.com>
+References: <1360723497-23266-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1360723497-23266-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-> On Fri, Oct 05, 2012 at 05:34:54PM +0100, phil.edworthy@renesas.com 
-wrote:
-> > Hi,
-> > 
-> > Any news on this patch?
-> 
-> Phil, did this patch get merged in the end?
-No, I sent a couple of emails to try to get some response but nothing. I 
-suspect that it was my fault in that I only realised somewhat later that I 
-wasn't signed up to the fbdev ml.
+Those GPIOs have been deprecated by the pinctrl API. They are unused and
+unneeded, remove them.
 
-Phil
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/include/mach/r8a7740.h |   39 -------------------------
+ 1 file changed, 39 deletions(-)
 
-> > > From: Jingoo Han <jg1.han@samsung.com>
-> > > To: "'Phil Edworthy'" <phil.edworthy@renesas.com>, 
-> > > Cc: "'Florian Tobias Schandinat'" <FlorianSchandinat@gmx.de>, linux-
-> > > fbdev@vger.kernel.org, linux-sh@vger.kernel.org, "'Jingoo Han'" 
-> > > <jg1.han@samsung.com>
-> > > Date: 11/09/2012 03:31
-> > > Subject: Re: [PATCH v2] fbdev: Add Renesas vdc4 framebuffer driver
-> > > 
-> > > On Monday, September 10, 2012 5:56 PM Phil Edworthy wrote
-> > > > 
-> > > > The vdc4 display hardware is found on the sh7269 device.
-> > > > 
-> > > > Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-> > > 
-> > > 
-> > > Reviewed-by: Jingoo Han <jg1.han@samsung.com>
-> > > 
-> > > Best regards,
-> > > Jingoo Han
-> > > 
-> > > 
-> > > > ---
-> > > > v2:
-> > > >  * Use devm_ variants of clk_get, ioremap_nocache, request_irq.
-> > > >  * Replace spaces with tabs.
-> > > >  * Check ren_vdc4_start return value.
-> > > >  * Fix headers used.
-> > > > 
-> > > >  drivers/video/Kconfig      |   10 +
-> > > >  drivers/video/Makefile     |    1 +
-> > > >  drivers/video/ren_vdc4fb.c |  641 +++++++++++++++++++++++++++++++
-> > > +++++++++++++
-> > > >  include/video/ren_vdc4fb.h |   19 ++
-> > > >  4 files changed, 671 insertions(+), 0 deletions(-)
-> > > >  create mode 100644 drivers/video/ren_vdc4fb.c
-> > > >  create mode 100644 include/video/ren_vdc4fb.h
-> > > 
-> > > 
-> > 
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> > 
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+index 59d252f..0c417da 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
+@@ -241,48 +241,9 @@ enum {
+ 
+ 	/* LCD0 */
+ 	GPIO_FN_LCDC0_SELECT,
+-	GPIO_FN_LCD0_D0,	GPIO_FN_LCD0_D1,	GPIO_FN_LCD0_D2,
+-	GPIO_FN_LCD0_D3,	GPIO_FN_LCD0_D4,	GPIO_FN_LCD0_D5,
+-	GPIO_FN_LCD0_D6,	GPIO_FN_LCD0_D7,	GPIO_FN_LCD0_D8,
+-	GPIO_FN_LCD0_D9,	GPIO_FN_LCD0_D10,	GPIO_FN_LCD0_D11,
+-	GPIO_FN_LCD0_D12,	GPIO_FN_LCD0_D13,	GPIO_FN_LCD0_D14,
+-	GPIO_FN_LCD0_D15,	GPIO_FN_LCD0_D16,	GPIO_FN_LCD0_D17,
+-	GPIO_FN_LCD0_DON,	GPIO_FN_LCD0_VCPWC,	GPIO_FN_LCD0_VEPWC,
+-
+-	GPIO_FN_LCD0_DCK,	GPIO_FN_LCD0_VSYN, /* for RGB */
+-	GPIO_FN_LCD0_HSYN,	GPIO_FN_LCD0_DISP, /* for RGB */
+-
+-	GPIO_FN_LCD0_WR,	GPIO_FN_LCD0_RD, /* for SYS */
+-	GPIO_FN_LCD0_CS,	GPIO_FN_LCD0_RS, /* for SYS */
+-
+-	GPIO_FN_LCD0_D18_PORT163,	GPIO_FN_LCD0_D19_PORT162,
+-	GPIO_FN_LCD0_D20_PORT161,	GPIO_FN_LCD0_D21_PORT158,
+-	GPIO_FN_LCD0_D22_PORT160,	GPIO_FN_LCD0_D23_PORT159,
+-	GPIO_FN_LCD0_LCLK_PORT165,	 /* MSEL5CR_6_1 */
+-
+-	GPIO_FN_LCD0_D18_PORT40,	GPIO_FN_LCD0_D19_PORT4,
+-	GPIO_FN_LCD0_D20_PORT3,		GPIO_FN_LCD0_D21_PORT2,
+-	GPIO_FN_LCD0_D22_PORT0,		GPIO_FN_LCD0_D23_PORT1,
+-	GPIO_FN_LCD0_LCLK_PORT102,	/* MSEL5CR_6_0 */
+ 
+ 	/* LCD1 */
+ 	GPIO_FN_LCDC1_SELECT,
+-	GPIO_FN_LCD1_D0,	GPIO_FN_LCD1_D1,	GPIO_FN_LCD1_D2,
+-	GPIO_FN_LCD1_D3,	GPIO_FN_LCD1_D4,	GPIO_FN_LCD1_D5,
+-	GPIO_FN_LCD1_D6,	GPIO_FN_LCD1_D7,	GPIO_FN_LCD1_D8,
+-	GPIO_FN_LCD1_D9,	GPIO_FN_LCD1_D10,	GPIO_FN_LCD1_D11,
+-	GPIO_FN_LCD1_D12,	GPIO_FN_LCD1_D13,	GPIO_FN_LCD1_D14,
+-	GPIO_FN_LCD1_D15,	GPIO_FN_LCD1_D16,	GPIO_FN_LCD1_D17,
+-	GPIO_FN_LCD1_D18,	GPIO_FN_LCD1_D19,	GPIO_FN_LCD1_D20,
+-	GPIO_FN_LCD1_D21,	GPIO_FN_LCD1_D22,	GPIO_FN_LCD1_D23,
+-	GPIO_FN_LCD1_DON,	GPIO_FN_LCD1_VCPWC,
+-	GPIO_FN_LCD1_LCLK,	GPIO_FN_LCD1_VEPWC,
+-
+-	GPIO_FN_LCD1_DCK,	GPIO_FN_LCD1_VSYN, /* for RGB */
+-	GPIO_FN_LCD1_HSYN,	GPIO_FN_LCD1_DISP, /* for RGB */
+-
+-	GPIO_FN_LCD1_WR,	GPIO_FN_LCD1_RD, /* for SYS */
+-	GPIO_FN_LCD1_CS,	GPIO_FN_LCD1_RS, /* for SYS */
+ 
+ 	/* RSPI */
+ 	GPIO_FN_RSPI_SSL0_A,	GPIO_FN_RSPI_SSL1_A,
+-- 
+1.7.10.4
 
