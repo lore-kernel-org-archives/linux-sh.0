@@ -1,45 +1,77 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 06 Feb 2013 02:03:21 +0000
-Subject: [PATCH] ARM: shmobile: Register ARM architected timer
-Message-Id: <1360116201-9362-2-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 13 Feb 2013 02:44:43 +0000
+Subject: [PATCH 07/21] ARM: shmobile: kzm9g: reference: Register pinctrl mappings for I2C
+Message-Id: <1360723497-23266-8-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360116201-9362-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1360116201-9362-1-git-send-email-horms+renesas@verge.net.au>
+References: <1360723497-23266-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1360723497-23266-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+Replace the GPIO-based I2C pinmux configuration by pinctrl mappings.
 
-Register ARM architected timer by default for all mach-shmobile
-systems using late timer.
+This change is for the kzm9g reference DT implementation and
+is in keeping with a similar change for the default kzm9g implementation
+made by Laurent Pinchart.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+This change also adds a sh73a0_pinmux_init() call to kzm_init()
+which was previously missing as it was not needed (or at least not
+needed in practice) for the minimal board configuration supplied
+by the reference DT implementation. The call to sh73a0_pinmux_init()
+will be removed by a subsequent patch to initialise pinmus using
+device tree.
+
+Reported-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/timer.c |    3 +++
- 1 file changed, 3 insertions(+)
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |   12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/timer.c b/arch/arm/mach-shmobile/timer.c
-index fdbe54a..3d16d4d 100644
---- a/arch/arm/mach-shmobile/timer.c
-+++ b/arch/arm/mach-shmobile/timer.c
-@@ -20,6 +20,7 @@
-  */
- #include <linux/platform_device.h>
- #include <linux/delay.h>
-+#include <asm/arch_timer.h>
- #include <asm/mach/time.h>
- #include <asm/smp_twd.h>
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index 6a1222e..642bb7b 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -26,12 +26,18 @@
+ #include <linux/irq.h>
+ #include <linux/input.h>
+ #include <linux/of_platform.h>
++#include <linux/pinctrl/machine.h>
+ #include <mach/sh73a0.h>
+ #include <mach/common.h>
+ #include <asm/hardware/cache-l2x0.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
  
-@@ -62,4 +63,6 @@ void __init shmobile_earlytimer_init(void)
- 
- void __init shmobile_timer_init(void)
++static const struct pinctrl_map kzm_pinctrl_map[] = {
++	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.3", "pfc-sh73a0",
++				  "i2c3_1", "i2c3"),
++};
++
+ static void __init kzm_init(void)
  {
-+	arch_timer_of_register();
-+	arch_timer_sched_clock_init();
+ 	/* enable SCIFA4 */
+@@ -52,16 +58,14 @@ static void __init kzm_init(void)
+ 	gpio_request(GPIO_FN_MMCD0_6_PU,	NULL);
+ 	gpio_request(GPIO_FN_MMCD0_7_PU,	NULL);
+ 
+-	/* I2C 3 */
+-	gpio_request(GPIO_FN_PORT27_I2C_SCL3, NULL);
+-	gpio_request(GPIO_FN_PORT28_I2C_SDA3, NULL);
+-
+ #ifdef CONFIG_CACHE_L2X0
+ 	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
+ 	l2x0_init(IOMEM(0xf0100000), 0x40460000, 0x82000fff);
+ #endif
+ 
++	sh73a0_pinmux_init();
+ 	sh73a0_add_standard_devices_dt();
++	pinctrl_register_mappings(kzm_pinctrl_map, ARRAY_SIZE(kzm_pinctrl_map));
  }
+ 
+ static void kzm9g_restart(char mode, const char *cmd)
 -- 
 1.7.10.4
 
