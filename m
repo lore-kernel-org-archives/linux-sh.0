@@ -1,34 +1,38 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 13 Feb 2013 07:49:02 +0000
-Subject: [PATCH] ARM: mach-shmobile: mackerel: enable MMCIF and SDHI in defconfig
-Message-Id: <1360741742-11342-1-git-send-email-horms+renesas@verge.net.au>
+Date: Wed, 13 Feb 2013 12:16:10 +0000
+Subject: [PATCH] ARM: mach-shmobile: mackerel: enable REGULATOR in defconfig
+Message-Id: <1360757770-15360-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1360741742-11342-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1360741742-11342-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-I'm unsure why this isn't already the case.
+As well as being a generally sane thing to do this
+is required for MMCIF to function in conjunction with
+" ARM: shmobile: streamline mackerel SD and MMC devices".
 
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/mackerel_defconfig |    3 +++
- 1 file changed, 3 insertions(+)
+ arch/arm/configs/mackerel_defconfig |    2 ++
+ 1 file changed, 2 insertions(+)
 
 diff --git a/arch/arm/configs/mackerel_defconfig b/arch/arm/configs/mackerel_defconfig
-index 7594b3a..ec8e605 100644
+index ec8e605..fdced32 100644
 --- a/arch/arm/configs/mackerel_defconfig
 +++ b/arch/arm/configs/mackerel_defconfig
-@@ -94,6 +94,9 @@ CONFIG_USB_RENESAS_USBHS=y
- CONFIG_USB_STORAGE=y
- CONFIG_USB_GADGET=y
- CONFIG_USB_RENESAS_USBHS_UDC=y
-+CONFIG_MMC=y
-+CONFIG_MMC_SDHI=y
-+CONFIG_MMC_SH_MMCIF=y
- CONFIG_DMADEVICES=y
- CONFIG_SH_DMAE=y
- CONFIG_EXT2_FS=y
+@@ -75,6 +75,8 @@ CONFIG_I2C=y
+ CONFIG_I2C_SH_MOBILE=y
+ # CONFIG_HWMON is not set
+ # CONFIG_MFD_SUPPORT is not set
++CONFIG_REGULATOR=y
++CONFIG_REGULATOR_DUMMY=y
+ CONFIG_FB=y
+ CONFIG_FB_MODE_HELPERS=y
+ CONFIG_FB_SH_MOBILE_LCDC=y
 -- 
 1.7.10.4
 
