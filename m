@@ -1,17 +1,38 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Thu, 07 Feb 2013 08:27:29 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Wed, 13 Feb 2013 15:59:42 +0000
 Subject: Re: [PATCH v3 06/13] mmc: tmio-mmc: define device-tree bindings
-Message-Id: <201302070827.29355.arnd@arndb.de>
+Message-Id: <Pine.LNX.4.64.1302131632280.18535@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de> <201302062224.20549.arnd@arndb.de> <20130207005957.GB9775@verge.net.au>
+References: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
+ <1360180020-18555-7-git-send-email-g.liakhovetski@gmx.de>
+ <201302062224.20549.arnd@arndb.de> <20130207005957.GB9775@verge.net.au>
 In-Reply-To: <20130207005957.GB9775@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Simon Horman <horms@verge.net.au>
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, linux-mmc@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
+Cc: Arnd Bergmann <arnd@arndb.de>, linux-mmc@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>
 
-On Thursday 07 February 2013, Simon Horman wrote:
+On Thu, 7 Feb 2013, Simon Horman wrote:
+
+> On Wed, Feb 06, 2013 at 10:24:20PM +0000, Arnd Bergmann wrote:
+> > On Wednesday 06 February 2013, Guennadi Liakhovetski wrote:
+> > > +* Toshiba Mobile IO SD/MMC controller
+> > > +
+> > > +The tmio-mmc driver doesn't probe its devices actively, instead its binding to
+> > > +devices is managed by either MFD drivers or by the sh_mobile_sdhi platform
+> > > +driver. Those drivers supply the tmio-mmc driver with platform data, that either
+> > > +describe hardware capabilities, known to them, or are obtained by them from
+> > > +their own platform data or from their DT information. In the latter case all
+> > > +compulsory and any optional properties, common to all SD/MMC drivers, as
+> > > +described in mmc.txt, should or can be used. Additionally the following optional
+> > > +bindings can be used. They set respective TMIO_MMC_* flags.
+> > > +
+> > > +Optional properties:
+> > > +- toshiba,mmc-wrprotect-disable        : set TMIO_MMC_WRPROTECT_DISABLE flag
+> > > +- toshiba,mmc-blksz-2bytes     : set TMIO_MMC_BLKSZ_2BYTES
+> > > +- toshiba,mmc-has-idle-wait    : set TMIO_MMC_HAS_IDLE_WAIT
+> > 
 > > Please write the binding in a way that does not refer to a specific
 > > implementation in Linux: The binding should describe the hardware
 > > independent of details in the driver. In particular, I think you
@@ -26,7 +47,9 @@ On Thursday 07 February 2013, Simon Horman wrote:
 > > actually need to provide this here, but can keep that knowledge
 > > implicit based on whether we're talking to sh_mobile_sdhi
 > > or another tmio_mmc variant.
-> > 
+
+Can do that, yes.
+
 > > For the other last one, is that actually board specific, or just
 > > a feature of a given chip? If we can tell by the SoC, then I'd
 > > suggest using separate "compatible" properties instead, and
@@ -37,10 +60,34 @@ On Thursday 07 February 2013, Simon Horman wrote:
 > My understanding is that TMIO_MMC_HAS_IDLE_WAIT can be set based
 > on the SoC in use.
 
-Ok, thanks for the confirmation. Just to be clear: Either way (compatible
-or separate property) works fine and can be used here. I tend to prefer
-basing these things on the "compatible" string in order to keep
-specific knowledge of the device internals out of the device tree
-binding though.
+So far TMIO_MMC_HAS_IDLE_WAIT is set on
 
-	Arnd
+board-kzm9g.c (sh73a0 / AG5)
+board-ag5evm.c (sh73a0 / AG5)
+board-armadillo800eva.c (r8a7740 / A1)
+board-kota2.c (sh73a0 / AG5)
+board-marzen.c (r8a7779 / H1)
+
+and isn't set on
+
+board-ap4evb.c (sh7372 / ap4)
+board-bonito.c (r8a7740 / a1, SDHI isn't used)
+board-mackerel.c (sh7372 / ap4)
+
+So, shall we use a compatible property for this and drop this property? We 
+can add later at any time, if needed, which is better, than defining 
+something redundant. OTOH I seem to remember, that using SoC-version from 
+the "compatible" property was considered by someone inappropriate. Magnus, 
+what do you think?
+
+So, if we drop TMIO_MMC_BLKSZ_2BYTES and TMIO_MMC_HAS_IDLE_WAIT, we only 
+keep toshiba,mmc-wrprotect-disable to set TMIO_MMC_WRPROTECT_DISABLE? And 
+that one is definitely needed, because that even differs between SDHI 
+instances on one SoC.
+
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
