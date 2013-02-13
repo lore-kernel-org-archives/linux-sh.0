@@ -1,58 +1,93 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 01 Feb 2013 04:23:51 +0000
-Subject: Re: [PATCH/RFC v2 06/11] mmc: tmio-mmc: define device-tree bindings
-Message-Id: <20130201042350.GA6898@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 13 Feb 2013 02:44:36 +0000
+Subject: [PATCH 00/16 v1.1] SCIF, I2C and FSI pinctrl functions for sh73a0
+Message-Id: <1360723497-23266-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1358955158-1510-1-git-send-email-g.liakhovetski@gmx.de>
- <1358955158-1510-7-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1358955158-1510-7-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Chris Ball <cjb@laptop.org>
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Jan 23, 2013 at 04:32:33PM +0100, Guennadi Liakhovetski wrote:
-> Define device-tree bindings for the tmio-mmc driver to be able to specify
-> parameters, currently provided in platform data.
-> 
-> Cc: Magnus Damm <magnus.damm@gmail.com>
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> ---
-> 
-> Please, comment on this one, since it is defining an ABI
-> 
->  Documentation/devicetree/bindings/mmc/tmio_mmc.txt |   19 +++++++++++++++++++
->  1 files changed, 19 insertions(+), 0 deletions(-)
->  create mode 100644 Documentation/devicetree/bindings/mmc/tmio_mmc.txt
-> 
-> diff --git a/Documentation/devicetree/bindings/mmc/tmio_mmc.txt b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
-> new file mode 100644
-> index 0000000..dd8decd
-> --- /dev/null
-> +++ b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
-> @@ -0,0 +1,19 @@
-> +* Toshiba Mobile IO SD/MMC controller
-> +
-> +The tmio-mmc driver doesn't probe its devices actively, instead its binding to
-> +devices is managed by either MFD drivers or by the sh_mobile_sdhi platform
-> +driver. Those drivers supply the tmio-mmc driver with platform data, that either
-> +describe hardware capabilities, known to them, or are obtained by them from
-> +their own platform data or from their DT information. In the latter case all
-> +compulsory and any optional properties, common to all SD/MMC drivers, as
-> +described in mmc.txt, should or can be used. Additionally the following optional
-> +bindings can be used. They set either respective TMIO_MMC_* flags or MMC_CAP_*
-> +capabilities.
-> +
-> +Optional properties:
-> +- toshiba,mmc-wrprotect-disable	: set TMIO_MMC_WRPROTECT_DISABLE flag
-> +- toshiba,mmc-blksz-2bytes	: set TMIO_MMC_BLKSZ_2BYTES
-> +- toshiba,mmc-cap-sdio-irq	: SDIO IRQ signalling should be used, if
-> +	supported by the hardware, i.e. set MMC_CAP_SDIO_IRQ if
-> +	TMIO_MMC_SDIO_IRQ is also set
-> +- toshiba,mmc-has-idle-wait	: set TMIO_MMC_HAS_IDLE_WAIT
+Hi,
 
-FWIW, TMIO_MMC_HAS_IDLE_WAIT appears to be required for SDHI0 to
-function on the Marzen board. As I have been doing some work on
-bring up the Marzen board using DT I am very happy to see these new
-bindings.
+this series is a follow-up to "[PATCH 00/16] SCIF, I2C and FSI pinctrl
+functions for sh73a0" by Laurent Pinchart. I am primarily posting it for
+his review.
+
+This series differs from the series posted by Laurent in the following ways:
+
+* Due to some slightly over-zelous git use on my part the series
+  is actually based on a checkout of
+  git://linuxtv.org/pinchartl/fbdev.git pinmux-pfc-funcs
+
+  As such it includes several patches not included in the series posted in
+  via eimal as the series "[PATCH 00/16] SCIF, I2C and FSI pinctrl
+  functions for sh73a0". In particular it includes r8a7740 and r8a7779
+  patches.
+
+* I have added the following two patches to update the KZM9G rerence code.
+
+  ARM: shmobile: kzm9g: reference: Register pinctrl mappings for I2C
+  ARM: shmobile: kzm9g: reference: Register pinctrl mappings for SCIF
+
+As implied by the second point above, this series is based on
+a branch that includes the kzm9g reference code. That branch is
+
+	git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git topic/pinmux-base
+
+Git and diffstat information is provided below to aid review.
+
+Laurent, if you want to change this series in any way just let me know.
+I can drop patches indidually or drop the entire series and add a fresh
+one from you to the topic branch.
+
+----------------------------------------------------------------
+The following changes since commit e90f8429f06947f36693fbdc083fdab15c4164b9:
+
+  ARM: shmobile: armadillo800eva: Register pinctrl mappings for LCDC0 (2013-02-13 09:15:37 +0900)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git topic/pinmux-pfc-funcs
+
+for you to fetch changes up to da8ef3c2e6aee4da048e37c4e7a52439e6928379:
+
+  ARM: shmobile: r8a7779: Remove DU function GPIOs (2013-02-13 10:06:59 +0900)
+
+----------------------------------------------------------------
+Laurent Pinchart (19):
+      ARM: shmobile: bonito: Register pinctrl mappings for LCDC0
+      ARM: shmobile: kota2: Register pinctrl mappings for SCIF
+      ARM: shmobile: kzm9g: Register pinctrl mappings for LCD
+      ARM: shmobile: kzm9g: Register pinctrl mappings for SCIF
+      ARM: shmobile: kzm9g: Register pinctrl mappings for I2C
+      ARM: shmobile: kzm9g: Register pinctrl mappings for FSI
+      sh-pfc: sh73a0: Remove LCD and LCD2 function GPIOS
+      sh-pfc: sh73a0: Remove SCIFA and SCIFB function GPIOS
+      sh-pfc: sh73a0: Remove I2C function GPIOS
+      sh-pfc: sh73a0: Remove FSI function GPIOS
+      sh-pfc: r8a7740: Remove LCD0 and LCD1 function GPIOS
+      sh-pfc: r8a7779: Remove DU1_DOTCLKOUT1 GPIO
+      ARM: shmobile: sh73a0: Remove LCDC and LCDC2 function GPIOs
+      ARM: shmobile: sh73a0: Remove SCIFA and SCIFB function GPIOs
+      ARM: shmobile: sh73a0: Remove I2C function GPIOs
+      ARM: shmobile: sh73a0: Remove FSI function GPIOs
+      ARM: shmobile: r8a7740: Remove LCD0 and LCD1 function GPIOs
+      ARM: shmobile: r8a7779: Remove DU1_DOTCLKOUT1 GPIO
+      ARM: shmobile: r8a7779: Remove DU function GPIOs
+
+Simon Horman (2):
+      ARM: shmobile: kzm9g: reference: Register pinctrl mappings for I2C
+      ARM: shmobile: kzm9g: reference: Register pinctrl mappings for SCIF
+
+ arch/arm/mach-shmobile/board-bonito.c          |   43 ++---
+ arch/arm/mach-shmobile/board-kota2.c           |   42 +++--
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |   22 ++-
+ arch/arm/mach-shmobile/board-kzm9g.c           |   68 +++----
+ arch/arm/mach-shmobile/include/mach/r8a7740.h  |   39 ----
+ arch/arm/mach-shmobile/include/mach/r8a7779.h  |   90 ++++-----
+ arch/arm/mach-shmobile/include/mach/sh73a0.h   |  237 ++++++++++--------------
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c           |   37 ----
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c           |    9 +-
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c            |  182 ------------------
+ 10 files changed, 217 insertions(+), 552 deletions(-)
