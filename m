@@ -1,111 +1,290 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Wed, 27 Feb 2013 19:38:39 +0000
-Subject: [PATCH v4 2/3] ARM: mach-shmobile: r8a7779: add SATA support
-Message-Id: <201302272339.15402.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Wed, 13 Feb 2013 03:29:13 +0000
+Subject: [PATCH 1/9] sh-pfc: Add OF support
+Message-Id: <1360726161-16072-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1360726161-16072-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1360726161-16072-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Add SATA clock for r8a7779 SoC (for both device tree and usual cases). 
-Register SATA controller as a "late" platform device on r8a7779 SoC.
- 
-Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Support device instantiation through the device tree. The compatible
+property is used to select the SoC pinmux information.
 
+Set the gpio_chip device field to the PFC device to enable automatic
+GPIO OF support.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: devicetree-discuss@lists.ozlabs.org
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Changes since v3:
-- recast to apply to the recent 'next' branch.
+ .../bindings/pinctrl/renesas,pfc-pinctrl.txt       |   77 ++++++++++++++++++++
+ drivers/pinctrl/sh-pfc/core.c                      |   62 +++++++++++++++-
+ drivers/pinctrl/sh-pfc/pinctrl.c                   |   54 ++++++++++++++
+ 3 files changed, 191 insertions(+), 2 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
 
-Changes since v1:
-- added new clock entry for the device tree case instead of the entry in
-  r8a7779_auxdata_lookup[];
-- initialized sata_device.dev.[coherent_]dma_mask;
-- created r8a7779_late_devices[], add SATA device there, and register "late"
-  devices from r8a7779_add_standard_devices();
-
- arch/arm/mach-shmobile/clock-r8a7779.c |    4 ++++
- arch/arm/mach-shmobile/setup-r8a7779.c |   26 ++++++++++++++++++++++++++
- 2 files changed, 30 insertions(+)
-
-Index: renesas/arch/arm/mach-shmobile/clock-r8a7779.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ renesas/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -87,6 +87,7 @@ static struct clk div4_clks[DIV4_NR] = {
- };
- 
- enum { MSTP323, MSTP322, MSTP321, MSTP320,
-+	MSTP115,
- 	MSTP101, MSTP100,
- 	MSTP030,
- 	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
-@@ -99,6 +100,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP322] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 22, 0), /* SDHI1 */
- 	[MSTP321] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 21, 0), /* SDHI2 */
- 	[MSTP320] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 20, 0), /* SDHI3 */
-+	[MSTP115] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1, 15, 0), /* SATA */
- 	[MSTP101] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  1, 0), /* USB2 */
- 	[MSTP100] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  0, 0), /* USB0/1 */
- 	[MSTP030] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 30, 0), /* I2C0 */
-@@ -156,6 +158,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("peripheral_clk",	&div4_clks[DIV4_P]),
- 
- 	/* MSTP32 clocks */
-+	CLKDEV_DEV_ID("sata_rcar", &mstp_clks[MSTP115]), /* SATA */
-+	CLKDEV_DEV_ID("fc600000.sata", &mstp_clks[MSTP115]), /* SATA w/DT */
- 	CLKDEV_DEV_ID("ehci-platform.1", &mstp_clks[MSTP101]), /* USB EHCI port2 */
- 	CLKDEV_DEV_ID("ohci-platform.1", &mstp_clks[MSTP101]), /* USB OHCI port2 */
- 	CLKDEV_DEV_ID("ehci-platform.0", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
-Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -29,6 +29,7 @@
- #include <linux/serial_sci.h>
- #include <linux/sh_intc.h>
- #include <linux/sh_timer.h>
-+#include <linux/dma-mapping.h>
- #include <mach/hardware.h>
- #include <mach/irqs.h>
- #include <mach/r8a7779.h>
-@@ -322,6 +323,30 @@ static struct platform_device i2c3_devic
- 	.num_resources	= ARRAY_SIZE(rcar_i2c3_res),
- };
- 
-+static struct resource sata_resources[] = {
-+	[0] = {
-+		.name	= "rcar-sata",
-+		.start	= 0xfc600000,
-+		.end	= 0xfc601fff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= gic_spi(100),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
+diff --git a/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt b/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
+new file mode 100644
+index 0000000..77752c2
+--- /dev/null
++++ b/Documentation/devicetree/bindings/pinctrl/renesas,pfc-pinctrl.txt
+@@ -0,0 +1,77 @@
++* Renesas GPIO and Pin Mux/Config controller
 +
-+static struct platform_device sata_device = {
-+	.name		= "sata_rcar",
-+	.id		= -1,
-+	.resource	= sata_resources,
-+	.num_resources	= ARRAY_SIZE(sata_resources),
-+	.dev		= {
-+		.dma_mask		= &sata_device.dev.coherent_dma_mask,
-+		.coherent_dma_mask	= DMA_BIT_MASK(32),
-+	},
-+};
++Required Properties:
++- compatible: should be one of the following.
++  - "renesas,pfc-r8a7740": for R8A7740 (R-Mobile A1) compatible pin-controller.
++  - "renesas,pfc-r8a7779": for R8A7779 (R-Car H1) compatible pin-controller.
++  - "renesas,pfc-sh7372": for SH7372 (SH-Mobile AP4) compatible pin-controller.
++  - "renesas,pfc-sh73a0": for SH73A0 (SH-Mobile AG5) compatible pin-controller.
 +
- static struct platform_device *r8a7779_devices_dt[] __initdata = {
- 	&scif0_device,
- 	&scif1_device,
-@@ -338,6 +363,7 @@ static struct platform_device *r8a7779_l
- 	&i2c1_device,
- 	&i2c2_device,
- 	&i2c3_device,
-+	&sata_device,
++- reg: Base address and length of each memory resource used by the pin
++  controller hardware module.
++
++- gpio-controller: Marks the device node as a gpio controller.
++
++- #gpio-cells: Should be 2. The first cell is the pin number and the second cell
++  is used to specify optional parameters as bit flags. Only the GPIO active low
++  flag (bit 0) is currently supported.
++
++
++The PFC node also acts as a container for pin control maps represented as
++subnodes. Each subnode contains a function name and one or more pin or pin group
++name. The subnode names are ignored, all subnodes are parsed through phandles
++and processed purely based on their content.
++
++Required Subnode Properties:
++- renesas,pins : An array of strings. Each string contains the name of a pin or
++  pin group.
++- renesas,function: A string containing the name of the function to mux to the
++  pin or pin group.
++
++  Valid values for group and function names can be found in the group and
++  function arrays of the PFC data file corresponding to the SoC
++  (drivers/pinctrl/spear/pfc-*.c)
++
++Please refer to pinctrl-bindings.txt in this directory for details of the common
++pinctrl bindings used by client devices.
++
++
++The syntax of the gpio specifier used by client nodes should be the following
++with values derived from the SoC user manual.
++
++  <[phandle of the gpio controller node]
++   [pin number within the gpio controller]
++   [flags and pull up/down]>
++
++
++Example 1: SH73A0 (SH-Mobile AG5) pin controller node
++
++	gpio: pfc@e6050000 {
++		compatible = "renesas,pfc-sh73a0";
++		reg = <0xe6050000 0x8000>,
++		      <0xe605801c 0x1c>;
++		gpio-controller;
++		#gpio-cells = <2>;
++	};
++
++Example 2: A GPIO LED node that references a GPIO
++
++	leds {
++		compatible = "gpio-leds";
++		led1 {
++			gpios = <&gpio 20 1>; /* Active low */
++		};
++	};
++
++Example 3: KZM-A9-GT (SH-Mobile AG5) default pin state and pin control maps
++           for the LCD device
++
++	&gpio {
++		pinctrl-0 = <&lcd_pins>;
++		pinctrl-names = "default";
++
++		lcd_pins: pfc_lcd_pins {
++			renesas,pins = "lcd_data24", "lcd_sync";
++			renesas,function = "lcd";
++		};
++	};
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index 912b579..d0e8e77 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -19,6 +19,7 @@
+ #include <linux/ioport.h>
+ #include <linux/kernel.h>
+ #include <linux/module.h>
++#include <linux/of_device.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/platform_device.h>
+ #include <linux/slab.h>
+@@ -510,8 +511,55 @@ int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
+ 	return sh_pfc_config_mux(pfc, mark, pinmux_type, cfg_mode);
+ }
+ 
++#ifdef CONFIG_OF
++static const struct of_device_id sh_pfc_of_table[] = {
++#ifdef CONFIG_PINCTRL_PFC_R8A7740
++	{
++		.compatible = "renesas,pfc-r8a7740",
++		.data = &r8a7740_pinmux_info,
++	},
++#endif
++#ifdef CONFIG_PINCTRL_PFC_R8A7779
++	{
++		.compatible = "renesas,pfc-r8a7779",
++		.data = &r8a7779_pinmux_info,
++	},
++#endif
++#ifdef CONFIG_PINCTRL_PFC_SH7367
++	{
++		.compatible = "renesas,pfc-sh7367",
++		.data = &sh7367_pinmux_info,
++	},
++#endif
++#ifdef CONFIG_PINCTRL_PFC_SH7372
++	{
++		.compatible = "renesas,pfc-sh7372",
++		.data = &sh7372_pinmux_info,
++	},
++#endif
++#ifdef CONFIG_PINCTRL_PFC_SH7377
++	{
++		.compatible = "renesas,pfc-sh7377",
++		.data = &sh7377_pinmux_info,
++	},
++#endif
++#ifdef CONFIG_PINCTRL_PFC_SH73A0
++	{
++		.compatible = "renesas,pfc-sh73a0",
++		.data = &sh73a0_pinmux_info,
++	},
++#endif
++	{ },
++};
++MODULE_DEVICE_TABLE(of, sh_pfc_of_table);
++#endif
++
+ static int sh_pfc_probe(struct platform_device *pdev)
+ {
++	const struct platform_device_id *platid = platform_get_device_id(pdev);
++#ifdef CONFIG_OF
++	struct device_node *np = pdev->dev.of_node;
++#endif
+ 	struct sh_pfc_soc_info *info;
+ 	struct sh_pfc *pfc;
+ 	int ret;
+@@ -521,8 +569,15 @@ static int sh_pfc_probe(struct platform_device *pdev)
+ 	 */
+ 	BUILD_BUG_ON(PINMUX_FLAG_TYPE > ((1 << PINMUX_FLAG_DBIT_SHIFT) - 1));
+ 
+-	info = pdev->id_entry->driver_data
+-	      ? (void *)pdev->id_entry->driver_data : pdev->dev.platform_data;
++	if (platid)
++		info = (void *)platid->driver_data;
++#ifdef CONFIG_OF
++	else if (np)
++		info = (void *)of_match_device(sh_pfc_of_table, &pdev->dev)->data;
++#endif
++	else
++		info = pdev->dev.platform_data;
++
+ 	if (info = NULL)
+ 		return -ENODEV;
+ 
+@@ -646,6 +701,9 @@ static struct platform_driver sh_pfc_driver = {
+ 	.driver		= {
+ 		.name	= DRV_NAME,
+ 		.owner	= THIS_MODULE,
++#ifdef CONFIG_OF
++		.of_match_table = sh_pfc_of_table,
++#endif
+ 	},
  };
  
- void __init r8a7779_add_standard_devices(void)
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index 6ee4105..78b78d2 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -15,7 +15,9 @@
+ #include <linux/err.h>
+ #include <linux/init.h>
+ #include <linux/module.h>
++#include <linux/of.h>
+ #include <linux/pinctrl/consumer.h>
++#include <linux/pinctrl/machine.h>
+ #include <linux/pinctrl/pinconf.h>
+ #include <linux/pinctrl/pinconf-generic.h>
+ #include <linux/pinctrl/pinctrl.h>
+@@ -65,11 +67,63 @@ static void sh_pfc_pin_dbg_show(struct pinctrl_dev *pctldev, struct seq_file *s,
+ 	seq_printf(s, "%s", DRV_NAME);
+ }
+ 
++static int sh_pfc_dt_node_to_map(struct pinctrl_dev *pctldev,
++				 struct device_node *np,
++				 struct pinctrl_map **map, unsigned *num_maps)
++{
++	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
++	struct pinctrl_map *maps;
++	struct property *prop;
++	unsigned int index = 0;
++	const char *function;
++	const char *group;
++	int ret;
++
++	ret = of_property_read_string(np, "renesas,function", &function);
++	if (ret < 0) {
++		dev_err(pmx->pfc->dev, "No function provided in DT\n");
++		return ret;
++	}
++
++	ret = of_property_count_strings(np, "renesas,pins");
++	if (ret < 0)
++		return ret;
++
++	if (!ret) {
++		dev_err(pmx->pfc->dev, "No pin(group) provided in DT node\n");
++		return -ENODEV;
++	}
++
++	maps = kzalloc(sizeof(*maps) * ret, GFP_KERNEL);
++	if (maps = NULL)
++		return -ENOMEM;
++
++	of_property_for_each_string(np, "renesas,pins", prop, group) {
++		maps[index].type = PIN_MAP_TYPE_MUX_GROUP;
++		maps[index].data.mux.group = group;
++		maps[index].data.mux.function = function;
++		index++;
++	}
++
++	*map = maps;
++	*num_maps = index;
++
++	return 0;
++}
++
++static void sh_pfc_dt_free_map(struct pinctrl_dev *pctldev,
++			       struct pinctrl_map *map, unsigned num_maps)
++{
++	kfree(map);
++}
++
+ static struct pinctrl_ops sh_pfc_pinctrl_ops = {
+ 	.get_groups_count	= sh_pfc_get_groups_count,
+ 	.get_group_name		= sh_pfc_get_group_name,
+ 	.get_group_pins		= sh_pfc_get_group_pins,
+ 	.pin_dbg_show		= sh_pfc_pin_dbg_show,
++	.dt_node_to_map		= sh_pfc_dt_node_to_map,
++	.dt_free_map		= sh_pfc_dt_free_map,
+ };
+ 
+ static int sh_pfc_get_functions_count(struct pinctrl_dev *pctldev)
+-- 
+1.7.10.4
+
