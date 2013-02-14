@@ -1,42 +1,50 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 15 Feb 2013 13:48:36 +0000
-Subject: [PATCH 1/2] ARM: shmobile: kzm9g: correct smsc regulator registration
-Message-Id: <1360936117-21765-2-git-send-email-horms+renesas@verge.net.au>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Thu, 14 Feb 2013 17:29:52 +0000
+Subject: [INFO] No re-enabling of IRQ line when using touchscreen during suspend
+Message-Id: <CABYn4sz2LdgTrY1ZBqWwY1zi4qygSkHWD+OPsoJF=PAq34kyyA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360936117-21765-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1360936117-21765-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-input@vger.kernel.org, Linux-SH <linux-sh@vger.kernel.org>
+Cc: Magnus Damm <magnus.damm@gmail.com>, Tony SIM <chinyeow.sim.xt@renesas.com>
 
-Correct the name of smsc devices used for regulator registration
-allowing the regulators to be found and used.
+Hi,
 
-This eliminates the need for CONFIG_REGULATOR_DUMMY
-when CONFIG_REGULATOR is set.
+I wanted to add this information that is related to my patch
+submissions. Next to the i2c timeout issues dealt in "[PATCH] i2c:
+sh_mobile: Don't start transfers when suspending" I'm experiencing
+another problem when using the touchscreen during the suspend process.
 
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/board-kzm9g.c |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+When handling the touch the generic_irq_handler masks out the line,
+but before the irq_thread can reenable it suspension seems to finish.
+Thus we get stuck in the sleep mode without being able to wake using
+this device. I'm unsure if this a general fault in the suspend code or
+if it is somehow driver related.
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index 1a26077..3cf5898 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -61,8 +61,8 @@
- 
- /* Dummy supplies, where voltage doesn't matter */
- static struct regulator_consumer_supply dummy_supplies[] = {
--	REGULATOR_SUPPLY("vddvario", "smsc911x"),
--	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
-+	REGULATOR_SUPPLY("vddvario", "smsc911x.0"),
-+	REGULATOR_SUPPLY("vdd33a", "smsc911x.0"),
- };
- 
- /*
--- 
-1.7.10.4
+My debug output on a kzm9g looks like this:
 
+
+PM: Syncing filesystems ... enabling 568
+done.
+PM: Preparing system for mem sleep
+disabling IRQ: 568 568
+enabling 568
+Freezing user space processes ... disabling IRQ: 568 568
+enabling 568
+disabling IRQ: 568 568
+(elapsed 0.02 seconds) enabling 568
+done.
+Freezing remaining freezable tasks ... disabling IRQ: 568 568
+enabling 568
+disabling IRQ: 568 568
+enabling 568
+(elapsed 0.02 seconds) done.
+PM: Entering mem sleep
+Suspending console(s) (use no_console_suspend to debug)
+disabling IRQ: 568 568
+
+
+Cheers,
+
+ Bastian
