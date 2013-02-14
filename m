@@ -1,24 +1,23 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 14 Feb 2013 02:24:30 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 14 Feb 2013 08:28:06 +0000
 Subject: Re: [PATCH v3 06/13] mmc: tmio-mmc: define device-tree bindings
-Message-Id: <20130214022429.GP15879@verge.net.au>
+Message-Id: <Pine.LNX.4.64.1302140909340.29693@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
  <1360180020-18555-7-git-send-email-g.liakhovetski@gmx.de>
- <201302062224.20549.arnd@arndb.de>
- <20130207005957.GB9775@verge.net.au>
+ <201302062224.20549.arnd@arndb.de> <20130207005957.GB9775@verge.net.au>
  <Pine.LNX.4.64.1302131632280.18535@axis700.grange>
  <CANqRtoS_3wbNxVoPy48r=OFbnG=a7f6TDwc9XWcajkdANqsd8g@mail.gmail.com>
- <20130214015920.GK15879@verge.net.au>
- <CANqRtoTnF16T8dSNohPZLTSyLthS0xCJ6kUaMO6D1aEXmZmRtA@mail.gmail.com>
+ <20130214015920.GK15879@verge.net.au> <CANqRtoTnF16T8dSNohPZLTSyLthS0xCJ6kUaMO6D1aEXmZmRtA@mail.gmail.com>
 In-Reply-To: <CANqRtoTnF16T8dSNohPZLTSyLthS0xCJ6kUaMO6D1aEXmZmRtA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Magnus Damm <magnus.damm@gmail.com>
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Arnd Bergmann <arnd@arndb.de>, linux-mmc@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org
+Cc: Simon Horman <horms@verge.net.au>, Arnd Bergmann <arnd@arndb.de>, linux-mmc@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org
 
-On Thu, Feb 14, 2013 at 11:09:06AM +0900, Magnus Damm wrote:
+On Thu, 14 Feb 2013, Magnus Damm wrote:
+
 > On Thu, Feb 14, 2013 at 10:59 AM, Simon Horman <horms@verge.net.au> wrote:
 > > On Thu, Feb 14, 2013 at 10:42:21AM +0900, Magnus Damm wrote:
 > >> On Thu, Feb 14, 2013 at 12:59 AM, Guennadi Liakhovetski
@@ -51,7 +50,13 @@ On Thu, Feb 14, 2013 at 11:09:06AM +0900, Magnus Damm wrote:
 > >> >> >
 > >> >> > Regarding the toshiba,mmc-wrprotect-disable property, would it be
 > >> >> > enough to just check the presence of the wp-gpios property?
-> >> >> >
+
+No, normally WP would be implemented, using the native dedicated SDHI WP 
+pin. So, toshiba,mmc-wrprotect-disable is used when no such pin is 
+available on this interface, or it's not routed to the socket and no GPIO 
+is used for that either. So, this flag is the only way to know, whether a 
+WP pin is used, if no wp-gpios is used.
+
 > >> >> > TMIO_MMC_BLKSZ_2BYTES seems to be set unconditionally in
 > >> >> > sh_mobile_sdhi_probe and nowhere else, so I'd assume we don't
 > >> >> > actually need to provide this here, but can keep that knowledge
@@ -133,4 +138,30 @@ On Thu, Feb 14, 2013 at 11:09:06AM +0900, Magnus Damm wrote:
 > actually needed. And the TMIO_MMC_HAS_IDLE_WAIT flag is not
 > SoC-specific so using a SoC suffix seems incorrect to me.
 
-It seems that 3) coincides best with your desires and Arnd's feedback to date.
+My take on this is the following: having N optionally available on 
+different IP-versions features, I'd rather have N DT properties, than up 
+to 2^N abstract vX versions. Yes, I realise, that in practice we'll never 
+have 2^N, rather just a bit more than N, still, my main problem with those 
+versions, is that they are purely abstracted. I'd be happy if that was a 
+real hardware revision string, that you could look up in a datasheet. But 
+if you have to look in some text file... That just seems much less 
+user-friendly to me, than selecting single properties. Just imagine, what 
+would you prefer, either specifying
+
+	feature-A;
+	feature-B;
+
+in your .dts or going through a list of
+
+v1: has no features
+v2: feature A only
+v3: feature B only
+v4: features A and B
+...
+
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
