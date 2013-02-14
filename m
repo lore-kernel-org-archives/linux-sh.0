@@ -1,132 +1,92 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 14 Feb 2013 08:34:11 +0000
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Thu, 14 Feb 2013 09:10:40 +0000
 Subject: Re: [PATCH] ARM: shmobile: r8a7779: Correct TMU clock support again
-Message-Id: <20130214083408.GA21198@verge.net.au>
+Message-Id: <20130214091040.GG6088@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1360813381-3416-1-git-send-email-horms+renesas@verge.net.au>
  <87a9r7v8xd.wl%kuninori.morimoto.gx@renesas.com>
  <CANqRtoQtROi1cD3MmykhKLqY+1Y2=f+1Qkmw2bjAaP6yZRPW=Q@mail.gmail.com>
- <878v6rv8ij.wl%kuninori.morimoto.gx@renesas.com>
- <20130214042027.GD6036@verge.net.au>
- <87621vv7wa.wl%kuninori.morimoto.gx@renesas.com>
- <20130214043648.GA4773@verge.net.au>
- <20130214044221.GB4773@verge.net.au>
- <CANqRtoSbnXQhqu_-gsVdU1iAZxPo0f5t5P1S8H0CdYTO=1YGMw@mail.gmail.com>
-In-Reply-To: <CANqRtoSbnXQhqu_-gsVdU1iAZxPo0f5t5P1S8H0CdYTO=1YGMw@mail.gmail.com>
+ <20130214041651.GB6036@verge.net.au>
+In-Reply-To: <20130214041651.GB6036@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Feb 14, 2013 at 02:20:07PM +0900, Magnus Damm wrote:
-> On Thu, Feb 14, 2013 at 1:42 PM, Simon Horman <horms@verge.net.au> wrote:
-> > On Thu, Feb 14, 2013 at 01:36:49PM +0900, Simon Horman wrote:
-> >> On Wed, Feb 13, 2013 at 08:25:45PM -0800, Kuninori Morimoto wrote:
-> >> >
-> >> > Hi Simon
-> >> >
-> >> > > > >>       CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
-> >> > > > >> -     CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP015]), /* TMU01 */
-> >> > > > >> +     CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP016]), /* TMU01 */
-> >> > > > >>       CLKDEV_DEV_ID("sh_tmu.2", &mstp_clks[MSTP014]), /* TMU02 */
-> >> > (snip)
-> >> > > > This means that current TMU02 numbering seems doubtful too ?
-> >> > > > How about just rever 58079fa7d54a0929d304054ee759187a2ccd3cdf ?
-> >> > >
-> >> > > Perhaps that is a good idea.
-> >> > >
-> >> > > The original motivation for this patch was to add the TMU02 line.
-> >> > > And "fixing" TMU01 was an afterthought. However, I am also
-> >> > > now doubtful about the correctness of the TMU02 line and thus
-> >> > > the usefulness of the original patch.
-> >> >
-> >> > I think this comment out is creating confusion ?
-> >> >
-> >> > /* TMU00 */ -> /* TMU0 channel 0 */
-> >> > /* TMU01 */ -> /* TMU0 channel 1 */
-> >> > /* TMU02 */ -> /* TMU0 channel 2 */
-> >>
-> >> That does make things a little clearer,
-> >> but I for one wasn't confused by the existing comments.
-> >
-> > Ok, now I think I see what you are getting at.
-> >
-> > MSTP016 is for channel 0..n of TMU0
-> > MSTP015 is for channel 1..n of TMU1
-> > MSTP014 is for channel 2..n of TMU2
-> >
-> > And all the TMU values set by CLKDEV_DEV_ID statements above
-> > relate to channels of TMU0.
-> >
-> > That does seem to be a valid interpretation of the documentation
-> > now that I read it again.
+On Thu, Feb 14, 2013 at 01:16:52PM +0900, Simon Horman wrote:
+> On Thu, Feb 14, 2013 at 01:04:35PM +0900, Magnus Damm wrote:
+> > On Thu, Feb 14, 2013 at 1:03 PM, Kuninori Morimoto
+> > <kuninori.morimoto.gx@renesas.com> wrote:
+> > >
+> > > Hi Simon
+> > >
+> > >> This partially reverts 58079fa7d54a0929d304054ee759187a2ccd3cdf
+> > >> (ARM: shmobile: r8a7779: Correct TMU clock support) and fixes
+> > >> a regression introduced by that patch.
+> > >>
+> > >> Although the documentation I have indicates that the patch above is
+> > >> correct it appears that the change causes the Marzen board to fail to boot
+> > >> as follows.
+> > > (snip)
+> > >> --- a/arch/arm/mach-shmobile/clock-r8a7779.c
+> > >> +++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+> > >> @@ -161,7 +161,7 @@ static struct clk_lookup lookups[] = {
+> > >>       CLKDEV_DEV_ID("ehci-platform.0", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
+> > >>       CLKDEV_DEV_ID("ohci-platform.0", &mstp_clks[MSTP100]), /* USB OHCI port0/1 */
+> > >>       CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
+> > >> -     CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP015]), /* TMU01 */
+> > >> +     CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP016]), /* TMU01 */
+> > >>       CLKDEV_DEV_ID("sh_tmu.2", &mstp_clks[MSTP014]), /* TMU02 */
+> > >>       CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
+> > >>       CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP029]), /* I2C1 */
+> > >
+> > > Really ???
 > 
-> Hm, your channel assignment above seems a tad different from what I believe:
+> I am surprised too!
 > 
-> MSTP016 is for channel 0..n of TMU0
-> MSTP015 is for channel 0..n of TMU1
-> MSTP014 is for channel 0..n of TMU2
+> > > Is MSTP value of TMU01 same as TMU00 ?
+> 
+> With the patch above the board appears to boot.
+> Without the patch, it doesn't.
+> 
+> > Usually, the TMU channels are bundled together. So TMU00 may be for
+> > channel 0->3 and TMU01 for 4->6.
+> 
+> Ok, so in that case the correct value for "sh_tmu.2" might actually
+> be MSTP016 or MSTP015 depending on the bundle size. I am unsure how to test
+> sh_tmu.2.
+> 
+> However, the documentation I have seems to talk about channels
+> being TMU0..TMU2 and control of them being via MSTP016..MSTP014.
+> I.e. what the code currently is but not what seems to work for
+> TMU1 in practice.
 
-Yes, thats is what I wanted to say too.
+I think you are getting caught up on naming semantics. The MSTP bit
+controls a block, which in turn usually has multiple TMU channels
+associated with it, so it's quite reasonable to register the same bit
+multiple times for each channel it impacts (that's what refcounting is
+for, after all).
 
-> Actually, you can check how the TMU channels are bundled together
-> based on the I/O memory and interrupts.
-> The TMU driver configuration in setup-sh73a0 contains these:
-> 
-> static struct sh_timer_config tmu00_platform_data = {
-> 	.name = "TMU00",
-> 	.channel_offset = 0x4,
-> 	.timer_bit = 0,
-> 	.clockevent_rating = 200,
-> };
-> 
-> static struct resource tmu00_resources[] = {
-> 	[0] = {
-> 		.name	= "TMU00",
-> 		.start	= 0xfff60008,
-> 		.end	= 0xfff60013,
-> 		.flags	= IORESOURCE_MEM,
-> 	},
-> 	[1] = {
-> 		.start	= intcs_evt2irq(0x0e80), /* TMU0_TUNI00 */
-> 		.flags	= IORESOURCE_IRQ,
-> 	},
-> };
-> 
-> and
-> 
-> static struct sh_timer_config tmu01_platform_data = {
-> 	.name = "TMU01",
-> 	.channel_offset = 0x10,
-> 	.timer_bit = 1,
-> 	.clocksource_rating = 200,
-> };
-> 
-> static struct resource tmu01_resources[] = {
-> 	[0] = {
-> 		.name	= "TMU01",
-> 		.start	= 0xfff60014,
-> 		.end	= 0xfff6001f,
-> 		.flags	= IORESOURCE_MEM,
-> 	},
-> 	[1] = {
-> 		.start	= intcs_evt2irq(0x0ea0), /* TMU0_TUNI01 */
-> 		.flags	= IORESOURCE_IRQ,
-> 	},
-> };
-> 
-> Note how the IORESOURCE_MEM ranges for tmu00 and tmu01 are closely
-> located. Also check the channel_offset platform data that point out
-> the shared start-stop register. The timer bit is the per-channel
-> start-stop bit. Another hint is in the IORESOURCE_IRQ and the
-> TMU0_TUNI00 + TMU0_TUNI01 comments that both start with TMU0_.
-> 
-> So basically, in this case both tmu00 and tmu01 should be assigned to
-> MSTP016 aka TMU00.
-> 
-> This line must be correct from my point of view:
-> 
-> CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP016]), /* TMU00 */
+The TMU driver only handles individual channels, so sh_tmu.0/1/2 are just
+channel numbers, you don't have any insight in to which block they are a
+subset of or how any of their MSTP bits relate to each other, nor should
+you, as this gets handled by the clk API.
 
-That seems sane. But we are still left guessing about sh_tmu.2.
-Can we assume it is channel 2 or TMU0 ?
+Consider the following example for SH7786:
+
+        CLKDEV_ICK_ID("tmu_fck", "sh_tmu.0", &mstp_clks[MSTP008]),
+        CLKDEV_ICK_ID("tmu_fck", "sh_tmu.1", &mstp_clks[MSTP008]),
+        CLKDEV_ICK_ID("tmu_fck", "sh_tmu.2", &mstp_clks[MSTP008]),
+        CLKDEV_ICK_ID("tmu_fck", "sh_tmu.3", &mstp_clks[MSTP009]),
+        CLKDEV_ICK_ID("tmu_fck", "sh_tmu.4", &mstp_clks[MSTP009]),
+        CLKDEV_ICK_ID("tmu_fck", "sh_tmu.5", &mstp_clks[MSTP009]),
+        CLKDEV_ICK_ID("tmu_fck", "sh_tmu.6", &mstp_clks[MSTP010]),
+        CLKDEV_ICK_ID("tmu_fck", "sh_tmu.7", &mstp_clks[MSTP010]),
+        CLKDEV_ICK_ID("tmu_fck", "sh_tmu.8", &mstp_clks[MSTP010]),
+        CLKDEV_ICK_ID("tmu_fck", "sh_tmu.9", &mstp_clks[MSTP011]),
+        CLKDEV_ICK_ID("tmu_fck", "sh_tmu.10", &mstp_clks[MSTP011]),
+        CLKDEV_ICK_ID("tmu_fck", "sh_tmu.11", &mstp_clks[MSTP011]),
+
+registers a tmu_fck lookup that maps back appropriately for each channel,
+regardless of MSTP overlap. In practice these channels are split between 4 TMU
+blocks, but the driver doesn't know or care.
