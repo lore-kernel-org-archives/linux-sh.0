@@ -1,60 +1,40 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 06 Feb 2013 19:46:57 +0000
-Subject: [PATCH v3 10/13] mmc: tmio: remove unused and deprecated symbols
-Message-Id: <1360180020-18555-11-git-send-email-g.liakhovetski@gmx.de>
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Thu, 14 Feb 2013 13:49:20 +0000
+Subject: [PATCH 04/11] ARM: shmobile: fix defconfig warning on CONFIG_USB
+Message-Id: <1360849767-1463135-5-git-send-email-arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1360849767-1463135-1-git-send-email-arnd@arndb.de>
+In-Reply-To: <1360849767-1463135-1-git-send-email-arnd@arndb.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-arm-kernel@lists.infradead.org
 
-The tmio_mmc_cd_wakeup() inline function has been deprecated since 3.4 and
-is unused since 3.4 too. Remove them.
+A recent update to the marzen_defconfig introduced a
+duplicate CONFIG_USB=y line. This removes one of the
+two.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+arch/arm/configs/marzen_defconfig:86:warning: override: reassigning to symbol USB
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Acked-by: Simon Horman <horms+renesas@verge.net.au>
+Cc: linux-sh@vger.kernel.org
 ---
- include/linux/mfd/tmio.h |   18 ------------------
- 1 files changed, 0 insertions(+), 18 deletions(-)
+ arch/arm/configs/marzen_defconfig | 1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
-index d83af39..99bf3e66 100644
---- a/include/linux/mfd/tmio.h
-+++ b/include/linux/mfd/tmio.h
-@@ -65,12 +65,6 @@
-  */
- #define TMIO_MMC_SDIO_IRQ		(1 << 2)
- /*
-- * Some platforms can detect card insertion events with controller powered
-- * down, using a GPIO IRQ, in which case they have to fill in cd_irq, cd_gpio,
-- * and cd_flags fields of struct tmio_mmc_data.
-- */
--#define TMIO_MMC_HAS_COLD_CD		(1 << 3)
--/*
-  * Some controllers require waiting for the SD bus to become
-  * idle before writing to some registers.
-  */
-@@ -117,18 +111,6 @@ struct tmio_mmc_data {
- };
- 
- /*
-- * This function is deprecated and will be removed soon. Please, convert your
-- * platform to use drivers/mmc/core/cd-gpio.c
-- */
--#include <linux/mmc/host.h>
--static inline void tmio_mmc_cd_wakeup(struct tmio_mmc_data *pdata)
--{
--	if (pdata)
--		mmc_detect_change(dev_get_drvdata(pdata->dev),
--				  msecs_to_jiffies(100));
--}
--
--/*
-  * data for the NAND controller
-  */
- struct tmio_nand_data {
+diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
+index 728a43c..afb17d6 100644
+--- a/arch/arm/configs/marzen_defconfig
++++ b/arch/arm/configs/marzen_defconfig
+@@ -83,7 +83,6 @@ CONFIG_USB=y
+ CONFIG_USB_RCAR_PHY=y
+ CONFIG_MMC=y
+ CONFIG_MMC_SDHI=y
+-CONFIG_USB=y
+ CONFIG_USB_EHCI_HCD=y
+ CONFIG_USB_OHCI_HCD=y
+ CONFIG_USB_OHCI_HCD_PLATFORM=y
 -- 
-1.7.2.5
+1.8.1.2
 
