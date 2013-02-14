@@ -1,76 +1,34 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 15 Feb 2013 13:39:58 +0000
-Subject: Re: [PATCH 3/3] ARM: mach-shmobile: kzm9g: do not enable REGULATOR_DUMMY in defconfig
-Message-Id: <20130215133957.GD27724@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 14 Feb 2013 12:23:47 +0000
+Subject: [PATCH] sh-pfc: sh_pfc_probe() sizeof() fix
+Message-Id: <20130214122347.20778.10789.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360761103-17357-1-git-send-email-horms+renesas@verge.net.au>
- <1360761103-17357-4-git-send-email-horms+renesas@verge.net.au>
- <20130214083621.GA8236@verge.net.au>
- <Pine.LNX.4.64.1302140942250.29693@axis700.grange>
- <20130215131331.GA27724@verge.net.au>
- <Pine.LNX.4.64.1302151420480.7446@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1302151420480.7446@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Fri, Feb 15, 2013 at 02:23:46PM +0100, Guennadi Liakhovetski wrote:
-> Hi Simon
-> 
-> On Fri, 15 Feb 2013, Simon Horman wrote:
-> 
-> > On Thu, Feb 14, 2013 at 09:45:24AM +0100, Guennadi Liakhovetski wrote:
-> > > On Thu, 14 Feb 2013, Simon Horman wrote:
-> > > 
-> > > > On Wed, Feb 13, 2013 at 10:11:43PM +0900, Simon Horman wrote:
-> > > > > Don't enable REGULATOR_DUMMY, it is only intended for development / testing.
-> > > > > There doesn't seem to be any value in setting it here and doing
-> > > > > so was an error on my part.
-> > > > > 
-> > > > > Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > > > > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > > > > ---
-> > > > >  arch/arm/configs/kzm9g_defconfig |    1 -
-> > > > >  1 file changed, 1 deletion(-)
-> > > > > 
-> > > > > diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
-> > > > > index 670c3b6..6751c02 100644
-> > > > > --- a/arch/arm/configs/kzm9g_defconfig
-> > > > > +++ b/arch/arm/configs/kzm9g_defconfig
-> > > > > @@ -86,7 +86,6 @@ CONFIG_I2C_SH_MOBILE=y
-> > > > >  CONFIG_GPIO_PCF857X=y
-> > > > >  # CONFIG_HWMON is not set
-> > > > >  CONFIG_REGULATOR=y
-> > > > > -CONFIG_REGULATOR_DUMMY=y
-> > > > >  CONFIG_FB=y
-> > > > >  CONFIG_FB_SH_MOBILE_LCDC=y
-> > > > >  CONFIG_FRAMEBUFFER_CONSOLE=y
-> > > > 
-> > > > This patch seems to break NIC initialisation.
-> > > > 
-> > > > smsc911x: Driver version 2008-10-21
-> > > > smsc911x smsc911x.0: Failed to get supply 'vdd33a': -517
-> > > > smsc911x smsc911x.0 (unregistered net_device): couldn't get regulators -517
-> > > > platform smsc911x.0: Driver smsc911x requests probe deferral
-> > > 
-> > > Right, you need a fixed regulator similar to how I adde it here
-> > > 
-> > > http://www.spinics.net/lists/linux-sh/msg15713.html
-> > 
-> > Perhaps that is the wrong link?
-> 
-> No, the link is right
-> 
-> > The code in the link seems to be the same as what is preseng
-> > in boards-kzm9g.c already
-> 
-> Indeed, that should be fine. Ah, wait, what if you add ".0" to device 
-> names in regulators like
-> 
-> 	REGULATOR_SUPPLY("vddvario", "smsc911x.0"),
-> 	REGULATOR_SUPPLY("vdd33a", "smsc911x.0"),
+From: Magnus Damm <damm@opensource.se>
 
-Bingo!
+Fix sizeof() usage in sh-pfc/core.c to allocate space
+for the full data structure instead of a pointer.
 
-Thanks, I'll send a patch.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ Written against -next in renesas.git
+
+ drivers/pinctrl/sh-pfc/core.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- 0001/drivers/pinctrl/sh-pfc/core.c
++++ work/drivers/pinctrl/sh-pfc/core.c	2013-02-14 21:04:20.000000000 +0900
+@@ -495,7 +495,7 @@ static int sh_pfc_probe(struct platform_
+ 	if (info = NULL)
+ 		return -ENODEV;
+ 
+-	pfc = devm_kzalloc(&pdev->dev, sizeof(pfc), GFP_KERNEL);
++	pfc = devm_kzalloc(&pdev->dev, sizeof(*pfc), GFP_KERNEL);
+ 	if (pfc = NULL)
+ 		return -ENOMEM;
+ 
