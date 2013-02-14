@@ -1,67 +1,43 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 14 Feb 2013 03:43:01 +0000
-Subject: [PATCH] ARM: shmobile: r8a7779: Correct TMU clock support again
-Message-Id: <1360813381-3416-1-git-send-email-horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Thu, 14 Feb 2013 04:03:30 +0000
+Subject: Re: [PATCH] ARM: shmobile: r8a7779: Correct TMU clock support again
+Message-Id: <87a9r7v8xd.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360034939-32082-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1360034939-32082-1-git-send-email-horms+renesas@verge.net.au>
+References: <1360813381-3416-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1360813381-3416-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This partially reverts 58079fa7d54a0929d304054ee759187a2ccd3cdf
-(ARM: shmobile: r8a7779: Correct TMU clock support) and fixes
-a regression introduced by that patch.
 
-Although the documentation I have indicates that the patch above is
-correct it appears that the change causes the Marzen board to fail to boot
-as follows.
+Hi Simon
 
-...
-hub 4-0:1.0: USB hub found
-hub 4-0:1.0: 2 ports detected
-INFO: rcu_sched self-detected stall on CPUINFO: rcu_sched detected stalls on CPUs/tasks: { 1} (detected by 2, t'9640 jiffies, gB94967052, cB94967051, q8)
-Task dump for CPU 1:
-swapper/0       R running      0     1      0 0x00000002
-[<c02b8f5c>] (__schedule+0x1b0/0x4c0) from [<c013c590>] (__loop_delay+0x4/0xc)
+> This partially reverts 58079fa7d54a0929d304054ee759187a2ccd3cdf
+> (ARM: shmobile: r8a7779: Correct TMU clock support) and fixes
+> a regression introduced by that patch.
+> 
+> Although the documentation I have indicates that the patch above is
+> correct it appears that the change causes the Marzen board to fail to boot
+> as follows.
+(snip)
+> --- a/arch/arm/mach-shmobile/clock-r8a7779.c
+> +++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+> @@ -161,7 +161,7 @@ static struct clk_lookup lookups[] = {
+>  	CLKDEV_DEV_ID("ehci-platform.0", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
+>  	CLKDEV_DEV_ID("ohci-platform.0", &mstp_clks[MSTP100]), /* USB OHCI port0/1 */
+>  	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
+> -	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP015]), /* TMU01 */
+> +	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP016]), /* TMU01 */
+>  	CLKDEV_DEV_ID("sh_tmu.2", &mstp_clks[MSTP014]), /* TMU02 */
+>  	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
+>  	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP029]), /* I2C1 */
 
- { 1}  (t'9640 jiffies gB94967052 cB94967052 q7)
-[<c000ef9c>] (unwind_backtrace+0x0/0xf8) from [<c0068488>] (rcu_check_callbacks+0x218/0x6b8)
-[<c0068488>] (rcu_check_callbacks+0x218/0x6b8) from [<c0026774>] (update_process_times+0x38/0x4c)
-[<c0026774>] (update_process_times+0x38/0x4c) from [<c00569e0>] (tick_nohz_handler+0xb4/0x11c)
-[<c00569e0>] (tick_nohz_handler+0xb4/0x11c) from [<c000e518>] (twd_handler+0x34/0x44)
-[<c000e518>] (twd_handler+0x34/0x44) from [<c0063484>] (handle_percpu_devid_irq+0x68/0x80)
-[<c0063484>] (handle_percpu_devid_irq+0x68/0x80) from [<c005febc>] (generic_handle_irq+0x20/0x30)
-[<c005febc>] (generic_handle_irq+0x20/0x30) from [<c000a5ec>] (handle_IRQ+0x40/0x90)
-[<c000a5ec>] (handle_IRQ+0x40/0x90) from [<c000934c>] (gic_handle_irq+0x2c/0x5c)
-[<c000934c>] (gic_handle_irq+0x2c/0x5c) from [<c0009a40>] (__irq_svc+0x40/0x50)
-Exception stack(0xef03ddf8 to 0xef03de40)
-dde0:                                                       000001c1 ffffffff
-de00: 000001d8 01bf01bf ef35ec40 ef35e800 ef35ec6c 0000002b ef35ec68 c013c560
-de20: c0392994 60000113 00000000 ef03de40 c01a5d40 c013c590 20000113 ffffffff
-[<c0009a40>] (__irq_svc+0x40/0x50) from [<c013c590>] (__loop_delay+0x4/0xc)
+Really ???
+Is MSTP value of TMU01 same as TMU00 ?
 
-Cc: Denis Oliver Kropp <dok@directfb.org>
-Cc: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Please wail, I ask it to hardware guys.
+
+Best regards
 ---
- arch/arm/mach-shmobile/clock-r8a7779.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index 202370d..83369c9 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -161,7 +161,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("ehci-platform.0", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
- 	CLKDEV_DEV_ID("ohci-platform.0", &mstp_clks[MSTP100]), /* USB OHCI port0/1 */
- 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
--	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP015]), /* TMU01 */
-+	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP016]), /* TMU01 */
- 	CLKDEV_DEV_ID("sh_tmu.2", &mstp_clks[MSTP014]), /* TMU02 */
- 	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
- 	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP029]), /* I2C1 */
--- 
-1.7.10.4
-
+Kuninori Morimoto
