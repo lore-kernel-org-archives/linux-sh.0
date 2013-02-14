@@ -1,99 +1,80 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 13 Feb 2013 16:25:07 +0000
-Subject: Re: [PATCH 07/21] ARM: shmobile: kzm9g: reference: Register pinctrl mappings for I2C
-Message-Id: <20130213162507.GC10520@verge.net.au>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Thu, 14 Feb 2013 16:18:35 +0000
+Subject: [PATCH] i2c: sh_mobile: Don't start transfers when suspending
+Message-Id: <1360862257-10807-1-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360723497-23266-1-git-send-email-horms+renesas@verge.net.au>
- <1360723497-23266-8-git-send-email-horms+renesas@verge.net.au>
- <3631209.BKvXQoUfHr@avalon>
-In-Reply-To: <3631209.BKvXQoUfHr@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org, linux-i2c@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Bastian Hecht <hechtb+renesas@gmail.com>
 
-On Wed, Feb 13, 2013 at 05:03:28PM +0100, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> Thanks you for the patch.
-> 
-> On Wednesday 13 February 2013 11:44:43 Simon Horman wrote:
-> > Replace the GPIO-based I2C pinmux configuration by pinctrl mappings.
-> > 
-> > This change is for the kzm9g reference DT implementation and
-> > is in keeping with a similar change for the default kzm9g implementation
-> > made by Laurent Pinchart.
-> > 
-> > This change also adds a sh73a0_pinmux_init() call to kzm_init()
-> > which was previously missing as it was not needed (or at least not
-> > needed in practice) for the minimal board configuration supplied
-> > by the reference DT implementation. The call to sh73a0_pinmux_init()
-> > will be removed by a subsequent patch to initialise pinmus using
-> > device tree.
-> > 
-> > Reported-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> > Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > ---
-> >  arch/arm/mach-shmobile/board-kzm9g-reference.c |   12 ++++++++----
-> >  1 file changed, 8 insertions(+), 4 deletions(-)
-> > 
-> > diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c
-> > b/arch/arm/mach-shmobile/board-kzm9g-reference.c index 6a1222e..642bb7b
-> > 100644
-> > --- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
-> > +++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-> > @@ -26,12 +26,18 @@
-> >  #include <linux/irq.h>
-> >  #include <linux/input.h>
-> >  #include <linux/of_platform.h>
-> > +#include <linux/pinctrl/machine.h>
-> >  #include <mach/sh73a0.h>
-> >  #include <mach/common.h>
-> >  #include <asm/hardware/cache-l2x0.h>
-> >  #include <asm/mach-types.h>
-> >  #include <asm/mach/arch.h>
-> > 
-> > +static const struct pinctrl_map kzm_pinctrl_map[] = {
-> > +	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.3", "pfc-sh73a0",
-> > +				  "i2c3_1", "i2c3"),
-> > +};
-> > +
-> >  static void __init kzm_init(void)
-> >  {
-> >  	/* enable SCIFA4 */
-> > @@ -52,16 +58,14 @@ static void __init kzm_init(void)
-> >  	gpio_request(GPIO_FN_MMCD0_6_PU,	NULL);
-> >  	gpio_request(GPIO_FN_MMCD0_7_PU,	NULL);
-> > 
-> > -	/* I2C 3 */
-> > -	gpio_request(GPIO_FN_PORT27_I2C_SCL3, NULL);
-> > -	gpio_request(GPIO_FN_PORT28_I2C_SDA3, NULL);
-> > -
-> >  #ifdef CONFIG_CACHE_L2X0
-> >  	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
-> >  	l2x0_init(IOMEM(0xf0100000), 0x40460000, 0x82000fff);
-> >  #endif
-> > 
-> > +	sh73a0_pinmux_init();
-> 
-> You should initialize pinmuxing before using any of the GPIO functions, so 
-> this call should be moved near the top of kzm_init().
-> 
-> >  	sh73a0_add_standard_devices_dt();
-> > +	pinctrl_register_mappings(kzm_pinctrl_map, ARRAY_SIZE(kzm_pinctrl_map));
-> 
-> You should register mappings before initializing pinmuxing, otherwise the 
-> default configurations won't be applied as they won't be registered when the 
-> PFC device is registered. This call should thus be moved before the 
-> sh73a0_pinmux_init() call.
+Currently we provoke i2c timeouts by allowing transfers when
+suspending. This patch adds awareness to suspending and fixes these
+issues.
+The patch follows the style used in i2c-tegra.c - thanks.
 
-Thanks. I have sorted that out in my tree as Guennadi had supplied
-a patch to add sh73a0_pinmux_init() and pinctrl_register_mappings()
-calls in the correct locations and I rebased on top of that.
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+---
+ drivers/i2c/busses/i2c-sh_mobile.c |   28 ++++++++++++++++++++++++++++
+ 1 file changed, 28 insertions(+)
 
-Its a shame we seem to have this co-dependency between kzm9g-reference
-and pinmux. At this stage it just looks like we will need to tread
-carefully when merging.
-
+diff --git a/drivers/i2c/busses/i2c-sh_mobile.c b/drivers/i2c/busses/i2c-sh_mobile.c
+index b6e7a83..da28164 100644
+--- a/drivers/i2c/busses/i2c-sh_mobile.c
++++ b/drivers/i2c/busses/i2c-sh_mobile.c
+@@ -132,6 +132,7 @@ struct sh_mobile_i2c_data {
+ 	struct i2c_msg *msg;
+ 	int pos;
+ 	int sr;
++	bool is_suspended;
+ };
+ 
+ #define IIC_FLAG_HAS_ICIC67	(1 << 0)
+@@ -511,6 +512,9 @@ static int sh_mobile_i2c_xfer(struct i2c_adapter *adapter,
+ 	u_int8_t val;
+ 	int i, k, retry_count;
+ 
++	if (pd->is_suspended)
++		return -EBUSY;
++
+ 	activate_ch(pd);
+ 
+ 	/* Process all messages */
+@@ -753,9 +757,33 @@ static int sh_mobile_i2c_runtime_nop(struct device *dev)
+ 	return 0;
+ }
+ 
++static int sh_mobile_i2c_suspend(struct device *dev)
++{
++	struct sh_mobile_i2c_data *pd = dev_get_drvdata(dev);
++
++	i2c_lock_adapter(&pd->adap);
++	pd->is_suspended = true;
++	i2c_unlock_adapter(&pd->adap);
++
++	return 0;
++}
++
++static int sh_mobile_i2c_resume(struct device *dev)
++{
++	struct sh_mobile_i2c_data *pd = dev_get_drvdata(dev);
++
++	i2c_lock_adapter(&pd->adap);
++	pd->is_suspended = false;
++	i2c_unlock_adapter(&pd->adap);
++
++	return 0;
++}
++
+ static const struct dev_pm_ops sh_mobile_i2c_dev_pm_ops = {
+ 	.runtime_suspend = sh_mobile_i2c_runtime_nop,
+ 	.runtime_resume = sh_mobile_i2c_runtime_nop,
++	.suspend = sh_mobile_i2c_suspend,
++	.resume = sh_mobile_i2c_resume,
+ };
+ 
+ static const struct of_device_id sh_mobile_i2c_dt_ids[] = {
+-- 
+1.7.9.5
 
