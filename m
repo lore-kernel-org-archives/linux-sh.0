@@ -1,37 +1,21 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sat, 16 Feb 2013 21:40:22 +0000
-Subject: [PATCH 1/4] ARM: mach-shmobile: r8a7779: SATA DT configuration
-Message-Id: <201302170140.45708.sergei.shtylyov@cogentembedded.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 15 Feb 2013 13:48:35 +0000
+Subject: [PATCH 0/2] shmobile: kzm9g: correct smsc regulator registration
+Message-Id: <1360936117-21765-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+Correct registration of regulators for the SMSC device on the kzm9g
+and update the defconfig accordingly.
 
-Allow configuration of the r8a7779 SoC SATA controller using a flattened device
-tree.
+Simon Horman (2):
+  ARM: shmobile: kzm9g: correct smsc regulator registration
+  ARM: mach-shmobile: kzm9g: do not enable REGULATOR_DUMMY in defconfig
 
-Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+ arch/arm/configs/kzm9g_defconfig     |    1 -
+ arch/arm/mach-shmobile/board-kzm9g.c |    4 ++--
+ 2 files changed, 2 insertions(+), 3 deletions(-)
 
----
- arch/arm/boot/dts/r8a7779.dtsi |    7 +++++++
- 1 file changed, 7 insertions(+)
-
-Index: renesas/arch/arm/boot/dts/r8a7779.dtsi
-=================================--- renesas.orig/arch/arm/boot/dts/r8a7779.dtsi
-+++ renesas/arch/arm/boot/dts/r8a7779.dtsi
-@@ -92,4 +92,11 @@
- 		interrupts = <0 28 0x4>;
- 		reg-io-width = <4>;
- 	};
-+
-+	sata: sata@0xfc600000 {
-+		compatible = "renesas,rcar-sata";
-+		reg = <0xfc600000 0x2000>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 100 0x4>;
-+	};
- };
