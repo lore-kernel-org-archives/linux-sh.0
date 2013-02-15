@@ -1,143 +1,66 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 18 Feb 2013 13:47:54 +0000
-Subject: [PATCH 07/08] ARM: shmobile: Rearrange r8a7779 cpu hotplug code
-Message-Id: <20130218134754.17303.4405.sendpatchset@w520>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 15 Feb 2013 15:13:53 +0000
+Subject: [PATCH v4 04/13] mmc: (cosmetic) remove "extern" from function declarations
+Message-Id: <1360941242-18153-5-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130218134648.17303.97576.sendpatchset@w520>
-In-Reply-To: <20130218134648.17303.97576.sendpatchset@w520>
+References: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Arnd Bergmann <arnd@arndb.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-From: Magnus Damm <damm@opensource.se>
+The "extern" keyword isn't required in function declarations, remove it.
 
-Update the r8a7779 SMP code and CPU Hotplug in particular
-to follow the same style as sh73a0. This means dropping
-__maybe_unused for #ifdef CONFIG_HOTPLUG_CPU.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ include/linux/mmc/host.h |   22 +++++++++++-----------
+ 1 files changed, 11 insertions(+), 11 deletions(-)
 
- arch/arm/mach-shmobile/smp-r8a7779.c |   96 +++++++++++++++++-----------------
- 1 file changed, 49 insertions(+), 47 deletions(-)
+diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
+index 13c0c8d..356ae0a 100644
+--- a/include/linux/mmc/host.h
++++ b/include/linux/mmc/host.h
+@@ -341,10 +341,10 @@ struct mmc_host {
+ 	unsigned long		private[0] ____cacheline_aligned;
+ };
+ 
+-extern struct mmc_host *mmc_alloc_host(int extra, struct device *);
+-extern int mmc_add_host(struct mmc_host *);
+-extern void mmc_remove_host(struct mmc_host *);
+-extern void mmc_free_host(struct mmc_host *);
++struct mmc_host *mmc_alloc_host(int extra, struct device *);
++int mmc_add_host(struct mmc_host *);
++void mmc_remove_host(struct mmc_host *);
++void mmc_free_host(struct mmc_host *);
+ void mmc_of_parse(struct mmc_host *host);
+ 
+ static inline void *mmc_priv(struct mmc_host *host)
+@@ -358,16 +358,16 @@ static inline void *mmc_priv(struct mmc_host *host)
+ #define mmc_classdev(x)	(&(x)->class_dev)
+ #define mmc_hostname(x)	(dev_name(&(x)->class_dev))
+ 
+-extern int mmc_suspend_host(struct mmc_host *);
+-extern int mmc_resume_host(struct mmc_host *);
++int mmc_suspend_host(struct mmc_host *);
++int mmc_resume_host(struct mmc_host *);
+ 
+-extern int mmc_power_save_host(struct mmc_host *host);
+-extern int mmc_power_restore_host(struct mmc_host *host);
++int mmc_power_save_host(struct mmc_host *host);
++int mmc_power_restore_host(struct mmc_host *host);
+ 
+-extern void mmc_detect_change(struct mmc_host *, unsigned long delay);
+-extern void mmc_request_done(struct mmc_host *, struct mmc_request *);
++void mmc_detect_change(struct mmc_host *, unsigned long delay);
++void mmc_request_done(struct mmc_host *, struct mmc_request *);
+ 
+-extern int mmc_cache_ctrl(struct mmc_host *, u8);
++int mmc_cache_ctrl(struct mmc_host *, u8);
+ 
+ static inline void mmc_signal_sdio_irq(struct mmc_host *host)
+ {
+-- 
+1.7.2.5
 
---- 0006/arch/arm/mach-shmobile/smp-r8a7779.c
-+++ work/arch/arm/mach-shmobile/smp-r8a7779.c	2013-02-18 22:30:04.000000000 +0900
-@@ -66,16 +66,6 @@ void __init r8a7779_register_twd(void)
- }
- #endif
- 
--static int r8a7779_scu_psr_core_disabled(int cpu)
--{
--	unsigned long mask = 3 << (cpu * 8);
--
--	if ((__raw_readl(shmobile_scu_base + 8) & mask) = mask)
--		return 1;
--
--	return 0;
--}
--
- static int r8a7779_platform_cpu_kill(unsigned int cpu)
- {
- 	struct r8a7779_pm_ch *ch = NULL;
-@@ -92,43 +82,6 @@ static int r8a7779_platform_cpu_kill(uns
- 	return ret ? ret : 1;
- }
- 
--static int __maybe_unused r8a7779_cpu_kill(unsigned int cpu)
--{
--	int k;
--
--	/* this function is running on another CPU than the offline target,
--	 * here we need wait for shutdown code in platform_cpu_die() to
--	 * finish before asking SoC-specific code to power off the CPU core.
--	 */
--	for (k = 0; k < 1000; k++) {
--		if (r8a7779_scu_psr_core_disabled(cpu))
--			return r8a7779_platform_cpu_kill(cpu);
--
--		mdelay(1);
--	}
--
--	return 0;
--}
--
--static void __maybe_unused r8a7779_cpu_die(unsigned int cpu)
--{
--	dsb();
--	flush_cache_all();
--
--	/* disable cache coherency */
--	scu_power_mode(shmobile_scu_base, SCU_PM_POWEROFF);
--
--	/* Endless loop until power off from r8a7779_cpu_kill() */
--	while (1)
--		cpu_do_idle();
--}
--
--static int __maybe_unused r8a7779_cpu_disable(unsigned int cpu)
--{
--	/* only CPU1->3 have power domains, do not allow hotplug of CPU0 */
--	return cpu = 0 ? -EPERM : 0;
--}
--
- static void __cpuinit r8a7779_secondary_init(unsigned int cpu)
- {
- 	gic_secondary_init(0);
-@@ -176,6 +129,55 @@ static void __init r8a7779_smp_init_cpus
- 	shmobile_smp_init_cpus(scu_get_core_count(shmobile_scu_base));
- }
- 
-+#ifdef CONFIG_HOTPLUG_CPU
-+static int r8a7779_scu_psr_core_disabled(int cpu)
-+{
-+	unsigned long mask = 3 << (cpu * 8);
-+
-+	if ((__raw_readl(shmobile_scu_base + 8) & mask) = mask)
-+		return 1;
-+
-+	return 0;
-+}
-+
-+static int r8a7779_cpu_kill(unsigned int cpu)
-+{
-+	int k;
-+
-+	/* this function is running on another CPU than the offline target,
-+	 * here we need wait for shutdown code in platform_cpu_die() to
-+	 * finish before asking SoC-specific code to power off the CPU core.
-+	 */
-+	for (k = 0; k < 1000; k++) {
-+		if (r8a7779_scu_psr_core_disabled(cpu))
-+			return r8a7779_platform_cpu_kill(cpu);
-+
-+		mdelay(1);
-+	}
-+
-+	return 0;
-+}
-+
-+static void r8a7779_cpu_die(unsigned int cpu)
-+{
-+	dsb();
-+	flush_cache_all();
-+
-+	/* disable cache coherency */
-+	scu_power_mode(shmobile_scu_base, SCU_PM_POWEROFF);
-+
-+	/* Endless loop until power off from r8a7779_cpu_kill() */
-+	while (1)
-+		cpu_do_idle();
-+}
-+
-+static int r8a7779_cpu_disable(unsigned int cpu)
-+{
-+	/* only CPU1->3 have power domains, do not allow hotplug of CPU0 */
-+	return cpu = 0 ? -EPERM : 0;
-+}
-+#endif /* CONFIG_HOTPLUG_CPU */
-+
- struct smp_operations r8a7779_smp_ops  __initdata = {
- 	.smp_init_cpus		= r8a7779_smp_init_cpus,
- 	.smp_prepare_cpus	= r8a7779_smp_prepare_cpus,
