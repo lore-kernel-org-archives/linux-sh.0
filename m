@@ -1,95 +1,78 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 13 Feb 2013 03:26:21 +0000
-Subject: [PATCH 03/21] ARM: shmobile: kzm9g: Register pinctrl mappings for LCD
-Message-Id: <1360725999-14514-4-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 15 Feb 2013 15:14:02 +0000
+Subject: [PATCH v4 13/13] mmc: tmio: add barriers to IO operations
+Message-Id: <1360941242-18153-14-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360725999-14514-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1360725999-14514-1-git-send-email-horms+renesas@verge.net.au>
+References: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Arnd Bergmann <arnd@arndb.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Without barriers SDIO operations fail with runtime PM enabled.
 
-Replace the GPIO-based LCD pinmux configuration by pinctrl mappings.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Reviewed-by: Paul Mundt <lethal@linux-sh.org>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/board-kzm9g.c |   37 +++++++++-------------------------
- 1 file changed, 10 insertions(+), 27 deletions(-)
+ drivers/mmc/host/tmio_mmc.h |   18 ++++++++++--------
+ 1 files changed, 10 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index 1a26077..1621889 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -30,6 +30,7 @@
- #include <linux/mmc/sh_mmcif.h>
- #include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/mfd/tmio.h>
-+#include <linux/pinctrl/machine.h>
- #include <linux/platform_device.h>
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/machine.h>
-@@ -599,6 +600,13 @@ static struct platform_device *kzm_devices[] __initdata = {
- 	&fsi_ak4648_device,
- };
+diff --git a/drivers/mmc/host/tmio_mmc.h b/drivers/mmc/host/tmio_mmc.h
+index d857f5c..a10ebd0 100644
+--- a/drivers/mmc/host/tmio_mmc.h
++++ b/drivers/mmc/host/tmio_mmc.h
+@@ -159,19 +159,20 @@ int tmio_mmc_host_runtime_resume(struct device *dev);
  
-+static const struct pinctrl_map kzm_pinctrl_map[] = {
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-sh73a0",
-+				  "lcd_data24", "lcd"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-sh73a0",
-+				  "lcd_sync", "lcd"),
-+};
-+
- /*
-  * FIXME
-  *
-@@ -660,6 +668,8 @@ static void __init kzm_init(void)
- 				     ARRAY_SIZE(fixed2v8_power_consumers), 2800000);
- 	regulator_register_fixed(2, dummy_supplies, ARRAY_SIZE(dummy_supplies));
+ static inline u16 sd_ctrl_read16(struct tmio_mmc_host *host, int addr)
+ {
+-	return readw(host->ctl + (addr << host->bus_shift));
++	return ioread16(host->ctl + (addr << host->bus_shift));
+ }
  
-+	pinctrl_register_mappings(kzm_pinctrl_map, ARRAY_SIZE(kzm_pinctrl_map));
-+
- 	sh73a0_pinmux_init();
+ static inline void sd_ctrl_read16_rep(struct tmio_mmc_host *host, int addr,
+ 		u16 *buf, int count)
+ {
+-	readsw(host->ctl + (addr << host->bus_shift), buf, count);
++	wmb();
++	ioread16_rep(host->ctl + (addr << host->bus_shift), buf, count);
+ }
  
- 	/* enable SCIFA4 */
-@@ -675,33 +685,6 @@ static void __init kzm_init(void)
- 	gpio_request_one(GPIO_PORT224, GPIOF_IN, NULL); /* IRQ3 */
+ static inline u32 sd_ctrl_read32(struct tmio_mmc_host *host, int addr)
+ {
+-	return readw(host->ctl + (addr << host->bus_shift)) |
+-	       readw(host->ctl + ((addr + 2) << host->bus_shift)) << 16;
++	return ioread16(host->ctl + (addr << host->bus_shift)) |
++	       ioread16(host->ctl + ((addr + 2) << host->bus_shift)) << 16;
+ }
  
- 	/* LCDC */
--	gpio_request(GPIO_FN_LCDD23,	NULL);
--	gpio_request(GPIO_FN_LCDD22,	NULL);
--	gpio_request(GPIO_FN_LCDD21,	NULL);
--	gpio_request(GPIO_FN_LCDD20,	NULL);
--	gpio_request(GPIO_FN_LCDD19,	NULL);
--	gpio_request(GPIO_FN_LCDD18,	NULL);
--	gpio_request(GPIO_FN_LCDD17,	NULL);
--	gpio_request(GPIO_FN_LCDD16,	NULL);
--	gpio_request(GPIO_FN_LCDD15,	NULL);
--	gpio_request(GPIO_FN_LCDD14,	NULL);
--	gpio_request(GPIO_FN_LCDD13,	NULL);
--	gpio_request(GPIO_FN_LCDD12,	NULL);
--	gpio_request(GPIO_FN_LCDD11,	NULL);
--	gpio_request(GPIO_FN_LCDD10,	NULL);
--	gpio_request(GPIO_FN_LCDD9,	NULL);
--	gpio_request(GPIO_FN_LCDD8,	NULL);
--	gpio_request(GPIO_FN_LCDD7,	NULL);
--	gpio_request(GPIO_FN_LCDD6,	NULL);
--	gpio_request(GPIO_FN_LCDD5,	NULL);
--	gpio_request(GPIO_FN_LCDD4,	NULL);
--	gpio_request(GPIO_FN_LCDD3,	NULL);
--	gpio_request(GPIO_FN_LCDD2,	NULL);
--	gpio_request(GPIO_FN_LCDD1,	NULL);
--	gpio_request(GPIO_FN_LCDD0,	NULL);
--	gpio_request(GPIO_FN_LCDDISP,	NULL);
--	gpio_request(GPIO_FN_LCDDCK,	NULL);
--
- 	gpio_request_one(GPIO_PORT222, GPIOF_OUT_INIT_HIGH, NULL); /* LCDCDON */
- 	gpio_request_one(GPIO_PORT226, GPIOF_OUT_INIT_HIGH, NULL); /* SC */
+ static inline void sd_ctrl_write16(struct tmio_mmc_host *host, int addr, u16 val)
+@@ -181,19 +182,20 @@ static inline void sd_ctrl_write16(struct tmio_mmc_host *host, int addr, u16 val
+ 	 */
+ 	if (host->pdata->write16_hook && host->pdata->write16_hook(host, addr))
+ 		return;
+-	writew(val, host->ctl + (addr << host->bus_shift));
++	iowrite16(val, host->ctl + (addr << host->bus_shift));
+ }
+ 
+ static inline void sd_ctrl_write16_rep(struct tmio_mmc_host *host, int addr,
+ 		u16 *buf, int count)
+ {
+-	writesw(host->ctl + (addr << host->bus_shift), buf, count);
++	iowrite16_rep(host->ctl + (addr << host->bus_shift), buf, count);
++	wmb();
+ }
+ 
+ static inline void sd_ctrl_write32(struct tmio_mmc_host *host, int addr, u32 val)
+ {
+-	writew(val, host->ctl + (addr << host->bus_shift));
+-	writew(val >> 16, host->ctl + ((addr + 2) << host->bus_shift));
++	iowrite16(val, host->ctl + (addr << host->bus_shift));
++	iowrite16(val >> 16, host->ctl + ((addr + 2) << host->bus_shift));
+ }
+ 
  
 -- 
-1.7.10.4
+1.7.2.5
 
