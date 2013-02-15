@@ -1,71 +1,56 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 12 Feb 2013 15:44:57 +0000
-Subject: [PATCH 02/06] ARM: shmobile: Remove partial CPU Hotplug from EMEV2
-Message-Id: <20130212154457.13067.95836.sendpatchset@w520>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 15 Feb 2013 15:13:55 +0000
+Subject: [PATCH v4 06/13] mmc: tmio-mmc: define device-tree bindings
+Message-Id: <1360941242-18153-7-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130212154438.13067.77359.sendpatchset@w520>
-In-Reply-To: <20130212154438.13067.77359.sendpatchset@w520>
+References: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Arnd Bergmann <arnd@arndb.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-From: Magnus Damm <damm@opensource.se>
+Define device-tree bindings for the tmio-mmc driver to be able to specify
+parameters, currently provided in platform data.
 
-Remove partial CPU hotplug support from EMEV2 SMP code.
-
-The upstream EMEV2 SMP support code has no CPU shutdown or
-reset ability so we cannot reboot the secondary CPU cores.
-
-Regular SMP operation is however still working as expected.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
 
- Tested on KZM9D hardware.
+v4: remove the "toshiba,mmc-blksz-2bytes" property, it can be set directly 
+by the sh_mobile_sdhi driver, use compatible string parsing instead of
+the "toshiba,mmc-has-idle-wait" property.
 
- arch/arm/mach-shmobile/smp-emev2.c |   28 ----------------------------
- 1 file changed, 28 deletions(-)
+ Documentation/devicetree/bindings/mmc/tmio_mmc.txt |   20 ++++++++++++++++++++
+ 1 files changed, 20 insertions(+), 0 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/mmc/tmio_mmc.txt
 
---- 0001/arch/arm/mach-shmobile/smp-emev2.c
-+++ work/arch/arm/mach-shmobile/smp-emev2.c	2013-02-12 22:44:23.000000000 +0900
-@@ -62,29 +62,6 @@ static unsigned int __init emev2_get_cor
- 	return scu_base ? scu_get_core_count(scu_base) : 1;
- }
- 
--static int emev2_platform_cpu_kill(unsigned int cpu)
--{
--	return 0; /* not supported yet */
--}
--
--static int __maybe_unused emev2_cpu_kill(unsigned int cpu)
--{
--	int k;
--
--	/* this function is running on another CPU than the offline target,
--	 * here we need wait for shutdown code in platform_cpu_die() to
--	 * finish before asking SoC-specific code to power off the CPU core.
--	 */
--	for (k = 0; k < 1000; k++) {
--		if (shmobile_cpu_is_dead(cpu))
--			return emev2_platform_cpu_kill(cpu);
--		mdelay(1);
--	}
--
--	return 0;
--}
--
--
- static void __cpuinit emev2_secondary_init(unsigned int cpu)
- {
- 	gic_secondary_init(0);
-@@ -126,9 +103,4 @@ struct smp_operations emev2_smp_ops __in
- 	.smp_prepare_cpus	= emev2_smp_prepare_cpus,
- 	.smp_secondary_init	= emev2_secondary_init,
- 	.smp_boot_secondary	= emev2_boot_secondary,
--#ifdef CONFIG_HOTPLUG_CPU
--	.cpu_kill		= emev2_cpu_kill,
--	.cpu_die		= shmobile_cpu_die,
--	.cpu_disable		= shmobile_cpu_disable,
--#endif
- };
+diff --git a/Documentation/devicetree/bindings/mmc/tmio_mmc.txt b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
+new file mode 100644
+index 0000000..df204e1
+--- /dev/null
++++ b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
+@@ -0,0 +1,20 @@
++* Toshiba Mobile IO SD/MMC controller
++
++The tmio-mmc driver doesn't probe its devices actively, instead its binding to
++devices is managed by either MFD drivers or by the sh_mobile_sdhi platform
++driver. Those drivers supply the tmio-mmc driver with platform data, that either
++describe hardware capabilities, known to them, or are obtained by them from
++their own platform data or from their DT information. In the latter case all
++compulsory and any optional properties, common to all SD/MMC drivers, as
++described in mmc.txt, can be used. Additionally the following tmio_mmc-specific
++optional bindings can be used.
++
++Optional properties:
++- toshiba,mmc-wrprotect-disable: write-protect detection is unavailable
++
++When used with Renesas SDHI hardware, the following compatibility strings
++configure various model-specific properties:
++
++"renesas,sh7372-sdhi":	(default) compatible with SH7372
++"renesas,r8a7740-sdhi":	compatible with R8A7740: certain MMC/SD commands have to
++			wait for the interface to become idle.
+-- 
+1.7.2.5
+
