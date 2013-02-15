@@ -1,41 +1,38 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 12 Feb 2013 15:50:01 +0000
-Subject: [PATCH/RFC 0/3] ARM: shmobile: pinctrl sparse pin numbers
-Message-Id: <1360684204-12888-1-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 15 Feb 2013 13:00:57 +0000
+Subject: [PATCH 1/5] ARM: shmobile: kzm9g: defconfig: do not enable PREEMPT
+Message-Id: <1360933261-6359-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1360933261-6359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1360933261-6359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon
+The motivation for this change is:
 
-This implements support for sparse pin / GPIO numbers for r-/sh-mobile. 
-Most probably this won't become the mainline implementation, so, mainly an 
-RFC / demonstration.
+* It is consistent with all other shmobile boards and;
+* Allows the kzm9g-reference code to work with CONFIG_SMP
+  and thus the new defconfig
 
-Guennadi Liakhovetski (3):
-  pinctrl: sh-pfc: support sparse GPIO numbers
-  pinctrl: sh-pfc: add pin groups for all SD/MMC interfaces on sh73a0
-  ARM: shmobile: switch SDHI and MMCIF interfaces on kzm9g-reference to
-    pinctrl
-
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts   |   61 ++++++--
- arch/arm/boot/dts/sh73a0-reference.dtsi        |    9 -
- arch/arm/mach-shmobile/board-kzm9g-reference.c |   36 +----
- arch/arm/mach-shmobile/board-kzm9g.c           |   30 ++--
- arch/arm/mach-shmobile/include/mach/sh73a0.h   |    2 +
- drivers/pinctrl/sh-pfc/core.h                  |    1 +
- drivers/pinctrl/sh-pfc/gpio.c                  |    6 +-
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c            |  203 ++++++++++++++++++++++++
- drivers/pinctrl/sh-pfc/pinctrl.c               |  111 +++++++++++--
- drivers/pinctrl/sh-pfc/sh_pfc.h                |    2 +
- 10 files changed, 377 insertions(+), 84 deletions(-)
-
--- 
-1.7.2.5
-
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ arch/arm/configs/kzm9g_defconfig |    1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
+index afbae28..da7672e 100644
+--- a/arch/arm/configs/kzm9g_defconfig
++++ b/arch/arm/configs/kzm9g_defconfig
+@@ -33,7 +33,6 @@ CONFIG_NO_HZ=y
+ CONFIG_HIGH_RES_TIMERS=y
+ CONFIG_SMP=y
+ CONFIG_SCHED_MC=y
+-CONFIG_PREEMPT=y
+ CONFIG_AEABI=y
+ # CONFIG_OABI_COMPAT is not set
+ CONFIG_HIGHMEM=y
+-- 
+1.7.10.4
+
