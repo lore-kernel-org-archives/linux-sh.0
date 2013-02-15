@@ -1,60 +1,68 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 12 Feb 2013 15:45:34 +0000
-Subject: [PATCH 06/06] ARM: shmobile: Remove emev2_get_core_count()
-Message-Id: <20130212154534.13067.45412.sendpatchset@w520>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 15 Feb 2013 15:13:57 +0000
+Subject: [PATCH v4 08/13] mmc: sh_mobile_sdhi: remove unused .pdata field
+Message-Id: <1360941242-18153-9-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130212154438.13067.77359.sendpatchset@w520>
-In-Reply-To: <20130212154438.13067.77359.sendpatchset@w520>
+References: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Arnd Bergmann <arnd@arndb.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-From: Magnus Damm <damm@opensource.se>
+The struct sh_mobile_sdhi_info::pdata field was only used for platform-
+based card detection and isn't used anymore since the migration to GPIO-
+based MMC slot functions. Remove it.
 
-Reduce the number of lines of code in smp-emev2.c
-by getting rid of the emev2_get_core_count() function.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
+ drivers/mmc/host/sh_mobile_sdhi.c  |    4 ----
+ include/linux/mmc/sh_mobile_sdhi.h |    2 --
+ 2 files changed, 0 insertions(+), 6 deletions(-)
 
- arch/arm/mach-shmobile/smp-emev2.c |   21 ++++++++-------------
- 1 file changed, 8 insertions(+), 13 deletions(-)
+diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
+index 06e1bc9..175ab97 100644
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -156,7 +156,6 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
+ 	mmc_data = &priv->mmc_data;
+ 
+ 	if (p) {
+-		p->pdata = mmc_data;
+ 		if (p->init) {
+ 			ret = p->init(pdev, &sdhi_ops);
+ 			if (ret)
+@@ -310,9 +309,6 @@ static int sh_mobile_sdhi_remove(struct platform_device *pdev)
+ 	struct sh_mobile_sdhi_info *p = pdev->dev.platform_data;
+ 	int i = 0, irq;
+ 
+-	if (p)
+-		p->pdata = NULL;
+-
+ 	tmio_mmc_host_remove(host);
+ 
+ 	while (1) {
+diff --git a/include/linux/mmc/sh_mobile_sdhi.h b/include/linux/mmc/sh_mobile_sdhi.h
+index b65679f..b76bcf0 100644
+--- a/include/linux/mmc/sh_mobile_sdhi.h
++++ b/include/linux/mmc/sh_mobile_sdhi.h
+@@ -4,7 +4,6 @@
+ #include <linux/types.h>
+ 
+ struct platform_device;
+-struct tmio_mmc_data;
+ 
+ #define SH_MOBILE_SDHI_IRQ_CARD_DETECT	"card_detect"
+ #define SH_MOBILE_SDHI_IRQ_SDCARD	"sdcard"
+@@ -26,7 +25,6 @@ struct sh_mobile_sdhi_info {
+ 	unsigned long tmio_caps2;
+ 	u32 tmio_ocr_mask;	/* available MMC voltages */
+ 	unsigned int cd_gpio;
+-	struct tmio_mmc_data *pdata;
+ 	void (*set_pwr)(struct platform_device *pdev, int state);
+ 	int (*get_cd)(struct platform_device *pdev);
+ 
+-- 
+1.7.2.5
 
---- 0007/arch/arm/mach-shmobile/smp-emev2.c
-+++ work/arch/arm/mach-shmobile/smp-emev2.c	2013-02-12 23:51:54.000000000 +0900
-@@ -50,18 +50,6 @@ static void modify_scu_cpu_psr(unsigned
- 
- }
- 
--static unsigned int __init emev2_get_core_count(void)
--{
--	if (!scu_base) {
--		scu_base = ioremap(EMEV2_SCU_BASE, PAGE_SIZE);
--		emev2_clock_init(); /* need ioremapped SMU */
--	}
--
--	WARN_ON_ONCE(!scu_base);
--
--	return scu_base ? scu_get_core_count(scu_base) : 1;
--}
--
- static void __cpuinit emev2_secondary_init(unsigned int cpu)
- {
- 	gic_secondary_init(0);
-@@ -93,7 +81,14 @@ static void __init emev2_smp_prepare_cpu
- 
- static void __init emev2_smp_init_cpus(void)
- {
--	unsigned int ncores = emev2_get_core_count();
-+	unsigned int ncores;
-+
-+	if (!scu_base) {
-+		scu_base = ioremap(EMEV2_SCU_BASE, PAGE_SIZE);
-+		emev2_clock_init(); /* need ioremapped SMU */
-+	}
-+
-+	ncores = scu_base ? scu_get_core_count(scu_base) : 1;
- 
- 	shmobile_smp_init_cpus(ncores);
- }
