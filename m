@@ -1,139 +1,64 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Thu, 07 Feb 2013 23:31:45 +0000
-Subject: [PATCH 2/3] ARM: shmobile: add SDHI and MMCIF interfaces to armadillo800eva-reference
-Message-Id: <Pine.LNX.4.64.1302080028180.30556@axis700.grange>
+Date: Fri, 15 Feb 2013 15:13:51 +0000
+Subject: [PATCH v4 02/13] mmc: detailed definition of CD and WP MMC line polarities in DT
+Message-Id: <1360941242-18153-3-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Arnd Bergmann <arnd@arndb.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Add SDHI0, SDHI1 and MMCIF interfaces to armadillo800eva-reference. With
-no pinctrl DT support we cannot use GPIO card-detection and regulator
-switching.
+Clarify ways to specify write-protect and card-detect MMC lines in FDT.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- .../boot/dts/r8a7740-armadillo800eva-reference.dts |   44 +++++++++++++++++
- .../board-armadillo800eva-reference.c              |   52 ++++++++++++++++++++
- 2 files changed, 96 insertions(+), 0 deletions(-)
 
-diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-index f7db06d..bd6d724 100644
---- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-+++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
-@@ -34,4 +34,48 @@
- 		sh-eth,register-type = "gigabit";
- 		sh-eth,phy-id = <0>;
- 	};
-+
-+	reg_3p3v: regulator@0 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "fixed-3.3V";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+		regulator-always-on;
-+		regulator-boot-on;
-+	};
-+
-+	mmcif0: mmcif@0xe6bd0000 {
-+		compatible = "renesas,sh-mmcif", "renesas,sh7372-mmcif";
-+		reg = <0xe6bd0000 0x100>;
-+		interrupt-parent = <&intca>;
-+		interrupts = <0x1ac0 0x1ae0>;
-+		vmmc-supply = <&reg_3p3v>;
-+		bus-width = <8>;
-+		non-removable;
-+	};
-+
-+	sdhi0: sdhi@0xe6850000 {
-+		compatible = "renesas,shmobile-sdhi";
-+		reg = <0xe6850000 0x100>;
-+		interrupt-parent = <&intca>;
-+		interrupts = <0xe20 0xe40>;
-+		vmmc-supply = <&reg_3p3v>;
-+		bus-width = <4>;
-+		cap-sd-highspeed;
-+		cap-sdio-irq;
-+		broken-cd;
-+		toshiba,mmc-has-idle-wait;
-+	};
-+
-+	sdhi1: sdhi@0xe6860000 {
-+		compatible = "renesas,shmobile-sdhi";
-+		reg = <0xe6860000 0x100>;
-+		interrupt-parent = <&intca>;
-+		interrupts = <0xe80 0xea0 0xec0>;
-+		vmmc-supply = <&reg_3p3v>;
-+		bus-width = <4>;
-+		cap-sd-highspeed;
-+		cap-sdio-irq;
-+		toshiba,mmc-has-idle-wait;
-+	};
- };
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-index e31030e..f280fa7 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
-@@ -138,6 +138,58 @@ static void __init eva_init(void)
- 	gpio_request(GPIO_PORT18, NULL); /* PHY_RST */
- 	gpio_direction_output(GPIO_PORT18, 1);
+v4: remove Linux-specific references.
+
+ Documentation/devicetree/bindings/mmc/mmc.txt |   23 +++++++++++++++++++++--
+ 1 files changed, 21 insertions(+), 2 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/mmc/mmc.txt b/Documentation/devicetree/bindings/mmc/mmc.txt
+index 34f28ed..24c8552 100644
+--- a/Documentation/devicetree/bindings/mmc/mmc.txt
++++ b/Documentation/devicetree/bindings/mmc/mmc.txt
+@@ -18,12 +18,31 @@ Only one of the properties in this section should be supplied:
  
-+	/* SDHI0 */
-+	gpio_request(GPIO_FN_SDHI0_CMD, NULL);
-+	gpio_request(GPIO_FN_SDHI0_CLK, NULL);
-+	gpio_request(GPIO_FN_SDHI0_D0, NULL);
-+	gpio_request(GPIO_FN_SDHI0_D1, NULL);
-+	gpio_request(GPIO_FN_SDHI0_D2, NULL);
-+	gpio_request(GPIO_FN_SDHI0_D3, NULL);
-+	gpio_request(GPIO_FN_SDHI0_WP, NULL);
+ Optional properties:
+ - wp-gpios: Specify GPIOs for write protection, see gpio binding
+-- cd-inverted: when present, polarity on the cd gpio line is inverted
+-- wp-inverted: when present, polarity on the wp gpio line is inverted
++- cd-inverted: when present, polarity on the CD line is inverted. See the note
++  below for the case, when a GPIO is used for the CD line
++- wp-inverted: when present, polarity on the WP line is inverted. See the note
++  below for the case, when a GPIO is used for the WP line
+ - max-frequency: maximum operating clock frequency
+ - no-1-8-v: when present, denotes that 1.8v card voltage is not supported on
+   this system, even if the controller claims it is.
+ 
++*NOTE* on CD and WP polarity. To use common for all SD/MMC host controllers line
++polarity properties, we have to fix the meaning of the "normal" and "inverted"
++line levels. We choose to follow the SDHCI standard, which specifies both those
++lines as "active low." Therefore, using the "cd-inverted" property means, that
++the CD line is active high, i.e. it is high, when a card is inserted. Similar
++logic applies to the "wp-inverted" property.
 +
-+	gpio_request_one(GPIO_PORT17, GPIOF_OUT_INIT_LOW, NULL);  /* SDHI0_18/33_B */
-+	gpio_request_one(GPIO_PORT74, GPIOF_OUT_INIT_HIGH, NULL); /* SDHI0_PON */
-+	gpio_request_one(GPIO_PORT75, GPIOF_OUT_INIT_HIGH, NULL); /* SDSLOT1_PON */
++CD and WP lines can be implemented on the hardware in one of two ways: as GPIOs,
++specified in cd-gpios and wp-gpios properties, or as dedicated pins. Polarity of
++dedicated pins can be specified, using *-inverted properties. GPIO polarity can
++also be specified using the OF_GPIO_ACTIVE_LOW flag. This creates an ambiguity
++in the latter case. We choose to use the XOR logic for GPIO CD and WP lines.
++This means, the two properties are "superimposed," for example leaving the
++OF_GPIO_ACTIVE_LOW flag clear and specifying the respective *-inverted
++property results in a double-inversion and actually means the "normal" line
++polarity is in effect.
 +
-+	/*
-+	 * MMCIF
-+	 * Don't care about the SW1.4 status, since CON2 is not mounted.
-+	 */
-+	gpio_request(GPIO_FN_MMC1_CLK_PORT103,	NULL);
-+	gpio_request(GPIO_FN_MMC1_CMD_PORT104,	NULL);
-+	gpio_request(GPIO_FN_MMC1_D0_PORT149,	NULL);
-+	gpio_request(GPIO_FN_MMC1_D1_PORT148,	NULL);
-+	gpio_request(GPIO_FN_MMC1_D2_PORT147,	NULL);
-+	gpio_request(GPIO_FN_MMC1_D3_PORT146,	NULL);
-+	gpio_request(GPIO_FN_MMC1_D4_PORT145,	NULL);
-+	gpio_request(GPIO_FN_MMC1_D5_PORT144,	NULL);
-+	gpio_request(GPIO_FN_MMC1_D6_PORT143,	NULL);
-+	gpio_request(GPIO_FN_MMC1_D7_PORT142,	NULL);
-+
-+	/*
-+	 * CAUTION
-+	 * DBGMD/LCDC0/FSIA MUX
-+	 * DBGMD_SELECT_B should be set after setting PFC Function.
-+	 */
-+	gpio_request_one(GPIO_PORT176, GPIOF_OUT_INIT_HIGH, NULL);
-+
-+	/* We can switch CON8/CON14 by SW1.5, but only after DBGMD_SELECT_B */
-+	gpio_request_one(GPIO_PORT6, GPIOF_IN, NULL);
-+	if (!gpio_get_value(GPIO_PORT6)) {
-+		/* CON14 disabled, CON8 (SDHI1) enabled */
-+		gpio_request(GPIO_FN_SDHI1_CLK,	NULL);
-+		gpio_request(GPIO_FN_SDHI1_CMD,	NULL);
-+		gpio_request(GPIO_FN_SDHI1_D0,	NULL);
-+		gpio_request(GPIO_FN_SDHI1_D1,	NULL);
-+		gpio_request(GPIO_FN_SDHI1_D2,	NULL);
-+		gpio_request(GPIO_FN_SDHI1_D3,	NULL);
-+		gpio_request(GPIO_FN_SDHI1_CD,	NULL);
-+		gpio_request(GPIO_FN_SDHI1_WP,	NULL);
-+
-+		/* SDSLOT2_PON */
-+		gpio_request_one(GPIO_PORT16, GPIOF_OUT_INIT_HIGH, NULL);
-+	}
-+
- #ifdef CONFIG_CACHE_L2X0
- 	/* Early BRESP enable, Shared attribute override enable, 32K*8way */
- 	l2x0_init(IOMEM(0xf0002000), 0x40440000, 0x82000fff);
+ Optional SDIO properties:
+ - keep-power-in-suspend: Preserves card power during a suspend/resume cycle
+ - enable-sdio-wakeup: Enables wake up of host system on SDIO IRQ assertion
 -- 
 1.7.2.5
 
