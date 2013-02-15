@@ -1,94 +1,53 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 13 Feb 2013 03:26:30 +0000
-Subject: [PATCH 12/21] sh-pfc: sh73a0: Remove FSI function GPIOS
-Message-Id: <1360725999-14514-13-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 15 Feb 2013 15:13:49 +0000
+Subject: [PATCH v4 00/13] mmc: core and driver DT and related development
+Message-Id: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360725999-14514-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1360725999-14514-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-mmc@vger.kernel.org
+Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Arnd Bergmann <arnd@arndb.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This is v4 of a patch-series, extending mmc subsystem device-tree usage 
+and adding more advanced DT capabilities to sh_mmcif and sh_mobile_sdhi / 
+tmio_mmc drivers. Changes since v3 are described in respective patches. 
+Thanks to all who commented on v3.
 
-All sh73a0 platforms now use the pinctrl API to control the FSI pins,
-the corresponding function GPIOS are unused. Remove them.
+Guennadi Liakhovetski (13):
+  mmc: sdhi, tmio: only check flags in tmio-mmc driver proper
+  mmc: detailed definition of CD and WP MMC line polarities in DT
+  mmc: provide a standard MMC device-tree binding parser centrally
+  mmc: (cosmetic) remove "extern" from function declarations
+  mmc: sh-mmcif: use mmc_of_parse() to parse standard MMC DT bindings
+  mmc: tmio-mmc: define device-tree bindings
+  mmc: tmio-mmc: parse device-tree bindings
+  mmc: sh_mobile_sdhi: remove unused .pdata field
+  mmc: sh_mobile_sdhi: use managed resource allocations
+  mmc: tmio: remove unused and deprecated symbols
+  mmc: tmio: add support for the VccQ regulator
+  mmc: add DT bindings for more MMC capability flags
+  mmc: tmio: add barriers to IO operations
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c |   36 -----------------------------------
- 1 file changed, 36 deletions(-)
+ Documentation/devicetree/bindings/mmc/mmc.txt      |   27 ++++-
+ Documentation/devicetree/bindings/mmc/tmio_mmc.txt |   20 ++++
+ drivers/mmc/core/host.c                            |  121 ++++++++++++++++++++
+ drivers/mmc/host/sh_mmcif.c                        |    3 +-
+ drivers/mmc/host/sh_mobile_sdhi.c                  |   96 +++++++---------
+ drivers/mmc/host/tmio_mmc.h                        |   18 ++--
+ drivers/mmc/host/tmio_mmc_pio.c                    |   79 +++++++++++--
+ include/linux/mfd/tmio.h                           |   18 ---
+ include/linux/mmc/host.h                           |   23 ++--
+ include/linux/mmc/sh_mobile_sdhi.h                 |    2 -
+ 10 files changed, 298 insertions(+), 109 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/mmc/tmio_mmc.txt
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index 56c135d..b048fa4 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -2473,7 +2473,6 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(GPO6), \
- 	GPIO_FN(MFG1_OUT2),
- 	GPIO_FN(GPO5), \
--	GPIO_FN(FSICOSLDT3), \
- 	GPIO_FN(PORT16_VIO_CKOR),
- 	GPIO_FN(PORT19_VIO_CKO2),
- 	GPIO_FN(GPO0),
-@@ -2498,55 +2497,20 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(SIM_D), \
- 	GPIO_FN(PORT31_IROUT),
- 	GPIO_FN(XWUP),
--	GPIO_FN(FSIBOBT), \
--	GPIO_FN(FSIBIBT),
--	GPIO_FN(FSIBOLR), \
--	GPIO_FN(FSIBILR),
--	GPIO_FN(FSIBOSLD),
--	GPIO_FN(FSIBISLD),
- 	GPIO_FN(VACK),
- 	GPIO_FN(XTAL1L),
--	GPIO_FN(FSICOSLDT2),
--	GPIO_FN(FSICOSLDT1),
--	GPIO_FN(FSICOBT), \
--	GPIO_FN(FSICIBT), \
--	GPIO_FN(FSIDOBT), \
--	GPIO_FN(FSIDIBT),
--	GPIO_FN(FSICOLR), \
--	GPIO_FN(FSICILR), \
--	GPIO_FN(FSIDOLR), \
--	GPIO_FN(FSIDILR),
--	GPIO_FN(FSICOSLD), \
--	GPIO_FN(PORT47_FSICSPDIF),
--	GPIO_FN(FSICISLD), \
--	GPIO_FN(FSIDISLD),
--	GPIO_FN(FSIACK), \
- 	GPIO_FN(PORT49_IRDA_OUT), \
- 	GPIO_FN(PORT49_IROUT), \
--	GPIO_FN(FSIAOMC),
--	GPIO_FN(FSIAOLR), \
- 	GPIO_FN(BBIF2_TSYNC2), \
- 	GPIO_FN(TPU2TO2), \
--	GPIO_FN(FSIAILR),
- 
--	GPIO_FN(FSIAOBT), \
- 	GPIO_FN(BBIF2_TSCK2), \
- 	GPIO_FN(TPU2TO3), \
--	GPIO_FN(FSIAIBT),
--	GPIO_FN(FSIAOSLD), \
- 	GPIO_FN(BBIF2_TXD2),
--	GPIO_FN(FSIASPDIF), \
- 	GPIO_FN(PORT53_IRDA_IN), \
- 	GPIO_FN(TPU3TO3), \
--	GPIO_FN(FSIBSPDIF), \
--	GPIO_FN(PORT53_FSICSPDIF),
--	GPIO_FN(FSIBCK), \
- 	GPIO_FN(PORT54_IRDA_FIRSEL), \
- 	GPIO_FN(TPU3TO2), \
--	GPIO_FN(FSIBOMC), \
--	GPIO_FN(FSICCK), \
--	GPIO_FN(FSICOMC),
--	GPIO_FN(FSIAISLD), \
- 	GPIO_FN(TPU0TO0),
- 	GPIO_FN(A0), \
- 	GPIO_FN(BS_),
 -- 
-1.7.10.4
+1.7.2.5
 
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de
