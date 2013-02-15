@@ -1,52 +1,69 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 14 Feb 2013 00:40:13 +0000
-Subject: Re: [PATCH 2/3] drm: Renesas R-Car Display Unit DRM driver
-Message-Id: <20130214004012.GE15879@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 15 Feb 2013 15:14:01 +0000
+Subject: [PATCH v4 12/13] mmc: add DT bindings for more MMC capability flags
+Message-Id: <1360941242-18153-13-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359596703-17556-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <1359596703-17556-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <20130213122820.GA19512@verge.net.au>
- <1952026.K0AL5gJOGS@avalon>
-In-Reply-To: <1952026.K0AL5gJOGS@avalon>
+References: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org, magnus.damm@gmail.com
+To: linux-mmc@vger.kernel.org
+Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Arnd Bergmann <arnd@arndb.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-On Wed, Feb 13, 2013 at 07:18:33PM +0100, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> On Wednesday 13 February 2013 21:28:20 Simon Horman wrote:
-> > On Thu, Jan 31, 2013 at 02:45:02AM +0100, Laurent Pinchart wrote:
-> > > The R-Car Display Unit (DU) DRM driver supports both superposition
-> > > processors and all eight planes in RGB and YUV formats without alpha
-> > > blending.
-> > > 
-> > > Only VGA and LVDS encoders and connectors are currently supported.
-> > 
-> > As discussed elsewhere I have applied this series to topic/r-car-du-drm
-> > in the renesas tree.
-> > 
-> > Subsequently, thanks to the wonder that is kbuild,
-> > I have noticed the following build error when using this series
-> > in conjunction with "ARM: shmobile: r8a7779: Remove DU function GPIOs".
-> > 
-> > Clearly this will not be a problem if this series is applied before
-> > the patch above. But presumably it will be a problem down the road.
-> > And actually it is currently a (ignorable) problem in topic/all+next.
-> > 
-> > In any case, I was wondering if Laurent could cook up an add-on patch
-> > to resolve this problem. At the very least it would provide a
-> > reference for how to solve the problem later on and as a bonus clean
-> > up topic/all+next.
-> 
-> The DU board code I've submitted for the Marzen board doesn't use the pinctrl 
-> API yet, as I wanted the DU DRM driver to be usable without waiting for the 
-> next pinctrl series to be ready. I will fix this later, either in the DU DRM 
-> driver patch series or in the pinctrl patch series, depending on which one is 
-> ready first.
-> 
-> In the meantime, please keep the branches separate.
+Many MMC capability flags are platform-dependent and are traditionally set
+in platform data. With DT often each such capability requires a special
+binding. Add bindings for MMC_CAP_SD_HIGHSPEED, MMC_CAP_MMC_HIGHSPEED,
+MMC_CAP_POWER_OFF_CARD and MMC_CAP_SDIO_IRQ capabilities. Also add code to
+DT parser to look up "keep-power-in-suspend" and "enable-sdio-wakeup"
+bindings and set MMC_PM_KEEP_POWER and MMC_PM_WAKE_SDIO_IRQ respectively,
+if found.
 
-Sure, I can do that :)
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ Documentation/devicetree/bindings/mmc/mmc.txt |    4 ++++
+ drivers/mmc/core/host.c                       |   13 +++++++++++++
+ 2 files changed, 17 insertions(+), 0 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/mmc/mmc.txt b/Documentation/devicetree/bindings/mmc/mmc.txt
+index 24c8552..d9ab51f 100644
+--- a/Documentation/devicetree/bindings/mmc/mmc.txt
++++ b/Documentation/devicetree/bindings/mmc/mmc.txt
+@@ -25,6 +25,10 @@ Optional properties:
+ - max-frequency: maximum operating clock frequency
+ - no-1-8-v: when present, denotes that 1.8v card voltage is not supported on
+   this system, even if the controller claims it is.
++- cap-sd-highspeed: SD high-speed timing is supported
++- cap-mmc-highspeed: MMC high-speed timing is supported
++- cap-power-off-card: powering off the card is safe
++- cap-sdio-irq: enable SDIO IRQ signalling on this interface
+ 
+ *NOTE* on CD and WP polarity. To use common for all SD/MMC host controllers line
+ polarity properties, we have to fix the meaning of the "normal" and "inverted"
+diff --git a/drivers/mmc/core/host.c b/drivers/mmc/core/host.c
+index daa2ed1..1365466 100644
+--- a/drivers/mmc/core/host.c
++++ b/drivers/mmc/core/host.c
+@@ -398,6 +398,19 @@ void mmc_of_parse(struct mmc_host *host)
+ 	}
+ 	if (explicit_inv_wp ^ gpio_inv_wp)
+ 		host->caps2 |= MMC_CAP2_RO_ACTIVE_HIGH;
++
++	if (of_find_property(np, "cap-sd-highspeed", &len))
++		host->caps |= MMC_CAP_SD_HIGHSPEED;
++	if (of_find_property(np, "cap-mmc-highspeed", &len))
++		host->caps |= MMC_CAP_MMC_HIGHSPEED;
++	if (of_find_property(np, "cap-power-off-card", &len))
++		host->caps |= MMC_CAP_POWER_OFF_CARD;
++	if (of_find_property(np, "cap-sdio-irq", &len))
++		host->caps |= MMC_CAP_SDIO_IRQ;
++	if (of_find_property(np, "keep-power-in-suspend", &len))
++		host->pm_caps |= MMC_PM_KEEP_POWER;
++	if (of_find_property(np, "enable-sdio-wakeup", &len))
++		host->pm_caps |= MMC_PM_WAKE_SDIO_IRQ;
+ }
+ 
+ EXPORT_SYMBOL(mmc_of_parse);
+-- 
+1.7.2.5
+
