@@ -1,28 +1,39 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 14 Feb 2013 23:22:55 +0000
-Subject: Re: [PATCH] gpio: em: Use irq_domain_add_simple() to fix runtime error
-Message-Id: <20130214232252.GA30667@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 15 Feb 2013 13:48:37 +0000
+Subject: [PATCH 2/2] ARM: mach-shmobile: kzm9g: do not enable REGULATOR_DUMMY in defconfig
+Message-Id: <1360936117-21765-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130212155613.13396.44355.sendpatchset@w520>
-In-Reply-To: <20130212155613.13396.44355.sendpatchset@w520>
+References: <1360936117-21765-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1360936117-21765-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Feb 14, 2013 at 05:45:46PM +0100, Linus Walleij wrote:
-> On Thu, Feb 14, 2013 at 1:30 PM, Magnus Damm <magnus.damm@gmail.com> wrote:
-> > [Simon]
-> >> This appears to be a regression between v3.7 and v3.8-rc1 which
-> >> (possibly amongst other things) prevents the NIC on the KZM9D
-> >> from functioning.
-> >
-> > Thanks, Simon. I forgot to add you on the Reported-by. Good to see
-> > that you've tested the patch.
-> >
-> > So how can we merge this one? From my point of view, if v3.8 is
-> > difficult timing wise then v3.9 is fine.
-> 
-> I've applied it to for-next with an Cc: stable tag.
+Don't enable REGULATOR_DUMMY, it is only intended for development / testing.
+There doesn't seem to be any value in setting it here and doing
+so was an error on my part.
 
-Thanks.
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/configs/kzm9g_defconfig |    1 -
+ 1 file changed, 1 deletion(-)
+
+This patch depends on "ARM: shmobile: kzm9g: correct smsc regulator registration"
+
+diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
+index 670c3b6..6751c02 100644
+--- a/arch/arm/configs/kzm9g_defconfig
++++ b/arch/arm/configs/kzm9g_defconfig
+@@ -86,7 +86,6 @@ CONFIG_I2C_SH_MOBILE=y
+ CONFIG_GPIO_PCF857X=y
+ # CONFIG_HWMON is not set
+ CONFIG_REGULATOR=y
+-CONFIG_REGULATOR_DUMMY=y
+ CONFIG_FB=y
+ CONFIG_FB_SH_MOBILE_LCDC=y
+ CONFIG_FRAMEBUFFER_CONSOLE=y
+-- 
+1.7.10.4
+
