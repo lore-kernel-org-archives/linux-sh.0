@@ -1,26 +1,21 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 06 Feb 2013 19:46:52 +0000
-Subject: [PATCH v3 05/13] mmc: sh-mmcif: use mmc_of_parse() to parse standard MMC DT bindings
-Message-Id: <1360180020-18555-6-git-send-email-g.liakhovetski@gmx.de>
+Date: Fri, 15 Feb 2013 15:13:54 +0000
+Subject: [PATCH v4 05/13] mmc: sh-mmcif: use mmc_of_parse() to parse standard MMC DT bindings
+Message-Id: <1360941242-18153-6-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-mmc@vger.kernel.org
-Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Arnd Bergmann <arnd@arndb.de>
+Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Arnd Bergmann <arnd@arndb.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
 Use mmc_of_parse() to get interface capability flags and used GPIOs from
 device-tree bindings.
 
-Cc: Arnd Bergmann <arnd@arndb.de>
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-
-v3: updated on top of "mmc: sh_mmcif: Avoid unnecessary mmc_delay() at
-    mmc_card_sleepawake()"
-
  drivers/mmc/host/sh_mmcif.c |    3 ++-
  1 files changed, 2 insertions(+), 1 deletions(-)
 
