@@ -1,30 +1,51 @@
-From: Chris Ball <cjb@laptop.org>
-Date: Tue, 19 Feb 2013 22:00:26 +0000
-Subject: Re: [PATCH v4 00/13] mmc: core and driver DT and related development
-Message-Id: <87k3q4ge11.fsf@octavius.laptop.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 15 Feb 2013 13:01:01 +0000
+Subject: [PATCH 5/5] ARM: shmobile: kzm9g: Trim reference DT_MACHINE_START
+Message-Id: <1360933261-6359-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
-	<87k3q5ahl8.fsf@octavius.laptop.org>
-	<Pine.LNX.4.64.1302192253140.22058@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1302192253140.22058@axis700.grange> (Guennadi
-	Liakhovetski's message of "Tue, 19 Feb 2013 22:57:05 +0100 (CET)")
+References: <1360933261-6359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1360933261-6359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: linux-mmc@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Arnd Bergmann <arnd@arndb.de>
+To: linux-arm-kernel@lists.infradead.org
 
-Hi,
+Remove .init_late and .restart from DT_MACHINE_START
+for kzm9g reference as these are not necessary to
+bring the board up which is the main aim of kzm9g reference.
 
-On Tue, Feb 19 2013, Guennadi Liakhovetski wrote:
->> Thanks!  Pushed to mmc-next, will think about merging for 3.9.
->
-> Thanks! Please, push all of them (taking into account v5 of #03/13), but 
-> hold back on #13, it'll need some more work.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |    9 ---------
+ 1 file changed, 9 deletions(-)
 
-Okay, I've dropped #13 from mmc-next.
-
-- Chris.
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index b9e40b6..836070a 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -87,13 +87,6 @@ static void __init kzm_init(void)
+ #endif
+ }
+ 
+-static void kzm9g_restart(char mode, const char *cmd)
+-{
+-#define RESCNT2 IOMEM(0xe6188020)
+-	/* Do soft power on reset */
+-	writel((1 << 31), RESCNT2);
+-}
+-
+ static const char *kzm9g_boards_compat_dt[] __initdata = {
+ 	"renesas,kzm9g-reference",
+ 	NULL,
+@@ -106,8 +99,6 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g-reference")
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_irq	= irqchip_init,
+ 	.init_machine	= kzm_init,
+-	.init_late	= shmobile_init_late,
+ 	.init_time	= shmobile_timer_init,
+-	.restart	= kzm9g_restart,
+ 	.dt_compat	= kzm9g_boards_compat_dt,
+ MACHINE_END
 -- 
-Chris Ball   <cjb@laptop.org>   <http://printf.net/>
-One Laptop Per Child
+1.7.10.4
+
