@@ -1,41 +1,35 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 19 Feb 2013 02:56:09 +0000
-Subject: [PATCH 4/5] ARM: shmobile: r8a7779: Remove lan from dtsi
-Message-Id: <1361242570-8867-5-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 15 Feb 2013 13:01:00 +0000
+Subject: [PATCH 4/5] ARM: shmobile: sh73a0: Add smp ops to DT_MACHINE_START
+Message-Id: <1360933261-6359-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1361242570-8867-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1361242570-8867-1-git-send-email-horms+renesas@verge.net.au>
+References: <1360933261-6359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1360933261-6359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The ethernet controller is not part of the r8a7779 SoC.
+This a board to be brought up with SMP enabled
+without a board file present.
 
-Cc: Magnus Damm <magnus.damm@gmail.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/boot/dts/r8a7779.dtsi |    9 ---------
- 1 file changed, 9 deletions(-)
+ arch/arm/mach-shmobile/setup-sh73a0.c |    1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 2913759..0016302 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -83,13 +83,4 @@
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 81 0x4>;
- 	};
--
--	lan0: lan0@18000000 {
--		compatible = "smsc,lan9220", "smsc,lan9115";
--		reg = <0x18000000 0x100>;
--		phy-mode = "mii";
--		interrupt-parent = <&gic>;
--		interrupts = <0 28 0x4>;
--		reg-io-width = <4>;
--	};
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index fc0c73c..8f00f3a 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -863,6 +863,7 @@ static const char *sh73a0_boards_compat_dt[] __initdata = {
  };
+ 
+ DT_MACHINE_START(SH73A0_DT, "Generic SH73A0 (Flattened Device Tree)")
++	.smp		= smp_ops(sh73a0_smp_ops),
+ 	.map_io		= sh73a0_map_io,
+ 	.init_early	= sh73a0_add_early_devices_dt,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
 -- 
 1.7.10.4
 
