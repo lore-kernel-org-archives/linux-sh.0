@@ -1,119 +1,60 @@
-From: Kiyoshi Ishiyama <kiyoshi.ishiyama.wg@renesas.com>
-Date: Mon, 25 Feb 2013 06:59:12 +0000
-Subject: Re:
-Message-Id: <20130225155109.F15B.KIYOSHI.ISHIYAMA.WG@renesas.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 15 Feb 2013 15:13:59 +0000
+Subject: [PATCH v4 10/13] mmc: tmio: remove unused and deprecated symbols
+Message-Id: <1360941242-18153-11-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-mmc@vger.kernel.org
+Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Arnd Bergmann <arnd@arndb.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Hi Morimoto-san
+The tmio_mmc_cd_wakeup() inline function has been deprecated since 3.4 and
+is unused since 3.4 too. Remove them.
 
-> < LTSI3.4.25 >
-> Calibrating delay loop... 1654.30 BogoMIPS (lpjd63488)
-> 
-> < 3.8.rc7 >
-> Calibrating delay loop... 827.65 BogoMIPS (lpj231744)
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ include/linux/mfd/tmio.h |   18 ------------------
+ 1 files changed, 0 insertions(+), 18 deletions(-)
 
-I have checked bogo mips problem but could not find 
-the root cause of the problem.
-
-Let me report my situation although I cannot explain why 
-below situation happens....
-Please let me know if you know something.
-
----------------------------------------------------------
-(1) use __loop_delay 
-
-BogoMIPS on 3.8 becomes 1654.30 BogoMIPS if we use __loop_delay
-instead of arm_delay_ops.delay(n).
-
-arch/arm/include/asm/delay.h 
-
-/* original bogoMIPS =  827.65 */
-#define __delay(n)              arm_delay_ops.delay(n)
-
-/* test1 bogoMPIS = 1654.30 */
-#define __delay(n)              __loop_delay(n)
-
-
-I have checked the address of arm_delay_ops.delay and __loop_delay.
-Both are the same.....
-
----------------------------------------------------------
-(2) insert printk in calibrate_delay_converge()
-
-BogoMIPS on 3.8 becomes 1654.30 BogoMIPS if we insert 
-printk in calibrate_delay_converge().
-
-BR
-Ishi
-
-
-
-
-
-> Hi Morimoto-san
-> 
-> Thank you for handling patches.
-> 
-> I sent "Acked-by" for three patches.
-> 
-> L2 cache/NEON/Arm branch prediction are handled correctly with three 
-> patches.
-> 
-> But I found one strbange thing....
-> 
-> I'm using LTSI3.4.25 kernel on my Armadillo board for development.
-> I have tested three patches with linux 3.8.rc7.
-> 
-> The prbolem I faced is that the value of BogoMIPS is different.
-> Please find attched log.
-> 
-> < LTSI3.4.25 >
-> Calibrating delay loop... 1654.30 BogoMIPS (lpjd63488)
-> 
-> < 3.8.rc7 >
-> Calibrating delay loop... 827.65 BogoMIPS (lpj231744)
-> 
-> I will check why this difference occurs and come back to you
-> once I find something.
-> 
-> BR
-> Ishi
-> 
-> 
-> > 
-> > Hi Simon, Ishiyama-san, and all
-> > 
-> > These patches update Armaddilo800eva defconfig.
-> > 
-> > >> Ishiyama-san
-> > 
-> > Could you please give your Acked-by to these patches,
-> > if you can agree these ?
-> > 
-> > >> Simon
-> > 
-> > Could you please back-port these patches to LTSI
-> > if we got Acked-by ?
-> > 
-> > Kuninori Morimoto (3):
-> >       ARM: shmobile: armadillo800eva: enable all errata for cache on defconfig
-> >       ARM: shmobile: armadillo800eva: enable branch prediction on defconfig
-> >       ARM: shmobile: armadillo800eva: enable NEON on defconfig
-> > 
-> >  arch/arm/configs/armadillo800eva_defconfig |    7 ++++++-
-> >  1 file changed, 6 insertions(+), 1 deletion(-)
-> > 
-> > Best regards
-> > ---
-> > Kuninori Morimoto
-> 
-> -- 
-> Kiyoshi Ishiyama <kiyoshi.ishiyama.wg@renesas.com>
-
+diff --git a/include/linux/mfd/tmio.h b/include/linux/mfd/tmio.h
+index d83af39..99bf3e66 100644
+--- a/include/linux/mfd/tmio.h
++++ b/include/linux/mfd/tmio.h
+@@ -65,12 +65,6 @@
+  */
+ #define TMIO_MMC_SDIO_IRQ		(1 << 2)
+ /*
+- * Some platforms can detect card insertion events with controller powered
+- * down, using a GPIO IRQ, in which case they have to fill in cd_irq, cd_gpio,
+- * and cd_flags fields of struct tmio_mmc_data.
+- */
+-#define TMIO_MMC_HAS_COLD_CD		(1 << 3)
+-/*
+  * Some controllers require waiting for the SD bus to become
+  * idle before writing to some registers.
+  */
+@@ -117,18 +111,6 @@ struct tmio_mmc_data {
+ };
+ 
+ /*
+- * This function is deprecated and will be removed soon. Please, convert your
+- * platform to use drivers/mmc/core/cd-gpio.c
+- */
+-#include <linux/mmc/host.h>
+-static inline void tmio_mmc_cd_wakeup(struct tmio_mmc_data *pdata)
+-{
+-	if (pdata)
+-		mmc_detect_change(dev_get_drvdata(pdata->dev),
+-				  msecs_to_jiffies(100));
+-}
+-
+-/*
+  * data for the NAND controller
+  */
+ struct tmio_nand_data {
 -- 
-Kiyoshi Ishiyama <kiyoshi.ishiyama.wg@renesas.com>
+1.7.2.5
 
