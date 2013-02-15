@@ -1,48 +1,85 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 12 Feb 2013 15:45:25 +0000
-Subject: [PATCH 05/06] ARM: shmobile: Remove r8a7779_get_core_count()
-Message-Id: <20130212154525.13067.38412.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 15 Feb 2013 13:00:59 +0000
+Subject: [PATCH 3/5] ARM: shmobile: sh73a0: Remove sh73a0_init_irq_dt()
+Message-Id: <1360933261-6359-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130212154438.13067.77359.sendpatchset@w520>
-In-Reply-To: <20130212154438.13067.77359.sendpatchset@w520>
+References: <1360933261-6359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1360933261-6359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+This is not needed as irq_set_wake is
+only used for suspend to ram which is not
+a requirement for bringing up boards using DT.
 
-Reduce the number of lines of code in smp-r8a7779.c
-by getting rid of the r8a7779_get_core_count() function.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Reported-by: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |    3 ++-
+ arch/arm/mach-shmobile/intc-sh73a0.c           |    8 --------
+ arch/arm/mach-shmobile/setup-sh73a0.c          |    3 ++-
+ 3 files changed, 4 insertions(+), 10 deletions(-)
 
- arch/arm/mach-shmobile/smp-r8a7779.c |    9 +--------
- 1 file changed, 1 insertion(+), 8 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/smp-r8a7779.c
-+++ work/arch/arm/mach-shmobile/smp-r8a7779.c	2013-02-12 23:51:15.000000000 +0900
-@@ -87,13 +87,6 @@ static void modify_scu_cpu_psr(unsigned
- 	__raw_writel(tmp, scu_base + 8);
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index bce2a49..b9e40b6 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -24,6 +24,7 @@
+ #include <linux/gpio.h>
+ #include <linux/io.h>
+ #include <linux/irq.h>
++#include <linux/irqchip.h>
+ #include <linux/input.h>
+ #include <linux/of_platform.h>
+ #include <mach/sh73a0.h>
+@@ -103,7 +104,7 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g-reference")
+ 	.map_io		= sh73a0_map_io,
+ 	.init_early	= sh73a0_add_early_devices_dt,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+-	.init_irq	= sh73a0_init_irq_dt,
++	.init_irq	= irqchip_init,
+ 	.init_machine	= kzm_init,
+ 	.init_late	= shmobile_init_late,
+ 	.init_time	= shmobile_timer_init,
+diff --git a/arch/arm/mach-shmobile/intc-sh73a0.c b/arch/arm/mach-shmobile/intc-sh73a0.c
+index 91faba6..a81a1d8 100644
+--- a/arch/arm/mach-shmobile/intc-sh73a0.c
++++ b/arch/arm/mach-shmobile/intc-sh73a0.c
+@@ -460,11 +460,3 @@ void __init sh73a0_init_irq(void)
+ 	sh73a0_pint1_cascade.handler = sh73a0_pint1_demux;
+ 	setup_irq(gic_spi(34), &sh73a0_pint1_cascade);
  }
- 
--static unsigned int __init r8a7779_get_core_count(void)
+-
+-#ifdef CONFIG_OF
+-void __init sh73a0_init_irq_dt(void)
 -{
--	void __iomem *scu_base = scu_base_addr();
--
--	return scu_get_core_count(scu_base);
+-	irqchip_init();
+-	gic_arch_extn.irq_set_wake = sh73a0_set_wake;
 -}
--
- static int r8a7779_platform_cpu_kill(unsigned int cpu)
- {
- 	struct r8a7779_pm_ch *ch = NULL;
-@@ -178,7 +171,7 @@ static void __init r8a7779_smp_prepare_c
- 
- static void __init r8a7779_smp_init_cpus(void)
- {
--	unsigned int ncores = r8a7779_get_core_count();
-+	unsigned int ncores = scu_get_core_count(scu_base_addr());
- 
- 	shmobile_smp_init_cpus(ncores);
- }
+-#endif
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index f7ecb0b..fc0c73c 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -22,6 +22,7 @@
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+ #include <linux/irq.h>
++#include <linux/irqchip.h>
+ #include <linux/platform_device.h>
+ #include <linux/of_platform.h>
+ #include <linux/delay.h>
+@@ -865,7 +866,7 @@ DT_MACHINE_START(SH73A0_DT, "Generic SH73A0 (Flattened Device Tree)")
+ 	.map_io		= sh73a0_map_io,
+ 	.init_early	= sh73a0_add_early_devices_dt,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+-	.init_irq	= sh73a0_init_irq_dt,
++	.init_irq	= irqchip_init,
+ 	.init_machine	= sh73a0_add_standard_devices_dt,
+ 	.init_time	= shmobile_timer_init,
+ 	.dt_compat	= sh73a0_boards_compat_dt,
+-- 
+1.7.10.4
+
