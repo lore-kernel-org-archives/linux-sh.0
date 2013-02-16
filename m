@@ -1,45 +1,35 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 15 Feb 2013 15:13:54 +0000
-Subject: [PATCH v4 05/13] mmc: sh-mmcif: use mmc_of_parse() to parse standard MMC DT bindings
-Message-Id: <1360941242-18153-6-git-send-email-g.liakhovetski@gmx.de>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Sat, 16 Feb 2013 21:50:07 +0000
+Subject: [PATCH 4/4] ARM: mach-shmobile: marzen: add SATA support
+Message-Id: <201302170150.28997.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Arnd Bergmann <arnd@arndb.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-arm-kernel@lists.infradead.org
 
-Use mmc_of_parse() to get interface capability flags and used GPIOs from
-device-tree bindings.
+From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Add SATA support to marzen_defconfig.
+
+Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- drivers/mmc/host/sh_mmcif.c |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
+ arch/arm/configs/marzen_defconfig |    4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/drivers/mmc/host/sh_mmcif.c b/drivers/mmc/host/sh_mmcif.c
-index 7d05852..adb4f68 100644
---- a/drivers/mmc/host/sh_mmcif.c
-+++ b/drivers/mmc/host/sh_mmcif.c
-@@ -1331,6 +1331,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
- 		ret = -ENOMEM;
- 		goto ealloch;
- 	}
-+	mmc_of_parse(mmc);
- 	host		= mmc_priv(mmc);
- 	host->mmc	= mmc;
- 	host->addr	= reg;
-@@ -1343,7 +1344,7 @@ static int sh_mmcif_probe(struct platform_device *pdev)
- 	mmc->ops = &sh_mmcif_ops;
- 	sh_mmcif_init_ocr(host);
- 
--	mmc->caps = MMC_CAP_MMC_HIGHSPEED | MMC_CAP_WAIT_WHILE_BUSY;
-+	mmc->caps |= MMC_CAP_MMC_HIGHSPEED | MMC_CAP_WAIT_WHILE_BUSY;
- 	if (pd && pd->caps)
- 		mmc->caps |= pd->caps;
- 	mmc->max_segs = 32;
--- 
-1.7.2.5
-
+Index: renesas/arch/arm/configs/marzen_defconfig
+=================================--- renesas.orig/arch/arm/configs/marzen_defconfig
++++ renesas/arch/arm/configs/marzen_defconfig
+@@ -49,6 +49,10 @@ CONFIG_DEVTMPFS_MOUNT=y
+ # CONFIG_FW_LOADER is not set
+ CONFIG_SCSI=y
+ CONFIG_BLK_DEV_SD=y
++CONFIG_ATA=y
++CONFIG_ATA_SFF=y
++CONFIG_ATA_BMDMA=y
++CONFIG_SATA_RCAR=y
+ CONFIG_NETDEVICES=y
+ # CONFIG_NET_VENDOR_BROADCOM is not set
+ # CONFIG_NET_VENDOR_FARADAY is not set
