@@ -1,64 +1,24 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 13 Feb 2013 03:29:15 +0000
-Subject: [PATCH 3/9] ARM: shmobile: armadillo: Populate platform devices from device tree
-Message-Id: <1360726161-16072-4-git-send-email-horms+renesas@verge.net.au>
+From: GFS <hillie82@broadweave.net>
+Date: Sun, 17 Feb 2013 15:47:49 +0000
+Subject: SPECIAL OFFER! APPLY NOW FOR 3% LOAN (PERSONAL, BUSINESS & PROJECT FINANCING LOANS)
+Message-Id: <1882796834.2678576.1361116069042.JavaMail.root@broadweave.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360726161-16072-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1360726161-16072-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Call of_platform_populate() at machine initialization time to populate
-platform devices. Remove the explicit pinmux initialization as the PFC
-device will be instantiated from the device tree.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/board-armadillo800eva.c |   10 ++++++----
- 1 file changed, 6 insertions(+), 4 deletions(-)
+Good Day
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 5086795..a10e644 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -25,6 +25,7 @@
- #include <linux/kernel.h>
- #include <linux/input.h>
- #include <linux/irq.h>
-+#include <linux/of_platform.h>
- #include <linux/platform_device.h>
- #include <linux/gpio.h>
- #include <linux/gpio_keys.h>
-@@ -916,11 +917,11 @@ static struct platform_device *eva_devices[] __initdata = {
- };
- 
- static const struct pinctrl_map eva_pinctrl_map[] = {
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "e6050000.pfc",
- 				  "lcd0_data24_0", "lcd0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "e6050000.pfc",
- 				  "lcd0_lclk_1", "lcd0"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "e6050000.pfc",
- 				  "lcd0_sync", "lcd0"),
- };
- 
-@@ -973,7 +974,8 @@ static void __init eva_init(void)
- 
- 	pinctrl_register_mappings(eva_pinctrl_map, ARRAY_SIZE(eva_pinctrl_map));
- 
--	r8a7740_pinmux_init();
-+	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
-+
- 	r8a7740_meram_workaround();
- 
- 	/* SCIFA1 */
--- 
-1.7.10.4
+Apply for personal, business project financing and any type loan at 3%
+interest rate. Contact Ari Monfared of the Global Financial Solution
+via email: arimonfared@blumail.org
+
+In business, it takes money to make money. We are ready to entrust our money on you and your business ideas if you meet the necessary requirement.
+
+Best Regards
+Ari Monfared
+Global Financial Solution
 
