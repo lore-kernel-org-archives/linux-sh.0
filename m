@@ -1,57 +1,72 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 19 Feb 2013 00:49:47 +0000
-Subject: Re: [PATCH 0/4] R-Car SATA driver and platform data
-Message-Id: <20130219004947.GB14932@verge.net.au>
+From: phil.edworthy@renesas.com
+Date: Mon, 18 Feb 2013 08:14:38 +0000
+Subject: Re: [PATCH v2] fbdev: Add Renesas vdc4 framebuffer driver
+Message-Id: <OF9E7DE87B.2215F567-ON80257B16.002CE7D6-80257B16.002D4977@eu.necel.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201302170135.28336.sergei.shtylyov@cogentembedded.com>
- <20130218012322.GA11807@verge.net.au>
- <512234E5.5050700@cogentembedded.com>
-In-Reply-To: <512234E5.5050700@cogentembedded.com>
+References: <1347267372-22949-1-git-send-email-phil.edworthy@renesas.com>
+In-Reply-To: <1347267372-22949-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-fbdev@vger.kernel.org
 
-On Mon, Feb 18, 2013 at 06:04:21PM +0400, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 18-02-2013 5:23, Simon Horman wrote:
-> 
-> >>    Here's the set of 4 patches against the Simon Horman's renesas.git repo, 'next' branch:
-> 
-> >>[1/4] ARM: mach-shmobile: r8a7779: SATA DT configuration
-> >>[2/4] ARM: mach-shmobile: r8a7779: add SATA support
-> >>[3/4] libata: add R-Car SATA driver
-> >>[4/4] ARM: mach-shmobile: marzen: add SATA support
-> 
-> >>Patch 3 also applies to the 'upstream' branch of Jeff Garzik's libata-dev.git repo.
-> 
-> >Hi Sergei, Hi All,
-> 
-> >I do not expect patch 3 of this series to got through
-> >the renesas tree, however, I have included it and the other three patches
-> >in this series to a topic branch in the renesas tree, topic/r-car-stat.
-> 
->    I probably make the patch 3 patch 1 in the next posting.
-> 
-> >The base of the topic branch is:
-> >* a merge of renesas.git next and libata-dev.git upstream, and;
-> >* a boot fix for Marzen which I plan to add to next once it is reviewed:
-> >   "ARM: shmobile: r8a7779: Correct TMU clock support again" (v3).
-> 
-> >With this in place I built a kernel using the marzen_defconfig and booted it.
-> >However, I wonder if I am missing a kernel option, or perhaps something
-> >else of a minor nature as I see the following:
-> 
-> ># dmesg | grep sata
-> >sata_rcar sata_rcar: coherent DMA mask is unset
-> >sata_rcar sata_rcar: failed to start port 0 (errno=-12)
-> >sata_rcar: probe of sata_rcar failed with error -12
-> 
->    No, it's entirely our fault -- Vladimir didn't test the driver in
-> non-DT mode with DMA support added (due to the above mentioned boot
-> fix missing), and I didn't notice the missing intializers for
-> 'sata_device.dev.[coherent_]dma_mask' when reviewing his patches. V2
-> will be posted soon.
+Hi Simon,
 
-Great, thanks.
+> On Fri, Oct 05, 2012 at 05:34:54PM +0100, phil.edworthy@renesas.com 
+wrote:
+> > Hi,
+> > 
+> > Any news on this patch?
+> 
+> Phil, did this patch get merged in the end?
+No, I sent a couple of emails to try to get some response but nothing. I 
+suspect that it was my fault in that I only realised somewhat later that I 
+wasn't signed up to the fbdev ml.
+
+Phil
+
+> > > From: Jingoo Han <jg1.han@samsung.com>
+> > > To: "'Phil Edworthy'" <phil.edworthy@renesas.com>, 
+> > > Cc: "'Florian Tobias Schandinat'" <FlorianSchandinat@gmx.de>, linux-
+> > > fbdev@vger.kernel.org, linux-sh@vger.kernel.org, "'Jingoo Han'" 
+> > > <jg1.han@samsung.com>
+> > > Date: 11/09/2012 03:31
+> > > Subject: Re: [PATCH v2] fbdev: Add Renesas vdc4 framebuffer driver
+> > > 
+> > > On Monday, September 10, 2012 5:56 PM Phil Edworthy wrote
+> > > > 
+> > > > The vdc4 display hardware is found on the sh7269 device.
+> > > > 
+> > > > Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+> > > 
+> > > 
+> > > Reviewed-by: Jingoo Han <jg1.han@samsung.com>
+> > > 
+> > > Best regards,
+> > > Jingoo Han
+> > > 
+> > > 
+> > > > ---
+> > > > v2:
+> > > >  * Use devm_ variants of clk_get, ioremap_nocache, request_irq.
+> > > >  * Replace spaces with tabs.
+> > > >  * Check ren_vdc4_start return value.
+> > > >  * Fix headers used.
+> > > > 
+> > > >  drivers/video/Kconfig      |   10 +
+> > > >  drivers/video/Makefile     |    1 +
+> > > >  drivers/video/ren_vdc4fb.c |  641 +++++++++++++++++++++++++++++++
+> > > +++++++++++++
+> > > >  include/video/ren_vdc4fb.h |   19 ++
+> > > >  4 files changed, 671 insertions(+), 0 deletions(-)
+> > > >  create mode 100644 drivers/video/ren_vdc4fb.c
+> > > >  create mode 100644 include/video/ren_vdc4fb.h
+> > > 
+> > > 
+> > 
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> > 
+
