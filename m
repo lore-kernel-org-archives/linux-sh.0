@@ -1,53 +1,90 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 01 Feb 2013 03:26:41 +0000
-Subject: Re: [PATCH 0/3] R-Car Display Unit DRM driver
-Message-Id: <20130201032641.GC15639@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 18 Feb 2013 09:36:12 +0000
+Subject: Re: [PATCH 3/4] ARM: mach-shmobile: r8a7779: Minimal setup using DT
+Message-Id: <CANqRtoRgA_U2onxnOJ7N2wec1C-V4ZE25UEDC5Dm8KstLPuhEg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359596703-17556-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
- <20130131063838.GC24518@verge.net.au>
- <226620406.loYPPLmWhQ@avalon>
-In-Reply-To: <226620406.loYPPLmWhQ@avalon>
+References: <1359597051-32700-1-git-send-email-horms+renesas@verge.net.au>
+ <1359597051-32700-4-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1359597051-32700-4-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>, linux-sh@vger.kernel.org, dri-devel@lists.freedesktop.org, magnus.damm@gmail.com
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Feb 01, 2013 at 04:15:31AM +0100, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> On Thursday 31 January 2013 15:38:38 Simon Horman wrote:
-> > On Thu, Jan 31, 2013 at 02:45:00AM +0100, Laurent Pinchart wrote:
-> > > Hello,
-> > > 
-> > > Here's a new DRM driver for the Renesas R-Car Display Unit (DU).
-> > > 
-> > > The DU features two superposition processors (modeled as CRTCs) and eight
-> > > planes that can be shared between the superposition processors.
-> > > 
-> > > The driver supports the superposition processors (currently in pure
-> > > overlay mode without alpha blending), all eight planes and all hardware
-> > > supported formats except 8-bit indexed color more and 32-bit RGB666 mode
-> > > (that would be [31:0] x:R:x:G:x:B:x 8:6:2:6:2:6:2 little endian, not
-> > > supported by DRM at the moment).
-> > > 
-> > > On the output side only sync master non-interlaced modes are currently
-> > > supported. Only the VGA output has been tested, as I lack an LVDS panel
-> > > for the development board. The second CRTC hasn't been tested for the same
-> > > reason.
-> > > 
-> > > Platform data are subject to change with the common display framework.
-> > > This is why I haven't implemented DT bindings yet.
-> > > 
-> > > Laurent Pinchart (2):
-> > >   drm: Renesas R-Car Display Unit DRM driver
-> > >   ARM: shmobile: marzen: Add Display Unit support
-> > 
-> > I assume that the above patch is dependent on the other two patches in the
-> > series. If so please let me know how you would like to handle the merge.
-> 
-> It would probably easier to push everything through your tree, as the only 
-> risk of conflict in the DRM patch is in Kconfig/Makefile. I'll first give time 
-> to reviewers anway.
+Hi Simon,
 
-That is fine by me.
+Here's some feedback on your r8a7779 DT code.
+
+On Thu, Jan 31, 2013 at 10:50 AM, Simon Horman
+<horms+renesas@verge.net.au> wrote:
+> Allow a minimal setup of the r8a7779 SoC using a flattened device tree.
+> In particular, configure the i2c and ethernet controllers using a
+> flattened device tree.
+>
+> SCI serial controller and TMU clock source, whose drivers do not yet
+> support configuration using a flattened device tree, are still configured
+> using C code in order to allow booting of a board with this SoC.
+>
+> The ethernet controller also requires a regulator which is a board property.
+> A sample snippet DT for the marzen board is as follows:
+>
+> /dts-v1/;
+> /include/ "r8a7779.dtsi"
+>
+> / {
+>         fixedregulator3v3: fixedregulator@0 {
+>                 compatible = "regulator-fixed";
+>                 regulator-name = "fixed-3.3V";
+>                 regulator-min-microvolt = <3300000>;
+>                 regulator-max-microvolt = <3300000>;
+>                 regulator-boot-on;
+>                 regulator-always-on;
+>         };
+> };
+>
+> &lan0 {
+>         vddvario-supply = <&fixedregulator3v3>;
+>         vdd33a-supply = <&fixedregulator3v3>;
+> };
+>
+> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+> ---
+
+> --- a/arch/arm/mach-shmobile/setup-r8a7779.c
+> +++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+> @@ -321,7 +321,7 @@ static struct platform_device i2c3_device = {
+>         .num_resources  = ARRAY_SIZE(rcar_i2c3_res),
+>  };
+>
+> -static struct platform_device *r8a7779_early_devices[] __initdata = {
+> +static struct platform_device *r8a7779_early_devices_dt[] __initdata = {
+>         &scif0_device,
+>         &scif1_device,
+>         &scif2_device,
+> @@ -330,15 +330,15 @@ static struct platform_device *r8a7779_early_devices[] __initdata = {
+>         &scif5_device,
+>         &tmu00_device,
+>         &tmu01_device,
+> +};
+> +
+> +static struct platform_device *r8a7779_early_devices[] __initdata = {
+>         &i2c0_device,
+>         &i2c1_device,
+>         &i2c2_device,
+>         &i2c3_device,
+>  };
+>
+> -static struct platform_device *r8a7779_late_devices[] __initdata = {
+> -};
+> -
+
+Thanks for your work on this. Two things with early/late devices on r8a7779:
+
+1)  Same thing as sh73a0 applies here, please refrain from using early
+devices with DT.
+2) The i2c devices as early devices look incorrect. Can you make them
+late devices?
+
+Cheers,
+
+/ magnus
