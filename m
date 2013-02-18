@@ -1,42 +1,55 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 18 Feb 2013 05:40:49 +0000
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Mon, 18 Feb 2013 14:56:46 +0000
 Subject: Re: [PATCH 05/06] ARM: shmobile: Common shmobile_scu_base in headsmp-scu.S
-Message-Id: <CANqRtoRtPOjqy+uhWOxpbQMdp=sDaRMAEqZqjMUBcruLB0NuwQ@mail.gmail.com>
+Message-Id: <CABYn4sxoFJMsFnrf9bNCAGfram0rADv2TSbp_90BJ31DRT2W3w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130213134628.12153.47120.sendpatchset@w520>
  <20130213134717.12153.6162.sendpatchset@w520>
  <CABYn4syysDVAKRpjDUc9j26SgmUcjxV3rNf3u2kZMZWurhrjiw@mail.gmail.com>
-In-Reply-To: <CABYn4syysDVAKRpjDUc9j26SgmUcjxV3rNf3u2kZMZWurhrjiw@mail.gmail.com>
+ <CANqRtoRtPOjqy+uhWOxpbQMdp=sDaRMAEqZqjMUBcruLB0NuwQ@mail.gmail.com>
+In-Reply-To: <CANqRtoRtPOjqy+uhWOxpbQMdp=sDaRMAEqZqjMUBcruLB0NuwQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello Bastian,
+Hi,
 
-On Mon, Feb 18, 2013 at 7:20 AM, Bastian Hecht <hechtb@gmail.com> wrote:
-> Hi,
+2013/2/17 Magnus Damm <magnus.damm@gmail.com>:
+> Hello Bastian,
 >
-> this breaks the secondary CPU startup when I test it. I think you
-> can't access shmobile_scu_address this way with the MMU still turned
-> off.
+> On Mon, Feb 18, 2013 at 7:20 AM, Bastian Hecht <hechtb@gmail.com> wrote:
+>> Hi,
+>>
+>> this breaks the secondary CPU startup when I test it. I think you
+>> can't access shmobile_scu_address this way with the MMU still turned
+>> off.
+>>
+>> But instead of
+>>> +       ldr     r1, =shmobile_scu_base
+>>> +       ldr     r1, [r1]                @ SCU base address
+>>
+>> try
+>>
+>> +        mrc     p15, 4, r1, c15, c0, 0 @ get SCU base address
+>>
+>> to get it from the coprocessor.
 >
-> But instead of
->> +       ldr     r1, =shmobile_scu_base
->> +       ldr     r1, [r1]                @ SCU base address
+> Thanks. Can you please let us know which platform you see this?
 >
-> try
+> I've executed this on sh73a0 and KZM9G myself without any issues.
 >
-> +        mrc     p15, 4, r1, c15, c0, 0 @ get SCU base address
->
-> to get it from the coprocessor.
+> Could it be that you are powering down the power domain in your own code?
 
-Thanks. Can you please let us know which platform you see this?
-
-I've executed this on sh73a0 and KZM9G myself without any issues.
-
-Could it be that you are powering down the power domain in your own code?
+I saw it on the current HEAD of the next branch using my KZM9G. I
+bisected it down to your commit. The problem appears right at boot
+time when the 2nd CPU should be brought up.
 
 Thanks,
 
-/ magnus
+ Bastian
+
+
+> Thanks,
+>
+> / magnus
