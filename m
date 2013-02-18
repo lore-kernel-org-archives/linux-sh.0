@@ -1,95 +1,37 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 13 Feb 2013 03:29:21 +0000
-Subject: [PATCH 9/9] ARM: shmobile: kzm9g: Move pinctrl mappings to device tree
-Message-Id: <1360726161-16072-10-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Mon, 18 Feb 2013 19:33:50 +0000
+Subject: [PATCH v2 4/4] ARM: mach-shmobile: marzen: add SATA support
+Message-Id: <201302182334.15982.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360726161-16072-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1360726161-16072-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-Replace the pinctrl mappings in board code by device tree mappings.
-Reference the mapping as the default pin controller state to apply it at
-boot time.
+Add SATA support to marzen_defconfig.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
- arch/arm/boot/dts/sh73a0-kzm9g.dts   |   10 ++++++++++
- arch/arm/mach-shmobile/board-kzm9g.c |   24 ------------------------
- 2 files changed, 10 insertions(+), 24 deletions(-)
+No changes since v1.
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-index 203efb8..ba321c2 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-@@ -36,3 +36,13 @@
- 		};
- 	};
- };
-+
-+&gpio {
-+	pinctrl-0 = <&lcd_pins>;
-+	pinctrl-names = "default";
-+
-+	lcd_pins: pfc_lcd_pins {
-+		renesas,pins = "lcd_data24", "lcd_sync";
-+		renesas,function = "lcd";
-+	};
-+};
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index b89a9a8..949ef36 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -31,7 +31,6 @@
- #include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/mfd/tmio.h>
- #include <linux/of_platform.h>
--#include <linux/pinctrl/machine.h>
- #include <linux/platform_device.h>
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/machine.h>
-@@ -601,27 +600,6 @@ static struct platform_device *kzm_devices[] __initdata = {
- 	&fsi_ak4648_device,
- };
- 
--static const struct pinctrl_map kzm_pinctrl_map[] = {
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_fsi2.0", "e6050000.pfc",
--				  "fsia_mclk_in", "fsia"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_fsi2.0", "e6050000.pfc",
--				  "fsia_sclk_in", "fsia"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_fsi2.0", "e6050000.pfc",
--				  "fsia_data_in", "fsia"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_fsi2.0", "e6050000.pfc",
--				  "fsia_data_out", "fsia"),
--	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.3", "e6050000.pfc",
--				  "i2c3_1", "i2c3"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "e6050000.pfc",
--				  "scifa4_data", "scifa4"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "e6050000.pfc",
--				  "scifa4_ctrl", "scifa4"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "e6050000.pfc",
--				  "lcd_data24", "lcd"),
--	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "e6050000.pfc",
--				  "lcd_sync", "lcd"),
--};
--
- /*
-  * FIXME
-  *
-@@ -683,8 +661,6 @@ static void __init kzm_init(void)
- 				     ARRAY_SIZE(fixed2v8_power_consumers), 2800000);
- 	regulator_register_fixed(2, dummy_supplies, ARRAY_SIZE(dummy_supplies));
- 
--	pinctrl_register_mappings(kzm_pinctrl_map, ARRAY_SIZE(kzm_pinctrl_map));
--
- 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
- 
- 	/* CS4 for SMSC/USB */
--- 
-1.7.10.4
+ arch/arm/configs/marzen_defconfig |    4 ++++
+ 1 file changed, 4 insertions(+)
 
+Index: renesas/arch/arm/configs/marzen_defconfig
+=================================--- renesas.orig/arch/arm/configs/marzen_defconfig
++++ renesas/arch/arm/configs/marzen_defconfig
+@@ -49,6 +49,10 @@ CONFIG_DEVTMPFS_MOUNT=y
+ # CONFIG_FW_LOADER is not set
+ CONFIG_SCSI=y
+ CONFIG_BLK_DEV_SD=y
++CONFIG_ATA=y
++CONFIG_ATA_SFF=y
++CONFIG_ATA_BMDMA=y
++CONFIG_SATA_RCAR=y
+ CONFIG_NETDEVICES=y
+ # CONFIG_NET_VENDOR_BROADCOM is not set
+ # CONFIG_NET_VENDOR_FARADAY is not set
