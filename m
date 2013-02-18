@@ -1,95 +1,58 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 18 Feb 2013 08:52:43 +0000
-Subject: Re: [PATCH v4 12/13] mmc: add DT bindings for more MMC capability flags
-Message-Id: <Pine.LNX.4.64.1302180950310.4526@axis700.grange>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Mon, 18 Feb 2013 20:44:44 +0000
+Subject: [PATCH] ARM: shmobile: Armadillo800EVA-reference: Remove usage of shmobile_timer
+Message-Id: <1361223490-20106-1-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
- <1360941242-18153-13-git-send-email-g.liakhovetski@gmx.de>
- <51201D32.20006@cogentembedded.com>
-In-Reply-To: <51201D32.20006-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov-M4DtvfQ/ZS1MRgGoP+s0PdBPR1lH4CV8@public.gmane.org>
-Cc: linux-sh-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, linux-mmc-u79uwXL29TY76Z2rM5mHXA@public.gmane.org, devicetree-discuss-uLR06cmDAlY/bJ5BZ2RsiQ@public.gmane.org, Magnus Damm <magnus.damm-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>, Simon Horman <horms-/R6kz+dDXgpPR4JQBCEnsQ@public.gmane.org>
+To: linux-sh@vger.kernel.org
 
-Hi Sergei
+The struct sys_timer is gone since the patch "ARM: delete struct
+sys_timer". Since then we can't use shmobile_timer any longer. Setting
+.init_time directly to eva_earlytimer_init fixes the resulting compile
+error and makes the code shorter as well.
 
-On Sun, 17 Feb 2013, Sergei Shtylyov wrote:
-
-> Hello.
-> 
-> On 02/15/2013 06:14 PM, Guennadi Liakhovetski wrote:
-> 
-> > Many MMC capability flags are platform-dependent and are traditionally set
-> > in platform data. With DT often each such capability requires a special
-> > binding. Add bindings for MMC_CAP_SD_HIGHSPEED, MMC_CAP_MMC_HIGHSPEED,
-> > MMC_CAP_POWER_OFF_CARD and MMC_CAP_SDIO_IRQ capabilities. Also add code to
-> > DT parser to look up "keep-power-in-suspend" and "enable-sdio-wakeup"
-> > bindings and set MMC_PM_KEEP_POWER and MMC_PM_WAKE_SDIO_IRQ respectively,
-> > if found.
-> > 
-> > Signed-off-by: Guennadi Liakhovetski<g.liakhovetski@gmx.de>
-> > ---
-> >   Documentation/devicetree/bindings/mmc/mmc.txt |    4 ++++
-> >   drivers/mmc/core/host.c                       |   13 +++++++++++++
-> >   2 files changed, 17 insertions(+), 0 deletions(-)
-> > 
-> > diff --git a/Documentation/devicetree/bindings/mmc/mmc.txt
-> > b/Documentation/devicetree/bindings/mmc/mmc.txt
-> > index 24c8552..d9ab51f 100644
-> > --- a/Documentation/devicetree/bindings/mmc/mmc.txt
-> > +++ b/Documentation/devicetree/bindings/mmc/mmc.txt
-> > @@ -25,6 +25,10 @@ Optional properties:
-> >   - max-frequency: maximum operating clock frequency
-> >   - no-1-8-v: when present, denotes that 1.8v card voltage is not supported
-> > on
-> >     this system, even if the controller claims it is.
-> > +- cap-sd-highspeed: SD high-speed timing is supported
-> > +- cap-mmc-highspeed: MMC high-speed timing is supported
-> > +- cap-power-off-card: powering off the card is safe
-> > +- cap-sdio-irq: enable SDIO IRQ signalling on this interface
-> > 
-> >   *NOTE* on CD and WP polarity. To use common for all SD/MMC host
-> > controllers line
-> >   polarity properties, we have to fix the meaning of the "normal" and
-> > "inverted"
-> > diff --git a/drivers/mmc/core/host.c b/drivers/mmc/core/host.c
-> > index daa2ed1..1365466 100644
-> > --- a/drivers/mmc/core/host.c
-> > +++ b/drivers/mmc/core/host.c
-> > @@ -398,6 +398,19 @@ void mmc_of_parse(struct mmc_host *host)
-> >   	}
-> >   	if (explicit_inv_wp ^ gpio_inv_wp)
-> >   		host->caps2 |= MMC_CAP2_RO_ACTIVE_HIGH;
-> > +
-> > +	if (of_find_property(np, "cap-sd-highspeed",&len))
-> > +		host->caps |= MMC_CAP_SD_HIGHSPEED;
-> > +	if (of_find_property(np, "cap-mmc-highspeed",&len))
-> > +		host->caps |= MMC_CAP_MMC_HIGHSPEED;
-> > +	if (of_find_property(np, "cap-power-off-card",&len))
-> > +		host->caps |= MMC_CAP_POWER_OFF_CARD;
-> > +	if (of_find_property(np, "cap-sdio-irq",&len))
-> > +		host->caps |= MMC_CAP_SDIO_IRQ;
-> > +	if (of_find_property(np, "keep-power-in-suspend",&len))
-> > +		host->pm_caps |= MMC_PM_KEEP_POWER;
-> > +	if (of_find_property(np, "enable-sdio-wakeup",&len))
-> > +		host->pm_caps |= MMC_PM_WAKE_SDIO_IRQ;
-> >    
-> 
->    Why are you not using of_property_read_bool() instead?
-
-Because it's the same. Where I need a boolean return value I so use 
-of_property_read_bool(), e.g.
-
-	explicit_inv_cd = of_property_read_bool(np, "cd-inverted");
-
-But where I just need to check, whether a property is present, using 
-of_find_property() isn't any worse, IMHO.
-
-Thanks
-Guennadi
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ .../board-armadillo800eva-reference.c              |   12 ++----------
+ 1 file changed, 2 insertions(+), 10 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+index 623754d..ae20979 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+@@ -219,14 +219,6 @@ static void __init eva_earlytimer_init(void)
+ 	eva_clock_init();
+ }
+ 
+-static void __init eva_add_early_devices(void)
+-{
+-	r8a7740_add_early_devices_dt();
+-
+-	/* override timer setup with board-specific code */
+-	shmobile_timer.init = eva_earlytimer_init;
+-}
+-
+ #define RESCNT2 IOMEM(0xe6188020)
+ static void eva_restart(char mode, const char *cmd)
+ {
+@@ -241,13 +233,13 @@ static const char *eva_boards_compat_dt[] __initdata = {
+ 
+ DT_MACHINE_START(ARMADILLO800EVA_DT, "armadillo800eva-reference")
+ 	.map_io		= r8a7740_map_io,
+-	.init_early	= eva_add_early_devices,
++	.init_early	= r8a7740_add_early_devices_dt,
+ 	.init_irq	= r8a7740_init_irq_of,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.handle_irq	= shmobile_handle_irq_intc,
+ 	.init_machine	= eva_init,
+ 	.init_late	= shmobile_init_late,
+-	.init_time	= shmobile_timer_init,
++	.init_time	= eva_earlytimer_init,
+ 	.dt_compat	= eva_boards_compat_dt,
+ 	.restart	= eva_restart,
+ MACHINE_END
+-- 
+1.7.9.5
+
