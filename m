@@ -1,47 +1,89 @@
-From: phil.edworthy@renesas.com
-Date: Wed, 13 Feb 2013 12:21:42 +0000
-Subject: Re: [PATCH RFC] sh: pfc: Add ability to use separate read & write GPIO data regs
-Message-Id: <OFC451CA33.A7930984-ON80257B11.003D489D-80257B11.0043E811@eu.necel.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Feb 2013 00:29:36 +0000
+Subject: [PATCH 2/2 v3] [RFC] ARM: shmobile: r8a7779: Add TMU02 platform device
+Message-Id: <1361147376-1228-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360335771-4468-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1360335771-4468-1-git-send-email-phil.edworthy@renesas.com>
+References: <1361147376-1228-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1361147376-1228-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Paul,
+This is intended primarily to exercise the TMUO2 clock definition
+in clock-r8a7779.c. I would appreciate review before I queue it up or
+drop it.
 
-> On Fri, Feb 08, 2013 at 03:02:51PM +0000, Phil Edworthy wrote:
-> > On several devices, there are separate registers for data input
-> > and data output.
-> > 
-> > Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-> 
-> Can you provide a bit more information out how these actually look? As
-> you are reusing the reg_width it seems the write register must be
-> relatively close to the read register for these parts, in which case you
-> could simply increase the size of the mapping and provide a write offset
-> (which would be 0 for parts where read_reg = write_reg).
+With this patch and "ARM: shmobile: r8a7779: Correct TMU clock support
+again" in place I see the following tmu related portions of the
+bootlog on the Marzen board.
 
-Sure, for r8a7779 the data write reg (OUTDTx) is at an offset of -8 from 
-the data read reg (INDTx). I had thought about just using an offset, but 
-thought it would be better to have two mappings rather than the code to 
-handle negative offsets. I assumed that other devices might have a 
-positive offset to OUTDTx.
+ sh_tmu.0: used for clock events
+ sh_tmu.0: used for periodic clock events
+ sh_tmu.1: used as clock source
+Switching to clocksource sh_tmu.1
+sh_tmu sh_tmu.0: kept as earlytimer
+sh_tmu sh_tmu.1: kept as earlytimer
+sh_tmu sh_tmu.2: used as clock source
+
+Cc: Denis Oliver Kropp <dok@directfb.org>
+Cc: Magnus Damm <damm@opensource.se>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/setup-r8a7779.c |   31 +++++++++++++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 7b4c1eb..3cdb738 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -224,6 +224,36 @@ static struct platform_device tmu01_device = {
+ 	.num_resources	= ARRAY_SIZE(tmu01_resources),
+ };
  
-> > +#define PINMUX_DATA_REG2(name, r, r2, r_width) \
-> > +   .reg = r, .wreg = r2, .reg_width = r_width,   \
-> >     .enum_ids = (pinmux_enum_t [r_width]) \
-> > 
-> As imaginative as r2 and reg2 are, how about something at least
-> masquerading as informative? PINMUX_DATA_RWREG() or something perhaps?
-Yeah, I was suffering from a complete lack of imagination at the time! 
-Would this be better?
++static struct sh_timer_config tmu02_platform_data = {
++	.name = "TMU02",
++	.channel_offset = 0x1c,
++	.timer_bit = 1,
++	.clocksource_rating = 200,
++};
++
++static struct resource tmu02_resources[] = {
++	[0] = {
++		.name	= "TMU02",
++		.start	= 0xffd80020,
++		.end	= 0xffd81003,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= gic_spi(34),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device tmu02_device = {
++	.name		= "sh_tmu",
++	.id		= 2,
++	.dev = {
++		.platform_data	= &tmu02_platform_data,
++	},
++	.resource	= tmu02_resources,
++	.num_resources	= ARRAY_SIZE(tmu02_resources),
++};
++
+ /* I2C */
+ static struct resource rcar_i2c0_res[] = {
+ 	{
+@@ -306,6 +336,7 @@ static struct platform_device *r8a7779_early_devices_dt[] __initdata = {
+ 	&scif5_device,
+ 	&tmu00_device,
+ 	&tmu01_device,
++	&tmu02_device,
+ };
+ 
+ static struct platform_device *r8a7779_early_devices[] __initdata = {
+-- 
+1.7.10.4
 
-#define PINMUX_DATA_RWREG(name, read_reg, write_reg, r_width) \
-   .reg = read_reg, .wreg = write_reg, .reg_width = r_width,   \
-   .enum_ids = (pinmux_enum_t [r_width]) \
-
-Thanks
-Phil
