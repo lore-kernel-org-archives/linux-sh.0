@@ -1,64 +1,103 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 15 Feb 2013 15:13:51 +0000
-Subject: [PATCH v4 02/13] mmc: detailed definition of CD and WP MMC line polarities in DT
-Message-Id: <1360941242-18153-3-git-send-email-g.liakhovetski@gmx.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 18 Feb 2013 13:47:35 +0000
+Subject: [PATCH 05/08] ARM: shmobile: Update r8a7779 to use scu_power_mode()
+Message-Id: <20130218134735.17303.76426.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
+References: <20130218134648.17303.97576.sendpatchset@w520>
+In-Reply-To: <20130218134648.17303.97576.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Arnd Bergmann <arnd@arndb.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-arm-kernel@lists.infradead.org
 
-Clarify ways to specify write-protect and card-detect MMC lines in FDT.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Update the SMP code for R8A7779 to make use of the
+shared SCU function scu_power_mode() together with
+the early setup code in shmobile_secondary_vector_scu.
+
+With this patch in place the secondary CPUs modify the
+SCU setting during early boot instead of letting other
+CPUs deal with the coherency setting before boot. In
+other words, we used to setup coherency before boot
+in r8a7779_boot_secondary() but that bit is now instead
+handled by the code in shmobile_secondary_vector_scu.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
-v4: remove Linux-specific references.
+ arch/arm/mach-shmobile/smp-r8a7779.c |   32 +++++---------------------------
+ 1 file changed, 5 insertions(+), 27 deletions(-)
 
- Documentation/devicetree/bindings/mmc/mmc.txt |   23 +++++++++++++++++++++--
- 1 files changed, 21 insertions(+), 2 deletions(-)
-
-diff --git a/Documentation/devicetree/bindings/mmc/mmc.txt b/Documentation/devicetree/bindings/mmc/mmc.txt
-index 34f28ed..24c8552 100644
---- a/Documentation/devicetree/bindings/mmc/mmc.txt
-+++ b/Documentation/devicetree/bindings/mmc/mmc.txt
-@@ -18,12 +18,31 @@ Only one of the properties in this section should be supplied:
+--- 0005/arch/arm/mach-shmobile/smp-r8a7779.c
++++ work/arch/arm/mach-shmobile/smp-r8a7779.c	2013-02-18 22:10:26.000000000 +0900
+@@ -58,9 +58,6 @@ static struct r8a7779_pm_ch *r8a7779_ch_
+ 	[3] = &r8a7779_ch_cpu3,
+ };
  
- Optional properties:
- - wp-gpios: Specify GPIOs for write protection, see gpio binding
--- cd-inverted: when present, polarity on the cd gpio line is inverted
--- wp-inverted: when present, polarity on the wp gpio line is inverted
-+- cd-inverted: when present, polarity on the CD line is inverted. See the note
-+  below for the case, when a GPIO is used for the CD line
-+- wp-inverted: when present, polarity on the WP line is inverted. See the note
-+  below for the case, when a GPIO is used for the WP line
- - max-frequency: maximum operating clock frequency
- - no-1-8-v: when present, denotes that 1.8v card voltage is not supported on
-   this system, even if the controller claims it is.
+-static DEFINE_SPINLOCK(scu_lock);
+-static unsigned long tmp;
+-
+ #ifdef CONFIG_HAVE_ARM_TWD
+ static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, R8A7779_SCU_BASE + 0x600, 29);
+ void __init r8a7779_register_twd(void)
+@@ -79,20 +76,6 @@ static int r8a7779_scu_psr_core_disabled
+ 	return 0;
+ }
  
-+*NOTE* on CD and WP polarity. To use common for all SD/MMC host controllers line
-+polarity properties, we have to fix the meaning of the "normal" and "inverted"
-+line levels. We choose to follow the SDHCI standard, which specifies both those
-+lines as "active low." Therefore, using the "cd-inverted" property means, that
-+the CD line is active high, i.e. it is high, when a card is inserted. Similar
-+logic applies to the "wp-inverted" property.
-+
-+CD and WP lines can be implemented on the hardware in one of two ways: as GPIOs,
-+specified in cd-gpios and wp-gpios properties, or as dedicated pins. Polarity of
-+dedicated pins can be specified, using *-inverted properties. GPIO polarity can
-+also be specified using the OF_GPIO_ACTIVE_LOW flag. This creates an ambiguity
-+in the latter case. We choose to use the XOR logic for GPIO CD and WP lines.
-+This means, the two properties are "superimposed," for example leaving the
-+OF_GPIO_ACTIVE_LOW flag clear and specifying the respective *-inverted
-+property results in a double-inversion and actually means the "normal" line
-+polarity is in effect.
-+
- Optional SDIO properties:
- - keep-power-in-suspend: Preserves card power during a suspend/resume cycle
- - enable-sdio-wakeup: Enables wake up of host system on SDIO IRQ assertion
--- 
-1.7.2.5
-
+-static void modify_scu_cpu_psr(unsigned long set, unsigned long clr)
+-{
+-	void __iomem *scu_base = shmobile_scu_base;
+-
+-	spin_lock(&scu_lock);
+-	tmp = __raw_readl(scu_base + 8);
+-	tmp &= ~clr;
+-	tmp |= set;
+-	spin_unlock(&scu_lock);
+-
+-	/* disable cache coherency after releasing the lock */
+-	__raw_writel(tmp, scu_base + 8);
+-}
+-
+ static int r8a7779_platform_cpu_kill(unsigned int cpu)
+ {
+ 	struct r8a7779_pm_ch *ch = NULL;
+@@ -133,7 +116,7 @@ static void __maybe_unused r8a7779_cpu_d
+ 	flush_cache_all();
+ 
+ 	/* disable cache coherency */
+-	modify_scu_cpu_psr(3 << (cpu * 8), 0);
++	scu_power_mode(shmobile_scu_base, SCU_PM_POWEROFF);
+ 
+ 	/* Endless loop until power off from r8a7779_cpu_kill() */
+ 	while (1)
+@@ -158,9 +141,6 @@ static int __cpuinit r8a7779_boot_second
+ 
+ 	cpu = cpu_logical_map(cpu);
+ 
+-	/* enable cache coherency */
+-	modify_scu_cpu_psr(0, 3 << (cpu * 8));
+-
+ 	if (cpu < ARRAY_SIZE(r8a7779_ch_cpu))
+ 		ch = r8a7779_ch_cpu[cpu];
+ 
+@@ -172,15 +152,13 @@ static int __cpuinit r8a7779_boot_second
+ 
+ static void __init r8a7779_smp_prepare_cpus(unsigned int max_cpus)
+ {
+-	int cpu = cpu_logical_map(0);
+-
+ 	scu_enable(shmobile_scu_base);
+ 
+-	/* Map the reset vector (in headsmp.S) */
+-	__raw_writel(__pa(shmobile_secondary_vector), AVECR);
++	/* Map the reset vector (in headsmp-scu.S) */
++	__raw_writel(__pa(shmobile_secondary_vector_scu), AVECR);
+ 
+-	/* enable cache coherency on CPU0 */
+-	modify_scu_cpu_psr(0, 3 << (cpu * 8));
++	/* enable cache coherency on booting CPU */
++	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
+ 
+ 	r8a7779_pm_init();
+ 
