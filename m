@@ -1,51 +1,81 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 08 Feb 2013 18:38:24 +0000
-Subject: [PATCH/RFC v2 0/8] ARM: shmobile: SD/MMC for armadillo800eva- and kzm9g-reference
-Message-Id: <1360348712-29255-1-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Feb 2013 00:29:35 +0000
+Subject: [PATCH 1/2 v3] ARM: shmobile: r8a7779: Correct TMU clock support again
+Message-Id: <1361147376-1228-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1361147376-1228-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1361147376-1228-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-This series extends the 3-patch series, sent by me yesterday. It is still 
-to be decided, whether and which of these patches are suitable for upstream, 
-and which of them just demonstrate, how to get the hardware running.
+After discussion on the linux-sh mailing list and reference to the
+hardware documentation it appears that 'TMU00', 'TMU01' and 'TMU02'
+use a common clock.
 
-Thanks
-Guennadi
+The sh_tmu.1 portion of this change resolves a regression introduced in
+58079fa7d54a0929d304054ee759187a2ccd3cdf (ARM: shmobile: r8a7779: Correct
+TMU clock support) and fixes a regression introduced by that patch. That
+patch is queued up for v3.9.
 
-Guennadi Liakhovetski (8):
-  ARM: shmobile: add MMCIF and SDHI DT clock aliases to sh73a0 and
-    r8a7740
-  ARM: shmobile: add SDHI and MMCIF interfaces to
-    armadillo800eva-reference
-  ARM: shmobile: SDHI and MMCIF interfaces to kzm9g-reference
-  ARM: shmobile: move GIC and I2C devices from sh73a0 common .dtsi to
-    reference
-  ARM: shmobile: add sh73a0-specific timer initialisation to
-    kzm9g-reference
-  ARM: shmobile: add INTC interrupt controllers on sh73a0 in the DT
-    case
-  ARM: shmobile: parse DT and configure pinmux early on kzm9g-reference
-  ARM: shmobile: add ethernet support to kzm9g-reference
+...
+hub 4-0:1.0: USB hub found
+hub 4-0:1.0: 2 ports detected
+INFO: rcu_sched self-detected stall on CPUINFO: rcu_sched detected stalls on
++CPUs/tasks: { 1} (detected by 2, t'9640 jiffies, gB94967052, cB94967051,
++q8)
+Task dump for CPU 1:
+swapper/0       R running      0     1      0 0x00000002
+[<c02b8f5c>] (__schedule+0x1b0/0x4c0) from [<c013c590>] (__loop_delay+0x4/0xc)
 
- .../boot/dts/r8a7740-armadillo800eva-reference.dts |   44 ++++++++++++
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts       |   42 ++++++++++-
- arch/arm/boot/dts/sh73a0-reference.dtsi            |   69 ++++++++++++++++++
- arch/arm/boot/dts/sh73a0.dtsi                      |   69 ------------------
- .../board-armadillo800eva-reference.c              |   52 ++++++++++++++
- arch/arm/mach-shmobile/board-kzm9g-reference.c     |   74 ++++++++++++++++++-
- arch/arm/mach-shmobile/clock-r8a7740.c             |    4 +
- arch/arm/mach-shmobile/clock-sh73a0.c              |    3 +
- arch/arm/mach-shmobile/include/mach/common.h       |    1 +
- arch/arm/mach-shmobile/intc-sh73a0.c               |   24 +++++--
- 10 files changed, 300 insertions(+), 82 deletions(-)
+ { 1}  (t'9640 jiffies gB94967052 cB94967052 q7)
+[<c000ef9c>] (unwind_backtrace+0x0/0xf8) from [<c0068488>]
++(rcu_check_callbacks+0x218/0x6b8)
+[<c0068488>] (rcu_check_callbacks+0x218/0x6b8) from [<c0026774>]
++(update_process_times+0x38/0x4c)
+[<c0026774>] (update_process_times+0x38/0x4c) from [<c00569e0>]
++(tick_nohz_handler+0xb4/0x11c)
+[<c00569e0>] (tick_nohz_handler+0xb4/0x11c) from [<c000e518>]
++(twd_handler+0x34/0x44)
+[<c000e518>] (twd_handler+0x34/0x44) from [<c0063484>]
++(handle_percpu_devid_irq+0x68/0x80)
+[<c0063484>] (handle_percpu_devid_irq+0x68/0x80) from [<c005febc>]
++(generic_handle_irq+0x20/0x30)
+[<c005febc>] (generic_handle_irq+0x20/0x30) from [<c000a5ec>]
++(handle_IRQ+0x40/0x90)
+[<c000a5ec>] (handle_IRQ+0x40/0x90) from [<c000934c>] (gic_handle_irq+0x2c/0x5c)
+[<c000934c>] (gic_handle_irq+0x2c/0x5c) from [<c0009a40>] (__irq_svc+0x40/0x50)
+Exception stack(0xef03ddf8 to 0xef03de40)
+dde0:                                                       000001c1 ffffffff
+de00: 000001d8 01bf01bf ef35ec40 ef35e800 ef35ec6c 0000002b ef35ec68 c013c560
+de20: c0392994 60000113 00000000 ef03de40 c01a5d40 c013c590 20000113 ffffffff
+[<c0009a40>] (__irq_svc+0x40/0x50) from [<c013c590>] (__loop_delay+0x4/0xc)
 
--- 
-1.7.2.5
-
+Cc: Denis Oliver Kropp <dok@directfb.org>
+Cc: Magnus Damm <damm@opensource.se>
+Cc: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Cc: Paul Mundt <lethal@linux-sh.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ arch/arm/mach-shmobile/clock-r8a7779.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index 202370d..1db3653 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -161,8 +161,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("ehci-platform.0", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
+ 	CLKDEV_DEV_ID("ohci-platform.0", &mstp_clks[MSTP100]), /* USB OHCI port0/1 */
+ 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
+-	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP015]), /* TMU01 */
+-	CLKDEV_DEV_ID("sh_tmu.2", &mstp_clks[MSTP014]), /* TMU02 */
++	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP016]), /* TMU01 */
++	CLKDEV_DEV_ID("sh_tmu.2", &mstp_clks[MSTP016]), /* TMU02 */
+ 	CLKDEV_DEV_ID("i2c-rcar.0", &mstp_clks[MSTP030]), /* I2C0 */
+ 	CLKDEV_DEV_ID("i2c-rcar.1", &mstp_clks[MSTP029]), /* I2C1 */
+ 	CLKDEV_DEV_ID("i2c-rcar.2", &mstp_clks[MSTP028]), /* I2C2 */
+-- 
+1.7.10.4
+
