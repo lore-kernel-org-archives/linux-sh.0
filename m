@@ -1,79 +1,53 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 25 Feb 2013 17:17:13 +0000
-Subject: [PATCH/RFC v2 2/2] ARM: shmobile: kzm9g-reference: add CPUFreq support
-Message-Id: <Pine.LNX.4.64.1302251814430.3030@axis700.grange>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 18 Feb 2013 13:47:16 +0000
+Subject: [PATCH 03/08] ARM: shmobile: Use R8A7779_SCU_BASE with TWD
+Message-Id: <20130218134716.17303.17033.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1302251644010.3030@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1302251644010.3030@axis700.grange>
+References: <20130218134648.17303.97576.sendpatchset@w520>
+In-Reply-To: <20130218134648.17303.97576.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This patch enables the use of the generic cpufreq-cpu0 driver on kzm9g.
-Providing a regulator and a list of OPPs in DT, combined with a clock,
-attached to the cpu0 device is everything, the cpufreq-cpu0 driver needs.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Rework the IOMEM() usage for the SCU base address in the
+case of r8a7779. Adjusts the TWD to use R8A7779_SCU_BASE.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
-v2: adjust CPU frequencies in the OPP list according to v2 of patch 1/2.
+ arch/arm/mach-shmobile/smp-r8a7779.c |    7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
 
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |   19 ++++++++++++++++---
- arch/arm/mach-shmobile/Kconfig               |    2 ++
- 2 files changed, 18 insertions(+), 3 deletions(-)
-
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index d9f6c18..d7f18fd 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -18,6 +18,19 @@
- 	model = "KZM-A9-GT";
- 	compatible = "renesas,kzm9g-reference", "renesas,sh73a0";
+--- 0003/arch/arm/mach-shmobile/smp-r8a7779.c
++++ work/arch/arm/mach-shmobile/smp-r8a7779.c	2013-02-18 16:21:10.000000000 +0900
+@@ -32,7 +32,7 @@
+ #include <asm/smp_twd.h>
  
-+	cpus {
-+		cpu@0 {
-+			cpu0-supply = <&vdd_dvfs>;
-+			operating-points = <
-+				/* kHz  uV */
-+				1196000 1315000
-+				 598000 1175000
-+				 398667 1065000
-+			>;
-+			voltage-tolerance = <1>; /* 1% */
-+		};
-+	};
-+
- 	chosen {
- 		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200";
- 	};
-@@ -118,10 +131,10 @@
- 		reg = <0x40>;
+ #define AVECR IOMEM(0xfe700040)
+-#define R8A7779_SCU_BASE IOMEM(0xf0000000)
++#define R8A7779_SCU_BASE 0xf0000000
  
- 		regulators {
--			sd1 {
-+			vdd_dvfs: sd1 {
- 				regulator-name = "1.315V CPU";
--				regulator-min-microvolt = <1315000>;
--				regulator-max-microvolt = <1335000>;
-+				regulator-min-microvolt = <1050000>;
-+				regulator-max-microvolt = <1350000>;
- 				regulator-always-on;
- 				regulator-boot-on;
- 			};
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 927eecc..6f621ac 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -141,6 +141,8 @@ config MACH_KZM9G
- config MACH_KZM9G_REFERENCE
- 	bool "KZM-A9-GT board - Reference Device Tree Implementation"
- 	depends on ARCH_SH73A0
-+	select ARCH_HAS_CPUFREQ
-+	select ARCH_HAS_OPP
- 	select ARCH_REQUIRE_GPIOLIB
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
- 	select SND_SOC_AK4642 if SND_SIMPLE_CARD
--- 
-1.7.2.5
-
+ static struct r8a7779_pm_ch r8a7779_ch_cpu1 = {
+ 	.chan_offs = 0x40, /* PWRSR0 .. PWRER0 */
+@@ -59,8 +59,7 @@ static struct r8a7779_pm_ch *r8a7779_ch_
+ };
+ 
+ #ifdef CONFIG_HAVE_ARM_TWD
+-static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, 0xf0000600, 29);
+-
++static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, R8A7779_SCU_BASE + 0x600, 29);
+ void __init r8a7779_register_twd(void)
+ {
+ 	twd_local_timer_register(&twd_local_timer);
+@@ -178,7 +177,7 @@ static void __init r8a7779_smp_prepare_c
+ static void __init r8a7779_smp_init_cpus(void)
+ {
+ 	/* setup r8a7779 specific SCU base */
+-	shmobile_scu_base = R8A7779_SCU_BASE;
++	shmobile_scu_base = IOMEM(R8A7779_SCU_BASE);
+ 
+ 	shmobile_smp_init_cpus(scu_get_core_count(shmobile_scu_base));
+ }
