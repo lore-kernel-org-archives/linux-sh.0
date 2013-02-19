@@ -1,103 +1,59 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 19 Feb 2013 08:55:13 +0000
-Subject: [RFC][PATCH v2] ARM: shmobile: R-Car: add gic_iid macro for ICCIAR / interrupt ID
-Message-Id: <87wqu4el91.wl%kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 19 Feb 2013 10:15:37 +0000
+Subject: Re: [RFC][PATCH v2] ARM: shmobile: R-Car: add gic_iid macro for ICCIAR / interrupt ID
+Message-Id: <CANqRtoSC62JUSSibH3o722vdDnv+VsP424hPdsO9qMRk7Qyr4Q@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87wqu4el91.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87wqu4el91.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-R-Car H1 datasheet GIC number is indicating
-GIC ICCIAR / interrupt ID number, not SPI number,
-but current marzen board code is using gic_spi() with
-un-understandable calculation.
+Hi Morimoto-san,
 
-This patch adds new gic_iid() macro which means
-ICCIAR / interrupt ID, and used the number
-currently written on datasheet.
+On Tue, Feb 19, 2013 at 5:55 PM, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
+> R-Car H1 datasheet GIC number is indicating
+> GIC ICCIAR / interrupt ID number, not SPI number,
+> but current marzen board code is using gic_spi() with
+> un-understandable calculation.
+>
+> This patch adds new gic_iid() macro which means
+> ICCIAR / interrupt ID, and used the number
+> currently written on datasheet.
+>
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> ---
+> v1 -> v2
+>
+>  - gic_iic() -> gic_iid()
+>  - update git log comments
+>
+>  arch/arm/mach-shmobile/board-marzen.c      |   12 ++++++------
+>  arch/arm/mach-shmobile/include/mach/irqs.h |    1 +
+>  2 files changed, 7 insertions(+), 6 deletions(-)
+>
+> diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+> index cdcb799..2338d4b 100644
+> --- a/arch/arm/mach-shmobile/board-marzen.c
+> +++ b/arch/arm/mach-shmobile/board-marzen.c
+> @@ -66,7 +66,7 @@ static struct resource smsc911x_resources[] = {
+>                 .flags          = IORESOURCE_MEM,
+>         },
+>         [1] = {
+> -               .start          = gic_spi(28), /* IRQ 1 */
+> +               .start          = gic_iid(0x3c), /* IRQ 1 */
+>                 .flags          = IORESOURCE_IRQ,
+>         },
+>  };
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v1 -> v2
+In general we're moving over to DT so for this case I can't say that I
+care very much. However, if you want to change things around why don't
+you just do the following?
 
- - gic_iic() -> gic_iid()
- - update git log comments
+> +               .start          = 0x3c, /* IRQ 1 */
 
- arch/arm/mach-shmobile/board-marzen.c      |   12 ++++++------
- arch/arm/mach-shmobile/include/mach/irqs.h |    1 +
- 2 files changed, 7 insertions(+), 6 deletions(-)
+Thanks,
 
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index cdcb799..2338d4b 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -66,7 +66,7 @@ static struct resource smsc911x_resources[] = {
- 		.flags		= IORESOURCE_MEM,
- 	},
- 	[1] = {
--		.start		= gic_spi(28), /* IRQ 1 */
-+		.start		= gic_iid(0x3c), /* IRQ 1 */
- 		.flags		= IORESOURCE_IRQ,
- 	},
- };
-@@ -96,7 +96,7 @@ static struct resource sdhi0_resources[] = {
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
--		.start	= gic_spi(104),
-+		.start	= gic_iid(0x88),
- 		.flags	= IORESOURCE_IRQ,
- 	},
- };
-@@ -214,7 +214,7 @@ static struct resource ehci0_resources[] = {
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
--		.start	= gic_spi(44),
-+		.start	= gic_iid(0x4c),
- 		.flags	= IORESOURCE_IRQ,
- 	},
- };
-@@ -238,7 +238,7 @@ static struct resource ehci1_resources[] = {
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
--		.start	= gic_spi(45),
-+		.start	= gic_iid(0x4d),
- 		.flags	= IORESOURCE_IRQ,
- 	},
- };
-@@ -268,7 +268,7 @@ static struct resource ohci0_resources[] = {
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
--		.start	= gic_spi(44),
-+		.start	= gic_iid(0x4c),
- 		.flags	= IORESOURCE_IRQ,
- 	},
- };
-@@ -292,7 +292,7 @@ static struct resource ohci1_resources[] = {
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
--		.start	= gic_spi(45),
-+		.start	= gic_iid(0x4d),
- 		.flags	= IORESOURCE_IRQ,
- 	},
- };
-diff --git a/arch/arm/mach-shmobile/include/mach/irqs.h b/arch/arm/mach-shmobile/include/mach/irqs.h
-index 06a5da3..83f1c84 100644
---- a/arch/arm/mach-shmobile/include/mach/irqs.h
-+++ b/arch/arm/mach-shmobile/include/mach/irqs.h
-@@ -5,6 +5,7 @@
- 
- /* GIC */
- #define gic_spi(nr)		((nr) + 32)
-+#define gic_iid(nr)		(nr)
- 
- /* INTCS */
- #define INTCS_VECT_BASE		0x3400
--- 
-1.7.9.5
-
+/ magnus
