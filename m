@@ -1,230 +1,103 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 13 Feb 2013 11:36:38 +0000
-Subject: Re: [PATCH v2 4/8] ARM: shmobile: move GIC and I2C devices from sh73a0 common .dtsi to reference
-Message-Id: <20130213113637.GH22623@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 19 Feb 2013 08:55:13 +0000
+Subject: [RFC][PATCH v2] ARM: shmobile: R-Car: add gic_iid macro for ICCIAR / interrupt ID
+Message-Id: <87wqu4el91.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360348712-29255-5-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1360348712-29255-5-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Feb 13, 2013 at 10:59:41AM +0100, Guennadi Liakhovetski wrote:
-> Hi Simon
-> 
-> On Wed, 13 Feb 2013, Simon Horman wrote:
-> 
-> > On Fri, Feb 08, 2013 at 07:38:28PM +0100, Guennadi Liakhovetski wrote:
-> > > In "legacy" mode, when all devices are initialised by the board .c file,
-> > > there is no need to install the GIC and all I2C devices from the device
-> > > tree too. Move them to the reference implementation, that fully relies upon
-> > > DT.
-> > 
-> > The motivation for placing the code in sh73a0.dtsi was so that
-> > it would be available to the non-reference board code if/when it
-> > moves over to using DT.
-> > 
-> > I'm happy to switch things around if its preferred to keep
-> > the dts small.
-> 
-> As I said, I do think it is good to keep devices in a central .dtsi, 
-> included by all, but they should be disabled by default, using the 
-> 'status="disabled"' property, and only enabled on boards, that actually 
-> use those devices.
+R-Car H1 datasheet GIC number is indicating
+GIC ICCIAR / interrupt ID number, not SPI number,
+but current marzen board code is using gic_spi() with
+un-understandable calculation.
 
-Ok, that makes sense to me. Do you think you could update this patch
-accordingly?
+This patch adds new gic_iid() macro which means
+ICCIAR / interrupt ID, and used the number
+currently written on datasheet.
 
-> I'm just not sure what's the difference between the two 
-> DT-"patching" syntaxes - using '&' and not using it.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
-Unfortunately I'm not sure either.
+ - gic_iic() -> gic_iid()
+ - update git log comments
 
-> Thanks
-> Guennadi
-> 
-> > > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > > ---
-> > > 
-> > > I think, this is a fix and should be applied.
-> > > 
-> > >  arch/arm/boot/dts/sh73a0-reference.dtsi |   69 +++++++++++++++++++++++++++++++
-> > >  arch/arm/boot/dts/sh73a0.dtsi           |   69 -------------------------------
-> > >  2 files changed, 69 insertions(+), 69 deletions(-)
-> > > 
-> > > diff --git a/arch/arm/boot/dts/sh73a0-reference.dtsi b/arch/arm/boot/dts/sh73a0-reference.dtsi
-> > > index d4bb012..457afc7 100644
-> > > --- a/arch/arm/boot/dts/sh73a0-reference.dtsi
-> > > +++ b/arch/arm/boot/dts/sh73a0-reference.dtsi
-> > > @@ -21,4 +21,73 @@
-> > >  			      0 141 0x4>;
-> > >  		reg-io-width = <4>;
-> > >  	};
-> > > +
-> > > +	gic: interrupt-controller@f0001000 {
-> > > +		compatible = "arm,cortex-a9-gic";
-> > > +		#interrupt-cells = <3>;
-> > > +		#address-cells = <1>;
-> > > +		interrupt-controller;
-> > > +		reg = <0xf0001000 0x1000>,
-> > > +		      <0xf0000100 0x100>;
-> > > +	};
-> > > +
-> > > +	i2c0: i2c@0xe6820000 {
-> > > +		#address-cells = <1>;
-> > > +		#size-cells = <0>;
-> > > +		compatible = "renesas,rmobile-iic";
-> > > +		reg = <0xe6820000 0x425>;
-> > > +		interrupt-parent = <&gic>;
-> > > +		interrupts = <0 167 0x4
-> > > +			      0 168 0x4
-> > > +			      0 169 0x4
-> > > +			      0 170 0x4>;
-> > > +	};
-> > > +
-> > > +	i2c1: i2c@0xe6822000 {
-> > > +		#address-cells = <1>;
-> > > +		#size-cells = <0>;
-> > > +		compatible = "renesas,rmobile-iic";
-> > > +		reg = <0xe6822000 0x425>;
-> > > +		interrupt-parent = <&gic>;
-> > > +		interrupts = <0 51 0x4
-> > > +			      0 52 0x4
-> > > +			      0 53 0x4
-> > > +			      0 54 0x4>;
-> > > +	};
-> > > +
-> > > +	i2c2: i2c@0xe6824000 {
-> > > +		#address-cells = <1>;
-> > > +		#size-cells = <0>;
-> > > +		compatible = "renesas,rmobile-iic";
-> > > +		reg = <0xe6824000 0x425>;
-> > > +		interrupt-parent = <&gic>;
-> > > +		interrupts = <0 171 0x4
-> > > +			      0 172 0x4
-> > > +			      0 173 0x4
-> > > +			      0 174 0x4>;
-> > > +	};
-> > > +
-> > > +	i2c3: i2c@0xe6826000 {
-> > > +		#address-cells = <1>;
-> > > +		#size-cells = <0>;
-> > > +		compatible = "renesas,rmobile-iic";
-> > > +		reg = <0xe6826000 0x425>;
-> > > +		interrupt-parent = <&gic>;
-> > > +		interrupts = <0 183 0x4
-> > > +			      0 184 0x4
-> > > +			      0 185 0x4
-> > > +			      0 186 0x4>;
-> > > +	};
-> > > +
-> > > +	i2c4: i2c@0xe6828000 {
-> > > +		#address-cells = <1>;
-> > > +		#size-cells = <0>;
-> > > +		compatible = "renesas,rmobile-iic";
-> > > +		reg = <0xe6828000 0x425>;
-> > > +		interrupt-parent = <&gic>;
-> > > +		interrupts = <0 187 0x4
-> > > +			      0 188 0x4
-> > > +			      0 189 0x4
-> > > +			      0 190 0x4>;
-> > > +	};
-> > >  };
-> > > diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-> > > index 8a59465..6837b3f 100644
-> > > --- a/arch/arm/boot/dts/sh73a0.dtsi
-> > > +++ b/arch/arm/boot/dts/sh73a0.dtsi
-> > > @@ -28,73 +28,4 @@
-> > >  			reg = <1>;
-> > >  		};
-> > >  	};
-> > > -
-> > > -	gic: interrupt-controller@f0001000 {
-> > > -		compatible = "arm,cortex-a9-gic";
-> > > -		#interrupt-cells = <3>;
-> > > -		#address-cells = <1>;
-> > > -		interrupt-controller;
-> > > -		reg = <0xf0001000 0x1000>,
-> > > -		      <0xf0000100 0x100>;
-> > > -	};
-> > > -
-> > > -	i2c0: i2c@0xe6820000 {
-> > > -		#address-cells = <1>;
-> > > -		#size-cells = <0>;
-> > > -		compatible = "renesas,rmobile-iic";
-> > > -		reg = <0xe6820000 0x425>;
-> > > -		interrupt-parent = <&gic>;
-> > > -		interrupts = <0 167 0x4
-> > > -			      0 168 0x4
-> > > -			      0 169 0x4
-> > > -			      0 170 0x4>;
-> > > -	};
-> > > -
-> > > -	i2c1: i2c@0xe6822000 {
-> > > -		#address-cells = <1>;
-> > > -		#size-cells = <0>;
-> > > -		compatible = "renesas,rmobile-iic";
-> > > -		reg = <0xe6822000 0x425>;
-> > > -		interrupt-parent = <&gic>;
-> > > -		interrupts = <0 51 0x4
-> > > -			      0 52 0x4
-> > > -			      0 53 0x4
-> > > -			      0 54 0x4>;
-> > > -	};
-> > > -
-> > > -	i2c2: i2c@0xe6824000 {
-> > > -		#address-cells = <1>;
-> > > -		#size-cells = <0>;
-> > > -		compatible = "renesas,rmobile-iic";
-> > > -		reg = <0xe6824000 0x425>;
-> > > -		interrupt-parent = <&gic>;
-> > > -		interrupts = <0 171 0x4
-> > > -			      0 172 0x4
-> > > -			      0 173 0x4
-> > > -			      0 174 0x4>;
-> > > -	};
-> > > -
-> > > -	i2c3: i2c@0xe6826000 {
-> > > -		#address-cells = <1>;
-> > > -		#size-cells = <0>;
-> > > -		compatible = "renesas,rmobile-iic";
-> > > -		reg = <0xe6826000 0x425>;
-> > > -		interrupt-parent = <&gic>;
-> > > -		interrupts = <0 183 0x4
-> > > -			      0 184 0x4
-> > > -			      0 185 0x4
-> > > -			      0 186 0x4>;
-> > > -	};
-> > > -
-> > > -	i2c4: i2c@0xe6828000 {
-> > > -		#address-cells = <1>;
-> > > -		#size-cells = <0>;
-> > > -		compatible = "renesas,rmobile-iic";
-> > > -		reg = <0xe6828000 0x425>;
-> > > -		interrupt-parent = <&gic>;
-> > > -		interrupts = <0 187 0x4
-> > > -			      0 188 0x4
-> > > -			      0 189 0x4
-> > > -			      0 190 0x4>;
-> > > -	};
-> > >  };
-> > > -- 
-> > > 1.7.2.5
-> > > 
-> > > --
-> > > To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> > > the body of a message to majordomo@vger.kernel.org
-> > > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> > > 
-> > 
-> 
-> ---
-> Guennadi Liakhovetski, Ph.D.
-> Freelance Open-Source Software Developer
-> http://www.open-technology.de/
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+ arch/arm/mach-shmobile/board-marzen.c      |   12 ++++++------
+ arch/arm/mach-shmobile/include/mach/irqs.h |    1 +
+ 2 files changed, 7 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index cdcb799..2338d4b 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -66,7 +66,7 @@ static struct resource smsc911x_resources[] = {
+ 		.flags		= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start		= gic_spi(28), /* IRQ 1 */
++		.start		= gic_iid(0x3c), /* IRQ 1 */
+ 		.flags		= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -96,7 +96,7 @@ static struct resource sdhi0_resources[] = {
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start	= gic_spi(104),
++		.start	= gic_iid(0x88),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -214,7 +214,7 @@ static struct resource ehci0_resources[] = {
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start	= gic_spi(44),
++		.start	= gic_iid(0x4c),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -238,7 +238,7 @@ static struct resource ehci1_resources[] = {
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start	= gic_spi(45),
++		.start	= gic_iid(0x4d),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -268,7 +268,7 @@ static struct resource ohci0_resources[] = {
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start	= gic_spi(44),
++		.start	= gic_iid(0x4c),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -292,7 +292,7 @@ static struct resource ohci1_resources[] = {
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start	= gic_spi(45),
++		.start	= gic_iid(0x4d),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
+diff --git a/arch/arm/mach-shmobile/include/mach/irqs.h b/arch/arm/mach-shmobile/include/mach/irqs.h
+index 06a5da3..83f1c84 100644
+--- a/arch/arm/mach-shmobile/include/mach/irqs.h
++++ b/arch/arm/mach-shmobile/include/mach/irqs.h
+@@ -5,6 +5,7 @@
+ 
+ /* GIC */
+ #define gic_spi(nr)		((nr) + 32)
++#define gic_iid(nr)		(nr)
+ 
+ /* INTCS */
+ #define INTCS_VECT_BASE		0x3400
+-- 
+1.7.9.5
+
