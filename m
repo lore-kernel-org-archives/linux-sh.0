@@ -1,38 +1,48 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 15 Feb 2013 13:00:57 +0000
-Subject: [PATCH 1/5] ARM: shmobile: kzm9g: defconfig: do not enable PREEMPT
-Message-Id: <1360933261-6359-2-git-send-email-horms+renesas@verge.net.au>
+Date: Tue, 19 Feb 2013 02:56:10 +0000
+Subject: [PATCH 5/5] ARM: shmobile: marzen: Add lan to dts file
+Message-Id: <1361242570-8867-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360933261-6359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1360933261-6359-1-git-send-email-horms+renesas@verge.net.au>
+References: <1361242570-8867-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1361242570-8867-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The motivation for this change is:
+The ethernet controller is part of the marzen board so add it to
+the dts file.
 
-* It is consistent with all other shmobile boards and;
-* Allows the kzm9g-reference code to work with CONFIG_SMP
-  and thus the new defconfig
-
+Cc: Magnus Damm <magnus.damm@gmail.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/configs/kzm9g_defconfig |    1 -
- 1 file changed, 1 deletion(-)
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts |   14 ++++++++++----
+ 1 file changed, 10 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
-index afbae28..da7672e 100644
---- a/arch/arm/configs/kzm9g_defconfig
-+++ b/arch/arm/configs/kzm9g_defconfig
-@@ -33,7 +33,6 @@ CONFIG_NO_HZ=y
- CONFIG_HIGH_RES_TIMERS=y
- CONFIG_SMP=y
- CONFIG_SCHED_MC=y
--CONFIG_PREEMPT=y
- CONFIG_AEABI=y
- # CONFIG_OABI_COMPAT is not set
- CONFIG_HIGHMEM=y
+diff --git a/arch/arm/boot/dts/r8a7779-marzen-reference.dts b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+index 377d8df..72be4c8 100644
+--- a/arch/arm/boot/dts/r8a7779-marzen-reference.dts
++++ b/arch/arm/boot/dts/r8a7779-marzen-reference.dts
+@@ -33,9 +33,15 @@
+ 		regulator-boot-on;
+ 		regulator-always-on;
+ 	};
+-};
+ 
+-&lan0 {
+-	vddvario-supply = <&fixedregulator3v3>;
+-	vdd33a-supply = <&fixedregulator3v3>;
++	lan0@18000000 {
++		compatible = "smsc,lan9220", "smsc,lan9115";
++		reg = <0x18000000 0x100>;
++		phy-mode = "mii";
++		interrupt-parent = <&gic>;
++		interrupts = <0 28 0x4>;
++		reg-io-width = <4>;
++		vddvario-supply = <&fixedregulator3v3>;
++		vdd33a-supply = <&fixedregulator3v3>;
++	};
+ };
 -- 
 1.7.10.4
 
