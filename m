@@ -1,52 +1,30 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Tue, 19 Feb 2013 21:57:05 +0000
+From: Chris Ball <cjb@laptop.org>
+Date: Tue, 19 Feb 2013 22:00:26 +0000
 Subject: Re: [PATCH v4 00/13] mmc: core and driver DT and related development
-Message-Id: <Pine.LNX.4.64.1302192253140.22058@axis700.grange>
+Message-Id: <87k3q4ge11.fsf@octavius.laptop.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
- <87k3q5ahl8.fsf@octavius.laptop.org>
-In-Reply-To: <87k3q5ahl8.fsf@octavius.laptop.org>
+	<87k3q5ahl8.fsf@octavius.laptop.org>
+	<Pine.LNX.4.64.1302192253140.22058@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1302192253140.22058@axis700.grange> (Guennadi
+	Liakhovetski's message of "Tue, 19 Feb 2013 22:57:05 +0100 (CET)")
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Chris Ball <cjb@laptop.org>
+To: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 Cc: linux-mmc@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Arnd Bergmann <arnd@arndb.de>
 
-Hi Chris
+Hi,
 
-On Mon, 18 Feb 2013, Chris Ball wrote:
+On Tue, Feb 19 2013, Guennadi Liakhovetski wrote:
+>> Thanks!  Pushed to mmc-next, will think about merging for 3.9.
+>
+> Thanks! Please, push all of them (taking into account v5 of #03/13), but 
+> hold back on #13, it'll need some more work.
 
-> Hi Guennadi,
-> 
-> On Fri, Feb 15 2013, Guennadi Liakhovetski wrote:
-> > This is v4 of a patch-series, extending mmc subsystem device-tree usage 
-> > and adding more advanced DT capabilities to sh_mmcif and sh_mobile_sdhi / 
-> > tmio_mmc drivers. Changes since v3 are described in respective patches. 
-> > Thanks to all who commented on v3.
-> >
-> > Guennadi Liakhovetski (13):
-> >   mmc: sdhi, tmio: only check flags in tmio-mmc driver proper
-> >   mmc: detailed definition of CD and WP MMC line polarities in DT
-> >   mmc: provide a standard MMC device-tree binding parser centrally
-> >   mmc: (cosmetic) remove "extern" from function declarations
-> >   mmc: sh-mmcif: use mmc_of_parse() to parse standard MMC DT bindings
-> >   mmc: tmio-mmc: define device-tree bindings
-> >   mmc: tmio-mmc: parse device-tree bindings
-> >   mmc: sh_mobile_sdhi: remove unused .pdata field
-> >   mmc: sh_mobile_sdhi: use managed resource allocations
-> >   mmc: tmio: remove unused and deprecated symbols
-> >   mmc: tmio: add support for the VccQ regulator
-> >   mmc: add DT bindings for more MMC capability flags
-> >   mmc: tmio: add barriers to IO operations
-> 
-> Thanks!  Pushed to mmc-next, will think about merging for 3.9.
+Okay, I've dropped #13 from mmc-next.
 
-Thanks! Please, push all of them (taking into account v5 of #03/13), but 
-hold back on #13, it'll need some more work.
-
-Thanks
-Guennadi
----
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+- Chris.
+-- 
+Chris Ball   <cjb@laptop.org>   <http://printf.net/>
+One Laptop Per Child
