@@ -1,127 +1,150 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 06 Feb 2013 19:46:58 +0000
-Subject: [PATCH v3 11/13] mmc: tmio: add support for the VccQ regulator
-Message-Id: <1360180020-18555-12-git-send-email-g.liakhovetski@gmx.de>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Tue, 19 Feb 2013 17:30:06 +0000
+Subject: [PATCH 3/3] ARM: mach-shmobile: r8a7740: Setup the serial devices using DT
+Message-Id: <1361298586-30357-4-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-sh@vger.kernel.org
 
-Some SD/MMC interfaces use 2 power regulators: one to power the card itself
-(Vcc) and another one to pull signal lines up (VccQ). In case of eMMC and
-UHS SD cards the regulators also have to be configured to supply different
-voltages. The preferred order of turning supply power on and off is to
-turn Vcc first on and last off.
+We can now use the Device Tree for bringing up our serial devices. We
+need to add an alternative early_devices list in setup-r8a7740 without
+the serial devices and move them into the Armadillo-reference .dts config file.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
 ---
- drivers/mmc/host/tmio_mmc_pio.c |   56 ++++++++++++++++++++++++++++++++-------
- 1 files changed, 46 insertions(+), 10 deletions(-)
+ .../boot/dts/r8a7740-armadillo800eva-reference.dts |   76 ++++++++++++++++++++
+ arch/arm/mach-shmobile/setup-r8a7740.c             |   15 ++--
+ 2 files changed, 87 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index e32e9b4..3a44086 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -43,6 +43,7 @@
- #include <linux/platform_device.h>
- #include <linux/pm_qos.h>
- #include <linux/pm_runtime.h>
-+#include <linux/regulator/consumer.h>
- #include <linux/scatterlist.h>
- #include <linux/spinlock.h>
- #include <linux/workqueue.h>
-@@ -155,6 +156,7 @@ static void tmio_mmc_set_clock(struct tmio_mmc_host *host, int new_clock)
- 		host->set_clk_div(host->pdev, (clk>>22) & 1);
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index 1e339cd..94fdad3 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -134,6 +134,82 @@
+ 		renesas,pins = "eth_base";
+ 		renesas,function = "eth";
+ 	};
++
++	sci@0xe6c40000 {
++		compatible = "renesas,shmobile-sci-r8a7740";
++		interrupt-parent = <&intca>;
++		reg = <0xe6c40000 0x100>;
++		interrupts = <0x0c00>, <0x0c00>, <0x0c00>, <0x0c00>;
++		cell-index = <0>;
++		renesas,serial-type = <3>;
++	};
++
++	sci@0xe6c50000 {
++		compatible = "renesas,shmobile-sci-r8a7740";
++		interrupt-parent = <&intca>;
++		reg = <0xe6c50000 0x100>;
++		interrupts = <0x0c20>, <0x0c20>, <0x0c20>, <0x0c20>;
++		cell-index = <1>;
++		renesas,serial-type = <3>;
++	};
++
++	sci@0xe6c60000 {
++		compatible = "renesas,shmobile-sci-r8a7740";
++		interrupt-parent = <&intca>;
++		reg = <0xe6c60000 0x100>;
++		interrupts = <0x0c40>, <0x0c40>, <0x0c40>, <0x0c40>;
++		cell-index = <2>;
++		renesas,serial-type = <3>;
++	};
++
++	sci@0xe6c70000 {
++		compatible = "renesas,shmobile-sci-r8a7740";
++		interrupt-parent = <&intca>;
++		reg = <0xe6c70000 0x100>;
++		interrupts = <0x0c60>, <0x0c60>, <0x0c60>, <0x0c60>;
++		cell-index = <3>;
++		renesas,serial-type = <3>;
++	};
++	sci@0xe6c80000 {
++		compatible = "renesas,shmobile-sci-r8a7740";
++		interrupt-parent = <&intca>;
++		reg = <0xe6c80000 0x100>;
++		interrupts = <0x0d20>, <0x0d20>, <0x0d20>, <0x0d20>;
++		cell-index = <4>;
++		renesas,serial-type = <3>;
++	};
++	sci@0xe6cb0000 {
++		compatible = "renesas,shmobile-sci-r8a7740";
++		interrupt-parent = <&intca>;
++		reg = <0xe6cb0000 0x100>;
++		interrupts = <0x0d40>, <0x0d40>, <0x0d40>, <0x0d40>;
++		cell-index = <5>;
++		renesas,serial-type = <3>;
++	};
++	sci@0xe6cc0000 {
++		compatible = "renesas,shmobile-sci-r8a7740";
++		interrupt-parent = <&intca>;
++		reg = <0xe6cc0000 0x100>;
++		interrupts = <0x04c0>, <0x04c0>, <0x04c0>, <0x04c0>;
++		cell-index = <6>;
++		renesas,serial-type = <3>;
++	};
++	sci@0xe6cd0000 {
++		compatible = "renesas,shmobile-sci-r8a7740";
++		interrupt-parent = <&intca>;
++		reg = <0xe6cd0000 0x100>;
++		interrupts = <0x04e0>, <0x04e0>, <0x04e0>, <0x04e0>;
++		cell-index = <7>;
++		renesas,serial-type = <3>;
++	};
++	sci@0xe6c30000 {
++		compatible = "renesas,shmobile-sci-r8a7740";
++		interrupt-parent = <&intca>;
++		reg = <0xe6c30000 0x100>;
++		interrupts = <0x0d60>, <0x0d60>, <0x0d60>, <0x0d60>;
++		cell-index = <8>;
++		renesas,serial-type = <4>;
++	};
+ };
  
- 	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, clk & 0x1ff);
-+	msleep(10);
- }
+ &gpio {
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 5312aad..5f7597a 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -394,6 +394,13 @@ static struct platform_device *r8a7740_early_devices[] __initdata = {
+ 	&tmu02_device,
+ };
  
- static void tmio_mmc_clk_stop(struct tmio_mmc_host *host)
-@@ -768,16 +770,48 @@ static int tmio_mmc_clk_update(struct mmc_host *mmc)
- 	return ret;
- }
- 
--static void tmio_mmc_set_power(struct tmio_mmc_host *host, struct mmc_ios *ios)
-+static void tmio_mmc_power_on(struct tmio_mmc_host *host, unsigned short vdd)
++static struct platform_device *r8a7740_early_devices_dt[] __initdata = {
++	&cmt10_device,
++	&tmu00_device,
++	&tmu01_device,
++	&tmu02_device,
++};
++
+ /* DMA */
+ static const struct sh_dmae_slave_config r8a7740_dmae_slaves[] = {
+ 	{
+@@ -839,8 +846,8 @@ void __init r8a7740_add_early_devices_dt(void)
  {
- 	struct mmc_host *mmc = host->mmc;
-+	int ret = 0;
-+
-+	/* .set_ios() is returning void, so, no chance to report an error */
+ 	shmobile_setup_delay(800, 1, 3); /* Cortex-A9 @ 800MHz */
  
- 	if (host->set_pwr)
--		host->set_pwr(host->pdev, ios->power_mode != MMC_POWER_OFF);
-+		host->set_pwr(host->pdev, 1);
-+
-+	if (!IS_ERR(mmc->supply.vmmc)) {
-+		ret = mmc_regulator_set_ocr(mmc, mmc->supply.vmmc, vdd);
-+		/*
-+		 * Attention: empiric value. With a b43 WiFi SDIO card this
-+		 * delay proved necessary for reliable card-insertion probing.
-+		 * 100us were not enough. Is this the same 140us delay, as in
-+		 * tmio_mmc_set_ios()?
-+		 */
-+		udelay(200);
-+	}
-+	/*
-+	 * It seems, VccQ should be switched on after Vcc, this is also what the
-+	 * omap_hsmmc.c driver does.
-+	 */
-+	if (!IS_ERR(mmc->supply.vqmmc) && !ret) {
-+		regulator_enable(mmc->supply.vqmmc);
-+		udelay(200);
-+	}
-+}
-+
-+static void tmio_mmc_power_off(struct tmio_mmc_host *host)
-+{
-+	struct mmc_host *mmc = host->mmc;
-+
-+	if (!IS_ERR(mmc->supply.vqmmc))
-+		regulator_disable(mmc->supply.vqmmc);
-+
- 	if (!IS_ERR(mmc->supply.vmmc))
--		/* Errors ignored... */
--		mmc_regulator_set_ocr(mmc, mmc->supply.vmmc,
--				      ios->power_mode ? ios->vdd : 0);
-+		mmc_regulator_set_ocr(mmc, mmc->supply.vmmc, 0);
-+
-+	if (host->set_pwr)
-+		host->set_pwr(host->pdev, 0);
- }
+-	early_platform_add_devices(r8a7740_early_devices,
+-				   ARRAY_SIZE(r8a7740_early_devices));
++	early_platform_add_devices(r8a7740_early_devices_dt,
++				   ARRAY_SIZE(r8a7740_early_devices_dt));
  
- /* Set MMC clock / power.
-@@ -828,18 +862,20 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 		if (!host->power) {
- 			tmio_mmc_clk_update(mmc);
- 			pm_runtime_get_sync(dev);
--			host->power = true;
- 		}
- 		tmio_mmc_set_clock(host, ios->clock);
--		/* power up SD bus */
--		tmio_mmc_set_power(host, ios);
-+		if (!host->power) {
-+			/* power up SD card and the bus */
-+			tmio_mmc_power_on(host, ios->vdd);
-+			host->power = true;
-+		}
- 		/* start bus clock */
- 		tmio_mmc_clk_start(host);
- 	} else if (ios->power_mode != MMC_POWER_UP) {
--		if (ios->power_mode = MMC_POWER_OFF)
--			tmio_mmc_set_power(host, ios);
- 		if (host->power) {
- 			struct tmio_mmc_data *pdata = host->pdata;
-+			if (ios->power_mode = MMC_POWER_OFF)
-+				tmio_mmc_power_off(host);
- 			tmio_mmc_clk_stop(host);
- 			host->power = false;
- 			pm_runtime_put(dev);
+ 	/* setup early console here as well */
+ 	shmobile_setup_console();
+@@ -852,8 +859,8 @@ static const struct of_dev_auxdata r8a7740_auxdata_lookup[] __initconst = {
+ 
+ void __init r8a7740_add_standard_devices_dt(void)
+ {
+-	platform_add_devices(r8a7740_early_devices,
+-			    ARRAY_SIZE(r8a7740_early_devices));
++	platform_add_devices(r8a7740_early_devices_dt,
++			    ARRAY_SIZE(r8a7740_early_devices_dt));
+ 
+ 	of_platform_populate(NULL, of_default_bus_match_table,
+ 			     r8a7740_auxdata_lookup, NULL);
 -- 
-1.7.2.5
+1.7.9.5
 
