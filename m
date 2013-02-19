@@ -1,137 +1,56 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 26 Feb 2013 11:58:54 +0000
-Subject: [PATCH 02/05] irqchip: intc-irqpin: Cache mapped IRQ
-Message-Id: <20130226115854.5630.51016.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 19 Feb 2013 02:56:08 +0000
+Subject: [PATCH 3/5] ARM: shmobile: r8a7779: Do not initialise i2c as an early device
+Message-Id: <1361242570-8867-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130226115834.5630.45471.sendpatchset@w520>
-In-Reply-To: <20130226115834.5630.45471.sendpatchset@w520>
+References: <1361242570-8867-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1361242570-8867-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: kuninori.morimoto.gx@renesas.com, linux-sh@vger.kernel.org, benh@kernel.crashing.org, grant.likely@secretlab.ca, horms@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+It is sufficient to initialise i2c as a late device.
 
-Cache IRQ in domain_irq variable instead of
-making use of irq_find_mapping(). While at it
-rename the irq variable to requested_irq.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/setup-r8a7779.c |    8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
 
- Thanks to Thomas Gleixner for this suggestion.
-
- drivers/irqchip/irq-renesas-intc-irqpin.c |   30 +++++++++++++++--------------
- 1 file changed, 16 insertions(+), 14 deletions(-)
-
---- 0003/drivers/irqchip/irq-renesas-intc-irqpin.c
-+++ work/drivers/irqchip/irq-renesas-intc-irqpin.c	2013-02-26 19:29:56.000000000 +0900
-@@ -61,7 +61,8 @@ struct intc_irqpin_iomem {
- 
- struct intc_irqpin_irq {
- 	int hw_irq;
--	int irq;
-+	int requested_irq;
-+	int domain_irq;
- 	struct intc_irqpin_priv *p;
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index b1f7a45..7f8daf1 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -333,7 +333,7 @@ static struct platform_device *r8a7779_devices_dt[] __initdata = {
+ 	&tmu01_device,
  };
  
-@@ -171,8 +172,7 @@ static int intc_irqpin_set_sense(struct
- static void intc_irqpin_dbg(struct intc_irqpin_irq *i, char *str)
- {
- 	dev_dbg(&i->p->pdev->dev, "%s (%d:%d:%d)\n",
--		str, i->irq, i->hw_irq,
--		irq_find_mapping(i->p->irq_domain, i->hw_irq));
-+		str, i->requested_irq, i->hw_irq, i->domain_irq);
+-static struct platform_device *r8a7779_early_devices[] __initdata = {
++static struct platform_device *r8a7779_late_devices[] __initdata = {
+ 	&i2c0_device,
+ 	&i2c1_device,
+ 	&i2c2_device,
+@@ -352,8 +352,8 @@ void __init r8a7779_add_standard_devices(void)
+ 
+ 	platform_add_devices(r8a7779_devices_dt,
+ 			    ARRAY_SIZE(r8a7779_devices_dt));
+-	platform_add_devices(r8a7779_early_devices,
+-			    ARRAY_SIZE(r8a7779_early_devices));
++	platform_add_devices(r8a7779_late_devices,
++			    ARRAY_SIZE(r8a7779_late_devices));
  }
  
- static void intc_irqpin_irq_enable(struct irq_data *d)
-@@ -196,7 +196,7 @@ static void intc_irqpin_irq_disable(stru
- static void intc_irqpin_irq_enable_force(struct irq_data *d)
+ /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
+@@ -370,8 +370,6 @@ void __init r8a7779_add_early_devices(void)
  {
- 	struct intc_irqpin_priv *p = irq_data_get_irq_chip_data(d);
--	int irq = p->irq[irqd_to_hwirq(d)].irq;
-+	int irq = p->irq[irqd_to_hwirq(d)].requested_irq;
+ 	early_platform_add_devices(r8a7779_devices_dt,
+ 				   ARRAY_SIZE(r8a7779_devices_dt));
+-	early_platform_add_devices(r8a7779_early_devices,
+-				   ARRAY_SIZE(r8a7779_early_devices));
  
- 	intc_irqpin_irq_enable(d);
- 	irq_get_chip(irq)->irq_unmask(irq_get_irq_data(irq));
-@@ -205,7 +205,7 @@ static void intc_irqpin_irq_enable_force
- static void intc_irqpin_irq_disable_force(struct irq_data *d)
- {
- 	struct intc_irqpin_priv *p = irq_data_get_irq_chip_data(d);
--	int irq = p->irq[irqd_to_hwirq(d)].irq;
-+	int irq = p->irq[irqd_to_hwirq(d)].requested_irq;
- 
- 	irq_get_chip(irq)->irq_mask(irq_get_irq_data(irq));
- 	intc_irqpin_irq_disable(d);
-@@ -246,7 +246,7 @@ static irqreturn_t intc_irqpin_irq_handl
- 	if (intc_irqpin_read(p, INTC_IRQPIN_REG_SOURCE) & bit) {
- 		intc_irqpin_write(p, INTC_IRQPIN_REG_SOURCE, ~bit);
- 		intc_irqpin_dbg(i, "demux2");
--		generic_handle_irq(irq_find_mapping(p->irq_domain, i->hw_irq));
-+		generic_handle_irq(i->domain_irq);
- 		return IRQ_HANDLED;
- 	}
- 	return IRQ_NONE;
-@@ -257,6 +257,9 @@ static int intc_irqpin_irq_domain_map(st
- {
- 	struct intc_irqpin_priv *p = h->host_data;
- 
-+	p->irq[hw].domain_irq = virq;
-+	p->irq[hw].hw_irq = hw;
-+
- 	intc_irqpin_dbg(&p->irq[hw], "map");
- 	irq_set_chip_data(virq, h->host_data);
- 	irq_set_chip_and_handler(virq, &p->irq_chip, handle_level_irq);
-@@ -314,9 +317,8 @@ static int intc_irqpin_probe(struct plat
- 		if (!irq)
- 			break;
- 
--		p->irq[k].hw_irq = k;
- 		p->irq[k].p = p;
--		p->irq[k].irq = irq->start;
-+		p->irq[k].requested_irq = irq->start;
- 	}
- 
- 	p->number_of_irqs = k;
-@@ -389,7 +391,8 @@ static int intc_irqpin_probe(struct plat
- 
- 	/* request and set priority on interrupts one by one */
- 	for (k = 0; k < p->number_of_irqs; k++) {
--		if (request_irq(p->irq[k].irq, intc_irqpin_irq_handler,
-+		if (request_irq(p->irq[k].requested_irq,
-+				intc_irqpin_irq_handler,
- 				0, name, &p->irq[k])) {
- 			dev_err(&pdev->dev, "failed to request low IRQ\n");
- 			ret = -ENOENT;
-@@ -402,17 +405,16 @@ static int intc_irqpin_probe(struct plat
- 
- 	/* warn in case of mismatch if irq base is specified */
- 	if (p->config.irq_base) {
--		k = irq_find_mapping(p->irq_domain, 0);
--		if (p->config.irq_base != k)
-+		if (p->config.irq_base != p->irq[0].domain_irq)
- 			dev_warn(&pdev->dev, "irq base mismatch (%d/%d)\n",
--				 p->config.irq_base, k);
-+				 p->config.irq_base, p->irq[0].domain_irq);
- 	}
- 
- 	return 0;
- 
- err3:
- 	for (; k >= 0; k--)
--		free_irq(p->irq[k - 1].irq, &p->irq[k - 1]);
-+		free_irq(p->irq[k - 1].requested_irq, &p->irq[k - 1]);
- 
- 	irq_domain_remove(p->irq_domain);
- err2:
-@@ -430,7 +432,7 @@ static int intc_irqpin_remove(struct pla
- 	int k;
- 
- 	for (k = 0; k < p->number_of_irqs; k++)
--		free_irq(p->irq[k].irq, &p->irq[k]);
-+		free_irq(p->irq[k].requested_irq, &p->irq[k]);
- 
- 	irq_domain_remove(p->irq_domain);
- 
+ 	/* Early serial console setup is not included here due to
+ 	 * memory map collisions. The SCIF serial ports in r8a7779
+-- 
+1.7.10.4
+
