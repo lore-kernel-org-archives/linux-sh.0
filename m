@@ -1,52 +1,58 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 13 Feb 2013 02:17:08 +0000
-Subject: Re: [PATCH 1/2] ARM: shmobile: fix a syntax error in sh73a0.dtsi from a bad merge
-Message-Id: <20130213021708.GB18922@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 19 Feb 2013 02:47:34 +0000
+Subject: [PATCH v2 0/8] ARM: shmobile: kzm9g reference SMP and cleanup
+Message-Id: <1361242062-6957-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1302121533590.7059@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1302121533590.7059@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Feb 12, 2013 at 03:55:33PM +0100, Guennadi Liakhovetski wrote:
-> A semicolon went missing in the merge
+Hi,
 
-Thanks, it seems that I was careless.
+this series:
 
-I have resolved this be re-merging.
-topic/all+next should no longer feature this problem.
+* Tweaks the defconfig to allow SMP kzm9g reference to successfully boot.
+* Removes the use of early devices from reference kzm9g reference DT
+* Makes various other minor cleanups to kzm9g reference DT
 
-> 
-> commit 6dffe18b5dbe1e3d5ccf1792a4793c854bad7e87
-> Merge: 95c746f 68c80f0
-> Author: Simon Horman <horms+renesas@verge.net.au>
-> Date:   Thu Feb 7 17:23:58 2013 +0900
-> 
->     Merge branch 'topic/pfc' into topic/all+next
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> ---
->  arch/arm/boot/dts/sh73a0.dtsi |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
-> 
-> diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-> index ebbd604..c97edb2 100644
-> --- a/arch/arm/boot/dts/sh73a0.dtsi
-> +++ b/arch/arm/boot/dts/sh73a0.dtsi
-> @@ -35,5 +35,5 @@
->  		      <0xe605801c 0x1c>;
->  		gpio-controller;
->  		#gpio-cells = <2>;
-> -	}
-> +	};
->  };
-> -- 
-> 1.7.2.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Clarification of SMP fix:
+* Diabling CONFIG_PREEMPT is sufficent to allow the existing
+  kzm9g reference DT code to boot SMP.
+
+Merge:
+
+My plan to merge this is:
+* Add the defconfig change to a defconfig branch.
+* Add the sh73a0 patches to an soc branch.
+* Then rebase the existing boards-kzm9g-reference breanch on top of
+  the soc branch.
+* Then apply the kzm9g patches in this series to boards-kzm9g-reference,
+  squashing the "ARM: shmobile: kzm9g: Do not use early devices" change to
+  avoid breaking bisection.
+
+Difference to v1:
+* Added "shmobile: sh73a0: Do not use early devices with DT reference"
+* Added "shmobile: sh73a0: Remove warning about SMP"
+* Added "shmobile: kzm9g: Do not use early devices"
+
+Simon Horman (8):
+  ARM: shmobile: kzm9g: defconfig: do not enable PREEMPT
+  ARM: shmobile: sh73a0: Remove sh73a0_init_irq_dt()
+  ARM: shmobile: sh73a0: Add smp ops to DT_MACHINE_START
+  ARM: shmobile: sh73a0: Remove warning about SMP
+  ARM: shmobile: sh73a0: Do not use early devices with DT reference
+  ARM: shmobile: kzm9g: Do not use early devices
+  ARM: shmobile: kzm9g: Remove warning about SMP
+  ARM: shmobile: kzm9g: Trim reference DT_MACHINE_START
+
+ arch/arm/configs/kzm9g_defconfig               |    1 -
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |   21 ++------------
+ arch/arm/mach-shmobile/include/mach/common.h   |    2 +-
+ arch/arm/mach-shmobile/intc-sh73a0.c           |    8 ------
+ arch/arm/mach-shmobile/setup-sh73a0.c          |   36 ++++++++----------------
+ 5 files changed, 16 insertions(+), 52 deletions(-)
+
+-- 
+1.7.10.4
+
