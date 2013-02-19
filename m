@@ -1,81 +1,96 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 14 Feb 2013 12:20:10 +0000
-Subject: Re: [PATCH/RFC 3/3] ARM: shmobile: switch SDHI and MMCIF interfaces on kzm9g-reference to pinctrl
-Message-Id: <CANqRtoSoMB4DfXb3j0FQcJ7pLSAyHPFvz0Xa-doqp2VXLnzMqA@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 19 Feb 2013 07:54:49 +0000
+Subject: [RFC][PATCH] ARM: shmobile: R-Car: add gic_iic macro for ICCIAR / interrupt ID
+Message-Id: <871uccg2m2.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360684204-12888-4-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1360684204-12888-4-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Feb 14, 2013 at 8:09 PM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> On Thursday 14 February 2013 18:00:12 Paul Mundt wrote:
->> On Thu, Feb 14, 2013 at 10:36:52AM +0900, Magnus Damm wrote:
->> > On Thu, Feb 14, 2013 at 3:15 AM, Laurent Pinchart wrote:
->> > > Hi Guennadi,
->> > >
->> > > Thank you for the patch.
->> > >
->> > > On Tuesday 12 February 2013 16:50:04 Guennadi Liakhovetski wrote:
->> > >> The recently added on sh73a0 DT pinctrl support enables us to switch
->> > >> SDHI
->> > >> and MMCIF interface pins to pinctrl and to add GPIO bindings for their
->> > >> card-detection pins and regulators.
->> > >>
->> > >> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
->> > >> ---
->> > >>
->> > >>  arch/arm/boot/dts/sh73a0-kzm9g-reference.dts   |   61
->> > >>  ++++++++++++++++-----
->> > >>  arch/arm/boot/dts/sh73a0-reference.dtsi        |    9 ----
->> > >>  arch/arm/mach-shmobile/board-kzm9g-reference.c |   36 ++------------
->> > >>  3 files changed, 54 insertions(+), 52 deletions(-)
->> > >
->> > > [snip]
->> > >
->> > >> diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c
->> > >> b/arch/arm/mach-shmobile/board-kzm9g-reference.c index d92da6d..1490246
->> > >> 100644
->> > >> --- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
->> > >> +++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
->> > >> @@ -90,38 +90,12 @@ static void __init kzm_init(void)
->> > >>
->> > >>       regulator_register_fixed(2, dummy_supplies,
->> > >>       ARRAY_SIZE(dummy_supplies));
->> > >>       platform_device_register(&smsc_device);
->> > >>
->> > >> -     /* enable MMCIF */
->> > >> -     gpio_request(GPIO_FN_MMCCLK0,           NULL);
->> > >> -     gpio_request(GPIO_FN_MMCCMD0_PU,        NULL);
->> > >> -     gpio_request(GPIO_FN_MMCD0_0_PU,        NULL);
->> > >> -     gpio_request(GPIO_FN_MMCD0_1_PU,        NULL);
->> > >> -     gpio_request(GPIO_FN_MMCD0_2_PU,        NULL);
->> > >> -     gpio_request(GPIO_FN_MMCD0_3_PU,        NULL);
->> > >> -     gpio_request(GPIO_FN_MMCD0_4_PU,        NULL);
->> > >> -     gpio_request(GPIO_FN_MMCD0_5_PU,        NULL);
->> > >> -     gpio_request(GPIO_FN_MMCD0_6_PU,        NULL);
->> > >> -     gpio_request(GPIO_FN_MMCD0_7_PU,        NULL);
->> > >
->> > > Don't hate me, but... the PFC implementation doesn't support controlling
->> > > pull- ups through the pinctrl API yet :-( That's something I still need
->> > > to implement.
->> >
->> > Uhm, doesn't that smell like a functional regression...?
->> >
->> > Would it be possible for someone else to re-add pull-up support
->> > properly to the PFC code?
->>
->> No, because it's still supported by way of the GPIO API as above, which
->> in turn layers through the rest of the PFC code. Transitioning these
->> users over to the corresponding pinctrl API takes some more work, so I
->> don't believe any of the refactoring has introduced regressions in that
->> regard.
->
-> Thanks Paul, I couldn't have said that better :-)
+R-Car H1 datasheet GIC number is indicating
+GIC ICCIAR / interrupt ID number, not SPI number,
+but current marzen board code is using gic_spi() with
+un-understandable calculation.
+This patch adds new gic_iic() macro which means
+ICCIAR / interrupt ID.
 
-Good, as long as things keep on working as before I am happy.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/board-marzen.c      |   12 ++++++------
+ arch/arm/mach-shmobile/include/mach/irqs.h |    1 +
+ 2 files changed, 7 insertions(+), 6 deletions(-)
 
-Thanks guys.
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index cdcb799..a06dfba 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -66,7 +66,7 @@ static struct resource smsc911x_resources[] = {
+ 		.flags		= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start		= gic_spi(28), /* IRQ 1 */
++		.start		= gic_iic(0x3c), /* IRQ 1 */
+ 		.flags		= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -96,7 +96,7 @@ static struct resource sdhi0_resources[] = {
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start	= gic_spi(104),
++		.start	= gic_iic(0x88),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -214,7 +214,7 @@ static struct resource ehci0_resources[] = {
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start	= gic_spi(44),
++		.start	= gic_iic(0x4c),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -238,7 +238,7 @@ static struct resource ehci1_resources[] = {
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start	= gic_spi(45),
++		.start	= gic_iic(0x4d),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -268,7 +268,7 @@ static struct resource ohci0_resources[] = {
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start	= gic_spi(44),
++		.start	= gic_iic(0x4c),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -292,7 +292,7 @@ static struct resource ohci1_resources[] = {
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start	= gic_spi(45),
++		.start	= gic_iic(0x4d),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
+diff --git a/arch/arm/mach-shmobile/include/mach/irqs.h b/arch/arm/mach-shmobile/include/mach/irqs.h
+index 06a5da3..83f1c84 100644
+--- a/arch/arm/mach-shmobile/include/mach/irqs.h
++++ b/arch/arm/mach-shmobile/include/mach/irqs.h
+@@ -5,6 +5,7 @@
+ 
+ /* GIC */
+ #define gic_spi(nr)		((nr) + 32)
++#define gic_iid(nr)		(nr)
+ 
+ /* INTCS */
+ #define INTCS_VECT_BASE		0x3400
+-- 
+1.7.9.5
+
