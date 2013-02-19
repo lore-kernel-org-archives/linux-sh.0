@@ -1,73 +1,85 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 06 Feb 2013 19:46:59 +0000
-Subject: [PATCH v3 12/13] mmc: add DT bindings for more MMC capability flags
-Message-Id: <1360180020-18555-13-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 19 Feb 2013 02:47:36 +0000
+Subject: [PATCH v2 2/8] ARM: shmobile: sh73a0: Remove sh73a0_init_irq_dt()
+Message-Id: <1361242062-6957-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1361242062-6957-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1361242062-6957-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Arnd Bergmann <arnd@arndb.de>
+To: linux-arm-kernel@lists.infradead.org
 
-Many MMC capability flags are platform-dependent and are traditionally set
-in platform data. With DT often each such capability requires a special
-binding. Add bindings for MMC_CAP_SD_HIGHSPEED, MMC_CAP_MMC_HIGHSPEED,
-MMC_CAP_POWER_OFF_CARD and MMC_CAP_SDIO_IRQ capabilities. Also add code to
-DT parser to look up "keep-power-in-suspend" and "enable-sdio-wakeup"
-bindings and set MMC_PM_KEEP_POWER and MMC_PM_WAKE_SDIO_IRQ respectively,
-if found.
+This is not needed as irq_set_wake is
+only used for suspend to ram which is not
+a requirement for bringing up boards using DT.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Arnd Bergmann <arnd@arndb.de>
+Reported-by: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |    3 ++-
+ arch/arm/mach-shmobile/intc-sh73a0.c           |    8 --------
+ arch/arm/mach-shmobile/setup-sh73a0.c          |    3 ++-
+ 3 files changed, 4 insertions(+), 10 deletions(-)
 
-v3: add cap-sdio-irq
-
- Documentation/devicetree/bindings/mmc/mmc.txt |    4 ++++
- drivers/mmc/core/host.c                       |   13 +++++++++++++
- 2 files changed, 17 insertions(+), 0 deletions(-)
-
-diff --git a/Documentation/devicetree/bindings/mmc/mmc.txt b/Documentation/devicetree/bindings/mmc/mmc.txt
-index 51dd64f..a043c78 100644
---- a/Documentation/devicetree/bindings/mmc/mmc.txt
-+++ b/Documentation/devicetree/bindings/mmc/mmc.txt
-@@ -25,6 +25,10 @@ Optional properties:
- - max-frequency: maximum operating clock frequency
- - no-1-8-v: when present, denotes that 1.8v card voltage is not supported on
-   this system, even if the controller claims it is.
-+- cap-sd-highspeed: SD high-speed timing is supported
-+- cap-mmc-highspeed: MMC high-speed timing is supported
-+- cap-power-off-card: powering off the card is safe
-+- cap-sdio-irq: enable SDIO IRQ signalling on this interface
- 
- *NOTE* on CD and WP polarity. As of 3.8, SD/MMC drivers parse their DT nodes
- each in its own way, including calculation of CD and WP polarities. Our goal is
-diff --git a/drivers/mmc/core/host.c b/drivers/mmc/core/host.c
-index c412612..56b6227 100644
---- a/drivers/mmc/core/host.c
-+++ b/drivers/mmc/core/host.c
-@@ -380,6 +380,19 @@ void mmc_of_parse(struct mmc_host *host)
- 	}
- 	if (explicit_inv_wp ^ gpio_inv_wp)
- 		host->caps2 |= MMC_CAP2_RO_ACTIVE_HIGH;
-+
-+	if (of_find_property(np, "cap-sd-highspeed", &len))
-+		host->caps |= MMC_CAP_SD_HIGHSPEED;
-+	if (of_find_property(np, "cap-mmc-highspeed", &len))
-+		host->caps |= MMC_CAP_MMC_HIGHSPEED;
-+	if (of_find_property(np, "cap-power-off-card", &len))
-+		host->caps |= MMC_CAP_POWER_OFF_CARD;
-+	if (of_find_property(np, "cap-sdio-irq", &len))
-+		host->caps |= MMC_CAP_SDIO_IRQ;
-+	if (of_find_property(np, "keep-power-in-suspend", &len))
-+		host->pm_caps |= MMC_PM_KEEP_POWER;
-+	if (of_find_property(np, "enable-sdio-wakeup", &len))
-+		host->pm_caps |= MMC_PM_WAKE_SDIO_IRQ;
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index a677d61..a4cd9e2 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -24,6 +24,7 @@
+ #include <linux/gpio.h>
+ #include <linux/io.h>
+ #include <linux/irq.h>
++#include <linux/irqchip.h>
+ #include <linux/input.h>
+ #include <linux/of_platform.h>
+ #include <mach/sh73a0.h>
+@@ -110,7 +111,7 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g-reference")
+ 	.map_io		= sh73a0_map_io,
+ 	.init_early	= sh73a0_add_early_devices_dt,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+-	.init_irq	= sh73a0_init_irq_dt,
++	.init_irq	= irqchip_init,
+ 	.init_machine	= kzm_init,
+ 	.init_late	= shmobile_init_late,
+ 	.init_time	= shmobile_timer_init,
+diff --git a/arch/arm/mach-shmobile/intc-sh73a0.c b/arch/arm/mach-shmobile/intc-sh73a0.c
+index 91faba6..a81a1d8 100644
+--- a/arch/arm/mach-shmobile/intc-sh73a0.c
++++ b/arch/arm/mach-shmobile/intc-sh73a0.c
+@@ -460,11 +460,3 @@ void __init sh73a0_init_irq(void)
+ 	sh73a0_pint1_cascade.handler = sh73a0_pint1_demux;
+ 	setup_irq(gic_spi(34), &sh73a0_pint1_cascade);
  }
- 
- EXPORT_SYMBOL(mmc_of_parse);
+-
+-#ifdef CONFIG_OF
+-void __init sh73a0_init_irq_dt(void)
+-{
+-	irqchip_init();
+-	gic_arch_extn.irq_set_wake = sh73a0_set_wake;
+-}
+-#endif
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index f7ecb0b..fc0c73c 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -22,6 +22,7 @@
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+ #include <linux/irq.h>
++#include <linux/irqchip.h>
+ #include <linux/platform_device.h>
+ #include <linux/of_platform.h>
+ #include <linux/delay.h>
+@@ -865,7 +866,7 @@ DT_MACHINE_START(SH73A0_DT, "Generic SH73A0 (Flattened Device Tree)")
+ 	.map_io		= sh73a0_map_io,
+ 	.init_early	= sh73a0_add_early_devices_dt,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+-	.init_irq	= sh73a0_init_irq_dt,
++	.init_irq	= irqchip_init,
+ 	.init_machine	= sh73a0_add_standard_devices_dt,
+ 	.init_time	= shmobile_timer_init,
+ 	.dt_compat	= sh73a0_boards_compat_dt,
 -- 
-1.7.2.5
+1.7.10.4
 
