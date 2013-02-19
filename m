@@ -1,7 +1,7 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 19 Feb 2013 01:04:30 +0000
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Tue, 19 Feb 2013 10:11:39 +0000
 Subject: Re: [PATCH] irqchip: Renesas INTC External IRQ pin driver
-Message-Id: <87d2vxf71h.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <alpine.LFD.2.02.1302191029510.22263@ionos>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130218142834.28739.39417.sendpatchset@w520>
 In-Reply-To: <20130218142834.28739.39417.sendpatchset@w520>
@@ -9,28 +9,45 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, benh@kernel.crashing.org, grant.likely@secretlab.ca, horms@verge.net.au, tglx@linutronix.de
+Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, benh@kernel.crashing.org, grant.likely@secretlab.ca, horms@verge.net.au
 
+Magnus,
 
-Hi Magnus
+On Mon, 18 Feb 2013, Magnus Damm wrote:
 
-Thank you for this patch.
-Small comment from me :)
+> +static inline unsigned long intc_irqpin_read(struct intc_irqpin_priv *p,
+> +					     int reg)
+> +{
+> +	struct intc_irqpin_iomem *i = &p->iomem[reg];
 
-> +struct intc_irqpin_priv {
-> +	struct intc_irqpin_iomem iomem[INTC_IRQPIN_REG_NR];
-> +	struct intc_irqpin_irq irq[INTC_IRQPIN_MAX];
-> +	struct renesas_intc_irqpin_config config;
-> +	unsigned int number_of_irqs;
-> +	struct platform_device *pdev;
-> +	struct irq_chip irq_chip;
-> +	struct irq_domain *irq_domain;
-> +};
+Newline between variable and code please.
 
-(snip)
-
-> +static DEFINE_RAW_SPINLOCK(intc_irqpin_lock); /* only used by slow path */
+> +	return i->read(i->iomem);
+> +}
 > +
+> +static inline void intc_irqpin_write(struct intc_irqpin_priv *p,
+> +				     int reg, unsigned long data)
+> +{
+> +	struct intc_irqpin_iomem *i = &p->iomem[reg];
+> +	i->write(i->iomem, data);
+> +}
+> +
+> +static inline unsigned long intc_irqpin_hwirq_mask(struct intc_irqpin_priv *p,
+> +						   int reg, int hw_irq)
+> +{
+> +	return BIT((p->iomem[reg].width - 1) - hw_irq);
+> +}
+> +
+> +static inline void intc_irqpin_irq_write_hwirq(struct intc_irqpin_priv *p,
+> +					       int reg, int hw_irq)
+> +{
+> +	intc_irqpin_write(p, reg, intc_irqpin_hwirq_mask(p, reg, hw_irq));
+> +}
+> +
+> +static DEFINE_RAW_SPINLOCK(intc_irqpin_lock); /* only used by slow path */
+
+Shouldn't the lock be part of struct intc_irqpin_priv ?
+
 > +static void intc_irqpin_read_modify_write(struct intc_irqpin_priv *p,
 > +					  int reg, int shift,
 > +					  int width, int value)
@@ -39,223 +56,114 @@ Small comment from me :)
 > +	unsigned long tmp;
 > +
 > +	raw_spin_lock_irqsave(&intc_irqpin_lock, flags);
-> +
-> +	tmp = intc_irqpin_read(p, reg);
-> +	tmp &= ~(((1 << width) - 1) << shift);
-> +	tmp |= value << shift;
-> +	intc_irqpin_write(p, reg, tmp);
-> +
-> +	raw_spin_unlock_irqrestore(&intc_irqpin_lock, flags);
-> +}
-
-It is possible to include this spin lock into priv ?
-This local static spin lock seems not wrong, but looks strange ?
-
-> +static int intc_irqpin_probe(struct platform_device *pdev)
+> +static void intc_irqpin_dbg(struct intc_irqpin_irq *i, char *str)
 > +{
-> +	struct renesas_intc_irqpin_config *pdata = pdev->dev.platform_data;
-> +	struct intc_irqpin_priv *p;
-> +	struct intc_irqpin_iomem *i;
-> +	struct resource *io[INTC_IRQPIN_REG_NR];
-> +	struct resource *irq;
-> +	struct irq_chip *irq_chip;
-> +	void (*enable_fn)(struct irq_data *d);
-> +	void (*disable_fn)(struct irq_data *d);
-> +	const char *name = dev_name(&pdev->dev);
-> +	int ret;
-> +	int k;
-> +
-> +	p = kzalloc(sizeof(*p), GFP_KERNEL);
+> +	dev_dbg(&i->p->pdev->dev, "%s (%d:%d:%d)\n",
+> +		str, i->irq, i->hw_irq,
+> +		irq_find_mapping(i->p->irq_domain, i->hw_irq));
 
-can you use devm_kzalloc() ?
+Do you really want to do a lookup for each debug invocation?
 
-> +	if (!p) {
-> +		dev_err(&pdev->dev, "failed to allocate driver data\n");
-> +		ret = -ENOMEM;
-> +		goto err0;
-> +	}
-> +
-> +	/* deal with driver instance configuration */
-> +	if (pdata)
-> +		memcpy(&p->config, pdata, sizeof(*pdata));
-> +	if (!p->config.sense_bitfield_width)
-> +		p->config.sense_bitfield_width = 4; /* default to 4 bits */
-> +
-> +	p->pdev = pdev;
-> +	platform_set_drvdata(pdev, p);
-> +
-> +	/* get hold of manadatory IOMEM */
-> +	for (k = 0; k < INTC_IRQPIN_REG_NR; k++) {
-> +		io[k] = platform_get_resource(pdev, IORESOURCE_MEM, k);
-> +		if (!io[k]) {
-> +			dev_err(&pdev->dev, "not enough IOMEM resources\n");
-> +			ret = -EINVAL;
-> +			goto err1;
-> +		}
-> +	}
-> +
-> +	/* allow any number of IRQs between 1 and INTC_IRQPIN_MAX */
-> +	for (k = 0; k < INTC_IRQPIN_MAX; k++) {
-> +		irq = platform_get_resource(pdev, IORESOURCE_IRQ, k);
-> +		if (!irq)
-> +			break;
-> +
-> +		p->irq[k].hw_irq = k;
-> +		p->irq[k].p = p;
-> +		p->irq[k].irq = irq->start;
-> +	}
-> +
-> +	p->number_of_irqs = k;
-> +	if (p->number_of_irqs < 1) {
-> +		dev_err(&pdev->dev, "not enough IRQ resources\n");
-> +		ret = -EINVAL;
-> +		goto err1;
-> +	}
-> +
-> +	/* ioremap IOMEM and setup read/write callbacks */
-> +	for (k = 0; k < INTC_IRQPIN_REG_NR; k++) {
-> +		i = &p->iomem[k];
-> +
-> +		switch (resource_size(io[k])) {
-> +		case 1:
-> +			i->width = 8;
-> +			i->read = intc_irqpin_read8;
-> +			i->write = intc_irqpin_write8;
-> +			break;
-> +		case 4:
-> +			i->width = 32;
-> +			i->read = intc_irqpin_read32;
-> +			i->write = intc_irqpin_write32;
-> +			break;
-> +		default:
-> +			dev_err(&pdev->dev, "IOMEM size mismatch\n");
-> +			ret = -EINVAL;
-> +			goto err2;
-> +		}
-> +
-> +		i->iomem = ioremap_nocache(io[k]->start, resource_size(io[k]));
-
-devm_ioremap_nocache() or devm_request_and_ioremap()
-
-> +		if (!i->iomem) {
-> +			dev_err(&pdev->dev, "failed to remap IOMEM\n");
-> +			ret = -ENXIO;
-> +			goto err2;
-> +		}
-> +	}
-> +
-> +	/* mask all interrupts using priority */
-> +	for (k = 0; k < p->number_of_irqs; k++)
-> +		intc_irqpin_mask_unmask_prio(p, k, 1);
-> +
-> +	/* use more severe masking method if requested */
-> +	if (p->config.control_parent) {
-> +		enable_fn = intc_irqpin_irq_enable_force;
-> +		disable_fn = intc_irqpin_irq_disable_force;
-> +	} else {
-> +		enable_fn = intc_irqpin_irq_enable;
-> +		disable_fn = intc_irqpin_irq_disable;
-> +	}
-> +
-> +	irq_chip = &p->irq_chip;
-> +	irq_chip->name = name;
-> +	irq_chip->irq_mask = disable_fn;
-> +	irq_chip->irq_unmask = enable_fn;
-> +	irq_chip->irq_enable = enable_fn;
-> +	irq_chip->irq_disable = disable_fn;
-> +	irq_chip->irq_set_type = intc_irqpin_irq_set_type;
-> +	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE;
-> +
-> +	p->irq_domain = irq_domain_add_simple(pdev->dev.of_node,
-> +					      p->number_of_irqs,
-> +					      p->config.irq_base,
-> +					      &intc_irqpin_irq_domain_ops, p);
-> +	if (!p->irq_domain) {
-> +		ret = -ENXIO;
-> +		dev_err(&pdev->dev, "cannot initialize irq domain\n");
-> +		goto err2;
-> +	}
-> +
-> +	/* request and set priority on interrupts one by one */
-> +	for (k = 0; k < p->number_of_irqs; k++) {
-> +		if (request_irq(p->irq[k].irq, intc_irqpin_irq_handler,
-
-Can you use devm_request_irq()
-
-> +				0, name, &p->irq[k])) {
-> +			dev_err(&pdev->dev, "failed to request low IRQ\n");
-> +			ret = -ENOENT;
-> +			goto err3;
-> +		}
-> +		intc_irqpin_mask_unmask_prio(p, k, 0);
-> +	}
-> +
-> +	dev_info(&pdev->dev, "driving %d irqs\n", p->number_of_irqs);
-> +
-> +	/* warn in case of mismatch if irq base is specified */
-> +	if (p->config.irq_base) {
-> +		k = irq_find_mapping(p->irq_domain, 0);
-> +		if (p->config.irq_base != k)
-> +			dev_warn(&pdev->dev, "irq base mismatch (%d/%d)\n",
-> +				 p->config.irq_base, k);
-> +	}
-> +	
-> +	return 0;
-> +
-> +err3:
-> +	for (; k >= 0; k--)
-> +		free_irq(p->irq[k - 1].irq, &p->irq[k - 1]);
-> +
-> +	irq_domain_remove(p->irq_domain);
-> +err2:
-> +	for (k = 0; k < INTC_IRQPIN_REG_NR; k++)
-> +		iounmap(p->iomem[k].iomem);
-> +err1:
-> +	kfree(p);
-
-if you used devm_xxxx, you can remove kfree() / free_irq() / iounmap() here
-
-> +err0:
-> +	return ret;
 > +}
 > +
-> +static int intc_irqpin_remove(struct platform_device *pdev)
+> +static void intc_irqpin_irq_enable(struct irq_data *d)
 > +{
-> +	struct intc_irqpin_priv *p = platform_get_drvdata(pdev);
-> +	int k;
+> +	struct intc_irqpin_priv *p = irq_data_get_irq_chip_data(d);
+> +	int hw_irq = irqd_to_hwirq(d);
 > +
-> +	for (k = 0; k < p->number_of_irqs; k++)
-> +		free_irq(p->irq[k].irq, &p->irq[k]);
-> +
-> +	irq_domain_remove(p->irq_domain);
-> +
-> +	for (k = 0; k < INTC_IRQPIN_REG_NR; k++)
-> +		iounmap(p->iomem[k].iomem);
-> +
-> +	kfree(p);
-> +	return 0;
+> +	intc_irqpin_dbg(&p->irq[hw_irq], "enable");
+> +	intc_irqpin_irq_write_hwirq(p, INTC_IRQPIN_REG_CLEAR, hw_irq);
 > +}
-
-same as above
-
-> --- /dev/null
-> +++ work/include/linux/platform_data/irq-renesas-intc-irqpin.h	2013-02-18 18:28:24.000000000 +0900
-> @@ -0,0 +1,10 @@
-> +#ifndef __IRQ_RENESAS_INTC_IRQPIN_H__
-> +#define __IRQ_RENESAS_INTC_IRQPIN_H__
-
-GPL license signage ?
-
 > +
-> +struct renesas_intc_irqpin_config {
-> +	unsigned int sense_bitfield_width;
-> +	unsigned int irq_base;
-> +	bool control_parent;
+> +static void intc_irqpin_irq_disable(struct irq_data *d)
+> +{
+> +	struct intc_irqpin_priv *p = irq_data_get_irq_chip_data(d);
+> +	int hw_irq = irqd_to_hwirq(d);
+> +
+> +	intc_irqpin_dbg(&p->irq[hw_irq], "disable");
+> +	intc_irqpin_irq_write_hwirq(p, INTC_IRQPIN_REG_MASK, hw_irq);
+> +}
+> +
+> +static void intc_irqpin_irq_enable_force(struct irq_data *d)
+> +{
+> +	struct intc_irqpin_priv *p = irq_data_get_irq_chip_data(d);
+> +	int irq = p->irq[irqd_to_hwirq(d)].irq;
+> +
+> +	intc_irqpin_irq_enable(d);
+> +	irq_get_chip(irq)->irq_unmask(irq_get_irq_data(irq));
+> +}
+> +
+> +static void intc_irqpin_irq_disable_force(struct irq_data *d)
+> +{
+> +	struct intc_irqpin_priv *p = irq_data_get_irq_chip_data(d);
+> +	int irq = p->irq[irqd_to_hwirq(d)].irq;
+> +
+> +	irq_get_chip(irq)->irq_mask(irq_get_irq_data(irq));
+> +	intc_irqpin_irq_disable(d);
+
+Hmm. If I understand that code correctly, then the _force functions
+are (un)masking another interrupt line. But this happens without
+holding irq_desc[irq]->lock. Looks unsafe at least and if correct
+wants a big fat comment.
+
+> +}
+> +
+> +#define INTC_IRQ_SENSE_VALID 0x10
+> +#define INTC_IRQ_SENSE(x) (x + INTC_IRQ_SENSE_VALID)
+> +
+> +static unsigned char intc_irqpin_sense[IRQ_TYPE_SENSE_MASK + 1] = {
+> +	[IRQ_TYPE_EDGE_FALLING] = INTC_IRQ_SENSE(0x00),
+> +	[IRQ_TYPE_EDGE_RISING] = INTC_IRQ_SENSE(0x01),
+> +	[IRQ_TYPE_LEVEL_LOW] = INTC_IRQ_SENSE(0x02),
+> +	[IRQ_TYPE_LEVEL_HIGH] = INTC_IRQ_SENSE(0x03),
+> +	[IRQ_TYPE_EDGE_BOTH] = INTC_IRQ_SENSE(0x04),
 > +};
 > +
-> +#endif /* __IRQ_RENESAS_INTC_IRQPIN_H__ */
+> +static int intc_irqpin_irq_set_type(struct irq_data *d, unsigned int type)
+> +{
+> +	unsigned char value = intc_irqpin_sense[type & IRQ_TYPE_SENSE_MASK];
+> +	struct intc_irqpin_priv *p = irq_data_get_irq_chip_data(d);
+> +
+> +	if (!(value & INTC_IRQ_SENSE_VALID))
+> +		return -EINVAL;
+> +
+> +	return intc_irqpin_set_sense(p, irqd_to_hwirq(d),
+> +				     value ^ INTC_IRQ_SENSE_VALID);
+> +}
+> +
+> +static irqreturn_t intc_irqpin_irq_handler(int irq, void *dev_id)
+> +{
+> +	struct intc_irqpin_irq *i = dev_id;
+> +	struct intc_irqpin_priv *p = i->p;
+> +	unsigned long bit;
+> +
+> +	intc_irqpin_dbg(i, "demux1");
+> +	bit = intc_irqpin_hwirq_mask(p, INTC_IRQPIN_REG_SOURCE, i->hw_irq);
+> +
+> +	if (intc_irqpin_read(p, INTC_IRQPIN_REG_SOURCE) & bit) {
+> +		intc_irqpin_write(p, INTC_IRQPIN_REG_SOURCE, ~bit);
+> +		intc_irqpin_dbg(i, "demux2");
+> +		generic_handle_irq(irq_find_mapping(p->irq_domain, i->hw_irq));
 
+Shouldn't you cache that mapping value somewhere ?
 
-Best regards
----
-Kuninori Morimoto
+> +		return IRQ_HANDLED;
+> +	}
+> +	return IRQ_NONE;
+> +}
+> +
+> +static int intc_irqpin_irq_domain_map(struct irq_domain *h, unsigned int virq,
+> +				      irq_hw_number_t hw)
+> +{
+> +	struct intc_irqpin_priv *p = h->host_data;
+> +
+> +	intc_irqpin_dbg(&p->irq[hw], "map");
+> +	irq_set_chip_data(virq, h->host_data);
+> +	irq_set_chip_and_handler(virq, &p->irq_chip, handle_level_irq);
+> +	set_irq_flags(virq, IRQF_VALID); /* kill me now */
+
+What needs to be killed? -ENOPARSE
+
+Thanks,
+
+	tglx
