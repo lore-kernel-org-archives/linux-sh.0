@@ -1,179 +1,216 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 13 Feb 2013 03:26:33 +0000
-Subject: [PATCH 15/21] ARM: shmobile: sh73a0: Remove LCDC and LCDC2 function GPIOs
-Message-Id: <1360725999-14514-16-git-send-email-horms+renesas@verge.net.au>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Tue, 19 Feb 2013 17:29:54 +0000
+Subject: [PATCH 1/3] serial: sh-sci: Add Device Tree probing
+Message-Id: <1361298586-30357-2-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360725999-14514-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1360725999-14514-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+We add the capabilty to probe SH SCI devices using Device Tree setup. We
+split SoC dependent config data from board dependent data and store it
+inside the driver. Support for the SoCs sh7372, sh73a0, r8a7740 and
+r8a7779 has been added. The required fields for booting via DT are
+documented in renesas,sh-sci-serial.txt.
 
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
+This is an early draft and needs still discussion about SoC/board
+related properties.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
 ---
- arch/arm/mach-shmobile/include/mach/sh73a0.h |  112 +++++++++++---------------
- 1 file changed, 49 insertions(+), 63 deletions(-)
+ .../bindings/tty/serial/renesas,sh-sci-serial.txt  |   27 +++++
+ drivers/tty/serial/sh-sci.c                        |  120 +++++++++++++++++++-
+ 2 files changed, 143 insertions(+), 4 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/tty/serial/renesas,sh-sci-serial.txt
 
-diff --git a/arch/arm/mach-shmobile/include/mach/sh73a0.h b/arch/arm/mach-shmobile/include/mach/sh73a0.h
-index 606d31d..5ce2fa9 100644
---- a/arch/arm/mach-shmobile/include/mach/sh73a0.h
-+++ b/arch/arm/mach-shmobile/include/mach/sh73a0.h
-@@ -218,38 +218,33 @@ enum {
- 	GPIO_FN_PORT116_I2C_SDA3,
- 	GPIO_FN_HSI_RX_FLAG, GPIO_FN_BBIF1_SS1, GPIO_FN_BBIF1_FLOW,
- 	GPIO_FN_HSI_TX_FLAG,
--	GPIO_FN_VIO_VD, GPIO_FN_PORT128_LCD2VSYN, GPIO_FN_VIO2_VD, \
--	GPIO_FN_LCD2D0,
-+	GPIO_FN_VIO_VD, GPIO_FN_VIO2_VD,
+diff --git a/Documentation/devicetree/bindings/tty/serial/renesas,sh-sci-serial.txt b/Documentation/devicetree/bindings/tty/serial/renesas,sh-sci-serial.txt
+new file mode 100644
+index 0000000..69df44d
+--- /dev/null
++++ b/Documentation/devicetree/bindings/tty/serial/renesas,sh-sci-serial.txt
+@@ -0,0 +1,27 @@
++* Renesas SH-Mobile Serial Communication Interface
++
++Required properties:
++- compatible : Should be "renesas,shmobile-sci-hwb-<x>", where <x> denotes a
++  hardware block version number of the following list - choose it according
++  to your SoC in use.
++  1: sh7372, sh73a0, r8a7740
++  2: r8a7779
++- reg : Address and length of the register set for the device
++- interrupts : Should contain the following IRQs: ERI, RXI, TXI and BRI.
++- renesas,serial-type : Specifies the type of the serial port.
++	0: SCI
++	1: SCIF
++	2: IRDA
++	3: SCIFA
++	4: SCIFB
++- cell-index : The device id.
++
++Example:
++        sci@0xe6c50000 {
++                compatible = "renesas,shmobile-sci-hwb-1";
++                interrupt-parent = <&intca>;
++                reg = <0xe6c50000 0x100>;
++                interrupts = <0x0c20>, <0x0c20>, <0x0c20>, <0x0c20>;
++                cell-index = <1>;
++                renesas,serial-type = <3>;
++        };
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index 6147756..4f3613d 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2353,6 +2353,106 @@ static int sci_remove(struct platform_device *dev)
+ 	return 0;
+ }
  
--	GPIO_FN_VIO_HD, GPIO_FN_PORT129_LCD2HSYN, GPIO_FN_PORT129_LCD2CS_, \
--	GPIO_FN_VIO2_HD, GPIO_FN_LCD2D1,
--	GPIO_FN_VIO_D0, GPIO_FN_PORT130_MSIOF2_RXD, GPIO_FN_LCD2D10,
-+	GPIO_FN_VIO_HD,
-+	GPIO_FN_VIO2_HD,
-+	GPIO_FN_VIO_D0, GPIO_FN_PORT130_MSIOF2_RXD,
- 	GPIO_FN_VIO_D1, GPIO_FN_PORT131_KEYOUT6, GPIO_FN_PORT131_MSIOF2_SS1, \
--	GPIO_FN_PORT131_KEYOUT11, GPIO_FN_LCD2D11,
-+	GPIO_FN_PORT131_KEYOUT11,
- 	GPIO_FN_VIO_D2, GPIO_FN_PORT132_KEYOUT7, GPIO_FN_PORT132_MSIOF2_SS2, \
--	GPIO_FN_PORT132_KEYOUT10, GPIO_FN_LCD2D12,
--	GPIO_FN_VIO_D3, GPIO_FN_MSIOF2_TSYNC, GPIO_FN_LCD2D13,
--	GPIO_FN_VIO_D4, GPIO_FN_MSIOF2_TXD, GPIO_FN_LCD2D14,
--	GPIO_FN_VIO_D5, GPIO_FN_MSIOF2_TSCK, GPIO_FN_LCD2D15,
--	GPIO_FN_VIO_D6, GPIO_FN_PORT136_KEYOUT8, GPIO_FN_LCD2D16,
--	GPIO_FN_VIO_D7, GPIO_FN_PORT137_KEYOUT9, GPIO_FN_LCD2D17,
-+	GPIO_FN_PORT132_KEYOUT10,
-+	GPIO_FN_VIO_D3, GPIO_FN_MSIOF2_TSYNC,
-+	GPIO_FN_VIO_D4, GPIO_FN_MSIOF2_TXD,
-+	GPIO_FN_VIO_D5, GPIO_FN_MSIOF2_TSCK,
-+	GPIO_FN_VIO_D6, GPIO_FN_PORT136_KEYOUT8,
-+	GPIO_FN_VIO_D7, GPIO_FN_PORT137_KEYOUT9,
- 	GPIO_FN_VIO_D8, GPIO_FN_PORT138_KEYOUT8, GPIO_FN_VIO2_D0, \
--	GPIO_FN_LCD2D6,
- 	GPIO_FN_VIO_D9, GPIO_FN_PORT139_KEYOUT9, GPIO_FN_VIO2_D1, \
--	GPIO_FN_LCD2D7,
--	GPIO_FN_VIO_D10, GPIO_FN_TPU0TO2, GPIO_FN_VIO2_D2, GPIO_FN_LCD2D8,
--	GPIO_FN_VIO_D11, GPIO_FN_TPU0TO3, GPIO_FN_VIO2_D3, GPIO_FN_LCD2D9,
-+	GPIO_FN_VIO_D10, GPIO_FN_TPU0TO2, GPIO_FN_VIO2_D2,
-+	GPIO_FN_VIO_D11, GPIO_FN_TPU0TO3, GPIO_FN_VIO2_D3,
- 	GPIO_FN_VIO_D12, GPIO_FN_PORT142_KEYOUT10, GPIO_FN_VIO2_D4, \
--	GPIO_FN_LCD2D2,
- 	GPIO_FN_VIO_D13, GPIO_FN_PORT143_KEYOUT11, GPIO_FN_PORT143_KEYOUT6, \
--	GPIO_FN_VIO2_D5, GPIO_FN_LCD2D3,
-+	GPIO_FN_VIO2_D5,
- 	GPIO_FN_VIO_D14, GPIO_FN_PORT144_KEYOUT7, GPIO_FN_VIO2_D6, \
--	GPIO_FN_LCD2D4,
--	GPIO_FN_VIO_D15, GPIO_FN_TPU1TO3, GPIO_FN_PORT145_LCD2DISP, \
--	GPIO_FN_PORT145_LCD2RS, GPIO_FN_VIO2_D7, GPIO_FN_LCD2D5,
--	GPIO_FN_VIO_CLK, GPIO_FN_LCD2DCK, GPIO_FN_PORT146_LCD2WR_, \
--	GPIO_FN_VIO2_CLK, GPIO_FN_LCD2D18,
--	GPIO_FN_VIO_FIELD, GPIO_FN_LCD2RD_, GPIO_FN_VIO2_FIELD, GPIO_FN_LCD2D19,
-+	GPIO_FN_VIO_D15, GPIO_FN_TPU1TO3,
-+	GPIO_FN_VIO2_D7,
-+	GPIO_FN_VIO_CLK,
-+	GPIO_FN_VIO2_CLK,
-+	GPIO_FN_VIO_FIELD, GPIO_FN_VIO2_FIELD,
- 	GPIO_FN_VIO_CKO,
- 	GPIO_FN_A27, GPIO_FN_PORT149_RDWR, GPIO_FN_MFG0_IN1, \
- 	GPIO_FN_PORT149_KEYOUT9,
-@@ -268,45 +263,38 @@ enum {
- 	GPIO_FN_PORT162_SCIFB_RXD, GPIO_FN_PORT162_SCIFA5_RXD,
- 	GPIO_FN_PORT163_SCIFB_RTS_, GPIO_FN_PORT163_SCIFA5_RTS_, \
- 	GPIO_FN_TPU3TO0,
--	GPIO_FN_LCDD0,
--	GPIO_FN_LCDD1, GPIO_FN_PORT193_SCIFA5_CTS_, GPIO_FN_BBIF2_TSYNC1,
--	GPIO_FN_LCDD2, GPIO_FN_PORT194_SCIFA5_RTS_, GPIO_FN_BBIF2_TSCK1,
--	GPIO_FN_LCDD3, GPIO_FN_PORT195_SCIFA5_RXD, GPIO_FN_BBIF2_TXD1,
--	GPIO_FN_LCDD4, GPIO_FN_PORT196_SCIFA5_TXD,
--	GPIO_FN_LCDD5, GPIO_FN_PORT197_SCIFA5_SCK, GPIO_FN_MFG2_OUT2, \
-+	GPIO_FN_PORT193_SCIFA5_CTS_, GPIO_FN_BBIF2_TSYNC1,
-+	GPIO_FN_PORT194_SCIFA5_RTS_, GPIO_FN_BBIF2_TSCK1,
-+	GPIO_FN_PORT195_SCIFA5_RXD, GPIO_FN_BBIF2_TXD1,
-+	GPIO_FN_PORT196_SCIFA5_TXD,
-+	GPIO_FN_PORT197_SCIFA5_SCK, GPIO_FN_MFG2_OUT2,
- 	GPIO_FN_TPU2TO1,
--	GPIO_FN_LCDD6,
--	GPIO_FN_LCDD7, GPIO_FN_TPU4TO1, GPIO_FN_MFG4_OUT2,
--	GPIO_FN_LCDD8, GPIO_FN_D16,
--	GPIO_FN_LCDD9, GPIO_FN_D17,
--	GPIO_FN_LCDD10, GPIO_FN_D18,
--	GPIO_FN_LCDD11, GPIO_FN_D19,
--	GPIO_FN_LCDD12, GPIO_FN_D20,
--	GPIO_FN_LCDD13, GPIO_FN_D21,
--	GPIO_FN_LCDD14, GPIO_FN_D22,
--	GPIO_FN_LCDD15, GPIO_FN_PORT207_MSIOF0L_SS1, GPIO_FN_D23,
--	GPIO_FN_LCDD16, GPIO_FN_PORT208_MSIOF0L_SS2, GPIO_FN_D24,
--	GPIO_FN_LCDD17, GPIO_FN_D25,
--	GPIO_FN_LCDD18, GPIO_FN_DREQ2, GPIO_FN_PORT210_MSIOF0L_SS1, GPIO_FN_D26,
--	GPIO_FN_LCDD19, GPIO_FN_PORT211_MSIOF0L_SS2, GPIO_FN_D27,
--	GPIO_FN_LCDD20, GPIO_FN_TS_SPSYNC1, GPIO_FN_MSIOF0L_MCK0, GPIO_FN_D28,
--	GPIO_FN_LCDD21, GPIO_FN_TS_SDAT1, GPIO_FN_MSIOF0L_MCK1, GPIO_FN_D29,
--	GPIO_FN_LCDD22, GPIO_FN_TS_SDEN1, GPIO_FN_MSIOF0L_RSCK, GPIO_FN_D30,
--	GPIO_FN_LCDD23, GPIO_FN_TS_SCK1, GPIO_FN_MSIOF0L_RSYNC, GPIO_FN_D31,
--	GPIO_FN_LCDDCK, GPIO_FN_LCDWR_,
--	GPIO_FN_LCDRD_, GPIO_FN_DACK2, GPIO_FN_PORT217_LCD2RS, \
--	GPIO_FN_MSIOF0L_TSYNC, GPIO_FN_VIO2_FIELD3, GPIO_FN_PORT217_LCD2DISP,
--	GPIO_FN_LCDHSYN, GPIO_FN_LCDCS_, GPIO_FN_LCDCS2_, GPIO_FN_DACK3, \
-+	GPIO_FN_TPU4TO1, GPIO_FN_MFG4_OUT2,
-+	GPIO_FN_D16,
-+	GPIO_FN_D17,
-+	GPIO_FN_D18,
-+	GPIO_FN_D19,
-+	GPIO_FN_D20,
-+	GPIO_FN_D21,
-+	GPIO_FN_D22,
-+	GPIO_FN_PORT207_MSIOF0L_SS1, GPIO_FN_D23,
-+	GPIO_FN_PORT208_MSIOF0L_SS2, GPIO_FN_D24,
-+	GPIO_FN_D25,
-+	GPIO_FN_DREQ2, GPIO_FN_PORT210_MSIOF0L_SS1, GPIO_FN_D26,
-+	GPIO_FN_PORT211_MSIOF0L_SS2, GPIO_FN_D27,
-+	GPIO_FN_TS_SPSYNC1, GPIO_FN_MSIOF0L_MCK0, GPIO_FN_D28,
-+	GPIO_FN_TS_SDAT1, GPIO_FN_MSIOF0L_MCK1, GPIO_FN_D29,
-+	GPIO_FN_TS_SDEN1, GPIO_FN_MSIOF0L_RSCK, GPIO_FN_D30,
-+	GPIO_FN_TS_SCK1, GPIO_FN_MSIOF0L_RSYNC, GPIO_FN_D31,
-+	GPIO_FN_DACK2,
-+	GPIO_FN_MSIOF0L_TSYNC, GPIO_FN_VIO2_FIELD3,
-+	GPIO_FN_DACK3,
- 	GPIO_FN_PORT218_VIO_CKOR,
--	GPIO_FN_LCDDISP, GPIO_FN_LCDRS, GPIO_FN_PORT219_LCD2WR_, \
- 	GPIO_FN_DREQ3, GPIO_FN_MSIOF0L_TSCK, GPIO_FN_VIO2_CLK3, \
--	GPIO_FN_LCD2DCK_2,
--	GPIO_FN_LCDVSYN, GPIO_FN_LCDVSYN2,
--	GPIO_FN_LCDLCLK, GPIO_FN_DREQ1, GPIO_FN_PORT221_LCD2CS_, \
-+	GPIO_FN_DREQ1,
- 	GPIO_FN_PWEN, GPIO_FN_MSIOF0L_RXD, GPIO_FN_VIO2_HD3, \
--	GPIO_FN_PORT221_LCD2HSYN,
--	GPIO_FN_LCDDON, GPIO_FN_LCDDON2, GPIO_FN_DACK1, GPIO_FN_OVCN, \
--	GPIO_FN_MSIOF0L_TXD, GPIO_FN_VIO2_VD3, GPIO_FN_PORT222_LCD2VSYN,
-+	GPIO_FN_DACK1, GPIO_FN_OVCN,
-+	GPIO_FN_MSIOF0L_TXD, GPIO_FN_VIO2_VD3,
++#ifdef CONFIG_OF
++/*
++ * We provide setup data for different hardware block versionis. See
++ * Documentation/devicetree/bindings/tty/serial/renesas,sh-sci-serial.txt
++ * for further information.
++ */
++static struct plat_sci_port sci_drv_data_hwb_1 = {
++	.flags		= UPF_BOOT_AUTOCONF,
++	.scscr		= SCSCR_RE | SCSCR_TE,
++	.scbrr_algo_id	= SCBRR_ALGO_4,
++};
++
++static struct plat_sci_port sci_drv_data_hwb_2 = {
++	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
++	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
++	.scbrr_algo_id	= SCBRR_ALGO_2,
++};
++
++static const struct of_device_id of_sci_match[] = {
++	{ .compatible = "renesas,shmobile-sci-hwb-1",
++		.data = &sci_drv_data_hwb_1 },
++	{ .compatible = "renesas,shmobile-sci-hwb-2",
++		.data = &sci_drv_data_hwb_2 },
++	{},
++};
++MODULE_DEVICE_TABLE(of, of_sci_match);
++
++/* This array corresponds to the DT binding definition of the SCI driver */
++static const char sci_serial_modes[] = {
++	PORT_SCI, PORT_SCIF, PORT_IRDA, PORT_SCIFA, PORT_SCIFB
++};
++
++static struct plat_sci_port *sci_parse_dt(struct platform_device *pdev,
++								int *dev_id)
++{
++	struct plat_sci_port *p;
++	struct device_node *np = pdev->dev.of_node;
++	const struct of_device_id *match;
++	struct resource *res;
++	const __be32 *prop;
++	int i, irq;
++
++	match = of_match_node(of_sci_match, pdev->dev.of_node);
++	if (!match || !match->data) {
++		dev_err(&pdev->dev, "OF match error\n");
++		return NULL;
++	}
++
++	/*
++	 * Switch to devm_kmalloc if it will be added to the kernel, as we
++	 * will copy match->data that is correctly zeroed for unused fields
++	 */
++	p = devm_kzalloc(&pdev->dev, sizeof(struct plat_sci_port), GFP_KERNEL);
++	if (!p) {
++		dev_err(&pdev->dev, "failed to allocate DT config data\n");
++		return NULL;
++	}
++
++	memcpy(p, match->data, sizeof(struct plat_sci_port));
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!res) {
++		dev_err(&pdev->dev, "failed to get I/O memory\n");
++		return NULL;
++	}
++	p->mapbase = res->start;
++
++	for (i = 0; i < SCIx_NR_IRQS; i++) {
++		irq = platform_get_irq(pdev, i);
++		if (irq < 0) {
++			dev_err(&pdev->dev, "failed to get irq data %d\n", i);
++			return NULL;
++		}
++		p->irqs[i] = irq;
++	}
++
++	prop = of_get_property(np, "cell-index", NULL);
++	if (!prop) {
++		dev_err(&pdev->dev, "device id missing\n");
++		return NULL;
++	}
++	*dev_id = be32_to_cpup(prop);
++
++	prop = of_get_property(np, "renesas,serial-type", NULL);
++	if (!prop) {
++		dev_err(&pdev->dev, "serial type missing\n");
++		return NULL;
++	}
++	p->type = sci_serial_modes[be32_to_cpup(prop)];
++
++	return p;
++}
++#else
++static struct plat_sci_port *sci_parse_dt(struct platform_device *pdev,
++								int *dev_id)
++{
++	return NULL;
++}
++#endif /* CONFIG_OF */
++
+ static int sci_probe_single(struct platform_device *dev,
+ 				      unsigned int index,
+ 				      struct plat_sci_port *p,
+@@ -2385,9 +2485,9 @@ static int sci_probe_single(struct platform_device *dev,
  
- 	GPIO_FN_SCIFA1_TXD, GPIO_FN_OVCN2,
- 	GPIO_FN_EXTLP, GPIO_FN_SCIFA1_SCK, GPIO_FN_PORT226_VIO_CKO2,
-@@ -318,13 +306,11 @@ enum {
- 	GPIO_FN_MSIOF1_TSCK, GPIO_FN_SCIFA2_SCK2,
- 	GPIO_FN_MSIOF1_RXD, GPIO_FN_SCIFA2_RXD2,
- 	GPIO_FN_MSIOF1_RSCK, GPIO_FN_SCIFA2_RTS2_, GPIO_FN_VIO2_CLK2, \
--	GPIO_FN_LCD2D20,
- 	GPIO_FN_MSIOF1_RSYNC, GPIO_FN_MFG1_IN2, GPIO_FN_VIO2_VD2, \
--	GPIO_FN_LCD2D21,
- 	GPIO_FN_MSIOF1_MCK0, GPIO_FN_PORT236_I2C_SDA2,
- 	GPIO_FN_MSIOF1_MCK1, GPIO_FN_PORT237_I2C_SCL2,
--	GPIO_FN_MSIOF1_SS1, GPIO_FN_VIO2_FIELD2, GPIO_FN_LCD2D22,
--	GPIO_FN_MSIOF1_SS2, GPIO_FN_VIO2_HD2, GPIO_FN_LCD2D23,
-+	GPIO_FN_MSIOF1_SS1, GPIO_FN_VIO2_FIELD2,
-+	GPIO_FN_MSIOF1_SS2, GPIO_FN_VIO2_HD2,
- 	GPIO_FN_SCIFA6_TXD,
- 	GPIO_FN_PORT241_IRDA_OUT, GPIO_FN_PORT241_IROUT, GPIO_FN_MFG4_OUT1, \
- 	GPIO_FN_TPU4TO0,
+ static int sci_probe(struct platform_device *dev)
+ {
+-	struct plat_sci_port *p = dev->dev.platform_data;
+-	struct sci_port *sp = &sci_ports[dev->id];
+-	int ret;
++	struct plat_sci_port *p;
++	struct sci_port *sp;
++	int ret, dev_id = dev->id;
+ 
+ 	/*
+ 	 * If we've come here via earlyprintk initialization, head off to
+@@ -2397,9 +2497,20 @@ static int sci_probe(struct platform_device *dev)
+ 	if (is_early_platform_device(dev))
+ 		return sci_probe_earlyprintk(dev);
+ 
++	if (dev->dev.of_node)
++		p = sci_parse_dt(dev, &dev_id);
++	else
++		p = dev->dev.platform_data;
++
++	if (!p) {
++		dev_err(&dev->dev, "no setup data supplied\n");
++		return -EINVAL;
++	}
++
++	sp = &sci_ports[dev_id];
+ 	platform_set_drvdata(dev, sp);
+ 
+-	ret = sci_probe_single(dev, dev->id, p, sp);
++	ret = sci_probe_single(dev, dev_id, p, sp);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -2451,6 +2562,7 @@ static struct platform_driver sci_driver = {
+ 		.name	= "sh-sci",
+ 		.owner	= THIS_MODULE,
+ 		.pm	= &sci_dev_pm_ops,
++		.of_match_table = of_match_ptr(of_sci_match),
+ 	},
+ };
+ 
 -- 
-1.7.10.4
+1.7.9.5
 
