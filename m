@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 19 Feb 2013 01:26:31 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 19 Feb 2013 14:26:01 +0000
 Subject: Re: [PATCH 2/4] ARM: mach-shmobile: r8a7779: add SATA support
-Message-Id: <20130219012629.GM14932@verge.net.au>
+Message-Id: <51238B79.2080807@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201302170143.36052.sergei.shtylyov@cogentembedded.com>
  <874nhao1nx.wl%kuninori.morimoto.gx@renesas.com>
@@ -14,38 +14,42 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Feb 18, 2013 at 04:40:16PM -0800, Kuninori Morimoto wrote:
-> 
-> Hi Sergei, Magnus, Simon
-> 
-> > >>>   static const struct of_dev_auxdata r8a7779_auxdata_lookup[] __initconst
-> > >>> = {
-> > >>> +       OF_DEV_AUXDATA("renesas,rcar-sata", 0xfc600000, "sata_rcar",
-> > >>> NULL),
-> > >
-> > >
-> > >> ??
-> > >> Is this settings really required for DT ??
-> > >
-> > >
-> > >    Yes, TTBOMK, it's the last resort measure used in exctly this case.
-> > 
-> > Well, I have to agree with Morimoto-san here. Other vendors may chose
-> > to use AUXDATA to map clocks, and I believe it makes sense in the case
-> > of adding platform data as a workaround during transition to full DT
-> > support. But for simply mapping clocks please follow the same style as
-> > we have done so far, which is what Morimoto-san pointed out:
-> > 
-> > CLKDEV_DEV_ID("fc600000.sata_rcar", &mstp_clks[MSTP115]),
-> > 
-> > Also, I don't think SATA is needed as an early device so it should be
-> > enough to register it late as a regular platform device. =)
-> 
+Hello.
+
+On 19-02-2013 4:40, Kuninori Morimoto wrote:
+
+>>>>>    static const struct of_dev_auxdata r8a7779_auxdata_lookup[] __initconst
+>>>>> = {
+>>>>> +       OF_DEV_AUXDATA("renesas,rcar-sata", 0xfc600000, "sata_rcar",
+>>>>> NULL),
+
+
+>>>> ??
+>>>> Is this settings really required for DT ??
+
+
+>>>     Yes, TTBOMK, it's the last resort measure used in exctly this case.
+
+>> Well, I have to agree with Morimoto-san here. Other vendors may chose
+>> to use AUXDATA to map clocks, and I believe it makes sense in the case
+>> of adding platform data as a workaround during transition to full DT
+>> support. But for simply mapping clocks please follow the same style as
+>> we have done so far, which is what Morimoto-san pointed out:
+
+>> CLKDEV_DEV_ID("fc600000.sata_rcar", &mstp_clks[MSTP115]),
+
+>> Also, I don't think SATA is needed as an early device so it should be
+>> enough to register it late as a regular platform device. =)
+
 > BTW, Sergei, which branch are you using for R-Car H1 DT booting ?
 > I'm not sure detail, but, I guess R-Car H1 DT detection needs
 > simon's latest branch.
-> If you are using old branch, DT detection will be failed ?
-> 
-> Simon, is my comment correct ?
 
-I guess so too.
+    I noted in the cover letter that the patches are against the 'next' branch.
+
+> If you are using old branch, DT detection will be failed ?
+
+    Those old/new branches sound too vague for me.
+
+WBR, Sergei
+
