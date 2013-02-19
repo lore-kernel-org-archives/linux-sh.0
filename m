@@ -1,7 +1,7 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 19 Feb 2013 01:15:34 +0000
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 19 Feb 2013 01:21:29 +0000
 Subject: Re: [PATCH] ARM: shmobile: Armadillo800EVA-reference: Remove usage of shmobile_timer
-Message-Id: <87a9r1f6j0.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <20130219012129.GJ14932@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1361223490-20106-1-git-send-email-hechtb+renesas@gmail.com>
 In-Reply-To: <1361223490-20106-1-git-send-email-hechtb+renesas@gmail.com>
@@ -10,23 +10,19 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-
-Hi Bastian
-
+On Mon, Feb 18, 2013 at 03:38:10PM -0600, Bastian Hecht wrote:
 > The struct sys_timer is gone since the patch "ARM: delete struct
 > sys_timer". Since then we can't use shmobile_timer any longer. Setting
 > .init_time directly to eva_earlytimer_init fixes the resulting compile
 > error and makes the code shorter as well.
 
-I guess it is 6bb27d7349db51b50c40534710fe164ca0d58902
-Can you please add commit number too ?
-It is easy to check.
+Hi Bastian,
 
-something like
+Magnus seems to be very keen on the idea that -reference code
+shouldn't use early timer or early devices if possible.
 
-the patch "ARM: delete struct sys_timer"
-(6bb27d7349db51b50c40534710fe164ca0d58902)
-
+Is it possible to re-work this patch so that armadillo800eva-reference
+doesn't use early timer?
 
 > 
 > Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
@@ -72,12 +68,3 @@ the patch "ARM: delete struct sys_timer"
 > -- 
 > 1.7.9.5
 > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
-Best regards
----
-Kuninori Morimoto
