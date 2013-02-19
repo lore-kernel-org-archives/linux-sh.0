@@ -1,67 +1,43 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Sat, 16 Feb 2013 02:04:12 +0000
-Subject: Re: [PATCH v2] fbdev: Add Renesas vdc4 framebuffer driver
-Message-Id: <20130216020412.GA3637@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 19 Feb 2013 02:47:41 +0000
+Subject: [PATCH v2 7/8] ARM: shmobile: kzm9g: Remove warning about SMP
+Message-Id: <1361242062-6957-8-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1347267372-22949-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1347267372-22949-1-git-send-email-phil.edworthy@renesas.com>
+References: <1361242062-6957-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1361242062-6957-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-fbdev@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Oct 05, 2012 at 05:34:54PM +0100, phil.edworthy@renesas.com wrote:
-> Hi,
-> 
-> Any news on this patch?
+Remove warning about SMP not working with the
+clock initialisation used for kzm9g reference.
 
-Phil, did this patch get merged in the end?
+This is resolved by not selecting CONFIG_PREEMPT.
 
-> 
-> Thanks
-> Phil
-> 
-> > From: Jingoo Han <jg1.han@samsung.com>
-> > To: "'Phil Edworthy'" <phil.edworthy@renesas.com>, 
-> > Cc: "'Florian Tobias Schandinat'" <FlorianSchandinat@gmx.de>, linux-
-> > fbdev@vger.kernel.org, linux-sh@vger.kernel.org, "'Jingoo Han'" 
-> > <jg1.han@samsung.com>
-> > Date: 11/09/2012 03:31
-> > Subject: Re: [PATCH v2] fbdev: Add Renesas vdc4 framebuffer driver
-> > 
-> > On Monday, September 10, 2012 5:56 PM Phil Edworthy wrote
-> > > 
-> > > The vdc4 display hardware is found on the sh7269 device.
-> > > 
-> > > Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-> > 
-> > 
-> > Reviewed-by: Jingoo Han <jg1.han@samsung.com>
-> > 
-> > Best regards,
-> > Jingoo Han
-> > 
-> > 
-> > > ---
-> > > v2:
-> > >  * Use devm_ variants of clk_get, ioremap_nocache, request_irq.
-> > >  * Replace spaces with tabs.
-> > >  * Check ren_vdc4_start return value.
-> > >  * Fix headers used.
-> > > 
-> > >  drivers/video/Kconfig      |   10 +
-> > >  drivers/video/Makefile     |    1 +
-> > >  drivers/video/ren_vdc4fb.c |  641 +++++++++++++++++++++++++++++++
-> > +++++++++++++
-> > >  include/video/ren_vdc4fb.h |   19 ++
-> > >  4 files changed, 671 insertions(+), 0 deletions(-)
-> > >  create mode 100644 drivers/video/ren_vdc4fb.c
-> > >  create mode 100644 include/video/ren_vdc4fb.h
-> > 
-> > 
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |    7 -------
+ 1 file changed, 7 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index 229e9e3..b741649 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -99,13 +99,6 @@ static const char *kzm9g_boards_compat_dt[] __initdata = {
+ 	NULL,
+ };
+ 
+-/* Please note that the clock initialisation shcheme used in
+- * sh73a0_add_early_devices_dt() and sh73a0_add_standard_devices_dt()
+- * does not work with SMP as there is a yet to be resolved lock-up in
+- * workqueue initialisation.
+- *
+- * CONFIG_SMP should be disabled when using this code.
+- */
+ DT_MACHINE_START(KZM9G_DT, "kzm9g-reference")
+ 	.smp		= smp_ops(sh73a0_smp_ops),
+ 	.map_io		= sh73a0_map_io,
+-- 
+1.7.10.4
+
