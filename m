@@ -1,65 +1,39 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Thu, 21 Feb 2013 15:50:40 +0000
-Subject: Re: [PATCH 0/3] serial/shmobile: Add OF support to SCI
-Message-Id: <CABYn4sx9Ni1yfFZ2-o4zLhvyrVdW0rCrJ+XyS+d39iprNokO3w@mail.gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 22 Feb 2013 04:46:19 +0000
+Subject: [PATCH 2/3] ARM: shmobile: armadillo800eva: enable branch prediction on defconfig
+Message-Id: <87ppztdkh4.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1361298586-30357-1-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1361298586-30357-1-git-send-email-hechtb+renesas@gmail.com>
+References: <1351731731-8435-3-git-send-email-horms@verge.net.au>
+In-Reply-To: <1351731731-8435-3-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Paul,
+Because defconfig disabled ARM branch prediction
+by CONFIG_CPU_BPREDICT_DISABLE,
+Armadillo800eva's Bogomips and Loop were not good performance.
+This patch enabled Arm branch prediction.
+Special thanks to Ishiyama-san
 
-2013/2/20 Paul Mundt <lethal@linux-sh.org>:
-> On Tue, Feb 19, 2013 at 12:29:43PM -0600, Bastian Hecht wrote:
->> We add support to probe shmobile SCI devices using device tree.
->>
->> Here we face the much discussed issue of device tree bindings and driver data
->> configs. I followed the idea of grouping SoCs into similar hardware blocks.
->>
->> The naming is:
->> renesas,shmobile-sci-hwb-1    for sh7372, sh73a0, r8a7740 and
->> renesas,shmobile-sci-hwb-2    for r8a7779
->>
->> I looked up the configuration of the prementioned SoCs and came to the
->> conclusion that
->> +       .flags          = ...
->> +       .scscr          = ...
->> +       .scbrr_algo_id  = ...
->>
->> are all properties that are SoC dependent and that they currently completely
->> describe the SoC-related configuration. This is however based on estimation
->> as the struct plat_sci_port contains more fields that are not used currently
->> in any board code but might be needed in the future. I don't know that.
->>
-> I think you can probably safely ignore the init_pins and the gpios for
-> now, as this was more about preserving legacy behaviour and bolting on
-> crude API utilization when we started to track pins through the GPIO API.
-> Now that everything is moving towards or supportable via pinctrl/pinconf,
-> there should be no need to ever have to deal with any of this on new
-> SoCs.
+Reported-by: Kiyoshi Ishiyama <kiyoshi.ishiyama.wg@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/configs/armadillo800eva_defconfig |    1 -
+ 1 file changed, 1 deletion(-)
 
-Good to hear that.
+diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
+index 891318e..dd1592b 100644
+--- a/arch/arm/configs/armadillo800eva_defconfig
++++ b/arch/arm/configs/armadillo800eva_defconfig
+@@ -20,7 +20,6 @@ CONFIG_ARCH_R8A7740=y
+ CONFIG_MACH_ARMADILLO800EVA=y
+ # CONFIG_SH_TIMER_TMU is not set
+ CONFIG_ARM_THUMB=y
+-CONFIG_CPU_BPREDICT_DISABLE=y
+ CONFIG_CACHE_L2X0=y
+ CONFIG_ARM_ERRATA_430973=y
+ CONFIG_ARM_ERRATA_458693=y
+-- 
+1.7.9.5
 
-> If you don't want to deal with overrun detection or RTS/CTS that should
-> be fine, but it should be noted that the binding only implements a
-> restricted subset of functionality, in that case.
-
-Yes it would be nice to get the general sci DT thing going and deal
-with details later.
-So it is great that you are OK with it for now.
-
->> Further I'm unsure how to add the DMA descriptors to the bindings. I haven't
->> found a driver that uses DMA except the flctl, that uses "dmas" and "dma-names",
->> but I don't know if this is still the way to go.
->>
-> There are no users that presently depend on this, so you can probably get
-> away with adding this as an incremental change at a later state.
-
-Ok let's do this when DMA is a well known use case for the SHMobile drivers.
-
-Thanks,
-
- Bastian
