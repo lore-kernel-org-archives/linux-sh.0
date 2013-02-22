@@ -1,55 +1,46 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 26 Feb 2013 08:53:16 +0000
-Subject: Re: [PATCH 00/08] ARM: shmobile: CPU Hotplug and SMP CA9 SCU rework part 2
-Message-Id: <20130226085312.GA11648@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Fri, 22 Feb 2013 04:45:57 +0000
+Subject: [PATCH 1/3] ARM: shmobile: armadillo800eva: enable all errata for cache on defconfig
+Message-Id: <87r4k9dkhq.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130218134648.17303.97576.sendpatchset@w520>
- <20130219004857.GA14932@verge.net.au>
- <CANqRtoQxC89zQHjM++19fRxch7x-jua_XEmvxk8t0p0D7-Vr8g@mail.gmail.com>
-In-Reply-To: <CANqRtoQxC89zQHjM++19fRxch7x-jua_XEmvxk8t0p0D7-Vr8g@mail.gmail.com>
+References: <1346808893-14124-2-git-send-email-horms@verge.net.au>
+In-Reply-To: <1346808893-14124-2-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Tue, Feb 19, 2013 at 07:09:14PM +0900, Magnus Damm wrote:
-> On Tue, Feb 19, 2013 at 9:49 AM, Simon Horman <horms@verge.net.au> wrote:
-> > On Mon, Feb 18, 2013 at 10:46:48PM +0900, Magnus Damm wrote:
-> >> ARM: shmobile: CPU Hotplug and SMP CA9 SCU rework part 2
-> >>
-> >> [PATCH 01/08] ARM: shmobile: Fix base address readout in headsmp-scu.S
-> >> [PATCH 02/08] ARM: shmobile: Rework SH73A0_SCU_BASE IOMEM() usage
-> >> [PATCH 03/08] ARM: shmobile: Use R8A7779_SCU_BASE with TWD
-> >> [PATCH 04/08] ARM: shmobile: Update r8a7779 to check SCU for hotplug
-> >> [PATCH 05/08] ARM: shmobile: Update r8a7779 to use scu_power_mode()
-> >> [PATCH 06/08] ARM: shmobile: Use sh73a0-specific cpu disable code
-> >> [PATCH 07/08] ARM: shmobile: Rearrange r8a7779 cpu hotplug code
-> >> [PATCH 08/08] ARM: shmobile: Remove unused hotplug.c
-> >>
-> >> Finalize the SCU rework by performing minor fixes and converting
-> >> the r8a7779 SMP code to make use of common scu_power_mode() code
-> >> and the early SCU setup code in headsmp-scu.S.
-> >>
-> >> Also, to save a few line remove hotplug.c while at it.
-> >>
-> >> The only remaining itch to scratch here is to fix up CPU Hotplug
-> >> of CPU0 on r8a7779, but for that to happen we first need to start
-> >> accounting for spurious interrupts during shut down.
-> >>
-> >> Signed-off-by: Magnus Damm <damm@opensource.se>
-> >> ---
-> >>
-> >>  No known dependencies apart from previous SMP cleanup series
-> >>  "[PATCH 00/06] ARM: shmobile: SMP Cortex-A9 SCU rework"
-> >>  Written against -next in renesas.git.
-> >
-> > I believe those are queued up for upstream in the soc5 branch.
-> >
-> > Please let me know when you are comfortable with me applying these patches
-> > to that branch. I'm fine with that answer being "now".
-> 
-> Now sounds wonderful. Thanks Simon.
+Some errata for cache had not enabled on current
+Armadillo800eva defconfig.
+This patch enables these.
+Special thanks to Ishiyama-san
 
-[some time passes]
+Reported-by: Kiyoshi Ishiyama <kiyoshi.ishiyama.wg@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/configs/armadillo800eva_defconfig |    5 +++++
+ 1 file changed, 5 insertions(+)
 
-Thanks, applied to the soc5 branch.
+diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
+index 2e1a825..891318e 100644
+--- a/arch/arm/configs/armadillo800eva_defconfig
++++ b/arch/arm/configs/armadillo800eva_defconfig
+@@ -25,10 +25,15 @@ CONFIG_CACHE_L2X0=y
+ CONFIG_ARM_ERRATA_430973=y
+ CONFIG_ARM_ERRATA_458693=y
+ CONFIG_ARM_ERRATA_460075=y
++CONFIG_PL310_ERRATA_588369=y
+ CONFIG_ARM_ERRATA_720789=y
++CONFIG_PL310_ERRATA_727915=y
+ CONFIG_ARM_ERRATA_743622=y
+ CONFIG_ARM_ERRATA_751472=y
++CONFIG_PL310_ERRATA_753970=y
+ CONFIG_ARM_ERRATA_754322=y
++CONFIG_PL310_ERRATA_769419=y
++CONFIG_ARM_ERRATA_775420=y
+ CONFIG_AEABI=y
+ # CONFIG_OABI_COMPAT is not set
+ CONFIG_FORCE_MAX_ZONEORDER
+-- 
+1.7.9.5
+
