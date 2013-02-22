@@ -1,42 +1,41 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Wed, 27 Feb 2013 08:04:14 +0000
-Subject: Re: [PATCH v2 1/3] serial: sh-sci: Add OF support
-Message-Id: <20130227080413.GA21690@linux-sh.org>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 22 Feb 2013 17:17:51 +0000
+Subject: [PATCH 1/4] ARM: shmobile: sh73a0: fix Z and ZG clock hierarchy
+Message-Id: <1361553474-27022-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1361819215-4115-1-git-send-email-hechtb+renesas@gmail.com>
- <20130225203534.GB19670@linux-sh.org>
- <CABYn4szH8QnPAj6dkv94wEVr6b=ezb2f7fxyiMnhF7AqOBOMpQ@mail.gmail.com>
-In-Reply-To: <CABYn4szH8QnPAj6dkv94wEVr6b=ezb2f7fxyiMnhF7AqOBOMpQ@mail.gmail.com>
+References: <1361553474-27022-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1361553474-27022-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Bastian Hecht <hechtb@gmail.com>
-Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, linux-serial@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Feb 26, 2013 at 09:09:52AM -0600, Bastian Hecht wrote:
-> 2013/2/25 Paul Mundt <lethal@linux-sh.org>:
-> > You can then compare against SCIx_PROBE_REGTYPE and SCIx_NR_REGTYPES, and
-> > assign p->regtype the be32_to_cpup() value directly. Which will also make
-> > it trivial to add new regtypes in the future, we would only need to
-> > update the binding documentation.
-> 
-> Ok, I slightly disliked that portion anyway in the code as we have the
-> full mapping from the SCBRR algo ID and only the partial mapping from
-> the register set. Additionally I wonder if I should add something like
-> 
-> enum {
-> +     SCBRR_ALGO_INVALID,
->        SCBRR_ALGO_1,
->        SCBRR_ALGO_2,
->        SCBRR_ALGO_3,
->        SCBRR_ALGO_4,
->        SCBRR_ALGO_5,
-> };
-> ...
-> -p->scbrr_algo_id = be32_to_cpup(prop) - 1;
-> +p->scbrr_algo_id = be32_to_cpup(prop);
-> 
-> to have a straight mapping.
+Z and ZG clocks on sh73a0 have pll0 as their parent, not pll1.
 
-Yes, that would be my preferred option as well. I was going to comment on
-the - 1 thing previously, but figured it was just some DT oddity.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ arch/arm/mach-shmobile/clock-sh73a0.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index 5fa106b..71843dd 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -265,12 +265,12 @@ enum { DIV4_I, DIV4_ZG, DIV4_M3, DIV4_B, DIV4_M1, DIV4_M2,
+ 
+ static struct clk div4_clks[DIV4_NR] = {
+ 	[DIV4_I] = DIV4(FRQCRA, 20, 0xdff, CLK_ENABLE_ON_INIT),
+-	[DIV4_ZG] = DIV4(FRQCRA, 16, 0xd7f, CLK_ENABLE_ON_INIT),
++	[DIV4_ZG] = SH_CLK_DIV4(&pll0_clk, FRQCRA, 16, 0xd7f, CLK_ENABLE_ON_INIT),
+ 	[DIV4_M3] = DIV4(FRQCRA, 12, 0x1dff, CLK_ENABLE_ON_INIT),
+ 	[DIV4_B] = DIV4(FRQCRA, 8, 0xdff, CLK_ENABLE_ON_INIT),
+ 	[DIV4_M1] = DIV4(FRQCRA, 4, 0x1dff, 0),
+ 	[DIV4_M2] = DIV4(FRQCRA, 0, 0x1dff, 0),
+-	[DIV4_Z] = DIV4(FRQCRB, 24, 0x97f, 0),
++	[DIV4_Z] = SH_CLK_DIV4(&pll0_clk, FRQCRB, 24, 0x97f, 0),
+ 	[DIV4_ZTR] = DIV4(FRQCRB, 20, 0xdff, 0),
+ 	[DIV4_ZT] = DIV4(FRQCRB, 16, 0xdff, 0),
+ 	[DIV4_ZX] = DIV4(FRQCRB, 12, 0xdff, 0),
+-- 
+1.7.2.5
+
