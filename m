@@ -1,40 +1,37 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 14 Feb 2013 03:34:04 +0000
-Subject: Re: [PATCH 00/06] ARM: shmobile: SMP Cortex-A9 SCU rework
-Message-Id: <20130214033403.GR15879@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 22 Feb 2013 17:17:50 +0000
+Subject: [PATCH/RFC 0/4] CPUFreq for kzm9g
+Message-Id: <1361553474-27022-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130213134628.12153.47120.sendpatchset@w520>
-In-Reply-To: <20130213134628.12153.47120.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Feb 13, 2013 at 10:46:28PM +0900, Magnus Damm wrote:
-> ARM: shmobile: SMP Cortex-A9 SCU rework
-> 
-> [PATCH 01/06] ARM: shmobile: Kill off sh73a0 scu_base_addr() function
-> [PATCH 02/06] ARM: shmobile: Kill off r8a7779 scu_base_addr() function
-> [PATCH 03/06] ARM: shmobile: Rework EMEV2 scu_base variable
-> [PATCH 04/06] ARM: shmobile: Move headsmp-sh73a0.S to headsmp-scu.S
-> [PATCH 05/06] ARM: shmobile: Common shmobile_scu_base in headsmp-scu.S
-> [PATCH 06/06] ARM: shmobile: Update EMEV2 to use scu_power_mode()
-> 
-> Rework the EMEV2 SMP code to make use of common scu_power_mode()
-> code together with a shared shmobile_scu_base and early SCU
-> setup code in headsmp-scu.S.
-> 
-> The patches are known to build for sh73a0, r8a7779 and EMEV2.
->
-> Note that the code has only been tested on the KZM9D/EMEV2 board,
-> and because of that changes to other boards have been kept at
-> a minimum. Next target after this is to update the r8a7779 SMP/SCU
-> code to make use of scu_base_addr(), but that requires hardware
-> access for testing.
+The first of these patches is a bug-fix, whereas the latter three patches 
+are experimental and might want to be discussed. This patch set is based 
+on an earlier Simon's topic/all+next branch snapshot. Attempts to use 
+todays checkout failed - I couldn't even boot. Obviously, I'm also using 
+my AS3711 patches and a number of other (not directly related) patches, 
+that I'll be posting separately.
 
-I have tested this on the kzm9g/sh73a0, marzen/r8a7779 and kzm9d/emev2.
+Guennadi Liakhovetski (4):
+  ARM: shmobile: sh73a0: fix Z and ZG clock hierarchy
+  ARM: shmobile: sh73a0: add support for adjusting CPU frequency
+  ARM: shmobile: sh73a0: run sh73a0_clock_init() only once
+  ARM: shmobile: kzm9g-reference: add CPUFreq support
 
-I have applied the entire series to the soc5 branch thus queued up
-for v3.10. It is also in the next branch and thus should appear
-in linux-next in the not to distant future.
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |   19 ++-
+ arch/arm/mach-shmobile/Kconfig               |    2 +
+ arch/arm/mach-shmobile/clock-sh73a0.c        |  224 +++++++++++++++++++++++++-
+ 3 files changed, 236 insertions(+), 9 deletions(-)
 
+-- 
+1.7.2.5
+
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
