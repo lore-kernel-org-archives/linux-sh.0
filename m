@@ -1,56 +1,23 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 19 Feb 2013 02:56:08 +0000
-Subject: [PATCH 3/5] ARM: shmobile: r8a7779: Do not initialise i2c as an early device
-Message-Id: <1361242570-8867-4-git-send-email-horms+renesas@verge.net.au>
+From: christiannoyer@info.fr
+Date: Sun, 24 Feb 2013 16:43:11 +0000
+Subject: Dringende Von Gouverneur Christian Noyer!
+Message-Id: <20130224164318.3D2D815B533F9@mail.factum.hk>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1361242570-8867-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1361242570-8867-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+To: linux-sh@vger.kernel.org
 
-It is sufficient to initialise i2c as a late device.
+Hallo Freund,
 
-Cc: Magnus Damm <magnus.damm@gmail.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/setup-r8a7779.c |    8 +++-----
- 1 file changed, 3 insertions(+), 5 deletions(-)
+Ich brauche deine Hilfe bei der =DCbertragung eines verstorbenen Kunden Fon=
+ds im Wert von $ 18,500,000.00 Millionen US-Dollar aus meiner Bank hier in =
+Franz=F6sisch Zentralbank (Banque de France). Wenn Sie interessiert sind, b=
+itten wir reagieren zur=FCck zu mir sofort f=FCr weitere Details =FCber mei=
+ne geplante Transaktion.
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index b1f7a45..7f8daf1 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -333,7 +333,7 @@ static struct platform_device *r8a7779_devices_dt[] __initdata = {
- 	&tmu01_device,
- };
- 
--static struct platform_device *r8a7779_early_devices[] __initdata = {
-+static struct platform_device *r8a7779_late_devices[] __initdata = {
- 	&i2c0_device,
- 	&i2c1_device,
- 	&i2c2_device,
-@@ -352,8 +352,8 @@ void __init r8a7779_add_standard_devices(void)
- 
- 	platform_add_devices(r8a7779_devices_dt,
- 			    ARRAY_SIZE(r8a7779_devices_dt));
--	platform_add_devices(r8a7779_early_devices,
--			    ARRAY_SIZE(r8a7779_early_devices));
-+	platform_add_devices(r8a7779_late_devices,
-+			    ARRAY_SIZE(r8a7779_late_devices));
- }
- 
- /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
-@@ -370,8 +370,6 @@ void __init r8a7779_add_early_devices(void)
- {
- 	early_platform_add_devices(r8a7779_devices_dt,
- 				   ARRAY_SIZE(r8a7779_devices_dt));
--	early_platform_add_devices(r8a7779_early_devices,
--				   ARRAY_SIZE(r8a7779_early_devices));
- 
- 	/* Early serial console setup is not included here due to
- 	 * memory map collisions. The SCIF serial ports in r8a7779
--- 
-1.7.10.4
+Mit freundlichen Gr=FC=DFen,
+Herr Christian Noyer
+Gouverneur Franz=F6sisch Zentralbank (Banque de France)
 
+Antwort E-Mail: christiannoyer@aol.fr
