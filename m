@@ -1,53 +1,26 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 13 Feb 2013 03:26:22 +0000
-Subject: [PATCH 04/21] ARM: shmobile: kzm9g: Register pinctrl mappings for SCIF
-Message-Id: <1360725999-14514-5-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 25 Feb 2013 17:16:23 +0000
+Subject: [PATCH/RFC v2 0/2] CPUFreq for kzm9g
+Message-Id: <Pine.LNX.4.64.1302251644010.3030@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360725999-14514-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1360725999-14514-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+In v2 of this patch-set I dropped patches 1 and 3, because #1 is a bug-fix 
+and can go in separately, #3 is more of a debugging help, than a real 
+patch for mainlining. Of the remaining 2 patches the main difference to v1 
+is the omission of the PLL0 manipulation. More is explained in respective 
+patches.
 
-Replace the GPIO-based SCIF pinmux configuration by pinctrl mappings.
+Guennadi Liakhovetski (2):
+  ARM: shmobile: sh73a0: add support for adjusting CPU frequency
+  ARM: shmobile: kzm9g-reference: add CPUFreq support
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Thanks
+Guennadi
 ---
- arch/arm/mach-shmobile/board-kzm9g.c |   10 ++++------
- 1 file changed, 4 insertions(+), 6 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index 1621889..dd5b3b7 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -601,6 +601,10 @@ static struct platform_device *kzm_devices[] __initdata = {
- };
- 
- static const struct pinctrl_map kzm_pinctrl_map[] = {
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
-+				  "scifa4_data", "scifa4"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
-+				  "scifa4_ctrl", "scifa4"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-sh73a0",
- 				  "lcd_data24", "lcd"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-sh73a0",
-@@ -672,12 +676,6 @@ static void __init kzm_init(void)
- 
- 	sh73a0_pinmux_init();
- 
--	/* enable SCIFA4 */
--	gpio_request(GPIO_FN_SCIFA4_TXD, NULL);
--	gpio_request(GPIO_FN_SCIFA4_RXD, NULL);
--	gpio_request(GPIO_FN_SCIFA4_RTS_, NULL);
--	gpio_request(GPIO_FN_SCIFA4_CTS_, NULL);
--
- 	/* CS4 for SMSC/USB */
- 	gpio_request(GPIO_FN_CS4_, NULL); /* CS4 */
- 
--- 
-1.7.10.4
-
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
