@@ -1,74 +1,102 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 14 Feb 2013 00:58:20 +0000
-Subject: Re: [PATCH 3/2] pinctrl: sh-pfc: fix a typo and simplify a definition on sh73a0
-Message-Id: <20130214005820.GG15879@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 25 Feb 2013 09:39:44 +0000
+Subject: [PATCH v3] ARM: shmobile: add gic_iid macro for ICCIAR / interrupt ID
+Message-Id: <87zjysenqb.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1302121633000.7059@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1302121633000.7059@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Feb 13, 2013 at 06:48:24PM +0100, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> On Wednesday 13 February 2013 17:53:34 Simon Horman wrote:
-> > On Wed, Feb 13, 2013 at 08:02:56AM +0100, Guennadi Liakhovetski wrote:
-> > > On Wed, 13 Feb 2013, Guennadi Liakhovetski wrote:
-> > > > On Wed, 13 Feb 2013, Simon Horman wrote:
-> > > > > On Tue, Feb 12, 2013 at 04:34:31PM +0100, Guennadi Liakhovetski wrote:
-> > > > > > Fix definition of the SDHIWP0 function and simplify the CPU_ALL_PORT
-> > > > > > definition on sh73a0.
-> > > > > > 
-> > > > > > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > > > > 
-> > > > > This patch appears to be against code that has been merged into
-> > > > > arm-soc for 3.9.
-> > > > > 
-> > > > > In particular the following change in the pfc branch of the renesas
-> > > > > tree a.k.a the arm-soc/renesas/pinmux branch of the arm-soc tree.
-> > > > > 
-> > > > > commit 5d5166dc39bcbe2c21d4fca034540133c415dce6
-> > > > > Author: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> > > > > Date:   Sat Dec 15 23:51:24 2012 +0100
-> > > > > 
-> > > > >     sh-pfc: Add sh73a0 pinmux support
-> > > > >     
-> > > > >     Signed-off-by: Laurent Pinchart
-> > > > >     <laurent.pinchart+renesas@ideasonboard.com>
-> > > > >     Acked-by: Paul Mundt <lethal@linux-sh.org>
-> > > > >     Acked-by: Linus Walleij <linus.walleij@linaro.org>
-> > > > >     Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> > > > > 
-> > > > > As such, I would like to handle it separately from the other two
-> > > > > patches in this series which are against un-merged code.
-> > > > > 
-> > > > > Before I do so I would like to:
-> > > > > 
-> > > > > * Know about the severity of this problem.
-> > > > > 
-> > > > >   Does it break things?
-> > > > 
-> > > > Yes, .dts doesn't compile without the semicolon.
-> > > 
-> > > Ok, sorry, obviously, I was thinking about a different patch. Please,
-> > > ignore this.
-> > > 
-> > > As for breakage - so far I'm personally unaware of any breakage, which is
-> > > of course not to say, that none is possible.
-> > 
-> > Thanks. In any case it is probably appropriate for v3.10.
-> > In any case I'll wait to see what Laurent and Linus have to say.
-> 
-> Patches 1/2 should be squashed into the merge that introduced the issue (I 
-> think that's what you've done already) and 2/2 should be carried along with 
-> your other kzm9g-reference pinctrl patches for now.
+R-Car H1 datasheet GIC number is indicating
+GIC ICCIAR / interrupt ID number, not SPI number,
+but current marzen board code is using gic_spi() with
+un-understandable calculation.
 
-Yes, that is what I have done.
+This patch adds new gic_iid() macro which means
+ICCIAR / interrupt ID, and used the number
+currently written on datasheet.
 
-> I've taken patch 3/2 in my tree. Given the the SDHIWP0_PU function GPIO
-> isn't used in mainline I don't think there's a need to fast-track it to
-> v3.9, I will include it in my next pinctrl series for v3.10.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v2 -> v3
 
-Great, thanks.
+ - add simple explain on gic_iid()
+
+ arch/arm/mach-shmobile/board-marzen.c      |   12 ++++++------
+ arch/arm/mach-shmobile/include/mach/irqs.h |    1 +
+ 2 files changed, 7 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index cdcb799..2338d4b 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -66,7 +66,7 @@ static struct resource smsc911x_resources[] = {
+ 		.flags		= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start		= gic_spi(28), /* IRQ 1 */
++		.start		= gic_iid(0x3c), /* IRQ 1 */
+ 		.flags		= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -96,7 +96,7 @@ static struct resource sdhi0_resources[] = {
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start	= gic_spi(104),
++		.start	= gic_iid(0x88),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -214,7 +214,7 @@ static struct resource ehci0_resources[] = {
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start	= gic_spi(44),
++		.start	= gic_iid(0x4c),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -238,7 +238,7 @@ static struct resource ehci1_resources[] = {
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start	= gic_spi(45),
++		.start	= gic_iid(0x4d),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -268,7 +268,7 @@ static struct resource ohci0_resources[] = {
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start	= gic_spi(44),
++		.start	= gic_iid(0x4c),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -292,7 +292,7 @@ static struct resource ohci1_resources[] = {
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start	= gic_spi(45),
++		.start	= gic_iid(0x4d),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
+diff --git a/arch/arm/mach-shmobile/include/mach/irqs.h b/arch/arm/mach-shmobile/include/mach/irqs.h
+index 06a5da3..992ed21 100644
+--- a/arch/arm/mach-shmobile/include/mach/irqs.h
++++ b/arch/arm/mach-shmobile/include/mach/irqs.h
+@@ -5,6 +5,7 @@
+ 
+ /* GIC */
+ #define gic_spi(nr)		((nr) + 32)
++#define gic_iid(nr)		(nr) /* ICCIAR / interrupt ID */
+ 
+ /* INTCS */
+ #define INTCS_VECT_BASE		0x3400
+-- 
+1.7.9.5
+
