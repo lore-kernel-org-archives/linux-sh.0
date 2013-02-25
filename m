@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 22 Feb 2013 23:09:24 +0000
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 25 Feb 2013 00:17:46 +0000
 Subject: Re: [PATCH 3/3] ARM: shmobile: armadillo800eva: enable NEON on defconfig
-Message-Id: <20130222230911.GG4737@verge.net.au>
+Message-Id: <87k3pxfdqw.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1346808893-14124-4-git-send-email-horms@verge.net.au>
 In-Reply-To: <1346808893-14124-4-git-send-email-horms@verge.net.au>
@@ -10,36 +10,26 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Feb 21, 2013 at 08:46:40PM -0800, Kuninori Morimoto wrote:
-> The application / library will be stopped by illegal instruction
-> on current Armaddilo800eva board,
-> since defconfig doesn't have CONFIG_NEON.
-> This patch enabled it.
-> Special thanks to Ishiyama-san
 
-I assume this relates to using a userspace that makes use of NEON
-instructions. As such I am quite happy to accept this change. But
-I wonder if it is also relevant to other shmobile defconfigs.
-Do any of the shmobile SoCs not support NEON (in a useful way)?
+Hi Simon
 
-> Reported-by: Kiyoshi Ishiyama <kiyoshi.ishiyama.wg@renesas.com>
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
->  arch/arm/configs/armadillo800eva_defconfig |    1 +
->  1 file changed, 1 insertion(+)
+> > The application / library will be stopped by illegal instruction
+> > on current Armaddilo800eva board,
+> > since defconfig doesn't have CONFIG_NEON.
+> > This patch enabled it.
+> > Special thanks to Ishiyama-san
 > 
-> diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
-> index dd1592b..a452f65 100644
-> --- a/arch/arm/configs/armadillo800eva_defconfig
-> +++ b/arch/arm/configs/armadillo800eva_defconfig
-> @@ -42,6 +42,7 @@ CONFIG_CMDLINE="console=tty0 console=ttySC1,115200 earlyprintk=sh-sci.1,115200 i
->  CONFIG_CMDLINE_FORCE=y
->  CONFIG_KEXEC=y
->  CONFIG_VFP=y
-> +CONFIG_NEON=y
->  # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
->  # CONFIG_SUSPEND is not set
->  CONFIG_NET=y
-> -- 
-> 1.7.9.5
-> 
+> I assume this relates to using a userspace that makes use of NEON
+> instructions. As such I am quite happy to accept this change. But
+> I wonder if it is also relevant to other shmobile defconfigs.
+> Do any of the shmobile SoCs not support NEON (in a useful way)?
+
+Thank you.
+kzm9g_defconfig seems have NEON support,
+but I'm not sure detail of other board.
+
+Anyway, we can enable it on other SoC/board when we need it.
+
+Best regards
+---
+Kuninori Morimoto
