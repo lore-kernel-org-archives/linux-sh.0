@@ -1,39 +1,79 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 13 Feb 2013 14:16:33 +0000
-Subject: [PATCH 02/02] ARM: shmobile: Temporarily use emev2_map_io() for SMP
-Message-Id: <20130213141633.12474.34597.sendpatchset@w520>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 25 Feb 2013 17:17:13 +0000
+Subject: [PATCH/RFC v2 2/2] ARM: shmobile: kzm9g-reference: add CPUFreq support
+Message-Id: <Pine.LNX.4.64.1302251814430.3030@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
+References: <Pine.LNX.4.64.1302251644010.3030@axis700.grange>
+In-Reply-To: <Pine.LNX.4.64.1302251644010.3030@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+This patch enables the use of the generic cpufreq-cpu0 driver on kzm9g.
+Providing a regulator and a list of OPPs in DT, combined with a clock,
+attached to the cpu0 device is everything, the cpufreq-cpu0 driver needs.
 
-To run SMP together with DT we need to use emev2_map_io
-on EMEV2. This due to some early requirements for ioremap().
-
-Instead of blindly applying this I believe we should spend
-time looking into why the common ARM ioremap() code dies
-early instead of behaving sanely and returning NULL.
-
-So for now I prefer not to merge this. Anyone wanting
-to use and/or develop code for KZM9D can instead make
-use of the code in board-kzm9d.c.
-
-Not-Yet-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
 
- arch/arm/mach-shmobile/setup-emev2.c |    1 +
- 1 file changed, 1 insertion(+)
+v2: adjust CPU frequencies in the OPP list according to v2 of patch 1/2.
 
---- 0002/arch/arm/mach-shmobile/setup-emev2.c
-+++ work/arch/arm/mach-shmobile/setup-emev2.c	2013-02-13 17:08:33.000000000 +0900
-@@ -454,6 +454,7 @@ static const char *emev2_boards_compat_d
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |   19 ++++++++++++++++---
+ arch/arm/mach-shmobile/Kconfig               |    2 ++
+ 2 files changed, 18 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index d9f6c18..d7f18fd 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -18,6 +18,19 @@
+ 	model = "KZM-A9-GT";
+ 	compatible = "renesas,kzm9g-reference", "renesas,sh73a0";
  
- DT_MACHINE_START(EMEV2_DT, "Generic Emma Mobile EV2 (Flattened Device Tree)")
- 	.smp		= smp_ops(emev2_smp_ops),
-+	.map_io		= emev2_map_io,
- 	.init_early	= emev2_init_delay,
- 	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_irq	= irqchip_init,
++	cpus {
++		cpu@0 {
++			cpu0-supply = <&vdd_dvfs>;
++			operating-points = <
++				/* kHz  uV */
++				1196000 1315000
++				 598000 1175000
++				 398667 1065000
++			>;
++			voltage-tolerance = <1>; /* 1% */
++		};
++	};
++
+ 	chosen {
+ 		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200";
+ 	};
+@@ -118,10 +131,10 @@
+ 		reg = <0x40>;
+ 
+ 		regulators {
+-			sd1 {
++			vdd_dvfs: sd1 {
+ 				regulator-name = "1.315V CPU";
+-				regulator-min-microvolt = <1315000>;
+-				regulator-max-microvolt = <1335000>;
++				regulator-min-microvolt = <1050000>;
++				regulator-max-microvolt = <1350000>;
+ 				regulator-always-on;
+ 				regulator-boot-on;
+ 			};
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 927eecc..6f621ac 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -141,6 +141,8 @@ config MACH_KZM9G
+ config MACH_KZM9G_REFERENCE
+ 	bool "KZM-A9-GT board - Reference Device Tree Implementation"
+ 	depends on ARCH_SH73A0
++	select ARCH_HAS_CPUFREQ
++	select ARCH_HAS_OPP
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	select SND_SOC_AK4642 if SND_SIMPLE_CARD
+-- 
+1.7.2.5
+
