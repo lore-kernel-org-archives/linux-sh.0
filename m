@@ -1,51 +1,175 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 19 Feb 2013 02:47:42 +0000
-Subject: [PATCH v2 8/8] ARM: shmobile: kzm9g: Trim reference DT_MACHINE_START
-Message-Id: <1361242062-6957-9-git-send-email-horms+renesas@verge.net.au>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Mon, 25 Feb 2013 18:07:09 +0000
+Subject: [PATCH v2 3/3] ARM: mach-shmobile: r8a7740: Setup the serial devices using DT
+Message-Id: <1361819215-4115-3-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1361242062-6957-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1361242062-6957-1-git-send-email-horms+renesas@verge.net.au>
+References: <1361819215-4115-1-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1361819215-4115-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, linux-serial@vger.kernel.org
 
-Remove .init_late and .restart from DT_MACHINE_START
-for kzm9g reference as these are not necessary to
-bring the board up which is the main aim of kzm9g reference.
+We can now use the Device Tree for bringing up our serial devices. We
+need to add an alternative early_devices list in setup-r8a7740 without
+the serial devices and move them into the Armadillo-reference .dts config file.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
 ---
- arch/arm/mach-shmobile/board-kzm9g-reference.c |    9 ---------
- 1 file changed, 9 deletions(-)
+v2:
+ - adjusted compatible lines
+ - used new properties
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-index b741649..f278381 100644
---- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-@@ -87,13 +87,6 @@ static void __init kzm_init(void)
- #endif
- }
+ .../boot/dts/r8a7740-armadillo800eva-reference.dts |   94 ++++++++++++++++++++
+ arch/arm/mach-shmobile/setup-r8a7740.c             |   15 +++-
+ 2 files changed, 105 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+index 1e339cd..52645b6 100644
+--- a/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
++++ b/arch/arm/boot/dts/r8a7740-armadillo800eva-reference.dts
+@@ -134,6 +134,100 @@
+ 		renesas,pins = "eth_base";
+ 		renesas,function = "eth";
+ 	};
++
++	sci@0xe6c40000 {
++		compatible = "renesas,sci-SCIFA-uart";
++		interrupt-parent = <&intca>;
++		reg = <0xe6c40000 0x100>;
++		interrupts = <0x0c00>, <0x0c00>, <0x0c00>, <0x0c00>;
++		cell-index = <0>;
++		renesas,scscr = <0x30>;
++		renesas,scbrr-algo-id = <4>;
++		renesas,autoconf;
++	};
++
++	sci@0xe6c50000 {
++		compatible = "renesas,sci-SCIFA-uart";
++		interrupt-parent = <&intca>;
++		reg = <0xe6c50000 0x100>;
++		interrupts = <0x0c20>, <0x0c20>, <0x0c20>, <0x0c20>;
++		cell-index = <1>;
++		renesas,scscr = <0x30>;
++		renesas,scbrr-algo-id = <4>;
++		renesas,autoconf;
++	};
++
++	sci@0xe6c60000 {
++		compatible = "renesas,sci-SCIFA-uart";
++		interrupt-parent = <&intca>;
++		reg = <0xe6c60000 0x100>;
++		interrupts = <0x0c40>, <0x0c40>, <0x0c40>, <0x0c40>;
++		cell-index = <2>;
++		renesas,scscr = <0x30>;
++		renesas,scbrr-algo-id = <4>;
++		renesas,autoconf;
++	};
++
++	sci@0xe6c70000 {
++		compatible = "renesas,sci-SCIFA-uart";
++		interrupt-parent = <&intca>;
++		reg = <0xe6c70000 0x100>;
++		interrupts = <0x0c60>, <0x0c60>, <0x0c60>, <0x0c60>;
++		cell-index = <3>;
++		renesas,scscr = <0x30>;
++		renesas,scbrr-algo-id = <4>;
++		renesas,autoconf;
++	};
++	sci@0xe6c80000 {
++		compatible = "renesas,sci-SCIFA-uart";
++		interrupt-parent = <&intca>;
++		reg = <0xe6c80000 0x100>;
++		interrupts = <0x0d20>, <0x0d20>, <0x0d20>, <0x0d20>;
++		cell-index = <4>;
++		renesas,scscr = <0x30>;
++		renesas,scbrr-algo-id = <4>;
++		renesas,autoconf;
++	};
++	sci@0xe6cb0000 {
++		compatible = "renesas,sci-SCIFA-uart";
++		interrupt-parent = <&intca>;
++		reg = <0xe6cb0000 0x100>;
++		interrupts = <0x0d40>, <0x0d40>, <0x0d40>, <0x0d40>;
++		cell-index = <5>;
++		renesas,scscr = <0x30>;
++		renesas,scbrr-algo-id = <4>;
++		renesas,autoconf;
++	};
++	sci@0xe6cc0000 {
++		compatible = "renesas,sci-SCIFA-uart";
++		interrupt-parent = <&intca>;
++		reg = <0xe6cc0000 0x100>;
++		interrupts = <0x04c0>, <0x04c0>, <0x04c0>, <0x04c0>;
++		cell-index = <6>;
++		renesas,scscr = <0x30>;
++		renesas,scbrr-algo-id = <4>;
++		renesas,autoconf;
++	};
++	sci@0xe6cd0000 {
++		compatible = "renesas,sci-SCIFA-uart";
++		interrupt-parent = <&intca>;
++		reg = <0xe6cd0000 0x100>;
++		interrupts = <0x04e0>, <0x04e0>, <0x04e0>, <0x04e0>;
++		cell-index = <7>;
++		renesas,scscr = <0x30>;
++		renesas,scbrr-algo-id = <4>;
++		renesas,autoconf;
++	};
++	sci@0xe6c30000 {
++		compatible = "renesas,sci-SCIFB-uart";
++		interrupt-parent = <&intca>;
++		reg = <0xe6c30000 0x100>;
++		interrupts = <0x0d60>, <0x0d60>, <0x0d60>, <0x0d60>;
++		cell-index = <8>;
++		renesas,scscr = <0x30>;
++		renesas,scbrr-algo-id = <4>;
++		renesas,autoconf;
++	};
+ };
  
--static void kzm9g_restart(char mode, const char *cmd)
--{
--#define RESCNT2 IOMEM(0xe6188020)
--	/* Do soft power on reset */
--	writel((1 << 31), RESCNT2);
--}
--
- static const char *kzm9g_boards_compat_dt[] __initdata = {
- 	"renesas,kzm9g-reference",
- 	NULL,
-@@ -106,8 +99,6 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g-reference")
- 	.nr_irqs	= NR_IRQS_LEGACY,
- 	.init_irq	= irqchip_init,
- 	.init_machine	= kzm_init,
--	.init_late	= shmobile_init_late,
- 	.init_time	= shmobile_timer_init,
--	.restart	= kzm9g_restart,
- 	.dt_compat	= kzm9g_boards_compat_dt,
- MACHINE_END
+ &gpio {
+diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
+index 5312aad..5f7597a 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7740.c
++++ b/arch/arm/mach-shmobile/setup-r8a7740.c
+@@ -394,6 +394,13 @@ static struct platform_device *r8a7740_early_devices[] __initdata = {
+ 	&tmu02_device,
+ };
+ 
++static struct platform_device *r8a7740_early_devices_dt[] __initdata = {
++	&cmt10_device,
++	&tmu00_device,
++	&tmu01_device,
++	&tmu02_device,
++};
++
+ /* DMA */
+ static const struct sh_dmae_slave_config r8a7740_dmae_slaves[] = {
+ 	{
+@@ -839,8 +846,8 @@ void __init r8a7740_add_early_devices_dt(void)
+ {
+ 	shmobile_setup_delay(800, 1, 3); /* Cortex-A9 @ 800MHz */
+ 
+-	early_platform_add_devices(r8a7740_early_devices,
+-				   ARRAY_SIZE(r8a7740_early_devices));
++	early_platform_add_devices(r8a7740_early_devices_dt,
++				   ARRAY_SIZE(r8a7740_early_devices_dt));
+ 
+ 	/* setup early console here as well */
+ 	shmobile_setup_console();
+@@ -852,8 +859,8 @@ static const struct of_dev_auxdata r8a7740_auxdata_lookup[] __initconst = {
+ 
+ void __init r8a7740_add_standard_devices_dt(void)
+ {
+-	platform_add_devices(r8a7740_early_devices,
+-			    ARRAY_SIZE(r8a7740_early_devices));
++	platform_add_devices(r8a7740_early_devices_dt,
++			    ARRAY_SIZE(r8a7740_early_devices_dt));
+ 
+ 	of_platform_populate(NULL, of_default_bus_match_table,
+ 			     r8a7740_auxdata_lookup, NULL);
 -- 
-1.7.10.4
+1.7.9.5
 
