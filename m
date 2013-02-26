@@ -1,58 +1,55 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 25 Feb 2013 14:30:58 +0000
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Tue, 26 Feb 2013 10:18:28 +0000
 Subject: Re: [PATCH 02/08] ARM: shmobile: Rework SH73A0_SCU_BASE IOMEM() usage
-Message-Id: <CANqRtoSU9xqhTCv31CskYN8bu4H7gwz93fQcvuyLQx=hdRk2MA@mail.gmail.com>
+Message-Id: <201302261018.28463.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130218134648.17303.97576.sendpatchset@w520>
- <20130218134707.17303.48589.sendpatchset@w520>
- <201302181439.08639.arnd@arndb.de>
  <201302181444.21717.arnd@arndb.de>
-In-Reply-To: <201302181444.21717.arnd@arndb.de>
+ <CANqRtoSU9xqhTCv31CskYN8bu4H7gwz93fQcvuyLQx=hdRk2MA@mail.gmail.com>
+In-Reply-To: <CANqRtoSU9xqhTCv31CskYN8bu4H7gwz93fQcvuyLQx=hdRk2MA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Feb 18, 2013 at 11:44 PM, Arnd Bergmann <arnd@arndb.de> wrote:
-> On Monday 18 February 2013, Arnd Bergmann wrote:
->> Ok, this gets rid of the warning, but I'm a bit worried about
->> how it is hardwiring the fact that the SCU physical address has
->> the same bit pattern as the __iomem token.
->>
->> While I realize that you already rely on this in a lot of places
->> in the shmobile code, I see a red light going off every time I read
->> code like this, and it is not any more logical than the previous
->> version.
->>
->> It would be nice to keep these address spaces separate at least
->> in new code, mostly in order to not confuse reviewers with code
->> that is based on assumptions which are not generally true, but also
->> to be more flexible with the virtual memory layout. On a related
->> topic, you are using an entire 256 MB section of your virtual
->> address space for sh73a0 and sh7372 and 160 MB for r8a7740. Putting
->> less of that into the identity mapped area would free up space for
->> vmalloc, but it's hard to prove that doing this is correct when
->> you have all sorts of code using a hardcoded virtual MMIO address
->> token.
->
-> To clarify my rant: I'm absolutely fine with this code going in
-> for now, but I'd like to see a long-term plan about what to do
-> with the hardcoded virtual address hacks.
+On Monday 25 February 2013, Magnus Damm wrote:
+> For mach-shmobile the three major components that rely on entity
+> mapped memory maps are SMP, clocks and power domains. The clocks
+> should really be moved in the common direction and I intend to get
+> people to focus on that in the not too distant future (next 6 months).
+> Power domains should be rather easy to convert. SMP tends to be a bit
+> of a headache because last time I checked I couldn't use ioremap() at
+> ->smp_init_cpus() time. What I recall is that ioremap() hanged instead
+> of returning something.
+> 
+> Anyway, if I track down the ioremap() issue, would it be possible for
+> you to check if it can be reproduced on some other sub-architecture?
 
-Thanks for the clarification.
+You are right that ioremap cannot be used from ->smp_init_cpus() and any
+code called from there needs to use a static mapping for accessing
+MMIO registers. There is nothing wrong with that. There are in fact
+three distinct reasons why people use static MMIO mappings with
+iotable_init():
 
-For mach-shmobile the three major components that rely on entity
-mapped memory maps are SMP, clocks and power domains. The clocks
-should really be moved in the common direction and I intend to get
-people to focus on that in the not too distant future (next 6 months).
-Power domains should be rather easy to convert. SMP tends to be a bit
-of a headache because last time I checked I couldn't use ioremap() at
-->smp_init_cpus() time. What I recall is that ioremap() hanged instead
-of returning something.
+1. For MMIO registers that need to be accessed before ioremap works.
+   This usually means the SMP startup and the early printk (which I
+   believe shmobile is not using).
 
-Anyway, if I track down the ioremap() issue, would it be possible for
-you to check if it can be reproduced on some other sub-architecture?
+2. For getting hugetlb mappings of MMIO registers into the kernel
+   address space. If you have a lot of registers in the same area,
+   using a single TLB to map them is more efficient, even when 
+   accessing the registers through ioremap from a device driver.
 
-Thanks,
+3. For hardcoding the virtual address to a location that is passed
+   to device drivers as compile-time constants.
 
-/ magnus
+The first two are absolutely fine, there are no objections to those.
+The third one is tradtitionally used on a lot of the older platforms,
+but with the multiplatform work, we are moving away from it, towards
+passing resources in the platform device (ideally from DT, but that
+is an orthogonal question here). AFAICT, shmobile is the only "modern"
+platform that still relies on fixed virtual addresses, and it is the
+only one I know that uses a mapping where the virtual address equals
+the physical address.
+
+	Arnd
