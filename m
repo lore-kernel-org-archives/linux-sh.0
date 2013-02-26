@@ -1,56 +1,137 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 06 Feb 2013 19:46:48 +0000
-Subject: [PATCH v3 01/13] mmc: sdhi, tmio: only check flags in tmio-mmc driver proper
-Message-Id: <1360180020-18555-2-git-send-email-g.liakhovetski@gmx.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 26 Feb 2013 11:58:54 +0000
+Subject: [PATCH 02/05] irqchip: intc-irqpin: Cache mapped IRQ
+Message-Id: <20130226115854.5630.51016.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
+References: <20130226115834.5630.45471.sendpatchset@w520>
+In-Reply-To: <20130226115834.5630.45471.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-kernel@vger.kernel.org
+Cc: kuninori.morimoto.gx@renesas.com, linux-sh@vger.kernel.org, benh@kernel.crashing.org, grant.likely@secretlab.ca, horms@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
-tmio-mmc platform flags can be set by various means, including caller
-drivers and device-tree bindings, therefore it is better to only check
-them in the tmio-mmc driver proper, not in caller drivers themselves.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cache IRQ in domain_irq variable instead of
+making use of irq_find_mapping(). While at it
+rename the irq variable to requested_irq.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/mmc/host/sh_mobile_sdhi.c |    3 +--
- drivers/mmc/host/tmio_mmc_pio.c   |    3 +++
- 2 files changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/mmc/host/sh_mobile_sdhi.c b/drivers/mmc/host/sh_mobile_sdhi.c
-index 524a7f7..e0ca0ab 100644
---- a/drivers/mmc/host/sh_mobile_sdhi.c
-+++ b/drivers/mmc/host/sh_mobile_sdhi.c
-@@ -153,10 +153,9 @@ static int sh_mobile_sdhi_probe(struct platform_device *pdev)
- 	mmc_data->clk_enable = sh_mobile_sdhi_clk_enable;
- 	mmc_data->clk_disable = sh_mobile_sdhi_clk_disable;
- 	mmc_data->capabilities = MMC_CAP_MMC_HIGHSPEED;
-+	mmc_data->write16_hook = sh_mobile_sdhi_write16_hook;
- 	if (p) {
- 		mmc_data->flags = p->tmio_flags;
--		if (mmc_data->flags & TMIO_MMC_HAS_IDLE_WAIT)
--			mmc_data->write16_hook = sh_mobile_sdhi_write16_hook;
- 		mmc_data->ocr_mask = p->tmio_ocr_mask;
- 		mmc_data->capabilities |= p->tmio_caps;
- 		mmc_data->capabilities2 |= p->tmio_caps2;
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index 0f992e9..b25adb4 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -928,6 +928,9 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 	int ret;
- 	u32 irq_mask = TMIO_MASK_CMD;
+ Thanks to Thomas Gleixner for this suggestion.
+
+ drivers/irqchip/irq-renesas-intc-irqpin.c |   30 +++++++++++++++--------------
+ 1 file changed, 16 insertions(+), 14 deletions(-)
+
+--- 0003/drivers/irqchip/irq-renesas-intc-irqpin.c
++++ work/drivers/irqchip/irq-renesas-intc-irqpin.c	2013-02-26 19:29:56.000000000 +0900
+@@ -61,7 +61,8 @@ struct intc_irqpin_iomem {
  
-+	if (!(pdata->flags & TMIO_MMC_HAS_IDLE_WAIT))
-+		pdata->write16_hook = NULL;
+ struct intc_irqpin_irq {
+ 	int hw_irq;
+-	int irq;
++	int requested_irq;
++	int domain_irq;
+ 	struct intc_irqpin_priv *p;
+ };
+ 
+@@ -171,8 +172,7 @@ static int intc_irqpin_set_sense(struct
+ static void intc_irqpin_dbg(struct intc_irqpin_irq *i, char *str)
+ {
+ 	dev_dbg(&i->p->pdev->dev, "%s (%d:%d:%d)\n",
+-		str, i->irq, i->hw_irq,
+-		irq_find_mapping(i->p->irq_domain, i->hw_irq));
++		str, i->requested_irq, i->hw_irq, i->domain_irq);
+ }
+ 
+ static void intc_irqpin_irq_enable(struct irq_data *d)
+@@ -196,7 +196,7 @@ static void intc_irqpin_irq_disable(stru
+ static void intc_irqpin_irq_enable_force(struct irq_data *d)
+ {
+ 	struct intc_irqpin_priv *p = irq_data_get_irq_chip_data(d);
+-	int irq = p->irq[irqd_to_hwirq(d)].irq;
++	int irq = p->irq[irqd_to_hwirq(d)].requested_irq;
+ 
+ 	intc_irqpin_irq_enable(d);
+ 	irq_get_chip(irq)->irq_unmask(irq_get_irq_data(irq));
+@@ -205,7 +205,7 @@ static void intc_irqpin_irq_enable_force
+ static void intc_irqpin_irq_disable_force(struct irq_data *d)
+ {
+ 	struct intc_irqpin_priv *p = irq_data_get_irq_chip_data(d);
+-	int irq = p->irq[irqd_to_hwirq(d)].irq;
++	int irq = p->irq[irqd_to_hwirq(d)].requested_irq;
+ 
+ 	irq_get_chip(irq)->irq_mask(irq_get_irq_data(irq));
+ 	intc_irqpin_irq_disable(d);
+@@ -246,7 +246,7 @@ static irqreturn_t intc_irqpin_irq_handl
+ 	if (intc_irqpin_read(p, INTC_IRQPIN_REG_SOURCE) & bit) {
+ 		intc_irqpin_write(p, INTC_IRQPIN_REG_SOURCE, ~bit);
+ 		intc_irqpin_dbg(i, "demux2");
+-		generic_handle_irq(irq_find_mapping(p->irq_domain, i->hw_irq));
++		generic_handle_irq(i->domain_irq);
+ 		return IRQ_HANDLED;
+ 	}
+ 	return IRQ_NONE;
+@@ -257,6 +257,9 @@ static int intc_irqpin_irq_domain_map(st
+ {
+ 	struct intc_irqpin_priv *p = h->host_data;
+ 
++	p->irq[hw].domain_irq = virq;
++	p->irq[hw].hw_irq = hw;
 +
- 	res_ctl = platform_get_resource(pdev, IORESOURCE_MEM, 0);
- 	if (!res_ctl)
- 		return -EINVAL;
--- 
-1.7.2.5
-
+ 	intc_irqpin_dbg(&p->irq[hw], "map");
+ 	irq_set_chip_data(virq, h->host_data);
+ 	irq_set_chip_and_handler(virq, &p->irq_chip, handle_level_irq);
+@@ -314,9 +317,8 @@ static int intc_irqpin_probe(struct plat
+ 		if (!irq)
+ 			break;
+ 
+-		p->irq[k].hw_irq = k;
+ 		p->irq[k].p = p;
+-		p->irq[k].irq = irq->start;
++		p->irq[k].requested_irq = irq->start;
+ 	}
+ 
+ 	p->number_of_irqs = k;
+@@ -389,7 +391,8 @@ static int intc_irqpin_probe(struct plat
+ 
+ 	/* request and set priority on interrupts one by one */
+ 	for (k = 0; k < p->number_of_irqs; k++) {
+-		if (request_irq(p->irq[k].irq, intc_irqpin_irq_handler,
++		if (request_irq(p->irq[k].requested_irq,
++				intc_irqpin_irq_handler,
+ 				0, name, &p->irq[k])) {
+ 			dev_err(&pdev->dev, "failed to request low IRQ\n");
+ 			ret = -ENOENT;
+@@ -402,17 +405,16 @@ static int intc_irqpin_probe(struct plat
+ 
+ 	/* warn in case of mismatch if irq base is specified */
+ 	if (p->config.irq_base) {
+-		k = irq_find_mapping(p->irq_domain, 0);
+-		if (p->config.irq_base != k)
++		if (p->config.irq_base != p->irq[0].domain_irq)
+ 			dev_warn(&pdev->dev, "irq base mismatch (%d/%d)\n",
+-				 p->config.irq_base, k);
++				 p->config.irq_base, p->irq[0].domain_irq);
+ 	}
+ 
+ 	return 0;
+ 
+ err3:
+ 	for (; k >= 0; k--)
+-		free_irq(p->irq[k - 1].irq, &p->irq[k - 1]);
++		free_irq(p->irq[k - 1].requested_irq, &p->irq[k - 1]);
+ 
+ 	irq_domain_remove(p->irq_domain);
+ err2:
+@@ -430,7 +432,7 @@ static int intc_irqpin_remove(struct pla
+ 	int k;
+ 
+ 	for (k = 0; k < p->number_of_irqs; k++)
+-		free_irq(p->irq[k].irq, &p->irq[k]);
++		free_irq(p->irq[k].requested_irq, &p->irq[k]);
+ 
+ 	irq_domain_remove(p->irq_domain);
+ 
