@@ -1,127 +1,59 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 15 Feb 2013 15:14:00 +0000
-Subject: [PATCH v4 11/13] mmc: tmio: add support for the VccQ regulator
-Message-Id: <1360941242-18153-12-git-send-email-g.liakhovetski@gmx.de>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Tue, 26 Feb 2013 16:04:07 +0000
+Subject: [PATCH v3 2/3] ARM: mach-shmobile: r8a7740: Add DT names to clock list
+Message-Id: <1361898208-6683-2-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1361898208-6683-1-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1361898208-6683-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Arnd Bergmann <arnd@arndb.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-sh@vger.kernel.org
+Cc: Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, linux-serial@vger.kernel.org
 
-Some SD/MMC interfaces use 2 power regulators: one to power the card itself
-(Vcc) and another one to pull signal lines up (VccQ). In case of eMMC and
-UHS SD cards the regulators also have to be configured to supply different
-voltages. The preferred order of turning supply power on and off is to
-turn Vcc first on and last off.
+This adds temporarily the alternative device names to the clock list
+that are used when booting via Device Tree setup.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
 ---
- drivers/mmc/host/tmio_mmc_pio.c |   56 ++++++++++++++++++++++++++++++++-------
- 1 files changed, 46 insertions(+), 10 deletions(-)
+v3:
+no changes
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index e5b3fcf..f508ecb 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -43,6 +43,7 @@
- #include <linux/platform_device.h>
- #include <linux/pm_qos.h>
- #include <linux/pm_runtime.h>
-+#include <linux/regulator/consumer.h>
- #include <linux/scatterlist.h>
- #include <linux/spinlock.h>
- #include <linux/workqueue.h>
-@@ -155,6 +156,7 @@ static void tmio_mmc_set_clock(struct tmio_mmc_host *host, int new_clock)
- 		host->set_clk_div(host->pdev, (clk>>22) & 1);
+ arch/arm/mach-shmobile/clock-r8a7740.c |    9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index 71fc400..0f77823 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -593,18 +593,27 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_mobile_ceu.1",	&mstp_clks[MSTP128]),
  
- 	sd_ctrl_write16(host, CTL_SD_CARD_CLK_CTL, clk & 0x1ff);
-+	msleep(10);
- }
+ 	CLKDEV_DEV_ID("sh-sci.4",		&mstp_clks[MSTP200]),
++	CLKDEV_DEV_ID("e6c80000.sci",		&mstp_clks[MSTP200]),
+ 	CLKDEV_DEV_ID("sh-sci.3",		&mstp_clks[MSTP201]),
++	CLKDEV_DEV_ID("e6c70000.sci",		&mstp_clks[MSTP201]),
+ 	CLKDEV_DEV_ID("sh-sci.2",		&mstp_clks[MSTP202]),
++	CLKDEV_DEV_ID("e6c60000.sci",		&mstp_clks[MSTP202]),
+ 	CLKDEV_DEV_ID("sh-sci.1",		&mstp_clks[MSTP203]),
++	CLKDEV_DEV_ID("e6c50000.sci",		&mstp_clks[MSTP203]),
+ 	CLKDEV_DEV_ID("sh-sci.0",		&mstp_clks[MSTP204]),
++	CLKDEV_DEV_ID("e6c40000.sci",		&mstp_clks[MSTP204]),
+ 	CLKDEV_DEV_ID("sh-sci.8",		&mstp_clks[MSTP206]),
++	CLKDEV_DEV_ID("e6c30000.sci",		&mstp_clks[MSTP206]),
+ 	CLKDEV_DEV_ID("sh-sci.5",		&mstp_clks[MSTP207]),
++	CLKDEV_DEV_ID("e6cb0000.sci",		&mstp_clks[MSTP207]),
+ 	CLKDEV_DEV_ID("sh-dma-engine.3",	&mstp_clks[MSTP214]),
+ 	CLKDEV_DEV_ID("sh-dma-engine.2",	&mstp_clks[MSTP216]),
+ 	CLKDEV_DEV_ID("sh-dma-engine.1",	&mstp_clks[MSTP217]),
+ 	CLKDEV_DEV_ID("sh-dma-engine.0",	&mstp_clks[MSTP218]),
+ 	CLKDEV_DEV_ID("sh-sci.7",		&mstp_clks[MSTP222]),
++	CLKDEV_DEV_ID("e6cd0000.sci",		&mstp_clks[MSTP222]),
+ 	CLKDEV_DEV_ID("sh-sci.6",		&mstp_clks[MSTP230]),
++	CLKDEV_DEV_ID("e6cc0000.sci",		&mstp_clks[MSTP230]),
  
- static void tmio_mmc_clk_stop(struct tmio_mmc_host *host)
-@@ -768,16 +770,48 @@ static int tmio_mmc_clk_update(struct mmc_host *mmc)
- 	return ret;
- }
- 
--static void tmio_mmc_set_power(struct tmio_mmc_host *host, struct mmc_ios *ios)
-+static void tmio_mmc_power_on(struct tmio_mmc_host *host, unsigned short vdd)
- {
- 	struct mmc_host *mmc = host->mmc;
-+	int ret = 0;
-+
-+	/* .set_ios() is returning void, so, no chance to report an error */
- 
- 	if (host->set_pwr)
--		host->set_pwr(host->pdev, ios->power_mode != MMC_POWER_OFF);
-+		host->set_pwr(host->pdev, 1);
-+
-+	if (!IS_ERR(mmc->supply.vmmc)) {
-+		ret = mmc_regulator_set_ocr(mmc, mmc->supply.vmmc, vdd);
-+		/*
-+		 * Attention: empiric value. With a b43 WiFi SDIO card this
-+		 * delay proved necessary for reliable card-insertion probing.
-+		 * 100us were not enough. Is this the same 140us delay, as in
-+		 * tmio_mmc_set_ios()?
-+		 */
-+		udelay(200);
-+	}
-+	/*
-+	 * It seems, VccQ should be switched on after Vcc, this is also what the
-+	 * omap_hsmmc.c driver does.
-+	 */
-+	if (!IS_ERR(mmc->supply.vqmmc) && !ret) {
-+		regulator_enable(mmc->supply.vqmmc);
-+		udelay(200);
-+	}
-+}
-+
-+static void tmio_mmc_power_off(struct tmio_mmc_host *host)
-+{
-+	struct mmc_host *mmc = host->mmc;
-+
-+	if (!IS_ERR(mmc->supply.vqmmc))
-+		regulator_disable(mmc->supply.vqmmc);
-+
- 	if (!IS_ERR(mmc->supply.vmmc))
--		/* Errors ignored... */
--		mmc_regulator_set_ocr(mmc, mmc->supply.vmmc,
--				      ios->power_mode ? ios->vdd : 0);
-+		mmc_regulator_set_ocr(mmc, mmc->supply.vmmc, 0);
-+
-+	if (host->set_pwr)
-+		host->set_pwr(host->pdev, 0);
- }
- 
- /* Set MMC clock / power.
-@@ -828,18 +862,20 @@ static void tmio_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
- 		if (!host->power) {
- 			tmio_mmc_clk_update(mmc);
- 			pm_runtime_get_sync(dev);
--			host->power = true;
- 		}
- 		tmio_mmc_set_clock(host, ios->clock);
--		/* power up SD bus */
--		tmio_mmc_set_power(host, ios);
-+		if (!host->power) {
-+			/* power up SD card and the bus */
-+			tmio_mmc_power_on(host, ios->vdd);
-+			host->power = true;
-+		}
- 		/* start bus clock */
- 		tmio_mmc_clk_start(host);
- 	} else if (ios->power_mode != MMC_POWER_UP) {
--		if (ios->power_mode = MMC_POWER_OFF)
--			tmio_mmc_set_power(host, ios);
- 		if (host->power) {
- 			struct tmio_mmc_data *pdata = host->pdata;
-+			if (ios->power_mode = MMC_POWER_OFF)
-+				tmio_mmc_power_off(host);
- 			tmio_mmc_clk_stop(host);
- 			host->power = false;
- 			pm_runtime_put(dev);
+ 	CLKDEV_DEV_ID("sh_cmt.10",		&mstp_clks[MSTP329]),
+ 	CLKDEV_DEV_ID("sh_fsi2",		&mstp_clks[MSTP328]),
 -- 
-1.7.2.5
+1.7.9.5
 
