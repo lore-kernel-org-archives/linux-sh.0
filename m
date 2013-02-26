@@ -1,50 +1,134 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 13 Feb 2013 03:29:19 +0000
-Subject: [PATCH 7/9] ARM: shmobile: kzm9g: Add LED1-LED4 to the device tree
-Message-Id: <1360726161-16072-8-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 26 Feb 2013 11:59:13 +0000
+Subject: [PATCH 04/05] irqchip: intc-irqpin: Make use of devm functions
+Message-Id: <20130226115913.5630.4712.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360726161-16072-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1360726161-16072-1-git-send-email-horms+renesas@verge.net.au>
+References: <20130226115834.5630.45471.sendpatchset@w520>
+In-Reply-To: <20130226115834.5630.45471.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: kuninori.morimoto.gx@renesas.com, linux-sh@vger.kernel.org, benh@kernel.crashing.org, grant.likely@secretlab.ca, horms@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm@opensource.se>
 
-LED1 to LED4 are GPIO LEDs. Add corresponding DT nodes.
+Use devm_kzalloc(), devm_ioremap_nocache()
+and devm_request_irq() to simplify error
+handling.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g.dts |   16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g.dts b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-index 7b37901..203efb8 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g.dts
-@@ -19,4 +19,20 @@
- 		device_type = "memory";
- 		reg = <0x41000000 0x1e800000>;
- 	};
-+
-+	leds {
-+		compatible = "gpio-leds";
-+		led1 {
-+			gpios = <&gpio 20 1>; /* Active low */
-+		};
-+		led2 {
-+			gpios = <&gpio 21 1>; /* Active low */
-+		};
-+		led3 {
-+			gpios = <&gpio 22 1>; /* Active low */
-+		};
-+		led4 {
-+			gpios = <&gpio 23 1>; /* Active low */
-+		};
-+	};
- };
--- 
-1.7.10.4
+ Thanks to Kuninori Morimoto for this suggestion.
 
+ drivers/irqchip/irq-renesas-intc-irqpin.c |   41 +++++++++--------------------
+ 1 file changed, 13 insertions(+), 28 deletions(-)
+
+--- 0007/drivers/irqchip/irq-renesas-intc-irqpin.c
++++ work/drivers/irqchip/irq-renesas-intc-irqpin.c	2013-02-26 19:50:11.000000000 +0900
+@@ -294,7 +294,7 @@ static int intc_irqpin_probe(struct plat
+ 	int ret;
+ 	int k;
+ 
+-	p = kzalloc(sizeof(*p), GFP_KERNEL);
++	p = devm_kzalloc(&pdev->dev, sizeof(*p), GFP_KERNEL);
+ 	if (!p) {
+ 		dev_err(&pdev->dev, "failed to allocate driver data\n");
+ 		ret = -ENOMEM;
+@@ -316,7 +316,7 @@ static int intc_irqpin_probe(struct plat
+ 		if (!io[k]) {
+ 			dev_err(&pdev->dev, "not enough IOMEM resources\n");
+ 			ret = -EINVAL;
+-			goto err1;
++			goto err0;
+ 		}
+ 	}
+ 
+@@ -334,7 +334,7 @@ static int intc_irqpin_probe(struct plat
+ 	if (p->number_of_irqs < 1) {
+ 		dev_err(&pdev->dev, "not enough IRQ resources\n");
+ 		ret = -EINVAL;
+-		goto err1;
++		goto err0;
+ 	}
+ 
+ 	/* ioremap IOMEM and setup read/write callbacks */
+@@ -355,14 +355,15 @@ static int intc_irqpin_probe(struct plat
+ 		default:
+ 			dev_err(&pdev->dev, "IOMEM size mismatch\n");
+ 			ret = -EINVAL;
+-			goto err2;
++			goto err0;
+ 		}
+ 
+-		i->iomem = ioremap_nocache(io[k]->start, resource_size(io[k]));
++		i->iomem = devm_ioremap_nocache(&pdev->dev, io[k]->start,
++						resource_size(io[k]));
+ 		if (!i->iomem) {
+ 			dev_err(&pdev->dev, "failed to remap IOMEM\n");
+ 			ret = -ENXIO;
+-			goto err2;
++			goto err0;
+ 		}
+ 	}
+ 
+@@ -395,17 +396,17 @@ static int intc_irqpin_probe(struct plat
+ 	if (!p->irq_domain) {
+ 		ret = -ENXIO;
+ 		dev_err(&pdev->dev, "cannot initialize irq domain\n");
+-		goto err2;
++		goto err0;
+ 	}
+ 
+ 	/* request and set priority on interrupts one by one */
+ 	for (k = 0; k < p->number_of_irqs; k++) {
+-		if (request_irq(p->irq[k].requested_irq,
+-				intc_irqpin_irq_handler,
+-				0, name, &p->irq[k])) {
++		if (devm_request_irq(&pdev->dev, p->irq[k].requested_irq,
++				     intc_irqpin_irq_handler,
++				     0, name, &p->irq[k])) {
+ 			dev_err(&pdev->dev, "failed to request low IRQ\n");
+ 			ret = -ENOENT;
+-			goto err3;
++			goto err1;
+ 		}
+ 		intc_irqpin_mask_unmask_prio(p, k, 0);
+ 	}
+@@ -421,16 +422,8 @@ static int intc_irqpin_probe(struct plat
+ 
+ 	return 0;
+ 
+-err3:
+-	for (; k >= 0; k--)
+-		free_irq(p->irq[k - 1].requested_irq, &p->irq[k - 1]);
+-
+-	irq_domain_remove(p->irq_domain);
+-err2:
+-	for (k = 0; k < INTC_IRQPIN_REG_NR; k++)
+-		iounmap(p->iomem[k].iomem);
+ err1:
+-	kfree(p);
++	irq_domain_remove(p->irq_domain);
+ err0:
+ 	return ret;
+ }
+@@ -438,17 +431,9 @@ err0:
+ static int intc_irqpin_remove(struct platform_device *pdev)
+ {
+ 	struct intc_irqpin_priv *p = platform_get_drvdata(pdev);
+-	int k;
+-
+-	for (k = 0; k < p->number_of_irqs; k++)
+-		free_irq(p->irq[k].requested_irq, &p->irq[k]);
+ 
+ 	irq_domain_remove(p->irq_domain);
+ 
+-	for (k = 0; k < INTC_IRQPIN_REG_NR; k++)
+-		iounmap(p->iomem[k].iomem);
+-
+-	kfree(p);
+ 	return 0;
+ }
+ 
