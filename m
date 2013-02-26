@@ -1,91 +1,50 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Wed, 06 Feb 2013 19:46:54 +0000
-Subject: [PATCH v3 07/13] mmc: tmio-mmc: parse device-tree bindings
-Message-Id: <1360180020-18555-8-git-send-email-g.liakhovetski@gmx.de>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 26 Feb 2013 11:59:23 +0000
+Subject: [PATCH 05/05] irqchip: intc-irqpin: GPL header for platform data
+Message-Id: <20130226115923.5630.46380.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1360180020-18555-1-git-send-email-g.liakhovetski@gmx.de>
+References: <20130226115834.5630.45471.sendpatchset@w520>
+In-Reply-To: <20130226115834.5630.45471.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>, Arnd Bergmann <arnd@arndb.de>
+To: linux-kernel@vger.kernel.org
+Cc: kuninori.morimoto.gx@renesas.com, linux-sh@vger.kernel.org, benh@kernel.crashing.org, grant.likely@secretlab.ca, horms@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
-Add parsing of common and driver-specific DT bindings to the tmio-mmc
-MMC host driver.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Arnd Bergmann <arnd@arndb.de>
+Add GPL header to platform data include file.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
-v3: remove the "toshiba,mmc-cap-sdio-irq" property
+ Thanks to Kuninori Morimoto for this suggestion.
 
- drivers/mmc/host/tmio_mmc_pio.c |   24 ++++++++++++++++++++++--
- 1 files changed, 22 insertions(+), 2 deletions(-)
+ include/linux/platform_data/irq-renesas-intc-irqpin.h |   19 +++++++++++++++++
+ 1 file changed, 19 insertions(+)
 
-diff --git a/drivers/mmc/host/tmio_mmc_pio.c b/drivers/mmc/host/tmio_mmc_pio.c
-index b25adb4..e32e9b4 100644
---- a/drivers/mmc/host/tmio_mmc_pio.c
-+++ b/drivers/mmc/host/tmio_mmc_pio.c
-@@ -918,6 +918,21 @@ static void tmio_mmc_init_ocr(struct tmio_mmc_host *host)
- 		dev_warn(mmc_dev(mmc), "Platform OCR mask is ignored\n");
- }
- 
-+static void tmio_mmc_of_parse(struct platform_device *pdev,
-+			      struct tmio_mmc_data *pdata)
-+{
-+	const struct device_node *np = pdev->dev.of_node;
-+	if (!np)
-+		return;
+--- 0002/include/linux/platform_data/irq-renesas-intc-irqpin.h
++++ work/include/linux/platform_data/irq-renesas-intc-irqpin.h	2013-02-26 19:57:03.000000000 +0900
+@@ -1,3 +1,22 @@
++/*
++ * Renesas INTC External IRQ Pin Driver
++ *
++ *  Copyright (C) 2013 Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
 +
-+	if (of_get_property(np, "toshiba,mmc-wrprotect-disable", NULL))
-+		pdata->flags |= TMIO_MMC_WRPROTECT_DISABLE;
-+	if (of_get_property(np, "toshiba,mmc-blksz-2bytes", NULL))
-+		pdata->flags |= TMIO_MMC_BLKSZ_2BYTES;
-+	if (of_get_property(np, "toshiba,mmc-has-idle-wait", NULL))
-+		pdata->flags |= TMIO_MMC_HAS_IDLE_WAIT;
-+}
-+
- int tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 				  struct platform_device *pdev,
- 				  struct tmio_mmc_data *pdata)
-@@ -928,6 +943,8 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 	int ret;
- 	u32 irq_mask = TMIO_MASK_CMD;
+ #ifndef __IRQ_RENESAS_INTC_IRQPIN_H__
+ #define __IRQ_RENESAS_INTC_IRQPIN_H__
  
-+	tmio_mmc_of_parse(pdev, pdata);
-+
- 	if (!(pdata->flags & TMIO_MMC_HAS_IDLE_WAIT))
- 		pdata->write16_hook = NULL;
- 
-@@ -939,6 +956,8 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 	if (!mmc)
- 		return -ENOMEM;
- 
-+	mmc_of_parse(mmc);
-+
- 	pdata->dev = &pdev->dev;
- 	_host = mmc_priv(mmc);
- 	_host->pdata = pdata;
-@@ -959,7 +978,7 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 	}
- 
- 	mmc->ops = &tmio_mmc_ops;
--	mmc->caps = MMC_CAP_4_BIT_DATA | pdata->capabilities;
-+	mmc->caps |= MMC_CAP_4_BIT_DATA | pdata->capabilities;
- 	mmc->caps2 = pdata->capabilities2;
- 	mmc->max_segs = 32;
- 	mmc->max_blk_size = 512;
-@@ -971,7 +990,8 @@ int tmio_mmc_host_probe(struct tmio_mmc_host **host,
- 
- 	_host->native_hotplug = !(pdata->flags & TMIO_MMC_USE_GPIO_CD ||
- 				  mmc->caps & MMC_CAP_NEEDS_POLL ||
--				  mmc->caps & MMC_CAP_NONREMOVABLE);
-+				  mmc->caps & MMC_CAP_NONREMOVABLE ||
-+				  mmc->slot.cd_irq >= 0);
- 
- 	_host->power = false;
- 	pm_runtime_enable(&pdev->dev);
--- 
-1.7.2.5
-
