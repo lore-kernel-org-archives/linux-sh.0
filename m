@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 26 Feb 2013 12:14:26 +0000
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Tue, 26 Feb 2013 17:47:25 +0000
 Subject: Re: [PATCH 00/05] irqchip: Renesas INTC External IRQ pin v2 update
-Message-Id: <20130226121425.GB17704@verge.net.au>
+Message-Id: <alpine.LFD.2.02.1302261846550.22263@ionos>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130226115834.5630.45471.sendpatchset@w520>
 In-Reply-To: <20130226115834.5630.45471.sendpatchset@w520>
@@ -9,9 +9,10 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-kernel@vger.kernel.org, kuninori.morimoto.gx@renesas.com, linux-sh@vger.kernel.org, benh@kernel.crashing.org, grant.likely@secretlab.ca, tglx@linutronix.de
+Cc: linux-kernel@vger.kernel.org, kuninori.morimoto.gx@renesas.com, linux-sh@vger.kernel.org, benh@kernel.crashing.org, grant.likely@secretlab.ca, horms@verge.net.au
 
-On Tue, Feb 26, 2013 at 08:58:34PM +0900, Magnus Damm wrote:
+On Tue, 26 Feb 2013, Magnus Damm wrote:
+
 > irqchip: Renesas INTC External IRQ pin v2 update
 > 
 > [PATCH 01/05] irqchip: intc-irqpin: Whitespace fixes
@@ -31,7 +32,19 @@ On Tue, Feb 26, 2013 at 08:58:34PM +0900, Magnus Damm wrote:
 > of redoing a single "v2" patch for the driver. The reason
 > behind this is that there are on-going back porting efforts
 > that are better dealt with using incremental patches.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-I have added these to the topic/intc-external-irq branch of the renesas
-tree, although at this stage I anticipate that the code will be merged
-through a different tree.
+For the full series:
+
+Reviewed-by: Thomas Gleixner <tglx@linutronix.de>
+
+> ---
+> 
+>  Depends on:
+>  [PATCH] irqchip: Renesas INTC External IRQ pin driver
+> 
+>  drivers/irqchip/irq-renesas-intc-irqpin.c             |   88 ++++++++---------
+>  include/linux/platform_data/irq-renesas-intc-irqpin.h |   19 +++
+>  2 files changed, 62 insertions(+), 45 deletions(-)
+> 
