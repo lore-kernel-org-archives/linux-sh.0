@@ -1,56 +1,37 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 15 Feb 2013 15:13:55 +0000
-Subject: [PATCH v4 06/13] mmc: tmio-mmc: define device-tree bindings
-Message-Id: <1360941242-18153-7-git-send-email-g.liakhovetski@gmx.de>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 27 Feb 2013 19:39:58 +0000
+Subject: [PATCH v4 3/3] ARM: mach-shmobile: marzen: add SATA support
+Message-Id: <201302272340.35334.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Arnd Bergmann <arnd@arndb.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-arm-kernel@lists.infradead.org
 
-Define device-tree bindings for the tmio-mmc driver to be able to specify
-parameters, currently provided in platform data.
+From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Add SATA support to marzen_defconfig.
+
+Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+
 ---
+No changes since v1.
 
-v4: remove the "toshiba,mmc-blksz-2bytes" property, it can be set directly 
-by the sh_mobile_sdhi driver, use compatible string parsing instead of
-the "toshiba,mmc-has-idle-wait" property.
+ arch/arm/configs/marzen_defconfig |    4 ++++
+ 1 file changed, 4 insertions(+)
 
- Documentation/devicetree/bindings/mmc/tmio_mmc.txt |   20 ++++++++++++++++++++
- 1 files changed, 20 insertions(+), 0 deletions(-)
- create mode 100644 Documentation/devicetree/bindings/mmc/tmio_mmc.txt
-
-diff --git a/Documentation/devicetree/bindings/mmc/tmio_mmc.txt b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
-new file mode 100644
-index 0000000..df204e1
---- /dev/null
-+++ b/Documentation/devicetree/bindings/mmc/tmio_mmc.txt
-@@ -0,0 +1,20 @@
-+* Toshiba Mobile IO SD/MMC controller
-+
-+The tmio-mmc driver doesn't probe its devices actively, instead its binding to
-+devices is managed by either MFD drivers or by the sh_mobile_sdhi platform
-+driver. Those drivers supply the tmio-mmc driver with platform data, that either
-+describe hardware capabilities, known to them, or are obtained by them from
-+their own platform data or from their DT information. In the latter case all
-+compulsory and any optional properties, common to all SD/MMC drivers, as
-+described in mmc.txt, can be used. Additionally the following tmio_mmc-specific
-+optional bindings can be used.
-+
-+Optional properties:
-+- toshiba,mmc-wrprotect-disable: write-protect detection is unavailable
-+
-+When used with Renesas SDHI hardware, the following compatibility strings
-+configure various model-specific properties:
-+
-+"renesas,sh7372-sdhi":	(default) compatible with SH7372
-+"renesas,r8a7740-sdhi":	compatible with R8A7740: certain MMC/SD commands have to
-+			wait for the interface to become idle.
--- 
-1.7.2.5
-
+Index: renesas/arch/arm/configs/marzen_defconfig
+=================================--- renesas.orig/arch/arm/configs/marzen_defconfig
++++ renesas/arch/arm/configs/marzen_defconfig
+@@ -49,6 +49,10 @@ CONFIG_DEVTMPFS_MOUNT=y
+ # CONFIG_FW_LOADER is not set
+ CONFIG_SCSI=y
+ CONFIG_BLK_DEV_SD=y
++CONFIG_ATA=y
++CONFIG_ATA_SFF=y
++CONFIG_ATA_BMDMA=y
++CONFIG_SATA_RCAR=y
+ CONFIG_NETDEVICES=y
+ # CONFIG_NET_VENDOR_BROADCOM is not set
+ # CONFIG_NET_VENDOR_FARADAY is not set
