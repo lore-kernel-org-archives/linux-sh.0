@@ -1,21 +1,22 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 14 Feb 2013 03:34:19 +0000
-Subject: Re: [PATCH] ARM: shmobile: Make EMEV2 setup functions static
-Message-Id: <20130214033418.GS15879@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 27 Feb 2013 19:32:18 +0000
+Subject: [PATCH v4 0/3] R-Car SATA platform data
+Message-Id: <201302272332.51650.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130213134947.12392.92386.sendpatchset@w520>
-In-Reply-To: <20130213134947.12392.92386.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Feb 13, 2013 at 10:49:47PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Adjust emev2_init_delay() and emev2_add_standard_devices_dt()
-> to become static. They are not used outside this file anyway.
+Hello.
 
-I have applied the entire series to the soc5 branch thus queued up
-for v3.10. It is also in the next branch and thus should appear
-in linux-next in the not to distant future.
+   Here's the v4 of the set of now 3 patches (the driver itself has been merged
+since) against the Simon Horman's renesas.git repo, 'next' branch:
+
+[1/3] ARM: mach-shmobile: r8a7779: SATA DT configuration
+[2/3] ARM: mach-shmobile: r8a7779: add SATA support
+[3/3] ARM: mach-shmobile: marzen: add SATA support
+
+Patch changes since the initial posting are reported in the individual patches.
+
+MBR, Sergei
