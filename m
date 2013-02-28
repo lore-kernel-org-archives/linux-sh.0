@@ -1,46 +1,70 @@
-From: Tang Chen <tangchen@cn.fujitsu.com>
-Date: Thu, 07 Feb 2013 07:56:35 +0000
-Subject: Re: [PATCH v5 01/14] memory-hotplug: try to offline the memory twice to avoid dependence
-Message-Id: <51135E33.4060508@cn.fujitsu.com>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Thu, 28 Feb 2013 17:00:28 +0000
+Subject: [PATCH v2 1/2] ARM: shmobile: Armadillo800EVA-reference: Remove usage of shmobile_timer
+Message-Id: <1362074410-2960-1-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1356350964-13437-1-git-send-email-tangchen@cn.fujitsu.com> <1356350964-13437-2-git-send-email-tangchen@cn.fujitsu.com> <50D96543.6010903@parallels.com> <50DFD7F7.5090408@cn.fujitsu.com> <50ED8834.1090804@parallels.com> <5111C8EB.6090805@cn.fujitsu.com> <51121FB7.1070205@cn.fujitsu.com> <51122C1D.5020002@cn.fujitsu.com> <5112679A.7080600@parallels.com>
-In-Reply-To: <5112679A.7080600@parallels.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Glauber Costa <glommer@parallels.com>
-Cc: Wen Congyang <wency@cn.fujitsu.com>, akpm@linux-foundation.org, rientjes@google.com, liuj97@gmail.com, len.brown@intel.com, benh@kernel.crashing.org, paulus@samba.org, cl@linux.com, minchan.kim@gmail.com, kosaki.motohiro@jp.fujitsu.com, isimatu.yasuaki@jp.fujitsu.com, wujianguo@huawei.com, hpa@zytor.com, linfeng@cn.fujitsu.com, laijs@cn.fujitsu.com, mgorman@suse.de, yinghai@kernel.org, x86@kernel.org, linux-mm@kvack.org, linux-kernel@vger.kernel.org, linuxppc-dev@lists.ozlabs.org, linux-acpi@vger.kernel.org, linux-s390@vger.kernel.org, linux-sh@vger.kernel.org, linux-ia64@vger.kernel.org, cmetcalf@tilera.com, sparclinux@vger.kernel.org, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Miao Xie <miaox@cn.fujitsu.com>
+To: linux-sh@vger.kernel.org
 
-On 02/06/2013 10:24 PM, Glauber Costa wrote:
->>>> And one more question, a memory section is 128MB in Linux. If we reserve
->>>> part of the them for page_cgroup,
->>>> then anyone who wants to allocate a contiguous memory larger than 128MB,
->>>> it will fail, right ?
->>>> Is it OK ?
-> No, it is not.
->
-> Another take on this: Can't we free all the page_cgroup structure before
-> we actually start removing the sections ? If we do this, we would be
-> basically left with no problem at all, since when your code starts
-> running we would no longer have any page_cgroup allocated.
->
-> All you have to guarantee is that it happens after the memory block is
-> already isolated and allocations no longer can reach it.
->
-> What do you think ?
+The struct sys_timer is gone since the patch "ARM: delete struct
+sys_timer". Since then we can't use shmobile_timer any longer. Setting
+.init_time directly to eva_earlytimer_init fixes the resulting compile
+error and makes the code shorter as well.
 
-Hi Glauber,
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+---
+v2: same. Just integrated into a 2 pieces patchset.
 
-I don't think so. We can offline some of the sections and leave the 
-reset online.
+ .../board-armadillo800eva-reference.c              |   15 +++------------
+ 1 file changed, 3 insertions(+), 12 deletions(-)
 
-For example, we store page_cgroups of memory9~11 in memory8. So when we 
-offline memory8,
-we free memory8's page_cgroup storing on other section, but we cannot 
-free the page_cgroups
-being stored in memory8 if memory9~11 are left online.
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+index 623754d..6991fb1 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva-reference.c
+@@ -210,23 +210,14 @@ static void __init eva_init(void)
+ #endif
+ }
+ 
+-static void __init eva_earlytimer_init(void)
++static void __init eva_timer_init(void)
+ {
+ 	r8a7740_clock_init(MD_CK0 | MD_CK2);
+-	shmobile_earlytimer_init();
+ 
+ 	/* the rate of extal1 clock must be set before late_time_init */
+ 	eva_clock_init();
+ }
+ 
+-static void __init eva_add_early_devices(void)
+-{
+-	r8a7740_add_early_devices_dt();
+-
+-	/* override timer setup with board-specific code */
+-	shmobile_timer.init = eva_earlytimer_init;
+-}
+-
+ #define RESCNT2 IOMEM(0xe6188020)
+ static void eva_restart(char mode, const char *cmd)
+ {
+@@ -241,13 +232,13 @@ static const char *eva_boards_compat_dt[] __initdata = {
+ 
+ DT_MACHINE_START(ARMADILLO800EVA_DT, "armadillo800eva-reference")
+ 	.map_io		= r8a7740_map_io,
+-	.init_early	= eva_add_early_devices,
++	.init_early	= r8a7740_add_early_devices_dt,
+ 	.init_irq	= r8a7740_init_irq_of,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.handle_irq	= shmobile_handle_irq_intc,
+ 	.init_machine	= eva_init,
+ 	.init_late	= shmobile_init_late,
+-	.init_time	= shmobile_timer_init,
++	.init_time	= eva_timer_init,
+ 	.dt_compat	= eva_boards_compat_dt,
+ 	.restart	= eva_restart,
+ MACHINE_END
+-- 
+1.7.9.5
 
-So we still need to offline memory9~11, and then offline memory8, right ?
-I think it makes no difference.
-
-Thanks. :)
