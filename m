@@ -1,71 +1,73 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 18 Feb 2013 08:54:06 +0000
-Subject: Re: [PATCH v5 03/13] mmc: provide a standard MMC device-tree binding parser centrally
-Message-Id: <Pine.LNX.4.64.1302180953140.4526@axis700.grange>
+Date: Thu, 28 Feb 2013 12:21:58 +0000
+Subject: [PATCH v3 1/3] ARM: shmobile: sh73a0: wait for completion when kicking the clock
+Message-Id: <1362054120-8600-2-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
- <1360941242-18153-4-git-send-email-g.liakhovetski@gmx.de>
- <Pine.LNX.4.64.1302161613450.20044@axis700.grange> <20130216165825.GF1906@pengutronix.de>
- <20130217075216.GA3871@verge.net.au> <20130217075805.GB3871@verge.net.au>
-In-Reply-To: <20130217075805.GB3871@verge.net.au>
+References: <1362054120-8600-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1362054120-8600-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Simon Horman <horms@verge.net.au>
-Cc: Sascha Hauer <s.hauer@pengutronix.de>, linux-mmc@vger.kernel.org, linux-sh@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, Magnus Damm <magnus.damm@gmail.com>, Markus Pargmann <mpa@pengutronix.de>
+To: linux-arm-kernel@lists.infradead.org
 
-On Sun, 17 Feb 2013, Simon Horman wrote:
+To reconfigure clocks, controlled by FRQCRA and FRQCRB, a kick bit has to
+be set and to make sure the setting has taken effect, it has to be read
+back repeatedly until it is cleared by the hardware. This patch adds the
+waiting part, that was missing until now.
 
-> On Sun, Feb 17, 2013 at 04:52:16PM +0900, Simon Horman wrote:
-> > On Sat, Feb 16, 2013 at 05:58:25PM +0100, Sascha Hauer wrote:
-> > > Hi Guennadi,
-> > > 
-> > > On Sat, Feb 16, 2013 at 04:21:16PM +0100, Guennadi Liakhovetski wrote:
-> > > > MMC defines a number of standard DT bindings. Having each driver parse
-> > > > them individually adds code redundancy and is error prone. Provide a
-> > > > standard function to unify the parsing. After all drivers are converted
-> > > > to using it instead of their own parsers, this function can be integrated
-> > > > into mmc_alloc_host().
-> > > > 
-> > > > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> > > > ---
-> > > > 
-> > > > v5:
-> > > > 
-> > > > 1. fix an uninitialised variable warning. Note, I don't actually know, 
-> > > > whether this will fix the error, reported by the kbuild test robot. None 
-> > > > of my compilers reports an error there, at most, I've got a warning with 
-> > > > one of them, and, surprisingly, it is gone after this change. 
-> > > > Surprisingly, because I only add the bus_width initialisation in the error 
-> > > > case - exactly as it actually has to be done. In the success case it is 
-> > > > assigned set by the function. But the compiler cannot know that!
-> > > 
-> > > Maybe the build robot builds with devicetree disabled? In this case
-> > > of_property_read_u32_array expands to a static inline function and the
-> > > compiler indeed knows that &bus_width is unitialized. It also knows that
-> > > this function always returns an error, so what you did below should
-> > > silence the compiler.
-> > 
-> > It seems so. The configuration that flagged the error was atngw100_defconfig.
-> > 
-> > ARCH=avr32 make atngw100_defconfig
-> > grep USE_OF .config
-> > [nothing]
-> 
-> In that vein I managed to reproduce the warning using ap4evb_defconfig
-> and then enabled MMC. I have also verified that v5 does not produce
-> the same warning.
-> 
-> I chose this as I don't have a avr32 cross-compile environment
-> but I do have one for ARM and I know that ap4evb doesn't use DT.
-> 
-> I will update topic/mmc with v5.
-
-Very good, thanks! So, this way I think, v5 should be ok.
-
-Thanks
-Guennadi
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+
+As noted in patch 0/3, this patch affects existing systems, but AFAICS 
+only theoretically - so far nobody is changing clock rates of any of the 
+FRQCRA and FRQCRB clocks. Still, please, handle with care.
+
+ arch/arm/mach-shmobile/clock-sh73a0.c |   23 +++++++++++++++++------
+ 1 files changed, 17 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index 71843dd..34b5c5a 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -21,6 +21,7 @@
+ #include <linux/io.h>
+ #include <linux/sh_clk.h>
+ #include <linux/clkdev.h>
++#include <asm/processor.h>
+ #include <mach/common.h>
+ 
+ #define FRQCRA		IOMEM(0xe6150000)
+@@ -234,14 +235,24 @@ static struct clk *main_clks[] = {
+ 	&sh73a0_extalr_clk,
+ };
+ 
+-static void div4_kick(struct clk *clk)
++static int frqcr_kick(void)
+ {
+-	unsigned long value;
++	int i;
++
++	/* set KICK bit in FRQCRB to update hardware setting, check success */
++	__raw_writel(__raw_readl(FRQCRB) | (1 << 31), FRQCRB);
++	for (i = 1000; i; i--)
++		if (__raw_readl(FRQCRB) & (1 << 31))
++			cpu_relax();
++		else
++			return i;
++
++	return -ETIMEDOUT;
++}
+ 
+-	/* set KICK bit in FRQCRB to update hardware setting */
+-	value = __raw_readl(FRQCRB);
+-	value |= (1 << 31);
+-	__raw_writel(value, FRQCRB);
++static void div4_kick(struct clk *clk)
++{
++	frqcr_kick();
+ }
+ 
+ static int divisors[] = { 2, 3, 4, 6, 8, 12, 16, 18,
+-- 
+1.7.2.5
+
