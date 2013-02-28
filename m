@@ -1,66 +1,79 @@
 From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 15 Feb 2013 15:13:53 +0000
-Subject: [PATCH v4 04/13] mmc: (cosmetic) remove "extern" from function declarations
-Message-Id: <1360941242-18153-5-git-send-email-g.liakhovetski@gmx.de>
+Date: Thu, 28 Feb 2013 12:22:00 +0000
+Subject: [PATCH/RFC v3 3/3] ARM: shmobile: kzm9g-reference: add CPUFreq support
+Message-Id: <1362054120-8600-4-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1360941242-18153-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1362054120-8600-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1362054120-8600-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-mmc@vger.kernel.org
-Cc: devicetree-discuss@lists.ozlabs.org, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Simon Horman <horms@verge.net.au>, Arnd Bergmann <arnd@arndb.de>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-arm-kernel@lists.infradead.org
 
-The "extern" keyword isn't required in function declarations, remove it.
+This patch enables the use of the generic cpufreq-cpu0 driver on kzm9g.
+Providing a regulator and a list of OPPs in DT, combined with a clock,
+attached to the cpu0 device is everything, the cpufreq-cpu0 driver needs.
 
 Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- include/linux/mmc/host.h |   22 +++++++++++-----------
- 1 files changed, 11 insertions(+), 11 deletions(-)
 
-diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
-index 13c0c8d..356ae0a 100644
---- a/include/linux/mmc/host.h
-+++ b/include/linux/mmc/host.h
-@@ -341,10 +341,10 @@ struct mmc_host {
- 	unsigned long		private[0] ____cacheline_aligned;
- };
+v3: no change
+
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |   19 ++++++++++++++++---
+ arch/arm/mach-shmobile/Kconfig               |    2 ++
+ 2 files changed, 18 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 363f1ab..c964e20 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -18,6 +18,19 @@
+ 	model = "KZM-A9-GT";
+ 	compatible = "renesas,kzm9g-reference", "renesas,sh73a0";
  
--extern struct mmc_host *mmc_alloc_host(int extra, struct device *);
--extern int mmc_add_host(struct mmc_host *);
--extern void mmc_remove_host(struct mmc_host *);
--extern void mmc_free_host(struct mmc_host *);
-+struct mmc_host *mmc_alloc_host(int extra, struct device *);
-+int mmc_add_host(struct mmc_host *);
-+void mmc_remove_host(struct mmc_host *);
-+void mmc_free_host(struct mmc_host *);
- void mmc_of_parse(struct mmc_host *host);
++	cpus {
++		cpu@0 {
++			cpu0-supply = <&vdd_dvfs>;
++			operating-points = <
++				/* kHz  uV */
++				1196000 1315000
++				 598000 1175000
++				 398667 1065000
++			>;
++			voltage-tolerance = <1>; /* 1% */
++		};
++	};
++
+ 	chosen {
+ 		bootargs = "console=tty0 console=ttySC4,115200 root=/dev/nfs ip=dhcp ignore_loglevel earlyprintk=sh-sci.4,115200";
+ 	};
+@@ -113,10 +126,10 @@
+ 		reg = <0x40>;
  
- static inline void *mmc_priv(struct mmc_host *host)
-@@ -358,16 +358,16 @@ static inline void *mmc_priv(struct mmc_host *host)
- #define mmc_classdev(x)	(&(x)->class_dev)
- #define mmc_hostname(x)	(dev_name(&(x)->class_dev))
- 
--extern int mmc_suspend_host(struct mmc_host *);
--extern int mmc_resume_host(struct mmc_host *);
-+int mmc_suspend_host(struct mmc_host *);
-+int mmc_resume_host(struct mmc_host *);
- 
--extern int mmc_power_save_host(struct mmc_host *host);
--extern int mmc_power_restore_host(struct mmc_host *host);
-+int mmc_power_save_host(struct mmc_host *host);
-+int mmc_power_restore_host(struct mmc_host *host);
- 
--extern void mmc_detect_change(struct mmc_host *, unsigned long delay);
--extern void mmc_request_done(struct mmc_host *, struct mmc_request *);
-+void mmc_detect_change(struct mmc_host *, unsigned long delay);
-+void mmc_request_done(struct mmc_host *, struct mmc_request *);
- 
--extern int mmc_cache_ctrl(struct mmc_host *, u8);
-+int mmc_cache_ctrl(struct mmc_host *, u8);
- 
- static inline void mmc_signal_sdio_irq(struct mmc_host *host)
- {
+ 		regulators {
+-			sd1 {
++			vdd_dvfs: sd1 {
+ 				regulator-name = "1.315V CPU";
+-				regulator-min-microvolt = <1315000>;
+-				regulator-max-microvolt = <1335000>;
++				regulator-min-microvolt = <1050000>;
++				regulator-max-microvolt = <1350000>;
+ 				regulator-always-on;
+ 				regulator-boot-on;
+ 			};
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index eb3a7ff..8a0420b 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -134,6 +134,8 @@ config MACH_KZM9G
+ config MACH_KZM9G_REFERENCE
+ 	bool "KZM-A9-GT board - Reference Device Tree Implementation"
+ 	depends on ARCH_SH73A0
++	select ARCH_HAS_CPUFREQ
++	select ARCH_HAS_OPP
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	select SND_SOC_AK4642 if SND_SIMPLE_CARD
 -- 
 1.7.2.5
 
