@@ -1,45 +1,25 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 12:32:44 +0000
-Subject: [PATCH 34/43] ARM: shmobile: add gic_iid macro for ICCIAR / interrupt ID
-Message-Id: <1363609973-31086-35-git-send-email-horms+renesas@verge.net.au>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 01 Mar 2013 01:13:16 +0000
+Subject: Re: [PATCH v2 1/2] ARM: shmobile: Armadillo800EVA-reference: Remove usage of shmobile_timer
+Message-Id: <20130301011315.GU11434@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
+References: <1362074410-2960-1-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1362074410-2960-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+On Thu, Feb 28, 2013 at 12:00:09PM -0600, Bastian Hecht wrote:
+> The struct sys_timer is gone since the patch "ARM: delete struct
+> sys_timer". Since then we can't use shmobile_timer any longer. Setting
+> .init_time directly to eva_earlytimer_init fixes the resulting compile
+> error and makes the code shorter as well.
 
-R-Car H1 datasheet GIC number is indicating
-GIC ICCIAR / interrupt ID number, not SPI number,
-but current marzen board code is using gic_spi() with
-un-understandable calculation.
+Thanks. I have added this to the topic/intc-of intc branch.
 
-This patch adds new gic_iid() macro which means
-ICCIAR / interrupt ID, and used the number
-currently written on datasheet.
+The reason that I have added this it and the other Armadillo800EVA-reference
+patches there is that I believe that they depend on the INTC DT bindings
+which currently live in that topic branch.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-[ horms+renesas@verge.net.au: Split board-marzen.c portion into a separate patch ]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/include/mach/irqs.h |    1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/arch/arm/mach-shmobile/include/mach/irqs.h b/arch/arm/mach-shmobile/include/mach/irqs.h
-index 06a5da3..992ed21 100644
---- a/arch/arm/mach-shmobile/include/mach/irqs.h
-+++ b/arch/arm/mach-shmobile/include/mach/irqs.h
-@@ -5,6 +5,7 @@
- 
- /* GIC */
- #define gic_spi(nr)		((nr) + 32)
-+#define gic_iid(nr)		(nr) /* ICCIAR / interrupt ID */
- 
- /* INTCS */
- #define INTCS_VECT_BASE		0x3400
--- 
-1.7.10.4
-
+If there is a way to remove that dependency please let me know.
