@@ -1,23 +1,25 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 14 Mar 2013 15:05:23 +0000
-Subject: Re: [PATCH v4 62/88] sh-pfc: r8a7779: Remove DU1_DOTCLKOUT1 GPIO
-Message-Id: <CACRpkdZ6u0j9z_Mtu=LSonN5dnLhYMUFZn2_FUkgsSz6_Bw81w@mail.gmail.com>
+From: Olof Johansson <olof@lixom.net>
+Date: Fri, 01 Mar 2013 01:41:48 +0000
+Subject: Re: [PATCH v4 2/3] ARM: mach-shmobile: r8a7779: add SATA support
+Message-Id: <20130301014148.GB9232@quad.lixom.net>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363215633-4264-63-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1363215633-4264-63-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <201302272339.15402.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201302272339.15402.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Mar 14, 2013 at 12:00 AM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
+On Wed, Feb 27, 2013 at 11:39:14PM +0300, Sergei Shtylyov wrote:
+> From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+> 
+> Add SATA clock for r8a7779 SoC (for both device tree and usual cases). 
+> Register SATA controller as a "late" platform device on r8a7779 SoC.
 
-> The function is not documented in the r8a7779 datasheet. Remove it.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Hi,
 
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+If you have the a binding in the device tree (which you do through patch 1/3),
+then there's no reason to have a platform device for it.
 
-Yours,
-Linus Walleij
+
+-Olof
