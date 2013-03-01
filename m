@@ -1,37 +1,74 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 29 Mar 2013 06:56:46 +0000
-Subject: [GIT PULL] Update for Renesas INTC External IRQ pin driver for v3.10
-Message-Id: <1364540207-7699-1-git-send-email-horms+renesas@verge.net.au>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 01 Mar 2013 11:08:02 +0000
+Subject: SDHI and MMCIF with kzm9g-reference
+Message-Id: <20130301110802.GB24364@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Arnd, Hi Olof,
+Hi Guennadi,
 
-The following changes since commit 3b8dfa7c2f8af7613dae28ac0f3419bf75ead5d0:
+this is a heads-up about the state of SDHI and MMCIF with kzm9g-reference
+in the current next and topic/all+next branches.
 
-  irqchip: irqc: Add DT support (2013-03-18 21:26:07 +0900)
+Currently the boot will not complete. It stalls in SDHI or MMCIF
+initialisation (whichever comes first), though it doesn't say so.
 
-are available in the git repository at:
+The reason is msleep() calls. In the case of SDHI in the driver itself.
+In the case of MMCIF in the MMC core code.
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-intc-external-irq2-for-v3.10
+I had the following patch in next for a while but removed it a few days
+ago because for some reason I thought my tests showed it was no longer needed.
+I now believe it is needed and I will put it back into next and
+topic/all+next ASAP. I do not plan to make any other changes to my branches
+in what is left of today for me.
 
-for you to fetch changes up to 427cc720277c140e6a63a03237f9bf37d8076ac3:
 
-  irqchip: intc-irqpin: Add support for shared interrupt lines (2013-03-28 16:39:46 +0900)
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Tue, 11 Dec 2012 10:20:21 +0900
+Subject: [PATCH] ARM: clocksource: Initialise early
 
-----------------------------------------------------------------
-Update for Renesas INTC External IRQ pin driver for v3.10
+Initialise clock sources early, since some subsystems rely on them to
+initialize.
 
-This adds support for shared interrupt lines to the
-Renesas INTC External IRQ pin driver which has already
-been queued up for v3.10 (tag renesas-intc-external-irq-for-v3.10).
+This came up when working on DT support for the kzm9g board.
+The prototype does not use early timers and I found that the
+CMT clocksource needs to be initialised before the MMCIF MMC driver.
 
-----------------------------------------------------------------
-Bastian Hecht (1):
-      irqchip: intc-irqpin: Add support for shared interrupt lines
+Cc: linux-kernel@vger.kernel.org
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ drivers/Makefile |    8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
 
- drivers/irqchip/irq-renesas-intc-irqpin.c |   90 ++++++++++++++++++++++++++---
- 1 file changed, 83 insertions(+), 7 deletions(-)
+diff --git a/drivers/Makefile b/drivers/Makefile
+index 7863b9f..f156db5 100644
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -37,6 +37,11 @@ obj-$(CONFIG_XEN)		+= xen/
+ # regulators early, since some subsystems rely on them to initialize
+ obj-$(CONFIG_REGULATOR)		+= regulator/
+ 
++# clocksource early, since some subsystems rely on them to initialize
++ifndef CONFIG_ARCH_USES_GETTIMEOFFSET
++obj-y				+= clocksource/
++endif
++
+ # tty/ comes before char/ so that the VT console is the boot-time
+ # default.
+ obj-y				+= tty/
+@@ -114,9 +119,6 @@ obj-y				+= firmware/
+ obj-$(CONFIG_CRYPTO)		+= crypto/
+ obj-$(CONFIG_SUPERH)		+= sh/
+ obj-$(CONFIG_ARCH_SHMOBILE)	+= sh/
+-ifndef CONFIG_ARCH_USES_GETTIMEOFFSET
+-obj-y				+= clocksource/
+-endif
+ obj-$(CONFIG_DCA)		+= dca/
+ obj-$(CONFIG_HID)		+= hid/
+ obj-$(CONFIG_PPC_PS3)		+= ps3/
+-- 
+1.7.10.4
+
