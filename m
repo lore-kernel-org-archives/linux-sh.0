@@ -1,7 +1,7 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 01 Mar 2013 09:41:41 +0000
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 01 Mar 2013 15:03:17 +0000
 Subject: Re: [PATCH 00/05] irqchip: Renesas INTC External IRQ pin v2 update
-Message-Id: <20130301094140.GB27938@verge.net.au>
+Message-Id: <Pine.LNX.4.64.1303011603060.18776@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130226115834.5630.45471.sendpatchset@w520>
 In-Reply-To: <20130226115834.5630.45471.sendpatchset@w520>
@@ -9,9 +9,10 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-kernel@vger.kernel.org, kuninori.morimoto.gx@renesas.com, linux-sh@vger.kernel.org, benh@kernel.crashing.org, grant.likely@secretlab.ca, tglx@linutronix.de
+Cc: linux-kernel@vger.kernel.org, kuninori.morimoto.gx@renesas.com, linux-sh@vger.kernel.org, benh@kernel.crashing.org, grant.likely@secretlab.ca, horms@verge.net.au, tglx@linutronix.de
 
-On Tue, Feb 26, 2013 at 08:58:34PM +0900, Magnus Damm wrote:
+On Tue, 26 Feb 2013, Magnus Damm wrote:
+
 > irqchip: Renesas INTC External IRQ pin v2 update
 > 
 > [PATCH 01/05] irqchip: intc-irqpin: Whitespace fixes
@@ -31,13 +32,33 @@ On Tue, Feb 26, 2013 at 08:58:34PM +0900, Magnus Damm wrote:
 > of redoing a single "v2" patch for the driver. The reason
 > behind this is that there are on-going back porting efforts
 > that are better dealt with using incremental patches.
+> 
+> Signed-off-by: Magnus Damm <damm@opensource.se>
 
-Hi Magnus, Hi all,
+tested on kzm9g in topic/all+next branch of
 
-I do not expect this code to go through the renesas tree.  However, in
-order to provide a basis for work on renesas SoCs I have added this series
-to the topic/intc-external-irq topic branch in the reneas tree on
-kernel.org and merged it into topic/all+next.
+https://git.kernel.org/cgit/linux/kernel/git/horms/renesas.git/
 
-In other words, I am not picking this series up to merge it or add it to
-linux-next, rather I am storing it for reference.
+Tested-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+
+Thanks
+Guennadi
+
+> ---
+> 
+>  Depends on:
+>  [PATCH] irqchip: Renesas INTC External IRQ pin driver
+> 
+>  drivers/irqchip/irq-renesas-intc-irqpin.c             |   88 ++++++++---------
+>  include/linux/platform_data/irq-renesas-intc-irqpin.h |   19 +++
+>  2 files changed, 62 insertions(+), 45 deletions(-)
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
