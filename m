@@ -1,63 +1,52 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Thu, 14 Mar 2013 14:51:55 +0000
-Subject: Re: [PATCH 21/25] sh-pfc: Implement generic pinconf support
-Message-Id: <2046334.MuxPydO8CZ@avalon>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 01 Mar 2013 21:11:41 +0000
+Subject: Re: [PATCH/RFC v2 0/2] CPUFreq for kzm9g
+Message-Id: <Pine.LNX.4.64.1303011649260.18776@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363214384-3870-22-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1363214384-3870-22-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <Pine.LNX.4.64.1302251644010.3030@axis700.grange>
+ <CANqRtoSpu3V5KC-POq7+y0NpRx6yNfdZFfgaxa7Lv1gU1rO53Q@mail.gmail.com>
+In-Reply-To: <CANqRtoSpu3V5KC-POq7+y0NpRx6yNfdZFfgaxa7Lv1gU1rO53Q@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Linus,
+On Tue, 26 Feb 2013, Magnus Damm wrote:
 
-On Thursday 14 March 2013 15:29:21 Linus Walleij wrote:
-> On Thu, Mar 14, 2013 at 3:21 PM, Laurent Pinchart wrote:
-> > After reading the documentation I was still a bit at loss, so I've read
-> > several drivers to try and understand how pinconf get/set was supposed to
-> > operate. I have to confess that it didn't really clarify the situation :-)
+> On Tue, Feb 26, 2013 at 2:16 AM, Guennadi Liakhovetski
+> <g.liakhovetski@gmx.de> wrote:
+> > In v2 of this patch-set I dropped patches 1 and 3, because #1 is a bug-fix
+> > and can go in separately, #3 is more of a debugging help, than a real
+> > patch for mainlining. Of the remaining 2 patches the main difference to v1
+> > is the omission of the PLL0 manipulation. More is explained in respective
+> > patches.
+> >
+> > Guennadi Liakhovetski (2):
+> >   ARM: shmobile: sh73a0: add support for adjusting CPU frequency
+> >   ARM: shmobile: kzm9g-reference: add CPUFreq support
 > 
-> OK let's patch Documentation/pinctrl.txt as an outcome of this discussion.
-
-Good idea. I've found the "-EINVAL means the feature specified by the 
-parameter is turned off" to be pretty confusing. That definitely needs to be 
-documented, as well as the interactions between the different pinconf generic 
-parameters.
-
-> > My understanding of the pinconf API is that the config argument carries a
-> > parameter type and a value. When setting the parameter the situation is
-> > pretty clear, the parameter type and value are extracted from the config
-> > argument, and the value is written to the hardware based on the parameter
-> > type. If the type is not supported (for example
-> > PIN_CONFIG_INPUT_SCHMITT_ENABLE on a hardware that has no Schmitt
-> > triggers) the pin_config_set handler returns - ENOTSUPP. If the value is
-> > not valid, it returns -EINVAL.
+> Hi Guennadi,
 > 
-> Yes.
+> Thanks for your work on this. In general I am quite happy about this series.
 > 
-> > Getting parameters is a bit more confusing. I've understood the config
-> > argument as carrying the parameter type (with a 0 value) to be read. This
-> > is why my pin_config_get handler first checks whether the parameter type
-> > is supported and returns -ENOTSUPP if it isn't. Is that incorrect ? If
-> > *config is supposed to be written only, how does the driver know which
-> > parameter value to return ?
-> 
-> Oh damned, I was totally wrong, I thought we had designed it to be
-> a single call to get all the configurations, but indeed you are right,
-> for example in the debugfs code in
-> pinconf-generic.c:pinconf_generic_dump_pin.
-> 
-> Mea culpa :-(
+> One rather significant question is however this: Would it be possible
+> for you to check if the TWD is operating as expected when you scale
+> the CPU Frequency? I suspect it is not, so please cook up a v3 of this
+> series that also includes updates for timers.
 
-No worries :-)
+At last I managed to get twd running with a recent (of 27.02) all+next 
+snapshot on kzm9g with DT (reference) and actually I'm not really sure the 
+problem is there. At least definitely not as bad as I saw it last time. To 
+remind, the problem I observed was, that at lower CPU speeds a simple 
+shell script, consisting of 20 20-second sleep calls was gaining multiple 
+seconds, was taking more like 405 seconds, than 400. Now I only see it 
+going to 401 seconds. This is still not good, but I need a more precise 
+comparison to actually decide, whether this problem only appears at lower 
+CPU speeds or it is always there. I'll look further into it next week.
 
-> Acked-by: Linus Walleij <linus.walleij@linaro.org>
-> 
-> for this patch.
-
--- 
-Regards,
-
-Laurent Pinchart
-
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
