@@ -1,73 +1,49 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Wed, 06 Mar 2013 07:55:37 +0000
-Subject: Re: [PATCH] ARM: shmobile: Make sh73a0 INTC irqpin platform data static
-Message-Id: <20130306075536.GB29060@verge.net.au>
+Date: Fri, 01 Mar 2013 09:41:30 +0000
+Subject: Re: [PATCH] irqchip: Renesas IRQC driver
+Message-Id: <20130301094125.GA27938@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130306060831.4859.88481.sendpatchset@w520>
-In-Reply-To: <20130306060831.4859.88481.sendpatchset@w520>
+References: <20130227081501.30706.60471.sendpatchset@w520>
+In-Reply-To: <20130227081501.30706.60471.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Magnus Damm <magnus.damm@gmail.com>
+Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, benh@kernel.crashing.org, grant.likely@secretlab.ca, tglx@linutronix.de
 
-On Wed, Mar 06, 2013 at 03:08:31PM +0900, Magnus Damm wrote:
+On Wed, Feb 27, 2013 at 05:15:01PM +0900, Magnus Damm wrote:
 > From: Magnus Damm <damm@opensource.se>
 > 
-> The platform data for the INTC irq pin driver
-> seems to be global symbols, make it static to
-> allow multi-soc build.
-
-I have added this to topic/intc-external-irq with the related patches.
-The holding-pen for INTC.
-
-I'm also fine with you sending a v2 of revisions to unmerged patches.
-
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
+> This patch adds a driver for external IRQ pins connected
+> to the IRQC hardware block on recent SoCs from Renesas.
 > 
->  arch/arm/mach-shmobile/setup-sh73a0.c |    8 ++++----
->  1 file changed, 4 insertions(+), 4 deletions(-)
+> The IRQC hardware block is used together with more
+> recent ARM based SoCs using the GIC. As usual the GIC
+> requires external IRQ trigger setup somewhere else
+> which in this particular case happens to be IRQC.
 > 
-> --- 0001/arch/arm/mach-shmobile/setup-sh73a0.c
-> +++ work/arch/arm/mach-shmobile/setup-sh73a0.c	2013-03-06 15:03:05.000000000 +0900
-> @@ -782,7 +782,7 @@ static struct platform_device pmu_device
->  	.resource	= pmu_resources,
->  };
->  
-> -struct renesas_intc_irqpin_config irqpin0_platform_data = {
-> +static struct renesas_intc_irqpin_config irqpin0_platform_data = {
->  	.irq_base = irq_pin(0), /* IRQ0 -> IRQ7 */
->  };
->  
-> @@ -812,7 +812,7 @@ static struct platform_device irqpin0_de
->  	},
->  };
->  
-> -struct renesas_intc_irqpin_config irqpin1_platform_data = {
-> +static struct renesas_intc_irqpin_config irqpin1_platform_data = {
->  	.irq_base = irq_pin(8), /* IRQ8 -> IRQ15 */
->  	.control_parent = true, /* Disable spurious IRQ10 */
->  };
-> @@ -843,7 +843,7 @@ static struct platform_device irqpin1_de
->  	},
->  };
->  
-> -struct renesas_intc_irqpin_config irqpin2_platform_data = {
-> +static struct renesas_intc_irqpin_config irqpin2_platform_data = {
->  	.irq_base = irq_pin(16), /* IRQ16 -> IRQ23 */
->  };
->  
-> @@ -873,7 +873,7 @@ static struct platform_device irqpin2_de
->  	},
->  };
->  
-> -struct renesas_intc_irqpin_config irqpin3_platform_data = {
-> +static struct renesas_intc_irqpin_config irqpin3_platform_data = {
->  	.irq_base = irq_pin(24), /* IRQ24 -> IRQ31 */
->  };
->  
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> This driver implements the glue code needed to configure
+> IRQ trigger and also handle mask/unmask and demux of
+> external IRQ pins hooked up from the IRQC to the GIC.
 > 
+> Tested on r8a73a4 but is designed to work with a wide
+> range of SoCs. The driver requires one GIC SPI per
+> external IRQ pin to operate.  Each driver instance
+> will handle up to 32 external IRQ pins.
+> 
+> The SoCs using this driver are currently mainly used
+> together with regular platform devices so this driver
+> allows configuration via platform data to support things
+> like static interrupt base address. DT support will
+> be added incrementally in the not so distant future.
+
+Hi Magnus, Hi all,
+
+I do not expect this code to go through the renesas tree.  However, in
+order to provide a basis for work on renesas SoCs I have added this patch
+to the topic/intc-external-irq topic branch in the reneas tree on
+kernel.org and merged it into topic/all+next.
+
+In other words, I am not picking this series up to merge it or add it to
+linux-next, rather I am storing it for reference.
+
