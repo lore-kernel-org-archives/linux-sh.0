@@ -1,58 +1,233 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 28 Mar 2013 06:03:26 +0000
-Subject: Re: [PATCH/RFC 00/12] Split PFC and GPIO for R8A7779
-Message-Id: <CANqRtoQ37BcyBLiSdC=aALNS2Q=vgqEMntg2gqyKoEF1Fyt9fA@mail.gmail.com>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Fri, 01 Mar 2013 16:45:39 +0000
+Subject: [PATCH 1/3] clocksource: sh_cmt: Add Device Tree probing
+Message-Id: <1362159932-18533-2-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1362941928-18115-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1362941928-18115-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1362159932-18533-1-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1362159932-18533-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Mar 11, 2013 at 3:58 AM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
-> Hello,
->
-> This patch set replaces the GPIO handling code in the PFC driver with the
-> Renesas R-Car (R8A7779) GPIO driver submitted by Magnus Damm.
->
-> Patch 01/12 adds the R-Car GPIO driver. I've picked the patch from the
-> linux-sh mailing as-is. Review for this patch should be directed to the
-> mailing list in the "[PATCH] gpio: Renesas R-Car GPIO driver" thread. Patch
-> 02/12 further extends the GPIO driver to add pinctrl support.
->
-> Patch 03/12 adds a GPIO LEDs device to the Marzen board. This isn't strictly
-> required by this patch series but is useful for test purposes.
->
-> Patches 04/12 to 07/12 make GPIOs support optional in the PFC driver and fix
-> the pin configuration code to support an external GPIO driver.
->
-> Patches 08/12 to 10/12 remove function GPIOs from the R-Car platform and
-> remove the now unused GPIO enumeration.
->
-> Finally patches 11/12 and 12/12 register GPIO devices for the R-Car platform
-> and remove GPIO data from the R-Car SoC data.
->
-> The PFC GPIO code isn't removed as all platforms will need to be converted
-> first. This is a first step towards that goal.
->
-> Laurent Pinchart (11):
->   gpio-rcar: Add pinctrl support
->   ARM: shmobile: marzen: Add GPIO LEDs
->   sh-pfc: Make function GPIOs support optional
->   sh-pfc: Make GPIO support optional
->   sh-pfc: Skip gpiochip registration when no GPIO resource is found
->   sh-pfc: Configure pins as GPIOs at request time when handled
->     externally
->   sh-pfc: r8a7779: Remove function GPIOs
->   sh-pfc: r8a7779: Don't use GPIO enum entries
->   ARM: shmobile: r8a7779: Remove all GPIOs
->   ARM: shmobile: r8a7779: Register GPIO devices
->   sh-pfc: r8a7779: Remove GPIO data
+We add the capabilty to probe SH CMT timer devices using Device Tree
+setup.
 
-Thanks, looking good. They work well too!
+We can deduce former platform data by the device IDs and channel
+IDs of our timer instances, so we choose this more intuitive info as our
+DT properties.
 
-If it still matters, for the above patches:
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+---
+ .../bindings/timer/renesas,sh-cmt-timer.txt        |   21 +++++
+ drivers/clocksource/sh_cmt.c                       |   94 +++++++++++++++++---
+ 2 files changed, 102 insertions(+), 13 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/timer/renesas,sh-cmt-timer.txt
 
-Acked-by: Magnus Damm <damm@opensource.se>
+diff --git a/Documentation/devicetree/bindings/timer/renesas,sh-cmt-timer.txt b/Documentation/devicetree/bindings/timer/renesas,sh-cmt-timer.txt
+new file mode 100644
+index 0000000..e5ad808
+--- /dev/null
++++ b/Documentation/devicetree/bindings/timer/renesas,sh-cmt-timer.txt
+@@ -0,0 +1,21 @@
++* Renesas SH Mobile Compare Match Timer
++
++Required properties:
++- compatible : Should be "renesas,cmt"
++- reg : Address and length of the register set for the device
++- interrupts : Timer IRQ
++- renesas,timer-device-id : The ID of the timer device
++- renesas,timer-channel-id : The channel ID of the timer device
++
++Example for CMT10 of the R8A7740 SoC:
++
++	cmt@0xe6138010 {
++		compatible = "renesas,cmt";
++		interrupt-parent = <&intca>;
++		reg = <0xe6138010 0xc>;
++		interrupts = <0x0b00>;
++		renesas,timer-device-id = <1>;
++		renesas,timer-channel-id = <0>;
++		renesas,clocksource-rating = <150>;
++		renesas,clockevent-rating = <150>;
++	};
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index b72b724..9a7a7d4 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -38,6 +38,8 @@
+ struct sh_cmt_priv {
+ 	void __iomem *mapbase;
+ 	struct clk *clk;
++	long channel_offset;
++	int timer_bit;
+ 	unsigned long width; /* 16 or 32 bit version of hardware block */
+ 	unsigned long overflow_bit;
+ 	unsigned long clear_bits;
+@@ -109,9 +111,7 @@ static void sh_cmt_write32(void __iomem *base, unsigned long offs,
+ 
+ static inline unsigned long sh_cmt_read_cmstr(struct sh_cmt_priv *p)
+ {
+-	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
+-
+-	return p->read_control(p->mapbase - cfg->channel_offset, 0);
++	return p->read_control(p->mapbase - p->channel_offset, 0);
+ }
+ 
+ static inline unsigned long sh_cmt_read_cmcsr(struct sh_cmt_priv *p)
+@@ -127,9 +127,7 @@ static inline unsigned long sh_cmt_read_cmcnt(struct sh_cmt_priv *p)
+ static inline void sh_cmt_write_cmstr(struct sh_cmt_priv *p,
+ 				      unsigned long value)
+ {
+-	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
+-
+-	p->write_control(p->mapbase - cfg->channel_offset, 0, value);
++	p->write_control(p->mapbase - p->channel_offset, 0, value);
+ }
+ 
+ static inline void sh_cmt_write_cmcsr(struct sh_cmt_priv *p,
+@@ -176,7 +174,6 @@ static DEFINE_RAW_SPINLOCK(sh_cmt_lock);
+ 
+ static void sh_cmt_start_stop_ch(struct sh_cmt_priv *p, int start)
+ {
+-	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
+ 	unsigned long flags, value;
+ 
+ 	/* start stop register shared by multiple timer channels */
+@@ -184,9 +181,9 @@ static void sh_cmt_start_stop_ch(struct sh_cmt_priv *p, int start)
+ 	value = sh_cmt_read_cmstr(p);
+ 
+ 	if (start)
+-		value |= 1 << cfg->timer_bit;
++		value |= 1 << p->timer_bit;
+ 	else
+-		value &= ~(1 << cfg->timer_bit);
++		value &= ~(1 << p->timer_bit);
+ 
+ 	sh_cmt_write_cmstr(p, value);
+ 	raw_spin_unlock_irqrestore(&sh_cmt_lock, flags);
+@@ -673,9 +670,71 @@ static int sh_cmt_register(struct sh_cmt_priv *p, char *name,
+ 	return 0;
+ }
+ 
+-static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
++#ifdef CONFIG_OF
++static const struct of_device_id of_sh_cmt_match[] = {
++	{ .compatible = "renesas,cmt" },
++	{},
++};
++MODULE_DEVICE_TABLE(of, of_sh_cmt_match);
++
++static const int sh_timer_offset_multiplier[] = { 0x60, 0x10, 0x40, 0x40 };
++
++static struct sh_timer_config *sh_cmt_parse_dt(struct device *dev)
++{
++	struct sh_timer_config *cfg;
++	struct device_node *np = dev->of_node;
++	const __be32 *prop;
++	int timer_id, channel_id;
++
++	cfg = devm_kzalloc(dev, sizeof(struct sh_timer_config), GFP_KERNEL);
++	if (!cfg) {
++		dev_err(dev, "failed to allocate DT config data\n");
++		return NULL;
++	}
++
++	prop = of_get_property(np, "renesas,timer-device-id", NULL);
++	if (!prop) {
++		dev_err(dev, "device id missing\n");
++		return NULL;
++	}
++	timer_id = be32_to_cpup(prop);
++
++	prop = of_get_property(np, "renesas,timer-channel-id", NULL);
++	if (!prop) {
++		dev_err(dev, "channel id missing\n");
++		return NULL;
++	}
++	channel_id = be32_to_cpup(prop);
++
++	if (timer_id >= ARRAY_SIZE(sh_timer_offset_multiplier)) {
++		dev_err(dev, "unsupported timer id\n");
++		return NULL;
++	}
++
++	cfg->channel_offset = sh_timer_offset_multiplier[timer_id] *
++							(channel_id + 1);
++	cfg->timer_bit = channel_id;
++
++	prop = of_get_property(np, "renesas,clocksource-rating", NULL);
++	if (prop)
++		cfg->clocksource_rating = be32_to_cpup(prop);
++
++	prop = of_get_property(np, "renesas,clockevent-rating", NULL);
++	if (prop)
++		cfg->clockevent_rating = be32_to_cpup(prop);
++
++	return cfg;
++}
++#else
++static struct sh_timer_config *sh_cmt_parse_dt(struct device *dev)
++{
++	return NULL;
++}
++#endif /* CONFIG_OF */
++
++static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev,
++						struct sh_timer_config *cfg)
+ {
+-	struct sh_timer_config *cfg = pdev->dev.platform_data;
+ 	struct resource *res;
+ 	int irq, ret;
+ 	ret = -ENXIO;
+@@ -762,6 +821,9 @@ static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
+ 		goto err2;
+ 	}
+ 
++	p->channel_offset = cfg->channel_offset;
++	p->timer_bit = cfg->timer_bit;
++
+ 	platform_set_drvdata(pdev, p);
+ 
+ 	return 0;
+@@ -777,7 +839,7 @@ err0:
+ static int sh_cmt_probe(struct platform_device *pdev)
+ {
+ 	struct sh_cmt_priv *p = platform_get_drvdata(pdev);
+-	struct sh_timer_config *cfg = pdev->dev.platform_data;
++	struct sh_timer_config *cfg;
+ 	int ret;
+ 
+ 	if (!is_early_platform_device(pdev)) {
+@@ -785,6 +847,11 @@ static int sh_cmt_probe(struct platform_device *pdev)
+ 		pm_runtime_enable(&pdev->dev);
+ 	}
+ 
++	if (pdev->dev.of_node)
++		cfg = sh_cmt_parse_dt(&pdev->dev);
++	else
++		cfg = pdev->dev.platform_data;
++
+ 	if (p) {
+ 		dev_info(&pdev->dev, "kept as earlytimer\n");
+ 		goto out;
+@@ -796,7 +863,7 @@ static int sh_cmt_probe(struct platform_device *pdev)
+ 		return -ENOMEM;
+ 	}
+ 
+-	ret = sh_cmt_setup(p, pdev);
++	ret = sh_cmt_setup(p, pdev, cfg);
+ 	if (ret) {
+ 		kfree(p);
+ 		pm_runtime_idle(&pdev->dev);
+@@ -824,6 +891,7 @@ static struct platform_driver sh_cmt_device_driver = {
+ 	.remove		= sh_cmt_remove,
+ 	.driver		= {
+ 		.name	= "sh_cmt",
++		.of_match_table = of_match_ptr(of_sh_cmt_match),
+ 	}
+ };
+ 
+-- 
+1.7.9.5
+
