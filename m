@@ -1,27 +1,85 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Wed, 13 Mar 2013 17:41:42 +0000
-Subject: Re: [PATCH/RFC 09/12] sh-pfc: r8a7779: Don't use GPIO enum entries
-Message-Id: <CACRpkdYHRMhUR64DA9aJnHvi2b8ROUyPgss=6xm_Hwv6PJW1jA@mail.gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 01 Mar 2013 02:52:25 +0000
+Subject: Re: [PATCH v3 1/3] ARM: shmobile: sh73a0: wait for completion when kicking the clock
+Message-Id: <20130301025222.GA32306@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1362941928-18115-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1362941928-18115-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1362054120-8600-1-git-send-email-g.liakhovetski@gmx.de>
+ <1362054120-8600-2-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1362054120-8600-2-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Sun, Mar 10, 2013 at 7:58 PM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
+On Thu, Feb 28, 2013 at 01:21:58PM +0100, Guennadi Liakhovetski wrote:
+> To reconfigure clocks, controlled by FRQCRA and FRQCRB, a kick bit has to
+> be set and to make sure the setting has taken effect, it has to be read
+> back repeatedly until it is cleared by the hardware. This patch adds the
+> waiting part, that was missing until now.
+> 
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-> Refactor the GPIO macro magic to use GPIO numbers directly instead of
-> the GPIO_GP_x_y enum entries. This will allow removing the GPIO enum
-> entries from the mach/r8a7779.h header.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This patch seems to be ready to be applied.
 
-Much more readable.
+Magnus, could I get a review from you?
 
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-
-Yours,
-Linus Walleij
+> ---
+> 
+> As noted in patch 0/3, this patch affects existing systems, but AFAICS 
+> only theoretically - so far nobody is changing clock rates of any of the 
+> FRQCRA and FRQCRB clocks. Still, please, handle with care.
+> 
+>  arch/arm/mach-shmobile/clock-sh73a0.c |   23 +++++++++++++++++------
+>  1 files changed, 17 insertions(+), 6 deletions(-)
+> 
+> diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+> index 71843dd..34b5c5a 100644
+> --- a/arch/arm/mach-shmobile/clock-sh73a0.c
+> +++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+> @@ -21,6 +21,7 @@
+>  #include <linux/io.h>
+>  #include <linux/sh_clk.h>
+>  #include <linux/clkdev.h>
+> +#include <asm/processor.h>
+>  #include <mach/common.h>
+>  
+>  #define FRQCRA		IOMEM(0xe6150000)
+> @@ -234,14 +235,24 @@ static struct clk *main_clks[] = {
+>  	&sh73a0_extalr_clk,
+>  };
+>  
+> -static void div4_kick(struct clk *clk)
+> +static int frqcr_kick(void)
+>  {
+> -	unsigned long value;
+> +	int i;
+> +
+> +	/* set KICK bit in FRQCRB to update hardware setting, check success */
+> +	__raw_writel(__raw_readl(FRQCRB) | (1 << 31), FRQCRB);
+> +	for (i = 1000; i; i--)
+> +		if (__raw_readl(FRQCRB) & (1 << 31))
+> +			cpu_relax();
+> +		else
+> +			return i;
+> +
+> +	return -ETIMEDOUT;
+> +}
+>  
+> -	/* set KICK bit in FRQCRB to update hardware setting */
+> -	value = __raw_readl(FRQCRB);
+> -	value |= (1 << 31);
+> -	__raw_writel(value, FRQCRB);
+> +static void div4_kick(struct clk *clk)
+> +{
+> +	frqcr_kick();
+>  }
+>  
+>  static int divisors[] = { 2, 3, 4, 6, 8, 12, 16, 18,
+> -- 
+> 1.7.2.5
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
