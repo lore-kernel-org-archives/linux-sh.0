@@ -1,91 +1,23 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Mar 2013 22:59:41 +0000
-Subject: [PATCH v4 36/88] ARM: shmobile: kzm9g: Register pinctrl mappings for LCD
-Message-Id: <1363215633-4264-37-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 01 Mar 2013 01:13:44 +0000
+Subject: Re: [PATCH v2 2/2] ARM: shmobile: r8a7740: Do not use early devices with DT reference
+Message-Id: <20130301011344.GV11434@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Replace the GPIO-based LCD pinmux configuration by pinctrl mappings.
+On Thu, Feb 28, 2013 at 12:00:10PM -0600, Bastian Hecht wrote:
+> Do not initialise any early devices when using the minimal DT
+> reference code. Only the delay needs to be initialised.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
----
- arch/arm/mach-shmobile/board-kzm9g.c | 38 +++++++++++-------------------------
- 1 file changed, 11 insertions(+), 27 deletions(-)
+Thanks this looks good to me.
+I have added this to the topic/intc-of intc branch.
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index 65a5e0b..7cef005 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -30,6 +30,7 @@
- #include <linux/mmc/sh_mmcif.h>
- #include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/mfd/tmio.h>
-+#include <linux/pinctrl/machine.h>
- #include <linux/platform_device.h>
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/machine.h>
-@@ -599,6 +600,14 @@ static struct platform_device *kzm_devices[] __initdata = {
- 	&fsi_ak4648_device,
- };
- 
-+static const struct pinctrl_map kzm_pinctrl_map[] = {
-+	/* LCD */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-sh73a0",
-+				  "lcd_data24", "lcd"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-sh73a0",
-+				  "lcd_sync", "lcd"),
-+};
-+
- /*
-  * FIXME
-  *
-@@ -660,6 +669,8 @@ static void __init kzm_init(void)
- 				     ARRAY_SIZE(fixed2v8_power_consumers), 2800000);
- 	regulator_register_fixed(2, dummy_supplies, ARRAY_SIZE(dummy_supplies));
- 
-+	pinctrl_register_mappings(kzm_pinctrl_map, ARRAY_SIZE(kzm_pinctrl_map));
-+
- 	sh73a0_pinmux_init();
- 
- 	/* enable SCIFA4 */
-@@ -675,33 +686,6 @@ static void __init kzm_init(void)
- 	gpio_request_one(224, GPIOF_IN, NULL); /* IRQ3 */
- 
- 	/* LCDC */
--	gpio_request(GPIO_FN_LCDD23,	NULL);
--	gpio_request(GPIO_FN_LCDD22,	NULL);
--	gpio_request(GPIO_FN_LCDD21,	NULL);
--	gpio_request(GPIO_FN_LCDD20,	NULL);
--	gpio_request(GPIO_FN_LCDD19,	NULL);
--	gpio_request(GPIO_FN_LCDD18,	NULL);
--	gpio_request(GPIO_FN_LCDD17,	NULL);
--	gpio_request(GPIO_FN_LCDD16,	NULL);
--	gpio_request(GPIO_FN_LCDD15,	NULL);
--	gpio_request(GPIO_FN_LCDD14,	NULL);
--	gpio_request(GPIO_FN_LCDD13,	NULL);
--	gpio_request(GPIO_FN_LCDD12,	NULL);
--	gpio_request(GPIO_FN_LCDD11,	NULL);
--	gpio_request(GPIO_FN_LCDD10,	NULL);
--	gpio_request(GPIO_FN_LCDD9,	NULL);
--	gpio_request(GPIO_FN_LCDD8,	NULL);
--	gpio_request(GPIO_FN_LCDD7,	NULL);
--	gpio_request(GPIO_FN_LCDD6,	NULL);
--	gpio_request(GPIO_FN_LCDD5,	NULL);
--	gpio_request(GPIO_FN_LCDD4,	NULL);
--	gpio_request(GPIO_FN_LCDD3,	NULL);
--	gpio_request(GPIO_FN_LCDD2,	NULL);
--	gpio_request(GPIO_FN_LCDD1,	NULL);
--	gpio_request(GPIO_FN_LCDD0,	NULL);
--	gpio_request(GPIO_FN_LCDDISP,	NULL);
--	gpio_request(GPIO_FN_LCDDCK,	NULL);
--
- 	gpio_request_one(222, GPIOF_OUT_INIT_HIGH, NULL); /* LCDCDON */
- 	gpio_request_one(226, GPIOF_OUT_INIT_HIGH, NULL); /* SC */
- 
--- 
-1.8.1.5
+The reason that I have added this it and the other
+Armadillo800EVA-reference
+patches there is that I believe that they depend on the INTC DT bindings
+which currently live in that topic branch.
 
+If there is a way to remove that dependency please let me know.
