@@ -1,35 +1,73 @@
 From: Simon Horman <horms@verge.net.au>
-Date: Thu, 28 Mar 2013 00:58:13 +0000
-Subject: Re: [PATCH 0/3] sh-pfc: r8a7779: Improve readability with a new macro
-Message-Id: <20130328005813.GJ20736@verge.net.au>
+Date: Fri, 01 Mar 2013 07:09:25 +0000
+Subject: Re: [PATCH] <linux/of_platform.h>: fix compilation warnings with DT disabled
+Message-Id: <20130301070925.GA24369@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364411253-12170-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1364411253-12170-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <201302190258.25726.sergei.shtylyov@cogentembedded.com>
+In-Reply-To: <201302190258.25726.sergei.shtylyov@cogentembedded.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Cc: grant.likely@secretlab.ca, rob.herring@calxeda.com, devicetree-discuss@lists.ozlabs.org, vladimir.barinov@cogentembedded.com, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
 
-On Wed, Mar 27, 2013 at 08:07:30PM +0100, Laurent Pinchart wrote:
-> Hello,
+On Tue, Feb 19, 2013 at 02:58:25AM +0300, Sergei Shtylyov wrote:
+> Fix the following compilation warnings (in Simon Horman's renesas.git repo):
 > 
-> Pins are numbered in the r8a7779 documentation using a bank number and a
-> pin number in the bank. As the pinctrl pin number space is linear, this
-> is flattened by multiplying the bank number by 32 and adding the pin
-> number. The resulting pin number has no direct relationship with the
-> documentation, making it error-prone.
+> In file included from arch/arm/mach-shmobile/setup-r8a7779.c:24:0:
+> include/linux/of_platform.h:107:13: warning: ‘struct of_device_id’ declared
+> inside parameter list [enabled by default]
+> include/linux/of_platform.h:107:13: warning: its scope is only this definition
+> or declaration, which is probably not what you want [enabled by default]
+> include/linux/of_platform.h:107:13: warning: ‘struct device_node’ declared
+> inside parameter list [enabled by default]
 > 
-> These patches introduce and use a GP_PIN macro that converts from the
-> documentation pin number space to the linear pinctrl space.
+> <linux/of_platform.h> only #include's headers with definitions of the above
+> mentioned structures if CONFIG_OF_DEVICE=y but uses them even if not. One
+> solution is to move some #include's out of #ifdef CONFIG_OF_DEVICE and use
+> incomplete declarations for the rest of the structures where the #ifdef move
+> doesn't help...
 > 
-> Laurent Pinchart (3):
->   sh-pfc: r8a7779: Replace hardcoded pin numbers with GP_PIN macro
->   ARM: shmobile: r8a7779: Add GP_PIN macro
->   ARM: shmobile: marzen: Use GP_PIN macro
-> 
->  arch/arm/mach-shmobile/board-marzen.c         |   6 +-
->  arch/arm/mach-shmobile/include/mach/r8a7779.h |   2 +
->  drivers/pinctrl/sh-pfc/pfc-r8a7779.c          | 270 ++++++++++++++------------
->  3 files changed, 147 insertions(+), 131 deletions(-)
+> Reported-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-These changes seem fine to me.
+Reviewed-by: Simon Horman <horms+renesas@verge.net.au>
+
+Grant, could you consider taking this patch?
+
+> ---
+> Actually, it compiles eve without 'struct device_node' declared, I haven't
+> found the reason of this, so left it there...
+> 
+>  include/linux/of_platform.h |    5 +++--
+>  1 file changed, 3 insertions(+), 2 deletions(-)
+> 
+> Index: linux/include/linux/of_platform.h
+> =================================> --- linux.orig/include/linux/of_platform.h
+> +++ linux/include/linux/of_platform.h
+> @@ -11,9 +11,10 @@
+>   *
+>   */
+>  
+> -#ifdef CONFIG_OF_DEVICE
+>  #include <linux/device.h>
+>  #include <linux/mod_devicetable.h>
+> +
+> +#ifdef CONFIG_OF_DEVICE
+>  #include <linux/pm.h>
+>  #include <linux/of_device.h>
+>  #include <linux/platform_device.h>
+> @@ -100,7 +101,7 @@ extern int of_platform_populate(struct d
+>  
+>  #if !defined(CONFIG_OF_ADDRESS)
+>  struct of_dev_auxdata;
+> -struct device;
+> +struct device_node;
+>  static inline int of_platform_populate(struct device_node *root,
+>  					const struct of_device_id *matches,
+>  					const struct of_dev_auxdata *lookup,
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
