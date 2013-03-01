@@ -1,71 +1,69 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 12 Mar 2013 15:52:49 +0000
-Subject: Re: [PATCH 1/3] r8a7779: Add Display Unit clock support
-Message-Id: <20130312155248.GD6258@verge.net.au>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Fri, 01 Mar 2013 16:45:42 +0000
+Subject: [PATCH 3/3] ARM: mach-shmobile: sh73a0: Setup the timer device CMT10 using DT
+Message-Id: <1362159932-18533-4-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1359596703-17556-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1359596703-17556-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1362159932-18533-1-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1362159932-18533-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Mar 12, 2013 at 04:08:23PM +0100, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> There has been no comment on this patch, I assume it's ready for mainline. 
-> Could you please pick it up for v3.10 ?
+We can now use the Device Tree for bringing up our timer device CMT10.
+We move it out of the DT devices list into the early_devices list by
+the non-reference board code. And we add the device to the
+kzm9g-reference .dts file.
 
-Sure, will do.
+Not-yet-signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+---
+I wonder if this should go to arch/arm/boot/dts/sh73a0.dtsi.
 
-> On Thursday 31 January 2013 02:45:01 Laurent Pinchart wrote:
-> > From: Phil Edworthy <phil.edworthy@renesas.com>
-> > 
-> > Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-> > [Rename device from to rcarfb to rcar-du]
-> > Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-> > ---
-> >  arch/arm/mach-shmobile/clock-r8a7779.c | 4 +++-
-> >  1 file changed, 3 insertions(+), 1 deletion(-)
-> > 
-> > diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c
-> > b/arch/arm/mach-shmobile/clock-r8a7779.c index c019609..8cc9bce 100644
-> > --- a/arch/arm/mach-shmobile/clock-r8a7779.c
-> > +++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-> > @@ -87,7 +87,7 @@ static struct clk div4_clks[DIV4_NR] = {
-> >  };
-> > 
-> >  enum { MSTP323, MSTP322, MSTP321, MSTP320,
-> > -	MSTP101, MSTP100,
-> > +	MSTP103, MSTP101, MSTP100,
-> >  	MSTP030,
-> >  	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022,
-> > MSTP021, MSTP016, MSTP015, MSTP014,
-> > @@ -99,6 +99,7 @@ static struct clk mstp_clks[MSTP_NR] = {
-> >  	[MSTP322] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 22, 0), /* SDHI1 
-> */
-> > [MSTP321] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 21, 0), /* SDHI2 */
-> > [MSTP320] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 20, 0), /* SDHI3 */
-> > +	[MSTP103] = SH_CLK_MSTP32(&div4_clks[DIV4_S], MSTPCR1,  3, 0), /* DU */
-> > [MSTP101] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  1, 0), /* USB2 */
-> > [MSTP100] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  0, 0), /* USB0/1 */
-> > [MSTP030] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 30, 0), /* I2C0 */
-> > @@ -179,6 +180,7 @@ static struct clk_lookup lookups[] = {
-> >  	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
-> >  	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
-> >  	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP320]), /* SDHI3 */
-> > +	CLKDEV_DEV_ID("rcar-du.0", &mstp_clks[MSTP103]), /* DU */
-> >  };
-> > 
-> >  void __init r8a7779_clock_init(void)
-> 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+The moving to the early_devices is a bit hackish - I will cook up a better
+patch when I know into which .dts(i) file things go.
+
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |   11 +++++++++++
+ arch/arm/mach-shmobile/setup-sh73a0.c        |    2 +-
+ 2 files changed, 12 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 7fad4b9..fef12f0 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -69,6 +69,17 @@
+ 		toshiba,mmc-wrprotect-disable;
+ 		toshiba,mmc-has-idle-wait;
+ 	};
++
++	cmt@0xe6138010 {
++		compatible = "renesas,cmt";
++		reg = <0xe6138010 0xc>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 65 0x4>;
++		renesas,timer-device-id = <1>;
++		renesas,timer-channel-id = <0>;
++		renesas,clocksource-rating = <125>;
++		renesas,clockevent-rating = <125>;
++	};
+ };
+ 
+ &mmcif {
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 6259e07..b7fdec0 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -913,10 +913,10 @@ static struct platform_device *sh73a0_devices_dt[] __initdata = {
+ 	&scif6_device,
+ 	&scif7_device,
+ 	&scif8_device,
+-	&cmt10_device,
+ };
+ 
+ static struct platform_device *sh73a0_early_devices[] __initdata = {
++	&cmt10_device,
+ 	&tmu00_device,
+ 	&tmu01_device,
+ };
+-- 
+1.7.9.5
+
