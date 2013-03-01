@@ -1,43 +1,25 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 12:32:50 +0000
-Subject: [PATCH 40/43] ARM: mach-shmobile: r8a7779: SATA DT configuration
-Message-Id: <1363609973-31086-41-git-send-email-horms+renesas@verge.net.au>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 01 Mar 2013 09:42:05 +0000
+Subject: Re: [PATCH v3 3/3] ARM: mach-shmobile: r8a7740: Setup the serial devices using DT
+Message-Id: <20130301094205.GG27938@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
+References: <1361898208-6683-1-git-send-email-hechtb+renesas@gmail.com>
+ <1361898208-6683-3-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1361898208-6683-3-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: Bastian Hecht <hechtb@gmail.com>
+Cc: linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Paul Mundt <lethal@linux-sh.org>, linux-serial@vger.kernel.org
 
-From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+On Tue, Feb 26, 2013 at 11:03:28AM -0600, Bastian Hecht wrote:
+> We can now use the Device Tree for bringing up our serial devices. We
+> need to add an alternative early_devices list in setup-r8a7740 without
+> the serial devices and move them into the Armadillo-reference .dts config file.
 
-Allow configuration of the r8a7779 SoC SATA controller using a flattened device
-tree.
+Hi Bastian,
 
-Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7779.dtsi |    7 +++++++
- 1 file changed, 7 insertions(+)
+could you please refresh this patch on top of the current topic/intc-of.
+In particular, it conflicts with changes made by:
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 18383db..fe5c6f2 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -88,4 +88,11 @@
- 		compatible = "renesas,rcar-thermal";
- 		reg = <0xffc48000 0x38>;
- 	};
-+
-+	sata: sata@fc600000 {
-+		compatible = "renesas,rcar-sata";
-+		reg = <0xfc600000 0x2000>;
-+		interrupt-parent = <&gic>;
-+		interrupts = <0 100 0x4>;
-+	};
- };
--- 
-1.7.10.4
-
+ARM: shmobile: r8a7740: Do not use early devices with DT reference
