@@ -1,87 +1,54 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 12:32:20 +0000
-Subject: [PATCH 10/43] ARM: shmobile: Kill off sh73a0 scu_base_addr() function
-Message-Id: <1363609973-31086-11-git-send-email-horms+renesas@verge.net.au>
+From: Simon Horman <horms@verge.net.au>
+Date: Fri, 01 Mar 2013 09:41:45 +0000
+Subject: Re: [PATCH 2/3] ARM: shmobile: armadillo800eva: enable branch prediction on defconfig
+Message-Id: <20130301094145.GC27938@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363607255-6385-11-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363607255-6385-11-git-send-email-horms+renesas@verge.net.au>
+References: <1351731731-8435-3-git-send-email-horms@verge.net.au>
+In-Reply-To: <1351731731-8435-3-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+On Mon, Feb 25, 2013 at 09:22:36AM +0900, Kiyoshi Ishiyama wrote:
+> Hi Morimoto-san, Shimon-san
+> 
+> Acked-by: Kiyoshi Ishiyama <kiyoshi.ishiyama.wg@renesas.com>
 
-Replace scu_base_addr() with a static shmobile_scu_base
-variable and introduce SH73A0_SCU_BASE.
+Thanks, applied to the defconfig branch of the renesas tree
+and thus included in its next branch and queued up for v3.10.
 
-Later in the series the shmobile_scu_base variable will be
-made into a global variable so this is preparation only.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/smp-sh73a0.c |   20 ++++++++++----------
- 1 file changed, 10 insertions(+), 10 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
-index 81c0f4b..0757f4a 100644
---- a/arch/arm/mach-shmobile/smp-sh73a0.c
-+++ b/arch/arm/mach-shmobile/smp-sh73a0.c
-@@ -39,13 +39,12 @@
- 
- #define PSTR_SHUTDOWN_MODE	3
- 
--static void __iomem *scu_base_addr(void)
--{
--	return (void __iomem *)0xf0000000;
--}
-+#define SH73A0_SCU_BASE IOMEM(0xf0000000)
-+
-+static void __iomem *shmobile_scu_base;
- 
- #ifdef CONFIG_HAVE_ARM_TWD
--static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, 0xf0000600, 29);
-+static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, SH73A0_SCU_BASE + 0x600, 29);
- void __init sh73a0_register_twd(void)
- {
- 	twd_local_timer_register(&twd_local_timer);
-@@ -71,21 +70,22 @@ static int __cpuinit sh73a0_boot_secondary(unsigned int cpu, struct task_struct
- 
- static void __init sh73a0_smp_prepare_cpus(unsigned int max_cpus)
- {
--	scu_enable(scu_base_addr());
-+	scu_enable(shmobile_scu_base);
- 
- 	/* Map the reset vector (in headsmp-sh73a0.S) */
- 	__raw_writel(0, APARMBAREA);      /* 4k */
- 	__raw_writel(__pa(sh73a0_secondary_vector), SBAR);
- 
- 	/* enable cache coherency on booting CPU */
--	scu_power_mode(scu_base_addr(), SCU_PM_NORMAL);
-+	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
- }
- 
- static void __init sh73a0_smp_init_cpus(void)
- {
--	unsigned int ncores = scu_get_core_count(scu_base_addr());
-+	/* setup sh73a0 specific SCU base */
-+	shmobile_scu_base = SH73A0_SCU_BASE;
- 
--	shmobile_smp_init_cpus(ncores);
-+	shmobile_smp_init_cpus(scu_get_core_count(shmobile_scu_base));
- }
- 
- #ifdef CONFIG_HOTPLUG_CPU
-@@ -121,7 +121,7 @@ static void sh73a0_cpu_die(unsigned int cpu)
- 	flush_cache_all();
- 
- 	/* Set power off mode. This takes the CPU out of the MP cluster */
--	scu_power_mode(scu_base_addr(), SCU_PM_POWEROFF);
-+	scu_power_mode(shmobile_scu_base, SCU_PM_POWEROFF);
- 
- 	/* Enter shutdown mode */
- 	cpu_do_idle();
--- 
-1.7.10.4
-
+> BR
+> Ishi
+> 
+> 
+> > Because defconfig disabled ARM branch prediction
+> > by CONFIG_CPU_BPREDICT_DISABLE,
+> > Armadillo800eva's Bogomips and Loop were not good performance.
+> > This patch enabled Arm branch prediction.
+> > Special thanks to Ishiyama-san
+> > 
+> > Reported-by: Kiyoshi Ishiyama <kiyoshi.ishiyama.wg@renesas.com>
+> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> > ---
+> >  arch/arm/configs/armadillo800eva_defconfig |    1 -
+> >  1 file changed, 1 deletion(-)
+> > 
+> > diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
+> > index 891318e..dd1592b 100644
+> > --- a/arch/arm/configs/armadillo800eva_defconfig
+> > +++ b/arch/arm/configs/armadillo800eva_defconfig
+> > @@ -20,7 +20,6 @@ CONFIG_ARCH_R8A7740=y
+> >  CONFIG_MACH_ARMADILLO800EVA=y
+> >  # CONFIG_SH_TIMER_TMU is not set
+> >  CONFIG_ARM_THUMB=y
+> > -CONFIG_CPU_BPREDICT_DISABLE=y
+> >  CONFIG_CACHE_L2X0=y
+> >  CONFIG_ARM_ERRATA_430973=y
+> >  CONFIG_ARM_ERRATA_458693=y
+> > -- 
+> > 1.7.9.5
+> 
+> -- 
+> Kiyoshi Ishiyama <kiyoshi.ishiyama.wg@renesas.com>
+> 
