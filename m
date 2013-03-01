@@ -1,44 +1,39 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Mar 2013 22:59:47 +0000
-Subject: [PATCH v4 42/88] ARM: shmobile: kzm9g: Register pinctrl mappings for USB
-Message-Id: <1363215633-4264-43-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Fri, 01 Mar 2013 16:53:41 +0000
+Subject: [PATCH 0/3] Add OF support to CMT driver - bindings discussion
+Message-Id: <1362159932-18533-1-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Replace the GPIO-based USB pinmux configuration by pinctrl mappings.
+Hello,
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/mach-shmobile/board-kzm9g.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+here in the CMT driver we currently can derive all neccessary hardware info from the device ID and channel ID (there are multiple CMT instances built into one SoC with multiple channels each). This seems like a very intuituve description to me.
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index 7427041..c1c0401 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -654,6 +654,9 @@ static const struct pinctrl_map kzm_pinctrl_map[] = {
- 	/* SMSC */
- 	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x.0", "pfc-sh73a0",
- 				  "bsc_cs4", "bsc"),
-+	/* USB */
-+	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs", "pfc-sh73a0",
-+				  "usb_vbus", "usb"),
- };
- 
- /*
-@@ -738,9 +741,6 @@ static void __init kzm_init(void)
- 	/* enable Micro SD */
- 	gpio_request_one(14, GPIOF_OUT_INIT_HIGH, NULL); /* power */
- 
--	/* enable USB */
--	gpio_request(GPIO_FN_VBUS_0,	NULL);
--
- #ifdef CONFIG_CACHE_L2X0
- 	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
- 	l2x0_init(IOMEM(0xf0100000), 0x40460000, 0x82000fff);
+If multiple register layouts appear we can add an (optional) regtype property and some parts of the driver need to be rewritten anyway. But the descriptiveness of device ID and channel ID should stay I think.
+
+Will this work?
+
+In the patchset I have added the dts specification to sh73a0-kzm9g-reference.dts to test it. Does this belong to sh73a0.dtsi instead? I wonder because the clock is in the setup code, not board code.
+
+Thanks,
+
+ Bastian
+
+
+Bastian Hecht (3):
+  clocksource: sh_cmt: Add Device Tree probing
+  ARM: mach-shmobile: sh73a0: Add CMT DT name to clock list
+  ARM: mach-shmobile: sh73a0: Setup the timer device CMT10 using DT
+
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |   11 ++++
+ arch/arm/mach-shmobile/clock-sh73a0.c        |    1 +
+ arch/arm/mach-shmobile/setup-sh73a0.c        |    1 -
+ drivers/clocksource/sh_cmt.c                 |   87 ++++++++++++++++++++++----
+ 4 files changed, 86 insertions(+), 14 deletions(-)
+
 -- 
-1.8.1.5
+1.7.9.5
 
