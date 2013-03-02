@@ -1,44 +1,71 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 11:01:33 +0000
-Subject: [PATCH v3 13/64] sh-pfc: r8a7779: Add USB0 and USB1 PENC pinmux support
-Message-Id: <1362740544-19164-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Grant Likely <grant.likely@secretlab.ca>
+Date: Sat, 02 Mar 2013 20:07:32 +0000
+Subject: Re: [PATCH] gpio: em: Add Device Tree support
+Message-Id: <20130302200732.E18BB3E206B@localhost>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20130226132623.18365.36583.sendpatchset@w520> <20130226224106.GC20670@core.coreip.homeip.net> <CANqRtoRUqDsspHQQ11d3c2jc+MvoROwfbv3so5=SGhHOs9k7WA@mail.gmail.com> <20130228051122.GA12312@verge.net.au>
+In-Reply-To: <20130228051122.GA12312@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Simon Horman <horms@verge.net.au>, Magnus Damm <magnus.damm@gmail.com>
+Cc: Dmitry Torokhov <dmitry.torokhov@gmail.com>, linux-kernel@vger.kernel.org, linus.walleij@linaro.org, linux-sh@vger.kernel.org
 
-The USB0 and USB1 PENC functions were missing. Add them.
+On Thu, 28 Feb 2013 14:11:23 +0900, Simon Horman <horms@verge.net.au> wrote:
+> On Wed, Feb 27, 2013 at 07:13:46PM +0900, Magnus Damm wrote:
+> > Hi Dmitry,
+> > 
+> > Thanks for your feedback!
+> > 
+> > On Wed, Feb 27, 2013 at 7:41 AM, Dmitry Torokhov
+> > <dmitry.torokhov@gmail.com> wrote:
+> > > Hi Magnus,
+> > >
+> > > On Tue, Feb 26, 2013 at 10:26:23PM +0900, Magnus Damm wrote:
+> > >> From: Magnus Damm <damm@opensource.se>
+> > >>
+> > >> Update the Emma Mobile GPIO driver to add DT support.
+> > >>
+> > >
+> > > ...
+> > >
+> > >> @@ -366,15 +387,33 @@ static int em_gio_remove(struct platform
+> > >>       return 0;
+> > >>  }
+> > >>
+> > >
+> > > #ifdef CONFIG_OF here? No need to have extra aliases in modules if OF
+> > > support is not enabled (or is entire ARM arch now enables device tree?).
+> > >
+> > >> +static const struct of_device_id em_gio_dt_ids[] = {
+> > >> +     { .compatible = "renesas,em-gio", },
+> > >> +     {},
+> > >> +};
+> > >> +MODULE_DEVICE_TABLE(of, em_gio_dt_ids);
+> > >> +
+> > 
+> > I suppose we could sprinkle a couple of #ifdefs across the code, but I
+> > have to say that I'm not that fond of #ifdefs in general. So if it was
+> > up to me only then I would aim at having exactly zero #ifdefs in my
+> > drivers at the expense of slightly larger binaries in some cases.
+> 
+> My take on this is as follows (if anyone cares):
+> 
+> * The driver in question is currently only useful in conjunction with
+>   the Emev2 SoC and the kzm9g board which uses that SoC. The current
+>   (and to date only) practice when booting that board and thus SoC
+>   with merged upstream code is to do so using DT.
+> 
+> * The inclusion of the code above does not appear to cause build-time
+>   breakage even if CONFIG_OF is not set.
+> 
+> So it seems to me that it is reasonable to leave the code as is
+> without being guarded by an #ifdef.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
+I completely agree.  Applied for v3.10
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-index 492832c..4ab7b11 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-@@ -429,7 +429,8 @@ enum {
- 	A0_MARK, SD1_DAT3_MARK, MMC0_D3_MARK, FD3_MARK,
- 	BS_MARK, SD1_DAT2_MARK, MMC0_D2_MARK, FD2_MARK,
- 	ATADIR0_MARK, SDSELF_MARK, HCTS1_MARK, TX4_C_MARK,
--	USB_PENC2_MARK, SCK0_MARK, PWM1_MARK, PWMFSW0_MARK,
-+	USB_PENC0_MARK, USB_PENC1_MARK, USB_PENC2_MARK,
-+	SCK0_MARK, PWM1_MARK, PWMFSW0_MARK,
- 	SCIF_CLK_MARK, TCLK0_C_MARK,
- 
- 	EX_CS0_MARK, RX3_C_IRDA_RX_C_MARK, MMC0_D6_MARK,
-@@ -640,6 +641,9 @@ static pinmux_enum_t pinmux_data[] = {
- 	PINMUX_DATA(A18_MARK, FN_A18),
- 	PINMUX_DATA(A19_MARK, FN_A19),
- 
-+	PINMUX_DATA(USB_PENC0_MARK, FN_USB_PENC0),
-+	PINMUX_DATA(USB_PENC1_MARK, FN_USB_PENC1),
-+
- 	PINMUX_IPSR_DATA(IP0_2_0, USB_PENC2),
- 	PINMUX_IPSR_MODSEL_DATA(IP0_2_0, SCK0, SEL_SCIF0_0),
- 	PINMUX_IPSR_DATA(IP0_2_0, PWM1),
+g.
+
 -- 
-1.8.1.5
-
+Grant Likely, B.Sc, P.Eng.
+Secret Lab Technologies, Ltd.
