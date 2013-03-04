@@ -1,74 +1,163 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Mar 2013 23:00:25 +0000
-Subject: [PATCH v4 80/88] ARM: shmobile: r8a7740: Remove SDHI and MMCIF function GPIOs
-Message-Id: <1363215633-4264-81-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 04 Mar 2013 07:18:42 +0000
+Subject: [PATCH 2/5] ARM: shmobile: add R8A7778 clock support
+Message-Id: <87vc97pr8x.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
+based on v1.0 datasheet
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7740.h | 35 ---------------------------
- 1 file changed, 35 deletions(-)
+ arch/arm/mach-shmobile/Makefile              |    2 +-
+ arch/arm/mach-shmobile/clock-r8a7778.c       |  109 ++++++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/common.h |    1 +
+ 3 files changed, 111 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/mach-shmobile/clock-r8a7778.c
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index 0c417da..c258361 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -307,26 +307,6 @@ enum {
- 	GPIO_FN_SIM_D_PORT22, /* SIM_D  Port 22/199 */
- 	GPIO_FN_SIM_D_PORT199,
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index d866f30..0f50a3c 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -9,7 +9,7 @@ obj-y				:= timer.o console.o clock.o
+ obj-$(CONFIG_ARCH_SH7372)	+= setup-sh7372.o clock-sh7372.o intc-sh7372.o
+ obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o clock-sh73a0.o intc-sh73a0.o
+ obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o clock-r8a7740.o intc-r8a7740.o
+-obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o
++obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o clock-r8a7778.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o clock-r8a7779.o intc-r8a7779.o
+ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o clock-emev2.o
  
--	/* SDHI0 */
--	GPIO_FN_SDHI0_D0,	GPIO_FN_SDHI0_D1,	GPIO_FN_SDHI0_D2,
--	GPIO_FN_SDHI0_D3,	GPIO_FN_SDHI0_CD,	GPIO_FN_SDHI0_WP,
--	GPIO_FN_SDHI0_CMD,	GPIO_FN_SDHI0_CLK,
--
--	/* SDHI1 */
--	GPIO_FN_SDHI1_D0,	GPIO_FN_SDHI1_D1,	GPIO_FN_SDHI1_D2,
--	GPIO_FN_SDHI1_D3,	GPIO_FN_SDHI1_CD,	GPIO_FN_SDHI1_WP,
--	GPIO_FN_SDHI1_CMD,	GPIO_FN_SDHI1_CLK,
--
--	/* SDHI2 */
--	GPIO_FN_SDHI2_D0,	GPIO_FN_SDHI2_D1,	GPIO_FN_SDHI2_D2,
--	GPIO_FN_SDHI2_D3,	GPIO_FN_SDHI2_CLK,	GPIO_FN_SDHI2_CMD,
--
--	GPIO_FN_SDHI2_CD_PORT24, /* MSEL5CR_19_0 */
--	GPIO_FN_SDHI2_WP_PORT25,
--
--	GPIO_FN_SDHI2_WP_PORT177, /* MSEL5CR_19_1 */
--	GPIO_FN_SDHI2_CD_PORT202,
--
- 	/* MSIOF2 */
- 	GPIO_FN_MSIOF2_TXD,	GPIO_FN_MSIOF2_RXD,	GPIO_FN_MSIOF2_TSCK,
- 	GPIO_FN_MSIOF2_SS2,	GPIO_FN_MSIOF2_TSYNC,	GPIO_FN_MSIOF2_SS1,
-@@ -378,21 +358,6 @@ enum {
- 	GPIO_FN_MEMC_DREQ1,
- 	GPIO_FN_MEMC_A0,
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+new file mode 100644
+index 0000000..4e779444b
+--- /dev/null
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -0,0 +1,109 @@
++/*
++ * r8a7778 clock framework support
++ *
++ * Copyright (C) 2013  Renesas Solutions Corp.
++ * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ *
++ * based on r8a7779
++ *
++ * Copyright (C) 2011  Renesas Solutions Corp.
++ * Copyright (C) 2011  Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/io.h>
++#include <linux/sh_clk.h>
++#include <linux/clkdev.h>
++#include <mach/common.h>
++
++#define FRQMR   0xffc80014
++#define MSTPCR0 0xffc80030
++#define MSTPCR1 0xffc80034
++#define MSTPCR3 0xffc8003c
++#define MSTPSR1 0xffc80044
++#define MSTPSR4 0xffc80048
++#define MSTPSR6 0xffc8004c
++#define MSTPCR4 0xffc80050
++#define MSTPCR5 0xffc80054
++#define MSTPCR6 0xffc80058
++
++/* ioremap() through clock mapping mandatory to avoid
++ * collision with ARM coherent DMA virtual memory range.
++ */
++
++static struct clk_mapping cpg_mapping = {
++	.phys	= 0xffc80000,
++	.len	= 0x80,
++};
++
++static struct clk clkp = {
++	.rate   = 62500000, /* FIXME: shortcut */
++	.flags  = CLK_ENABLE_ON_INIT,
++	.mapping = &cpg_mapping,
++};
++
++static struct clk *main_clks[] = {
++	&clkp,
++};
++
++enum { MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
++	MSTP016, MSTP015, MSTP014,
++	MSTP_NR };
++
++#define MSTP(_parent, _reg, _bit, _flags) \
++	SH_CLK_MSTP32(_parent, _reg, _bit, _flags)
++
++static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP026] = MSTP(&clkp, MSTPCR0, 26, 0), /* SCIF0 */
++	[MSTP025] = MSTP(&clkp, MSTPCR0, 25, 0), /* SCIF1 */
++	[MSTP024] = MSTP(&clkp, MSTPCR0, 24, 0), /* SCIF2 */
++	[MSTP023] = MSTP(&clkp, MSTPCR0, 23, 0), /* SCIF3 */
++	[MSTP022] = MSTP(&clkp, MSTPCR0, 22, 0), /* SCIF4 */
++	[MSTP021] = MSTP(&clkp, MSTPCR0, 21, 0), /* SCIF5 */
++	[MSTP016] = MSTP(&clkp, MSTPCR0, 16, 0), /* TMU0 */
++	[MSTP015] = MSTP(&clkp, MSTPCR0, 15, 0), /* TMU1 */
++	[MSTP014] = MSTP(&clkp, MSTPCR0, 14, 0), /* TMU2 */
++};
++
++static struct clk_lookup lookups[] = {
++	/* MSTP32 clocks */
++	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
++	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP016]), /* TMU01 */
++	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
++	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
++	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP024]), /* SCIF2 */
++	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP023]), /* SCIF3 */
++	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP022]), /* SCIF4 */
++	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP021]), /* SCIF6 */
++};
++
++void __init r8a7778_clock_init(void)
++{
++	int k, ret = 0;
++
++	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
++		ret = clk_register(main_clks[k]);
++
++	if (!ret)
++		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
++
++	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
++
++	if (!ret)
++		shmobile_clk_init();
++	else
++		panic("failed to setup r8a7778 clocks\n");
++}
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index 23b1d4f..e01fa1a 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -62,6 +62,7 @@ extern void r8a7778_add_early_devices(void);
+ extern void r8a7778_earlytimer_init(void);
+ extern void r8a7778_add_standard_devices(void);
+ extern void r8a7778_map_io(void);
++extern void r8a7778_clock_init(void);
  
--	/* MMC */
--	GPIO_FN_MMC0_D0_PORT68,		GPIO_FN_MMC0_D1_PORT69,
--	GPIO_FN_MMC0_D2_PORT70,		GPIO_FN_MMC0_D3_PORT71,
--	GPIO_FN_MMC0_D4_PORT72,		GPIO_FN_MMC0_D5_PORT73,
--	GPIO_FN_MMC0_D6_PORT74,		GPIO_FN_MMC0_D7_PORT75,
--	GPIO_FN_MMC0_CLK_PORT66,
--	GPIO_FN_MMC0_CMD_PORT67,	/* MSEL4CR_15_0 */
--
--	GPIO_FN_MMC1_D0_PORT149,	GPIO_FN_MMC1_D1_PORT148,
--	GPIO_FN_MMC1_D2_PORT147,	GPIO_FN_MMC1_D3_PORT146,
--	GPIO_FN_MMC1_D4_PORT145,	GPIO_FN_MMC1_D5_PORT144,
--	GPIO_FN_MMC1_D6_PORT143,	GPIO_FN_MMC1_D7_PORT142,
--	GPIO_FN_MMC1_CLK_PORT103,
--	GPIO_FN_MMC1_CMD_PORT104,	/* MSEL4CR_15_1 */
--
- 	/* MSIOF0 */
- 	GPIO_FN_MSIOF0_SS1,	GPIO_FN_MSIOF0_SS2,
- 	GPIO_FN_MSIOF0_RXD,	GPIO_FN_MSIOF0_TXD,
+ extern void r8a7779_init_delay(void);
+ extern void r8a7779_init_irq(void);
 -- 
-1.8.1.5
+1.7.9.5
 
