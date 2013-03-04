@@ -1,166 +1,136 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 21 Mar 2013 13:25:30 +0000
-Subject: Re: [PATCH] ARM: shmobile: kzm9g-reference: fix device-tree bindings and device names
-Message-Id: <20130321132530.GB22565@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 04 Mar 2013 07:11:41 +0000
+Subject: [PATCH 3/3] ARM: shmobile: r8a7779: use gic_iid macro
+Message-Id: <87zjyjprkm.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <Pine.LNX.4.64.1303191827590.11768@axis700.grange>
-In-Reply-To: <Pine.LNX.4.64.1303191827590.11768@axis700.grange>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Thu, Mar 21, 2013 at 01:23:44PM +0100, Laurent Pinchart wrote:
-> Hi Guennadi,
-> 
-> Thanks for the patch.
-> 
-> On Tuesday 19 March 2013 18:38:50 Guennadi Liakhovetski wrote:
-> > Fix several device-tree bindings, that haven't been updated for newest
-> > versions of respective drivers, and device names and pin numbers, left over
-> > from non-DT and old pinctrl versions.
-> > 
-> > Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> 
-> Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+e38a002c45e43e225c7d777e64719487c83cac31
+(ARM: shmobile: add gic_iid macro for ICCIAR / interrupt ID)
+enabled to use gic_iid macro.
+This patch exchange current GIC interrupt setting
+from gic_spi() to gic_iid()
 
-Thanks, applied to the boards branch.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+ arch/arm/mach-shmobile/setup-r8a7779.c |   24 ++++++++++++------------
+ 1 file changed, 12 insertions(+), 12 deletions(-)
 
-> > ---
-> > 
-> > Applies on top of my previous patches from yesterday and today. In
-> > principle it would be better to first fix bugs and then move device tree
-> > nodes around, but the bugs are there also in the original version, so,
-> > doesn't really matter in which order we do fixing and transforming. Unless
-> > we want to merge fixes into original patches, that introduced the bugs.
-> 
-> I prefer merging the fixes in the original patches when they haven't reached 
-> mainline yet, but I can live with both.
-> 
-> >  arch/arm/boot/dts/sh73a0.dtsi                  |   12 +++++-----
-> >  arch/arm/mach-shmobile/board-kzm9g-reference.c |   27 ++++++++++-----------
-> >  2 files changed, 19 insertions(+), 20 deletions(-)
-> > 
-> > diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-> > index c89be38..3e4d383 100644
-> > --- a/arch/arm/boot/dts/sh73a0.dtsi
-> > +++ b/arch/arm/boot/dts/sh73a0.dtsi
-> > @@ -109,36 +109,36 @@
-> >  	};
-> > 
-> >  	sdhi0: sdhi@0xee100000 {
-> > -		compatible = "renesas,shmobile-sdhi";
-> > +		compatible = "renesas,r8a7740-sdhi";
-> >  		reg = <0xee100000 0x100>;
-> >  		interrupt-parent = <&gic>;
-> >  		interrupts = <0 83 4
-> >  				0 84 4
-> >  				0 85 4>;
-> > -		toshiba,mmc-has-idle-wait;
-> > +		cap-sd-highspeed;
-> >  		status = "disabled";
-> >  	};
-> > 
-> >  	/* SDHI1 and SDHI2 have no CD pins, no need for CD IRQ */
-> >  	sdhi1: sdhi@0xee120000 {
-> > -		compatible = "renesas,shmobile-sdhi";
-> > +		compatible = "renesas,r8a7740-sdhi";
-> >  		reg = <0xee120000 0x100>;
-> >  		interrupt-parent = <&gic>;
-> >  		interrupts = <0 88 4
-> >  				0 89 4>;
-> >  		toshiba,mmc-wrprotect-disable;
-> > -		toshiba,mmc-has-idle-wait;
-> > +		cap-sd-highspeed;
-> >  		status = "disabled";
-> >  	};
-> > 
-> >  	sdhi2: sdhi@0xee140000 {
-> > -		compatible = "renesas,shmobile-sdhi";
-> > +		compatible = "renesas,r8a7740-sdhi";
-> >  		reg = <0xee140000 0x100>;
-> >  		interrupt-parent = <&gic>;
-> >  		interrupts = <0 104 4
-> >  				0 105 4>;
-> >  		toshiba,mmc-wrprotect-disable;
-> > -		toshiba,mmc-has-idle-wait;
-> > +		cap-sd-highspeed;
-> >  		status = "disabled";
-> >  	};
-> >  };
-> > diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c
-> > b/arch/arm/mach-shmobile/board-kzm9g-reference.c index b21e03f..100672c
-> > 100644
-> > --- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
-> > +++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
-> > @@ -81,16 +81,16 @@ static unsigned long pin_pullup_conf[] = {
-> >  };
-> > 
-> >  static const struct pinctrl_map kzm_pinctrl_map[] = {
-> > -	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.3", "pfc-sh73a0",
-> > +	PIN_MAP_MUX_GROUP_DEFAULT("e6826000.i2c", "pfc-sh73a0",
-> >  				  "i2c3_1", "i2c3"),
-> >  	/* MMCIF */
-> > -	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
-> > +	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
-> >  				  "mmc0_data8_0", "mmc0"),
-> > -	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
-> > +	PIN_MAP_MUX_GROUP_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
-> >  				  "mmc0_ctrl_0", "mmc0"),
-> > -	PIN_MAP_CONFIGS_PIN_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
-> > +	PIN_MAP_CONFIGS_PIN_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
-> >  				    "PORT279", pin_pullup_conf),
-> > -	PIN_MAP_CONFIGS_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
-> > +	PIN_MAP_CONFIGS_GROUP_DEFAULT("e6bd0000.mmcif", "pfc-sh73a0",
-> >  				      "mmc0_data8_0", pin_pullup_conf),
-> >  	/* SCIFA4 */
-> >  	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
-> > @@ -98,18 +98,18 @@ static const struct pinctrl_map kzm_pinctrl_map[] = {
-> >  	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
-> >  				  "scifa4_ctrl", "scifa4"),
-> >  	/* SDHI0 */
-> > -	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
-> > +	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
-> >  				  "sdhi0_data4", "sdhi0"),
-> > -	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
-> > +	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
-> >  				  "sdhi0_ctrl", "sdhi0"),
-> > -	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
-> > +	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
-> >  				  "sdhi0_cd", "sdhi0"),
-> > -	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
-> > +	PIN_MAP_MUX_GROUP_DEFAULT("ee100000.sdhi", "pfc-sh73a0",
-> >  				  "sdhi0_wp", "sdhi0"),
-> >  	/* SDHI2 */
-> > -	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-sh73a0",
-> > +	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "pfc-sh73a0",
-> >  				  "sdhi2_data4", "sdhi2"),
-> > -	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-sh73a0",
-> > +	PIN_MAP_MUX_GROUP_DEFAULT("ee140000.sdhi", "pfc-sh73a0",
-> >  				  "sdhi2_ctrl", "sdhi2"),
-> >  };
-> > 
-> > @@ -124,10 +124,9 @@ static void __init kzm_init(void)
-> > 
-> >  	/* enable SD */
-> >  	gpio_request(GPIO_FN_SDHI0_VCCQ_MC0_ON,	NULL);
-> > -	gpio_request_one(GPIO_PORT15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
-> > +	gpio_request_one(15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
-> > 
-> > -	gpio_request(GPIO_FN_SDHICLK2,		NULL);
-> > -	gpio_request_one(GPIO_PORT14, GPIOF_OUT_INIT_HIGH, NULL); /* power */
-> > +	gpio_request_one(14, GPIOF_OUT_INIT_HIGH, NULL); /* power */
-> > 
-> >  #ifdef CONFIG_CACHE_L2X0
-> >  	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
-> 
-> -- 
-> Regards,
-> 
-> Laurent Pinchart
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 9322858..0068b9f 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -92,7 +92,7 @@ static struct plat_sci_port scif0_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= SCIx_IRQ_MUXED(gic_spi(88)),
++	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x78)),
+ };
+ 
+ static struct platform_device scif0_device = {
+@@ -109,7 +109,7 @@ static struct plat_sci_port scif1_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= SCIx_IRQ_MUXED(gic_spi(89)),
++	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x79)),
+ };
+ 
+ static struct platform_device scif1_device = {
+@@ -126,7 +126,7 @@ static struct plat_sci_port scif2_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= SCIx_IRQ_MUXED(gic_spi(90)),
++	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7a)),
+ };
+ 
+ static struct platform_device scif2_device = {
+@@ -143,7 +143,7 @@ static struct plat_sci_port scif3_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= SCIx_IRQ_MUXED(gic_spi(91)),
++	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7b)),
+ };
+ 
+ static struct platform_device scif3_device = {
+@@ -160,7 +160,7 @@ static struct plat_sci_port scif4_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= SCIx_IRQ_MUXED(gic_spi(92)),
++	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7c)),
+ };
+ 
+ static struct platform_device scif4_device = {
+@@ -177,7 +177,7 @@ static struct plat_sci_port scif5_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= SCIx_IRQ_MUXED(gic_spi(93)),
++	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7d)),
+ };
+ 
+ static struct platform_device scif5_device = {
+@@ -204,7 +204,7 @@ static struct resource tmu00_resources[] = {
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start	= gic_spi(32),
++		.start	= gic_iid(0x40),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -234,7 +234,7 @@ static struct resource tmu01_resources[] = {
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start	= gic_spi(33),
++		.start	= gic_iid(0x41),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -256,7 +256,7 @@ static struct resource rcar_i2c0_res[] = {
+ 		.end    = 0xffc70fff,
+ 		.flags  = IORESOURCE_MEM,
+ 	}, {
+-		.start  = gic_spi(79),
++		.start  = gic_iid(0x6f),
+ 		.flags  = IORESOURCE_IRQ,
+ 	},
+ };
+@@ -274,7 +274,7 @@ static struct resource rcar_i2c1_res[] = {
+ 		.end    = 0xffc71fff,
+ 		.flags  = IORESOURCE_MEM,
+ 	}, {
+-		.start  = gic_spi(82),
++		.start  = gic_iid(0x72),
+ 		.flags  = IORESOURCE_IRQ,
+ 	},
+ };
+@@ -292,7 +292,7 @@ static struct resource rcar_i2c2_res[] = {
+ 		.end    = 0xffc72fff,
+ 		.flags  = IORESOURCE_MEM,
+ 	}, {
+-		.start  = gic_spi(80),
++		.start  = gic_iid(0x70),
+ 		.flags  = IORESOURCE_IRQ,
+ 	},
+ };
+@@ -310,7 +310,7 @@ static struct resource rcar_i2c3_res[] = {
+ 		.end    = 0xffc73fff,
+ 		.flags  = IORESOURCE_MEM,
+ 	}, {
+-		.start  = gic_spi(81),
++		.start  = gic_iid(0x71),
+ 		.flags  = IORESOURCE_IRQ,
+ 	},
+ };
+-- 
+1.7.9.5
+
