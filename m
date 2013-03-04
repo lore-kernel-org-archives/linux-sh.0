@@ -1,40 +1,47 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Mar 2013 19:07:32 +0000
-Subject: [PATCH 2/3] ARM: shmobile: r8a7779: Add GP_PIN macro
-Message-Id: <1364411253-12170-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Mon, 04 Mar 2013 16:54:10 +0000
+Subject: [PATCH] Core Standby Mode and caches
+Message-Id: <1362419645-3116-1-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Pins are numbered in the r8a7779 documentation using a bank number and a
-pin number in the bank. As the pinctrl pin number space is linear, this
-is flattened by multiplying the bank number by 32 and adding the pin
-number. The resulting pin number has no direct relationship with the
-documentation, making it error-prone.
+Hello,
 
-Add a GP_PIN macro for board code to convert from the documentation pin
-number space to the linear pinctrl space.
+here a patch that adds Core Standby Mode.
+The code as it is works fine, but still I've got a question:
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/mach-shmobile/include/mach/r8a7779.h | 2 ++
- 1 file changed, 2 insertions(+)
+The datasheet of the r8a7740 states that caches are kept in a standby state.
+Still I have to issue a outer_flush_all() to flush the L2 before sleeping. If
+I don't do it the SoC hangs or sometimes jumps to the boot code
+Booting Linux on physical CPU 0x0...
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-index 5896922..53db188 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -6,6 +6,8 @@
- 
- struct platform_device;
- 
-+#define GP_PIN(bank, pin)	(((bank) * 32) + (pin))
-+
- struct r8a7779_pm_ch {
- 	unsigned long chan_offs;
- 	unsigned int chan_bit;
+Do we have an explanation for that? Do we want one? Do we need one?
+
+Further this is the dozenth incarnation of v7_invalidate_l1. I don't want to
+compile in headsmp.S as this is a uniprocessor system. On the other hand I'm a
+bit reluctant to be the one moving it into the general ARM code base - doing
+something wrong there would raise eternal hatred of many people.
+
+
+The patch is based on topic/all+next (a9043db17d02119bcda8a33414e7526961a7cee5)
+
+Cheers,
+
+ Bastian
+
+Bastian Hecht (1):
+  ARM: shmobile: r8a7740: Add CPU Core Standby Mode
+
+ arch/arm/mach-shmobile/Makefile              |    2 +-
+ arch/arm/mach-shmobile/include/mach/common.h |    1 +
+ arch/arm/mach-shmobile/pm-r8a7740.c          |   63 +++++++++++++++++++++-
+ arch/arm/mach-shmobile/sleep-r8a7740.S       |   75 ++++++++++++++++++++++++++
+ 4 files changed, 138 insertions(+), 3 deletions(-)
+ create mode 100644 arch/arm/mach-shmobile/sleep-r8a7740.S
+
 -- 
-1.8.1.5
+1.7.9.5
 
