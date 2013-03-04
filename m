@@ -1,268 +1,118 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 22 Mar 2013 01:23:52 +0000
-Subject: [PATCH 6/6] Revert "ARM: shmobile: streamline mackerel SD and MMC devices"
-Message-Id: <1363915432-21720-7-git-send-email-horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 04 Mar 2013 07:18:53 +0000
+Subject: [PATCH 3/5] ARM: shmobile: add R8A7778 intc support
+Message-Id: <87txorpr8m.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363915432-21720-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363915432-21720-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Content-Transfer-Encoding: 8bit
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-sh@vger.kernel.org
 
-This reverts commit 626a645eb75415255aad3162f4da3f6988f0c8ec.
+Based on v1.0 datasheet
 
-This appears to be incompatible with
-"ARM: shmobile: sh7372: Remove SDHI and MMCIF function GPIOs"
-
-Reverting this change resolves the following build failure:
-
-arch/arm/mach-shmobile/board-mackerel.c: In function ‘mackerel_init’:
-arch/arm/mach-shmobile/board-mackerel.c:1468: error: ‘GPIO_FN_SDHICMD1’ undeclared (first use in this function)
-arch/arm/mach-shmobile/board-mackerel.c:1468: error: (Each undeclared identifier is reported only once
-arch/arm/mach-shmobile/board-mackerel.c:1468: error: for each function it appears in.)
-arch/arm/mach-shmobile/board-mackerel.c:1469: error: ‘GPIO_FN_SDHICLK1’ undeclared (first use in this function)
-arch/arm/mach-shmobile/board-mackerel.c:1470: error: ‘GPIO_FN_SDHID1_3’ undeclared (first use in this function)
-arch/arm/mach-shmobile/board-mackerel.c:1471: error: ‘GPIO_FN_SDHID1_2’ undeclared (first use in this function)
-arch/arm/mach-shmobile/board-mackerel.c:1472: error: ‘GPIO_FN_SDHID1_1’ undeclared (first use in this function)
-arch/arm/mach-shmobile/board-mackerel.c:1473: error: ‘GPIO_FN_SDHID1_0’ undeclared (first use in this function)
-arch/arm/mach-shmobile/board-mackerel.c:1489: error: ‘GPIO_FN_SDHICMD2’ undeclared (first use in this function)
-arch/arm/mach-shmobile/board-mackerel.c:1490: error: ‘GPIO_FN_SDHICLK2’ undeclared (first use in this function)
-arch/arm/mach-shmobile/board-mackerel.c:1491: error: ‘GPIO_FN_SDHID2_3’ undeclared (first use in this function)
-arch/arm/mach-shmobile/board-mackerel.c:1492: error: ‘GPIO_FN_SDHID2_2’ undeclared (first use in this function)
-arch/arm/mach-shmobile/board-mackerel.c:1493: error: ‘GPIO_FN_SDHID2_1’ undeclared (first use in this function)
-arch/arm/mach-shmobile/board-mackerel.c:1494: error: ‘GPIO_FN_SDHID2_0’ undeclared (first use in this function)
-
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- arch/arm/mach-shmobile/board-mackerel.c |  113 +++++++++++++++----------------
- 1 file changed, 56 insertions(+), 57 deletions(-)
+ arch/arm/mach-shmobile/Makefile              |    2 +-
+ arch/arm/mach-shmobile/include/mach/common.h |    1 +
+ arch/arm/mach-shmobile/intc-r8a7778.c        |   64 ++++++++++++++++++++++++++
+ 3 files changed, 66 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/mach-shmobile/intc-r8a7778.c
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index ef22ec4..1a9c753 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -963,6 +963,15 @@ static struct platform_device nand_flash_device = {
- 	},
- };
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 0f50a3c..cc3ccff 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -9,7 +9,7 @@ obj-y				:= timer.o console.o clock.o
+ obj-$(CONFIG_ARCH_SH7372)	+= setup-sh7372.o clock-sh7372.o intc-sh7372.o
+ obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o clock-sh73a0.o intc-sh73a0.o
+ obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o clock-r8a7740.o intc-r8a7740.o
+-obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o clock-r8a7778.o
++obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o clock-r8a7778.o intc-r8a7778.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o clock-r8a7779.o intc-r8a7779.o
+ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o clock-emev2.o
  
+diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
+index e01fa1a..6921488 100644
+--- a/arch/arm/mach-shmobile/include/mach/common.h
++++ b/arch/arm/mach-shmobile/include/mach/common.h
+@@ -63,6 +63,7 @@ extern void r8a7778_earlytimer_init(void);
+ extern void r8a7778_add_standard_devices(void);
+ extern void r8a7778_map_io(void);
+ extern void r8a7778_clock_init(void);
++extern void r8a7778_init_irq(void);
+ 
+ extern void r8a7779_init_delay(void);
+ extern void r8a7779_init_irq(void);
+diff --git a/arch/arm/mach-shmobile/intc-r8a7778.c b/arch/arm/mach-shmobile/intc-r8a7778.c
+new file mode 100644
+index 0000000..afe9197
+--- /dev/null
++++ b/arch/arm/mach-shmobile/intc-r8a7778.c
+@@ -0,0 +1,64 @@
 +/*
-+ * The card detect pin of the top SD/MMC slot (CN7) is active low and is
-+ * connected to GPIO A22 of SH7372 (GPIO 41).
++ * r8a7778 processor support - INTC hardware block
++ *
++ * Copyright (C) 2013  Renesas Solutions Corp.
++ * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ *
++ * based on r8a7779
++ *
++ * Copyright (C) 2011  Renesas Solutions Corp.
++ * Copyright (C) 2011  Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 + */
-+static int slot_cn7_get_cd(struct platform_device *pdev)
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/interrupt.h>
++#include <linux/irq.h>
++#include <linux/io.h>
++#include <linux/irqchip/arm-gic.h>
++#include <mach/common.h>
++#include <mach/intc.h>
++#include <mach/r8a7778.h>
++#include <asm/mach-types.h>
++#include <asm/mach/arch.h>
++
++#define INT2SMSKCR0 IOMEM(0xfe782288)
++#define INT2SMSKCR1 IOMEM(0xfe78228c)
++
++#define INT2NTSR0 IOMEM(0xfe700018)
++#define INT2NTSR1 IOMEM(0xfe70002c)
++
++static int r8a7778_set_wake(struct irq_data *data, unsigned int on)
 +{
-+	return !gpio_get_value(41);
++	return 0; /* always allow wakeup */
 +}
 +
- /* SDHI0 */
- static struct sh_mobile_sdhi_info sdhi0_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
-@@ -973,21 +982,21 @@ static struct sh_mobile_sdhi_info sdhi0_info = {
- };
- 
- static struct resource sdhi0_resources[] = {
--	{
-+	[0] = {
- 		.name	= "SDHI0",
- 		.start	= 0xe6850000,
- 		.end	= 0xe68500ff,
- 		.flags	= IORESOURCE_MEM,
--	}, {
--		.name	= SH_MOBILE_SDHI_IRQ_CARD_DETECT,
-+	},
-+	[1] = {
- 		.start	= evt2irq(0x0e00) /* SDHI0_SDHI0I0 */,
- 		.flags	= IORESOURCE_IRQ,
--	}, {
--		.name	= SH_MOBILE_SDHI_IRQ_SDCARD,
-+	},
-+	[2] = {
- 		.start	= evt2irq(0x0e20) /* SDHI0_SDHI0I1 */,
- 		.flags	= IORESOURCE_IRQ,
--	}, {
--		.name	= SH_MOBILE_SDHI_IRQ_SDIO,
-+	},
-+	[3] = {
- 		.start	= evt2irq(0x0e40) /* SDHI0_SDHI0I2 */,
- 		.flags	= IORESOURCE_IRQ,
- 	},
-@@ -1005,28 +1014,34 @@ static struct platform_device sdhi0_device = {
- 
- #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
- /* SDHI1 */
--
--/* GPIO_PORT41 can trigger IRQ8, but it is used by USBHS1, we have to poll */
- static struct sh_mobile_sdhi_info sdhi1_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
--	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_USE_GPIO_CD,
-+	.tmio_ocr_mask	= MMC_VDD_165_195,
-+	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE,
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_NEEDS_POLL,
--	.cd_gpio	= GPIO_PORT41,
-+	.get_cd		= slot_cn7_get_cd,
- };
- 
- static struct resource sdhi1_resources[] = {
--	{
-+	[0] = {
- 		.name	= "SDHI1",
- 		.start	= 0xe6860000,
- 		.end	= 0xe68600ff,
- 		.flags	= IORESOURCE_MEM,
--	}, {
-+	},
-+	[1] = {
-+		.name	= SH_MOBILE_SDHI_IRQ_CARD_DETECT,
-+		.start	= evt2irq(0x0e80), /* SDHI1_SDHI1I0 */
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+	[2] = {
- 		.name	= SH_MOBILE_SDHI_IRQ_SDCARD,
- 		.start	= evt2irq(0x0ea0), /* SDHI1_SDHI1I1 */
- 		.flags	= IORESOURCE_IRQ,
--	}, {
-+	},
-+	[3] = {
- 		.name	= SH_MOBILE_SDHI_IRQ_SDIO,
- 		.start	= evt2irq(0x0ec0), /* SDHI1_SDHI1I2 */
- 		.flags	= IORESOURCE_IRQ,
-@@ -1044,32 +1059,43 @@ static struct platform_device sdhi1_device = {
- };
- #endif
- 
--/* SDHI2 */
--
- /*
-  * The card detect pin of the top SD/MMC slot (CN23) is active low and is
-- * connected to GPIO SCIFB_SCK of SH7372 (GPIO_PORT162).
-+ * connected to GPIO SCIFB_SCK of SH7372 (162).
-  */
-+static int slot_cn23_get_cd(struct platform_device *pdev)
++void __init r8a7778_init_irq(void)
 +{
-+	return !gpio_get_value(162);
-+}
++	void __iomem *gic_dist_base = IOMEM(0xfe438000);
++	void __iomem *gic_cpu_base = IOMEM(0xfe430000);
 +
-+/* SDHI2 */
- static struct sh_mobile_sdhi_info sdhi2_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI2_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI2_RX,
--	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE | TMIO_MMC_USE_GPIO_CD,
-+	.tmio_flags	= TMIO_MMC_WRPROTECT_DISABLE,
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
- 			  MMC_CAP_NEEDS_POLL,
--	.cd_gpio	= GPIO_PORT162,
-+	.get_cd		= slot_cn23_get_cd,
- };
- 
- static struct resource sdhi2_resources[] = {
--	{
-+	[0] = {
- 		.name	= "SDHI2",
- 		.start	= 0xe6870000,
- 		.end	= 0xe68700ff,
- 		.flags	= IORESOURCE_MEM,
--	}, {
-+	},
-+	[1] = {
-+		.name	= SH_MOBILE_SDHI_IRQ_CARD_DETECT,
-+		.start	= evt2irq(0x1200), /* SDHI2_SDHI2I0 */
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+	[2] = {
- 		.name	= SH_MOBILE_SDHI_IRQ_SDCARD,
- 		.start	= evt2irq(0x1220), /* SDHI2_SDHI2I1 */
- 		.flags	= IORESOURCE_IRQ,
--	}, {
-+	},
-+	[3] = {
- 		.name	= SH_MOBILE_SDHI_IRQ_SDIO,
- 		.start	= evt2irq(0x1240), /* SDHI2_SDHI2I2 */
- 		.flags	= IORESOURCE_IRQ,
-@@ -1108,12 +1134,11 @@ static struct resource sh_mmcif_resources[] = {
- 
- static struct sh_mmcif_plat_data sh_mmcif_plat = {
- 	.sup_pclk	= 0,
-+	.ocr		= MMC_VDD_165_195 | MMC_VDD_32_33 | MMC_VDD_33_34,
- 	.caps		= MMC_CAP_4_BIT_DATA |
- 			  MMC_CAP_8_BIT_DATA |
- 			  MMC_CAP_NEEDS_POLL,
--	.use_cd_gpio	= true,
--	/* card detect pin for SD/MMC slot (CN7) */
--	.cd_gpio	= GPIO_PORT41,
-+	.get_cd		= slot_cn7_get_cd,
- 	.slave_id_tx	= SHDMA_SLAVE_MMCIF_TX,
- 	.slave_id_rx	= SHDMA_SLAVE_MMCIF_RX,
- };
-@@ -1238,10 +1263,9 @@ static struct platform_device *mackerel_devices[] __initdata = {
- 	&sdhi0_device,
- #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
- 	&sdhi1_device,
--#else
--	&sh_mmcif_device,
- #endif
- 	&sdhi2_device,
-+	&sh_mmcif_device,
- 	&ceu_device,
- 	&mackerel_camera,
- 	&hdmi_device,
-@@ -1348,11 +1372,10 @@ static void __init mackerel_init(void)
- 		{ "A3SP", &usbhs0_device, },
- 		{ "A3SP", &usbhs1_device, },
- 		{ "A3SP", &nand_flash_device, },
-+		{ "A3SP", &sh_mmcif_device, },
- 		{ "A3SP", &sdhi0_device, },
- #if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
- 		{ "A3SP", &sdhi1_device, },
--#else
--		{ "A3SP", &sh_mmcif_device, },
- #endif
- 		{ "A3SP", &sdhi2_device, },
- 		{ "A4R", &ceu_device, },
-@@ -1463,35 +1486,11 @@ static void __init mackerel_init(void)
- 	/* SDHI0 PORT172 card-detect IRQ26 */
- 	gpio_request(GPIO_FN_IRQ26_172, NULL);
- 
--#if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
--	/* enable SDHI1 */
--	gpio_request(GPIO_FN_SDHICMD1, NULL);
--	gpio_request(GPIO_FN_SDHICLK1, NULL);
--	gpio_request(GPIO_FN_SDHID1_3, NULL);
--	gpio_request(GPIO_FN_SDHID1_2, NULL);
--	gpio_request(GPIO_FN_SDHID1_1, NULL);
--	gpio_request(GPIO_FN_SDHID1_0, NULL);
--#else
--	/* MMCIF */
--	gpio_request(GPIO_FN_MMCD0_0, NULL);
--	gpio_request(GPIO_FN_MMCD0_1, NULL);
--	gpio_request(GPIO_FN_MMCD0_2, NULL);
--	gpio_request(GPIO_FN_MMCD0_3, NULL);
--	gpio_request(GPIO_FN_MMCD0_4, NULL);
--	gpio_request(GPIO_FN_MMCD0_5, NULL);
--	gpio_request(GPIO_FN_MMCD0_6, NULL);
--	gpio_request(GPIO_FN_MMCD0_7, NULL);
--	gpio_request(GPIO_FN_MMCCMD0, NULL);
--	gpio_request(GPIO_FN_MMCCLK0, NULL);
--#endif
-+	/* card detect pin for MMC slot (CN7) */
-+	gpio_request_one(41, GPIOF_IN, NULL);
- 
--	/* enable SDHI2 */
--	gpio_request(GPIO_FN_SDHICMD2, NULL);
--	gpio_request(GPIO_FN_SDHICLK2, NULL);
--	gpio_request(GPIO_FN_SDHID2_3, NULL);
--	gpio_request(GPIO_FN_SDHID2_2, NULL);
--	gpio_request(GPIO_FN_SDHID2_1, NULL);
--	gpio_request(GPIO_FN_SDHID2_0, NULL);
-+	/* card detect pin for microSD slot (CN23) */
-+	gpio_request_one(162, GPIOF_IN, NULL);
- 
- 	/* FLCTL */
- 	gpio_request(GPIO_FN_D0_NAF0, NULL);
++	/* use GIC to handle interrupts */
++	gic_init(0, 29, gic_dist_base, gic_cpu_base);
++	gic_arch_extn.irq_set_wake = r8a7778_set_wake;
++
++	/* route all interrupts to ARM */
++	__raw_writel(0x73ffffff, INT2NTSR0);
++	__raw_writel(0xffffffff, INT2NTSR1);
++
++	/* unmask all known interrupts in INTCS2 */
++	__raw_writel(0x08330773, INT2SMSKCR0);
++	__raw_writel(0x00311110, INT2SMSKCR1);
++}
 -- 
-1.7.10.4
+1.7.9.5
 
