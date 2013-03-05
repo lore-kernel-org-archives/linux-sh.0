@@ -1,57 +1,43 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Mon, 04 Mar 2013 15:23:32 +0000
-Subject: [PATCH v4 2/3] ARM: mach-shmobile: r8a7740: Add DT names to clock list
-Message-Id: <1362414054-23092-2-git-send-email-hechtb+renesas@gmail.com>
+From: Simon Horman <horms@verge.net.au>
+Date: Tue, 05 Mar 2013 00:26:55 +0000
+Subject: Re: [PATCH v4 2/3] ARM: mach-shmobile: r8a7779: add SATA support
+Message-Id: <20130305002653.GA9439@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1362414054-23092-1-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1362414054-23092-1-git-send-email-hechtb+renesas@gmail.com>
+References: <201302272339.15402.sergei.shtylyov@cogentembedded.com>
+ <20130301014148.GB9232@quad.lixom.net>
+ <20130301072345.GD14376@verge.net.au>
+In-Reply-To: <20130301072345.GD14376@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This adds temporarily the alternative device names to the clock list
-that are used when booting via Device Tree setup.
+On Fri, Mar 01, 2013 at 04:23:45PM +0900, Simon Horman wrote:
+> On Thu, Feb 28, 2013 at 05:41:48PM -0800, Olof Johansson wrote:
+> > On Wed, Feb 27, 2013 at 11:39:14PM +0300, Sergei Shtylyov wrote:
+> > > From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+> > > 
+> > > Add SATA clock for r8a7779 SoC (for both device tree and usual cases). 
+> > > Register SATA controller as a "late" platform device on r8a7779 SoC.
+> > 
+> > Hi,
+> > 
+> > If you have the a binding in the device tree (which you do through patch 1/3),
+> > then there's no reason to have a platform device for it.
+> 
+> Hi Olof,
+> 
+> the DT exists but currently the marzen board brings up all
+> of its devices using platform devices. Which if nothing else is
+> internally consistent.
+> 
+> I suppose it would be possible to add a call to
+> r8a7779_add_standard_devices_dt() and have the board bring
+> up this device using DT and the rest using platform drivers
+> (until the drivers are migrated to DT).
+> 
+> Would that be your preferred option?
+> 
+> Magnus, how do you feel about this idea?
 
-Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
----
-v4: no changes
-
- arch/arm/mach-shmobile/clock-r8a7740.c |    9 +++++++++
- 1 file changed, 9 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index 71fc400..0f77823 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -593,18 +593,27 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_mobile_ceu.1",	&mstp_clks[MSTP128]),
- 
- 	CLKDEV_DEV_ID("sh-sci.4",		&mstp_clks[MSTP200]),
-+	CLKDEV_DEV_ID("e6c80000.sci",		&mstp_clks[MSTP200]),
- 	CLKDEV_DEV_ID("sh-sci.3",		&mstp_clks[MSTP201]),
-+	CLKDEV_DEV_ID("e6c70000.sci",		&mstp_clks[MSTP201]),
- 	CLKDEV_DEV_ID("sh-sci.2",		&mstp_clks[MSTP202]),
-+	CLKDEV_DEV_ID("e6c60000.sci",		&mstp_clks[MSTP202]),
- 	CLKDEV_DEV_ID("sh-sci.1",		&mstp_clks[MSTP203]),
-+	CLKDEV_DEV_ID("e6c50000.sci",		&mstp_clks[MSTP203]),
- 	CLKDEV_DEV_ID("sh-sci.0",		&mstp_clks[MSTP204]),
-+	CLKDEV_DEV_ID("e6c40000.sci",		&mstp_clks[MSTP204]),
- 	CLKDEV_DEV_ID("sh-sci.8",		&mstp_clks[MSTP206]),
-+	CLKDEV_DEV_ID("e6c30000.sci",		&mstp_clks[MSTP206]),
- 	CLKDEV_DEV_ID("sh-sci.5",		&mstp_clks[MSTP207]),
-+	CLKDEV_DEV_ID("e6cb0000.sci",		&mstp_clks[MSTP207]),
- 	CLKDEV_DEV_ID("sh-dma-engine.3",	&mstp_clks[MSTP214]),
- 	CLKDEV_DEV_ID("sh-dma-engine.2",	&mstp_clks[MSTP216]),
- 	CLKDEV_DEV_ID("sh-dma-engine.1",	&mstp_clks[MSTP217]),
- 	CLKDEV_DEV_ID("sh-dma-engine.0",	&mstp_clks[MSTP218]),
- 	CLKDEV_DEV_ID("sh-sci.7",		&mstp_clks[MSTP222]),
-+	CLKDEV_DEV_ID("e6cd0000.sci",		&mstp_clks[MSTP222]),
- 	CLKDEV_DEV_ID("sh-sci.6",		&mstp_clks[MSTP230]),
-+	CLKDEV_DEV_ID("e6cc0000.sci",		&mstp_clks[MSTP230]),
- 
- 	CLKDEV_DEV_ID("sh_cmt.10",		&mstp_clks[MSTP329]),
- 	CLKDEV_DEV_ID("sh_fsi2",		&mstp_clks[MSTP328]),
--- 
-1.7.9.5
-
+Ping.
