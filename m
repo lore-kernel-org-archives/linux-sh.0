@@ -1,54 +1,47 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Tue, 05 Mar 2013 13:47:17 +0000
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Tue, 05 Mar 2013 19:22:02 +0000
 Subject: Re: [PATCH v4 3/3] ARM: mach-shmobile: r8a7740: Setup the serial devices using DT
-Message-Id: <CABYn4swottJ6knJXfHntJuWJ9rzrC7kA-47TaKJRG0mh+u+Pig@mail.gmail.com>
+Message-Id: <201303051922.02455.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1362414054-23092-1-git-send-email-hechtb+renesas@gmail.com>
- <1362414054-23092-3-git-send-email-hechtb+renesas@gmail.com>
  <2835497.S76YK1KMLM@wuerfel>
  <CABYn4sx=bC6JwicbVgRnmwdu=6DuW5GFgdG25a-Wow1Jn9M-bQ@mail.gmail.com>
- <5135F647.8050002@cogentembedded.com>
-In-Reply-To: <5135F647.8050002@cogentembedded.com>
+In-Reply-To: <CABYn4sx=bC6JwicbVgRnmwdu=6DuW5GFgdG25a-Wow1Jn9M-bQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-2013/3/5 Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>:
-> Hello.
->
->
-> On 05-03-2013 17:00, Bastian Hecht wrote:
->
->>>> +       sci@e6c40000 {
->>>> +               compatible = "renesas,sci-SCIFA-uart";
->>>> +               interrupt-parent = <&intca>;
->>>> +               reg = <0xe6c40000 0x100>;
->>>> +               interrupts = <0x0c00>, <0x0c00>, <0x0c00>, <0x0c00>;
->>>> +               cell-index = <0>;
->>>> +               renesas,scscr = <0x30>;
->>>> +               renesas,scbrr-algo-id = <4>;
->>>> +               renesas,autoconf;
->>>> +       };
->>>
->>>
->>> The default name for a uart is "serial", I would recommend sticking to
->>> that by convention. You may also want to add an "aliases" node
->>> somewhere, to define which port should get which logical device number
->>> on a given board.
->
->
->> Switched to "...-serial".
->
->
->    I think he was talking about the node name, not "compatible" property.
+On Tuesday 05 March 2013, Bastian Hecht wrote:
+> 2013/3/4 Arnd Bergmann <arnd@arndb.de>:
+> > On Monday 04 March 2013 17:20:54 Bastian Hecht wrote:
+> >>
+> >> +       sci@e6c40000 {
+> >> +               compatible = "renesas,sci-SCIFA-uart";
+> >> +               interrupt-parent = <&intca>;
+> >> +               reg = <0xe6c40000 0x100>;
+> >> +               interrupts = <0x0c00>, <0x0c00>, <0x0c00>, <0x0c00>;
+> >> +               cell-index = <0>;
+> >> +               renesas,scscr = <0x30>;
+> >> +               renesas,scbrr-algo-id = <4>;
+> >> +               renesas,autoconf;
+> >> +       };
+> >
+> > The default name for a uart is "serial", I would recommend sticking to
+> > that by convention. You may also want to add an "aliases" node
+> > somewhere, to define which port should get which logical device number
+> > on a given board.
+> 
+> Switched to "...-serial".
 
-Ah sure! I'll wait for responses to v5 and will change it around in v6.
+I actually meant the name, not the "compatible" value. For compatible, either
+version is fine with me. What I think you should change though is renaming
+"sci@e6c40000" to "serial@e6c40000".
 
-Thanks,
+> About the aliases: Would I need to add that now, or can we postpone that?
+> 
 
- Bastian
+No hurry for that. It's just a feature that comes in very handy, but not
+all platforms implement it.
 
-
-> WBR, Sergei
->
+	Arnd
