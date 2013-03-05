@@ -1,334 +1,245 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:05:38 +0000
-Subject: [PATCH 042/142] sh-pfc: Move GPIO registers access functions to gpio.c
-Message-Id: <1363604838-29359-43-git-send-email-horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 05 Mar 2013 07:22:54 +0000
+Subject: [PATCH 2/2 v2] ARM: shmobile: bockw: Reference DT implementation
+Message-Id: <87k3pmmhth.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Provide board code for the bockw to demonstrate
+how DT may be used given the current state of driver
+device tree support. This is intended to act as a reference
+for mach-shmobile developers.
 
-Move the sh_pfc_setup_data_regs(), sh_pfc_setup_data_reg(),
-sh_pfc_get_data_reg(), sh_pfc_read_bit() and sh_pfc_write_bit()
-function to gpio.c as they belong to the GPIO implementation. Inline
-sh_pfc_read_bit() and sh_pfc_write_bit() in their only call location.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/pinctrl/sh-pfc/core.c |  110 ++---------------------------------------
- drivers/pinctrl/sh-pfc/core.h |   11 +++--
- drivers/pinctrl/sh-pfc/gpio.c |   92 +++++++++++++++++++++++++++++++---
- 3 files changed, 97 insertions(+), 116 deletions(-)
+v1 -> v2
 
-diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
-index 79824826..49fde28 100644
---- a/drivers/pinctrl/sh-pfc/core.c
-+++ b/drivers/pinctrl/sh-pfc/core.c
-@@ -55,8 +55,7 @@ static int sh_pfc_ioremap(struct sh_pfc *pfc, struct platform_device *pdev)
- 	return 0;
- }
- 
--static void __iomem *sh_pfc_phys_to_virt(struct sh_pfc *pfc,
--					 unsigned long address)
-+void __iomem *sh_pfc_phys_to_virt(struct sh_pfc *pfc, unsigned long address)
- {
- 	struct sh_pfc_window *window;
- 	int k;
-@@ -111,8 +110,8 @@ static int sh_pfc_enum_in_range(pinmux_enum_t enum_id, struct pinmux_range *r)
- 	return 1;
- }
- 
--static unsigned long sh_pfc_read_raw_reg(void __iomem *mapped_reg,
--					 unsigned long reg_width)
-+unsigned long sh_pfc_read_raw_reg(void __iomem *mapped_reg,
-+				  unsigned long reg_width)
- {
- 	switch (reg_width) {
- 	case 8:
-@@ -127,8 +126,8 @@ static unsigned long sh_pfc_read_raw_reg(void __iomem *mapped_reg,
- 	return 0;
- }
- 
--static void sh_pfc_write_raw_reg(void __iomem *mapped_reg,
--				 unsigned long reg_width, unsigned long data)
-+void sh_pfc_write_raw_reg(void __iomem *mapped_reg, unsigned long reg_width,
-+			  unsigned long data)
- {
- 	switch (reg_width) {
- 	case 8:
-@@ -145,37 +144,6 @@ static void sh_pfc_write_raw_reg(void __iomem *mapped_reg,
- 	BUG();
- }
- 
--int sh_pfc_read_bit(struct pinmux_data_reg *dr, unsigned long in_pos)
--{
--	unsigned long pos;
--
--	pos = dr->reg_width - (in_pos + 1);
--
--	pr_debug("read_bit: addr = %lx, pos = %ld, "
--		 "r_width = %ld\n", dr->reg, pos, dr->reg_width);
--
--	return (sh_pfc_read_raw_reg(dr->mapped_reg, dr->reg_width) >> pos) & 1;
--}
--
--void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
--		      unsigned long value)
--{
--	unsigned long pos;
--
--	pos = dr->reg_width - (in_pos + 1);
--
--	pr_debug("write_bit addr = %lx, value = %d, pos = %ld, "
--		 "r_width = %ld\n",
--		 dr->reg, !!value, pos, dr->reg_width);
--
--	if (value)
--		set_bit(pos, &dr->reg_shadow);
--	else
--		clear_bit(pos, &dr->reg_shadow);
--
--	sh_pfc_write_raw_reg(dr->mapped_reg, dr->reg_width, dr->reg_shadow);
--}
--
- static void sh_pfc_config_reg_helper(struct sh_pfc *pfc,
- 				     struct pinmux_cfg_reg *crp,
- 				     unsigned long in_pos,
-@@ -242,73 +210,6 @@ static void sh_pfc_write_config_reg(struct sh_pfc *pfc,
- 	sh_pfc_write_raw_reg(mapped_reg, crp->reg_width, data);
- }
- 
--static void sh_pfc_setup_data_reg(struct sh_pfc *pfc, unsigned gpio)
--{
--	struct sh_pfc_pin *gpiop = &pfc->info->pins[gpio];
--	struct pinmux_data_reg *data_reg;
--	int k, n;
--
--	k = 0;
--	while (1) {
--		data_reg = pfc->info->data_regs + k;
--
--		if (!data_reg->reg_width)
--			break;
--
--		data_reg->mapped_reg = sh_pfc_phys_to_virt(pfc, data_reg->reg);
--
--		for (n = 0; n < data_reg->reg_width; n++) {
--			if (data_reg->enum_ids[n] = gpiop->enum_id) {
--				gpiop->flags &= ~PINMUX_FLAG_DREG;
--				gpiop->flags |= (k << PINMUX_FLAG_DREG_SHIFT);
--				gpiop->flags &= ~PINMUX_FLAG_DBIT;
--				gpiop->flags |= (n << PINMUX_FLAG_DBIT_SHIFT);
--				return;
--			}
--		}
--		k++;
--	}
--
--	BUG();
--}
--
--static void sh_pfc_setup_data_regs(struct sh_pfc *pfc)
--{
--	struct pinmux_data_reg *drp;
--	int k;
--
--	for (k = 0; k < pfc->info->nr_pins; k++) {
--		if (pfc->info->pins[k].enum_id = 0)
--			continue;
--
--		sh_pfc_setup_data_reg(pfc, k);
--	}
--
--	k = 0;
--	while (1) {
--		drp = pfc->info->data_regs + k;
--
--		if (!drp->reg_width)
--			break;
--
--		drp->reg_shadow = sh_pfc_read_raw_reg(drp->mapped_reg,
--						      drp->reg_width);
--		k++;
--	}
--}
--
--void sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
--			 struct pinmux_data_reg **drp, int *bitp)
--{
--	struct sh_pfc_pin *gpiop = sh_pfc_get_pin(pfc, gpio);
--	int k, n;
--
--	k = (gpiop->flags & PINMUX_FLAG_DREG) >> PINMUX_FLAG_DREG_SHIFT;
--	n = (gpiop->flags & PINMUX_FLAG_DBIT) >> PINMUX_FLAG_DBIT_SHIFT;
--	*drp = pfc->info->data_regs + k;
--	*bitp = n;
--}
--
- static int sh_pfc_get_config_reg(struct sh_pfc *pfc, pinmux_enum_t enum_id,
- 				 struct pinmux_cfg_reg **crp, int *fieldp,
- 				 int *valuep, unsigned long **cntp)
-@@ -518,7 +419,6 @@ static int sh_pfc_probe(struct platform_device *pdev)
- 	spin_lock_init(&pfc->lock);
- 
- 	pinctrl_provide_dummies();
--	sh_pfc_setup_data_regs(pfc);
- 
- 	/*
- 	 * Initialize pinctrl bindings first
-diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
-index b8b3e87..434b628 100644
---- a/drivers/pinctrl/sh-pfc/core.h
-+++ b/drivers/pinctrl/sh-pfc/core.h
-@@ -46,11 +46,12 @@ int sh_pfc_unregister_gpiochip(struct sh_pfc *pfc);
- int sh_pfc_register_pinctrl(struct sh_pfc *pfc);
- int sh_pfc_unregister_pinctrl(struct sh_pfc *pfc);
- 
--int sh_pfc_read_bit(struct pinmux_data_reg *dr, unsigned long in_pos);
--void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
--		      unsigned long value);
--void sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
--			 struct pinmux_data_reg **drp, int *bitp);
-+void __iomem *sh_pfc_phys_to_virt(struct sh_pfc *pfc, unsigned long address);
-+unsigned long sh_pfc_read_raw_reg(void __iomem *mapped_reg,
-+				  unsigned long reg_width);
-+void sh_pfc_write_raw_reg(void __iomem *mapped_reg, unsigned long reg_width,
-+			  unsigned long data);
+ - fixup compile warning
+
+ arch/arm/boot/dts/Makefile                     |    1 +
+ arch/arm/boot/dts/r8a7778-bockw-reference.dts  |   32 ++++++++++
+ arch/arm/boot/dts/r8a7778.dtsi                 |   35 +++++++++++
+ arch/arm/mach-shmobile/Kconfig                 |   12 ++++
+ arch/arm/mach-shmobile/Makefile                |    1 +
+ arch/arm/mach-shmobile/board-bockw-reference.c |   78 ++++++++++++++++++++++++
+ 6 files changed, 159 insertions(+)
+ create mode 100644 arch/arm/boot/dts/r8a7778-bockw-reference.dts
+ create mode 100644 arch/arm/boot/dts/r8a7778.dtsi
+ create mode 100644 arch/arm/mach-shmobile/board-bockw-reference.c
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index b284b22..c394957 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -122,6 +122,7 @@ dtb-$(CONFIG_ARCH_U8500) += snowball.dtb \
+ 	ccu9540.dtb
+ dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm9d.dtb \
+ 	r8a7740-armadillo800eva.dtb \
++	r8a7778-bockw-reference.dtb \
+ 	r8a7779-marzen-reference.dtb \
+ 	sh73a0-kzm9g.dtb \
+ 	sh73a0-kzm9g-reference.dtb \
+diff --git a/arch/arm/boot/dts/r8a7778-bockw-reference.dts b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+new file mode 100644
+index 0000000..fb1550e
+--- /dev/null
++++ b/arch/arm/boot/dts/r8a7778-bockw-reference.dts
+@@ -0,0 +1,32 @@
++/*
++ * Reference Device Tree Source for the Bock-W board
++ *
++ * Copyright (C) 2013  Renesas Solutions Corp.
++ * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ *
++ * based on r8a7779
++ *
++ * Copyright (C) 2013 Renesas Solutions Corp.
++ * Copyright (C) 2013 Simon Horman
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
 +
- struct sh_pfc_pin *sh_pfc_get_pin(struct sh_pfc *pfc, unsigned int pin);
- int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark, int pinmux_type,
- 		      int cfg_mode);
-diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
-index 806e2dd..027c777 100644
---- a/drivers/pinctrl/sh-pfc/gpio.c
-+++ b/drivers/pinctrl/sh-pfc/gpio.c
-@@ -36,6 +36,71 @@ static struct sh_pfc *gpio_to_pfc(struct gpio_chip *gc)
- 	return gpio_to_pfc_chip(gc)->pfc;
- }
++/dts-v1/;
++/include/ "r8a7778.dtsi"
++
++/ {
++	model = "bockw";
++	compatible = "renesas,bockw-reference";
++
++	chosen {
++		bootargs = "console=ttySC0,115200 earlyprintk=sh-sci.0,115200 ignore_loglevel root=/dev/nfs ip=dhcp";
++	};
++
++	memory {
++		device_type = "memory";
++		reg = <0x60000000 0x10000000>;
++	};
++};
+diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
+new file mode 100644
+index 0000000..4743735
+--- /dev/null
++++ b/arch/arm/boot/dts/r8a7778.dtsi
+@@ -0,0 +1,35 @@
++/*
++ * Device Tree Source for Renesas r8a7778
++ *
++ * Copyright (C) 2013  Renesas Solutions Corp.
++ * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ *
++ * based on r8a7779
++ *
++ * Copyright (C) 2013 Renesas Solutions Corp.
++ * Copyright (C) 2013 Simon Horman
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++
++/include/ "skeleton.dtsi"
++
++/ {
++	compatible = "renesas,r8a7778";
++
++	cpus {
++		cpu@0 {
++			compatible = "arm,cortex-a9";
++		};
++	};
++
++	gic: interrupt-controller@fe438000 {
++		compatible = "arm,cortex-a9-gic";
++		#interrupt-cells = <3>;
++		interrupt-controller;
++		reg = <0xfe438000 0x1000>,
++		      <0xfe430000 0x100>;
++	};
++};
+diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
+index 84696c4..21e6519 100644
+--- a/arch/arm/mach-shmobile/Kconfig
++++ b/arch/arm/mach-shmobile/Kconfig
+@@ -108,6 +108,18 @@ config MACH_BOCKW
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	help
  
-+static void gpio_get_data_reg(struct sh_pfc *pfc, unsigned int gpio,
-+			      struct pinmux_data_reg **dr, unsigned int *bit)
++config MACH_BOCKW_REFERENCE
++	bool "BOCK-W platform - Reference Device Tree Implementation"
++	depends on ARCH_R8A7778
++	select ARCH_REQUIRE_GPIOLIB
++	select USE_OF
++	---help---
++	   Use reference implementation of Bock-W board support
++	   which makes use of device tree at the expense
++	   of not supporting a number of devices.
++
++	   This is intended to aid developers
++
+ config MACH_MARZEN
+ 	bool "MARZEN board"
+ 	depends on ARCH_R8A7779
+diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
+index 8f33255..9844be7 100644
+--- a/arch/arm/mach-shmobile/Makefile
++++ b/arch/arm/mach-shmobile/Makefile
+@@ -39,6 +39,7 @@ obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
+ obj-$(CONFIG_MACH_KOTA2)	+= board-kota2.o
+ obj-$(CONFIG_MACH_BONITO)	+= board-bonito.o
+ obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
++obj-$(CONFIG_MACH_BOCKW_REFERENCE)	+= board-bockw-reference.o
+ obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
+ obj-$(CONFIG_MACH_MARZEN_REFERENCE)	+= board-marzen-reference.o
+ obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
+diff --git a/arch/arm/mach-shmobile/board-bockw-reference.c b/arch/arm/mach-shmobile/board-bockw-reference.c
+new file mode 100644
+index 0000000..56d5120
+--- /dev/null
++++ b/arch/arm/mach-shmobile/board-bockw-reference.c
+@@ -0,0 +1,78 @@
++/*
++ * Bock-W board support
++ *
++ * Copyright (C) 2013  Renesas Solutions Corp.
++ * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ */
++
++#include <linux/kernel.h>
++#include <linux/irq.h>
++#include <linux/gpio.h>
++#include <linux/platform_device.h>
++#include <mach/common.h>
++#include <mach/r8a7778.h>
++#include <asm/mach/arch.h>
++#include <asm/mach/map.h>
++
++/* FPGA is mapped to 0xe0000000 */
++#define FPGA(x) (((x) & 0x0FFFFFFF) + 0xe0000000)
++
++static struct map_desc bockw_io_desc[] __initdata = {
++	/* FPGA / AREA0 from 0x18200000 */
++	{
++		.virtual	= FPGA(0x18200000),
++		.pfn		= __phys_to_pfn(0x18200000),
++		.length		= SZ_1M,
++		.type		= MT_DEVICE_NONSHARED
++	},
++};
++
++static void __init bockw_map_io(void)
 +{
-+	struct sh_pfc_pin *gpiop = sh_pfc_get_pin(pfc, gpio);
++	iotable_init(bockw_io_desc, ARRAY_SIZE(bockw_io_desc));
 +
-+	*dr = pfc->info->data_regs
-+	    + ((gpiop->flags & PINMUX_FLAG_DREG) >> PINMUX_FLAG_DREG_SHIFT);
-+	*bit = (gpiop->flags & PINMUX_FLAG_DBIT) >> PINMUX_FLAG_DBIT_SHIFT;
++	r8a7778_map_io();
 +}
 +
-+static void gpio_setup_data_reg(struct sh_pfc *pfc, unsigned gpio)
++#define IRQ0MR		IOMEM(FPGA(0x18200030))
++static void __init bockw_init(void)
 +{
-+	struct sh_pfc_pin *gpiop = &pfc->info->pins[gpio];
-+	struct pinmux_data_reg *data_reg;
-+	int k, n;
++	r8a7778_pinmux_init();
 +
-+	k = 0;
-+	while (1) {
-+		data_reg = pfc->info->data_regs + k;
++	/* SCIF 0 */
++	gpio_request(GPIO_FN_SCIF_CLK,	NULL);
++	gpio_request(GPIO_FN_TX0_A,	NULL);
++	gpio_request(GPIO_FN_RX0_A,	NULL);
++	gpio_request(GPIO_FN_RTS0_A,	NULL);
++	gpio_request(GPIO_FN_CTS0_A,	NULL);
 +
-+		if (!data_reg->reg_width)
-+			break;
-+
-+		data_reg->mapped_reg = sh_pfc_phys_to_virt(pfc, data_reg->reg);
-+
-+		for (n = 0; n < data_reg->reg_width; n++) {
-+			if (data_reg->enum_ids[n] = gpiop->enum_id) {
-+				gpiop->flags &= ~PINMUX_FLAG_DREG;
-+				gpiop->flags |= (k << PINMUX_FLAG_DREG_SHIFT);
-+				gpiop->flags &= ~PINMUX_FLAG_DBIT;
-+				gpiop->flags |= (n << PINMUX_FLAG_DBIT_SHIFT);
-+				return;
-+			}
-+		}
-+		k++;
-+	}
-+
-+	BUG();
++	r8a7778_add_standard_devices_dt();
 +}
 +
-+static void gpio_setup_data_regs(struct sh_pfc *pfc)
-+{
-+	struct pinmux_data_reg *drp;
-+	int k;
++static const char *bockw_boards_compat_dt[] __initdata = {
++	"renesas,bockw-reference",
++	NULL,
++};
 +
-+	for (k = 0; k < pfc->info->nr_pins; k++) {
-+		if (pfc->info->pins[k].enum_id = 0)
-+			continue;
-+
-+		gpio_setup_data_reg(pfc, k);
-+	}
-+
-+	k = 0;
-+	while (1) {
-+		drp = pfc->info->data_regs + k;
-+
-+		if (!drp->reg_width)
-+			break;
-+
-+		drp->reg_shadow = sh_pfc_read_raw_reg(drp->mapped_reg,
-+						      drp->reg_width);
-+		k++;
-+	}
-+}
-+
- /* -----------------------------------------------------------------------------
-  * Pin GPIOs
-  */
-@@ -59,10 +124,19 @@ static void gpio_pin_free(struct gpio_chip *gc, unsigned offset)
- static void gpio_pin_set_value(struct sh_pfc *pfc, unsigned offset, int value)
- {
- 	struct pinmux_data_reg *dr;
--	int bit;
-+	unsigned long pos;
-+	unsigned int bit;
- 
--	sh_pfc_get_data_reg(pfc, offset, &dr, &bit);
--	sh_pfc_write_bit(dr, bit, value);
-+	gpio_get_data_reg(pfc, offset, &dr, &bit);
-+
-+	pos = dr->reg_width - (bit + 1);
-+
-+	if (value)
-+		set_bit(pos, &dr->reg_shadow);
-+	else
-+		clear_bit(pos, &dr->reg_shadow);
-+
-+	sh_pfc_write_raw_reg(dr->mapped_reg, dr->reg_width, dr->reg_shadow);
- }
- 
- static int gpio_pin_direction_input(struct gpio_chip *gc, unsigned offset)
-@@ -82,10 +156,14 @@ static int gpio_pin_get(struct gpio_chip *gc, unsigned offset)
- {
- 	struct sh_pfc *pfc = gpio_to_pfc(gc);
- 	struct pinmux_data_reg *dr;
--	int bit;
-+	unsigned long pos;
-+	unsigned int bit;
- 
--	sh_pfc_get_data_reg(pfc, offset, &dr, &bit);
--	return sh_pfc_read_bit(dr, bit);
-+	gpio_get_data_reg(pfc, offset, &dr, &bit);
-+
-+	pos = dr->reg_width - (bit + 1);
-+
-+	return (sh_pfc_read_raw_reg(dr->mapped_reg, dr->reg_width) >> pos) & 1;
- }
- 
- static void gpio_pin_set(struct gpio_chip *gc, unsigned offset, int value)
-@@ -226,6 +304,8 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
- 	unsigned int i;
- 	int ret;
- 
-+	gpio_setup_data_regs(pfc);
-+
- 	/* Register the real GPIOs chip. */
- 	chip = sh_pfc_add_gpiochip(pfc, gpio_pin_setup);
- 	if (IS_ERR(chip))
++DT_MACHINE_START(BOCKW, "bockw")
++	.map_io		= bockw_map_io,
++	.init_early	= r8a7778_init_delay,
++	.nr_irqs	= NR_IRQS_LEGACY,
++	.init_irq	= r8a7778_init_irq_dt,
++	.init_machine	= bockw_init,
++	.init_time	= shmobile_timer_init,
++	.dt_compat	= bockw_boards_compat_dt,
++MACHINE_END
 -- 
-1.7.10.4
+1.7.9.5
 
