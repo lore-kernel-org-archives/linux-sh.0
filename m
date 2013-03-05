@@ -1,47 +1,23 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 07 Mar 2013 03:20:55 +0000
-Subject: Re: [PATCH v4 0/3] R-Car SATA platform data
-Message-Id: <20130307032055.GI9499@verge.net.au>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Tue, 05 Mar 2013 13:40:15 +0000
+Subject: Power management test code samples
+Message-Id: <CABYn4sypQ2VzigxmRwiqWnDim1zPiAcb_NrYbBxnRt0FMCq0vA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201302272332.51650.sergei.shtylyov@cogentembedded.com>
- <20130301072501.GE14376@verge.net.au>
- <5137D139.9010304@cogentembedded.com>
-In-Reply-To: <5137D139.9010304@cogentembedded.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Thu, Mar 07, 2013 at 02:28:57AM +0300, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 03/01/2013 10:25 AM, Simon Horman wrote:
-> 
-> >
-> >>Hello.
-> >>
-> >>    Here's the v4 of the set of now 3 patches (the driver itself has been merged
-> >>since) against the Simon Horman's renesas.git repo, 'next' branch:
-> >>
-> >>[1/3] ARM: mach-shmobile: r8a7779: SATA DT configuration
-> >>[2/3] ARM: mach-shmobile: r8a7779: add SATA support
-> >>[3/3] ARM: mach-shmobile: marzen: add SATA support
-> >>
-> >>Patch changes since the initial posting are reported in the individual patches.
-> >Thanks. I have refreshed the topic/r-car-sata branch of the renesas tree
-> >accordingly. That branch still contains a copy of the "Add Renesas R-Car
-> >on-chip 3Gbps SATA controller driver." but it should disappear once I rebase
-> >(e.g. on v3.9-rc1).
-> 
->    I see you have finally merged my patches to your 'next' branch, thanks.
-> However, you've also merged Morimoto-san's patch to change from gic_spi()
-> to gic_iid(), and I thought I'd recast patch 2/3 to make it use
-> gic_iid() too.
+Hello,
 
-Sorry for messing that up.
+hereby I ask officially if there is some test code available regarding
+the power management of the SoCs r8a7740 and sh73a0.
 
-> How do we do now, do I need to send a new patch to convert to gic_iid()?
+I'm interested in the exact handling of the different caches (L1, L2,
+TLB) and shutdown/wakeup procedures. Sample code would help a lot so I
+can compare what the v7_cpu_suspend code already does and what is
+needed in the SoC-specific code.
 
-Yes, I think it would be best if you sent an incremental patch.
+Thanks,
 
-Sorry once again for the mix-up.
+ Bastian
