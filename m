@@ -1,7 +1,7 @@
-From: Olof Johansson <olof@lixom.net>
-Date: Tue, 05 Mar 2013 02:22:00 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 05 Mar 2013 04:33:30 +0000
 Subject: Re: [PATCH v4 2/3] ARM: mach-shmobile: r8a7779: add SATA support
-Message-Id: <CAOesGMgJJ3KO79uywrDNd75JpeBSS24Bkee73cAZzrFgkfot1g@mail.gmail.com>
+Message-Id: <CANqRtoSRiY5KXyhfhuu55fSNJN-ocvUFWqEAeH5H2+Mna-SQ9w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201302272339.15402.sergei.shtylyov@cogentembedded.com>
  <20130301014148.GB9232@quad.lixom.net>
@@ -14,7 +14,7 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Mar 4, 2013 at 6:05 PM, Simon Horman <horms@verge.net.au> wrote:
+On Tue, Mar 5, 2013 at 11:05 AM, Simon Horman <horms@verge.net.au> wrote:
 > On Tue, Mar 05, 2013 at 10:28:09AM +0900, Magnus Damm wrote:
 >> Hi Simon
 >>
@@ -60,7 +60,9 @@ On Mon, Mar 4, 2013 at 6:05 PM, Simon Horman <horms@verge.net.au> wrote:
 > Sure, but in this case the DT bindings are set (by virtue of having been
 > merged) and it is my understanding that they offer the same features as
 > the platform device.
->
+
+And if we want to add an experimental feature, how do you suggest we proceed?
+
 > As it is a new device driver I lean towards Olof's suggestion.
 >
 >> You can of course do some mixed DT and platform device support on a
@@ -74,15 +76,21 @@ On Mon, Mar 4, 2013 at 6:05 PM, Simon Horman <horms@verge.net.au> wrote:
 > * The DT code would be exercised by people using the default board file.
 > * The platform device would not need to be added.
 
-Right, and just to clarify: The driver is still a platform driver. For
-non-trivial devices with per-device data, there will be a function in
-the platform driver to fill in the platform data from the device tree
-contents.
+Sure. It is however just a couple of lines of data. Also, this
+bypasses the idea of the -reference boards, but hey.
 
-So besides that one function, the rest of the driver can be shared
-between shmobile and arch/sh, there just won't be a platform_device
-registered on the ARM side.
+>> Of course Simon, if you prefer to follow your proposal above then go
+>> ahead. However, please consider the case when this code will be back
+>> ported to LTSI-3.4.
+>
+> With regards to backporting, the platform driver patch still exists
+> (e.g. on the ML) so it can be used for backporting as needed.
 
+And then there will be different code paths in the back port and in
+the upstream code.
 
+Well, well.
 
--Olof
+Thanks,
+
+/ magnus
