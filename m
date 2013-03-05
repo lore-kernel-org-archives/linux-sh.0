@@ -1,47 +1,42 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Tue, 05 Mar 2013 19:22:02 +0000
-Subject: Re: [PATCH v4 3/3] ARM: mach-shmobile: r8a7740: Setup the serial devices using DT
-Message-Id: <201303051922.02455.arnd@arndb.de>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 05 Mar 2013 05:07:10 +0000
+Subject: [PATCH v2] fbdev: sh_mobile_lcdc: fixup B side hsync adjust settings
+Message-Id: <87txoqmo3p.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1362414054-23092-1-git-send-email-hechtb+renesas@gmail.com>
- <2835497.S76YK1KMLM@wuerfel>
- <CABYn4sx=bC6JwicbVgRnmwdu=6DuW5GFgdG25a-Wow1Jn9M-bQ@mail.gmail.com>
-In-Reply-To: <CABYn4sx=bC6JwicbVgRnmwdu=6DuW5GFgdG25a-Wow1Jn9M-bQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-fbdev@vger.kernel.org
 
-On Tuesday 05 March 2013, Bastian Hecht wrote:
-> 2013/3/4 Arnd Bergmann <arnd@arndb.de>:
-> > On Monday 04 March 2013 17:20:54 Bastian Hecht wrote:
-> >>
-> >> +       sci@e6c40000 {
-> >> +               compatible = "renesas,sci-SCIFA-uart";
-> >> +               interrupt-parent = <&intca>;
-> >> +               reg = <0xe6c40000 0x100>;
-> >> +               interrupts = <0x0c00>, <0x0c00>, <0x0c00>, <0x0c00>;
-> >> +               cell-index = <0>;
-> >> +               renesas,scscr = <0x30>;
-> >> +               renesas,scbrr-algo-id = <4>;
-> >> +               renesas,autoconf;
-> >> +       };
-> >
-> > The default name for a uart is "serial", I would recommend sticking to
-> > that by convention. You may also want to add an "aliases" node
-> > somewhere, to define which port should get which logical device number
-> > on a given board.
-> 
-> Switched to "...-serial".
+The lcdc B side horizon output is shifted
+if sh_mobile_lcdc_pan() was called.
+This patch fixup this issue.
+It is tested on R8A7740 Armadillo800eva HDMI output.
+Special thanks to Fukushima-san, and Sano-san
 
-I actually meant the name, not the "compatible" value. For compatible, either
-version is fine with me. What I think you should change though is renaming
-"sci@e6c40000" to "serial@e6c40000".
+Reported-by: Osamu Fukushima <osamu.fukushima.wr@renesas.com>
+Signed-off-by: Hideyuki Sano <hideyuki.sano.dn@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+---
+v1 -> v2
 
-> About the aliases: Would I need to add that now, or can we postpone that?
-> 
+ - git log has tested SoC/board
 
-No hurry for that. It's just a feature that comes in very handy, but not
-all platforms implement it.
+ drivers/video/sh_mobile_lcdcfb.c |    1 +
+ 1 file changed, 1 insertion(+)
 
-	Arnd
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 63203ac..0264704 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -858,6 +858,7 @@ static void sh_mobile_lcdc_geometry(struct sh_mobile_lcdc_chan *ch)
+ 	tmp = ((mode->xres & 7) << 24) | ((display_h_total & 7) << 16)
+ 	    | ((mode->hsync_len & 7) << 8) | (hsync_pos & 7);
+ 	lcdc_write_chan(ch, LDHAJR, tmp);
++	lcdc_write_chan_mirror(ch, LDHAJR, tmp);
+ }
+ 
+ static void sh_mobile_lcdc_overlay_setup(struct sh_mobile_lcdc_overlay *ovl)
+-- 
+1.7.9.5
+
