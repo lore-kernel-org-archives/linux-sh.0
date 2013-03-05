@@ -1,47 +1,37 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 12:32:48 +0000
-Subject: [PATCH 38/43] ARM: shmobile: tidyup chip series definition order for r8a7740/r8a7779
-Message-Id: <1363609973-31086-39-git-send-email-horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Tue, 05 Mar 2013 04:44:39 +0000
+Subject: [PATCH] fbdev: sh_mobile_lcdc: fixup B side hsync adjust settings
+Message-Id: <87wqtmmp59.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-fbdev@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-move r8a7740_meram_workaround() to r8a7740 area
-from r8a7779 area
+The lcdc B side horizon output is shifted if sh_mobile_lcdc_pan() was called,
+since driver didn't care LDHAJR mirror.
+This patch fixup this issue
 
+Reported-by: Osamu Fukushima <osamu.fukushima.wr@renesas.com>
+Signed-off-by: Hideyuki Sano <hideyuki.sano.dn@renesas.com>
 Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/include/mach/common.h |    3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+ drivers/video/sh_mobile_lcdcfb.c |    1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index 1ca1ad9..86fcdf9 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -50,6 +50,7 @@ extern struct clk sh73a0_extal2_clk;
- extern struct clk sh73a0_extcki_clk;
- extern struct clk sh73a0_extalr_clk;
+diff --git a/drivers/video/sh_mobile_lcdcfb.c b/drivers/video/sh_mobile_lcdcfb.c
+index 63203ac..0264704 100644
+--- a/drivers/video/sh_mobile_lcdcfb.c
++++ b/drivers/video/sh_mobile_lcdcfb.c
+@@ -858,6 +858,7 @@ static void sh_mobile_lcdc_geometry(struct sh_mobile_lcdc_chan *ch)
+ 	tmp = ((mode->xres & 7) << 24) | ((display_h_total & 7) << 16)
+ 	    | ((mode->hsync_len & 7) << 8) | (hsync_pos & 7);
+ 	lcdc_write_chan(ch, LDHAJR, tmp);
++	lcdc_write_chan_mirror(ch, LDHAJR, tmp);
+ }
  
-+extern void r8a7740_meram_workaround(void);
- extern void r8a7740_init_irq(void);
- extern void r8a7740_map_io(void);
- extern void r8a7740_add_early_devices(void);
-@@ -69,8 +70,6 @@ extern void r8a7779_add_standard_devices_dt(void);
- extern void r8a7779_clock_init(void);
- extern void r8a7779_pinmux_init(void);
- extern void r8a7779_pm_init(void);
--extern void r8a7740_meram_workaround(void);
--
- extern void r8a7779_register_twd(void);
- 
- #ifdef CONFIG_SUSPEND
+ static void sh_mobile_lcdc_overlay_setup(struct sh_mobile_lcdc_overlay *ovl)
 -- 
-1.7.10.4
+1.7.9.5
 
