@@ -1,146 +1,61 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Tue, 05 Mar 2013 12:58:13 +0000
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Tue, 05 Mar 2013 19:26:25 +0000
 Subject: Re: [PATCH v4 1/3] serial: sh-sci: Add OF support
-Message-Id: <CABYn4sxYRbmEe27WKE-FbTZ3_SM+APaYqHJ1=Zrk8_a5czxZaQ@mail.gmail.com>
+Message-Id: <201303051926.25655.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1362414054-23092-1-git-send-email-hechtb+renesas@gmail.com>
  <5345836.ZO7uU35cQD@wuerfel>
-In-Reply-To: <5345836.ZO7uU35cQD@wuerfel>
+ <CABYn4sxYRbmEe27WKE-FbTZ3_SM+APaYqHJ1=Zrk8_a5czxZaQ@mail.gmail.com>
+In-Reply-To: <CABYn4sxYRbmEe27WKE-FbTZ3_SM+APaYqHJ1=Zrk8_a5czxZaQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Arnd,
+On Tuesday 05 March 2013, Bastian Hecht wrote:
+> 2013/3/4 Arnd Bergmann <arnd@arndb.de>:
+> > On Monday 04 March 2013 17:20:52 Bastian Hecht wrote:
+> >> +- reg : Address and length of the register set for the device
+> >> +- interrupts : Should contain the following IRQs: ERI, RXI, TXI and BRI.
+> >
+> > You probably want to require the "interrupt-names" property as well
+> > then.
+> 
+> I added the interrupt-names property but still enforce the ordering in
+> the binding specs.
 
-thanks for having a look at it.
+Yes, that is the correct approach.
 
-2013/3/4 Arnd Bergmann <arnd@arndb.de>:
-> On Monday 04 March 2013 17:20:52 Bastian Hecht wrote:
->> diff --git a/Documentation/devicetree/bindings/tty/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/tty/serial/renesas,sci-serial.txt
->> new file mode 100644
->> index 0000000..6ad1adf
->> --- /dev/null
->> +++ b/Documentation/devicetree/bindings/tty/serial/renesas,sci-serial.txt
->> @@ -0,0 +1,53 @@
->> +* Renesas SH-Mobile Serial Communication Interface
->> +
->> +Required properties:
->> +- compatible : Should be "renesas,sci-<port type>-uart", where <port type> may be
->> +  SCI, SCIF, IRDA, SCIFA or SCIFB.
->
-> Why capital letters here? Maybe just list
->
->         "renesas,sci-uart", "renesas,scif-uart", ...
+> Don't know if we want the extra overhead to scan for strings or just
+> take a certain order for granted.
+> If we want to change it to parsing, it would be better to switch
+> completely to platform_get_irq_byname() and change all the current
+> platform code, else we will produce code overhead.
 
-Yes - changed.
+Right, there is no need to change the code for that, but I think it
+makes sense to do the binding the way you describe, in case someone
+later wants to move to platform_get_irq_byname. A lot of people prefer
+that for some reason, although I think the traditional numbering is
+just as good.
 
->> +- reg : Address and length of the register set for the device
->> +- interrupts : Should contain the following IRQs: ERI, RXI, TXI and BRI.
->
-> You probably want to require the "interrupt-names" property as well
-> then.
+> >> +- renesas,scbrr-algo-id : Algorithm ID for the Bit Rate Register
+> >> +  1 = SCBRR_ALGO_1 ((clk + 16 * bps) / (16 * bps) - 1)
+> >> +  2 = SCBRR_ALGO_2 ((clk + 16 * bps) / (32 * bps) - 1)
+> >> +  3 = SCBRR_ALGO_3 (((clk * 2) + 16 * bps) / (16 * bps) - 1)
+> >> +  4 = SCBRR_ALGO_4 (((clk * 2) + 16 * bps) / (32 * bps) - 1)
+> >> +  5 = SCBRR_ALGO_5 (((clk * 1000 / 32) / bps) - 1)
+> >
+> > Maybe replace this with a "clock-frequency" property? This may
+> > be what the registers contain, but it is not very readable.
+> 
+> Hmm... do you want a frequency in absolute terms? And then calculate
+> the best SCBRR value for it?
+> I'm unsure about this, either you must exactly hit it or accept
+> tolerances? As something in between I renamed the property to
+> "renesas,clock-algorithm", but I don't know if this is what you want.
 
-I added the interrupt-names property but still enforce the ordering in
-the binding specs.
-Don't know if we want the extra overhead to scan for strings or just
-take a certain order for granted.
-If we want to change it to parsing, it would be better to switch
-completely to platform_get_irq_byname() and change all the current
-platform code, else we will produce code overhead.
+I meant the absolute frequency in HZ, since that is what we do
+for the 8250 uart and other devices, but only if that is sufficient
+for your device.
 
->> +- cell-index : The device id.
->> +- renesas,scscr : Should contain a bitfield used by the Serial Control Register.
->> +  b7 = SCSCR_TIE
->> +  b6 = SCSCR_RIE
->> +  b5 = SCSCR_TE
->> +  b4 = SCSCR_RE
->> +  b3 = SCSCR_REIE
->> +  b2 = SCSCR_TOIE
->> +  b1 = SCSCR_CKE1
->> +  b0 = SCSCR_CKE0
->> +- renesas,scbrr-algo-id : Algorithm ID for the Bit Rate Register
->> +  1 = SCBRR_ALGO_1 ((clk + 16 * bps) / (16 * bps) - 1)
->> +  2 = SCBRR_ALGO_2 ((clk + 16 * bps) / (32 * bps) - 1)
->> +  3 = SCBRR_ALGO_3 (((clk * 2) + 16 * bps) / (16 * bps) - 1)
->> +  4 = SCBRR_ALGO_4 (((clk * 2) + 16 * bps) / (32 * bps) - 1)
->> +  5 = SCBRR_ALGO_5 (((clk * 1000 / 32) / bps) - 1)
->
-> Maybe replace this with a "clock-frequency" property? This may
-> be what the registers contain, but it is not very readable.
-
-Hmm... do you want a frequency in absolute terms? And then calculate
-the best SCBRR value for it?
-I'm unsure about this, either you must exactly hit it or accept
-tolerances? As something in between I renamed the property to
-"renesas,clock-algorithm", but I don't know if this is what you want.
-
->> +Optional properties:
->> +- renesas,autoconf : Set if device is capable of auto configuration
->> +- renesas,regtype : Overwrite the register layout. In most cases you can rely
->> +  on auto-probing (omit this property or set to 0) but some legacy devices
->> +  use a non-default register layout. Possible layouts are
->> +  0 = SCIx_PROBE_REGTYPE (default)
->> +  1 = SCIx_SCI_REGTYPE
->> +  2 = SCIx_IRDA_REGTYPE
->> +  3 = SCIx_SCIFA_REGTYPE
->> +  4 = SCIx_SCIFB_REGTYPE
->> +  5 = SCIx_SH2_SCIF_FIFODATA_REGTYPE
->> +  6 = SCIx_SH3_SCIF_REGTYPE
->> +  7 = SCIx_SH4_SCIF_REGTYPE
->> +  8 = SCIx_SH4_SCIF_NO_SCSPTR_REGTYPE
->> +  9 = SCIx_SH4_SCIF_FIFODATA_REGTYPE
->> + 10 = SCIx_SH7705_SCIF_REGTYPE
->
-> Why do you keep these separate from the "compatible" property?
-> By definition, the register layout is already determined by
-> "compatible".
-
-Ok, I've melted the register type and port type (defined in
-include/uapi/linux/serial_core.h) definition into the compatible
-property. Looks good!
-
->> +#ifdef CONFIG_OF
->> +static const struct of_device_id of_sci_match[] = {
->> +     { .compatible = "renesas,sci-SCI-uart",
->> +             .data = (void *)PORT_SCI },
->> +     { .compatible = "renesas,sci-SCIF-uart",
->> +             .data = (void *)PORT_SCIF },
->> +     { .compatible = "renesas,sci-IRDA-uart",
->> +             .data = (void *)PORT_IRDA },
->> +     { .compatible = "renesas,sci-SCIFA-uart",
->> +             .data = (void *)PORT_SCIFA },
->> +     { .compatible = "renesas,sci-SCIFB-uart",
->> +             .data = (void *)PORT_SCIFB },
->> +     {},
->> +};
->> +MODULE_DEVICE_TABLE(of, of_sci_match);
->> +
->> +static struct plat_sci_port *sci_parse_dt(struct platform_device *pdev,
->> +                                                             int *dev_id)
->> +{
->> +     struct plat_sci_port *p;
->> +     struct device_node *np = pdev->dev.of_node;
->> +     const struct of_device_id *match;
->> +     struct resource *res;
->> +     const __be32 *prop;
->> +     int i, irq, val;
->> +
->
-> You can remove the #ifdef by replacing it with
->
->         if (!IS_ENABLED(CONFIG_OF) || !np)
->                 return NULL;
->
-> here. This gives better compile time coverage and more readable code.
-
-Alright, done!
-
-> Otherwise looks very nice!
-
-Cheers!
-
- Bastian
-
-
->         Arnd
+	Arnd
