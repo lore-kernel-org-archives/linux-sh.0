@@ -1,335 +1,223 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:06:05 +0000
-Subject: [PATCH 069/142] sh-pfc: r8a7779: Add SDHI and MMCIF pin groups and functions
-Message-Id: <1363604838-29359-70-git-send-email-horms+renesas@verge.net.au>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Wed, 06 Mar 2013 11:36:46 +0000
+Subject: [PATCH] serial: sh-sci: OF support finishing
+Message-Id: <1362569806-11431-1-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This is the diff between v3 and v6 of the "serial: sh-sci: Add OF
+support" patch. Among other minor changes this includes
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+- Reworked compatible property
+- Added interrupt-names property
+
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c |  284 ++++++++++++++++++++++++++++++++++
- 1 file changed, 284 insertions(+)
+This is based on git://github.com/pmundt/linux-sh.git branch sh/serial-of.
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-index 9046a8f..ca16b04 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-@@ -1575,6 +1575,210 @@ static const unsigned int du1_cde_pins[] = {
- static const unsigned int du1_cde_mux[] = {
- 	DU1_CDE_MARK
- };
-+/* - MMCIF ------------------------------------------------------------------ */
-+static const unsigned int mmc0_data1_pins[] = {
-+	/* D[0] */
-+	19,
-+};
-+static const unsigned int mmc0_data1_mux[] = {
-+	MMC0_D0_MARK,
-+};
-+static const unsigned int mmc0_data4_pins[] = {
-+	/* D[0:3] */
-+	19, 20, 21, 2,
-+};
-+static const unsigned int mmc0_data4_mux[] = {
-+	MMC0_D0_MARK, MMC0_D1_MARK, MMC0_D2_MARK, MMC0_D3_MARK,
-+};
-+static const unsigned int mmc0_data8_pins[] = {
-+	/* D[0:7] */
-+	19, 20, 21, 2, 10, 11, 15, 16,
-+};
-+static const unsigned int mmc0_data8_mux[] = {
-+	MMC0_D0_MARK, MMC0_D1_MARK, MMC0_D2_MARK, MMC0_D3_MARK,
-+	MMC0_D4_MARK, MMC0_D5_MARK, MMC0_D6_MARK, MMC0_D7_MARK,
-+};
-+static const unsigned int mmc0_ctrl_pins[] = {
-+	/* CMD, CLK */
-+	18, 17,
-+};
-+static const unsigned int mmc0_ctrl_mux[] = {
-+	MMC0_CMD_MARK, MMC0_CLK_MARK,
-+};
-+
-+static const unsigned int mmc1_data1_pins[] = {
-+	/* D[0] */
-+	72,
-+};
-+static const unsigned int mmc1_data1_mux[] = {
-+	MMC1_D0_MARK,
-+};
-+static const unsigned int mmc1_data4_pins[] = {
-+	/* D[0:3] */
-+	72, 73, 74, 75,
-+};
-+static const unsigned int mmc1_data4_mux[] = {
-+	MMC1_D0_MARK, MMC1_D1_MARK, MMC1_D2_MARK, MMC1_D3_MARK,
-+};
-+static const unsigned int mmc1_data8_pins[] = {
-+	/* D[0:7] */
-+	72, 73, 74, 75, 76, 77, 80, 81,
-+};
-+static const unsigned int mmc1_data8_mux[] = {
-+	MMC1_D0_MARK, MMC1_D1_MARK, MMC1_D2_MARK, MMC1_D3_MARK,
-+	MMC1_D4_MARK, MMC1_D5_MARK, MMC1_D6_MARK, MMC1_D7_MARK,
-+};
-+static const unsigned int mmc1_ctrl_pins[] = {
-+	/* CMD, CLK */
-+	68, 65,
-+};
-+static const unsigned int mmc1_ctrl_mux[] = {
-+	MMC1_CMD_MARK, MMC1_CLK_MARK,
-+};
-+/* - SDHI0 ------------------------------------------------------------------ */
-+static const unsigned int sdhi0_data1_pins[] = {
-+	/* D0 */
-+	117,
-+};
-+static const unsigned int sdhi0_data1_mux[] = {
-+	SD0_DAT0_MARK,
-+};
-+static const unsigned int sdhi0_data4_pins[] = {
-+	/* D[0:3] */
-+	117, 118, 119, 120,
-+};
-+static const unsigned int sdhi0_data4_mux[] = {
-+	SD0_DAT0_MARK, SD0_DAT1_MARK, SD0_DAT2_MARK, SD0_DAT3_MARK,
-+};
-+static const unsigned int sdhi0_ctrl_pins[] = {
-+	/* CMD, CLK */
-+	114, 113,
-+};
-+static const unsigned int sdhi0_ctrl_mux[] = {
-+	SD0_CMD_MARK, SD0_CLK_MARK,
-+};
-+static const unsigned int sdhi0_cd_pins[] = {
-+	/* CD */
-+	115,
-+};
-+static const unsigned int sdhi0_cd_mux[] = {
-+	SD0_CD_MARK,
-+};
-+static const unsigned int sdhi0_wp_pins[] = {
-+	/* WP */
-+	116,
-+};
-+static const unsigned int sdhi0_wp_mux[] = {
-+	SD0_WP_MARK,
-+};
-+/* - SDHI1 ------------------------------------------------------------------ */
-+static const unsigned int sdhi1_data1_pins[] = {
-+	/* D0 */
-+	19,
-+};
-+static const unsigned int sdhi1_data1_mux[] = {
-+	SD1_DAT0_MARK,
-+};
-+static const unsigned int sdhi1_data4_pins[] = {
-+	/* D[0:3] */
-+	19, 20, 21, 2,
-+};
-+static const unsigned int sdhi1_data4_mux[] = {
-+	SD1_DAT0_MARK, SD1_DAT1_MARK, SD1_DAT2_MARK, SD1_DAT3_MARK,
-+};
-+static const unsigned int sdhi1_ctrl_pins[] = {
-+	/* CMD, CLK */
-+	18, 17,
-+};
-+static const unsigned int sdhi1_ctrl_mux[] = {
-+	SD1_CMD_MARK, SD1_CLK_MARK,
-+};
-+static const unsigned int sdhi1_cd_pins[] = {
-+	/* CD */
-+	10,
-+};
-+static const unsigned int sdhi1_cd_mux[] = {
-+	SD1_CD_MARK,
-+};
-+static const unsigned int sdhi1_wp_pins[] = {
-+	/* WP */
-+	11,
-+};
-+static const unsigned int sdhi1_wp_mux[] = {
-+	SD1_WP_MARK,
-+};
-+/* - SDHI2 ------------------------------------------------------------------ */
-+static const unsigned int sdhi2_data1_pins[] = {
-+	/* D0 */
-+	97,
-+};
-+static const unsigned int sdhi2_data1_mux[] = {
-+	SD2_DAT0_MARK,
-+};
-+static const unsigned int sdhi2_data4_pins[] = {
-+	/* D[0:3] */
-+	97, 98, 99, 100,
-+};
-+static const unsigned int sdhi2_data4_mux[] = {
-+	SD2_DAT0_MARK, SD2_DAT1_MARK, SD2_DAT2_MARK, SD2_DAT3_MARK,
-+};
-+static const unsigned int sdhi2_ctrl_pins[] = {
-+	/* CMD, CLK */
-+	102, 101,
-+};
-+static const unsigned int sdhi2_ctrl_mux[] = {
-+	SD2_CMD_MARK, SD2_CLK_MARK,
-+};
-+static const unsigned int sdhi2_cd_pins[] = {
-+	/* CD */
-+	103,
-+};
-+static const unsigned int sdhi2_cd_mux[] = {
-+	SD2_CD_MARK,
-+};
-+static const unsigned int sdhi2_wp_pins[] = {
-+	/* WP */
-+	104,
-+};
-+static const unsigned int sdhi2_wp_mux[] = {
-+	SD2_WP_MARK,
-+};
-+/* - SDHI3 ------------------------------------------------------------------ */
-+static const unsigned int sdhi3_data1_pins[] = {
-+	/* D0 */
-+	50,
-+};
-+static const unsigned int sdhi3_data1_mux[] = {
-+	SD3_DAT0_MARK,
-+};
-+static const unsigned int sdhi3_data4_pins[] = {
-+	/* D[0:3] */
-+	50, 51, 52, 53,
-+};
-+static const unsigned int sdhi3_data4_mux[] = {
-+	SD3_DAT0_MARK, SD3_DAT1_MARK, SD3_DAT2_MARK, SD3_DAT3_MARK,
-+};
-+static const unsigned int sdhi3_ctrl_pins[] = {
-+	/* CMD, CLK */
-+	35, 34,
-+};
-+static const unsigned int sdhi3_ctrl_mux[] = {
-+	SD3_CMD_MARK, SD3_CLK_MARK,
-+};
-+static const unsigned int sdhi3_cd_pins[] = {
-+	/* CD */
-+	62,
-+};
-+static const unsigned int sdhi3_cd_mux[] = {
-+	SD3_CD_MARK,
-+};
-+static const unsigned int sdhi3_wp_pins[] = {
-+	/* WP */
-+	64,
-+};
-+static const unsigned int sdhi3_wp_mux[] = {
-+	SD3_WP_MARK,
-+};
+ .../bindings/tty/serial/renesas,sci-serial.txt     |   40 ++++------
+ drivers/tty/serial/sh-sci.c                        |   81 ++++++++++++--------
+ 2 files changed, 67 insertions(+), 54 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/tty/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/tty/serial/renesas,sci-serial.txt
+index 6ad1adf..d80039e 100644
+--- a/Documentation/devicetree/bindings/tty/serial/renesas,sci-serial.txt
++++ b/Documentation/devicetree/bindings/tty/serial/renesas,sci-serial.txt
+@@ -1,10 +1,18 @@
+ * Renesas SH-Mobile Serial Communication Interface
  
- static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(du0_rgb666),
-@@ -1592,6 +1796,34 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(du1_sync_1),
- 	SH_PFC_PIN_GROUP(du1_oddf),
- 	SH_PFC_PIN_GROUP(du1_cde),
-+	SH_PFC_PIN_GROUP(mmc0_data1),
-+	SH_PFC_PIN_GROUP(mmc0_data4),
-+	SH_PFC_PIN_GROUP(mmc0_data8),
-+	SH_PFC_PIN_GROUP(mmc0_ctrl),
-+	SH_PFC_PIN_GROUP(mmc1_data1),
-+	SH_PFC_PIN_GROUP(mmc1_data4),
-+	SH_PFC_PIN_GROUP(mmc1_data8),
-+	SH_PFC_PIN_GROUP(mmc1_ctrl),
-+	SH_PFC_PIN_GROUP(sdhi0_data1),
-+	SH_PFC_PIN_GROUP(sdhi0_data4),
-+	SH_PFC_PIN_GROUP(sdhi0_ctrl),
-+	SH_PFC_PIN_GROUP(sdhi0_cd),
-+	SH_PFC_PIN_GROUP(sdhi0_wp),
-+	SH_PFC_PIN_GROUP(sdhi1_data1),
-+	SH_PFC_PIN_GROUP(sdhi1_data4),
-+	SH_PFC_PIN_GROUP(sdhi1_ctrl),
-+	SH_PFC_PIN_GROUP(sdhi1_cd),
-+	SH_PFC_PIN_GROUP(sdhi1_wp),
-+	SH_PFC_PIN_GROUP(sdhi2_data1),
-+	SH_PFC_PIN_GROUP(sdhi2_data4),
-+	SH_PFC_PIN_GROUP(sdhi2_ctrl),
-+	SH_PFC_PIN_GROUP(sdhi2_cd),
-+	SH_PFC_PIN_GROUP(sdhi2_wp),
-+	SH_PFC_PIN_GROUP(sdhi3_data1),
-+	SH_PFC_PIN_GROUP(sdhi3_data4),
-+	SH_PFC_PIN_GROUP(sdhi3_ctrl),
-+	SH_PFC_PIN_GROUP(sdhi3_cd),
-+	SH_PFC_PIN_GROUP(sdhi3_wp),
- };
+ Required properties:
+-- compatible : Should be "renesas,sci-<port type>-uart", where <port type> may be
+-  SCI, SCIF, IRDA, SCIFA or SCIFB.
++- compatible : Should be "renesas,sci-<port type>-uart", where <port type> is
++  "sci", "scif", "irda", "scifa", "scifb"
++  or for legacy devices
++  "sh2_scif_fifodata", "sh3_scif", "sh4_scif", "sh4_scif_no_scsptr",
++  "sh4_scif_fifodata", "sh7705_scif".
+ - reg : Address and length of the register set for the device
+-- interrupts : Should contain the following IRQs: ERI, RXI, TXI and BRI.
++- interrupts : Should contain the following IRQs in this order:
++	ERI: receive-error interrupt
++	RXI: receive-FIFO-data-full interrupt
++	TXI: transmit-FIFO-data-empty interrupt
++	BRI: break reception interrupt
++- interrupt-names: The IRQ names "eri", "rxi", "txi" and "bri".
+ - cell-index : The device id.
+ - renesas,scscr : Should contain a bitfield used by the Serial Control Register.
+   b7 = SCSCR_TIE
+@@ -15,7 +23,7 @@ Required properties:
+   b2 = SCSCR_TOIE
+   b1 = SCSCR_CKE1
+   b0 = SCSCR_CKE0
+-- renesas,scbrr-algo-id : Algorithm ID for the Bit Rate Register
++- renesas,scbrr-algorithm : Choose an algorithm ID for the baud rate generator.
+   1 = SCBRR_ALGO_1 ((clk + 16 * bps) / (16 * bps) - 1)
+   2 = SCBRR_ALGO_2 ((clk + 16 * bps) / (32 * bps) - 1)
+   3 = SCBRR_ALGO_3 (((clk * 2) + 16 * bps) / (16 * bps) - 1)
+@@ -23,31 +31,17 @@ Required properties:
+   5 = SCBRR_ALGO_5 (((clk * 1000 / 32) / bps) - 1)
  
- static const char * const du0_groups[] = {
-@@ -1615,9 +1847,61 @@ static const char * const du1_groups[] = {
- 	"du1_cde",
- };
+ Optional properties:
+-- renesas,autoconf : Set if device is capable of auto configuration
+-- renesas,regtype : Overwrite the register layout. In most cases you can rely
+-  on auto-probing (omit this property or set to 0) but some legacy devices
+-  use a non-default register layout. Possible layouts are
+-  0 = SCIx_PROBE_REGTYPE (default)
+-  1 = SCIx_SCI_REGTYPE
+-  2 = SCIx_IRDA_REGTYPE
+-  3 = SCIx_SCIFA_REGTYPE
+-  4 = SCIx_SCIFB_REGTYPE
+-  5 = SCIx_SH2_SCIF_FIFODATA_REGTYPE
+-  6 = SCIx_SH3_SCIF_REGTYPE
+-  7 = SCIx_SH4_SCIF_REGTYPE
+-  8 = SCIx_SH4_SCIF_NO_SCSPTR_REGTYPE
+-  9 = SCIx_SH4_SCIF_FIFODATA_REGTYPE
+- 10 = SCIx_SH7705_SCIF_REGTYPE
+-
++- renesas,autoconf : Set if device is capable of auto configuration.
  
-+static const char * const mmc0_groups[] = {
-+	"mmc0_data1",
-+	"mmc0_data4",
-+	"mmc0_data8",
-+	"mmc0_ctrl",
-+};
-+
-+static const char * const mmc1_groups[] = {
-+	"mmc1_data1",
-+	"mmc1_data4",
-+	"mmc1_data8",
-+	"mmc1_ctrl",
-+};
-+
-+static const char * const sdhi0_groups[] = {
-+	"sdhi0_data1",
-+	"sdhi0_data4",
-+	"sdhi0_ctrl",
-+	"sdhi0_cd",
-+	"sdhi0_wp",
-+};
-+
-+static const char * const sdhi1_groups[] = {
-+	"sdhi1_data1",
-+	"sdhi1_data4",
-+	"sdhi1_ctrl",
-+	"sdhi1_cd",
-+	"sdhi1_wp",
-+};
-+
-+static const char * const sdhi2_groups[] = {
-+	"sdhi2_data1",
-+	"sdhi2_data4",
-+	"sdhi2_ctrl",
-+	"sdhi2_cd",
-+	"sdhi2_wp",
-+};
-+
-+static const char * const sdhi3_groups[] = {
-+	"sdhi3_data1",
-+	"sdhi3_data4",
-+	"sdhi3_ctrl",
-+	"sdhi3_cd",
-+	"sdhi3_wp",
-+};
-+
- static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(du0),
- 	SH_PFC_FUNCTION(du1),
-+	SH_PFC_FUNCTION(mmc0),
-+	SH_PFC_FUNCTION(mmc1),
-+	SH_PFC_FUNCTION(sdhi0),
-+	SH_PFC_FUNCTION(sdhi1),
-+	SH_PFC_FUNCTION(sdhi2),
-+	SH_PFC_FUNCTION(sdhi3),
- };
+ Example:
+-	sci@0xe6c50000 {
+-		compatible = "renesas,sci-SCIFA-uart";
++	serial@e6c50000 {
++		compatible = "renesas,sci-scifa-uart";
+ 		interrupt-parent = <&intca>;
+ 		reg = <0xe6c50000 0x100>;
+ 		interrupts = <0x0c20>, <0x0c20>, <0x0c20>, <0x0c20>;
++		interrupt-names = "eri", "rxi", "txi", "bri";
+ 		cell-index = <1>;
+ 		renesas,scscr = <0x30>;
+-		renesas,scbrr-algo-id = <4>;
++		renesas,scbrr-algorithm = <4>;
+ 		renesas,autoconf;
+ 	};
+diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
+index e3847cc..f1343d2 100644
+--- a/drivers/tty/serial/sh-sci.c
++++ b/drivers/tty/serial/sh-sci.c
+@@ -2352,18 +2352,29 @@ static int sci_remove(struct platform_device *dev)
+ 	return 0;
+ }
  
- #define PINMUX_FN_BASE	ARRAY_SIZE(pinmux_pins)
+-#ifdef CONFIG_OF
+ static const struct of_device_id of_sci_match[] = {
+-	{ .compatible = "renesas,sci-SCI-uart",
+-		.data = (void *)PORT_SCI },
+-	{ .compatible = "renesas,sci-SCIF-uart",
+-		.data = (void *)PORT_SCIF },
+-	{ .compatible = "renesas,sci-IRDA-uart",
+-		.data = (void *)PORT_IRDA },
+-	{ .compatible = "renesas,sci-SCIFA-uart",
+-		.data = (void *)PORT_SCIFA },
+-	{ .compatible = "renesas,sci-SCIFB-uart",
+-		.data = (void *)PORT_SCIFB },
++	{ .compatible = "renesas,sci-sci-uart",
++		.data = (void *)SCIx_SCI_REGTYPE },
++	{ .compatible = "renesas,sci-scif-uart",
++		.data = (void *)SCIx_SH4_SCIF_REGTYPE, },
++	{ .compatible = "renesas,sci-irda-uart",
++		.data = (void *)SCIx_IRDA_REGTYPE },
++	{ .compatible = "renesas,sci-scifa-uart",
++		.data = (void *)SCIx_SCIFA_REGTYPE },
++	{ .compatible = "renesas,sci-scifb-uart",
++		.data = (void *)SCIx_SCIFB_REGTYPE },
++	{ .compatible = "renesas,sci-sh2_scif_fifodata-uart",
++		.data = (void *)SCIx_SH2_SCIF_FIFODATA_REGTYPE },
++	{ .compatible = "renesas,sci-sh3_scif-uart",
++		.data = (void *)SCIx_SH3_SCIF_REGTYPE },
++	{ .compatible = "renesas,sci-sh4_scif-uart",
++		.data = (void *)SCIx_SH4_SCIF_REGTYPE },
++	{ .compatible = "renesas,sci-sh4_scif_no_scsptr-uart",
++		.data = (void *)SCIx_SH4_SCIF_NO_SCSPTR_REGTYPE },
++	{ .compatible = "renesas,sci-sh4_scif_fifodata-uart",
++		.data = (void *)SCIx_SH4_SCIF_FIFODATA_REGTYPE },
++	{ .compatible = "renesas,sci-sh7705_scif-uart",
++		.data = (void *)SCIx_SH7705_SCIF_REGTYPE },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, of_sci_match);
+@@ -2378,6 +2389,9 @@ static struct plat_sci_port *sci_parse_dt(struct platform_device *pdev,
+ 	const __be32 *prop;
+ 	int i, irq, val;
+ 
++	if (!IS_ENABLED(CONFIG_OF) || !np)
++		return NULL;
++
+ 	match = of_match_node(of_sci_match, pdev->dev.of_node);
+ 	if (!match || !match->data) {
+ 		dev_err(&pdev->dev, "OF match error\n");
+@@ -2420,14 +2434,14 @@ static struct plat_sci_port *sci_parse_dt(struct platform_device *pdev,
+ 	}
+ 	p->scscr = be32_to_cpup(prop);
+ 
+-	prop = of_get_property(np, "renesas,scbrr-algo-id", NULL);
++	prop = of_get_property(np, "renesas,scbrr-algorithm", NULL);
+ 	if (!prop) {
+-		dev_err(&pdev->dev, "required DT prop scbrr-algo-id missing\n");
++		dev_err(&pdev->dev, "required DT prop scbrr-algorithm missing\n");
+ 		return NULL;
+ 	}
+ 	val = be32_to_cpup(prop);
+ 	if (val <= SCBRR_ALGO_INVALID || val >= SCBRR_NR_ALGOS) {
+-		dev_err(&pdev->dev, "DT prop scbrr-algo-id out of range\n");
++		dev_err(&pdev->dev, "DT prop clock-algorithm out of range\n");
+ 		return NULL;
+ 	}
+ 	p->scbrr_algo_id = val;
+@@ -2436,27 +2450,32 @@ static struct plat_sci_port *sci_parse_dt(struct platform_device *pdev,
+ 	if (of_get_property(np, "renesas,autoconf", NULL))
+ 		p->flags |= UPF_BOOT_AUTOCONF;
+ 
+-	prop = of_get_property(np, "renesas,regtype", NULL);
+-	if (prop) {
+-		val = be32_to_cpup(prop);
+-		if (val < SCIx_PROBE_REGTYPE || val >= SCIx_NR_REGTYPES) {
+-			dev_err(&pdev->dev, "DT prop regtype out of range\n");
+-			return NULL;
+-		}
+-		p->regtype = val;
+-	}
++	p->regtype = (unsigned int)match->data;
+ 
+-	p->type = (unsigned int)match->data;
++	switch (p->regtype) {
++	case SCIx_SCI_REGTYPE:
++		p->type = PORT_SCI;
++		break;
++	case SCIx_SH4_SCIF_REGTYPE:
++		p->type = PORT_SCIF;
++		break;
++	case SCIx_IRDA_REGTYPE:
++		p->type = PORT_IRDA;
++		break;
++	case SCIx_SCIFA_REGTYPE:
++		p->type = PORT_SCIFA;
++		break;
++	case SCIx_SCIFB_REGTYPE:
++		p->type = PORT_SCIFB;
++		break;
++	default:
++		/* legacy register sets default to PORT_SCIF */
++		p->type = PORT_SCIF;
++		break;
++	}
+ 
+ 	return p;
+ }
+-#else
+-static struct plat_sci_port *sci_parse_dt(struct platform_device *pdev,
+-								int *dev_id)
+-{
+-	return NULL;
+-}
+-#endif /* CONFIG_OF */
+ 
+ static int sci_probe_single(struct platform_device *dev,
+ 				      unsigned int index,
 -- 
-1.7.10.4
+1.7.9.5
 
