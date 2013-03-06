@@ -1,28 +1,41 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 01 Mar 2013 07:25:01 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 06 Mar 2013 22:28:09 +0000
 Subject: Re: [PATCH v4 0/3] R-Car SATA platform data
-Message-Id: <20130301072501.GE14376@verge.net.au>
+Message-Id: <5137D139.9010304@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <201302272332.51650.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201302272332.51650.sergei.shtylyov@cogentembedded.com>
+ <20130301072501.GE14376@verge.net.au>
+In-Reply-To: <20130301072501.GE14376@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Feb 27, 2013 at 11:32:51PM +0300, Sergei Shtylyov wrote:
-> Hello.
-> 
->    Here's the v4 of the set of now 3 patches (the driver itself has been merged
-> since) against the Simon Horman's renesas.git repo, 'next' branch:
-> 
-> [1/3] ARM: mach-shmobile: r8a7779: SATA DT configuration
-> [2/3] ARM: mach-shmobile: r8a7779: add SATA support
-> [3/3] ARM: mach-shmobile: marzen: add SATA support
-> 
-> Patch changes since the initial posting are reported in the individual patches.
+Hello.
 
-Thanks. I have refreshed the topic/r-car-sata branch of the renesas tree
-accordingly. That branch still contains a copy of the "Add Renesas R-Car
-on-chip 3Gbps SATA controller driver." but it should disappear once I rebase
-(e.g. on v3.9-rc1).
+On 03/01/2013 10:25 AM, Simon Horman wrote:
+
+>
+>> Hello.
+>>
+>>     Here's the v4 of the set of now 3 patches (the driver itself has been merged
+>> since) against the Simon Horman's renesas.git repo, 'next' branch:
+>>
+>> [1/3] ARM: mach-shmobile: r8a7779: SATA DT configuration
+>> [2/3] ARM: mach-shmobile: r8a7779: add SATA support
+>> [3/3] ARM: mach-shmobile: marzen: add SATA support
+>>
+>> Patch changes since the initial posting are reported in the individual patches.
+> Thanks. I have refreshed the topic/r-car-sata branch of the renesas tree
+> accordingly. That branch still contains a copy of the "Add Renesas R-Car
+> on-chip 3Gbps SATA controller driver." but it should disappear once I rebase
+> (e.g. on v3.9-rc1).
+
+    I see you have finally merged my patches to your 'next' branch, thanks.
+However, you've also merged Morimoto-san's patch to change from gic_spi()
+to gic_iid(), and I thought I'd recast patch 2/3 to make it use 
+gic_iid() too.
+How do we do now, do I need to send a new patch to convert to gic_iid()?
+
+WBR, Sergei
+
