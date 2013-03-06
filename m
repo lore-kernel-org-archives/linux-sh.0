@@ -1,124 +1,52 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 19 Mar 2013 09:22:00 +0000
-Subject: [PATCH v2] ARM: shmobile: ape6evm: add defconfig
-Message-Id: <1363684920-2370-1-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 06 Mar 2013 12:52:23 +0000
+Subject: [PATCH v3 02/29] sh-pfc: Declare operation structures as const
+Message-Id: <1362574370-17889-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Add defconfig for ape6evm. This is based loosely
-on the kzm9g defconfig with fewer devices enabled.
+The pinconf, pinctrl and pinmux operation structures hold function
+pointers that are never modified. Declare them as const.
 
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/configs/ape6evm_defconfig |   91 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 91 insertions(+)
- create mode 100644 arch/arm/configs/ape6evm_defconfig
+ drivers/pinctrl/sh-pfc/pinctrl.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-v2
-
-* Set ARCH=arm when running make savedefconfig so the config is for ARM :^)
-* Enable CONFIG_SWP_EMULATE. This allows the Debian armhf userspace to boot
-
-diff --git a/arch/arm/configs/ape6evm_defconfig b/arch/arm/configs/ape6evm_defconfig
-new file mode 100644
-index 0000000..1240e54
---- /dev/null
-+++ b/arch/arm/configs/ape6evm_defconfig
-@@ -0,0 +1,91 @@
-+CONFIG_SYSVIPC=y
-+CONFIG_POSIX_MQUEUE=y
-+CONFIG_NO_HZ=y
-+CONFIG_HIGH_RES_TIMERS=y
-+CONFIG_BSD_PROCESS_ACCT=y
-+CONFIG_IKCONFIG=y
-+CONFIG_IKCONFIG_PROC=y
-+CONFIG_LOG_BUF_SHIFT
-+CONFIG_CGROUPS=y
-+CONFIG_CGROUP_SCHED=y
-+CONFIG_KALLSYMS_ALL=y
-+CONFIG_EMBEDDED=y
-+CONFIG_PERF_EVENTS=y
-+CONFIG_SLAB=y
-+# CONFIG_BLOCK is not set
-+CONFIG_ARCH_SHMOBILE=y
-+CONFIG_ARCH_R8A73A4=y
-+CONFIG_MACH_APE6EVM=y
-+# CONFIG_ARM_THUMB is not set
-+CONFIG_CPU_BPREDICT_DISABLE=y
-+CONFIG_PL310_ERRATA_588369=y
-+CONFIG_ARM_ERRATA_754322=y
-+CONFIG_SMP=y
-+CONFIG_SCHED_MC=y
-+CONFIG_HAVE_ARM_ARCH_TIMER=y
-+CONFIG_NR_CPUS=8
-+CONFIG_AEABI=y
-+CONFIG_HIGHMEM=y
-+CONFIG_HIGHPTE=y
-+# CONFIG_HW_PERF_EVENTS is not set
-+# CONFIG_COMPACTION is not set
-+# CONFIG_CROSS_MEMORY_ATTACH is not set
-+CONFIG_ARM_APPENDED_DTB=y
-+CONFIG_VFP=y
-+CONFIG_NEON=y
-+CONFIG_BINFMT_MISC=y
-+CONFIG_NET=y
-+CONFIG_PACKET=y
-+CONFIG_UNIX=y
-+CONFIG_XFRM_USER=y
-+CONFIG_NET_KEY=y
-+CONFIG_NET_KEY_MIGRATE=y
-+CONFIG_INET=y
-+CONFIG_IP_MULTICAST=y
-+CONFIG_IP_PNP=y
-+CONFIG_IP_PNP_DHCP=y
-+# CONFIG_INET_LRO is not set
-+# CONFIG_IPV6_SIT is not set
-+CONFIG_NETFILTER=y
-+CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
-+# CONFIG_FW_LOADER_USER_HELPER is not set
-+CONFIG_NETDEVICES=y
-+# CONFIG_NET_CADENCE is not set
-+CONFIG_SMC91X=y
-+CONFIG_SMSC911X=y
-+# CONFIG_INPUT_MOUSEDEV is not set
-+# CONFIG_INPUT_KEYBOARD is not set
-+# CONFIG_INPUT_MOUSE is not set
-+# CONFIG_SERIO is not set
-+CONFIG_SERIAL_NONSTANDARD=y
-+CONFIG_SERIAL_SH_SCI=y
-+CONFIG_SERIAL_SH_SCI_NR_UARTS
-+CONFIG_SERIAL_SH_SCI_CONSOLE=y
-+# CONFIG_HWMON is not set
-+CONFIG_THERMAL=y
-+CONFIG_RCAR_THERMAL=y
-+CONFIG_REGULATOR=y
-+# CONFIG_HID is not set
-+# CONFIG_USB_SUPPORT is not set
-+# CONFIG_IOMMU_SUPPORT is not set
-+# CONFIG_DNOTIFY is not set
-+CONFIG_TMPFS=y
-+# CONFIG_MISC_FILESYSTEMS is not set
-+CONFIG_NFS_FS=y
-+CONFIG_NFS_V3_ACL=y
-+CONFIG_NFS_V4=y
-+CONFIG_NFS_V4_1=y
-+CONFIG_ROOT_NFS=y
-+CONFIG_MAGIC_SYSRQ=y
-+CONFIG_ENABLE_DEFAULT_TRACERS=y
-+CONFIG_CRYPTO_CBC=y
-+CONFIG_CRYPTO_ECB=y
-+CONFIG_CRYPTO_MD5=y
-+CONFIG_CRYPTO_MICHAEL_MIC=y
-+CONFIG_CRYPTO_TWOFISH=y
-+CONFIG_CRC_CCITT=y
-+CONFIG_CRC16=y
-+CONFIG_CRC_T10DIF=y
-+CONFIG_CRC_ITU_T=y
-+CONFIG_CRC7=y
-+CONFIG_LIBCRC32C=y
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index 11e0e13..887930e 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -70,7 +70,7 @@ static void sh_pfc_pin_dbg_show(struct pinctrl_dev *pctldev, struct seq_file *s,
+ 	seq_printf(s, "%s", DRV_NAME);
+ }
+ 
+-static struct pinctrl_ops sh_pfc_pinctrl_ops = {
++static const struct pinctrl_ops sh_pfc_pinctrl_ops = {
+ 	.get_groups_count	= sh_pfc_get_groups_count,
+ 	.get_group_name		= sh_pfc_get_group_name,
+ 	.get_group_pins		= sh_pfc_get_group_pins,
+@@ -252,7 +252,7 @@ static int sh_pfc_gpio_set_direction(struct pinctrl_dev *pctldev,
+ 	return sh_pfc_reconfig_pin(pmx->pfc, offset, type);
+ }
+ 
+-static struct pinmux_ops sh_pfc_pinmux_ops = {
++static const struct pinmux_ops sh_pfc_pinmux_ops = {
+ 	.get_functions_count	= sh_pfc_get_functions_count,
+ 	.get_function_name	= sh_pfc_get_function_name,
+ 	.get_function_groups	= sh_pfc_get_function_groups,
+@@ -308,7 +308,7 @@ static void sh_pfc_pinconf_dbg_show(struct pinctrl_dev *pctldev,
+ 	seq_printf(s, " %s", pinmux_type_str[config]);
+ }
+ 
+-static struct pinconf_ops sh_pfc_pinconf_ops = {
++static const struct pinconf_ops sh_pfc_pinconf_ops = {
+ 	.pin_config_get		= sh_pfc_pinconf_get,
+ 	.pin_config_set		= sh_pfc_pinconf_set,
+ 	.pin_config_dbg_show	= sh_pfc_pinconf_dbg_show,
 -- 
-1.7.10.4
+1.8.1.5
 
