@@ -1,126 +1,114 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 06 Mar 2013 12:52:46 +0000
-Subject: [PATCH v3 25/29] ARM: shmobile: ap4-evb: Replace GPIO_PORTx enum with GPIO port numbers
-Message-Id: <1362574370-17889-26-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 06 Mar 2013 13:46:43 +0000
+Subject: [PATCH v2 04/39] sh-pfc: sh73a0: Add I2C2 and I2C3 pin groups and functions
+Message-Id: <1362577638-15493-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The PFC GPIO API implementation moved to using port numbers. Replace all
-GPIO_PORTx enum usage with the corresponding port number. The GPIO_PORTx
-enum values are identical to the port number on this platform.
-
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c | 36 +++++++++++++++++------------------
- 1 file changed, 18 insertions(+), 18 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 64 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 64 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 38f1259..0a2b6e4 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -273,11 +273,11 @@ static struct platform_device smc911x_device = {
- 
- /*
-  * The card detect pin of the top SD/MMC slot (CN7) is active low and is
-- * connected to GPIO A22 of SH7372 (GPIO_PORT41).
-+ * connected to GPIO A22 of SH7372 (GPIO 41).
-  */
- static int slot_cn7_get_cd(struct platform_device *pdev)
- {
--	return !gpio_get_value(GPIO_PORT41);
-+	return !gpio_get_value(41);
- }
- /* MERAM */
- static struct sh_mobile_meram_info meram_info = {
-@@ -838,22 +838,22 @@ static struct platform_device fsi_hdmi_device = {
- static struct gpio_led ap4evb_leds[] = {
- 	{
- 		.name			= "led4",
--		.gpio			= GPIO_PORT185,
-+		.gpio			= 185,
- 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
- 	},
- 	{
- 		.name			= "led2",
--		.gpio			= GPIO_PORT186,
-+		.gpio			= 186,
- 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
- 	},
- 	{
- 		.name			= "led3",
--		.gpio			= GPIO_PORT187,
-+		.gpio			= 187,
- 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
- 	},
- 	{
- 		.name			= "led1",
--		.gpio			= GPIO_PORT188,
-+		.gpio			= 188,
- 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
- 	}
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index 09c2501..2dc58e2 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -1550,6 +1550,50 @@ static struct pinmux_range pinmux_ranges[] = {
+ 	{.begin = 288, .end = 309,},
  };
-@@ -1026,10 +1026,10 @@ out:
- /* TouchScreen */
- #ifdef CONFIG_AP4EVB_QHD
- # define GPIO_TSC_IRQ	GPIO_FN_IRQ28_123
--# define GPIO_TSC_PORT	GPIO_PORT123
-+# define GPIO_TSC_PORT	123
- #else /* WVGA */
- # define GPIO_TSC_IRQ	GPIO_FN_IRQ7_40
--# define GPIO_TSC_PORT	GPIO_PORT40
-+# define GPIO_TSC_PORT	40
- #endif
  
- #define IRQ28	evt2irq(0x3380) /* IRQ28A */
-@@ -1121,10 +1121,10 @@ static void __init ap4evb_init(void)
- 	gpio_request(GPIO_FN_IRQ6_39,	NULL);
++static const unsigned int i2c2_0_pins[] = {
++	/* SCL, SDA */
++	237, 236,
++};
++static const unsigned int i2c2_0_mux[] = {
++	PORT237_I2C_SCL2_MARK, PORT236_I2C_SDA2_MARK,
++};
++static const unsigned int i2c2_1_pins[] = {
++	/* SCL, SDA */
++	27, 28,
++};
++static const unsigned int i2c2_1_mux[] = {
++	PORT27_I2C_SCL2_MARK, PORT28_I2C_SDA2_MARK,
++};
++static const unsigned int i2c2_2_pins[] = {
++	/* SCL, SDA */
++	115, 116,
++};
++static const unsigned int i2c2_2_mux[] = {
++	PORT115_I2C_SCL2_MARK, PORT116_I2C_SDA2_MARK,
++};
++
++static const unsigned int i2c3_0_pins[] = {
++	/* SCL, SDA */
++	248, 249,
++};
++static const unsigned int i2c3_0_mux[] = {
++	PORT248_I2C_SCL3_MARK, PORT249_I2C_SDA3_MARK,
++};
++static const unsigned int i2c3_1_pins[] = {
++	/* SCL, SDA */
++	27, 28,
++};
++static const unsigned int i2c3_1_mux[] = {
++	PORT27_I2C_SCL3_MARK, PORT28_I2C_SDA3_MARK,
++};
++static const unsigned int i2c3_2_pins[] = {
++	/* SCL, SDA */
++	115, 116,
++};
++static const unsigned int i2c3_2_mux[] = {
++	PORT115_I2C_SCL3_MARK, PORT116_I2C_SDA3_MARK,
++};
++
+ static const unsigned int lcd_data8_pins[] = {
+ 	/* D[0:7] */
+ 	192, 193, 194, 195, 196, 197, 198, 199,
+@@ -1993,6 +2037,12 @@ static const unsigned int scifb_ctrl_1_mux[] = {
+ };
  
- 	/* enable Debug switch (S6) */
--	gpio_request_one(GPIO_PORT32, GPIOF_IN | GPIOF_EXPORT, NULL);
--	gpio_request_one(GPIO_PORT33, GPIOF_IN | GPIOF_EXPORT, NULL);
--	gpio_request_one(GPIO_PORT34, GPIOF_IN | GPIOF_EXPORT, NULL);
--	gpio_request_one(GPIO_PORT35, GPIOF_IN | GPIOF_EXPORT, NULL);
-+	gpio_request_one(32, GPIOF_IN | GPIOF_EXPORT, NULL);
-+	gpio_request_one(33, GPIOF_IN | GPIOF_EXPORT, NULL);
-+	gpio_request_one(34, GPIOF_IN | GPIOF_EXPORT, NULL);
-+	gpio_request_one(35, GPIOF_IN | GPIOF_EXPORT, NULL);
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
++	SH_PFC_PIN_GROUP(i2c2_0),
++	SH_PFC_PIN_GROUP(i2c2_1),
++	SH_PFC_PIN_GROUP(i2c2_2),
++	SH_PFC_PIN_GROUP(i2c3_0),
++	SH_PFC_PIN_GROUP(i2c3_1),
++	SH_PFC_PIN_GROUP(i2c3_2),
+ 	SH_PFC_PIN_GROUP(lcd_data8),
+ 	SH_PFC_PIN_GROUP(lcd_data9),
+ 	SH_PFC_PIN_GROUP(lcd_data12),
+@@ -2049,6 +2099,18 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(scifb_ctrl_1),
+ };
  
- 	/* SDHI0 */
- 	gpio_request(GPIO_FN_SDHICD0, NULL);
-@@ -1172,15 +1172,15 @@ static void __init ap4evb_init(void)
- 	gpio_request(GPIO_FN_FSIAILR,	NULL);
- 	gpio_request(GPIO_FN_FSIAISLD,	NULL);
- 	gpio_request(GPIO_FN_FSIAOSLD,	NULL);
--	gpio_request_one(GPIO_PORT161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
-+	gpio_request_one(161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
++static const char * const i2c2_groups[] = {
++	"i2c2_0",
++	"i2c2_1",
++	"i2c2_2",
++};
++
++static const char * const i2c3_groups[] = {
++	"i2c3_0",
++	"i2c3_1",
++	"i2c3_2",
++};
++
+ static const char * const lcd_groups[] = {
+ 	"lcd_data8",
+ 	"lcd_data9",
+@@ -2137,6 +2199,8 @@ static const char * const scifb_groups[] = {
+ };
  
--	gpio_request(GPIO_PORT9, NULL);
--	gpio_request(GPIO_PORT10, NULL);
-+	gpio_request(9, NULL);
-+	gpio_request(10, NULL);
- 	gpio_direction_none(GPIO_PORT9CR);  /* FSIAOBT needs no direction */
- 	gpio_direction_none(GPIO_PORT10CR); /* FSIAOLR needs no direction */
- 
- 	/* card detect pin for MMC slot (CN7) */
--	gpio_request_one(GPIO_PORT41, GPIOF_IN, NULL);
-+	gpio_request_one(41, GPIOF_IN, NULL);
- 
- 	/* setup FSI2 port B (HDMI) */
- 	gpio_request(GPIO_FN_FSIBCK, NULL);
-@@ -1268,8 +1268,8 @@ static void __init ap4evb_init(void)
- 	gpio_request(GPIO_FN_LCDDISP,  NULL);
- 	gpio_request(GPIO_FN_LCDDCK,   NULL);
- 
--	gpio_request_one(GPIO_PORT189, GPIOF_OUT_INIT_HIGH, NULL); /* backlight */
--	gpio_request_one(GPIO_PORT151, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
-+	gpio_request_one(189, GPIOF_OUT_INIT_HIGH, NULL); /* backlight */
-+	gpio_request_one(151, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
- 
- 	lcdc_info.clock_source			= LCDC_CLK_BUS;
- 	lcdc_info.ch[0].interface_type		= RGB18;
+ static const struct sh_pfc_function pinmux_functions[] = {
++	SH_PFC_FUNCTION(i2c2),
++	SH_PFC_FUNCTION(i2c3),
+ 	SH_PFC_FUNCTION(lcd),
+ 	SH_PFC_FUNCTION(lcd2),
+ 	SH_PFC_FUNCTION(scifa0),
 -- 
 1.8.1.5
 
