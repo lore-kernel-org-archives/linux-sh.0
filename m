@@ -1,98 +1,126 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 06 Mar 2013 12:52:24 +0000
-Subject: [PATCH v3 03/29] sh-pfc: Don't define the per-device pinctrl struct instances as global
-Message-Id: <1362574370-17889-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 06 Mar 2013 13:47:01 +0000
+Subject: [PATCH v2 22/39] ARM: shmobile: mackerel: Register pinctrl mappings for SDHI and MMCIF
+Message-Id: <1362577638-15493-23-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The pinctrl_desc and pinctrl_gpio_range structures registered with the
-pinctrl core are per-device instances. Move them to the dynamically
-allocated sh_pfc_pinctrl structure and initialize them at runtime.
+Replace the GPIO-based SDHI and MMCIF pinmux configuration by pinctrl
+mappings
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/pinctrl/sh-pfc/pinctrl.c | 40 ++++++++++++++++++----------------------
- 1 file changed, 18 insertions(+), 22 deletions(-)
+ arch/arm/mach-shmobile/board-mackerel.c | 64 ++++++++++++++-------------------
+ 1 file changed, 26 insertions(+), 38 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
-index 887930e..d113746 100644
---- a/drivers/pinctrl/sh-pfc/pinctrl.c
-+++ b/drivers/pinctrl/sh-pfc/pinctrl.c
-@@ -27,6 +27,9 @@
- 
- struct sh_pfc_pinctrl {
- 	struct pinctrl_dev *pctl;
-+	struct pinctrl_desc pctl_desc;
-+	struct pinctrl_gpio_range range;
-+
- 	struct sh_pfc *pfc;
- 
- 	struct pinmux_gpio **functions;
-@@ -314,19 +317,6 @@ static const struct pinconf_ops sh_pfc_pinconf_ops = {
- 	.pin_config_dbg_show	= sh_pfc_pinconf_dbg_show,
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index 172d472..08088c1 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -40,6 +40,7 @@
+ #include <linux/mtd/partitions.h>
+ #include <linux/mtd/physmap.h>
+ #include <linux/mtd/sh_flctl.h>
++#include <linux/pinctrl/machine.h>
+ #include <linux/pm_clock.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
+@@ -1328,6 +1329,29 @@ static struct i2c_board_info i2c1_devices[] = {
+ 	},
  };
  
--static struct pinctrl_gpio_range sh_pfc_gpio_range = {
--	.name		= DRV_NAME,
--	.id		= 0,
--};
--
--static struct pinctrl_desc sh_pfc_pinctrl_desc = {
--	.name		= DRV_NAME,
--	.owner		= THIS_MODULE,
--	.pctlops	= &sh_pfc_pinctrl_ops,
--	.pmxops		= &sh_pfc_pinmux_ops,
--	.confops	= &sh_pfc_pinconf_ops,
--};
--
- static void sh_pfc_map_one_gpio(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx,
- 				struct pinmux_gpio *gpio, unsigned offset)
- {
-@@ -386,9 +376,6 @@ static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
- 
- 	spin_unlock_irqrestore(&pfc->lock, flags);
- 
--	sh_pfc_pinctrl_desc.pins = pmx->pads;
--	sh_pfc_pinctrl_desc.npins = pmx->nr_pads;
--
- 	return 0;
- }
- 
-@@ -438,16 +425,25 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
- 	if (unlikely(ret != 0))
- 		return ret;
- 
--	pmx->pctl = pinctrl_register(&sh_pfc_pinctrl_desc, pfc->dev, pmx);
-+	pmx->pctl_desc.name = DRV_NAME;
-+	pmx->pctl_desc.owner = THIS_MODULE;
-+	pmx->pctl_desc.pctlops = &sh_pfc_pinctrl_ops;
-+	pmx->pctl_desc.pmxops = &sh_pfc_pinmux_ops;
-+	pmx->pctl_desc.confops = &sh_pfc_pinconf_ops;
-+	pmx->pctl_desc.pins = pmx->pads;
-+	pmx->pctl_desc.npins = pmx->nr_pads;
++static const struct pinctrl_map mackerel_pinctrl_map[] = {
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh7372",
++				  "mmc0_data8_0", "mmc0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh7372",
++				  "mmc0_ctrl_0", "mmc0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
++				  "sdhi0_data4", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
++				  "sdhi0_ctrl", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
++				  "sdhi0_wp", "sdhi0"),
++#if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-sh7372",
++				  "sdhi1_data4", "sdhi1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-sh7372",
++				  "sdhi1_ctrl", "sdhi1"),
++#endif
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-sh7372",
++				  "sdhi2_data4", "sdhi2"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-sh7372",
++				  "sdhi2_ctrl", "sdhi2"),
++};
 +
-+	pmx->pctl = pinctrl_register(&pmx->pctl_desc, pfc->dev, pmx);
- 	if (IS_ERR(pmx->pctl))
- 		return PTR_ERR(pmx->pctl);
+ #define GPIO_PORT9CR	IOMEM(0xE6051009)
+ #define GPIO_PORT10CR	IOMEM(0xE605100A)
+ #define GPIO_PORT167CR	IOMEM(0xE60520A7)
+@@ -1364,6 +1388,8 @@ static void __init mackerel_init(void)
+ 	/* External clock source */
+ 	clk_set_rate(&sh7372_dv_clki_clk, 27000000);
  
--	sh_pfc_gpio_range.npins = pfc->info->last_gpio
--				- pfc->info->first_gpio + 1;
--	sh_pfc_gpio_range.base = pfc->info->first_gpio;
--	sh_pfc_gpio_range.pin_base = pfc->info->first_gpio;
-+	pmx->range.name = DRV_NAME,
-+	pmx->range.id = 0;
-+	pmx->range.npins = pfc->info->last_gpio - pfc->info->first_gpio + 1;
-+	pmx->range.base = pfc->info->first_gpio;
-+	pmx->range.pin_base = pfc->info->first_gpio;
++	pinctrl_register_mappings(mackerel_pinctrl_map,
++				  ARRAY_SIZE(mackerel_pinctrl_map));
+ 	sh7372_pinmux_init();
  
--	pinctrl_add_gpio_range(pmx->pctl, &sh_pfc_gpio_range);
-+	pinctrl_add_gpio_range(pmx->pctl, &pmx->range);
+ 	/* enable SCIFA0 */
+@@ -1453,53 +1479,15 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_IRQ21,	NULL);
+ 	irq_set_irq_type(IRQ21, IRQ_TYPE_LEVEL_HIGH);
  
- 	return 0;
- }
+-	/* enable SDHI0 */
+-	gpio_request(GPIO_FN_SDHIWP0, NULL);
+-	gpio_request(GPIO_FN_SDHICMD0, NULL);
+-	gpio_request(GPIO_FN_SDHICLK0, NULL);
+-	gpio_request(GPIO_FN_SDHID0_3, NULL);
+-	gpio_request(GPIO_FN_SDHID0_2, NULL);
+-	gpio_request(GPIO_FN_SDHID0_1, NULL);
+-	gpio_request(GPIO_FN_SDHID0_0, NULL);
+-
+ 	/* SDHI0 PORT172 card-detect IRQ26 */
+ 	gpio_request(GPIO_FN_IRQ26_172, NULL);
+ 
+-#if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
+-	/* enable SDHI1 */
+-	gpio_request(GPIO_FN_SDHICMD1, NULL);
+-	gpio_request(GPIO_FN_SDHICLK1, NULL);
+-	gpio_request(GPIO_FN_SDHID1_3, NULL);
+-	gpio_request(GPIO_FN_SDHID1_2, NULL);
+-	gpio_request(GPIO_FN_SDHID1_1, NULL);
+-	gpio_request(GPIO_FN_SDHID1_0, NULL);
+-#endif
+ 	/* card detect pin for MMC slot (CN7) */
+ 	gpio_request_one(41, GPIOF_IN, NULL);
+ 
+-	/* enable SDHI2 */
+-	gpio_request(GPIO_FN_SDHICMD2, NULL);
+-	gpio_request(GPIO_FN_SDHICLK2, NULL);
+-	gpio_request(GPIO_FN_SDHID2_3, NULL);
+-	gpio_request(GPIO_FN_SDHID2_2, NULL);
+-	gpio_request(GPIO_FN_SDHID2_1, NULL);
+-	gpio_request(GPIO_FN_SDHID2_0, NULL);
+-
+ 	/* card detect pin for microSD slot (CN23) */
+ 	gpio_request_one(162, GPIOF_IN, NULL);
+ 
+-	/* MMCIF */
+-	gpio_request(GPIO_FN_MMCD0_0, NULL);
+-	gpio_request(GPIO_FN_MMCD0_1, NULL);
+-	gpio_request(GPIO_FN_MMCD0_2, NULL);
+-	gpio_request(GPIO_FN_MMCD0_3, NULL);
+-	gpio_request(GPIO_FN_MMCD0_4, NULL);
+-	gpio_request(GPIO_FN_MMCD0_5, NULL);
+-	gpio_request(GPIO_FN_MMCD0_6, NULL);
+-	gpio_request(GPIO_FN_MMCD0_7, NULL);
+-	gpio_request(GPIO_FN_MMCCMD0, NULL);
+-	gpio_request(GPIO_FN_MMCCLK0, NULL);
+-
+ 	/* FLCTL */
+ 	gpio_request(GPIO_FN_D0_NAF0, NULL);
+ 	gpio_request(GPIO_FN_D1_NAF1, NULL);
 -- 
 1.8.1.5
 
