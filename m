@@ -1,245 +1,315 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:06:53 +0000
-Subject: [PATCH 117/142] sh-pfc: r8a7779: Remove SDHI and MMCIF function GPIOS
-Message-Id: <1363604838-29359-118-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 06 Mar 2013 12:52:38 +0000
+Subject: [PATCH v3 17/29] sh-pfc: Rename struct pinmux_pin to struct sh_pfc_pin
+Message-Id: <1362574370-17889-18-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-All r8a7779 platforms now use the pinctrl API to control the SDHI and
-MMCIF pins, the corresponding function GPIOS are unused. Remove them.
+And drop the pinmux_flag_t typedef.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c |  112 +++++++++++++++++-----------------
- 1 file changed, 56 insertions(+), 56 deletions(-)
+ drivers/pinctrl/sh-pfc/core.c        | 4 ++--
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 2 +-
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 2 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7203.c  | 2 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7264.c  | 2 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7269.c  | 2 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7372.c  | 2 +-
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c  | 2 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7720.c  | 2 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7722.c  | 2 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7723.c  | 2 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7724.c  | 2 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7734.c  | 2 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7757.c  | 2 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7785.c  | 2 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7786.c  | 2 +-
+ drivers/pinctrl/sh-pfc/pfc-shx3.c    | 2 +-
+ drivers/pinctrl/sh-pfc/pinctrl.c     | 2 +-
+ drivers/pinctrl/sh-pfc/sh_pfc.h      | 7 +++----
+ 19 files changed, 22 insertions(+), 23 deletions(-)
 
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index 6cf3943..f94d80c 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -235,7 +235,7 @@ static void sh_pfc_write_config_reg(struct sh_pfc *pfc,
+ 
+ static int sh_pfc_setup_data_reg(struct sh_pfc *pfc, unsigned gpio)
+ {
+-	struct pinmux_pin *gpiop = &pfc->info->pins[gpio];
++	struct sh_pfc_pin *gpiop = &pfc->info->pins[gpio];
+ 	struct pinmux_data_reg *data_reg;
+ 	int k, n;
+ 
+@@ -292,7 +292,7 @@ static void sh_pfc_setup_data_regs(struct sh_pfc *pfc)
+ int sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
+ 			struct pinmux_data_reg **drp, int *bitp)
+ {
+-	struct pinmux_pin *gpiop = &pfc->info->pins[gpio];
++	struct sh_pfc_pin *gpiop = &pfc->info->pins[gpio];
+ 	int k, n;
+ 
+ 	if (!sh_pfc_gpio_is_pin(pfc, gpio))
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index a22763e..ccf9161 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -1654,7 +1654,7 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(TRACEAUD_FROM_MEMC_MARK,			MSEL5CR_30_1,	MSEL5CR_29_0),
+ };
+ 
+-static struct pinmux_pin pinmux_pins[] = {
++static struct sh_pfc_pin pinmux_pins[] = {
+ 	GPIO_PORT_ALL(),
+ };
+ 
 diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-index f1fa355..0a65003 100644
+index f771239..0e53674 100644
 --- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
 +++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-@@ -2678,16 +2678,16 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+@@ -1450,7 +1450,7 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_IPSR_MODSEL_DATA(IP12_17_15, SCK4_B, SEL_SCIF4_1),
+ };
  
- 	/* IPSR0 */
- 	GPIO_FN(USB_PENC2), GPIO_FN(SCK0), GPIO_FN(PWM1), GPIO_FN(PWMFSW0),
--	GPIO_FN(SCIF_CLK), GPIO_FN(TCLK0_C), GPIO_FN(BS), GPIO_FN(SD1_DAT2),
--	GPIO_FN(MMC0_D2), GPIO_FN(FD2), GPIO_FN(ATADIR0), GPIO_FN(SDSELF),
--	GPIO_FN(HCTS1), GPIO_FN(TX4_C), GPIO_FN(A0), GPIO_FN(SD1_DAT3),
--	GPIO_FN(MMC0_D3), GPIO_FN(FD3), GPIO_FN(A20), GPIO_FN(TX5_D),
-+	GPIO_FN(SCIF_CLK), GPIO_FN(TCLK0_C), GPIO_FN(BS),
-+	GPIO_FN(FD2), GPIO_FN(ATADIR0), GPIO_FN(SDSELF),
-+	GPIO_FN(HCTS1), GPIO_FN(TX4_C), GPIO_FN(A0),
-+	GPIO_FN(FD3), GPIO_FN(A20), GPIO_FN(TX5_D),
- 	GPIO_FN(HSPI_TX2_B), GPIO_FN(A21), GPIO_FN(SCK5_D),
- 	GPIO_FN(HSPI_CLK2_B), GPIO_FN(A22), GPIO_FN(RX5_D),
- 	GPIO_FN(HSPI_RX2_B), GPIO_FN(VI1_R0), GPIO_FN(A23), GPIO_FN(FCLE),
--	GPIO_FN(HSPI_CLK2), GPIO_FN(VI1_R1), GPIO_FN(A24), GPIO_FN(SD1_CD),
--	GPIO_FN(MMC0_D4), GPIO_FN(FD4),	GPIO_FN(HSPI_CS2), GPIO_FN(VI1_R2),
--	GPIO_FN(SSI_WS78_B), GPIO_FN(A25), GPIO_FN(SD1_WP), GPIO_FN(MMC0_D5),
-+	GPIO_FN(HSPI_CLK2), GPIO_FN(VI1_R1), GPIO_FN(A24),
-+	GPIO_FN(FD4),	GPIO_FN(HSPI_CS2), GPIO_FN(VI1_R2),
-+	GPIO_FN(SSI_WS78_B), GPIO_FN(A25),
- 	GPIO_FN(FD5), GPIO_FN(HSPI_RX2), GPIO_FN(VI1_R3), GPIO_FN(TX5_B),
- 	GPIO_FN(SSI_SDATA7_B), GPIO_FN(CTS0_B), GPIO_FN(CLKOUT),
- 	GPIO_FN(TX3C_IRDA_TX_C), GPIO_FN(PWM0_B), GPIO_FN(CS0),
-@@ -2696,17 +2696,17 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(VI1_R7), GPIO_FN(HRTS1), GPIO_FN(RX4_C),
+-static struct pinmux_pin pinmux_pins[] = {
++static struct sh_pfc_pin pinmux_pins[] = {
+ 	PINMUX_GPIO_GP_ALL(),
+ };
  
- 	/* IPSR1 */
--	GPIO_FN(EX_CS0), GPIO_FN(RX3_C_IRDA_RX_C), GPIO_FN(MMC0_D6),
--	GPIO_FN(FD6), GPIO_FN(EX_CS1), GPIO_FN(MMC0_D7), GPIO_FN(FD7),
--	GPIO_FN(EX_CS2), GPIO_FN(SD1_CLK), GPIO_FN(MMC0_CLK), GPIO_FN(FALE),
--	GPIO_FN(ATACS00), GPIO_FN(EX_CS3), GPIO_FN(SD1_CMD), GPIO_FN(MMC0_CMD),
-+	GPIO_FN(EX_CS0), GPIO_FN(RX3_C_IRDA_RX_C),
-+	GPIO_FN(FD6), GPIO_FN(EX_CS1), GPIO_FN(FD7),
-+	GPIO_FN(EX_CS2), GPIO_FN(FALE),
-+	GPIO_FN(ATACS00), GPIO_FN(EX_CS3),
- 	GPIO_FN(FRE), GPIO_FN(ATACS10), GPIO_FN(VI1_R4), GPIO_FN(RX5_B),
- 	GPIO_FN(HSCK1), GPIO_FN(SSI_SDATA8_B), GPIO_FN(RTS0_B_TANS_B),
--	GPIO_FN(SSI_SDATA9), GPIO_FN(EX_CS4), GPIO_FN(SD1_DAT0),
--	GPIO_FN(MMC0_D0), GPIO_FN(FD0), GPIO_FN(ATARD0), GPIO_FN(VI1_R5),
-+	GPIO_FN(SSI_SDATA9), GPIO_FN(EX_CS4),
-+	GPIO_FN(FD0), GPIO_FN(ATARD0), GPIO_FN(VI1_R5),
- 	GPIO_FN(SCK5_B), GPIO_FN(HTX1), GPIO_FN(TX2_E), GPIO_FN(TX0_B),
--	GPIO_FN(SSI_SCK9), GPIO_FN(EX_CS5), GPIO_FN(SD1_DAT1),
--	GPIO_FN(MMC0_D1), GPIO_FN(FD1),	GPIO_FN(ATAWR0), GPIO_FN(VI1_R6),
-+	GPIO_FN(SSI_SCK9), GPIO_FN(EX_CS5),
-+	GPIO_FN(FD1),	GPIO_FN(ATAWR0), GPIO_FN(VI1_R6),
- 	GPIO_FN(HRX1), GPIO_FN(RX2_E), GPIO_FN(RX0_B), GPIO_FN(SSI_WS9),
- 	GPIO_FN(MLB_CLK), GPIO_FN(PWM2), GPIO_FN(SCK4), GPIO_FN(MLB_SIG),
- 	GPIO_FN(PWM3), GPIO_FN(TX4), GPIO_FN(MLB_DAT), GPIO_FN(PWM4),
-@@ -2766,26 +2766,26 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(QPOLB), GPIO_FN(CAN1_RX), GPIO_FN(RX2_C),
- 	GPIO_FN(DREQ0_B), GPIO_FN(SSI_SCK78_B), GPIO_FN(SCK0_B),
- 	GPIO_FN(VI2_DATA0_VI2_B0), GPIO_FN(PWM6),
--	GPIO_FN(SD3_CLK), GPIO_FN(TX3_E_IRDA_TX_E), GPIO_FN(AUDCK),
-+	GPIO_FN(TX3_E_IRDA_TX_E), GPIO_FN(AUDCK),
- 	GPIO_FN(PWMFSW0_B), GPIO_FN(VI2_DATA1_VI2_B1),
--	GPIO_FN(PWM0), GPIO_FN(SD3_CMD), GPIO_FN(RX3_E_IRDA_RX_E),
-+	GPIO_FN(PWM0), GPIO_FN(RX3_E_IRDA_RX_E),
- 	GPIO_FN(AUDSYNC), GPIO_FN(CTS0_D), GPIO_FN(VI2_G0),
- 	GPIO_FN(VI2_G1), GPIO_FN(VI2_G2),
- 	GPIO_FN(VI2_G3), GPIO_FN(VI2_G4),
- 	GPIO_FN(VI2_G5),
--	GPIO_FN(VI2_DATA2_VI2_B2), GPIO_FN(SCL1_B), GPIO_FN(SD3_DAT2),
-+	GPIO_FN(VI2_DATA2_VI2_B2), GPIO_FN(SCL1_B),
- 	GPIO_FN(SCK3_E), GPIO_FN(AUDATA6), GPIO_FN(TX0_D),
--	GPIO_FN(VI2_DATA3_VI2_B3), GPIO_FN(SDA1_B), GPIO_FN(SD3_DAT3),
-+	GPIO_FN(VI2_DATA3_VI2_B3), GPIO_FN(SDA1_B),
- 	GPIO_FN(SCK5), GPIO_FN(AUDATA7), GPIO_FN(RX0_D),
- 	GPIO_FN(VI2_G6), GPIO_FN(VI2_G7),
- 	GPIO_FN(VI2_R0), GPIO_FN(VI2_R1),
- 	GPIO_FN(VI2_R2), GPIO_FN(VI2_R3),
--	GPIO_FN(VI2_DATA4_VI2_B4), GPIO_FN(SCL2_B), GPIO_FN(SD3_DAT0),
-+	GPIO_FN(VI2_DATA4_VI2_B4), GPIO_FN(SCL2_B),
- 	GPIO_FN(TX5), GPIO_FN(SCK0_D),
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7203.c b/drivers/pinctrl/sh-pfc/pfc-sh7203.c
+index 17e2d06..fc4a128 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7203.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7203.c
+@@ -703,7 +703,7 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(SSCK0_PF_MARK, PF0MD_11),
+ };
  
- 	/* IPSR5 */
- 	GPIO_FN(VI2_DATA5_VI2_B5), GPIO_FN(SDA2_B),
--	GPIO_FN(SD3_DAT1), GPIO_FN(RX5), GPIO_FN(RTS0_D_TANS_D),
-+	GPIO_FN(RX5), GPIO_FN(RTS0_D_TANS_D),
- 	GPIO_FN(VI2_R4), GPIO_FN(VI2_R5),
- 	GPIO_FN(VI2_R6), GPIO_FN(VI2_R7),
- 	GPIO_FN(SCL2_D), GPIO_FN(SDA2_D),
-@@ -2794,14 +2794,14 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(SDA1_D), GPIO_FN(VI2_HSYNC),
- 	GPIO_FN(VI3_HSYNC), GPIO_FN(VI2_VSYNC),
- 	GPIO_FN(VI3_VSYNC),
--	GPIO_FN(VI2_CLK), GPIO_FN(TX3_B_IRDA_TX_B), GPIO_FN(SD3_CD),
-+	GPIO_FN(VI2_CLK), GPIO_FN(TX3_B_IRDA_TX_B),
- 	GPIO_FN(HSPI_TX1), GPIO_FN(VI1_CLKENB), GPIO_FN(VI3_CLKENB),
- 	GPIO_FN(AUDIO_CLKC), GPIO_FN(TX2_D), GPIO_FN(SPEEDIN),
- 	GPIO_FN(GPS_SIGN_D), GPIO_FN(VI2_DATA6_VI2_B6),
- 	GPIO_FN(TCLK0), GPIO_FN(QSTVA_B_QVS_B), GPIO_FN(HSPI_CLK1),
- 	GPIO_FN(SCK2_D), GPIO_FN(AUDIO_CLKOUT_B), GPIO_FN(GPS_MAG_D),
- 	GPIO_FN(VI2_DATA7_VI2_B7), GPIO_FN(RX3_B_IRDA_RX_B),
--	GPIO_FN(SD3_WP), GPIO_FN(HSPI_RX1), GPIO_FN(VI1_FIELD),
-+	GPIO_FN(HSPI_RX1), GPIO_FN(VI1_FIELD),
- 	GPIO_FN(VI3_FIELD), GPIO_FN(AUDIO_CLKOUT), GPIO_FN(RX2_D),
- 	GPIO_FN(GPS_CLK_C), GPIO_FN(GPS_CLK_D), GPIO_FN(AUDIO_CLKA),
- 	GPIO_FN(CAN_TXCLK), GPIO_FN(AUDIO_CLKB), GPIO_FN(USB_OVC2),
-@@ -2835,14 +2835,14 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(SSI_WS9_B), GPIO_FN(HSPI_CS1_C), GPIO_FN(SSI_SDATA7),
- 	GPIO_FN(CAN_DEBUGOUT15), GPIO_FN(IRQ2_B), GPIO_FN(TCLK1_C),
- 	GPIO_FN(HSPI_TX1_C), GPIO_FN(SSI_SDATA8), GPIO_FN(VSP),
--	GPIO_FN(IRQ3_B), GPIO_FN(HSPI_RX1_C), GPIO_FN(SD0_CLK),
--	GPIO_FN(ATACS01), GPIO_FN(SCK1_B), GPIO_FN(SD0_CMD), GPIO_FN(ATACS11),
--	GPIO_FN(TX1_B), GPIO_FN(CC5_TDO), GPIO_FN(SD0_DAT0), GPIO_FN(ATADIR1),
--	GPIO_FN(RX1_B), GPIO_FN(CC5_TRST), GPIO_FN(SD0_DAT1), GPIO_FN(ATAG1),
--	GPIO_FN(SCK2_B), GPIO_FN(CC5_TMS), GPIO_FN(SD0_DAT2), GPIO_FN(ATARD1),
--	GPIO_FN(TX2_B), GPIO_FN(CC5_TCK), GPIO_FN(SD0_DAT3), GPIO_FN(ATAWR1),
--	GPIO_FN(RX2_B), GPIO_FN(CC5_TDI), GPIO_FN(SD0_CD), GPIO_FN(DREQ2),
--	GPIO_FN(RTS1_B_TANS_B), GPIO_FN(SD0_WP), GPIO_FN(DACK2),
-+	GPIO_FN(IRQ3_B), GPIO_FN(HSPI_RX1_C),
-+	GPIO_FN(ATACS01), GPIO_FN(SCK1_B), GPIO_FN(ATACS11),
-+	GPIO_FN(TX1_B), GPIO_FN(CC5_TDO), GPIO_FN(ATADIR1),
-+	GPIO_FN(RX1_B), GPIO_FN(CC5_TRST), GPIO_FN(ATAG1),
-+	GPIO_FN(SCK2_B), GPIO_FN(CC5_TMS), GPIO_FN(ATARD1),
-+	GPIO_FN(TX2_B), GPIO_FN(CC5_TCK), GPIO_FN(ATAWR1),
-+	GPIO_FN(RX2_B), GPIO_FN(CC5_TDI), GPIO_FN(DREQ2),
-+	GPIO_FN(RTS1_B_TANS_B), GPIO_FN(DACK2),
- 	GPIO_FN(CTS1_B),
+-static struct pinmux_pin pinmux_pins[] = {
++static struct sh_pfc_pin pinmux_pins[] = {
  
- 	/* IPSR8 */
-@@ -2859,46 +2859,46 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(CC5_STATE15), GPIO_FN(CC5_STATE23), GPIO_FN(CC5_STATE31),
- 	GPIO_FN(CC5_STATE39), GPIO_FN(FMCLK), GPIO_FN(RDS_CLK), GPIO_FN(PCMOE),
- 	GPIO_FN(BPFCLK), GPIO_FN(PCMWE), GPIO_FN(FMIN), GPIO_FN(RDS_DATA),
--	GPIO_FN(VI0_CLK), GPIO_FN(MMC1_CLK), GPIO_FN(VI0_CLKENB),
-+	GPIO_FN(VI0_CLK), GPIO_FN(VI0_CLKENB),
- 	GPIO_FN(TX1_C), GPIO_FN(HTX1_B), GPIO_FN(MT1_SYNC),
- 	GPIO_FN(VI0_FIELD), GPIO_FN(RX1_C), GPIO_FN(HRX1_B),
- 	GPIO_FN(VI0_HSYNC), GPIO_FN(VI0_DATA0_B_VI0_B0_B), GPIO_FN(CTS1_C),
--	GPIO_FN(TX4_D), GPIO_FN(MMC1_CMD), GPIO_FN(HSCK1_B),
-+	GPIO_FN(TX4_D), GPIO_FN(HSCK1_B),
- 	GPIO_FN(VI0_VSYNC), GPIO_FN(VI0_DATA1_B_VI0_B1_B),
- 	GPIO_FN(RTS1_C_TANS_C), GPIO_FN(RX4_D), GPIO_FN(PWMFSW0_C),
+ 	/* PA */
+ 	PINMUX_GPIO(GPIO_PA7, PA7_DATA),
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7264.c b/drivers/pinctrl/sh-pfc/pfc-sh7264.c
+index b927440..c03365c 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7264.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7264.c
+@@ -1072,7 +1072,7 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(SD_D2_MARK, PK0MD_10),
+ };
  
- 	/* IPSR9 */
- 	GPIO_FN(VI0_DATA0_VI0_B0), GPIO_FN(HRTS1_B), GPIO_FN(MT1_VCXO),
- 	GPIO_FN(VI0_DATA1_VI0_B1), GPIO_FN(HCTS1_B), GPIO_FN(MT1_PWM),
--	GPIO_FN(VI0_DATA2_VI0_B2), GPIO_FN(MMC1_D0), GPIO_FN(VI0_DATA3_VI0_B3),
--	GPIO_FN(MMC1_D1), GPIO_FN(VI0_DATA4_VI0_B4), GPIO_FN(MMC1_D2),
--	GPIO_FN(VI0_DATA5_VI0_B5), GPIO_FN(MMC1_D3), GPIO_FN(VI0_DATA6_VI0_B6),
--	GPIO_FN(MMC1_D4), GPIO_FN(ARM_TRACEDATA_0), GPIO_FN(VI0_DATA7_VI0_B7),
--	GPIO_FN(MMC1_D5), GPIO_FN(ARM_TRACEDATA_1), GPIO_FN(VI0_G0),
-+	GPIO_FN(VI0_DATA2_VI0_B2), GPIO_FN(VI0_DATA3_VI0_B3),
-+	GPIO_FN(VI0_DATA4_VI0_B4),
-+	GPIO_FN(VI0_DATA5_VI0_B5), GPIO_FN(VI0_DATA6_VI0_B6),
-+	GPIO_FN(ARM_TRACEDATA_0), GPIO_FN(VI0_DATA7_VI0_B7),
-+	GPIO_FN(ARM_TRACEDATA_1), GPIO_FN(VI0_G0),
- 	GPIO_FN(SSI_SCK78_C), GPIO_FN(IRQ0), GPIO_FN(ARM_TRACEDATA_2),
- 	GPIO_FN(VI0_G1), GPIO_FN(SSI_WS78_C), GPIO_FN(IRQ1),
- 	GPIO_FN(ARM_TRACEDATA_3), GPIO_FN(VI0_G2), GPIO_FN(ETH_TXD1),
--	GPIO_FN(MMC1_D6), GPIO_FN(ARM_TRACEDATA_4), GPIO_FN(TS_SPSYNC0),
--	GPIO_FN(VI0_G3), GPIO_FN(ETH_CRS_DV), GPIO_FN(MMC1_D7),
-+	GPIO_FN(ARM_TRACEDATA_4), GPIO_FN(TS_SPSYNC0),
-+	GPIO_FN(VI0_G3), GPIO_FN(ETH_CRS_DV),
- 	GPIO_FN(ARM_TRACEDATA_5), GPIO_FN(TS_SDAT0), GPIO_FN(VI0_G4),
--	GPIO_FN(ETH_TX_EN), GPIO_FN(SD2_DAT0_B), GPIO_FN(ARM_TRACEDATA_6),
--	GPIO_FN(VI0_G5), GPIO_FN(ETH_RX_ER), GPIO_FN(SD2_DAT1_B),
-+	GPIO_FN(ETH_TX_EN), GPIO_FN(ARM_TRACEDATA_6),
-+	GPIO_FN(VI0_G5), GPIO_FN(ETH_RX_ER),
- 	GPIO_FN(ARM_TRACEDATA_7), GPIO_FN(VI0_G6), GPIO_FN(ETH_RXD0),
--	GPIO_FN(SD2_DAT2_B), GPIO_FN(ARM_TRACEDATA_8), GPIO_FN(VI0_G7),
--	GPIO_FN(ETH_RXD1), GPIO_FN(SD2_DAT3_B), GPIO_FN(ARM_TRACEDATA_9),
-+	GPIO_FN(ARM_TRACEDATA_8), GPIO_FN(VI0_G7),
-+	GPIO_FN(ETH_RXD1), GPIO_FN(ARM_TRACEDATA_9),
+-static struct pinmux_pin pinmux_pins[] = {
++static struct sh_pfc_pin pinmux_pins[] = {
  
- 	/* IPSR10 */
- 	GPIO_FN(VI0_R0), GPIO_FN(SSI_SDATA7_C), GPIO_FN(SCK1_C),
- 	GPIO_FN(DREQ1_B), GPIO_FN(ARM_TRACEDATA_10), GPIO_FN(DREQ0_C),
- 	GPIO_FN(VI0_R1), GPIO_FN(SSI_SDATA8_C), GPIO_FN(DACK1_B),
- 	GPIO_FN(ARM_TRACEDATA_11), GPIO_FN(DACK0_C), GPIO_FN(DRACK0_C),
--	GPIO_FN(VI0_R2), GPIO_FN(ETH_LINK), GPIO_FN(SD2_CLK_B), GPIO_FN(IRQ2),
-+	GPIO_FN(VI0_R2), GPIO_FN(ETH_LINK), GPIO_FN(IRQ2),
- 	GPIO_FN(ARM_TRACEDATA_12), GPIO_FN(VI0_R3), GPIO_FN(ETH_MAGIC),
--	GPIO_FN(SD2_CMD_B), GPIO_FN(IRQ3), GPIO_FN(ARM_TRACEDATA_13),
--	GPIO_FN(VI0_R4), GPIO_FN(ETH_REFCLK), GPIO_FN(SD2_CD_B),
-+	GPIO_FN(IRQ3), GPIO_FN(ARM_TRACEDATA_13),
-+	GPIO_FN(VI0_R4), GPIO_FN(ETH_REFCLK),
- 	GPIO_FN(HSPI_CLK1_B), GPIO_FN(ARM_TRACEDATA_14), GPIO_FN(MT1_CLK),
- 	GPIO_FN(TS_SCK0), GPIO_FN(VI0_R5), GPIO_FN(ETH_TXD0),
--	GPIO_FN(SD2_WP_B), GPIO_FN(HSPI_CS1_B), GPIO_FN(ARM_TRACEDATA_15),
-+	GPIO_FN(HSPI_CS1_B), GPIO_FN(ARM_TRACEDATA_15),
- 	GPIO_FN(MT1_D), GPIO_FN(TS_SDEN0), GPIO_FN(VI0_R6), GPIO_FN(ETH_MDC),
- 	GPIO_FN(DREQ2_C), GPIO_FN(HSPI_TX1_B), GPIO_FN(TRACECLK),
- 	GPIO_FN(MT1_BEN), GPIO_FN(PWMFSW0_D), GPIO_FN(VI0_R7),
-@@ -2911,19 +2911,19 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(SPV_TRST), GPIO_FN(SCL3),
+ 	/* Port A */
+ 	PINMUX_GPIO(GPIO_PA3, PA3_DATA),
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7269.c b/drivers/pinctrl/sh-pfc/pfc-sh7269.c
+index 8f9b975..1fa0950 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7269.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7269.c
+@@ -1452,7 +1452,7 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(PWM1A_MARK, PJ0MD_100),
+ };
  
- 	/* IPSR11 */
--	GPIO_FN(VI1_DATA0_VI1_B0), GPIO_FN(SD2_DAT0), GPIO_FN(SIM_RST),
-+	GPIO_FN(VI1_DATA0_VI1_B0), GPIO_FN(SIM_RST),
- 	GPIO_FN(SPV_TCK), GPIO_FN(ADICLK_B), GPIO_FN(VI1_DATA1_VI1_B1),
--	GPIO_FN(SD2_DAT1), GPIO_FN(MT0_CLK), GPIO_FN(SPV_TMS),
--	GPIO_FN(ADICS_B_SAMP_B), GPIO_FN(VI1_DATA2_VI1_B2), GPIO_FN(SD2_DAT2),
-+	GPIO_FN(MT0_CLK), GPIO_FN(SPV_TMS),
-+	GPIO_FN(ADICS_B_SAMP_B), GPIO_FN(VI1_DATA2_VI1_B2),
- 	GPIO_FN(MT0_D), GPIO_FN(SPVTDI), GPIO_FN(ADIDATA_B),
--	GPIO_FN(VI1_DATA3_VI1_B3), GPIO_FN(SD2_DAT3), GPIO_FN(MT0_BEN),
-+	GPIO_FN(VI1_DATA3_VI1_B3), GPIO_FN(MT0_BEN),
- 	GPIO_FN(SPV_TDO), GPIO_FN(ADICHS0_B), GPIO_FN(VI1_DATA4_VI1_B4),
--	GPIO_FN(SD2_CLK), GPIO_FN(MT0_PEN), GPIO_FN(SPA_TRST),
-+	GPIO_FN(MT0_PEN), GPIO_FN(SPA_TRST),
- 	GPIO_FN(HSPI_CLK1_D), GPIO_FN(ADICHS1_B), GPIO_FN(VI1_DATA5_VI1_B5),
--	GPIO_FN(SD2_CMD), GPIO_FN(MT0_SYNC), GPIO_FN(SPA_TCK),
-+	GPIO_FN(MT0_SYNC), GPIO_FN(SPA_TCK),
- 	GPIO_FN(HSPI_CS1_D), GPIO_FN(ADICHS2_B), GPIO_FN(VI1_DATA6_VI1_B6),
--	GPIO_FN(SD2_CD), GPIO_FN(MT0_VCXO), GPIO_FN(SPA_TMS),
--	GPIO_FN(HSPI_TX1_D), GPIO_FN(VI1_DATA7_VI1_B7), GPIO_FN(SD2_WP),
-+	GPIO_FN(MT0_VCXO), GPIO_FN(SPA_TMS),
-+	GPIO_FN(HSPI_TX1_D), GPIO_FN(VI1_DATA7_VI1_B7),
- 	GPIO_FN(MT0_PWM), GPIO_FN(SPA_TDI), GPIO_FN(HSPI_RX1_D),
- 	GPIO_FN(VI1_G0), GPIO_FN(VI3_DATA0),
- 	GPIO_FN(TS_SCK1), GPIO_FN(DREQ2_B), GPIO_FN(TX2), GPIO_FN(SPA_TDO),
+-static struct pinmux_pin pinmux_pins[] = {
++static struct sh_pfc_pin pinmux_pins[] = {
+ 	/* Port A */
+ 	PINMUX_GPIO(GPIO_PA1, PA1_DATA),
+ 	PINMUX_GPIO(GPIO_PA0, PA0_DATA),
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+index 3a1961b..b15a16a 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+@@ -929,7 +929,7 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(MFIv4_MARK,		MSEL4CR_6_1),
+ };
+ 
+-static struct pinmux_pin pinmux_pins[] = {
++static struct sh_pfc_pin pinmux_pins[] = {
+ 	GPIO_PORT_ALL(),
+ };
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index 02cb1dc..ca1e97a 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -1539,7 +1539,7 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(FSIAISLD_PU_MARK, PORT55_FN1, PORT55_IN_PU),
+ };
+ 
+-static struct pinmux_pin pinmux_pins[] = {
++static struct sh_pfc_pin pinmux_pins[] = {
+ 	GPIO_PORT_ALL(),
+ };
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7720.c b/drivers/pinctrl/sh-pfc/pfc-sh7720.c
+index 9952a7c2..0b3078b 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7720.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7720.c
+@@ -606,7 +606,7 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(SIM_CLK_MARK, PSELD_1_0_10, PTV0_FN),
+ };
+ 
+-static struct pinmux_pin pinmux_pins[] = {
++static struct sh_pfc_pin pinmux_pins[] = {
+ 	/* PTA */
+ 	PINMUX_GPIO(GPIO_PTA7, PTA7_DATA),
+ 	PINMUX_GPIO(GPIO_PTA6, PTA6_DATA),
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7722.c b/drivers/pinctrl/sh-pfc/pfc-sh7722.c
+index d561737..3a8d95f 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7722.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7722.c
+@@ -787,7 +787,7 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(KEYOUT5_IN5_MARK, HIZA14_KEYSC, KEYOUT5_IN5),
+ };
+ 
+-static struct pinmux_pin pinmux_pins[] = {
++static struct sh_pfc_pin pinmux_pins[] = {
+ 	/* PTA */
+ 	PINMUX_GPIO(GPIO_PTA7, PTA7_DATA),
+ 	PINMUX_GPIO(GPIO_PTA6, PTA6_DATA),
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7723.c b/drivers/pinctrl/sh-pfc/pfc-sh7723.c
+index 60831bf..d8797ff 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7723.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7723.c
+@@ -923,7 +923,7 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(SIUBISLD_MARK, PSD1_PSD0_FN2, PTZ0_FN),
+ };
+ 
+-static struct pinmux_pin pinmux_pins[] = {
++static struct sh_pfc_pin pinmux_pins[] = {
+ 	/* PTA */
+ 	PINMUX_GPIO(GPIO_PTA7, PTA7_DATA),
+ 	PINMUX_GPIO(GPIO_PTA6, PTA6_DATA),
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7724.c b/drivers/pinctrl/sh-pfc/pfc-sh7724.c
+index 0b9d16e..40f430b 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7724.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7724.c
+@@ -1192,7 +1192,7 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(SCIF3_I_TXD_MARK,	PSB14_1, PTZ3_FN),
+ };
+ 
+-static struct pinmux_pin pinmux_pins[] = {
++static struct sh_pfc_pin pinmux_pins[] = {
+ 	/* PTA */
+ 	PINMUX_GPIO(GPIO_PTA7, PTA7_DATA),
+ 	PINMUX_GPIO(GPIO_PTA6, PTA6_DATA),
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7734.c b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
+index e3bfeff..20c44dd 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7734.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
+@@ -1384,7 +1384,7 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_IPSR_DATA(IP11_28, ST_CLKOUT),
+ };
+ 
+-static struct pinmux_pin pinmux_pins[] = {
++static struct sh_pfc_pin pinmux_pins[] = {
+ 	PINMUX_GPIO_GP_ALL(),
+ };
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7757.c b/drivers/pinctrl/sh-pfc/pfc-sh7757.c
+index 6e78358..e81ab0e 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7757.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7757.c
+@@ -1114,7 +1114,7 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(ON_DQ0_MARK, PS8_8_FN2, PTZ0_FN),
+ };
+ 
+-static struct pinmux_pin pinmux_pins[] = {
++static struct sh_pfc_pin pinmux_pins[] = {
+ 	/* PTA */
+ 	PINMUX_GPIO(GPIO_PTA7, PTA7_DATA),
+ 	PINMUX_GPIO(GPIO_PTA6, PTA6_DATA),
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7785.c b/drivers/pinctrl/sh-pfc/pfc-sh7785.c
+index cce232d..6049f59 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7785.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7785.c
+@@ -702,7 +702,7 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(IRQOUT_MARK, P2MSEL2_1),
+ };
+ 
+-static struct pinmux_pin pinmux_pins[] = {
++static struct sh_pfc_pin pinmux_pins[] = {
+ 	/* PA */
+ 	PINMUX_GPIO(GPIO_PA7, PA7_DATA),
+ 	PINMUX_GPIO(GPIO_PA6, PA6_DATA),
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7786.c b/drivers/pinctrl/sh-pfc/pfc-sh7786.c
+index 74a0e11..526e784 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7786.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7786.c
+@@ -427,7 +427,7 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(SSI3_SCK_MARK,	P2MSEL6_1, P2MSEL5_1, PJ1_FN),
+ };
+ 
+-static struct pinmux_pin pinmux_pins[] = {
++static struct sh_pfc_pin pinmux_pins[] = {
+ 	/* PA */
+ 	PINMUX_GPIO(GPIO_PA7, PA7_DATA),
+ 	PINMUX_GPIO(GPIO_PA6, PA6_DATA),
+diff --git a/drivers/pinctrl/sh-pfc/pfc-shx3.c b/drivers/pinctrl/sh-pfc/pfc-shx3.c
+index eeecffc..93d60cd 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-shx3.c
++++ b/drivers/pinctrl/sh-pfc/pfc-shx3.c
+@@ -306,7 +306,7 @@ static pinmux_enum_t shx3_pinmux_data[] = {
+ 	PINMUX_DATA(IRQOUT_MARK,	PH0_FN),
+ };
+ 
+-static struct pinmux_pin shx3_pinmux_pins[] = {
++static struct sh_pfc_pin shx3_pinmux_pins[] = {
+ 	/* PA */
+ 	PINMUX_GPIO(GPIO_PA7, PA7_DATA),
+ 	PINMUX_GPIO(GPIO_PA6, PA6_DATA),
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index 7759290..d420d99 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -307,7 +307,7 @@ static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ 
+ 	for (i = 0; i < pmx->nr_pads; i++) {
+ 		struct pinctrl_pin_desc *pin = pmx->pads + i;
+-		struct pinmux_pin *gpio = pfc->info->pins + i;
++		struct sh_pfc_pin *gpio = pfc->info->pins + i;
+ 
+ 		pin->number = i;
+ 		pin->name = gpio->name;
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index 940170a..dae9e15 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -15,7 +15,6 @@
+ #include <asm-generic/gpio.h>
+ 
+ typedef unsigned short pinmux_enum_t;
+-typedef unsigned short pinmux_flag_t;
+ 
+ enum {
+ 	PINMUX_TYPE_NONE,
+@@ -35,9 +34,9 @@ enum {
+ #define PINMUX_FLAG_DREG_SHIFT      10
+ #define PINMUX_FLAG_DREG            (0x3f << PINMUX_FLAG_DREG_SHIFT)
+ 
+-struct pinmux_pin {
++struct sh_pfc_pin {
+ 	const pinmux_enum_t enum_id;
+-	pinmux_flag_t flags;
++	unsigned short flags;
+ 	const char *name;
+ };
+ 
+@@ -110,7 +109,7 @@ struct sh_pfc_soc_info {
+ 	struct pinmux_range output;
+ 	struct pinmux_range function;
+ 
+-	struct pinmux_pin *pins;
++	struct sh_pfc_pin *pins;
+ 	unsigned int nr_pins;
+ 	struct pinmux_func *func_gpios;
+ 	unsigned int nr_func_gpios;
 -- 
-1.7.10.4
+1.8.1.5
 
