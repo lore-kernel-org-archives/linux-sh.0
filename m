@@ -1,295 +1,174 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:05:53 +0000
-Subject: [PATCH 057/142] sh-pfc: sh73a0: Add LCD and LCD2 pin groups and functions
-Message-Id: <1363604838-29359-58-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 06 Mar 2013 13:47:11 +0000
+Subject: [PATCH v2 32/39] ARM: shmobile: sh73a0: Remove LCDC and LCDC2 function GPIOs
+Message-Id: <1362577638-15493-33-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Those GPIOs have been deprecated by the pinctrl API. They are unused and
+unneeded, remove them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c |  254 +++++++++++++++++++++++++++++++++++
- 1 file changed, 254 insertions(+)
+ arch/arm/mach-shmobile/include/mach/sh73a0.h | 112 ++++++++++++---------------
+ 1 file changed, 49 insertions(+), 63 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index f31adfc..c8b2604 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -1846,6 +1846,255 @@ static const struct pinmux_range pinmux_ranges[] = {
- 	{.begin = 288, .end = 309,},
- };
+diff --git a/arch/arm/mach-shmobile/include/mach/sh73a0.h b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+index 4dca135..a7b7a3c 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh73a0.h
++++ b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+@@ -218,38 +218,33 @@ enum {
+ 	GPIO_FN_PORT116_I2C_SDA3,
+ 	GPIO_FN_HSI_RX_FLAG, GPIO_FN_BBIF1_SS1, GPIO_FN_BBIF1_FLOW,
+ 	GPIO_FN_HSI_TX_FLAG,
+-	GPIO_FN_VIO_VD, GPIO_FN_PORT128_LCD2VSYN, GPIO_FN_VIO2_VD, \
+-	GPIO_FN_LCD2D0,
++	GPIO_FN_VIO_VD, GPIO_FN_VIO2_VD,
  
-+/* - LCD -------------------------------------------------------------------- */
-+static const unsigned int lcd_data8_pins[] = {
-+	/* D[0:7] */
-+	192, 193, 194, 195, 196, 197, 198, 199,
-+};
-+static const unsigned int lcd_data8_mux[] = {
-+	LCDD0_MARK, LCDD1_MARK, LCDD2_MARK, LCDD3_MARK,
-+	LCDD4_MARK, LCDD5_MARK, LCDD6_MARK, LCDD7_MARK,
-+};
-+static const unsigned int lcd_data9_pins[] = {
-+	/* D[0:8] */
-+	192, 193, 194, 195, 196, 197, 198, 199,
-+	200,
-+};
-+static const unsigned int lcd_data9_mux[] = {
-+	LCDD0_MARK, LCDD1_MARK, LCDD2_MARK, LCDD3_MARK,
-+	LCDD4_MARK, LCDD5_MARK, LCDD6_MARK, LCDD7_MARK,
-+	LCDD8_MARK,
-+};
-+static const unsigned int lcd_data12_pins[] = {
-+	/* D[0:11] */
-+	192, 193, 194, 195, 196, 197, 198, 199,
-+	200, 201, 202, 203,
-+};
-+static const unsigned int lcd_data12_mux[] = {
-+	LCDD0_MARK, LCDD1_MARK, LCDD2_MARK, LCDD3_MARK,
-+	LCDD4_MARK, LCDD5_MARK, LCDD6_MARK, LCDD7_MARK,
-+	LCDD8_MARK, LCDD9_MARK, LCDD10_MARK, LCDD11_MARK,
-+};
-+static const unsigned int lcd_data16_pins[] = {
-+	/* D[0:15] */
-+	192, 193, 194, 195, 196, 197, 198, 199,
-+	200, 201, 202, 203, 204, 205, 206, 207,
-+};
-+static const unsigned int lcd_data16_mux[] = {
-+	LCDD0_MARK, LCDD1_MARK, LCDD2_MARK, LCDD3_MARK,
-+	LCDD4_MARK, LCDD5_MARK, LCDD6_MARK, LCDD7_MARK,
-+	LCDD8_MARK, LCDD9_MARK, LCDD10_MARK, LCDD11_MARK,
-+	LCDD12_MARK, LCDD13_MARK, LCDD14_MARK, LCDD15_MARK,
-+};
-+static const unsigned int lcd_data18_pins[] = {
-+	/* D[0:17] */
-+	192, 193, 194, 195, 196, 197, 198, 199,
-+	200, 201, 202, 203, 204, 205, 206, 207,
-+	208, 209,
-+};
-+static const unsigned int lcd_data18_mux[] = {
-+	LCDD0_MARK, LCDD1_MARK, LCDD2_MARK, LCDD3_MARK,
-+	LCDD4_MARK, LCDD5_MARK, LCDD6_MARK, LCDD7_MARK,
-+	LCDD8_MARK, LCDD9_MARK, LCDD10_MARK, LCDD11_MARK,
-+	LCDD12_MARK, LCDD13_MARK, LCDD14_MARK, LCDD15_MARK,
-+	LCDD16_MARK, LCDD17_MARK,
-+};
-+static const unsigned int lcd_data24_pins[] = {
-+	/* D[0:23] */
-+	192, 193, 194, 195, 196, 197, 198, 199,
-+	200, 201, 202, 203, 204, 205, 206, 207,
-+	208, 209, 210, 211, 212, 213, 214, 215
-+};
-+static const unsigned int lcd_data24_mux[] = {
-+	LCDD0_MARK, LCDD1_MARK, LCDD2_MARK, LCDD3_MARK,
-+	LCDD4_MARK, LCDD5_MARK, LCDD6_MARK, LCDD7_MARK,
-+	LCDD8_MARK, LCDD9_MARK, LCDD10_MARK, LCDD11_MARK,
-+	LCDD12_MARK, LCDD13_MARK, LCDD14_MARK, LCDD15_MARK,
-+	LCDD16_MARK, LCDD17_MARK, LCDD18_MARK, LCDD19_MARK,
-+	LCDD20_MARK, LCDD21_MARK, LCDD22_MARK, LCDD23_MARK,
-+};
-+static const unsigned int lcd_display_pins[] = {
-+	/* DON */
-+	222,
-+};
-+static const unsigned int lcd_display_mux[] = {
-+	LCDDON_MARK,
-+};
-+static const unsigned int lcd_lclk_pins[] = {
-+	/* LCLK */
-+	221,
-+};
-+static const unsigned int lcd_lclk_mux[] = {
-+	LCDLCLK_MARK,
-+};
-+static const unsigned int lcd_sync_pins[] = {
-+	/* VSYN, HSYN, DCK, DISP */
-+	220, 218, 216, 219,
-+};
-+static const unsigned int lcd_sync_mux[] = {
-+	LCDVSYN_MARK, LCDHSYN_MARK, LCDDCK_MARK, LCDDISP_MARK,
-+};
-+static const unsigned int lcd_sys_pins[] = {
-+	/* CS, WR, RD, RS */
-+	218, 216, 217, 219,
-+};
-+static const unsigned int lcd_sys_mux[] = {
-+	LCDCS__MARK, LCDWR__MARK, LCDRD__MARK, LCDRS_MARK,
-+};
-+/* - LCD2 ------------------------------------------------------------------- */
-+static const unsigned int lcd2_data8_pins[] = {
-+	/* D[0:7] */
-+	128, 129, 142, 143, 144, 145, 138, 139,
-+};
-+static const unsigned int lcd2_data8_mux[] = {
-+	LCD2D0_MARK, LCD2D1_MARK, LCD2D2_MARK, LCD2D3_MARK,
-+	LCD2D4_MARK, LCD2D5_MARK, LCD2D6_MARK, LCD2D7_MARK,
-+};
-+static const unsigned int lcd2_data9_pins[] = {
-+	/* D[0:8] */
-+	128, 129, 142, 143, 144, 145, 138, 139,
-+	140,
-+};
-+static const unsigned int lcd2_data9_mux[] = {
-+	LCD2D0_MARK, LCD2D1_MARK, LCD2D2_MARK, LCD2D3_MARK,
-+	LCD2D4_MARK, LCD2D5_MARK, LCD2D6_MARK, LCD2D7_MARK,
-+	LCD2D8_MARK,
-+};
-+static const unsigned int lcd2_data12_pins[] = {
-+	/* D[0:12] */
-+	128, 129, 142, 143, 144, 145, 138, 139,
-+	140, 141, 130, 131,
-+};
-+static const unsigned int lcd2_data12_mux[] = {
-+	LCD2D0_MARK, LCD2D1_MARK, LCD2D2_MARK, LCD2D3_MARK,
-+	LCD2D4_MARK, LCD2D5_MARK, LCD2D6_MARK, LCD2D7_MARK,
-+	LCD2D8_MARK, LCD2D9_MARK, LCD2D10_MARK, LCD2D11_MARK,
-+};
-+static const unsigned int lcd2_data16_pins[] = {
-+	/* D[0:15] */
-+	128, 129, 142, 143, 144, 145, 138, 139,
-+	140, 141, 130, 131, 132, 133, 134, 135,
-+};
-+static const unsigned int lcd2_data16_mux[] = {
-+	LCD2D0_MARK, LCD2D1_MARK, LCD2D2_MARK, LCD2D3_MARK,
-+	LCD2D4_MARK, LCD2D5_MARK, LCD2D6_MARK, LCD2D7_MARK,
-+	LCD2D8_MARK, LCD2D9_MARK, LCD2D10_MARK, LCD2D11_MARK,
-+	LCD2D12_MARK, LCD2D13_MARK, LCD2D14_MARK, LCD2D15_MARK,
-+};
-+static const unsigned int lcd2_data18_pins[] = {
-+	/* D[0:17] */
-+	128, 129, 142, 143, 144, 145, 138, 139,
-+	140, 141, 130, 131, 132, 133, 134, 135,
-+	136, 137,
-+};
-+static const unsigned int lcd2_data18_mux[] = {
-+	LCD2D0_MARK, LCD2D1_MARK, LCD2D2_MARK, LCD2D3_MARK,
-+	LCD2D4_MARK, LCD2D5_MARK, LCD2D6_MARK, LCD2D7_MARK,
-+	LCD2D8_MARK, LCD2D9_MARK, LCD2D10_MARK, LCD2D11_MARK,
-+	LCD2D12_MARK, LCD2D13_MARK, LCD2D14_MARK, LCD2D15_MARK,
-+	LCD2D16_MARK, LCD2D17_MARK,
-+};
-+static const unsigned int lcd2_data24_pins[] = {
-+	/* D[0:23] */
-+	128, 129, 142, 143, 144, 145, 138, 139,
-+	140, 141, 130, 131, 132, 133, 134, 135,
-+	136, 137, 146, 147, 234, 235, 238, 239
-+};
-+static const unsigned int lcd2_data24_mux[] = {
-+	LCD2D0_MARK, LCD2D1_MARK, LCD2D2_MARK, LCD2D3_MARK,
-+	LCD2D4_MARK, LCD2D5_MARK, LCD2D6_MARK, LCD2D7_MARK,
-+	LCD2D8_MARK, LCD2D9_MARK, LCD2D10_MARK, LCD2D11_MARK,
-+	LCD2D12_MARK, LCD2D13_MARK, LCD2D14_MARK, LCD2D15_MARK,
-+	LCD2D16_MARK, LCD2D17_MARK, LCD2D18_MARK, LCD2D19_MARK,
-+	LCD2D20_MARK, LCD2D21_MARK, LCD2D22_MARK, LCD2D23_MARK,
-+};
-+static const unsigned int lcd2_sync_0_pins[] = {
-+	/* VSYN, HSYN, DCK, DISP */
-+	128, 129, 146, 145,
-+};
-+static const unsigned int lcd2_sync_0_mux[] = {
-+	PORT128_LCD2VSYN_MARK, PORT129_LCD2HSYN_MARK,
-+	LCD2DCK_MARK, PORT145_LCD2DISP_MARK,
-+};
-+static const unsigned int lcd2_sync_1_pins[] = {
-+	/* VSYN, HSYN, DCK, DISP */
-+	222, 221, 219, 217,
-+};
-+static const unsigned int lcd2_sync_1_mux[] = {
-+	PORT222_LCD2VSYN_MARK, PORT221_LCD2HSYN_MARK,
-+	LCD2DCK_2_MARK, PORT217_LCD2DISP_MARK,
-+};
-+static const unsigned int lcd2_sys_0_pins[] = {
-+	/* CS, WR, RD, RS */
-+	129, 146, 147, 145,
-+};
-+static const unsigned int lcd2_sys_0_mux[] = {
-+	PORT129_LCD2CS__MARK, PORT146_LCD2WR__MARK,
-+	LCD2RD__MARK, PORT145_LCD2RS_MARK,
-+};
-+static const unsigned int lcd2_sys_1_pins[] = {
-+	/* CS, WR, RD, RS */
-+	221, 219, 147, 217,
-+};
-+static const unsigned int lcd2_sys_1_mux[] = {
-+	PORT221_LCD2CS__MARK, PORT219_LCD2WR__MARK,
-+	LCD2RD__MARK, PORT217_LCD2RS_MARK,
-+};
-+
-+static const struct sh_pfc_pin_group pinmux_groups[] = {
-+	SH_PFC_PIN_GROUP(lcd_data8),
-+	SH_PFC_PIN_GROUP(lcd_data9),
-+	SH_PFC_PIN_GROUP(lcd_data12),
-+	SH_PFC_PIN_GROUP(lcd_data16),
-+	SH_PFC_PIN_GROUP(lcd_data18),
-+	SH_PFC_PIN_GROUP(lcd_data24),
-+	SH_PFC_PIN_GROUP(lcd_display),
-+	SH_PFC_PIN_GROUP(lcd_lclk),
-+	SH_PFC_PIN_GROUP(lcd_sync),
-+	SH_PFC_PIN_GROUP(lcd_sys),
-+	SH_PFC_PIN_GROUP(lcd2_data8),
-+	SH_PFC_PIN_GROUP(lcd2_data9),
-+	SH_PFC_PIN_GROUP(lcd2_data12),
-+	SH_PFC_PIN_GROUP(lcd2_data16),
-+	SH_PFC_PIN_GROUP(lcd2_data18),
-+	SH_PFC_PIN_GROUP(lcd2_data24),
-+	SH_PFC_PIN_GROUP(lcd2_sync_0),
-+	SH_PFC_PIN_GROUP(lcd2_sync_1),
-+	SH_PFC_PIN_GROUP(lcd2_sys_0),
-+	SH_PFC_PIN_GROUP(lcd2_sys_1),
-+};
-+
-+static const char * const lcd_groups[] = {
-+	"lcd_data8",
-+	"lcd_data9",
-+	"lcd_data12",
-+	"lcd_data16",
-+	"lcd_data18",
-+	"lcd_data24",
-+	"lcd_display",
-+	"lcd_lclk",
-+	"lcd_sync",
-+	"lcd_sys",
-+};
-+
-+static const char * const lcd2_groups[] = {
-+	"lcd2_data8",
-+	"lcd2_data9",
-+	"lcd2_data12",
-+	"lcd2_data16",
-+	"lcd2_data18",
-+	"lcd2_data24",
-+	"lcd2_sync_0",
-+	"lcd2_sync_1",
-+	"lcd2_sys_0",
-+	"lcd2_sys_1",
-+};
-+
-+static const struct sh_pfc_function pinmux_functions[] = {
-+	SH_PFC_FUNCTION(lcd),
-+	SH_PFC_FUNCTION(lcd2),
-+};
-+
- #define PINMUX_FN_BASE	GPIO_FN_VBUS_0
+-	GPIO_FN_VIO_HD, GPIO_FN_PORT129_LCD2HSYN, GPIO_FN_PORT129_LCD2CS_, \
+-	GPIO_FN_VIO2_HD, GPIO_FN_LCD2D1,
+-	GPIO_FN_VIO_D0, GPIO_FN_PORT130_MSIOF2_RXD, GPIO_FN_LCD2D10,
++	GPIO_FN_VIO_HD,
++	GPIO_FN_VIO2_HD,
++	GPIO_FN_VIO_D0, GPIO_FN_PORT130_MSIOF2_RXD,
+ 	GPIO_FN_VIO_D1, GPIO_FN_PORT131_KEYOUT6, GPIO_FN_PORT131_MSIOF2_SS1, \
+-	GPIO_FN_PORT131_KEYOUT11, GPIO_FN_LCD2D11,
++	GPIO_FN_PORT131_KEYOUT11,
+ 	GPIO_FN_VIO_D2, GPIO_FN_PORT132_KEYOUT7, GPIO_FN_PORT132_MSIOF2_SS2, \
+-	GPIO_FN_PORT132_KEYOUT10, GPIO_FN_LCD2D12,
+-	GPIO_FN_VIO_D3, GPIO_FN_MSIOF2_TSYNC, GPIO_FN_LCD2D13,
+-	GPIO_FN_VIO_D4, GPIO_FN_MSIOF2_TXD, GPIO_FN_LCD2D14,
+-	GPIO_FN_VIO_D5, GPIO_FN_MSIOF2_TSCK, GPIO_FN_LCD2D15,
+-	GPIO_FN_VIO_D6, GPIO_FN_PORT136_KEYOUT8, GPIO_FN_LCD2D16,
+-	GPIO_FN_VIO_D7, GPIO_FN_PORT137_KEYOUT9, GPIO_FN_LCD2D17,
++	GPIO_FN_PORT132_KEYOUT10,
++	GPIO_FN_VIO_D3, GPIO_FN_MSIOF2_TSYNC,
++	GPIO_FN_VIO_D4, GPIO_FN_MSIOF2_TXD,
++	GPIO_FN_VIO_D5, GPIO_FN_MSIOF2_TSCK,
++	GPIO_FN_VIO_D6, GPIO_FN_PORT136_KEYOUT8,
++	GPIO_FN_VIO_D7, GPIO_FN_PORT137_KEYOUT9,
+ 	GPIO_FN_VIO_D8, GPIO_FN_PORT138_KEYOUT8, GPIO_FN_VIO2_D0, \
+-	GPIO_FN_LCD2D6,
+ 	GPIO_FN_VIO_D9, GPIO_FN_PORT139_KEYOUT9, GPIO_FN_VIO2_D1, \
+-	GPIO_FN_LCD2D7,
+-	GPIO_FN_VIO_D10, GPIO_FN_TPU0TO2, GPIO_FN_VIO2_D2, GPIO_FN_LCD2D8,
+-	GPIO_FN_VIO_D11, GPIO_FN_TPU0TO3, GPIO_FN_VIO2_D3, GPIO_FN_LCD2D9,
++	GPIO_FN_VIO_D10, GPIO_FN_TPU0TO2, GPIO_FN_VIO2_D2,
++	GPIO_FN_VIO_D11, GPIO_FN_TPU0TO3, GPIO_FN_VIO2_D3,
+ 	GPIO_FN_VIO_D12, GPIO_FN_PORT142_KEYOUT10, GPIO_FN_VIO2_D4, \
+-	GPIO_FN_LCD2D2,
+ 	GPIO_FN_VIO_D13, GPIO_FN_PORT143_KEYOUT11, GPIO_FN_PORT143_KEYOUT6, \
+-	GPIO_FN_VIO2_D5, GPIO_FN_LCD2D3,
++	GPIO_FN_VIO2_D5,
+ 	GPIO_FN_VIO_D14, GPIO_FN_PORT144_KEYOUT7, GPIO_FN_VIO2_D6, \
+-	GPIO_FN_LCD2D4,
+-	GPIO_FN_VIO_D15, GPIO_FN_TPU1TO3, GPIO_FN_PORT145_LCD2DISP, \
+-	GPIO_FN_PORT145_LCD2RS, GPIO_FN_VIO2_D7, GPIO_FN_LCD2D5,
+-	GPIO_FN_VIO_CLK, GPIO_FN_LCD2DCK, GPIO_FN_PORT146_LCD2WR_, \
+-	GPIO_FN_VIO2_CLK, GPIO_FN_LCD2D18,
+-	GPIO_FN_VIO_FIELD, GPIO_FN_LCD2RD_, GPIO_FN_VIO2_FIELD, GPIO_FN_LCD2D19,
++	GPIO_FN_VIO_D15, GPIO_FN_TPU1TO3,
++	GPIO_FN_VIO2_D7,
++	GPIO_FN_VIO_CLK,
++	GPIO_FN_VIO2_CLK,
++	GPIO_FN_VIO_FIELD, GPIO_FN_VIO2_FIELD,
+ 	GPIO_FN_VIO_CKO,
+ 	GPIO_FN_A27, GPIO_FN_PORT149_RDWR, GPIO_FN_MFG0_IN1, \
+ 	GPIO_FN_PORT149_KEYOUT9,
+@@ -268,45 +263,38 @@ enum {
+ 	GPIO_FN_PORT162_SCIFB_RXD, GPIO_FN_PORT162_SCIFA5_RXD,
+ 	GPIO_FN_PORT163_SCIFB_RTS_, GPIO_FN_PORT163_SCIFA5_RTS_, \
+ 	GPIO_FN_TPU3TO0,
+-	GPIO_FN_LCDD0,
+-	GPIO_FN_LCDD1, GPIO_FN_PORT193_SCIFA5_CTS_, GPIO_FN_BBIF2_TSYNC1,
+-	GPIO_FN_LCDD2, GPIO_FN_PORT194_SCIFA5_RTS_, GPIO_FN_BBIF2_TSCK1,
+-	GPIO_FN_LCDD3, GPIO_FN_PORT195_SCIFA5_RXD, GPIO_FN_BBIF2_TXD1,
+-	GPIO_FN_LCDD4, GPIO_FN_PORT196_SCIFA5_TXD,
+-	GPIO_FN_LCDD5, GPIO_FN_PORT197_SCIFA5_SCK, GPIO_FN_MFG2_OUT2, \
++	GPIO_FN_PORT193_SCIFA5_CTS_, GPIO_FN_BBIF2_TSYNC1,
++	GPIO_FN_PORT194_SCIFA5_RTS_, GPIO_FN_BBIF2_TSCK1,
++	GPIO_FN_PORT195_SCIFA5_RXD, GPIO_FN_BBIF2_TXD1,
++	GPIO_FN_PORT196_SCIFA5_TXD,
++	GPIO_FN_PORT197_SCIFA5_SCK, GPIO_FN_MFG2_OUT2,
+ 	GPIO_FN_TPU2TO1,
+-	GPIO_FN_LCDD6,
+-	GPIO_FN_LCDD7, GPIO_FN_TPU4TO1, GPIO_FN_MFG4_OUT2,
+-	GPIO_FN_LCDD8, GPIO_FN_D16,
+-	GPIO_FN_LCDD9, GPIO_FN_D17,
+-	GPIO_FN_LCDD10, GPIO_FN_D18,
+-	GPIO_FN_LCDD11, GPIO_FN_D19,
+-	GPIO_FN_LCDD12, GPIO_FN_D20,
+-	GPIO_FN_LCDD13, GPIO_FN_D21,
+-	GPIO_FN_LCDD14, GPIO_FN_D22,
+-	GPIO_FN_LCDD15, GPIO_FN_PORT207_MSIOF0L_SS1, GPIO_FN_D23,
+-	GPIO_FN_LCDD16, GPIO_FN_PORT208_MSIOF0L_SS2, GPIO_FN_D24,
+-	GPIO_FN_LCDD17, GPIO_FN_D25,
+-	GPIO_FN_LCDD18, GPIO_FN_DREQ2, GPIO_FN_PORT210_MSIOF0L_SS1, GPIO_FN_D26,
+-	GPIO_FN_LCDD19, GPIO_FN_PORT211_MSIOF0L_SS2, GPIO_FN_D27,
+-	GPIO_FN_LCDD20, GPIO_FN_TS_SPSYNC1, GPIO_FN_MSIOF0L_MCK0, GPIO_FN_D28,
+-	GPIO_FN_LCDD21, GPIO_FN_TS_SDAT1, GPIO_FN_MSIOF0L_MCK1, GPIO_FN_D29,
+-	GPIO_FN_LCDD22, GPIO_FN_TS_SDEN1, GPIO_FN_MSIOF0L_RSCK, GPIO_FN_D30,
+-	GPIO_FN_LCDD23, GPIO_FN_TS_SCK1, GPIO_FN_MSIOF0L_RSYNC, GPIO_FN_D31,
+-	GPIO_FN_LCDDCK, GPIO_FN_LCDWR_,
+-	GPIO_FN_LCDRD_, GPIO_FN_DACK2, GPIO_FN_PORT217_LCD2RS, \
+-	GPIO_FN_MSIOF0L_TSYNC, GPIO_FN_VIO2_FIELD3, GPIO_FN_PORT217_LCD2DISP,
+-	GPIO_FN_LCDHSYN, GPIO_FN_LCDCS_, GPIO_FN_LCDCS2_, GPIO_FN_DACK3, \
++	GPIO_FN_TPU4TO1, GPIO_FN_MFG4_OUT2,
++	GPIO_FN_D16,
++	GPIO_FN_D17,
++	GPIO_FN_D18,
++	GPIO_FN_D19,
++	GPIO_FN_D20,
++	GPIO_FN_D21,
++	GPIO_FN_D22,
++	GPIO_FN_PORT207_MSIOF0L_SS1, GPIO_FN_D23,
++	GPIO_FN_PORT208_MSIOF0L_SS2, GPIO_FN_D24,
++	GPIO_FN_D25,
++	GPIO_FN_DREQ2, GPIO_FN_PORT210_MSIOF0L_SS1, GPIO_FN_D26,
++	GPIO_FN_PORT211_MSIOF0L_SS2, GPIO_FN_D27,
++	GPIO_FN_TS_SPSYNC1, GPIO_FN_MSIOF0L_MCK0, GPIO_FN_D28,
++	GPIO_FN_TS_SDAT1, GPIO_FN_MSIOF0L_MCK1, GPIO_FN_D29,
++	GPIO_FN_TS_SDEN1, GPIO_FN_MSIOF0L_RSCK, GPIO_FN_D30,
++	GPIO_FN_TS_SCK1, GPIO_FN_MSIOF0L_RSYNC, GPIO_FN_D31,
++	GPIO_FN_DACK2,
++	GPIO_FN_MSIOF0L_TSYNC, GPIO_FN_VIO2_FIELD3,
++	GPIO_FN_DACK3,
+ 	GPIO_FN_PORT218_VIO_CKOR,
+-	GPIO_FN_LCDDISP, GPIO_FN_LCDRS, GPIO_FN_PORT219_LCD2WR_, \
+ 	GPIO_FN_DREQ3, GPIO_FN_MSIOF0L_TSCK, GPIO_FN_VIO2_CLK3, \
+-	GPIO_FN_LCD2DCK_2,
+-	GPIO_FN_LCDVSYN, GPIO_FN_LCDVSYN2,
+-	GPIO_FN_LCDLCLK, GPIO_FN_DREQ1, GPIO_FN_PORT221_LCD2CS_, \
++	GPIO_FN_DREQ1,
+ 	GPIO_FN_PWEN, GPIO_FN_MSIOF0L_RXD, GPIO_FN_VIO2_HD3, \
+-	GPIO_FN_PORT221_LCD2HSYN,
+-	GPIO_FN_LCDDON, GPIO_FN_LCDDON2, GPIO_FN_DACK1, GPIO_FN_OVCN, \
+-	GPIO_FN_MSIOF0L_TXD, GPIO_FN_VIO2_VD3, GPIO_FN_PORT222_LCD2VSYN,
++	GPIO_FN_DACK1, GPIO_FN_OVCN,
++	GPIO_FN_MSIOF0L_TXD, GPIO_FN_VIO2_VD3,
  
- static const struct pinmux_func pinmux_func_gpios[] = {
-@@ -3140,6 +3389,11 @@ const struct sh_pfc_soc_info sh73a0_pinmux_info = {
- 	.nr_pins = ARRAY_SIZE(pinmux_pins),
- 	.ranges = pinmux_ranges,
- 	.nr_ranges = ARRAY_SIZE(pinmux_ranges),
-+	.groups = pinmux_groups,
-+	.nr_groups = ARRAY_SIZE(pinmux_groups),
-+	.functions = pinmux_functions,
-+	.nr_functions = ARRAY_SIZE(pinmux_functions),
-+
- 	.func_gpios = pinmux_func_gpios,
- 	.nr_func_gpios = ARRAY_SIZE(pinmux_func_gpios),
- 
+ 	GPIO_FN_SCIFA1_TXD, GPIO_FN_OVCN2,
+ 	GPIO_FN_EXTLP, GPIO_FN_SCIFA1_SCK, GPIO_FN_PORT226_VIO_CKO2,
+@@ -318,13 +306,11 @@ enum {
+ 	GPIO_FN_MSIOF1_TSCK, GPIO_FN_SCIFA2_SCK2,
+ 	GPIO_FN_MSIOF1_RXD, GPIO_FN_SCIFA2_RXD2,
+ 	GPIO_FN_MSIOF1_RSCK, GPIO_FN_SCIFA2_RTS2_, GPIO_FN_VIO2_CLK2, \
+-	GPIO_FN_LCD2D20,
+ 	GPIO_FN_MSIOF1_RSYNC, GPIO_FN_MFG1_IN2, GPIO_FN_VIO2_VD2, \
+-	GPIO_FN_LCD2D21,
+ 	GPIO_FN_MSIOF1_MCK0, GPIO_FN_PORT236_I2C_SDA2,
+ 	GPIO_FN_MSIOF1_MCK1, GPIO_FN_PORT237_I2C_SCL2,
+-	GPIO_FN_MSIOF1_SS1, GPIO_FN_VIO2_FIELD2, GPIO_FN_LCD2D22,
+-	GPIO_FN_MSIOF1_SS2, GPIO_FN_VIO2_HD2, GPIO_FN_LCD2D23,
++	GPIO_FN_MSIOF1_SS1, GPIO_FN_VIO2_FIELD2,
++	GPIO_FN_MSIOF1_SS2, GPIO_FN_VIO2_HD2,
+ 	GPIO_FN_SCIFA6_TXD,
+ 	GPIO_FN_PORT241_IRDA_OUT, GPIO_FN_PORT241_IROUT, GPIO_FN_MFG4_OUT1, \
+ 	GPIO_FN_TPU4TO0,
 -- 
-1.7.10.4
+1.8.1.5
 
