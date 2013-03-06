@@ -1,139 +1,72 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:06:46 +0000
-Subject: [PATCH 110/142] sh-pfc: sh73a0: Remove KEYSC function GPIOS
-Message-Id: <1363604838-29359-111-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 06 Mar 2013 13:47:14 +0000
+Subject: [PATCH v2 35/39] ARM: shmobile: sh73a0: Remove FSI function GPIOs
+Message-Id: <1362577638-15493-36-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-All sh73a0 platforms now use the pinctrl API to control the KEYSC pins,
-the corresponding function GPIOS are unused. Remove them.
+Those GPIOs have been deprecated by the pinctrl API. They are unused and
+unneeded, remove them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c |   30 ------------------------------
- 1 file changed, 30 deletions(-)
+ arch/arm/mach-shmobile/include/mach/sh73a0.h | 31 ++++++++--------------------
+ 1 file changed, 9 insertions(+), 22 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index 1249a3f..33e2b3f 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -2996,48 +2996,32 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(A0), \
- 	GPIO_FN(BS_),
- 	GPIO_FN(A12), \
--	GPIO_FN(PORT58_KEYOUT7), \
- 	GPIO_FN(TPU4TO2),
- 	GPIO_FN(A13), \
--	GPIO_FN(PORT59_KEYOUT6), \
- 	GPIO_FN(TPU0TO1),
- 	GPIO_FN(A14), \
--	GPIO_FN(KEYOUT5),
- 	GPIO_FN(A15), \
--	GPIO_FN(KEYOUT4),
- 	GPIO_FN(A16), \
--	GPIO_FN(KEYOUT3), \
- 	GPIO_FN(MSIOF0_SS1),
- 	GPIO_FN(A17), \
--	GPIO_FN(KEYOUT2), \
- 	GPIO_FN(MSIOF0_TSYNC),
- 	GPIO_FN(A18), \
--	GPIO_FN(KEYOUT1), \
- 	GPIO_FN(MSIOF0_TSCK),
- 	GPIO_FN(A19), \
--	GPIO_FN(KEYOUT0), \
- 	GPIO_FN(MSIOF0_TXD),
- 	GPIO_FN(A20), \
--	GPIO_FN(KEYIN0), \
- 	GPIO_FN(MSIOF0_RSCK),
- 	GPIO_FN(A21), \
--	GPIO_FN(KEYIN1), \
- 	GPIO_FN(MSIOF0_RSYNC),
- 	GPIO_FN(A22), \
--	GPIO_FN(KEYIN2), \
- 	GPIO_FN(MSIOF0_MCK0),
- 	GPIO_FN(A23), \
--	GPIO_FN(KEYIN3), \
- 	GPIO_FN(MSIOF0_MCK1),
- 	GPIO_FN(A24), \
--	GPIO_FN(KEYIN4), \
- 	GPIO_FN(MSIOF0_RXD),
- 	GPIO_FN(A25), \
--	GPIO_FN(KEYIN5), \
- 	GPIO_FN(MSIOF0_SS2),
- 	GPIO_FN(A26), \
--	GPIO_FN(KEYIN6),
--	GPIO_FN(KEYIN7),
- 	GPIO_FN(D0_NAF0),
- 	GPIO_FN(D1_NAF1),
- 	GPIO_FN(D2_NAF2),
-@@ -3105,13 +3089,9 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(VIO_D0), \
- 	GPIO_FN(PORT130_MSIOF2_RXD), \
- 	GPIO_FN(VIO_D1), \
--	GPIO_FN(PORT131_KEYOUT6), \
- 	GPIO_FN(PORT131_MSIOF2_SS1), \
--	GPIO_FN(PORT131_KEYOUT11), \
- 	GPIO_FN(VIO_D2), \
--	GPIO_FN(PORT132_KEYOUT7), \
- 	GPIO_FN(PORT132_MSIOF2_SS2), \
--	GPIO_FN(PORT132_KEYOUT10), \
- 	GPIO_FN(VIO_D3), \
- 	GPIO_FN(MSIOF2_TSYNC), \
- 	GPIO_FN(VIO_D4), \
-@@ -3119,14 +3099,10 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(VIO_D5), \
- 	GPIO_FN(MSIOF2_TSCK), \
- 	GPIO_FN(VIO_D6), \
--	GPIO_FN(PORT136_KEYOUT8), \
- 	GPIO_FN(VIO_D7), \
--	GPIO_FN(PORT137_KEYOUT9), \
- 	GPIO_FN(VIO_D8), \
--	GPIO_FN(PORT138_KEYOUT8), \
- 	GPIO_FN(VIO2_D0), \
- 	GPIO_FN(VIO_D9), \
--	GPIO_FN(PORT139_KEYOUT9), \
- 	GPIO_FN(VIO2_D1), \
- 	GPIO_FN(VIO_D10), \
- 	GPIO_FN(TPU0TO2), \
-@@ -3135,14 +3111,10 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(TPU0TO3), \
- 	GPIO_FN(VIO2_D3), \
- 	GPIO_FN(VIO_D12), \
--	GPIO_FN(PORT142_KEYOUT10), \
- 	GPIO_FN(VIO2_D4), \
- 	GPIO_FN(VIO_D13), \
--	GPIO_FN(PORT143_KEYOUT11), \
--	GPIO_FN(PORT143_KEYOUT6), \
- 	GPIO_FN(VIO2_D5), \
- 	GPIO_FN(VIO_D14), \
--	GPIO_FN(PORT144_KEYOUT7), \
- 	GPIO_FN(VIO2_D6), \
- 	GPIO_FN(VIO_D15), \
- 	GPIO_FN(TPU1TO3), \
-@@ -3155,7 +3127,6 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(A27), \
- 	GPIO_FN(PORT149_RDWR), \
- 	GPIO_FN(MFG0_IN1), \
--	GPIO_FN(PORT149_KEYOUT9),
- 	GPIO_FN(MFG0_IN2),
- 	GPIO_FN(TS_SPSYNC3), \
- 	GPIO_FN(MSIOF2_RSCK),
-@@ -3383,7 +3354,6 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(IRQ9_MEM_INT),
- 	GPIO_FN(IRQ9_MCP_INT),
- 	GPIO_FN(A11),
--	GPIO_FN(KEYOUT8),
- 	GPIO_FN(TPU4TO3),
- 	GPIO_FN(RESETA_N_PU_ON),
- 	GPIO_FN(RESETA_N_PU_OFF),
+diff --git a/arch/arm/mach-shmobile/include/mach/sh73a0.h b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+index 3d7950c..563a48d 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh73a0.h
++++ b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+@@ -105,7 +105,7 @@ enum {
+ 	GPIO_FN_GPI7,
+ 	GPIO_FN_GPO7, GPIO_FN_MFG0_OUT2,
+ 	GPIO_FN_GPO6, GPIO_FN_MFG1_OUT2,
+-	GPIO_FN_GPO5, GPIO_FN_FSICOSLDT3,
++	GPIO_FN_GPO5,
+ 	GPIO_FN_PORT16_VIO_CKOR,
+ 	GPIO_FN_PORT19_VIO_CKO2,
+ 	GPIO_FN_GPO0,
+@@ -123,29 +123,16 @@ enum {
+ 	GPIO_FN_SIM_CLK, GPIO_FN_PORT30_VIO_CKOR,
+ 	GPIO_FN_SIM_D, GPIO_FN_PORT31_IROUT,
+ 	GPIO_FN_XWUP,
+-	GPIO_FN_FSIBOBT, GPIO_FN_FSIBIBT,
+-	GPIO_FN_FSIBOLR, GPIO_FN_FSIBILR,
+-	GPIO_FN_FSIBOSLD,
+-	GPIO_FN_FSIBISLD,
+ 	GPIO_FN_VACK,
+ 	GPIO_FN_XTAL1L,
+-	GPIO_FN_FSICOSLDT2,
+-	GPIO_FN_FSICOSLDT1,
+-	GPIO_FN_FSICOBT, GPIO_FN_FSICIBT, GPIO_FN_FSIDOBT, GPIO_FN_FSIDIBT,
+-	GPIO_FN_FSICOLR, GPIO_FN_FSICILR, GPIO_FN_FSIDOLR, GPIO_FN_FSIDILR,
+-	GPIO_FN_FSICOSLD, GPIO_FN_PORT47_FSICSPDIF,
+-	GPIO_FN_FSICISLD, GPIO_FN_FSIDISLD,
+-	GPIO_FN_FSIACK, GPIO_FN_PORT49_IRDA_OUT, GPIO_FN_PORT49_IROUT, \
+-	GPIO_FN_FSIAOMC,
+-	GPIO_FN_FSIAOLR, GPIO_FN_BBIF2_TSYNC2, GPIO_FN_TPU2TO2, GPIO_FN_FSIAILR,
+-
+-	GPIO_FN_FSIAOBT, GPIO_FN_BBIF2_TSCK2, GPIO_FN_TPU2TO3, GPIO_FN_FSIAIBT,
+-	GPIO_FN_FSIAOSLD, GPIO_FN_BBIF2_TXD2,
+-	GPIO_FN_FSIASPDIF, GPIO_FN_PORT53_IRDA_IN, GPIO_FN_TPU3TO3, \
+-	GPIO_FN_FSIBSPDIF, GPIO_FN_PORT53_FSICSPDIF,
+-	GPIO_FN_FSIBCK, GPIO_FN_PORT54_IRDA_FIRSEL, GPIO_FN_TPU3TO2, \
+-	GPIO_FN_FSIBOMC, GPIO_FN_FSICCK, GPIO_FN_FSICOMC,
+-	GPIO_FN_FSIAISLD, GPIO_FN_TPU0TO0,
++	GPIO_FN_PORT49_IRDA_OUT, GPIO_FN_PORT49_IROUT,
++	GPIO_FN_BBIF2_TSYNC2, GPIO_FN_TPU2TO2,
++
++	GPIO_FN_BBIF2_TSCK2, GPIO_FN_TPU2TO3,
++	GPIO_FN_BBIF2_TXD2,
++	GPIO_FN_PORT53_IRDA_IN, GPIO_FN_TPU3TO3,
++	GPIO_FN_PORT54_IRDA_FIRSEL, GPIO_FN_TPU3TO2,
++	GPIO_FN_TPU0TO0,
+ 	GPIO_FN_A0, GPIO_FN_BS_,
+ 	GPIO_FN_A12, GPIO_FN_PORT58_KEYOUT7, GPIO_FN_TPU4TO2,
+ 	GPIO_FN_A13, GPIO_FN_PORT59_KEYOUT6, GPIO_FN_TPU0TO1,
 -- 
-1.7.10.4
+1.8.1.5
 
