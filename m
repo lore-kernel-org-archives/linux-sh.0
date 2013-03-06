@@ -1,69 +1,33 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:06:58 +0000
-Subject: [PATCH 122/142] sh-pfc: r8a7779: Remove INTC function GPIOS
-Message-Id: <1363604838-29359-123-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 06 Mar 2013 13:47:17 +0000
+Subject: [PATCH v2 38/39] ARM: shmobile: r8a7779: Remove DU1_DOTCLKOUT1 GPIO
+Message-Id: <1362577638-15493-39-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-All r8a7779 platforms now use the pinctrl API to control the INTC pins,
-the corresponding function GPIOS are unused. Remove them.
+The function is not documented in the r8a7779 datasheet. Remove it.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c |   15 +++++++--------
- 1 file changed, 7 insertions(+), 8 deletions(-)
+ arch/arm/mach-shmobile/include/mach/r8a7779.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-index 5d65499..1d7b0df 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-@@ -2826,12 +2826,11 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(SSI_WS6), GPIO_FN(ADICHS1), GPIO_FN(CAN0_RX), GPIO_FN(IETX_B),
- 	GPIO_FN(SSI_SDATA6), GPIO_FN(ADICHS2), GPIO_FN(CAN_CLK),
- 	GPIO_FN(IECLK_B), GPIO_FN(SSI_SCK78), GPIO_FN(CAN_DEBUGOUT13),
--	GPIO_FN(IRQ0_B), GPIO_FN(SSI_SCK9_B),
--	GPIO_FN(SSI_WS78), GPIO_FN(CAN_DEBUGOUT14), GPIO_FN(IRQ1_B),
-+	GPIO_FN(SSI_SCK9_B),
-+	GPIO_FN(SSI_WS78), GPIO_FN(CAN_DEBUGOUT14),
- 	GPIO_FN(SSI_WS9_B), GPIO_FN(SSI_SDATA7),
--	GPIO_FN(CAN_DEBUGOUT15), GPIO_FN(IRQ2_B), GPIO_FN(TCLK1_C),
-+	GPIO_FN(CAN_DEBUGOUT15), GPIO_FN(TCLK1_C),
- 	GPIO_FN(SSI_SDATA8), GPIO_FN(VSP),
--	GPIO_FN(IRQ3_B),
- 	GPIO_FN(ATACS01), GPIO_FN(ATACS11),
- 	GPIO_FN(CC5_TDO), GPIO_FN(ATADIR1),
- 	GPIO_FN(CC5_TRST), GPIO_FN(ATAG1),
-@@ -2870,8 +2869,8 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(VI0_DATA5_VI0_B5), GPIO_FN(VI0_DATA6_VI0_B6),
- 	GPIO_FN(ARM_TRACEDATA_0), GPIO_FN(VI0_DATA7_VI0_B7),
- 	GPIO_FN(ARM_TRACEDATA_1), GPIO_FN(VI0_G0),
--	GPIO_FN(SSI_SCK78_C), GPIO_FN(IRQ0), GPIO_FN(ARM_TRACEDATA_2),
--	GPIO_FN(VI0_G1), GPIO_FN(SSI_WS78_C), GPIO_FN(IRQ1),
-+	GPIO_FN(SSI_SCK78_C), GPIO_FN(ARM_TRACEDATA_2),
-+	GPIO_FN(VI0_G1), GPIO_FN(SSI_WS78_C),
- 	GPIO_FN(ARM_TRACEDATA_3), GPIO_FN(VI0_G2), GPIO_FN(ETH_TXD1),
- 	GPIO_FN(ARM_TRACEDATA_4), GPIO_FN(TS_SPSYNC0),
- 	GPIO_FN(VI0_G3), GPIO_FN(ETH_CRS_DV),
-@@ -2887,9 +2886,9 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(DREQ1_B), GPIO_FN(ARM_TRACEDATA_10), GPIO_FN(DREQ0_C),
- 	GPIO_FN(VI0_R1), GPIO_FN(SSI_SDATA8_C), GPIO_FN(DACK1_B),
- 	GPIO_FN(ARM_TRACEDATA_11), GPIO_FN(DACK0_C), GPIO_FN(DRACK0_C),
--	GPIO_FN(VI0_R2), GPIO_FN(ETH_LINK), GPIO_FN(IRQ2),
-+	GPIO_FN(VI0_R2), GPIO_FN(ETH_LINK),
- 	GPIO_FN(ARM_TRACEDATA_12), GPIO_FN(VI0_R3), GPIO_FN(ETH_MAGIC),
--	GPIO_FN(IRQ3), GPIO_FN(ARM_TRACEDATA_13),
-+	GPIO_FN(ARM_TRACEDATA_13),
- 	GPIO_FN(VI0_R4), GPIO_FN(ETH_REFCLK),
- 	GPIO_FN(ARM_TRACEDATA_14), GPIO_FN(MT1_CLK),
- 	GPIO_FN(TS_SCK0), GPIO_FN(VI0_R5), GPIO_FN(ETH_TXD0),
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+index 8ab0cd6..badba57 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -308,7 +308,7 @@ enum {
+ 	GPIO_FN_SD2_CD, GPIO_FN_MT0_VCXO, GPIO_FN_SPA_TMS, GPIO_FN_HSPI_TX1_D,
+ 	GPIO_FN_VI1_DATA7_VI1_B7, GPIO_FN_SD2_WP, GPIO_FN_MT0_PWM,
+ 	GPIO_FN_SPA_TDI, GPIO_FN_HSPI_RX1_D, GPIO_FN_VI1_G0, GPIO_FN_VI3_DATA0,
+-	GPIO_FN_DU1_DOTCLKOUT1, GPIO_FN_TS_SCK1, GPIO_FN_DREQ2_B, GPIO_FN_TX2,
++	GPIO_FN_TS_SCK1, GPIO_FN_DREQ2_B, GPIO_FN_TX2,
+ 	GPIO_FN_SPA_TDO, GPIO_FN_HCTS0_B, GPIO_FN_VI1_G1, GPIO_FN_VI3_DATA1,
+ 	GPIO_FN_SSI_SCK1, GPIO_FN_TS_SDEN1, GPIO_FN_DACK2_B, GPIO_FN_RX2,
+ 	GPIO_FN_HRTS0_B,
 -- 
-1.7.10.4
+1.8.1.5
 
