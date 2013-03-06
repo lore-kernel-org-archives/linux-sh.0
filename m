@@ -1,101 +1,44 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 06 Mar 2013 12:25:16 +0000
+From: Paul Mundt <lethal@linux-sh.org>
+Date: Wed, 06 Mar 2013 15:29:03 +0000
 Subject: Re: [PATCH v6 1/3] serial: sh-sci: Add OF support
-Message-Id: <2479902.R2JaqaE7dT@avalon>
+Message-Id: <20130306152857.GJ14275@linux-sh.org>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1362569437-11133-1-git-send-email-hechtb+renesas@gmail.com>
- <9335181.JoypQftkI4@avalon>
-In-Reply-To: <9335181.JoypQftkI4@avalon>
+ <9335181.JoypQftkI4@avalon> <2479902.R2JaqaE7dT@avalon>
+In-Reply-To: <2479902.R2JaqaE7dT@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wednesday 06 March 2013 13:10:55 Laurent Pinchart wrote:
-> On Wednesday 06 March 2013 12:30:35 Bastian Hecht wrote:
-> > We add the capabilty to probe Renesas SCI devices using Device Tree setup.
+On Wed, Mar 06, 2013 at 01:25:16PM +0100, Laurent Pinchart wrote:
+> On Wednesday 06 March 2013 13:10:55 Laurent Pinchart wrote:
+> > On Wednesday 06 March 2013 12:30:35 Bastian Hecht wrote:
+> > > +- renesas,scbrr-algorithm : Choose an algorithm ID for the baud rate
+> > > generator.
+> > > +  1 = SCBRR_ALGO_1 ((clk + 16 * bps) / (16 * bps) - 1)
+> > > +  2 = SCBRR_ALGO_2 ((clk + 16 * bps) / (32 * bps) - 1)
+> > > +  3 = SCBRR_ALGO_3 (((clk * 2) + 16 * bps) / (16 * bps) - 1)
+> > > +  4 = SCBRR_ALGO_4 (((clk * 2) + 16 * bps) / (32 * bps) - 1)
+> > > +  5 = SCBRR_ALGO_5 (((clk * 1000 / 32) / bps) - 1)
 > > 
-> > Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
-> > Reviewed-by: Paul Mundt <lethal@linux-sh.org>
-> > Acked-by: Arnd Bergmann <arnd@arndb.de>
-> > ---
-> > v6:
-> > putting it all together: I posted v5 as an incremental patch - here
-> > the full version based on Simon Horman's tree topic/intc-of.
-> > 
-> > I will post another incremental version as well.
-> > 
-> > - rename sci@xxxxxxxx to serial@xxxxxxxx
-> > - stick to scbrr-algorithm
-> > 
-> >  .../bindings/tty/serial/renesas,sci-serial.txt     |   47 +++++++
-> >  drivers/tty/serial/sh-sci.c                        |  146 ++++++++++++++-
-> >  include/linux/serial_sci.h                         |    4 +
-> >  3 files changed, 193 insertions(+), 4 deletions(-)
-> >  create mode 100644
-> > 
-> > Documentation/devicetree/bindings/tty/serial/renesas,sci-serial.txt
-> > 
-> > diff --git
-> > a/Documentation/devicetree/bindings/tty/serial/renesas,sci-serial.txt
-> > b/Documentation/devicetree/bindings/tty/serial/renesas,sci-serial.txt new
-> > file mode 100644
-> > index 0000000..d80039e
-> > --- /dev/null
-> > +++ b/Documentation/devicetree/bindings/tty/serial/renesas,sci-serial.txt
-> > @@ -0,0 +1,47 @@
-> > +* Renesas SH-Mobile Serial Communication Interface
-> > +
-> > +Required properties:
-> > +- compatible : Should be "renesas,sci-<port type>-uart", where <port
-> > type>
-> > is +  "sci", "scif", "irda", "scifa", "scifb"
-> > +  or for legacy devices
-> > +  "sh2_scif_fifodata", "sh3_scif", "sh4_scif", "sh4_scif_no_scsptr",
-> > +  "sh4_scif_fifodata", "sh7705_scif".
-> > +- reg : Address and length of the register set for the device
-> > +- interrupts : Should contain the following IRQs in this order:
-> > +	ERI: receive-error interrupt
-> > +	RXI: receive-FIFO-data-full interrupt
-> > +	TXI: transmit-FIFO-data-empty interrupt
-> > +	BRI: break reception interrupt
-> > +- interrupt-names: The IRQ names "eri", "rxi", "txi" and "bri".
-> > +- cell-index : The device id.
-> > +- renesas,scscr : Should contain a bitfield used by the Serial Control
-> > Register.
-> > +  b7 = SCSCR_TIE
-> > +  b6 = SCSCR_RIE
-> > +  b5 = SCSCR_TE
-> > +  b4 = SCSCR_RE
-> > +  b3 = SCSCR_REIE
-> > +  b2 = SCSCR_TOIE
-> > +  b1 = SCSCR_CKE1
-> > +  b0 = SCSCR_CKE0
+> > Isn't it a property specific to our implementation of the driver instead of
+> > a hardware property ? How is one supposed to select the right algorithm ?
 > 
-> What is that for exactly ?
+> I realize I haven't expressed myself very clearly here. What I mean is that 
+> expressing how the baud rate generator works internally using an algorithm ID 
+> is pretty specific to the Linux driver.
 > 
-> > +- renesas,scbrr-algorithm : Choose an algorithm ID for the baud rate
-> > generator.
-> > +  1 = SCBRR_ALGO_1 ((clk + 16 * bps) / (16 * bps) - 1)
-> > +  2 = SCBRR_ALGO_2 ((clk + 16 * bps) / (32 * bps) - 1)
-> > +  3 = SCBRR_ALGO_3 (((clk * 2) + 16 * bps) / (16 * bps) - 1)
-> > +  4 = SCBRR_ALGO_4 (((clk * 2) + 16 * bps) / (32 * bps) - 1)
-> > +  5 = SCBRR_ALGO_5 (((clk * 1000 / 32) / bps) - 1)
+> I assume that, for a given serial port on a given SoC, the algorithm that 
+> matches the baud rate generator hardware implementation needs to be selected. 
+> Can't this information be inferred from the compatible string and port number 
+> ?
 > 
-> Isn't it a property specific to our implementation of the driver instead of
-> a hardware property ? How is one supposed to select the right algorithm ?
-
-I realize I haven't expressed myself very clearly here. What I mean is that 
-expressing how the baud rate generator works internally using an algorithm ID 
-is pretty specific to the Linux driver.
-
-I assume that, for a given serial port on a given SoC, the algorithm that 
-matches the baud rate generator hardware implementation needs to be selected. 
-Can't this information be inferred from the compatible string and port number 
-?
-
--- 
-Regards,
-
-Laurent Pinchart
-
+Now that we have split things out in to regtype for the compat string we
+may be able to get away with selecting defaults that match the regtype
+and drop it from the binding (assuming all future parts remain relatively
+sane), but it would still complicate things if we were to ever do DT
+support for legacy CPUs. It's not enough to tie to the port type, as
+there are plenty of cases where the port type uses a non-standard algo on
+some CPU subtypes (although things are pretty consistent for the arm side
+so far).
