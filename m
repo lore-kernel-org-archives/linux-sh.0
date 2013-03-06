@@ -1,119 +1,105 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:05:55 +0000
-Subject: [PATCH 059/142] sh-pfc: sh73a0: Add I2C2 and I2C3 pin groups and functions
-Message-Id: <1363604838-29359-60-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 06 Mar 2013 13:46:52 +0000
+Subject: [PATCH v2 13/39] ARM: shmobile: ap4evb: Register pinctrl mappings for SDHI and MMCIF
+Message-Id: <1362577638-15493-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Replace the GPIO-based SDHI and MMCIF pinmux configuration by pinctrl
+mappings
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c |   64 +++++++++++++++++++++++++++++++++++
- 1 file changed, 64 insertions(+)
+ arch/arm/mach-shmobile/board-ap4evb.c | 52 +++++++++++++++--------------------
+ 1 file changed, 22 insertions(+), 30 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index 4b0a349..fad11d7 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -1846,6 +1846,50 @@ static const struct pinmux_range pinmux_ranges[] = {
- 	{.begin = 288, .end = 309,},
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 0a2b6e4..c8947e0 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -34,6 +34,7 @@
+ #include <linux/i2c.h>
+ #include <linux/i2c/tsc2007.h>
+ #include <linux/io.h>
++#include <linux/pinctrl/machine.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/smsc911x.h>
+@@ -1084,6 +1085,25 @@ static struct i2c_board_info i2c1_devices[] = {
  };
  
-+/* - I2C2 ------------------------------------------------------------------- */
-+static const unsigned int i2c2_0_pins[] = {
-+	/* SCL, SDA */
-+	237, 236,
-+};
-+static const unsigned int i2c2_0_mux[] = {
-+	PORT237_I2C_SCL2_MARK, PORT236_I2C_SDA2_MARK,
-+};
-+static const unsigned int i2c2_1_pins[] = {
-+	/* SCL, SDA */
-+	27, 28,
-+};
-+static const unsigned int i2c2_1_mux[] = {
-+	PORT27_I2C_SCL2_MARK, PORT28_I2C_SDA2_MARK,
-+};
-+static const unsigned int i2c2_2_pins[] = {
-+	/* SCL, SDA */
-+	115, 116,
-+};
-+static const unsigned int i2c2_2_mux[] = {
-+	PORT115_I2C_SCL2_MARK, PORT116_I2C_SDA2_MARK,
-+};
-+/* - I2C3 ------------------------------------------------------------------- */
-+static const unsigned int i2c3_0_pins[] = {
-+	/* SCL, SDA */
-+	248, 249,
-+};
-+static const unsigned int i2c3_0_mux[] = {
-+	PORT248_I2C_SCL3_MARK, PORT249_I2C_SDA3_MARK,
-+};
-+static const unsigned int i2c3_1_pins[] = {
-+	/* SCL, SDA */
-+	27, 28,
-+};
-+static const unsigned int i2c3_1_mux[] = {
-+	PORT27_I2C_SCL3_MARK, PORT28_I2C_SDA3_MARK,
-+};
-+static const unsigned int i2c3_2_pins[] = {
-+	/* SCL, SDA */
-+	115, 116,
-+};
-+static const unsigned int i2c3_2_mux[] = {
-+	PORT115_I2C_SCL3_MARK, PORT116_I2C_SDA3_MARK,
-+};
- /* - LCD -------------------------------------------------------------------- */
- static const unsigned int lcd_data8_pins[] = {
- 	/* D[0:7] */
-@@ -2289,6 +2333,12 @@ static const unsigned int scifb_ctrl_1_mux[] = {
- };
  
- static const struct sh_pfc_pin_group pinmux_groups[] = {
-+	SH_PFC_PIN_GROUP(i2c2_0),
-+	SH_PFC_PIN_GROUP(i2c2_1),
-+	SH_PFC_PIN_GROUP(i2c2_2),
-+	SH_PFC_PIN_GROUP(i2c3_0),
-+	SH_PFC_PIN_GROUP(i2c3_1),
-+	SH_PFC_PIN_GROUP(i2c3_2),
- 	SH_PFC_PIN_GROUP(lcd_data8),
- 	SH_PFC_PIN_GROUP(lcd_data9),
- 	SH_PFC_PIN_GROUP(lcd_data12),
-@@ -2345,6 +2395,18 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(scifb_ctrl_1),
- };
- 
-+static const char * const i2c2_groups[] = {
-+	"i2c2_0",
-+	"i2c2_1",
-+	"i2c2_2",
++static const struct pinctrl_map ap4evb_pinctrl_map[] = {
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh7372",
++				  "mmc0_data8_0", "mmc0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh7372",
++				  "mmc0_ctrl_0", "mmc0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
++				  "sdhi0_data4", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
++				  "sdhi0_ctrl", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
++				  "sdhi0_cd", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
++				  "sdhi0_wp", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-sh7372",
++				  "sdhi1_data4", "sdhi1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-sh7372",
++				  "sdhi1_ctrl", "sdhi1"),
 +};
 +
-+static const char * const i2c3_groups[] = {
-+	"i2c3_0",
-+	"i2c3_1",
-+	"i2c3_2",
-+};
-+
- static const char * const lcd_groups[] = {
- 	"lcd_data8",
- 	"lcd_data9",
-@@ -2433,6 +2495,8 @@ static const char * const scifb_groups[] = {
- };
+ #define GPIO_PORT9CR	IOMEM(0xE6051009)
+ #define GPIO_PORT10CR	IOMEM(0xE605100A)
+ #define USCCR1		IOMEM(0xE6058144)
+@@ -1110,6 +1130,8 @@ static void __init ap4evb_init(void)
+ 	/* External clock source */
+ 	clk_set_rate(&sh7372_dv_clki_clk, 27000000);
  
- static const struct sh_pfc_function pinmux_functions[] = {
-+	SH_PFC_FUNCTION(i2c2),
-+	SH_PFC_FUNCTION(i2c3),
- 	SH_PFC_FUNCTION(lcd),
- 	SH_PFC_FUNCTION(lcd2),
- 	SH_PFC_FUNCTION(scifa0),
++	pinctrl_register_mappings(ap4evb_pinctrl_map,
++				  ARRAY_SIZE(ap4evb_pinctrl_map));
+ 	sh7372_pinmux_init();
+ 
+ 	/* enable SCIFA0 */
+@@ -1126,36 +1148,6 @@ static void __init ap4evb_init(void)
+ 	gpio_request_one(34, GPIOF_IN | GPIOF_EXPORT, NULL);
+ 	gpio_request_one(35, GPIOF_IN | GPIOF_EXPORT, NULL);
+ 
+-	/* SDHI0 */
+-	gpio_request(GPIO_FN_SDHICD0, NULL);
+-	gpio_request(GPIO_FN_SDHIWP0, NULL);
+-	gpio_request(GPIO_FN_SDHICMD0, NULL);
+-	gpio_request(GPIO_FN_SDHICLK0, NULL);
+-	gpio_request(GPIO_FN_SDHID0_3, NULL);
+-	gpio_request(GPIO_FN_SDHID0_2, NULL);
+-	gpio_request(GPIO_FN_SDHID0_1, NULL);
+-	gpio_request(GPIO_FN_SDHID0_0, NULL);
+-
+-	/* SDHI1 */
+-	gpio_request(GPIO_FN_SDHICMD1, NULL);
+-	gpio_request(GPIO_FN_SDHICLK1, NULL);
+-	gpio_request(GPIO_FN_SDHID1_3, NULL);
+-	gpio_request(GPIO_FN_SDHID1_2, NULL);
+-	gpio_request(GPIO_FN_SDHID1_1, NULL);
+-	gpio_request(GPIO_FN_SDHID1_0, NULL);
+-
+-	/* MMCIF */
+-	gpio_request(GPIO_FN_MMCD0_0, NULL);
+-	gpio_request(GPIO_FN_MMCD0_1, NULL);
+-	gpio_request(GPIO_FN_MMCD0_2, NULL);
+-	gpio_request(GPIO_FN_MMCD0_3, NULL);
+-	gpio_request(GPIO_FN_MMCD0_4, NULL);
+-	gpio_request(GPIO_FN_MMCD0_5, NULL);
+-	gpio_request(GPIO_FN_MMCD0_6, NULL);
+-	gpio_request(GPIO_FN_MMCD0_7, NULL);
+-	gpio_request(GPIO_FN_MMCCMD0, NULL);
+-	gpio_request(GPIO_FN_MMCCLK0, NULL);
+-
+ 	/* USB enable */
+ 	gpio_request(GPIO_FN_VBUS0_1,    NULL);
+ 	gpio_request(GPIO_FN_IDIN_1_18,  NULL);
 -- 
-1.7.10.4
+1.8.1.5
 
