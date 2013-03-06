@@ -1,64 +1,77 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Mar 2013 22:59:27 +0000
-Subject: [PATCH v4 22/88] ARM: shmobile: ag5evm: Register pinctrl mappings for SCIF
-Message-Id: <1363215633-4264-23-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 06 Mar 2013 00:22:33 +0000
+Subject: [PATCH 02/04] ARM: shmobile: Add EMEV2 specific timer_init
+Message-Id: <20130306002233.5430.86.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
+References: <20130306002214.5430.43766.sendpatchset@w520>
+In-Reply-To: <20130306002214.5430.43766.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Replace the GPIO-based SCIF pinmux configuration by pinctrl mappings.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add a emev2_timer_init() function to the EMEV2 setup
+code. This is preparation work for EMEV2 TWD support.
+
+To allow registration of the TWD driver from
+the ->timer_init() callback the init code for EMEV2
+clocks is from ->init_machine() to ->init_time().
+
+This affects EMEV2 clock init order on the KZM9D board
+but leaves the generic EMEV2 DT case as-is due to
+no setup code for clocks in the DT case.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/board-ag5evm.c | 17 +++++++++++------
- 1 file changed, 11 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
-index a4ac46a..5b8dcdc 100644
---- a/arch/arm/mach-shmobile/board-ag5evm.c
-+++ b/arch/arm/mach-shmobile/board-ag5evm.c
-@@ -23,6 +23,7 @@
- #include <linux/init.h>
- #include <linux/interrupt.h>
- #include <linux/irq.h>
-+#include <linux/pinctrl/machine.h>
- #include <linux/platform_device.h>
- #include <linux/delay.h>
- #include <linux/io.h>
-@@ -550,6 +551,14 @@ static struct platform_device *ag5evm_devices[] __initdata = {
- 	&sdhi1_device,
- };
+ arch/arm/mach-shmobile/board-kzm9d.c        |    2 +-
+ arch/arm/mach-shmobile/include/mach/emev2.h |    1 +
+ arch/arm/mach-shmobile/setup-emev2.c        |    8 ++++++--
+ 3 files changed, 8 insertions(+), 3 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/board-kzm9d.c
++++ work/arch/arm/mach-shmobile/board-kzm9d.c	2013-03-05 18:31:45.000000000 +0900
+@@ -90,6 +90,6 @@ DT_MACHINE_START(KZM9D_DT, "kzm9d")
+ 	.init_irq	= emev2_init_irq,
+ 	.init_machine	= kzm9d_add_standard_devices,
+ 	.init_late	= shmobile_init_late,
+-	.init_time	= shmobile_timer_init,
++	.init_time	= emev2_timer_init,
+ 	.dt_compat	= kzm9d_boards_compat_dt,
+ MACHINE_END
+--- 0001/arch/arm/mach-shmobile/include/mach/emev2.h
++++ work/arch/arm/mach-shmobile/include/mach/emev2.h	2013-03-05 18:31:45.000000000 +0900
+@@ -5,6 +5,7 @@ extern void emev2_map_io(void);
+ extern void emev2_init_irq(void);
+ extern void emev2_add_early_devices(void);
+ extern void emev2_add_standard_devices(void);
++extern void emev2_timer_init(void);
+ extern void emev2_clock_init(void);
+ extern void emev2_set_boot_vector(unsigned long value);
  
-+static const struct pinctrl_map ag5evm_pinctrl_map[] = {
-+	/* SCIFA2 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-sh73a0",
-+				  "scifa2_data_0", "scifa2"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-sh73a0",
-+				  "scifa2_ctrl_0", "scifa2"),
-+};
-+
- static void __init ag5evm_init(void)
+--- 0004/arch/arm/mach-shmobile/setup-emev2.c
++++ work/arch/arm/mach-shmobile/setup-emev2.c	2013-03-05 18:34:09.000000000 +0900
+@@ -395,8 +395,6 @@ static struct platform_device *emev2_lat
+ 
+ void __init emev2_add_standard_devices(void)
  {
- 	regulator_register_always_on(0, "fixed-1.8V", fixed1v8_power_consumers,
-@@ -558,14 +567,10 @@ static void __init ag5evm_init(void)
- 				     ARRAY_SIZE(fixed2v8_power_consumers), 3300000);
- 	regulator_register_fixed(3, dummy_supplies, ARRAY_SIZE(dummy_supplies));
- 
-+	pinctrl_register_mappings(ag5evm_pinctrl_map,
-+				  ARRAY_SIZE(ag5evm_pinctrl_map));
- 	sh73a0_pinmux_init();
- 
--	/* enable SCIFA2 */
--	gpio_request(GPIO_FN_SCIFA2_TXD1, NULL);
--	gpio_request(GPIO_FN_SCIFA2_RXD1, NULL);
--	gpio_request(GPIO_FN_SCIFA2_RTS1_, NULL);
--	gpio_request(GPIO_FN_SCIFA2_CTS1_, NULL);
+-	emev2_clock_init();
 -
- 	/* enable KEYSC */
- 	gpio_request(GPIO_FN_KEYIN0_PU, NULL);
- 	gpio_request(GPIO_FN_KEYIN1_PU, NULL);
--- 
-1.8.1.5
-
+ 	platform_add_devices(emev2_early_devices,
+ 			     ARRAY_SIZE(emev2_early_devices));
+ 
+@@ -404,6 +402,12 @@ void __init emev2_add_standard_devices(v
+ 			     ARRAY_SIZE(emev2_late_devices));
+ }
+ 
++void __init emev2_timer_init(void)
++{
++	emev2_clock_init();
++	shmobile_timer_init();
++}
++
+ static void __init emev2_init_delay(void)
+ {
+ 	shmobile_setup_delay(533, 1, 3); /* Cortex-A9 @ 533MHz */
