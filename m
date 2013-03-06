@@ -1,97 +1,64 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Sun, 17 Mar 2013 15:43:51 +0000
-Subject: [PATCH v3 7/7] ARM: mach-shmobile: r8a7740: Setup the timer CMT10 using DT
-Message-Id: <1363535031-21402-7-git-send-email-hechtb+renesas@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 06 Mar 2013 13:47:02 +0000
+Subject: [PATCH v2 23/39] sh-pfc: sh7372: Remove SDHI and MMCIF function GPIOS
+Message-Id: <1362577638-15493-24-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363535031-21402-1-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1363535031-21402-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-We can now use the Device Tree for bringing up our timer device CMT10 on
-the SoC r8a7740.
+All sh7372 platforms now use the pinctrl API to control the SDHI and
+MMCIF pins, the corresponding function GPIOS are unused. Remove them.
 
-Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v3: same (only patch 0003 changed)
+ drivers/pinctrl/sh-pfc/pfc-sh7372.c | 25 -------------------------
+ 1 file changed, 25 deletions(-)
 
- arch/arm/boot/dts/r8a7740.dtsi         |   11 +++++++++++
- arch/arm/mach-shmobile/setup-r8a7740.c |   33 --------------------------------
- 2 files changed, 11 insertions(+), 33 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 798fa35..72f4c80 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -18,4 +18,15 @@
- 			compatible = "arm,cortex-a9";
- 		};
- 	};
-+
-+	timer@e6138010 {
-+		compatible = "renesas,cmt-timer";
-+		interrupt-parent = <&intca>;
-+		reg = <0xe6138010 0xc>;
-+		interrupts = <0x0b00>;
-+		renesas,device-id = <1>;
-+		renesas,channel-id = <0>;
-+		renesas,source-quality = <3>;
-+		renesas,event-quality = <3>;
-+	};
- };
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 30ac79c..9db61a6 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -255,38 +255,6 @@ static struct platform_device scifb_device = {
- 	},
- };
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+index b4b54a0..78d0b77 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+@@ -1276,18 +1276,6 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(D11_NAF11),	GPIO_FN(D12_NAF12),	GPIO_FN(D13_NAF13),
+ 	GPIO_FN(D14_NAF14),	GPIO_FN(D15_NAF15),
  
--/* CMT */
--static struct sh_timer_config cmt10_platform_data = {
--	.name = "CMT10",
--	.channel_offset = 0x10,
--	.timer_bit = 0,
--	.clockevent_rating = 125,
--	.clocksource_rating = 125,
--};
+-	/* MMCIF(1) */
+-	GPIO_FN(MMCD0_0),	GPIO_FN(MMCD0_1),	GPIO_FN(MMCD0_2),
+-	GPIO_FN(MMCD0_3),	GPIO_FN(MMCD0_4),	GPIO_FN(MMCD0_5),
+-	GPIO_FN(MMCD0_6),	GPIO_FN(MMCD0_7),	GPIO_FN(MMCCMD0),
+-	GPIO_FN(MMCCLK0),
 -
--static struct resource cmt10_resources[] = {
--	[0] = {
--		.name	= "CMT10",
--		.start	= 0xe6138010,
--		.end	= 0xe613801b,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1] = {
--		.start	= evt2irq(0x0b00),
--		.flags	= IORESOURCE_IRQ,
--	},
--};
+-	/* MMCIF(2) */
+-	GPIO_FN(MMCD1_0),	GPIO_FN(MMCD1_1),	GPIO_FN(MMCD1_2),
+-	GPIO_FN(MMCD1_3),	GPIO_FN(MMCD1_4),	GPIO_FN(MMCD1_5),
+-	GPIO_FN(MMCD1_6),	GPIO_FN(MMCD1_7),	GPIO_FN(MMCCLK1),
+-	GPIO_FN(MMCCMD1),
 -
--static struct platform_device cmt10_device = {
--	.name		= "sh_cmt",
--	.id		= 10,
--	.dev = {
--		.platform_data	= &cmt10_platform_data,
--	},
--	.resource	= cmt10_resources,
--	.num_resources	= ARRAY_SIZE(cmt10_resources),
--};
+ 	/* SPU2 */
+ 	GPIO_FN(VINT_I),
+ 
+@@ -1384,19 +1372,6 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	/* HDMI */
+ 	GPIO_FN(HDMI_HPD),	GPIO_FN(HDMI_CEC),
+ 
+-	/* SDHI0 */
+-	GPIO_FN(SDHICLK0),	GPIO_FN(SDHICD0),	GPIO_FN(SDHICMD0),
+-	GPIO_FN(SDHIWP0),	GPIO_FN(SDHID0_0),	GPIO_FN(SDHID0_1),
+-	GPIO_FN(SDHID0_2),	GPIO_FN(SDHID0_3),
 -
- /* TMU */
- static struct sh_timer_config tmu00_platform_data = {
- 	.name = "TMU00",
-@@ -388,7 +356,6 @@ static struct platform_device *r8a7740_early_devices[] __initdata = {
- 	&scif6_device,
- 	&scif7_device,
- 	&scifb_device,
--	&cmt10_device,
- 	&tmu00_device,
- 	&tmu01_device,
- 	&tmu02_device,
+-	/* SDHI1 */
+-	GPIO_FN(SDHICLK1),	GPIO_FN(SDHICMD1),	GPIO_FN(SDHID1_0),
+-	GPIO_FN(SDHID1_1),	GPIO_FN(SDHID1_2),	GPIO_FN(SDHID1_3),
+-
+-	/* SDHI2 */
+-	GPIO_FN(SDHICLK2),	GPIO_FN(SDHICMD2),	GPIO_FN(SDHID2_0),
+-	GPIO_FN(SDHID2_1),	GPIO_FN(SDHID2_2),	GPIO_FN(SDHID2_3),
+-
+ 	/* SDENC */
+ 	GPIO_FN(SDENC_CPG),
+ 	GPIO_FN(SDENC_DV_CLKI),
 -- 
-1.7.9.5
+1.8.1.5
 
