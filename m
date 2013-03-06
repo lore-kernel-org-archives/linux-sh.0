@@ -1,62 +1,94 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:06:49 +0000
-Subject: [PATCH 113/142] sh-pfc: sh73a0: Remove IrDA function GPIOS
-Message-Id: <1363604838-29359-114-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 06 Mar 2013 13:46:53 +0000
+Subject: [PATCH v2 14/39] ARM: shmobile: armadillo800eva: Register pinctrl mappings for LCDC0
+Message-Id: <1362577638-15493-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-All sh73a0 platforms now use the pinctrl API to control the IrDA pins,
-the corresponding function GPIOS are unused. Remove them.
+Replace the GPIO-based LCDC0 pinmux configuration by pinctrl mappings.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c |    6 ------
- 1 file changed, 6 deletions(-)
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 41 ++++++++------------------
+ 1 file changed, 12 insertions(+), 29 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index 273345c..cde4387 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -2979,7 +2979,6 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(XWUP),
- 	GPIO_FN(VACK),
- 	GPIO_FN(XTAL1L),
--	GPIO_FN(PORT49_IRDA_OUT), \
- 	GPIO_FN(PORT49_IROUT), \
- 	GPIO_FN(BBIF2_TSYNC2), \
- 	GPIO_FN(TPU2TO2), \
-@@ -2987,9 +2986,7 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(BBIF2_TSCK2), \
- 	GPIO_FN(TPU2TO3), \
- 	GPIO_FN(BBIF2_TXD2),
--	GPIO_FN(PORT53_IRDA_IN), \
- 	GPIO_FN(TPU3TO3), \
--	GPIO_FN(PORT54_IRDA_FIRSEL), \
- 	GPIO_FN(TPU3TO2), \
- 	GPIO_FN(TPU0TO0),
- 	GPIO_FN(A0), \
-@@ -3188,13 +3185,10 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(VIO2_FIELD2), \
- 	GPIO_FN(MSIOF1_SS2), \
- 	GPIO_FN(VIO2_HD2), \
--	GPIO_FN(PORT241_IRDA_OUT), \
- 	GPIO_FN(PORT241_IROUT), \
- 	GPIO_FN(MFG4_OUT1), \
- 	GPIO_FN(TPU4TO0),
--	GPIO_FN(PORT242_IRDA_IN), \
- 	GPIO_FN(MFG4_IN2),
--	GPIO_FN(PORT243_IRDA_FIRSEL), \
- 	GPIO_FN(PORT243_VIO_CKO2),
- 	GPIO_FN(MFG2_IN1), \
- 	GPIO_FN(MSIOF2R_RXD),
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index 92d7991..48dfda8 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -28,6 +28,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/gpio.h>
+ #include <linux/gpio_keys.h>
++#include <linux/pinctrl/machine.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/sh_eth.h>
+@@ -914,6 +915,15 @@ static struct platform_device *eva_devices[] __initdata = {
+ 	&i2c_gpio_device,
+ };
+ 
++static const struct pinctrl_map eva_pinctrl_map[] = {
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
++				  "lcd0_data24_0", "lcd0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
++				  "lcd0_lclk_1", "lcd0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
++				  "lcd0_sync", "lcd0"),
++};
++
+ static void __init eva_clock_init(void)
+ {
+ 	struct clk *system	= clk_get(NULL, "system_clk");
+@@ -961,6 +971,8 @@ static void __init eva_init(void)
+ 	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
+ 				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
+ 
++	pinctrl_register_mappings(eva_pinctrl_map, ARRAY_SIZE(eva_pinctrl_map));
++
+ 	r8a7740_pinmux_init();
+ 	r8a7740_meram_workaround();
+ 
+@@ -970,35 +982,6 @@ static void __init eva_init(void)
+ 
+ 	/* LCDC0 */
+ 	gpio_request(GPIO_FN_LCDC0_SELECT,	NULL);
+-	gpio_request(GPIO_FN_LCD0_D0,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D1,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D2,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D3,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D4,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D5,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D6,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D7,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D8,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D9,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D10,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D11,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D12,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D13,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D14,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D15,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D16,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D17,		NULL);
+-	gpio_request(GPIO_FN_LCD0_D18_PORT40,	NULL);
+-	gpio_request(GPIO_FN_LCD0_D19_PORT4,	NULL);
+-	gpio_request(GPIO_FN_LCD0_D20_PORT3,	NULL);
+-	gpio_request(GPIO_FN_LCD0_D21_PORT2,	NULL);
+-	gpio_request(GPIO_FN_LCD0_D22_PORT0,	NULL);
+-	gpio_request(GPIO_FN_LCD0_D23_PORT1,	NULL);
+-	gpio_request(GPIO_FN_LCD0_DCK,		NULL);
+-	gpio_request(GPIO_FN_LCD0_VSYN,		NULL);
+-	gpio_request(GPIO_FN_LCD0_HSYN,		NULL);
+-	gpio_request(GPIO_FN_LCD0_DISP,		NULL);
+-	gpio_request(GPIO_FN_LCD0_LCLK_PORT165,	NULL);
+ 
+ 	gpio_request_one(61, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
+ 	gpio_request_one(202, GPIOF_OUT_INIT_LOW, NULL); /* LCD0_LED_CONT */
 -- 
-1.7.10.4
+1.8.1.5
 
