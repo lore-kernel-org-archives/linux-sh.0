@@ -1,60 +1,53 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 29 Mar 2013 03:48:40 +0000
-Subject: Re: [PATCH 2/2] ARM: remove mach .init_irq for irqchip_init users
-Message-Id: <20130329034839.GB13429@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 06 Mar 2013 06:16:08 +0000
+Subject: [PATCH] irqchip: intc-irqpin: Initial DT support
+Message-Id: <20130306061608.5231.23213.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364463704-13692-1-git-send-email-maxime.ripard@free-electrons.com>
- <1364463704-13692-3-git-send-email-maxime.ripard@free-electrons.com>
- <20130328124228.GA29616@verge.net.au>
- <51548AC2.1010802@free-electrons.com>
-In-Reply-To: <51548AC2.1010802@free-electrons.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
-To: linux-arm-kernel@lists.infradead.org
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, benh@kernel.crashing.org, grant.likely@secretlab.ca, horms@verge.net.au, Magnus Damm <magnus.damm@gmail.com>, tglx@linutronix.de
 
-On Thu, Mar 28, 2013 at 07:24:02PM +0100, Maxime Ripard wrote:
-> Hi Simon,
->=20
-> Le 28/03/2013 13:42, Simon Horman a =C3=A9crit :
-> > On Thu, Mar 28, 2013 at 10:41:44AM +0100, Maxime Ripard wrote:
-> >> Now that the arm core code calls irqchip_init, we can remove it from a=
-ll
-> >> the machines that were using it.
-> >>
-> >> Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
-> >> ---
-> >>  arch/arm/mach-bcm/board_bcm.c                  |    1 -
-> >>  arch/arm/mach-msm/board-dt-8660.c              |    1 -
-> >>  arch/arm/mach-msm/board-dt-8960.c              |    1 -
-> >>  arch/arm/mach-nomadik/cpu-8815.c               |    1 -
-> >>  arch/arm/mach-picoxcell/common.c               |    1 -
-> >>  arch/arm/mach-prima2/common.c                  |    1 -
-> >>  arch/arm/mach-shmobile/board-kzm9g-reference.c |    1 -
-> >>  arch/arm/mach-shmobile/setup-emev2.c           |    1 -
-> >>  arch/arm/mach-shmobile/setup-sh73a0.c          |    1 -
-> >>  arch/arm/mach-spear/spear1310.c                |    1 -
-> >>  arch/arm/mach-spear/spear1340.c                |    1 -
-> >>  arch/arm/mach-spear/spear300.c                 |    1 -
-> >>  arch/arm/mach-spear/spear310.c                 |    1 -
-> >>  arch/arm/mach-spear/spear320.c                 |    1 -
-> >>  arch/arm/mach-spear/spear6xx.c                 |    1 -
-> >>  arch/arm/mach-vexpress/v2m.c                   |    1 -
-> >>  arch/arm/mach-virt/virt.c                      |    1 -
-> >>  arch/arm/mach-zynq/common.c                    |    1 -
-> >>  18 files changed, 18 deletions(-)
-> >=20
-> > mach-shmobile portion:
-> >=20
-> > Acked-by: Simon Horman <horms+renesas@verge.net.au>
->=20
-> Thanks!
->=20
-> >=20
-> > I have some new users of this queued up for v3.10.
-> > How should we handle that?
->=20
-> Since the old behaviour is preserved, I guess it doesn't matter much,
-> and one of us can always make a followup patch on top of these patches.
+From: Magnus Damm <damm@opensource.se>
 
-Ok, sound good.
+Add initial DT support to the INTC External IRQ Pin
+driver. At this point only hardware with 4-bit wide
+sense registers is supported via DT.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ drivers/irqchip/irq-renesas-intc-irqpin.c |    9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- 0001/drivers/irqchip/irq-renesas-intc-irqpin.c
++++ work/drivers/irqchip/irq-renesas-intc-irqpin.c	2013-03-06 14:59:58.000000000 +0900
+@@ -278,6 +278,7 @@ static int intc_irqpin_irq_domain_map(st
+ 
+ static struct irq_domain_ops intc_irqpin_irq_domain_ops = {
+ 	.map	= intc_irqpin_irq_domain_map,
++	.xlate  = irq_domain_xlate_twocell,
+ };
+ 
+ static int intc_irqpin_probe(struct platform_device *pdev)
+@@ -437,11 +438,19 @@ static int intc_irqpin_remove(struct pla
+ 	return 0;
+ }
+ 
++static const struct of_device_id intc_irqpin_dt_ids[] = {
++	{ .compatible = "renesas,intc-irqpin", },
++	{},
++};
++MODULE_DEVICE_TABLE(of, intc_irqpin_dt_ids);
++
+ static struct platform_driver intc_irqpin_device_driver = {
+ 	.probe		= intc_irqpin_probe,
+ 	.remove		= intc_irqpin_remove,
+ 	.driver		= {
+ 		.name	= "renesas_intc_irqpin",
++		.of_match_table = intc_irqpin_dt_ids,
++		.owner  = THIS_MODULE,
+ 	}
+ };
+ 
