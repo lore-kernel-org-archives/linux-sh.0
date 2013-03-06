@@ -1,158 +1,182 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 20 Mar 2013 14:36:42 +0000
-Subject: [PATCH 04/04] ARM: shmobile: Lager support
-Message-Id: <20130320143642.32377.35780.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 06 Mar 2013 13:47:04 +0000
+Subject: [PATCH v2 25/39] sh-pfc: sh73a0: Remove SCIFA and SCIFB function GPIOS
+Message-Id: <1362577638-15493-26-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130320143604.32377.32634.sendpatchset@w520>
-In-Reply-To: <20130320143604.32377.32634.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+All sh73a0 platforms now use the pinctrl API to control the SCIFA and
+SCIFB pins, the corresponding function GPIOS are unused. Remove them.
 
-Lager base board support making use of 2 GiB of memory,
-the r8a7790 SoC with the SCIF0 serial port and CA15 with
-ARM architected timer.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 58 -------------------------------------
+ 1 file changed, 58 deletions(-)
 
- arch/arm/boot/dts/Makefile           |    1 
- arch/arm/boot/dts/r8a7790-lager.dts  |   26 +++++++++++++++++++
- arch/arm/mach-shmobile/Kconfig       |    9 +++++-
- arch/arm/mach-shmobile/Makefile      |    1 
- arch/arm/mach-shmobile/board-lager.c |   46 ++++++++++++++++++++++++++++++++++
- 5 files changed, 82 insertions(+), 1 deletion(-)
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index 89ae259..0e00207 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -2665,19 +2665,13 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(GPI5),
+ 	GPIO_FN(GPI6),
+ 	GPIO_FN(GPI7),
+-	GPIO_FN(SCIFA7_RXD),
+-	GPIO_FN(SCIFA7_CTS_),
+ 	GPIO_FN(GPO7), \
+ 	GPIO_FN(MFG0_OUT2),
+ 	GPIO_FN(GPO6), \
+ 	GPIO_FN(MFG1_OUT2),
+ 	GPIO_FN(GPO5), \
+-	GPIO_FN(SCIFA0_SCK), \
+ 	GPIO_FN(FSICOSLDT3), \
+ 	GPIO_FN(PORT16_VIO_CKOR),
+-	GPIO_FN(SCIFA0_TXD),
+-	GPIO_FN(SCIFA7_TXD),
+-	GPIO_FN(SCIFA7_RTS_), \
+ 	GPIO_FN(PORT19_VIO_CKO2),
+ 	GPIO_FN(GPO0),
+ 	GPIO_FN(GPO1),
+@@ -2704,11 +2698,7 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(PORT30_VIO_CKOR),
+ 	GPIO_FN(SIM_D), \
+ 	GPIO_FN(PORT31_IROUT),
+-	GPIO_FN(SCIFA4_TXD),
+-	GPIO_FN(SCIFA4_RXD), \
+ 	GPIO_FN(XWUP),
+-	GPIO_FN(SCIFA4_RTS_),
+-	GPIO_FN(SCIFA4_CTS_),
+ 	GPIO_FN(FSIBOBT), \
+ 	GPIO_FN(FSIBIBT),
+ 	GPIO_FN(FSIBOLR), \
+@@ -2717,10 +2707,7 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(FSIBISLD),
+ 	GPIO_FN(VACK),
+ 	GPIO_FN(XTAL1L),
+-	GPIO_FN(SCIFA0_RTS_), \
+ 	GPIO_FN(FSICOSLDT2),
+-	GPIO_FN(SCIFA0_RXD),
+-	GPIO_FN(SCIFA0_CTS_), \
+ 	GPIO_FN(FSICOSLDT1),
+ 	GPIO_FN(FSICOBT), \
+ 	GPIO_FN(FSICIBT), \
+@@ -2846,14 +2833,10 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(BBIF2_RXD),
+ 	GPIO_FN(BBIF2_SYNC),
+ 	GPIO_FN(BBIF2_SCK),
+-	GPIO_FN(SCIFA3_CTS_), \
+ 	GPIO_FN(MFG3_IN2),
+-	GPIO_FN(SCIFA3_RXD), \
+ 	GPIO_FN(MFG3_IN1),
+ 	GPIO_FN(BBIF1_SS2), \
+-	GPIO_FN(SCIFA3_RTS_), \
+ 	GPIO_FN(MFG3_OUT1),
+-	GPIO_FN(SCIFA3_TXD),
+ 	GPIO_FN(HSI_RX_DATA), \
+ 	GPIO_FN(BBIF1_RXD),
+ 	GPIO_FN(HSI_TX_WAKE), \
+@@ -2941,37 +2924,17 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(TPU1TO2), \
+ 	GPIO_FN(TS_SDEN3), \
+ 	GPIO_FN(PORT153_MSIOF2_SS1),
+-	GPIO_FN(SCIFA2_TXD1), \
+ 	GPIO_FN(MSIOF2_MCK0),
+-	GPIO_FN(SCIFA2_RXD1), \
+ 	GPIO_FN(MSIOF2_MCK1),
+-	GPIO_FN(SCIFA2_RTS1_), \
+ 	GPIO_FN(PORT156_MSIOF2_SS2),
+-	GPIO_FN(SCIFA2_CTS1_), \
+ 	GPIO_FN(PORT157_MSIOF2_RXD),
+ 	GPIO_FN(DINT_), \
+-	GPIO_FN(SCIFA2_SCK1), \
+ 	GPIO_FN(TS_SCK3),
+-	GPIO_FN(PORT159_SCIFB_SCK), \
+-	GPIO_FN(PORT159_SCIFA5_SCK), \
+ 	GPIO_FN(NMI),
+-	GPIO_FN(PORT160_SCIFB_TXD), \
+-	GPIO_FN(PORT160_SCIFA5_TXD),
+-	GPIO_FN(PORT161_SCIFB_CTS_), \
+-	GPIO_FN(PORT161_SCIFA5_CTS_),
+-	GPIO_FN(PORT162_SCIFB_RXD), \
+-	GPIO_FN(PORT162_SCIFA5_RXD),
+-	GPIO_FN(PORT163_SCIFB_RTS_), \
+-	GPIO_FN(PORT163_SCIFA5_RTS_), \
+ 	GPIO_FN(TPU3TO0),
+-	GPIO_FN(PORT193_SCIFA5_CTS_), \
+ 	GPIO_FN(BBIF2_TSYNC1),
+-	GPIO_FN(PORT194_SCIFA5_RTS_), \
+ 	GPIO_FN(BBIF2_TSCK1),
+-	GPIO_FN(PORT195_SCIFA5_RXD), \
+ 	GPIO_FN(BBIF2_TXD1),
+-	GPIO_FN(PORT196_SCIFA5_TXD),
+-	GPIO_FN(PORT197_SCIFA5_SCK), \
+ 	GPIO_FN(MFG2_OUT2), \
+ 	GPIO_FN(TPU2TO1),
+ 	GPIO_FN(TPU4TO1), \
+@@ -3022,26 +2985,16 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(MSIOF0L_TXD), \
+ 	GPIO_FN(VIO2_VD3), \
+ 
+-	GPIO_FN(SCIFA1_TXD), \
+ 	GPIO_FN(OVCN2),
+ 	GPIO_FN(EXTLP), \
+-	GPIO_FN(SCIFA1_SCK), \
+ 	GPIO_FN(PORT226_VIO_CKO2),
+-	GPIO_FN(SCIFA1_RTS_), \
+ 	GPIO_FN(IDIN),
+-	GPIO_FN(SCIFA1_RXD),
+-	GPIO_FN(SCIFA1_CTS_), \
+ 	GPIO_FN(MFG1_IN1),
+ 	GPIO_FN(MSIOF1_TXD), \
+-	GPIO_FN(SCIFA2_TXD2),
+ 	GPIO_FN(MSIOF1_TSYNC), \
+-	GPIO_FN(SCIFA2_CTS2_),
+ 	GPIO_FN(MSIOF1_TSCK), \
+-	GPIO_FN(SCIFA2_SCK2),
+ 	GPIO_FN(MSIOF1_RXD), \
+-	GPIO_FN(SCIFA2_RXD2),
+ 	GPIO_FN(MSIOF1_RSCK), \
+-	GPIO_FN(SCIFA2_RTS2_), \
+ 	GPIO_FN(VIO2_CLK2), \
+ 	GPIO_FN(MSIOF1_RSYNC), \
+ 	GPIO_FN(MFG1_IN2), \
+@@ -3054,7 +3007,6 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(VIO2_FIELD2), \
+ 	GPIO_FN(MSIOF1_SS2), \
+ 	GPIO_FN(VIO2_HD2), \
+-	GPIO_FN(SCIFA6_TXD),
+ 	GPIO_FN(PORT241_IRDA_OUT), \
+ 	GPIO_FN(PORT241_IROUT), \
+ 	GPIO_FN(MFG4_OUT1), \
+@@ -3063,25 +3015,15 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(MFG4_IN2),
+ 	GPIO_FN(PORT243_IRDA_FIRSEL), \
+ 	GPIO_FN(PORT243_VIO_CKO2),
+-	GPIO_FN(PORT244_SCIFA5_CTS_), \
+ 	GPIO_FN(MFG2_IN1), \
+-	GPIO_FN(PORT244_SCIFB_CTS_), \
+ 	GPIO_FN(MSIOF2R_RXD),
+-	GPIO_FN(PORT245_SCIFA5_RTS_), \
+ 	GPIO_FN(MFG2_IN2), \
+-	GPIO_FN(PORT245_SCIFB_RTS_), \
+ 	GPIO_FN(MSIOF2R_TXD),
+-	GPIO_FN(PORT246_SCIFA5_RXD), \
+ 	GPIO_FN(MFG1_OUT1), \
+-	GPIO_FN(PORT246_SCIFB_RXD), \
+ 	GPIO_FN(TPU1TO0),
+-	GPIO_FN(PORT247_SCIFA5_TXD), \
+ 	GPIO_FN(MFG3_OUT2), \
+-	GPIO_FN(PORT247_SCIFB_TXD), \
+ 	GPIO_FN(TPU3TO1),
+-	GPIO_FN(PORT248_SCIFA5_SCK), \
+ 	GPIO_FN(MFG2_OUT1), \
+-	GPIO_FN(PORT248_SCIFB_SCK), \
+ 	GPIO_FN(TPU2TO0), \
+ 	GPIO_FN(PORT248_I2C_SCL3), \
+ 	GPIO_FN(MSIOF2R_TSCK),
+-- 
+1.8.1.5
 
---- 0009/arch/arm/boot/dts/Makefile
-+++ work/arch/arm/boot/dts/Makefile	2013-03-20 21:09:38.000000000 +0900
-@@ -137,6 +137,7 @@ dtb-$(CONFIG_ARCH_U8500) += snowball.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm9d.dtb \
- 	r8a7740-armadillo800eva.dtb \
- 	r8a7779-marzen-reference.dtb \
-+	r8a7790-lager.dtb \
- 	sh73a0-kzm9g.dtb \
- 	sh73a0-kzm9g-reference.dtb \
- 	r8a73a4-ape6evm.dtb \
---- /dev/null
-+++ work/arch/arm/boot/dts/r8a7790-lager.dts	2013-03-20 21:09:39.000000000 +0900
-@@ -0,0 +1,26 @@
-+/*
-+ * Device Tree Source for the Lager board
-+ *
-+ * Copyright (C) 2013 Renesas Solutions Corp.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/dts-v1/;
-+/include/ "r8a7790.dtsi"
-+
-+/ {
-+	model = "Lager";
-+	compatible = "renesas,lager", "renesas,r8a7790";
-+
-+	chosen {
-+		bootargs = "console=ttySC6,115200 ignore_loglevel";
-+	};
-+
-+	memory@40000000 {
-+		device_type = "memory";
-+		reg = <0x40000000 0x80000000>;
-+	};
-+};
---- 0014/arch/arm/mach-shmobile/Kconfig
-+++ work/arch/arm/mach-shmobile/Kconfig	2013-03-20 21:09:38.000000000 +0900
-@@ -141,6 +141,11 @@ config MACH_MARZEN_REFERENCE
- 
- 	   This is intended to aid developers
- 
-+config MACH_LAGER
-+	bool "Lager board"
-+	depends on ARCH_R8A7790
-+	select USE_OF
-+
- config MACH_KZM9D
- 	bool "KZM9D board"
- 	depends on ARCH_EMEV2
-@@ -181,7 +186,8 @@ config MEMORY_START
- 	hex "Physical memory start address"
- 	default "0x40000000" if MACH_AP4EVB || MACH_AG5EVM || \
- 				MACH_MACKEREL || MACH_BONITO || \
--				MACH_ARMADILLO800EVA || MACH_APE6EVM
-+				MACH_ARMADILLO800EVA || MACH_APE6EVM || \
-+				MACH_LAGER
- 	default "0x41000000" if MACH_KOTA2
- 	default "0x00000000"
- 	---help---
-@@ -191,6 +197,7 @@ config MEMORY_START
- 
- config MEMORY_SIZE
- 	hex "Physical memory size"
-+	default "0x80000000" if MACH_LAGER
- 	default "0x40000000" if MACH_APE6EVM
- 	default "0x20000000" if MACH_AG5EVM || MACH_BONITO || \
- 				MACH_ARMADILLO800EVA
---- 0012/arch/arm/mach-shmobile/Makefile
-+++ work/arch/arm/mach-shmobile/Makefile	2013-03-20 21:09:38.000000000 +0900
-@@ -42,6 +42,7 @@ obj-$(CONFIG_MACH_KOTA2)	+= board-kota2.
- obj-$(CONFIG_MACH_BONITO)	+= board-bonito.o
- obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
- obj-$(CONFIG_MACH_MARZEN_REFERENCE)	+= board-marzen-reference.o
-+obj-$(CONFIG_MACH_LAGER)	+= board-lager.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
- obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d.o
- obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o
---- /dev/null
-+++ work/arch/arm/mach-shmobile/board-lager.c	2013-03-20 21:12:05.000000000 +0900
-@@ -0,0 +1,46 @@
-+/*
-+ * Lager board support
-+ *
-+ * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2013  Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+ */
-+
-+#include <linux/interrupt.h>
-+#include <linux/irqchip.h>
-+#include <linux/kernel.h>
-+#include <linux/platform_device.h>
-+#include <mach/common.h>
-+#include <mach/r8a7790.h>
-+#include <asm/mach-types.h>
-+#include <asm/mach/arch.h>
-+
-+static void __init lager_add_standard_devices(void)
-+{
-+	r8a7790_clock_init();
-+	r8a7790_add_standard_devices();
-+}
-+
-+static const char *lager_boards_compat_dt[] __initdata = {
-+	"renesas,lager",
-+	NULL,
-+};
-+
-+DT_MACHINE_START(LAGER_DT, "lager")
-+	.init_irq	= irqchip_init,
-+	.init_time	= shmobile_timer_init,
-+	.init_machine	= lager_add_standard_devices,
-+	.dt_compat	= lager_boards_compat_dt,
-+MACHINE_END
