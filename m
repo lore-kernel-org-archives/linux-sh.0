@@ -1,124 +1,74 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Mar 2013 22:59:38 +0000
-Subject: [PATCH v4 33/88] ARM: shmobile: kota2: Register pinctrl mappings for SDHI and MMCIF
-Message-Id: <1363215633-4264-34-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 06 Mar 2013 13:47:08 +0000
+Subject: [PATCH v2 29/39] sh-pfc: r8a7740: Remove SDHI and MMCIF function GPIOS
+Message-Id: <1362577638-15493-30-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Replace the GPIO-based SDHI and MMCIF pinmux configuration by pinctrl
-mappings.
-
-Board code used the non-pulled-up version of the function GPIOs, but
-those are defined in the PFC driver as enabling the pull-ups anyway.
-Enable pull-ups on the MMCIF data and command pins through the pinconf
-API.
+All r8a7740 platforms now use the pinctrl API to control the SDHI and
+MMCIF pins, the corresponding function GPIOS are unused. Remove them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-kota2.c | 63 ++++++++++++++++++++----------------
- 1 file changed, 36 insertions(+), 27 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 35 -----------------------------------
+ 1 file changed, 35 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-kota2.c b/arch/arm/mach-shmobile/board-kota2.c
-index 09c4f00..7fa71f5 100644
---- a/arch/arm/mach-shmobile/board-kota2.c
-+++ b/arch/arm/mach-shmobile/board-kota2.c
-@@ -25,6 +25,7 @@
- #include <linux/interrupt.h>
- #include <linux/irq.h>
- #include <linux/pinctrl/machine.h>
-+#include <linux/pinctrl/pinconf-generic.h>
- #include <linux/platform_device.h>
- #include <linux/delay.h>
- #include <linux/io.h>
-@@ -434,7 +435,20 @@ static struct platform_device *kota2_devices[] __initdata = {
- 	&sdhi1_device,
- };
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index 4c92af8..5220bec 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -2372,26 +2372,6 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(SIM_D_PORT22), /* SIM_D  Port 22/199 */
+ 	GPIO_FN(SIM_D_PORT199),
  
-+static unsigned long pin_pullup_conf[] = {
-+	PIN_CONF_PACKED(PIN_CONFIG_BIAS_PULL_UP, 0),
-+};
-+
- static const struct pinctrl_map kota2_pinctrl_map[] = {
-+	/* MMCIF */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
-+				  "mmc0_data8_0", "mmc0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
-+				  "mmc0_ctrl_0", "mmc0"),
-+	PIN_MAP_CONFIGS_PIN_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
-+				    "PORT279", pin_pullup_conf),
-+	PIN_MAP_CONFIGS_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
-+				      "mmc0_data8_0", pin_pullup_conf),
- 	/* SCIFA2 (UART2) */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-sh73a0",
- 				  "scifa2_data_0", "scifa2"),
-@@ -452,6 +466,28 @@ static const struct pinctrl_map kota2_pinctrl_map[] = {
- 				  "scifb_clk_0", "scifb"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.8", "pfc-sh73a0",
- 				  "scifb_ctrl_0", "scifb"),
-+	/* SDHI0 (microSD) */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
-+				  "sdhi0_data4", "sdhi0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
-+				  "sdhi0_ctrl", "sdhi0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
-+				  "sdhi0_cd", "sdhi0"),
-+	PIN_MAP_CONFIGS_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
-+				      "sdhi0_data4", pin_pullup_conf),
-+	PIN_MAP_CONFIGS_PIN_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
-+				    "PORT256", pin_pullup_conf),
-+	PIN_MAP_CONFIGS_PIN_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
-+				    "PORT251", pin_pullup_conf),
-+	/* SDHI1 (BCM4330) */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-sh73a0",
-+				  "sdhi1_data4", "sdhi1"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-sh73a0",
-+				  "sdhi1_ctrl", "sdhi1"),
-+	PIN_MAP_CONFIGS_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-sh73a0",
-+				      "sdhi1_data4", pin_pullup_conf),
-+	PIN_MAP_CONFIGS_PIN_DEFAULT("sh_mobile_sdhi.1", "pfc-sh73a0",
-+				    "PORT263", pin_pullup_conf),
- };
- 
- static void __init kota2_init(void)
-@@ -508,35 +544,8 @@ static void __init kota2_init(void)
- 	gpio_request(GPIO_FN_KEYOUT8, NULL);
- 
- 	/* MMCIF */
--	gpio_request(GPIO_FN_MMCCLK0, NULL);
--	gpio_request(GPIO_FN_MMCD0_0, NULL);
--	gpio_request(GPIO_FN_MMCD0_1, NULL);
--	gpio_request(GPIO_FN_MMCD0_2, NULL);
--	gpio_request(GPIO_FN_MMCD0_3, NULL);
--	gpio_request(GPIO_FN_MMCD0_4, NULL);
--	gpio_request(GPIO_FN_MMCD0_5, NULL);
--	gpio_request(GPIO_FN_MMCD0_6, NULL);
--	gpio_request(GPIO_FN_MMCD0_7, NULL);
--	gpio_request(GPIO_FN_MMCCMD0, NULL);
- 	gpio_request_one(208, GPIOF_OUT_INIT_HIGH, NULL); /* Reset */
- 
--	/* SDHI0 (microSD) */
--	gpio_request(GPIO_FN_SDHICD0_PU, NULL);
--	gpio_request(GPIO_FN_SDHICMD0_PU, NULL);
--	gpio_request(GPIO_FN_SDHICLK0, NULL);
--	gpio_request(GPIO_FN_SDHID0_3_PU, NULL);
--	gpio_request(GPIO_FN_SDHID0_2_PU, NULL);
--	gpio_request(GPIO_FN_SDHID0_1_PU, NULL);
--	gpio_request(GPIO_FN_SDHID0_0_PU, NULL);
+-	/* SDHI0 */
+-	GPIO_FN(SDHI0_D0),	GPIO_FN(SDHI0_D1),	GPIO_FN(SDHI0_D2),
+-	GPIO_FN(SDHI0_D3),	GPIO_FN(SDHI0_CD),	GPIO_FN(SDHI0_WP),
+-	GPIO_FN(SDHI0_CMD),	GPIO_FN(SDHI0_CLK),
 -
--	/* SDHI1 (BCM4330) */
--	gpio_request(GPIO_FN_SDHICLK1, NULL);
--	gpio_request(GPIO_FN_SDHICMD1_PU, NULL);
--	gpio_request(GPIO_FN_SDHID1_3_PU, NULL);
--	gpio_request(GPIO_FN_SDHID1_2_PU, NULL);
--	gpio_request(GPIO_FN_SDHID1_1_PU, NULL);
--	gpio_request(GPIO_FN_SDHID1_0_PU, NULL);
+-	/* SDHI1 */
+-	GPIO_FN(SDHI1_D0),	GPIO_FN(SDHI1_D1),	GPIO_FN(SDHI1_D2),
+-	GPIO_FN(SDHI1_D3),	GPIO_FN(SDHI1_CD),	GPIO_FN(SDHI1_WP),
+-	GPIO_FN(SDHI1_CMD),	GPIO_FN(SDHI1_CLK),
 -
- #ifdef CONFIG_CACHE_L2X0
- 	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
- 	l2x0_init(IOMEM(0xf0100000), 0x40460000, 0x82000fff);
+-	/* SDHI2 */
+-	GPIO_FN(SDHI2_D0),	GPIO_FN(SDHI2_D1),	GPIO_FN(SDHI2_D2),
+-	GPIO_FN(SDHI2_D3),	GPIO_FN(SDHI2_CLK),	GPIO_FN(SDHI2_CMD),
+-
+-	GPIO_FN(SDHI2_CD_PORT24), /* MSEL5CR_19_0 */
+-	GPIO_FN(SDHI2_WP_PORT25),
+-
+-	GPIO_FN(SDHI2_WP_PORT177), /* MSEL5CR_19_1 */
+-	GPIO_FN(SDHI2_CD_PORT202),
+-
+ 	/* MSIOF2 */
+ 	GPIO_FN(MSIOF2_TXD),	GPIO_FN(MSIOF2_RXD),	GPIO_FN(MSIOF2_TSCK),
+ 	GPIO_FN(MSIOF2_SS2),	GPIO_FN(MSIOF2_TSYNC),	GPIO_FN(MSIOF2_SS1),
+@@ -2436,21 +2416,6 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(MEMC_WAIT),	GPIO_FN(MEMC_DREQ1),	GPIO_FN(MEMC_BUSCLK),
+ 	GPIO_FN(MEMC_A0),
+ 
+-	/* MMC */
+-	GPIO_FN(MMC0_D0_PORT68),	GPIO_FN(MMC0_D1_PORT69),
+-	GPIO_FN(MMC0_D2_PORT70),	GPIO_FN(MMC0_D3_PORT71),
+-	GPIO_FN(MMC0_D4_PORT72),	GPIO_FN(MMC0_D5_PORT73),
+-	GPIO_FN(MMC0_D6_PORT74),	GPIO_FN(MMC0_D7_PORT75),
+-	GPIO_FN(MMC0_CLK_PORT66),
+-	GPIO_FN(MMC0_CMD_PORT67),	/* MSEL4CR_15_0 */
+-
+-	GPIO_FN(MMC1_D0_PORT149),	GPIO_FN(MMC1_D1_PORT148),
+-	GPIO_FN(MMC1_D2_PORT147),	GPIO_FN(MMC1_D3_PORT146),
+-	GPIO_FN(MMC1_D4_PORT145),	GPIO_FN(MMC1_D5_PORT144),
+-	GPIO_FN(MMC1_D6_PORT143),	GPIO_FN(MMC1_D7_PORT142),
+-	GPIO_FN(MMC1_CLK_PORT103),
+-	GPIO_FN(MMC1_CMD_PORT104),	/* MSEL4CR_15_1 */
+-
+ 	/* MSIOF0 */
+ 	GPIO_FN(MSIOF0_SS1),	GPIO_FN(MSIOF0_SS2),	GPIO_FN(MSIOF0_RXD),
+ 	GPIO_FN(MSIOF0_TXD),	GPIO_FN(MSIOF0_MCK0),	GPIO_FN(MSIOF0_MCK1),
 -- 
 1.8.1.5
 
