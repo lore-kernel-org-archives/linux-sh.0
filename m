@@ -1,51 +1,73 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 10:55:44 +0000
-Subject: [PATCH v4 03/29] sh-pfc: Fix a typo and simplify a definition on sh73a0
-Message-Id: <1362740170-19073-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 06 Mar 2013 13:47:13 +0000
+Subject: [PATCH v2 34/39] ARM: shmobile: sh73a0: Remove I2C function GPIOs
+Message-Id: <1362577638-15493-35-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Those GPIOs have been deprecated by the pinctrl API. They are unused and
+unneeded, remove them.
 
-Fix definition of the SDHIWP0 function and simplify the CPU_ALL_PORT
-definition on sh73a0.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 8 ++------
- 1 file changed, 2 insertions(+), 6 deletions(-)
+ arch/arm/mach-shmobile/include/mach/sh73a0.h | 18 ++++++++----------
+ 1 file changed, 8 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index 709008e..232731b 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -25,11 +25,7 @@
- #include "sh_pfc.h"
- 
- #define CPU_ALL_PORT(fn, pfx, sfx)				\
--	PORT_10(fn, pfx,    sfx), PORT_10(fn, pfx##1, sfx),	\
--	PORT_10(fn, pfx##2, sfx), PORT_10(fn, pfx##3, sfx),	\
--	PORT_10(fn, pfx##4, sfx), PORT_10(fn, pfx##5, sfx),	\
--	PORT_10(fn, pfx##6, sfx), PORT_10(fn, pfx##7, sfx),	\
--	PORT_10(fn, pfx##8, sfx), PORT_10(fn, pfx##9, sfx),	\
-+	PORT_10(fn, pfx,    sfx), PORT_90(fn, pfx, sfx),	\
- 	PORT_10(fn, pfx##10, sfx),				\
- 	PORT_1(fn, pfx##110, sfx), PORT_1(fn, pfx##111, sfx),	\
- 	PORT_1(fn, pfx##112, sfx), PORT_1(fn, pfx##113, sfx),	\
-@@ -1502,7 +1498,7 @@ static pinmux_enum_t pinmux_data[] = {
- 	PINMUX_DATA(SDHID0_2_PU_MARK, PORT254_FN1, PORT254_IN_PU),
- 	PINMUX_DATA(SDHID0_3_PU_MARK, PORT255_FN1, PORT255_IN_PU),
- 	PINMUX_DATA(SDHICMD0_PU_MARK, PORT256_FN1, PORT256_IN_PU),
--	PINMUX_DATA(SDHIWP0_PU_MARK,  PORT257_FN1, PORT256_IN_PU),
-+	PINMUX_DATA(SDHIWP0_PU_MARK,  PORT257_FN1, PORT257_IN_PU),
- 	PINMUX_DATA(SDHID1_0_PU_MARK, PORT259_FN1, PORT259_IN_PU),
- 	PINMUX_DATA(SDHID1_1_PU_MARK, PORT260_FN1, PORT260_IN_PU),
- 	PINMUX_DATA(SDHID1_2_PU_MARK, PORT261_FN1, PORT261_IN_PU),
+diff --git a/arch/arm/mach-shmobile/include/mach/sh73a0.h b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+index b843cd7..3d7950c 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh73a0.h
++++ b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+@@ -115,9 +115,9 @@ enum {
+ 	GPIO_FN_GPO4, GPIO_FN_STATUS2,
+ 	GPIO_FN_VINT,
+ 	GPIO_FN_TCKON,
+-	GPIO_FN_XDVFS1, GPIO_FN_PORT27_I2C_SCL2, GPIO_FN_PORT27_I2C_SCL3, \
++	GPIO_FN_XDVFS1,
+ 	GPIO_FN_MFG0_OUT1, GPIO_FN_PORT27_IROUT,
+-	GPIO_FN_XDVFS2, GPIO_FN_PORT28_I2C_SDA2, GPIO_FN_PORT28_I2C_SDA3, \
++	GPIO_FN_XDVFS2,
+ 	GPIO_FN_PORT28_TPU1TO1,
+ 	GPIO_FN_SIM_RST, GPIO_FN_PORT29_TPU1TO1,
+ 	GPIO_FN_SIM_CLK, GPIO_FN_PORT30_VIO_CKOR,
+@@ -203,10 +203,8 @@ enum {
+ 	GPIO_FN_HSI_TX_WAKE, GPIO_FN_BBIF1_TSCK,
+ 	GPIO_FN_HSI_TX_DATA, GPIO_FN_BBIF1_TSYNC,
+ 	GPIO_FN_HSI_TX_READY, GPIO_FN_BBIF1_TXD,
+-	GPIO_FN_HSI_RX_READY, GPIO_FN_BBIF1_RSCK, GPIO_FN_PORT115_I2C_SCL2, \
+-	GPIO_FN_PORT115_I2C_SCL3,
+-	GPIO_FN_HSI_RX_WAKE, GPIO_FN_BBIF1_RSYNC, GPIO_FN_PORT116_I2C_SDA2, \
+-	GPIO_FN_PORT116_I2C_SDA3,
++	GPIO_FN_HSI_RX_READY, GPIO_FN_BBIF1_RSCK,
++	GPIO_FN_HSI_RX_WAKE, GPIO_FN_BBIF1_RSYNC,
+ 	GPIO_FN_HSI_RX_FLAG, GPIO_FN_BBIF1_SS1, GPIO_FN_BBIF1_FLOW,
+ 	GPIO_FN_HSI_TX_FLAG,
+ 	GPIO_FN_VIO_VD, GPIO_FN_VIO2_VD,
+@@ -292,8 +290,8 @@ enum {
+ 	GPIO_FN_MSIOF1_RXD,
+ 	GPIO_FN_MSIOF1_RSCK, GPIO_FN_VIO2_CLK2,
+ 	GPIO_FN_MSIOF1_RSYNC, GPIO_FN_MFG1_IN2, GPIO_FN_VIO2_VD2, \
+-	GPIO_FN_MSIOF1_MCK0, GPIO_FN_PORT236_I2C_SDA2,
+-	GPIO_FN_MSIOF1_MCK1, GPIO_FN_PORT237_I2C_SCL2,
++	GPIO_FN_MSIOF1_MCK0,
++	GPIO_FN_MSIOF1_MCK1,
+ 	GPIO_FN_MSIOF1_SS1, GPIO_FN_VIO2_FIELD2,
+ 	GPIO_FN_MSIOF1_SS2, GPIO_FN_VIO2_HD2,
+ 	GPIO_FN_PORT241_IRDA_OUT, GPIO_FN_PORT241_IROUT, GPIO_FN_MFG4_OUT1, \
+@@ -310,9 +308,9 @@ enum {
+ 	GPIO_FN_TPU3TO1,
+ 	GPIO_FN_MFG2_OUT1,
+ 	GPIO_FN_TPU2TO0,
+-	GPIO_FN_PORT248_I2C_SCL3, GPIO_FN_MSIOF2R_TSCK,
++	GPIO_FN_MSIOF2R_TSCK,
+ 	GPIO_FN_PORT249_IROUT, GPIO_FN_MFG4_IN1, \
+-	GPIO_FN_PORT249_I2C_SDA3, GPIO_FN_MSIOF2R_TSYNC,
++	GPIO_FN_MSIOF2R_TSYNC,
+ 	GPIO_FN_SDHICLK0,
+ 	GPIO_FN_SDHICD0,
+ 	GPIO_FN_SDHID0_0,
 -- 
 1.8.1.5
 
