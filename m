@@ -1,121 +1,183 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 11:01:42 +0000
-Subject: [PATCH v3 22/64] ARM: shmobile: armadillo800eva: Register pinctrl mappings for SDHI and MMCIF
-Message-Id: <1362740544-19164-23-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 06 Mar 2013 12:52:47 +0000
+Subject: [PATCH v3 26/29] ARM: shmobile: armadillo: Replace GPIO_PORTx enum with GPIO port numbers
+Message-Id: <1362574370-17889-27-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Replace the GPIO-based SDHI and MMCIF pinmux configuration by pinctrl
-mappings.
+The PFC GPIO API implementation moved to using port numbers. Replace all
+GPIO_PORTx enum usage with the corresponding port number. The GPIO_PORTx
+enum values are identical to the port number on this platform.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c | 56 +++++++++++---------------
- 1 file changed, 23 insertions(+), 33 deletions(-)
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 58 +++++++++++++-------------
+ 1 file changed, 29 insertions(+), 29 deletions(-)
 
 diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index 48dfda8..29203a6 100644
+index f2ec077..92d7991 100644
 --- a/arch/arm/mach-shmobile/board-armadillo800eva.c
 +++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -657,6 +657,17 @@ static struct platform_device sdhi1_device = {
- 	.resource	= sdhi1_resources,
+@@ -227,7 +227,7 @@ static void usbhsf_power_ctrl(struct platform_device *pdev,
+ 
+ static int usbhsf_get_vbus(struct platform_device *pdev)
+ {
+-	return gpio_get_value(GPIO_PORT209);
++	return gpio_get_value(209);
+ }
+ 
+ static irqreturn_t usbhsf_interrupt(int irq, void *data)
+@@ -535,10 +535,10 @@ static struct platform_device hdmi_lcdc_device = {
+ 	{ .code = c, .gpio = g, .desc = d, .active_low = 1, __VA_ARGS__ }
+ 
+ static struct gpio_keys_button gpio_buttons[] = {
+-	GPIO_KEY(KEY_POWER,	GPIO_PORT99,	"SW3", .wakeup = 1),
+-	GPIO_KEY(KEY_BACK,	GPIO_PORT100,	"SW4"),
+-	GPIO_KEY(KEY_MENU,	GPIO_PORT97,	"SW5"),
+-	GPIO_KEY(KEY_HOME,	GPIO_PORT98,	"SW6"),
++	GPIO_KEY(KEY_POWER,	99,	"SW3", .wakeup = 1),
++	GPIO_KEY(KEY_BACK,	100,	"SW4"),
++	GPIO_KEY(KEY_MENU,	97,	"SW5"),
++	GPIO_KEY(KEY_HOME,	98,	"SW6"),
  };
  
-+static const struct pinctrl_map eva_sdhi1_pinctrl_map[] = {
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-r8a7740",
-+				  "sdhi1_data4", "sdhi1"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-r8a7740",
-+				  "sdhi1_ctrl", "sdhi1"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-r8a7740",
-+				  "sdhi1_cd", "sdhi1"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-r8a7740",
-+				  "sdhi1_wp", "sdhi1"),
-+};
-+
- /* MMCIF */
- static struct sh_mmcif_plat_data sh_mmcif_plat = {
- 	.sup_pclk	= 0,
-@@ -916,12 +927,22 @@ static struct platform_device *eva_devices[] __initdata = {
- };
- 
- static const struct pinctrl_map eva_pinctrl_map[] = {
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-r8a7740",
-+				  "mmc0_data8_1", "mmc0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-r8a7740",
-+				  "mmc0_ctrl_1", "mmc0"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
- 				  "lcd0_data24_0", "lcd0"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
- 				  "lcd0_lclk_1", "lcd0"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
- 				  "lcd0_sync", "lcd0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7740",
-+				  "sdhi0_data4", "sdhi0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7740",
-+				  "sdhi0_ctrl", "sdhi0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7740",
-+				  "sdhi0_wp", "sdhi0"),
- };
- 
- static void __init eva_clock_init(void)
-@@ -1035,37 +1056,12 @@ static void __init eva_init(void)
+ static struct gpio_keys_platform_data gpio_key_info = {
+@@ -708,9 +708,9 @@ static int mt9t111_power(struct device *dev, int mode)
+ 		/* video1 (= CON1 camera) expect 24MHz */
+ 		clk_set_rate(mclk, clk_round_rate(mclk, 24000000));
+ 		clk_enable(mclk);
+-		gpio_set_value(GPIO_PORT158, 1);
++		gpio_set_value(158, 1);
+ 	} else {
+-		gpio_set_value(GPIO_PORT158, 0);
++		gpio_set_value(158, 0);
+ 		clk_disable(mclk);
  	}
  
- 	/* SDHI0 */
--	gpio_request(GPIO_FN_SDHI0_CMD, NULL);
--	gpio_request(GPIO_FN_SDHI0_CLK, NULL);
--	gpio_request(GPIO_FN_SDHI0_D0, NULL);
--	gpio_request(GPIO_FN_SDHI0_D1, NULL);
--	gpio_request(GPIO_FN_SDHI0_D2, NULL);
--	gpio_request(GPIO_FN_SDHI0_D3, NULL);
--	gpio_request(GPIO_FN_SDHI0_WP, NULL);
--
- 	gpio_request_one(17, GPIOF_OUT_INIT_LOW, NULL);  /* SDHI0_18/33_B */
- 	gpio_request_one(74, GPIOF_OUT_INIT_HIGH, NULL); /* SDHI0_PON */
- 	gpio_request_one(75, GPIOF_OUT_INIT_HIGH, NULL); /* SDSLOT1_PON */
+@@ -864,8 +864,8 @@ static struct platform_device fsi_hdmi_device = {
+ 
+ /* RTC: RTC connects i2c-gpio. */
+ static struct i2c_gpio_platform_data i2c_gpio_data = {
+-	.sda_pin	= GPIO_PORT208,
+-	.scl_pin	= GPIO_PORT91,
++	.sda_pin	= 208,
++	.scl_pin	= 91,
+ 	.udelay		= 5, /* 100 kHz */
+ };
+ 
+@@ -1000,12 +1000,12 @@ static void __init eva_init(void)
+ 	gpio_request(GPIO_FN_LCD0_DISP,		NULL);
+ 	gpio_request(GPIO_FN_LCD0_LCLK_PORT165,	NULL);
+ 
+-	gpio_request_one(GPIO_PORT61, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
+-	gpio_request_one(GPIO_PORT202, GPIOF_OUT_INIT_LOW, NULL); /* LCD0_LED_CONT */
++	gpio_request_one(61, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
++	gpio_request_one(202, GPIOF_OUT_INIT_LOW, NULL); /* LCD0_LED_CONT */
+ 
+ 	/* Touchscreen */
+ 	gpio_request(GPIO_FN_IRQ10,	NULL); /* TP_INT */
+-	gpio_request_one(GPIO_PORT166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
++	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
+ 
+ 	/* GETHER */
+ 	gpio_request(GPIO_FN_ET_CRS,		NULL);
+@@ -1028,12 +1028,12 @@ static void __init eva_init(void)
+ 	gpio_request(GPIO_FN_ET_RX_DV,		NULL);
+ 	gpio_request(GPIO_FN_ET_RX_CLK,		NULL);
+ 
+-	gpio_request_one(GPIO_PORT18, GPIOF_OUT_INIT_HIGH, NULL); /* PHY_RST */
++	gpio_request_one(18, GPIOF_OUT_INIT_HIGH, NULL); /* PHY_RST */
+ 
+ 	/* USB */
+-	gpio_request_one(GPIO_PORT159, GPIOF_IN, NULL); /* USB_DEVICE_MODE */
++	gpio_request_one(159, GPIOF_IN, NULL); /* USB_DEVICE_MODE */
+ 
+-	if (gpio_get_value(GPIO_PORT159)) {
++	if (gpio_get_value(159)) {
+ 		/* USB Host */
+ 	} else {
+ 		/* USB Func */
+@@ -1042,10 +1042,10 @@ static void __init eva_init(void)
+ 		 * OTOH, usbhs interrupt needs its value (HI/LOW) to decide
+ 		 * USB connection/disconnection (usbhsf_get_vbus()).
+ 		 * This means we needs to select GPIO_FN_IRQ7_PORT209 first,
+-		 * and select GPIO_PORT209 here
++		 * and select GPIO 209 here
+ 		 */
+ 		gpio_request(GPIO_FN_IRQ7_PORT209, NULL);
+-		gpio_request_one(GPIO_PORT209, GPIOF_IN, NULL);
++		gpio_request_one(209, GPIOF_IN, NULL);
+ 
+ 		platform_device_register(&usbhsf_device);
+ 		usb = &usbhsf_device;
+@@ -1060,9 +1060,9 @@ static void __init eva_init(void)
+ 	gpio_request(GPIO_FN_SDHI0_D3, NULL);
+ 	gpio_request(GPIO_FN_SDHI0_WP, NULL);
+ 
+-	gpio_request_one(GPIO_PORT17, GPIOF_OUT_INIT_LOW, NULL);  /* SDHI0_18/33_B */
+-	gpio_request_one(GPIO_PORT74, GPIOF_OUT_INIT_HIGH, NULL); /* SDHI0_PON */
+-	gpio_request_one(GPIO_PORT75, GPIOF_OUT_INIT_HIGH, NULL); /* SDSLOT1_PON */
++	gpio_request_one(17, GPIOF_OUT_INIT_LOW, NULL);  /* SDHI0_18/33_B */
++	gpio_request_one(74, GPIOF_OUT_INIT_HIGH, NULL); /* SDHI0_PON */
++	gpio_request_one(75, GPIOF_OUT_INIT_HIGH, NULL); /* SDSLOT1_PON */
  
  	/* we can use GPIO_FN_IRQ31_PORT167 here for SDHI0 CD irq */
  
--	/*
--	 * MMCIF
--	 *
--	 * Here doesn't care SW1.4 status,
--	 * since CON2 is not mounted.
--	 */
--	gpio_request(GPIO_FN_MMC1_CLK_PORT103,	NULL);
--	gpio_request(GPIO_FN_MMC1_CMD_PORT104,	NULL);
--	gpio_request(GPIO_FN_MMC1_D0_PORT149,	NULL);
--	gpio_request(GPIO_FN_MMC1_D1_PORT148,	NULL);
--	gpio_request(GPIO_FN_MMC1_D2_PORT147,	NULL);
--	gpio_request(GPIO_FN_MMC1_D3_PORT146,	NULL);
--	gpio_request(GPIO_FN_MMC1_D4_PORT145,	NULL);
--	gpio_request(GPIO_FN_MMC1_D5_PORT144,	NULL);
--	gpio_request(GPIO_FN_MMC1_D6_PORT143,	NULL);
--	gpio_request(GPIO_FN_MMC1_D7_PORT142,	NULL);
--
- 	/* CEU0 */
- 	gpio_request(GPIO_FN_VIO0_D7,		NULL);
- 	gpio_request(GPIO_FN_VIO0_D6,		NULL);
-@@ -1123,14 +1119,8 @@ static void __init eva_init(void)
+@@ -1099,10 +1099,10 @@ static void __init eva_init(void)
+ 	gpio_request(GPIO_FN_VIO_CKO,		NULL);
+ 
+ 	/* CON1/CON15 Camera */
+-	gpio_request_one(GPIO_PORT173, GPIOF_OUT_INIT_LOW, NULL);  /* STANDBY */
+-	gpio_request_one(GPIO_PORT172, GPIOF_OUT_INIT_HIGH, NULL); /* RST */
++	gpio_request_one(173, GPIOF_OUT_INIT_LOW, NULL);  /* STANDBY */
++	gpio_request_one(172, GPIOF_OUT_INIT_HIGH, NULL); /* RST */
+ 	/* see mt9t111_power() */
+-	gpio_request_one(GPIO_PORT158, GPIOF_OUT_INIT_LOW, NULL);  /* CAM_PON */
++	gpio_request_one(158, GPIOF_OUT_INIT_LOW, NULL);  /* CAM_PON */
+ 
+ 	/* FSI-WM8978 */
+ 	gpio_request(GPIO_FN_FSIAIBT,		NULL);
+@@ -1111,8 +1111,8 @@ static void __init eva_init(void)
+ 	gpio_request(GPIO_FN_FSIAOSLD,		NULL);
+ 	gpio_request(GPIO_FN_FSIAISLD_PORT5,	NULL);
+ 
+-	gpio_request(GPIO_PORT7, NULL);
+-	gpio_request(GPIO_PORT8, NULL);
++	gpio_request(7, NULL);
++	gpio_request(8, NULL);
+ 	gpio_direction_none(GPIO_PORT7CR); /* FSIAOBT needs no direction */
+ 	gpio_direction_none(GPIO_PORT8CR); /* FSIAOLR needs no direction */
+ 
+@@ -1129,14 +1129,14 @@ static void __init eva_init(void)
+ 	 * DBGMD/LCDC0/FSIA MUX
+ 	 * DBGMD_SELECT_B should be set after setting PFC Function.
+ 	 */
+-	gpio_request_one(GPIO_PORT176, GPIOF_OUT_INIT_HIGH, NULL);
++	gpio_request_one(176, GPIOF_OUT_INIT_HIGH, NULL);
+ 
+ 	/*
+ 	 * We can switch CON8/CON14 by SW1.5,
+ 	 * but it needs after DBGMD_SELECT_B
+ 	 */
+-	gpio_request_one(GPIO_PORT6, GPIOF_IN, NULL);
+-	if (gpio_get_value(GPIO_PORT6)) {
++	gpio_request_one(6, GPIOF_IN, NULL);
++	if (gpio_get_value(6)) {
  		/* CON14 enable */
  	} else {
  		/* CON8 (SDHI1) enable */
--		gpio_request(GPIO_FN_SDHI1_CLK,	NULL);
--		gpio_request(GPIO_FN_SDHI1_CMD,	NULL);
--		gpio_request(GPIO_FN_SDHI1_D0,	NULL);
--		gpio_request(GPIO_FN_SDHI1_D1,	NULL);
--		gpio_request(GPIO_FN_SDHI1_D2,	NULL);
--		gpio_request(GPIO_FN_SDHI1_D3,	NULL);
--		gpio_request(GPIO_FN_SDHI1_CD,	NULL);
--		gpio_request(GPIO_FN_SDHI1_WP,	NULL);
-+		pinctrl_register_mappings(eva_sdhi1_pinctrl_map,
-+					  ARRAY_SIZE(eva_sdhi1_pinctrl_map));
+@@ -1150,7 +1150,7 @@ static void __init eva_init(void)
+ 		gpio_request(GPIO_FN_SDHI1_WP,	NULL);
  
  		/* SDSLOT2_PON */
- 		gpio_request_one(16, GPIOF_OUT_INIT_HIGH, NULL);
+-		gpio_request_one(GPIO_PORT16, GPIOF_OUT_INIT_HIGH, NULL);
++		gpio_request_one(16, GPIOF_OUT_INIT_HIGH, NULL);
+ 
+ 		platform_device_register(&sdhi1_device);
+ 	}
 -- 
 1.8.1.5
 
