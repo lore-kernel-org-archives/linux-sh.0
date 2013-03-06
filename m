@@ -1,300 +1,143 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 06 Mar 2013 13:46:47 +0000
-Subject: [PATCH v2 08/39] sh-pfc: r8a7740: Add SDHI and MMCIF pin groups and functions
-Message-Id: <1362577638-15493-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 06 Mar 2013 12:52:49 +0000
+Subject: [PATCH v3 28/29] ARM: shmobile: mackerel: Replace GPIO_PORTx enum with GPIO port numbers
+Message-Id: <1362574370-17889-29-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+The PFC GPIO API implementation moved to using port numbers. Replace all
+GPIO_PORTx enum usage with the corresponding port number. The GPIO_PORTx
+enum values are identical to the port number on this platform.
 
-Add pin groups for the first two SDHI interfaces and two alternative pin
-groups for the MMCIF interface on the r8a7740 SoC.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 248 +++++++++++++++++++++++++++++++++++
- 1 file changed, 248 insertions(+)
+ arch/arm/mach-shmobile/board-mackerel.c | 34 ++++++++++++++++-----------------
+ 1 file changed, 17 insertions(+), 17 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-index bcd1a91..bdc3859 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-@@ -1870,6 +1870,188 @@ static const unsigned int lcd1_sys_mux[] = {
- 	LCD1_CS_MARK, LCD1_WR_MARK, LCD1_RD_MARK, LCD1_RS_MARK,
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index db968a5..172d472 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -363,7 +363,7 @@ static struct fb_videomode mackerel_lcdc_modes[] = {
+ 
+ static int mackerel_set_brightness(int brightness)
+ {
+-	gpio_set_value(GPIO_PORT31, brightness);
++	gpio_set_value(31, brightness);
+ 
+ 	return 0;
+ }
+@@ -819,22 +819,22 @@ static struct platform_device usbhs1_device = {
+ static struct gpio_led mackerel_leds[] = {
+ 	{
+ 		.name		= "led0",
+-		.gpio		= GPIO_PORT0,
++		.gpio		= 0,
+ 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
+ 	},
+ 	{
+ 		.name		= "led1",
+-		.gpio		= GPIO_PORT1,
++		.gpio		= 1,
+ 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
+ 	},
+ 	{
+ 		.name		= "led2",
+-		.gpio		= GPIO_PORT2,
++		.gpio		= 2,
+ 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
+ 	},
+ 	{
+ 		.name		= "led3",
+-		.gpio		= GPIO_PORT159,
++		.gpio		= 159,
+ 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
+ 	}
+ };
+@@ -964,11 +964,11 @@ static struct platform_device nand_flash_device = {
+ 
+ /*
+  * The card detect pin of the top SD/MMC slot (CN7) is active low and is
+- * connected to GPIO A22 of SH7372 (GPIO_PORT41).
++ * connected to GPIO A22 of SH7372 (GPIO 41).
+  */
+ static int slot_cn7_get_cd(struct platform_device *pdev)
+ {
+-	return !gpio_get_value(GPIO_PORT41);
++	return !gpio_get_value(41);
+ }
+ 
+ /* SDHI0 */
+@@ -977,7 +977,7 @@ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+ 	.tmio_flags	= TMIO_MMC_USE_GPIO_CD,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
+-	.cd_gpio	= GPIO_PORT172,
++	.cd_gpio	= 172,
  };
  
-+static const unsigned int sdhi0_data1_pins[] = {
-+	/* D0 */
-+	77,
-+};
-+static const unsigned int sdhi0_data1_mux[] = {
-+	SDHI0_D0_MARK,
-+};
-+static const unsigned int sdhi0_data4_pins[] = {
-+	/* D[0:3] */
-+	77, 78, 79, 80,
-+};
-+static const unsigned int sdhi0_data4_mux[] = {
-+	SDHI0_D0_MARK, SDHI0_D1_MARK, SDHI0_D2_MARK, SDHI0_D3_MARK,
-+};
-+static const unsigned int sdhi0_ctrl_pins[] = {
-+	/* CMD, CLK */
-+	76, 82,
-+};
-+static const unsigned int sdhi0_ctrl_mux[] = {
-+	SDHI0_CMD_MARK, SDHI0_CLK_MARK,
-+};
-+static const unsigned int sdhi0_cd_pins[] = {
-+	/* CD */
-+	81,
-+};
-+static const unsigned int sdhi0_cd_mux[] = {
-+	SDHI0_CD_MARK,
-+};
-+static const unsigned int sdhi0_wp_pins[] = {
-+	/* WP */
-+	83,
-+};
-+static const unsigned int sdhi0_wp_mux[] = {
-+	SDHI0_WP_MARK,
-+};
-+
-+static const unsigned int sdhi1_data1_pins[] = {
-+	/* D0 */
-+	68,
-+};
-+static const unsigned int sdhi1_data1_mux[] = {
-+	SDHI1_D0_MARK,
-+};
-+static const unsigned int sdhi1_data4_pins[] = {
-+	/* D[0:3] */
-+	68, 69, 70, 71,
-+};
-+static const unsigned int sdhi1_data4_mux[] = {
-+	SDHI1_D0_MARK, SDHI1_D1_MARK, SDHI1_D2_MARK, SDHI1_D3_MARK,
-+};
-+static const unsigned int sdhi1_ctrl_pins[] = {
-+	/* CMD, CLK */
-+	67, 66,
-+};
-+static const unsigned int sdhi1_ctrl_mux[] = {
-+	SDHI1_CMD_MARK, SDHI1_CLK_MARK,
-+};
-+static const unsigned int sdhi1_cd_pins[] = {
-+	/* CD */
-+	72,
-+};
-+static const unsigned int sdhi1_cd_mux[] = {
-+	SDHI1_CD_MARK,
-+};
-+static const unsigned int sdhi1_wp_pins[] = {
-+	/* WP */
-+	73,
-+};
-+static const unsigned int sdhi1_wp_mux[] = {
-+	SDHI1_WP_MARK,
-+};
-+
-+static const unsigned int sdhi2_data1_pins[] = {
-+	/* D0 */
-+	205,
-+};
-+static const unsigned int sdhi2_data1_mux[] = {
-+	SDHI2_D0_MARK,
-+};
-+static const unsigned int sdhi2_data4_pins[] = {
-+	/* D[0:3] */
-+	205, 206, 207, 208,
-+};
-+static const unsigned int sdhi2_data4_mux[] = {
-+	SDHI2_D0_MARK, SDHI2_D1_MARK, SDHI2_D2_MARK, SDHI2_D3_MARK,
-+};
-+static const unsigned int sdhi2_ctrl_pins[] = {
-+	/* CMD, CLK */
-+	204, 203,
-+};
-+static const unsigned int sdhi2_ctrl_mux[] = {
-+	SDHI2_CMD_MARK, SDHI2_CLK_MARK,
-+};
-+static const unsigned int sdhi2_cd_0_pins[] = {
-+	/* CD */
-+	202,
-+};
-+static const unsigned int sdhi2_cd_0_mux[] = {
-+	SDHI2_CD_PORT202_MARK,
-+};
-+static const unsigned int sdhi2_wp_0_pins[] = {
-+	/* WP */
-+	177,
-+};
-+static const unsigned int sdhi2_wp_0_mux[] = {
-+	SDHI2_WP_PORT177_MARK,
-+};
-+static const unsigned int sdhi2_cd_1_pins[] = {
-+	/* CD */
-+	24,
-+};
-+static const unsigned int sdhi2_cd_1_mux[] = {
-+	SDHI2_CD_PORT24_MARK,
-+};
-+static const unsigned int sdhi2_wp_1_pins[] = {
-+	/* WP */
-+	25,
-+};
-+static const unsigned int sdhi2_wp_1_mux[] = {
-+	SDHI2_WP_PORT25_MARK,
-+};
-+
-+static const unsigned int mmc0_data1_0_pins[] = {
-+	/* D[0] */
-+	68,
-+};
-+static const unsigned int mmc0_data1_0_mux[] = {
-+	MMC0_D0_PORT68_MARK,
-+};
-+static const unsigned int mmc0_data4_0_pins[] = {
-+	/* D[0:3] */
-+	68, 69, 70, 71,
-+};
-+static const unsigned int mmc0_data4_0_mux[] = {
-+	MMC0_D0_PORT68_MARK, MMC0_D1_PORT69_MARK, MMC0_D2_PORT70_MARK, MMC0_D3_PORT71_MARK,
-+};
-+static const unsigned int mmc0_data8_0_pins[] = {
-+	/* D[0:7] */
-+	68, 69, 70, 71, 72, 73, 74, 75,
-+};
-+static const unsigned int mmc0_data8_0_mux[] = {
-+	MMC0_D0_PORT68_MARK, MMC0_D1_PORT69_MARK, MMC0_D2_PORT70_MARK, MMC0_D3_PORT71_MARK,
-+	MMC0_D4_PORT72_MARK, MMC0_D5_PORT73_MARK, MMC0_D6_PORT74_MARK, MMC0_D7_PORT75_MARK,
-+};
-+static const unsigned int mmc0_ctrl_0_pins[] = {
-+	/* CMD, CLK */
-+	67, 66,
-+};
-+static const unsigned int mmc0_ctrl_0_mux[] = {
-+	MMC0_CMD_PORT67_MARK, MMC0_CLK_PORT66_MARK,
-+};
-+
-+static const unsigned int mmc0_data1_1_pins[] = {
-+	/* D[0] */
-+	149,
-+};
-+static const unsigned int mmc0_data1_1_mux[] = {
-+	MMC1_D0_PORT149_MARK,
-+};
-+static const unsigned int mmc0_data4_1_pins[] = {
-+	/* D[0:3] */
-+	149, 148, 147, 146,
-+};
-+static const unsigned int mmc0_data4_1_mux[] = {
-+	MMC1_D0_PORT149_MARK, MMC1_D1_PORT148_MARK, MMC1_D2_PORT147_MARK, MMC1_D3_PORT146_MARK,
-+};
-+static const unsigned int mmc0_data8_1_pins[] = {
-+	/* D[0:7] */
-+	149, 148, 147, 146, 145, 144, 143, 142,
-+};
-+static const unsigned int mmc0_data8_1_mux[] = {
-+	MMC1_D0_PORT149_MARK, MMC1_D1_PORT148_MARK, MMC1_D2_PORT147_MARK, MMC1_D3_PORT146_MARK,
-+	MMC1_D4_PORT145_MARK, MMC1_D5_PORT144_MARK, MMC1_D6_PORT143_MARK, MMC1_D7_PORT142_MARK,
-+};
-+static const unsigned int mmc0_ctrl_1_pins[] = {
-+	/* CMD, CLK */
-+	104, 103,
-+};
-+static const unsigned int mmc0_ctrl_1_mux[] = {
-+	MMC1_CMD_PORT104_MARK, MMC1_CLK_PORT103_MARK,
-+};
-+
- static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(lcd0_data8),
- 	SH_PFC_PIN_GROUP(lcd0_data9),
-@@ -1893,6 +2075,31 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(lcd1_lclk),
- 	SH_PFC_PIN_GROUP(lcd1_sync),
- 	SH_PFC_PIN_GROUP(lcd1_sys),
-+	SH_PFC_PIN_GROUP(sdhi0_data1),
-+	SH_PFC_PIN_GROUP(sdhi0_data4),
-+	SH_PFC_PIN_GROUP(sdhi0_ctrl),
-+	SH_PFC_PIN_GROUP(sdhi0_cd),
-+	SH_PFC_PIN_GROUP(sdhi0_wp),
-+	SH_PFC_PIN_GROUP(sdhi1_data1),
-+	SH_PFC_PIN_GROUP(sdhi1_data4),
-+	SH_PFC_PIN_GROUP(sdhi1_ctrl),
-+	SH_PFC_PIN_GROUP(sdhi1_cd),
-+	SH_PFC_PIN_GROUP(sdhi1_wp),
-+	SH_PFC_PIN_GROUP(sdhi2_data1),
-+	SH_PFC_PIN_GROUP(sdhi2_data4),
-+	SH_PFC_PIN_GROUP(sdhi2_ctrl),
-+	SH_PFC_PIN_GROUP(sdhi2_cd_0),
-+	SH_PFC_PIN_GROUP(sdhi2_wp_0),
-+	SH_PFC_PIN_GROUP(sdhi2_cd_1),
-+	SH_PFC_PIN_GROUP(sdhi2_wp_1),
-+	SH_PFC_PIN_GROUP(mmc0_data1_0),
-+	SH_PFC_PIN_GROUP(mmc0_data4_0),
-+	SH_PFC_PIN_GROUP(mmc0_data8_0),
-+	SH_PFC_PIN_GROUP(mmc0_ctrl_0),
-+	SH_PFC_PIN_GROUP(mmc0_data1_1),
-+	SH_PFC_PIN_GROUP(mmc0_data4_1),
-+	SH_PFC_PIN_GROUP(mmc0_data8_1),
-+	SH_PFC_PIN_GROUP(mmc0_ctrl_1),
- };
+ static struct resource sdhi0_resources[] = {
+@@ -1060,11 +1060,11 @@ static struct platform_device sdhi1_device = {
  
- static const char * const lcd0_groups[] = {
-@@ -1923,9 +2130,50 @@ static const char * const lcd1_groups[] = {
- 	"lcd1_sys",
- };
+ /*
+  * The card detect pin of the top SD/MMC slot (CN23) is active low and is
+- * connected to GPIO SCIFB_SCK of SH7372 (GPIO_PORT162).
++ * connected to GPIO SCIFB_SCK of SH7372 (162).
+  */
+ static int slot_cn23_get_cd(struct platform_device *pdev)
+ {
+-	return !gpio_get_value(GPIO_PORT162);
++	return !gpio_get_value(162);
+ }
  
-+static const char * const sdhi0_groups[] = {
-+	"sdhi0_data1",
-+	"sdhi0_data4",
-+	"sdhi0_ctrl",
-+	"sdhi0_cd",
-+	"sdhi0_wp",
-+};
-+
-+static const char * const sdhi1_groups[] = {
-+	"sdhi1_data1",
-+	"sdhi1_data4",
-+	"sdhi1_ctrl",
-+	"sdhi1_cd",
-+	"sdhi1_wp",
-+};
-+
-+static const char * const sdhi2_groups[] = {
-+	"sdhi2_data1",
-+	"sdhi2_data4",
-+	"sdhi2_ctrl",
-+	"sdhi2_cd_0",
-+	"sdhi2_wp_0",
-+	"sdhi2_cd_1",
-+	"sdhi2_wp_1",
-+};
-+
-+static const char * const mmc0_groups[] = {
-+	"mmc0_data1_0",
-+	"mmc0_data4_0",
-+	"mmc0_data8_0",
-+	"mmc0_ctrl_0",
-+	"mmc0_data1_1",
-+	"mmc0_data4_1",
-+	"mmc0_data8_1",
-+	"mmc0_ctrl_1",
-+};
-+
- static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(lcd0),
- 	SH_PFC_FUNCTION(lcd1),
-+	SH_PFC_FUNCTION(sdhi0),
-+	SH_PFC_FUNCTION(sdhi1),
-+	SH_PFC_FUNCTION(sdhi2),
-+	SH_PFC_FUNCTION(mmc0),
- };
+ /* SDHI2 */
+@@ -1403,9 +1403,9 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_LCDDCK,   NULL);
  
- #define PINMUX_FN_BASE	ARRAY_SIZE(pinmux_pins)
+ 	/* backlight, off by default */
+-	gpio_request_one(GPIO_PORT31, GPIOF_OUT_INIT_LOW, NULL);
++	gpio_request_one(31, GPIOF_OUT_INIT_LOW, NULL);
+ 
+-	gpio_request_one(GPIO_PORT151, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
++	gpio_request_one(151, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
+ 
+ 	/* USBHS0 */
+ 	gpio_request(GPIO_FN_VBUS0_0, NULL);
+@@ -1421,10 +1421,10 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_FSIAILR,	NULL);
+ 	gpio_request(GPIO_FN_FSIAISLD,	NULL);
+ 	gpio_request(GPIO_FN_FSIAOSLD,	NULL);
+-	gpio_request_one(GPIO_PORT161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
++	gpio_request_one(161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
+ 
+-	gpio_request(GPIO_PORT9,  NULL);
+-	gpio_request(GPIO_PORT10, NULL);
++	gpio_request(9,  NULL);
++	gpio_request(10, NULL);
+ 	gpio_direction_none(GPIO_PORT9CR);  /* FSIAOBT needs no direction */
+ 	gpio_direction_none(GPIO_PORT10CR); /* FSIAOLR needs no direction */
+ 
+@@ -1475,7 +1475,7 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_SDHID1_0, NULL);
+ #endif
+ 	/* card detect pin for MMC slot (CN7) */
+-	gpio_request_one(GPIO_PORT41, GPIOF_IN, NULL);
++	gpio_request_one(41, GPIOF_IN, NULL);
+ 
+ 	/* enable SDHI2 */
+ 	gpio_request(GPIO_FN_SDHICMD2, NULL);
+@@ -1486,7 +1486,7 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_SDHID2_0, NULL);
+ 
+ 	/* card detect pin for microSD slot (CN23) */
+-	gpio_request_one(GPIO_PORT162, GPIOF_IN, NULL);
++	gpio_request_one(162, GPIOF_IN, NULL);
+ 
+ 	/* MMCIF */
+ 	gpio_request(GPIO_FN_MMCD0_0, NULL);
 -- 
 1.8.1.5
 
