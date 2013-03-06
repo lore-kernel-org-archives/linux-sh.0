@@ -1,548 +1,171 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:06:45 +0000
-Subject: [PATCH 109/142] sh-pfc: sh73a0: Remove pull-up function GPIOS
-Message-Id: <1363604838-29359-110-git-send-email-horms+renesas@verge.net.au>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Wed, 06 Mar 2013 05:02:44 +0000
+Subject: [PATCH 2/2 v2] ARM: shmobile: r8a7778: add DIV4 clock support
+Message-Id: <87d2vdktn3.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Current R8A7778 clock is using temporary setting as quick hack.
+To correct it, this patch adds PLL-A and DIV4 clocks
 
-All sh73a0 platforms now use the pinconf API to control pull-ups, the
-corresponding function GPIOS are unused. Remove them.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c |  465 ++---------------------------------
- 1 file changed, 23 insertions(+), 442 deletions(-)
+v1 -> v2
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index 1a638f2..1249a3f 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -66,14 +66,6 @@ enum {
- 	PORT_ALL(IN),			/* PORT0_IN -> PORT309_IN */
- 	PINMUX_INPUT_END,
+ - r8a7779 -> r8a7778 on Subject
+
+ arch/arm/mach-shmobile/clock-r8a7778.c |  107 ++++++++++++++++++++++++--------
+ 1 file changed, 82 insertions(+), 25 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
+index bffa206..b49bcef 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7778.c
++++ b/arch/arm/mach-shmobile/clock-r8a7778.c
+@@ -29,6 +29,19 @@
+ #include <linux/clkdev.h>
+ #include <mach/common.h>
  
--	PINMUX_INPUT_PULLUP_BEGIN,
--	PORT_ALL(IN_PU),		/* PORT0_IN_PU -> PORT309_IN_PU */
--	PINMUX_INPUT_PULLUP_END,
--
--	PINMUX_INPUT_PULLDOWN_BEGIN,
--	PORT_ALL(IN_PD),		/* PORT0_IN_PD -> PORT309_IN_PD */
--	PINMUX_INPUT_PULLDOWN_END,
--
- 	PINMUX_OUTPUT_BEGIN,
- 	PORT_ALL(OUT),			/* PORT0_OUT -> PORT309_OUT */
- 	PINMUX_OUTPUT_END,
-@@ -468,328 +460,15 @@ enum {
- 	EDBGREQ_PD_MARK,
- 	EDBGREQ_PU_MARK,
- 
--	/* Functions with pull-ups */
--	KEYIN0_PU_MARK,
--	KEYIN1_PU_MARK,
--	KEYIN2_PU_MARK,
--	KEYIN3_PU_MARK,
--	KEYIN4_PU_MARK,
--	KEYIN5_PU_MARK,
--	KEYIN6_PU_MARK,
--	KEYIN7_PU_MARK,
--	SDHICD0_PU_MARK,
--	SDHID0_0_PU_MARK,
--	SDHID0_1_PU_MARK,
--	SDHID0_2_PU_MARK,
--	SDHID0_3_PU_MARK,
--	SDHICMD0_PU_MARK,
--	SDHIWP0_PU_MARK,
--	SDHID1_0_PU_MARK,
--	SDHID1_1_PU_MARK,
--	SDHID1_2_PU_MARK,
--	SDHID1_3_PU_MARK,
--	SDHICMD1_PU_MARK,
--	SDHID2_0_PU_MARK,
--	SDHID2_1_PU_MARK,
--	SDHID2_2_PU_MARK,
--	SDHID2_3_PU_MARK,
--	SDHICMD2_PU_MARK,
--	MMCCMD0_PU_MARK,
--	MMCCMD1_PU_MARK,
--	MMCD0_0_PU_MARK,
--	MMCD0_1_PU_MARK,
--	MMCD0_2_PU_MARK,
--	MMCD0_3_PU_MARK,
--	MMCD0_4_PU_MARK,
--	MMCD0_5_PU_MARK,
--	MMCD0_6_PU_MARK,
--	MMCD0_7_PU_MARK,
--	FSIBISLD_PU_MARK,
--	FSIACK_PU_MARK,
--	FSIAILR_PU_MARK,
--	FSIAIBT_PU_MARK,
--	FSIAISLD_PU_MARK,
--
- 	PINMUX_MARK_END,
- };
- 
-+#define _PORT_DATA(pfx, sfx)	PORT_DATA_IO(pfx)
-+#define PINMUX_DATA_GP_ALL()    CPU_ALL_PORT(_PORT_DATA, , unused)
++/*
++ *	MD	MD	MD	MD	 PLLA	PLLB	EXTAL	clki	clkz
++ *	19	18	12	11			(HMz)	(MHz)	(MHz)
++ *----------------------------------------------------------------------------
++ *	1	0	0	0	x21	x21	38.00	800	800
++ *	1	0	0	1	x24	x24	33.33	800	800
++ *	1	0	1	0	x28	x28	28.50	800	800
++ *	1	0	1	1	x32	x32	25.00	800	800
++ *	1	1	0	1	x24	x21	33.33	800	700
++ *	1	1	1	0	x28	x21	28.50	800	600
++ *	1	1	1	1	x32	x24	25.00	800	600
++ */
 +
- static const pinmux_enum_t pinmux_data[] = {
- 	/* specify valid pin states for each pin in GPIO mode */
--
--	/* Table 25-1 (I/O and Pull U/D) */
--	PORT_DATA_I_PD(0),
--	PORT_DATA_I_PU(1),
--	PORT_DATA_I_PU(2),
--	PORT_DATA_I_PU(3),
--	PORT_DATA_I_PU(4),
--	PORT_DATA_I_PU(5),
--	PORT_DATA_I_PU(6),
--	PORT_DATA_I_PU(7),
--	PORT_DATA_I_PU(8),
--	PORT_DATA_I_PD(9),
--	PORT_DATA_I_PD(10),
--	PORT_DATA_I_PU_PD(11),
--	PORT_DATA_IO_PU_PD(12),
--	PORT_DATA_IO_PU_PD(13),
--	PORT_DATA_IO_PU_PD(14),
--	PORT_DATA_IO_PU_PD(15),
--	PORT_DATA_IO_PD(16),
--	PORT_DATA_IO_PD(17),
--	PORT_DATA_IO_PU(18),
--	PORT_DATA_IO_PU(19),
--	PORT_DATA_O(20),
--	PORT_DATA_O(21),
--	PORT_DATA_O(22),
--	PORT_DATA_O(23),
--	PORT_DATA_O(24),
--	PORT_DATA_I_PD(25),
--	PORT_DATA_I_PD(26),
--	PORT_DATA_IO_PU(27),
--	PORT_DATA_IO_PU(28),
--	PORT_DATA_IO_PD(29),
--	PORT_DATA_IO_PD(30),
--	PORT_DATA_IO_PU(31),
--	PORT_DATA_IO_PD(32),
--	PORT_DATA_I_PU_PD(33),
--	PORT_DATA_IO_PD(34),
--	PORT_DATA_I_PU_PD(35),
--	PORT_DATA_IO_PD(36),
--	PORT_DATA_IO(37),
--	PORT_DATA_O(38),
--	PORT_DATA_I_PU(39),
--	PORT_DATA_I_PU_PD(40),
--	PORT_DATA_O(41),
--	PORT_DATA_IO_PD(42),
--	PORT_DATA_IO_PU_PD(43),
--	PORT_DATA_IO_PU_PD(44),
--	PORT_DATA_IO_PD(45),
--	PORT_DATA_IO_PD(46),
--	PORT_DATA_IO_PD(47),
--	PORT_DATA_I_PD(48),
--	PORT_DATA_IO_PU_PD(49),
--	PORT_DATA_IO_PD(50),
--
--	PORT_DATA_IO_PD(51),
--	PORT_DATA_O(52),
--	PORT_DATA_IO_PU_PD(53),
--	PORT_DATA_IO_PU_PD(54),
--	PORT_DATA_IO_PD(55),
--	PORT_DATA_I_PU_PD(56),
--	PORT_DATA_IO(57),
--	PORT_DATA_IO(58),
--	PORT_DATA_IO(59),
--	PORT_DATA_IO(60),
--	PORT_DATA_IO(61),
--	PORT_DATA_IO_PD(62),
--	PORT_DATA_IO_PD(63),
--	PORT_DATA_IO_PU_PD(64),
--	PORT_DATA_IO_PD(65),
--	PORT_DATA_IO_PU_PD(66),
--	PORT_DATA_IO_PU_PD(67),
--	PORT_DATA_IO_PU_PD(68),
--	PORT_DATA_IO_PU_PD(69),
--	PORT_DATA_IO_PU_PD(70),
--	PORT_DATA_IO_PU_PD(71),
--	PORT_DATA_IO_PU_PD(72),
--	PORT_DATA_I_PU_PD(73),
--	PORT_DATA_IO_PU(74),
--	PORT_DATA_IO_PU(75),
--	PORT_DATA_IO_PU(76),
--	PORT_DATA_IO_PU(77),
--	PORT_DATA_IO_PU(78),
--	PORT_DATA_IO_PU(79),
--	PORT_DATA_IO_PU(80),
--	PORT_DATA_IO_PU(81),
--	PORT_DATA_IO_PU(82),
--	PORT_DATA_IO_PU(83),
--	PORT_DATA_IO_PU(84),
--	PORT_DATA_IO_PU(85),
--	PORT_DATA_IO_PU(86),
--	PORT_DATA_IO_PU(87),
--	PORT_DATA_IO_PU(88),
--	PORT_DATA_IO_PU(89),
--	PORT_DATA_O(90),
--	PORT_DATA_IO_PU(91),
--	PORT_DATA_O(92),
--	PORT_DATA_IO_PU(93),
--	PORT_DATA_O(94),
--	PORT_DATA_I_PU_PD(95),
--	PORT_DATA_IO(96),
--	PORT_DATA_IO(97),
--	PORT_DATA_IO(98),
--	PORT_DATA_I_PU(99),
--	PORT_DATA_O(100),
--	PORT_DATA_O(101),
--	PORT_DATA_I_PU(102),
--	PORT_DATA_IO_PD(103),
--	PORT_DATA_I_PU_PD(104),
--	PORT_DATA_I_PD(105),
--	PORT_DATA_I_PD(106),
--	PORT_DATA_I_PU_PD(107),
--	PORT_DATA_I_PU_PD(108),
--	PORT_DATA_IO_PD(109),
--	PORT_DATA_IO_PD(110),
--	PORT_DATA_IO_PU_PD(111),
--	PORT_DATA_IO_PU_PD(112),
--	PORT_DATA_IO_PU_PD(113),
--	PORT_DATA_IO_PD(114),
--	PORT_DATA_IO_PU(115),
--	PORT_DATA_IO_PU(116),
--	PORT_DATA_IO_PU_PD(117),
--	PORT_DATA_IO_PU_PD(118),
--	PORT_DATA_IO_PD(128),
--
--	PORT_DATA_IO_PD(129),
--	PORT_DATA_IO_PU_PD(130),
--	PORT_DATA_IO_PD(131),
--	PORT_DATA_IO_PD(132),
--	PORT_DATA_IO_PD(133),
--	PORT_DATA_IO_PU_PD(134),
--	PORT_DATA_IO_PU_PD(135),
--	PORT_DATA_IO_PU_PD(136),
--	PORT_DATA_IO_PU_PD(137),
--	PORT_DATA_IO_PD(138),
--	PORT_DATA_IO_PD(139),
--	PORT_DATA_IO_PD(140),
--	PORT_DATA_IO_PD(141),
--	PORT_DATA_IO_PD(142),
--	PORT_DATA_IO_PD(143),
--	PORT_DATA_IO_PU_PD(144),
--	PORT_DATA_IO_PD(145),
--	PORT_DATA_IO_PU_PD(146),
--	PORT_DATA_IO_PU_PD(147),
--	PORT_DATA_IO_PU_PD(148),
--	PORT_DATA_IO_PU_PD(149),
--	PORT_DATA_I_PU_PD(150),
--	PORT_DATA_IO_PU_PD(151),
--	PORT_DATA_IO_PU_PD(152),
--	PORT_DATA_IO_PD(153),
--	PORT_DATA_IO_PD(154),
--	PORT_DATA_I_PU_PD(155),
--	PORT_DATA_IO_PU_PD(156),
--	PORT_DATA_I_PD(157),
--	PORT_DATA_IO_PD(158),
--	PORT_DATA_IO_PU_PD(159),
--	PORT_DATA_IO_PU_PD(160),
--	PORT_DATA_I_PU_PD(161),
--	PORT_DATA_I_PU_PD(162),
--	PORT_DATA_IO_PU_PD(163),
--	PORT_DATA_I_PU_PD(164),
--	PORT_DATA_IO_PD(192),
--	PORT_DATA_IO_PU_PD(193),
--	PORT_DATA_IO_PD(194),
--	PORT_DATA_IO_PU_PD(195),
--	PORT_DATA_IO_PD(196),
--	PORT_DATA_IO_PD(197),
--	PORT_DATA_IO_PD(198),
--	PORT_DATA_IO_PD(199),
--	PORT_DATA_IO_PU_PD(200),
--	PORT_DATA_IO_PU_PD(201),
--	PORT_DATA_IO_PU_PD(202),
--	PORT_DATA_IO_PU_PD(203),
--	PORT_DATA_IO_PU_PD(204),
--	PORT_DATA_IO_PU_PD(205),
--	PORT_DATA_IO_PU_PD(206),
--	PORT_DATA_IO_PD(207),
--	PORT_DATA_IO_PD(208),
--	PORT_DATA_IO_PD(209),
--	PORT_DATA_IO_PD(210),
--	PORT_DATA_IO_PD(211),
--	PORT_DATA_IO_PD(212),
--	PORT_DATA_IO_PD(213),
--	PORT_DATA_IO_PU_PD(214),
--	PORT_DATA_IO_PU_PD(215),
--	PORT_DATA_IO_PD(216),
--	PORT_DATA_IO_PD(217),
--	PORT_DATA_O(218),
--	PORT_DATA_IO_PD(219),
--	PORT_DATA_IO_PD(220),
--	PORT_DATA_IO_PU_PD(221),
--	PORT_DATA_IO_PU_PD(222),
--	PORT_DATA_I_PU_PD(223),
--	PORT_DATA_I_PU_PD(224),
--
--	PORT_DATA_IO_PU_PD(225),
--	PORT_DATA_O(226),
--	PORT_DATA_IO_PU_PD(227),
--	PORT_DATA_I_PU_PD(228),
--	PORT_DATA_I_PD(229),
--	PORT_DATA_IO(230),
--	PORT_DATA_IO_PU_PD(231),
--	PORT_DATA_IO_PU_PD(232),
--	PORT_DATA_I_PU_PD(233),
--	PORT_DATA_IO_PU_PD(234),
--	PORT_DATA_IO_PU_PD(235),
--	PORT_DATA_IO_PU_PD(236),
--	PORT_DATA_IO_PD(237),
--	PORT_DATA_IO_PU_PD(238),
--	PORT_DATA_IO_PU_PD(239),
--	PORT_DATA_IO_PU_PD(240),
--	PORT_DATA_O(241),
--	PORT_DATA_I_PD(242),
--	PORT_DATA_IO_PU_PD(243),
--	PORT_DATA_IO_PU_PD(244),
--	PORT_DATA_IO_PU_PD(245),
--	PORT_DATA_IO_PU_PD(246),
--	PORT_DATA_IO_PU_PD(247),
--	PORT_DATA_IO_PU_PD(248),
--	PORT_DATA_IO_PU_PD(249),
--	PORT_DATA_IO_PU_PD(250),
--	PORT_DATA_IO_PU_PD(251),
--	PORT_DATA_IO_PU_PD(252),
--	PORT_DATA_IO_PU_PD(253),
--	PORT_DATA_IO_PU_PD(254),
--	PORT_DATA_IO_PU_PD(255),
--	PORT_DATA_IO_PU_PD(256),
--	PORT_DATA_IO_PU_PD(257),
--	PORT_DATA_IO_PU_PD(258),
--	PORT_DATA_IO_PU_PD(259),
--	PORT_DATA_IO_PU_PD(260),
--	PORT_DATA_IO_PU_PD(261),
--	PORT_DATA_IO_PU_PD(262),
--	PORT_DATA_IO_PU_PD(263),
--	PORT_DATA_IO_PU_PD(264),
--	PORT_DATA_IO_PU_PD(265),
--	PORT_DATA_IO_PU_PD(266),
--	PORT_DATA_IO_PU_PD(267),
--	PORT_DATA_IO_PU_PD(268),
--	PORT_DATA_IO_PU_PD(269),
--	PORT_DATA_IO_PU_PD(270),
--	PORT_DATA_IO_PU_PD(271),
--	PORT_DATA_IO_PU_PD(272),
--	PORT_DATA_IO_PU_PD(273),
--	PORT_DATA_IO_PU_PD(274),
--	PORT_DATA_IO_PU_PD(275),
--	PORT_DATA_IO_PU_PD(276),
--	PORT_DATA_IO_PU_PD(277),
--	PORT_DATA_IO_PU_PD(278),
--	PORT_DATA_IO_PU_PD(279),
--	PORT_DATA_IO_PU_PD(280),
--	PORT_DATA_O(281),
--	PORT_DATA_O(282),
--	PORT_DATA_I_PU(288),
--	PORT_DATA_IO_PU_PD(289),
--	PORT_DATA_IO_PU_PD(290),
--	PORT_DATA_IO_PU_PD(291),
--	PORT_DATA_IO_PU_PD(292),
--	PORT_DATA_IO_PU_PD(293),
--	PORT_DATA_IO_PU_PD(294),
--	PORT_DATA_IO_PU_PD(295),
--	PORT_DATA_IO_PU_PD(296),
--	PORT_DATA_IO_PU_PD(297),
--	PORT_DATA_IO_PU_PD(298),
--
--	PORT_DATA_IO_PU_PD(299),
--	PORT_DATA_IO_PU_PD(300),
--	PORT_DATA_IO_PU_PD(301),
--	PORT_DATA_IO_PU_PD(302),
--	PORT_DATA_IO_PU_PD(303),
--	PORT_DATA_IO_PU_PD(304),
--	PORT_DATA_IO_PU_PD(305),
--	PORT_DATA_O(306),
--	PORT_DATA_O(307),
--	PORT_DATA_I_PU(308),
--	PORT_DATA_O(309),
-+	PINMUX_DATA_GP_ALL(),
- 
- 	/* Table 25-1 (Function 0-7) */
- 	PINMUX_DATA(VBUS_0_MARK, PORT0_FN1),
-@@ -1358,28 +1037,19 @@ static const pinmux_enum_t pinmux_data[] = {
- 	PINMUX_DATA(TS_SCK4_MARK, PORT268_FN3),
- 	PINMUX_DATA(SDHICMD2_MARK, PORT269_FN1),
- 	PINMUX_DATA(MMCCLK0_MARK, PORT270_FN1, MSEL4CR_MSEL15_0),
--	PINMUX_DATA(MMCD0_0_MARK, PORT271_FN1, PORT271_IN_PU,
--		MSEL4CR_MSEL15_0),
--	PINMUX_DATA(MMCD0_1_MARK, PORT272_FN1, PORT272_IN_PU,
--		MSEL4CR_MSEL15_0),
--	PINMUX_DATA(MMCD0_2_MARK, PORT273_FN1, PORT273_IN_PU,
--		MSEL4CR_MSEL15_0),
--	PINMUX_DATA(MMCD0_3_MARK, PORT274_FN1, PORT274_IN_PU,
--		MSEL4CR_MSEL15_0),
--	PINMUX_DATA(MMCD0_4_MARK, PORT275_FN1, PORT275_IN_PU,
--		MSEL4CR_MSEL15_0), \
-+	PINMUX_DATA(MMCD0_0_MARK, PORT271_FN1, MSEL4CR_MSEL15_0),
-+	PINMUX_DATA(MMCD0_1_MARK, PORT272_FN1, MSEL4CR_MSEL15_0),
-+	PINMUX_DATA(MMCD0_2_MARK, PORT273_FN1, MSEL4CR_MSEL15_0),
-+	PINMUX_DATA(MMCD0_3_MARK, PORT274_FN1, MSEL4CR_MSEL15_0),
-+	PINMUX_DATA(MMCD0_4_MARK, PORT275_FN1, MSEL4CR_MSEL15_0),
- 	PINMUX_DATA(TS_SPSYNC5_MARK, PORT275_FN3),
--	PINMUX_DATA(MMCD0_5_MARK, PORT276_FN1, PORT276_IN_PU,
--		MSEL4CR_MSEL15_0), \
-+	PINMUX_DATA(MMCD0_5_MARK, PORT276_FN1, MSEL4CR_MSEL15_0),
- 	PINMUX_DATA(TS_SDAT5_MARK, PORT276_FN3),
--	PINMUX_DATA(MMCD0_6_MARK, PORT277_FN1, PORT277_IN_PU,
--		MSEL4CR_MSEL15_0), \
-+	PINMUX_DATA(MMCD0_6_MARK, PORT277_FN1, MSEL4CR_MSEL15_0),
- 	PINMUX_DATA(TS_SDEN5_MARK, PORT277_FN3),
--	PINMUX_DATA(MMCD0_7_MARK, PORT278_FN1, PORT278_IN_PU,
--		MSEL4CR_MSEL15_0), \
-+	PINMUX_DATA(MMCD0_7_MARK, PORT278_FN1, MSEL4CR_MSEL15_0),
- 	PINMUX_DATA(TS_SCK5_MARK, PORT278_FN3),
--	PINMUX_DATA(MMCCMD0_MARK, PORT279_FN1, PORT279_IN_PU,
--		MSEL4CR_MSEL15_0),
-+	PINMUX_DATA(MMCCMD0_MARK, PORT279_FN1, MSEL4CR_MSEL15_0),
- 	PINMUX_DATA(RESETOUTS__MARK, PORT281_FN1), \
- 	PINMUX_DATA(EXTAL2OUT_MARK, PORT281_FN2),
- 	PINMUX_DATA(MCP_WAIT__MCP_FRB_MARK, PORT288_FN1),
-@@ -1485,62 +1155,6 @@ static const pinmux_enum_t pinmux_data[] = {
- 	PINMUX_DATA(RESETA_N_PU_OFF_MARK, MSEL4CR_MSEL4_1),
- 	PINMUX_DATA(EDBGREQ_PD_MARK, MSEL4CR_MSEL1_0),
- 	PINMUX_DATA(EDBGREQ_PU_MARK, MSEL4CR_MSEL1_1),
--
--	/* Functions with pull-ups */
--	PINMUX_DATA(KEYIN0_PU_MARK, PORT66_FN2, PORT66_IN_PU),
--	PINMUX_DATA(KEYIN1_PU_MARK, PORT67_FN2, PORT67_IN_PU),
--	PINMUX_DATA(KEYIN2_PU_MARK, PORT68_FN2, PORT68_IN_PU),
--	PINMUX_DATA(KEYIN3_PU_MARK, PORT69_FN2, PORT69_IN_PU),
--	PINMUX_DATA(KEYIN4_PU_MARK, PORT70_FN2, PORT70_IN_PU),
--	PINMUX_DATA(KEYIN5_PU_MARK, PORT71_FN2, PORT71_IN_PU),
--	PINMUX_DATA(KEYIN6_PU_MARK, PORT72_FN2, PORT72_IN_PU),
--	PINMUX_DATA(KEYIN7_PU_MARK, PORT73_FN2, PORT73_IN_PU),
--
--	PINMUX_DATA(SDHICD0_PU_MARK,  PORT251_FN1, PORT251_IN_PU),
--	PINMUX_DATA(SDHID0_0_PU_MARK, PORT252_FN1, PORT252_IN_PU),
--	PINMUX_DATA(SDHID0_1_PU_MARK, PORT253_FN1, PORT253_IN_PU),
--	PINMUX_DATA(SDHID0_2_PU_MARK, PORT254_FN1, PORT254_IN_PU),
--	PINMUX_DATA(SDHID0_3_PU_MARK, PORT255_FN1, PORT255_IN_PU),
--	PINMUX_DATA(SDHICMD0_PU_MARK, PORT256_FN1, PORT256_IN_PU),
--	PINMUX_DATA(SDHIWP0_PU_MARK,  PORT257_FN1, PORT257_IN_PU),
--	PINMUX_DATA(SDHID1_0_PU_MARK, PORT259_FN1, PORT259_IN_PU),
--	PINMUX_DATA(SDHID1_1_PU_MARK, PORT260_FN1, PORT260_IN_PU),
--	PINMUX_DATA(SDHID1_2_PU_MARK, PORT261_FN1, PORT261_IN_PU),
--	PINMUX_DATA(SDHID1_3_PU_MARK, PORT262_FN1, PORT262_IN_PU),
--	PINMUX_DATA(SDHICMD1_PU_MARK, PORT263_FN1, PORT263_IN_PU),
--	PINMUX_DATA(SDHID2_0_PU_MARK, PORT265_FN1, PORT265_IN_PU),
--	PINMUX_DATA(SDHID2_1_PU_MARK, PORT266_FN1, PORT266_IN_PU),
--	PINMUX_DATA(SDHID2_2_PU_MARK, PORT267_FN1, PORT267_IN_PU),
--	PINMUX_DATA(SDHID2_3_PU_MARK, PORT268_FN1, PORT268_IN_PU),
--	PINMUX_DATA(SDHICMD2_PU_MARK, PORT269_FN1, PORT269_IN_PU),
--
--	PINMUX_DATA(MMCCMD0_PU_MARK, PORT279_FN1, PORT279_IN_PU,
--		MSEL4CR_MSEL15_0),
--	PINMUX_DATA(MMCCMD1_PU_MARK, PORT297_FN2, PORT297_IN_PU,
--		MSEL4CR_MSEL15_1),
--
--	PINMUX_DATA(MMCD0_0_PU_MARK,
--		    PORT271_FN1, PORT271_IN_PU, MSEL4CR_MSEL15_0),
--	PINMUX_DATA(MMCD0_1_PU_MARK,
--		    PORT272_FN1, PORT272_IN_PU, MSEL4CR_MSEL15_0),
--	PINMUX_DATA(MMCD0_2_PU_MARK,
--		    PORT273_FN1, PORT273_IN_PU, MSEL4CR_MSEL15_0),
--	PINMUX_DATA(MMCD0_3_PU_MARK,
--		    PORT274_FN1, PORT274_IN_PU, MSEL4CR_MSEL15_0),
--	PINMUX_DATA(MMCD0_4_PU_MARK,
--		    PORT275_FN1, PORT275_IN_PU, MSEL4CR_MSEL15_0),
--	PINMUX_DATA(MMCD0_5_PU_MARK,
--		    PORT276_FN1, PORT276_IN_PU, MSEL4CR_MSEL15_0),
--	PINMUX_DATA(MMCD0_6_PU_MARK,
--		    PORT277_FN1, PORT277_IN_PU, MSEL4CR_MSEL15_0),
--	PINMUX_DATA(MMCD0_7_PU_MARK,
--		    PORT278_FN1, PORT278_IN_PU, MSEL4CR_MSEL15_0),
--
--	PINMUX_DATA(FSIBISLD_PU_MARK, PORT39_FN1, PORT39_IN_PU),
--	PINMUX_DATA(FSIACK_PU_MARK, PORT49_FN1, PORT49_IN_PU),
--	PINMUX_DATA(FSIAILR_PU_MARK, PORT50_FN5, PORT50_IN_PU),
--	PINMUX_DATA(FSIAIBT_PU_MARK, PORT51_FN5, PORT51_IN_PU),
--	PINMUX_DATA(FSIAISLD_PU_MARK, PORT55_FN1, PORT55_IN_PU),
+ #define FRQMR		IOMEM(0xffc80014)
+ #define MSTPCR0		IOMEM(0xffc80030)
+ #define MSTPCR1		IOMEM(0xffc80034)
+@@ -49,45 +62,86 @@ static struct clk_mapping cpg_mapping = {
+ 	.len	= 0x80,
  };
  
- #define SH73A0_PIN(pin, cfgs)						\
-@@ -3775,49 +3389,18 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(RESETA_N_PU_OFF),
- 	GPIO_FN(EDBGREQ_PD),
- 	GPIO_FN(EDBGREQ_PU),
--
--	/* Functions with pull-ups */
--	GPIO_FN(KEYIN0_PU),
--	GPIO_FN(KEYIN1_PU),
--	GPIO_FN(KEYIN2_PU),
--	GPIO_FN(KEYIN3_PU),
--	GPIO_FN(KEYIN4_PU),
--	GPIO_FN(KEYIN5_PU),
--	GPIO_FN(KEYIN6_PU),
--	GPIO_FN(KEYIN7_PU),
--	GPIO_FN(SDHICD0_PU),
--	GPIO_FN(SDHID0_0_PU),
--	GPIO_FN(SDHID0_1_PU),
--	GPIO_FN(SDHID0_2_PU),
--	GPIO_FN(SDHID0_3_PU),
--	GPIO_FN(SDHICMD0_PU),
--	GPIO_FN(SDHIWP0_PU),
--	GPIO_FN(SDHID1_0_PU),
--	GPIO_FN(SDHID1_1_PU),
--	GPIO_FN(SDHID1_2_PU),
--	GPIO_FN(SDHID1_3_PU),
--	GPIO_FN(SDHICMD1_PU),
--	GPIO_FN(SDHID2_0_PU),
--	GPIO_FN(SDHID2_1_PU),
--	GPIO_FN(SDHID2_2_PU),
--	GPIO_FN(SDHID2_3_PU),
--	GPIO_FN(SDHICMD2_PU),
--	GPIO_FN(MMCCMD0_PU),
--	GPIO_FN(MMCCMD1_PU),
--	GPIO_FN(MMCD0_0_PU),
--	GPIO_FN(MMCD0_1_PU),
--	GPIO_FN(MMCD0_2_PU),
--	GPIO_FN(MMCD0_3_PU),
--	GPIO_FN(MMCD0_4_PU),
--	GPIO_FN(MMCD0_5_PU),
--	GPIO_FN(MMCD0_6_PU),
--	GPIO_FN(MMCD0_7_PU),
--	GPIO_FN(FSIACK_PU),
--	GPIO_FN(FSIAILR_PU),
--	GPIO_FN(FSIAIBT_PU),
--	GPIO_FN(FSIAISLD_PU),
+-static struct clk clkp = {
+-	.rate   = 62500000, /* FIXME: shortcut */
+-	.flags  = CLK_ENABLE_ON_INIT,
+-	.mapping = &cpg_mapping,
++static struct clk plla_clk = {
++	.rate		= 800000000,
++	.mapping	= &cpg_mapping,
  };
  
-+#undef PORTCR
-+#define PORTCR(nr, reg)							\
-+	{								\
-+		PINMUX_CFG_REG("PORT" nr "CR", reg, 8, 4) {		\
-+			_PCRH(PORT##nr##_IN, 0, 0, PORT##nr##_OUT),	\
-+				PORT##nr##_FN0, PORT##nr##_FN1,		\
-+				PORT##nr##_FN2, PORT##nr##_FN3,		\
-+				PORT##nr##_FN4, PORT##nr##_FN5,		\
-+				PORT##nr##_FN6, PORT##nr##_FN7 }	\
-+	}
- static const struct pinmux_cfg_reg pinmux_config_regs[] = {
- 	PORTCR(0, 0xe6050000), /* PORT0CR */
- 	PORTCR(1, 0xe6050001), /* PORT1CR */
-@@ -4425,8 +4008,6 @@ const struct sh_pfc_soc_info sh73a0_pinmux_info = {
- 	.ops = &sh73a0_pinmux_ops,
+ static struct clk *main_clks[] = {
+-	&clkp,
++	&plla_clk,
++};
++
++static int divisors[] = { 0, 1, 0, 3, 4, 6, 8, 0, 12, 16, 18 };
++
++static struct clk_div_mult_table div4_div_mult_table = {
++	.divisors = divisors,
++	.nr_divisors = ARRAY_SIZE(divisors),
++};
++
++static struct clk_div4_table div4_table = {
++	.div_mult_table = &div4_div_mult_table,
++};
++
++enum { DIV4_I, DIV4_S, DIV4_B, DIV4_OUT, DIV4_S4,
++       DIV4_S3, DIV4_S1, DIV4_P, DIV4_NR };
++
++static struct clk div4_clks[DIV4_NR] = {
++	[DIV4_I]	= SH_CLK_DIV4(&plla_clk, FRQMR, 28,
++				      0x0002, CLK_ENABLE_ON_INIT),
++	[DIV4_S]	= SH_CLK_DIV4(&plla_clk, FRQMR, 20,
++				      0x0018, CLK_ENABLE_ON_INIT),
++	[DIV4_OUT]	= SH_CLK_DIV4(&plla_clk, FRQMR, 16,
++				      0x0700, CLK_ENABLE_ON_INIT),
++	[DIV4_B]	= SH_CLK_DIV4(&plla_clk, FRQMR, 16,
++				      0x0700, CLK_ENABLE_ON_INIT),
++	[DIV4_S4]	= SH_CLK_DIV4(&plla_clk, FRQMR, 12,
++				      0x0060, CLK_ENABLE_ON_INIT),
++	[DIV4_S3]	= SH_CLK_DIV4(&plla_clk, FRQMR, 8,
++				      0x0018, CLK_ENABLE_ON_INIT),
++	[DIV4_S1]	= SH_CLK_DIV4(&plla_clk, FRQMR, 4,
++				      0x0060, CLK_ENABLE_ON_INIT),
++	[DIV4_P]	= SH_CLK_DIV4(&plla_clk, FRQMR, 0,
++				      0x0300, CLK_ENABLE_ON_INIT),
+ };
  
- 	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
--	.input_pu = { PINMUX_INPUT_PULLUP_BEGIN, PINMUX_INPUT_PULLUP_END },
--	.input_pd = { PINMUX_INPUT_PULLDOWN_BEGIN, PINMUX_INPUT_PULLDOWN_END },
- 	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
- 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ enum { MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+ 	MSTP016, MSTP015, MSTP014,
+ 	MSTP_NR };
  
+-#define MSTP(_parent, _reg, _bit, _flags) \
+-	SH_CLK_MSTP32(_parent, _reg, _bit, _flags)
+-
+ static struct clk mstp_clks[MSTP_NR] = {
+-	[MSTP026] = MSTP(&clkp, MSTPCR0, 26, 0), /* SCIF0 */
+-	[MSTP025] = MSTP(&clkp, MSTPCR0, 25, 0), /* SCIF1 */
+-	[MSTP024] = MSTP(&clkp, MSTPCR0, 24, 0), /* SCIF2 */
+-	[MSTP023] = MSTP(&clkp, MSTPCR0, 23, 0), /* SCIF3 */
+-	[MSTP022] = MSTP(&clkp, MSTPCR0, 22, 0), /* SCIF4 */
+-	[MSTP021] = MSTP(&clkp, MSTPCR0, 21, 0), /* SCIF5 */
+-	[MSTP016] = MSTP(&clkp, MSTPCR0, 16, 0), /* TMU0 */
+-	[MSTP015] = MSTP(&clkp, MSTPCR0, 15, 0), /* TMU1 */
+-	[MSTP014] = MSTP(&clkp, MSTPCR0, 14, 0), /* TMU2 */
++	[MSTP026] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 26, 0), /* SCIF0 */
++	[MSTP025] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 25, 0), /* SCIF1 */
++	[MSTP024] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 24, 0), /* SCIF2 */
++	[MSTP023] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 23, 0), /* SCIF3 */
++	[MSTP022] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 22, 0), /* SCIF4 */
++	[MSTP021] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 21, 0), /* SCIF5 */
++	[MSTP016] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 16, 0), /* TMU0 */
++	[MSTP015] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 15, 0), /* TMU1 */
++	[MSTP014] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 14, 0), /* TMU2 */
+ };
+ 
+ static struct clk_lookup lookups[] = {
++	/* main clocks */
++	CLKDEV_CON_ID("plla_clk",	&plla_clk),
++
++	/* DIV4 clocks */
++	CLKDEV_CON_ID("shyway_clk",	&div4_clks[DIV4_S]),
++	CLKDEV_CON_ID("bus_clk",	&div4_clks[DIV4_B]),
++	CLKDEV_CON_ID("clkout",		&div4_clks[DIV4_OUT]),
++	CLKDEV_CON_ID("shyway4_clk",	&div4_clks[DIV4_S4]),
++	CLKDEV_CON_ID("shyway3_clk",	&div4_clks[DIV4_S3]),
++	CLKDEV_CON_ID("shyway1_clk",	&div4_clks[DIV4_S1]),
++	CLKDEV_CON_ID("peripheral_clk",	&div4_clks[DIV4_P]),
++
+ 	/* MSTP32 clocks */
+-	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
+-	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP016]), /* TMU01 */
+-	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP026]), /* SCIF0 */
+-	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP025]), /* SCIF1 */
+-	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP024]), /* SCIF2 */
+-	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP023]), /* SCIF3 */
+-	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP022]), /* SCIF4 */
+-	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP021]), /* SCIF6 */
++	CLKDEV_DEV_ID("sh_tmu.0",	&mstp_clks[MSTP016]), /* TMU00 */
++	CLKDEV_DEV_ID("sh_tmu.1",	&mstp_clks[MSTP016]), /* TMU01 */
++	CLKDEV_DEV_ID("sh-sci.0",	&mstp_clks[MSTP026]), /* SCIF0 */
++	CLKDEV_DEV_ID("sh-sci.1",	&mstp_clks[MSTP025]), /* SCIF1 */
++	CLKDEV_DEV_ID("sh-sci.2",	&mstp_clks[MSTP024]), /* SCIF2 */
++	CLKDEV_DEV_ID("sh-sci.3",	&mstp_clks[MSTP023]), /* SCIF3 */
++	CLKDEV_DEV_ID("sh-sci.4",	&mstp_clks[MSTP022]), /* SCIF4 */
++	CLKDEV_DEV_ID("sh-sci.5",	&mstp_clks[MSTP021]), /* SCIF6 */
+ };
+ 
+ void __init r8a7778_clock_init(void)
+@@ -98,6 +152,9 @@ void __init r8a7778_clock_init(void)
+ 		ret = clk_register(main_clks[k]);
+ 
+ 	if (!ret)
++		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
++
++	if (!ret)
+ 		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
+ 
+ 	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
 -- 
-1.7.10.4
+1.7.9.5
 
