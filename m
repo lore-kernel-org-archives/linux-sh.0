@@ -1,46 +1,174 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:06:38 +0000
-Subject: [PATCH 102/142] ARM: shmobile: marzen: Register pinctrl mappings for LBSC
-Message-Id: <1363604838-29359-103-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 06 Mar 2013 12:52:42 +0000
+Subject: [PATCH v3 21/29] sh-pfc: Simplify the sh_pfc_gpio_is_pin() logic
+Message-Id: <1362574370-17889-22-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-Replace the GPIO-based LBSC pinmux configuration by pinctrl mappings.
+The function is guaranteed to be called with a gpio number smaller than
+nr_pins. The condition can the be simplified, and the function inlined.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-marzen.c |    4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ drivers/pinctrl/sh-pfc/core.c | 29 +++++++++--------------------
+ drivers/pinctrl/sh-pfc/core.h |  4 ++--
+ drivers/pinctrl/sh-pfc/gpio.c | 21 +++++++++++----------
+ 3 files changed, 22 insertions(+), 32 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index 04bcf88..b16f85f 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -347,6 +347,9 @@ static const struct pinctrl_map marzen_pinctrl_map[] = {
- 				  "sdhi0_cd", "sdhi0"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
- 				  "sdhi0_wp", "sdhi0"),
-+	/* SMSC */
-+	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a7779",
-+				  "lbsc_ex_cs0", "lbsc"),
- 	/* USB0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform.0", "pfc-r8a7779",
- 				  "usb0", "usb0"),
-@@ -370,7 +373,6 @@ static void __init marzen_init(void)
- 	r8a7779_pinmux_init();
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index 3387f82..9b5c031 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -89,12 +89,6 @@ static int sh_pfc_enum_in_range(pinmux_enum_t enum_id, struct pinmux_range *r)
+ 	return 1;
+ }
  
- 	/* LAN89218 */
--	gpio_request(GPIO_FN_EX_CS0, NULL); /* nCS */
- 	gpio_request(GPIO_FN_IRQ1_B, NULL); /* IRQ + PME */
+-static bool sh_pfc_gpio_is_pin(struct sh_pfc *pfc, unsigned int gpio)
+-{
+-	return (gpio < pfc->info->nr_pins) &&
+-	       (pfc->info->pins[gpio].enum_id != 0);
+-}
+-
+ static unsigned long sh_pfc_read_raw_reg(void __iomem *mapped_reg,
+ 					 unsigned long reg_width)
+ {
+@@ -226,15 +220,12 @@ static void sh_pfc_write_config_reg(struct sh_pfc *pfc,
+ 	sh_pfc_write_raw_reg(mapped_reg, crp->reg_width, data);
+ }
  
- 	r8a7779_add_standard_devices();
+-static int sh_pfc_setup_data_reg(struct sh_pfc *pfc, unsigned gpio)
++static void sh_pfc_setup_data_reg(struct sh_pfc *pfc, unsigned gpio)
+ {
+ 	struct sh_pfc_pin *gpiop = &pfc->info->pins[gpio];
+ 	struct pinmux_data_reg *data_reg;
+ 	int k, n;
+ 
+-	if (!sh_pfc_gpio_is_pin(pfc, gpio))
+-		return -1;
+-
+ 	k = 0;
+ 	while (1) {
+ 		data_reg = pfc->info->data_regs + k;
+@@ -250,15 +241,13 @@ static int sh_pfc_setup_data_reg(struct sh_pfc *pfc, unsigned gpio)
+ 				gpiop->flags |= (k << PINMUX_FLAG_DREG_SHIFT);
+ 				gpiop->flags &= ~PINMUX_FLAG_DBIT;
+ 				gpiop->flags |= (n << PINMUX_FLAG_DBIT_SHIFT);
+-				return 0;
++				return;
+ 			}
+ 		}
+ 		k++;
+ 	}
+ 
+ 	BUG();
+-
+-	return -1;
+ }
+ 
+ static void sh_pfc_setup_data_regs(struct sh_pfc *pfc)
+@@ -266,8 +255,12 @@ static void sh_pfc_setup_data_regs(struct sh_pfc *pfc)
+ 	struct pinmux_data_reg *drp;
+ 	int k;
+ 
+-	for (k = 0; k < pfc->info->nr_pins; k++)
++	for (k = 0; k < pfc->info->nr_pins; k++) {
++		if (pfc->info->pins[k].enum_id = 0)
++			continue;
++
+ 		sh_pfc_setup_data_reg(pfc, k);
++	}
+ 
+ 	k = 0;
+ 	while (1) {
+@@ -282,20 +275,16 @@ static void sh_pfc_setup_data_regs(struct sh_pfc *pfc)
+ 	}
+ }
+ 
+-int sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
+-			struct pinmux_data_reg **drp, int *bitp)
++void sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
++			 struct pinmux_data_reg **drp, int *bitp)
+ {
+ 	struct sh_pfc_pin *gpiop = &pfc->info->pins[gpio];
+ 	int k, n;
+ 
+-	if (!sh_pfc_gpio_is_pin(pfc, gpio))
+-		return -1;
+-
+ 	k = (gpiop->flags & PINMUX_FLAG_DREG) >> PINMUX_FLAG_DREG_SHIFT;
+ 	n = (gpiop->flags & PINMUX_FLAG_DBIT) >> PINMUX_FLAG_DBIT_SHIFT;
+ 	*drp = pfc->info->data_regs + k;
+ 	*bitp = n;
+-	return 0;
+ }
+ 
+ static int sh_pfc_get_config_reg(struct sh_pfc *pfc, pinmux_enum_t enum_id,
+diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
+index ab816b7..a3111b7 100644
+--- a/drivers/pinctrl/sh-pfc/core.h
++++ b/drivers/pinctrl/sh-pfc/core.h
+@@ -47,8 +47,8 @@ int sh_pfc_unregister_pinctrl(struct sh_pfc *pfc);
+ int sh_pfc_read_bit(struct pinmux_data_reg *dr, unsigned long in_pos);
+ void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
+ 		      unsigned long value);
+-int sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
+-			struct pinmux_data_reg **drp, int *bitp);
++void sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
++			 struct pinmux_data_reg **drp, int *bitp);
+ int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark, int pinmux_type,
+ 		      int cfg_mode);
+ 
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index 3ad938f..db9af4e 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -42,6 +42,11 @@ static struct sh_pfc *gpio_to_pfc(struct gpio_chip *gc)
+ 
+ static int gpio_pin_request(struct gpio_chip *gc, unsigned offset)
+ {
++	struct sh_pfc *pfc = gpio_to_pfc(gc);
++
++	if (pfc->info->pins[offset].enum_id = 0)
++		return -EINVAL;
++
+ 	return pinctrl_request_gpio(offset);
+ }
+ 
+@@ -52,12 +57,10 @@ static void gpio_pin_free(struct gpio_chip *gc, unsigned offset)
+ 
+ static void gpio_pin_set_value(struct sh_pfc *pfc, unsigned offset, int value)
+ {
+-	struct pinmux_data_reg *dr = NULL;
+-	int bit = 0;
+-
+-	if (sh_pfc_get_data_reg(pfc, offset, &dr, &bit) != 0)
+-		BUG();
++	struct pinmux_data_reg *dr;
++	int bit;
+ 
++	sh_pfc_get_data_reg(pfc, offset, &dr, &bit);
+ 	sh_pfc_write_bit(dr, bit, value);
+ }
+ 
+@@ -77,12 +80,10 @@ static int gpio_pin_direction_output(struct gpio_chip *gc, unsigned offset,
+ static int gpio_pin_get(struct gpio_chip *gc, unsigned offset)
+ {
+ 	struct sh_pfc *pfc = gpio_to_pfc(gc);
+-	struct pinmux_data_reg *dr = NULL;
+-	int bit = 0;
+-
+-	if (sh_pfc_get_data_reg(pfc, offset, &dr, &bit) != 0)
+-		return -EINVAL;
++	struct pinmux_data_reg *dr;
++	int bit;
+ 
++	sh_pfc_get_data_reg(pfc, offset, &dr, &bit);
+ 	return sh_pfc_read_bit(dr, bit);
+ }
+ 
 -- 
-1.7.10.4
+1.8.1.5
 
