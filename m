@@ -1,98 +1,300 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 27 Mar 2013 07:55:54 +0000
-Subject: [PATCH 4/8] ARM: shmobile: sh7372: use fixed ratio clock
-Message-Id: <871ub1i8e1.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 06 Mar 2013 13:46:47 +0000
+Subject: [PATCH v2 08/39] sh-pfc: r8a7740: Add SDHI and MMCIF pin groups and functions
+Message-Id: <1362577638-15493-9-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Current clock-sh7372 is using own implement
-for each divX clocks.
-This patch switches to use fixed ratio clock,
-and was tesed on mackerel board.
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Add pin groups for the first two SDHI interfaces and two alternative pin
+groups for the MMCIF interface on the r8a7740 SoC.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-sh7372.c |   44 ++++++---------------------------
- 1 file changed, 7 insertions(+), 37 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 248 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 248 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
-index 6c23e3f..7e10593 100644
---- a/arch/arm/mach-shmobile/clock-sh7372.c
-+++ b/arch/arm/mach-shmobile/clock-sh7372.c
-@@ -21,6 +21,7 @@
- #include <linux/io.h>
- #include <linux/sh_clk.h>
- #include <linux/clkdev.h>
-+#include <mach/clock.h>
- #include <mach/common.h>
- 
- /* SH7372 registers */
-@@ -83,39 +84,12 @@ struct clk sh7372_extal2_clk = {
- 	.rate		= 48000000,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index bcd1a91..bdc3859 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -1870,6 +1870,188 @@ static const unsigned int lcd1_sys_mux[] = {
+ 	LCD1_CS_MARK, LCD1_WR_MARK, LCD1_RD_MARK, LCD1_RS_MARK,
  };
  
--/* A fixed divide-by-2 block */
--static unsigned long div2_recalc(struct clk *clk)
--{
--	return clk->parent->rate / 2;
--}
--
--static struct sh_clk_ops div2_clk_ops = {
--	.recalc		= div2_recalc,
--};
-+SH_CLK_RATIO(div2, 1, 2);
- 
--/* Divide dv_clki by two */
--struct clk sh7372_dv_clki_div2_clk = {
--	.ops		= &div2_clk_ops,
--	.parent		= &sh7372_dv_clki_clk,
--};
--
--/* Divide extal1 by two */
--static struct clk extal1_div2_clk = {
--	.ops		= &div2_clk_ops,
--	.parent		= &sh7372_extal1_clk,
--};
--
--/* Divide extal2 by two */
--static struct clk extal2_div2_clk = {
--	.ops		= &div2_clk_ops,
--	.parent		= &sh7372_extal2_clk,
--};
--
--/* Divide extal2 by four */
--static struct clk extal2_div4_clk = {
--	.ops		= &div2_clk_ops,
--	.parent		= &extal2_div2_clk,
--};
-+SH_FIXED_RATIO_CLKg(sh7372_dv_clki_div2_clk,	sh7372_dv_clki_clk,	div2);
-+SH_FIXED_RATIO_CLK(extal1_div2_clk,		sh7372_extal1_clk,	div2);
-+SH_FIXED_RATIO_CLK(extal2_div2_clk,		sh7372_extal2_clk,	div2);
-+SH_FIXED_RATIO_CLK(extal2_div4_clk,		extal2_div2_clk,	div2);
- 
- /* PLLC0 and PLLC1 */
- static unsigned long pllc01_recalc(struct clk *clk)
-@@ -147,10 +121,7 @@ static struct clk pllc1_clk = {
++static const unsigned int sdhi0_data1_pins[] = {
++	/* D0 */
++	77,
++};
++static const unsigned int sdhi0_data1_mux[] = {
++	SDHI0_D0_MARK,
++};
++static const unsigned int sdhi0_data4_pins[] = {
++	/* D[0:3] */
++	77, 78, 79, 80,
++};
++static const unsigned int sdhi0_data4_mux[] = {
++	SDHI0_D0_MARK, SDHI0_D1_MARK, SDHI0_D2_MARK, SDHI0_D3_MARK,
++};
++static const unsigned int sdhi0_ctrl_pins[] = {
++	/* CMD, CLK */
++	76, 82,
++};
++static const unsigned int sdhi0_ctrl_mux[] = {
++	SDHI0_CMD_MARK, SDHI0_CLK_MARK,
++};
++static const unsigned int sdhi0_cd_pins[] = {
++	/* CD */
++	81,
++};
++static const unsigned int sdhi0_cd_mux[] = {
++	SDHI0_CD_MARK,
++};
++static const unsigned int sdhi0_wp_pins[] = {
++	/* WP */
++	83,
++};
++static const unsigned int sdhi0_wp_mux[] = {
++	SDHI0_WP_MARK,
++};
++
++static const unsigned int sdhi1_data1_pins[] = {
++	/* D0 */
++	68,
++};
++static const unsigned int sdhi1_data1_mux[] = {
++	SDHI1_D0_MARK,
++};
++static const unsigned int sdhi1_data4_pins[] = {
++	/* D[0:3] */
++	68, 69, 70, 71,
++};
++static const unsigned int sdhi1_data4_mux[] = {
++	SDHI1_D0_MARK, SDHI1_D1_MARK, SDHI1_D2_MARK, SDHI1_D3_MARK,
++};
++static const unsigned int sdhi1_ctrl_pins[] = {
++	/* CMD, CLK */
++	67, 66,
++};
++static const unsigned int sdhi1_ctrl_mux[] = {
++	SDHI1_CMD_MARK, SDHI1_CLK_MARK,
++};
++static const unsigned int sdhi1_cd_pins[] = {
++	/* CD */
++	72,
++};
++static const unsigned int sdhi1_cd_mux[] = {
++	SDHI1_CD_MARK,
++};
++static const unsigned int sdhi1_wp_pins[] = {
++	/* WP */
++	73,
++};
++static const unsigned int sdhi1_wp_mux[] = {
++	SDHI1_WP_MARK,
++};
++
++static const unsigned int sdhi2_data1_pins[] = {
++	/* D0 */
++	205,
++};
++static const unsigned int sdhi2_data1_mux[] = {
++	SDHI2_D0_MARK,
++};
++static const unsigned int sdhi2_data4_pins[] = {
++	/* D[0:3] */
++	205, 206, 207, 208,
++};
++static const unsigned int sdhi2_data4_mux[] = {
++	SDHI2_D0_MARK, SDHI2_D1_MARK, SDHI2_D2_MARK, SDHI2_D3_MARK,
++};
++static const unsigned int sdhi2_ctrl_pins[] = {
++	/* CMD, CLK */
++	204, 203,
++};
++static const unsigned int sdhi2_ctrl_mux[] = {
++	SDHI2_CMD_MARK, SDHI2_CLK_MARK,
++};
++static const unsigned int sdhi2_cd_0_pins[] = {
++	/* CD */
++	202,
++};
++static const unsigned int sdhi2_cd_0_mux[] = {
++	SDHI2_CD_PORT202_MARK,
++};
++static const unsigned int sdhi2_wp_0_pins[] = {
++	/* WP */
++	177,
++};
++static const unsigned int sdhi2_wp_0_mux[] = {
++	SDHI2_WP_PORT177_MARK,
++};
++static const unsigned int sdhi2_cd_1_pins[] = {
++	/* CD */
++	24,
++};
++static const unsigned int sdhi2_cd_1_mux[] = {
++	SDHI2_CD_PORT24_MARK,
++};
++static const unsigned int sdhi2_wp_1_pins[] = {
++	/* WP */
++	25,
++};
++static const unsigned int sdhi2_wp_1_mux[] = {
++	SDHI2_WP_PORT25_MARK,
++};
++
++static const unsigned int mmc0_data1_0_pins[] = {
++	/* D[0] */
++	68,
++};
++static const unsigned int mmc0_data1_0_mux[] = {
++	MMC0_D0_PORT68_MARK,
++};
++static const unsigned int mmc0_data4_0_pins[] = {
++	/* D[0:3] */
++	68, 69, 70, 71,
++};
++static const unsigned int mmc0_data4_0_mux[] = {
++	MMC0_D0_PORT68_MARK, MMC0_D1_PORT69_MARK, MMC0_D2_PORT70_MARK, MMC0_D3_PORT71_MARK,
++};
++static const unsigned int mmc0_data8_0_pins[] = {
++	/* D[0:7] */
++	68, 69, 70, 71, 72, 73, 74, 75,
++};
++static const unsigned int mmc0_data8_0_mux[] = {
++	MMC0_D0_PORT68_MARK, MMC0_D1_PORT69_MARK, MMC0_D2_PORT70_MARK, MMC0_D3_PORT71_MARK,
++	MMC0_D4_PORT72_MARK, MMC0_D5_PORT73_MARK, MMC0_D6_PORT74_MARK, MMC0_D7_PORT75_MARK,
++};
++static const unsigned int mmc0_ctrl_0_pins[] = {
++	/* CMD, CLK */
++	67, 66,
++};
++static const unsigned int mmc0_ctrl_0_mux[] = {
++	MMC0_CMD_PORT67_MARK, MMC0_CLK_PORT66_MARK,
++};
++
++static const unsigned int mmc0_data1_1_pins[] = {
++	/* D[0] */
++	149,
++};
++static const unsigned int mmc0_data1_1_mux[] = {
++	MMC1_D0_PORT149_MARK,
++};
++static const unsigned int mmc0_data4_1_pins[] = {
++	/* D[0:3] */
++	149, 148, 147, 146,
++};
++static const unsigned int mmc0_data4_1_mux[] = {
++	MMC1_D0_PORT149_MARK, MMC1_D1_PORT148_MARK, MMC1_D2_PORT147_MARK, MMC1_D3_PORT146_MARK,
++};
++static const unsigned int mmc0_data8_1_pins[] = {
++	/* D[0:7] */
++	149, 148, 147, 146, 145, 144, 143, 142,
++};
++static const unsigned int mmc0_data8_1_mux[] = {
++	MMC1_D0_PORT149_MARK, MMC1_D1_PORT148_MARK, MMC1_D2_PORT147_MARK, MMC1_D3_PORT146_MARK,
++	MMC1_D4_PORT145_MARK, MMC1_D5_PORT144_MARK, MMC1_D6_PORT143_MARK, MMC1_D7_PORT142_MARK,
++};
++static const unsigned int mmc0_ctrl_1_pins[] = {
++	/* CMD, CLK */
++	104, 103,
++};
++static const unsigned int mmc0_ctrl_1_mux[] = {
++	MMC1_CMD_PORT104_MARK, MMC1_CLK_PORT103_MARK,
++};
++
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(lcd0_data8),
+ 	SH_PFC_PIN_GROUP(lcd0_data9),
+@@ -1893,6 +2075,31 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(lcd1_lclk),
+ 	SH_PFC_PIN_GROUP(lcd1_sync),
+ 	SH_PFC_PIN_GROUP(lcd1_sys),
++	SH_PFC_PIN_GROUP(sdhi0_data1),
++	SH_PFC_PIN_GROUP(sdhi0_data4),
++	SH_PFC_PIN_GROUP(sdhi0_ctrl),
++	SH_PFC_PIN_GROUP(sdhi0_cd),
++	SH_PFC_PIN_GROUP(sdhi0_wp),
++	SH_PFC_PIN_GROUP(sdhi1_data1),
++	SH_PFC_PIN_GROUP(sdhi1_data4),
++	SH_PFC_PIN_GROUP(sdhi1_ctrl),
++	SH_PFC_PIN_GROUP(sdhi1_cd),
++	SH_PFC_PIN_GROUP(sdhi1_wp),
++	SH_PFC_PIN_GROUP(sdhi2_data1),
++	SH_PFC_PIN_GROUP(sdhi2_data4),
++	SH_PFC_PIN_GROUP(sdhi2_ctrl),
++	SH_PFC_PIN_GROUP(sdhi2_cd_0),
++	SH_PFC_PIN_GROUP(sdhi2_wp_0),
++	SH_PFC_PIN_GROUP(sdhi2_cd_1),
++	SH_PFC_PIN_GROUP(sdhi2_wp_1),
++	SH_PFC_PIN_GROUP(mmc0_data1_0),
++	SH_PFC_PIN_GROUP(mmc0_data4_0),
++	SH_PFC_PIN_GROUP(mmc0_data8_0),
++	SH_PFC_PIN_GROUP(mmc0_ctrl_0),
++	SH_PFC_PIN_GROUP(mmc0_data1_1),
++	SH_PFC_PIN_GROUP(mmc0_data4_1),
++	SH_PFC_PIN_GROUP(mmc0_data8_1),
++	SH_PFC_PIN_GROUP(mmc0_ctrl_1),
  };
  
- /* Divide PLLC1 by two */
--static struct clk pllc1_div2_clk = {
--	.ops		= &div2_clk_ops,
--	.parent		= &pllc1_clk,
--};
-+SH_FIXED_RATIO_CLK(pllc1_div2_clk,	pllc1_clk,	div2);
+ static const char * const lcd0_groups[] = {
+@@ -1923,9 +2130,50 @@ static const char * const lcd1_groups[] = {
+ 	"lcd1_sys",
+ };
  
- /* PLLC2 */
++static const char * const sdhi0_groups[] = {
++	"sdhi0_data1",
++	"sdhi0_data4",
++	"sdhi0_ctrl",
++	"sdhi0_cd",
++	"sdhi0_wp",
++};
++
++static const char * const sdhi1_groups[] = {
++	"sdhi1_data1",
++	"sdhi1_data4",
++	"sdhi1_ctrl",
++	"sdhi1_cd",
++	"sdhi1_wp",
++};
++
++static const char * const sdhi2_groups[] = {
++	"sdhi2_data1",
++	"sdhi2_data4",
++	"sdhi2_ctrl",
++	"sdhi2_cd_0",
++	"sdhi2_wp_0",
++	"sdhi2_cd_1",
++	"sdhi2_wp_1",
++};
++
++static const char * const mmc0_groups[] = {
++	"mmc0_data1_0",
++	"mmc0_data4_0",
++	"mmc0_data8_0",
++	"mmc0_ctrl_0",
++	"mmc0_data1_1",
++	"mmc0_data4_1",
++	"mmc0_data8_1",
++	"mmc0_ctrl_1",
++};
++
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(lcd0),
+ 	SH_PFC_FUNCTION(lcd1),
++	SH_PFC_FUNCTION(sdhi0),
++	SH_PFC_FUNCTION(sdhi1),
++	SH_PFC_FUNCTION(sdhi2),
++	SH_PFC_FUNCTION(mmc0),
+ };
  
-@@ -650,5 +621,4 @@ void __init sh7372_clock_init(void)
- 		shmobile_clk_init();
- 	else
- 		panic("failed to setup sh7372 clocks\n");
--
- }
+ #define PINMUX_FN_BASE	ARRAY_SIZE(pinmux_pins)
 -- 
-1.7.9.5
+1.8.1.5
 
