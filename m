@@ -1,57 +1,88 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 08 Mar 2013 08:20:19 +0000
-Subject: [PATCH 3/4] clocksource: em_sti: Set initcall level to subsys
-Message-Id: <1362730820-25417-4-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 06 Mar 2013 13:46:55 +0000
+Subject: [PATCH v2 16/39] ARM: shmobile: bonito: Register pinctrl mappings for LCDC0
+Message-Id: <1362577638-15493-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1362730820-25417-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1362730820-25417-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The reason for this is to ensure that STI is probed earlier
-than with its previous initcall level, module init.
+Replace the GPIO-based LCDC0 pinmux configuration by pinctrl mappings.
 
-This came up as a problem with using CMT as a clock source kzm9g-reference
-which does not make use of early timers or devices. In that scenario
-initialisation of SDHI and MMCIF both stall on msleep() calls due to the
-absence of a initialised clock source.
-
-The purpose of this change is to keep the STI code in sync with the CMT code
-which has been modified in a similar manner..
-
-Boot tested on: kzm9d.
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/clocksource/em_sti.c |   13 ++++++++++++-
- 1 file changed, 12 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/board-bonito.c | 43 +++++++++++------------------------
+ 1 file changed, 13 insertions(+), 30 deletions(-)
 
-diff --git a/drivers/clocksource/em_sti.c b/drivers/clocksource/em_sti.c
-index e6a553c..4329a29 100644
---- a/drivers/clocksource/em_sti.c
-+++ b/drivers/clocksource/em_sti.c
-@@ -399,7 +399,18 @@ static struct platform_driver em_sti_device_driver = {
- 	}
+diff --git a/arch/arm/mach-shmobile/board-bonito.c b/arch/arm/mach-shmobile/board-bonito.c
+index d363526..cc8941d 100644
+--- a/arch/arm/mach-shmobile/board-bonito.c
++++ b/arch/arm/mach-shmobile/board-bonito.c
+@@ -24,6 +24,7 @@
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+ #include <linux/irq.h>
++#include <linux/pinctrl/machine.h>
+ #include <linux/platform_device.h>
+ #include <linux/gpio.h>
+ #include <linux/regulator/fixed.h>
+@@ -288,6 +289,15 @@ static struct platform_device lcdc0_device = {
+ 	},
  };
  
--module_platform_driver(em_sti_device_driver);
-+static int __init em_sti_init(void)
-+{
-+	return platform_driver_register(&em_sti_device_driver);
-+}
++static const struct pinctrl_map lcdc0_pinctrl_map[] = {
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
++				  "lcd0_data24_1", "lcd0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
++				  "lcd0_lclk_1", "lcd0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
++				  "lcd0_sync", "lcd0"),
++};
 +
-+static void __exit em_sti_exit(void)
-+{
-+	platform_driver_unregister(&em_sti_device_driver);
-+}
-+
-+subsys_initcall(em_sti_init);
-+module_exit(em_sti_exit);
+ /*
+  * SMSC 9221
+  */
+@@ -430,36 +440,9 @@ static void __init bonito_init(void)
+ 		 */
+ 		if (BIT_ON(bsw2, 3) &&	/* S38.1 = OFF */
+ 		    BIT_ON(bsw2, 2)) {	/* S38.2 = OFF */
+-			gpio_request(GPIO_FN_LCDC0_SELECT,	NULL);
+-			gpio_request(GPIO_FN_LCD0_D0,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D1,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D2,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D3,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D4,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D5,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D6,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D7,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D8,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D9,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D10,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D11,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D12,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D13,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D14,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D15,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D16,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D17,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D18_PORT163,	NULL);
+-			gpio_request(GPIO_FN_LCD0_D19_PORT162,	NULL);
+-			gpio_request(GPIO_FN_LCD0_D20_PORT161,	NULL);
+-			gpio_request(GPIO_FN_LCD0_D21_PORT158,	NULL);
+-			gpio_request(GPIO_FN_LCD0_D22_PORT160,	NULL);
+-			gpio_request(GPIO_FN_LCD0_D23_PORT159,	NULL);
+-			gpio_request(GPIO_FN_LCD0_DCK,		NULL);
+-			gpio_request(GPIO_FN_LCD0_VSYN,		NULL);
+-			gpio_request(GPIO_FN_LCD0_HSYN,		NULL);
+-			gpio_request(GPIO_FN_LCD0_DISP,		NULL);
+-			gpio_request(GPIO_FN_LCD0_LCLK_PORT165,	NULL);
++			pinctrl_register_mappings(lcdc0_pinctrl_map,
++						  ARRAY_SIZE(lcdc0_pinctrl_map));
++			gpio_request(GPIO_FN_LCDC0_SELECT, NULL);
  
- MODULE_AUTHOR("Magnus Damm");
- MODULE_DESCRIPTION("Renesas Emma Mobile STI Timer Driver");
+ 			gpio_request_one(61, GPIOF_OUT_INIT_HIGH,
+ 					 NULL); /* LCDDON */
 -- 
-1.7.10.4
+1.8.1.5
 
