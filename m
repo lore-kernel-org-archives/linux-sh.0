@@ -1,350 +1,294 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Wed, 06 Mar 2013 11:30:37 +0000
-Subject: [PATCH v6 3/3] ARM: mach-shmobile: r8a7740: Setup the serial devices using DT
-Message-Id: <1362569437-11133-3-git-send-email-hechtb+renesas@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 06 Mar 2013 13:46:44 +0000
+Subject: [PATCH v2 05/39] sh-pfc: sh73a0: Add FSI pin groups and functions
+Message-Id: <1362577638-15493-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1362569437-11133-1-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1362569437-11133-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-We can now use the Device Tree for bringing up our serial devices on
-the SoC r8a7740.
-
-We remove the power domain association. We will move the info into the
-DT setup as soon as we have support for it. For now this is fine as we
-use the power domain governor "pm_domain_always_on_gov" for A3SP.
-
-Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/boot/dts/r8a7740.dtsi         |  108 +++++++++++++++++++
- arch/arm/mach-shmobile/setup-r8a7740.c |  180 --------------------------------
- 2 files changed, 108 insertions(+), 180 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 244 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 244 insertions(+)
 
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 82faf52..049e54b 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -767,4 +767,112 @@
- 		gpio-controller;
- 		#gpio-cells = <2>;
- 	};
-+
-+	serial@e6c40000 {
-+		compatible = "renesas,sci-scifa-uart";
-+		interrupt-parent = <&intca>;
-+		reg = <0xe6c40000 0x100>;
-+		interrupts = <0x0c00>, <0x0c00>, <0x0c00>, <0x0c00>;
-+		interrupt-names = "eri", "rxi", "txi", "bri";
-+		cell-index = <0>;
-+		renesas,scscr = <0x30>;
-+		renesas,scbrr-algorithm = <4>;
-+		renesas,autoconf;
-+	};
-+
-+	serial@e6c50000 {
-+		compatible = "renesas,sci-scifa-uart";
-+		interrupt-parent = <&intca>;
-+		reg = <0xe6c50000 0x100>;
-+		interrupts = <0x0c20>, <0x0c20>, <0x0c20>, <0x0c20>;
-+		interrupt-names = "eri", "rxi", "txi", "bri";
-+		cell-index = <1>;
-+		renesas,scscr = <0x30>;
-+		renesas,scbrr-algorithm = <4>;
-+		renesas,autoconf;
-+	};
-+
-+	serial@e6c60000 {
-+		compatible = "renesas,sci-scifa-uart";
-+		interrupt-parent = <&intca>;
-+		reg = <0xe6c60000 0x100>;
-+		interrupts = <0x0c40>, <0x0c40>, <0x0c40>, <0x0c40>;
-+		interrupt-names = "eri", "rxi", "txi", "bri";
-+		cell-index = <2>;
-+		renesas,scscr = <0x30>;
-+		renesas,scbrr-algorithm = <4>;
-+		renesas,autoconf;
-+	};
-+
-+	serial@e6c70000 {
-+		compatible = "renesas,sci-scifa-uart";
-+		interrupt-parent = <&intca>;
-+		reg = <0xe6c70000 0x100>;
-+		interrupts = <0x0c60>, <0x0c60>, <0x0c60>, <0x0c60>;
-+		interrupt-names = "eri", "rxi", "txi", "bri";
-+		cell-index = <3>;
-+		renesas,scscr = <0x30>;
-+		renesas,scbrr-algorithm = <4>;
-+		renesas,autoconf;
-+	};
-+
-+	serial@e6c80000 {
-+		compatible = "renesas,sci-scifa-uart";
-+		interrupt-parent = <&intca>;
-+		reg = <0xe6c80000 0x100>;
-+		interrupts = <0x0d20>, <0x0d20>, <0x0d20>, <0x0d20>;
-+		interrupt-names = "eri", "rxi", "txi", "bri";
-+		cell-index = <4>;
-+		renesas,scscr = <0x30>;
-+		renesas,scbrr-algorithm = <4>;
-+		renesas,autoconf;
-+	};
-+
-+	serial@e6cb0000 {
-+		compatible = "renesas,sci-scifa-uart";
-+		interrupt-parent = <&intca>;
-+		reg = <0xe6cb0000 0x100>;
-+		interrupts = <0x0d40>, <0x0d40>, <0x0d40>, <0x0d40>;
-+		interrupt-names = "eri", "rxi", "txi", "bri";
-+		cell-index = <5>;
-+		renesas,scscr = <0x30>;
-+		renesas,scbrr-algorithm = <4>;
-+		renesas,autoconf;
-+	};
-+
-+	serial@e6cc0000 {
-+		compatible = "renesas,sci-scifa-uart";
-+		interrupt-parent = <&intca>;
-+		reg = <0xe6cc0000 0x100>;
-+		interrupts = <0x04c0>, <0x04c0>, <0x04c0>, <0x04c0>;
-+		interrupt-names = "eri", "rxi", "txi", "bri";
-+		cell-index = <6>;
-+		renesas,scscr = <0x30>;
-+		renesas,scbrr-algorithm = <4>;
-+		renesas,autoconf;
-+	};
-+
-+	serial@0xe6cd0000 {
-+		compatible = "renesas,sci-scifa-uart";
-+		interrupt-parent = <&intca>;
-+		reg = <0xe6cd0000 0x100>;
-+		interrupts = <0x04e0>, <0x04e0>, <0x04e0>, <0x04e0>;
-+		interrupt-names = "eri", "rxi", "txi", "bri";
-+		cell-index = <7>;
-+		renesas,scscr = <0x30>;
-+		renesas,scbrr-algorithm = <4>;
-+		renesas,autoconf;
-+	};
-+
-+	serial@e6c30000 {
-+		compatible = "renesas,sci-scifb-uart";
-+		interrupt-parent = <&intca>;
-+		reg = <0xe6c30000 0x100>;
-+		interrupts = <0x0d60>, <0x0d60>, <0x0d60>, <0x0d60>;
-+		interrupt-names = "eri", "rxi", "txi", "bri";
-+		cell-index = <8>;
-+		renesas,scscr = <0x30>;
-+		renesas,scbrr-algorithm = <4>;
-+		renesas,autoconf;
-+	};
- };
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index f35e7c2..5a563cd 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -93,168 +93,6 @@ void __init r8a7740_pinmux_init(void)
- 	platform_device_register(&r8a7740_pfc_device);
- }
- 
--/* SCIFA0 */
--static struct plat_sci_port scif0_platform_data = {
--	.mapbase	= 0xe6c40000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= SCIx_IRQ_MUXED(evt2irq(0x0c00)),
--};
--
--static struct platform_device scif0_device = {
--	.name		= "sh-sci",
--	.id		= 0,
--	.dev		= {
--		.platform_data	= &scif0_platform_data,
--	},
--};
--
--/* SCIFA1 */
--static struct plat_sci_port scif1_platform_data = {
--	.mapbase	= 0xe6c50000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= SCIx_IRQ_MUXED(evt2irq(0x0c20)),
--};
--
--static struct platform_device scif1_device = {
--	.name		= "sh-sci",
--	.id		= 1,
--	.dev		= {
--		.platform_data	= &scif1_platform_data,
--	},
--};
--
--/* SCIFA2 */
--static struct plat_sci_port scif2_platform_data = {
--	.mapbase	= 0xe6c60000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= SCIx_IRQ_MUXED(evt2irq(0x0c40)),
--};
--
--static struct platform_device scif2_device = {
--	.name		= "sh-sci",
--	.id		= 2,
--	.dev		= {
--		.platform_data	= &scif2_platform_data,
--	},
--};
--
--/* SCIFA3 */
--static struct plat_sci_port scif3_platform_data = {
--	.mapbase	= 0xe6c70000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= SCIx_IRQ_MUXED(evt2irq(0x0c60)),
--};
--
--static struct platform_device scif3_device = {
--	.name		= "sh-sci",
--	.id		= 3,
--	.dev		= {
--		.platform_data	= &scif3_platform_data,
--	},
--};
--
--/* SCIFA4 */
--static struct plat_sci_port scif4_platform_data = {
--	.mapbase	= 0xe6c80000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= SCIx_IRQ_MUXED(evt2irq(0x0d20)),
--};
--
--static struct platform_device scif4_device = {
--	.name		= "sh-sci",
--	.id		= 4,
--	.dev		= {
--		.platform_data	= &scif4_platform_data,
--	},
--};
--
--/* SCIFA5 */
--static struct plat_sci_port scif5_platform_data = {
--	.mapbase	= 0xe6cb0000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= SCIx_IRQ_MUXED(evt2irq(0x0d40)),
--};
--
--static struct platform_device scif5_device = {
--	.name		= "sh-sci",
--	.id		= 5,
--	.dev		= {
--		.platform_data	= &scif5_platform_data,
--	},
--};
--
--/* SCIFA6 */
--static struct plat_sci_port scif6_platform_data = {
--	.mapbase	= 0xe6cc0000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= SCIx_IRQ_MUXED(evt2irq(0x04c0)),
--};
--
--static struct platform_device scif6_device = {
--	.name		= "sh-sci",
--	.id		= 6,
--	.dev		= {
--		.platform_data	= &scif6_platform_data,
--	},
--};
--
--/* SCIFA7 */
--static struct plat_sci_port scif7_platform_data = {
--	.mapbase	= 0xe6cd0000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFA,
--	.irqs		= SCIx_IRQ_MUXED(evt2irq(0x04e0)),
--};
--
--static struct platform_device scif7_device = {
--	.name		= "sh-sci",
--	.id		= 7,
--	.dev		= {
--		.platform_data	= &scif7_platform_data,
--	},
--};
--
--/* SCIFB */
--static struct plat_sci_port scifb_platform_data = {
--	.mapbase	= 0xe6c30000,
--	.flags		= UPF_BOOT_AUTOCONF,
--	.scscr		= SCSCR_RE | SCSCR_TE,
--	.scbrr_algo_id	= SCBRR_ALGO_4,
--	.type		= PORT_SCIFB,
--	.irqs		= SCIx_IRQ_MUXED(evt2irq(0x0d60)),
--};
--
--static struct platform_device scifb_device = {
--	.name		= "sh-sci",
--	.id		= 8,
--	.dev		= {
--		.platform_data	= &scifb_platform_data,
--	},
--};
--
- /* CMT */
- static struct sh_timer_config cmt10_platform_data = {
- 	.name = "CMT10",
-@@ -379,15 +217,6 @@ static struct platform_device tmu02_device = {
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index 2dc58e2..09848f8 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -1550,6 +1550,185 @@ static struct pinmux_range pinmux_ranges[] = {
+ 	{.begin = 288, .end = 309,},
  };
  
- static struct platform_device *r8a7740_devices_dt[] __initdata = {
--	&scif0_device,
--	&scif1_device,
--	&scif2_device,
--	&scif3_device,
--	&scif4_device,
--	&scif5_device,
--	&scif6_device,
--	&scif7_device,
--	&scifb_device,
- 	&cmt10_device,
- 	&tmu00_device,
- 	&tmu01_device,
-@@ -812,15 +641,6 @@ void __init r8a7740_add_standard_devices(void)
++static const unsigned int fsia_mclk_in_pins[] = {
++	/* CK */
++	49,
++};
++static const unsigned int fsia_mclk_in_mux[] = {
++	FSIACK_MARK,
++};
++static const unsigned int fsia_mclk_out_pins[] = {
++	/* OMC */
++	49,
++};
++static const unsigned int fsia_mclk_out_mux[] = {
++	FSIAOMC_MARK,
++};
++static const unsigned int fsia_sclk_in_pins[] = {
++	/* ILR, IBT */
++	50, 51,
++};
++static const unsigned int fsia_sclk_in_mux[] = {
++	FSIAILR_MARK, FSIAIBT_MARK,
++};
++static const unsigned int fsia_sclk_out_pins[] = {
++	/* OLR, OBT */
++	50, 51,
++};
++static const unsigned int fsia_sclk_out_mux[] = {
++	FSIAOLR_MARK, FSIAOBT_MARK,
++};
++static const unsigned int fsia_data_in_pins[] = {
++	/* ISLD */
++	55,
++};
++static const unsigned int fsia_data_in_mux[] = {
++	FSIAISLD_MARK,
++};
++static const unsigned int fsia_data_out_pins[] = {
++	/* OSLD */
++	52,
++};
++static const unsigned int fsia_data_out_mux[] = {
++	FSIAOSLD_MARK,
++};
++static const unsigned int fsia_spdif_pins[] = {
++	/* SPDIF */
++	53,
++};
++static const unsigned int fsia_spdif_mux[] = {
++	FSIASPDIF_MARK,
++};
++
++static const unsigned int fsib_mclk_in_pins[] = {
++	/* CK */
++	54,
++};
++static const unsigned int fsib_mclk_in_mux[] = {
++	FSIBCK_MARK,
++};
++static const unsigned int fsib_mclk_out_pins[] = {
++	/* OMC */
++	54,
++};
++static const unsigned int fsib_mclk_out_mux[] = {
++	FSIBOMC_MARK,
++};
++static const unsigned int fsib_sclk_in_pins[] = {
++	/* ILR, IBT */
++	37, 36,
++};
++static const unsigned int fsib_sclk_in_mux[] = {
++	FSIBILR_MARK, FSIBIBT_MARK,
++};
++static const unsigned int fsib_sclk_out_pins[] = {
++	/* OLR, OBT */
++	37, 36,
++};
++static const unsigned int fsib_sclk_out_mux[] = {
++	FSIBOLR_MARK, FSIBOBT_MARK,
++};
++static const unsigned int fsib_data_in_pins[] = {
++	/* ISLD */
++	39,
++};
++static const unsigned int fsib_data_in_mux[] = {
++	FSIBISLD_MARK,
++};
++static const unsigned int fsib_data_out_pins[] = {
++	/* OSLD */
++	38,
++};
++static const unsigned int fsib_data_out_mux[] = {
++	FSIBOSLD_MARK,
++};
++static const unsigned int fsib_spdif_pins[] = {
++	/* SPDIF */
++	53,
++};
++static const unsigned int fsib_spdif_mux[] = {
++	FSIBSPDIF_MARK,
++};
++
++static const unsigned int fsic_mclk_in_pins[] = {
++	/* CK */
++	54,
++};
++static const unsigned int fsic_mclk_in_mux[] = {
++	FSICCK_MARK,
++};
++static const unsigned int fsic_mclk_out_pins[] = {
++	/* OMC */
++	54,
++};
++static const unsigned int fsic_mclk_out_mux[] = {
++	FSICOMC_MARK,
++};
++static const unsigned int fsic_sclk_in_pins[] = {
++	/* ILR, IBT */
++	46, 45,
++};
++static const unsigned int fsic_sclk_in_mux[] = {
++	FSICILR_MARK, FSICIBT_MARK,
++};
++static const unsigned int fsic_sclk_out_pins[] = {
++	/* OLR, OBT */
++	46, 45,
++};
++static const unsigned int fsic_sclk_out_mux[] = {
++	FSICOLR_MARK, FSICOBT_MARK,
++};
++static const unsigned int fsic_data_in_pins[] = {
++	/* ISLD */
++	48,
++};
++static const unsigned int fsic_data_in_mux[] = {
++	FSICISLD_MARK,
++};
++static const unsigned int fsic_data_out_pins[] = {
++	/* OSLD, OSLDT1, OSLDT2, OSLDT3 */
++	47, 44, 42, 16,
++};
++static const unsigned int fsic_data_out_mux[] = {
++	FSICOSLD_MARK, FSICOSLDT1_MARK, FSICOSLDT2_MARK, FSICOSLDT3_MARK,
++};
++static const unsigned int fsic_spdif_0_pins[] = {
++	/* SPDIF */
++	53,
++};
++static const unsigned int fsic_spdif_0_mux[] = {
++	PORT53_FSICSPDIF_MARK,
++};
++static const unsigned int fsic_spdif_1_pins[] = {
++	/* SPDIF */
++	47,
++};
++static const unsigned int fsic_spdif_1_mux[] = {
++	PORT47_FSICSPDIF_MARK,
++};
++
++static const unsigned int fsid_sclk_in_pins[] = {
++	/* ILR, IBT */
++	46, 45,
++};
++static const unsigned int fsid_sclk_in_mux[] = {
++	FSIDILR_MARK, FSIDIBT_MARK,
++};
++static const unsigned int fsid_sclk_out_pins[] = {
++	/* OLR, OBT */
++	46, 45,
++};
++static const unsigned int fsid_sclk_out_mux[] = {
++	FSIDOLR_MARK, FSIDOBT_MARK,
++};
++static const unsigned int fsid_data_in_pins[] = {
++	/* ISLD */
++	48,
++};
++static const unsigned int fsid_data_in_mux[] = {
++	FSIDISLD_MARK,
++};
++
+ static const unsigned int i2c2_0_pins[] = {
+ 	/* SCL, SDA */
+ 	237, 236,
+@@ -2037,6 +2216,31 @@ static const unsigned int scifb_ctrl_1_mux[] = {
+ };
  
- 	/* add devices to PM domain  */
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
++	SH_PFC_PIN_GROUP(fsia_mclk_in),
++	SH_PFC_PIN_GROUP(fsia_mclk_out),
++	SH_PFC_PIN_GROUP(fsia_sclk_in),
++	SH_PFC_PIN_GROUP(fsia_sclk_out),
++	SH_PFC_PIN_GROUP(fsia_data_in),
++	SH_PFC_PIN_GROUP(fsia_data_out),
++	SH_PFC_PIN_GROUP(fsia_spdif),
++	SH_PFC_PIN_GROUP(fsib_mclk_in),
++	SH_PFC_PIN_GROUP(fsib_mclk_out),
++	SH_PFC_PIN_GROUP(fsib_sclk_in),
++	SH_PFC_PIN_GROUP(fsib_sclk_out),
++	SH_PFC_PIN_GROUP(fsib_data_in),
++	SH_PFC_PIN_GROUP(fsib_data_out),
++	SH_PFC_PIN_GROUP(fsib_spdif),
++	SH_PFC_PIN_GROUP(fsic_mclk_in),
++	SH_PFC_PIN_GROUP(fsic_mclk_out),
++	SH_PFC_PIN_GROUP(fsic_sclk_in),
++	SH_PFC_PIN_GROUP(fsic_sclk_out),
++	SH_PFC_PIN_GROUP(fsic_data_in),
++	SH_PFC_PIN_GROUP(fsic_data_out),
++	SH_PFC_PIN_GROUP(fsic_spdif_0),
++	SH_PFC_PIN_GROUP(fsic_spdif_1),
++	SH_PFC_PIN_GROUP(fsid_sclk_in),
++	SH_PFC_PIN_GROUP(fsid_sclk_out),
++	SH_PFC_PIN_GROUP(fsid_data_in),
+ 	SH_PFC_PIN_GROUP(i2c2_0),
+ 	SH_PFC_PIN_GROUP(i2c2_1),
+ 	SH_PFC_PIN_GROUP(i2c2_2),
+@@ -2099,6 +2303,42 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(scifb_ctrl_1),
+ };
  
--	rmobile_add_device_to_domain("A3SP",	&scif0_device);
--	rmobile_add_device_to_domain("A3SP",	&scif1_device);
--	rmobile_add_device_to_domain("A3SP",	&scif2_device);
--	rmobile_add_device_to_domain("A3SP",	&scif3_device);
--	rmobile_add_device_to_domain("A3SP",	&scif4_device);
--	rmobile_add_device_to_domain("A3SP",	&scif5_device);
--	rmobile_add_device_to_domain("A3SP",	&scif6_device);
--	rmobile_add_device_to_domain("A3SP",	&scif7_device);
--	rmobile_add_device_to_domain("A3SP",	&scifb_device);
- 	rmobile_add_device_to_domain("A3SP",	&i2c1_device);
- }
++static const char * const fsia_groups[] = {
++	"fsia_mclk_in",
++	"fsia_mclk_out",
++	"fsia_sclk_in",
++	"fsia_sclk_out",
++	"fsia_data_in",
++	"fsia_data_out",
++	"fsia_spdif",
++};
++
++static const char * const fsib_groups[] = {
++	"fsib_mclk_in",
++	"fsib_mclk_out",
++	"fsib_sclk_in",
++	"fsib_sclk_out",
++	"fsib_data_in",
++	"fsib_data_out",
++	"fsib_spdif",
++};
++
++static const char * const fsic_groups[] = {
++	"fsic_mclk_in",
++	"fsic_mclk_out",
++	"fsic_sclk_in",
++	"fsic_sclk_out",
++	"fsic_data_in",
++	"fsic_data_out",
++	"fsic_spdif",
++};
++
++static const char * const fsid_groups[] = {
++	"fsid_sclk_in",
++	"fsid_sclk_out",
++	"fsid_data_in",
++};
++
+ static const char * const i2c2_groups[] = {
+ 	"i2c2_0",
+ 	"i2c2_1",
+@@ -2199,6 +2439,10 @@ static const char * const scifb_groups[] = {
+ };
  
+ static const struct sh_pfc_function pinmux_functions[] = {
++	SH_PFC_FUNCTION(fsia),
++	SH_PFC_FUNCTION(fsib),
++	SH_PFC_FUNCTION(fsic),
++	SH_PFC_FUNCTION(fsid),
+ 	SH_PFC_FUNCTION(i2c2),
+ 	SH_PFC_FUNCTION(i2c3),
+ 	SH_PFC_FUNCTION(lcd),
 -- 
-1.7.9.5
+1.8.1.5
 
