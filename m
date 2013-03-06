@@ -1,58 +1,192 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:05:27 +0000
-Subject: [PATCH 031/142] sh: sh7264: Add pin control resources
-Message-Id: <1363604838-29359-32-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 06 Mar 2013 12:52:34 +0000
+Subject: [PATCH v3 13/29] sh-pfc: Shrink the pinctrl GPIO range to include real GPIOs only
+Message-Id: <1362574370-17889-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-Add memory resources for the pin control platform device to let the
-sh-pfc driver ioremap() registers properly instead of evily casting
-register physical addresses to virtual addresses.
-
-The memory resource address range has been extracted from the config and
-data registes lists in the sh-pfc driver.
+As a step towards GPIO function removal, shorten the GPIO range
+registered with the pinctrl core. Function GPIOs are now handled in the
+GPIO handlers directly instead of going through the pinctrl API.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c |   13 ++++++++++++-
- 1 file changed, 12 insertions(+), 1 deletion(-)
+ drivers/pinctrl/sh-pfc/core.c    |  2 +-
+ drivers/pinctrl/sh-pfc/core.h    |  1 +
+ drivers/pinctrl/sh-pfc/gpio.c    | 57 ++++++++++++++++++++++++++++++++++++++--
+ drivers/pinctrl/sh-pfc/pinctrl.c | 27 ++-----------------
+ 4 files changed, 59 insertions(+), 28 deletions(-)
 
-diff --git a/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c b/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c
-index b1b7c1b..569decb 100644
---- a/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c
-+++ b/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c
-@@ -8,12 +8,23 @@
-  * for more details.
-  */
- 
-+#include <linux/bug.h>
- #include <linux/init.h>
- #include <linux/kernel.h>
-+#include <linux/ioport.h>
- #include <cpu/pfc.h>
- 
-+static struct resource sh7264_pfc_resources[] = {
-+	[0] = {
-+		.start	= 0xfffe3800,
-+		.end	= 0xfffe393f,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+};
-+
- static int __init plat_pinmux_setup(void)
- {
--	return sh_pfc_register("pfc-sh7264", NULL, 0);
-+	return sh_pfc_register("pfc-sh7264", sh7264_pfc_resources,
-+			       ARRAY_SIZE(sh7264_pfc_resources));
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index e7ad0d9..bed2d23 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -95,7 +95,7 @@ static bool sh_pfc_gpio_is_pin(struct sh_pfc *pfc, unsigned int gpio)
+ 	       (pfc->info->gpios[gpio].enum_id != 0);
  }
- arch_initcall(plat_pinmux_setup);
+ 
+-static bool sh_pfc_gpio_is_function(struct sh_pfc *pfc, unsigned int gpio)
++bool sh_pfc_gpio_is_function(struct sh_pfc *pfc, unsigned int gpio)
+ {
+ 	return (gpio >= pfc->info->nr_pins) && (gpio < pfc->info->nr_gpios) &&
+ 	       (pfc->info->gpios[gpio].enum_id != 0);
+diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
+index ba7c33c..dceaec0 100644
+--- a/drivers/pinctrl/sh-pfc/core.h
++++ b/drivers/pinctrl/sh-pfc/core.h
+@@ -47,6 +47,7 @@ void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
+ 		      unsigned long value);
+ int sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
+ 			struct pinmux_data_reg **drp, int *bitp);
++bool sh_pfc_gpio_is_function(struct sh_pfc *pfc, unsigned int gpio);
+ int sh_pfc_gpio_to_enum(struct sh_pfc *pfc, unsigned gpio, int pos,
+ 			pinmux_enum_t *enum_idp);
+ int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index f46f069..80a50d8 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -38,12 +38,51 @@ static struct sh_pfc *gpio_to_pfc(struct gpio_chip *gc)
+ 
+ static int sh_gpio_request(struct gpio_chip *gc, unsigned offset)
+ {
+-	return pinctrl_request_gpio(offset);
++	struct sh_pfc *pfc = gpio_to_pfc(gc);
++	unsigned long flags;
++	int ret = -EINVAL;
++
++	if (offset < pfc->info->nr_pins)
++		return pinctrl_request_gpio(offset);
++
++	pr_notice_once("Use of GPIO API for function requests is deprecated, convert to pinctrl\n");
++
++	spin_lock_irqsave(&pfc->lock, flags);
++
++	if (!sh_pfc_gpio_is_function(pfc, offset))
++		goto done;
++
++	if (sh_pfc_config_gpio(pfc, offset, PINMUX_TYPE_FUNCTION,
++			       GPIO_CFG_DRYRUN))
++		goto done;
++
++	if (sh_pfc_config_gpio(pfc, offset, PINMUX_TYPE_FUNCTION,
++			       GPIO_CFG_REQ))
++		goto done;
++
++	ret = 0;
++
++done:
++	spin_unlock_irqrestore(&pfc->lock, flags);
++	return ret;
+ }
+ 
+ static void sh_gpio_free(struct gpio_chip *gc, unsigned offset)
+ {
+-	pinctrl_free_gpio(offset);
++	struct sh_pfc *pfc = gpio_to_pfc(gc);
++	unsigned long flags;
++	int pinmux_type;
++
++	if (offset < pfc->info->nr_pins)
++		return pinctrl_free_gpio(offset);
++
++	spin_lock_irqsave(&pfc->lock, flags);
++
++	pinmux_type = pfc->info->gpios[offset].flags & PINMUX_FLAG_TYPE;
++
++	sh_pfc_config_gpio(pfc, offset, pinmux_type, GPIO_CFG_FREE);
++
++	spin_unlock_irqrestore(&pfc->lock, flags);
+ }
+ 
+ static void sh_gpio_set_value(struct sh_pfc *pfc, unsigned gpio, int value)
+@@ -70,12 +109,26 @@ static int sh_gpio_get_value(struct sh_pfc *pfc, unsigned gpio)
+ 
+ static int sh_gpio_direction_input(struct gpio_chip *gc, unsigned offset)
+ {
++	struct sh_pfc *pfc = gpio_to_pfc(gc);
++
++	if (offset >= pfc->info->nr_pins) {
++		/* Function GPIOs can only be requested, never configured. */
++		return -EINVAL;
++	}
++
+ 	return pinctrl_gpio_direction_input(offset);
+ }
+ 
+ static int sh_gpio_direction_output(struct gpio_chip *gc, unsigned offset,
+ 				    int value)
+ {
++	struct sh_pfc *pfc = gpio_to_pfc(gc);
++
++	if (offset >= pfc->info->nr_pins) {
++		/* Function GPIOs can only be requested, never configured. */
++		return -EINVAL;
++	}
++
+ 	sh_gpio_set_value(gpio_to_pfc(gc), offset, value);
+ 
+ 	return pinctrl_gpio_direction_output(offset);
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index 682b3a6..747ee64 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -116,21 +116,6 @@ static void sh_pfc_noop_disable(struct pinctrl_dev *pctldev, unsigned func,
+ {
+ }
+ 
+-static int sh_pfc_config_function(struct sh_pfc *pfc, unsigned offset)
+-{
+-	if (sh_pfc_config_gpio(pfc, offset,
+-			       PINMUX_TYPE_FUNCTION,
+-			       GPIO_CFG_DRYRUN) != 0)
+-		return -EINVAL;
+-
+-	if (sh_pfc_config_gpio(pfc, offset,
+-			       PINMUX_TYPE_FUNCTION,
+-			       GPIO_CFG_REQ) != 0)
+-		return -EINVAL;
+-
+-	return 0;
+-}
+-
+ static int sh_pfc_reconfig_pin(struct sh_pfc *pfc, unsigned offset,
+ 			       int new_type)
+ {
+@@ -198,19 +183,11 @@ static int sh_pfc_gpio_request_enable(struct pinctrl_dev *pctldev,
+ 	pinmux_type = pfc->info->gpios[offset].flags & PINMUX_FLAG_TYPE;
+ 
+ 	switch (pinmux_type) {
+-	case PINMUX_TYPE_FUNCTION:
+-		pr_notice_once("Use of GPIO API for function requests is "
+-			       "deprecated, convert to pinctrl\n");
+-		/* handle for now */
+-		ret = sh_pfc_config_function(pfc, offset);
+-		if (unlikely(ret < 0))
+-			goto err;
+-
+-		break;
+ 	case PINMUX_TYPE_GPIO:
+ 	case PINMUX_TYPE_INPUT:
+ 	case PINMUX_TYPE_OUTPUT:
+ 		break;
++	case PINMUX_TYPE_FUNCTION:
+ 	default:
+ 		pr_err("Unsupported mux type (%d), bailing...\n", pinmux_type);
+ 		ret = -ENOTSUPP;
+@@ -400,7 +377,7 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ 
+ 	pmx->range.name = DRV_NAME,
+ 	pmx->range.id = 0;
+-	pmx->range.npins = pfc->info->nr_gpios;
++	pmx->range.npins = pfc->info->nr_pins;
+ 	pmx->range.base = 0;
+ 	pmx->range.pin_base = 0;
+ 
 -- 
-1.7.10.4
+1.8.1.5
 
