@@ -1,27 +1,60 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 14 Mar 2013 14:11:36 +0000
-Subject: Re: [PATCH 25/25] sh-pfc: Return an error if a pin doesn't support the requested direction
-Message-Id: <CACRpkdbSGX4esPepvB1pum98Oy_Ycf2HrwHo372UOqgVKpX=FQ@mail.gmail.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 06 Mar 2013 06:08:31 +0000
+Subject: [PATCH] ARM: shmobile: Make sh73a0 INTC irqpin platform data static
+Message-Id: <20130306060831.4859.88481.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363214384-3870-26-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1363214384-3870-26-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Mar 13, 2013 at 11:39 PM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
+From: Magnus Damm <damm@opensource.se>
 
-> When setting a pin direction verify that the requested direction is
-> supported, and return an error if it isn't.
->
-> This requires pin configuration information to be supplied by SoC data.
-> The check is a no-op if the information is not supplied.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The platform data for the INTC irq pin driver
+seems to be global symbols, make it static to
+allow multi-soc build.
 
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Yours,
-Linus Walleij
+ arch/arm/mach-shmobile/setup-sh73a0.c |    8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- 0001/arch/arm/mach-shmobile/setup-sh73a0.c
++++ work/arch/arm/mach-shmobile/setup-sh73a0.c	2013-03-06 15:03:05.000000000 +0900
+@@ -782,7 +782,7 @@ static struct platform_device pmu_device
+ 	.resource	= pmu_resources,
+ };
+ 
+-struct renesas_intc_irqpin_config irqpin0_platform_data = {
++static struct renesas_intc_irqpin_config irqpin0_platform_data = {
+ 	.irq_base = irq_pin(0), /* IRQ0 -> IRQ7 */
+ };
+ 
+@@ -812,7 +812,7 @@ static struct platform_device irqpin0_de
+ 	},
+ };
+ 
+-struct renesas_intc_irqpin_config irqpin1_platform_data = {
++static struct renesas_intc_irqpin_config irqpin1_platform_data = {
+ 	.irq_base = irq_pin(8), /* IRQ8 -> IRQ15 */
+ 	.control_parent = true, /* Disable spurious IRQ10 */
+ };
+@@ -843,7 +843,7 @@ static struct platform_device irqpin1_de
+ 	},
+ };
+ 
+-struct renesas_intc_irqpin_config irqpin2_platform_data = {
++static struct renesas_intc_irqpin_config irqpin2_platform_data = {
+ 	.irq_base = irq_pin(16), /* IRQ16 -> IRQ23 */
+ };
+ 
+@@ -873,7 +873,7 @@ static struct platform_device irqpin2_de
+ 	},
+ };
+ 
+-struct renesas_intc_irqpin_config irqpin3_platform_data = {
++static struct renesas_intc_irqpin_config irqpin3_platform_data = {
+ 	.irq_base = irq_pin(24), /* IRQ24 -> IRQ31 */
+ };
+ 
