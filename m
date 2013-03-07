@@ -1,23 +1,62 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 14 Mar 2013 08:20:01 +0000
-Subject: Re: [PATCH 19/25] sh-pfc: Constify all SoC data
-Message-Id: <CACRpkdZnYGg_S1hHFPkjeCOjsC50g1SajhcicEsXxen5u6L8zA@mail.gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Thu, 07 Mar 2013 19:00:48 +0000
+Subject: [PATCH/RFC 3/3] ARM: shmobile: sh73a0: add a TWD clock
+Message-Id: <Pine.LNX.4.64.1303071957230.16065@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363214384-3870-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1363214384-3870-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Wed, Mar 13, 2013 at 11:39 PM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
+Add a TWD clock on sh73a0 for the smp_twd driver to properly update the
+clock's frequency upon cpufreq events.
 
-> None of the SoC data need to be modified. Constify it.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ arch/arm/mach-shmobile/clock-sh73a0.c |   16 ++++++++++++++++
+ 1 files changed, 16 insertions(+), 0 deletions(-)
 
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index 71843dd..e8a6ba7 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -277,6 +277,20 @@ static struct clk div4_clks[DIV4_NR] = {
+ 	[DIV4_HP] = DIV4(FRQCRB, 4, 0xdff, 0),
+ };
+ 
++static unsigned long twd_recalc(struct clk *clk)
++{
++	return clk_get_rate(clk->parent) / 4;
++}
++
++static struct sh_clk_ops twd_clk_ops = {
++	.recalc = twd_recalc,
++};
++
++static struct clk twd_clk = {
++	.parent = &div4_clks[DIV4_Z],
++	.ops = &twd_clk_ops,
++};
++
+ enum { DIV6_VCK1, DIV6_VCK2, DIV6_VCK3, DIV6_ZB1,
+ 	DIV6_FLCTL, DIV6_SDHI0, DIV6_SDHI1, DIV6_SDHI2,
+ 	DIV6_FSIA, DIV6_FSIB, DIV6_SUB,
+@@ -471,6 +485,7 @@ static struct clk dsi1phy_clk = {
+ static struct clk *late_main_clks[] = {
+ 	&dsi0phy_clk,
+ 	&dsi1phy_clk,
++	&twd_clk,
+ };
+ 
+ enum { MSTP001,
+@@ -535,6 +550,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ static struct clk_lookup lookups[] = {
+ 	/* main clocks */
+ 	CLKDEV_CON_ID("r_clk", &r_clk),
++	CLKDEV_DEV_ID("smp_twd", &twd_clk), /* smp_twd */
+ 
+ 	/* DIV6 clocks */
+ 	CLKDEV_CON_ID("vck1_clk", &div6_clks[DIV6_VCK1]),
+-- 
+1.7.2.5
 
-Yours,
-Linus Walleij
