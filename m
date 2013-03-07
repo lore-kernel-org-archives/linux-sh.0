@@ -1,67 +1,35 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 19 Mar 2013 02:19:33 +0000
-Subject: [PATCH 11/14] ARM: shmobile: Make sh73a0 INTC irqpin platform data static
-Message-Id: <1363659576-6333-12-git-send-email-horms+renesas@verge.net.au>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 07 Mar 2013 22:30:12 +0000
+Subject: [PATCH] ARM: shmobile: R8A7779: use gic_iid() in SATA IRQ resource
+Message-Id: <201303080231.04149.sergei.shtylyov@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363659576-6333-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363659576-6333-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+Commit "ARM: shmobile: r8a7779: use gic_iid macro" switched R8A7779 platform
+devices to using gic_iid() macro instead of gic_spi() but commit "ARM: mach-
+shmobile: r8a7779: add SATA support" added another use of gic_spi(). Convert
+the SATA IRQ resource to using gic_iid().
 
-The platform data for the INTC irq pin driver
-seems to be global symbols, make it static to
-allow multi-soc build.
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-sh73a0.c |    8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+This patch is atop of the 'next' branch of Simon Horman's renesas.git.
 
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index 638735f..e8cd93a 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -812,7 +812,7 @@ static struct platform_device ipmmu_device = {
- 	.num_resources  = ARRAY_SIZE(ipmmu_resources),
- };
- 
--struct renesas_intc_irqpin_config irqpin0_platform_data = {
-+static struct renesas_intc_irqpin_config irqpin0_platform_data = {
- 	.irq_base = irq_pin(0), /* IRQ0 -> IRQ7 */
- };
- 
-@@ -842,7 +842,7 @@ static struct platform_device irqpin0_device = {
- 	},
- };
- 
--struct renesas_intc_irqpin_config irqpin1_platform_data = {
-+static struct renesas_intc_irqpin_config irqpin1_platform_data = {
- 	.irq_base = irq_pin(8), /* IRQ8 -> IRQ15 */
- 	.control_parent = true, /* Disable spurious IRQ10 */
- };
-@@ -873,7 +873,7 @@ static struct platform_device irqpin1_device = {
- 	},
- };
- 
--struct renesas_intc_irqpin_config irqpin2_platform_data = {
-+static struct renesas_intc_irqpin_config irqpin2_platform_data = {
- 	.irq_base = irq_pin(16), /* IRQ16 -> IRQ23 */
- };
- 
-@@ -903,7 +903,7 @@ static struct platform_device irqpin2_device = {
- 	},
- };
- 
--struct renesas_intc_irqpin_config irqpin3_platform_data = {
-+static struct renesas_intc_irqpin_config irqpin3_platform_data = {
- 	.irq_base = irq_pin(24), /* IRQ24 -> IRQ31 */
- };
- 
--- 
-1.7.10.4
+ arch/arm/mach-shmobile/setup-r8a7779.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
+Index: renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+=================================--- renesas.orig/arch/arm/mach-shmobile/setup-r8a7779.c
++++ renesas/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -331,7 +331,7 @@ static struct resource sata_resources[] 
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start	= gic_spi(100),
++		.start	= gic_iid(0x84),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
