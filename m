@@ -1,28 +1,54 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Thu, 07 Mar 2013 05:51:58 +0000
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Thu, 07 Mar 2013 10:26:29 +0000
 Subject: Re: [PATCH v6 1/3] serial: sh-sci: Add OF support
-Message-Id: <201303070551.59191.arnd@arndb.de>
+Message-Id: <CABYn4sz_5vEzXba0Y7iXKBbGhfGwY2cd8fn30mUQ0GQcbGTG+w@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1362569437-11133-1-git-send-email-hechtb+renesas@gmail.com>
- <2479902.R2JaqaE7dT@avalon> <20130306152857.GJ14275@linux-sh.org>
-In-Reply-To: <20130306152857.GJ14275@linux-sh.org>
+ <9335181.JoypQftkI4@avalon>
+In-Reply-To: <9335181.JoypQftkI4@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wednesday 06 March 2013, Paul Mundt wrote:
-> Now that we have split things out in to regtype for the compat string we
-> may be able to get away with selecting defaults that match the regtype
-> and drop it from the binding (assuming all future parts remain relatively
-> sane), but it would still complicate things if we were to ever do DT
-> support for legacy CPUs. It's not enough to tie to the port type, as
-> there are plenty of cases where the port type uses a non-standard algo on
-> some CPU subtypes (although things are pretty consistent for the arm side
-> so far).
+Hi Laurent,
 
-Maybe we could document it as an optional property that we may use for the
-legacy CPUs if necessary, but put it into the ARM dts files or into
-the driver implementation for the time being.
+>> +- renesas,scscr : Should contain a bitfield used by the Serial Control
+>> Register.
+>> +  b7 = SCSCR_TIE
+>> +  b6 = SCSCR_RIE
+>> +  b5 = SCSCR_TE
+>> +  b4 = SCSCR_RE
+>> +  b3 = SCSCR_REIE
+>> +  b2 = SCSCR_TOIE
+>> +  b1 = SCSCR_CKE1
+>> +  b0 = SCSCR_CKE0
+>
+> What is that for exactly ?
 
-	Arnd
+What I can see from 3 different datasheets (sh7372, sh73a0, r8a7740)
+the first 2 bits differ in meaning.
+
+On r8a7740 it depends: In asynchronous mode the first 2 bits CKE0/1
+define whether you want to use an external clock to drive the baud
+generator or if you want to use the internal SUB clock. If you use the
+SUB clock you can further define if you want to use a subscaled SUB
+clock in the SCSMR register. In synchronous mode you must rely on the
+internal clock for the baud generator and can select if the SCK pin is
+used as clock input or output.
+
+On sh73a0 and sh7372 it's used to control the output clock SCK (set it
+to high impedance or actually output a clock when in sychronous mode)
+
+Bit 2 and 3 don't exist in my datasheets.
+
+The other bits define under which conditions you receive interrupts
+(send FIFO empty, receive FIFO full) and which bits you need to start
+transfers (one bit to start sending, one receiving). The bits 8 to 31
+are used to set up DMA transfers and various interrupt events like
+error status and finish transfers. I haven't included them as they are
+not used in the driver.
+
+Thanks,
+
+Bastian
