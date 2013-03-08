@@ -1,310 +1,127 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 06 Mar 2013 12:52:50 +0000
-Subject: [PATCH v3 29/29] sh-pfc: Expose real groups and functions in pinctrl/pinmux operations
-Message-Id: <1362574370-17889-30-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 08 Mar 2013 10:56:06 +0000
+Subject: [PATCH v4 25/29] ARM: shmobile: ap4-evb: Replace GPIO_PORTx enum with GPIO port numbers
+Message-Id: <1362740170-19073-26-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The sh-pfc driver exposes one fake group and function per GPIO pin. As
-the pinctrl and pinmux APIs are not used by any SuperH and SH Mobile
-board or driver, drop the fake groups and functions and replace them by
-a real pinctrl and pinmux implementation.
-
-Groups and functions must now be explicitly provided by PFC SoC-specific
-data.
+The PFC GPIO API implementation moved to using port numbers. Replace all
+GPIO_PORTx enum usage with the corresponding port number. The GPIO_PORTx
+enum values are identical to the port number on this platform.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/pinctrl/sh-pfc/pinctrl.c | 115 ++++++++++++++++++++-------------------
- drivers/pinctrl/sh-pfc/sh_pfc.h  |  35 ++++++++++++
- 2 files changed, 93 insertions(+), 57 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c | 36 +++++++++++++++++------------------
+ 1 file changed, 18 insertions(+), 18 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
-index c951c81..bf317af 100644
---- a/drivers/pinctrl/sh-pfc/pinctrl.c
-+++ b/drivers/pinctrl/sh-pfc/pinctrl.c
-@@ -31,12 +31,7 @@ struct sh_pfc_pinctrl {
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 38f1259..0a2b6e4 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -273,11 +273,11 @@ static struct platform_device smc911x_device = {
  
- 	struct sh_pfc *pfc;
- 
--	struct pinmux_func **functions;
--	unsigned int nr_functions;
--
--	struct pinctrl_pin_desc *pads;
--	unsigned int nr_pads;
--
-+	struct pinctrl_pin_desc *pins;
- 	struct pinctrl_gpio_range *ranges;
- };
- 
-@@ -44,7 +39,7 @@ static int sh_pfc_get_groups_count(struct pinctrl_dev *pctldev)
+ /*
+  * The card detect pin of the top SD/MMC slot (CN7) is active low and is
+- * connected to GPIO A22 of SH7372 (GPIO_PORT41).
++ * connected to GPIO A22 of SH7372 (GPIO 41).
+  */
+ static int slot_cn7_get_cd(struct platform_device *pdev)
  {
- 	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
- 
--	return pmx->nr_pads;
-+	return pmx->pfc->info->nr_groups;
+-	return !gpio_get_value(GPIO_PORT41);
++	return !gpio_get_value(41);
  }
- 
- static const char *sh_pfc_get_group_name(struct pinctrl_dev *pctldev,
-@@ -52,16 +47,16 @@ static const char *sh_pfc_get_group_name(struct pinctrl_dev *pctldev,
- {
- 	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
- 
--	return pmx->pads[selector].name;
-+	return pmx->pfc->info->groups[selector].name;
- }
- 
--static int sh_pfc_get_group_pins(struct pinctrl_dev *pctldev, unsigned group,
-+static int sh_pfc_get_group_pins(struct pinctrl_dev *pctldev, unsigned selector,
- 				 const unsigned **pins, unsigned *num_pins)
- {
- 	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
- 
--	*pins = &pmx->pads[group].number;
--	*num_pins = 1;
-+	*pins = pmx->pfc->info->groups[selector].pins;
-+	*num_pins = pmx->pfc->info->groups[selector].nr_pins;
- 
- 	return 0;
- }
-@@ -83,7 +78,7 @@ static int sh_pfc_get_functions_count(struct pinctrl_dev *pctldev)
- {
- 	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
- 
--	return pmx->nr_functions;
-+	return pmx->pfc->info->nr_functions;
- }
- 
- static const char *sh_pfc_get_function_name(struct pinctrl_dev *pctldev,
-@@ -91,30 +86,67 @@ static const char *sh_pfc_get_function_name(struct pinctrl_dev *pctldev,
- {
- 	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
- 
--	return pmx->functions[selector]->name;
-+	return pmx->pfc->info->functions[selector].name;
- }
- 
--static int sh_pfc_get_function_groups(struct pinctrl_dev *pctldev, unsigned func,
-+static int sh_pfc_get_function_groups(struct pinctrl_dev *pctldev,
-+				      unsigned selector,
- 				      const char * const **groups,
- 				      unsigned * const num_groups)
- {
- 	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
- 
--	*groups = &pmx->functions[func]->name;
--	*num_groups = 1;
-+	*groups = pmx->pfc->info->functions[selector].groups;
-+	*num_groups = pmx->pfc->info->functions[selector].nr_groups;
- 
- 	return 0;
- }
- 
--static int sh_pfc_noop_enable(struct pinctrl_dev *pctldev, unsigned func,
-+static int sh_pfc_func_enable(struct pinctrl_dev *pctldev, unsigned selector,
- 			      unsigned group)
- {
--	return 0;
-+	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
-+	struct sh_pfc *pfc = pmx->pfc;
-+	const struct sh_pfc_pin_group *grp = &pfc->info->groups[group];
-+	unsigned long flags;
-+	unsigned int i;
-+	int ret = -EINVAL;
-+
-+	spin_lock_irqsave(&pfc->lock, flags);
-+
-+	for (i = 0; i < grp->nr_pins; ++i) {
-+		if (sh_pfc_config_mux(pfc, grp->mux[i], PINMUX_TYPE_FUNCTION,
-+				      GPIO_CFG_DRYRUN))
-+			goto done;
-+
-+		if (sh_pfc_config_mux(pfc, grp->mux[i], PINMUX_TYPE_FUNCTION,
-+				      GPIO_CFG_REQ))
-+			goto done;
-+	}
-+
-+	ret = 0;
-+
-+done:
-+	spin_unlock_irqrestore(&pfc->lock, flags);
-+	return ret;
- }
- 
--static void sh_pfc_noop_disable(struct pinctrl_dev *pctldev, unsigned func,
-+static void sh_pfc_func_disable(struct pinctrl_dev *pctldev, unsigned selector,
- 				unsigned group)
- {
-+	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
-+	struct sh_pfc *pfc = pmx->pfc;
-+	const struct sh_pfc_pin_group *grp = &pfc->info->groups[group];
-+	unsigned long flags;
-+	unsigned int i;
-+
-+	spin_lock_irqsave(&pfc->lock, flags);
-+
-+	for (i = 0; i < grp->nr_pins; ++i)
-+		sh_pfc_config_mux(pfc, grp->mux[i], PINMUX_TYPE_FUNCTION,
-+				  GPIO_CFG_FREE);
-+
-+	spin_unlock_irqrestore(&pfc->lock, flags);
- }
- 
- static int sh_pfc_reconfig_pin(struct sh_pfc *pfc, unsigned offset,
-@@ -236,8 +268,8 @@ static const struct pinmux_ops sh_pfc_pinmux_ops = {
- 	.get_functions_count	= sh_pfc_get_functions_count,
- 	.get_function_name	= sh_pfc_get_function_name,
- 	.get_function_groups	= sh_pfc_get_function_groups,
--	.enable			= sh_pfc_noop_enable,
--	.disable		= sh_pfc_noop_disable,
-+	.enable			= sh_pfc_func_enable,
-+	.disable		= sh_pfc_func_disable,
- 	.gpio_request_enable	= sh_pfc_gpio_request_enable,
- 	.gpio_disable_free	= sh_pfc_gpio_disable_free,
- 	.gpio_set_direction	= sh_pfc_gpio_set_direction,
-@@ -315,10 +347,10 @@ static int sh_pfc_map_pins(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
- 		nr_ranges = pfc->info->nr_ranges;
+ /* MERAM */
+ static struct sh_mobile_meram_info meram_info = {
+@@ -838,22 +838,22 @@ static struct platform_device fsi_hdmi_device = {
+ static struct gpio_led ap4evb_leds[] = {
+ 	{
+ 		.name			= "led4",
+-		.gpio			= GPIO_PORT185,
++		.gpio			= 185,
+ 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
+ 	},
+ 	{
+ 		.name			= "led2",
+-		.gpio			= GPIO_PORT186,
++		.gpio			= 186,
+ 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
+ 	},
+ 	{
+ 		.name			= "led3",
+-		.gpio			= GPIO_PORT187,
++		.gpio			= 187,
+ 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
+ 	},
+ 	{
+ 		.name			= "led1",
+-		.gpio			= GPIO_PORT188,
++		.gpio			= 188,
+ 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
  	}
- 
--	pmx->pads = devm_kzalloc(pfc->dev,
--				 sizeof(*pmx->pads) * pfc->info->nr_pins,
-+	pmx->pins = devm_kzalloc(pfc->dev,
-+				 sizeof(*pmx->pins) * pfc->info->nr_pins,
- 				 GFP_KERNEL);
--	if (unlikely(!pmx->pads))
-+	if (unlikely(!pmx->pins))
- 		return -ENOMEM;
- 
- 	pmx->ranges = devm_kzalloc(pfc->dev, sizeof(*pmx->ranges) * nr_ranges,
-@@ -337,7 +369,7 @@ static int sh_pfc_map_pins(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
- 		range->pin_base = pfc_range->begin;
- 
- 		for (j = 0; j < range->npins; j++, nr_pins++) {
--			struct pinctrl_pin_desc *pin = &pmx->pads[nr_pins];
-+			struct pinctrl_pin_desc *pin = &pmx->pins[nr_pins];
- 			struct sh_pfc_pin *gpio = &pfc->info->pins[nr_pins];
- 
- 			pin->number = range->pin_base + j;
-@@ -350,37 +382,10 @@ static int sh_pfc_map_pins(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
- 	return nr_ranges;
- }
- 
--static int sh_pfc_map_functions(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
--{
--	int i, fn;
--
--	for (i = 0; i < pfc->info->nr_func_gpios; i++) {
--		struct pinmux_func *func = pfc->info->func_gpios + i;
--
--		if (func->enum_id)
--			pmx->nr_functions++;
--	}
--
--	pmx->functions = devm_kzalloc(pfc->dev, pmx->nr_functions *
--				      sizeof(*pmx->functions), GFP_KERNEL);
--	if (unlikely(!pmx->functions))
--		return -ENOMEM;
--
--	for (i = fn = 0; i < pfc->info->nr_func_gpios; i++) {
--		struct pinmux_func *func = pfc->info->func_gpios + i;
--
--		if (func->enum_id)
--			pmx->functions[fn++] = func;
--	}
--
--	return 0;
--}
--
- int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
- {
- 	struct sh_pfc_pinctrl *pmx;
- 	int nr_ranges;
--	int ret;
- 
- 	pmx = devm_kzalloc(pfc->dev, sizeof(*pmx), GFP_KERNEL);
- 	if (unlikely(!pmx))
-@@ -393,16 +398,12 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
- 	if (unlikely(nr_ranges < 0))
- 		return nr_ranges;
- 
--	ret = sh_pfc_map_functions(pfc, pmx);
--	if (unlikely(ret != 0))
--		return ret;
--
- 	pmx->pctl_desc.name = DRV_NAME;
- 	pmx->pctl_desc.owner = THIS_MODULE;
- 	pmx->pctl_desc.pctlops = &sh_pfc_pinctrl_ops;
- 	pmx->pctl_desc.pmxops = &sh_pfc_pinmux_ops;
- 	pmx->pctl_desc.confops = &sh_pfc_pinconf_ops;
--	pmx->pctl_desc.pins = pmx->pads;
-+	pmx->pctl_desc.pins = pmx->pins;
- 	pmx->pctl_desc.npins = pfc->info->nr_pins;
- 
- 	pmx->pctl = pinctrl_register(&pmx->pctl_desc, pfc->dev, pmx);
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index dbcaa60..028e29a 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -16,6 +16,8 @@
- 
- typedef unsigned short pinmux_enum_t;
- 
-+#define SH_PFC_MARK_INVALID	((pinmux_enum_t)-1)
-+
- enum {
- 	PINMUX_TYPE_NONE,
- 
-@@ -40,6 +42,34 @@ struct sh_pfc_pin {
- 	const char *name;
  };
+@@ -1026,10 +1026,10 @@ out:
+ /* TouchScreen */
+ #ifdef CONFIG_AP4EVB_QHD
+ # define GPIO_TSC_IRQ	GPIO_FN_IRQ28_123
+-# define GPIO_TSC_PORT	GPIO_PORT123
++# define GPIO_TSC_PORT	123
+ #else /* WVGA */
+ # define GPIO_TSC_IRQ	GPIO_FN_IRQ7_40
+-# define GPIO_TSC_PORT	GPIO_PORT40
++# define GPIO_TSC_PORT	40
+ #endif
  
-+#define SH_PFC_PIN_GROUP(n)				\
-+	{						\
-+		.name = #n,				\
-+		.pins = n##_pins,			\
-+		.mux = n##_mux,				\
-+		.nr_pins = ARRAY_SIZE(n##_pins),	\
-+	}
-+
-+struct sh_pfc_pin_group {
-+	const char *name;
-+	const unsigned int *pins;
-+	const unsigned int *mux;
-+	unsigned int nr_pins;
-+};
-+
-+#define SH_PFC_FUNCTION(n)				\
-+	{						\
-+		.name = #n,				\
-+		.groups = n##_groups,			\
-+		.nr_groups = ARRAY_SIZE(n##_groups),	\
-+	}
-+
-+struct sh_pfc_function {
-+	const char *name;
-+	const char * const *groups;
-+	unsigned int nr_groups;
-+};
-+
- struct pinmux_func {
- 	const pinmux_enum_t enum_id;
- 	const char *name;
-@@ -113,6 +143,11 @@ struct sh_pfc_soc_info {
- 	unsigned int nr_pins;
- 	const struct pinmux_range *ranges;
- 	unsigned int nr_ranges;
-+	const struct sh_pfc_pin_group *groups;
-+	unsigned int nr_groups;
-+	const struct sh_pfc_function *functions;
-+	unsigned int nr_functions;
-+
- 	struct pinmux_func *func_gpios;
- 	unsigned int nr_func_gpios;
+ #define IRQ28	evt2irq(0x3380) /* IRQ28A */
+@@ -1121,10 +1121,10 @@ static void __init ap4evb_init(void)
+ 	gpio_request(GPIO_FN_IRQ6_39,	NULL);
  
+ 	/* enable Debug switch (S6) */
+-	gpio_request_one(GPIO_PORT32, GPIOF_IN | GPIOF_EXPORT, NULL);
+-	gpio_request_one(GPIO_PORT33, GPIOF_IN | GPIOF_EXPORT, NULL);
+-	gpio_request_one(GPIO_PORT34, GPIOF_IN | GPIOF_EXPORT, NULL);
+-	gpio_request_one(GPIO_PORT35, GPIOF_IN | GPIOF_EXPORT, NULL);
++	gpio_request_one(32, GPIOF_IN | GPIOF_EXPORT, NULL);
++	gpio_request_one(33, GPIOF_IN | GPIOF_EXPORT, NULL);
++	gpio_request_one(34, GPIOF_IN | GPIOF_EXPORT, NULL);
++	gpio_request_one(35, GPIOF_IN | GPIOF_EXPORT, NULL);
+ 
+ 	/* SDHI0 */
+ 	gpio_request(GPIO_FN_SDHICD0, NULL);
+@@ -1172,15 +1172,15 @@ static void __init ap4evb_init(void)
+ 	gpio_request(GPIO_FN_FSIAILR,	NULL);
+ 	gpio_request(GPIO_FN_FSIAISLD,	NULL);
+ 	gpio_request(GPIO_FN_FSIAOSLD,	NULL);
+-	gpio_request_one(GPIO_PORT161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
++	gpio_request_one(161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
+ 
+-	gpio_request(GPIO_PORT9, NULL);
+-	gpio_request(GPIO_PORT10, NULL);
++	gpio_request(9, NULL);
++	gpio_request(10, NULL);
+ 	gpio_direction_none(GPIO_PORT9CR);  /* FSIAOBT needs no direction */
+ 	gpio_direction_none(GPIO_PORT10CR); /* FSIAOLR needs no direction */
+ 
+ 	/* card detect pin for MMC slot (CN7) */
+-	gpio_request_one(GPIO_PORT41, GPIOF_IN, NULL);
++	gpio_request_one(41, GPIOF_IN, NULL);
+ 
+ 	/* setup FSI2 port B (HDMI) */
+ 	gpio_request(GPIO_FN_FSIBCK, NULL);
+@@ -1268,8 +1268,8 @@ static void __init ap4evb_init(void)
+ 	gpio_request(GPIO_FN_LCDDISP,  NULL);
+ 	gpio_request(GPIO_FN_LCDDCK,   NULL);
+ 
+-	gpio_request_one(GPIO_PORT189, GPIOF_OUT_INIT_HIGH, NULL); /* backlight */
+-	gpio_request_one(GPIO_PORT151, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
++	gpio_request_one(189, GPIOF_OUT_INIT_HIGH, NULL); /* backlight */
++	gpio_request_one(151, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
+ 
+ 	lcdc_info.clock_source			= LCDC_CLK_BUS;
+ 	lcdc_info.ch[0].interface_type		= RGB18;
 -- 
 1.8.1.5
 
