@@ -1,48 +1,74 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:06:31 +0000
-Subject: [PATCH 095/142] ARM: shmobile: kzm9g: Register pinctrl mappings for BSC
-Message-Id: <1363604838-29359-96-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 08 Mar 2013 11:02:02 +0000
+Subject: [PATCH v3 42/64] sh-pfc: r8a7740: Remove SDHI and MMCIF function GPIOS
+Message-Id: <1362740544-19164-43-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-Replace the GPIO-based BSC pinmux configuration by pinctrl mappings.
+All r8a7740 platforms now use the pinctrl API to control the SDHI and
+MMCIF pins, the corresponding function GPIOS are unused. Remove them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-kzm9g.c |    6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 35 -----------------------------------
+ 1 file changed, 35 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index 335bdbb..7427041 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -651,6 +651,9 @@ static const struct pinctrl_map kzm_pinctrl_map[] = {
- 				  "sdhi2_data4", "sdhi2"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-sh73a0",
- 				  "sdhi2_ctrl", "sdhi2"),
-+	/* SMSC */
-+	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x.0", "pfc-sh73a0",
-+				  "bsc_cs4", "bsc"),
- };
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index b34a27d..d199d28c 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -2372,26 +2372,6 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(SIM_D_PORT22), /* SIM_D  Port 22/199 */
+ 	GPIO_FN(SIM_D_PORT199),
  
- /*
-@@ -718,9 +721,6 @@ static void __init kzm_init(void)
- 
- 	sh73a0_pinmux_init();
- 
--	/* CS4 for SMSC/USB */
--	gpio_request(GPIO_FN_CS4_, NULL); /* CS4 */
+-	/* SDHI0 */
+-	GPIO_FN(SDHI0_D0),	GPIO_FN(SDHI0_D1),	GPIO_FN(SDHI0_D2),
+-	GPIO_FN(SDHI0_D3),	GPIO_FN(SDHI0_CD),	GPIO_FN(SDHI0_WP),
+-	GPIO_FN(SDHI0_CMD),	GPIO_FN(SDHI0_CLK),
 -
- 	/* SMSC */
- 	gpio_request_one(224, GPIOF_IN, NULL); /* IRQ3 */
+-	/* SDHI1 */
+-	GPIO_FN(SDHI1_D0),	GPIO_FN(SDHI1_D1),	GPIO_FN(SDHI1_D2),
+-	GPIO_FN(SDHI1_D3),	GPIO_FN(SDHI1_CD),	GPIO_FN(SDHI1_WP),
+-	GPIO_FN(SDHI1_CMD),	GPIO_FN(SDHI1_CLK),
+-
+-	/* SDHI2 */
+-	GPIO_FN(SDHI2_D0),	GPIO_FN(SDHI2_D1),	GPIO_FN(SDHI2_D2),
+-	GPIO_FN(SDHI2_D3),	GPIO_FN(SDHI2_CLK),	GPIO_FN(SDHI2_CMD),
+-
+-	GPIO_FN(SDHI2_CD_PORT24), /* MSEL5CR_19_0 */
+-	GPIO_FN(SDHI2_WP_PORT25),
+-
+-	GPIO_FN(SDHI2_WP_PORT177), /* MSEL5CR_19_1 */
+-	GPIO_FN(SDHI2_CD_PORT202),
+-
+ 	/* MSIOF2 */
+ 	GPIO_FN(MSIOF2_TXD),	GPIO_FN(MSIOF2_RXD),	GPIO_FN(MSIOF2_TSCK),
+ 	GPIO_FN(MSIOF2_SS2),	GPIO_FN(MSIOF2_TSYNC),	GPIO_FN(MSIOF2_SS1),
+@@ -2436,21 +2416,6 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(MEMC_WAIT),	GPIO_FN(MEMC_DREQ1),	GPIO_FN(MEMC_BUSCLK),
+ 	GPIO_FN(MEMC_A0),
  
+-	/* MMC */
+-	GPIO_FN(MMC0_D0_PORT68),	GPIO_FN(MMC0_D1_PORT69),
+-	GPIO_FN(MMC0_D2_PORT70),	GPIO_FN(MMC0_D3_PORT71),
+-	GPIO_FN(MMC0_D4_PORT72),	GPIO_FN(MMC0_D5_PORT73),
+-	GPIO_FN(MMC0_D6_PORT74),	GPIO_FN(MMC0_D7_PORT75),
+-	GPIO_FN(MMC0_CLK_PORT66),
+-	GPIO_FN(MMC0_CMD_PORT67),	/* MSEL4CR_15_0 */
+-
+-	GPIO_FN(MMC1_D0_PORT149),	GPIO_FN(MMC1_D1_PORT148),
+-	GPIO_FN(MMC1_D2_PORT147),	GPIO_FN(MMC1_D3_PORT146),
+-	GPIO_FN(MMC1_D4_PORT145),	GPIO_FN(MMC1_D5_PORT144),
+-	GPIO_FN(MMC1_D6_PORT143),	GPIO_FN(MMC1_D7_PORT142),
+-	GPIO_FN(MMC1_CLK_PORT103),
+-	GPIO_FN(MMC1_CMD_PORT104),	/* MSEL4CR_15_1 */
+-
+ 	/* MSIOF0 */
+ 	GPIO_FN(MSIOF0_SS1),	GPIO_FN(MSIOF0_SS2),	GPIO_FN(MSIOF0_RXD),
+ 	GPIO_FN(MSIOF0_TXD),	GPIO_FN(MSIOF0_MCK0),	GPIO_FN(MSIOF0_MCK1),
 -- 
-1.7.10.4
+1.8.1.5
 
