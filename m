@@ -1,24 +1,98 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Wed, 13 Mar 2013 17:42:39 +0000
-Subject: Re: [PATCH/RFC 12/12] sh-pfc: r8a7779: Remove GPIO data
-Message-Id: <CACRpkdbmZ-T2DXpBec-+SjCK=eNcexOw+AOUNULoUJPYVCUpig@mail.gmail.com>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Fri, 08 Mar 2013 11:29:39 +0000
+Subject: [PATCH v2 5/7] ARM: mach-shmobile: sh73a0: Setup the timer CMT10 using DT
+Message-Id: <1362742181-19111-6-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1362941928-18115-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1362941928-18115-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1362742181-19111-1-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1362742181-19111-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Sun, Mar 10, 2013 at 7:58 PM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
+We can now use the Device Tree for bringing up our timer device CMT10 on
+the SoC sh73a0.
 
-> GPIOs are now handled by a separate driver, remove GPIO data from the
-> SoC information structure.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+---
+v2:
+- Moved the definition from the board .dts to the SoC .dtsi
+- Renamed cmt@0xe6138010 to timer@e6138010
 
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+ arch/arm/boot/dts/sh73a0.dtsi         |   11 +++++++++++
+ arch/arm/mach-shmobile/setup-sh73a0.c |   32 --------------------------------
+ 2 files changed, 11 insertions(+), 32 deletions(-)
 
-Yours,
-Linus Walleij
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index 8a59465..6549d6c 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -97,4 +97,15 @@
+ 			      0 189 0x4
+ 			      0 190 0x4>;
+ 	};
++
++	timer@e6138010 {
++		compatible = "renesas,cmt-timer";
++		interrupt-parent = <&gic>;
++		reg = <0xe6138010 0xc>;
++		interrupts = <0 65 0x4>;
++		renesas,device-id = <1>;
++		renesas,channel-id = <0>;
++		renesas,source-quality = <3>;
++		renesas,event-quality = <3>;
++	};
+ };
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 95a75af..64bc2c5 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -247,37 +247,6 @@ static struct platform_device scif8_device = {
+ 	},
+ };
+ 
+-static struct sh_timer_config cmt10_platform_data = {
+-	.name = "CMT10",
+-	.channel_offset = 0x10,
+-	.timer_bit = 0,
+-	.clockevent_rating = 125,
+-	.clocksource_rating = 125,
+-};
+-
+-static struct resource cmt10_resources[] = {
+-	[0] = {
+-		.name	= "CMT10",
+-		.start	= 0xe6138010,
+-		.end	= 0xe613801b,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= gic_spi(65),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device cmt10_device = {
+-	.name		= "sh_cmt",
+-	.id		= 10,
+-	.dev = {
+-		.platform_data	= &cmt10_platform_data,
+-	},
+-	.resource	= cmt10_resources,
+-	.num_resources	= ARRAY_SIZE(cmt10_resources),
+-};
+-
+ /* TMU */
+ static struct sh_timer_config tmu00_platform_data = {
+ 	.name = "TMU00",
+@@ -913,7 +882,6 @@ static struct platform_device *sh73a0_devices_dt[] __initdata = {
+ 	&scif6_device,
+ 	&scif7_device,
+ 	&scif8_device,
+-	&cmt10_device,
+ };
+ 
+ static struct platform_device *sh73a0_early_devices[] __initdata = {
+-- 
+1.7.9.5
+
