@@ -1,49 +1,77 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:06:08 +0000
-Subject: [PATCH 072/142] sh-pfc: r8a7779: Add USB0 and USB1 PENC pinmux support
-Message-Id: <1363604838-29359-73-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 08 Mar 2013 11:01:50 +0000
+Subject: [PATCH v3 30/64] ARM: shmobile: marzen: Register pinctrl mappings for SDHI and MMCIF
+Message-Id: <1362740544-19164-31-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-The USB0 and USB1 PENC functions were missing. Add them.
+Replace the GPIO-based SDHI and MMCIF pinmux configuration by pinctrl
+mappings
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c |    6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/board-marzen.c | 24 ++++++++++++++----------
+ 1 file changed, 14 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-index 361b162..946572bc 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-@@ -429,7 +429,8 @@ enum {
- 	A0_MARK, SD1_DAT3_MARK, MMC0_D3_MARK, FD3_MARK,
- 	BS_MARK, SD1_DAT2_MARK, MMC0_D2_MARK, FD2_MARK,
- 	ATADIR0_MARK, SDSELF_MARK, HCTS1_MARK, TX4_C_MARK,
--	USB_PENC2_MARK, SCK0_MARK, PWM1_MARK, PWMFSW0_MARK,
-+	USB_PENC0_MARK, USB_PENC1_MARK, USB_PENC2_MARK,
-+	SCK0_MARK, PWM1_MARK, PWMFSW0_MARK,
- 	SCIF_CLK_MARK, TCLK0_C_MARK,
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index fec49eb..d25a7b3 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -27,6 +27,7 @@
+ #include <linux/io.h>
+ #include <linux/gpio.h>
+ #include <linux/dma-mapping.h>
++#include <linux/pinctrl/machine.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/smsc911x.h>
+@@ -327,6 +328,17 @@ void __init marzen_init_late(void)
+ 			     ARRAY_SIZE(marzen_late_devices));
+ }
  
- 	EX_CS0_MARK, RX3_C_IRDA_RX_C_MARK, MMC0_D6_MARK,
-@@ -640,6 +641,9 @@ static const pinmux_enum_t pinmux_data[] = {
- 	PINMUX_DATA(A18_MARK, FN_A18),
- 	PINMUX_DATA(A19_MARK, FN_A19),
- 
-+	PINMUX_DATA(USB_PENC0_MARK, FN_USB_PENC0),
-+	PINMUX_DATA(USB_PENC1_MARK, FN_USB_PENC1),
++static const struct pinctrl_map marzen_pinctrl_map[] = {
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
++				  "sdhi0_data4", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
++				  "sdhi0_ctrl", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
++				  "sdhi0_cd", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
++				  "sdhi0_wp", "sdhi0"),
++};
 +
- 	PINMUX_IPSR_DATA(IP0_2_0, USB_PENC2),
- 	PINMUX_IPSR_MODSEL_DATA(IP0_2_0, SCK0, SEL_SCIF0_0),
- 	PINMUX_IPSR_DATA(IP0_2_0, PWM1),
+ static void __init marzen_init(void)
+ {
+ 	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
+@@ -334,6 +346,8 @@ static void __init marzen_init(void)
+ 	regulator_register_fixed(1, dummy_supplies,
+ 				ARRAY_SIZE(dummy_supplies));
+ 
++	pinctrl_register_mappings(marzen_pinctrl_map,
++				  ARRAY_SIZE(marzen_pinctrl_map));
+ 	r8a7779_pinmux_init();
+ 
+ 	/* SCIF2 (CN18: DEBUG0) */
+@@ -348,16 +362,6 @@ static void __init marzen_init(void)
+ 	gpio_request(GPIO_FN_EX_CS0, NULL); /* nCS */
+ 	gpio_request(GPIO_FN_IRQ1_B, NULL); /* IRQ + PME */
+ 
+-	/* SD0 (CN20) */
+-	gpio_request(GPIO_FN_SD0_CLK, NULL);
+-	gpio_request(GPIO_FN_SD0_CMD, NULL);
+-	gpio_request(GPIO_FN_SD0_DAT0, NULL);
+-	gpio_request(GPIO_FN_SD0_DAT1, NULL);
+-	gpio_request(GPIO_FN_SD0_DAT2, NULL);
+-	gpio_request(GPIO_FN_SD0_DAT3, NULL);
+-	gpio_request(GPIO_FN_SD0_CD, NULL);
+-	gpio_request(GPIO_FN_SD0_WP, NULL);
+-
+ 	/* HSPI 0 */
+ 	gpio_request(GPIO_FN_HSPI_CLK0,	NULL);
+ 	gpio_request(GPIO_FN_HSPI_CS0,	NULL);
 -- 
-1.7.10.4
+1.8.1.5
 
