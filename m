@@ -1,60 +1,330 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:07:08 +0000
-Subject: [PATCH 132/142] ARM: shmobile: sh73a0: Remove IrDA function GPIOs
-Message-Id: <1363604838-29359-133-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 08 Mar 2013 11:01:30 +0000
+Subject: [PATCH v3 10/64] sh-pfc: r8a7779: Add SDHI and MMCIF pin groups and functions
+Message-Id: <1362740544-19164-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
-
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
+To: linux-sh@vger.kernel.org
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/include/mach/sh73a0.h |   12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 284 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 284 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/sh73a0.h b/arch/arm/mach-shmobile/include/mach/sh73a0.h
-index d488e2b..fbc1584 100644
---- a/arch/arm/mach-shmobile/include/mach/sh73a0.h
-+++ b/arch/arm/mach-shmobile/include/mach/sh73a0.h
-@@ -124,13 +124,13 @@ enum {
- 	GPIO_FN_XWUP,
- 	GPIO_FN_VACK,
- 	GPIO_FN_XTAL1L,
--	GPIO_FN_PORT49_IRDA_OUT, GPIO_FN_PORT49_IROUT,
-+	GPIO_FN_PORT49_IROUT,
- 	GPIO_FN_BBIF2_TSYNC2, GPIO_FN_TPU2TO2,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+index 1ea6247..47a91be 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+@@ -1575,6 +1575,210 @@ static const unsigned int du1_cde_mux[] = {
+ 	DU1_CDE_MARK
+ };
  
- 	GPIO_FN_BBIF2_TSCK2, GPIO_FN_TPU2TO3,
- 	GPIO_FN_BBIF2_TXD2,
--	GPIO_FN_PORT53_IRDA_IN, GPIO_FN_TPU3TO3,
--	GPIO_FN_PORT54_IRDA_FIRSEL, GPIO_FN_TPU3TO2,
-+	GPIO_FN_TPU3TO3,
-+	GPIO_FN_TPU3TO2,
- 	GPIO_FN_TPU0TO0,
- 	GPIO_FN_A0, GPIO_FN_BS_,
- 	GPIO_FN_A12, GPIO_FN_TPU4TO2,
-@@ -255,10 +255,10 @@ enum {
- 	GPIO_FN_MSIOF1_MCK1,
- 	GPIO_FN_MSIOF1_SS1, GPIO_FN_VIO2_FIELD2,
- 	GPIO_FN_MSIOF1_SS2, GPIO_FN_VIO2_HD2,
--	GPIO_FN_PORT241_IRDA_OUT, GPIO_FN_PORT241_IROUT, GPIO_FN_MFG4_OUT1, \
-+	GPIO_FN_PORT241_IROUT, GPIO_FN_MFG4_OUT1, \
- 	GPIO_FN_TPU4TO0,
--	GPIO_FN_PORT242_IRDA_IN, GPIO_FN_MFG4_IN2,
--	GPIO_FN_PORT243_IRDA_FIRSEL, GPIO_FN_PORT243_VIO_CKO2,
-+	GPIO_FN_MFG4_IN2,
-+	GPIO_FN_PORT243_VIO_CKO2,
- 	GPIO_FN_MFG2_IN1,
- 	GPIO_FN_MSIOF2R_RXD,
- 	GPIO_FN_MFG2_IN2,
++static const unsigned int mmc0_data1_pins[] = {
++	/* D[0] */
++	19,
++};
++static const unsigned int mmc0_data1_mux[] = {
++	MMC0_D0_MARK,
++};
++static const unsigned int mmc0_data4_pins[] = {
++	/* D[0:3] */
++	19, 20, 21, 2,
++};
++static const unsigned int mmc0_data4_mux[] = {
++	MMC0_D0_MARK, MMC0_D1_MARK, MMC0_D2_MARK, MMC0_D3_MARK,
++};
++static const unsigned int mmc0_data8_pins[] = {
++	/* D[0:7] */
++	19, 20, 21, 2, 10, 11, 15, 16,
++};
++static const unsigned int mmc0_data8_mux[] = {
++	MMC0_D0_MARK, MMC0_D1_MARK, MMC0_D2_MARK, MMC0_D3_MARK,
++	MMC0_D4_MARK, MMC0_D5_MARK, MMC0_D6_MARK, MMC0_D7_MARK,
++};
++static const unsigned int mmc0_ctrl_pins[] = {
++	/* CMD, CLK */
++	18, 17,
++};
++static const unsigned int mmc0_ctrl_mux[] = {
++	MMC0_CMD_MARK, MMC0_CLK_MARK,
++};
++
++static const unsigned int mmc1_data1_pins[] = {
++	/* D[0] */
++	72,
++};
++static const unsigned int mmc1_data1_mux[] = {
++	MMC1_D0_MARK,
++};
++static const unsigned int mmc1_data4_pins[] = {
++	/* D[0:3] */
++	72, 73, 74, 75,
++};
++static const unsigned int mmc1_data4_mux[] = {
++	MMC1_D0_MARK, MMC1_D1_MARK, MMC1_D2_MARK, MMC1_D3_MARK,
++};
++static const unsigned int mmc1_data8_pins[] = {
++	/* D[0:7] */
++	72, 73, 74, 75, 76, 77, 80, 81,
++};
++static const unsigned int mmc1_data8_mux[] = {
++	MMC1_D0_MARK, MMC1_D1_MARK, MMC1_D2_MARK, MMC1_D3_MARK,
++	MMC1_D4_MARK, MMC1_D5_MARK, MMC1_D6_MARK, MMC1_D7_MARK,
++};
++static const unsigned int mmc1_ctrl_pins[] = {
++	/* CMD, CLK */
++	68, 65,
++};
++static const unsigned int mmc1_ctrl_mux[] = {
++	MMC1_CMD_MARK, MMC1_CLK_MARK,
++};
++
++static const unsigned int sdhi0_data1_pins[] = {
++	/* D0 */
++	117,
++};
++static const unsigned int sdhi0_data1_mux[] = {
++	SD0_DAT0_MARK,
++};
++static const unsigned int sdhi0_data4_pins[] = {
++	/* D[0:3] */
++	117, 118, 119, 120,
++};
++static const unsigned int sdhi0_data4_mux[] = {
++	SD0_DAT0_MARK, SD0_DAT1_MARK, SD0_DAT2_MARK, SD0_DAT3_MARK,
++};
++static const unsigned int sdhi0_ctrl_pins[] = {
++	/* CMD, CLK */
++	114, 113,
++};
++static const unsigned int sdhi0_ctrl_mux[] = {
++	SD0_CMD_MARK, SD0_CLK_MARK,
++};
++static const unsigned int sdhi0_cd_pins[] = {
++	/* CD */
++	115,
++};
++static const unsigned int sdhi0_cd_mux[] = {
++	SD0_CD_MARK,
++};
++static const unsigned int sdhi0_wp_pins[] = {
++	/* WP */
++	116,
++};
++static const unsigned int sdhi0_wp_mux[] = {
++	SD0_WP_MARK,
++};
++
++static const unsigned int sdhi1_data1_pins[] = {
++	/* D0 */
++	19,
++};
++static const unsigned int sdhi1_data1_mux[] = {
++	SD1_DAT0_MARK,
++};
++static const unsigned int sdhi1_data4_pins[] = {
++	/* D[0:3] */
++	19, 20, 21, 2,
++};
++static const unsigned int sdhi1_data4_mux[] = {
++	SD1_DAT0_MARK, SD1_DAT1_MARK, SD1_DAT2_MARK, SD1_DAT3_MARK,
++};
++static const unsigned int sdhi1_ctrl_pins[] = {
++	/* CMD, CLK */
++	18, 17,
++};
++static const unsigned int sdhi1_ctrl_mux[] = {
++	SD1_CMD_MARK, SD1_CLK_MARK,
++};
++static const unsigned int sdhi1_cd_pins[] = {
++	/* CD */
++	10,
++};
++static const unsigned int sdhi1_cd_mux[] = {
++	SD1_CD_MARK,
++};
++static const unsigned int sdhi1_wp_pins[] = {
++	/* WP */
++	11,
++};
++static const unsigned int sdhi1_wp_mux[] = {
++	SD1_WP_MARK,
++};
++
++static const unsigned int sdhi2_data1_pins[] = {
++	/* D0 */
++	97,
++};
++static const unsigned int sdhi2_data1_mux[] = {
++	SD2_DAT0_MARK,
++};
++static const unsigned int sdhi2_data4_pins[] = {
++	/* D[0:3] */
++	97, 98, 99, 100,
++};
++static const unsigned int sdhi2_data4_mux[] = {
++	SD2_DAT0_MARK, SD2_DAT1_MARK, SD2_DAT2_MARK, SD2_DAT3_MARK,
++};
++static const unsigned int sdhi2_ctrl_pins[] = {
++	/* CMD, CLK */
++	102, 101,
++};
++static const unsigned int sdhi2_ctrl_mux[] = {
++	SD2_CMD_MARK, SD2_CLK_MARK,
++};
++static const unsigned int sdhi2_cd_pins[] = {
++	/* CD */
++	103,
++};
++static const unsigned int sdhi2_cd_mux[] = {
++	SD2_CD_MARK,
++};
++static const unsigned int sdhi2_wp_pins[] = {
++	/* WP */
++	104,
++};
++static const unsigned int sdhi2_wp_mux[] = {
++	SD2_WP_MARK,
++};
++
++static const unsigned int sdhi3_data1_pins[] = {
++	/* D0 */
++	50,
++};
++static const unsigned int sdhi3_data1_mux[] = {
++	SD3_DAT0_MARK,
++};
++static const unsigned int sdhi3_data4_pins[] = {
++	/* D[0:3] */
++	50, 51, 52, 53,
++};
++static const unsigned int sdhi3_data4_mux[] = {
++	SD3_DAT0_MARK, SD3_DAT1_MARK, SD3_DAT2_MARK, SD3_DAT3_MARK,
++};
++static const unsigned int sdhi3_ctrl_pins[] = {
++	/* CMD, CLK */
++	35, 34,
++};
++static const unsigned int sdhi3_ctrl_mux[] = {
++	SD3_CMD_MARK, SD3_CLK_MARK,
++};
++static const unsigned int sdhi3_cd_pins[] = {
++	/* CD */
++	62,
++};
++static const unsigned int sdhi3_cd_mux[] = {
++	SD3_CD_MARK,
++};
++static const unsigned int sdhi3_wp_pins[] = {
++	/* WP */
++	64,
++};
++static const unsigned int sdhi3_wp_mux[] = {
++	SD3_WP_MARK,
++};
++
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(du0_rgb666),
+ 	SH_PFC_PIN_GROUP(du0_rgb888),
+@@ -1591,6 +1795,34 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(du1_sync_1),
+ 	SH_PFC_PIN_GROUP(du1_oddf),
+ 	SH_PFC_PIN_GROUP(du1_cde),
++	SH_PFC_PIN_GROUP(mmc0_data1),
++	SH_PFC_PIN_GROUP(mmc0_data4),
++	SH_PFC_PIN_GROUP(mmc0_data8),
++	SH_PFC_PIN_GROUP(mmc0_ctrl),
++	SH_PFC_PIN_GROUP(mmc1_data1),
++	SH_PFC_PIN_GROUP(mmc1_data4),
++	SH_PFC_PIN_GROUP(mmc1_data8),
++	SH_PFC_PIN_GROUP(mmc1_ctrl),
++	SH_PFC_PIN_GROUP(sdhi0_data1),
++	SH_PFC_PIN_GROUP(sdhi0_data4),
++	SH_PFC_PIN_GROUP(sdhi0_ctrl),
++	SH_PFC_PIN_GROUP(sdhi0_cd),
++	SH_PFC_PIN_GROUP(sdhi0_wp),
++	SH_PFC_PIN_GROUP(sdhi1_data1),
++	SH_PFC_PIN_GROUP(sdhi1_data4),
++	SH_PFC_PIN_GROUP(sdhi1_ctrl),
++	SH_PFC_PIN_GROUP(sdhi1_cd),
++	SH_PFC_PIN_GROUP(sdhi1_wp),
++	SH_PFC_PIN_GROUP(sdhi2_data1),
++	SH_PFC_PIN_GROUP(sdhi2_data4),
++	SH_PFC_PIN_GROUP(sdhi2_ctrl),
++	SH_PFC_PIN_GROUP(sdhi2_cd),
++	SH_PFC_PIN_GROUP(sdhi2_wp),
++	SH_PFC_PIN_GROUP(sdhi3_data1),
++	SH_PFC_PIN_GROUP(sdhi3_data4),
++	SH_PFC_PIN_GROUP(sdhi3_ctrl),
++	SH_PFC_PIN_GROUP(sdhi3_cd),
++	SH_PFC_PIN_GROUP(sdhi3_wp),
+ };
+ 
+ static const char * const du0_groups[] = {
+@@ -1614,9 +1846,61 @@ static const char * const du1_groups[] = {
+ 	"du1_cde",
+ };
+ 
++static const char * const mmc0_groups[] = {
++	"mmc0_data1",
++	"mmc0_data4",
++	"mmc0_data8",
++	"mmc0_ctrl",
++};
++
++static const char * const mmc1_groups[] = {
++	"mmc1_data1",
++	"mmc1_data4",
++	"mmc1_data8",
++	"mmc1_ctrl",
++};
++
++static const char * const sdhi0_groups[] = {
++	"sdhi0_data1",
++	"sdhi0_data4",
++	"sdhi0_ctrl",
++	"sdhi0_cd",
++	"sdhi0_wp",
++};
++
++static const char * const sdhi1_groups[] = {
++	"sdhi1_data1",
++	"sdhi1_data4",
++	"sdhi1_ctrl",
++	"sdhi1_cd",
++	"sdhi1_wp",
++};
++
++static const char * const sdhi2_groups[] = {
++	"sdhi2_data1",
++	"sdhi2_data4",
++	"sdhi2_ctrl",
++	"sdhi2_cd",
++	"sdhi2_wp",
++};
++
++static const char * const sdhi3_groups[] = {
++	"sdhi3_data1",
++	"sdhi3_data4",
++	"sdhi3_ctrl",
++	"sdhi3_cd",
++	"sdhi3_wp",
++};
++
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(du0),
+ 	SH_PFC_FUNCTION(du1),
++	SH_PFC_FUNCTION(mmc0),
++	SH_PFC_FUNCTION(mmc1),
++	SH_PFC_FUNCTION(sdhi0),
++	SH_PFC_FUNCTION(sdhi1),
++	SH_PFC_FUNCTION(sdhi2),
++	SH_PFC_FUNCTION(sdhi3),
+ };
+ 
+ #define PINMUX_FN_BASE	ARRAY_SIZE(pinmux_pins)
 -- 
-1.7.10.4
+1.8.1.5
 
