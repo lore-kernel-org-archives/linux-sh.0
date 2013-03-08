@@ -1,114 +1,39 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 06 Mar 2013 13:46:43 +0000
-Subject: [PATCH v2 04/39] sh-pfc: sh73a0: Add I2C2 and I2C3 pin groups and functions
-Message-Id: <1362577638-15493-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Fri, 08 Mar 2013 11:29:40 +0000
+Subject: [PATCH v2 6/7] ARM: shmobile: r8a7740: Add DT name to clock list for CMT10
+Message-Id: <1362742181-19111-7-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1362742181-19111-1-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1362742181-19111-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This adds temporarily the alternative device name to the clock list
+that is used when booting via Device Tree setup.
+
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 64 +++++++++++++++++++++++++++++++++++++
- 1 file changed, 64 insertions(+)
+v2: new
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index 09c2501..2dc58e2 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -1550,6 +1550,50 @@ static struct pinmux_range pinmux_ranges[] = {
- 	{.begin = 288, .end = 309,},
- };
+I can rebase this on topic/intc-of if wanted.
+
+ arch/arm/mach-shmobile/clock-r8a7740.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index 1feb9a2..b0b5d3c 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -616,6 +616,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6cc0000.sci",		&mstp_clks[MSTP230]),
  
-+static const unsigned int i2c2_0_pins[] = {
-+	/* SCL, SDA */
-+	237, 236,
-+};
-+static const unsigned int i2c2_0_mux[] = {
-+	PORT237_I2C_SCL2_MARK, PORT236_I2C_SDA2_MARK,
-+};
-+static const unsigned int i2c2_1_pins[] = {
-+	/* SCL, SDA */
-+	27, 28,
-+};
-+static const unsigned int i2c2_1_mux[] = {
-+	PORT27_I2C_SCL2_MARK, PORT28_I2C_SDA2_MARK,
-+};
-+static const unsigned int i2c2_2_pins[] = {
-+	/* SCL, SDA */
-+	115, 116,
-+};
-+static const unsigned int i2c2_2_mux[] = {
-+	PORT115_I2C_SCL2_MARK, PORT116_I2C_SDA2_MARK,
-+};
-+
-+static const unsigned int i2c3_0_pins[] = {
-+	/* SCL, SDA */
-+	248, 249,
-+};
-+static const unsigned int i2c3_0_mux[] = {
-+	PORT248_I2C_SCL3_MARK, PORT249_I2C_SDA3_MARK,
-+};
-+static const unsigned int i2c3_1_pins[] = {
-+	/* SCL, SDA */
-+	27, 28,
-+};
-+static const unsigned int i2c3_1_mux[] = {
-+	PORT27_I2C_SCL3_MARK, PORT28_I2C_SDA3_MARK,
-+};
-+static const unsigned int i2c3_2_pins[] = {
-+	/* SCL, SDA */
-+	115, 116,
-+};
-+static const unsigned int i2c3_2_mux[] = {
-+	PORT115_I2C_SCL3_MARK, PORT116_I2C_SDA3_MARK,
-+};
-+
- static const unsigned int lcd_data8_pins[] = {
- 	/* D[0:7] */
- 	192, 193, 194, 195, 196, 197, 198, 199,
-@@ -1993,6 +2037,12 @@ static const unsigned int scifb_ctrl_1_mux[] = {
- };
- 
- static const struct sh_pfc_pin_group pinmux_groups[] = {
-+	SH_PFC_PIN_GROUP(i2c2_0),
-+	SH_PFC_PIN_GROUP(i2c2_1),
-+	SH_PFC_PIN_GROUP(i2c2_2),
-+	SH_PFC_PIN_GROUP(i2c3_0),
-+	SH_PFC_PIN_GROUP(i2c3_1),
-+	SH_PFC_PIN_GROUP(i2c3_2),
- 	SH_PFC_PIN_GROUP(lcd_data8),
- 	SH_PFC_PIN_GROUP(lcd_data9),
- 	SH_PFC_PIN_GROUP(lcd_data12),
-@@ -2049,6 +2099,18 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(scifb_ctrl_1),
- };
- 
-+static const char * const i2c2_groups[] = {
-+	"i2c2_0",
-+	"i2c2_1",
-+	"i2c2_2",
-+};
-+
-+static const char * const i2c3_groups[] = {
-+	"i2c3_0",
-+	"i2c3_1",
-+	"i2c3_2",
-+};
-+
- static const char * const lcd_groups[] = {
- 	"lcd_data8",
- 	"lcd_data9",
-@@ -2137,6 +2199,8 @@ static const char * const scifb_groups[] = {
- };
- 
- static const struct sh_pfc_function pinmux_functions[] = {
-+	SH_PFC_FUNCTION(i2c2),
-+	SH_PFC_FUNCTION(i2c3),
- 	SH_PFC_FUNCTION(lcd),
- 	SH_PFC_FUNCTION(lcd2),
- 	SH_PFC_FUNCTION(scifa0),
+ 	CLKDEV_DEV_ID("sh_cmt.10",		&mstp_clks[MSTP329]),
++	CLKDEV_DEV_ID("e6138010.timer",		&mstp_clks[MSTP329]),
+ 	CLKDEV_DEV_ID("sh_fsi2",		&mstp_clks[MSTP328]),
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.1",	&mstp_clks[MSTP323]),
+ 	CLKDEV_DEV_ID("renesas_usbhs",		&mstp_clks[MSTP320]),
 -- 
-1.8.1.5
+1.7.9.5
 
