@@ -1,83 +1,56 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 26 Mar 2013 06:08:52 +0000
-Subject: [PATCH 2/2 v2] thermal: rcar: add pm_runtime_xxx() support
-Message-Id: <87obe6itfy.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 08 Mar 2013 11:02:07 +0000
+Subject: [PATCH v3 47/64] sh-pfc: r8a7779: Remove USB function GPIOS
+Message-Id: <1362740544-19164-48-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87620gqbbe.wl%kuninori.morimoto.gx@renesas.com>
-	<874ng0qb9f.wl%kuninori.morimoto.gx@renesas.com>
-	<1364200856.2465.48.camel@rzhang1-mobl4>
-	<871ub3j9r3.wl%kuninori.morimoto.gx@renesas.com>
-	<87sj3iiu5m.wl%kuninori.morimoto.gx@renesas.com>
-	<87r4j2itio.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87r4j2itio.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Zhang Rui <rui.zhang@intel.com>
-Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-pm@vger.kernel.org, Linux-SH <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
-Current rcar_thermal() didn't care about own power.
-Without this patch, rcar_thermal doesn't work on APE6 board
+All r8a7779 platforms now use the pinctrl API to control the USB pins,
+the corresponding function GPIOS are unused. Remove them.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v1 -> v2
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
- - fixup pm_runtime_xxx() timing
- - fixup compile error
-
- drivers/thermal/rcar_thermal.c |   11 +++++++++++
- 1 file changed, 11 insertions(+)
-
-diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
-index c199623..0f0f951 100644
---- a/drivers/thermal/rcar_thermal.c
-+++ b/drivers/thermal/rcar_thermal.c
-@@ -24,6 +24,7 @@
- #include <linux/io.h>
- #include <linux/module.h>
- #include <linux/platform_device.h>
-+#include <linux/pm_runtime.h>
- #include <linux/reboot.h>
- #include <linux/slab.h>
- #include <linux/spinlock.h>
-@@ -377,6 +378,9 @@ static int rcar_thermal_probe(struct platform_device *pdev)
- 	spin_lock_init(&common->lock);
- 	common->dev = dev;
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+index 8feceb5..085256c 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+@@ -2699,7 +2699,7 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(A19),
  
-+	pm_runtime_enable(dev);
-+	pm_runtime_get_sync(dev);
-+
- 	irq = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
- 	if (irq) {
- 		int ret;
-@@ -468,12 +472,16 @@ error_unregister:
- 			rcar_thermal_irq_disable(priv);
- 	}
+ 	/* IPSR0 */
+-	GPIO_FN(USB_PENC2), GPIO_FN(PWM1), GPIO_FN(PWMFSW0),
++	GPIO_FN(PWM1), GPIO_FN(PWMFSW0),
+ 	GPIO_FN(SCIF_CLK), GPIO_FN(TCLK0_C), GPIO_FN(BS),
+ 	GPIO_FN(FD2), GPIO_FN(ATADIR0), GPIO_FN(SDSELF),
+ 	GPIO_FN(HCTS1), GPIO_FN(A0),
+@@ -2824,7 +2824,7 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(VI1_FIELD),
+ 	GPIO_FN(VI3_FIELD), GPIO_FN(AUDIO_CLKOUT),
+ 	GPIO_FN(GPS_CLK_C), GPIO_FN(GPS_CLK_D), GPIO_FN(AUDIO_CLKA),
+-	GPIO_FN(CAN_TXCLK), GPIO_FN(AUDIO_CLKB), GPIO_FN(USB_OVC2),
++	GPIO_FN(CAN_TXCLK), GPIO_FN(AUDIO_CLKB),
+ 	GPIO_FN(CAN_DEBUGOUT0), GPIO_FN(MOUT0),
  
-+	pm_runtime_put_sync(dev);
-+	pm_runtime_disable(dev);
-+
- 	return ret;
- }
+ 	/* IPSR6 */
+@@ -2865,10 +2865,10 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(DACK2),
  
- static int rcar_thermal_remove(struct platform_device *pdev)
- {
- 	struct rcar_thermal_common *common = platform_get_drvdata(pdev);
-+	struct device *dev = &pdev->dev;
- 	struct rcar_thermal_priv *priv;
- 
- 	rcar_thermal_for_each_priv(priv, common) {
-@@ -484,6 +492,9 @@ static int rcar_thermal_remove(struct platform_device *pdev)
- 
- 	platform_set_drvdata(pdev, NULL);
- 
-+	pm_runtime_put_sync(dev);
-+	pm_runtime_disable(dev);
-+
- 	return 0;
- }
- 
+ 	/* IPSR8 */
+-	GPIO_FN(USB_OVC0), GPIO_FN(AD_CLK),
++	GPIO_FN(AD_CLK),
+ 	GPIO_FN(CC5_STATE4), GPIO_FN(CC5_STATE12), GPIO_FN(CC5_STATE20),
+ 	GPIO_FN(CC5_STATE28), GPIO_FN(CC5_STATE36),
+-	GPIO_FN(USB_OVC1), GPIO_FN(AD_DI),
++	GPIO_FN(AD_DI),
+ 	GPIO_FN(CC5_STATE5), GPIO_FN(CC5_STATE13), GPIO_FN(CC5_STATE21),
+ 	GPIO_FN(CC5_STATE29), GPIO_FN(CC5_STATE37),
+ 	GPIO_FN(CAN_DEBUG_HW_TRIGGER), GPIO_FN(AD_DO),
 -- 
-1.7.9.5
+1.8.1.5
 
