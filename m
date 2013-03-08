@@ -1,74 +1,184 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 11:02:15 +0000
-Subject: [PATCH v3 55/64] ARM: shmobile: r8a7740: Remove LCD0 and LCD1 function GPIOs
-Message-Id: <1362740544-19164-56-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 08 Mar 2013 10:56:07 +0000
+Subject: [PATCH v4 26/29] ARM: shmobile: armadillo: Replace GPIO_PORTx enum with GPIO port numbers
+Message-Id: <1362740170-19073-27-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
+The PFC GPIO API implementation moved to using port numbers. Replace all
+GPIO_PORTx enum usage with the corresponding port number. The GPIO_PORTx
+enum values are identical to the port number on this platform.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7740.h | 39 ---------------------------
- 1 file changed, 39 deletions(-)
+ arch/arm/mach-shmobile/board-armadillo800eva.c | 58 +++++++++++++-------------
+ 1 file changed, 29 insertions(+), 29 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index 59d252f..0c417da 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -241,48 +241,9 @@ enum {
+diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
+index f2ec077..92d7991 100644
+--- a/arch/arm/mach-shmobile/board-armadillo800eva.c
++++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
+@@ -227,7 +227,7 @@ static void usbhsf_power_ctrl(struct platform_device *pdev,
  
- 	/* LCD0 */
- 	GPIO_FN_LCDC0_SELECT,
--	GPIO_FN_LCD0_D0,	GPIO_FN_LCD0_D1,	GPIO_FN_LCD0_D2,
--	GPIO_FN_LCD0_D3,	GPIO_FN_LCD0_D4,	GPIO_FN_LCD0_D5,
--	GPIO_FN_LCD0_D6,	GPIO_FN_LCD0_D7,	GPIO_FN_LCD0_D8,
--	GPIO_FN_LCD0_D9,	GPIO_FN_LCD0_D10,	GPIO_FN_LCD0_D11,
--	GPIO_FN_LCD0_D12,	GPIO_FN_LCD0_D13,	GPIO_FN_LCD0_D14,
--	GPIO_FN_LCD0_D15,	GPIO_FN_LCD0_D16,	GPIO_FN_LCD0_D17,
--	GPIO_FN_LCD0_DON,	GPIO_FN_LCD0_VCPWC,	GPIO_FN_LCD0_VEPWC,
--
--	GPIO_FN_LCD0_DCK,	GPIO_FN_LCD0_VSYN, /* for RGB */
--	GPIO_FN_LCD0_HSYN,	GPIO_FN_LCD0_DISP, /* for RGB */
--
--	GPIO_FN_LCD0_WR,	GPIO_FN_LCD0_RD, /* for SYS */
--	GPIO_FN_LCD0_CS,	GPIO_FN_LCD0_RS, /* for SYS */
--
--	GPIO_FN_LCD0_D18_PORT163,	GPIO_FN_LCD0_D19_PORT162,
--	GPIO_FN_LCD0_D20_PORT161,	GPIO_FN_LCD0_D21_PORT158,
--	GPIO_FN_LCD0_D22_PORT160,	GPIO_FN_LCD0_D23_PORT159,
--	GPIO_FN_LCD0_LCLK_PORT165,	 /* MSEL5CR_6_1 */
--
--	GPIO_FN_LCD0_D18_PORT40,	GPIO_FN_LCD0_D19_PORT4,
--	GPIO_FN_LCD0_D20_PORT3,		GPIO_FN_LCD0_D21_PORT2,
--	GPIO_FN_LCD0_D22_PORT0,		GPIO_FN_LCD0_D23_PORT1,
--	GPIO_FN_LCD0_LCLK_PORT102,	/* MSEL5CR_6_0 */
+ static int usbhsf_get_vbus(struct platform_device *pdev)
+ {
+-	return gpio_get_value(GPIO_PORT209);
++	return gpio_get_value(209);
+ }
  
- 	/* LCD1 */
- 	GPIO_FN_LCDC1_SELECT,
--	GPIO_FN_LCD1_D0,	GPIO_FN_LCD1_D1,	GPIO_FN_LCD1_D2,
--	GPIO_FN_LCD1_D3,	GPIO_FN_LCD1_D4,	GPIO_FN_LCD1_D5,
--	GPIO_FN_LCD1_D6,	GPIO_FN_LCD1_D7,	GPIO_FN_LCD1_D8,
--	GPIO_FN_LCD1_D9,	GPIO_FN_LCD1_D10,	GPIO_FN_LCD1_D11,
--	GPIO_FN_LCD1_D12,	GPIO_FN_LCD1_D13,	GPIO_FN_LCD1_D14,
--	GPIO_FN_LCD1_D15,	GPIO_FN_LCD1_D16,	GPIO_FN_LCD1_D17,
--	GPIO_FN_LCD1_D18,	GPIO_FN_LCD1_D19,	GPIO_FN_LCD1_D20,
--	GPIO_FN_LCD1_D21,	GPIO_FN_LCD1_D22,	GPIO_FN_LCD1_D23,
--	GPIO_FN_LCD1_DON,	GPIO_FN_LCD1_VCPWC,
--	GPIO_FN_LCD1_LCLK,	GPIO_FN_LCD1_VEPWC,
--
--	GPIO_FN_LCD1_DCK,	GPIO_FN_LCD1_VSYN, /* for RGB */
--	GPIO_FN_LCD1_HSYN,	GPIO_FN_LCD1_DISP, /* for RGB */
--
--	GPIO_FN_LCD1_WR,	GPIO_FN_LCD1_RD, /* for SYS */
--	GPIO_FN_LCD1_CS,	GPIO_FN_LCD1_RS, /* for SYS */
+ static irqreturn_t usbhsf_interrupt(int irq, void *data)
+@@ -535,10 +535,10 @@ static struct platform_device hdmi_lcdc_device = {
+ 	{ .code = c, .gpio = g, .desc = d, .active_low = 1, __VA_ARGS__ }
  
- 	/* RSPI */
- 	GPIO_FN_RSPI_SSL0_A,	GPIO_FN_RSPI_SSL1_A,
+ static struct gpio_keys_button gpio_buttons[] = {
+-	GPIO_KEY(KEY_POWER,	GPIO_PORT99,	"SW3", .wakeup = 1),
+-	GPIO_KEY(KEY_BACK,	GPIO_PORT100,	"SW4"),
+-	GPIO_KEY(KEY_MENU,	GPIO_PORT97,	"SW5"),
+-	GPIO_KEY(KEY_HOME,	GPIO_PORT98,	"SW6"),
++	GPIO_KEY(KEY_POWER,	99,	"SW3", .wakeup = 1),
++	GPIO_KEY(KEY_BACK,	100,	"SW4"),
++	GPIO_KEY(KEY_MENU,	97,	"SW5"),
++	GPIO_KEY(KEY_HOME,	98,	"SW6"),
+ };
+ 
+ static struct gpio_keys_platform_data gpio_key_info = {
+@@ -708,9 +708,9 @@ static int mt9t111_power(struct device *dev, int mode)
+ 		/* video1 (= CON1 camera) expect 24MHz */
+ 		clk_set_rate(mclk, clk_round_rate(mclk, 24000000));
+ 		clk_enable(mclk);
+-		gpio_set_value(GPIO_PORT158, 1);
++		gpio_set_value(158, 1);
+ 	} else {
+-		gpio_set_value(GPIO_PORT158, 0);
++		gpio_set_value(158, 0);
+ 		clk_disable(mclk);
+ 	}
+ 
+@@ -864,8 +864,8 @@ static struct platform_device fsi_hdmi_device = {
+ 
+ /* RTC: RTC connects i2c-gpio. */
+ static struct i2c_gpio_platform_data i2c_gpio_data = {
+-	.sda_pin	= GPIO_PORT208,
+-	.scl_pin	= GPIO_PORT91,
++	.sda_pin	= 208,
++	.scl_pin	= 91,
+ 	.udelay		= 5, /* 100 kHz */
+ };
+ 
+@@ -1000,12 +1000,12 @@ static void __init eva_init(void)
+ 	gpio_request(GPIO_FN_LCD0_DISP,		NULL);
+ 	gpio_request(GPIO_FN_LCD0_LCLK_PORT165,	NULL);
+ 
+-	gpio_request_one(GPIO_PORT61, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
+-	gpio_request_one(GPIO_PORT202, GPIOF_OUT_INIT_LOW, NULL); /* LCD0_LED_CONT */
++	gpio_request_one(61, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
++	gpio_request_one(202, GPIOF_OUT_INIT_LOW, NULL); /* LCD0_LED_CONT */
+ 
+ 	/* Touchscreen */
+ 	gpio_request(GPIO_FN_IRQ10,	NULL); /* TP_INT */
+-	gpio_request_one(GPIO_PORT166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
++	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
+ 
+ 	/* GETHER */
+ 	gpio_request(GPIO_FN_ET_CRS,		NULL);
+@@ -1028,12 +1028,12 @@ static void __init eva_init(void)
+ 	gpio_request(GPIO_FN_ET_RX_DV,		NULL);
+ 	gpio_request(GPIO_FN_ET_RX_CLK,		NULL);
+ 
+-	gpio_request_one(GPIO_PORT18, GPIOF_OUT_INIT_HIGH, NULL); /* PHY_RST */
++	gpio_request_one(18, GPIOF_OUT_INIT_HIGH, NULL); /* PHY_RST */
+ 
+ 	/* USB */
+-	gpio_request_one(GPIO_PORT159, GPIOF_IN, NULL); /* USB_DEVICE_MODE */
++	gpio_request_one(159, GPIOF_IN, NULL); /* USB_DEVICE_MODE */
+ 
+-	if (gpio_get_value(GPIO_PORT159)) {
++	if (gpio_get_value(159)) {
+ 		/* USB Host */
+ 	} else {
+ 		/* USB Func */
+@@ -1042,10 +1042,10 @@ static void __init eva_init(void)
+ 		 * OTOH, usbhs interrupt needs its value (HI/LOW) to decide
+ 		 * USB connection/disconnection (usbhsf_get_vbus()).
+ 		 * This means we needs to select GPIO_FN_IRQ7_PORT209 first,
+-		 * and select GPIO_PORT209 here
++		 * and select GPIO 209 here
+ 		 */
+ 		gpio_request(GPIO_FN_IRQ7_PORT209, NULL);
+-		gpio_request_one(GPIO_PORT209, GPIOF_IN, NULL);
++		gpio_request_one(209, GPIOF_IN, NULL);
+ 
+ 		platform_device_register(&usbhsf_device);
+ 		usb = &usbhsf_device;
+@@ -1060,9 +1060,9 @@ static void __init eva_init(void)
+ 	gpio_request(GPIO_FN_SDHI0_D3, NULL);
+ 	gpio_request(GPIO_FN_SDHI0_WP, NULL);
+ 
+-	gpio_request_one(GPIO_PORT17, GPIOF_OUT_INIT_LOW, NULL);  /* SDHI0_18/33_B */
+-	gpio_request_one(GPIO_PORT74, GPIOF_OUT_INIT_HIGH, NULL); /* SDHI0_PON */
+-	gpio_request_one(GPIO_PORT75, GPIOF_OUT_INIT_HIGH, NULL); /* SDSLOT1_PON */
++	gpio_request_one(17, GPIOF_OUT_INIT_LOW, NULL);  /* SDHI0_18/33_B */
++	gpio_request_one(74, GPIOF_OUT_INIT_HIGH, NULL); /* SDHI0_PON */
++	gpio_request_one(75, GPIOF_OUT_INIT_HIGH, NULL); /* SDSLOT1_PON */
+ 
+ 	/* we can use GPIO_FN_IRQ31_PORT167 here for SDHI0 CD irq */
+ 
+@@ -1099,10 +1099,10 @@ static void __init eva_init(void)
+ 	gpio_request(GPIO_FN_VIO_CKO,		NULL);
+ 
+ 	/* CON1/CON15 Camera */
+-	gpio_request_one(GPIO_PORT173, GPIOF_OUT_INIT_LOW, NULL);  /* STANDBY */
+-	gpio_request_one(GPIO_PORT172, GPIOF_OUT_INIT_HIGH, NULL); /* RST */
++	gpio_request_one(173, GPIOF_OUT_INIT_LOW, NULL);  /* STANDBY */
++	gpio_request_one(172, GPIOF_OUT_INIT_HIGH, NULL); /* RST */
+ 	/* see mt9t111_power() */
+-	gpio_request_one(GPIO_PORT158, GPIOF_OUT_INIT_LOW, NULL);  /* CAM_PON */
++	gpio_request_one(158, GPIOF_OUT_INIT_LOW, NULL);  /* CAM_PON */
+ 
+ 	/* FSI-WM8978 */
+ 	gpio_request(GPIO_FN_FSIAIBT,		NULL);
+@@ -1111,8 +1111,8 @@ static void __init eva_init(void)
+ 	gpio_request(GPIO_FN_FSIAOSLD,		NULL);
+ 	gpio_request(GPIO_FN_FSIAISLD_PORT5,	NULL);
+ 
+-	gpio_request(GPIO_PORT7, NULL);
+-	gpio_request(GPIO_PORT8, NULL);
++	gpio_request(7, NULL);
++	gpio_request(8, NULL);
+ 	gpio_direction_none(GPIO_PORT7CR); /* FSIAOBT needs no direction */
+ 	gpio_direction_none(GPIO_PORT8CR); /* FSIAOLR needs no direction */
+ 
+@@ -1129,14 +1129,14 @@ static void __init eva_init(void)
+ 	 * DBGMD/LCDC0/FSIA MUX
+ 	 * DBGMD_SELECT_B should be set after setting PFC Function.
+ 	 */
+-	gpio_request_one(GPIO_PORT176, GPIOF_OUT_INIT_HIGH, NULL);
++	gpio_request_one(176, GPIOF_OUT_INIT_HIGH, NULL);
+ 
+ 	/*
+ 	 * We can switch CON8/CON14 by SW1.5,
+ 	 * but it needs after DBGMD_SELECT_B
+ 	 */
+-	gpio_request_one(GPIO_PORT6, GPIOF_IN, NULL);
+-	if (gpio_get_value(GPIO_PORT6)) {
++	gpio_request_one(6, GPIOF_IN, NULL);
++	if (gpio_get_value(6)) {
+ 		/* CON14 enable */
+ 	} else {
+ 		/* CON8 (SDHI1) enable */
+@@ -1150,7 +1150,7 @@ static void __init eva_init(void)
+ 		gpio_request(GPIO_FN_SDHI1_WP,	NULL);
+ 
+ 		/* SDSLOT2_PON */
+-		gpio_request_one(GPIO_PORT16, GPIOF_OUT_INIT_HIGH, NULL);
++		gpio_request_one(16, GPIOF_OUT_INIT_HIGH, NULL);
+ 
+ 		platform_device_register(&sdhi1_device);
+ 	}
 -- 
 1.8.1.5
 
