@@ -1,134 +1,127 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:06:33 +0000
-Subject: [PATCH 097/142] ARM: shmobile: mackerel: Register pinctrl mappings for SDHI and MMCIF
-Message-Id: <1363604838-29359-98-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 08 Mar 2013 11:01:36 +0000
+Subject: [PATCH v3 16/64] sh-pfc: r8a7779: Add INTC pin groups and functions
+Message-Id: <1362740544-19164-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
-
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-Replace the GPIO-based SDHI and MMCIF pinmux configuration by pinctrl
-mappings
+To: linux-sh@vger.kernel.org
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-mackerel.c |   68 ++++++++++++++-----------------
- 1 file changed, 30 insertions(+), 38 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 77 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 77 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index 172d472..336ccb4 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -40,6 +40,7 @@
- #include <linux/mtd/partitions.h>
- #include <linux/mtd/physmap.h>
- #include <linux/mtd/sh_flctl.h>
-+#include <linux/pinctrl/machine.h>
- #include <linux/pm_clock.h>
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/machine.h>
-@@ -1328,6 +1329,33 @@ static struct i2c_board_info i2c1_devices[] = {
- 	},
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+index c55b1ab..df2fd70 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+@@ -1635,6 +1635,63 @@ static const unsigned int hspi2_b_mux[] = {
+ 	HSPI_CLK2_B_MARK, HSPI_CS2_B_MARK, HSPI_RX2_B_MARK, HSPI_TX2_B_MARK,
  };
  
-+static const struct pinctrl_map mackerel_pinctrl_map[] = {
-+	/* MMCIF */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh7372",
-+				  "mmc0_data8_0", "mmc0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh7372",
-+				  "mmc0_ctrl_0", "mmc0"),
-+	/* SDHI0 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
-+				  "sdhi0_data4", "sdhi0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
-+				  "sdhi0_ctrl", "sdhi0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
-+				  "sdhi0_wp", "sdhi0"),
-+	/* SDHI1 */
-+#if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-sh7372",
-+				  "sdhi1_data4", "sdhi1"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-sh7372",
-+				  "sdhi1_ctrl", "sdhi1"),
-+#endif
-+	/* SDHI2 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-sh7372",
-+				  "sdhi2_data4", "sdhi2"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-sh7372",
-+				  "sdhi2_ctrl", "sdhi2"),
++static const unsigned int intc_irq0_pins[] = {
++	/* IRQ */
++	78,
++};
++static const unsigned int intc_irq0_mux[] = {
++	IRQ0_MARK,
++};
++static const unsigned int intc_irq0_b_pins[] = {
++	/* IRQ */
++	141,
++};
++static const unsigned int intc_irq0_b_mux[] = {
++	IRQ0_B_MARK,
++};
++static const unsigned int intc_irq1_pins[] = {
++	/* IRQ */
++	79,
++};
++static const unsigned int intc_irq1_mux[] = {
++	IRQ1_MARK,
++};
++static const unsigned int intc_irq1_b_pins[] = {
++	/* IRQ */
++	142,
++};
++static const unsigned int intc_irq1_b_mux[] = {
++	IRQ1_B_MARK,
++};
++static const unsigned int intc_irq2_pins[] = {
++	/* IRQ */
++	88,
++};
++static const unsigned int intc_irq2_mux[] = {
++	IRQ2_MARK,
++};
++static const unsigned int intc_irq2_b_pins[] = {
++	/* IRQ */
++	143,
++};
++static const unsigned int intc_irq2_b_mux[] = {
++	IRQ2_B_MARK,
++};
++static const unsigned int intc_irq3_pins[] = {
++	/* IRQ */
++	89,
++};
++static const unsigned int intc_irq3_mux[] = {
++	IRQ3_MARK,
++};
++static const unsigned int intc_irq3_b_pins[] = {
++	/* IRQ */
++	144,
++};
++static const unsigned int intc_irq3_b_mux[] = {
++	IRQ3_B_MARK,
 +};
 +
- #define GPIO_PORT9CR	IOMEM(0xE6051009)
- #define GPIO_PORT10CR	IOMEM(0xE605100A)
- #define GPIO_PORT167CR	IOMEM(0xE60520A7)
-@@ -1364,6 +1392,8 @@ static void __init mackerel_init(void)
- 	/* External clock source */
- 	clk_set_rate(&sh7372_dv_clki_clk, 27000000);
+ static const unsigned int lbsc_cs0_pins[] = {
+ 	/* CS */
+ 	13,
+@@ -2325,6 +2382,14 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(hspi1_d),
+ 	SH_PFC_PIN_GROUP(hspi2),
+ 	SH_PFC_PIN_GROUP(hspi2_b),
++	SH_PFC_PIN_GROUP(intc_irq0),
++	SH_PFC_PIN_GROUP(intc_irq0_b),
++	SH_PFC_PIN_GROUP(intc_irq1),
++	SH_PFC_PIN_GROUP(intc_irq1_b),
++	SH_PFC_PIN_GROUP(intc_irq2),
++	SH_PFC_PIN_GROUP(intc_irq2_b),
++	SH_PFC_PIN_GROUP(intc_irq3),
++	SH_PFC_PIN_GROUP(intc_irq3_b),
+ 	SH_PFC_PIN_GROUP(lbsc_cs0),
+ 	SH_PFC_PIN_GROUP(lbsc_cs1),
+ 	SH_PFC_PIN_GROUP(lbsc_ex_cs0),
+@@ -2454,6 +2519,17 @@ static const char * const hspi2_groups[] = {
+ 	"hspi2_b",
+ };
  
-+	pinctrl_register_mappings(mackerel_pinctrl_map,
-+				  ARRAY_SIZE(mackerel_pinctrl_map));
- 	sh7372_pinmux_init();
- 
- 	/* enable SCIFA0 */
-@@ -1453,53 +1483,15 @@ static void __init mackerel_init(void)
- 	gpio_request(GPIO_FN_IRQ21,	NULL);
- 	irq_set_irq_type(IRQ21, IRQ_TYPE_LEVEL_HIGH);
- 
--	/* enable SDHI0 */
--	gpio_request(GPIO_FN_SDHIWP0, NULL);
--	gpio_request(GPIO_FN_SDHICMD0, NULL);
--	gpio_request(GPIO_FN_SDHICLK0, NULL);
--	gpio_request(GPIO_FN_SDHID0_3, NULL);
--	gpio_request(GPIO_FN_SDHID0_2, NULL);
--	gpio_request(GPIO_FN_SDHID0_1, NULL);
--	gpio_request(GPIO_FN_SDHID0_0, NULL);
--
- 	/* SDHI0 PORT172 card-detect IRQ26 */
- 	gpio_request(GPIO_FN_IRQ26_172, NULL);
- 
--#if !defined(CONFIG_MMC_SH_MMCIF) && !defined(CONFIG_MMC_SH_MMCIF_MODULE)
--	/* enable SDHI1 */
--	gpio_request(GPIO_FN_SDHICMD1, NULL);
--	gpio_request(GPIO_FN_SDHICLK1, NULL);
--	gpio_request(GPIO_FN_SDHID1_3, NULL);
--	gpio_request(GPIO_FN_SDHID1_2, NULL);
--	gpio_request(GPIO_FN_SDHID1_1, NULL);
--	gpio_request(GPIO_FN_SDHID1_0, NULL);
--#endif
- 	/* card detect pin for MMC slot (CN7) */
- 	gpio_request_one(41, GPIOF_IN, NULL);
- 
--	/* enable SDHI2 */
--	gpio_request(GPIO_FN_SDHICMD2, NULL);
--	gpio_request(GPIO_FN_SDHICLK2, NULL);
--	gpio_request(GPIO_FN_SDHID2_3, NULL);
--	gpio_request(GPIO_FN_SDHID2_2, NULL);
--	gpio_request(GPIO_FN_SDHID2_1, NULL);
--	gpio_request(GPIO_FN_SDHID2_0, NULL);
--
- 	/* card detect pin for microSD slot (CN23) */
- 	gpio_request_one(162, GPIOF_IN, NULL);
- 
--	/* MMCIF */
--	gpio_request(GPIO_FN_MMCD0_0, NULL);
--	gpio_request(GPIO_FN_MMCD0_1, NULL);
--	gpio_request(GPIO_FN_MMCD0_2, NULL);
--	gpio_request(GPIO_FN_MMCD0_3, NULL);
--	gpio_request(GPIO_FN_MMCD0_4, NULL);
--	gpio_request(GPIO_FN_MMCD0_5, NULL);
--	gpio_request(GPIO_FN_MMCD0_6, NULL);
--	gpio_request(GPIO_FN_MMCD0_7, NULL);
--	gpio_request(GPIO_FN_MMCCMD0, NULL);
--	gpio_request(GPIO_FN_MMCCLK0, NULL);
--
- 	/* FLCTL */
- 	gpio_request(GPIO_FN_D0_NAF0, NULL);
- 	gpio_request(GPIO_FN_D1_NAF1, NULL);
++static const char * const intc_groups[] = {
++	"intc_irq0",
++	"intc_irq0_b",
++	"intc_irq1",
++	"intc_irq1_b",
++	"intc_irq2",
++	"intc_irq2_b",
++	"intc_irq3",
++	"intc_irq4_b",
++};
++
+ static const char * const lbsc_groups[] = {
+ 	"lbsc_cs0",
+ 	"lbsc_cs1",
+@@ -2598,6 +2674,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(hspi0),
+ 	SH_PFC_FUNCTION(hspi1),
+ 	SH_PFC_FUNCTION(hspi2),
++	SH_PFC_FUNCTION(intc),
+ 	SH_PFC_FUNCTION(lbsc),
+ 	SH_PFC_FUNCTION(mmc0),
+ 	SH_PFC_FUNCTION(mmc1),
 -- 
-1.7.10.4
+1.8.1.5
 
