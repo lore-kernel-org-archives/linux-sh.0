@@ -1,46 +1,96 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 11:01:52 +0000
-Subject: [PATCH v3 32/64] ARM: shmobile: marzen: Register pinctrl mappings for HSPI
-Message-Id: <1362740544-19164-33-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 08 Mar 2013 11:01:44 +0000
+Subject: [PATCH v3 24/64] ARM: shmobile: kota2: Register pinctrl mappings for SCIF
+Message-Id: <1362740544-19164-25-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Replace the GPIO-based HSPI pinmux configuration by pinctrl mappings.
+Replace the GPIO-based SCIF pinmux configuration by pinctrl mappings.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-marzen.c | 8 ++------
- 1 file changed, 2 insertions(+), 6 deletions(-)
+ arch/arm/mach-shmobile/board-kota2.c | 42 ++++++++++++++++++++----------------
+ 1 file changed, 23 insertions(+), 19 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index fd313a8..7fa865f 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -329,6 +329,8 @@ void __init marzen_init_late(void)
- }
+diff --git a/arch/arm/mach-shmobile/board-kota2.c b/arch/arm/mach-shmobile/board-kota2.c
+index b6f0515..09c4f00 100644
+--- a/arch/arm/mach-shmobile/board-kota2.c
++++ b/arch/arm/mach-shmobile/board-kota2.c
+@@ -24,6 +24,7 @@
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+ #include <linux/irq.h>
++#include <linux/pinctrl/machine.h>
+ #include <linux/platform_device.h>
+ #include <linux/delay.h>
+ #include <linux/io.h>
+@@ -433,6 +434,26 @@ static struct platform_device *kota2_devices[] __initdata = {
+ 	&sdhi1_device,
+ };
  
- static const struct pinctrl_map marzen_pinctrl_map[] = {
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-hspi.0", "pfc-r8a7779",
-+				  "hspi0", "hspi0"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-r8a7779",
- 				  "scif2_data_c", "scif2"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-r8a7779",
-@@ -358,12 +360,6 @@ static void __init marzen_init(void)
- 	gpio_request(GPIO_FN_EX_CS0, NULL); /* nCS */
- 	gpio_request(GPIO_FN_IRQ1_B, NULL); /* IRQ + PME */
++static const struct pinctrl_map kota2_pinctrl_map[] = {
++	/* SCIFA2 (UART2) */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-sh73a0",
++				  "scifa2_data_0", "scifa2"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-sh73a0",
++				  "scifa2_ctrl_0", "scifa2"),
++	/* SCIFA4 (UART1) */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
++				  "scifa4_data", "scifa4"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
++				  "scifa4_ctrl", "scifa4"),
++	/* SCIFB (BT) */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.8", "pfc-sh73a0",
++				  "scifb_data_0", "scifb"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.8", "pfc-sh73a0",
++				  "scifb_clk_0", "scifb"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.8", "pfc-sh73a0",
++				  "scifb_ctrl_0", "scifb"),
++};
++
+ static void __init kota2_init(void)
+ {
+ 	regulator_register_always_on(0, "fixed-1.8V", fixed1v8_power_consumers,
+@@ -441,20 +462,10 @@ static void __init kota2_init(void)
+ 				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
+ 	regulator_register_fixed(2, dummy_supplies, ARRAY_SIZE(dummy_supplies));
  
--	/* HSPI 0 */
--	gpio_request(GPIO_FN_HSPI_CLK0,	NULL);
--	gpio_request(GPIO_FN_HSPI_CS0,	NULL);
--	gpio_request(GPIO_FN_HSPI_TX0,	NULL);
--	gpio_request(GPIO_FN_HSPI_RX0,	NULL);
++	pinctrl_register_mappings(kota2_pinctrl_map,
++				  ARRAY_SIZE(kota2_pinctrl_map));
+ 	sh73a0_pinmux_init();
+ 
+-	/* SCIFA2 (UART2) */
+-	gpio_request(GPIO_FN_SCIFA2_TXD1, NULL);
+-	gpio_request(GPIO_FN_SCIFA2_RXD1, NULL);
+-	gpio_request(GPIO_FN_SCIFA2_RTS1_, NULL);
+-	gpio_request(GPIO_FN_SCIFA2_CTS1_, NULL);
 -
- 	/* USB (CN21) */
- 	gpio_request(GPIO_FN_USB_OVC0, NULL);
- 	gpio_request(GPIO_FN_USB_OVC1, NULL);
+-	/* SCIFA4 (UART1) */
+-	gpio_request(GPIO_FN_SCIFA4_TXD, NULL);
+-	gpio_request(GPIO_FN_SCIFA4_RXD, NULL);
+-	gpio_request(GPIO_FN_SCIFA4_RTS_, NULL);
+-	gpio_request(GPIO_FN_SCIFA4_CTS_, NULL);
+-
+ 	/* SMSC911X */
+ 	gpio_request(GPIO_FN_D0_NAF0, NULL);
+ 	gpio_request(GPIO_FN_D1_NAF1, NULL);
+@@ -518,13 +529,6 @@ static void __init kota2_init(void)
+ 	gpio_request(GPIO_FN_SDHID0_1_PU, NULL);
+ 	gpio_request(GPIO_FN_SDHID0_0_PU, NULL);
+ 
+-	/* SCIFB (BT) */
+-	gpio_request(GPIO_FN_PORT159_SCIFB_SCK, NULL);
+-	gpio_request(GPIO_FN_PORT160_SCIFB_TXD, NULL);
+-	gpio_request(GPIO_FN_PORT161_SCIFB_CTS_, NULL);
+-	gpio_request(GPIO_FN_PORT162_SCIFB_RXD, NULL);
+-	gpio_request(GPIO_FN_PORT163_SCIFB_RTS_, NULL);
+-
+ 	/* SDHI1 (BCM4330) */
+ 	gpio_request(GPIO_FN_SDHICLK1, NULL);
+ 	gpio_request(GPIO_FN_SDHICMD1_PU, NULL);
 -- 
 1.8.1.5
 
