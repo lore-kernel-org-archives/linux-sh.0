@@ -1,223 +1,129 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Wed, 06 Mar 2013 11:36:46 +0000
-Subject: [PATCH] serial: sh-sci: OF support finishing
-Message-Id: <1362569806-11431-1-git-send-email-hechtb+renesas@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 08 Mar 2013 11:01:35 +0000
+Subject: [PATCH v3 15/64] sh-pfc: r8a7779: Add LBSC pin groups and functions
+Message-Id: <1362740544-19164-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This is the diff between v3 and v6 of the "serial: sh-sci: Add OF
-support" patch. Among other minor changes this includes
+Only the CS pins and functions are currently handled.
 
-- Reworked compatible property
-- Added interrupt-names property
-
-Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
-Acked-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-This is based on git://github.com/pmundt/linux-sh.git branch sh/serial-of.
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 77 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 77 insertions(+)
 
- .../bindings/tty/serial/renesas,sci-serial.txt     |   40 ++++------
- drivers/tty/serial/sh-sci.c                        |   81 ++++++++++++--------
- 2 files changed, 67 insertions(+), 54 deletions(-)
-
-diff --git a/Documentation/devicetree/bindings/tty/serial/renesas,sci-serial.txt b/Documentation/devicetree/bindings/tty/serial/renesas,sci-serial.txt
-index 6ad1adf..d80039e 100644
---- a/Documentation/devicetree/bindings/tty/serial/renesas,sci-serial.txt
-+++ b/Documentation/devicetree/bindings/tty/serial/renesas,sci-serial.txt
-@@ -1,10 +1,18 @@
- * Renesas SH-Mobile Serial Communication Interface
- 
- Required properties:
--- compatible : Should be "renesas,sci-<port type>-uart", where <port type> may be
--  SCI, SCIF, IRDA, SCIFA or SCIFB.
-+- compatible : Should be "renesas,sci-<port type>-uart", where <port type> is
-+  "sci", "scif", "irda", "scifa", "scifb"
-+  or for legacy devices
-+  "sh2_scif_fifodata", "sh3_scif", "sh4_scif", "sh4_scif_no_scsptr",
-+  "sh4_scif_fifodata", "sh7705_scif".
- - reg : Address and length of the register set for the device
--- interrupts : Should contain the following IRQs: ERI, RXI, TXI and BRI.
-+- interrupts : Should contain the following IRQs in this order:
-+	ERI: receive-error interrupt
-+	RXI: receive-FIFO-data-full interrupt
-+	TXI: transmit-FIFO-data-empty interrupt
-+	BRI: break reception interrupt
-+- interrupt-names: The IRQ names "eri", "rxi", "txi" and "bri".
- - cell-index : The device id.
- - renesas,scscr : Should contain a bitfield used by the Serial Control Register.
-   b7 = SCSCR_TIE
-@@ -15,7 +23,7 @@ Required properties:
-   b2 = SCSCR_TOIE
-   b1 = SCSCR_CKE1
-   b0 = SCSCR_CKE0
--- renesas,scbrr-algo-id : Algorithm ID for the Bit Rate Register
-+- renesas,scbrr-algorithm : Choose an algorithm ID for the baud rate generator.
-   1 = SCBRR_ALGO_1 ((clk + 16 * bps) / (16 * bps) - 1)
-   2 = SCBRR_ALGO_2 ((clk + 16 * bps) / (32 * bps) - 1)
-   3 = SCBRR_ALGO_3 (((clk * 2) + 16 * bps) / (16 * bps) - 1)
-@@ -23,31 +31,17 @@ Required properties:
-   5 = SCBRR_ALGO_5 (((clk * 1000 / 32) / bps) - 1)
- 
- Optional properties:
--- renesas,autoconf : Set if device is capable of auto configuration
--- renesas,regtype : Overwrite the register layout. In most cases you can rely
--  on auto-probing (omit this property or set to 0) but some legacy devices
--  use a non-default register layout. Possible layouts are
--  0 = SCIx_PROBE_REGTYPE (default)
--  1 = SCIx_SCI_REGTYPE
--  2 = SCIx_IRDA_REGTYPE
--  3 = SCIx_SCIFA_REGTYPE
--  4 = SCIx_SCIFB_REGTYPE
--  5 = SCIx_SH2_SCIF_FIFODATA_REGTYPE
--  6 = SCIx_SH3_SCIF_REGTYPE
--  7 = SCIx_SH4_SCIF_REGTYPE
--  8 = SCIx_SH4_SCIF_NO_SCSPTR_REGTYPE
--  9 = SCIx_SH4_SCIF_FIFODATA_REGTYPE
-- 10 = SCIx_SH7705_SCIF_REGTYPE
--
-+- renesas,autoconf : Set if device is capable of auto configuration.
- 
- Example:
--	sci@0xe6c50000 {
--		compatible = "renesas,sci-SCIFA-uart";
-+	serial@e6c50000 {
-+		compatible = "renesas,sci-scifa-uart";
- 		interrupt-parent = <&intca>;
- 		reg = <0xe6c50000 0x100>;
- 		interrupts = <0x0c20>, <0x0c20>, <0x0c20>, <0x0c20>;
-+		interrupt-names = "eri", "rxi", "txi", "bri";
- 		cell-index = <1>;
- 		renesas,scscr = <0x30>;
--		renesas,scbrr-algo-id = <4>;
-+		renesas,scbrr-algorithm = <4>;
- 		renesas,autoconf;
- 	};
-diff --git a/drivers/tty/serial/sh-sci.c b/drivers/tty/serial/sh-sci.c
-index e3847cc..f1343d2 100644
---- a/drivers/tty/serial/sh-sci.c
-+++ b/drivers/tty/serial/sh-sci.c
-@@ -2352,18 +2352,29 @@ static int sci_remove(struct platform_device *dev)
- 	return 0;
- }
- 
--#ifdef CONFIG_OF
- static const struct of_device_id of_sci_match[] = {
--	{ .compatible = "renesas,sci-SCI-uart",
--		.data = (void *)PORT_SCI },
--	{ .compatible = "renesas,sci-SCIF-uart",
--		.data = (void *)PORT_SCIF },
--	{ .compatible = "renesas,sci-IRDA-uart",
--		.data = (void *)PORT_IRDA },
--	{ .compatible = "renesas,sci-SCIFA-uart",
--		.data = (void *)PORT_SCIFA },
--	{ .compatible = "renesas,sci-SCIFB-uart",
--		.data = (void *)PORT_SCIFB },
-+	{ .compatible = "renesas,sci-sci-uart",
-+		.data = (void *)SCIx_SCI_REGTYPE },
-+	{ .compatible = "renesas,sci-scif-uart",
-+		.data = (void *)SCIx_SH4_SCIF_REGTYPE, },
-+	{ .compatible = "renesas,sci-irda-uart",
-+		.data = (void *)SCIx_IRDA_REGTYPE },
-+	{ .compatible = "renesas,sci-scifa-uart",
-+		.data = (void *)SCIx_SCIFA_REGTYPE },
-+	{ .compatible = "renesas,sci-scifb-uart",
-+		.data = (void *)SCIx_SCIFB_REGTYPE },
-+	{ .compatible = "renesas,sci-sh2_scif_fifodata-uart",
-+		.data = (void *)SCIx_SH2_SCIF_FIFODATA_REGTYPE },
-+	{ .compatible = "renesas,sci-sh3_scif-uart",
-+		.data = (void *)SCIx_SH3_SCIF_REGTYPE },
-+	{ .compatible = "renesas,sci-sh4_scif-uart",
-+		.data = (void *)SCIx_SH4_SCIF_REGTYPE },
-+	{ .compatible = "renesas,sci-sh4_scif_no_scsptr-uart",
-+		.data = (void *)SCIx_SH4_SCIF_NO_SCSPTR_REGTYPE },
-+	{ .compatible = "renesas,sci-sh4_scif_fifodata-uart",
-+		.data = (void *)SCIx_SH4_SCIF_FIFODATA_REGTYPE },
-+	{ .compatible = "renesas,sci-sh7705_scif-uart",
-+		.data = (void *)SCIx_SH7705_SCIF_REGTYPE },
- 	{},
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+index 150bdf0..c55b1ab 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+@@ -1635,6 +1635,63 @@ static const unsigned int hspi2_b_mux[] = {
+ 	HSPI_CLK2_B_MARK, HSPI_CS2_B_MARK, HSPI_RX2_B_MARK, HSPI_TX2_B_MARK,
  };
- MODULE_DEVICE_TABLE(of, of_sci_match);
-@@ -2378,6 +2389,9 @@ static struct plat_sci_port *sci_parse_dt(struct platform_device *pdev,
- 	const __be32 *prop;
- 	int i, irq, val;
  
-+	if (!IS_ENABLED(CONFIG_OF) || !np)
-+		return NULL;
++static const unsigned int lbsc_cs0_pins[] = {
++	/* CS */
++	13,
++};
++static const unsigned int lbsc_cs0_mux[] = {
++	CS0_MARK,
++};
++static const unsigned int lbsc_cs1_pins[] = {
++	/* CS */
++	14,
++};
++static const unsigned int lbsc_cs1_mux[] = {
++	CS1_A26_MARK,
++};
++static const unsigned int lbsc_ex_cs0_pins[] = {
++	/* CS */
++	15,
++};
++static const unsigned int lbsc_ex_cs0_mux[] = {
++	EX_CS0_MARK,
++};
++static const unsigned int lbsc_ex_cs1_pins[] = {
++	/* CS */
++	16,
++};
++static const unsigned int lbsc_ex_cs1_mux[] = {
++	EX_CS1_MARK,
++};
++static const unsigned int lbsc_ex_cs2_pins[] = {
++	/* CS */
++	17,
++};
++static const unsigned int lbsc_ex_cs2_mux[] = {
++	EX_CS2_MARK,
++};
++static const unsigned int lbsc_ex_cs3_pins[] = {
++	/* CS */
++	18,
++};
++static const unsigned int lbsc_ex_cs3_mux[] = {
++	EX_CS3_MARK,
++};
++static const unsigned int lbsc_ex_cs4_pins[] = {
++	/* CS */
++	19,
++};
++static const unsigned int lbsc_ex_cs4_mux[] = {
++	EX_CS4_MARK,
++};
++static const unsigned int lbsc_ex_cs5_pins[] = {
++	/* CS */
++	20,
++};
++static const unsigned int lbsc_ex_cs5_mux[] = {
++	EX_CS5_MARK,
++};
 +
- 	match = of_match_node(of_sci_match, pdev->dev.of_node);
- 	if (!match || !match->data) {
- 		dev_err(&pdev->dev, "OF match error\n");
-@@ -2420,14 +2434,14 @@ static struct plat_sci_port *sci_parse_dt(struct platform_device *pdev,
- 	}
- 	p->scscr = be32_to_cpup(prop);
+ static const unsigned int scif0_data_pins[] = {
+ 	/* RXD, TXD */
+ 	153, 152,
+@@ -2268,6 +2325,14 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(hspi1_d),
+ 	SH_PFC_PIN_GROUP(hspi2),
+ 	SH_PFC_PIN_GROUP(hspi2_b),
++	SH_PFC_PIN_GROUP(lbsc_cs0),
++	SH_PFC_PIN_GROUP(lbsc_cs1),
++	SH_PFC_PIN_GROUP(lbsc_ex_cs0),
++	SH_PFC_PIN_GROUP(lbsc_ex_cs1),
++	SH_PFC_PIN_GROUP(lbsc_ex_cs2),
++	SH_PFC_PIN_GROUP(lbsc_ex_cs3),
++	SH_PFC_PIN_GROUP(lbsc_ex_cs4),
++	SH_PFC_PIN_GROUP(lbsc_ex_cs5),
+ 	SH_PFC_PIN_GROUP(mmc0_data1),
+ 	SH_PFC_PIN_GROUP(mmc0_data4),
+ 	SH_PFC_PIN_GROUP(mmc0_data8),
+@@ -2389,6 +2454,17 @@ static const char * const hspi2_groups[] = {
+ 	"hspi2_b",
+ };
  
--	prop = of_get_property(np, "renesas,scbrr-algo-id", NULL);
-+	prop = of_get_property(np, "renesas,scbrr-algorithm", NULL);
- 	if (!prop) {
--		dev_err(&pdev->dev, "required DT prop scbrr-algo-id missing\n");
-+		dev_err(&pdev->dev, "required DT prop scbrr-algorithm missing\n");
- 		return NULL;
- 	}
- 	val = be32_to_cpup(prop);
- 	if (val <= SCBRR_ALGO_INVALID || val >= SCBRR_NR_ALGOS) {
--		dev_err(&pdev->dev, "DT prop scbrr-algo-id out of range\n");
-+		dev_err(&pdev->dev, "DT prop clock-algorithm out of range\n");
- 		return NULL;
- 	}
- 	p->scbrr_algo_id = val;
-@@ -2436,27 +2450,32 @@ static struct plat_sci_port *sci_parse_dt(struct platform_device *pdev,
- 	if (of_get_property(np, "renesas,autoconf", NULL))
- 		p->flags |= UPF_BOOT_AUTOCONF;
- 
--	prop = of_get_property(np, "renesas,regtype", NULL);
--	if (prop) {
--		val = be32_to_cpup(prop);
--		if (val < SCIx_PROBE_REGTYPE || val >= SCIx_NR_REGTYPES) {
--			dev_err(&pdev->dev, "DT prop regtype out of range\n");
--			return NULL;
--		}
--		p->regtype = val;
--	}
-+	p->regtype = (unsigned int)match->data;
- 
--	p->type = (unsigned int)match->data;
-+	switch (p->regtype) {
-+	case SCIx_SCI_REGTYPE:
-+		p->type = PORT_SCI;
-+		break;
-+	case SCIx_SH4_SCIF_REGTYPE:
-+		p->type = PORT_SCIF;
-+		break;
-+	case SCIx_IRDA_REGTYPE:
-+		p->type = PORT_IRDA;
-+		break;
-+	case SCIx_SCIFA_REGTYPE:
-+		p->type = PORT_SCIFA;
-+		break;
-+	case SCIx_SCIFB_REGTYPE:
-+		p->type = PORT_SCIFB;
-+		break;
-+	default:
-+		/* legacy register sets default to PORT_SCIF */
-+		p->type = PORT_SCIF;
-+		break;
-+	}
- 
- 	return p;
- }
--#else
--static struct plat_sci_port *sci_parse_dt(struct platform_device *pdev,
--								int *dev_id)
--{
--	return NULL;
--}
--#endif /* CONFIG_OF */
- 
- static int sci_probe_single(struct platform_device *dev,
- 				      unsigned int index,
++static const char * const lbsc_groups[] = {
++	"lbsc_cs0",
++	"lbsc_cs1",
++	"lbsc_ex_cs0",
++	"lbsc_ex_cs1",
++	"lbsc_ex_cs2",
++	"lbsc_ex_cs3",
++	"lbsc_ex_cs4",
++	"lbsc_ex_cs5",
++};
++
+ static const char * const mmc0_groups[] = {
+ 	"mmc0_data1",
+ 	"mmc0_data4",
+@@ -2522,6 +2598,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(hspi0),
+ 	SH_PFC_FUNCTION(hspi1),
+ 	SH_PFC_FUNCTION(hspi2),
++	SH_PFC_FUNCTION(lbsc),
+ 	SH_PFC_FUNCTION(mmc0),
+ 	SH_PFC_FUNCTION(mmc1),
+ 	SH_PFC_FUNCTION(sdhi0),
 -- 
-1.7.9.5
+1.8.1.5
 
