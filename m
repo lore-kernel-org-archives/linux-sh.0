@@ -1,54 +1,144 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Mar 2013 23:00:32 +0000
-Subject: [PATCH v4 87/88] ARM: shmobile: r8a7779: Remove LBSC function GPIOs
-Message-Id: <1363215633-4264-88-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 08 Mar 2013 10:56:09 +0000
+Subject: [PATCH v4 28/29] ARM: shmobile: mackerel: Replace GPIO_PORTx enum with GPIO port numbers
+Message-Id: <1362740170-19073-29-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
+The PFC GPIO API implementation moved to using port numbers. Replace all
+GPIO_PORTx enum usage with the corresponding port number. The GPIO_PORTx
+enum values are identical to the port number on this platform.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7779.h | 14 ++++++--------
- 1 file changed, 6 insertions(+), 8 deletions(-)
+ arch/arm/mach-shmobile/board-mackerel.c | 34 ++++++++++++++++-----------------
+ 1 file changed, 17 insertions(+), 17 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-index e50bf53..688c0d2 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -83,22 +83,20 @@ enum {
- 	GPIO_FN_VI1_R2, GPIO_FN_SSI_WS78_B, GPIO_FN_A25,
- 	GPIO_FN_FD5,
- 	GPIO_FN_VI1_R3, GPIO_FN_SSI_SDATA7_B,
--	GPIO_FN_CLKOUT, GPIO_FN_PWM0_B, GPIO_FN_CS0,
--	GPIO_FN_CS1_A26,
-+	GPIO_FN_CLKOUT, GPIO_FN_PWM0_B,
- 	GPIO_FN_SDSELF_B, GPIO_FN_RD_WR, GPIO_FN_FWE, GPIO_FN_ATAG0,
- 	GPIO_FN_VI1_R7, GPIO_FN_HRTS1,
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index db968a5..172d472 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -363,7 +363,7 @@ static struct fb_videomode mackerel_lcdc_modes[] = {
  
- 	/* IPSR1 */
--	GPIO_FN_EX_CS0,
--	GPIO_FN_FD6, GPIO_FN_EX_CS1, GPIO_FN_FD7,
--	GPIO_FN_EX_CS2, GPIO_FN_FALE,
--	GPIO_FN_ATACS00, GPIO_FN_EX_CS3,
-+	GPIO_FN_FD6, GPIO_FN_FD7,
-+	GPIO_FN_FALE,
-+	GPIO_FN_ATACS00,
- 	GPIO_FN_FRE, GPIO_FN_ATACS10, GPIO_FN_VI1_R4,
- 	GPIO_FN_HSCK1, GPIO_FN_SSI_SDATA8_B,
--	GPIO_FN_SSI_SDATA9, GPIO_FN_EX_CS4,
-+	GPIO_FN_SSI_SDATA9,
- 	GPIO_FN_FD0, GPIO_FN_ATARD0, GPIO_FN_VI1_R5,
- 	GPIO_FN_HTX1, GPIO_FN_SSI_SCK9,
--	GPIO_FN_EX_CS5, GPIO_FN_FD1,
-+	GPIO_FN_FD1,
- 	GPIO_FN_ATAWR0, GPIO_FN_VI1_R6, GPIO_FN_HRX1,
- 	GPIO_FN_SSI_WS9, GPIO_FN_MLB_CLK, GPIO_FN_PWM2,
- 	GPIO_FN_MLB_SIG, GPIO_FN_PWM3,
+ static int mackerel_set_brightness(int brightness)
+ {
+-	gpio_set_value(GPIO_PORT31, brightness);
++	gpio_set_value(31, brightness);
+ 
+ 	return 0;
+ }
+@@ -819,22 +819,22 @@ static struct platform_device usbhs1_device = {
+ static struct gpio_led mackerel_leds[] = {
+ 	{
+ 		.name		= "led0",
+-		.gpio		= GPIO_PORT0,
++		.gpio		= 0,
+ 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
+ 	},
+ 	{
+ 		.name		= "led1",
+-		.gpio		= GPIO_PORT1,
++		.gpio		= 1,
+ 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
+ 	},
+ 	{
+ 		.name		= "led2",
+-		.gpio		= GPIO_PORT2,
++		.gpio		= 2,
+ 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
+ 	},
+ 	{
+ 		.name		= "led3",
+-		.gpio		= GPIO_PORT159,
++		.gpio		= 159,
+ 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
+ 	}
+ };
+@@ -964,11 +964,11 @@ static struct platform_device nand_flash_device = {
+ 
+ /*
+  * The card detect pin of the top SD/MMC slot (CN7) is active low and is
+- * connected to GPIO A22 of SH7372 (GPIO_PORT41).
++ * connected to GPIO A22 of SH7372 (GPIO 41).
+  */
+ static int slot_cn7_get_cd(struct platform_device *pdev)
+ {
+-	return !gpio_get_value(GPIO_PORT41);
++	return !gpio_get_value(41);
+ }
+ 
+ /* SDHI0 */
+@@ -977,7 +977,7 @@ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+ 	.tmio_flags	= TMIO_MMC_USE_GPIO_CD,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
+-	.cd_gpio	= GPIO_PORT172,
++	.cd_gpio	= 172,
+ };
+ 
+ static struct resource sdhi0_resources[] = {
+@@ -1060,11 +1060,11 @@ static struct platform_device sdhi1_device = {
+ 
+ /*
+  * The card detect pin of the top SD/MMC slot (CN23) is active low and is
+- * connected to GPIO SCIFB_SCK of SH7372 (GPIO_PORT162).
++ * connected to GPIO SCIFB_SCK of SH7372 (162).
+  */
+ static int slot_cn23_get_cd(struct platform_device *pdev)
+ {
+-	return !gpio_get_value(GPIO_PORT162);
++	return !gpio_get_value(162);
+ }
+ 
+ /* SDHI2 */
+@@ -1403,9 +1403,9 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_LCDDCK,   NULL);
+ 
+ 	/* backlight, off by default */
+-	gpio_request_one(GPIO_PORT31, GPIOF_OUT_INIT_LOW, NULL);
++	gpio_request_one(31, GPIOF_OUT_INIT_LOW, NULL);
+ 
+-	gpio_request_one(GPIO_PORT151, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
++	gpio_request_one(151, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
+ 
+ 	/* USBHS0 */
+ 	gpio_request(GPIO_FN_VBUS0_0, NULL);
+@@ -1421,10 +1421,10 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_FSIAILR,	NULL);
+ 	gpio_request(GPIO_FN_FSIAISLD,	NULL);
+ 	gpio_request(GPIO_FN_FSIAOSLD,	NULL);
+-	gpio_request_one(GPIO_PORT161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
++	gpio_request_one(161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
+ 
+-	gpio_request(GPIO_PORT9,  NULL);
+-	gpio_request(GPIO_PORT10, NULL);
++	gpio_request(9,  NULL);
++	gpio_request(10, NULL);
+ 	gpio_direction_none(GPIO_PORT9CR);  /* FSIAOBT needs no direction */
+ 	gpio_direction_none(GPIO_PORT10CR); /* FSIAOLR needs no direction */
+ 
+@@ -1475,7 +1475,7 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_SDHID1_0, NULL);
+ #endif
+ 	/* card detect pin for MMC slot (CN7) */
+-	gpio_request_one(GPIO_PORT41, GPIOF_IN, NULL);
++	gpio_request_one(41, GPIOF_IN, NULL);
+ 
+ 	/* enable SDHI2 */
+ 	gpio_request(GPIO_FN_SDHICMD2, NULL);
+@@ -1486,7 +1486,7 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_SDHID2_0, NULL);
+ 
+ 	/* card detect pin for microSD slot (CN23) */
+-	gpio_request_one(GPIO_PORT162, GPIOF_IN, NULL);
++	gpio_request_one(162, GPIOF_IN, NULL);
+ 
+ 	/* MMCIF */
+ 	gpio_request(GPIO_FN_MMCD0_0, NULL);
 -- 
 1.8.1.5
 
