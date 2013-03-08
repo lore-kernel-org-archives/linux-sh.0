@@ -1,41 +1,41 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 06 Mar 2013 04:33:13 +0000
-Subject: [PATCH] clocksource: sh_cmt: Set initcall level to subsys
-Message-Id: <1362544393-17269-1-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 08 Mar 2013 11:01:54 +0000
+Subject: [PATCH v3 34/64] ARM: shmobile: marzen: Register pinctrl mappings for LBSC
+Message-Id: <1362740544-19164-35-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The reason for this is to ensure that CMT is probed earlier
-than with its previous initcall level, module init.
+Replace the GPIO-based LBSC pinmux configuration by pinctrl mappings.
 
-This came up as a problem with using kzm9g-reference which does
-not make use of early timers or devices. In that scenario initialisation
-of SDHI and MMCIF both stall on msleep() calls due to the absence
-of a initialised clock source.
-
-Boot tested on: armadillo800eva, mackerel and kzm9g
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/clocksource/sh_cmt.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/board-marzen.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index b72b724..08d0c41 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -838,7 +838,7 @@ static void __exit sh_cmt_exit(void)
- }
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index 4cdb8e0..053b957 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -349,6 +349,8 @@ static const struct pinctrl_map marzen_pinctrl_map[] = {
+ 				  "sdhi0_cd", "sdhi0"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
+ 				  "sdhi0_wp", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a7779",
++				  "lbsc_ex_cs0", "lbsc"),
+ };
  
- early_platform_init("earlytimer", &sh_cmt_device_driver);
--module_init(sh_cmt_init);
-+subsys_initcall(sh_cmt_init);
- module_exit(sh_cmt_exit);
+ static void __init marzen_init(void)
+@@ -363,7 +365,6 @@ static void __init marzen_init(void)
+ 	r8a7779_pinmux_init();
  
- MODULE_AUTHOR("Magnus Damm");
+ 	/* LAN89218 */
+-	gpio_request(GPIO_FN_EX_CS0, NULL); /* nCS */
+ 	gpio_request(GPIO_FN_IRQ1_B, NULL); /* IRQ + PME */
+ 
+ 	r8a7779_add_standard_devices();
 -- 
-1.7.10.4
+1.8.1.5
 
