@@ -1,398 +1,53 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 06 Mar 2013 13:46:42 +0000
-Subject: [PATCH v2 03/39] sh-pfc: sh73a0: Add SCIFA and SCIFB pin groups and functions
-Message-Id: <1362577638-15493-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 08 Mar 2013 10:55:42 +0000
+Subject: [PATCH v4 01/29] sh-pfc: Declare operation structures as const
+Message-Id: <1362740170-19073-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 352 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 352 insertions(+)
+The pinconf, pinctrl and pinmux operation structures hold function
+pointers that are never modified. Declare them as const.
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index 9958096..09c2501 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -1744,6 +1744,254 @@ static const unsigned int lcd2_sys_1_mux[] = {
- 	LCD2RD__MARK, PORT217_LCD2RS_MARK,
- };
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/pinctrl/sh-pfc/pinctrl.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index 11e0e13..887930e 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -70,7 +70,7 @@ static void sh_pfc_pin_dbg_show(struct pinctrl_dev *pctldev, struct seq_file *s,
+ 	seq_printf(s, "%s", DRV_NAME);
+ }
  
-+static const unsigned int scifa0_data_pins[] = {
-+	/* RXD, TXD */
-+	43, 17,
-+};
-+static const unsigned int scifa0_data_mux[] = {
-+	SCIFA0_RXD_MARK, SCIFA0_TXD_MARK,
-+};
-+static const unsigned int scifa0_clk_pins[] = {
-+	/* SCK */
-+	16,
-+};
-+static const unsigned int scifa0_clk_mux[] = {
-+	SCIFA0_SCK_MARK,
-+};
-+static const unsigned int scifa0_ctrl_pins[] = {
-+	/* RTS, CTS */
-+	42, 44,
-+};
-+static const unsigned int scifa0_ctrl_mux[] = {
-+	SCIFA0_RTS__MARK, SCIFA0_CTS__MARK,
-+};
-+
-+static const unsigned int scifa1_data_pins[] = {
-+	/* RXD, TXD */
-+	228, 225,
-+};
-+static const unsigned int scifa1_data_mux[] = {
-+	SCIFA1_RXD_MARK, SCIFA1_TXD_MARK,
-+};
-+static const unsigned int scifa1_clk_pins[] = {
-+	/* SCK */
-+	226,
-+};
-+static const unsigned int scifa1_clk_mux[] = {
-+	SCIFA1_SCK_MARK,
-+};
-+static const unsigned int scifa1_ctrl_pins[] = {
-+	/* RTS, CTS */
-+	227, 229,
-+};
-+static const unsigned int scifa1_ctrl_mux[] = {
-+	SCIFA1_RTS__MARK, SCIFA1_CTS__MARK,
-+};
-+
-+static const unsigned int scifa2_data_0_pins[] = {
-+	/* RXD, TXD */
-+	155, 154,
-+};
-+static const unsigned int scifa2_data_0_mux[] = {
-+	SCIFA2_RXD1_MARK, SCIFA2_TXD1_MARK,
-+};
-+static const unsigned int scifa2_clk_0_pins[] = {
-+	/* SCK */
-+	158,
-+};
-+static const unsigned int scifa2_clk_0_mux[] = {
-+	SCIFA2_SCK1_MARK,
-+};
-+static const unsigned int scifa2_ctrl_0_pins[] = {
-+	/* RTS, CTS */
-+	156, 157,
-+};
-+static const unsigned int scifa2_ctrl_0_mux[] = {
-+	SCIFA2_RTS1__MARK, SCIFA2_CTS1__MARK,
-+};
-+static const unsigned int scifa2_data_1_pins[] = {
-+	/* RXD, TXD */
-+	233, 230,
-+};
-+static const unsigned int scifa2_data_1_mux[] = {
-+	SCIFA2_RXD2_MARK, SCIFA2_TXD2_MARK,
-+};
-+static const unsigned int scifa2_clk_1_pins[] = {
-+	/* SCK */
-+	232,
-+};
-+static const unsigned int scifa2_clk_1_mux[] = {
-+	SCIFA2_SCK2_MARK,
-+};
-+static const unsigned int scifa2_ctrl_1_pins[] = {
-+	/* RTS, CTS */
-+	234, 231,
-+};
-+static const unsigned int scifa2_ctrl_1_mux[] = {
-+	SCIFA2_RTS2__MARK, SCIFA2_CTS2__MARK,
-+};
-+
-+static const unsigned int scifa3_data_pins[] = {
-+	/* RXD, TXD */
-+	108, 110,
-+};
-+static const unsigned int scifa3_data_mux[] = {
-+	SCIFA3_RXD_MARK, SCIFA3_TXD_MARK,
-+};
-+static const unsigned int scifa3_ctrl_pins[] = {
-+	/* RTS, CTS */
-+	109, 107,
-+};
-+static const unsigned int scifa3_ctrl_mux[] = {
-+	SCIFA3_RTS__MARK, SCIFA3_CTS__MARK,
-+};
-+
-+static const unsigned int scifa4_data_pins[] = {
-+	/* RXD, TXD */
-+	33, 32,
-+};
-+static const unsigned int scifa4_data_mux[] = {
-+	SCIFA4_RXD_MARK, SCIFA4_TXD_MARK,
-+};
-+static const unsigned int scifa4_ctrl_pins[] = {
-+	/* RTS, CTS */
-+	34, 35,
-+};
-+static const unsigned int scifa4_ctrl_mux[] = {
-+	SCIFA4_RTS__MARK, SCIFA4_CTS__MARK,
-+};
-+
-+static const unsigned int scifa5_data_0_pins[] = {
-+	/* RXD, TXD */
-+	246, 247,
-+};
-+static const unsigned int scifa5_data_0_mux[] = {
-+	PORT246_SCIFA5_RXD_MARK, PORT247_SCIFA5_TXD_MARK,
-+};
-+static const unsigned int scifa5_clk_0_pins[] = {
-+	/* SCK */
-+	248,
-+};
-+static const unsigned int scifa5_clk_0_mux[] = {
-+	PORT248_SCIFA5_SCK_MARK,
-+};
-+static const unsigned int scifa5_ctrl_0_pins[] = {
-+	/* RTS, CTS */
-+	245, 244,
-+};
-+static const unsigned int scifa5_ctrl_0_mux[] = {
-+	PORT245_SCIFA5_RTS__MARK, PORT244_SCIFA5_CTS__MARK,
-+};
-+static const unsigned int scifa5_data_1_pins[] = {
-+	/* RXD, TXD */
-+	195, 196,
-+};
-+static const unsigned int scifa5_data_1_mux[] = {
-+	PORT195_SCIFA5_RXD_MARK, PORT196_SCIFA5_TXD_MARK,
-+};
-+static const unsigned int scifa5_clk_1_pins[] = {
-+	/* SCK */
-+	197,
-+};
-+static const unsigned int scifa5_clk_1_mux[] = {
-+	PORT197_SCIFA5_SCK_MARK,
-+};
-+static const unsigned int scifa5_ctrl_1_pins[] = {
-+	/* RTS, CTS */
-+	194, 193,
-+};
-+static const unsigned int scifa5_ctrl_1_mux[] = {
-+	PORT194_SCIFA5_RTS__MARK, PORT193_SCIFA5_CTS__MARK,
-+};
-+static const unsigned int scifa5_data_2_pins[] = {
-+	/* RXD, TXD */
-+	162, 160,
-+};
-+static const unsigned int scifa5_data_2_mux[] = {
-+	PORT162_SCIFA5_RXD_MARK, PORT160_SCIFA5_TXD_MARK,
-+};
-+static const unsigned int scifa5_clk_2_pins[] = {
-+	/* SCK */
-+	159,
-+};
-+static const unsigned int scifa5_clk_2_mux[] = {
-+	PORT159_SCIFA5_SCK_MARK,
-+};
-+static const unsigned int scifa5_ctrl_2_pins[] = {
-+	/* RTS, CTS */
-+	163, 161,
-+};
-+static const unsigned int scifa5_ctrl_2_mux[] = {
-+	PORT163_SCIFA5_RTS__MARK, PORT161_SCIFA5_CTS__MARK,
-+};
-+
-+static const unsigned int scifa6_pins[] = {
-+	/* TXD */
-+	240,
-+};
-+static const unsigned int scifa6_mux[] = {
-+	SCIFA6_TXD_MARK,
-+};
-+
-+static const unsigned int scifa7_data_pins[] = {
-+	/* RXD, TXD */
-+	12, 18,
-+};
-+static const unsigned int scifa7_data_mux[] = {
-+	SCIFA7_RXD_MARK, SCIFA7_TXD_MARK,
-+};
-+static const unsigned int scifa7_ctrl_pins[] = {
-+	/* RTS, CTS */
-+	19, 13,
-+};
-+static const unsigned int scifa7_ctrl_mux[] = {
-+	SCIFA7_RTS__MARK, SCIFA7_CTS__MARK,
-+};
-+
-+static const unsigned int scifb_data_0_pins[] = {
-+	/* RXD, TXD */
-+	162, 160,
-+};
-+static const unsigned int scifb_data_0_mux[] = {
-+	PORT162_SCIFB_RXD_MARK, PORT160_SCIFB_TXD_MARK,
-+};
-+static const unsigned int scifb_clk_0_pins[] = {
-+	/* SCK */
-+	159,
-+};
-+static const unsigned int scifb_clk_0_mux[] = {
-+	PORT159_SCIFB_SCK_MARK,
-+};
-+static const unsigned int scifb_ctrl_0_pins[] = {
-+	/* RTS, CTS */
-+	163, 161,
-+};
-+static const unsigned int scifb_ctrl_0_mux[] = {
-+	PORT163_SCIFB_RTS__MARK, PORT161_SCIFB_CTS__MARK,
-+};
-+
-+static const unsigned int scifb_data_1_pins[] = {
-+	/* RXD, TXD */
-+	246, 247,
-+};
-+static const unsigned int scifb_data_1_mux[] = {
-+	PORT246_SCIFB_RXD_MARK, PORT247_SCIFB_TXD_MARK,
-+};
-+static const unsigned int scifb_clk_1_pins[] = {
-+	/* SCK */
-+	248,
-+};
-+static const unsigned int scifb_clk_1_mux[] = {
-+	PORT248_SCIFB_SCK_MARK,
-+};
-+static const unsigned int scifb_ctrl_1_pins[] = {
-+	/* RTS, CTS */
-+	245, 244,
-+};
-+static const unsigned int scifb_ctrl_1_mux[] = {
-+	PORT245_SCIFB_RTS__MARK, PORT244_SCIFB_CTS__MARK,
-+};
-+
- static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(lcd_data8),
- 	SH_PFC_PIN_GROUP(lcd_data9),
-@@ -1765,6 +2013,40 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(lcd2_sync_1),
- 	SH_PFC_PIN_GROUP(lcd2_sys_0),
- 	SH_PFC_PIN_GROUP(lcd2_sys_1),
-+	SH_PFC_PIN_GROUP(scifa0_data),
-+	SH_PFC_PIN_GROUP(scifa0_clk),
-+	SH_PFC_PIN_GROUP(scifa0_ctrl),
-+	SH_PFC_PIN_GROUP(scifa1_data),
-+	SH_PFC_PIN_GROUP(scifa1_clk),
-+	SH_PFC_PIN_GROUP(scifa1_ctrl),
-+	SH_PFC_PIN_GROUP(scifa2_data_0),
-+	SH_PFC_PIN_GROUP(scifa2_clk_0),
-+	SH_PFC_PIN_GROUP(scifa2_ctrl_0),
-+	SH_PFC_PIN_GROUP(scifa2_data_1),
-+	SH_PFC_PIN_GROUP(scifa2_clk_1),
-+	SH_PFC_PIN_GROUP(scifa2_ctrl_1),
-+	SH_PFC_PIN_GROUP(scifa3_data),
-+	SH_PFC_PIN_GROUP(scifa3_ctrl),
-+	SH_PFC_PIN_GROUP(scifa4_data),
-+	SH_PFC_PIN_GROUP(scifa4_ctrl),
-+	SH_PFC_PIN_GROUP(scifa5_data_0),
-+	SH_PFC_PIN_GROUP(scifa5_clk_0),
-+	SH_PFC_PIN_GROUP(scifa5_ctrl_0),
-+	SH_PFC_PIN_GROUP(scifa5_data_1),
-+	SH_PFC_PIN_GROUP(scifa5_clk_1),
-+	SH_PFC_PIN_GROUP(scifa5_ctrl_1),
-+	SH_PFC_PIN_GROUP(scifa5_data_2),
-+	SH_PFC_PIN_GROUP(scifa5_clk_2),
-+	SH_PFC_PIN_GROUP(scifa5_ctrl_2),
-+	SH_PFC_PIN_GROUP(scifa6),
-+	SH_PFC_PIN_GROUP(scifa7_data),
-+	SH_PFC_PIN_GROUP(scifa7_ctrl),
-+	SH_PFC_PIN_GROUP(scifb_data_0),
-+	SH_PFC_PIN_GROUP(scifb_clk_0),
-+	SH_PFC_PIN_GROUP(scifb_ctrl_0),
-+	SH_PFC_PIN_GROUP(scifb_data_1),
-+	SH_PFC_PIN_GROUP(scifb_clk_1),
-+	SH_PFC_PIN_GROUP(scifb_ctrl_1),
- };
+-static struct pinctrl_ops sh_pfc_pinctrl_ops = {
++static const struct pinctrl_ops sh_pfc_pinctrl_ops = {
+ 	.get_groups_count	= sh_pfc_get_groups_count,
+ 	.get_group_name		= sh_pfc_get_group_name,
+ 	.get_group_pins		= sh_pfc_get_group_pins,
+@@ -252,7 +252,7 @@ static int sh_pfc_gpio_set_direction(struct pinctrl_dev *pctldev,
+ 	return sh_pfc_reconfig_pin(pmx->pfc, offset, type);
+ }
  
- static const char * const lcd_groups[] = {
-@@ -1793,9 +2075,79 @@ static const char * const lcd2_groups[] = {
- 	"lcd2_sys_1",
- };
+-static struct pinmux_ops sh_pfc_pinmux_ops = {
++static const struct pinmux_ops sh_pfc_pinmux_ops = {
+ 	.get_functions_count	= sh_pfc_get_functions_count,
+ 	.get_function_name	= sh_pfc_get_function_name,
+ 	.get_function_groups	= sh_pfc_get_function_groups,
+@@ -308,7 +308,7 @@ static void sh_pfc_pinconf_dbg_show(struct pinctrl_dev *pctldev,
+ 	seq_printf(s, " %s", pinmux_type_str[config]);
+ }
  
-+static const char * const scifa0_groups[] = {
-+	"scifa0_data",
-+	"scifa0_clk",
-+	"scifa0_ctrl",
-+};
-+
-+static const char * const scifa1_groups[] = {
-+	"scifa1_data",
-+	"scifa1_clk",
-+	"scifa1_ctrl",
-+};
-+
-+static const char * const scifa2_groups[] = {
-+	"scifa2_data_0",
-+	"scifa2_clk_0",
-+	"scifa2_ctrl_0",
-+	"scifa2_data_1",
-+	"scifa2_clk_1",
-+	"scifa2_ctrl_1",
-+};
-+
-+static const char * const scifa3_groups[] = {
-+	"scifa3_data",
-+	"scifa3_ctrl",
-+};
-+
-+static const char * const scifa4_groups[] = {
-+	"scifa4_data",
-+	"scifa4_ctrl",
-+};
-+
-+static const char * const scifa5_groups[] = {
-+	"scifa5_data_0",
-+	"scifa5_clk_0",
-+	"scifa5_ctrl_0",
-+	"scifa5_data_1",
-+	"scifa5_clk_1",
-+	"scifa5_ctrl_1",
-+	"scifa5_data_2",
-+	"scifa5_clk_2",
-+	"scifa5_ctrl_2",
-+};
-+
-+static const char * const scifa6_groups[] = {
-+	"scifa6",
-+};
-+
-+static const char * const scifa7_groups[] = {
-+	"scifa7_data",
-+	"scifa7_ctrl",
-+};
-+
-+static const char * const scifb_groups[] = {
-+	"scifb_data_0",
-+	"scifb_clk_0",
-+	"scifb_ctrl_0",
-+	"scifb_data_1",
-+	"scifb_clk_1",
-+	"scifb_ctrl_1",
-+};
-+
- static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(lcd),
- 	SH_PFC_FUNCTION(lcd2),
-+	SH_PFC_FUNCTION(scifa0),
-+	SH_PFC_FUNCTION(scifa1),
-+	SH_PFC_FUNCTION(scifa2),
-+	SH_PFC_FUNCTION(scifa3),
-+	SH_PFC_FUNCTION(scifa4),
-+	SH_PFC_FUNCTION(scifa5),
-+	SH_PFC_FUNCTION(scifa6),
-+	SH_PFC_FUNCTION(scifa7),
-+	SH_PFC_FUNCTION(scifb),
- };
- 
- #define PINMUX_FN_BASE	GPIO_FN_VBUS_0
+-static struct pinconf_ops sh_pfc_pinconf_ops = {
++static const struct pinconf_ops sh_pfc_pinconf_ops = {
+ 	.pin_config_get		= sh_pfc_pinconf_get,
+ 	.pin_config_set		= sh_pfc_pinconf_set,
+ 	.pin_config_dbg_show	= sh_pfc_pinconf_dbg_show,
 -- 
 1.8.1.5
 
