@@ -1,53 +1,47 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:06:13 +0000
-Subject: [PATCH 077/142] ARM: shmobile: ag5evm: Register pinctrl mappings for I2C
-Message-Id: <1363604838-29359-78-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 08 Mar 2013 08:20:20 +0000
+Subject: [PATCH 4/4] clocksource: sh_mtu2: Set initcall level to subsys
+Message-Id: <1362730820-25417-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+References: <1362730820-25417-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1362730820-25417-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The reason for this is to ensure that MTU2 is probed earlier
+than with its previous initcall level, module init.
 
-Replace the GPIO-based I2C pinmux configuration by pinctrl mappings.
+This came up as a problem with using CMT as a clock source kzm9g-reference
+which does not make use of early timers or devices. In that scenario
+initialisation of SDHI and MMCIF both stall on msleep() calls due to the
+absence of a initialised clock source.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The purpose of this change is to keep the MTU2 code in sync with the CMT code
+which has been modified in a similar manner..
+
+Compile tested only using se7206_defconfig.
+I do not believe I have any boards that support the MTU2.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-ag5evm.c |   11 +++++------
- 1 file changed, 5 insertions(+), 6 deletions(-)
+ drivers/clocksource/sh_mtu2.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
-index 5b8dcdc..e19dade 100644
---- a/arch/arm/mach-shmobile/board-ag5evm.c
-+++ b/arch/arm/mach-shmobile/board-ag5evm.c
-@@ -552,6 +552,11 @@ static struct platform_device *ag5evm_devices[] __initdata = {
- };
+diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
+index 83943e2..4aac9ee 100644
+--- a/drivers/clocksource/sh_mtu2.c
++++ b/drivers/clocksource/sh_mtu2.c
+@@ -386,7 +386,7 @@ static void __exit sh_mtu2_exit(void)
+ }
  
- static const struct pinctrl_map ag5evm_pinctrl_map[] = {
-+	/* I2C2 & I2C3 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.2", "pfc-sh73a0",
-+				  "i2c2_0", "i2c2"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.3", "pfc-sh73a0",
-+				  "i2c3_0", "i2c3"),
- 	/* SCIFA2 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-sh73a0",
- 				  "scifa2_data_0", "scifa2"),
-@@ -591,12 +596,6 @@ static void __init ag5evm_init(void)
- 	gpio_request(GPIO_FN_KEYOUT8, NULL);
- 	gpio_request(GPIO_FN_PORT149_KEYOUT9, NULL);
+ early_platform_init("earlytimer", &sh_mtu2_device_driver);
+-module_init(sh_mtu2_init);
++subsys_initcall(sh_mtu2_init);
+ module_exit(sh_mtu2_exit);
  
--	/* enable I2C channel 2 and 3 */
--	gpio_request(GPIO_FN_PORT236_I2C_SDA2, NULL);
--	gpio_request(GPIO_FN_PORT237_I2C_SCL2, NULL);
--	gpio_request(GPIO_FN_PORT248_I2C_SCL3, NULL);
--	gpio_request(GPIO_FN_PORT249_I2C_SDA3, NULL);
--
- 	/* enable MMCIF */
- 	gpio_request(GPIO_FN_MMCCLK0, NULL);
- 	gpio_request(GPIO_FN_MMCCMD0_PU, NULL);
+ MODULE_AUTHOR("Magnus Damm");
 -- 
 1.7.10.4
 
