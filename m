@@ -1,150 +1,51 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:06:55 +0000
-Subject: [PATCH 119/142] sh-pfc: r8a7779: Remove HSPI function GPIOS
-Message-Id: <1363604838-29359-120-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 08 Mar 2013 10:55:44 +0000
+Subject: [PATCH v4 03/29] sh-pfc: Fix a typo and simplify a definition on sh73a0
+Message-Id: <1362740170-19073-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-All r8a7779 platforms now use the pinctrl API to control the HSPI pins,
-the corresponding function GPIOS are unused. Remove them.
+Fix definition of the SDHIWP0 function and simplify the CPU_ALL_PORT
+definition on sh73a0.
 
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c |   54 +++++++++++++++++-----------------
- 1 file changed, 27 insertions(+), 27 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 8 ++------
+ 1 file changed, 2 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-index ecc300d..ca59a18 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-@@ -2682,16 +2682,16 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(FD2), GPIO_FN(ATADIR0), GPIO_FN(SDSELF),
- 	GPIO_FN(HCTS1), GPIO_FN(A0),
- 	GPIO_FN(FD3), GPIO_FN(A20),
--	GPIO_FN(HSPI_TX2_B), GPIO_FN(A21),
--	GPIO_FN(HSPI_CLK2_B), GPIO_FN(A22),
--	GPIO_FN(HSPI_RX2_B), GPIO_FN(VI1_R0), GPIO_FN(A23), GPIO_FN(FCLE),
--	GPIO_FN(HSPI_CLK2), GPIO_FN(VI1_R1), GPIO_FN(A24),
--	GPIO_FN(FD4),	GPIO_FN(HSPI_CS2), GPIO_FN(VI1_R2),
-+	GPIO_FN(A21),
-+	GPIO_FN(A22),
-+	GPIO_FN(VI1_R0), GPIO_FN(A23), GPIO_FN(FCLE),
-+	GPIO_FN(VI1_R1), GPIO_FN(A24),
-+	GPIO_FN(FD4),	GPIO_FN(VI1_R2),
- 	GPIO_FN(SSI_WS78_B), GPIO_FN(A25),
--	GPIO_FN(FD5), GPIO_FN(HSPI_RX2), GPIO_FN(VI1_R3),
-+	GPIO_FN(FD5), GPIO_FN(VI1_R3),
- 	GPIO_FN(SSI_SDATA7_B), GPIO_FN(CLKOUT),
- 	GPIO_FN(PWM0_B), GPIO_FN(CS0),
--	GPIO_FN(HSPI_CS2_B), GPIO_FN(CS1_A26), GPIO_FN(HSPI_TX2),
-+	GPIO_FN(CS1_A26),
- 	GPIO_FN(SDSELF_B), GPIO_FN(RD_WR), GPIO_FN(FWE), GPIO_FN(ATAG0),
- 	GPIO_FN(VI1_R7), GPIO_FN(HRTS1),
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index 709008e..232731b 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -25,11 +25,7 @@
+ #include "sh_pfc.h"
  
-@@ -2787,19 +2787,19 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(VI2_R4), GPIO_FN(VI2_R5),
- 	GPIO_FN(VI2_R6), GPIO_FN(VI2_R7),
- 	GPIO_FN(SCL2_D), GPIO_FN(SDA2_D),
--	GPIO_FN(VI2_CLKENB), GPIO_FN(HSPI_CS1),
-+	GPIO_FN(VI2_CLKENB),
- 	GPIO_FN(SCL1_D), GPIO_FN(VI2_FIELD),
- 	GPIO_FN(SDA1_D), GPIO_FN(VI2_HSYNC),
- 	GPIO_FN(VI3_HSYNC), GPIO_FN(VI2_VSYNC),
- 	GPIO_FN(VI3_VSYNC),
- 	GPIO_FN(VI2_CLK),
--	GPIO_FN(HSPI_TX1), GPIO_FN(VI1_CLKENB), GPIO_FN(VI3_CLKENB),
-+	GPIO_FN(VI1_CLKENB), GPIO_FN(VI3_CLKENB),
- 	GPIO_FN(AUDIO_CLKC), GPIO_FN(SPEEDIN),
- 	GPIO_FN(GPS_SIGN_D), GPIO_FN(VI2_DATA6_VI2_B6),
--	GPIO_FN(TCLK0), GPIO_FN(QSTVA_B_QVS_B), GPIO_FN(HSPI_CLK1),
-+	GPIO_FN(TCLK0), GPIO_FN(QSTVA_B_QVS_B),
- 	GPIO_FN(AUDIO_CLKOUT_B), GPIO_FN(GPS_MAG_D),
- 	GPIO_FN(VI2_DATA7_VI2_B7),
--	GPIO_FN(HSPI_RX1), GPIO_FN(VI1_FIELD),
-+	GPIO_FN(VI1_FIELD),
- 	GPIO_FN(VI3_FIELD), GPIO_FN(AUDIO_CLKOUT),
- 	GPIO_FN(GPS_CLK_C), GPIO_FN(GPS_CLK_D), GPIO_FN(AUDIO_CLKA),
- 	GPIO_FN(CAN_TXCLK), GPIO_FN(AUDIO_CLKB), GPIO_FN(USB_OVC2),
-@@ -2828,12 +2828,12 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(SSI_WS6), GPIO_FN(ADICHS1), GPIO_FN(CAN0_RX), GPIO_FN(IETX_B),
- 	GPIO_FN(SSI_SDATA6), GPIO_FN(ADICHS2), GPIO_FN(CAN_CLK),
- 	GPIO_FN(IECLK_B), GPIO_FN(SSI_SCK78), GPIO_FN(CAN_DEBUGOUT13),
--	GPIO_FN(IRQ0_B), GPIO_FN(SSI_SCK9_B), GPIO_FN(HSPI_CLK1_C),
-+	GPIO_FN(IRQ0_B), GPIO_FN(SSI_SCK9_B),
- 	GPIO_FN(SSI_WS78), GPIO_FN(CAN_DEBUGOUT14), GPIO_FN(IRQ1_B),
--	GPIO_FN(SSI_WS9_B), GPIO_FN(HSPI_CS1_C), GPIO_FN(SSI_SDATA7),
-+	GPIO_FN(SSI_WS9_B), GPIO_FN(SSI_SDATA7),
- 	GPIO_FN(CAN_DEBUGOUT15), GPIO_FN(IRQ2_B), GPIO_FN(TCLK1_C),
--	GPIO_FN(HSPI_TX1_C), GPIO_FN(SSI_SDATA8), GPIO_FN(VSP),
--	GPIO_FN(IRQ3_B), GPIO_FN(HSPI_RX1_C),
-+	GPIO_FN(SSI_SDATA8), GPIO_FN(VSP),
-+	GPIO_FN(IRQ3_B),
- 	GPIO_FN(ATACS01), GPIO_FN(ATACS11),
- 	GPIO_FN(CC5_TDO), GPIO_FN(ATADIR1),
- 	GPIO_FN(CC5_TRST), GPIO_FN(ATAG1),
-@@ -2843,15 +2843,15 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(DACK2),
- 
- 	/* IPSR8 */
--	GPIO_FN(HSPI_CLK0), GPIO_FN(USB_OVC0), GPIO_FN(AD_CLK),
-+	GPIO_FN(USB_OVC0), GPIO_FN(AD_CLK),
- 	GPIO_FN(CC5_STATE4), GPIO_FN(CC5_STATE12), GPIO_FN(CC5_STATE20),
--	GPIO_FN(CC5_STATE28), GPIO_FN(CC5_STATE36), GPIO_FN(HSPI_CS0),
-+	GPIO_FN(CC5_STATE28), GPIO_FN(CC5_STATE36),
- 	GPIO_FN(USB_OVC1), GPIO_FN(AD_DI),
- 	GPIO_FN(CC5_STATE5), GPIO_FN(CC5_STATE13), GPIO_FN(CC5_STATE21),
--	GPIO_FN(CC5_STATE29), GPIO_FN(CC5_STATE37), GPIO_FN(HSPI_TX0),
-+	GPIO_FN(CC5_STATE29), GPIO_FN(CC5_STATE37),
- 	GPIO_FN(CAN_DEBUG_HW_TRIGGER), GPIO_FN(AD_DO),
- 	GPIO_FN(CC5_STATE6), GPIO_FN(CC5_STATE14), GPIO_FN(CC5_STATE22),
--	GPIO_FN(CC5_STATE30), GPIO_FN(CC5_STATE38), GPIO_FN(HSPI_RX0),
-+	GPIO_FN(CC5_STATE30), GPIO_FN(CC5_STATE38),
- 	GPIO_FN(CAN_STEP0), GPIO_FN(AD_NCS), GPIO_FN(CC5_STATE7),
- 	GPIO_FN(CC5_STATE15), GPIO_FN(CC5_STATE23), GPIO_FN(CC5_STATE31),
- 	GPIO_FN(CC5_STATE39), GPIO_FN(FMCLK), GPIO_FN(RDS_CLK), GPIO_FN(PCMOE),
-@@ -2893,13 +2893,13 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(ARM_TRACEDATA_12), GPIO_FN(VI0_R3), GPIO_FN(ETH_MAGIC),
- 	GPIO_FN(IRQ3), GPIO_FN(ARM_TRACEDATA_13),
- 	GPIO_FN(VI0_R4), GPIO_FN(ETH_REFCLK),
--	GPIO_FN(HSPI_CLK1_B), GPIO_FN(ARM_TRACEDATA_14), GPIO_FN(MT1_CLK),
-+	GPIO_FN(ARM_TRACEDATA_14), GPIO_FN(MT1_CLK),
- 	GPIO_FN(TS_SCK0), GPIO_FN(VI0_R5), GPIO_FN(ETH_TXD0),
--	GPIO_FN(HSPI_CS1_B), GPIO_FN(ARM_TRACEDATA_15),
-+	GPIO_FN(ARM_TRACEDATA_15),
- 	GPIO_FN(MT1_D), GPIO_FN(TS_SDEN0), GPIO_FN(VI0_R6), GPIO_FN(ETH_MDC),
--	GPIO_FN(DREQ2_C), GPIO_FN(HSPI_TX1_B), GPIO_FN(TRACECLK),
-+	GPIO_FN(DREQ2_C), GPIO_FN(TRACECLK),
- 	GPIO_FN(MT1_BEN), GPIO_FN(PWMFSW0_D), GPIO_FN(VI0_R7),
--	GPIO_FN(ETH_MDIO), GPIO_FN(DACK2_C), GPIO_FN(HSPI_RX1_B),
-+	GPIO_FN(ETH_MDIO), GPIO_FN(DACK2_C),
- 	GPIO_FN(SCIF_CLK_D), GPIO_FN(TRACECTL), GPIO_FN(MT1_PEN),
- 	GPIO_FN(VI1_CLK), GPIO_FN(SIM_D), GPIO_FN(SDA3), GPIO_FN(VI1_HSYNC),
- 	GPIO_FN(VI3_CLK), GPIO_FN(SSI_SCK4), GPIO_FN(GPS_SIGN_C),
-@@ -2916,12 +2916,12 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(VI1_DATA3_VI1_B3), GPIO_FN(MT0_BEN),
- 	GPIO_FN(SPV_TDO), GPIO_FN(ADICHS0_B), GPIO_FN(VI1_DATA4_VI1_B4),
- 	GPIO_FN(MT0_PEN), GPIO_FN(SPA_TRST),
--	GPIO_FN(HSPI_CLK1_D), GPIO_FN(ADICHS1_B), GPIO_FN(VI1_DATA5_VI1_B5),
-+	GPIO_FN(ADICHS1_B), GPIO_FN(VI1_DATA5_VI1_B5),
- 	GPIO_FN(MT0_SYNC), GPIO_FN(SPA_TCK),
--	GPIO_FN(HSPI_CS1_D), GPIO_FN(ADICHS2_B), GPIO_FN(VI1_DATA6_VI1_B6),
-+	GPIO_FN(ADICHS2_B), GPIO_FN(VI1_DATA6_VI1_B6),
- 	GPIO_FN(MT0_VCXO), GPIO_FN(SPA_TMS),
--	GPIO_FN(HSPI_TX1_D), GPIO_FN(VI1_DATA7_VI1_B7),
--	GPIO_FN(MT0_PWM), GPIO_FN(SPA_TDI), GPIO_FN(HSPI_RX1_D),
-+	GPIO_FN(VI1_DATA7_VI1_B7),
-+	GPIO_FN(MT0_PWM), GPIO_FN(SPA_TDI),
- 	GPIO_FN(VI1_G0), GPIO_FN(VI3_DATA0),
- 	GPIO_FN(TS_SCK1), GPIO_FN(DREQ2_B), GPIO_FN(SPA_TDO),
- 	GPIO_FN(HCTS0_B), GPIO_FN(VI1_G1), GPIO_FN(VI3_DATA1),
+ #define CPU_ALL_PORT(fn, pfx, sfx)				\
+-	PORT_10(fn, pfx,    sfx), PORT_10(fn, pfx##1, sfx),	\
+-	PORT_10(fn, pfx##2, sfx), PORT_10(fn, pfx##3, sfx),	\
+-	PORT_10(fn, pfx##4, sfx), PORT_10(fn, pfx##5, sfx),	\
+-	PORT_10(fn, pfx##6, sfx), PORT_10(fn, pfx##7, sfx),	\
+-	PORT_10(fn, pfx##8, sfx), PORT_10(fn, pfx##9, sfx),	\
++	PORT_10(fn, pfx,    sfx), PORT_90(fn, pfx, sfx),	\
+ 	PORT_10(fn, pfx##10, sfx),				\
+ 	PORT_1(fn, pfx##110, sfx), PORT_1(fn, pfx##111, sfx),	\
+ 	PORT_1(fn, pfx##112, sfx), PORT_1(fn, pfx##113, sfx),	\
+@@ -1502,7 +1498,7 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(SDHID0_2_PU_MARK, PORT254_FN1, PORT254_IN_PU),
+ 	PINMUX_DATA(SDHID0_3_PU_MARK, PORT255_FN1, PORT255_IN_PU),
+ 	PINMUX_DATA(SDHICMD0_PU_MARK, PORT256_FN1, PORT256_IN_PU),
+-	PINMUX_DATA(SDHIWP0_PU_MARK,  PORT257_FN1, PORT256_IN_PU),
++	PINMUX_DATA(SDHIWP0_PU_MARK,  PORT257_FN1, PORT257_IN_PU),
+ 	PINMUX_DATA(SDHID1_0_PU_MARK, PORT259_FN1, PORT259_IN_PU),
+ 	PINMUX_DATA(SDHID1_1_PU_MARK, PORT260_FN1, PORT260_IN_PU),
+ 	PINMUX_DATA(SDHID1_2_PU_MARK, PORT261_FN1, PORT261_IN_PU),
 -- 
-1.7.10.4
+1.8.1.5
 
