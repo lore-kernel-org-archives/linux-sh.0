@@ -1,7 +1,7 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 06 Mar 2013 13:47:15 +0000
-Subject: [PATCH v2 36/39] ARM: shmobile: r8a7740: Remove LCD0 and LCD1 function GPIOs
-Message-Id: <1362577638-15493-37-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 08 Mar 2013 11:02:23 +0000
+Subject: [PATCH v3 63/64] ARM: shmobile: r8a7779: Remove LBSC function GPIOs
+Message-Id: <1362740544-19164-64-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -13,62 +13,42 @@ unneeded, remove them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7740.h | 39 ---------------------------
- 1 file changed, 39 deletions(-)
+ arch/arm/mach-shmobile/include/mach/r8a7779.h | 14 ++++++--------
+ 1 file changed, 6 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index 59d252f..0c417da 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -241,48 +241,9 @@ enum {
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+index e50bf53..688c0d2 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -83,22 +83,20 @@ enum {
+ 	GPIO_FN_VI1_R2, GPIO_FN_SSI_WS78_B, GPIO_FN_A25,
+ 	GPIO_FN_FD5,
+ 	GPIO_FN_VI1_R3, GPIO_FN_SSI_SDATA7_B,
+-	GPIO_FN_CLKOUT, GPIO_FN_PWM0_B, GPIO_FN_CS0,
+-	GPIO_FN_CS1_A26,
++	GPIO_FN_CLKOUT, GPIO_FN_PWM0_B,
+ 	GPIO_FN_SDSELF_B, GPIO_FN_RD_WR, GPIO_FN_FWE, GPIO_FN_ATAG0,
+ 	GPIO_FN_VI1_R7, GPIO_FN_HRTS1,
  
- 	/* LCD0 */
- 	GPIO_FN_LCDC0_SELECT,
--	GPIO_FN_LCD0_D0,	GPIO_FN_LCD0_D1,	GPIO_FN_LCD0_D2,
--	GPIO_FN_LCD0_D3,	GPIO_FN_LCD0_D4,	GPIO_FN_LCD0_D5,
--	GPIO_FN_LCD0_D6,	GPIO_FN_LCD0_D7,	GPIO_FN_LCD0_D8,
--	GPIO_FN_LCD0_D9,	GPIO_FN_LCD0_D10,	GPIO_FN_LCD0_D11,
--	GPIO_FN_LCD0_D12,	GPIO_FN_LCD0_D13,	GPIO_FN_LCD0_D14,
--	GPIO_FN_LCD0_D15,	GPIO_FN_LCD0_D16,	GPIO_FN_LCD0_D17,
--	GPIO_FN_LCD0_DON,	GPIO_FN_LCD0_VCPWC,	GPIO_FN_LCD0_VEPWC,
--
--	GPIO_FN_LCD0_DCK,	GPIO_FN_LCD0_VSYN, /* for RGB */
--	GPIO_FN_LCD0_HSYN,	GPIO_FN_LCD0_DISP, /* for RGB */
--
--	GPIO_FN_LCD0_WR,	GPIO_FN_LCD0_RD, /* for SYS */
--	GPIO_FN_LCD0_CS,	GPIO_FN_LCD0_RS, /* for SYS */
--
--	GPIO_FN_LCD0_D18_PORT163,	GPIO_FN_LCD0_D19_PORT162,
--	GPIO_FN_LCD0_D20_PORT161,	GPIO_FN_LCD0_D21_PORT158,
--	GPIO_FN_LCD0_D22_PORT160,	GPIO_FN_LCD0_D23_PORT159,
--	GPIO_FN_LCD0_LCLK_PORT165,	 /* MSEL5CR_6_1 */
--
--	GPIO_FN_LCD0_D18_PORT40,	GPIO_FN_LCD0_D19_PORT4,
--	GPIO_FN_LCD0_D20_PORT3,		GPIO_FN_LCD0_D21_PORT2,
--	GPIO_FN_LCD0_D22_PORT0,		GPIO_FN_LCD0_D23_PORT1,
--	GPIO_FN_LCD0_LCLK_PORT102,	/* MSEL5CR_6_0 */
- 
- 	/* LCD1 */
- 	GPIO_FN_LCDC1_SELECT,
--	GPIO_FN_LCD1_D0,	GPIO_FN_LCD1_D1,	GPIO_FN_LCD1_D2,
--	GPIO_FN_LCD1_D3,	GPIO_FN_LCD1_D4,	GPIO_FN_LCD1_D5,
--	GPIO_FN_LCD1_D6,	GPIO_FN_LCD1_D7,	GPIO_FN_LCD1_D8,
--	GPIO_FN_LCD1_D9,	GPIO_FN_LCD1_D10,	GPIO_FN_LCD1_D11,
--	GPIO_FN_LCD1_D12,	GPIO_FN_LCD1_D13,	GPIO_FN_LCD1_D14,
--	GPIO_FN_LCD1_D15,	GPIO_FN_LCD1_D16,	GPIO_FN_LCD1_D17,
--	GPIO_FN_LCD1_D18,	GPIO_FN_LCD1_D19,	GPIO_FN_LCD1_D20,
--	GPIO_FN_LCD1_D21,	GPIO_FN_LCD1_D22,	GPIO_FN_LCD1_D23,
--	GPIO_FN_LCD1_DON,	GPIO_FN_LCD1_VCPWC,
--	GPIO_FN_LCD1_LCLK,	GPIO_FN_LCD1_VEPWC,
--
--	GPIO_FN_LCD1_DCK,	GPIO_FN_LCD1_VSYN, /* for RGB */
--	GPIO_FN_LCD1_HSYN,	GPIO_FN_LCD1_DISP, /* for RGB */
--
--	GPIO_FN_LCD1_WR,	GPIO_FN_LCD1_RD, /* for SYS */
--	GPIO_FN_LCD1_CS,	GPIO_FN_LCD1_RS, /* for SYS */
- 
- 	/* RSPI */
- 	GPIO_FN_RSPI_SSL0_A,	GPIO_FN_RSPI_SSL1_A,
+ 	/* IPSR1 */
+-	GPIO_FN_EX_CS0,
+-	GPIO_FN_FD6, GPIO_FN_EX_CS1, GPIO_FN_FD7,
+-	GPIO_FN_EX_CS2, GPIO_FN_FALE,
+-	GPIO_FN_ATACS00, GPIO_FN_EX_CS3,
++	GPIO_FN_FD6, GPIO_FN_FD7,
++	GPIO_FN_FALE,
++	GPIO_FN_ATACS00,
+ 	GPIO_FN_FRE, GPIO_FN_ATACS10, GPIO_FN_VI1_R4,
+ 	GPIO_FN_HSCK1, GPIO_FN_SSI_SDATA8_B,
+-	GPIO_FN_SSI_SDATA9, GPIO_FN_EX_CS4,
++	GPIO_FN_SSI_SDATA9,
+ 	GPIO_FN_FD0, GPIO_FN_ATARD0, GPIO_FN_VI1_R5,
+ 	GPIO_FN_HTX1, GPIO_FN_SSI_SCK9,
+-	GPIO_FN_EX_CS5, GPIO_FN_FD1,
++	GPIO_FN_FD1,
+ 	GPIO_FN_ATAWR0, GPIO_FN_VI1_R6, GPIO_FN_HRX1,
+ 	GPIO_FN_SSI_WS9, GPIO_FN_MLB_CLK, GPIO_FN_PWM2,
+ 	GPIO_FN_MLB_SIG, GPIO_FN_PWM3,
 -- 
 1.8.1.5
 
