@@ -1,68 +1,51 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:07:18 +0000
-Subject: [PATCH 142/142] ARM: shmobile: r8a7779: Remove INTC function GPIOs
-Message-Id: <1363604838-29359-143-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 08 Mar 2013 11:01:55 +0000
+Subject: [PATCH v3 35/64] ARM: shmobile: marzen: Register pinctrl mappings for INTC
+Message-Id: <1362740544-19164-36-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
+Replace the GPIO-based INTC pinmux configuration by pinctrl mappings.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7779.h |   16 ++++++++--------
- 1 file changed, 8 insertions(+), 8 deletions(-)
+ arch/arm/mach-shmobile/board-marzen.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-index 688c0d2..8ea0ad1 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -213,12 +213,12 @@ enum {
- 	/* IPSR7 */
- 	GPIO_FN_SSI_WS6, GPIO_FN_ADICHS1, GPIO_FN_CAN0_RX, GPIO_FN_IETX_B,
- 	GPIO_FN_SSI_SDATA6, GPIO_FN_ADICHS2, GPIO_FN_CAN_CLK, GPIO_FN_IECLK_B,
--	GPIO_FN_SSI_SCK78, GPIO_FN_CAN_DEBUGOUT13, GPIO_FN_IRQ0_B,
-+	GPIO_FN_SSI_SCK78, GPIO_FN_CAN_DEBUGOUT13,
- 	GPIO_FN_SSI_SCK9_B, GPIO_FN_SSI_WS78,
--	GPIO_FN_CAN_DEBUGOUT14, GPIO_FN_IRQ1_B, GPIO_FN_SSI_WS9_B,
-+	GPIO_FN_CAN_DEBUGOUT14, GPIO_FN_SSI_WS9_B,
- 	GPIO_FN_SSI_SDATA7, GPIO_FN_CAN_DEBUGOUT15,
--	GPIO_FN_IRQ2_B, GPIO_FN_TCLK1_C,
--	GPIO_FN_SSI_SDATA8, GPIO_FN_VSP, GPIO_FN_IRQ3_B,
-+	GPIO_FN_TCLK1_C,
-+	GPIO_FN_SSI_SDATA8, GPIO_FN_VSP,
- 	GPIO_FN_ATACS01,
- 	GPIO_FN_ATACS11, GPIO_FN_CC5_TDO,
- 	GPIO_FN_ATADIR1, GPIO_FN_CC5_TRST,
-@@ -256,8 +256,8 @@ enum {
- 	GPIO_FN_VI0_DATA5_VI0_B5, GPIO_FN_VI0_DATA6_VI0_B6,
- 	GPIO_FN_ARM_TRACEDATA_0, GPIO_FN_VI0_DATA7_VI0_B7,
- 	GPIO_FN_ARM_TRACEDATA_1, GPIO_FN_VI0_G0,
--	GPIO_FN_SSI_SCK78_C, GPIO_FN_IRQ0, GPIO_FN_ARM_TRACEDATA_2,
--	GPIO_FN_VI0_G1, GPIO_FN_SSI_WS78_C, GPIO_FN_IRQ1,
-+	GPIO_FN_SSI_SCK78_C, GPIO_FN_ARM_TRACEDATA_2,
-+	GPIO_FN_VI0_G1, GPIO_FN_SSI_WS78_C,
- 	GPIO_FN_ARM_TRACEDATA_3, GPIO_FN_VI0_G2, GPIO_FN_ETH_TXD1,
- 	GPIO_FN_ARM_TRACEDATA_4, GPIO_FN_TS_SPSYNC0,
- 	GPIO_FN_VI0_G3, GPIO_FN_ETH_CRS_DV,
-@@ -273,8 +273,8 @@ enum {
- 	GPIO_FN_ARM_TRACEDATA_10, GPIO_FN_DREQ0_C, GPIO_FN_VI0_R1,
- 	GPIO_FN_SSI_SDATA8_C, GPIO_FN_DACK1_B, GPIO_FN_ARM_TRACEDATA_11,
- 	GPIO_FN_DACK0_C, GPIO_FN_DRACK0_C, GPIO_FN_VI0_R2, GPIO_FN_ETH_LINK,
--	GPIO_FN_IRQ2, GPIO_FN_ARM_TRACEDATA_12,
--	GPIO_FN_VI0_R3, GPIO_FN_ETH_MAGIC, GPIO_FN_IRQ3,
-+	GPIO_FN_ARM_TRACEDATA_12,
-+	GPIO_FN_VI0_R3, GPIO_FN_ETH_MAGIC,
- 	GPIO_FN_ARM_TRACEDATA_13, GPIO_FN_VI0_R4, GPIO_FN_ETH_REFCLK,
- 	GPIO_FN_ARM_TRACEDATA_14,
- 	GPIO_FN_MT1_CLK, GPIO_FN_TS_SCK0, GPIO_FN_VI0_R5, GPIO_FN_ETH_TXD0,
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index 053b957..df91271 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -25,7 +25,6 @@
+ #include <linux/platform_device.h>
+ #include <linux/delay.h>
+ #include <linux/io.h>
+-#include <linux/gpio.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/regulator/fixed.h>
+@@ -350,6 +349,8 @@ static const struct pinctrl_map marzen_pinctrl_map[] = {
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
+ 				  "sdhi0_wp", "sdhi0"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a7779",
++				  "intc_irq1_b", "intc"),
++	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a7779",
+ 				  "lbsc_ex_cs0", "lbsc"),
+ };
+ 
+@@ -364,9 +365,6 @@ static void __init marzen_init(void)
+ 				  ARRAY_SIZE(marzen_pinctrl_map));
+ 	r8a7779_pinmux_init();
+ 
+-	/* LAN89218 */
+-	gpio_request(GPIO_FN_IRQ1_B, NULL); /* IRQ + PME */
+-
+ 	r8a7779_add_standard_devices();
+ 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
+ }
 -- 
-1.7.10.4
+1.8.1.5
 
