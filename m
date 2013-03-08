@@ -1,143 +1,264 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 06 Mar 2013 12:52:49 +0000
-Subject: [PATCH v3 28/29] ARM: shmobile: mackerel: Replace GPIO_PORTx enum with GPIO port numbers
-Message-Id: <1362574370-17889-29-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 08 Mar 2013 10:56:04 +0000
+Subject: [PATCH v4 23/29] sh-pfc: Add support for sparse pin numbers
+Message-Id: <1362740170-19073-24-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The PFC GPIO API implementation moved to using port numbers. Replace all
-GPIO_PORTx enum usage with the corresponding port number. The GPIO_PORTx
-enum values are identical to the port number on this platform.
+The PFC driver assumes that the value of the GPIO_PORTxxx enumeration
+names are equal to the port number. This isn't true when the port number
+space is sparse, as with the SH73A0.
+
+Fix the issue by adding support for pin numbers ranges specified through
+SoC data. When no range is specified the driver considers that the PFC
+implements a single contiguous range for all pins.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/arm/mach-shmobile/board-mackerel.c | 34 ++++++++++++++++-----------------
- 1 file changed, 17 insertions(+), 17 deletions(-)
+ drivers/pinctrl/sh-pfc/core.c    | 19 ++++++++++++-
+ drivers/pinctrl/sh-pfc/core.h    |  2 ++
+ drivers/pinctrl/sh-pfc/gpio.c    | 37 ++++++++++++++++++++-----
+ drivers/pinctrl/sh-pfc/pinctrl.c | 58 +++++++++++++++++++++++++++-------------
+ drivers/pinctrl/sh-pfc/sh_pfc.h  |  2 ++
+ 5 files changed, 91 insertions(+), 27 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index db968a5..172d472 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -363,7 +363,7 @@ static struct fb_videomode mackerel_lcdc_modes[] = {
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index 667db99..79824826 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -80,7 +80,24 @@ static void __iomem *sh_pfc_phys_to_virt(struct sh_pfc *pfc,
  
- static int mackerel_set_brightness(int brightness)
+ struct sh_pfc_pin *sh_pfc_get_pin(struct sh_pfc *pfc, unsigned int pin)
  {
--	gpio_set_value(GPIO_PORT31, brightness);
-+	gpio_set_value(31, brightness);
- 
- 	return 0;
+-	return &pfc->info->pins[pin];
++	unsigned int offset;
++	unsigned int i;
++
++	if (pfc->info->ranges = NULL)
++		return &pfc->info->pins[pin];
++
++	for (i = 0, offset = 0; i < pfc->info->nr_ranges; ++i) {
++		const struct pinmux_range *range = &pfc->info->ranges[i];
++
++		if (pin <= range->end)
++			return pin >= range->begin
++			     ? &pfc->info->pins[offset + pin - range->begin]
++			     : NULL;
++
++		offset += range->end - range->begin + 1;
++	}
++
++	return NULL;
  }
-@@ -819,22 +819,22 @@ static struct platform_device usbhs1_device = {
- static struct gpio_led mackerel_leds[] = {
- 	{
- 		.name		= "led0",
--		.gpio		= GPIO_PORT0,
-+		.gpio		= 0,
- 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
- 	},
- 	{
- 		.name		= "led1",
--		.gpio		= GPIO_PORT1,
-+		.gpio		= 1,
- 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
- 	},
- 	{
- 		.name		= "led2",
--		.gpio		= GPIO_PORT2,
-+		.gpio		= 2,
- 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
- 	},
- 	{
- 		.name		= "led3",
--		.gpio		= GPIO_PORT159,
-+		.gpio		= 159,
- 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
+ 
+ static int sh_pfc_enum_in_range(pinmux_enum_t enum_id, struct pinmux_range *r)
+diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
+index 6ea3d4f..b8b3e87 100644
+--- a/drivers/pinctrl/sh-pfc/core.h
++++ b/drivers/pinctrl/sh-pfc/core.h
+@@ -32,6 +32,8 @@ struct sh_pfc {
+ 	unsigned int num_windows;
+ 	struct sh_pfc_window *window;
+ 
++	unsigned int nr_pins;
++
+ 	struct sh_pfc_chip *gpio;
+ 	struct sh_pfc_chip *func;
+ 
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index 32a9c78..806e2dd 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -45,7 +45,7 @@ static int gpio_pin_request(struct gpio_chip *gc, unsigned offset)
+ 	struct sh_pfc *pfc = gpio_to_pfc(gc);
+ 	struct sh_pfc_pin *pin = sh_pfc_get_pin(pfc, offset);
+ 
+-	if (pin->enum_id = 0)
++	if (pin = NULL || pin->enum_id = 0)
+ 		return -EINVAL;
+ 
+ 	return pinctrl_request_gpio(offset);
+@@ -127,7 +127,7 @@ static void gpio_pin_setup(struct sh_pfc_chip *chip)
+ 	gc->dev = pfc->dev;
+ 	gc->owner = THIS_MODULE;
+ 	gc->base = 0;
+-	gc->ngpio = pfc->info->nr_pins;
++	gc->ngpio = pfc->nr_pins;
+ }
+ 
+ /* -----------------------------------------------------------------------------
+@@ -184,7 +184,7 @@ static void gpio_function_setup(struct sh_pfc_chip *chip)
+ 
+ 	gc->label = pfc->info->name;
+ 	gc->owner = THIS_MODULE;
+-	gc->base = pfc->info->nr_pins;
++	gc->base = pfc->nr_pins;
+ 	gc->ngpio = pfc->info->nr_func_gpios;
+ }
+ 
+@@ -219,20 +219,43 @@ sh_pfc_add_gpiochip(struct sh_pfc *pfc, void(*setup)(struct sh_pfc_chip *))
+ 
+ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+ {
++	const struct pinmux_range *ranges;
++	struct pinmux_range def_range;
+ 	struct sh_pfc_chip *chip;
++	unsigned int nr_ranges;
++	unsigned int i;
+ 	int ret;
+ 
++	/* Register the real GPIOs chip. */
+ 	chip = sh_pfc_add_gpiochip(pfc, gpio_pin_setup);
+ 	if (IS_ERR(chip))
+ 		return PTR_ERR(chip);
+ 
+ 	pfc->gpio = chip;
+ 
+-	ret = gpiochip_add_pin_range(&chip->gpio_chip, dev_name(pfc->dev), 0, 0,
+-				     chip->gpio_chip.ngpio);
+-	if (ret < 0)
+-		return ret;
++	/* Register the GPIO to pin mappings. */
++	if (pfc->info->ranges = NULL) {
++		def_range.begin = 0;
++		def_range.end = pfc->info->nr_pins - 1;
++		ranges = &def_range;
++		nr_ranges = 1;
++	} else {
++		ranges = pfc->info->ranges;
++		nr_ranges = pfc->info->nr_ranges;
++	}
++
++	for (i = 0; i < nr_ranges; ++i) {
++		const struct pinmux_range *range = &ranges[i];
++
++		ret = gpiochip_add_pin_range(&chip->gpio_chip,
++					     dev_name(pfc->dev),
++					     range->begin, range->begin,
++					     range->end - range->begin + 1);
++		if (ret < 0)
++			return ret;
++	}
+ 
++	/* Register the function GPIOs chip. */
+ 	chip = sh_pfc_add_gpiochip(pfc, gpio_function_setup);
+ 	if (IS_ERR(chip))
+ 		return PTR_ERR(chip);
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index a60c317..c9e9a1d 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -293,29 +293,48 @@ static const struct pinconf_ops sh_pfc_pinconf_ops = {
+ 	.pin_config_dbg_show	= sh_pfc_pinconf_dbg_show,
+ };
+ 
+-/* pinmux ranges -> pinctrl pin descs */
+-static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
++/* PFC ranges -> pinctrl pin descs */
++static int sh_pfc_map_pins(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ {
+-	int i;
+-
+-	pmx->nr_pads = pfc->info->nr_pins;
++	const struct pinmux_range *ranges;
++	struct pinmux_range def_range;
++	unsigned int nr_ranges;
++	unsigned int nr_pins;
++	unsigned int i;
++
++	if (pfc->info->ranges = NULL) {
++		def_range.begin = 0;
++		def_range.end = pfc->info->nr_pins - 1;
++		ranges = &def_range;
++		nr_ranges = 1;
++	} else {
++		ranges = pfc->info->ranges;
++		nr_ranges = pfc->info->nr_ranges;
++	}
+ 
+-	pmx->pads = devm_kzalloc(pfc->dev, sizeof(*pmx->pads) * pmx->nr_pads,
++	pmx->pads = devm_kzalloc(pfc->dev,
++				 sizeof(*pmx->pads) * pfc->info->nr_pins,
+ 				 GFP_KERNEL);
+-	if (unlikely(!pmx->pads)) {
+-		pmx->nr_pads = 0;
++	if (unlikely(!pmx->pads))
+ 		return -ENOMEM;
+-	}
+ 
+-	for (i = 0; i < pmx->nr_pads; i++) {
+-		struct pinctrl_pin_desc *pin = pmx->pads + i;
+-		struct sh_pfc_pin *gpio = pfc->info->pins + i;
++	for (i = 0, nr_pins = 0; i < nr_ranges; ++i) {
++		const struct pinmux_range *range = &ranges[i];
++		unsigned int number;
++
++		for (number = range->begin; number <= range->end;
++		     number++, nr_pins++) {
++			struct pinctrl_pin_desc *pin = &pmx->pads[nr_pins];
++			struct sh_pfc_pin *info = &pfc->info->pins[nr_pins];
+ 
+-		pin->number = i;
+-		pin->name = gpio->name;
++			pin->number = number;
++			pin->name = info->name;
++		}
  	}
- };
-@@ -964,11 +964,11 @@ static struct platform_device nand_flash_device = {
  
- /*
-  * The card detect pin of the top SD/MMC slot (CN7) is active low and is
-- * connected to GPIO A22 of SH7372 (GPIO_PORT41).
-+ * connected to GPIO A22 of SH7372 (GPIO 41).
-  */
- static int slot_cn7_get_cd(struct platform_device *pdev)
- {
--	return !gpio_get_value(GPIO_PORT41);
-+	return !gpio_get_value(41);
+-	return 0;
++	pfc->nr_pins = ranges[nr_ranges-1].end + 1;
++
++	return nr_ranges;
  }
  
- /* SDHI0 */
-@@ -977,7 +977,7 @@ static struct sh_mobile_sdhi_info sdhi0_info = {
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
- 	.tmio_flags	= TMIO_MMC_USE_GPIO_CD,
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
--	.cd_gpio	= GPIO_PORT172,
-+	.cd_gpio	= 172,
- };
- 
- static struct resource sdhi0_resources[] = {
-@@ -1060,11 +1060,11 @@ static struct platform_device sdhi1_device = {
- 
- /*
-  * The card detect pin of the top SD/MMC slot (CN23) is active low and is
-- * connected to GPIO SCIFB_SCK of SH7372 (GPIO_PORT162).
-+ * connected to GPIO SCIFB_SCK of SH7372 (162).
-  */
- static int slot_cn23_get_cd(struct platform_device *pdev)
+ static int sh_pfc_map_functions(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+@@ -347,6 +366,7 @@ static int sh_pfc_map_functions(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
  {
--	return !gpio_get_value(GPIO_PORT162);
-+	return !gpio_get_value(162);
- }
+ 	struct sh_pfc_pinctrl *pmx;
++	int nr_ranges;
+ 	int ret;
  
- /* SDHI2 */
-@@ -1403,9 +1403,9 @@ static void __init mackerel_init(void)
- 	gpio_request(GPIO_FN_LCDDCK,   NULL);
+ 	pmx = devm_kzalloc(pfc->dev, sizeof(*pmx), GFP_KERNEL);
+@@ -356,9 +376,9 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ 	pmx->pfc = pfc;
+ 	pfc->pinctrl = pmx;
  
- 	/* backlight, off by default */
--	gpio_request_one(GPIO_PORT31, GPIOF_OUT_INIT_LOW, NULL);
-+	gpio_request_one(31, GPIOF_OUT_INIT_LOW, NULL);
+-	ret = sh_pfc_map_gpios(pfc, pmx);
+-	if (unlikely(ret != 0))
+-		return ret;
++	nr_ranges = sh_pfc_map_pins(pfc, pmx);
++	if (unlikely(nr_ranges < 0))
++		return nr_ranges;
  
--	gpio_request_one(GPIO_PORT151, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
-+	gpio_request_one(151, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
+ 	ret = sh_pfc_map_functions(pfc, pmx);
+ 	if (unlikely(ret != 0))
+@@ -370,7 +390,7 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ 	pmx->pctl_desc.pmxops = &sh_pfc_pinmux_ops;
+ 	pmx->pctl_desc.confops = &sh_pfc_pinconf_ops;
+ 	pmx->pctl_desc.pins = pmx->pads;
+-	pmx->pctl_desc.npins = pmx->nr_pads;
++	pmx->pctl_desc.npins = pfc->info->nr_pins;
  
- 	/* USBHS0 */
- 	gpio_request(GPIO_FN_VBUS0_0, NULL);
-@@ -1421,10 +1421,10 @@ static void __init mackerel_init(void)
- 	gpio_request(GPIO_FN_FSIAILR,	NULL);
- 	gpio_request(GPIO_FN_FSIAISLD,	NULL);
- 	gpio_request(GPIO_FN_FSIAOSLD,	NULL);
--	gpio_request_one(GPIO_PORT161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
-+	gpio_request_one(161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
+ 	pmx->pctl = pinctrl_register(&pmx->pctl_desc, pfc->dev, pmx);
+ 	if (IS_ERR(pmx->pctl))
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index 43c858d..dbcaa60 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -111,6 +111,8 @@ struct sh_pfc_soc_info {
  
--	gpio_request(GPIO_PORT9,  NULL);
--	gpio_request(GPIO_PORT10, NULL);
-+	gpio_request(9,  NULL);
-+	gpio_request(10, NULL);
- 	gpio_direction_none(GPIO_PORT9CR);  /* FSIAOBT needs no direction */
- 	gpio_direction_none(GPIO_PORT10CR); /* FSIAOLR needs no direction */
+ 	struct sh_pfc_pin *pins;
+ 	unsigned int nr_pins;
++	const struct pinmux_range *ranges;
++	unsigned int nr_ranges;
+ 	struct pinmux_func *func_gpios;
+ 	unsigned int nr_func_gpios;
  
-@@ -1475,7 +1475,7 @@ static void __init mackerel_init(void)
- 	gpio_request(GPIO_FN_SDHID1_0, NULL);
- #endif
- 	/* card detect pin for MMC slot (CN7) */
--	gpio_request_one(GPIO_PORT41, GPIOF_IN, NULL);
-+	gpio_request_one(41, GPIOF_IN, NULL);
- 
- 	/* enable SDHI2 */
- 	gpio_request(GPIO_FN_SDHICMD2, NULL);
-@@ -1486,7 +1486,7 @@ static void __init mackerel_init(void)
- 	gpio_request(GPIO_FN_SDHID2_0, NULL);
- 
- 	/* card detect pin for microSD slot (CN23) */
--	gpio_request_one(GPIO_PORT162, GPIOF_IN, NULL);
-+	gpio_request_one(162, GPIOF_IN, NULL);
- 
- 	/* MMCIF */
- 	gpio_request(GPIO_FN_MMCD0_0, NULL);
 -- 
 1.8.1.5
 
