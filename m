@@ -1,32 +1,73 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 28 Mar 2013 00:55:11 +0000
-Subject: Re: [PATCH v4 2/2] ARM: shmobile: r8a7740: Migrate from INTC to GIC
-Message-Id: <20130328005511.GH20736@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 08 Mar 2013 10:56:03 +0000
+Subject: [PATCH v4 22/29] sh-pfc: Replace pinctrl_add_gpio_range() with gpiochip_add_pin_range()
+Message-Id: <1362740170-19073-23-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364392444-25181-1-git-send-email-hechtb+renesas@gmail.com>
- <1364392444-25181-2-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1364392444-25181-2-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Mar 27, 2013 at 02:54:04PM +0100, Bastian Hecht wrote:
-> With the added capabilty of the intc_irqpin driver to handle shared
-> external IRQs, all prerequisites are fulfilled and we are ready to
-> migrate completely to GIC. This includes the following steps:
-> 
-> - Kconfig:	select ARM_GIC and RENESAS_INTC_IRQPIN
-> - intc-r8a7740: Throw out all legacy INTC code and init the GIC. We need
->   		to mask out all shared IRQs as it is needed by the
-> 		shared intc_irqpin driver.
-> - setup-r8a7740: Add 4 irqpin devices to handle external IRQs and update
-> 		all IRQ numbers to point to the GIC SPI.
-> - board-armadillo: Update all IRQ numbers to point to the GIC SPI.
-> - pfc-r8a7740:	Update all IRQ numbers of the GPIOs to point to the GIC
-> 		SPI.
-> 
-> Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
-> Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Adding a GPIO range to a pinctrl device logically belongs to the GPIO
+driver. Switch to the right API.
 
-Thanks, queued up for v3.10 in the soc branch.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/pinctrl/sh-pfc/gpio.c    | 6 ++++++
+ drivers/pinctrl/sh-pfc/pinctrl.c | 9 ---------
+ 2 files changed, 6 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index 45090d8..32a9c78 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -220,6 +220,7 @@ sh_pfc_add_gpiochip(struct sh_pfc *pfc, void(*setup)(struct sh_pfc_chip *))
+ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+ {
+ 	struct sh_pfc_chip *chip;
++	int ret;
+ 
+ 	chip = sh_pfc_add_gpiochip(pfc, gpio_pin_setup);
+ 	if (IS_ERR(chip))
+@@ -227,6 +228,11 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+ 
+ 	pfc->gpio = chip;
+ 
++	ret = gpiochip_add_pin_range(&chip->gpio_chip, dev_name(pfc->dev), 0, 0,
++				     chip->gpio_chip.ngpio);
++	if (ret < 0)
++		return ret;
++
+ 	chip = sh_pfc_add_gpiochip(pfc, gpio_function_setup);
+ 	if (IS_ERR(chip))
+ 		return PTR_ERR(chip);
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index 78bd277..a60c317 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -28,7 +28,6 @@
+ struct sh_pfc_pinctrl {
+ 	struct pinctrl_dev *pctl;
+ 	struct pinctrl_desc pctl_desc;
+-	struct pinctrl_gpio_range range;
+ 
+ 	struct sh_pfc *pfc;
+ 
+@@ -377,14 +376,6 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ 	if (IS_ERR(pmx->pctl))
+ 		return PTR_ERR(pmx->pctl);
+ 
+-	pmx->range.name = DRV_NAME,
+-	pmx->range.id = 0;
+-	pmx->range.npins = pfc->info->nr_pins;
+-	pmx->range.base = 0;
+-	pmx->range.pin_base = 0;
+-
+-	pinctrl_add_gpio_range(pmx->pctl, &pmx->range);
+-
+ 	return 0;
+ }
+ 
+-- 
+1.8.1.5
+
