@@ -1,56 +1,82 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:06:35 +0000
-Subject: [PATCH 099/142] ARM: shmobile: marzen: Register pinctrl mappings for SCIF
-Message-Id: <1363604838-29359-100-git-send-email-horms+renesas@verge.net.au>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Fri, 08 Mar 2013 11:29:35 +0000
+Subject: [PATCH v2 1/7] ARM: shmobile: Define DT bindings for timer devices
+Message-Id: <1362742181-19111-2-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+References: <1362742181-19111-1-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1362742181-19111-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The SH mobile series currently features 3 timer devices in the kernel:
+Compare Match Timer (CMT), Timer Unit (TMU) and MTU2. These devices
+share register layout characteristics amongst each that enable us to
+define common DT bindings for them.
 
-Replace the GPIO-based SCIF pinmux configuration by pinctrl mappings.
-
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
 ---
- arch/arm/mach-shmobile/board-marzen.c |   14 ++++++--------
- 1 file changed, 6 insertions(+), 8 deletions(-)
+v2:
+- Split the bindings into an extra patch
+- Renamed the linux specific clocksource-rating and added an explanation why
+  it is in the bindings
+- Using the postfix -timer in the compatible string
+ .../devicetree/bindings/timer/renesas,timer.txt    |   45 ++++++++++++++++++++
+ 1 file changed, 45 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/timer/renesas,timer.txt
 
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index f00677f..4097366 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -329,6 +329,12 @@ void __init marzen_init_late(void)
- }
- 
- static const struct pinctrl_map marzen_pinctrl_map[] = {
-+	/* SCIF2 (CN18: DEBUG0) */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-r8a7779",
-+				  "scif2_data_c", "scif2"),
-+	/* SCIF4 (CN19: DEBUG1) */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-r8a7779",
-+				  "scif4_data", "scif4"),
- 	/* SDHI0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
- 				  "sdhi0_data4", "sdhi0"),
-@@ -351,14 +357,6 @@ static void __init marzen_init(void)
- 				  ARRAY_SIZE(marzen_pinctrl_map));
- 	r8a7779_pinmux_init();
- 
--	/* SCIF2 (CN18: DEBUG0) */
--	gpio_request(GPIO_FN_TX2_C, NULL);
--	gpio_request(GPIO_FN_RX2_C, NULL);
--
--	/* SCIF4 (CN19: DEBUG1) */
--	gpio_request(GPIO_FN_TX4, NULL);
--	gpio_request(GPIO_FN_RX4, NULL);
--
- 	/* LAN89218 */
- 	gpio_request(GPIO_FN_EX_CS0, NULL); /* nCS */
- 	gpio_request(GPIO_FN_IRQ1_B, NULL); /* IRQ + PME */
+diff --git a/Documentation/devicetree/bindings/timer/renesas,timer.txt b/Documentation/devicetree/bindings/timer/renesas,timer.txt
+new file mode 100644
+index 0000000..2c001bf
+--- /dev/null
++++ b/Documentation/devicetree/bindings/timer/renesas,timer.txt
+@@ -0,0 +1,45 @@
++* Renesas SH Mobile Timer
++
++Bindings for several timer devices from Renesas including CMT, TMU and MTU2.
++
++Required properties:
++- compatible : Should be "renesas,{device}-timer",
++  whereas device is "cmt", "tmu" or "mtu2".
++- reg : Address and length of the register set for the device
++- interrupts : Timer interrupt
++- renesas,device-id : The ID of the timer device
++- renesas,channel-id : The channel ID of the timer device
++- renesas,source-quality : The viability to use this device as a free
++  running clock. From 0 (do not use) to 10 (best possible clock).
++- renesas,event-quality : The viability to use this device as an event
++  generator. From 0 (do not use) to 10 (best possible clock).
++
++The properties renesas,{source,event}-quality reflect the situation that the
++usability of the timer devices depend on the location within their SoCs. E.g.
++the power domain affinty affects power management, some mux-ed lines might be
++preferred to be assigned to other functions and other constraints.
++
++Example for CMT1 channel 0 on the R8A7740 SoC:
++
++	timer@e6138010 {
++		compatible = "renesas,cmt-timer";
++		interrupt-parent = <&intca>;
++		reg = <0xe6138010 0xc>;
++		interrupts = <0x0b00>;
++		renesas,device-id = <1>;
++		renesas,channel-id = <0>;
++		renesas,source-quality = <3>;
++		renesas,event-quality = <3>;
++	};
++
++Example for TMU0 channel 1 on the SH7372 SoC:
++	timer@fff60014 {
++		compatible = "renesas,tmu-timer";
++		interrupt-parent = <&intcs>;
++		reg = <0xfff60014 0xc>;
++		interrupts = <0xea0>;
++		renesas,device-id = <0>;
++		renesas,channel-id = <1>;
++		renesas,source-quality = <4>;
++		renesas,event-quality = <0>;
++	};
 -- 
-1.7.10.4
+1.7.9.5
 
