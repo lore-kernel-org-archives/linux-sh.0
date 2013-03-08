@@ -1,56 +1,69 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:05:30 +0000
-Subject: [PATCH 034/142] sh: sh7722: Add pin control resources
-Message-Id: <1363604838-29359-35-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 08 Mar 2013 11:02:01 +0000
+Subject: [PATCH v3 41/64] sh-pfc: r8a7740: Remove LCD0 and LCD1 function GPIOS
+Message-Id: <1362740544-19164-42-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-Add memory resources for the pin control platform device to let the
-sh-pfc driver ioremap() registers properly instead of evily casting
-register physical addresses to virtual addresses.
-
-The memory resource address range has been extracted from the config and
-data registes lists in the sh-pfc driver.
+All r8a7740 platforms now use the pinctrl API to control the LCD0 and
+LCD1 pins, the corresponding function GPIOS are unused. Remove them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c |   14 ++++++++++++--
- 1 file changed, 12 insertions(+), 2 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 37 ------------------------------------
+ 1 file changed, 37 deletions(-)
 
-diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c
-index d9bcc42..271bbc8 100644
---- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c
-+++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c
-@@ -1,10 +1,20 @@
-+#include <linux/bug.h>
- #include <linux/init.h>
- #include <linux/kernel.h>
-+#include <linux/ioport.h>
- #include <cpu/pfc.h>
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index c15128b..b34a27d 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -2312,43 +2312,6 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(SCIFB_RTS_PORT172),
+ 	GPIO_FN(SCIFB_CTS_PORT173),
  
-+static struct resource sh7722_pfc_resources[] = {
-+	[0] = {
-+		.start	= 0xa4050100,
-+		.end	= 0xa405018f,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+};
-+
- static int __init plat_pinmux_setup(void)
- {
--	return sh_pfc_register("pfc-sh7722", NULL, 0);
-+	return sh_pfc_register("pfc-sh7722", sh7722_pfc_resources,
-+			       ARRAY_SIZE(sh7722_pfc_resources));
- }
+-	/* LCD0 */
+-	GPIO_FN(LCD0_D0),	GPIO_FN(LCD0_D1),	GPIO_FN(LCD0_D2),
+-	GPIO_FN(LCD0_D3),	GPIO_FN(LCD0_D4),	GPIO_FN(LCD0_D5),
+-	GPIO_FN(LCD0_D6),	GPIO_FN(LCD0_D7),	GPIO_FN(LCD0_D8),
+-	GPIO_FN(LCD0_D9),	GPIO_FN(LCD0_D10),	GPIO_FN(LCD0_D11),
+-	GPIO_FN(LCD0_D12),	GPIO_FN(LCD0_D13),	GPIO_FN(LCD0_D14),
+-	GPIO_FN(LCD0_D15),	GPIO_FN(LCD0_D16),	GPIO_FN(LCD0_D17),
+-	GPIO_FN(LCD0_DON),	GPIO_FN(LCD0_VCPWC),	GPIO_FN(LCD0_VEPWC),
+-	GPIO_FN(LCD0_DCK),	GPIO_FN(LCD0_VSYN),
+-	GPIO_FN(LCD0_HSYN),	GPIO_FN(LCD0_DISP),
+-	GPIO_FN(LCD0_WR),	GPIO_FN(LCD0_RD),
+-	GPIO_FN(LCD0_CS),	GPIO_FN(LCD0_RS),
 -
- arch_initcall(plat_pinmux_setup);
+-	GPIO_FN(LCD0_D18_PORT163),	GPIO_FN(LCD0_D19_PORT162),
+-	GPIO_FN(LCD0_D20_PORT161),	GPIO_FN(LCD0_D21_PORT158),
+-	GPIO_FN(LCD0_D22_PORT160),	GPIO_FN(LCD0_D23_PORT159),
+-	GPIO_FN(LCD0_LCLK_PORT165),	/* MSEL5CR_6_1 */
+-
+-	GPIO_FN(LCD0_D18_PORT40),	GPIO_FN(LCD0_D19_PORT4),
+-	GPIO_FN(LCD0_D20_PORT3),	GPIO_FN(LCD0_D21_PORT2),
+-	GPIO_FN(LCD0_D22_PORT0),	GPIO_FN(LCD0_D23_PORT1),
+-	GPIO_FN(LCD0_LCLK_PORT102),	/* MSEL5CR_6_0 */
+-
+-	/* LCD1 */
+-	GPIO_FN(LCD1_D0),	GPIO_FN(LCD1_D1),	GPIO_FN(LCD1_D2),
+-	GPIO_FN(LCD1_D3),	GPIO_FN(LCD1_D4),	GPIO_FN(LCD1_D5),
+-	GPIO_FN(LCD1_D6),	GPIO_FN(LCD1_D7),	GPIO_FN(LCD1_D8),
+-	GPIO_FN(LCD1_D9),	GPIO_FN(LCD1_D10),	GPIO_FN(LCD1_D11),
+-	GPIO_FN(LCD1_D12),	GPIO_FN(LCD1_D13),	GPIO_FN(LCD1_D14),
+-	GPIO_FN(LCD1_D15),	GPIO_FN(LCD1_D16),	GPIO_FN(LCD1_D17),
+-	GPIO_FN(LCD1_D18),	GPIO_FN(LCD1_D19),	GPIO_FN(LCD1_D20),
+-	GPIO_FN(LCD1_D21),	GPIO_FN(LCD1_D22),	GPIO_FN(LCD1_D23),
+-	GPIO_FN(LCD1_RS),	GPIO_FN(LCD1_RD),	GPIO_FN(LCD1_CS),
+-	GPIO_FN(LCD1_WR),	GPIO_FN(LCD1_DCK),	GPIO_FN(LCD1_DON),
+-	GPIO_FN(LCD1_VCPWC),	GPIO_FN(LCD1_LCLK),	GPIO_FN(LCD1_HSYN),
+-	GPIO_FN(LCD1_VSYN),	GPIO_FN(LCD1_VEPWC),	GPIO_FN(LCD1_DISP),
+-
+ 	/* RSPI */
+ 	GPIO_FN(RSPI_SSL0_A),	GPIO_FN(RSPI_SSL1_A),	GPIO_FN(RSPI_SSL2_A),
+ 	GPIO_FN(RSPI_SSL3_A),	GPIO_FN(RSPI_CK_A),	GPIO_FN(RSPI_MOSI_A),
 -- 
-1.7.10.4
+1.8.1.5
 
