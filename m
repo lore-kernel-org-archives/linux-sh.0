@@ -1,77 +1,64 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:07:02 +0000
-Subject: [PATCH 126/142] ARM: shmobile: sh73a0: Remove I2C function GPIOs
-Message-Id: <1363604838-29359-127-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 08 Mar 2013 11:02:24 +0000
+Subject: [PATCH v3 64/64] ARM: shmobile: r8a7779: Remove INTC function GPIOs
+Message-Id: <1362740544-19164-65-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
-
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+To: linux-sh@vger.kernel.org
 
 Those GPIOs have been deprecated by the pinctrl API. They are unused and
 unneeded, remove them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/include/mach/sh73a0.h |   18 ++++++++----------
- 1 file changed, 8 insertions(+), 10 deletions(-)
+ arch/arm/mach-shmobile/include/mach/r8a7779.h | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/sh73a0.h b/arch/arm/mach-shmobile/include/mach/sh73a0.h
-index b843cd7..3d7950c 100644
---- a/arch/arm/mach-shmobile/include/mach/sh73a0.h
-+++ b/arch/arm/mach-shmobile/include/mach/sh73a0.h
-@@ -115,9 +115,9 @@ enum {
- 	GPIO_FN_GPO4, GPIO_FN_STATUS2,
- 	GPIO_FN_VINT,
- 	GPIO_FN_TCKON,
--	GPIO_FN_XDVFS1, GPIO_FN_PORT27_I2C_SCL2, GPIO_FN_PORT27_I2C_SCL3, \
-+	GPIO_FN_XDVFS1,
- 	GPIO_FN_MFG0_OUT1, GPIO_FN_PORT27_IROUT,
--	GPIO_FN_XDVFS2, GPIO_FN_PORT28_I2C_SDA2, GPIO_FN_PORT28_I2C_SDA3, \
-+	GPIO_FN_XDVFS2,
- 	GPIO_FN_PORT28_TPU1TO1,
- 	GPIO_FN_SIM_RST, GPIO_FN_PORT29_TPU1TO1,
- 	GPIO_FN_SIM_CLK, GPIO_FN_PORT30_VIO_CKOR,
-@@ -203,10 +203,8 @@ enum {
- 	GPIO_FN_HSI_TX_WAKE, GPIO_FN_BBIF1_TSCK,
- 	GPIO_FN_HSI_TX_DATA, GPIO_FN_BBIF1_TSYNC,
- 	GPIO_FN_HSI_TX_READY, GPIO_FN_BBIF1_TXD,
--	GPIO_FN_HSI_RX_READY, GPIO_FN_BBIF1_RSCK, GPIO_FN_PORT115_I2C_SCL2, \
--	GPIO_FN_PORT115_I2C_SCL3,
--	GPIO_FN_HSI_RX_WAKE, GPIO_FN_BBIF1_RSYNC, GPIO_FN_PORT116_I2C_SDA2, \
--	GPIO_FN_PORT116_I2C_SDA3,
-+	GPIO_FN_HSI_RX_READY, GPIO_FN_BBIF1_RSCK,
-+	GPIO_FN_HSI_RX_WAKE, GPIO_FN_BBIF1_RSYNC,
- 	GPIO_FN_HSI_RX_FLAG, GPIO_FN_BBIF1_SS1, GPIO_FN_BBIF1_FLOW,
- 	GPIO_FN_HSI_TX_FLAG,
- 	GPIO_FN_VIO_VD, GPIO_FN_VIO2_VD,
-@@ -292,8 +290,8 @@ enum {
- 	GPIO_FN_MSIOF1_RXD,
- 	GPIO_FN_MSIOF1_RSCK, GPIO_FN_VIO2_CLK2,
- 	GPIO_FN_MSIOF1_RSYNC, GPIO_FN_MFG1_IN2, GPIO_FN_VIO2_VD2, \
--	GPIO_FN_MSIOF1_MCK0, GPIO_FN_PORT236_I2C_SDA2,
--	GPIO_FN_MSIOF1_MCK1, GPIO_FN_PORT237_I2C_SCL2,
-+	GPIO_FN_MSIOF1_MCK0,
-+	GPIO_FN_MSIOF1_MCK1,
- 	GPIO_FN_MSIOF1_SS1, GPIO_FN_VIO2_FIELD2,
- 	GPIO_FN_MSIOF1_SS2, GPIO_FN_VIO2_HD2,
- 	GPIO_FN_PORT241_IRDA_OUT, GPIO_FN_PORT241_IROUT, GPIO_FN_MFG4_OUT1, \
-@@ -310,9 +308,9 @@ enum {
- 	GPIO_FN_TPU3TO1,
- 	GPIO_FN_MFG2_OUT1,
- 	GPIO_FN_TPU2TO0,
--	GPIO_FN_PORT248_I2C_SCL3, GPIO_FN_MSIOF2R_TSCK,
-+	GPIO_FN_MSIOF2R_TSCK,
- 	GPIO_FN_PORT249_IROUT, GPIO_FN_MFG4_IN1, \
--	GPIO_FN_PORT249_I2C_SDA3, GPIO_FN_MSIOF2R_TSYNC,
-+	GPIO_FN_MSIOF2R_TSYNC,
- 	GPIO_FN_SDHICLK0,
- 	GPIO_FN_SDHICD0,
- 	GPIO_FN_SDHID0_0,
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+index 688c0d2..8ea0ad1 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -213,12 +213,12 @@ enum {
+ 	/* IPSR7 */
+ 	GPIO_FN_SSI_WS6, GPIO_FN_ADICHS1, GPIO_FN_CAN0_RX, GPIO_FN_IETX_B,
+ 	GPIO_FN_SSI_SDATA6, GPIO_FN_ADICHS2, GPIO_FN_CAN_CLK, GPIO_FN_IECLK_B,
+-	GPIO_FN_SSI_SCK78, GPIO_FN_CAN_DEBUGOUT13, GPIO_FN_IRQ0_B,
++	GPIO_FN_SSI_SCK78, GPIO_FN_CAN_DEBUGOUT13,
+ 	GPIO_FN_SSI_SCK9_B, GPIO_FN_SSI_WS78,
+-	GPIO_FN_CAN_DEBUGOUT14, GPIO_FN_IRQ1_B, GPIO_FN_SSI_WS9_B,
++	GPIO_FN_CAN_DEBUGOUT14, GPIO_FN_SSI_WS9_B,
+ 	GPIO_FN_SSI_SDATA7, GPIO_FN_CAN_DEBUGOUT15,
+-	GPIO_FN_IRQ2_B, GPIO_FN_TCLK1_C,
+-	GPIO_FN_SSI_SDATA8, GPIO_FN_VSP, GPIO_FN_IRQ3_B,
++	GPIO_FN_TCLK1_C,
++	GPIO_FN_SSI_SDATA8, GPIO_FN_VSP,
+ 	GPIO_FN_ATACS01,
+ 	GPIO_FN_ATACS11, GPIO_FN_CC5_TDO,
+ 	GPIO_FN_ATADIR1, GPIO_FN_CC5_TRST,
+@@ -256,8 +256,8 @@ enum {
+ 	GPIO_FN_VI0_DATA5_VI0_B5, GPIO_FN_VI0_DATA6_VI0_B6,
+ 	GPIO_FN_ARM_TRACEDATA_0, GPIO_FN_VI0_DATA7_VI0_B7,
+ 	GPIO_FN_ARM_TRACEDATA_1, GPIO_FN_VI0_G0,
+-	GPIO_FN_SSI_SCK78_C, GPIO_FN_IRQ0, GPIO_FN_ARM_TRACEDATA_2,
+-	GPIO_FN_VI0_G1, GPIO_FN_SSI_WS78_C, GPIO_FN_IRQ1,
++	GPIO_FN_SSI_SCK78_C, GPIO_FN_ARM_TRACEDATA_2,
++	GPIO_FN_VI0_G1, GPIO_FN_SSI_WS78_C,
+ 	GPIO_FN_ARM_TRACEDATA_3, GPIO_FN_VI0_G2, GPIO_FN_ETH_TXD1,
+ 	GPIO_FN_ARM_TRACEDATA_4, GPIO_FN_TS_SPSYNC0,
+ 	GPIO_FN_VI0_G3, GPIO_FN_ETH_CRS_DV,
+@@ -273,8 +273,8 @@ enum {
+ 	GPIO_FN_ARM_TRACEDATA_10, GPIO_FN_DREQ0_C, GPIO_FN_VI0_R1,
+ 	GPIO_FN_SSI_SDATA8_C, GPIO_FN_DACK1_B, GPIO_FN_ARM_TRACEDATA_11,
+ 	GPIO_FN_DACK0_C, GPIO_FN_DRACK0_C, GPIO_FN_VI0_R2, GPIO_FN_ETH_LINK,
+-	GPIO_FN_IRQ2, GPIO_FN_ARM_TRACEDATA_12,
+-	GPIO_FN_VI0_R3, GPIO_FN_ETH_MAGIC, GPIO_FN_IRQ3,
++	GPIO_FN_ARM_TRACEDATA_12,
++	GPIO_FN_VI0_R3, GPIO_FN_ETH_MAGIC,
+ 	GPIO_FN_ARM_TRACEDATA_13, GPIO_FN_VI0_R4, GPIO_FN_ETH_REFCLK,
+ 	GPIO_FN_ARM_TRACEDATA_14,
+ 	GPIO_FN_MT1_CLK, GPIO_FN_TS_SCK0, GPIO_FN_VI0_R5, GPIO_FN_ETH_TXD0,
 -- 
-1.7.10.4
+1.8.1.5
 
