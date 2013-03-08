@@ -1,95 +1,33 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 27 Mar 2013 07:55:41 +0000
-Subject: [PATCH 3/8] ARM: shmobile: add struct clk_ratio and fixed ratio clock macro
-Message-Id: <8738vhi8ee.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 08 Mar 2013 11:02:17 +0000
+Subject: [PATCH v3 57/64] ARM: shmobile: r8a7779: Remove DU1_DOTCLKOUT1 GPIO
+Message-Id: <1362740544-19164-58-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Renesas chip has many clocks inside,
-and some of them are using fixed ratio via parent clock.
-Current shmobile clock code is using own divX_recalc function
-and divX_clk_ops.
-This patch can reduce these code
+The function is not documented in the r8a7779 datasheet. Remove it.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock.c              |   13 +++++++++
- arch/arm/mach-shmobile/include/mach/clock.h |   39 +++++++++++++++++++++++++++
- 2 files changed, 52 insertions(+)
- create mode 100644 arch/arm/mach-shmobile/include/mach/clock.h
+ arch/arm/mach-shmobile/include/mach/r8a7779.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/clock.c b/arch/arm/mach-shmobile/clock.c
-index e816ca9..ad7df62 100644
---- a/arch/arm/mach-shmobile/clock.c
-+++ b/arch/arm/mach-shmobile/clock.c
-@@ -23,6 +23,19 @@
- #include <linux/init.h>
- #include <linux/sh_clk.h>
- #include <linux/export.h>
-+#include <mach/clock.h>
-+#include <mach/common.h>
-+
-+unsigned long shmobile_fixed_ratio_clk_recalc(struct clk *clk)
-+{
-+	struct clk_ratio *p = clk->priv;
-+
-+	return clk->parent->rate / p->div * p->mul;
-+};
-+
-+struct sh_clk_ops shmobile_fixed_ratio_clk_ops = {
-+	.recalc	= shmobile_fixed_ratio_clk_recalc,
-+};
- 
- int __init shmobile_clk_init(void)
- {
-diff --git a/arch/arm/mach-shmobile/include/mach/clock.h b/arch/arm/mach-shmobile/include/mach/clock.h
-new file mode 100644
-index 0000000..76ac612
---- /dev/null
-+++ b/arch/arm/mach-shmobile/include/mach/clock.h
-@@ -0,0 +1,39 @@
-+#ifndef CLOCK_H
-+#define CLOCK_H
-+
-+unsigned long shmobile_fixed_ratio_clk_recalc(struct clk *clk);
-+extern struct sh_clk_ops shmobile_fixed_ratio_clk_ops;
-+
-+/* clock ratio */
-+struct clk_ratio {
-+	int mul;
-+	int div;
-+};
-+
-+#define SH_CLK_RATIO(name, m, d)		\
-+static struct clk_ratio name ##_ratio = {	\
-+	.mul = m,				\
-+	.div = d,				\
-+}
-+
-+#define SH_FIXED_RATIO_CLKg(name, p, r)	\
-+struct clk name = {			\
-+	.parent	= &p,				\
-+	.ops	= &shmobile_fixed_ratio_clk_ops,\
-+	.priv	= &r ## _ratio,			\
-+}
-+
-+#define SH_FIXED_RATIO_CLK(name, p, r)		\
-+static SH_FIXED_RATIO_CLKg(name, p, r);
-+
-+#define SH_FIXED_RATIO_CLK_SET(name, p, m, d)	\
-+	SH_CLK_RATIO(name, m, d);		\
-+	SH_FIXED_RATIO_CLK(name, p, name);
-+
-+#define SH_CLK_SET_RATIO(p, m, d)	\
-+{			\
-+	(p)->mul = m;	\
-+	(p)->div = d;	\
-+}
-+
-+#endif
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+index 8ab0cd6..badba57 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -308,7 +308,7 @@ enum {
+ 	GPIO_FN_SD2_CD, GPIO_FN_MT0_VCXO, GPIO_FN_SPA_TMS, GPIO_FN_HSPI_TX1_D,
+ 	GPIO_FN_VI1_DATA7_VI1_B7, GPIO_FN_SD2_WP, GPIO_FN_MT0_PWM,
+ 	GPIO_FN_SPA_TDI, GPIO_FN_HSPI_RX1_D, GPIO_FN_VI1_G0, GPIO_FN_VI3_DATA0,
+-	GPIO_FN_DU1_DOTCLKOUT1, GPIO_FN_TS_SCK1, GPIO_FN_DREQ2_B, GPIO_FN_TX2,
++	GPIO_FN_TS_SCK1, GPIO_FN_DREQ2_B, GPIO_FN_TX2,
+ 	GPIO_FN_SPA_TDO, GPIO_FN_HCTS0_B, GPIO_FN_VI1_G1, GPIO_FN_VI3_DATA1,
+ 	GPIO_FN_SSI_SCK1, GPIO_FN_TS_SDEN1, GPIO_FN_DACK2_B, GPIO_FN_RX2,
+ 	GPIO_FN_HRTS0_B,
 -- 
-1.7.9.5
+1.8.1.5
 
