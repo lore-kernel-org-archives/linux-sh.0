@@ -1,153 +1,64 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 22 Mar 2013 01:23:50 +0000
-Subject: [PATCH 4/6] ARM: shmobile: kzm9g: add fixed voltage regulators for SDHI0 and SDHI2
-Message-Id: <1363915432-21720-5-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 08 Mar 2013 11:02:09 +0000
+Subject: [PATCH v3 49/64] sh-pfc: r8a7779: Remove INTC function GPIOS
+Message-Id: <1362740544-19164-50-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363915432-21720-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363915432-21720-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+All r8a7779 platforms now use the pinctrl API to control the INTC pins,
+the corresponding function GPIOS are unused. Remove them.
 
-Both SDHI0 and SDHI2 power supplies on kzm9g can be switched on and off. In
-the current version this is not used and the regulators are hard-wired to
-"on." This patch switches SDHI0 and SDHI2 to proper fixed-voltage
-regulators, using GPIOs to enable and disable them. Both ports shall
-now be specifying the MMC_CAP_POWER_OFF_CARD MMC capability. Only SDHI0
-has been tested with an SDIO card, since SDHI2 is a microSD slot.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-kzm9g.c |   76 +++++++++++++++++++++++++++-------
- 1 file changed, 62 insertions(+), 14 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 15 +++++++--------
+ 1 file changed, 7 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index e924b81..77a66ac 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -375,13 +375,64 @@ static struct platform_device mmc_device = {
- 	.resource	= sh_mmcif_resources,
- };
- 
--/* Fixed 3.3V regulators to be used by SDHI0 and SDHI2 */
--static struct regulator_consumer_supply fixed3v3_power_consumers[] +/* Fixed 3.3V regulators to be used by SDHI0 */
-+static struct regulator_consumer_supply vcc_sdhi0_consumers[]  {
- 	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
--	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
-+};
-+
-+static struct regulator_init_data vcc_sdhi0_init_data = {
-+	.constraints = {
-+		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
-+	},
-+	.num_consumer_supplies  = ARRAY_SIZE(vcc_sdhi0_consumers),
-+	.consumer_supplies      = vcc_sdhi0_consumers,
-+};
-+
-+static struct fixed_voltage_config vcc_sdhi0_info = {
-+	.supply_name = "SDHI0 Vcc",
-+	.microvolts = 3300000,
-+	.gpio = 15,
-+	.enable_high = 1,
-+	.init_data = &vcc_sdhi0_init_data,
-+};
-+
-+static struct platform_device vcc_sdhi0 = {
-+	.name = "reg-fixed-voltage",
-+	.id   = 0,
-+	.dev  = {
-+		.platform_data = &vcc_sdhi0_info,
-+	},
-+};
-+
-+/* Fixed 3.3V regulators to be used by SDHI2 */
-+static struct regulator_consumer_supply vcc_sdhi2_consumers[] +{
- 	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.2"),
--	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.2"),
-+};
-+
-+static struct regulator_init_data vcc_sdhi2_init_data = {
-+	.constraints = {
-+		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
-+	},
-+	.num_consumer_supplies  = ARRAY_SIZE(vcc_sdhi2_consumers),
-+	.consumer_supplies      = vcc_sdhi2_consumers,
-+};
-+
-+static struct fixed_voltage_config vcc_sdhi2_info = {
-+	.supply_name = "SDHI2 Vcc",
-+	.microvolts = 3300000,
-+	.gpio = 14,
-+	.enable_high = 1,
-+	.init_data = &vcc_sdhi2_init_data,
-+};
-+
-+static struct platform_device vcc_sdhi2 = {
-+	.name = "reg-fixed-voltage",
-+	.id   = 1,
-+	.dev  = {
-+		.platform_data = &vcc_sdhi2_info,
-+	},
- };
- 
- /* SDHI */
-@@ -389,7 +440,8 @@ static struct sh_mobile_sdhi_info sdhi0_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
--	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
-+	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
-+			  MMC_CAP_POWER_OFF_CARD,
- };
- 
- static struct resource sdhi0_resources[] = {
-@@ -432,7 +484,7 @@ static struct sh_mobile_sdhi_info sdhi2_info = {
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
- 			  TMIO_MMC_USE_GPIO_CD |
- 			  TMIO_MMC_WRPROTECT_DISABLE,
--	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
-+	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_POWER_OFF_CARD,
- 	.cd_gpio	= 13,
- };
- 
-@@ -592,6 +644,8 @@ static struct platform_device *kzm_devices[] __initdata = {
- 	&usbhs_device,
- 	&lcdc_device,
- 	&mmc_device,
-+	&vcc_sdhi0,
-+	&vcc_sdhi2,
- 	&sdhi0_device,
- 	&sdhi2_device,
- 	&gpio_keys_device,
-@@ -712,11 +766,9 @@ device_initcall(as3711_enable_lcdc_backlight);
- 
- static void __init kzm_init(void)
- {
--	regulator_register_always_on(0, "fixed-1.8V", fixed1v8_power_consumers,
-+	regulator_register_always_on(2, "fixed-1.8V", fixed1v8_power_consumers,
- 				     ARRAY_SIZE(fixed1v8_power_consumers), 1800000);
--	regulator_register_always_on(1, "fixed-3.3V", fixed3v3_power_consumers,
--				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
--	regulator_register_fixed(2, dummy_supplies, ARRAY_SIZE(dummy_supplies));
-+	regulator_register_fixed(3, dummy_supplies, ARRAY_SIZE(dummy_supplies));
- 
- 	pinctrl_register_mappings(kzm_pinctrl_map, ARRAY_SIZE(kzm_pinctrl_map));
- 
-@@ -734,10 +786,6 @@ static void __init kzm_init(void)
- 
- 	/* enable SD */
- 	gpio_request(GPIO_FN_SDHI0_VCCQ_MC0_ON,	NULL);
--	gpio_request_one(15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
--
--	/* enable Micro SD */
--	gpio_request_one(14, GPIOF_OUT_INIT_HIGH, NULL); /* power */
- 
- #ifdef CONFIG_CACHE_L2X0
- 	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+index 14a247d..4d928c5 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+@@ -2848,12 +2848,11 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(SSI_WS6), GPIO_FN(ADICHS1), GPIO_FN(CAN0_RX), GPIO_FN(IETX_B),
+ 	GPIO_FN(SSI_SDATA6), GPIO_FN(ADICHS2), GPIO_FN(CAN_CLK),
+ 	GPIO_FN(IECLK_B), GPIO_FN(SSI_SCK78), GPIO_FN(CAN_DEBUGOUT13),
+-	GPIO_FN(IRQ0_B), GPIO_FN(SSI_SCK9_B),
+-	GPIO_FN(SSI_WS78), GPIO_FN(CAN_DEBUGOUT14), GPIO_FN(IRQ1_B),
++	GPIO_FN(SSI_SCK9_B),
++	GPIO_FN(SSI_WS78), GPIO_FN(CAN_DEBUGOUT14),
+ 	GPIO_FN(SSI_WS9_B), GPIO_FN(SSI_SDATA7),
+-	GPIO_FN(CAN_DEBUGOUT15), GPIO_FN(IRQ2_B), GPIO_FN(TCLK1_C),
++	GPIO_FN(CAN_DEBUGOUT15), GPIO_FN(TCLK1_C),
+ 	GPIO_FN(SSI_SDATA8), GPIO_FN(VSP),
+-	GPIO_FN(IRQ3_B),
+ 	GPIO_FN(ATACS01), GPIO_FN(ATACS11),
+ 	GPIO_FN(CC5_TDO), GPIO_FN(ATADIR1),
+ 	GPIO_FN(CC5_TRST), GPIO_FN(ATAG1),
+@@ -2892,8 +2891,8 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(VI0_DATA5_VI0_B5), GPIO_FN(VI0_DATA6_VI0_B6),
+ 	GPIO_FN(ARM_TRACEDATA_0), GPIO_FN(VI0_DATA7_VI0_B7),
+ 	GPIO_FN(ARM_TRACEDATA_1), GPIO_FN(VI0_G0),
+-	GPIO_FN(SSI_SCK78_C), GPIO_FN(IRQ0), GPIO_FN(ARM_TRACEDATA_2),
+-	GPIO_FN(VI0_G1), GPIO_FN(SSI_WS78_C), GPIO_FN(IRQ1),
++	GPIO_FN(SSI_SCK78_C), GPIO_FN(ARM_TRACEDATA_2),
++	GPIO_FN(VI0_G1), GPIO_FN(SSI_WS78_C),
+ 	GPIO_FN(ARM_TRACEDATA_3), GPIO_FN(VI0_G2), GPIO_FN(ETH_TXD1),
+ 	GPIO_FN(ARM_TRACEDATA_4), GPIO_FN(TS_SPSYNC0),
+ 	GPIO_FN(VI0_G3), GPIO_FN(ETH_CRS_DV),
+@@ -2909,9 +2908,9 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(DREQ1_B), GPIO_FN(ARM_TRACEDATA_10), GPIO_FN(DREQ0_C),
+ 	GPIO_FN(VI0_R1), GPIO_FN(SSI_SDATA8_C), GPIO_FN(DACK1_B),
+ 	GPIO_FN(ARM_TRACEDATA_11), GPIO_FN(DACK0_C), GPIO_FN(DRACK0_C),
+-	GPIO_FN(VI0_R2), GPIO_FN(ETH_LINK), GPIO_FN(IRQ2),
++	GPIO_FN(VI0_R2), GPIO_FN(ETH_LINK),
+ 	GPIO_FN(ARM_TRACEDATA_12), GPIO_FN(VI0_R3), GPIO_FN(ETH_MAGIC),
+-	GPIO_FN(IRQ3), GPIO_FN(ARM_TRACEDATA_13),
++	GPIO_FN(ARM_TRACEDATA_13),
+ 	GPIO_FN(VI0_R4), GPIO_FN(ETH_REFCLK),
+ 	GPIO_FN(ARM_TRACEDATA_14), GPIO_FN(MT1_CLK),
+ 	GPIO_FN(TS_SCK0), GPIO_FN(VI0_R5), GPIO_FN(ETH_TXD0),
 -- 
-1.7.10.4
+1.8.1.5
 
