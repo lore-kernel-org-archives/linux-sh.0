@@ -1,68 +1,44 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 06 Mar 2013 13:47:09 +0000
-Subject: [PATCH v2 30/39] sh-pfc: r8a7779: Remove DU1_DOTCLKOUT1 GPIO
-Message-Id: <1362577638-15493-31-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 08 Mar 2013 11:01:47 +0000
+Subject: [PATCH v3 27/64] ARM: shmobile: kzm9g: Register pinctrl mappings for I2C
+Message-Id: <1362740544-19164-28-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The function is not documented in the r8a7779 datasheet. Remove it.
+Replace the GPIO-based I2C pinmux configuration by pinctrl mappings.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 9 ++++-----
- 1 file changed, 4 insertions(+), 5 deletions(-)
+ arch/arm/mach-shmobile/board-kzm9g.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-index 1ea6247..707cd96 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-@@ -353,7 +353,7 @@ enum {
- 	FN_VI1_DATA6_VI1_B6, FN_SD2_CD, FN_MT0_VCXO, FN_SPA_TMS,
- 	FN_HSPI_TX1_D, FN_VI1_DATA7_VI1_B7, FN_SD2_WP, FN_MT0_PWM,
- 	FN_SPA_TDI, FN_HSPI_RX1_D, FN_VI1_G0, FN_VI3_DATA0,
--	FN_DU1_DOTCLKOUT1, FN_TS_SCK1, FN_DREQ2_B, FN_TX2,
-+	FN_TS_SCK1, FN_DREQ2_B, FN_TX2,
- 	FN_SPA_TDO, FN_HCTS0_B, FN_VI1_G1, FN_VI3_DATA1,
- 	FN_SSI_SCK1, FN_TS_SDEN1, FN_DACK2_B, FN_RX2, FN_HRTS0_B,
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index 3ec4838..d54cc35 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -601,6 +601,8 @@ static struct platform_device *kzm_devices[] __initdata = {
+ };
  
-@@ -614,7 +614,7 @@ enum {
- 	HSPI_CS1_D_MARK, ADICHS2_B_MARK, VI1_DATA6_VI1_B6_MARK, SD2_CD_MARK,
- 	MT0_VCXO_MARK, SPA_TMS_MARK, HSPI_TX1_D_MARK, VI1_DATA7_VI1_B7_MARK,
- 	SD2_WP_MARK, MT0_PWM_MARK, SPA_TDI_MARK, HSPI_RX1_D_MARK,
--	VI1_G0_MARK, VI3_DATA0_MARK, DU1_DOTCLKOUT1_MARK, TS_SCK1_MARK,
-+	VI1_G0_MARK, VI3_DATA0_MARK, TS_SCK1_MARK,
- 	DREQ2_B_MARK, TX2_MARK,	SPA_TDO_MARK, HCTS0_B_MARK,
- 	VI1_G1_MARK, VI3_DATA1_MARK, SSI_SCK1_MARK, TS_SDEN1_MARK,
- 	DACK2_B_MARK, RX2_MARK, HRTS0_B_MARK,
-@@ -1381,7 +1381,6 @@ static pinmux_enum_t pinmux_data[] = {
- 	PINMUX_IPSR_MODSEL_DATA(IP11_23_21, HSPI_RX1_D, SEL_HSPI1_3),
- 	PINMUX_IPSR_DATA(IP11_26_24, VI1_G0),
- 	PINMUX_IPSR_DATA(IP11_26_24, VI3_DATA0),
--	PINMUX_IPSR_DATA(IP11_26_24, DU1_DOTCLKOUT1),
- 	PINMUX_IPSR_DATA(IP11_26_24, TS_SCK1),
- 	PINMUX_IPSR_MODSEL_DATA(IP11_26_24, DREQ2_B, SEL_EXBUS2_1),
- 	PINMUX_IPSR_DATA(IP11_26_24, TX2),
-@@ -1874,7 +1873,7 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(SD2_CD), GPIO_FN(MT0_VCXO), GPIO_FN(SPA_TMS),
- 	GPIO_FN(HSPI_TX1_D), GPIO_FN(VI1_DATA7_VI1_B7), GPIO_FN(SD2_WP),
- 	GPIO_FN(MT0_PWM), GPIO_FN(SPA_TDI), GPIO_FN(HSPI_RX1_D),
--	GPIO_FN(VI1_G0), GPIO_FN(VI3_DATA0), GPIO_FN(DU1_DOTCLKOUT1),
-+	GPIO_FN(VI1_G0), GPIO_FN(VI3_DATA0),
- 	GPIO_FN(TS_SCK1), GPIO_FN(DREQ2_B), GPIO_FN(TX2), GPIO_FN(SPA_TDO),
- 	GPIO_FN(HCTS0_B), GPIO_FN(VI1_G1), GPIO_FN(VI3_DATA1),
- 	GPIO_FN(SSI_SCK1), GPIO_FN(TS_SDEN1), GPIO_FN(DACK2_B), GPIO_FN(RX2),
-@@ -2582,7 +2581,7 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
- 	    FN_VI1_G1, FN_VI3_DATA1, FN_SSI_SCK1, FN_TS_SDEN1,
- 	    FN_DACK2_B, FN_RX2, FN_HRTS0_B, 0,
- 	    /* IP11_26_24 [3] */
--	    FN_VI1_G0, FN_VI3_DATA0, FN_DU1_DOTCLKOUT1, FN_TS_SCK1,
-+	    FN_VI1_G0, FN_VI3_DATA0, 0, FN_TS_SCK1,
- 	    FN_DREQ2_B, FN_TX2, FN_SPA_TDO, FN_HCTS0_B,
- 	    /* IP11_23_21 [3] */
- 	    FN_VI1_DATA7_VI1_B7, FN_SD2_WP, FN_MT0_PWM, FN_SPA_TDI,
+ static const struct pinctrl_map kzm_pinctrl_map[] = {
++	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.3", "pfc-sh73a0",
++				  "i2c3_1", "i2c3"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
+ 				  "scifa4_data", "scifa4"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
+@@ -722,10 +724,6 @@ static void __init kzm_init(void)
+ 	gpio_request(GPIO_FN_SDHICLK2,		NULL);
+ 	gpio_request_one(14, GPIOF_OUT_INIT_HIGH, NULL); /* power */
+ 
+-	/* I2C 3 */
+-	gpio_request(GPIO_FN_PORT27_I2C_SCL3, NULL);
+-	gpio_request(GPIO_FN_PORT28_I2C_SDA3, NULL);
+-
+ 	/* enable FSI2 port A (ak4648) */
+ 	gpio_request(GPIO_FN_FSIACK,	NULL);
+ 	gpio_request(GPIO_FN_FSIAILR,	NULL);
 -- 
 1.8.1.5
 
