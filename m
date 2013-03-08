@@ -1,57 +1,43 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 13:02:37 +0000
-Subject: [PATCH 11/12] clocksource: em_sti: Set initcall level to subsys
-Message-Id: <1363611758-6655-12-git-send-email-horms+renesas@verge.net.au>
+Date: Fri, 08 Mar 2013 08:20:17 +0000
+Subject: [PATCH 1/4] clocksource: sh_cmt: Set initcall level to subsys
+Message-Id: <1362730820-25417-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363611758-6655-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363611758-6655-1-git-send-email-horms+renesas@verge.net.au>
+References: <1362730820-25417-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1362730820-25417-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The reason for this is to ensure that STI is probed earlier
+The reason for this is to ensure that CMT is probed earlier
 than with its previous initcall level, module init.
 
-This came up as a problem with using CMT as a clock source kzm9g-reference
-which does not make use of early timers or devices. In that scenario
-initialisation of SDHI and MMCIF both stall on msleep() calls due to the
-absence of a initialised clock source.
+This came up as a problem with using kzm9g-reference which does
+not make use of early timers or devices. In that scenario initialisation
+of SDHI and MMCIF both stall on msleep() calls due to the absence
+of a initialised clock source.
 
-The purpose of this change is to keep the STI code in sync with the CMT code
-which has been modified in a similar manner..
-
-Boot tested on: kzm9d.
+Boot tested on: armadillo800eva, mackerel and kzm9g
 
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/clocksource/em_sti.c |   13 ++++++++++++-
- 1 file changed, 12 insertions(+), 1 deletion(-)
+ drivers/clocksource/sh_cmt.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/clocksource/em_sti.c b/drivers/clocksource/em_sti.c
-index e6a553c..4329a29 100644
---- a/drivers/clocksource/em_sti.c
-+++ b/drivers/clocksource/em_sti.c
-@@ -399,7 +399,18 @@ static struct platform_driver em_sti_device_driver = {
- 	}
- };
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index 488c14c..1a7743a 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -791,7 +791,7 @@ static void __exit sh_cmt_exit(void)
+ }
  
--module_platform_driver(em_sti_device_driver);
-+static int __init em_sti_init(void)
-+{
-+	return platform_driver_register(&em_sti_device_driver);
-+}
-+
-+static void __exit em_sti_exit(void)
-+{
-+	platform_driver_unregister(&em_sti_device_driver);
-+}
-+
-+subsys_initcall(em_sti_init);
-+module_exit(em_sti_exit);
+ early_platform_init("earlytimer", &sh_cmt_device_driver);
+-module_init(sh_cmt_init);
++subsys_initcall(sh_cmt_init);
+ module_exit(sh_cmt_exit);
  
  MODULE_AUTHOR("Magnus Damm");
- MODULE_DESCRIPTION("Renesas Emma Mobile STI Timer Driver");
 -- 
 1.7.10.4
 
