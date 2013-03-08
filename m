@@ -1,365 +1,145 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 10:55:56 +0000
-Subject: [PATCH v4 15/29] sh-pfc: Split pins and functions into separate gpio_chip instances
-Message-Id: <1362740170-19073-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 08 Mar 2013 11:02:06 +0000
+Subject: [PATCH v3 46/64] sh-pfc: r8a7779: Remove HSPI function GPIOS
+Message-Id: <1362740544-19164-47-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Register two GPIO chips, one for the real GPIOs and one for the function
-GPIOs.
+All r8a7779 platforms now use the pinctrl API to control the HSPI pins,
+the corresponding function GPIOS are unused. Remove them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/pinctrl/sh-pfc/core.c |   2 +-
- drivers/pinctrl/sh-pfc/core.h |   3 +-
- drivers/pinctrl/sh-pfc/gpio.c | 227 ++++++++++++++++++++++++------------------
- 3 files changed, 132 insertions(+), 100 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 54 ++++++++++++++++++------------------
+ 1 file changed, 27 insertions(+), 27 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
-index 9dee3b9..6cf3943 100644
---- a/drivers/pinctrl/sh-pfc/core.c
-+++ b/drivers/pinctrl/sh-pfc/core.c
-@@ -95,7 +95,7 @@ static bool sh_pfc_gpio_is_pin(struct sh_pfc *pfc, unsigned int gpio)
- 	       (pfc->info->pins[gpio].enum_id != 0);
- }
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+index 3d9456f..8feceb5 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+@@ -2704,16 +2704,16 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(FD2), GPIO_FN(ATADIR0), GPIO_FN(SDSELF),
+ 	GPIO_FN(HCTS1), GPIO_FN(A0),
+ 	GPIO_FN(FD3), GPIO_FN(A20),
+-	GPIO_FN(HSPI_TX2_B), GPIO_FN(A21),
+-	GPIO_FN(HSPI_CLK2_B), GPIO_FN(A22),
+-	GPIO_FN(HSPI_RX2_B), GPIO_FN(VI1_R0), GPIO_FN(A23), GPIO_FN(FCLE),
+-	GPIO_FN(HSPI_CLK2), GPIO_FN(VI1_R1), GPIO_FN(A24),
+-	GPIO_FN(FD4),	GPIO_FN(HSPI_CS2), GPIO_FN(VI1_R2),
++	GPIO_FN(A21),
++	GPIO_FN(A22),
++	GPIO_FN(VI1_R0), GPIO_FN(A23), GPIO_FN(FCLE),
++	GPIO_FN(VI1_R1), GPIO_FN(A24),
++	GPIO_FN(FD4),	GPIO_FN(VI1_R2),
+ 	GPIO_FN(SSI_WS78_B), GPIO_FN(A25),
+-	GPIO_FN(FD5), GPIO_FN(HSPI_RX2), GPIO_FN(VI1_R3),
++	GPIO_FN(FD5), GPIO_FN(VI1_R3),
+ 	GPIO_FN(SSI_SDATA7_B), GPIO_FN(CLKOUT),
+ 	GPIO_FN(PWM0_B), GPIO_FN(CS0),
+-	GPIO_FN(HSPI_CS2_B), GPIO_FN(CS1_A26), GPIO_FN(HSPI_TX2),
++	GPIO_FN(CS1_A26),
+ 	GPIO_FN(SDSELF_B), GPIO_FN(RD_WR), GPIO_FN(FWE), GPIO_FN(ATAG0),
+ 	GPIO_FN(VI1_R7), GPIO_FN(HRTS1),
  
--bool sh_pfc_gpio_is_function(struct sh_pfc *pfc, unsigned int gpio)
-+static bool sh_pfc_gpio_is_function(struct sh_pfc *pfc, unsigned int gpio)
- {
- 	return (gpio >= pfc->info->nr_pins) &&
- 	       (gpio < pfc->info->nr_pins + pfc->info->nr_func_gpios) &&
-diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
-index dceaec0..5a0143b 100644
---- a/drivers/pinctrl/sh-pfc/core.h
-+++ b/drivers/pinctrl/sh-pfc/core.h
-@@ -33,6 +33,8 @@ struct sh_pfc {
- 	struct sh_pfc_window *window;
+@@ -2809,19 +2809,19 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(VI2_R4), GPIO_FN(VI2_R5),
+ 	GPIO_FN(VI2_R6), GPIO_FN(VI2_R7),
+ 	GPIO_FN(SCL2_D), GPIO_FN(SDA2_D),
+-	GPIO_FN(VI2_CLKENB), GPIO_FN(HSPI_CS1),
++	GPIO_FN(VI2_CLKENB),
+ 	GPIO_FN(SCL1_D), GPIO_FN(VI2_FIELD),
+ 	GPIO_FN(SDA1_D), GPIO_FN(VI2_HSYNC),
+ 	GPIO_FN(VI3_HSYNC), GPIO_FN(VI2_VSYNC),
+ 	GPIO_FN(VI3_VSYNC),
+ 	GPIO_FN(VI2_CLK),
+-	GPIO_FN(HSPI_TX1), GPIO_FN(VI1_CLKENB), GPIO_FN(VI3_CLKENB),
++	GPIO_FN(VI1_CLKENB), GPIO_FN(VI3_CLKENB),
+ 	GPIO_FN(AUDIO_CLKC), GPIO_FN(SPEEDIN),
+ 	GPIO_FN(GPS_SIGN_D), GPIO_FN(VI2_DATA6_VI2_B6),
+-	GPIO_FN(TCLK0), GPIO_FN(QSTVA_B_QVS_B), GPIO_FN(HSPI_CLK1),
++	GPIO_FN(TCLK0), GPIO_FN(QSTVA_B_QVS_B),
+ 	GPIO_FN(AUDIO_CLKOUT_B), GPIO_FN(GPS_MAG_D),
+ 	GPIO_FN(VI2_DATA7_VI2_B7),
+-	GPIO_FN(HSPI_RX1), GPIO_FN(VI1_FIELD),
++	GPIO_FN(VI1_FIELD),
+ 	GPIO_FN(VI3_FIELD), GPIO_FN(AUDIO_CLKOUT),
+ 	GPIO_FN(GPS_CLK_C), GPIO_FN(GPS_CLK_D), GPIO_FN(AUDIO_CLKA),
+ 	GPIO_FN(CAN_TXCLK), GPIO_FN(AUDIO_CLKB), GPIO_FN(USB_OVC2),
+@@ -2850,12 +2850,12 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(SSI_WS6), GPIO_FN(ADICHS1), GPIO_FN(CAN0_RX), GPIO_FN(IETX_B),
+ 	GPIO_FN(SSI_SDATA6), GPIO_FN(ADICHS2), GPIO_FN(CAN_CLK),
+ 	GPIO_FN(IECLK_B), GPIO_FN(SSI_SCK78), GPIO_FN(CAN_DEBUGOUT13),
+-	GPIO_FN(IRQ0_B), GPIO_FN(SSI_SCK9_B), GPIO_FN(HSPI_CLK1_C),
++	GPIO_FN(IRQ0_B), GPIO_FN(SSI_SCK9_B),
+ 	GPIO_FN(SSI_WS78), GPIO_FN(CAN_DEBUGOUT14), GPIO_FN(IRQ1_B),
+-	GPIO_FN(SSI_WS9_B), GPIO_FN(HSPI_CS1_C), GPIO_FN(SSI_SDATA7),
++	GPIO_FN(SSI_WS9_B), GPIO_FN(SSI_SDATA7),
+ 	GPIO_FN(CAN_DEBUGOUT15), GPIO_FN(IRQ2_B), GPIO_FN(TCLK1_C),
+-	GPIO_FN(HSPI_TX1_C), GPIO_FN(SSI_SDATA8), GPIO_FN(VSP),
+-	GPIO_FN(IRQ3_B), GPIO_FN(HSPI_RX1_C),
++	GPIO_FN(SSI_SDATA8), GPIO_FN(VSP),
++	GPIO_FN(IRQ3_B),
+ 	GPIO_FN(ATACS01), GPIO_FN(ATACS11),
+ 	GPIO_FN(CC5_TDO), GPIO_FN(ATADIR1),
+ 	GPIO_FN(CC5_TRST), GPIO_FN(ATAG1),
+@@ -2865,15 +2865,15 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(DACK2),
  
- 	struct sh_pfc_chip *gpio;
-+	struct sh_pfc_chip *func;
-+
- 	struct sh_pfc_pinctrl *pinctrl;
- };
- 
-@@ -47,7 +49,6 @@ void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
- 		      unsigned long value);
- int sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
- 			struct pinmux_data_reg **drp, int *bitp);
--bool sh_pfc_gpio_is_function(struct sh_pfc *pfc, unsigned int gpio);
- int sh_pfc_gpio_to_enum(struct sh_pfc *pfc, unsigned gpio, int pos,
- 			pinmux_enum_t *enum_idp);
- int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
-diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
-index 2a99bef..82fcb5f 100644
---- a/drivers/pinctrl/sh-pfc/gpio.c
-+++ b/drivers/pinctrl/sh-pfc/gpio.c
-@@ -36,112 +36,62 @@ static struct sh_pfc *gpio_to_pfc(struct gpio_chip *gc)
- 	return gpio_to_pfc_chip(gc)->pfc;
- }
- 
--static int sh_gpio_request(struct gpio_chip *gc, unsigned offset)
--{
--	struct sh_pfc *pfc = gpio_to_pfc(gc);
--	unsigned long flags;
--	int ret = -EINVAL;
--
--	if (offset < pfc->info->nr_pins)
--		return pinctrl_request_gpio(offset);
--
--	pr_notice_once("Use of GPIO API for function requests is deprecated, convert to pinctrl\n");
--
--	spin_lock_irqsave(&pfc->lock, flags);
--
--	if (!sh_pfc_gpio_is_function(pfc, offset))
--		goto done;
--
--	if (sh_pfc_config_gpio(pfc, offset, PINMUX_TYPE_FUNCTION,
--			       GPIO_CFG_DRYRUN))
--		goto done;
--
--	if (sh_pfc_config_gpio(pfc, offset, PINMUX_TYPE_FUNCTION,
--			       GPIO_CFG_REQ))
--		goto done;
--
--	ret = 0;
--
--done:
--	spin_unlock_irqrestore(&pfc->lock, flags);
--	return ret;
--}
-+/* -----------------------------------------------------------------------------
-+ * Pin GPIOs
-+ */
- 
--static void sh_gpio_free(struct gpio_chip *gc, unsigned offset)
-+static int gpio_pin_request(struct gpio_chip *gc, unsigned offset)
- {
--	struct sh_pfc *pfc = gpio_to_pfc(gc);
--	unsigned long flags;
--
--	if (offset < pfc->info->nr_pins)
--		return pinctrl_free_gpio(offset);
--
--	spin_lock_irqsave(&pfc->lock, flags);
--
--	sh_pfc_config_gpio(pfc, offset, PINMUX_TYPE_FUNCTION, GPIO_CFG_FREE);
--
--	spin_unlock_irqrestore(&pfc->lock, flags);
-+	return pinctrl_request_gpio(offset);
- }
- 
--static void sh_gpio_set_value(struct sh_pfc *pfc, unsigned gpio, int value)
-+static void gpio_pin_free(struct gpio_chip *gc, unsigned offset)
- {
--	struct pinmux_data_reg *dr = NULL;
--	int bit = 0;
--
--	if (sh_pfc_get_data_reg(pfc, gpio, &dr, &bit) != 0)
--		BUG();
--	else
--		sh_pfc_write_bit(dr, bit, value);
-+	return pinctrl_free_gpio(offset);
- }
- 
--static int sh_gpio_get_value(struct sh_pfc *pfc, unsigned gpio)
-+static void gpio_pin_set_value(struct sh_pfc *pfc, unsigned offset, int value)
- {
- 	struct pinmux_data_reg *dr = NULL;
- 	int bit = 0;
- 
--	if (sh_pfc_get_data_reg(pfc, gpio, &dr, &bit) != 0)
--		return -EINVAL;
-+	if (sh_pfc_get_data_reg(pfc, offset, &dr, &bit) != 0)
-+		BUG();
- 
--	return sh_pfc_read_bit(dr, bit);
-+	sh_pfc_write_bit(dr, bit, value);
- }
- 
--static int sh_gpio_direction_input(struct gpio_chip *gc, unsigned offset)
-+static int gpio_pin_direction_input(struct gpio_chip *gc, unsigned offset)
- {
--	struct sh_pfc *pfc = gpio_to_pfc(gc);
--
--	if (offset >= pfc->info->nr_pins) {
--		/* Function GPIOs can only be requested, never configured. */
--		return -EINVAL;
--	}
--
- 	return pinctrl_gpio_direction_input(offset);
- }
- 
--static int sh_gpio_direction_output(struct gpio_chip *gc, unsigned offset,
-+static int gpio_pin_direction_output(struct gpio_chip *gc, unsigned offset,
- 				    int value)
- {
--	struct sh_pfc *pfc = gpio_to_pfc(gc);
--
--	if (offset >= pfc->info->nr_pins) {
--		/* Function GPIOs can only be requested, never configured. */
--		return -EINVAL;
--	}
--
--	sh_gpio_set_value(gpio_to_pfc(gc), offset, value);
-+	gpio_pin_set_value(gpio_to_pfc(gc), offset, value);
- 
- 	return pinctrl_gpio_direction_output(offset);
- }
- 
--static int sh_gpio_get(struct gpio_chip *gc, unsigned offset)
-+static int gpio_pin_get(struct gpio_chip *gc, unsigned offset)
- {
--	return sh_gpio_get_value(gpio_to_pfc(gc), offset);
-+	struct sh_pfc *pfc = gpio_to_pfc(gc);
-+	struct pinmux_data_reg *dr = NULL;
-+	int bit = 0;
-+
-+	if (sh_pfc_get_data_reg(pfc, offset, &dr, &bit) != 0)
-+		return -EINVAL;
-+
-+	return sh_pfc_read_bit(dr, bit);
- }
- 
--static void sh_gpio_set(struct gpio_chip *gc, unsigned offset, int value)
-+static void gpio_pin_set(struct gpio_chip *gc, unsigned offset, int value)
- {
--	sh_gpio_set_value(gpio_to_pfc(gc), offset, value);
-+	gpio_pin_set_value(gpio_to_pfc(gc), offset, value);
- }
- 
--static int sh_gpio_to_irq(struct gpio_chip *gc, unsigned offset)
-+static int gpio_pin_to_irq(struct gpio_chip *gc, unsigned offset)
- {
- 	struct sh_pfc *pfc = gpio_to_pfc(gc);
- 	pinmux_enum_t enum_id;
-@@ -167,60 +117,141 @@ static int sh_gpio_to_irq(struct gpio_chip *gc, unsigned offset)
- 	return -ENOSYS;
- }
- 
--static void sh_pfc_gpio_setup(struct sh_pfc_chip *chip)
-+static void gpio_pin_setup(struct sh_pfc_chip *chip)
- {
- 	struct sh_pfc *pfc = chip->pfc;
- 	struct gpio_chip *gc = &chip->gpio_chip;
- 
--	gc->request = sh_gpio_request;
--	gc->free = sh_gpio_free;
--	gc->direction_input = sh_gpio_direction_input;
--	gc->get = sh_gpio_get;
--	gc->direction_output = sh_gpio_direction_output;
--	gc->set = sh_gpio_set;
--	gc->to_irq = sh_gpio_to_irq;
-+	gc->request = gpio_pin_request;
-+	gc->free = gpio_pin_free;
-+	gc->direction_input = gpio_pin_direction_input;
-+	gc->get = gpio_pin_get;
-+	gc->direction_output = gpio_pin_direction_output;
-+	gc->set = gpio_pin_set;
-+	gc->to_irq = gpio_pin_to_irq;
- 
- 	gc->label = pfc->info->name;
-+	gc->dev = pfc->dev;
- 	gc->owner = THIS_MODULE;
- 	gc->base = 0;
--	gc->ngpio = pfc->info->nr_pins + pfc->info->nr_func_gpios;
-+	gc->ngpio = pfc->info->nr_pins;
- }
- 
--int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
-+/* -----------------------------------------------------------------------------
-+ * Function GPIOs
-+ */
-+
-+static int gpio_function_request(struct gpio_chip *gc, unsigned offset)
-+{
-+	struct sh_pfc *pfc = gpio_to_pfc(gc);
-+	unsigned int gpio = gc->base + offset;
-+	unsigned long flags;
-+	int ret = -EINVAL;
-+
-+	pr_notice_once("Use of GPIO API for function requests is deprecated, convert to pinctrl\n");
-+
-+	if (pfc->info->func_gpios[offset].enum_id = 0)
-+		return ret;
-+
-+	spin_lock_irqsave(&pfc->lock, flags);
-+
-+	if (sh_pfc_config_gpio(pfc, gpio, PINMUX_TYPE_FUNCTION,
-+			       GPIO_CFG_DRYRUN))
-+		goto done;
-+
-+	if (sh_pfc_config_gpio(pfc, gpio, PINMUX_TYPE_FUNCTION,
-+			       GPIO_CFG_REQ))
-+		goto done;
-+
-+	ret = 0;
-+
-+done:
-+	spin_unlock_irqrestore(&pfc->lock, flags);
-+	return ret;
-+}
-+
-+static void gpio_function_free(struct gpio_chip *gc, unsigned offset)
-+{
-+	struct sh_pfc *pfc = gpio_to_pfc(gc);
-+	unsigned int gpio = gc->base + offset;
-+	unsigned long flags;
-+
-+	spin_lock_irqsave(&pfc->lock, flags);
-+
-+	sh_pfc_config_gpio(pfc, gpio, PINMUX_TYPE_FUNCTION, GPIO_CFG_FREE);
-+
-+	spin_unlock_irqrestore(&pfc->lock, flags);
-+}
-+
-+static void gpio_function_setup(struct sh_pfc_chip *chip)
-+{
-+	struct sh_pfc *pfc = chip->pfc;
-+	struct gpio_chip *gc = &chip->gpio_chip;
-+
-+	gc->request = gpio_function_request;
-+	gc->free = gpio_function_free;
-+
-+	gc->label = pfc->info->name;
-+	gc->owner = THIS_MODULE;
-+	gc->base = pfc->info->nr_pins;
-+	gc->ngpio = pfc->info->nr_func_gpios;
-+}
-+
-+/* -----------------------------------------------------------------------------
-+ * Register/unregister
-+ */
-+
-+static struct sh_pfc_chip *
-+sh_pfc_add_gpiochip(struct sh_pfc *pfc, void(*setup)(struct sh_pfc_chip *))
- {
- 	struct sh_pfc_chip *chip;
- 	int ret;
- 
- 	chip = devm_kzalloc(pfc->dev, sizeof(*chip), GFP_KERNEL);
- 	if (unlikely(!chip))
--		return -ENOMEM;
-+		return ERR_PTR(-ENOMEM);
- 
- 	chip->pfc = pfc;
- 
--	sh_pfc_gpio_setup(chip);
-+	setup(chip);
- 
- 	ret = gpiochip_add(&chip->gpio_chip);
- 	if (unlikely(ret < 0))
--		return ret;
-+		return ERR_PTR(ret);
-+
-+	pr_info("%s handling gpio %u -> %u\n",
-+		chip->gpio_chip.label, chip->gpio_chip.base,
-+		chip->gpio_chip.base + chip->gpio_chip.ngpio - 1);
-+
-+	return chip;
-+}
-+
-+int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
-+{
-+	struct sh_pfc_chip *chip;
-+
-+	chip = sh_pfc_add_gpiochip(pfc, gpio_pin_setup);
-+	if (IS_ERR(chip))
-+		return PTR_ERR(chip);
- 
- 	pfc->gpio = chip;
- 
--	pr_info("%s handling gpio 0 -> %u\n",
--		pfc->info->name,
--		pfc->info->nr_pins + pfc->info->nr_func_gpios - 1);
-+	chip = sh_pfc_add_gpiochip(pfc, gpio_function_setup);
-+	if (IS_ERR(chip))
-+		return PTR_ERR(chip);
-+
-+	pfc->func = chip;
- 
- 	return 0;
- }
- 
- int sh_pfc_unregister_gpiochip(struct sh_pfc *pfc)
- {
--	struct sh_pfc_chip *chip = pfc->gpio;
-+	int err;
- 	int ret;
- 
--	ret = gpiochip_remove(&chip->gpio_chip);
--	if (unlikely(ret < 0))
--		return ret;
-+	ret = gpiochip_remove(&pfc->gpio->gpio_chip);
-+	err = gpiochip_remove(&pfc->func->gpio_chip);
- 
--	pfc->gpio = NULL;
--	return 0;
-+	return ret < 0 ? ret : err;
- }
+ 	/* IPSR8 */
+-	GPIO_FN(HSPI_CLK0), GPIO_FN(USB_OVC0), GPIO_FN(AD_CLK),
++	GPIO_FN(USB_OVC0), GPIO_FN(AD_CLK),
+ 	GPIO_FN(CC5_STATE4), GPIO_FN(CC5_STATE12), GPIO_FN(CC5_STATE20),
+-	GPIO_FN(CC5_STATE28), GPIO_FN(CC5_STATE36), GPIO_FN(HSPI_CS0),
++	GPIO_FN(CC5_STATE28), GPIO_FN(CC5_STATE36),
+ 	GPIO_FN(USB_OVC1), GPIO_FN(AD_DI),
+ 	GPIO_FN(CC5_STATE5), GPIO_FN(CC5_STATE13), GPIO_FN(CC5_STATE21),
+-	GPIO_FN(CC5_STATE29), GPIO_FN(CC5_STATE37), GPIO_FN(HSPI_TX0),
++	GPIO_FN(CC5_STATE29), GPIO_FN(CC5_STATE37),
+ 	GPIO_FN(CAN_DEBUG_HW_TRIGGER), GPIO_FN(AD_DO),
+ 	GPIO_FN(CC5_STATE6), GPIO_FN(CC5_STATE14), GPIO_FN(CC5_STATE22),
+-	GPIO_FN(CC5_STATE30), GPIO_FN(CC5_STATE38), GPIO_FN(HSPI_RX0),
++	GPIO_FN(CC5_STATE30), GPIO_FN(CC5_STATE38),
+ 	GPIO_FN(CAN_STEP0), GPIO_FN(AD_NCS), GPIO_FN(CC5_STATE7),
+ 	GPIO_FN(CC5_STATE15), GPIO_FN(CC5_STATE23), GPIO_FN(CC5_STATE31),
+ 	GPIO_FN(CC5_STATE39), GPIO_FN(FMCLK), GPIO_FN(RDS_CLK), GPIO_FN(PCMOE),
+@@ -2915,13 +2915,13 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(ARM_TRACEDATA_12), GPIO_FN(VI0_R3), GPIO_FN(ETH_MAGIC),
+ 	GPIO_FN(IRQ3), GPIO_FN(ARM_TRACEDATA_13),
+ 	GPIO_FN(VI0_R4), GPIO_FN(ETH_REFCLK),
+-	GPIO_FN(HSPI_CLK1_B), GPIO_FN(ARM_TRACEDATA_14), GPIO_FN(MT1_CLK),
++	GPIO_FN(ARM_TRACEDATA_14), GPIO_FN(MT1_CLK),
+ 	GPIO_FN(TS_SCK0), GPIO_FN(VI0_R5), GPIO_FN(ETH_TXD0),
+-	GPIO_FN(HSPI_CS1_B), GPIO_FN(ARM_TRACEDATA_15),
++	GPIO_FN(ARM_TRACEDATA_15),
+ 	GPIO_FN(MT1_D), GPIO_FN(TS_SDEN0), GPIO_FN(VI0_R6), GPIO_FN(ETH_MDC),
+-	GPIO_FN(DREQ2_C), GPIO_FN(HSPI_TX1_B), GPIO_FN(TRACECLK),
++	GPIO_FN(DREQ2_C), GPIO_FN(TRACECLK),
+ 	GPIO_FN(MT1_BEN), GPIO_FN(PWMFSW0_D), GPIO_FN(VI0_R7),
+-	GPIO_FN(ETH_MDIO), GPIO_FN(DACK2_C), GPIO_FN(HSPI_RX1_B),
++	GPIO_FN(ETH_MDIO), GPIO_FN(DACK2_C),
+ 	GPIO_FN(SCIF_CLK_D), GPIO_FN(TRACECTL), GPIO_FN(MT1_PEN),
+ 	GPIO_FN(VI1_CLK), GPIO_FN(SIM_D), GPIO_FN(SDA3), GPIO_FN(VI1_HSYNC),
+ 	GPIO_FN(VI3_CLK), GPIO_FN(SSI_SCK4), GPIO_FN(GPS_SIGN_C),
+@@ -2938,12 +2938,12 @@ static struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(VI1_DATA3_VI1_B3), GPIO_FN(MT0_BEN),
+ 	GPIO_FN(SPV_TDO), GPIO_FN(ADICHS0_B), GPIO_FN(VI1_DATA4_VI1_B4),
+ 	GPIO_FN(MT0_PEN), GPIO_FN(SPA_TRST),
+-	GPIO_FN(HSPI_CLK1_D), GPIO_FN(ADICHS1_B), GPIO_FN(VI1_DATA5_VI1_B5),
++	GPIO_FN(ADICHS1_B), GPIO_FN(VI1_DATA5_VI1_B5),
+ 	GPIO_FN(MT0_SYNC), GPIO_FN(SPA_TCK),
+-	GPIO_FN(HSPI_CS1_D), GPIO_FN(ADICHS2_B), GPIO_FN(VI1_DATA6_VI1_B6),
++	GPIO_FN(ADICHS2_B), GPIO_FN(VI1_DATA6_VI1_B6),
+ 	GPIO_FN(MT0_VCXO), GPIO_FN(SPA_TMS),
+-	GPIO_FN(HSPI_TX1_D), GPIO_FN(VI1_DATA7_VI1_B7),
+-	GPIO_FN(MT0_PWM), GPIO_FN(SPA_TDI), GPIO_FN(HSPI_RX1_D),
++	GPIO_FN(VI1_DATA7_VI1_B7),
++	GPIO_FN(MT0_PWM), GPIO_FN(SPA_TDI),
+ 	GPIO_FN(VI1_G0), GPIO_FN(VI3_DATA0),
+ 	GPIO_FN(TS_SCK1), GPIO_FN(DREQ2_B), GPIO_FN(SPA_TDO),
+ 	GPIO_FN(HCTS0_B), GPIO_FN(VI1_G1), GPIO_FN(VI3_DATA1),
 -- 
 1.8.1.5
 
