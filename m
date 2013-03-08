@@ -1,62 +1,38 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Mon, 11 Mar 2013 11:33:18 +0000
-Subject: Re: [PATCH v2 5/7] ARM: mach-shmobile: sh73a0: Setup the timer CMT10 using DT
-Message-Id: <CABYn4sy=9Wkh7tCsBpna4hwX3ptRwCeC_+ys0apAHGbjjieN2g@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 08 Mar 2013 15:38:24 +0000
+Subject: [PATCH] ARM: shmobile: marzen: Include mmc/host.h
+Message-Id: <1362757104-7498-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1362742181-19111-1-git-send-email-hechtb+renesas@gmail.com>
- <1362742181-19111-6-git-send-email-hechtb+renesas@gmail.com>
- <87y5duhjru.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87y5duhjru.wl%kuninori.morimoto.gx@renesas.com>
+References: <1362757104-7498-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1362757104-7498-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hello Morimoto-san!
+mmc/host.h provides MMC_CAP_SD_HIGHSPEED which is used in board-marzen.c
 
-2013/3/11 Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>:
->
-> Hi Bastian
->
-> 1 question
->
->> We can now use the Device Tree for bringing up our timer device CMT10 on
->> the SoC sh73a0.
->>
->> Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
-> (snip)
->>  /* TMU */
->>  static struct sh_timer_config tmu00_platform_data = {
->>       .name = "TMU00",
->> @@ -913,7 +882,6 @@ static struct platform_device *sh73a0_devices_dt[] __initdata = {
->>       &scif6_device,
->>       &scif7_device,
->>       &scif8_device,
->> -     &cmt10_device,
->>  };
->
-> I didn't test this patch,
-> but setup-sh73a0.c :: sh73a0_devices_dt is
-> used from sh73a0_add_standard_devices() or sh73a0_add_early_devices(),
-> and it is used from board-kzm9g.c (not -reference.c).
->
-> Does board-kzm9g.c still works ?
-> Is it better that sh73a0_early_devices[] has it ?
->
+This resolves a build problem observed when compiling with
+"mmc: tmio: remove unused and deprecated symbols" applied.
 
-As the timer devices have no board dependencies we can put them into
-the general sh73a0.dtsi and it works for the reference and
-no-reference case.
+Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-marzen.c |    1 +
+ 1 file changed, 1 insertion(+)
 
-Still - while rechecking it I discovered a small slip I made in my
-series. In 0003-Add OF to TMU I forgot 2 trivial lines. So thanks for
-asking ;)
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index cdcb799..fec49eb 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -32,6 +32,7 @@
+ #include <linux/smsc911x.h>
+ #include <linux/spi/spi.h>
+ #include <linux/spi/sh_hspi.h>
++#include <linux/mmc/host.h>
+ #include <linux/mmc/sh_mobile_sdhi.h>
+ #include <linux/mfd/tmio.h>
+ #include <linux/usb/otg.h>
+-- 
+1.7.10.4
 
-Cheers,
-
- Bastian
-
-
-> Best regards
-> ---
-> Kuninori Morimoto
