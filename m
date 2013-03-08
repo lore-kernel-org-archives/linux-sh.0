@@ -1,46 +1,35 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 06 Mar 2013 08:54:04 +0000
-Subject: Re: [PATCH] sh-pfc: r8a7779: fixup INDTx address
-Message-Id: <CANqRtoREUrT_S73nA34kFfXBwaNc7fWGPjvWNSQb55bpfPJAWA@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 08 Mar 2013 15:38:23 +0000
+Subject: [GIT PULL] Renesas ARM-based SoC fixes for v3.9
+Message-Id: <1362757104-7498-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87lia3pn80.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87lia3pn80.wl%kuninori.morimoto.gx@renesas.com>
+References: <1350448585-26403-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1350448585-26403-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Phil
+Hi Olof, Hi Arnd,
 
-On Wed, Mar 6, 2013 at 5:50 PM,  <phil.edworthy@renesas.com> wrote:
->> > Hmm, this isn't what you want. I sent a similar patch on this a while
-> back
->> > before realising that the problem is that the pfc driver doesn't
-> support
->> > separate input and output data registers, only one reg for both input
-> and
->> > output. With the code as it is, the gpio pins act as outputs. Changing
-> the
->> > addresses as per this patch means the gpios act now as inputs.
->>
->> Hi Phil,
->>
->> Thanks for guiding people in the right direction. GPIOS on r8a7779 is
->> a bit tricky in general. Both IN and OUT registers as well as IRQ
->> demux support.
->>
->> From my point of view, switching to the recently posted gpio-rcar.c
->> driver should take care of all these issues.
->> [PATCH] gpio: Renesas R-Car GPIO driver
-> I hadn't seen that, thanks for pointing it out.
->
->> We do however need to work on how to make GPIO and PFC coexist.
-> Yes, that is certainly an issue...
+The following changes since commit 6dbe51c251a327e012439c4772097a13df43c5b8:
 
-Yeah, (un?)fortunately it's something we need on a wide range of SoCs
-including EMEV2, R-Car H1, R-Car M1A and a bunch of newer SoCs as
-well.
+  Linux 3.9-rc1 (2013-03-03 15:11:05 -0800)
 
-Thanks,
+are available in the git repository at:
 
-/ magnus
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git 
+
+for you to fetch changes up to 44e9ac45754a182e8121bf137368452365d4cc4b:
+
+  ARM: shmobile: marzen: Include mmc/host.h (2013-03-08 16:29:23 +0100)
+
+----------------------------------------------------------------
+Resolve a build failure present since v3.9-rc1
+
+----------------------------------------------------------------
+Simon Horman (1):
+      ARM: shmobile: marzen: Include mmc/host.h
+
+ arch/arm/mach-shmobile/board-marzen.c |    1 +
+ 1 file changed, 1 insertion(+)
