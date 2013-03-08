@@ -1,184 +1,169 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 10:56:07 +0000
-Subject: [PATCH v4 26/29] ARM: shmobile: armadillo: Replace GPIO_PORTx enum with GPIO port numbers
-Message-Id: <1362740170-19073-27-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 08 Mar 2013 11:02:12 +0000
+Subject: [PATCH v3 52/64] ARM: shmobile: sh73a0: Remove SCIFA and SCIFB function GPIOs
+Message-Id: <1362740544-19164-53-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The PFC GPIO API implementation moved to using port numbers. Replace all
-GPIO_PORTx enum usage with the corresponding port number. The GPIO_PORTx
-enum values are identical to the port number on this platform.
+Those GPIOs have been deprecated by the pinctrl API. They are unused and
+unneeded, remove them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c | 58 +++++++++++++-------------
- 1 file changed, 29 insertions(+), 29 deletions(-)
+ arch/arm/mach-shmobile/include/mach/sh73a0.h | 90 ++++++++++++----------------
+ 1 file changed, 37 insertions(+), 53 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index f2ec077..92d7991 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -227,7 +227,7 @@ static void usbhsf_power_ctrl(struct platform_device *pdev,
+diff --git a/arch/arm/mach-shmobile/include/mach/sh73a0.h b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+index a7b7a3c..b843cd7 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh73a0.h
++++ b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+@@ -103,15 +103,11 @@ enum {
+ 	GPIO_FN_GPI5,
+ 	GPIO_FN_GPI6,
+ 	GPIO_FN_GPI7,
+-	GPIO_FN_SCIFA7_RXD,
+-	GPIO_FN_SCIFA7_CTS_,
+ 	GPIO_FN_GPO7, GPIO_FN_MFG0_OUT2,
+ 	GPIO_FN_GPO6, GPIO_FN_MFG1_OUT2,
+-	GPIO_FN_GPO5, GPIO_FN_SCIFA0_SCK, GPIO_FN_FSICOSLDT3, \
++	GPIO_FN_GPO5, GPIO_FN_FSICOSLDT3,
+ 	GPIO_FN_PORT16_VIO_CKOR,
+-	GPIO_FN_SCIFA0_TXD,
+-	GPIO_FN_SCIFA7_TXD,
+-	GPIO_FN_SCIFA7_RTS_, GPIO_FN_PORT19_VIO_CKO2,
++	GPIO_FN_PORT19_VIO_CKO2,
+ 	GPIO_FN_GPO0,
+ 	GPIO_FN_GPO1,
+ 	GPIO_FN_GPO2, GPIO_FN_STATUS0,
+@@ -126,19 +122,15 @@ enum {
+ 	GPIO_FN_SIM_RST, GPIO_FN_PORT29_TPU1TO1,
+ 	GPIO_FN_SIM_CLK, GPIO_FN_PORT30_VIO_CKOR,
+ 	GPIO_FN_SIM_D, GPIO_FN_PORT31_IROUT,
+-	GPIO_FN_SCIFA4_TXD,
+-	GPIO_FN_SCIFA4_RXD, GPIO_FN_XWUP,
+-	GPIO_FN_SCIFA4_RTS_,
+-	GPIO_FN_SCIFA4_CTS_,
++	GPIO_FN_XWUP,
+ 	GPIO_FN_FSIBOBT, GPIO_FN_FSIBIBT,
+ 	GPIO_FN_FSIBOLR, GPIO_FN_FSIBILR,
+ 	GPIO_FN_FSIBOSLD,
+ 	GPIO_FN_FSIBISLD,
+ 	GPIO_FN_VACK,
+ 	GPIO_FN_XTAL1L,
+-	GPIO_FN_SCIFA0_RTS_, GPIO_FN_FSICOSLDT2,
+-	GPIO_FN_SCIFA0_RXD,
+-	GPIO_FN_SCIFA0_CTS_, GPIO_FN_FSICOSLDT1,
++	GPIO_FN_FSICOSLDT2,
++	GPIO_FN_FSICOSLDT1,
+ 	GPIO_FN_FSICOBT, GPIO_FN_FSICIBT, GPIO_FN_FSIDOBT, GPIO_FN_FSIDIBT,
+ 	GPIO_FN_FSICOLR, GPIO_FN_FSICILR, GPIO_FN_FSIDOLR, GPIO_FN_FSIDILR,
+ 	GPIO_FN_FSICOSLD, GPIO_FN_PORT47_FSICSPDIF,
+@@ -204,10 +196,9 @@ enum {
+ 	GPIO_FN_BBIF2_RXD,
+ 	GPIO_FN_BBIF2_SYNC,
+ 	GPIO_FN_BBIF2_SCK,
+-	GPIO_FN_SCIFA3_CTS_, GPIO_FN_MFG3_IN2,
+-	GPIO_FN_SCIFA3_RXD, GPIO_FN_MFG3_IN1,
+-	GPIO_FN_BBIF1_SS2, GPIO_FN_SCIFA3_RTS_, GPIO_FN_MFG3_OUT1,
+-	GPIO_FN_SCIFA3_TXD,
++	GPIO_FN_MFG3_IN2,
++	GPIO_FN_MFG3_IN1,
++	GPIO_FN_BBIF1_SS2, GPIO_FN_MFG3_OUT1,
+ 	GPIO_FN_HSI_RX_DATA, GPIO_FN_BBIF1_RXD,
+ 	GPIO_FN_HSI_TX_WAKE, GPIO_FN_BBIF1_TSCK,
+ 	GPIO_FN_HSI_TX_DATA, GPIO_FN_BBIF1_TSYNC,
+@@ -252,22 +243,17 @@ enum {
+ 	GPIO_FN_TS_SPSYNC3, GPIO_FN_MSIOF2_RSCK,
+ 	GPIO_FN_TS_SDAT3, GPIO_FN_MSIOF2_RSYNC,
+ 	GPIO_FN_TPU1TO2, GPIO_FN_TS_SDEN3, GPIO_FN_PORT153_MSIOF2_SS1,
+-	GPIO_FN_SCIFA2_TXD1, GPIO_FN_MSIOF2_MCK0,
+-	GPIO_FN_SCIFA2_RXD1, GPIO_FN_MSIOF2_MCK1,
+-	GPIO_FN_SCIFA2_RTS1_, GPIO_FN_PORT156_MSIOF2_SS2,
+-	GPIO_FN_SCIFA2_CTS1_, GPIO_FN_PORT157_MSIOF2_RXD,
+-	GPIO_FN_DINT_, GPIO_FN_SCIFA2_SCK1, GPIO_FN_TS_SCK3,
+-	GPIO_FN_PORT159_SCIFB_SCK, GPIO_FN_PORT159_SCIFA5_SCK, GPIO_FN_NMI,
+-	GPIO_FN_PORT160_SCIFB_TXD, GPIO_FN_PORT160_SCIFA5_TXD,
+-	GPIO_FN_PORT161_SCIFB_CTS_, GPIO_FN_PORT161_SCIFA5_CTS_,
+-	GPIO_FN_PORT162_SCIFB_RXD, GPIO_FN_PORT162_SCIFA5_RXD,
+-	GPIO_FN_PORT163_SCIFB_RTS_, GPIO_FN_PORT163_SCIFA5_RTS_, \
++	GPIO_FN_MSIOF2_MCK0,
++	GPIO_FN_MSIOF2_MCK1,
++	GPIO_FN_PORT156_MSIOF2_SS2,
++	GPIO_FN_PORT157_MSIOF2_RXD,
++	GPIO_FN_DINT_, GPIO_FN_TS_SCK3,
++	GPIO_FN_NMI,
+ 	GPIO_FN_TPU3TO0,
+-	GPIO_FN_PORT193_SCIFA5_CTS_, GPIO_FN_BBIF2_TSYNC1,
+-	GPIO_FN_PORT194_SCIFA5_RTS_, GPIO_FN_BBIF2_TSCK1,
+-	GPIO_FN_PORT195_SCIFA5_RXD, GPIO_FN_BBIF2_TXD1,
+-	GPIO_FN_PORT196_SCIFA5_TXD,
+-	GPIO_FN_PORT197_SCIFA5_SCK, GPIO_FN_MFG2_OUT2,
++	GPIO_FN_BBIF2_TSYNC1,
++	GPIO_FN_BBIF2_TSCK1,
++	GPIO_FN_BBIF2_TXD1,
++	GPIO_FN_MFG2_OUT2,
+ 	GPIO_FN_TPU2TO1,
+ 	GPIO_FN_TPU4TO1, GPIO_FN_MFG4_OUT2,
+ 	GPIO_FN_D16,
+@@ -296,36 +282,34 @@ enum {
+ 	GPIO_FN_DACK1, GPIO_FN_OVCN,
+ 	GPIO_FN_MSIOF0L_TXD, GPIO_FN_VIO2_VD3,
  
- static int usbhsf_get_vbus(struct platform_device *pdev)
- {
--	return gpio_get_value(GPIO_PORT209);
-+	return gpio_get_value(209);
- }
- 
- static irqreturn_t usbhsf_interrupt(int irq, void *data)
-@@ -535,10 +535,10 @@ static struct platform_device hdmi_lcdc_device = {
- 	{ .code = c, .gpio = g, .desc = d, .active_low = 1, __VA_ARGS__ }
- 
- static struct gpio_keys_button gpio_buttons[] = {
--	GPIO_KEY(KEY_POWER,	GPIO_PORT99,	"SW3", .wakeup = 1),
--	GPIO_KEY(KEY_BACK,	GPIO_PORT100,	"SW4"),
--	GPIO_KEY(KEY_MENU,	GPIO_PORT97,	"SW5"),
--	GPIO_KEY(KEY_HOME,	GPIO_PORT98,	"SW6"),
-+	GPIO_KEY(KEY_POWER,	99,	"SW3", .wakeup = 1),
-+	GPIO_KEY(KEY_BACK,	100,	"SW4"),
-+	GPIO_KEY(KEY_MENU,	97,	"SW5"),
-+	GPIO_KEY(KEY_HOME,	98,	"SW6"),
- };
- 
- static struct gpio_keys_platform_data gpio_key_info = {
-@@ -708,9 +708,9 @@ static int mt9t111_power(struct device *dev, int mode)
- 		/* video1 (= CON1 camera) expect 24MHz */
- 		clk_set_rate(mclk, clk_round_rate(mclk, 24000000));
- 		clk_enable(mclk);
--		gpio_set_value(GPIO_PORT158, 1);
-+		gpio_set_value(158, 1);
- 	} else {
--		gpio_set_value(GPIO_PORT158, 0);
-+		gpio_set_value(158, 0);
- 		clk_disable(mclk);
- 	}
- 
-@@ -864,8 +864,8 @@ static struct platform_device fsi_hdmi_device = {
- 
- /* RTC: RTC connects i2c-gpio. */
- static struct i2c_gpio_platform_data i2c_gpio_data = {
--	.sda_pin	= GPIO_PORT208,
--	.scl_pin	= GPIO_PORT91,
-+	.sda_pin	= 208,
-+	.scl_pin	= 91,
- 	.udelay		= 5, /* 100 kHz */
- };
- 
-@@ -1000,12 +1000,12 @@ static void __init eva_init(void)
- 	gpio_request(GPIO_FN_LCD0_DISP,		NULL);
- 	gpio_request(GPIO_FN_LCD0_LCLK_PORT165,	NULL);
- 
--	gpio_request_one(GPIO_PORT61, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
--	gpio_request_one(GPIO_PORT202, GPIOF_OUT_INIT_LOW, NULL); /* LCD0_LED_CONT */
-+	gpio_request_one(61, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
-+	gpio_request_one(202, GPIOF_OUT_INIT_LOW, NULL); /* LCD0_LED_CONT */
- 
- 	/* Touchscreen */
- 	gpio_request(GPIO_FN_IRQ10,	NULL); /* TP_INT */
--	gpio_request_one(GPIO_PORT166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
-+	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
- 
- 	/* GETHER */
- 	gpio_request(GPIO_FN_ET_CRS,		NULL);
-@@ -1028,12 +1028,12 @@ static void __init eva_init(void)
- 	gpio_request(GPIO_FN_ET_RX_DV,		NULL);
- 	gpio_request(GPIO_FN_ET_RX_CLK,		NULL);
- 
--	gpio_request_one(GPIO_PORT18, GPIOF_OUT_INIT_HIGH, NULL); /* PHY_RST */
-+	gpio_request_one(18, GPIOF_OUT_INIT_HIGH, NULL); /* PHY_RST */
- 
- 	/* USB */
--	gpio_request_one(GPIO_PORT159, GPIOF_IN, NULL); /* USB_DEVICE_MODE */
-+	gpio_request_one(159, GPIOF_IN, NULL); /* USB_DEVICE_MODE */
- 
--	if (gpio_get_value(GPIO_PORT159)) {
-+	if (gpio_get_value(159)) {
- 		/* USB Host */
- 	} else {
- 		/* USB Func */
-@@ -1042,10 +1042,10 @@ static void __init eva_init(void)
- 		 * OTOH, usbhs interrupt needs its value (HI/LOW) to decide
- 		 * USB connection/disconnection (usbhsf_get_vbus()).
- 		 * This means we needs to select GPIO_FN_IRQ7_PORT209 first,
--		 * and select GPIO_PORT209 here
-+		 * and select GPIO 209 here
- 		 */
- 		gpio_request(GPIO_FN_IRQ7_PORT209, NULL);
--		gpio_request_one(GPIO_PORT209, GPIOF_IN, NULL);
-+		gpio_request_one(209, GPIOF_IN, NULL);
- 
- 		platform_device_register(&usbhsf_device);
- 		usb = &usbhsf_device;
-@@ -1060,9 +1060,9 @@ static void __init eva_init(void)
- 	gpio_request(GPIO_FN_SDHI0_D3, NULL);
- 	gpio_request(GPIO_FN_SDHI0_WP, NULL);
- 
--	gpio_request_one(GPIO_PORT17, GPIOF_OUT_INIT_LOW, NULL);  /* SDHI0_18/33_B */
--	gpio_request_one(GPIO_PORT74, GPIOF_OUT_INIT_HIGH, NULL); /* SDHI0_PON */
--	gpio_request_one(GPIO_PORT75, GPIOF_OUT_INIT_HIGH, NULL); /* SDSLOT1_PON */
-+	gpio_request_one(17, GPIOF_OUT_INIT_LOW, NULL);  /* SDHI0_18/33_B */
-+	gpio_request_one(74, GPIOF_OUT_INIT_HIGH, NULL); /* SDHI0_PON */
-+	gpio_request_one(75, GPIOF_OUT_INIT_HIGH, NULL); /* SDSLOT1_PON */
- 
- 	/* we can use GPIO_FN_IRQ31_PORT167 here for SDHI0 CD irq */
- 
-@@ -1099,10 +1099,10 @@ static void __init eva_init(void)
- 	gpio_request(GPIO_FN_VIO_CKO,		NULL);
- 
- 	/* CON1/CON15 Camera */
--	gpio_request_one(GPIO_PORT173, GPIOF_OUT_INIT_LOW, NULL);  /* STANDBY */
--	gpio_request_one(GPIO_PORT172, GPIOF_OUT_INIT_HIGH, NULL); /* RST */
-+	gpio_request_one(173, GPIOF_OUT_INIT_LOW, NULL);  /* STANDBY */
-+	gpio_request_one(172, GPIOF_OUT_INIT_HIGH, NULL); /* RST */
- 	/* see mt9t111_power() */
--	gpio_request_one(GPIO_PORT158, GPIOF_OUT_INIT_LOW, NULL);  /* CAM_PON */
-+	gpio_request_one(158, GPIOF_OUT_INIT_LOW, NULL);  /* CAM_PON */
- 
- 	/* FSI-WM8978 */
- 	gpio_request(GPIO_FN_FSIAIBT,		NULL);
-@@ -1111,8 +1111,8 @@ static void __init eva_init(void)
- 	gpio_request(GPIO_FN_FSIAOSLD,		NULL);
- 	gpio_request(GPIO_FN_FSIAISLD_PORT5,	NULL);
- 
--	gpio_request(GPIO_PORT7, NULL);
--	gpio_request(GPIO_PORT8, NULL);
-+	gpio_request(7, NULL);
-+	gpio_request(8, NULL);
- 	gpio_direction_none(GPIO_PORT7CR); /* FSIAOBT needs no direction */
- 	gpio_direction_none(GPIO_PORT8CR); /* FSIAOLR needs no direction */
- 
-@@ -1129,14 +1129,14 @@ static void __init eva_init(void)
- 	 * DBGMD/LCDC0/FSIA MUX
- 	 * DBGMD_SELECT_B should be set after setting PFC Function.
- 	 */
--	gpio_request_one(GPIO_PORT176, GPIOF_OUT_INIT_HIGH, NULL);
-+	gpio_request_one(176, GPIOF_OUT_INIT_HIGH, NULL);
- 
- 	/*
- 	 * We can switch CON8/CON14 by SW1.5,
- 	 * but it needs after DBGMD_SELECT_B
- 	 */
--	gpio_request_one(GPIO_PORT6, GPIOF_IN, NULL);
--	if (gpio_get_value(GPIO_PORT6)) {
-+	gpio_request_one(6, GPIOF_IN, NULL);
-+	if (gpio_get_value(6)) {
- 		/* CON14 enable */
- 	} else {
- 		/* CON8 (SDHI1) enable */
-@@ -1150,7 +1150,7 @@ static void __init eva_init(void)
- 		gpio_request(GPIO_FN_SDHI1_WP,	NULL);
- 
- 		/* SDSLOT2_PON */
--		gpio_request_one(GPIO_PORT16, GPIOF_OUT_INIT_HIGH, NULL);
-+		gpio_request_one(16, GPIOF_OUT_INIT_HIGH, NULL);
- 
- 		platform_device_register(&sdhi1_device);
- 	}
+-	GPIO_FN_SCIFA1_TXD, GPIO_FN_OVCN2,
+-	GPIO_FN_EXTLP, GPIO_FN_SCIFA1_SCK, GPIO_FN_PORT226_VIO_CKO2,
+-	GPIO_FN_SCIFA1_RTS_, GPIO_FN_IDIN,
+-	GPIO_FN_SCIFA1_RXD,
+-	GPIO_FN_SCIFA1_CTS_, GPIO_FN_MFG1_IN1,
+-	GPIO_FN_MSIOF1_TXD, GPIO_FN_SCIFA2_TXD2,
+-	GPIO_FN_MSIOF1_TSYNC, GPIO_FN_SCIFA2_CTS2_,
+-	GPIO_FN_MSIOF1_TSCK, GPIO_FN_SCIFA2_SCK2,
+-	GPIO_FN_MSIOF1_RXD, GPIO_FN_SCIFA2_RXD2,
+-	GPIO_FN_MSIOF1_RSCK, GPIO_FN_SCIFA2_RTS2_, GPIO_FN_VIO2_CLK2, \
++	GPIO_FN_OVCN2,
++	GPIO_FN_EXTLP, GPIO_FN_PORT226_VIO_CKO2,
++	GPIO_FN_IDIN,
++	GPIO_FN_MFG1_IN1,
++	GPIO_FN_MSIOF1_TXD,
++	GPIO_FN_MSIOF1_TSYNC,
++	GPIO_FN_MSIOF1_TSCK,
++	GPIO_FN_MSIOF1_RXD,
++	GPIO_FN_MSIOF1_RSCK, GPIO_FN_VIO2_CLK2,
+ 	GPIO_FN_MSIOF1_RSYNC, GPIO_FN_MFG1_IN2, GPIO_FN_VIO2_VD2, \
+ 	GPIO_FN_MSIOF1_MCK0, GPIO_FN_PORT236_I2C_SDA2,
+ 	GPIO_FN_MSIOF1_MCK1, GPIO_FN_PORT237_I2C_SCL2,
+ 	GPIO_FN_MSIOF1_SS1, GPIO_FN_VIO2_FIELD2,
+ 	GPIO_FN_MSIOF1_SS2, GPIO_FN_VIO2_HD2,
+-	GPIO_FN_SCIFA6_TXD,
+ 	GPIO_FN_PORT241_IRDA_OUT, GPIO_FN_PORT241_IROUT, GPIO_FN_MFG4_OUT1, \
+ 	GPIO_FN_TPU4TO0,
+ 	GPIO_FN_PORT242_IRDA_IN, GPIO_FN_MFG4_IN2,
+ 	GPIO_FN_PORT243_IRDA_FIRSEL, GPIO_FN_PORT243_VIO_CKO2,
+-	GPIO_FN_PORT244_SCIFA5_CTS_, GPIO_FN_MFG2_IN1, \
+-	GPIO_FN_PORT244_SCIFB_CTS_, GPIO_FN_MSIOF2R_RXD,
+-	GPIO_FN_PORT245_SCIFA5_RTS_, GPIO_FN_MFG2_IN2, \
+-	GPIO_FN_PORT245_SCIFB_RTS_, GPIO_FN_MSIOF2R_TXD,
+-	GPIO_FN_PORT246_SCIFA5_RXD, GPIO_FN_MFG1_OUT1, \
+-	GPIO_FN_PORT246_SCIFB_RXD, GPIO_FN_TPU1TO0,
+-	GPIO_FN_PORT247_SCIFA5_TXD, GPIO_FN_MFG3_OUT2, \
+-	GPIO_FN_PORT247_SCIFB_TXD, GPIO_FN_TPU3TO1,
+-	GPIO_FN_PORT248_SCIFA5_SCK, GPIO_FN_MFG2_OUT1, \
+-	GPIO_FN_PORT248_SCIFB_SCK, GPIO_FN_TPU2TO0, \
++	GPIO_FN_MFG2_IN1,
++	GPIO_FN_MSIOF2R_RXD,
++	GPIO_FN_MFG2_IN2,
++	GPIO_FN_MSIOF2R_TXD,
++	GPIO_FN_MFG1_OUT1,
++	GPIO_FN_TPU1TO0,
++	GPIO_FN_MFG3_OUT2,
++	GPIO_FN_TPU3TO1,
++	GPIO_FN_MFG2_OUT1,
++	GPIO_FN_TPU2TO0,
+ 	GPIO_FN_PORT248_I2C_SCL3, GPIO_FN_MSIOF2R_TSCK,
+ 	GPIO_FN_PORT249_IROUT, GPIO_FN_MFG4_IN1, \
+ 	GPIO_FN_PORT249_I2C_SDA3, GPIO_FN_MSIOF2R_TSYNC,
 -- 
 1.8.1.5
 
