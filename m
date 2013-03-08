@@ -1,33 +1,46 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 06 Mar 2013 00:22:53 +0000
-Subject: [PATCH 04/04] ARM: shmobile: Remove r8a7779_register_twd() from common.h
-Message-Id: <20130306002253.5430.18137.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 08 Mar 2013 08:20:18 +0000
+Subject: [PATCH 2/4] clocksource: sh_tmu: Set initcall level to subsys
+Message-Id: <1362730820-25417-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130306002214.5430.43766.sendpatchset@w520>
-In-Reply-To: <20130306002214.5430.43766.sendpatchset@w520>
+References: <1362730820-25417-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1362730820-25417-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+The reason for this is to ensure that TMU is probed earlier
+than with its previous initcall level, module init.
 
-Remove unnecessary r8a7779_register_twd() from common.h
+This came up as a problem with using CMT as a clock source kzm9g-reference
+which does not make use of early timers or devices. In that scenario
+initialisation of SDHI and MMCIF both stall on msleep() calls due to the
+absence of a initialised clock source.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+The purpose of this change is to keep the TMU code in sync with the CMT code
+which has been modified in a similar manner..
+
+Boot tested on: mackerel.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ drivers/clocksource/sh_tmu.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- arch/arm/mach-shmobile/include/mach/common.h |    2 --
- 1 file changed, 2 deletions(-)
-
---- 0001/arch/arm/mach-shmobile/include/mach/common.h
-+++ work/arch/arm/mach-shmobile/include/mach/common.h	2013-03-05 18:38:07.000000000 +0900
-@@ -71,8 +71,6 @@ extern void r8a7779_pinmux_init(void);
- extern void r8a7779_pm_init(void);
- extern void r8a7740_meram_workaround(void);
+diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
+index b4502edc..78b8dae 100644
+--- a/drivers/clocksource/sh_tmu.c
++++ b/drivers/clocksource/sh_tmu.c
+@@ -549,7 +549,7 @@ static void __exit sh_tmu_exit(void)
+ }
  
--extern void r8a7779_register_twd(void);
--
- #ifdef CONFIG_SUSPEND
- int shmobile_suspend_init(void);
- #else
+ early_platform_init("earlytimer", &sh_tmu_device_driver);
+-module_init(sh_tmu_init);
++subsys_initcall(sh_tmu_init);
+ module_exit(sh_tmu_exit);
+ 
+ MODULE_AUTHOR("Magnus Damm");
+-- 
+1.7.10.4
+
