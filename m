@@ -1,42 +1,105 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Mar 2013 22:59:53 +0000
-Subject: [PATCH v4 48/88] ARM: shmobile: marzen: Register pinctrl mappings for LBSC
-Message-Id: <1363215633-4264-49-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 08 Mar 2013 11:01:40 +0000
+Subject: [PATCH v3 20/64] ARM: shmobile: ap4evb: Register pinctrl mappings for SDHI and MMCIF
+Message-Id: <1362740544-19164-21-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Replace the GPIO-based LBSC pinmux configuration by pinctrl mappings.
+Replace the GPIO-based SDHI and MMCIF pinmux configuration by pinctrl
+mappings
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-marzen.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ arch/arm/mach-shmobile/board-ap4evb.c | 52 +++++++++++++++--------------------
+ 1 file changed, 22 insertions(+), 30 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index 04bcf88..b16f85f 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -347,6 +347,9 @@ static const struct pinctrl_map marzen_pinctrl_map[] = {
- 				  "sdhi0_cd", "sdhi0"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
- 				  "sdhi0_wp", "sdhi0"),
-+	/* SMSC */
-+	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a7779",
-+				  "lbsc_ex_cs0", "lbsc"),
- 	/* USB0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform.0", "pfc-r8a7779",
- 				  "usb0", "usb0"),
-@@ -370,7 +373,6 @@ static void __init marzen_init(void)
- 	r8a7779_pinmux_init();
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 0a2b6e4..c8947e0 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -34,6 +34,7 @@
+ #include <linux/i2c.h>
+ #include <linux/i2c/tsc2007.h>
+ #include <linux/io.h>
++#include <linux/pinctrl/machine.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/smsc911x.h>
+@@ -1084,6 +1085,25 @@ static struct i2c_board_info i2c1_devices[] = {
+ };
  
- 	/* LAN89218 */
--	gpio_request(GPIO_FN_EX_CS0, NULL); /* nCS */
- 	gpio_request(GPIO_FN_IRQ1_B, NULL); /* IRQ + PME */
  
- 	r8a7779_add_standard_devices();
++static const struct pinctrl_map ap4evb_pinctrl_map[] = {
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh7372",
++				  "mmc0_data8_0", "mmc0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh7372",
++				  "mmc0_ctrl_0", "mmc0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
++				  "sdhi0_data4", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
++				  "sdhi0_ctrl", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
++				  "sdhi0_cd", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
++				  "sdhi0_wp", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-sh7372",
++				  "sdhi1_data4", "sdhi1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-sh7372",
++				  "sdhi1_ctrl", "sdhi1"),
++};
++
+ #define GPIO_PORT9CR	IOMEM(0xE6051009)
+ #define GPIO_PORT10CR	IOMEM(0xE605100A)
+ #define USCCR1		IOMEM(0xE6058144)
+@@ -1110,6 +1130,8 @@ static void __init ap4evb_init(void)
+ 	/* External clock source */
+ 	clk_set_rate(&sh7372_dv_clki_clk, 27000000);
+ 
++	pinctrl_register_mappings(ap4evb_pinctrl_map,
++				  ARRAY_SIZE(ap4evb_pinctrl_map));
+ 	sh7372_pinmux_init();
+ 
+ 	/* enable SCIFA0 */
+@@ -1126,36 +1148,6 @@ static void __init ap4evb_init(void)
+ 	gpio_request_one(34, GPIOF_IN | GPIOF_EXPORT, NULL);
+ 	gpio_request_one(35, GPIOF_IN | GPIOF_EXPORT, NULL);
+ 
+-	/* SDHI0 */
+-	gpio_request(GPIO_FN_SDHICD0, NULL);
+-	gpio_request(GPIO_FN_SDHIWP0, NULL);
+-	gpio_request(GPIO_FN_SDHICMD0, NULL);
+-	gpio_request(GPIO_FN_SDHICLK0, NULL);
+-	gpio_request(GPIO_FN_SDHID0_3, NULL);
+-	gpio_request(GPIO_FN_SDHID0_2, NULL);
+-	gpio_request(GPIO_FN_SDHID0_1, NULL);
+-	gpio_request(GPIO_FN_SDHID0_0, NULL);
+-
+-	/* SDHI1 */
+-	gpio_request(GPIO_FN_SDHICMD1, NULL);
+-	gpio_request(GPIO_FN_SDHICLK1, NULL);
+-	gpio_request(GPIO_FN_SDHID1_3, NULL);
+-	gpio_request(GPIO_FN_SDHID1_2, NULL);
+-	gpio_request(GPIO_FN_SDHID1_1, NULL);
+-	gpio_request(GPIO_FN_SDHID1_0, NULL);
+-
+-	/* MMCIF */
+-	gpio_request(GPIO_FN_MMCD0_0, NULL);
+-	gpio_request(GPIO_FN_MMCD0_1, NULL);
+-	gpio_request(GPIO_FN_MMCD0_2, NULL);
+-	gpio_request(GPIO_FN_MMCD0_3, NULL);
+-	gpio_request(GPIO_FN_MMCD0_4, NULL);
+-	gpio_request(GPIO_FN_MMCD0_5, NULL);
+-	gpio_request(GPIO_FN_MMCD0_6, NULL);
+-	gpio_request(GPIO_FN_MMCD0_7, NULL);
+-	gpio_request(GPIO_FN_MMCCMD0, NULL);
+-	gpio_request(GPIO_FN_MMCCLK0, NULL);
+-
+ 	/* USB enable */
+ 	gpio_request(GPIO_FN_VBUS0_1,    NULL);
+ 	gpio_request(GPIO_FN_IDIN_1_18,  NULL);
 -- 
 1.8.1.5
 
