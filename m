@@ -1,89 +1,50 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 06 Mar 2013 12:52:26 +0000
-Subject: [PATCH v3 05/29] sh-pfc: Drop the sh_pfc_pinctrl spinlock
-Message-Id: <1362574370-17889-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 08 Mar 2013 11:01:51 +0000
+Subject: [PATCH v3 31/64] ARM: shmobile: marzen: Register pinctrl mappings for SCIF
+Message-Id: <1362740544-19164-32-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The spinlock is used to protect data that is only accessed sequentially
-during initialization. Remove it.
+Replace the GPIO-based SCIF pinmux configuration by pinctrl mappings.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/pinctrl/sh-pfc/pinctrl.c | 13 -------------
- 1 file changed, 13 deletions(-)
+ arch/arm/mach-shmobile/board-marzen.c | 12 ++++--------
+ 1 file changed, 4 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
-index d113746..9bd0a83 100644
---- a/drivers/pinctrl/sh-pfc/pinctrl.c
-+++ b/drivers/pinctrl/sh-pfc/pinctrl.c
-@@ -37,8 +37,6 @@ struct sh_pfc_pinctrl {
- 
- 	struct pinctrl_pin_desc *pads;
- 	unsigned int nr_pads;
--
--	spinlock_t lock;
- };
- 
- static int sh_pfc_get_groups_count(struct pinctrl_dev *pctldev)
-@@ -321,7 +319,6 @@ static void sh_pfc_map_one_gpio(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx,
- 				struct pinmux_gpio *gpio, unsigned offset)
- {
- 	struct pinmux_data_reg *dummy;
--	unsigned long flags;
- 	int bit;
- 
- 	gpio->flags &= ~PINMUX_FLAG_TYPE;
-@@ -330,10 +327,7 @@ static void sh_pfc_map_one_gpio(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx,
- 		gpio->flags |= PINMUX_TYPE_GPIO;
- 	else {
- 		gpio->flags |= PINMUX_TYPE_FUNCTION;
--
--		spin_lock_irqsave(&pmx->lock, flags);
- 		pmx->nr_functions++;
--		spin_unlock_irqrestore(&pmx->lock, flags);
- 	}
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index d25a7b3..fd313a8 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -329,6 +329,10 @@ void __init marzen_init_late(void)
  }
  
-@@ -381,7 +375,6 @@ static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ static const struct pinctrl_map marzen_pinctrl_map[] = {
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-r8a7779",
++				  "scif2_data_c", "scif2"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-r8a7779",
++				  "scif4_data", "scif4"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
+ 				  "sdhi0_data4", "sdhi0"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
+@@ -350,14 +354,6 @@ static void __init marzen_init(void)
+ 				  ARRAY_SIZE(marzen_pinctrl_map));
+ 	r8a7779_pinmux_init();
  
- static int sh_pfc_map_functions(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
- {
--	unsigned long flags;
- 	int i, fn;
- 
- 	pmx->functions = devm_kzalloc(pfc->dev, pmx->nr_functions *
-@@ -389,8 +382,6 @@ static int sh_pfc_map_functions(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
- 	if (unlikely(!pmx->functions))
- 		return -ENOMEM;
- 
--	spin_lock_irqsave(&pmx->lock, flags);
+-	/* SCIF2 (CN18: DEBUG0) */
+-	gpio_request(GPIO_FN_TX2_C, NULL);
+-	gpio_request(GPIO_FN_RX2_C, NULL);
 -
- 	for (i = fn = 0; i < pmx->nr_pads; i++) {
- 		struct pinmux_gpio *gpio = pfc->info->gpios + i;
- 
-@@ -398,8 +389,6 @@ static int sh_pfc_map_functions(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
- 			pmx->functions[fn++] = gpio;
- 	}
- 
--	spin_unlock_irqrestore(&pmx->lock, flags);
+-	/* SCIF4 (CN19: DEBUG1) */
+-	gpio_request(GPIO_FN_TX4, NULL);
+-	gpio_request(GPIO_FN_RX4, NULL);
 -
- 	return 0;
- }
- 
-@@ -412,8 +401,6 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
- 	if (unlikely(!pmx))
- 		return -ENOMEM;
- 
--	spin_lock_init(&pmx->lock);
--
- 	pmx->pfc = pfc;
- 	pfc->pinctrl = pmx;
- 
+ 	/* LAN89218 */
+ 	gpio_request(GPIO_FN_EX_CS0, NULL); /* nCS */
+ 	gpio_request(GPIO_FN_IRQ1_B, NULL); /* IRQ + PME */
 -- 
 1.8.1.5
 
