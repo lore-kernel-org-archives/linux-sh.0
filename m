@@ -1,68 +1,57 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 11:02:03 +0000
-Subject: [PATCH v3 43/64] sh-pfc: r8a7779: Remove DU1_DOTCLKOUT1 GPIO
-Message-Id: <1362740544-19164-44-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Fri, 08 Mar 2013 08:20:19 +0000
+Subject: [PATCH 3/4] clocksource: em_sti: Set initcall level to subsys
+Message-Id: <1362730820-25417-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1362730820-25417-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1362730820-25417-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The function is not documented in the r8a7779 datasheet. Remove it.
+The reason for this is to ensure that STI is probed earlier
+than with its previous initcall level, module init.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This came up as a problem with using CMT as a clock source kzm9g-reference
+which does not make use of early timers or devices. In that scenario
+initialisation of SDHI and MMCIF both stall on msleep() calls due to the
+absence of a initialised clock source.
+
+The purpose of this change is to keep the STI code in sync with the CMT code
+which has been modified in a similar manner..
+
+Boot tested on: kzm9d.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 9 ++++-----
- 1 file changed, 4 insertions(+), 5 deletions(-)
+ drivers/clocksource/em_sti.c |   13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-index df2fd70..6d0142b 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-@@ -353,7 +353,7 @@ enum {
- 	FN_VI1_DATA6_VI1_B6, FN_SD2_CD, FN_MT0_VCXO, FN_SPA_TMS,
- 	FN_HSPI_TX1_D, FN_VI1_DATA7_VI1_B7, FN_SD2_WP, FN_MT0_PWM,
- 	FN_SPA_TDI, FN_HSPI_RX1_D, FN_VI1_G0, FN_VI3_DATA0,
--	FN_DU1_DOTCLKOUT1, FN_TS_SCK1, FN_DREQ2_B, FN_TX2,
-+	FN_TS_SCK1, FN_DREQ2_B, FN_TX2,
- 	FN_SPA_TDO, FN_HCTS0_B, FN_VI1_G1, FN_VI3_DATA1,
- 	FN_SSI_SCK1, FN_TS_SDEN1, FN_DACK2_B, FN_RX2, FN_HRTS0_B,
+diff --git a/drivers/clocksource/em_sti.c b/drivers/clocksource/em_sti.c
+index e6a553c..4329a29 100644
+--- a/drivers/clocksource/em_sti.c
++++ b/drivers/clocksource/em_sti.c
+@@ -399,7 +399,18 @@ static struct platform_driver em_sti_device_driver = {
+ 	}
+ };
  
-@@ -615,7 +615,7 @@ enum {
- 	HSPI_CS1_D_MARK, ADICHS2_B_MARK, VI1_DATA6_VI1_B6_MARK, SD2_CD_MARK,
- 	MT0_VCXO_MARK, SPA_TMS_MARK, HSPI_TX1_D_MARK, VI1_DATA7_VI1_B7_MARK,
- 	SD2_WP_MARK, MT0_PWM_MARK, SPA_TDI_MARK, HSPI_RX1_D_MARK,
--	VI1_G0_MARK, VI3_DATA0_MARK, DU1_DOTCLKOUT1_MARK, TS_SCK1_MARK,
-+	VI1_G0_MARK, VI3_DATA0_MARK, TS_SCK1_MARK,
- 	DREQ2_B_MARK, TX2_MARK,	SPA_TDO_MARK, HCTS0_B_MARK,
- 	VI1_G1_MARK, VI3_DATA1_MARK, SSI_SCK1_MARK, TS_SDEN1_MARK,
- 	DACK2_B_MARK, RX2_MARK, HRTS0_B_MARK,
-@@ -1385,7 +1385,6 @@ static pinmux_enum_t pinmux_data[] = {
- 	PINMUX_IPSR_MODSEL_DATA(IP11_23_21, HSPI_RX1_D, SEL_HSPI1_3),
- 	PINMUX_IPSR_DATA(IP11_26_24, VI1_G0),
- 	PINMUX_IPSR_DATA(IP11_26_24, VI3_DATA0),
--	PINMUX_IPSR_DATA(IP11_26_24, DU1_DOTCLKOUT1),
- 	PINMUX_IPSR_DATA(IP11_26_24, TS_SCK1),
- 	PINMUX_IPSR_MODSEL_DATA(IP11_26_24, DREQ2_B, SEL_EXBUS2_1),
- 	PINMUX_IPSR_DATA(IP11_26_24, TX2),
-@@ -2948,7 +2947,7 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(SD2_CD), GPIO_FN(MT0_VCXO), GPIO_FN(SPA_TMS),
- 	GPIO_FN(HSPI_TX1_D), GPIO_FN(VI1_DATA7_VI1_B7), GPIO_FN(SD2_WP),
- 	GPIO_FN(MT0_PWM), GPIO_FN(SPA_TDI), GPIO_FN(HSPI_RX1_D),
--	GPIO_FN(VI1_G0), GPIO_FN(VI3_DATA0), GPIO_FN(DU1_DOTCLKOUT1),
-+	GPIO_FN(VI1_G0), GPIO_FN(VI3_DATA0),
- 	GPIO_FN(TS_SCK1), GPIO_FN(DREQ2_B), GPIO_FN(TX2), GPIO_FN(SPA_TDO),
- 	GPIO_FN(HCTS0_B), GPIO_FN(VI1_G1), GPIO_FN(VI3_DATA1),
- 	GPIO_FN(SSI_SCK1), GPIO_FN(TS_SDEN1), GPIO_FN(DACK2_B), GPIO_FN(RX2),
-@@ -3656,7 +3655,7 @@ static struct pinmux_cfg_reg pinmux_config_regs[] = {
- 	    FN_VI1_G1, FN_VI3_DATA1, FN_SSI_SCK1, FN_TS_SDEN1,
- 	    FN_DACK2_B, FN_RX2, FN_HRTS0_B, 0,
- 	    /* IP11_26_24 [3] */
--	    FN_VI1_G0, FN_VI3_DATA0, FN_DU1_DOTCLKOUT1, FN_TS_SCK1,
-+	    FN_VI1_G0, FN_VI3_DATA0, 0, FN_TS_SCK1,
- 	    FN_DREQ2_B, FN_TX2, FN_SPA_TDO, FN_HCTS0_B,
- 	    /* IP11_23_21 [3] */
- 	    FN_VI1_DATA7_VI1_B7, FN_SD2_WP, FN_MT0_PWM, FN_SPA_TDI,
+-module_platform_driver(em_sti_device_driver);
++static int __init em_sti_init(void)
++{
++	return platform_driver_register(&em_sti_device_driver);
++}
++
++static void __exit em_sti_exit(void)
++{
++	platform_driver_unregister(&em_sti_device_driver);
++}
++
++subsys_initcall(em_sti_init);
++module_exit(em_sti_exit);
+ 
+ MODULE_AUTHOR("Magnus Damm");
+ MODULE_DESCRIPTION("Renesas Emma Mobile STI Timer Driver");
 -- 
-1.8.1.5
+1.7.10.4
 
