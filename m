@@ -1,146 +1,99 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Mar 2013 23:00:27 +0000
-Subject: [PATCH v4 82/88] ARM: shmobile: r8a7779: Remove DU function GPIOs
-Message-Id: <1363215633-4264-83-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Fri, 08 Mar 2013 10:55:43 +0000
+Subject: [PATCH v4 02/29] sh-pfc: Don't define the per-device pinctrl struct instances as global
+Message-Id: <1362740170-19073-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
+The pinctrl_desc and pinctrl_gpio_range structures registered with the
+pinctrl core are per-device instances. Move them to the dynamically
+allocated sh_pfc_pinctrl structure and initialize them at runtime.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7779.h | 88 +++++++++++++--------------
- 1 file changed, 44 insertions(+), 44 deletions(-)
+ drivers/pinctrl/sh-pfc/pinctrl.c | 40 ++++++++++++++++++----------------------
+ 1 file changed, 18 insertions(+), 22 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-index badba57..c25f66b 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -119,76 +119,76 @@ enum {
- 	GPIO_FN_SUB_TRST, GPIO_FN_TCLK1_B, GPIO_FN_CC5_OSCOUT, GPIO_FN_HRTS0,
- 	GPIO_FN_RTS1_TANS, GPIO_FN_MDATA, GPIO_FN_TX0_C, GPIO_FN_SUB_TMS,
- 	GPIO_FN_CC5_STATE1, GPIO_FN_CC5_STATE9, GPIO_FN_CC5_STATE17,
--	GPIO_FN_CC5_STATE25, GPIO_FN_CC5_STATE33, GPIO_FN_DU0_DR0,
-+	GPIO_FN_CC5_STATE25, GPIO_FN_CC5_STATE33,
- 	GPIO_FN_LCDOUT0, GPIO_FN_DREQ0, GPIO_FN_GPS_CLK_B, GPIO_FN_AUDATA0,
--	GPIO_FN_TX5_C, GPIO_FN_DU0_DR1,	GPIO_FN_LCDOUT1, GPIO_FN_DACK0,
-+	GPIO_FN_TX5_C, GPIO_FN_LCDOUT1, GPIO_FN_DACK0,
- 	GPIO_FN_DRACK0, GPIO_FN_GPS_SIGN_B, GPIO_FN_AUDATA1, GPIO_FN_RX5_C,
--	GPIO_FN_DU0_DR2, GPIO_FN_LCDOUT2, GPIO_FN_DU0_DR3, GPIO_FN_LCDOUT3,
--	GPIO_FN_DU0_DR4, GPIO_FN_LCDOUT4, GPIO_FN_DU0_DR5, GPIO_FN_LCDOUT5,
--	GPIO_FN_DU0_DR6, GPIO_FN_LCDOUT6, GPIO_FN_DU0_DR7, GPIO_FN_LCDOUT7,
--	GPIO_FN_DU0_DG0, GPIO_FN_LCDOUT8, GPIO_FN_DREQ1, GPIO_FN_SCL2,
-+	GPIO_FN_LCDOUT2, GPIO_FN_LCDOUT3,
-+	GPIO_FN_LCDOUT4, GPIO_FN_LCDOUT5,
-+	GPIO_FN_LCDOUT6, GPIO_FN_LCDOUT7,
-+	GPIO_FN_LCDOUT8, GPIO_FN_DREQ1, GPIO_FN_SCL2,
- 	GPIO_FN_AUDATA2,
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index 887930e..d113746 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -27,6 +27,9 @@
  
- 	/* IPSR3 */
--	GPIO_FN_DU0_DG1, GPIO_FN_LCDOUT9, GPIO_FN_DACK1, GPIO_FN_SDA2,
--	GPIO_FN_AUDATA3, GPIO_FN_DU0_DG2, GPIO_FN_LCDOUT10, GPIO_FN_DU0_DG3,
--	GPIO_FN_LCDOUT11, GPIO_FN_DU0_DG4, GPIO_FN_LCDOUT12, GPIO_FN_DU0_DG5,
--	GPIO_FN_LCDOUT13, GPIO_FN_DU0_DG6, GPIO_FN_LCDOUT14, GPIO_FN_DU0_DG7,
--	GPIO_FN_LCDOUT15, GPIO_FN_DU0_DB0, GPIO_FN_LCDOUT16, GPIO_FN_EX_WAIT1,
--	GPIO_FN_SCL1, GPIO_FN_TCLK1, GPIO_FN_AUDATA4, GPIO_FN_DU0_DB1,
-+	GPIO_FN_LCDOUT9, GPIO_FN_DACK1, GPIO_FN_SDA2,
-+	GPIO_FN_AUDATA3, GPIO_FN_LCDOUT10,
-+	GPIO_FN_LCDOUT11, GPIO_FN_LCDOUT12,
-+	GPIO_FN_LCDOUT13, GPIO_FN_LCDOUT14,
-+	GPIO_FN_LCDOUT15, GPIO_FN_LCDOUT16, GPIO_FN_EX_WAIT1,
-+	GPIO_FN_SCL1, GPIO_FN_TCLK1, GPIO_FN_AUDATA4,
- 	GPIO_FN_LCDOUT17, GPIO_FN_EX_WAIT2, GPIO_FN_SDA1, GPIO_FN_GPS_MAG_B,
--	GPIO_FN_AUDATA5, GPIO_FN_SCK5_C, GPIO_FN_DU0_DB2, GPIO_FN_LCDOUT18,
--	GPIO_FN_DU0_DB3, GPIO_FN_LCDOUT19, GPIO_FN_DU0_DB4, GPIO_FN_LCDOUT20,
--	GPIO_FN_DU0_DB5, GPIO_FN_LCDOUT21, GPIO_FN_DU0_DB6, GPIO_FN_LCDOUT22,
--	GPIO_FN_DU0_DB7, GPIO_FN_LCDOUT23, GPIO_FN_DU0_DOTCLKIN,
-+	GPIO_FN_AUDATA5, GPIO_FN_SCK5_C, GPIO_FN_LCDOUT18,
-+	GPIO_FN_LCDOUT19, GPIO_FN_LCDOUT20,
-+	GPIO_FN_LCDOUT21, GPIO_FN_LCDOUT22,
-+	GPIO_FN_LCDOUT23,
- 	GPIO_FN_QSTVA_QVS, GPIO_FN_TX3_D_IRDA_TX_D, GPIO_FN_SCL3_B,
--	GPIO_FN_DU0_DOTCLKOUT0, GPIO_FN_QCLK, GPIO_FN_DU0_DOTCLKOUT1,
-+	GPIO_FN_QCLK,
- 	GPIO_FN_QSTVB_QVE, GPIO_FN_RX3_D_IRDA_RX_D, GPIO_FN_SDA3_B,
- 	GPIO_FN_SDA2_C, GPIO_FN_DACK0_B, GPIO_FN_DRACK0_B,
--	GPIO_FN_DU0_EXHSYNC_DU0_HSYNC, GPIO_FN_QSTH_QHS,
--	GPIO_FN_DU0_EXVSYNC_DU0_VSYNC, GPIO_FN_QSTB_QHE,
--	GPIO_FN_DU0_EXODDF_DU0_ODDF_DISP_CDE, GPIO_FN_QCPV_QDE,
-+	GPIO_FN_QSTH_QHS,
-+	GPIO_FN_QSTB_QHE,
-+	GPIO_FN_QCPV_QDE,
- 	GPIO_FN_CAN1_TX, GPIO_FN_TX2_C, GPIO_FN_SCL2_C, GPIO_FN_REMOCON,
+ struct sh_pfc_pinctrl {
+ 	struct pinctrl_dev *pctl;
++	struct pinctrl_desc pctl_desc;
++	struct pinctrl_gpio_range range;
++
+ 	struct sh_pfc *pfc;
  
- 	/* IPSR4 */
--	GPIO_FN_DU0_DISP, GPIO_FN_QPOLA, GPIO_FN_CAN_CLK_C, GPIO_FN_SCK2_C,
--	GPIO_FN_DU0_CDE, GPIO_FN_QPOLB, GPIO_FN_CAN1_RX, GPIO_FN_RX2_C,
--	GPIO_FN_DREQ0_B, GPIO_FN_SSI_SCK78_B, GPIO_FN_SCK0_B, GPIO_FN_DU1_DR0,
-+	GPIO_FN_QPOLA, GPIO_FN_CAN_CLK_C, GPIO_FN_SCK2_C,
-+	GPIO_FN_QPOLB, GPIO_FN_CAN1_RX, GPIO_FN_RX2_C,
-+	GPIO_FN_DREQ0_B, GPIO_FN_SSI_SCK78_B, GPIO_FN_SCK0_B,
- 	GPIO_FN_VI2_DATA0_VI2_B0, GPIO_FN_PWM6, GPIO_FN_SD3_CLK,
- 	GPIO_FN_TX3_E_IRDA_TX_E, GPIO_FN_AUDCK, GPIO_FN_PWMFSW0_B,
--	GPIO_FN_DU1_DR1, GPIO_FN_VI2_DATA1_VI2_B1, GPIO_FN_PWM0,
-+	GPIO_FN_VI2_DATA1_VI2_B1, GPIO_FN_PWM0,
- 	GPIO_FN_SD3_CMD, GPIO_FN_RX3_E_IRDA_RX_E, GPIO_FN_AUDSYNC,
--	GPIO_FN_CTS0_D, GPIO_FN_DU1_DR2, GPIO_FN_VI2_G0, GPIO_FN_DU1_DR3,
--	GPIO_FN_VI2_G1, GPIO_FN_DU1_DR4, GPIO_FN_VI2_G2, GPIO_FN_DU1_DR5,
--	GPIO_FN_VI2_G3, GPIO_FN_DU1_DR6, GPIO_FN_VI2_G4, GPIO_FN_DU1_DR7,
--	GPIO_FN_VI2_G5, GPIO_FN_DU1_DG0, GPIO_FN_VI2_DATA2_VI2_B2,
-+	GPIO_FN_CTS0_D, GPIO_FN_VI2_G0,
-+	GPIO_FN_VI2_G1, GPIO_FN_VI2_G2,
-+	GPIO_FN_VI2_G3, GPIO_FN_VI2_G4,
-+	GPIO_FN_VI2_G5, GPIO_FN_VI2_DATA2_VI2_B2,
- 	GPIO_FN_SCL1_B, GPIO_FN_SD3_DAT2, GPIO_FN_SCK3_E, GPIO_FN_AUDATA6,
--	GPIO_FN_TX0_D, GPIO_FN_DU1_DG1, GPIO_FN_VI2_DATA3_VI2_B3,
-+	GPIO_FN_TX0_D, GPIO_FN_VI2_DATA3_VI2_B3,
- 	GPIO_FN_SDA1_B, GPIO_FN_SD3_DAT3, GPIO_FN_SCK5, GPIO_FN_AUDATA7,
--	GPIO_FN_RX0_D, GPIO_FN_DU1_DG2,	GPIO_FN_VI2_G6, GPIO_FN_DU1_DG3,
--	GPIO_FN_VI2_G7, GPIO_FN_DU1_DG4, GPIO_FN_VI2_R0, GPIO_FN_DU1_DG5,
--	GPIO_FN_VI2_R1, GPIO_FN_DU1_DG6, GPIO_FN_VI2_R2, GPIO_FN_DU1_DG7,
--	GPIO_FN_VI2_R3, GPIO_FN_DU1_DB0, GPIO_FN_VI2_DATA4_VI2_B4,
-+	GPIO_FN_RX0_D, GPIO_FN_VI2_G6,
-+	GPIO_FN_VI2_G7, GPIO_FN_VI2_R0,
-+	GPIO_FN_VI2_R1, GPIO_FN_VI2_R2,
-+	GPIO_FN_VI2_R3, GPIO_FN_VI2_DATA4_VI2_B4,
- 	GPIO_FN_SCL2_B, GPIO_FN_SD3_DAT0, GPIO_FN_TX5, GPIO_FN_SCK0_D,
+ 	struct pinmux_gpio **functions;
+@@ -314,19 +317,6 @@ static const struct pinconf_ops sh_pfc_pinconf_ops = {
+ 	.pin_config_dbg_show	= sh_pfc_pinconf_dbg_show,
+ };
  
- 	/* IPSR5 */
--	GPIO_FN_DU1_DB1, GPIO_FN_VI2_DATA5_VI2_B5, GPIO_FN_SDA2_B,
-+	GPIO_FN_VI2_DATA5_VI2_B5, GPIO_FN_SDA2_B,
- 	GPIO_FN_SD3_DAT1, GPIO_FN_RX5, GPIO_FN_RTS0_D_TANS_D,
--	GPIO_FN_DU1_DB2, GPIO_FN_VI2_R4, GPIO_FN_DU1_DB3, GPIO_FN_VI2_R5,
--	GPIO_FN_DU1_DB4, GPIO_FN_VI2_R6, GPIO_FN_DU1_DB5, GPIO_FN_VI2_R7,
--	GPIO_FN_DU1_DB6, GPIO_FN_SCL2_D, GPIO_FN_DU1_DB7, GPIO_FN_SDA2_D,
--	GPIO_FN_DU1_DOTCLKIN, GPIO_FN_VI2_CLKENB, GPIO_FN_HSPI_CS1,
--	GPIO_FN_SCL1_D, GPIO_FN_DU1_DOTCLKOUT, GPIO_FN_VI2_FIELD,
--	GPIO_FN_SDA1_D, GPIO_FN_DU1_EXHSYNC_DU1_HSYNC, GPIO_FN_VI2_HSYNC,
--	GPIO_FN_VI3_HSYNC, GPIO_FN_DU1_EXVSYNC_DU1_VSYNC, GPIO_FN_VI2_VSYNC,
--	GPIO_FN_VI3_VSYNC, GPIO_FN_DU1_EXODDF_DU1_ODDF_DISP_CDE,
-+	GPIO_FN_VI2_R4, GPIO_FN_VI2_R5,
-+	GPIO_FN_VI2_R6, GPIO_FN_VI2_R7,
-+	GPIO_FN_SCL2_D, GPIO_FN_SDA2_D,
-+	GPIO_FN_VI2_CLKENB, GPIO_FN_HSPI_CS1,
-+	GPIO_FN_SCL1_D, GPIO_FN_VI2_FIELD,
-+	GPIO_FN_SDA1_D, GPIO_FN_VI2_HSYNC,
-+	GPIO_FN_VI3_HSYNC, GPIO_FN_VI2_VSYNC,
-+	GPIO_FN_VI3_VSYNC,
- 	GPIO_FN_VI2_CLK, GPIO_FN_TX3_B_IRDA_TX_B, GPIO_FN_SD3_CD,
- 	GPIO_FN_HSPI_TX1, GPIO_FN_VI1_CLKENB, GPIO_FN_VI3_CLKENB,
- 	GPIO_FN_AUDIO_CLKC, GPIO_FN_TX2_D, GPIO_FN_SPEEDIN,
--	GPIO_FN_GPS_SIGN_D, GPIO_FN_DU1_DISP, GPIO_FN_VI2_DATA6_VI2_B6,
-+	GPIO_FN_GPS_SIGN_D, GPIO_FN_VI2_DATA6_VI2_B6,
- 	GPIO_FN_TCLK0, GPIO_FN_QSTVA_B_QVS_B, GPIO_FN_HSPI_CLK1,
- 	GPIO_FN_SCK2_D, GPIO_FN_AUDIO_CLKOUT_B, GPIO_FN_GPS_MAG_D,
--	GPIO_FN_DU1_CDE, GPIO_FN_VI2_DATA7_VI2_B7, GPIO_FN_RX3_B_IRDA_RX_B,
-+	GPIO_FN_VI2_DATA7_VI2_B7, GPIO_FN_RX3_B_IRDA_RX_B,
- 	GPIO_FN_SD3_WP, GPIO_FN_HSPI_RX1, GPIO_FN_VI1_FIELD, GPIO_FN_VI3_FIELD,
- 	GPIO_FN_AUDIO_CLKOUT, GPIO_FN_RX2_D, GPIO_FN_GPS_CLK_C,
- 	GPIO_FN_GPS_CLK_D, GPIO_FN_AUDIO_CLKA, GPIO_FN_CAN_TXCLK,
+-static struct pinctrl_gpio_range sh_pfc_gpio_range = {
+-	.name		= DRV_NAME,
+-	.id		= 0,
+-};
+-
+-static struct pinctrl_desc sh_pfc_pinctrl_desc = {
+-	.name		= DRV_NAME,
+-	.owner		= THIS_MODULE,
+-	.pctlops	= &sh_pfc_pinctrl_ops,
+-	.pmxops		= &sh_pfc_pinmux_ops,
+-	.confops	= &sh_pfc_pinconf_ops,
+-};
+-
+ static void sh_pfc_map_one_gpio(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx,
+ 				struct pinmux_gpio *gpio, unsigned offset)
+ {
+@@ -386,9 +376,6 @@ static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ 
+ 	spin_unlock_irqrestore(&pfc->lock, flags);
+ 
+-	sh_pfc_pinctrl_desc.pins = pmx->pads;
+-	sh_pfc_pinctrl_desc.npins = pmx->nr_pads;
+-
+ 	return 0;
+ }
+ 
+@@ -438,16 +425,25 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ 	if (unlikely(ret != 0))
+ 		return ret;
+ 
+-	pmx->pctl = pinctrl_register(&sh_pfc_pinctrl_desc, pfc->dev, pmx);
++	pmx->pctl_desc.name = DRV_NAME;
++	pmx->pctl_desc.owner = THIS_MODULE;
++	pmx->pctl_desc.pctlops = &sh_pfc_pinctrl_ops;
++	pmx->pctl_desc.pmxops = &sh_pfc_pinmux_ops;
++	pmx->pctl_desc.confops = &sh_pfc_pinconf_ops;
++	pmx->pctl_desc.pins = pmx->pads;
++	pmx->pctl_desc.npins = pmx->nr_pads;
++
++	pmx->pctl = pinctrl_register(&pmx->pctl_desc, pfc->dev, pmx);
+ 	if (IS_ERR(pmx->pctl))
+ 		return PTR_ERR(pmx->pctl);
+ 
+-	sh_pfc_gpio_range.npins = pfc->info->last_gpio
+-				- pfc->info->first_gpio + 1;
+-	sh_pfc_gpio_range.base = pfc->info->first_gpio;
+-	sh_pfc_gpio_range.pin_base = pfc->info->first_gpio;
++	pmx->range.name = DRV_NAME,
++	pmx->range.id = 0;
++	pmx->range.npins = pfc->info->last_gpio - pfc->info->first_gpio + 1;
++	pmx->range.base = pfc->info->first_gpio;
++	pmx->range.pin_base = pfc->info->first_gpio;
+ 
+-	pinctrl_add_gpio_range(pmx->pctl, &sh_pfc_gpio_range);
++	pinctrl_add_gpio_range(pmx->pctl, &pmx->range);
+ 
+ 	return 0;
+ }
 -- 
 1.8.1.5
 
