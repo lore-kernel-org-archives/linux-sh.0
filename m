@@ -1,56 +1,109 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 27 Mar 2013 16:37:33 +0000
-Subject: Re: [PATCH 00/04] ARM: shmobile: r8a73a4 SoC support V3
-Message-Id: <CANqRtoQ4h6cwF3X-f9UmD0h04B9EQ7TVyJ2PwTTGTvLYz6NFzQ@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 10 Mar 2013 18:58:42 +0000
+Subject: [PATCH/RFC 06/12] sh-pfc: Skip gpiochip registration when no GPIO resource is found
+Message-Id: <1362941928-18115-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130326013414.11796.9937.sendpatchset@w520>
- <201303261148.56032.arnd@arndb.de>
- <CANqRtoS73UGpq4bv_wkUG9w1AYH9KgSW8Q8Rfjp6Hr080hv6sw@mail.gmail.com>
- <20130327034605.GB25431@verge.net.au>
- <CANqRtoTp-Bx7EVQioekmJZJs5qUCoq=CX6CtukbEHp22RR_goA@mail.gmail.com>
- <20130327114553.GA9420@verge.net.au>
- <20130327120127.GL413@verge.net.au>
-In-Reply-To: <20130327120127.GL413@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Mar 27, 2013 at 9:01 PM, Simon Horman <horms@verge.net.au> wrote:
-> On Wed, Mar 27, 2013 at 08:45:54PM +0900, Simon Horman wrote:
->> On Wed, Mar 27, 2013 at 05:19:55PM +0900, Magnus Damm wrote:
->> > On Wed, Mar 27, 2013 at 12:46 PM, Simon Horman <horms@verge.net.au> wrote:
->> > > On Tue, Mar 26, 2013 at 11:17:43PM +0900, Magnus Damm wrote:
->> > >> On Tue, Mar 26, 2013 at 8:48 PM, Arnd Bergmann <arnd@arndb.de> wrote:
->> > >> > On Tuesday 26 March 2013, Magnus Damm wrote:
->> > >> >> ARM: shmobile: r8a73a4 SoC support V3
->> > >> >> [PATCH 01/04] ARM: shmobile: Initial r8a73a4 SoC support V3
->> > >> >> [PATCH 02/04] ARM: shmobile: r8a73a4 SCIF support V3
->> > >> >> [PATCH 03/04] ARM: shmobile: r8a73a4 IRQC support V2
->> > >> >> [PATCH 04/04] ARM: shmobile: r8a73a4 PFC support
->> > >> >>
->> > >> >> This series is V3 of initial support for the r8a73a4 SoC. The SoC
->> > >> >> is known as r8a73a4 which is built around Cortex-A15 and makes use
->> > >> >> of SCIF for serial, IRQC interrupt controller for external IRQs and
->> > >> >> PFC for combined support for pinmux and GPIO.
->> > >> >>
->> > >> >
->> > >> > Acked-by: Arnd Bergmann <arnd@arndb.de>
->> > >>
->> > >> Thanks for your help!
->> > >
->> > > Indeed.
->> > >
->> > > Magnus, please let me know if/when you would like me to queue-up these
->> > > patches.
->> >
->> > Thanks. Since you bring up the topic, I'd like you to queue up this
->> > patch series more or less right away if possible. =)
->>
->> Sure, I think it is possible.
->
-> I have applied the series to the soc branch with Arnd's Ack.
+Boards/platforms that register dedicated GPIO devices will not supply a
+memory resource for GPIOs. Try to locate the GPIO memory resource at
+initialization time, and skip registration of the gpiochip if the
+resource can't be found.
 
-Thank you!
+This is a temporary modification to ease the transition to separate GPIO
+drivers. It should be reverted when all boards and platforms will have
+been moved.
 
-/ magnus
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/pinctrl/sh-pfc/gpio.c | 39 +++++++++++++++++++++------------------
+ 1 file changed, 21 insertions(+), 18 deletions(-)
+
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index 317cebb..d37efa7 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -101,24 +101,9 @@ static void gpio_setup_data_reg(struct sh_pfc_chip *chip, unsigned gpio)
+ static int gpio_setup_data_regs(struct sh_pfc_chip *chip)
+ {
+ 	struct sh_pfc *pfc = chip->pfc;
+-	unsigned long addr = pfc->info->data_regs[0].reg;
+ 	const struct pinmux_data_reg *dreg;
+ 	unsigned int i;
+ 
+-	/* Find the window that contain the GPIO registers. */
+-	for (i = 0; i < pfc->num_windows; ++i) {
+-		struct sh_pfc_window *window = &pfc->window[i];
+-
+-		if (addr >= window->phys && addr < window->phys + window->size)
+-			break;
+-	}
+-
+-	if (i = pfc->num_windows)
+-		return -EINVAL;
+-
+-	/* GPIO data registers must be in the first memory resource. */
+-	chip->mem = &pfc->window[i];
+-
+ 	/* Count the number of data registers, allocate memory and initialize
+ 	 * them.
+ 	 */
+@@ -319,7 +304,8 @@ static int gpio_function_setup(struct sh_pfc_chip *chip)
+  */
+ 
+ static struct sh_pfc_chip *
+-sh_pfc_add_gpiochip(struct sh_pfc *pfc, int(*setup)(struct sh_pfc_chip *))
++sh_pfc_add_gpiochip(struct sh_pfc *pfc, int(*setup)(struct sh_pfc_chip *),
++		    struct sh_pfc_window *mem)
+ {
+ 	struct sh_pfc_chip *chip;
+ 	int ret;
+@@ -328,6 +314,7 @@ sh_pfc_add_gpiochip(struct sh_pfc *pfc, int(*setup)(struct sh_pfc_chip *))
+ 	if (unlikely(!chip))
+ 		return ERR_PTR(-ENOMEM);
+ 
++	chip->mem = mem;
+ 	chip->pfc = pfc;
+ 
+ 	ret = setup(chip);
+@@ -357,8 +344,24 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+ 	if (pfc->info->data_regs = NULL)
+ 		return 0;
+ 
++	/* Find the memory window that contain the GPIO registers. Boards that
++	 * register a separate GPIO device will not supply a memory resource
++	 * that covers the data registers. In that case don't try to handle
++	 * GPIOs.
++	 */
++	for (i = 0; i < pfc->num_windows; ++i) {
++		struct sh_pfc_window *window = &pfc->window[i];
++
++		if (pfc->info->data_regs[0].reg >= window->phys &&
++		    pfc->info->data_regs[0].reg < window->phys + window->size)
++			break;
++	}
++
++	if (i = pfc->num_windows)
++		return 0;
++
+ 	/* Register the real GPIOs chip. */
+-	chip = sh_pfc_add_gpiochip(pfc, gpio_pin_setup);
++	chip = sh_pfc_add_gpiochip(pfc, gpio_pin_setup, &pfc->window[i]);
+ 	if (IS_ERR(chip))
+ 		return PTR_ERR(chip);
+ 
+@@ -390,7 +393,7 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+ 	if (pfc->info->nr_func_gpios = 0)
+ 		return 0;
+ 
+-	chip = sh_pfc_add_gpiochip(pfc, gpio_function_setup);
++	chip = sh_pfc_add_gpiochip(pfc, gpio_function_setup, NULL);
+ 	if (IS_ERR(chip))
+ 		return PTR_ERR(chip);
+ 
+-- 
+1.8.1.5
+
