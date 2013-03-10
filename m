@@ -1,44 +1,54 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 06 Mar 2013 13:46:59 +0000
-Subject: [PATCH v2 20/39] ARM: shmobile: kzm9g: Register pinctrl mappings for I2C
-Message-Id: <1362577638-15493-21-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 10 Mar 2013 18:35:41 +0000
+Subject: [PATCH 02/23] sh: sh7264: Add pin control resources
+Message-Id: <1362940562-8570-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Replace the GPIO-based I2C pinmux configuration by pinctrl mappings.
+Add memory resources for the pin control platform device to let the
+sh-pfc driver ioremap() registers properly instead of evily casting
+register physical addresses to virtual addresses.
+
+The memory resource address range has been extracted from the config and
+data registes lists in the sh-pfc driver.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-kzm9g.c | 6 ++----
- 1 file changed, 2 insertions(+), 4 deletions(-)
+ arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c | 13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index 3ec4838..d54cc35 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -601,6 +601,8 @@ static struct platform_device *kzm_devices[] __initdata = {
- };
+diff --git a/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c b/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c
+index b1b7c1b..569decb 100644
+--- a/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c
++++ b/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c
+@@ -8,12 +8,23 @@
+  * for more details.
+  */
  
- static const struct pinctrl_map kzm_pinctrl_map[] = {
-+	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.3", "pfc-sh73a0",
-+				  "i2c3_1", "i2c3"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
- 				  "scifa4_data", "scifa4"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
-@@ -722,10 +724,6 @@ static void __init kzm_init(void)
- 	gpio_request(GPIO_FN_SDHICLK2,		NULL);
- 	gpio_request_one(14, GPIOF_OUT_INIT_HIGH, NULL); /* power */
++#include <linux/bug.h>
+ #include <linux/init.h>
+ #include <linux/kernel.h>
++#include <linux/ioport.h>
+ #include <cpu/pfc.h>
  
--	/* I2C 3 */
--	gpio_request(GPIO_FN_PORT27_I2C_SCL3, NULL);
--	gpio_request(GPIO_FN_PORT28_I2C_SDA3, NULL);
--
- 	/* enable FSI2 port A (ak4648) */
- 	gpio_request(GPIO_FN_FSIACK,	NULL);
- 	gpio_request(GPIO_FN_FSIAILR,	NULL);
++static struct resource sh7264_pfc_resources[] = {
++	[0] = {
++		.start	= 0xfffe3800,
++		.end	= 0xfffe393f,
++		.flags	= IORESOURCE_MEM,
++	},
++};
++
+ static int __init plat_pinmux_setup(void)
+ {
+-	return sh_pfc_register("pfc-sh7264", NULL, 0);
++	return sh_pfc_register("pfc-sh7264", sh7264_pfc_resources,
++			       ARRAY_SIZE(sh7264_pfc_resources));
+ }
+ arch_initcall(plat_pinmux_setup);
 -- 
 1.8.1.5
 
