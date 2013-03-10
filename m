@@ -1,47 +1,72 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 19 Mar 2013 02:17:57 +0000
-Subject: [PATCH 09/13] ARM: shmobile: simplify kzm9g Kconfig dependencies
-Message-Id: <1363659481-5922-10-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 10 Mar 2013 18:58:36 +0000
+Subject: [PATCH/RFC 00/12] Split PFC and GPIO for R8A7779
+Message-Id: <1362941928-18115-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363659481-5922-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363659481-5922-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Hello,
 
-Reference kernel configurations for armadillo800eva and kzm9g boards do not
-have to depend on their respective "legacy" configurations, doing device
-instantiation in .c, they can be configured and built independently.
+This patch set replaces the GPIO handling code in the PFC driver with the
+Renesas R-Car (R8A7779) GPIO driver submitted by Magnus Damm.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-[horms+renesas@verge.net.au: created separate patch for kzm9g portion]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/Kconfig |    6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
+Patch 01/12 adds the R-Car GPIO driver. I've picked the patch from the
+linux-sh mailing as-is. Review for this patch should be directed to the
+mailing list in the "[PATCH] gpio: Renesas R-Car GPIO driver" thread. Patch
+02/12 further extends the GPIO driver to add pinctrl support.
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 0c48af9..ab2bb71 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -131,7 +131,11 @@ config MACH_KZM9G
- 
- config MACH_KZM9G_REFERENCE
- 	bool "KZM-A9-GT board - Reference Device Tree Implementation"
--	depends on MACH_KZM9G
-+	depends on ARCH_SH73A0
-+	select ARCH_REQUIRE_GPIOLIB
-+	select REGULATOR_FIXED_VOLTAGE if REGULATOR
-+	select SND_SOC_AK4642 if SND_SIMPLE_CARD
-+	select USE_OF
- 	---help---
- 	   Use reference implementation of KZM-A9-GT board support
- 	   which makes as greater use of device tree at the expense
+Patch 03/12 adds a GPIO LEDs device to the Marzen board. This isn't strictly
+required by this patch series but is useful for test purposes.
+
+Patches 04/12 to 07/12 make GPIOs support optional in the PFC driver and fix
+the pin configuration code to support an external GPIO driver.
+
+Patches 08/12 to 10/12 remove function GPIOs from the R-Car platform and
+remove the now unused GPIO enumeration.
+
+Finally patches 11/12 and 12/12 register GPIO devices for the R-Car platform
+and remove GPIO data from the R-Car SoC data.
+
+The PFC GPIO code isn't removed as all platforms will need to be converted
+first. This is a first step towards that goal.
+
+Laurent Pinchart (11):
+  gpio-rcar: Add pinctrl support
+  ARM: shmobile: marzen: Add GPIO LEDs
+  sh-pfc: Make function GPIOs support optional
+  sh-pfc: Make GPIO support optional
+  sh-pfc: Skip gpiochip registration when no GPIO resource is found
+  sh-pfc: Configure pins as GPIOs at request time when handled
+    externally
+  sh-pfc: r8a7779: Remove function GPIOs
+  sh-pfc: r8a7779: Don't use GPIO enum entries
+  ARM: shmobile: r8a7779: Remove all GPIOs
+  ARM: shmobile: r8a7779: Register GPIO devices
+  sh-pfc: r8a7779: Remove GPIO data
+
+Magnus Damm (1):
+  gpio: Renesas R-Car GPIO driver
+
+ arch/arm/mach-shmobile/board-marzen.c         |  32 ++
+ arch/arm/mach-shmobile/include/mach/r8a7779.h | 317 -------------------
+ arch/arm/mach-shmobile/setup-r8a7779.c        |  58 +++-
+ drivers/gpio/Kconfig                          |   6 +
+ drivers/gpio/Makefile                         |   1 +
+ drivers/gpio/gpio-rcar.c                      | 429 ++++++++++++++++++++++++++
+ drivers/pinctrl/sh-pfc/core.c                 |  37 +--
+ drivers/pinctrl/sh-pfc/gpio.c                 |  45 +--
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c          | 419 ++++---------------------
+ drivers/pinctrl/sh-pfc/pinctrl.c              |  11 +
+ include/linux/platform_data/gpio-rcar.h       |  30 ++
+ 11 files changed, 672 insertions(+), 713 deletions(-)
+ create mode 100644 drivers/gpio/gpio-rcar.c
+ create mode 100644 include/linux/platform_data/gpio-rcar.h
+
 -- 
-1.7.10.4
+Regards,
+
+Laurent Pinchart
 
