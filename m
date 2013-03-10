@@ -1,59 +1,161 @@
-From: Paul Bolle <pebolle@tiscali.nl>
-Date: Thu, 21 Mar 2013 12:41:23 +0000
-Subject: [PATCH] cpuidle: remove ARCH_HAS_DEFAULT_IDLE
-Message-Id: <1363869683.1390.134.camel@x61.thuisdomein>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 10 Mar 2013 18:35:54 +0000
+Subject: [PATCH 15/23] sh-pfc: Don't modify pinmux_data_reg SoC data
+Message-Id: <1362940562-8570-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Mundt <lethal@linux-sh.org>, Thomas Gleixner <tglx@linutronix.de>, Ingo Molnar <mingo@redhat.com>, "H. Peter Anvin" <hpa@zytor.com>
-Cc: Len Brown <len.brown@intel.com>, x86@kernel.org, linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-sh@vger.kernel.org
 
-The Kconfig symbol ARCH_HAS_DEFAULT_IDLE is unused. Commit
-a0bfa1373859e9d11dc92561a8667588803e42d8 ("cpuidle: stop depending on
-pm_idle") removed the only place were it was actually used. But
-it did not remove its Kconfig entries (for sh and x86). Remove those two
-entries now.
+The pinmux_data_reg structure supplied in SoC data contains information
+about data registers. It's abused to store per-device mapped iomem and
+shadow values. Move those fields out of the pinmux_data_reg structure
+into the per-device sh_pfc_chip structure.
 
-Signed-off-by: Paul Bolle <pebolle@tiscali.nl>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-0) Untested.
+ drivers/pinctrl/sh-pfc/gpio.c   | 58 ++++++++++++++++++++++++++++-------------
+ drivers/pinctrl/sh-pfc/sh_pfc.h |  2 +-
+ 2 files changed, 41 insertions(+), 19 deletions(-)
 
-1) Sent as a single patch. I'm happy to split it into two and resend it
-if needed.
-
- arch/sh/Kconfig  | 3 ---
- arch/x86/Kconfig | 3 ---
- 2 files changed, 6 deletions(-)
-
-diff --git a/arch/sh/Kconfig b/arch/sh/Kconfig
-index 5e85963..6d4327f 100644
---- a/arch/sh/Kconfig
-+++ b/arch/sh/Kconfig
-@@ -148,9 +148,6 @@ config ARCH_HAS_ILOG2_U32
- config ARCH_HAS_ILOG2_U64
- 	def_bool n
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index b370d28..55eaf75 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -21,11 +21,17 @@
  
--config ARCH_HAS_DEFAULT_IDLE
--	def_bool y
--
- config NO_IOPORT
- 	def_bool !PCI
- 	depends on !SH_CAYMAN && !SH_SH4202_MICRODEV && !SH_SHMIN && \
-diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 70c0f3d..fcf2939 100644
---- a/arch/x86/Kconfig
-+++ b/arch/x86/Kconfig
-@@ -188,9 +188,6 @@ config GENERIC_CALIBRATE_DELAY
- config ARCH_HAS_CPU_RELAX
- 	def_bool y
+ #include "core.h"
  
--config ARCH_HAS_DEFAULT_IDLE
--	def_bool y
--
- config ARCH_HAS_CACHE_LINE_SIZE
- 	def_bool y
++struct sh_pfc_gpio_data_reg {
++	const struct pinmux_data_reg *info;
++	unsigned long shadow;
++};
++
+ struct sh_pfc_chip {
+ 	struct sh_pfc		*pfc;
+ 	struct gpio_chip	gpio_chip;
+ 
+ 	struct sh_pfc_window	*mem;
++	struct sh_pfc_gpio_data_reg	*regs;
+ };
+ 
+ static struct sh_pfc_chip *gpio_to_pfc_chip(struct gpio_chip *gc)
+@@ -38,13 +44,16 @@ static struct sh_pfc *gpio_to_pfc(struct gpio_chip *gc)
+ 	return gpio_to_pfc_chip(gc)->pfc;
+ }
+ 
+-static void gpio_get_data_reg(struct sh_pfc *pfc, unsigned int gpio,
+-			      struct pinmux_data_reg **dr, unsigned int *bit)
++static void gpio_get_data_reg(struct sh_pfc_chip *chip, unsigned int gpio,
++			      struct sh_pfc_gpio_data_reg **reg,
++			      unsigned int *bit)
+ {
+-	struct sh_pfc_pin *gpiop = sh_pfc_get_pin(pfc, gpio);
++	struct sh_pfc_pin *gpiop = sh_pfc_get_pin(chip->pfc, gpio);
++	unsigned int reg_idx;
+ 
+-	*dr = pfc->info->data_regs
+-	    + ((gpiop->flags & PINMUX_FLAG_DREG) >> PINMUX_FLAG_DREG_SHIFT);
++	reg_idx = (gpiop->flags & PINMUX_FLAG_DREG) >> PINMUX_FLAG_DREG_SHIFT;
++
++	*reg = &chip->regs[reg_idx];
+ 	*bit = (gpiop->flags & PINMUX_FLAG_DBIT) >> PINMUX_FLAG_DBIT_SHIFT;
+ }
+ 
+@@ -91,7 +100,7 @@ static int gpio_setup_data_regs(struct sh_pfc_chip *chip)
+ {
+ 	struct sh_pfc *pfc = chip->pfc;
+ 	unsigned long addr = pfc->info->data_regs[0].reg;
+-	struct pinmux_data_reg *dreg;
++	const struct pinmux_data_reg *dreg;
+ 	unsigned int i;
+ 
+ 	/* Find the window that contain the GPIO registers. */
+@@ -108,8 +117,21 @@ static int gpio_setup_data_regs(struct sh_pfc_chip *chip)
+ 	/* GPIO data registers must be in the first memory resource. */
+ 	chip->mem = &pfc->window[i];
+ 
+-	for (dreg = pfc->info->data_regs; dreg->reg; ++dreg)
+-		dreg->reg_shadow = gpio_read_data_reg(chip, dreg);
++	/* Count the number of data registers, allocate memory and initialize
++	 * them.
++	 */
++	for (i = 0; pfc->info->data_regs[i].reg_width; ++i)
++		;
++
++	chip->regs = devm_kzalloc(pfc->dev, i * sizeof(*chip->regs),
++				  GFP_KERNEL);
++	if (chip->regs = NULL)
++		return -ENOMEM;
++
++	for (i = 0, dreg = pfc->info->data_regs; dreg->reg_width; ++i, ++dreg) {
++		chip->regs[i].info = dreg;
++		chip->regs[i].shadow = gpio_read_data_reg(chip, dreg);
++	}
+ 
+ 	for (i = 0; i < pfc->info->nr_pins; i++) {
+ 		if (pfc->info->pins[i].enum_id = 0)
+@@ -144,20 +166,20 @@ static void gpio_pin_free(struct gpio_chip *gc, unsigned offset)
+ static void gpio_pin_set_value(struct sh_pfc_chip *chip, unsigned offset,
+ 			       int value)
+ {
+-	struct pinmux_data_reg *dreg;
++	struct sh_pfc_gpio_data_reg *reg;
+ 	unsigned long pos;
+ 	unsigned int bit;
+ 
+-	gpio_get_data_reg(chip->pfc, offset, &dreg, &bit);
++	gpio_get_data_reg(chip, offset, &reg, &bit);
+ 
+-	pos = dreg->reg_width - (bit + 1);
++	pos = reg->info->reg_width - (bit + 1);
+ 
+ 	if (value)
+-		set_bit(pos, &dreg->reg_shadow);
++		set_bit(pos, &reg->shadow);
+ 	else
+-		clear_bit(pos, &dreg->reg_shadow);
++		clear_bit(pos, &reg->shadow);
+ 
+-	gpio_write_data_reg(chip, dreg, dreg->reg_shadow);
++	gpio_write_data_reg(chip, reg->info, reg->shadow);
+ }
+ 
+ static int gpio_pin_direction_input(struct gpio_chip *gc, unsigned offset)
+@@ -176,15 +198,15 @@ static int gpio_pin_direction_output(struct gpio_chip *gc, unsigned offset,
+ static int gpio_pin_get(struct gpio_chip *gc, unsigned offset)
+ {
+ 	struct sh_pfc_chip *chip = gpio_to_pfc_chip(gc);
+-	struct pinmux_data_reg *dreg;
++	struct sh_pfc_gpio_data_reg *reg;
+ 	unsigned long pos;
+ 	unsigned int bit;
+ 
+-	gpio_get_data_reg(chip->pfc, offset, &dreg, &bit);
++	gpio_get_data_reg(chip, offset, &reg, &bit);
+ 
+-	pos = dreg->reg_width - (bit + 1);
++	pos = reg->info->reg_width - (bit + 1);
+ 
+-	return (gpio_read_data_reg(chip, dreg) >> pos) & 1;
++	return (gpio_read_data_reg(chip, reg->info) >> pos) & 1;
+ }
+ 
+ static void gpio_pin_set(struct gpio_chip *gc, unsigned offset, int value)
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index ba3697d..e6a51a9 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -108,7 +108,7 @@ struct pinmux_cfg_reg {
+ 	.enum_ids = (pinmux_enum_t [])
+ 
+ struct pinmux_data_reg {
+-	unsigned long reg, reg_width, reg_shadow;
++	unsigned long reg, reg_width;
+ 	pinmux_enum_t *enum_ids;
+ };
  
 -- 
-1.7.11.7
+1.8.1.5
 
