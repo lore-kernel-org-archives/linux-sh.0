@@ -1,169 +1,310 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 29 Mar 2013 08:49:37 +0000
-Subject: [PATCH v2] ARM: shmobile: Initial r8a7790 Lager board support
-Message-Id: <20130329084937.16365.8698.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 10 Mar 2013 18:35:56 +0000
+Subject: [PATCH 17/23] sh-pfc: Remove configuration dry-run and free
+Message-Id: <1362940562-8570-18-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+The purpose of the dry-run is to ensure that a pin about to be
+configured isn't in use. However, the current implementation is a no-op.
+This proves that the dry-run isn't essential. Remove it.
 
-Lager base board support making use of 2 GiB of memory,
-the r8a7790 SoC with the SCIF0 serial port and CA15 with
-ARM architected timer.
+Freeing configuration then becomes a no-op as well. Remove it.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ drivers/pinctrl/sh-pfc/core.c    | 50 ++++++----------------------------------
+ drivers/pinctrl/sh-pfc/core.h    |  3 +--
+ drivers/pinctrl/sh-pfc/gpio.c    | 14 +----------
+ drivers/pinctrl/sh-pfc/pinctrl.c | 48 ++------------------------------------
+ drivers/pinctrl/sh-pfc/sh_pfc.h  |  5 +---
+ 5 files changed, 12 insertions(+), 108 deletions(-)
 
- Changes since V1:
- - Use 64-bit addresses for DT
-
- Written on top of renesas-next-20130329 together with
-
- [PATCH 00/04 v2] ARM: shmobile: r8a7790 SoC
- [PATCH] ARM: shmobile: r8a7790 SoC 64-bit DT support
-
- arch/arm/boot/dts/Makefile           |    1 
- arch/arm/boot/dts/r8a7790-lager.dts  |   31 ++++++++++++++++++++++
- arch/arm/mach-shmobile/Kconfig       |    9 +++++-
- arch/arm/mach-shmobile/Makefile      |    1 
- arch/arm/mach-shmobile/board-lager.c |   46 ++++++++++++++++++++++++++++++++++
- 5 files changed, 87 insertions(+), 1 deletion(-)
-
---- 0003/arch/arm/boot/dts/Makefile
-+++ work/arch/arm/boot/dts/Makefile	2013-03-29 16:37:07.000000000 +0900
-@@ -138,6 +138,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm
- 	r8a7740-armadillo800eva.dtb \
- 	r8a7778-bockw.dtb \
- 	r8a7779-marzen-reference.dtb \
-+	r8a7790-lager.dtb \
- 	sh73a0-kzm9g.dtb \
- 	sh73a0-kzm9g-reference.dtb \
- 	r8a73a4-ape6evm.dtb \
---- /dev/null
-+++ work/arch/arm/boot/dts/r8a7790-lager.dts	2013-03-29 16:37:40.000000000 +0900
-@@ -0,0 +1,31 @@
-+/*
-+ * Device Tree Source for the Lager board
-+ *
-+ * Copyright (C) 2013 Renesas Solutions Corp.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/dts-v1/;
-+/include/ "r8a7790.dtsi"
-+
-+/ {
-+	model = "Lager";
-+	compatible = "renesas,lager", "renesas,r8a7790";
-+
-+	chosen {
-+		bootargs = "console=ttySC6,115200 ignore_loglevel";
-+	};
-+
-+	memory@40000000 {
-+		device_type = "memory";
-+		reg = <0 0x40000000 0 0x80000000>;
-+	};
-+
-+	lbsc {
-+		#address-cells = <1>;
-+		#size-cells = <1>;
-+	};
-+};
---- 0009/arch/arm/mach-shmobile/Kconfig
-+++ work/arch/arm/mach-shmobile/Kconfig	2013-03-29 16:37:07.000000000 +0900
-@@ -154,6 +154,11 @@ config MACH_MARZEN_REFERENCE
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index 1973501..e2864ec 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -163,22 +163,6 @@ static void sh_pfc_config_reg_helper(struct sh_pfc *pfc,
+ 	}
+ }
  
- 	   This is intended to aid developers
+-static int sh_pfc_read_config_reg(struct sh_pfc *pfc,
+-				  struct pinmux_cfg_reg *crp,
+-				  unsigned long field)
+-{
+-	void __iomem *mapped_reg;
+-	unsigned long mask, pos;
+-
+-	sh_pfc_config_reg_helper(pfc, crp, field, &mapped_reg, &mask, &pos);
+-
+-	pr_debug("read_reg: addr = %lx, field = %ld, "
+-		 "r_width = %ld, f_width = %ld\n",
+-		 crp->reg, field, crp->reg_width, crp->field_width);
+-
+-	return (sh_pfc_read_raw_reg(mapped_reg, crp->reg_width) >> pos) & mask;
+-}
+-
+ static void sh_pfc_write_config_reg(struct sh_pfc *pfc,
+ 				    struct pinmux_cfg_reg *crp,
+ 				    unsigned long field, unsigned long value)
+@@ -209,7 +193,7 @@ static void sh_pfc_write_config_reg(struct sh_pfc *pfc,
  
-+config MACH_LAGER
-+	bool "Lager board"
-+	depends on ARCH_R8A7790
-+	select USE_OF
-+
- config MACH_KZM9D
- 	bool "KZM9D board"
- 	depends on ARCH_EMEV2
-@@ -194,7 +199,8 @@ config MEMORY_START
- 	hex "Physical memory start address"
- 	default "0x40000000" if MACH_AP4EVB || MACH_AG5EVM || \
- 				MACH_MACKEREL || MACH_BONITO || \
--				MACH_ARMADILLO800EVA || MACH_APE6EVM
-+				MACH_ARMADILLO800EVA || MACH_APE6EVM || \
-+				MACH_LAGER
- 	default "0x41000000" if MACH_KOTA2
- 	default "0x00000000"
- 	---help---
-@@ -204,6 +210,7 @@ config MEMORY_START
+ static int sh_pfc_get_config_reg(struct sh_pfc *pfc, pinmux_enum_t enum_id,
+ 				 struct pinmux_cfg_reg **crp, int *fieldp,
+-				 int *valuep, unsigned long **cntp)
++				 int *valuep)
+ {
+ 	struct pinmux_cfg_reg *config_reg;
+ 	unsigned long r_width, f_width, curr_width, ncomb;
+@@ -239,7 +223,6 @@ static int sh_pfc_get_config_reg(struct sh_pfc *pfc, pinmux_enum_t enum_id,
+ 					*crp = config_reg;
+ 					*fieldp = m;
+ 					*valuep = n;
+-					*cntp = &config_reg->cnt[m];
+ 					return 0;
+ 				}
+ 			}
+@@ -274,14 +257,12 @@ static int sh_pfc_mark_to_enum(struct sh_pfc *pfc, pinmux_enum_t mark, int pos,
+ 	return -1;
+ }
  
- config MEMORY_SIZE
- 	hex "Physical memory size"
-+	default "0x80000000" if MACH_LAGER
- 	default "0x40000000" if MACH_APE6EVM
- 	default "0x20000000" if MACH_AG5EVM || MACH_BONITO || \
- 				MACH_ARMADILLO800EVA
---- 0006/arch/arm/mach-shmobile/Makefile
-+++ work/arch/arm/mach-shmobile/Makefile	2013-03-29 16:37:07.000000000 +0900
-@@ -44,6 +44,7 @@ obj-$(CONFIG_MACH_BONITO)	+= board-bonit
- obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
- obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
- obj-$(CONFIG_MACH_MARZEN_REFERENCE)	+= board-marzen-reference.o
-+obj-$(CONFIG_MACH_LAGER)	+= board-lager.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
- obj-$(CONFIG_MACH_KZM9D)	+= board-kzm9d.o
- obj-$(CONFIG_MACH_KZM9G)	+= board-kzm9g.o
---- /dev/null
-+++ work/arch/arm/mach-shmobile/board-lager.c	2013-03-29 16:37:08.000000000 +0900
-@@ -0,0 +1,46 @@
-+/*
-+ * Lager board support
-+ *
-+ * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2013  Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+ */
-+
-+#include <linux/interrupt.h>
-+#include <linux/irqchip.h>
-+#include <linux/kernel.h>
-+#include <linux/platform_device.h>
-+#include <mach/common.h>
-+#include <mach/r8a7790.h>
-+#include <asm/mach-types.h>
-+#include <asm/mach/arch.h>
-+
-+static void __init lager_add_standard_devices(void)
-+{
-+	r8a7790_clock_init();
-+	r8a7790_add_standard_devices();
-+}
-+
-+static const char *lager_boards_compat_dt[] __initdata = {
-+	"renesas,lager",
-+	NULL,
-+};
-+
-+DT_MACHINE_START(LAGER_DT, "lager")
-+	.init_irq	= irqchip_init,
-+	.init_time	= shmobile_timer_init,
-+	.init_machine	= lager_add_standard_devices,
-+	.dt_compat	= lager_boards_compat_dt,
-+MACHINE_END
+-int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark, int pinmux_type,
+-		      int cfg_mode)
++int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark, int pinmux_type)
+ {
+ 	struct pinmux_cfg_reg *cr = NULL;
+ 	pinmux_enum_t enum_id;
+ 	struct pinmux_range *range;
+ 	int in_range, pos, field, value;
+-	unsigned long *cntp;
+ 
+ 	switch (pinmux_type) {
+ 
+@@ -306,7 +287,7 @@ int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark, int pinmux_type,
+ 		break;
+ 
+ 	default:
+-		goto out_err;
++		return -1;
+ 	}
+ 
+ 	pos = 0;
+@@ -316,7 +297,7 @@ int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark, int pinmux_type,
+ 	while (1) {
+ 		pos = sh_pfc_mark_to_enum(pfc, mark, pos, &enum_id);
+ 		if (pos <= 0)
+-			goto out_err;
++			return -1;
+ 
+ 		if (!enum_id)
+ 			break;
+@@ -360,30 +341,13 @@ int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark, int pinmux_type,
+ 			continue;
+ 
+ 		if (sh_pfc_get_config_reg(pfc, enum_id, &cr,
+-					  &field, &value, &cntp) != 0)
+-			goto out_err;
+-
+-		switch (cfg_mode) {
+-		case GPIO_CFG_DRYRUN:
+-			if (!*cntp ||
+-			    (sh_pfc_read_config_reg(pfc, cr, field) != value))
+-				continue;
+-			break;
+-
+-		case GPIO_CFG_REQ:
+-			sh_pfc_write_config_reg(pfc, cr, field, value);
+-			*cntp = *cntp + 1;
+-			break;
++					  &field, &value) != 0)
++			return -1;
+ 
+-		case GPIO_CFG_FREE:
+-			*cntp = *cntp - 1;
+-			break;
+-		}
++		sh_pfc_write_config_reg(pfc, cr, field, value);
+ 	}
+ 
+ 	return 0;
+- out_err:
+-	return -1;
+ }
+ 
+ static int sh_pfc_probe(struct platform_device *pdev)
+diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
+index 6db54aa..7b2b4f0 100644
+--- a/drivers/pinctrl/sh-pfc/core.h
++++ b/drivers/pinctrl/sh-pfc/core.h
+@@ -52,8 +52,7 @@ void sh_pfc_write_raw_reg(void __iomem *mapped_reg, unsigned long reg_width,
+ 			  unsigned long data);
+ 
+ int sh_pfc_get_pin_index(struct sh_pfc *pfc, unsigned int pin);
+-int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark, int pinmux_type,
+-		      int cfg_mode);
++int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark, int pinmux_type);
+ 
+ extern struct sh_pfc_soc_info r8a7740_pinmux_info;
+ extern struct sh_pfc_soc_info r8a7779_pinmux_info;
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index ce074b2..761a0da 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -285,10 +285,7 @@ static int gpio_function_request(struct gpio_chip *gc, unsigned offset)
+ 
+ 	spin_lock_irqsave(&pfc->lock, flags);
+ 
+-	if (sh_pfc_config_mux(pfc, mark, PINMUX_TYPE_FUNCTION, GPIO_CFG_DRYRUN))
+-		goto done;
+-
+-	if (sh_pfc_config_mux(pfc, mark, PINMUX_TYPE_FUNCTION, GPIO_CFG_REQ))
++	if (sh_pfc_config_mux(pfc, mark, PINMUX_TYPE_FUNCTION))
+ 		goto done;
+ 
+ 	ret = 0;
+@@ -300,15 +297,6 @@ done:
+ 
+ static void gpio_function_free(struct gpio_chip *gc, unsigned offset)
+ {
+-	struct sh_pfc *pfc = gpio_to_pfc(gc);
+-	unsigned int mark = pfc->info->func_gpios[offset].enum_id;
+-	unsigned long flags;
+-
+-	spin_lock_irqsave(&pfc->lock, flags);
+-
+-	sh_pfc_config_mux(pfc, mark, PINMUX_TYPE_FUNCTION, GPIO_CFG_FREE);
+-
+-	spin_unlock_irqrestore(&pfc->lock, flags);
+ }
+ 
+ static int gpio_function_setup(struct sh_pfc_chip *chip)
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index cd1c9c8..9cf26e8 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -119,12 +119,7 @@ static int sh_pfc_func_enable(struct pinctrl_dev *pctldev, unsigned selector,
+ 	spin_lock_irqsave(&pfc->lock, flags);
+ 
+ 	for (i = 0; i < grp->nr_pins; ++i) {
+-		if (sh_pfc_config_mux(pfc, grp->mux[i], PINMUX_TYPE_FUNCTION,
+-				      GPIO_CFG_DRYRUN))
+-			goto done;
+-
+-		if (sh_pfc_config_mux(pfc, grp->mux[i], PINMUX_TYPE_FUNCTION,
+-				      GPIO_CFG_REQ))
++		if (sh_pfc_config_mux(pfc, grp->mux[i], PINMUX_TYPE_FUNCTION))
+ 			goto done;
+ 	}
+ 
+@@ -138,19 +133,6 @@ done:
+ static void sh_pfc_func_disable(struct pinctrl_dev *pctldev, unsigned selector,
+ 				unsigned group)
+ {
+-	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
+-	struct sh_pfc *pfc = pmx->pfc;
+-	const struct sh_pfc_pin_group *grp = &pfc->info->groups[group];
+-	unsigned long flags;
+-	unsigned int i;
+-
+-	spin_lock_irqsave(&pfc->lock, flags);
+-
+-	for (i = 0; i < grp->nr_pins; ++i)
+-		sh_pfc_config_mux(pfc, grp->mux[i], PINMUX_TYPE_FUNCTION,
+-				  GPIO_CFG_FREE);
+-
+-	spin_unlock_irqrestore(&pfc->lock, flags);
+ }
+ 
+ static int sh_pfc_reconfig_pin(struct sh_pfc_pinctrl *pmx, unsigned offset,
+@@ -166,32 +148,18 @@ static int sh_pfc_reconfig_pin(struct sh_pfc_pinctrl *pmx, unsigned offset,
+ 
+ 	spin_lock_irqsave(&pfc->lock, flags);
+ 
+-	/*
+-	 * See if the present config needs to first be de-configured.
+-	 */
+ 	switch (cfg->type) {
+ 	case PINMUX_TYPE_GPIO:
+-		break;
+ 	case PINMUX_TYPE_OUTPUT:
+ 	case PINMUX_TYPE_INPUT:
+ 	case PINMUX_TYPE_INPUT_PULLUP:
+ 	case PINMUX_TYPE_INPUT_PULLDOWN:
+-		sh_pfc_config_mux(pfc, mark, cfg->type, GPIO_CFG_FREE);
+ 		break;
+ 	default:
+ 		goto err;
+ 	}
+ 
+-	/*
+-	 * Dry run
+-	 */
+-	if (sh_pfc_config_mux(pfc, mark, new_type, GPIO_CFG_DRYRUN) != 0)
+-		goto err;
+-
+-	/*
+-	 * Request
+-	 */
+-	if (sh_pfc_config_mux(pfc, mark, new_type, GPIO_CFG_REQ) != 0)
++	if (sh_pfc_config_mux(pfc, mark, new_type) != 0)
+ 		goto err;
+ 
+ 	cfg->type = new_type;
+@@ -241,18 +209,6 @@ static void sh_pfc_gpio_disable_free(struct pinctrl_dev *pctldev,
+ 				     struct pinctrl_gpio_range *range,
+ 				     unsigned offset)
+ {
+-	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
+-	struct sh_pfc *pfc = pmx->pfc;
+-	int idx = sh_pfc_get_pin_index(pfc, offset);
+-	struct sh_pfc_pin_config *cfg = &pmx->configs[idx];
+-	struct sh_pfc_pin *pin = &pfc->info->pins[idx];
+-	unsigned long flags;
+-
+-	spin_lock_irqsave(&pfc->lock, flags);
+-
+-	sh_pfc_config_mux(pfc, pin->enum_id, cfg->type, GPIO_CFG_FREE);
+-
+-	spin_unlock_irqrestore(&pfc->lock, flags);
+ }
+ 
+ static int sh_pfc_gpio_set_direction(struct pinctrl_dev *pctldev,
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index 6a4a62f..19da3b7 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -84,19 +84,16 @@ struct pinmux_func {
+ 
+ struct pinmux_cfg_reg {
+ 	unsigned long reg, reg_width, field_width;
+-	unsigned long *cnt;
+ 	pinmux_enum_t *enum_ids;
+ 	unsigned long *var_field_width;
+ };
+ 
+ #define PINMUX_CFG_REG(name, r, r_width, f_width) \
+ 	.reg = r, .reg_width = r_width, .field_width = f_width,		\
+-	.cnt = (unsigned long [r_width / f_width]) {}, \
+ 	.enum_ids = (pinmux_enum_t [(r_width / f_width) * (1 << f_width)])
+ 
+ #define PINMUX_CFG_REG_VAR(name, r, r_width, var_fw0, var_fwn...) \
+ 	.reg = r, .reg_width = r_width,	\
+-	.cnt = (unsigned long [r_width]) {}, \
+ 	.var_field_width = (unsigned long [r_width]) { var_fw0, var_fwn, 0 }, \
+ 	.enum_ids = (pinmux_enum_t [])
+ 
+@@ -155,7 +152,7 @@ struct sh_pfc_soc_info {
+ 	unsigned long unlock_reg;
+ };
+ 
+-enum { GPIO_CFG_DRYRUN, GPIO_CFG_REQ, GPIO_CFG_FREE };
++enum { GPIO_CFG_REQ, GPIO_CFG_FREE };
+ 
+ /* helper macro for port */
+ #define PORT_1(fn, pfx, sfx) fn(pfx, sfx)
+-- 
+1.8.1.5
+
