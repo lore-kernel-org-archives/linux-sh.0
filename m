@@ -1,48 +1,77 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 06 Mar 2013 13:46:50 +0000
-Subject: [PATCH v2 11/39] ARM: shmobile: ag5evm: Register pinctrl mappings for I2C
-Message-Id: <1362577638-15493-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 10 Mar 2013 18:58:39 +0000
+Subject: [PATCH/RFC 03/12] ARM: shmobile: marzen: Add GPIO LEDs
+Message-Id: <1362941928-18115-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Replace the GPIO-based I2C pinmux configuration by pinctrl mappings.
+The board has 3 LEDs connected to GPIOs. Add a led-gpio device to
+support them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-ag5evm.c | 10 ++++------
- 1 file changed, 4 insertions(+), 6 deletions(-)
+ arch/arm/mach-shmobile/board-marzen.c | 32 ++++++++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
-index 989d096..af7b427 100644
---- a/arch/arm/mach-shmobile/board-ag5evm.c
-+++ b/arch/arm/mach-shmobile/board-ag5evm.c
-@@ -552,6 +552,10 @@ static struct platform_device *ag5evm_devices[] __initdata = {
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index df91271..6898b82 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -25,6 +25,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/delay.h>
+ #include <linux/io.h>
++#include <linux/leds.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/pinctrl/machine.h>
+ #include <linux/regulator/fixed.h>
+@@ -168,12 +169,43 @@ static struct platform_device usb_phy_device = {
+ 	.num_resources	= ARRAY_SIZE(usb_phy_resources),
  };
  
- static const struct pinctrl_map ag5evm_pinctrl_map[] = {
-+	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.2", "pfc-sh73a0",
-+				  "i2c2_0", "i2c2"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.3", "pfc-sh73a0",
-+				  "i2c3_0", "i2c3"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-sh73a0",
- 				  "scifa2_data_0", "scifa2"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-sh73a0",
-@@ -590,12 +594,6 @@ static void __init ag5evm_init(void)
- 	gpio_request(GPIO_FN_KEYOUT8, NULL);
- 	gpio_request(GPIO_FN_PORT149_KEYOUT9, NULL);
++/* LEDS */
++static struct gpio_led marzen_leds[] = {
++	{
++		.name		= "led2",
++		.gpio		= 157,
++		.default_state	= LEDS_GPIO_DEFSTATE_ON,
++	}, {
++		.name		= "led3",
++		.gpio		= 158,
++		.default_state	= LEDS_GPIO_DEFSTATE_ON,
++	}, {
++		.name		= "led4",
++		.gpio		= 159,
++		.default_state	= LEDS_GPIO_DEFSTATE_ON,
++	},
++};
++
++static struct gpio_led_platform_data marzen_leds_pdata = {
++	.leds		= marzen_leds,
++	.num_leds	= ARRAY_SIZE(marzen_leds),
++};
++
++static struct platform_device leds_device = {
++	.name	= "leds-gpio",
++	.id	= 0,
++	.dev	= {
++		.platform_data  = &marzen_leds_pdata,
++	},
++};
++
+ static struct platform_device *marzen_devices[] __initdata = {
+ 	&eth_device,
+ 	&sdhi0_device,
+ 	&thermal_device,
+ 	&hspi_device,
+ 	&usb_phy_device,
++	&leds_device,
+ };
  
--	/* enable I2C channel 2 and 3 */
--	gpio_request(GPIO_FN_PORT236_I2C_SDA2, NULL);
--	gpio_request(GPIO_FN_PORT237_I2C_SCL2, NULL);
--	gpio_request(GPIO_FN_PORT248_I2C_SCL3, NULL);
--	gpio_request(GPIO_FN_PORT249_I2C_SDA3, NULL);
--
- 	/* enable MMCIF */
- 	gpio_request(GPIO_FN_MMCCLK0, NULL);
- 	gpio_request(GPIO_FN_MMCCMD0_PU, NULL);
+ /* USB */
 -- 
 1.8.1.5
 
