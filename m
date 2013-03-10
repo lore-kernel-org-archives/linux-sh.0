@@ -1,39 +1,140 @@
-From: James Hogan <james.hogan@imgtec.com>
-Date: Thu, 21 Mar 2013 09:48:29 +0000
-Subject: Re: [PATCH] memblock: kill "config MAX_ACTIVE_REGIONS"
-Message-Id: <514AD76D.2020401@imgtec.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 10 Mar 2013 18:58:45 +0000
+Subject: [PATCH/RFC 09/12] sh-pfc: r8a7779: Don't use GPIO enum entries
+Message-Id: <1362941928-18115-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363858076.1390.104.camel@x61.thuisdomein>
- <20130321093455.GA8027@linux-sh.org>
-In-Reply-To: <20130321093455.GA8027@linux-sh.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Bolle <pebolle@tiscali.nl>
-Cc: linux-sh@vger.kernel.org, linux-kernel@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, Paul Mackerras <paulus@samba.org>, Tejun Heo <tj@kernel.org>, linuxppc-dev@lists.ozlabs.org
+To: linux-sh@vger.kernel.org
 
-On 21/03/13 09:34, Paul Mundt wrote:
-> On Thu, Mar 21, 2013 at 10:27:56AM +0100, Paul Bolle wrote:
->> The Kconfig symbol MAX_ACTIVE_REGIONS is unused. Commit
->> 0ee332c1451869963626bf9cac88f165a90990e1 ("memblock: Kill
->> early_node_map[]") removed the only place were it was actually used. But
->> it did not remove its Kconfig entries (for powerpc and sh).
->>
->> Remove those two entries (and the entry for metag, that popped up in
->> v3.9-rc1).
->>
->> Signed-off-by: Paul Bolle <pebolle@tiscali.nl>
->> ---
->> 0) Eyeball tested again.
->>
->> 1) It felt silly to split this clean up patch into three patches. But if
->> the maintainers involved disagree I'm happy to split and resend it. 
->>
-> Given that it's unused now it doesn't really matter how it gets applied,
-> it looks fine to me.
-> 
-> Acked-by: Paul Mundt <lethal@linux-sh.org>
-> 
+Refactor the GPIO macro magic to use GPIO numbers directly instead of
+the GPIO_GP_x_y enum entries. This will allow removing the GPIO enum
+entries from the mach/r8a7779.h header.
 
-Acked-by: James Hogan <james.hogan@imgtec.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 104 +++++++++++++++++++++++++----------
+ 1 file changed, 74 insertions(+), 30 deletions(-)
+
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+index 4b99d3e..4bb5160 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+@@ -19,39 +19,83 @@
+  */
+ 
+ #include <linux/kernel.h>
+-#include <mach/r8a7779.h>
+ 
+ #include "sh_pfc.h"
+ 
+-#define CPU_32_PORT6(fn, pfx, sfx)				\
+-	PORT_1(fn, pfx##0, sfx), PORT_1(fn, pfx##1, sfx),	\
+-	PORT_1(fn, pfx##2, sfx), PORT_1(fn, pfx##3, sfx),	\
+-	PORT_1(fn, pfx##4, sfx), PORT_1(fn, pfx##5, sfx),	\
+-	PORT_1(fn, pfx##6, sfx), PORT_1(fn, pfx##7, sfx),	\
+-	PORT_1(fn, pfx##8, sfx)
+-
+-#define CPU_ALL_PORT(fn, pfx, sfx)				\
+-	PORT_32(fn, pfx##_0_, sfx),				\
+-	PORT_32(fn, pfx##_1_, sfx),				\
+-	PORT_32(fn, pfx##_2_, sfx),				\
+-	PORT_32(fn, pfx##_3_, sfx),				\
+-	PORT_32(fn, pfx##_4_, sfx),				\
+-	PORT_32(fn, pfx##_5_, sfx),				\
+-	CPU_32_PORT6(fn, pfx##_6_, sfx)
+-
+-#define _GP_GPIO(pfx, sfx) PINMUX_GPIO(GPIO_GP##pfx, GP##pfx##_DATA)
+-#define _GP_DATA(pfx, sfx) PINMUX_DATA(GP##pfx##_DATA, GP##pfx##_FN,	\
+-				       GP##pfx##_IN, GP##pfx##_OUT)
+-
+-#define _GP_INOUTSEL(pfx, sfx) GP##pfx##_IN, GP##pfx##_OUT
+-#define _GP_INDT(pfx, sfx) GP##pfx##_DATA
+-
+-#define GP_ALL(str)	CPU_ALL_PORT(_PORT_ALL, GP, str)
+-#define PINMUX_GPIO_GP_ALL()	CPU_ALL_PORT(_GP_GPIO, , unused)
+-#define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_GP_DATA, , unused)
+-
+-#define GP_INOUTSEL(bank) PORT_32_REV(_GP_INOUTSEL, _##bank##_, unused)
+-#define GP_INDT(bank) PORT_32_REV(_GP_INDT, _##bank##_, unused)
++#define PORT_GP_1(bank, pin, fn, sfx) fn(bank, pin, GP_##bank##_##pin, sfx)
++
++#define PORT_GP_32(bank, fn, sfx)					\
++	PORT_GP_1(bank, 0,  fn, sfx), PORT_GP_1(bank, 1,  fn, sfx),	\
++	PORT_GP_1(bank, 2,  fn, sfx), PORT_GP_1(bank, 3,  fn, sfx),	\
++	PORT_GP_1(bank, 4,  fn, sfx), PORT_GP_1(bank, 5,  fn, sfx),	\
++	PORT_GP_1(bank, 6,  fn, sfx), PORT_GP_1(bank, 7,  fn, sfx),	\
++	PORT_GP_1(bank, 8,  fn, sfx), PORT_GP_1(bank, 9,  fn, sfx),	\
++	PORT_GP_1(bank, 10, fn, sfx), PORT_GP_1(bank, 11, fn, sfx),	\
++	PORT_GP_1(bank, 12, fn, sfx), PORT_GP_1(bank, 13, fn, sfx),	\
++	PORT_GP_1(bank, 14, fn, sfx), PORT_GP_1(bank, 15, fn, sfx),	\
++	PORT_GP_1(bank, 16, fn, sfx), PORT_GP_1(bank, 17, fn, sfx),	\
++	PORT_GP_1(bank, 18, fn, sfx), PORT_GP_1(bank, 19, fn, sfx),	\
++	PORT_GP_1(bank, 20, fn, sfx), PORT_GP_1(bank, 21, fn, sfx),	\
++	PORT_GP_1(bank, 22, fn, sfx), PORT_GP_1(bank, 23, fn, sfx),	\
++	PORT_GP_1(bank, 24, fn, sfx), PORT_GP_1(bank, 25, fn, sfx),	\
++	PORT_GP_1(bank, 26, fn, sfx), PORT_GP_1(bank, 27, fn, sfx),	\
++	PORT_GP_1(bank, 28, fn, sfx), PORT_GP_1(bank, 29, fn, sfx),	\
++	PORT_GP_1(bank, 30, fn, sfx), PORT_GP_1(bank, 31, fn, sfx)
++
++#define PORT_GP_32_9(bank, fn, sfx)					\
++	PORT_GP_1(bank, 0, fn, sfx), PORT_GP_1(bank, 1, fn, sfx),	\
++	PORT_GP_1(bank, 2, fn, sfx), PORT_GP_1(bank, 3, fn, sfx),	\
++	PORT_GP_1(bank, 4, fn, sfx), PORT_GP_1(bank, 5, fn, sfx),	\
++	PORT_GP_1(bank, 6, fn, sfx), PORT_GP_1(bank, 7, fn, sfx),	\
++	PORT_GP_1(bank, 8, fn, sfx)
++
++#define PORT_GP_32_REV(bank, fn, sfx)					\
++	PORT_GP_1(bank, 31, fn, sfx), PORT_GP_1(bank, 30, fn, sfx),	\
++	PORT_GP_1(bank, 29, fn, sfx), PORT_GP_1(bank, 28, fn, sfx),	\
++	PORT_GP_1(bank, 27, fn, sfx), PORT_GP_1(bank, 26, fn, sfx),	\
++	PORT_GP_1(bank, 25, fn, sfx), PORT_GP_1(bank, 24, fn, sfx),	\
++	PORT_GP_1(bank, 23, fn, sfx), PORT_GP_1(bank, 22, fn, sfx),	\
++	PORT_GP_1(bank, 21, fn, sfx), PORT_GP_1(bank, 20, fn, sfx),	\
++	PORT_GP_1(bank, 19, fn, sfx), PORT_GP_1(bank, 18, fn, sfx),	\
++	PORT_GP_1(bank, 17, fn, sfx), PORT_GP_1(bank, 16, fn, sfx),	\
++	PORT_GP_1(bank, 15, fn, sfx), PORT_GP_1(bank, 14, fn, sfx),	\
++	PORT_GP_1(bank, 13, fn, sfx), PORT_GP_1(bank, 12, fn, sfx),	\
++	PORT_GP_1(bank, 11, fn, sfx), PORT_GP_1(bank, 10, fn, sfx),	\
++	PORT_GP_1(bank, 9,  fn, sfx), PORT_GP_1(bank, 8,  fn, sfx),	\
++	PORT_GP_1(bank, 7,  fn, sfx), PORT_GP_1(bank, 6,  fn, sfx),	\
++	PORT_GP_1(bank, 5,  fn, sfx), PORT_GP_1(bank, 4,  fn, sfx),	\
++	PORT_GP_1(bank, 3,  fn, sfx), PORT_GP_1(bank, 2,  fn, sfx),	\
++	PORT_GP_1(bank, 1,  fn, sfx), PORT_GP_1(bank, 0,  fn, sfx)
++
++#define CPU_ALL_PORT(fn, sfx)						\
++	PORT_GP_32(0, fn, sfx),						\
++	PORT_GP_32(1, fn, sfx),						\
++	PORT_GP_32(2, fn, sfx),						\
++	PORT_GP_32(3, fn, sfx),						\
++	PORT_GP_32(4, fn, sfx),						\
++	PORT_GP_32(5, fn, sfx),						\
++	PORT_GP_32_9(6, fn, sfx)
++
++#define _GP_PORT_ALL(bank, pin, name, sfx)	name##_##sfx
++
++#define _GP_GPIO(bank, pin, _name, sfx)					\
++	[(bank * 32) + pin] = {						\
++		.name = __stringify(_name),				\
++		.enum_id = _name##_DATA,				\
++	}
++
++#define _GP_DATA(bank, pin, name, sfx)					\
++	PINMUX_DATA(name##_DATA, name##_FN, name##_IN, name##_OUT)
++
++#define _GP_INOUTSEL(bank, pin, name, sfx)	name##_IN, name##_OUT
++#define _GP_INDT(bank, pin, name, sfx)		name##_DATA
++
++#define GP_ALL(str)		CPU_ALL_PORT(_GP_PORT_ALL, str)
++#define PINMUX_GPIO_GP_ALL()	CPU_ALL_PORT(_GP_GPIO, unused)
++#define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_GP_DATA, unused)
++
++#define GP_INOUTSEL(bank) PORT_GP_32_REV(bank, _GP_INOUTSEL, unused)
++#define GP_INDT(bank) PORT_GP_32_REV(bank, _GP_INDT, unused)
+ 
+ #define PINMUX_IPSR_DATA(ipsr, fn) PINMUX_DATA(fn##_MARK, FN_##ipsr, FN_##fn)
+ #define PINMUX_IPSR_MODSEL_DATA(ipsr, fn, ms) PINMUX_DATA(fn##_MARK, FN_##ms, \
+-- 
+1.8.1.5
 
