@@ -1,132 +1,54 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 11:01:32 +0000
-Subject: [PATCH v3 12/64] sh-pfc: r8a7779: Add HSPI pin groups and functions
-Message-Id: <1362740544-19164-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 10 Mar 2013 18:35:46 +0000
+Subject: [PATCH 07/23] sh: sh7724: Add pin control resources
+Message-Id: <1362940562-8570-8-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+Add memory resources for the pin control platform device to let the
+sh-pfc driver ioremap() registers properly instead of evily casting
+register physical addresses to virtual addresses.
+
+The memory resource address range has been extracted from the config and
+data registes lists in the sh-pfc driver.
+
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 82 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 82 insertions(+)
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7724.c | 13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-index e562028..492832c 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-@@ -1575,6 +1575,62 @@ static const unsigned int du1_cde_mux[] = {
- 	DU1_CDE_MARK
- };
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7724.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7724.c
+index 5c3541d..63be474 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7724.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7724.c
+@@ -13,12 +13,23 @@
+  * for more details.
+  */
  
-+static const unsigned int hspi0_pins[] = {
-+	/* CLK, CS, RX, TX */
-+	150, 151, 153, 152,
-+};
-+static const unsigned int hspi0_mux[] = {
-+	HSPI_CLK0_MARK, HSPI_CS0_MARK, HSPI_RX0_MARK, HSPI_TX0_MARK,
-+};
-+
-+static const unsigned int hspi1_pins[] = {
-+	/* CLK, CS, RX, TX */
-+	63, 58, 64, 62,
-+};
-+static const unsigned int hspi1_mux[] = {
-+	HSPI_CLK1_MARK, HSPI_CS1_MARK, HSPI_RX1_MARK, HSPI_TX1_MARK,
-+};
-+
-+static const unsigned int hspi1_b_pins[] = {
-+	/* CLK, CS, RX, TX */
-+	90, 91, 93, 92,
-+};
-+static const unsigned int hspi1_b_mux[] = {
-+	HSPI_CLK1_B_MARK, HSPI_CS1_B_MARK, HSPI_RX1_B_MARK, HSPI_TX1_B_MARK,
-+};
-+
-+static const unsigned int hspi1_c_pins[] = {
-+	/* CLK, CS, RX, TX */
-+	141, 142, 144, 143,
-+};
-+static const unsigned int hspi1_c_mux[] = {
-+	HSPI_CLK1_C_MARK, HSPI_CS1_C_MARK, HSPI_RX1_C_MARK, HSPI_TX1_C_MARK,
-+};
-+
-+static const unsigned int hspi1_d_pins[] = {
-+	/* CLK, CS, RX, TX */
-+	101, 102, 104, 103,
-+};
-+static const unsigned int hspi1_d_mux[] = {
-+	HSPI_CLK1_D_MARK, HSPI_CS1_D_MARK, HSPI_RX1_D_MARK, HSPI_TX1_D_MARK,
-+};
-+
-+static const unsigned int hspi2_pins[] = {
-+	/* CLK, CS, RX, TX */
-+	9, 10, 11, 14,
-+};
-+static const unsigned int hspi2_mux[] = {
-+	HSPI_CLK2_MARK, HSPI_CS2_MARK, HSPI_RX2_MARK, HSPI_TX2_MARK,
-+};
-+
-+static const unsigned int hspi2_b_pins[] = {
-+	/* CLK, CS, RX, TX */
-+	7, 13, 8, 6,
-+};
-+static const unsigned int hspi2_b_mux[] = {
-+	HSPI_CLK2_B_MARK, HSPI_CS2_B_MARK, HSPI_RX2_B_MARK, HSPI_TX2_B_MARK,
-+};
-+
- static const unsigned int scif0_data_pins[] = {
- 	/* RXD, TXD */
- 	153, 152,
-@@ -2177,6 +2233,13 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(du1_sync_1),
- 	SH_PFC_PIN_GROUP(du1_oddf),
- 	SH_PFC_PIN_GROUP(du1_cde),
-+	SH_PFC_PIN_GROUP(hspi0),
-+	SH_PFC_PIN_GROUP(hspi1),
-+	SH_PFC_PIN_GROUP(hspi1_b),
-+	SH_PFC_PIN_GROUP(hspi1_c),
-+	SH_PFC_PIN_GROUP(hspi1_d),
-+	SH_PFC_PIN_GROUP(hspi2),
-+	SH_PFC_PIN_GROUP(hspi2_b),
- 	SH_PFC_PIN_GROUP(mmc0_data1),
- 	SH_PFC_PIN_GROUP(mmc0_data4),
- 	SH_PFC_PIN_GROUP(mmc0_data8),
-@@ -2279,6 +2342,22 @@ static const char * const du1_groups[] = {
- 	"du1_cde",
- };
++#include <linux/bug.h>
+ #include <linux/init.h>
+ #include <linux/kernel.h>
++#include <linux/ioport.h>
+ #include <cpu/pfc.h>
  
-+static const char * const hspi0_groups[] = {
-+	"hspi0",
++static struct resource sh7724_pfc_resources[] = {
++	[0] = {
++		.start	= 0xa4050100,
++		.end	= 0xa405016f,
++		.flags	= IORESOURCE_MEM,
++	},
 +};
 +
-+static const char * const hspi1_groups[] = {
-+	"hspi1",
-+	"hspi1_b",
-+	"hspi1_c",
-+	"hspi1_d",
-+};
-+
-+static const char * const hspi2_groups[] = {
-+	"hspi2",
-+	"hspi2_b",
-+};
-+
- static const char * const mmc0_groups[] = {
- 	"mmc0_data1",
- 	"mmc0_data4",
-@@ -2397,6 +2476,9 @@ static const char * const sdhi3_groups[] = {
- static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(du0),
- 	SH_PFC_FUNCTION(du1),
-+	SH_PFC_FUNCTION(hspi0),
-+	SH_PFC_FUNCTION(hspi1),
-+	SH_PFC_FUNCTION(hspi2),
- 	SH_PFC_FUNCTION(mmc0),
- 	SH_PFC_FUNCTION(mmc1),
- 	SH_PFC_FUNCTION(sdhi0),
+ static int __init plat_pinmux_setup(void)
+ {
+-	return sh_pfc_register("pfc-sh7724", NULL, 0);
++	return sh_pfc_register("pfc-sh7724", sh7724_pfc_resources,
++			       ARRAY_SIZE(sh7724_pfc_resources));
+ }
+ arch_initcall(plat_pinmux_setup);
 -- 
 1.8.1.5
 
