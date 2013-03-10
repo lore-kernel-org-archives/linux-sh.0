@@ -1,175 +1,325 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Tue, 12 Mar 2013 15:48:28 +0000
-Subject: [PATCH v3.1 2/4] sh-pfc: sh73a0: Add BSC pin groups and functions
-Message-Id: <1363103310-16260-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 10 Mar 2013 18:35:52 +0000
+Subject: [PATCH 13/23] sh-pfc: Don't map data registers individually
+Message-Id: <1362940562-8570-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
+All data registers are located in the same memory resource. Locate the
+mapped resource at initializat time and use it directly instead of
+computing a mapped address for each register. This gets rid of the
+mapped_reg field of the pinmux_data_reg structure.
+
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 125 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 125 insertions(+)
+ drivers/pinctrl/sh-pfc/core.c   |   3 +-
+ drivers/pinctrl/sh-pfc/core.h   |   1 -
+ drivers/pinctrl/sh-pfc/gpio.c   | 130 ++++++++++++++++++++++++----------------
+ drivers/pinctrl/sh-pfc/sh_pfc.h |   1 -
+ 4 files changed, 82 insertions(+), 53 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index aa36aa4..ba8efa8 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -1556,6 +1556,101 @@ static struct pinmux_range pinmux_ranges[] = {
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index 49fde28..e847d16 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -55,7 +55,8 @@ static int sh_pfc_ioremap(struct sh_pfc *pfc, struct platform_device *pdev)
+ 	return 0;
+ }
+ 
+-void __iomem *sh_pfc_phys_to_virt(struct sh_pfc *pfc, unsigned long address)
++static void __iomem *sh_pfc_phys_to_virt(struct sh_pfc *pfc,
++					 unsigned long address)
+ {
+ 	struct sh_pfc_window *window;
+ 	int k;
+diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
+index 434b628..1c3816d 100644
+--- a/drivers/pinctrl/sh-pfc/core.h
++++ b/drivers/pinctrl/sh-pfc/core.h
+@@ -46,7 +46,6 @@ int sh_pfc_unregister_gpiochip(struct sh_pfc *pfc);
+ int sh_pfc_register_pinctrl(struct sh_pfc *pfc);
+ int sh_pfc_unregister_pinctrl(struct sh_pfc *pfc);
+ 
+-void __iomem *sh_pfc_phys_to_virt(struct sh_pfc *pfc, unsigned long address);
+ unsigned long sh_pfc_read_raw_reg(void __iomem *mapped_reg,
+ 				  unsigned long reg_width);
+ void sh_pfc_write_raw_reg(void __iomem *mapped_reg, unsigned long reg_width,
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index 027c777..b370d28 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -24,6 +24,8 @@
+ struct sh_pfc_chip {
+ 	struct sh_pfc		*pfc;
+ 	struct gpio_chip	gpio_chip;
++
++	struct sh_pfc_window	*mem;
+ };
+ 
+ static struct sh_pfc_chip *gpio_to_pfc_chip(struct gpio_chip *gc)
+@@ -46,59 +48,77 @@ static void gpio_get_data_reg(struct sh_pfc *pfc, unsigned int gpio,
+ 	*bit = (gpiop->flags & PINMUX_FLAG_DBIT) >> PINMUX_FLAG_DBIT_SHIFT;
+ }
+ 
+-static void gpio_setup_data_reg(struct sh_pfc *pfc, unsigned gpio)
++static unsigned long gpio_read_data_reg(struct sh_pfc_chip *chip,
++					const struct pinmux_data_reg *dreg)
+ {
+-	struct sh_pfc_pin *gpiop = &pfc->info->pins[gpio];
+-	struct pinmux_data_reg *data_reg;
+-	int k, n;
++	void __iomem *mem = dreg->reg - chip->mem->phys + chip->mem->virt;
+ 
+-	k = 0;
+-	while (1) {
+-		data_reg = pfc->info->data_regs + k;
++	return sh_pfc_read_raw_reg(mem, dreg->reg_width);
++}
+ 
+-		if (!data_reg->reg_width)
+-			break;
++static void gpio_write_data_reg(struct sh_pfc_chip *chip,
++				const struct pinmux_data_reg *dreg,
++				unsigned long value)
++{
++	void __iomem *mem = dreg->reg - chip->mem->phys + chip->mem->virt;
+ 
+-		data_reg->mapped_reg = sh_pfc_phys_to_virt(pfc, data_reg->reg);
++	sh_pfc_write_raw_reg(mem, dreg->reg_width, value);
++}
+ 
+-		for (n = 0; n < data_reg->reg_width; n++) {
+-			if (data_reg->enum_ids[n] = gpiop->enum_id) {
++static void gpio_setup_data_reg(struct sh_pfc *pfc, unsigned gpio)
++{
++	struct sh_pfc_pin *gpiop = &pfc->info->pins[gpio];
++	const struct pinmux_data_reg *dreg;
++	unsigned int bit;
++	unsigned int i;
++
++	for (i = 0, dreg = pfc->info->data_regs; dreg->reg; ++i, ++dreg) {
++		for (bit = 0; bit < dreg->reg_width; bit++) {
++			if (dreg->enum_ids[bit] = gpiop->enum_id) {
+ 				gpiop->flags &= ~PINMUX_FLAG_DREG;
+-				gpiop->flags |= (k << PINMUX_FLAG_DREG_SHIFT);
++				gpiop->flags |= i << PINMUX_FLAG_DREG_SHIFT;
+ 				gpiop->flags &= ~PINMUX_FLAG_DBIT;
+-				gpiop->flags |= (n << PINMUX_FLAG_DBIT_SHIFT);
++				gpiop->flags |= bit << PINMUX_FLAG_DBIT_SHIFT;
+ 				return;
+ 			}
+ 		}
+-		k++;
+ 	}
+ 
+ 	BUG();
+ }
+ 
+-static void gpio_setup_data_regs(struct sh_pfc *pfc)
++static int gpio_setup_data_regs(struct sh_pfc_chip *chip)
+ {
+-	struct pinmux_data_reg *drp;
+-	int k;
++	struct sh_pfc *pfc = chip->pfc;
++	unsigned long addr = pfc->info->data_regs[0].reg;
++	struct pinmux_data_reg *dreg;
++	unsigned int i;
+ 
+-	for (k = 0; k < pfc->info->nr_pins; k++) {
+-		if (pfc->info->pins[k].enum_id = 0)
+-			continue;
++	/* Find the window that contain the GPIO registers. */
++	for (i = 0; i < pfc->num_windows; ++i) {
++		struct sh_pfc_window *window = &pfc->window[i];
+ 
+-		gpio_setup_data_reg(pfc, k);
++		if (addr >= window->phys && addr < window->phys + window->size)
++			break;
+ 	}
+ 
+-	k = 0;
+-	while (1) {
+-		drp = pfc->info->data_regs + k;
++	if (i = pfc->num_windows)
++		return -EINVAL;
+ 
+-		if (!drp->reg_width)
+-			break;
++	/* GPIO data registers must be in the first memory resource. */
++	chip->mem = &pfc->window[i];
++
++	for (dreg = pfc->info->data_regs; dreg->reg; ++dreg)
++		dreg->reg_shadow = gpio_read_data_reg(chip, dreg);
++
++	for (i = 0; i < pfc->info->nr_pins; i++) {
++		if (pfc->info->pins[i].enum_id = 0)
++			continue;
+ 
+-		drp->reg_shadow = sh_pfc_read_raw_reg(drp->mapped_reg,
+-						      drp->reg_width);
+-		k++;
++		gpio_setup_data_reg(pfc, i);
+ 	}
++
++	return 0;
+ }
+ 
+ /* -----------------------------------------------------------------------------
+@@ -121,22 +141,23 @@ static void gpio_pin_free(struct gpio_chip *gc, unsigned offset)
+ 	return pinctrl_free_gpio(offset);
+ }
+ 
+-static void gpio_pin_set_value(struct sh_pfc *pfc, unsigned offset, int value)
++static void gpio_pin_set_value(struct sh_pfc_chip *chip, unsigned offset,
++			       int value)
+ {
+-	struct pinmux_data_reg *dr;
++	struct pinmux_data_reg *dreg;
+ 	unsigned long pos;
+ 	unsigned int bit;
+ 
+-	gpio_get_data_reg(pfc, offset, &dr, &bit);
++	gpio_get_data_reg(chip->pfc, offset, &dreg, &bit);
+ 
+-	pos = dr->reg_width - (bit + 1);
++	pos = dreg->reg_width - (bit + 1);
+ 
+ 	if (value)
+-		set_bit(pos, &dr->reg_shadow);
++		set_bit(pos, &dreg->reg_shadow);
+ 	else
+-		clear_bit(pos, &dr->reg_shadow);
++		clear_bit(pos, &dreg->reg_shadow);
+ 
+-	sh_pfc_write_raw_reg(dr->mapped_reg, dr->reg_width, dr->reg_shadow);
++	gpio_write_data_reg(chip, dreg, dreg->reg_shadow);
+ }
+ 
+ static int gpio_pin_direction_input(struct gpio_chip *gc, unsigned offset)
+@@ -147,28 +168,28 @@ static int gpio_pin_direction_input(struct gpio_chip *gc, unsigned offset)
+ static int gpio_pin_direction_output(struct gpio_chip *gc, unsigned offset,
+ 				    int value)
+ {
+-	gpio_pin_set_value(gpio_to_pfc(gc), offset, value);
++	gpio_pin_set_value(gpio_to_pfc_chip(gc), offset, value);
+ 
+ 	return pinctrl_gpio_direction_output(offset);
+ }
+ 
+ static int gpio_pin_get(struct gpio_chip *gc, unsigned offset)
+ {
+-	struct sh_pfc *pfc = gpio_to_pfc(gc);
+-	struct pinmux_data_reg *dr;
++	struct sh_pfc_chip *chip = gpio_to_pfc_chip(gc);
++	struct pinmux_data_reg *dreg;
+ 	unsigned long pos;
+ 	unsigned int bit;
+ 
+-	gpio_get_data_reg(pfc, offset, &dr, &bit);
++	gpio_get_data_reg(chip->pfc, offset, &dreg, &bit);
+ 
+-	pos = dr->reg_width - (bit + 1);
++	pos = dreg->reg_width - (bit + 1);
+ 
+-	return (sh_pfc_read_raw_reg(dr->mapped_reg, dr->reg_width) >> pos) & 1;
++	return (gpio_read_data_reg(chip, dreg) >> pos) & 1;
+ }
+ 
+ static void gpio_pin_set(struct gpio_chip *gc, unsigned offset, int value)
+ {
+-	gpio_pin_set_value(gpio_to_pfc(gc), offset, value);
++	gpio_pin_set_value(gpio_to_pfc_chip(gc), offset, value);
+ }
+ 
+ static int gpio_pin_to_irq(struct gpio_chip *gc, unsigned offset)
+@@ -188,10 +209,15 @@ static int gpio_pin_to_irq(struct gpio_chip *gc, unsigned offset)
+ 	return -ENOSYS;
+ }
+ 
+-static void gpio_pin_setup(struct sh_pfc_chip *chip)
++static int gpio_pin_setup(struct sh_pfc_chip *chip)
+ {
+ 	struct sh_pfc *pfc = chip->pfc;
+ 	struct gpio_chip *gc = &chip->gpio_chip;
++	int ret;
++
++	ret = gpio_setup_data_regs(chip);
++	if (ret < 0)
++		return ret;
+ 
+ 	gc->request = gpio_pin_request;
+ 	gc->free = gpio_pin_free;
+@@ -206,6 +232,8 @@ static void gpio_pin_setup(struct sh_pfc_chip *chip)
+ 	gc->owner = THIS_MODULE;
+ 	gc->base = 0;
+ 	gc->ngpio = pfc->nr_pins;
++
++	return 0;
+ }
+ 
+ /* -----------------------------------------------------------------------------
+@@ -252,7 +280,7 @@ static void gpio_function_free(struct gpio_chip *gc, unsigned offset)
+ 	spin_unlock_irqrestore(&pfc->lock, flags);
+ }
+ 
+-static void gpio_function_setup(struct sh_pfc_chip *chip)
++static int gpio_function_setup(struct sh_pfc_chip *chip)
+ {
+ 	struct sh_pfc *pfc = chip->pfc;
+ 	struct gpio_chip *gc = &chip->gpio_chip;
+@@ -264,6 +292,8 @@ static void gpio_function_setup(struct sh_pfc_chip *chip)
+ 	gc->owner = THIS_MODULE;
+ 	gc->base = pfc->nr_pins;
+ 	gc->ngpio = pfc->info->nr_func_gpios;
++
++	return 0;
+ }
+ 
+ /* -----------------------------------------------------------------------------
+@@ -271,7 +301,7 @@ static void gpio_function_setup(struct sh_pfc_chip *chip)
   */
- #define PIN_NUMBER(row, col)		(1000+((row)-1)*34+(col)-1)
  
-+static const unsigned int bsc_data_0_7_pins[] = {
-+	/* D[0:7] */
-+	74, 75, 76, 77, 78, 79, 80, 81,
-+};
-+static const unsigned int bsc_data_0_7_mux[] = {
-+	D0_NAF0_MARK, D1_NAF1_MARK, D2_NAF2_MARK, D3_NAF3_MARK,
-+	D4_NAF4_MARK, D5_NAF5_MARK, D6_NAF6_MARK, D7_NAF7_MARK,
-+};
-+static const unsigned int bsc_data_8_15_pins[] = {
-+	/* D[8:15] */
-+	82, 83, 84, 85, 86, 87, 88, 89,
-+};
-+static const unsigned int bsc_data_8_15_mux[] = {
-+	D8_NAF8_MARK, D9_NAF9_MARK, D10_NAF10_MARK, D11_NAF11_MARK,
-+	D12_NAF12_MARK, D13_NAF13_MARK, D14_NAF14_MARK, D15_NAF15_MARK,
-+};
-+static const unsigned int bsc_cs4_pins[] = {
-+	/* CS */
-+	90,
-+};
-+static const unsigned int bsc_cs4_mux[] = {
-+	CS4__MARK,
-+};
-+static const unsigned int bsc_cs5_a_pins[] = {
-+	/* CS */
-+	91,
-+};
-+static const unsigned int bsc_cs5_a_mux[] = {
-+	CS5A__MARK,
-+};
-+static const unsigned int bsc_cs5_b_pins[] = {
-+	/* CS */
-+	92,
-+};
-+static const unsigned int bsc_cs5_b_mux[] = {
-+	CS5B__MARK,
-+};
-+static const unsigned int bsc_cs6_a_pins[] = {
-+	/* CS */
-+	94,
-+};
-+static const unsigned int bsc_cs6_a_mux[] = {
-+	CS6A__MARK,
-+};
-+static const unsigned int bsc_cs6_b_pins[] = {
-+	/* CS */
-+	93,
-+};
-+static const unsigned int bsc_cs6_b_mux[] = {
-+	CS6B__MARK,
-+};
-+
-+static const unsigned int bsc_rd_pins[] = {
-+	/* RD */
-+	96,
-+};
-+static const unsigned int bsc_rd_mux[] = {
-+	RD__FSC_MARK,
-+};
-+static const unsigned int bsc_rdwr_0_pins[] = {
-+	/* RDWR */
-+	91,
-+};
-+static const unsigned int bsc_rdwr_0_mux[] = {
-+	PORT91_RDWR_MARK,
-+};
-+static const unsigned int bsc_rdwr_1_pins[] = {
-+	/* RDWR */
-+	97,
-+};
-+static const unsigned int bsc_rdwr_1_mux[] = {
-+	RDWR_FWE_MARK,
-+};
-+static const unsigned int bsc_rdwr_2_pins[] = {
-+	/* RDWR */
-+	149,
-+};
-+static const unsigned int bsc_rdwr_2_mux[] = {
-+	PORT149_RDWR_MARK,
-+};
-+static const unsigned int bsc_we0_pins[] = {
-+	/* WE0 */
-+	97,
-+};
-+static const unsigned int bsc_we0_mux[] = {
-+	WE0__FWE_MARK,
-+};
-+static const unsigned int bsc_we1_pins[] = {
-+	/* WE1 */
-+	98,
-+};
-+static const unsigned int bsc_we1_mux[] = {
-+	WE1__MARK,
-+};
-+
- static const unsigned int fsia_mclk_in_pins[] = {
- 	/* CK */
- 	49,
-@@ -2521,6 +2616,19 @@ static const unsigned int sdhi2_ctrl_mux[] = {
+ static struct sh_pfc_chip *
+-sh_pfc_add_gpiochip(struct sh_pfc *pfc, void(*setup)(struct sh_pfc_chip *))
++sh_pfc_add_gpiochip(struct sh_pfc *pfc, int(*setup)(struct sh_pfc_chip *))
+ {
+ 	struct sh_pfc_chip *chip;
+ 	int ret;
+@@ -282,7 +312,9 @@ sh_pfc_add_gpiochip(struct sh_pfc *pfc, void(*setup)(struct sh_pfc_chip *))
+ 
+ 	chip->pfc = pfc;
+ 
+-	setup(chip);
++	ret = setup(chip);
++	if (ret < 0)
++		return ERR_PTR(ret);
+ 
+ 	ret = gpiochip_add(&chip->gpio_chip);
+ 	if (unlikely(ret < 0))
+@@ -304,8 +336,6 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+ 	unsigned int i;
+ 	int ret;
+ 
+-	gpio_setup_data_regs(pfc);
+-
+ 	/* Register the real GPIOs chip. */
+ 	chip = sh_pfc_add_gpiochip(pfc, gpio_pin_setup);
+ 	if (IS_ERR(chip))
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index 028e29a..ba3697d 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -110,7 +110,6 @@ struct pinmux_cfg_reg {
+ struct pinmux_data_reg {
+ 	unsigned long reg, reg_width, reg_shadow;
+ 	pinmux_enum_t *enum_ids;
+-	void __iomem *mapped_reg;
  };
  
- static const struct sh_pfc_pin_group pinmux_groups[] = {
-+	SH_PFC_PIN_GROUP(bsc_data_0_7),
-+	SH_PFC_PIN_GROUP(bsc_data_8_15),
-+	SH_PFC_PIN_GROUP(bsc_cs4),
-+	SH_PFC_PIN_GROUP(bsc_cs5_a),
-+	SH_PFC_PIN_GROUP(bsc_cs5_b),
-+	SH_PFC_PIN_GROUP(bsc_cs6_a),
-+	SH_PFC_PIN_GROUP(bsc_cs6_b),
-+	SH_PFC_PIN_GROUP(bsc_rd),
-+	SH_PFC_PIN_GROUP(bsc_rdwr_0),
-+	SH_PFC_PIN_GROUP(bsc_rdwr_1),
-+	SH_PFC_PIN_GROUP(bsc_rdwr_2),
-+	SH_PFC_PIN_GROUP(bsc_we0),
-+	SH_PFC_PIN_GROUP(bsc_we1),
- 	SH_PFC_PIN_GROUP(fsia_mclk_in),
- 	SH_PFC_PIN_GROUP(fsia_mclk_out),
- 	SH_PFC_PIN_GROUP(fsia_sclk_in),
-@@ -2649,6 +2757,22 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(sdhi2_ctrl),
- };
- 
-+static const char * const bsc_groups[] = {
-+	"bsc_data_0_7",
-+	"bsc_data_8_15",
-+	"bsc_cs4",
-+	"bsc_cs5_a",
-+	"bsc_cs5_b",
-+	"bsc_cs6_a",
-+	"bsc_cs6_b",
-+	"bsc_rd",
-+	"bsc_rdwr_0",
-+	"bsc_rdwr_1",
-+	"bsc_rdwr_2",
-+	"bsc_we0",
-+	"bsc_we1",
-+};
-+
- static const char * const fsia_groups[] = {
- 	"fsia_mclk_in",
- 	"fsia_mclk_out",
-@@ -2841,6 +2965,7 @@ static const char * const sdhi2_groups[] = {
- };
- 
- static const struct sh_pfc_function pinmux_functions[] = {
-+	SH_PFC_FUNCTION(bsc),
- 	SH_PFC_FUNCTION(fsia),
- 	SH_PFC_FUNCTION(fsib),
- 	SH_PFC_FUNCTION(fsic),
+ #define PINMUX_DATA_REG(name, r, r_width) \
 -- 
 1.8.1.5
 
