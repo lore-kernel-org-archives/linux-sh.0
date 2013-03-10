@@ -1,130 +1,64 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Wed, 27 Mar 2013 07:56:14 +0000
-Subject: [PATCH 5/8] ARM: shmobile: sh73a0: use fixed ratio clock
-Message-Id: <87zjxpgtt1.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 10 Mar 2013 18:35:53 +0000
+Subject: [PATCH 14/23] sh-pfc: Drop unused support for 1:1 physical to virtual memory mappings
+Message-Id: <1362940562-8570-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Current clock-sh73a0 is using own implement
-for each divX clocks.
-This patch switches to use fixed ratio clock,
-and was tesed on kzm9g board.
+Now that all PFC platform devices provide memory resources support for
+registers without an associated memory resource isn't used anymore. Drop
+it.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/clock-sh73a0.c |   72 ++++++---------------------------
- 1 file changed, 12 insertions(+), 60 deletions(-)
+ drivers/pinctrl/sh-pfc/core.c | 15 ++++++---------
+ 1 file changed, 6 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-index 8f28395..02e5d94 100644
---- a/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-@@ -22,6 +22,7 @@
- #include <linux/sh_clk.h>
- #include <linux/clkdev.h>
- #include <asm/processor.h>
-+#include <mach/clock.h>
- #include <mach/common.h>
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index e847d16..cadfb37 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -30,10 +30,8 @@ static int sh_pfc_ioremap(struct sh_pfc *pfc, struct platform_device *pdev)
+ 	struct resource *res;
+ 	int k;
  
- #define FRQCRA		IOMEM(0xe6150000)
-@@ -83,61 +84,16 @@ struct clk sh73a0_extal2_clk = {
- 	.rate		= 48000000,
- };
+-	if (pdev->num_resources = 0) {
+-		pfc->num_windows = 0;
+-		return 0;
+-	}
++	if (pdev->num_resources = 0)
++		return -EINVAL;
  
--/* A fixed divide-by-2 block */
--static unsigned long div2_recalc(struct clk *clk)
--{
--	return clk->parent->rate / 2;
--}
--
--static struct sh_clk_ops div2_clk_ops = {
--	.recalc		= div2_recalc,
--};
--
--static unsigned long div7_recalc(struct clk *clk)
--{
--	return clk->parent->rate / 7;
--}
--
--static struct sh_clk_ops div7_clk_ops = {
--	.recalc		= div7_recalc,
--};
--
--static unsigned long div13_recalc(struct clk *clk)
--{
--	return clk->parent->rate / 13;
--}
--
--static struct sh_clk_ops div13_clk_ops = {
--	.recalc		= div13_recalc,
--};
--
--/* Divide extal1 by two */
--static struct clk extal1_div2_clk = {
--	.ops		= &div2_clk_ops,
--	.parent		= &sh73a0_extal1_clk,
--};
--
--/* Divide extal2 by two */
--static struct clk extal2_div2_clk = {
--	.ops		= &div2_clk_ops,
--	.parent		= &sh73a0_extal2_clk,
--};
--
- static struct sh_clk_ops main_clk_ops = {
- 	.recalc		= followparent_recalc,
- };
- 
- /* Main clock */
- static struct clk main_clk = {
-+	/* .parent wll be set on sh73a0_clock_init() */
- 	.ops		= &main_clk_ops,
- };
- 
--/* Divide Main clock by two */
--static struct clk main_div2_clk = {
--	.ops		= &div2_clk_ops,
--	.parent		= &main_clk,
--};
--
- /* PLL0, PLL1, PLL2, PLL3 */
- static unsigned long pll_recalc(struct clk *clk)
+ 	pfc->window = devm_kzalloc(pfc->dev, pdev->num_resources *
+ 				   sizeof(*pfc->window), GFP_NOWAIT);
+@@ -59,11 +57,11 @@ static void __iomem *sh_pfc_phys_to_virt(struct sh_pfc *pfc,
+ 					 unsigned long address)
  {
-@@ -193,21 +149,17 @@ static struct clk pll3_clk = {
- 	.enable_bit	= 3,
- };
+ 	struct sh_pfc_window *window;
+-	int k;
++	unsigned int i;
  
--/* Divide PLL */
--static struct clk pll1_div2_clk = {
--	.ops		= &div2_clk_ops,
--	.parent		= &pll1_clk,
--};
--
--static struct clk pll1_div7_clk = {
--	.ops		= &div7_clk_ops,
--	.parent		= &pll1_clk,
--};
-+/* A fixed divide block */
-+SH_CLK_RATIO(div2,  1, 2);
-+SH_CLK_RATIO(div7,  1, 7);
-+SH_CLK_RATIO(div13, 1, 13);
+ 	/* scan through physical windows and convert address */
+-	for (k = 0; k < pfc->num_windows; k++) {
+-		window = pfc->window + k;
++	for (i = 0; i < pfc->num_windows; i++) {
++		window = pfc->window + i;
  
--static struct clk pll1_div13_clk = {
--	.ops		= &div13_clk_ops,
--	.parent		= &pll1_clk,
--};
-+SH_FIXED_RATIO_CLK(extal1_div2_clk,	sh73a0_extal1_clk,	div2);
-+SH_FIXED_RATIO_CLK(extal2_div2_clk,	sh73a0_extal2_clk,	div2);
-+SH_FIXED_RATIO_CLK(main_div2_clk,	main_clk,		div2);
-+SH_FIXED_RATIO_CLK(pll1_div2_clk,	pll1_clk,		div2);
-+SH_FIXED_RATIO_CLK(pll1_div7_clk,	pll1_clk,		div7);
-+SH_FIXED_RATIO_CLK(pll1_div13_clk,	pll1_clk,		div13);
+ 		if (address < window->phys)
+ 			continue;
+@@ -74,8 +72,7 @@ static void __iomem *sh_pfc_phys_to_virt(struct sh_pfc *pfc,
+ 		return window->virt + (address - window->phys);
+ 	}
  
- /* External input clock */
- struct clk sh73a0_extcki_clk = {
+-	/* no windows defined, register must be 1:1 mapped virt:phys */
+-	return (void __iomem *)address;
++	BUG();
+ }
+ 
+ struct sh_pfc_pin *sh_pfc_get_pin(struct sh_pfc *pfc, unsigned int pin)
 -- 
-1.7.9.5
+1.8.1.5
 
