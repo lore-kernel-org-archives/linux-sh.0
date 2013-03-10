@@ -1,46 +1,123 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Wed, 06 Mar 2013 12:49:03 +0000
-Subject: Re: Power management test code samples
-Message-Id: <CABYn4syX9E_BKx=T7NkignYvf1Uy85MEwC7P_raPpqo2qmwaQQ@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 10 Mar 2013 18:58:48 +0000
+Subject: [PATCH/RFC 12/12] sh-pfc: r8a7779: Remove GPIO data
+Message-Id: <1362941928-18115-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CABYn4sypQ2VzigxmRwiqWnDim1zPiAcb_NrYbBxnRt0FMCq0vA@mail.gmail.com>
-In-Reply-To: <CABYn4sypQ2VzigxmRwiqWnDim1zPiAcb_NrYbBxnRt0FMCq0vA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello Morimoto-san,
+GPIOs are now handled by a separate driver, remove GPIO data from the
+SoC information structure.
 
-2013/3/6 Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>:
->
-> Hi Bastian
->
->> hereby I ask officially if there is some test code available regarding
->> the power management of the SoCs r8a7740 and sh73a0.
->>
->> I'm interested in the exact handling of the different caches (L1, L2,
->> TLB) and shutdown/wakeup procedures. Sample code would help a lot so I
->> can compare what the v7_cpu_suspend code already does and what is
->> needed in the SoC-specific code.
->
-> Can this help you ?
-> It is for r8a7740, and still "sample-code"
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 58 +-----------------------------------
+ 1 file changed, 1 insertion(+), 57 deletions(-)
 
-Oh yes very useful information, thank you! There are some constant
-definitions like
-PL310_REG1_CTRL
-PL310_REG1_AUXCTRL
-...
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+index 4bb5160..0515452 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+@@ -85,18 +85,12 @@
+ 	}
+ 
+ #define _GP_DATA(bank, pin, name, sfx)					\
+-	PINMUX_DATA(name##_DATA, name##_FN, name##_IN, name##_OUT)
+-
+-#define _GP_INOUTSEL(bank, pin, name, sfx)	name##_IN, name##_OUT
+-#define _GP_INDT(bank, pin, name, sfx)		name##_DATA
++	PINMUX_DATA(name##_DATA, name##_FN)
+ 
+ #define GP_ALL(str)		CPU_ALL_PORT(_GP_PORT_ALL, str)
+ #define PINMUX_GPIO_GP_ALL()	CPU_ALL_PORT(_GP_GPIO, unused)
+ #define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_GP_DATA, unused)
+ 
+-#define GP_INOUTSEL(bank) PORT_GP_32_REV(bank, _GP_INOUTSEL, unused)
+-#define GP_INDT(bank) PORT_GP_32_REV(bank, _GP_INDT, unused)
+-
+ #define PINMUX_IPSR_DATA(ipsr, fn) PINMUX_DATA(fn##_MARK, FN_##ipsr, FN_##fn)
+ #define PINMUX_IPSR_MODSEL_DATA(ipsr, fn, ms) PINMUX_DATA(fn##_MARK, FN_##ms, \
+ 							  FN_##ipsr, FN_##fn)
+@@ -108,14 +102,6 @@ enum {
+ 	GP_ALL(DATA), /* GP_0_0_DATA -> GP_6_8_DATA */
+ 	PINMUX_DATA_END,
+ 
+-	PINMUX_INPUT_BEGIN,
+-	GP_ALL(IN), /* GP_0_0_IN -> GP_6_8_IN */
+-	PINMUX_INPUT_END,
+-
+-	PINMUX_OUTPUT_BEGIN,
+-	GP_ALL(OUT), /* GP_0_0_OUT -> GP_6_8_OUT */
+-	PINMUX_OUTPUT_END,
+-
+ 	PINMUX_FUNCTION_BEGIN,
+ 	GP_ALL(FN), /* GP_0_0_FN -> GP_6_8_FN */
+ 
+@@ -3571,45 +3557,6 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 	    /* SEL_I2C1 [2] */
+ 	    FN_SEL_I2C1_0, FN_SEL_I2C1_1, FN_SEL_I2C1_2, FN_SEL_I2C1_3 }
+ 	},
+-	{ PINMUX_CFG_REG("INOUTSEL0", 0xffc40004, 32, 1) { GP_INOUTSEL(0) } },
+-	{ PINMUX_CFG_REG("INOUTSEL1", 0xffc41004, 32, 1) { GP_INOUTSEL(1) } },
+-	{ PINMUX_CFG_REG("INOUTSEL2", 0xffc42004, 32, 1) { GP_INOUTSEL(2) } },
+-	{ PINMUX_CFG_REG("INOUTSEL3", 0xffc43004, 32, 1) { GP_INOUTSEL(3) } },
+-	{ PINMUX_CFG_REG("INOUTSEL4", 0xffc44004, 32, 1) { GP_INOUTSEL(4) } },
+-	{ PINMUX_CFG_REG("INOUTSEL5", 0xffc45004, 32, 1) { GP_INOUTSEL(5) } },
+-	{ PINMUX_CFG_REG("INOUTSEL6", 0xffc46004, 32, 1) {
+-		0, 0, 0, 0, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0, 0, 0,
+-		0, 0, 0, 0, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0, 0, 0,
+-		0, 0, 0, 0, 0, 0, 0, 0,
+-		0, 0,
+-		0, 0,
+-		0, 0,
+-		GP_6_8_IN, GP_6_8_OUT,
+-		GP_6_7_IN, GP_6_7_OUT,
+-		GP_6_6_IN, GP_6_6_OUT,
+-		GP_6_5_IN, GP_6_5_OUT,
+-		GP_6_4_IN, GP_6_4_OUT,
+-		GP_6_3_IN, GP_6_3_OUT,
+-		GP_6_2_IN, GP_6_2_OUT,
+-		GP_6_1_IN, GP_6_1_OUT,
+-		GP_6_0_IN, GP_6_0_OUT, }
+-	},
+-	{ },
+-};
+-
+-static const struct pinmux_data_reg pinmux_data_regs[] = {
+-	{ PINMUX_DATA_REG("INDT0", 0xffc40008, 32) { GP_INDT(0) } },
+-	{ PINMUX_DATA_REG("INDT1", 0xffc41008, 32) { GP_INDT(1) } },
+-	{ PINMUX_DATA_REG("INDT2", 0xffc42008, 32) { GP_INDT(2) } },
+-	{ PINMUX_DATA_REG("INDT3", 0xffc43008, 32) { GP_INDT(3) } },
+-	{ PINMUX_DATA_REG("INDT4", 0xffc44008, 32) { GP_INDT(4) } },
+-	{ PINMUX_DATA_REG("INDT5", 0xffc45008, 32) { GP_INDT(5) } },
+-	{ PINMUX_DATA_REG("INDT6", 0xffc46008, 32) {
+-		0, 0, 0, 0, 0, 0, 0, 0,	0, 0, 0, 0, 0, 0, 0, 0,
+-		0, 0, 0, 0, 0, 0, 0, GP_6_8_DATA,
+-		GP_6_7_DATA, GP_6_6_DATA, GP_6_5_DATA, GP_6_4_DATA,
+-		GP_6_3_DATA, GP_6_2_DATA, GP_6_1_DATA, GP_6_0_DATA }
+-	},
+ 	{ },
+ };
+ 
+@@ -3618,8 +3565,6 @@ const struct sh_pfc_soc_info r8a7779_pinmux_info = {
+ 
+ 	.unlock_reg = 0xfffc0000, /* PMMR */
+ 
+-	.input = { PINMUX_INPUT_BEGIN, PINMUX_INPUT_END },
+-	.output = { PINMUX_OUTPUT_BEGIN, PINMUX_OUTPUT_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+ 	.pins = pinmux_pins,
+@@ -3630,7 +3575,6 @@ const struct sh_pfc_soc_info r8a7779_pinmux_info = {
+ 	.nr_functions = ARRAY_SIZE(pinmux_functions),
+ 
+ 	.cfg_regs = pinmux_config_regs,
+-	.data_regs = pinmux_data_regs,
+ 
+ 	.gpio_data = pinmux_data,
+ 	.gpio_data_size = ARRAY_SIZE(pinmux_data),
+-- 
+1.8.1.5
 
-that seem to be included "hardware.inc". Is it possible to get these values too?
-
-Thanks,
-
- Bastian
-
-
-> Best regards
-> ---
-> Kuninori Morimoto
->
