@@ -1,76 +1,95 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:06:47 +0000
-Subject: [PATCH 111/142] sh-pfc: sh73a0: Remove BSC function GPIOS
-Message-Id: <1363604838-29359-112-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 10 Mar 2013 18:35:39 +0000
+Subject: [PATCH 00/23] Further SH PFC cleanup
+Message-Id: <1362940562-8570-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Hello,
 
-All sh73a0 platforms now use the pinctrl API to control the BSC pins,
-the corresponding function GPIOS are unused. Remove them.
+Is there better ways to spend a Sunday than working on further SH PFC
+cleanups (hint: there definitely is) ? For your enjoyment here are 23 more
+patches that prepare the PFC driver for the big GPIO/PFC split.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
----
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c |   27 ---------------------------
- 1 file changed, 27 deletions(-)
+The first 11 patches add pin control resources to the SH platforms. They don't
+depend on any of the previous unmerged PFC patch series but are required for
+the rest of this series. Paul, are you fine with merging them through the ARM
+tree ? I don't think there's any risk of merge conflicts.
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index 33e2b3f..7b010b6 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -3022,37 +3022,11 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(A25), \
- 	GPIO_FN(MSIOF0_SS2),
- 	GPIO_FN(A26), \
--	GPIO_FN(D0_NAF0),
--	GPIO_FN(D1_NAF1),
--	GPIO_FN(D2_NAF2),
--	GPIO_FN(D3_NAF3),
--	GPIO_FN(D4_NAF4),
--	GPIO_FN(D5_NAF5),
--	GPIO_FN(D6_NAF6),
--	GPIO_FN(D7_NAF7),
--	GPIO_FN(D8_NAF8),
--	GPIO_FN(D9_NAF9),
--	GPIO_FN(D10_NAF10),
--	GPIO_FN(D11_NAF11),
--	GPIO_FN(D12_NAF12),
--	GPIO_FN(D13_NAF13),
--	GPIO_FN(D14_NAF14),
--	GPIO_FN(D15_NAF15),
--	GPIO_FN(CS4_),
--	GPIO_FN(CS5A_), \
--	GPIO_FN(PORT91_RDWR),
--	GPIO_FN(CS5B_), \
- 	GPIO_FN(FCE1_),
--	GPIO_FN(CS6B_), \
- 	GPIO_FN(DACK0),
- 	GPIO_FN(FCE0_), \
--	GPIO_FN(CS6A_),
- 	GPIO_FN(WAIT_), \
- 	GPIO_FN(DREQ0),
--	GPIO_FN(RD__FSC),
--	GPIO_FN(WE0__FWE), \
--	GPIO_FN(RDWR_FWE),
--	GPIO_FN(WE1_),
- 	GPIO_FN(FRB),
- 	GPIO_FN(CKO),
- 	GPIO_FN(NBRSTOUT_),
-@@ -3125,7 +3099,6 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(VIO2_FIELD), \
- 	GPIO_FN(VIO_CKO),
- 	GPIO_FN(A27), \
--	GPIO_FN(PORT149_RDWR), \
- 	GPIO_FN(MFG0_IN1), \
- 	GPIO_FN(MFG0_IN2),
- 	GPIO_FN(TS_SPSYNC3), \
+The rest of the series is really miscellaneous cleanups. Worth to be noted are
+the constification of the PFC SoC data and the removal of the unused and badly
+implemented pinconf support.
+
+The patches are based on my previous "[PATCH v3 00/64] PFC pinctrl functions
+for sh7372, sh73a0, r8a7740 and r8a7779" series and are available at
+
+	git://linuxtv.org/pinchartl/fbdev.git pinmux/3.9/pfc-cleanup
+
+Laurent Pinchart (23):
+  sh: sh7203: Add pin control resources
+  sh: sh7264: Add pin control resources
+  sh: sh7269: Add pin control resources
+  sh: sh7720: Add pin control resources
+  sh: sh7722: Add pin control resources
+  sh: sh7723: Add pin control resources
+  sh: sh7724: Add pin control resources
+  sh: sh7757: Add pin control resources
+  sh: sh7785: Add pin control resources
+  sh: sh7786: Add pin control resources
+  sh: shx3: Add pin control resources
+  sh-pfc: Move GPIO registers access functions to gpio.c
+  sh-pfc: Don't map data registers individually
+  sh-pfc: Drop unused support for 1:1 physical to virtual memory
+    mappings
+  sh-pfc: Don't modify pinmux_data_reg SoC data
+  sh-pfc: Don't modify sh_pfc_pin SoC data
+  sh-pfc: Remove configuration dry-run and free
+  sh-pfc: Constify all SoC data
+  sh-pfc: Use proper error codes
+  sh-pfc: Remove pinconf support
+  sh-pfc: Merge sh_pfc_reconfig_pin() into sh_pfc_gpio_set_direction()
+  sh-pfc: Clean up pin configuration type handling
+  sh-pfc: Convert message printing from pr_* to dev_*
+
+ arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c |  13 +-
+ arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c |  13 +-
+ arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c |  11 +-
+ arch/sh/kernel/cpu/sh3/pinmux-sh7720.c  |  14 +-
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c |  14 +-
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c |  14 +-
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7724.c |  13 +-
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c |  13 +-
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7785.c |  14 +-
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c |  14 +-
+ arch/sh/kernel/cpu/sh4a/pinmux-shx3.c   |  17 ++-
+ drivers/pinctrl/sh-pfc/core.c           | 228 ++++++--------------------------
+ drivers/pinctrl/sh-pfc/core.h           |  49 ++++---
+ drivers/pinctrl/sh-pfc/gpio.c           | 222 ++++++++++++++++++++++++-------
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c    |  12 +-
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c    |  10 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7203.c     |  10 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7264.c     |  10 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7269.c     |  10 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7372.c     |  12 +-
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c     |  14 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7720.c     |  10 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7722.c     |  10 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7723.c     |  10 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7724.c     |  10 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7734.c     |  10 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7757.c     |  10 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7785.c     |  10 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7786.c     |  10 +-
+ drivers/pinctrl/sh-pfc/pfc-shx3.c       |  10 +-
+ drivers/pinctrl/sh-pfc/pinctrl.c        | 202 +++++++++-------------------
+ drivers/pinctrl/sh-pfc/sh_pfc.h         |  35 ++---
+ 32 files changed, 533 insertions(+), 521 deletions(-)
+
 -- 
-1.7.10.4
+Regards,
+
+Laurent Pinchart
 
