@@ -1,47 +1,55 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 13:02:38 +0000
-Subject: [PATCH 12/12] clocksource: sh_mtu2: Set initcall level to subsys
-Message-Id: <1363611758-6655-13-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Sun, 10 Mar 2013 18:35:48 +0000
+Subject: [PATCH 09/23] sh: sh7785: Add pin control resources
+Message-Id: <1362940562-8570-10-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363611758-6655-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363611758-6655-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-The reason for this is to ensure that MTU2 is probed earlier
-than with its previous initcall level, module init.
+Add memory resources for the pin control platform device to let the
+sh-pfc driver ioremap() registers properly instead of evily casting
+register physical addresses to virtual addresses.
 
-This came up as a problem with using CMT as a clock source kzm9g-reference
-which does not make use of early timers or devices. In that scenario
-initialisation of SDHI and MMCIF both stall on msleep() calls due to the
-absence of a initialised clock source.
+The memory resource address range has been extracted from the config and
+data registes lists in the sh-pfc driver.
 
-The purpose of this change is to keep the MTU2 code in sync with the CMT code
-which has been modified in a similar manner..
-
-Compile tested only using se7206_defconfig.
-I do not believe I have any boards that support the MTU2.
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/clocksource/sh_mtu2.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7785.c | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
-index 83943e2..4aac9ee 100644
---- a/drivers/clocksource/sh_mtu2.c
-+++ b/drivers/clocksource/sh_mtu2.c
-@@ -386,7 +386,7 @@ static void __exit sh_mtu2_exit(void)
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7785.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7785.c
+index 01055b8..e336ab8 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7785.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7785.c
+@@ -8,13 +8,23 @@
+  * for more details.
+  */
+ 
++#include <linux/bug.h>
+ #include <linux/init.h>
+ #include <linux/kernel.h>
++#include <linux/ioport.h>
+ #include <cpu/pfc.h>
+ 
++static struct resource sh7785_pfc_resources[] = {
++	[0] = {
++		.start	= 0xffe70000,
++		.end	= 0xffe7008f,
++		.flags	= IORESOURCE_MEM,
++	},
++};
++
+ static int __init plat_pinmux_setup(void)
+ {
+-	return sh_pfc_register("pfc-sh7785", NULL, 0);
++	return sh_pfc_register("pfc-sh7785", sh7785_pfc_resources,
++			       ARRAY_SIZE(sh7785_pfc_resources));
  }
- 
- early_platform_init("earlytimer", &sh_mtu2_device_driver);
--module_init(sh_mtu2_init);
-+subsys_initcall(sh_mtu2_init);
- module_exit(sh_mtu2_exit);
- 
- MODULE_AUTHOR("Magnus Damm");
+-
+ arch_initcall(plat_pinmux_setup);
 -- 
-1.7.10.4
+1.8.1.5
 
