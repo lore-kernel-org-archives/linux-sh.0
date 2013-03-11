@@ -1,126 +1,146 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 22 Mar 2013 13:24:25 +0000
-Subject: [PATCH/RFC 1/2] ARM: shmobile: wait for MSTP clock status to toggle, when enabling it
-Message-Id: <Pine.LNX.4.64.1303221422500.12375@axis700.grange>
+From: Lai Jiangshan <laijs@cn.fujitsu.com>
+Date: Mon, 11 Mar 2013 16:30:04 +0000
+Subject: [PATCH 3/3] async: rename and redefine async_func_ptr
+Message-Id: <1363019405-4331-4-git-send-email-laijs@cn.fujitsu.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363019405-4331-1-git-send-email-laijs@cn.fujitsu.com>
+In-Reply-To: <1363019405-4331-1-git-send-email-laijs@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Tejun Heo <tj@kernel.org>, Arjan van de Ven <arjan@linux.intel.com>, linux-kernel@vger.kernel.org
+Cc: Lai Jiangshan <laijs@cn.fujitsu.com>, Paul Mundt <lethal@linux-sh.org>, Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>, Greg Kroah-Hartman <gregkh@linuxfoundation.org>, James Bottomley <JBottomley@Parallels.com>, Dan Williams <dan.j.williams@intel.com>, linux-sh@vger.kernel.org
 
-On r-/sh-mobile SoCs MSTP clocks are used by the runtime PM to dynamically
-enable and disable peripheral clocks. To make sure the clock has really
-started we have to read back its status register until it confirms success.
+A function type is typically defined as
+typedef ret_type (*func)(args..)
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+but async_func_ptr is not.  Redefine it.
+
+Also rename async_func_ptr to async_func_t for _func_t suffix is more generic.
+
+Signed-off-by: Lai Jiangshan <laijs@cn.fujitsu.com>
+Cc: Tejun Heo <tj@kernel.org>
+Cc: Arjan van de Ven <arjan@linux.intel.com>
 ---
- drivers/sh/clk/cpg.c   |   38 ++++++++++++++++++++++++++++++++++++++
- include/linux/sh_clk.h |   29 +++++++++++++++++------------
- 2 files changed, 55 insertions(+), 12 deletions(-)
+ arch/sh/drivers/pci/pcie-sh7786.c |    2 +-
+ include/linux/async.h             |    6 +++---
+ kernel/async.c                    |   20 ++++++++++----------
+ 3 files changed, 14 insertions(+), 14 deletions(-)
 
-diff --git a/drivers/sh/clk/cpg.c b/drivers/sh/clk/cpg.c
-index 1ebe67c..7442bc1 100644
---- a/drivers/sh/clk/cpg.c
-+++ b/drivers/sh/clk/cpg.c
-@@ -36,9 +36,47 @@ static void sh_clk_write(int value, struct clk *clk)
- 		iowrite32(value, clk->mapped_reg);
+diff --git a/arch/sh/drivers/pci/pcie-sh7786.c b/arch/sh/drivers/pci/pcie-sh7786.c
+index c2c85f6..a162a7f 100644
+--- a/arch/sh/drivers/pci/pcie-sh7786.c
++++ b/arch/sh/drivers/pci/pcie-sh7786.c
+@@ -35,7 +35,7 @@ static unsigned int nr_ports;
+ 
+ static struct sh7786_pcie_hwops {
+ 	int (*core_init)(void);
+-	async_func_ptr *port_init_hw;
++	async_func_t port_init_hw;
+ } *sh7786_pcie_hwops;
+ 
+ static struct resource sh7786_pci0_resources[] = {
+diff --git a/include/linux/async.h b/include/linux/async.h
+index 8e53494..0f1226d 100644
+--- a/include/linux/async.h
++++ b/include/linux/async.h
+@@ -16,7 +16,7 @@
+ #include <linux/list.h>
+ 
+ typedef u64 async_cookie_t;
+-typedef void (async_func_ptr) (void *data, async_cookie_t cookie);
++typedef void (*async_func_t) (void *data, async_cookie_t cookie);
+ struct async_domain {
+ 	struct list_head pending;
+ 	unsigned registered:1;
+@@ -35,8 +35,8 @@ struct async_domain {
+ #define ASYNC_DOMAIN_EXCLUSIVE(_name) struct async_domain _name =	\
+ 	{ .pending = LIST_HEAD_INIT(_name.pending), .registered = 0 }
+ 
+-extern async_cookie_t async_schedule(async_func_ptr *ptr, void *data);
+-extern async_cookie_t async_schedule_domain(async_func_ptr *ptr, void *data,
++extern async_cookie_t async_schedule(async_func_t func, void *data);
++extern async_cookie_t async_schedule_domain(async_func_t func, void *data,
+ 					    struct async_domain *domain);
+ void async_unregister_domain(struct async_domain *domain);
+ extern void async_synchronize_full(void);
+diff --git a/kernel/async.c b/kernel/async.c
+index ef66b2f..61873c3 100644
+--- a/kernel/async.c
++++ b/kernel/async.c
+@@ -73,7 +73,7 @@ struct async_entry {
+ 	struct list_head	global_list;
+ 	struct work_struct	work;
+ 	async_cookie_t		cookie;
+-	async_func_ptr		*func;
++	async_func_t		func;
+ 	void			*data;
+ 	struct async_domain	*domain;
+ };
+@@ -145,7 +145,7 @@ static void async_run_entry_fn(struct work_struct *work)
+ 	wake_up(&async_done);
  }
  
-+static unsigned int r8(const void __iomem *addr)
-+{
-+	return ioread8(addr);
-+}
-+
-+static unsigned int r16(const void __iomem *addr)
-+{
-+	return ioread16(addr);
-+}
-+
-+static unsigned int r32(const void __iomem *addr)
-+{
-+	return ioread32(addr);
-+}
-+
- static int sh_clk_mstp_enable(struct clk *clk)
+-static async_cookie_t __async_schedule(async_func_ptr *ptr, void *data, struct async_domain *domain)
++static async_cookie_t __async_schedule(async_func_t func, void *data, struct async_domain *domain)
  {
- 	sh_clk_write(sh_clk_read(clk) & ~(1 << clk->enable_bit), clk);
-+	if (clk->status_reg) {
-+		unsigned int (*read)(const void __iomem *addr);
-+		int i;
-+		void __iomem *mapped_status = (phys_addr_t)clk->status_reg -
-+			(phys_addr_t)clk->enable_reg + clk->mapped_reg;
-+
-+		if (clk->flags & CLK_ENABLE_REG_8BIT)
-+			read = r8;
-+		else if (clk->flags & CLK_ENABLE_REG_16BIT)
-+			read = r16;
-+		else
-+			read = r32;
-+
-+		for (i = 1000;
-+		     (read(mapped_status) & (1 << clk->enable_bit)) && i;
-+		     i--)
-+			cpu_relax();
-+		if (!i) {
-+			pr_err("cpg: failed to enable %p[%d]\n",
-+			       clk->enable_reg, clk->enable_bit);
-+			return -ETIMEDOUT;
-+		}
-+	}
- 	return 0;
+ 	struct async_entry *entry;
+ 	unsigned long flags;
+@@ -165,13 +165,13 @@ static async_cookie_t __async_schedule(async_func_ptr *ptr, void *data, struct a
+ 		spin_unlock_irqrestore(&async_lock, flags);
+ 
+ 		/* low on memory.. run synchronously */
+-		ptr(data, newcookie);
++		func(data, newcookie);
+ 		return newcookie;
+ 	}
+ 	INIT_LIST_HEAD(&entry->domain_list);
+ 	INIT_LIST_HEAD(&entry->global_list);
+ 	INIT_WORK(&entry->work, async_run_entry_fn);
+-	entry->func = ptr;
++	entry->func = func;
+ 	entry->data = data;
+ 	entry->domain = domain;
+ 
+@@ -198,21 +198,21 @@ static async_cookie_t __async_schedule(async_func_ptr *ptr, void *data, struct a
+ 
+ /**
+  * async_schedule - schedule a function for asynchronous execution
+- * @ptr: function to execute asynchronously
++ * @func: function to execute asynchronously
+  * @data: data pointer to pass to the function
+  *
+  * Returns an async_cookie_t that may be used for checkpointing later.
+  * Note: This function may be called from atomic or non-atomic contexts.
+  */
+-async_cookie_t async_schedule(async_func_ptr *ptr, void *data)
++async_cookie_t async_schedule(async_func_t func, void *data)
+ {
+-	return __async_schedule(ptr, data, &async_dfl_domain);
++	return __async_schedule(func, data, &async_dfl_domain);
  }
+ EXPORT_SYMBOL_GPL(async_schedule);
  
-diff --git a/include/linux/sh_clk.h b/include/linux/sh_clk.h
-index 60c7239..e85bf79 100644
---- a/include/linux/sh_clk.h
-+++ b/include/linux/sh_clk.h
-@@ -52,6 +52,7 @@ struct clk {
- 	unsigned long		flags;
- 
- 	void __iomem		*enable_reg;
-+	void __iomem		*status_reg;
- 	unsigned int		enable_bit;
- 	void __iomem		*mapped_reg;
- 
-@@ -116,22 +117,26 @@ long clk_round_parent(struct clk *clk, unsigned long target,
- 		      unsigned long *best_freq, unsigned long *parent_freq,
- 		      unsigned int div_min, unsigned int div_max);
- 
--#define SH_CLK_MSTP(_parent, _enable_reg, _enable_bit, _flags)		\
--{									\
--	.parent		= _parent,					\
--	.enable_reg	= (void __iomem *)_enable_reg,			\
--	.enable_bit	= _enable_bit,					\
--	.flags		= _flags,					\
-+#define SH_CLK_MSTP(_parent, _enable_reg, _enable_bit, _status_reg, _flags)	\
-+{										\
-+	.parent		= _parent,						\
-+	.enable_reg	= (void __iomem *)_enable_reg,				\
-+	.enable_bit	= _enable_bit,						\
-+	.status_reg	= _status_reg,						\
-+	.flags		= _flags,						\
+ /**
+  * async_schedule_domain - schedule a function for asynchronous execution within a certain domain
+- * @ptr: function to execute asynchronously
++ * @func: function to execute asynchronously
+  * @data: data pointer to pass to the function
+  * @domain: the domain
+  *
+@@ -222,10 +222,10 @@ EXPORT_SYMBOL_GPL(async_schedule);
+  * synchronization domain is specified via @domain.  Note: This function
+  * may be called from atomic or non-atomic contexts.
+  */
+-async_cookie_t async_schedule_domain(async_func_ptr *ptr, void *data,
++async_cookie_t async_schedule_domain(async_func_t func, void *data,
+ 				     struct async_domain *domain)
+ {
+-	return __async_schedule(ptr, data, domain);
++	return __async_schedule(func, data, domain);
  }
- 
--#define SH_CLK_MSTP32(_p, _r, _b, _f)					\
--	SH_CLK_MSTP(_p, _r, _b, _f | CLK_ENABLE_REG_32BIT)
-+#define SH_CLK_MSTP32(_p, _r, _b, _f)				\
-+	SH_CLK_MSTP(_p, _r, _b, 0, _f | CLK_ENABLE_REG_32BIT)
- 
--#define SH_CLK_MSTP16(_p, _r, _b, _f)					\
--	SH_CLK_MSTP(_p, _r, _b, _f | CLK_ENABLE_REG_16BIT)
-+#define SH_CLK_MSTP32_STS(_p, _r, _b, _s, _f)			\
-+	SH_CLK_MSTP(_p, _r, _b, _s, _f | CLK_ENABLE_REG_32BIT)
- 
--#define SH_CLK_MSTP8(_p, _r, _b, _f)					\
--	SH_CLK_MSTP(_p, _r, _b, _f | CLK_ENABLE_REG_8BIT)
-+#define SH_CLK_MSTP16(_p, _r, _b, _f)				\
-+	SH_CLK_MSTP(_p, _r, _b, 0, _f | CLK_ENABLE_REG_16BIT)
-+
-+#define SH_CLK_MSTP8(_p, _r, _b, _f)				\
-+	SH_CLK_MSTP(_p, _r, _b, 0, _f | CLK_ENABLE_REG_8BIT)
- 
- int sh_clk_mstp_register(struct clk *clks, int nr);
+ EXPORT_SYMBOL_GPL(async_schedule_domain);
  
 -- 
-1.7.2.5
+1.7.4.4
 
