@@ -1,98 +1,45 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Fri, 08 Mar 2013 11:29:39 +0000
-Subject: [PATCH v2 5/7] ARM: mach-shmobile: sh73a0: Setup the timer CMT10 using DT
-Message-Id: <1362742181-19111-6-git-send-email-hechtb+renesas@gmail.com>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Date: Mon, 11 Mar 2013 00:17:47 +0000
+Subject: Re: [PATCH v2 5/7] ARM: mach-shmobile: sh73a0: Setup the timer CMT10 using DT
+Message-Id: <87y5duhjru.wl%kuninori.morimoto.gx@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1362742181-19111-1-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1362742181-19111-1-git-send-email-hechtb+renesas@gmail.com>
+ <1362742181-19111-6-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1362742181-19111-6-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-We can now use the Device Tree for bringing up our timer device CMT10 on
-the SoC sh73a0.
 
-Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+Hi Bastian
+
+1 question
+
+> We can now use the Device Tree for bringing up our timer device CMT10 on
+> the SoC sh73a0.
+> 
+> Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+(snip)
+>  /* TMU */
+>  static struct sh_timer_config tmu00_platform_data = {
+>  	.name = "TMU00",
+> @@ -913,7 +882,6 @@ static struct platform_device *sh73a0_devices_dt[] __initdata = {
+>  	&scif6_device,
+>  	&scif7_device,
+>  	&scif8_device,
+> -	&cmt10_device,
+>  };
+
+I didn't test this patch,
+but setup-sh73a0.c :: sh73a0_devices_dt is
+used from sh73a0_add_standard_devices() or sh73a0_add_early_devices(),
+and it is used from board-kzm9g.c (not -reference.c).
+
+Does board-kzm9g.c still works ?
+Is it better that sh73a0_early_devices[] has it ?
+
+
+Best regards
 ---
-v2:
-- Moved the definition from the board .dts to the SoC .dtsi
-- Renamed cmt@0xe6138010 to timer@e6138010
-
- arch/arm/boot/dts/sh73a0.dtsi         |   11 +++++++++++
- arch/arm/mach-shmobile/setup-sh73a0.c |   32 --------------------------------
- 2 files changed, 11 insertions(+), 32 deletions(-)
-
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index 8a59465..6549d6c 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -97,4 +97,15 @@
- 			      0 189 0x4
- 			      0 190 0x4>;
- 	};
-+
-+	timer@e6138010 {
-+		compatible = "renesas,cmt-timer";
-+		interrupt-parent = <&gic>;
-+		reg = <0xe6138010 0xc>;
-+		interrupts = <0 65 0x4>;
-+		renesas,device-id = <1>;
-+		renesas,channel-id = <0>;
-+		renesas,source-quality = <3>;
-+		renesas,event-quality = <3>;
-+	};
- };
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index 95a75af..64bc2c5 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -247,37 +247,6 @@ static struct platform_device scif8_device = {
- 	},
- };
- 
--static struct sh_timer_config cmt10_platform_data = {
--	.name = "CMT10",
--	.channel_offset = 0x10,
--	.timer_bit = 0,
--	.clockevent_rating = 125,
--	.clocksource_rating = 125,
--};
--
--static struct resource cmt10_resources[] = {
--	[0] = {
--		.name	= "CMT10",
--		.start	= 0xe6138010,
--		.end	= 0xe613801b,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1] = {
--		.start	= gic_spi(65),
--		.flags	= IORESOURCE_IRQ,
--	},
--};
--
--static struct platform_device cmt10_device = {
--	.name		= "sh_cmt",
--	.id		= 10,
--	.dev = {
--		.platform_data	= &cmt10_platform_data,
--	},
--	.resource	= cmt10_resources,
--	.num_resources	= ARRAY_SIZE(cmt10_resources),
--};
--
- /* TMU */
- static struct sh_timer_config tmu00_platform_data = {
- 	.name = "TMU00",
-@@ -913,7 +882,6 @@ static struct platform_device *sh73a0_devices_dt[] __initdata = {
- 	&scif6_device,
- 	&scif7_device,
- 	&scif8_device,
--	&cmt10_device,
- };
- 
- static struct platform_device *sh73a0_early_devices[] __initdata = {
--- 
-1.7.9.5
-
+Kuninori Morimoto
