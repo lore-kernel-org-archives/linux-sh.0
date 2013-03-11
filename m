@@ -1,54 +1,71 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Thu, 07 Mar 2013 10:26:29 +0000
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Mon, 11 Mar 2013 22:32:31 +0000
 Subject: Re: [PATCH v6 1/3] serial: sh-sci: Add OF support
-Message-Id: <CABYn4sz_5vEzXba0Y7iXKBbGhfGwY2cd8fn30mUQ0GQcbGTG+w@mail.gmail.com>
+Message-Id: <1689352.QAdqes1IG8@avalon>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1362569437-11133-1-git-send-email-hechtb+renesas@gmail.com>
  <9335181.JoypQftkI4@avalon>
-In-Reply-To: <9335181.JoypQftkI4@avalon>
+ <CABYn4sz_5vEzXba0Y7iXKBbGhfGwY2cd8fn30mUQ0GQcbGTG+w@mail.gmail.com>
+In-Reply-To: <CABYn4sz_5vEzXba0Y7iXKBbGhfGwY2cd8fn30mUQ0GQcbGTG+w@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Laurent,
+Hi Bastian,
 
->> +- renesas,scscr : Should contain a bitfield used by the Serial Control
->> Register.
->> +  b7 = SCSCR_TIE
->> +  b6 = SCSCR_RIE
->> +  b5 = SCSCR_TE
->> +  b4 = SCSCR_RE
->> +  b3 = SCSCR_REIE
->> +  b2 = SCSCR_TOIE
->> +  b1 = SCSCR_CKE1
->> +  b0 = SCSCR_CKE0
->
-> What is that for exactly ?
+On Thursday 07 March 2013 11:26:29 Bastian Hecht wrote:
+> Hi Laurent,
+> 
+> >> +- renesas,scscr : Should contain a bitfield used by the Serial Control
+> >> Register.
+> >> +  b7 = SCSCR_TIE
+> >> +  b6 = SCSCR_RIE
+> >> +  b5 = SCSCR_TE
+> >> +  b4 = SCSCR_RE
+> >> +  b3 = SCSCR_REIE
+> >> +  b2 = SCSCR_TOIE
+> >> +  b1 = SCSCR_CKE1
+> >> +  b0 = SCSCR_CKE0
+> > 
+> > What is that for exactly ?
+> 
+> What I can see from 3 different datasheets (sh7372, sh73a0, r8a7740)
+> the first 2 bits differ in meaning.
+> 
+> On r8a7740 it depends: In asynchronous mode the first 2 bits CKE0/1
+> define whether you want to use an external clock to drive the baud
+> generator or if you want to use the internal SUB clock. If you use the
+> SUB clock you can further define if you want to use a subscaled SUB
+> clock in the SCSMR register. In synchronous mode you must rely on the
+> internal clock for the baud generator and can select if the SCK pin is
+> used as clock input or output.
 
-What I can see from 3 different datasheets (sh7372, sh73a0, r8a7740)
-the first 2 bits differ in meaning.
+What about adding an optional source clock property to the bindings, that 
+would contain the phandle of the source clock ? If the property is absent then 
+the internal clock would be used.
 
-On r8a7740 it depends: In asynchronous mode the first 2 bits CKE0/1
-define whether you want to use an external clock to drive the baud
-generator or if you want to use the internal SUB clock. If you use the
-SUB clock you can further define if you want to use a subscaled SUB
-clock in the SCSMR register. In synchronous mode you must rely on the
-internal clock for the baud generator and can select if the SCK pin is
-used as clock input or output.
+How is subscaling used in practice ?
 
-On sh73a0 and sh7372 it's used to control the output clock SCK (set it
-to high impedance or actually output a clock when in sychronous mode)
+> On sh73a0 and sh7372 it's used to control the output clock SCK (set it
+> to high impedance or actually output a clock when in sychronous mode)
 
-Bit 2 and 3 don't exist in my datasheets.
+Maybe we could add a synchronous mode property to the DT bindings and use it 
+to infer the bit values.
 
-The other bits define under which conditions you receive interrupts
-(send FIFO empty, receive FIFO full) and which bits you need to start
-transfers (one bit to start sending, one receiving). The bits 8 to 31
-are used to set up DMA transfers and various interrupt events like
-error status and finish transfers. I haven't included them as they are
-not used in the driver.
+> Bit 2 and 3 don't exist in my datasheets.
+> 
+> The other bits define under which conditions you receive interrupts
+> (send FIFO empty, receive FIFO full) and which bits you need to start
+> transfers (one bit to start sending, one receiving). The bits 8 to 31
+> are used to set up DMA transfers and various interrupt events like
+> error status and finish transfers. I haven't included them as they are
+> not used in the driver.
 
-Thanks,
+If they're not used maybe we can drop them :-)
 
-Bastian
+-- 
+Regards,
+
+Laurent Pinchart
+
