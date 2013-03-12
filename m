@@ -1,336 +1,289 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 10:55:58 +0000
-Subject: [PATCH v4 17/29] sh-pfc: Look up IRQ table entries by GPIO number
-Message-Id: <1362740170-19073-18-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Tue, 12 Mar 2013 16:03:21 +0000
+Subject: [PATCH v4] media: V4L2: add temporary clock helpers
+Message-Id: <Pine.LNX.4.64.1303121658590.680@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: Linux Media Mailing List <linux-media@vger.kernel.org>
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Sakari Ailus <sakari.ailus@iki.fi>, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Magnus Damm <magnus.damm@gmail.com>, linux-sh@vger.kernel.org, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>
 
-Instead of converting the GPIO number to an enum_id and looking up IRQ
-table entries by enum_id, replace the pinmux_irq enum_ids field with a
-gpios field and lookup entries using the GPIO number.
+Typical video devices like camera sensors require an external clock source.
+Many such devices cannot even access their hardware registers without a
+running clock. These clock sources should be controlled by their consumers.
+This should be performed, using the generic clock framework. Unfortunately
+so far only very few systems have been ported to that framework. This patch
+adds a set of temporary helpers, mimicking the generic clock API, to V4L2.
+Platforms, adopting the clock API, should switch to using it. Eventually
+this temporary API should be removed.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- drivers/pinctrl/sh-pfc/core.c        |  4 +--
- drivers/pinctrl/sh-pfc/core.h        |  2 --
- drivers/pinctrl/sh-pfc/gpio.c        | 25 +++++---------
- drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 64 ++++++++++++++++++------------------
- drivers/pinctrl/sh-pfc/pfc-sh7372.c  | 64 ++++++++++++++++++------------------
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c  | 64 ++++++++++++++++++------------------
- drivers/pinctrl/sh-pfc/sh_pfc.h      |  4 +--
- 7 files changed, 108 insertions(+), 119 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
-index f94d80c..22f2999 100644
---- a/drivers/pinctrl/sh-pfc/core.c
-+++ b/drivers/pinctrl/sh-pfc/core.c
-@@ -350,8 +350,8 @@ static int sh_pfc_get_config_reg(struct sh_pfc *pfc, pinmux_enum_t enum_id,
- 	return -1;
- }
+v4: replace BUG() with a WARN_ON() - thanks to Sylwester for a geads-up
+
+ drivers/media/v4l2-core/Makefile   |    2 +-
+ drivers/media/v4l2-core/v4l2-clk.c |  175 ++++++++++++++++++++++++++++++++++++
+ include/media/v4l2-clk.h           |   54 +++++++++++
+ 3 files changed, 230 insertions(+), 1 deletions(-)
+ create mode 100644 drivers/media/v4l2-core/v4l2-clk.c
+ create mode 100644 include/media/v4l2-clk.h
+
+diff --git a/drivers/media/v4l2-core/Makefile b/drivers/media/v4l2-core/Makefile
+index a9d3552..aea7aea 100644
+--- a/drivers/media/v4l2-core/Makefile
++++ b/drivers/media/v4l2-core/Makefile
+@@ -5,7 +5,7 @@
+ tuner-objs	:=	tuner-core.o
  
--int sh_pfc_gpio_to_enum(struct sh_pfc *pfc, unsigned gpio, int pos,
--			pinmux_enum_t *enum_idp)
-+static int sh_pfc_gpio_to_enum(struct sh_pfc *pfc, unsigned gpio, int pos,
-+			       pinmux_enum_t *enum_idp)
- {
- 	pinmux_enum_t *data = pfc->info->gpio_data;
- 	pinmux_enum_t enum_id;
-diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
-index 5a0143b..f22d03f 100644
---- a/drivers/pinctrl/sh-pfc/core.h
-+++ b/drivers/pinctrl/sh-pfc/core.h
-@@ -49,8 +49,6 @@ void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
- 		      unsigned long value);
- int sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
- 			struct pinmux_data_reg **drp, int *bitp);
--int sh_pfc_gpio_to_enum(struct sh_pfc *pfc, unsigned gpio, int pos,
--			pinmux_enum_t *enum_idp);
- int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
- 		       int cfg_mode);
- 
-diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
-index 82fcb5f..454c965 100644
---- a/drivers/pinctrl/sh-pfc/gpio.c
-+++ b/drivers/pinctrl/sh-pfc/gpio.c
-@@ -94,23 +94,14 @@ static void gpio_pin_set(struct gpio_chip *gc, unsigned offset, int value)
- static int gpio_pin_to_irq(struct gpio_chip *gc, unsigned offset)
- {
- 	struct sh_pfc *pfc = gpio_to_pfc(gc);
--	pinmux_enum_t enum_id;
--	pinmux_enum_t *enum_ids;
--	int i, k, pos;
--
--	pos = 0;
--	enum_id = 0;
--	while (1) {
--		pos = sh_pfc_gpio_to_enum(pfc, offset, pos, &enum_id);
--		if (pos <= 0 || !enum_id)
--			break;
--
--		for (i = 0; i < pfc->info->gpio_irq_size; i++) {
--			enum_ids = pfc->info->gpio_irq[i].enum_ids;
--			for (k = 0; enum_ids[k]; k++) {
--				if (enum_ids[k] = enum_id)
--					return pfc->info->gpio_irq[i].irq;
--			}
-+	int i, k;
+ videodev-objs	:=	v4l2-dev.o v4l2-ioctl.o v4l2-device.o v4l2-fh.o \
+-			v4l2-event.o v4l2-ctrls.o v4l2-subdev.o
++			v4l2-event.o v4l2-ctrls.o v4l2-subdev.o v4l2-clk.o
+ ifeq ($(CONFIG_COMPAT),y)
+   videodev-objs += v4l2-compat-ioctl32.o
+ endif
+diff --git a/drivers/media/v4l2-core/v4l2-clk.c b/drivers/media/v4l2-core/v4l2-clk.c
+new file mode 100644
+index 0000000..9c714a7
+--- /dev/null
++++ b/drivers/media/v4l2-core/v4l2-clk.c
+@@ -0,0 +1,175 @@
++/*
++ * V4L2 clock service
++ *
++ * Copyright (C) 2012, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
 +
-+	for (i = 0; i < pfc->info->gpio_irq_size; i++) {
-+		unsigned short *gpios = pfc->info->gpio_irq[i].gpios;
++#include <linux/atomic.h>
++#include <linux/errno.h>
++#include <linux/list.h>
++#include <linux/module.h>
++#include <linux/mutex.h>
++#include <linux/string.h>
 +
-+		for (k = 0; gpios[k]; k++) {
-+			if (gpios[k] = offset)
-+				return pfc->info->gpio_irq[i].irq;
- 		}
- 	}
- 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-index ccf9161..fd91381 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-@@ -2547,38 +2547,38 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
- };
- 
- static struct pinmux_irq pinmux_irqs[] = {
--	PINMUX_IRQ(evt2irq(0x0200), PORT2_FN0,	 PORT13_FN0),	/* IRQ0A */
--	PINMUX_IRQ(evt2irq(0x0220), PORT20_FN0),		/* IRQ1A */
--	PINMUX_IRQ(evt2irq(0x0240), PORT11_FN0,	 PORT12_FN0),	/* IRQ2A */
--	PINMUX_IRQ(evt2irq(0x0260), PORT10_FN0,	 PORT14_FN0),	/* IRQ3A */
--	PINMUX_IRQ(evt2irq(0x0280), PORT15_FN0,	 PORT172_FN0),	/* IRQ4A */
--	PINMUX_IRQ(evt2irq(0x02A0), PORT0_FN0,	 PORT1_FN0),	/* IRQ5A */
--	PINMUX_IRQ(evt2irq(0x02C0), PORT121_FN0, PORT173_FN0),	/* IRQ6A */
--	PINMUX_IRQ(evt2irq(0x02E0), PORT120_FN0, PORT209_FN0),	/* IRQ7A */
--	PINMUX_IRQ(evt2irq(0x0300), PORT119_FN0),		/* IRQ8A */
--	PINMUX_IRQ(evt2irq(0x0320), PORT118_FN0, PORT210_FN0),	/* IRQ9A */
--	PINMUX_IRQ(evt2irq(0x0340), PORT19_FN0),		/* IRQ10A */
--	PINMUX_IRQ(evt2irq(0x0360), PORT104_FN0),		/* IRQ11A */
--	PINMUX_IRQ(evt2irq(0x0380), PORT42_FN0,	 PORT97_FN0),	/* IRQ12A */
--	PINMUX_IRQ(evt2irq(0x03A0), PORT64_FN0,	 PORT98_FN0),	/* IRQ13A */
--	PINMUX_IRQ(evt2irq(0x03C0), PORT63_FN0,	 PORT99_FN0),	/* IRQ14A */
--	PINMUX_IRQ(evt2irq(0x03E0), PORT62_FN0,	 PORT100_FN0),	/* IRQ15A */
--	PINMUX_IRQ(evt2irq(0x3200), PORT68_FN0,	 PORT211_FN0),	/* IRQ16A */
--	PINMUX_IRQ(evt2irq(0x3220), PORT69_FN0),		/* IRQ17A */
--	PINMUX_IRQ(evt2irq(0x3240), PORT70_FN0),		/* IRQ18A */
--	PINMUX_IRQ(evt2irq(0x3260), PORT71_FN0),		/* IRQ19A */
--	PINMUX_IRQ(evt2irq(0x3280), PORT67_FN0),		/* IRQ20A */
--	PINMUX_IRQ(evt2irq(0x32A0), PORT202_FN0),		/* IRQ21A */
--	PINMUX_IRQ(evt2irq(0x32C0), PORT95_FN0),		/* IRQ22A */
--	PINMUX_IRQ(evt2irq(0x32E0), PORT96_FN0),		/* IRQ23A */
--	PINMUX_IRQ(evt2irq(0x3300), PORT180_FN0),		/* IRQ24A */
--	PINMUX_IRQ(evt2irq(0x3320), PORT38_FN0),		/* IRQ25A */
--	PINMUX_IRQ(evt2irq(0x3340), PORT58_FN0,	 PORT81_FN0),	/* IRQ26A */
--	PINMUX_IRQ(evt2irq(0x3360), PORT57_FN0,	 PORT168_FN0),	/* IRQ27A */
--	PINMUX_IRQ(evt2irq(0x3380), PORT56_FN0,	 PORT169_FN0),	/* IRQ28A */
--	PINMUX_IRQ(evt2irq(0x33A0), PORT50_FN0,	 PORT170_FN0),	/* IRQ29A */
--	PINMUX_IRQ(evt2irq(0x33C0), PORT49_FN0,	 PORT171_FN0),	/* IRQ30A */
--	PINMUX_IRQ(evt2irq(0x33E0), PORT41_FN0,	 PORT167_FN0),	/* IRQ31A */
-+	PINMUX_IRQ(evt2irq(0x0200), GPIO_PORT2,   GPIO_PORT13),	/* IRQ0A */
-+	PINMUX_IRQ(evt2irq(0x0220), GPIO_PORT20),		/* IRQ1A */
-+	PINMUX_IRQ(evt2irq(0x0240), GPIO_PORT11,  GPIO_PORT12),	/* IRQ2A */
-+	PINMUX_IRQ(evt2irq(0x0260), GPIO_PORT10,  GPIO_PORT14),	/* IRQ3A */
-+	PINMUX_IRQ(evt2irq(0x0280), GPIO_PORT15,  GPIO_PORT172),/* IRQ4A */
-+	PINMUX_IRQ(evt2irq(0x02A0), GPIO_PORT0,   GPIO_PORT1),	/* IRQ5A */
-+	PINMUX_IRQ(evt2irq(0x02C0), GPIO_PORT121, GPIO_PORT173),/* IRQ6A */
-+	PINMUX_IRQ(evt2irq(0x02E0), GPIO_PORT120, GPIO_PORT209),/* IRQ7A */
-+	PINMUX_IRQ(evt2irq(0x0300), GPIO_PORT119),		/* IRQ8A */
-+	PINMUX_IRQ(evt2irq(0x0320), GPIO_PORT118, GPIO_PORT210),/* IRQ9A */
-+	PINMUX_IRQ(evt2irq(0x0340), GPIO_PORT19),		/* IRQ10A */
-+	PINMUX_IRQ(evt2irq(0x0360), GPIO_PORT104),		/* IRQ11A */
-+	PINMUX_IRQ(evt2irq(0x0380), GPIO_PORT42,  GPIO_PORT97),	/* IRQ12A */
-+	PINMUX_IRQ(evt2irq(0x03A0), GPIO_PORT64,  GPIO_PORT98),	/* IRQ13A */
-+	PINMUX_IRQ(evt2irq(0x03C0), GPIO_PORT63,  GPIO_PORT99),	/* IRQ14A */
-+	PINMUX_IRQ(evt2irq(0x03E0), GPIO_PORT62,  GPIO_PORT100),/* IRQ15A */
-+	PINMUX_IRQ(evt2irq(0x3200), GPIO_PORT68,  GPIO_PORT211),/* IRQ16A */
-+	PINMUX_IRQ(evt2irq(0x3220), GPIO_PORT69),		/* IRQ17A */
-+	PINMUX_IRQ(evt2irq(0x3240), GPIO_PORT70),		/* IRQ18A */
-+	PINMUX_IRQ(evt2irq(0x3260), GPIO_PORT71),		/* IRQ19A */
-+	PINMUX_IRQ(evt2irq(0x3280), GPIO_PORT67),		/* IRQ20A */
-+	PINMUX_IRQ(evt2irq(0x32A0), GPIO_PORT202),		/* IRQ21A */
-+	PINMUX_IRQ(evt2irq(0x32C0), GPIO_PORT95),		/* IRQ22A */
-+	PINMUX_IRQ(evt2irq(0x32E0), GPIO_PORT96),		/* IRQ23A */
-+	PINMUX_IRQ(evt2irq(0x3300), GPIO_PORT180),		/* IRQ24A */
-+	PINMUX_IRQ(evt2irq(0x3320), GPIO_PORT38),		/* IRQ25A */
-+	PINMUX_IRQ(evt2irq(0x3340), GPIO_PORT58,  GPIO_PORT81),	/* IRQ26A */
-+	PINMUX_IRQ(evt2irq(0x3360), GPIO_PORT57,  GPIO_PORT168),/* IRQ27A */
-+	PINMUX_IRQ(evt2irq(0x3380), GPIO_PORT56,  GPIO_PORT169),/* IRQ28A */
-+	PINMUX_IRQ(evt2irq(0x33A0), GPIO_PORT50,  GPIO_PORT170),/* IRQ29A */
-+	PINMUX_IRQ(evt2irq(0x33C0), GPIO_PORT49,  GPIO_PORT171),/* IRQ30A */
-+	PINMUX_IRQ(evt2irq(0x33E0), GPIO_PORT41,  GPIO_PORT167),/* IRQ31A */
- };
- 
- struct sh_pfc_soc_info r8a7740_pinmux_info = {
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-index b15a16a..847e0cd 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-@@ -1600,38 +1600,38 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
- #define EXT_IRQ16L(n) evt2irq(0x200 + ((n) << 5))
- #define EXT_IRQ16H(n) evt2irq(0x3200 + (((n) - 16) << 5))
- static struct pinmux_irq pinmux_irqs[] = {
--	PINMUX_IRQ(EXT_IRQ16L(0), PORT6_FN0, PORT162_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(1), PORT12_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(2), PORT4_FN0, PORT5_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(3), PORT8_FN0, PORT16_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(4), PORT17_FN0, PORT163_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(5), PORT18_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(6), PORT39_FN0, PORT164_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(7), PORT40_FN0, PORT167_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(8), PORT41_FN0, PORT168_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(9), PORT42_FN0, PORT169_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(10), PORT65_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(11), PORT67_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(12), PORT80_FN0, PORT137_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(13), PORT81_FN0, PORT145_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(14), PORT82_FN0, PORT146_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(15), PORT83_FN0, PORT147_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(16), PORT84_FN0, PORT170_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(17), PORT85_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(18), PORT86_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(19), PORT87_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(20), PORT92_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(21), PORT93_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(22), PORT94_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(23), PORT95_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(24), PORT112_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(25), PORT119_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(26), PORT121_FN0, PORT172_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(27), PORT122_FN0, PORT180_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(28), PORT123_FN0, PORT181_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(29), PORT129_FN0, PORT182_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(30), PORT130_FN0, PORT183_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(31), PORT138_FN0, PORT184_FN0),
-+	PINMUX_IRQ(EXT_IRQ16L(0), GPIO_PORT6, GPIO_PORT162),
-+	PINMUX_IRQ(EXT_IRQ16L(1), GPIO_PORT12),
-+	PINMUX_IRQ(EXT_IRQ16L(2), GPIO_PORT4, GPIO_PORT5),
-+	PINMUX_IRQ(EXT_IRQ16L(3), GPIO_PORT8, GPIO_PORT16),
-+	PINMUX_IRQ(EXT_IRQ16L(4), GPIO_PORT17, GPIO_PORT163),
-+	PINMUX_IRQ(EXT_IRQ16L(5), GPIO_PORT18),
-+	PINMUX_IRQ(EXT_IRQ16L(6), GPIO_PORT39, GPIO_PORT164),
-+	PINMUX_IRQ(EXT_IRQ16L(7), GPIO_PORT40, GPIO_PORT167),
-+	PINMUX_IRQ(EXT_IRQ16L(8), GPIO_PORT41, GPIO_PORT168),
-+	PINMUX_IRQ(EXT_IRQ16L(9), GPIO_PORT42, GPIO_PORT169),
-+	PINMUX_IRQ(EXT_IRQ16L(10), GPIO_PORT65),
-+	PINMUX_IRQ(EXT_IRQ16L(11), GPIO_PORT67),
-+	PINMUX_IRQ(EXT_IRQ16L(12), GPIO_PORT80, GPIO_PORT137),
-+	PINMUX_IRQ(EXT_IRQ16L(13), GPIO_PORT81, GPIO_PORT145),
-+	PINMUX_IRQ(EXT_IRQ16L(14), GPIO_PORT82, GPIO_PORT146),
-+	PINMUX_IRQ(EXT_IRQ16L(15), GPIO_PORT83, GPIO_PORT147),
-+	PINMUX_IRQ(EXT_IRQ16H(16), GPIO_PORT84, GPIO_PORT170),
-+	PINMUX_IRQ(EXT_IRQ16H(17), GPIO_PORT85),
-+	PINMUX_IRQ(EXT_IRQ16H(18), GPIO_PORT86),
-+	PINMUX_IRQ(EXT_IRQ16H(19), GPIO_PORT87),
-+	PINMUX_IRQ(EXT_IRQ16H(20), GPIO_PORT92),
-+	PINMUX_IRQ(EXT_IRQ16H(21), GPIO_PORT93),
-+	PINMUX_IRQ(EXT_IRQ16H(22), GPIO_PORT94),
-+	PINMUX_IRQ(EXT_IRQ16H(23), GPIO_PORT95),
-+	PINMUX_IRQ(EXT_IRQ16H(24), GPIO_PORT112),
-+	PINMUX_IRQ(EXT_IRQ16H(25), GPIO_PORT119),
-+	PINMUX_IRQ(EXT_IRQ16H(26), GPIO_PORT121, GPIO_PORT172),
-+	PINMUX_IRQ(EXT_IRQ16H(27), GPIO_PORT122, GPIO_PORT180),
-+	PINMUX_IRQ(EXT_IRQ16H(28), GPIO_PORT123, GPIO_PORT181),
-+	PINMUX_IRQ(EXT_IRQ16H(29), GPIO_PORT129, GPIO_PORT182),
-+	PINMUX_IRQ(EXT_IRQ16H(30), GPIO_PORT130, GPIO_PORT183),
-+	PINMUX_IRQ(EXT_IRQ16H(31), GPIO_PORT138, GPIO_PORT184),
- };
- 
- struct sh_pfc_soc_info sh7372_pinmux_info = {
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index ca1e97a..639b5e2 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -2738,38 +2738,38 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
- #define EXT_IRQ16H(n) intcs_evt2irq(0x3200 + ((n - 16) << 5))
- 
- static struct pinmux_irq pinmux_irqs[] = {
--	PINMUX_IRQ(EXT_IRQ16H(19), PORT9_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(1), PORT10_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(0), PORT11_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(18), PORT13_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(20), PORT14_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(21), PORT15_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(31), PORT26_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(30), PORT27_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(29), PORT28_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(22), PORT40_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(23), PORT53_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(10), PORT54_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(9), PORT56_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(26), PORT115_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(27), PORT116_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(28), PORT117_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(24), PORT118_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(6), PORT147_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(2), PORT149_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(7), PORT150_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(12), PORT156_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(4), PORT159_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(25), PORT164_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(8), PORT223_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(3), PORT224_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(5), PORT227_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(17), PORT234_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(11), PORT238_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(13), PORT239_FN0),
--	PINMUX_IRQ(EXT_IRQ16H(16), PORT249_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(14), PORT251_FN0),
--	PINMUX_IRQ(EXT_IRQ16L(9), PORT308_FN0),
-+	PINMUX_IRQ(EXT_IRQ16H(19), GPIO_PORT9),
-+	PINMUX_IRQ(EXT_IRQ16L(1), GPIO_PORT10),
-+	PINMUX_IRQ(EXT_IRQ16L(0), GPIO_PORT11),
-+	PINMUX_IRQ(EXT_IRQ16H(18), GPIO_PORT13),
-+	PINMUX_IRQ(EXT_IRQ16H(20), GPIO_PORT14),
-+	PINMUX_IRQ(EXT_IRQ16H(21), GPIO_PORT15),
-+	PINMUX_IRQ(EXT_IRQ16H(31), GPIO_PORT26),
-+	PINMUX_IRQ(EXT_IRQ16H(30), GPIO_PORT27),
-+	PINMUX_IRQ(EXT_IRQ16H(29), GPIO_PORT28),
-+	PINMUX_IRQ(EXT_IRQ16H(22), GPIO_PORT40),
-+	PINMUX_IRQ(EXT_IRQ16H(23), GPIO_PORT53),
-+	PINMUX_IRQ(EXT_IRQ16L(10), GPIO_PORT54),
-+	PINMUX_IRQ(EXT_IRQ16L(9), GPIO_PORT56),
-+	PINMUX_IRQ(EXT_IRQ16H(26), GPIO_PORT115),
-+	PINMUX_IRQ(EXT_IRQ16H(27), GPIO_PORT116),
-+	PINMUX_IRQ(EXT_IRQ16H(28), GPIO_PORT117),
-+	PINMUX_IRQ(EXT_IRQ16H(24), GPIO_PORT118),
-+	PINMUX_IRQ(EXT_IRQ16L(6), GPIO_PORT147),
-+	PINMUX_IRQ(EXT_IRQ16L(2), GPIO_PORT149),
-+	PINMUX_IRQ(EXT_IRQ16L(7), GPIO_PORT150),
-+	PINMUX_IRQ(EXT_IRQ16L(12), GPIO_PORT156),
-+	PINMUX_IRQ(EXT_IRQ16L(4), GPIO_PORT159),
-+	PINMUX_IRQ(EXT_IRQ16H(25), GPIO_PORT164),
-+	PINMUX_IRQ(EXT_IRQ16L(8), GPIO_PORT223),
-+	PINMUX_IRQ(EXT_IRQ16L(3), GPIO_PORT224),
-+	PINMUX_IRQ(EXT_IRQ16L(5), GPIO_PORT227),
-+	PINMUX_IRQ(EXT_IRQ16H(17), GPIO_PORT234),
-+	PINMUX_IRQ(EXT_IRQ16L(11), GPIO_PORT238),
-+	PINMUX_IRQ(EXT_IRQ16L(13), GPIO_PORT239),
-+	PINMUX_IRQ(EXT_IRQ16H(16), GPIO_PORT249),
-+	PINMUX_IRQ(EXT_IRQ16L(14), GPIO_PORT251),
-+	PINMUX_IRQ(EXT_IRQ16L(9), GPIO_PORT308),
- };
- 
- struct sh_pfc_soc_info sh73a0_pinmux_info = {
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index dae9e15..f9d4480 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -89,11 +89,11 @@ struct pinmux_data_reg {
- 
- struct pinmux_irq {
- 	int irq;
--	pinmux_enum_t *enum_ids;
-+	unsigned short *gpios;
- };
- 
- #define PINMUX_IRQ(irq_nr, ids...)			   \
--	{ .irq = irq_nr, .enum_ids = (pinmux_enum_t []) { ids, 0 } }	\
-+	{ .irq = irq_nr, .gpios = (unsigned short []) { ids, 0 } }	\
- 
- struct pinmux_range {
- 	pinmux_enum_t begin;
++#include <media/v4l2-clk.h>
++#include <media/v4l2-subdev.h>
++
++static DEFINE_MUTEX(clk_lock);
++static LIST_HEAD(clk_list);
++
++static struct v4l2_clk *v4l2_clk_find(const char *dev_id, const char *id)
++{
++	struct v4l2_clk *clk;
++
++	list_for_each_entry(clk, &clk_list, list) {
++		if (strcmp(dev_id, clk->dev_id))
++			continue;
++
++		if (!id || !clk->id || !strcmp(clk->id, id))
++			return clk;
++	}
++
++	return ERR_PTR(-ENODEV);
++}
++
++struct v4l2_clk *v4l2_clk_get(struct v4l2_subdev *sd, const char *id)
++{
++	struct v4l2_clk *clk;
++
++	mutex_lock(&clk_lock);
++	clk = v4l2_clk_find(sd->name, id);
++
++	if (!IS_ERR(clk) && !try_module_get(clk->ops->owner))
++		clk = ERR_PTR(-ENODEV);
++	mutex_unlock(&clk_lock);
++
++	if (!IS_ERR(clk))
++		atomic_inc(&clk->use_count);
++
++	return clk;
++}
++EXPORT_SYMBOL(v4l2_clk_get);
++
++void v4l2_clk_put(struct v4l2_clk *clk)
++{
++	if (!IS_ERR(clk)) {
++		atomic_dec(&clk->use_count);
++		module_put(clk->ops->owner);
++	}
++}
++EXPORT_SYMBOL(v4l2_clk_put);
++
++int v4l2_clk_enable(struct v4l2_clk *clk)
++{
++	int ret;
++	mutex_lock(&clk->lock);
++	if (++clk->enable = 1 && clk->ops->enable) {
++		ret = clk->ops->enable(clk);
++		if (ret < 0)
++			clk->enable--;
++	} else {
++		ret = 0;
++	}
++	mutex_unlock(&clk->lock);
++	return ret;
++}
++EXPORT_SYMBOL(v4l2_clk_enable);
++
++void v4l2_clk_disable(struct v4l2_clk *clk)
++{
++	int enable;
++
++	mutex_lock(&clk->lock);
++	enable = --clk->enable;
++	if (WARN(enable < 0, "Unbalanced %s() on %s:%s!\n", __func__,
++		 clk->dev_id, clk->id))
++		clk->enable++;
++	else if (!enable && clk->ops->disable)
++		clk->ops->disable(clk);
++	mutex_unlock(&clk->lock);
++}
++EXPORT_SYMBOL(v4l2_clk_disable);
++
++unsigned long v4l2_clk_get_rate(struct v4l2_clk *clk)
++{
++	if (!clk->ops->get_rate)
++		return -ENOSYS;
++
++	return clk->ops->get_rate(clk);
++}
++EXPORT_SYMBOL(v4l2_clk_get_rate);
++
++int v4l2_clk_set_rate(struct v4l2_clk *clk, unsigned long rate)
++{
++	if (!clk->ops->set_rate)
++		return -ENOSYS;
++
++	return clk->ops->set_rate(clk, rate);
++}
++EXPORT_SYMBOL(v4l2_clk_set_rate);
++
++struct v4l2_clk *v4l2_clk_register(const struct v4l2_clk_ops *ops,
++				   const char *dev_id,
++				   const char *id, void *priv)
++{
++	struct v4l2_clk *clk;
++	int ret;
++
++	if (!ops || !dev_id)
++		return ERR_PTR(-EINVAL);
++
++	clk = kzalloc(sizeof(struct v4l2_clk), GFP_KERNEL);
++	if (!clk)
++		return ERR_PTR(-ENOMEM);
++
++	clk->id = kstrdup(id, GFP_KERNEL);
++	clk->dev_id = kstrdup(dev_id, GFP_KERNEL);
++	if ((id && !clk->id) || !clk->dev_id) {
++		ret = -ENOMEM;
++		goto ealloc;
++	}
++	clk->ops = ops;
++	clk->priv = priv;
++	atomic_set(&clk->use_count, 0);
++	mutex_init(&clk->lock);
++
++	mutex_lock(&clk_lock);
++	if (!IS_ERR(v4l2_clk_find(dev_id, id))) {
++		mutex_unlock(&clk_lock);
++		ret = -EEXIST;
++		goto eexist;
++	}
++	list_add_tail(&clk->list, &clk_list);
++	mutex_unlock(&clk_lock);
++
++	return clk;
++
++eexist:
++ealloc:
++	kfree(clk->id);
++	kfree(clk->dev_id);
++	kfree(clk);
++	return ERR_PTR(ret);
++}
++EXPORT_SYMBOL(v4l2_clk_register);
++
++void v4l2_clk_unregister(struct v4l2_clk *clk)
++{
++	if (WARN(atomic_read(&clk->use_count),
++		 "%s(): Refusing to unregister ref-counted %s:%s clock!\n",
++		 __func__, clk->dev_id, clk->id))
++		return;
++
++	mutex_lock(&clk_lock);
++	list_del(&clk->list);
++	mutex_unlock(&clk_lock);
++
++	kfree(clk->id);
++	kfree(clk->dev_id);
++	kfree(clk);
++}
++EXPORT_SYMBOL(v4l2_clk_unregister);
+diff --git a/include/media/v4l2-clk.h b/include/media/v4l2-clk.h
+new file mode 100644
+index 0000000..9b67472
+--- /dev/null
++++ b/include/media/v4l2-clk.h
+@@ -0,0 +1,54 @@
++/*
++ * V4L2 clock service
++ *
++ * Copyright (C) 2012, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ * ATTENTION: This is a temporary API and it shall be replaced by the generic
++ * clock API, when the latter becomes widely available.
++ */
++
++#ifndef MEDIA_V4L2_CLK_H
++#define MEDIA_V4L2_CLK_H
++
++#include <linux/atomic.h>
++#include <linux/list.h>
++#include <linux/mutex.h>
++
++struct module;
++struct v4l2_subdev;
++
++struct v4l2_clk {
++	struct list_head list;
++	const struct v4l2_clk_ops *ops;
++	const char *dev_id;
++	const char *id;
++	int enable;
++	struct mutex lock; /* Protect the enable count */
++	atomic_t use_count;
++	void *priv;
++};
++
++struct v4l2_clk_ops {
++	struct module	*owner;
++	int		(*enable)(struct v4l2_clk *clk);
++	void		(*disable)(struct v4l2_clk *clk);
++	unsigned long	(*get_rate)(struct v4l2_clk *clk);
++	int		(*set_rate)(struct v4l2_clk *clk, unsigned long);
++};
++
++struct v4l2_clk *v4l2_clk_register(const struct v4l2_clk_ops *ops,
++				   const char *dev_name,
++				   const char *name, void *priv);
++void v4l2_clk_unregister(struct v4l2_clk *clk);
++struct v4l2_clk *v4l2_clk_get(struct v4l2_subdev *sd, const char *id);
++void v4l2_clk_put(struct v4l2_clk *clk);
++int v4l2_clk_enable(struct v4l2_clk *clk);
++void v4l2_clk_disable(struct v4l2_clk *clk);
++unsigned long v4l2_clk_get_rate(struct v4l2_clk *clk);
++int v4l2_clk_set_rate(struct v4l2_clk *clk, unsigned long rate);
++
++#endif
 -- 
-1.8.1.5
+1.7.2.5
 
