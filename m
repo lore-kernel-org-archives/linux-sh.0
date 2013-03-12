@@ -1,257 +1,50 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 12 Mar 2013 08:31:43 +0000
-Subject: [PATCH 3/3 v2] ARM: shmobile: add R-Car M1A Bock-W platform support
-Message-Id: <87d2v5rpck.wl%kuninori.morimoto.gx@renesas.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Tue, 12 Mar 2013 11:37:52 +0000
+Subject: Re: [PATCH 3/3 v2] ARM: shmobile: add R-Car M1A Bock-W platform support
+Message-Id: <513F1390.4070702@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <87d2v5rpck.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87d2v5rpck.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Add basic Bock-W board support
+Hello.
 
-More devices will be added on top of this patch after
-PICNTRL and clock framework are in better shape.
+On 12-03-2013 12:31, Kuninori Morimoto wrote:
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
-v1 -> v2
+> Add basic Bock-W board support
 
- - DT only
+> More devices will be added on top of this patch after
+> PICNTRL and clock framework are in better shape.
 
- arch/arm/boot/dts/Makefile           |    1 +
- arch/arm/boot/dts/r8a7778-bockw.dts  |   32 ++++++++++++
- arch/arm/configs/bockw_defconfig     |   95 ++++++++++++++++++++++++++++++++++
- arch/arm/mach-shmobile/Kconfig       |    5 ++
- arch/arm/mach-shmobile/Makefile      |    1 +
- arch/arm/mach-shmobile/board-bockw.c |   37 +++++++++++++
- 6 files changed, 171 insertions(+)
- create mode 100644 arch/arm/boot/dts/r8a7778-bockw.dts
- create mode 100644 arch/arm/configs/bockw_defconfig
- create mode 100644 arch/arm/mach-shmobile/board-bockw.c
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+[...]
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index b284b22..0cc5ad1 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -122,6 +122,7 @@ dtb-$(CONFIG_ARCH_U8500) += snowball.dtb \
- 	ccu9540.dtb
- dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm9d.dtb \
- 	r8a7740-armadillo800eva.dtb \
-+	r8a7778-bockw.dtb \
- 	r8a7779-marzen-reference.dtb \
- 	sh73a0-kzm9g.dtb \
- 	sh73a0-kzm9g-reference.dtb \
-diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
-new file mode 100644
-index 0000000..876616d
---- /dev/null
-+++ b/arch/arm/boot/dts/r8a7778-bockw.dts
-@@ -0,0 +1,32 @@
-+/*
-+ * Reference Device Tree Source for the Bock-W board
-+ *
-+ * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-+ *
-+ * based on r8a7779
-+ *
-+ * Copyright (C) 2013 Renesas Solutions Corp.
-+ * Copyright (C) 2013 Simon Horman
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/dts-v1/;
-+/include/ "r8a7778.dtsi"
-+
-+/ {
-+	model = "bockw";
-+	compatible = "renesas,bockw", "renesas,r8a7778";
-+
-+	chosen {
-+		bootargs = "console=ttySC0,115200 earlyprintk=sh-sci.0,115200 ignore_loglevel root=/dev/nfs ip=dhcp";
-+	};
-+
-+	memory {
-+		device_type = "memory";
-+		reg = <0x60000000 0x10000000>;
-+	};
-+};
-diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
-new file mode 100644
-index 0000000..d92384c
---- /dev/null
-+++ b/arch/arm/configs/bockw_defconfig
-@@ -0,0 +1,95 @@
-+# CONFIG_ARM_PATCH_PHYS_VIRT is not set
-+CONFIG_EXPERIMENTAL=y
-+CONFIG_KERNEL_LZMA=y
-+CONFIG_IKCONFIG=y
-+CONFIG_IKCONFIG_PROC=y
-+CONFIG_LOG_BUF_SHIFT
-+CONFIG_SYSCTL_SYSCALL=y
-+CONFIG_EMBEDDED=y
-+CONFIG_SLAB=y
-+# CONFIG_IOSCHED_CFQ is not set
-+CONFIG_ARCH_SHMOBILE=y
-+CONFIG_ARCH_R8A7778=y
-+CONFIG_MACH_BOCKW=y
-+CONFIG_MEMORY_START=0x60000000
-+CONFIG_MEMORY_SIZE=0x10000000
-+CONFIG_SHMOBILE_TIMER_HZ24
-+# CONFIG_SH_TIMER_CMT is not set
-+# CONFIG_EM_TIMER_STI is not set
-+CONFIG_ARM_ERRATA_430973=y
-+CONFIG_ARM_ERRATA_458693=y
-+CONFIG_ARM_ERRATA_460075=y
-+CONFIG_ARM_ERRATA_743622=y
-+CONFIG_ARM_ERRATA_754322=y
-+CONFIG_NO_HZ=y
-+CONFIG_AEABI=y
-+# CONFIG_OABI_COMPAT is not set
-+CONFIG_HIGHMEM=y
-+CONFIG_ZBOOT_ROM_TEXT=0x0
-+CONFIG_ZBOOT_ROM_BSS=0x0
-+CONFIG_CMDLINE="console=ttySC0,115200 earlyprintk=sh-sci.0,115200 ignore_loglevel root=/dev/nfs ip=dhcp"
-+CONFIG_CMDLINE_FORCE=y
-+# CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
-+# CONFIG_SUSPEND is not set
-+CONFIG_NET=y
-+CONFIG_PACKET=y
-+CONFIG_UNIX=y
-+CONFIG_INET=y
-+CONFIG_IP_PNP=y
-+CONFIG_IP_PNP_DHCP=y
-+# CONFIG_INET_XFRM_MODE_TRANSPORT is not set
-+# CONFIG_INET_XFRM_MODE_TUNNEL is not set
-+# CONFIG_INET_XFRM_MODE_BEET is not set
-+# CONFIG_INET_LRO is not set
-+# CONFIG_INET_DIAG is not set
-+# CONFIG_IPV6 is not set
-+# CONFIG_WIRELESS is not set
-+CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
-+CONFIG_DEVTMPFS=y
-+CONFIG_DEVTMPFS_MOUNT=y
-+# CONFIG_STANDALONE is not set
-+# CONFIG_PREVENT_FIRMWARE_BUILD is not set
-+# CONFIG_FW_LOADER is not set
-+CONFIG_NETDEVICES=y
-+# CONFIG_NET_VENDOR_BROADCOM is not set
-+# CONFIG_NET_VENDOR_CHELSIO is not set
-+# CONFIG_NET_VENDOR_CIRRUS is not set
-+# CONFIG_NET_VENDOR_FARADAY is not set
-+# CONFIG_NET_VENDOR_INTEL is not set
-+# CONFIG_NET_VENDOR_MARVELL is not set
-+# CONFIG_NET_VENDOR_MICREL is not set
-+# CONFIG_NET_VENDOR_NATSEMI is not set
-+# CONFIG_NET_VENDOR_SEEQ is not set
-+CONFIG_SMSC911X=y
-+# CONFIG_NET_VENDOR_STMICRO is not set
-+# CONFIG_WLAN is not set
-+# CONFIG_INPUT is not set
-+# CONFIG_SERIO is not set
-+# CONFIG_VT is not set
-+# CONFIG_LEGACY_PTYS is not set
-+# CONFIG_DEVKMEM is not set
-+CONFIG_SERIAL_SH_SCI=y
-+CONFIG_SERIAL_SH_SCI_NR_UARTS=6
-+CONFIG_SERIAL_SH_SCI_CONSOLE=y
-+# CONFIG_HW_RANDOM is not set
-+CONFIG_GPIO_SYSFS=y
-+# CONFIG_HWMON is not set
-+# CONFIG_USB_SUPPORT is not set
-+CONFIG_UIO=y
-+CONFIG_UIO_PDRV_GENIRQ=y
-+# CONFIG_IOMMU_SUPPORT is not set
-+# CONFIG_DNOTIFY is not set
-+# CONFIG_INOTIFY_USER is not set
-+CONFIG_TMPFS=y
-+# CONFIG_MISC_FILESYSTEMS is not set
-+CONFIG_NFS_FS=y
-+CONFIG_NFS_V3=y
-+CONFIG_NFS_V4=y
-+CONFIG_ROOT_NFS=y
-+# CONFIG_ENABLE_WARN_DEPRECATED is not set
-+# CONFIG_ENABLE_MUST_CHECK is not set
-+# CONFIG_SCHED_DEBUG is not set
-+# CONFIG_DEBUG_BUGVERBOSE is not set
-+# CONFIG_FTRACE is not set
-+# CONFIG_ARM_UNWIND is not set
-+CONFIG_AVERAGE=y
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index aa273a5..6201658 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -104,6 +104,11 @@ config MACH_ARMADILLO800EVA
- 	select SND_SOC_WM8978 if SND_SIMPLE_CARD
- 	select USE_OF
- 
-+config MACH_BOCKW
-+	bool "BOCK-W platform"
-+	depends on ARCH_R8A7778
-+	select USE_OF
-+
- config MACH_MARZEN
- 	bool "MARZEN board"
- 	depends on ARCH_R8A7779
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 0f50a3c..b6cf0f4 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -38,6 +38,7 @@ obj-$(CONFIG_MACH_AG5EVM)	+= board-ag5evm.o
- obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
- obj-$(CONFIG_MACH_KOTA2)	+= board-kota2.o
- obj-$(CONFIG_MACH_BONITO)	+= board-bonito.o
-+obj-$(CONFIG_MACH_BOCKW)	+= board-bockw.o
- obj-$(CONFIG_MACH_MARZEN)	+= board-marzen.o
- obj-$(CONFIG_MACH_MARZEN_REFERENCE)	+= board-marzen-reference.o
- obj-$(CONFIG_MACH_ARMADILLO800EVA)	+= board-armadillo800eva.o
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-new file mode 100644
-index 0000000..18f2bf2
---- /dev/null
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -0,0 +1,37 @@
-+/*
-+ * Bock-W board support
-+ *
-+ * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+ */
-+
-+#include <linux/platform_device.h>
-+#include <mach/common.h>
-+#include <mach/r8a7778.h>
-+#include <asm/mach/arch.h>
-+
-+static const char *bockw_boards_compat_dt[] __initdata = {
-+	"renesas,bockw-reference",
-+	NULL,
-+};
-+
-+DT_MACHINE_START(BOCKW_DT, "bockw")
-+	.init_early	= r8a7778_init_delay,
-+	.init_irq	= r8a7778_init_irq_dt,
-+	.init_machine	= r8a7778_add_standard_devices_dt,
-+	.init_time	= shmobile_timer_init,
-+	.dt_compat	= bockw_boards_compat_dt,
-+MACHINE_END
--- 
-1.7.9.5
+> diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
+> new file mode 100644
+> index 0000000..876616d
+> --- /dev/null
+> +++ b/arch/arm/boot/dts/r8a7778-bockw.dts
+> @@ -0,0 +1,32 @@
+[...]
+> +/ {
+> +	model = "bockw";
+> +	compatible = "renesas,bockw", "renesas,r8a7778";
+
+    Shouldn't the above coincide with the below?
+
+> diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
+> new file mode 100644
+> index 0000000..18f2bf2
+> --- /dev/null
+> +++ b/arch/arm/mach-shmobile/board-bockw.c
+[...]
+> +static const char *bockw_boards_compat_dt[] __initdata = {
+> +	"renesas,bockw-reference",
+> +	NULL,
+> +};
+
+WBR, Sergei
 
