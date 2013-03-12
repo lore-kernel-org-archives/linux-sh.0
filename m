@@ -1,58 +1,44 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:06:29 +0000
-Subject: [PATCH 093/142] ARM: shmobile: kzm9g: Register pinctrl mappings for FSI
-Message-Id: <1363604838-29359-94-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 12 Mar 2013 15:48:26 +0000
+Subject: [PATCH v3.1 0/4] More PFC pinctrl functions for sh73a0
+Message-Id: <1363103310-16260-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Hello,
 
-Replace the GPIO-based FSI pinmux configuration by pinctrl mappings.
+Here are more pinctrl pin groups and functions for the sh73a0 KEYSC, BSC, USB
+and IrDA devices.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- arch/arm/mach-shmobile/board-kzm9g.c |   16 +++++++++-------
- 1 file changed, 9 insertions(+), 7 deletions(-)
+I've inserted the patches right after "sh-pfc: sh73a0: Add SDHI and MMCIF pin
+groups and functions" in the "[PATCH v3 00/64] PFC pinctrl functions for
+sh7372, sh73a0, r8a7740 and r8a7779" series. The result can be found in my git
+tree at
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index df3c5ca..a628d1b 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -601,6 +601,15 @@ static struct platform_device *kzm_devices[] __initdata = {
- };
- 
- static const struct pinctrl_map kzm_pinctrl_map[] = {
-+	/* FSIA (AK4648) */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_fsi2.0", "pfc-sh73a0",
-+				  "fsia_mclk_in", "fsia"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_fsi2.0", "pfc-sh73a0",
-+				  "fsia_sclk_in", "fsia"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_fsi2.0", "pfc-sh73a0",
-+				  "fsia_data_in", "fsia"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_fsi2.0", "pfc-sh73a0",
-+				  "fsia_data_out", "fsia"),
- 	/* I2C3 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.3", "pfc-sh73a0",
- 				  "i2c3_1", "i2c3"),
-@@ -727,13 +736,6 @@ static void __init kzm_init(void)
- 	gpio_request(GPIO_FN_SDHICLK2,		NULL);
- 	gpio_request_one(14, GPIOF_OUT_INIT_HIGH, NULL); /* power */
- 
--	/* enable FSI2 port A (ak4648) */
--	gpio_request(GPIO_FN_FSIACK,	NULL);
--	gpio_request(GPIO_FN_FSIAILR,	NULL);
--	gpio_request(GPIO_FN_FSIAIBT,	NULL);
--	gpio_request(GPIO_FN_FSIAISLD,	NULL);
--	gpio_request(GPIO_FN_FSIAOSLD,	NULL);
--
- 	/* enable USB */
- 	gpio_request(GPIO_FN_VBUS_0,	NULL);
- 
+	git://linuxtv.org/pinchartl/fbdev.git pinmux/3.9/pfc-funcs
+
+Simon, could you please pull the pinmux/3.9/pinctrl and pinmux/3.9/pfc-funcs
+branches into your tree ?
+
+I'd like to get the pinmux/3.9/pfc-cleanup branch in v3.10 as well. It
+includes arm/sh/* changes that could in my opinion go through the ARM tree to
+avoid dependency issues upstream, but I'd like to get a confirmation from Paul
+first.
+
+Laurent Pinchart (4):
+  sh-pfc: sh73a0: Add KEYSC pin groups and functions
+  sh-pfc: sh73a0: Add BSC pin groups and functions
+  sh-pfc: sh73a0: Add USB pin groups and functions
+  sh-pfc: sh73a0: Add IrDA pin groups and functions
+
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 375 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 375 insertions(+)
+
 -- 
-1.7.10.4
+Regards,
+
+Laurent Pinchart
 
