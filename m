@@ -1,161 +1,175 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 13:02:31 +0000
-Subject: [PATCH 05/12] clocksource: sh_cmt: CMSTR and CMCSR register access update
-Message-Id: <1363611758-6655-6-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 12 Mar 2013 15:48:28 +0000
+Subject: [PATCH v3.1 2/4] sh-pfc: sh73a0: Add BSC pin groups and functions
+Message-Id: <1363103310-16260-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363611758-6655-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363611758-6655-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
-
-Update hardware register access code for CMSTR and CMCSR
-from using sh_cmt_read() and sh_cmt_write() to make use
-of 16-bit register access functions such as sh_cmt_read16()
-and sh_cmt_write16(). Also update sh_cmt_read() and
-sh_cmt_write() now when the special cases are gone.
-
-This patch moves us one step closer to the goal of separating
-counter register access functions from control control register
-functions.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: John Stultz <john.stultz@linaro.org>
-Tested-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/clocksource/sh_cmt.c |   66 +++++++++++++++++++-----------------------
- 1 file changed, 30 insertions(+), 36 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 125 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 125 insertions(+)
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index a2f8023..eefacc3 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -56,44 +56,46 @@ struct sh_cmt_priv {
- 	bool cs_enabled;
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index aa36aa4..ba8efa8 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -1556,6 +1556,101 @@ static struct pinmux_range pinmux_ranges[] = {
+  */
+ #define PIN_NUMBER(row, col)		(1000+((row)-1)*34+(col)-1)
+ 
++static const unsigned int bsc_data_0_7_pins[] = {
++	/* D[0:7] */
++	74, 75, 76, 77, 78, 79, 80, 81,
++};
++static const unsigned int bsc_data_0_7_mux[] = {
++	D0_NAF0_MARK, D1_NAF1_MARK, D2_NAF2_MARK, D3_NAF3_MARK,
++	D4_NAF4_MARK, D5_NAF5_MARK, D6_NAF6_MARK, D7_NAF7_MARK,
++};
++static const unsigned int bsc_data_8_15_pins[] = {
++	/* D[8:15] */
++	82, 83, 84, 85, 86, 87, 88, 89,
++};
++static const unsigned int bsc_data_8_15_mux[] = {
++	D8_NAF8_MARK, D9_NAF9_MARK, D10_NAF10_MARK, D11_NAF11_MARK,
++	D12_NAF12_MARK, D13_NAF13_MARK, D14_NAF14_MARK, D15_NAF15_MARK,
++};
++static const unsigned int bsc_cs4_pins[] = {
++	/* CS */
++	90,
++};
++static const unsigned int bsc_cs4_mux[] = {
++	CS4__MARK,
++};
++static const unsigned int bsc_cs5_a_pins[] = {
++	/* CS */
++	91,
++};
++static const unsigned int bsc_cs5_a_mux[] = {
++	CS5A__MARK,
++};
++static const unsigned int bsc_cs5_b_pins[] = {
++	/* CS */
++	92,
++};
++static const unsigned int bsc_cs5_b_mux[] = {
++	CS5B__MARK,
++};
++static const unsigned int bsc_cs6_a_pins[] = {
++	/* CS */
++	94,
++};
++static const unsigned int bsc_cs6_a_mux[] = {
++	CS6A__MARK,
++};
++static const unsigned int bsc_cs6_b_pins[] = {
++	/* CS */
++	93,
++};
++static const unsigned int bsc_cs6_b_mux[] = {
++	CS6B__MARK,
++};
++
++static const unsigned int bsc_rd_pins[] = {
++	/* RD */
++	96,
++};
++static const unsigned int bsc_rd_mux[] = {
++	RD__FSC_MARK,
++};
++static const unsigned int bsc_rdwr_0_pins[] = {
++	/* RDWR */
++	91,
++};
++static const unsigned int bsc_rdwr_0_mux[] = {
++	PORT91_RDWR_MARK,
++};
++static const unsigned int bsc_rdwr_1_pins[] = {
++	/* RDWR */
++	97,
++};
++static const unsigned int bsc_rdwr_1_mux[] = {
++	RDWR_FWE_MARK,
++};
++static const unsigned int bsc_rdwr_2_pins[] = {
++	/* RDWR */
++	149,
++};
++static const unsigned int bsc_rdwr_2_mux[] = {
++	PORT149_RDWR_MARK,
++};
++static const unsigned int bsc_we0_pins[] = {
++	/* WE0 */
++	97,
++};
++static const unsigned int bsc_we0_mux[] = {
++	WE0__FWE_MARK,
++};
++static const unsigned int bsc_we1_pins[] = {
++	/* WE1 */
++	98,
++};
++static const unsigned int bsc_we1_mux[] = {
++	WE1__MARK,
++};
++
+ static const unsigned int fsia_mclk_in_pins[] = {
+ 	/* CK */
+ 	49,
+@@ -2521,6 +2616,19 @@ static const unsigned int sdhi2_ctrl_mux[] = {
  };
  
--static DEFINE_RAW_SPINLOCK(sh_cmt_lock);
-+static inline unsigned long sh_cmt_read16(void __iomem *base,
-+					  unsigned long offs)
-+{
-+	return ioread16(base + (offs << 1));
-+}
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
++	SH_PFC_PIN_GROUP(bsc_data_0_7),
++	SH_PFC_PIN_GROUP(bsc_data_8_15),
++	SH_PFC_PIN_GROUP(bsc_cs4),
++	SH_PFC_PIN_GROUP(bsc_cs5_a),
++	SH_PFC_PIN_GROUP(bsc_cs5_b),
++	SH_PFC_PIN_GROUP(bsc_cs6_a),
++	SH_PFC_PIN_GROUP(bsc_cs6_b),
++	SH_PFC_PIN_GROUP(bsc_rd),
++	SH_PFC_PIN_GROUP(bsc_rdwr_0),
++	SH_PFC_PIN_GROUP(bsc_rdwr_1),
++	SH_PFC_PIN_GROUP(bsc_rdwr_2),
++	SH_PFC_PIN_GROUP(bsc_we0),
++	SH_PFC_PIN_GROUP(bsc_we1),
+ 	SH_PFC_PIN_GROUP(fsia_mclk_in),
+ 	SH_PFC_PIN_GROUP(fsia_mclk_out),
+ 	SH_PFC_PIN_GROUP(fsia_sclk_in),
+@@ -2649,6 +2757,22 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(sdhi2_ctrl),
+ };
+ 
++static const char * const bsc_groups[] = {
++	"bsc_data_0_7",
++	"bsc_data_8_15",
++	"bsc_cs4",
++	"bsc_cs5_a",
++	"bsc_cs5_b",
++	"bsc_cs6_a",
++	"bsc_cs6_b",
++	"bsc_rd",
++	"bsc_rdwr_0",
++	"bsc_rdwr_1",
++	"bsc_rdwr_2",
++	"bsc_we0",
++	"bsc_we1",
++};
 +
-+static inline void sh_cmt_write16(void __iomem *base, unsigned long offs,
-+				  unsigned long value)
-+{
-+	iowrite16(value, base + (offs << 1));
-+}
+ static const char * const fsia_groups[] = {
+ 	"fsia_mclk_in",
+ 	"fsia_mclk_out",
+@@ -2841,6 +2965,7 @@ static const char * const sdhi2_groups[] = {
+ };
  
--#define CMSTR -1 /* shared register */
- #define CMCSR 0 /* channel register */
- #define CMCNT 1 /* channel register */
- #define CMCOR 2 /* channel register */
- 
- static inline unsigned long sh_cmt_read(struct sh_cmt_priv *p, int reg_nr)
- {
--	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
- 	void __iomem *base = p->mapbase;
--	unsigned long offs;
--
--	if (reg_nr = CMSTR) {
--		offs = 0;
--		base -= cfg->channel_offset;
--	} else
--		offs = reg_nr;
-+	unsigned long offs = reg_nr;
- 
--	if (p->width = 16)
-+	if (p->width = 16) {
- 		offs <<= 1;
--	else {
-+		return ioread16(base + offs);
-+	} else {
- 		offs <<= 2;
--		if ((reg_nr = CMCNT) || (reg_nr = CMCOR))
--			return ioread32(base + offs);
-+		return ioread32(base + offs);
- 	}
--
--	return ioread16(base + offs);
- }
- 
- static inline unsigned long sh_cmt_read_cmstr(struct sh_cmt_priv *p)
- {
--	return sh_cmt_read(p, CMSTR);
-+	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
-+
-+	return sh_cmt_read16(p->mapbase - cfg->channel_offset, 0);
- }
- 
- static inline unsigned long sh_cmt_read_cmcsr(struct sh_cmt_priv *p)
- {
--	return sh_cmt_read(p, CMCSR);
-+	return sh_cmt_read16(p->mapbase, CMCSR);
- }
- 
- static inline unsigned long sh_cmt_read_cmcnt(struct sh_cmt_priv *p)
-@@ -104,39 +106,30 @@ static inline unsigned long sh_cmt_read_cmcnt(struct sh_cmt_priv *p)
- static inline void sh_cmt_write(struct sh_cmt_priv *p, int reg_nr,
- 				unsigned long value)
- {
--	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
- 	void __iomem *base = p->mapbase;
--	unsigned long offs;
-+	unsigned long offs = reg_nr;
- 
--	if (reg_nr = CMSTR) {
--		offs = 0;
--		base -= cfg->channel_offset;
--	} else
--		offs = reg_nr;
--
--	if (p->width = 16)
-+	if (p->width = 16) {
- 		offs <<= 1;
--	else {
-+		iowrite16(value, base + offs);
-+	} else {
- 		offs <<= 2;
--		if ((reg_nr = CMCNT) || (reg_nr = CMCOR)) {
--			iowrite32(value, base + offs);
--			return;
--		}
-+		iowrite32(value, base + offs);
- 	}
--
--	iowrite16(value, base + offs);
- }
- 
- static inline void sh_cmt_write_cmstr(struct sh_cmt_priv *p,
- 				      unsigned long value)
- {
--	sh_cmt_write(p, CMSTR, value);
-+	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
-+
-+	sh_cmt_write16(p->mapbase - cfg->channel_offset, 0, value);
- }
- 
- static inline void sh_cmt_write_cmcsr(struct sh_cmt_priv *p,
- 				      unsigned long value)
- {
--	sh_cmt_write(p, CMCSR, value);
-+	sh_cmt_write16(p->mapbase, CMCSR, value);
- }
- 
- static inline void sh_cmt_write_cmcnt(struct sh_cmt_priv *p,
-@@ -173,6 +166,7 @@ static unsigned long sh_cmt_get_counter(struct sh_cmt_priv *p,
- 	return v2;
- }
- 
-+static DEFINE_RAW_SPINLOCK(sh_cmt_lock);
- 
- static void sh_cmt_start_stop_ch(struct sh_cmt_priv *p, int start)
- {
+ static const struct sh_pfc_function pinmux_functions[] = {
++	SH_PFC_FUNCTION(bsc),
+ 	SH_PFC_FUNCTION(fsia),
+ 	SH_PFC_FUNCTION(fsib),
+ 	SH_PFC_FUNCTION(fsic),
 -- 
-1.7.10.4
+1.8.1.5
 
