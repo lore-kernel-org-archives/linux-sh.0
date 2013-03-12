@@ -1,68 +1,64 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 06 Mar 2013 13:47:10 +0000
-Subject: [PATCH v2 31/39] ARM: shmobile: sh7372: Remove SDHI and MMCIF function GPIOs
-Message-Id: <1362577638-15493-32-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 12 Mar 2013 15:48:29 +0000
+Subject: [PATCH v3.1 3/4] sh-pfc: sh73a0: Add USB pin groups and functions
+Message-Id: <1363103310-16260-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
-
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/include/mach/sh7372.h | 29 ----------------------------
- 1 file changed, 29 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
-index b582fac..7ded4eb 100644
---- a/arch/arm/mach-shmobile/include/mach/sh7372.h
-+++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
-@@ -294,21 +294,6 @@ enum {
- 	GPIO_FN_D12_NAF12,	GPIO_FN_D13_NAF13,	GPIO_FN_D14_NAF14,
- 	GPIO_FN_D15_NAF15,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index ba8efa8..f5fa2be 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -2615,6 +2615,14 @@ static const unsigned int sdhi2_ctrl_mux[] = {
+ 	SDHICMD2_MARK, SDHICLK2_MARK,
+ };
  
--	/*
--	 * MMCIF(1)		(PORT 84, 85, 86, 87, 88, 89,
--	 *			      90, 91, 92, 99)
--	 */
--	GPIO_FN_MMCD0_0,	GPIO_FN_MMCD0_1,	GPIO_FN_MMCD0_2,
--	GPIO_FN_MMCD0_3,	GPIO_FN_MMCD0_4,	GPIO_FN_MMCD0_5,
--	GPIO_FN_MMCD0_6,	GPIO_FN_MMCD0_7,
--	GPIO_FN_MMCCMD0,	GPIO_FN_MMCCLK0,
--
--	/* MMCIF(2)		(PORT 54, 55, 56, 57, 58, 59, 60, 61, 66, 67) */
--	GPIO_FN_MMCD1_0,	GPIO_FN_MMCD1_1,	GPIO_FN_MMCD1_2,
--	GPIO_FN_MMCD1_3,	GPIO_FN_MMCD1_4,	GPIO_FN_MMCD1_5,
--	GPIO_FN_MMCD1_6,	GPIO_FN_MMCD1_7,
--	GPIO_FN_MMCCLK1,	GPIO_FN_MMCCMD1,
--
- 	/* SPU2		(PORT 65) */
- 	GPIO_FN_VINT_I,
++static const unsigned int usb_vbus_pins[] = {
++	/* VBUS */
++	0,
++};
++static const unsigned int usb_vbus_mux[] = {
++	VBUS_0_MARK,
++};
++
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(bsc_data_0_7),
+ 	SH_PFC_PIN_GROUP(bsc_data_8_15),
+@@ -2755,6 +2763,7 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(sdhi2_data1),
+ 	SH_PFC_PIN_GROUP(sdhi2_data4),
+ 	SH_PFC_PIN_GROUP(sdhi2_ctrl),
++	SH_PFC_PIN_GROUP(usb_vbus),
+ };
  
-@@ -416,20 +401,6 @@ enum {
- 	/* HDMI		(PORT 169, 170) */
- 	GPIO_FN_HDMI_HPD,	GPIO_FN_HDMI_CEC,
+ static const char * const bsc_groups[] = {
+@@ -2964,6 +2973,10 @@ static const char * const sdhi2_groups[] = {
+ 	"sdhi2_ctrl",
+ };
  
--	/* SDHI0	(PORT 171, 172, 173, 174, 175, 176, 177, 178) */
--	GPIO_FN_SDHICLK0,	GPIO_FN_SDHICD0,
--	GPIO_FN_SDHICMD0,	GPIO_FN_SDHIWP0,
--	GPIO_FN_SDHID0_0,	GPIO_FN_SDHID0_1,
--	GPIO_FN_SDHID0_2,	GPIO_FN_SDHID0_3,
--
--	/* SDHI1	(PORT 179, 180, 181, 182, 183, 184) */
--	GPIO_FN_SDHICLK1,	GPIO_FN_SDHICMD1,	GPIO_FN_SDHID1_0,
--	GPIO_FN_SDHID1_1,	GPIO_FN_SDHID1_2,	GPIO_FN_SDHID1_3,
--
--	/* SDHI2	(PORT 185, 186, 187, 188, 189, 190) */
--	GPIO_FN_SDHICLK2,	GPIO_FN_SDHICMD2,	GPIO_FN_SDHID2_0,
--	GPIO_FN_SDHID2_1,	GPIO_FN_SDHID2_2,	GPIO_FN_SDHID2_3,
--
- 	/* SDENC	see MSEL4CR 19 */
- 	GPIO_FN_SDENC_CPG,
- 	GPIO_FN_SDENC_DV_CLKI,
++static const char * const usb_groups[] = {
++	"usb_vbus",
++};
++
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(bsc),
+ 	SH_PFC_FUNCTION(fsia),
+@@ -2988,6 +3001,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(sdhi0),
+ 	SH_PFC_FUNCTION(sdhi1),
+ 	SH_PFC_FUNCTION(sdhi2),
++	SH_PFC_FUNCTION(usb),
+ };
+ 
+ #define PINMUX_FN_BASE	GPIO_FN_VBUS_0
 -- 
 1.8.1.5
 
