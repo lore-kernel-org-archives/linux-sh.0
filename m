@@ -1,7 +1,7 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 12 Mar 2013 05:19:46 +0000
+From: Arnd Bergmann <arnd@arndb.de>
+Date: Tue, 12 Mar 2013 12:28:30 +0000
 Subject: Re: [PATCH 00/04] ARM: shmobile: r8a73a4 SoC and APE6EVM board support
-Message-Id: <87vc8xry8i.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <201303121228.31067.arnd@arndb.de>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130312045559.19701.77841.sendpatchset@w520>
 In-Reply-To: <20130312045559.19701.77841.sendpatchset@w520>
@@ -10,9 +10,7 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-
-Hi
-
+On Tuesday 12 March 2013, Magnus Damm wrote:
 > ARM: shmobile: r8a73a4 SoC and APE6EVM board support
 > 
 > [PATCH 01/04] ARM: shmobile: Initial r8a73a4 SoC support
@@ -30,26 +28,8 @@ Hi
 > by SMP support.
 > 
 > Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  Written against all+next in renesas.git.
->  [PATCH 03/04] requires the IRQC driver to build
-> 
->  arch/arm/boot/dts/Makefile                    |    1 
->  arch/arm/boot/dts/r8a73a4-ape6evm.dts         |   26 ++
->  arch/arm/boot/dts/r8a73a4.dtsi                |   87 ++++++++
->  arch/arm/mach-shmobile/Kconfig                |   16 +
->  arch/arm/mach-shmobile/Makefile               |    2 
->  arch/arm/mach-shmobile/board-ape6evm.c        |   40 +++
->  arch/arm/mach-shmobile/clock-r8a73a4.c        |  104 +++++++++
->  arch/arm/mach-shmobile/include/mach/r8a73a4.h |    7 
->  arch/arm/mach-shmobile/setup-r8a73a4.c        |  268 +++++++++++++++++++++++++
->  9 files changed, 549 insertions(+), 2 deletions(-)
 
-For all patches
+Patches look good so far. I assume you have made them in a way that lets
+you easily keep around non-DT support internally, right?
 
-Reviewed-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-
-Best regards
----
-Kuninori Morimoto
+	Arnd
