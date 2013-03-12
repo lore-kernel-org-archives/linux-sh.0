@@ -1,116 +1,73 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:07:05 +0000
-Subject: [PATCH 129/142] ARM: shmobile: sh73a0: Remove KEYSC function GPIOs
-Message-Id: <1363604838-29359-130-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Tue, 12 Mar 2013 15:48:30 +0000
+Subject: [PATCH v3.1 4/4] sh-pfc: sh73a0: Add IrDA pin groups and functions
+Message-Id: <1363103310-16260-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
-
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
+To: linux-sh@vger.kernel.org
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/include/mach/sh73a0.h |   53 ++++++++++++--------------
- 1 file changed, 24 insertions(+), 29 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 23 +++++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/sh73a0.h b/arch/arm/mach-shmobile/include/mach/sh73a0.h
-index 5b9620e..f1b85ff 100644
---- a/arch/arm/mach-shmobile/include/mach/sh73a0.h
-+++ b/arch/arm/mach-shmobile/include/mach/sh73a0.h
-@@ -134,22 +134,21 @@ enum {
- 	GPIO_FN_PORT54_IRDA_FIRSEL, GPIO_FN_TPU3TO2,
- 	GPIO_FN_TPU0TO0,
- 	GPIO_FN_A0, GPIO_FN_BS_,
--	GPIO_FN_A12, GPIO_FN_PORT58_KEYOUT7, GPIO_FN_TPU4TO2,
--	GPIO_FN_A13, GPIO_FN_PORT59_KEYOUT6, GPIO_FN_TPU0TO1,
--	GPIO_FN_A14, GPIO_FN_KEYOUT5,
--	GPIO_FN_A15, GPIO_FN_KEYOUT4,
--	GPIO_FN_A16, GPIO_FN_KEYOUT3, GPIO_FN_MSIOF0_SS1,
--	GPIO_FN_A17, GPIO_FN_KEYOUT2, GPIO_FN_MSIOF0_TSYNC,
--	GPIO_FN_A18, GPIO_FN_KEYOUT1, GPIO_FN_MSIOF0_TSCK,
--	GPIO_FN_A19, GPIO_FN_KEYOUT0, GPIO_FN_MSIOF0_TXD,
--	GPIO_FN_A20, GPIO_FN_KEYIN0, GPIO_FN_MSIOF0_RSCK,
--	GPIO_FN_A21, GPIO_FN_KEYIN1, GPIO_FN_MSIOF0_RSYNC,
--	GPIO_FN_A22, GPIO_FN_KEYIN2, GPIO_FN_MSIOF0_MCK0,
--	GPIO_FN_A23, GPIO_FN_KEYIN3, GPIO_FN_MSIOF0_MCK1,
--	GPIO_FN_A24, GPIO_FN_KEYIN4, GPIO_FN_MSIOF0_RXD,
--	GPIO_FN_A25, GPIO_FN_KEYIN5, GPIO_FN_MSIOF0_SS2,
--	GPIO_FN_A26, GPIO_FN_KEYIN6,
--	GPIO_FN_KEYIN7,
-+	GPIO_FN_A12, GPIO_FN_TPU4TO2,
-+	GPIO_FN_A13, GPIO_FN_TPU0TO1,
-+	GPIO_FN_A14,
-+	GPIO_FN_A15,
-+	GPIO_FN_A16, GPIO_FN_MSIOF0_SS1,
-+	GPIO_FN_A17, GPIO_FN_MSIOF0_TSYNC,
-+	GPIO_FN_A18, GPIO_FN_MSIOF0_TSCK,
-+	GPIO_FN_A19, GPIO_FN_MSIOF0_TXD,
-+	GPIO_FN_A20, GPIO_FN_MSIOF0_RSCK,
-+	GPIO_FN_A21, GPIO_FN_MSIOF0_RSYNC,
-+	GPIO_FN_A22, GPIO_FN_MSIOF0_MCK0,
-+	GPIO_FN_A23, GPIO_FN_MSIOF0_MCK1,
-+	GPIO_FN_A24, GPIO_FN_MSIOF0_RXD,
-+	GPIO_FN_A25, GPIO_FN_MSIOF0_SS2,
-+	GPIO_FN_A26,
- 	GPIO_FN_D0_NAF0,
- 	GPIO_FN_D1_NAF1,
- 	GPIO_FN_D2_NAF2,
-@@ -199,23 +198,21 @@ enum {
- 	GPIO_FN_VIO_HD,
- 	GPIO_FN_VIO2_HD,
- 	GPIO_FN_VIO_D0, GPIO_FN_PORT130_MSIOF2_RXD,
--	GPIO_FN_VIO_D1, GPIO_FN_PORT131_KEYOUT6, GPIO_FN_PORT131_MSIOF2_SS1, \
--	GPIO_FN_PORT131_KEYOUT11,
--	GPIO_FN_VIO_D2, GPIO_FN_PORT132_KEYOUT7, GPIO_FN_PORT132_MSIOF2_SS2, \
--	GPIO_FN_PORT132_KEYOUT10,
-+	GPIO_FN_VIO_D1, GPIO_FN_PORT131_MSIOF2_SS1,
-+	GPIO_FN_VIO_D2, GPIO_FN_PORT132_MSIOF2_SS2,
- 	GPIO_FN_VIO_D3, GPIO_FN_MSIOF2_TSYNC,
- 	GPIO_FN_VIO_D4, GPIO_FN_MSIOF2_TXD,
- 	GPIO_FN_VIO_D5, GPIO_FN_MSIOF2_TSCK,
--	GPIO_FN_VIO_D6, GPIO_FN_PORT136_KEYOUT8,
--	GPIO_FN_VIO_D7, GPIO_FN_PORT137_KEYOUT9,
--	GPIO_FN_VIO_D8, GPIO_FN_PORT138_KEYOUT8, GPIO_FN_VIO2_D0, \
--	GPIO_FN_VIO_D9, GPIO_FN_PORT139_KEYOUT9, GPIO_FN_VIO2_D1, \
-+	GPIO_FN_VIO_D6,
-+	GPIO_FN_VIO_D7,
-+	GPIO_FN_VIO_D8, GPIO_FN_VIO2_D0,
-+	GPIO_FN_VIO_D9, GPIO_FN_VIO2_D1,
- 	GPIO_FN_VIO_D10, GPIO_FN_TPU0TO2, GPIO_FN_VIO2_D2,
- 	GPIO_FN_VIO_D11, GPIO_FN_TPU0TO3, GPIO_FN_VIO2_D3,
--	GPIO_FN_VIO_D12, GPIO_FN_PORT142_KEYOUT10, GPIO_FN_VIO2_D4, \
--	GPIO_FN_VIO_D13, GPIO_FN_PORT143_KEYOUT11, GPIO_FN_PORT143_KEYOUT6, \
-+	GPIO_FN_VIO_D12, GPIO_FN_VIO2_D4,
-+	GPIO_FN_VIO_D13,
- 	GPIO_FN_VIO2_D5,
--	GPIO_FN_VIO_D14, GPIO_FN_PORT144_KEYOUT7, GPIO_FN_VIO2_D6, \
-+	GPIO_FN_VIO_D14, GPIO_FN_VIO2_D6,
- 	GPIO_FN_VIO_D15, GPIO_FN_TPU1TO3,
- 	GPIO_FN_VIO2_D7,
- 	GPIO_FN_VIO_CLK,
-@@ -223,7 +220,6 @@ enum {
- 	GPIO_FN_VIO_FIELD, GPIO_FN_VIO2_FIELD,
- 	GPIO_FN_VIO_CKO,
- 	GPIO_FN_A27, GPIO_FN_PORT149_RDWR, GPIO_FN_MFG0_IN1, \
--	GPIO_FN_PORT149_KEYOUT9,
- 	GPIO_FN_MFG0_IN2,
- 	GPIO_FN_TS_SPSYNC3, GPIO_FN_MSIOF2_RSCK,
- 	GPIO_FN_TS_SDAT3, GPIO_FN_MSIOF2_RSYNC,
-@@ -390,7 +386,6 @@ enum {
- 	GPIO_FN_IRQ9_MEM_INT,
- 	GPIO_FN_IRQ9_MCP_INT,
- 	GPIO_FN_A11,
--	GPIO_FN_KEYOUT8,
- 	GPIO_FN_TPU4TO3,
- 	GPIO_FN_RESETA_N_PU_ON,
- 	GPIO_FN_RESETA_N_PU_OFF,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index f5fa2be..e2a37d3 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -1874,6 +1874,21 @@ static const unsigned int i2c3_2_mux[] = {
+ 	PORT115_I2C_SCL3_MARK, PORT116_I2C_SDA3_MARK,
+ };
+ 
++static const unsigned int irda_0_pins[] = {
++	/* OUT, IN, FIRSEL */
++	241, 242, 243,
++};
++static const unsigned int irda_0_mux[] = {
++	PORT241_IRDA_OUT_MARK, PORT242_IRDA_IN_MARK, PORT243_IRDA_FIRSEL_MARK,
++};
++static const unsigned int irda_1_pins[] = {
++	/* OUT, IN, FIRSEL */
++	49, 53, 54,
++};
++static const unsigned int irda_1_mux[] = {
++	PORT49_IRDA_OUT_MARK, PORT53_IRDA_IN_MARK, PORT54_IRDA_FIRSEL_MARK,
++};
++
+ static const unsigned int keysc_in5_pins[] = {
+ 	/* KEYIN[0:4] */
+ 	66, 67, 68, 69, 70,
+@@ -2668,6 +2683,8 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(i2c3_0),
+ 	SH_PFC_PIN_GROUP(i2c3_1),
+ 	SH_PFC_PIN_GROUP(i2c3_2),
++	SH_PFC_PIN_GROUP(irda_0),
++	SH_PFC_PIN_GROUP(irda_1),
+ 	SH_PFC_PIN_GROUP(keysc_in5),
+ 	SH_PFC_PIN_GROUP(keysc_in6),
+ 	SH_PFC_PIN_GROUP(keysc_in7),
+@@ -2830,6 +2847,11 @@ static const char * const i2c3_groups[] = {
+ 	"i2c3_2",
+ };
+ 
++static const char * const irda_groups[] = {
++	"irda_0",
++	"irda_1",
++};
++
+ static const char * const keysc_groups[] = {
+ 	"keysc_in5",
+ 	"keysc_in6",
+@@ -2985,6 +3007,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(fsid),
+ 	SH_PFC_FUNCTION(i2c2),
+ 	SH_PFC_FUNCTION(i2c3),
++	SH_PFC_FUNCTION(irda),
+ 	SH_PFC_FUNCTION(keysc),
+ 	SH_PFC_FUNCTION(lcd),
+ 	SH_PFC_FUNCTION(lcd2),
 -- 
-1.7.10.4
+1.8.1.5
 
