@@ -1,82 +1,192 @@
-From: Marc Kleine-Budde <mkl@pengutronix.de>
-Date: Wed, 27 Mar 2013 10:22:32 +0000
-Subject: Re: drivers/net/can/sja1000/peak_pcmcia.c:626:2: error: implicit declaration of function 'ioport_unm
-Message-Id: <5152C868.5030801@pengutronix.de>
-MIME-Version: 1
-Content-Type: multipart/mixed; boundary="----enig2VSTGXEXXSWVTWEGOQMEE"
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 12 Mar 2013 04:56:19 +0000
+Subject: [PATCH 02/04] ARM: shmobile: r8a73a4 SCIF support
+Message-Id: <20130312045619.19701.29486.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130327083110.GB11489@localhost>
-In-Reply-To: <20130327083110.GB11489@localhost>
-To: linux-sh@vger.kernel.org
+References: <20130312045559.19701.77841.sendpatchset@w520>
+In-Reply-To: <20130312045559.19701.77841.sendpatchset@w520>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+To: linux-arm-kernel@lists.infradead.org
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
-------enig2VSTGXEXXSWVTWEGOQMEE
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: quoted-printable
+From: Magnus Damm <damm@opensource.se>
 
-On 03/27/2013 10:41 AM, Paul Mundt wrote:
-> On Wed, Mar 27, 2013 at 04:31:10PM +0800, Fengguang Wu wrote:
->>
->> Hi Stephane,
->>
->> FYI, kernel build failed on
->>
->> tree:   git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux m=
-aster
->> head:   de55eb1d60d2ed0f1ba5e13226d91b3bfbe1c108
->> commit: 2b61972b74219d21ef1e91178349bdb840357688 can: sja1000: add sup=
-port for PEAK-System PCMCIA card
->> date:   1 year, 1 month ago
->> config: make ARCH=3Dsh allyesconfig
->>
->> All error/warnings:
->>
->>    In file included from drivers/net/can/sja1000/peak_pcmcia.c:28:0:
->>    drivers/net/can/sja1000/sja1000.h:59:0: warning: "REG_SR" redefined=
- [enabled by default]
->>    arch/sh/include/asm/ptrace_32.h:25:0: note: this is the location of=
- the previous definition
->>    drivers/net/can/sja1000/peak_pcmcia.c: In function 'pcan_free':
->>>> drivers/net/can/sja1000/peak_pcmcia.c:626:2: error: implicit declara=
-tion of function 'ioport_unmap' [-Werror=3Dimplicit-function-declaration]=
+Add SCIF serial port support to the r8a73a4 SoC by
+adding platform devices for SCIFA0 -> SCIFA1 as well
+as SCIFB0 -> SCIFB3 together with clock bindings. DT
+device description is excluded at this point since
+such bindings are still under development.
 
->>    drivers/net/can/sja1000/peak_pcmcia.c: In function 'pcan_probe':
->>>> drivers/net/can/sja1000/peak_pcmcia.c:672:2: error: implicit declara=
-tion of function 'ioport_map' [-Werror=3Dimplicit-function-declaration]
->>    drivers/net/can/sja1000/peak_pcmcia.c:672:20: warning: assignment m=
-akes pointer from integer without a cast [enabled by default]
->>    cc1: some warnings being treated as errors
->>
-> This would no doubt be due to the defconfig selecting NO_IOPORT. This
-> driver probably needs a HAS_IOPORT depends.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
 
-Stephane, can we use pcmcia_map_mem_page() instead of ioport_map() like
-in the ems_pcmcia driver?
+ arch/arm/mach-shmobile/clock-r8a73a4.c |   15 +++-
+ arch/arm/mach-shmobile/setup-r8a73a4.c |  115 ++++++++++++++++++++++++++++++++
+ 2 files changed, 129 insertions(+), 1 deletion(-)
 
-http://lxr.free-electrons.com/source/drivers/net/can/sja1000/ems_pcmcia.c=
-#L286
-
-Marc
-
---=20
-Pengutronix e.K.                  | Marc Kleine-Budde           |
-Industrial Linux Solutions        | Phone: +49-231-2826-924     |
-Vertretung West/Dortmund          | Fax:   +49-5121-206917-5555 |
-Amtsgericht Hildesheim, HRA 2686  | http://www.pengutronix.de   |
-
-
-------enig2VSTGXEXXSWVTWEGOQMEE
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
-
-iEYEARECAAYFAlFSyGwACgkQjTAFq1RaXHPnCwCgmRnI0iVIMnoQAFZOaKjYl/EV
-w3oAmwfwmKpta5cqgOqCL1Q0YtOntusm
-=+502
------END PGP SIGNATURE-----
-
-------enig2VSTGXEXXSWVTWEGOQMEE--
+--- 0002/arch/arm/mach-shmobile/clock-r8a73a4.c
++++ work/arch/arm/mach-shmobile/clock-r8a73a4.c	2013-03-12 12:49:35.000000000 +0900
+@@ -28,6 +28,7 @@
+ #define CPG_LEN 0x270
+ 
+ #define MPCKCR 0xe6150080
++#define SMSTPCR2 0xe6150138
+ 
+ static struct clk_mapping cpg_mapping = {
+ 	.phys   = CPG_BASE,
+@@ -53,11 +54,23 @@ static struct clk *main_clks[] = {
+ 	&extal2_clk,
+ };
+ 
+-enum { MSTP_NR };
++enum { MSTP217, MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP_NR };
+ static struct clk mstp_clks[MSTP_NR] = {
++	[MSTP204] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 4, 1), /* SCIFA0 */
++	[MSTP203] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 3, 1), /* SCIFA1 */
++	[MSTP206] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 6, 1), /* SCIFB0 */
++	[MSTP207] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 7, 1), /* SCIFB1 */
++	[MSTP216] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 16, 1), /* SCIFB2 */
++	[MSTP217] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 17, 1), /* SCIFB3 */
+ };
+ 
+ static struct clk_lookup lookups[] = {
++	CLKDEV_DEV_ID("sh-sci.0", &mstp_clks[MSTP204]),
++	CLKDEV_DEV_ID("sh-sci.1", &mstp_clks[MSTP203]),
++	CLKDEV_DEV_ID("sh-sci.2", &mstp_clks[MSTP206]),
++	CLKDEV_DEV_ID("sh-sci.3", &mstp_clks[MSTP207]),
++	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP216]),
++	CLKDEV_DEV_ID("sh-sci.5", &mstp_clks[MSTP217]),
+ };
+ 
+ void __init r8a73a4_clock_init(void)
+--- 0002/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ work/arch/arm/mach-shmobile/setup-r8a73a4.c	2013-03-12 12:49:46.000000000 +0900
+@@ -21,12 +21,127 @@
+ #include <linux/irqchip.h>
+ #include <linux/of_platform.h>
+ #include <linux/irq.h>
++#include <linux/serial_sci.h>
+ #include <mach/common.h>
+ #include <mach/irqs.h>
+ #include <mach/r8a73a4.h>
+ #include <asm/mach/arch.h>
+ 
++/* SCIFA0 */
++static struct plat_sci_port scif0_platform_data = {
++	.mapbase	= 0xe6c40000,
++	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
++	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE0,
++	.scbrr_algo_id	= SCBRR_ALGO_4,
++	.type		= PORT_SCIFA,
++	.irqs		= SCIx_IRQ_MUXED(gic_spi(144)),
++};
++
++static struct platform_device scif0_device = {
++	.name		= "sh-sci",
++	.id		= 0,
++	.dev		= {
++		.platform_data  = &scif0_platform_data,
++	},
++};
++
++/* SCIFA1 */
++static struct plat_sci_port scif1_platform_data = {
++	.mapbase	= 0xe6c50000,
++	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
++	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE0,
++	.scbrr_algo_id	= SCBRR_ALGO_4,
++	.type		= PORT_SCIFA,
++	.irqs		= SCIx_IRQ_MUXED(gic_spi(145)),
++};
++
++static struct platform_device scif1_device = {
++	.name		= "sh-sci",
++	.id		= 1,
++	.dev		= {
++		.platform_data  = &scif1_platform_data,
++	},
++};
++
++/* SCIFB0 */
++static struct plat_sci_port scif2_platform_data = {
++	.mapbase	= 0xe6c20000,
++	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
++	.scscr		= SCSCR_RE | SCSCR_TE,
++	.scbrr_algo_id	= SCBRR_ALGO_4,
++	.type		= PORT_SCIFB,
++	.irqs		= SCIx_IRQ_MUXED(gic_spi(148)),
++};
++
++static struct platform_device scif2_device = {
++	.name		= "sh-sci",
++	.id		= 2,
++	.dev		= {
++		.platform_data  = &scif2_platform_data,
++	},
++};
++
++/* SCIFB1 */
++static struct plat_sci_port scif3_platform_data = {
++	.mapbase	= 0xe6c30000,
++	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
++	.scscr		= SCSCR_RE | SCSCR_TE,
++	.scbrr_algo_id	= SCBRR_ALGO_4,
++	.type		= PORT_SCIFB,
++	.irqs		= SCIx_IRQ_MUXED(gic_spi(149)),
++};
++
++static struct platform_device scif3_device = {
++	.name		= "sh-sci",
++	.id		= 3,
++	.dev		= {
++		.platform_data  = &scif3_platform_data,
++	},
++};
++
++/* SCIFB2 */
++static struct plat_sci_port scif4_platform_data = {
++	.mapbase	= 0xe6ce0000,
++	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
++	.scscr		= SCSCR_RE | SCSCR_TE,
++	.scbrr_algo_id	= SCBRR_ALGO_4,
++	.type		= PORT_SCIFB,
++	.irqs		= SCIx_IRQ_MUXED(gic_spi(150)),
++};
++
++static struct platform_device scif4_device = {
++	.name		= "sh-sci",
++	.id		= 4,
++	.dev		= {
++		.platform_data  = &scif4_platform_data,
++	},
++};
++
++/* SCIFB3 */
++static struct plat_sci_port scif5_platform_data = {
++	.mapbase	= 0xe6cf0000,
++	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
++	.scscr		= SCSCR_RE | SCSCR_TE,
++	.scbrr_algo_id	= SCBRR_ALGO_4,
++	.type		= PORT_SCIFB,
++	.irqs		= SCIx_IRQ_MUXED(gic_spi(151)),
++};
++
++static struct platform_device scif5_device = {
++	.name		= "sh-sci",
++	.id		= 5,
++	.dev		= {
++		.platform_data  = &scif5_platform_data,
++	},
++};
++
+ static struct platform_device *r8a73a4_devices[] __initdata = {
++	&scif0_device,
++	&scif1_device,
++	&scif2_device,
++	&scif3_device,
++	&scif4_device,
++	&scif5_device,
+ };
+ 
+ void __init r8a73a4_add_standard_devices(void)
