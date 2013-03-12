@@ -1,54 +1,278 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 01 Mar 2013 09:41:45 +0000
-Subject: Re: [PATCH 2/3] ARM: shmobile: armadillo800eva: enable branch prediction on defconfig
-Message-Id: <20130301094145.GC27938@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Tue, 12 Mar 2013 04:56:09 +0000
+Subject: [PATCH 01/04] ARM: shmobile: Initial r8a73a4 SoC support
+Message-Id: <20130312045609.19701.39029.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1351731731-8435-3-git-send-email-horms@verge.net.au>
-In-Reply-To: <1351731731-8435-3-git-send-email-horms@verge.net.au>
+References: <20130312045559.19701.77841.sendpatchset@w520>
+In-Reply-To: <20130312045559.19701.77841.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Feb 25, 2013 at 09:22:36AM +0900, Kiyoshi Ishiyama wrote:
-> Hi Morimoto-san, Shimon-san
-> 
-> Acked-by: Kiyoshi Ishiyama <kiyoshi.ishiyama.wg@renesas.com>
+From: Magnus Damm <damm@opensource.se>
 
-Thanks, applied to the defconfig branch of the renesas tree
-and thus included in its next branch and queued up for v3.10.
+Add initial support for the r8a73a4 SoC including:
+ - Single Cortex-A15 CPU Core
+ - GIC
+ - Architecture timer
 
-> BR
-> Ishi
-> 
-> 
-> > Because defconfig disabled ARM branch prediction
-> > by CONFIG_CPU_BPREDICT_DISABLE,
-> > Armadillo800eva's Bogomips and Loop were not good performance.
-> > This patch enabled Arm branch prediction.
-> > Special thanks to Ishiyama-san
-> > 
-> > Reported-by: Kiyoshi Ishiyama <kiyoshi.ishiyama.wg@renesas.com>
-> > Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> > ---
-> >  arch/arm/configs/armadillo800eva_defconfig |    1 -
-> >  1 file changed, 1 deletion(-)
-> > 
-> > diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
-> > index 891318e..dd1592b 100644
-> > --- a/arch/arm/configs/armadillo800eva_defconfig
-> > +++ b/arch/arm/configs/armadillo800eva_defconfig
-> > @@ -20,7 +20,6 @@ CONFIG_ARCH_R8A7740=y
-> >  CONFIG_MACH_ARMADILLO800EVA=y
-> >  # CONFIG_SH_TIMER_TMU is not set
-> >  CONFIG_ARM_THUMB=y
-> > -CONFIG_CPU_BPREDICT_DISABLE=y
-> >  CONFIG_CACHE_L2X0=y
-> >  CONFIG_ARM_ERRATA_430973=y
-> >  CONFIG_ARM_ERRATA_458693=y
-> > -- 
-> > 1.7.9.5
-> 
-> -- 
-> Kiyoshi Ishiyama <kiyoshi.ishiyama.wg@renesas.com>
-> 
+No static virtual mappings are used, all the components
+make use of ioremap().
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ arch/arm/boot/dts/r8a73a4.dtsi                |   55 +++++++++++++++
+ arch/arm/mach-shmobile/Kconfig                |    7 +
+ arch/arm/mach-shmobile/Makefile               |    1 
+ arch/arm/mach-shmobile/clock-r8a73a4.c        |   89 +++++++++++++++++++++++++
+ arch/arm/mach-shmobile/include/mach/r8a73a4.h |    7 +
+ arch/arm/mach-shmobile/setup-r8a73a4.c        |   56 +++++++++++++++
+ 6 files changed, 215 insertions(+)
+
+--- /dev/null
++++ work/arch/arm/boot/dts/r8a73a4.dtsi	2013-03-12 13:33:33.000000000 +0900
+@@ -0,0 +1,55 @@
++/*
++ * Device Tree Source for the r8a73a4 SoC
++ *
++ * Copyright (C) 2013 Renesas Solutions Corp.
++ * Copyright (C) 2013 Magnus Damm
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++
++/include/ "skeleton.dtsi"
++
++/ {
++	compatible = "renesas,r8a73a4";
++	interrupt-parent = <&gic>;
++
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		cpu0: cpu@0 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a15";
++			reg = <0>;
++			clock-frequency = <1500000000>;
++		};
++	};
++
++	gic: interrupt-controller@f1001000 {
++		compatible = "arm,cortex-a15-gic";
++		#interrupt-cells = <3>;
++		#address-cells = <0>;
++		interrupt-controller;
++		reg = <0xf1001000 0x1000>,
++			<0xf1002000 0x1000>,
++			<0xf1004000 0x2000>,
++			<0xf1006000 0x2000>;
++		interrupts = <1 9 0xf04>;
++
++		gic-cpuif@4 {
++			compatible = "arm,gic-cpuif";
++			cpuif-id = <4>;
++			cpu = <&cpu0>;
++		};
++	};
++
++	timer {
++		compatible = "arm,armv7-timer";
++		interrupts = <1 13 0xf08>,
++				<1 14 0xf08>,
++				<1 11 0xf08>,
++				<1 10 0xf08>;
++	};
++};
+--- 0001/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2013-03-12 12:47:46.000000000 +0900
+@@ -18,6 +18,13 @@ config ARCH_SH73A0
+ 	select SH_CLK_CPG
+ 	select RENESAS_INTC_IRQPIN
+ 
++config ARCH_R8A73A4
++	bool "R-Mobile APE6 (R8A73A40)"
++	select ARM_GIC
++	select CPU_V7
++	select ARM_ARCH_TIMER
++	select SH_CLK_CPG
++
+ config ARCH_R8A7740
+ 	bool "R-Mobile A1 (R8A77400)"
+ 	select ARCH_WANT_OPTIONAL_GPIOLIB
+--- 0001/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2013-03-12 12:47:46.000000000 +0900
+@@ -8,6 +8,7 @@ obj-y				:= timer.o console.o clock.o
+ # CPU objects
+ obj-$(CONFIG_ARCH_SH7372)	+= setup-sh7372.o clock-sh7372.o intc-sh7372.o
+ obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o clock-sh73a0.o intc-sh73a0.o
++obj-$(CONFIG_ARCH_R8A73A4)	+= setup-r8a73a4.o clock-r8a73a4.o
+ obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o clock-r8a7740.o intc-r8a7740.o
+ obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o clock-r8a7779.o intc-r8a7779.o
+ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o clock-emev2.o
+--- /dev/null
++++ work/arch/arm/mach-shmobile/clock-r8a73a4.c	2013-03-12 13:33:57.000000000 +0900
+@@ -0,0 +1,89 @@
++/*
++ * r8a73a4 clock framework support
++ *
++ * Copyright (C) 2013  Renesas Solutions Corp.
++ * Copyright (C) 2013  Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ */
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/io.h>
++#include <linux/sh_clk.h>
++#include <linux/clkdev.h>
++#include <mach/common.h>
++
++#define CPG_BASE 0xe6150000
++#define CPG_LEN 0x270
++
++#define MPCKCR 0xe6150080
++
++static struct clk_mapping cpg_mapping = {
++	.phys   = CPG_BASE,
++	.len    = CPG_LEN,
++};
++
++static struct clk extalr_clk = {
++	.rate	= 32768,
++};
++
++static struct clk extal1_clk = {
++	.rate	= 26000000,
++};
++
++static struct clk extal2_clk = {
++	.rate	= 48000000,
++	.mapping	= &cpg_mapping,
++};
++
++static struct clk *main_clks[] = {
++	&extalr_clk,
++	&extal1_clk,
++	&extal2_clk,
++};
++
++enum { MSTP_NR };
++static struct clk mstp_clks[MSTP_NR] = {
++};
++
++static struct clk_lookup lookups[] = {
++};
++
++void __init r8a73a4_clock_init(void)
++{
++	void __iomem *cpg_base, *reg;
++	int k, ret = 0;
++
++	/* fix MPCLK to EXTAL2 for now.
++	 * this is needed until more detailed clock topology is supported
++	 */
++	cpg_base = ioremap_nocache(CPG_BASE, CPG_LEN);
++	BUG_ON(!cpg_base);
++	reg = cpg_base + (MPCKCR - CPG_BASE);
++	iowrite32(ioread32(reg) | 1 << 7 | 0x0c, reg); /* set CKSEL */
++	iounmap(cpg_base);
++
++	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
++		ret = clk_register(main_clks[k]);
++
++	if (!ret)
++		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
++
++	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
++
++	if (!ret)
++		shmobile_clk_init();
++	else
++		panic("failed to setup r8a73a4 clocks\n");
++}
+--- /dev/null
++++ work/arch/arm/mach-shmobile/include/mach/r8a73a4.h	2013-03-12 12:47:47.000000000 +0900
+@@ -0,0 +1,7 @@
++#ifndef __ASM_R8A73A4_H__
++#define __ASM_R8A73A4_H__
++
++void r8a73a4_add_standard_devices(void);
++void r8a73a4_clock_init(void);
++
++#endif /* __ASM_R8A73A4_H__ */
+--- /dev/null
++++ work/arch/arm/mach-shmobile/setup-r8a73a4.c	2013-03-12 12:47:47.000000000 +0900
+@@ -0,0 +1,56 @@
++/*
++ * r8a73a4 processor support
++ *
++ * Copyright (C) 2013  Renesas Solutions Corp.
++ * Copyright (C) 2013  Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ */
++#include <linux/kernel.h>
++#include <linux/irqchip.h>
++#include <linux/of_platform.h>
++#include <linux/irq.h>
++#include <mach/common.h>
++#include <mach/irqs.h>
++#include <mach/r8a73a4.h>
++#include <asm/mach/arch.h>
++
++static struct platform_device *r8a73a4_devices[] __initdata = {
++};
++
++void __init r8a73a4_add_standard_devices(void)
++{
++	r8a73a4_clock_init();
++
++	platform_add_devices(r8a73a4_devices, ARRAY_SIZE(r8a73a4_devices));
++}
++
++#ifdef CONFIG_USE_OF
++void __init r8a73a4_add_standard_devices_dt(void)
++{
++	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
++}
++
++static const char *r8a73a4_boards_compat_dt[] __initdata = {
++	"renesas,r8a73a4",
++	NULL,
++};
++
++DT_MACHINE_START(R8A73A4_DT, "Generic R8A73A4 (Flattened Device Tree)")
++	.init_irq	= irqchip_init,
++	.init_machine	= r8a73a4_add_standard_devices_dt,
++	.init_time	= shmobile_timer_init,
++	.dt_compat	= r8a73a4_boards_compat_dt,
++MACHINE_END
++#endif /* CONFIG_USE_OF */
