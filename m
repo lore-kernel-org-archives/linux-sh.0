@@ -1,143 +1,71 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 12:32:23 +0000
-Subject: [PATCH 13/43] ARM: shmobile: Move headsmp-sh73a0.S to headsmp-scu.S
-Message-Id: <1363609973-31086-14-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 23:00:02 +0000
+Subject: [PATCH v4 57/88] sh-pfc: sh73a0: Remove BSC function GPIOS
+Message-Id: <1363215633-4264-58-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+All sh73a0 platforms now use the pinctrl API to control the BSC pins,
+the corresponding function GPIOS are unused. Remove them.
 
-Rename headsmp-sh73a0.S into headsmp-scu.S and
-introduce shmobile_secondary_vector_scu().
-
-The goal is to be able to share the function
-above between all mach-shmobile SoCs that use
-SCU for SMP. So far only sh73a0 use this.
-
-At this time the SCU base address is still hard
-coded in headsmp-scu.S to 0xf0000000, but this
-will be changed in the future.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/Makefile              |    2 +-
- arch/arm/mach-shmobile/headsmp-scu.S         |   50 ++++++++++++++++++++++++++
- arch/arm/mach-shmobile/include/mach/common.h |    2 +-
- arch/arm/mach-shmobile/smp-sh73a0.c          |    4 +--
- 4 files changed, 54 insertions(+), 4 deletions(-)
- create mode 100644 arch/arm/mach-shmobile/headsmp-scu.S
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 27 ---------------------------
+ 1 file changed, 27 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index e1fac57..245a873 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -15,7 +15,7 @@ obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o clock-emev2.o
- # SMP objects
- smp-y				:= platsmp.o headsmp.o
- smp-$(CONFIG_HOTPLUG_CPU)	+= hotplug.o
--smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o headsmp-sh73a0.o
-+smp-$(CONFIG_ARCH_SH73A0)	+= smp-sh73a0.o headsmp-scu.o
- smp-$(CONFIG_ARCH_R8A7779)	+= smp-r8a7779.o
- smp-$(CONFIG_ARCH_EMEV2)	+= smp-emev2.o
- 
-diff --git a/arch/arm/mach-shmobile/headsmp-scu.S b/arch/arm/mach-shmobile/headsmp-scu.S
-new file mode 100644
-index 0000000..4ee287d
---- /dev/null
-+++ b/arch/arm/mach-shmobile/headsmp-scu.S
-@@ -0,0 +1,50 @@
-+/*
-+ * Shared SCU setup for mach-shmobile
-+ *
-+ * Copyright (C) 2012 Bastian Hecht
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License as
-+ * published by the Free Software Foundation; either version 2 of
-+ * the License, or (at your option) any later version.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR /PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-+ * MA 02111-1307 USA
-+ */
-+
-+#include <linux/linkage.h>
-+#include <linux/init.h>
-+#include <asm/memory.h>
-+
-+	__CPUINIT
-+/*
-+ * Reset vector for secondary CPUs.
-+ *
-+ * First we turn on L1 cache coherency for our CPU. Then we jump to
-+ * shmobile_invalidate_start that invalidates the cache and hands over control
-+ * to the common ARM startup code.
-+ * This function will be mapped to address 0 by the SBAR register.
-+ * A normal branch is out of range here so we need a long jump. We jump to
-+ * the physical address as the MMU is still turned off.
-+ */
-+	.align	12
-+ENTRY(shmobile_secondary_vector_scu)
-+	mrc     p15, 0, r0, c0, c0, 5	@ read MIPDR
-+	and	r0, r0, #3		@ mask out cpu ID
-+	lsl	r0, r0, #3		@ we will shift by cpu_id * 8 bits
-+	mov	r1, #0xf0000000		@ SCU base address
-+	ldr	r2, [r1, #8]		@ SCU Power Status Register
-+	mov	r3, #3
-+	bic	r2, r2, r3, lsl r0	@ Clear bits of our CPU (Run Mode)
-+	str	r2, [r1, #8]		@ write back
-+
-+	ldr	pc, 1f
-+1:	.long shmobile_invalidate_start - PAGE_OFFSET + PLAT_PHYS_OFFSET
-+ENDPROC(shmobile_secondary_vector_scu)
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index c72d301..20acf00 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -8,6 +8,7 @@ extern void shmobile_setup_delay(unsigned int max_cpu_core_mhz,
- struct twd_local_timer;
- extern void shmobile_setup_console(void);
- extern void shmobile_secondary_vector(void);
-+extern void shmobile_secondary_vector_scu(void);
- struct clk;
- extern int shmobile_clk_init(void);
- extern void shmobile_handle_irq_intc(struct pt_regs *);
-@@ -44,7 +45,6 @@ extern void sh73a0_add_standard_devices_dt(void);
- extern void sh73a0_clock_init(void);
- extern void sh73a0_pinmux_init(void);
- extern void sh73a0_pm_init(void);
--extern void sh73a0_secondary_vector(void);
- extern struct clk sh73a0_extal1_clk;
- extern struct clk sh73a0_extal2_clk;
- extern struct clk sh73a0_extcki_clk;
-diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
-index 0757f4a..de7518f 100644
---- a/arch/arm/mach-shmobile/smp-sh73a0.c
-+++ b/arch/arm/mach-shmobile/smp-sh73a0.c
-@@ -72,9 +72,9 @@ static void __init sh73a0_smp_prepare_cpus(unsigned int max_cpus)
- {
- 	scu_enable(shmobile_scu_base);
- 
--	/* Map the reset vector (in headsmp-sh73a0.S) */
-+	/* Map the reset vector (in headsmp-scu.S) */
- 	__raw_writel(0, APARMBAREA);      /* 4k */
--	__raw_writel(__pa(sh73a0_secondary_vector), SBAR);
-+	__raw_writel(__pa(shmobile_secondary_vector_scu), SBAR);
- 
- 	/* enable cache coherency on booting CPU */
- 	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index 33e2b3f..7b010b6 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -3022,37 +3022,11 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(A25), \
+ 	GPIO_FN(MSIOF0_SS2),
+ 	GPIO_FN(A26), \
+-	GPIO_FN(D0_NAF0),
+-	GPIO_FN(D1_NAF1),
+-	GPIO_FN(D2_NAF2),
+-	GPIO_FN(D3_NAF3),
+-	GPIO_FN(D4_NAF4),
+-	GPIO_FN(D5_NAF5),
+-	GPIO_FN(D6_NAF6),
+-	GPIO_FN(D7_NAF7),
+-	GPIO_FN(D8_NAF8),
+-	GPIO_FN(D9_NAF9),
+-	GPIO_FN(D10_NAF10),
+-	GPIO_FN(D11_NAF11),
+-	GPIO_FN(D12_NAF12),
+-	GPIO_FN(D13_NAF13),
+-	GPIO_FN(D14_NAF14),
+-	GPIO_FN(D15_NAF15),
+-	GPIO_FN(CS4_),
+-	GPIO_FN(CS5A_), \
+-	GPIO_FN(PORT91_RDWR),
+-	GPIO_FN(CS5B_), \
+ 	GPIO_FN(FCE1_),
+-	GPIO_FN(CS6B_), \
+ 	GPIO_FN(DACK0),
+ 	GPIO_FN(FCE0_), \
+-	GPIO_FN(CS6A_),
+ 	GPIO_FN(WAIT_), \
+ 	GPIO_FN(DREQ0),
+-	GPIO_FN(RD__FSC),
+-	GPIO_FN(WE0__FWE), \
+-	GPIO_FN(RDWR_FWE),
+-	GPIO_FN(WE1_),
+ 	GPIO_FN(FRB),
+ 	GPIO_FN(CKO),
+ 	GPIO_FN(NBRSTOUT_),
+@@ -3125,7 +3099,6 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(VIO2_FIELD), \
+ 	GPIO_FN(VIO_CKO),
+ 	GPIO_FN(A27), \
+-	GPIO_FN(PORT149_RDWR), \
+ 	GPIO_FN(MFG0_IN1), \
+ 	GPIO_FN(MFG0_IN2),
+ 	GPIO_FN(TS_SPSYNC3), \
 -- 
-1.7.10.4
+1.8.1.5
 
