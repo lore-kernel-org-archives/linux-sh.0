@@ -1,47 +1,44 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 26 Mar 2013 06:45:35 +0000
-Subject: Re: [PATCH 0/2 v2] thermal: rcar: fixup registration failure case
-Message-Id: <87k3ouirqs.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 22:59:23 +0000
+Subject: [PATCH v4 18/88] sh-pfc: r8a7779: Add USB0 and USB1 PENC pinmux support
+Message-Id: <1363215633-4264-19-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87620gqbbe.wl%kuninori.morimoto.gx@renesas.com>
-	<874ng0qb9f.wl%kuninori.morimoto.gx@renesas.com>
-	<1364200856.2465.48.camel@rzhang1-mobl4>
-	<871ub3j9r3.wl%kuninori.morimoto.gx@renesas.com>
-	<87sj3iiu5m.wl%kuninori.morimoto.gx@renesas.com>
-	<87r4j2itio.wl%kuninori.morimoto.gx@renesas.com>
-	<1364279455.2821.2.camel@rzhang1-mobl4>
-In-Reply-To: <1364279455.2821.2.camel@rzhang1-mobl4>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Zhang Rui <rui.zhang@intel.com>
-Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-pm@vger.kernel.org, Linux-SH <linux-sh@vger.kernel.org>
+To: linux-sh@vger.kernel.org
 
+The USB0 and USB1 PENC functions were missing. Add them.
 
-Hi Zhang
-
-> On Mon, 2013-03-25 at 23:07 -0700, Kuninori Morimoto wrote:
-> > Hi Zhang
-> > 
-> > These are v2 patch set of rcar_thermal driver fixup
-> > I noticed that v1 patch had bug.
-> > 
-> it seems that you did not run any test for the previous patch set, not
-> even build test.
-
-Sorry about my v1 patch set.
-
-My v1 (v2 too) based on not only your branch (= your branch + SH-ML patch set)
-Of course I tested v1 patch set,
-
-But I missed when I git-format-patch.
-I'm sorry about it again
-
-> have you tried this patch set before sending out?
-
-Yes, these are tesed on r8a73a4 APE6 board
-
-
-Best regards
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Kuninori Morimoto
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+index 361b162..946572bc 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+@@ -429,7 +429,8 @@ enum {
+ 	A0_MARK, SD1_DAT3_MARK, MMC0_D3_MARK, FD3_MARK,
+ 	BS_MARK, SD1_DAT2_MARK, MMC0_D2_MARK, FD2_MARK,
+ 	ATADIR0_MARK, SDSELF_MARK, HCTS1_MARK, TX4_C_MARK,
+-	USB_PENC2_MARK, SCK0_MARK, PWM1_MARK, PWMFSW0_MARK,
++	USB_PENC0_MARK, USB_PENC1_MARK, USB_PENC2_MARK,
++	SCK0_MARK, PWM1_MARK, PWMFSW0_MARK,
+ 	SCIF_CLK_MARK, TCLK0_C_MARK,
+ 
+ 	EX_CS0_MARK, RX3_C_IRDA_RX_C_MARK, MMC0_D6_MARK,
+@@ -640,6 +641,9 @@ static const pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(A18_MARK, FN_A18),
+ 	PINMUX_DATA(A19_MARK, FN_A19),
+ 
++	PINMUX_DATA(USB_PENC0_MARK, FN_USB_PENC0),
++	PINMUX_DATA(USB_PENC1_MARK, FN_USB_PENC1),
++
+ 	PINMUX_IPSR_DATA(IP0_2_0, USB_PENC2),
+ 	PINMUX_IPSR_MODSEL_DATA(IP0_2_0, SCK0, SEL_SCIF0_0),
+ 	PINMUX_IPSR_DATA(IP0_2_0, PWM1),
+-- 
+1.8.1.5
+
