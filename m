@@ -1,240 +1,124 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 11:02:04 +0000
-Subject: [PATCH v3 44/64] sh-pfc: r8a7779: Remove SDHI and MMCIF function GPIOS
-Message-Id: <1362740544-19164-45-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 22:59:38 +0000
+Subject: [PATCH v4 33/88] ARM: shmobile: kota2: Register pinctrl mappings for SDHI and MMCIF
+Message-Id: <1363215633-4264-34-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-All r8a7779 platforms now use the pinctrl API to control the SDHI and
-MMCIF pins, the corresponding function GPIOS are unused. Remove them.
+Replace the GPIO-based SDHI and MMCIF pinmux configuration by pinctrl
+mappings.
+
+Board code used the non-pulled-up version of the function GPIOs, but
+those are defined in the PFC driver as enabling the pull-ups anyway.
+Enable pull-ups on the MMCIF data and command pins through the pinconf
+API.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 112 +++++++++++++++++------------------
- 1 file changed, 56 insertions(+), 56 deletions(-)
+ arch/arm/mach-shmobile/board-kota2.c | 63 ++++++++++++++++++++----------------
+ 1 file changed, 36 insertions(+), 27 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-index 6d0142b..2aee7cc 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-@@ -2700,16 +2700,16 @@ static struct pinmux_func pinmux_func_gpios[] = {
+diff --git a/arch/arm/mach-shmobile/board-kota2.c b/arch/arm/mach-shmobile/board-kota2.c
+index 09c4f00..7fa71f5 100644
+--- a/arch/arm/mach-shmobile/board-kota2.c
++++ b/arch/arm/mach-shmobile/board-kota2.c
+@@ -25,6 +25,7 @@
+ #include <linux/interrupt.h>
+ #include <linux/irq.h>
+ #include <linux/pinctrl/machine.h>
++#include <linux/pinctrl/pinconf-generic.h>
+ #include <linux/platform_device.h>
+ #include <linux/delay.h>
+ #include <linux/io.h>
+@@ -434,7 +435,20 @@ static struct platform_device *kota2_devices[] __initdata = {
+ 	&sdhi1_device,
+ };
  
- 	/* IPSR0 */
- 	GPIO_FN(USB_PENC2), GPIO_FN(SCK0), GPIO_FN(PWM1), GPIO_FN(PWMFSW0),
--	GPIO_FN(SCIF_CLK), GPIO_FN(TCLK0_C), GPIO_FN(BS), GPIO_FN(SD1_DAT2),
--	GPIO_FN(MMC0_D2), GPIO_FN(FD2), GPIO_FN(ATADIR0), GPIO_FN(SDSELF),
--	GPIO_FN(HCTS1), GPIO_FN(TX4_C), GPIO_FN(A0), GPIO_FN(SD1_DAT3),
--	GPIO_FN(MMC0_D3), GPIO_FN(FD3), GPIO_FN(A20), GPIO_FN(TX5_D),
-+	GPIO_FN(SCIF_CLK), GPIO_FN(TCLK0_C), GPIO_FN(BS),
-+	GPIO_FN(FD2), GPIO_FN(ATADIR0), GPIO_FN(SDSELF),
-+	GPIO_FN(HCTS1), GPIO_FN(TX4_C), GPIO_FN(A0),
-+	GPIO_FN(FD3), GPIO_FN(A20), GPIO_FN(TX5_D),
- 	GPIO_FN(HSPI_TX2_B), GPIO_FN(A21), GPIO_FN(SCK5_D),
- 	GPIO_FN(HSPI_CLK2_B), GPIO_FN(A22), GPIO_FN(RX5_D),
- 	GPIO_FN(HSPI_RX2_B), GPIO_FN(VI1_R0), GPIO_FN(A23), GPIO_FN(FCLE),
--	GPIO_FN(HSPI_CLK2), GPIO_FN(VI1_R1), GPIO_FN(A24), GPIO_FN(SD1_CD),
--	GPIO_FN(MMC0_D4), GPIO_FN(FD4),	GPIO_FN(HSPI_CS2), GPIO_FN(VI1_R2),
--	GPIO_FN(SSI_WS78_B), GPIO_FN(A25), GPIO_FN(SD1_WP), GPIO_FN(MMC0_D5),
-+	GPIO_FN(HSPI_CLK2), GPIO_FN(VI1_R1), GPIO_FN(A24),
-+	GPIO_FN(FD4),	GPIO_FN(HSPI_CS2), GPIO_FN(VI1_R2),
-+	GPIO_FN(SSI_WS78_B), GPIO_FN(A25),
- 	GPIO_FN(FD5), GPIO_FN(HSPI_RX2), GPIO_FN(VI1_R3), GPIO_FN(TX5_B),
- 	GPIO_FN(SSI_SDATA7_B), GPIO_FN(CTS0_B), GPIO_FN(CLKOUT),
- 	GPIO_FN(TX3C_IRDA_TX_C), GPIO_FN(PWM0_B), GPIO_FN(CS0),
-@@ -2718,17 +2718,17 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(VI1_R7), GPIO_FN(HRTS1), GPIO_FN(RX4_C),
++static unsigned long pin_pullup_conf[] = {
++	PIN_CONF_PACKED(PIN_CONFIG_BIAS_PULL_UP, 0),
++};
++
+ static const struct pinctrl_map kota2_pinctrl_map[] = {
++	/* MMCIF */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
++				  "mmc0_data8_0", "mmc0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
++				  "mmc0_ctrl_0", "mmc0"),
++	PIN_MAP_CONFIGS_PIN_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
++				    "PORT279", pin_pullup_conf),
++	PIN_MAP_CONFIGS_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
++				      "mmc0_data8_0", pin_pullup_conf),
+ 	/* SCIFA2 (UART2) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-sh73a0",
+ 				  "scifa2_data_0", "scifa2"),
+@@ -452,6 +466,28 @@ static const struct pinctrl_map kota2_pinctrl_map[] = {
+ 				  "scifb_clk_0", "scifb"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.8", "pfc-sh73a0",
+ 				  "scifb_ctrl_0", "scifb"),
++	/* SDHI0 (microSD) */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
++				  "sdhi0_data4", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
++				  "sdhi0_ctrl", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
++				  "sdhi0_cd", "sdhi0"),
++	PIN_MAP_CONFIGS_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
++				      "sdhi0_data4", pin_pullup_conf),
++	PIN_MAP_CONFIGS_PIN_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
++				    "PORT256", pin_pullup_conf),
++	PIN_MAP_CONFIGS_PIN_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
++				    "PORT251", pin_pullup_conf),
++	/* SDHI1 (BCM4330) */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-sh73a0",
++				  "sdhi1_data4", "sdhi1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-sh73a0",
++				  "sdhi1_ctrl", "sdhi1"),
++	PIN_MAP_CONFIGS_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-sh73a0",
++				      "sdhi1_data4", pin_pullup_conf),
++	PIN_MAP_CONFIGS_PIN_DEFAULT("sh_mobile_sdhi.1", "pfc-sh73a0",
++				    "PORT263", pin_pullup_conf),
+ };
  
- 	/* IPSR1 */
--	GPIO_FN(EX_CS0), GPIO_FN(RX3_C_IRDA_RX_C), GPIO_FN(MMC0_D6),
--	GPIO_FN(FD6), GPIO_FN(EX_CS1), GPIO_FN(MMC0_D7), GPIO_FN(FD7),
--	GPIO_FN(EX_CS2), GPIO_FN(SD1_CLK), GPIO_FN(MMC0_CLK), GPIO_FN(FALE),
--	GPIO_FN(ATACS00), GPIO_FN(EX_CS3), GPIO_FN(SD1_CMD), GPIO_FN(MMC0_CMD),
-+	GPIO_FN(EX_CS0), GPIO_FN(RX3_C_IRDA_RX_C),
-+	GPIO_FN(FD6), GPIO_FN(EX_CS1), GPIO_FN(FD7),
-+	GPIO_FN(EX_CS2), GPIO_FN(FALE),
-+	GPIO_FN(ATACS00), GPIO_FN(EX_CS3),
- 	GPIO_FN(FRE), GPIO_FN(ATACS10), GPIO_FN(VI1_R4), GPIO_FN(RX5_B),
- 	GPIO_FN(HSCK1), GPIO_FN(SSI_SDATA8_B), GPIO_FN(RTS0_B_TANS_B),
--	GPIO_FN(SSI_SDATA9), GPIO_FN(EX_CS4), GPIO_FN(SD1_DAT0),
--	GPIO_FN(MMC0_D0), GPIO_FN(FD0), GPIO_FN(ATARD0), GPIO_FN(VI1_R5),
-+	GPIO_FN(SSI_SDATA9), GPIO_FN(EX_CS4),
-+	GPIO_FN(FD0), GPIO_FN(ATARD0), GPIO_FN(VI1_R5),
- 	GPIO_FN(SCK5_B), GPIO_FN(HTX1), GPIO_FN(TX2_E), GPIO_FN(TX0_B),
--	GPIO_FN(SSI_SCK9), GPIO_FN(EX_CS5), GPIO_FN(SD1_DAT1),
--	GPIO_FN(MMC0_D1), GPIO_FN(FD1),	GPIO_FN(ATAWR0), GPIO_FN(VI1_R6),
-+	GPIO_FN(SSI_SCK9), GPIO_FN(EX_CS5),
-+	GPIO_FN(FD1),	GPIO_FN(ATAWR0), GPIO_FN(VI1_R6),
- 	GPIO_FN(HRX1), GPIO_FN(RX2_E), GPIO_FN(RX0_B), GPIO_FN(SSI_WS9),
- 	GPIO_FN(MLB_CLK), GPIO_FN(PWM2), GPIO_FN(SCK4), GPIO_FN(MLB_SIG),
- 	GPIO_FN(PWM3), GPIO_FN(TX4), GPIO_FN(MLB_DAT), GPIO_FN(PWM4),
-@@ -2788,26 +2788,26 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(QPOLB), GPIO_FN(CAN1_RX), GPIO_FN(RX2_C),
- 	GPIO_FN(DREQ0_B), GPIO_FN(SSI_SCK78_B), GPIO_FN(SCK0_B),
- 	GPIO_FN(VI2_DATA0_VI2_B0), GPIO_FN(PWM6),
--	GPIO_FN(SD3_CLK), GPIO_FN(TX3_E_IRDA_TX_E), GPIO_FN(AUDCK),
-+	GPIO_FN(TX3_E_IRDA_TX_E), GPIO_FN(AUDCK),
- 	GPIO_FN(PWMFSW0_B), GPIO_FN(VI2_DATA1_VI2_B1),
--	GPIO_FN(PWM0), GPIO_FN(SD3_CMD), GPIO_FN(RX3_E_IRDA_RX_E),
-+	GPIO_FN(PWM0), GPIO_FN(RX3_E_IRDA_RX_E),
- 	GPIO_FN(AUDSYNC), GPIO_FN(CTS0_D), GPIO_FN(VI2_G0),
- 	GPIO_FN(VI2_G1), GPIO_FN(VI2_G2),
- 	GPIO_FN(VI2_G3), GPIO_FN(VI2_G4),
- 	GPIO_FN(VI2_G5),
--	GPIO_FN(VI2_DATA2_VI2_B2), GPIO_FN(SCL1_B), GPIO_FN(SD3_DAT2),
-+	GPIO_FN(VI2_DATA2_VI2_B2), GPIO_FN(SCL1_B),
- 	GPIO_FN(SCK3_E), GPIO_FN(AUDATA6), GPIO_FN(TX0_D),
--	GPIO_FN(VI2_DATA3_VI2_B3), GPIO_FN(SDA1_B), GPIO_FN(SD3_DAT3),
-+	GPIO_FN(VI2_DATA3_VI2_B3), GPIO_FN(SDA1_B),
- 	GPIO_FN(SCK5), GPIO_FN(AUDATA7), GPIO_FN(RX0_D),
- 	GPIO_FN(VI2_G6), GPIO_FN(VI2_G7),
- 	GPIO_FN(VI2_R0), GPIO_FN(VI2_R1),
- 	GPIO_FN(VI2_R2), GPIO_FN(VI2_R3),
--	GPIO_FN(VI2_DATA4_VI2_B4), GPIO_FN(SCL2_B), GPIO_FN(SD3_DAT0),
-+	GPIO_FN(VI2_DATA4_VI2_B4), GPIO_FN(SCL2_B),
- 	GPIO_FN(TX5), GPIO_FN(SCK0_D),
+ static void __init kota2_init(void)
+@@ -508,35 +544,8 @@ static void __init kota2_init(void)
+ 	gpio_request(GPIO_FN_KEYOUT8, NULL);
  
- 	/* IPSR5 */
- 	GPIO_FN(VI2_DATA5_VI2_B5), GPIO_FN(SDA2_B),
--	GPIO_FN(SD3_DAT1), GPIO_FN(RX5), GPIO_FN(RTS0_D_TANS_D),
-+	GPIO_FN(RX5), GPIO_FN(RTS0_D_TANS_D),
- 	GPIO_FN(VI2_R4), GPIO_FN(VI2_R5),
- 	GPIO_FN(VI2_R6), GPIO_FN(VI2_R7),
- 	GPIO_FN(SCL2_D), GPIO_FN(SDA2_D),
-@@ -2816,14 +2816,14 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(SDA1_D), GPIO_FN(VI2_HSYNC),
- 	GPIO_FN(VI3_HSYNC), GPIO_FN(VI2_VSYNC),
- 	GPIO_FN(VI3_VSYNC),
--	GPIO_FN(VI2_CLK), GPIO_FN(TX3_B_IRDA_TX_B), GPIO_FN(SD3_CD),
-+	GPIO_FN(VI2_CLK), GPIO_FN(TX3_B_IRDA_TX_B),
- 	GPIO_FN(HSPI_TX1), GPIO_FN(VI1_CLKENB), GPIO_FN(VI3_CLKENB),
- 	GPIO_FN(AUDIO_CLKC), GPIO_FN(TX2_D), GPIO_FN(SPEEDIN),
- 	GPIO_FN(GPS_SIGN_D), GPIO_FN(VI2_DATA6_VI2_B6),
- 	GPIO_FN(TCLK0), GPIO_FN(QSTVA_B_QVS_B), GPIO_FN(HSPI_CLK1),
- 	GPIO_FN(SCK2_D), GPIO_FN(AUDIO_CLKOUT_B), GPIO_FN(GPS_MAG_D),
- 	GPIO_FN(VI2_DATA7_VI2_B7), GPIO_FN(RX3_B_IRDA_RX_B),
--	GPIO_FN(SD3_WP), GPIO_FN(HSPI_RX1), GPIO_FN(VI1_FIELD),
-+	GPIO_FN(HSPI_RX1), GPIO_FN(VI1_FIELD),
- 	GPIO_FN(VI3_FIELD), GPIO_FN(AUDIO_CLKOUT), GPIO_FN(RX2_D),
- 	GPIO_FN(GPS_CLK_C), GPIO_FN(GPS_CLK_D), GPIO_FN(AUDIO_CLKA),
- 	GPIO_FN(CAN_TXCLK), GPIO_FN(AUDIO_CLKB), GPIO_FN(USB_OVC2),
-@@ -2857,14 +2857,14 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(SSI_WS9_B), GPIO_FN(HSPI_CS1_C), GPIO_FN(SSI_SDATA7),
- 	GPIO_FN(CAN_DEBUGOUT15), GPIO_FN(IRQ2_B), GPIO_FN(TCLK1_C),
- 	GPIO_FN(HSPI_TX1_C), GPIO_FN(SSI_SDATA8), GPIO_FN(VSP),
--	GPIO_FN(IRQ3_B), GPIO_FN(HSPI_RX1_C), GPIO_FN(SD0_CLK),
--	GPIO_FN(ATACS01), GPIO_FN(SCK1_B), GPIO_FN(SD0_CMD), GPIO_FN(ATACS11),
--	GPIO_FN(TX1_B), GPIO_FN(CC5_TDO), GPIO_FN(SD0_DAT0), GPIO_FN(ATADIR1),
--	GPIO_FN(RX1_B), GPIO_FN(CC5_TRST), GPIO_FN(SD0_DAT1), GPIO_FN(ATAG1),
--	GPIO_FN(SCK2_B), GPIO_FN(CC5_TMS), GPIO_FN(SD0_DAT2), GPIO_FN(ATARD1),
--	GPIO_FN(TX2_B), GPIO_FN(CC5_TCK), GPIO_FN(SD0_DAT3), GPIO_FN(ATAWR1),
--	GPIO_FN(RX2_B), GPIO_FN(CC5_TDI), GPIO_FN(SD0_CD), GPIO_FN(DREQ2),
--	GPIO_FN(RTS1_B_TANS_B), GPIO_FN(SD0_WP), GPIO_FN(DACK2),
-+	GPIO_FN(IRQ3_B), GPIO_FN(HSPI_RX1_C),
-+	GPIO_FN(ATACS01), GPIO_FN(SCK1_B), GPIO_FN(ATACS11),
-+	GPIO_FN(TX1_B), GPIO_FN(CC5_TDO), GPIO_FN(ATADIR1),
-+	GPIO_FN(RX1_B), GPIO_FN(CC5_TRST), GPIO_FN(ATAG1),
-+	GPIO_FN(SCK2_B), GPIO_FN(CC5_TMS), GPIO_FN(ATARD1),
-+	GPIO_FN(TX2_B), GPIO_FN(CC5_TCK), GPIO_FN(ATAWR1),
-+	GPIO_FN(RX2_B), GPIO_FN(CC5_TDI), GPIO_FN(DREQ2),
-+	GPIO_FN(RTS1_B_TANS_B), GPIO_FN(DACK2),
- 	GPIO_FN(CTS1_B),
+ 	/* MMCIF */
+-	gpio_request(GPIO_FN_MMCCLK0, NULL);
+-	gpio_request(GPIO_FN_MMCD0_0, NULL);
+-	gpio_request(GPIO_FN_MMCD0_1, NULL);
+-	gpio_request(GPIO_FN_MMCD0_2, NULL);
+-	gpio_request(GPIO_FN_MMCD0_3, NULL);
+-	gpio_request(GPIO_FN_MMCD0_4, NULL);
+-	gpio_request(GPIO_FN_MMCD0_5, NULL);
+-	gpio_request(GPIO_FN_MMCD0_6, NULL);
+-	gpio_request(GPIO_FN_MMCD0_7, NULL);
+-	gpio_request(GPIO_FN_MMCCMD0, NULL);
+ 	gpio_request_one(208, GPIOF_OUT_INIT_HIGH, NULL); /* Reset */
  
- 	/* IPSR8 */
-@@ -2881,46 +2881,46 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(CC5_STATE15), GPIO_FN(CC5_STATE23), GPIO_FN(CC5_STATE31),
- 	GPIO_FN(CC5_STATE39), GPIO_FN(FMCLK), GPIO_FN(RDS_CLK), GPIO_FN(PCMOE),
- 	GPIO_FN(BPFCLK), GPIO_FN(PCMWE), GPIO_FN(FMIN), GPIO_FN(RDS_DATA),
--	GPIO_FN(VI0_CLK), GPIO_FN(MMC1_CLK), GPIO_FN(VI0_CLKENB),
-+	GPIO_FN(VI0_CLK), GPIO_FN(VI0_CLKENB),
- 	GPIO_FN(TX1_C), GPIO_FN(HTX1_B), GPIO_FN(MT1_SYNC),
- 	GPIO_FN(VI0_FIELD), GPIO_FN(RX1_C), GPIO_FN(HRX1_B),
- 	GPIO_FN(VI0_HSYNC), GPIO_FN(VI0_DATA0_B_VI0_B0_B), GPIO_FN(CTS1_C),
--	GPIO_FN(TX4_D), GPIO_FN(MMC1_CMD), GPIO_FN(HSCK1_B),
-+	GPIO_FN(TX4_D), GPIO_FN(HSCK1_B),
- 	GPIO_FN(VI0_VSYNC), GPIO_FN(VI0_DATA1_B_VI0_B1_B),
- 	GPIO_FN(RTS1_C_TANS_C), GPIO_FN(RX4_D), GPIO_FN(PWMFSW0_C),
- 
- 	/* IPSR9 */
- 	GPIO_FN(VI0_DATA0_VI0_B0), GPIO_FN(HRTS1_B), GPIO_FN(MT1_VCXO),
- 	GPIO_FN(VI0_DATA1_VI0_B1), GPIO_FN(HCTS1_B), GPIO_FN(MT1_PWM),
--	GPIO_FN(VI0_DATA2_VI0_B2), GPIO_FN(MMC1_D0), GPIO_FN(VI0_DATA3_VI0_B3),
--	GPIO_FN(MMC1_D1), GPIO_FN(VI0_DATA4_VI0_B4), GPIO_FN(MMC1_D2),
--	GPIO_FN(VI0_DATA5_VI0_B5), GPIO_FN(MMC1_D3), GPIO_FN(VI0_DATA6_VI0_B6),
--	GPIO_FN(MMC1_D4), GPIO_FN(ARM_TRACEDATA_0), GPIO_FN(VI0_DATA7_VI0_B7),
--	GPIO_FN(MMC1_D5), GPIO_FN(ARM_TRACEDATA_1), GPIO_FN(VI0_G0),
-+	GPIO_FN(VI0_DATA2_VI0_B2), GPIO_FN(VI0_DATA3_VI0_B3),
-+	GPIO_FN(VI0_DATA4_VI0_B4),
-+	GPIO_FN(VI0_DATA5_VI0_B5), GPIO_FN(VI0_DATA6_VI0_B6),
-+	GPIO_FN(ARM_TRACEDATA_0), GPIO_FN(VI0_DATA7_VI0_B7),
-+	GPIO_FN(ARM_TRACEDATA_1), GPIO_FN(VI0_G0),
- 	GPIO_FN(SSI_SCK78_C), GPIO_FN(IRQ0), GPIO_FN(ARM_TRACEDATA_2),
- 	GPIO_FN(VI0_G1), GPIO_FN(SSI_WS78_C), GPIO_FN(IRQ1),
- 	GPIO_FN(ARM_TRACEDATA_3), GPIO_FN(VI0_G2), GPIO_FN(ETH_TXD1),
--	GPIO_FN(MMC1_D6), GPIO_FN(ARM_TRACEDATA_4), GPIO_FN(TS_SPSYNC0),
--	GPIO_FN(VI0_G3), GPIO_FN(ETH_CRS_DV), GPIO_FN(MMC1_D7),
-+	GPIO_FN(ARM_TRACEDATA_4), GPIO_FN(TS_SPSYNC0),
-+	GPIO_FN(VI0_G3), GPIO_FN(ETH_CRS_DV),
- 	GPIO_FN(ARM_TRACEDATA_5), GPIO_FN(TS_SDAT0), GPIO_FN(VI0_G4),
--	GPIO_FN(ETH_TX_EN), GPIO_FN(SD2_DAT0_B), GPIO_FN(ARM_TRACEDATA_6),
--	GPIO_FN(VI0_G5), GPIO_FN(ETH_RX_ER), GPIO_FN(SD2_DAT1_B),
-+	GPIO_FN(ETH_TX_EN), GPIO_FN(ARM_TRACEDATA_6),
-+	GPIO_FN(VI0_G5), GPIO_FN(ETH_RX_ER),
- 	GPIO_FN(ARM_TRACEDATA_7), GPIO_FN(VI0_G6), GPIO_FN(ETH_RXD0),
--	GPIO_FN(SD2_DAT2_B), GPIO_FN(ARM_TRACEDATA_8), GPIO_FN(VI0_G7),
--	GPIO_FN(ETH_RXD1), GPIO_FN(SD2_DAT3_B), GPIO_FN(ARM_TRACEDATA_9),
-+	GPIO_FN(ARM_TRACEDATA_8), GPIO_FN(VI0_G7),
-+	GPIO_FN(ETH_RXD1), GPIO_FN(ARM_TRACEDATA_9),
- 
- 	/* IPSR10 */
- 	GPIO_FN(VI0_R0), GPIO_FN(SSI_SDATA7_C), GPIO_FN(SCK1_C),
- 	GPIO_FN(DREQ1_B), GPIO_FN(ARM_TRACEDATA_10), GPIO_FN(DREQ0_C),
- 	GPIO_FN(VI0_R1), GPIO_FN(SSI_SDATA8_C), GPIO_FN(DACK1_B),
- 	GPIO_FN(ARM_TRACEDATA_11), GPIO_FN(DACK0_C), GPIO_FN(DRACK0_C),
--	GPIO_FN(VI0_R2), GPIO_FN(ETH_LINK), GPIO_FN(SD2_CLK_B), GPIO_FN(IRQ2),
-+	GPIO_FN(VI0_R2), GPIO_FN(ETH_LINK), GPIO_FN(IRQ2),
- 	GPIO_FN(ARM_TRACEDATA_12), GPIO_FN(VI0_R3), GPIO_FN(ETH_MAGIC),
--	GPIO_FN(SD2_CMD_B), GPIO_FN(IRQ3), GPIO_FN(ARM_TRACEDATA_13),
--	GPIO_FN(VI0_R4), GPIO_FN(ETH_REFCLK), GPIO_FN(SD2_CD_B),
-+	GPIO_FN(IRQ3), GPIO_FN(ARM_TRACEDATA_13),
-+	GPIO_FN(VI0_R4), GPIO_FN(ETH_REFCLK),
- 	GPIO_FN(HSPI_CLK1_B), GPIO_FN(ARM_TRACEDATA_14), GPIO_FN(MT1_CLK),
- 	GPIO_FN(TS_SCK0), GPIO_FN(VI0_R5), GPIO_FN(ETH_TXD0),
--	GPIO_FN(SD2_WP_B), GPIO_FN(HSPI_CS1_B), GPIO_FN(ARM_TRACEDATA_15),
-+	GPIO_FN(HSPI_CS1_B), GPIO_FN(ARM_TRACEDATA_15),
- 	GPIO_FN(MT1_D), GPIO_FN(TS_SDEN0), GPIO_FN(VI0_R6), GPIO_FN(ETH_MDC),
- 	GPIO_FN(DREQ2_C), GPIO_FN(HSPI_TX1_B), GPIO_FN(TRACECLK),
- 	GPIO_FN(MT1_BEN), GPIO_FN(PWMFSW0_D), GPIO_FN(VI0_R7),
-@@ -2933,19 +2933,19 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(SPV_TRST), GPIO_FN(SCL3),
- 
- 	/* IPSR11 */
--	GPIO_FN(VI1_DATA0_VI1_B0), GPIO_FN(SD2_DAT0), GPIO_FN(SIM_RST),
-+	GPIO_FN(VI1_DATA0_VI1_B0), GPIO_FN(SIM_RST),
- 	GPIO_FN(SPV_TCK), GPIO_FN(ADICLK_B), GPIO_FN(VI1_DATA1_VI1_B1),
--	GPIO_FN(SD2_DAT1), GPIO_FN(MT0_CLK), GPIO_FN(SPV_TMS),
--	GPIO_FN(ADICS_B_SAMP_B), GPIO_FN(VI1_DATA2_VI1_B2), GPIO_FN(SD2_DAT2),
-+	GPIO_FN(MT0_CLK), GPIO_FN(SPV_TMS),
-+	GPIO_FN(ADICS_B_SAMP_B), GPIO_FN(VI1_DATA2_VI1_B2),
- 	GPIO_FN(MT0_D), GPIO_FN(SPVTDI), GPIO_FN(ADIDATA_B),
--	GPIO_FN(VI1_DATA3_VI1_B3), GPIO_FN(SD2_DAT3), GPIO_FN(MT0_BEN),
-+	GPIO_FN(VI1_DATA3_VI1_B3), GPIO_FN(MT0_BEN),
- 	GPIO_FN(SPV_TDO), GPIO_FN(ADICHS0_B), GPIO_FN(VI1_DATA4_VI1_B4),
--	GPIO_FN(SD2_CLK), GPIO_FN(MT0_PEN), GPIO_FN(SPA_TRST),
-+	GPIO_FN(MT0_PEN), GPIO_FN(SPA_TRST),
- 	GPIO_FN(HSPI_CLK1_D), GPIO_FN(ADICHS1_B), GPIO_FN(VI1_DATA5_VI1_B5),
--	GPIO_FN(SD2_CMD), GPIO_FN(MT0_SYNC), GPIO_FN(SPA_TCK),
-+	GPIO_FN(MT0_SYNC), GPIO_FN(SPA_TCK),
- 	GPIO_FN(HSPI_CS1_D), GPIO_FN(ADICHS2_B), GPIO_FN(VI1_DATA6_VI1_B6),
--	GPIO_FN(SD2_CD), GPIO_FN(MT0_VCXO), GPIO_FN(SPA_TMS),
--	GPIO_FN(HSPI_TX1_D), GPIO_FN(VI1_DATA7_VI1_B7), GPIO_FN(SD2_WP),
-+	GPIO_FN(MT0_VCXO), GPIO_FN(SPA_TMS),
-+	GPIO_FN(HSPI_TX1_D), GPIO_FN(VI1_DATA7_VI1_B7),
- 	GPIO_FN(MT0_PWM), GPIO_FN(SPA_TDI), GPIO_FN(HSPI_RX1_D),
- 	GPIO_FN(VI1_G0), GPIO_FN(VI3_DATA0),
- 	GPIO_FN(TS_SCK1), GPIO_FN(DREQ2_B), GPIO_FN(TX2), GPIO_FN(SPA_TDO),
+-	/* SDHI0 (microSD) */
+-	gpio_request(GPIO_FN_SDHICD0_PU, NULL);
+-	gpio_request(GPIO_FN_SDHICMD0_PU, NULL);
+-	gpio_request(GPIO_FN_SDHICLK0, NULL);
+-	gpio_request(GPIO_FN_SDHID0_3_PU, NULL);
+-	gpio_request(GPIO_FN_SDHID0_2_PU, NULL);
+-	gpio_request(GPIO_FN_SDHID0_1_PU, NULL);
+-	gpio_request(GPIO_FN_SDHID0_0_PU, NULL);
+-
+-	/* SDHI1 (BCM4330) */
+-	gpio_request(GPIO_FN_SDHICLK1, NULL);
+-	gpio_request(GPIO_FN_SDHICMD1_PU, NULL);
+-	gpio_request(GPIO_FN_SDHID1_3_PU, NULL);
+-	gpio_request(GPIO_FN_SDHID1_2_PU, NULL);
+-	gpio_request(GPIO_FN_SDHID1_1_PU, NULL);
+-	gpio_request(GPIO_FN_SDHID1_0_PU, NULL);
+-
+ #ifdef CONFIG_CACHE_L2X0
+ 	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
+ 	l2x0_init(IOMEM(0xf0100000), 0x40460000, 0x82000fff);
 -- 
 1.8.1.5
 
