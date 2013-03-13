@@ -1,52 +1,68 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 15 Mar 2013 12:51:23 +0000
-Subject: Re: [PATCH 2/7] ARM: shmobile: marzen: add USB EHCI driver support
-Message-Id: <5143194B.2040600@cogentembedded.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 23:00:07 +0000
+Subject: [PATCH v4 62/88] sh-pfc: r8a7779: Remove DU1_DOTCLKOUT1 GPIO
+Message-Id: <1363215633-4264-63-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1352446306-19945-1-git-send-email-horms@verge.net.au>
- <1352446306-19945-3-git-send-email-horms@verge.net.au>
- <5140F35F.3090702@cogentembedded.com>
- <87li9q4ydj.wl%kuninori.morimoto.gx@renesas.com>
- <5141D3C6.4090806@cogentembedded.com>
- <87boal32nh.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87boal32nh.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hello.
+The function is not documented in the r8a7779 datasheet. Remove it.
 
-On 15-03-2013 4:52, Kuninori Morimoto wrote:
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
 
->>> I forgot detail of it, but these usb is using callback function,
->>> and it is using *phy*.
-
->>     But this PHY also belongs to SoC.
-
->>> This phy came from marzen_init_late() with usb_get_phy(USB_PHY_TYPE_USB2);
->>> This usb_get_phy() is not needed if board doesn't have USB.
-
->>      Anyway, there should be ways to separate the board specific platform code
->> and the SoC specific one. That's what other subarches do.
-
->>> You can modify it if you want
-
->>      Yes, I definitely would like to try.
-
-> I checked CPG :: MSTP for USB0/1/2 and USB Host/Function,
-> and GIC number for it.
-> It seems no conflict each other
-> I guess EHCI/OHCI goes to setup seems no problem.
-
-> But, as you pointed on USB ML,
-> USB-PHY :: USBPCTRL0 depends on platform
-> (Host/Function selection, and OVC pin setting)
-
-> rcar_usb_phy driver belongs to platform
-
-    No, it doesn't. Only it's (future) platform data will belong to the board --
-that's what they were designed for.
-
-WBR, Sergei
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+index 5b498ff..f1fa355 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+@@ -353,7 +353,7 @@ enum {
+ 	FN_VI1_DATA6_VI1_B6, FN_SD2_CD, FN_MT0_VCXO, FN_SPA_TMS,
+ 	FN_HSPI_TX1_D, FN_VI1_DATA7_VI1_B7, FN_SD2_WP, FN_MT0_PWM,
+ 	FN_SPA_TDI, FN_HSPI_RX1_D, FN_VI1_G0, FN_VI3_DATA0,
+-	FN_DU1_DOTCLKOUT1, FN_TS_SCK1, FN_DREQ2_B, FN_TX2,
++	FN_TS_SCK1, FN_DREQ2_B, FN_TX2,
+ 	FN_SPA_TDO, FN_HCTS0_B, FN_VI1_G1, FN_VI3_DATA1,
+ 	FN_SSI_SCK1, FN_TS_SDEN1, FN_DACK2_B, FN_RX2, FN_HRTS0_B,
+ 
+@@ -615,7 +615,7 @@ enum {
+ 	HSPI_CS1_D_MARK, ADICHS2_B_MARK, VI1_DATA6_VI1_B6_MARK, SD2_CD_MARK,
+ 	MT0_VCXO_MARK, SPA_TMS_MARK, HSPI_TX1_D_MARK, VI1_DATA7_VI1_B7_MARK,
+ 	SD2_WP_MARK, MT0_PWM_MARK, SPA_TDI_MARK, HSPI_RX1_D_MARK,
+-	VI1_G0_MARK, VI3_DATA0_MARK, DU1_DOTCLKOUT1_MARK, TS_SCK1_MARK,
++	VI1_G0_MARK, VI3_DATA0_MARK, TS_SCK1_MARK,
+ 	DREQ2_B_MARK, TX2_MARK,	SPA_TDO_MARK, HCTS0_B_MARK,
+ 	VI1_G1_MARK, VI3_DATA1_MARK, SSI_SCK1_MARK, TS_SDEN1_MARK,
+ 	DACK2_B_MARK, RX2_MARK, HRTS0_B_MARK,
+@@ -1385,7 +1385,6 @@ static const pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_IPSR_MODSEL_DATA(IP11_23_21, HSPI_RX1_D, SEL_HSPI1_3),
+ 	PINMUX_IPSR_DATA(IP11_26_24, VI1_G0),
+ 	PINMUX_IPSR_DATA(IP11_26_24, VI3_DATA0),
+-	PINMUX_IPSR_DATA(IP11_26_24, DU1_DOTCLKOUT1),
+ 	PINMUX_IPSR_DATA(IP11_26_24, TS_SCK1),
+ 	PINMUX_IPSR_MODSEL_DATA(IP11_26_24, DREQ2_B, SEL_EXBUS2_1),
+ 	PINMUX_IPSR_DATA(IP11_26_24, TX2),
+@@ -2926,7 +2925,7 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(SD2_CD), GPIO_FN(MT0_VCXO), GPIO_FN(SPA_TMS),
+ 	GPIO_FN(HSPI_TX1_D), GPIO_FN(VI1_DATA7_VI1_B7), GPIO_FN(SD2_WP),
+ 	GPIO_FN(MT0_PWM), GPIO_FN(SPA_TDI), GPIO_FN(HSPI_RX1_D),
+-	GPIO_FN(VI1_G0), GPIO_FN(VI3_DATA0), GPIO_FN(DU1_DOTCLKOUT1),
++	GPIO_FN(VI1_G0), GPIO_FN(VI3_DATA0),
+ 	GPIO_FN(TS_SCK1), GPIO_FN(DREQ2_B), GPIO_FN(TX2), GPIO_FN(SPA_TDO),
+ 	GPIO_FN(HCTS0_B), GPIO_FN(VI1_G1), GPIO_FN(VI3_DATA1),
+ 	GPIO_FN(SSI_SCK1), GPIO_FN(TS_SDEN1), GPIO_FN(DACK2_B), GPIO_FN(RX2),
+@@ -3634,7 +3633,7 @@ static const struct pinmux_cfg_reg pinmux_config_regs[] = {
+ 	    FN_VI1_G1, FN_VI3_DATA1, FN_SSI_SCK1, FN_TS_SDEN1,
+ 	    FN_DACK2_B, FN_RX2, FN_HRTS0_B, 0,
+ 	    /* IP11_26_24 [3] */
+-	    FN_VI1_G0, FN_VI3_DATA0, FN_DU1_DOTCLKOUT1, FN_TS_SCK1,
++	    FN_VI1_G0, FN_VI3_DATA0, 0, FN_TS_SCK1,
+ 	    FN_DREQ2_B, FN_TX2, FN_SPA_TDO, FN_HCTS0_B,
+ 	    /* IP11_23_21 [3] */
+ 	    FN_VI1_DATA7_VI1_B7, FN_SD2_WP, FN_MT0_PWM, FN_SPA_TDI,
+-- 
+1.8.1.5
 
