@@ -1,55 +1,33 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Mar 2013 22:39:29 +0000
-Subject: [PATCH 10/25] sh: sh7786: Add pin control resources
-Message-Id: <1363214384-3870-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 23:00:26 +0000
+Subject: [PATCH v4 81/88] ARM: shmobile: r8a7779: Remove DU1_DOTCLKOUT1 GPIO
+Message-Id: <1363215633-4264-82-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Add memory resources for the pin control platform device to let the
-sh-pfc driver ioremap() registers properly instead of evily casting
-register physical addresses to virtual addresses.
-
-The memory resource address range has been extracted from the config and
-data registes lists in the sh-pfc driver.
+The function is not documented in the r8a7779 datasheet. Remove it.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c | 14 ++++++++++++--
- 1 file changed, 12 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/include/mach/r8a7779.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
-index 3061778..9a45955 100644
---- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
-+++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
-@@ -13,13 +13,23 @@
-  * for more details.
-  */
- 
-+#include <linux/bug.h>
- #include <linux/init.h>
- #include <linux/kernel.h>
-+#include <linux/ioport.h>
- #include <cpu/pfc.h>
- 
-+static struct resource sh7786_pfc_resources[] = {
-+	[0] = {
-+		.start	= 0xffcc0000,
-+		.end	= 0xffcc008f,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+};
-+
- static int __init plat_pinmux_setup(void)
- {
--	return sh_pfc_register("pfc-sh7786", NULL, 0);
-+	return sh_pfc_register("pfc-sh7786", sh7786_pfc_resources,
-+			       ARRAY_SIZE(sh7786_pfc_resources));
- }
--
- arch_initcall(plat_pinmux_setup);
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+index 8ab0cd6..badba57 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -308,7 +308,7 @@ enum {
+ 	GPIO_FN_SD2_CD, GPIO_FN_MT0_VCXO, GPIO_FN_SPA_TMS, GPIO_FN_HSPI_TX1_D,
+ 	GPIO_FN_VI1_DATA7_VI1_B7, GPIO_FN_SD2_WP, GPIO_FN_MT0_PWM,
+ 	GPIO_FN_SPA_TDI, GPIO_FN_HSPI_RX1_D, GPIO_FN_VI1_G0, GPIO_FN_VI3_DATA0,
+-	GPIO_FN_DU1_DOTCLKOUT1, GPIO_FN_TS_SCK1, GPIO_FN_DREQ2_B, GPIO_FN_TX2,
++	GPIO_FN_TS_SCK1, GPIO_FN_DREQ2_B, GPIO_FN_TX2,
+ 	GPIO_FN_SPA_TDO, GPIO_FN_HCTS0_B, GPIO_FN_VI1_G1, GPIO_FN_VI3_DATA1,
+ 	GPIO_FN_SSI_SCK1, GPIO_FN_TS_SDEN1, GPIO_FN_DACK2_B, GPIO_FN_RX2,
+ 	GPIO_FN_HRTS0_B,
 -- 
 1.8.1.5
 
