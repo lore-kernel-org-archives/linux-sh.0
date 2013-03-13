@@ -1,40 +1,74 @@
-From: Arnd Bergmann <arnd@arndb.de>
-Date: Wed, 06 Mar 2013 10:28:22 +0000
-Subject: Re: [PATCH v4 1/3] serial: sh-sci: Add OF support
-Message-Id: <201303061028.23084.arnd@arndb.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 22:59:58 +0000
+Subject: [PATCH v4 53/88] sh-pfc: sh73a0: Remove I2C function GPIOS
+Message-Id: <1363215633-4264-54-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1362414054-23092-1-git-send-email-hechtb+renesas@gmail.com>
- <20130306005009.GF14275@linux-sh.org>
- <CABYn4szirgE7jy=49qCR3BuYd9jsWXJ=DrXeCqyuyGP0S2quiQ@mail.gmail.com>
-In-Reply-To: <CABYn4szirgE7jy=49qCR3BuYd9jsWXJ=DrXeCqyuyGP0S2quiQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wednesday 06 March 2013, Bastian Hecht wrote:
-> 2013/3/6 Paul Mundt <lethal@linux-sh.org>:
-> > No, we still need to figure out how to generate that baud rate, whether
-> > it needs an internal or external clock for driving the rate, etc. The
-> > frequency in and of itself doesn't provide this information, and various
-> > parts use different algorithms for factoring the baud rate generator,
-> > even varying across otherwise identical ports. It's unfortunately not
-> > possible to infer anything about the SCBRR algorithm from port type or
-> > specified baud rate.
-> >
-> > The algorithm IDs here are wholly arbitrary anyways, but are the
-> > variations I came up with from roughly 60-70 different CPUs.
+All sh73a0 platforms now use the pinctrl API to control the I2C pins,
+the corresponding function GPIOS are unused. Remove them.
 
-Ok, I see.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 12 ------------
+ 1 file changed, 12 deletions(-)
 
-> So if we stick with the notion of the algrithm ID everything is settled now.
-> 
-> I will prepare a v6 that I will post as the whole patchset and an
-> additional incremental patch 1/3 from v3 to v6 for Paul's repo. Then
-> we can see if the SCBRR thing needs further discussion and if the rest
-> of the patchset is final.
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index 6d36ebb..13bd138 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -3354,13 +3354,9 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(VINT),
+ 	GPIO_FN(TCKON),
+ 	GPIO_FN(XDVFS1), \
+-	GPIO_FN(PORT27_I2C_SCL2), \
+-	GPIO_FN(PORT27_I2C_SCL3), \
+ 	GPIO_FN(MFG0_OUT1), \
+ 	GPIO_FN(PORT27_IROUT),
+ 	GPIO_FN(XDVFS2), \
+-	GPIO_FN(PORT28_I2C_SDA2), \
+-	GPIO_FN(PORT28_I2C_SDA3), \
+ 	GPIO_FN(PORT28_TPU1TO1),
+ 	GPIO_FN(SIM_RST), \
+ 	GPIO_FN(PORT29_TPU1TO1),
+@@ -3517,12 +3513,8 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(BBIF1_TXD),
+ 	GPIO_FN(HSI_RX_READY), \
+ 	GPIO_FN(BBIF1_RSCK), \
+-	GPIO_FN(PORT115_I2C_SCL2), \
+-	GPIO_FN(PORT115_I2C_SCL3),
+ 	GPIO_FN(HSI_RX_WAKE), \
+ 	GPIO_FN(BBIF1_RSYNC), \
+-	GPIO_FN(PORT116_I2C_SDA2), \
+-	GPIO_FN(PORT116_I2C_SDA3),
+ 	GPIO_FN(HSI_RX_FLAG), \
+ 	GPIO_FN(BBIF1_SS1), \
+ 	GPIO_FN(BBIF1_FLOW),
+@@ -3670,9 +3662,7 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(MFG1_IN2), \
+ 	GPIO_FN(VIO2_VD2), \
+ 	GPIO_FN(MSIOF1_MCK0), \
+-	GPIO_FN(PORT236_I2C_SDA2),
+ 	GPIO_FN(MSIOF1_MCK1), \
+-	GPIO_FN(PORT237_I2C_SCL2),
+ 	GPIO_FN(MSIOF1_SS1), \
+ 	GPIO_FN(VIO2_FIELD2), \
+ 	GPIO_FN(MSIOF1_SS2), \
+@@ -3695,11 +3685,9 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(TPU3TO1),
+ 	GPIO_FN(MFG2_OUT1), \
+ 	GPIO_FN(TPU2TO0), \
+-	GPIO_FN(PORT248_I2C_SCL3), \
+ 	GPIO_FN(MSIOF2R_TSCK),
+ 	GPIO_FN(PORT249_IROUT), \
+ 	GPIO_FN(MFG4_IN1), \
+-	GPIO_FN(PORT249_I2C_SDA3), \
+ 	GPIO_FN(MSIOF2R_TSYNC),
+ 	GPIO_FN(SDHICLK0),
+ 	GPIO_FN(SDHICD0),
+-- 
+1.8.1.5
 
-I can't think of anything better either, so let's stick to putting the
-algorithm ID into the DT binding.
-
-	Arnd
