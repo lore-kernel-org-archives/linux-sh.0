@@ -1,93 +1,78 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:06:21 +0000
-Subject: [PATCH 085/142] ARM: shmobile: bonito: Register pinctrl mappings for LCDC0
-Message-Id: <1363604838-29359-86-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 22:59:49 +0000
+Subject: [PATCH v4 44/88] ARM: shmobile: marzen: Register pinctrl mappings for SDHI and MMCIF
+Message-Id: <1363215633-4264-45-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-Replace the GPIO-based LCDC0 pinmux configuration by pinctrl mappings.
+Replace the GPIO-based SDHI and MMCIF pinmux configuration by pinctrl
+mappings
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-bonito.c |   44 +++++++++++----------------------
- 1 file changed, 14 insertions(+), 30 deletions(-)
+ arch/arm/mach-shmobile/board-marzen.c | 25 +++++++++++++++----------
+ 1 file changed, 15 insertions(+), 10 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-bonito.c b/arch/arm/mach-shmobile/board-bonito.c
-index d363526..70d992c 100644
---- a/arch/arm/mach-shmobile/board-bonito.c
-+++ b/arch/arm/mach-shmobile/board-bonito.c
-@@ -24,6 +24,7 @@
- #include <linux/init.h>
- #include <linux/interrupt.h>
- #include <linux/irq.h>
-+#include <linux/pinctrl/machine.h>
- #include <linux/platform_device.h>
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index fec49eb..f00677f 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -27,6 +27,7 @@
+ #include <linux/io.h>
  #include <linux/gpio.h>
+ #include <linux/dma-mapping.h>
++#include <linux/pinctrl/machine.h>
  #include <linux/regulator/fixed.h>
-@@ -288,6 +289,16 @@ static struct platform_device lcdc0_device = {
- 	},
- };
+ #include <linux/regulator/machine.h>
+ #include <linux/smsc911x.h>
+@@ -327,6 +328,18 @@ void __init marzen_init_late(void)
+ 			     ARRAY_SIZE(marzen_late_devices));
+ }
  
-+static const struct pinctrl_map lcdc0_pinctrl_map[] = {
-+	/* LCD0 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
-+				  "lcd0_data24_1", "lcd0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
-+				  "lcd0_lclk_1", "lcd0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
-+				  "lcd0_sync", "lcd0"),
++static const struct pinctrl_map marzen_pinctrl_map[] = {
++	/* SDHI0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
++				  "sdhi0_data4", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
++				  "sdhi0_ctrl", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
++				  "sdhi0_cd", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
++				  "sdhi0_wp", "sdhi0"),
 +};
 +
- /*
-  * SMSC 9221
-  */
-@@ -430,36 +441,9 @@ static void __init bonito_init(void)
- 		 */
- 		if (BIT_ON(bsw2, 3) &&	/* S38.1 = OFF */
- 		    BIT_ON(bsw2, 2)) {	/* S38.2 = OFF */
--			gpio_request(GPIO_FN_LCDC0_SELECT,	NULL);
--			gpio_request(GPIO_FN_LCD0_D0,		NULL);
--			gpio_request(GPIO_FN_LCD0_D1,		NULL);
--			gpio_request(GPIO_FN_LCD0_D2,		NULL);
--			gpio_request(GPIO_FN_LCD0_D3,		NULL);
--			gpio_request(GPIO_FN_LCD0_D4,		NULL);
--			gpio_request(GPIO_FN_LCD0_D5,		NULL);
--			gpio_request(GPIO_FN_LCD0_D6,		NULL);
--			gpio_request(GPIO_FN_LCD0_D7,		NULL);
--			gpio_request(GPIO_FN_LCD0_D8,		NULL);
--			gpio_request(GPIO_FN_LCD0_D9,		NULL);
--			gpio_request(GPIO_FN_LCD0_D10,		NULL);
--			gpio_request(GPIO_FN_LCD0_D11,		NULL);
--			gpio_request(GPIO_FN_LCD0_D12,		NULL);
--			gpio_request(GPIO_FN_LCD0_D13,		NULL);
--			gpio_request(GPIO_FN_LCD0_D14,		NULL);
--			gpio_request(GPIO_FN_LCD0_D15,		NULL);
--			gpio_request(GPIO_FN_LCD0_D16,		NULL);
--			gpio_request(GPIO_FN_LCD0_D17,		NULL);
--			gpio_request(GPIO_FN_LCD0_D18_PORT163,	NULL);
--			gpio_request(GPIO_FN_LCD0_D19_PORT162,	NULL);
--			gpio_request(GPIO_FN_LCD0_D20_PORT161,	NULL);
--			gpio_request(GPIO_FN_LCD0_D21_PORT158,	NULL);
--			gpio_request(GPIO_FN_LCD0_D22_PORT160,	NULL);
--			gpio_request(GPIO_FN_LCD0_D23_PORT159,	NULL);
--			gpio_request(GPIO_FN_LCD0_DCK,		NULL);
--			gpio_request(GPIO_FN_LCD0_VSYN,		NULL);
--			gpio_request(GPIO_FN_LCD0_HSYN,		NULL);
--			gpio_request(GPIO_FN_LCD0_DISP,		NULL);
--			gpio_request(GPIO_FN_LCD0_LCLK_PORT165,	NULL);
-+			pinctrl_register_mappings(lcdc0_pinctrl_map,
-+						  ARRAY_SIZE(lcdc0_pinctrl_map));
-+			gpio_request(GPIO_FN_LCDC0_SELECT, NULL);
+ static void __init marzen_init(void)
+ {
+ 	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
+@@ -334,6 +347,8 @@ static void __init marzen_init(void)
+ 	regulator_register_fixed(1, dummy_supplies,
+ 				ARRAY_SIZE(dummy_supplies));
  
- 			gpio_request_one(61, GPIOF_OUT_INIT_HIGH,
- 					 NULL); /* LCDDON */
++	pinctrl_register_mappings(marzen_pinctrl_map,
++				  ARRAY_SIZE(marzen_pinctrl_map));
+ 	r8a7779_pinmux_init();
+ 
+ 	/* SCIF2 (CN18: DEBUG0) */
+@@ -348,16 +363,6 @@ static void __init marzen_init(void)
+ 	gpio_request(GPIO_FN_EX_CS0, NULL); /* nCS */
+ 	gpio_request(GPIO_FN_IRQ1_B, NULL); /* IRQ + PME */
+ 
+-	/* SD0 (CN20) */
+-	gpio_request(GPIO_FN_SD0_CLK, NULL);
+-	gpio_request(GPIO_FN_SD0_CMD, NULL);
+-	gpio_request(GPIO_FN_SD0_DAT0, NULL);
+-	gpio_request(GPIO_FN_SD0_DAT1, NULL);
+-	gpio_request(GPIO_FN_SD0_DAT2, NULL);
+-	gpio_request(GPIO_FN_SD0_DAT3, NULL);
+-	gpio_request(GPIO_FN_SD0_CD, NULL);
+-	gpio_request(GPIO_FN_SD0_WP, NULL);
+-
+ 	/* HSPI 0 */
+ 	gpio_request(GPIO_FN_HSPI_CLK0,	NULL);
+ 	gpio_request(GPIO_FN_HSPI_CS0,	NULL);
 -- 
-1.7.10.4
+1.8.1.5
 
