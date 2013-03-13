@@ -1,44 +1,79 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 12:32:11 +0000
-Subject: [PATCH 01/43] ARM: shmobile: Remove unused headers from hotplug.c
-Message-Id: <1363609973-31086-2-git-send-email-horms+renesas@verge.net.au>
+From: Simon Horman <horms@verge.net.au>
+Date: Wed, 13 Mar 2013 15:46:31 +0000
+Subject: [ANNOUNCE] Renesas branch refresh
+Message-Id: <20130313154630.GB2755@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Hi,
 
-This file has no SoC-specific references in it, and
-fortunately it is still independent of OF so there
-is no real reason to drag in these headers.
+I would like to announce that I have pushed fresh branches to
+the renesas tree on kernel.org which for the basis of what I intend
+to request arm-soc to pull for v3.10.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/hotplug.c |    4 ----
- 1 file changed, 4 deletions(-)
+The new/rebased branches are as follows:
 
-diff --git a/arch/arm/mach-shmobile/hotplug.c b/arch/arm/mach-shmobile/hotplug.c
-index a1524e3..efd0b36 100644
---- a/arch/arm/mach-shmobile/hotplug.c
-+++ b/arch/arm/mach-shmobile/hotplug.c
-@@ -14,12 +14,8 @@
- #include <linux/smp.h>
- #include <linux/cpumask.h>
- #include <linux/delay.h>
--#include <linux/of.h>
- #include <mach/common.h>
--#include <mach/r8a7779.h>
--#include <mach/emev2.h>
- #include <asm/cacheflush.h>
--#include <asm/mach-types.h>
- 
- static cpumask_t dead_cpus;
- 
--- 
-1.7.10.4
+* next-for-v3.10
 
+  A merge of fixes, defconfig, soc, pinmux and boards.
+  I have not named this next at this time primarily because
+  it includes the pinmux branch which is based on a branch of
+  Linus Walleij's linux-pinctrl tree and I would like his approval
+  to use that in linux-next and request it to be pulled into arm-soc first.
+
+* fixes
+
+  Critical fixes targeted at inclusion in v3.9.
+  Based on v3.9-rc1.
+
+* defconfig
+
+  defconfig changes.
+  Based on v3.9-rc2.
+
+* soc
+
+  SoC changes.
+  Based on v3.9-rc2.
+
+* pinmux
+
+  pinmux changes, a.k.a Laurent's work
+  Based on pinmux-base, a merge of: fixes and the devel branch of
+  Linus Walleij's linux-pinctrl tree on kernel.org
+
+* boards
+
+  Branch for board changes.
+  Based on boards-base, a merge of the pinmux and soc branches.
+
+
+Old/unmodified branches. Not targeted at inclusion in arm-soc at this time.
+
+* next
+
+  This is present-in linux-next
+  It is based on v3.8-rc3.
+  I intend to replace it with next-for-v3.10 in the near future.
+
+* topic/*
+
+  These are based on v3.8-rc3.
+  The only ones that still seem relevant are:
+  * topic/intc-of
+  * topic/r-car-du-drm
+  * topic/sh_eth
+  I intend the rebase the branches listed immediately above and
+  remove the rest. I do not believe there is any need for
+  topic/all+next at this point and I plan to remove it too.
+
+
+Deleted branches:
+
+* boards3: Rebased and renamed boards
+* soc5: Rebased and renamed soc
+* pfc: Included in v3.9-rc2
+* boards-kzm9g-reference: Merged into soc and boards branches
