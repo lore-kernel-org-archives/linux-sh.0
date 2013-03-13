@@ -1,48 +1,173 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Wed, 13 Mar 2013 10:31:44 +0000
-Subject: Re: Serial port RTPM/Suspend issues
-Message-Id: <CABYn4szWhpYJhma1Q=yW_Au6mKcasY==w3d3v8kXDsUhpf_V1w@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 22:39:42 +0000
+Subject: [PATCH 23/25] sh-pfc: Clean up pin configuration type handling
+Message-Id: <1363214384-3870-24-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <CABYn4szDUQpgsSErNV6e+f8z9-FdpzzZkhafC5qELdK=kWk6=w@mail.gmail.com>
-In-Reply-To: <CABYn4szDUQpgsSErNV6e+f8z9-FdpzzZkhafC5qELdK=kWk6=w@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-2013/3/13 Bastian Hecht <hechtb@gmail.com>:
-> Hi Paul,
->
-> 2013/3/12 Paul Mundt <lethal@linux-sh.org>:
->> On Tue, Mar 12, 2013 at 04:31:57PM +0100, Bastian Hecht wrote:
->>> 2013/3/12 Paul Mundt <lethal@linux-sh.org>:
->>> > On Tue, Mar 12, 2013 at 03:50:42PM +0100, Bastian Hecht wrote:
->>> >> To avoid confusion, let me add: Garbage is produced when waking, not
->>> >> in the shutdown process.
->>> >
->>> > I assume this is just data left in the FIFO that hasn't been drained that
->>> > comes back in an undefined state due to losing the clock?
->>>
->>> The port hangs after printing a couple of dozens of characters. The
->>> system itself seems stable - I can log into it using ssh.
->>> Does this fit with your theory?
->>>
->> There are two theories really, residual FIFO data or baud rate generation
->> issues. Your dozens of characters thing seems to support the former,
->> given the FIFO size -- the latter would more likely generate a lot more
->> spew.
->
-> Ok I dumped the output into a file and realized that the garbage is
-> just one line but this contains 7343 characters - so a bit more than a
-> couple of dozens.
->
->>> By the way I am using a shallow sleep to test it. Just cpu_do_idle().
->>
->> Can you see how it goes booting with nohlt? We have seen issues between
->> BL bit and sleep interactivity before.
->
-> nohlt didn't improve things.
+Set pin configuration type to
 
-Ok I found out that the SUB clock gets turned off when all depending
-devices are off. And skipping the shut down of the SUB clock let's the
-sci.1 survive.
+- PINMUX_TYPE_NONE at initialization time and when disabling a function
+  or freeing a GPIO
+
+- PINMUX_TYPE_FUNCTION when enabling a function
+
+- PINMUX_TYPE_INPUT or PINMUX_TYPE_OUTPUT when setting the GPIO
+  direction
+
+Verify that the type is PINMUX_TYPE_NONE when enabling a function or
+requesting a GPIO and return -EBUSY if it isn't.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/pinctrl/sh-pfc/pinctrl.c | 74 +++++++++++++++++++++++++---------------
+ 1 file changed, 46 insertions(+), 28 deletions(-)
+
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index 36f08f8..82e4fb2 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -121,11 +121,22 @@ static int sh_pfc_func_enable(struct pinctrl_dev *pctldev, unsigned selector,
+ 	spin_lock_irqsave(&pfc->lock, flags);
+ 
+ 	for (i = 0; i < grp->nr_pins; ++i) {
++		int idx = sh_pfc_get_pin_index(pfc, grp->pins[i]);
++		struct sh_pfc_pin_config *cfg = &pmx->configs[idx];
++
++		if (cfg->type != PINMUX_TYPE_NONE) {
++			ret = -EBUSY;
++			goto done;
++		}
++	}
++
++	for (i = 0; i < grp->nr_pins; ++i) {
+ 		ret = sh_pfc_config_mux(pfc, grp->mux[i], PINMUX_TYPE_FUNCTION);
+ 		if (ret < 0)
+ 			break;
+ 	}
+ 
++done:
+ 	spin_unlock_irqrestore(&pfc->lock, flags);
+ 	return ret;
+ }
+@@ -133,6 +144,22 @@ static int sh_pfc_func_enable(struct pinctrl_dev *pctldev, unsigned selector,
+ static void sh_pfc_func_disable(struct pinctrl_dev *pctldev, unsigned selector,
+ 				unsigned group)
+ {
++	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
++	struct sh_pfc *pfc = pmx->pfc;
++	const struct sh_pfc_pin_group *grp = &pfc->info->groups[group];
++	unsigned long flags;
++	unsigned int i;
++
++	spin_lock_irqsave(&pfc->lock, flags);
++
++	for (i = 0; i < grp->nr_pins; ++i) {
++		int idx = sh_pfc_get_pin_index(pfc, grp->pins[i]);
++		struct sh_pfc_pin_config *cfg = &pmx->configs[idx];
++
++		cfg->type = PINMUX_TYPE_NONE;
++	}
++
++	spin_unlock_irqrestore(&pfc->lock, flags);
+ }
+ 
+ static int sh_pfc_gpio_request_enable(struct pinctrl_dev *pctldev,
+@@ -148,21 +175,17 @@ static int sh_pfc_gpio_request_enable(struct pinctrl_dev *pctldev,
+ 
+ 	spin_lock_irqsave(&pfc->lock, flags);
+ 
+-	switch (cfg->type) {
+-	case PINMUX_TYPE_GPIO:
+-	case PINMUX_TYPE_INPUT:
+-	case PINMUX_TYPE_OUTPUT:
+-		break;
+-	case PINMUX_TYPE_FUNCTION:
+-	default:
+-		pr_err("Unsupported mux type (%d), bailing...\n", cfg->type);
+-		ret = -ENOTSUPP;
+-		goto err;
++	if (cfg->type != PINMUX_TYPE_NONE) {
++		pr_err("Pin %u is busy, can't configure it as GPIO.\n", offset);
++		ret = -EBUSY;
++		goto done;
+ 	}
+ 
++	cfg->type = PINMUX_TYPE_GPIO;
++
+ 	ret = 0;
+ 
+-err:
++done:
+ 	spin_unlock_irqrestore(&pfc->lock, flags);
+ 
+ 	return ret;
+@@ -172,6 +195,15 @@ static void sh_pfc_gpio_disable_free(struct pinctrl_dev *pctldev,
+ 				     struct pinctrl_gpio_range *range,
+ 				     unsigned offset)
+ {
++	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
++	struct sh_pfc *pfc = pmx->pfc;
++	int idx = sh_pfc_get_pin_index(pfc, offset);
++	struct sh_pfc_pin_config *cfg = &pmx->configs[idx];
++	unsigned long flags;
++
++	spin_lock_irqsave(&pfc->lock, flags);
++	cfg->type = PINMUX_TYPE_NONE;
++	spin_unlock_irqrestore(&pfc->lock, flags);
+ }
+ 
+ static int sh_pfc_gpio_set_direction(struct pinctrl_dev *pctldev,
+@@ -182,27 +214,14 @@ static int sh_pfc_gpio_set_direction(struct pinctrl_dev *pctldev,
+ 	struct sh_pfc *pfc = pmx->pfc;
+ 	int new_type = input ? PINMUX_TYPE_INPUT : PINMUX_TYPE_OUTPUT;
+ 	int idx = sh_pfc_get_pin_index(pfc, offset);
+-	struct sh_pfc_pin_config *cfg = &pmx->configs[idx];
+ 	const struct sh_pfc_pin *pin = &pfc->info->pins[idx];
+-	unsigned int mark = pin->enum_id;
++	struct sh_pfc_pin_config *cfg = &pmx->configs[idx];
+ 	unsigned long flags;
+ 	int ret;
+ 
+ 	spin_lock_irqsave(&pfc->lock, flags);
+ 
+-	switch (cfg->type) {
+-	case PINMUX_TYPE_GPIO:
+-	case PINMUX_TYPE_OUTPUT:
+-	case PINMUX_TYPE_INPUT:
+-	case PINMUX_TYPE_INPUT_PULLUP:
+-	case PINMUX_TYPE_INPUT_PULLDOWN:
+-		break;
+-	default:
+-		ret = -EINVAL;
+-		goto done;
+-	}
+-
+-	ret = sh_pfc_config_mux(pfc, mark, new_type);
++	ret = sh_pfc_config_mux(pfc, pin->enum_id, new_type);
+ 	if (ret < 0)
+ 		goto done;
+ 
+@@ -210,7 +229,6 @@ static int sh_pfc_gpio_set_direction(struct pinctrl_dev *pctldev,
+ 
+ done:
+ 	spin_unlock_irqrestore(&pfc->lock, flags);
+-
+ 	return ret;
+ }
+ 
+@@ -383,7 +401,7 @@ static int sh_pfc_map_pins(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ 
+ 			pin->number = number;
+ 			pin->name = info->name;
+-			cfg->type = PINMUX_TYPE_GPIO;
++			cfg->type = PINMUX_TYPE_NONE;
+ 		}
+ 	}
+ 
+-- 
+1.8.1.5
+
