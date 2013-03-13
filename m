@@ -1,50 +1,146 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 14 Mar 2013 08:08:48 +0000
-Subject: Re: [PATCH/RFC 06/12] sh-pfc: Skip gpiochip registration when no GPIO resource is found
-Message-Id: <CACRpkdb91cdTtXwS=8U67TVGfVZ7D4H_0iRkeh0SBkx8JOORUQ@mail.gmail.com>
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Wed, 13 Mar 2013 20:44:02 +0000
+Subject: Re: [PATCH 2/7] ARM: shmobile: marzen: add USB EHCI driver support
+Message-Id: <5140F35F.3090702@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1362941928-18115-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1362941928-18115-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1352446306-19945-1-git-send-email-horms@verge.net.au>
+ <1352446306-19945-3-git-send-email-horms@verge.net.au>
+In-Reply-To: <1352446306-19945-3-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Mar 13, 2013 at 9:51 PM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
+Hello.
 
->> But maybe this could be refactored to actually be a number of
->> IOMEM resources?
+On 11/09/2012 10:31 AM, Simon Horman wrote:
+
+> From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 >
-> pfc->info->data_regs is a list of SoC-specific information about GPIO
-> registers. It contains, among other information, the register physical address
-> in the reg field. pfc->window is a list of ioremapped IOMEM resources.
+> This patch supports CN21/CN22 USB 2.0 (port 0/1/2),
+> and enable USB momery on defconfig
 
-So the thing is that this array of resources are handled elsewhere, where
-they are ioremapped and stashed into pfc->window, OK following now.
+    Sorry for late comment but I'm studying this code just now (in order 
+to add R-Car M1A USB support).
 
-> The main purpose of this code is to allow an atomic transition from GPIO
-> handling inside the PFC driver to GPIO handling by a separate driver without
-> requiring a patch to touch both arch/arm/mach-shmobile/ and
-> drivers/pinctrl/sh-pfc/. Such a transition only requires adding the GPIO
-> platform device and removing the GPIO IOMEM resource from the PFC device. A
-> later patch can then remove the pfc->info->data_regs completely from SoC data
-> in drivers/pinctrl/sh-pfc/pfc-*.c.
-
-OK I buy this argument!
-
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-
->> The ++i and this thing make the code pretty hard for me to grasp. But maybe
->> I'm just dumb? Could you explain here what is happening, like with some
->> small comment or so....
+> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+> Signed-off-by: Simon Horman <horms@verge.net.au>
+> ---
+>   arch/arm/configs/marzen_defconfig     |    6 ++
+>   arch/arm/mach-shmobile/Kconfig        |    1 +
+>   arch/arm/mach-shmobile/board-marzen.c |  108 ++++++++++++++++++++++++++++++++-
+>   3 files changed, 114 insertions(+), 1 deletion(-)
 >
-> ++i and i++ would be totally equivalent in the for loop above. I took the
-> habit of using the pre-increment style in for loops from my C++ programming
-> days (http://forums.codeguru.com/showthread.php?231052-C-Operator-Why-should-I-use-i-instead-of-i).
+> diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+> index 74c7f0b..707b3bd 100644
+> --- a/arch/arm/mach-shmobile/board-marzen.c
+> +++ b/arch/arm/mach-shmobile/board-marzen.c
+> @@ -34,6 +34,9 @@
+[...]
+> @@ -172,6 +175,101 @@ static struct platform_device *marzen_devices[] __initdata = {
+>   	&usb_phy_device,
+>   };
+>   
+> +/* USB */
+> +static struct usb_phy *phy;
+> +static int usb_power_on(struct platform_device *pdev)
+> +{
+> +	if (!phy)
+> +		return -EIO;
+> +
+> +	pm_runtime_enable(&pdev->dev);
+> +	pm_runtime_get_sync(&pdev->dev);
+> +
+> +	usb_phy_init(phy);
+> +
+> +	return 0;
+> +}
+> +
+> +static void usb_power_off(struct platform_device *pdev)
+> +{
+> +	if (!phy)
+> +		return;
+> +
+> +	usb_phy_shutdown(phy);
+> +
+> +	pm_runtime_put_sync(&pdev->dev);
+> +	pm_runtime_disable(&pdev->dev);
+> +}
+> +
+> +static struct usb_ehci_pdata ehcix_pdata = {
+> +	.power_on	= usb_power_on,
+> +	.power_off	= usb_power_off,
+> +	.power_suspend	= usb_power_off,
+> +};
+> +
+> +static struct resource ehci0_resources[] = {
+> +	[0] = {
+> +		.start	= 0xffe70000,
+> +		.end	= 0xffe70400 - 1,
+> +		.flags	= IORESOURCE_MEM,
+> +	},
+> +	[1] = {
+> +		.start	= gic_spi(44),
+> +		.flags	= IORESOURCE_IRQ,
+> +	},
+> +};
+> +
+> +static struct platform_device ehci0_device = {
+> +	.name	= "ehci-platform",
+> +	.id	= 0,
+> +	.dev	= {
+> +		.dma_mask		= &ehci0_device.dev.coherent_dma_mask,
+> +		.coherent_dma_mask	= 0xffffffff,
+> +		.platform_data		= &ehcix_pdata,
+> +	},
+> +	.num_resources	= ARRAY_SIZE(ehci0_resources),
+> +	.resource	= ehci0_resources,
+> +};
+> +
+> +static struct resource ehci1_resources[] = {
+> +	[0] = {
+> +		.start	= 0xfff70000,
+> +		.end	= 0xfff70400 - 1,
+> +		.flags	= IORESOURCE_MEM,
+> +	},
+> +	[1] = {
+> +		.start	= gic_spi(45),
+> +		.flags	= IORESOURCE_IRQ,
+> +	},
+> +};
+> +
+> +static struct platform_device ehci1_device = {
+> +	.name	= "ehci-platform",
+> +	.id	= 1,
+> +	.dev	= {
+> +		.dma_mask		= &ehci1_device.dev.coherent_dma_mask,
+> +		.coherent_dma_mask	= 0xffffffff,
+> +		.platform_data		= &ehcix_pdata,
+> +	},
+> +	.num_resources	= ARRAY_SIZE(ehci1_resources),
+> +	.resource	= ehci1_resources,
+> +};
+> +
+> +static struct platform_device *marzen_late_devices[] __initdata = {
+> +	&ehci0_device,
+> +	&ehci1_device,
+> +};
+> +
+> +void __init marzen_init_late(void)
+> +{
+> +	/* get usb phy */
+> +	phy = usb_get_phy(USB_PHY_TYPE_USB2);
+> +
+> +	shmobile_init_late();
+> +	platform_add_devices(marzen_late_devices,
+> +			     ARRAY_SIZE(marzen_late_devices));
+> +}
+> +
+>
 
-Interesting, that will be very useful the day we rewrite the kernel in
-C++ ;-)
+    Morimoto-san, I don't understand why this SoC specific platform device
+ended up in the board file? Could you explain your reasons please?
+    I think this is generally a bad practice as this approach scales badly.
 
-Yours,
-Linus Walleij
+WVR, Sergei
+
