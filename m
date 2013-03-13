@@ -1,59 +1,75 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:06:57 +0000
-Subject: [PATCH 121/142] sh-pfc: r8a7779: Remove LBSC function GPIOS
-Message-Id: <1363604838-29359-122-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 22:59:31 +0000
+Subject: [PATCH v4 26/88] ARM: shmobile: ag5evm: Register pinctrl mappings for KEYSC
+Message-Id: <1363215633-4264-27-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-
-All r8a7779 platforms now use the pinctrl API to control the LBSC pins,
-the corresponding function GPIOS are unused. Remove them.
+Replace the GPIO-based KEYSC pinmux configuration by pinctrl mappings.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c |   14 ++++++--------
- 1 file changed, 6 insertions(+), 8 deletions(-)
+ arch/arm/mach-shmobile/board-ag5evm.c | 37 ++++++++++++++++-------------------
+ 1 file changed, 17 insertions(+), 20 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-index 6f8cc53..5d65499 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-@@ -2690,22 +2690,20 @@ static const struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(SSI_WS78_B), GPIO_FN(A25),
- 	GPIO_FN(FD5), GPIO_FN(VI1_R3),
- 	GPIO_FN(SSI_SDATA7_B), GPIO_FN(CLKOUT),
--	GPIO_FN(PWM0_B), GPIO_FN(CS0),
--	GPIO_FN(CS1_A26),
-+	GPIO_FN(PWM0_B),
- 	GPIO_FN(SDSELF_B), GPIO_FN(RD_WR), GPIO_FN(FWE), GPIO_FN(ATAG0),
- 	GPIO_FN(VI1_R7), GPIO_FN(HRTS1),
+diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
+index 987b9b6..22b9655 100644
+--- a/arch/arm/mach-shmobile/board-ag5evm.c
++++ b/arch/arm/mach-shmobile/board-ag5evm.c
+@@ -571,6 +571,23 @@ static const struct pinctrl_map ag5evm_pinctrl_map[] = {
+ 				  "i2c2_0", "i2c2"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.3", "pfc-sh73a0",
+ 				  "i2c3_0", "i2c3"),
++	/* KEYSC */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_keysc.0", "pfc-sh73a0",
++				  "keysc_in8", "keysc"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_keysc.0", "pfc-sh73a0",
++				  "keysc_out04", "keysc"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_keysc.0", "pfc-sh73a0",
++				  "keysc_out5", "keysc"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_keysc.0", "pfc-sh73a0",
++				  "keysc_out6_0", "keysc"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_keysc.0", "pfc-sh73a0",
++				  "keysc_out7_0", "keysc"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_keysc.0", "pfc-sh73a0",
++				  "keysc_out8_0", "keysc"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_keysc.0", "pfc-sh73a0",
++				  "keysc_out9_2", "keysc"),
++	PIN_MAP_CONFIGS_GROUP_DEFAULT("sh_keysc.0", "pfc-sh73a0",
++				      "keysc_in8", pin_pullup_conf),
+ 	/* MMCIF */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
+ 				  "mmc0_data8_0", "mmc0"),
+@@ -615,26 +632,6 @@ static void __init ag5evm_init(void)
+ 				  ARRAY_SIZE(ag5evm_pinctrl_map));
+ 	sh73a0_pinmux_init();
  
- 	/* IPSR1 */
--	GPIO_FN(EX_CS0),
--	GPIO_FN(FD6), GPIO_FN(EX_CS1), GPIO_FN(FD7),
--	GPIO_FN(EX_CS2), GPIO_FN(FALE),
--	GPIO_FN(ATACS00), GPIO_FN(EX_CS3),
-+	GPIO_FN(FD6), GPIO_FN(FD7),
-+	GPIO_FN(FALE),
-+	GPIO_FN(ATACS00),
- 	GPIO_FN(FRE), GPIO_FN(ATACS10), GPIO_FN(VI1_R4),
- 	GPIO_FN(HSCK1), GPIO_FN(SSI_SDATA8_B),
--	GPIO_FN(SSI_SDATA9), GPIO_FN(EX_CS4),
-+	GPIO_FN(SSI_SDATA9),
- 	GPIO_FN(FD0), GPIO_FN(ATARD0), GPIO_FN(VI1_R5),
- 	GPIO_FN(HTX1),
--	GPIO_FN(SSI_SCK9), GPIO_FN(EX_CS5),
-+	GPIO_FN(SSI_SCK9),
- 	GPIO_FN(FD1),	GPIO_FN(ATAWR0), GPIO_FN(VI1_R6),
- 	GPIO_FN(HRX1), GPIO_FN(SSI_WS9),
- 	GPIO_FN(MLB_CLK), GPIO_FN(PWM2), GPIO_FN(MLB_SIG),
+-	/* enable KEYSC */
+-	gpio_request(GPIO_FN_KEYIN0_PU, NULL);
+-	gpio_request(GPIO_FN_KEYIN1_PU, NULL);
+-	gpio_request(GPIO_FN_KEYIN2_PU, NULL);
+-	gpio_request(GPIO_FN_KEYIN3_PU, NULL);
+-	gpio_request(GPIO_FN_KEYIN4_PU, NULL);
+-	gpio_request(GPIO_FN_KEYIN5_PU, NULL);
+-	gpio_request(GPIO_FN_KEYIN6_PU, NULL);
+-	gpio_request(GPIO_FN_KEYIN7_PU, NULL);
+-	gpio_request(GPIO_FN_KEYOUT0, NULL);
+-	gpio_request(GPIO_FN_KEYOUT1, NULL);
+-	gpio_request(GPIO_FN_KEYOUT2, NULL);
+-	gpio_request(GPIO_FN_KEYOUT3, NULL);
+-	gpio_request(GPIO_FN_KEYOUT4, NULL);
+-	gpio_request(GPIO_FN_KEYOUT5, NULL);
+-	gpio_request(GPIO_FN_PORT59_KEYOUT6, NULL);
+-	gpio_request(GPIO_FN_PORT58_KEYOUT7, NULL);
+-	gpio_request(GPIO_FN_KEYOUT8, NULL);
+-	gpio_request(GPIO_FN_PORT149_KEYOUT9, NULL);
+-
+ 	/* enable MMCIF */
+ 	gpio_request_one(208, GPIOF_OUT_INIT_HIGH, NULL); /* Reset */
+ 
 -- 
-1.7.10.4
+1.8.1.5
 
