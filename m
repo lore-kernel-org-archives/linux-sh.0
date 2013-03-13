@@ -1,186 +1,127 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 29 Mar 2013 06:56:47 +0000
-Subject: [PATCH] irqchip: intc-irqpin: Add support for shared interrupt lines
-Message-Id: <1364540207-7699-2-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 22:59:26 +0000
+Subject: [PATCH v4 21/88] sh-pfc: r8a7779: Add INTC pin groups and functions
+Message-Id: <1363215633-4264-22-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364540207-7699-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364540207-7699-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Bastian Hecht <hechtb@gmail.com>
-
-On some hardware we don't have a 1-1 mapping from the external
-interrupts coming from INTC to the GIC SPI pins. We can however
-share lines to demux incoming IRQs on these SoCs.
-
-This patch enables the intc_irqpin driver to detect requests for shared
-interrupt lines and demuxes them properly by querying the INTC INTREQx0A
-registers.
-
-If you need multiple shared intc_irqpin device instances, be sure to mask
-out all interrupts on the INTC that share the one line before you start
-to register them. Else you run into IRQ floods that would be caused by
-interrupts for which no handler has been set up yet when the first
-intc_irqpin device is registered.
-
-Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
-Acked-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/irqchip/irq-renesas-intc-irqpin.c |   90 ++++++++++++++++++++++++++---
- 1 file changed, 83 insertions(+), 7 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 77 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 77 insertions(+)
 
-diff --git a/drivers/irqchip/irq-renesas-intc-irqpin.c b/drivers/irqchip/irq-renesas-intc-irqpin.c
-index fd5dabc..5a68e5a 100644
---- a/drivers/irqchip/irq-renesas-intc-irqpin.c
-+++ b/drivers/irqchip/irq-renesas-intc-irqpin.c
-@@ -74,6 +74,8 @@ struct intc_irqpin_priv {
- 	struct platform_device *pdev;
- 	struct irq_chip irq_chip;
- 	struct irq_domain *irq_domain;
-+	bool shared_irqs;
-+	u8 shared_irq_mask;
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+index 3f67143..5b498ff 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+@@ -1631,6 +1631,63 @@ static const unsigned int hspi2_b_pins[] = {
+ static const unsigned int hspi2_b_mux[] = {
+ 	HSPI_CLK2_B_MARK, HSPI_CS2_B_MARK, HSPI_RX2_B_MARK, HSPI_TX2_B_MARK,
+ };
++/* - INTC ------------------------------------------------------------------- */
++static const unsigned int intc_irq0_pins[] = {
++	/* IRQ */
++	78,
++};
++static const unsigned int intc_irq0_mux[] = {
++	IRQ0_MARK,
++};
++static const unsigned int intc_irq0_b_pins[] = {
++	/* IRQ */
++	141,
++};
++static const unsigned int intc_irq0_b_mux[] = {
++	IRQ0_B_MARK,
++};
++static const unsigned int intc_irq1_pins[] = {
++	/* IRQ */
++	79,
++};
++static const unsigned int intc_irq1_mux[] = {
++	IRQ1_MARK,
++};
++static const unsigned int intc_irq1_b_pins[] = {
++	/* IRQ */
++	142,
++};
++static const unsigned int intc_irq1_b_mux[] = {
++	IRQ1_B_MARK,
++};
++static const unsigned int intc_irq2_pins[] = {
++	/* IRQ */
++	88,
++};
++static const unsigned int intc_irq2_mux[] = {
++	IRQ2_MARK,
++};
++static const unsigned int intc_irq2_b_pins[] = {
++	/* IRQ */
++	143,
++};
++static const unsigned int intc_irq2_b_mux[] = {
++	IRQ2_B_MARK,
++};
++static const unsigned int intc_irq3_pins[] = {
++	/* IRQ */
++	89,
++};
++static const unsigned int intc_irq3_mux[] = {
++	IRQ3_MARK,
++};
++static const unsigned int intc_irq3_b_pins[] = {
++	/* IRQ */
++	144,
++};
++static const unsigned int intc_irq3_b_mux[] = {
++	IRQ3_B_MARK,
++};
+ /* - LSBC ------------------------------------------------------------------- */
+ static const unsigned int lbsc_cs0_pins[] = {
+ 	/* CS */
+@@ -2303,6 +2360,14 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(hspi1_d),
+ 	SH_PFC_PIN_GROUP(hspi2),
+ 	SH_PFC_PIN_GROUP(hspi2_b),
++	SH_PFC_PIN_GROUP(intc_irq0),
++	SH_PFC_PIN_GROUP(intc_irq0_b),
++	SH_PFC_PIN_GROUP(intc_irq1),
++	SH_PFC_PIN_GROUP(intc_irq1_b),
++	SH_PFC_PIN_GROUP(intc_irq2),
++	SH_PFC_PIN_GROUP(intc_irq2_b),
++	SH_PFC_PIN_GROUP(intc_irq3),
++	SH_PFC_PIN_GROUP(intc_irq3_b),
+ 	SH_PFC_PIN_GROUP(lbsc_cs0),
+ 	SH_PFC_PIN_GROUP(lbsc_cs1),
+ 	SH_PFC_PIN_GROUP(lbsc_ex_cs0),
+@@ -2432,6 +2497,17 @@ static const char * const hspi2_groups[] = {
+ 	"hspi2_b",
  };
  
- static unsigned long intc_irqpin_read32(void __iomem *iomem)
-@@ -193,6 +195,28 @@ static void intc_irqpin_irq_disable(struct irq_data *d)
- 	intc_irqpin_irq_write_hwirq(p, INTC_IRQPIN_REG_MASK, hw_irq);
- }
- 
-+static void intc_irqpin_shared_irq_enable(struct irq_data *d)
-+{
-+	struct intc_irqpin_priv *p = irq_data_get_irq_chip_data(d);
-+	int hw_irq = irqd_to_hwirq(d);
++static const char * const intc_groups[] = {
++	"intc_irq0",
++	"intc_irq0_b",
++	"intc_irq1",
++	"intc_irq1_b",
++	"intc_irq2",
++	"intc_irq2_b",
++	"intc_irq3",
++	"intc_irq4_b",
++};
 +
-+	intc_irqpin_dbg(&p->irq[hw_irq], "shared enable");
-+	intc_irqpin_irq_write_hwirq(p, INTC_IRQPIN_REG_CLEAR, hw_irq);
-+
-+	p->shared_irq_mask &= ~BIT(hw_irq);
-+}
-+
-+static void intc_irqpin_shared_irq_disable(struct irq_data *d)
-+{
-+	struct intc_irqpin_priv *p = irq_data_get_irq_chip_data(d);
-+	int hw_irq = irqd_to_hwirq(d);
-+
-+	intc_irqpin_dbg(&p->irq[hw_irq], "shared disable");
-+	intc_irqpin_irq_write_hwirq(p, INTC_IRQPIN_REG_MASK, hw_irq);
-+
-+	p->shared_irq_mask |= BIT(hw_irq);
-+}
-+
- static void intc_irqpin_irq_enable_force(struct irq_data *d)
- {
- 	struct intc_irqpin_priv *p = irq_data_get_irq_chip_data(d);
-@@ -261,6 +285,25 @@ static irqreturn_t intc_irqpin_irq_handler(int irq, void *dev_id)
- 	return IRQ_NONE;
- }
- 
-+static irqreturn_t intc_irqpin_shared_irq_handler(int irq, void *dev_id)
-+{
-+	struct intc_irqpin_priv *p = dev_id;
-+	unsigned int reg_source = intc_irqpin_read(p, INTC_IRQPIN_REG_SOURCE);
-+	irqreturn_t status = IRQ_NONE;
-+	int k;
-+
-+	for (k = 0; k < 8; k++) {
-+		if (reg_source & BIT(7 - k)) {
-+			if (BIT(k) & p->shared_irq_mask)
-+				continue;
-+
-+			status |= intc_irqpin_irq_handler(irq, &p->irq[k]);
-+		}
-+	}
-+
-+	return status;
-+}
-+
- static int intc_irqpin_irq_domain_map(struct irq_domain *h, unsigned int virq,
- 				      irq_hw_number_t hw)
- {
-@@ -292,6 +335,7 @@ static int intc_irqpin_probe(struct platform_device *pdev)
- 	void (*enable_fn)(struct irq_data *d);
- 	void (*disable_fn)(struct irq_data *d);
- 	const char *name = dev_name(&pdev->dev);
-+	int ref_irq;
- 	int ret;
- 	int k;
- 
-@@ -372,13 +416,29 @@ static int intc_irqpin_probe(struct platform_device *pdev)
- 	for (k = 0; k < p->number_of_irqs; k++)
- 		intc_irqpin_mask_unmask_prio(p, k, 1);
- 
-+	/* clear all pending interrupts */
-+	intc_irqpin_write(p, INTC_IRQPIN_REG_SOURCE, 0x0);
-+
-+	/* scan for shared interrupt lines */
-+	ref_irq = p->irq[0].requested_irq;
-+	p->shared_irqs = true;
-+	for (k = 1; k < p->number_of_irqs; k++) {
-+		if (ref_irq != p->irq[k].requested_irq) {
-+			p->shared_irqs = false;
-+			break;
-+		}
-+	}
-+
- 	/* use more severe masking method if requested */
- 	if (p->config.control_parent) {
- 		enable_fn = intc_irqpin_irq_enable_force;
- 		disable_fn = intc_irqpin_irq_disable_force;
--	} else {
-+	} else if (!p->shared_irqs) {
- 		enable_fn = intc_irqpin_irq_enable;
- 		disable_fn = intc_irqpin_irq_disable;
-+	} else {
-+		enable_fn = intc_irqpin_shared_irq_enable;
-+		disable_fn = intc_irqpin_shared_irq_disable;
- 	}
- 
- 	irq_chip = &p->irq_chip;
-@@ -400,18 +460,34 @@ static int intc_irqpin_probe(struct platform_device *pdev)
- 		goto err0;
- 	}
- 
--	/* request and set priority on interrupts one by one */
--	for (k = 0; k < p->number_of_irqs; k++) {
--		if (devm_request_irq(&pdev->dev, p->irq[k].requested_irq,
--				     intc_irqpin_irq_handler,
--				     0, name, &p->irq[k])) {
-+	if (p->shared_irqs) {
-+		/* request one shared interrupt */
-+		if (devm_request_irq(&pdev->dev, p->irq[0].requested_irq,
-+				intc_irqpin_shared_irq_handler,
-+				IRQF_SHARED, name, p)) {
- 			dev_err(&pdev->dev, "failed to request low IRQ\n");
- 			ret = -ENOENT;
- 			goto err1;
- 		}
--		intc_irqpin_mask_unmask_prio(p, k, 0);
-+	} else {
-+		/* request interrupts one by one */
-+		for (k = 0; k < p->number_of_irqs; k++) {
-+			if (devm_request_irq(&pdev->dev,
-+					p->irq[k].requested_irq,
-+					intc_irqpin_irq_handler,
-+					0, name, &p->irq[k])) {
-+				dev_err(&pdev->dev,
-+					"failed to request low IRQ\n");
-+				ret = -ENOENT;
-+				goto err1;
-+			}
-+		}
- 	}
- 
-+	/* unmask all interrupts on prio level */
-+	for (k = 0; k < p->number_of_irqs; k++)
-+		intc_irqpin_mask_unmask_prio(p, k, 0);
-+
- 	dev_info(&pdev->dev, "driving %d irqs\n", p->number_of_irqs);
- 
- 	/* warn in case of mismatch if irq base is specified */
+ static const char * const lbsc_groups[] = {
+ 	"lbsc_cs0",
+ 	"lbsc_cs1",
+@@ -2576,6 +2652,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(hspi0),
+ 	SH_PFC_FUNCTION(hspi1),
+ 	SH_PFC_FUNCTION(hspi2),
++	SH_PFC_FUNCTION(intc),
+ 	SH_PFC_FUNCTION(lbsc),
+ 	SH_PFC_FUNCTION(mmc0),
+ 	SH_PFC_FUNCTION(mmc1),
 -- 
-1.7.10.4
+1.8.1.5
 
