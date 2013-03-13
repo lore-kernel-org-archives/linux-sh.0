@@ -1,182 +1,47 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 11:01:58 +0000
-Subject: [PATCH v3 38/64] sh-pfc: sh73a0: Remove SCIFA and SCIFB function GPIOS
-Message-Id: <1362740544-19164-39-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 22:59:51 +0000
+Subject: [PATCH v4 46/88] ARM: shmobile: marzen: Register pinctrl mappings for HSPI
+Message-Id: <1363215633-4264-47-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-All sh73a0 platforms now use the pinctrl API to control the SCIFA and
-SCIFB pins, the corresponding function GPIOS are unused. Remove them.
+Replace the GPIO-based HSPI pinmux configuration by pinctrl mappings.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 58 -------------------------------------
- 1 file changed, 58 deletions(-)
+ arch/arm/mach-shmobile/board-marzen.c | 9 +++------
+ 1 file changed, 3 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index 287563d..1bba1d8 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -2665,19 +2665,13 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(GPI5),
- 	GPIO_FN(GPI6),
- 	GPIO_FN(GPI7),
--	GPIO_FN(SCIFA7_RXD),
--	GPIO_FN(SCIFA7_CTS_),
- 	GPIO_FN(GPO7), \
- 	GPIO_FN(MFG0_OUT2),
- 	GPIO_FN(GPO6), \
- 	GPIO_FN(MFG1_OUT2),
- 	GPIO_FN(GPO5), \
--	GPIO_FN(SCIFA0_SCK), \
- 	GPIO_FN(FSICOSLDT3), \
- 	GPIO_FN(PORT16_VIO_CKOR),
--	GPIO_FN(SCIFA0_TXD),
--	GPIO_FN(SCIFA7_TXD),
--	GPIO_FN(SCIFA7_RTS_), \
- 	GPIO_FN(PORT19_VIO_CKO2),
- 	GPIO_FN(GPO0),
- 	GPIO_FN(GPO1),
-@@ -2704,11 +2698,7 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(PORT30_VIO_CKOR),
- 	GPIO_FN(SIM_D), \
- 	GPIO_FN(PORT31_IROUT),
--	GPIO_FN(SCIFA4_TXD),
--	GPIO_FN(SCIFA4_RXD), \
- 	GPIO_FN(XWUP),
--	GPIO_FN(SCIFA4_RTS_),
--	GPIO_FN(SCIFA4_CTS_),
- 	GPIO_FN(FSIBOBT), \
- 	GPIO_FN(FSIBIBT),
- 	GPIO_FN(FSIBOLR), \
-@@ -2717,10 +2707,7 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(FSIBISLD),
- 	GPIO_FN(VACK),
- 	GPIO_FN(XTAL1L),
--	GPIO_FN(SCIFA0_RTS_), \
- 	GPIO_FN(FSICOSLDT2),
--	GPIO_FN(SCIFA0_RXD),
--	GPIO_FN(SCIFA0_CTS_), \
- 	GPIO_FN(FSICOSLDT1),
- 	GPIO_FN(FSICOBT), \
- 	GPIO_FN(FSICIBT), \
-@@ -2846,14 +2833,10 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(BBIF2_RXD),
- 	GPIO_FN(BBIF2_SYNC),
- 	GPIO_FN(BBIF2_SCK),
--	GPIO_FN(SCIFA3_CTS_), \
- 	GPIO_FN(MFG3_IN2),
--	GPIO_FN(SCIFA3_RXD), \
- 	GPIO_FN(MFG3_IN1),
- 	GPIO_FN(BBIF1_SS2), \
--	GPIO_FN(SCIFA3_RTS_), \
- 	GPIO_FN(MFG3_OUT1),
--	GPIO_FN(SCIFA3_TXD),
- 	GPIO_FN(HSI_RX_DATA), \
- 	GPIO_FN(BBIF1_RXD),
- 	GPIO_FN(HSI_TX_WAKE), \
-@@ -2941,37 +2924,17 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(TPU1TO2), \
- 	GPIO_FN(TS_SDEN3), \
- 	GPIO_FN(PORT153_MSIOF2_SS1),
--	GPIO_FN(SCIFA2_TXD1), \
- 	GPIO_FN(MSIOF2_MCK0),
--	GPIO_FN(SCIFA2_RXD1), \
- 	GPIO_FN(MSIOF2_MCK1),
--	GPIO_FN(SCIFA2_RTS1_), \
- 	GPIO_FN(PORT156_MSIOF2_SS2),
--	GPIO_FN(SCIFA2_CTS1_), \
- 	GPIO_FN(PORT157_MSIOF2_RXD),
- 	GPIO_FN(DINT_), \
--	GPIO_FN(SCIFA2_SCK1), \
- 	GPIO_FN(TS_SCK3),
--	GPIO_FN(PORT159_SCIFB_SCK), \
--	GPIO_FN(PORT159_SCIFA5_SCK), \
- 	GPIO_FN(NMI),
--	GPIO_FN(PORT160_SCIFB_TXD), \
--	GPIO_FN(PORT160_SCIFA5_TXD),
--	GPIO_FN(PORT161_SCIFB_CTS_), \
--	GPIO_FN(PORT161_SCIFA5_CTS_),
--	GPIO_FN(PORT162_SCIFB_RXD), \
--	GPIO_FN(PORT162_SCIFA5_RXD),
--	GPIO_FN(PORT163_SCIFB_RTS_), \
--	GPIO_FN(PORT163_SCIFA5_RTS_), \
- 	GPIO_FN(TPU3TO0),
--	GPIO_FN(PORT193_SCIFA5_CTS_), \
- 	GPIO_FN(BBIF2_TSYNC1),
--	GPIO_FN(PORT194_SCIFA5_RTS_), \
- 	GPIO_FN(BBIF2_TSCK1),
--	GPIO_FN(PORT195_SCIFA5_RXD), \
- 	GPIO_FN(BBIF2_TXD1),
--	GPIO_FN(PORT196_SCIFA5_TXD),
--	GPIO_FN(PORT197_SCIFA5_SCK), \
- 	GPIO_FN(MFG2_OUT2), \
- 	GPIO_FN(TPU2TO1),
- 	GPIO_FN(TPU4TO1), \
-@@ -3022,26 +2985,16 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(MSIOF0L_TXD), \
- 	GPIO_FN(VIO2_VD3), \
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index 4097366..8871af3 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -329,6 +329,9 @@ void __init marzen_init_late(void)
+ }
  
--	GPIO_FN(SCIFA1_TXD), \
- 	GPIO_FN(OVCN2),
- 	GPIO_FN(EXTLP), \
--	GPIO_FN(SCIFA1_SCK), \
- 	GPIO_FN(PORT226_VIO_CKO2),
--	GPIO_FN(SCIFA1_RTS_), \
- 	GPIO_FN(IDIN),
--	GPIO_FN(SCIFA1_RXD),
--	GPIO_FN(SCIFA1_CTS_), \
- 	GPIO_FN(MFG1_IN1),
- 	GPIO_FN(MSIOF1_TXD), \
--	GPIO_FN(SCIFA2_TXD2),
- 	GPIO_FN(MSIOF1_TSYNC), \
--	GPIO_FN(SCIFA2_CTS2_),
- 	GPIO_FN(MSIOF1_TSCK), \
--	GPIO_FN(SCIFA2_SCK2),
- 	GPIO_FN(MSIOF1_RXD), \
--	GPIO_FN(SCIFA2_RXD2),
- 	GPIO_FN(MSIOF1_RSCK), \
--	GPIO_FN(SCIFA2_RTS2_), \
- 	GPIO_FN(VIO2_CLK2), \
- 	GPIO_FN(MSIOF1_RSYNC), \
- 	GPIO_FN(MFG1_IN2), \
-@@ -3054,7 +3007,6 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(VIO2_FIELD2), \
- 	GPIO_FN(MSIOF1_SS2), \
- 	GPIO_FN(VIO2_HD2), \
--	GPIO_FN(SCIFA6_TXD),
- 	GPIO_FN(PORT241_IRDA_OUT), \
- 	GPIO_FN(PORT241_IROUT), \
- 	GPIO_FN(MFG4_OUT1), \
-@@ -3063,25 +3015,15 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(MFG4_IN2),
- 	GPIO_FN(PORT243_IRDA_FIRSEL), \
- 	GPIO_FN(PORT243_VIO_CKO2),
--	GPIO_FN(PORT244_SCIFA5_CTS_), \
- 	GPIO_FN(MFG2_IN1), \
--	GPIO_FN(PORT244_SCIFB_CTS_), \
- 	GPIO_FN(MSIOF2R_RXD),
--	GPIO_FN(PORT245_SCIFA5_RTS_), \
- 	GPIO_FN(MFG2_IN2), \
--	GPIO_FN(PORT245_SCIFB_RTS_), \
- 	GPIO_FN(MSIOF2R_TXD),
--	GPIO_FN(PORT246_SCIFA5_RXD), \
- 	GPIO_FN(MFG1_OUT1), \
--	GPIO_FN(PORT246_SCIFB_RXD), \
- 	GPIO_FN(TPU1TO0),
--	GPIO_FN(PORT247_SCIFA5_TXD), \
- 	GPIO_FN(MFG3_OUT2), \
--	GPIO_FN(PORT247_SCIFB_TXD), \
- 	GPIO_FN(TPU3TO1),
--	GPIO_FN(PORT248_SCIFA5_SCK), \
- 	GPIO_FN(MFG2_OUT1), \
--	GPIO_FN(PORT248_SCIFB_SCK), \
- 	GPIO_FN(TPU2TO0), \
- 	GPIO_FN(PORT248_I2C_SCL3), \
- 	GPIO_FN(MSIOF2R_TSCK),
+ static const struct pinctrl_map marzen_pinctrl_map[] = {
++	/* HSPI0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-hspi.0", "pfc-r8a7779",
++				  "hspi0", "hspi0"),
+ 	/* SCIF2 (CN18: DEBUG0) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-r8a7779",
+ 				  "scif2_data_c", "scif2"),
+@@ -361,12 +364,6 @@ static void __init marzen_init(void)
+ 	gpio_request(GPIO_FN_EX_CS0, NULL); /* nCS */
+ 	gpio_request(GPIO_FN_IRQ1_B, NULL); /* IRQ + PME */
+ 
+-	/* HSPI 0 */
+-	gpio_request(GPIO_FN_HSPI_CLK0,	NULL);
+-	gpio_request(GPIO_FN_HSPI_CS0,	NULL);
+-	gpio_request(GPIO_FN_HSPI_TX0,	NULL);
+-	gpio_request(GPIO_FN_HSPI_RX0,	NULL);
+-
+ 	/* USB (CN21) */
+ 	gpio_request(GPIO_FN_USB_OVC0, NULL);
+ 	gpio_request(GPIO_FN_USB_OVC1, NULL);
 -- 
 1.8.1.5
 
