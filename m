@@ -1,74 +1,57 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 12:32:12 +0000
-Subject: [PATCH 02/43] ARM: shmobile: Remove partial CPU Hotplug from EMEV2
-Message-Id: <1363609973-31086-3-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 23:00:04 +0000
+Subject: [PATCH v4 59/88] sh-pfc: sh73a0: Remove IrDA function GPIOS
+Message-Id: <1363215633-4264-60-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+All sh73a0 platforms now use the pinctrl API to control the IrDA pins,
+the corresponding function GPIOS are unused. Remove them.
 
-Remove partial CPU hotplug support from EMEV2 SMP code.
-
-The upstream EMEV2 SMP support code has no CPU shutdown or
-reset ability so we cannot reboot the secondary CPU cores.
-
-Regular SMP operation is however still working as expected.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/smp-emev2.c |   28 ----------------------------
- 1 file changed, 28 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 6 ------
+ 1 file changed, 6 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/smp-emev2.c b/arch/arm/mach-shmobile/smp-emev2.c
-index 953eb1f..72620b1 100644
---- a/arch/arm/mach-shmobile/smp-emev2.c
-+++ b/arch/arm/mach-shmobile/smp-emev2.c
-@@ -62,29 +62,6 @@ static unsigned int __init emev2_get_core_count(void)
- 	return scu_base ? scu_get_core_count(scu_base) : 1;
- }
- 
--static int emev2_platform_cpu_kill(unsigned int cpu)
--{
--	return 0; /* not supported yet */
--}
--
--static int __maybe_unused emev2_cpu_kill(unsigned int cpu)
--{
--	int k;
--
--	/* this function is running on another CPU than the offline target,
--	 * here we need wait for shutdown code in platform_cpu_die() to
--	 * finish before asking SoC-specific code to power off the CPU core.
--	 */
--	for (k = 0; k < 1000; k++) {
--		if (shmobile_cpu_is_dead(cpu))
--			return emev2_platform_cpu_kill(cpu);
--		mdelay(1);
--	}
--
--	return 0;
--}
--
--
- static void __cpuinit emev2_secondary_init(unsigned int cpu)
- {
- 	gic_secondary_init(0);
-@@ -126,9 +103,4 @@ struct smp_operations emev2_smp_ops __initdata = {
- 	.smp_prepare_cpus	= emev2_smp_prepare_cpus,
- 	.smp_secondary_init	= emev2_secondary_init,
- 	.smp_boot_secondary	= emev2_boot_secondary,
--#ifdef CONFIG_HOTPLUG_CPU
--	.cpu_kill		= emev2_cpu_kill,
--	.cpu_die		= shmobile_cpu_die,
--	.cpu_disable		= shmobile_cpu_disable,
--#endif
- };
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index 273345c..cde4387 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -2979,7 +2979,6 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(XWUP),
+ 	GPIO_FN(VACK),
+ 	GPIO_FN(XTAL1L),
+-	GPIO_FN(PORT49_IRDA_OUT), \
+ 	GPIO_FN(PORT49_IROUT), \
+ 	GPIO_FN(BBIF2_TSYNC2), \
+ 	GPIO_FN(TPU2TO2), \
+@@ -2987,9 +2986,7 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(BBIF2_TSCK2), \
+ 	GPIO_FN(TPU2TO3), \
+ 	GPIO_FN(BBIF2_TXD2),
+-	GPIO_FN(PORT53_IRDA_IN), \
+ 	GPIO_FN(TPU3TO3), \
+-	GPIO_FN(PORT54_IRDA_FIRSEL), \
+ 	GPIO_FN(TPU3TO2), \
+ 	GPIO_FN(TPU0TO0),
+ 	GPIO_FN(A0), \
+@@ -3188,13 +3185,10 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(VIO2_FIELD2), \
+ 	GPIO_FN(MSIOF1_SS2), \
+ 	GPIO_FN(VIO2_HD2), \
+-	GPIO_FN(PORT241_IRDA_OUT), \
+ 	GPIO_FN(PORT241_IROUT), \
+ 	GPIO_FN(MFG4_OUT1), \
+ 	GPIO_FN(TPU4TO0),
+-	GPIO_FN(PORT242_IRDA_IN), \
+ 	GPIO_FN(MFG4_IN2),
+-	GPIO_FN(PORT243_IRDA_FIRSEL), \
+ 	GPIO_FN(PORT243_VIO_CKO2),
+ 	GPIO_FN(MFG2_IN1), \
+ 	GPIO_FN(MSIOF2R_RXD),
 -- 
-1.7.10.4
+1.8.1.5
 
