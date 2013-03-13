@@ -1,50 +1,64 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 06 Mar 2013 12:52:25 +0000
-Subject: [PATCH v3 04/29] sh-pfc: Fix a typo and simplify a definition on sh73a0
-Message-Id: <1362574370-17889-5-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 22:59:27 +0000
+Subject: [PATCH v4 22/88] ARM: shmobile: ag5evm: Register pinctrl mappings for SCIF
+Message-Id: <1363215633-4264-23-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Replace the GPIO-based SCIF pinmux configuration by pinctrl mappings.
 
-Fix definition of the SDHIWP0 function and simplify the CPU_ALL_PORT
-definition on sh73a0.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 8 ++------
- 1 file changed, 2 insertions(+), 6 deletions(-)
+ arch/arm/mach-shmobile/board-ag5evm.c | 17 +++++++++++------
+ 1 file changed, 11 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index 709008e..232731b 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -25,11 +25,7 @@
- #include "sh_pfc.h"
+diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
+index a4ac46a..5b8dcdc 100644
+--- a/arch/arm/mach-shmobile/board-ag5evm.c
++++ b/arch/arm/mach-shmobile/board-ag5evm.c
+@@ -23,6 +23,7 @@
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+ #include <linux/irq.h>
++#include <linux/pinctrl/machine.h>
+ #include <linux/platform_device.h>
+ #include <linux/delay.h>
+ #include <linux/io.h>
+@@ -550,6 +551,14 @@ static struct platform_device *ag5evm_devices[] __initdata = {
+ 	&sdhi1_device,
+ };
  
- #define CPU_ALL_PORT(fn, pfx, sfx)				\
--	PORT_10(fn, pfx,    sfx), PORT_10(fn, pfx##1, sfx),	\
--	PORT_10(fn, pfx##2, sfx), PORT_10(fn, pfx##3, sfx),	\
--	PORT_10(fn, pfx##4, sfx), PORT_10(fn, pfx##5, sfx),	\
--	PORT_10(fn, pfx##6, sfx), PORT_10(fn, pfx##7, sfx),	\
--	PORT_10(fn, pfx##8, sfx), PORT_10(fn, pfx##9, sfx),	\
-+	PORT_10(fn, pfx,    sfx), PORT_90(fn, pfx, sfx),	\
- 	PORT_10(fn, pfx##10, sfx),				\
- 	PORT_1(fn, pfx##110, sfx), PORT_1(fn, pfx##111, sfx),	\
- 	PORT_1(fn, pfx##112, sfx), PORT_1(fn, pfx##113, sfx),	\
-@@ -1502,7 +1498,7 @@ static pinmux_enum_t pinmux_data[] = {
- 	PINMUX_DATA(SDHID0_2_PU_MARK, PORT254_FN1, PORT254_IN_PU),
- 	PINMUX_DATA(SDHID0_3_PU_MARK, PORT255_FN1, PORT255_IN_PU),
- 	PINMUX_DATA(SDHICMD0_PU_MARK, PORT256_FN1, PORT256_IN_PU),
--	PINMUX_DATA(SDHIWP0_PU_MARK,  PORT257_FN1, PORT256_IN_PU),
-+	PINMUX_DATA(SDHIWP0_PU_MARK,  PORT257_FN1, PORT257_IN_PU),
- 	PINMUX_DATA(SDHID1_0_PU_MARK, PORT259_FN1, PORT259_IN_PU),
- 	PINMUX_DATA(SDHID1_1_PU_MARK, PORT260_FN1, PORT260_IN_PU),
- 	PINMUX_DATA(SDHID1_2_PU_MARK, PORT261_FN1, PORT261_IN_PU),
++static const struct pinctrl_map ag5evm_pinctrl_map[] = {
++	/* SCIFA2 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-sh73a0",
++				  "scifa2_data_0", "scifa2"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-sh73a0",
++				  "scifa2_ctrl_0", "scifa2"),
++};
++
+ static void __init ag5evm_init(void)
+ {
+ 	regulator_register_always_on(0, "fixed-1.8V", fixed1v8_power_consumers,
+@@ -558,14 +567,10 @@ static void __init ag5evm_init(void)
+ 				     ARRAY_SIZE(fixed2v8_power_consumers), 3300000);
+ 	regulator_register_fixed(3, dummy_supplies, ARRAY_SIZE(dummy_supplies));
+ 
++	pinctrl_register_mappings(ag5evm_pinctrl_map,
++				  ARRAY_SIZE(ag5evm_pinctrl_map));
+ 	sh73a0_pinmux_init();
+ 
+-	/* enable SCIFA2 */
+-	gpio_request(GPIO_FN_SCIFA2_TXD1, NULL);
+-	gpio_request(GPIO_FN_SCIFA2_RXD1, NULL);
+-	gpio_request(GPIO_FN_SCIFA2_RTS1_, NULL);
+-	gpio_request(GPIO_FN_SCIFA2_CTS1_, NULL);
+-
+ 	/* enable KEYSC */
+ 	gpio_request(GPIO_FN_KEYIN0_PU, NULL);
+ 	gpio_request(GPIO_FN_KEYIN1_PU, NULL);
 -- 
 1.8.1.5
 
