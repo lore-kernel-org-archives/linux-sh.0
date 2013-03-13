@@ -1,96 +1,140 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 20 Mar 2013 14:45:04 +0000
-Subject: Re: [PATCH 01/03] ARM: shmobile: APE6EVM base support V2
-Message-Id: <CANqRtoQVdT7JeT=00WMp7OwVnX=-v1htZ8=jx+GBtOWRf9hMKg@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 22:39:43 +0000
+Subject: [PATCH 24/25] sh-pfc: Convert message printing from pr_* to dev_*
+Message-Id: <1363214384-3870-25-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130318150953.28231.73454.sendpatchset@w520>
- <20130318151002.28231.37531.sendpatchset@w520>
- <20130319072532.GA19741@verge.net.au>
- <20130319075053.GA14668@verge.net.au>
- <CANqRtoRkKB-5GxWN_uXN6ansA33koX743Gr0EsBeEVSd0uwgMg@mail.gmail.com>
- <20130320125057.GB16436@verge.net.au>
-In-Reply-To: <20130320125057.GB16436@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-On Wed, Mar 20, 2013 at 9:50 PM, Simon Horman <horms@verge.net.au> wrote:
-> On Tue, Mar 19, 2013 at 07:18:18PM +0900, Magnus Damm wrote:
->> On Tue, Mar 19, 2013 at 4:50 PM, Simon Horman <horms@verge.net.au> wrote:
->> > On Tue, Mar 19, 2013 at 04:25:33PM +0900, Simon Horman wrote:
->> >> On Tue, Mar 19, 2013 at 12:10:02AM +0900, Magnus Damm wrote:
->> >> > From: Magnus Damm <damm@opensource.se>
->> >> >
->> >> > V2 of APE6EVM base board support making use of
->> >> > 1 GiB of memory, the SCIFA0 serial port and
->> >> > ARM architected timer.
->> >> >
->> >> > Signed-off-by: Magnus Damm <damm@opensource.se>
->> >> > ---
->> >> >
->> >> >  Changes since V1:
->> >> >  - Sorted headers
->> >> >  - Use ape6evm_add_standard_devices() to setup SoC devices and clocks
->> >> >
->> >> >   Written against "next" renesas.git 811689afc214564c4a5f238ecf4d8bdc0e52b615
->> >> >
->> >> >  Depends on the following series:
->> >> >  [PATCH 00/04] ARM: shmobile: r8a73a4 SoC support V2
->> >> >
->> >> >  Does not depend on:
->> >> >  [PATCH 00/02] sh-pfc: Initial r8a73a4 PFC support
->> >> >
->> >> > arch/arm/boot/dts/Makefile             |    1
->> >> >  arch/arm/boot/dts/r8a73a4-ape6evm.dts  |   26 ++++++++++++++++++
->> >> >  arch/arm/mach-shmobile/Kconfig         |    8 ++++-
->> >> >  arch/arm/mach-shmobile/Makefile        |    1
->> >> >  arch/arm/mach-shmobile/board-ape6evm.c |   46 ++++++++++++++++++++++++++++++++
->> >> >  5 files changed, 81 insertions(+), 1 deletion(-)
->> >> >
->> >> > --- /dev/null
->> >> > +++ work/arch/arm/boot/dts/r8a73a4-ape6evm.dts      2013-03-18 21:44:35.000000000 +0900
->> >> > @@ -0,0 +1,26 @@
->> >> > +/*
->> >> > + * Device Tree Source for the APE6EVM board
->> >> > + *
->> >> > + * Copyright (C) 2013 Renesas Solutions Corp.
->> >> > + *
->> >> > + * This file is licensed under the terms of the GNU General Public License
->> >> > + * version 2.  This program is licensed "as is" without any warranty of any
->> >> > + * kind, whether express or implied.
->> >> > + */
->> >> > +
->> >> > +/dts-v1/;
->> >> > +/include/ "r8a73a4.dtsi"
->> >> > +
->> >> > +/ {
->> >> > +   model = "APE6EVM";
->> >> > +   compatible = "renesas,ape6evm", "renesas,r8a73a4";
->> >> > +
->> >> > +   chosen {
->> >> > +           bootargs = "console=ttySC0,115200 ignore_loglevel";
->> >>
->> >> I think that earlyprintk=sh-sci.0,11520 go in here.
->> >
->> > Also, to be consistent with the dts of other shmobile boards
->> > could you add root=/dev/nfs ip=dhcp. This history behind this
->> > is that many boards defaulted to using nfsroot in their defconfigs,
->> > a reasonable default IMHO, and recently the command line for all
->> > boards that boot using DT was moved from their defconfig
->> > to their .dtsi in preparation for defconfig consolidation.
->>
->> Sounds like a good idea. Network is however not existing until pretty
->> late in the series. How about adding it in that patch that includes
->> SMSC ethernet support?
->
-> Yes, that sounds reasonable to me.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/pinctrl/sh-pfc/core.c    | 14 +++++++-------
+ drivers/pinctrl/sh-pfc/gpio.c    | 16 ++++++++++------
+ drivers/pinctrl/sh-pfc/pinctrl.c |  5 +++--
+ 3 files changed, 20 insertions(+), 15 deletions(-)
 
-Thanks. I will include that change in V3 together with a bug fix for
-the SCIF ports. Also, if there is any suggestion about the the split
-of platform device vs DT then I can also rework that portion of the
-code. And yes, will need to update the PFC with PINCTRL support too.
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index a04c497..feef897 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -10,7 +10,6 @@
+  */
+ 
+ #define DRV_NAME "sh-pfc"
+-#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+ 
+ #include <linux/bitops.h>
+ #include <linux/err.h>
+@@ -173,9 +172,9 @@ static void sh_pfc_write_config_reg(struct sh_pfc *pfc,
+ 
+ 	sh_pfc_config_reg_helper(pfc, crp, field, &mapped_reg, &mask, &pos);
+ 
+-	pr_debug("write_reg addr = %lx, value = %ld, field = %ld, "
+-		 "r_width = %ld, f_width = %ld\n",
+-		 crp->reg, value, field, crp->reg_width, crp->field_width);
++	dev_dbg(pfc->dev, "write_reg addr = %lx, value = %ld, field = %ld, "
++		"r_width = %ld, f_width = %ld\n",
++		crp->reg, value, field, crp->reg_width, crp->field_width);
+ 
+ 	mask = ~(mask << pos);
+ 	value = value << pos;
+@@ -254,7 +253,8 @@ static int sh_pfc_mark_to_enum(struct sh_pfc *pfc, pinmux_enum_t mark, int pos,
+ 		}
+ 	}
+ 
+-	pr_err("cannot locate data/mark enum_id for mark %d\n", mark);
++	dev_err(pfc->dev, "cannot locate data/mark enum_id for mark %d\n",
++		mark);
+ 	return -EINVAL;
+ }
+ 
+@@ -396,13 +396,13 @@ static int sh_pfc_probe(struct platform_device *pdev)
+ 		 * PFC state as it is, given that there are already
+ 		 * extant users of it that have succeeded by this point.
+ 		 */
+-		pr_notice("failed to init GPIO chip, ignoring...\n");
++		dev_notice(pfc->dev, "failed to init GPIO chip, ignoring...\n");
+ 	}
+ #endif
+ 
+ 	platform_set_drvdata(pdev, pfc);
+ 
+-	pr_info("%s support registered\n", info->name);
++	dev_info(pfc->dev, "%s support registered\n", info->name);
+ 
+ 	return 0;
+ }
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index e299f14..d7acb06 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -9,8 +9,6 @@
+  * for more details.
+  */
+ 
+-#define pr_fmt(fmt) KBUILD_MODNAME " gpio: " fmt
+-
+ #include <linux/device.h>
+ #include <linux/gpio.h>
+ #include <linux/init.h>
+@@ -273,12 +271,18 @@ static int gpio_pin_setup(struct sh_pfc_chip *chip)
+ 
+ static int gpio_function_request(struct gpio_chip *gc, unsigned offset)
+ {
++	static bool __print_once;
+ 	struct sh_pfc *pfc = gpio_to_pfc(gc);
+ 	unsigned int mark = pfc->info->func_gpios[offset].enum_id;
+ 	unsigned long flags;
+ 	int ret;
+ 
+-	pr_notice_once("Use of GPIO API for function requests is deprecated, convert to pinctrl\n");
++	if (!__print_once) {
++		dev_notice(pfc->dev,
++			   "Use of GPIO API for function requests is deprecated."
++			   " Convert to pinctrl\n");
++		__print_once = true;
++	}
+ 
+ 	if (mark = 0)
+ 		return -EINVAL;
+@@ -334,9 +338,9 @@ sh_pfc_add_gpiochip(struct sh_pfc *pfc, int(*setup)(struct sh_pfc_chip *))
+ 	if (unlikely(ret < 0))
+ 		return ERR_PTR(ret);
+ 
+-	pr_info("%s handling gpio %u -> %u\n",
+-		chip->gpio_chip.label, chip->gpio_chip.base,
+-		chip->gpio_chip.base + chip->gpio_chip.ngpio - 1);
++	dev_info(pfc->dev, "%s handling gpio %u -> %u\n",
++		 chip->gpio_chip.label, chip->gpio_chip.base,
++		 chip->gpio_chip.base + chip->gpio_chip.ngpio - 1);
+ 
+ 	return chip;
+ }
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index 82e4fb2..52179bb 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -9,7 +9,6 @@
+  */
+ 
+ #define DRV_NAME "sh-pfc"
+-#define pr_fmt(fmt) KBUILD_MODNAME " pinctrl: " fmt
+ 
+ #include <linux/device.h>
+ #include <linux/err.h>
+@@ -176,7 +175,9 @@ static int sh_pfc_gpio_request_enable(struct pinctrl_dev *pctldev,
+ 	spin_lock_irqsave(&pfc->lock, flags);
+ 
+ 	if (cfg->type != PINMUX_TYPE_NONE) {
+-		pr_err("Pin %u is busy, can't configure it as GPIO.\n", offset);
++		dev_err(pfc->dev,
++			"Pin %u is busy, can't configure it as GPIO.\n",
++			offset);
+ 		ret = -EBUSY;
+ 		goto done;
+ 	}
+-- 
+1.8.1.5
 
-Cheers,
-
-/ magnus
