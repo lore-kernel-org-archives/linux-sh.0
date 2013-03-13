@@ -1,68 +1,56 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 15 Mar 2013 21:27:46 +0000
-Subject: [PATCH v6 0/7] V4L2 clock and async patches and soc-camera example
-Message-Id: <1363382873-20077-1-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 23:00:31 +0000
+Subject: [PATCH v4 86/88] ARM: shmobile: r8a7779: Remove USB function GPIOs
+Message-Id: <1363215633-4264-87-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-sh@vger.kernel.org
 
-Update of V4l2 clock and asynchronous probing patches. Various review 
-comments are addressed, as described in individual patches.
+Those GPIOs have been deprecated by the pinctrl API. They are unused and
+unneeded, remove them.
 
-Guennadi Liakhovetski (7):
-  media: V4L2: add temporary clock helpers
-  media: V4L2: support asynchronous subdevice registration
-  media: soc-camera: switch I2C subdevice drivers to use v4l2-clk
-  soc-camera: add V4L2-async support
-  sh_mobile_ceu_camera: add asynchronous subdevice probing support
-  imx074: support asynchronous probing
-  ARM: shmobile: convert ap4evb to asynchronously register camera
-    subdevices
-
- arch/arm/mach-shmobile/board-ap4evb.c              |  103 ++--
- arch/arm/mach-shmobile/clock-sh7372.c              |    1 +
- drivers/media/i2c/soc_camera/imx074.c              |   36 +-
- drivers/media/i2c/soc_camera/mt9m001.c             |   17 +-
- drivers/media/i2c/soc_camera/mt9m111.c             |   20 +-
- drivers/media/i2c/soc_camera/mt9t031.c             |   19 +-
- drivers/media/i2c/soc_camera/mt9t112.c             |   19 +-
- drivers/media/i2c/soc_camera/mt9v022.c             |   17 +-
- drivers/media/i2c/soc_camera/ov2640.c              |   19 +-
- drivers/media/i2c/soc_camera/ov5642.c              |   20 +-
- drivers/media/i2c/soc_camera/ov6650.c              |   17 +-
- drivers/media/i2c/soc_camera/ov772x.c              |   15 +-
- drivers/media/i2c/soc_camera/ov9640.c              |   17 +-
- drivers/media/i2c/soc_camera/ov9640.h              |    1 +
- drivers/media/i2c/soc_camera/ov9740.c              |   18 +-
- drivers/media/i2c/soc_camera/rj54n1cb0c.c          |   17 +-
- drivers/media/i2c/soc_camera/tw9910.c              |   18 +-
- .../platform/soc_camera/sh_mobile_ceu_camera.c     |  136 +++--
- drivers/media/platform/soc_camera/sh_mobile_csi2.c |  162 +++---
- drivers/media/platform/soc_camera/soc_camera.c     |  642 ++++++++++++++++----
- .../platform/soc_camera/soc_camera_platform.c      |    2 +-
- drivers/media/v4l2-core/Makefile                   |    3 +-
- drivers/media/v4l2-core/v4l2-async.c               |  272 +++++++++
- drivers/media/v4l2-core/v4l2-clk.c                 |  184 ++++++
- include/media/sh_mobile_ceu.h                      |    2 +
- include/media/sh_mobile_csi2.h                     |    2 +-
- include/media/soc_camera.h                         |   36 +-
- include/media/v4l2-async.h                         |  105 ++++
- include/media/v4l2-clk.h                           |   55 ++
- 29 files changed, 1666 insertions(+), 309 deletions(-)
- create mode 100644 drivers/media/v4l2-core/v4l2-async.c
- create mode 100644 drivers/media/v4l2-core/v4l2-clk.c
- create mode 100644 include/media/v4l2-async.h
- create mode 100644 include/media/v4l2-clk.h
-
--- 
-1.7.2.5
-
-Thanks
-Guennadi
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ arch/arm/mach-shmobile/include/mach/r8a7779.h | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+index f3ae551..e50bf53 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -71,7 +71,7 @@ enum {
+ 	GPIO_FN_A19,
+ 
+ 	/* IPSR0 */
+-	GPIO_FN_USB_PENC2, GPIO_FN_PWM1, GPIO_FN_PWMFSW0,
++	GPIO_FN_PWM1, GPIO_FN_PWMFSW0,
+ 	GPIO_FN_SCIF_CLK, GPIO_FN_TCLK0_C, GPIO_FN_BS,
+ 	GPIO_FN_FD2, GPIO_FN_ATADIR0, GPIO_FN_SDSELF,
+ 	GPIO_FN_HCTS1, GPIO_FN_A0,
+@@ -191,7 +191,7 @@ enum {
+ 	GPIO_FN_VI1_FIELD, GPIO_FN_VI3_FIELD,
+ 	GPIO_FN_AUDIO_CLKOUT, GPIO_FN_GPS_CLK_C,
+ 	GPIO_FN_GPS_CLK_D, GPIO_FN_AUDIO_CLKA, GPIO_FN_CAN_TXCLK,
+-	GPIO_FN_AUDIO_CLKB, GPIO_FN_USB_OVC2, GPIO_FN_CAN_DEBUGOUT0,
++	GPIO_FN_AUDIO_CLKB, GPIO_FN_CAN_DEBUGOUT0,
+ 	GPIO_FN_MOUT0,
+ 
+ 	/* IPSR6 */
+@@ -230,10 +230,10 @@ enum {
+ 	GPIO_FN_DREQ2,	GPIO_FN_DACK2,
+ 
+ 	/* IPSR8 */
+-	GPIO_FN_USB_OVC0, GPIO_FN_AD_CLK,
++	GPIO_FN_AD_CLK,
+ 	GPIO_FN_CC5_STATE4, GPIO_FN_CC5_STATE12, GPIO_FN_CC5_STATE20,
+ 	GPIO_FN_CC5_STATE28, GPIO_FN_CC5_STATE36,
+-	GPIO_FN_USB_OVC1, GPIO_FN_AD_DI,
++	GPIO_FN_AD_DI,
+ 	GPIO_FN_CC5_STATE5, GPIO_FN_CC5_STATE13, GPIO_FN_CC5_STATE21,
+ 	GPIO_FN_CC5_STATE29, GPIO_FN_CC5_STATE37,
+ 	GPIO_FN_CAN_DEBUG_HW_TRIGGER, GPIO_FN_AD_DO,
+-- 
+1.8.1.5
+
