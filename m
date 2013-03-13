@@ -1,58 +1,300 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 27 Mar 2013 14:44:24 +0000
-Subject: Re: [PATCH 00/03] gpio: Renesas R-Car GPIO driver update
-Message-Id: <CANqRtoRNj6V51V=URATdgBw4ugq2TUoTs3_A8j16nG9G1ZvQ1Q@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 22:59:18 +0000
+Subject: [PATCH v4 13/88] sh-pfc: r8a7740: Add SDHI and MMCIF pin groups and functions
+Message-Id: <1363215633-4264-14-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130313113203.30133.49539.sendpatchset@w520>
-	<1670937.hEFtzrbkf6@avalon>
-	<CANqRtoSDc6YfnotMR2aw4niEYyjn1C7JRu4WciyKsP-QT+j4LA@mail.gmail.com>
-	<1938905.m8UJXV94pZ@avalon>
-	<CANqRtoRBfjXgGt4_niN3m5ULVQVQXBBARLUkNPyeDnZLatgXKA@mail.gmail.com>
-	<CACRpkdaduNaUj0rZQjFmCbwWhK_CN_EnyRGNwut59bTCWp-PXA@mail.gmail.com>
-In-Reply-To: <CACRpkdaduNaUj0rZQjFmCbwWhK_CN_EnyRGNwut59bTCWp-PXA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Linus Walleij <linus.walleij@linaro.org>
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, grant.likely@secretlab.ca, horms@verge.net.au
+To: linux-sh@vger.kernel.org
 
-On Wed, Mar 27, 2013 at 9:34 PM, Linus Walleij <linus.walleij@linaro.org> wrote:
-> On Tue, Mar 19, 2013 at 4:36 AM, Magnus Damm <magnus.damm@gmail.com> wrote:
->> On Thu, Mar 14, 2013 at 10:13 PM, Laurent Pinchart
->> <laurent.pinchart@ideasonboard.com> wrote:
->
->>> When submitting new drivers I usually try not to make the development history
->>> visible to mainline. It brings little additional value (beside possibly making
->>> backporting a bit easier, but in the devm_* case that shouldn't be a problem,
->>> unless Simon thinks otherwise) but adds review complexity, as reviewers need
->>> to validate the intermediate versions as well. More patches also mean more
->>> potential bisection breakages.
->>
->> Huh, it seems that my point of view is the total opposite. I see that
->> using incremental patches to show new development would make review
->> _easier_. Perhaps that's not the case for most people.
->
-> As subsystem maintainer what I don't want to see is a patch that
-> at one point breaks something in some configuration and then later
-> fixes it. Then I strongly prefer squashing. (Greg also mentions this
-> in one of his seminars.)
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Sure, I totally agree. I strongly dislike when people introduce
-breakage and then fix it later in the same series. It's pretty obvious
-to me, each incremental step needs to work by itself - if it doesn't
-then it should be reworked before it gets merged. I personally prefer
-to separate features from fixes. Fixes are always folded into the
-original patch.
+Add pin groups for the first two SDHI interfaces and two alternative pin
+groups for the MMCIF interface on the r8a7740 SoC.
 
-> What really makes me mad is the the above pattern + claim that
-> it must be done in that way to preserve authorship. Like legaleaze
-> or credit is more important that functionality.
->
-> If all patches are bisectable and perfectly fine then whether you
-> take 8 stops when driving to Rome or just drive there in one
-> big stretch is more a technical, secondary thing. Do whatever you
-> like as long as all commits build and boot.
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 248 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 248 insertions(+)
 
-I suppose I prefer to stop for coffee in every village then. =)
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index e16ec10..a2f909a 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -1870,6 +1870,188 @@ static const unsigned int lcd1_sys_pins[] = {
+ static const unsigned int lcd1_sys_mux[] = {
+ 	LCD1_CS_MARK, LCD1_WR_MARK, LCD1_RD_MARK, LCD1_RS_MARK,
+ };
++/* - MMCIF ------------------------------------------------------------------ */
++static const unsigned int mmc0_data1_0_pins[] = {
++	/* D[0] */
++	68,
++};
++static const unsigned int mmc0_data1_0_mux[] = {
++	MMC0_D0_PORT68_MARK,
++};
++static const unsigned int mmc0_data4_0_pins[] = {
++	/* D[0:3] */
++	68, 69, 70, 71,
++};
++static const unsigned int mmc0_data4_0_mux[] = {
++	MMC0_D0_PORT68_MARK, MMC0_D1_PORT69_MARK, MMC0_D2_PORT70_MARK, MMC0_D3_PORT71_MARK,
++};
++static const unsigned int mmc0_data8_0_pins[] = {
++	/* D[0:7] */
++	68, 69, 70, 71, 72, 73, 74, 75,
++};
++static const unsigned int mmc0_data8_0_mux[] = {
++	MMC0_D0_PORT68_MARK, MMC0_D1_PORT69_MARK, MMC0_D2_PORT70_MARK, MMC0_D3_PORT71_MARK,
++	MMC0_D4_PORT72_MARK, MMC0_D5_PORT73_MARK, MMC0_D6_PORT74_MARK, MMC0_D7_PORT75_MARK,
++};
++static const unsigned int mmc0_ctrl_0_pins[] = {
++	/* CMD, CLK */
++	67, 66,
++};
++static const unsigned int mmc0_ctrl_0_mux[] = {
++	MMC0_CMD_PORT67_MARK, MMC0_CLK_PORT66_MARK,
++};
++
++static const unsigned int mmc0_data1_1_pins[] = {
++	/* D[0] */
++	149,
++};
++static const unsigned int mmc0_data1_1_mux[] = {
++	MMC1_D0_PORT149_MARK,
++};
++static const unsigned int mmc0_data4_1_pins[] = {
++	/* D[0:3] */
++	149, 148, 147, 146,
++};
++static const unsigned int mmc0_data4_1_mux[] = {
++	MMC1_D0_PORT149_MARK, MMC1_D1_PORT148_MARK, MMC1_D2_PORT147_MARK, MMC1_D3_PORT146_MARK,
++};
++static const unsigned int mmc0_data8_1_pins[] = {
++	/* D[0:7] */
++	149, 148, 147, 146, 145, 144, 143, 142,
++};
++static const unsigned int mmc0_data8_1_mux[] = {
++	MMC1_D0_PORT149_MARK, MMC1_D1_PORT148_MARK, MMC1_D2_PORT147_MARK, MMC1_D3_PORT146_MARK,
++	MMC1_D4_PORT145_MARK, MMC1_D5_PORT144_MARK, MMC1_D6_PORT143_MARK, MMC1_D7_PORT142_MARK,
++};
++static const unsigned int mmc0_ctrl_1_pins[] = {
++	/* CMD, CLK */
++	104, 103,
++};
++static const unsigned int mmc0_ctrl_1_mux[] = {
++	MMC1_CMD_PORT104_MARK, MMC1_CLK_PORT103_MARK,
++};
++/* - SDHI0 ------------------------------------------------------------------ */
++static const unsigned int sdhi0_data1_pins[] = {
++	/* D0 */
++	77,
++};
++static const unsigned int sdhi0_data1_mux[] = {
++	SDHI0_D0_MARK,
++};
++static const unsigned int sdhi0_data4_pins[] = {
++	/* D[0:3] */
++	77, 78, 79, 80,
++};
++static const unsigned int sdhi0_data4_mux[] = {
++	SDHI0_D0_MARK, SDHI0_D1_MARK, SDHI0_D2_MARK, SDHI0_D3_MARK,
++};
++static const unsigned int sdhi0_ctrl_pins[] = {
++	/* CMD, CLK */
++	76, 82,
++};
++static const unsigned int sdhi0_ctrl_mux[] = {
++	SDHI0_CMD_MARK, SDHI0_CLK_MARK,
++};
++static const unsigned int sdhi0_cd_pins[] = {
++	/* CD */
++	81,
++};
++static const unsigned int sdhi0_cd_mux[] = {
++	SDHI0_CD_MARK,
++};
++static const unsigned int sdhi0_wp_pins[] = {
++	/* WP */
++	83,
++};
++static const unsigned int sdhi0_wp_mux[] = {
++	SDHI0_WP_MARK,
++};
++/* - SDHI1 ------------------------------------------------------------------ */
++static const unsigned int sdhi1_data1_pins[] = {
++	/* D0 */
++	68,
++};
++static const unsigned int sdhi1_data1_mux[] = {
++	SDHI1_D0_MARK,
++};
++static const unsigned int sdhi1_data4_pins[] = {
++	/* D[0:3] */
++	68, 69, 70, 71,
++};
++static const unsigned int sdhi1_data4_mux[] = {
++	SDHI1_D0_MARK, SDHI1_D1_MARK, SDHI1_D2_MARK, SDHI1_D3_MARK,
++};
++static const unsigned int sdhi1_ctrl_pins[] = {
++	/* CMD, CLK */
++	67, 66,
++};
++static const unsigned int sdhi1_ctrl_mux[] = {
++	SDHI1_CMD_MARK, SDHI1_CLK_MARK,
++};
++static const unsigned int sdhi1_cd_pins[] = {
++	/* CD */
++	72,
++};
++static const unsigned int sdhi1_cd_mux[] = {
++	SDHI1_CD_MARK,
++};
++static const unsigned int sdhi1_wp_pins[] = {
++	/* WP */
++	73,
++};
++static const unsigned int sdhi1_wp_mux[] = {
++	SDHI1_WP_MARK,
++};
++/* - SDHI2 ------------------------------------------------------------------ */
++static const unsigned int sdhi2_data1_pins[] = {
++	/* D0 */
++	205,
++};
++static const unsigned int sdhi2_data1_mux[] = {
++	SDHI2_D0_MARK,
++};
++static const unsigned int sdhi2_data4_pins[] = {
++	/* D[0:3] */
++	205, 206, 207, 208,
++};
++static const unsigned int sdhi2_data4_mux[] = {
++	SDHI2_D0_MARK, SDHI2_D1_MARK, SDHI2_D2_MARK, SDHI2_D3_MARK,
++};
++static const unsigned int sdhi2_ctrl_pins[] = {
++	/* CMD, CLK */
++	204, 203,
++};
++static const unsigned int sdhi2_ctrl_mux[] = {
++	SDHI2_CMD_MARK, SDHI2_CLK_MARK,
++};
++static const unsigned int sdhi2_cd_0_pins[] = {
++	/* CD */
++	202,
++};
++static const unsigned int sdhi2_cd_0_mux[] = {
++	SDHI2_CD_PORT202_MARK,
++};
++static const unsigned int sdhi2_wp_0_pins[] = {
++	/* WP */
++	177,
++};
++static const unsigned int sdhi2_wp_0_mux[] = {
++	SDHI2_WP_PORT177_MARK,
++};
++static const unsigned int sdhi2_cd_1_pins[] = {
++	/* CD */
++	24,
++};
++static const unsigned int sdhi2_cd_1_mux[] = {
++	SDHI2_CD_PORT24_MARK,
++};
++static const unsigned int sdhi2_wp_1_pins[] = {
++	/* WP */
++	25,
++};
++static const unsigned int sdhi2_wp_1_mux[] = {
++	SDHI2_WP_PORT25_MARK,
++};
+ 
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(lcd0_data8),
+@@ -1894,6 +2076,31 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(lcd1_lclk),
+ 	SH_PFC_PIN_GROUP(lcd1_sync),
+ 	SH_PFC_PIN_GROUP(lcd1_sys),
++	SH_PFC_PIN_GROUP(mmc0_data1_0),
++	SH_PFC_PIN_GROUP(mmc0_data4_0),
++	SH_PFC_PIN_GROUP(mmc0_data8_0),
++	SH_PFC_PIN_GROUP(mmc0_ctrl_0),
++	SH_PFC_PIN_GROUP(mmc0_data1_1),
++	SH_PFC_PIN_GROUP(mmc0_data4_1),
++	SH_PFC_PIN_GROUP(mmc0_data8_1),
++	SH_PFC_PIN_GROUP(mmc0_ctrl_1),
++	SH_PFC_PIN_GROUP(sdhi0_data1),
++	SH_PFC_PIN_GROUP(sdhi0_data4),
++	SH_PFC_PIN_GROUP(sdhi0_ctrl),
++	SH_PFC_PIN_GROUP(sdhi0_cd),
++	SH_PFC_PIN_GROUP(sdhi0_wp),
++	SH_PFC_PIN_GROUP(sdhi1_data1),
++	SH_PFC_PIN_GROUP(sdhi1_data4),
++	SH_PFC_PIN_GROUP(sdhi1_ctrl),
++	SH_PFC_PIN_GROUP(sdhi1_cd),
++	SH_PFC_PIN_GROUP(sdhi1_wp),
++	SH_PFC_PIN_GROUP(sdhi2_data1),
++	SH_PFC_PIN_GROUP(sdhi2_data4),
++	SH_PFC_PIN_GROUP(sdhi2_ctrl),
++	SH_PFC_PIN_GROUP(sdhi2_cd_0),
++	SH_PFC_PIN_GROUP(sdhi2_wp_0),
++	SH_PFC_PIN_GROUP(sdhi2_cd_1),
++	SH_PFC_PIN_GROUP(sdhi2_wp_1),
+ };
+ 
+ static const char * const lcd0_groups[] = {
+@@ -1924,9 +2131,50 @@ static const char * const lcd1_groups[] = {
+ 	"lcd1_sys",
+ };
+ 
++static const char * const mmc0_groups[] = {
++	"mmc0_data1_0",
++	"mmc0_data4_0",
++	"mmc0_data8_0",
++	"mmc0_ctrl_0",
++	"mmc0_data1_1",
++	"mmc0_data4_1",
++	"mmc0_data8_1",
++	"mmc0_ctrl_1",
++};
++
++static const char * const sdhi0_groups[] = {
++	"sdhi0_data1",
++	"sdhi0_data4",
++	"sdhi0_ctrl",
++	"sdhi0_cd",
++	"sdhi0_wp",
++};
++
++static const char * const sdhi1_groups[] = {
++	"sdhi1_data1",
++	"sdhi1_data4",
++	"sdhi1_ctrl",
++	"sdhi1_cd",
++	"sdhi1_wp",
++};
++
++static const char * const sdhi2_groups[] = {
++	"sdhi2_data1",
++	"sdhi2_data4",
++	"sdhi2_ctrl",
++	"sdhi2_cd_0",
++	"sdhi2_wp_0",
++	"sdhi2_cd_1",
++	"sdhi2_wp_1",
++};
++
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(lcd0),
+ 	SH_PFC_FUNCTION(lcd1),
++	SH_PFC_FUNCTION(mmc0),
++	SH_PFC_FUNCTION(sdhi0),
++	SH_PFC_FUNCTION(sdhi1),
++	SH_PFC_FUNCTION(sdhi2),
+ };
+ 
+ #define PINMUX_FN_BASE	ARRAY_SIZE(pinmux_pins)
+-- 
+1.8.1.5
 
-/ magnus
