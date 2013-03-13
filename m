@@ -1,79 +1,36 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:06:16 +0000
-Subject: [PATCH 080/142] ARM: shmobile: ag5evm: Register pinctrl mappings for KEYSC
-Message-Id: <1363604838-29359-81-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Wed, 13 Mar 2013 11:32:23 +0000
+Subject: [PATCH 02/03] gpio: rcar: Use IRQCHIP_SET_TYPE_MASKED
+Message-Id: <20130313113223.30133.50623.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+References: <20130313113203.30133.49539.sendpatchset@w520>
+In-Reply-To: <20130313113203.30133.49539.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-kernel@vger.kernel.org
+Cc: linux-sh@vger.kernel.org, linus.walleij@linaro.org, grant.likely@secretlab.ca, horms@verge.net.au, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <damm@opensource.se>
 
-Replace the GPIO-based KEYSC pinmux configuration by pinctrl mappings.
+Set the flag IRQCHIP_SET_TYPE_MASKED in gpio-rcar.c to 
+force mask of the interrupt while configuring trigger
+settings.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/board-ag5evm.c |   37 +++++++++++++++------------------
- 1 file changed, 17 insertions(+), 20 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
-index 987b9b6..22b9655 100644
---- a/arch/arm/mach-shmobile/board-ag5evm.c
-+++ b/arch/arm/mach-shmobile/board-ag5evm.c
-@@ -571,6 +571,23 @@ static const struct pinctrl_map ag5evm_pinctrl_map[] = {
- 				  "i2c2_0", "i2c2"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.3", "pfc-sh73a0",
- 				  "i2c3_0", "i2c3"),
-+	/* KEYSC */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_keysc.0", "pfc-sh73a0",
-+				  "keysc_in8", "keysc"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_keysc.0", "pfc-sh73a0",
-+				  "keysc_out04", "keysc"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_keysc.0", "pfc-sh73a0",
-+				  "keysc_out5", "keysc"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_keysc.0", "pfc-sh73a0",
-+				  "keysc_out6_0", "keysc"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_keysc.0", "pfc-sh73a0",
-+				  "keysc_out7_0", "keysc"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_keysc.0", "pfc-sh73a0",
-+				  "keysc_out8_0", "keysc"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_keysc.0", "pfc-sh73a0",
-+				  "keysc_out9_2", "keysc"),
-+	PIN_MAP_CONFIGS_GROUP_DEFAULT("sh_keysc.0", "pfc-sh73a0",
-+				      "keysc_in8", pin_pullup_conf),
- 	/* MMCIF */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
- 				  "mmc0_data8_0", "mmc0"),
-@@ -615,26 +632,6 @@ static void __init ag5evm_init(void)
- 				  ARRAY_SIZE(ag5evm_pinctrl_map));
- 	sh73a0_pinmux_init();
- 
--	/* enable KEYSC */
--	gpio_request(GPIO_FN_KEYIN0_PU, NULL);
--	gpio_request(GPIO_FN_KEYIN1_PU, NULL);
--	gpio_request(GPIO_FN_KEYIN2_PU, NULL);
--	gpio_request(GPIO_FN_KEYIN3_PU, NULL);
--	gpio_request(GPIO_FN_KEYIN4_PU, NULL);
--	gpio_request(GPIO_FN_KEYIN5_PU, NULL);
--	gpio_request(GPIO_FN_KEYIN6_PU, NULL);
--	gpio_request(GPIO_FN_KEYIN7_PU, NULL);
--	gpio_request(GPIO_FN_KEYOUT0, NULL);
--	gpio_request(GPIO_FN_KEYOUT1, NULL);
--	gpio_request(GPIO_FN_KEYOUT2, NULL);
--	gpio_request(GPIO_FN_KEYOUT3, NULL);
--	gpio_request(GPIO_FN_KEYOUT4, NULL);
--	gpio_request(GPIO_FN_KEYOUT5, NULL);
--	gpio_request(GPIO_FN_PORT59_KEYOUT6, NULL);
--	gpio_request(GPIO_FN_PORT58_KEYOUT7, NULL);
--	gpio_request(GPIO_FN_KEYOUT8, NULL);
--	gpio_request(GPIO_FN_PORT149_KEYOUT9, NULL);
--
- 	/* enable MMCIF */
- 	gpio_request_one(208, GPIOF_OUT_INIT_HIGH, NULL); /* Reset */
- 
--- 
-1.7.10.4
+ drivers/gpio/gpio-rcar.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
+--- 0004/drivers/gpio/gpio-rcar.c
++++ work/drivers/gpio/gpio-rcar.c	2013-03-13 19:42:56.000000000 +0900
+@@ -301,7 +301,7 @@ static int gpio_rcar_probe(struct platfo
+ 	irq_chip->irq_enable = gpio_rcar_irq_enable;
+ 	irq_chip->irq_disable = gpio_rcar_irq_disable;
+ 	irq_chip->irq_set_type = gpio_rcar_irq_set_type;
+-	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE;
++	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE | IRQCHIP_SET_TYPE_MASKED;
+ 
+ 	p->irq_domain = irq_domain_add_simple(pdev->dev.of_node,
+ 					      p->config.number_of_pins,
