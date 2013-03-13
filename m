@@ -1,96 +1,44 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Sun, 17 Mar 2013 15:43:49 +0000
-Subject: [PATCH v3 5/7] ARM: mach-shmobile: sh73a0: Setup the timer CMT10 using DT
-Message-Id: <1363535031-21402-5-git-send-email-hechtb+renesas@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 22:59:47 +0000
+Subject: [PATCH v4 42/88] ARM: shmobile: kzm9g: Register pinctrl mappings for USB
+Message-Id: <1363215633-4264-43-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363535031-21402-1-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1363535031-21402-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-We can now use the Device Tree for bringing up our timer device CMT10 on
-the SoC sh73a0.
+Replace the GPIO-based USB pinmux configuration by pinctrl mappings.
 
-Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v3: same (only patch 0003 changed)
+ arch/arm/mach-shmobile/board-kzm9g.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
- arch/arm/boot/dts/sh73a0.dtsi         |   11 +++++++++++
- arch/arm/mach-shmobile/setup-sh73a0.c |   32 --------------------------------
- 2 files changed, 11 insertions(+), 32 deletions(-)
-
-diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
-index 8a59465..6549d6c 100644
---- a/arch/arm/boot/dts/sh73a0.dtsi
-+++ b/arch/arm/boot/dts/sh73a0.dtsi
-@@ -97,4 +97,15 @@
- 			      0 189 0x4
- 			      0 190 0x4>;
- 	};
-+
-+	timer@e6138010 {
-+		compatible = "renesas,cmt-timer";
-+		interrupt-parent = <&gic>;
-+		reg = <0xe6138010 0xc>;
-+		interrupts = <0 65 0x4>;
-+		renesas,device-id = <1>;
-+		renesas,channel-id = <0>;
-+		renesas,source-quality = <3>;
-+		renesas,event-quality = <3>;
-+	};
- };
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index 95a75af..64bc2c5 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -247,37 +247,6 @@ static struct platform_device scif8_device = {
- 	},
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index 7427041..c1c0401 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -654,6 +654,9 @@ static const struct pinctrl_map kzm_pinctrl_map[] = {
+ 	/* SMSC */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x.0", "pfc-sh73a0",
+ 				  "bsc_cs4", "bsc"),
++	/* USB */
++	PIN_MAP_MUX_GROUP_DEFAULT("renesas_usbhs", "pfc-sh73a0",
++				  "usb_vbus", "usb"),
  };
  
--static struct sh_timer_config cmt10_platform_data = {
--	.name = "CMT10",
--	.channel_offset = 0x10,
--	.timer_bit = 0,
--	.clockevent_rating = 125,
--	.clocksource_rating = 125,
--};
--
--static struct resource cmt10_resources[] = {
--	[0] = {
--		.name	= "CMT10",
--		.start	= 0xe6138010,
--		.end	= 0xe613801b,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1] = {
--		.start	= gic_spi(65),
--		.flags	= IORESOURCE_IRQ,
--	},
--};
--
--static struct platform_device cmt10_device = {
--	.name		= "sh_cmt",
--	.id		= 10,
--	.dev = {
--		.platform_data	= &cmt10_platform_data,
--	},
--	.resource	= cmt10_resources,
--	.num_resources	= ARRAY_SIZE(cmt10_resources),
--};
--
- /* TMU */
- static struct sh_timer_config tmu00_platform_data = {
- 	.name = "TMU00",
-@@ -913,7 +882,6 @@ static struct platform_device *sh73a0_devices_dt[] __initdata = {
- 	&scif6_device,
- 	&scif7_device,
- 	&scif8_device,
--	&cmt10_device,
- };
+ /*
+@@ -738,9 +741,6 @@ static void __init kzm_init(void)
+ 	/* enable Micro SD */
+ 	gpio_request_one(14, GPIOF_OUT_INIT_HIGH, NULL); /* power */
  
- static struct platform_device *sh73a0_early_devices[] __initdata = {
+-	/* enable USB */
+-	gpio_request(GPIO_FN_VBUS_0,	NULL);
+-
+ #ifdef CONFIG_CACHE_L2X0
+ 	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
+ 	l2x0_init(IOMEM(0xf0100000), 0x40460000, 0x82000fff);
 -- 
-1.7.9.5
+1.8.1.5
 
