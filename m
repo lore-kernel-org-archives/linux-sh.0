@@ -1,44 +1,72 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 11:01:47 +0000
-Subject: [PATCH v3 27/64] ARM: shmobile: kzm9g: Register pinctrl mappings for I2C
-Message-Id: <1362740544-19164-28-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 23:00:18 +0000
+Subject: [PATCH v4 73/88] ARM: shmobile: sh73a0: Remove FSI function GPIOs
+Message-Id: <1363215633-4264-74-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Replace the GPIO-based I2C pinmux configuration by pinctrl mappings.
+Those GPIOs have been deprecated by the pinctrl API. They are unused and
+unneeded, remove them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-kzm9g.c | 6 ++----
- 1 file changed, 2 insertions(+), 4 deletions(-)
+ arch/arm/mach-shmobile/include/mach/sh73a0.h | 31 ++++++++--------------------
+ 1 file changed, 9 insertions(+), 22 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index 3ec4838..d54cc35 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -601,6 +601,8 @@ static struct platform_device *kzm_devices[] __initdata = {
- };
- 
- static const struct pinctrl_map kzm_pinctrl_map[] = {
-+	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.3", "pfc-sh73a0",
-+				  "i2c3_1", "i2c3"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
- 				  "scifa4_data", "scifa4"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
-@@ -722,10 +724,6 @@ static void __init kzm_init(void)
- 	gpio_request(GPIO_FN_SDHICLK2,		NULL);
- 	gpio_request_one(14, GPIOF_OUT_INIT_HIGH, NULL); /* power */
- 
--	/* I2C 3 */
--	gpio_request(GPIO_FN_PORT27_I2C_SCL3, NULL);
--	gpio_request(GPIO_FN_PORT28_I2C_SDA3, NULL);
+diff --git a/arch/arm/mach-shmobile/include/mach/sh73a0.h b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+index 3d7950c..563a48d 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh73a0.h
++++ b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+@@ -105,7 +105,7 @@ enum {
+ 	GPIO_FN_GPI7,
+ 	GPIO_FN_GPO7, GPIO_FN_MFG0_OUT2,
+ 	GPIO_FN_GPO6, GPIO_FN_MFG1_OUT2,
+-	GPIO_FN_GPO5, GPIO_FN_FSICOSLDT3,
++	GPIO_FN_GPO5,
+ 	GPIO_FN_PORT16_VIO_CKOR,
+ 	GPIO_FN_PORT19_VIO_CKO2,
+ 	GPIO_FN_GPO0,
+@@ -123,29 +123,16 @@ enum {
+ 	GPIO_FN_SIM_CLK, GPIO_FN_PORT30_VIO_CKOR,
+ 	GPIO_FN_SIM_D, GPIO_FN_PORT31_IROUT,
+ 	GPIO_FN_XWUP,
+-	GPIO_FN_FSIBOBT, GPIO_FN_FSIBIBT,
+-	GPIO_FN_FSIBOLR, GPIO_FN_FSIBILR,
+-	GPIO_FN_FSIBOSLD,
+-	GPIO_FN_FSIBISLD,
+ 	GPIO_FN_VACK,
+ 	GPIO_FN_XTAL1L,
+-	GPIO_FN_FSICOSLDT2,
+-	GPIO_FN_FSICOSLDT1,
+-	GPIO_FN_FSICOBT, GPIO_FN_FSICIBT, GPIO_FN_FSIDOBT, GPIO_FN_FSIDIBT,
+-	GPIO_FN_FSICOLR, GPIO_FN_FSICILR, GPIO_FN_FSIDOLR, GPIO_FN_FSIDILR,
+-	GPIO_FN_FSICOSLD, GPIO_FN_PORT47_FSICSPDIF,
+-	GPIO_FN_FSICISLD, GPIO_FN_FSIDISLD,
+-	GPIO_FN_FSIACK, GPIO_FN_PORT49_IRDA_OUT, GPIO_FN_PORT49_IROUT, \
+-	GPIO_FN_FSIAOMC,
+-	GPIO_FN_FSIAOLR, GPIO_FN_BBIF2_TSYNC2, GPIO_FN_TPU2TO2, GPIO_FN_FSIAILR,
 -
- 	/* enable FSI2 port A (ak4648) */
- 	gpio_request(GPIO_FN_FSIACK,	NULL);
- 	gpio_request(GPIO_FN_FSIAILR,	NULL);
+-	GPIO_FN_FSIAOBT, GPIO_FN_BBIF2_TSCK2, GPIO_FN_TPU2TO3, GPIO_FN_FSIAIBT,
+-	GPIO_FN_FSIAOSLD, GPIO_FN_BBIF2_TXD2,
+-	GPIO_FN_FSIASPDIF, GPIO_FN_PORT53_IRDA_IN, GPIO_FN_TPU3TO3, \
+-	GPIO_FN_FSIBSPDIF, GPIO_FN_PORT53_FSICSPDIF,
+-	GPIO_FN_FSIBCK, GPIO_FN_PORT54_IRDA_FIRSEL, GPIO_FN_TPU3TO2, \
+-	GPIO_FN_FSIBOMC, GPIO_FN_FSICCK, GPIO_FN_FSICOMC,
+-	GPIO_FN_FSIAISLD, GPIO_FN_TPU0TO0,
++	GPIO_FN_PORT49_IRDA_OUT, GPIO_FN_PORT49_IROUT,
++	GPIO_FN_BBIF2_TSYNC2, GPIO_FN_TPU2TO2,
++
++	GPIO_FN_BBIF2_TSCK2, GPIO_FN_TPU2TO3,
++	GPIO_FN_BBIF2_TXD2,
++	GPIO_FN_PORT53_IRDA_IN, GPIO_FN_TPU3TO3,
++	GPIO_FN_PORT54_IRDA_FIRSEL, GPIO_FN_TPU3TO2,
++	GPIO_FN_TPU0TO0,
+ 	GPIO_FN_A0, GPIO_FN_BS_,
+ 	GPIO_FN_A12, GPIO_FN_PORT58_KEYOUT7, GPIO_FN_TPU4TO2,
+ 	GPIO_FN_A13, GPIO_FN_PORT59_KEYOUT6, GPIO_FN_TPU0TO1,
 -- 
 1.8.1.5
 
