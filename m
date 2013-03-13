@@ -1,133 +1,73 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 26 Mar 2013 14:12:56 +0000
-Subject: [PATCH 03/03 v2] ARM: shmobile: APE6EVM LAN9220 support
-Message-Id: <20130326141256.19958.260.sendpatchset@w520>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 23:00:17 +0000
+Subject: [PATCH v4 72/88] ARM: shmobile: sh73a0: Remove I2C function GPIOs
+Message-Id: <1363215633-4264-73-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130326141228.19958.93081.sendpatchset@w520>
-In-Reply-To: <20130326141228.19958.93081.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Those GPIOs have been deprecated by the pinctrl API. They are unused and
+unneeded, remove them.
 
-Add LAN9220 support to the APE6EVM board using C and DT.
-At this point the PFC driver lacks DT bindings so to
-configure the PFC we use PINCTRL in C board code.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ arch/arm/mach-shmobile/include/mach/sh73a0.h | 18 ++++++++----------
+ 1 file changed, 8 insertions(+), 10 deletions(-)
 
- Changes since V1:
- - Use PINCTRL instead of function GPIOs.
- - Modify bootargs to enable DHCP and NFS root.
+diff --git a/arch/arm/mach-shmobile/include/mach/sh73a0.h b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+index b843cd7..3d7950c 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh73a0.h
++++ b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+@@ -115,9 +115,9 @@ enum {
+ 	GPIO_FN_GPO4, GPIO_FN_STATUS2,
+ 	GPIO_FN_VINT,
+ 	GPIO_FN_TCKON,
+-	GPIO_FN_XDVFS1, GPIO_FN_PORT27_I2C_SCL2, GPIO_FN_PORT27_I2C_SCL3, \
++	GPIO_FN_XDVFS1,
+ 	GPIO_FN_MFG0_OUT1, GPIO_FN_PORT27_IROUT,
+-	GPIO_FN_XDVFS2, GPIO_FN_PORT28_I2C_SDA2, GPIO_FN_PORT28_I2C_SDA3, \
++	GPIO_FN_XDVFS2,
+ 	GPIO_FN_PORT28_TPU1TO1,
+ 	GPIO_FN_SIM_RST, GPIO_FN_PORT29_TPU1TO1,
+ 	GPIO_FN_SIM_CLK, GPIO_FN_PORT30_VIO_CKOR,
+@@ -203,10 +203,8 @@ enum {
+ 	GPIO_FN_HSI_TX_WAKE, GPIO_FN_BBIF1_TSCK,
+ 	GPIO_FN_HSI_TX_DATA, GPIO_FN_BBIF1_TSYNC,
+ 	GPIO_FN_HSI_TX_READY, GPIO_FN_BBIF1_TXD,
+-	GPIO_FN_HSI_RX_READY, GPIO_FN_BBIF1_RSCK, GPIO_FN_PORT115_I2C_SCL2, \
+-	GPIO_FN_PORT115_I2C_SCL3,
+-	GPIO_FN_HSI_RX_WAKE, GPIO_FN_BBIF1_RSYNC, GPIO_FN_PORT116_I2C_SDA2, \
+-	GPIO_FN_PORT116_I2C_SDA3,
++	GPIO_FN_HSI_RX_READY, GPIO_FN_BBIF1_RSCK,
++	GPIO_FN_HSI_RX_WAKE, GPIO_FN_BBIF1_RSYNC,
+ 	GPIO_FN_HSI_RX_FLAG, GPIO_FN_BBIF1_SS1, GPIO_FN_BBIF1_FLOW,
+ 	GPIO_FN_HSI_TX_FLAG,
+ 	GPIO_FN_VIO_VD, GPIO_FN_VIO2_VD,
+@@ -292,8 +290,8 @@ enum {
+ 	GPIO_FN_MSIOF1_RXD,
+ 	GPIO_FN_MSIOF1_RSCK, GPIO_FN_VIO2_CLK2,
+ 	GPIO_FN_MSIOF1_RSYNC, GPIO_FN_MFG1_IN2, GPIO_FN_VIO2_VD2, \
+-	GPIO_FN_MSIOF1_MCK0, GPIO_FN_PORT236_I2C_SDA2,
+-	GPIO_FN_MSIOF1_MCK1, GPIO_FN_PORT237_I2C_SCL2,
++	GPIO_FN_MSIOF1_MCK0,
++	GPIO_FN_MSIOF1_MCK1,
+ 	GPIO_FN_MSIOF1_SS1, GPIO_FN_VIO2_FIELD2,
+ 	GPIO_FN_MSIOF1_SS2, GPIO_FN_VIO2_HD2,
+ 	GPIO_FN_PORT241_IRDA_OUT, GPIO_FN_PORT241_IROUT, GPIO_FN_MFG4_OUT1, \
+@@ -310,9 +308,9 @@ enum {
+ 	GPIO_FN_TPU3TO1,
+ 	GPIO_FN_MFG2_OUT1,
+ 	GPIO_FN_TPU2TO0,
+-	GPIO_FN_PORT248_I2C_SCL3, GPIO_FN_MSIOF2R_TSCK,
++	GPIO_FN_MSIOF2R_TSCK,
+ 	GPIO_FN_PORT249_IROUT, GPIO_FN_MFG4_IN1, \
+-	GPIO_FN_PORT249_I2C_SDA3, GPIO_FN_MSIOF2R_TSYNC,
++	GPIO_FN_MSIOF2R_TSYNC,
+ 	GPIO_FN_SDHICLK0,
+ 	GPIO_FN_SDHICD0,
+ 	GPIO_FN_SDHID0_0,
+-- 
+1.8.1.5
 
- arch/arm/boot/dts/r8a73a4-ape6evm.dts  |   23 ++++++++++++++++++-
- arch/arm/mach-shmobile/board-ape6evm.c |   38 ++++++++++++++++++++++++++++++++
- 2 files changed, 60 insertions(+), 1 deletion(-)
-
---- 0020/arch/arm/boot/dts/r8a73a4-ape6evm.dts
-+++ work/arch/arm/boot/dts/r8a73a4-ape6evm.dts	2013-03-26 23:06:31.000000000 +0900
-@@ -16,11 +16,32 @@
- 	compatible = "renesas,ape6evm", "renesas,r8a73a4";
- 
- 	chosen {
--		bootargs = "console=ttySC0,115200 ignore_loglevel";
-+		bootargs = "console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp";
- 	};
- 
- 	memory@40000000 {
- 		device_type = "memory";
- 		reg = <0x40000000 0x40000000>;
- 	};
-+
-+	ape6evm_fixed_3v3: fixedregulator@0 {
-+		compatible = "regulator-fixed";
-+		regulator-name = "3V3";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
-+		regulator-always-on;
-+	};
-+
-+	ethernet@8000000 {
-+		compatible = "smsc,lan9118", "smsc,lan9115";
-+		reg = <0x08000000 0x1000>;
-+		interrupt-parent = <&irqc1>;
-+		interrupts = <8 0x4>;
-+		phy-mode = "mii";
-+		reg-io-width = <4>;
-+		smsc,irq-active-high;
-+		smsc,irq-push-pull;
-+		vdd33a-supply = <&ape6evm_fixed_3v3>;
-+		vddvario-supply = <&ape6evm_fixed_3v3>;
-+	};
- };
---- 0021/arch/arm/mach-shmobile/board-ape6evm.c
-+++ work/arch/arm/mach-shmobile/board-ape6evm.c	2013-03-26 23:06:14.000000000 +0900
-@@ -18,20 +18,49 @@
-  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-  */
- 
-+#include <linux/gpio.h>
- #include <linux/interrupt.h>
- #include <linux/irqchip.h>
- #include <linux/kernel.h>
- #include <linux/pinctrl/machine.h>
- #include <linux/platform_device.h>
-+#include <linux/regulator/fixed.h>
-+#include <linux/regulator/machine.h>
-+#include <linux/smsc911x.h>
- #include <mach/common.h>
-+#include <mach/irqs.h>
- #include <mach/r8a73a4.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
- 
-+/* Dummy supplies, where voltage doesn't matter */
-+static struct regulator_consumer_supply dummy_supplies[] = {
-+	REGULATOR_SUPPLY("vddvario", "smsc911x"),
-+	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
-+};
-+
-+/* SMSC LAN9220 */
-+static const struct resource lan9220_res[] = {
-+	DEFINE_RES_MEM(0x08000000, 0x1000),
-+	{
-+		.start	= irq_pin(40), /* IRQ40 */
-+		.flags	= IORESOURCE_IRQ | IRQF_TRIGGER_HIGH,
-+	},
-+};
-+
-+static const struct smsc911x_platform_config lan9220_data = {
-+	.flags		= SMSC911X_USE_32BIT,
-+	.irq_type	= SMSC911X_IRQ_TYPE_PUSH_PULL,
-+	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_HIGH,
-+};
-+
- static const struct pinctrl_map ape6evm_pinctrl_map[] = {
- 	/* SCIFA0 console */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.0", "pfc-r8a73a4",
- 				  "scifa0_data", "scifa0"),
-+	/* SMSC */
-+	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a73a4",
-+				  "irqc_irq40", "irqc"),
- };
- 
- static void __init ape6evm_add_standard_devices(void)
-@@ -41,6 +70,15 @@ static void __init ape6evm_add_standard_
- 				  ARRAY_SIZE(ape6evm_pinctrl_map));
- 	r8a73a4_pinmux_init();
- 	r8a73a4_add_standard_devices();
-+
-+	/* LAN9220 ethernet */
-+	gpio_request_one(270, GPIOF_OUT_INIT_HIGH, NULL); /* smsc9220 RESET */
-+
-+	regulator_register_fixed(0, dummy_supplies, ARRAY_SIZE(dummy_supplies));
-+
-+	platform_device_register_resndata(&platform_bus, "smsc911x", -1,
-+					  lan9220_res, ARRAY_SIZE(lan9220_res),
-+					  &lan9220_data, sizeof(lan9220_data));
- }
- 
- static const char *ape6evm_boards_compat_dt[] __initdata = {
