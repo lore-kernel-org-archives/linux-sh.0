@@ -1,65 +1,69 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Mar 2013 22:59:40 +0000
-Subject: [PATCH v4 35/88] ARM: shmobile: kota2: Register pinctrl mappings for BSC
-Message-Id: <1363215633-4264-36-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 23:00:21 +0000
+Subject: [PATCH v4 76/88] ARM: shmobile: sh73a0: Remove BSC function GPIOs
+Message-Id: <1363215633-4264-77-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Replace the GPIO-based BSC pinmux configuration by pinctrl mappings.
+Those GPIOs have been deprecated by the pinctrl API. They are unused and
+unneeded, remove them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-kota2.c | 27 +++++++++------------------
- 1 file changed, 9 insertions(+), 18 deletions(-)
+ arch/arm/mach-shmobile/include/mach/sh73a0.h | 29 ++++------------------------
+ 1 file changed, 4 insertions(+), 25 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-kota2.c b/arch/arm/mach-shmobile/board-kota2.c
-index 3f36557..ef5ca0e 100644
---- a/arch/arm/mach-shmobile/board-kota2.c
-+++ b/arch/arm/mach-shmobile/board-kota2.c
-@@ -503,6 +503,15 @@ static const struct pinctrl_map kota2_pinctrl_map[] = {
- 				      "sdhi1_data4", pin_pullup_conf),
- 	PIN_MAP_CONFIGS_PIN_DEFAULT("sh_mobile_sdhi.1", "pfc-sh73a0",
- 				    "PORT263", pin_pullup_conf),
-+	/* SMSC911X */
-+	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x.0", "pfc-sh73a0",
-+				  "bsc_data_0_7", "bsc"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x.0", "pfc-sh73a0",
-+				  "bsc_data_8_15", "bsc"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x.0", "pfc-sh73a0",
-+				  "bsc_cs5_a", "bsc"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x.0", "pfc-sh73a0",
-+				  "bsc_we0", "bsc"),
- };
- 
- static void __init kota2_init(void)
-@@ -518,24 +527,6 @@ static void __init kota2_init(void)
- 	sh73a0_pinmux_init();
- 
- 	/* SMSC911X */
--	gpio_request(GPIO_FN_D0_NAF0, NULL);
--	gpio_request(GPIO_FN_D1_NAF1, NULL);
--	gpio_request(GPIO_FN_D2_NAF2, NULL);
--	gpio_request(GPIO_FN_D3_NAF3, NULL);
--	gpio_request(GPIO_FN_D4_NAF4, NULL);
--	gpio_request(GPIO_FN_D5_NAF5, NULL);
--	gpio_request(GPIO_FN_D6_NAF6, NULL);
--	gpio_request(GPIO_FN_D7_NAF7, NULL);
--	gpio_request(GPIO_FN_D8_NAF8, NULL);
--	gpio_request(GPIO_FN_D9_NAF9, NULL);
--	gpio_request(GPIO_FN_D10_NAF10, NULL);
--	gpio_request(GPIO_FN_D11_NAF11, NULL);
--	gpio_request(GPIO_FN_D12_NAF12, NULL);
--	gpio_request(GPIO_FN_D13_NAF13, NULL);
--	gpio_request(GPIO_FN_D14_NAF14, NULL);
--	gpio_request(GPIO_FN_D15_NAF15, NULL);
--	gpio_request(GPIO_FN_CS5A_, NULL);
--	gpio_request(GPIO_FN_WE0__FWE, NULL);
- 	gpio_request_one(144, GPIOF_IN, NULL); /* PINTA2 */
- 	gpio_request_one(145, GPIOF_OUT_INIT_HIGH, NULL); /* RESET */
- 
+diff --git a/arch/arm/mach-shmobile/include/mach/sh73a0.h b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+index f1b85ff..218e6b7 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh73a0.h
++++ b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+@@ -149,31 +149,10 @@ enum {
+ 	GPIO_FN_A24, GPIO_FN_MSIOF0_RXD,
+ 	GPIO_FN_A25, GPIO_FN_MSIOF0_SS2,
+ 	GPIO_FN_A26,
+-	GPIO_FN_D0_NAF0,
+-	GPIO_FN_D1_NAF1,
+-	GPIO_FN_D2_NAF2,
+-	GPIO_FN_D3_NAF3,
+-	GPIO_FN_D4_NAF4,
+-	GPIO_FN_D5_NAF5,
+-	GPIO_FN_D6_NAF6,
+-	GPIO_FN_D7_NAF7,
+-	GPIO_FN_D8_NAF8,
+-	GPIO_FN_D9_NAF9,
+-	GPIO_FN_D10_NAF10,
+-	GPIO_FN_D11_NAF11,
+-	GPIO_FN_D12_NAF12,
+-	GPIO_FN_D13_NAF13,
+-	GPIO_FN_D14_NAF14,
+-	GPIO_FN_D15_NAF15,
+-	GPIO_FN_CS4_,
+-	GPIO_FN_CS5A_, GPIO_FN_PORT91_RDWR,
+-	GPIO_FN_CS5B_, GPIO_FN_FCE1_,
+-	GPIO_FN_CS6B_, GPIO_FN_DACK0,
+-	GPIO_FN_FCE0_, GPIO_FN_CS6A_,
++	GPIO_FN_FCE1_,
++	GPIO_FN_DACK0,
++	GPIO_FN_FCE0_,
+ 	GPIO_FN_WAIT_, GPIO_FN_DREQ0,
+-	GPIO_FN_RD__FSC,
+-	GPIO_FN_WE0__FWE, GPIO_FN_RDWR_FWE,
+-	GPIO_FN_WE1_,
+ 	GPIO_FN_FRB,
+ 	GPIO_FN_CKO,
+ 	GPIO_FN_NBRSTOUT_,
+@@ -219,7 +198,7 @@ enum {
+ 	GPIO_FN_VIO2_CLK,
+ 	GPIO_FN_VIO_FIELD, GPIO_FN_VIO2_FIELD,
+ 	GPIO_FN_VIO_CKO,
+-	GPIO_FN_A27, GPIO_FN_PORT149_RDWR, GPIO_FN_MFG0_IN1, \
++	GPIO_FN_A27, GPIO_FN_MFG0_IN1,
+ 	GPIO_FN_MFG0_IN2,
+ 	GPIO_FN_TS_SPSYNC3, GPIO_FN_MSIOF2_RSCK,
+ 	GPIO_FN_TS_SDAT3, GPIO_FN_MSIOF2_RSYNC,
 -- 
 1.8.1.5
 
