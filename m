@@ -1,108 +1,48 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 12:32:10 +0000
-Subject: [GIT PULL v2] Renesas ARM-based SoC updates for v3.10
-Message-Id: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 22:39:22 +0000
+Subject: [PATCH 03/25] sh: sh7269: Add pin control resources
+Message-Id: <1363214384-3870-4-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Olof, Hi Arnd,
+Add memory resources for the pin control platform device to let the
+sh-pfc driver ioremap() registers properly instead of evily casting
+register physical addresses to virtual addresses.
 
-The following changes since commit f6161aa153581da4a3867a2d1a7caf4be19b6ec9:
+The memory resource address range has been extracted from the config and
+data registes lists in the sh-pfc driver.
 
-  Linux 3.9-rc2 (2013-03-10 16:54:19 -0700)
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
 
-are available in the git repository at:
+diff --git a/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c b/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c
+index dc2a868..1825b0b 100644
+--- a/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c
++++ b/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c
+@@ -13,8 +13,17 @@
+ #include <linux/kernel.h>
+ #include <cpu/pfc.h>
+ 
++static struct resource sh7269_pfc_resources[] = {
++	[0] = {
++		.start	= 0xfffe3800,
++		.end	= 0xfffe391f,
++		.flags	= IORESOURCE_MEM,
++	},
++};
++
+ static int __init plat_pinmux_setup(void)
+ {
+-	return sh_pfc_register("pfc-sh7269", NULL, 0);
++	return sh_pfc_register("pfc-sh7269", sh7269_pfc_resources,
++			       ARRAY_SIZE(sh7269_pfc_resources));
+ }
+ arch_initcall(plat_pinmux_setup);
+-- 
+1.8.1.5
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-soc-for-v3.10
-
-for you to fetch changes up to d75bc78b508d0a95d7738290d8ec9923691f4301:
-
-  r8a7779: Add Display Unit clock support (2013-03-18 21:22:34 +0900)
-
-----------------------------------------------------------------
-Renesas ARM-based SoC updates for v3.10
-
-----------------------------------------------------------------
-Bastian Hecht (1):
-      ARM: mach-shmobile: r8a7740: Add DT names to clock list
-
-Guennadi Liakhovetski (2):
-      ARM: shmobile: add MMCIF and SDHI DT clock aliases to sh73a0 and r8a7740
-      ARM: shmobile: sh73a0: fix Z and ZG clock hierarchy
-
-Kuninori Morimoto (6):
-      ARM: shmobile: add gic_iid macro for ICCIAR / interrupt ID
-      ARM: shmobile: r8a7779: fixup dtsi typo
-      ARM: shmobile: r8a7779: fixup DT machine name
-      ARM: shmobile: r8a7779: use gic_iid macro
-      ARM: shmobile: tidyup chip series definition order for r8a7740/r8a7779
-      ARM: shmobile: r8a7779: add Thermal support on DT
-
-Magnus Damm (21):
-      ARM: shmobile: Remove unused headers from hotplug.c
-      ARM: shmobile: Remove partial CPU Hotplug from EMEV2
-      ARM: shmobile: Move EMEV2 CPU boot vector setup code
-      ARM: shmobile: Remove sh73a0_get_core_count()
-      ARM: shmobile: Remove r8a7779_get_core_count()
-      ARM: shmobile: Remove emev2_get_core_count()
-      ARM: shmobile: Kill off sh73a0 scu_base_addr() function
-      ARM: shmobile: Kill off r8a7779 scu_base_addr() function
-      ARM: shmobile: Rework EMEV2 scu_base variable
-      ARM: shmobile: Move headsmp-sh73a0.S to headsmp-scu.S
-      ARM: shmobile: Common shmobile_scu_base in headsmp-scu.S
-      ARM: shmobile: Update EMEV2 to use scu_power_mode()
-      ARM: shmobile: Make EMEV2 setup functions static
-      ARM: shmobile: Fix base address readout in headsmp-scu.S
-      ARM: shmobile: Rework SH73A0_SCU_BASE IOMEM() usage
-      ARM: shmobile: Use R8A7779_SCU_BASE with TWD
-      ARM: shmobile: Update r8a7779 to check SCU for hotplug
-      ARM: shmobile: Update r8a7779 to use scu_power_mode()
-      ARM: shmobile: Use sh73a0-specific cpu disable code
-      ARM: shmobile: Rearrange r8a7779 cpu hotplug code
-      ARM: shmobile: Remove unused hotplug.c
-
-Phil Edworthy (1):
-      r8a7779: Add Display Unit clock support
-
-Sergei Shtylyov (1):
-      ARM: shmobile: R8A7779: use gic_iid() in SATA IRQ resource
-
-Simon Horman (9):
-      ARM: mach-shmobile: r8a7779: Allow initialisation of GIC by DT
-      ARM: mach-shmobile: r8a7779: Minimal setup using DT
-      ARM: shmobile: sh73a0: Remove sh73a0_init_irq_dt()
-      ARM: shmobile: sh73a0: Add smp ops to DT_MACHINE_START
-      ARM: shmobile: sh73a0: Remove warning about SMP
-      ARM: shmobile: sh73a0: Do not use early devices with DT reference
-      ARM: shmobile: r8a7779: Do not use early devices with DT reference
-      ARM: shmobile: r8a7779: Do not initialise i2c as an early device
-      ARM: shmobile: r8a7779: Remove lan from dtsi
-
-Vladimir Barinov (2):
-      ARM: mach-shmobile: r8a7779: SATA DT configuration
-      ARM: mach-shmobile: r8a7779: add SATA support
-
- arch/arm/boot/dts/r8a7779.dtsi                     |   98 +++++++++++++++
- arch/arm/mach-shmobile/Makefile                    |    7 +-
- arch/arm/mach-shmobile/clock-r8a7740.c             |   13 ++
- arch/arm/mach-shmobile/clock-r8a7779.c             |    8 +-
- arch/arm/mach-shmobile/clock-sh73a0.c              |    7 +-
- .../{headsmp-sh73a0.S => headsmp-scu.S}            |   15 ++-
- arch/arm/mach-shmobile/hotplug.c                   |   68 -----------
- arch/arm/mach-shmobile/include/mach/common.h       |   21 ++--
- arch/arm/mach-shmobile/include/mach/irqs.h         |    1 +
- arch/arm/mach-shmobile/intc-r8a7779.c              |   27 +++-
- arch/arm/mach-shmobile/intc-sh73a0.c               |    8 --
- arch/arm/mach-shmobile/setup-emev2.c               |    4 +-
- arch/arm/mach-shmobile/setup-r8a7779.c             |  104 +++++++++++++---
- arch/arm/mach-shmobile/setup-sh73a0.c              |   36 ++----
- arch/arm/mach-shmobile/smp-emev2.c                 |   86 ++-----------
- arch/arm/mach-shmobile/smp-r8a7779.c               |  129 ++++++++++----------
- arch/arm/mach-shmobile/smp-sh73a0.c                |   36 +++---
- 17 files changed, 355 insertions(+), 313 deletions(-)
- create mode 100644 arch/arm/boot/dts/r8a7779.dtsi
- rename arch/arm/mach-shmobile/{headsmp-sh73a0.S => headsmp-scu.S} (85%)
- delete mode 100644 arch/arm/mach-shmobile/hotplug.c
