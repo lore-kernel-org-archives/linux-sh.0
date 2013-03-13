@@ -1,48 +1,38 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 12:32:26 +0000
-Subject: [PATCH 16/43] ARM: shmobile: Make EMEV2 setup functions static
-Message-Id: <1363609973-31086-17-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 23:00:03 +0000
+Subject: [PATCH v4 58/88] sh-pfc: sh73a0: Remove USB function GPIOS
+Message-Id: <1363215633-4264-59-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+All sh73a0 platforms now use the pinctrl API to control the USB pins,
+the corresponding function GPIOS are unused. Remove them.
 
-Adjust emev2_init_delay() and emev2_add_standard_devices_dt()
-to become static. They are not used outside this file anyway.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/setup-emev2.c |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-emev2.c b/arch/arm/mach-shmobile/setup-emev2.c
-index 47662a5..e4545c1 100644
---- a/arch/arm/mach-shmobile/setup-emev2.c
-+++ b/arch/arm/mach-shmobile/setup-emev2.c
-@@ -404,7 +404,7 @@ void __init emev2_add_standard_devices(void)
- 			     ARRAY_SIZE(emev2_late_devices));
- }
- 
--void __init emev2_init_delay(void)
-+static void __init emev2_init_delay(void)
- {
- 	shmobile_setup_delay(533, 1, 3); /* Cortex-A9 @ 533MHz */
- }
-@@ -439,7 +439,7 @@ static const struct of_dev_auxdata emev2_auxdata_lookup[] __initconst = {
- 	{ }
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index 7b010b6..273345c 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -2936,11 +2936,10 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(usb),
  };
  
--void __init emev2_add_standard_devices_dt(void)
-+static void __init emev2_add_standard_devices_dt(void)
- {
- 	of_platform_populate(NULL, of_default_bus_match_table,
- 			     emev2_auxdata_lookup, NULL);
+-#define PINMUX_FN_BASE	GPIO_FN_VBUS_0
++#define PINMUX_FN_BASE	GPIO_FN_GPI0
+ 
+ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	/* Table 25-1 (Functions 0-7) */
+-	GPIO_FN(VBUS_0),
+ 	GPIO_FN(GPI0),
+ 	GPIO_FN(GPI1),
+ 	GPIO_FN(GPI2),
 -- 
-1.7.10.4
+1.8.1.5
 
