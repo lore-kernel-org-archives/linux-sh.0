@@ -1,152 +1,64 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Tue, 05 Mar 2013 05:31:16 +0000
-Subject: Re: [PATCH 3/3] ARM: shmobile: r8a7779: use gic_iid macro
-Message-Id: <20130305053114.GD22698@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 22:59:55 +0000
+Subject: [PATCH v4 50/88] sh-pfc: sh7372: Remove SDHI and MMCIF function GPIOS
+Message-Id: <1363215633-4264-51-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87zjyjprkm.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87zjyjprkm.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Sun, Mar 03, 2013 at 11:11:41PM -0800, Kuninori Morimoto wrote:
-> e38a002c45e43e225c7d777e64719487c83cac31
+All sh7372 platforms now use the pinctrl API to control the SDHI and
+MMCIF pins, the corresponding function GPIOS are unused. Remove them.
 
-I plan to rebase on top of v3.9-rc1 so the commit id will change.
-I have removed it from the commit message.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/pinctrl/sh-pfc/pfc-sh7372.c | 25 -------------------------
+ 1 file changed, 25 deletions(-)
 
-> (ARM: shmobile: add gic_iid macro for ICCIAR / interrupt ID)
-> enabled to use gic_iid macro.
-> This patch exchange current GIC interrupt setting
-> from gic_spi() to gic_iid()
-> 
-> Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-> ---
->  arch/arm/mach-shmobile/setup-r8a7779.c |   24 ++++++++++++------------
->  1 file changed, 12 insertions(+), 12 deletions(-)
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+index cef4d6a..df0ae21 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+@@ -1277,18 +1277,6 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(D11_NAF11),	GPIO_FN(D12_NAF12),	GPIO_FN(D13_NAF13),
+ 	GPIO_FN(D14_NAF14),	GPIO_FN(D15_NAF15),
+ 
+-	/* MMCIF(1) */
+-	GPIO_FN(MMCD0_0),	GPIO_FN(MMCD0_1),	GPIO_FN(MMCD0_2),
+-	GPIO_FN(MMCD0_3),	GPIO_FN(MMCD0_4),	GPIO_FN(MMCD0_5),
+-	GPIO_FN(MMCD0_6),	GPIO_FN(MMCD0_7),	GPIO_FN(MMCCMD0),
+-	GPIO_FN(MMCCLK0),
+-
+-	/* MMCIF(2) */
+-	GPIO_FN(MMCD1_0),	GPIO_FN(MMCD1_1),	GPIO_FN(MMCD1_2),
+-	GPIO_FN(MMCD1_3),	GPIO_FN(MMCD1_4),	GPIO_FN(MMCD1_5),
+-	GPIO_FN(MMCD1_6),	GPIO_FN(MMCD1_7),	GPIO_FN(MMCCLK1),
+-	GPIO_FN(MMCCMD1),
+-
+ 	/* SPU2 */
+ 	GPIO_FN(VINT_I),
+ 
+@@ -1385,19 +1373,6 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	/* HDMI */
+ 	GPIO_FN(HDMI_HPD),	GPIO_FN(HDMI_CEC),
+ 
+-	/* SDHI0 */
+-	GPIO_FN(SDHICLK0),	GPIO_FN(SDHICD0),	GPIO_FN(SDHICMD0),
+-	GPIO_FN(SDHIWP0),	GPIO_FN(SDHID0_0),	GPIO_FN(SDHID0_1),
+-	GPIO_FN(SDHID0_2),	GPIO_FN(SDHID0_3),
+-
+-	/* SDHI1 */
+-	GPIO_FN(SDHICLK1),	GPIO_FN(SDHICMD1),	GPIO_FN(SDHID1_0),
+-	GPIO_FN(SDHID1_1),	GPIO_FN(SDHID1_2),	GPIO_FN(SDHID1_3),
+-
+-	/* SDHI2 */
+-	GPIO_FN(SDHICLK2),	GPIO_FN(SDHICMD2),	GPIO_FN(SDHID2_0),
+-	GPIO_FN(SDHID2_1),	GPIO_FN(SDHID2_2),	GPIO_FN(SDHID2_3),
+-
+ 	/* SDENC */
+ 	GPIO_FN(SDENC_CPG),
+ 	GPIO_FN(SDENC_DV_CLKI),
+-- 
+1.8.1.5
 
-Applied to the soc5 branch of the renesas tree
-and thus included in its next branch and queued up for v3.10.
-
-> 
-> diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-> index 9322858..0068b9f 100644
-> --- a/arch/arm/mach-shmobile/setup-r8a7779.c
-> +++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-> @@ -92,7 +92,7 @@ static struct plat_sci_port scif0_platform_data = {
->  	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
->  	.scbrr_algo_id	= SCBRR_ALGO_2,
->  	.type		= PORT_SCIF,
-> -	.irqs		= SCIx_IRQ_MUXED(gic_spi(88)),
-> +	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x78)),
->  };
->  
->  static struct platform_device scif0_device = {
-> @@ -109,7 +109,7 @@ static struct plat_sci_port scif1_platform_data = {
->  	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
->  	.scbrr_algo_id	= SCBRR_ALGO_2,
->  	.type		= PORT_SCIF,
-> -	.irqs		= SCIx_IRQ_MUXED(gic_spi(89)),
-> +	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x79)),
->  };
->  
->  static struct platform_device scif1_device = {
-> @@ -126,7 +126,7 @@ static struct plat_sci_port scif2_platform_data = {
->  	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
->  	.scbrr_algo_id	= SCBRR_ALGO_2,
->  	.type		= PORT_SCIF,
-> -	.irqs		= SCIx_IRQ_MUXED(gic_spi(90)),
-> +	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7a)),
->  };
->  
->  static struct platform_device scif2_device = {
-> @@ -143,7 +143,7 @@ static struct plat_sci_port scif3_platform_data = {
->  	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
->  	.scbrr_algo_id	= SCBRR_ALGO_2,
->  	.type		= PORT_SCIF,
-> -	.irqs		= SCIx_IRQ_MUXED(gic_spi(91)),
-> +	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7b)),
->  };
->  
->  static struct platform_device scif3_device = {
-> @@ -160,7 +160,7 @@ static struct plat_sci_port scif4_platform_data = {
->  	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
->  	.scbrr_algo_id	= SCBRR_ALGO_2,
->  	.type		= PORT_SCIF,
-> -	.irqs		= SCIx_IRQ_MUXED(gic_spi(92)),
-> +	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7c)),
->  };
->  
->  static struct platform_device scif4_device = {
-> @@ -177,7 +177,7 @@ static struct plat_sci_port scif5_platform_data = {
->  	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
->  	.scbrr_algo_id	= SCBRR_ALGO_2,
->  	.type		= PORT_SCIF,
-> -	.irqs		= SCIx_IRQ_MUXED(gic_spi(93)),
-> +	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7d)),
->  };
->  
->  static struct platform_device scif5_device = {
-> @@ -204,7 +204,7 @@ static struct resource tmu00_resources[] = {
->  		.flags	= IORESOURCE_MEM,
->  	},
->  	[1] = {
-> -		.start	= gic_spi(32),
-> +		.start	= gic_iid(0x40),
->  		.flags	= IORESOURCE_IRQ,
->  	},
->  };
-> @@ -234,7 +234,7 @@ static struct resource tmu01_resources[] = {
->  		.flags	= IORESOURCE_MEM,
->  	},
->  	[1] = {
-> -		.start	= gic_spi(33),
-> +		.start	= gic_iid(0x41),
->  		.flags	= IORESOURCE_IRQ,
->  	},
->  };
-> @@ -256,7 +256,7 @@ static struct resource rcar_i2c0_res[] = {
->  		.end    = 0xffc70fff,
->  		.flags  = IORESOURCE_MEM,
->  	}, {
-> -		.start  = gic_spi(79),
-> +		.start  = gic_iid(0x6f),
->  		.flags  = IORESOURCE_IRQ,
->  	},
->  };
-> @@ -274,7 +274,7 @@ static struct resource rcar_i2c1_res[] = {
->  		.end    = 0xffc71fff,
->  		.flags  = IORESOURCE_MEM,
->  	}, {
-> -		.start  = gic_spi(82),
-> +		.start  = gic_iid(0x72),
->  		.flags  = IORESOURCE_IRQ,
->  	},
->  };
-> @@ -292,7 +292,7 @@ static struct resource rcar_i2c2_res[] = {
->  		.end    = 0xffc72fff,
->  		.flags  = IORESOURCE_MEM,
->  	}, {
-> -		.start  = gic_spi(80),
-> +		.start  = gic_iid(0x70),
->  		.flags  = IORESOURCE_IRQ,
->  	},
->  };
-> @@ -310,7 +310,7 @@ static struct resource rcar_i2c3_res[] = {
->  		.end    = 0xffc73fff,
->  		.flags  = IORESOURCE_MEM,
->  	}, {
-> -		.start  = gic_spi(81),
-> +		.start  = gic_iid(0x71),
->  		.flags  = IORESOURCE_IRQ,
->  	},
->  };
-> -- 
-> 1.7.9.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
