@@ -1,36 +1,42 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Wed, 27 Mar 2013 03:46:56 +0000
-Subject: [PATCH 1/2] ARM: shmobile: marzen: defconfig: add GPIO RCAR driver support
-Message-Id: <1364356017-25890-2-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 22:59:53 +0000
+Subject: [PATCH v4 48/88] ARM: shmobile: marzen: Register pinctrl mappings for LBSC
+Message-Id: <1363215633-4264-49-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364356017-25890-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1364356017-25890-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This enables the driver added in "gpio: Renesas R-Car GPIO driver V3"
+Replace the GPIO-based LBSC pinmux configuration by pinctrl mappings.
 
-Cc: Magnus Damm <damm@opensource.se>
-Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/configs/marzen_defconfig |    1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/mach-shmobile/board-marzen.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index afb17d6..4b183d1 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -75,6 +75,7 @@ CONFIG_I2C_RCAR=y
- CONFIG_SPI=y
- CONFIG_SPI_SH_HSPI=y
- CONFIG_GPIO_SYSFS=y
-+CONFIG_GPIO_RCAR=y
- # CONFIG_HWMON is not set
- CONFIG_THERMAL=y
- CONFIG_RCAR_THERMAL=y
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index 04bcf88..b16f85f 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -347,6 +347,9 @@ static const struct pinctrl_map marzen_pinctrl_map[] = {
+ 				  "sdhi0_cd", "sdhi0"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
+ 				  "sdhi0_wp", "sdhi0"),
++	/* SMSC */
++	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x", "pfc-r8a7779",
++				  "lbsc_ex_cs0", "lbsc"),
+ 	/* USB0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform.0", "pfc-r8a7779",
+ 				  "usb0", "usb0"),
+@@ -370,7 +373,6 @@ static void __init marzen_init(void)
+ 	r8a7779_pinmux_init();
+ 
+ 	/* LAN89218 */
+-	gpio_request(GPIO_FN_EX_CS0, NULL); /* nCS */
+ 	gpio_request(GPIO_FN_IRQ1_B, NULL); /* IRQ + PME */
+ 
+ 	r8a7779_add_standard_devices();
 -- 
-1.7.10.4
+1.8.1.5
 
