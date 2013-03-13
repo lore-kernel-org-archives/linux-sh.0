@@ -1,52 +1,89 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 25 Mar 2013 22:24:55 +0000
-Subject: Re: [PATCH v2 1/2] irqchip: intc-irqpin: Add support for shared interrupt lines
-Message-Id: <CANqRtoTPy8LF-YvSiaWRyQjcvZG-qJK2tVi5KxkNfD4oNbOOeQ@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 22:59:59 +0000
+Subject: [PATCH v4 54/88] sh-pfc: sh73a0: Remove FSI function GPIOS
+Message-Id: <1363215633-4264-55-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364219503-7738-1-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1364219503-7738-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-Hi Bastian,
+All sh73a0 platforms now use the pinctrl API to control the FSI pins,
+the corresponding function GPIOS are unused. Remove them.
 
-On Mon, Mar 25, 2013 at 10:51 PM, Bastian Hecht <hechtb@gmail.com> wrote:
-> On some hardware we don't have a 1-1 mapping from the external
-> interrupts coming from INTC to the GIC SPI pins. We can however
-> share lines to demux incoming IRQs on these SoCs.
->
-> This patch enables the intc_irqpin driver to detect requests for shared
-> interrupt lines and demuxes them properly by querying the INTC INTREQx0A
-> registers.
->
-> If you need multiple shared intc_irqpin device instances, be sure to mask
-> out all interrupts on the INTC that share the one line before you start
-> to register them. Else you run into IRQ floods that would be caused by
-> interrupts for which no handler has been set up yet when the first
-> intc_irqpin device is registered.
->
-> Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
-> ---
-> v2:
->
-> Nothing fundamentally changed but several balancing issues:
->
-> We don't check for mixing single and shared IRQs but expect the user not to
-> do this. Code gets a good bit shorter.
->
-> Same for unmasked IRQs. We don't check it but assume the user to do it.
->
-> Add dis-/enable IRQ functions for the shared case. While we add verbosity,
-> we unburden the normal case hotpath from the extra read/modify/write step
-> to update the shared_irq_mask.
->
->  drivers/irqchip/irq-renesas-intc-irqpin.c |   90 ++++++++++++++++++++++++++---
->  1 file changed, 83 insertions(+), 7 deletions(-)
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 36 ------------------------------------
+ 1 file changed, 36 deletions(-)
 
-Thanks for this. I am happy how V2 turned out, and I am pleased to see
-that the r8a7740 INTC code can with this patch finally be migrated
-over from old INTC to GIC + INTC irqpin.
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index 13bd138..1a638f2 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -3340,7 +3340,6 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(GPO6), \
+ 	GPIO_FN(MFG1_OUT2),
+ 	GPIO_FN(GPO5), \
+-	GPIO_FN(FSICOSLDT3), \
+ 	GPIO_FN(PORT16_VIO_CKOR),
+ 	GPIO_FN(PORT19_VIO_CKO2),
+ 	GPIO_FN(GPO0),
+@@ -3365,55 +3364,20 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(SIM_D), \
+ 	GPIO_FN(PORT31_IROUT),
+ 	GPIO_FN(XWUP),
+-	GPIO_FN(FSIBOBT), \
+-	GPIO_FN(FSIBIBT),
+-	GPIO_FN(FSIBOLR), \
+-	GPIO_FN(FSIBILR),
+-	GPIO_FN(FSIBOSLD),
+-	GPIO_FN(FSIBISLD),
+ 	GPIO_FN(VACK),
+ 	GPIO_FN(XTAL1L),
+-	GPIO_FN(FSICOSLDT2),
+-	GPIO_FN(FSICOSLDT1),
+-	GPIO_FN(FSICOBT), \
+-	GPIO_FN(FSICIBT), \
+-	GPIO_FN(FSIDOBT), \
+-	GPIO_FN(FSIDIBT),
+-	GPIO_FN(FSICOLR), \
+-	GPIO_FN(FSICILR), \
+-	GPIO_FN(FSIDOLR), \
+-	GPIO_FN(FSIDILR),
+-	GPIO_FN(FSICOSLD), \
+-	GPIO_FN(PORT47_FSICSPDIF),
+-	GPIO_FN(FSICISLD), \
+-	GPIO_FN(FSIDISLD),
+-	GPIO_FN(FSIACK), \
+ 	GPIO_FN(PORT49_IRDA_OUT), \
+ 	GPIO_FN(PORT49_IROUT), \
+-	GPIO_FN(FSIAOMC),
+-	GPIO_FN(FSIAOLR), \
+ 	GPIO_FN(BBIF2_TSYNC2), \
+ 	GPIO_FN(TPU2TO2), \
+-	GPIO_FN(FSIAILR),
+ 
+-	GPIO_FN(FSIAOBT), \
+ 	GPIO_FN(BBIF2_TSCK2), \
+ 	GPIO_FN(TPU2TO3), \
+-	GPIO_FN(FSIAIBT),
+-	GPIO_FN(FSIAOSLD), \
+ 	GPIO_FN(BBIF2_TXD2),
+-	GPIO_FN(FSIASPDIF), \
+ 	GPIO_FN(PORT53_IRDA_IN), \
+ 	GPIO_FN(TPU3TO3), \
+-	GPIO_FN(FSIBSPDIF), \
+-	GPIO_FN(PORT53_FSICSPDIF),
+-	GPIO_FN(FSIBCK), \
+ 	GPIO_FN(PORT54_IRDA_FIRSEL), \
+ 	GPIO_FN(TPU3TO2), \
+-	GPIO_FN(FSIBOMC), \
+-	GPIO_FN(FSICCK), \
+-	GPIO_FN(FSICOMC),
+-	GPIO_FN(FSIAISLD), \
+ 	GPIO_FN(TPU0TO0),
+ 	GPIO_FN(A0), \
+ 	GPIO_FN(BS_),
+-- 
+1.8.1.5
 
-Acked-by: Magnus Damm <damm@opensource.se>
