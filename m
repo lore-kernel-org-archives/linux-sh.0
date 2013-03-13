@@ -1,96 +1,169 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Mon, 18 Mar 2013 10:17:55 +0000
-Subject: Re: [PATCH] sh: enable DMA for MMCIF on ecovec
-Message-Id: <Pine.LNX.4.64.1303181114290.30957@axis700.grange>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 23:00:16 +0000
+Subject: [PATCH v4 71/88] ARM: shmobile: sh73a0: Remove SCIFA and SCIFB function GPIOs
+Message-Id: <1363215633-4264-72-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hi Paul
+Those GPIOs have been deprecated by the pinctrl API. They are unused and
+unneeded, remove them.
 
-On Wed, 12 Dec 2012, Guennadi Liakhovetski wrote:
-
-> MMCIF on SH7724 can use DMA for I/O. Enable it on ecovec.
-> 
-> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-
-Any specific reason this patch hasn't been applied?
-
-Thanks
-Guennadi
-
-> ---
->  arch/sh/boards/mach-ecovec24/setup.c   |    3 +++
->  arch/sh/include/cpu-sh4/cpu/sh7724.h   |    2 ++
->  arch/sh/kernel/cpu/sh4a/setup-sh7724.c |   10 ++++++++++
->  3 files changed, 15 insertions(+), 0 deletions(-)
-> 
-> diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
-> index 64559e8a..57c30e8 100644
-> --- a/arch/sh/boards/mach-ecovec24/setup.c
-> +++ b/arch/sh/boards/mach-ecovec24/setup.c
-> @@ -1031,12 +1031,15 @@ static struct sh_mmcif_plat_data sh_mmcif_plat = {
->  			  MMC_CAP_8_BIT_DATA |
->  			  MMC_CAP_NEEDS_POLL,
->  	.ocr		= MMC_VDD_32_33 | MMC_VDD_33_34,
-> +	.slave_id_tx	= SHDMA_SLAVE_MMCIF_TX,
-> +	.slave_id_rx	= SHDMA_SLAVE_MMCIF_RX,
->  };
->  
->  static struct platform_device sh_mmcif_device = {
->  	.name		= "sh_mmcif",
->  	.id		= 0,
->  	.dev		= {
-> +		.coherent_dma_mask	= 0xffffffff,
->  		.platform_data		= &sh_mmcif_plat,
->  	},
->  	.num_resources	= ARRAY_SIZE(sh_mmcif_resources),
-> diff --git a/arch/sh/include/cpu-sh4/cpu/sh7724.h b/arch/sh/include/cpu-sh4/cpu/sh7724.h
-> index 38859f9..2e38361 100644
-> --- a/arch/sh/include/cpu-sh4/cpu/sh7724.h
-> +++ b/arch/sh/include/cpu-sh4/cpu/sh7724.h
-> @@ -309,6 +309,8 @@ enum {
->  	SHDMA_SLAVE_SDHI0_RX,
->  	SHDMA_SLAVE_SDHI1_TX,
->  	SHDMA_SLAVE_SDHI1_RX,
-> +	SHDMA_SLAVE_MMCIF_TX,
-> +	SHDMA_SLAVE_MMCIF_RX,
->  };
->  
->  extern struct clk sh7724_fsimcka_clk;
-> diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
-> index 26b74c2..011c3c5 100644
-> --- a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
-> +++ b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
-> @@ -153,6 +153,16 @@ static const struct sh_dmae_slave_config sh7724_dmae_slaves[] = {
->  		.addr		= 0x04cf0030,
->  		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
->  		.mid_rid	= 0xca,
-> +	}, {
-> +		.slave_id	= SHDMA_SLAVE_MMCIF_TX,
-> +		.addr		= 0xa4ca0034,
-> +		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
-> +		.mid_rid	= 0xcd,
-> +	}, {
-> +		.slave_id	= SHDMA_SLAVE_MMCIF_RX,
-> +		.addr		= 0xa4ca0034,
-> +		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
-> +		.mid_rid	= 0xce,
->  	},
->  };
->  
-> -- 
-> 1.7.2.5
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ arch/arm/mach-shmobile/include/mach/sh73a0.h | 90 ++++++++++++----------------
+ 1 file changed, 37 insertions(+), 53 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/include/mach/sh73a0.h b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+index a7b7a3c..b843cd7 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh73a0.h
++++ b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+@@ -103,15 +103,11 @@ enum {
+ 	GPIO_FN_GPI5,
+ 	GPIO_FN_GPI6,
+ 	GPIO_FN_GPI7,
+-	GPIO_FN_SCIFA7_RXD,
+-	GPIO_FN_SCIFA7_CTS_,
+ 	GPIO_FN_GPO7, GPIO_FN_MFG0_OUT2,
+ 	GPIO_FN_GPO6, GPIO_FN_MFG1_OUT2,
+-	GPIO_FN_GPO5, GPIO_FN_SCIFA0_SCK, GPIO_FN_FSICOSLDT3, \
++	GPIO_FN_GPO5, GPIO_FN_FSICOSLDT3,
+ 	GPIO_FN_PORT16_VIO_CKOR,
+-	GPIO_FN_SCIFA0_TXD,
+-	GPIO_FN_SCIFA7_TXD,
+-	GPIO_FN_SCIFA7_RTS_, GPIO_FN_PORT19_VIO_CKO2,
++	GPIO_FN_PORT19_VIO_CKO2,
+ 	GPIO_FN_GPO0,
+ 	GPIO_FN_GPO1,
+ 	GPIO_FN_GPO2, GPIO_FN_STATUS0,
+@@ -126,19 +122,15 @@ enum {
+ 	GPIO_FN_SIM_RST, GPIO_FN_PORT29_TPU1TO1,
+ 	GPIO_FN_SIM_CLK, GPIO_FN_PORT30_VIO_CKOR,
+ 	GPIO_FN_SIM_D, GPIO_FN_PORT31_IROUT,
+-	GPIO_FN_SCIFA4_TXD,
+-	GPIO_FN_SCIFA4_RXD, GPIO_FN_XWUP,
+-	GPIO_FN_SCIFA4_RTS_,
+-	GPIO_FN_SCIFA4_CTS_,
++	GPIO_FN_XWUP,
+ 	GPIO_FN_FSIBOBT, GPIO_FN_FSIBIBT,
+ 	GPIO_FN_FSIBOLR, GPIO_FN_FSIBILR,
+ 	GPIO_FN_FSIBOSLD,
+ 	GPIO_FN_FSIBISLD,
+ 	GPIO_FN_VACK,
+ 	GPIO_FN_XTAL1L,
+-	GPIO_FN_SCIFA0_RTS_, GPIO_FN_FSICOSLDT2,
+-	GPIO_FN_SCIFA0_RXD,
+-	GPIO_FN_SCIFA0_CTS_, GPIO_FN_FSICOSLDT1,
++	GPIO_FN_FSICOSLDT2,
++	GPIO_FN_FSICOSLDT1,
+ 	GPIO_FN_FSICOBT, GPIO_FN_FSICIBT, GPIO_FN_FSIDOBT, GPIO_FN_FSIDIBT,
+ 	GPIO_FN_FSICOLR, GPIO_FN_FSICILR, GPIO_FN_FSIDOLR, GPIO_FN_FSIDILR,
+ 	GPIO_FN_FSICOSLD, GPIO_FN_PORT47_FSICSPDIF,
+@@ -204,10 +196,9 @@ enum {
+ 	GPIO_FN_BBIF2_RXD,
+ 	GPIO_FN_BBIF2_SYNC,
+ 	GPIO_FN_BBIF2_SCK,
+-	GPIO_FN_SCIFA3_CTS_, GPIO_FN_MFG3_IN2,
+-	GPIO_FN_SCIFA3_RXD, GPIO_FN_MFG3_IN1,
+-	GPIO_FN_BBIF1_SS2, GPIO_FN_SCIFA3_RTS_, GPIO_FN_MFG3_OUT1,
+-	GPIO_FN_SCIFA3_TXD,
++	GPIO_FN_MFG3_IN2,
++	GPIO_FN_MFG3_IN1,
++	GPIO_FN_BBIF1_SS2, GPIO_FN_MFG3_OUT1,
+ 	GPIO_FN_HSI_RX_DATA, GPIO_FN_BBIF1_RXD,
+ 	GPIO_FN_HSI_TX_WAKE, GPIO_FN_BBIF1_TSCK,
+ 	GPIO_FN_HSI_TX_DATA, GPIO_FN_BBIF1_TSYNC,
+@@ -252,22 +243,17 @@ enum {
+ 	GPIO_FN_TS_SPSYNC3, GPIO_FN_MSIOF2_RSCK,
+ 	GPIO_FN_TS_SDAT3, GPIO_FN_MSIOF2_RSYNC,
+ 	GPIO_FN_TPU1TO2, GPIO_FN_TS_SDEN3, GPIO_FN_PORT153_MSIOF2_SS1,
+-	GPIO_FN_SCIFA2_TXD1, GPIO_FN_MSIOF2_MCK0,
+-	GPIO_FN_SCIFA2_RXD1, GPIO_FN_MSIOF2_MCK1,
+-	GPIO_FN_SCIFA2_RTS1_, GPIO_FN_PORT156_MSIOF2_SS2,
+-	GPIO_FN_SCIFA2_CTS1_, GPIO_FN_PORT157_MSIOF2_RXD,
+-	GPIO_FN_DINT_, GPIO_FN_SCIFA2_SCK1, GPIO_FN_TS_SCK3,
+-	GPIO_FN_PORT159_SCIFB_SCK, GPIO_FN_PORT159_SCIFA5_SCK, GPIO_FN_NMI,
+-	GPIO_FN_PORT160_SCIFB_TXD, GPIO_FN_PORT160_SCIFA5_TXD,
+-	GPIO_FN_PORT161_SCIFB_CTS_, GPIO_FN_PORT161_SCIFA5_CTS_,
+-	GPIO_FN_PORT162_SCIFB_RXD, GPIO_FN_PORT162_SCIFA5_RXD,
+-	GPIO_FN_PORT163_SCIFB_RTS_, GPIO_FN_PORT163_SCIFA5_RTS_, \
++	GPIO_FN_MSIOF2_MCK0,
++	GPIO_FN_MSIOF2_MCK1,
++	GPIO_FN_PORT156_MSIOF2_SS2,
++	GPIO_FN_PORT157_MSIOF2_RXD,
++	GPIO_FN_DINT_, GPIO_FN_TS_SCK3,
++	GPIO_FN_NMI,
+ 	GPIO_FN_TPU3TO0,
+-	GPIO_FN_PORT193_SCIFA5_CTS_, GPIO_FN_BBIF2_TSYNC1,
+-	GPIO_FN_PORT194_SCIFA5_RTS_, GPIO_FN_BBIF2_TSCK1,
+-	GPIO_FN_PORT195_SCIFA5_RXD, GPIO_FN_BBIF2_TXD1,
+-	GPIO_FN_PORT196_SCIFA5_TXD,
+-	GPIO_FN_PORT197_SCIFA5_SCK, GPIO_FN_MFG2_OUT2,
++	GPIO_FN_BBIF2_TSYNC1,
++	GPIO_FN_BBIF2_TSCK1,
++	GPIO_FN_BBIF2_TXD1,
++	GPIO_FN_MFG2_OUT2,
+ 	GPIO_FN_TPU2TO1,
+ 	GPIO_FN_TPU4TO1, GPIO_FN_MFG4_OUT2,
+ 	GPIO_FN_D16,
+@@ -296,36 +282,34 @@ enum {
+ 	GPIO_FN_DACK1, GPIO_FN_OVCN,
+ 	GPIO_FN_MSIOF0L_TXD, GPIO_FN_VIO2_VD3,
+ 
+-	GPIO_FN_SCIFA1_TXD, GPIO_FN_OVCN2,
+-	GPIO_FN_EXTLP, GPIO_FN_SCIFA1_SCK, GPIO_FN_PORT226_VIO_CKO2,
+-	GPIO_FN_SCIFA1_RTS_, GPIO_FN_IDIN,
+-	GPIO_FN_SCIFA1_RXD,
+-	GPIO_FN_SCIFA1_CTS_, GPIO_FN_MFG1_IN1,
+-	GPIO_FN_MSIOF1_TXD, GPIO_FN_SCIFA2_TXD2,
+-	GPIO_FN_MSIOF1_TSYNC, GPIO_FN_SCIFA2_CTS2_,
+-	GPIO_FN_MSIOF1_TSCK, GPIO_FN_SCIFA2_SCK2,
+-	GPIO_FN_MSIOF1_RXD, GPIO_FN_SCIFA2_RXD2,
+-	GPIO_FN_MSIOF1_RSCK, GPIO_FN_SCIFA2_RTS2_, GPIO_FN_VIO2_CLK2, \
++	GPIO_FN_OVCN2,
++	GPIO_FN_EXTLP, GPIO_FN_PORT226_VIO_CKO2,
++	GPIO_FN_IDIN,
++	GPIO_FN_MFG1_IN1,
++	GPIO_FN_MSIOF1_TXD,
++	GPIO_FN_MSIOF1_TSYNC,
++	GPIO_FN_MSIOF1_TSCK,
++	GPIO_FN_MSIOF1_RXD,
++	GPIO_FN_MSIOF1_RSCK, GPIO_FN_VIO2_CLK2,
+ 	GPIO_FN_MSIOF1_RSYNC, GPIO_FN_MFG1_IN2, GPIO_FN_VIO2_VD2, \
+ 	GPIO_FN_MSIOF1_MCK0, GPIO_FN_PORT236_I2C_SDA2,
+ 	GPIO_FN_MSIOF1_MCK1, GPIO_FN_PORT237_I2C_SCL2,
+ 	GPIO_FN_MSIOF1_SS1, GPIO_FN_VIO2_FIELD2,
+ 	GPIO_FN_MSIOF1_SS2, GPIO_FN_VIO2_HD2,
+-	GPIO_FN_SCIFA6_TXD,
+ 	GPIO_FN_PORT241_IRDA_OUT, GPIO_FN_PORT241_IROUT, GPIO_FN_MFG4_OUT1, \
+ 	GPIO_FN_TPU4TO0,
+ 	GPIO_FN_PORT242_IRDA_IN, GPIO_FN_MFG4_IN2,
+ 	GPIO_FN_PORT243_IRDA_FIRSEL, GPIO_FN_PORT243_VIO_CKO2,
+-	GPIO_FN_PORT244_SCIFA5_CTS_, GPIO_FN_MFG2_IN1, \
+-	GPIO_FN_PORT244_SCIFB_CTS_, GPIO_FN_MSIOF2R_RXD,
+-	GPIO_FN_PORT245_SCIFA5_RTS_, GPIO_FN_MFG2_IN2, \
+-	GPIO_FN_PORT245_SCIFB_RTS_, GPIO_FN_MSIOF2R_TXD,
+-	GPIO_FN_PORT246_SCIFA5_RXD, GPIO_FN_MFG1_OUT1, \
+-	GPIO_FN_PORT246_SCIFB_RXD, GPIO_FN_TPU1TO0,
+-	GPIO_FN_PORT247_SCIFA5_TXD, GPIO_FN_MFG3_OUT2, \
+-	GPIO_FN_PORT247_SCIFB_TXD, GPIO_FN_TPU3TO1,
+-	GPIO_FN_PORT248_SCIFA5_SCK, GPIO_FN_MFG2_OUT1, \
+-	GPIO_FN_PORT248_SCIFB_SCK, GPIO_FN_TPU2TO0, \
++	GPIO_FN_MFG2_IN1,
++	GPIO_FN_MSIOF2R_RXD,
++	GPIO_FN_MFG2_IN2,
++	GPIO_FN_MSIOF2R_TXD,
++	GPIO_FN_MFG1_OUT1,
++	GPIO_FN_TPU1TO0,
++	GPIO_FN_MFG3_OUT2,
++	GPIO_FN_TPU3TO1,
++	GPIO_FN_MFG2_OUT1,
++	GPIO_FN_TPU2TO0,
+ 	GPIO_FN_PORT248_I2C_SCL3, GPIO_FN_MSIOF2R_TSCK,
+ 	GPIO_FN_PORT249_IROUT, GPIO_FN_MFG4_IN1, \
+ 	GPIO_FN_PORT249_I2C_SDA3, GPIO_FN_MSIOF2R_TSYNC,
+-- 
+1.8.1.5
+
