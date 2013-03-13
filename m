@@ -1,48 +1,112 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Fri, 08 Mar 2013 11:29:38 +0000
-Subject: [PATCH v2 4/7] ARM: shmobile: sh73a0: Add timer DT names to clock list
-Message-Id: <1362742181-19111-5-git-send-email-hechtb+renesas@gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 23:00:20 +0000
+Subject: [PATCH v4 75/88] ARM: shmobile: sh73a0: Remove KEYSC function GPIOs
+Message-Id: <1363215633-4264-76-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1362742181-19111-1-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1362742181-19111-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This adds temporarily the alternative device names to the clock list
-that are used when booting via Device Tree setup.
+Those GPIOs have been deprecated by the pinctrl API. They are unused and
+unneeded, remove them.
 
-Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v2:
-- Done for cmt and tmu
+ arch/arm/mach-shmobile/include/mach/sh73a0.h | 53 +++++++++++++---------------
+ 1 file changed, 24 insertions(+), 29 deletions(-)
 
- arch/arm/mach-shmobile/clock-sh73a0.c |    3 +++
- 1 file changed, 3 insertions(+)
-
-diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-index 71843dd..2704467 100644
---- a/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-@@ -558,7 +558,9 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_mobile_ceu.0", &mstp_clks[MSTP127]), /* CEU0 */
- 	CLKDEV_DEV_ID("sh-mobile-csi2.0", &mstp_clks[MSTP126]), /* CSI2-RX0 */
- 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP125]), /* TMU00 */
-+	CLKDEV_DEV_ID("fff60008.timer", &mstp_clks[MSTP125]), /* TMU00 */
- 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP125]), /* TMU01 */
-+	CLKDEV_DEV_ID("fff60014.timer", &mstp_clks[MSTP125]), /* TMU01 */
- 	CLKDEV_DEV_ID("sh-mipi-dsi.0", &mstp_clks[MSTP118]), /* DSITX */
- 	CLKDEV_DEV_ID("i2c-sh_mobile.0", &mstp_clks[MSTP116]), /* I2C0 */
- 	CLKDEV_DEV_ID("e6820000.i2c", &mstp_clks[MSTP116]), /* I2C0 */
-@@ -575,6 +577,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP200]), /* SCIFA4 */
- 	CLKDEV_DEV_ID("sh-sci.6", &mstp_clks[MSTP331]), /* SCIFA6 */
- 	CLKDEV_DEV_ID("sh_cmt.10", &mstp_clks[MSTP329]), /* CMT10 */
-+	CLKDEV_DEV_ID("e6138010.timer", &mstp_clks[MSTP329]), /* CMT10 */
- 	CLKDEV_DEV_ID("sh_fsi2", &mstp_clks[MSTP328]), /* FSI */
- 	CLKDEV_DEV_ID("sh_irda.0", &mstp_clks[MSTP325]), /* IrDA */
- 	CLKDEV_DEV_ID("i2c-sh_mobile.1", &mstp_clks[MSTP323]), /* I2C1 */
+diff --git a/arch/arm/mach-shmobile/include/mach/sh73a0.h b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+index 5b9620e..f1b85ff 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh73a0.h
++++ b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+@@ -134,22 +134,21 @@ enum {
+ 	GPIO_FN_PORT54_IRDA_FIRSEL, GPIO_FN_TPU3TO2,
+ 	GPIO_FN_TPU0TO0,
+ 	GPIO_FN_A0, GPIO_FN_BS_,
+-	GPIO_FN_A12, GPIO_FN_PORT58_KEYOUT7, GPIO_FN_TPU4TO2,
+-	GPIO_FN_A13, GPIO_FN_PORT59_KEYOUT6, GPIO_FN_TPU0TO1,
+-	GPIO_FN_A14, GPIO_FN_KEYOUT5,
+-	GPIO_FN_A15, GPIO_FN_KEYOUT4,
+-	GPIO_FN_A16, GPIO_FN_KEYOUT3, GPIO_FN_MSIOF0_SS1,
+-	GPIO_FN_A17, GPIO_FN_KEYOUT2, GPIO_FN_MSIOF0_TSYNC,
+-	GPIO_FN_A18, GPIO_FN_KEYOUT1, GPIO_FN_MSIOF0_TSCK,
+-	GPIO_FN_A19, GPIO_FN_KEYOUT0, GPIO_FN_MSIOF0_TXD,
+-	GPIO_FN_A20, GPIO_FN_KEYIN0, GPIO_FN_MSIOF0_RSCK,
+-	GPIO_FN_A21, GPIO_FN_KEYIN1, GPIO_FN_MSIOF0_RSYNC,
+-	GPIO_FN_A22, GPIO_FN_KEYIN2, GPIO_FN_MSIOF0_MCK0,
+-	GPIO_FN_A23, GPIO_FN_KEYIN3, GPIO_FN_MSIOF0_MCK1,
+-	GPIO_FN_A24, GPIO_FN_KEYIN4, GPIO_FN_MSIOF0_RXD,
+-	GPIO_FN_A25, GPIO_FN_KEYIN5, GPIO_FN_MSIOF0_SS2,
+-	GPIO_FN_A26, GPIO_FN_KEYIN6,
+-	GPIO_FN_KEYIN7,
++	GPIO_FN_A12, GPIO_FN_TPU4TO2,
++	GPIO_FN_A13, GPIO_FN_TPU0TO1,
++	GPIO_FN_A14,
++	GPIO_FN_A15,
++	GPIO_FN_A16, GPIO_FN_MSIOF0_SS1,
++	GPIO_FN_A17, GPIO_FN_MSIOF0_TSYNC,
++	GPIO_FN_A18, GPIO_FN_MSIOF0_TSCK,
++	GPIO_FN_A19, GPIO_FN_MSIOF0_TXD,
++	GPIO_FN_A20, GPIO_FN_MSIOF0_RSCK,
++	GPIO_FN_A21, GPIO_FN_MSIOF0_RSYNC,
++	GPIO_FN_A22, GPIO_FN_MSIOF0_MCK0,
++	GPIO_FN_A23, GPIO_FN_MSIOF0_MCK1,
++	GPIO_FN_A24, GPIO_FN_MSIOF0_RXD,
++	GPIO_FN_A25, GPIO_FN_MSIOF0_SS2,
++	GPIO_FN_A26,
+ 	GPIO_FN_D0_NAF0,
+ 	GPIO_FN_D1_NAF1,
+ 	GPIO_FN_D2_NAF2,
+@@ -199,23 +198,21 @@ enum {
+ 	GPIO_FN_VIO_HD,
+ 	GPIO_FN_VIO2_HD,
+ 	GPIO_FN_VIO_D0, GPIO_FN_PORT130_MSIOF2_RXD,
+-	GPIO_FN_VIO_D1, GPIO_FN_PORT131_KEYOUT6, GPIO_FN_PORT131_MSIOF2_SS1, \
+-	GPIO_FN_PORT131_KEYOUT11,
+-	GPIO_FN_VIO_D2, GPIO_FN_PORT132_KEYOUT7, GPIO_FN_PORT132_MSIOF2_SS2, \
+-	GPIO_FN_PORT132_KEYOUT10,
++	GPIO_FN_VIO_D1, GPIO_FN_PORT131_MSIOF2_SS1,
++	GPIO_FN_VIO_D2, GPIO_FN_PORT132_MSIOF2_SS2,
+ 	GPIO_FN_VIO_D3, GPIO_FN_MSIOF2_TSYNC,
+ 	GPIO_FN_VIO_D4, GPIO_FN_MSIOF2_TXD,
+ 	GPIO_FN_VIO_D5, GPIO_FN_MSIOF2_TSCK,
+-	GPIO_FN_VIO_D6, GPIO_FN_PORT136_KEYOUT8,
+-	GPIO_FN_VIO_D7, GPIO_FN_PORT137_KEYOUT9,
+-	GPIO_FN_VIO_D8, GPIO_FN_PORT138_KEYOUT8, GPIO_FN_VIO2_D0, \
+-	GPIO_FN_VIO_D9, GPIO_FN_PORT139_KEYOUT9, GPIO_FN_VIO2_D1, \
++	GPIO_FN_VIO_D6,
++	GPIO_FN_VIO_D7,
++	GPIO_FN_VIO_D8, GPIO_FN_VIO2_D0,
++	GPIO_FN_VIO_D9, GPIO_FN_VIO2_D1,
+ 	GPIO_FN_VIO_D10, GPIO_FN_TPU0TO2, GPIO_FN_VIO2_D2,
+ 	GPIO_FN_VIO_D11, GPIO_FN_TPU0TO3, GPIO_FN_VIO2_D3,
+-	GPIO_FN_VIO_D12, GPIO_FN_PORT142_KEYOUT10, GPIO_FN_VIO2_D4, \
+-	GPIO_FN_VIO_D13, GPIO_FN_PORT143_KEYOUT11, GPIO_FN_PORT143_KEYOUT6, \
++	GPIO_FN_VIO_D12, GPIO_FN_VIO2_D4,
++	GPIO_FN_VIO_D13,
+ 	GPIO_FN_VIO2_D5,
+-	GPIO_FN_VIO_D14, GPIO_FN_PORT144_KEYOUT7, GPIO_FN_VIO2_D6, \
++	GPIO_FN_VIO_D14, GPIO_FN_VIO2_D6,
+ 	GPIO_FN_VIO_D15, GPIO_FN_TPU1TO3,
+ 	GPIO_FN_VIO2_D7,
+ 	GPIO_FN_VIO_CLK,
+@@ -223,7 +220,6 @@ enum {
+ 	GPIO_FN_VIO_FIELD, GPIO_FN_VIO2_FIELD,
+ 	GPIO_FN_VIO_CKO,
+ 	GPIO_FN_A27, GPIO_FN_PORT149_RDWR, GPIO_FN_MFG0_IN1, \
+-	GPIO_FN_PORT149_KEYOUT9,
+ 	GPIO_FN_MFG0_IN2,
+ 	GPIO_FN_TS_SPSYNC3, GPIO_FN_MSIOF2_RSCK,
+ 	GPIO_FN_TS_SDAT3, GPIO_FN_MSIOF2_RSYNC,
+@@ -390,7 +386,6 @@ enum {
+ 	GPIO_FN_IRQ9_MEM_INT,
+ 	GPIO_FN_IRQ9_MCP_INT,
+ 	GPIO_FN_A11,
+-	GPIO_FN_KEYOUT8,
+ 	GPIO_FN_TPU4TO3,
+ 	GPIO_FN_RESETA_N_PU_ON,
+ 	GPIO_FN_RESETA_N_PU_OFF,
 -- 
-1.7.9.5
+1.8.1.5
 
