@@ -1,87 +1,52 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 13:02:33 +0000
-Subject: [PATCH 07/12] clocksource: sh_cmt: Add control register callbacks
-Message-Id: <1363611758-6655-8-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 22:39:24 +0000
+Subject: [PATCH 05/25] sh: sh7722: Add pin control resources
+Message-Id: <1363214384-3870-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363611758-6655-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363611758-6655-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+Add memory resources for the pin control platform device to let the
+sh-pfc driver ioremap() registers properly instead of evily casting
+register physical addresses to virtual addresses.
 
-This patch adds control register callbacks for the CMT
-driver. At this point only 16-bit access is supported
-but in the future this will be updated to allow 32-bit
-access as well.
+The memory resource address range has been extracted from the config and
+data registes lists in the sh-pfc driver.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: John Stultz <john.stultz@linaro.org>
-Tested-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/clocksource/sh_cmt.c |   16 ++++++++++++----
- 1 file changed, 12 insertions(+), 4 deletions(-)
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index da904d7..7108963 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -55,6 +55,11 @@ struct sh_cmt_priv {
- 	unsigned long total_cycles;
- 	bool cs_enabled;
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c
+index d9bcc42..271bbc8 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c
+@@ -1,10 +1,20 @@
++#include <linux/bug.h>
+ #include <linux/init.h>
+ #include <linux/kernel.h>
++#include <linux/ioport.h>
+ #include <cpu/pfc.h>
  
-+	/* callbacks for CMSTR and CMCSR access */
-+	unsigned long (*read_control)(void __iomem *base, unsigned long offs);
-+	void (*write_control)(void __iomem *base, unsigned long offs,
-+			      unsigned long value);
++static struct resource sh7722_pfc_resources[] = {
++	[0] = {
++		.start	= 0xa4050100,
++		.end	= 0xa405018f,
++		.flags	= IORESOURCE_MEM,
++	},
++};
 +
- 	/* callbacks for CMCNT and CMCOR access */
- 	unsigned long (*read_count)(void __iomem *base, unsigned long offs);
- 	void (*write_count)(void __iomem *base, unsigned long offs,
-@@ -91,12 +96,12 @@ static inline unsigned long sh_cmt_read_cmstr(struct sh_cmt_priv *p)
+ static int __init plat_pinmux_setup(void)
  {
- 	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
- 
--	return sh_cmt_read16(p->mapbase - cfg->channel_offset, 0);
-+	return p->read_control(p->mapbase - cfg->channel_offset, 0);
+-	return sh_pfc_register("pfc-sh7722", NULL, 0);
++	return sh_pfc_register("pfc-sh7722", sh7722_pfc_resources,
++			       ARRAY_SIZE(sh7722_pfc_resources));
  }
- 
- static inline unsigned long sh_cmt_read_cmcsr(struct sh_cmt_priv *p)
- {
--	return sh_cmt_read16(p->mapbase, CMCSR);
-+	return p->read_control(p->mapbase, CMCSR);
- }
- 
- static inline unsigned long sh_cmt_read_cmcnt(struct sh_cmt_priv *p)
-@@ -109,13 +114,13 @@ static inline void sh_cmt_write_cmstr(struct sh_cmt_priv *p,
- {
- 	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
- 
--	sh_cmt_write16(p->mapbase - cfg->channel_offset, 0, value);
-+	p->write_control(p->mapbase - cfg->channel_offset, 0, value);
- }
- 
- static inline void sh_cmt_write_cmcsr(struct sh_cmt_priv *p,
- 				      unsigned long value)
- {
--	sh_cmt_write16(p->mapbase, CMCSR, value);
-+	p->write_control(p->mapbase, CMCSR, value);
- }
- 
- static inline void sh_cmt_write_cmcnt(struct sh_cmt_priv *p,
-@@ -702,6 +707,9 @@ static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
- 		goto err1;
- 	}
- 
-+	p->read_control = sh_cmt_read16;
-+	p->write_control = sh_cmt_write16;
-+
- 	if (resource_size(res) = 6) {
- 		p->width = 16;
- 		p->read_count = sh_cmt_read16;
+-
+ arch_initcall(plat_pinmux_setup);
 -- 
-1.7.10.4
+1.8.1.5
 
