@@ -1,74 +1,55 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 06 Mar 2013 13:47:05 +0000
-Subject: [PATCH v2 26/39] sh-pfc: sh73a0: Remove I2C function GPIOS
-Message-Id: <1362577638-15493-27-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 22:39:29 +0000
+Subject: [PATCH 10/25] sh: sh7786: Add pin control resources
+Message-Id: <1363214384-3870-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-All sh73a0 platforms now use the pinctrl API to control the I2C pins,
-the corresponding function GPIOS are unused. Remove them.
+Add memory resources for the pin control platform device to let the
+sh-pfc driver ioremap() registers properly instead of evily casting
+register physical addresses to virtual addresses.
+
+The memory resource address range has been extracted from the config and
+data registes lists in the sh-pfc driver.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 12 ------------
- 1 file changed, 12 deletions(-)
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index 0e00207..7c27ec9 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -2684,13 +2684,9 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(VINT),
- 	GPIO_FN(TCKON),
- 	GPIO_FN(XDVFS1), \
--	GPIO_FN(PORT27_I2C_SCL2), \
--	GPIO_FN(PORT27_I2C_SCL3), \
- 	GPIO_FN(MFG0_OUT1), \
- 	GPIO_FN(PORT27_IROUT),
- 	GPIO_FN(XDVFS2), \
--	GPIO_FN(PORT28_I2C_SDA2), \
--	GPIO_FN(PORT28_I2C_SDA3), \
- 	GPIO_FN(PORT28_TPU1TO1),
- 	GPIO_FN(SIM_RST), \
- 	GPIO_FN(PORT29_TPU1TO1),
-@@ -2847,12 +2843,8 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(BBIF1_TXD),
- 	GPIO_FN(HSI_RX_READY), \
- 	GPIO_FN(BBIF1_RSCK), \
--	GPIO_FN(PORT115_I2C_SCL2), \
--	GPIO_FN(PORT115_I2C_SCL3),
- 	GPIO_FN(HSI_RX_WAKE), \
- 	GPIO_FN(BBIF1_RSYNC), \
--	GPIO_FN(PORT116_I2C_SDA2), \
--	GPIO_FN(PORT116_I2C_SDA3),
- 	GPIO_FN(HSI_RX_FLAG), \
- 	GPIO_FN(BBIF1_SS1), \
- 	GPIO_FN(BBIF1_FLOW),
-@@ -3000,9 +2992,7 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(MFG1_IN2), \
- 	GPIO_FN(VIO2_VD2), \
- 	GPIO_FN(MSIOF1_MCK0), \
--	GPIO_FN(PORT236_I2C_SDA2),
- 	GPIO_FN(MSIOF1_MCK1), \
--	GPIO_FN(PORT237_I2C_SCL2),
- 	GPIO_FN(MSIOF1_SS1), \
- 	GPIO_FN(VIO2_FIELD2), \
- 	GPIO_FN(MSIOF1_SS2), \
-@@ -3025,11 +3015,9 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(TPU3TO1),
- 	GPIO_FN(MFG2_OUT1), \
- 	GPIO_FN(TPU2TO0), \
--	GPIO_FN(PORT248_I2C_SCL3), \
- 	GPIO_FN(MSIOF2R_TSCK),
- 	GPIO_FN(PORT249_IROUT), \
- 	GPIO_FN(MFG4_IN1), \
--	GPIO_FN(PORT249_I2C_SDA3), \
- 	GPIO_FN(MSIOF2R_TSYNC),
- 	GPIO_FN(SDHICLK0),
- 	GPIO_FN(SDHICD0),
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
+index 3061778..9a45955 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
+@@ -13,13 +13,23 @@
+  * for more details.
+  */
+ 
++#include <linux/bug.h>
+ #include <linux/init.h>
+ #include <linux/kernel.h>
++#include <linux/ioport.h>
+ #include <cpu/pfc.h>
+ 
++static struct resource sh7786_pfc_resources[] = {
++	[0] = {
++		.start	= 0xffcc0000,
++		.end	= 0xffcc008f,
++		.flags	= IORESOURCE_MEM,
++	},
++};
++
+ static int __init plat_pinmux_setup(void)
+ {
+-	return sh_pfc_register("pfc-sh7786", NULL, 0);
++	return sh_pfc_register("pfc-sh7786", sh7786_pfc_resources,
++			       ARRAY_SIZE(sh7786_pfc_resources));
+ }
+-
+ arch_initcall(plat_pinmux_setup);
 -- 
 1.8.1.5
 
