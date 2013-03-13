@@ -1,49 +1,49 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:53:20 +0000
-Subject: [PATCH 8/9] ARM: shmobile: armadillo800eva: enable all errata for cache on defconfig
-Message-Id: <1363607601-20366-9-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 22:59:28 +0000
+Subject: [PATCH v4 23/88] ARM: shmobile: ag5evm: Register pinctrl mappings for I2C
+Message-Id: <1363215633-4264-24-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363607601-20366-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363607601-20366-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Replace the GPIO-based I2C pinmux configuration by pinctrl mappings.
 
-Some errata for cache had not enabled on current
-Armadillo800eva defconfig.
-This patch enables these.
-Special thanks to Ishiyama-san
-
-Reported-by: Kiyoshi Ishiyama <kiyoshi.ishiyama.wg@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/configs/armadillo800eva_defconfig |    5 +++++
- 1 file changed, 5 insertions(+)
+ arch/arm/mach-shmobile/board-ag5evm.c | 11 +++++------
+ 1 file changed, 5 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
-index 468c616..0f2d80d 100644
---- a/arch/arm/configs/armadillo800eva_defconfig
-+++ b/arch/arm/configs/armadillo800eva_defconfig
-@@ -24,10 +24,15 @@ CONFIG_CACHE_L2X0=y
- CONFIG_ARM_ERRATA_430973=y
- CONFIG_ARM_ERRATA_458693=y
- CONFIG_ARM_ERRATA_460075=y
-+CONFIG_PL310_ERRATA_588369=y
- CONFIG_ARM_ERRATA_720789=y
-+CONFIG_PL310_ERRATA_727915=y
- CONFIG_ARM_ERRATA_743622=y
- CONFIG_ARM_ERRATA_751472=y
-+CONFIG_PL310_ERRATA_753970=y
- CONFIG_ARM_ERRATA_754322=y
-+CONFIG_PL310_ERRATA_769419=y
-+CONFIG_ARM_ERRATA_775420=y
- CONFIG_AEABI=y
- # CONFIG_OABI_COMPAT is not set
- CONFIG_FORCE_MAX_ZONEORDER
+diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
+index 5b8dcdc..e19dade 100644
+--- a/arch/arm/mach-shmobile/board-ag5evm.c
++++ b/arch/arm/mach-shmobile/board-ag5evm.c
+@@ -552,6 +552,11 @@ static struct platform_device *ag5evm_devices[] __initdata = {
+ };
+ 
+ static const struct pinctrl_map ag5evm_pinctrl_map[] = {
++	/* I2C2 & I2C3 */
++	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.2", "pfc-sh73a0",
++				  "i2c2_0", "i2c2"),
++	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.3", "pfc-sh73a0",
++				  "i2c3_0", "i2c3"),
+ 	/* SCIFA2 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-sh73a0",
+ 				  "scifa2_data_0", "scifa2"),
+@@ -591,12 +596,6 @@ static void __init ag5evm_init(void)
+ 	gpio_request(GPIO_FN_KEYOUT8, NULL);
+ 	gpio_request(GPIO_FN_PORT149_KEYOUT9, NULL);
+ 
+-	/* enable I2C channel 2 and 3 */
+-	gpio_request(GPIO_FN_PORT236_I2C_SDA2, NULL);
+-	gpio_request(GPIO_FN_PORT237_I2C_SCL2, NULL);
+-	gpio_request(GPIO_FN_PORT248_I2C_SCL3, NULL);
+-	gpio_request(GPIO_FN_PORT249_I2C_SDA3, NULL);
+-
+ 	/* enable MMCIF */
+ 	gpio_request(GPIO_FN_MMCCLK0, NULL);
+ 	gpio_request(GPIO_FN_MMCCMD0_PU, NULL);
 -- 
-1.7.10.4
+1.8.1.5
 
