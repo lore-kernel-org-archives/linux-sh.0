@@ -1,178 +1,107 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 22 Mar 2013 07:15:17 +0000
-Subject: [RFC][PATCH 3/3] ARM: shmobile: bockw: add SMSC ethernet support
-Message-Id: <87vc8jewhq.wl%kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 22:39:19 +0000
+Subject: [PATCH 00/25] sh-pfc: pinconf implementation
+Message-Id: <1363214384-3870-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87zjxvewko.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87zjxvewko.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-This patch adds SMSC ethernet support on Bock-W
+Hello,
 
-Bock-W SMSC needs FPGA settings which enables interrupt.
-This patch does it on bockw_init() function.
-As notes for future, this FPGA settings should be
-updated in the future, since this FPGA is using cascaded interrupt.
-Current code is assuming that this FPGA interrupt user is only SMSC
-Becouse of these background, this patch doesn't
-have DT settings
+Here's a patch set that implements pinconf support for the sh-pfc driver.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm/boot/dts/r8a7778-bockw.dts  |    2 +-
- arch/arm/configs/bockw_defconfig     |   34 ++++++++++++++++++++++++++++---
- arch/arm/mach-shmobile/Kconfig       |    1 +
- arch/arm/mach-shmobile/board-bockw.c |   37 ++++++++++++++++++++++++++++++++++
- 4 files changed, 70 insertions(+), 4 deletions(-)
+The set is based on the "[PATCH 00/23] Further SH PFC cleanup" set that I've
+previously posted. Changes since that set are
 
-diff --git a/arch/arm/boot/dts/r8a7778-bockw.dts b/arch/arm/boot/dts/r8a7778-bockw.dts
-index 735c964..0076b1e 100644
---- a/arch/arm/boot/dts/r8a7778-bockw.dts
-+++ b/arch/arm/boot/dts/r8a7778-bockw.dts
-@@ -22,7 +22,7 @@
- 	compatible = "renesas,bockw", "renesas,r8a7778";
- 
- 	chosen {
--		bootargs = "console=ttySC0,115200 ignore_loglevel";
-+		bootargs = "console=ttySC0,115200 ignore_loglevel ip=dhcp root=/dev/nfs";
- 	};
- 
- 	memory {
-diff --git a/arch/arm/configs/bockw_defconfig b/arch/arm/configs/bockw_defconfig
-index 6037705..6524cdf 100644
---- a/arch/arm/configs/bockw_defconfig
-+++ b/arch/arm/configs/bockw_defconfig
-@@ -27,16 +27,40 @@ CONFIG_HIGHMEM=y
- CONFIG_ZBOOT_ROM_TEXT=0x0
- CONFIG_ZBOOT_ROM_BSS=0x0
- CONFIG_ARM_APPENDED_DTB=y
--CONFIG_CMDLINE="console=ttySC0,115200 ignore_loglevel"
-+CONFIG_CMDLINE="console=ttySC0,115200 ignore_loglevel root=/dev/nfs ip=dhcp"
- CONFIG_CMDLINE_FORCE=y
- # CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS is not set
- # CONFIG_SUSPEND is not set
-+CONFIG_NET=y
-+CONFIG_UNIX=y
-+CONFIG_INET=y
-+CONFIG_IP_PNP=y
-+CONFIG_IP_PNP_DHCP=y
-+# CONFIG_INET_XFRM_MODE_TRANSPORT is not set
-+# CONFIG_INET_XFRM_MODE_TUNNEL is not set
-+# CONFIG_INET_XFRM_MODE_BEET is not set
-+# CONFIG_INET_LRO is not set
-+# CONFIG_INET_DIAG is not set
-+# CONFIG_IPV6 is not set
- CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
- CONFIG_DEVTMPFS=y
- CONFIG_DEVTMPFS_MOUNT=y
- # CONFIG_STANDALONE is not set
- # CONFIG_PREVENT_FIRMWARE_BUILD is not set
- # CONFIG_FW_LOADER is not set
-+CONFIG_NETDEVICES=y
-+# CONFIG_NET_CADENCE is not set
-+# CONFIG_NET_VENDOR_BROADCOM is not set
-+# CONFIG_NET_VENDOR_CIRRUS is not set
-+# CONFIG_NET_VENDOR_FARADAY is not set
-+# CONFIG_NET_VENDOR_INTEL is not set
-+# CONFIG_NET_VENDOR_MARVELL is not set
-+# CONFIG_NET_VENDOR_MICREL is not set
-+# CONFIG_NET_VENDOR_NATSEMI is not set
-+# CONFIG_NET_VENDOR_SEEQ is not set
-+CONFIG_SMSC911X=y
-+# CONFIG_NET_VENDOR_STMICRO is not set
-+# CONFIG_NET_VENDOR_WIZNET is not set
- # CONFIG_INPUT is not set
- # CONFIG_SERIO is not set
- # CONFIG_VT is not set
-@@ -55,12 +79,16 @@ CONFIG_UIO_PDRV_GENIRQ=y
- # CONFIG_INOTIFY_USER is not set
- CONFIG_TMPFS=y
- # CONFIG_MISC_FILESYSTEMS is not set
-+CONFIG_NFS_FS=y
-+CONFIG_NFS_V3_ACL=y
-+CONFIG_NFS_V4=y
-+CONFIG_NFS_SWAP=y
-+CONFIG_NFS_V4_1=y
-+CONFIG_ROOT_NFS=y
- # CONFIG_ENABLE_WARN_DEPRECATED is not set
- # CONFIG_ENABLE_MUST_CHECK is not set
- # CONFIG_SCHED_DEBUG is not set
- # CONFIG_DEBUG_BUGVERBOSE is not set
- # CONFIG_FTRACE is not set
- # CONFIG_ARM_UNWIND is not set
--CONFIG_KEYS=y
--CONFIG_CRYPTO=y
- CONFIG_AVERAGE=y
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index e5cd4d8..bbf23bc 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -108,6 +108,7 @@ config MACH_BOCKW
- 	bool "BOCK-W platform"
- 	depends on ARCH_R8A7778
- 	select ARCH_REQUIRE_GPIOLIB
-+	select RENESAS_INTC_IRQPIN
- 	select USE_OF
- 
- config MACH_MARZEN
-diff --git a/arch/arm/mach-shmobile/board-bockw.c b/arch/arm/mach-shmobile/board-bockw.c
-index 56ab56e..67a89af 100644
---- a/arch/arm/mach-shmobile/board-bockw.c
-+++ b/arch/arm/mach-shmobile/board-bockw.c
-@@ -19,14 +19,51 @@
-  */
- 
- #include <linux/platform_device.h>
-+#include <linux/smsc911x.h>
- #include <mach/common.h>
-+#include <mach/irqs.h>
- #include <mach/r8a7778.h>
- #include <asm/mach/arch.h>
- 
-+static struct smsc911x_platform_config smsc911x_platform_data = {
-+	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_LOW,
-+	.irq_type	= SMSC911X_IRQ_TYPE_PUSH_PULL,
-+	.flags		= SMSC911X_USE_32BIT,
-+	.phy_interface	= PHY_INTERFACE_MODE_MII,
-+};
-+
-+static struct resource smsc911x_resources[] = {
-+	DEFINE_RES_MEM(0x18300000, 0x1000),
-+	DEFINE_RES_IRQ(irq_pin(0)), /* IRQ 0 */
-+};
-+
-+static struct platform_device_info smsc911x_devinfo +	PLATFORM_FULL_INFO("smsc911x", -1, smsc911x);
-+
-+#define IRQ0MR	0x30
- static void __init bockw_init(void)
- {
-+	void __iomem *fpga = ioremap_nocache(0x18200000, SZ_1M);
-+
- 	r8a7778_clock_init();
-+	r8a7778_init_irq_extpin(1);
- 	r8a7778_add_standard_devices();
-+
-+	if (fpga) {
-+		/*
-+		 * CAUTION
-+		 *
-+		 * IRQ0/1 is cascaded interrupt from FPGA.
-+		 * it should be cared in the future
-+		 * Now, it is assuming IRQ0 was used only from SMSC.
-+		 */
-+		u16 val = ioread16(fpga + IRQ0MR);
-+		val &= ~(1 << 4); /* enable SMSC911x */
-+		iowrite16(val, fpga + IRQ0MR);
-+
-+		platform_device_register_full(&smsc911x_devinfo);
-+		iounmap(fpga);
-+	}
- }
- 
- static const char *bockw_boards_compat_dt[] __initdata = {
+- fix return value check in sh_pfc_register_pinctrl() (12/25)
+- provide a real pinconf implementation instead of removing it (21/25)
+- return an error if a pin doesn't support the requested direction (25/25)
+
+As I'm not too familiar with the pinconf API I'd appreciate if 21/25 could be
+carefully reviewed.
+
+As before, the first 11 patches add pin control resources to the SH platforms.
+They don't depend on any of the previous unmerged PFC patch series but are
+required for the rest of this series. Paul, are you fine with merging them
+through the ARM tree ? I don't think there's any risk of merge conflicts.
+
+The patches are based on my pinmux/3.9/pinctrl branch and are available at
+
+        git://linuxtv.org/pinchartl/fbdev.git pinmux/3.9/pinconf
+
+I've rebased the pinmux/3.9/pinctrl branch on top of the pinctrl merge in
+Simon's tree.
+
+Laurent Pinchart (24):
+  sh: sh7203: Add pin control resources
+  sh: sh7264: Add pin control resources
+  sh: sh7269: Add pin control resources
+  sh: sh7720: Add pin control resources
+  sh: sh7722: Add pin control resources
+  sh: sh7723: Add pin control resources
+  sh: sh7724: Add pin control resources
+  sh: sh7757: Add pin control resources
+  sh: sh7785: Add pin control resources
+  sh: sh7786: Add pin control resources
+  sh: shx3: Add pin control resources
+  sh-pfc: Move GPIO registers access functions to gpio.c
+  sh-pfc: Don't map data registers individually
+  sh-pfc: Drop unused support for 1:1 physical to virtual memory
+    mappings
+  sh-pfc: Don't modify pinmux_data_reg SoC data
+  sh-pfc: Don't modify sh_pfc_pin SoC data
+  sh-pfc: Remove configuration dry-run and free
+  sh-pfc: Constify all SoC data
+  sh-pfc: Use proper error codes
+  sh-pfc: Implement generic pinconf support
+  sh-pfc: Merge sh_pfc_reconfig_pin() into sh_pfc_gpio_set_direction()
+  sh-pfc: Clean up pin configuration type handling
+  sh-pfc: Convert message printing from pr_* to dev_*
+  sh-pfc: Return an error if a pin doesn't support the requested
+    direction
+
+Wei Yongjun (1):
+  sh-pfc: Fix return value check in sh_pfc_register_pinctrl()
+
+ arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c |  13 +-
+ arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c |  13 +-
+ arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c |  11 +-
+ arch/sh/kernel/cpu/sh3/pinmux-sh7720.c  |  14 +-
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c |  14 +-
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c |  14 +-
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7724.c |  13 +-
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c |  13 +-
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7785.c |  14 +-
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c |  14 +-
+ arch/sh/kernel/cpu/sh4a/pinmux-shx3.c   |  17 +-
+ drivers/pinctrl/sh-pfc/Kconfig          |   1 +
+ drivers/pinctrl/sh-pfc/core.c           | 228 +++++--------------------
+ drivers/pinctrl/sh-pfc/core.h           |  49 +++---
+ drivers/pinctrl/sh-pfc/gpio.c           | 222 +++++++++++++++++++------
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c    |  12 +-
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c    |  10 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7203.c     |  10 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7264.c     |  10 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7269.c     |  10 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7372.c     |  12 +-
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c     |  14 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7720.c     |  10 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7722.c     |  10 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7723.c     |  10 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7724.c     |  10 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7734.c     |  10 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7757.c     |  10 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7785.c     |  10 +-
+ drivers/pinctrl/sh-pfc/pfc-sh7786.c     |  10 +-
+ drivers/pinctrl/sh-pfc/pfc-shx3.c       |  10 +-
+ drivers/pinctrl/sh-pfc/pinctrl.c        | 285 +++++++++++++++++++-------------
+ drivers/pinctrl/sh-pfc/sh_pfc.h         |  49 +++---
+ 33 files changed, 654 insertions(+), 498 deletions(-)
+
 -- 
-1.7.9.5
+Regards,
+
+Laurent Pinchart
 
