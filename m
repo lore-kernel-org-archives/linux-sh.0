@@ -1,52 +1,111 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 12:32:13 +0000
-Subject: [PATCH 03/43] ARM: shmobile: Move EMEV2 CPU boot vector setup code
-Message-Id: <1363609973-31086-4-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 22:39:41 +0000
+Subject: [PATCH 22/25] sh-pfc: Merge sh_pfc_reconfig_pin() into sh_pfc_gpio_set_direction()
+Message-Id: <1363214384-3870-23-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
+The sh_pfc_reconfig_pin() is only called from a single location. Merge
+it into its call site to make the code easier to follow.
 
-Move the boot vector setup code for the EMEV2 SoC to match
-the sh73a0 and r8a7779 implementations. With this in place
-all SoC specific SMP implementations for mach-shmobile uses
-the ->smp_prepare_cpus() callback to setup the boot vector.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/smp-emev2.c |    6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ drivers/pinctrl/sh-pfc/pinctrl.c | 71 ++++++++++++++++++----------------------
+ 1 file changed, 32 insertions(+), 39 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/smp-emev2.c b/arch/arm/mach-shmobile/smp-emev2.c
-index 72620b1..6427821 100644
---- a/arch/arm/mach-shmobile/smp-emev2.c
-+++ b/arch/arm/mach-shmobile/smp-emev2.c
-@@ -74,9 +74,6 @@ static int __cpuinit emev2_boot_secondary(unsigned int cpu, struct task_struct *
- 	/* enable cache coherency */
- 	modify_scu_cpu_psr(0, 3 << (cpu * 8));
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index 79fa170..36f08f8 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -135,43 +135,6 @@ static void sh_pfc_func_disable(struct pinctrl_dev *pctldev, unsigned selector,
+ {
+ }
  
--	/* Tell ROM loader about our vector (in headsmp.S) */
--	emev2_set_boot_vector(__pa(shmobile_secondary_vector));
+-static int sh_pfc_reconfig_pin(struct sh_pfc_pinctrl *pmx, unsigned offset,
+-			       int new_type)
+-{
+-	struct sh_pfc *pfc = pmx->pfc;
+-	int idx = sh_pfc_get_pin_index(pfc, offset);
+-	struct sh_pfc_pin_config *cfg = &pmx->configs[idx];
+-	const struct sh_pfc_pin *pin = &pfc->info->pins[idx];
+-	unsigned int mark = pin->enum_id;
+-	unsigned long flags;
+-	int ret;
 -
- 	arch_send_wakeup_ipi_mask(cpumask_of(cpu));
- 	return 0;
- }
-@@ -87,6 +84,9 @@ static void __init emev2_smp_prepare_cpus(unsigned int max_cpus)
+-	spin_lock_irqsave(&pfc->lock, flags);
+-
+-	switch (cfg->type) {
+-	case PINMUX_TYPE_GPIO:
+-	case PINMUX_TYPE_OUTPUT:
+-	case PINMUX_TYPE_INPUT:
+-	case PINMUX_TYPE_INPUT_PULLUP:
+-	case PINMUX_TYPE_INPUT_PULLDOWN:
+-		break;
+-	default:
+-		ret = -EINVAL;
+-		goto done;
+-	}
+-
+-	ret = sh_pfc_config_mux(pfc, mark, new_type);
+-	if (ret < 0)
+-		goto done;
+-
+-	cfg->type = new_type;
+-
+-done:
+-	spin_unlock_irqrestore(&pfc->lock, flags);
+-
+-	return ret;
+-}
+-
+ static int sh_pfc_gpio_request_enable(struct pinctrl_dev *pctldev,
+ 				      struct pinctrl_gpio_range *range,
+ 				      unsigned offset)
+@@ -216,9 +179,39 @@ static int sh_pfc_gpio_set_direction(struct pinctrl_dev *pctldev,
+ 				     unsigned offset, bool input)
+ {
+ 	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
+-	int type = input ? PINMUX_TYPE_INPUT : PINMUX_TYPE_OUTPUT;
++	struct sh_pfc *pfc = pmx->pfc;
++	int new_type = input ? PINMUX_TYPE_INPUT : PINMUX_TYPE_OUTPUT;
++	int idx = sh_pfc_get_pin_index(pfc, offset);
++	struct sh_pfc_pin_config *cfg = &pmx->configs[idx];
++	const struct sh_pfc_pin *pin = &pfc->info->pins[idx];
++	unsigned int mark = pin->enum_id;
++	unsigned long flags;
++	int ret;
  
- 	scu_enable(scu_base);
- 
-+	/* Tell ROM loader about our vector (in headsmp.S) */
-+	emev2_set_boot_vector(__pa(shmobile_secondary_vector));
+-	return sh_pfc_reconfig_pin(pmx, offset, type);
++	spin_lock_irqsave(&pfc->lock, flags);
 +
- 	/* enable cache coherency on CPU0 */
- 	modify_scu_cpu_psr(0, 3 << (cpu * 8));
++	switch (cfg->type) {
++	case PINMUX_TYPE_GPIO:
++	case PINMUX_TYPE_OUTPUT:
++	case PINMUX_TYPE_INPUT:
++	case PINMUX_TYPE_INPUT_PULLUP:
++	case PINMUX_TYPE_INPUT_PULLDOWN:
++		break;
++	default:
++		ret = -EINVAL;
++		goto done;
++	}
++
++	ret = sh_pfc_config_mux(pfc, mark, new_type);
++	if (ret < 0)
++		goto done;
++
++	cfg->type = new_type;
++
++done:
++	spin_unlock_irqrestore(&pfc->lock, flags);
++
++	return ret;
  }
+ 
+ static const struct pinmux_ops sh_pfc_pinmux_ops = {
 -- 
-1.7.10.4
+1.8.1.5
 
