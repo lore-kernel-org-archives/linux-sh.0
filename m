@@ -1,299 +1,108 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:05:56 +0000
-Subject: [PATCH 060/142] sh-pfc: sh73a0: Add FSI pin groups and functions
-Message-Id: <1363604838-29359-61-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 22:59:33 +0000
+Subject: [PATCH v4 28/88] ARM: shmobile: ap4evb: Register pinctrl mappings for SDHI and MMCIF
+Message-Id: <1363215633-4264-29-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Replace the GPIO-based SDHI and MMCIF pinmux configuration by pinctrl
+mappings
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c |  244 +++++++++++++++++++++++++++++++++++
- 1 file changed, 244 insertions(+)
+ arch/arm/mach-shmobile/board-ap4evb.c | 55 ++++++++++++++++-------------------
+ 1 file changed, 25 insertions(+), 30 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index fad11d7..0d35f7b 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -1846,6 +1846,185 @@ static const struct pinmux_range pinmux_ranges[] = {
- 	{.begin = 288, .end = 309,},
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 0a2b6e4..45f78ca 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -34,6 +34,7 @@
+ #include <linux/i2c.h>
+ #include <linux/i2c/tsc2007.h>
+ #include <linux/io.h>
++#include <linux/pinctrl/machine.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/smsc911x.h>
+@@ -1084,6 +1085,28 @@ static struct i2c_board_info i2c1_devices[] = {
  };
  
-+/* - FSIA ------------------------------------------------------------------- */
-+static const unsigned int fsia_mclk_in_pins[] = {
-+	/* CK */
-+	49,
-+};
-+static const unsigned int fsia_mclk_in_mux[] = {
-+	FSIACK_MARK,
-+};
-+static const unsigned int fsia_mclk_out_pins[] = {
-+	/* OMC */
-+	49,
-+};
-+static const unsigned int fsia_mclk_out_mux[] = {
-+	FSIAOMC_MARK,
-+};
-+static const unsigned int fsia_sclk_in_pins[] = {
-+	/* ILR, IBT */
-+	50, 51,
-+};
-+static const unsigned int fsia_sclk_in_mux[] = {
-+	FSIAILR_MARK, FSIAIBT_MARK,
-+};
-+static const unsigned int fsia_sclk_out_pins[] = {
-+	/* OLR, OBT */
-+	50, 51,
-+};
-+static const unsigned int fsia_sclk_out_mux[] = {
-+	FSIAOLR_MARK, FSIAOBT_MARK,
-+};
-+static const unsigned int fsia_data_in_pins[] = {
-+	/* ISLD */
-+	55,
-+};
-+static const unsigned int fsia_data_in_mux[] = {
-+	FSIAISLD_MARK,
-+};
-+static const unsigned int fsia_data_out_pins[] = {
-+	/* OSLD */
-+	52,
-+};
-+static const unsigned int fsia_data_out_mux[] = {
-+	FSIAOSLD_MARK,
-+};
-+static const unsigned int fsia_spdif_pins[] = {
-+	/* SPDIF */
-+	53,
-+};
-+static const unsigned int fsia_spdif_mux[] = {
-+	FSIASPDIF_MARK,
-+};
-+/* - FSIB ------------------------------------------------------------------- */
-+static const unsigned int fsib_mclk_in_pins[] = {
-+	/* CK */
-+	54,
-+};
-+static const unsigned int fsib_mclk_in_mux[] = {
-+	FSIBCK_MARK,
-+};
-+static const unsigned int fsib_mclk_out_pins[] = {
-+	/* OMC */
-+	54,
-+};
-+static const unsigned int fsib_mclk_out_mux[] = {
-+	FSIBOMC_MARK,
-+};
-+static const unsigned int fsib_sclk_in_pins[] = {
-+	/* ILR, IBT */
-+	37, 36,
-+};
-+static const unsigned int fsib_sclk_in_mux[] = {
-+	FSIBILR_MARK, FSIBIBT_MARK,
-+};
-+static const unsigned int fsib_sclk_out_pins[] = {
-+	/* OLR, OBT */
-+	37, 36,
-+};
-+static const unsigned int fsib_sclk_out_mux[] = {
-+	FSIBOLR_MARK, FSIBOBT_MARK,
-+};
-+static const unsigned int fsib_data_in_pins[] = {
-+	/* ISLD */
-+	39,
-+};
-+static const unsigned int fsib_data_in_mux[] = {
-+	FSIBISLD_MARK,
-+};
-+static const unsigned int fsib_data_out_pins[] = {
-+	/* OSLD */
-+	38,
-+};
-+static const unsigned int fsib_data_out_mux[] = {
-+	FSIBOSLD_MARK,
-+};
-+static const unsigned int fsib_spdif_pins[] = {
-+	/* SPDIF */
-+	53,
-+};
-+static const unsigned int fsib_spdif_mux[] = {
-+	FSIBSPDIF_MARK,
-+};
-+/* - FSIC ------------------------------------------------------------------- */
-+static const unsigned int fsic_mclk_in_pins[] = {
-+	/* CK */
-+	54,
-+};
-+static const unsigned int fsic_mclk_in_mux[] = {
-+	FSICCK_MARK,
-+};
-+static const unsigned int fsic_mclk_out_pins[] = {
-+	/* OMC */
-+	54,
-+};
-+static const unsigned int fsic_mclk_out_mux[] = {
-+	FSICOMC_MARK,
-+};
-+static const unsigned int fsic_sclk_in_pins[] = {
-+	/* ILR, IBT */
-+	46, 45,
-+};
-+static const unsigned int fsic_sclk_in_mux[] = {
-+	FSICILR_MARK, FSICIBT_MARK,
-+};
-+static const unsigned int fsic_sclk_out_pins[] = {
-+	/* OLR, OBT */
-+	46, 45,
-+};
-+static const unsigned int fsic_sclk_out_mux[] = {
-+	FSICOLR_MARK, FSICOBT_MARK,
-+};
-+static const unsigned int fsic_data_in_pins[] = {
-+	/* ISLD */
-+	48,
-+};
-+static const unsigned int fsic_data_in_mux[] = {
-+	FSICISLD_MARK,
-+};
-+static const unsigned int fsic_data_out_pins[] = {
-+	/* OSLD, OSLDT1, OSLDT2, OSLDT3 */
-+	47, 44, 42, 16,
-+};
-+static const unsigned int fsic_data_out_mux[] = {
-+	FSICOSLD_MARK, FSICOSLDT1_MARK, FSICOSLDT2_MARK, FSICOSLDT3_MARK,
-+};
-+static const unsigned int fsic_spdif_0_pins[] = {
-+	/* SPDIF */
-+	53,
-+};
-+static const unsigned int fsic_spdif_0_mux[] = {
-+	PORT53_FSICSPDIF_MARK,
-+};
-+static const unsigned int fsic_spdif_1_pins[] = {
-+	/* SPDIF */
-+	47,
-+};
-+static const unsigned int fsic_spdif_1_mux[] = {
-+	PORT47_FSICSPDIF_MARK,
-+};
-+/* - FSID ------------------------------------------------------------------- */
-+static const unsigned int fsid_sclk_in_pins[] = {
-+	/* ILR, IBT */
-+	46, 45,
-+};
-+static const unsigned int fsid_sclk_in_mux[] = {
-+	FSIDILR_MARK, FSIDIBT_MARK,
-+};
-+static const unsigned int fsid_sclk_out_pins[] = {
-+	/* OLR, OBT */
-+	46, 45,
-+};
-+static const unsigned int fsid_sclk_out_mux[] = {
-+	FSIDOLR_MARK, FSIDOBT_MARK,
-+};
-+static const unsigned int fsid_data_in_pins[] = {
-+	/* ISLD */
-+	48,
-+};
-+static const unsigned int fsid_data_in_mux[] = {
-+	FSIDISLD_MARK,
-+};
- /* - I2C2 ------------------------------------------------------------------- */
- static const unsigned int i2c2_0_pins[] = {
- 	/* SCL, SDA */
-@@ -2333,6 +2512,31 @@ static const unsigned int scifb_ctrl_1_mux[] = {
- };
  
- static const struct sh_pfc_pin_group pinmux_groups[] = {
-+	SH_PFC_PIN_GROUP(fsia_mclk_in),
-+	SH_PFC_PIN_GROUP(fsia_mclk_out),
-+	SH_PFC_PIN_GROUP(fsia_sclk_in),
-+	SH_PFC_PIN_GROUP(fsia_sclk_out),
-+	SH_PFC_PIN_GROUP(fsia_data_in),
-+	SH_PFC_PIN_GROUP(fsia_data_out),
-+	SH_PFC_PIN_GROUP(fsia_spdif),
-+	SH_PFC_PIN_GROUP(fsib_mclk_in),
-+	SH_PFC_PIN_GROUP(fsib_mclk_out),
-+	SH_PFC_PIN_GROUP(fsib_sclk_in),
-+	SH_PFC_PIN_GROUP(fsib_sclk_out),
-+	SH_PFC_PIN_GROUP(fsib_data_in),
-+	SH_PFC_PIN_GROUP(fsib_data_out),
-+	SH_PFC_PIN_GROUP(fsib_spdif),
-+	SH_PFC_PIN_GROUP(fsic_mclk_in),
-+	SH_PFC_PIN_GROUP(fsic_mclk_out),
-+	SH_PFC_PIN_GROUP(fsic_sclk_in),
-+	SH_PFC_PIN_GROUP(fsic_sclk_out),
-+	SH_PFC_PIN_GROUP(fsic_data_in),
-+	SH_PFC_PIN_GROUP(fsic_data_out),
-+	SH_PFC_PIN_GROUP(fsic_spdif_0),
-+	SH_PFC_PIN_GROUP(fsic_spdif_1),
-+	SH_PFC_PIN_GROUP(fsid_sclk_in),
-+	SH_PFC_PIN_GROUP(fsid_sclk_out),
-+	SH_PFC_PIN_GROUP(fsid_data_in),
- 	SH_PFC_PIN_GROUP(i2c2_0),
- 	SH_PFC_PIN_GROUP(i2c2_1),
- 	SH_PFC_PIN_GROUP(i2c2_2),
-@@ -2395,6 +2599,42 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(scifb_ctrl_1),
- };
++static const struct pinctrl_map ap4evb_pinctrl_map[] = {
++	/* MMCIF */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh7372",
++				  "mmc0_data8_0", "mmc0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh7372",
++				  "mmc0_ctrl_0", "mmc0"),
++	/* SDHI0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
++				  "sdhi0_data4", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
++				  "sdhi0_ctrl", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
++				  "sdhi0_cd", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
++				  "sdhi0_wp", "sdhi0"),
++	/* SDHI1 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-sh7372",
++				  "sdhi1_data4", "sdhi1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-sh7372",
++				  "sdhi1_ctrl", "sdhi1"),
++};
++
+ #define GPIO_PORT9CR	IOMEM(0xE6051009)
+ #define GPIO_PORT10CR	IOMEM(0xE605100A)
+ #define USCCR1		IOMEM(0xE6058144)
+@@ -1110,6 +1133,8 @@ static void __init ap4evb_init(void)
+ 	/* External clock source */
+ 	clk_set_rate(&sh7372_dv_clki_clk, 27000000);
  
-+static const char * const fsia_groups[] = {
-+	"fsia_mclk_in",
-+	"fsia_mclk_out",
-+	"fsia_sclk_in",
-+	"fsia_sclk_out",
-+	"fsia_data_in",
-+	"fsia_data_out",
-+	"fsia_spdif",
-+};
-+
-+static const char * const fsib_groups[] = {
-+	"fsib_mclk_in",
-+	"fsib_mclk_out",
-+	"fsib_sclk_in",
-+	"fsib_sclk_out",
-+	"fsib_data_in",
-+	"fsib_data_out",
-+	"fsib_spdif",
-+};
-+
-+static const char * const fsic_groups[] = {
-+	"fsic_mclk_in",
-+	"fsic_mclk_out",
-+	"fsic_sclk_in",
-+	"fsic_sclk_out",
-+	"fsic_data_in",
-+	"fsic_data_out",
-+	"fsic_spdif",
-+};
-+
-+static const char * const fsid_groups[] = {
-+	"fsid_sclk_in",
-+	"fsid_sclk_out",
-+	"fsid_data_in",
-+};
-+
- static const char * const i2c2_groups[] = {
- 	"i2c2_0",
- 	"i2c2_1",
-@@ -2495,6 +2735,10 @@ static const char * const scifb_groups[] = {
- };
++	pinctrl_register_mappings(ap4evb_pinctrl_map,
++				  ARRAY_SIZE(ap4evb_pinctrl_map));
+ 	sh7372_pinmux_init();
  
- static const struct sh_pfc_function pinmux_functions[] = {
-+	SH_PFC_FUNCTION(fsia),
-+	SH_PFC_FUNCTION(fsib),
-+	SH_PFC_FUNCTION(fsic),
-+	SH_PFC_FUNCTION(fsid),
- 	SH_PFC_FUNCTION(i2c2),
- 	SH_PFC_FUNCTION(i2c3),
- 	SH_PFC_FUNCTION(lcd),
+ 	/* enable SCIFA0 */
+@@ -1126,36 +1151,6 @@ static void __init ap4evb_init(void)
+ 	gpio_request_one(34, GPIOF_IN | GPIOF_EXPORT, NULL);
+ 	gpio_request_one(35, GPIOF_IN | GPIOF_EXPORT, NULL);
+ 
+-	/* SDHI0 */
+-	gpio_request(GPIO_FN_SDHICD0, NULL);
+-	gpio_request(GPIO_FN_SDHIWP0, NULL);
+-	gpio_request(GPIO_FN_SDHICMD0, NULL);
+-	gpio_request(GPIO_FN_SDHICLK0, NULL);
+-	gpio_request(GPIO_FN_SDHID0_3, NULL);
+-	gpio_request(GPIO_FN_SDHID0_2, NULL);
+-	gpio_request(GPIO_FN_SDHID0_1, NULL);
+-	gpio_request(GPIO_FN_SDHID0_0, NULL);
+-
+-	/* SDHI1 */
+-	gpio_request(GPIO_FN_SDHICMD1, NULL);
+-	gpio_request(GPIO_FN_SDHICLK1, NULL);
+-	gpio_request(GPIO_FN_SDHID1_3, NULL);
+-	gpio_request(GPIO_FN_SDHID1_2, NULL);
+-	gpio_request(GPIO_FN_SDHID1_1, NULL);
+-	gpio_request(GPIO_FN_SDHID1_0, NULL);
+-
+-	/* MMCIF */
+-	gpio_request(GPIO_FN_MMCD0_0, NULL);
+-	gpio_request(GPIO_FN_MMCD0_1, NULL);
+-	gpio_request(GPIO_FN_MMCD0_2, NULL);
+-	gpio_request(GPIO_FN_MMCD0_3, NULL);
+-	gpio_request(GPIO_FN_MMCD0_4, NULL);
+-	gpio_request(GPIO_FN_MMCD0_5, NULL);
+-	gpio_request(GPIO_FN_MMCD0_6, NULL);
+-	gpio_request(GPIO_FN_MMCD0_7, NULL);
+-	gpio_request(GPIO_FN_MMCCMD0, NULL);
+-	gpio_request(GPIO_FN_MMCCLK0, NULL);
+-
+ 	/* USB enable */
+ 	gpio_request(GPIO_FN_VBUS0_1,    NULL);
+ 	gpio_request(GPIO_FN_IDIN_1_18,  NULL);
 -- 
-1.7.10.4
+1.8.1.5
 
