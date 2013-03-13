@@ -1,37 +1,64 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Fri, 08 Mar 2013 02:07:32 +0000
-Subject: Re: [PATCH v3 00/29] SH pinctrl and pinmux implementation
-Message-Id: <CACRpkdZ+dgtAPEJj-A+nwCKhnuH82oSJWbM-wU7mTFA77uyKBA@mail.gmail.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 22:59:15 +0000
+Subject: [PATCH v4 10/88] sh-pfc: sh73a0: Add USB pin groups and functions
+Message-Id: <1363215633-4264-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1362574370-17889-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1362574370-17889-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-On Fri, Mar 8, 2013 at 12:39 AM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> [Me]
->> - Alter the pinctrl.c file to register the GPIO range from the gpiochip
->>   side of things, essentially taking out pinctrl_add_gpio_range() and
->>   use gpiochip_add_pin_range() from the gpio.c code instead.
->
-> OK, I'll do that for v4. Is pinctrl_add_gpio_range() getting deprecated ?
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
 
-Sort of. We prefer to do it this way for new code, it's using the local
-numbers on both the GPIO and the pinctrl side, which is nice (no
-reference to the global GPIO numberspace!)
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index 76674af..61c682a 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -2909,6 +2909,14 @@ static const unsigned int sdhi2_ctrl_pins[] = {
+ static const unsigned int sdhi2_ctrl_mux[] = {
+ 	SDHICMD2_MARK, SDHICLK2_MARK,
+ };
++/* - USB -------------------------------------------------------------------- */
++static const unsigned int usb_vbus_pins[] = {
++	/* VBUS */
++	0,
++};
++static const unsigned int usb_vbus_mux[] = {
++	VBUS_0_MARK,
++};
+ 
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(bsc_data_0_7),
+@@ -3050,6 +3058,7 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(sdhi2_data1),
+ 	SH_PFC_PIN_GROUP(sdhi2_data4),
+ 	SH_PFC_PIN_GROUP(sdhi2_ctrl),
++	SH_PFC_PIN_GROUP(usb_vbus),
+ };
+ 
+ static const char * const bsc_groups[] = {
+@@ -3259,6 +3268,10 @@ static const char * const sdhi2_groups[] = {
+ 	"sdhi2_ctrl",
+ };
+ 
++static const char * const usb_groups[] = {
++	"usb_vbus",
++};
++
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(bsc),
+ 	SH_PFC_FUNCTION(fsia),
+@@ -3283,6 +3296,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(sdhi0),
+ 	SH_PFC_FUNCTION(sdhi1),
+ 	SH_PFC_FUNCTION(sdhi2),
++	SH_PFC_FUNCTION(usb),
+ };
+ 
+ #define PINMUX_FN_BASE	GPIO_FN_VBUS_0
+-- 
+1.8.1.5
 
->> - Change gpio.c to get rid of the complex code in sh_gpio_to_irq()
->>   by using irqdomain. It'll need a custom mapping function but that makes
->>   it simpler overall. Change all mappings between Linux and hardware
->>   irq numbers to use the irqdomain.
->
-> I plan to split the GPIO handling functions to a separate driver, I'll try to
-> address that then.
-
-OK!
-
-Yours,
-Linus Walleij
