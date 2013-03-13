@@ -1,590 +1,313 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 15 Mar 2013 21:27:51 +0000
-Subject: [PATCH v6 5/7] sh_mobile_ceu_camera: add asynchronous subdevice probing support
-Message-Id: <1363382873-20077-6-git-send-email-g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 22:59:17 +0000
+Subject: [PATCH v4 12/88] sh-pfc: r8a7740: Add LCDC0 and LCDC1 pin groups and functions
+Message-Id: <1363215633-4264-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363382873-20077-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1363382873-20077-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-media@vger.kernel.org
-Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+To: linux-sh@vger.kernel.org
 
-Use the v4l2-async API to support asynchronous subdevice probing,
-including the CSI2 subdevice. Synchronous probing is still supported too.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 276 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 276 insertions(+)
 
-v6: update to the new v4l2-async API
-
- .../platform/soc_camera/sh_mobile_ceu_camera.c     |  136 ++++++++++++-----
- drivers/media/platform/soc_camera/sh_mobile_csi2.c |  162 +++++++++++---------
- include/media/sh_mobile_ceu.h                      |    2 +
- include/media/sh_mobile_csi2.h                     |    2 +-
- 4 files changed, 196 insertions(+), 106 deletions(-)
-
-diff --git a/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c b/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
-index 6539f41..f1ef217 100644
---- a/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
-+++ b/drivers/media/platform/soc_camera/sh_mobile_ceu_camera.c
-@@ -36,6 +36,7 @@
- #include <linux/pm_runtime.h>
- #include <linux/sched.h>
- 
-+#include <media/v4l2-async.h>
- #include <media/v4l2-common.h>
- #include <media/v4l2-dev.h>
- #include <media/soc_camera.h>
-@@ -97,6 +98,10 @@ struct sh_mobile_ceu_buffer {
- struct sh_mobile_ceu_dev {
- 	struct soc_camera_host ici;
- 	struct soc_camera_device *icd;
-+	/* Asynchronous CSI2 linking */
-+	struct v4l2_async_subdev *csi2_asd;
-+	struct v4l2_subdev *csi2_sd;
-+	/* Synchronous probing compatibility */
- 	struct platform_device *csi2_pdev;
- 
- 	unsigned int irq;
-@@ -187,7 +192,6 @@ static int sh_mobile_ceu_soft_reset(struct sh_mobile_ceu_dev *pcdev)
- 		udelay(1);
- 	}
- 
--
- 	if (2 != success) {
- 		dev_warn(icd->pdev, "soft reset time out\n");
- 		return -EIO;
-@@ -536,16 +540,29 @@ static struct v4l2_subdev *find_csi2(struct sh_mobile_ceu_dev *pcdev)
- {
- 	struct v4l2_subdev *sd;
- 
--	if (!pcdev->csi2_pdev)
--		return NULL;
-+	if (pcdev->csi2_sd)
-+		return pcdev->csi2_sd;
- 
--	v4l2_device_for_each_subdev(sd, &pcdev->ici.v4l2_dev)
--		if (&pcdev->csi2_pdev->dev = v4l2_get_subdevdata(sd))
--			return sd;
-+	if (pcdev->csi2_asd) {
-+		char name[] = "sh-mobile-csi2";
-+		v4l2_device_for_each_subdev(sd, &pcdev->ici.v4l2_dev)
-+			if (!strncmp(name, sd->name, sizeof(name) - 1)) {
-+				pcdev->csi2_sd = sd;
-+				return sd;
-+			}
-+	}
- 
- 	return NULL;
- }
- 
-+static struct v4l2_subdev *csi2_subdev(struct sh_mobile_ceu_dev *pcdev,
-+				       struct soc_camera_device *icd)
-+{
-+	struct v4l2_subdev *sd = pcdev->csi2_sd;
-+
-+	return sd && sd->grp_id = soc_camera_grp_id(icd) ? sd : NULL;
-+}
-+
- /* Called with .host_lock held */
- static int sh_mobile_ceu_add_device(struct soc_camera_device *icd)
- {
-@@ -583,8 +600,13 @@ static int sh_mobile_ceu_add_device(struct soc_camera_device *icd)
- 	 * -ENODEV is special: either csi2_sd = NULL or the CSI-2 driver
- 	 * has not found this soc-camera device among its clients
- 	 */
--	if (ret = -ENODEV && csi2_sd)
--		csi2_sd->grp_id = 0;
-+	if (csi2_sd) {
-+		if (ret = -ENODEV)
-+			csi2_sd->grp_id = 0;
-+		else
-+			dev_info(icd->parent, "Using CSI-2 interface\n");
-+	}
-+
- 	pcdev->icd = icd;
- 
- 	return 0;
-@@ -600,8 +622,7 @@ static void sh_mobile_ceu_remove_device(struct soc_camera_device *icd)
- 	BUG_ON(icd != pcdev->icd);
- 
- 	v4l2_subdev_call(csi2_sd, core, s_power, 0);
--	if (csi2_sd)
--		csi2_sd->grp_id = 0;
-+
- 	/* disable capture, disable interrupts */
- 	ceu_write(pcdev, CEIER, 0);
- 	sh_mobile_ceu_soft_reset(pcdev);
-@@ -707,7 +728,7 @@ static void sh_mobile_ceu_set_rect(struct soc_camera_device *icd)
- 	}
- 
- 	/* CSI2 special configuration */
--	if (pcdev->csi2_pdev) {
-+	if (csi2_subdev(pcdev, icd)) {
- 		in_width = ((in_width - 2) * 2);
- 		left_offset *= 2;
- 	}
-@@ -764,13 +785,7 @@ static void capture_restore(struct sh_mobile_ceu_dev *pcdev, u32 capsr)
- static struct v4l2_subdev *find_bus_subdev(struct sh_mobile_ceu_dev *pcdev,
- 					   struct soc_camera_device *icd)
- {
--	if (pcdev->csi2_pdev) {
--		struct v4l2_subdev *csi2_sd = find_csi2(pcdev);
--		if (csi2_sd && csi2_sd->grp_id = soc_camera_grp_id(icd))
--			return csi2_sd;
--	}
--
--	return soc_camera_to_subdev(icd);
-+	return csi2_subdev(pcdev, icd) ? : soc_camera_to_subdev(icd);
- }
- 
- #define CEU_BUS_FLAGS (V4L2_MBUS_MASTER |	\
-@@ -874,7 +889,7 @@ static int sh_mobile_ceu_set_bus_param(struct soc_camera_device *icd)
- 	value |= common_flags & V4L2_MBUS_VSYNC_ACTIVE_LOW ? 1 << 1 : 0;
- 	value |= common_flags & V4L2_MBUS_HSYNC_ACTIVE_LOW ? 1 << 0 : 0;
- 
--	if (pcdev->csi2_pdev) /* CSI2 mode */
-+	if (csi2_subdev(pcdev, icd)) /* CSI2 mode */
- 		value |= 3 << 12;
- 	else if (pcdev->is_16bit)
- 		value |= 1 << 12;
-@@ -1053,7 +1068,7 @@ static int sh_mobile_ceu_get_formats(struct soc_camera_device *icd, unsigned int
- 		return 0;
- 	}
- 
--	if (!pcdev->pdata || !pcdev->pdata->csi2) {
-+	if (!csi2_subdev(pcdev, icd)) {
- 		/* Are there any restrictions in the CSI-2 case? */
- 		ret = sh_mobile_ceu_try_bus_param(icd, fmt->bits_per_sample);
- 		if (ret < 0)
-@@ -2080,7 +2095,7 @@ static int sh_mobile_ceu_probe(struct platform_device *pdev)
- 	struct resource *res;
- 	void __iomem *base;
- 	unsigned int irq;
--	int err = 0;
-+	int err, i;
- 	struct bus_wait wait = {
- 		.completion = COMPLETION_INITIALIZER_ONSTACK(wait.completion),
- 		.notifier.notifier_call = bus_notify,
-@@ -2184,31 +2199,60 @@ static int sh_mobile_ceu_probe(struct platform_device *pdev)
- 		goto exit_free_clk;
- 	}
- 
--	err = soc_camera_host_register(&pcdev->ici);
--	if (err)
--		goto exit_free_ctx;
-+	if (pcdev->pdata && pcdev->pdata->asd_sizes) {
-+		struct v4l2_async_subdev **asd;
-+		char name[] = "sh-mobile-csi2";
-+		int j;
-+
-+		/*
-+		 * CSI2 interfacing: several groups can use CSI2, pick up the
-+		 * first one
-+		 */
-+		asd = pcdev->pdata->asd;
-+		for (j = 0; pcdev->pdata->asd_sizes[j]; j++) {
-+			for (i = 0; i < pcdev->pdata->asd_sizes[j]; i++, asd++) {
-+				dev_info(&pdev->dev, "%s(): subdev #%d, type %u\n",
-+					 __func__, i, (*asd)->hw.bus_type);
-+				if ((*asd)->hw.bus_type = V4L2_ASYNC_BUS_PLATFORM &&
-+				    !strncmp(name, (*asd)->hw.match.platform.name,
-+					     sizeof(name) - 1)) {
-+					pcdev->csi2_asd = *asd;
-+					break;
-+				}
-+			}
-+			if (pcdev->csi2_asd)
-+				break;
-+		}
-+
-+		pcdev->ici.asd = pcdev->pdata->asd;
-+		pcdev->ici.asd_sizes = pcdev->pdata->asd_sizes;
-+	}
- 
--	/* CSI2 interfacing */
-+	/* Legacy CSI2 interfacing */
- 	csi2 = pcdev->pdata ? pcdev->pdata->csi2 : NULL;
- 	if (csi2) {
-+		/*
-+		 * TODO: remove this once all users are converted to
-+		 * asynchronous CSI2 probing. If it has to be kept, csi2
-+		 * platform device resources have to be added, using
-+		 * platform_device_add_resources()
-+		 */
- 		struct platform_device *csi2_pdev  			platform_device_alloc("sh-mobile-csi2", csi2->id);
- 		struct sh_csi2_pdata *csi2_pdata = csi2->platform_data;
- 
- 		if (!csi2_pdev) {
- 			err = -ENOMEM;
--			goto exit_host_unregister;
-+			goto exit_free_ctx;
- 		}
- 
- 		pcdev->csi2_pdev		= csi2_pdev;
- 
--		err = platform_device_add_data(csi2_pdev, csi2_pdata, sizeof(*csi2_pdata));
-+		err = platform_device_add_data(csi2_pdev, csi2_pdata,
-+					       sizeof(*csi2_pdata));
- 		if (err < 0)
- 			goto exit_pdev_put;
- 
--		csi2_pdata			= csi2_pdev->dev.platform_data;
--		csi2_pdata->v4l2_dev		= &pcdev->ici.v4l2_dev;
--
- 		csi2_pdev->resource		= csi2->resource;
- 		csi2_pdev->num_resources	= csi2->num_resources;
- 
-@@ -2250,17 +2294,36 @@ static int sh_mobile_ceu_probe(struct platform_device *pdev)
- 			err = -ENODEV;
- 			goto exit_pdev_unregister;
- 		}
-+
-+		pcdev->csi2_sd = platform_get_drvdata(csi2_pdev);
-+	}
-+
-+	err = soc_camera_host_register(&pcdev->ici);
-+	if (err)
-+		goto exit_csi2_unregister;
-+
-+	if (csi2) {
-+		err = v4l2_device_register_subdev(&pcdev->ici.v4l2_dev,
-+						  pcdev->csi2_sd);
-+		dev_dbg(&pdev->dev, "%s(): ret(register_subdev) = %d\n",
-+			__func__, err);
-+		if (err < 0)
-+			goto exit_host_unregister;
- 	}
- 
- 	return 0;
- 
--exit_pdev_unregister:
--	platform_device_del(pcdev->csi2_pdev);
--exit_pdev_put:
--	pcdev->csi2_pdev->resource = NULL;
--	platform_device_put(pcdev->csi2_pdev);
- exit_host_unregister:
- 	soc_camera_host_unregister(&pcdev->ici);
-+exit_csi2_unregister:
-+	if (csi2) {
-+		module_put(pcdev->csi2_pdev->dev.driver->owner);
-+exit_pdev_unregister:
-+		platform_device_del(pcdev->csi2_pdev);
-+exit_pdev_put:
-+		pcdev->csi2_pdev->resource = NULL;
-+		platform_device_put(pcdev->csi2_pdev);
-+	}
- exit_free_ctx:
- 	vb2_dma_contig_cleanup_ctx(pcdev->alloc_ctx);
- exit_free_clk:
-@@ -2320,6 +2383,7 @@ MODULE_DEVICE_TABLE(of, sh_mobile_ceu_of_match);
- static struct platform_driver sh_mobile_ceu_driver = {
- 	.driver 	= {
- 		.name	= "sh_mobile_ceu",
-+		.owner	= THIS_MODULE,
- 		.pm	= &sh_mobile_ceu_dev_pm_ops,
- 		.of_match_table = sh_mobile_ceu_of_match,
- 	},
-@@ -2345,5 +2409,5 @@ module_exit(sh_mobile_ceu_exit);
- MODULE_DESCRIPTION("SuperH Mobile CEU driver");
- MODULE_AUTHOR("Magnus Damm");
- MODULE_LICENSE("GPL");
--MODULE_VERSION("0.0.6");
-+MODULE_VERSION("0.1.0");
- MODULE_ALIAS("platform:sh_mobile_ceu");
-diff --git a/drivers/media/platform/soc_camera/sh_mobile_csi2.c b/drivers/media/platform/soc_camera/sh_mobile_csi2.c
-index 09cb4fc..55de542 100644
---- a/drivers/media/platform/soc_camera/sh_mobile_csi2.c
-+++ b/drivers/media/platform/soc_camera/sh_mobile_csi2.c
-@@ -36,14 +36,16 @@
- 
- struct sh_csi2 {
- 	struct v4l2_subdev		subdev;
--	struct list_head		list;
- 	unsigned int			irq;
- 	unsigned long			mipi_flags;
- 	void __iomem			*base;
- 	struct platform_device		*pdev;
- 	struct sh_csi2_client_config	*client;
-+	struct v4l2_async_subdev_list	asdl;
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index de13348..e16ec10 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -1658,6 +1658,277 @@ static struct sh_pfc_pin pinmux_pins[] = {
+ 	GPIO_PORT_ALL(),
  };
  
-+static void sh_csi2_hwinit(struct sh_csi2 *priv);
++/* - LCD0 ------------------------------------------------------------------- */
++static const unsigned int lcd0_data8_pins[] = {
++	/* D[0:7] */
++	58, 57, 56, 55, 54, 53, 52, 51,
++};
++static const unsigned int lcd0_data8_mux[] = {
++	LCD0_D0_MARK, LCD0_D1_MARK, LCD0_D2_MARK, LCD0_D3_MARK,
++	LCD0_D4_MARK, LCD0_D5_MARK, LCD0_D6_MARK, LCD0_D7_MARK,
++};
++static const unsigned int lcd0_data9_pins[] = {
++	/* D[0:8] */
++	58, 57, 56, 55, 54, 53, 52, 51,
++	50,
++};
++static const unsigned int lcd0_data9_mux[] = {
++	LCD0_D0_MARK, LCD0_D1_MARK, LCD0_D2_MARK, LCD0_D3_MARK,
++	LCD0_D4_MARK, LCD0_D5_MARK, LCD0_D6_MARK, LCD0_D7_MARK,
++	LCD0_D8_MARK,
++};
++static const unsigned int lcd0_data12_pins[] = {
++	/* D[0:11] */
++	58, 57, 56, 55, 54, 53, 52, 51,
++	50, 49, 48, 47,
++};
++static const unsigned int lcd0_data12_mux[] = {
++	LCD0_D0_MARK, LCD0_D1_MARK, LCD0_D2_MARK, LCD0_D3_MARK,
++	LCD0_D4_MARK, LCD0_D5_MARK, LCD0_D6_MARK, LCD0_D7_MARK,
++	LCD0_D8_MARK, LCD0_D9_MARK, LCD0_D10_MARK, LCD0_D11_MARK,
++};
++static const unsigned int lcd0_data16_pins[] = {
++	/* D[0:15] */
++	58, 57, 56, 55, 54, 53, 52, 51,
++	50, 49, 48, 47, 46, 45, 44, 43,
++};
++static const unsigned int lcd0_data16_mux[] = {
++	LCD0_D0_MARK, LCD0_D1_MARK, LCD0_D2_MARK, LCD0_D3_MARK,
++	LCD0_D4_MARK, LCD0_D5_MARK, LCD0_D6_MARK, LCD0_D7_MARK,
++	LCD0_D8_MARK, LCD0_D9_MARK, LCD0_D10_MARK, LCD0_D11_MARK,
++	LCD0_D12_MARK, LCD0_D13_MARK, LCD0_D14_MARK, LCD0_D15_MARK,
++};
++static const unsigned int lcd0_data18_pins[] = {
++	/* D[0:17] */
++	58, 57, 56, 55, 54, 53, 52, 51,
++	50, 49, 48, 47, 46, 45, 44, 43,
++	42, 41,
++};
++static const unsigned int lcd0_data18_mux[] = {
++	LCD0_D0_MARK, LCD0_D1_MARK, LCD0_D2_MARK, LCD0_D3_MARK,
++	LCD0_D4_MARK, LCD0_D5_MARK, LCD0_D6_MARK, LCD0_D7_MARK,
++	LCD0_D8_MARK, LCD0_D9_MARK, LCD0_D10_MARK, LCD0_D11_MARK,
++	LCD0_D12_MARK, LCD0_D13_MARK, LCD0_D14_MARK, LCD0_D15_MARK,
++	LCD0_D16_MARK, LCD0_D17_MARK,
++};
++static const unsigned int lcd0_data24_0_pins[] = {
++	/* D[0:23] */
++	58, 57, 56, 55, 54, 53, 52, 51,
++	50, 49, 48, 47, 46, 45, 44, 43,
++	42, 41, 40, 4, 3, 2, 0, 1,
++};
++static const unsigned int lcd0_data24_0_mux[] = {
++	LCD0_D0_MARK, LCD0_D1_MARK, LCD0_D2_MARK, LCD0_D3_MARK,
++	LCD0_D4_MARK, LCD0_D5_MARK, LCD0_D6_MARK, LCD0_D7_MARK,
++	LCD0_D8_MARK, LCD0_D9_MARK, LCD0_D10_MARK, LCD0_D11_MARK,
++	LCD0_D12_MARK, LCD0_D13_MARK, LCD0_D14_MARK, LCD0_D15_MARK,
++	LCD0_D16_MARK, LCD0_D17_MARK, LCD0_D18_PORT40_MARK, LCD0_D19_PORT4_MARK,
++	LCD0_D20_PORT3_MARK, LCD0_D21_PORT2_MARK, LCD0_D22_PORT0_MARK,
++	LCD0_D23_PORT1_MARK,
++};
++static const unsigned int lcd0_data24_1_pins[] = {
++	/* D[0:23] */
++	58, 57, 56, 55, 54, 53, 52, 51,
++	50, 49, 48, 47, 46, 45, 44, 43,
++	42, 41, 163, 162, 161, 158, 160, 159,
++};
++static const unsigned int lcd0_data24_1_mux[] = {
++	LCD0_D0_MARK, LCD0_D1_MARK, LCD0_D2_MARK, LCD0_D3_MARK,
++	LCD0_D4_MARK, LCD0_D5_MARK, LCD0_D6_MARK, LCD0_D7_MARK,
++	LCD0_D8_MARK, LCD0_D9_MARK, LCD0_D10_MARK, LCD0_D11_MARK,
++	LCD0_D16_MARK, LCD0_D17_MARK, LCD0_D18_PORT163_MARK,
++	LCD0_D19_PORT162_MARK, LCD0_D20_PORT161_MARK, LCD0_D21_PORT158_MARK,
++	LCD0_D22_PORT160_MARK, LCD0_D23_PORT159_MARK,
++};
++static const unsigned int lcd0_display_pins[] = {
++	/* DON, VCPWC, VEPWC */
++	61, 59, 60,
++};
++static const unsigned int lcd0_display_mux[] = {
++	LCD0_DON_MARK, LCD0_VCPWC_MARK, LCD0_VEPWC_MARK,
++};
++static const unsigned int lcd0_lclk_0_pins[] = {
++	/* LCLK */
++	102,
++};
++static const unsigned int lcd0_lclk_0_mux[] = {
++	LCD0_LCLK_PORT102_MARK,
++};
++static const unsigned int lcd0_lclk_1_pins[] = {
++	/* LCLK */
++	165,
++};
++static const unsigned int lcd0_lclk_1_mux[] = {
++	LCD0_LCLK_PORT165_MARK,
++};
++static const unsigned int lcd0_sync_pins[] = {
++	/* VSYN, HSYN, DCK, DISP */
++	63, 64, 62, 65,
++};
++static const unsigned int lcd0_sync_mux[] = {
++	LCD0_VSYN_MARK, LCD0_HSYN_MARK, LCD0_DCK_MARK, LCD0_DISP_MARK,
++};
++static const unsigned int lcd0_sys_pins[] = {
++	/* CS, WR, RD, RS */
++	64, 62, 164, 65,
++};
++static const unsigned int lcd0_sys_mux[] = {
++	LCD0_CS_MARK, LCD0_WR_MARK, LCD0_RD_MARK, LCD0_RS_MARK,
++};
++/* - LCD1 ------------------------------------------------------------------- */
++static const unsigned int lcd1_data8_pins[] = {
++	/* D[0:7] */
++	4, 3, 2, 1, 0, 91, 92, 23,
++};
++static const unsigned int lcd1_data8_mux[] = {
++	LCD1_D0_MARK, LCD1_D1_MARK, LCD1_D2_MARK, LCD1_D3_MARK,
++	LCD1_D4_MARK, LCD1_D5_MARK, LCD1_D6_MARK, LCD1_D7_MARK,
++};
++static const unsigned int lcd1_data9_pins[] = {
++	/* D[0:8] */
++	4, 3, 2, 1, 0, 91, 92, 23,
++	93,
++};
++static const unsigned int lcd1_data9_mux[] = {
++	LCD1_D0_MARK, LCD1_D1_MARK, LCD1_D2_MARK, LCD1_D3_MARK,
++	LCD1_D4_MARK, LCD1_D5_MARK, LCD1_D6_MARK, LCD1_D7_MARK,
++	LCD1_D8_MARK,
++};
++static const unsigned int lcd1_data12_pins[] = {
++	/* D[0:12] */
++	4, 3, 2, 1, 0, 91, 92, 23,
++	93, 94, 21, 201,
++};
++static const unsigned int lcd1_data12_mux[] = {
++	LCD1_D0_MARK, LCD1_D1_MARK, LCD1_D2_MARK, LCD1_D3_MARK,
++	LCD1_D4_MARK, LCD1_D5_MARK, LCD1_D6_MARK, LCD1_D7_MARK,
++	LCD1_D8_MARK, LCD1_D9_MARK, LCD1_D10_MARK, LCD1_D11_MARK,
++};
++static const unsigned int lcd1_data16_pins[] = {
++	/* D[0:15] */
++	4, 3, 2, 1, 0, 91, 92, 23,
++	93, 94, 21, 201, 200, 199, 196, 195,
++};
++static const unsigned int lcd1_data16_mux[] = {
++	LCD1_D0_MARK, LCD1_D1_MARK, LCD1_D2_MARK, LCD1_D3_MARK,
++	LCD1_D4_MARK, LCD1_D5_MARK, LCD1_D6_MARK, LCD1_D7_MARK,
++	LCD1_D8_MARK, LCD1_D9_MARK, LCD1_D10_MARK, LCD1_D11_MARK,
++	LCD1_D12_MARK, LCD1_D13_MARK, LCD1_D14_MARK, LCD1_D15_MARK,
++};
++static const unsigned int lcd1_data18_pins[] = {
++	/* D[0:17] */
++	4, 3, 2, 1, 0, 91, 92, 23,
++	93, 94, 21, 201, 200, 199, 196, 195,
++	194, 193,
++};
++static const unsigned int lcd1_data18_mux[] = {
++	LCD1_D0_MARK, LCD1_D1_MARK, LCD1_D2_MARK, LCD1_D3_MARK,
++	LCD1_D4_MARK, LCD1_D5_MARK, LCD1_D6_MARK, LCD1_D7_MARK,
++	LCD1_D8_MARK, LCD1_D9_MARK, LCD1_D10_MARK, LCD1_D11_MARK,
++	LCD1_D12_MARK, LCD1_D13_MARK, LCD1_D14_MARK, LCD1_D15_MARK,
++	LCD1_D16_MARK, LCD1_D17_MARK,
++};
++static const unsigned int lcd1_data24_pins[] = {
++	/* D[0:23] */
++	4, 3, 2, 1, 0, 91, 92, 23,
++	93, 94, 21, 201, 200, 199, 196, 195,
++	194, 193, 198, 197, 75, 74, 15, 14,
++};
++static const unsigned int lcd1_data24_mux[] = {
++	LCD1_D0_MARK, LCD1_D1_MARK, LCD1_D2_MARK, LCD1_D3_MARK,
++	LCD1_D4_MARK, LCD1_D5_MARK, LCD1_D6_MARK, LCD1_D7_MARK,
++	LCD1_D8_MARK, LCD1_D9_MARK, LCD1_D10_MARK, LCD1_D11_MARK,
++	LCD1_D12_MARK, LCD1_D13_MARK, LCD1_D14_MARK, LCD1_D15_MARK,
++	LCD1_D16_MARK, LCD1_D17_MARK, LCD1_D18_MARK, LCD1_D19_MARK,
++	LCD1_D20_MARK, LCD1_D21_MARK, LCD1_D22_MARK, LCD1_D23_MARK,
++};
++static const unsigned int lcd1_display_pins[] = {
++	/* DON, VCPWC, VEPWC */
++	100, 5, 6,
++};
++static const unsigned int lcd1_display_mux[] = {
++	LCD1_DON_MARK, LCD1_VCPWC_MARK, LCD1_VEPWC_MARK,
++};
++static const unsigned int lcd1_lclk_pins[] = {
++	/* LCLK */
++	40,
++};
++static const unsigned int lcd1_lclk_mux[] = {
++	LCD1_LCLK_MARK,
++};
++static const unsigned int lcd1_sync_pins[] = {
++	/* VSYN, HSYN, DCK, DISP */
++	98, 97, 99, 12,
++};
++static const unsigned int lcd1_sync_mux[] = {
++	LCD1_VSYN_MARK, LCD1_HSYN_MARK, LCD1_DCK_MARK, LCD1_DISP_MARK,
++};
++static const unsigned int lcd1_sys_pins[] = {
++	/* CS, WR, RD, RS */
++	97, 99, 13, 12,
++};
++static const unsigned int lcd1_sys_mux[] = {
++	LCD1_CS_MARK, LCD1_WR_MARK, LCD1_RD_MARK, LCD1_RS_MARK,
++};
 +
- static int sh_csi2_try_fmt(struct v4l2_subdev *sd,
- 			   struct v4l2_mbus_framefmt *mf)
- {
-@@ -132,10 +134,58 @@ static int sh_csi2_s_fmt(struct v4l2_subdev *sd,
- static int sh_csi2_g_mbus_config(struct v4l2_subdev *sd,
- 				 struct v4l2_mbus_config *cfg)
- {
--	cfg->flags = V4L2_MBUS_PCLK_SAMPLE_RISING |
--		V4L2_MBUS_HSYNC_ACTIVE_HIGH | V4L2_MBUS_VSYNC_ACTIVE_HIGH |
--		V4L2_MBUS_MASTER | V4L2_MBUS_DATA_ACTIVE_HIGH;
--	cfg->type = V4L2_MBUS_PARALLEL;
-+	struct sh_csi2 *priv = container_of(sd, struct sh_csi2, subdev);
++static const struct sh_pfc_pin_group pinmux_groups[] = {
++	SH_PFC_PIN_GROUP(lcd0_data8),
++	SH_PFC_PIN_GROUP(lcd0_data9),
++	SH_PFC_PIN_GROUP(lcd0_data12),
++	SH_PFC_PIN_GROUP(lcd0_data16),
++	SH_PFC_PIN_GROUP(lcd0_data18),
++	SH_PFC_PIN_GROUP(lcd0_data24_0),
++	SH_PFC_PIN_GROUP(lcd0_data24_1),
++	SH_PFC_PIN_GROUP(lcd0_display),
++	SH_PFC_PIN_GROUP(lcd0_lclk_0),
++	SH_PFC_PIN_GROUP(lcd0_lclk_1),
++	SH_PFC_PIN_GROUP(lcd0_sync),
++	SH_PFC_PIN_GROUP(lcd0_sys),
++	SH_PFC_PIN_GROUP(lcd1_data8),
++	SH_PFC_PIN_GROUP(lcd1_data9),
++	SH_PFC_PIN_GROUP(lcd1_data12),
++	SH_PFC_PIN_GROUP(lcd1_data16),
++	SH_PFC_PIN_GROUP(lcd1_data18),
++	SH_PFC_PIN_GROUP(lcd1_data24),
++	SH_PFC_PIN_GROUP(lcd1_display),
++	SH_PFC_PIN_GROUP(lcd1_lclk),
++	SH_PFC_PIN_GROUP(lcd1_sync),
++	SH_PFC_PIN_GROUP(lcd1_sys),
++};
 +
-+	if (!priv->mipi_flags) {
-+		struct soc_camera_device *icd = v4l2_get_subdev_hostdata(sd);
-+		struct v4l2_subdev *client_sd = soc_camera_to_subdev(icd);
-+		struct sh_csi2_pdata *pdata = priv->pdev->dev.platform_data;
-+		unsigned long common_flags, csi2_flags;
-+		struct v4l2_mbus_config client_cfg = {.type = V4L2_MBUS_CSI2,};
-+		int ret;
++static const char * const lcd0_groups[] = {
++	"lcd0_data8",
++	"lcd0_data9",
++	"lcd0_data12",
++	"lcd0_data16",
++	"lcd0_data18",
++	"lcd0_data24_0",
++	"lcd0_data24_1",
++	"lcd0_display",
++	"lcd0_lclk_0",
++	"lcd0_lclk_1",
++	"lcd0_sync",
++	"lcd0_sys",
++};
 +
-+		/* Check if we can support this camera */
-+		csi2_flags = V4L2_MBUS_CSI2_CONTINUOUS_CLOCK |
-+			V4L2_MBUS_CSI2_1_LANE;
++static const char * const lcd1_groups[] = {
++	"lcd1_data8",
++	"lcd1_data9",
++	"lcd1_data12",
++	"lcd1_data16",
++	"lcd1_data18",
++	"lcd1_data24",
++	"lcd1_display",
++	"lcd1_lclk",
++	"lcd1_sync",
++	"lcd1_sys",
++};
 +
-+		switch (pdata->type) {
-+		case SH_CSI2C:
-+			if (priv->client->lanes != 1)
-+				csi2_flags |= V4L2_MBUS_CSI2_2_LANE;
-+			break;
-+		case SH_CSI2I:
-+			switch (priv->client->lanes) {
-+			default:
-+				csi2_flags |= V4L2_MBUS_CSI2_4_LANE;
-+			case 3:
-+				csi2_flags |= V4L2_MBUS_CSI2_3_LANE;
-+			case 2:
-+				csi2_flags |= V4L2_MBUS_CSI2_2_LANE;
-+			}
-+		}
++static const struct sh_pfc_function pinmux_functions[] = {
++	SH_PFC_FUNCTION(lcd0),
++	SH_PFC_FUNCTION(lcd1),
++};
 +
-+		ret = v4l2_subdev_call(client_sd, video, g_mbus_config, &client_cfg);
-+		if (ret = -ENOIOCTLCMD)
-+			common_flags = csi2_flags;
-+		else if (!ret)
-+			common_flags = soc_mbus_config_compatible(&client_cfg,
-+								  csi2_flags);
-+		else
-+			common_flags = 0;
+ #define PINMUX_FN_BASE	ARRAY_SIZE(pinmux_pins)
+ 
+ static const struct pinmux_func pinmux_func_gpios[] = {
+@@ -2596,6 +2867,11 @@ const struct sh_pfc_soc_info r8a7740_pinmux_info = {
+ 
+ 	.pins		= pinmux_pins,
+ 	.nr_pins	= ARRAY_SIZE(pinmux_pins),
++	.groups		= pinmux_groups,
++	.nr_groups	= ARRAY_SIZE(pinmux_groups),
++	.functions	= pinmux_functions,
++	.nr_functions	= ARRAY_SIZE(pinmux_functions),
 +
-+		if (!common_flags)
-+			return -EINVAL;
-+
-+		/* All good: camera MIPI configuration supported */
-+		priv->mipi_flags = common_flags;
-+	}
-+
-+	if (cfg) {
-+		cfg->flags = V4L2_MBUS_PCLK_SAMPLE_RISING |
-+			V4L2_MBUS_HSYNC_ACTIVE_HIGH | V4L2_MBUS_VSYNC_ACTIVE_HIGH |
-+			V4L2_MBUS_MASTER | V4L2_MBUS_DATA_ACTIVE_HIGH;
-+		cfg->type = V4L2_MBUS_PARALLEL;
-+	}
+ 	.func_gpios	= pinmux_func_gpios,
+ 	.nr_func_gpios	= ARRAY_SIZE(pinmux_func_gpios),
  
- 	return 0;
- }
-@@ -146,8 +196,17 @@ static int sh_csi2_s_mbus_config(struct v4l2_subdev *sd,
- 	struct sh_csi2 *priv = container_of(sd, struct sh_csi2, subdev);
- 	struct soc_camera_device *icd = v4l2_get_subdev_hostdata(sd);
- 	struct v4l2_subdev *client_sd = soc_camera_to_subdev(icd);
--	struct v4l2_mbus_config client_cfg = {.type = V4L2_MBUS_CSI2,
--					      .flags = priv->mipi_flags};
-+	struct v4l2_mbus_config client_cfg = {.type = V4L2_MBUS_CSI2,};
-+	int ret = sh_csi2_g_mbus_config(sd, NULL);
-+
-+	if (ret < 0)
-+		return ret;
-+
-+	pm_runtime_get_sync(&priv->pdev->dev);
-+
-+	sh_csi2_hwinit(priv);
-+
-+	client_cfg.flags = priv->mipi_flags;
- 
- 	return v4l2_subdev_call(client_sd, video, s_mbus_config, &client_cfg);
- }
-@@ -202,19 +261,19 @@ static void sh_csi2_hwinit(struct sh_csi2 *priv)
- 
- static int sh_csi2_client_connect(struct sh_csi2 *priv)
- {
--	struct sh_csi2_pdata *pdata = priv->pdev->dev.platform_data;
--	struct soc_camera_device *icd = v4l2_get_subdev_hostdata(&priv->subdev);
--	struct v4l2_subdev *client_sd = soc_camera_to_subdev(icd);
- 	struct device *dev = v4l2_get_subdevdata(&priv->subdev);
--	struct v4l2_mbus_config cfg;
--	unsigned long common_flags, csi2_flags;
--	int i, ret;
-+	struct sh_csi2_pdata *pdata = dev->platform_data;
-+	struct soc_camera_device *icd = v4l2_get_subdev_hostdata(&priv->subdev);
-+	int i;
- 
- 	if (priv->client)
- 		return -EBUSY;
- 
- 	for (i = 0; i < pdata->num_clients; i++)
--		if (&pdata->clients[i].pdev->dev = icd->pdev)
-+		if ((pdata->clients[i].pdev &&
-+		     &pdata->clients[i].pdev->dev = icd->pdev) ||
-+		    (icd->control &&
-+		     strcmp(pdata->clients[i].name, dev_name(icd->control))))
- 			break;
- 
- 	dev_dbg(dev, "%s(%p): found #%d\n", __func__, dev, i);
-@@ -222,46 +281,8 @@ static int sh_csi2_client_connect(struct sh_csi2 *priv)
- 	if (i = pdata->num_clients)
- 		return -ENODEV;
- 
--	/* Check if we can support this camera */
--	csi2_flags = V4L2_MBUS_CSI2_CONTINUOUS_CLOCK | V4L2_MBUS_CSI2_1_LANE;
--
--	switch (pdata->type) {
--	case SH_CSI2C:
--		if (pdata->clients[i].lanes != 1)
--			csi2_flags |= V4L2_MBUS_CSI2_2_LANE;
--		break;
--	case SH_CSI2I:
--		switch (pdata->clients[i].lanes) {
--		default:
--			csi2_flags |= V4L2_MBUS_CSI2_4_LANE;
--		case 3:
--			csi2_flags |= V4L2_MBUS_CSI2_3_LANE;
--		case 2:
--			csi2_flags |= V4L2_MBUS_CSI2_2_LANE;
--		}
--	}
--
--	cfg.type = V4L2_MBUS_CSI2;
--	ret = v4l2_subdev_call(client_sd, video, g_mbus_config, &cfg);
--	if (ret = -ENOIOCTLCMD)
--		common_flags = csi2_flags;
--	else if (!ret)
--		common_flags = soc_mbus_config_compatible(&cfg,
--							  csi2_flags);
--	else
--		common_flags = 0;
--
--	if (!common_flags)
--		return -EINVAL;
--
--	/* All good: camera MIPI configuration supported */
--	priv->mipi_flags = common_flags;
- 	priv->client = pdata->clients + i;
- 
--	pm_runtime_get_sync(dev);
--
--	sh_csi2_hwinit(priv);
--
- 	return 0;
- }
- 
-@@ -304,11 +325,21 @@ static int sh_csi2_probe(struct platform_device *pdev)
- 	/* Platform data specify the PHY, lanes, ECC, CRC */
- 	struct sh_csi2_pdata *pdata = pdev->dev.platform_data;
- 
-+	if (!pdata)
-+		return -EINVAL;
-+
-+	priv = devm_kzalloc(&pdev->dev, sizeof(struct sh_csi2), GFP_KERNEL);
-+	if (!priv)
-+		return -ENOMEM;
-+
-+	priv->asdl.subdev = &priv->subdev;
-+	priv->asdl.dev = &pdev->dev;
-+
- 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
- 	/* Interrupt unused so far */
- 	irq = platform_get_irq(pdev, 0);
- 
--	if (!res || (int)irq <= 0 || !pdata) {
-+	if (!res || (int)irq <= 0) {
- 		dev_err(&pdev->dev, "Not enough CSI2 platform resources.\n");
- 		return -ENODEV;
- 	}
-@@ -319,10 +350,6 @@ static int sh_csi2_probe(struct platform_device *pdev)
- 		return -EINVAL;
- 	}
- 
--	priv = devm_kzalloc(&pdev->dev, sizeof(struct sh_csi2), GFP_KERNEL);
--	if (!priv)
--		return -ENOMEM;
--
- 	priv->irq = irq;
- 
- 	priv->base = devm_ioremap_resource(&pdev->dev, res);
-@@ -330,35 +357,32 @@ static int sh_csi2_probe(struct platform_device *pdev)
- 		return PTR_ERR(priv->base);
- 
- 	priv->pdev = pdev;
--	platform_set_drvdata(pdev, priv);
-+	platform_set_drvdata(pdev, &priv->subdev);
- 
- 	v4l2_subdev_init(&priv->subdev, &sh_csi2_subdev_ops);
- 	v4l2_set_subdevdata(&priv->subdev, &pdev->dev);
- 
- 	snprintf(priv->subdev.name, V4L2_SUBDEV_NAME_SIZE, "%s.mipi-csi",
--		 dev_name(pdata->v4l2_dev->dev));
--	ret = v4l2_device_register_subdev(pdata->v4l2_dev, &priv->subdev);
--	dev_dbg(&pdev->dev, "%s(%p): ret(register_subdev) = %d\n", __func__, priv, ret);
-+		 dev_name(&pdev->dev));
-+
-+	ret = v4l2_async_subdev_register(&priv->asdl);
- 	if (ret < 0)
--		goto esdreg;
-+		return ret;
- 
- 	pm_runtime_enable(&pdev->dev);
- 
- 	dev_dbg(&pdev->dev, "CSI2 probed.\n");
- 
- 	return 0;
--
--esdreg:
--	platform_set_drvdata(pdev, NULL);
--
--	return ret;
- }
- 
- static int sh_csi2_remove(struct platform_device *pdev)
- {
--	struct sh_csi2 *priv = platform_get_drvdata(pdev);
-+	struct v4l2_subdev *subdev = platform_get_drvdata(pdev);
-+	struct sh_csi2 *priv = container_of(subdev, struct sh_csi2, subdev);
- 
--	v4l2_device_unregister_subdev(&priv->subdev);
-+	v4l2_async_subdev_unregister(&priv->asdl);
-+	v4l2_device_unregister_subdev(subdev);
- 	pm_runtime_disable(&pdev->dev);
- 	platform_set_drvdata(pdev, NULL);
- 
-diff --git a/include/media/sh_mobile_ceu.h b/include/media/sh_mobile_ceu.h
-index 6fdb6ad..8937241 100644
---- a/include/media/sh_mobile_ceu.h
-+++ b/include/media/sh_mobile_ceu.h
-@@ -22,6 +22,8 @@ struct sh_mobile_ceu_info {
- 	int max_width;
- 	int max_height;
- 	struct sh_mobile_ceu_companion *csi2;
-+	struct v4l2_async_subdev **asd;	/* Flat array, arranged in groups */
-+	int *asd_sizes;			/* 0-terminated array pf asd group sizes */
- };
- 
- #endif /* __ASM_SH_MOBILE_CEU_H__ */
-diff --git a/include/media/sh_mobile_csi2.h b/include/media/sh_mobile_csi2.h
-index c586c4f..14030db 100644
---- a/include/media/sh_mobile_csi2.h
-+++ b/include/media/sh_mobile_csi2.h
-@@ -33,6 +33,7 @@ struct sh_csi2_client_config {
- 	unsigned char lanes;		/* bitmask[3:0] */
- 	unsigned char channel;		/* 0..3 */
- 	struct platform_device *pdev;	/* client platform device */
-+	const char *name;		/* async matching: client name */
- };
- 
- struct v4l2_device;
-@@ -42,7 +43,6 @@ struct sh_csi2_pdata {
- 	unsigned int flags;
- 	struct sh_csi2_client_config *clients;
- 	int num_clients;
--	struct v4l2_device *v4l2_dev;
- };
- 
- #endif
 -- 
-1.7.2.5
+1.8.1.5
 
