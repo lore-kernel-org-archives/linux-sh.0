@@ -1,264 +1,142 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 10:56:04 +0000
-Subject: [PATCH v4 23/29] sh-pfc: Add support for sparse pin numbers
-Message-Id: <1362740170-19073-24-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 23:00:30 +0000
+Subject: [PATCH v4 85/88] ARM: shmobile: r8a7779: Remove HSPI function GPIOs
+Message-Id: <1363215633-4264-86-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The PFC driver assumes that the value of the GPIO_PORTxxx enumeration
-names are equal to the port number. This isn't true when the port number
-space is sparse, as with the SH73A0.
-
-Fix the issue by adding support for pin numbers ranges specified through
-SoC data. When no range is specified the driver considers that the PFC
-implements a single contiguous range for all pins.
+Those GPIOs have been deprecated by the pinctrl API. They are unused and
+unneeded, remove them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/pinctrl/sh-pfc/core.c    | 19 ++++++++++++-
- drivers/pinctrl/sh-pfc/core.h    |  2 ++
- drivers/pinctrl/sh-pfc/gpio.c    | 37 ++++++++++++++++++++-----
- drivers/pinctrl/sh-pfc/pinctrl.c | 58 +++++++++++++++++++++++++++-------------
- drivers/pinctrl/sh-pfc/sh_pfc.h  |  2 ++
- 5 files changed, 91 insertions(+), 27 deletions(-)
+ arch/arm/mach-shmobile/include/mach/r8a7779.h | 52 +++++++++++++--------------
+ 1 file changed, 26 insertions(+), 26 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
-index 667db99..79824826 100644
---- a/drivers/pinctrl/sh-pfc/core.c
-+++ b/drivers/pinctrl/sh-pfc/core.c
-@@ -80,7 +80,24 @@ static void __iomem *sh_pfc_phys_to_virt(struct sh_pfc *pfc,
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+index e901316..f3ae551 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -76,15 +76,15 @@ enum {
+ 	GPIO_FN_FD2, GPIO_FN_ATADIR0, GPIO_FN_SDSELF,
+ 	GPIO_FN_HCTS1, GPIO_FN_A0,
+ 	GPIO_FN_FD3, GPIO_FN_A20,
+-	GPIO_FN_HSPI_TX2_B, GPIO_FN_A21, GPIO_FN_HSPI_CLK2_B,
+-	GPIO_FN_A22, GPIO_FN_HSPI_RX2_B, GPIO_FN_VI1_R0,
+-	GPIO_FN_A23, GPIO_FN_FCLE, GPIO_FN_HSPI_CLK2, GPIO_FN_VI1_R1,
++	GPIO_FN_A21,
++	GPIO_FN_A22, GPIO_FN_VI1_R0,
++	GPIO_FN_A23, GPIO_FN_FCLE, GPIO_FN_VI1_R1,
+ 	GPIO_FN_A24, GPIO_FN_FD4,
+-	GPIO_FN_HSPI_CS2, GPIO_FN_VI1_R2, GPIO_FN_SSI_WS78_B, GPIO_FN_A25,
+-	GPIO_FN_FD5, GPIO_FN_HSPI_RX2,
++	GPIO_FN_VI1_R2, GPIO_FN_SSI_WS78_B, GPIO_FN_A25,
++	GPIO_FN_FD5,
+ 	GPIO_FN_VI1_R3, GPIO_FN_SSI_SDATA7_B,
+ 	GPIO_FN_CLKOUT, GPIO_FN_PWM0_B, GPIO_FN_CS0,
+-	GPIO_FN_HSPI_CS2_B, GPIO_FN_CS1_A26, GPIO_FN_HSPI_TX2,
++	GPIO_FN_CS1_A26,
+ 	GPIO_FN_SDSELF_B, GPIO_FN_RD_WR, GPIO_FN_FWE, GPIO_FN_ATAG0,
+ 	GPIO_FN_VI1_R7, GPIO_FN_HRTS1,
  
- struct sh_pfc_pin *sh_pfc_get_pin(struct sh_pfc *pfc, unsigned int pin)
- {
--	return &pfc->info->pins[pin];
-+	unsigned int offset;
-+	unsigned int i;
-+
-+	if (pfc->info->ranges = NULL)
-+		return &pfc->info->pins[pin];
-+
-+	for (i = 0, offset = 0; i < pfc->info->nr_ranges; ++i) {
-+		const struct pinmux_range *range = &pfc->info->ranges[i];
-+
-+		if (pin <= range->end)
-+			return pin >= range->begin
-+			     ? &pfc->info->pins[offset + pin - range->begin]
-+			     : NULL;
-+
-+		offset += range->end - range->begin + 1;
-+	}
-+
-+	return NULL;
- }
+@@ -176,19 +176,19 @@ enum {
+ 	GPIO_FN_VI2_R4, GPIO_FN_VI2_R5,
+ 	GPIO_FN_VI2_R6, GPIO_FN_VI2_R7,
+ 	GPIO_FN_SCL2_D, GPIO_FN_SDA2_D,
+-	GPIO_FN_VI2_CLKENB, GPIO_FN_HSPI_CS1,
++	GPIO_FN_VI2_CLKENB,
+ 	GPIO_FN_SCL1_D, GPIO_FN_VI2_FIELD,
+ 	GPIO_FN_SDA1_D, GPIO_FN_VI2_HSYNC,
+ 	GPIO_FN_VI3_HSYNC, GPIO_FN_VI2_VSYNC,
+ 	GPIO_FN_VI3_VSYNC,
+ 	GPIO_FN_VI2_CLK,
+-	GPIO_FN_HSPI_TX1, GPIO_FN_VI1_CLKENB, GPIO_FN_VI3_CLKENB,
++	GPIO_FN_VI1_CLKENB, GPIO_FN_VI3_CLKENB,
+ 	GPIO_FN_AUDIO_CLKC, GPIO_FN_SPEEDIN,
+ 	GPIO_FN_GPS_SIGN_D, GPIO_FN_VI2_DATA6_VI2_B6,
+-	GPIO_FN_TCLK0, GPIO_FN_QSTVA_B_QVS_B, GPIO_FN_HSPI_CLK1,
++	GPIO_FN_TCLK0, GPIO_FN_QSTVA_B_QVS_B,
+ 	GPIO_FN_AUDIO_CLKOUT_B, GPIO_FN_GPS_MAG_D,
+ 	GPIO_FN_VI2_DATA7_VI2_B7,
+-	GPIO_FN_HSPI_RX1, GPIO_FN_VI1_FIELD, GPIO_FN_VI3_FIELD,
++	GPIO_FN_VI1_FIELD, GPIO_FN_VI3_FIELD,
+ 	GPIO_FN_AUDIO_CLKOUT, GPIO_FN_GPS_CLK_C,
+ 	GPIO_FN_GPS_CLK_D, GPIO_FN_AUDIO_CLKA, GPIO_FN_CAN_TXCLK,
+ 	GPIO_FN_AUDIO_CLKB, GPIO_FN_USB_OVC2, GPIO_FN_CAN_DEBUGOUT0,
+@@ -216,11 +216,11 @@ enum {
+ 	GPIO_FN_SSI_WS6, GPIO_FN_ADICHS1, GPIO_FN_CAN0_RX, GPIO_FN_IETX_B,
+ 	GPIO_FN_SSI_SDATA6, GPIO_FN_ADICHS2, GPIO_FN_CAN_CLK, GPIO_FN_IECLK_B,
+ 	GPIO_FN_SSI_SCK78, GPIO_FN_CAN_DEBUGOUT13, GPIO_FN_IRQ0_B,
+-	GPIO_FN_SSI_SCK9_B, GPIO_FN_HSPI_CLK1_C, GPIO_FN_SSI_WS78,
++	GPIO_FN_SSI_SCK9_B, GPIO_FN_SSI_WS78,
+ 	GPIO_FN_CAN_DEBUGOUT14, GPIO_FN_IRQ1_B, GPIO_FN_SSI_WS9_B,
+-	GPIO_FN_HSPI_CS1_C, GPIO_FN_SSI_SDATA7, GPIO_FN_CAN_DEBUGOUT15,
+-	GPIO_FN_IRQ2_B, GPIO_FN_TCLK1_C, GPIO_FN_HSPI_TX1_C,
+-	GPIO_FN_SSI_SDATA8, GPIO_FN_VSP, GPIO_FN_IRQ3_B, GPIO_FN_HSPI_RX1_C,
++	GPIO_FN_SSI_SDATA7, GPIO_FN_CAN_DEBUGOUT15,
++	GPIO_FN_IRQ2_B, GPIO_FN_TCLK1_C,
++	GPIO_FN_SSI_SDATA8, GPIO_FN_VSP, GPIO_FN_IRQ3_B,
+ 	GPIO_FN_ATACS01,
+ 	GPIO_FN_ATACS11, GPIO_FN_CC5_TDO,
+ 	GPIO_FN_ATADIR1, GPIO_FN_CC5_TRST,
+@@ -230,15 +230,15 @@ enum {
+ 	GPIO_FN_DREQ2,	GPIO_FN_DACK2,
  
- static int sh_pfc_enum_in_range(pinmux_enum_t enum_id, struct pinmux_range *r)
-diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
-index 6ea3d4f..b8b3e87 100644
---- a/drivers/pinctrl/sh-pfc/core.h
-+++ b/drivers/pinctrl/sh-pfc/core.h
-@@ -32,6 +32,8 @@ struct sh_pfc {
- 	unsigned int num_windows;
- 	struct sh_pfc_window *window;
- 
-+	unsigned int nr_pins;
-+
- 	struct sh_pfc_chip *gpio;
- 	struct sh_pfc_chip *func;
- 
-diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
-index 32a9c78..806e2dd 100644
---- a/drivers/pinctrl/sh-pfc/gpio.c
-+++ b/drivers/pinctrl/sh-pfc/gpio.c
-@@ -45,7 +45,7 @@ static int gpio_pin_request(struct gpio_chip *gc, unsigned offset)
- 	struct sh_pfc *pfc = gpio_to_pfc(gc);
- 	struct sh_pfc_pin *pin = sh_pfc_get_pin(pfc, offset);
- 
--	if (pin->enum_id = 0)
-+	if (pin = NULL || pin->enum_id = 0)
- 		return -EINVAL;
- 
- 	return pinctrl_request_gpio(offset);
-@@ -127,7 +127,7 @@ static void gpio_pin_setup(struct sh_pfc_chip *chip)
- 	gc->dev = pfc->dev;
- 	gc->owner = THIS_MODULE;
- 	gc->base = 0;
--	gc->ngpio = pfc->info->nr_pins;
-+	gc->ngpio = pfc->nr_pins;
- }
- 
- /* -----------------------------------------------------------------------------
-@@ -184,7 +184,7 @@ static void gpio_function_setup(struct sh_pfc_chip *chip)
- 
- 	gc->label = pfc->info->name;
- 	gc->owner = THIS_MODULE;
--	gc->base = pfc->info->nr_pins;
-+	gc->base = pfc->nr_pins;
- 	gc->ngpio = pfc->info->nr_func_gpios;
- }
- 
-@@ -219,20 +219,43 @@ sh_pfc_add_gpiochip(struct sh_pfc *pfc, void(*setup)(struct sh_pfc_chip *))
- 
- int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
- {
-+	const struct pinmux_range *ranges;
-+	struct pinmux_range def_range;
- 	struct sh_pfc_chip *chip;
-+	unsigned int nr_ranges;
-+	unsigned int i;
- 	int ret;
- 
-+	/* Register the real GPIOs chip. */
- 	chip = sh_pfc_add_gpiochip(pfc, gpio_pin_setup);
- 	if (IS_ERR(chip))
- 		return PTR_ERR(chip);
- 
- 	pfc->gpio = chip;
- 
--	ret = gpiochip_add_pin_range(&chip->gpio_chip, dev_name(pfc->dev), 0, 0,
--				     chip->gpio_chip.ngpio);
--	if (ret < 0)
--		return ret;
-+	/* Register the GPIO to pin mappings. */
-+	if (pfc->info->ranges = NULL) {
-+		def_range.begin = 0;
-+		def_range.end = pfc->info->nr_pins - 1;
-+		ranges = &def_range;
-+		nr_ranges = 1;
-+	} else {
-+		ranges = pfc->info->ranges;
-+		nr_ranges = pfc->info->nr_ranges;
-+	}
-+
-+	for (i = 0; i < nr_ranges; ++i) {
-+		const struct pinmux_range *range = &ranges[i];
-+
-+		ret = gpiochip_add_pin_range(&chip->gpio_chip,
-+					     dev_name(pfc->dev),
-+					     range->begin, range->begin,
-+					     range->end - range->begin + 1);
-+		if (ret < 0)
-+			return ret;
-+	}
- 
-+	/* Register the function GPIOs chip. */
- 	chip = sh_pfc_add_gpiochip(pfc, gpio_function_setup);
- 	if (IS_ERR(chip))
- 		return PTR_ERR(chip);
-diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
-index a60c317..c9e9a1d 100644
---- a/drivers/pinctrl/sh-pfc/pinctrl.c
-+++ b/drivers/pinctrl/sh-pfc/pinctrl.c
-@@ -293,29 +293,48 @@ static const struct pinconf_ops sh_pfc_pinconf_ops = {
- 	.pin_config_dbg_show	= sh_pfc_pinconf_dbg_show,
- };
- 
--/* pinmux ranges -> pinctrl pin descs */
--static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
-+/* PFC ranges -> pinctrl pin descs */
-+static int sh_pfc_map_pins(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
- {
--	int i;
--
--	pmx->nr_pads = pfc->info->nr_pins;
-+	const struct pinmux_range *ranges;
-+	struct pinmux_range def_range;
-+	unsigned int nr_ranges;
-+	unsigned int nr_pins;
-+	unsigned int i;
-+
-+	if (pfc->info->ranges = NULL) {
-+		def_range.begin = 0;
-+		def_range.end = pfc->info->nr_pins - 1;
-+		ranges = &def_range;
-+		nr_ranges = 1;
-+	} else {
-+		ranges = pfc->info->ranges;
-+		nr_ranges = pfc->info->nr_ranges;
-+	}
- 
--	pmx->pads = devm_kzalloc(pfc->dev, sizeof(*pmx->pads) * pmx->nr_pads,
-+	pmx->pads = devm_kzalloc(pfc->dev,
-+				 sizeof(*pmx->pads) * pfc->info->nr_pins,
- 				 GFP_KERNEL);
--	if (unlikely(!pmx->pads)) {
--		pmx->nr_pads = 0;
-+	if (unlikely(!pmx->pads))
- 		return -ENOMEM;
--	}
- 
--	for (i = 0; i < pmx->nr_pads; i++) {
--		struct pinctrl_pin_desc *pin = pmx->pads + i;
--		struct sh_pfc_pin *gpio = pfc->info->pins + i;
-+	for (i = 0, nr_pins = 0; i < nr_ranges; ++i) {
-+		const struct pinmux_range *range = &ranges[i];
-+		unsigned int number;
-+
-+		for (number = range->begin; number <= range->end;
-+		     number++, nr_pins++) {
-+			struct pinctrl_pin_desc *pin = &pmx->pads[nr_pins];
-+			struct sh_pfc_pin *info = &pfc->info->pins[nr_pins];
- 
--		pin->number = i;
--		pin->name = gpio->name;
-+			pin->number = number;
-+			pin->name = info->name;
-+		}
- 	}
- 
--	return 0;
-+	pfc->nr_pins = ranges[nr_ranges-1].end + 1;
-+
-+	return nr_ranges;
- }
- 
- static int sh_pfc_map_functions(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
-@@ -347,6 +366,7 @@ static int sh_pfc_map_functions(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
- int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
- {
- 	struct sh_pfc_pinctrl *pmx;
-+	int nr_ranges;
- 	int ret;
- 
- 	pmx = devm_kzalloc(pfc->dev, sizeof(*pmx), GFP_KERNEL);
-@@ -356,9 +376,9 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
- 	pmx->pfc = pfc;
- 	pfc->pinctrl = pmx;
- 
--	ret = sh_pfc_map_gpios(pfc, pmx);
--	if (unlikely(ret != 0))
--		return ret;
-+	nr_ranges = sh_pfc_map_pins(pfc, pmx);
-+	if (unlikely(nr_ranges < 0))
-+		return nr_ranges;
- 
- 	ret = sh_pfc_map_functions(pfc, pmx);
- 	if (unlikely(ret != 0))
-@@ -370,7 +390,7 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
- 	pmx->pctl_desc.pmxops = &sh_pfc_pinmux_ops;
- 	pmx->pctl_desc.confops = &sh_pfc_pinconf_ops;
- 	pmx->pctl_desc.pins = pmx->pads;
--	pmx->pctl_desc.npins = pmx->nr_pads;
-+	pmx->pctl_desc.npins = pfc->info->nr_pins;
- 
- 	pmx->pctl = pinctrl_register(&pmx->pctl_desc, pfc->dev, pmx);
- 	if (IS_ERR(pmx->pctl))
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index 43c858d..dbcaa60 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -111,6 +111,8 @@ struct sh_pfc_soc_info {
- 
- 	struct sh_pfc_pin *pins;
- 	unsigned int nr_pins;
-+	const struct pinmux_range *ranges;
-+	unsigned int nr_ranges;
- 	struct pinmux_func *func_gpios;
- 	unsigned int nr_func_gpios;
- 
+ 	/* IPSR8 */
+-	GPIO_FN_HSPI_CLK0, GPIO_FN_USB_OVC0, GPIO_FN_AD_CLK,
++	GPIO_FN_USB_OVC0, GPIO_FN_AD_CLK,
+ 	GPIO_FN_CC5_STATE4, GPIO_FN_CC5_STATE12, GPIO_FN_CC5_STATE20,
+-	GPIO_FN_CC5_STATE28, GPIO_FN_CC5_STATE36, GPIO_FN_HSPI_CS0,
++	GPIO_FN_CC5_STATE28, GPIO_FN_CC5_STATE36,
+ 	GPIO_FN_USB_OVC1, GPIO_FN_AD_DI,
+ 	GPIO_FN_CC5_STATE5, GPIO_FN_CC5_STATE13, GPIO_FN_CC5_STATE21,
+-	GPIO_FN_CC5_STATE29, GPIO_FN_CC5_STATE37, GPIO_FN_HSPI_TX0,
++	GPIO_FN_CC5_STATE29, GPIO_FN_CC5_STATE37,
+ 	GPIO_FN_CAN_DEBUG_HW_TRIGGER, GPIO_FN_AD_DO,
+ 	GPIO_FN_CC5_STATE6, GPIO_FN_CC5_STATE14, GPIO_FN_CC5_STATE22,
+-	GPIO_FN_CC5_STATE30, GPIO_FN_CC5_STATE38, GPIO_FN_HSPI_RX0,
++	GPIO_FN_CC5_STATE30, GPIO_FN_CC5_STATE38,
+ 	GPIO_FN_CAN_STEP0, GPIO_FN_AD_NCS, GPIO_FN_CC5_STATE7,
+ 	GPIO_FN_CC5_STATE15, GPIO_FN_CC5_STATE23, GPIO_FN_CC5_STATE31,
+ 	GPIO_FN_CC5_STATE39, GPIO_FN_FMCLK, GPIO_FN_RDS_CLK, GPIO_FN_PCMOE,
+@@ -278,13 +278,13 @@ enum {
+ 	GPIO_FN_IRQ2, GPIO_FN_ARM_TRACEDATA_12,
+ 	GPIO_FN_VI0_R3, GPIO_FN_ETH_MAGIC, GPIO_FN_IRQ3,
+ 	GPIO_FN_ARM_TRACEDATA_13, GPIO_FN_VI0_R4, GPIO_FN_ETH_REFCLK,
+-	GPIO_FN_HSPI_CLK1_B, GPIO_FN_ARM_TRACEDATA_14,
++	GPIO_FN_ARM_TRACEDATA_14,
+ 	GPIO_FN_MT1_CLK, GPIO_FN_TS_SCK0, GPIO_FN_VI0_R5, GPIO_FN_ETH_TXD0,
+-	GPIO_FN_HSPI_CS1_B, GPIO_FN_ARM_TRACEDATA_15,
++	GPIO_FN_ARM_TRACEDATA_15,
+ 	GPIO_FN_MT1_D, GPIO_FN_TS_SDEN0, GPIO_FN_VI0_R6, GPIO_FN_ETH_MDC,
+-	GPIO_FN_DREQ2_C, GPIO_FN_HSPI_TX1_B, GPIO_FN_TRACECLK,
++	GPIO_FN_DREQ2_C, GPIO_FN_TRACECLK,
+ 	GPIO_FN_MT1_BEN, GPIO_FN_PWMFSW0_D, GPIO_FN_VI0_R7, GPIO_FN_ETH_MDIO,
+-	GPIO_FN_DACK2_C, GPIO_FN_HSPI_RX1_B, GPIO_FN_SCIF_CLK_D,
++	GPIO_FN_DACK2_C, GPIO_FN_SCIF_CLK_D,
+ 	GPIO_FN_TRACECTL, GPIO_FN_MT1_PEN, GPIO_FN_VI1_CLK, GPIO_FN_SIM_D,
+ 	GPIO_FN_SDA3, GPIO_FN_VI1_HSYNC, GPIO_FN_VI3_CLK, GPIO_FN_SSI_SCK4,
+ 	GPIO_FN_GPS_SIGN_C, GPIO_FN_PWMFSW0_E, GPIO_FN_VI1_VSYNC,
+@@ -300,12 +300,12 @@ enum {
+ 	GPIO_FN_VI1_DATA3_VI1_B3, GPIO_FN_MT0_BEN,
+ 	GPIO_FN_SPV_TDO, GPIO_FN_ADICHS0_B, GPIO_FN_VI1_DATA4_VI1_B4,
+ 	GPIO_FN_MT0_PEN, GPIO_FN_SPA_TRST,
+-	GPIO_FN_HSPI_CLK1_D, GPIO_FN_ADICHS1_B, GPIO_FN_VI1_DATA5_VI1_B5,
++	GPIO_FN_ADICHS1_B, GPIO_FN_VI1_DATA5_VI1_B5,
+ 	GPIO_FN_MT0_SYNC, GPIO_FN_SPA_TCK,
+-	GPIO_FN_HSPI_CS1_D, GPIO_FN_ADICHS2_B, GPIO_FN_VI1_DATA6_VI1_B6,
+-	GPIO_FN_MT0_VCXO, GPIO_FN_SPA_TMS, GPIO_FN_HSPI_TX1_D,
++	GPIO_FN_ADICHS2_B, GPIO_FN_VI1_DATA6_VI1_B6,
++	GPIO_FN_MT0_VCXO, GPIO_FN_SPA_TMS,
+ 	GPIO_FN_VI1_DATA7_VI1_B7, GPIO_FN_MT0_PWM,
+-	GPIO_FN_SPA_TDI, GPIO_FN_HSPI_RX1_D, GPIO_FN_VI1_G0, GPIO_FN_VI3_DATA0,
++	GPIO_FN_SPA_TDI, GPIO_FN_VI1_G0, GPIO_FN_VI3_DATA0,
+ 	GPIO_FN_TS_SCK1, GPIO_FN_DREQ2_B,
+ 	GPIO_FN_SPA_TDO, GPIO_FN_HCTS0_B, GPIO_FN_VI1_G1, GPIO_FN_VI3_DATA1,
+ 	GPIO_FN_SSI_SCK1, GPIO_FN_TS_SDEN1, GPIO_FN_DACK2_B,
 -- 
 1.8.1.5
 
