@@ -1,52 +1,54 @@
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Mar 2013 22:59:50 +0000
-Subject: [PATCH v4 45/88] ARM: shmobile: marzen: Register pinctrl mappings for SCIF
-Message-Id: <1363215633-4264-46-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 22:39:21 +0000
+Subject: [PATCH 02/25] sh: sh7264: Add pin control resources
+Message-Id: <1363214384-3870-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Replace the GPIO-based SCIF pinmux configuration by pinctrl mappings.
+Add memory resources for the pin control platform device to let the
+sh-pfc driver ioremap() registers properly instead of evily casting
+register physical addresses to virtual addresses.
+
+The memory resource address range has been extracted from the config and
+data registes lists in the sh-pfc driver.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-marzen.c | 14 ++++++--------
- 1 file changed, 6 insertions(+), 8 deletions(-)
+ arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c | 13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index f00677f..4097366 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -329,6 +329,12 @@ void __init marzen_init_late(void)
+diff --git a/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c b/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c
+index b1b7c1b..569decb 100644
+--- a/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c
++++ b/arch/sh/kernel/cpu/sh2a/pinmux-sh7264.c
+@@ -8,12 +8,23 @@
+  * for more details.
+  */
+ 
++#include <linux/bug.h>
+ #include <linux/init.h>
+ #include <linux/kernel.h>
++#include <linux/ioport.h>
+ #include <cpu/pfc.h>
+ 
++static struct resource sh7264_pfc_resources[] = {
++	[0] = {
++		.start	= 0xfffe3800,
++		.end	= 0xfffe393f,
++		.flags	= IORESOURCE_MEM,
++	},
++};
++
+ static int __init plat_pinmux_setup(void)
+ {
+-	return sh_pfc_register("pfc-sh7264", NULL, 0);
++	return sh_pfc_register("pfc-sh7264", sh7264_pfc_resources,
++			       ARRAY_SIZE(sh7264_pfc_resources));
  }
- 
- static const struct pinctrl_map marzen_pinctrl_map[] = {
-+	/* SCIF2 (CN18: DEBUG0) */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-r8a7779",
-+				  "scif2_data_c", "scif2"),
-+	/* SCIF4 (CN19: DEBUG1) */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-r8a7779",
-+				  "scif4_data", "scif4"),
- 	/* SDHI0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
- 				  "sdhi0_data4", "sdhi0"),
-@@ -351,14 +357,6 @@ static void __init marzen_init(void)
- 				  ARRAY_SIZE(marzen_pinctrl_map));
- 	r8a7779_pinmux_init();
- 
--	/* SCIF2 (CN18: DEBUG0) */
--	gpio_request(GPIO_FN_TX2_C, NULL);
--	gpio_request(GPIO_FN_RX2_C, NULL);
--
--	/* SCIF4 (CN19: DEBUG1) */
--	gpio_request(GPIO_FN_TX4, NULL);
--	gpio_request(GPIO_FN_RX4, NULL);
--
- 	/* LAN89218 */
- 	gpio_request(GPIO_FN_EX_CS0, NULL); /* nCS */
- 	gpio_request(GPIO_FN_IRQ1_B, NULL); /* IRQ + PME */
+ arch_initcall(plat_pinmux_setup);
 -- 
 1.8.1.5
 
