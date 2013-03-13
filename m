@@ -1,37 +1,56 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:53:14 +0000
-Subject: [PATCH 2/9] ARM: mach-shmobile: mackerel: enable REGULATOR in defconfig
-Message-Id: <1363607601-20366-3-git-send-email-horms+renesas@verge.net.au>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Date: Wed, 13 Mar 2013 23:00:23 +0000
+Subject: [PATCH v4 78/88] ARM: shmobile: sh73a0: Remove IrDA function GPIOs
+Message-Id: <1363215633-4264-79-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363607601-20366-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363607601-20366-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-As well as being a generally sane thing to do this
-is required for MMCIF to function in conjunction with
-" ARM: shmobile: streamline mackerel SD and MMC devices".
+Those GPIOs have been deprecated by the pinctrl API. They are unused and
+unneeded, remove them.
 
-Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/configs/mackerel_defconfig |    1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/mach-shmobile/include/mach/sh73a0.h | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/arch/arm/configs/mackerel_defconfig b/arch/arm/configs/mackerel_defconfig
-index ec8e605..9fb1189 100644
---- a/arch/arm/configs/mackerel_defconfig
-+++ b/arch/arm/configs/mackerel_defconfig
-@@ -75,6 +75,7 @@ CONFIG_I2C=y
- CONFIG_I2C_SH_MOBILE=y
- # CONFIG_HWMON is not set
- # CONFIG_MFD_SUPPORT is not set
-+CONFIG_REGULATOR=y
- CONFIG_FB=y
- CONFIG_FB_MODE_HELPERS=y
- CONFIG_FB_SH_MOBILE_LCDC=y
+diff --git a/arch/arm/mach-shmobile/include/mach/sh73a0.h b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+index d488e2b..fbc1584 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh73a0.h
++++ b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+@@ -124,13 +124,13 @@ enum {
+ 	GPIO_FN_XWUP,
+ 	GPIO_FN_VACK,
+ 	GPIO_FN_XTAL1L,
+-	GPIO_FN_PORT49_IRDA_OUT, GPIO_FN_PORT49_IROUT,
++	GPIO_FN_PORT49_IROUT,
+ 	GPIO_FN_BBIF2_TSYNC2, GPIO_FN_TPU2TO2,
+ 
+ 	GPIO_FN_BBIF2_TSCK2, GPIO_FN_TPU2TO3,
+ 	GPIO_FN_BBIF2_TXD2,
+-	GPIO_FN_PORT53_IRDA_IN, GPIO_FN_TPU3TO3,
+-	GPIO_FN_PORT54_IRDA_FIRSEL, GPIO_FN_TPU3TO2,
++	GPIO_FN_TPU3TO3,
++	GPIO_FN_TPU3TO2,
+ 	GPIO_FN_TPU0TO0,
+ 	GPIO_FN_A0, GPIO_FN_BS_,
+ 	GPIO_FN_A12, GPIO_FN_TPU4TO2,
+@@ -255,10 +255,10 @@ enum {
+ 	GPIO_FN_MSIOF1_MCK1,
+ 	GPIO_FN_MSIOF1_SS1, GPIO_FN_VIO2_FIELD2,
+ 	GPIO_FN_MSIOF1_SS2, GPIO_FN_VIO2_HD2,
+-	GPIO_FN_PORT241_IRDA_OUT, GPIO_FN_PORT241_IROUT, GPIO_FN_MFG4_OUT1, \
++	GPIO_FN_PORT241_IROUT, GPIO_FN_MFG4_OUT1, \
+ 	GPIO_FN_TPU4TO0,
+-	GPIO_FN_PORT242_IRDA_IN, GPIO_FN_MFG4_IN2,
+-	GPIO_FN_PORT243_IRDA_FIRSEL, GPIO_FN_PORT243_VIO_CKO2,
++	GPIO_FN_MFG4_IN2,
++	GPIO_FN_PORT243_VIO_CKO2,
+ 	GPIO_FN_MFG2_IN1,
+ 	GPIO_FN_MSIOF2R_RXD,
+ 	GPIO_FN_MFG2_IN2,
 -- 
-1.7.10.4
+1.8.1.5
 
