@@ -1,44 +1,23 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Mar 2013 22:59:23 +0000
-Subject: [PATCH v4 18/88] sh-pfc: r8a7779: Add USB0 and USB1 PENC pinmux support
-Message-Id: <1363215633-4264-19-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Thu, 14 Mar 2013 15:00:08 +0000
+Subject: Re: [PATCH v4 18/88] sh-pfc: r8a7779: Add USB0 and USB1 PENC pinmux support
+Message-Id: <CACRpkdZV2c606vAaQ61WWhQL8fOjE6WfNXYSTdu14jNq9AY-og@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363215633-4264-19-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1363215633-4264-19-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-The USB0 and USB1 PENC functions were missing. Add them.
+On Wed, Mar 13, 2013 at 11:59 PM, Laurent Pinchart
+<laurent.pinchart+renesas@ideasonboard.com> wrote:
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
+> The USB0 and USB1 PENC functions were missing. Add them.
+>
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-index 361b162..946572bc 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-@@ -429,7 +429,8 @@ enum {
- 	A0_MARK, SD1_DAT3_MARK, MMC0_D3_MARK, FD3_MARK,
- 	BS_MARK, SD1_DAT2_MARK, MMC0_D2_MARK, FD2_MARK,
- 	ATADIR0_MARK, SDSELF_MARK, HCTS1_MARK, TX4_C_MARK,
--	USB_PENC2_MARK, SCK0_MARK, PWM1_MARK, PWMFSW0_MARK,
-+	USB_PENC0_MARK, USB_PENC1_MARK, USB_PENC2_MARK,
-+	SCK0_MARK, PWM1_MARK, PWMFSW0_MARK,
- 	SCIF_CLK_MARK, TCLK0_C_MARK,
- 
- 	EX_CS0_MARK, RX3_C_IRDA_RX_C_MARK, MMC0_D6_MARK,
-@@ -640,6 +641,9 @@ static const pinmux_enum_t pinmux_data[] = {
- 	PINMUX_DATA(A18_MARK, FN_A18),
- 	PINMUX_DATA(A19_MARK, FN_A19),
- 
-+	PINMUX_DATA(USB_PENC0_MARK, FN_USB_PENC0),
-+	PINMUX_DATA(USB_PENC1_MARK, FN_USB_PENC1),
-+
- 	PINMUX_IPSR_DATA(IP0_2_0, USB_PENC2),
- 	PINMUX_IPSR_MODSEL_DATA(IP0_2_0, SCK0, SEL_SCIF0_0),
- 	PINMUX_IPSR_DATA(IP0_2_0, PWM1),
--- 
-1.8.1.5
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 
+Yours,
+Linus Walleij
