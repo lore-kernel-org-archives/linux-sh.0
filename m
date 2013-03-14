@@ -1,129 +1,23 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Mar 2013 22:59:25 +0000
-Subject: [PATCH v4 20/88] sh-pfc: r8a7779: Add LBSC pin groups and functions
-Message-Id: <1363215633-4264-21-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Linus Walleij <linus.walleij@linaro.org>
+Date: Thu, 14 Mar 2013 15:00:36 +0000
+Subject: Re: [PATCH v4 20/88] sh-pfc: r8a7779: Add LBSC pin groups and functions
+Message-Id: <CACRpkdYrm0CFydZBmrqw8YcOJWFEichoDLLfLYK2YkSn8Zbizg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363215633-4264-21-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+In-Reply-To: <1363215633-4264-21-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Only the CS pins and functions are currently handled.
+On Wed, Mar 13, 2013 at 11:59 PM, Laurent Pinchart
+<laurent.pinchart+renesas@ideasonboard.com> wrote:
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 77 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 77 insertions(+)
+> Only the CS pins and functions are currently handled.
+>
+> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-index 6043d2c..3f67143 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-@@ -1631,6 +1631,63 @@ static const unsigned int hspi2_b_pins[] = {
- static const unsigned int hspi2_b_mux[] = {
- 	HSPI_CLK2_B_MARK, HSPI_CS2_B_MARK, HSPI_RX2_B_MARK, HSPI_TX2_B_MARK,
- };
-+/* - LSBC ------------------------------------------------------------------- */
-+static const unsigned int lbsc_cs0_pins[] = {
-+	/* CS */
-+	13,
-+};
-+static const unsigned int lbsc_cs0_mux[] = {
-+	CS0_MARK,
-+};
-+static const unsigned int lbsc_cs1_pins[] = {
-+	/* CS */
-+	14,
-+};
-+static const unsigned int lbsc_cs1_mux[] = {
-+	CS1_A26_MARK,
-+};
-+static const unsigned int lbsc_ex_cs0_pins[] = {
-+	/* CS */
-+	15,
-+};
-+static const unsigned int lbsc_ex_cs0_mux[] = {
-+	EX_CS0_MARK,
-+};
-+static const unsigned int lbsc_ex_cs1_pins[] = {
-+	/* CS */
-+	16,
-+};
-+static const unsigned int lbsc_ex_cs1_mux[] = {
-+	EX_CS1_MARK,
-+};
-+static const unsigned int lbsc_ex_cs2_pins[] = {
-+	/* CS */
-+	17,
-+};
-+static const unsigned int lbsc_ex_cs2_mux[] = {
-+	EX_CS2_MARK,
-+};
-+static const unsigned int lbsc_ex_cs3_pins[] = {
-+	/* CS */
-+	18,
-+};
-+static const unsigned int lbsc_ex_cs3_mux[] = {
-+	EX_CS3_MARK,
-+};
-+static const unsigned int lbsc_ex_cs4_pins[] = {
-+	/* CS */
-+	19,
-+};
-+static const unsigned int lbsc_ex_cs4_mux[] = {
-+	EX_CS4_MARK,
-+};
-+static const unsigned int lbsc_ex_cs5_pins[] = {
-+	/* CS */
-+	20,
-+};
-+static const unsigned int lbsc_ex_cs5_mux[] = {
-+	EX_CS5_MARK,
-+};
- /* - MMCIF ------------------------------------------------------------------ */
- static const unsigned int mmc0_data1_pins[] = {
- 	/* D[0] */
-@@ -2246,6 +2303,14 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(hspi1_d),
- 	SH_PFC_PIN_GROUP(hspi2),
- 	SH_PFC_PIN_GROUP(hspi2_b),
-+	SH_PFC_PIN_GROUP(lbsc_cs0),
-+	SH_PFC_PIN_GROUP(lbsc_cs1),
-+	SH_PFC_PIN_GROUP(lbsc_ex_cs0),
-+	SH_PFC_PIN_GROUP(lbsc_ex_cs1),
-+	SH_PFC_PIN_GROUP(lbsc_ex_cs2),
-+	SH_PFC_PIN_GROUP(lbsc_ex_cs3),
-+	SH_PFC_PIN_GROUP(lbsc_ex_cs4),
-+	SH_PFC_PIN_GROUP(lbsc_ex_cs5),
- 	SH_PFC_PIN_GROUP(mmc0_data1),
- 	SH_PFC_PIN_GROUP(mmc0_data4),
- 	SH_PFC_PIN_GROUP(mmc0_data8),
-@@ -2367,6 +2432,17 @@ static const char * const hspi2_groups[] = {
- 	"hspi2_b",
- };
- 
-+static const char * const lbsc_groups[] = {
-+	"lbsc_cs0",
-+	"lbsc_cs1",
-+	"lbsc_ex_cs0",
-+	"lbsc_ex_cs1",
-+	"lbsc_ex_cs2",
-+	"lbsc_ex_cs3",
-+	"lbsc_ex_cs4",
-+	"lbsc_ex_cs5",
-+};
-+
- static const char * const mmc0_groups[] = {
- 	"mmc0_data1",
- 	"mmc0_data4",
-@@ -2500,6 +2576,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(hspi0),
- 	SH_PFC_FUNCTION(hspi1),
- 	SH_PFC_FUNCTION(hspi2),
-+	SH_PFC_FUNCTION(lbsc),
- 	SH_PFC_FUNCTION(mmc0),
- 	SH_PFC_FUNCTION(mmc1),
- 	SH_PFC_FUNCTION(sdhi0),
--- 
-1.8.1.5
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 
+Yours,
+Linus Walleij
