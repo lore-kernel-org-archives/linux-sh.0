@@ -1,41 +1,51 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 14 Mar 2013 00:44:10 +0000
+From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Date: Thu, 14 Mar 2013 13:20:54 +0000
 Subject: Re: [PATCH 1/7] ARM: shmobile: marzen: add USB phy support
-Message-Id: <87k3pa4xpk.wl%kuninori.morimoto.gx@renesas.com>
+Message-Id: <5141CEB6.2080803@cogentembedded.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1352446306-19945-1-git-send-email-horms@verge.net.au>
  <1352446306-19945-2-git-send-email-horms@verge.net.au>
- <5140FBB1.50401@mvista.com>
-In-Reply-To: <5140FBB1.50401@mvista.com>
+ <5140FBB1.50401@mvista.com> <87k3pa4xpk.wl%kuninori.morimoto.gx@renesas.com>
+In-Reply-To: <87k3pa4xpk.wl%kuninori.morimoto.gx@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
+Hello.
 
-Hi Sergei
+On 14-03-2013 4:44, Kuninori Morimoto wrote:
 
-> > +/* USB PHY */
-> > +static struct resource usb_phy_resources[] = {
-> > +	[0] = {
-> > +		.start		= 0xffe70000,
-> 
->     Why not 0xffe70800? 0xffe70000 is where the EHCI registers start.
-> I don't see why they should be overlapped like this.
+>>> +/* USB PHY */
+>>> +static struct resource usb_phy_resources[] = {
+>>> +	[0] = {
+>>> +		.start		= 0xffe70000,
 
-Current rcar-phy try to access 0xffe7009x
+>>      Why not 0xffe70800? 0xffe70000 is where the EHCI registers start.
+>> I don't see why they should be overlapped like this.
 
-> > +	[1] = {
-> > +		.start		= 0xfff70000,
-> > +		.end		= 0xfff70900 - 1,
-> 
->     Hm, this PHY register range doesn't seem to be documented?
+> Current rcar-phy try to access 0xffe7009x
 
-0xffe70000 is for port0/1
-0xfff70000 is for port2
+    That should be changed too IHO, as these registers are not really PHY 
+related, they control EHCI itself. These writes should be done somewhere in 
+setup-r8a7779.c probably.
 
-But this 0xfff70000 is only for 0xfff7009x access
+>>> +	[1] = {
+>>> +		.start		= 0xfff70000,
+>>> +		.end		= 0xfff70900 - 1,
 
-Best regards
----
-Kuninori Morimoto
+>>      Hm, this PHY register range doesn't seem to be documented?
+
+> 0xffe70000 is for port0/1
+> 0xfff70000 is for port2
+
+> But this 0xfff70000 is only for 0xfff7009x access
+
+    Yeah, I understood that it's only for the extra EHCI registers.
+
+> Best regards
+> ---
+> Kuninori Morimoto
+
+WBR, Sergei
+
