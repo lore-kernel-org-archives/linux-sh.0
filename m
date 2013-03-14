@@ -1,45 +1,71 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 13 Mar 2013 12:58:37 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Thu, 14 Mar 2013 04:23:46 +0000
 Subject: Re: [PATCH 00/03] gpio: Renesas R-Car GPIO driver update
-Message-Id: <1670937.hEFtzrbkf6@avalon>
+Message-Id: <CANqRtoSDc6YfnotMR2aw4niEYyjn1C7JRu4WciyKsP-QT+j4LA@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <20130313113203.30133.49539.sendpatchset@w520>
-In-Reply-To: <20130313113203.30133.49539.sendpatchset@w520>
+	<1670937.hEFtzrbkf6@avalon>
+In-Reply-To: <1670937.hEFtzrbkf6@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
+To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linus.walleij@linaro.org, grant.likely@secretlab.ca, horms@verge.net.au
 
-Hi Magnus,
+Hi Laurent, Simon,
 
-Thanks for the patches.
+On Wed, Mar 13, 2013 at 9:58 PM, Laurent Pinchart
+<laurent.pinchart@ideasonboard.com> wrote:
+> Hi Magnus,
+>
+> Thanks for the patches.
 
-On Wednesday 13 March 2013 20:32:03 Magnus Damm wrote:
-> gpio: Renesas R-Car GPIO driver update
-> 
-> [PATCH 01/03] gpio: Renesas R-Car GPIO driver V2
-> [PATCH 02/03] gpio: rcar: Use IRQCHIP_SET_TYPE_MASKED
-> [PATCH 03/03] gpio: rcar: Make use of devm functions
-> 
-> This series updates the R-Car GPIO driver with various
-> changes kindly suggested by Laurent Pinchart.
-> 
-> Patch [01/03] is a drop in replacement for V1 of the R-Car
-> GPIO driver. The flag in patch [02/03] is kept out of [01/03]
-> to avoid changing the behaviour of the driver between V1 and V2.
-> Also, devm support in [03/03] is kept out of [01/03] to make
-> sure back porting goes as smooth as possible.
+Thanks for your review!
 
-As I mentioned in a previous e-mail, all the devm_* functions used in 03/03 
-have been available since 2.6.30. Do you really need to port that driver to 
-older kernels ?
+> On Wednesday 13 March 2013 20:32:03 Magnus Damm wrote:
+>> gpio: Renesas R-Car GPIO driver update
+>>
+>> [PATCH 01/03] gpio: Renesas R-Car GPIO driver V2
+>> [PATCH 02/03] gpio: rcar: Use IRQCHIP_SET_TYPE_MASKED
+>> [PATCH 03/03] gpio: rcar: Make use of devm functions
+>>
+>> This series updates the R-Car GPIO driver with various
+>> changes kindly suggested by Laurent Pinchart.
+>>
+>> Patch [01/03] is a drop in replacement for V1 of the R-Car
+>> GPIO driver. The flag in patch [02/03] is kept out of [01/03]
+>> to avoid changing the behaviour of the driver between V1 and V2.
+>> Also, devm support in [03/03] is kept out of [01/03] to make
+>> sure back porting goes as smooth as possible.
+>
+> As I mentioned in a previous e-mail, all the devm_* functions used in 03/03
+> have been available since 2.6.30. Do you really need to port that driver to
+> older kernels ?
 
-Regarding 02/03, do you plan to squash it with 01/03 for the mainline 
-submission ?
+Well, it was earlier suggested to me that not using devm to begin with
+is a safe way forward for back porting. Also, as the individual patch
+shows, we save about 10 lines of code but add many more complex
+dependencies.
 
--- 
-Regards,
+Simon, do you have any recommendation how for us regarding devm and
+back porting?
 
-Laurent Pinchart
+> Regarding 02/03, do you plan to squash it with 01/03 for the mainline
+> submission ?
 
+Not unless someone puts a gun to my head. =) Of course, if a single
+patch is really required then I will follow that, but I can't really
+see why when we have a nice versioning control system that can help
+our development in various ways.
+
+What is the reason behind you wanting to merge these patches?
+
+From my point of view, if any incremental patch was a bug fix then i
+would of course request to fold it in, but in this case these are
+feature patches that would be beneficial to keep as individual
+commits. Keeping them separate allows us to bisect and also makes
+partial back porting easier if needed.
+
+Thanks,
+
+/ magnus
