@@ -1,330 +1,68 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 11:01:30 +0000
-Subject: [PATCH v3 10/64] sh-pfc: r8a7779: Add SDHI and MMCIF pin groups and functions
-Message-Id: <1362740544-19164-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 15 Mar 2013 21:27:46 +0000
+Subject: [PATCH v6 0/7] V4L2 clock and async patches and soc-camera example
+Message-Id: <1363382873-20077-1-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-media@vger.kernel.org
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
----
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 284 +++++++++++++++++++++++++++++++++++
- 1 file changed, 284 insertions(+)
+Update of V4l2 clock and asynchronous probing patches. Various review 
+comments are addressed, as described in individual patches.
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-index 1ea6247..47a91be 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-@@ -1575,6 +1575,210 @@ static const unsigned int du1_cde_mux[] = {
- 	DU1_CDE_MARK
- };
- 
-+static const unsigned int mmc0_data1_pins[] = {
-+	/* D[0] */
-+	19,
-+};
-+static const unsigned int mmc0_data1_mux[] = {
-+	MMC0_D0_MARK,
-+};
-+static const unsigned int mmc0_data4_pins[] = {
-+	/* D[0:3] */
-+	19, 20, 21, 2,
-+};
-+static const unsigned int mmc0_data4_mux[] = {
-+	MMC0_D0_MARK, MMC0_D1_MARK, MMC0_D2_MARK, MMC0_D3_MARK,
-+};
-+static const unsigned int mmc0_data8_pins[] = {
-+	/* D[0:7] */
-+	19, 20, 21, 2, 10, 11, 15, 16,
-+};
-+static const unsigned int mmc0_data8_mux[] = {
-+	MMC0_D0_MARK, MMC0_D1_MARK, MMC0_D2_MARK, MMC0_D3_MARK,
-+	MMC0_D4_MARK, MMC0_D5_MARK, MMC0_D6_MARK, MMC0_D7_MARK,
-+};
-+static const unsigned int mmc0_ctrl_pins[] = {
-+	/* CMD, CLK */
-+	18, 17,
-+};
-+static const unsigned int mmc0_ctrl_mux[] = {
-+	MMC0_CMD_MARK, MMC0_CLK_MARK,
-+};
-+
-+static const unsigned int mmc1_data1_pins[] = {
-+	/* D[0] */
-+	72,
-+};
-+static const unsigned int mmc1_data1_mux[] = {
-+	MMC1_D0_MARK,
-+};
-+static const unsigned int mmc1_data4_pins[] = {
-+	/* D[0:3] */
-+	72, 73, 74, 75,
-+};
-+static const unsigned int mmc1_data4_mux[] = {
-+	MMC1_D0_MARK, MMC1_D1_MARK, MMC1_D2_MARK, MMC1_D3_MARK,
-+};
-+static const unsigned int mmc1_data8_pins[] = {
-+	/* D[0:7] */
-+	72, 73, 74, 75, 76, 77, 80, 81,
-+};
-+static const unsigned int mmc1_data8_mux[] = {
-+	MMC1_D0_MARK, MMC1_D1_MARK, MMC1_D2_MARK, MMC1_D3_MARK,
-+	MMC1_D4_MARK, MMC1_D5_MARK, MMC1_D6_MARK, MMC1_D7_MARK,
-+};
-+static const unsigned int mmc1_ctrl_pins[] = {
-+	/* CMD, CLK */
-+	68, 65,
-+};
-+static const unsigned int mmc1_ctrl_mux[] = {
-+	MMC1_CMD_MARK, MMC1_CLK_MARK,
-+};
-+
-+static const unsigned int sdhi0_data1_pins[] = {
-+	/* D0 */
-+	117,
-+};
-+static const unsigned int sdhi0_data1_mux[] = {
-+	SD0_DAT0_MARK,
-+};
-+static const unsigned int sdhi0_data4_pins[] = {
-+	/* D[0:3] */
-+	117, 118, 119, 120,
-+};
-+static const unsigned int sdhi0_data4_mux[] = {
-+	SD0_DAT0_MARK, SD0_DAT1_MARK, SD0_DAT2_MARK, SD0_DAT3_MARK,
-+};
-+static const unsigned int sdhi0_ctrl_pins[] = {
-+	/* CMD, CLK */
-+	114, 113,
-+};
-+static const unsigned int sdhi0_ctrl_mux[] = {
-+	SD0_CMD_MARK, SD0_CLK_MARK,
-+};
-+static const unsigned int sdhi0_cd_pins[] = {
-+	/* CD */
-+	115,
-+};
-+static const unsigned int sdhi0_cd_mux[] = {
-+	SD0_CD_MARK,
-+};
-+static const unsigned int sdhi0_wp_pins[] = {
-+	/* WP */
-+	116,
-+};
-+static const unsigned int sdhi0_wp_mux[] = {
-+	SD0_WP_MARK,
-+};
-+
-+static const unsigned int sdhi1_data1_pins[] = {
-+	/* D0 */
-+	19,
-+};
-+static const unsigned int sdhi1_data1_mux[] = {
-+	SD1_DAT0_MARK,
-+};
-+static const unsigned int sdhi1_data4_pins[] = {
-+	/* D[0:3] */
-+	19, 20, 21, 2,
-+};
-+static const unsigned int sdhi1_data4_mux[] = {
-+	SD1_DAT0_MARK, SD1_DAT1_MARK, SD1_DAT2_MARK, SD1_DAT3_MARK,
-+};
-+static const unsigned int sdhi1_ctrl_pins[] = {
-+	/* CMD, CLK */
-+	18, 17,
-+};
-+static const unsigned int sdhi1_ctrl_mux[] = {
-+	SD1_CMD_MARK, SD1_CLK_MARK,
-+};
-+static const unsigned int sdhi1_cd_pins[] = {
-+	/* CD */
-+	10,
-+};
-+static const unsigned int sdhi1_cd_mux[] = {
-+	SD1_CD_MARK,
-+};
-+static const unsigned int sdhi1_wp_pins[] = {
-+	/* WP */
-+	11,
-+};
-+static const unsigned int sdhi1_wp_mux[] = {
-+	SD1_WP_MARK,
-+};
-+
-+static const unsigned int sdhi2_data1_pins[] = {
-+	/* D0 */
-+	97,
-+};
-+static const unsigned int sdhi2_data1_mux[] = {
-+	SD2_DAT0_MARK,
-+};
-+static const unsigned int sdhi2_data4_pins[] = {
-+	/* D[0:3] */
-+	97, 98, 99, 100,
-+};
-+static const unsigned int sdhi2_data4_mux[] = {
-+	SD2_DAT0_MARK, SD2_DAT1_MARK, SD2_DAT2_MARK, SD2_DAT3_MARK,
-+};
-+static const unsigned int sdhi2_ctrl_pins[] = {
-+	/* CMD, CLK */
-+	102, 101,
-+};
-+static const unsigned int sdhi2_ctrl_mux[] = {
-+	SD2_CMD_MARK, SD2_CLK_MARK,
-+};
-+static const unsigned int sdhi2_cd_pins[] = {
-+	/* CD */
-+	103,
-+};
-+static const unsigned int sdhi2_cd_mux[] = {
-+	SD2_CD_MARK,
-+};
-+static const unsigned int sdhi2_wp_pins[] = {
-+	/* WP */
-+	104,
-+};
-+static const unsigned int sdhi2_wp_mux[] = {
-+	SD2_WP_MARK,
-+};
-+
-+static const unsigned int sdhi3_data1_pins[] = {
-+	/* D0 */
-+	50,
-+};
-+static const unsigned int sdhi3_data1_mux[] = {
-+	SD3_DAT0_MARK,
-+};
-+static const unsigned int sdhi3_data4_pins[] = {
-+	/* D[0:3] */
-+	50, 51, 52, 53,
-+};
-+static const unsigned int sdhi3_data4_mux[] = {
-+	SD3_DAT0_MARK, SD3_DAT1_MARK, SD3_DAT2_MARK, SD3_DAT3_MARK,
-+};
-+static const unsigned int sdhi3_ctrl_pins[] = {
-+	/* CMD, CLK */
-+	35, 34,
-+};
-+static const unsigned int sdhi3_ctrl_mux[] = {
-+	SD3_CMD_MARK, SD3_CLK_MARK,
-+};
-+static const unsigned int sdhi3_cd_pins[] = {
-+	/* CD */
-+	62,
-+};
-+static const unsigned int sdhi3_cd_mux[] = {
-+	SD3_CD_MARK,
-+};
-+static const unsigned int sdhi3_wp_pins[] = {
-+	/* WP */
-+	64,
-+};
-+static const unsigned int sdhi3_wp_mux[] = {
-+	SD3_WP_MARK,
-+};
-+
- static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(du0_rgb666),
- 	SH_PFC_PIN_GROUP(du0_rgb888),
-@@ -1591,6 +1795,34 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(du1_sync_1),
- 	SH_PFC_PIN_GROUP(du1_oddf),
- 	SH_PFC_PIN_GROUP(du1_cde),
-+	SH_PFC_PIN_GROUP(mmc0_data1),
-+	SH_PFC_PIN_GROUP(mmc0_data4),
-+	SH_PFC_PIN_GROUP(mmc0_data8),
-+	SH_PFC_PIN_GROUP(mmc0_ctrl),
-+	SH_PFC_PIN_GROUP(mmc1_data1),
-+	SH_PFC_PIN_GROUP(mmc1_data4),
-+	SH_PFC_PIN_GROUP(mmc1_data8),
-+	SH_PFC_PIN_GROUP(mmc1_ctrl),
-+	SH_PFC_PIN_GROUP(sdhi0_data1),
-+	SH_PFC_PIN_GROUP(sdhi0_data4),
-+	SH_PFC_PIN_GROUP(sdhi0_ctrl),
-+	SH_PFC_PIN_GROUP(sdhi0_cd),
-+	SH_PFC_PIN_GROUP(sdhi0_wp),
-+	SH_PFC_PIN_GROUP(sdhi1_data1),
-+	SH_PFC_PIN_GROUP(sdhi1_data4),
-+	SH_PFC_PIN_GROUP(sdhi1_ctrl),
-+	SH_PFC_PIN_GROUP(sdhi1_cd),
-+	SH_PFC_PIN_GROUP(sdhi1_wp),
-+	SH_PFC_PIN_GROUP(sdhi2_data1),
-+	SH_PFC_PIN_GROUP(sdhi2_data4),
-+	SH_PFC_PIN_GROUP(sdhi2_ctrl),
-+	SH_PFC_PIN_GROUP(sdhi2_cd),
-+	SH_PFC_PIN_GROUP(sdhi2_wp),
-+	SH_PFC_PIN_GROUP(sdhi3_data1),
-+	SH_PFC_PIN_GROUP(sdhi3_data4),
-+	SH_PFC_PIN_GROUP(sdhi3_ctrl),
-+	SH_PFC_PIN_GROUP(sdhi3_cd),
-+	SH_PFC_PIN_GROUP(sdhi3_wp),
- };
- 
- static const char * const du0_groups[] = {
-@@ -1614,9 +1846,61 @@ static const char * const du1_groups[] = {
- 	"du1_cde",
- };
- 
-+static const char * const mmc0_groups[] = {
-+	"mmc0_data1",
-+	"mmc0_data4",
-+	"mmc0_data8",
-+	"mmc0_ctrl",
-+};
-+
-+static const char * const mmc1_groups[] = {
-+	"mmc1_data1",
-+	"mmc1_data4",
-+	"mmc1_data8",
-+	"mmc1_ctrl",
-+};
-+
-+static const char * const sdhi0_groups[] = {
-+	"sdhi0_data1",
-+	"sdhi0_data4",
-+	"sdhi0_ctrl",
-+	"sdhi0_cd",
-+	"sdhi0_wp",
-+};
-+
-+static const char * const sdhi1_groups[] = {
-+	"sdhi1_data1",
-+	"sdhi1_data4",
-+	"sdhi1_ctrl",
-+	"sdhi1_cd",
-+	"sdhi1_wp",
-+};
-+
-+static const char * const sdhi2_groups[] = {
-+	"sdhi2_data1",
-+	"sdhi2_data4",
-+	"sdhi2_ctrl",
-+	"sdhi2_cd",
-+	"sdhi2_wp",
-+};
-+
-+static const char * const sdhi3_groups[] = {
-+	"sdhi3_data1",
-+	"sdhi3_data4",
-+	"sdhi3_ctrl",
-+	"sdhi3_cd",
-+	"sdhi3_wp",
-+};
-+
- static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(du0),
- 	SH_PFC_FUNCTION(du1),
-+	SH_PFC_FUNCTION(mmc0),
-+	SH_PFC_FUNCTION(mmc1),
-+	SH_PFC_FUNCTION(sdhi0),
-+	SH_PFC_FUNCTION(sdhi1),
-+	SH_PFC_FUNCTION(sdhi2),
-+	SH_PFC_FUNCTION(sdhi3),
- };
- 
- #define PINMUX_FN_BASE	ARRAY_SIZE(pinmux_pins)
+Guennadi Liakhovetski (7):
+  media: V4L2: add temporary clock helpers
+  media: V4L2: support asynchronous subdevice registration
+  media: soc-camera: switch I2C subdevice drivers to use v4l2-clk
+  soc-camera: add V4L2-async support
+  sh_mobile_ceu_camera: add asynchronous subdevice probing support
+  imx074: support asynchronous probing
+  ARM: shmobile: convert ap4evb to asynchronously register camera
+    subdevices
+
+ arch/arm/mach-shmobile/board-ap4evb.c              |  103 ++--
+ arch/arm/mach-shmobile/clock-sh7372.c              |    1 +
+ drivers/media/i2c/soc_camera/imx074.c              |   36 +-
+ drivers/media/i2c/soc_camera/mt9m001.c             |   17 +-
+ drivers/media/i2c/soc_camera/mt9m111.c             |   20 +-
+ drivers/media/i2c/soc_camera/mt9t031.c             |   19 +-
+ drivers/media/i2c/soc_camera/mt9t112.c             |   19 +-
+ drivers/media/i2c/soc_camera/mt9v022.c             |   17 +-
+ drivers/media/i2c/soc_camera/ov2640.c              |   19 +-
+ drivers/media/i2c/soc_camera/ov5642.c              |   20 +-
+ drivers/media/i2c/soc_camera/ov6650.c              |   17 +-
+ drivers/media/i2c/soc_camera/ov772x.c              |   15 +-
+ drivers/media/i2c/soc_camera/ov9640.c              |   17 +-
+ drivers/media/i2c/soc_camera/ov9640.h              |    1 +
+ drivers/media/i2c/soc_camera/ov9740.c              |   18 +-
+ drivers/media/i2c/soc_camera/rj54n1cb0c.c          |   17 +-
+ drivers/media/i2c/soc_camera/tw9910.c              |   18 +-
+ .../platform/soc_camera/sh_mobile_ceu_camera.c     |  136 +++--
+ drivers/media/platform/soc_camera/sh_mobile_csi2.c |  162 +++---
+ drivers/media/platform/soc_camera/soc_camera.c     |  642 ++++++++++++++++----
+ .../platform/soc_camera/soc_camera_platform.c      |    2 +-
+ drivers/media/v4l2-core/Makefile                   |    3 +-
+ drivers/media/v4l2-core/v4l2-async.c               |  272 +++++++++
+ drivers/media/v4l2-core/v4l2-clk.c                 |  184 ++++++
+ include/media/sh_mobile_ceu.h                      |    2 +
+ include/media/sh_mobile_csi2.h                     |    2 +-
+ include/media/soc_camera.h                         |   36 +-
+ include/media/v4l2-async.h                         |  105 ++++
+ include/media/v4l2-clk.h                           |   55 ++
+ 29 files changed, 1666 insertions(+), 309 deletions(-)
+ create mode 100644 drivers/media/v4l2-core/v4l2-async.c
+ create mode 100644 drivers/media/v4l2-core/v4l2-clk.c
+ create mode 100644 include/media/v4l2-async.h
+ create mode 100644 include/media/v4l2-clk.h
+
 -- 
-1.8.1.5
+1.7.2.5
 
+Thanks
+Guennadi
+---
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
