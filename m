@@ -1,147 +1,219 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 19 Mar 2013 02:19:26 +0000
-Subject: [PATCH 04/14] ARM: shmobile: INTC External IRQ pin driver on r8a7779
-Message-Id: <1363659576-6333-5-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Fri, 15 Mar 2013 21:27:53 +0000
+Subject: [PATCH v6 7/7] ARM: shmobile: convert ap4evb to asynchronously register camera subdevices
+Message-Id: <1363382873-20077-8-git-send-email-g.liakhovetski@gmx.de>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363659576-6333-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363659576-6333-1-git-send-email-horms+renesas@verge.net.au>
+References: <1363382873-20077-1-git-send-email-g.liakhovetski@gmx.de>
+In-Reply-To: <1363382873-20077-1-git-send-email-g.liakhovetski@gmx.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-media@vger.kernel.org
+Cc: Laurent Pinchart <laurent.pinchart@ideasonboard.com>, Hans Verkuil <hverkuil@xs4all.nl>, Sylwester Nawrocki <s.nawrocki@samsung.com>, Sylwester Nawrocki <sylvester.nawrocki@gmail.com>, linux-sh@vger.kernel.org, Magnus Damm <magnus.damm@gmail.com>, Sakari Ailus <sakari.ailus@iki.fi>, Prabhakar Lad <prabhakar.lad@ti.com>, Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-From: Magnus Damm <damm@opensource.se>
+Register the imx074 camera I2C and the CSI-2 platform devices directly
+in board platform data instead of letting the sh_mobile_ceu_camera driver
+and the soc-camera framework register them at their run-time. This uses
+the V4L2 asynchronous subdevice probing capability.
 
-Update the r8a7779 IRQ code to make use of the
-INTC External IRQ pin driver for external
-interrupt pins IRQ0 -> IRQ3.
-
-The r8a7779 SoC can like older SH SoCs configure
-to use the IRQ0 -> IRQ3 signals as individual
-interrupts or a combined IRL mode.
-
-Without this patch the r8a7779 SoC code does
-not fully support external IRQ pins in individual
-IRQ mode. The r8a7779 PFC code does not yet have
-gpio_to_irq() support so no need to update such
-code.
-
-At this point the DT reference implementations
-are not covered. In the future such code shall
-tie in the INTC External IRQ pin driver via
-DT, so this kind of verbose code is not needed
-for the long term DT case.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Tested-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 ---
- arch/arm/mach-shmobile/Kconfig               |    1 +
- arch/arm/mach-shmobile/include/mach/common.h |    1 +
- arch/arm/mach-shmobile/intc-r8a7779.c        |   53 +++++++++++++++++++++++++-
- 3 files changed, 54 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index f964accb..75d413c 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -32,6 +32,7 @@ config ARCH_R8A7779
- 	select SH_CLK_CPG
- 	select USB_ARCH_HAS_EHCI
- 	select USB_ARCH_HAS_OHCI
-+	select RENESAS_INTC_IRQPIN
+v6: no change
+
+ arch/arm/mach-shmobile/board-ap4evb.c |  103 +++++++++++++++++++-------------
+ arch/arm/mach-shmobile/clock-sh7372.c |    1 +
+ 2 files changed, 62 insertions(+), 42 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 38f1259..450e06b 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -50,6 +50,7 @@
+ #include <media/sh_mobile_ceu.h>
+ #include <media/sh_mobile_csi2.h>
+ #include <media/soc_camera.h>
++#include <media/v4l2-async.h>
  
- config ARCH_EMEV2
- 	bool "Emma Mobile EV2"
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index 86fcdf9..03f73de 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -61,6 +61,7 @@ extern void r8a7740_pm_init(void);
+ #include <sound/sh_fsi.h>
+ #include <sound/simple_card.h>
+@@ -871,22 +872,32 @@ static struct platform_device leds_device = {
+ 	},
+ };
  
- extern void r8a7779_init_delay(void);
- extern void r8a7779_init_irq(void);
-+extern void r8a7779_init_irq_extpin(int irlm);
- extern void r8a7779_init_irq_dt(void);
- extern void r8a7779_map_io(void);
- extern void r8a7779_earlytimer_init(void);
-diff --git a/arch/arm/mach-shmobile/intc-r8a7779.c b/arch/arm/mach-shmobile/intc-r8a7779.c
-index f9cc4bc..fb0363c 100644
---- a/arch/arm/mach-shmobile/intc-r8a7779.c
-+++ b/arch/arm/mach-shmobile/intc-r8a7779.c
-@@ -19,13 +19,16 @@
-  */
- #include <linux/kernel.h>
- #include <linux/init.h>
-+#include <linux/platform_device.h>
- #include <linux/interrupt.h>
- #include <linux/irq.h>
- #include <linux/io.h>
- #include <linux/irqchip/arm-gic.h>
--#include <mach/common.h>
-+#include <linux/platform_data/irq-renesas-intc-irqpin.h>
- #include <linux/irqchip.h>
-+#include <mach/common.h>
- #include <mach/intc.h>
-+#include <mach/irqs.h>
- #include <mach/r8a7779.h>
- #include <asm/mach-types.h>
- #include <asm/mach/arch.h>
-@@ -39,6 +42,54 @@
- #define INT2NTSR0 IOMEM(0xfe700060)
- #define INT2NTSR1 IOMEM(0xfe700064)
- 
-+struct renesas_intc_irqpin_config irqpin0_platform_data = {
-+	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
-+	.sense_bitfield_width = 2,
-+};
-+
-+static struct resource irqpin0_resources[] = {
-+	DEFINE_RES_MEM(0xfe78001c, 4), /* ICR1 */
-+	DEFINE_RES_MEM(0xfe780010, 4), /* INTPRI */
-+	DEFINE_RES_MEM(0xfe780024, 4), /* INTREQ */
-+	DEFINE_RES_MEM(0xfe780044, 4), /* INTMSK0 */
-+	DEFINE_RES_MEM(0xfe780064, 4), /* INTMSKCLR0 */
-+	DEFINE_RES_IRQ(gic_spi(27)), /* IRQ0 */
-+	DEFINE_RES_IRQ(gic_spi(28)), /* IRQ1 */
-+	DEFINE_RES_IRQ(gic_spi(29)), /* IRQ2 */
-+	DEFINE_RES_IRQ(gic_spi(30)), /* IRQ3 */
-+};
-+
-+static struct platform_device irqpin0_device = {
-+	.name		= "renesas_intc_irqpin",
-+	.id		= 0,
-+	.resource	= irqpin0_resources,
-+	.num_resources	= ARRAY_SIZE(irqpin0_resources),
-+	.dev		= {
-+		.platform_data	= &irqpin0_platform_data,
+-static struct i2c_board_info imx074_info = {
+-	I2C_BOARD_INFO("imx074", 0x1a),
++/* I2C */
++static struct soc_camera_subdev_desc imx074_desc;
++static struct i2c_board_info i2c0_devices[] = {
++	{
++		I2C_BOARD_INFO("ak4643", 0x13),
++	}, {
++		I2C_BOARD_INFO("imx074", 0x1a),
++		.platform_data = &imx074_desc,
 +	},
+ };
+ 
+-static struct soc_camera_link imx074_link = {
+-	.bus_id		= 0,
+-	.board_info	= &imx074_info,
+-	.i2c_adapter_id	= 0,
+-	.module_name	= "imx074",
++static struct i2c_board_info i2c1_devices[] = {
++	{
++		I2C_BOARD_INFO("r2025sd", 0x32),
++	},
+ };
+ 
+-static struct platform_device ap4evb_camera = {
+-	.name   = "soc-camera-pdrv",
+-	.id     = 0,
+-	.dev    = {
+-		.platform_data = &imx074_link,
++static struct resource csi2_resources[] = {
++	{
++		.name	= "CSI2",
++		.start	= 0xffc90000,
++		.end	= 0xffc90fff,
++		.flags	= IORESOURCE_MEM,
++	}, {
++		.start	= intcs_evt2irq(0x17a0),
++		.flags  = IORESOURCE_IRQ,
+ 	},
+ };
+ 
+@@ -895,7 +906,7 @@ static struct sh_csi2_client_config csi2_clients[] = {
+ 		.phy		= SH_CSI2_PHY_MAIN,
+ 		.lanes		= 0,		/* default: 2 lanes */
+ 		.channel	= 0,
+-		.pdev		= &ap4evb_camera,
++		.name		= "imx074",
+ 	},
+ };
+ 
+@@ -906,31 +917,50 @@ static struct sh_csi2_pdata csi2_info = {
+ 	.flags		= SH_CSI2_ECC | SH_CSI2_CRC,
+ };
+ 
+-static struct resource csi2_resources[] = {
+-	[0] = {
+-		.name	= "CSI2",
+-		.start	= 0xffc90000,
+-		.end	= 0xffc90fff,
+-		.flags	= IORESOURCE_MEM,
++static struct platform_device csi2_device = {
++	.name		= "sh-mobile-csi2",
++	.id		= 0,
++	.num_resources	= ARRAY_SIZE(csi2_resources),
++	.resource	= csi2_resources,
++	.dev		= {
++		.platform_data = &csi2_info,
+ 	},
+-	[1] = {
+-		.start	= intcs_evt2irq(0x17a0),
+-		.flags  = IORESOURCE_IRQ,
 +};
 +
-+void __init r8a7779_init_irq_extpin(int irlm)
-+{
-+	void __iomem *icr0 = ioremap_nocache(0xfe780000, PAGE_SIZE);
-+	unsigned long tmp;
++static struct soc_camera_async_subdev csi2_sd = {
++	.asd.hw = {
++		.bus_type = V4L2_ASYNC_BUS_PLATFORM,
++		.match.platform.name = "sh-mobile-csi2.0",
+ 	},
++	.role = SOCAM_SUBDEV_DATA_PROCESSOR,
+ };
+ 
+-static struct sh_mobile_ceu_companion csi2 = {
+-	.id		= 0,
+-	.num_resources	= ARRAY_SIZE(csi2_resources),
+-	.resource	= csi2_resources,
+-	.platform_data	= &csi2_info,
++static struct soc_camera_async_subdev imx074_sd = {
++	.asd.hw = {
++		.bus_type = V4L2_ASYNC_BUS_I2C,
++		.match.i2c = {
++			.adapter_id = 0,
++			.address = 0x1a,
++		},
++	},
++	.role = SOCAM_SUBDEV_DATA_SOURCE,
+ };
+ 
++static struct v4l2_async_subdev *ceu_subdevs[] = {
++	/* Single 2-element group */
++	&csi2_sd.asd,
++	&imx074_sd.asd,
++};
 +
-+	if (icr0) {
-+		tmp = ioread32(icr0);
-+		if (irlm)
-+			tmp |= 1 << 23; /* IRQ0 -> IRQ3 as individual pins */
-+		else
-+			tmp &= ~(1 << 23); /* IRL mode - not supported */
-+		tmp |= (1 << 21); /* LVLMODE = 1 */
-+		iowrite32(tmp, icr0);
-+		iounmap(icr0);
++/* 0-terminated array of group-sizes */
++static int ceu_subdev_sizes[] = {ARRAY_SIZE(ceu_subdevs), 0};
 +
-+		if (irlm)
-+			platform_device_register(&irqpin0_device);
-+	} else
-+		pr_warn("r8a7779: unable to setup external irq pin mode\n");
-+}
-+
- static int r8a7779_set_wake(struct irq_data *data, unsigned int on)
- {
- 	return 0; /* always allow wakeup */
+ static struct sh_mobile_ceu_info sh_mobile_ceu_info = {
+ 	.flags = SH_CEU_FLAG_USE_8BIT_BUS,
+ 	.max_width = 8188,
+ 	.max_height = 8188,
+-	.csi2 = &csi2,
++	.asd = ceu_subdevs,
++	.asd_sizes = ceu_subdev_sizes,
+ };
+ 
+ static struct resource ceu_resources[] = {
+@@ -975,7 +1005,7 @@ static struct platform_device *ap4evb_devices[] __initdata = {
+ 	&lcdc_device,
+ 	&lcdc1_device,
+ 	&ceu_device,
+-	&ap4evb_camera,
++	&csi2_device,
+ 	&meram_device,
+ };
+ 
+@@ -1070,19 +1100,6 @@ static struct i2c_board_info tsc_device = {
+ 	/*.irq is selected on ap4evb_init */
+ };
+ 
+-/* I2C */
+-static struct i2c_board_info i2c0_devices[] = {
+-	{
+-		I2C_BOARD_INFO("ak4643", 0x13),
+-	},
+-};
+-
+-static struct i2c_board_info i2c1_devices[] = {
+-	{
+-		I2C_BOARD_INFO("r2025sd", 0x32),
+-	},
+-};
+-
+ 
+ #define GPIO_PORT9CR	IOMEM(0xE6051009)
+ #define GPIO_PORT10CR	IOMEM(0xE605100A)
+@@ -1097,6 +1114,7 @@ static void __init ap4evb_init(void)
+ 		{ "A3SP", &sdhi0_device, },
+ 		{ "A3SP", &sdhi1_device, },
+ 		{ "A4R", &ceu_device, },
++		{ "A4R", &csi2_device, },
+ 	};
+ 	u32 srcr4;
+ 	struct clk *clk;
+@@ -1324,6 +1342,7 @@ static void __init ap4evb_init(void)
+ 	sh7372_pm_init();
+ 	pm_clk_add(&fsi_device.dev, "spu2");
+ 	pm_clk_add(&lcdc1_device.dev, "hdmi");
++	pm_clk_add(&csi2_device.dev, "csir");
+ }
+ 
+ MACHINE_START(AP4EVB, "ap4evb")
+diff --git a/arch/arm/mach-shmobile/clock-sh7372.c b/arch/arm/mach-shmobile/clock-sh7372.c
+index 45d21fe..2e8cb42 100644
+--- a/arch/arm/mach-shmobile/clock-sh7372.c
++++ b/arch/arm/mach-shmobile/clock-sh7372.c
+@@ -617,6 +617,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_ICK_ID("divb", "sh_fsi2", &fsidivs[FSIDIV_B]),
+ 	CLKDEV_ICK_ID("xcka", "sh_fsi2", &fsiack_clk),
+ 	CLKDEV_ICK_ID("xckb", "sh_fsi2", &fsibck_clk),
++	CLKDEV_ICK_ID("csir", "sh-mobile-csi2.0", &div4_clks[DIV4_CSIR]),
+ };
+ 
+ void __init sh7372_clock_init(void)
 -- 
-1.7.10.4
+1.7.2.5
 
