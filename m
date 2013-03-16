@@ -1,7 +1,7 @@
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Fri, 15 Mar 2013 22:25:50 +0000
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Sat, 16 Mar 2013 03:40:53 +0000
 Subject: Re: [PATCH 0/5] ARM: shmobile: Add R-Car M1A Bock-W support
-Message-Id: <5143AE40.7010201@cogentembedded.com>
+Message-Id: <CANqRtoT2Ch5XHkoAgwzehSwmp+ATB1UCnmWM24683nF+gpDREg@mail.gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
 References: <87y5e3pra9.wl%kuninori.morimoto.gx@renesas.com>
 In-Reply-To: <87y5e3pra9.wl%kuninori.morimoto.gx@renesas.com>
@@ -10,10 +10,13 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-sh@vger.kernel.org
 
-Hello.
+Hi Morimoto-san, Simon,
 
-On 03/04/2013 10:17 AM, Kuninori Morimoto wrote:
-
+On Mon, Mar 4, 2013 at 4:17 PM, Kuninori Morimoto
+<kuninori.morimoto.gx@renesas.com> wrote:
+>
+> Hi Simon
+>
 > These are R-Car M1A chip and Bock-W board support
 >
 > Bock-W board needs ${LINUX}/arch/arm/tools/mach-types
@@ -22,39 +25,16 @@ On 03/04/2013 10:17 AM, Kuninori Morimoto wrote:
 >
 > ARM Web site already has Bock-W, mach-types will be updated
 > if upstream kernel has it.
->
-> This series doesn't support DT yet.
-> I'm working for it, but still doesn't work.
-> I will send my current DT support work for R-Car M1,
-> it is very helpful for me if you give feedback.
->
-> These patches are based on simon/next branch
->
-> Kuninori Morimoto (5):
->        ARM: shmobile: add R8A7778 setup support
->        ARM: shmobile: add R8A7778 clock support
->        ARM: shmobile: add R8A7778 intc support
->        ARM: shmobile: add r8a7778 GPIO/PFC support
 
-    I can't find patch 4 of this series anywhere, and it seems I can't 
-build board-bockw.c without it. Was it ever posted?
+Ok, I understand that Bock-W has been added via the wonderful web interface.
 
->        ARM: shmobile: add R-Car M1A Bock-W platform support
->
->   arch/arm/configs/bockw_defconfig              |   95 +
->   arch/arm/mach-shmobile/Kconfig                |   12 +
->   arch/arm/mach-shmobile/Makefile               |    2 +
->   arch/arm/mach-shmobile/board-bockw.c          |  126 ++
->   arch/arm/mach-shmobile/clock-r8a7778.c        |  109 ++
->   arch/arm/mach-shmobile/include/mach/common.h  |    8 +
->   arch/arm/mach-shmobile/include/mach/r8a7778.h |  292 +++
->   arch/arm/mach-shmobile/intc-r8a7778.c         |   64 +
->   arch/arm/mach-shmobile/setup-r8a7778.c        |  309 +++
->   drivers/pinctrl/sh-pfc/Makefile               |    1 +
->   drivers/pinctrl/sh-pfc/core.h                 |    1 +
->   drivers/pinctrl/sh-pfc/pfc-r8a7778.c          | 2503 +++++++++++++++++++++++++
->   12 files changed, 3522 insertions(+)
->
+But does the mach-type file really get updated these days? When was
+the last time anyone updated that file with updates from the web
+interface?
 
-WBR, Sergei
+I recall last year trying to use an already existing mach-type for
+KZM9D but that was removed and I was requested to use DT instead.
 
+Cheers,
+
+/ magnus
