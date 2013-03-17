@@ -1,63 +1,37 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 06 Mar 2013 13:46:49 +0000
-Subject: [PATCH v2 10/39] ARM: shmobile: ag5evm: Register pinctrl mappings for SCIF
-Message-Id: <1362577638-15493-11-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Sun, 17 Mar 2013 15:43:50 +0000
+Subject: [PATCH v3 6/7] ARM: shmobile: r8a7740: Add DT name to clock list for CMT10
+Message-Id: <1363535031-21402-6-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363535031-21402-1-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1363535031-21402-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Replace the GPIO-based SCIF pinmux configuration by pinctrl mappings.
+This adds temporarily the alternative device name to the clock list
+that is used when booting via Device Tree setup.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
 ---
- arch/arm/mach-shmobile/board-ag5evm.c | 16 ++++++++++------
- 1 file changed, 10 insertions(+), 6 deletions(-)
+v3: same (only patch 0003 changed)
 
-diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
-index a4ac46a..989d096 100644
---- a/arch/arm/mach-shmobile/board-ag5evm.c
-+++ b/arch/arm/mach-shmobile/board-ag5evm.c
-@@ -23,6 +23,7 @@
- #include <linux/init.h>
- #include <linux/interrupt.h>
- #include <linux/irq.h>
-+#include <linux/pinctrl/machine.h>
- #include <linux/platform_device.h>
- #include <linux/delay.h>
- #include <linux/io.h>
-@@ -550,6 +551,13 @@ static struct platform_device *ag5evm_devices[] __initdata = {
- 	&sdhi1_device,
- };
+ arch/arm/mach-shmobile/clock-r8a7740.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index 1feb9a2..b0b5d3c 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -616,6 +616,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6cc0000.sci",		&mstp_clks[MSTP230]),
  
-+static const struct pinctrl_map ag5evm_pinctrl_map[] = {
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-sh73a0",
-+				  "scifa2_data_0", "scifa2"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-sh73a0",
-+				  "scifa2_ctrl_0", "scifa2"),
-+};
-+
- static void __init ag5evm_init(void)
- {
- 	regulator_register_always_on(0, "fixed-1.8V", fixed1v8_power_consumers,
-@@ -558,14 +566,10 @@ static void __init ag5evm_init(void)
- 				     ARRAY_SIZE(fixed2v8_power_consumers), 3300000);
- 	regulator_register_fixed(3, dummy_supplies, ARRAY_SIZE(dummy_supplies));
- 
-+	pinctrl_register_mappings(ag5evm_pinctrl_map,
-+				  ARRAY_SIZE(ag5evm_pinctrl_map));
- 	sh73a0_pinmux_init();
- 
--	/* enable SCIFA2 */
--	gpio_request(GPIO_FN_SCIFA2_TXD1, NULL);
--	gpio_request(GPIO_FN_SCIFA2_RXD1, NULL);
--	gpio_request(GPIO_FN_SCIFA2_RTS1_, NULL);
--	gpio_request(GPIO_FN_SCIFA2_CTS1_, NULL);
--
- 	/* enable KEYSC */
- 	gpio_request(GPIO_FN_KEYIN0_PU, NULL);
- 	gpio_request(GPIO_FN_KEYIN1_PU, NULL);
+ 	CLKDEV_DEV_ID("sh_cmt.10",		&mstp_clks[MSTP329]),
++	CLKDEV_DEV_ID("e6138010.timer",		&mstp_clks[MSTP329]),
+ 	CLKDEV_DEV_ID("sh_fsi2",		&mstp_clks[MSTP328]),
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.1",	&mstp_clks[MSTP323]),
+ 	CLKDEV_DEV_ID("renesas_usbhs",		&mstp_clks[MSTP320]),
 -- 
-1.8.1.5
+1.7.9.5
 
