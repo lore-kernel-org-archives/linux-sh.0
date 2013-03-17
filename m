@@ -1,88 +1,96 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 06 Mar 2013 13:46:55 +0000
-Subject: [PATCH v2 16/39] ARM: shmobile: bonito: Register pinctrl mappings for LCDC0
-Message-Id: <1362577638-15493-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Sun, 17 Mar 2013 15:43:49 +0000
+Subject: [PATCH v3 5/7] ARM: mach-shmobile: sh73a0: Setup the timer CMT10 using DT
+Message-Id: <1363535031-21402-5-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363535031-21402-1-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1363535031-21402-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Replace the GPIO-based LCDC0 pinmux configuration by pinctrl mappings.
+We can now use the Device Tree for bringing up our timer device CMT10 on
+the SoC sh73a0.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
 ---
- arch/arm/mach-shmobile/board-bonito.c | 43 +++++++++++------------------------
- 1 file changed, 13 insertions(+), 30 deletions(-)
+v3: same (only patch 0003 changed)
 
-diff --git a/arch/arm/mach-shmobile/board-bonito.c b/arch/arm/mach-shmobile/board-bonito.c
-index d363526..cc8941d 100644
---- a/arch/arm/mach-shmobile/board-bonito.c
-+++ b/arch/arm/mach-shmobile/board-bonito.c
-@@ -24,6 +24,7 @@
- #include <linux/init.h>
- #include <linux/interrupt.h>
- #include <linux/irq.h>
-+#include <linux/pinctrl/machine.h>
- #include <linux/platform_device.h>
- #include <linux/gpio.h>
- #include <linux/regulator/fixed.h>
-@@ -288,6 +289,15 @@ static struct platform_device lcdc0_device = {
+ arch/arm/boot/dts/sh73a0.dtsi         |   11 +++++++++++
+ arch/arm/mach-shmobile/setup-sh73a0.c |   32 --------------------------------
+ 2 files changed, 11 insertions(+), 32 deletions(-)
+
+diff --git a/arch/arm/boot/dts/sh73a0.dtsi b/arch/arm/boot/dts/sh73a0.dtsi
+index 8a59465..6549d6c 100644
+--- a/arch/arm/boot/dts/sh73a0.dtsi
++++ b/arch/arm/boot/dts/sh73a0.dtsi
+@@ -97,4 +97,15 @@
+ 			      0 189 0x4
+ 			      0 190 0x4>;
+ 	};
++
++	timer@e6138010 {
++		compatible = "renesas,cmt-timer";
++		interrupt-parent = <&gic>;
++		reg = <0xe6138010 0xc>;
++		interrupts = <0 65 0x4>;
++		renesas,device-id = <1>;
++		renesas,channel-id = <0>;
++		renesas,source-quality = <3>;
++		renesas,event-quality = <3>;
++	};
+ };
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 95a75af..64bc2c5 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -247,37 +247,6 @@ static struct platform_device scif8_device = {
  	},
  };
  
-+static const struct pinctrl_map lcdc0_pinctrl_map[] = {
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
-+				  "lcd0_data24_1", "lcd0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
-+				  "lcd0_lclk_1", "lcd0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
-+				  "lcd0_sync", "lcd0"),
-+};
-+
- /*
-  * SMSC 9221
-  */
-@@ -430,36 +440,9 @@ static void __init bonito_init(void)
- 		 */
- 		if (BIT_ON(bsw2, 3) &&	/* S38.1 = OFF */
- 		    BIT_ON(bsw2, 2)) {	/* S38.2 = OFF */
--			gpio_request(GPIO_FN_LCDC0_SELECT,	NULL);
--			gpio_request(GPIO_FN_LCD0_D0,		NULL);
--			gpio_request(GPIO_FN_LCD0_D1,		NULL);
--			gpio_request(GPIO_FN_LCD0_D2,		NULL);
--			gpio_request(GPIO_FN_LCD0_D3,		NULL);
--			gpio_request(GPIO_FN_LCD0_D4,		NULL);
--			gpio_request(GPIO_FN_LCD0_D5,		NULL);
--			gpio_request(GPIO_FN_LCD0_D6,		NULL);
--			gpio_request(GPIO_FN_LCD0_D7,		NULL);
--			gpio_request(GPIO_FN_LCD0_D8,		NULL);
--			gpio_request(GPIO_FN_LCD0_D9,		NULL);
--			gpio_request(GPIO_FN_LCD0_D10,		NULL);
--			gpio_request(GPIO_FN_LCD0_D11,		NULL);
--			gpio_request(GPIO_FN_LCD0_D12,		NULL);
--			gpio_request(GPIO_FN_LCD0_D13,		NULL);
--			gpio_request(GPIO_FN_LCD0_D14,		NULL);
--			gpio_request(GPIO_FN_LCD0_D15,		NULL);
--			gpio_request(GPIO_FN_LCD0_D16,		NULL);
--			gpio_request(GPIO_FN_LCD0_D17,		NULL);
--			gpio_request(GPIO_FN_LCD0_D18_PORT163,	NULL);
--			gpio_request(GPIO_FN_LCD0_D19_PORT162,	NULL);
--			gpio_request(GPIO_FN_LCD0_D20_PORT161,	NULL);
--			gpio_request(GPIO_FN_LCD0_D21_PORT158,	NULL);
--			gpio_request(GPIO_FN_LCD0_D22_PORT160,	NULL);
--			gpio_request(GPIO_FN_LCD0_D23_PORT159,	NULL);
--			gpio_request(GPIO_FN_LCD0_DCK,		NULL);
--			gpio_request(GPIO_FN_LCD0_VSYN,		NULL);
--			gpio_request(GPIO_FN_LCD0_HSYN,		NULL);
--			gpio_request(GPIO_FN_LCD0_DISP,		NULL);
--			gpio_request(GPIO_FN_LCD0_LCLK_PORT165,	NULL);
-+			pinctrl_register_mappings(lcdc0_pinctrl_map,
-+						  ARRAY_SIZE(lcdc0_pinctrl_map));
-+			gpio_request(GPIO_FN_LCDC0_SELECT, NULL);
+-static struct sh_timer_config cmt10_platform_data = {
+-	.name = "CMT10",
+-	.channel_offset = 0x10,
+-	.timer_bit = 0,
+-	.clockevent_rating = 125,
+-	.clocksource_rating = 125,
+-};
+-
+-static struct resource cmt10_resources[] = {
+-	[0] = {
+-		.name	= "CMT10",
+-		.start	= 0xe6138010,
+-		.end	= 0xe613801b,
+-		.flags	= IORESOURCE_MEM,
+-	},
+-	[1] = {
+-		.start	= gic_spi(65),
+-		.flags	= IORESOURCE_IRQ,
+-	},
+-};
+-
+-static struct platform_device cmt10_device = {
+-	.name		= "sh_cmt",
+-	.id		= 10,
+-	.dev = {
+-		.platform_data	= &cmt10_platform_data,
+-	},
+-	.resource	= cmt10_resources,
+-	.num_resources	= ARRAY_SIZE(cmt10_resources),
+-};
+-
+ /* TMU */
+ static struct sh_timer_config tmu00_platform_data = {
+ 	.name = "TMU00",
+@@ -913,7 +882,6 @@ static struct platform_device *sh73a0_devices_dt[] __initdata = {
+ 	&scif6_device,
+ 	&scif7_device,
+ 	&scif8_device,
+-	&cmt10_device,
+ };
  
- 			gpio_request_one(61, GPIOF_OUT_INIT_HIGH,
- 					 NULL); /* LCDDON */
+ static struct platform_device *sh73a0_early_devices[] __initdata = {
 -- 
-1.8.1.5
+1.7.9.5
 
