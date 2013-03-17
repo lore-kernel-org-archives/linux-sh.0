@@ -1,97 +1,47 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 26 Mar 2013 06:08:10 +0000
-Subject: [PATCH 1/2 v2] thermal: rcar: tidyup registration failure case
-Message-Id: <87ppymith5.wl%kuninori.morimoto.gx@renesas.com>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Sun, 17 Mar 2013 15:43:48 +0000
+Subject: [PATCH v3 4/7] ARM: shmobile: sh73a0: Add timer DT names to clock list
+Message-Id: <1363535031-21402-4-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87620gqbbe.wl%kuninori.morimoto.gx@renesas.com>
-	<874ng0qb9f.wl%kuninori.morimoto.gx@renesas.com>
-	<1364200856.2465.48.camel@rzhang1-mobl4>
-	<871ub3j9r3.wl%kuninori.morimoto.gx@renesas.com>
-	<87sj3iiu5m.wl%kuninori.morimoto.gx@renesas.com>
-	<87r4j2itio.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87r4j2itio.wl%kuninori.morimoto.gx@renesas.com>
+References: <1363535031-21402-1-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1363535031-21402-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Zhang Rui <rui.zhang@intel.com>
-Cc: Simon <horms@verge.net.au>, Magnus <magnus.damm@gmail.com>, Kuninori Morimoto <kuninori.morimoto.gx@gmail.com>, linux-pm@vger.kernel.org, Linux-SH <linux-sh@vger.kernel.org>
+To: linux-arm-kernel@lists.infradead.org
 
-Current rcar_thermal driver didn't care about rcar_theraml_irq_disable()
-when registration failure case on _probe(), and _remove().
-And, it returns without unregistering thermal zone when
-registration failure case on _probe().
-This patch fixes these issue.
+This adds temporarily the alternative device names to the clock list
+that are used when booting via Device Tree setup.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
 ---
-v1 -> v2
+v3: same (only patch 0003 changed)
 
- - same as v1
+ arch/arm/mach-shmobile/clock-sh73a0.c |    3 +++
+ 1 file changed, 3 insertions(+)
 
- drivers/thermal/rcar_thermal.c |   20 ++++++++++++++------
- 1 file changed, 14 insertions(+), 6 deletions(-)
-
-diff --git a/drivers/thermal/rcar_thermal.c b/drivers/thermal/rcar_thermal.c
-index c490aa5..c199623 100644
---- a/drivers/thermal/rcar_thermal.c
-+++ b/drivers/thermal/rcar_thermal.c
-@@ -421,13 +421,15 @@ static int rcar_thermal_probe(struct platform_device *pdev)
- 		priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
- 		if (!priv) {
- 			dev_err(dev, "Could not allocate priv\n");
--			return -ENOMEM;
-+			ret = -ENOMEM;
-+			goto error_unregister;
- 		}
- 
- 		priv->base = devm_request_and_ioremap(dev, res);
- 		if (!priv->base) {
- 			dev_err(dev, "Unable to ioremap priv register\n");
--			return -ENOMEM;
-+			ret = -ENOMEM;
-+			goto error_unregister;
- 		}
- 
- 		priv->common = common;
-@@ -447,10 +449,10 @@ static int rcar_thermal_probe(struct platform_device *pdev)
- 			goto error_unregister;
- 		}
- 
--		list_move_tail(&priv->list, &common->head);
--
- 		if (rcar_has_irq_support(priv))
- 			rcar_thermal_irq_enable(priv);
-+
-+		list_move_tail(&priv->list, &common->head);
- 	}
- 
- 	platform_set_drvdata(pdev, common);
-@@ -460,8 +462,11 @@ static int rcar_thermal_probe(struct platform_device *pdev)
- 	return 0;
- 
- error_unregister:
--	rcar_thermal_for_each_priv(priv, common)
-+	rcar_thermal_for_each_priv(priv, common) {
- 		thermal_zone_device_unregister(priv->zone);
-+		if (rcar_has_irq_support(priv))
-+			rcar_thermal_irq_disable(priv);
-+	}
- 
- 	return ret;
- }
-@@ -471,8 +476,11 @@ static int rcar_thermal_remove(struct platform_device *pdev)
- 	struct rcar_thermal_common *common = platform_get_drvdata(pdev);
- 	struct rcar_thermal_priv *priv;
- 
--	rcar_thermal_for_each_priv(priv, common)
-+	rcar_thermal_for_each_priv(priv, common) {
- 		thermal_zone_device_unregister(priv->zone);
-+		if (rcar_has_irq_support(priv))
-+			rcar_thermal_irq_disable(priv);
-+	}
- 
- 	platform_set_drvdata(pdev, NULL);
- 
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index 71843dd..2704467 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -558,7 +558,9 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_mobile_ceu.0", &mstp_clks[MSTP127]), /* CEU0 */
+ 	CLKDEV_DEV_ID("sh-mobile-csi2.0", &mstp_clks[MSTP126]), /* CSI2-RX0 */
+ 	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP125]), /* TMU00 */
++	CLKDEV_DEV_ID("fff60008.timer", &mstp_clks[MSTP125]), /* TMU00 */
+ 	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP125]), /* TMU01 */
++	CLKDEV_DEV_ID("fff60014.timer", &mstp_clks[MSTP125]), /* TMU01 */
+ 	CLKDEV_DEV_ID("sh-mipi-dsi.0", &mstp_clks[MSTP118]), /* DSITX */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.0", &mstp_clks[MSTP116]), /* I2C0 */
+ 	CLKDEV_DEV_ID("e6820000.i2c", &mstp_clks[MSTP116]), /* I2C0 */
+@@ -575,6 +577,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh-sci.4", &mstp_clks[MSTP200]), /* SCIFA4 */
+ 	CLKDEV_DEV_ID("sh-sci.6", &mstp_clks[MSTP331]), /* SCIFA6 */
+ 	CLKDEV_DEV_ID("sh_cmt.10", &mstp_clks[MSTP329]), /* CMT10 */
++	CLKDEV_DEV_ID("e6138010.timer", &mstp_clks[MSTP329]), /* CMT10 */
+ 	CLKDEV_DEV_ID("sh_fsi2", &mstp_clks[MSTP328]), /* FSI */
+ 	CLKDEV_DEV_ID("sh_irda.0", &mstp_clks[MSTP325]), /* IrDA */
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.1", &mstp_clks[MSTP323]), /* I2C1 */
 -- 
 1.7.9.5
 
