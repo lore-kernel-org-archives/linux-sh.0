@@ -1,389 +1,216 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:05:20 +0000
-Subject: [PATCH 024/142] ARM: shmobile: sh73a0: Support sparse GPIO numbers
-Message-Id: <1363604838-29359-25-git-send-email-horms+renesas@verge.net.au>
+From: Bastian Hecht <hechtb@gmail.com>
+Date: Sun, 17 Mar 2013 15:43:47 +0000
+Subject: [PATCH v3 3/7] clocksource: sh_tmu: Add OF support
+Message-Id: <1363535031-21402-3-git-send-email-hechtb+renesas@gmail.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+References: <1363535031-21402-1-git-send-email-hechtb+renesas@gmail.com>
+In-Reply-To: <1363535031-21402-1-git-send-email-hechtb+renesas@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+We add the capabilty to probe SH CMT timer devices using Device Tree
+setup.
 
-The SH73A0 SoC has sparse GPIO numbers. Declare the pin numbers ranges
-in the PFC SoC data and use the pin numbers in the GPIO API.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
 ---
- arch/arm/mach-shmobile/board-ag5evm.c        |   26 ++++-----
- arch/arm/mach-shmobile/board-kota2.c         |   42 +++++++--------
- arch/arm/mach-shmobile/board-kzm9g.c         |   14 ++---
- arch/arm/mach-shmobile/include/mach/sh73a0.h |    2 +-
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c          |   75 ++++++++++++++------------
- 5 files changed, 84 insertions(+), 75 deletions(-)
+v3: trivial fix: assign config values to driver data.
 
-diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
-index 8ff53a1..a4ac46a 100644
---- a/arch/arm/mach-shmobile/board-ag5evm.c
-+++ b/arch/arm/mach-shmobile/board-ag5evm.c
-@@ -304,9 +304,9 @@ static int lcd_backlight_set_brightness(int brightness)
+ drivers/clocksource/sh_tmu.c |   96 +++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 85 insertions(+), 11 deletions(-)
+
+diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
+index b4502edc..98a3c3c 100644
+--- a/drivers/clocksource/sh_tmu.c
++++ b/drivers/clocksource/sh_tmu.c
+@@ -34,10 +34,13 @@
+ #include <linux/module.h>
+ #include <linux/pm_domain.h>
+ #include <linux/pm_runtime.h>
++#include <linux/of.h>
  
- 	if (brightness = 0) {
- 		/* Reset the chip */
--		gpio_set_value(GPIO_PORT235, 0);
-+		gpio_set_value(235, 0);
- 		mdelay(24);
--		gpio_set_value(GPIO_PORT235, 1);
-+		gpio_set_value(235, 1);
- 		return 0;
+ struct sh_tmu_priv {
+ 	void __iomem *mapbase;
+ 	struct clk *clk;
++	long channel_offset;
++	int timer_bit;
+ 	struct irqaction irqaction;
+ 	struct platform_device *pdev;
+ 	unsigned long rate;
+@@ -57,12 +60,11 @@ static DEFINE_RAW_SPINLOCK(sh_tmu_lock);
+ 
+ static inline unsigned long sh_tmu_read(struct sh_tmu_priv *p, int reg_nr)
+ {
+-	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
+ 	void __iomem *base = p->mapbase;
+ 	unsigned long offs;
+ 
+ 	if (reg_nr = TSTR)
+-		return ioread8(base - cfg->channel_offset);
++		return ioread8(base - p->channel_offset);
+ 
+ 	offs = reg_nr << 2;
+ 
+@@ -75,12 +77,11 @@ static inline unsigned long sh_tmu_read(struct sh_tmu_priv *p, int reg_nr)
+ static inline void sh_tmu_write(struct sh_tmu_priv *p, int reg_nr,
+ 				unsigned long value)
+ {
+-	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
+ 	void __iomem *base = p->mapbase;
+ 	unsigned long offs;
+ 
+ 	if (reg_nr = TSTR) {
+-		iowrite8(value, base - cfg->channel_offset);
++		iowrite8(value, base - p->channel_offset);
+ 		return;
  	}
  
-@@ -406,7 +406,7 @@ static struct sh_mobile_sdhi_info sdhi0_info = {
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_USE_GPIO_CD,
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
- 	.tmio_ocr_mask	= MMC_VDD_27_28 | MMC_VDD_28_29,
--	.cd_gpio	= GPIO_PORT251,
-+	.cd_gpio	= 251,
- };
+@@ -94,7 +95,6 @@ static inline void sh_tmu_write(struct sh_tmu_priv *p, int reg_nr,
  
- static struct resource sdhi0_resources[] = {
-@@ -461,7 +461,7 @@ static struct regulator_init_data cn4_power_init_data = {
- static struct fixed_voltage_config cn4_power_info = {
- 	.supply_name = "CN4 SD/MMC Vdd",
- 	.microvolts = 3300000,
--	.gpio = GPIO_PORT114,
-+	.gpio = 114,
- 	.enable_high = 1,
- 	.init_data = &cn4_power_init_data,
- };
-@@ -479,10 +479,10 @@ static void ag5evm_sdhi1_set_pwr(struct platform_device *pdev, int state)
- 	static int power_gpio = -EINVAL;
+ static void sh_tmu_start_stop_ch(struct sh_tmu_priv *p, int start)
+ {
+-	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
+ 	unsigned long flags, value;
  
- 	if (power_gpio < 0) {
--		int ret = gpio_request_one(GPIO_PORT114, GPIOF_OUT_INIT_LOW,
-+		int ret = gpio_request_one(114, GPIOF_OUT_INIT_LOW,
- 					   "sdhi1_power");
- 		if (!ret)
--			power_gpio = GPIO_PORT114;
-+			power_gpio = 114;
- 	}
+ 	/* start stop register shared by multiple timer channels */
+@@ -102,9 +102,9 @@ static void sh_tmu_start_stop_ch(struct sh_tmu_priv *p, int start)
+ 	value = sh_tmu_read(p, TSTR);
  
- 	/*
-@@ -493,7 +493,7 @@ static void ag5evm_sdhi1_set_pwr(struct platform_device *pdev, int state)
- 	 * regulator driver. We have to live with the race in case the driver
- 	 * gets unloaded and the GPIO freed between these two steps.
- 	 */
--	gpio_set_value(GPIO_PORT114, state);
-+	gpio_set_value(114, state);
+ 	if (start)
+-		value |= 1 << cfg->timer_bit;
++		value |= 1 << p->timer_bit;
+ 	else
+-		value &= ~(1 << cfg->timer_bit);
++		value &= ~(1 << p->timer_bit);
+ 
+ 	sh_tmu_write(p, TSTR, value);
+ 	raw_spin_unlock_irqrestore(&sh_tmu_lock, flags);
+@@ -421,9 +421,75 @@ static int sh_tmu_register(struct sh_tmu_priv *p, char *name,
+ 	return 0;
  }
  
- static struct sh_mobile_sdhi_info sh_sdhi1_info = {
-@@ -603,11 +603,11 @@ static void __init ag5evm_init(void)
- 	gpio_request(GPIO_FN_MMCD0_5_PU, NULL);
- 	gpio_request(GPIO_FN_MMCD0_6_PU, NULL);
- 	gpio_request(GPIO_FN_MMCD0_7_PU, NULL);
--	gpio_request_one(GPIO_PORT208, GPIOF_OUT_INIT_HIGH, NULL); /* Reset */
-+	gpio_request_one(208, GPIOF_OUT_INIT_HIGH, NULL); /* Reset */
- 
- 	/* enable SMSC911X */
--	gpio_request_one(GPIO_PORT144, GPIOF_IN, NULL); /* PINTA2 */
--	gpio_request_one(GPIO_PORT145, GPIOF_OUT_INIT_HIGH, NULL); /* RESET */
-+	gpio_request_one(144, GPIOF_IN, NULL); /* PINTA2 */
-+	gpio_request_one(145, GPIOF_OUT_INIT_HIGH, NULL); /* RESET */
- 
- 	/* FSI A */
- 	gpio_request(GPIO_FN_FSIACK, NULL);
-@@ -622,13 +622,13 @@ static void __init ag5evm_init(void)
- 	gpio_request(GPIO_FN_PORT243_IRDA_FIRSEL, NULL);
- 
- 	/* LCD panel */
--	gpio_request_one(GPIO_PORT217, GPIOF_OUT_INIT_LOW, NULL); /* RESET */
-+	gpio_request_one(217, GPIOF_OUT_INIT_LOW, NULL); /* RESET */
- 	mdelay(1);
--	gpio_set_value(GPIO_PORT217, 1);
-+	gpio_set_value(217, 1);
- 	mdelay(100);
- 
- 	/* LCD backlight controller */
--	gpio_request_one(GPIO_PORT235, GPIOF_OUT_INIT_LOW, NULL); /* RESET */
-+	gpio_request_one(235, GPIOF_OUT_INIT_LOW, NULL); /* RESET */
- 	lcd_backlight_set_brightness(0);
- 
- 	/* enable SDHI0 on CN15 [SD I/F] */
-diff --git a/arch/arm/mach-shmobile/board-kota2.c b/arch/arm/mach-shmobile/board-kota2.c
-index 2ccc860..b6f0515 100644
---- a/arch/arm/mach-shmobile/board-kota2.c
-+++ b/arch/arm/mach-shmobile/board-kota2.c
-@@ -135,17 +135,17 @@ static struct platform_device keysc_device = {
- #define GPIO_KEY(c, g, d) { .code = c, .gpio = g, .desc = d, .active_low = 1 }
- 
- static struct gpio_keys_button gpio_buttons[] = {
--	GPIO_KEY(KEY_VOLUMEUP, GPIO_PORT56, "+"), /* S2: VOL+ [IRQ9] */
--	GPIO_KEY(KEY_VOLUMEDOWN, GPIO_PORT54, "-"), /* S3: VOL- [IRQ10] */
--	GPIO_KEY(KEY_MENU, GPIO_PORT27, "Menu"), /* S4: MENU [IRQ30] */
--	GPIO_KEY(KEY_HOMEPAGE, GPIO_PORT26, "Home"), /* S5: HOME [IRQ31] */
--	GPIO_KEY(KEY_BACK, GPIO_PORT11, "Back"), /* S6: BACK [IRQ0] */
--	GPIO_KEY(KEY_PHONE, GPIO_PORT238, "Tel"), /* S7: TEL [IRQ11] */
--	GPIO_KEY(KEY_POWER, GPIO_PORT239, "C1"), /* S8: CAM [IRQ13] */
--	GPIO_KEY(KEY_MAIL, GPIO_PORT224, "Mail"), /* S9: MAIL [IRQ3] */
--	/* Omitted button "C3?": GPIO_PORT223 - S10: CUST [IRQ8] */
--	GPIO_KEY(KEY_CAMERA, GPIO_PORT164, "C2"), /* S11: CAM_HALF [IRQ25] */
--	/* Omitted button "?": GPIO_PORT152 - S12: CAM_FULL [No IRQ] */
-+	GPIO_KEY(KEY_VOLUMEUP, 56, "+"), /* S2: VOL+ [IRQ9] */
-+	GPIO_KEY(KEY_VOLUMEDOWN, 54, "-"), /* S3: VOL- [IRQ10] */
-+	GPIO_KEY(KEY_MENU, 27, "Menu"), /* S4: MENU [IRQ30] */
-+	GPIO_KEY(KEY_HOMEPAGE, 26, "Home"), /* S5: HOME [IRQ31] */
-+	GPIO_KEY(KEY_BACK, 11, "Back"), /* S6: BACK [IRQ0] */
-+	GPIO_KEY(KEY_PHONE, 238, "Tel"), /* S7: TEL [IRQ11] */
-+	GPIO_KEY(KEY_POWER, 239, "C1"), /* S8: CAM [IRQ13] */
-+	GPIO_KEY(KEY_MAIL, 224, "Mail"), /* S9: MAIL [IRQ3] */
-+	/* Omitted button "C3?": 223 - S10: CUST [IRQ8] */
-+	GPIO_KEY(KEY_CAMERA, 164, "C2"), /* S11: CAM_HALF [IRQ25] */
-+	/* Omitted button "?": 152 - S12: CAM_FULL [No IRQ] */
- };
- 
- static struct gpio_keys_platform_data gpio_key_info = {
-@@ -165,9 +165,9 @@ static struct platform_device gpio_keys_device = {
- #define GPIO_LED(n, g) { .name = n, .gpio = g }
- 
- static struct gpio_led gpio_leds[] = {
--	GPIO_LED("G", GPIO_PORT20), /* PORT20 [GPO0] -> LED7 -> "G" */
--	GPIO_LED("H", GPIO_PORT21), /* PORT21 [GPO1] -> LED8 -> "H" */
--	GPIO_LED("J", GPIO_PORT22), /* PORT22 [GPO2] -> LED9 -> "J" */
-+	GPIO_LED("G", 20), /* PORT20 [GPO0] -> LED7 -> "G" */
-+	GPIO_LED("H", 21), /* PORT21 [GPO1] -> LED8 -> "H" */
-+	GPIO_LED("J", 22), /* PORT22 [GPO2] -> LED9 -> "J" */
- };
- 
- static struct gpio_led_platform_data gpio_leds_info = {
-@@ -187,7 +187,7 @@ static struct platform_device gpio_leds_device = {
- static struct led_renesas_tpu_config led_renesas_tpu12_pdata = {
- 	.name		= "V2513",
- 	.pin_gpio_fn	= GPIO_FN_TPU1TO2,
--	.pin_gpio	= GPIO_PORT153,
-+	.pin_gpio	= 153,
- 	.channel_offset = 0x90,
- 	.timer_bit = 2,
- 	.max_brightness = 1000,
-@@ -215,7 +215,7 @@ static struct platform_device leds_tpu12_device = {
- static struct led_renesas_tpu_config led_renesas_tpu41_pdata = {
- 	.name		= "V2514",
- 	.pin_gpio_fn	= GPIO_FN_TPU4TO1,
--	.pin_gpio	= GPIO_PORT199,
-+	.pin_gpio	= 199,
- 	.channel_offset = 0x50,
- 	.timer_bit = 1,
- 	.max_brightness = 1000,
-@@ -243,7 +243,7 @@ static struct platform_device leds_tpu41_device = {
- static struct led_renesas_tpu_config led_renesas_tpu21_pdata = {
- 	.name		= "V2515",
- 	.pin_gpio_fn	= GPIO_FN_TPU2TO1,
--	.pin_gpio	= GPIO_PORT197,
-+	.pin_gpio	= 197,
- 	.channel_offset = 0x50,
- 	.timer_bit = 1,
- 	.max_brightness = 1000,
-@@ -271,7 +271,7 @@ static struct platform_device leds_tpu21_device = {
- static struct led_renesas_tpu_config led_renesas_tpu30_pdata = {
- 	.name		= "KEYLED",
- 	.pin_gpio_fn	= GPIO_FN_TPU3TO0,
--	.pin_gpio	= GPIO_PORT163,
-+	.pin_gpio	= 163,
- 	.channel_offset = 0x10,
- 	.timer_bit = 0,
- 	.max_brightness = 1000,
-@@ -474,8 +474,8 @@ static void __init kota2_init(void)
- 	gpio_request(GPIO_FN_D15_NAF15, NULL);
- 	gpio_request(GPIO_FN_CS5A_, NULL);
- 	gpio_request(GPIO_FN_WE0__FWE, NULL);
--	gpio_request_one(GPIO_PORT144, GPIOF_IN, NULL); /* PINTA2 */
--	gpio_request_one(GPIO_PORT145, GPIOF_OUT_INIT_HIGH, NULL); /* RESET */
-+	gpio_request_one(144, GPIOF_IN, NULL); /* PINTA2 */
-+	gpio_request_one(145, GPIOF_OUT_INIT_HIGH, NULL); /* RESET */
- 
- 	/* KEYSC */
- 	gpio_request(GPIO_FN_KEYIN0_PU, NULL);
-@@ -507,7 +507,7 @@ static void __init kota2_init(void)
- 	gpio_request(GPIO_FN_MMCD0_6, NULL);
- 	gpio_request(GPIO_FN_MMCD0_7, NULL);
- 	gpio_request(GPIO_FN_MMCCMD0, NULL);
--	gpio_request_one(GPIO_PORT208, GPIOF_OUT_INIT_HIGH, NULL); /* Reset */
-+	gpio_request_one(208, GPIOF_OUT_INIT_HIGH, NULL); /* Reset */
- 
- 	/* SDHI0 (microSD) */
- 	gpio_request(GPIO_FN_SDHICD0_PU, NULL);
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index 7f3a6b7..65a5e0b 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -433,7 +433,7 @@ static struct sh_mobile_sdhi_info sdhi2_info = {
- 			  TMIO_MMC_WRPROTECT_DISABLE,
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
- 	.tmio_ocr_mask	= MMC_VDD_27_28 | MMC_VDD_28_29,
--	.cd_gpio	= GPIO_PORT13,
-+	.cd_gpio	= 13,
- };
- 
- static struct resource sdhi2_resources[] = {
-@@ -672,7 +672,7 @@ static void __init kzm_init(void)
- 	gpio_request(GPIO_FN_CS4_, NULL); /* CS4 */
- 
- 	/* SMSC */
--	gpio_request_one(GPIO_PORT224, GPIOF_IN, NULL); /* IRQ3 */
-+	gpio_request_one(224, GPIOF_IN, NULL); /* IRQ3 */
- 
- 	/* LCDC */
- 	gpio_request(GPIO_FN_LCDD23,	NULL);
-@@ -702,11 +702,11 @@ static void __init kzm_init(void)
- 	gpio_request(GPIO_FN_LCDDISP,	NULL);
- 	gpio_request(GPIO_FN_LCDDCK,	NULL);
- 
--	gpio_request_one(GPIO_PORT222, GPIOF_OUT_INIT_HIGH, NULL); /* LCDCDON */
--	gpio_request_one(GPIO_PORT226, GPIOF_OUT_INIT_HIGH, NULL); /* SC */
-+	gpio_request_one(222, GPIOF_OUT_INIT_HIGH, NULL); /* LCDCDON */
-+	gpio_request_one(226, GPIOF_OUT_INIT_HIGH, NULL); /* SC */
- 
- 	/* Touchscreen */
--	gpio_request_one(GPIO_PORT223, GPIOF_IN, NULL); /* IRQ8 */
-+	gpio_request_one(223, GPIOF_IN, NULL); /* IRQ8 */
- 
- 	/* enable MMCIF */
- 	gpio_request(GPIO_FN_MMCCLK0,		NULL);
-@@ -730,7 +730,7 @@ static void __init kzm_init(void)
- 	gpio_request(GPIO_FN_SDHID0_1,		NULL);
- 	gpio_request(GPIO_FN_SDHID0_0,		NULL);
- 	gpio_request(GPIO_FN_SDHI0_VCCQ_MC0_ON,	NULL);
--	gpio_request_one(GPIO_PORT15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
-+	gpio_request_one(15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
- 
- 	/* enable Micro SD */
- 	gpio_request(GPIO_FN_SDHID2_0,		NULL);
-@@ -739,7 +739,7 @@ static void __init kzm_init(void)
- 	gpio_request(GPIO_FN_SDHID2_3,		NULL);
- 	gpio_request(GPIO_FN_SDHICMD2,		NULL);
- 	gpio_request(GPIO_FN_SDHICLK2,		NULL);
--	gpio_request_one(GPIO_PORT14, GPIOF_OUT_INIT_HIGH, NULL); /* power */
-+	gpio_request_one(14, GPIOF_OUT_INIT_HIGH, NULL); /* power */
- 
- 	/* I2C 3 */
- 	gpio_request(GPIO_FN_PORT27_I2C_SCL3, NULL);
-diff --git a/arch/arm/mach-shmobile/include/mach/sh73a0.h b/arch/arm/mach-shmobile/include/mach/sh73a0.h
-index 606d31d..4dca135 100644
---- a/arch/arm/mach-shmobile/include/mach/sh73a0.h
-+++ b/arch/arm/mach-shmobile/include/mach/sh73a0.h
-@@ -94,7 +94,7 @@ enum {
- 	GPIO_PORT305, GPIO_PORT306, GPIO_PORT307, GPIO_PORT308, GPIO_PORT309,
- 
- 	/* Table 25-1 (Function 0-7) */
--	GPIO_FN_VBUS_0,
-+	GPIO_FN_VBUS_0 = 310,
- 	GPIO_FN_GPI0,
- 	GPIO_FN_GPI1,
- 	GPIO_FN_GPI2,
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index 639b5e2..9cef0d8 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -1543,7 +1543,14 @@ static struct sh_pfc_pin pinmux_pins[] = {
- 	GPIO_PORT_ALL(),
- };
- 
--#define PINMUX_FN_BASE	ARRAY_SIZE(pinmux_pins)
-+static struct pinmux_range pinmux_ranges[] = {
-+	{.begin = 0, .end = 118,},
-+	{.begin = 128, .end = 164,},
-+	{.begin = 192, .end = 282,},
-+	{.begin = 288, .end = 309,},
+-static int sh_tmu_setup(struct sh_tmu_priv *p, struct platform_device *pdev)
++static const struct of_device_id of_sh_tmu_match[] = {
++	{ .compatible = "renesas,tmu-timer" },
++	{},
 +};
++MODULE_DEVICE_TABLE(of, of_sh_tmu_match);
 +
-+#define PINMUX_FN_BASE	GPIO_FN_VBUS_0
++#define TMU_OFFSET_MULTIPLIER	0xc
++#define TMU_MAX_CHANNELS	3
++
++static struct sh_timer_config *sh_tmu_parse_dt(struct device *dev)
++{
++	struct sh_timer_config *cfg;
++	struct device_node *np = dev->of_node;
++	u32 channel_id, rating;
++
++	if (!IS_ENABLED(CONFIG_OF) || !np)
++		return NULL;
++
++	cfg = devm_kzalloc(dev, sizeof(struct sh_timer_config), GFP_KERNEL);
++	if (!cfg) {
++		dev_err(dev, "failed to allocate DT config data\n");
++		return NULL;
++	}
++
++	if (of_property_read_u32(np, "renesas,channel-id", &channel_id)) {
++		dev_err(dev, "channel id missing\n");
++		return NULL;
++	}
++	if (channel_id >= TMU_MAX_CHANNELS) {
++		dev_err(dev, "invalid channel id\n");
++		return NULL;
++	}
++
++	cfg->channel_offset = channel_id * TMU_OFFSET_MULTIPLIER + 4;
++	cfg->timer_bit = channel_id;
++
++	/*
++	 * We convert the {source,event}-quality DT properties to linux specific
++	 * clock{source,event}_ratings.
++	 */
++	if (!of_property_read_u32(np, "renesas,source-quality", &rating)) {
++		if (rating > 10) {
++			dev_err(dev, "invalid source-quality\n");
++			return NULL;
++		}
++		if (rating)
++			cfg->clocksource_rating = rating * 50 - 1;
++	}
++
++	if (!of_property_read_u32(np, "renesas,event-quality", &rating)) {
++		if (rating > 10) {
++			dev_err(dev, "invalid event-quality\n");
++			return NULL;
++		}
++		if (rating)
++			cfg->clockevent_rating = rating * 50 - 1;
++	}
++
++	if (!cfg->clocksource_rating && !cfg->clockevent_rating) {
++		dev_err(dev, "source- and event-quality 0, timer is unused\n");
++		return NULL;
++	}
++
++	return cfg;
++}
++
++static int sh_tmu_setup(struct sh_tmu_priv *p, struct platform_device *pdev,
++						struct sh_timer_config *cfg)
+ {
+-	struct sh_timer_config *cfg = pdev->dev.platform_data;
+ 	struct resource *res;
+ 	int irq, ret;
+ 	ret = -ENXIO;
+@@ -474,6 +540,8 @@ static int sh_tmu_setup(struct sh_tmu_priv *p, struct platform_device *pdev)
+ 	}
+ 	p->cs_enabled = false;
+ 	p->enable_count = 0;
++	p->channel_offset = cfg->channel_offset;
++	p->timer_bit = cfg->timer_bit;
  
- static struct pinmux_func pinmux_func_gpios[] = {
- 	/* Table 25-1 (Functions 0-7) */
-@@ -2738,38 +2745,38 @@ static struct pinmux_data_reg pinmux_data_regs[] = {
- #define EXT_IRQ16H(n) intcs_evt2irq(0x3200 + ((n - 16) << 5))
+ 	return sh_tmu_register(p, (char *)dev_name(&p->pdev->dev),
+ 			       cfg->clockevent_rating,
+@@ -487,7 +555,7 @@ static int sh_tmu_setup(struct sh_tmu_priv *p, struct platform_device *pdev)
+ static int sh_tmu_probe(struct platform_device *pdev)
+ {
+ 	struct sh_tmu_priv *p = platform_get_drvdata(pdev);
+-	struct sh_timer_config *cfg = pdev->dev.platform_data;
++	struct sh_timer_config *cfg;
+ 	int ret;
  
- static struct pinmux_irq pinmux_irqs[] = {
--	PINMUX_IRQ(EXT_IRQ16H(19), GPIO_PORT9),
--	PINMUX_IRQ(EXT_IRQ16L(1), GPIO_PORT10),
--	PINMUX_IRQ(EXT_IRQ16L(0), GPIO_PORT11),
--	PINMUX_IRQ(EXT_IRQ16H(18), GPIO_PORT13),
--	PINMUX_IRQ(EXT_IRQ16H(20), GPIO_PORT14),
--	PINMUX_IRQ(EXT_IRQ16H(21), GPIO_PORT15),
--	PINMUX_IRQ(EXT_IRQ16H(31), GPIO_PORT26),
--	PINMUX_IRQ(EXT_IRQ16H(30), GPIO_PORT27),
--	PINMUX_IRQ(EXT_IRQ16H(29), GPIO_PORT28),
--	PINMUX_IRQ(EXT_IRQ16H(22), GPIO_PORT40),
--	PINMUX_IRQ(EXT_IRQ16H(23), GPIO_PORT53),
--	PINMUX_IRQ(EXT_IRQ16L(10), GPIO_PORT54),
--	PINMUX_IRQ(EXT_IRQ16L(9), GPIO_PORT56),
--	PINMUX_IRQ(EXT_IRQ16H(26), GPIO_PORT115),
--	PINMUX_IRQ(EXT_IRQ16H(27), GPIO_PORT116),
--	PINMUX_IRQ(EXT_IRQ16H(28), GPIO_PORT117),
--	PINMUX_IRQ(EXT_IRQ16H(24), GPIO_PORT118),
--	PINMUX_IRQ(EXT_IRQ16L(6), GPIO_PORT147),
--	PINMUX_IRQ(EXT_IRQ16L(2), GPIO_PORT149),
--	PINMUX_IRQ(EXT_IRQ16L(7), GPIO_PORT150),
--	PINMUX_IRQ(EXT_IRQ16L(12), GPIO_PORT156),
--	PINMUX_IRQ(EXT_IRQ16L(4), GPIO_PORT159),
--	PINMUX_IRQ(EXT_IRQ16H(25), GPIO_PORT164),
--	PINMUX_IRQ(EXT_IRQ16L(8), GPIO_PORT223),
--	PINMUX_IRQ(EXT_IRQ16L(3), GPIO_PORT224),
--	PINMUX_IRQ(EXT_IRQ16L(5), GPIO_PORT227),
--	PINMUX_IRQ(EXT_IRQ16H(17), GPIO_PORT234),
--	PINMUX_IRQ(EXT_IRQ16L(11), GPIO_PORT238),
--	PINMUX_IRQ(EXT_IRQ16L(13), GPIO_PORT239),
--	PINMUX_IRQ(EXT_IRQ16H(16), GPIO_PORT249),
--	PINMUX_IRQ(EXT_IRQ16L(14), GPIO_PORT251),
--	PINMUX_IRQ(EXT_IRQ16L(9), GPIO_PORT308),
-+	PINMUX_IRQ(EXT_IRQ16H(19), 9),
-+	PINMUX_IRQ(EXT_IRQ16L(1), 10),
-+	PINMUX_IRQ(EXT_IRQ16L(0), 11),
-+	PINMUX_IRQ(EXT_IRQ16H(18), 13),
-+	PINMUX_IRQ(EXT_IRQ16H(20), 14),
-+	PINMUX_IRQ(EXT_IRQ16H(21), 15),
-+	PINMUX_IRQ(EXT_IRQ16H(31), 26),
-+	PINMUX_IRQ(EXT_IRQ16H(30), 27),
-+	PINMUX_IRQ(EXT_IRQ16H(29), 28),
-+	PINMUX_IRQ(EXT_IRQ16H(22), 40),
-+	PINMUX_IRQ(EXT_IRQ16H(23), 53),
-+	PINMUX_IRQ(EXT_IRQ16L(10), 54),
-+	PINMUX_IRQ(EXT_IRQ16L(9), 56),
-+	PINMUX_IRQ(EXT_IRQ16H(26), 115),
-+	PINMUX_IRQ(EXT_IRQ16H(27), 116),
-+	PINMUX_IRQ(EXT_IRQ16H(28), 117),
-+	PINMUX_IRQ(EXT_IRQ16H(24), 118),
-+	PINMUX_IRQ(EXT_IRQ16L(6), 147),
-+	PINMUX_IRQ(EXT_IRQ16L(2), 149),
-+	PINMUX_IRQ(EXT_IRQ16L(7), 150),
-+	PINMUX_IRQ(EXT_IRQ16L(12), 156),
-+	PINMUX_IRQ(EXT_IRQ16L(4), 159),
-+	PINMUX_IRQ(EXT_IRQ16H(25), 164),
-+	PINMUX_IRQ(EXT_IRQ16L(8), 223),
-+	PINMUX_IRQ(EXT_IRQ16L(3), 224),
-+	PINMUX_IRQ(EXT_IRQ16L(5), 227),
-+	PINMUX_IRQ(EXT_IRQ16H(17), 234),
-+	PINMUX_IRQ(EXT_IRQ16L(11), 238),
-+	PINMUX_IRQ(EXT_IRQ16L(13), 239),
-+	PINMUX_IRQ(EXT_IRQ16H(16), 249),
-+	PINMUX_IRQ(EXT_IRQ16L(14), 251),
-+	PINMUX_IRQ(EXT_IRQ16L(9), 308),
+ 	if (!is_early_platform_device(pdev)) {
+@@ -495,6 +563,11 @@ static int sh_tmu_probe(struct platform_device *pdev)
+ 		pm_runtime_enable(&pdev->dev);
+ 	}
+ 
++	if (pdev->dev.of_node)
++		cfg = sh_tmu_parse_dt(&pdev->dev);
++	else
++		cfg = pdev->dev.platform_data;
++
+ 	if (p) {
+ 		dev_info(&pdev->dev, "kept as earlytimer\n");
+ 		goto out;
+@@ -506,7 +579,7 @@ static int sh_tmu_probe(struct platform_device *pdev)
+ 		return -ENOMEM;
+ 	}
+ 
+-	ret = sh_tmu_setup(p, pdev);
++	ret = sh_tmu_setup(p, pdev, cfg);
+ 	if (ret) {
+ 		kfree(p);
+ 		platform_set_drvdata(pdev, NULL);
+@@ -535,6 +608,7 @@ static struct platform_driver sh_tmu_device_driver = {
+ 	.remove		= sh_tmu_remove,
+ 	.driver		= {
+ 		.name	= "sh_tmu",
++		.of_match_table = of_sh_tmu_match,
+ 	}
  };
- 
- struct sh_pfc_soc_info sh73a0_pinmux_info = {
-@@ -2782,6 +2789,8 @@ struct sh_pfc_soc_info sh73a0_pinmux_info = {
- 
- 	.pins = pinmux_pins,
- 	.nr_pins = ARRAY_SIZE(pinmux_pins),
-+	.ranges = pinmux_ranges,
-+	.nr_ranges = ARRAY_SIZE(pinmux_ranges),
- 	.func_gpios = pinmux_func_gpios,
- 	.nr_func_gpios = ARRAY_SIZE(pinmux_func_gpios),
  
 -- 
-1.7.10.4
+1.7.9.5
 
