@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:47:34 +0000
+Date: Mon, 18 Mar 2013 12:32:52 +0000
 Subject: [PATCH 42/43] ARM: shmobile: R8A7779: use gic_iid() in SATA IRQ resource
-Message-Id: <1363607255-6385-43-git-send-email-horms+renesas@verge.net.au>
+Message-Id: <1363609973-31086-43-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
+References: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
