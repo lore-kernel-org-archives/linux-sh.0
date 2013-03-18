@@ -1,38 +1,42 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 08 Mar 2013 15:38:24 +0000
-Subject: [PATCH] ARM: shmobile: marzen: Include mmc/host.h
-Message-Id: <1362757104-7498-2-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:59:40 +0000
+Subject: [PATCH 13/13] ARM: shmobile: kzm9g: correct smsc regulator registration
+Message-Id: <1363607980-22153-14-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1362757104-7498-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1362757104-7498-1-git-send-email-horms+renesas@verge.net.au>
+References: <1363607980-22153-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363607980-22153-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-mmc/host.h provides MMC_CAP_SD_HIGHSPEED which is used in board-marzen.c
+Correct the name of smsc devices used for regulator registration
+allowing the regulators to be found and used.
 
-This resolves a build problem observed when compiling with
-"mmc: tmio: remove unused and deprecated symbols" applied.
+This eliminates the need for CONFIG_REGULATOR_DUMMY
+when CONFIG_REGULATOR is set.
 
-Acked-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-marzen.c |    1 +
- 1 file changed, 1 insertion(+)
+ arch/arm/mach-shmobile/board-kzm9g.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index cdcb799..fec49eb 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -32,6 +32,7 @@
- #include <linux/smsc911x.h>
- #include <linux/spi/spi.h>
- #include <linux/spi/sh_hspi.h>
-+#include <linux/mmc/host.h>
- #include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/mfd/tmio.h>
- #include <linux/usb/otg.h>
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index c1c0401..d2ace3a 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -63,8 +63,8 @@
+ 
+ /* Dummy supplies, where voltage doesn't matter */
+ static struct regulator_consumer_supply dummy_supplies[] = {
+-	REGULATOR_SUPPLY("vddvario", "smsc911x"),
+-	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
++	REGULATOR_SUPPLY("vddvario", "smsc911x.0"),
++	REGULATOR_SUPPLY("vdd33a", "smsc911x.0"),
+ };
+ 
+ /*
 -- 
 1.7.10.4
 
