@@ -1,88 +1,312 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 11:01:43 +0000
-Subject: [PATCH v3 23/64] ARM: shmobile: bonito: Register pinctrl mappings for LCDC0
-Message-Id: <1362740544-19164-24-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:05:25 +0000
+Subject: [PATCH 029/142] sh-pfc: Expose real groups and functions in pinctrl/pinmux operations
+Message-Id: <1363604838-29359-30-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Replace the GPIO-based LCDC0 pinmux configuration by pinctrl mappings.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+The sh-pfc driver exposes one fake group and function per GPIO pin. As
+the pinctrl and pinmux APIs are not used by any SuperH and SH Mobile
+board or driver, drop the fake groups and functions and replace them by
+a real pinctrl and pinmux implementation.
+
+Groups and functions must now be explicitly provided by PFC SoC-specific
+data.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/arm/mach-shmobile/board-bonito.c | 43 +++++++++++------------------------
- 1 file changed, 13 insertions(+), 30 deletions(-)
+ drivers/pinctrl/sh-pfc/pinctrl.c |  114 +++++++++++++++++++-------------------
+ drivers/pinctrl/sh-pfc/sh_pfc.h  |   35 ++++++++++++
+ 2 files changed, 93 insertions(+), 56 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-bonito.c b/arch/arm/mach-shmobile/board-bonito.c
-index d363526..cc8941d 100644
---- a/arch/arm/mach-shmobile/board-bonito.c
-+++ b/arch/arm/mach-shmobile/board-bonito.c
-@@ -24,6 +24,7 @@
- #include <linux/init.h>
- #include <linux/interrupt.h>
- #include <linux/irq.h>
-+#include <linux/pinctrl/machine.h>
- #include <linux/platform_device.h>
- #include <linux/gpio.h>
- #include <linux/regulator/fixed.h>
-@@ -288,6 +289,15 @@ static struct platform_device lcdc0_device = {
- 	},
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index c9e9a1d..c7f3c40 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -31,18 +31,14 @@ struct sh_pfc_pinctrl {
+ 
+ 	struct sh_pfc *pfc;
+ 
+-	struct pinmux_func **functions;
+-	unsigned int nr_functions;
+-
+-	struct pinctrl_pin_desc *pads;
+-	unsigned int nr_pads;
++	struct pinctrl_pin_desc *pins;
  };
  
-+static const struct pinctrl_map lcdc0_pinctrl_map[] = {
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
-+				  "lcd0_data24_1", "lcd0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
-+				  "lcd0_lclk_1", "lcd0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
-+				  "lcd0_sync", "lcd0"),
+ static int sh_pfc_get_groups_count(struct pinctrl_dev *pctldev)
+ {
+ 	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
+ 
+-	return pmx->nr_pads;
++	return pmx->pfc->info->nr_groups;
+ }
+ 
+ static const char *sh_pfc_get_group_name(struct pinctrl_dev *pctldev,
+@@ -50,16 +46,16 @@ static const char *sh_pfc_get_group_name(struct pinctrl_dev *pctldev,
+ {
+ 	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
+ 
+-	return pmx->pads[selector].name;
++	return pmx->pfc->info->groups[selector].name;
+ }
+ 
+-static int sh_pfc_get_group_pins(struct pinctrl_dev *pctldev, unsigned group,
++static int sh_pfc_get_group_pins(struct pinctrl_dev *pctldev, unsigned selector,
+ 				 const unsigned **pins, unsigned *num_pins)
+ {
+ 	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
+ 
+-	*pins = &pmx->pads[group].number;
+-	*num_pins = 1;
++	*pins = pmx->pfc->info->groups[selector].pins;
++	*num_pins = pmx->pfc->info->groups[selector].nr_pins;
+ 
+ 	return 0;
+ }
+@@ -81,7 +77,7 @@ static int sh_pfc_get_functions_count(struct pinctrl_dev *pctldev)
+ {
+ 	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
+ 
+-	return pmx->nr_functions;
++	return pmx->pfc->info->nr_functions;
+ }
+ 
+ static const char *sh_pfc_get_function_name(struct pinctrl_dev *pctldev,
+@@ -89,30 +85,67 @@ static const char *sh_pfc_get_function_name(struct pinctrl_dev *pctldev,
+ {
+ 	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
+ 
+-	return pmx->functions[selector]->name;
++	return pmx->pfc->info->functions[selector].name;
+ }
+ 
+-static int sh_pfc_get_function_groups(struct pinctrl_dev *pctldev, unsigned func,
++static int sh_pfc_get_function_groups(struct pinctrl_dev *pctldev,
++				      unsigned selector,
+ 				      const char * const **groups,
+ 				      unsigned * const num_groups)
+ {
+ 	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
+ 
+-	*groups = &pmx->functions[func]->name;
+-	*num_groups = 1;
++	*groups = pmx->pfc->info->functions[selector].groups;
++	*num_groups = pmx->pfc->info->functions[selector].nr_groups;
+ 
+ 	return 0;
+ }
+ 
+-static int sh_pfc_noop_enable(struct pinctrl_dev *pctldev, unsigned func,
++static int sh_pfc_func_enable(struct pinctrl_dev *pctldev, unsigned selector,
+ 			      unsigned group)
+ {
+-	return 0;
++	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
++	struct sh_pfc *pfc = pmx->pfc;
++	const struct sh_pfc_pin_group *grp = &pfc->info->groups[group];
++	unsigned long flags;
++	unsigned int i;
++	int ret = -EINVAL;
++
++	spin_lock_irqsave(&pfc->lock, flags);
++
++	for (i = 0; i < grp->nr_pins; ++i) {
++		if (sh_pfc_config_mux(pfc, grp->mux[i], PINMUX_TYPE_FUNCTION,
++				      GPIO_CFG_DRYRUN))
++			goto done;
++
++		if (sh_pfc_config_mux(pfc, grp->mux[i], PINMUX_TYPE_FUNCTION,
++				      GPIO_CFG_REQ))
++			goto done;
++	}
++
++	ret = 0;
++
++done:
++	spin_unlock_irqrestore(&pfc->lock, flags);
++	return ret;
+ }
+ 
+-static void sh_pfc_noop_disable(struct pinctrl_dev *pctldev, unsigned func,
++static void sh_pfc_func_disable(struct pinctrl_dev *pctldev, unsigned selector,
+ 				unsigned group)
+ {
++	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
++	struct sh_pfc *pfc = pmx->pfc;
++	const struct sh_pfc_pin_group *grp = &pfc->info->groups[group];
++	unsigned long flags;
++	unsigned int i;
++
++	spin_lock_irqsave(&pfc->lock, flags);
++
++	for (i = 0; i < grp->nr_pins; ++i)
++		sh_pfc_config_mux(pfc, grp->mux[i], PINMUX_TYPE_FUNCTION,
++				  GPIO_CFG_FREE);
++
++	spin_unlock_irqrestore(&pfc->lock, flags);
+ }
+ 
+ static int sh_pfc_reconfig_pin(struct sh_pfc *pfc, unsigned offset,
+@@ -234,8 +267,8 @@ static const struct pinmux_ops sh_pfc_pinmux_ops = {
+ 	.get_functions_count	= sh_pfc_get_functions_count,
+ 	.get_function_name	= sh_pfc_get_function_name,
+ 	.get_function_groups	= sh_pfc_get_function_groups,
+-	.enable			= sh_pfc_noop_enable,
+-	.disable		= sh_pfc_noop_disable,
++	.enable			= sh_pfc_func_enable,
++	.disable		= sh_pfc_func_disable,
+ 	.gpio_request_enable	= sh_pfc_gpio_request_enable,
+ 	.gpio_disable_free	= sh_pfc_gpio_disable_free,
+ 	.gpio_set_direction	= sh_pfc_gpio_set_direction,
+@@ -312,10 +345,10 @@ static int sh_pfc_map_pins(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ 		nr_ranges = pfc->info->nr_ranges;
+ 	}
+ 
+-	pmx->pads = devm_kzalloc(pfc->dev,
+-				 sizeof(*pmx->pads) * pfc->info->nr_pins,
++	pmx->pins = devm_kzalloc(pfc->dev,
++				 sizeof(*pmx->pins) * pfc->info->nr_pins,
+ 				 GFP_KERNEL);
+-	if (unlikely(!pmx->pads))
++	if (unlikely(!pmx->pins))
+ 		return -ENOMEM;
+ 
+ 	for (i = 0, nr_pins = 0; i < nr_ranges; ++i) {
+@@ -324,7 +357,7 @@ static int sh_pfc_map_pins(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ 
+ 		for (number = range->begin; number <= range->end;
+ 		     number++, nr_pins++) {
+-			struct pinctrl_pin_desc *pin = &pmx->pads[nr_pins];
++			struct pinctrl_pin_desc *pin = &pmx->pins[nr_pins];
+ 			struct sh_pfc_pin *info = &pfc->info->pins[nr_pins];
+ 
+ 			pin->number = number;
+@@ -337,37 +370,10 @@ static int sh_pfc_map_pins(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ 	return nr_ranges;
+ }
+ 
+-static int sh_pfc_map_functions(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+-{
+-	int i, fn;
+-
+-	for (i = 0; i < pfc->info->nr_func_gpios; i++) {
+-		struct pinmux_func *func = pfc->info->func_gpios + i;
+-
+-		if (func->enum_id)
+-			pmx->nr_functions++;
+-	}
+-
+-	pmx->functions = devm_kzalloc(pfc->dev, pmx->nr_functions *
+-				      sizeof(*pmx->functions), GFP_KERNEL);
+-	if (unlikely(!pmx->functions))
+-		return -ENOMEM;
+-
+-	for (i = fn = 0; i < pfc->info->nr_func_gpios; i++) {
+-		struct pinmux_func *func = pfc->info->func_gpios + i;
+-
+-		if (func->enum_id)
+-			pmx->functions[fn++] = func;
+-	}
+-
+-	return 0;
+-}
+-
+ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ {
+ 	struct sh_pfc_pinctrl *pmx;
+ 	int nr_ranges;
+-	int ret;
+ 
+ 	pmx = devm_kzalloc(pfc->dev, sizeof(*pmx), GFP_KERNEL);
+ 	if (unlikely(!pmx))
+@@ -380,16 +386,12 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ 	if (unlikely(nr_ranges < 0))
+ 		return nr_ranges;
+ 
+-	ret = sh_pfc_map_functions(pfc, pmx);
+-	if (unlikely(ret != 0))
+-		return ret;
+-
+ 	pmx->pctl_desc.name = DRV_NAME;
+ 	pmx->pctl_desc.owner = THIS_MODULE;
+ 	pmx->pctl_desc.pctlops = &sh_pfc_pinctrl_ops;
+ 	pmx->pctl_desc.pmxops = &sh_pfc_pinmux_ops;
+ 	pmx->pctl_desc.confops = &sh_pfc_pinconf_ops;
+-	pmx->pctl_desc.pins = pmx->pads;
++	pmx->pctl_desc.pins = pmx->pins;
+ 	pmx->pctl_desc.npins = pfc->info->nr_pins;
+ 
+ 	pmx->pctl = pinctrl_register(&pmx->pctl_desc, pfc->dev, pmx);
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index dbcaa60..028e29a 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -16,6 +16,8 @@
+ 
+ typedef unsigned short pinmux_enum_t;
+ 
++#define SH_PFC_MARK_INVALID	((pinmux_enum_t)-1)
++
+ enum {
+ 	PINMUX_TYPE_NONE,
+ 
+@@ -40,6 +42,34 @@ struct sh_pfc_pin {
+ 	const char *name;
+ };
+ 
++#define SH_PFC_PIN_GROUP(n)				\
++	{						\
++		.name = #n,				\
++		.pins = n##_pins,			\
++		.mux = n##_mux,				\
++		.nr_pins = ARRAY_SIZE(n##_pins),	\
++	}
++
++struct sh_pfc_pin_group {
++	const char *name;
++	const unsigned int *pins;
++	const unsigned int *mux;
++	unsigned int nr_pins;
 +};
 +
- /*
-  * SMSC 9221
-  */
-@@ -430,36 +440,9 @@ static void __init bonito_init(void)
- 		 */
- 		if (BIT_ON(bsw2, 3) &&	/* S38.1 = OFF */
- 		    BIT_ON(bsw2, 2)) {	/* S38.2 = OFF */
--			gpio_request(GPIO_FN_LCDC0_SELECT,	NULL);
--			gpio_request(GPIO_FN_LCD0_D0,		NULL);
--			gpio_request(GPIO_FN_LCD0_D1,		NULL);
--			gpio_request(GPIO_FN_LCD0_D2,		NULL);
--			gpio_request(GPIO_FN_LCD0_D3,		NULL);
--			gpio_request(GPIO_FN_LCD0_D4,		NULL);
--			gpio_request(GPIO_FN_LCD0_D5,		NULL);
--			gpio_request(GPIO_FN_LCD0_D6,		NULL);
--			gpio_request(GPIO_FN_LCD0_D7,		NULL);
--			gpio_request(GPIO_FN_LCD0_D8,		NULL);
--			gpio_request(GPIO_FN_LCD0_D9,		NULL);
--			gpio_request(GPIO_FN_LCD0_D10,		NULL);
--			gpio_request(GPIO_FN_LCD0_D11,		NULL);
--			gpio_request(GPIO_FN_LCD0_D12,		NULL);
--			gpio_request(GPIO_FN_LCD0_D13,		NULL);
--			gpio_request(GPIO_FN_LCD0_D14,		NULL);
--			gpio_request(GPIO_FN_LCD0_D15,		NULL);
--			gpio_request(GPIO_FN_LCD0_D16,		NULL);
--			gpio_request(GPIO_FN_LCD0_D17,		NULL);
--			gpio_request(GPIO_FN_LCD0_D18_PORT163,	NULL);
--			gpio_request(GPIO_FN_LCD0_D19_PORT162,	NULL);
--			gpio_request(GPIO_FN_LCD0_D20_PORT161,	NULL);
--			gpio_request(GPIO_FN_LCD0_D21_PORT158,	NULL);
--			gpio_request(GPIO_FN_LCD0_D22_PORT160,	NULL);
--			gpio_request(GPIO_FN_LCD0_D23_PORT159,	NULL);
--			gpio_request(GPIO_FN_LCD0_DCK,		NULL);
--			gpio_request(GPIO_FN_LCD0_VSYN,		NULL);
--			gpio_request(GPIO_FN_LCD0_HSYN,		NULL);
--			gpio_request(GPIO_FN_LCD0_DISP,		NULL);
--			gpio_request(GPIO_FN_LCD0_LCLK_PORT165,	NULL);
-+			pinctrl_register_mappings(lcdc0_pinctrl_map,
-+						  ARRAY_SIZE(lcdc0_pinctrl_map));
-+			gpio_request(GPIO_FN_LCDC0_SELECT, NULL);
++#define SH_PFC_FUNCTION(n)				\
++	{						\
++		.name = #n,				\
++		.groups = n##_groups,			\
++		.nr_groups = ARRAY_SIZE(n##_groups),	\
++	}
++
++struct sh_pfc_function {
++	const char *name;
++	const char * const *groups;
++	unsigned int nr_groups;
++};
++
+ struct pinmux_func {
+ 	const pinmux_enum_t enum_id;
+ 	const char *name;
+@@ -113,6 +143,11 @@ struct sh_pfc_soc_info {
+ 	unsigned int nr_pins;
+ 	const struct pinmux_range *ranges;
+ 	unsigned int nr_ranges;
++	const struct sh_pfc_pin_group *groups;
++	unsigned int nr_groups;
++	const struct sh_pfc_function *functions;
++	unsigned int nr_functions;
++
+ 	struct pinmux_func *func_gpios;
+ 	unsigned int nr_func_gpios;
  
- 			gpio_request_one(61, GPIOF_OUT_INIT_HIGH,
- 					 NULL); /* LCDDON */
 -- 
-1.8.1.5
+1.7.10.4
 
