@@ -1,111 +1,141 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 12:32:25 +0000
-Subject: [PATCH 15/43] ARM: shmobile: Update EMEV2 to use scu_power_mode()
-Message-Id: <1363609973-31086-16-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:47:29 +0000
+Subject: [PATCH 37/43] ARM: shmobile: r8a7779: use gic_iid macro
+Message-Id: <1363607255-6385-38-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
+References: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Update the SMP code for EMEV2 to make use of the
-shared SCU function scu_power_mode() together with
-the early setup code in shmobile_secondary_vector_scu.
+"ARM: shmobile: add gic_iid macro for ICCIAR / interrupt ID"
+enabled to use gic_iid macro.
+This patch exchange current GIC interrupt setting
+from gic_spi() to gic_iid()
 
-With this patch in place the secondary CPUs modify the
-SCU setting during early boot instead of letting other
-CPUs deal with the coherency setting before boot. In
-other words, we used to setup coherency before boot
-in emev2_boot_secondary() but that bit is now instead
-handled by the code in shmobile_secondary_vector_scu.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+[ horms+renesas@verge.net.au: Updated git commit id in changelog ]
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/smp-emev2.c |   42 +++++++-----------------------------
- 1 file changed, 8 insertions(+), 34 deletions(-)
+ arch/arm/mach-shmobile/setup-r8a7779.c |   24 ++++++++++++------------
+ 1 file changed, 12 insertions(+), 12 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/smp-emev2.c b/arch/arm/mach-shmobile/smp-emev2.c
-index bc8e071..8225c16 100644
---- a/arch/arm/mach-shmobile/smp-emev2.c
-+++ b/arch/arm/mach-shmobile/smp-emev2.c
-@@ -28,27 +28,9 @@
- #include <mach/emev2.h>
- #include <asm/smp_plat.h>
- #include <asm/smp_scu.h>
--#include <asm/cacheflush.h>
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 9322858..0068b9f 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -92,7 +92,7 @@ static struct plat_sci_port scif0_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= SCIx_IRQ_MUXED(gic_spi(88)),
++	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x78)),
+ };
  
- #define EMEV2_SCU_BASE 0x1e000000
+ static struct platform_device scif0_device = {
+@@ -109,7 +109,7 @@ static struct plat_sci_port scif1_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= SCIx_IRQ_MUXED(gic_spi(89)),
++	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x79)),
+ };
  
--static DEFINE_SPINLOCK(scu_lock);
--
--static void modify_scu_cpu_psr(unsigned long set, unsigned long clr)
--{
--	unsigned long tmp;
--
--	/* we assume this code is running on a different cpu
--	 * than the one that is changing coherency setting */
--	spin_lock(&scu_lock);
--	tmp = readl(shmobile_scu_base + 8);
--	tmp &= ~clr;
--	tmp |= set;
--	writel(tmp, shmobile_scu_base + 8);
--	spin_unlock(&scu_lock);
--
--}
--
- static void __cpuinit emev2_secondary_init(unsigned int cpu)
- {
- 	gic_secondary_init(0);
-@@ -56,36 +38,28 @@ static void __cpuinit emev2_secondary_init(unsigned int cpu)
+ static struct platform_device scif1_device = {
+@@ -126,7 +126,7 @@ static struct plat_sci_port scif2_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= SCIx_IRQ_MUXED(gic_spi(90)),
++	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7a)),
+ };
  
- static int __cpuinit emev2_boot_secondary(unsigned int cpu, struct task_struct *idle)
- {
--	cpu = cpu_logical_map(cpu);
--
--	/* enable cache coherency */
--	modify_scu_cpu_psr(0, 3 << (cpu * 8));
--
--	arch_send_wakeup_ipi_mask(cpumask_of(cpu));
-+	arch_send_wakeup_ipi_mask(cpumask_of(cpu_logical_map(cpu)));
- 	return 0;
- }
+ static struct platform_device scif2_device = {
+@@ -143,7 +143,7 @@ static struct plat_sci_port scif3_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= SCIx_IRQ_MUXED(gic_spi(91)),
++	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7b)),
+ };
  
- static void __init emev2_smp_prepare_cpus(unsigned int max_cpus)
- {
--	int cpu = cpu_logical_map(0);
--
- 	scu_enable(shmobile_scu_base);
+ static struct platform_device scif3_device = {
+@@ -160,7 +160,7 @@ static struct plat_sci_port scif4_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= SCIx_IRQ_MUXED(gic_spi(92)),
++	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7c)),
+ };
  
--	/* Tell ROM loader about our vector (in headsmp.S) */
--	emev2_set_boot_vector(__pa(shmobile_secondary_vector));
-+	/* Tell ROM loader about our vector (in headsmp-scu.S) */
-+	emev2_set_boot_vector(__pa(shmobile_secondary_vector_scu));
+ static struct platform_device scif4_device = {
+@@ -177,7 +177,7 @@ static struct plat_sci_port scif5_platform_data = {
+ 	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE1,
+ 	.scbrr_algo_id	= SCBRR_ALGO_2,
+ 	.type		= PORT_SCIF,
+-	.irqs		= SCIx_IRQ_MUXED(gic_spi(93)),
++	.irqs		= SCIx_IRQ_MUXED(gic_iid(0x7d)),
+ };
  
--	/* enable cache coherency on CPU0 */
--	modify_scu_cpu_psr(0, 3 << (cpu * 8));
-+	/* enable cache coherency on booting CPU */
-+	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
- }
- 
- static void __init emev2_smp_init_cpus(void)
- {
- 	unsigned int ncores;
- 
--	if (!shmobile_scu_base) {
--		shmobile_scu_base = ioremap(EMEV2_SCU_BASE, PAGE_SIZE);
--		emev2_clock_init(); /* need ioremapped SMU */
--	}
-+	/* setup EMEV2 specific SCU base */
-+	shmobile_scu_base = ioremap(EMEV2_SCU_BASE, PAGE_SIZE);
-+	emev2_clock_init(); /* need ioremapped SMU */
- 
- 	ncores = shmobile_scu_base ? scu_get_core_count(shmobile_scu_base) : 1;
- 
+ static struct platform_device scif5_device = {
+@@ -204,7 +204,7 @@ static struct resource tmu00_resources[] = {
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start	= gic_spi(32),
++		.start	= gic_iid(0x40),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -234,7 +234,7 @@ static struct resource tmu01_resources[] = {
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start	= gic_spi(33),
++		.start	= gic_iid(0x41),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -256,7 +256,7 @@ static struct resource rcar_i2c0_res[] = {
+ 		.end    = 0xffc70fff,
+ 		.flags  = IORESOURCE_MEM,
+ 	}, {
+-		.start  = gic_spi(79),
++		.start  = gic_iid(0x6f),
+ 		.flags  = IORESOURCE_IRQ,
+ 	},
+ };
+@@ -274,7 +274,7 @@ static struct resource rcar_i2c1_res[] = {
+ 		.end    = 0xffc71fff,
+ 		.flags  = IORESOURCE_MEM,
+ 	}, {
+-		.start  = gic_spi(82),
++		.start  = gic_iid(0x72),
+ 		.flags  = IORESOURCE_IRQ,
+ 	},
+ };
+@@ -292,7 +292,7 @@ static struct resource rcar_i2c2_res[] = {
+ 		.end    = 0xffc72fff,
+ 		.flags  = IORESOURCE_MEM,
+ 	}, {
+-		.start  = gic_spi(80),
++		.start  = gic_iid(0x70),
+ 		.flags  = IORESOURCE_IRQ,
+ 	},
+ };
+@@ -310,7 +310,7 @@ static struct resource rcar_i2c3_res[] = {
+ 		.end    = 0xffc73fff,
+ 		.flags  = IORESOURCE_MEM,
+ 	}, {
+-		.start  = gic_spi(81),
++		.start  = gic_iid(0x71),
+ 		.flags  = IORESOURCE_IRQ,
+ 	},
+ };
 -- 
 1.7.10.4
 
