@@ -1,56 +1,73 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 12:32:33 +0000
-Subject: [PATCH 23/43] ARM: shmobile: r8a7779: Do not initialise i2c as an early device
-Message-Id: <1363609973-31086-24-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 12:05:49 +0000
+Subject: [PATCH 05/14] irqchip: intc-irqpin: Whitespace fixes
+Message-Id: <1363608358-24215-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
+References: <1363608358-24215-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363608358-24215-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-It is sufficient to initialise i2c as a late device.
+From: Magnus Damm <damm@opensource.se>
 
-Cc: Magnus Damm <magnus.damm@gmail.com>
+Remove whitespace damage and add newline
+between variables and code.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Reviewed-by: Thomas Gleixner <tglx@linutronix.de>
+Tested-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7779.c |    8 +++-----
- 1 file changed, 3 insertions(+), 5 deletions(-)
+ drivers/irqchip/irq-renesas-intc-irqpin.c |    8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index b1f7a45..7f8daf1 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -333,7 +333,7 @@ static struct platform_device *r8a7779_devices_dt[] __initdata = {
- 	&tmu01_device,
- };
+diff --git a/drivers/irqchip/irq-renesas-intc-irqpin.c b/drivers/irqchip/irq-renesas-intc-irqpin.c
+index 1e5058a..4b5933f 100644
+--- a/drivers/irqchip/irq-renesas-intc-irqpin.c
++++ b/drivers/irqchip/irq-renesas-intc-irqpin.c
+@@ -57,13 +57,13 @@ struct intc_irqpin_iomem {
+ 	unsigned long (*read)(void __iomem *iomem);
+ 	void (*write)(void __iomem *iomem, unsigned long data);
+ 	int width;
+-};  
++};
  
--static struct platform_device *r8a7779_early_devices[] __initdata = {
-+static struct platform_device *r8a7779_late_devices[] __initdata = {
- 	&i2c0_device,
- 	&i2c1_device,
- 	&i2c2_device,
-@@ -352,8 +352,8 @@ void __init r8a7779_add_standard_devices(void)
+ struct intc_irqpin_irq {
+ 	int hw_irq;
+ 	int irq;
+ 	struct intc_irqpin_priv *p;
+-};  
++};
  
- 	platform_add_devices(r8a7779_devices_dt,
- 			    ARRAY_SIZE(r8a7779_devices_dt));
--	platform_add_devices(r8a7779_early_devices,
--			    ARRAY_SIZE(r8a7779_early_devices));
-+	platform_add_devices(r8a7779_late_devices,
-+			    ARRAY_SIZE(r8a7779_late_devices));
+ struct intc_irqpin_priv {
+ 	struct intc_irqpin_iomem iomem[INTC_IRQPIN_REG_NR];
+@@ -99,6 +99,7 @@ static inline unsigned long intc_irqpin_read(struct intc_irqpin_priv *p,
+ 					     int reg)
+ {
+ 	struct intc_irqpin_iomem *i = &p->iomem[reg];
++
+ 	return i->read(i->iomem);
  }
  
- /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
-@@ -370,8 +370,6 @@ void __init r8a7779_add_early_devices(void)
+@@ -106,6 +107,7 @@ static inline void intc_irqpin_write(struct intc_irqpin_priv *p,
+ 				     int reg, unsigned long data)
  {
- 	early_platform_add_devices(r8a7779_devices_dt,
- 				   ARRAY_SIZE(r8a7779_devices_dt));
--	early_platform_add_devices(r8a7779_early_devices,
--				   ARRAY_SIZE(r8a7779_early_devices));
+ 	struct intc_irqpin_iomem *i = &p->iomem[reg];
++
+ 	i->write(i->iomem, data);
+ }
  
- 	/* Early serial console setup is not included here due to
- 	 * memory map collisions. The SCIF serial ports in r8a7779
+@@ -405,7 +407,7 @@ static int intc_irqpin_probe(struct platform_device *pdev)
+ 			dev_warn(&pdev->dev, "irq base mismatch (%d/%d)\n",
+ 				 p->config.irq_base, k);
+ 	}
+-	
++
+ 	return 0;
+ 
+ err3:
 -- 
 1.7.10.4
 
