@@ -1,64 +1,87 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 11:02:24 +0000
-Subject: [PATCH v3 64/64] ARM: shmobile: r8a7779: Remove INTC function GPIOs
-Message-Id: <1362740544-19164-65-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 13:02:33 +0000
+Subject: [PATCH 07/12] clocksource: sh_cmt: Add control register callbacks
+Message-Id: <1363611758-6655-8-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363611758-6655-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363611758-6655-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This patch adds control register callbacks for the CMT
+driver. At this point only 16-bit access is supported
+but in the future this will be updated to allow 32-bit
+access as well.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Acked-by: John Stultz <john.stultz@linaro.org>
+Tested-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7779.h | 16 ++++++++--------
- 1 file changed, 8 insertions(+), 8 deletions(-)
+ drivers/clocksource/sh_cmt.c |   16 ++++++++++++----
+ 1 file changed, 12 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-index 688c0d2..8ea0ad1 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -213,12 +213,12 @@ enum {
- 	/* IPSR7 */
- 	GPIO_FN_SSI_WS6, GPIO_FN_ADICHS1, GPIO_FN_CAN0_RX, GPIO_FN_IETX_B,
- 	GPIO_FN_SSI_SDATA6, GPIO_FN_ADICHS2, GPIO_FN_CAN_CLK, GPIO_FN_IECLK_B,
--	GPIO_FN_SSI_SCK78, GPIO_FN_CAN_DEBUGOUT13, GPIO_FN_IRQ0_B,
-+	GPIO_FN_SSI_SCK78, GPIO_FN_CAN_DEBUGOUT13,
- 	GPIO_FN_SSI_SCK9_B, GPIO_FN_SSI_WS78,
--	GPIO_FN_CAN_DEBUGOUT14, GPIO_FN_IRQ1_B, GPIO_FN_SSI_WS9_B,
-+	GPIO_FN_CAN_DEBUGOUT14, GPIO_FN_SSI_WS9_B,
- 	GPIO_FN_SSI_SDATA7, GPIO_FN_CAN_DEBUGOUT15,
--	GPIO_FN_IRQ2_B, GPIO_FN_TCLK1_C,
--	GPIO_FN_SSI_SDATA8, GPIO_FN_VSP, GPIO_FN_IRQ3_B,
-+	GPIO_FN_TCLK1_C,
-+	GPIO_FN_SSI_SDATA8, GPIO_FN_VSP,
- 	GPIO_FN_ATACS01,
- 	GPIO_FN_ATACS11, GPIO_FN_CC5_TDO,
- 	GPIO_FN_ATADIR1, GPIO_FN_CC5_TRST,
-@@ -256,8 +256,8 @@ enum {
- 	GPIO_FN_VI0_DATA5_VI0_B5, GPIO_FN_VI0_DATA6_VI0_B6,
- 	GPIO_FN_ARM_TRACEDATA_0, GPIO_FN_VI0_DATA7_VI0_B7,
- 	GPIO_FN_ARM_TRACEDATA_1, GPIO_FN_VI0_G0,
--	GPIO_FN_SSI_SCK78_C, GPIO_FN_IRQ0, GPIO_FN_ARM_TRACEDATA_2,
--	GPIO_FN_VI0_G1, GPIO_FN_SSI_WS78_C, GPIO_FN_IRQ1,
-+	GPIO_FN_SSI_SCK78_C, GPIO_FN_ARM_TRACEDATA_2,
-+	GPIO_FN_VI0_G1, GPIO_FN_SSI_WS78_C,
- 	GPIO_FN_ARM_TRACEDATA_3, GPIO_FN_VI0_G2, GPIO_FN_ETH_TXD1,
- 	GPIO_FN_ARM_TRACEDATA_4, GPIO_FN_TS_SPSYNC0,
- 	GPIO_FN_VI0_G3, GPIO_FN_ETH_CRS_DV,
-@@ -273,8 +273,8 @@ enum {
- 	GPIO_FN_ARM_TRACEDATA_10, GPIO_FN_DREQ0_C, GPIO_FN_VI0_R1,
- 	GPIO_FN_SSI_SDATA8_C, GPIO_FN_DACK1_B, GPIO_FN_ARM_TRACEDATA_11,
- 	GPIO_FN_DACK0_C, GPIO_FN_DRACK0_C, GPIO_FN_VI0_R2, GPIO_FN_ETH_LINK,
--	GPIO_FN_IRQ2, GPIO_FN_ARM_TRACEDATA_12,
--	GPIO_FN_VI0_R3, GPIO_FN_ETH_MAGIC, GPIO_FN_IRQ3,
-+	GPIO_FN_ARM_TRACEDATA_12,
-+	GPIO_FN_VI0_R3, GPIO_FN_ETH_MAGIC,
- 	GPIO_FN_ARM_TRACEDATA_13, GPIO_FN_VI0_R4, GPIO_FN_ETH_REFCLK,
- 	GPIO_FN_ARM_TRACEDATA_14,
- 	GPIO_FN_MT1_CLK, GPIO_FN_TS_SCK0, GPIO_FN_VI0_R5, GPIO_FN_ETH_TXD0,
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index da904d7..7108963 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -55,6 +55,11 @@ struct sh_cmt_priv {
+ 	unsigned long total_cycles;
+ 	bool cs_enabled;
+ 
++	/* callbacks for CMSTR and CMCSR access */
++	unsigned long (*read_control)(void __iomem *base, unsigned long offs);
++	void (*write_control)(void __iomem *base, unsigned long offs,
++			      unsigned long value);
++
+ 	/* callbacks for CMCNT and CMCOR access */
+ 	unsigned long (*read_count)(void __iomem *base, unsigned long offs);
+ 	void (*write_count)(void __iomem *base, unsigned long offs,
+@@ -91,12 +96,12 @@ static inline unsigned long sh_cmt_read_cmstr(struct sh_cmt_priv *p)
+ {
+ 	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
+ 
+-	return sh_cmt_read16(p->mapbase - cfg->channel_offset, 0);
++	return p->read_control(p->mapbase - cfg->channel_offset, 0);
+ }
+ 
+ static inline unsigned long sh_cmt_read_cmcsr(struct sh_cmt_priv *p)
+ {
+-	return sh_cmt_read16(p->mapbase, CMCSR);
++	return p->read_control(p->mapbase, CMCSR);
+ }
+ 
+ static inline unsigned long sh_cmt_read_cmcnt(struct sh_cmt_priv *p)
+@@ -109,13 +114,13 @@ static inline void sh_cmt_write_cmstr(struct sh_cmt_priv *p,
+ {
+ 	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
+ 
+-	sh_cmt_write16(p->mapbase - cfg->channel_offset, 0, value);
++	p->write_control(p->mapbase - cfg->channel_offset, 0, value);
+ }
+ 
+ static inline void sh_cmt_write_cmcsr(struct sh_cmt_priv *p,
+ 				      unsigned long value)
+ {
+-	sh_cmt_write16(p->mapbase, CMCSR, value);
++	p->write_control(p->mapbase, CMCSR, value);
+ }
+ 
+ static inline void sh_cmt_write_cmcnt(struct sh_cmt_priv *p,
+@@ -702,6 +707,9 @@ static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
+ 		goto err1;
+ 	}
+ 
++	p->read_control = sh_cmt_read16;
++	p->write_control = sh_cmt_write16;
++
+ 	if (resource_size(res) = 6) {
+ 		p->width = 16;
+ 		p->read_count = sh_cmt_read16;
 -- 
-1.8.1.5
+1.7.10.4
 
