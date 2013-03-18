@@ -1,47 +1,157 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Tue, 19 Mar 2013 12:35:30 +0000
-Subject: Re: [PATCH 00/02] sh-pfc: Initial r8a73a4 PFC support
-Message-Id: <9743105.r88dzff2HI@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:59:35 +0000
+Subject: [PATCH 08/13] ARM: shmobile: SDHI and MMCIF interfaces to kzm9g-reference
+Message-Id: <1363607980-22153-9-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130318145029.26761.15477.sendpatchset@w520>
-In-Reply-To: <20130318145029.26761.15477.sendpatchset@w520>
+References: <1363607980-22153-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363607980-22153-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Simon,
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-On Tuesday 19 March 2013 09:26:53 Simon Horman wrote:
-> On Mon, Mar 18, 2013 at 11:50:29PM +0900, Magnus Damm wrote:
-> > sh-pfc: Initial r8a73a4 PFC support
-> > 
-> > [PATCH 01/02] sh-pfc: Add r8a73a4 pinmux support
-> > [PATCH 02/02] sh-pfc: Add r8a73a4 GPIO IRQ support
-> > 
-> > This series is V1 of initial PFC support for the r8a73a4 SoC.
-> > Nothing out of the ordinary, just similar but different tables
-> > to describe the pinmux hardware and GPIOs on r8a73a4.
-> > 
-> > The header in the mach directory is still used, and in the future
-> > this will be removed when fully using PINCTRL. Until then a common
-> > location is needed so this series simply follows what other SoCs
-> > do. Because of this there is a dependency on the r8a73a4 SoC code.
-> 
-> Laurent, could you review these and either give me some Acks or a branch to
-> pull? I assume the base should be the renesas-pinmux-for-v3.10 tag in the
-> renesas tree.
+Add SDHI0 and SDHI2 interfaces to kzm9g-reference. With no pinctrl DT
+support we cannot use GPIO card-detection and regulator switching.
+Also update the MMCIF DT node to use all 8 data lines and avoid
+redundant information in DT.
 
-I will review the patches. However, following a discussion I've had with 
-Magnus, I won't take the patches without proper pinctrl support. The first 
-patch uses the old API for r8a73a4 support in the PFC driver to make 
-backporting easier, but I don't want to push it to mainline without additional 
-patches to move to the pinctrl API.
+Cc: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+[ horms+renesas@verge.net.au: Updated for pinmux changes by Laurent Pinchart ]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts   |   42 ++++++++++++++++++++++--
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |   36 ++++++++++++++++++++
+ 2 files changed, 75 insertions(+), 3 deletions(-)
 
-Magnus, are you working on that ?
-
+diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+index 06f52f9..7fad4b9 100644
+--- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
++++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+@@ -27,15 +27,51 @@
+ 		reg = <0x41000000 0x1e800000>;
+ 	};
+ 
+-	fixedregulator1v8: fixedregulator@0 {
++	reg_1p8v: regulator@0 {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "fixed-1.8V";
+ 		regulator-min-microvolt = <1800000>;
+ 		regulator-max-microvolt = <1800000>;
++		regulator-always-on;
++		regulator-boot-on;
++	};
++
++	reg_2p8v: regulator@1 {
++		compatible = "regulator-fixed";
++		regulator-name = "fixed-2.8V";
++		regulator-min-microvolt = <2800000>;
++		regulator-max-microvolt = <2800000>;
++		regulator-always-on;
++		regulator-boot-on;
++	};
++
++	sdhi0: sdhi@0xee100000 {
++		compatible = "renesas,shmobile-sdhi";
++		reg = <0xee100000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 83 4
++				0 84 4
++				0 85 4>;
++		vmmc-supply = <&reg_2p8v>;
++		bus-width = <4>;
++		toshiba,mmc-has-idle-wait;
++	};
++
++	sdhi2: sdhi@0xee140000 {
++		compatible = "renesas,shmobile-sdhi";
++		reg = <0xee140000 0x100>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 104 4
++				0 105 4>;
++		vmmc-supply = <&reg_2p8v>;
++		bus-width = <4>;
++		broken-cd;
++		toshiba,mmc-wrprotect-disable;
++		toshiba,mmc-has-idle-wait;
+ 	};
+ };
+ 
+ &mmcif {
+-	vmmc-supply = <&fixedregulator1v8>;
+-	vqmmc-supply = <&fixedregulator1v8>;
++	bus-width = <8>;
++	vmmc-supply = <&reg_1p8v>;
+ };
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index add537c..3056698 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -28,19 +28,48 @@
+ #include <linux/input.h>
+ #include <linux/of_platform.h>
+ #include <linux/pinctrl/machine.h>
++#include <linux/pinctrl/pinconf-generic.h>
+ #include <mach/sh73a0.h>
+ #include <mach/common.h>
+ #include <asm/hardware/cache-l2x0.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ 
++static unsigned long pin_pullup_conf[] = {
++	PIN_CONF_PACKED(PIN_CONFIG_BIAS_PULL_UP, 0),
++};
++
+ static const struct pinctrl_map kzm_pinctrl_map[] = {
+ 	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.3", "pfc-sh73a0",
+ 				  "i2c3_1", "i2c3"),
++	/* MMCIF */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
++				  "mmc0_data8_0", "mmc0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
++				  "mmc0_ctrl_0", "mmc0"),
++	PIN_MAP_CONFIGS_PIN_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
++				    "PORT279", pin_pullup_conf),
++	PIN_MAP_CONFIGS_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
++				      "mmc0_data8_0", pin_pullup_conf),
++	/* SCIFA4 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
+ 				  "scifa4_data", "scifa4"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
+ 				  "scifa4_ctrl", "scifa4"),
++	/* SDHI0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
++				  "sdhi0_data4", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
++				  "sdhi0_ctrl", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
++				  "sdhi0_cd", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
++				  "sdhi0_wp", "sdhi0"),
++	/* SDHI2 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-sh73a0",
++				  "sdhi2_data4", "sdhi2"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-sh73a0",
++				  "sdhi2_ctrl", "sdhi2"),
+ };
+ 
+ static void __init kzm_init(void)
+@@ -49,6 +78,13 @@ static void __init kzm_init(void)
+ 	pinctrl_register_mappings(kzm_pinctrl_map, ARRAY_SIZE(kzm_pinctrl_map));
+ 	sh73a0_pinmux_init();
+ 
++	/* enable SD */
++	gpio_request(GPIO_FN_SDHI0_VCCQ_MC0_ON,	NULL);
++	gpio_request_one(GPIO_PORT15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
++
++	gpio_request(GPIO_FN_SDHICLK2,		NULL);
++	gpio_request_one(GPIO_PORT14, GPIOF_OUT_INIT_HIGH, NULL); /* power */
++
+ #ifdef CONFIG_CACHE_L2X0
+ 	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
+ 	l2x0_init(IOMEM(0xf0100000), 0x40460000, 0x82000fff);
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.10.4
 
