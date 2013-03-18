@@ -1,294 +1,268 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 06 Mar 2013 13:46:44 +0000
-Subject: [PATCH v2 05/39] sh-pfc: sh73a0: Add FSI pin groups and functions
-Message-Id: <1362577638-15493-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:05:19 +0000
+Subject: [PATCH 023/142] sh-pfc: Add support for sparse pin numbers
+Message-Id: <1363604838-29359-24-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
+
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+The PFC driver assumes that the value of the GPIO_PORTxxx enumeration
+names are equal to the port number. This isn't true when the port number
+space is sparse, as with the SH73A0.
+
+Fix the issue by adding support for pin numbers ranges specified through
+SoC data. When no range is specified the driver considers that the PFC
+implements a single contiguous range for all pins.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 244 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 244 insertions(+)
+ drivers/pinctrl/sh-pfc/core.c    |   19 ++++++++++++-
+ drivers/pinctrl/sh-pfc/core.h    |    2 ++
+ drivers/pinctrl/sh-pfc/gpio.c    |   37 +++++++++++++++++++-----
+ drivers/pinctrl/sh-pfc/pinctrl.c |   58 +++++++++++++++++++++++++-------------
+ drivers/pinctrl/sh-pfc/sh_pfc.h  |    2 ++
+ 5 files changed, 91 insertions(+), 27 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index 2dc58e2..09848f8 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -1550,6 +1550,185 @@ static struct pinmux_range pinmux_ranges[] = {
- 	{.begin = 288, .end = 309,},
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index 667db99..79824826 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -80,7 +80,24 @@ static void __iomem *sh_pfc_phys_to_virt(struct sh_pfc *pfc,
+ 
+ struct sh_pfc_pin *sh_pfc_get_pin(struct sh_pfc *pfc, unsigned int pin)
+ {
+-	return &pfc->info->pins[pin];
++	unsigned int offset;
++	unsigned int i;
++
++	if (pfc->info->ranges = NULL)
++		return &pfc->info->pins[pin];
++
++	for (i = 0, offset = 0; i < pfc->info->nr_ranges; ++i) {
++		const struct pinmux_range *range = &pfc->info->ranges[i];
++
++		if (pin <= range->end)
++			return pin >= range->begin
++			     ? &pfc->info->pins[offset + pin - range->begin]
++			     : NULL;
++
++		offset += range->end - range->begin + 1;
++	}
++
++	return NULL;
+ }
+ 
+ static int sh_pfc_enum_in_range(pinmux_enum_t enum_id, struct pinmux_range *r)
+diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
+index 6ea3d4f..b8b3e87 100644
+--- a/drivers/pinctrl/sh-pfc/core.h
++++ b/drivers/pinctrl/sh-pfc/core.h
+@@ -32,6 +32,8 @@ struct sh_pfc {
+ 	unsigned int num_windows;
+ 	struct sh_pfc_window *window;
+ 
++	unsigned int nr_pins;
++
+ 	struct sh_pfc_chip *gpio;
+ 	struct sh_pfc_chip *func;
+ 
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index 32a9c78..806e2dd 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -45,7 +45,7 @@ static int gpio_pin_request(struct gpio_chip *gc, unsigned offset)
+ 	struct sh_pfc *pfc = gpio_to_pfc(gc);
+ 	struct sh_pfc_pin *pin = sh_pfc_get_pin(pfc, offset);
+ 
+-	if (pin->enum_id = 0)
++	if (pin = NULL || pin->enum_id = 0)
+ 		return -EINVAL;
+ 
+ 	return pinctrl_request_gpio(offset);
+@@ -127,7 +127,7 @@ static void gpio_pin_setup(struct sh_pfc_chip *chip)
+ 	gc->dev = pfc->dev;
+ 	gc->owner = THIS_MODULE;
+ 	gc->base = 0;
+-	gc->ngpio = pfc->info->nr_pins;
++	gc->ngpio = pfc->nr_pins;
+ }
+ 
+ /* -----------------------------------------------------------------------------
+@@ -184,7 +184,7 @@ static void gpio_function_setup(struct sh_pfc_chip *chip)
+ 
+ 	gc->label = pfc->info->name;
+ 	gc->owner = THIS_MODULE;
+-	gc->base = pfc->info->nr_pins;
++	gc->base = pfc->nr_pins;
+ 	gc->ngpio = pfc->info->nr_func_gpios;
+ }
+ 
+@@ -219,20 +219,43 @@ sh_pfc_add_gpiochip(struct sh_pfc *pfc, void(*setup)(struct sh_pfc_chip *))
+ 
+ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+ {
++	const struct pinmux_range *ranges;
++	struct pinmux_range def_range;
+ 	struct sh_pfc_chip *chip;
++	unsigned int nr_ranges;
++	unsigned int i;
+ 	int ret;
+ 
++	/* Register the real GPIOs chip. */
+ 	chip = sh_pfc_add_gpiochip(pfc, gpio_pin_setup);
+ 	if (IS_ERR(chip))
+ 		return PTR_ERR(chip);
+ 
+ 	pfc->gpio = chip;
+ 
+-	ret = gpiochip_add_pin_range(&chip->gpio_chip, dev_name(pfc->dev), 0, 0,
+-				     chip->gpio_chip.ngpio);
+-	if (ret < 0)
+-		return ret;
++	/* Register the GPIO to pin mappings. */
++	if (pfc->info->ranges = NULL) {
++		def_range.begin = 0;
++		def_range.end = pfc->info->nr_pins - 1;
++		ranges = &def_range;
++		nr_ranges = 1;
++	} else {
++		ranges = pfc->info->ranges;
++		nr_ranges = pfc->info->nr_ranges;
++	}
++
++	for (i = 0; i < nr_ranges; ++i) {
++		const struct pinmux_range *range = &ranges[i];
++
++		ret = gpiochip_add_pin_range(&chip->gpio_chip,
++					     dev_name(pfc->dev),
++					     range->begin, range->begin,
++					     range->end - range->begin + 1);
++		if (ret < 0)
++			return ret;
++	}
+ 
++	/* Register the function GPIOs chip. */
+ 	chip = sh_pfc_add_gpiochip(pfc, gpio_function_setup);
+ 	if (IS_ERR(chip))
+ 		return PTR_ERR(chip);
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index a60c317..c9e9a1d 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -293,29 +293,48 @@ static const struct pinconf_ops sh_pfc_pinconf_ops = {
+ 	.pin_config_dbg_show	= sh_pfc_pinconf_dbg_show,
  };
  
-+static const unsigned int fsia_mclk_in_pins[] = {
-+	/* CK */
-+	49,
-+};
-+static const unsigned int fsia_mclk_in_mux[] = {
-+	FSIACK_MARK,
-+};
-+static const unsigned int fsia_mclk_out_pins[] = {
-+	/* OMC */
-+	49,
-+};
-+static const unsigned int fsia_mclk_out_mux[] = {
-+	FSIAOMC_MARK,
-+};
-+static const unsigned int fsia_sclk_in_pins[] = {
-+	/* ILR, IBT */
-+	50, 51,
-+};
-+static const unsigned int fsia_sclk_in_mux[] = {
-+	FSIAILR_MARK, FSIAIBT_MARK,
-+};
-+static const unsigned int fsia_sclk_out_pins[] = {
-+	/* OLR, OBT */
-+	50, 51,
-+};
-+static const unsigned int fsia_sclk_out_mux[] = {
-+	FSIAOLR_MARK, FSIAOBT_MARK,
-+};
-+static const unsigned int fsia_data_in_pins[] = {
-+	/* ISLD */
-+	55,
-+};
-+static const unsigned int fsia_data_in_mux[] = {
-+	FSIAISLD_MARK,
-+};
-+static const unsigned int fsia_data_out_pins[] = {
-+	/* OSLD */
-+	52,
-+};
-+static const unsigned int fsia_data_out_mux[] = {
-+	FSIAOSLD_MARK,
-+};
-+static const unsigned int fsia_spdif_pins[] = {
-+	/* SPDIF */
-+	53,
-+};
-+static const unsigned int fsia_spdif_mux[] = {
-+	FSIASPDIF_MARK,
-+};
+-/* pinmux ranges -> pinctrl pin descs */
+-static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
++/* PFC ranges -> pinctrl pin descs */
++static int sh_pfc_map_pins(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ {
+-	int i;
+-
+-	pmx->nr_pads = pfc->info->nr_pins;
++	const struct pinmux_range *ranges;
++	struct pinmux_range def_range;
++	unsigned int nr_ranges;
++	unsigned int nr_pins;
++	unsigned int i;
 +
-+static const unsigned int fsib_mclk_in_pins[] = {
-+	/* CK */
-+	54,
-+};
-+static const unsigned int fsib_mclk_in_mux[] = {
-+	FSIBCK_MARK,
-+};
-+static const unsigned int fsib_mclk_out_pins[] = {
-+	/* OMC */
-+	54,
-+};
-+static const unsigned int fsib_mclk_out_mux[] = {
-+	FSIBOMC_MARK,
-+};
-+static const unsigned int fsib_sclk_in_pins[] = {
-+	/* ILR, IBT */
-+	37, 36,
-+};
-+static const unsigned int fsib_sclk_in_mux[] = {
-+	FSIBILR_MARK, FSIBIBT_MARK,
-+};
-+static const unsigned int fsib_sclk_out_pins[] = {
-+	/* OLR, OBT */
-+	37, 36,
-+};
-+static const unsigned int fsib_sclk_out_mux[] = {
-+	FSIBOLR_MARK, FSIBOBT_MARK,
-+};
-+static const unsigned int fsib_data_in_pins[] = {
-+	/* ISLD */
-+	39,
-+};
-+static const unsigned int fsib_data_in_mux[] = {
-+	FSIBISLD_MARK,
-+};
-+static const unsigned int fsib_data_out_pins[] = {
-+	/* OSLD */
-+	38,
-+};
-+static const unsigned int fsib_data_out_mux[] = {
-+	FSIBOSLD_MARK,
-+};
-+static const unsigned int fsib_spdif_pins[] = {
-+	/* SPDIF */
-+	53,
-+};
-+static const unsigned int fsib_spdif_mux[] = {
-+	FSIBSPDIF_MARK,
-+};
-+
-+static const unsigned int fsic_mclk_in_pins[] = {
-+	/* CK */
-+	54,
-+};
-+static const unsigned int fsic_mclk_in_mux[] = {
-+	FSICCK_MARK,
-+};
-+static const unsigned int fsic_mclk_out_pins[] = {
-+	/* OMC */
-+	54,
-+};
-+static const unsigned int fsic_mclk_out_mux[] = {
-+	FSICOMC_MARK,
-+};
-+static const unsigned int fsic_sclk_in_pins[] = {
-+	/* ILR, IBT */
-+	46, 45,
-+};
-+static const unsigned int fsic_sclk_in_mux[] = {
-+	FSICILR_MARK, FSICIBT_MARK,
-+};
-+static const unsigned int fsic_sclk_out_pins[] = {
-+	/* OLR, OBT */
-+	46, 45,
-+};
-+static const unsigned int fsic_sclk_out_mux[] = {
-+	FSICOLR_MARK, FSICOBT_MARK,
-+};
-+static const unsigned int fsic_data_in_pins[] = {
-+	/* ISLD */
-+	48,
-+};
-+static const unsigned int fsic_data_in_mux[] = {
-+	FSICISLD_MARK,
-+};
-+static const unsigned int fsic_data_out_pins[] = {
-+	/* OSLD, OSLDT1, OSLDT2, OSLDT3 */
-+	47, 44, 42, 16,
-+};
-+static const unsigned int fsic_data_out_mux[] = {
-+	FSICOSLD_MARK, FSICOSLDT1_MARK, FSICOSLDT2_MARK, FSICOSLDT3_MARK,
-+};
-+static const unsigned int fsic_spdif_0_pins[] = {
-+	/* SPDIF */
-+	53,
-+};
-+static const unsigned int fsic_spdif_0_mux[] = {
-+	PORT53_FSICSPDIF_MARK,
-+};
-+static const unsigned int fsic_spdif_1_pins[] = {
-+	/* SPDIF */
-+	47,
-+};
-+static const unsigned int fsic_spdif_1_mux[] = {
-+	PORT47_FSICSPDIF_MARK,
-+};
-+
-+static const unsigned int fsid_sclk_in_pins[] = {
-+	/* ILR, IBT */
-+	46, 45,
-+};
-+static const unsigned int fsid_sclk_in_mux[] = {
-+	FSIDILR_MARK, FSIDIBT_MARK,
-+};
-+static const unsigned int fsid_sclk_out_pins[] = {
-+	/* OLR, OBT */
-+	46, 45,
-+};
-+static const unsigned int fsid_sclk_out_mux[] = {
-+	FSIDOLR_MARK, FSIDOBT_MARK,
-+};
-+static const unsigned int fsid_data_in_pins[] = {
-+	/* ISLD */
-+	48,
-+};
-+static const unsigned int fsid_data_in_mux[] = {
-+	FSIDISLD_MARK,
-+};
-+
- static const unsigned int i2c2_0_pins[] = {
- 	/* SCL, SDA */
- 	237, 236,
-@@ -2037,6 +2216,31 @@ static const unsigned int scifb_ctrl_1_mux[] = {
- };
++	if (pfc->info->ranges = NULL) {
++		def_range.begin = 0;
++		def_range.end = pfc->info->nr_pins - 1;
++		ranges = &def_range;
++		nr_ranges = 1;
++	} else {
++		ranges = pfc->info->ranges;
++		nr_ranges = pfc->info->nr_ranges;
++	}
  
- static const struct sh_pfc_pin_group pinmux_groups[] = {
-+	SH_PFC_PIN_GROUP(fsia_mclk_in),
-+	SH_PFC_PIN_GROUP(fsia_mclk_out),
-+	SH_PFC_PIN_GROUP(fsia_sclk_in),
-+	SH_PFC_PIN_GROUP(fsia_sclk_out),
-+	SH_PFC_PIN_GROUP(fsia_data_in),
-+	SH_PFC_PIN_GROUP(fsia_data_out),
-+	SH_PFC_PIN_GROUP(fsia_spdif),
-+	SH_PFC_PIN_GROUP(fsib_mclk_in),
-+	SH_PFC_PIN_GROUP(fsib_mclk_out),
-+	SH_PFC_PIN_GROUP(fsib_sclk_in),
-+	SH_PFC_PIN_GROUP(fsib_sclk_out),
-+	SH_PFC_PIN_GROUP(fsib_data_in),
-+	SH_PFC_PIN_GROUP(fsib_data_out),
-+	SH_PFC_PIN_GROUP(fsib_spdif),
-+	SH_PFC_PIN_GROUP(fsic_mclk_in),
-+	SH_PFC_PIN_GROUP(fsic_mclk_out),
-+	SH_PFC_PIN_GROUP(fsic_sclk_in),
-+	SH_PFC_PIN_GROUP(fsic_sclk_out),
-+	SH_PFC_PIN_GROUP(fsic_data_in),
-+	SH_PFC_PIN_GROUP(fsic_data_out),
-+	SH_PFC_PIN_GROUP(fsic_spdif_0),
-+	SH_PFC_PIN_GROUP(fsic_spdif_1),
-+	SH_PFC_PIN_GROUP(fsid_sclk_in),
-+	SH_PFC_PIN_GROUP(fsid_sclk_out),
-+	SH_PFC_PIN_GROUP(fsid_data_in),
- 	SH_PFC_PIN_GROUP(i2c2_0),
- 	SH_PFC_PIN_GROUP(i2c2_1),
- 	SH_PFC_PIN_GROUP(i2c2_2),
-@@ -2099,6 +2303,42 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(scifb_ctrl_1),
- };
+-	pmx->pads = devm_kzalloc(pfc->dev, sizeof(*pmx->pads) * pmx->nr_pads,
++	pmx->pads = devm_kzalloc(pfc->dev,
++				 sizeof(*pmx->pads) * pfc->info->nr_pins,
+ 				 GFP_KERNEL);
+-	if (unlikely(!pmx->pads)) {
+-		pmx->nr_pads = 0;
++	if (unlikely(!pmx->pads))
+ 		return -ENOMEM;
+-	}
  
-+static const char * const fsia_groups[] = {
-+	"fsia_mclk_in",
-+	"fsia_mclk_out",
-+	"fsia_sclk_in",
-+	"fsia_sclk_out",
-+	"fsia_data_in",
-+	"fsia_data_out",
-+	"fsia_spdif",
-+};
+-	for (i = 0; i < pmx->nr_pads; i++) {
+-		struct pinctrl_pin_desc *pin = pmx->pads + i;
+-		struct sh_pfc_pin *gpio = pfc->info->pins + i;
++	for (i = 0, nr_pins = 0; i < nr_ranges; ++i) {
++		const struct pinmux_range *range = &ranges[i];
++		unsigned int number;
 +
-+static const char * const fsib_groups[] = {
-+	"fsib_mclk_in",
-+	"fsib_mclk_out",
-+	"fsib_sclk_in",
-+	"fsib_sclk_out",
-+	"fsib_data_in",
-+	"fsib_data_out",
-+	"fsib_spdif",
-+};
-+
-+static const char * const fsic_groups[] = {
-+	"fsic_mclk_in",
-+	"fsic_mclk_out",
-+	"fsic_sclk_in",
-+	"fsic_sclk_out",
-+	"fsic_data_in",
-+	"fsic_data_out",
-+	"fsic_spdif",
-+};
-+
-+static const char * const fsid_groups[] = {
-+	"fsid_sclk_in",
-+	"fsid_sclk_out",
-+	"fsid_data_in",
-+};
-+
- static const char * const i2c2_groups[] = {
- 	"i2c2_0",
- 	"i2c2_1",
-@@ -2199,6 +2439,10 @@ static const char * const scifb_groups[] = {
- };
++		for (number = range->begin; number <= range->end;
++		     number++, nr_pins++) {
++			struct pinctrl_pin_desc *pin = &pmx->pads[nr_pins];
++			struct sh_pfc_pin *info = &pfc->info->pins[nr_pins];
  
- static const struct sh_pfc_function pinmux_functions[] = {
-+	SH_PFC_FUNCTION(fsia),
-+	SH_PFC_FUNCTION(fsib),
-+	SH_PFC_FUNCTION(fsic),
-+	SH_PFC_FUNCTION(fsid),
- 	SH_PFC_FUNCTION(i2c2),
- 	SH_PFC_FUNCTION(i2c3),
- 	SH_PFC_FUNCTION(lcd),
+-		pin->number = i;
+-		pin->name = gpio->name;
++			pin->number = number;
++			pin->name = info->name;
++		}
+ 	}
+ 
+-	return 0;
++	pfc->nr_pins = ranges[nr_ranges-1].end + 1;
++
++	return nr_ranges;
+ }
+ 
+ static int sh_pfc_map_functions(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+@@ -347,6 +366,7 @@ static int sh_pfc_map_functions(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ {
+ 	struct sh_pfc_pinctrl *pmx;
++	int nr_ranges;
+ 	int ret;
+ 
+ 	pmx = devm_kzalloc(pfc->dev, sizeof(*pmx), GFP_KERNEL);
+@@ -356,9 +376,9 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ 	pmx->pfc = pfc;
+ 	pfc->pinctrl = pmx;
+ 
+-	ret = sh_pfc_map_gpios(pfc, pmx);
+-	if (unlikely(ret != 0))
+-		return ret;
++	nr_ranges = sh_pfc_map_pins(pfc, pmx);
++	if (unlikely(nr_ranges < 0))
++		return nr_ranges;
+ 
+ 	ret = sh_pfc_map_functions(pfc, pmx);
+ 	if (unlikely(ret != 0))
+@@ -370,7 +390,7 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ 	pmx->pctl_desc.pmxops = &sh_pfc_pinmux_ops;
+ 	pmx->pctl_desc.confops = &sh_pfc_pinconf_ops;
+ 	pmx->pctl_desc.pins = pmx->pads;
+-	pmx->pctl_desc.npins = pmx->nr_pads;
++	pmx->pctl_desc.npins = pfc->info->nr_pins;
+ 
+ 	pmx->pctl = pinctrl_register(&pmx->pctl_desc, pfc->dev, pmx);
+ 	if (IS_ERR(pmx->pctl))
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index 43c858d..dbcaa60 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -111,6 +111,8 @@ struct sh_pfc_soc_info {
+ 
+ 	struct sh_pfc_pin *pins;
+ 	unsigned int nr_pins;
++	const struct pinmux_range *ranges;
++	unsigned int nr_ranges;
+ 	struct pinmux_func *func_gpios;
+ 	unsigned int nr_func_gpios;
+ 
 -- 
-1.8.1.5
+1.7.10.4
 
