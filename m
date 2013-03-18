@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:05:37 +0000
-Subject: [PATCH 041/142] sh-pfc: Fix return value check in sh_pfc_register_pinctrl()
-Message-Id: <1363604838-29359-42-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:06:31 +0000
+Subject: [PATCH 095/142] ARM: shmobile: kzm9g: Register pinctrl mappings for BSC
+Message-Id: <1363604838-29359-96-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
@@ -10,34 +10,39 @@ Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-In case of error, the function pinctrl_register() returns NULL not
-ERR_PTR(). The IS_ERR() test in the return value check should be
-replaced with NULL test.
+Replace the GPIO-based BSC pinmux configuration by pinctrl mappings.
 
-Signed-off-by: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/pinctrl/sh-pfc/pinctrl.c |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/board-kzm9g.c |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
-index c7f3c40..3e49bf0 100644
---- a/drivers/pinctrl/sh-pfc/pinctrl.c
-+++ b/drivers/pinctrl/sh-pfc/pinctrl.c
-@@ -395,8 +395,8 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
- 	pmx->pctl_desc.npins = pfc->info->nr_pins;
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index 335bdbb..7427041 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -651,6 +651,9 @@ static const struct pinctrl_map kzm_pinctrl_map[] = {
+ 				  "sdhi2_data4", "sdhi2"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-sh73a0",
+ 				  "sdhi2_ctrl", "sdhi2"),
++	/* SMSC */
++	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x.0", "pfc-sh73a0",
++				  "bsc_cs4", "bsc"),
+ };
  
- 	pmx->pctl = pinctrl_register(&pmx->pctl_desc, pfc->dev, pmx);
--	if (IS_ERR(pmx->pctl))
--		return PTR_ERR(pmx->pctl);
-+	if (pmx->pctl = NULL)
-+		return -EINVAL;
+ /*
+@@ -718,9 +721,6 @@ static void __init kzm_init(void)
  
- 	return 0;
- }
+ 	sh73a0_pinmux_init();
+ 
+-	/* CS4 for SMSC/USB */
+-	gpio_request(GPIO_FN_CS4_, NULL); /* CS4 */
+-
+ 	/* SMSC */
+ 	gpio_request_one(224, GPIOF_IN, NULL); /* IRQ3 */
+ 
 -- 
 1.7.10.4
 
