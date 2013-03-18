@@ -1,55 +1,78 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 12:32:53 +0000
-Subject: [PATCH 43/43] r8a7779: Add Display Unit clock support
-Message-Id: <1363609973-31086-44-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:05:18 +0000
+Subject: [PATCH 022/142] sh-pfc: Replace pinctrl_add_gpio_range() with gpiochip_add_pin_range()
+Message-Id: <1363604838-29359-23-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Phil Edworthy <phil.edworthy@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-[Rename device from to rcarfb to rcar-du]
+Adding a GPIO range to a pinctrl device logically belongs to the GPIO
+driver. Switch to the right API.
+
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-[Manual conflict resolution]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/arm/mach-shmobile/clock-r8a7779.c |    4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ drivers/pinctrl/sh-pfc/gpio.c    |    6 ++++++
+ drivers/pinctrl/sh-pfc/pinctrl.c |    9 ---------
+ 2 files changed, 6 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index 0f66d35..d9edeaf 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -88,7 +88,7 @@ static struct clk div4_clks[DIV4_NR] = {
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index 45090d8..32a9c78 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -220,6 +220,7 @@ sh_pfc_add_gpiochip(struct sh_pfc *pfc, void(*setup)(struct sh_pfc_chip *))
+ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+ {
+ 	struct sh_pfc_chip *chip;
++	int ret;
  
- enum { MSTP323, MSTP322, MSTP321, MSTP320,
- 	MSTP115,
--	MSTP101, MSTP100,
-+	MSTP103, MSTP101, MSTP100,
- 	MSTP030,
- 	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
- 	MSTP016, MSTP015, MSTP014,
-@@ -101,6 +101,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP321] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 21, 0), /* SDHI2 */
- 	[MSTP320] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 20, 0), /* SDHI3 */
- 	[MSTP115] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1, 15, 0), /* SATA */
-+	[MSTP103] = SH_CLK_MSTP32(&div4_clks[DIV4_S], MSTPCR1,  3, 0), /* DU */
- 	[MSTP101] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  1, 0), /* USB2 */
- 	[MSTP100] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  0, 0), /* USB0/1 */
- 	[MSTP030] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 30, 0), /* I2C0 */
-@@ -184,6 +185,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP320]), /* SDHI3 */
-+	CLKDEV_DEV_ID("rcar-du.0", &mstp_clks[MSTP103]), /* DU */
- };
+ 	chip = sh_pfc_add_gpiochip(pfc, gpio_pin_setup);
+ 	if (IS_ERR(chip))
+@@ -227,6 +228,11 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
  
- void __init r8a7779_clock_init(void)
+ 	pfc->gpio = chip;
+ 
++	ret = gpiochip_add_pin_range(&chip->gpio_chip, dev_name(pfc->dev), 0, 0,
++				     chip->gpio_chip.ngpio);
++	if (ret < 0)
++		return ret;
++
+ 	chip = sh_pfc_add_gpiochip(pfc, gpio_function_setup);
+ 	if (IS_ERR(chip))
+ 		return PTR_ERR(chip);
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index 78bd277..a60c317 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -28,7 +28,6 @@
+ struct sh_pfc_pinctrl {
+ 	struct pinctrl_dev *pctl;
+ 	struct pinctrl_desc pctl_desc;
+-	struct pinctrl_gpio_range range;
+ 
+ 	struct sh_pfc *pfc;
+ 
+@@ -377,14 +376,6 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ 	if (IS_ERR(pmx->pctl))
+ 		return PTR_ERR(pmx->pctl);
+ 
+-	pmx->range.name = DRV_NAME,
+-	pmx->range.id = 0;
+-	pmx->range.npins = pfc->info->nr_pins;
+-	pmx->range.base = 0;
+-	pmx->range.pin_base = 0;
+-
+-	pinctrl_add_gpio_range(pmx->pctl, &pmx->range);
+-
+ 	return 0;
+ }
+ 
 -- 
 1.7.10.4
 
