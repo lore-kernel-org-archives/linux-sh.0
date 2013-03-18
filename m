@@ -1,64 +1,141 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 01 Mar 2013 15:03:17 +0000
-Subject: Re: [PATCH 00/05] irqchip: Renesas INTC External IRQ pin v2 update
-Message-Id: <Pine.LNX.4.64.1303011603060.18776@axis700.grange>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 12:05:50 +0000
+Subject: [PATCH 06/14] irqchip: intc-irqpin: Cache mapped IRQ
+Message-Id: <1363608358-24215-7-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130226115834.5630.45471.sendpatchset@w520>
-In-Reply-To: <20130226115834.5630.45471.sendpatchset@w520>
+References: <1363608358-24215-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363608358-24215-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-kernel@vger.kernel.org, kuninori.morimoto.gx@renesas.com, linux-sh@vger.kernel.org, benh@kernel.crashing.org, grant.likely@secretlab.ca, horms@verge.net.au, tglx@linutronix.de
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, 26 Feb 2013, Magnus Damm wrote:
+From: Magnus Damm <damm@opensource.se>
 
-> irqchip: Renesas INTC External IRQ pin v2 update
-> 
-> [PATCH 01/05] irqchip: intc-irqpin: Whitespace fixes
-> [PATCH 02/05] irqchip: intc-irqpin: Cache mapped IRQ
-> [PATCH 03/05] irqchip: intc-irqpin: Add force comments
-> [PATCH 04/05] irqchip: intc-irqpin: Make use of devm functions
-> [PATCH 05/05] irqchip: intc-irqpin: GPL header for platform data
-> 
-> These patches update the v1 of the INTC External IRQ pin driver
-> in various ways based on feedback kindly received from:
-> - Simon Horman
-> - Kuninori Morimoto
-> - Thomas Gleixner
-> 
-> With the series applied I see the driver as "v2", but
-> I prefer to keep these changes as incremental ones instead
-> of redoing a single "v2" patch for the driver. The reason
-> behind this is that there are on-going back porting efforts
-> that are better dealt with using incremental patches.
-> 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
+Cache IRQ in domain_irq variable instead of
+making use of irq_find_mapping(). While at it
+rename the irq variable to requested_irq.
 
-tested on kzm9g in topic/all+next branch of
-
-https://git.kernel.org/cgit/linux/kernel/git/horms/renesas.git/
-
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Reviewed-by: Thomas Gleixner <tglx@linutronix.de>
 Tested-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-
-Thanks
-Guennadi
-
-> ---
-> 
->  Depends on:
->  [PATCH] irqchip: Renesas INTC External IRQ pin driver
-> 
->  drivers/irqchip/irq-renesas-intc-irqpin.c             |   88 ++++++++---------
->  include/linux/platform_data/irq-renesas-intc-irqpin.h |   19 +++
->  2 files changed, 62 insertions(+), 45 deletions(-)
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-Guennadi Liakhovetski, Ph.D.
-Freelance Open-Source Software Developer
-http://www.open-technology.de/
+ drivers/irqchip/irq-renesas-intc-irqpin.c |   30 +++++++++++++++--------------
+ 1 file changed, 16 insertions(+), 14 deletions(-)
+
+diff --git a/drivers/irqchip/irq-renesas-intc-irqpin.c b/drivers/irqchip/irq-renesas-intc-irqpin.c
+index 4b5933f..0ac2bf6 100644
+--- a/drivers/irqchip/irq-renesas-intc-irqpin.c
++++ b/drivers/irqchip/irq-renesas-intc-irqpin.c
+@@ -61,7 +61,8 @@ struct intc_irqpin_iomem {
+ 
+ struct intc_irqpin_irq {
+ 	int hw_irq;
+-	int irq;
++	int requested_irq;
++	int domain_irq;
+ 	struct intc_irqpin_priv *p;
+ };
+ 
+@@ -171,8 +172,7 @@ static int intc_irqpin_set_sense(struct intc_irqpin_priv *p, int irq, int value)
+ static void intc_irqpin_dbg(struct intc_irqpin_irq *i, char *str)
+ {
+ 	dev_dbg(&i->p->pdev->dev, "%s (%d:%d:%d)\n",
+-		str, i->irq, i->hw_irq,
+-		irq_find_mapping(i->p->irq_domain, i->hw_irq));
++		str, i->requested_irq, i->hw_irq, i->domain_irq);
+ }
+ 
+ static void intc_irqpin_irq_enable(struct irq_data *d)
+@@ -196,7 +196,7 @@ static void intc_irqpin_irq_disable(struct irq_data *d)
+ static void intc_irqpin_irq_enable_force(struct irq_data *d)
+ {
+ 	struct intc_irqpin_priv *p = irq_data_get_irq_chip_data(d);
+-	int irq = p->irq[irqd_to_hwirq(d)].irq;
++	int irq = p->irq[irqd_to_hwirq(d)].requested_irq;
+ 
+ 	intc_irqpin_irq_enable(d);
+ 	irq_get_chip(irq)->irq_unmask(irq_get_irq_data(irq));
+@@ -205,7 +205,7 @@ static void intc_irqpin_irq_enable_force(struct irq_data *d)
+ static void intc_irqpin_irq_disable_force(struct irq_data *d)
+ {
+ 	struct intc_irqpin_priv *p = irq_data_get_irq_chip_data(d);
+-	int irq = p->irq[irqd_to_hwirq(d)].irq;
++	int irq = p->irq[irqd_to_hwirq(d)].requested_irq;
+ 
+ 	irq_get_chip(irq)->irq_mask(irq_get_irq_data(irq));
+ 	intc_irqpin_irq_disable(d);
+@@ -246,7 +246,7 @@ static irqreturn_t intc_irqpin_irq_handler(int irq, void *dev_id)
+ 	if (intc_irqpin_read(p, INTC_IRQPIN_REG_SOURCE) & bit) {
+ 		intc_irqpin_write(p, INTC_IRQPIN_REG_SOURCE, ~bit);
+ 		intc_irqpin_dbg(i, "demux2");
+-		generic_handle_irq(irq_find_mapping(p->irq_domain, i->hw_irq));
++		generic_handle_irq(i->domain_irq);
+ 		return IRQ_HANDLED;
+ 	}
+ 	return IRQ_NONE;
+@@ -257,6 +257,9 @@ static int intc_irqpin_irq_domain_map(struct irq_domain *h, unsigned int virq,
+ {
+ 	struct intc_irqpin_priv *p = h->host_data;
+ 
++	p->irq[hw].domain_irq = virq;
++	p->irq[hw].hw_irq = hw;
++
+ 	intc_irqpin_dbg(&p->irq[hw], "map");
+ 	irq_set_chip_data(virq, h->host_data);
+ 	irq_set_chip_and_handler(virq, &p->irq_chip, handle_level_irq);
+@@ -314,9 +317,8 @@ static int intc_irqpin_probe(struct platform_device *pdev)
+ 		if (!irq)
+ 			break;
+ 
+-		p->irq[k].hw_irq = k;
+ 		p->irq[k].p = p;
+-		p->irq[k].irq = irq->start;
++		p->irq[k].requested_irq = irq->start;
+ 	}
+ 
+ 	p->number_of_irqs = k;
+@@ -389,7 +391,8 @@ static int intc_irqpin_probe(struct platform_device *pdev)
+ 
+ 	/* request and set priority on interrupts one by one */
+ 	for (k = 0; k < p->number_of_irqs; k++) {
+-		if (request_irq(p->irq[k].irq, intc_irqpin_irq_handler,
++		if (request_irq(p->irq[k].requested_irq,
++				intc_irqpin_irq_handler,
+ 				0, name, &p->irq[k])) {
+ 			dev_err(&pdev->dev, "failed to request low IRQ\n");
+ 			ret = -ENOENT;
+@@ -402,17 +405,16 @@ static int intc_irqpin_probe(struct platform_device *pdev)
+ 
+ 	/* warn in case of mismatch if irq base is specified */
+ 	if (p->config.irq_base) {
+-		k = irq_find_mapping(p->irq_domain, 0);
+-		if (p->config.irq_base != k)
++		if (p->config.irq_base != p->irq[0].domain_irq)
+ 			dev_warn(&pdev->dev, "irq base mismatch (%d/%d)\n",
+-				 p->config.irq_base, k);
++				 p->config.irq_base, p->irq[0].domain_irq);
+ 	}
+ 
+ 	return 0;
+ 
+ err3:
+ 	for (; k >= 0; k--)
+-		free_irq(p->irq[k - 1].irq, &p->irq[k - 1]);
++		free_irq(p->irq[k - 1].requested_irq, &p->irq[k - 1]);
+ 
+ 	irq_domain_remove(p->irq_domain);
+ err2:
+@@ -430,7 +432,7 @@ static int intc_irqpin_remove(struct platform_device *pdev)
+ 	int k;
+ 
+ 	for (k = 0; k < p->number_of_irqs; k++)
+-		free_irq(p->irq[k].irq, &p->irq[k]);
++		free_irq(p->irq[k].requested_irq, &p->irq[k]);
+ 
+ 	irq_domain_remove(p->irq_domain);
+ 
+-- 
+1.7.10.4
+
