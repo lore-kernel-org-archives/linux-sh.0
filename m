@@ -1,106 +1,148 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 22 Mar 2013 01:23:47 +0000
-Subject: [PATCH 1/6] ARM: shmobile: kzm9g: SDHI0 and SDHI1 use a 3.3V power supply
-Message-Id: <1363915432-21720-2-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:05:24 +0000
+Subject: [PATCH 028/142] ARM: shmobile: mackerel: Replace GPIO_PORTx enum with GPIO port numbers
+Message-Id: <1363604838-29359-29-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363915432-21720-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363915432-21720-1-git-send-email-horms+renesas@verge.net.au>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-kzm9g supplies 3.3V to its SDHI0 and SDHI2 interfaces. Specifying 2.8V
-prevents some (e.g. certain SDIO) cards from working. This patch fixes the
-voltage and removes redundant OCR masks from platform data.
+The PFC GPIO API implementation moved to using port numbers. Replace all
+GPIO_PORTx enum usage with the corresponding port number. The GPIO_PORTx
+enum values are identical to the port number on this platform.
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/arm/boot/dts/sh73a0-kzm9g-reference.dts |   12 ++++++------
- arch/arm/mach-shmobile/board-kzm9g.c         |   10 ++++------
- 2 files changed, 10 insertions(+), 12 deletions(-)
+ arch/arm/mach-shmobile/board-mackerel.c |   34 +++++++++++++++----------------
+ 1 file changed, 17 insertions(+), 17 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-index 7fad4b9..cadcf30 100644
---- a/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-+++ b/arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
-@@ -36,11 +36,11 @@
- 		regulator-boot-on;
- 	};
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index db968a5..172d472 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -363,7 +363,7 @@ static struct fb_videomode mackerel_lcdc_modes[] = {
  
--	reg_2p8v: regulator@1 {
-+	reg_3p3v: regulator@1 {
- 		compatible = "regulator-fixed";
--		regulator-name = "fixed-2.8V";
--		regulator-min-microvolt = <2800000>;
--		regulator-max-microvolt = <2800000>;
-+		regulator-name = "fixed-3.3V";
-+		regulator-min-microvolt = <3300000>;
-+		regulator-max-microvolt = <3300000>;
- 		regulator-always-on;
- 		regulator-boot-on;
- 	};
-@@ -52,7 +52,7 @@
- 		interrupts = <0 83 4
- 				0 84 4
- 				0 85 4>;
--		vmmc-supply = <&reg_2p8v>;
-+		vmmc-supply = <&reg_3p3v>;
- 		bus-width = <4>;
- 		toshiba,mmc-has-idle-wait;
- 	};
-@@ -63,7 +63,7 @@
- 		interrupt-parent = <&gic>;
- 		interrupts = <0 104 4
- 				0 105 4>;
--		vmmc-supply = <&reg_2p8v>;
-+		vmmc-supply = <&reg_3p3v>;
- 		bus-width = <4>;
- 		broken-cd;
- 		toshiba,mmc-wrprotect-disable;
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index d2ace3a..e924b81 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -375,8 +375,8 @@ static struct platform_device mmc_device = {
- 	.resource	= sh_mmcif_resources,
+ static int mackerel_set_brightness(int brightness)
+ {
+-	gpio_set_value(GPIO_PORT31, brightness);
++	gpio_set_value(31, brightness);
+ 
+ 	return 0;
+ }
+@@ -819,22 +819,22 @@ static struct platform_device usbhs1_device = {
+ static struct gpio_led mackerel_leds[] = {
+ 	{
+ 		.name		= "led0",
+-		.gpio		= GPIO_PORT0,
++		.gpio		= 0,
+ 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
+ 	},
+ 	{
+ 		.name		= "led1",
+-		.gpio		= GPIO_PORT1,
++		.gpio		= 1,
+ 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
+ 	},
+ 	{
+ 		.name		= "led2",
+-		.gpio		= GPIO_PORT2,
++		.gpio		= 2,
+ 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
+ 	},
+ 	{
+ 		.name		= "led3",
+-		.gpio		= GPIO_PORT159,
++		.gpio		= 159,
+ 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
+ 	}
  };
+@@ -964,11 +964,11 @@ static struct platform_device nand_flash_device = {
  
--/* Fixed 2.8V regulators to be used by SDHI0 and SDHI2 */
--static struct regulator_consumer_supply fixed2v8_power_consumers[] +/* Fixed 3.3V regulators to be used by SDHI0 and SDHI2 */
-+static struct regulator_consumer_supply fixed3v3_power_consumers[]  {
- 	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
- 	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
-@@ -390,7 +390,6 @@ static struct sh_mobile_sdhi_info sdhi0_info = {
+ /*
+  * The card detect pin of the top SD/MMC slot (CN7) is active low and is
+- * connected to GPIO A22 of SH7372 (GPIO_PORT41).
++ * connected to GPIO A22 of SH7372 (GPIO 41).
+  */
+ static int slot_cn7_get_cd(struct platform_device *pdev)
+ {
+-	return !gpio_get_value(GPIO_PORT41);
++	return !gpio_get_value(41);
+ }
+ 
+ /* SDHI0 */
+@@ -977,7 +977,7 @@ static struct sh_mobile_sdhi_info sdhi0_info = {
  	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
--	.tmio_ocr_mask	= MMC_VDD_27_28 | MMC_VDD_28_29,
+ 	.tmio_flags	= TMIO_MMC_USE_GPIO_CD,
+ 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
+-	.cd_gpio	= GPIO_PORT172,
++	.cd_gpio	= 172,
  };
  
  static struct resource sdhi0_resources[] = {
-@@ -434,7 +433,6 @@ static struct sh_mobile_sdhi_info sdhi2_info = {
- 			  TMIO_MMC_USE_GPIO_CD |
- 			  TMIO_MMC_WRPROTECT_DISABLE,
- 	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
--	.tmio_ocr_mask	= MMC_VDD_27_28 | MMC_VDD_28_29,
- 	.cd_gpio	= 13,
- };
+@@ -1060,11 +1060,11 @@ static struct platform_device sdhi1_device = {
  
-@@ -716,8 +714,8 @@ static void __init kzm_init(void)
+ /*
+  * The card detect pin of the top SD/MMC slot (CN23) is active low and is
+- * connected to GPIO SCIFB_SCK of SH7372 (GPIO_PORT162).
++ * connected to GPIO SCIFB_SCK of SH7372 (162).
+  */
+ static int slot_cn23_get_cd(struct platform_device *pdev)
  {
- 	regulator_register_always_on(0, "fixed-1.8V", fixed1v8_power_consumers,
- 				     ARRAY_SIZE(fixed1v8_power_consumers), 1800000);
--	regulator_register_always_on(1, "fixed-2.8V", fixed2v8_power_consumers,
--				     ARRAY_SIZE(fixed2v8_power_consumers), 2800000);
-+	regulator_register_always_on(1, "fixed-3.3V", fixed3v3_power_consumers,
-+				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
- 	regulator_register_fixed(2, dummy_supplies, ARRAY_SIZE(dummy_supplies));
+-	return !gpio_get_value(GPIO_PORT162);
++	return !gpio_get_value(162);
+ }
  
- 	pinctrl_register_mappings(kzm_pinctrl_map, ARRAY_SIZE(kzm_pinctrl_map));
+ /* SDHI2 */
+@@ -1403,9 +1403,9 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_LCDDCK,   NULL);
+ 
+ 	/* backlight, off by default */
+-	gpio_request_one(GPIO_PORT31, GPIOF_OUT_INIT_LOW, NULL);
++	gpio_request_one(31, GPIOF_OUT_INIT_LOW, NULL);
+ 
+-	gpio_request_one(GPIO_PORT151, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
++	gpio_request_one(151, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
+ 
+ 	/* USBHS0 */
+ 	gpio_request(GPIO_FN_VBUS0_0, NULL);
+@@ -1421,10 +1421,10 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_FSIAILR,	NULL);
+ 	gpio_request(GPIO_FN_FSIAISLD,	NULL);
+ 	gpio_request(GPIO_FN_FSIAOSLD,	NULL);
+-	gpio_request_one(GPIO_PORT161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
++	gpio_request_one(161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
+ 
+-	gpio_request(GPIO_PORT9,  NULL);
+-	gpio_request(GPIO_PORT10, NULL);
++	gpio_request(9,  NULL);
++	gpio_request(10, NULL);
+ 	gpio_direction_none(GPIO_PORT9CR);  /* FSIAOBT needs no direction */
+ 	gpio_direction_none(GPIO_PORT10CR); /* FSIAOLR needs no direction */
+ 
+@@ -1475,7 +1475,7 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_SDHID1_0, NULL);
+ #endif
+ 	/* card detect pin for MMC slot (CN7) */
+-	gpio_request_one(GPIO_PORT41, GPIOF_IN, NULL);
++	gpio_request_one(41, GPIOF_IN, NULL);
+ 
+ 	/* enable SDHI2 */
+ 	gpio_request(GPIO_FN_SDHICMD2, NULL);
+@@ -1486,7 +1486,7 @@ static void __init mackerel_init(void)
+ 	gpio_request(GPIO_FN_SDHID2_0, NULL);
+ 
+ 	/* card detect pin for microSD slot (CN23) */
+-	gpio_request_one(GPIO_PORT162, GPIOF_IN, NULL);
++	gpio_request_one(162, GPIOF_IN, NULL);
+ 
+ 	/* MMCIF */
+ 	gpio_request(GPIO_FN_MMCD0_0, NULL);
 -- 
 1.7.10.4
 
