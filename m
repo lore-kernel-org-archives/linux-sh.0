@@ -1,45 +1,86 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 01 Mar 2013 09:42:12 +0000
-Subject: Re: [PATCH 2/2] ARM: mach-shmobile: kzm9g: do not enable REGULATOR_DUMMY in defconfig
-Message-Id: <20130301094212.GH27938@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:47:03 +0000
+Subject: [PATCH 11/43] ARM: shmobile: Kill off r8a7779 scu_base_addr() function
+Message-Id: <1363607255-6385-12-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1360936117-21765-1-git-send-email-horms+renesas@verge.net.au>
- <1360936117-21765-3-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1360936117-21765-3-git-send-email-horms+renesas@verge.net.au>
+References: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Fri, Feb 15, 2013 at 10:48:37PM +0900, Simon Horman wrote:
-> Don't enable REGULATOR_DUMMY, it is only intended for development / testing.
-> There doesn't seem to be any value in setting it here and doing
-> so was an error on my part.
+From: Magnus Damm <damm@opensource.se>
 
-Applied to the defconfig branch of the renesas tree
-and thus included in its next branch and queued up for v3.10.
+Replace scu_base_addr() with a static shmobile_scu_base
+variable and introduce R8A7779_SCU_BASE.
 
-> 
-> Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
-> ---
->  arch/arm/configs/kzm9g_defconfig |    1 -
->  1 file changed, 1 deletion(-)
-> 
-> This patch depends on "ARM: shmobile: kzm9g: correct smsc regulator registration"
-> 
-> diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
-> index 670c3b6..6751c02 100644
-> --- a/arch/arm/configs/kzm9g_defconfig
-> +++ b/arch/arm/configs/kzm9g_defconfig
-> @@ -86,7 +86,6 @@ CONFIG_I2C_SH_MOBILE=y
->  CONFIG_GPIO_PCF857X=y
->  # CONFIG_HWMON is not set
->  CONFIG_REGULATOR=y
-> -CONFIG_REGULATOR_DUMMY=y
->  CONFIG_FB=y
->  CONFIG_FB_SH_MOBILE_LCDC=y
->  CONFIG_FRAMEBUFFER_CONSOLE=y
-> -- 
-> 1.7.10.4
-> 
+Later in the series the shmobile_scu_base variable will be
+made into a global variable so this is preparation only.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/smp-r8a7779.c |   17 ++++++++---------
+ 1 file changed, 8 insertions(+), 9 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/smp-r8a7779.c b/arch/arm/mach-shmobile/smp-r8a7779.c
+index f46b516..d92188d 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7779.c
++++ b/arch/arm/mach-shmobile/smp-r8a7779.c
+@@ -31,6 +31,9 @@
+ #include <asm/smp_twd.h>
+ 
+ #define AVECR IOMEM(0xfe700040)
++#define R8A7779_SCU_BASE IOMEM(0xf0000000)
++
++static void __iomem *shmobile_scu_base;
+ 
+ static struct r8a7779_pm_ch r8a7779_ch_cpu1 = {
+ 	.chan_offs = 0x40, /* PWRSR0 .. PWRER0 */
+@@ -56,11 +59,6 @@ static struct r8a7779_pm_ch *r8a7779_ch_cpu[4] = {
+ 	[3] = &r8a7779_ch_cpu3,
+ };
+ 
+-static void __iomem *scu_base_addr(void)
+-{
+-	return (void __iomem *)0xf0000000;
+-}
+-
+ static DEFINE_SPINLOCK(scu_lock);
+ static unsigned long tmp;
+ 
+@@ -75,7 +73,7 @@ void __init r8a7779_register_twd(void)
+ 
+ static void modify_scu_cpu_psr(unsigned long set, unsigned long clr)
+ {
+-	void __iomem *scu_base = scu_base_addr();
++	void __iomem *scu_base = shmobile_scu_base;
+ 
+ 	spin_lock(&scu_lock);
+ 	tmp = __raw_readl(scu_base + 8);
+@@ -153,7 +151,7 @@ static void __init r8a7779_smp_prepare_cpus(unsigned int max_cpus)
+ {
+ 	int cpu = cpu_logical_map(0);
+ 
+-	scu_enable(scu_base_addr());
++	scu_enable(shmobile_scu_base);
+ 
+ 	/* Map the reset vector (in headsmp.S) */
+ 	__raw_writel(__pa(shmobile_secondary_vector), AVECR);
+@@ -171,9 +169,10 @@ static void __init r8a7779_smp_prepare_cpus(unsigned int max_cpus)
+ 
+ static void __init r8a7779_smp_init_cpus(void)
+ {
+-	unsigned int ncores = scu_get_core_count(scu_base_addr());
++	/* setup r8a7779 specific SCU base */
++	shmobile_scu_base = R8A7779_SCU_BASE;
+ 
+-	shmobile_smp_init_cpus(ncores);
++	shmobile_smp_init_cpus(scu_get_core_count(shmobile_scu_base));
+ }
+ 
+ struct smp_operations r8a7779_smp_ops  __initdata = {
+-- 
+1.7.10.4
+
