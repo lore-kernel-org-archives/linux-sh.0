@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:05:06 +0000
-Subject: [PATCH 010/142] sh-pfc: Initialize pinmux_gpio flags statically
-Message-Id: <1363604838-29359-11-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:06:48 +0000
+Subject: [PATCH 112/142] sh-pfc: sh73a0: Remove USB function GPIOS
+Message-Id: <1363604838-29359-113-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
@@ -12,93 +12,32 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-All function GPIO entries are initialized with the GPIO_FN macro that
-expands to the PINMUX_GPIO macro, used to initialize real GPIOs. Create
-a PINMUX_GPIO_FN macro that duplicates PINMUX_GPIO and sets flags to
-PINMUX_TYPE_FUNCTION and use it in GPIO_FN, and make PINMUX_GPIO set
-flags to PINMUX_TYPE_GPIO.
-
-This removes the need to initialize GPIO flags at runtime and thus
-simplifies the code, preparing for the GPIO and functions split.
+All sh73a0 platforms now use the pinctrl API to control the USB pins,
+the corresponding function GPIOS are unused. Remove them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/pinctrl/sh-pfc/pinctrl.c |   19 ++-----------------
- drivers/pinctrl/sh-pfc/sh_pfc.h  |   16 +++++++++++++---
- 2 files changed, 15 insertions(+), 20 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c |    3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
-index 908b536..682b3a6 100644
---- a/drivers/pinctrl/sh-pfc/pinctrl.c
-+++ b/drivers/pinctrl/sh-pfc/pinctrl.c
-@@ -315,22 +315,6 @@ static const struct pinconf_ops sh_pfc_pinconf_ops = {
- 	.pin_config_dbg_show	= sh_pfc_pinconf_dbg_show,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index 7b010b6..273345c 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -2936,11 +2936,10 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(usb),
  };
  
--static void sh_pfc_map_one_gpio(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx,
--				struct pinmux_gpio *gpio, unsigned offset)
--{
--	struct pinmux_data_reg *dummy;
--	int bit;
--
--	gpio->flags &= ~PINMUX_FLAG_TYPE;
--
--	if (sh_pfc_get_data_reg(pfc, offset, &dummy, &bit) = 0)
--		gpio->flags |= PINMUX_TYPE_GPIO;
--	else {
--		gpio->flags |= PINMUX_TYPE_FUNCTION;
--		pmx->nr_functions++;
--	}
--}
--
- /* pinmux ranges -> pinctrl pin descs */
- static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
- {
-@@ -356,7 +340,8 @@ static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
- 		if (unlikely(!gpio->enum_id))
- 			continue;
+-#define PINMUX_FN_BASE	GPIO_FN_VBUS_0
++#define PINMUX_FN_BASE	GPIO_FN_GPI0
  
--		sh_pfc_map_one_gpio(pfc, pmx, gpio, i);
-+		if ((gpio->flags & PINMUX_FLAG_TYPE) = PINMUX_TYPE_FUNCTION)
-+			pmx->nr_functions++;
- 	}
- 
- 	return 0;
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index 2627a89..e150395 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -41,8 +41,18 @@ struct pinmux_gpio {
- 	const char *name;
- };
- 
--#define PINMUX_GPIO(gpio, data_or_mark) \
--	[gpio] = { .name = __stringify(gpio), .enum_id = data_or_mark, .flags = PINMUX_TYPE_NONE }
-+#define PINMUX_GPIO(gpio, data_or_mark)			\
-+	[gpio] = {					\
-+		.name = __stringify(gpio),		\
-+		.enum_id = data_or_mark,		\
-+		.flags = PINMUX_TYPE_GPIO		\
-+	}
-+#define PINMUX_GPIO_FN(gpio, data_or_mark)		\
-+	[gpio] = {					\
-+		.name = __stringify(gpio),		\
-+		.enum_id = data_or_mark,		\
-+		.flags = PINMUX_TYPE_FUNCTION		\
-+	}
- 
- #define PINMUX_DATA(data_or_mark, ids...) data_or_mark, ids, 0
- 
-@@ -135,7 +145,7 @@ enum { GPIO_CFG_DRYRUN, GPIO_CFG_REQ, GPIO_CFG_FREE };
- #define _GPIO_PORT(pfx, sfx) PINMUX_GPIO(GPIO_PORT##pfx, PORT##pfx##_DATA)
- #define PORT_ALL(str)	CPU_ALL_PORT(_PORT_ALL, PORT, str)
- #define GPIO_PORT_ALL()	CPU_ALL_PORT(_GPIO_PORT, , unused)
--#define GPIO_FN(str) PINMUX_GPIO(GPIO_FN_##str, str##_MARK)
-+#define GPIO_FN(str) PINMUX_GPIO_FN(GPIO_FN_##str, str##_MARK)
- 
- /* helper macro for pinmux_enum_t */
- #define PORT_DATA_I(nr)	\
+ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	/* Table 25-1 (Functions 0-7) */
+-	GPIO_FN(VBUS_0),
+ 	GPIO_FN(GPI0),
+ 	GPIO_FN(GPI1),
+ 	GPIO_FN(GPI2),
 -- 
 1.7.10.4
 
