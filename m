@@ -1,44 +1,50 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 06 Mar 2013 12:52:35 +0000
-Subject: [PATCH v3 14/29] sh-pfc: Don't needlessly check GPIO type in sh_gpio_free()
-Message-Id: <1362574370-17889-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:06:17 +0000
+Subject: [PATCH 081/142] ARM: shmobile: ag5evm: Register pinctrl mappings for IrDA
+Message-Id: <1363604838-29359-82-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The GPIO type is always PINMUX_TYPE_FUNCTION when freeing a function
-GPIO. Hardcode the type value.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+Replace the GPIO-based IrDA pinmux configuration by pinctrl mappings.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/pinctrl/sh-pfc/gpio.c | 5 +----
- 1 file changed, 1 insertion(+), 4 deletions(-)
+ arch/arm/mach-shmobile/board-ag5evm.c |    8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
-index 80a50d8..8f01113 100644
---- a/drivers/pinctrl/sh-pfc/gpio.c
-+++ b/drivers/pinctrl/sh-pfc/gpio.c
-@@ -71,16 +71,13 @@ static void sh_gpio_free(struct gpio_chip *gc, unsigned offset)
- {
- 	struct sh_pfc *pfc = gpio_to_pfc(gc);
- 	unsigned long flags;
--	int pinmux_type;
+diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
+index 22b9655..c754071 100644
+--- a/arch/arm/mach-shmobile/board-ag5evm.c
++++ b/arch/arm/mach-shmobile/board-ag5evm.c
+@@ -571,6 +571,9 @@ static const struct pinctrl_map ag5evm_pinctrl_map[] = {
+ 				  "i2c2_0", "i2c2"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.3", "pfc-sh73a0",
+ 				  "i2c3_0", "i2c3"),
++	/* IrDA */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_irda.0", "pfc-sh73a0",
++				  "irda_0", "irda"),
+ 	/* KEYSC */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_keysc.0", "pfc-sh73a0",
+ 				  "keysc_in8", "keysc"),
+@@ -639,11 +642,6 @@ static void __init ag5evm_init(void)
+ 	gpio_request_one(144, GPIOF_IN, NULL); /* PINTA2 */
+ 	gpio_request_one(145, GPIOF_OUT_INIT_HIGH, NULL); /* RESET */
  
- 	if (offset < pfc->info->nr_pins)
- 		return pinctrl_free_gpio(offset);
- 
- 	spin_lock_irqsave(&pfc->lock, flags);
- 
--	pinmux_type = pfc->info->gpios[offset].flags & PINMUX_FLAG_TYPE;
+-	/* IrDA */
+-	gpio_request(GPIO_FN_PORT241_IRDA_OUT, NULL);
+-	gpio_request(GPIO_FN_PORT242_IRDA_IN,  NULL);
+-	gpio_request(GPIO_FN_PORT243_IRDA_FIRSEL, NULL);
 -
--	sh_pfc_config_gpio(pfc, offset, pinmux_type, GPIO_CFG_FREE);
-+	sh_pfc_config_gpio(pfc, offset, PINMUX_TYPE_FUNCTION, GPIO_CFG_FREE);
- 
- 	spin_unlock_irqrestore(&pfc->lock, flags);
- }
+ 	/* LCD panel */
+ 	gpio_request_one(217, GPIOF_OUT_INIT_LOW, NULL); /* RESET */
+ 	mdelay(1);
 -- 
-1.8.1.5
+1.7.10.4
 
