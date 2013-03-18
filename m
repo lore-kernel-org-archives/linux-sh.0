@@ -1,180 +1,132 @@
-From: Viresh Kumar <viresh.kumar@linaro.org>
-Date: Sun, 24 Mar 2013 13:49:11 +0000
-Subject: [PATCH 2/2] cpufreq: Don't check if cpu is online/offline for cpufreq callbacks
-Message-Id: <ebbe8178fab5739c7322745b3a7ba05955477761.1364132845.git.viresh.kumar@linaro.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:06:11 +0000
+Subject: [PATCH 075/142] sh-pfc: r8a7779: Add INTC pin groups and functions
+Message-Id: <1363604838-29359-76-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <981c23bd4b2a14c346820685e1203ab7054378f8.1364132845.git.viresh.kumar@linaro.org>
-In-Reply-To: <981c23bd4b2a14c346820685e1203ab7054378f8.1364132845.git.viresh.kumar@linaro.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: rjw@sisk.pl
-Cc: cpufreq@vger.kernel.org, linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org, arvind.chauhan@arm.com, robin.randhawa@arm.com, Steve.Bannister@arm.com, Liviu.Dudau@arm.com, charles.garcia-tobin@arm.com, linaro-kernel@lists.linaro.org, Viresh Kumar <viresh.kumar@linaro.org>, Ralf Baechle <ralf@linux-mips.org>, Paul Mundt <lethal@linux-sh.org>, "David S. Miller" <davem@davemloft.net>, Thomas Renninger <trenn@suse.de>, Borislav Petkov <bp@alien8.de>, linux-mips@linux-mips.org, linux-sh@vger.kernel.org, sparclinux@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-cpufreq layer doesn't call cpufreq driver's callback for any offline cpu and so
-checking that isn't useful.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Lets get rid of it.
-
-Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
-Cc: Ralf Baechle <ralf@linux-mips.org>
-Cc: Paul Mundt <lethal@linux-sh.org>
-Cc: David S. Miller <davem@davemloft.net>
-Cc: Thomas Renninger <trenn@suse.de>
-Cc: Borislav Petkov <bp@alien8.de>
-Cc: linux-mips@linux-mips.org
-Cc: linux-sh@vger.kernel.org
-Cc: sparclinux@vger.kernel.org
-Cc: linux-kernel@vger.kernel.org
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/mips/kernel/cpufreq/loongson2_cpufreq.c | 6 ------
- arch/sh/kernel/cpufreq.c                     | 6 ------
- arch/sparc/kernel/us2e_cpufreq.c             | 6 ------
- arch/sparc/kernel/us3_cpufreq.c              | 6 ------
- drivers/cpufreq/p4-clockmod.c                | 3 +--
- drivers/cpufreq/powernow-k8.c                | 3 ---
- drivers/cpufreq/speedstep-centrino.c         | 4 ----
- 7 files changed, 1 insertion(+), 33 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c |   77 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 77 insertions(+)
 
-diff --git a/arch/mips/kernel/cpufreq/loongson2_cpufreq.c b/arch/mips/kernel/cpufreq/loongson2_cpufreq.c
-index bafda70..8488957 100644
---- a/arch/mips/kernel/cpufreq/loongson2_cpufreq.c
-+++ b/arch/mips/kernel/cpufreq/loongson2_cpufreq.c
-@@ -61,9 +61,6 @@ static int loongson2_cpufreq_target(struct cpufreq_policy *policy,
- 	struct cpufreq_freqs freqs;
- 	unsigned int freq;
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+index 3f67143..5b498ff 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+@@ -1631,6 +1631,63 @@ static const unsigned int hspi2_b_pins[] = {
+ static const unsigned int hspi2_b_mux[] = {
+ 	HSPI_CLK2_B_MARK, HSPI_CS2_B_MARK, HSPI_RX2_B_MARK, HSPI_TX2_B_MARK,
+ };
++/* - INTC ------------------------------------------------------------------- */
++static const unsigned int intc_irq0_pins[] = {
++	/* IRQ */
++	78,
++};
++static const unsigned int intc_irq0_mux[] = {
++	IRQ0_MARK,
++};
++static const unsigned int intc_irq0_b_pins[] = {
++	/* IRQ */
++	141,
++};
++static const unsigned int intc_irq0_b_mux[] = {
++	IRQ0_B_MARK,
++};
++static const unsigned int intc_irq1_pins[] = {
++	/* IRQ */
++	79,
++};
++static const unsigned int intc_irq1_mux[] = {
++	IRQ1_MARK,
++};
++static const unsigned int intc_irq1_b_pins[] = {
++	/* IRQ */
++	142,
++};
++static const unsigned int intc_irq1_b_mux[] = {
++	IRQ1_B_MARK,
++};
++static const unsigned int intc_irq2_pins[] = {
++	/* IRQ */
++	88,
++};
++static const unsigned int intc_irq2_mux[] = {
++	IRQ2_MARK,
++};
++static const unsigned int intc_irq2_b_pins[] = {
++	/* IRQ */
++	143,
++};
++static const unsigned int intc_irq2_b_mux[] = {
++	IRQ2_B_MARK,
++};
++static const unsigned int intc_irq3_pins[] = {
++	/* IRQ */
++	89,
++};
++static const unsigned int intc_irq3_mux[] = {
++	IRQ3_MARK,
++};
++static const unsigned int intc_irq3_b_pins[] = {
++	/* IRQ */
++	144,
++};
++static const unsigned int intc_irq3_b_mux[] = {
++	IRQ3_B_MARK,
++};
+ /* - LSBC ------------------------------------------------------------------- */
+ static const unsigned int lbsc_cs0_pins[] = {
+ 	/* CS */
+@@ -2303,6 +2360,14 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(hspi1_d),
+ 	SH_PFC_PIN_GROUP(hspi2),
+ 	SH_PFC_PIN_GROUP(hspi2_b),
++	SH_PFC_PIN_GROUP(intc_irq0),
++	SH_PFC_PIN_GROUP(intc_irq0_b),
++	SH_PFC_PIN_GROUP(intc_irq1),
++	SH_PFC_PIN_GROUP(intc_irq1_b),
++	SH_PFC_PIN_GROUP(intc_irq2),
++	SH_PFC_PIN_GROUP(intc_irq2_b),
++	SH_PFC_PIN_GROUP(intc_irq3),
++	SH_PFC_PIN_GROUP(intc_irq3_b),
+ 	SH_PFC_PIN_GROUP(lbsc_cs0),
+ 	SH_PFC_PIN_GROUP(lbsc_cs1),
+ 	SH_PFC_PIN_GROUP(lbsc_ex_cs0),
+@@ -2432,6 +2497,17 @@ static const char * const hspi2_groups[] = {
+ 	"hspi2_b",
+ };
  
--	if (!cpu_online(cpu))
--		return -ENODEV;
--
- 	cpus_allowed = current->cpus_allowed;
- 	set_cpus_allowed_ptr(current, cpumask_of(cpu));
- 
-@@ -109,9 +106,6 @@ static int loongson2_cpufreq_cpu_init(struct cpufreq_policy *policy)
- 	unsigned long rate;
- 	int ret;
- 
--	if (!cpu_online(policy->cpu))
--		return -ENODEV;
--
- 	cpuclk = clk_get(NULL, "cpu_clk");
- 	if (IS_ERR(cpuclk)) {
- 		printk(KERN_ERR "cpufreq: couldn't get CPU clk\n");
-diff --git a/arch/sh/kernel/cpufreq.c b/arch/sh/kernel/cpufreq.c
-index 2c7bd94..0fdf64b 100644
---- a/arch/sh/kernel/cpufreq.c
-+++ b/arch/sh/kernel/cpufreq.c
-@@ -51,9 +51,6 @@ static int sh_cpufreq_target(struct cpufreq_policy *policy,
- 	struct device *dev;
- 	long freq;
- 
--	if (!cpu_online(cpu))
--		return -ENODEV;
--
- 	cpus_allowed = current->cpus_allowed;
- 	set_cpus_allowed_ptr(current, cpumask_of(cpu));
- 
-@@ -111,9 +108,6 @@ static int sh_cpufreq_cpu_init(struct cpufreq_policy *policy)
- 	struct cpufreq_frequency_table *freq_table;
- 	struct device *dev;
- 
--	if (!cpu_online(cpu))
--		return -ENODEV;
--
- 	dev = get_cpu_device(cpu);
- 
- 	cpuclk = clk_get(dev, "cpu_clk");
-diff --git a/arch/sparc/kernel/us2e_cpufreq.c b/arch/sparc/kernel/us2e_cpufreq.c
-index abe963d..306ae46 100644
---- a/arch/sparc/kernel/us2e_cpufreq.c
-+++ b/arch/sparc/kernel/us2e_cpufreq.c
-@@ -234,9 +234,6 @@ static unsigned int us2e_freq_get(unsigned int cpu)
- 	cpumask_t cpus_allowed;
- 	unsigned long clock_tick, estar;
- 
--	if (!cpu_online(cpu))
--		return 0;
--
- 	cpumask_copy(&cpus_allowed, tsk_cpus_allowed(current));
- 	set_cpus_allowed_ptr(current, cpumask_of(cpu));
- 
-@@ -257,9 +254,6 @@ static void us2e_set_cpu_divider_index(struct cpufreq_policy *policy,
- 	cpumask_t cpus_allowed;
- 	struct cpufreq_freqs freqs;
- 
--	if (!cpu_online(cpu))
--		return;
--
- 	cpumask_copy(&cpus_allowed, tsk_cpus_allowed(current));
- 	set_cpus_allowed_ptr(current, cpumask_of(cpu));
- 
-diff --git a/arch/sparc/kernel/us3_cpufreq.c b/arch/sparc/kernel/us3_cpufreq.c
-index 7ceb9c8..c71ee14 100644
---- a/arch/sparc/kernel/us3_cpufreq.c
-+++ b/arch/sparc/kernel/us3_cpufreq.c
-@@ -82,9 +82,6 @@ static unsigned int us3_freq_get(unsigned int cpu)
- 	unsigned long reg;
- 	unsigned int ret;
- 
--	if (!cpu_online(cpu))
--		return 0;
--
- 	cpumask_copy(&cpus_allowed, tsk_cpus_allowed(current));
- 	set_cpus_allowed_ptr(current, cpumask_of(cpu));
- 
-@@ -104,9 +101,6 @@ static void us3_set_cpu_divider_index(struct cpufreq_policy *policy,
- 	cpumask_t cpus_allowed;
- 	struct cpufreq_freqs freqs;
- 
--	if (!cpu_online(cpu))
--		return;
--
- 	cpumask_copy(&cpus_allowed, tsk_cpus_allowed(current));
- 	set_cpus_allowed_ptr(current, cpumask_of(cpu));
- 
-diff --git a/drivers/cpufreq/p4-clockmod.c b/drivers/cpufreq/p4-clockmod.c
-index 4b2e773..421ef37 100644
---- a/drivers/cpufreq/p4-clockmod.c
-+++ b/drivers/cpufreq/p4-clockmod.c
-@@ -58,8 +58,7 @@ static int cpufreq_p4_setdc(unsigned int cpu, unsigned int newstate)
- {
- 	u32 l, h;
- 
--	if (!cpu_online(cpu) ||
--	    (newstate > DC_DISABLE) || (newstate = DC_RESV))
-+	if ((newstate > DC_DISABLE) || (newstate = DC_RESV))
- 		return -EINVAL;
- 
- 	rdmsr_on_cpu(cpu, MSR_IA32_THERM_STATUS, &l, &h);
-diff --git a/drivers/cpufreq/powernow-k8.c b/drivers/cpufreq/powernow-k8.c
-index 52137a3..b828efe 100644
---- a/drivers/cpufreq/powernow-k8.c
-+++ b/drivers/cpufreq/powernow-k8.c
-@@ -1102,9 +1102,6 @@ static int __cpuinit powernowk8_cpu_init(struct cpufreq_policy *pol)
- 	struct init_on_cpu init_on_cpu;
- 	int rc;
- 
--	if (!cpu_online(pol->cpu))
--		return -ENODEV;
--
- 	smp_call_function_single(pol->cpu, check_supported_cpu, &rc, 1);
- 	if (rc)
- 		return -ENODEV;
-diff --git a/drivers/cpufreq/speedstep-centrino.c b/drivers/cpufreq/speedstep-centrino.c
-index 3dbbcc3..618e6f4 100644
---- a/drivers/cpufreq/speedstep-centrino.c
-+++ b/drivers/cpufreq/speedstep-centrino.c
-@@ -481,10 +481,6 @@ static int centrino_target (struct cpufreq_policy *policy,
- 	for_each_cpu(j, policy->cpus) {
- 		int good_cpu;
- 
--		/* cpufreq holds the hotplug lock, so we are safe here */
--		if (!cpu_online(j))
--			continue;
--
- 		/*
- 		 * Support for SMP systems.
- 		 * Make sure we are running on CPU that wants to change freq
++static const char * const intc_groups[] = {
++	"intc_irq0",
++	"intc_irq0_b",
++	"intc_irq1",
++	"intc_irq1_b",
++	"intc_irq2",
++	"intc_irq2_b",
++	"intc_irq3",
++	"intc_irq4_b",
++};
++
+ static const char * const lbsc_groups[] = {
+ 	"lbsc_cs0",
+ 	"lbsc_cs1",
+@@ -2576,6 +2652,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(hspi0),
+ 	SH_PFC_FUNCTION(hspi1),
+ 	SH_PFC_FUNCTION(hspi2),
++	SH_PFC_FUNCTION(intc),
+ 	SH_PFC_FUNCTION(lbsc),
+ 	SH_PFC_FUNCTION(mmc0),
+ 	SH_PFC_FUNCTION(mmc1),
 -- 
-1.7.12.rc2.18.g61b472e
+1.7.10.4
 
