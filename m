@@ -1,87 +1,54 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 19 Mar 2013 02:18:00 +0000
-Subject: [PATCH 12/13] ARM: shmobile: marzen: Use gic_iid macro for ICCIAR / interrupt ID
-Message-Id: <1363659481-5922-13-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 12:05:53 +0000
+Subject: [PATCH 09/14] irqchip: intc-irqpin: GPL header for platform data
+Message-Id: <1363608358-24215-10-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363659481-5922-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363659481-5922-1-git-send-email-horms+renesas@verge.net.au>
+References: <1363608358-24215-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363608358-24215-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <damm@opensource.se>
 
-ARM: shmobile: add gic_iid macro for ICCIAR / interrupt ID
-enabled to use gic_iid macro.
-This patch exchange current GIC interrupt setting
-from gic_spi() to gic_iid()
+Add GPL header to platform data include file.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-[ horms+renesas@verge.net.au: Split irq.h portion into a separate patch ]
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Reviewed-by: Thomas Gleixner <tglx@linutronix.de>
+Tested-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-marzen.c |   12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+ .../linux/platform_data/irq-renesas-intc-irqpin.h   |   19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index 5852331..2333a2d 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -67,7 +67,7 @@ static struct resource smsc911x_resources[] = {
- 		.flags		= IORESOURCE_MEM,
- 	},
- 	[1] = {
--		.start		= gic_spi(28), /* IRQ 1 */
-+		.start		= gic_iid(0x3c), /* IRQ 1 */
- 		.flags		= IORESOURCE_IRQ,
- 	},
- };
-@@ -97,7 +97,7 @@ static struct resource sdhi0_resources[] = {
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
--		.start	= gic_spi(104),
-+		.start	= gic_iid(0x88),
- 		.flags	= IORESOURCE_IRQ,
- 	},
- };
-@@ -215,7 +215,7 @@ static struct resource ehci0_resources[] = {
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
--		.start	= gic_spi(44),
-+		.start	= gic_iid(0x4c),
- 		.flags	= IORESOURCE_IRQ,
- 	},
- };
-@@ -239,7 +239,7 @@ static struct resource ehci1_resources[] = {
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
--		.start	= gic_spi(45),
-+		.start	= gic_iid(0x4d),
- 		.flags	= IORESOURCE_IRQ,
- 	},
- };
-@@ -269,7 +269,7 @@ static struct resource ohci0_resources[] = {
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
--		.start	= gic_spi(44),
-+		.start	= gic_iid(0x4c),
- 		.flags	= IORESOURCE_IRQ,
- 	},
- };
-@@ -293,7 +293,7 @@ static struct resource ohci1_resources[] = {
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
--		.start	= gic_spi(45),
-+		.start	= gic_iid(0x4d),
- 		.flags	= IORESOURCE_IRQ,
- 	},
- };
+diff --git a/include/linux/platform_data/irq-renesas-intc-irqpin.h b/include/linux/platform_data/irq-renesas-intc-irqpin.h
+index 00ccac3..e4cb911 100644
+--- a/include/linux/platform_data/irq-renesas-intc-irqpin.h
++++ b/include/linux/platform_data/irq-renesas-intc-irqpin.h
+@@ -1,3 +1,22 @@
++/*
++ * Renesas INTC External IRQ Pin Driver
++ *
++ *  Copyright (C) 2013 Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ */
++
+ #ifndef __IRQ_RENESAS_INTC_IRQPIN_H__
+ #define __IRQ_RENESAS_INTC_IRQPIN_H__
+ 
 -- 
 1.7.10.4
 
