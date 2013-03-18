@@ -1,127 +1,61 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 10:56:06 +0000
-Subject: [PATCH v4 25/29] ARM: shmobile: ap4-evb: Replace GPIO_PORTx enum with GPIO port numbers
-Message-Id: <1362740170-19073-26-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:06:56 +0000
+Subject: [PATCH 120/142] sh-pfc: r8a7779: Remove USB function GPIOS
+Message-Id: <1363604838-29359-121-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The PFC GPIO API implementation moved to using port numbers. Replace all
-GPIO_PORTx enum usage with the corresponding port number. The GPIO_PORTx
-enum values are identical to the port number on this platform.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+All r8a7779 platforms now use the pinctrl API to control the USB pins,
+the corresponding function GPIOS are unused. Remove them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/arm/mach-shmobile/board-ap4evb.c | 36 +++++++++++++++++------------------
- 1 file changed, 18 insertions(+), 18 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c |    8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
-index 38f1259..0a2b6e4 100644
---- a/arch/arm/mach-shmobile/board-ap4evb.c
-+++ b/arch/arm/mach-shmobile/board-ap4evb.c
-@@ -273,11 +273,11 @@ static struct platform_device smc911x_device = {
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+index ca59a18..6f8cc53 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+@@ -2677,7 +2677,7 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(A19),
  
- /*
-  * The card detect pin of the top SD/MMC slot (CN7) is active low and is
-- * connected to GPIO A22 of SH7372 (GPIO_PORT41).
-+ * connected to GPIO A22 of SH7372 (GPIO 41).
-  */
- static int slot_cn7_get_cd(struct platform_device *pdev)
- {
--	return !gpio_get_value(GPIO_PORT41);
-+	return !gpio_get_value(41);
- }
- /* MERAM */
- static struct sh_mobile_meram_info meram_info = {
-@@ -838,22 +838,22 @@ static struct platform_device fsi_hdmi_device = {
- static struct gpio_led ap4evb_leds[] = {
- 	{
- 		.name			= "led4",
--		.gpio			= GPIO_PORT185,
-+		.gpio			= 185,
- 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
- 	},
- 	{
- 		.name			= "led2",
--		.gpio			= GPIO_PORT186,
-+		.gpio			= 186,
- 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
- 	},
- 	{
- 		.name			= "led3",
--		.gpio			= GPIO_PORT187,
-+		.gpio			= 187,
- 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
- 	},
- 	{
- 		.name			= "led1",
--		.gpio			= GPIO_PORT188,
-+		.gpio			= 188,
- 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
- 	}
- };
-@@ -1026,10 +1026,10 @@ out:
- /* TouchScreen */
- #ifdef CONFIG_AP4EVB_QHD
- # define GPIO_TSC_IRQ	GPIO_FN_IRQ28_123
--# define GPIO_TSC_PORT	GPIO_PORT123
-+# define GPIO_TSC_PORT	123
- #else /* WVGA */
- # define GPIO_TSC_IRQ	GPIO_FN_IRQ7_40
--# define GPIO_TSC_PORT	GPIO_PORT40
-+# define GPIO_TSC_PORT	40
- #endif
+ 	/* IPSR0 */
+-	GPIO_FN(USB_PENC2), GPIO_FN(PWM1), GPIO_FN(PWMFSW0),
++	GPIO_FN(PWM1), GPIO_FN(PWMFSW0),
+ 	GPIO_FN(SCIF_CLK), GPIO_FN(TCLK0_C), GPIO_FN(BS),
+ 	GPIO_FN(FD2), GPIO_FN(ATADIR0), GPIO_FN(SDSELF),
+ 	GPIO_FN(HCTS1), GPIO_FN(A0),
+@@ -2802,7 +2802,7 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(VI1_FIELD),
+ 	GPIO_FN(VI3_FIELD), GPIO_FN(AUDIO_CLKOUT),
+ 	GPIO_FN(GPS_CLK_C), GPIO_FN(GPS_CLK_D), GPIO_FN(AUDIO_CLKA),
+-	GPIO_FN(CAN_TXCLK), GPIO_FN(AUDIO_CLKB), GPIO_FN(USB_OVC2),
++	GPIO_FN(CAN_TXCLK), GPIO_FN(AUDIO_CLKB),
+ 	GPIO_FN(CAN_DEBUGOUT0), GPIO_FN(MOUT0),
  
- #define IRQ28	evt2irq(0x3380) /* IRQ28A */
-@@ -1121,10 +1121,10 @@ static void __init ap4evb_init(void)
- 	gpio_request(GPIO_FN_IRQ6_39,	NULL);
+ 	/* IPSR6 */
+@@ -2843,10 +2843,10 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(DACK2),
  
- 	/* enable Debug switch (S6) */
--	gpio_request_one(GPIO_PORT32, GPIOF_IN | GPIOF_EXPORT, NULL);
--	gpio_request_one(GPIO_PORT33, GPIOF_IN | GPIOF_EXPORT, NULL);
--	gpio_request_one(GPIO_PORT34, GPIOF_IN | GPIOF_EXPORT, NULL);
--	gpio_request_one(GPIO_PORT35, GPIOF_IN | GPIOF_EXPORT, NULL);
-+	gpio_request_one(32, GPIOF_IN | GPIOF_EXPORT, NULL);
-+	gpio_request_one(33, GPIOF_IN | GPIOF_EXPORT, NULL);
-+	gpio_request_one(34, GPIOF_IN | GPIOF_EXPORT, NULL);
-+	gpio_request_one(35, GPIOF_IN | GPIOF_EXPORT, NULL);
- 
- 	/* SDHI0 */
- 	gpio_request(GPIO_FN_SDHICD0, NULL);
-@@ -1172,15 +1172,15 @@ static void __init ap4evb_init(void)
- 	gpio_request(GPIO_FN_FSIAILR,	NULL);
- 	gpio_request(GPIO_FN_FSIAISLD,	NULL);
- 	gpio_request(GPIO_FN_FSIAOSLD,	NULL);
--	gpio_request_one(GPIO_PORT161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
-+	gpio_request_one(161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
- 
--	gpio_request(GPIO_PORT9, NULL);
--	gpio_request(GPIO_PORT10, NULL);
-+	gpio_request(9, NULL);
-+	gpio_request(10, NULL);
- 	gpio_direction_none(GPIO_PORT9CR);  /* FSIAOBT needs no direction */
- 	gpio_direction_none(GPIO_PORT10CR); /* FSIAOLR needs no direction */
- 
- 	/* card detect pin for MMC slot (CN7) */
--	gpio_request_one(GPIO_PORT41, GPIOF_IN, NULL);
-+	gpio_request_one(41, GPIOF_IN, NULL);
- 
- 	/* setup FSI2 port B (HDMI) */
- 	gpio_request(GPIO_FN_FSIBCK, NULL);
-@@ -1268,8 +1268,8 @@ static void __init ap4evb_init(void)
- 	gpio_request(GPIO_FN_LCDDISP,  NULL);
- 	gpio_request(GPIO_FN_LCDDCK,   NULL);
- 
--	gpio_request_one(GPIO_PORT189, GPIOF_OUT_INIT_HIGH, NULL); /* backlight */
--	gpio_request_one(GPIO_PORT151, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
-+	gpio_request_one(189, GPIOF_OUT_INIT_HIGH, NULL); /* backlight */
-+	gpio_request_one(151, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
- 
- 	lcdc_info.clock_source			= LCDC_CLK_BUS;
- 	lcdc_info.ch[0].interface_type		= RGB18;
+ 	/* IPSR8 */
+-	GPIO_FN(USB_OVC0), GPIO_FN(AD_CLK),
++	GPIO_FN(AD_CLK),
+ 	GPIO_FN(CC5_STATE4), GPIO_FN(CC5_STATE12), GPIO_FN(CC5_STATE20),
+ 	GPIO_FN(CC5_STATE28), GPIO_FN(CC5_STATE36),
+-	GPIO_FN(USB_OVC1), GPIO_FN(AD_DI),
++	GPIO_FN(AD_DI),
+ 	GPIO_FN(CC5_STATE5), GPIO_FN(CC5_STATE13), GPIO_FN(CC5_STATE21),
+ 	GPIO_FN(CC5_STATE29), GPIO_FN(CC5_STATE37),
+ 	GPIO_FN(CAN_DEBUG_HW_TRIGGER), GPIO_FN(AD_DO),
 -- 
-1.8.1.5
+1.7.10.4
 
