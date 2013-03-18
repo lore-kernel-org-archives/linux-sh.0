@@ -1,96 +1,58 @@
-From: Jiang Liu <liuj97@gmail.com>
-Date: Sun, 24 Mar 2013 12:11:30 +0000
-Subject: Re: [RFC PATCH v2, part4 31/39] mm/SH: prepare for removing num_physpages and simplify mem_init()
-Message-Id: <514EED72.1040807@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:47:25 +0000
+Subject: [PATCH 33/43] ARM: mach-shmobile: r8a7740: Add DT names to clock list
+Message-Id: <1363607255-6385-34-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364109934-7851-1-git-send-email-jiang.liu@huawei.com> <1364109934-7851-54-git-send-email-jiang.liu@huawei.com> <514EEC39.40107@cogentembedded.com>
-In-Reply-To: <514EEC39.40107@cogentembedded.com>
+References: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Cc: Andrew Morton <akpm@linux-foundation.org>, David Rientjes <rientjes@google.com>, Jiang Liu <jiang.liu@huawei.com>, Wen Congyang <wency@cn.fujitsu.com>, Mel Gorman <mgorman@suse.de>, Minchan Kim <minchan@kernel.org>, KAMEZAWA Hiroyuki <kamezawa.hiroyu@jp.fujitsu.com>, Michal Hocko <mhocko@suse.cz>, Jianguo Wu <wujianguo@huawei.com>, linux-mm@kvack.org, linux-kernel@vger.kernel.org, Paul Mundt <lethal@linux-sh.org>, Tang Chen <tangchen@cn.fujitsu.com>, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Sergei,
-	I'm really sorry, my patch set has screwed up so that patch 10-38 have
-been send twice with different title. Be more careful next time.
-	Thanks!
-	Gerry
+From: Bastian Hecht <hechtb@gmail.com>
 
-On 03/24/2013 08:06 PM, Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 24-03-2013 11:25, Jiang Liu wrote:
-> 
->> Prepare for removing num_physpages and simplify mem_init().
-> 
->> Signed-off-by: Jiang Liu <jiang.liu@huawei.com>
->> Cc: Paul Mundt <lethal@linux-sh.org>
->> Cc: Wen Congyang <wency@cn.fujitsu.com>
->> Cc: Tang Chen <tangchen@cn.fujitsu.com>
->> Cc: linux-sh@vger.kernel.org
->> Cc: linux-kernel@vger.kernel.org
->> ---
->>   arch/sh/mm/init.c |   25 ++++---------------------
->>   1 file changed, 4 insertions(+), 21 deletions(-)
-> 
->> diff --git a/arch/sh/mm/init.c b/arch/sh/mm/init.c
->> index aecd913..3826596 100644
->> --- a/arch/sh/mm/init.c
->> +++ b/arch/sh/mm/init.c
->> @@ -407,24 +407,18 @@ unsigned int mem_init_done = 0;
->>
->>   void __init mem_init(void)
->>   {
->> -    int codesize, datasize, initsize;
->> -    int nid;
->> +    pg_data_t *pgdat;
->>
->>       iommu_init();
->>
->> -    num_physpages = 0;
->>       high_memory = NULL;
->>
->> -    for_each_online_node(nid) {
->> -        pg_data_t *pgdat = NODE_DATA(nid);
->> +    for_each_online_pgdat(pgdat) {
->>           void *node_high_memory;
->>
->> -        num_physpages += pgdat->node_present_pages;
->> -
->>           if (pgdat->node_spanned_pages)
->>               free_all_bootmem_node(pgdat);
->>
->> -
->>           node_high_memory = (void *)__va((pgdat->node_start_pfn +
->>                            pgdat->node_spanned_pages) <<
->>                            PAGE_SHIFT);
->> @@ -441,19 +435,8 @@ void __init mem_init(void)
->>
->>       vsyscall_init();
->>
->> -    codesize =  (unsigned long) &_etext - (unsigned long) &_text;
->> -    datasize =  (unsigned long) &_edata - (unsigned long) &_etext;
->> -    initsize =  (unsigned long) &__init_end - (unsigned long) &__init_begin;
->> -
->> -    printk(KERN_INFO "Memory: %luk/%luk available (%dk kernel code, "
->> -           "%dk data, %dk init)\n",
->> -        nr_free_pages() << (PAGE_SHIFT-10),
->> -        num_physpages << (PAGE_SHIFT-10),
->> -        codesize >> 10,
->> -        datasize >> 10,
->> -        initsize >> 10);
->> -
->> -    printk(KERN_INFO "virtual kernel memory layout:\n"
->> +    mem_init_print_info(NULL);
->> +    pr_info("virtual kernel memory layout:\n"
->>           "    fixmap  : 0x%08lx - 0x%08lx   (%4ld kB)\n"
->>   #ifdef CONFIG_HIGHMEM
->>           "    pkmap   : 0x%08lx - 0x%08lx   (%4ld kB)\n"
->>
-> 
->    Hm, isn't patch 31 the same as patch 30?
-> 
-> WBR, Sergei
-> 
+This adds temporarily the alternative device names to the clock list
+that are used when booting via Device Tree setup.
+
+Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-r8a7740.c |    9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index 1a9b9a2..1feb9a2 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -593,18 +593,27 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_mobile_ceu.1",	&mstp_clks[MSTP128]),
+ 
+ 	CLKDEV_DEV_ID("sh-sci.4",		&mstp_clks[MSTP200]),
++	CLKDEV_DEV_ID("e6c80000.sci",		&mstp_clks[MSTP200]),
+ 	CLKDEV_DEV_ID("sh-sci.3",		&mstp_clks[MSTP201]),
++	CLKDEV_DEV_ID("e6c70000.sci",		&mstp_clks[MSTP201]),
+ 	CLKDEV_DEV_ID("sh-sci.2",		&mstp_clks[MSTP202]),
++	CLKDEV_DEV_ID("e6c60000.sci",		&mstp_clks[MSTP202]),
+ 	CLKDEV_DEV_ID("sh-sci.1",		&mstp_clks[MSTP203]),
++	CLKDEV_DEV_ID("e6c50000.sci",		&mstp_clks[MSTP203]),
+ 	CLKDEV_DEV_ID("sh-sci.0",		&mstp_clks[MSTP204]),
++	CLKDEV_DEV_ID("e6c40000.sci",		&mstp_clks[MSTP204]),
+ 	CLKDEV_DEV_ID("sh-sci.8",		&mstp_clks[MSTP206]),
++	CLKDEV_DEV_ID("e6c30000.sci",		&mstp_clks[MSTP206]),
+ 	CLKDEV_DEV_ID("sh-sci.5",		&mstp_clks[MSTP207]),
++	CLKDEV_DEV_ID("e6cb0000.sci",		&mstp_clks[MSTP207]),
+ 	CLKDEV_DEV_ID("sh-dma-engine.3",	&mstp_clks[MSTP214]),
+ 	CLKDEV_DEV_ID("sh-dma-engine.2",	&mstp_clks[MSTP216]),
+ 	CLKDEV_DEV_ID("sh-dma-engine.1",	&mstp_clks[MSTP217]),
+ 	CLKDEV_DEV_ID("sh-dma-engine.0",	&mstp_clks[MSTP218]),
+ 	CLKDEV_DEV_ID("sh-sci.7",		&mstp_clks[MSTP222]),
++	CLKDEV_DEV_ID("e6cd0000.sci",		&mstp_clks[MSTP222]),
+ 	CLKDEV_DEV_ID("sh-sci.6",		&mstp_clks[MSTP230]),
++	CLKDEV_DEV_ID("e6cc0000.sci",		&mstp_clks[MSTP230]),
+ 
+ 	CLKDEV_DEV_ID("sh_cmt.10",		&mstp_clks[MSTP329]),
+ 	CLKDEV_DEV_ID("sh_fsi2",		&mstp_clks[MSTP328]),
+-- 
+1.7.10.4
 
