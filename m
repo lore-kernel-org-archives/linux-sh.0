@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:05:00 +0000
-Subject: [PATCH 004/142] sh-pfc: Drop the sh_pfc_pinctrl spinlock
-Message-Id: <1363604838-29359-5-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:07:18 +0000
+Subject: [PATCH 142/142] ARM: shmobile: r8a7779: Remove INTC function GPIOs
+Message-Id: <1363604838-29359-143-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
@@ -12,82 +12,57 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-The spinlock is used to protect data that is only accessed sequentially
-during initialization. Remove it.
+Those GPIOs have been deprecated by the pinctrl API. They are unused and
+unneeded, remove them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/pinctrl/sh-pfc/pinctrl.c |   13 -------------
- 1 file changed, 13 deletions(-)
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |   16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
-index d113746..9bd0a83 100644
---- a/drivers/pinctrl/sh-pfc/pinctrl.c
-+++ b/drivers/pinctrl/sh-pfc/pinctrl.c
-@@ -37,8 +37,6 @@ struct sh_pfc_pinctrl {
- 
- 	struct pinctrl_pin_desc *pads;
- 	unsigned int nr_pads;
--
--	spinlock_t lock;
- };
- 
- static int sh_pfc_get_groups_count(struct pinctrl_dev *pctldev)
-@@ -321,7 +319,6 @@ static void sh_pfc_map_one_gpio(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx,
- 				struct pinmux_gpio *gpio, unsigned offset)
- {
- 	struct pinmux_data_reg *dummy;
--	unsigned long flags;
- 	int bit;
- 
- 	gpio->flags &= ~PINMUX_FLAG_TYPE;
-@@ -330,10 +327,7 @@ static void sh_pfc_map_one_gpio(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx,
- 		gpio->flags |= PINMUX_TYPE_GPIO;
- 	else {
- 		gpio->flags |= PINMUX_TYPE_FUNCTION;
--
--		spin_lock_irqsave(&pmx->lock, flags);
- 		pmx->nr_functions++;
--		spin_unlock_irqrestore(&pmx->lock, flags);
- 	}
- }
- 
-@@ -381,7 +375,6 @@ static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
- 
- static int sh_pfc_map_functions(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
- {
--	unsigned long flags;
- 	int i, fn;
- 
- 	pmx->functions = devm_kzalloc(pfc->dev, pmx->nr_functions *
-@@ -389,8 +382,6 @@ static int sh_pfc_map_functions(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
- 	if (unlikely(!pmx->functions))
- 		return -ENOMEM;
- 
--	spin_lock_irqsave(&pmx->lock, flags);
--
- 	for (i = fn = 0; i < pmx->nr_pads; i++) {
- 		struct pinmux_gpio *gpio = pfc->info->gpios + i;
- 
-@@ -398,8 +389,6 @@ static int sh_pfc_map_functions(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
- 			pmx->functions[fn++] = gpio;
- 	}
- 
--	spin_unlock_irqrestore(&pmx->lock, flags);
--
- 	return 0;
- }
- 
-@@ -412,8 +401,6 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
- 	if (unlikely(!pmx))
- 		return -ENOMEM;
- 
--	spin_lock_init(&pmx->lock);
--
- 	pmx->pfc = pfc;
- 	pfc->pinctrl = pmx;
- 
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+index 688c0d2..8ea0ad1 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -213,12 +213,12 @@ enum {
+ 	/* IPSR7 */
+ 	GPIO_FN_SSI_WS6, GPIO_FN_ADICHS1, GPIO_FN_CAN0_RX, GPIO_FN_IETX_B,
+ 	GPIO_FN_SSI_SDATA6, GPIO_FN_ADICHS2, GPIO_FN_CAN_CLK, GPIO_FN_IECLK_B,
+-	GPIO_FN_SSI_SCK78, GPIO_FN_CAN_DEBUGOUT13, GPIO_FN_IRQ0_B,
++	GPIO_FN_SSI_SCK78, GPIO_FN_CAN_DEBUGOUT13,
+ 	GPIO_FN_SSI_SCK9_B, GPIO_FN_SSI_WS78,
+-	GPIO_FN_CAN_DEBUGOUT14, GPIO_FN_IRQ1_B, GPIO_FN_SSI_WS9_B,
++	GPIO_FN_CAN_DEBUGOUT14, GPIO_FN_SSI_WS9_B,
+ 	GPIO_FN_SSI_SDATA7, GPIO_FN_CAN_DEBUGOUT15,
+-	GPIO_FN_IRQ2_B, GPIO_FN_TCLK1_C,
+-	GPIO_FN_SSI_SDATA8, GPIO_FN_VSP, GPIO_FN_IRQ3_B,
++	GPIO_FN_TCLK1_C,
++	GPIO_FN_SSI_SDATA8, GPIO_FN_VSP,
+ 	GPIO_FN_ATACS01,
+ 	GPIO_FN_ATACS11, GPIO_FN_CC5_TDO,
+ 	GPIO_FN_ATADIR1, GPIO_FN_CC5_TRST,
+@@ -256,8 +256,8 @@ enum {
+ 	GPIO_FN_VI0_DATA5_VI0_B5, GPIO_FN_VI0_DATA6_VI0_B6,
+ 	GPIO_FN_ARM_TRACEDATA_0, GPIO_FN_VI0_DATA7_VI0_B7,
+ 	GPIO_FN_ARM_TRACEDATA_1, GPIO_FN_VI0_G0,
+-	GPIO_FN_SSI_SCK78_C, GPIO_FN_IRQ0, GPIO_FN_ARM_TRACEDATA_2,
+-	GPIO_FN_VI0_G1, GPIO_FN_SSI_WS78_C, GPIO_FN_IRQ1,
++	GPIO_FN_SSI_SCK78_C, GPIO_FN_ARM_TRACEDATA_2,
++	GPIO_FN_VI0_G1, GPIO_FN_SSI_WS78_C,
+ 	GPIO_FN_ARM_TRACEDATA_3, GPIO_FN_VI0_G2, GPIO_FN_ETH_TXD1,
+ 	GPIO_FN_ARM_TRACEDATA_4, GPIO_FN_TS_SPSYNC0,
+ 	GPIO_FN_VI0_G3, GPIO_FN_ETH_CRS_DV,
+@@ -273,8 +273,8 @@ enum {
+ 	GPIO_FN_ARM_TRACEDATA_10, GPIO_FN_DREQ0_C, GPIO_FN_VI0_R1,
+ 	GPIO_FN_SSI_SDATA8_C, GPIO_FN_DACK1_B, GPIO_FN_ARM_TRACEDATA_11,
+ 	GPIO_FN_DACK0_C, GPIO_FN_DRACK0_C, GPIO_FN_VI0_R2, GPIO_FN_ETH_LINK,
+-	GPIO_FN_IRQ2, GPIO_FN_ARM_TRACEDATA_12,
+-	GPIO_FN_VI0_R3, GPIO_FN_ETH_MAGIC, GPIO_FN_IRQ3,
++	GPIO_FN_ARM_TRACEDATA_12,
++	GPIO_FN_VI0_R3, GPIO_FN_ETH_MAGIC,
+ 	GPIO_FN_ARM_TRACEDATA_13, GPIO_FN_VI0_R4, GPIO_FN_ETH_REFCLK,
+ 	GPIO_FN_ARM_TRACEDATA_14,
+ 	GPIO_FN_MT1_CLK, GPIO_FN_TS_SCK0, GPIO_FN_VI0_R5, GPIO_FN_ETH_TXD0,
 -- 
 1.7.10.4
 
