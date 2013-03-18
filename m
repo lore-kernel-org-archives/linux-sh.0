@@ -1,56 +1,62 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Fri, 29 Mar 2013 07:59:52 +0000
-Subject: [PATCH 00/03 v4] ARM: shmobile: r8a73a4 APE6EVM board support
-Message-Id: <20130329075952.15748.6290.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:06:49 +0000
+Subject: [PATCH 113/142] sh-pfc: sh73a0: Remove IrDA function GPIOS
+Message-Id: <1363604838-29359-114-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-ARM: shmobile: r8a73a4 APE6EVM board support (V4)
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-[PATCH 01/03 v3] ARM: shmobile: APE6EVM base support
-[PATCH 02/03 v2] ARM: shmobile: APE6EVM PFC support
-[PATCH 03/03 v3] ARM: shmobile: APE6EVM LAN9220 support
+All sh73a0 platforms now use the pinctrl API to control the IrDA pins,
+the corresponding function GPIOS are unused. Remove them.
 
-This series is V4 of initial support for the APE6EVM board.
-
-The APE6EVM board makes use of the r8a73a4 SoC and has a
-couple of different I/O devices on board, but with this
-series only support for the SCIFA0 UART and the Ethernet
-chip is included.
-
-In the future support for more I/O devices will be added as
-incremental feature patches.
-
-Changes since V3:
-- Make use of 64-bit DT addresses
-
-Changes since V2:
-- Use PINCTRL instead of function GPIOs.
-- Modify bootargs to enable DHCP and NFS root.
-- Now depends on r8a73a4 PFC V2
-
-Changes since V1:
-- Went from single patch to series
-- Use ape6evm_add_standard_devices() to setup SoC devices and clocks
-- Use PFC to configure SCIFA0
-- Add Ethernet support including PFC support
-
-For more details please see the individual patches.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c |    6 ------
+ 1 file changed, 6 deletions(-)
 
- Written against renesas-next-20130329 in renesas.git
- 
- Depends on the following patch:
- [PATCH] ARM: shmobile: r8a73a4 SoC 64-bit DT support
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index 273345c..cde4387 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -2979,7 +2979,6 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(XWUP),
+ 	GPIO_FN(VACK),
+ 	GPIO_FN(XTAL1L),
+-	GPIO_FN(PORT49_IRDA_OUT), \
+ 	GPIO_FN(PORT49_IROUT), \
+ 	GPIO_FN(BBIF2_TSYNC2), \
+ 	GPIO_FN(TPU2TO2), \
+@@ -2987,9 +2986,7 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(BBIF2_TSCK2), \
+ 	GPIO_FN(TPU2TO3), \
+ 	GPIO_FN(BBIF2_TXD2),
+-	GPIO_FN(PORT53_IRDA_IN), \
+ 	GPIO_FN(TPU3TO3), \
+-	GPIO_FN(PORT54_IRDA_FIRSEL), \
+ 	GPIO_FN(TPU3TO2), \
+ 	GPIO_FN(TPU0TO0),
+ 	GPIO_FN(A0), \
+@@ -3188,13 +3185,10 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(VIO2_FIELD2), \
+ 	GPIO_FN(MSIOF1_SS2), \
+ 	GPIO_FN(VIO2_HD2), \
+-	GPIO_FN(PORT241_IRDA_OUT), \
+ 	GPIO_FN(PORT241_IROUT), \
+ 	GPIO_FN(MFG4_OUT1), \
+ 	GPIO_FN(TPU4TO0),
+-	GPIO_FN(PORT242_IRDA_IN), \
+ 	GPIO_FN(MFG4_IN2),
+-	GPIO_FN(PORT243_IRDA_FIRSEL), \
+ 	GPIO_FN(PORT243_VIO_CKO2),
+ 	GPIO_FN(MFG2_IN1), \
+ 	GPIO_FN(MSIOF2R_RXD),
+-- 
+1.7.10.4
 
- arch/arm/boot/dts/Makefile             |    1 
- arch/arm/boot/dts/r8a73a4-ape6evm.dts  |   54 ++++++++++++++++++
- arch/arm/mach-shmobile/Kconfig         |    8 ++
- arch/arm/mach-shmobile/Makefile        |    1 
- arch/arm/mach-shmobile/board-ape6evm.c |   94 ++++++++++++++++++++++++++++++++
- 5 files changed, 156 insertions(+), 2 deletions(-)
