@@ -1,51 +1,69 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Fri, 29 Mar 2013 21:05:51 +0000
-Subject: [PATCH v3 4/5] ARM: shmobile: mackerel: add interrupt names for SDHI0
-Message-Id: <1364591152-4780-5-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:06:25 +0000
+Subject: [PATCH 089/142] ARM: shmobile: kota2: Register pinctrl mappings for BSC
+Message-Id: <1363604838-29359-90-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-To unify with SDHI1 also use named IRQs for SDHI0. This also clarifies
-which specific IRQs are used.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+Replace the GPIO-based BSC pinmux configuration by pinctrl mappings.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-mackerel.c |    9 ++-------
- 1 files changed, 2 insertions(+), 7 deletions(-)
+ arch/arm/mach-shmobile/board-kota2.c |   27 +++++++++------------------
+ 1 file changed, 9 insertions(+), 18 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
-index a47a1116..b976ad6 100644
---- a/arch/arm/mach-shmobile/board-mackerel.c
-+++ b/arch/arm/mach-shmobile/board-mackerel.c
-@@ -979,12 +979,11 @@ static struct resource sdhi0_resources[] = {
- 		.end	= 0xe68500ff,
- 		.flags	= IORESOURCE_MEM,
- 	}, {
--		.start	= evt2irq(0x0e00) /* SDHI0_SDHI0I0 */,
--		.flags	= IORESOURCE_IRQ,
--	}, {
-+		.name	= SH_MOBILE_SDHI_IRQ_SDCARD,
- 		.start	= evt2irq(0x0e20) /* SDHI0_SDHI0I1 */,
- 		.flags	= IORESOURCE_IRQ,
- 	}, {
-+		.name	= SH_MOBILE_SDHI_IRQ_SDIO,
- 		.start	= evt2irq(0x0e40) /* SDHI0_SDHI0I2 */,
- 		.flags	= IORESOURCE_IRQ,
- 	},
-@@ -1020,10 +1019,6 @@ static struct resource sdhi1_resources[] = {
- 		.end	= 0xe68600ff,
- 		.flags	= IORESOURCE_MEM,
- 	}, {
--		.name	= SH_MOBILE_SDHI_IRQ_CARD_DETECT,
--		.start	= evt2irq(0x0e80), /* SDHI1_SDHI1I0 */
--		.flags	= IORESOURCE_IRQ,
--	}, {
- 		.name	= SH_MOBILE_SDHI_IRQ_SDCARD,
- 		.start	= evt2irq(0x0ea0), /* SDHI1_SDHI1I1 */
- 		.flags	= IORESOURCE_IRQ,
+diff --git a/arch/arm/mach-shmobile/board-kota2.c b/arch/arm/mach-shmobile/board-kota2.c
+index 3f36557..ef5ca0e 100644
+--- a/arch/arm/mach-shmobile/board-kota2.c
++++ b/arch/arm/mach-shmobile/board-kota2.c
+@@ -503,6 +503,15 @@ static const struct pinctrl_map kota2_pinctrl_map[] = {
+ 				      "sdhi1_data4", pin_pullup_conf),
+ 	PIN_MAP_CONFIGS_PIN_DEFAULT("sh_mobile_sdhi.1", "pfc-sh73a0",
+ 				    "PORT263", pin_pullup_conf),
++	/* SMSC911X */
++	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x.0", "pfc-sh73a0",
++				  "bsc_data_0_7", "bsc"),
++	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x.0", "pfc-sh73a0",
++				  "bsc_data_8_15", "bsc"),
++	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x.0", "pfc-sh73a0",
++				  "bsc_cs5_a", "bsc"),
++	PIN_MAP_MUX_GROUP_DEFAULT("smsc911x.0", "pfc-sh73a0",
++				  "bsc_we0", "bsc"),
+ };
+ 
+ static void __init kota2_init(void)
+@@ -518,24 +527,6 @@ static void __init kota2_init(void)
+ 	sh73a0_pinmux_init();
+ 
+ 	/* SMSC911X */
+-	gpio_request(GPIO_FN_D0_NAF0, NULL);
+-	gpio_request(GPIO_FN_D1_NAF1, NULL);
+-	gpio_request(GPIO_FN_D2_NAF2, NULL);
+-	gpio_request(GPIO_FN_D3_NAF3, NULL);
+-	gpio_request(GPIO_FN_D4_NAF4, NULL);
+-	gpio_request(GPIO_FN_D5_NAF5, NULL);
+-	gpio_request(GPIO_FN_D6_NAF6, NULL);
+-	gpio_request(GPIO_FN_D7_NAF7, NULL);
+-	gpio_request(GPIO_FN_D8_NAF8, NULL);
+-	gpio_request(GPIO_FN_D9_NAF9, NULL);
+-	gpio_request(GPIO_FN_D10_NAF10, NULL);
+-	gpio_request(GPIO_FN_D11_NAF11, NULL);
+-	gpio_request(GPIO_FN_D12_NAF12, NULL);
+-	gpio_request(GPIO_FN_D13_NAF13, NULL);
+-	gpio_request(GPIO_FN_D14_NAF14, NULL);
+-	gpio_request(GPIO_FN_D15_NAF15, NULL);
+-	gpio_request(GPIO_FN_CS5A_, NULL);
+-	gpio_request(GPIO_FN_WE0__FWE, NULL);
+ 	gpio_request_one(144, GPIOF_IN, NULL); /* PINTA2 */
+ 	gpio_request_one(145, GPIOF_OUT_INIT_HIGH, NULL); /* RESET */
+ 
 -- 
-1.7.2.5
+1.7.10.4
 
