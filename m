@@ -1,118 +1,131 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 27 Mar 2013 19:21:13 +0000
-Subject: [PATCH v2 2/2] ARM: shmobile: marzen: Add Display Unit support
-Message-Id: <1364412073-12322-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:05:21 +0000
+Subject: [PATCH 025/142] ARM: shmobile: ap4-evb: Replace GPIO_PORTx enum with GPIO port numbers
+Message-Id: <1363604838-29359-26-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Support the DU0 VGA and DU1 LVDS outputs. DU1 is connected to a
-Mitsubishi AA104XD12 panel (10.4" XGA).
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+The PFC GPIO API implementation moved to using port numbers. Replace all
+GPIO_PORTx enum usage with the corresponding port number. The GPIO_PORTx
+enum values are identical to the port number on this platform.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/arm/configs/marzen_defconfig     |  2 ++
- arch/arm/mach-shmobile/board-marzen.c | 51 +++++++++++++++++++++++++++++++++++
- 2 files changed, 53 insertions(+)
+ arch/arm/mach-shmobile/board-ap4evb.c |   36 ++++++++++++++++-----------------
+ 1 file changed, 18 insertions(+), 18 deletions(-)
 
-diff --git a/arch/arm/configs/marzen_defconfig b/arch/arm/configs/marzen_defconfig
-index 8e7329b..60c4b31 100644
---- a/arch/arm/configs/marzen_defconfig
-+++ b/arch/arm/configs/marzen_defconfig
-@@ -83,6 +83,8 @@ CONFIG_GPIO_SYSFS=y
- CONFIG_THERMAL=y
- CONFIG_RCAR_THERMAL=y
- CONFIG_SSB=y
-+CONFIG_DRM=y
-+CONFIG_DRM_RCAR_DU=y
- CONFIG_USB=y
- CONFIG_USB_RCAR_PHY=y
- CONFIG_MMC=y
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index 9105285..fcd1a56 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -40,6 +40,7 @@
- #include <linux/usb/ehci_pdriver.h>
- #include <linux/usb/ohci_pdriver.h>
- #include <linux/pm_runtime.h>
-+#include <linux/platform_data/rcar-du.h>
- #include <mach/hardware.h>
- #include <mach/r8a7779.h>
- #include <mach/common.h>
-@@ -149,6 +150,42 @@ static struct platform_device hspi_device = {
- 	.num_resources	= ARRAY_SIZE(hspi_resources),
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 38f1259..0a2b6e4 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -273,11 +273,11 @@ static struct platform_device smc911x_device = {
+ 
+ /*
+  * The card detect pin of the top SD/MMC slot (CN7) is active low and is
+- * connected to GPIO A22 of SH7372 (GPIO_PORT41).
++ * connected to GPIO A22 of SH7372 (GPIO 41).
+  */
+ static int slot_cn7_get_cd(struct platform_device *pdev)
+ {
+-	return !gpio_get_value(GPIO_PORT41);
++	return !gpio_get_value(41);
+ }
+ /* MERAM */
+ static struct sh_mobile_meram_info meram_info = {
+@@ -838,22 +838,22 @@ static struct platform_device fsi_hdmi_device = {
+ static struct gpio_led ap4evb_leds[] = {
+ 	{
+ 		.name			= "led4",
+-		.gpio			= GPIO_PORT185,
++		.gpio			= 185,
+ 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
+ 	},
+ 	{
+ 		.name			= "led2",
+-		.gpio			= GPIO_PORT186,
++		.gpio			= 186,
+ 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
+ 	},
+ 	{
+ 		.name			= "led3",
+-		.gpio			= GPIO_PORT187,
++		.gpio			= 187,
+ 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
+ 	},
+ 	{
+ 		.name			= "led1",
+-		.gpio			= GPIO_PORT188,
++		.gpio			= 188,
+ 		.default_state	= LEDS_GPIO_DEFSTATE_ON,
+ 	}
  };
+@@ -1026,10 +1026,10 @@ out:
+ /* TouchScreen */
+ #ifdef CONFIG_AP4EVB_QHD
+ # define GPIO_TSC_IRQ	GPIO_FN_IRQ28_123
+-# define GPIO_TSC_PORT	GPIO_PORT123
++# define GPIO_TSC_PORT	123
+ #else /* WVGA */
+ # define GPIO_TSC_IRQ	GPIO_FN_IRQ7_40
+-# define GPIO_TSC_PORT	GPIO_PORT40
++# define GPIO_TSC_PORT	40
+ #endif
  
-+/* DU
-+ *
-+ * The panel only specifies the [hv]display and [hv]total values. The position
-+ * and width of the sync pulses don't matter, they're copied from VESA timings.
-+ */
-+static struct rcar_du_encoder_data rcar_du_encoders[] = {
-+	{
-+		.encoder = RCAR_DU_ENCODER_VGA,
-+		.output = 0,
-+	}, {
-+		.encoder = RCAR_DU_ENCODER_LVDS,
-+		.output = 1,
-+		.u.lvds.panel = {
-+			.width_mm = 210,
-+			.height_mm = 158,
-+			.mode = {
-+				.clock = 65000,
-+				.hdisplay = 1024,
-+				.hsync_start = 1048,
-+				.hsync_end = 1184,
-+				.htotal = 1344,
-+				.vdisplay = 768,
-+				.vsync_start = 771,
-+				.vsync_end = 777,
-+				.vtotal = 806,
-+				.flags = 0,
-+			},
-+		},
-+	},
-+};
-+
-+static struct rcar_du_platform_data rcar_du_pdata = {
-+	.encoders = rcar_du_encoders,
-+	.num_encoders = ARRAY_SIZE(rcar_du_encoders),
-+};
-+
- /* USB PHY */
- static struct resource usb_phy_resources[] = {
- 	[0] = {
-@@ -360,6 +397,19 @@ void __init marzen_init_late(void)
- }
+ #define IRQ28	evt2irq(0x3380) /* IRQ28A */
+@@ -1121,10 +1121,10 @@ static void __init ap4evb_init(void)
+ 	gpio_request(GPIO_FN_IRQ6_39,	NULL);
  
- static const struct pinctrl_map marzen_pinctrl_map[] = {
-+	/* DU0 (CN10: ARGB0, CN13: LVDS) */
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du.0", "pfc-r8a7779",
-+				  "du0_rgb888", "du0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du.0", "pfc-r8a7779",
-+				  "du0_sync_1", "du0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du.0", "pfc-r8a7779",
-+				  "du0_clk_out_0", "du0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du.0", "pfc-r8a7779",
-+				  "du1_rgb666", "du1"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du.0", "pfc-r8a7779",
-+				  "du1_sync_1", "du1"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("rcar-du.0", "pfc-r8a7779",
-+				  "du1_clk_out", "du1"),
- 	/* HSPI0 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-hspi.0", "pfc-r8a7779",
- 				  "hspi0", "hspi0"),
-@@ -407,6 +457,7 @@ static void __init marzen_init(void)
+ 	/* enable Debug switch (S6) */
+-	gpio_request_one(GPIO_PORT32, GPIOF_IN | GPIOF_EXPORT, NULL);
+-	gpio_request_one(GPIO_PORT33, GPIOF_IN | GPIOF_EXPORT, NULL);
+-	gpio_request_one(GPIO_PORT34, GPIOF_IN | GPIOF_EXPORT, NULL);
+-	gpio_request_one(GPIO_PORT35, GPIOF_IN | GPIOF_EXPORT, NULL);
++	gpio_request_one(32, GPIOF_IN | GPIOF_EXPORT, NULL);
++	gpio_request_one(33, GPIOF_IN | GPIOF_EXPORT, NULL);
++	gpio_request_one(34, GPIOF_IN | GPIOF_EXPORT, NULL);
++	gpio_request_one(35, GPIOF_IN | GPIOF_EXPORT, NULL);
  
- 	r8a7779_add_standard_devices();
- 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
-+	r8a7779_add_du_device(&rcar_du_pdata);
- }
+ 	/* SDHI0 */
+ 	gpio_request(GPIO_FN_SDHICD0, NULL);
+@@ -1172,15 +1172,15 @@ static void __init ap4evb_init(void)
+ 	gpio_request(GPIO_FN_FSIAILR,	NULL);
+ 	gpio_request(GPIO_FN_FSIAISLD,	NULL);
+ 	gpio_request(GPIO_FN_FSIAOSLD,	NULL);
+-	gpio_request_one(GPIO_PORT161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
++	gpio_request_one(161, GPIOF_OUT_INIT_LOW, NULL); /* slave */
  
- MACHINE_START(MARZEN, "marzen")
+-	gpio_request(GPIO_PORT9, NULL);
+-	gpio_request(GPIO_PORT10, NULL);
++	gpio_request(9, NULL);
++	gpio_request(10, NULL);
+ 	gpio_direction_none(GPIO_PORT9CR);  /* FSIAOBT needs no direction */
+ 	gpio_direction_none(GPIO_PORT10CR); /* FSIAOLR needs no direction */
+ 
+ 	/* card detect pin for MMC slot (CN7) */
+-	gpio_request_one(GPIO_PORT41, GPIOF_IN, NULL);
++	gpio_request_one(41, GPIOF_IN, NULL);
+ 
+ 	/* setup FSI2 port B (HDMI) */
+ 	gpio_request(GPIO_FN_FSIBCK, NULL);
+@@ -1268,8 +1268,8 @@ static void __init ap4evb_init(void)
+ 	gpio_request(GPIO_FN_LCDDISP,  NULL);
+ 	gpio_request(GPIO_FN_LCDDCK,   NULL);
+ 
+-	gpio_request_one(GPIO_PORT189, GPIOF_OUT_INIT_HIGH, NULL); /* backlight */
+-	gpio_request_one(GPIO_PORT151, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
++	gpio_request_one(189, GPIOF_OUT_INIT_HIGH, NULL); /* backlight */
++	gpio_request_one(151, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
+ 
+ 	lcdc_info.clock_source			= LCDC_CLK_BUS;
+ 	lcdc_info.ch[0].interface_type		= RGB18;
 -- 
-1.8.1.5
+1.7.10.4
 
