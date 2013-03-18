@@ -1,56 +1,69 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Mar 2013 23:00:31 +0000
-Subject: [PATCH v4 86/88] ARM: shmobile: r8a7779: Remove USB function GPIOs
-Message-Id: <1363215633-4264-87-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:05:40 +0000
+Subject: [PATCH 044/142] sh-pfc: Drop unused support for 1:1 physical to virtual memory mappings
+Message-Id: <1363604838-29359-45-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+Now that all PFC platform devices provide memory resources support for
+registers without an associated memory resource isn't used anymore. Drop
+it.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7779.h | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ drivers/pinctrl/sh-pfc/core.c |   15 ++++++---------
+ 1 file changed, 6 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-index f3ae551..e50bf53 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -71,7 +71,7 @@ enum {
- 	GPIO_FN_A19,
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index e847d16..cadfb37 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -30,10 +30,8 @@ static int sh_pfc_ioremap(struct sh_pfc *pfc, struct platform_device *pdev)
+ 	struct resource *res;
+ 	int k;
  
- 	/* IPSR0 */
--	GPIO_FN_USB_PENC2, GPIO_FN_PWM1, GPIO_FN_PWMFSW0,
-+	GPIO_FN_PWM1, GPIO_FN_PWMFSW0,
- 	GPIO_FN_SCIF_CLK, GPIO_FN_TCLK0_C, GPIO_FN_BS,
- 	GPIO_FN_FD2, GPIO_FN_ATADIR0, GPIO_FN_SDSELF,
- 	GPIO_FN_HCTS1, GPIO_FN_A0,
-@@ -191,7 +191,7 @@ enum {
- 	GPIO_FN_VI1_FIELD, GPIO_FN_VI3_FIELD,
- 	GPIO_FN_AUDIO_CLKOUT, GPIO_FN_GPS_CLK_C,
- 	GPIO_FN_GPS_CLK_D, GPIO_FN_AUDIO_CLKA, GPIO_FN_CAN_TXCLK,
--	GPIO_FN_AUDIO_CLKB, GPIO_FN_USB_OVC2, GPIO_FN_CAN_DEBUGOUT0,
-+	GPIO_FN_AUDIO_CLKB, GPIO_FN_CAN_DEBUGOUT0,
- 	GPIO_FN_MOUT0,
+-	if (pdev->num_resources = 0) {
+-		pfc->num_windows = 0;
+-		return 0;
+-	}
++	if (pdev->num_resources = 0)
++		return -EINVAL;
  
- 	/* IPSR6 */
-@@ -230,10 +230,10 @@ enum {
- 	GPIO_FN_DREQ2,	GPIO_FN_DACK2,
+ 	pfc->window = devm_kzalloc(pfc->dev, pdev->num_resources *
+ 				   sizeof(*pfc->window), GFP_NOWAIT);
+@@ -59,11 +57,11 @@ static void __iomem *sh_pfc_phys_to_virt(struct sh_pfc *pfc,
+ 					 unsigned long address)
+ {
+ 	struct sh_pfc_window *window;
+-	int k;
++	unsigned int i;
  
- 	/* IPSR8 */
--	GPIO_FN_USB_OVC0, GPIO_FN_AD_CLK,
-+	GPIO_FN_AD_CLK,
- 	GPIO_FN_CC5_STATE4, GPIO_FN_CC5_STATE12, GPIO_FN_CC5_STATE20,
- 	GPIO_FN_CC5_STATE28, GPIO_FN_CC5_STATE36,
--	GPIO_FN_USB_OVC1, GPIO_FN_AD_DI,
-+	GPIO_FN_AD_DI,
- 	GPIO_FN_CC5_STATE5, GPIO_FN_CC5_STATE13, GPIO_FN_CC5_STATE21,
- 	GPIO_FN_CC5_STATE29, GPIO_FN_CC5_STATE37,
- 	GPIO_FN_CAN_DEBUG_HW_TRIGGER, GPIO_FN_AD_DO,
+ 	/* scan through physical windows and convert address */
+-	for (k = 0; k < pfc->num_windows; k++) {
+-		window = pfc->window + k;
++	for (i = 0; i < pfc->num_windows; i++) {
++		window = pfc->window + i;
+ 
+ 		if (address < window->phys)
+ 			continue;
+@@ -74,8 +72,7 @@ static void __iomem *sh_pfc_phys_to_virt(struct sh_pfc *pfc,
+ 		return window->virt + (address - window->phys);
+ 	}
+ 
+-	/* no windows defined, register must be 1:1 mapped virt:phys */
+-	return (void __iomem *)address;
++	BUG();
+ }
+ 
+ struct sh_pfc_pin *sh_pfc_get_pin(struct sh_pfc *pfc, unsigned int pin)
 -- 
-1.8.1.5
+1.7.10.4
 
