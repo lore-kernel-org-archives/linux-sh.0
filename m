@@ -1,111 +1,69 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 10 Mar 2013 18:36:00 +0000
-Subject: [PATCH 21/23] sh-pfc: Merge sh_pfc_reconfig_pin() into sh_pfc_gpio_set_direction()
-Message-Id: <1362940562-8570-22-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:06:40 +0000
+Subject: [PATCH 104/142] sh-pfc: sh7372: Remove SDHI and MMCIF function GPIOS
+Message-Id: <1363604838-29359-105-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The sh_pfc_reconfig_pin() is only called from a single location. Merge
-it into its call site to make the code easier to follow.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+All sh7372 platforms now use the pinctrl API to control the SDHI and
+MMCIF pins, the corresponding function GPIOS are unused. Remove them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/pinctrl/sh-pfc/pinctrl.c | 71 ++++++++++++++++++----------------------
- 1 file changed, 32 insertions(+), 39 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-sh7372.c |   25 -------------------------
+ 1 file changed, 25 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
-index 84aa457..5e88881 100644
---- a/drivers/pinctrl/sh-pfc/pinctrl.c
-+++ b/drivers/pinctrl/sh-pfc/pinctrl.c
-@@ -133,43 +133,6 @@ static void sh_pfc_func_disable(struct pinctrl_dev *pctldev, unsigned selector,
- {
- }
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+index cef4d6a..df0ae21 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+@@ -1277,18 +1277,6 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(D11_NAF11),	GPIO_FN(D12_NAF12),	GPIO_FN(D13_NAF13),
+ 	GPIO_FN(D14_NAF14),	GPIO_FN(D15_NAF15),
  
--static int sh_pfc_reconfig_pin(struct sh_pfc_pinctrl *pmx, unsigned offset,
--			       int new_type)
--{
--	struct sh_pfc *pfc = pmx->pfc;
--	int idx = sh_pfc_get_pin_index(pfc, offset);
--	struct sh_pfc_pin_config *cfg = &pmx->configs[idx];
--	const struct sh_pfc_pin *pin = &pfc->info->pins[idx];
--	unsigned int mark = pin->enum_id;
--	unsigned long flags;
--	int ret;
+-	/* MMCIF(1) */
+-	GPIO_FN(MMCD0_0),	GPIO_FN(MMCD0_1),	GPIO_FN(MMCD0_2),
+-	GPIO_FN(MMCD0_3),	GPIO_FN(MMCD0_4),	GPIO_FN(MMCD0_5),
+-	GPIO_FN(MMCD0_6),	GPIO_FN(MMCD0_7),	GPIO_FN(MMCCMD0),
+-	GPIO_FN(MMCCLK0),
 -
--	spin_lock_irqsave(&pfc->lock, flags);
+-	/* MMCIF(2) */
+-	GPIO_FN(MMCD1_0),	GPIO_FN(MMCD1_1),	GPIO_FN(MMCD1_2),
+-	GPIO_FN(MMCD1_3),	GPIO_FN(MMCD1_4),	GPIO_FN(MMCD1_5),
+-	GPIO_FN(MMCD1_6),	GPIO_FN(MMCD1_7),	GPIO_FN(MMCCLK1),
+-	GPIO_FN(MMCCMD1),
 -
--	switch (cfg->type) {
--	case PINMUX_TYPE_GPIO:
--	case PINMUX_TYPE_OUTPUT:
--	case PINMUX_TYPE_INPUT:
--	case PINMUX_TYPE_INPUT_PULLUP:
--	case PINMUX_TYPE_INPUT_PULLDOWN:
--		break;
--	default:
--		ret = -EINVAL;
--		goto done;
--	}
--
--	ret = sh_pfc_config_mux(pfc, mark, new_type);
--	if (ret < 0)
--		goto done;
--
--	cfg->type = new_type;
--
--done:
--	spin_unlock_irqrestore(&pfc->lock, flags);
--
--	return ret;
--}
--
- static int sh_pfc_gpio_request_enable(struct pinctrl_dev *pctldev,
- 				      struct pinctrl_gpio_range *range,
- 				      unsigned offset)
-@@ -214,9 +177,39 @@ static int sh_pfc_gpio_set_direction(struct pinctrl_dev *pctldev,
- 				     unsigned offset, bool input)
- {
- 	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
--	int type = input ? PINMUX_TYPE_INPUT : PINMUX_TYPE_OUTPUT;
-+	struct sh_pfc *pfc = pmx->pfc;
-+	int new_type = input ? PINMUX_TYPE_INPUT : PINMUX_TYPE_OUTPUT;
-+	int idx = sh_pfc_get_pin_index(pfc, offset);
-+	struct sh_pfc_pin_config *cfg = &pmx->configs[idx];
-+	const struct sh_pfc_pin *pin = &pfc->info->pins[idx];
-+	unsigned int mark = pin->enum_id;
-+	unsigned long flags;
-+	int ret;
+ 	/* SPU2 */
+ 	GPIO_FN(VINT_I),
  
--	return sh_pfc_reconfig_pin(pmx, offset, type);
-+	spin_lock_irqsave(&pfc->lock, flags);
-+
-+	switch (cfg->type) {
-+	case PINMUX_TYPE_GPIO:
-+	case PINMUX_TYPE_OUTPUT:
-+	case PINMUX_TYPE_INPUT:
-+	case PINMUX_TYPE_INPUT_PULLUP:
-+	case PINMUX_TYPE_INPUT_PULLDOWN:
-+		break;
-+	default:
-+		ret = -EINVAL;
-+		goto done;
-+	}
-+
-+	ret = sh_pfc_config_mux(pfc, mark, new_type);
-+	if (ret < 0)
-+		goto done;
-+
-+	cfg->type = new_type;
-+
-+done:
-+	spin_unlock_irqrestore(&pfc->lock, flags);
-+
-+	return ret;
- }
+@@ -1385,19 +1373,6 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	/* HDMI */
+ 	GPIO_FN(HDMI_HPD),	GPIO_FN(HDMI_CEC),
  
- static const struct pinmux_ops sh_pfc_pinmux_ops = {
+-	/* SDHI0 */
+-	GPIO_FN(SDHICLK0),	GPIO_FN(SDHICD0),	GPIO_FN(SDHICMD0),
+-	GPIO_FN(SDHIWP0),	GPIO_FN(SDHID0_0),	GPIO_FN(SDHID0_1),
+-	GPIO_FN(SDHID0_2),	GPIO_FN(SDHID0_3),
+-
+-	/* SDHI1 */
+-	GPIO_FN(SDHICLK1),	GPIO_FN(SDHICMD1),	GPIO_FN(SDHID1_0),
+-	GPIO_FN(SDHID1_1),	GPIO_FN(SDHID1_2),	GPIO_FN(SDHID1_3),
+-
+-	/* SDHI2 */
+-	GPIO_FN(SDHICLK2),	GPIO_FN(SDHICMD2),	GPIO_FN(SDHID2_0),
+-	GPIO_FN(SDHID2_1),	GPIO_FN(SDHID2_2),	GPIO_FN(SDHID2_3),
+-
+ 	/* SDENC */
+ 	GPIO_FN(SDENC_CPG),
+ 	GPIO_FN(SDENC_DV_CLKI),
 -- 
-1.8.1.5
+1.7.10.4
 
