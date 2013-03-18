@@ -1,67 +1,74 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 12:32:17 +0000
-Subject: [PATCH 07/43] ARM: shmobile: add MMCIF and SDHI DT clock aliases to sh73a0 and r8a7740
-Message-Id: <1363609973-31086-8-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 12:05:44 +0000
+Subject: [GIT PULL] Renesas INTC External IRQ pin driver
+Message-Id: <1363608358-24215-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Hi Olof, Hi Arnd,
 
-Add clock lookup entries for SDHI and MMCIF device names, for the FDT case.
+The following changes since commit da8288d03cd9e22036c759c1bfb5ec91e4ad01fd:
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-[horms+renesas@verge.net.au: resolved trivial conflict in clock-r8a7740.c]
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/mach-shmobile/clock-r8a7740.c |    4 ++++
- arch/arm/mach-shmobile/clock-sh73a0.c  |    3 +++
- 2 files changed, 7 insertions(+)
+  ARM: shmobile: fix kzm9g-reference compile breakage (2013-03-14 00:00:14 +0900)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index 19ce885..1a9b9a2 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -611,11 +611,15 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("i2c-sh_mobile.1",	&mstp_clks[MSTP323]),
- 	CLKDEV_DEV_ID("renesas_usbhs",		&mstp_clks[MSTP320]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.0",	&mstp_clks[MSTP314]),
-+	CLKDEV_DEV_ID("e6850000.sdhi",          &mstp_clks[MSTP314]),
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1",	&mstp_clks[MSTP313]),
-+	CLKDEV_DEV_ID("e6860000.sdhi",          &mstp_clks[MSTP313]),
- 	CLKDEV_DEV_ID("sh_mmcif",		&mstp_clks[MSTP312]),
-+	CLKDEV_DEV_ID("e6bd0000.mmcif",         &mstp_clks[MSTP312]),
- 	CLKDEV_DEV_ID("sh-eth",			&mstp_clks[MSTP309]),
- 
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2",	&mstp_clks[MSTP415]),
-+	CLKDEV_DEV_ID("e6870000.sdhi",          &mstp_clks[MSTP415]),
- 
- 	/* ICK */
- 	CLKDEV_ICK_ID("host",	"renesas_usbhs",	&mstp_clks[MSTP416]),
-diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-index afa5423..5fa106b 100644
---- a/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-@@ -581,10 +581,13 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("e6822000.i2c", &mstp_clks[MSTP323]), /* I2C1 */
- 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP322]), /* USB */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]), /* SDHI0 */
-+	CLKDEV_DEV_ID("ee100000.sdhi", &mstp_clks[MSTP314]), /* SDHI0 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]), /* SDHI1 */
-+	CLKDEV_DEV_ID("ee120000.sdhi", &mstp_clks[MSTP313]), /* SDHI1 */
- 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP312]), /* MMCIF0 */
- 	CLKDEV_DEV_ID("e6bd0000.mmcif", &mstp_clks[MSTP312]), /* MMCIF0 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]), /* SDHI2 */
-+	CLKDEV_DEV_ID("ee140000.sdhi", &mstp_clks[MSTP311]), /* SDHI2 */
- 	CLKDEV_DEV_ID("leds-renesas-tpu.12", &mstp_clks[MSTP303]), /* TPU1 */
- 	CLKDEV_DEV_ID("leds-renesas-tpu.21", &mstp_clks[MSTP302]), /* TPU2 */
- 	CLKDEV_DEV_ID("leds-renesas-tpu.30", &mstp_clks[MSTP301]), /* TPU3 */
--- 
-1.7.10.4
+are available in the git repository at:
 
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-intc-external-irq-for-v3.10
+
+for you to fetch changes up to 2033e618f13f8efc782b9ad511dd37b654943072:
+
+  irqchip: irqc: Add DT support (2013-03-14 00:02:46 +0900)
+
+----------------------------------------------------------------
+Renesas INTC External IRQ pin driver
+
+This provides two new INTC drivers for use with Renesas ARM-based SoCs and
+makes use of them on the r8a7779 and sh73a0 SoCs.
+
+It has been agreed by the relevant parties, Thomas Gleixner, Magnus Damm,
+and myself that it would be best to merge this code through the renesas
+tree and thus through the arm-soc tree.
+
+This is based on:
+
+git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-soc-v3.10
+
+----------------------------------------------------------------
+Magnus Damm (14):
+      irqchip: Renesas INTC External IRQ pin driver
+      ARM: shmobile: irq_pin() for static IRQ pin assignment
+      ARM: shmobile: INTC External IRQ pin driver on sh73a0
+      ARM: shmobile: INTC External IRQ pin driver on r8a7779
+      irqchip: intc-irqpin: Whitespace fixes
+      irqchip: intc-irqpin: Cache mapped IRQ
+      irqchip: intc-irqpin: Add force comments
+      irqchip: intc-irqpin: Make use of devm functions
+      irqchip: intc-irqpin: GPL header for platform data
+      irqchip: Renesas IRQC driver
+      ARM: shmobile: Make sh73a0 INTC irqpin platform data static
+      ARM: shmobile: Make r8a7779 INTC irqpin platform data static
+      irqchip: intc-irqpin: Initial DT support
+      irqchip: irqc: Add DT support
+
+ arch/arm/mach-shmobile/Kconfig                     |    2 +
+ arch/arm/mach-shmobile/board-kzm9g.c               |   14 +-
+ arch/arm/mach-shmobile/include/mach/common.h       |    1 +
+ arch/arm/mach-shmobile/include/mach/irqs.h         |    4 +
+ arch/arm/mach-shmobile/intc-r8a7779.c              |   53 ++-
+ arch/arm/mach-shmobile/intc-sh73a0.c               |  117 -----
+ arch/arm/mach-shmobile/setup-sh73a0.c              |  126 ++++++
+ drivers/irqchip/Kconfig                            |    8 +
+ drivers/irqchip/Makefile                           |    2 +
+ drivers/irqchip/irq-renesas-intc-irqpin.c          |  471 ++++++++++++++++++++
+ drivers/irqchip/irq-renesas-irqc.c                 |  307 +++++++++++++
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c                |    6 +-
+ .../linux/platform_data/irq-renesas-intc-irqpin.h  |   29 ++
+ include/linux/platform_data/irq-renesas-irqc.h     |   27 ++
+ 14 files changed, 1039 insertions(+), 128 deletions(-)
+ create mode 100644 drivers/irqchip/irq-renesas-intc-irqpin.c
+ create mode 100644 drivers/irqchip/irq-renesas-irqc.c
+ create mode 100644 include/linux/platform_data/irq-renesas-intc-irqpin.h
+ create mode 100644 include/linux/platform_data/irq-renesas-irqc.h
