@@ -1,37 +1,87 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 22 Mar 2013 00:46:59 +0000
-Subject: Re: [GIT PULL] Renesas ARM-based SoC defconfig updates for v3.10
-Message-Id: <20130322004659.GC1689@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:59:39 +0000
+Subject: [PATCH 12/13] ARM: shmobile: marzen: Use gic_iid macro for ICCIAR / interrupt ID
+Message-Id: <1363607980-22153-13-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363607601-20366-1-git-send-email-horms+renesas@verge.net.au>
- <201303211656.25427.arnd@arndb.de>
-In-Reply-To: <201303211656.25427.arnd@arndb.de>
+References: <1363607980-22153-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363607980-22153-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Mar 21, 2013 at 04:56:25PM +0000, Arnd Bergmann wrote:
-> On Monday 18 March 2013, Simon Horman wrote:
-> > The following changes since commit f6161aa153581da4a3867a2d1a7caf4be19b6ec9:
-> > 
-> >   Linux 3.9-rc2 (2013-03-10 16:54:19 -0700)
-> > 
-> > are available in the git repository at:
-> > 
-> >   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig-for-v3.10
-> > 
-> > for you to fetch changes up to db30abdf3c07c564d4af0f991bb7f38b728f9035:
-> 
-> Pulled into next/soc, thanks!
-> 
-> I'm combining it with the other soc updates for now, but I still like to
-> receive the branches separately as you do here. If we get a lot more
-> defconfig pull requests, we can make that an extra topic branch that we
-> create from all the ones we received.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Thanks.
+ARM: shmobile: add gic_iid macro for ICCIAR / interrupt ID
+enabled to use gic_iid macro.
+This patch exchange current GIC interrupt setting
+from gic_spi() to gic_iid()
 
-At this point I do not have any more defconfig changes queued up
-and I only expect a few more in the v3.10 time-frame - to deal
-with new SoCs and corresponding boards.
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+[ horms+renesas@verge.net.au: Split irq.h portion into a separate patch ]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-marzen.c |   12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index 5852331..2333a2d 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -67,7 +67,7 @@ static struct resource smsc911x_resources[] = {
+ 		.flags		= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start		= gic_spi(28), /* IRQ 1 */
++		.start		= gic_iid(0x3c), /* IRQ 1 */
+ 		.flags		= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -97,7 +97,7 @@ static struct resource sdhi0_resources[] = {
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start	= gic_spi(104),
++		.start	= gic_iid(0x88),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -215,7 +215,7 @@ static struct resource ehci0_resources[] = {
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start	= gic_spi(44),
++		.start	= gic_iid(0x4c),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -239,7 +239,7 @@ static struct resource ehci1_resources[] = {
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start	= gic_spi(45),
++		.start	= gic_iid(0x4d),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -269,7 +269,7 @@ static struct resource ohci0_resources[] = {
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start	= gic_spi(44),
++		.start	= gic_iid(0x4c),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
+@@ -293,7 +293,7 @@ static struct resource ohci1_resources[] = {
+ 		.flags	= IORESOURCE_MEM,
+ 	},
+ 	[1] = {
+-		.start	= gic_spi(45),
++		.start	= gic_iid(0x4d),
+ 		.flags	= IORESOURCE_IRQ,
+ 	},
+ };
+-- 
+1.7.10.4
+
