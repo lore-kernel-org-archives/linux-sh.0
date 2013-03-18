@@ -1,21 +1,56 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 14 Mar 2013 14:11:12 +0000
-Subject: Re: [PATCH 24/25] sh-pfc: Convert message printing from pr_* to dev_*
-Message-Id: <CACRpkdYS4LiGaiiyDheADD6A_L2U7J8uwTz2yz2KK=3KxjQ+0g@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:47:15 +0000
+Subject: [PATCH 23/43] ARM: shmobile: r8a7779: Do not initialise i2c as an early device
+Message-Id: <1363607255-6385-24-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363214384-3870-25-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1363214384-3870-25-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Mar 13, 2013 at 11:39 PM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
+It is sufficient to initialise i2c as a late device.
 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cc: Magnus Damm <magnus.damm@gmail.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/setup-r8a7779.c |    8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
 
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index b1f7a45..7f8daf1 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -333,7 +333,7 @@ static struct platform_device *r8a7779_devices_dt[] __initdata = {
+ 	&tmu01_device,
+ };
+ 
+-static struct platform_device *r8a7779_early_devices[] __initdata = {
++static struct platform_device *r8a7779_late_devices[] __initdata = {
+ 	&i2c0_device,
+ 	&i2c1_device,
+ 	&i2c2_device,
+@@ -352,8 +352,8 @@ void __init r8a7779_add_standard_devices(void)
+ 
+ 	platform_add_devices(r8a7779_devices_dt,
+ 			    ARRAY_SIZE(r8a7779_devices_dt));
+-	platform_add_devices(r8a7779_early_devices,
+-			    ARRAY_SIZE(r8a7779_early_devices));
++	platform_add_devices(r8a7779_late_devices,
++			    ARRAY_SIZE(r8a7779_late_devices));
+ }
+ 
+ /* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
+@@ -370,8 +370,6 @@ void __init r8a7779_add_early_devices(void)
+ {
+ 	early_platform_add_devices(r8a7779_devices_dt,
+ 				   ARRAY_SIZE(r8a7779_devices_dt));
+-	early_platform_add_devices(r8a7779_early_devices,
+-				   ARRAY_SIZE(r8a7779_early_devices));
+ 
+ 	/* Early serial console setup is not included here due to
+ 	 * memory map collisions. The SCIF serial ports in r8a7779
+-- 
+1.7.10.4
 
-Yours,
-Linus Walleij
