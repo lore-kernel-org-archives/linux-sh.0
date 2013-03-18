@@ -1,60 +1,46 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 06 Mar 2013 07:55:45 +0000
-Subject: Re: [PATCH] irqchip: intc-irqpin: Initial DT support
-Message-Id: <20130306075544.GD29060@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:59:31 +0000
+Subject: [PATCH 04/13] ARM: shmobile: mark mackerel sh_mmcif_device __maybe_unused
+Message-Id: <1363607980-22153-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130306061608.5231.23213.sendpatchset@w520>
-In-Reply-To: <20130306061608.5231.23213.sendpatchset@w520>
+References: <1363607980-22153-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363607980-22153-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Magnus Damm <magnus.damm@gmail.com>
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, benh@kernel.crashing.org, grant.likely@secretlab.ca, tglx@linutronix.de
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Mar 06, 2013 at 03:16:08PM +0900, Magnus Damm wrote:
-> From: Magnus Damm <damm@opensource.se>
-> 
-> Add initial DT support to the INTC External IRQ Pin
-> driver. At this point only hardware with 4-bit wide
-> sense registers is supported via DT.
+From: Arnd Bergmann <arnd@arndb.de>
 
-I have added this to topic/intc-external-irq with the related patches.
-The holding-pen for INTC.
+Patch eac036ef9e "ARM: shmobile: streamline mackerel SD and MMC devices"
+made the use of the sh_mmcif_device variable for mackarel optional,
+but the definition is always provided, causing a build warning.
 
-> Signed-off-by: Magnus Damm <damm@opensource.se>
-> ---
-> 
->  drivers/irqchip/irq-renesas-intc-irqpin.c |    9 +++++++++
->  1 file changed, 9 insertions(+)
-> 
-> --- 0001/drivers/irqchip/irq-renesas-intc-irqpin.c
-> +++ work/drivers/irqchip/irq-renesas-intc-irqpin.c	2013-03-06 14:59:58.000000000 +0900
-> @@ -278,6 +278,7 @@ static int intc_irqpin_irq_domain_map(st
->  
->  static struct irq_domain_ops intc_irqpin_irq_domain_ops = {
->  	.map	= intc_irqpin_irq_domain_map,
-> +	.xlate  = irq_domain_xlate_twocell,
->  };
->  
->  static int intc_irqpin_probe(struct platform_device *pdev)
-> @@ -437,11 +438,19 @@ static int intc_irqpin_remove(struct pla
->  	return 0;
->  }
->  
-> +static const struct of_device_id intc_irqpin_dt_ids[] = {
-> +	{ .compatible = "renesas,intc-irqpin", },
-> +	{},
-> +};
-> +MODULE_DEVICE_TABLE(of, intc_irqpin_dt_ids);
-> +
->  static struct platform_driver intc_irqpin_device_driver = {
->  	.probe		= intc_irqpin_probe,
->  	.remove		= intc_irqpin_remove,
->  	.driver		= {
->  		.name	= "renesas_intc_irqpin",
-> +		.of_match_table = intc_irqpin_dt_ids,
-> +		.owner  = THIS_MODULE,
->  	}
->  };
->  
-> 
+arch/arm/mach-shmobile/board-mackerel.c:1120:31: warning: 'sh_mmcif_device'
+	defined but not used [-Wunused-variable]
+
+Marking the variable as __maybe_unused will do the right thing here.
+
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+Cc: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-mackerel.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/board-mackerel.c b/arch/arm/mach-shmobile/board-mackerel.c
+index fb058c7..ef22ec4 100644
+--- a/arch/arm/mach-shmobile/board-mackerel.c
++++ b/arch/arm/mach-shmobile/board-mackerel.c
+@@ -1118,7 +1118,7 @@ static struct sh_mmcif_plat_data sh_mmcif_plat = {
+ 	.slave_id_rx	= SHDMA_SLAVE_MMCIF_RX,
+ };
+ 
+-static struct platform_device sh_mmcif_device = {
++static struct platform_device sh_mmcif_device __maybe_unused = {
+ 	.name		= "sh_mmcif",
+ 	.id		= 0,
+ 	.dev		= {
+-- 
+1.7.10.4
+
