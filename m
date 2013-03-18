@@ -1,167 +1,53 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 10:55:59 +0000
-Subject: [PATCH v4 18/29] sh-pfc: Share the PORT_10_REV, PORT_32 and PORT_32_REV definitions
-Message-Id: <1362740170-19073-19-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:04:59 +0000
+Subject: [PATCH 003/142] sh-pfc: Fix a typo and simplify a definition on sh73a0
+Message-Id: <1363604838-29359-4-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The macros are defined identically and used in two SoC-specific files,
-share them.
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
+Fix definition of the SDHIWP0 function and simplify the CPU_ALL_PORT
+definition on sh73a0.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 34 ++++++++--------------------------
- drivers/pinctrl/sh-pfc/pfc-sh7734.c  | 31 +++++++------------------------
- drivers/pinctrl/sh-pfc/sh_pfc.h      | 17 +++++++++++++++++
- 3 files changed, 32 insertions(+), 50 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c |    8 ++------
+ 1 file changed, 2 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-index 0e53674..e9a7ead 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-@@ -23,11 +23,6 @@
- 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index 709008e..232731b 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -25,11 +25,7 @@
  #include "sh_pfc.h"
  
--#define CPU_32_PORT(fn, pfx, sfx)				\
--	PORT_10(fn, pfx, sfx), PORT_10(fn, pfx##1, sfx),	\
--	PORT_10(fn, pfx##2, sfx), PORT_1(fn, pfx##30, sfx),	\
--	PORT_1(fn, pfx##31, sfx)
--
- #define CPU_32_PORT6(fn, pfx, sfx)				\
- 	PORT_1(fn, pfx##0, sfx), PORT_1(fn, pfx##1, sfx),	\
- 	PORT_1(fn, pfx##2, sfx), PORT_1(fn, pfx##3, sfx),	\
-@@ -36,12 +31,12 @@
- 	PORT_1(fn, pfx##8, sfx)
- 
  #define CPU_ALL_PORT(fn, pfx, sfx)				\
--	CPU_32_PORT(fn, pfx##_0_, sfx),				\
--	CPU_32_PORT(fn, pfx##_1_, sfx),				\
--	CPU_32_PORT(fn, pfx##_2_, sfx),				\
--	CPU_32_PORT(fn, pfx##_3_, sfx),				\
--	CPU_32_PORT(fn, pfx##_4_, sfx),				\
--	CPU_32_PORT(fn, pfx##_5_, sfx),				\
-+	PORT_32(fn, pfx##_0_, sfx),				\
-+	PORT_32(fn, pfx##_1_, sfx),				\
-+	PORT_32(fn, pfx##_2_, sfx),				\
-+	PORT_32(fn, pfx##_3_, sfx),				\
-+	PORT_32(fn, pfx##_4_, sfx),				\
-+	PORT_32(fn, pfx##_5_, sfx),				\
- 	CPU_32_PORT6(fn, pfx##_6_, sfx)
- 
- #define _GP_GPIO(pfx, sfx) PINMUX_GPIO(GPIO_GP##pfx, GP##pfx##_DATA)
-@@ -55,21 +50,8 @@
- #define PINMUX_GPIO_GP_ALL()	CPU_ALL_PORT(_GP_GPIO, , unused)
- #define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_GP_DATA, , unused)
- 
--
--#define PORT_10_REV(fn, pfx, sfx)				\
--	PORT_1(fn, pfx##9, sfx), PORT_1(fn, pfx##8, sfx),	\
--	PORT_1(fn, pfx##7, sfx), PORT_1(fn, pfx##6, sfx),	\
--	PORT_1(fn, pfx##5, sfx), PORT_1(fn, pfx##4, sfx),	\
--	PORT_1(fn, pfx##3, sfx), PORT_1(fn, pfx##2, sfx),	\
--	PORT_1(fn, pfx##1, sfx), PORT_1(fn, pfx##0, sfx)
--
--#define CPU_32_PORT_REV(fn, pfx, sfx)					\
--	PORT_1(fn, pfx##31, sfx), PORT_1(fn, pfx##30, sfx),		\
--	PORT_10_REV(fn, pfx##2, sfx), PORT_10_REV(fn, pfx##1, sfx),	\
--	PORT_10_REV(fn, pfx, sfx)
--
--#define GP_INOUTSEL(bank) CPU_32_PORT_REV(_GP_INOUTSEL, _##bank##_, unused)
--#define GP_INDT(bank) CPU_32_PORT_REV(_GP_INDT, _##bank##_, unused)
-+#define GP_INOUTSEL(bank) PORT_32_REV(_GP_INOUTSEL, _##bank##_, unused)
-+#define GP_INDT(bank) PORT_32_REV(_GP_INDT, _##bank##_, unused)
- 
- #define PINMUX_IPSR_DATA(ipsr, fn) PINMUX_DATA(fn##_MARK, FN_##ipsr, FN_##fn)
- #define PINMUX_IPSR_MODSEL_DATA(ipsr, fn, ms) PINMUX_DATA(fn##_MARK, FN_##ms, \
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7734.c b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-index 20c44dd..99ea220 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
-@@ -14,11 +14,6 @@
- 
- #include "sh_pfc.h"
- 
--#define CPU_32_PORT(fn, pfx, sfx)				\
--	PORT_10(fn, pfx, sfx), PORT_10(fn, pfx##1, sfx),	\
--	PORT_10(fn, pfx##2, sfx), PORT_1(fn, pfx##30, sfx),	\
--	PORT_1(fn, pfx##31, sfx)
--
- #define CPU_32_PORT5(fn, pfx, sfx)				\
- 	PORT_1(fn, pfx##0, sfx), PORT_1(fn, pfx##1, sfx),	\
- 	PORT_1(fn, pfx##2, sfx), PORT_1(fn, pfx##3, sfx),	\
-@@ -29,11 +24,11 @@
- 
- /* GPSR0 - GPSR5 */
- #define CPU_ALL_PORT(fn, pfx, sfx)				\
--	CPU_32_PORT(fn, pfx##_0_, sfx),			\
--	CPU_32_PORT(fn, pfx##_1_, sfx),				\
--	CPU_32_PORT(fn, pfx##_2_, sfx),				\
--	CPU_32_PORT(fn, pfx##_3_, sfx),				\
--	CPU_32_PORT(fn, pfx##_4_, sfx),				\
-+	PORT_32(fn, pfx##_0_, sfx),			\
-+	PORT_32(fn, pfx##_1_, sfx),				\
-+	PORT_32(fn, pfx##_2_, sfx),				\
-+	PORT_32(fn, pfx##_3_, sfx),				\
-+	PORT_32(fn, pfx##_4_, sfx),				\
- 	CPU_32_PORT5(fn, pfx##_5_, sfx)
- 
- #define _GP_GPIO(pfx, sfx) PINMUX_GPIO(GPIO_GP##pfx, GP##pfx##_DATA)
-@@ -47,20 +42,8 @@
- #define PINMUX_GPIO_GP_ALL()	CPU_ALL_PORT(_GP_GPIO, , unused)
- #define PINMUX_DATA_GP_ALL()	CPU_ALL_PORT(_GP_DATA, , unused)
- 
--#define PORT_10_REV(fn, pfx, sfx)	\
--	PORT_1(fn, pfx##9, sfx), PORT_1(fn, pfx##8, sfx),	\
--	PORT_1(fn, pfx##7, sfx), PORT_1(fn, pfx##6, sfx),	\
--	PORT_1(fn, pfx##5, sfx), PORT_1(fn, pfx##4, sfx),	\
--	PORT_1(fn, pfx##3, sfx), PORT_1(fn, pfx##2, sfx),	\
--	PORT_1(fn, pfx##1, sfx), PORT_1(fn, pfx##0, sfx)
--
--#define CPU_32_PORT_REV(fn, pfx, sfx)	\
--	PORT_1(fn, pfx##31, sfx), PORT_1(fn, pfx##30, sfx),	\
--	PORT_10_REV(fn, pfx##2, sfx), PORT_10_REV(fn, pfx##1, sfx),	\
--	PORT_10_REV(fn, pfx, sfx)
--
--#define GP_INOUTSEL(bank) CPU_32_PORT_REV(_GP_INOUTSEL, _##bank##_, unused)
--#define GP_INDT(bank) CPU_32_PORT_REV(_GP_INDT, _##bank##_, unused)
-+#define GP_INOUTSEL(bank) PORT_32_REV(_GP_INOUTSEL, _##bank##_, unused)
-+#define GP_INDT(bank) PORT_32_REV(_GP_INDT, _##bank##_, unused)
- 
- #define PINMUX_IPSR_DATA(ipsr, fn) PINMUX_DATA(fn##_MARK, FN_##ipsr, FN_##fn)
- #define PINMUX_IPSR_MODSEL_DATA(ipsr, fn, ms) PINMUX_DATA(fn##_MARK, FN_##ms, \
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index f9d4480..43c858d 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -138,6 +138,23 @@ enum { GPIO_CFG_DRYRUN, GPIO_CFG_REQ, GPIO_CFG_FREE };
- 	PORT_1(fn, pfx##6, sfx), PORT_1(fn, pfx##7, sfx),	\
- 	PORT_1(fn, pfx##8, sfx), PORT_1(fn, pfx##9, sfx)
- 
-+#define PORT_10_REV(fn, pfx, sfx)	\
-+	PORT_1(fn, pfx##9, sfx), PORT_1(fn, pfx##8, sfx),	\
-+	PORT_1(fn, pfx##7, sfx), PORT_1(fn, pfx##6, sfx),	\
-+	PORT_1(fn, pfx##5, sfx), PORT_1(fn, pfx##4, sfx),	\
-+	PORT_1(fn, pfx##3, sfx), PORT_1(fn, pfx##2, sfx),	\
-+	PORT_1(fn, pfx##1, sfx), PORT_1(fn, pfx##0, sfx)
-+
-+#define PORT_32(fn, pfx, sfx)					\
-+	PORT_10(fn, pfx, sfx), PORT_10(fn, pfx##1, sfx),	\
-+	PORT_10(fn, pfx##2, sfx), PORT_1(fn, pfx##30, sfx),	\
-+	PORT_1(fn, pfx##31, sfx)
-+
-+#define PORT_32_REV(fn, pfx, sfx)					\
-+	PORT_1(fn, pfx##31, sfx), PORT_1(fn, pfx##30, sfx),		\
-+	PORT_10_REV(fn, pfx##2, sfx), PORT_10_REV(fn, pfx##1, sfx),	\
-+	PORT_10_REV(fn, pfx, sfx)
-+
- #define PORT_90(fn, pfx, sfx) \
- 	PORT_10(fn, pfx##1, sfx), PORT_10(fn, pfx##2, sfx),	\
- 	PORT_10(fn, pfx##3, sfx), PORT_10(fn, pfx##4, sfx),	\
+-	PORT_10(fn, pfx,    sfx), PORT_10(fn, pfx##1, sfx),	\
+-	PORT_10(fn, pfx##2, sfx), PORT_10(fn, pfx##3, sfx),	\
+-	PORT_10(fn, pfx##4, sfx), PORT_10(fn, pfx##5, sfx),	\
+-	PORT_10(fn, pfx##6, sfx), PORT_10(fn, pfx##7, sfx),	\
+-	PORT_10(fn, pfx##8, sfx), PORT_10(fn, pfx##9, sfx),	\
++	PORT_10(fn, pfx,    sfx), PORT_90(fn, pfx, sfx),	\
+ 	PORT_10(fn, pfx##10, sfx),				\
+ 	PORT_1(fn, pfx##110, sfx), PORT_1(fn, pfx##111, sfx),	\
+ 	PORT_1(fn, pfx##112, sfx), PORT_1(fn, pfx##113, sfx),	\
+@@ -1502,7 +1498,7 @@ static pinmux_enum_t pinmux_data[] = {
+ 	PINMUX_DATA(SDHID0_2_PU_MARK, PORT254_FN1, PORT254_IN_PU),
+ 	PINMUX_DATA(SDHID0_3_PU_MARK, PORT255_FN1, PORT255_IN_PU),
+ 	PINMUX_DATA(SDHICMD0_PU_MARK, PORT256_FN1, PORT256_IN_PU),
+-	PINMUX_DATA(SDHIWP0_PU_MARK,  PORT257_FN1, PORT256_IN_PU),
++	PINMUX_DATA(SDHIWP0_PU_MARK,  PORT257_FN1, PORT257_IN_PU),
+ 	PINMUX_DATA(SDHID1_0_PU_MARK, PORT259_FN1, PORT259_IN_PU),
+ 	PINMUX_DATA(SDHID1_1_PU_MARK, PORT260_FN1, PORT260_IN_PU),
+ 	PINMUX_DATA(SDHID1_2_PU_MARK, PORT261_FN1, PORT261_IN_PU),
 -- 
-1.8.1.5
+1.7.10.4
 
