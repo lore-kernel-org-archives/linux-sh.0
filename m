@@ -1,10 +1,10 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 26 Mar 2013 01:34:52 +0000
-Subject: [PATCH 04/04] ARM: shmobile: r8a73a4 PFC support
-Message-Id: <20130326013452.11796.62159.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:47:17 +0000
+Subject: [PATCH 25/43] ARM: shmobile: Fix base address readout in headsmp-scu.S
+Message-Id: <1363607255-6385-26-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130326013414.11796.9937.sendpatchset@w520>
-In-Reply-To: <20130326013414.11796.9937.sendpatchset@w520>
+References: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,54 +12,38 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Add a platform device for the r8a73a4 PFC.
+Rework the early SCU setup code in headsmp-scu.S to read
+the base address in the same way as we use to fetch the
+address of the invalidation function.
 
+Reported-by: Bastian Hecht <hechtb@gmail.com>
 Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ arch/arm/mach-shmobile/headsmp-scu.S |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
- No build time dependency, but requires PFC tables
- in separate patch series to actually do something.
+diff --git a/arch/arm/mach-shmobile/headsmp-scu.S b/arch/arm/mach-shmobile/headsmp-scu.S
+index 0b93170..7d113f8 100644
+--- a/arch/arm/mach-shmobile/headsmp-scu.S
++++ b/arch/arm/mach-shmobile/headsmp-scu.S
+@@ -39,7 +39,7 @@ ENTRY(shmobile_secondary_vector_scu)
+ 	mrc     p15, 0, r0, c0, c0, 5	@ read MIPDR
+ 	and	r0, r0, #3		@ mask out cpu ID
+ 	lsl	r0, r0, #3		@ we will shift by cpu_id * 8 bits
+-	ldr	r1, =shmobile_scu_base
++	ldr	r1, 2f
+ 	ldr	r1, [r1]		@ SCU base address
+ 	ldr	r2, [r1, #8]		@ SCU Power Status Register
+ 	mov	r3, #3
+@@ -48,6 +48,7 @@ ENTRY(shmobile_secondary_vector_scu)
+ 
+ 	ldr	pc, 1f
+ 1:	.long shmobile_invalidate_start - PAGE_OFFSET + PLAT_PHYS_OFFSET
++2:	.long shmobile_scu_base - PAGE_OFFSET + PLAT_PHYS_OFFSET
+ ENDPROC(shmobile_secondary_vector_scu)
+ 
+ 	.text
+-- 
+1.7.10.4
 
- arch/arm/mach-shmobile/Kconfig                |    1 +
- arch/arm/mach-shmobile/include/mach/r8a73a4.h |    1 +
- arch/arm/mach-shmobile/setup-r8a73a4.c        |   10 ++++++++++
- 3 files changed, 12 insertions(+)
-
---- 0005/arch/arm/mach-shmobile/Kconfig
-+++ work/arch/arm/mach-shmobile/Kconfig	2013-03-18 18:51:13.000000000 +0900
-@@ -20,6 +20,7 @@ config ARCH_SH73A0
- 
- config ARCH_R8A73A4
- 	bool "R-Mobile APE6 (R8A73A40)"
-+	select ARCH_WANT_OPTIONAL_GPIOLIB
- 	select ARM_GIC
- 	select CPU_V7
- 	select ARM_ARCH_TIMER
---- 0003/arch/arm/mach-shmobile/include/mach/r8a73a4.h
-+++ work/arch/arm/mach-shmobile/include/mach/r8a73a4.h	2013-03-18 18:51:13.000000000 +0900
-@@ -3,5 +3,6 @@
- 
- void r8a73a4_add_standard_devices(void);
- void r8a73a4_clock_init(void);
-+void r8a73a4_pinmux_init(void);
- 
- #endif /* __ASM_R8A73A4_H__ */
---- 0005/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ work/arch/arm/mach-shmobile/setup-r8a73a4.c	2013-03-18 18:53:50.000000000 +0900
-@@ -28,6 +28,16 @@
- #include <mach/r8a73a4.h>
- #include <asm/mach/arch.h>
- 
-+static const struct resource pfc_resources[] = {
-+	DEFINE_RES_MEM(0xe6050000, 0x9000),
-+};
-+
-+void __init r8a73a4_pinmux_init(void)
-+{
-+	platform_device_register_simple("pfc-r8a73a4", -1, pfc_resources,
-+					ARRAY_SIZE(pfc_resources));
-+}
-+
- #define SCIF_COMMON(scif_type, baseaddr, irq)			\
- 	.type		= PORT_SCIFA,				\
- 	.mapbase	= baseaddr,				\
