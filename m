@@ -1,54 +1,196 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 14 Mar 2013 14:35:44 +0000
-Subject: [PATCH v2 1/3] r8a7779: Add Display Unit clock support
-Message-Id: <1363271746-9806-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:05:08 +0000
+Subject: [PATCH 012/142] sh-pfc: Shrink the pinctrl GPIO range to include real GPIOs only
+Message-Id: <1363604838-29359-13-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363271746-9806-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1363271746-9806-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org, linux-sh@vger.kernel.org
-Cc: Simon Horman <horms@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Phil Edworthy <phil.edworthy@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-[Rename device from to rcarfb to rcar-du]
+As a step towards GPIO function removal, shorten the GPIO range
+registered with the pinctrl core. Function GPIOs are now handled in the
+GPIO handlers directly instead of going through the pinctrl API.
+
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/arm/mach-shmobile/clock-r8a7779.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ drivers/pinctrl/sh-pfc/core.c    |    2 +-
+ drivers/pinctrl/sh-pfc/core.h    |    1 +
+ drivers/pinctrl/sh-pfc/gpio.c    |   57 ++++++++++++++++++++++++++++++++++++--
+ drivers/pinctrl/sh-pfc/pinctrl.c |   27 ++----------------
+ 4 files changed, 59 insertions(+), 28 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index 1db3653..9ea6087 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -87,7 +87,7 @@ static struct clk div4_clks[DIV4_NR] = {
- };
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index e7ad0d9..bed2d23 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -95,7 +95,7 @@ static bool sh_pfc_gpio_is_pin(struct sh_pfc *pfc, unsigned int gpio)
+ 	       (pfc->info->gpios[gpio].enum_id != 0);
+ }
  
- enum { MSTP323, MSTP322, MSTP321, MSTP320,
--	MSTP101, MSTP100,
-+	MSTP103, MSTP101, MSTP100,
- 	MSTP030,
- 	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
- 	MSTP016, MSTP015, MSTP014,
-@@ -99,6 +99,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP322] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 22, 0), /* SDHI1 */
- 	[MSTP321] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 21, 0), /* SDHI2 */
- 	[MSTP320] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 20, 0), /* SDHI3 */
-+	[MSTP103] = SH_CLK_MSTP32(&div4_clks[DIV4_S], MSTPCR1,  3, 0), /* DU */
- 	[MSTP101] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  1, 0), /* USB2 */
- 	[MSTP100] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  0, 0), /* USB0/1 */
- 	[MSTP030] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 30, 0), /* I2C0 */
-@@ -180,6 +181,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
- 	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP320]), /* SDHI3 */
-+	CLKDEV_DEV_ID("rcar-du.0", &mstp_clks[MSTP103]), /* DU */
- };
+-static bool sh_pfc_gpio_is_function(struct sh_pfc *pfc, unsigned int gpio)
++bool sh_pfc_gpio_is_function(struct sh_pfc *pfc, unsigned int gpio)
+ {
+ 	return (gpio >= pfc->info->nr_pins) && (gpio < pfc->info->nr_gpios) &&
+ 	       (pfc->info->gpios[gpio].enum_id != 0);
+diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
+index ba7c33c..dceaec0 100644
+--- a/drivers/pinctrl/sh-pfc/core.h
++++ b/drivers/pinctrl/sh-pfc/core.h
+@@ -47,6 +47,7 @@ void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
+ 		      unsigned long value);
+ int sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
+ 			struct pinmux_data_reg **drp, int *bitp);
++bool sh_pfc_gpio_is_function(struct sh_pfc *pfc, unsigned int gpio);
+ int sh_pfc_gpio_to_enum(struct sh_pfc *pfc, unsigned gpio, int pos,
+ 			pinmux_enum_t *enum_idp);
+ int sh_pfc_config_gpio(struct sh_pfc *pfc, unsigned gpio, int pinmux_type,
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index f46f069..80a50d8 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -38,12 +38,51 @@ static struct sh_pfc *gpio_to_pfc(struct gpio_chip *gc)
  
- void __init r8a7779_clock_init(void)
+ static int sh_gpio_request(struct gpio_chip *gc, unsigned offset)
+ {
+-	return pinctrl_request_gpio(offset);
++	struct sh_pfc *pfc = gpio_to_pfc(gc);
++	unsigned long flags;
++	int ret = -EINVAL;
++
++	if (offset < pfc->info->nr_pins)
++		return pinctrl_request_gpio(offset);
++
++	pr_notice_once("Use of GPIO API for function requests is deprecated, convert to pinctrl\n");
++
++	spin_lock_irqsave(&pfc->lock, flags);
++
++	if (!sh_pfc_gpio_is_function(pfc, offset))
++		goto done;
++
++	if (sh_pfc_config_gpio(pfc, offset, PINMUX_TYPE_FUNCTION,
++			       GPIO_CFG_DRYRUN))
++		goto done;
++
++	if (sh_pfc_config_gpio(pfc, offset, PINMUX_TYPE_FUNCTION,
++			       GPIO_CFG_REQ))
++		goto done;
++
++	ret = 0;
++
++done:
++	spin_unlock_irqrestore(&pfc->lock, flags);
++	return ret;
+ }
+ 
+ static void sh_gpio_free(struct gpio_chip *gc, unsigned offset)
+ {
+-	pinctrl_free_gpio(offset);
++	struct sh_pfc *pfc = gpio_to_pfc(gc);
++	unsigned long flags;
++	int pinmux_type;
++
++	if (offset < pfc->info->nr_pins)
++		return pinctrl_free_gpio(offset);
++
++	spin_lock_irqsave(&pfc->lock, flags);
++
++	pinmux_type = pfc->info->gpios[offset].flags & PINMUX_FLAG_TYPE;
++
++	sh_pfc_config_gpio(pfc, offset, pinmux_type, GPIO_CFG_FREE);
++
++	spin_unlock_irqrestore(&pfc->lock, flags);
+ }
+ 
+ static void sh_gpio_set_value(struct sh_pfc *pfc, unsigned gpio, int value)
+@@ -70,12 +109,26 @@ static int sh_gpio_get_value(struct sh_pfc *pfc, unsigned gpio)
+ 
+ static int sh_gpio_direction_input(struct gpio_chip *gc, unsigned offset)
+ {
++	struct sh_pfc *pfc = gpio_to_pfc(gc);
++
++	if (offset >= pfc->info->nr_pins) {
++		/* Function GPIOs can only be requested, never configured. */
++		return -EINVAL;
++	}
++
+ 	return pinctrl_gpio_direction_input(offset);
+ }
+ 
+ static int sh_gpio_direction_output(struct gpio_chip *gc, unsigned offset,
+ 				    int value)
+ {
++	struct sh_pfc *pfc = gpio_to_pfc(gc);
++
++	if (offset >= pfc->info->nr_pins) {
++		/* Function GPIOs can only be requested, never configured. */
++		return -EINVAL;
++	}
++
+ 	sh_gpio_set_value(gpio_to_pfc(gc), offset, value);
+ 
+ 	return pinctrl_gpio_direction_output(offset);
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index 682b3a6..747ee64 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -116,21 +116,6 @@ static void sh_pfc_noop_disable(struct pinctrl_dev *pctldev, unsigned func,
+ {
+ }
+ 
+-static int sh_pfc_config_function(struct sh_pfc *pfc, unsigned offset)
+-{
+-	if (sh_pfc_config_gpio(pfc, offset,
+-			       PINMUX_TYPE_FUNCTION,
+-			       GPIO_CFG_DRYRUN) != 0)
+-		return -EINVAL;
+-
+-	if (sh_pfc_config_gpio(pfc, offset,
+-			       PINMUX_TYPE_FUNCTION,
+-			       GPIO_CFG_REQ) != 0)
+-		return -EINVAL;
+-
+-	return 0;
+-}
+-
+ static int sh_pfc_reconfig_pin(struct sh_pfc *pfc, unsigned offset,
+ 			       int new_type)
+ {
+@@ -198,19 +183,11 @@ static int sh_pfc_gpio_request_enable(struct pinctrl_dev *pctldev,
+ 	pinmux_type = pfc->info->gpios[offset].flags & PINMUX_FLAG_TYPE;
+ 
+ 	switch (pinmux_type) {
+-	case PINMUX_TYPE_FUNCTION:
+-		pr_notice_once("Use of GPIO API for function requests is "
+-			       "deprecated, convert to pinctrl\n");
+-		/* handle for now */
+-		ret = sh_pfc_config_function(pfc, offset);
+-		if (unlikely(ret < 0))
+-			goto err;
+-
+-		break;
+ 	case PINMUX_TYPE_GPIO:
+ 	case PINMUX_TYPE_INPUT:
+ 	case PINMUX_TYPE_OUTPUT:
+ 		break;
++	case PINMUX_TYPE_FUNCTION:
+ 	default:
+ 		pr_err("Unsupported mux type (%d), bailing...\n", pinmux_type);
+ 		ret = -ENOTSUPP;
+@@ -400,7 +377,7 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ 
+ 	pmx->range.name = DRV_NAME,
+ 	pmx->range.id = 0;
+-	pmx->range.npins = pfc->info->nr_gpios;
++	pmx->range.npins = pfc->info->nr_pins;
+ 	pmx->range.base = 0;
+ 	pmx->range.pin_base = 0;
+ 
 -- 
-1.8.1.5
+1.7.10.4
 
