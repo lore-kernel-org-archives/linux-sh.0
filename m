@@ -1,170 +1,150 @@
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Date: Sun, 24 Mar 2013 19:27:33 +0000
-Subject: [PATCH v4 1/3] ARM: shmobile: sh73a0: add support for adjusting CPU frequency
-Message-Id: <1364153255-20664-2-git-send-email-g.liakhovetski@gmx.de>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:06:55 +0000
+Subject: [PATCH 119/142] sh-pfc: r8a7779: Remove HSPI function GPIOS
+Message-Id: <1363604838-29359-120-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364153255-20664-1-git-send-email-g.liakhovetski@gmx.de>
-In-Reply-To: <1364153255-20664-1-git-send-email-g.liakhovetski@gmx.de>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On SH73A0 the output of PLL0 is supplied to two dividers, feeding clock to
-the CPU core and SGX. Lower CPU frequencies allow the use of lower supply
-voltages and thus reduce power consumption.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski+renesas@gmail.com>
+All r8a7779 platforms now use the pinctrl API to control the HSPI pins,
+the corresponding function GPIOS are unused. Remove them.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c |   54 +++++++++++++++++-----------------
+ 1 file changed, 27 insertions(+), 27 deletions(-)
 
-v4: update Z-clock lookup name for the new version of the cpufreq-cpu0 
-driver.
-
- arch/arm/mach-shmobile/clock-sh73a0.c |   95 ++++++++++++++++++++++++++++++++-
- 1 files changed, 93 insertions(+), 2 deletions(-)
-
-diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
-index c992600..509be3e 100644
---- a/arch/arm/mach-shmobile/clock-sh73a0.c
-+++ b/arch/arm/mach-shmobile/clock-sh73a0.c
-@@ -282,6 +282,11 @@ enum { DIV4_I, DIV4_ZG, DIV4_M3, DIV4_B, DIV4_M1, DIV4_M2,
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+index ecc300d..ca59a18 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+@@ -2682,16 +2682,16 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(FD2), GPIO_FN(ATADIR0), GPIO_FN(SDSELF),
+ 	GPIO_FN(HCTS1), GPIO_FN(A0),
+ 	GPIO_FN(FD3), GPIO_FN(A20),
+-	GPIO_FN(HSPI_TX2_B), GPIO_FN(A21),
+-	GPIO_FN(HSPI_CLK2_B), GPIO_FN(A22),
+-	GPIO_FN(HSPI_RX2_B), GPIO_FN(VI1_R0), GPIO_FN(A23), GPIO_FN(FCLE),
+-	GPIO_FN(HSPI_CLK2), GPIO_FN(VI1_R1), GPIO_FN(A24),
+-	GPIO_FN(FD4),	GPIO_FN(HSPI_CS2), GPIO_FN(VI1_R2),
++	GPIO_FN(A21),
++	GPIO_FN(A22),
++	GPIO_FN(VI1_R0), GPIO_FN(A23), GPIO_FN(FCLE),
++	GPIO_FN(VI1_R1), GPIO_FN(A24),
++	GPIO_FN(FD4),	GPIO_FN(VI1_R2),
+ 	GPIO_FN(SSI_WS78_B), GPIO_FN(A25),
+-	GPIO_FN(FD5), GPIO_FN(HSPI_RX2), GPIO_FN(VI1_R3),
++	GPIO_FN(FD5), GPIO_FN(VI1_R3),
+ 	GPIO_FN(SSI_SDATA7_B), GPIO_FN(CLKOUT),
+ 	GPIO_FN(PWM0_B), GPIO_FN(CS0),
+-	GPIO_FN(HSPI_CS2_B), GPIO_FN(CS1_A26), GPIO_FN(HSPI_TX2),
++	GPIO_FN(CS1_A26),
+ 	GPIO_FN(SDSELF_B), GPIO_FN(RD_WR), GPIO_FN(FWE), GPIO_FN(ATAG0),
+ 	GPIO_FN(VI1_R7), GPIO_FN(HRTS1),
  
- static struct clk div4_clks[DIV4_NR] = {
- 	[DIV4_I] = DIV4(FRQCRA, 20, 0xdff, CLK_ENABLE_ON_INIT),
-+	/*
-+	 * ZG clock is dividing PLL0 frequency to supply SGX. Make sure not to
-+	 * exceed maximum frequencies of 201.5MHz for VDD_DVFS=1.175 and
-+	 * 239.2MHz for VDD_DVFS=1.315V.
-+	 */
- 	[DIV4_ZG] = SH_CLK_DIV4(&pll0_clk, FRQCRA, 16, 0xd7f, CLK_ENABLE_ON_INIT),
- 	[DIV4_M3] = DIV4(FRQCRA, 12, 0x1dff, CLK_ENABLE_ON_INIT),
- 	[DIV4_B] = DIV4(FRQCRA, 8, 0xdff, CLK_ENABLE_ON_INIT),
-@@ -308,6 +313,85 @@ static struct clk twd_clk = {
- 	.ops = &twd_clk_ops,
- };
+@@ -2787,19 +2787,19 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(VI2_R4), GPIO_FN(VI2_R5),
+ 	GPIO_FN(VI2_R6), GPIO_FN(VI2_R7),
+ 	GPIO_FN(SCL2_D), GPIO_FN(SDA2_D),
+-	GPIO_FN(VI2_CLKENB), GPIO_FN(HSPI_CS1),
++	GPIO_FN(VI2_CLKENB),
+ 	GPIO_FN(SCL1_D), GPIO_FN(VI2_FIELD),
+ 	GPIO_FN(SDA1_D), GPIO_FN(VI2_HSYNC),
+ 	GPIO_FN(VI3_HSYNC), GPIO_FN(VI2_VSYNC),
+ 	GPIO_FN(VI3_VSYNC),
+ 	GPIO_FN(VI2_CLK),
+-	GPIO_FN(HSPI_TX1), GPIO_FN(VI1_CLKENB), GPIO_FN(VI3_CLKENB),
++	GPIO_FN(VI1_CLKENB), GPIO_FN(VI3_CLKENB),
+ 	GPIO_FN(AUDIO_CLKC), GPIO_FN(SPEEDIN),
+ 	GPIO_FN(GPS_SIGN_D), GPIO_FN(VI2_DATA6_VI2_B6),
+-	GPIO_FN(TCLK0), GPIO_FN(QSTVA_B_QVS_B), GPIO_FN(HSPI_CLK1),
++	GPIO_FN(TCLK0), GPIO_FN(QSTVA_B_QVS_B),
+ 	GPIO_FN(AUDIO_CLKOUT_B), GPIO_FN(GPS_MAG_D),
+ 	GPIO_FN(VI2_DATA7_VI2_B7),
+-	GPIO_FN(HSPI_RX1), GPIO_FN(VI1_FIELD),
++	GPIO_FN(VI1_FIELD),
+ 	GPIO_FN(VI3_FIELD), GPIO_FN(AUDIO_CLKOUT),
+ 	GPIO_FN(GPS_CLK_C), GPIO_FN(GPS_CLK_D), GPIO_FN(AUDIO_CLKA),
+ 	GPIO_FN(CAN_TXCLK), GPIO_FN(AUDIO_CLKB), GPIO_FN(USB_OVC2),
+@@ -2828,12 +2828,12 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(SSI_WS6), GPIO_FN(ADICHS1), GPIO_FN(CAN0_RX), GPIO_FN(IETX_B),
+ 	GPIO_FN(SSI_SDATA6), GPIO_FN(ADICHS2), GPIO_FN(CAN_CLK),
+ 	GPIO_FN(IECLK_B), GPIO_FN(SSI_SCK78), GPIO_FN(CAN_DEBUGOUT13),
+-	GPIO_FN(IRQ0_B), GPIO_FN(SSI_SCK9_B), GPIO_FN(HSPI_CLK1_C),
++	GPIO_FN(IRQ0_B), GPIO_FN(SSI_SCK9_B),
+ 	GPIO_FN(SSI_WS78), GPIO_FN(CAN_DEBUGOUT14), GPIO_FN(IRQ1_B),
+-	GPIO_FN(SSI_WS9_B), GPIO_FN(HSPI_CS1_C), GPIO_FN(SSI_SDATA7),
++	GPIO_FN(SSI_WS9_B), GPIO_FN(SSI_SDATA7),
+ 	GPIO_FN(CAN_DEBUGOUT15), GPIO_FN(IRQ2_B), GPIO_FN(TCLK1_C),
+-	GPIO_FN(HSPI_TX1_C), GPIO_FN(SSI_SDATA8), GPIO_FN(VSP),
+-	GPIO_FN(IRQ3_B), GPIO_FN(HSPI_RX1_C),
++	GPIO_FN(SSI_SDATA8), GPIO_FN(VSP),
++	GPIO_FN(IRQ3_B),
+ 	GPIO_FN(ATACS01), GPIO_FN(ATACS11),
+ 	GPIO_FN(CC5_TDO), GPIO_FN(ATADIR1),
+ 	GPIO_FN(CC5_TRST), GPIO_FN(ATAG1),
+@@ -2843,15 +2843,15 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(DACK2),
  
-+static int (*div4_set_rate)(struct clk *clk, unsigned long rate);
-+static unsigned long (*div4_recalc)(struct clk *clk);
-+static long (*div4_round_rate)(struct clk *clk, unsigned long rate);
-+
-+static int zclk_set_rate(struct clk *clk, unsigned long rate)
-+{
-+	int ret;
-+
-+	if (!clk->parent || !__clk_get(clk->parent))
-+		return -ENODEV;
-+
-+	if (readl(FRQCRB) & (1 << 31))
-+		return -EBUSY;
-+
-+	if (rate = clk_get_rate(clk->parent)) {
-+		/* 1:1 - switch off divider */
-+		__raw_writel(__raw_readl(FRQCRB) & ~(1 << 28), FRQCRB);
-+		/* nullify the divider to prepare for the next time */
-+		ret = div4_set_rate(clk, rate / 2);
-+		if (!ret)
-+			ret = frqcr_kick();
-+		if (ret > 0)
-+			ret = 0;
-+	} else {
-+		/* Enable the divider */
-+		__raw_writel(__raw_readl(FRQCRB) | (1 << 28), FRQCRB);
-+
-+		ret = frqcr_kick();
-+		if (ret >= 0)
-+			/*
-+			 * set the divider - call the DIV4 method, it will kick
-+			 * FRQCRB too
-+			 */
-+			ret = div4_set_rate(clk, rate);
-+		if (ret < 0)
-+			goto esetrate;
-+	}
-+
-+esetrate:
-+	__clk_put(clk->parent);
-+	return ret;
-+}
-+
-+static long zclk_round_rate(struct clk *clk, unsigned long rate)
-+{
-+	unsigned long div_freq = div4_round_rate(clk, rate),
-+		parent_freq = clk_get_rate(clk->parent);
-+
-+	if (rate > div_freq && abs(parent_freq - rate) < rate - div_freq)
-+		return parent_freq;
-+
-+	return div_freq;
-+}
-+
-+static unsigned long zclk_recalc(struct clk *clk)
-+{
-+	/*
-+	 * Must recalculate frequencies in case PLL0 has been changed, even if
-+	 * the divisor is unused ATM!
-+	 */
-+	unsigned long div_freq = div4_recalc(clk);
-+
-+	if (__raw_readl(FRQCRB) & (1 << 28))
-+		return div_freq;
-+
-+	return clk_get_rate(clk->parent);
-+}
-+
-+static void zclk_extend(void)
-+{
-+	/* We extend the DIV4 clock with a 1:1 pass-through case */
-+	div4_set_rate = div4_clks[DIV4_Z].ops->set_rate;
-+	div4_round_rate = div4_clks[DIV4_Z].ops->round_rate;
-+	div4_recalc = div4_clks[DIV4_Z].ops->recalc;
-+	div4_clks[DIV4_Z].ops->set_rate = zclk_set_rate;
-+	div4_clks[DIV4_Z].ops->round_rate = zclk_round_rate;
-+	div4_clks[DIV4_Z].ops->recalc = zclk_recalc;
-+}
-+
- enum { DIV6_VCK1, DIV6_VCK2, DIV6_VCK3, DIV6_ZB1,
- 	DIV6_FLCTL, DIV6_SDHI0, DIV6_SDHI1, DIV6_SDHI2,
- 	DIV6_FSIA, DIV6_FSIB, DIV6_SUB,
-@@ -506,7 +590,7 @@ static struct clk *late_main_clks[] = {
- };
- 
- enum { MSTP001,
--	MSTP129, MSTP128, MSTP127, MSTP126, MSTP125, MSTP118, MSTP116, MSTP100,
-+	MSTP129, MSTP128, MSTP127, MSTP126, MSTP125, MSTP118, MSTP116, MSTP112, MSTP100,
- 	MSTP219, MSTP218, MSTP217,
- 	MSTP207, MSTP206, MSTP204, MSTP203, MSTP202, MSTP201, MSTP200,
- 	MSTP331, MSTP329, MSTP328, MSTP325, MSTP323, MSTP322,
-@@ -527,6 +611,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP125] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR1, 25, MSTPSR1, 0), /* TMU0 */
- 	[MSTP118] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 18, MSTPSR1, 0), /* DSITX0 */
- 	[MSTP116] = MSTP(&div4_clks[DIV4_HP], SMSTPCR1, 16, MSTPSR1, 0), /* IIC0 */
-+	[MSTP112] = MSTP(&div4_clks[DIV4_ZG], SMSTPCR1, 12, MSTPSR1, 0), /* SGX */
- 	[MSTP100] = MSTP(&div4_clks[DIV4_B], SMSTPCR1, 0, MSTPSR1, 0), /* LCDC0 */
- 	[MSTP219] = MSTP(&div6_clks[DIV6_SUB], SMSTPCR2, 19, MSTPSR2, 0), /* SCIFA7 */
- 	[MSTP218] = MSTP(&div4_clks[DIV4_HP], SMSTPCR2, 18, MSTPSR2, 0), /* SY-DMAC */
-@@ -569,6 +654,9 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("r_clk", &r_clk),
- 	CLKDEV_DEV_ID("smp_twd", &twd_clk), /* smp_twd */
- 
-+	/* DIV4 clocks */
-+	CLKDEV_DEV_ID("cpufreq-cpu0", &div4_clks[DIV4_Z]),
-+
- 	/* DIV6 clocks */
- 	CLKDEV_CON_ID("vck1_clk", &div6_clks[DIV6_VCK1]),
- 	CLKDEV_CON_ID("vck2_clk", &div6_clks[DIV6_VCK2]),
-@@ -660,8 +748,11 @@ void __init sh73a0_clock_init(void)
- 	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
- 		ret = clk_register(main_clks[k]);
- 
--	if (!ret)
-+	if (!ret) {
- 		ret = sh_clk_div4_register(div4_clks, DIV4_NR, &div4_table);
-+		if (!ret)
-+			zclk_extend();
-+	}
- 
- 	if (!ret)
- 		ret = sh_clk_div6_reparent_register(div6_clks, DIV6_NR);
+ 	/* IPSR8 */
+-	GPIO_FN(HSPI_CLK0), GPIO_FN(USB_OVC0), GPIO_FN(AD_CLK),
++	GPIO_FN(USB_OVC0), GPIO_FN(AD_CLK),
+ 	GPIO_FN(CC5_STATE4), GPIO_FN(CC5_STATE12), GPIO_FN(CC5_STATE20),
+-	GPIO_FN(CC5_STATE28), GPIO_FN(CC5_STATE36), GPIO_FN(HSPI_CS0),
++	GPIO_FN(CC5_STATE28), GPIO_FN(CC5_STATE36),
+ 	GPIO_FN(USB_OVC1), GPIO_FN(AD_DI),
+ 	GPIO_FN(CC5_STATE5), GPIO_FN(CC5_STATE13), GPIO_FN(CC5_STATE21),
+-	GPIO_FN(CC5_STATE29), GPIO_FN(CC5_STATE37), GPIO_FN(HSPI_TX0),
++	GPIO_FN(CC5_STATE29), GPIO_FN(CC5_STATE37),
+ 	GPIO_FN(CAN_DEBUG_HW_TRIGGER), GPIO_FN(AD_DO),
+ 	GPIO_FN(CC5_STATE6), GPIO_FN(CC5_STATE14), GPIO_FN(CC5_STATE22),
+-	GPIO_FN(CC5_STATE30), GPIO_FN(CC5_STATE38), GPIO_FN(HSPI_RX0),
++	GPIO_FN(CC5_STATE30), GPIO_FN(CC5_STATE38),
+ 	GPIO_FN(CAN_STEP0), GPIO_FN(AD_NCS), GPIO_FN(CC5_STATE7),
+ 	GPIO_FN(CC5_STATE15), GPIO_FN(CC5_STATE23), GPIO_FN(CC5_STATE31),
+ 	GPIO_FN(CC5_STATE39), GPIO_FN(FMCLK), GPIO_FN(RDS_CLK), GPIO_FN(PCMOE),
+@@ -2893,13 +2893,13 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(ARM_TRACEDATA_12), GPIO_FN(VI0_R3), GPIO_FN(ETH_MAGIC),
+ 	GPIO_FN(IRQ3), GPIO_FN(ARM_TRACEDATA_13),
+ 	GPIO_FN(VI0_R4), GPIO_FN(ETH_REFCLK),
+-	GPIO_FN(HSPI_CLK1_B), GPIO_FN(ARM_TRACEDATA_14), GPIO_FN(MT1_CLK),
++	GPIO_FN(ARM_TRACEDATA_14), GPIO_FN(MT1_CLK),
+ 	GPIO_FN(TS_SCK0), GPIO_FN(VI0_R5), GPIO_FN(ETH_TXD0),
+-	GPIO_FN(HSPI_CS1_B), GPIO_FN(ARM_TRACEDATA_15),
++	GPIO_FN(ARM_TRACEDATA_15),
+ 	GPIO_FN(MT1_D), GPIO_FN(TS_SDEN0), GPIO_FN(VI0_R6), GPIO_FN(ETH_MDC),
+-	GPIO_FN(DREQ2_C), GPIO_FN(HSPI_TX1_B), GPIO_FN(TRACECLK),
++	GPIO_FN(DREQ2_C), GPIO_FN(TRACECLK),
+ 	GPIO_FN(MT1_BEN), GPIO_FN(PWMFSW0_D), GPIO_FN(VI0_R7),
+-	GPIO_FN(ETH_MDIO), GPIO_FN(DACK2_C), GPIO_FN(HSPI_RX1_B),
++	GPIO_FN(ETH_MDIO), GPIO_FN(DACK2_C),
+ 	GPIO_FN(SCIF_CLK_D), GPIO_FN(TRACECTL), GPIO_FN(MT1_PEN),
+ 	GPIO_FN(VI1_CLK), GPIO_FN(SIM_D), GPIO_FN(SDA3), GPIO_FN(VI1_HSYNC),
+ 	GPIO_FN(VI3_CLK), GPIO_FN(SSI_SCK4), GPIO_FN(GPS_SIGN_C),
+@@ -2916,12 +2916,12 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(VI1_DATA3_VI1_B3), GPIO_FN(MT0_BEN),
+ 	GPIO_FN(SPV_TDO), GPIO_FN(ADICHS0_B), GPIO_FN(VI1_DATA4_VI1_B4),
+ 	GPIO_FN(MT0_PEN), GPIO_FN(SPA_TRST),
+-	GPIO_FN(HSPI_CLK1_D), GPIO_FN(ADICHS1_B), GPIO_FN(VI1_DATA5_VI1_B5),
++	GPIO_FN(ADICHS1_B), GPIO_FN(VI1_DATA5_VI1_B5),
+ 	GPIO_FN(MT0_SYNC), GPIO_FN(SPA_TCK),
+-	GPIO_FN(HSPI_CS1_D), GPIO_FN(ADICHS2_B), GPIO_FN(VI1_DATA6_VI1_B6),
++	GPIO_FN(ADICHS2_B), GPIO_FN(VI1_DATA6_VI1_B6),
+ 	GPIO_FN(MT0_VCXO), GPIO_FN(SPA_TMS),
+-	GPIO_FN(HSPI_TX1_D), GPIO_FN(VI1_DATA7_VI1_B7),
+-	GPIO_FN(MT0_PWM), GPIO_FN(SPA_TDI), GPIO_FN(HSPI_RX1_D),
++	GPIO_FN(VI1_DATA7_VI1_B7),
++	GPIO_FN(MT0_PWM), GPIO_FN(SPA_TDI),
+ 	GPIO_FN(VI1_G0), GPIO_FN(VI3_DATA0),
+ 	GPIO_FN(TS_SCK1), GPIO_FN(DREQ2_B), GPIO_FN(SPA_TDO),
+ 	GPIO_FN(HCTS0_B), GPIO_FN(VI1_G1), GPIO_FN(VI3_DATA1),
 -- 
-1.7.2.5
+1.7.10.4
 
