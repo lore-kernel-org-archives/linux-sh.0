@@ -1,108 +1,57 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 12:32:39 +0000
-Subject: [PATCH 29/43] ARM: shmobile: Update r8a7779 to use scu_power_mode()
-Message-Id: <1363609973-31086-30-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:47:35 +0000
+Subject: [PATCH 43/43] ARM: shmobile: fix kzm9g-reference compile breakage
+Message-Id: <1363607255-6385-44-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
+References: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Update the SMP code for R8A7779 to make use of the
-shared SCU function scu_power_mode() together with
-the early setup code in shmobile_secondary_vector_scu.
+Recently many pin function names have been removed, as their users have
+been switched to use pinctrl. However, kzm9g-reference has been left
+unchanged, which broke its compilation. Fix this by switching over to
+pinctrl.
 
-With this patch in place the secondary CPUs modify the
-SCU setting during early boot instead of letting other
-CPUs deal with the coherency setting before boot. In
-other words, we used to setup coherency before boot
-in r8a7779_boot_secondary() but that bit is now instead
-handled by the code in shmobile_secondary_vector_scu.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/smp-r8a7779.c |   32 +++++---------------------------
- 1 file changed, 5 insertions(+), 27 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7779.c |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/smp-r8a7779.c b/arch/arm/mach-shmobile/smp-r8a7779.c
-index 63c8db9..bdd3809 100644
---- a/arch/arm/mach-shmobile/smp-r8a7779.c
-+++ b/arch/arm/mach-shmobile/smp-r8a7779.c
-@@ -58,9 +58,6 @@ static struct r8a7779_pm_ch *r8a7779_ch_cpu[4] = {
- 	[3] = &r8a7779_ch_cpu3,
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index 0f66d35..d9edeaf 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -88,7 +88,7 @@ static struct clk div4_clks[DIV4_NR] = {
+ 
+ enum { MSTP323, MSTP322, MSTP321, MSTP320,
+ 	MSTP115,
+-	MSTP101, MSTP100,
++	MSTP103, MSTP101, MSTP100,
+ 	MSTP030,
+ 	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+ 	MSTP016, MSTP015, MSTP014,
+@@ -101,6 +101,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP321] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 21, 0), /* SDHI2 */
+ 	[MSTP320] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 20, 0), /* SDHI3 */
+ 	[MSTP115] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1, 15, 0), /* SATA */
++	[MSTP103] = SH_CLK_MSTP32(&div4_clks[DIV4_S], MSTPCR1,  3, 0), /* DU */
+ 	[MSTP101] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  1, 0), /* USB2 */
+ 	[MSTP100] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  0, 0), /* USB0/1 */
+ 	[MSTP030] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 30, 0), /* I2C0 */
+@@ -184,6 +185,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP320]), /* SDHI3 */
++	CLKDEV_DEV_ID("rcar-du.0", &mstp_clks[MSTP103]), /* DU */
  };
  
--static DEFINE_SPINLOCK(scu_lock);
--static unsigned long tmp;
--
- #ifdef CONFIG_HAVE_ARM_TWD
- static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, R8A7779_SCU_BASE + 0x600, 29);
- void __init r8a7779_register_twd(void)
-@@ -79,20 +76,6 @@ static int r8a7779_scu_psr_core_disabled(int cpu)
- 	return 0;
- }
- 
--static void modify_scu_cpu_psr(unsigned long set, unsigned long clr)
--{
--	void __iomem *scu_base = shmobile_scu_base;
--
--	spin_lock(&scu_lock);
--	tmp = __raw_readl(scu_base + 8);
--	tmp &= ~clr;
--	tmp |= set;
--	spin_unlock(&scu_lock);
--
--	/* disable cache coherency after releasing the lock */
--	__raw_writel(tmp, scu_base + 8);
--}
--
- static int r8a7779_platform_cpu_kill(unsigned int cpu)
- {
- 	struct r8a7779_pm_ch *ch = NULL;
-@@ -133,7 +116,7 @@ static void __maybe_unused r8a7779_cpu_die(unsigned int cpu)
- 	flush_cache_all();
- 
- 	/* disable cache coherency */
--	modify_scu_cpu_psr(3 << (cpu * 8), 0);
-+	scu_power_mode(shmobile_scu_base, SCU_PM_POWEROFF);
- 
- 	/* Endless loop until power off from r8a7779_cpu_kill() */
- 	while (1)
-@@ -158,9 +141,6 @@ static int __cpuinit r8a7779_boot_secondary(unsigned int cpu, struct task_struct
- 
- 	cpu = cpu_logical_map(cpu);
- 
--	/* enable cache coherency */
--	modify_scu_cpu_psr(0, 3 << (cpu * 8));
--
- 	if (cpu < ARRAY_SIZE(r8a7779_ch_cpu))
- 		ch = r8a7779_ch_cpu[cpu];
- 
-@@ -172,15 +152,13 @@ static int __cpuinit r8a7779_boot_secondary(unsigned int cpu, struct task_struct
- 
- static void __init r8a7779_smp_prepare_cpus(unsigned int max_cpus)
- {
--	int cpu = cpu_logical_map(0);
--
- 	scu_enable(shmobile_scu_base);
- 
--	/* Map the reset vector (in headsmp.S) */
--	__raw_writel(__pa(shmobile_secondary_vector), AVECR);
-+	/* Map the reset vector (in headsmp-scu.S) */
-+	__raw_writel(__pa(shmobile_secondary_vector_scu), AVECR);
- 
--	/* enable cache coherency on CPU0 */
--	modify_scu_cpu_psr(0, 3 << (cpu * 8));
-+	/* enable cache coherency on booting CPU */
-+	scu_power_mode(shmobile_scu_base, SCU_PM_NORMAL);
- 
- 	r8a7779_pm_init();
- 
+ void __init r8a7779_clock_init(void)
 -- 
 1.7.10.4
 
