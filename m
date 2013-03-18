@@ -1,21 +1,65 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 14 Mar 2013 14:59:39 +0000
-Subject: Re: [PATCH v4 16/88] sh-pfc: r8a7779: Add SCIF pin groups and functions
-Message-Id: <CACRpkdYFv7mWs8-82eYuryAAuRTQ1hVu1+KS9Kvv_u0hK++HSA@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:46:58 +0000
+Subject: [PATCH 06/43] ARM: shmobile: Remove emev2_get_core_count()
+Message-Id: <1363607255-6385-7-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363215633-4264-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1363215633-4264-17-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Mar 13, 2013 at 11:59 PM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
+From: Magnus Damm <damm@opensource.se>
 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Reduce the number of lines of code in smp-emev2.c
+by getting rid of the emev2_get_core_count() function.
 
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/smp-emev2.c |   21 ++++++++-------------
+ 1 file changed, 8 insertions(+), 13 deletions(-)
 
-Yours,
-Linus Walleij
+diff --git a/arch/arm/mach-shmobile/smp-emev2.c b/arch/arm/mach-shmobile/smp-emev2.c
+index 6427821..4ede413 100644
+--- a/arch/arm/mach-shmobile/smp-emev2.c
++++ b/arch/arm/mach-shmobile/smp-emev2.c
+@@ -50,18 +50,6 @@ static void modify_scu_cpu_psr(unsigned long set, unsigned long clr)
+ 
+ }
+ 
+-static unsigned int __init emev2_get_core_count(void)
+-{
+-	if (!scu_base) {
+-		scu_base = ioremap(EMEV2_SCU_BASE, PAGE_SIZE);
+-		emev2_clock_init(); /* need ioremapped SMU */
+-	}
+-
+-	WARN_ON_ONCE(!scu_base);
+-
+-	return scu_base ? scu_get_core_count(scu_base) : 1;
+-}
+-
+ static void __cpuinit emev2_secondary_init(unsigned int cpu)
+ {
+ 	gic_secondary_init(0);
+@@ -93,7 +81,14 @@ static void __init emev2_smp_prepare_cpus(unsigned int max_cpus)
+ 
+ static void __init emev2_smp_init_cpus(void)
+ {
+-	unsigned int ncores = emev2_get_core_count();
++	unsigned int ncores;
++
++	if (!scu_base) {
++		scu_base = ioremap(EMEV2_SCU_BASE, PAGE_SIZE);
++		emev2_clock_init(); /* need ioremapped SMU */
++	}
++
++	ncores = scu_base ? scu_get_core_count(scu_base) : 1;
+ 
+ 	shmobile_smp_init_cpus(ncores);
+ }
+-- 
+1.7.10.4
+
