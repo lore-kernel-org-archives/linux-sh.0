@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:07:10 +0000
-Subject: [PATCH 134/142] ARM: shmobile: r8a7740: Remove SDHI and MMCIF function GPIOs
-Message-Id: <1363604838-29359-135-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:05:01 +0000
+Subject: [PATCH 005/142] sh-pfc: Don't take the sh_pfc spinlock in sh_pfc_map_gpios()
+Message-Id: <1363604838-29359-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
@@ -12,67 +12,46 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
+The sh_pfc_map_gpios() function is only called at initialization time
+when no other task can access the sh_pfc fields. Don't protect the
+operation with a spinlock.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7740.h |   35 -------------------------
- 1 file changed, 35 deletions(-)
+ drivers/pinctrl/sh-pfc/pinctrl.c |    5 -----
+ 1 file changed, 5 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index 0c417da..c258361 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -307,26 +307,6 @@ enum {
- 	GPIO_FN_SIM_D_PORT22, /* SIM_D  Port 22/199 */
- 	GPIO_FN_SIM_D_PORT199,
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index 9bd0a83..4ce2753 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -334,7 +334,6 @@ static void sh_pfc_map_one_gpio(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx,
+ /* pinmux ranges -> pinctrl pin descs */
+ static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ {
+-	unsigned long flags;
+ 	int i;
  
--	/* SDHI0 */
--	GPIO_FN_SDHI0_D0,	GPIO_FN_SDHI0_D1,	GPIO_FN_SDHI0_D2,
--	GPIO_FN_SDHI0_D3,	GPIO_FN_SDHI0_CD,	GPIO_FN_SDHI0_WP,
--	GPIO_FN_SDHI0_CMD,	GPIO_FN_SDHI0_CLK,
--
--	/* SDHI1 */
--	GPIO_FN_SDHI1_D0,	GPIO_FN_SDHI1_D1,	GPIO_FN_SDHI1_D2,
--	GPIO_FN_SDHI1_D3,	GPIO_FN_SDHI1_CD,	GPIO_FN_SDHI1_WP,
--	GPIO_FN_SDHI1_CMD,	GPIO_FN_SDHI1_CLK,
--
--	/* SDHI2 */
--	GPIO_FN_SDHI2_D0,	GPIO_FN_SDHI2_D1,	GPIO_FN_SDHI2_D2,
--	GPIO_FN_SDHI2_D3,	GPIO_FN_SDHI2_CLK,	GPIO_FN_SDHI2_CMD,
--
--	GPIO_FN_SDHI2_CD_PORT24, /* MSEL5CR_19_0 */
--	GPIO_FN_SDHI2_WP_PORT25,
--
--	GPIO_FN_SDHI2_WP_PORT177, /* MSEL5CR_19_1 */
--	GPIO_FN_SDHI2_CD_PORT202,
--
- 	/* MSIOF2 */
- 	GPIO_FN_MSIOF2_TXD,	GPIO_FN_MSIOF2_RXD,	GPIO_FN_MSIOF2_TSCK,
- 	GPIO_FN_MSIOF2_SS2,	GPIO_FN_MSIOF2_TSYNC,	GPIO_FN_MSIOF2_SS1,
-@@ -378,21 +358,6 @@ enum {
- 	GPIO_FN_MEMC_DREQ1,
- 	GPIO_FN_MEMC_A0,
+ 	pmx->nr_pads = pfc->info->last_gpio - pfc->info->first_gpio + 1;
+@@ -346,8 +345,6 @@ static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ 		return -ENOMEM;
+ 	}
  
--	/* MMC */
--	GPIO_FN_MMC0_D0_PORT68,		GPIO_FN_MMC0_D1_PORT69,
--	GPIO_FN_MMC0_D2_PORT70,		GPIO_FN_MMC0_D3_PORT71,
--	GPIO_FN_MMC0_D4_PORT72,		GPIO_FN_MMC0_D5_PORT73,
--	GPIO_FN_MMC0_D6_PORT74,		GPIO_FN_MMC0_D7_PORT75,
--	GPIO_FN_MMC0_CLK_PORT66,
--	GPIO_FN_MMC0_CMD_PORT67,	/* MSEL4CR_15_0 */
+-	spin_lock_irqsave(&pfc->lock, flags);
 -
--	GPIO_FN_MMC1_D0_PORT149,	GPIO_FN_MMC1_D1_PORT148,
--	GPIO_FN_MMC1_D2_PORT147,	GPIO_FN_MMC1_D3_PORT146,
--	GPIO_FN_MMC1_D4_PORT145,	GPIO_FN_MMC1_D5_PORT144,
--	GPIO_FN_MMC1_D6_PORT143,	GPIO_FN_MMC1_D7_PORT142,
--	GPIO_FN_MMC1_CLK_PORT103,
--	GPIO_FN_MMC1_CMD_PORT104,	/* MSEL4CR_15_1 */
+ 	/*
+ 	 * We don't necessarily have a 1:1 mapping between pin and linux
+ 	 * GPIO number, as the latter maps to the associated enum_id.
+@@ -368,8 +365,6 @@ static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ 		sh_pfc_map_one_gpio(pfc, pmx, gpio, i);
+ 	}
+ 
+-	spin_unlock_irqrestore(&pfc->lock, flags);
 -
- 	/* MSIOF0 */
- 	GPIO_FN_MSIOF0_SS1,	GPIO_FN_MSIOF0_SS2,
- 	GPIO_FN_MSIOF0_RXD,	GPIO_FN_MSIOF0_TXD,
+ 	return 0;
+ }
+ 
 -- 
 1.7.10.4
 
