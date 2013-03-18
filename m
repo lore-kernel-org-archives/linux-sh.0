@@ -1,118 +1,251 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Mon, 04 Mar 2013 07:18:53 +0000
-Subject: [PATCH 3/5] ARM: shmobile: add R8A7778 intc support
-Message-Id: <87txorpr8m.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:05:51 +0000
+Subject: [PATCH 055/142] sh-pfc: sh7372: Add SDHCI and MMCIF pin groups and functions
+Message-Id: <1363604838-29359-56-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Based on v1.0 datasheet
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Add pin groups for all three SDHI interfaces and two alternative pin
+groups for the MMCIF interface on the sh7372 SoC.
+
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/Makefile              |    2 +-
- arch/arm/mach-shmobile/include/mach/common.h |    1 +
- arch/arm/mach-shmobile/intc-r8a7778.c        |   64 ++++++++++++++++++++++++++
- 3 files changed, 66 insertions(+), 1 deletion(-)
- create mode 100644 arch/arm/mach-shmobile/intc-r8a7778.c
+ drivers/pinctrl/sh-pfc/pfc-sh7372.c |  206 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 206 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index 0f50a3c..cc3ccff 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -9,7 +9,7 @@ obj-y				:= timer.o console.o clock.o
- obj-$(CONFIG_ARCH_SH7372)	+= setup-sh7372.o clock-sh7372.o intc-sh7372.o
- obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o clock-sh73a0.o intc-sh73a0.o
- obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o clock-r8a7740.o intc-r8a7740.o
--obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o clock-r8a7778.o
-+obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o clock-r8a7778.o intc-r8a7778.o
- obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o clock-r8a7779.o intc-r8a7779.o
- obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o clock-emev2.o
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+index 6b56344..cef4d6a 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+@@ -933,6 +933,207 @@ static struct sh_pfc_pin pinmux_pins[] = {
+ 	GPIO_PORT_ALL(),
+ };
  
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index e01fa1a..6921488 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -63,6 +63,7 @@ extern void r8a7778_earlytimer_init(void);
- extern void r8a7778_add_standard_devices(void);
- extern void r8a7778_map_io(void);
- extern void r8a7778_clock_init(void);
-+extern void r8a7778_init_irq(void);
++/* - MMCIF ------------------------------------------------------------------ */
++static const unsigned int mmc0_data1_0_pins[] = {
++	/* D[0] */
++	84,
++};
++static const unsigned int mmc0_data1_0_mux[] = {
++	MMCD0_0_MARK,
++};
++static const unsigned int mmc0_data4_0_pins[] = {
++	/* D[0:3] */
++	84, 85, 86, 87,
++};
++static const unsigned int mmc0_data4_0_mux[] = {
++	MMCD0_0_MARK, MMCD0_1_MARK, MMCD0_2_MARK, MMCD0_3_MARK,
++};
++static const unsigned int mmc0_data8_0_pins[] = {
++	/* D[0:7] */
++	84, 85, 86, 87, 88, 89, 90, 91,
++};
++static const unsigned int mmc0_data8_0_mux[] = {
++	MMCD0_0_MARK, MMCD0_1_MARK, MMCD0_2_MARK, MMCD0_3_MARK,
++	MMCD0_4_MARK, MMCD0_5_MARK, MMCD0_6_MARK, MMCD0_7_MARK,
++};
++static const unsigned int mmc0_ctrl_0_pins[] = {
++	/* CMD, CLK */
++	92, 99,
++};
++static const unsigned int mmc0_ctrl_0_mux[] = {
++	MMCCMD0_MARK, MMCCLK0_MARK,
++};
++
++static const unsigned int mmc0_data1_1_pins[] = {
++	/* D[0] */
++	54,
++};
++static const unsigned int mmc0_data1_1_mux[] = {
++	MMCD1_0_MARK,
++};
++static const unsigned int mmc0_data4_1_pins[] = {
++	/* D[0:3] */
++	54, 55, 56, 57,
++};
++static const unsigned int mmc0_data4_1_mux[] = {
++	MMCD1_0_MARK, MMCD1_1_MARK, MMCD1_2_MARK, MMCD1_3_MARK,
++};
++static const unsigned int mmc0_data8_1_pins[] = {
++	/* D[0:7] */
++	54, 55, 56, 57, 58, 59, 60, 61,
++};
++static const unsigned int mmc0_data8_1_mux[] = {
++	MMCD1_0_MARK, MMCD1_1_MARK, MMCD1_2_MARK, MMCD1_3_MARK,
++	MMCD1_4_MARK, MMCD1_5_MARK, MMCD1_6_MARK, MMCD1_7_MARK,
++};
++static const unsigned int mmc0_ctrl_1_pins[] = {
++	/* CMD, CLK */
++	67, 66,
++};
++static const unsigned int mmc0_ctrl_1_mux[] = {
++	MMCCMD1_MARK, MMCCLK1_MARK,
++};
++/* - SDHI0 ------------------------------------------------------------------ */
++static const unsigned int sdhi0_data1_pins[] = {
++	/* D0 */
++	173,
++};
++static const unsigned int sdhi0_data1_mux[] = {
++	SDHID0_0_MARK,
++};
++static const unsigned int sdhi0_data4_pins[] = {
++	/* D[0:3] */
++	173, 174, 175, 176,
++};
++static const unsigned int sdhi0_data4_mux[] = {
++	SDHID0_0_MARK, SDHID0_1_MARK, SDHID0_2_MARK, SDHID0_3_MARK,
++};
++static const unsigned int sdhi0_ctrl_pins[] = {
++	/* CMD, CLK */
++	177, 171,
++};
++static const unsigned int sdhi0_ctrl_mux[] = {
++	SDHICMD0_MARK, SDHICLK0_MARK,
++};
++static const unsigned int sdhi0_cd_pins[] = {
++	/* CD */
++	172,
++};
++static const unsigned int sdhi0_cd_mux[] = {
++	SDHICD0_MARK,
++};
++static const unsigned int sdhi0_wp_pins[] = {
++	/* WP */
++	178,
++};
++static const unsigned int sdhi0_wp_mux[] = {
++	SDHIWP0_MARK,
++};
++/* - SDHI1 ------------------------------------------------------------------ */
++static const unsigned int sdhi1_data1_pins[] = {
++	/* D0 */
++	180,
++};
++static const unsigned int sdhi1_data1_mux[] = {
++	SDHID1_0_MARK,
++};
++static const unsigned int sdhi1_data4_pins[] = {
++	/* D[0:3] */
++	180, 181, 182, 183,
++};
++static const unsigned int sdhi1_data4_mux[] = {
++	SDHID1_0_MARK, SDHID1_1_MARK, SDHID1_2_MARK, SDHID1_3_MARK,
++};
++static const unsigned int sdhi1_ctrl_pins[] = {
++	/* CMD, CLK */
++	184, 179,
++};
++static const unsigned int sdhi1_ctrl_mux[] = {
++	SDHICMD1_MARK, SDHICLK1_MARK,
++};
++
++static const unsigned int sdhi2_data1_pins[] = {
++	/* D0 */
++	186,
++};
++static const unsigned int sdhi2_data1_mux[] = {
++	SDHID2_0_MARK,
++};
++static const unsigned int sdhi2_data4_pins[] = {
++	/* D[0:3] */
++	186, 187, 188, 189,
++};
++static const unsigned int sdhi2_data4_mux[] = {
++	SDHID2_0_MARK, SDHID2_1_MARK, SDHID2_2_MARK, SDHID2_3_MARK,
++};
++static const unsigned int sdhi2_ctrl_pins[] = {
++	/* CMD, CLK */
++	190, 185,
++};
++static const unsigned int sdhi2_ctrl_mux[] = {
++	SDHICMD2_MARK, SDHICLK2_MARK,
++};
++
++static const struct sh_pfc_pin_group pinmux_groups[] = {
++	SH_PFC_PIN_GROUP(mmc0_data1_0),
++	SH_PFC_PIN_GROUP(mmc0_data4_0),
++	SH_PFC_PIN_GROUP(mmc0_data8_0),
++	SH_PFC_PIN_GROUP(mmc0_ctrl_0),
++	SH_PFC_PIN_GROUP(mmc0_data1_1),
++	SH_PFC_PIN_GROUP(mmc0_data4_1),
++	SH_PFC_PIN_GROUP(mmc0_data8_1),
++	SH_PFC_PIN_GROUP(mmc0_ctrl_1),
++	SH_PFC_PIN_GROUP(sdhi0_data1),
++	SH_PFC_PIN_GROUP(sdhi0_data4),
++	SH_PFC_PIN_GROUP(sdhi0_ctrl),
++	SH_PFC_PIN_GROUP(sdhi0_cd),
++	SH_PFC_PIN_GROUP(sdhi0_wp),
++	SH_PFC_PIN_GROUP(sdhi1_data1),
++	SH_PFC_PIN_GROUP(sdhi1_data4),
++	SH_PFC_PIN_GROUP(sdhi1_ctrl),
++	SH_PFC_PIN_GROUP(sdhi2_data1),
++	SH_PFC_PIN_GROUP(sdhi2_data4),
++	SH_PFC_PIN_GROUP(sdhi2_ctrl),
++};
++
++static const char * const mmc0_groups[] = {
++	"mmc0_data1_0",
++	"mmc0_data4_0",
++	"mmc0_data8_0",
++	"mmc0_ctrl_0",
++	"mmc0_data1_1",
++	"mmc0_data4_1",
++	"mmc0_data8_1",
++	"mmc0_ctrl_1",
++};
++
++static const char * const sdhi0_groups[] = {
++	"sdhi0_data1",
++	"sdhi0_data4",
++	"sdhi0_ctrl",
++	"sdhi0_cd",
++	"sdhi0_wp",
++};
++
++static const char * const sdhi1_groups[] = {
++	"sdhi1_data1",
++	"sdhi1_data4",
++	"sdhi1_ctrl",
++};
++
++static const char * const sdhi2_groups[] = {
++	"sdhi2_data1",
++	"sdhi2_data4",
++	"sdhi2_ctrl",
++};
++
++static const struct sh_pfc_function pinmux_functions[] = {
++	SH_PFC_FUNCTION(mmc0),
++	SH_PFC_FUNCTION(sdhi0),
++	SH_PFC_FUNCTION(sdhi1),
++	SH_PFC_FUNCTION(sdhi2),
++};
++
+ #define PINMUX_FN_BASE	ARRAY_SIZE(pinmux_pins)
  
- extern void r8a7779_init_delay(void);
- extern void r8a7779_init_irq(void);
-diff --git a/arch/arm/mach-shmobile/intc-r8a7778.c b/arch/arm/mach-shmobile/intc-r8a7778.c
-new file mode 100644
-index 0000000..afe9197
---- /dev/null
-+++ b/arch/arm/mach-shmobile/intc-r8a7778.c
-@@ -0,0 +1,64 @@
-+/*
-+ * r8a7778 processor support - INTC hardware block
-+ *
-+ * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-+ *
-+ * based on r8a7779
-+ *
-+ * Copyright (C) 2011  Renesas Solutions Corp.
-+ * Copyright (C) 2011  Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+ */
-+#include <linux/kernel.h>
-+#include <linux/init.h>
-+#include <linux/interrupt.h>
-+#include <linux/irq.h>
-+#include <linux/io.h>
-+#include <linux/irqchip/arm-gic.h>
-+#include <mach/common.h>
-+#include <mach/intc.h>
-+#include <mach/r8a7778.h>
-+#include <asm/mach-types.h>
-+#include <asm/mach/arch.h>
+ static const struct pinmux_func pinmux_func_gpios[] = {
+@@ -1644,6 +1845,11 @@ const struct sh_pfc_soc_info sh7372_pinmux_info = {
+ 
+ 	.pins = pinmux_pins,
+ 	.nr_pins = ARRAY_SIZE(pinmux_pins),
++	.groups = pinmux_groups,
++	.nr_groups = ARRAY_SIZE(pinmux_groups),
++	.functions = pinmux_functions,
++	.nr_functions = ARRAY_SIZE(pinmux_functions),
 +
-+#define INT2SMSKCR0 IOMEM(0xfe782288)
-+#define INT2SMSKCR1 IOMEM(0xfe78228c)
-+
-+#define INT2NTSR0 IOMEM(0xfe700018)
-+#define INT2NTSR1 IOMEM(0xfe70002c)
-+
-+static int r8a7778_set_wake(struct irq_data *data, unsigned int on)
-+{
-+	return 0; /* always allow wakeup */
-+}
-+
-+void __init r8a7778_init_irq(void)
-+{
-+	void __iomem *gic_dist_base = IOMEM(0xfe438000);
-+	void __iomem *gic_cpu_base = IOMEM(0xfe430000);
-+
-+	/* use GIC to handle interrupts */
-+	gic_init(0, 29, gic_dist_base, gic_cpu_base);
-+	gic_arch_extn.irq_set_wake = r8a7778_set_wake;
-+
-+	/* route all interrupts to ARM */
-+	__raw_writel(0x73ffffff, INT2NTSR0);
-+	__raw_writel(0xffffffff, INT2NTSR1);
-+
-+	/* unmask all known interrupts in INTCS2 */
-+	__raw_writel(0x08330773, INT2SMSKCR0);
-+	__raw_writel(0x00311110, INT2SMSKCR1);
-+}
+ 	.func_gpios = pinmux_func_gpios,
+ 	.nr_func_gpios = ARRAY_SIZE(pinmux_func_gpios),
+ 
 -- 
-1.7.9.5
+1.7.10.4
 
