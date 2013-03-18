@@ -1,24 +1,40 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 14 Mar 2013 15:06:59 +0000
-Subject: Re: [PATCH v4 68/88] sh-pfc: r8a7779: Remove INTC function GPIOS
-Message-Id: <CACRpkdZfEJUDBvUcRzoq-fqPD+4bc9n8Pz_XV43yzGkLkg539w@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 12:05:56 +0000
+Subject: [PATCH 12/14] ARM: shmobile: Make r8a7779 INTC irqpin platform data static
+Message-Id: <1363608358-24215-13-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363215633-4264-69-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1363215633-4264-69-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1363608358-24215-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363608358-24215-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Mar 14, 2013 at 12:00 AM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
+From: Magnus Damm <damm@opensource.se>
 
-> All r8a7779 platforms now use the pinctrl API to control the INTC pins,
-> the corresponding function GPIOS are unused. Remove them.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+The platform data for the INTC irq pin driver
+seems to be global symbols, make it static to
+allow multi-soc build.
 
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/intc-r8a7779.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Yours,
-Linus Walleij
+diff --git a/arch/arm/mach-shmobile/intc-r8a7779.c b/arch/arm/mach-shmobile/intc-r8a7779.c
+index fb0363c..b86dc89 100644
+--- a/arch/arm/mach-shmobile/intc-r8a7779.c
++++ b/arch/arm/mach-shmobile/intc-r8a7779.c
+@@ -42,7 +42,7 @@
+ #define INT2NTSR0 IOMEM(0xfe700060)
+ #define INT2NTSR1 IOMEM(0xfe700064)
+ 
+-struct renesas_intc_irqpin_config irqpin0_platform_data = {
++static struct renesas_intc_irqpin_config irqpin0_platform_data = {
+ 	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
+ 	.sense_bitfield_width = 2,
+ };
+-- 
+1.7.10.4
+
