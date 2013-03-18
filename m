@@ -1,53 +1,59 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 06 Mar 2013 13:47:00 +0000
-Subject: [PATCH v2 21/39] ARM: shmobile: kzm9g: Register pinctrl mappings for FSI
-Message-Id: <1362577638-15493-22-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:05:35 +0000
+Subject: [PATCH 039/142] sh: sh7786: Add pin control resources
+Message-Id: <1363604838-29359-40-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Replace the GPIO-based FSI pinmux configuration by pinctrl mappings.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+Add memory resources for the pin control platform device to let the
+sh-pfc driver ioremap() registers properly instead of evily casting
+register physical addresses to virtual addresses.
+
+The memory resource address range has been extracted from the config and
+data registes lists in the sh-pfc driver.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-kzm9g.c | 15 ++++++++-------
- 1 file changed, 8 insertions(+), 7 deletions(-)
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c |   14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index d54cc35..68f67c2 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -601,6 +601,14 @@ static struct platform_device *kzm_devices[] __initdata = {
- };
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
+index 3061778..9a45955 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7786.c
+@@ -13,13 +13,23 @@
+  * for more details.
+  */
  
- static const struct pinctrl_map kzm_pinctrl_map[] = {
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_fsi2.0", "pfc-sh73a0",
-+				  "fsia_mclk_in", "fsia"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_fsi2.0", "pfc-sh73a0",
-+				  "fsia_sclk_in", "fsia"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_fsi2.0", "pfc-sh73a0",
-+				  "fsia_data_in", "fsia"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_fsi2.0", "pfc-sh73a0",
-+				  "fsia_data_out", "fsia"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.3", "pfc-sh73a0",
- 				  "i2c3_1", "i2c3"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
-@@ -724,13 +732,6 @@ static void __init kzm_init(void)
- 	gpio_request(GPIO_FN_SDHICLK2,		NULL);
- 	gpio_request_one(14, GPIOF_OUT_INIT_HIGH, NULL); /* power */
++#include <linux/bug.h>
+ #include <linux/init.h>
+ #include <linux/kernel.h>
++#include <linux/ioport.h>
+ #include <cpu/pfc.h>
  
--	/* enable FSI2 port A (ak4648) */
--	gpio_request(GPIO_FN_FSIACK,	NULL);
--	gpio_request(GPIO_FN_FSIAILR,	NULL);
--	gpio_request(GPIO_FN_FSIAIBT,	NULL);
--	gpio_request(GPIO_FN_FSIAISLD,	NULL);
--	gpio_request(GPIO_FN_FSIAOSLD,	NULL);
++static struct resource sh7786_pfc_resources[] = {
++	[0] = {
++		.start	= 0xffcc0000,
++		.end	= 0xffcc008f,
++		.flags	= IORESOURCE_MEM,
++	},
++};
++
+ static int __init plat_pinmux_setup(void)
+ {
+-	return sh_pfc_register("pfc-sh7786", NULL, 0);
++	return sh_pfc_register("pfc-sh7786", sh7786_pfc_resources,
++			       ARRAY_SIZE(sh7786_pfc_resources));
+ }
 -
- 	/* enable USB */
- 	gpio_request(GPIO_FN_VBUS_0,	NULL);
- 
+ arch_initcall(plat_pinmux_setup);
 -- 
-1.8.1.5
+1.7.10.4
 
