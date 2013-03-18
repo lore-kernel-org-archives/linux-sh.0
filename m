@@ -1,55 +1,103 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Mar 2013 22:59:52 +0000
-Subject: [PATCH v4 47/88] ARM: shmobile: marzen: Register pinctrl mappings for USB
-Message-Id: <1363215633-4264-48-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:04:58 +0000
+Subject: [PATCH 002/142] sh-pfc: Don't define the per-device pinctrl struct instances as global
+Message-Id: <1363604838-29359-3-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Replace the GPIO-based USB pinmux configuration by pinctrl mappings.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+The pinctrl_desc and pinctrl_gpio_range structures registered with the
+pinctrl core are per-device instances. Move them to the dynamically
+allocated sh_pfc_pinctrl structure and initialize them at runtime.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/arm/mach-shmobile/board-marzen.c | 17 +++++++++--------
- 1 file changed, 9 insertions(+), 8 deletions(-)
+ drivers/pinctrl/sh-pfc/pinctrl.c |   40 +++++++++++++++++---------------------
+ 1 file changed, 18 insertions(+), 22 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index 8871af3..04bcf88 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -347,6 +347,15 @@ static const struct pinctrl_map marzen_pinctrl_map[] = {
- 				  "sdhi0_cd", "sdhi0"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
- 				  "sdhi0_wp", "sdhi0"),
-+	/* USB0 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform.0", "pfc-r8a7779",
-+				  "usb0", "usb0"),
-+	/* USB1 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform.0", "pfc-r8a7779",
-+				  "usb1", "usb1"),
-+	/* USB2 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform.1", "pfc-r8a7779",
-+				  "usb2", "usb2"),
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index 887930e..d113746 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -27,6 +27,9 @@
+ 
+ struct sh_pfc_pinctrl {
+ 	struct pinctrl_dev *pctl;
++	struct pinctrl_desc pctl_desc;
++	struct pinctrl_gpio_range range;
++
+ 	struct sh_pfc *pfc;
+ 
+ 	struct pinmux_gpio **functions;
+@@ -314,19 +317,6 @@ static const struct pinconf_ops sh_pfc_pinconf_ops = {
+ 	.pin_config_dbg_show	= sh_pfc_pinconf_dbg_show,
  };
  
- static void __init marzen_init(void)
-@@ -364,14 +373,6 @@ static void __init marzen_init(void)
- 	gpio_request(GPIO_FN_EX_CS0, NULL); /* nCS */
- 	gpio_request(GPIO_FN_IRQ1_B, NULL); /* IRQ + PME */
+-static struct pinctrl_gpio_range sh_pfc_gpio_range = {
+-	.name		= DRV_NAME,
+-	.id		= 0,
+-};
+-
+-static struct pinctrl_desc sh_pfc_pinctrl_desc = {
+-	.name		= DRV_NAME,
+-	.owner		= THIS_MODULE,
+-	.pctlops	= &sh_pfc_pinctrl_ops,
+-	.pmxops		= &sh_pfc_pinmux_ops,
+-	.confops	= &sh_pfc_pinconf_ops,
+-};
+-
+ static void sh_pfc_map_one_gpio(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx,
+ 				struct pinmux_gpio *gpio, unsigned offset)
+ {
+@@ -386,9 +376,6 @@ static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
  
--	/* USB (CN21) */
--	gpio_request(GPIO_FN_USB_OVC0, NULL);
--	gpio_request(GPIO_FN_USB_OVC1, NULL);
--	gpio_request(GPIO_FN_USB_OVC2, NULL);
+ 	spin_unlock_irqrestore(&pfc->lock, flags);
+ 
+-	sh_pfc_pinctrl_desc.pins = pmx->pads;
+-	sh_pfc_pinctrl_desc.npins = pmx->nr_pads;
 -
--	/* USB (CN22) */
--	gpio_request(GPIO_FN_USB_PENC2, NULL);
--
- 	r8a7779_add_standard_devices();
- 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
+ 	return 0;
+ }
+ 
+@@ -438,16 +425,25 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ 	if (unlikely(ret != 0))
+ 		return ret;
+ 
+-	pmx->pctl = pinctrl_register(&sh_pfc_pinctrl_desc, pfc->dev, pmx);
++	pmx->pctl_desc.name = DRV_NAME;
++	pmx->pctl_desc.owner = THIS_MODULE;
++	pmx->pctl_desc.pctlops = &sh_pfc_pinctrl_ops;
++	pmx->pctl_desc.pmxops = &sh_pfc_pinmux_ops;
++	pmx->pctl_desc.confops = &sh_pfc_pinconf_ops;
++	pmx->pctl_desc.pins = pmx->pads;
++	pmx->pctl_desc.npins = pmx->nr_pads;
++
++	pmx->pctl = pinctrl_register(&pmx->pctl_desc, pfc->dev, pmx);
+ 	if (IS_ERR(pmx->pctl))
+ 		return PTR_ERR(pmx->pctl);
+ 
+-	sh_pfc_gpio_range.npins = pfc->info->last_gpio
+-				- pfc->info->first_gpio + 1;
+-	sh_pfc_gpio_range.base = pfc->info->first_gpio;
+-	sh_pfc_gpio_range.pin_base = pfc->info->first_gpio;
++	pmx->range.name = DRV_NAME,
++	pmx->range.id = 0;
++	pmx->range.npins = pfc->info->last_gpio - pfc->info->first_gpio + 1;
++	pmx->range.base = pfc->info->first_gpio;
++	pmx->range.pin_base = pfc->info->first_gpio;
+ 
+-	pinctrl_add_gpio_range(pmx->pctl, &sh_pfc_gpio_range);
++	pinctrl_add_gpio_range(pmx->pctl, &pmx->range);
+ 
+ 	return 0;
  }
 -- 
-1.8.1.5
+1.7.10.4
 
