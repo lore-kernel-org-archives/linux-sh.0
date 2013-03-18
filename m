@@ -1,248 +1,49 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 11:01:21 +0000
-Subject: [PATCH v3 01/64] sh-pfc: sh7372: Add SDHCI and MMCIF pin groups and functions
-Message-Id: <1362740544-19164-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 18 Mar 2013 15:09:53 +0000
+Subject: [PATCH 00/03] ARM: shmobile: r8a73a4 APE6EVM board support V2
+Message-Id: <20130318150953.28231.73454.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+ARM: shmobile: r8a73a4 APE6EVM board support V2
 
-Add pin groups for all three SDHI interfaces and two alternative pin
-groups for the MMCIF interface on the sh7372 SoC.
+[PATCH 01/03] ARM: shmobile: APE6EVM base support V2
+[PATCH 02/03] ARM: shmobile: APE6EVM PFC support
+[PATCH 03/03] ARM: shmobile: APE6EVM LAN9220 support
 
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This series is V2 of initial support for the APE6EVM board.
+
+The APE6EVM board makes use of the r8a73a4 SoC and has a
+couple of different I/O devices on board, but with this
+series only support for the SCIFA0 UART and the Ethernet
+chip is included.
+
+In the future support for more I/O devices will be added as
+incremental feature patches.
+
+Changes since V1:
+- Went from single patch to series
+- Use ape6evm_add_standard_devices() to setup SoC devices and clocks
+- Use PFC to configure SCIFA0
+- Add Ethernet support including PFC support
+
+For more details please see the individual patches.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh7372.c | 205 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 205 insertions(+)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-index 847e0cd..01fcfd3 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-@@ -933,6 +933,206 @@ static struct sh_pfc_pin pinmux_pins[] = {
- 	GPIO_PORT_ALL(),
- };
+ Written against "next" renesas.git 811689afc214564c4a5f238ecf4d8bdc0e52b615
  
-+static const unsigned int mmc0_data1_0_pins[] = {
-+	/* D[0] */
-+	84,
-+};
-+static const unsigned int mmc0_data1_0_mux[] = {
-+	MMCD0_0_MARK,
-+};
-+static const unsigned int mmc0_data4_0_pins[] = {
-+	/* D[0:3] */
-+	84, 85, 86, 87,
-+};
-+static const unsigned int mmc0_data4_0_mux[] = {
-+	MMCD0_0_MARK, MMCD0_1_MARK, MMCD0_2_MARK, MMCD0_3_MARK,
-+};
-+static const unsigned int mmc0_data8_0_pins[] = {
-+	/* D[0:7] */
-+	84, 85, 86, 87, 88, 89, 90, 91,
-+};
-+static const unsigned int mmc0_data8_0_mux[] = {
-+	MMCD0_0_MARK, MMCD0_1_MARK, MMCD0_2_MARK, MMCD0_3_MARK,
-+	MMCD0_4_MARK, MMCD0_5_MARK, MMCD0_6_MARK, MMCD0_7_MARK,
-+};
-+static const unsigned int mmc0_ctrl_0_pins[] = {
-+	/* CMD, CLK */
-+	92, 99,
-+};
-+static const unsigned int mmc0_ctrl_0_mux[] = {
-+	MMCCMD0_MARK, MMCCLK0_MARK,
-+};
-+
-+static const unsigned int mmc0_data1_1_pins[] = {
-+	/* D[0] */
-+	54,
-+};
-+static const unsigned int mmc0_data1_1_mux[] = {
-+	MMCD1_0_MARK,
-+};
-+static const unsigned int mmc0_data4_1_pins[] = {
-+	/* D[0:3] */
-+	54, 55, 56, 57,
-+};
-+static const unsigned int mmc0_data4_1_mux[] = {
-+	MMCD1_0_MARK, MMCD1_1_MARK, MMCD1_2_MARK, MMCD1_3_MARK,
-+};
-+static const unsigned int mmc0_data8_1_pins[] = {
-+	/* D[0:7] */
-+	54, 55, 56, 57, 58, 59, 60, 61,
-+};
-+static const unsigned int mmc0_data8_1_mux[] = {
-+	MMCD1_0_MARK, MMCD1_1_MARK, MMCD1_2_MARK, MMCD1_3_MARK,
-+	MMCD1_4_MARK, MMCD1_5_MARK, MMCD1_6_MARK, MMCD1_7_MARK,
-+};
-+static const unsigned int mmc0_ctrl_1_pins[] = {
-+	/* CMD, CLK */
-+	67, 66,
-+};
-+static const unsigned int mmc0_ctrl_1_mux[] = {
-+	MMCCMD1_MARK, MMCCLK1_MARK,
-+};
-+
-+static const unsigned int sdhi0_data1_pins[] = {
-+	/* D0 */
-+	173,
-+};
-+static const unsigned int sdhi0_data1_mux[] = {
-+	SDHID0_0_MARK,
-+};
-+static const unsigned int sdhi0_data4_pins[] = {
-+	/* D[0:3] */
-+	173, 174, 175, 176,
-+};
-+static const unsigned int sdhi0_data4_mux[] = {
-+	SDHID0_0_MARK, SDHID0_1_MARK, SDHID0_2_MARK, SDHID0_3_MARK,
-+};
-+static const unsigned int sdhi0_ctrl_pins[] = {
-+	/* CMD, CLK */
-+	177, 171,
-+};
-+static const unsigned int sdhi0_ctrl_mux[] = {
-+	SDHICMD0_MARK, SDHICLK0_MARK,
-+};
-+static const unsigned int sdhi0_cd_pins[] = {
-+	/* CD */
-+	172,
-+};
-+static const unsigned int sdhi0_cd_mux[] = {
-+	SDHICD0_MARK,
-+};
-+static const unsigned int sdhi0_wp_pins[] = {
-+	/* WP */
-+	178,
-+};
-+static const unsigned int sdhi0_wp_mux[] = {
-+	SDHIWP0_MARK,
-+};
-+
-+static const unsigned int sdhi1_data1_pins[] = {
-+	/* D0 */
-+	180,
-+};
-+static const unsigned int sdhi1_data1_mux[] = {
-+	SDHID1_0_MARK,
-+};
-+static const unsigned int sdhi1_data4_pins[] = {
-+	/* D[0:3] */
-+	180, 181, 182, 183,
-+};
-+static const unsigned int sdhi1_data4_mux[] = {
-+	SDHID1_0_MARK, SDHID1_1_MARK, SDHID1_2_MARK, SDHID1_3_MARK,
-+};
-+static const unsigned int sdhi1_ctrl_pins[] = {
-+	/* CMD, CLK */
-+	184, 179,
-+};
-+static const unsigned int sdhi1_ctrl_mux[] = {
-+	SDHICMD1_MARK, SDHICLK1_MARK,
-+};
-+
-+static const unsigned int sdhi2_data1_pins[] = {
-+	/* D0 */
-+	186,
-+};
-+static const unsigned int sdhi2_data1_mux[] = {
-+	SDHID2_0_MARK,
-+};
-+static const unsigned int sdhi2_data4_pins[] = {
-+	/* D[0:3] */
-+	186, 187, 188, 189,
-+};
-+static const unsigned int sdhi2_data4_mux[] = {
-+	SDHID2_0_MARK, SDHID2_1_MARK, SDHID2_2_MARK, SDHID2_3_MARK,
-+};
-+static const unsigned int sdhi2_ctrl_pins[] = {
-+	/* CMD, CLK */
-+	190, 185,
-+};
-+static const unsigned int sdhi2_ctrl_mux[] = {
-+	SDHICMD2_MARK, SDHICLK2_MARK,
-+};
-+
-+static const struct sh_pfc_pin_group pinmux_groups[] = {
-+	SH_PFC_PIN_GROUP(mmc0_data1_0),
-+	SH_PFC_PIN_GROUP(mmc0_data4_0),
-+	SH_PFC_PIN_GROUP(mmc0_data8_0),
-+	SH_PFC_PIN_GROUP(mmc0_ctrl_0),
-+	SH_PFC_PIN_GROUP(mmc0_data1_1),
-+	SH_PFC_PIN_GROUP(mmc0_data4_1),
-+	SH_PFC_PIN_GROUP(mmc0_data8_1),
-+	SH_PFC_PIN_GROUP(mmc0_ctrl_1),
-+	SH_PFC_PIN_GROUP(sdhi0_data1),
-+	SH_PFC_PIN_GROUP(sdhi0_data4),
-+	SH_PFC_PIN_GROUP(sdhi0_ctrl),
-+	SH_PFC_PIN_GROUP(sdhi0_cd),
-+	SH_PFC_PIN_GROUP(sdhi0_wp),
-+	SH_PFC_PIN_GROUP(sdhi1_data1),
-+	SH_PFC_PIN_GROUP(sdhi1_data4),
-+	SH_PFC_PIN_GROUP(sdhi1_ctrl),
-+	SH_PFC_PIN_GROUP(sdhi2_data1),
-+	SH_PFC_PIN_GROUP(sdhi2_data4),
-+	SH_PFC_PIN_GROUP(sdhi2_ctrl),
-+};
-+
-+static const char * const mmc0_groups[] = {
-+	"mmc0_data1_0",
-+	"mmc0_data4_0",
-+	"mmc0_data8_0",
-+	"mmc0_ctrl_0",
-+	"mmc0_data1_1",
-+	"mmc0_data4_1",
-+	"mmc0_data8_1",
-+	"mmc0_ctrl_1",
-+};
-+
-+static const char * const sdhi0_groups[] = {
-+	"sdhi0_data1",
-+	"sdhi0_data4",
-+	"sdhi0_ctrl",
-+	"sdhi0_cd",
-+	"sdhi0_wp",
-+};
-+
-+static const char * const sdhi1_groups[] = {
-+	"sdhi1_data1",
-+	"sdhi1_data4",
-+	"sdhi1_ctrl",
-+};
-+
-+static const char * const sdhi2_groups[] = {
-+	"sdhi2_data1",
-+	"sdhi2_data4",
-+	"sdhi2_ctrl",
-+};
-+
-+static const struct sh_pfc_function pinmux_functions[] = {
-+	SH_PFC_FUNCTION(mmc0),
-+	SH_PFC_FUNCTION(sdhi0),
-+	SH_PFC_FUNCTION(sdhi1),
-+	SH_PFC_FUNCTION(sdhi2),
-+};
-+
- #define PINMUX_FN_BASE	ARRAY_SIZE(pinmux_pins)
- 
- static struct pinmux_func pinmux_func_gpios[] = {
-@@ -1644,6 +1844,11 @@ struct sh_pfc_soc_info sh7372_pinmux_info = {
- 
- 	.pins = pinmux_pins,
- 	.nr_pins = ARRAY_SIZE(pinmux_pins),
-+	.groups = pinmux_groups,
-+	.nr_groups = ARRAY_SIZE(pinmux_groups),
-+	.functions = pinmux_functions,
-+	.nr_functions = ARRAY_SIZE(pinmux_functions),
-+
- 	.func_gpios = pinmux_func_gpios,
- 	.nr_func_gpios = ARRAY_SIZE(pinmux_func_gpios),
- 
--- 
-1.8.1.5
+ Depends on the following two series:
+ [PATCH 00/04] ARM: shmobile: r8a73a4 SoC support V2
+ [PATCH 00/02] sh-pfc: Initial r8a73a4 PFC support
 
+ arch/arm/boot/dts/Makefile             |    1 
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts  |   47 ++++++++++++++++
+ arch/arm/mach-shmobile/Kconfig         |   10 +++
+ arch/arm/mach-shmobile/Makefile        |    1 
+ arch/arm/mach-shmobile/board-ape6evm.c |   89 ++++++++++++++++++++++++++++++++
+ 5 files changed, 147 insertions(+), 1 deletion(-)
