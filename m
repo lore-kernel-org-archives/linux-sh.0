@@ -1,54 +1,69 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Mar 2013 22:39:20 +0000
-Subject: [PATCH 01/25] sh: sh7203: Add pin control resources
-Message-Id: <1363214384-3870-2-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:06:00 +0000
+Subject: [PATCH 064/142] sh-pfc: sh73a0: Add USB pin groups and functions
+Message-Id: <1363604838-29359-65-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add memory resources for the pin control platform device to let the
-sh-pfc driver ioremap() registers properly instead of evily casting
-register physical addresses to virtual addresses.
-
-The memory resource address range has been extracted from the config and
-data registes lists in the sh-pfc driver.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c | 13 ++++++++++++-
- 1 file changed, 12 insertions(+), 1 deletion(-)
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c |   14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
 
-diff --git a/arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c b/arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c
-index 96c6c26..eef17dc 100644
---- a/arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c
-+++ b/arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c
-@@ -8,12 +8,23 @@
-  * for more details.
-  */
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index 76674af..61c682a 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -2909,6 +2909,14 @@ static const unsigned int sdhi2_ctrl_pins[] = {
+ static const unsigned int sdhi2_ctrl_mux[] = {
+ 	SDHICMD2_MARK, SDHICLK2_MARK,
+ };
++/* - USB -------------------------------------------------------------------- */
++static const unsigned int usb_vbus_pins[] = {
++	/* VBUS */
++	0,
++};
++static const unsigned int usb_vbus_mux[] = {
++	VBUS_0_MARK,
++};
  
-+#include <linux/bug.h>
- #include <linux/init.h>
- #include <linux/kernel.h>
-+#include <linux/ioport.h>
- #include <cpu/pfc.h>
+ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(bsc_data_0_7),
+@@ -3050,6 +3058,7 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
+ 	SH_PFC_PIN_GROUP(sdhi2_data1),
+ 	SH_PFC_PIN_GROUP(sdhi2_data4),
+ 	SH_PFC_PIN_GROUP(sdhi2_ctrl),
++	SH_PFC_PIN_GROUP(usb_vbus),
+ };
  
-+static struct resource sh7203_pfc_resources[] = {
-+	[0] = {
-+		.start	= 0xfffe3800,
-+		.end	= 0xfffe3a9f,
-+		.flags	= IORESOURCE_MEM,
-+	},
+ static const char * const bsc_groups[] = {
+@@ -3259,6 +3268,10 @@ static const char * const sdhi2_groups[] = {
+ 	"sdhi2_ctrl",
+ };
+ 
++static const char * const usb_groups[] = {
++	"usb_vbus",
 +};
 +
- static int __init plat_pinmux_setup(void)
- {
--	return sh_pfc_register("pfc-sh7203", NULL, 0);
-+	return sh_pfc_register("pfc-sh7203", sh7203_pfc_resources,
-+			       ARRAY_SIZE(sh7203_pfc_resources));
- }
- arch_initcall(plat_pinmux_setup);
+ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(bsc),
+ 	SH_PFC_FUNCTION(fsia),
+@@ -3283,6 +3296,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
+ 	SH_PFC_FUNCTION(sdhi0),
+ 	SH_PFC_FUNCTION(sdhi1),
+ 	SH_PFC_FUNCTION(sdhi2),
++	SH_PFC_FUNCTION(usb),
+ };
+ 
+ #define PINMUX_FN_BASE	GPIO_FN_VBUS_0
 -- 
-1.8.1.5
+1.7.10.4
 
