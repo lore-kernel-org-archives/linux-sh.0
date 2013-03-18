@@ -1,24 +1,81 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 14 Mar 2013 15:05:52 +0000
-Subject: Re: [PATCH v4 64/88] sh-pfc: r8a7779: Remove SCIF function GPIOS
-Message-Id: <CACRpkdZSkk+N7ggBcSdV1dLvgBcS5r=0A2hu5x6zPeaMyvvnRA@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:47:04 +0000
+Subject: [PATCH 12/43] ARM: shmobile: Rework EMEV2 scu_base variable
+Message-Id: <1363607255-6385-13-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363215633-4264-65-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1363215633-4264-65-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Mar 14, 2013 at 12:00 AM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
+From: Magnus Damm <damm@opensource.se>
 
-> All r8a7779 platforms now use the pinctrl API to control the SCIF pins,
-> the corresponding function GPIOS are unused. Remove them.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Rename the static scu_base variable into shmobile_scu_base.
 
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Later in the series the shmobile_scu_base variable will be
+made into a global variable so this is preparation only.
 
-Yours,
-Linus Walleij
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/smp-emev2.c |   15 ++++++++-------
+ 1 file changed, 8 insertions(+), 7 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/smp-emev2.c b/arch/arm/mach-shmobile/smp-emev2.c
+index 4ede413..136867e 100644
+--- a/arch/arm/mach-shmobile/smp-emev2.c
++++ b/arch/arm/mach-shmobile/smp-emev2.c
+@@ -32,8 +32,9 @@
+ 
+ #define EMEV2_SCU_BASE 0x1e000000
+ 
++static void __iomem *shmobile_scu_base;
++
+ static DEFINE_SPINLOCK(scu_lock);
+-static void __iomem *scu_base;
+ 
+ static void modify_scu_cpu_psr(unsigned long set, unsigned long clr)
+ {
+@@ -42,10 +43,10 @@ static void modify_scu_cpu_psr(unsigned long set, unsigned long clr)
+ 	/* we assume this code is running on a different cpu
+ 	 * than the one that is changing coherency setting */
+ 	spin_lock(&scu_lock);
+-	tmp = readl(scu_base + 8);
++	tmp = readl(shmobile_scu_base + 8);
+ 	tmp &= ~clr;
+ 	tmp |= set;
+-	writel(tmp, scu_base + 8);
++	writel(tmp, shmobile_scu_base + 8);
+ 	spin_unlock(&scu_lock);
+ 
+ }
+@@ -70,7 +71,7 @@ static void __init emev2_smp_prepare_cpus(unsigned int max_cpus)
+ {
+ 	int cpu = cpu_logical_map(0);
+ 
+-	scu_enable(scu_base);
++	scu_enable(shmobile_scu_base);
+ 
+ 	/* Tell ROM loader about our vector (in headsmp.S) */
+ 	emev2_set_boot_vector(__pa(shmobile_secondary_vector));
+@@ -83,12 +84,12 @@ static void __init emev2_smp_init_cpus(void)
+ {
+ 	unsigned int ncores;
+ 
+-	if (!scu_base) {
+-		scu_base = ioremap(EMEV2_SCU_BASE, PAGE_SIZE);
++	if (!shmobile_scu_base) {
++		shmobile_scu_base = ioremap(EMEV2_SCU_BASE, PAGE_SIZE);
+ 		emev2_clock_init(); /* need ioremapped SMU */
+ 	}
+ 
+-	ncores = scu_base ? scu_get_core_count(scu_base) : 1;
++	ncores = shmobile_scu_base ? scu_get_core_count(shmobile_scu_base) : 1;
+ 
+ 	shmobile_smp_init_cpus(ncores);
+ }
+-- 
+1.7.10.4
+
