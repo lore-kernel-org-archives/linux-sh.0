@@ -1,25 +1,51 @@
-From: Paul Mundt <lethal@linux-sh.org>
-Date: Tue, 12 Mar 2013 07:57:47 +0000
-Subject: Re: [PATCH] sh: remove references to CPU_SUBTYPE_SH7764
-Message-Id: <20130312075747.GB3553@linux-sh.org>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:59:38 +0000
+Subject: [PATCH 11/13] ARM: shmobile: kzm9g: Trim reference DT_MACHINE_START
+Message-Id: <1363607980-22153-12-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363002940.3137.65.camel@x61.thuisdomein>
-In-Reply-To: <1363002940.3137.65.camel@x61.thuisdomein>
+References: <1363607980-22153-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363607980-22153-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Paul Bolle <pebolle@tiscali.nl>
-Cc: linux-sh@vger.kernel.org, netdev@vger.kernel.org, linux-kernel@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Mon, Mar 11, 2013 at 12:55:40PM +0100, Paul Bolle wrote:
-> Since release v2.6.29 the tree has a few references to the Kconfig
-> symbol CPU_SUBTYPE_SH7764 and the Kconfig macro
-> CONFIG_CPU_SUBTYPE_SH7764. But the actual symbol CPU_SUBTYPE_SH7764 was
-> never added to the tree. Perhaps no one noticed because these references
-> were never used alone. Anyhow, these references serve no purpose and
-> can be removed.
-> 
-> Signed-off-by: Paul Bolle <pebolle@tiscali.nl>
+Remove .init_late and .restart from DT_MACHINE_START
+for kzm9g reference as these are not necessary to
+bring the board up which is the main aim of kzm9g reference.
 
-Looks fine, I suspect Iwamatsu-san let this trickle in from some vendor
-branch given that these are all his drivers. I'll queue it up, thanks.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |    9 ---------
+ 1 file changed, 9 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index 4da3501..e93473c 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -91,13 +91,6 @@ static void __init kzm_init(void)
+ #endif
+ }
+ 
+-static void kzm9g_restart(char mode, const char *cmd)
+-{
+-#define RESCNT2 IOMEM(0xe6188020)
+-	/* Do soft power on reset */
+-	writel((1 << 31), RESCNT2);
+-}
+-
+ static const char *kzm9g_boards_compat_dt[] __initdata = {
+ 	"renesas,kzm9g-reference",
+ 	NULL,
+@@ -110,8 +103,6 @@ DT_MACHINE_START(KZM9G_DT, "kzm9g-reference")
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+ 	.init_irq	= irqchip_init,
+ 	.init_machine	= kzm_init,
+-	.init_late	= shmobile_init_late,
+ 	.init_time	= shmobile_timer_init,
+-	.restart	= kzm9g_restart,
+ 	.dt_compat	= kzm9g_boards_compat_dt,
+ MACHINE_END
+-- 
+1.7.10.4
+
