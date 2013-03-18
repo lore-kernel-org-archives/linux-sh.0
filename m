@@ -1,52 +1,60 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 06 Mar 2013 12:52:23 +0000
-Subject: [PATCH v3 02/29] sh-pfc: Declare operation structures as const
-Message-Id: <1362574370-17889-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:05:36 +0000
+Subject: [PATCH 040/142] sh: shx3: Add pin control resources
+Message-Id: <1363604838-29359-41-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The pinconf, pinctrl and pinmux operation structures hold function
-pointers that are never modified. Declare them as const.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+Add memory resources for the pin control platform device to let the
+sh-pfc driver ioremap() registers properly instead of evily casting
+register physical addresses to virtual addresses.
+
+The memory resource address range has been extracted from the config and
+data registes lists in the sh-pfc driver.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/pinctrl/sh-pfc/pinctrl.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ arch/sh/kernel/cpu/sh4a/pinmux-shx3.c |   17 ++++++++++++++---
+ 1 file changed, 14 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
-index 11e0e13..887930e 100644
---- a/drivers/pinctrl/sh-pfc/pinctrl.c
-+++ b/drivers/pinctrl/sh-pfc/pinctrl.c
-@@ -70,7 +70,7 @@ static void sh_pfc_pin_dbg_show(struct pinctrl_dev *pctldev, struct seq_file *s,
- 	seq_printf(s, "%s", DRV_NAME);
- }
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c b/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
+index ace84ac..444bf25 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-shx3.c
+@@ -7,12 +7,23 @@
+  * License.  See the file "COPYING" in the main directory of this archive
+  * for more details.
+  */
++#include <linux/bug.h>
+ #include <linux/init.h>
+ #include <linux/kernel.h>
++#include <linux/ioport.h>
+ #include <cpu/pfc.h>
  
--static struct pinctrl_ops sh_pfc_pinctrl_ops = {
-+static const struct pinctrl_ops sh_pfc_pinctrl_ops = {
- 	.get_groups_count	= sh_pfc_get_groups_count,
- 	.get_group_name		= sh_pfc_get_group_name,
- 	.get_group_pins		= sh_pfc_get_group_pins,
-@@ -252,7 +252,7 @@ static int sh_pfc_gpio_set_direction(struct pinctrl_dev *pctldev,
- 	return sh_pfc_reconfig_pin(pmx->pfc, offset, type);
+-static int __init shx3_pinmux_setup(void)
++static struct resource shx3_pfc_resources[] = {
++	[0] = {
++		.start	= 0xffc70000,
++		.end	= 0xffc7001f,
++		.flags	= IORESOURCE_MEM,
++	},
++};
++
++static int __init plat_pinmux_setup(void)
+ {
+-	return sh_pfc_register("pfc-shx3", NULL, 0);
++	return sh_pfc_register("pfc-shx3", shx3_pfc_resources,
++			       ARRAY_SIZE(shx3_pfc_resources));
  }
- 
--static struct pinmux_ops sh_pfc_pinmux_ops = {
-+static const struct pinmux_ops sh_pfc_pinmux_ops = {
- 	.get_functions_count	= sh_pfc_get_functions_count,
- 	.get_function_name	= sh_pfc_get_function_name,
- 	.get_function_groups	= sh_pfc_get_function_groups,
-@@ -308,7 +308,7 @@ static void sh_pfc_pinconf_dbg_show(struct pinctrl_dev *pctldev,
- 	seq_printf(s, " %s", pinmux_type_str[config]);
- }
- 
--static struct pinconf_ops sh_pfc_pinconf_ops = {
-+static const struct pinconf_ops sh_pfc_pinconf_ops = {
- 	.pin_config_get		= sh_pfc_pinconf_get,
- 	.pin_config_set		= sh_pfc_pinconf_set,
- 	.pin_config_dbg_show	= sh_pfc_pinconf_dbg_show,
+-arch_initcall(shx3_pinmux_setup);
++arch_initcall(plat_pinmux_setup);
 -- 
-1.8.1.5
+1.7.10.4
 
