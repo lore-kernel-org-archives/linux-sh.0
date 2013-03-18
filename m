@@ -1,102 +1,82 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Thu, 14 Mar 2013 14:35:43 +0000
-Subject: [PATCH v2 0/3] R-Car Display Unit DRM driver
-Message-Id: <1363271746-9806-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:06:34 +0000
+Subject: [PATCH 098/142] ARM: shmobile: marzen: Register pinctrl mappings for SDHI and MMCIF
+Message-Id: <1363604838-29359-99-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: dri-devel@lists.freedesktop.org, linux-sh@vger.kernel.org
-Cc: Simon Horman <horms@verge.net.au>
+To: linux-arm-kernel@lists.infradead.org
 
-Hello,
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Here's the second version of the Renesas R-Car Display Unit (DU) DRM driver.
+Replace the GPIO-based SDHI and MMCIF pinmux configuration by pinctrl
+mappings
 
-The DU features two superposition processors (modeled as CRTCs) and eight
-planes that can be shared between the superposition processors.
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+---
+ arch/arm/mach-shmobile/board-marzen.c |   25 +++++++++++++++----------
+ 1 file changed, 15 insertions(+), 10 deletions(-)
 
-The driver supports the superposition processors, all eight planes and all
-hardware supported formats except 8-bit indexed color mode and 32-bit RGB666
-mode (that would be [31:0] x:R:x:G:x:B:x 8:6:2:6:2:6:2 little endian, not
-supported by DRM at the moment).
-
-On the output side only sync master non-interlaced modes are currently
-supported. Both the VGA and the LVDS outputs have been tested.
-
-Platform data are subject to change with the common display framework. This is
-why I haven't implemented DT bindings yet.
-
-Changes since v1:
-
- - Use drm_encoder_cleanup() directly as .destroy handlers
- - Enable alpha blending support
- - Don't re-reserve hardware plane at each update
- - Fix planes allocation for multiplanar formats
- - Add DRM PRIME support
- - Fix race condition between page flip request and handler
- - Add configurable z-order support for planes
- - Support configurable color keying for planes
- - Update plane format after releasing hardware planes
- - Fix register access for global registers
- - Fix plane index wrap-around for multi-planar overlays
-
-Please note that this version depends on the GEM CMA DRM PRIME patches I have
-previously sent to the dri-devel mailing list.
-
-I've included necessary arch/ modifications to allow easy testing. The r8a7779
-clock patch should already be on its way to mainline, the Marzen board code
-will be resubmitted separately through the ARM tree after the DU driver gets
-pulled in the DRM tree.
-
-Laurent Pinchart (2):
-  drm: Renesas R-Car Display Unit DRM driver
-  ARM: shmobile: marzen: Add Display Unit support
-
-Phil Edworthy (1):
-  r8a7779: Add Display Unit clock support
-
- arch/arm/configs/marzen_defconfig       |   2 +
- arch/arm/mach-shmobile/board-marzen.c   |  65 +++++
- arch/arm/mach-shmobile/clock-r8a7779.c  |   4 +-
- drivers/gpu/drm/Kconfig                 |   2 +
- drivers/gpu/drm/Makefile                |   1 +
- drivers/gpu/drm/rcar-du/Kconfig         |   9 +
- drivers/gpu/drm/rcar-du/Makefile        |   8 +
- drivers/gpu/drm/rcar-du/rcar_du_crtc.c  | 499 ++++++++++++++++++++++++++++++++
- drivers/gpu/drm/rcar-du/rcar_du_crtc.h  |  48 +++
- drivers/gpu/drm/rcar-du/rcar_du_drv.c   | 270 +++++++++++++++++
- drivers/gpu/drm/rcar-du/rcar_du_drv.h   |  59 ++++
- drivers/gpu/drm/rcar-du/rcar_du_kms.c   | 163 +++++++++++
- drivers/gpu/drm/rcar-du/rcar_du_kms.h   |  33 +++
- drivers/gpu/drm/rcar-du/rcar_du_lvds.c  | 242 ++++++++++++++++
- drivers/gpu/drm/rcar-du/rcar_du_lvds.h  |  25 ++
- drivers/gpu/drm/rcar-du/rcar_du_plane.c | 444 ++++++++++++++++++++++++++++
- drivers/gpu/drm/rcar-du/rcar_du_plane.h |  61 ++++
- drivers/gpu/drm/rcar-du/rcar_du_regs.h  | 443 ++++++++++++++++++++++++++++
- drivers/gpu/drm/rcar-du/rcar_du_vga.c   | 188 ++++++++++++
- drivers/gpu/drm/rcar-du/rcar_du_vga.h   |  24 ++
- include/linux/platform_data/rcar-du.h   |  51 ++++
- 21 files changed, 2640 insertions(+), 1 deletion(-)
- create mode 100644 drivers/gpu/drm/rcar-du/Kconfig
- create mode 100644 drivers/gpu/drm/rcar-du/Makefile
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_crtc.c
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_crtc.h
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_drv.c
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_drv.h
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_kms.c
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_kms.h
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_lvds.c
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_lvds.h
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_plane.c
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_plane.h
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_regs.h
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_vga.c
- create mode 100644 drivers/gpu/drm/rcar-du/rcar_du_vga.h
- create mode 100644 include/linux/platform_data/rcar-du.h
-
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index fec49eb..f00677f 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -27,6 +27,7 @@
+ #include <linux/io.h>
+ #include <linux/gpio.h>
+ #include <linux/dma-mapping.h>
++#include <linux/pinctrl/machine.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/smsc911x.h>
+@@ -327,6 +328,18 @@ void __init marzen_init_late(void)
+ 			     ARRAY_SIZE(marzen_late_devices));
+ }
+ 
++static const struct pinctrl_map marzen_pinctrl_map[] = {
++	/* SDHI0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
++				  "sdhi0_data4", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
++				  "sdhi0_ctrl", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
++				  "sdhi0_cd", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
++				  "sdhi0_wp", "sdhi0"),
++};
++
+ static void __init marzen_init(void)
+ {
+ 	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
+@@ -334,6 +347,8 @@ static void __init marzen_init(void)
+ 	regulator_register_fixed(1, dummy_supplies,
+ 				ARRAY_SIZE(dummy_supplies));
+ 
++	pinctrl_register_mappings(marzen_pinctrl_map,
++				  ARRAY_SIZE(marzen_pinctrl_map));
+ 	r8a7779_pinmux_init();
+ 
+ 	/* SCIF2 (CN18: DEBUG0) */
+@@ -348,16 +363,6 @@ static void __init marzen_init(void)
+ 	gpio_request(GPIO_FN_EX_CS0, NULL); /* nCS */
+ 	gpio_request(GPIO_FN_IRQ1_B, NULL); /* IRQ + PME */
+ 
+-	/* SD0 (CN20) */
+-	gpio_request(GPIO_FN_SD0_CLK, NULL);
+-	gpio_request(GPIO_FN_SD0_CMD, NULL);
+-	gpio_request(GPIO_FN_SD0_DAT0, NULL);
+-	gpio_request(GPIO_FN_SD0_DAT1, NULL);
+-	gpio_request(GPIO_FN_SD0_DAT2, NULL);
+-	gpio_request(GPIO_FN_SD0_DAT3, NULL);
+-	gpio_request(GPIO_FN_SD0_CD, NULL);
+-	gpio_request(GPIO_FN_SD0_WP, NULL);
+-
+ 	/* HSPI 0 */
+ 	gpio_request(GPIO_FN_HSPI_CLK0,	NULL);
+ 	gpio_request(GPIO_FN_HSPI_CS0,	NULL);
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.10.4
 
