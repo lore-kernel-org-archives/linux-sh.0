@@ -1,99 +1,56 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Fri, 08 Mar 2013 11:29:41 +0000
-Subject: [PATCH v2 7/7] ARM: mach-shmobile: r8a7740: Setup the timer CMT10 using DT
-Message-Id: <1362742181-19111-8-git-send-email-hechtb+renesas@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:05:30 +0000
+Subject: [PATCH 034/142] sh: sh7722: Add pin control resources
+Message-Id: <1363604838-29359-35-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1362742181-19111-1-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1362742181-19111-1-git-send-email-hechtb+renesas@gmail.com>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-We can now use the Device Tree for bringing up our timer device CMT10 on
-the SoC r8a7740.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+Add memory resources for the pin control platform device to let the
+sh-pfc driver ioremap() registers properly instead of evily casting
+register physical addresses to virtual addresses.
+
+The memory resource address range has been extracted from the config and
+data registes lists in the sh-pfc driver.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-v2: new
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c |   14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
 
-I can rebase this on topic/intc-of if wanted.
-
- arch/arm/boot/dts/r8a7740.dtsi         |   11 +++++++++++
- arch/arm/mach-shmobile/setup-r8a7740.c |   33 --------------------------------
- 2 files changed, 11 insertions(+), 33 deletions(-)
-
-diff --git a/arch/arm/boot/dts/r8a7740.dtsi b/arch/arm/boot/dts/r8a7740.dtsi
-index 798fa35..72f4c80 100644
---- a/arch/arm/boot/dts/r8a7740.dtsi
-+++ b/arch/arm/boot/dts/r8a7740.dtsi
-@@ -18,4 +18,15 @@
- 			compatible = "arm,cortex-a9";
- 		};
- 	};
-+
-+	timer@e6138010 {
-+		compatible = "renesas,cmt-timer";
-+		interrupt-parent = <&intca>;
-+		reg = <0xe6138010 0xc>;
-+		interrupts = <0x0b00>;
-+		renesas,device-id = <1>;
-+		renesas,channel-id = <0>;
-+		renesas,source-quality = <3>;
-+		renesas,event-quality = <3>;
-+	};
- };
-diff --git a/arch/arm/mach-shmobile/setup-r8a7740.c b/arch/arm/mach-shmobile/setup-r8a7740.c
-index 30ac79c..9db61a6 100644
---- a/arch/arm/mach-shmobile/setup-r8a7740.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7740.c
-@@ -255,38 +255,6 @@ static struct platform_device scifb_device = {
- 	},
- };
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c
+index d9bcc42..271bbc8 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c
+@@ -1,10 +1,20 @@
++#include <linux/bug.h>
+ #include <linux/init.h>
+ #include <linux/kernel.h>
++#include <linux/ioport.h>
+ #include <cpu/pfc.h>
  
--/* CMT */
--static struct sh_timer_config cmt10_platform_data = {
--	.name = "CMT10",
--	.channel_offset = 0x10,
--	.timer_bit = 0,
--	.clockevent_rating = 125,
--	.clocksource_rating = 125,
--};
++static struct resource sh7722_pfc_resources[] = {
++	[0] = {
++		.start	= 0xa4050100,
++		.end	= 0xa405018f,
++		.flags	= IORESOURCE_MEM,
++	},
++};
++
+ static int __init plat_pinmux_setup(void)
+ {
+-	return sh_pfc_register("pfc-sh7722", NULL, 0);
++	return sh_pfc_register("pfc-sh7722", sh7722_pfc_resources,
++			       ARRAY_SIZE(sh7722_pfc_resources));
+ }
 -
--static struct resource cmt10_resources[] = {
--	[0] = {
--		.name	= "CMT10",
--		.start	= 0xe6138010,
--		.end	= 0xe613801b,
--		.flags	= IORESOURCE_MEM,
--	},
--	[1] = {
--		.start	= evt2irq(0x0b00),
--		.flags	= IORESOURCE_IRQ,
--	},
--};
--
--static struct platform_device cmt10_device = {
--	.name		= "sh_cmt",
--	.id		= 10,
--	.dev = {
--		.platform_data	= &cmt10_platform_data,
--	},
--	.resource	= cmt10_resources,
--	.num_resources	= ARRAY_SIZE(cmt10_resources),
--};
--
- /* TMU */
- static struct sh_timer_config tmu00_platform_data = {
- 	.name = "TMU00",
-@@ -388,7 +356,6 @@ static struct platform_device *r8a7740_early_devices[] __initdata = {
- 	&scif6_device,
- 	&scif7_device,
- 	&scifb_device,
--	&cmt10_device,
- 	&tmu00_device,
- 	&tmu01_device,
- 	&tmu02_device,
+ arch_initcall(plat_pinmux_setup);
 -- 
-1.7.9.5
+1.7.10.4
 
