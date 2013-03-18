@@ -1,68 +1,76 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Mar 2013 23:00:14 +0000
-Subject: [PATCH v4 69/88] ARM: shmobile: sh7372: Remove SDHI and MMCIF function GPIOs
-Message-Id: <1363215633-4264-70-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:06:24 +0000
+Subject: [PATCH 088/142] ARM: shmobile: kota2: Register pinctrl mappings for KEYSC
+Message-Id: <1363604838-29359-89-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+Replace the GPIO-based KEYSC pinmux configuration by pinctrl mappings.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/include/mach/sh7372.h | 29 ----------------------------
- 1 file changed, 29 deletions(-)
+ arch/arm/mach-shmobile/board-kota2.c |   34 +++++++++++++++-------------------
+ 1 file changed, 15 insertions(+), 19 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
-index b582fac..7ded4eb 100644
---- a/arch/arm/mach-shmobile/include/mach/sh7372.h
-+++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
-@@ -294,21 +294,6 @@ enum {
- 	GPIO_FN_D12_NAF12,	GPIO_FN_D13_NAF13,	GPIO_FN_D14_NAF14,
- 	GPIO_FN_D15_NAF15,
+diff --git a/arch/arm/mach-shmobile/board-kota2.c b/arch/arm/mach-shmobile/board-kota2.c
+index 7fa71f5..3f36557 100644
+--- a/arch/arm/mach-shmobile/board-kota2.c
++++ b/arch/arm/mach-shmobile/board-kota2.c
+@@ -440,6 +440,21 @@ static unsigned long pin_pullup_conf[] = {
+ };
  
--	/*
--	 * MMCIF(1)		(PORT 84, 85, 86, 87, 88, 89,
--	 *			      90, 91, 92, 99)
--	 */
--	GPIO_FN_MMCD0_0,	GPIO_FN_MMCD0_1,	GPIO_FN_MMCD0_2,
--	GPIO_FN_MMCD0_3,	GPIO_FN_MMCD0_4,	GPIO_FN_MMCD0_5,
--	GPIO_FN_MMCD0_6,	GPIO_FN_MMCD0_7,
--	GPIO_FN_MMCCMD0,	GPIO_FN_MMCCLK0,
--
--	/* MMCIF(2)		(PORT 54, 55, 56, 57, 58, 59, 60, 61, 66, 67) */
--	GPIO_FN_MMCD1_0,	GPIO_FN_MMCD1_1,	GPIO_FN_MMCD1_2,
--	GPIO_FN_MMCD1_3,	GPIO_FN_MMCD1_4,	GPIO_FN_MMCD1_5,
--	GPIO_FN_MMCD1_6,	GPIO_FN_MMCD1_7,
--	GPIO_FN_MMCCLK1,	GPIO_FN_MMCCMD1,
--
- 	/* SPU2		(PORT 65) */
- 	GPIO_FN_VINT_I,
+ static const struct pinctrl_map kota2_pinctrl_map[] = {
++	/* KEYSC */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_keysc.0", "pfc-sh73a0",
++				  "keysc_in8", "keysc"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_keysc.0", "pfc-sh73a0",
++				  "keysc_out04", "keysc"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_keysc.0", "pfc-sh73a0",
++				  "keysc_out5", "keysc"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_keysc.0", "pfc-sh73a0",
++				  "keysc_out6_0", "keysc"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_keysc.0", "pfc-sh73a0",
++				  "keysc_out7_0", "keysc"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_keysc.0", "pfc-sh73a0",
++				  "keysc_out8_0", "keysc"),
++	PIN_MAP_CONFIGS_GROUP_DEFAULT("sh_keysc.0", "pfc-sh73a0",
++				      "keysc_in8", pin_pullup_conf),
+ 	/* MMCIF */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
+ 				  "mmc0_data8_0", "mmc0"),
+@@ -524,25 +539,6 @@ static void __init kota2_init(void)
+ 	gpio_request_one(144, GPIOF_IN, NULL); /* PINTA2 */
+ 	gpio_request_one(145, GPIOF_OUT_INIT_HIGH, NULL); /* RESET */
  
-@@ -416,20 +401,6 @@ enum {
- 	/* HDMI		(PORT 169, 170) */
- 	GPIO_FN_HDMI_HPD,	GPIO_FN_HDMI_CEC,
+-	/* KEYSC */
+-	gpio_request(GPIO_FN_KEYIN0_PU, NULL);
+-	gpio_request(GPIO_FN_KEYIN1_PU, NULL);
+-	gpio_request(GPIO_FN_KEYIN2_PU, NULL);
+-	gpio_request(GPIO_FN_KEYIN3_PU, NULL);
+-	gpio_request(GPIO_FN_KEYIN4_PU, NULL);
+-	gpio_request(GPIO_FN_KEYIN5_PU, NULL);
+-	gpio_request(GPIO_FN_KEYIN6_PU, NULL);
+-	gpio_request(GPIO_FN_KEYIN7_PU, NULL);
+-	gpio_request(GPIO_FN_KEYOUT0, NULL);
+-	gpio_request(GPIO_FN_KEYOUT1, NULL);
+-	gpio_request(GPIO_FN_KEYOUT2, NULL);
+-	gpio_request(GPIO_FN_KEYOUT3, NULL);
+-	gpio_request(GPIO_FN_KEYOUT4, NULL);
+-	gpio_request(GPIO_FN_KEYOUT5, NULL);
+-	gpio_request(GPIO_FN_PORT59_KEYOUT6, NULL);
+-	gpio_request(GPIO_FN_PORT58_KEYOUT7, NULL);
+-	gpio_request(GPIO_FN_KEYOUT8, NULL);
+-
+ 	/* MMCIF */
+ 	gpio_request_one(208, GPIOF_OUT_INIT_HIGH, NULL); /* Reset */
  
--	/* SDHI0	(PORT 171, 172, 173, 174, 175, 176, 177, 178) */
--	GPIO_FN_SDHICLK0,	GPIO_FN_SDHICD0,
--	GPIO_FN_SDHICMD0,	GPIO_FN_SDHIWP0,
--	GPIO_FN_SDHID0_0,	GPIO_FN_SDHID0_1,
--	GPIO_FN_SDHID0_2,	GPIO_FN_SDHID0_3,
--
--	/* SDHI1	(PORT 179, 180, 181, 182, 183, 184) */
--	GPIO_FN_SDHICLK1,	GPIO_FN_SDHICMD1,	GPIO_FN_SDHID1_0,
--	GPIO_FN_SDHID1_1,	GPIO_FN_SDHID1_2,	GPIO_FN_SDHID1_3,
--
--	/* SDHI2	(PORT 185, 186, 187, 188, 189, 190) */
--	GPIO_FN_SDHICLK2,	GPIO_FN_SDHICMD2,	GPIO_FN_SDHID2_0,
--	GPIO_FN_SDHID2_1,	GPIO_FN_SDHID2_2,	GPIO_FN_SDHID2_3,
--
- 	/* SDENC	see MSEL4CR 19 */
- 	GPIO_FN_SDENC_CPG,
- 	GPIO_FN_SDENC_DV_CLKI,
 -- 
-1.8.1.5
+1.7.10.4
 
