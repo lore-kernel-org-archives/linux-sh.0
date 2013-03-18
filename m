@@ -1,95 +1,52 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 27 Mar 2013 11:47:49 +0000
-Subject: Re: [PATCH/RFC] ARM: shmobile: Disallow PINCTRL without GPIOLIB
-Message-Id: <20130327114749.GK413@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:47:22 +0000
+Subject: [PATCH 30/43] ARM: shmobile: Use sh73a0-specific cpu disable code
+Message-Id: <1363607255-6385-31-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130318135818.23765.51686.sendpatchset@w520>
- <7840344.mRAPGty7WD@avalon>
- <CANqRtoR+xVFx6ytvjcHxNcQ3X=avXs49-pR-XCr7ApqOq_WFRQ@mail.gmail.com>
- <21658140.49USZQOU99@avalon>
-In-Reply-To: <21658140.49USZQOU99@avalon>
+References: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Mar 26, 2013 at 04:23:58PM +0100, Laurent Pinchart wrote:
-> Hi Magnus,
-> 
-> On Tuesday 26 March 2013 13:04:25 Magnus Damm wrote:
-> > On Thu, Mar 21, 2013 at 12:28 AM, Laurent Pinchart wrote:
-> > > On Monday 18 March 2013 22:58:18 Magnus Damm wrote:
-> > >> From: Magnus Damm <damm@opensource.se>
-> > >> 
-> > >> Modify mach-shmobile to only select PINCTRL in case of
-> > >> ARCH_WANT_OPTIONAL_GPIOLIB is set.
-> > >> 
-> > >> This fixes a build error triggered when adding a new SoC
-> > >> 
-> > >> lacking GPIO software support (ARCH_WANT_OPTIONAL_GPIOLIB=n):
-> > >>  CC      drivers/tty/vt/keyboard.o
-> > >> 
-> > >> In file included from drivers/pinctrl/core.c:30:0:
-> > >> include/asm-generic/gpio.h: In function 'gpio_get_value_cansleep':
-> > >> include/asm-generic/gpio.h:270:2: error: implicit declaration of function
-> > >> '__gpio_get_value'
-> > >> include/asm-generic/gpio.h: In function 'gpio_set_value_cansleep':
-> > >> include/asm-generic/gpio.h:276:2: error: implicit declaration of function
-> > >> '__gpio_set_value'
-> > >> drivers/pinctrl/core.c: In function 'pinctrl_ready_for_gpio_range':
-> > >> drivers/pinctrl/core.c:297:9: error: implicit declaration of function
-> > >> 'gpio_to_chip'
-> > >> drivers/pinctrl/core.c:297:27: warning: initialization makes pointer from
-> > >> integer without a cast
-> > >> drivers/pinctrl/core.c:304:45: error: dereferencing pointer to incomplete
-> > >> type
-> > >> drivers/pinctrl/core.c:305:26: error: dereferencing pointer to incomplete
-> > >> type
-> > >> drivers/pinctrl/core.c:305:39: error: dereferencing pointer to incomplete
-> > >> type
-> > >> make[2]: *** [drivers/pinctrl/core.o] Error 1
-> > >> make[1]: *** [drivers/pinctrl] Error 2
-> > >> make[1]: *** Waiting for unfinished jobs....
-> > >> 
-> > >>   LD      drivers/sh/built-in.o
-> > >> 
-> > >> Signed-off-by: Magnus Damm <damm@opensource.se>
-> > >> 
-> > >> ---
-> > >> 
-> > >>  Using renesas.git "next" 811689afc214564c4a5f238ecf4d8bdc0e52b615
-> > >>  
-> > >>  Trigger using the r8a73a4 patches that lack GPIO and PFC support.
-> > >>  
-> > >>  I am more than happy to replace this patch with something cleaner.
-> > > 
-> > > If I'm not mistaken your patch fixes the compilation breakage by
-> > > unselecting PINCTRL and making it possible no to select GPIOLIB. I'm fine
-> > > with that as an interim solution, but I wonder whether we shouldn't just
-> > > force PINCTRL and GPIOLIB for ARCH_SHMOBILE at some point.
-> > 
-> > Thanks for your comments. I'm quite fine with any approach myself. My
-> > main concern is to have to the mach-shmobile code in a state so it is
-> > possible to add SoC support incrementally and start without any PFC or
-> > GPIO and then add them one by one. Or add them together. Please note
-> > that EMEV2 supports GPIO but not yet PINCTRL.
-> 
-> Right. In that case your patch is fine.
-> 
-> > About this issue, the fact that selecting PINCTRL without GPIO results
-> > in compile error makes me think that something needs slight adjustment
-> > in the PFC code.
-> 
-> The above errors come from the pinctrl core (although the PFC driver might not 
-> compile either in this case). Linus, what's your opinion on this ? Do we want 
-> to support systems with pinctrl but without gpiolib ?
-> 
-> > Or perhaps PINCTRL without GPIO isn't a valid combination? But if so, why do
-> > we have separate Kconfig entries?
+From: Magnus Damm <damm@opensource.se>
 
-I am currently planning to apply this patch to the soc branch
-of the renesas tree as Magnus's "[PATCH 00/04] ARM: shmobile: r8a73a4 SoC
-support V3" series depends on it and I'd rather not block that series.
+Convert the sh73a0 CPU Hotplug code to use a local
+implementation of ->cpu_disable(). With this change
+in place the sh73a0 SMP code does no longer depend
+on hotplug.c.
 
-I realise that this patch is a temporary fix. A more permanent
-solution can be based on top of it.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/smp-sh73a0.c |    7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
+index 593f8de..5ae502b 100644
+--- a/arch/arm/mach-shmobile/smp-sh73a0.c
++++ b/arch/arm/mach-shmobile/smp-sh73a0.c
+@@ -124,6 +124,11 @@ static void sh73a0_cpu_die(unsigned int cpu)
+ 	/* Enter shutdown mode */
+ 	cpu_do_idle();
+ }
++
++static int sh73a0_cpu_disable(unsigned int cpu)
++{
++	return 0; /* CPU0 and CPU1 supported */
++}
+ #endif /* CONFIG_HOTPLUG_CPU */
+ 
+ struct smp_operations sh73a0_smp_ops __initdata = {
+@@ -134,6 +139,6 @@ struct smp_operations sh73a0_smp_ops __initdata = {
+ #ifdef CONFIG_HOTPLUG_CPU
+ 	.cpu_kill		= sh73a0_cpu_kill,
+ 	.cpu_die		= sh73a0_cpu_die,
+-	.cpu_disable		= shmobile_cpu_disable_any,
++	.cpu_disable		= sh73a0_cpu_disable,
+ #endif
+ };
+-- 
+1.7.10.4
+
