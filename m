@@ -1,128 +1,41 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 22 Mar 2013 01:23:49 +0000
-Subject: [PATCH 3/6] ARM: shmobile: armadillo800eva: add a fixed voltage regulator for SDHI1
-Message-Id: <1363915432-21720-4-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:47:16 +0000
+Subject: [PATCH 24/43] ARM: shmobile: r8a7779: Remove lan from dtsi
+Message-Id: <1363607255-6385-25-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363915432-21720-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363915432-21720-1-git-send-email-horms+renesas@verge.net.au>
+References: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+The ethernet controller is not part of the r8a7779 SoC.
 
-The SDHI1 power supply on armadillo800eva can be switched on and off. In
-the current version this is not used and the regulator is hard-wired to
-"on." This patch switches SDHI1 to a proper fixed-voltage regulator,
-using a GPIO to enable and disable it. Both SDHI0 and SDHI1 ports shall
-now be specifying the MMC_CAP_POWER_OFF_CARD MMC capability. Both
-interfaces tested with an SDIO card.
-
-Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Cc: Magnus Damm <magnus.damm@gmail.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c |   45 +++++++++++++++++++-----
- 1 file changed, 36 insertions(+), 9 deletions(-)
+ arch/arm/boot/dts/r8a7779.dtsi |    9 ---------
+ 1 file changed, 9 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index f322a18..7a78f94 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -559,8 +559,6 @@ static struct platform_device gpio_keys_device = {
- 
- /* Fixed 3.3V regulator to be used by SDHI1, MMCIF */
- static struct regulator_consumer_supply fixed3v3_power_consumers[] = {
--	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
--	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.1"),
- 	REGULATOR_SUPPLY("vmmc", "sh_mmcif"),
- 	REGULATOR_SUPPLY("vqmmc", "sh_mmcif"),
- };
-@@ -645,6 +643,35 @@ static struct platform_device vccq_sdhi0 = {
- 	},
- };
- 
-+/* Fixed 3.3V regulator to be used by SDHI1 */
-+static struct regulator_consumer_supply vcc_sdhi1_consumers[] = {
-+	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.1"),
-+};
-+
-+static struct regulator_init_data vcc_sdhi1_init_data = {
-+	.constraints = {
-+		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
-+	},
-+	.num_consumer_supplies  = ARRAY_SIZE(vcc_sdhi1_consumers),
-+	.consumer_supplies      = vcc_sdhi1_consumers,
-+};
-+
-+static struct fixed_voltage_config vcc_sdhi1_info = {
-+	.supply_name = "SDHI1 Vcc",
-+	.microvolts = 3300000,
-+	.gpio = GPIO_PORT16,
-+	.enable_high = 1,
-+	.init_data = &vcc_sdhi1_init_data,
-+};
-+
-+static struct platform_device vcc_sdhi1 = {
-+	.name = "reg-fixed-voltage",
-+	.id   = 2,
-+	.dev  = {
-+		.platform_data = &vcc_sdhi1_info,
-+	},
-+};
-+
- /* SDHI0 */
- /*
-  * FIXME
-@@ -658,7 +685,8 @@ static struct platform_device vccq_sdhi0 = {
- static struct sh_mobile_sdhi_info sdhi0_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
--	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
-+	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
-+			  MMC_CAP_POWER_OFF_CARD,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_USE_GPIO_CD,
- 	.cd_gpio	= GPIO_PORT167,
- };
-@@ -699,7 +727,8 @@ static struct platform_device sdhi0_device = {
- static struct sh_mobile_sdhi_info sdhi1_info = {
- 	.dma_slave_tx	= SHDMA_SLAVE_SDHI1_TX,
- 	.dma_slave_rx	= SHDMA_SLAVE_SDHI1_RX,
--	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ,
-+	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
-+			  MMC_CAP_POWER_OFF_CARD,
- 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT | TMIO_MMC_USE_GPIO_CD,
- 	/* Port72 cannot generate IRQs, will be used in polling mode. */
- 	.cd_gpio	= GPIO_PORT72,
-@@ -992,6 +1021,8 @@ static struct platform_device *eva_devices[] __initdata = {
- 	&lcdc0_device,
- 	&gpio_keys_device,
- 	&sh_eth_device,
-+	&vcc_sdhi0,
-+	&vccq_sdhi0,
- 	&sdhi0_device,
- 	&sh_mmcif_device,
- 	&hdmi_device,
-@@ -1002,8 +1033,6 @@ static struct platform_device *eva_devices[] __initdata = {
- 	&fsi_wm8978_device,
- 	&fsi_hdmi_device,
- 	&i2c_gpio_device,
--	&vcc_sdhi0,
--	&vccq_sdhi0,
- };
- 
- static const struct pinctrl_map eva_pinctrl_map[] = {
-@@ -1198,9 +1227,7 @@ static void __init eva_init(void)
- 		pinctrl_register_mappings(eva_sdhi1_pinctrl_map,
- 					  ARRAY_SIZE(eva_sdhi1_pinctrl_map));
- 
--		/* SDSLOT2_PON */
--		gpio_request_one(16, GPIOF_OUT_INIT_HIGH, NULL);
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 2913759..0016302 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -83,13 +83,4 @@
+ 		interrupt-parent = <&gic>;
+ 		interrupts = <0 81 0x4>;
+ 	};
 -
-+		platform_device_register(&vcc_sdhi1);
- 		platform_device_register(&sdhi1_device);
- 	}
- 
+-	lan0: lan0@18000000 {
+-		compatible = "smsc,lan9220", "smsc,lan9115";
+-		reg = <0x18000000 0x100>;
+-		phy-mode = "mii";
+-		interrupt-parent = <&gic>;
+-		interrupts = <0 28 0x4>;
+-		reg-io-width = <4>;
+-	};
+ };
 -- 
 1.7.10.4
 
