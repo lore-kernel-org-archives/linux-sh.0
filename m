@@ -1,148 +1,112 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 13:02:32 +0000
-Subject: [PATCH 06/12] clocksource: sh_cmt: CMCNT and CMCOR register access update
-Message-Id: <1363611758-6655-7-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:06:18 +0000
+Subject: [PATCH 082/142] ARM: shmobile: ap4evb: Register pinctrl mappings for SDHI and MMCIF
+Message-Id: <1363604838-29359-83-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363611758-6655-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363611758-6655-1-git-send-email-horms+renesas@verge.net.au>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Break out the CMCNT and CMCOR register access code
-into separate 16-bit and 32-bit functions that are
-hooked into callbacks at init time. This reduces
-the amount of software calculations happening at
-runtime.
+Replace the GPIO-based SDHI and MMCIF pinmux configuration by pinctrl
+mappings
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Acked-by: John Stultz <john.stultz@linaro.org>
-Tested-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/clocksource/sh_cmt.c |   62 ++++++++++++++++++------------------------
- 1 file changed, 26 insertions(+), 36 deletions(-)
+ arch/arm/mach-shmobile/board-ap4evb.c |   55 +++++++++++++++------------------
+ 1 file changed, 25 insertions(+), 30 deletions(-)
 
-diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
-index eefacc3..da904d7 100644
---- a/drivers/clocksource/sh_cmt.c
-+++ b/drivers/clocksource/sh_cmt.c
-@@ -54,38 +54,39 @@ struct sh_cmt_priv {
- 	struct clocksource cs;
- 	unsigned long total_cycles;
- 	bool cs_enabled;
-+
-+	/* callbacks for CMCNT and CMCOR access */
-+	unsigned long (*read_count)(void __iomem *base, unsigned long offs);
-+	void (*write_count)(void __iomem *base, unsigned long offs,
-+			    unsigned long value);
+diff --git a/arch/arm/mach-shmobile/board-ap4evb.c b/arch/arm/mach-shmobile/board-ap4evb.c
+index 0a2b6e4..45f78ca 100644
+--- a/arch/arm/mach-shmobile/board-ap4evb.c
++++ b/arch/arm/mach-shmobile/board-ap4evb.c
+@@ -34,6 +34,7 @@
+ #include <linux/i2c.h>
+ #include <linux/i2c/tsc2007.h>
+ #include <linux/io.h>
++#include <linux/pinctrl/machine.h>
+ #include <linux/regulator/fixed.h>
+ #include <linux/regulator/machine.h>
+ #include <linux/smsc911x.h>
+@@ -1084,6 +1085,28 @@ static struct i2c_board_info i2c1_devices[] = {
  };
  
--static inline unsigned long sh_cmt_read16(void __iomem *base,
--					  unsigned long offs)
-+static unsigned long sh_cmt_read16(void __iomem *base, unsigned long offs)
- {
- 	return ioread16(base + (offs << 1));
- }
  
--static inline void sh_cmt_write16(void __iomem *base, unsigned long offs,
--				  unsigned long value)
-+static unsigned long sh_cmt_read32(void __iomem *base, unsigned long offs)
-+{
-+	return ioread32(base + (offs << 2));
-+}
++static const struct pinctrl_map ap4evb_pinctrl_map[] = {
++	/* MMCIF */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh7372",
++				  "mmc0_data8_0", "mmc0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh7372",
++				  "mmc0_ctrl_0", "mmc0"),
++	/* SDHI0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
++				  "sdhi0_data4", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
++				  "sdhi0_ctrl", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
++				  "sdhi0_cd", "sdhi0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh7372",
++				  "sdhi0_wp", "sdhi0"),
++	/* SDHI1 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-sh7372",
++				  "sdhi1_data4", "sdhi1"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.1", "pfc-sh7372",
++				  "sdhi1_ctrl", "sdhi1"),
++};
 +
-+static void sh_cmt_write16(void __iomem *base, unsigned long offs,
-+			   unsigned long value)
- {
- 	iowrite16(value, base + (offs << 1));
- }
+ #define GPIO_PORT9CR	IOMEM(0xE6051009)
+ #define GPIO_PORT10CR	IOMEM(0xE605100A)
+ #define USCCR1		IOMEM(0xE6058144)
+@@ -1110,6 +1133,8 @@ static void __init ap4evb_init(void)
+ 	/* External clock source */
+ 	clk_set_rate(&sh7372_dv_clki_clk, 27000000);
  
-+static void sh_cmt_write32(void __iomem *base, unsigned long offs,
-+			   unsigned long value)
-+{
-+	iowrite32(value, base + (offs << 2));
-+}
-+
- #define CMCSR 0 /* channel register */
- #define CMCNT 1 /* channel register */
- #define CMCOR 2 /* channel register */
++	pinctrl_register_mappings(ap4evb_pinctrl_map,
++				  ARRAY_SIZE(ap4evb_pinctrl_map));
+ 	sh7372_pinmux_init();
  
--static inline unsigned long sh_cmt_read(struct sh_cmt_priv *p, int reg_nr)
--{
--	void __iomem *base = p->mapbase;
--	unsigned long offs = reg_nr;
+ 	/* enable SCIFA0 */
+@@ -1126,36 +1151,6 @@ static void __init ap4evb_init(void)
+ 	gpio_request_one(34, GPIOF_IN | GPIOF_EXPORT, NULL);
+ 	gpio_request_one(35, GPIOF_IN | GPIOF_EXPORT, NULL);
+ 
+-	/* SDHI0 */
+-	gpio_request(GPIO_FN_SDHICD0, NULL);
+-	gpio_request(GPIO_FN_SDHIWP0, NULL);
+-	gpio_request(GPIO_FN_SDHICMD0, NULL);
+-	gpio_request(GPIO_FN_SDHICLK0, NULL);
+-	gpio_request(GPIO_FN_SDHID0_3, NULL);
+-	gpio_request(GPIO_FN_SDHID0_2, NULL);
+-	gpio_request(GPIO_FN_SDHID0_1, NULL);
+-	gpio_request(GPIO_FN_SDHID0_0, NULL);
 -
--	if (p->width = 16) {
--		offs <<= 1;
--		return ioread16(base + offs);
--	} else {
--		offs <<= 2;
--		return ioread32(base + offs);
--	}
--}
+-	/* SDHI1 */
+-	gpio_request(GPIO_FN_SDHICMD1, NULL);
+-	gpio_request(GPIO_FN_SDHICLK1, NULL);
+-	gpio_request(GPIO_FN_SDHID1_3, NULL);
+-	gpio_request(GPIO_FN_SDHID1_2, NULL);
+-	gpio_request(GPIO_FN_SDHID1_1, NULL);
+-	gpio_request(GPIO_FN_SDHID1_0, NULL);
 -
- static inline unsigned long sh_cmt_read_cmstr(struct sh_cmt_priv *p)
- {
- 	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
-@@ -100,22 +101,7 @@ static inline unsigned long sh_cmt_read_cmcsr(struct sh_cmt_priv *p)
- 
- static inline unsigned long sh_cmt_read_cmcnt(struct sh_cmt_priv *p)
- {
--	return sh_cmt_read(p, CMCNT);
--}
+-	/* MMCIF */
+-	gpio_request(GPIO_FN_MMCD0_0, NULL);
+-	gpio_request(GPIO_FN_MMCD0_1, NULL);
+-	gpio_request(GPIO_FN_MMCD0_2, NULL);
+-	gpio_request(GPIO_FN_MMCD0_3, NULL);
+-	gpio_request(GPIO_FN_MMCD0_4, NULL);
+-	gpio_request(GPIO_FN_MMCD0_5, NULL);
+-	gpio_request(GPIO_FN_MMCD0_6, NULL);
+-	gpio_request(GPIO_FN_MMCD0_7, NULL);
+-	gpio_request(GPIO_FN_MMCCMD0, NULL);
+-	gpio_request(GPIO_FN_MMCCLK0, NULL);
 -
--static inline void sh_cmt_write(struct sh_cmt_priv *p, int reg_nr,
--				unsigned long value)
--{
--	void __iomem *base = p->mapbase;
--	unsigned long offs = reg_nr;
--
--	if (p->width = 16) {
--		offs <<= 1;
--		iowrite16(value, base + offs);
--	} else {
--		offs <<= 2;
--		iowrite32(value, base + offs);
--	}
-+	return p->read_count(p->mapbase, CMCNT);
- }
- 
- static inline void sh_cmt_write_cmstr(struct sh_cmt_priv *p,
-@@ -135,13 +121,13 @@ static inline void sh_cmt_write_cmcsr(struct sh_cmt_priv *p,
- static inline void sh_cmt_write_cmcnt(struct sh_cmt_priv *p,
- 				      unsigned long value)
- {
--	sh_cmt_write(p, CMCNT, value);
-+	p->write_count(p->mapbase, CMCNT, value);
- }
- 
- static inline void sh_cmt_write_cmcor(struct sh_cmt_priv *p,
- 				      unsigned long value)
- {
--	sh_cmt_write(p, CMCOR, value);
-+	p->write_count(p->mapbase, CMCOR, value);
- }
- 
- static unsigned long sh_cmt_get_counter(struct sh_cmt_priv *p,
-@@ -718,10 +704,14 @@ static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
- 
- 	if (resource_size(res) = 6) {
- 		p->width = 16;
-+		p->read_count = sh_cmt_read16;
-+		p->write_count = sh_cmt_write16;
- 		p->overflow_bit = 0x80;
- 		p->clear_bits = ~0x80;
- 	} else {
- 		p->width = 32;
-+		p->read_count = sh_cmt_read32;
-+		p->write_count = sh_cmt_write32;
- 		p->overflow_bit = 0x8000;
- 		p->clear_bits = ~0xc000;
- 	}
+ 	/* USB enable */
+ 	gpio_request(GPIO_FN_VBUS0_1,    NULL);
+ 	gpio_request(GPIO_FN_IDIN_1_18,  NULL);
 -- 
 1.7.10.4
 
