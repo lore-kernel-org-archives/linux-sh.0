@@ -1,46 +1,43 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Fri, 08 Mar 2013 08:20:18 +0000
-Subject: [PATCH 2/4] clocksource: sh_tmu: Set initcall level to subsys
-Message-Id: <1362730820-25417-3-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:05:37 +0000
+Subject: [PATCH 041/142] sh-pfc: Fix return value check in sh_pfc_register_pinctrl()
+Message-Id: <1363604838-29359-42-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1362730820-25417-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1362730820-25417-1-git-send-email-horms+renesas@verge.net.au>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-The reason for this is to ensure that TMU is probed earlier
-than with its previous initcall level, module init.
+From: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
 
-This came up as a problem with using CMT as a clock source kzm9g-reference
-which does not make use of early timers or devices. In that scenario
-initialisation of SDHI and MMCIF both stall on msleep() calls due to the
-absence of a initialised clock source.
+In case of error, the function pinctrl_register() returns NULL not
+ERR_PTR(). The IS_ERR() test in the return value check should be
+replaced with NULL test.
 
-The purpose of this change is to keep the TMU code in sync with the CMT code
-which has been modified in a similar manner..
-
-Boot tested on: mackerel.
-
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/clocksource/sh_tmu.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ drivers/pinctrl/sh-pfc/pinctrl.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/clocksource/sh_tmu.c b/drivers/clocksource/sh_tmu.c
-index b4502edc..78b8dae 100644
---- a/drivers/clocksource/sh_tmu.c
-+++ b/drivers/clocksource/sh_tmu.c
-@@ -549,7 +549,7 @@ static void __exit sh_tmu_exit(void)
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index c7f3c40..3e49bf0 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -395,8 +395,8 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ 	pmx->pctl_desc.npins = pfc->info->nr_pins;
+ 
+ 	pmx->pctl = pinctrl_register(&pmx->pctl_desc, pfc->dev, pmx);
+-	if (IS_ERR(pmx->pctl))
+-		return PTR_ERR(pmx->pctl);
++	if (pmx->pctl = NULL)
++		return -EINVAL;
+ 
+ 	return 0;
  }
- 
- early_platform_init("earlytimer", &sh_tmu_device_driver);
--module_init(sh_tmu_init);
-+subsys_initcall(sh_tmu_init);
- module_exit(sh_tmu_exit);
- 
- MODULE_AUTHOR("Magnus Damm");
 -- 
 1.7.10.4
 
