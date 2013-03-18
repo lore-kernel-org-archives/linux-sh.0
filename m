@@ -1,86 +1,63 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 12:32:21 +0000
-Subject: [PATCH 11/43] ARM: shmobile: Kill off r8a7779 scu_base_addr() function
-Message-Id: <1363609973-31086-12-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:47:10 +0000
+Subject: [PATCH 18/43] ARM: shmobile: sh73a0: Remove sh73a0_init_irq_dt()
+Message-Id: <1363607255-6385-19-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
+References: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+This is not needed as irq_set_wake is
+only used for suspend to ram which is not
+a requirement for bringing up boards using DT.
 
-Replace scu_base_addr() with a static shmobile_scu_base
-variable and introduce R8A7779_SCU_BASE.
-
-Later in the series the shmobile_scu_base variable will be
-made into a global variable so this is preparation only.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Reported-by: Magnus Damm <magnus.damm@gmail.com>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/smp-r8a7779.c |   17 ++++++++---------
- 1 file changed, 8 insertions(+), 9 deletions(-)
+ arch/arm/mach-shmobile/intc-sh73a0.c  |    8 --------
+ arch/arm/mach-shmobile/setup-sh73a0.c |    3 ++-
+ 2 files changed, 2 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/smp-r8a7779.c b/arch/arm/mach-shmobile/smp-r8a7779.c
-index f46b516..d92188d 100644
---- a/arch/arm/mach-shmobile/smp-r8a7779.c
-+++ b/arch/arm/mach-shmobile/smp-r8a7779.c
-@@ -31,6 +31,9 @@
- #include <asm/smp_twd.h>
- 
- #define AVECR IOMEM(0xfe700040)
-+#define R8A7779_SCU_BASE IOMEM(0xf0000000)
-+
-+static void __iomem *shmobile_scu_base;
- 
- static struct r8a7779_pm_ch r8a7779_ch_cpu1 = {
- 	.chan_offs = 0x40, /* PWRSR0 .. PWRER0 */
-@@ -56,11 +59,6 @@ static struct r8a7779_pm_ch *r8a7779_ch_cpu[4] = {
- 	[3] = &r8a7779_ch_cpu3,
- };
- 
--static void __iomem *scu_base_addr(void)
--{
--	return (void __iomem *)0xf0000000;
--}
--
- static DEFINE_SPINLOCK(scu_lock);
- static unsigned long tmp;
- 
-@@ -75,7 +73,7 @@ void __init r8a7779_register_twd(void)
- 
- static void modify_scu_cpu_psr(unsigned long set, unsigned long clr)
- {
--	void __iomem *scu_base = scu_base_addr();
-+	void __iomem *scu_base = shmobile_scu_base;
- 
- 	spin_lock(&scu_lock);
- 	tmp = __raw_readl(scu_base + 8);
-@@ -153,7 +151,7 @@ static void __init r8a7779_smp_prepare_cpus(unsigned int max_cpus)
- {
- 	int cpu = cpu_logical_map(0);
- 
--	scu_enable(scu_base_addr());
-+	scu_enable(shmobile_scu_base);
- 
- 	/* Map the reset vector (in headsmp.S) */
- 	__raw_writel(__pa(shmobile_secondary_vector), AVECR);
-@@ -171,9 +169,10 @@ static void __init r8a7779_smp_prepare_cpus(unsigned int max_cpus)
- 
- static void __init r8a7779_smp_init_cpus(void)
- {
--	unsigned int ncores = scu_get_core_count(scu_base_addr());
-+	/* setup r8a7779 specific SCU base */
-+	shmobile_scu_base = R8A7779_SCU_BASE;
- 
--	shmobile_smp_init_cpus(ncores);
-+	shmobile_smp_init_cpus(scu_get_core_count(shmobile_scu_base));
+diff --git a/arch/arm/mach-shmobile/intc-sh73a0.c b/arch/arm/mach-shmobile/intc-sh73a0.c
+index 91faba6..a81a1d8 100644
+--- a/arch/arm/mach-shmobile/intc-sh73a0.c
++++ b/arch/arm/mach-shmobile/intc-sh73a0.c
+@@ -460,11 +460,3 @@ void __init sh73a0_init_irq(void)
+ 	sh73a0_pint1_cascade.handler = sh73a0_pint1_demux;
+ 	setup_irq(gic_spi(34), &sh73a0_pint1_cascade);
  }
- 
- struct smp_operations r8a7779_smp_ops  __initdata = {
+-
+-#ifdef CONFIG_OF
+-void __init sh73a0_init_irq_dt(void)
+-{
+-	irqchip_init();
+-	gic_arch_extn.irq_set_wake = sh73a0_set_wake;
+-}
+-#endif
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index bdab575..49483f4 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -22,6 +22,7 @@
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+ #include <linux/irq.h>
++#include <linux/irqchip.h>
+ #include <linux/platform_device.h>
+ #include <linux/of_platform.h>
+ #include <linux/delay.h>
+@@ -921,7 +922,7 @@ DT_MACHINE_START(SH73A0_DT, "Generic SH73A0 (Flattened Device Tree)")
+ 	.map_io		= sh73a0_map_io,
+ 	.init_early	= sh73a0_add_early_devices_dt,
+ 	.nr_irqs	= NR_IRQS_LEGACY,
+-	.init_irq	= sh73a0_init_irq_dt,
++	.init_irq	= irqchip_init,
+ 	.init_machine	= sh73a0_add_standard_devices_dt,
+ 	.init_time	= shmobile_timer_init,
+ 	.dt_compat	= sh73a0_boards_compat_dt,
 -- 
 1.7.10.4
 
