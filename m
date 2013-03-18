@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Tue, 19 Mar 2013 02:19:36 +0000
-Subject: [PATCH 14/14] irqchip: irqc: Add DT support
-Message-Id: <1363659576-6333-15-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:47:19 +0000
+Subject: [PATCH 27/43] ARM: shmobile: Use R8A7779_SCU_BASE with TWD
+Message-Id: <1363607255-6385-28-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363659576-6333-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363659576-6333-1-git-send-email-horms+renesas@verge.net.au>
+References: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,46 +12,47 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Add DT support to the IRQC External IRQ Pin driver.
+Rework the IOMEM() usage for the SCU base address in the
+case of r8a7779. Adjusts the TWD to use R8A7779_SCU_BASE.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/irqchip/irq-renesas-irqc.c |    9 +++++++++
- 1 file changed, 9 insertions(+)
+ arch/arm/mach-shmobile/smp-r8a7779.c |    7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/irqchip/irq-renesas-irqc.c b/drivers/irqchip/irq-renesas-irqc.c
-index 95d69bf..927bff3 100644
---- a/drivers/irqchip/irq-renesas-irqc.c
-+++ b/drivers/irqchip/irq-renesas-irqc.c
-@@ -145,6 +145,7 @@ static int irqc_irq_domain_map(struct irq_domain *h, unsigned int virq,
+diff --git a/arch/arm/mach-shmobile/smp-r8a7779.c b/arch/arm/mach-shmobile/smp-r8a7779.c
+index 7fd58a3..e69ce25 100644
+--- a/arch/arm/mach-shmobile/smp-r8a7779.c
++++ b/arch/arm/mach-shmobile/smp-r8a7779.c
+@@ -31,7 +31,7 @@
+ #include <asm/smp_twd.h>
  
- static struct irq_domain_ops irqc_irq_domain_ops = {
- 	.map	= irqc_irq_domain_map,
-+	.xlate  = irq_domain_xlate_twocell,
- };
+ #define AVECR IOMEM(0xfe700040)
+-#define R8A7779_SCU_BASE IOMEM(0xf0000000)
++#define R8A7779_SCU_BASE 0xf0000000
  
- static int irqc_probe(struct platform_device *pdev)
-@@ -273,11 +274,19 @@ static int irqc_remove(struct platform_device *pdev)
- 	return 0;
+ static struct r8a7779_pm_ch r8a7779_ch_cpu1 = {
+ 	.chan_offs = 0x40, /* PWRSR0 .. PWRER0 */
+@@ -61,8 +61,7 @@ static DEFINE_SPINLOCK(scu_lock);
+ static unsigned long tmp;
+ 
+ #ifdef CONFIG_HAVE_ARM_TWD
+-static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, 0xf0000600, 29);
+-
++static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, R8A7779_SCU_BASE + 0x600, 29);
+ void __init r8a7779_register_twd(void)
+ {
+ 	twd_local_timer_register(&twd_local_timer);
+@@ -168,7 +167,7 @@ static void __init r8a7779_smp_prepare_cpus(unsigned int max_cpus)
+ static void __init r8a7779_smp_init_cpus(void)
+ {
+ 	/* setup r8a7779 specific SCU base */
+-	shmobile_scu_base = R8A7779_SCU_BASE;
++	shmobile_scu_base = IOMEM(R8A7779_SCU_BASE);
+ 
+ 	shmobile_smp_init_cpus(scu_get_core_count(shmobile_scu_base));
  }
- 
-+static const struct of_device_id irqc_dt_ids[] = {
-+	{ .compatible = "renesas,irqc", },
-+	{},
-+};
-+MODULE_DEVICE_TABLE(of, irqc_dt_ids);
-+
- static struct platform_driver irqc_device_driver = {
- 	.probe		= irqc_probe,
- 	.remove		= irqc_remove,
- 	.driver		= {
- 		.name	= "renesas_irqc",
-+		.of_match_table	= irqc_dt_ids,
-+		.owner	= THIS_MODULE,
- 	}
- };
- 
 -- 
 1.7.10.4
 
