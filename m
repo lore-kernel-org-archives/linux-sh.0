@@ -1,108 +1,169 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 12:32:51 +0000
-Subject: [PATCH 41/43] ARM: mach-shmobile: r8a7779: add SATA support
-Message-Id: <1363609973-31086-42-git-send-email-horms+renesas@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 18 Mar 2013 15:10:02 +0000
+Subject: [PATCH 01/03] ARM: shmobile: APE6EVM base support V2
+Message-Id: <20130318151002.28231.37531.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
+References: <20130318150953.28231.73454.sendpatchset@w520>
+In-Reply-To: <20130318150953.28231.73454.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+From: Magnus Damm <damm@opensource.se>
 
-Add SATA clock for r8a7779 SoC (for both device tree and usual cases).
-Register SATA controller as a "late" platform device on r8a7779 SoC.
+V2 of APE6EVM base board support making use of
+1 GiB of memory, the SCIFA0 serial port and 
+ARM architected timer.
 
-Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/clock-r8a7779.c |    4 ++++
- arch/arm/mach-shmobile/setup-r8a7779.c |   26 ++++++++++++++++++++++++++
- 2 files changed, 30 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
-index 1db3653..0f66d35 100644
---- a/arch/arm/mach-shmobile/clock-r8a7779.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7779.c
-@@ -87,6 +87,7 @@ static struct clk div4_clks[DIV4_NR] = {
- };
+ Changes since V1:
+ - Sorted headers
+ - Use ape6evm_add_standard_devices() to setup SoC devices and clocks
+
+  Written against "next" renesas.git 811689afc214564c4a5f238ecf4d8bdc0e52b615
  
- enum { MSTP323, MSTP322, MSTP321, MSTP320,
-+	MSTP115,
- 	MSTP101, MSTP100,
- 	MSTP030,
- 	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
-@@ -99,6 +100,7 @@ static struct clk mstp_clks[MSTP_NR] = {
- 	[MSTP322] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 22, 0), /* SDHI1 */
- 	[MSTP321] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 21, 0), /* SDHI2 */
- 	[MSTP320] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 20, 0), /* SDHI3 */
-+	[MSTP115] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1, 15, 0), /* SATA */
- 	[MSTP101] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  1, 0), /* USB2 */
- 	[MSTP100] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  0, 0), /* USB0/1 */
- 	[MSTP030] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 30, 0), /* I2C0 */
-@@ -156,6 +158,8 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_CON_ID("peripheral_clk",	&div4_clks[DIV4_P]),
+ Depends on the following series:
+ [PATCH 00/04] ARM: shmobile: r8a73a4 SoC support V2
+
+ Does not depend on:
+ [PATCH 00/02] sh-pfc: Initial r8a73a4 PFC support
+
+arch/arm/boot/dts/Makefile             |    1 
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts  |   26 ++++++++++++++++++
+ arch/arm/mach-shmobile/Kconfig         |    8 ++++-
+ arch/arm/mach-shmobile/Makefile        |    1 
+ arch/arm/mach-shmobile/board-ape6evm.c |   46 ++++++++++++++++++++++++++++++++
+ 5 files changed, 81 insertions(+), 1 deletion(-)
+
+--- 0001/arch/arm/boot/dts/Makefile
++++ work/arch/arm/boot/dts/Makefile	2013-03-18 21:44:34.000000000 +0900
+@@ -139,6 +139,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm
+ 	r8a7779-marzen-reference.dtb \
+ 	sh73a0-kzm9g.dtb \
+ 	sh73a0-kzm9g-reference.dtb \
++	r8a73a4-ape6evm.dtb \
+ 	sh7372-mackerel.dtb
+ dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_cyclone5.dtb \
+ 	socfpga_vt.dtb
+--- /dev/null
++++ work/arch/arm/boot/dts/r8a73a4-ape6evm.dts	2013-03-18 21:44:35.000000000 +0900
+@@ -0,0 +1,26 @@
++/*
++ * Device Tree Source for the APE6EVM board
++ *
++ * Copyright (C) 2013 Renesas Solutions Corp.
++ *
++ * This file is licensed under the terms of the GNU General Public License
++ * version 2.  This program is licensed "as is" without any warranty of any
++ * kind, whether express or implied.
++ */
++
++/dts-v1/;
++/include/ "r8a73a4.dtsi"
++
++/ {
++	model = "APE6EVM";
++	compatible = "renesas,ape6evm", "renesas,r8a73a4";
++
++	chosen {
++		bootargs = "console=ttySC0,115200 ignore_loglevel";
++	};
++
++	memory@40000000 {
++		device_type = "memory";
++		reg = <0x40000000 0x40000000>;
++	};
++};
+--- 0007/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2013-03-18 21:44:34.000000000 +0900
+@@ -79,6 +79,11 @@ config MACH_AG5EVM
+ 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	select SH_LCD_MIPI_DSI
  
- 	/* MSTP32 clocks */
-+	CLKDEV_DEV_ID("sata_rcar", &mstp_clks[MSTP115]), /* SATA */
-+	CLKDEV_DEV_ID("fc600000.sata", &mstp_clks[MSTP115]), /* SATA w/DT */
- 	CLKDEV_DEV_ID("ehci-platform.1", &mstp_clks[MSTP101]), /* USB EHCI port2 */
- 	CLKDEV_DEV_ID("ohci-platform.1", &mstp_clks[MSTP101]), /* USB OHCI port2 */
- 	CLKDEV_DEV_ID("ehci-platform.0", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 0068b9f..10031fe 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -29,6 +29,7 @@
- #include <linux/serial_sci.h>
- #include <linux/sh_intc.h>
- #include <linux/sh_timer.h>
-+#include <linux/dma-mapping.h>
- #include <mach/hardware.h>
- #include <mach/irqs.h>
- #include <mach/r8a7779.h>
-@@ -322,6 +323,30 @@ static struct platform_device i2c3_device = {
- 	.num_resources	= ARRAY_SIZE(rcar_i2c3_res),
- };
++config MACH_APE6EVM
++	bool "APE6EVM board"
++	depends on ARCH_R8A73A4
++	select USE_OF
++
+ config MACH_MACKEREL
+ 	bool "mackerel board"
+ 	depends on ARCH_SH7372
+@@ -166,7 +171,7 @@ config MEMORY_START
+ 	hex "Physical memory start address"
+ 	default "0x40000000" if MACH_AP4EVB || MACH_AG5EVM || \
+ 				MACH_MACKEREL || MACH_BONITO || \
+-				MACH_ARMADILLO800EVA
++				MACH_ARMADILLO800EVA || MACH_APE6EVM
+ 	default "0x41000000" if MACH_KOTA2
+ 	default "0x00000000"
+ 	---help---
+@@ -176,6 +181,7 @@ config MEMORY_START
  
-+static struct resource sata_resources[] = {
-+	[0] = {
-+		.name	= "rcar-sata",
-+		.start	= 0xfc600000,
-+		.end	= 0xfc601fff,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= gic_spi(100),
-+		.flags	= IORESOURCE_IRQ,
-+	},
+ config MEMORY_SIZE
+ 	hex "Physical memory size"
++	default "0x40000000" if MACH_APE6EVM
+ 	default "0x20000000" if MACH_AG5EVM || MACH_BONITO || \
+ 				MACH_ARMADILLO800EVA
+ 	default "0x1e000000" if MACH_KOTA2
+--- 0003/arch/arm/mach-shmobile/Makefile
++++ work/arch/arm/mach-shmobile/Makefile	2013-03-18 21:44:34.000000000 +0900
+@@ -35,6 +35,7 @@ obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
+ # Board objects
+ obj-$(CONFIG_MACH_AP4EVB)	+= board-ap4evb.o
+ obj-$(CONFIG_MACH_AG5EVM)	+= board-ag5evm.o
++obj-$(CONFIG_MACH_APE6EVM)	+= board-ape6evm.o
+ obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
+ obj-$(CONFIG_MACH_KOTA2)	+= board-kota2.o
+ obj-$(CONFIG_MACH_BONITO)	+= board-bonito.o
+--- /dev/null
++++ work/arch/arm/mach-shmobile/board-ape6evm.c	2013-03-18 21:45:34.000000000 +0900
+@@ -0,0 +1,46 @@
++/*
++ * APE6EVM board support
++ *
++ * Copyright (C) 2013  Renesas Solutions Corp.
++ * Copyright (C) 2013  Magnus Damm
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; version 2 of the License.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++ */
++
++#include <linux/interrupt.h>
++#include <linux/irqchip.h>
++#include <linux/kernel.h>
++#include <linux/platform_device.h>
++#include <mach/common.h>
++#include <mach/r8a73a4.h>
++#include <asm/mach-types.h>
++#include <asm/mach/arch.h>
++
++static void __init ape6evm_add_standard_devices(void)
++{
++	r8a73a4_clock_init();
++	r8a73a4_add_standard_devices();
++}
++
++static const char *ape6evm_boards_compat_dt[] __initdata = {
++	"renesas,ape6evm",
++	NULL,
 +};
 +
-+static struct platform_device sata_device = {
-+	.name		= "sata_rcar",
-+	.id		= -1,
-+	.resource	= sata_resources,
-+	.num_resources	= ARRAY_SIZE(sata_resources),
-+	.dev		= {
-+		.dma_mask		= &sata_device.dev.coherent_dma_mask,
-+		.coherent_dma_mask	= DMA_BIT_MASK(32),
-+	},
-+};
-+
- static struct platform_device *r8a7779_devices_dt[] __initdata = {
- 	&scif0_device,
- 	&scif1_device,
-@@ -338,6 +363,7 @@ static struct platform_device *r8a7779_late_devices[] __initdata = {
- 	&i2c1_device,
- 	&i2c2_device,
- 	&i2c3_device,
-+	&sata_device,
- };
- 
- void __init r8a7779_add_standard_devices(void)
--- 
-1.7.10.4
-
++DT_MACHINE_START(APE6EVM_DT, "ape6evm")
++	.init_irq	= irqchip_init,
++	.init_time	= shmobile_timer_init,
++	.init_machine	= ape6evm_add_standard_devices,
++	.dt_compat	= ape6evm_boards_compat_dt,
++MACHINE_END
