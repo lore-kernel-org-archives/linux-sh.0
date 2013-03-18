@@ -1,79 +1,65 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Wed, 27 Mar 2013 12:10:24 +0000
-Subject: Re: [PATCH 0/1] ARM: shmobile: r8a73a4 thermal support
-Message-Id: <20130327121023.GA15520@verge.net.au>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 18 Mar 2013 14:32:41 +0000
+Subject: [PATCH 04/04] ARM: shmobile: r8a73a4 PFC support
+Message-Id: <20130318143241.26687.75018.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130326013414.11796.9937.sendpatchset@w520>
- <87mwtqit29.wl%kuninori.morimoto.gx@renesas.com>
- <20130327052135.GK25431@verge.net.au>
- <CANqRtoT5CwEvmV6_G2F=WaG=WLBsJ7ZoM2ijWR0TJr2T0ic0tA@mail.gmail.com>
-In-Reply-To: <CANqRtoT5CwEvmV6_G2F=WaG=WLBsJ7ZoM2ijWR0TJr2T0ic0tA@mail.gmail.com>
+References: <20130318143203.26687.98180.sendpatchset@w520>
+In-Reply-To: <20130318143203.26687.98180.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Mar 27, 2013 at 06:17:24PM +0900, Magnus Damm wrote:
-> On Wed, Mar 27, 2013 at 2:21 PM, Simon Horman <horms@verge.net.au> wrote:
-> > On Mon, Mar 25, 2013 at 11:17:06PM -0700, Kuninori Morimoto wrote:
-> >>
-> >> Hi Simon, Magnus
-> >>
-> >> This patch add thermal driver support on r8a73a4.
-> >>
-> >> > ARM: shmobile: r8a73a4 SoC support V3
-> >> > [PATCH 01/04] ARM: shmobile: Initial r8a73a4 SoC support V3
-> >> > [PATCH 02/04] ARM: shmobile: r8a73a4 SCIF support V3
-> >> > [PATCH 03/04] ARM: shmobile: r8a73a4 IRQC support V2
-> >> > [PATCH 04/04] ARM: shmobile: r8a73a4 PFC support
-> >>
-> >> This patch is based on...
-> >>
-> >> simon/next branch
-> >>
-> >> And, Magnus's
-> >>     ARM: shmobile: r8a73a4 SoC support V3
-> >>     sh-pfc: Initial r8a73a4 PFC support
-> >>     ARM: shmobile: r8a73a4 APE6EVM board support V2
-> >>
-> >> And, Zhang's (= PM ML)
-> >>
-> >> f0e68fc3caf677e834f7bd0f601800e686b56c98
-> >> (thermal: rcar: fix missing unlock on error in rcar_thermal_update_temp())
-> >>
-> >> fb84d9907f0ff0e3f7d70d55039ddf0f78d2a472
-> >> (thermal: rcar_thermal: propagate return value of thermal_zone_device_register)
-> >>
-> >> And, my previous
-> >>       thermal: rcar: tidyup registration failure case
-> >>       thermal: rcar: add pm_runtime_xxx() support
-> >>
-> >> Simon, please let me know if you need my help
-> >
-> > I think that I need to get a branch to base my changes on.
-> > Do you know if such a branch exists and who we should contact
-> > to make sure it is ok to use it as a base?
-> 
-> Hi Simon,
-> 
-> I have now tested patch "[PATCH] ARM: shmobile: r8a73a4: add thermal
-> driver support" on real hardware.
-> 
-> I have exercised this patch by applying the following patches on top
-> of renesas-next-20130321:
-> [PATCH] ARM: shmobile: Disallow PINCTRL without GPIOLIB
-> [PATCH 00/04] ARM: shmobile: r8a73a4 SoC support V3
-> [PATCH 01/04] ARM: shmobile: Initial r8a73a4 SoC support V3
-> [PATCH 02/04] ARM: shmobile: r8a73a4 SCIF support V3
-> [PATCH 03/04] ARM: shmobile: r8a73a4 IRQC support V2
-> [PATCH 04/04] ARM: shmobile: r8a73a4 PFC support
-> [PATCH] ARM: shmobile: r8a73a4: add thermal driver support
-> 
-> Judging by the patch list above I believe you can just throw this
-> patch in on top of the "r8a73a4 SoC V3" patches.
-> 
-> As Morimoto-san explained, there are some runtime dependencies related
-> to various bug fixes in the thermal driver. But for merging and
-> compiling I believe the above should be enough.
+From: Magnus Damm <damm@opensource.se>
 
-Ok, I think that should be fine. I will do as you suggest.
+Add a platform device for the r8a73a4 PFC.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+---
+
+ No build time dependency, but requires PFC tables
+ in separate patch series to actually do something.
+
+ arch/arm/mach-shmobile/Kconfig                |    1 +
+ arch/arm/mach-shmobile/include/mach/r8a73a4.h |    1 +
+ arch/arm/mach-shmobile/setup-r8a73a4.c        |   10 ++++++++++
+ 3 files changed, 12 insertions(+)
+
+--- 0005/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2013-03-18 18:51:13.000000000 +0900
+@@ -20,6 +20,7 @@ config ARCH_SH73A0
+ 
+ config ARCH_R8A73A4
+ 	bool "R-Mobile APE6 (R8A73A40)"
++	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select CPU_V7
+ 	select ARM_ARCH_TIMER
+--- 0003/arch/arm/mach-shmobile/include/mach/r8a73a4.h
++++ work/arch/arm/mach-shmobile/include/mach/r8a73a4.h	2013-03-18 18:51:13.000000000 +0900
+@@ -3,5 +3,6 @@
+ 
+ void r8a73a4_add_standard_devices(void);
+ void r8a73a4_clock_init(void);
++void r8a73a4_pinmux_init(void);
+ 
+ #endif /* __ASM_R8A73A4_H__ */
+--- 0005/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ work/arch/arm/mach-shmobile/setup-r8a73a4.c	2013-03-18 18:53:50.000000000 +0900
+@@ -28,6 +28,16 @@
+ #include <mach/r8a73a4.h>
+ #include <asm/mach/arch.h>
+ 
++static const struct resource pfc_resources[] = {
++	DEFINE_RES_MEM(0xe6050000, 0x9000),
++};
++
++void __init r8a73a4_pinmux_init(void)
++{
++	platform_device_register_simple("pfc-r8a73a4", -1, pfc_resources,
++					ARRAY_SIZE(pfc_resources));
++}
++
+ #define SCIF_COMMON(scif_type, baseaddr, irq)			\
+ 	.type		= PORT_SCIFA,				\
+ 	.mapbase	= baseaddr,				\
