@@ -1,243 +1,96 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:05:46 +0000
-Subject: [PATCH 050/142] sh-pfc: Implement generic pinconf support
-Message-Id: <1363604838-29359-51-git-send-email-horms+renesas@verge.net.au>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 18 Mar 2013 10:17:55 +0000
+Subject: Re: [PATCH] sh: enable DMA for MMCIF on ecovec
+Message-Id: <Pine.LNX.4.64.1303181114290.30957@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Hi Paul
 
-The existing PFC pinconf implementation, tied to the PFC-specific pin
-types, isn't used by drivers or boards. Replace it with the generic
-pinconf types to implement bias (pull-up/down) setup. Other pin
-configuration options can be implemented later if needed.
+On Wed, 12 Dec 2012, Guennadi Liakhovetski wrote:
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+> MMCIF on SH7724 can use DMA for I/O. Enable it on ecovec.
+> 
+> Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+
+Any specific reason this patch hasn't been applied?
+
+Thanks
+Guennadi
+
+> ---
+>  arch/sh/boards/mach-ecovec24/setup.c   |    3 +++
+>  arch/sh/include/cpu-sh4/cpu/sh7724.h   |    2 ++
+>  arch/sh/kernel/cpu/sh4a/setup-sh7724.c |   10 ++++++++++
+>  3 files changed, 15 insertions(+), 0 deletions(-)
+> 
+> diff --git a/arch/sh/boards/mach-ecovec24/setup.c b/arch/sh/boards/mach-ecovec24/setup.c
+> index 64559e8a..57c30e8 100644
+> --- a/arch/sh/boards/mach-ecovec24/setup.c
+> +++ b/arch/sh/boards/mach-ecovec24/setup.c
+> @@ -1031,12 +1031,15 @@ static struct sh_mmcif_plat_data sh_mmcif_plat = {
+>  			  MMC_CAP_8_BIT_DATA |
+>  			  MMC_CAP_NEEDS_POLL,
+>  	.ocr		= MMC_VDD_32_33 | MMC_VDD_33_34,
+> +	.slave_id_tx	= SHDMA_SLAVE_MMCIF_TX,
+> +	.slave_id_rx	= SHDMA_SLAVE_MMCIF_RX,
+>  };
+>  
+>  static struct platform_device sh_mmcif_device = {
+>  	.name		= "sh_mmcif",
+>  	.id		= 0,
+>  	.dev		= {
+> +		.coherent_dma_mask	= 0xffffffff,
+>  		.platform_data		= &sh_mmcif_plat,
+>  	},
+>  	.num_resources	= ARRAY_SIZE(sh_mmcif_resources),
+> diff --git a/arch/sh/include/cpu-sh4/cpu/sh7724.h b/arch/sh/include/cpu-sh4/cpu/sh7724.h
+> index 38859f9..2e38361 100644
+> --- a/arch/sh/include/cpu-sh4/cpu/sh7724.h
+> +++ b/arch/sh/include/cpu-sh4/cpu/sh7724.h
+> @@ -309,6 +309,8 @@ enum {
+>  	SHDMA_SLAVE_SDHI0_RX,
+>  	SHDMA_SLAVE_SDHI1_TX,
+>  	SHDMA_SLAVE_SDHI1_RX,
+> +	SHDMA_SLAVE_MMCIF_TX,
+> +	SHDMA_SLAVE_MMCIF_RX,
+>  };
+>  
+>  extern struct clk sh7724_fsimcka_clk;
+> diff --git a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+> index 26b74c2..011c3c5 100644
+> --- a/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+> +++ b/arch/sh/kernel/cpu/sh4a/setup-sh7724.c
+> @@ -153,6 +153,16 @@ static const struct sh_dmae_slave_config sh7724_dmae_slaves[] = {
+>  		.addr		= 0x04cf0030,
+>  		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_16BIT),
+>  		.mid_rid	= 0xca,
+> +	}, {
+> +		.slave_id	= SHDMA_SLAVE_MMCIF_TX,
+> +		.addr		= 0xa4ca0034,
+> +		.chcr		= DM_FIX | SM_INC | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
+> +		.mid_rid	= 0xcd,
+> +	}, {
+> +		.slave_id	= SHDMA_SLAVE_MMCIF_RX,
+> +		.addr		= 0xa4ca0034,
+> +		.chcr		= DM_INC | SM_FIX | 0x800 | TS_INDEX2VAL(XMIT_SZ_32BIT),
+> +		.mid_rid	= 0xce,
+>  	},
+>  };
+>  
+> -- 
+> 1.7.2.5
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-sh" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+
 ---
- drivers/pinctrl/sh-pfc/Kconfig   |    1 +
- drivers/pinctrl/sh-pfc/pinctrl.c |  123 ++++++++++++++++++++++++++++----------
- drivers/pinctrl/sh-pfc/sh_pfc.h  |   16 +++++
- 3 files changed, 110 insertions(+), 30 deletions(-)
-
-diff --git a/drivers/pinctrl/sh-pfc/Kconfig b/drivers/pinctrl/sh-pfc/Kconfig
-index c3340f5..af16f8f 100644
---- a/drivers/pinctrl/sh-pfc/Kconfig
-+++ b/drivers/pinctrl/sh-pfc/Kconfig
-@@ -10,6 +10,7 @@ config PINCTRL_SH_PFC
- 	select GPIO_SH_PFC if ARCH_REQUIRE_GPIOLIB
- 	select PINMUX
- 	select PINCONF
-+	select GENERIC_PINCONF
- 	def_bool y
- 	help
- 	  This enables pin control drivers for SH and SH Mobile platforms
-diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
-index c150910..79fa170 100644
---- a/drivers/pinctrl/sh-pfc/pinctrl.c
-+++ b/drivers/pinctrl/sh-pfc/pinctrl.c
-@@ -24,6 +24,8 @@
- #include <linux/spinlock.h>
- 
- #include "core.h"
-+#include "../core.h"
-+#include "../pinconf.h"
- 
- struct sh_pfc_pin_config {
- 	u32 type;
-@@ -230,57 +232,118 @@ static const struct pinmux_ops sh_pfc_pinmux_ops = {
- 	.gpio_set_direction	= sh_pfc_gpio_set_direction,
- };
- 
-+/* Check whether the requested parameter is supported for a pin. */
-+static bool sh_pfc_pinconf_validate(struct sh_pfc *pfc, unsigned int _pin,
-+				    enum pin_config_param param)
-+{
-+	int idx = sh_pfc_get_pin_index(pfc, _pin);
-+	const struct sh_pfc_pin *pin = &pfc->info->pins[idx];
-+
-+	switch (param) {
-+	case PIN_CONFIG_BIAS_DISABLE:
-+		return true;
-+
-+	case PIN_CONFIG_BIAS_PULL_UP:
-+		return pin->configs & SH_PFC_PIN_CFG_PULL_UP;
-+
-+	case PIN_CONFIG_BIAS_PULL_DOWN:
-+		return pin->configs & SH_PFC_PIN_CFG_PULL_DOWN;
-+
-+	default:
-+		return false;
-+	}
-+}
-+
- static int sh_pfc_pinconf_get(struct pinctrl_dev *pctldev, unsigned _pin,
- 			      unsigned long *config)
- {
- 	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
- 	struct sh_pfc *pfc = pmx->pfc;
--	int idx = sh_pfc_get_pin_index(pfc, _pin);
--	struct sh_pfc_pin_config *cfg = &pmx->configs[idx];
-+	enum pin_config_param param = pinconf_to_config_param(*config);
-+	unsigned long flags;
-+	unsigned int bias;
-+
-+	if (!sh_pfc_pinconf_validate(pfc, _pin, param))
-+		return -ENOTSUPP;
- 
--	*config = cfg->type;
-+	switch (param) {
-+	case PIN_CONFIG_BIAS_DISABLE:
-+	case PIN_CONFIG_BIAS_PULL_UP:
-+	case PIN_CONFIG_BIAS_PULL_DOWN:
-+		if (!pfc->info->ops || !pfc->info->ops->get_bias)
-+			return -ENOTSUPP;
-+
-+		spin_lock_irqsave(&pfc->lock, flags);
-+		bias = pfc->info->ops->get_bias(pfc, _pin);
-+		spin_unlock_irqrestore(&pfc->lock, flags);
-+
-+		if (bias != param)
-+			return -EINVAL;
-+
-+		*config = 0;
-+		break;
-+
-+	default:
-+		return -ENOTSUPP;
-+	}
- 
- 	return 0;
- }
- 
--static int sh_pfc_pinconf_set(struct pinctrl_dev *pctldev, unsigned pin,
-+static int sh_pfc_pinconf_set(struct pinctrl_dev *pctldev, unsigned _pin,
- 			      unsigned long config)
- {
- 	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
-+	struct sh_pfc *pfc = pmx->pfc;
-+	enum pin_config_param param = pinconf_to_config_param(config);
-+	unsigned long flags;
- 
--	/* Validate the new type */
--	if (config >= PINMUX_FLAG_TYPE)
--		return -EINVAL;
-+	if (!sh_pfc_pinconf_validate(pfc, _pin, param))
-+		return -ENOTSUPP;
- 
--	return sh_pfc_reconfig_pin(pmx, pin, config);
-+	switch (param) {
-+	case PIN_CONFIG_BIAS_PULL_UP:
-+	case PIN_CONFIG_BIAS_PULL_DOWN:
-+	case PIN_CONFIG_BIAS_DISABLE:
-+		if (!pfc->info->ops || !pfc->info->ops->set_bias)
-+			return -ENOTSUPP;
-+
-+		spin_lock_irqsave(&pfc->lock, flags);
-+		pfc->info->ops->set_bias(pfc, _pin, param);
-+		spin_unlock_irqrestore(&pfc->lock, flags);
-+
-+		break;
-+
-+	default:
-+		return -ENOTSUPP;
-+	}
-+
-+	return 0;
- }
- 
--static void sh_pfc_pinconf_dbg_show(struct pinctrl_dev *pctldev,
--				    struct seq_file *s, unsigned pin)
-+static int sh_pfc_pinconf_group_set(struct pinctrl_dev *pctldev, unsigned group,
-+				    unsigned long config)
- {
--	const char *pinmux_type_str[] = {
--		[PINMUX_TYPE_NONE]		= "none",
--		[PINMUX_TYPE_FUNCTION]		= "function",
--		[PINMUX_TYPE_GPIO]		= "gpio",
--		[PINMUX_TYPE_OUTPUT]		= "output",
--		[PINMUX_TYPE_INPUT]		= "input",
--		[PINMUX_TYPE_INPUT_PULLUP]	= "input bias pull up",
--		[PINMUX_TYPE_INPUT_PULLDOWN]	= "input bias pull down",
--	};
--	unsigned long config;
--	int rc;
--
--	rc = sh_pfc_pinconf_get(pctldev, pin, &config);
--	if (unlikely(rc != 0))
--		return;
--
--	seq_printf(s, " %s", pinmux_type_str[config]);
-+	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
-+	const unsigned int *pins;
-+	unsigned int num_pins;
-+	unsigned int i;
-+
-+	pins = pmx->pfc->info->groups[group].pins;
-+	num_pins = pmx->pfc->info->groups[group].nr_pins;
-+
-+	for (i = 0; i < num_pins; ++i)
-+		sh_pfc_pinconf_set(pctldev, pins[i], config);
-+
-+	return 0;
- }
- 
- static const struct pinconf_ops sh_pfc_pinconf_ops = {
--	.pin_config_get		= sh_pfc_pinconf_get,
--	.pin_config_set		= sh_pfc_pinconf_set,
--	.pin_config_dbg_show	= sh_pfc_pinconf_dbg_show,
-+	.is_generic			= true,
-+	.pin_config_get			= sh_pfc_pinconf_get,
-+	.pin_config_set			= sh_pfc_pinconf_set,
-+	.pin_config_group_set		= sh_pfc_pinconf_group_set,
-+	.pin_config_config_dbg_show	= pinconf_generic_dump_config,
- };
- 
- /* PFC ranges -> pinctrl pin descs */
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index b250dac..3b785fc 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -31,9 +31,15 @@ enum {
- 	PINMUX_FLAG_TYPE,	/* must be last */
- };
- 
-+#define SH_PFC_PIN_CFG_INPUT		(1 << 0)
-+#define SH_PFC_PIN_CFG_OUTPUT		(1 << 1)
-+#define SH_PFC_PIN_CFG_PULL_UP		(1 << 2)
-+#define SH_PFC_PIN_CFG_PULL_DOWN	(1 << 3)
-+
- struct sh_pfc_pin {
- 	const pinmux_enum_t enum_id;
- 	const char *name;
-+	unsigned int configs;
- };
- 
- #define SH_PFC_PIN_GROUP(n)				\
-@@ -120,8 +126,18 @@ struct pinmux_range {
- 	pinmux_enum_t force;
- };
- 
-+struct sh_pfc;
-+
-+struct sh_pfc_soc_operations {
-+	unsigned int (*get_bias)(struct sh_pfc *pfc, unsigned int pin);
-+	void (*set_bias)(struct sh_pfc *pfc, unsigned int pin,
-+			 unsigned int bias);
-+};
-+
- struct sh_pfc_soc_info {
- 	const char *name;
-+	const struct sh_pfc_soc_operations *ops;
-+
- 	struct pinmux_range input;
- 	struct pinmux_range input_pd;
- 	struct pinmux_range input_pu;
--- 
-1.7.10.4
-
+Guennadi Liakhovetski, Ph.D.
+Freelance Open-Source Software Developer
+http://www.open-technology.de/
