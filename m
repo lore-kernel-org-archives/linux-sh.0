@@ -1,48 +1,58 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 06 Mar 2013 13:46:58 +0000
-Subject: [PATCH v2 19/39] ARM: shmobile: kzm9g: Register pinctrl mappings for SCIF
-Message-Id: <1362577638-15493-20-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:05:26 +0000
+Subject: [PATCH 030/142] sh: sh7203: Add pin control resources
+Message-Id: <1363604838-29359-31-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Replace the GPIO-based SCIF pinmux configuration by pinctrl mappings.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+Add memory resources for the pin control platform device to let the
+sh-pfc driver ioremap() registers properly instead of evily casting
+register physical addresses to virtual addresses.
+
+The memory resource address range has been extracted from the config and
+data registes lists in the sh-pfc driver.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-kzm9g.c | 10 ++++------
- 1 file changed, 4 insertions(+), 6 deletions(-)
+ arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c |   13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index 7ca6002..3ec4838 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -601,6 +601,10 @@ static struct platform_device *kzm_devices[] __initdata = {
- };
+diff --git a/arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c b/arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c
+index 96c6c26..eef17dc 100644
+--- a/arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c
++++ b/arch/sh/kernel/cpu/sh2a/pinmux-sh7203.c
+@@ -8,12 +8,23 @@
+  * for more details.
+  */
  
- static const struct pinctrl_map kzm_pinctrl_map[] = {
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
-+				  "scifa4_data", "scifa4"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
-+				  "scifa4_ctrl", "scifa4"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-sh73a0",
- 				  "lcd_data24", "lcd"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-sh73a0",
-@@ -672,12 +676,6 @@ static void __init kzm_init(void)
++#include <linux/bug.h>
+ #include <linux/init.h>
+ #include <linux/kernel.h>
++#include <linux/ioport.h>
+ #include <cpu/pfc.h>
  
- 	sh73a0_pinmux_init();
- 
--	/* enable SCIFA4 */
--	gpio_request(GPIO_FN_SCIFA4_TXD, NULL);
--	gpio_request(GPIO_FN_SCIFA4_RXD, NULL);
--	gpio_request(GPIO_FN_SCIFA4_RTS_, NULL);
--	gpio_request(GPIO_FN_SCIFA4_CTS_, NULL);
--
- 	/* CS4 for SMSC/USB */
- 	gpio_request(GPIO_FN_CS4_, NULL); /* CS4 */
- 
++static struct resource sh7203_pfc_resources[] = {
++	[0] = {
++		.start	= 0xfffe3800,
++		.end	= 0xfffe3a9f,
++		.flags	= IORESOURCE_MEM,
++	},
++};
++
+ static int __init plat_pinmux_setup(void)
+ {
+-	return sh_pfc_register("pfc-sh7203", NULL, 0);
++	return sh_pfc_register("pfc-sh7203", sh7203_pfc_resources,
++			       ARRAY_SIZE(sh7203_pfc_resources));
+ }
+ arch_initcall(plat_pinmux_setup);
 -- 
-1.8.1.5
+1.7.10.4
 
