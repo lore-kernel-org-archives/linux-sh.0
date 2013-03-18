@@ -1,24 +1,44 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 14 Mar 2013 15:03:43 +0000
-Subject: Re: [PATCH v4 55/88] sh-pfc: sh73a0: Remove pull-up function GPIOS
-Message-Id: <CACRpkdYuRZdcWhz_5_r+nHkRFm1tWOuxJYoUJHP7spXNUU8+sw@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:47:09 +0000
+Subject: [PATCH 17/43] ARM: shmobile: sh73a0: fix Z and ZG clock hierarchy
+Message-Id: <1363607255-6385-18-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363215633-4264-56-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1363215633-4264-56-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Mar 14, 2013 at 12:00 AM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-> All sh73a0 platforms now use the pinconf API to control pull-ups, the
-> corresponding function GPIOS are unused. Remove them.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Z and ZG clocks on sh73a0 have pll0 as their parent, not pll1.
 
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-sh73a0.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-Yours,
-Linus Walleij
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index 5fa106b..71843dd 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -265,12 +265,12 @@ enum { DIV4_I, DIV4_ZG, DIV4_M3, DIV4_B, DIV4_M1, DIV4_M2,
+ 
+ static struct clk div4_clks[DIV4_NR] = {
+ 	[DIV4_I] = DIV4(FRQCRA, 20, 0xdff, CLK_ENABLE_ON_INIT),
+-	[DIV4_ZG] = DIV4(FRQCRA, 16, 0xd7f, CLK_ENABLE_ON_INIT),
++	[DIV4_ZG] = SH_CLK_DIV4(&pll0_clk, FRQCRA, 16, 0xd7f, CLK_ENABLE_ON_INIT),
+ 	[DIV4_M3] = DIV4(FRQCRA, 12, 0x1dff, CLK_ENABLE_ON_INIT),
+ 	[DIV4_B] = DIV4(FRQCRA, 8, 0xdff, CLK_ENABLE_ON_INIT),
+ 	[DIV4_M1] = DIV4(FRQCRA, 4, 0x1dff, 0),
+ 	[DIV4_M2] = DIV4(FRQCRA, 0, 0x1dff, 0),
+-	[DIV4_Z] = DIV4(FRQCRB, 24, 0x97f, 0),
++	[DIV4_Z] = SH_CLK_DIV4(&pll0_clk, FRQCRB, 24, 0x97f, 0),
+ 	[DIV4_ZTR] = DIV4(FRQCRB, 20, 0xdff, 0),
+ 	[DIV4_ZT] = DIV4(FRQCRB, 16, 0xdff, 0),
+ 	[DIV4_ZX] = DIV4(FRQCRB, 12, 0xdff, 0),
+-- 
+1.7.10.4
+
