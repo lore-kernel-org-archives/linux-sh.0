@@ -1,74 +1,44 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 12:05:44 +0000
-Subject: [GIT PULL] Renesas INTC External IRQ pin driver
-Message-Id: <1363608358-24215-1-git-send-email-horms+renesas@verge.net.au>
+From: Simon Horman <horms@verge.net.au>
+Date: Mon, 18 Mar 2013 12:20:52 +0000
+Subject: Re: [GIT PULL] Renesas INTC External IRQ pin driver
+Message-Id: <20130318122052.GA27503@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363608358-24215-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363608358-24215-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Hi Olof, Hi Arnd,
+On Mon, Mar 18, 2013 at 09:05:44PM +0900, Simon Horman wrote:
+> Hi Olof, Hi Arnd,
+> 
+> The following changes since commit da8288d03cd9e22036c759c1bfb5ec91e4ad01fd:
+> 
+>   ARM: shmobile: fix kzm9g-reference compile breakage (2013-03-14 00:00:14 +0900)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-intc-external-irq-for-v3.10
+> 
+> for you to fetch changes up to 2033e618f13f8efc782b9ad511dd37b654943072:
+> 
+>   irqchip: irqc: Add DT support (2013-03-14 00:02:46 +0900)
+> 
+> ----------------------------------------------------------------
+> Renesas INTC External IRQ pin driver
+> 
+> This provides two new INTC drivers for use with Renesas ARM-based SoCs and
+> makes use of them on the r8a7779 and sh73a0 SoCs.
+> 
+> It has been agreed by the relevant parties, Thomas Gleixner, Magnus Damm,
+> and myself that it would be best to merge this code through the renesas
+> tree and thus through the arm-soc tree.
+> 
+> This is based on:
+> 
+> git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-soc-v3.10
 
-The following changes since commit da8288d03cd9e22036c759c1bfb5ec91e4ad01fd:
+It seems there is a problem with renesas-soc-for-v3.10 so please
+ignore this pull request.
 
-  ARM: shmobile: fix kzm9g-reference compile breakage (2013-03-14 00:00:14 +0900)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-intc-external-irq-for-v3.10
-
-for you to fetch changes up to 2033e618f13f8efc782b9ad511dd37b654943072:
-
-  irqchip: irqc: Add DT support (2013-03-14 00:02:46 +0900)
-
-----------------------------------------------------------------
-Renesas INTC External IRQ pin driver
-
-This provides two new INTC drivers for use with Renesas ARM-based SoCs and
-makes use of them on the r8a7779 and sh73a0 SoCs.
-
-It has been agreed by the relevant parties, Thomas Gleixner, Magnus Damm,
-and myself that it would be best to merge this code through the renesas
-tree and thus through the arm-soc tree.
-
-This is based on:
-
-git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-soc-v3.10
-
-----------------------------------------------------------------
-Magnus Damm (14):
-      irqchip: Renesas INTC External IRQ pin driver
-      ARM: shmobile: irq_pin() for static IRQ pin assignment
-      ARM: shmobile: INTC External IRQ pin driver on sh73a0
-      ARM: shmobile: INTC External IRQ pin driver on r8a7779
-      irqchip: intc-irqpin: Whitespace fixes
-      irqchip: intc-irqpin: Cache mapped IRQ
-      irqchip: intc-irqpin: Add force comments
-      irqchip: intc-irqpin: Make use of devm functions
-      irqchip: intc-irqpin: GPL header for platform data
-      irqchip: Renesas IRQC driver
-      ARM: shmobile: Make sh73a0 INTC irqpin platform data static
-      ARM: shmobile: Make r8a7779 INTC irqpin platform data static
-      irqchip: intc-irqpin: Initial DT support
-      irqchip: irqc: Add DT support
-
- arch/arm/mach-shmobile/Kconfig                     |    2 +
- arch/arm/mach-shmobile/board-kzm9g.c               |   14 +-
- arch/arm/mach-shmobile/include/mach/common.h       |    1 +
- arch/arm/mach-shmobile/include/mach/irqs.h         |    4 +
- arch/arm/mach-shmobile/intc-r8a7779.c              |   53 ++-
- arch/arm/mach-shmobile/intc-sh73a0.c               |  117 -----
- arch/arm/mach-shmobile/setup-sh73a0.c              |  126 ++++++
- drivers/irqchip/Kconfig                            |    8 +
- drivers/irqchip/Makefile                           |    2 +
- drivers/irqchip/irq-renesas-intc-irqpin.c          |  471 ++++++++++++++++++++
- drivers/irqchip/irq-renesas-irqc.c                 |  307 +++++++++++++
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c                |    6 +-
- .../linux/platform_data/irq-renesas-intc-irqpin.h  |   29 ++
- include/linux/platform_data/irq-renesas-irqc.h     |   27 ++
- 14 files changed, 1039 insertions(+), 128 deletions(-)
- create mode 100644 drivers/irqchip/irq-renesas-intc-irqpin.c
- create mode 100644 drivers/irqchip/irq-renesas-irqc.c
- create mode 100644 include/linux/platform_data/irq-renesas-intc-irqpin.h
- create mode 100644 include/linux/platform_data/irq-renesas-irqc.h
