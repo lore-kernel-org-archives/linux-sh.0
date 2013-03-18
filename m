@@ -1,22 +1,67 @@
-From: David Miller <davem@davemloft.net>
-Date: Thu, 21 Mar 2013 15:56:51 +0000
-Subject: Re: [PATCH] net: sh-eth: Use pr_err instead of printk
-Message-Id: <20130321.115651.1835577210151216326.davem@davemloft.net>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 12:05:55 +0000
+Subject: [PATCH 11/14] ARM: shmobile: Make sh73a0 INTC irqpin platform data static
+Message-Id: <1363608358-24215-12-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363855615-30551-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363855615-30551-1-git-send-email-horms+renesas@verge.net.au>
+References: <1363608358-24215-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363608358-24215-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: horms+renesas@verge.net.au
-Cc: netdev@vger.kernel.org, linux-sh@vger.kernel.org, devicetree-discuss@lists.ozlabs.org, magnus.damm@gmail.com, nobuhiro.iwamatsu.yj@renesas.com
+To: linux-arm-kernel@lists.infradead.org
 
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Thu, 21 Mar 2013 17:46:55 +0900
+From: Magnus Damm <damm@opensource.se>
 
-> From: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-> 
-> Signed-off-by: Nobuhiro Iwamatsu <nobuhiro.iwamatsu.yj@renesas.com>
-> Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+The platform data for the INTC irq pin driver
+seems to be global symbols, make it static to
+allow multi-soc build.
 
-Applied, thanks.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/setup-sh73a0.c |    8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index 638735f..e8cd93a 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -812,7 +812,7 @@ static struct platform_device ipmmu_device = {
+ 	.num_resources  = ARRAY_SIZE(ipmmu_resources),
+ };
+ 
+-struct renesas_intc_irqpin_config irqpin0_platform_data = {
++static struct renesas_intc_irqpin_config irqpin0_platform_data = {
+ 	.irq_base = irq_pin(0), /* IRQ0 -> IRQ7 */
+ };
+ 
+@@ -842,7 +842,7 @@ static struct platform_device irqpin0_device = {
+ 	},
+ };
+ 
+-struct renesas_intc_irqpin_config irqpin1_platform_data = {
++static struct renesas_intc_irqpin_config irqpin1_platform_data = {
+ 	.irq_base = irq_pin(8), /* IRQ8 -> IRQ15 */
+ 	.control_parent = true, /* Disable spurious IRQ10 */
+ };
+@@ -873,7 +873,7 @@ static struct platform_device irqpin1_device = {
+ 	},
+ };
+ 
+-struct renesas_intc_irqpin_config irqpin2_platform_data = {
++static struct renesas_intc_irqpin_config irqpin2_platform_data = {
+ 	.irq_base = irq_pin(16), /* IRQ16 -> IRQ23 */
+ };
+ 
+@@ -903,7 +903,7 @@ static struct platform_device irqpin2_device = {
+ 	},
+ };
+ 
+-struct renesas_intc_irqpin_config irqpin3_platform_data = {
++static struct renesas_intc_irqpin_config irqpin3_platform_data = {
+ 	.irq_base = irq_pin(24), /* IRQ24 -> IRQ31 */
+ };
+ 
+-- 
+1.7.10.4
+
