@@ -1,169 +1,422 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 26 Mar 2013 14:12:38 +0000
-Subject: [PATCH 01/03 v2] ARM: shmobile: APE6EVM base support
-Message-Id: <20130326141238.19958.21184.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:05:03 +0000
+Subject: [PATCH 007/142] sh-pfc: Replace first_gpio and last_gpio with nr_gpios
+Message-Id: <1363604838-29359-8-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130326141228.19958.93081.sendpatchset@w520>
-In-Reply-To: <20130326141228.19958.93081.sendpatchset@w520>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-V2 of APE6EVM base board support making use of
-1 GiB of memory, the SCIFA0 serial port and 
-ARM architected timer.
+The SoC information first_gpio field is always equal to 0, and the
+last_gpio field is the index of the last entry in the pinmux_gpios
+array. Replace the first_gpio and last_gpio fields by a nr_gpios field,
+and initialize it to ARRAY_SIZE(pinmux_gpios).
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
+ drivers/pinctrl/sh-pfc/core.c        |    2 +-
+ drivers/pinctrl/sh-pfc/gpio.c        |   11 ++++-------
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c |    5 ++---
+ drivers/pinctrl/sh-pfc/pfc-r8a7779.c |    5 ++---
+ drivers/pinctrl/sh-pfc/pfc-sh7203.c  |    5 ++---
+ drivers/pinctrl/sh-pfc/pfc-sh7264.c  |    5 ++---
+ drivers/pinctrl/sh-pfc/pfc-sh7269.c  |    5 ++---
+ drivers/pinctrl/sh-pfc/pfc-sh7372.c  |    5 ++---
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c  |    5 ++---
+ drivers/pinctrl/sh-pfc/pfc-sh7720.c  |    5 ++---
+ drivers/pinctrl/sh-pfc/pfc-sh7722.c  |    5 ++---
+ drivers/pinctrl/sh-pfc/pfc-sh7723.c  |    5 ++---
+ drivers/pinctrl/sh-pfc/pfc-sh7724.c  |    5 ++---
+ drivers/pinctrl/sh-pfc/pfc-sh7734.c  |    5 ++---
+ drivers/pinctrl/sh-pfc/pfc-sh7757.c  |    5 ++---
+ drivers/pinctrl/sh-pfc/pfc-sh7785.c  |    5 ++---
+ drivers/pinctrl/sh-pfc/pfc-sh7786.c  |    5 ++---
+ drivers/pinctrl/sh-pfc/pfc-shx3.c    |    3 +--
+ drivers/pinctrl/sh-pfc/pinctrl.c     |   16 +++++-----------
+ drivers/pinctrl/sh-pfc/sh_pfc.h      |    4 ++--
+ 20 files changed, 43 insertions(+), 68 deletions(-)
 
- Changes since V1:
- - Sorted headers
- - Use ape6evm_add_standard_devices() to setup SoC devices and clocks
-
-  Written against "next" renesas.git 811689afc214564c4a5f238ecf4d8bdc0e52b615
+diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
+index 970ddff..1b86a90 100644
+--- a/drivers/pinctrl/sh-pfc/core.c
++++ b/drivers/pinctrl/sh-pfc/core.c
+@@ -260,7 +260,7 @@ static void sh_pfc_setup_data_regs(struct sh_pfc *pfc)
+ 	struct pinmux_data_reg *drp;
+ 	int k;
  
- Depends on the following series:
- [PATCH 00/04] ARM: shmobile: r8a73a4 SoC support V2
-
- Does not depend on:
- [PATCH 00/02] sh-pfc: Initial r8a73a4 PFC support
-
-arch/arm/boot/dts/Makefile             |    1 
- arch/arm/boot/dts/r8a73a4-ape6evm.dts  |   26 ++++++++++++++++++
- arch/arm/mach-shmobile/Kconfig         |    8 ++++-
- arch/arm/mach-shmobile/Makefile        |    1 
- arch/arm/mach-shmobile/board-ape6evm.c |   46 ++++++++++++++++++++++++++++++++
- 5 files changed, 81 insertions(+), 1 deletion(-)
-
---- 0001/arch/arm/boot/dts/Makefile
-+++ work/arch/arm/boot/dts/Makefile	2013-03-18 21:44:34.000000000 +0900
-@@ -139,6 +139,7 @@ dtb-$(CONFIG_ARCH_SHMOBILE) += emev2-kzm
- 	r8a7779-marzen-reference.dtb \
- 	sh73a0-kzm9g.dtb \
- 	sh73a0-kzm9g-reference.dtb \
-+	r8a73a4-ape6evm.dtb \
- 	sh7372-mackerel.dtb
- dtb-$(CONFIG_ARCH_SOCFPGA) += socfpga_cyclone5.dtb \
- 	socfpga_vt.dtb
---- /dev/null
-+++ work/arch/arm/boot/dts/r8a73a4-ape6evm.dts	2013-03-18 21:44:35.000000000 +0900
-@@ -0,0 +1,26 @@
-+/*
-+ * Device Tree Source for the APE6EVM board
-+ *
-+ * Copyright (C) 2013 Renesas Solutions Corp.
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/dts-v1/;
-+/include/ "r8a73a4.dtsi"
-+
-+/ {
-+	model = "APE6EVM";
-+	compatible = "renesas,ape6evm", "renesas,r8a73a4";
-+
-+	chosen {
-+		bootargs = "console=ttySC0,115200 ignore_loglevel";
-+	};
-+
-+	memory@40000000 {
-+		device_type = "memory";
-+		reg = <0x40000000 0x40000000>;
-+	};
-+};
---- 0007/arch/arm/mach-shmobile/Kconfig
-+++ work/arch/arm/mach-shmobile/Kconfig	2013-03-18 21:44:34.000000000 +0900
-@@ -79,6 +79,11 @@ config MACH_AG5EVM
- 	select REGULATOR_FIXED_VOLTAGE if REGULATOR
- 	select SH_LCD_MIPI_DSI
+-	for (k = pfc->info->first_gpio; k <= pfc->info->last_gpio; k++)
++	for (k = 0; k < pfc->info->nr_gpios; k++)
+ 		sh_pfc_setup_data_reg(pfc, k);
  
-+config MACH_APE6EVM
-+	bool "APE6EVM board"
-+	depends on ARCH_R8A73A4
-+	select USE_OF
-+
- config MACH_MACKEREL
- 	bool "mackerel board"
- 	depends on ARCH_SH7372
-@@ -166,7 +171,7 @@ config MEMORY_START
- 	hex "Physical memory start address"
- 	default "0x40000000" if MACH_AP4EVB || MACH_AG5EVM || \
- 				MACH_MACKEREL || MACH_BONITO || \
--				MACH_ARMADILLO800EVA
-+				MACH_ARMADILLO800EVA || MACH_APE6EVM
- 	default "0x41000000" if MACH_KOTA2
- 	default "0x00000000"
- 	---help---
-@@ -176,6 +181,7 @@ config MEMORY_START
+ 	k = 0;
+diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
+index a535075..f46f069 100644
+--- a/drivers/pinctrl/sh-pfc/gpio.c
++++ b/drivers/pinctrl/sh-pfc/gpio.c
+@@ -130,12 +130,10 @@ static void sh_pfc_gpio_setup(struct sh_pfc_chip *chip)
+ 	gc->set = sh_gpio_set;
+ 	gc->to_irq = sh_gpio_to_irq;
  
- config MEMORY_SIZE
- 	hex "Physical memory size"
-+	default "0x40000000" if MACH_APE6EVM
- 	default "0x20000000" if MACH_AG5EVM || MACH_BONITO || \
- 				MACH_ARMADILLO800EVA
- 	default "0x1e000000" if MACH_KOTA2
---- 0003/arch/arm/mach-shmobile/Makefile
-+++ work/arch/arm/mach-shmobile/Makefile	2013-03-18 21:44:34.000000000 +0900
-@@ -35,6 +35,7 @@ obj-$(CONFIG_ARCH_SH73A0)	+= pm-sh73a0.o
- # Board objects
- obj-$(CONFIG_MACH_AP4EVB)	+= board-ap4evb.o
- obj-$(CONFIG_MACH_AG5EVM)	+= board-ag5evm.o
-+obj-$(CONFIG_MACH_APE6EVM)	+= board-ape6evm.o
- obj-$(CONFIG_MACH_MACKEREL)	+= board-mackerel.o
- obj-$(CONFIG_MACH_KOTA2)	+= board-kota2.o
- obj-$(CONFIG_MACH_BONITO)	+= board-bonito.o
---- /dev/null
-+++ work/arch/arm/mach-shmobile/board-ape6evm.c	2013-03-18 21:45:34.000000000 +0900
-@@ -0,0 +1,46 @@
-+/*
-+ * APE6EVM board support
-+ *
-+ * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2013  Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+ */
+-	WARN_ON(pfc->info->first_gpio != 0); /* needs testing */
+-
+ 	gc->label = pfc->info->name;
+ 	gc->owner = THIS_MODULE;
+-	gc->base = pfc->info->first_gpio;
+-	gc->ngpio = (pfc->info->last_gpio - pfc->info->first_gpio) + 1;
++	gc->base = 0;
++	gc->ngpio = pfc->info->nr_gpios;
+ }
+ 
+ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+@@ -157,9 +155,8 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
+ 
+ 	pfc->gpio = chip;
+ 
+-	pr_info("%s handling gpio %d -> %d\n",
+-		pfc->info->name, pfc->info->first_gpio,
+-		pfc->info->last_gpio);
++	pr_info("%s handling gpio 0 -> %u\n",
++		pfc->info->name, pfc->info->nr_gpios - 1);
+ 
+ 	return 0;
+ }
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index 214788c..c189a86 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -2597,10 +2597,9 @@ struct sh_pfc_soc_info r8a7740_pinmux_info = {
+ 	.function	= { PINMUX_FUNCTION_BEGIN,
+ 			    PINMUX_FUNCTION_END },
+ 
+-	.first_gpio	= GPIO_PORT0,
+-	.last_gpio	= GPIO_FN_TRACEAUD_FROM_MEMC,
+-
+ 	.gpios		= pinmux_gpios,
++	.nr_gpios	= ARRAY_SIZE(pinmux_gpios),
 +
-+#include <linux/interrupt.h>
-+#include <linux/irqchip.h>
-+#include <linux/kernel.h>
-+#include <linux/platform_device.h>
-+#include <mach/common.h>
-+#include <mach/r8a73a4.h>
-+#include <asm/mach-types.h>
-+#include <asm/mach/arch.h>
+ 	.cfg_regs	= pinmux_config_regs,
+ 	.data_regs	= pinmux_data_regs,
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+index 13feaa0..16ec97a 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
+@@ -2612,10 +2612,9 @@ struct sh_pfc_soc_info r8a7779_pinmux_info = {
+ 	.mark = { PINMUX_MARK_BEGIN, PINMUX_MARK_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+-	.first_gpio = GPIO_GP_0_0,
+-	.last_gpio = GPIO_FN_SCK4_B,
+-
+ 	.gpios = pinmux_gpios,
++	.nr_gpios = ARRAY_SIZE(pinmux_gpios),
 +
-+static void __init ape6evm_add_standard_devices(void)
-+{
-+	r8a73a4_clock_init();
-+	r8a73a4_add_standard_devices();
-+}
+ 	.cfg_regs = pinmux_config_regs,
+ 	.data_regs = pinmux_data_regs,
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7203.c b/drivers/pinctrl/sh-pfc/pfc-sh7203.c
+index 22be49b..6cc6701 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7203.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7203.c
+@@ -1580,10 +1580,9 @@ struct sh_pfc_soc_info sh7203_pinmux_info = {
+ 	.mark = { PINMUX_MARK_BEGIN, PINMUX_MARK_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+-	.first_gpio = GPIO_PA7,
+-	.last_gpio = GPIO_FN_LCD_DATA0,
+-
+ 	.gpios = pinmux_gpios,
++	.nr_gpios = ARRAY_SIZE(pinmux_gpios),
 +
-+static const char *ape6evm_boards_compat_dt[] __initdata = {
-+	"renesas,ape6evm",
-+	NULL,
-+};
+ 	.cfg_regs = pinmux_config_regs,
+ 	.data_regs = pinmux_data_regs,
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7264.c b/drivers/pinctrl/sh-pfc/pfc-sh7264.c
+index ebe9c7c..c2ecc65 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7264.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7264.c
+@@ -2119,10 +2119,9 @@ struct sh_pfc_soc_info sh7264_pinmux_info = {
+ 	.mark = { PINMUX_MARK_BEGIN, PINMUX_MARK_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+-	.first_gpio = GPIO_PA3,
+-	.last_gpio = GPIO_FN_LCD_M_DISP,
+-
+ 	.gpios = pinmux_gpios,
++	.nr_gpios = ARRAY_SIZE(pinmux_gpios),
 +
-+DT_MACHINE_START(APE6EVM_DT, "ape6evm")
-+	.init_irq	= irqchip_init,
-+	.init_time	= shmobile_timer_init,
-+	.init_machine	= ape6evm_add_standard_devices,
-+	.dt_compat	= ape6evm_boards_compat_dt,
-+MACHINE_END
+ 	.cfg_regs = pinmux_config_regs,
+ 	.data_regs = pinmux_data_regs,
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7269.c b/drivers/pinctrl/sh-pfc/pfc-sh7269.c
+index 87cb693..2013f4f 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7269.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7269.c
+@@ -2822,10 +2822,9 @@ struct sh_pfc_soc_info sh7269_pinmux_info = {
+ 	.mark = { PINMUX_MARK_BEGIN, PINMUX_MARK_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+-	.first_gpio = GPIO_PA1,
+-	.last_gpio = GPIO_FN_LCD_M_DISP,
+-
+ 	.gpios = pinmux_gpios,
++	.nr_gpios = ARRAY_SIZE(pinmux_gpios),
++
+ 	.cfg_regs = pinmux_config_regs,
+ 	.data_regs = pinmux_data_regs,
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+index d44e7f0..332cf34 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
+@@ -1643,10 +1643,9 @@ struct sh_pfc_soc_info sh7372_pinmux_info = {
+ 	.mark = { PINMUX_MARK_BEGIN, PINMUX_MARK_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+-	.first_gpio = GPIO_PORT0,
+-	.last_gpio = GPIO_FN_SDENC_DV_CLKI,
+-
+ 	.gpios = pinmux_gpios,
++	.nr_gpios = ARRAY_SIZE(pinmux_gpios),
++
+ 	.cfg_regs = pinmux_config_regs,
+ 	.data_regs = pinmux_data_regs,
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index 232731b..d5ee0f7 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -2779,10 +2779,9 @@ struct sh_pfc_soc_info sh73a0_pinmux_info = {
+ 	.mark = { PINMUX_MARK_BEGIN, PINMUX_MARK_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+-	.first_gpio = GPIO_PORT0,
+-	.last_gpio = GPIO_FN_FSIAISLD_PU,
+-
+ 	.gpios = pinmux_gpios,
++	.nr_gpios = ARRAY_SIZE(pinmux_gpios),
++
+ 	.cfg_regs = pinmux_config_regs,
+ 	.data_regs = pinmux_data_regs,
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7720.c b/drivers/pinctrl/sh-pfc/pfc-sh7720.c
+index e2e4520..8646237 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7720.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7720.c
+@@ -1223,10 +1223,9 @@ struct sh_pfc_soc_info sh7720_pinmux_info = {
+ 	.mark = { PINMUX_MARK_BEGIN, PINMUX_MARK_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+-	.first_gpio = GPIO_PTA7,
+-	.last_gpio = GPIO_FN_STATUS1,
+-
+ 	.gpios = pinmux_gpios,
++	.nr_gpios = ARRAY_SIZE(pinmux_gpios),
++
+ 	.cfg_regs = pinmux_config_regs,
+ 	.data_regs = pinmux_data_regs,
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7722.c b/drivers/pinctrl/sh-pfc/pfc-sh7722.c
+index 225fa96..194ae3d 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7722.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7722.c
+@@ -1767,10 +1767,9 @@ struct sh_pfc_soc_info sh7722_pinmux_info = {
+ 	.mark = { PINMUX_MARK_BEGIN, PINMUX_MARK_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+-	.first_gpio = GPIO_PTA7,
+-	.last_gpio = GPIO_FN_KEYOUT5_IN5,
+-
+ 	.gpios = pinmux_gpios,
++	.nr_gpios = ARRAY_SIZE(pinmux_gpios),
++
+ 	.cfg_regs = pinmux_config_regs,
+ 	.data_regs = pinmux_data_regs,
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7723.c b/drivers/pinctrl/sh-pfc/pfc-sh7723.c
+index 49fd5c8..f31aa4f 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7723.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7723.c
+@@ -1891,10 +1891,9 @@ struct sh_pfc_soc_info sh7723_pinmux_info = {
+ 	.mark = { PINMUX_MARK_BEGIN, PINMUX_MARK_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+-	.first_gpio = GPIO_PTA7,
+-	.last_gpio = GPIO_FN_IDEA0,
+-
+ 	.gpios = pinmux_gpios,
++	.nr_gpios = ARRAY_SIZE(pinmux_gpios),
++
+ 	.cfg_regs = pinmux_config_regs,
+ 	.data_regs = pinmux_data_regs,
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7724.c b/drivers/pinctrl/sh-pfc/pfc-sh7724.c
+index 054b700..64b69b7 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7724.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7724.c
+@@ -2213,10 +2213,9 @@ struct sh_pfc_soc_info sh7724_pinmux_info = {
+ 	.mark = { PINMUX_MARK_BEGIN, PINMUX_MARK_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+-	.first_gpio = GPIO_PTA7,
+-	.last_gpio = GPIO_FN_INTC_IRQ0,
+-
+ 	.gpios = pinmux_gpios,
++	.nr_gpios = ARRAY_SIZE(pinmux_gpios),
++
+ 	.cfg_regs = pinmux_config_regs,
+ 	.data_regs = pinmux_data_regs,
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7734.c b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
+index 23d76d2..d67a572 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7734.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7734.c
+@@ -2463,10 +2463,9 @@ struct sh_pfc_soc_info sh7734_pinmux_info = {
+ 	.mark = { PINMUX_MARK_BEGIN, PINMUX_MARK_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+-	.first_gpio = GPIO_GP_0_0,
+-	.last_gpio = GPIO_FN_ST_CLKOUT,
+-
+ 	.gpios = pinmux_gpios,
++	.nr_gpios = ARRAY_SIZE(pinmux_gpios),
++
+ 	.cfg_regs = pinmux_config_regs,
+ 	.data_regs = pinmux_data_regs,
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7757.c b/drivers/pinctrl/sh-pfc/pfc-sh7757.c
+index ffbd8b7..7fc1310 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7757.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7757.c
+@@ -2270,10 +2270,9 @@ struct sh_pfc_soc_info sh7757_pinmux_info = {
+ 	.mark = { PINMUX_MARK_BEGIN, PINMUX_MARK_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+-	.first_gpio = GPIO_PTA0,
+-	.last_gpio = GPIO_FN_ON_DQ0,
+-
+ 	.gpios = pinmux_gpios,
++	.nr_gpios = ARRAY_SIZE(pinmux_gpios),
++
+ 	.cfg_regs = pinmux_config_regs,
+ 	.data_regs = pinmux_data_regs,
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7785.c b/drivers/pinctrl/sh-pfc/pfc-sh7785.c
+index 2e9d7cb..4bde4b5 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7785.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7785.c
+@@ -1292,10 +1292,9 @@ struct sh_pfc_soc_info sh7785_pinmux_info = {
+ 	.mark = { PINMUX_MARK_BEGIN, PINMUX_MARK_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+-	.first_gpio = GPIO_PA7,
+-	.last_gpio = GPIO_FN_IRQOUT,
+-
+ 	.gpios = pinmux_gpios,
++	.nr_gpios = ARRAY_SIZE(pinmux_gpios),
++
+ 	.cfg_regs = pinmux_config_regs,
+ 	.data_regs = pinmux_data_regs,
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7786.c b/drivers/pinctrl/sh-pfc/pfc-sh7786.c
+index c9d8f50..9a42d25 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh7786.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh7786.c
+@@ -825,10 +825,9 @@ struct sh_pfc_soc_info sh7786_pinmux_info = {
+ 	.mark = { PINMUX_MARK_BEGIN, PINMUX_MARK_END },
+ 	.function = { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+ 
+-	.first_gpio = GPIO_PA7,
+-	.last_gpio = GPIO_FN_IRL4,
+-
+ 	.gpios = pinmux_gpios,
++	.nr_gpios = ARRAY_SIZE(pinmux_gpios),
++
+ 	.cfg_regs = pinmux_config_regs,
+ 	.data_regs = pinmux_data_regs,
+ 
+diff --git a/drivers/pinctrl/sh-pfc/pfc-shx3.c b/drivers/pinctrl/sh-pfc/pfc-shx3.c
+index 04e8940..b23f5f9 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-shx3.c
++++ b/drivers/pinctrl/sh-pfc/pfc-shx3.c
+@@ -572,9 +572,8 @@ struct sh_pfc_soc_info shx3_pinmux_info = {
+ 	.output		= { PINMUX_OUTPUT_BEGIN,   PINMUX_OUTPUT_END },
+ 	.mark		= { PINMUX_MARK_BEGIN,     PINMUX_MARK_END },
+ 	.function	= { PINMUX_FUNCTION_BEGIN, PINMUX_FUNCTION_END },
+-	.first_gpio	= GPIO_PA7,
+-	.last_gpio	= GPIO_FN_STATUS0,
+ 	.gpios		= shx3_pinmux_gpios,
++	.nr_gpios	= ARRAY_SIZE(shx3_pinmux_gpios),
+ 	.gpio_data	= shx3_pinmux_data,
+ 	.gpio_data_size	= ARRAY_SIZE(shx3_pinmux_data),
+ 	.cfg_regs	= shx3_pinmux_config_regs,
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index 4ce2753..908b536 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -336,7 +336,7 @@ static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ {
+ 	int i;
+ 
+-	pmx->nr_pads = pfc->info->last_gpio - pfc->info->first_gpio + 1;
++	pmx->nr_pads = pfc->info->nr_gpios;
+ 
+ 	pmx->pads = devm_kzalloc(pfc->dev, sizeof(*pmx->pads) * pmx->nr_pads,
+ 				 GFP_KERNEL);
+@@ -345,17 +345,11 @@ static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ 		return -ENOMEM;
+ 	}
+ 
+-	/*
+-	 * We don't necessarily have a 1:1 mapping between pin and linux
+-	 * GPIO number, as the latter maps to the associated enum_id.
+-	 * Care needs to be taken to translate back to pin space when
+-	 * dealing with any pin configurations.
+-	 */
+ 	for (i = 0; i < pmx->nr_pads; i++) {
+ 		struct pinctrl_pin_desc *pin = pmx->pads + i;
+ 		struct pinmux_gpio *gpio = pfc->info->gpios + i;
+ 
+-		pin->number = pfc->info->first_gpio + i;
++		pin->number = i;
+ 		pin->name = gpio->name;
+ 
+ 		/* XXX */
+@@ -421,9 +415,9 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
+ 
+ 	pmx->range.name = DRV_NAME,
+ 	pmx->range.id = 0;
+-	pmx->range.npins = pfc->info->last_gpio - pfc->info->first_gpio + 1;
+-	pmx->range.base = pfc->info->first_gpio;
+-	pmx->range.pin_base = pfc->info->first_gpio;
++	pmx->range.npins = pfc->info->nr_gpios;
++	pmx->range.base = 0;
++	pmx->range.pin_base = 0;
+ 
+ 	pinctrl_add_gpio_range(pmx->pctl, &pmx->range);
+ 
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index 13049c4..67fe91b 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -99,9 +99,9 @@ struct sh_pfc_soc_info {
+ 	struct pinmux_range mark;
+ 	struct pinmux_range function;
+ 
+-	unsigned first_gpio, last_gpio;
+-
+ 	struct pinmux_gpio *gpios;
++	unsigned int nr_gpios;
++
+ 	struct pinmux_cfg_reg *cfg_regs;
+ 	struct pinmux_data_reg *data_regs;
+ 
+-- 
+1.7.10.4
+
