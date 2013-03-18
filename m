@@ -1,43 +1,43 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 27 Mar 2013 19:18:26 +0000
-Subject: Re: [PATCH 0/2] Add R-Car Display Unit support for the Marzen board
-Message-Id: <2147090.G3zcvJnIjL@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:47:32 +0000
+Subject: [PATCH 40/43] ARM: mach-shmobile: r8a7779: SATA DT configuration
+Message-Id: <1363607255-6385-41-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364407550-30652-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1364407550-30652-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Sergei,
+From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-On Wednesday 27 March 2013 23:07:31 Sergei Shtylyov wrote:
-> Hello.
-> 
-> On 03/27/2013 09:05 PM, Laurent Pinchart wrote:
-> > Per Simon's request, here are r8a7779 and marzen patches that add support
-> > for the display unit, based on the pinctrl API.
-> > 
-> > The patches are not meant to be merged yet, they will be submitted with
-> > the next version of the DU driver.
-> > 
-> > Sergei, is this more in line with how you want SoC devices to be declared
-> > ?
-> 
-> Yes, it seems exactly how it's done by e.g. arch/arm/mach-davinci/, however
-> I thought it was kind of tradition here to register the platform devices
-> from array. I.e. you could separate setting the platform data ptr and
-> registering the device... I don't have a strong opinion on either approach,
-> so I will just follow your example when I'll have to submit an Ether SoC
-> device.
+Allow configuration of the r8a7779 SoC SATA controller using a flattened device
+tree.
 
-The issue with keeping the device in the devices array is that it would get 
-registered even if the board doesn't provide any platform data, which is 
-probably something we want to avoid.
+Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/boot/dts/r8a7779.dtsi |    7 +++++++
+ 1 file changed, 7 insertions(+)
 
+diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
+index 18383db..fe5c6f2 100644
+--- a/arch/arm/boot/dts/r8a7779.dtsi
++++ b/arch/arm/boot/dts/r8a7779.dtsi
+@@ -88,4 +88,11 @@
+ 		compatible = "renesas,rcar-thermal";
+ 		reg = <0xffc48000 0x38>;
+ 	};
++
++	sata: sata@fc600000 {
++		compatible = "renesas,rcar-sata";
++		reg = <0xfc600000 0x2000>;
++		interrupt-parent = <&gic>;
++		interrupts = <0 100 0x4>;
++	};
+ };
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.10.4
 
