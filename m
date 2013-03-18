@@ -1,55 +1,59 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Mar 2013 22:39:25 +0000
-Subject: [PATCH 06/25] sh: sh7723: Add pin control resources
-Message-Id: <1363214384-3870-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:06:37 +0000
+Subject: [PATCH 101/142] ARM: shmobile: marzen: Register pinctrl mappings for USB
+Message-Id: <1363604838-29359-102-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add memory resources for the pin control platform device to let the
-sh-pfc driver ioremap() registers properly instead of evily casting
-register physical addresses to virtual addresses.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-The memory resource address range has been extracted from the config and
-data registes lists in the sh-pfc driver.
+Replace the GPIO-based USB pinmux configuration by pinctrl mappings.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c | 14 ++++++++++++--
- 1 file changed, 12 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/board-marzen.c |   17 +++++++++--------
+ 1 file changed, 9 insertions(+), 8 deletions(-)
 
-diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c
-index bcec7ad..99c637d 100644
---- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c
-+++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c
-@@ -8,13 +8,23 @@
-  * for more details.
-  */
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index 8871af3..04bcf88 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -347,6 +347,15 @@ static const struct pinctrl_map marzen_pinctrl_map[] = {
+ 				  "sdhi0_cd", "sdhi0"),
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
+ 				  "sdhi0_wp", "sdhi0"),
++	/* USB0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform.0", "pfc-r8a7779",
++				  "usb0", "usb0"),
++	/* USB1 */
++	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform.0", "pfc-r8a7779",
++				  "usb1", "usb1"),
++	/* USB2 */
++	PIN_MAP_MUX_GROUP_DEFAULT("ehci-platform.1", "pfc-r8a7779",
++				  "usb2", "usb2"),
+ };
  
-+#include <linux/bug.h>
- #include <linux/init.h>
- #include <linux/kernel.h>
-+#include <linux/ioport.h>
- #include <cpu/pfc.h>
+ static void __init marzen_init(void)
+@@ -364,14 +373,6 @@ static void __init marzen_init(void)
+ 	gpio_request(GPIO_FN_EX_CS0, NULL); /* nCS */
+ 	gpio_request(GPIO_FN_IRQ1_B, NULL); /* IRQ + PME */
  
-+static struct resource sh7723_pfc_resources[] = {
-+	[0] = {
-+		.start	= 0xa4050100,
-+		.end	= 0xa405016f,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+};
-+
- static int __init plat_pinmux_setup(void)
- {
--	return sh_pfc_register("pfc-sh7723", NULL, 0);
-+	return sh_pfc_register("pfc-sh7723", sh7723_pfc_resources,
-+			       ARRAY_SIZE(sh7723_pfc_resources));
- }
+-	/* USB (CN21) */
+-	gpio_request(GPIO_FN_USB_OVC0, NULL);
+-	gpio_request(GPIO_FN_USB_OVC1, NULL);
+-	gpio_request(GPIO_FN_USB_OVC2, NULL);
 -
- arch_initcall(plat_pinmux_setup);
+-	/* USB (CN22) */
+-	gpio_request(GPIO_FN_USB_PENC2, NULL);
+-
+ 	r8a7779_add_standard_devices();
+ 	platform_add_devices(marzen_devices, ARRAY_SIZE(marzen_devices));
+ }
 -- 
-1.8.1.5
+1.7.10.4
 
