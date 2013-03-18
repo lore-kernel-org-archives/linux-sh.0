@@ -1,49 +1,56 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Mon, 18 Mar 2013 15:09:53 +0000
-Subject: [PATCH 00/03] ARM: shmobile: r8a73a4 APE6EVM board support V2
-Message-Id: <20130318150953.28231.73454.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:06:35 +0000
+Subject: [PATCH 099/142] ARM: shmobile: marzen: Register pinctrl mappings for SCIF
+Message-Id: <1363604838-29359-100-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-ARM: shmobile: r8a73a4 APE6EVM board support V2
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-[PATCH 01/03] ARM: shmobile: APE6EVM base support V2
-[PATCH 02/03] ARM: shmobile: APE6EVM PFC support
-[PATCH 03/03] ARM: shmobile: APE6EVM LAN9220 support
+Replace the GPIO-based SCIF pinmux configuration by pinctrl mappings.
 
-This series is V2 of initial support for the APE6EVM board.
-
-The APE6EVM board makes use of the r8a73a4 SoC and has a
-couple of different I/O devices on board, but with this
-series only support for the SCIFA0 UART and the Ethernet
-chip is included.
-
-In the future support for more I/O devices will be added as
-incremental feature patches.
-
-Changes since V1:
-- Went from single patch to series
-- Use ape6evm_add_standard_devices() to setup SoC devices and clocks
-- Use PFC to configure SCIFA0
-- Add Ethernet support including PFC support
-
-For more details please see the individual patches.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
+ arch/arm/mach-shmobile/board-marzen.c |   14 ++++++--------
+ 1 file changed, 6 insertions(+), 8 deletions(-)
 
- Written against "next" renesas.git 811689afc214564c4a5f238ecf4d8bdc0e52b615
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index f00677f..4097366 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -329,6 +329,12 @@ void __init marzen_init_late(void)
+ }
  
- Depends on the following two series:
- [PATCH 00/04] ARM: shmobile: r8a73a4 SoC support V2
- [PATCH 00/02] sh-pfc: Initial r8a73a4 PFC support
+ static const struct pinctrl_map marzen_pinctrl_map[] = {
++	/* SCIF2 (CN18: DEBUG0) */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-r8a7779",
++				  "scif2_data_c", "scif2"),
++	/* SCIF4 (CN19: DEBUG1) */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-r8a7779",
++				  "scif4_data", "scif4"),
+ 	/* SDHI0 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
+ 				  "sdhi0_data4", "sdhi0"),
+@@ -351,14 +357,6 @@ static void __init marzen_init(void)
+ 				  ARRAY_SIZE(marzen_pinctrl_map));
+ 	r8a7779_pinmux_init();
+ 
+-	/* SCIF2 (CN18: DEBUG0) */
+-	gpio_request(GPIO_FN_TX2_C, NULL);
+-	gpio_request(GPIO_FN_RX2_C, NULL);
+-
+-	/* SCIF4 (CN19: DEBUG1) */
+-	gpio_request(GPIO_FN_TX4, NULL);
+-	gpio_request(GPIO_FN_RX4, NULL);
+-
+ 	/* LAN89218 */
+ 	gpio_request(GPIO_FN_EX_CS0, NULL); /* nCS */
+ 	gpio_request(GPIO_FN_IRQ1_B, NULL); /* IRQ + PME */
+-- 
+1.7.10.4
 
- arch/arm/boot/dts/Makefile             |    1 
- arch/arm/boot/dts/r8a73a4-ape6evm.dts  |   47 ++++++++++++++++
- arch/arm/mach-shmobile/Kconfig         |   10 +++
- arch/arm/mach-shmobile/Makefile        |    1 
- arch/arm/mach-shmobile/board-ape6evm.c |   89 ++++++++++++++++++++++++++++++++
- 5 files changed, 147 insertions(+), 1 deletion(-)
