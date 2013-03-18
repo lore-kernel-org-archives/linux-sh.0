@@ -1,44 +1,67 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 12:32:30 +0000
-Subject: [PATCH 20/43] ARM: shmobile: sh73a0: Remove warning about SMP
-Message-Id: <1363609973-31086-21-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:46:59 +0000
+Subject: [PATCH 07/43] ARM: shmobile: add MMCIF and SDHI DT clock aliases to sh73a0 and r8a7740
+Message-Id: <1363607255-6385-8-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
+References: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-Remove warning about SMP not working with the
-clock initialisation sheme used for reference DT.
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-This is resolved by not selecting CONFIG_PREEMPT.
+Add clock lookup entries for SDHI and MMCIF device names, for the FDT case.
 
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+[horms+renesas@verge.net.au: resolved trivial conflict in clock-r8a7740.c]
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-sh73a0.c |    8 --------
- 1 file changed, 8 deletions(-)
+ arch/arm/mach-shmobile/clock-r8a7740.c |    4 ++++
+ arch/arm/mach-shmobile/clock-sh73a0.c  |    3 +++
+ 2 files changed, 7 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
-index c7630aa..37baa48 100644
---- a/arch/arm/mach-shmobile/setup-sh73a0.c
-+++ b/arch/arm/mach-shmobile/setup-sh73a0.c
-@@ -879,14 +879,6 @@ void __init sh73a0_add_early_devices(void)
+diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
+index 19ce885..1a9b9a2 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7740.c
++++ b/arch/arm/mach-shmobile/clock-r8a7740.c
+@@ -611,11 +611,15 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("i2c-sh_mobile.1",	&mstp_clks[MSTP323]),
+ 	CLKDEV_DEV_ID("renesas_usbhs",		&mstp_clks[MSTP320]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0",	&mstp_clks[MSTP314]),
++	CLKDEV_DEV_ID("e6850000.sdhi",          &mstp_clks[MSTP314]),
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1",	&mstp_clks[MSTP313]),
++	CLKDEV_DEV_ID("e6860000.sdhi",          &mstp_clks[MSTP313]),
+ 	CLKDEV_DEV_ID("sh_mmcif",		&mstp_clks[MSTP312]),
++	CLKDEV_DEV_ID("e6bd0000.mmcif",         &mstp_clks[MSTP312]),
+ 	CLKDEV_DEV_ID("sh-eth",			&mstp_clks[MSTP309]),
  
- #ifdef CONFIG_USE_OF
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2",	&mstp_clks[MSTP415]),
++	CLKDEV_DEV_ID("e6870000.sdhi",          &mstp_clks[MSTP415]),
  
--/* Please note that the clock initialisation shcheme used in
-- * sh73a0_add_early_devices_dt() and sh73a0_add_standard_devices_dt()
-- * does not work with SMP as there is a yet to be resolved lock-up in
-- * workqueue initialisation.
-- *
-- * CONFIG_SMP should be disabled when using this code.
-- */
--
- void __init sh73a0_add_early_devices_dt(void)
- {
- 	shmobile_setup_delay(1196, 44, 46); /* Cortex-A9 @ 1196MHz */
+ 	/* ICK */
+ 	CLKDEV_ICK_ID("host",	"renesas_usbhs",	&mstp_clks[MSTP416]),
+diff --git a/arch/arm/mach-shmobile/clock-sh73a0.c b/arch/arm/mach-shmobile/clock-sh73a0.c
+index afa5423..5fa106b 100644
+--- a/arch/arm/mach-shmobile/clock-sh73a0.c
++++ b/arch/arm/mach-shmobile/clock-sh73a0.c
+@@ -581,10 +581,13 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("e6822000.i2c", &mstp_clks[MSTP323]), /* I2C1 */
+ 	CLKDEV_DEV_ID("renesas_usbhs", &mstp_clks[MSTP322]), /* USB */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.0", &mstp_clks[MSTP314]), /* SDHI0 */
++	CLKDEV_DEV_ID("ee100000.sdhi", &mstp_clks[MSTP314]), /* SDHI0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP313]), /* SDHI1 */
++	CLKDEV_DEV_ID("ee120000.sdhi", &mstp_clks[MSTP313]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mmcif.0", &mstp_clks[MSTP312]), /* MMCIF0 */
+ 	CLKDEV_DEV_ID("e6bd0000.mmcif", &mstp_clks[MSTP312]), /* MMCIF0 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP311]), /* SDHI2 */
++	CLKDEV_DEV_ID("ee140000.sdhi", &mstp_clks[MSTP311]), /* SDHI2 */
+ 	CLKDEV_DEV_ID("leds-renesas-tpu.12", &mstp_clks[MSTP303]), /* TPU1 */
+ 	CLKDEV_DEV_ID("leds-renesas-tpu.21", &mstp_clks[MSTP302]), /* TPU2 */
+ 	CLKDEV_DEV_ID("leds-renesas-tpu.30", &mstp_clks[MSTP301]), /* TPU3 */
 -- 
 1.7.10.4
 
