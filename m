@@ -1,99 +1,127 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Fri, 22 Mar 2013 07:14:59 +0000
-Subject: [RFC][PATCH 2/3] ARM: shmobile: r8a7778: add r8a7778_init_irq_extpin()
-Message-Id: <87wqszewi8.wl%kuninori.morimoto.gx@renesas.com>
+From: Magnus Damm <magnus.damm@gmail.com>
+Date: Mon, 18 Mar 2013 15:10:21 +0000
+Subject: [PATCH 03/03] ARM: shmobile: APE6EVM LAN9220 support
+Message-Id: <20130318151021.28231.51294.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <87zjxvewko.wl%kuninori.morimoto.gx@renesas.com>
-In-Reply-To: <87zjxvewko.wl%kuninori.morimoto.gx@renesas.com>
+References: <20130318150953.28231.73454.sendpatchset@w520>
+In-Reply-To: <20130318150953.28231.73454.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This patch adds r8a7778_init_irq_extpin() for IRQ0 - IRQ3.
-But this patch doesn't enable DT settings on r8a7778.dts,
-because R8A7778 chip external IRQ depends on
-IRQ0 - IRQ3 pin encoding which came from platform board
-implementation.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Add LAN9220 support to the APE6EVM board using C and DT.
+At this point the PFC lacks DT bindings so to configure
+the pinmux we need to use C.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7778.h |    1 +
- arch/arm/mach-shmobile/setup-r8a7778.c        |   44 +++++++++++++++++++++++++
- 2 files changed, 45 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-index a755dca..e0c6205 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7778.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-@@ -24,5 +24,6 @@ extern void r8a7778_init_delay(void);
- extern void r8a7778_init_irq(void);
- extern void r8a7778_init_irq_dt(void);
- extern void r8a7778_clock_init(void);
-+extern void r8a7778_init_irq_extpin(int irlm);
+ Written against "next" renesas.git 811689afc214564c4a5f238ecf4d8bdc0e52b615
  
- #endif /* __ASM_R8A7778_H__ */
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-index 45a1a53..7d8bcaf 100644
---- a/arch/arm/mach-shmobile/setup-r8a7778.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -23,6 +23,7 @@
- #include <linux/irqchip/arm-gic.h>
- #include <linux/of.h>
- #include <linux/of_platform.h>
-+#include <linux/platform_data/irq-renesas-intc-irqpin.h>
- #include <linux/platform_device.h>
+ Depends on the following two series:
+ [PATCH 00/04] ARM: shmobile: r8a73a4 SoC support V2
+ [PATCH 00/02] sh-pfc: Initial r8a73a4 PFC support
+
+ arch/arm/boot/dts/r8a73a4-ape6evm.dts  |   21 ++++++++++++++++++
+ arch/arm/mach-shmobile/Kconfig         |    1 
+ arch/arm/mach-shmobile/board-ape6evm.c |   36 ++++++++++++++++++++++++++++++++
+ 3 files changed, 58 insertions(+)
+
+--- 0009/arch/arm/boot/dts/r8a73a4-ape6evm.dts
++++ work/arch/arm/boot/dts/r8a73a4-ape6evm.dts	2013-03-18 22:13:31.000000000 +0900
+@@ -23,4 +23,25 @@
+ 		device_type = "memory";
+ 		reg = <0x40000000 0x40000000>;
+ 	};
++
++	ape6evm_fixed_3v3: fixedregulator@0 {
++		compatible = "regulator-fixed";
++		regulator-name = "3V3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-always-on;
++	};
++
++	ethernet@8000000 {
++		compatible = "smsc,lan9118", "smsc,lan9115";
++		reg = <0x08000000 0x1000>;
++		interrupt-parent = <&irqc1>;
++		interrupts = <8 0x4>;
++		phy-mode = "mii";
++		reg-io-width = <4>;
++		smsc,irq-active-high;
++		smsc,irq-push-pull;
++		vdd33a-supply = <&ape6evm_fixed_3v3>;
++		vddvario-supply = <&ape6evm_fixed_3v3>;
++	};
+ };
+--- 0010/arch/arm/mach-shmobile/Kconfig
++++ work/arch/arm/mach-shmobile/Kconfig	2013-03-18 22:13:44.000000000 +0900
+@@ -83,6 +83,7 @@ config MACH_APE6EVM
+ 	bool "APE6EVM board"
+ 	depends on ARCH_R8A73A4
+ 	select ARCH_REQUIRE_GPIOLIB
++	select REGULATOR_FIXED_VOLTAGE if REGULATOR
+ 	select USE_OF
+ 
+ config MACH_MACKEREL
+--- 0010/arch/arm/mach-shmobile/board-ape6evm.c
++++ work/arch/arm/mach-shmobile/board-ape6evm.c	2013-03-18 22:13:31.000000000 +0900
+@@ -23,11 +23,36 @@
  #include <linux/irqchip.h>
- #include <linux/serial_sci.h>
-@@ -112,6 +113,49 @@ void __init r8a7778_add_standard_devices(void)
- 		platform_device_register_full(&platform_devinfo[i]);
+ #include <linux/kernel.h>
+ #include <linux/platform_device.h>
++#include <linux/regulator/fixed.h>
++#include <linux/regulator/machine.h>
++#include <linux/smsc911x.h>
+ #include <mach/common.h>
++#include <mach/irqs.h>
+ #include <mach/r8a73a4.h>
+ #include <asm/mach-types.h>
+ #include <asm/mach/arch.h>
+ 
++/* Dummy supplies, where voltage doesn't matter */
++static struct regulator_consumer_supply dummy_supplies[] = {
++	REGULATOR_SUPPLY("vddvario", "smsc911x"),
++	REGULATOR_SUPPLY("vdd33a", "smsc911x"),
++};
++
++/* SMSC LAN9220 */
++static const struct resource lan9220_res[] = {
++	DEFINE_RES_MEM(0x08000000, 0x1000),
++	{
++		.start	= irq_pin(40), /* IRQ40 */
++		.flags	= IORESOURCE_IRQ | IRQF_TRIGGER_HIGH,
++	},
++};
++
++static const struct smsc911x_platform_config lan9220_data = {
++	.flags		= SMSC911X_USE_32BIT,
++	.irq_type	= SMSC911X_IRQ_TYPE_PUSH_PULL,
++	.irq_polarity	= SMSC911X_IRQ_POLARITY_ACTIVE_HIGH,
++};
++
+ static void __init ape6evm_add_standard_devices(void)
+ {
+ 	r8a73a4_clock_init();
+@@ -38,6 +63,17 @@ static void __init ape6evm_add_standard_
+ 	gpio_request(GPIO_FN_SCIFA0_RXD, NULL);
+ 
+ 	r8a73a4_add_standard_devices();
++
++	/* LAN9220 ethernet */
++	gpio_request(GPIO_FN_IRQ40, NULL);      /* smsc9220 IRQ */
++	gpio_request(GPIO_PORT270, NULL);       /* smsc9220 RESET */
++	gpio_direction_output(GPIO_PORT270, 1);
++
++	regulator_register_fixed(0, dummy_supplies, ARRAY_SIZE(dummy_supplies));
++
++	platform_device_register_resndata(&platform_bus, "smsc911x", -1,
++					  lan9220_res, ARRAY_SIZE(lan9220_res),
++					  &lan9220_data, sizeof(lan9220_data));
  }
  
-+static struct renesas_intc_irqpin_config irqpin_platform_data = {
-+	.irq_base = irq_pin(0), /* IRQ0 -> IRQ3 */
-+	.sense_bitfield_width = 2,
-+};
-+
-+static struct resource irqpin_resources[] = {
-+	DEFINE_RES_MEM(0xfe78001c, 4), /* ICR1 */
-+	DEFINE_RES_MEM(0xfe780010, 4), /* INTPRI */
-+	DEFINE_RES_MEM(0xfe780024, 4), /* INTREQ */
-+	DEFINE_RES_MEM(0xfe780044, 4), /* INTMSK0 */
-+	DEFINE_RES_MEM(0xfe780064, 4), /* INTMSKCLR0 */
-+	DEFINE_RES_IRQ(gic_iid(0x3b)), /* IRQ0 */
-+	DEFINE_RES_IRQ(gic_iid(0x3c)), /* IRQ1 */
-+	DEFINE_RES_IRQ(gic_iid(0x3d)), /* IRQ2 */
-+	DEFINE_RES_IRQ(gic_iid(0x3e)), /* IRQ3 */
-+};
-+
-+static struct platform_device_info intc_devinfo +	PLATFORM_FULL_INFO("renesas_intc_irqpin", -1, irqpin);
-+
-+void __init r8a7778_init_irq_extpin(int irlm)
-+{
-+	void __iomem *icr0 = ioremap_nocache(0xfe780000, PAGE_SIZE);
-+	unsigned long tmp;
-+
-+	if (!icr0) {
-+		pr_warn("r8a7778: unable to setup external irq pin mode\n");
-+		return;
-+	}
-+
-+	tmp = ioread32(icr0);
-+	if (irlm)
-+		tmp |= 1 << 23; /* IRQ0 -> IRQ3 as individual pins */
-+	else
-+		tmp &= ~(1 << 23); /* IRL mode - not supported */
-+	tmp |= (1 << 21); /* LVLMODE = 1 */
-+	iowrite32(tmp, icr0);
-+	iounmap(icr0);
-+
-+	if (irlm)
-+		platform_device_register_full(&intc_devinfo);
-+}
-+
- #define INT2SMSKCR0	0x82288 /* 0xfe782288 */
- #define INT2SMSKCR1	0x8228c /* 0xfe78228c */
- 
--- 
-1.7.9.5
-
+ static const char *ape6evm_boards_compat_dt[] __initdata = {
