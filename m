@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:47:05 +0000
+Date: Mon, 18 Mar 2013 12:32:23 +0000
 Subject: [PATCH 13/43] ARM: shmobile: Move headsmp-sh73a0.S to headsmp-scu.S
-Message-Id: <1363607255-6385-14-git-send-email-horms+renesas@verge.net.au>
+Message-Id: <1363609973-31086-14-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
+References: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
