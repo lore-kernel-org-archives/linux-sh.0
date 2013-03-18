@@ -1,64 +1,52 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 11:01:56 +0000
-Subject: [PATCH v3 36/64] sh-pfc: sh7372: Remove SDHI and MMCIF function GPIOS
-Message-Id: <1362740544-19164-37-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:05:28 +0000
+Subject: [PATCH 032/142] sh: sh7269: Add pin control resources
+Message-Id: <1363604838-29359-33-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-All sh7372 platforms now use the pinctrl API to control the SDHI and
-MMCIF pins, the corresponding function GPIOS are unused. Remove them.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+Add memory resources for the pin control platform device to let the
+sh-pfc driver ioremap() registers properly instead of evily casting
+register physical addresses to virtual addresses.
+
+The memory resource address range has been extracted from the config and
+data registes lists in the sh-pfc driver.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh7372.c | 25 -------------------------
- 1 file changed, 25 deletions(-)
+ arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c |   11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh7372.c b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-index 01fcfd3..7fdf6c3 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh7372.c
-@@ -1276,18 +1276,6 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(D11_NAF11),	GPIO_FN(D12_NAF12),	GPIO_FN(D13_NAF13),
- 	GPIO_FN(D14_NAF14),	GPIO_FN(D15_NAF15),
+diff --git a/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c b/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c
+index dc2a868..1825b0b 100644
+--- a/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c
++++ b/arch/sh/kernel/cpu/sh2a/pinmux-sh7269.c
+@@ -13,8 +13,17 @@
+ #include <linux/kernel.h>
+ #include <cpu/pfc.h>
  
--	/* MMCIF(1) */
--	GPIO_FN(MMCD0_0),	GPIO_FN(MMCD0_1),	GPIO_FN(MMCD0_2),
--	GPIO_FN(MMCD0_3),	GPIO_FN(MMCD0_4),	GPIO_FN(MMCD0_5),
--	GPIO_FN(MMCD0_6),	GPIO_FN(MMCD0_7),	GPIO_FN(MMCCMD0),
--	GPIO_FN(MMCCLK0),
--
--	/* MMCIF(2) */
--	GPIO_FN(MMCD1_0),	GPIO_FN(MMCD1_1),	GPIO_FN(MMCD1_2),
--	GPIO_FN(MMCD1_3),	GPIO_FN(MMCD1_4),	GPIO_FN(MMCD1_5),
--	GPIO_FN(MMCD1_6),	GPIO_FN(MMCD1_7),	GPIO_FN(MMCCLK1),
--	GPIO_FN(MMCCMD1),
--
- 	/* SPU2 */
- 	GPIO_FN(VINT_I),
- 
-@@ -1384,19 +1372,6 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	/* HDMI */
- 	GPIO_FN(HDMI_HPD),	GPIO_FN(HDMI_CEC),
- 
--	/* SDHI0 */
--	GPIO_FN(SDHICLK0),	GPIO_FN(SDHICD0),	GPIO_FN(SDHICMD0),
--	GPIO_FN(SDHIWP0),	GPIO_FN(SDHID0_0),	GPIO_FN(SDHID0_1),
--	GPIO_FN(SDHID0_2),	GPIO_FN(SDHID0_3),
--
--	/* SDHI1 */
--	GPIO_FN(SDHICLK1),	GPIO_FN(SDHICMD1),	GPIO_FN(SDHID1_0),
--	GPIO_FN(SDHID1_1),	GPIO_FN(SDHID1_2),	GPIO_FN(SDHID1_3),
--
--	/* SDHI2 */
--	GPIO_FN(SDHICLK2),	GPIO_FN(SDHICMD2),	GPIO_FN(SDHID2_0),
--	GPIO_FN(SDHID2_1),	GPIO_FN(SDHID2_2),	GPIO_FN(SDHID2_3),
--
- 	/* SDENC */
- 	GPIO_FN(SDENC_CPG),
- 	GPIO_FN(SDENC_DV_CLKI),
++static struct resource sh7269_pfc_resources[] = {
++	[0] = {
++		.start	= 0xfffe3800,
++		.end	= 0xfffe391f,
++		.flags	= IORESOURCE_MEM,
++	},
++};
++
+ static int __init plat_pinmux_setup(void)
+ {
+-	return sh_pfc_register("pfc-sh7269", NULL, 0);
++	return sh_pfc_register("pfc-sh7269", sh7269_pfc_resources,
++			       ARRAY_SIZE(sh7269_pfc_resources));
+ }
+ arch_initcall(plat_pinmux_setup);
 -- 
-1.8.1.5
+1.7.10.4
 
