@@ -1,40 +1,44 @@
-From: David Miller <davem@davemloft.net>
-Date: Sun, 31 Mar 2013 23:44:48 +0000
-Subject: Re: [PATCH 2/2] sh_eth: workaround for spurious ECI interrupt
-Message-Id: <20130331.194448.1126574548002783274.davem@davemloft.net>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:46:53 +0000
+Subject: [PATCH 01/43] ARM: shmobile: Remove unused headers from hotplug.c
+Message-Id: <1363607255-6385-2-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201303312354.20695.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201303312354.20695.sergei.shtylyov@cogentembedded.com>
+References: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: sergei.shtylyov@cogentembedded.com
-Cc: netdev@vger.kernel.org, nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sun, 31 Mar 2013 23:54:20 +0400
+From: Magnus Damm <damm@opensource.se>
 
-> At least on Renesas R8A7778, EESR.ECI interrupt seems to fire regardless of its
-> mask in EESIPR register. I can 100% reproduce it with the following scenario:
-> target is booted with 'ip=on' option, and so IP-Config opens SoC Ether device
-> but doesn't get a proper reply and then succeeds with on-board SMC chip; then
-> I login and try to bring up the SoC Ether device with 'ifconfig', and I get
-> an ECI interrupt once request_irq() is called by sh_eth_open() (while interrupt
-> mask in EESIPR register is all 0), if that interrupt is accompanied by a pending
-> EESR.FRC (frame receive completion) interrupt, I get kernel oops in sh_eth_rx()
-> because sh_eth_ring_init() hasn't been called yet!
-> 
-> The solution I worked out is the following: in sh_eth_interrupt(), mask the
-> interrupt status from EESR register with the interrupt mask from EESIPR register
-> in order not to handle the disabled interrupts -- but forcing EESIPR.M_ECI bit
-> in this mask set because we always need to fully handle EESR.ECI interrupt in
-> sh_eth_error() in order to quench it (as it doesn't get cleared by just writing
-> 1 to the this bit as all the other interrupts).
-> 
-> While at it, remove unneeded initializer for 'intr_status' variable and give it
-> *unsigned long* type, matching the type of sh_eth_read()'s result; fix comment.
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-> Reviewed-by: Max Filippov <max.filippov@cogentembedded.com>
+This file has no SoC-specific references in it, and
+fortunately it is still independent of OF so there
+is no real reason to drag in these headers.
 
-Applied.
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/hotplug.c |    4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/hotplug.c b/arch/arm/mach-shmobile/hotplug.c
+index a1524e3..efd0b36 100644
+--- a/arch/arm/mach-shmobile/hotplug.c
++++ b/arch/arm/mach-shmobile/hotplug.c
+@@ -14,12 +14,8 @@
+ #include <linux/smp.h>
+ #include <linux/cpumask.h>
+ #include <linux/delay.h>
+-#include <linux/of.h>
+ #include <mach/common.h>
+-#include <mach/r8a7779.h>
+-#include <mach/emev2.h>
+ #include <asm/cacheflush.h>
+-#include <asm/mach-types.h>
+ 
+ static cpumask_t dead_cpus;
+ 
+-- 
+1.7.10.4
+
