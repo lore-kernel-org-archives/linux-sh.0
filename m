@@ -1,39 +1,44 @@
-From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Date: Wed, 13 Mar 2013 17:30:38 +0000
-Subject: Re: [PATCH/RFC 02/12] gpio-rcar: Add pinctrl support
-Message-Id: <1495514.xyb7jHtL07@avalon>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:47:12 +0000
+Subject: [PATCH 20/43] ARM: shmobile: sh73a0: Remove warning about SMP
+Message-Id: <1363607255-6385-21-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1362941928-18115-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1362941928-18115-3-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Hi Linus,
+Remove warning about SMP not working with the
+clock initialisation sheme used for reference DT.
 
-On Wednesday 13 March 2013 18:21:59 Linus Walleij wrote:
-> On Sun, Mar 10, 2013 at 7:58 PM, Laurent Pinchart wrote:
-> > Register the GPIO pin range, and request and free GPIO pins using the
-> > pinctrl API.
-> > 
-> > Signed-off-by: Laurent Pinchart
-> > <laurent.pinchart+renesas@ideasonboard.com>
-> 
-> Looks good.
-> Acked-by: Linus Walleij <linus.walleij@linaro.org>
-> 
-> This requires that the Rcar driver is finalized first tho I guess.
+This is resolved by not selecting CONFIG_PREEMPT.
 
-I'm working on that with Magnus. This patch will likely be squashed into the 
-gpio-rcar driver for mainline submission.
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/setup-sh73a0.c |    8 --------
+ 1 file changed, 8 deletions(-)
 
-The PFC pinconf implementation is nearly ready, I'll post new patch sets soon 
-and will appreciate if you could review the core patches :-) (I'll point them 
-out in the cover letter).
-
+diff --git a/arch/arm/mach-shmobile/setup-sh73a0.c b/arch/arm/mach-shmobile/setup-sh73a0.c
+index c7630aa..37baa48 100644
+--- a/arch/arm/mach-shmobile/setup-sh73a0.c
++++ b/arch/arm/mach-shmobile/setup-sh73a0.c
+@@ -879,14 +879,6 @@ void __init sh73a0_add_early_devices(void)
+ 
+ #ifdef CONFIG_USE_OF
+ 
+-/* Please note that the clock initialisation shcheme used in
+- * sh73a0_add_early_devices_dt() and sh73a0_add_standard_devices_dt()
+- * does not work with SMP as there is a yet to be resolved lock-up in
+- * workqueue initialisation.
+- *
+- * CONFIG_SMP should be disabled when using this code.
+- */
+-
+ void __init sh73a0_add_early_devices_dt(void)
+ {
+ 	shmobile_setup_delay(1196, 44, 46); /* Cortex-A9 @ 1196MHz */
 -- 
-Regards,
-
-Laurent Pinchart
+1.7.10.4
 
