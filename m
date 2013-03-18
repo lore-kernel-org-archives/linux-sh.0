@@ -1,10 +1,10 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 06 Mar 2013 00:22:43 +0000
-Subject: [PATCH 03/04] ARM: shmobile: Add EMEV2 TWD support
-Message-Id: <20130306002243.5430.27806.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 13:02:31 +0000
+Subject: [PATCH 05/12] clocksource: sh_cmt: CMSTR and CMCSR register access update
+Message-Id: <1363611758-6655-6-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130306002214.5430.43766.sendpatchset@w520>
-In-Reply-To: <20130306002214.5430.43766.sendpatchset@w520>
+References: <1363611758-6655-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363611758-6655-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -12,104 +12,150 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Magnus Damm <damm@opensource.se>
 
-Add TWD support for the EMEV2 SoC and the KZM9D board.
-TWD data is added via C for the KZM9D board and also
-via DT for the generic EMEV2 DT board support.
+Update hardware register access code for CMSTR and CMCSR
+from using sh_cmt_read() and sh_cmt_write() to make use
+of 16-bit register access functions such as sh_cmt_read16()
+and sh_cmt_write16(). Also update sh_cmt_read() and
+sh_cmt_write() now when the special cases are gone.
+
+This patch moves us one step closer to the goal of separating
+counter register access functions from control control register
+functions.
 
 Signed-off-by: Magnus Damm <damm@opensource.se>
+Acked-by: John Stultz <john.stultz@linaro.org>
+Tested-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
+ drivers/clocksource/sh_cmt.c |   66 +++++++++++++++++++-----------------------
+ 1 file changed, 30 insertions(+), 36 deletions(-)
 
- arch/arm/boot/dts/emev2.dtsi         |    6 ++++++
- arch/arm/mach-shmobile/clock-emev2.c |    5 ++++-
- arch/arm/mach-shmobile/setup-emev2.c |    4 ++++
- arch/arm/mach-shmobile/smp-emev2.c   |    9 +++++++++
- 4 files changed, 23 insertions(+), 1 deletion(-)
-
---- 0001/arch/arm/boot/dts/emev2.dtsi
-+++ work/arch/arm/boot/dts/emev2.dtsi	2013-03-05 18:37:48.000000000 +0900
-@@ -30,6 +30,12 @@
- 		};
- 	};
- 
-+	timer@e0030600 {
-+		compatible = "arm,cortex-a9-twd-timer";
-+		reg = <0xe0030600 0x20>;
-+		interrupts = <1 1 0xf04>;
-+	};
-+
- 	gic: interrupt-controller@e0020000 {
- 		compatible = "arm,cortex-a9-gic";
- 		interrupt-controller;
---- 0001/arch/arm/mach-shmobile/clock-emev2.c
-+++ work/arch/arm/mach-shmobile/clock-emev2.c	2013-03-05 18:37:30.000000000 +0900
-@@ -31,6 +31,7 @@
- #define USIBU2_RSTCTRL 0x0b0
- #define USIBU3_RSTCTRL 0x0b4
- #define STI_RSTCTRL 0x124
-+#define INTAGCLKCTRL 0x40c
- #define USIAU0GCLKCTRL 0x4a0
- #define USIBU1GCLKCTRL 0x4b8
- #define USIBU2GCLKCTRL 0x4bc
-@@ -105,7 +106,7 @@ static struct clk sclkdiv_clks[SCLKDIV_N
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index a2f8023..eefacc3 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -56,44 +56,46 @@ struct sh_cmt_priv {
+ 	bool cs_enabled;
  };
  
- enum { GCLK_USIAU0_SCLK, GCLK_USIBU1_SCLK, GCLK_USIBU2_SCLK, GCLK_USIBU3_SCLK,
--	GCLK_STI_SCLK,
-+	GCLK_STI_SCLK, GCLK_INTA_CLK,
- 	GCLK_NR };
- 
- #define GCLK_SCLK(_parent, _reg) \
-@@ -125,6 +126,7 @@ static struct clk gclk_clks[GCLK_NR] = {
- 	[GCLK_USIBU3_SCLK] = GCLK_SCLK(&sclkdiv_clks[SCLKDIV_USIBU3],
- 				       USIBU3GCLKCTRL),
- 	[GCLK_STI_SCLK] = GCLK_SCLK(&c32k_clk, STIGCLKCTRL),
-+	[GCLK_INTA_CLK] = GCLK_SCLK(&c32k_clk, INTAGCLKCTRL),
- };
- 
- static int emev2_gclk_enable(struct clk *clk)
-@@ -200,6 +202,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("e1050000.uart", &gclk_clks[GCLK_USIBU3_SCLK]),
- 	CLKDEV_DEV_ID("em_sti.0", &gclk_clks[GCLK_STI_SCLK]),
- 	CLKDEV_DEV_ID("e0180000.sti", &gclk_clks[GCLK_STI_SCLK]),
-+	CLKDEV_DEV_ID("smp_twd", &gclk_clks[GCLK_INTA_CLK]),
- };
- 
- void __init emev2_clock_init(void)
---- 0006/arch/arm/mach-shmobile/setup-emev2.c
-+++ work/arch/arm/mach-shmobile/setup-emev2.c	2013-03-05 18:37:30.000000000 +0900
-@@ -402,10 +402,14 @@ void __init emev2_add_standard_devices(v
- 			     ARRAY_SIZE(emev2_late_devices));
- }
- 
-+/* do nothing for !CONFIG_SMP or !CONFIG_HAVE_TWD */
-+void __init __weak emev2_register_twd(void) { }
-+
- void __init emev2_timer_init(void)
- {
- 	emev2_clock_init();
- 	shmobile_timer_init();
-+	emev2_register_twd();
- }
- 
- static void __init emev2_init_delay(void)
---- 0001/arch/arm/mach-shmobile/smp-emev2.c
-+++ work/arch/arm/mach-shmobile/smp-emev2.c	2013-03-05 18:37:30.000000000 +0900
-@@ -28,9 +28,18 @@
- #include <mach/emev2.h>
- #include <asm/smp_plat.h>
- #include <asm/smp_scu.h>
-+#include <asm/smp_twd.h>
- 
- #define EMEV2_SCU_BASE 0x1e000000
- 
-+#ifdef CONFIG_HAVE_ARM_TWD
-+static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, 0xe0030600, 17);
-+void __init emev2_register_twd(void)
+-static DEFINE_RAW_SPINLOCK(sh_cmt_lock);
++static inline unsigned long sh_cmt_read16(void __iomem *base,
++					  unsigned long offs)
 +{
-+	twd_local_timer_register(&twd_local_timer);
++	return ioread16(base + (offs << 1));
 +}
-+#endif
 +
- static void __cpuinit emev2_secondary_init(unsigned int cpu)
++static inline void sh_cmt_write16(void __iomem *base, unsigned long offs,
++				  unsigned long value)
++{
++	iowrite16(value, base + (offs << 1));
++}
+ 
+-#define CMSTR -1 /* shared register */
+ #define CMCSR 0 /* channel register */
+ #define CMCNT 1 /* channel register */
+ #define CMCOR 2 /* channel register */
+ 
+ static inline unsigned long sh_cmt_read(struct sh_cmt_priv *p, int reg_nr)
  {
- 	gic_secondary_init(0);
+-	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
+ 	void __iomem *base = p->mapbase;
+-	unsigned long offs;
+-
+-	if (reg_nr = CMSTR) {
+-		offs = 0;
+-		base -= cfg->channel_offset;
+-	} else
+-		offs = reg_nr;
++	unsigned long offs = reg_nr;
+ 
+-	if (p->width = 16)
++	if (p->width = 16) {
+ 		offs <<= 1;
+-	else {
++		return ioread16(base + offs);
++	} else {
+ 		offs <<= 2;
+-		if ((reg_nr = CMCNT) || (reg_nr = CMCOR))
+-			return ioread32(base + offs);
++		return ioread32(base + offs);
+ 	}
+-
+-	return ioread16(base + offs);
+ }
+ 
+ static inline unsigned long sh_cmt_read_cmstr(struct sh_cmt_priv *p)
+ {
+-	return sh_cmt_read(p, CMSTR);
++	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
++
++	return sh_cmt_read16(p->mapbase - cfg->channel_offset, 0);
+ }
+ 
+ static inline unsigned long sh_cmt_read_cmcsr(struct sh_cmt_priv *p)
+ {
+-	return sh_cmt_read(p, CMCSR);
++	return sh_cmt_read16(p->mapbase, CMCSR);
+ }
+ 
+ static inline unsigned long sh_cmt_read_cmcnt(struct sh_cmt_priv *p)
+@@ -104,39 +106,30 @@ static inline unsigned long sh_cmt_read_cmcnt(struct sh_cmt_priv *p)
+ static inline void sh_cmt_write(struct sh_cmt_priv *p, int reg_nr,
+ 				unsigned long value)
+ {
+-	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
+ 	void __iomem *base = p->mapbase;
+-	unsigned long offs;
++	unsigned long offs = reg_nr;
+ 
+-	if (reg_nr = CMSTR) {
+-		offs = 0;
+-		base -= cfg->channel_offset;
+-	} else
+-		offs = reg_nr;
+-
+-	if (p->width = 16)
++	if (p->width = 16) {
+ 		offs <<= 1;
+-	else {
++		iowrite16(value, base + offs);
++	} else {
+ 		offs <<= 2;
+-		if ((reg_nr = CMCNT) || (reg_nr = CMCOR)) {
+-			iowrite32(value, base + offs);
+-			return;
+-		}
++		iowrite32(value, base + offs);
+ 	}
+-
+-	iowrite16(value, base + offs);
+ }
+ 
+ static inline void sh_cmt_write_cmstr(struct sh_cmt_priv *p,
+ 				      unsigned long value)
+ {
+-	sh_cmt_write(p, CMSTR, value);
++	struct sh_timer_config *cfg = p->pdev->dev.platform_data;
++
++	sh_cmt_write16(p->mapbase - cfg->channel_offset, 0, value);
+ }
+ 
+ static inline void sh_cmt_write_cmcsr(struct sh_cmt_priv *p,
+ 				      unsigned long value)
+ {
+-	sh_cmt_write(p, CMCSR, value);
++	sh_cmt_write16(p->mapbase, CMCSR, value);
+ }
+ 
+ static inline void sh_cmt_write_cmcnt(struct sh_cmt_priv *p,
+@@ -173,6 +166,7 @@ static unsigned long sh_cmt_get_counter(struct sh_cmt_priv *p,
+ 	return v2;
+ }
+ 
++static DEFINE_RAW_SPINLOCK(sh_cmt_lock);
+ 
+ static void sh_cmt_start_stop_ch(struct sh_cmt_priv *p, int start)
+ {
+-- 
+1.7.10.4
+
