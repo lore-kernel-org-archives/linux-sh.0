@@ -1,37 +1,49 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Sun, 17 Mar 2013 15:43:50 +0000
-Subject: [PATCH v3 6/7] ARM: shmobile: r8a7740: Add DT name to clock list for CMT10
-Message-Id: <1363535031-21402-6-git-send-email-hechtb+renesas@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:53:20 +0000
+Subject: [PATCH 8/9] ARM: shmobile: armadillo800eva: enable all errata for cache on defconfig
+Message-Id: <1363607601-20366-9-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363535031-21402-1-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1363535031-21402-1-git-send-email-hechtb+renesas@gmail.com>
+References: <1363607601-20366-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363607601-20366-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This adds temporarily the alternative device name to the clock list
-that is used when booting via Device Tree setup.
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+Some errata for cache had not enabled on current
+Armadillo800eva defconfig.
+This patch enables these.
+Special thanks to Ishiyama-san
+
+Reported-by: Kiyoshi Ishiyama <kiyoshi.ishiyama.wg@renesas.com>
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
-v3: same (only patch 0003 changed)
+ arch/arm/configs/armadillo800eva_defconfig |    5 +++++
+ 1 file changed, 5 insertions(+)
 
- arch/arm/mach-shmobile/clock-r8a7740.c |    1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index 1feb9a2..b0b5d3c 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -616,6 +616,7 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("e6cc0000.sci",		&mstp_clks[MSTP230]),
- 
- 	CLKDEV_DEV_ID("sh_cmt.10",		&mstp_clks[MSTP329]),
-+	CLKDEV_DEV_ID("e6138010.timer",		&mstp_clks[MSTP329]),
- 	CLKDEV_DEV_ID("sh_fsi2",		&mstp_clks[MSTP328]),
- 	CLKDEV_DEV_ID("i2c-sh_mobile.1",	&mstp_clks[MSTP323]),
- 	CLKDEV_DEV_ID("renesas_usbhs",		&mstp_clks[MSTP320]),
+diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
+index 468c616..0f2d80d 100644
+--- a/arch/arm/configs/armadillo800eva_defconfig
++++ b/arch/arm/configs/armadillo800eva_defconfig
+@@ -24,10 +24,15 @@ CONFIG_CACHE_L2X0=y
+ CONFIG_ARM_ERRATA_430973=y
+ CONFIG_ARM_ERRATA_458693=y
+ CONFIG_ARM_ERRATA_460075=y
++CONFIG_PL310_ERRATA_588369=y
+ CONFIG_ARM_ERRATA_720789=y
++CONFIG_PL310_ERRATA_727915=y
+ CONFIG_ARM_ERRATA_743622=y
+ CONFIG_ARM_ERRATA_751472=y
++CONFIG_PL310_ERRATA_753970=y
+ CONFIG_ARM_ERRATA_754322=y
++CONFIG_PL310_ERRATA_769419=y
++CONFIG_ARM_ERRATA_775420=y
+ CONFIG_AEABI=y
+ # CONFIG_OABI_COMPAT is not set
+ CONFIG_FORCE_MAX_ZONEORDER
 -- 
-1.7.9.5
+1.7.10.4
 
