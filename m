@@ -1,55 +1,52 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 10 Mar 2013 18:35:45 +0000
-Subject: [PATCH 06/23] sh: sh7723: Add pin control resources
-Message-Id: <1362940562-8570-7-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:05:50 +0000
+Subject: [PATCH 054/142] sh-pfc: Return an error if a pin doesn't support the requested direction
+Message-Id: <1363604838-29359-55-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add memory resources for the pin control platform device to let the
-sh-pfc driver ioremap() registers properly instead of evily casting
-register physical addresses to virtual addresses.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-The memory resource address range has been extracted from the config and
-data registes lists in the sh-pfc driver.
+When setting a pin direction verify that the requested direction is
+supported, and return an error if it isn't.
+
+This requires pin configuration information to be supplied by SoC data.
+The check is a no-op if the information is not supplied.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c | 14 ++++++++++++--
- 1 file changed, 12 insertions(+), 2 deletions(-)
+ drivers/pinctrl/sh-pfc/pinctrl.c |   10 ++++++++++
+ 1 file changed, 10 insertions(+)
 
-diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c
-index bcec7ad..99c637d 100644
---- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c
-+++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7723.c
-@@ -8,13 +8,23 @@
-  * for more details.
-  */
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index 52179bb..aef268b 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -218,8 +218,18 @@ static int sh_pfc_gpio_set_direction(struct pinctrl_dev *pctldev,
+ 	const struct sh_pfc_pin *pin = &pfc->info->pins[idx];
+ 	struct sh_pfc_pin_config *cfg = &pmx->configs[idx];
+ 	unsigned long flags;
++	unsigned int dir;
+ 	int ret;
  
-+#include <linux/bug.h>
- #include <linux/init.h>
- #include <linux/kernel.h>
-+#include <linux/ioport.h>
- #include <cpu/pfc.h>
- 
-+static struct resource sh7723_pfc_resources[] = {
-+	[0] = {
-+		.start	= 0xa4050100,
-+		.end	= 0xa405016f,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+};
++	/* Check if the requested direction is supported by the pin. Not all SoC
++	 * provide pin config data, so perform the check conditionally.
++	 */
++	if (pin->configs) {
++		dir = input ? SH_PFC_PIN_CFG_INPUT : SH_PFC_PIN_CFG_OUTPUT;
++		if (!(pin->configs & dir))
++			return -EINVAL;
++	}
 +
- static int __init plat_pinmux_setup(void)
- {
--	return sh_pfc_register("pfc-sh7723", NULL, 0);
-+	return sh_pfc_register("pfc-sh7723", sh7723_pfc_resources,
-+			       ARRAY_SIZE(sh7723_pfc_resources));
- }
--
- arch_initcall(plat_pinmux_setup);
+ 	spin_lock_irqsave(&pfc->lock, flags);
+ 
+ 	ret = sh_pfc_config_mux(pfc, pin->enum_id, new_type);
 -- 
-1.8.1.5
+1.7.10.4
 
