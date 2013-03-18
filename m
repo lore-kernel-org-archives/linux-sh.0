@@ -1,129 +1,53 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 11:01:35 +0000
-Subject: [PATCH v3 15/64] sh-pfc: r8a7779: Add LBSC pin groups and functions
-Message-Id: <1362740544-19164-16-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:06:13 +0000
+Subject: [PATCH 077/142] ARM: shmobile: ag5evm: Register pinctrl mappings for I2C
+Message-Id: <1363604838-29359-78-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Only the CS pins and functions are currently handled.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+Replace the GPIO-based I2C pinmux configuration by pinctrl mappings.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c | 77 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 77 insertions(+)
+ arch/arm/mach-shmobile/board-ag5evm.c |   11 +++++------
+ 1 file changed, 5 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-index 150bdf0..c55b1ab 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-@@ -1635,6 +1635,63 @@ static const unsigned int hspi2_b_mux[] = {
- 	HSPI_CLK2_B_MARK, HSPI_CS2_B_MARK, HSPI_RX2_B_MARK, HSPI_TX2_B_MARK,
+diff --git a/arch/arm/mach-shmobile/board-ag5evm.c b/arch/arm/mach-shmobile/board-ag5evm.c
+index 5b8dcdc..e19dade 100644
+--- a/arch/arm/mach-shmobile/board-ag5evm.c
++++ b/arch/arm/mach-shmobile/board-ag5evm.c
+@@ -552,6 +552,11 @@ static struct platform_device *ag5evm_devices[] __initdata = {
  };
  
-+static const unsigned int lbsc_cs0_pins[] = {
-+	/* CS */
-+	13,
-+};
-+static const unsigned int lbsc_cs0_mux[] = {
-+	CS0_MARK,
-+};
-+static const unsigned int lbsc_cs1_pins[] = {
-+	/* CS */
-+	14,
-+};
-+static const unsigned int lbsc_cs1_mux[] = {
-+	CS1_A26_MARK,
-+};
-+static const unsigned int lbsc_ex_cs0_pins[] = {
-+	/* CS */
-+	15,
-+};
-+static const unsigned int lbsc_ex_cs0_mux[] = {
-+	EX_CS0_MARK,
-+};
-+static const unsigned int lbsc_ex_cs1_pins[] = {
-+	/* CS */
-+	16,
-+};
-+static const unsigned int lbsc_ex_cs1_mux[] = {
-+	EX_CS1_MARK,
-+};
-+static const unsigned int lbsc_ex_cs2_pins[] = {
-+	/* CS */
-+	17,
-+};
-+static const unsigned int lbsc_ex_cs2_mux[] = {
-+	EX_CS2_MARK,
-+};
-+static const unsigned int lbsc_ex_cs3_pins[] = {
-+	/* CS */
-+	18,
-+};
-+static const unsigned int lbsc_ex_cs3_mux[] = {
-+	EX_CS3_MARK,
-+};
-+static const unsigned int lbsc_ex_cs4_pins[] = {
-+	/* CS */
-+	19,
-+};
-+static const unsigned int lbsc_ex_cs4_mux[] = {
-+	EX_CS4_MARK,
-+};
-+static const unsigned int lbsc_ex_cs5_pins[] = {
-+	/* CS */
-+	20,
-+};
-+static const unsigned int lbsc_ex_cs5_mux[] = {
-+	EX_CS5_MARK,
-+};
-+
- static const unsigned int scif0_data_pins[] = {
- 	/* RXD, TXD */
- 	153, 152,
-@@ -2268,6 +2325,14 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(hspi1_d),
- 	SH_PFC_PIN_GROUP(hspi2),
- 	SH_PFC_PIN_GROUP(hspi2_b),
-+	SH_PFC_PIN_GROUP(lbsc_cs0),
-+	SH_PFC_PIN_GROUP(lbsc_cs1),
-+	SH_PFC_PIN_GROUP(lbsc_ex_cs0),
-+	SH_PFC_PIN_GROUP(lbsc_ex_cs1),
-+	SH_PFC_PIN_GROUP(lbsc_ex_cs2),
-+	SH_PFC_PIN_GROUP(lbsc_ex_cs3),
-+	SH_PFC_PIN_GROUP(lbsc_ex_cs4),
-+	SH_PFC_PIN_GROUP(lbsc_ex_cs5),
- 	SH_PFC_PIN_GROUP(mmc0_data1),
- 	SH_PFC_PIN_GROUP(mmc0_data4),
- 	SH_PFC_PIN_GROUP(mmc0_data8),
-@@ -2389,6 +2454,17 @@ static const char * const hspi2_groups[] = {
- 	"hspi2_b",
- };
+ static const struct pinctrl_map ag5evm_pinctrl_map[] = {
++	/* I2C2 & I2C3 */
++	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.2", "pfc-sh73a0",
++				  "i2c2_0", "i2c2"),
++	PIN_MAP_MUX_GROUP_DEFAULT("i2c-sh_mobile.3", "pfc-sh73a0",
++				  "i2c3_0", "i2c3"),
+ 	/* SCIFA2 */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-sh73a0",
+ 				  "scifa2_data_0", "scifa2"),
+@@ -591,12 +596,6 @@ static void __init ag5evm_init(void)
+ 	gpio_request(GPIO_FN_KEYOUT8, NULL);
+ 	gpio_request(GPIO_FN_PORT149_KEYOUT9, NULL);
  
-+static const char * const lbsc_groups[] = {
-+	"lbsc_cs0",
-+	"lbsc_cs1",
-+	"lbsc_ex_cs0",
-+	"lbsc_ex_cs1",
-+	"lbsc_ex_cs2",
-+	"lbsc_ex_cs3",
-+	"lbsc_ex_cs4",
-+	"lbsc_ex_cs5",
-+};
-+
- static const char * const mmc0_groups[] = {
- 	"mmc0_data1",
- 	"mmc0_data4",
-@@ -2522,6 +2598,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(hspi0),
- 	SH_PFC_FUNCTION(hspi1),
- 	SH_PFC_FUNCTION(hspi2),
-+	SH_PFC_FUNCTION(lbsc),
- 	SH_PFC_FUNCTION(mmc0),
- 	SH_PFC_FUNCTION(mmc1),
- 	SH_PFC_FUNCTION(sdhi0),
+-	/* enable I2C channel 2 and 3 */
+-	gpio_request(GPIO_FN_PORT236_I2C_SDA2, NULL);
+-	gpio_request(GPIO_FN_PORT237_I2C_SCL2, NULL);
+-	gpio_request(GPIO_FN_PORT248_I2C_SCL3, NULL);
+-	gpio_request(GPIO_FN_PORT249_I2C_SDA3, NULL);
+-
+ 	/* enable MMCIF */
+ 	gpio_request(GPIO_FN_MMCCLK0, NULL);
+ 	gpio_request(GPIO_FN_MMCCMD0_PU, NULL);
 -- 
-1.8.1.5
+1.7.10.4
 
