@@ -1,148 +1,49 @@
-From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 12:32:41 +0000
-Subject: [PATCH 31/43] ARM: shmobile: Rearrange r8a7779 cpu hotplug code
-Message-Id: <1363609973-31086-32-git-send-email-horms+renesas@verge.net.au>
+From: Phil Edworthy <phil.edworthy@renesas.com>
+Date: Mon, 18 Mar 2013 16:38:52 +0000
+Subject: [PATCH] ARM: shmobile: r8a7779: Add PCIe clock support
+Message-Id: <1363624732-24660-1-git-send-email-phil.edworthy@renesas.com>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-arm-kernel@lists.infradead.org
+To: linux-sh@vger.kernel.org
 
-From: Magnus Damm <damm@opensource.se>
 
-Update the r8a7779 SMP code and CPU Hotplug in particular
-to follow the same style as sh73a0. This means dropping
-__maybe_unused for #ifdef CONFIG_HOTPLUG_CPU.
-
-Signed-off-by: Magnus Damm <damm@opensource.se>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
 ---
- arch/arm/mach-shmobile/smp-r8a7779.c |   96 +++++++++++++++++-----------------
- 1 file changed, 49 insertions(+), 47 deletions(-)
+Depends on "r8a7779: Add Display Unit clock support"
 
-diff --git a/arch/arm/mach-shmobile/smp-r8a7779.c b/arch/arm/mach-shmobile/smp-r8a7779.c
-index bdd3809..ea4535a 100644
---- a/arch/arm/mach-shmobile/smp-r8a7779.c
-+++ b/arch/arm/mach-shmobile/smp-r8a7779.c
-@@ -66,16 +66,6 @@ void __init r8a7779_register_twd(void)
- }
- #endif
+ arch/arm/mach-shmobile/clock-r8a7779.c |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index 9ea6087..a017418 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -87,6 +87,7 @@ static struct clk div4_clks[DIV4_NR] = {
+ };
  
--static int r8a7779_scu_psr_core_disabled(int cpu)
--{
--	unsigned long mask = 3 << (cpu * 8);
--
--	if ((__raw_readl(shmobile_scu_base + 8) & mask) = mask)
--		return 1;
--
--	return 0;
--}
--
- static int r8a7779_platform_cpu_kill(unsigned int cpu)
- {
- 	struct r8a7779_pm_ch *ch = NULL;
-@@ -92,43 +82,6 @@ static int r8a7779_platform_cpu_kill(unsigned int cpu)
- 	return ret ? ret : 1;
- }
+ enum { MSTP323, MSTP322, MSTP321, MSTP320,
++	MSTP116,
+ 	MSTP103, MSTP101, MSTP100,
+ 	MSTP030,
+ 	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+@@ -99,6 +100,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP322] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 22, 0), /* SDHI1 */
+ 	[MSTP321] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 21, 0), /* SDHI2 */
+ 	[MSTP320] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 20, 0), /* SDHI3 */
++	[MSTP116] = SH_CLK_MSTP32(&div4_clks[DIV4_S], MSTPCR1, 16, 0), /* PCIe */
+ 	[MSTP103] = SH_CLK_MSTP32(&div4_clks[DIV4_S], MSTPCR1,  3, 0), /* DU */
+ 	[MSTP101] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  1, 0), /* USB2 */
+ 	[MSTP100] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  0, 0), /* USB0/1 */
+@@ -182,6 +184,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP320]), /* SDHI3 */
+ 	CLKDEV_DEV_ID("rcar-du.0", &mstp_clks[MSTP103]), /* DU */
++	CLKDEV_DEV_ID("rcar-pcie.0", &mstp_clks[MSTP116]), /* PCIe */
+ };
  
--static int __maybe_unused r8a7779_cpu_kill(unsigned int cpu)
--{
--	int k;
--
--	/* this function is running on another CPU than the offline target,
--	 * here we need wait for shutdown code in platform_cpu_die() to
--	 * finish before asking SoC-specific code to power off the CPU core.
--	 */
--	for (k = 0; k < 1000; k++) {
--		if (r8a7779_scu_psr_core_disabled(cpu))
--			return r8a7779_platform_cpu_kill(cpu);
--
--		mdelay(1);
--	}
--
--	return 0;
--}
--
--static void __maybe_unused r8a7779_cpu_die(unsigned int cpu)
--{
--	dsb();
--	flush_cache_all();
--
--	/* disable cache coherency */
--	scu_power_mode(shmobile_scu_base, SCU_PM_POWEROFF);
--
--	/* Endless loop until power off from r8a7779_cpu_kill() */
--	while (1)
--		cpu_do_idle();
--}
--
--static int __maybe_unused r8a7779_cpu_disable(unsigned int cpu)
--{
--	/* only CPU1->3 have power domains, do not allow hotplug of CPU0 */
--	return cpu = 0 ? -EPERM : 0;
--}
--
- static void __cpuinit r8a7779_secondary_init(unsigned int cpu)
- {
- 	gic_secondary_init(0);
-@@ -176,6 +129,55 @@ static void __init r8a7779_smp_init_cpus(void)
- 	shmobile_smp_init_cpus(scu_get_core_count(shmobile_scu_base));
- }
- 
-+#ifdef CONFIG_HOTPLUG_CPU
-+static int r8a7779_scu_psr_core_disabled(int cpu)
-+{
-+	unsigned long mask = 3 << (cpu * 8);
-+
-+	if ((__raw_readl(shmobile_scu_base + 8) & mask) = mask)
-+		return 1;
-+
-+	return 0;
-+}
-+
-+static int r8a7779_cpu_kill(unsigned int cpu)
-+{
-+	int k;
-+
-+	/* this function is running on another CPU than the offline target,
-+	 * here we need wait for shutdown code in platform_cpu_die() to
-+	 * finish before asking SoC-specific code to power off the CPU core.
-+	 */
-+	for (k = 0; k < 1000; k++) {
-+		if (r8a7779_scu_psr_core_disabled(cpu))
-+			return r8a7779_platform_cpu_kill(cpu);
-+
-+		mdelay(1);
-+	}
-+
-+	return 0;
-+}
-+
-+static void r8a7779_cpu_die(unsigned int cpu)
-+{
-+	dsb();
-+	flush_cache_all();
-+
-+	/* disable cache coherency */
-+	scu_power_mode(shmobile_scu_base, SCU_PM_POWEROFF);
-+
-+	/* Endless loop until power off from r8a7779_cpu_kill() */
-+	while (1)
-+		cpu_do_idle();
-+}
-+
-+static int r8a7779_cpu_disable(unsigned int cpu)
-+{
-+	/* only CPU1->3 have power domains, do not allow hotplug of CPU0 */
-+	return cpu = 0 ? -EPERM : 0;
-+}
-+#endif /* CONFIG_HOTPLUG_CPU */
-+
- struct smp_operations r8a7779_smp_ops  __initdata = {
- 	.smp_init_cpus		= r8a7779_smp_init_cpus,
- 	.smp_prepare_cpus	= r8a7779_smp_prepare_cpus,
+ void __init r8a7779_clock_init(void)
 -- 
-1.7.10.4
+1.7.5.4
 
