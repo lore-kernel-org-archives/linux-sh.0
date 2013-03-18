@@ -1,27 +1,108 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Fri, 29 Mar 2013 04:06:27 +0000
-Subject: Re: [PATCH v2 0/2]  Add R-Car Display Unit support for the Marzen board
-Message-Id: <20130329040626.GJ13429@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:47:33 +0000
+Subject: [PATCH 41/43] ARM: mach-shmobile: r8a7779: add SATA support
+Message-Id: <1363607255-6385-42-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1364412073-12322-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1364412073-12322-1-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Mar 27, 2013 at 08:21:11PM +0100, Laurent Pinchart wrote:
-> Hello,
-> 
-> Here's the second version of the r8a7779 and marzen patches that add support
-> for the display unit, based on the pinctrl API.
-> 
-> Compared to v1, the second patch was fixed not to revert the first patch
-> (which was totally unintentional).
-> 
-> The patches are not meant to be merged yet, they will be submitted with the
-> next version of the DU driver.
+From: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
 
-Thanks, I have these working in my backport to LTSI-3.4.25.
+Add SATA clock for r8a7779 SoC (for both device tree and usual cases).
+Register SATA controller as a "late" platform device on r8a7779 SoC.
 
-http://lists.linuxfoundation.org/pipermail/ltsi-dev/2013-March/001268.html
+Signed-off-by: Vladimir Barinov <vladimir.barinov@cogentembedded.com>
+Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/clock-r8a7779.c |    4 ++++
+ arch/arm/mach-shmobile/setup-r8a7779.c |   26 ++++++++++++++++++++++++++
+ 2 files changed, 30 insertions(+)
+
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index 1db3653..0f66d35 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -87,6 +87,7 @@ static struct clk div4_clks[DIV4_NR] = {
+ };
+ 
+ enum { MSTP323, MSTP322, MSTP321, MSTP320,
++	MSTP115,
+ 	MSTP101, MSTP100,
+ 	MSTP030,
+ 	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+@@ -99,6 +100,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP322] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 22, 0), /* SDHI1 */
+ 	[MSTP321] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 21, 0), /* SDHI2 */
+ 	[MSTP320] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 20, 0), /* SDHI3 */
++	[MSTP115] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1, 15, 0), /* SATA */
+ 	[MSTP101] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  1, 0), /* USB2 */
+ 	[MSTP100] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  0, 0), /* USB0/1 */
+ 	[MSTP030] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 30, 0), /* I2C0 */
+@@ -156,6 +158,8 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_CON_ID("peripheral_clk",	&div4_clks[DIV4_P]),
+ 
+ 	/* MSTP32 clocks */
++	CLKDEV_DEV_ID("sata_rcar", &mstp_clks[MSTP115]), /* SATA */
++	CLKDEV_DEV_ID("fc600000.sata", &mstp_clks[MSTP115]), /* SATA w/DT */
+ 	CLKDEV_DEV_ID("ehci-platform.1", &mstp_clks[MSTP101]), /* USB EHCI port2 */
+ 	CLKDEV_DEV_ID("ohci-platform.1", &mstp_clks[MSTP101]), /* USB OHCI port2 */
+ 	CLKDEV_DEV_ID("ehci-platform.0", &mstp_clks[MSTP100]), /* USB EHCI port0/1 */
+diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
+index 0068b9f..10031fe 100644
+--- a/arch/arm/mach-shmobile/setup-r8a7779.c
++++ b/arch/arm/mach-shmobile/setup-r8a7779.c
+@@ -29,6 +29,7 @@
+ #include <linux/serial_sci.h>
+ #include <linux/sh_intc.h>
+ #include <linux/sh_timer.h>
++#include <linux/dma-mapping.h>
+ #include <mach/hardware.h>
+ #include <mach/irqs.h>
+ #include <mach/r8a7779.h>
+@@ -322,6 +323,30 @@ static struct platform_device i2c3_device = {
+ 	.num_resources	= ARRAY_SIZE(rcar_i2c3_res),
+ };
+ 
++static struct resource sata_resources[] = {
++	[0] = {
++		.name	= "rcar-sata",
++		.start	= 0xfc600000,
++		.end	= 0xfc601fff,
++		.flags	= IORESOURCE_MEM,
++	},
++	[1] = {
++		.start	= gic_spi(100),
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static struct platform_device sata_device = {
++	.name		= "sata_rcar",
++	.id		= -1,
++	.resource	= sata_resources,
++	.num_resources	= ARRAY_SIZE(sata_resources),
++	.dev		= {
++		.dma_mask		= &sata_device.dev.coherent_dma_mask,
++		.coherent_dma_mask	= DMA_BIT_MASK(32),
++	},
++};
++
+ static struct platform_device *r8a7779_devices_dt[] __initdata = {
+ 	&scif0_device,
+ 	&scif1_device,
+@@ -338,6 +363,7 @@ static struct platform_device *r8a7779_late_devices[] __initdata = {
+ 	&i2c1_device,
+ 	&i2c2_device,
+ 	&i2c3_device,
++	&sata_device,
+ };
+ 
+ void __init r8a7779_add_standard_devices(void)
+-- 
+1.7.10.4
+
