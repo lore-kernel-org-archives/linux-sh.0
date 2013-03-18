@@ -1,74 +1,38 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 06 Mar 2013 13:47:08 +0000
-Subject: [PATCH v2 29/39] sh-pfc: r8a7740: Remove SDHI and MMCIF function GPIOS
-Message-Id: <1362577638-15493-30-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:53:16 +0000
+Subject: [PATCH 4/9] ARM: shmobile: kzm9g: defconfig: do not enable PREEMPT
+Message-Id: <1363607601-20366-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363607601-20366-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363607601-20366-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-All r8a7740 platforms now use the pinctrl API to control the SDHI and
-MMCIF pins, the corresponding function GPIOS are unused. Remove them.
+The motivation for this change is:
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+* It is consistent with all other shmobile boards and;
+* Allows the kzm9g-reference code to work with CONFIG_SMP
+  and thus the new defconfig
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7740.c | 35 -----------------------------------
- 1 file changed, 35 deletions(-)
+ arch/arm/configs/kzm9g_defconfig |    1 -
+ 1 file changed, 1 deletion(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-index 4c92af8..5220bec 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
-@@ -2372,26 +2372,6 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(SIM_D_PORT22), /* SIM_D  Port 22/199 */
- 	GPIO_FN(SIM_D_PORT199),
- 
--	/* SDHI0 */
--	GPIO_FN(SDHI0_D0),	GPIO_FN(SDHI0_D1),	GPIO_FN(SDHI0_D2),
--	GPIO_FN(SDHI0_D3),	GPIO_FN(SDHI0_CD),	GPIO_FN(SDHI0_WP),
--	GPIO_FN(SDHI0_CMD),	GPIO_FN(SDHI0_CLK),
--
--	/* SDHI1 */
--	GPIO_FN(SDHI1_D0),	GPIO_FN(SDHI1_D1),	GPIO_FN(SDHI1_D2),
--	GPIO_FN(SDHI1_D3),	GPIO_FN(SDHI1_CD),	GPIO_FN(SDHI1_WP),
--	GPIO_FN(SDHI1_CMD),	GPIO_FN(SDHI1_CLK),
--
--	/* SDHI2 */
--	GPIO_FN(SDHI2_D0),	GPIO_FN(SDHI2_D1),	GPIO_FN(SDHI2_D2),
--	GPIO_FN(SDHI2_D3),	GPIO_FN(SDHI2_CLK),	GPIO_FN(SDHI2_CMD),
--
--	GPIO_FN(SDHI2_CD_PORT24), /* MSEL5CR_19_0 */
--	GPIO_FN(SDHI2_WP_PORT25),
--
--	GPIO_FN(SDHI2_WP_PORT177), /* MSEL5CR_19_1 */
--	GPIO_FN(SDHI2_CD_PORT202),
--
- 	/* MSIOF2 */
- 	GPIO_FN(MSIOF2_TXD),	GPIO_FN(MSIOF2_RXD),	GPIO_FN(MSIOF2_TSCK),
- 	GPIO_FN(MSIOF2_SS2),	GPIO_FN(MSIOF2_TSYNC),	GPIO_FN(MSIOF2_SS1),
-@@ -2436,21 +2416,6 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(MEMC_WAIT),	GPIO_FN(MEMC_DREQ1),	GPIO_FN(MEMC_BUSCLK),
- 	GPIO_FN(MEMC_A0),
- 
--	/* MMC */
--	GPIO_FN(MMC0_D0_PORT68),	GPIO_FN(MMC0_D1_PORT69),
--	GPIO_FN(MMC0_D2_PORT70),	GPIO_FN(MMC0_D3_PORT71),
--	GPIO_FN(MMC0_D4_PORT72),	GPIO_FN(MMC0_D5_PORT73),
--	GPIO_FN(MMC0_D6_PORT74),	GPIO_FN(MMC0_D7_PORT75),
--	GPIO_FN(MMC0_CLK_PORT66),
--	GPIO_FN(MMC0_CMD_PORT67),	/* MSEL4CR_15_0 */
--
--	GPIO_FN(MMC1_D0_PORT149),	GPIO_FN(MMC1_D1_PORT148),
--	GPIO_FN(MMC1_D2_PORT147),	GPIO_FN(MMC1_D3_PORT146),
--	GPIO_FN(MMC1_D4_PORT145),	GPIO_FN(MMC1_D5_PORT144),
--	GPIO_FN(MMC1_D6_PORT143),	GPIO_FN(MMC1_D7_PORT142),
--	GPIO_FN(MMC1_CLK_PORT103),
--	GPIO_FN(MMC1_CMD_PORT104),	/* MSEL4CR_15_1 */
--
- 	/* MSIOF0 */
- 	GPIO_FN(MSIOF0_SS1),	GPIO_FN(MSIOF0_SS2),	GPIO_FN(MSIOF0_RXD),
- 	GPIO_FN(MSIOF0_TXD),	GPIO_FN(MSIOF0_MCK0),	GPIO_FN(MSIOF0_MCK1),
+diff --git a/arch/arm/configs/kzm9g_defconfig b/arch/arm/configs/kzm9g_defconfig
+index 670c3b6..84ac68c 100644
+--- a/arch/arm/configs/kzm9g_defconfig
++++ b/arch/arm/configs/kzm9g_defconfig
+@@ -33,7 +33,6 @@ CONFIG_NO_HZ=y
+ CONFIG_HIGH_RES_TIMERS=y
+ CONFIG_SMP=y
+ CONFIG_SCHED_MC=y
+-CONFIG_PREEMPT=y
+ CONFIG_AEABI=y
+ # CONFIG_OABI_COMPAT is not set
+ CONFIG_HIGHMEM=y
 -- 
-1.8.1.5
+1.7.10.4
 
