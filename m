@@ -1,42 +1,39 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 12:32:52 +0000
-Subject: [PATCH 42/43] ARM: shmobile: R8A7779: use gic_iid() in SATA IRQ resource
-Message-Id: <1363609973-31086-43-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:59:34 +0000
+Subject: [PATCH 07/13] ARM: shmobile: parse DT and configure pinmux early on kzm9g-reference
+Message-Id: <1363607980-22153-8-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
+References: <1363607980-22153-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363607980-22153-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 
-Commit "ARM: shmobile: r8a7779: use gic_iid macro" switched R8A7779 platform
-devices to using gic_iid() macro instead of gic_spi() but commit "ARM: mach-
-shmobile: r8a7779: add SATA support" added another use of gic_spi(). Convert
-the SATA IRQ resource to using gic_iid().
+GPIOs can be provided by the pinctrl subsystem, which can be initialised
+by DT. Therefore DT has to be parsed before requesting GPIOs. Also non-DT
+pinmux has to be configured early.
 
-Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Acked-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
 Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/setup-r8a7779.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |    1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/arch/arm/mach-shmobile/setup-r8a7779.c b/arch/arm/mach-shmobile/setup-r8a7779.c
-index 10031fe..042df35 100644
---- a/arch/arm/mach-shmobile/setup-r8a7779.c
-+++ b/arch/arm/mach-shmobile/setup-r8a7779.c
-@@ -331,7 +331,7 @@ static struct resource sata_resources[] = {
- 		.flags	= IORESOURCE_MEM,
- 	},
- 	[1] = {
--		.start	= gic_spi(100),
-+		.start	= gic_iid(0x84),
- 		.flags	= IORESOURCE_IRQ,
- 	},
- };
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index caba1bb..add537c 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -47,6 +47,7 @@ static void __init kzm_init(void)
+ {
+ 	sh73a0_add_standard_devices_dt();
+ 	pinctrl_register_mappings(kzm_pinctrl_map, ARRAY_SIZE(kzm_pinctrl_map));
++	sh73a0_pinmux_init();
+ 
+ #ifdef CONFIG_CACHE_L2X0
+ 	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
 -- 
 1.7.10.4
 
