@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:04:58 +0000
-Subject: [PATCH 002/142] sh-pfc: Don't define the per-device pinctrl struct instances as global
-Message-Id: <1363604838-29359-3-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:05:34 +0000
+Subject: [PATCH 038/142] sh: sh7785: Add pin control resources
+Message-Id: <1363604838-29359-39-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
@@ -12,92 +12,48 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-The pinctrl_desc and pinctrl_gpio_range structures registered with the
-pinctrl core are per-device instances. Move them to the dynamically
-allocated sh_pfc_pinctrl structure and initialize them at runtime.
+Add memory resources for the pin control platform device to let the
+sh-pfc driver ioremap() registers properly instead of evily casting
+register physical addresses to virtual addresses.
+
+The memory resource address range has been extracted from the config and
+data registes lists in the sh-pfc driver.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/pinctrl/sh-pfc/pinctrl.c |   40 +++++++++++++++++---------------------
- 1 file changed, 18 insertions(+), 22 deletions(-)
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7785.c |   14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
-index 887930e..d113746 100644
---- a/drivers/pinctrl/sh-pfc/pinctrl.c
-+++ b/drivers/pinctrl/sh-pfc/pinctrl.c
-@@ -27,6 +27,9 @@
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7785.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7785.c
+index 01055b8..e336ab8 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7785.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7785.c
+@@ -8,13 +8,23 @@
+  * for more details.
+  */
  
- struct sh_pfc_pinctrl {
- 	struct pinctrl_dev *pctl;
-+	struct pinctrl_desc pctl_desc;
-+	struct pinctrl_gpio_range range;
++#include <linux/bug.h>
+ #include <linux/init.h>
+ #include <linux/kernel.h>
++#include <linux/ioport.h>
+ #include <cpu/pfc.h>
+ 
++static struct resource sh7785_pfc_resources[] = {
++	[0] = {
++		.start	= 0xffe70000,
++		.end	= 0xffe7008f,
++		.flags	= IORESOURCE_MEM,
++	},
++};
 +
- 	struct sh_pfc *pfc;
- 
- 	struct pinmux_gpio **functions;
-@@ -314,19 +317,6 @@ static const struct pinconf_ops sh_pfc_pinconf_ops = {
- 	.pin_config_dbg_show	= sh_pfc_pinconf_dbg_show,
- };
- 
--static struct pinctrl_gpio_range sh_pfc_gpio_range = {
--	.name		= DRV_NAME,
--	.id		= 0,
--};
--
--static struct pinctrl_desc sh_pfc_pinctrl_desc = {
--	.name		= DRV_NAME,
--	.owner		= THIS_MODULE,
--	.pctlops	= &sh_pfc_pinctrl_ops,
--	.pmxops		= &sh_pfc_pinmux_ops,
--	.confops	= &sh_pfc_pinconf_ops,
--};
--
- static void sh_pfc_map_one_gpio(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx,
- 				struct pinmux_gpio *gpio, unsigned offset)
+ static int __init plat_pinmux_setup(void)
  {
-@@ -386,9 +376,6 @@ static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
- 
- 	spin_unlock_irqrestore(&pfc->lock, flags);
- 
--	sh_pfc_pinctrl_desc.pins = pmx->pads;
--	sh_pfc_pinctrl_desc.npins = pmx->nr_pads;
+-	return sh_pfc_register("pfc-sh7785", NULL, 0);
++	return sh_pfc_register("pfc-sh7785", sh7785_pfc_resources,
++			       ARRAY_SIZE(sh7785_pfc_resources));
+ }
 -
- 	return 0;
- }
- 
-@@ -438,16 +425,25 @@ int sh_pfc_register_pinctrl(struct sh_pfc *pfc)
- 	if (unlikely(ret != 0))
- 		return ret;
- 
--	pmx->pctl = pinctrl_register(&sh_pfc_pinctrl_desc, pfc->dev, pmx);
-+	pmx->pctl_desc.name = DRV_NAME;
-+	pmx->pctl_desc.owner = THIS_MODULE;
-+	pmx->pctl_desc.pctlops = &sh_pfc_pinctrl_ops;
-+	pmx->pctl_desc.pmxops = &sh_pfc_pinmux_ops;
-+	pmx->pctl_desc.confops = &sh_pfc_pinconf_ops;
-+	pmx->pctl_desc.pins = pmx->pads;
-+	pmx->pctl_desc.npins = pmx->nr_pads;
-+
-+	pmx->pctl = pinctrl_register(&pmx->pctl_desc, pfc->dev, pmx);
- 	if (IS_ERR(pmx->pctl))
- 		return PTR_ERR(pmx->pctl);
- 
--	sh_pfc_gpio_range.npins = pfc->info->last_gpio
--				- pfc->info->first_gpio + 1;
--	sh_pfc_gpio_range.base = pfc->info->first_gpio;
--	sh_pfc_gpio_range.pin_base = pfc->info->first_gpio;
-+	pmx->range.name = DRV_NAME,
-+	pmx->range.id = 0;
-+	pmx->range.npins = pfc->info->last_gpio - pfc->info->first_gpio + 1;
-+	pmx->range.base = pfc->info->first_gpio;
-+	pmx->range.pin_base = pfc->info->first_gpio;
- 
--	pinctrl_add_gpio_range(pmx->pctl, &sh_pfc_gpio_range);
-+	pinctrl_add_gpio_range(pmx->pctl, &pmx->range);
- 
- 	return 0;
- }
+ arch_initcall(plat_pinmux_setup);
 -- 
 1.7.10.4
 
