@@ -1,38 +1,59 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 28 Mar 2013 09:09:11 +0000
-Subject: Re: pinmux missing from next in renesas tree
-Message-Id: <20130328090910.GD31379@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 12:05:57 +0000
+Subject: [PATCH 13/14] irqchip: intc-irqpin: Initial DT support
+Message-Id: <1363608358-24215-14-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130328003634.GF20736@verge.net.au>
-In-Reply-To: <20130328003634.GF20736@verge.net.au>
+References: <1363608358-24215-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363608358-24215-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Thu, Mar 28, 2013 at 09:40:14AM +0100, Laurent Pinchart wrote:
-> Hi Simon,
-> 
-> On Thursday 28 March 2013 09:36:34 Simon Horman wrote:
-> > Unfortunately I forgot to merge pinmux into the next branch
-> > I pushed last night and tagged as renesas-next-20130327.
-> > 
-> > I have re-pushed and re-taged with pinmux merged.
-> > And also pushed pinmux which was one patch behind my local version.
-> > 
-> > For reference the relevant commit ids are:
-> > 
-> > next, renesas-next-20130327: 3f9904f90ec7729c8ac0bc554fed67d4f9d5bd59
-> > 			     (Merge branch 'pinmux' into next)
-> > pinmux: 5ae81435c987e2ef071452d438770865814e8390
-> >         (sh-pfc: r8a7779: Split DU input and output pixel clocks)
-> 
-> Thanks a lot.
-> 
-> I've rebased all my branches on top of renesas-next-20130328 and there's no 
-> patch missing except for the "[PATCH 0/3] sh-pfc: r8a7779: Improve readability 
-> with a new macro" series that will need a v2 anyway.
-> 
-> I've also successfully test that tag with the DU driver on the Marzen board.
+From: Magnus Damm <damm@opensource.se>
 
-Great, thanks.
+Add initial DT support to the INTC External IRQ Pin
+driver. At this point only hardware with 4-bit wide
+sense registers is supported via DT.
+
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ drivers/irqchip/irq-renesas-intc-irqpin.c |    9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/drivers/irqchip/irq-renesas-intc-irqpin.c b/drivers/irqchip/irq-renesas-intc-irqpin.c
+index 21f4602..fd5dabc 100644
+--- a/drivers/irqchip/irq-renesas-intc-irqpin.c
++++ b/drivers/irqchip/irq-renesas-intc-irqpin.c
+@@ -278,6 +278,7 @@ static int intc_irqpin_irq_domain_map(struct irq_domain *h, unsigned int virq,
+ 
+ static struct irq_domain_ops intc_irqpin_irq_domain_ops = {
+ 	.map	= intc_irqpin_irq_domain_map,
++	.xlate  = irq_domain_xlate_twocell,
+ };
+ 
+ static int intc_irqpin_probe(struct platform_device *pdev)
+@@ -437,11 +438,19 @@ static int intc_irqpin_remove(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
++static const struct of_device_id intc_irqpin_dt_ids[] = {
++	{ .compatible = "renesas,intc-irqpin", },
++	{},
++};
++MODULE_DEVICE_TABLE(of, intc_irqpin_dt_ids);
++
+ static struct platform_driver intc_irqpin_device_driver = {
+ 	.probe		= intc_irqpin_probe,
+ 	.remove		= intc_irqpin_remove,
+ 	.driver		= {
+ 		.name	= "renesas_intc_irqpin",
++		.of_match_table = intc_irqpin_dt_ids,
++		.owner  = THIS_MODULE,
+ 	}
+ };
+ 
+-- 
+1.7.10.4
+
