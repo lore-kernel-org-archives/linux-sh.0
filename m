@@ -1,71 +1,52 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 28 Mar 2013 08:49:27 +0000
-Subject: [PATCH 4/4] ARM: shmobile: r8a7779: move global functions to r8a7779.h
-Message-Id: <87txnvlxik.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 13:02:26 +0000
+Subject: [GIT PULL] ARM and SH based SoC clocksource update for v3.10
+Message-Id: <1363611758-6655-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-There is no reason each CPU's own function has to exist in common.h. 
-r8a7779_xxx() go to r8a7779.h
+Hi Olof, Hi Arnd,
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
----
- arch/arm/mach-shmobile/include/mach/common.h  |   14 --------------
- arch/arm/mach-shmobile/include/mach/r8a7779.h |   13 +++++++++++++
- 2 files changed, 13 insertions(+), 14 deletions(-)
+The following changes since commit f6161aa153581da4a3867a2d1a7caf4be19b6ec9:
 
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index 4d5410d..e002cfd 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -19,20 +19,6 @@ extern int shmobile_enter_wfi(struct cpuidle_device *dev,
- 			      struct cpuidle_driver *drv, int index);
- extern void shmobile_cpuidle_set_driver(struct cpuidle_driver *drv);
- 
--extern void r8a7779_init_delay(void);
--extern void r8a7779_init_irq(void);
--extern void r8a7779_init_irq_extpin(int irlm);
--extern void r8a7779_init_irq_dt(void);
--extern void r8a7779_map_io(void);
--extern void r8a7779_earlytimer_init(void);
--extern void r8a7779_add_early_devices(void);
--extern void r8a7779_add_standard_devices(void);
--extern void r8a7779_add_standard_devices_dt(void);
--extern void r8a7779_clock_init(void);
--extern void r8a7779_pinmux_init(void);
--extern void r8a7779_pm_init(void);
--extern void r8a7779_register_twd(void);
--
- #ifdef CONFIG_SUSPEND
- int shmobile_suspend_init(void);
- #else
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-index 5896922..945299e 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -22,6 +22,19 @@ static inline struct r8a7779_pm_ch *to_r8a7779_ch(struct generic_pm_domain *d)
- 	return &container_of(d, struct r8a7779_pm_domain, genpd)->ch;
- }
- 
-+extern void r8a7779_init_delay(void);
-+extern void r8a7779_init_irq(void);
-+extern void r8a7779_init_irq_extpin(int irlm);
-+extern void r8a7779_init_irq_dt(void);
-+extern void r8a7779_map_io(void);
-+extern void r8a7779_earlytimer_init(void);
-+extern void r8a7779_add_early_devices(void);
-+extern void r8a7779_add_standard_devices(void);
-+extern void r8a7779_add_standard_devices_dt(void);
-+extern void r8a7779_clock_init(void);
-+extern void r8a7779_pinmux_init(void);
-+extern void r8a7779_pm_init(void);
-+extern void r8a7779_register_twd(void);
- extern int r8a7779_sysc_power_down(struct r8a7779_pm_ch *r8a7779_ch);
- extern int r8a7779_sysc_power_up(struct r8a7779_pm_ch *r8a7779_ch);
- 
--- 
-1.7.9.5
+  Linux 3.9-rc2 (2013-03-10 16:54:19 -0700)
 
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-clocksource-for-v3.10
+
+for you to fetch changes up to 342896a5c565e38dfb87954f362735f03ae1efb0:
+
+  clocksource: sh_mtu2: Set initcall level to subsys (2013-03-13 02:24:37 +0900)
+
+----------------------------------------------------------------
+Renesas ARM and SH based SoC clocksource update for v3.10
+
+I has been agreed by Paul Mundt and myself, that it would be best to take
+these changes through the renesas tree and in turn the arm-soc tree.
+
+----------------------------------------------------------------
+Magnus Damm (8):
+      clocksource: sh_cmt: Take care of clk_put() when setup_irq() fails
+      clocksource: sh_cmt: Initialize 'max_match_value' and 'lock' in sh_cmt_setup()
+      clocksource: sh_cmt: Introduce per-register functions
+      clocksource: sh_cmt: Consolidate platform_set_drvdata() call
+      clocksource: sh_cmt: CMSTR and CMCSR register access update
+      clocksource: sh_cmt: CMCNT and CMCOR register access update
+      clocksource: sh_cmt: Add control register callbacks
+      clocksource: sh_cmt: Add CMT register layout comment
+
+Simon Horman (4):
+      clocksource: sh_cmt: Set initcall level to subsys
+      clocksource: sh_tmu: Set initcall level to subsys
+      clocksource: em_sti: Set initcall level to subsys
+      clocksource: sh_mtu2: Set initcall level to subsys
+
+ drivers/clocksource/em_sti.c  |   13 ++-
+ drivers/clocksource/sh_cmt.c  |  189 +++++++++++++++++++++++++----------------
+ drivers/clocksource/sh_mtu2.c |    2 +-
+ drivers/clocksource/sh_tmu.c  |    2 +-
+ 4 files changed, 132 insertions(+), 74 deletions(-)
