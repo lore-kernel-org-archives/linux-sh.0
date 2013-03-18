@@ -1,21 +1,55 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 14 Mar 2013 14:58:34 +0000
-Subject: Re: [PATCH v4 11/88] sh-pfc: sh73a0: Add IrDA pin groups and functions
-Message-Id: <CACRpkdYYvSKsFHpVwjDnW8XU6VGzRNzDCj-UEgpQLNCSOaayFg@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 12:05:51 +0000
+Subject: [PATCH 07/14] irqchip: intc-irqpin: Add force comments
+Message-Id: <1363608358-24215-8-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363215633-4264-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1363215633-4264-12-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1363608358-24215-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363608358-24215-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Mar 13, 2013 at 11:59 PM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
+From: Magnus Damm <damm@opensource.se>
 
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Add comments to describe the special case for
+"force" versions of enable and disable functions.
 
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Reviewed-by: Thomas Gleixner <tglx@linutronix.de>
+Tested-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ drivers/irqchip/irq-renesas-intc-irqpin.c |    9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-Yours,
-Linus Walleij
+diff --git a/drivers/irqchip/irq-renesas-intc-irqpin.c b/drivers/irqchip/irq-renesas-intc-irqpin.c
+index 0ac2bf6..59c0cbc 100644
+--- a/drivers/irqchip/irq-renesas-intc-irqpin.c
++++ b/drivers/irqchip/irq-renesas-intc-irqpin.c
+@@ -199,6 +199,11 @@ static void intc_irqpin_irq_enable_force(struct irq_data *d)
+ 	int irq = p->irq[irqd_to_hwirq(d)].requested_irq;
+ 
+ 	intc_irqpin_irq_enable(d);
++
++	/* enable interrupt through parent interrupt controller,
++	 * assumes non-shared interrupt with 1:1 mapping
++	 * needed for busted IRQs on some SoCs like sh73a0
++	 */
+ 	irq_get_chip(irq)->irq_unmask(irq_get_irq_data(irq));
+ }
+ 
+@@ -207,6 +212,10 @@ static void intc_irqpin_irq_disable_force(struct irq_data *d)
+ 	struct intc_irqpin_priv *p = irq_data_get_irq_chip_data(d);
+ 	int irq = p->irq[irqd_to_hwirq(d)].requested_irq;
+ 
++	/* disable interrupt through parent interrupt controller,
++	 * assumes non-shared interrupt with 1:1 mapping
++	 * needed for busted IRQs on some SoCs like sh73a0
++	 */
+ 	irq_get_chip(irq)->irq_mask(irq_get_irq_data(irq));
+ 	intc_irqpin_irq_disable(d);
+ }
+-- 
+1.7.10.4
+
