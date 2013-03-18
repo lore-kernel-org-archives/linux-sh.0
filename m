@@ -1,10 +1,10 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:47:14 +0000
+Date: Mon, 18 Mar 2013 12:32:32 +0000
 Subject: [PATCH 22/43] ARM: shmobile: r8a7779: Do not use early devices with DT reference
-Message-Id: <1363607255-6385-23-git-send-email-horms+renesas@verge.net.au>
+Message-Id: <1363609973-31086-23-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
+References: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
