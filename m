@@ -1,52 +1,51 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 10 Mar 2013 18:35:44 +0000
-Subject: [PATCH 05/23] sh: sh7722: Add pin control resources
-Message-Id: <1362940562-8570-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:06:36 +0000
+Subject: [PATCH 100/142] ARM: shmobile: marzen: Register pinctrl mappings for HSPI
+Message-Id: <1363604838-29359-101-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add memory resources for the pin control platform device to let the
-sh-pfc driver ioremap() registers properly instead of evily casting
-register physical addresses to virtual addresses.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-The memory resource address range has been extracted from the config and
-data registes lists in the sh-pfc driver.
+Replace the GPIO-based HSPI pinmux configuration by pinctrl mappings.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c | 14 ++++++++++++--
- 1 file changed, 12 insertions(+), 2 deletions(-)
+ arch/arm/mach-shmobile/board-marzen.c |    9 +++------
+ 1 file changed, 3 insertions(+), 6 deletions(-)
 
-diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c
-index d9bcc42..271bbc8 100644
---- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c
-+++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7722.c
-@@ -1,10 +1,20 @@
-+#include <linux/bug.h>
- #include <linux/init.h>
- #include <linux/kernel.h>
-+#include <linux/ioport.h>
- #include <cpu/pfc.h>
- 
-+static struct resource sh7722_pfc_resources[] = {
-+	[0] = {
-+		.start	= 0xa4050100,
-+		.end	= 0xa405018f,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+};
-+
- static int __init plat_pinmux_setup(void)
- {
--	return sh_pfc_register("pfc-sh7722", NULL, 0);
-+	return sh_pfc_register("pfc-sh7722", sh7722_pfc_resources,
-+			       ARRAY_SIZE(sh7722_pfc_resources));
+diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
+index 4097366..8871af3 100644
+--- a/arch/arm/mach-shmobile/board-marzen.c
++++ b/arch/arm/mach-shmobile/board-marzen.c
+@@ -329,6 +329,9 @@ void __init marzen_init_late(void)
  }
+ 
+ static const struct pinctrl_map marzen_pinctrl_map[] = {
++	/* HSPI0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh-hspi.0", "pfc-r8a7779",
++				  "hspi0", "hspi0"),
+ 	/* SCIF2 (CN18: DEBUG0) */
+ 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.2", "pfc-r8a7779",
+ 				  "scif2_data_c", "scif2"),
+@@ -361,12 +364,6 @@ static void __init marzen_init(void)
+ 	gpio_request(GPIO_FN_EX_CS0, NULL); /* nCS */
+ 	gpio_request(GPIO_FN_IRQ1_B, NULL); /* IRQ + PME */
+ 
+-	/* HSPI 0 */
+-	gpio_request(GPIO_FN_HSPI_CLK0,	NULL);
+-	gpio_request(GPIO_FN_HSPI_CS0,	NULL);
+-	gpio_request(GPIO_FN_HSPI_TX0,	NULL);
+-	gpio_request(GPIO_FN_HSPI_RX0,	NULL);
 -
- arch_initcall(plat_pinmux_setup);
+ 	/* USB (CN21) */
+ 	gpio_request(GPIO_FN_USB_OVC0, NULL);
+ 	gpio_request(GPIO_FN_USB_OVC1, NULL);
 -- 
-1.8.1.5
+1.7.10.4
 
