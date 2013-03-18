@@ -1,21 +1,71 @@
-From: Simon Horman <horms@verge.net.au>
-Date: Thu, 21 Mar 2013 10:33:37 +0000
-Subject: Re: [PATCH v2] ARM: shmobile: r8a7779: Add PCIe clocks
-Message-Id: <20130321103337.GB2348@verge.net.au>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:59:27 +0000
+Subject: [GIT PULL] Renesas ARM-based SoC board updates for v3.10
+Message-Id: <1363607980-22153-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363685757-8159-1-git-send-email-phil.edworthy@renesas.com>
-In-Reply-To: <1363685757-8159-1-git-send-email-phil.edworthy@renesas.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Tue, Mar 19, 2013 at 09:35:57AM +0000, Phil Edworthy wrote:
-> 
-> Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
-> ---
-> v2:
->   Rebased on renesas soc branch.
->   Removed ".0" from clock name.
+Hi Olof, Hi Arnd,
 
-Thanks Phil, applied to the soc branch.
+The following changes since commit 3e4ca5183625b525520a73d9ce630ab8898dbd0e:
+
+  Merge branch 'pinmux/3.9/functions' of git://linuxtv.org/pinchartl/fbdev into boards-base (2013-03-15 23:41:21 +0900)
+
+are available in the git repository at:
+
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-boards-for-v3.10
+
+for you to fetch changes up to 7f9ed6b16338a19a33bd1e7d87ccf34b304dcf27:
+
+  ARM: shmobile: kzm9g: correct smsc regulator registration (2013-03-16 00:25:39 +0900)
+
+----------------------------------------------------------------
+Renesas ARM-based SoC board updates for v3.10
+
+This is based on a merge of the following:
+
+git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-pinmux-for-v3.10
+git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git renesas-soc-for-v3.10
+
+----------------------------------------------------------------
+Arnd Bergmann (1):
+      ARM: shmobile: mark mackerel sh_mmcif_device __maybe_unused
+
+Guennadi Liakhovetski (6):
+      ARM: shmobile: use GPIO SD-card detection on armadillo800eva
+      ARM: shmobile: switch SDHI0 to GPIO regulator on armadillo800eva
+      ARM: shmobile: streamline mackerel SD and MMC devices
+      ARM: shmobile: parse DT and configure pinmux early on kzm9g-reference
+      ARM: shmobile: SDHI and MMCIF interfaces to kzm9g-reference
+      ARM: shmobile: simplify kzm9g Kconfig dependencies
+
+Kuninori Morimoto (1):
+      ARM: shmobile: marzen: Use gic_iid macro for ICCIAR / interrupt ID
+
+Simon Horman (5):
+      ARM: shmobile: marzen: Reference DT implementation
+      ARM: shmobile: kzm9g: Reference DT implementation
+      ARM: shmobile: kzm9g: Remove warning about SMP
+      ARM: shmobile: kzm9g: Trim reference DT_MACHINE_START
+      ARM: shmobile: kzm9g: correct smsc regulator registration
+
+ arch/arm/boot/dts/Makefile                      |    2 +
+ arch/arm/boot/dts/r8a7779-marzen-reference.dts  |   47 +++++++++
+ arch/arm/boot/dts/sh73a0-kzm9g-reference.dts    |   77 +++++++++++++++
+ arch/arm/mach-shmobile/Kconfig                  |   27 ++++++
+ arch/arm/mach-shmobile/Makefile                 |    2 +
+ arch/arm/mach-shmobile/board-armadillo800eva.c  |  111 ++++++++++++++++++----
+ arch/arm/mach-shmobile/board-kzm9g-reference.c  |  108 +++++++++++++++++++++
+ arch/arm/mach-shmobile/board-kzm9g.c            |    4 +-
+ arch/arm/mach-shmobile/board-mackerel.c         |  115 ++++++++++++-----------
+ arch/arm/mach-shmobile/board-marzen-reference.c |   75 +++++++++++++++
+ arch/arm/mach-shmobile/board-marzen.c           |   12 +--
+ 11 files changed, 496 insertions(+), 84 deletions(-)
+ create mode 100644 arch/arm/boot/dts/r8a7779-marzen-reference.dts
+ create mode 100644 arch/arm/boot/dts/sh73a0-kzm9g-reference.dts
+ create mode 100644 arch/arm/mach-shmobile/board-kzm9g-reference.c
+ create mode 100644 arch/arm/mach-shmobile/board-marzen-reference.c
