@@ -1,89 +1,47 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 06 Mar 2013 13:47:06 +0000
-Subject: [PATCH v2 27/39] sh-pfc: sh73a0: Remove FSI function GPIOS
-Message-Id: <1362577638-15493-28-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 13:02:38 +0000
+Subject: [PATCH 12/12] clocksource: sh_mtu2: Set initcall level to subsys
+Message-Id: <1363611758-6655-13-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363611758-6655-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363611758-6655-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-All sh73a0 platforms now use the pinctrl API to control the FSI pins,
-the corresponding function GPIOS are unused. Remove them.
+The reason for this is to ensure that MTU2 is probed earlier
+than with its previous initcall level, module init.
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This came up as a problem with using CMT as a clock source kzm9g-reference
+which does not make use of early timers or devices. In that scenario
+initialisation of SDHI and MMCIF both stall on msleep() calls due to the
+absence of a initialised clock source.
+
+The purpose of this change is to keep the MTU2 code in sync with the CMT code
+which has been modified in a similar manner..
+
+Compile tested only using se7206_defconfig.
+I do not believe I have any boards that support the MTU2.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- drivers/pinctrl/sh-pfc/pfc-sh73a0.c | 36 ------------------------------------
- 1 file changed, 36 deletions(-)
+ drivers/clocksource/sh_mtu2.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-index 7c27ec9..47b3648 100644
---- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
-@@ -2670,7 +2670,6 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(GPO6), \
- 	GPIO_FN(MFG1_OUT2),
- 	GPIO_FN(GPO5), \
--	GPIO_FN(FSICOSLDT3), \
- 	GPIO_FN(PORT16_VIO_CKOR),
- 	GPIO_FN(PORT19_VIO_CKO2),
- 	GPIO_FN(GPO0),
-@@ -2695,55 +2694,20 @@ static struct pinmux_func pinmux_func_gpios[] = {
- 	GPIO_FN(SIM_D), \
- 	GPIO_FN(PORT31_IROUT),
- 	GPIO_FN(XWUP),
--	GPIO_FN(FSIBOBT), \
--	GPIO_FN(FSIBIBT),
--	GPIO_FN(FSIBOLR), \
--	GPIO_FN(FSIBILR),
--	GPIO_FN(FSIBOSLD),
--	GPIO_FN(FSIBISLD),
- 	GPIO_FN(VACK),
- 	GPIO_FN(XTAL1L),
--	GPIO_FN(FSICOSLDT2),
--	GPIO_FN(FSICOSLDT1),
--	GPIO_FN(FSICOBT), \
--	GPIO_FN(FSICIBT), \
--	GPIO_FN(FSIDOBT), \
--	GPIO_FN(FSIDIBT),
--	GPIO_FN(FSICOLR), \
--	GPIO_FN(FSICILR), \
--	GPIO_FN(FSIDOLR), \
--	GPIO_FN(FSIDILR),
--	GPIO_FN(FSICOSLD), \
--	GPIO_FN(PORT47_FSICSPDIF),
--	GPIO_FN(FSICISLD), \
--	GPIO_FN(FSIDISLD),
--	GPIO_FN(FSIACK), \
- 	GPIO_FN(PORT49_IRDA_OUT), \
- 	GPIO_FN(PORT49_IROUT), \
--	GPIO_FN(FSIAOMC),
--	GPIO_FN(FSIAOLR), \
- 	GPIO_FN(BBIF2_TSYNC2), \
- 	GPIO_FN(TPU2TO2), \
--	GPIO_FN(FSIAILR),
+diff --git a/drivers/clocksource/sh_mtu2.c b/drivers/clocksource/sh_mtu2.c
+index 83943e2..4aac9ee 100644
+--- a/drivers/clocksource/sh_mtu2.c
++++ b/drivers/clocksource/sh_mtu2.c
+@@ -386,7 +386,7 @@ static void __exit sh_mtu2_exit(void)
+ }
  
--	GPIO_FN(FSIAOBT), \
- 	GPIO_FN(BBIF2_TSCK2), \
- 	GPIO_FN(TPU2TO3), \
--	GPIO_FN(FSIAIBT),
--	GPIO_FN(FSIAOSLD), \
- 	GPIO_FN(BBIF2_TXD2),
--	GPIO_FN(FSIASPDIF), \
- 	GPIO_FN(PORT53_IRDA_IN), \
- 	GPIO_FN(TPU3TO3), \
--	GPIO_FN(FSIBSPDIF), \
--	GPIO_FN(PORT53_FSICSPDIF),
--	GPIO_FN(FSIBCK), \
- 	GPIO_FN(PORT54_IRDA_FIRSEL), \
- 	GPIO_FN(TPU3TO2), \
--	GPIO_FN(FSIBOMC), \
--	GPIO_FN(FSICCK), \
--	GPIO_FN(FSICOMC),
--	GPIO_FN(FSIAISLD), \
- 	GPIO_FN(TPU0TO0),
- 	GPIO_FN(A0), \
- 	GPIO_FN(BS_),
+ early_platform_init("earlytimer", &sh_mtu2_device_driver);
+-module_init(sh_mtu2_init);
++subsys_initcall(sh_mtu2_init);
+ module_exit(sh_mtu2_exit);
+ 
+ MODULE_AUTHOR("Magnus Damm");
 -- 
-1.8.1.5
+1.7.10.4
 
