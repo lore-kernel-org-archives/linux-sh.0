@@ -1,10 +1,10 @@
 From: Magnus Damm <magnus.damm@gmail.com>
-Date: Tue, 12 Mar 2013 04:56:19 +0000
-Subject: [PATCH 02/04] ARM: shmobile: r8a73a4 SCIF support
-Message-Id: <20130312045619.19701.29486.sendpatchset@w520>
+Date: Mon, 18 Mar 2013 14:32:22 +0000
+Subject: [PATCH 02/04] ARM: shmobile: r8a73a4 SCIF support V2
+Message-Id: <20130318143222.26687.79780.sendpatchset@w520>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130312045559.19701.77841.sendpatchset@w520>
-In-Reply-To: <20130312045559.19701.77841.sendpatchset@w520>
+References: <20130318143203.26687.98180.sendpatchset@w520>
+In-Reply-To: <20130318143203.26687.98180.sendpatchset@w520>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
@@ -21,12 +21,18 @@ such bindings are still under development.
 Signed-off-by: Magnus Damm <damm@opensource.se>
 ---
 
- arch/arm/mach-shmobile/clock-r8a73a4.c |   15 +++-
- arch/arm/mach-shmobile/setup-r8a73a4.c |  115 ++++++++++++++++++++++++++++++++
- 2 files changed, 129 insertions(+), 1 deletion(-)
+ Changes since V1:
+ - Replaced static platform devices with array of platform data
+   together with a call to platform_device_register_data()
 
---- 0002/arch/arm/mach-shmobile/clock-r8a73a4.c
-+++ work/arch/arm/mach-shmobile/clock-r8a73a4.c	2013-03-12 12:49:35.000000000 +0900
+ This version is about 70 lines smaller than V1. 
+
+ arch/arm/mach-shmobile/clock-r8a73a4.c |   15 ++++++++++-
+ arch/arm/mach-shmobile/setup-r8a73a4.c |   43 ++++++++++++++++++++++++++++++++
+ 2 files changed, 57 insertions(+), 1 deletion(-)
+
+--- 0003/arch/arm/mach-shmobile/clock-r8a73a4.c
++++ work/arch/arm/mach-shmobile/clock-r8a73a4.c	2013-03-18 21:42:19.000000000 +0900
 @@ -28,6 +28,7 @@
  #define CPG_LEN 0x270
  
@@ -42,12 +48,12 @@ Signed-off-by: Magnus Damm <damm@opensource.se>
 -enum { MSTP_NR };
 +enum { MSTP217, MSTP216, MSTP207, MSTP206, MSTP204, MSTP203, MSTP_NR };
  static struct clk mstp_clks[MSTP_NR] = {
-+	[MSTP204] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 4, 1), /* SCIFA0 */
-+	[MSTP203] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 3, 1), /* SCIFA1 */
-+	[MSTP206] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 6, 1), /* SCIFB0 */
-+	[MSTP207] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 7, 1), /* SCIFB1 */
-+	[MSTP216] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 16, 1), /* SCIFB2 */
-+	[MSTP217] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 17, 1), /* SCIFB3 */
++	[MSTP204] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 4, 0), /* SCIFA0 */
++	[MSTP203] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 3, 0), /* SCIFA1 */
++	[MSTP206] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 6, 0), /* SCIFB0 */
++	[MSTP207] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 7, 0), /* SCIFB1 */
++	[MSTP216] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 16, 0), /* SCIFB2 */
++	[MSTP217] = SH_CLK_MSTP32(&extal2_clk, SMSTPCR2, 17, 0), /* SCIFB3 */
  };
  
  static struct clk_lookup lookups[] = {
@@ -60,133 +66,62 @@ Signed-off-by: Magnus Damm <damm@opensource.se>
  };
  
  void __init r8a73a4_clock_init(void)
---- 0002/arch/arm/mach-shmobile/setup-r8a73a4.c
-+++ work/arch/arm/mach-shmobile/setup-r8a73a4.c	2013-03-12 12:49:46.000000000 +0900
-@@ -21,12 +21,127 @@
+--- 0003/arch/arm/mach-shmobile/setup-r8a73a4.c
++++ work/arch/arm/mach-shmobile/setup-r8a73a4.c	2013-03-18 21:43:19.000000000 +0900
+@@ -21,13 +21,56 @@
  #include <linux/irqchip.h>
+ #include <linux/kernel.h>
  #include <linux/of_platform.h>
- #include <linux/irq.h>
 +#include <linux/serial_sci.h>
  #include <mach/common.h>
  #include <mach/irqs.h>
  #include <mach/r8a73a4.h>
  #include <asm/mach/arch.h>
  
-+/* SCIFA0 */
-+static struct plat_sci_port scif0_platform_data = {
-+	.mapbase	= 0xe6c40000,
-+	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
-+	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE0,
-+	.scbrr_algo_id	= SCBRR_ALGO_4,
-+	.type		= PORT_SCIFA,
-+	.irqs		= SCIx_IRQ_MUXED(gic_spi(144)),
++#define SCIF_COMMON(scif_type, baseaddr, irq)			\
++	.type		= PORT_SCIFA,				\
++	.mapbase	= baseaddr,				\
++	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,	\
++	.scbrr_algo_id	= SCBRR_ALGO_4,				\
++	.irqs		= SCIx_IRQ_MUXED(irq)
++
++#define SCIFA_DATA(index, baseaddr, irq)		\
++[index] = {						\
++	SCIF_COMMON(PORT_SCIFA, baseaddr, irq),		\
++	.scscr = SCSCR_RE | SCSCR_TE | SCSCR_CKE0,	\
++}
++
++#define SCIFB_DATA(index, baseaddr, irq)	\
++[index] = {					\
++	SCIF_COMMON(PORT_SCIFB, baseaddr, irq),	\
++	.scscr = SCSCR_RE | SCSCR_TE,		\
++}
++
++enum { SCIFA0, SCIFA1, SCIFB0, SCIFB1, SCIFB2, SCIFB3 };
++
++static const struct plat_sci_port scif[] = {
++	SCIFA_DATA(SCIFA0, 0xe6c40000, gic_spi(144)), /* SCIFA0 */
++	SCIFA_DATA(SCIFA1, 0xe6c50000, gic_spi(145)), /* SCIFA1 */
++	SCIFB_DATA(SCIFB0, 0xe6c50000, gic_spi(145)), /* SCIFB0 */
++	SCIFB_DATA(SCIFB1, 0xe6c30000, gic_spi(149)), /* SCIFB1 */
++	SCIFB_DATA(SCIFB2, 0xe6ce0000, gic_spi(150)), /* SCIFB2 */
++	SCIFB_DATA(SCIFB3, 0xe6cf0000, gic_spi(151)), /* SCIFB3 */
 +};
 +
-+static struct platform_device scif0_device = {
-+	.name		= "sh-sci",
-+	.id		= 0,
-+	.dev		= {
-+		.platform_data  = &scif0_platform_data,
-+	},
-+};
++static inline void r8a73a4_register_scif(int idx)
++{
++	platform_device_register_data(&platform_bus, "sh-sci", idx, &scif[idx],
++				      sizeof(struct plat_sci_port));
++}
 +
-+/* SCIFA1 */
-+static struct plat_sci_port scif1_platform_data = {
-+	.mapbase	= 0xe6c50000,
-+	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
-+	.scscr		= SCSCR_RE | SCSCR_TE | SCSCR_CKE0,
-+	.scbrr_algo_id	= SCBRR_ALGO_4,
-+	.type		= PORT_SCIFA,
-+	.irqs		= SCIx_IRQ_MUXED(gic_spi(145)),
-+};
-+
-+static struct platform_device scif1_device = {
-+	.name		= "sh-sci",
-+	.id		= 1,
-+	.dev		= {
-+		.platform_data  = &scif1_platform_data,
-+	},
-+};
-+
-+/* SCIFB0 */
-+static struct plat_sci_port scif2_platform_data = {
-+	.mapbase	= 0xe6c20000,
-+	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
-+	.scscr		= SCSCR_RE | SCSCR_TE,
-+	.scbrr_algo_id	= SCBRR_ALGO_4,
-+	.type		= PORT_SCIFB,
-+	.irqs		= SCIx_IRQ_MUXED(gic_spi(148)),
-+};
-+
-+static struct platform_device scif2_device = {
-+	.name		= "sh-sci",
-+	.id		= 2,
-+	.dev		= {
-+		.platform_data  = &scif2_platform_data,
-+	},
-+};
-+
-+/* SCIFB1 */
-+static struct plat_sci_port scif3_platform_data = {
-+	.mapbase	= 0xe6c30000,
-+	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
-+	.scscr		= SCSCR_RE | SCSCR_TE,
-+	.scbrr_algo_id	= SCBRR_ALGO_4,
-+	.type		= PORT_SCIFB,
-+	.irqs		= SCIx_IRQ_MUXED(gic_spi(149)),
-+};
-+
-+static struct platform_device scif3_device = {
-+	.name		= "sh-sci",
-+	.id		= 3,
-+	.dev		= {
-+		.platform_data  = &scif3_platform_data,
-+	},
-+};
-+
-+/* SCIFB2 */
-+static struct plat_sci_port scif4_platform_data = {
-+	.mapbase	= 0xe6ce0000,
-+	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
-+	.scscr		= SCSCR_RE | SCSCR_TE,
-+	.scbrr_algo_id	= SCBRR_ALGO_4,
-+	.type		= PORT_SCIFB,
-+	.irqs		= SCIx_IRQ_MUXED(gic_spi(150)),
-+};
-+
-+static struct platform_device scif4_device = {
-+	.name		= "sh-sci",
-+	.id		= 4,
-+	.dev		= {
-+		.platform_data  = &scif4_platform_data,
-+	},
-+};
-+
-+/* SCIFB3 */
-+static struct plat_sci_port scif5_platform_data = {
-+	.mapbase	= 0xe6cf0000,
-+	.flags		= UPF_BOOT_AUTOCONF | UPF_IOREMAP,
-+	.scscr		= SCSCR_RE | SCSCR_TE,
-+	.scbrr_algo_id	= SCBRR_ALGO_4,
-+	.type		= PORT_SCIFB,
-+	.irqs		= SCIx_IRQ_MUXED(gic_spi(151)),
-+};
-+
-+static struct platform_device scif5_device = {
-+	.name		= "sh-sci",
-+	.id		= 5,
-+	.dev		= {
-+		.platform_data  = &scif5_platform_data,
-+	},
-+};
-+
- static struct platform_device *r8a73a4_devices[] __initdata = {
-+	&scif0_device,
-+	&scif1_device,
-+	&scif2_device,
-+	&scif3_device,
-+	&scif4_device,
-+	&scif5_device,
- };
- 
  void __init r8a73a4_add_standard_devices(void)
+ {
++	r8a73a4_register_scif(SCIFA0);
++	r8a73a4_register_scif(SCIFA1);
++	r8a73a4_register_scif(SCIFB0);
++	r8a73a4_register_scif(SCIFB1);
++	r8a73a4_register_scif(SCIFB2);
++	r8a73a4_register_scif(SCIFB3);
+ }
+ 
+ #ifdef CONFIG_USE_OF
