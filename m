@@ -1,74 +1,58 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 06 Mar 2013 13:47:16 +0000
-Subject: [PATCH v2 37/39] ARM: shmobile: r8a7740: Remove SDHI and MMCIF function GPIOs
-Message-Id: <1362577638-15493-38-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 13:02:30 +0000
+Subject: [PATCH 04/12] clocksource: sh_cmt: Consolidate platform_set_drvdata() call
+Message-Id: <1363611758-6655-5-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363611758-6655-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363611758-6655-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
+From: Magnus Damm <damm@opensource.se>
 
-Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Cleanup the use of platform_set_drvdata() to reduce code size
+
+Signed-off-by: Shinya Kuribayashi <shinya.kuribayashi.px@renesas.com>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Acked-by: John Stultz <john.stultz@linaro.org>
+Tested-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7740.h | 35 ---------------------------
- 1 file changed, 35 deletions(-)
+ drivers/clocksource/sh_cmt.c |    5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7740.h b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-index 0c417da..c258361 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7740.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7740.h
-@@ -307,26 +307,6 @@ enum {
- 	GPIO_FN_SIM_D_PORT22, /* SIM_D  Port 22/199 */
- 	GPIO_FN_SIM_D_PORT199,
+diff --git a/drivers/clocksource/sh_cmt.c b/drivers/clocksource/sh_cmt.c
+index 94fd3ab..a2f8023 100644
+--- a/drivers/clocksource/sh_cmt.c
++++ b/drivers/clocksource/sh_cmt.c
+@@ -688,8 +688,6 @@ static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
+ 		goto err0;
+ 	}
  
--	/* SDHI0 */
--	GPIO_FN_SDHI0_D0,	GPIO_FN_SDHI0_D1,	GPIO_FN_SDHI0_D2,
--	GPIO_FN_SDHI0_D3,	GPIO_FN_SDHI0_CD,	GPIO_FN_SDHI0_WP,
--	GPIO_FN_SDHI0_CMD,	GPIO_FN_SDHI0_CLK,
+-	platform_set_drvdata(pdev, p);
 -
--	/* SDHI1 */
--	GPIO_FN_SDHI1_D0,	GPIO_FN_SDHI1_D1,	GPIO_FN_SDHI1_D2,
--	GPIO_FN_SDHI1_D3,	GPIO_FN_SDHI1_CD,	GPIO_FN_SDHI1_WP,
--	GPIO_FN_SDHI1_CMD,	GPIO_FN_SDHI1_CLK,
--
--	/* SDHI2 */
--	GPIO_FN_SDHI2_D0,	GPIO_FN_SDHI2_D1,	GPIO_FN_SDHI2_D2,
--	GPIO_FN_SDHI2_D3,	GPIO_FN_SDHI2_CLK,	GPIO_FN_SDHI2_CMD,
--
--	GPIO_FN_SDHI2_CD_PORT24, /* MSEL5CR_19_0 */
--	GPIO_FN_SDHI2_WP_PORT25,
--
--	GPIO_FN_SDHI2_WP_PORT177, /* MSEL5CR_19_1 */
--	GPIO_FN_SDHI2_CD_PORT202,
--
- 	/* MSIOF2 */
- 	GPIO_FN_MSIOF2_TXD,	GPIO_FN_MSIOF2_RXD,	GPIO_FN_MSIOF2_TSCK,
- 	GPIO_FN_MSIOF2_SS2,	GPIO_FN_MSIOF2_TSYNC,	GPIO_FN_MSIOF2_SS1,
-@@ -378,21 +358,6 @@ enum {
- 	GPIO_FN_MEMC_DREQ1,
- 	GPIO_FN_MEMC_A0,
+ 	res = platform_get_resource(p->pdev, IORESOURCE_MEM, 0);
+ 	if (!res) {
+ 		dev_err(&p->pdev->dev, "failed to get I/O memory\n");
+@@ -757,6 +755,8 @@ static int sh_cmt_setup(struct sh_cmt_priv *p, struct platform_device *pdev)
+ 		goto err2;
+ 	}
  
--	/* MMC */
--	GPIO_FN_MMC0_D0_PORT68,		GPIO_FN_MMC0_D1_PORT69,
--	GPIO_FN_MMC0_D2_PORT70,		GPIO_FN_MMC0_D3_PORT71,
--	GPIO_FN_MMC0_D4_PORT72,		GPIO_FN_MMC0_D5_PORT73,
--	GPIO_FN_MMC0_D6_PORT74,		GPIO_FN_MMC0_D7_PORT75,
--	GPIO_FN_MMC0_CLK_PORT66,
--	GPIO_FN_MMC0_CMD_PORT67,	/* MSEL4CR_15_0 */
--
--	GPIO_FN_MMC1_D0_PORT149,	GPIO_FN_MMC1_D1_PORT148,
--	GPIO_FN_MMC1_D2_PORT147,	GPIO_FN_MMC1_D3_PORT146,
--	GPIO_FN_MMC1_D4_PORT145,	GPIO_FN_MMC1_D5_PORT144,
--	GPIO_FN_MMC1_D6_PORT143,	GPIO_FN_MMC1_D7_PORT142,
--	GPIO_FN_MMC1_CLK_PORT103,
--	GPIO_FN_MMC1_CMD_PORT104,	/* MSEL4CR_15_1 */
--
- 	/* MSIOF0 */
- 	GPIO_FN_MSIOF0_SS1,	GPIO_FN_MSIOF0_SS2,
- 	GPIO_FN_MSIOF0_RXD,	GPIO_FN_MSIOF0_TXD,
++	platform_set_drvdata(pdev, p);
++
+ 	return 0;
+ err2:
+ 	clk_put(p->clk);
+@@ -792,7 +792,6 @@ static int sh_cmt_probe(struct platform_device *pdev)
+ 	ret = sh_cmt_setup(p, pdev);
+ 	if (ret) {
+ 		kfree(p);
+-		platform_set_drvdata(pdev, NULL);
+ 		pm_runtime_idle(&pdev->dev);
+ 		return ret;
+ 	}
 -- 
-1.8.1.5
+1.7.10.4
 
