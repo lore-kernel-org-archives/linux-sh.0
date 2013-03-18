@@ -1,55 +1,55 @@
-From: Bastian Hecht <hechtb@gmail.com>
-Date: Wed, 06 Mar 2013 11:30:36 +0000
-Subject: [PATCH v6 2/3] ARM: mach-shmobile: r8a7740: Add DT names to clock list
-Message-Id: <1362569437-11133-2-git-send-email-hechtb+renesas@gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 12:32:53 +0000
+Subject: [PATCH 43/43] r8a7779: Add Display Unit clock support
+Message-Id: <1363609973-31086-44-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1362569437-11133-1-git-send-email-hechtb+renesas@gmail.com>
-In-Reply-To: <1362569437-11133-1-git-send-email-hechtb+renesas@gmail.com>
+References: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-This adds temporarily the alternative device names to the clock list
-that are used when booting via Device Tree setup.
+From: Phil Edworthy <phil.edworthy@renesas.com>
 
-Signed-off-by: Bastian Hecht <hechtb+renesas@gmail.com>
+Signed-off-by: Phil Edworthy <phil.edworthy@renesas.com>
+[Rename device from to rcarfb to rcar-du]
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+[Manual conflict resolution]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/clock-r8a7740.c |    9 +++++++++
- 1 file changed, 9 insertions(+)
+ arch/arm/mach-shmobile/clock-r8a7779.c |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/clock-r8a7740.c b/arch/arm/mach-shmobile/clock-r8a7740.c
-index 71fc400..b9d6312 100644
---- a/arch/arm/mach-shmobile/clock-r8a7740.c
-+++ b/arch/arm/mach-shmobile/clock-r8a7740.c
-@@ -593,18 +593,27 @@ static struct clk_lookup lookups[] = {
- 	CLKDEV_DEV_ID("sh_mobile_ceu.1",	&mstp_clks[MSTP128]),
+diff --git a/arch/arm/mach-shmobile/clock-r8a7779.c b/arch/arm/mach-shmobile/clock-r8a7779.c
+index 0f66d35..d9edeaf 100644
+--- a/arch/arm/mach-shmobile/clock-r8a7779.c
++++ b/arch/arm/mach-shmobile/clock-r8a7779.c
+@@ -88,7 +88,7 @@ static struct clk div4_clks[DIV4_NR] = {
  
- 	CLKDEV_DEV_ID("sh-sci.4",		&mstp_clks[MSTP200]),
-+	CLKDEV_DEV_ID("e6c80000.serial",	&mstp_clks[MSTP200]),
- 	CLKDEV_DEV_ID("sh-sci.3",		&mstp_clks[MSTP201]),
-+	CLKDEV_DEV_ID("e6c70000.serial",	&mstp_clks[MSTP201]),
- 	CLKDEV_DEV_ID("sh-sci.2",		&mstp_clks[MSTP202]),
-+	CLKDEV_DEV_ID("e6c60000.serial",	&mstp_clks[MSTP202]),
- 	CLKDEV_DEV_ID("sh-sci.1",		&mstp_clks[MSTP203]),
-+	CLKDEV_DEV_ID("e6c50000.serial",	&mstp_clks[MSTP203]),
- 	CLKDEV_DEV_ID("sh-sci.0",		&mstp_clks[MSTP204]),
-+	CLKDEV_DEV_ID("e6c40000.serial",	&mstp_clks[MSTP204]),
- 	CLKDEV_DEV_ID("sh-sci.8",		&mstp_clks[MSTP206]),
-+	CLKDEV_DEV_ID("e6c30000.serial",	&mstp_clks[MSTP206]),
- 	CLKDEV_DEV_ID("sh-sci.5",		&mstp_clks[MSTP207]),
-+	CLKDEV_DEV_ID("e6cb0000.serial",	&mstp_clks[MSTP207]),
- 	CLKDEV_DEV_ID("sh-dma-engine.3",	&mstp_clks[MSTP214]),
- 	CLKDEV_DEV_ID("sh-dma-engine.2",	&mstp_clks[MSTP216]),
- 	CLKDEV_DEV_ID("sh-dma-engine.1",	&mstp_clks[MSTP217]),
- 	CLKDEV_DEV_ID("sh-dma-engine.0",	&mstp_clks[MSTP218]),
- 	CLKDEV_DEV_ID("sh-sci.7",		&mstp_clks[MSTP222]),
-+	CLKDEV_DEV_ID("e6cd0000.serial",	&mstp_clks[MSTP222]),
- 	CLKDEV_DEV_ID("sh-sci.6",		&mstp_clks[MSTP230]),
-+	CLKDEV_DEV_ID("e6cc0000.serial",	&mstp_clks[MSTP230]),
+ enum { MSTP323, MSTP322, MSTP321, MSTP320,
+ 	MSTP115,
+-	MSTP101, MSTP100,
++	MSTP103, MSTP101, MSTP100,
+ 	MSTP030,
+ 	MSTP029, MSTP028, MSTP027, MSTP026, MSTP025, MSTP024, MSTP023, MSTP022, MSTP021,
+ 	MSTP016, MSTP015, MSTP014,
+@@ -101,6 +101,7 @@ static struct clk mstp_clks[MSTP_NR] = {
+ 	[MSTP321] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 21, 0), /* SDHI2 */
+ 	[MSTP320] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR3, 20, 0), /* SDHI3 */
+ 	[MSTP115] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1, 15, 0), /* SATA */
++	[MSTP103] = SH_CLK_MSTP32(&div4_clks[DIV4_S], MSTPCR1,  3, 0), /* DU */
+ 	[MSTP101] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  1, 0), /* USB2 */
+ 	[MSTP100] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR1,  0, 0), /* USB0/1 */
+ 	[MSTP030] = SH_CLK_MSTP32(&div4_clks[DIV4_P], MSTPCR0, 30, 0), /* I2C0 */
+@@ -184,6 +185,7 @@ static struct clk_lookup lookups[] = {
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.1", &mstp_clks[MSTP322]), /* SDHI1 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.2", &mstp_clks[MSTP321]), /* SDHI2 */
+ 	CLKDEV_DEV_ID("sh_mobile_sdhi.3", &mstp_clks[MSTP320]), /* SDHI3 */
++	CLKDEV_DEV_ID("rcar-du.0", &mstp_clks[MSTP103]), /* DU */
+ };
  
- 	CLKDEV_DEV_ID("sh_cmt.10",		&mstp_clks[MSTP329]),
- 	CLKDEV_DEV_ID("sh_fsi2",		&mstp_clks[MSTP328]),
+ void __init r8a7779_clock_init(void)
 -- 
-1.7.9.5
+1.7.10.4
 
