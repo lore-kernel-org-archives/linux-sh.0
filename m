@@ -1,71 +1,57 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Thu, 28 Mar 2013 08:48:19 +0000
-Subject: [PATCH 1/4] ARM: shmobile: sh7372: move global functions to sh7372.h
-Message-Id: <87y5d7lxkg.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 13:02:37 +0000
+Subject: [PATCH 11/12] clocksource: em_sti: Set initcall level to subsys
+Message-Id: <1363611758-6655-12-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363611758-6655-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363611758-6655-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-There is no reason each CPU's own function has to exist in common.h. 
-sh7372_xxx() go to sh7372.h
+The reason for this is to ensure that STI is probed earlier
+than with its previous initcall level, module init.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+This came up as a problem with using CMT as a clock source kzm9g-reference
+which does not make use of early timers or devices. In that scenario
+initialisation of SDHI and MMCIF both stall on msleep() calls due to the
+absence of a initialised clock source.
+
+The purpose of this change is to keep the STI code in sync with the CMT code
+which has been modified in a similar manner..
+
+Boot tested on: kzm9d.
+
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
 ---
- arch/arm/mach-shmobile/include/mach/common.h |   15 ---------------
- arch/arm/mach-shmobile/include/mach/sh7372.h |   12 ++++++++++++
- 2 files changed, 12 insertions(+), 15 deletions(-)
+ drivers/clocksource/em_sti.c |   13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/common.h b/arch/arm/mach-shmobile/include/mach/common.h
-index 03f73de..d01a551 100644
---- a/arch/arm/mach-shmobile/include/mach/common.h
-+++ b/arch/arm/mach-shmobile/include/mach/common.h
-@@ -19,21 +19,6 @@ extern int shmobile_enter_wfi(struct cpuidle_device *dev,
- 			      struct cpuidle_driver *drv, int index);
- extern void shmobile_cpuidle_set_driver(struct cpuidle_driver *drv);
+diff --git a/drivers/clocksource/em_sti.c b/drivers/clocksource/em_sti.c
+index e6a553c..4329a29 100644
+--- a/drivers/clocksource/em_sti.c
++++ b/drivers/clocksource/em_sti.c
+@@ -399,7 +399,18 @@ static struct platform_driver em_sti_device_driver = {
+ 	}
+ };
  
--extern void sh7372_init_irq(void);
--extern void sh7372_map_io(void);
--extern void sh7372_earlytimer_init(void);
--extern void sh7372_add_early_devices(void);
--extern void sh7372_add_standard_devices(void);
--extern void sh7372_add_early_devices_dt(void);
--extern void sh7372_add_standard_devices_dt(void);
--extern void sh7372_clock_init(void);
--extern void sh7372_pinmux_init(void);
--extern void sh7372_pm_init(void);
--extern void sh7372_resume_core_standby_sysc(void);
--extern int sh7372_do_idle_sysc(unsigned long sleep_mode);
--extern struct clk sh7372_extal1_clk;
--extern struct clk sh7372_extal2_clk;
--
- extern void sh73a0_init_delay(void);
- extern void sh73a0_init_irq(void);
- extern void sh73a0_init_irq_dt(void);
-diff --git a/arch/arm/mach-shmobile/include/mach/sh7372.h b/arch/arm/mach-shmobile/include/mach/sh7372.h
-index 7ded4eb..fd7cba0 100644
---- a/arch/arm/mach-shmobile/include/mach/sh7372.h
-+++ b/arch/arm/mach-shmobile/include/mach/sh7372.h
-@@ -449,6 +449,18 @@ extern struct clk sh7372_dv_clki_clk;
- extern struct clk sh7372_dv_clki_div2_clk;
- extern struct clk sh7372_pllc2_clk;
+-module_platform_driver(em_sti_device_driver);
++static int __init em_sti_init(void)
++{
++	return platform_driver_register(&em_sti_device_driver);
++}
++
++static void __exit em_sti_exit(void)
++{
++	platform_driver_unregister(&em_sti_device_driver);
++}
++
++subsys_initcall(em_sti_init);
++module_exit(em_sti_exit);
  
-+extern void sh7372_init_irq(void);
-+extern void sh7372_map_io(void);
-+extern void sh7372_earlytimer_init(void);
-+extern void sh7372_add_early_devices(void);
-+extern void sh7372_add_standard_devices(void);
-+extern void sh7372_add_early_devices_dt(void);
-+extern void sh7372_add_standard_devices_dt(void);
-+extern void sh7372_clock_init(void);
-+extern void sh7372_pinmux_init(void);
-+extern void sh7372_pm_init(void);
-+extern void sh7372_resume_core_standby_sysc(void);
-+extern int  sh7372_do_idle_sysc(unsigned long sleep_mode);
- extern void sh7372_intcs_suspend(void);
- extern void sh7372_intcs_resume(void);
- extern void sh7372_intca_suspend(void);
+ MODULE_AUTHOR("Magnus Damm");
+ MODULE_DESCRIPTION("Renesas Emma Mobile STI Timer Driver");
 -- 
-1.7.9.5
+1.7.10.4
 
