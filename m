@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:05:41 +0000
-Subject: [PATCH 045/142] sh-pfc: Don't modify pinmux_data_reg SoC data
-Message-Id: <1363604838-29359-46-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:06:50 +0000
+Subject: [PATCH 114/142] sh-pfc: r8a7740: Remove LCD0 and LCD1 function GPIOS
+Message-Id: <1363604838-29359-115-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
@@ -12,155 +12,63 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-The pinmux_data_reg structure supplied in SoC data contains information
-about data registers. It's abused to store per-device mapped iomem and
-shadow values. Move those fields out of the pinmux_data_reg structure
-into the per-device sh_pfc_chip structure.
+All r8a7740 platforms now use the pinctrl API to control the LCD0 and
+LCD1 pins, the corresponding function GPIOS are unused. Remove them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/pinctrl/sh-pfc/gpio.c   |   58 +++++++++++++++++++++++++++------------
- drivers/pinctrl/sh-pfc/sh_pfc.h |    2 +-
- 2 files changed, 41 insertions(+), 19 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-r8a7740.c |   37 ----------------------------------
+ 1 file changed, 37 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
-index b370d28..55eaf75 100644
---- a/drivers/pinctrl/sh-pfc/gpio.c
-+++ b/drivers/pinctrl/sh-pfc/gpio.c
-@@ -21,11 +21,17 @@
+diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+index a2f909a..de1212d 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
++++ b/drivers/pinctrl/sh-pfc/pfc-r8a7740.c
+@@ -2313,43 +2313,6 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(SCIFB_RTS_PORT172),
+ 	GPIO_FN(SCIFB_CTS_PORT173),
  
- #include "core.h"
- 
-+struct sh_pfc_gpio_data_reg {
-+	const struct pinmux_data_reg *info;
-+	unsigned long shadow;
-+};
-+
- struct sh_pfc_chip {
- 	struct sh_pfc		*pfc;
- 	struct gpio_chip	gpio_chip;
- 
- 	struct sh_pfc_window	*mem;
-+	struct sh_pfc_gpio_data_reg	*regs;
- };
- 
- static struct sh_pfc_chip *gpio_to_pfc_chip(struct gpio_chip *gc)
-@@ -38,13 +44,16 @@ static struct sh_pfc *gpio_to_pfc(struct gpio_chip *gc)
- 	return gpio_to_pfc_chip(gc)->pfc;
- }
- 
--static void gpio_get_data_reg(struct sh_pfc *pfc, unsigned int gpio,
--			      struct pinmux_data_reg **dr, unsigned int *bit)
-+static void gpio_get_data_reg(struct sh_pfc_chip *chip, unsigned int gpio,
-+			      struct sh_pfc_gpio_data_reg **reg,
-+			      unsigned int *bit)
- {
--	struct sh_pfc_pin *gpiop = sh_pfc_get_pin(pfc, gpio);
-+	struct sh_pfc_pin *gpiop = sh_pfc_get_pin(chip->pfc, gpio);
-+	unsigned int reg_idx;
- 
--	*dr = pfc->info->data_regs
--	    + ((gpiop->flags & PINMUX_FLAG_DREG) >> PINMUX_FLAG_DREG_SHIFT);
-+	reg_idx = (gpiop->flags & PINMUX_FLAG_DREG) >> PINMUX_FLAG_DREG_SHIFT;
-+
-+	*reg = &chip->regs[reg_idx];
- 	*bit = (gpiop->flags & PINMUX_FLAG_DBIT) >> PINMUX_FLAG_DBIT_SHIFT;
- }
- 
-@@ -91,7 +100,7 @@ static int gpio_setup_data_regs(struct sh_pfc_chip *chip)
- {
- 	struct sh_pfc *pfc = chip->pfc;
- 	unsigned long addr = pfc->info->data_regs[0].reg;
--	struct pinmux_data_reg *dreg;
-+	const struct pinmux_data_reg *dreg;
- 	unsigned int i;
- 
- 	/* Find the window that contain the GPIO registers. */
-@@ -108,8 +117,21 @@ static int gpio_setup_data_regs(struct sh_pfc_chip *chip)
- 	/* GPIO data registers must be in the first memory resource. */
- 	chip->mem = &pfc->window[i];
- 
--	for (dreg = pfc->info->data_regs; dreg->reg; ++dreg)
--		dreg->reg_shadow = gpio_read_data_reg(chip, dreg);
-+	/* Count the number of data registers, allocate memory and initialize
-+	 * them.
-+	 */
-+	for (i = 0; pfc->info->data_regs[i].reg_width; ++i)
-+		;
-+
-+	chip->regs = devm_kzalloc(pfc->dev, i * sizeof(*chip->regs),
-+				  GFP_KERNEL);
-+	if (chip->regs = NULL)
-+		return -ENOMEM;
-+
-+	for (i = 0, dreg = pfc->info->data_regs; dreg->reg_width; ++i, ++dreg) {
-+		chip->regs[i].info = dreg;
-+		chip->regs[i].shadow = gpio_read_data_reg(chip, dreg);
-+	}
- 
- 	for (i = 0; i < pfc->info->nr_pins; i++) {
- 		if (pfc->info->pins[i].enum_id = 0)
-@@ -144,20 +166,20 @@ static void gpio_pin_free(struct gpio_chip *gc, unsigned offset)
- static void gpio_pin_set_value(struct sh_pfc_chip *chip, unsigned offset,
- 			       int value)
- {
--	struct pinmux_data_reg *dreg;
-+	struct sh_pfc_gpio_data_reg *reg;
- 	unsigned long pos;
- 	unsigned int bit;
- 
--	gpio_get_data_reg(chip->pfc, offset, &dreg, &bit);
-+	gpio_get_data_reg(chip, offset, &reg, &bit);
- 
--	pos = dreg->reg_width - (bit + 1);
-+	pos = reg->info->reg_width - (bit + 1);
- 
- 	if (value)
--		set_bit(pos, &dreg->reg_shadow);
-+		set_bit(pos, &reg->shadow);
- 	else
--		clear_bit(pos, &dreg->reg_shadow);
-+		clear_bit(pos, &reg->shadow);
- 
--	gpio_write_data_reg(chip, dreg, dreg->reg_shadow);
-+	gpio_write_data_reg(chip, reg->info, reg->shadow);
- }
- 
- static int gpio_pin_direction_input(struct gpio_chip *gc, unsigned offset)
-@@ -176,15 +198,15 @@ static int gpio_pin_direction_output(struct gpio_chip *gc, unsigned offset,
- static int gpio_pin_get(struct gpio_chip *gc, unsigned offset)
- {
- 	struct sh_pfc_chip *chip = gpio_to_pfc_chip(gc);
--	struct pinmux_data_reg *dreg;
-+	struct sh_pfc_gpio_data_reg *reg;
- 	unsigned long pos;
- 	unsigned int bit;
- 
--	gpio_get_data_reg(chip->pfc, offset, &dreg, &bit);
-+	gpio_get_data_reg(chip, offset, &reg, &bit);
- 
--	pos = dreg->reg_width - (bit + 1);
-+	pos = reg->info->reg_width - (bit + 1);
- 
--	return (gpio_read_data_reg(chip, dreg) >> pos) & 1;
-+	return (gpio_read_data_reg(chip, reg->info) >> pos) & 1;
- }
- 
- static void gpio_pin_set(struct gpio_chip *gc, unsigned offset, int value)
-diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
-index ba3697d..e6a51a9 100644
---- a/drivers/pinctrl/sh-pfc/sh_pfc.h
-+++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
-@@ -108,7 +108,7 @@ struct pinmux_cfg_reg {
- 	.enum_ids = (pinmux_enum_t [])
- 
- struct pinmux_data_reg {
--	unsigned long reg, reg_width, reg_shadow;
-+	unsigned long reg, reg_width;
- 	pinmux_enum_t *enum_ids;
- };
- 
+-	/* LCD0 */
+-	GPIO_FN(LCD0_D0),	GPIO_FN(LCD0_D1),	GPIO_FN(LCD0_D2),
+-	GPIO_FN(LCD0_D3),	GPIO_FN(LCD0_D4),	GPIO_FN(LCD0_D5),
+-	GPIO_FN(LCD0_D6),	GPIO_FN(LCD0_D7),	GPIO_FN(LCD0_D8),
+-	GPIO_FN(LCD0_D9),	GPIO_FN(LCD0_D10),	GPIO_FN(LCD0_D11),
+-	GPIO_FN(LCD0_D12),	GPIO_FN(LCD0_D13),	GPIO_FN(LCD0_D14),
+-	GPIO_FN(LCD0_D15),	GPIO_FN(LCD0_D16),	GPIO_FN(LCD0_D17),
+-	GPIO_FN(LCD0_DON),	GPIO_FN(LCD0_VCPWC),	GPIO_FN(LCD0_VEPWC),
+-	GPIO_FN(LCD0_DCK),	GPIO_FN(LCD0_VSYN),
+-	GPIO_FN(LCD0_HSYN),	GPIO_FN(LCD0_DISP),
+-	GPIO_FN(LCD0_WR),	GPIO_FN(LCD0_RD),
+-	GPIO_FN(LCD0_CS),	GPIO_FN(LCD0_RS),
+-
+-	GPIO_FN(LCD0_D18_PORT163),	GPIO_FN(LCD0_D19_PORT162),
+-	GPIO_FN(LCD0_D20_PORT161),	GPIO_FN(LCD0_D21_PORT158),
+-	GPIO_FN(LCD0_D22_PORT160),	GPIO_FN(LCD0_D23_PORT159),
+-	GPIO_FN(LCD0_LCLK_PORT165),	/* MSEL5CR_6_1 */
+-
+-	GPIO_FN(LCD0_D18_PORT40),	GPIO_FN(LCD0_D19_PORT4),
+-	GPIO_FN(LCD0_D20_PORT3),	GPIO_FN(LCD0_D21_PORT2),
+-	GPIO_FN(LCD0_D22_PORT0),	GPIO_FN(LCD0_D23_PORT1),
+-	GPIO_FN(LCD0_LCLK_PORT102),	/* MSEL5CR_6_0 */
+-
+-	/* LCD1 */
+-	GPIO_FN(LCD1_D0),	GPIO_FN(LCD1_D1),	GPIO_FN(LCD1_D2),
+-	GPIO_FN(LCD1_D3),	GPIO_FN(LCD1_D4),	GPIO_FN(LCD1_D5),
+-	GPIO_FN(LCD1_D6),	GPIO_FN(LCD1_D7),	GPIO_FN(LCD1_D8),
+-	GPIO_FN(LCD1_D9),	GPIO_FN(LCD1_D10),	GPIO_FN(LCD1_D11),
+-	GPIO_FN(LCD1_D12),	GPIO_FN(LCD1_D13),	GPIO_FN(LCD1_D14),
+-	GPIO_FN(LCD1_D15),	GPIO_FN(LCD1_D16),	GPIO_FN(LCD1_D17),
+-	GPIO_FN(LCD1_D18),	GPIO_FN(LCD1_D19),	GPIO_FN(LCD1_D20),
+-	GPIO_FN(LCD1_D21),	GPIO_FN(LCD1_D22),	GPIO_FN(LCD1_D23),
+-	GPIO_FN(LCD1_RS),	GPIO_FN(LCD1_RD),	GPIO_FN(LCD1_CS),
+-	GPIO_FN(LCD1_WR),	GPIO_FN(LCD1_DCK),	GPIO_FN(LCD1_DON),
+-	GPIO_FN(LCD1_VCPWC),	GPIO_FN(LCD1_LCLK),	GPIO_FN(LCD1_HSYN),
+-	GPIO_FN(LCD1_VSYN),	GPIO_FN(LCD1_VEPWC),	GPIO_FN(LCD1_DISP),
+-
+ 	/* RSPI */
+ 	GPIO_FN(RSPI_SSL0_A),	GPIO_FN(RSPI_SSL1_A),	GPIO_FN(RSPI_SSL2_A),
+ 	GPIO_FN(RSPI_SSL3_A),	GPIO_FN(RSPI_CK_A),	GPIO_FN(RSPI_MOSI_A),
 -- 
 1.7.10.4
 
