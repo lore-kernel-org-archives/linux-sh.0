@@ -1,24 +1,43 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 14 Mar 2013 15:03:04 +0000
-Subject: Re: [PATCH v4 52/88] sh-pfc: sh73a0: Remove SCIFA and SCIFB function GPIOS
-Message-Id: <CACRpkdaOBwGEmN_zHTULZ0AAx7NcE7X2sn+XrTzLHDicoiqWfw@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:59:37 +0000
+Subject: [PATCH 10/13] ARM: shmobile: kzm9g: Remove warning about SMP
+Message-Id: <1363607980-22153-11-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363215633-4264-53-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1363215633-4264-53-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1363607980-22153-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363607980-22153-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Mar 13, 2013 at 11:59 PM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
+Remove warning about SMP not working with the
+clock initialisation used for kzm9g reference.
 
-> All sh73a0 platforms now use the pinctrl API to control the SCIFA and
-> SCIFB pins, the corresponding function GPIOS are unused. Remove them.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+This is resolved by not selecting CONFIG_PREEMPT.
 
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/board-kzm9g-reference.c |    7 -------
+ 1 file changed, 7 deletions(-)
 
-Yours,
-Linus Walleij
+diff --git a/arch/arm/mach-shmobile/board-kzm9g-reference.c b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+index 3056698..4da3501 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g-reference.c
++++ b/arch/arm/mach-shmobile/board-kzm9g-reference.c
+@@ -103,13 +103,6 @@ static const char *kzm9g_boards_compat_dt[] __initdata = {
+ 	NULL,
+ };
+ 
+-/* Please note that the clock initialisation shcheme used in
+- * sh73a0_add_early_devices_dt() and sh73a0_add_standard_devices_dt()
+- * does not work with SMP as there is a yet to be resolved lock-up in
+- * workqueue initialisation.
+- *
+- * CONFIG_SMP should be disabled when using this code.
+- */
+ DT_MACHINE_START(KZM9G_DT, "kzm9g-reference")
+ 	.smp		= smp_ops(sh73a0_smp_ops),
+ 	.map_io		= sh73a0_map_io,
+-- 
+1.7.10.4
+
