@@ -1,448 +1,243 @@
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Date: Tue, 12 Mar 2013 08:26:41 +0000
-Subject: [PATCH 1/3 v2] ARM: shmobile: add R8A7778 setup support
-Message-Id: <87fw01rpky.wl%kuninori.morimoto.gx@renesas.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:05:46 +0000
+Subject: [PATCH 050/142] sh-pfc: Implement generic pinconf support
+Message-Id: <1363604838-29359-51-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Add initial support for the R8A7778 R-Car M1A SoC.
-No static virtual mappings are used, all the components
-make use of ioremap().
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-It is based on v1.0 datasheet
+The existing PFC pinconf implementation, tied to the PFC-specific pin
+types, isn't used by drivers or boards. Replace it with the generic
+pinconf types to implement bias (pull-up/down) setup. Other pin
+configuration options can be implemented later if needed.
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
-v1 -> v2
+ drivers/pinctrl/sh-pfc/Kconfig   |    1 +
+ drivers/pinctrl/sh-pfc/pinctrl.c |  123 ++++++++++++++++++++++++++++----------
+ drivers/pinctrl/sh-pfc/sh_pfc.h  |   16 +++++
+ 3 files changed, 110 insertions(+), 30 deletions(-)
 
- - DT default
- - clock-r8a7778.c was included
-
- arch/arm/boot/dts/r8a7778.dtsi                |   35 +++++
- arch/arm/mach-shmobile/Kconfig                |    6 +
- arch/arm/mach-shmobile/Makefile               |    1 +
- arch/arm/mach-shmobile/clock-r8a7778.c        |   91 +++++++++++
- arch/arm/mach-shmobile/include/mach/r8a7778.h |   29 ++++
- arch/arm/mach-shmobile/setup-r8a7778.c        |  202 +++++++++++++++++++++++++
- 6 files changed, 364 insertions(+)
- create mode 100644 arch/arm/boot/dts/r8a7778.dtsi
- create mode 100644 arch/arm/mach-shmobile/clock-r8a7778.c
- create mode 100644 arch/arm/mach-shmobile/include/mach/r8a7778.h
- create mode 100644 arch/arm/mach-shmobile/setup-r8a7778.c
-
-diff --git a/arch/arm/boot/dts/r8a7778.dtsi b/arch/arm/boot/dts/r8a7778.dtsi
-new file mode 100644
-index 0000000..4743735
---- /dev/null
-+++ b/arch/arm/boot/dts/r8a7778.dtsi
-@@ -0,0 +1,35 @@
-+/*
-+ * Device Tree Source for Renesas r8a7778
-+ *
-+ * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-+ *
-+ * based on r8a7779
-+ *
-+ * Copyright (C) 2013 Renesas Solutions Corp.
-+ * Copyright (C) 2013 Simon Horman
-+ *
-+ * This file is licensed under the terms of the GNU General Public License
-+ * version 2.  This program is licensed "as is" without any warranty of any
-+ * kind, whether express or implied.
-+ */
-+
-+/include/ "skeleton.dtsi"
-+
-+/ {
-+	compatible = "renesas,r8a7778";
-+
-+	cpus {
-+		cpu@0 {
-+			compatible = "arm,cortex-a9";
-+		};
-+	};
-+
-+	gic: interrupt-controller@fe438000 {
-+		compatible = "arm,cortex-a9-gic";
-+		#interrupt-cells = <3>;
-+		interrupt-controller;
-+		reg = <0xfe438000 0x1000>,
-+		      <0xfe430000 0x100>;
-+	};
-+};
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index eb3a7ff..aa273a5 100644
---- a/arch/arm/mach-shmobile/Kconfig
-+++ b/arch/arm/mach-shmobile/Kconfig
-@@ -24,6 +24,12 @@ config ARCH_R8A7740
- 	select CPU_V7
- 	select SH_CLK_CPG
+diff --git a/drivers/pinctrl/sh-pfc/Kconfig b/drivers/pinctrl/sh-pfc/Kconfig
+index c3340f5..af16f8f 100644
+--- a/drivers/pinctrl/sh-pfc/Kconfig
++++ b/drivers/pinctrl/sh-pfc/Kconfig
+@@ -10,6 +10,7 @@ config PINCTRL_SH_PFC
+ 	select GPIO_SH_PFC if ARCH_REQUIRE_GPIOLIB
+ 	select PINMUX
+ 	select PINCONF
++	select GENERIC_PINCONF
+ 	def_bool y
+ 	help
+ 	  This enables pin control drivers for SH and SH Mobile platforms
+diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
+index c150910..79fa170 100644
+--- a/drivers/pinctrl/sh-pfc/pinctrl.c
++++ b/drivers/pinctrl/sh-pfc/pinctrl.c
+@@ -24,6 +24,8 @@
+ #include <linux/spinlock.h>
  
-+config ARCH_R8A7778
-+	bool "R-Car M1 (R8A77780)"
-+	select CPU_V7
-+	select SH_CLK_CPG
-+	select ARM_GIC
-+
- config ARCH_R8A7779
- 	bool "R-Car H1 (R8A77790)"
- 	select ARCH_WANT_OPTIONAL_GPIOLIB
-diff --git a/arch/arm/mach-shmobile/Makefile b/arch/arm/mach-shmobile/Makefile
-index c621edf..0f50a3c 100644
---- a/arch/arm/mach-shmobile/Makefile
-+++ b/arch/arm/mach-shmobile/Makefile
-@@ -9,6 +9,7 @@ obj-y				:= timer.o console.o clock.o
- obj-$(CONFIG_ARCH_SH7372)	+= setup-sh7372.o clock-sh7372.o intc-sh7372.o
- obj-$(CONFIG_ARCH_SH73A0)	+= setup-sh73a0.o clock-sh73a0.o intc-sh73a0.o
- obj-$(CONFIG_ARCH_R8A7740)	+= setup-r8a7740.o clock-r8a7740.o intc-r8a7740.o
-+obj-$(CONFIG_ARCH_R8A7778)	+= setup-r8a7778.o clock-r8a7778.o
- obj-$(CONFIG_ARCH_R8A7779)	+= setup-r8a7779.o clock-r8a7779.o intc-r8a7779.o
- obj-$(CONFIG_ARCH_EMEV2)	+= setup-emev2.o clock-emev2.o
+ #include "core.h"
++#include "../core.h"
++#include "../pinconf.h"
  
-diff --git a/arch/arm/mach-shmobile/clock-r8a7778.c b/arch/arm/mach-shmobile/clock-r8a7778.c
-new file mode 100644
-index 0000000..387e3b7
---- /dev/null
-+++ b/arch/arm/mach-shmobile/clock-r8a7778.c
-@@ -0,0 +1,91 @@
-+/*
-+ * r8a7778 clock framework support
-+ *
-+ * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-+ *
-+ * based on r8a7779
-+ *
-+ * Copyright (C) 2011  Renesas Solutions Corp.
-+ * Copyright (C) 2011  Magnus Damm
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; either version 2 of the License
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-+ */
-+
-+#include <linux/io.h>
-+#include <linux/sh_clk.h>
-+#include <linux/clkdev.h>
-+#include <mach/common.h>
-+
-+#define MSTPCR0		IOMEM(0xffc80030)
-+#define MSTPCR1		IOMEM(0xffc80034)
-+#define MSTPCR3		IOMEM(0xffc8003c)
-+#define MSTPSR1		IOMEM(0xffc80044)
-+#define MSTPSR4		IOMEM(0xffc80048)
-+#define MSTPSR6		IOMEM(0xffc8004c)
-+#define MSTPCR4		IOMEM(0xffc80050)
-+#define MSTPCR5		IOMEM(0xffc80054)
-+#define MSTPCR6		IOMEM(0xffc80058)
-+
-+/* ioremap() through clock mapping mandatory to avoid
-+ * collision with ARM coherent DMA virtual memory range.
-+ */
-+
-+static struct clk_mapping cpg_mapping = {
-+	.phys	= 0xffc80000,
-+	.len	= 0x80,
-+};
-+
-+static struct clk clkp = {
-+	.rate   = 62500000, /* FIXME: shortcut */
-+	.flags  = CLK_ENABLE_ON_INIT,
-+	.mapping = &cpg_mapping,
-+};
-+
-+static struct clk *main_clks[] = {
-+	&clkp,
-+};
-+
-+enum {
-+	MSTP016, MSTP015,
-+	MSTP_NR };
-+
-+static struct clk mstp_clks[MSTP_NR] = {
-+	[MSTP016] = SH_CLK_MSTP32(&clkp, MSTPCR0, 16, 0), /* TMU0 */
-+	[MSTP015] = SH_CLK_MSTP32(&clkp, MSTPCR0, 15, 0), /* TMU1 */
-+};
-+
-+static struct clk_lookup lookups[] = {
-+	/* MSTP32 clocks */
-+	CLKDEV_DEV_ID("sh_tmu.0", &mstp_clks[MSTP016]), /* TMU00 */
-+	CLKDEV_DEV_ID("sh_tmu.1", &mstp_clks[MSTP015]), /* TMU01 */
-+};
-+
-+void __init r8a7778_clock_init(void)
+ struct sh_pfc_pin_config {
+ 	u32 type;
+@@ -230,57 +232,118 @@ static const struct pinmux_ops sh_pfc_pinmux_ops = {
+ 	.gpio_set_direction	= sh_pfc_gpio_set_direction,
+ };
+ 
++/* Check whether the requested parameter is supported for a pin. */
++static bool sh_pfc_pinconf_validate(struct sh_pfc *pfc, unsigned int _pin,
++				    enum pin_config_param param)
 +{
-+	int k, ret = 0;
++	int idx = sh_pfc_get_pin_index(pfc, _pin);
++	const struct sh_pfc_pin *pin = &pfc->info->pins[idx];
 +
-+	for (k = 0; !ret && (k < ARRAY_SIZE(main_clks)); k++)
-+		ret = clk_register(main_clks[k]);
++	switch (param) {
++	case PIN_CONFIG_BIAS_DISABLE:
++		return true;
 +
-+	if (!ret)
-+		ret = sh_clk_mstp_register(mstp_clks, MSTP_NR);
++	case PIN_CONFIG_BIAS_PULL_UP:
++		return pin->configs & SH_PFC_PIN_CFG_PULL_UP;
 +
-+	clkdev_add_table(lookups, ARRAY_SIZE(lookups));
++	case PIN_CONFIG_BIAS_PULL_DOWN:
++		return pin->configs & SH_PFC_PIN_CFG_PULL_DOWN;
 +
-+	if (!ret)
-+		shmobile_clk_init();
-+	else
-+		panic("failed to setup r8a7778 clocks\n");
-+}
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7778.h b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-new file mode 100644
-index 0000000..46dbb57
---- /dev/null
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7778.h
-@@ -0,0 +1,29 @@
-+/*
-+ * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+ */
-+#ifndef __ASM_R8A7778_H__
-+#define __ASM_R8A7778_H__
-+
-+extern void r8a7778_add_standard_devices(void);
-+extern void r8a7778_add_standard_devices_dt(void);
-+extern void r8a7778_init_delay(void);
-+extern void r8a7778_init_irq(void);
-+extern void r8a7778_init_irq_dt(void);
-+extern void r8a7778_init_irq_extpin(int irlm);
-+extern void r8a7778_clock_init(void);
-+
-+#endif /* __ASM_R8A7778_H__ */
-diff --git a/arch/arm/mach-shmobile/setup-r8a7778.c b/arch/arm/mach-shmobile/setup-r8a7778.c
-new file mode 100644
-index 0000000..d86a907
---- /dev/null
-+++ b/arch/arm/mach-shmobile/setup-r8a7778.c
-@@ -0,0 +1,202 @@
-+/*
-+ * r8a7778 processor support
-+ *
-+ * Copyright (C) 2013  Renesas Solutions Corp.
-+ * Copyright (C) 2013  Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-+ *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License as published by
-+ * the Free Software Foundation; version 2 of the License.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public License
-+ * along with this program; if not, write to the Free Software
-+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+ */
-+
-+#include <linux/kernel.h>
-+#include <linux/io.h>
-+#include <linux/irqchip/arm-gic.h>
-+#include <linux/of.h>
-+#include <linux/of_platform.h>
-+#include <linux/platform_device.h>
-+#include <linux/irqchip.h>
-+#include <linux/sh_timer.h>
-+#include <mach/irqs.h>
-+#include <mach/r8a7778.h>
-+#include <mach/common.h>
-+#include <asm/mach/arch.h>
-+#include <asm/hardware/cache-l2x0.h>
-+
-+/* TMU */
-+static struct sh_timer_config tmu00_platform_data = {
-+	.name = "TMU00",
-+	.channel_offset = 0x4,
-+	.timer_bit = 0,
-+	.clockevent_rating = 200,
-+};
-+
-+static struct resource tmu00_resources[] = {
-+	[0] = {
-+		.name	= "TMU00",
-+		.start	= 0xffd80008,
-+		.end	= 0xffd80013,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= gic_iid(0x40),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device tmu00_device = {
-+	.name		= "sh_tmu",
-+	.id		= 0,
-+	.dev = {
-+		.platform_data	= &tmu00_platform_data,
-+	},
-+	.resource	= tmu00_resources,
-+	.num_resources	= ARRAY_SIZE(tmu00_resources),
-+};
-+
-+static struct sh_timer_config tmu01_platform_data = {
-+	.name = "TMU01",
-+	.channel_offset = 0x10,
-+	.timer_bit = 1,
-+	.clocksource_rating = 200,
-+};
-+
-+static struct resource tmu01_resources[] = {
-+	[0] = {
-+		.name	= "TMU01",
-+		.start	= 0xffd80014,
-+		.end	= 0xffd8001f,
-+		.flags	= IORESOURCE_MEM,
-+	},
-+	[1] = {
-+		.start	= gic_iid(0x41),
-+		.flags	= IORESOURCE_IRQ,
-+	},
-+};
-+
-+static struct platform_device tmu01_device = {
-+	.name		= "sh_tmu",
-+	.id		= 1,
-+	.dev = {
-+		.platform_data	= &tmu01_platform_data,
-+	},
-+	.resource	= tmu01_resources,
-+	.num_resources	= ARRAY_SIZE(tmu01_resources),
-+};
-+
-+static struct platform_device *r8a7778_devices_dt[] __initdata = {
-+	&tmu00_device,
-+	&tmu01_device,
-+};
-+
-+void __init r8a7778_add_standard_devices(void)
-+{
-+#ifdef CONFIG_CACHE_L2X0
-+	void __iomem *base = ioremap_nocache(0xf0100000, 0x1000);
-+	if (base) {
-+		/*
-+		 * Early BRESP enable, Shared attribute override enable, 64K*16way
-+		 * don't call iounmap(base)
-+		 */
-+		l2x0_init(base, 0x40470000, 0x82000fff);
++	default:
++		return false;
 +	}
-+#endif
-+
-+	r8a7778_clock_init();
-+
-+	platform_add_devices(r8a7778_devices_dt,
-+			     ARRAY_SIZE(r8a7778_devices_dt));
 +}
 +
-+void __init r8a7778_earlytimer_init(void)
-+{
-+	shmobile_timer_init();
-+}
+ static int sh_pfc_pinconf_get(struct pinctrl_dev *pctldev, unsigned _pin,
+ 			      unsigned long *config)
+ {
+ 	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
+ 	struct sh_pfc *pfc = pmx->pfc;
+-	int idx = sh_pfc_get_pin_index(pfc, _pin);
+-	struct sh_pfc_pin_config *cfg = &pmx->configs[idx];
++	enum pin_config_param param = pinconf_to_config_param(*config);
++	unsigned long flags;
++	unsigned int bias;
 +
-+#define INT2SMSKCR0	0x82288 /* 0xfe782288 */
-+#define INT2SMSKCR1	0x8228c /* 0xfe78228c */
++	if (!sh_pfc_pinconf_validate(pfc, _pin, param))
++		return -ENOTSUPP;
+ 
+-	*config = cfg->type;
++	switch (param) {
++	case PIN_CONFIG_BIAS_DISABLE:
++	case PIN_CONFIG_BIAS_PULL_UP:
++	case PIN_CONFIG_BIAS_PULL_DOWN:
++		if (!pfc->info->ops || !pfc->info->ops->get_bias)
++			return -ENOTSUPP;
 +
-+#define INT2NTSR0	0x00018 /* 0xfe700018 */
-+#define INT2NTSR1	0x0002c /* 0xfe70002c */
-+static void __init r8a7778_init_irq_common(void)
-+{
-+	void __iomem *base = ioremap_nocache(0xfe700000, 0x00100000);
++		spin_lock_irqsave(&pfc->lock, flags);
++		bias = pfc->info->ops->get_bias(pfc, _pin);
++		spin_unlock_irqrestore(&pfc->lock, flags);
 +
-+	BUG_ON(!base);
++		if (bias != param)
++			return -EINVAL;
 +
-+	/* route all interrupts to ARM */
-+	__raw_writel(0x73ffffff, base + INT2NTSR0);
-+	__raw_writel(0xffffffff, base + INT2NTSR1);
++		*config = 0;
++		break;
 +
-+	/* unmask all known interrupts in INTCS2 */
-+	__raw_writel(0x08330773, base + INT2SMSKCR0);
-+	__raw_writel(0x00311110, base + INT2SMSKCR1);
++	default:
++		return -ENOTSUPP;
++	}
+ 
+ 	return 0;
+ }
+ 
+-static int sh_pfc_pinconf_set(struct pinctrl_dev *pctldev, unsigned pin,
++static int sh_pfc_pinconf_set(struct pinctrl_dev *pctldev, unsigned _pin,
+ 			      unsigned long config)
+ {
+ 	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
++	struct sh_pfc *pfc = pmx->pfc;
++	enum pin_config_param param = pinconf_to_config_param(config);
++	unsigned long flags;
+ 
+-	/* Validate the new type */
+-	if (config >= PINMUX_FLAG_TYPE)
+-		return -EINVAL;
++	if (!sh_pfc_pinconf_validate(pfc, _pin, param))
++		return -ENOTSUPP;
+ 
+-	return sh_pfc_reconfig_pin(pmx, pin, config);
++	switch (param) {
++	case PIN_CONFIG_BIAS_PULL_UP:
++	case PIN_CONFIG_BIAS_PULL_DOWN:
++	case PIN_CONFIG_BIAS_DISABLE:
++		if (!pfc->info->ops || !pfc->info->ops->set_bias)
++			return -ENOTSUPP;
 +
-+	iounmap(base);
-+}
++		spin_lock_irqsave(&pfc->lock, flags);
++		pfc->info->ops->set_bias(pfc, _pin, param);
++		spin_unlock_irqrestore(&pfc->lock, flags);
 +
-+void __init r8a7778_init_irq(void)
-+{
-+	void __iomem *gic_dist_base;
-+	void __iomem *gic_cpu_base;
++		break;
 +
-+	gic_dist_base = ioremap_nocache(0xfe438000, PAGE_SIZE);
-+	gic_cpu_base  = ioremap_nocache(0xfe430000, PAGE_SIZE);
-+	BUG_ON(!gic_dist_base || !gic_cpu_base);
++	default:
++		return -ENOTSUPP;
++	}
 +
-+	/* use GIC to handle interrupts */
-+	gic_init(0, 29, gic_dist_base, gic_cpu_base);
++	return 0;
+ }
+ 
+-static void sh_pfc_pinconf_dbg_show(struct pinctrl_dev *pctldev,
+-				    struct seq_file *s, unsigned pin)
++static int sh_pfc_pinconf_group_set(struct pinctrl_dev *pctldev, unsigned group,
++				    unsigned long config)
+ {
+-	const char *pinmux_type_str[] = {
+-		[PINMUX_TYPE_NONE]		= "none",
+-		[PINMUX_TYPE_FUNCTION]		= "function",
+-		[PINMUX_TYPE_GPIO]		= "gpio",
+-		[PINMUX_TYPE_OUTPUT]		= "output",
+-		[PINMUX_TYPE_INPUT]		= "input",
+-		[PINMUX_TYPE_INPUT_PULLUP]	= "input bias pull up",
+-		[PINMUX_TYPE_INPUT_PULLDOWN]	= "input bias pull down",
+-	};
+-	unsigned long config;
+-	int rc;
+-
+-	rc = sh_pfc_pinconf_get(pctldev, pin, &config);
+-	if (unlikely(rc != 0))
+-		return;
+-
+-	seq_printf(s, " %s", pinmux_type_str[config]);
++	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
++	const unsigned int *pins;
++	unsigned int num_pins;
++	unsigned int i;
 +
-+	r8a7778_init_irq_common();
-+}
++	pins = pmx->pfc->info->groups[group].pins;
++	num_pins = pmx->pfc->info->groups[group].nr_pins;
 +
-+void __init r8a7778_init_delay(void)
-+{
-+	shmobile_setup_delay(800, 1, 3); /* Cortex-A9 @ 800MHz */
-+}
++	for (i = 0; i < num_pins; ++i)
++		sh_pfc_pinconf_set(pctldev, pins[i], config);
 +
-+#ifdef CONFIG_USE_OF
-+void __init r8a7778_init_irq_dt(void)
-+{
-+	irqchip_init();
-+	r8a7778_init_irq_common();
-+}
++	return 0;
+ }
+ 
+ static const struct pinconf_ops sh_pfc_pinconf_ops = {
+-	.pin_config_get		= sh_pfc_pinconf_get,
+-	.pin_config_set		= sh_pfc_pinconf_set,
+-	.pin_config_dbg_show	= sh_pfc_pinconf_dbg_show,
++	.is_generic			= true,
++	.pin_config_get			= sh_pfc_pinconf_get,
++	.pin_config_set			= sh_pfc_pinconf_set,
++	.pin_config_group_set		= sh_pfc_pinconf_group_set,
++	.pin_config_config_dbg_show	= pinconf_generic_dump_config,
+ };
+ 
+ /* PFC ranges -> pinctrl pin descs */
+diff --git a/drivers/pinctrl/sh-pfc/sh_pfc.h b/drivers/pinctrl/sh-pfc/sh_pfc.h
+index b250dac..3b785fc 100644
+--- a/drivers/pinctrl/sh-pfc/sh_pfc.h
++++ b/drivers/pinctrl/sh-pfc/sh_pfc.h
+@@ -31,9 +31,15 @@ enum {
+ 	PINMUX_FLAG_TYPE,	/* must be last */
+ };
+ 
++#define SH_PFC_PIN_CFG_INPUT		(1 << 0)
++#define SH_PFC_PIN_CFG_OUTPUT		(1 << 1)
++#define SH_PFC_PIN_CFG_PULL_UP		(1 << 2)
++#define SH_PFC_PIN_CFG_PULL_DOWN	(1 << 3)
 +
-+static const struct of_dev_auxdata r8a7778_auxdata_lookup[] __initconst = {
-+	{},
+ struct sh_pfc_pin {
+ 	const pinmux_enum_t enum_id;
+ 	const char *name;
++	unsigned int configs;
+ };
+ 
+ #define SH_PFC_PIN_GROUP(n)				\
+@@ -120,8 +126,18 @@ struct pinmux_range {
+ 	pinmux_enum_t force;
+ };
+ 
++struct sh_pfc;
++
++struct sh_pfc_soc_operations {
++	unsigned int (*get_bias)(struct sh_pfc *pfc, unsigned int pin);
++	void (*set_bias)(struct sh_pfc *pfc, unsigned int pin,
++			 unsigned int bias);
 +};
 +
-+void __init r8a7778_add_standard_devices_dt(void)
-+{
-+	/* clocks are setup late during boot in the case of DT */
-+	r8a7778_clock_init();
+ struct sh_pfc_soc_info {
+ 	const char *name;
++	const struct sh_pfc_soc_operations *ops;
 +
-+	platform_add_devices(r8a7778_devices_dt,
-+			     ARRAY_SIZE(r8a7778_devices_dt));
-+	of_platform_populate(NULL, of_default_bus_match_table,
-+			     r8a7778_auxdata_lookup, NULL);
-+}
-+
-+static const char *r8a7778_compat_dt[] __initdata = {
-+	"renesas,r8a7778",
-+	NULL,
-+};
-+
-+DT_MACHINE_START(R8A7778_DT, "Generic R8A7778 (Flattened Device Tree)")
-+	.init_early	= r8a7778_init_delay,
-+	.init_irq	= r8a7778_init_irq_dt,
-+	.init_machine	= r8a7778_add_standard_devices_dt,
-+	.init_time	= shmobile_timer_init,
-+	.dt_compat	= r8a7778_compat_dt,
-+MACHINE_END
-+
-+#endif /* CONFIG_USE_OF */
+ 	struct pinmux_range input;
+ 	struct pinmux_range input_pd;
+ 	struct pinmux_range input_pu;
 -- 
-1.7.9.5
+1.7.10.4
 
