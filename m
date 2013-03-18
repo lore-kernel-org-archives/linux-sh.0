@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:06:10 +0000
-Subject: [PATCH 074/142] sh-pfc: r8a7779: Add LBSC pin groups and functions
-Message-Id: <1363604838-29359-75-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:07:06 +0000
+Subject: [PATCH 130/142] ARM: shmobile: sh73a0: Remove BSC function GPIOs
+Message-Id: <1363604838-29359-131-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
@@ -12,123 +12,62 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Only the CS pins and functions are currently handled.
+Those GPIOs have been deprecated by the pinctrl API. They are unused and
+unneeded, remove them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/pinctrl/sh-pfc/pfc-r8a7779.c |   77 ++++++++++++++++++++++++++++++++++
- 1 file changed, 77 insertions(+)
+ arch/arm/mach-shmobile/include/mach/sh73a0.h |   29 ++++----------------------
+ 1 file changed, 4 insertions(+), 25 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-index 6043d2c..3f67143 100644
---- a/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-+++ b/drivers/pinctrl/sh-pfc/pfc-r8a7779.c
-@@ -1631,6 +1631,63 @@ static const unsigned int hspi2_b_pins[] = {
- static const unsigned int hspi2_b_mux[] = {
- 	HSPI_CLK2_B_MARK, HSPI_CS2_B_MARK, HSPI_RX2_B_MARK, HSPI_TX2_B_MARK,
- };
-+/* - LSBC ------------------------------------------------------------------- */
-+static const unsigned int lbsc_cs0_pins[] = {
-+	/* CS */
-+	13,
-+};
-+static const unsigned int lbsc_cs0_mux[] = {
-+	CS0_MARK,
-+};
-+static const unsigned int lbsc_cs1_pins[] = {
-+	/* CS */
-+	14,
-+};
-+static const unsigned int lbsc_cs1_mux[] = {
-+	CS1_A26_MARK,
-+};
-+static const unsigned int lbsc_ex_cs0_pins[] = {
-+	/* CS */
-+	15,
-+};
-+static const unsigned int lbsc_ex_cs0_mux[] = {
-+	EX_CS0_MARK,
-+};
-+static const unsigned int lbsc_ex_cs1_pins[] = {
-+	/* CS */
-+	16,
-+};
-+static const unsigned int lbsc_ex_cs1_mux[] = {
-+	EX_CS1_MARK,
-+};
-+static const unsigned int lbsc_ex_cs2_pins[] = {
-+	/* CS */
-+	17,
-+};
-+static const unsigned int lbsc_ex_cs2_mux[] = {
-+	EX_CS2_MARK,
-+};
-+static const unsigned int lbsc_ex_cs3_pins[] = {
-+	/* CS */
-+	18,
-+};
-+static const unsigned int lbsc_ex_cs3_mux[] = {
-+	EX_CS3_MARK,
-+};
-+static const unsigned int lbsc_ex_cs4_pins[] = {
-+	/* CS */
-+	19,
-+};
-+static const unsigned int lbsc_ex_cs4_mux[] = {
-+	EX_CS4_MARK,
-+};
-+static const unsigned int lbsc_ex_cs5_pins[] = {
-+	/* CS */
-+	20,
-+};
-+static const unsigned int lbsc_ex_cs5_mux[] = {
-+	EX_CS5_MARK,
-+};
- /* - MMCIF ------------------------------------------------------------------ */
- static const unsigned int mmc0_data1_pins[] = {
- 	/* D[0] */
-@@ -2246,6 +2303,14 @@ static const struct sh_pfc_pin_group pinmux_groups[] = {
- 	SH_PFC_PIN_GROUP(hspi1_d),
- 	SH_PFC_PIN_GROUP(hspi2),
- 	SH_PFC_PIN_GROUP(hspi2_b),
-+	SH_PFC_PIN_GROUP(lbsc_cs0),
-+	SH_PFC_PIN_GROUP(lbsc_cs1),
-+	SH_PFC_PIN_GROUP(lbsc_ex_cs0),
-+	SH_PFC_PIN_GROUP(lbsc_ex_cs1),
-+	SH_PFC_PIN_GROUP(lbsc_ex_cs2),
-+	SH_PFC_PIN_GROUP(lbsc_ex_cs3),
-+	SH_PFC_PIN_GROUP(lbsc_ex_cs4),
-+	SH_PFC_PIN_GROUP(lbsc_ex_cs5),
- 	SH_PFC_PIN_GROUP(mmc0_data1),
- 	SH_PFC_PIN_GROUP(mmc0_data4),
- 	SH_PFC_PIN_GROUP(mmc0_data8),
-@@ -2367,6 +2432,17 @@ static const char * const hspi2_groups[] = {
- 	"hspi2_b",
- };
- 
-+static const char * const lbsc_groups[] = {
-+	"lbsc_cs0",
-+	"lbsc_cs1",
-+	"lbsc_ex_cs0",
-+	"lbsc_ex_cs1",
-+	"lbsc_ex_cs2",
-+	"lbsc_ex_cs3",
-+	"lbsc_ex_cs4",
-+	"lbsc_ex_cs5",
-+};
-+
- static const char * const mmc0_groups[] = {
- 	"mmc0_data1",
- 	"mmc0_data4",
-@@ -2500,6 +2576,7 @@ static const struct sh_pfc_function pinmux_functions[] = {
- 	SH_PFC_FUNCTION(hspi0),
- 	SH_PFC_FUNCTION(hspi1),
- 	SH_PFC_FUNCTION(hspi2),
-+	SH_PFC_FUNCTION(lbsc),
- 	SH_PFC_FUNCTION(mmc0),
- 	SH_PFC_FUNCTION(mmc1),
- 	SH_PFC_FUNCTION(sdhi0),
+diff --git a/arch/arm/mach-shmobile/include/mach/sh73a0.h b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+index f1b85ff..218e6b7 100644
+--- a/arch/arm/mach-shmobile/include/mach/sh73a0.h
++++ b/arch/arm/mach-shmobile/include/mach/sh73a0.h
+@@ -149,31 +149,10 @@ enum {
+ 	GPIO_FN_A24, GPIO_FN_MSIOF0_RXD,
+ 	GPIO_FN_A25, GPIO_FN_MSIOF0_SS2,
+ 	GPIO_FN_A26,
+-	GPIO_FN_D0_NAF0,
+-	GPIO_FN_D1_NAF1,
+-	GPIO_FN_D2_NAF2,
+-	GPIO_FN_D3_NAF3,
+-	GPIO_FN_D4_NAF4,
+-	GPIO_FN_D5_NAF5,
+-	GPIO_FN_D6_NAF6,
+-	GPIO_FN_D7_NAF7,
+-	GPIO_FN_D8_NAF8,
+-	GPIO_FN_D9_NAF9,
+-	GPIO_FN_D10_NAF10,
+-	GPIO_FN_D11_NAF11,
+-	GPIO_FN_D12_NAF12,
+-	GPIO_FN_D13_NAF13,
+-	GPIO_FN_D14_NAF14,
+-	GPIO_FN_D15_NAF15,
+-	GPIO_FN_CS4_,
+-	GPIO_FN_CS5A_, GPIO_FN_PORT91_RDWR,
+-	GPIO_FN_CS5B_, GPIO_FN_FCE1_,
+-	GPIO_FN_CS6B_, GPIO_FN_DACK0,
+-	GPIO_FN_FCE0_, GPIO_FN_CS6A_,
++	GPIO_FN_FCE1_,
++	GPIO_FN_DACK0,
++	GPIO_FN_FCE0_,
+ 	GPIO_FN_WAIT_, GPIO_FN_DREQ0,
+-	GPIO_FN_RD__FSC,
+-	GPIO_FN_WE0__FWE, GPIO_FN_RDWR_FWE,
+-	GPIO_FN_WE1_,
+ 	GPIO_FN_FRB,
+ 	GPIO_FN_CKO,
+ 	GPIO_FN_NBRSTOUT_,
+@@ -219,7 +198,7 @@ enum {
+ 	GPIO_FN_VIO2_CLK,
+ 	GPIO_FN_VIO_FIELD, GPIO_FN_VIO2_FIELD,
+ 	GPIO_FN_VIO_CKO,
+-	GPIO_FN_A27, GPIO_FN_PORT149_RDWR, GPIO_FN_MFG0_IN1, \
++	GPIO_FN_A27, GPIO_FN_MFG0_IN1,
+ 	GPIO_FN_MFG0_IN2,
+ 	GPIO_FN_TS_SPSYNC3, GPIO_FN_MSIOF2_RSCK,
+ 	GPIO_FN_TS_SDAT3, GPIO_FN_MSIOF2_RSYNC,
 -- 
 1.7.10.4
 
