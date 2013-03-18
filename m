@@ -1,32 +1,54 @@
-From: David Miller <davem@davemloft.net>
-Date: Sun, 31 Mar 2013 23:44:42 +0000
-Subject: Re: [PATCH 1/2] sh_eth: fix handling of no LINK signal
-Message-Id: <20130331.194442.1848586251646334735.davem@davemloft.net>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:47:18 +0000
+Subject: [PATCH 26/43] ARM: shmobile: Rework SH73A0_SCU_BASE IOMEM() usage
+Message-Id: <1363607255-6385-27-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <201303312350.08153.sergei.shtylyov@cogentembedded.com>
-In-Reply-To: <201303312350.08153.sergei.shtylyov@cogentembedded.com>
+References: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: sergei.shtylyov@cogentembedded.com
-Cc: netdev@vger.kernel.org, nobuhiro.iwamatsu.yj@renesas.com, linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-From: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
-Date: Sun, 31 Mar 2013 23:50:07 +0400
+From: Magnus Damm <damm@opensource.se>
 
-> The code handling the absent LINK signal (or the absent PSR register -- which
-> reflects the state of this signal) is quite naive and has probably never really
-> worked.  It's probably enough to say that this code is executed only on the LINK
-> change interrupt (sic!) but even if we actually have the signal and choose to
-> ignore it (it might be connected to PHY's link/activity LED output as on the
-> Renesas BOCK-W board), sh_eth_adjust_link() on which this code relies to update
-> 'mdp->link' gets executed later than the LINK change interrupt where it is
-> checked, and so RX/TX never get enabled via ECMR register.
-> 
-> So, ignore the LINK changed interrupt iff LINK signal is absent (or just chosen
-> not to be used) or PSR register is absent, and enable/disable RX/TX directly in
-> sh_eth_adjust_link() in this case. 
-> 
-> Signed-off-by: Sergei Shtylyov <sergei.shtylyov@cogentembedded.com>
+Rework the IOMEM() usage for the SCU base address in the
+case of sh73a0. Removes recently introduced build warnings:
 
-Applied.
+arch/arm/mach-shmobile/smp-sh73a0.c:45:15: warning: initialization makes integer from pointer without a cast [enabled by default]
+arch/arm/mach-shmobile/smp-sh73a0.c:45:15: warning: (near initialization for 'twd_local_timer.res[0].start') [enabled by default]
+arch/arm/mach-shmobile/smp-sh73a0.c:45:15: warning: initialization makes integer from pointer without a cast [enabled by default]
+/arch/arm/mach-shmobile/smp-sh73a0.c:45:15: warning: (near initialization for 'twd_local_timer.res[0].end') [enabled by default]
+
+Reported-by: Arnd Bergmann <arnd@arndb.de>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/smp-sh73a0.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-shmobile/smp-sh73a0.c b/arch/arm/mach-shmobile/smp-sh73a0.c
+index 2244fd0..593f8de 100644
+--- a/arch/arm/mach-shmobile/smp-sh73a0.c
++++ b/arch/arm/mach-shmobile/smp-sh73a0.c
+@@ -39,7 +39,7 @@
+ 
+ #define PSTR_SHUTDOWN_MODE	3
+ 
+-#define SH73A0_SCU_BASE IOMEM(0xf0000000)
++#define SH73A0_SCU_BASE 0xf0000000
+ 
+ #ifdef CONFIG_HAVE_ARM_TWD
+ static DEFINE_TWD_LOCAL_TIMER(twd_local_timer, SH73A0_SCU_BASE + 0x600, 29);
+@@ -81,7 +81,7 @@ static void __init sh73a0_smp_prepare_cpus(unsigned int max_cpus)
+ static void __init sh73a0_smp_init_cpus(void)
+ {
+ 	/* setup sh73a0 specific SCU base */
+-	shmobile_scu_base = SH73A0_SCU_BASE;
++	shmobile_scu_base = IOMEM(SH73A0_SCU_BASE);
+ 
+ 	shmobile_smp_init_cpus(scu_get_core_count(shmobile_scu_base));
+ }
+-- 
+1.7.10.4
+
