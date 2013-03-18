@@ -1,142 +1,93 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 11:02:21 +0000
-Subject: [PATCH v3 61/64] ARM: shmobile: r8a7779: Remove HSPI function GPIOs
-Message-Id: <1362740544-19164-62-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:06:21 +0000
+Subject: [PATCH 085/142] ARM: shmobile: bonito: Register pinctrl mappings for LCDC0
+Message-Id: <1363604838-29359-86-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Those GPIOs have been deprecated by the pinctrl API. They are unused and
-unneeded, remove them.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+Replace the GPIO-based LCDC0 pinmux configuration by pinctrl mappings.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/include/mach/r8a7779.h | 52 +++++++++++++--------------
- 1 file changed, 26 insertions(+), 26 deletions(-)
+ arch/arm/mach-shmobile/board-bonito.c |   44 +++++++++++----------------------
+ 1 file changed, 14 insertions(+), 30 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-index e901316..f3ae551 100644
---- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
-+++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
-@@ -76,15 +76,15 @@ enum {
- 	GPIO_FN_FD2, GPIO_FN_ATADIR0, GPIO_FN_SDSELF,
- 	GPIO_FN_HCTS1, GPIO_FN_A0,
- 	GPIO_FN_FD3, GPIO_FN_A20,
--	GPIO_FN_HSPI_TX2_B, GPIO_FN_A21, GPIO_FN_HSPI_CLK2_B,
--	GPIO_FN_A22, GPIO_FN_HSPI_RX2_B, GPIO_FN_VI1_R0,
--	GPIO_FN_A23, GPIO_FN_FCLE, GPIO_FN_HSPI_CLK2, GPIO_FN_VI1_R1,
-+	GPIO_FN_A21,
-+	GPIO_FN_A22, GPIO_FN_VI1_R0,
-+	GPIO_FN_A23, GPIO_FN_FCLE, GPIO_FN_VI1_R1,
- 	GPIO_FN_A24, GPIO_FN_FD4,
--	GPIO_FN_HSPI_CS2, GPIO_FN_VI1_R2, GPIO_FN_SSI_WS78_B, GPIO_FN_A25,
--	GPIO_FN_FD5, GPIO_FN_HSPI_RX2,
-+	GPIO_FN_VI1_R2, GPIO_FN_SSI_WS78_B, GPIO_FN_A25,
-+	GPIO_FN_FD5,
- 	GPIO_FN_VI1_R3, GPIO_FN_SSI_SDATA7_B,
- 	GPIO_FN_CLKOUT, GPIO_FN_PWM0_B, GPIO_FN_CS0,
--	GPIO_FN_HSPI_CS2_B, GPIO_FN_CS1_A26, GPIO_FN_HSPI_TX2,
-+	GPIO_FN_CS1_A26,
- 	GPIO_FN_SDSELF_B, GPIO_FN_RD_WR, GPIO_FN_FWE, GPIO_FN_ATAG0,
- 	GPIO_FN_VI1_R7, GPIO_FN_HRTS1,
+diff --git a/arch/arm/mach-shmobile/board-bonito.c b/arch/arm/mach-shmobile/board-bonito.c
+index d363526..70d992c 100644
+--- a/arch/arm/mach-shmobile/board-bonito.c
++++ b/arch/arm/mach-shmobile/board-bonito.c
+@@ -24,6 +24,7 @@
+ #include <linux/init.h>
+ #include <linux/interrupt.h>
+ #include <linux/irq.h>
++#include <linux/pinctrl/machine.h>
+ #include <linux/platform_device.h>
+ #include <linux/gpio.h>
+ #include <linux/regulator/fixed.h>
+@@ -288,6 +289,16 @@ static struct platform_device lcdc0_device = {
+ 	},
+ };
  
-@@ -176,19 +176,19 @@ enum {
- 	GPIO_FN_VI2_R4, GPIO_FN_VI2_R5,
- 	GPIO_FN_VI2_R6, GPIO_FN_VI2_R7,
- 	GPIO_FN_SCL2_D, GPIO_FN_SDA2_D,
--	GPIO_FN_VI2_CLKENB, GPIO_FN_HSPI_CS1,
-+	GPIO_FN_VI2_CLKENB,
- 	GPIO_FN_SCL1_D, GPIO_FN_VI2_FIELD,
- 	GPIO_FN_SDA1_D, GPIO_FN_VI2_HSYNC,
- 	GPIO_FN_VI3_HSYNC, GPIO_FN_VI2_VSYNC,
- 	GPIO_FN_VI3_VSYNC,
- 	GPIO_FN_VI2_CLK,
--	GPIO_FN_HSPI_TX1, GPIO_FN_VI1_CLKENB, GPIO_FN_VI3_CLKENB,
-+	GPIO_FN_VI1_CLKENB, GPIO_FN_VI3_CLKENB,
- 	GPIO_FN_AUDIO_CLKC, GPIO_FN_SPEEDIN,
- 	GPIO_FN_GPS_SIGN_D, GPIO_FN_VI2_DATA6_VI2_B6,
--	GPIO_FN_TCLK0, GPIO_FN_QSTVA_B_QVS_B, GPIO_FN_HSPI_CLK1,
-+	GPIO_FN_TCLK0, GPIO_FN_QSTVA_B_QVS_B,
- 	GPIO_FN_AUDIO_CLKOUT_B, GPIO_FN_GPS_MAG_D,
- 	GPIO_FN_VI2_DATA7_VI2_B7,
--	GPIO_FN_HSPI_RX1, GPIO_FN_VI1_FIELD, GPIO_FN_VI3_FIELD,
-+	GPIO_FN_VI1_FIELD, GPIO_FN_VI3_FIELD,
- 	GPIO_FN_AUDIO_CLKOUT, GPIO_FN_GPS_CLK_C,
- 	GPIO_FN_GPS_CLK_D, GPIO_FN_AUDIO_CLKA, GPIO_FN_CAN_TXCLK,
- 	GPIO_FN_AUDIO_CLKB, GPIO_FN_USB_OVC2, GPIO_FN_CAN_DEBUGOUT0,
-@@ -216,11 +216,11 @@ enum {
- 	GPIO_FN_SSI_WS6, GPIO_FN_ADICHS1, GPIO_FN_CAN0_RX, GPIO_FN_IETX_B,
- 	GPIO_FN_SSI_SDATA6, GPIO_FN_ADICHS2, GPIO_FN_CAN_CLK, GPIO_FN_IECLK_B,
- 	GPIO_FN_SSI_SCK78, GPIO_FN_CAN_DEBUGOUT13, GPIO_FN_IRQ0_B,
--	GPIO_FN_SSI_SCK9_B, GPIO_FN_HSPI_CLK1_C, GPIO_FN_SSI_WS78,
-+	GPIO_FN_SSI_SCK9_B, GPIO_FN_SSI_WS78,
- 	GPIO_FN_CAN_DEBUGOUT14, GPIO_FN_IRQ1_B, GPIO_FN_SSI_WS9_B,
--	GPIO_FN_HSPI_CS1_C, GPIO_FN_SSI_SDATA7, GPIO_FN_CAN_DEBUGOUT15,
--	GPIO_FN_IRQ2_B, GPIO_FN_TCLK1_C, GPIO_FN_HSPI_TX1_C,
--	GPIO_FN_SSI_SDATA8, GPIO_FN_VSP, GPIO_FN_IRQ3_B, GPIO_FN_HSPI_RX1_C,
-+	GPIO_FN_SSI_SDATA7, GPIO_FN_CAN_DEBUGOUT15,
-+	GPIO_FN_IRQ2_B, GPIO_FN_TCLK1_C,
-+	GPIO_FN_SSI_SDATA8, GPIO_FN_VSP, GPIO_FN_IRQ3_B,
- 	GPIO_FN_ATACS01,
- 	GPIO_FN_ATACS11, GPIO_FN_CC5_TDO,
- 	GPIO_FN_ATADIR1, GPIO_FN_CC5_TRST,
-@@ -230,15 +230,15 @@ enum {
- 	GPIO_FN_DREQ2,	GPIO_FN_DACK2,
++static const struct pinctrl_map lcdc0_pinctrl_map[] = {
++	/* LCD0 */
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
++				  "lcd0_data24_1", "lcd0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
++				  "lcd0_lclk_1", "lcd0"),
++	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-r8a7740",
++				  "lcd0_sync", "lcd0"),
++};
++
+ /*
+  * SMSC 9221
+  */
+@@ -430,36 +441,9 @@ static void __init bonito_init(void)
+ 		 */
+ 		if (BIT_ON(bsw2, 3) &&	/* S38.1 = OFF */
+ 		    BIT_ON(bsw2, 2)) {	/* S38.2 = OFF */
+-			gpio_request(GPIO_FN_LCDC0_SELECT,	NULL);
+-			gpio_request(GPIO_FN_LCD0_D0,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D1,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D2,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D3,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D4,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D5,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D6,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D7,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D8,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D9,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D10,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D11,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D12,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D13,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D14,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D15,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D16,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D17,		NULL);
+-			gpio_request(GPIO_FN_LCD0_D18_PORT163,	NULL);
+-			gpio_request(GPIO_FN_LCD0_D19_PORT162,	NULL);
+-			gpio_request(GPIO_FN_LCD0_D20_PORT161,	NULL);
+-			gpio_request(GPIO_FN_LCD0_D21_PORT158,	NULL);
+-			gpio_request(GPIO_FN_LCD0_D22_PORT160,	NULL);
+-			gpio_request(GPIO_FN_LCD0_D23_PORT159,	NULL);
+-			gpio_request(GPIO_FN_LCD0_DCK,		NULL);
+-			gpio_request(GPIO_FN_LCD0_VSYN,		NULL);
+-			gpio_request(GPIO_FN_LCD0_HSYN,		NULL);
+-			gpio_request(GPIO_FN_LCD0_DISP,		NULL);
+-			gpio_request(GPIO_FN_LCD0_LCLK_PORT165,	NULL);
++			pinctrl_register_mappings(lcdc0_pinctrl_map,
++						  ARRAY_SIZE(lcdc0_pinctrl_map));
++			gpio_request(GPIO_FN_LCDC0_SELECT, NULL);
  
- 	/* IPSR8 */
--	GPIO_FN_HSPI_CLK0, GPIO_FN_USB_OVC0, GPIO_FN_AD_CLK,
-+	GPIO_FN_USB_OVC0, GPIO_FN_AD_CLK,
- 	GPIO_FN_CC5_STATE4, GPIO_FN_CC5_STATE12, GPIO_FN_CC5_STATE20,
--	GPIO_FN_CC5_STATE28, GPIO_FN_CC5_STATE36, GPIO_FN_HSPI_CS0,
-+	GPIO_FN_CC5_STATE28, GPIO_FN_CC5_STATE36,
- 	GPIO_FN_USB_OVC1, GPIO_FN_AD_DI,
- 	GPIO_FN_CC5_STATE5, GPIO_FN_CC5_STATE13, GPIO_FN_CC5_STATE21,
--	GPIO_FN_CC5_STATE29, GPIO_FN_CC5_STATE37, GPIO_FN_HSPI_TX0,
-+	GPIO_FN_CC5_STATE29, GPIO_FN_CC5_STATE37,
- 	GPIO_FN_CAN_DEBUG_HW_TRIGGER, GPIO_FN_AD_DO,
- 	GPIO_FN_CC5_STATE6, GPIO_FN_CC5_STATE14, GPIO_FN_CC5_STATE22,
--	GPIO_FN_CC5_STATE30, GPIO_FN_CC5_STATE38, GPIO_FN_HSPI_RX0,
-+	GPIO_FN_CC5_STATE30, GPIO_FN_CC5_STATE38,
- 	GPIO_FN_CAN_STEP0, GPIO_FN_AD_NCS, GPIO_FN_CC5_STATE7,
- 	GPIO_FN_CC5_STATE15, GPIO_FN_CC5_STATE23, GPIO_FN_CC5_STATE31,
- 	GPIO_FN_CC5_STATE39, GPIO_FN_FMCLK, GPIO_FN_RDS_CLK, GPIO_FN_PCMOE,
-@@ -278,13 +278,13 @@ enum {
- 	GPIO_FN_IRQ2, GPIO_FN_ARM_TRACEDATA_12,
- 	GPIO_FN_VI0_R3, GPIO_FN_ETH_MAGIC, GPIO_FN_IRQ3,
- 	GPIO_FN_ARM_TRACEDATA_13, GPIO_FN_VI0_R4, GPIO_FN_ETH_REFCLK,
--	GPIO_FN_HSPI_CLK1_B, GPIO_FN_ARM_TRACEDATA_14,
-+	GPIO_FN_ARM_TRACEDATA_14,
- 	GPIO_FN_MT1_CLK, GPIO_FN_TS_SCK0, GPIO_FN_VI0_R5, GPIO_FN_ETH_TXD0,
--	GPIO_FN_HSPI_CS1_B, GPIO_FN_ARM_TRACEDATA_15,
-+	GPIO_FN_ARM_TRACEDATA_15,
- 	GPIO_FN_MT1_D, GPIO_FN_TS_SDEN0, GPIO_FN_VI0_R6, GPIO_FN_ETH_MDC,
--	GPIO_FN_DREQ2_C, GPIO_FN_HSPI_TX1_B, GPIO_FN_TRACECLK,
-+	GPIO_FN_DREQ2_C, GPIO_FN_TRACECLK,
- 	GPIO_FN_MT1_BEN, GPIO_FN_PWMFSW0_D, GPIO_FN_VI0_R7, GPIO_FN_ETH_MDIO,
--	GPIO_FN_DACK2_C, GPIO_FN_HSPI_RX1_B, GPIO_FN_SCIF_CLK_D,
-+	GPIO_FN_DACK2_C, GPIO_FN_SCIF_CLK_D,
- 	GPIO_FN_TRACECTL, GPIO_FN_MT1_PEN, GPIO_FN_VI1_CLK, GPIO_FN_SIM_D,
- 	GPIO_FN_SDA3, GPIO_FN_VI1_HSYNC, GPIO_FN_VI3_CLK, GPIO_FN_SSI_SCK4,
- 	GPIO_FN_GPS_SIGN_C, GPIO_FN_PWMFSW0_E, GPIO_FN_VI1_VSYNC,
-@@ -300,12 +300,12 @@ enum {
- 	GPIO_FN_VI1_DATA3_VI1_B3, GPIO_FN_MT0_BEN,
- 	GPIO_FN_SPV_TDO, GPIO_FN_ADICHS0_B, GPIO_FN_VI1_DATA4_VI1_B4,
- 	GPIO_FN_MT0_PEN, GPIO_FN_SPA_TRST,
--	GPIO_FN_HSPI_CLK1_D, GPIO_FN_ADICHS1_B, GPIO_FN_VI1_DATA5_VI1_B5,
-+	GPIO_FN_ADICHS1_B, GPIO_FN_VI1_DATA5_VI1_B5,
- 	GPIO_FN_MT0_SYNC, GPIO_FN_SPA_TCK,
--	GPIO_FN_HSPI_CS1_D, GPIO_FN_ADICHS2_B, GPIO_FN_VI1_DATA6_VI1_B6,
--	GPIO_FN_MT0_VCXO, GPIO_FN_SPA_TMS, GPIO_FN_HSPI_TX1_D,
-+	GPIO_FN_ADICHS2_B, GPIO_FN_VI1_DATA6_VI1_B6,
-+	GPIO_FN_MT0_VCXO, GPIO_FN_SPA_TMS,
- 	GPIO_FN_VI1_DATA7_VI1_B7, GPIO_FN_MT0_PWM,
--	GPIO_FN_SPA_TDI, GPIO_FN_HSPI_RX1_D, GPIO_FN_VI1_G0, GPIO_FN_VI3_DATA0,
-+	GPIO_FN_SPA_TDI, GPIO_FN_VI1_G0, GPIO_FN_VI3_DATA0,
- 	GPIO_FN_TS_SCK1, GPIO_FN_DREQ2_B,
- 	GPIO_FN_SPA_TDO, GPIO_FN_HCTS0_B, GPIO_FN_VI1_G1, GPIO_FN_VI3_DATA1,
- 	GPIO_FN_SSI_SCK1, GPIO_FN_TS_SDEN1, GPIO_FN_DACK2_B,
+ 			gpio_request_one(61, GPIOF_OUT_INIT_HIGH,
+ 					 NULL); /* LCDDON */
 -- 
-1.8.1.5
+1.7.10.4
 
