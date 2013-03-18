@@ -1,112 +1,148 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Thu, 14 Mar 2013 04:11:39 +0000
-Subject: Re: [PATCH 01/03] gpio: Renesas R-Car GPIO driver V2
-Message-Id: <CANqRtoRL83r8nGVN6ngq2Sdnk-FiMiQrmx2fyLh_Pcz4_MpwBQ@mail.gmail.com>
+From: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Date: Mon, 18 Mar 2013 18:26:44 +0000
+Subject: [PATCH/RFC 2/2] ARM: shmobile: kzm9g: add fixed voltage regulators for SDHI0 and SDHI2
+Message-Id: <Pine.LNX.4.64.1303181926060.4980@axis700.grange>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130313113203.30133.49539.sendpatchset@w520>
-	<20130313113213.30133.10066.sendpatchset@w520>
-	<11085187.4PsQNSVmtx@avalon>
-In-Reply-To: <11085187.4PsQNSVmtx@avalon>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
-Cc: linux-kernel@vger.kernel.org, linux-sh@vger.kernel.org, linus.walleij@linaro.org, grant.likely@secretlab.ca, horms@verge.net.au
+To: linux-sh@vger.kernel.org
 
-On Wed, Mar 13, 2013 at 10:14 PM, Laurent Pinchart
-<laurent.pinchart@ideasonboard.com> wrote:
-> Hi Magnus,
->
-> Thanks for the patch.
->
-> I've reviewed the result of squashing the 3 patches together, I just have one
-> comment.
->
-> On Wednesday 13 March 2013 20:32:13 Magnus Damm wrote:
->> From: Magnus Damm <damm@opensource.se>
->>
->> This patch is V2 of a GPIO driver for the R-Car series of
->> SoCs from Renesas. This driver is designed to be reusable
->> between multiple SoCs that share the same basic building block,
->> but so far it has only been used on R-Car H1 (r8a7779).
->>
->> Each driver instance handles 32 GPIOs with individually
->> maskable IRQs. The driver operates on a single I/O memory
->> range and the 32 GPIOs are hooked up a single interrupt.
->>
->> In the case of R-Car H1 either external IRQ pins or GPIOs
->> with interrupts can be used for on-board interupts. For
->> external IRQs 4 pins are supported, and in the case of GPIO
->> there are 202 GPIOS as 202 interrupts hooked up via 6 driver
->> instances and to the GIC and the Cortex-A9 Quad.
->>
->> At this point this driver is interfacing as a regular
->> platform device driver. In the future DT support will be
->> submitted as an incremental feature patch.
->>
->> Signed-off-by: Magnus Damm <damm@opensource.se>
->> ---
->>
->>  Changes since V1:
->>  - Update based on most suggestions from review by Laurent, thanks!
->>
->>  Please note that in V2 the driver is reworked to reduce the number of
->>  lines and includes minor changes related to headers, printouts and
->>  data types. In V2 the register access order is kept the same as in V1,
->>  and to make that happen IRQCHIP_SET_TYPE_MASKED is omitted. The interface
->>  to the Linux kernel is unchanged except the use of dev_dbg() instead of
->>  pr_debug(). So from a hardware point of view V2 is a drop in replacement
->>  for V1 and there should be no additional dependencies since devm is
->>  kept as a separate patch as well. All this to make back porting easier.
->>
->>  drivers/gpio/Kconfig                    |    6
->>  drivers/gpio/Makefile                   |    1
->>  drivers/gpio/gpio-rcar.c                |  383 ++++++++++++++++++++++++++++
->>  include/linux/platform_data/gpio-rcar.h |   25 ++
->>  4 files changed, 415 insertions(+)
->
-> [snip]
->
->> --- /dev/null
->> +++ work/drivers/gpio/gpio-rcar.c     2013-03-13 19:41:35.000000000 +0900
->> @@ -0,0 +1,383 @@
->> +/*
->> + * Renesas R-Car GPIO Support
->> + *
->> + *  Copyright (C) 2013 Magnus Damm
->> + *
->> + * This program is free software; you can redistribute it and/or modify
->> + * it under the terms of the GNU General Public License as published by
->> + * the Free Software Foundation; either version 2 of the License
->> + *
->> + * This program is distributed in the hope that it will be useful,
->> + * but WITHOUT ANY WARRANTY; without even the implied warranty of
->> + * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
->> + * GNU General Public License for more details.
->> + */
->
-> [snip]
->
->> +static int gpio_rcar_irq_domain_map(struct irq_domain *h, unsigned int
->> virq,
->> +                              irq_hw_number_t hw)
->> +{
->> +     struct gpio_rcar_priv *p = h->host_data;
->> +
->> +     dev_dbg(&p->pdev->dev, "map hw irq = %d, virq = %d\n", (int)hw, virq);
->> +
->> +     irq_set_chip_data(virq, h->host_data);
->> +     irq_set_chip_and_handler(virq, &p->irq_chip, handle_level_irq);
->> +     set_irq_flags(virq, IRQF_VALID); /* kill me now */
->
-> What is that comment about ?
+Both SDHI0 and SDHI2 power supplies on kzm9g can be switched on and off. In
+the current version this is not used and the regulators are hard-wired to
+"on." This patch switches SDHI0 and SDHI2 to proper fixed-voltage
+regulators, using GPIOs to enable and disable them. Both ports shall
+now be specifying the MMC_CAP_POWER_OFF_CARD MMC capability. Only SDHI0
+has been tested with an SDIO card, since SDHI2 is a microSD slot.
 
-I seem to have a habit of putting that comment in all IRQ code that I
-write for ARM. See these threads for more info:
+Signed-off-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+---
+ arch/arm/mach-shmobile/board-kzm9g.c |   76 +++++++++++++++++++++++++++------
+ 1 files changed, 62 insertions(+), 14 deletions(-)
 
-https://lkml.org/lkml/2013/2/19/246
-http://lists.infradead.org/pipermail/linux-arm-kernel/2010-January/008795.html
+diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
+index 0b19d0c..ceabb44 100644
+--- a/arch/arm/mach-shmobile/board-kzm9g.c
++++ b/arch/arm/mach-shmobile/board-kzm9g.c
+@@ -376,13 +376,64 @@ static struct platform_device mmc_device = {
+ 	.resource	= sh_mmcif_resources,
+ };
+ 
+-/* Fixed 3.3V regulators to be used by SDHI0 and SDHI2 */
+-static struct regulator_consumer_supply fixed3v3_power_consumers[] +/* Fixed 3.3V regulators to be used by SDHI0 */
++static struct regulator_consumer_supply vcc_sdhi0_consumers[]  {
+ 	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.0"),
+-	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.0"),
++};
++
++static struct regulator_init_data vcc_sdhi0_init_data = {
++	.constraints = {
++		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
++	},
++	.num_consumer_supplies  = ARRAY_SIZE(vcc_sdhi0_consumers),
++	.consumer_supplies      = vcc_sdhi0_consumers,
++};
++
++static struct fixed_voltage_config vcc_sdhi0_info = {
++	.supply_name = "SDHI0 Vcc",
++	.microvolts = 3300000,
++	.gpio = 15,
++	.enable_high = 1,
++	.init_data = &vcc_sdhi0_init_data,
++};
++
++static struct platform_device vcc_sdhi0 = {
++	.name = "reg-fixed-voltage",
++	.id   = 0,
++	.dev  = {
++		.platform_data = &vcc_sdhi0_info,
++	},
++};
++
++/* Fixed 3.3V regulators to be used by SDHI2 */
++static struct regulator_consumer_supply vcc_sdhi2_consumers[] +{
+ 	REGULATOR_SUPPLY("vmmc", "sh_mobile_sdhi.2"),
+-	REGULATOR_SUPPLY("vqmmc", "sh_mobile_sdhi.2"),
++};
++
++static struct regulator_init_data vcc_sdhi2_init_data = {
++	.constraints = {
++		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
++	},
++	.num_consumer_supplies  = ARRAY_SIZE(vcc_sdhi2_consumers),
++	.consumer_supplies      = vcc_sdhi2_consumers,
++};
++
++static struct fixed_voltage_config vcc_sdhi2_info = {
++	.supply_name = "SDHI2 Vcc",
++	.microvolts = 3300000,
++	.gpio = 14,
++	.enable_high = 1,
++	.init_data = &vcc_sdhi2_init_data,
++};
++
++static struct platform_device vcc_sdhi2 = {
++	.name = "reg-fixed-voltage",
++	.id   = 1,
++	.dev  = {
++		.platform_data = &vcc_sdhi2_info,
++	},
+ };
+ 
+ /* SDHI */
+@@ -390,7 +441,8 @@ static struct sh_mobile_sdhi_info sdhi0_info = {
+ 	.dma_slave_tx	= SHDMA_SLAVE_SDHI0_TX,
+ 	.dma_slave_rx	= SHDMA_SLAVE_SDHI0_RX,
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT,
+-	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_SDIO_IRQ |
++			  MMC_CAP_POWER_OFF_CARD,
+ };
+ 
+ static struct resource sdhi0_resources[] = {
+@@ -433,7 +485,7 @@ static struct sh_mobile_sdhi_info sdhi2_info = {
+ 	.tmio_flags	= TMIO_MMC_HAS_IDLE_WAIT |
+ 			  TMIO_MMC_USE_GPIO_CD |
+ 			  TMIO_MMC_WRPROTECT_DISABLE,
+-	.tmio_caps	= MMC_CAP_SD_HIGHSPEED,
++	.tmio_caps	= MMC_CAP_SD_HIGHSPEED | MMC_CAP_POWER_OFF_CARD,
+ 	.cd_gpio	= 13,
+ };
+ 
+@@ -732,6 +784,8 @@ static struct platform_device *kzm_devices[] __initdata = {
+ 	&usbhs_device,
+ 	&lcdc_device,
+ 	&mmc_device,
++	&vcc_sdhi0,
++	&vcc_sdhi2,
+ 	&sdhi0_device,
+ 	&sdhi2_device,
+ 	&gpio_keys_device,
+@@ -799,11 +853,9 @@ static const struct pinctrl_map kzm_pinctrl_map[] = {
+ 
+ static void __init kzm_init(void)
+ {
+-	regulator_register_always_on(0, "fixed-1.8V", fixed1v8_power_consumers,
++	regulator_register_always_on(2, "fixed-1.8V", fixed1v8_power_consumers,
+ 				     ARRAY_SIZE(fixed1v8_power_consumers), 1800000);
+-	regulator_register_always_on(1, "fixed-3.3V", fixed3v3_power_consumers,
+-				     ARRAY_SIZE(fixed3v3_power_consumers), 3300000);
+-	regulator_register_fixed(2, dummy_supplies, ARRAY_SIZE(dummy_supplies));
++	regulator_register_fixed(3, dummy_supplies, ARRAY_SIZE(dummy_supplies));
+ 
+ 	pinctrl_register_mappings(kzm_pinctrl_map, ARRAY_SIZE(kzm_pinctrl_map));
+ 
+@@ -821,10 +873,6 @@ static void __init kzm_init(void)
+ 
+ 	/* enable SD */
+ 	gpio_request(GPIO_FN_SDHI0_VCCQ_MC0_ON,	NULL);
+-	gpio_request_one(15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
+-
+-	/* enable Micro SD */
+-	gpio_request_one(14, GPIOF_OUT_INIT_HIGH, NULL); /* power */
+ 
+ #ifdef CONFIG_CACHE_L2X0
+ 	/* Early BRESP enable, Shared attribute override enable, 64K*8way */
+-- 
+1.7.2.5
 
-Cheers,
-
-/ magnus
