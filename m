@@ -1,43 +1,59 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:53:17 +0000
-Subject: [PATCH 5/9] ARM: shmobile: armadillo800eva: enable branch prediction on defconfig
-Message-Id: <1363607601-20366-6-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:05:29 +0000
+Subject: [PATCH 033/142] sh: sh7720: Add pin control resources
+Message-Id: <1363604838-29359-34-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363607601-20366-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363607601-20366-1-git-send-email-horms+renesas@verge.net.au>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Because defconfig disabled ARM branch prediction
-by CONFIG_CPU_BPREDICT_DISABLE,
-Armadillo800eva's Bogomips and Loop were not good performance.
-This patch enabled Arm branch prediction.
-Special thanks to Ishiyama-san
+Add memory resources for the pin control platform device to let the
+sh-pfc driver ioremap() registers properly instead of evily casting
+register physical addresses to virtual addresses.
 
-Reported-by: Kiyoshi Ishiyama <kiyoshi.ishiyama.wg@renesas.com>
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Acked-by: Kiyoshi Ishiyama <kiyoshi.ishiyama.wg@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+The memory resource address range has been extracted from the config and
+data registes lists in the sh-pfc driver.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/configs/armadillo800eva_defconfig |    1 -
- 1 file changed, 1 deletion(-)
+ arch/sh/kernel/cpu/sh3/pinmux-sh7720.c |   14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/configs/armadillo800eva_defconfig b/arch/arm/configs/armadillo800eva_defconfig
-index 0cc8014..c402294 100644
---- a/arch/arm/configs/armadillo800eva_defconfig
-+++ b/arch/arm/configs/armadillo800eva_defconfig
-@@ -20,7 +20,6 @@ CONFIG_ARCH_R8A7740=y
- CONFIG_MACH_ARMADILLO800EVA=y
- # CONFIG_SH_TIMER_TMU is not set
- CONFIG_ARM_THUMB=y
--CONFIG_CPU_BPREDICT_DISABLE=y
- CONFIG_CACHE_L2X0=y
- CONFIG_ARM_ERRATA_430973=y
- CONFIG_ARM_ERRATA_458693=y
+diff --git a/arch/sh/kernel/cpu/sh3/pinmux-sh7720.c b/arch/sh/kernel/cpu/sh3/pinmux-sh7720.c
+index 7d3744a..26e90a6 100644
+--- a/arch/sh/kernel/cpu/sh3/pinmux-sh7720.c
++++ b/arch/sh/kernel/cpu/sh3/pinmux-sh7720.c
+@@ -8,13 +8,23 @@
+  * for more details.
+  */
+ 
++#include <linux/bug.h>
+ #include <linux/init.h>
+ #include <linux/kernel.h>
++#include <linux/ioport.h>
+ #include <cpu/pfc.h>
+ 
++static struct resource sh7720_pfc_resources[] = {
++	[0] = {
++		.start	= 0xa4050100,
++		.end	= 0xa405016f,
++		.flags	= IORESOURCE_MEM,
++	},
++};
++
+ static int __init plat_pinmux_setup(void)
+ {
+-	return sh_pfc_register("pfc-sh7720", NULL, 0);
++	return sh_pfc_register("pfc-sh7720", sh7720_pfc_resources,
++			       ARRAY_SIZE(sh7720_pfc_resources));
+ }
+-
+ arch_initcall(plat_pinmux_setup);
 -- 
 1.7.10.4
 
