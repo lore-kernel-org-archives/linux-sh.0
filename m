@@ -1,27 +1,138 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 14 Mar 2013 08:19:11 +0000
-Subject: Re: [PATCH 17/25] sh-pfc: Don't modify sh_pfc_pin SoC data
-Message-Id: <CACRpkdagvtHK6Nxv14ubv=UbqgWexcm4BOL7qQ_Y=mf_gnCOQw@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 12:05:52 +0000
+Subject: [PATCH 08/14] irqchip: intc-irqpin: Make use of devm functions
+Message-Id: <1363608358-24215-9-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363214384-3870-18-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1363214384-3870-18-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1363608358-24215-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363608358-24215-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Mar 13, 2013 at 11:39 PM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
+From: Magnus Damm <damm@opensource.se>
 
-> The sh_pfc_pin structure supplied in SoC data contains information about
-> pin configuration and name. It's abused to store GPIO data registers
-> information and pin config type. Move those fields out of the
-> pinmux_data_reg structure into the new sh_pfc_gpio_pin and
-> sh_pfc_pin_config structures.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Use devm_kzalloc(), devm_ioremap_nocache()
+and devm_request_irq() to simplify error
+handling.
 
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+Signed-off-by: Magnus Damm <damm@opensource.se>
+Reviewed-by: Thomas Gleixner <tglx@linutronix.de>
+Tested-by: Guennadi Liakhovetski <g.liakhovetski@gmx.de>
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ drivers/irqchip/irq-renesas-intc-irqpin.c |   41 +++++++++--------------------
+ 1 file changed, 13 insertions(+), 28 deletions(-)
 
-Yours,
-Linus Walleij
+diff --git a/drivers/irqchip/irq-renesas-intc-irqpin.c b/drivers/irqchip/irq-renesas-intc-irqpin.c
+index 59c0cbc..21f4602 100644
+--- a/drivers/irqchip/irq-renesas-intc-irqpin.c
++++ b/drivers/irqchip/irq-renesas-intc-irqpin.c
+@@ -294,7 +294,7 @@ static int intc_irqpin_probe(struct platform_device *pdev)
+ 	int ret;
+ 	int k;
+ 
+-	p = kzalloc(sizeof(*p), GFP_KERNEL);
++	p = devm_kzalloc(&pdev->dev, sizeof(*p), GFP_KERNEL);
+ 	if (!p) {
+ 		dev_err(&pdev->dev, "failed to allocate driver data\n");
+ 		ret = -ENOMEM;
+@@ -316,7 +316,7 @@ static int intc_irqpin_probe(struct platform_device *pdev)
+ 		if (!io[k]) {
+ 			dev_err(&pdev->dev, "not enough IOMEM resources\n");
+ 			ret = -EINVAL;
+-			goto err1;
++			goto err0;
+ 		}
+ 	}
+ 
+@@ -334,7 +334,7 @@ static int intc_irqpin_probe(struct platform_device *pdev)
+ 	if (p->number_of_irqs < 1) {
+ 		dev_err(&pdev->dev, "not enough IRQ resources\n");
+ 		ret = -EINVAL;
+-		goto err1;
++		goto err0;
+ 	}
+ 
+ 	/* ioremap IOMEM and setup read/write callbacks */
+@@ -355,14 +355,15 @@ static int intc_irqpin_probe(struct platform_device *pdev)
+ 		default:
+ 			dev_err(&pdev->dev, "IOMEM size mismatch\n");
+ 			ret = -EINVAL;
+-			goto err2;
++			goto err0;
+ 		}
+ 
+-		i->iomem = ioremap_nocache(io[k]->start, resource_size(io[k]));
++		i->iomem = devm_ioremap_nocache(&pdev->dev, io[k]->start,
++						resource_size(io[k]));
+ 		if (!i->iomem) {
+ 			dev_err(&pdev->dev, "failed to remap IOMEM\n");
+ 			ret = -ENXIO;
+-			goto err2;
++			goto err0;
+ 		}
+ 	}
+ 
+@@ -395,17 +396,17 @@ static int intc_irqpin_probe(struct platform_device *pdev)
+ 	if (!p->irq_domain) {
+ 		ret = -ENXIO;
+ 		dev_err(&pdev->dev, "cannot initialize irq domain\n");
+-		goto err2;
++		goto err0;
+ 	}
+ 
+ 	/* request and set priority on interrupts one by one */
+ 	for (k = 0; k < p->number_of_irqs; k++) {
+-		if (request_irq(p->irq[k].requested_irq,
+-				intc_irqpin_irq_handler,
+-				0, name, &p->irq[k])) {
++		if (devm_request_irq(&pdev->dev, p->irq[k].requested_irq,
++				     intc_irqpin_irq_handler,
++				     0, name, &p->irq[k])) {
+ 			dev_err(&pdev->dev, "failed to request low IRQ\n");
+ 			ret = -ENOENT;
+-			goto err3;
++			goto err1;
+ 		}
+ 		intc_irqpin_mask_unmask_prio(p, k, 0);
+ 	}
+@@ -421,16 +422,8 @@ static int intc_irqpin_probe(struct platform_device *pdev)
+ 
+ 	return 0;
+ 
+-err3:
+-	for (; k >= 0; k--)
+-		free_irq(p->irq[k - 1].requested_irq, &p->irq[k - 1]);
+-
+-	irq_domain_remove(p->irq_domain);
+-err2:
+-	for (k = 0; k < INTC_IRQPIN_REG_NR; k++)
+-		iounmap(p->iomem[k].iomem);
+ err1:
+-	kfree(p);
++	irq_domain_remove(p->irq_domain);
+ err0:
+ 	return ret;
+ }
+@@ -438,17 +431,9 @@ err0:
+ static int intc_irqpin_remove(struct platform_device *pdev)
+ {
+ 	struct intc_irqpin_priv *p = platform_get_drvdata(pdev);
+-	int k;
+-
+-	for (k = 0; k < p->number_of_irqs; k++)
+-		free_irq(p->irq[k].requested_irq, &p->irq[k]);
+ 
+ 	irq_domain_remove(p->irq_domain);
+ 
+-	for (k = 0; k < INTC_IRQPIN_REG_NR; k++)
+-		iounmap(p->iomem[k].iomem);
+-
+-	kfree(p);
+ 	return 0;
+ }
+ 
+-- 
+1.7.10.4
+
