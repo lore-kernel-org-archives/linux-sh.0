@@ -1,7 +1,7 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 11:06:30 +0000
-Subject: [PATCH 094/142] ARM: shmobile: kzm9g: Register pinctrl mappings for SDHI and MMCIF
-Message-Id: <1363604838-29359-95-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:06:42 +0000
+Subject: [PATCH 106/142] sh-pfc: sh73a0: Remove SCIFA and SCIFB function GPIOS
+Message-Id: <1363604838-29359-107-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
 References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
@@ -12,110 +12,176 @@ To: linux-arm-kernel@lists.infradead.org
 
 From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Replace the GPIO-based SDHI and MMCIF pinmux configuration by pinctrl
-mappings.
+All sh73a0 platforms now use the pinctrl API to control the SCIFA and
+SCIFB pins, the corresponding function GPIOS are unused. Remove them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/arm/mach-shmobile/board-kzm9g.c |   54 ++++++++++++++++++----------------
- 1 file changed, 28 insertions(+), 26 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c |   58 -----------------------------------
+ 1 file changed, 58 deletions(-)
 
-diff --git a/arch/arm/mach-shmobile/board-kzm9g.c b/arch/arm/mach-shmobile/board-kzm9g.c
-index a628d1b..335bdbb 100644
---- a/arch/arm/mach-shmobile/board-kzm9g.c
-+++ b/arch/arm/mach-shmobile/board-kzm9g.c
-@@ -31,6 +31,7 @@
- #include <linux/mmc/sh_mobile_sdhi.h>
- #include <linux/mfd/tmio.h>
- #include <linux/pinctrl/machine.h>
-+#include <linux/pinctrl/pinconf-generic.h>
- #include <linux/platform_device.h>
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/machine.h>
-@@ -600,6 +601,10 @@ static struct platform_device *kzm_devices[] __initdata = {
- 	&fsi_ak4648_device,
- };
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index 1054a42..6d36ebb 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -3335,19 +3335,13 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(GPI5),
+ 	GPIO_FN(GPI6),
+ 	GPIO_FN(GPI7),
+-	GPIO_FN(SCIFA7_RXD),
+-	GPIO_FN(SCIFA7_CTS_),
+ 	GPIO_FN(GPO7), \
+ 	GPIO_FN(MFG0_OUT2),
+ 	GPIO_FN(GPO6), \
+ 	GPIO_FN(MFG1_OUT2),
+ 	GPIO_FN(GPO5), \
+-	GPIO_FN(SCIFA0_SCK), \
+ 	GPIO_FN(FSICOSLDT3), \
+ 	GPIO_FN(PORT16_VIO_CKOR),
+-	GPIO_FN(SCIFA0_TXD),
+-	GPIO_FN(SCIFA7_TXD),
+-	GPIO_FN(SCIFA7_RTS_), \
+ 	GPIO_FN(PORT19_VIO_CKO2),
+ 	GPIO_FN(GPO0),
+ 	GPIO_FN(GPO1),
+@@ -3374,11 +3368,7 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(PORT30_VIO_CKOR),
+ 	GPIO_FN(SIM_D), \
+ 	GPIO_FN(PORT31_IROUT),
+-	GPIO_FN(SCIFA4_TXD),
+-	GPIO_FN(SCIFA4_RXD), \
+ 	GPIO_FN(XWUP),
+-	GPIO_FN(SCIFA4_RTS_),
+-	GPIO_FN(SCIFA4_CTS_),
+ 	GPIO_FN(FSIBOBT), \
+ 	GPIO_FN(FSIBIBT),
+ 	GPIO_FN(FSIBOLR), \
+@@ -3387,10 +3377,7 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(FSIBISLD),
+ 	GPIO_FN(VACK),
+ 	GPIO_FN(XTAL1L),
+-	GPIO_FN(SCIFA0_RTS_), \
+ 	GPIO_FN(FSICOSLDT2),
+-	GPIO_FN(SCIFA0_RXD),
+-	GPIO_FN(SCIFA0_CTS_), \
+ 	GPIO_FN(FSICOSLDT1),
+ 	GPIO_FN(FSICOBT), \
+ 	GPIO_FN(FSICIBT), \
+@@ -3516,14 +3503,10 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(BBIF2_RXD),
+ 	GPIO_FN(BBIF2_SYNC),
+ 	GPIO_FN(BBIF2_SCK),
+-	GPIO_FN(SCIFA3_CTS_), \
+ 	GPIO_FN(MFG3_IN2),
+-	GPIO_FN(SCIFA3_RXD), \
+ 	GPIO_FN(MFG3_IN1),
+ 	GPIO_FN(BBIF1_SS2), \
+-	GPIO_FN(SCIFA3_RTS_), \
+ 	GPIO_FN(MFG3_OUT1),
+-	GPIO_FN(SCIFA3_TXD),
+ 	GPIO_FN(HSI_RX_DATA), \
+ 	GPIO_FN(BBIF1_RXD),
+ 	GPIO_FN(HSI_TX_WAKE), \
+@@ -3611,37 +3594,17 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(TPU1TO2), \
+ 	GPIO_FN(TS_SDEN3), \
+ 	GPIO_FN(PORT153_MSIOF2_SS1),
+-	GPIO_FN(SCIFA2_TXD1), \
+ 	GPIO_FN(MSIOF2_MCK0),
+-	GPIO_FN(SCIFA2_RXD1), \
+ 	GPIO_FN(MSIOF2_MCK1),
+-	GPIO_FN(SCIFA2_RTS1_), \
+ 	GPIO_FN(PORT156_MSIOF2_SS2),
+-	GPIO_FN(SCIFA2_CTS1_), \
+ 	GPIO_FN(PORT157_MSIOF2_RXD),
+ 	GPIO_FN(DINT_), \
+-	GPIO_FN(SCIFA2_SCK1), \
+ 	GPIO_FN(TS_SCK3),
+-	GPIO_FN(PORT159_SCIFB_SCK), \
+-	GPIO_FN(PORT159_SCIFA5_SCK), \
+ 	GPIO_FN(NMI),
+-	GPIO_FN(PORT160_SCIFB_TXD), \
+-	GPIO_FN(PORT160_SCIFA5_TXD),
+-	GPIO_FN(PORT161_SCIFB_CTS_), \
+-	GPIO_FN(PORT161_SCIFA5_CTS_),
+-	GPIO_FN(PORT162_SCIFB_RXD), \
+-	GPIO_FN(PORT162_SCIFA5_RXD),
+-	GPIO_FN(PORT163_SCIFB_RTS_), \
+-	GPIO_FN(PORT163_SCIFA5_RTS_), \
+ 	GPIO_FN(TPU3TO0),
+-	GPIO_FN(PORT193_SCIFA5_CTS_), \
+ 	GPIO_FN(BBIF2_TSYNC1),
+-	GPIO_FN(PORT194_SCIFA5_RTS_), \
+ 	GPIO_FN(BBIF2_TSCK1),
+-	GPIO_FN(PORT195_SCIFA5_RXD), \
+ 	GPIO_FN(BBIF2_TXD1),
+-	GPIO_FN(PORT196_SCIFA5_TXD),
+-	GPIO_FN(PORT197_SCIFA5_SCK), \
+ 	GPIO_FN(MFG2_OUT2), \
+ 	GPIO_FN(TPU2TO1),
+ 	GPIO_FN(TPU4TO1), \
+@@ -3692,26 +3655,16 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(MSIOF0L_TXD), \
+ 	GPIO_FN(VIO2_VD3), \
  
-+static unsigned long pin_pullup_conf[] = {
-+	PIN_CONF_PACKED(PIN_CONFIG_BIAS_PULL_UP, 0),
-+};
-+
- static const struct pinctrl_map kzm_pinctrl_map[] = {
- 	/* FSIA (AK4648) */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_fsi2.0", "pfc-sh73a0",
-@@ -618,11 +623,34 @@ static const struct pinctrl_map kzm_pinctrl_map[] = {
- 				  "lcd_data24", "lcd"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_lcdc_fb.0", "pfc-sh73a0",
- 				  "lcd_sync", "lcd"),
-+	/* MMCIF */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
-+				  "mmc0_data8_0", "mmc0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
-+				  "mmc0_ctrl_0", "mmc0"),
-+	PIN_MAP_CONFIGS_PIN_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
-+				    "PORT279", pin_pullup_conf),
-+	PIN_MAP_CONFIGS_GROUP_DEFAULT("sh_mmcif.0", "pfc-sh73a0",
-+				      "mmc0_data8_0", pin_pullup_conf),
- 	/* SCIFA4 */
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
- 				  "scifa4_data", "scifa4"),
- 	PIN_MAP_MUX_GROUP_DEFAULT("sh-sci.4", "pfc-sh73a0",
- 				  "scifa4_ctrl", "scifa4"),
-+	/* SDHI0 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
-+				  "sdhi0_data4", "sdhi0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
-+				  "sdhi0_ctrl", "sdhi0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
-+				  "sdhi0_cd", "sdhi0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-sh73a0",
-+				  "sdhi0_wp", "sdhi0"),
-+	/* SDHI2 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-sh73a0",
-+				  "sdhi2_data4", "sdhi2"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.2", "pfc-sh73a0",
-+				  "sdhi2_ctrl", "sdhi2"),
- };
- 
- /*
-@@ -703,37 +731,11 @@ static void __init kzm_init(void)
- 	/* Touchscreen */
- 	gpio_request_one(223, GPIOF_IN, NULL); /* IRQ8 */
- 
--	/* enable MMCIF */
--	gpio_request(GPIO_FN_MMCCLK0,		NULL);
--	gpio_request(GPIO_FN_MMCCMD0_PU,	NULL);
--	gpio_request(GPIO_FN_MMCD0_0_PU,	NULL);
--	gpio_request(GPIO_FN_MMCD0_1_PU,	NULL);
--	gpio_request(GPIO_FN_MMCD0_2_PU,	NULL);
--	gpio_request(GPIO_FN_MMCD0_3_PU,	NULL);
--	gpio_request(GPIO_FN_MMCD0_4_PU,	NULL);
--	gpio_request(GPIO_FN_MMCD0_5_PU,	NULL);
--	gpio_request(GPIO_FN_MMCD0_6_PU,	NULL);
--	gpio_request(GPIO_FN_MMCD0_7_PU,	NULL);
--
- 	/* enable SD */
--	gpio_request(GPIO_FN_SDHIWP0,		NULL);
--	gpio_request(GPIO_FN_SDHICD0,		NULL);
--	gpio_request(GPIO_FN_SDHICMD0,		NULL);
--	gpio_request(GPIO_FN_SDHICLK0,		NULL);
--	gpio_request(GPIO_FN_SDHID0_3,		NULL);
--	gpio_request(GPIO_FN_SDHID0_2,		NULL);
--	gpio_request(GPIO_FN_SDHID0_1,		NULL);
--	gpio_request(GPIO_FN_SDHID0_0,		NULL);
- 	gpio_request(GPIO_FN_SDHI0_VCCQ_MC0_ON,	NULL);
- 	gpio_request_one(15, GPIOF_OUT_INIT_HIGH, NULL); /* power */
- 
- 	/* enable Micro SD */
--	gpio_request(GPIO_FN_SDHID2_0,		NULL);
--	gpio_request(GPIO_FN_SDHID2_1,		NULL);
--	gpio_request(GPIO_FN_SDHID2_2,		NULL);
--	gpio_request(GPIO_FN_SDHID2_3,		NULL);
--	gpio_request(GPIO_FN_SDHICMD2,		NULL);
--	gpio_request(GPIO_FN_SDHICLK2,		NULL);
- 	gpio_request_one(14, GPIOF_OUT_INIT_HIGH, NULL); /* power */
- 
- 	/* enable USB */
+-	GPIO_FN(SCIFA1_TXD), \
+ 	GPIO_FN(OVCN2),
+ 	GPIO_FN(EXTLP), \
+-	GPIO_FN(SCIFA1_SCK), \
+ 	GPIO_FN(PORT226_VIO_CKO2),
+-	GPIO_FN(SCIFA1_RTS_), \
+ 	GPIO_FN(IDIN),
+-	GPIO_FN(SCIFA1_RXD),
+-	GPIO_FN(SCIFA1_CTS_), \
+ 	GPIO_FN(MFG1_IN1),
+ 	GPIO_FN(MSIOF1_TXD), \
+-	GPIO_FN(SCIFA2_TXD2),
+ 	GPIO_FN(MSIOF1_TSYNC), \
+-	GPIO_FN(SCIFA2_CTS2_),
+ 	GPIO_FN(MSIOF1_TSCK), \
+-	GPIO_FN(SCIFA2_SCK2),
+ 	GPIO_FN(MSIOF1_RXD), \
+-	GPIO_FN(SCIFA2_RXD2),
+ 	GPIO_FN(MSIOF1_RSCK), \
+-	GPIO_FN(SCIFA2_RTS2_), \
+ 	GPIO_FN(VIO2_CLK2), \
+ 	GPIO_FN(MSIOF1_RSYNC), \
+ 	GPIO_FN(MFG1_IN2), \
+@@ -3724,7 +3677,6 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(VIO2_FIELD2), \
+ 	GPIO_FN(MSIOF1_SS2), \
+ 	GPIO_FN(VIO2_HD2), \
+-	GPIO_FN(SCIFA6_TXD),
+ 	GPIO_FN(PORT241_IRDA_OUT), \
+ 	GPIO_FN(PORT241_IROUT), \
+ 	GPIO_FN(MFG4_OUT1), \
+@@ -3733,25 +3685,15 @@ static const struct pinmux_func pinmux_func_gpios[] = {
+ 	GPIO_FN(MFG4_IN2),
+ 	GPIO_FN(PORT243_IRDA_FIRSEL), \
+ 	GPIO_FN(PORT243_VIO_CKO2),
+-	GPIO_FN(PORT244_SCIFA5_CTS_), \
+ 	GPIO_FN(MFG2_IN1), \
+-	GPIO_FN(PORT244_SCIFB_CTS_), \
+ 	GPIO_FN(MSIOF2R_RXD),
+-	GPIO_FN(PORT245_SCIFA5_RTS_), \
+ 	GPIO_FN(MFG2_IN2), \
+-	GPIO_FN(PORT245_SCIFB_RTS_), \
+ 	GPIO_FN(MSIOF2R_TXD),
+-	GPIO_FN(PORT246_SCIFA5_RXD), \
+ 	GPIO_FN(MFG1_OUT1), \
+-	GPIO_FN(PORT246_SCIFB_RXD), \
+ 	GPIO_FN(TPU1TO0),
+-	GPIO_FN(PORT247_SCIFA5_TXD), \
+ 	GPIO_FN(MFG3_OUT2), \
+-	GPIO_FN(PORT247_SCIFB_TXD), \
+ 	GPIO_FN(TPU3TO1),
+-	GPIO_FN(PORT248_SCIFA5_SCK), \
+ 	GPIO_FN(MFG2_OUT1), \
+-	GPIO_FN(PORT248_SCIFB_SCK), \
+ 	GPIO_FN(TPU2TO0), \
+ 	GPIO_FN(PORT248_I2C_SCL3), \
+ 	GPIO_FN(MSIOF2R_TSCK),
 -- 
 1.7.10.4
 
