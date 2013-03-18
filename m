@@ -1,53 +1,178 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Fri, 08 Mar 2013 10:55:46 +0000
-Subject: [PATCH v4 05/29] sh-pfc: Don't take the sh_pfc spinlock in sh_pfc_map_gpios()
-Message-Id: <1362740170-19073-6-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:05:48 +0000
+Subject: [PATCH 052/142] sh-pfc: Clean up pin configuration type handling
+Message-Id: <1363604838-29359-53-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The sh_pfc_map_gpios() function is only called at initialization time
-when no other task can access the sh_pfc fields. Don't protect the
-operation with a spinlock.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+Set pin configuration type to
+
+- PINMUX_TYPE_NONE at initialization time and when disabling a function
+  or freeing a GPIO
+
+- PINMUX_TYPE_FUNCTION when enabling a function
+
+- PINMUX_TYPE_INPUT or PINMUX_TYPE_OUTPUT when setting the GPIO
+  direction
+
+Verify that the type is PINMUX_TYPE_NONE when enabling a function or
+requesting a GPIO and return -EBUSY if it isn't.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- drivers/pinctrl/sh-pfc/pinctrl.c | 5 -----
- 1 file changed, 5 deletions(-)
+ drivers/pinctrl/sh-pfc/pinctrl.c |   74 +++++++++++++++++++++++---------------
+ 1 file changed, 46 insertions(+), 28 deletions(-)
 
 diff --git a/drivers/pinctrl/sh-pfc/pinctrl.c b/drivers/pinctrl/sh-pfc/pinctrl.c
-index 9bd0a83..4ce2753 100644
+index 36f08f8..82e4fb2 100644
 --- a/drivers/pinctrl/sh-pfc/pinctrl.c
 +++ b/drivers/pinctrl/sh-pfc/pinctrl.c
-@@ -334,7 +334,6 @@ static void sh_pfc_map_one_gpio(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx,
- /* pinmux ranges -> pinctrl pin descs */
- static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+@@ -121,11 +121,22 @@ static int sh_pfc_func_enable(struct pinctrl_dev *pctldev, unsigned selector,
+ 	spin_lock_irqsave(&pfc->lock, flags);
+ 
+ 	for (i = 0; i < grp->nr_pins; ++i) {
++		int idx = sh_pfc_get_pin_index(pfc, grp->pins[i]);
++		struct sh_pfc_pin_config *cfg = &pmx->configs[idx];
++
++		if (cfg->type != PINMUX_TYPE_NONE) {
++			ret = -EBUSY;
++			goto done;
++		}
++	}
++
++	for (i = 0; i < grp->nr_pins; ++i) {
+ 		ret = sh_pfc_config_mux(pfc, grp->mux[i], PINMUX_TYPE_FUNCTION);
+ 		if (ret < 0)
+ 			break;
+ 	}
+ 
++done:
+ 	spin_unlock_irqrestore(&pfc->lock, flags);
+ 	return ret;
+ }
+@@ -133,6 +144,22 @@ static int sh_pfc_func_enable(struct pinctrl_dev *pctldev, unsigned selector,
+ static void sh_pfc_func_disable(struct pinctrl_dev *pctldev, unsigned selector,
+ 				unsigned group)
  {
--	unsigned long flags;
- 	int i;
- 
- 	pmx->nr_pads = pfc->info->last_gpio - pfc->info->first_gpio + 1;
-@@ -346,8 +345,6 @@ static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
- 		return -ENOMEM;
- 	}
- 
--	spin_lock_irqsave(&pfc->lock, flags);
--
- 	/*
- 	 * We don't necessarily have a 1:1 mapping between pin and linux
- 	 * GPIO number, as the latter maps to the associated enum_id.
-@@ -368,8 +365,6 @@ static int sh_pfc_map_gpios(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
- 		sh_pfc_map_one_gpio(pfc, pmx, gpio, i);
- 	}
- 
--	spin_unlock_irqrestore(&pfc->lock, flags);
--
- 	return 0;
++	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
++	struct sh_pfc *pfc = pmx->pfc;
++	const struct sh_pfc_pin_group *grp = &pfc->info->groups[group];
++	unsigned long flags;
++	unsigned int i;
++
++	spin_lock_irqsave(&pfc->lock, flags);
++
++	for (i = 0; i < grp->nr_pins; ++i) {
++		int idx = sh_pfc_get_pin_index(pfc, grp->pins[i]);
++		struct sh_pfc_pin_config *cfg = &pmx->configs[idx];
++
++		cfg->type = PINMUX_TYPE_NONE;
++	}
++
++	spin_unlock_irqrestore(&pfc->lock, flags);
  }
  
+ static int sh_pfc_gpio_request_enable(struct pinctrl_dev *pctldev,
+@@ -148,21 +175,17 @@ static int sh_pfc_gpio_request_enable(struct pinctrl_dev *pctldev,
+ 
+ 	spin_lock_irqsave(&pfc->lock, flags);
+ 
+-	switch (cfg->type) {
+-	case PINMUX_TYPE_GPIO:
+-	case PINMUX_TYPE_INPUT:
+-	case PINMUX_TYPE_OUTPUT:
+-		break;
+-	case PINMUX_TYPE_FUNCTION:
+-	default:
+-		pr_err("Unsupported mux type (%d), bailing...\n", cfg->type);
+-		ret = -ENOTSUPP;
+-		goto err;
++	if (cfg->type != PINMUX_TYPE_NONE) {
++		pr_err("Pin %u is busy, can't configure it as GPIO.\n", offset);
++		ret = -EBUSY;
++		goto done;
+ 	}
+ 
++	cfg->type = PINMUX_TYPE_GPIO;
++
+ 	ret = 0;
+ 
+-err:
++done:
+ 	spin_unlock_irqrestore(&pfc->lock, flags);
+ 
+ 	return ret;
+@@ -172,6 +195,15 @@ static void sh_pfc_gpio_disable_free(struct pinctrl_dev *pctldev,
+ 				     struct pinctrl_gpio_range *range,
+ 				     unsigned offset)
+ {
++	struct sh_pfc_pinctrl *pmx = pinctrl_dev_get_drvdata(pctldev);
++	struct sh_pfc *pfc = pmx->pfc;
++	int idx = sh_pfc_get_pin_index(pfc, offset);
++	struct sh_pfc_pin_config *cfg = &pmx->configs[idx];
++	unsigned long flags;
++
++	spin_lock_irqsave(&pfc->lock, flags);
++	cfg->type = PINMUX_TYPE_NONE;
++	spin_unlock_irqrestore(&pfc->lock, flags);
+ }
+ 
+ static int sh_pfc_gpio_set_direction(struct pinctrl_dev *pctldev,
+@@ -182,27 +214,14 @@ static int sh_pfc_gpio_set_direction(struct pinctrl_dev *pctldev,
+ 	struct sh_pfc *pfc = pmx->pfc;
+ 	int new_type = input ? PINMUX_TYPE_INPUT : PINMUX_TYPE_OUTPUT;
+ 	int idx = sh_pfc_get_pin_index(pfc, offset);
+-	struct sh_pfc_pin_config *cfg = &pmx->configs[idx];
+ 	const struct sh_pfc_pin *pin = &pfc->info->pins[idx];
+-	unsigned int mark = pin->enum_id;
++	struct sh_pfc_pin_config *cfg = &pmx->configs[idx];
+ 	unsigned long flags;
+ 	int ret;
+ 
+ 	spin_lock_irqsave(&pfc->lock, flags);
+ 
+-	switch (cfg->type) {
+-	case PINMUX_TYPE_GPIO:
+-	case PINMUX_TYPE_OUTPUT:
+-	case PINMUX_TYPE_INPUT:
+-	case PINMUX_TYPE_INPUT_PULLUP:
+-	case PINMUX_TYPE_INPUT_PULLDOWN:
+-		break;
+-	default:
+-		ret = -EINVAL;
+-		goto done;
+-	}
+-
+-	ret = sh_pfc_config_mux(pfc, mark, new_type);
++	ret = sh_pfc_config_mux(pfc, pin->enum_id, new_type);
+ 	if (ret < 0)
+ 		goto done;
+ 
+@@ -210,7 +229,6 @@ static int sh_pfc_gpio_set_direction(struct pinctrl_dev *pctldev,
+ 
+ done:
+ 	spin_unlock_irqrestore(&pfc->lock, flags);
+-
+ 	return ret;
+ }
+ 
+@@ -383,7 +401,7 @@ static int sh_pfc_map_pins(struct sh_pfc *pfc, struct sh_pfc_pinctrl *pmx)
+ 
+ 			pin->number = number;
+ 			pin->name = info->name;
+-			cfg->type = PINMUX_TYPE_GPIO;
++			cfg->type = PINMUX_TYPE_NONE;
+ 		}
+ 	}
+ 
 -- 
-1.8.1.5
+1.7.10.4
 
