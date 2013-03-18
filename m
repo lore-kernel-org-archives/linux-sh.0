@@ -1,329 +1,236 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Sun, 10 Mar 2013 18:35:51 +0000
-Subject: [PATCH 12/23] sh-pfc: Move GPIO registers access functions to gpio.c
-Message-Id: <1362940562-8570-13-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:07:13 +0000
+Subject: [PATCH 137/142] ARM: shmobile: r8a7779: Remove SDHI and MMCIF function GPIOs
+Message-Id: <1363604838-29359-138-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Move the sh_pfc_setup_data_regs(), sh_pfc_setup_data_reg(),
-sh_pfc_get_data_reg(), sh_pfc_read_bit() and sh_pfc_write_bit()
-function to gpio.c as they belong to the GPIO implementation. Inline
-sh_pfc_read_bit() and sh_pfc_write_bit() in their only call location.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+Those GPIOs have been deprecated by the pinctrl API. They are unused and
+unneeded, remove them.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- drivers/pinctrl/sh-pfc/core.c | 110 ++----------------------------------------
- drivers/pinctrl/sh-pfc/core.h |  11 +++--
- drivers/pinctrl/sh-pfc/gpio.c |  92 ++++++++++++++++++++++++++++++++---
- 3 files changed, 97 insertions(+), 116 deletions(-)
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |  104 ++++++++++++-------------
+ 1 file changed, 52 insertions(+), 52 deletions(-)
 
-diff --git a/drivers/pinctrl/sh-pfc/core.c b/drivers/pinctrl/sh-pfc/core.c
-index 79824826..49fde28 100644
---- a/drivers/pinctrl/sh-pfc/core.c
-+++ b/drivers/pinctrl/sh-pfc/core.c
-@@ -55,8 +55,7 @@ static int sh_pfc_ioremap(struct sh_pfc *pfc, struct platform_device *pdev)
- 	return 0;
- }
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+index c25f66b..11fdb1b 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -72,16 +72,16 @@ enum {
  
--static void __iomem *sh_pfc_phys_to_virt(struct sh_pfc *pfc,
--					 unsigned long address)
-+void __iomem *sh_pfc_phys_to_virt(struct sh_pfc *pfc, unsigned long address)
- {
- 	struct sh_pfc_window *window;
- 	int k;
-@@ -111,8 +110,8 @@ static int sh_pfc_enum_in_range(pinmux_enum_t enum_id, struct pinmux_range *r)
- 	return 1;
- }
+ 	/* IPSR0 */
+ 	GPIO_FN_USB_PENC2, GPIO_FN_SCK0, GPIO_FN_PWM1, GPIO_FN_PWMFSW0,
+-	GPIO_FN_SCIF_CLK, GPIO_FN_TCLK0_C, GPIO_FN_BS, GPIO_FN_SD1_DAT2,
+-	GPIO_FN_MMC0_D2, GPIO_FN_FD2, GPIO_FN_ATADIR0, GPIO_FN_SDSELF,
+-	GPIO_FN_HCTS1, GPIO_FN_TX4_C, GPIO_FN_A0, GPIO_FN_SD1_DAT3,
+-	GPIO_FN_MMC0_D3, GPIO_FN_FD3, GPIO_FN_A20, GPIO_FN_TX5_D,
++	GPIO_FN_SCIF_CLK, GPIO_FN_TCLK0_C, GPIO_FN_BS,
++	GPIO_FN_FD2, GPIO_FN_ATADIR0, GPIO_FN_SDSELF,
++	GPIO_FN_HCTS1, GPIO_FN_TX4_C, GPIO_FN_A0,
++	GPIO_FN_FD3, GPIO_FN_A20, GPIO_FN_TX5_D,
+ 	GPIO_FN_HSPI_TX2_B, GPIO_FN_A21, GPIO_FN_SCK5_D, GPIO_FN_HSPI_CLK2_B,
+ 	GPIO_FN_A22, GPIO_FN_RX5_D, GPIO_FN_HSPI_RX2_B, GPIO_FN_VI1_R0,
+ 	GPIO_FN_A23, GPIO_FN_FCLE, GPIO_FN_HSPI_CLK2, GPIO_FN_VI1_R1,
+-	GPIO_FN_A24, GPIO_FN_SD1_CD, GPIO_FN_MMC0_D4, GPIO_FN_FD4,
++	GPIO_FN_A24, GPIO_FN_FD4,
+ 	GPIO_FN_HSPI_CS2, GPIO_FN_VI1_R2, GPIO_FN_SSI_WS78_B, GPIO_FN_A25,
+-	GPIO_FN_SD1_WP, GPIO_FN_MMC0_D5, GPIO_FN_FD5, GPIO_FN_HSPI_RX2,
++	GPIO_FN_FD5, GPIO_FN_HSPI_RX2,
+ 	GPIO_FN_VI1_R3, GPIO_FN_TX5_B, GPIO_FN_SSI_SDATA7_B, GPIO_FN_CTS0_B,
+ 	GPIO_FN_CLKOUT, GPIO_FN_TX3C_IRDA_TX_C, GPIO_FN_PWM0_B, GPIO_FN_CS0,
+ 	GPIO_FN_HSPI_CS2_B, GPIO_FN_CS1_A26, GPIO_FN_HSPI_TX2,
+@@ -89,16 +89,16 @@ enum {
+ 	GPIO_FN_VI1_R7, GPIO_FN_HRTS1, GPIO_FN_RX4_C,
  
--static unsigned long sh_pfc_read_raw_reg(void __iomem *mapped_reg,
--					 unsigned long reg_width)
-+unsigned long sh_pfc_read_raw_reg(void __iomem *mapped_reg,
-+				  unsigned long reg_width)
- {
- 	switch (reg_width) {
- 	case 8:
-@@ -127,8 +126,8 @@ static unsigned long sh_pfc_read_raw_reg(void __iomem *mapped_reg,
- 	return 0;
- }
+ 	/* IPSR1 */
+-	GPIO_FN_EX_CS0, GPIO_FN_RX3_C_IRDA_RX_C, GPIO_FN_MMC0_D6,
+-	GPIO_FN_FD6, GPIO_FN_EX_CS1, GPIO_FN_MMC0_D7, GPIO_FN_FD7,
+-	GPIO_FN_EX_CS2, GPIO_FN_SD1_CLK, GPIO_FN_MMC0_CLK, GPIO_FN_FALE,
+-	GPIO_FN_ATACS00, GPIO_FN_EX_CS3, GPIO_FN_SD1_CMD, GPIO_FN_MMC0_CMD,
++	GPIO_FN_EX_CS0, GPIO_FN_RX3_C_IRDA_RX_C,
++	GPIO_FN_FD6, GPIO_FN_EX_CS1, GPIO_FN_FD7,
++	GPIO_FN_EX_CS2, GPIO_FN_FALE,
++	GPIO_FN_ATACS00, GPIO_FN_EX_CS3,
+ 	GPIO_FN_FRE, GPIO_FN_ATACS10, GPIO_FN_VI1_R4, GPIO_FN_RX5_B,
+ 	GPIO_FN_HSCK1, GPIO_FN_SSI_SDATA8_B, GPIO_FN_RTS0_B_TANS_B,
+-	GPIO_FN_SSI_SDATA9, GPIO_FN_EX_CS4, GPIO_FN_SD1_DAT0, GPIO_FN_MMC0_D0,
++	GPIO_FN_SSI_SDATA9, GPIO_FN_EX_CS4,
+ 	GPIO_FN_FD0, GPIO_FN_ATARD0, GPIO_FN_VI1_R5, GPIO_FN_SCK5_B,
+ 	GPIO_FN_HTX1, GPIO_FN_TX2_E, GPIO_FN_TX0_B, GPIO_FN_SSI_SCK9,
+-	GPIO_FN_EX_CS5, GPIO_FN_SD1_DAT1, GPIO_FN_MMC0_D1, GPIO_FN_FD1,
++	GPIO_FN_EX_CS5, GPIO_FN_FD1,
+ 	GPIO_FN_ATAWR0, GPIO_FN_VI1_R6, GPIO_FN_HRX1, GPIO_FN_RX2_E,
+ 	GPIO_FN_RX0_B, GPIO_FN_SSI_WS9, GPIO_FN_MLB_CLK, GPIO_FN_PWM2,
+ 	GPIO_FN_SCK4, GPIO_FN_MLB_SIG, GPIO_FN_PWM3, GPIO_FN_TX4,
+@@ -154,26 +154,26 @@ enum {
+ 	GPIO_FN_QPOLA, GPIO_FN_CAN_CLK_C, GPIO_FN_SCK2_C,
+ 	GPIO_FN_QPOLB, GPIO_FN_CAN1_RX, GPIO_FN_RX2_C,
+ 	GPIO_FN_DREQ0_B, GPIO_FN_SSI_SCK78_B, GPIO_FN_SCK0_B,
+-	GPIO_FN_VI2_DATA0_VI2_B0, GPIO_FN_PWM6, GPIO_FN_SD3_CLK,
++	GPIO_FN_VI2_DATA0_VI2_B0, GPIO_FN_PWM6,
+ 	GPIO_FN_TX3_E_IRDA_TX_E, GPIO_FN_AUDCK, GPIO_FN_PWMFSW0_B,
+ 	GPIO_FN_VI2_DATA1_VI2_B1, GPIO_FN_PWM0,
+-	GPIO_FN_SD3_CMD, GPIO_FN_RX3_E_IRDA_RX_E, GPIO_FN_AUDSYNC,
++	GPIO_FN_RX3_E_IRDA_RX_E, GPIO_FN_AUDSYNC,
+ 	GPIO_FN_CTS0_D, GPIO_FN_VI2_G0,
+ 	GPIO_FN_VI2_G1, GPIO_FN_VI2_G2,
+ 	GPIO_FN_VI2_G3, GPIO_FN_VI2_G4,
+ 	GPIO_FN_VI2_G5, GPIO_FN_VI2_DATA2_VI2_B2,
+-	GPIO_FN_SCL1_B, GPIO_FN_SD3_DAT2, GPIO_FN_SCK3_E, GPIO_FN_AUDATA6,
++	GPIO_FN_SCL1_B, GPIO_FN_SCK3_E, GPIO_FN_AUDATA6,
+ 	GPIO_FN_TX0_D, GPIO_FN_VI2_DATA3_VI2_B3,
+-	GPIO_FN_SDA1_B, GPIO_FN_SD3_DAT3, GPIO_FN_SCK5, GPIO_FN_AUDATA7,
++	GPIO_FN_SDA1_B, GPIO_FN_SCK5, GPIO_FN_AUDATA7,
+ 	GPIO_FN_RX0_D, GPIO_FN_VI2_G6,
+ 	GPIO_FN_VI2_G7, GPIO_FN_VI2_R0,
+ 	GPIO_FN_VI2_R1, GPIO_FN_VI2_R2,
+ 	GPIO_FN_VI2_R3, GPIO_FN_VI2_DATA4_VI2_B4,
+-	GPIO_FN_SCL2_B, GPIO_FN_SD3_DAT0, GPIO_FN_TX5, GPIO_FN_SCK0_D,
++	GPIO_FN_SCL2_B, GPIO_FN_TX5, GPIO_FN_SCK0_D,
  
--static void sh_pfc_write_raw_reg(void __iomem *mapped_reg,
--				 unsigned long reg_width, unsigned long data)
-+void sh_pfc_write_raw_reg(void __iomem *mapped_reg, unsigned long reg_width,
-+			  unsigned long data)
- {
- 	switch (reg_width) {
- 	case 8:
-@@ -145,37 +144,6 @@ static void sh_pfc_write_raw_reg(void __iomem *mapped_reg,
- 	BUG();
- }
+ 	/* IPSR5 */
+ 	GPIO_FN_VI2_DATA5_VI2_B5, GPIO_FN_SDA2_B,
+-	GPIO_FN_SD3_DAT1, GPIO_FN_RX5, GPIO_FN_RTS0_D_TANS_D,
++	GPIO_FN_RX5, GPIO_FN_RTS0_D_TANS_D,
+ 	GPIO_FN_VI2_R4, GPIO_FN_VI2_R5,
+ 	GPIO_FN_VI2_R6, GPIO_FN_VI2_R7,
+ 	GPIO_FN_SCL2_D, GPIO_FN_SDA2_D,
+@@ -182,14 +182,14 @@ enum {
+ 	GPIO_FN_SDA1_D, GPIO_FN_VI2_HSYNC,
+ 	GPIO_FN_VI3_HSYNC, GPIO_FN_VI2_VSYNC,
+ 	GPIO_FN_VI3_VSYNC,
+-	GPIO_FN_VI2_CLK, GPIO_FN_TX3_B_IRDA_TX_B, GPIO_FN_SD3_CD,
++	GPIO_FN_VI2_CLK, GPIO_FN_TX3_B_IRDA_TX_B,
+ 	GPIO_FN_HSPI_TX1, GPIO_FN_VI1_CLKENB, GPIO_FN_VI3_CLKENB,
+ 	GPIO_FN_AUDIO_CLKC, GPIO_FN_TX2_D, GPIO_FN_SPEEDIN,
+ 	GPIO_FN_GPS_SIGN_D, GPIO_FN_VI2_DATA6_VI2_B6,
+ 	GPIO_FN_TCLK0, GPIO_FN_QSTVA_B_QVS_B, GPIO_FN_HSPI_CLK1,
+ 	GPIO_FN_SCK2_D, GPIO_FN_AUDIO_CLKOUT_B, GPIO_FN_GPS_MAG_D,
+ 	GPIO_FN_VI2_DATA7_VI2_B7, GPIO_FN_RX3_B_IRDA_RX_B,
+-	GPIO_FN_SD3_WP, GPIO_FN_HSPI_RX1, GPIO_FN_VI1_FIELD, GPIO_FN_VI3_FIELD,
++	GPIO_FN_HSPI_RX1, GPIO_FN_VI1_FIELD, GPIO_FN_VI3_FIELD,
+ 	GPIO_FN_AUDIO_CLKOUT, GPIO_FN_RX2_D, GPIO_FN_GPS_CLK_C,
+ 	GPIO_FN_GPS_CLK_D, GPIO_FN_AUDIO_CLKA, GPIO_FN_CAN_TXCLK,
+ 	GPIO_FN_AUDIO_CLKB, GPIO_FN_USB_OVC2, GPIO_FN_CAN_DEBUGOUT0,
+@@ -222,13 +222,13 @@ enum {
+ 	GPIO_FN_HSPI_CS1_C, GPIO_FN_SSI_SDATA7, GPIO_FN_CAN_DEBUGOUT15,
+ 	GPIO_FN_IRQ2_B, GPIO_FN_TCLK1_C, GPIO_FN_HSPI_TX1_C,
+ 	GPIO_FN_SSI_SDATA8, GPIO_FN_VSP, GPIO_FN_IRQ3_B, GPIO_FN_HSPI_RX1_C,
+-	GPIO_FN_SD0_CLK, GPIO_FN_ATACS01, GPIO_FN_SCK1_B, GPIO_FN_SD0_CMD,
+-	GPIO_FN_ATACS11, GPIO_FN_TX1_B, GPIO_FN_CC5_TDO, GPIO_FN_SD0_DAT0,
+-	GPIO_FN_ATADIR1, GPIO_FN_RX1_B, GPIO_FN_CC5_TRST, GPIO_FN_SD0_DAT1,
+-	GPIO_FN_ATAG1, GPIO_FN_SCK2_B, GPIO_FN_CC5_TMS, GPIO_FN_SD0_DAT2,
+-	GPIO_FN_ATARD1,	GPIO_FN_TX2_B, GPIO_FN_CC5_TCK, GPIO_FN_SD0_DAT3,
+-	GPIO_FN_ATAWR1,	GPIO_FN_RX2_B, GPIO_FN_CC5_TDI, GPIO_FN_SD0_CD,
+-	GPIO_FN_DREQ2,	GPIO_FN_RTS1_B_TANS_B, GPIO_FN_SD0_WP, GPIO_FN_DACK2,
++	GPIO_FN_ATACS01, GPIO_FN_SCK1_B,
++	GPIO_FN_ATACS11, GPIO_FN_TX1_B, GPIO_FN_CC5_TDO,
++	GPIO_FN_ATADIR1, GPIO_FN_RX1_B, GPIO_FN_CC5_TRST,
++	GPIO_FN_ATAG1, GPIO_FN_SCK2_B, GPIO_FN_CC5_TMS,
++	GPIO_FN_ATARD1,	GPIO_FN_TX2_B, GPIO_FN_CC5_TCK,
++	GPIO_FN_ATAWR1,	GPIO_FN_RX2_B, GPIO_FN_CC5_TDI,
++	GPIO_FN_DREQ2,	GPIO_FN_RTS1_B_TANS_B, GPIO_FN_DACK2,
+ 	GPIO_FN_CTS1_B,
  
--int sh_pfc_read_bit(struct pinmux_data_reg *dr, unsigned long in_pos)
--{
--	unsigned long pos;
--
--	pos = dr->reg_width - (in_pos + 1);
--
--	pr_debug("read_bit: addr = %lx, pos = %ld, "
--		 "r_width = %ld\n", dr->reg, pos, dr->reg_width);
--
--	return (sh_pfc_read_raw_reg(dr->mapped_reg, dr->reg_width) >> pos) & 1;
--}
--
--void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
--		      unsigned long value)
--{
--	unsigned long pos;
--
--	pos = dr->reg_width - (in_pos + 1);
--
--	pr_debug("write_bit addr = %lx, value = %d, pos = %ld, "
--		 "r_width = %ld\n",
--		 dr->reg, !!value, pos, dr->reg_width);
--
--	if (value)
--		set_bit(pos, &dr->reg_shadow);
--	else
--		clear_bit(pos, &dr->reg_shadow);
--
--	sh_pfc_write_raw_reg(dr->mapped_reg, dr->reg_width, dr->reg_shadow);
--}
--
- static void sh_pfc_config_reg_helper(struct sh_pfc *pfc,
- 				     struct pinmux_cfg_reg *crp,
- 				     unsigned long in_pos,
-@@ -242,73 +210,6 @@ static void sh_pfc_write_config_reg(struct sh_pfc *pfc,
- 	sh_pfc_write_raw_reg(mapped_reg, crp->reg_width, data);
- }
+ 	/* IPSR8 */
+@@ -245,44 +245,44 @@ enum {
+ 	GPIO_FN_CC5_STATE15, GPIO_FN_CC5_STATE23, GPIO_FN_CC5_STATE31,
+ 	GPIO_FN_CC5_STATE39, GPIO_FN_FMCLK, GPIO_FN_RDS_CLK, GPIO_FN_PCMOE,
+ 	GPIO_FN_BPFCLK, GPIO_FN_PCMWE, GPIO_FN_FMIN, GPIO_FN_RDS_DATA,
+-	GPIO_FN_VI0_CLK, GPIO_FN_MMC1_CLK, GPIO_FN_VI0_CLKENB, GPIO_FN_TX1_C,
++	GPIO_FN_VI0_CLK, GPIO_FN_VI0_CLKENB, GPIO_FN_TX1_C,
+ 	GPIO_FN_HTX1_B, GPIO_FN_MT1_SYNC, GPIO_FN_VI0_FIELD, GPIO_FN_RX1_C,
+ 	GPIO_FN_HRX1_B, GPIO_FN_VI0_HSYNC, GPIO_FN_VI0_DATA0_B_VI0_B0_B,
+-	GPIO_FN_CTS1_C, GPIO_FN_TX4_D, GPIO_FN_MMC1_CMD, GPIO_FN_HSCK1_B,
++	GPIO_FN_CTS1_C, GPIO_FN_TX4_D, GPIO_FN_HSCK1_B,
+ 	GPIO_FN_VI0_VSYNC, GPIO_FN_VI0_DATA1_B_VI0_B1_B,
+ 	GPIO_FN_RTS1_C_TANS_C, GPIO_FN_RX4_D, GPIO_FN_PWMFSW0_C,
  
--static void sh_pfc_setup_data_reg(struct sh_pfc *pfc, unsigned gpio)
--{
--	struct sh_pfc_pin *gpiop = &pfc->info->pins[gpio];
--	struct pinmux_data_reg *data_reg;
--	int k, n;
--
--	k = 0;
--	while (1) {
--		data_reg = pfc->info->data_regs + k;
--
--		if (!data_reg->reg_width)
--			break;
--
--		data_reg->mapped_reg = sh_pfc_phys_to_virt(pfc, data_reg->reg);
--
--		for (n = 0; n < data_reg->reg_width; n++) {
--			if (data_reg->enum_ids[n] = gpiop->enum_id) {
--				gpiop->flags &= ~PINMUX_FLAG_DREG;
--				gpiop->flags |= (k << PINMUX_FLAG_DREG_SHIFT);
--				gpiop->flags &= ~PINMUX_FLAG_DBIT;
--				gpiop->flags |= (n << PINMUX_FLAG_DBIT_SHIFT);
--				return;
--			}
--		}
--		k++;
--	}
--
--	BUG();
--}
--
--static void sh_pfc_setup_data_regs(struct sh_pfc *pfc)
--{
--	struct pinmux_data_reg *drp;
--	int k;
--
--	for (k = 0; k < pfc->info->nr_pins; k++) {
--		if (pfc->info->pins[k].enum_id = 0)
--			continue;
--
--		sh_pfc_setup_data_reg(pfc, k);
--	}
--
--	k = 0;
--	while (1) {
--		drp = pfc->info->data_regs + k;
--
--		if (!drp->reg_width)
--			break;
--
--		drp->reg_shadow = sh_pfc_read_raw_reg(drp->mapped_reg,
--						      drp->reg_width);
--		k++;
--	}
--}
--
--void sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
--			 struct pinmux_data_reg **drp, int *bitp)
--{
--	struct sh_pfc_pin *gpiop = sh_pfc_get_pin(pfc, gpio);
--	int k, n;
--
--	k = (gpiop->flags & PINMUX_FLAG_DREG) >> PINMUX_FLAG_DREG_SHIFT;
--	n = (gpiop->flags & PINMUX_FLAG_DBIT) >> PINMUX_FLAG_DBIT_SHIFT;
--	*drp = pfc->info->data_regs + k;
--	*bitp = n;
--}
--
- static int sh_pfc_get_config_reg(struct sh_pfc *pfc, pinmux_enum_t enum_id,
- 				 struct pinmux_cfg_reg **crp, int *fieldp,
- 				 int *valuep, unsigned long **cntp)
-@@ -518,7 +419,6 @@ static int sh_pfc_probe(struct platform_device *pdev)
- 	spin_lock_init(&pfc->lock);
+ 	/* IPSR9 */
+ 	GPIO_FN_VI0_DATA0_VI0_B0, GPIO_FN_HRTS1_B, GPIO_FN_MT1_VCXO,
+ 	GPIO_FN_VI0_DATA1_VI0_B1, GPIO_FN_HCTS1_B, GPIO_FN_MT1_PWM,
+-	GPIO_FN_VI0_DATA2_VI0_B2, GPIO_FN_MMC1_D0, GPIO_FN_VI0_DATA3_VI0_B3,
+-	GPIO_FN_MMC1_D1, GPIO_FN_VI0_DATA4_VI0_B4, GPIO_FN_MMC1_D2,
+-	GPIO_FN_VI0_DATA5_VI0_B5, GPIO_FN_MMC1_D3, GPIO_FN_VI0_DATA6_VI0_B6,
+-	GPIO_FN_MMC1_D4, GPIO_FN_ARM_TRACEDATA_0, GPIO_FN_VI0_DATA7_VI0_B7,
+-	GPIO_FN_MMC1_D5, GPIO_FN_ARM_TRACEDATA_1, GPIO_FN_VI0_G0,
++	GPIO_FN_VI0_DATA2_VI0_B2, GPIO_FN_VI0_DATA3_VI0_B3,
++	GPIO_FN_VI0_DATA4_VI0_B4,
++	GPIO_FN_VI0_DATA5_VI0_B5, GPIO_FN_VI0_DATA6_VI0_B6,
++	GPIO_FN_ARM_TRACEDATA_0, GPIO_FN_VI0_DATA7_VI0_B7,
++	GPIO_FN_ARM_TRACEDATA_1, GPIO_FN_VI0_G0,
+ 	GPIO_FN_SSI_SCK78_C, GPIO_FN_IRQ0, GPIO_FN_ARM_TRACEDATA_2,
+ 	GPIO_FN_VI0_G1, GPIO_FN_SSI_WS78_C, GPIO_FN_IRQ1,
+ 	GPIO_FN_ARM_TRACEDATA_3, GPIO_FN_VI0_G2, GPIO_FN_ETH_TXD1,
+-	GPIO_FN_MMC1_D6, GPIO_FN_ARM_TRACEDATA_4, GPIO_FN_TS_SPSYNC0,
+-	GPIO_FN_VI0_G3, GPIO_FN_ETH_CRS_DV, GPIO_FN_MMC1_D7,
++	GPIO_FN_ARM_TRACEDATA_4, GPIO_FN_TS_SPSYNC0,
++	GPIO_FN_VI0_G3, GPIO_FN_ETH_CRS_DV,
+ 	GPIO_FN_ARM_TRACEDATA_5, GPIO_FN_TS_SDAT0, GPIO_FN_VI0_G4,
+-	GPIO_FN_ETH_TX_EN, GPIO_FN_SD2_DAT0_B, GPIO_FN_ARM_TRACEDATA_6,
+-	GPIO_FN_VI0_G5,	GPIO_FN_ETH_RX_ER, GPIO_FN_SD2_DAT1_B,
++	GPIO_FN_ETH_TX_EN, GPIO_FN_ARM_TRACEDATA_6,
++	GPIO_FN_VI0_G5,	GPIO_FN_ETH_RX_ER,
+ 	GPIO_FN_ARM_TRACEDATA_7, GPIO_FN_VI0_G6, GPIO_FN_ETH_RXD0,
+-	GPIO_FN_SD2_DAT2_B, GPIO_FN_ARM_TRACEDATA_8, GPIO_FN_VI0_G7,
+-	GPIO_FN_ETH_RXD1, GPIO_FN_SD2_DAT3_B, GPIO_FN_ARM_TRACEDATA_9,
++	GPIO_FN_ARM_TRACEDATA_8, GPIO_FN_VI0_G7,
++	GPIO_FN_ETH_RXD1, GPIO_FN_ARM_TRACEDATA_9,
  
- 	pinctrl_provide_dummies();
--	sh_pfc_setup_data_regs(pfc);
+ 	/* IPSR10 */
+ 	GPIO_FN_VI0_R0, GPIO_FN_SSI_SDATA7_C, GPIO_FN_SCK1_C, GPIO_FN_DREQ1_B,
+ 	GPIO_FN_ARM_TRACEDATA_10, GPIO_FN_DREQ0_C, GPIO_FN_VI0_R1,
+ 	GPIO_FN_SSI_SDATA8_C, GPIO_FN_DACK1_B, GPIO_FN_ARM_TRACEDATA_11,
+ 	GPIO_FN_DACK0_C, GPIO_FN_DRACK0_C, GPIO_FN_VI0_R2, GPIO_FN_ETH_LINK,
+-	GPIO_FN_SD2_CLK_B, GPIO_FN_IRQ2, GPIO_FN_ARM_TRACEDATA_12,
+-	GPIO_FN_VI0_R3, GPIO_FN_ETH_MAGIC, GPIO_FN_SD2_CMD_B, GPIO_FN_IRQ3,
++	GPIO_FN_IRQ2, GPIO_FN_ARM_TRACEDATA_12,
++	GPIO_FN_VI0_R3, GPIO_FN_ETH_MAGIC, GPIO_FN_IRQ3,
+ 	GPIO_FN_ARM_TRACEDATA_13, GPIO_FN_VI0_R4, GPIO_FN_ETH_REFCLK,
+-	GPIO_FN_SD2_CD_B, GPIO_FN_HSPI_CLK1_B, GPIO_FN_ARM_TRACEDATA_14,
++	GPIO_FN_HSPI_CLK1_B, GPIO_FN_ARM_TRACEDATA_14,
+ 	GPIO_FN_MT1_CLK, GPIO_FN_TS_SCK0, GPIO_FN_VI0_R5, GPIO_FN_ETH_TXD0,
+-	GPIO_FN_SD2_WP_B, GPIO_FN_HSPI_CS1_B, GPIO_FN_ARM_TRACEDATA_15,
++	GPIO_FN_HSPI_CS1_B, GPIO_FN_ARM_TRACEDATA_15,
+ 	GPIO_FN_MT1_D, GPIO_FN_TS_SDEN0, GPIO_FN_VI0_R6, GPIO_FN_ETH_MDC,
+ 	GPIO_FN_DREQ2_C, GPIO_FN_HSPI_TX1_B, GPIO_FN_TRACECLK,
+ 	GPIO_FN_MT1_BEN, GPIO_FN_PWMFSW0_D, GPIO_FN_VI0_R7, GPIO_FN_ETH_MDIO,
+@@ -294,19 +294,19 @@ enum {
+ 	GPIO_FN_GPS_MAG_C, GPIO_FN_SPV_TRST, GPIO_FN_SCL3,
  
- 	/*
- 	 * Initialize pinctrl bindings first
-diff --git a/drivers/pinctrl/sh-pfc/core.h b/drivers/pinctrl/sh-pfc/core.h
-index b8b3e87..434b628 100644
---- a/drivers/pinctrl/sh-pfc/core.h
-+++ b/drivers/pinctrl/sh-pfc/core.h
-@@ -46,11 +46,12 @@ int sh_pfc_unregister_gpiochip(struct sh_pfc *pfc);
- int sh_pfc_register_pinctrl(struct sh_pfc *pfc);
- int sh_pfc_unregister_pinctrl(struct sh_pfc *pfc);
- 
--int sh_pfc_read_bit(struct pinmux_data_reg *dr, unsigned long in_pos);
--void sh_pfc_write_bit(struct pinmux_data_reg *dr, unsigned long in_pos,
--		      unsigned long value);
--void sh_pfc_get_data_reg(struct sh_pfc *pfc, unsigned gpio,
--			 struct pinmux_data_reg **drp, int *bitp);
-+void __iomem *sh_pfc_phys_to_virt(struct sh_pfc *pfc, unsigned long address);
-+unsigned long sh_pfc_read_raw_reg(void __iomem *mapped_reg,
-+				  unsigned long reg_width);
-+void sh_pfc_write_raw_reg(void __iomem *mapped_reg, unsigned long reg_width,
-+			  unsigned long data);
-+
- struct sh_pfc_pin *sh_pfc_get_pin(struct sh_pfc *pfc, unsigned int pin);
- int sh_pfc_config_mux(struct sh_pfc *pfc, unsigned mark, int pinmux_type,
- 		      int cfg_mode);
-diff --git a/drivers/pinctrl/sh-pfc/gpio.c b/drivers/pinctrl/sh-pfc/gpio.c
-index 806e2dd..027c777 100644
---- a/drivers/pinctrl/sh-pfc/gpio.c
-+++ b/drivers/pinctrl/sh-pfc/gpio.c
-@@ -36,6 +36,71 @@ static struct sh_pfc *gpio_to_pfc(struct gpio_chip *gc)
- 	return gpio_to_pfc_chip(gc)->pfc;
- }
- 
-+static void gpio_get_data_reg(struct sh_pfc *pfc, unsigned int gpio,
-+			      struct pinmux_data_reg **dr, unsigned int *bit)
-+{
-+	struct sh_pfc_pin *gpiop = sh_pfc_get_pin(pfc, gpio);
-+
-+	*dr = pfc->info->data_regs
-+	    + ((gpiop->flags & PINMUX_FLAG_DREG) >> PINMUX_FLAG_DREG_SHIFT);
-+	*bit = (gpiop->flags & PINMUX_FLAG_DBIT) >> PINMUX_FLAG_DBIT_SHIFT;
-+}
-+
-+static void gpio_setup_data_reg(struct sh_pfc *pfc, unsigned gpio)
-+{
-+	struct sh_pfc_pin *gpiop = &pfc->info->pins[gpio];
-+	struct pinmux_data_reg *data_reg;
-+	int k, n;
-+
-+	k = 0;
-+	while (1) {
-+		data_reg = pfc->info->data_regs + k;
-+
-+		if (!data_reg->reg_width)
-+			break;
-+
-+		data_reg->mapped_reg = sh_pfc_phys_to_virt(pfc, data_reg->reg);
-+
-+		for (n = 0; n < data_reg->reg_width; n++) {
-+			if (data_reg->enum_ids[n] = gpiop->enum_id) {
-+				gpiop->flags &= ~PINMUX_FLAG_DREG;
-+				gpiop->flags |= (k << PINMUX_FLAG_DREG_SHIFT);
-+				gpiop->flags &= ~PINMUX_FLAG_DBIT;
-+				gpiop->flags |= (n << PINMUX_FLAG_DBIT_SHIFT);
-+				return;
-+			}
-+		}
-+		k++;
-+	}
-+
-+	BUG();
-+}
-+
-+static void gpio_setup_data_regs(struct sh_pfc *pfc)
-+{
-+	struct pinmux_data_reg *drp;
-+	int k;
-+
-+	for (k = 0; k < pfc->info->nr_pins; k++) {
-+		if (pfc->info->pins[k].enum_id = 0)
-+			continue;
-+
-+		gpio_setup_data_reg(pfc, k);
-+	}
-+
-+	k = 0;
-+	while (1) {
-+		drp = pfc->info->data_regs + k;
-+
-+		if (!drp->reg_width)
-+			break;
-+
-+		drp->reg_shadow = sh_pfc_read_raw_reg(drp->mapped_reg,
-+						      drp->reg_width);
-+		k++;
-+	}
-+}
-+
- /* -----------------------------------------------------------------------------
-  * Pin GPIOs
-  */
-@@ -59,10 +124,19 @@ static void gpio_pin_free(struct gpio_chip *gc, unsigned offset)
- static void gpio_pin_set_value(struct sh_pfc *pfc, unsigned offset, int value)
- {
- 	struct pinmux_data_reg *dr;
--	int bit;
-+	unsigned long pos;
-+	unsigned int bit;
- 
--	sh_pfc_get_data_reg(pfc, offset, &dr, &bit);
--	sh_pfc_write_bit(dr, bit, value);
-+	gpio_get_data_reg(pfc, offset, &dr, &bit);
-+
-+	pos = dr->reg_width - (bit + 1);
-+
-+	if (value)
-+		set_bit(pos, &dr->reg_shadow);
-+	else
-+		clear_bit(pos, &dr->reg_shadow);
-+
-+	sh_pfc_write_raw_reg(dr->mapped_reg, dr->reg_width, dr->reg_shadow);
- }
- 
- static int gpio_pin_direction_input(struct gpio_chip *gc, unsigned offset)
-@@ -82,10 +156,14 @@ static int gpio_pin_get(struct gpio_chip *gc, unsigned offset)
- {
- 	struct sh_pfc *pfc = gpio_to_pfc(gc);
- 	struct pinmux_data_reg *dr;
--	int bit;
-+	unsigned long pos;
-+	unsigned int bit;
- 
--	sh_pfc_get_data_reg(pfc, offset, &dr, &bit);
--	return sh_pfc_read_bit(dr, bit);
-+	gpio_get_data_reg(pfc, offset, &dr, &bit);
-+
-+	pos = dr->reg_width - (bit + 1);
-+
-+	return (sh_pfc_read_raw_reg(dr->mapped_reg, dr->reg_width) >> pos) & 1;
- }
- 
- static void gpio_pin_set(struct gpio_chip *gc, unsigned offset, int value)
-@@ -226,6 +304,8 @@ int sh_pfc_register_gpiochip(struct sh_pfc *pfc)
- 	unsigned int i;
- 	int ret;
- 
-+	gpio_setup_data_regs(pfc);
-+
- 	/* Register the real GPIOs chip. */
- 	chip = sh_pfc_add_gpiochip(pfc, gpio_pin_setup);
- 	if (IS_ERR(chip))
+ 	/* IPSR11 */
+-	GPIO_FN_VI1_DATA0_VI1_B0, GPIO_FN_SD2_DAT0, GPIO_FN_SIM_RST,
++	GPIO_FN_VI1_DATA0_VI1_B0, GPIO_FN_SIM_RST,
+ 	GPIO_FN_SPV_TCK, GPIO_FN_ADICLK_B, GPIO_FN_VI1_DATA1_VI1_B1,
+-	GPIO_FN_SD2_DAT1, GPIO_FN_MT0_CLK, GPIO_FN_SPV_TMS,
+-	GPIO_FN_ADICS_B_SAMP_B, GPIO_FN_VI1_DATA2_VI1_B2, GPIO_FN_SD2_DAT2,
++	GPIO_FN_MT0_CLK, GPIO_FN_SPV_TMS,
++	GPIO_FN_ADICS_B_SAMP_B, GPIO_FN_VI1_DATA2_VI1_B2,
+ 	GPIO_FN_MT0_D, GPIO_FN_SPVTDI, GPIO_FN_ADIDATA_B,
+-	GPIO_FN_VI1_DATA3_VI1_B3, GPIO_FN_SD2_DAT3, GPIO_FN_MT0_BEN,
++	GPIO_FN_VI1_DATA3_VI1_B3, GPIO_FN_MT0_BEN,
+ 	GPIO_FN_SPV_TDO, GPIO_FN_ADICHS0_B, GPIO_FN_VI1_DATA4_VI1_B4,
+-	GPIO_FN_SD2_CLK, GPIO_FN_MT0_PEN, GPIO_FN_SPA_TRST,
++	GPIO_FN_MT0_PEN, GPIO_FN_SPA_TRST,
+ 	GPIO_FN_HSPI_CLK1_D, GPIO_FN_ADICHS1_B, GPIO_FN_VI1_DATA5_VI1_B5,
+-	GPIO_FN_SD2_CMD, GPIO_FN_MT0_SYNC, GPIO_FN_SPA_TCK,
++	GPIO_FN_MT0_SYNC, GPIO_FN_SPA_TCK,
+ 	GPIO_FN_HSPI_CS1_D, GPIO_FN_ADICHS2_B, GPIO_FN_VI1_DATA6_VI1_B6,
+-	GPIO_FN_SD2_CD, GPIO_FN_MT0_VCXO, GPIO_FN_SPA_TMS, GPIO_FN_HSPI_TX1_D,
+-	GPIO_FN_VI1_DATA7_VI1_B7, GPIO_FN_SD2_WP, GPIO_FN_MT0_PWM,
++	GPIO_FN_MT0_VCXO, GPIO_FN_SPA_TMS, GPIO_FN_HSPI_TX1_D,
++	GPIO_FN_VI1_DATA7_VI1_B7, GPIO_FN_MT0_PWM,
+ 	GPIO_FN_SPA_TDI, GPIO_FN_HSPI_RX1_D, GPIO_FN_VI1_G0, GPIO_FN_VI3_DATA0,
+ 	GPIO_FN_TS_SCK1, GPIO_FN_DREQ2_B, GPIO_FN_TX2,
+ 	GPIO_FN_SPA_TDO, GPIO_FN_HCTS0_B, GPIO_FN_VI1_G1, GPIO_FN_VI3_DATA1,
 -- 
-1.8.1.5
+1.7.10.4
 
