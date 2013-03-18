@@ -1,36 +1,37 @@
-From: Magnus Damm <magnus.damm@gmail.com>
-Date: Wed, 13 Mar 2013 11:32:23 +0000
-Subject: [PATCH 02/03] gpio: rcar: Use IRQCHIP_SET_TYPE_MASKED
-Message-Id: <20130313113223.30133.50623.sendpatchset@w520>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:07:11 +0000
+Subject: [PATCH 135/142] ARM: shmobile: r8a7779: Remove DU1_DOTCLKOUT1 GPIO
+Message-Id: <1363604838-29359-136-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <20130313113203.30133.49539.sendpatchset@w520>
-In-Reply-To: <20130313113203.30133.49539.sendpatchset@w520>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-kernel@vger.kernel.org
-Cc: linux-sh@vger.kernel.org, linus.walleij@linaro.org, grant.likely@secretlab.ca, horms@verge.net.au, laurent.pinchart@ideasonboard.com, Magnus Damm <magnus.damm@gmail.com>
+To: linux-arm-kernel@lists.infradead.org
 
-From: Magnus Damm <damm@opensource.se>
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
-Set the flag IRQCHIP_SET_TYPE_MASKED in gpio-rcar.c to 
-force mask of the interrupt while configuring trigger
-settings.
+The function is not documented in the r8a7779 datasheet. Remove it.
 
-Signed-off-by: Magnus Damm <damm@opensource.se>
+Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
-
- drivers/gpio/gpio-rcar.c |    2 +-
+ arch/arm/mach-shmobile/include/mach/r8a7779.h |    2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
---- 0004/drivers/gpio/gpio-rcar.c
-+++ work/drivers/gpio/gpio-rcar.c	2013-03-13 19:42:56.000000000 +0900
-@@ -301,7 +301,7 @@ static int gpio_rcar_probe(struct platfo
- 	irq_chip->irq_enable = gpio_rcar_irq_enable;
- 	irq_chip->irq_disable = gpio_rcar_irq_disable;
- 	irq_chip->irq_set_type = gpio_rcar_irq_set_type;
--	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE;
-+	irq_chip->flags	= IRQCHIP_SKIP_SET_WAKE | IRQCHIP_SET_TYPE_MASKED;
- 
- 	p->irq_domain = irq_domain_add_simple(pdev->dev.of_node,
- 					      p->config.number_of_pins,
+diff --git a/arch/arm/mach-shmobile/include/mach/r8a7779.h b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+index 8ab0cd6..badba57 100644
+--- a/arch/arm/mach-shmobile/include/mach/r8a7779.h
++++ b/arch/arm/mach-shmobile/include/mach/r8a7779.h
+@@ -308,7 +308,7 @@ enum {
+ 	GPIO_FN_SD2_CD, GPIO_FN_MT0_VCXO, GPIO_FN_SPA_TMS, GPIO_FN_HSPI_TX1_D,
+ 	GPIO_FN_VI1_DATA7_VI1_B7, GPIO_FN_SD2_WP, GPIO_FN_MT0_PWM,
+ 	GPIO_FN_SPA_TDI, GPIO_FN_HSPI_RX1_D, GPIO_FN_VI1_G0, GPIO_FN_VI3_DATA0,
+-	GPIO_FN_DU1_DOTCLKOUT1, GPIO_FN_TS_SCK1, GPIO_FN_DREQ2_B, GPIO_FN_TX2,
++	GPIO_FN_TS_SCK1, GPIO_FN_DREQ2_B, GPIO_FN_TX2,
+ 	GPIO_FN_SPA_TDO, GPIO_FN_HCTS0_B, GPIO_FN_VI1_G1, GPIO_FN_VI3_DATA1,
+ 	GPIO_FN_SSI_SCK1, GPIO_FN_TS_SDEN1, GPIO_FN_DACK2_B, GPIO_FN_RX2,
+ 	GPIO_FN_HRTS0_B,
+-- 
+1.7.10.4
+
