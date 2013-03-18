@@ -1,26 +1,45 @@
-From: Linus Walleij <linus.walleij@linaro.org>
-Date: Thu, 14 Mar 2013 08:17:34 +0000
-Subject: Re: [PATCH 14/25] sh-pfc: Don't map data registers individually
-Message-Id: <CACRpkdbh-xT=RMVUCpdM4Qrz0+-TGR95EKE_naJCWOc95o7EDg@mail.gmail.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:47:26 +0000
+Subject: [PATCH 34/43] ARM: shmobile: add gic_iid macro for ICCIAR / interrupt ID
+Message-Id: <1363607255-6385-35-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363214384-3870-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
-In-Reply-To: <1363214384-3870-15-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+References: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363607255-6385-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-On Wed, Mar 13, 2013 at 11:39 PM, Laurent Pinchart
-<laurent.pinchart+renesas@ideasonboard.com> wrote:
+From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
 
-> All data registers are located in the same memory resource. Locate the
-> mapped resource at initializat time and use it directly instead of
-> computing a mapped address for each register. This gets rid of the
-> mapped_reg field of the pinmux_data_reg structure.
->
-> Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+R-Car H1 datasheet GIC number is indicating
+GIC ICCIAR / interrupt ID number, not SPI number,
+but current marzen board code is using gic_spi() with
+un-understandable calculation.
 
-Acked-by: Linus Walleij <linus.walleij@linaro.org>
+This patch adds new gic_iid() macro which means
+ICCIAR / interrupt ID, and used the number
+currently written on datasheet.
 
-Yours,
-Linus Walleij
+Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+[ horms+renesas@verge.net.au: Split board-marzen.c portion into a separate patch ]
+Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
+---
+ arch/arm/mach-shmobile/include/mach/irqs.h |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/mach-shmobile/include/mach/irqs.h b/arch/arm/mach-shmobile/include/mach/irqs.h
+index 06a5da3..992ed21 100644
+--- a/arch/arm/mach-shmobile/include/mach/irqs.h
++++ b/arch/arm/mach-shmobile/include/mach/irqs.h
+@@ -5,6 +5,7 @@
+ 
+ /* GIC */
+ #define gic_spi(nr)		((nr) + 32)
++#define gic_iid(nr)		(nr) /* ICCIAR / interrupt ID */
+ 
+ /* INTCS */
+ #define INTCS_VECT_BASE		0x3400
+-- 
+1.7.10.4
+
