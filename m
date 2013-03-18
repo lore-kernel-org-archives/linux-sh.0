@@ -1,78 +1,58 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 13 Mar 2013 22:59:49 +0000
-Subject: [PATCH v4 44/88] ARM: shmobile: marzen: Register pinctrl mappings for SDHI and MMCIF
-Message-Id: <1363215633-4264-45-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:05:33 +0000
+Subject: [PATCH 037/142] sh: sh7757: Add pin control resources
+Message-Id: <1363604838-29359-38-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-Replace the GPIO-based SDHI and MMCIF pinmux configuration by pinctrl
-mappings
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+
+Add memory resources for the pin control platform device to let the
+sh-pfc driver ioremap() registers properly instead of evily casting
+register physical addresses to virtual addresses.
+
+The memory resource address range has been extracted from the config and
+data registes lists in the sh-pfc driver.
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 ---
- arch/arm/mach-shmobile/board-marzen.c | 25 +++++++++++++++----------
- 1 file changed, 15 insertions(+), 10 deletions(-)
+ arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c |   13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
 
-diff --git a/arch/arm/mach-shmobile/board-marzen.c b/arch/arm/mach-shmobile/board-marzen.c
-index fec49eb..f00677f 100644
---- a/arch/arm/mach-shmobile/board-marzen.c
-+++ b/arch/arm/mach-shmobile/board-marzen.c
-@@ -27,6 +27,7 @@
- #include <linux/io.h>
- #include <linux/gpio.h>
- #include <linux/dma-mapping.h>
-+#include <linux/pinctrl/machine.h>
- #include <linux/regulator/fixed.h>
- #include <linux/regulator/machine.h>
- #include <linux/smsc911x.h>
-@@ -327,6 +328,18 @@ void __init marzen_init_late(void)
- 			     ARRAY_SIZE(marzen_late_devices));
- }
+diff --git a/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c b/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c
+index cda6bd1..567745d 100644
+--- a/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c
++++ b/arch/sh/kernel/cpu/sh4a/pinmux-sh7757.c
+@@ -13,12 +13,23 @@
+  * for more details.
+  */
  
-+static const struct pinctrl_map marzen_pinctrl_map[] = {
-+	/* SDHI0 */
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
-+				  "sdhi0_data4", "sdhi0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
-+				  "sdhi0_ctrl", "sdhi0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
-+				  "sdhi0_cd", "sdhi0"),
-+	PIN_MAP_MUX_GROUP_DEFAULT("sh_mobile_sdhi.0", "pfc-r8a7779",
-+				  "sdhi0_wp", "sdhi0"),
++#include <linux/bug.h>
+ #include <linux/init.h>
+ #include <linux/kernel.h>
++#include <linux/ioport.h>
+ #include <cpu/pfc.h>
+ 
++static struct resource sh7757_pfc_resources[] = {
++	[0] = {
++		.start	= 0xffec0000,
++		.end	= 0xffec008f,
++		.flags	= IORESOURCE_MEM,
++	},
 +};
 +
- static void __init marzen_init(void)
+ static int __init plat_pinmux_setup(void)
  {
- 	regulator_register_always_on(0, "fixed-3.3V", fixed3v3_power_consumers,
-@@ -334,6 +347,8 @@ static void __init marzen_init(void)
- 	regulator_register_fixed(1, dummy_supplies,
- 				ARRAY_SIZE(dummy_supplies));
- 
-+	pinctrl_register_mappings(marzen_pinctrl_map,
-+				  ARRAY_SIZE(marzen_pinctrl_map));
- 	r8a7779_pinmux_init();
- 
- 	/* SCIF2 (CN18: DEBUG0) */
-@@ -348,16 +363,6 @@ static void __init marzen_init(void)
- 	gpio_request(GPIO_FN_EX_CS0, NULL); /* nCS */
- 	gpio_request(GPIO_FN_IRQ1_B, NULL); /* IRQ + PME */
- 
--	/* SD0 (CN20) */
--	gpio_request(GPIO_FN_SD0_CLK, NULL);
--	gpio_request(GPIO_FN_SD0_CMD, NULL);
--	gpio_request(GPIO_FN_SD0_DAT0, NULL);
--	gpio_request(GPIO_FN_SD0_DAT1, NULL);
--	gpio_request(GPIO_FN_SD0_DAT2, NULL);
--	gpio_request(GPIO_FN_SD0_DAT3, NULL);
--	gpio_request(GPIO_FN_SD0_CD, NULL);
--	gpio_request(GPIO_FN_SD0_WP, NULL);
--
- 	/* HSPI 0 */
- 	gpio_request(GPIO_FN_HSPI_CLK0,	NULL);
- 	gpio_request(GPIO_FN_HSPI_CS0,	NULL);
+-	return sh_pfc_register("pfc-sh7757", NULL, 0);
++	return sh_pfc_register("pfc-sh7757", sh7757_pfc_resources,
++			       ARRAY_SIZE(sh7757_pfc_resources));
+ }
+ arch_initcall(plat_pinmux_setup);
 -- 
-1.8.1.5
+1.7.10.4
 
