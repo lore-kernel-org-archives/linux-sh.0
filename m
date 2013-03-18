@@ -1,36 +1,50 @@
 From: Simon Horman <horms+renesas@verge.net.au>
-Date: Mon, 18 Mar 2013 12:32:45 +0000
-Subject: [PATCH 35/43] ARM: shmobile: r8a7779: fixup dtsi typo
-Message-Id: <1363609973-31086-36-git-send-email-horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:53:12 +0000
+Subject: [GIT PULL] Renesas ARM-based SoC defconfig updates for v3.10
+Message-Id: <1363607601-20366-1-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
-References: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
-In-Reply-To: <1363609973-31086-1-git-send-email-horms+renesas@verge.net.au>
+References: <1350448698-26985-1-git-send-email-horms@verge.net.au>
+In-Reply-To: <1350448698-26985-1-git-send-email-horms@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
 To: linux-arm-kernel@lists.infradead.org
 
-From: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
+Hi Olof, Hi Arnd,
 
-r8a7779 is not r8a7740 chip
+The following changes since commit f6161aa153581da4a3867a2d1a7caf4be19b6ec9:
 
-Signed-off-by: Kuninori Morimoto <kuninori.morimoto.gx@renesas.com>
-Signed-off-by: Simon Horman <horms+renesas@verge.net.au>
----
- arch/arm/boot/dts/r8a7779.dtsi |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+  Linux 3.9-rc2 (2013-03-10 16:54:19 -0700)
 
-diff --git a/arch/arm/boot/dts/r8a7779.dtsi b/arch/arm/boot/dts/r8a7779.dtsi
-index 0016302..c73eb37 100644
---- a/arch/arm/boot/dts/r8a7779.dtsi
-+++ b/arch/arm/boot/dts/r8a7779.dtsi
-@@ -1,5 +1,5 @@
- /*
-- * Device Tree Source for Renesas r8a7740
-+ * Device Tree Source for Renesas r8a7779
-  *
-  * Copyright (C) 2013 Renesas Solutions Corp.
-  * Copyright (C) 2013 Simon Horman
--- 
-1.7.10.4
+are available in the git repository at:
 
+  git://git.kernel.org/pub/scm/linux/kernel/git/horms/renesas.git tags/renesas-defconfig-for-v3.10
+
+for you to fetch changes up to db30abdf3c07c564d4af0f991bb7f38b728f9035:
+
+  ARM: mach-shmobile: marzen: add SATA support (2013-03-14 10:28:07 +0100)
+
+----------------------------------------------------------------
+Renesas ARM-based SoC defconfig updates for v3.10
+
+----------------------------------------------------------------
+Kuninori Morimoto (3):
+      ARM: shmobile: armadillo800eva: enable branch prediction on defconfig
+      ARM: shmobile: armadillo800eva: enable NEON on defconfig
+      ARM: shmobile: armadillo800eva: enable all errata for cache on defconfig
+
+Simon Horman (5):
+      ARM: mach-shmobile: mackerel: enable MMCIF and SDHI in defconfig
+      ARM: mach-shmobile: mackerel: enable REGULATOR in defconfig
+      ARM: mach-shmobile: armadillo800eva: enable REGULATOR in defconfig
+      ARM: shmobile: kzm9g: defconfig: do not enable PREEMPT
+      ARM: mach-shmobile: kzm9g: do not enable REGULATOR_DUMMY in defconfig
+
+Vladimir Barinov (1):
+      ARM: mach-shmobile: marzen: add SATA support
+
+ arch/arm/configs/armadillo800eva_defconfig |    8 +++++++-
+ arch/arm/configs/kzm9g_defconfig           |    2 --
+ arch/arm/configs/mackerel_defconfig        |    4 ++++
+ arch/arm/configs/marzen_defconfig          |    4 ++++
+ 4 files changed, 15 insertions(+), 3 deletions(-)
