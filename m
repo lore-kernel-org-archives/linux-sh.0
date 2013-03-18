@@ -1,183 +1,295 @@
-From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
-Date: Wed, 06 Mar 2013 12:52:47 +0000
-Subject: [PATCH v3 26/29] ARM: shmobile: armadillo: Replace GPIO_PORTx enum with GPIO port numbers
-Message-Id: <1362574370-17889-27-git-send-email-laurent.pinchart+renesas@ideasonboard.com>
+From: Simon Horman <horms+renesas@verge.net.au>
+Date: Mon, 18 Mar 2013 11:05:53 +0000
+Subject: [PATCH 057/142] sh-pfc: sh73a0: Add LCD and LCD2 pin groups and functions
+Message-Id: <1363604838-29359-58-git-send-email-horms+renesas@verge.net.au>
 List-Id: <linux-sh.vger.kernel.org>
+References: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
+In-Reply-To: <1363604838-29359-1-git-send-email-horms+renesas@verge.net.au>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Content-Transfer-Encoding: 7bit
-To: linux-sh@vger.kernel.org
+To: linux-arm-kernel@lists.infradead.org
 
-The PFC GPIO API implementation moved to using port numbers. Replace all
-GPIO_PORTx enum usage with the corresponding port number. The GPIO_PORTx
-enum values are identical to the port number on this platform.
+From: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
 
 Signed-off-by: Laurent Pinchart <laurent.pinchart+renesas@ideasonboard.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
 ---
- arch/arm/mach-shmobile/board-armadillo800eva.c | 58 +++++++++++++-------------
- 1 file changed, 29 insertions(+), 29 deletions(-)
+ drivers/pinctrl/sh-pfc/pfc-sh73a0.c |  254 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 254 insertions(+)
 
-diff --git a/arch/arm/mach-shmobile/board-armadillo800eva.c b/arch/arm/mach-shmobile/board-armadillo800eva.c
-index f2ec077..92d7991 100644
---- a/arch/arm/mach-shmobile/board-armadillo800eva.c
-+++ b/arch/arm/mach-shmobile/board-armadillo800eva.c
-@@ -227,7 +227,7 @@ static void usbhsf_power_ctrl(struct platform_device *pdev,
- 
- static int usbhsf_get_vbus(struct platform_device *pdev)
- {
--	return gpio_get_value(GPIO_PORT209);
-+	return gpio_get_value(209);
- }
- 
- static irqreturn_t usbhsf_interrupt(int irq, void *data)
-@@ -535,10 +535,10 @@ static struct platform_device hdmi_lcdc_device = {
- 	{ .code = c, .gpio = g, .desc = d, .active_low = 1, __VA_ARGS__ }
- 
- static struct gpio_keys_button gpio_buttons[] = {
--	GPIO_KEY(KEY_POWER,	GPIO_PORT99,	"SW3", .wakeup = 1),
--	GPIO_KEY(KEY_BACK,	GPIO_PORT100,	"SW4"),
--	GPIO_KEY(KEY_MENU,	GPIO_PORT97,	"SW5"),
--	GPIO_KEY(KEY_HOME,	GPIO_PORT98,	"SW6"),
-+	GPIO_KEY(KEY_POWER,	99,	"SW3", .wakeup = 1),
-+	GPIO_KEY(KEY_BACK,	100,	"SW4"),
-+	GPIO_KEY(KEY_MENU,	97,	"SW5"),
-+	GPIO_KEY(KEY_HOME,	98,	"SW6"),
+diff --git a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+index f31adfc..c8b2604 100644
+--- a/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
++++ b/drivers/pinctrl/sh-pfc/pfc-sh73a0.c
+@@ -1846,6 +1846,255 @@ static const struct pinmux_range pinmux_ranges[] = {
+ 	{.begin = 288, .end = 309,},
  };
  
- static struct gpio_keys_platform_data gpio_key_info = {
-@@ -708,9 +708,9 @@ static int mt9t111_power(struct device *dev, int mode)
- 		/* video1 (= CON1 camera) expect 24MHz */
- 		clk_set_rate(mclk, clk_round_rate(mclk, 24000000));
- 		clk_enable(mclk);
--		gpio_set_value(GPIO_PORT158, 1);
-+		gpio_set_value(158, 1);
- 	} else {
--		gpio_set_value(GPIO_PORT158, 0);
-+		gpio_set_value(158, 0);
- 		clk_disable(mclk);
- 	}
++/* - LCD -------------------------------------------------------------------- */
++static const unsigned int lcd_data8_pins[] = {
++	/* D[0:7] */
++	192, 193, 194, 195, 196, 197, 198, 199,
++};
++static const unsigned int lcd_data8_mux[] = {
++	LCDD0_MARK, LCDD1_MARK, LCDD2_MARK, LCDD3_MARK,
++	LCDD4_MARK, LCDD5_MARK, LCDD6_MARK, LCDD7_MARK,
++};
++static const unsigned int lcd_data9_pins[] = {
++	/* D[0:8] */
++	192, 193, 194, 195, 196, 197, 198, 199,
++	200,
++};
++static const unsigned int lcd_data9_mux[] = {
++	LCDD0_MARK, LCDD1_MARK, LCDD2_MARK, LCDD3_MARK,
++	LCDD4_MARK, LCDD5_MARK, LCDD6_MARK, LCDD7_MARK,
++	LCDD8_MARK,
++};
++static const unsigned int lcd_data12_pins[] = {
++	/* D[0:11] */
++	192, 193, 194, 195, 196, 197, 198, 199,
++	200, 201, 202, 203,
++};
++static const unsigned int lcd_data12_mux[] = {
++	LCDD0_MARK, LCDD1_MARK, LCDD2_MARK, LCDD3_MARK,
++	LCDD4_MARK, LCDD5_MARK, LCDD6_MARK, LCDD7_MARK,
++	LCDD8_MARK, LCDD9_MARK, LCDD10_MARK, LCDD11_MARK,
++};
++static const unsigned int lcd_data16_pins[] = {
++	/* D[0:15] */
++	192, 193, 194, 195, 196, 197, 198, 199,
++	200, 201, 202, 203, 204, 205, 206, 207,
++};
++static const unsigned int lcd_data16_mux[] = {
++	LCDD0_MARK, LCDD1_MARK, LCDD2_MARK, LCDD3_MARK,
++	LCDD4_MARK, LCDD5_MARK, LCDD6_MARK, LCDD7_MARK,
++	LCDD8_MARK, LCDD9_MARK, LCDD10_MARK, LCDD11_MARK,
++	LCDD12_MARK, LCDD13_MARK, LCDD14_MARK, LCDD15_MARK,
++};
++static const unsigned int lcd_data18_pins[] = {
++	/* D[0:17] */
++	192, 193, 194, 195, 196, 197, 198, 199,
++	200, 201, 202, 203, 204, 205, 206, 207,
++	208, 209,
++};
++static const unsigned int lcd_data18_mux[] = {
++	LCDD0_MARK, LCDD1_MARK, LCDD2_MARK, LCDD3_MARK,
++	LCDD4_MARK, LCDD5_MARK, LCDD6_MARK, LCDD7_MARK,
++	LCDD8_MARK, LCDD9_MARK, LCDD10_MARK, LCDD11_MARK,
++	LCDD12_MARK, LCDD13_MARK, LCDD14_MARK, LCDD15_MARK,
++	LCDD16_MARK, LCDD17_MARK,
++};
++static const unsigned int lcd_data24_pins[] = {
++	/* D[0:23] */
++	192, 193, 194, 195, 196, 197, 198, 199,
++	200, 201, 202, 203, 204, 205, 206, 207,
++	208, 209, 210, 211, 212, 213, 214, 215
++};
++static const unsigned int lcd_data24_mux[] = {
++	LCDD0_MARK, LCDD1_MARK, LCDD2_MARK, LCDD3_MARK,
++	LCDD4_MARK, LCDD5_MARK, LCDD6_MARK, LCDD7_MARK,
++	LCDD8_MARK, LCDD9_MARK, LCDD10_MARK, LCDD11_MARK,
++	LCDD12_MARK, LCDD13_MARK, LCDD14_MARK, LCDD15_MARK,
++	LCDD16_MARK, LCDD17_MARK, LCDD18_MARK, LCDD19_MARK,
++	LCDD20_MARK, LCDD21_MARK, LCDD22_MARK, LCDD23_MARK,
++};
++static const unsigned int lcd_display_pins[] = {
++	/* DON */
++	222,
++};
++static const unsigned int lcd_display_mux[] = {
++	LCDDON_MARK,
++};
++static const unsigned int lcd_lclk_pins[] = {
++	/* LCLK */
++	221,
++};
++static const unsigned int lcd_lclk_mux[] = {
++	LCDLCLK_MARK,
++};
++static const unsigned int lcd_sync_pins[] = {
++	/* VSYN, HSYN, DCK, DISP */
++	220, 218, 216, 219,
++};
++static const unsigned int lcd_sync_mux[] = {
++	LCDVSYN_MARK, LCDHSYN_MARK, LCDDCK_MARK, LCDDISP_MARK,
++};
++static const unsigned int lcd_sys_pins[] = {
++	/* CS, WR, RD, RS */
++	218, 216, 217, 219,
++};
++static const unsigned int lcd_sys_mux[] = {
++	LCDCS__MARK, LCDWR__MARK, LCDRD__MARK, LCDRS_MARK,
++};
++/* - LCD2 ------------------------------------------------------------------- */
++static const unsigned int lcd2_data8_pins[] = {
++	/* D[0:7] */
++	128, 129, 142, 143, 144, 145, 138, 139,
++};
++static const unsigned int lcd2_data8_mux[] = {
++	LCD2D0_MARK, LCD2D1_MARK, LCD2D2_MARK, LCD2D3_MARK,
++	LCD2D4_MARK, LCD2D5_MARK, LCD2D6_MARK, LCD2D7_MARK,
++};
++static const unsigned int lcd2_data9_pins[] = {
++	/* D[0:8] */
++	128, 129, 142, 143, 144, 145, 138, 139,
++	140,
++};
++static const unsigned int lcd2_data9_mux[] = {
++	LCD2D0_MARK, LCD2D1_MARK, LCD2D2_MARK, LCD2D3_MARK,
++	LCD2D4_MARK, LCD2D5_MARK, LCD2D6_MARK, LCD2D7_MARK,
++	LCD2D8_MARK,
++};
++static const unsigned int lcd2_data12_pins[] = {
++	/* D[0:12] */
++	128, 129, 142, 143, 144, 145, 138, 139,
++	140, 141, 130, 131,
++};
++static const unsigned int lcd2_data12_mux[] = {
++	LCD2D0_MARK, LCD2D1_MARK, LCD2D2_MARK, LCD2D3_MARK,
++	LCD2D4_MARK, LCD2D5_MARK, LCD2D6_MARK, LCD2D7_MARK,
++	LCD2D8_MARK, LCD2D9_MARK, LCD2D10_MARK, LCD2D11_MARK,
++};
++static const unsigned int lcd2_data16_pins[] = {
++	/* D[0:15] */
++	128, 129, 142, 143, 144, 145, 138, 139,
++	140, 141, 130, 131, 132, 133, 134, 135,
++};
++static const unsigned int lcd2_data16_mux[] = {
++	LCD2D0_MARK, LCD2D1_MARK, LCD2D2_MARK, LCD2D3_MARK,
++	LCD2D4_MARK, LCD2D5_MARK, LCD2D6_MARK, LCD2D7_MARK,
++	LCD2D8_MARK, LCD2D9_MARK, LCD2D10_MARK, LCD2D11_MARK,
++	LCD2D12_MARK, LCD2D13_MARK, LCD2D14_MARK, LCD2D15_MARK,
++};
++static const unsigned int lcd2_data18_pins[] = {
++	/* D[0:17] */
++	128, 129, 142, 143, 144, 145, 138, 139,
++	140, 141, 130, 131, 132, 133, 134, 135,
++	136, 137,
++};
++static const unsigned int lcd2_data18_mux[] = {
++	LCD2D0_MARK, LCD2D1_MARK, LCD2D2_MARK, LCD2D3_MARK,
++	LCD2D4_MARK, LCD2D5_MARK, LCD2D6_MARK, LCD2D7_MARK,
++	LCD2D8_MARK, LCD2D9_MARK, LCD2D10_MARK, LCD2D11_MARK,
++	LCD2D12_MARK, LCD2D13_MARK, LCD2D14_MARK, LCD2D15_MARK,
++	LCD2D16_MARK, LCD2D17_MARK,
++};
++static const unsigned int lcd2_data24_pins[] = {
++	/* D[0:23] */
++	128, 129, 142, 143, 144, 145, 138, 139,
++	140, 141, 130, 131, 132, 133, 134, 135,
++	136, 137, 146, 147, 234, 235, 238, 239
++};
++static const unsigned int lcd2_data24_mux[] = {
++	LCD2D0_MARK, LCD2D1_MARK, LCD2D2_MARK, LCD2D3_MARK,
++	LCD2D4_MARK, LCD2D5_MARK, LCD2D6_MARK, LCD2D7_MARK,
++	LCD2D8_MARK, LCD2D9_MARK, LCD2D10_MARK, LCD2D11_MARK,
++	LCD2D12_MARK, LCD2D13_MARK, LCD2D14_MARK, LCD2D15_MARK,
++	LCD2D16_MARK, LCD2D17_MARK, LCD2D18_MARK, LCD2D19_MARK,
++	LCD2D20_MARK, LCD2D21_MARK, LCD2D22_MARK, LCD2D23_MARK,
++};
++static const unsigned int lcd2_sync_0_pins[] = {
++	/* VSYN, HSYN, DCK, DISP */
++	128, 129, 146, 145,
++};
++static const unsigned int lcd2_sync_0_mux[] = {
++	PORT128_LCD2VSYN_MARK, PORT129_LCD2HSYN_MARK,
++	LCD2DCK_MARK, PORT145_LCD2DISP_MARK,
++};
++static const unsigned int lcd2_sync_1_pins[] = {
++	/* VSYN, HSYN, DCK, DISP */
++	222, 221, 219, 217,
++};
++static const unsigned int lcd2_sync_1_mux[] = {
++	PORT222_LCD2VSYN_MARK, PORT221_LCD2HSYN_MARK,
++	LCD2DCK_2_MARK, PORT217_LCD2DISP_MARK,
++};
++static const unsigned int lcd2_sys_0_pins[] = {
++	/* CS, WR, RD, RS */
++	129, 146, 147, 145,
++};
++static const unsigned int lcd2_sys_0_mux[] = {
++	PORT129_LCD2CS__MARK, PORT146_LCD2WR__MARK,
++	LCD2RD__MARK, PORT145_LCD2RS_MARK,
++};
++static const unsigned int lcd2_sys_1_pins[] = {
++	/* CS, WR, RD, RS */
++	221, 219, 147, 217,
++};
++static const unsigned int lcd2_sys_1_mux[] = {
++	PORT221_LCD2CS__MARK, PORT219_LCD2WR__MARK,
++	LCD2RD__MARK, PORT217_LCD2RS_MARK,
++};
++
++static const struct sh_pfc_pin_group pinmux_groups[] = {
++	SH_PFC_PIN_GROUP(lcd_data8),
++	SH_PFC_PIN_GROUP(lcd_data9),
++	SH_PFC_PIN_GROUP(lcd_data12),
++	SH_PFC_PIN_GROUP(lcd_data16),
++	SH_PFC_PIN_GROUP(lcd_data18),
++	SH_PFC_PIN_GROUP(lcd_data24),
++	SH_PFC_PIN_GROUP(lcd_display),
++	SH_PFC_PIN_GROUP(lcd_lclk),
++	SH_PFC_PIN_GROUP(lcd_sync),
++	SH_PFC_PIN_GROUP(lcd_sys),
++	SH_PFC_PIN_GROUP(lcd2_data8),
++	SH_PFC_PIN_GROUP(lcd2_data9),
++	SH_PFC_PIN_GROUP(lcd2_data12),
++	SH_PFC_PIN_GROUP(lcd2_data16),
++	SH_PFC_PIN_GROUP(lcd2_data18),
++	SH_PFC_PIN_GROUP(lcd2_data24),
++	SH_PFC_PIN_GROUP(lcd2_sync_0),
++	SH_PFC_PIN_GROUP(lcd2_sync_1),
++	SH_PFC_PIN_GROUP(lcd2_sys_0),
++	SH_PFC_PIN_GROUP(lcd2_sys_1),
++};
++
++static const char * const lcd_groups[] = {
++	"lcd_data8",
++	"lcd_data9",
++	"lcd_data12",
++	"lcd_data16",
++	"lcd_data18",
++	"lcd_data24",
++	"lcd_display",
++	"lcd_lclk",
++	"lcd_sync",
++	"lcd_sys",
++};
++
++static const char * const lcd2_groups[] = {
++	"lcd2_data8",
++	"lcd2_data9",
++	"lcd2_data12",
++	"lcd2_data16",
++	"lcd2_data18",
++	"lcd2_data24",
++	"lcd2_sync_0",
++	"lcd2_sync_1",
++	"lcd2_sys_0",
++	"lcd2_sys_1",
++};
++
++static const struct sh_pfc_function pinmux_functions[] = {
++	SH_PFC_FUNCTION(lcd),
++	SH_PFC_FUNCTION(lcd2),
++};
++
+ #define PINMUX_FN_BASE	GPIO_FN_VBUS_0
  
-@@ -864,8 +864,8 @@ static struct platform_device fsi_hdmi_device = {
+ static const struct pinmux_func pinmux_func_gpios[] = {
+@@ -3140,6 +3389,11 @@ const struct sh_pfc_soc_info sh73a0_pinmux_info = {
+ 	.nr_pins = ARRAY_SIZE(pinmux_pins),
+ 	.ranges = pinmux_ranges,
+ 	.nr_ranges = ARRAY_SIZE(pinmux_ranges),
++	.groups = pinmux_groups,
++	.nr_groups = ARRAY_SIZE(pinmux_groups),
++	.functions = pinmux_functions,
++	.nr_functions = ARRAY_SIZE(pinmux_functions),
++
+ 	.func_gpios = pinmux_func_gpios,
+ 	.nr_func_gpios = ARRAY_SIZE(pinmux_func_gpios),
  
- /* RTC: RTC connects i2c-gpio. */
- static struct i2c_gpio_platform_data i2c_gpio_data = {
--	.sda_pin	= GPIO_PORT208,
--	.scl_pin	= GPIO_PORT91,
-+	.sda_pin	= 208,
-+	.scl_pin	= 91,
- 	.udelay		= 5, /* 100 kHz */
- };
- 
-@@ -1000,12 +1000,12 @@ static void __init eva_init(void)
- 	gpio_request(GPIO_FN_LCD0_DISP,		NULL);
- 	gpio_request(GPIO_FN_LCD0_LCLK_PORT165,	NULL);
- 
--	gpio_request_one(GPIO_PORT61, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
--	gpio_request_one(GPIO_PORT202, GPIOF_OUT_INIT_LOW, NULL); /* LCD0_LED_CONT */
-+	gpio_request_one(61, GPIOF_OUT_INIT_HIGH, NULL); /* LCDDON */
-+	gpio_request_one(202, GPIOF_OUT_INIT_LOW, NULL); /* LCD0_LED_CONT */
- 
- 	/* Touchscreen */
- 	gpio_request(GPIO_FN_IRQ10,	NULL); /* TP_INT */
--	gpio_request_one(GPIO_PORT166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
-+	gpio_request_one(166, GPIOF_OUT_INIT_HIGH, NULL); /* TP_RST_B */
- 
- 	/* GETHER */
- 	gpio_request(GPIO_FN_ET_CRS,		NULL);
-@@ -1028,12 +1028,12 @@ static void __init eva_init(void)
- 	gpio_request(GPIO_FN_ET_RX_DV,		NULL);
- 	gpio_request(GPIO_FN_ET_RX_CLK,		NULL);
- 
--	gpio_request_one(GPIO_PORT18, GPIOF_OUT_INIT_HIGH, NULL); /* PHY_RST */
-+	gpio_request_one(18, GPIOF_OUT_INIT_HIGH, NULL); /* PHY_RST */
- 
- 	/* USB */
--	gpio_request_one(GPIO_PORT159, GPIOF_IN, NULL); /* USB_DEVICE_MODE */
-+	gpio_request_one(159, GPIOF_IN, NULL); /* USB_DEVICE_MODE */
- 
--	if (gpio_get_value(GPIO_PORT159)) {
-+	if (gpio_get_value(159)) {
- 		/* USB Host */
- 	} else {
- 		/* USB Func */
-@@ -1042,10 +1042,10 @@ static void __init eva_init(void)
- 		 * OTOH, usbhs interrupt needs its value (HI/LOW) to decide
- 		 * USB connection/disconnection (usbhsf_get_vbus()).
- 		 * This means we needs to select GPIO_FN_IRQ7_PORT209 first,
--		 * and select GPIO_PORT209 here
-+		 * and select GPIO 209 here
- 		 */
- 		gpio_request(GPIO_FN_IRQ7_PORT209, NULL);
--		gpio_request_one(GPIO_PORT209, GPIOF_IN, NULL);
-+		gpio_request_one(209, GPIOF_IN, NULL);
- 
- 		platform_device_register(&usbhsf_device);
- 		usb = &usbhsf_device;
-@@ -1060,9 +1060,9 @@ static void __init eva_init(void)
- 	gpio_request(GPIO_FN_SDHI0_D3, NULL);
- 	gpio_request(GPIO_FN_SDHI0_WP, NULL);
- 
--	gpio_request_one(GPIO_PORT17, GPIOF_OUT_INIT_LOW, NULL);  /* SDHI0_18/33_B */
--	gpio_request_one(GPIO_PORT74, GPIOF_OUT_INIT_HIGH, NULL); /* SDHI0_PON */
--	gpio_request_one(GPIO_PORT75, GPIOF_OUT_INIT_HIGH, NULL); /* SDSLOT1_PON */
-+	gpio_request_one(17, GPIOF_OUT_INIT_LOW, NULL);  /* SDHI0_18/33_B */
-+	gpio_request_one(74, GPIOF_OUT_INIT_HIGH, NULL); /* SDHI0_PON */
-+	gpio_request_one(75, GPIOF_OUT_INIT_HIGH, NULL); /* SDSLOT1_PON */
- 
- 	/* we can use GPIO_FN_IRQ31_PORT167 here for SDHI0 CD irq */
- 
-@@ -1099,10 +1099,10 @@ static void __init eva_init(void)
- 	gpio_request(GPIO_FN_VIO_CKO,		NULL);
- 
- 	/* CON1/CON15 Camera */
--	gpio_request_one(GPIO_PORT173, GPIOF_OUT_INIT_LOW, NULL);  /* STANDBY */
--	gpio_request_one(GPIO_PORT172, GPIOF_OUT_INIT_HIGH, NULL); /* RST */
-+	gpio_request_one(173, GPIOF_OUT_INIT_LOW, NULL);  /* STANDBY */
-+	gpio_request_one(172, GPIOF_OUT_INIT_HIGH, NULL); /* RST */
- 	/* see mt9t111_power() */
--	gpio_request_one(GPIO_PORT158, GPIOF_OUT_INIT_LOW, NULL);  /* CAM_PON */
-+	gpio_request_one(158, GPIOF_OUT_INIT_LOW, NULL);  /* CAM_PON */
- 
- 	/* FSI-WM8978 */
- 	gpio_request(GPIO_FN_FSIAIBT,		NULL);
-@@ -1111,8 +1111,8 @@ static void __init eva_init(void)
- 	gpio_request(GPIO_FN_FSIAOSLD,		NULL);
- 	gpio_request(GPIO_FN_FSIAISLD_PORT5,	NULL);
- 
--	gpio_request(GPIO_PORT7, NULL);
--	gpio_request(GPIO_PORT8, NULL);
-+	gpio_request(7, NULL);
-+	gpio_request(8, NULL);
- 	gpio_direction_none(GPIO_PORT7CR); /* FSIAOBT needs no direction */
- 	gpio_direction_none(GPIO_PORT8CR); /* FSIAOLR needs no direction */
- 
-@@ -1129,14 +1129,14 @@ static void __init eva_init(void)
- 	 * DBGMD/LCDC0/FSIA MUX
- 	 * DBGMD_SELECT_B should be set after setting PFC Function.
- 	 */
--	gpio_request_one(GPIO_PORT176, GPIOF_OUT_INIT_HIGH, NULL);
-+	gpio_request_one(176, GPIOF_OUT_INIT_HIGH, NULL);
- 
- 	/*
- 	 * We can switch CON8/CON14 by SW1.5,
- 	 * but it needs after DBGMD_SELECT_B
- 	 */
--	gpio_request_one(GPIO_PORT6, GPIOF_IN, NULL);
--	if (gpio_get_value(GPIO_PORT6)) {
-+	gpio_request_one(6, GPIOF_IN, NULL);
-+	if (gpio_get_value(6)) {
- 		/* CON14 enable */
- 	} else {
- 		/* CON8 (SDHI1) enable */
-@@ -1150,7 +1150,7 @@ static void __init eva_init(void)
- 		gpio_request(GPIO_FN_SDHI1_WP,	NULL);
- 
- 		/* SDSLOT2_PON */
--		gpio_request_one(GPIO_PORT16, GPIOF_OUT_INIT_HIGH, NULL);
-+		gpio_request_one(16, GPIOF_OUT_INIT_HIGH, NULL);
- 
- 		platform_device_register(&sdhi1_device);
- 	}
 -- 
-1.8.1.5
+1.7.10.4
 
